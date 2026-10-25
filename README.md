@@ -35,6 +35,7 @@ Simple graphical application to browse the file system.
 | `/` | Open the search bar (live search, case-insensitive) |
 | `n` / `N` | Next / previous match of the searched term |
 | `Enter` | Enter the selected directory |
+| `Double-click` | Enter the double-clicked directory (same as `Enter`) |
 | `Backspace` | Go to the parent directory |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |

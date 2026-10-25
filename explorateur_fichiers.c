@@ -691,6 +691,33 @@ static void cycle_sort_mode(AppData* app) {
     refresh_listing(app);
 }
 
+/* Enter the selected entry when it is a directory (Enter key / double click) */
+static void enter_selected_directory(AppData* app) {
+    GtkTreeIter it;
+    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+        return;
+    }
+    gchar* name = NULL;
+    gchar* type = NULL;
+    gtk_tree_model_get(app->model, &it, 0, &name, 1, &type, -1);
+    if (g_strcmp0(type, "dir") == 0) {
+        gchar* subdir = g_build_filename(app->base_dir, name, NULL);
+        reload_directory(app, subdir);
+        g_free(subdir);
+    }
+    g_free(name);
+    g_free(type);
+}
+
+/* Double click on a row: enter it when it is a directory */
+static void on_row_activated(GtkTreeView* view, GtkTreePath* path,
+                             GtkTreeViewColumn* column, gpointer data) {
+    (void)view;
+    (void)path;
+    (void)column;
+    enter_selected_directory((AppData*)data);
+}
+
 /* Handler clavier du treeview : j k gg G / n N */
 static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
     (void)widget;
@@ -735,23 +762,10 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
     case GDK_KEY_KP_Enter:
     case GDK_KEY_Delete:
     case GDK_KEY_KP_Delete:
-    case GDK_KEY_ISO_Enter: {
+    case GDK_KEY_ISO_Enter:
         app->pending_g = FALSE;
-        GtkTreeIter it;
-        if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-            gchar* name = NULL;
-            gchar* type = NULL;
-            gtk_tree_model_get(app->model, &it, 0, &name, 1, &type, -1);
-            if (g_strcmp0(type, "dir") == 0) {
-                gchar* subdir = g_build_filename(app->base_dir, name, NULL);
-                reload_directory(app, subdir);
-                g_free(subdir);
-            }
-            g_free(name);
-            g_free(type);
-        }
+        enter_selected_directory(app);
         return TRUE;
-    }
     case GDK_KEY_BackSpace: /* Repertoire parent */
         app->pending_g = FALSE;
         {
@@ -1345,6 +1359,8 @@ int main(int argc, char** argv) {
 
     /* Keybindings vim sur le treeview : j k gg G / n N */
     g_signal_connect(tree_view, "key-press-event", G_CALLBACK(on_tree_key_press), app);
+    /* Double click on a directory: enter it */
+    g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), app);
     /* Same vim bindings on the viewer (jump + search in the file content) */
     g_signal_connect(text_view, "key-press-event", G_CALLBACK(on_viewer_key_press), app);
 
