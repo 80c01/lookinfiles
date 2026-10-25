@@ -8,6 +8,7 @@ typedef struct {
     GtkTreeView* tree_view;
     GtkTreeSelection* selection;
     GtkWidget* search_entry;
+    GtkWidget* path_label;
     gchar* search_term;
     gboolean pending_g; /* pour la sequence gg */
 } AppData;
@@ -126,6 +127,79 @@ static gboolean on_search_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
     return FALSE;
 }
 
+/* Remplit le store avec le contenu reel du repertoire (dossiers d'abord, tries) */
+static void populate_store(GtkListStore* store, const gchar* dirname) {
+    GtkTreeIter iter;
+    gtk_list_store_clear(store);
+
+    GDir* dir = g_dir_open(dirname, 0, NULL);
+    if (dir == NULL) {
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "(impossible de lire le repertoire)", -1);
+        gtk_list_store_set(store, &iter, 1, "-", -1);
+        return;
+    }
+
+    /* Collecter les noms pour les trier */
+    GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
+    const gchar* name;
+    while ((name = g_dir_read_name(dir)) != NULL) {
+        g_ptr_array_add(names, g_strdup(name));
+    }
+    g_dir_close(dir);
+
+    g_ptr_array_sort(names, (GCompareFunc)g_strcmp0);
+
+    /* Premier passage : les repertoires, deuxieme : les fichiers */
+    for (int pass = 0; pass < 2; pass++) {
+        for (guint i = 0; i < names->len; i++) {
+            const gchar* entry = g_ptr_array_index(names, i);
+            gchar* full = g_build_filename(dirname, entry, NULL);
+            gboolean is_dir = g_file_test(full, G_FILE_TEST_IS_DIR);
+            g_free(full);
+
+            if ((pass == 0) != is_dir) {
+                continue;
+            }
+
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter, 0, entry, -1);
+            gtk_list_store_set(store, &iter, 1, is_dir ? "dir" : "file", -1);
+        }
+    }
+
+    g_ptr_array_unref(names);
+}
+
+/* Navigue vers un nouveau repertoire (Entree / Retour arriere) */
+static void reload_directory(AppData* app, const gchar* new_dir) {
+    if (!g_file_test(new_dir, G_FILE_TEST_IS_DIR)) {
+        return;
+    }
+
+    g_free(app->base_dir);
+    app->base_dir = g_strdup(new_dir);
+
+    gchar* text = g_strdup_printf("Repertoire: %s", new_dir);
+    gtk_label_set_text(GTK_LABEL(app->path_label), text);
+    g_free(text);
+
+    /* La recherche precedente n'a plus de sens dans un nouveau repertoire */
+    g_free(app->search_term);
+    app->search_term = NULL;
+    gtk_entry_set_text(GTK_ENTRY(app->search_entry), "");
+
+    populate_store(GTK_LIST_STORE(app->model), new_dir);
+
+    /* Vider le panneau droit */
+    gtk_text_buffer_set_text(app->buffer, "", -1);
+
+    /* selectionner la premiere entree */
+    if (list_count(app) > 0) {
+        select_index(app, 0);
+    }
+}
+
 /* Handler clavier du treeview : j k gg G / n N */
 static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
     (void)widget;
@@ -165,6 +239,37 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
     case GDK_KEY_N: /* occurrence precedente */
         app->pending_g = FALSE;
         do_search(app, -1);
+        return TRUE;
+    case GDK_KEY_Return: /* Entrer dans le repertoire selectionne */
+    case GDK_KEY_KP_Enter:
+    case GDK_KEY_Delete:
+    case GDK_KEY_KP_Delete:
+    case GDK_KEY_ISO_Enter: {
+        app->pending_g = FALSE;
+        GtkTreeIter it;
+        if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+            gchar* name = NULL;
+            gchar* type = NULL;
+            gtk_tree_model_get(app->model, &it, 0, &name, 1, &type, -1);
+            if (g_strcmp0(type, "dir") == 0) {
+                gchar* subdir = g_build_filename(app->base_dir, name, NULL);
+                reload_directory(app, subdir);
+                g_free(subdir);
+            }
+            g_free(name);
+            g_free(type);
+        }
+        return TRUE;
+    }
+    case GDK_KEY_BackSpace: /* Repertoire parent */
+        app->pending_g = FALSE;
+        {
+            gchar* parent = g_path_get_dirname(app->base_dir);
+            if (g_strcmp0(parent, app->base_dir) != 0) {
+                reload_directory(app, parent);
+            }
+            g_free(parent);
+        }
         return TRUE;
     case GDK_KEY_Escape:
         app->pending_g = FALSE;
@@ -244,46 +349,10 @@ int main(int argc, char** argv) {
     gtk_widget_set_halign(sep_label, GTK_ALIGN_START);
 
     /* ===== Panneau gauche : liste des fichiers ===== */
-    GtkTreeIter iter;
     GtkListStore* store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
     /* Enumerer le contenu reel du repertoire courant */
-    GDir* dir = g_dir_open(cwd, 0, NULL);
-    if (dir != NULL) {
-        /* Collecter les noms pour les trier (dossiers d'abord) */
-        GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
-        const gchar* name;
-        while ((name = g_dir_read_name(dir)) != NULL) {
-            g_ptr_array_add(names, g_strdup(name));
-        }
-        g_dir_close(dir);
-
-        g_ptr_array_sort(names, (GCompareFunc)g_strcmp0);
-
-        /* Premier passage : les repertoires, deuxieme : les fichiers */
-        for (int pass = 0; pass < 2; pass++) {
-            for (guint i = 0; i < names->len; i++) {
-                const gchar* entry = g_ptr_array_index(names, i);
-                gchar* full = g_build_filename(cwd, entry, NULL);
-                gboolean is_dir = g_file_test(full, G_FILE_TEST_IS_DIR);
-                g_free(full);
-
-                if ((pass == 0) != is_dir) {
-                    continue;
-                }
-
-                gtk_list_store_append(store, &iter);
-                gtk_list_store_set(store, &iter, 0, entry, -1);
-                gtk_list_store_set(store, &iter, 1, is_dir ? "dir" : "file", -1);
-            }
-        }
-
-        g_ptr_array_unref(names);
-    } else {
-        gtk_list_store_append(store, &iter);
-        gtk_list_store_set(store, &iter, 0, "(impossible de lire le repertoire)", -1);
-        gtk_list_store_set(store, &iter, 1, "-", -1);
-    }
+    populate_store(store, cwd);
 
     /* GtkTreeView avec deux colonnes (Nom / Type) */
     GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
@@ -331,6 +400,7 @@ int main(int argc, char** argv) {
     app->model = GTK_TREE_MODEL(store);
     app->tree_view = GTK_TREE_VIEW(tree_view);
     app->search_entry = search_entry;
+    app->path_label = path_label;
 
     GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
     gtk_tree_selection_set_mode(selection, GTK_SELECTION_SINGLE);
