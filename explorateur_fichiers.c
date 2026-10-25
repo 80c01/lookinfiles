@@ -359,6 +359,10 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
 int main(int argc, char** argv) {
     gtk_init(&argc, &argv);
 
+    /* Theme sombre natif d'Adwaita */
+    GtkSettings* settings = gtk_settings_get_default();
+    g_object_set(settings, "gtk-application-prefer-dark-theme", TRUE, NULL);
+
     GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     gtk_window_set_title(GTK_WINDOW(window), "Explorateur de Fichiers");
