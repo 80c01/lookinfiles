@@ -276,11 +276,10 @@ static void update_status_bar(AppData* app) {
     g_free(msg);
 }
 
-/* Label du haut : repertoire courant + mode de tri, toujours a jour */
+/* Label du haut : repertoire courant, toujours a jour
+ * (le tri est affiche dans la barre de statut, en bas) */
 static void update_path_label(AppData* app) {
-    static const gchar* sort_names[SORT_COUNT] = {"nom", "date", "taille", "ext"};
-    gchar* text = g_strdup_printf("Repertoire: %s   [tri: %s]",
-                                  app->base_dir, sort_names[app->sort_mode]);
+    gchar* text = g_strdup_printf("Repertoire: %s", app->base_dir);
     gtk_label_set_text(GTK_LABEL(app->path_label), text);
     g_free(text);
     update_status_bar(app);
