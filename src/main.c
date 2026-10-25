@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     GtkTreeViewColumn* col_name = gtk_tree_view_column_new();
     gtk_tree_view_column_set_expand(col_name, TRUE);
     GtkCellRenderer* renderer_name = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(renderer_name, 4, 3);
+    gtk_cell_renderer_set_padding(renderer_name, 6, 4);
     gtk_tree_view_column_pack_start(col_name, renderer_name, TRUE);
     gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", COL_LABEL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_name);
