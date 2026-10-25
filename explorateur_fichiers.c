@@ -1441,6 +1441,28 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
     return TRUE;
 }
 
+/* Panel boundaries: a clear rule under the status bar and thicker,
+ * more contrasted paned handles between the file list and the viewer.
+ * Applied at screen level so child widgets are matched (GTK3 cascade). */
+static void apply_panel_borders(void) {
+    GtkCssProvider* css = gtk_css_provider_new();
+    static const gchar* DATA =
+        "#statusbar { padding-bottom: 4px; border-bottom: 1px solid #6e6e6e; }\n"
+        "paned > separator {\n"
+        "  -gtk-icon-source: none;\n"
+        "  min-width: 2px;\n"
+        "  min-height: 2px;\n"
+        "  background-color: #6e6e6e;\n"
+        "}\n";
+    gtk_css_provider_load_from_data(css, DATA, -1, NULL);
+    /* Screen-level: a window-level provider does not cascade to child
+     * widgets, and the selectors target the panes inside the window */
+    gtk_style_context_add_provider_for_screen(
+        gdk_screen_get_default(), GTK_STYLE_PROVIDER(css),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(css);
+}
+
 int main(int argc, char** argv) {
     /* Strip our own options first: gtk_init aborts on unknown options.
      * -f / --fullscreen: start in fullscreen mode. */
@@ -1629,12 +1651,14 @@ int main(int argc, char** argv) {
     /* Boite verticale englobante : label du chemin + paned */
     GtkWidget* outer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     GtkWidget* label_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_name(label_row, "statusbar"); /* CSS rule from below */
     gtk_box_pack_start(GTK_BOX(label_row), path_label, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(label_row), sep_label, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(outer_vbox), label_row, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(outer_vbox), paned, TRUE, TRUE, 0);
 
     gtk_container_add(GTK_CONTAINER(window), outer_vbox);
+    apply_panel_borders();
     gtk_widget_show_all(window);
 
     if (start_fullscreen) {
