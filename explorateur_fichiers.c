@@ -464,6 +464,77 @@ static gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
     }
 }
 
+/* VS Code-like emoji for a tree entry, based on kind / extension */
+static const gchar* file_icon(const gchar* name, gboolean is_dir) {
+    if (is_dir) {
+        return "📁";
+    }
+    const gchar* dot = strrchr(name, '.');
+    if (dot == NULL) {
+        /* Build/remote entry names without any extension */
+        if (g_strcmp0(name, "Makefile") == 0 ||
+            g_ascii_strcasecmp(name, "makefile") == 0) {
+            return "🔧";
+        }
+        return "📄";
+    }
+#define EXT_IS(x) (g_ascii_strcasecmp(dot, (x)) == 0)
+    if (EXT_IS(".c") || EXT_IS(".h")) {
+        return "🛠️"; /* systems / C sources */
+    }
+    if (EXT_IS(".cc") || EXT_IS(".cpp") || EXT_IS(".cxx") || EXT_IS(".hpp")) {
+        return "🔷"; /* C++ */
+    }
+    if (EXT_IS(".py") || EXT_IS(".pyw")) {
+        return "🐍";
+    }
+    if (EXT_IS(".java") || EXT_IS(".jar")) {
+        return "☕";
+    }
+    if (EXT_IS(".js") || EXT_IS(".mjs") || EXT_IS(".ts")) {
+        return "📜";
+    }
+    if (EXT_IS(".html") || EXT_IS(".htm") || EXT_IS(".xml")) {
+        return "🌐";
+    }
+    if (EXT_IS(".css") || EXT_IS(".scss") || EXT_IS(".less")) {
+        return "🎨";
+    }
+    if (EXT_IS(".json") || EXT_IS(".yaml") || EXT_IS(".yml") ||
+        EXT_IS(".toml") || EXT_IS(".ini") || EXT_IS(".cfg")) {
+        return "🧾";
+    }
+    if (EXT_IS(".sh") || EXT_IS(".bash") || EXT_IS(".zsh")) {
+        return "🐚";
+    }
+    if (EXT_IS(".png") || EXT_IS(".jpg") || EXT_IS(".jpeg") || EXT_IS(".gif") ||
+        EXT_IS(".svg") || EXT_IS(".bmp") || EXT_IS(".ico") || EXT_IS(".webp")) {
+        return "🖼️";
+    }
+    if (EXT_IS(".mp3") || EXT_IS(".wav") || EXT_IS(".ogg") || EXT_IS(".flac")) {
+        return "🎵";
+    }
+    if (EXT_IS(".mp4") || EXT_IS(".avi") || EXT_IS(".mkv") || EXT_IS(".mov")) {
+        return "🎬";
+    }
+    if (EXT_IS(".tar") || EXT_IS(".gz") || EXT_IS(".tgz") || EXT_IS(".zip") ||
+        EXT_IS(".rar") || EXT_IS(".7z") || EXT_IS(".xz") || EXT_IS(".bz2")) {
+        return "📦";
+    }
+    if (EXT_IS(".db") || EXT_IS(".sqlite") || EXT_IS(".sqlite3")) {
+        return "🗃️";
+    }
+    if (EXT_IS(".o") || EXT_IS(".so") || EXT_IS(".a") || EXT_IS(".bin") ||
+        EXT_IS(".exe")) {
+        return "⚙️"; /* compiled artifacts */
+    }
+    if (EXT_IS(".md") || EXT_IS(".txt") || EXT_IS(".rst") || EXT_IS(".log")) {
+        return "📝";
+    }
+    return "📄";
+#undef EXT_IS
+}
+
 /* Remplit le store avec le contenu reel du repertoire (dossiers d'abord, tries) */
 static void populate_store(GtkListStore* store, const gchar* dirname, gboolean show_hidden, gint sort_mode) {
     GtkTreeIter iter;
@@ -474,6 +545,7 @@ static void populate_store(GtkListStore* store, const gchar* dirname, gboolean s
         gtk_list_store_append(store, &iter);
         gtk_list_store_set(store, &iter, 0, "(cannot read directory)", -1);
         gtk_list_store_set(store, &iter, 1, "-", -1);
+        gtk_list_store_set(store, &iter, 2, "📄 (cannot read directory)", -1);
         return;
     }
 
@@ -502,9 +574,12 @@ static void populate_store(GtkListStore* store, const gchar* dirname, gboolean s
 
     for (guint i = 0; i < entries->len; i++) {
         const FileEntry* e = &g_array_index(entries, FileEntry, i);
+        gchar* label = g_strconcat(file_icon(e->name, e->is_dir), " ", e->name, NULL);
         gtk_list_store_append(store, &iter);
         gtk_list_store_set(store, &iter, 0, e->name, -1);
         gtk_list_store_set(store, &iter, 1, e->is_dir ? "dir" : "file", -1);
+        gtk_list_store_set(store, &iter, 2, label, -1);
+        g_free(label);
     }
 
     for (guint i = 0; i < entries->len; i++) {
@@ -1120,8 +1195,10 @@ int main(int argc, char** argv) {
     GtkWidget* sep_label = gtk_label_new(" ");
     gtk_widget_set_halign(sep_label, GTK_ALIGN_START);
 
-    /* ===== Panneau gauche : liste des fichiers ===== */
-    GtkListStore* store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
+    /* ===== Panneau gauche : liste des fichiers =====
+     * Model: col0 = raw name, col1 = type, col2 = display label (VS Code-like emoji + name) */
+    GtkListStore* store =
+        gtk_list_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
 
     /* Enumerer le contenu reel du repertoire courant */
     populate_store(store, cwd, FALSE, SORT_NAME); /* caches masques, tri par nom */
@@ -1136,7 +1213,7 @@ int main(int argc, char** argv) {
     gtk_tree_view_column_set_expand(col_name, TRUE);
     GtkCellRenderer* renderer_name = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col_name, renderer_name, TRUE);
-    gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", 0);
+    gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", 2);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_name);
 
     GtkTreeViewColumn* col_type = gtk_tree_view_column_new();

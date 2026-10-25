@@ -4,7 +4,7 @@ Simple graphical application to browse the file system.
 
 ## 🎯 Features (current version)
 
-- ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), with "Name" / "Type" (`dir` / `file`) columns
+- ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), with "Name" / "Type" (`dir` / `file`) columns, and VS Code-like **emoji icons** by file type
 - ✅ Right panel: content viewer — clicking a file on the left shows its content on the right; selecting a** directory** lists its contents
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
 - ✅ Non-UTF-8 files are sanitized before display (invalid bytes → U+FFFD)
@@ -100,4 +100,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.1**: Real current-directory listing, resizable panel (`GtkPaned`), content viewer linked to selection, `Ctrl+Q`
 - **v1.2**: Vim keybindings (`j`/`k`, `gg`, `G`, `/`, `n`/`N`) and tree navigation (`Enter`/`Backspace`)
 - **v1.3**: Hidden-files toggle (`I`), sort cycling (`o`), directory listing in the right panel, preview of large files, dark theme
+- **v1.4**: VS Code-like emoji icons per file type in the tree, `Ctrl+T` embedded terminal panel, `-f` fullscreen start, `Alt+←/→` panel focus cycling, read-only viewer, vim bindings and search inside the viewer
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)
