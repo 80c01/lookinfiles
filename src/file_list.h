@@ -5,6 +5,8 @@
 
 const gchar* file_extension(const gchar* name);
 gboolean is_markdown_file(const gchar* name);
+gboolean is_html_file(const gchar* name);
+gboolean is_renderable_file(const gchar* name);
 const gchar* file_icon(const gchar* name, gboolean is_dir);
 
 gint list_count(AppData* app);

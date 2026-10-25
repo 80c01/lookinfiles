@@ -23,6 +23,7 @@ SRCS = src/main.c \
        src/file_list.c \
        src/viewer.c \
        src/markdown.c \
+       src/html.c \
        src/editor.c \
        src/minimap.c \
        src/terminal.c \

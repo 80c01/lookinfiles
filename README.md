@@ -13,7 +13,7 @@ Simple graphical application to browse the file system.
 - ✅ Resizable panel: draggable `GtkPaned` divider (initial position 300 px, minimum width 150 px) — while a divider is dragged, a small popup shows both panes' sizes (`W × H | W × H`)
 - ✅ Navigation in the tree: the `Directory: …` label follows the current directory
 - ✅ Top bar shows the current directory, the sort mode and the hidden-files state
-- ✅ Markdown preview: markdown files (`.md`, `.markdown`, etc.) are rendered with rich styling (headers, formatted lists, checkboxes, blockquotes, code blocks, tables, inline bold/italic/code/strikethrough/links, and images) rather than raw content; press `m` to toggle between rendered and raw preview
+- ✅ Markdown & HTML preview: Markdown files (`.md`, `.markdown`, etc.) and HTML files (`.html`, `.htm`, `.xhtml`, `.shtml`) are rendered with rich styling (document title, headings, formatted lists, blockquotes, code blocks, tables with Unicode borders, inline formatting, links, and images) rather than raw markup; press `m` to toggle between rendered and raw preview
 
 ## ⌨️ Keyboard shortcuts
 
@@ -42,7 +42,7 @@ Simple graphical application to browse the file system.
 | `Backspace` | Go to the parent directory |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
-| `m` | Toggle rendered markdown / raw preview (when viewing a markdown file) |
+| `m` | Toggle rendered preview / raw markup view (for Markdown and HTML files) |
 | `h` | Show / hide the key-binding help panel (any key inside it closes it) |
 | `Esc` | Close the search bar |
 
@@ -59,7 +59,7 @@ Same vim bindings as the list, applied to the displayed content:
 | `G` | Go to the bottom of the file |
 | `/` | Open the search bar (searches in the displayed content) |
 | `n` / `N` | Next / previous occurrence (selected and centered, wraps around) |
-| `m` | Toggle rendered markdown / raw preview (when viewing a markdown file) |
+| `m` | Toggle rendered preview / raw markup view (for Markdown and HTML files) |
 | `Esc` | Close the search bar |
 
 ### Editor tabs (when the viewer zone shows a file opened for editing)
@@ -120,6 +120,7 @@ src/
 ├── file_list.c/.h       # Directory enumeration, sorting, navigation
 ├── viewer.c/.h          # File content viewer and disk monitoring
 ├── markdown.c/.h        # Markdown rendering engine
+├── html.c/.h            # HTML rendering engine
 ├── editor.c/.h          # Multi-tab file editor
 ├── minimap.c/.h         # Scaled file overview minimap
 ├── terminal.c/.h        # Embedded VTE terminal panel
@@ -140,4 +141,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.4**: VS Code-like emoji icons per file type in the tree, `Ctrl+T` embedded terminal panel, `-f` fullscreen start, `Alt+←/→` panel focus cycling, read-only viewer with vim bindings, in-content search and optional syntax highlighting
 - **v1.5**: Rendered Markdown preview in right panel (headings, task lists, tables, styled quotes, code blocks, inline formatting, and images) with `m` toggle for raw source preview
 - **v1.6**: Modular code architecture: split monolithic codebase into dedicated modules in `src/` (`main`, `file_list`, `viewer`, `markdown`, `editor`, `minimap`, `terminal`, `search`, `ui`)
+- **v1.7**: Rich HTML preview rendering in right panel (document title, headings, lists, blockquotes, preformatted code, Unicode border tables, inline formatting, links, and images) with `m` toggle for raw markup view
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)

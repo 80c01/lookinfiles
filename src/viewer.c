@@ -1,6 +1,7 @@
 #include "viewer.h"
 #include "file_list.h"
 #include "markdown.h"
+#include "html.h"
 #include "search.h"
 #include "ui.h"
 
@@ -205,8 +206,8 @@ gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpointer dat
     case GDK_KEY_m:
     case GDK_KEY_M:
         app->pending_g = FALSE;
-        if (app->viewed_name != NULL && is_markdown_file(app->viewed_name)) {
-            app->markdown_raw = !app->markdown_raw;
+        if (app->viewed_name != NULL && is_renderable_file(app->viewed_name)) {
+            app->render_raw = !app->render_raw;
             if (app->viewed_path != NULL) {
                 load_file_content(app, app->viewed_name, app->viewed_path);
             }
@@ -223,9 +224,11 @@ gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpointer dat
 }
 
 void load_file_content(AppData* app, const gchar* name, const gchar* full) {
-    gboolean is_md = is_markdown_file(name) && !app->markdown_raw;
+    gboolean is_md = is_markdown_file(name) && !app->render_raw;
+    gboolean is_html = is_html_file(name) && !app->render_raw;
+    gboolean is_rendered = is_md || is_html;
 
-    if (is_md) {
+    if (is_rendered) {
         apply_viewer_language(app, NULL);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
         gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
@@ -274,6 +277,9 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         if (is_md) {
             ensure_markdown_tags(app->buffer);
             render_markdown_to_buffer(app->buffer, src, full, preview, name, fsize);
+        } else if (is_html) {
+            ensure_html_tags(app->buffer);
+            render_html_to_buffer(app->buffer, src, full, preview, name, fsize);
         } else {
             GString* text = g_string_new(NULL);
             if (preview) {
@@ -445,7 +451,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         g_string_free(listing, TRUE);
     } else {
         if (g_strcmp0(name, app->viewed_name) != 0) {
-            app->markdown_raw = FALSE;
+            app->render_raw = FALSE;
         }
         load_file_content(app, name, full);
     }

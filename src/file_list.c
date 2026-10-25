@@ -29,6 +29,23 @@ gboolean is_markdown_file(const gchar* name) {
             g_ascii_strcasecmp(ext, "mkdn") == 0);
 }
 
+/* Return TRUE if file name indicates HTML content */
+gboolean is_html_file(const gchar* name) {
+    if (name == NULL) {
+        return FALSE;
+    }
+    const gchar* ext = file_extension(name);
+    return (g_ascii_strcasecmp(ext, "html") == 0 ||
+            g_ascii_strcasecmp(ext, "htm") == 0 ||
+            g_ascii_strcasecmp(ext, "xhtml") == 0 ||
+            g_ascii_strcasecmp(ext, "shtml") == 0);
+}
+
+/* Return TRUE if file content can be rendered richly in preview pane */
+gboolean is_renderable_file(const gchar* name) {
+    return is_markdown_file(name) || is_html_file(name);
+}
+
 /* Sort: directories first, then according to active sort mode */
 static gint compare_entries(gconstpointer a, gconstpointer b) {
     const FileEntry* ea = (const FileEntry*)a;
@@ -506,8 +523,8 @@ gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data)
     case GDK_KEY_m:
     case GDK_KEY_M:
         app->pending_g = FALSE;
-        if (app->viewed_name != NULL && is_markdown_file(app->viewed_name)) {
-            app->markdown_raw = !app->markdown_raw;
+        if (app->viewed_name != NULL && is_renderable_file(app->viewed_name)) {
+            app->render_raw = !app->render_raw;
             if (app->viewed_path != NULL) {
                 load_file_content(app, app->viewed_name, app->viewed_path);
             }
