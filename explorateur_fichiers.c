@@ -6,6 +6,10 @@
 /* Modes de tri cyclés par la touche o */
 enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 
+/* Apercu des gros fichiers */
+#define PREVIEW_THRESHOLD (512 * 1024)  /* au-dela de 512 Ko : apercu seul */
+#define PREVIEW_BYTES     (64 * 1024)   /* premiers octets affiches */
+
 /* Entree collectee pour le tri */
 typedef struct {
     gchar* name;
@@ -512,22 +516,57 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
         gtk_text_buffer_set_text(app->buffer, listing->str, (gint)listing->len);
         g_string_free(listing, TRUE);
     } else {
+        /* Taille du fichier pour decider entier vs apercu */
+        struct stat st;
+        gint64 fsize = (g_stat(full, &st) == 0) ? (gint64)st.st_size : -1;
         gchar* contents = NULL;
         gsize len = 0;
-        if (g_file_get_contents(full, &contents, &len, NULL) && contents != NULL) {
-            /* GtkTextBuffer exige de l'UTF-8 valide : nettoyer si besoin */
-            if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
-                gchar* valid = g_utf8_make_valid(contents, (gssize)len);
-                gtk_text_buffer_set_text(app->buffer, valid, -1);
-                g_free(valid);
-            } else {
-                gtk_text_buffer_set_text(app->buffer, contents, -1);
-            }
-            g_free(contents);
-        } else {
+        gboolean preview = FALSE;
+
+        if (fsize < 0) {
             gchar* msg = g_strdup_printf("[ Impossible de lire : %s ]", name);
             gtk_text_buffer_set_text(app->buffer, msg, -1);
             g_free(msg);
+        } else {
+            if (fsize > PREVIEW_THRESHOLD) {
+                /* Gros fichier : ne lire que le debut, pas le contenu entier */
+                preview = TRUE;
+                FILE* fp = g_fopen(full, "rb");
+                if (fp != NULL) {
+                    contents = g_malloc0(PREVIEW_BYTES + 1);
+                    len = fread(contents, 1, PREVIEW_BYTES, fp);
+                    contents[len] = '\0';
+                    fclose(fp);
+                }
+            } else {
+                g_file_get_contents(full, &contents, &len, NULL);
+            }
+
+            if (contents != NULL) {
+                GString* text = g_string_new(NULL);
+                if (preview) {
+                    g_string_append_printf(text,
+                            "[ APERCU ] %s (%" G_GINT64_FORMAT " octets au total)\n"
+                            "Premiers %u octets affiches. Fichier tres volumineux, affichage tronque.\n\n",
+                            name, fsize, (guint)len);
+                }
+
+                /* GtkTextBuffer exige de l'UTF-8 valide : nettoyer si besoin */
+                if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
+                    gchar* valid = g_utf8_make_valid(contents, (gssize)len);
+                    g_string_append(text, valid);
+                    g_free(valid);
+                } else {
+                    g_string_append_len(text, contents, (gssize)len);
+                }
+                gtk_text_buffer_set_text(app->buffer, text->str, (gint)text->len);
+                g_string_free(text, TRUE);
+                g_free(contents);
+            } else {
+                gchar* msg = g_strdup_printf("[ Impossible de lire : %s ]", name);
+                gtk_text_buffer_set_text(app->buffer, msg, -1);
+                g_free(msg);
+            }
         }
     }
 
