@@ -122,6 +122,8 @@ typedef struct {
 
     /* Minimap: scaled file overview right of the viewer */
     GtkWidget* minimap;
+    GtkAdjustment* viewer_vadj;  /* vertical scroll: keeps the slider + hides
+                                  * the minimap when the file fully fits */
     cairo_surface_t* mm_cache;   /* offscreen render of the mini file */
     gint mm_cache_w;             /* size the cache was built for */
     gint mm_cache_h;
@@ -1498,6 +1500,31 @@ static void minimap_invalidate(AppData* app) {
     }
 }
 
+/* Hide the minimap when the whole file is visible in the viewer: no scroll
+ * to navigate, nothing a miniature would help with */
+static void minimap_update_visibility(AppData* app) {
+    GtkAdjustment* adj;
+    gboolean useful;
+    if (app->minimap == NULL || app->viewer_vadj == NULL) {
+        return;
+    }
+    adj = app->viewer_vadj;
+    useful = gtk_adjustment_get_upper(adj) >
+             gtk_adjustment_get_page_size(adj) + 1.5;
+    if (gtk_widget_get_visible(app->minimap) == useful) {
+        return;
+    }
+    if (!useful) {
+        minimap_invalidate(app); /* free the offscreen copy as well */
+    }
+    gtk_widget_set_visible(app->minimap, useful);
+}
+
+static void on_minimap_adj_changed(GtkAdjustment* adjustment, gpointer data) {
+    (void)adjustment;
+    minimap_update_visibility((AppData*)data);
+}
+
 static gboolean on_minimap_draw(GtkWidget* widget, cairo_t* cr,
                                 gpointer data) {
     AppData* app = (AppData*)data;
@@ -1588,6 +1615,7 @@ static gboolean on_minimap_button_release(GtkWidget* widget,
 static void on_minimap_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
     minimap_invalidate((AppData*)data);
+    minimap_update_visibility((AppData*)data);
 }
 
 static void on_minimap_scroll(GtkAdjustment* adjustment, gpointer data) {
@@ -1601,6 +1629,8 @@ static void on_minimap_size_allocate(GtkWidget* widget,
     (void)widget;
     (void)allocation;
     minimap_invalidate((AppData*)data);
+    /* A window resize also changes the viewer's visible range */
+    minimap_update_visibility((AppData*)data);
 }
 
 static void on_minimap_realize(GtkWidget* widget, gpointer data) {
@@ -2040,6 +2070,8 @@ int main(int argc, char** argv) {
     /* Minimap wiring: buffer changes / scrolling / size move the cache and
      * the slider; clicks and drags steer the viewer */
     app->minimap = minimap;
+    app->viewer_vadj =
+        gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(right_scroll));
     g_signal_connect(minimap, "draw", G_CALLBACK(on_minimap_draw), app);
     g_signal_connect(minimap, "button-press-event",
                      G_CALLBACK(on_minimap_button_press), app);
@@ -2052,9 +2084,10 @@ int main(int argc, char** argv) {
     g_signal_connect(minimap, "realize", G_CALLBACK(on_minimap_realize), app);
     g_signal_connect(app->buffer, "changed",
                      G_CALLBACK(on_minimap_buffer_changed), app);
-    g_signal_connect(
-        gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(right_scroll)),
-        "value-changed", G_CALLBACK(on_minimap_scroll), app);
+    g_signal_connect(app->viewer_vadj, "value-changed",
+                     G_CALLBACK(on_minimap_scroll), app);
+    g_signal_connect(app->viewer_vadj, "changed",
+                     G_CALLBACK(on_minimap_adj_changed), app);
 
     /* h: floating key-bindings cheat sheet (hidden; toggled by h) */
     create_help_panel(GTK_WINDOW(window), app);
