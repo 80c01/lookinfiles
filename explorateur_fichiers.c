@@ -765,12 +765,14 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
     if (app->vte != NULL) {
         gtk_widget_destroy(app->vte);
     }
+    /* The container was never mapped: realize it BEFORE focusing the child */
+    gtk_widget_show(app->term_scroll);
     app->vte = vte_terminal_new();
     gtk_container_add(GTK_CONTAINER(app->term_scroll), app->vte);
     g_signal_connect(app->vte, "child-exited",
                      G_CALLBACK(on_term_child_exited), app);
     spawn_shell(app);
-    gtk_widget_show(app->vte);
+    gtk_widget_show_all(app->term_scroll);
     gtk_widget_grab_focus(app->vte);
 #else
     /* No VTE installed: the panel is a notice instead of a terminal */
