@@ -222,7 +222,7 @@ static void populate_store(GtkListStore* store, const gchar* dirname, gboolean s
     GDir* dir = g_dir_open(dirname, 0, NULL);
     if (dir == NULL) {
         gtk_list_store_append(store, &iter);
-        gtk_list_store_set(store, &iter, 0, "(impossible de lire le repertoire)", -1);
+        gtk_list_store_set(store, &iter, 0, "(cannot read directory)", -1);
         gtk_list_store_set(store, &iter, 1, "-", -1);
         return;
     }
@@ -265,8 +265,8 @@ static void populate_store(GtkListStore* store, const gchar* dirname, gboolean s
 
 /* Label du haut : repertoire courant + tri + fichiers caches, toujours a jour */
 static void update_path_label(AppData* app) {
-    static const gchar* sort_names[SORT_COUNT] = {"nom", "date", "taille", "ext"};
-    gchar* text = g_strdup_printf("Repertoire: %s   [tri: %s] [caches: %s]",
+    static const gchar* sort_names[SORT_COUNT] = {"name", "date", "size", "ext"};
+    gchar* text = g_strdup_printf("Directory: %s   [sort: %s] [hidden: %s]",
                                   app->base_dir, sort_names[app->sort_mode],
                                   app->show_hidden ? "on" : "off");
     gtk_label_set_text(GTK_LABEL(app->path_label), text);
@@ -469,7 +469,7 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
     if (g_strcmp0(type, "dir") == 0) {
         /* Lister le contenu du repertoire dans le panneau droit */
         GString* listing = g_string_new(NULL);
-        g_string_append_printf(listing, "[ Repertoire ] %s\n\n", name);
+        g_string_append_printf(listing, "[ Directory ] %s\n\n", name);
 
         GDir* sub = g_dir_open(full, 0, NULL);
         if (sub != NULL) {
@@ -493,11 +493,11 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
                                        sub_entry, sub_is_dir ? "/" : "");
             }
             if (names->len == 0) {
-                g_string_append(listing, "  (vide)\n");
+                g_string_append(listing, "  (empty)\n");
             }
             g_ptr_array_unref(names);
         } else {
-            g_string_append(listing, "  (impossible de lire le repertoire)\n");
+            g_string_append(listing, "  (cannot read directory)\n");
         }
 
         gtk_text_buffer_set_text(app->buffer, listing->str, (gint)listing->len);
@@ -511,7 +511,7 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
         gboolean preview = FALSE;
 
         if (fsize < 0) {
-            gchar* msg = g_strdup_printf("[ Impossible de lire : %s ]", name);
+            gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
             gtk_text_buffer_set_text(app->buffer, msg, -1);
             g_free(msg);
         } else {
@@ -533,8 +533,8 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
                 GString* text = g_string_new(NULL);
                 if (preview) {
                     g_string_append_printf(text,
-                            "[ APERCU ] %s (%" G_GINT64_FORMAT " octets au total)\n"
-                            "Premiers %u octets affiches. Fichier tres volumineux, affichage tronque.\n\n",
+                            "[ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)\n"
+                            "Showing first %u bytes. Large file, display truncated.\n\n",
                             name, fsize, (guint)len);
                 }
 
@@ -550,7 +550,7 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
                 g_string_free(text, TRUE);
                 g_free(contents);
             } else {
-                gchar* msg = g_strdup_printf("[ Impossible de lire : %s ]", name);
+                gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
                 gtk_text_buffer_set_text(app->buffer, msg, -1);
                 g_free(msg);
             }
@@ -571,7 +571,7 @@ int main(int argc, char** argv) {
 
     GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-    gtk_window_set_title(GTK_WINDOW(window), "Explorateur de Fichiers");
+    gtk_window_set_title(GTK_WINDOW(window), "File Explorer");
     gtk_window_set_default_size(GTK_WINDOW(window), 1000, 600);
 
     /* Raccourci Ctrl+Q pour quitter l'application */
@@ -586,7 +586,7 @@ int main(int argc, char** argv) {
 
     /* Label pour montrer le path actuel (au-dessus de la zone divisée) */
     char path_text[512];
-    snprintf(path_text, sizeof(path_text), "Repertoire: %s", cwd);
+    snprintf(path_text, sizeof(path_text), "Directory: %s", cwd);
     GtkWidget* path_label = gtk_label_new(path_text);
     gtk_widget_set_halign(path_label, GTK_ALIGN_START);
     gtk_widget_set_margin_start(path_label, 5);

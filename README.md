@@ -1,79 +1,78 @@
-# 📁 Explorateur de Fichiers en C avec GTK+ 3
+# 📁 File Explorer in C with GTK+ 3
 
-Application graphique simple pour naviguer dans le système de fichiers.
+Simple graphical application to browse the file system.
 
-## 🎯 Fonctionnalités (version actuelle)
+## 🎯 Features (current version)
 
-- ✅ Panneau gauche : liste **réelle** du répertoire courant (énumération `GDir`, tri alphabétique, dossiers en premier), colonnes « Nom » / « Type » (`dir` / `file`)
-- ✅ Panneau droit : visualiseur de contenu — un clic sur un fichier à gauche affiche son contenu à droite
-- ✅ Panneau redimensionnable : séparateur `GtkPaned` draggable (position initiale 300 px, largeur minimale 150 px)
-- ✅ Navigation dans l'arborescence : le label `Repertoire: …` suit le répertoire courant
-- ✅ Raccourcis clavier : `Ctrl+Q` pour quitter
-- ✅ Thème sombre natif d'Adwaita (`gtk-application-prefer-dark-theme`)
-- ✅ Keybindings vim dans le panneau gauche
-- ✅ Interface GTK+ native complète
+- ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), with "Name" / "Type" (`dir` / `file`) columns
+- ✅ Right panel: content viewer — clicking a file on the left shows its content on the right; selecting a** directory** lists its contents
+- ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
+- ✅ Non-UTF-8 files are sanitized before display (invalid bytes → U+FFFD)
+- ✅ Resizable panel: draggable `GtkPaned` divider (initial position 300 px, minimum width 150 px)
+- ✅ Navigation in the tree: the `Directory: …` label follows the current directory
+- ✅ Top bar shows the current directory, the sort mode and the hidden-files state
 
-## ⌨️ Raccourcis clavier
+## ⌨️ Keyboard shortcuts
 
 ### Global
 
-| Touche | Action |
+| Key | Action |
 |---|---|
-| `Ctrl+Q` | Quitter l'application |
+| `Ctrl+Q` | Quit the application |
 
-### Panneau gauche (lorsque la liste a le focus)
+### Left panel (when the list has focus)
 
-| Touche | Action |
+| Key | Action |
 |---|---|
-| `j` / `k` | Sélection suivante / précédente |
-| `Ctrl+F` | Avancer d'une page (comme Page Down) |
-| `Ctrl+B` | Reculer d'une page (comme Page Up) |
-| `gg` | Aller en haut de la liste |
-| `G` | Aller en bas de la liste |
-| `/` | Ouvrir la barre de recherche (recherche live, insensible à la casse) |
-| `n` / `N` | Occurrence suivante / précédente du terme cherché |
-| `Entrée` | Entrer dans le répertoire sélectionné |
-| `Backspace` | Remonter au répertoire parent |
-| `I` (min. ou maj.) | Afficher/masquer les fichiers cachés (préfixe `.`) |
-| `o` | Cycler le tri : nom → date (récent d'abord) → taille (gros d'abord) → extension |
-| `Échap` | Fermer la barre de recherche |
+| `j` / `k` | Select next / previous entry |
+| `Ctrl+F` | Jump one page forward (like Page Down) |
+| `Ctrl+B` | Jump one page backward (like Page Up) |
+| `gg` | Go to the top of the list |
+| `G` | Go to the bottom of the list |
+| `/` | Open the search bar (live search, case-insensitive) |
+| `n` / `N` | Next / previous match of the searched term |
+| `Enter` | Enter the selected directory |
+| `Backspace` | Go to the parent directory |
+| `I` | Toggle hidden files (dot-prefixed) |
+| `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
+| `Esc` | Close the search bar |
 
-## 📝 Compilation
+## 📝 Build
 
 ```bash
-make                           # ou
+make                           # or
 gcc -o explorateur_fichiers explorateur_fichiers.c `pkg-config --cflags --libs gtk+-3.0`
 ```
 
-## 🚀 Exécution
+## 🚀 Run
 
 ```bash
-./explorateur_fichiers          # Ou
-gnome-terminal && ./explorateur_fichiers
+./explorateur_fichiers
 ```
 
-## 📦 Prérequis
+## 📦 Prerequisites
 
 - GTK+ 3 Development: `libgtk-3-dev`
 - GCC: `gcc`
 
-Installer sur Debian/Ubuntu:
+Install on Debian/Ubuntu:
 ```bash
 sudo apt install libgtk-3-dev build-essential
 ```
 
-## 🏗️ Structure du projet
+## 🏗️ Project structure
 
 ```
-explorateur_fichiers.c  # Code source principal
-Makefile                 # Fichier de build
+explorateur_fichiers.c  # Main source file
+Makefile                 # Build file
 README.md                # Documentation
-explorateur_fichiers     # Binaire compilé
+explorateur_fichiers     # Compiled binary
 ```
 
-## 📝 Notes de version
+## 📝 Release notes
 
-- **v1.0** : Version de base avec deux panneaux principaux
-- **v1.1** : Liste réelle du répertoire courant, panneau redimensionnable (`GtkPaned`), visualiseur de contenu relié à la sélection, `Ctrl+Q`
-- **v1.2** : Keybindings vim (`j`/`k`, `gg`, `G`, `/`, `n`/`N`) et navigation dans l'arborescence (`Entrée`/`Backspace`)
-- Compatible avec GTK+ 3.10+ (nécessaire pour `GtkSearchEntry`)
+- **v1.0**: Base version with two main panels
+- **v1.1**: Real current-directory listing, resizable panel (`GtkPaned`), content viewer linked to selection, `Ctrl+Q`
+- **v1.2**: Vim keybindings (`j`/`k`, `gg`, `G`, `/`, `n`/`N`) and tree navigation (`Enter`/`Backspace`)
+- **v1.3**: Hidden-files toggle (`I`), sort cycling (`o`), directory listing in the right panel, preview of large files, dark theme
+- Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)
