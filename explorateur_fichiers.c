@@ -69,8 +69,6 @@ typedef struct {
     GtkTreeModel* model;
     GtkTreeView* tree_view;
     GtkTreeSelection* selection;
-    GtkWidget* status_bar;
-    guint status_ctx;
     GtkWidget* search_entry;
     GtkWidget* path_label;
     gchar* search_term;
@@ -265,24 +263,14 @@ static void populate_store(GtkListStore* store, const gchar* dirname, gboolean s
     g_array_unref(entries);
 }
 
-/* Barre de statut : tri courant + etat des fichiers caches */
-static void update_status_bar(AppData* app) {
-    static const gchar* sort_names[SORT_COUNT] = {"nom", "date", "taille", "ext"};
-    gchar* msg = g_strdup_printf("Tri : %s    Fichiers caches : %s",
-                                 sort_names[app->sort_mode],
-                                 app->show_hidden ? "activés" : "désactivés");
-    gtk_statusbar_pop(GTK_STATUSBAR(app->status_bar), app->status_ctx);
-    gtk_statusbar_push(GTK_STATUSBAR(app->status_bar), app->status_ctx, msg);
-    g_free(msg);
-}
-
-/* Label du haut : repertoire courant, toujours a jour
- * (le tri est affiche dans la barre de statut, en bas) */
+/* Label du haut : repertoire courant + tri + fichiers caches, toujours a jour */
 static void update_path_label(AppData* app) {
-    gchar* text = g_strdup_printf("Repertoire: %s", app->base_dir);
+    static const gchar* sort_names[SORT_COUNT] = {"nom", "date", "taille", "ext"};
+    gchar* text = g_strdup_printf("Repertoire: %s   [tri: %s] [caches: %s]",
+                                  app->base_dir, sort_names[app->sort_mode],
+                                  app->show_hidden ? "on" : "off");
     gtk_label_set_text(GTK_LABEL(app->path_label), text);
     g_free(text);
-    update_status_bar(app);
 }
 
 /* Navigue vers un nouveau repertoire (Entree / Retour arriere) */
@@ -652,20 +640,15 @@ int main(int argc, char** argv) {
     GtkWidget* search_entry = gtk_search_entry_new();
     gtk_widget_set_no_show_all(search_entry, TRUE);
 
-    /* Barre de statut en bas de fenetre */
-    GtkWidget* status_bar = gtk_statusbar_new();
-
     /* Signalalement : selection a gauche => contenu a droite */
     AppData* app = g_new0(AppData, 1);
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
     app->base_dir = g_strdup(cwd);
     app->model = GTK_TREE_MODEL(store);
     app->tree_view = GTK_TREE_VIEW(tree_view);
-    app->status_bar = status_bar;
-    app->status_ctx = gtk_statusbar_get_context_id(GTK_STATUSBAR(status_bar), "etat");
     app->search_entry = search_entry;
     app->path_label = path_label;
-    update_path_label(app); /* label initial : repertoire + [tri: nom] */
+    update_path_label(app); /* label initial : repertoire + [tri: nom] [caches: off] */
 
     GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
     gtk_tree_selection_set_mode(selection, GTK_SELECTION_SINGLE);
@@ -704,7 +687,6 @@ int main(int argc, char** argv) {
     gtk_box_pack_start(GTK_BOX(label_row), sep_label, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(outer_vbox), label_row, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(outer_vbox), paned, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(outer_vbox), status_bar, FALSE, FALSE, 0);
 
     gtk_container_add(GTK_CONTAINER(window), outer_vbox);
     gtk_widget_show_all(window);
