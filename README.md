@@ -25,6 +25,8 @@ Application graphique simple pour naviguer dans le système de fichiers.
 | Touche | Action |
 |---|---|
 | `j` / `k` | Sélection suivante / précédente |
+| `Ctrl+F` | Avancer d'une page (comme Page Down) |
+| `Ctrl+B` | Reculer d'une page (comme Page Up) |
 | `gg` | Aller en haut de la liste |
 | `G` | Aller en bas de la liste |
 | `/` | Ouvrir la barre de recherche (recherche live, insensible à la casse) |
