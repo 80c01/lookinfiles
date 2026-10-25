@@ -476,9 +476,41 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
     gchar* full = g_build_filename(app->base_dir, name, NULL);
 
     if (g_strcmp0(type, "dir") == 0) {
-        gchar* msg = g_strdup_printf("[ Repertoire ] %s", name);
-        gtk_text_buffer_set_text(app->buffer, msg, -1);
-        g_free(msg);
+        /* Lister le contenu du repertoire dans le panneau droit */
+        GString* listing = g_string_new(NULL);
+        g_string_append_printf(listing, "[ Repertoire ] %s\n\n", name);
+
+        GDir* sub = g_dir_open(full, 0, NULL);
+        if (sub != NULL) {
+            GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
+            const gchar* sub_name;
+            while ((sub_name = g_dir_read_name(sub)) != NULL) {
+                if (!app->show_hidden && sub_name[0] == '.') {
+                    continue;
+                }
+                g_ptr_array_add(names, g_strdup(sub_name));
+            }
+            g_dir_close(sub);
+            g_ptr_array_sort(names, (GCompareFunc)g_strcmp0);
+
+            for (guint i = 0; i < names->len; i++) {
+                const gchar* sub_entry = g_ptr_array_index(names, i);
+                gchar* sub_full = g_build_filename(full, sub_entry, NULL);
+                gboolean sub_is_dir = g_file_test(sub_full, G_FILE_TEST_IS_DIR);
+                g_free(sub_full);
+                g_string_append_printf(listing, "  %s%s\n",
+                                       sub_entry, sub_is_dir ? "/" : "");
+            }
+            if (names->len == 0) {
+                g_string_append(listing, "  (vide)\n");
+            }
+            g_ptr_array_unref(names);
+        } else {
+            g_string_append(listing, "  (impossible de lire le repertoire)\n");
+        }
+
+        gtk_text_buffer_set_text(app->buffer, listing->str, (gint)listing->len);
+        g_string_free(listing, TRUE);
     } else {
         gchar* contents = NULL;
         gsize len = 0;
