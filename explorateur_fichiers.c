@@ -27,25 +27,42 @@ int main(int argc, char** argv) {
     GtkTreeIter iter;
     GtkListStore* store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
-    /* Liste descriptive statique */
-    const char* folders[] = {"/", "/home", "/tmp", "/etc", NULL};
-    static const gchar* folder_types[] = {"root", "folder", "system", "system", NULL};
-
-    for (int i = 0; folders[i] != NULL; i++) {
-        gtk_list_store_append(store, &iter);
-        gtk_list_store_set(store, &iter, 0, folders[i], -1);
-        gtk_list_store_set(store, &iter, 1, folder_types[i], -1);
-    }
-
-    /* Ajout des fichiers du repertoire actuel si on est dans /workspace */
-    if (strncmp(cwd, "/workspace", 10) == 0) {
-        const char* project_files[] = {"explorateur_fichiers", "explorateur_fichiers.c", "Makefile", "README.md", NULL};
-
-        for (int i = 0; project_files[i] != NULL; i++) {
-            gtk_list_store_append(store, &iter);
-            gtk_list_store_set(store, &iter, 0, project_files[i], -1);
-            gtk_list_store_set(store, &iter, 1, "file", -1);
+    /* Enumerer le contenu reel du repertoire courant */
+    GDir* dir = g_dir_open(cwd, 0, NULL);
+    if (dir != NULL) {
+        /* Collecter les noms pour les trier (dossiers d'abord) */
+        GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
+        const gchar* name;
+        while ((name = g_dir_read_name(dir)) != NULL) {
+            g_ptr_array_add(names, g_strdup(name));
         }
+        g_dir_close(dir);
+
+        g_ptr_array_sort(names, (GCompareFunc)g_strcmp0);
+
+        /* Premier passage : les repertoires, deuxieme : les fichiers */
+        for (int pass = 0; pass < 2; pass++) {
+            for (guint i = 0; i < names->len; i++) {
+                const gchar* entry = g_ptr_array_index(names, i);
+                gchar* full = g_build_filename(cwd, entry, NULL);
+                gboolean is_dir = g_file_test(full, G_FILE_TEST_IS_DIR);
+                g_free(full);
+
+                if ((pass == 0) != is_dir) {
+                    continue;
+                }
+
+                gtk_list_store_append(store, &iter);
+                gtk_list_store_set(store, &iter, 0, entry, -1);
+                gtk_list_store_set(store, &iter, 1, is_dir ? "dir" : "file", -1);
+            }
+        }
+
+        g_ptr_array_unref(names);
+    } else {
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "(impossible de lire le repertoire)", -1);
+        gtk_list_store_set(store, &iter, 1, "-", -1);
     }
 
     /* GtkTreeView avec deux colonnes (Nom / Type) */
