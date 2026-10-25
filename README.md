@@ -13,6 +13,7 @@ Simple graphical application to browse the file system.
 - ✅ Resizable panel: draggable `GtkPaned` divider (initial position 300 px, minimum width 150 px) — while a divider is dragged, a small popup shows both panes' sizes (`W × H | W × H`)
 - ✅ Navigation in the tree: the `Directory: …` label follows the current directory
 - ✅ Top bar shows the current directory, the sort mode and the hidden-files state
+- ✅ Markdown preview: markdown files (`.md`, `.markdown`, etc.) are rendered with rich styling (headers, formatted lists, checkboxes, blockquotes, code blocks, tables, inline bold/italic/code/strikethrough/links, and images) rather than raw content; press `m` to toggle between rendered and raw preview
 
 ## ⌨️ Keyboard shortcuts
 
@@ -41,6 +42,7 @@ Simple graphical application to browse the file system.
 | `Backspace` | Go to the parent directory |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
+| `m` | Toggle rendered markdown / raw preview (when viewing a markdown file) |
 | `h` | Show / hide the key-binding help panel (any key inside it closes it) |
 | `Esc` | Close the search bar |
 
@@ -57,6 +59,7 @@ Same vim bindings as the list, applied to the displayed content:
 | `G` | Go to the bottom of the file |
 | `/` | Open the search bar (searches in the displayed content) |
 | `n` / `N` | Next / previous occurrence (selected and centered, wraps around) |
+| `m` | Toggle rendered markdown / raw preview (when viewing a markdown file) |
 | `Esc` | Close the search bar |
 
 ### Editor tabs (when the viewer zone shows a file opened for editing)
@@ -124,4 +127,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.2**: Vim keybindings (`j`/`k`, `gg`, `G`, `/`, `n`/`N`) and tree navigation (`Enter`/`Backspace`)
 - **v1.3**: Hidden-files toggle (`I`), sort cycling (`o`), directory listing in the right panel, preview of large files, dark theme
 - **v1.4**: VS Code-like emoji icons per file type in the tree, `Ctrl+T` embedded terminal panel, `-f` fullscreen start, `Alt+←/→` panel focus cycling, read-only viewer with vim bindings, in-content search and optional syntax highlighting
+- **v1.5**: Rendered Markdown preview in right panel (headings, task lists, tables, styled quotes, code blocks, inline formatting, and images) with `m` toggle for raw source preview
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)
