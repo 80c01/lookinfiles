@@ -833,7 +833,10 @@ static void apply_viewer_language(AppData* app, const gchar* name) {
 /* VS Code Dark+ palette, as a GtkSourceView style scheme */
 static const gchar* VSCODE_SCHEME_XML =
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-    "<style-scheme id=\"vscode-dark\" _name=\"VS Code Dark\" version=\"1.0\">\n"
+    "<!-- Inherits from a built-in dark scheme so every language style id\n"
+    "     stays colored; only Dark+ specific colors are overridden. -->\n"
+    "<style-scheme id=\"vscode-dark\" _name=\"VS Code Dark\" version=\"1.0\"\n"
+    "               parent-scheme=\"oblivion\">\n"
     "  <_description>VS Code Dark+ palette for the file explorer viewer</_description>\n"
     "  <style name=\"def\" foreground=\"#d4d4d4\" background=\"#1e1e1e\"/>\n"
     "  <style name=\"selection\" background=\"#264f78\"/>\n"
@@ -887,6 +890,8 @@ static void apply_vscode_scheme(GtkTextBuffer* buffer) {
         gtk_source_style_scheme_manager_get_scheme(mgr, "vscode-dark");
     if (scheme != NULL) {
         gtk_source_buffer_set_style_scheme(GTK_SOURCE_BUFFER(buffer), scheme);
+    } else {
+        g_printerr("[ VS Code scheme unavailable: keeping default syntax colors ]\n");
     }
 }
 #endif
