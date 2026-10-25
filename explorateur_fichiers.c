@@ -1341,7 +1341,9 @@ int main(int argc, char** argv) {
     gtk_box_pack_start(GTK_BOX(left_vbox), search_entry, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(left_vbox), left_scroll, TRUE, TRUE, 0);
 
-    gtk_paned_pack1(GTK_PANED(paned), left_vbox, TRUE, FALSE);
+    /* Left pane keeps its width when the window is resized: the right side
+     * absorbs the difference (resize=FALSE on child1) */
+    gtk_paned_pack1(GTK_PANED(paned), left_vbox, FALSE, FALSE);
 
     /* Secondary splitter: file viewer | terminal panel (Ctrl-T) */
     GtkWidget* right_split = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
