@@ -887,9 +887,22 @@ static const gchar* VSCODE_SCHEME_XML =
     "  <style name=\"net-address-in-comment\" foreground=\"#6a9955\"/>\n"
     "</style-scheme>\n";
 
+/* VS Code editor-like dark background for the viewer widget itself: style
+ * scheme tags only shade text spans, the widget base is painted from CSS. */
+static void apply_viewer_background(GtkWidget* view) {
+    gtk_widget_set_name(view, "viewer");
+    GtkCssProvider* css = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(
+        css, "#viewer text { background-color: #1e1e1e; }", -1, NULL);
+    gtk_style_context_add_provider(gtk_widget_get_style_context(view),
+                                   GTK_STYLE_PROVIDER(css),
+                                   GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(css);
+}
+
 /* Install the VS Code-style scheme and apply it to the viewer buffer:
  * the XML lives in the user cache dir (regenerated at each start). */
-static void apply_vscode_scheme(GtkTextBuffer* buffer) {
+static void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view) {
     GtkSourceStyleSchemeManager* mgr =
         gtk_source_style_scheme_manager_get_default();
     gchar* dir = g_build_filename(g_get_user_cache_dir(), "file-explorer",
@@ -909,6 +922,7 @@ static void apply_vscode_scheme(GtkTextBuffer* buffer) {
         gtk_source_style_scheme_manager_get_scheme(mgr, "vscode-dark");
     if (scheme != NULL) {
         gtk_source_buffer_set_style_scheme(GTK_SOURCE_BUFFER(buffer), scheme);
+        apply_viewer_background(view);
     } else {
         g_printerr("[ VS Code scheme unavailable: keeping default syntax colors ]\n");
     }
@@ -1435,7 +1449,7 @@ int main(int argc, char** argv) {
     AppData* app = g_new0(AppData, 1);
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
 #ifdef HAVE_GSV
-    apply_vscode_scheme(app->buffer);
+    apply_vscode_scheme(app->buffer, text_view);
 #endif
     app->base_dir = g_strdup(cwd);
     app->model = GTK_TREE_MODEL(store);
