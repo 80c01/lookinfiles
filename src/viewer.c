@@ -424,6 +424,10 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
         gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
         gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
+#if GTK_CHECK_VERSION(3, 18, 0)
+        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
+        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+#endif
         render_pdf_preview(app, name, full);
         app->viewer_match = -1;
         return;
@@ -435,6 +439,10 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
         gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
         gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
+#if GTK_CHECK_VERSION(3, 18, 0)
+        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
+        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+#endif
         render_image_preview(app, name, full);
         app->viewer_match = -1;
         return;
@@ -448,13 +456,21 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
         gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
         gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
+#if GTK_CHECK_VERSION(3, 18, 0)
+        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
+        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+#endif
     } else {
         gboolean code = is_code_file(name) || app->render_raw;
         set_view_monospace(app->text_view, code);
         apply_viewer_language(app, name);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
-        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 0);
+        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_X);
+        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_X);
+#if GTK_CHECK_VERSION(3, 18, 0)
+        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_Y);
+        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_Y);
+#endif
     }
 
     struct stat st;
@@ -672,6 +688,10 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
         gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
         gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 0);
+#if GTK_CHECK_VERSION(3, 18, 0)
+        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
+        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+#endif
         gtk_text_buffer_set_text(app->buffer, listing->str, (gint)listing->len);
         app->viewer_match = -1;
         apply_viewer_language(app, NULL);

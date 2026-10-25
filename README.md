@@ -9,6 +9,7 @@ Simple graphical application to browse the file system.
 - ✅ Right panel: content viewer — clicking a file on the left shows its content on the right; selecting a** directory** lists its contents
 - ✅ Syntax highlighting in the viewer for text files (optional `GtkSourceView`: C, C++, Python, JS, JSON, XML, Makefile, ...), with a **VS Code Dark+** color palette
 - ✅ Monospace font for code files: source code files (`*.c`, `*.py`, `*.js`, `*.sh`, `Makefile`, etc.) are displayed using a clean monospace / fixed-width font family in both the preview viewer and editor tabs, while rendered Markdown and HTML previews retain proportional typography
+- ✅ Text viewer padding: text and source code files displayed in the preview panel (as well as editor tabs) feature a slight, comfortable padding (margins) rather than adhering flush to the pane edges, improving reading and editing ergonomics
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
 - ✅ Non-UTF-8 files are sanitized before display (invalid bytes → U+FFFD)
 - ✅ Minimap right of the viewer: VS Code-like scaled overview of the displayed file (mini glyphs, or length-scaled bars for long files), with the viewport shown as a slider — click or drag on it to jump in the file
@@ -162,4 +163,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.10**: Monospace font for code files: automatic fixed-width font styling for source code files (`*.c`, `*.py`, etc.) and raw markup views in both the right-pane viewer and editor tabs
 - **v1.11**: Image preview in right panel: direct rendering of image formats (`.png`, `.jpg`, `.svg`, `.gif`, `.bmp`, `.ico`, `.webp`, etc.) with image metadata (format, dimensions, size), centered layout, automatic window fitting, and `m` toggle for 1:1 original scale
 - **v1.12**: PDF preview in right panel: direct document rendering for `.pdf` files using `poppler-glib` and Cairo with metadata banner (title, author, version, page count, file size), sharp page-by-page rendering, text extraction mode via `m` toggle, and dedicated icon (`📕`)
+- **v1.13**: Text viewer padding: subtle, comfortable margins for text and source code files in the preview panel and editor tabs for improved readability
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)

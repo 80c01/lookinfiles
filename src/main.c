@@ -100,6 +100,12 @@ int main(int argc, char** argv) {
 #endif
     gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
     gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(text_view), FALSE);
+    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(text_view), PREVIEW_TEXT_PADDING_X);
+    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(text_view), PREVIEW_TEXT_PADDING_X);
+#if GTK_CHECK_VERSION(3, 18, 0)
+    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(text_view), PREVIEW_TEXT_PADDING_Y);
+    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(text_view), PREVIEW_TEXT_PADDING_Y);
+#endif
 
 #ifdef HAVE_GSV
     gtk_source_buffer_set_highlight_syntax(

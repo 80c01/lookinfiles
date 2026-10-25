@@ -41,6 +41,10 @@ enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 /* Minimap width in pixels */
 #define MINIMAP_WIDTH 110
 
+/* Text viewer padding in pixels for text/code preview */
+#define PREVIEW_TEXT_PADDING_X 10
+#define PREVIEW_TEXT_PADDING_Y 6
+
 /* Entry collected for directory sorting */
 typedef struct {
     gchar* name;
