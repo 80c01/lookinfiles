@@ -35,6 +35,7 @@ Application graphique simple pour naviguer dans le système de fichiers.
 | `Entrée` | Entrer dans le répertoire sélectionné |
 | `Backspace` | Remonter au répertoire parent |
 | `I` (min. ou maj.) | Afficher/masquer les fichiers cachés (préfixe `.`) |
+| `o` | Cycler le tri : nom → date (récent d'abord) → taille (gros d'abord) → extension |
 | `Échap` | Fermer la barre de recherche |
 
 ## 📝 Compilation

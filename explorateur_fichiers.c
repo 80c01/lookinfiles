@@ -1,4 +1,62 @@
 #include <gtk/gtk.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <glib/gstdio.h>
+
+/* Modes de tri cyclés par la touche o */
+enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
+
+/* Entree collectee pour le tri */
+typedef struct {
+    gchar* name;
+    gboolean is_dir;
+    gint64 mtime;
+    gint64 size;
+} FileEntry;
+
+/* Contexte du comparateur (mono-thread : boucle GTK uniquement) */
+static gint cur_sort_mode = SORT_NAME;
+
+/* Extension d'un nom ("" si aucune), en ignorant le point initial des caches */
+static const gchar* file_extension(const gchar* name) {
+    const gchar* dot = strrchr(name, '.');
+    return (dot != NULL && dot != name) ? dot + 1 : "";
+}
+
+/* Tri : dossiers d'abord, puis selon le mode courant */
+static gint compare_entries(gconstpointer a, gconstpointer b) {
+    const FileEntry* ea = (const FileEntry*)a;
+    const FileEntry* eb = (const FileEntry*)b;
+
+    if (ea->is_dir != eb->is_dir) {
+        return ea->is_dir ? -1 : 1;
+    }
+
+    gint res = 0;
+    switch (cur_sort_mode) {
+    case SORT_DATE:
+        res = (ea->mtime > eb->mtime) ? -1 : (ea->mtime < eb->mtime) ? 1 : 0; /* recent d'abord */
+        break;
+    case SORT_SIZE:
+        res = (ea->size > eb->size) ? -1 : (ea->size < eb->size) ? 1 : 0; /* gros d'abord */
+        break;
+    case SORT_EXT: {
+        gchar* xa = g_utf8_casefold(file_extension(ea->name), -1);
+        gchar* xb = g_utf8_casefold(file_extension(eb->name), -1);
+        res = g_strcmp0(xa, xb);
+        g_free(xa);
+        g_free(xb);
+        break;
+    }
+    default: /* SORT_NAME */
+        break;
+    }
+
+    if (res == 0) {
+        res = g_utf8_collate(ea->name, eb->name); /* departage par nom */
+    }
+    return res;
+}
 
 /* Donnees partagees entre la selection et le visualiseur */
 typedef struct {
@@ -11,6 +69,7 @@ typedef struct {
     GtkWidget* path_label;
     gchar* search_term;
     gboolean show_hidden; /* fichiers caches (prefixe .) */
+    gint sort_mode; /* SORT_NAME / DATE / SIZE / EXT */
     gboolean pending_g; /* pour la sequence gg */
 } AppData;
 
@@ -152,7 +211,7 @@ static gboolean on_search_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
 }
 
 /* Remplit le store avec le contenu reel du repertoire (dossiers d'abord, tries) */
-static void populate_store(GtkListStore* store, const gchar* dirname, gboolean show_hidden) {
+static void populate_store(GtkListStore* store, const gchar* dirname, gboolean show_hidden, gint sort_mode) {
     GtkTreeIter iter;
     gtk_list_store_clear(store);
 
@@ -164,38 +223,40 @@ static void populate_store(GtkListStore* store, const gchar* dirname, gboolean s
         return;
     }
 
-    /* Collecter les noms pour les trier */
-    GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
+    /* Collecter les entrees avec leurs metadonnees (tri) */
+    GArray* entries = g_array_new(FALSE, FALSE, sizeof(FileEntry));
     const gchar* name;
     while ((name = g_dir_read_name(dir)) != NULL) {
         if (!show_hidden && name[0] == '.') {
             continue; /* fichier cache masque */
         }
-        g_ptr_array_add(names, g_strdup(name));
+        gchar* full = g_build_filename(dirname, name, NULL);
+        struct stat st;
+        FileEntry e;
+        e.name = g_strdup(name);
+        e.is_dir = g_file_test(full, G_FILE_TEST_IS_DIR);
+        e.mtime = (g_stat(full, &st) == 0) ? (gint64)st.st_mtime : 0;
+        e.size = (e.is_dir) ? 0 : (gint64)st.st_size;
+        g_free(full);
+        g_array_append_vals(entries, &e, 1);
     }
     g_dir_close(dir);
 
-    g_ptr_array_sort(names, (GCompareFunc)g_strcmp0);
+    /* Trier selon le mode courant (dossiers toujours en premier) */
+    cur_sort_mode = sort_mode;
+    g_array_sort(entries, compare_entries);
 
-    /* Premier passage : les repertoires, deuxieme : les fichiers */
-    for (int pass = 0; pass < 2; pass++) {
-        for (guint i = 0; i < names->len; i++) {
-            const gchar* entry = g_ptr_array_index(names, i);
-            gchar* full = g_build_filename(dirname, entry, NULL);
-            gboolean is_dir = g_file_test(full, G_FILE_TEST_IS_DIR);
-            g_free(full);
-
-            if ((pass == 0) != is_dir) {
-                continue;
-            }
-
-            gtk_list_store_append(store, &iter);
-            gtk_list_store_set(store, &iter, 0, entry, -1);
-            gtk_list_store_set(store, &iter, 1, is_dir ? "dir" : "file", -1);
-        }
+    for (guint i = 0; i < entries->len; i++) {
+        const FileEntry* e = &g_array_index(entries, FileEntry, i);
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, e->name, -1);
+        gtk_list_store_set(store, &iter, 1, e->is_dir ? "dir" : "file", -1);
     }
 
-    g_ptr_array_unref(names);
+    for (guint i = 0; i < entries->len; i++) {
+        g_free(g_array_index(entries, FileEntry, i).name);
+    }
+    g_array_unref(entries);
 }
 
 /* Navigue vers un nouveau repertoire (Entree / Retour arriere) */
@@ -216,7 +277,7 @@ static void reload_directory(AppData* app, const gchar* new_dir) {
     app->search_term = NULL;
     gtk_entry_set_text(GTK_ENTRY(app->search_entry), "");
 
-    populate_store(GTK_LIST_STORE(app->model), new_dir, app->show_hidden);
+    populate_store(GTK_LIST_STORE(app->model), new_dir, app->show_hidden, app->sort_mode);
 
     /* Vider le panneau droit */
     gtk_text_buffer_set_text(app->buffer, "", -1);
@@ -227,17 +288,23 @@ static void reload_directory(AppData* app, const gchar* new_dir) {
     }
 }
 
-/* I : basculer l'affichage des fichiers caches (prefixe .) */
-static void toggle_hidden_files(AppData* app) {
-    /* memoriser la selection courante pour la retrouver apres bascule */
+/* Re-peuple la liste en conservant la selection courante (nom) */
+static void refresh_listing(AppData* app) {
     gchar* cur_name = NULL;
     GtkTreeIter it;
     if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
         gtk_tree_model_get(app->model, &it, 0, &cur_name, -1);
     }
 
-    app->show_hidden = !app->show_hidden;
-    populate_store(GTK_LIST_STORE(app->model), app->base_dir, app->show_hidden);
+    populate_store(GTK_LIST_STORE(app->model), app->base_dir,
+                   app->show_hidden, app->sort_mode);
+
+    /* Indiquer le tri courant dans le label */
+    static const gchar* sort_names[SORT_COUNT] = {"nom", "date", "taille", "ext"};
+    gchar* text = g_strdup_printf("Repertoire: %s   [tri: %s]",
+                                  app->base_dir, sort_names[app->sort_mode]);
+    gtk_label_set_text(GTK_LABEL(app->path_label), text);
+    g_free(text);
 
     if (cur_name != NULL) {
         gint n = list_count(app);
@@ -259,6 +326,18 @@ static void toggle_hidden_files(AppData* app) {
     } else if (list_count(app) > 0) {
         select_index(app, 0);
     }
+}
+
+/* I : basculer l'affichage des fichiers caches (prefixe .) */
+static void toggle_hidden_files(AppData* app) {
+    app->show_hidden = !app->show_hidden;
+    refresh_listing(app);
+}
+
+/* o : cycle de tri nom -> date -> taille -> extension */
+static void cycle_sort_mode(AppData* app) {
+    app->sort_mode = (app->sort_mode + 1) % SORT_COUNT;
+    refresh_listing(app);
 }
 
 /* Handler clavier du treeview : j k gg G / n N */
@@ -336,6 +415,10 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
     case GDK_KEY_i:
         app->pending_g = FALSE;
         toggle_hidden_files(app);
+        return TRUE;
+    case GDK_KEY_o: /* cycle de tri : nom -> date -> taille -> ext */
+        app->pending_g = FALSE;
+        cycle_sort_mode(app);
         return TRUE;
     case GDK_KEY_b: /* Ctrl+B : page precedente */
         app->pending_g = FALSE;
@@ -436,7 +519,7 @@ int main(int argc, char** argv) {
     GtkListStore* store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
     /* Enumerer le contenu reel du repertoire courant */
-    populate_store(store, cwd, FALSE); /* fichiers caches masques au demarrage */
+    populate_store(store, cwd, FALSE, SORT_NAME); /* caches masques, tri par nom */
 
     /* GtkTreeView avec deux colonnes (Nom / Type) */
     GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
