@@ -9,6 +9,7 @@ Application graphique simple pour naviguer dans le système de fichiers.
 - ✅ Panneau redimensionnable : séparateur `GtkPaned` draggable (position initiale 300 px, largeur minimale 150 px)
 - ✅ Navigation dans l'arborescence : le label `Repertoire: …` suit le répertoire courant
 - ✅ Raccourcis clavier : `Ctrl+Q` pour quitter
+- ✅ Thème sombre natif d'Adwaita (`gtk-application-prefer-dark-theme`)
 - ✅ Keybindings vim dans le panneau gauche
 - ✅ Interface GTK+ native complète
 
