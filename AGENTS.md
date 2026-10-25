@@ -104,7 +104,7 @@ Shortcut list to keep in sync with `README.md` when you change behavior.
 ## Known status
 
 Recent features are stable (v1.15 in README.md): modular architecture in `src/`,
-custom panel backgrounds (#393939 file panel, #121314 preview, #1f2021 terminal),
+custom panel backgrounds (#191A1B file panel, #121314 preview, #1f2021 terminal),
 VS Code Dark+ full theme & icon matching, text viewer padding for text/code files, PDF document preview in right panel, image preview in right panel, monospace font for code files, expandable directory tree (`GtkTreeStore`), rendered Markdown & HTML previews, resizable terminal panes (`GtkPaned`), resizable layout, vim bindings, navigation, hidden toggle,
 sort cycle, previews, dark theme. UI language is English end-to-end, including README.md.
 Existing French `.cpp` reference file (`exp explorateur_fichiers.cpp`) is legacy —
