@@ -20,6 +20,7 @@ Simple graphical application to browse the file system.
 |---|---|
 | `Ctrl+Q` | Quit the application |
 | `Ctrl+T` | Toggle a terminal panel right of the viewer (needs `libvte-2.91-dev`; each press spawns a shell in the current directory, `Ctrl+D` exits the shell) |
+| `Alt+Left` / `Alt+Right` | Move the focus between the open panels: file list → viewer → terminal panel (cycles) |
 
 ### Left panel (when the list has focus)
 

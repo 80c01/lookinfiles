@@ -72,6 +72,7 @@ typedef struct {
     gchar* base_dir;
     GtkTreeModel* model;
     GtkTreeView* tree_view;
+    GtkWidget* text_view; /* right pane viewer (Alt+Left/Right cycling) */
     GtkTreeSelection* selection;
     GtkWidget* search_entry;
     GtkWidget* path_label;
@@ -757,9 +758,51 @@ static void on_vte_realize(GtkWidget* term, gpointer data) {
     gtk_widget_grab_focus(term);
 }
 
+/* Alt+Left / Alt+Right: move the keyboard focus between the open panels:
+ * file list -> text viewer -> Ctrl-T terminal panel (when visible) */
+static void focus_adjacent_panel(gint step, AppData* app) {
+    GtkWidget* panels[3];
+    gint count = 0;
+    gint current = -1;
+
+    panels[count++] = GTK_WIDGET(app->tree_view);
+    panels[count++] = app->text_view;
+#ifdef HAVE_VTE
+    if (app->vte != NULL && gtk_widget_get_visible(app->vte)) {
+        panels[count++] = app->vte;
+    }
+#endif
+
+    /* Which panel owns the focus? Walk the focused widget's ancestors */
+    GtkWidget* w = gtk_window_get_focus(GTK_WINDOW(
+        gtk_widget_get_toplevel(GTK_WIDGET(app->tree_view))));
+    while (w != NULL && current < 0) {
+        gint i;
+        for (i = 0; i < count; i++) {
+            if (panels[i] == w) {
+                current = i;
+                break;
+            }
+        }
+        w = gtk_widget_get_parent(w);
+    }
+    if (current < 0) {
+        current = 0; /* unknown focus (e.g. search bar): count as first panel */
+    }
+
+    gtk_widget_grab_focus(panels[(current + step + count) % count]);
+}
+
 static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
     (void)widget;
     AppData* app = (AppData*)data;
+
+    /* Alt+Left / Alt+Right: panel focus cycling */
+    if ((event->state & GDK_MOD1_MASK) != 0 &&
+        (event->keyval == GDK_KEY_Left || event->keyval == GDK_KEY_Right)) {
+        focus_adjacent_panel(event->keyval == GDK_KEY_Right ? 1 : -1, app);
+        return TRUE;
+    }
 
     if ((event->state & GDK_CONTROL_MASK) == 0 || event->keyval != GDK_KEY_t) {
         return FALSE;
@@ -910,6 +953,7 @@ int main(int argc, char** argv) {
     app->base_dir = g_strdup(cwd);
     app->model = GTK_TREE_MODEL(store);
     app->tree_view = GTK_TREE_VIEW(tree_view);
+    app->text_view = text_view;
     app->search_entry = search_entry;
     app->path_label = path_label;
     update_path_label(app); /* label initial : repertoire + [sort: name] [hidden: off] */
