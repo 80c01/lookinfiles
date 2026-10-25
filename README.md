@@ -77,8 +77,8 @@ the tab title marks unsaved changes.
 ## 📝 Build
 
 ```bash
-make                           # or
-gcc -o explorateur_fichiers explorateur_fichiers.c `pkg-config --cflags --libs gtk+-3.0`
+make                           # build with make (recommended)
+make clean                     # remove binary
 ```
 
 ## 🚀 Run
@@ -114,9 +114,20 @@ Detected the same way; without it the viewer stays plain text.
 ## 🏗️ Project structure
 
 ```
-explorateur_fichiers.c  # Main source file
-Makefile                 # Build file
+src/
+├── app_types.h          # Shared structs, enums, constants
+├── main.c               # Entry point and widget assembly
+├── file_list.c/.h       # Directory enumeration, sorting, navigation
+├── viewer.c/.h          # File content viewer and disk monitoring
+├── markdown.c/.h        # Markdown rendering engine
+├── editor.c/.h          # Multi-tab file editor
+├── minimap.c/.h         # Scaled file overview minimap
+├── terminal.c/.h        # Embedded VTE terminal panel
+├── search.c/.h          # Interactive search bar
+└── ui.c/.h              # Paned layouts, help popup, fullscreen, borders
+Makefile                 # Build configuration
 README.md                # Documentation
+AGENTS.md                # AI coding agent guidelines
 explorateur_fichiers     # Compiled binary
 ```
 
@@ -128,4 +139,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.3**: Hidden-files toggle (`I`), sort cycling (`o`), directory listing in the right panel, preview of large files, dark theme
 - **v1.4**: VS Code-like emoji icons per file type in the tree, `Ctrl+T` embedded terminal panel, `-f` fullscreen start, `Alt+←/→` panel focus cycling, read-only viewer with vim bindings, in-content search and optional syntax highlighting
 - **v1.5**: Rendered Markdown preview in right panel (headings, task lists, tables, styled quotes, code blocks, inline formatting, and images) with `m` toggle for raw source preview
+- **v1.6**: Modular code architecture: split monolithic codebase into dedicated modules in `src/` (`main`, `file_list`, `viewer`, `markdown`, `editor`, `minimap`, `terminal`, `search`, `ui`)
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)
