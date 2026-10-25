@@ -106,6 +106,9 @@ typedef struct {
 #ifdef HAVE_VTE
     GtkWidget* vte;
 #endif
+
+    /* h: floating key-binding cheat sheet */
+    GtkWidget* help_window;
 } AppData;
 
 /* Moniteurs de fichiers, definis plus bas dans le fichier */
@@ -718,6 +721,99 @@ static void on_row_activated(GtkTreeView* view, GtkTreePath* path,
     enter_selected_directory((AppData*)data);
 }
 
+/* ===== h: floating key-binding help panel ===== */
+
+/* One line of the cheat sheet: section header, key column, description */
+typedef struct {
+    const gchar* section;
+    const gchar* key;
+    const gchar* description;
+} KeyHelpEntry;
+
+static const KeyHelpEntry KEY_HELP[] = {
+    /* File panel */
+    {"File panel", "j / k", "Move down / up"},
+    {"File panel", "gg / G", "First / last entry"},
+    {"File panel", "Ctrl+F / Ctrl+B", "Page down / up"},
+    {"File panel", "/", "Search by substring (n / N: next / previous match)"},
+    {"File panel", "Enter", "Enter the selected directory"},
+    {"File panel", "Backspace", "Go to the parent directory"},
+    {"File panel", "Double-click", "Enter a directory"},
+    {"File panel", "i / I", "Toggle hidden files"},
+    {"File panel", "o", "Cycle sort: name, date, size, extension"},
+    {"File panel", "h", "Show / hide this help panel"},
+    /* Viewer panel */
+    {"Right panel (viewer)", "j / k", "Scroll a line down / up"},
+    {"Right panel (viewer)", "Ctrl+F / Ctrl+B", "Scroll a page down / up"},
+    {"Right panel (viewer)", "gg / G", "Jump to the start / end of the file"},
+    {"Right panel (viewer)", "/", "Search in the file (n / N: next / previous match)"},
+    /* Global */
+    {"Global", "Ctrl+T", "Toggle the embedded terminal panel"},
+    {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},
+    {"Global", "Ctrl+Q", "Quit"},
+};
+
+/* In the help panel, any key closes it and gives the keyboard back to the
+ * file list (h is the documented way, but anything else works too) */
+static gboolean on_help_key_press(GtkWidget* widget, GdkEventKey* event,
+                                  gpointer data) {
+    (void)widget;
+    (void)event;
+    AppData* app = (AppData*)data;
+    gtk_widget_hide(app->help_window);
+    gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    return TRUE;
+}
+
+/* Build the floating cheat sheet toggled by h (created once in main) */
+static void create_help_panel(GtkWindow* parent, AppData* app) {
+    GtkWidget* win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(win),
+                         "Key bindings - press h or any key to close");
+    gtk_window_set_transient_for(GTK_WINDOW(win), parent);
+    gtk_window_set_resizable(GTK_WINDOW(win), FALSE);
+    gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER_ON_PARENT);
+    gtk_container_set_border_width(GTK_CONTAINER(win), 14);
+
+    GtkGrid* grid = GTK_GRID(gtk_grid_new());
+    gtk_grid_set_row_spacing(grid, 3);
+    gtk_grid_set_column_spacing(grid, 16);
+
+    const gchar* current_section = NULL;
+    gint row = 0;
+    for (guint i = 0; i < G_N_ELEMENTS(KEY_HELP); i++) {
+        if (current_section == NULL ||
+            g_strcmp0(current_section, KEY_HELP[i].section) != 0) {
+            current_section = KEY_HELP[i].section;
+            gchar* header =
+                g_strdup_printf("<span weight=\"bold\">%s</span>\n",
+                                current_section);
+            GtkWidget* section_label = gtk_label_new(NULL);
+            gtk_label_set_markup(GTK_LABEL(section_label), header);
+            gtk_widget_set_halign(section_label, GTK_ALIGN_START);
+            g_free(header);
+            gtk_grid_attach(grid, section_label, 0, row++, 2, 1);
+        }
+        GtkWidget* key_label = gtk_label_new(NULL);
+        gchar* key_markup =
+            g_strdup_printf("<tt><b>%s</b></tt>", KEY_HELP[i].key);
+        gtk_label_set_markup(GTK_LABEL(key_label), key_markup);
+        g_free(key_markup);
+        gtk_widget_set_halign(key_label, GTK_ALIGN_START);
+        GtkWidget* desc_label = gtk_label_new(KEY_HELP[i].description);
+        gtk_widget_set_halign(desc_label, GTK_ALIGN_START);
+        gtk_grid_attach(grid, key_label, 0, row, 1, 1);
+        gtk_grid_attach(grid, desc_label, 1, row, 1, 1);
+        row++;
+    }
+
+    gtk_container_add(GTK_CONTAINER(win), GTK_WIDGET(grid));
+
+    g_signal_connect(win, "key-press-event",
+                     G_CALLBACK(on_help_key_press), app);
+    app->help_window = win;
+}
+
 /* Handler clavier du treeview : j k gg G / n N */
 static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
     (void)widget;
@@ -776,6 +872,20 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
             g_free(parent);
         }
         return TRUE;
+    case GDK_KEY_h: /* h: basculer le panneau d'aide des touches */
+        if ((event->state & GDK_CONTROL_MASK) == 0) {
+            app->pending_g = FALSE;
+            if (gtk_widget_get_visible(app->help_window)) {
+                gtk_widget_hide(app->help_window);
+            } else {
+                /* show_all: the labels were never shown, a plain show()
+                 * would display an empty window */
+                gtk_widget_show_all(app->help_window);
+            }
+            return TRUE;
+        }
+        app->pending_g = FALSE;
+        return FALSE;
     case GDK_KEY_I: /* basculer les fichiers caches */
     case GDK_KEY_i:
         app->pending_g = FALSE;
@@ -1461,6 +1571,10 @@ int main(int argc, char** argv) {
 
     /* Terminal panel (created just above, wired there) */
     app->term_scroll = term_scroll;
+
+    /* h: floating key-bindings cheat sheet (hidden; toggled by h) */
+    create_help_panel(GTK_WINDOW(window), app);
+
     g_signal_connect(window, "key-press-event",
                      G_CALLBACK(on_window_key_press), app);
 

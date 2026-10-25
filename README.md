@@ -39,6 +39,7 @@ Simple graphical application to browse the file system.
 | `Backspace` | Go to the parent directory |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
+| `h` | Show / hide the key-binding help panel (any key inside it closes it) |
 | `Esc` | Close the search bar |
 
 ### Right panel (when the viewer has focus)
