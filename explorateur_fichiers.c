@@ -483,7 +483,14 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
         gchar* contents = NULL;
         gsize len = 0;
         if (g_file_get_contents(full, &contents, &len, NULL) && contents != NULL) {
-            gtk_text_buffer_set_text(app->buffer, contents, -1);
+            /* GtkTextBuffer exige de l'UTF-8 valide : nettoyer si besoin */
+            if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
+                gchar* valid = g_utf8_make_valid(contents, (gssize)len);
+                gtk_text_buffer_set_text(app->buffer, valid, -1);
+                g_free(valid);
+            } else {
+                gtk_text_buffer_set_text(app->buffer, contents, -1);
+            }
             g_free(contents);
         } else {
             gchar* msg = g_strdup_printf("[ Impossible de lire : %s ]", name);
