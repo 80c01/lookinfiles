@@ -19,6 +19,7 @@ Simple graphical application to browse the file system.
 | Key | Action |
 |---|---|
 | `Ctrl+Q` | Quit the application |
+| `Ctrl+T` | Toggle a terminal panel right of the viewer (needs `libvte-2.91-dev`; each press spawns a shell in the current directory, `Ctrl+D` exits the shell) |
 
 ### Left panel (when the list has focus)
 
@@ -59,6 +60,13 @@ Install on Debian/Ubuntu:
 ```bash
 sudo apt install libgtk-3-dev build-essential
 ```
+
+Optional (embedded terminal panel, recommended):
+```bash
+sudo apt install libvte-2.91-dev
+```
+The Makefile detects it automatically; without it the build still works and
+`Ctrl+T` shows a notice instead of the terminal.
 
 ## 🏗️ Project structure
 

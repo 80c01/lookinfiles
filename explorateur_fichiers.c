@@ -3,6 +3,10 @@
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
+#ifdef HAVE_VTE
+#include <vte/vte.h>
+#endif
+
 /* Modes de tri cyclés par la touche o */
 enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 
@@ -81,9 +85,15 @@ typedef struct {
     GFileMonitor* file_monitor;  /* fichier affiche a droite */
     gchar* viewed_path;          /* chemin du fichier affiche, NULL sinon */
     gchar* viewed_name;          /* nom du fichier affiche */
-    gboolean dir_dirty;          /* evenement rep. en attente */
-    gboolean file_dirty;         /* evenement fichier en attente */
-    guint refresh_source;        /* id du debounce, 0 = inactif */
+    gboolean dir_dirty;          /* pending directory event */
+    gboolean file_dirty;         /* pending file event */
+    guint refresh_source;        /* debounce timeout id, 0 = idle */
+
+    /* Ctrl-T embedded terminal panel */
+    GtkWidget* term_scroll;
+#ifdef HAVE_VTE
+    GtkWidget* vte;
+#endif
 } AppData;
 
 /* Moniteurs de fichiers, definis plus bas dans le fichier */
@@ -701,6 +711,76 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
     g_free(type);
 }
 
+/* ===== Ctrl-T: embedded terminal in a panel right of the viewer ===== */
+
+#ifdef HAVE_VTE
+static void spawn_shell(AppData* app) {
+    VteTerminal* term = VTE_TERMINAL(app->vte);
+    const gchar* shell = g_getenv("SHELL");
+    if (shell == NULL || shell[0] == '\0') {
+        shell = "/bin/bash";
+    }
+    gchar* argv[2] = { (gchar*)shell, NULL };
+    GError* err = NULL;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    vte_terminal_spawn_sync(term, VTE_PTY_DEFAULT, app->base_dir, argv, NULL,
+                            G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL, &err);
+#pragma GCC diagnostic pop
+    if (err != NULL) {
+        g_printerr("[ Cannot start terminal shell: %s ]\n", err->message);
+        g_error_free(err);
+    }
+}
+
+static void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
+    (void)term;
+    (void)status;
+    AppData* app = (AppData*)data;
+    gtk_widget_hide(app->term_scroll);
+    gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+}
+#endif
+
+/* Window-level handler: catches Ctrl-T before children, but only eats it
+ * (other keys propagate to the focused widget / vim bindings untouched) */
+static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
+    (void)widget;
+    AppData* app = (AppData*)data;
+
+    if ((event->state & GDK_CONTROL_MASK) == 0 || event->keyval != GDK_KEY_t) {
+        return FALSE;
+    }
+
+#ifdef HAVE_VTE
+    if (gtk_widget_get_visible(app->term_scroll)) {
+        /* Ctrl-T again: hide the panel, the shell keeps running */
+        gtk_widget_hide(app->term_scroll);
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+        return TRUE;
+    }
+
+    /* Show: fresh shell spawned in the current directory.
+     * A shell idling inside the panel is old news: exit with Ctrl-D. */
+    if (app->vte != NULL) {
+        gtk_widget_destroy(app->vte);
+    }
+    app->vte = vte_terminal_new();
+    gtk_container_add(GTK_CONTAINER(app->term_scroll), app->vte);
+    g_signal_connect(app->vte, "child-exited",
+                     G_CALLBACK(on_term_child_exited), app);
+    spawn_shell(app);
+    gtk_widget_show(app->vte);
+    gtk_widget_grab_focus(app->vte);
+#else
+    /* No VTE installed: the panel is a notice instead of a terminal */
+    gtk_widget_set_visible(app->term_scroll,
+                           !gtk_widget_get_visible(app->term_scroll));
+    gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+#endif
+    return TRUE;
+}
+
 int main(int argc, char** argv) {
     gtk_init(&argc, &argv);
 
@@ -779,6 +859,19 @@ int main(int argc, char** argv) {
     GtkWidget* search_entry = gtk_search_entry_new();
     gtk_widget_set_no_show_all(search_entry, TRUE);
 
+    /* Terminal panel container: created before AppData so it can hold it.
+     * Content: a VteTerminal on Ctrl-T (#ifdef HAVE_VTE), else a notice. */
+    GtkWidget* term_scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(term_scroll),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+#ifndef HAVE_VTE
+    GtkWidget* term_stub = gtk_label_new(
+        "Terminal panel disabled:\ninstall libvte-2.91-dev then rebuild (make).");
+    gtk_widget_set_halign(term_stub, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(term_stub, GTK_ALIGN_CENTER);
+    gtk_container_add(GTK_CONTAINER(term_scroll), term_stub);
+#endif
+
     /* Signalalement : selection a gauche => contenu a droite */
     AppData* app = g_new0(AppData, 1);
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
@@ -788,6 +881,11 @@ int main(int argc, char** argv) {
     app->search_entry = search_entry;
     app->path_label = path_label;
     update_path_label(app); /* label initial : repertoire + [sort: name] [hidden: off] */
+
+    /* Terminal panel (created just above, wired there) */
+    app->term_scroll = term_scroll;
+    g_signal_connect(window, "key-press-event",
+                     G_CALLBACK(on_window_key_press), app);
 
     /* Surveillance du repertoire courant des l'ouverture */
     monitor_directory(app);
@@ -814,7 +912,16 @@ int main(int argc, char** argv) {
     gtk_box_pack_start(GTK_BOX(left_vbox), left_scroll, TRUE, TRUE, 0);
 
     gtk_paned_pack1(GTK_PANED(paned), left_vbox, TRUE, FALSE);
-    gtk_paned_pack2(GTK_PANED(paned), right_scroll, TRUE, FALSE);
+
+    /* Secondary splitter: file viewer | terminal panel (Ctrl-T) */
+    GtkWidget* right_split = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_paned_pack1(GTK_PANED(right_split), right_scroll, TRUE, FALSE);
+    gtk_paned_pack2(GTK_PANED(right_split), term_scroll, FALSE, FALSE);
+    gtk_paned_set_position(GTK_PANED(right_split), 500);
+    gtk_widget_set_size_request(term_scroll, 250, -1);
+    gtk_widget_set_no_show_all(term_scroll, TRUE); /* hidden until Ctrl-T */
+
+    gtk_paned_pack2(GTK_PANED(paned), right_split, TRUE, FALSE);
 
     /* Position initiale du séparateur : 300px pour le panneau gauche */
     gtk_paned_set_position(GTK_PANED(paned), 300);
