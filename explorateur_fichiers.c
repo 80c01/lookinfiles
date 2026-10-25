@@ -1281,12 +1281,8 @@ int main(int argc, char** argv) {
     gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", 2);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_name);
 
-    GtkTreeViewColumn* col_type = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col_type, "Type");
-    GtkCellRenderer* renderer_type = gtk_cell_renderer_text_new();
-    gtk_tree_view_column_pack_start(col_type, renderer_type, TRUE);
-    gtk_tree_view_column_add_attribute(col_type, renderer_type, "text", 1);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_type);
+    /* Model still carries the raw "dir"/"file" type in column 1 (used by
+     * handlers); only the Type column display was removed. */
 
     g_object_unref(store);
 

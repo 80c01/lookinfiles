@@ -4,7 +4,7 @@ Simple graphical application to browse the file system.
 
 ## 🎯 Features (current version)
 
-- ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), with "Name" / "Type" (`dir` / `file`) columns, and VS Code-like **emoji icons** by file type
+- ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), single "Name" column with VS Code-like **emoji icons** by file type
 - ✅ Right panel: content viewer — clicking a file on the left shows its content on the right; selecting a** directory** lists its contents
 - ✅ Syntax highlighting in the viewer for text files (optional `GtkSourceView`: C, C++, Python, JS, JSON, XML, Makefile, ...)
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
