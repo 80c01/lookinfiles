@@ -128,6 +128,15 @@ typedef struct {
     gint mm_cache_w;             /* size the cache was built for */
     gint mm_cache_h;
     gboolean mm_dragging;        /* mouse locked on the minimap */
+
+    /* Panel layout: the three panels assembled side-by-side or stacked */
+    GtkWidget* pane_slot;
+    GtkWidget* left_vbox;
+    GtkWidget* viewer_box;
+    GtkWidget* main_paned;
+    GtkWidget* right_paned;
+    gdouble main_frac;   /* list share of the pane area */
+    gdouble right_frac;  /* viewer share of the viewer/terminal pair */
 } AppData;
 
 /* Moniteurs de fichiers, definis plus bas dans le fichier */
@@ -135,6 +144,8 @@ static void monitor_directory(AppData* app);
 static void monitor_file(AppData* app, const char* path);
 /* Recherche dans le viewer, definie plus bas: utilisee par on_search_changed */
 static void do_viewer_search(AppData* app, gint direction);
+/* Ctrl+Shift+L: rebuild the panes side-by-side (initial) or stacked */
+static void layout_toggle(AppData* app);
 
 /* ===== Navigation style vim ===== */
 
@@ -812,6 +823,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Ctrl+T", "Add a terminal pane beside the running ones (exit the shell to close it)"},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},
     {"Global", "f", "Toggle fullscreen (Ctrl+F keeps its paging role)"},
+    {"Global", "Ctrl+Shift+L", "Stack the panels one above the other, or back side-by-side"},
     {"Global", "Ctrl+Q", "Quit"},
 };
 
@@ -1824,6 +1836,15 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
         return TRUE;
     }
 
+    /* Ctrl+Shift+L: stack the panels or restore side-by-side layout.
+     * Shift makes the keyval uppercase, so accept both l and L. */
+    if ((event->state & GDK_CONTROL_MASK) &&
+        (event->state & GDK_SHIFT_MASK) &&
+        (event->keyval == GDK_KEY_l || event->keyval == GDK_KEY_L)) {
+        layout_toggle(app);
+        return TRUE;
+    }
+
     if ((event->state & GDK_CONTROL_MASK) == 0 || event->keyval != GDK_KEY_t) {
         return FALSE;
     }
@@ -1925,6 +1946,128 @@ static gboolean on_paned_button_release(GtkWidget* widget,
     app->panning = FALSE;
     gtk_widget_hide(app->dim_window);
     return FALSE;
+}
+
+/* ===== Panel layout: side-by-side or stacked (Ctrl+Shift+L) ===== */
+
+/* Remember the current splits as fractions of their pane size */
+static void layout_save_fracs(AppData* app) {
+    GtkAllocation a;
+    gint pos;
+    GtkOrientation o;
+    if (app->main_paned == NULL) {
+        return;
+    }
+    o = gtk_orientable_get_orientation(GTK_ORIENTABLE(app->main_paned));
+    gtk_widget_get_allocation(app->main_paned, &a);
+    if ((o == GTK_ORIENTATION_VERTICAL ? a.height : a.width) > 0) {
+        pos = gtk_paned_get_position(GTK_PANED(app->main_paned));
+        app->main_frac = (gdouble)pos /
+                         (o == GTK_ORIENTATION_VERTICAL ? a.height : a.width);
+    }
+    gtk_widget_get_allocation(app->right_paned, &a);
+    if ((o == GTK_ORIENTATION_VERTICAL ? a.height : a.width) > 0) {
+        pos = gtk_paned_get_position(GTK_PANED(app->right_paned));
+        app->right_frac = (gdouble)pos /
+                          (o == GTK_ORIENTATION_VERTICAL ? a.height : a.width);
+    }
+}
+
+/* Restore the saved split proportions once the new panes are laid out */
+static gboolean layout_position_idle(gpointer data) {
+    AppData* app = (AppData*)data;
+    GtkAllocation a;
+    GtkOrientation o =
+        gtk_orientable_get_orientation(GTK_ORIENTABLE(app->main_paned));
+    gtk_widget_get_allocation(app->main_paned, &a);
+    if ((o == GTK_ORIENTATION_VERTICAL ? a.height : a.width) > 0) {
+        gtk_paned_set_position(GTK_PANED(app->main_paned),
+                               (gint)(app->main_frac *
+                                      (o == GTK_ORIENTATION_VERTICAL
+                                           ? a.height
+                                           : a.width)));
+        gtk_widget_get_allocation(app->right_paned, &a);
+        gtk_paned_set_position(GTK_PANED(app->right_paned),
+                               (gint)(app->right_frac *
+                                      (o == GTK_ORIENTATION_VERTICAL
+                                           ? a.height
+                                           : a.width)));
+        return FALSE; /* done */
+    }
+    return TRUE; /* not laid out yet: try again next idle turn */
+}
+
+/* Assemble the three panels into a pane pair with the wanted orientation;
+ * the panels themselves are re-parented, no state is lost */
+static void layout_build(AppData* app, GtkOrientation orientation) {
+    gboolean snatched = (app->main_paned != NULL);
+    if (snatched) {
+        /* Snatch the panels so removing the old panes will not destroy
+         * them (GtkPaned owns its children) */
+        g_object_ref(app->left_vbox);
+        g_object_ref(app->viewer_box);
+        g_object_ref(app->term_scroll);
+        gtk_container_remove(GTK_CONTAINER(app->main_paned), app->left_vbox);
+        gtk_container_remove(GTK_CONTAINER(app->right_paned),
+                             app->viewer_box);
+        gtk_container_remove(GTK_CONTAINER(app->right_paned),
+                             app->term_scroll);
+        gtk_container_remove(GTK_CONTAINER(app->pane_slot),
+                             app->main_paned);
+    }
+
+    GtkWidget* main_paned = gtk_paned_new(orientation);
+    GtkWidget* right_paned = gtk_paned_new(orientation);
+    /* Re-parent: each pack adds the new pane's own reference. On the
+     * first build the floating widget ref is consumed by pack, so do
+     * NOT drop an extra one — only the snatched ones carry our ref. */
+    gtk_paned_pack1(GTK_PANED(main_paned), app->left_vbox, FALSE, FALSE);
+    gtk_paned_pack1(GTK_PANED(right_paned), app->viewer_box, TRUE, FALSE);
+    gtk_paned_pack2(GTK_PANED(right_paned), app->term_scroll, FALSE, FALSE);
+    gtk_paned_pack2(GTK_PANED(main_paned), right_paned, TRUE, FALSE);
+    if (snatched) {
+        g_object_unref(app->left_vbox);
+        g_object_unref(app->viewer_box);
+        g_object_unref(app->term_scroll);
+    }
+
+    /* Min sizes valid for both orientations */
+    gtk_widget_set_size_request(app->left_vbox, 150, 150);
+    gtk_widget_set_size_request(app->term_scroll, 250, 150);
+
+    app->main_paned = main_paned;
+    app->right_paned = right_paned;
+
+    /* Shared divider feedback handlers (re-wired on every rebuild) */
+    g_signal_connect(main_paned, "button-press-event",
+                     G_CALLBACK(on_paned_button_press), app);
+    g_signal_connect(main_paned, "button-release-event",
+                     G_CALLBACK(on_paned_button_release), app);
+    g_signal_connect(main_paned, "notify::position",
+                     G_CALLBACK(on_paned_notify_position), app);
+    g_signal_connect(right_paned, "button-press-event",
+                     G_CALLBACK(on_paned_button_press), app);
+    g_signal_connect(right_paned, "button-release-event",
+                     G_CALLBACK(on_paned_button_release), app);
+    g_signal_connect(right_paned, "notify::position",
+                     G_CALLBACK(on_paned_notify_position), app);
+
+    gtk_box_pack_start(GTK_BOX(app->pane_slot), main_paned, TRUE, TRUE, 0);
+    gtk_widget_show(main_paned);
+    gtk_widget_show(right_paned);
+
+    /* Restore the last split proportions once allocations arrive */
+    g_idle_add(layout_position_idle, app);
+}
+
+/* Ctrl+Shift+L: stack the three panels (list on top, viewer under it,
+ * terminals at the bottom) or go back to side-by-side */
+static void layout_toggle(AppData* app) {
+    layout_save_fracs(app);
+    layout_build(app, gtk_orientable_get_orientation(GTK_ORIENTABLE(app->main_paned)) ==
+                              GTK_ORIENTATION_HORIZONTAL
+                          ? GTK_ORIENTATION_VERTICAL
+                          : GTK_ORIENTATION_HORIZONTAL);
 }
 
 /* Panel boundaries: a clear rule under the status bar and thicker,
@@ -2078,6 +2221,7 @@ int main(int argc, char** argv) {
     GtkWidget* term_scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(term_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_no_show_all(term_scroll, TRUE); /* hidden until Ctrl-T */
 #ifdef HAVE_VTE
     GtkWidget* term_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_container_add(GTK_CONTAINER(term_scroll), term_box);
@@ -2162,30 +2306,19 @@ int main(int argc, char** argv) {
     g_signal_connect(search_entry, "activate", G_CALLBACK(on_search_activate), app);
     g_signal_connect(search_entry, "key-press-event", G_CALLBACK(on_search_key_press), app);
 
-    /* ===== GtkPaned : poignee de redimensionnement entre les 2 panneaux ===== */
-    GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-
-    /* Colonne gauche : barre de recherche (masquee) + liste */
+    /* ===== Pane pair: list | viewer | terminal, rebuilt on Ctrl+Shift+L =====
+     * Colonne gauche : barre de recherche (masquee) + liste */
+    GtkWidget* pane_slot = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget* left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(left_vbox), search_entry, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(left_vbox), left_scroll, TRUE, TRUE, 0);
 
-    /* Left pane keeps its width when the window is resized: the right side
-     * absorbs the difference (resize=FALSE on child1) */
-    gtk_paned_pack1(GTK_PANED(paned), left_vbox, FALSE, FALSE);
-
-    /* Secondary splitter: file viewer | terminal panel (Ctrl-T) */
-    GtkWidget* right_split = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_paned_pack1(GTK_PANED(right_split), viewer_box, TRUE, FALSE);
-    gtk_paned_pack2(GTK_PANED(right_split), term_scroll, FALSE, FALSE);
-    gtk_paned_set_position(GTK_PANED(right_split), 500);
-    gtk_widget_set_size_request(term_scroll, 250, -1);
-    gtk_widget_set_no_show_all(term_scroll, TRUE); /* hidden until Ctrl-T */
-
-    gtk_paned_pack2(GTK_PANED(paned), right_split, TRUE, FALSE);
-
-    /* Position initiale du séparateur : 300px pour le panneau gauche */
-    gtk_paned_set_position(GTK_PANED(paned), 300);
+    app->pane_slot = pane_slot;
+    app->left_vbox = left_vbox;
+    app->viewer_box = viewer_box;
+    app->main_frac = 0.30;  /* list: like the old fixed 300 px on 1000 */
+    app->right_frac = 0.72; /* viewer: like the old fixed 500 px */
+    layout_build(app, GTK_ORIENTATION_HORIZONTAL);
 
     /* Pane-resize feedback popup (above everything, takes no focus) */
     GtkWidget* dim_window = gtk_window_new(GTK_WINDOW_POPUP);
@@ -2198,23 +2331,6 @@ int main(int argc, char** argv) {
     app->dim_window = dim_window;
     app->dim_label = dim_label;
 
-    /* Dragging either split handle shows both panes' sizes */
-    g_signal_connect(paned, "button-press-event",
-                     G_CALLBACK(on_paned_button_press), app);
-    g_signal_connect(paned, "button-release-event",
-                     G_CALLBACK(on_paned_button_release), app);
-    g_signal_connect(paned, "notify::position",
-                     G_CALLBACK(on_paned_notify_position), app);
-    g_signal_connect(right_split, "button-press-event",
-                     G_CALLBACK(on_paned_button_press), app);
-    g_signal_connect(right_split, "button-release-event",
-                     G_CALLBACK(on_paned_button_release), app);
-    g_signal_connect(right_split, "notify::position",
-                     G_CALLBACK(on_paned_notify_position), app);
-
-    /* Largeur minimale du panneau gauche, mais redimensionnable au-dela */
-    gtk_widget_set_size_request(left_vbox, 150, -1);
-
     /* Boite verticale englobante : label du chemin + paned */
     GtkWidget* outer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     GtkWidget* label_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -2222,7 +2338,7 @@ int main(int argc, char** argv) {
     gtk_box_pack_start(GTK_BOX(label_row), path_label, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(label_row), sep_label, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(outer_vbox), label_row, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(outer_vbox), paned, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(outer_vbox), pane_slot, TRUE, TRUE, 0);
 
     gtk_container_add(GTK_CONTAINER(window), outer_vbox);
     apply_panel_borders();
