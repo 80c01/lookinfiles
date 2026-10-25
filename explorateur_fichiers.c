@@ -159,6 +159,27 @@ static void select_index(AppData* app, gint idx) {
     gtk_tree_path_free(p);
 }
 
+/* Select the row whose raw name matches (e.g. the directory we just left);
+ * returns FALSE when no such entry is listed */
+static gboolean select_by_name(AppData* app, const gchar* name) {
+    gint n = list_count(app);
+    for (gint i = 0; i < n; i++) {
+        GtkTreeIter it;
+        if (!gtk_tree_model_iter_nth_child(app->model, &it, NULL, i)) {
+            break;
+        }
+        gchar* row_name = NULL;
+        gtk_tree_model_get(app->model, &it, 0, &row_name, -1);
+        gboolean same = (g_strcmp0(row_name, name) == 0);
+        g_free(row_name);
+        if (same) {
+            select_index(app, i);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 /* Nombre de lignes visibles dans le treeview (pour Ctrl-F / Ctrl-B) */
 static gint count_visible_rows(AppData* app) {
     GtkTreePath* start = NULL;
@@ -867,7 +888,14 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
         {
             gchar* parent = g_path_get_dirname(app->base_dir);
             if (g_strcmp0(parent, app->base_dir) != 0) {
+                /* Remember which directory we are leaving so it can be
+                 * highlighted again in the parent listing */
+                gchar* came_from = g_path_get_basename(app->base_dir);
                 reload_directory(app, parent);
+                if (!select_by_name(app, came_from) && list_count(app) > 0) {
+                    select_index(app, 0); /* entry was removed meanwhile */
+                }
+                g_free(came_from);
             }
             g_free(parent);
         }
