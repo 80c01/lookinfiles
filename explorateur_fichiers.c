@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
     /* En-tête */
     gtk_list_store_append(store, &iter);
     gtk_list_store_set(store, &iter, 0, "Nom", -1);
-    gtk_list_store_set(store, &iter, 1, "Type", "-1");
+    gtk_list_store_set(store, &iter, 1, "Type", -1);
     
     /* Liste descriptive statique */
     const char* folders[] = {"/", "/home", "/tmp", "/etc", NULL};
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
         for (int i = 0; project_files[i] != NULL; i++) {
             gtk_list_store_append(store, &iter);
             gtk_list_store_set(store, &iter, 0, project_files[i], -1);
-            gtk_list_store_set(store, &iter, 1, "file", "-1");
+            gtk_list_store_set(store, &iter, 1, "file", -1);
         }
     }
     
