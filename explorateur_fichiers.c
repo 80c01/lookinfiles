@@ -259,6 +259,15 @@ static void populate_store(GtkListStore* store, const gchar* dirname, gboolean s
     g_array_unref(entries);
 }
 
+/* Label du haut : repertoire courant + mode de tri, toujours a jour */
+static void update_path_label(AppData* app) {
+    static const gchar* sort_names[SORT_COUNT] = {"nom", "date", "taille", "ext"};
+    gchar* text = g_strdup_printf("Repertoire: %s   [tri: %s]",
+                                  app->base_dir, sort_names[app->sort_mode]);
+    gtk_label_set_text(GTK_LABEL(app->path_label), text);
+    g_free(text);
+}
+
 /* Navigue vers un nouveau repertoire (Entree / Retour arriere) */
 static void reload_directory(AppData* app, const gchar* new_dir) {
     if (!g_file_test(new_dir, G_FILE_TEST_IS_DIR)) {
@@ -267,10 +276,7 @@ static void reload_directory(AppData* app, const gchar* new_dir) {
 
     g_free(app->base_dir);
     app->base_dir = g_strdup(new_dir);
-
-    gchar* text = g_strdup_printf("Repertoire: %s", new_dir);
-    gtk_label_set_text(GTK_LABEL(app->path_label), text);
-    g_free(text);
+    update_path_label(app);
 
     /* La recherche precedente n'a plus de sens dans un nouveau repertoire */
     g_free(app->search_term);
@@ -299,12 +305,7 @@ static void refresh_listing(AppData* app) {
     populate_store(GTK_LIST_STORE(app->model), app->base_dir,
                    app->show_hidden, app->sort_mode);
 
-    /* Indiquer le tri courant dans le label */
-    static const gchar* sort_names[SORT_COUNT] = {"nom", "date", "taille", "ext"};
-    gchar* text = g_strdup_printf("Repertoire: %s   [tri: %s]",
-                                  app->base_dir, sort_names[app->sort_mode]);
-    gtk_label_set_text(GTK_LABEL(app->path_label), text);
-    g_free(text);
+    update_path_label(app);
 
     if (cur_name != NULL) {
         gint n = list_count(app);
@@ -568,6 +569,7 @@ int main(int argc, char** argv) {
     app->tree_view = GTK_TREE_VIEW(tree_view);
     app->search_entry = search_entry;
     app->path_label = path_label;
+    update_path_label(app); /* label initial : repertoire + [tri: nom] */
 
     GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
     gtk_tree_selection_set_mode(selection, GTK_SELECTION_SINGLE);
