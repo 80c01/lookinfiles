@@ -6,7 +6,7 @@ Simple graphical application to browse the file system.
 
 - ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), single "Name" column with VS Code-like **emoji icons** by file type
 - ✅ Right panel: content viewer — clicking a file on the left shows its content on the right; selecting a** directory** lists its contents
-- ✅ Syntax highlighting in the viewer for text files (optional `GtkSourceView`: C, C++, Python, JS, JSON, XML, Makefile, ...)
+- ✅ Syntax highlighting in the viewer for text files (optional `GtkSourceView`: C, C++, Python, JS, JSON, XML, Makefile, ...), with a **VS Code Dark+** color palette
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
 - ✅ Non-UTF-8 files are sanitized before display (invalid bytes → U+FFFD)
 - ✅ Resizable panel: draggable `GtkPaned` divider (initial position 300 px, minimum width 150 px)

@@ -829,6 +829,68 @@ static void apply_viewer_language(AppData* app, const gchar* name) {
 #endif
 }
 
+#ifdef HAVE_GSV
+/* VS Code Dark+ palette, as a GtkSourceView style scheme */
+static const gchar* VSCODE_SCHEME_XML =
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<style-scheme id=\"vscode-dark\" _name=\"VS Code Dark\" version=\"1.0\">\n"
+    "  <_description>VS Code Dark+ palette for the file explorer viewer</_description>\n"
+    "  <style name=\"def\" foreground=\"#d4d4d4\" background=\"#1e1e1e\"/>\n"
+    "  <style name=\"selection\" background=\"#264f78\"/>\n"
+    "  <style name=\"current-line\" background=\"#2a2d2e\"/>\n"
+    "  <style name=\"current-line-search\" background=\"#314365\"/>\n"
+    "  <style name=\"bracket-match\" background=\"#515553\"/>\n"
+    "  <style name=\"right-margin\" background=\"#1e1e1e\"/>\n"
+    "  <style name=\"comment\" foreground=\"#6a9955\"/>\n"
+    "  <style name=\"shebang\" foreground=\"#6a9955\"/>\n"
+    "  <style name=\"constant\" foreground=\"#569cd6\"/>\n"
+    "  <style name=\"boolean\" foreground=\"#569cd6\"/>\n"
+    "  <style name=\"special-constant\" foreground=\"#4fc1ff\"/>\n"
+    "  <style name=\"string\" foreground=\"#ce9178\"/>\n"
+    "  <style name=\"string-newline\" foreground=\"#6a9955\"/>\n"
+    "  <style name=\"character\" foreground=\"#ce9178\"/>\n"
+    "  <style name=\"escape\" foreground=\"#d7ba7d\"/>\n"
+    "  <style name=\"special-char\" foreground=\"#d7ba7d\"/>\n"
+    "  <style name=\"number\" foreground=\"#b5cea8\"/>\n"
+    "  <style name=\"keyword\" foreground=\"#569cd6\"/>\n"
+    "  <style name=\"keyword-modifier\" foreground=\"#569cd6\"/>\n"
+    "  <style name=\"preprocessor\" foreground=\"#c586c0\"/>\n"
+    "  <style name=\"type\" foreground=\"#4ec9b0\"/>\n"
+    "  <style name=\"function\" foreground=\"#dcdcaa\"/>\n"
+    "  <style name=\"variable\" foreground=\"#9cdcfe\"/>\n"
+    "  <style name=\"operator\" foreground=\"#d4d4d4\"/>\n"
+    "  <style name=\"error\" foreground=\"#f44747\"/>\n"
+    "  <style name=\"net-address-in-comment\" foreground=\"#6a9955\"/>\n"
+    "  <style name=\"include-statement\" foreground=\"#c586c0\"/>\n"
+    "  <style name=\"included-file\" foreground=\"#9cdcfe\"/>\n"
+    "</style-scheme>\n";
+
+/* Install the VS Code-style scheme and apply it to the viewer buffer:
+ * the XML lives in the user cache dir (regenerated at each start). */
+static void apply_vscode_scheme(GtkTextBuffer* buffer) {
+    GtkSourceStyleSchemeManager* mgr =
+        gtk_source_style_scheme_manager_get_default();
+    gchar* dir = g_build_filename(g_get_user_cache_dir(), "file-explorer",
+                                  "scheme", NULL);
+    if (g_mkdir_with_parents(dir, 0755) != 0) {
+        g_free(dir);
+        return;
+    }
+    gchar* path = g_build_filename(dir, "vscode-dark.xml", NULL);
+    g_file_set_contents(path, VSCODE_SCHEME_XML, -1, NULL);
+    g_free(path);
+    gtk_source_style_scheme_manager_append_search_path(mgr, dir);
+    g_free(dir);
+    gtk_source_style_scheme_manager_force_rescan(mgr);
+
+    GtkSourceStyleScheme* scheme =
+        gtk_source_style_scheme_manager_get_scheme(mgr, "vscode-dark");
+    if (scheme != NULL) {
+        gtk_source_buffer_set_style_scheme(GTK_SOURCE_BUFFER(buffer), scheme);
+    }
+}
+#endif
+
 /* Charge le contenu du fichier selectionne dans le panneau droit */
 /* Charge le contenu d'un fichier (avec apercu + sanitization) dans le buffer
  * Utilise par la selection ET par la surveillance de fichiers */
@@ -1330,6 +1392,9 @@ int main(int argc, char** argv) {
     /* Signalalement : selection a gauche => contenu a droite */
     AppData* app = g_new0(AppData, 1);
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+#ifdef HAVE_GSV
+    apply_vscode_scheme(app->buffer);
+#endif
     app->base_dir = g_strdup(cwd);
     app->model = GTK_TREE_MODEL(store);
     app->tree_view = GTK_TREE_VIEW(tree_view);
