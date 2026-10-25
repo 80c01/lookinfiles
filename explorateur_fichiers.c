@@ -16,10 +16,12 @@ int main(int argc, char** argv) {
     
     /* Panneau gauche - Liste des fichiers du repertoire actuel */
     GtkWidget* left_pane = gtk_scrolled_window_new(NULL, NULL);
-    gtk_container_set_border_width(GTK_CONTAINER(left_pane), 0);
+    
+    /* Configuration pour permettre le redimensionnement */
+    gtk_container_set_border_width(GTK_CONTAINER(left_pane), 5);
     
     /* Label pour montrer le path actuel */
-    char path_text[512];
+    char path_text[256];
     snprintf(path_text, sizeof(path_text), "Repertoire: %s", cwd);
     
     /* Créer le GtkListStore */
@@ -30,9 +32,9 @@ int main(int argc, char** argv) {
     /* En-tête */
     gtk_list_store_append(store, &iter);
     gtk_list_store_set(store, &iter, 0, "Nom", -1);
-    gtk_list_store_set(store, &iter, 1, "Type", -1);
+    gtk_list_store_set(store, &iter, 1, "Type", "-1");
     
-    /* Liste descriptive statique (à la place d'enumeration système) */
+    /* Liste descriptive statique */
     const char* folders[] = {"/", "/home", "/tmp", "/etc", NULL};
     static const gchar* folder_types[] = {"root", "folder", "system", "system", NULL};
     
@@ -42,28 +44,24 @@ int main(int argc, char** argv) {
         gtk_list_store_set(store, &iter, 1, folder_types[i], -1);
     }
     
-    /* Ajout de dossier du repertoire actuel si on est dans /workspace */
+    /* Ajout de dossiers du repertoire actuel si on est dans /workspace */
     if (strncmp(cwd, "/workspace", 10) == 0) {
         const char* project_files[] = {"explorateur_fichiers", "explorateur_fichiers.c", "Makefile", "README.md", NULL};
         
         for (int i = 0; project_files[i] != NULL; i++) {
             gtk_list_store_append(store, &iter);
             gtk_list_store_set(store, &iter, 0, project_files[i], -1);
-            gtk_list_store_set(store, &iter, 1, "file", -1);
+            gtk_list_store_set(store, &iter, 1, "file", "-1");
         }
     }
     
     /* Afficher une indication du repertoire actuel */
     GtkWidget* path_label = gtk_label_new(path_text);
+    gtk_widget_set_halign(path_label, GTK_ALIGN_START);
     
     /* Créer un GtkTreeView pour afficher les fichiers */
     tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
     g_object_ref_sink(tree_view);
-    
-    /* Ajouter le label de path au panneau gauche */
-    gtk_container_add(GTK_CONTAINER(left_pane), path_label);
-    
-    gtk_widget_show(path_label);
     
     /* Ajouter une colonne pour afficher les noms */
     GtkTreeViewColumn* column = gtk_tree_view_column_new();
@@ -77,7 +75,10 @@ int main(int argc, char** argv) {
     
     /* Ajouter le treeview */
     gtk_container_add(GTK_CONTAINER(left_pane), tree_view);
+    
+    /* Afficher les widgets */
     gtk_widget_show(tree_view);
+    gtk_widget_show(path_label);
     
     g_object_unref(store);
     
@@ -87,6 +88,7 @@ int main(int argc, char** argv) {
     GtkWidget* text_view = gtk_text_view_new();
     gtk_container_add(GTK_CONTAINER(right_pane), text_view);
     
+    /* Pack avec FALSE pour le gauche et TRUE pour le droit */
     gtk_box_pack_start(GTK_BOX(main_box), left_pane, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(main_box), right_pane, TRUE, TRUE, 5);
     
