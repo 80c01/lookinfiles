@@ -714,6 +714,19 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
 /* ===== Ctrl-T: embedded terminal in a panel right of the viewer ===== */
 
 #ifdef HAVE_VTE
+/* Async spawn callback: report failures, then hand the child PID to the
+ * terminal so it tracks the shell ("child-exited" stays reliable) */
+static void on_spawn_result(VteTerminal* term, GPid pid, GError* error,
+                            gpointer data) {
+    (void)data;
+    if (error != NULL) {
+        g_printerr("[ Cannot start terminal shell: %s ]\n", error->message);
+        g_error_free(error);
+        return;
+    }
+    vte_terminal_watch_child(term, pid);
+}
+
 static void spawn_shell(AppData* app) {
     VteTerminal* term = VTE_TERMINAL(app->vte);
     const gchar* shell = g_getenv("SHELL");
@@ -721,16 +734,9 @@ static void spawn_shell(AppData* app) {
         shell = "/bin/bash";
     }
     gchar* argv[2] = { (gchar*)shell, NULL };
-    GError* err = NULL;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    vte_terminal_spawn_sync(term, VTE_PTY_DEFAULT, app->base_dir, argv, NULL,
-                            G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL, &err);
-#pragma GCC diagnostic pop
-    if (err != NULL) {
-        g_printerr("[ Cannot start terminal shell: %s ]\n", err->message);
-        g_error_free(err);
-    }
+    vte_terminal_spawn_async(term, VTE_PTY_DEFAULT, app->base_dir, argv, NULL,
+                             G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, -1, NULL,
+                             on_spawn_result, app);
 }
 
 static void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
