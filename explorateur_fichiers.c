@@ -75,7 +75,20 @@ typedef struct {
     gboolean show_hidden; /* fichiers caches (prefixe .) */
     gint sort_mode; /* SORT_NAME / DATE / SIZE / EXT */
     gboolean pending_g; /* pour la sequence gg */
+
+    /* Surveillance du disque (file monitors) */
+    GFileMonitor* dir_monitor;   /* repertoire courant */
+    GFileMonitor* file_monitor;  /* fichier affiche a droite */
+    gchar* viewed_path;          /* chemin du fichier affiche, NULL sinon */
+    gchar* viewed_name;          /* nom du fichier affiche */
+    gboolean dir_dirty;          /* evenement rep. en attente */
+    gboolean file_dirty;         /* evenement fichier en attente */
+    guint refresh_source;        /* id du debounce, 0 = inactif */
 } AppData;
+
+/* Moniteurs de fichiers, definis plus bas dans le fichier */
+static void monitor_directory(AppData* app);
+static void monitor_file(AppData* app, const char* path);
 
 /* ===== Navigation style vim ===== */
 
@@ -293,6 +306,16 @@ static void reload_directory(AppData* app, const gchar* new_dir) {
     /* Vider le panneau droit */
     gtk_text_buffer_set_text(app->buffer, "", -1);
 
+    /* Plus de fichier affiche a droite : couper son moniteur */
+    g_free(app->viewed_path);
+    g_free(app->viewed_name);
+    app->viewed_path = NULL;
+    app->viewed_name = NULL;
+    app->file_dirty = FALSE;
+    app->dir_dirty = FALSE;
+    monitor_file(app, NULL);
+    monitor_directory(app);
+
     /* selectionner la premiere entree */
     if (list_count(app) > 0) {
         select_index(app, 0);
@@ -451,6 +474,160 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
 }
 
 /* Charge le contenu du fichier selectionne dans le panneau droit */
+/* Charge le contenu d'un fichier (avec apercu + sanitization) dans le buffer
+ * Utilise par la selection ET par la surveillance de fichiers */
+static void load_file_content(AppData* app, const gchar* name, const gchar* full) {
+    /* Taille du fichier pour decider entier vs apercu */
+    struct stat st;
+    gint64 fsize = (g_stat(full, &st) == 0) ? (gint64)st.st_size : -1;
+    gchar* contents = NULL;
+    gsize len = 0;
+    gboolean preview = FALSE;
+
+    if (fsize < 0) {
+        gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
+        gtk_text_buffer_set_text(app->buffer, msg, -1);
+        g_free(msg);
+        return;
+    }
+
+    if (fsize > PREVIEW_THRESHOLD) {
+        /* Gros fichier : ne lire que le debut, pas le contenu entier */
+        preview = TRUE;
+        FILE* fp = g_fopen(full, "rb");
+        if (fp != NULL) {
+            contents = g_malloc0(PREVIEW_BYTES + 1);
+            len = fread(contents, 1, PREVIEW_BYTES, fp);
+            contents[len] = '\0';
+            fclose(fp);
+        }
+    } else {
+        g_file_get_contents(full, &contents, &len, NULL);
+    }
+
+    if (contents != NULL) {
+        GString* text = g_string_new(NULL);
+        if (preview) {
+            g_string_append_printf(text,
+                    "[ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)\n"
+                    "Showing first %u bytes. Large file, display truncated.\n\n",
+                    name, fsize, (guint)len);
+        }
+
+        /* GtkTextBuffer exige de l'UTF-8 valide : nettoyer si besoin */
+        if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
+            gchar* valid = g_utf8_make_valid(contents, (gssize)len);
+            g_string_append(text, valid);
+            g_free(valid);
+        } else {
+            g_string_append_len(text, contents, (gssize)len);
+        }
+        gtk_text_buffer_set_text(app->buffer, text->str, (gint)text->len);
+        g_string_free(text, TRUE);
+        g_free(contents);
+    } else {
+        gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
+        gtk_text_buffer_set_text(app->buffer, msg, -1);
+        g_free(msg);
+    }
+}
+
+/* ===== Surveillance du disque (GFileMonitor + debonce) ===== */
+
+/* Un seul rafraichissement liste par le debounce : rep. et/ou contenu */
+static gboolean deferred_refresh(gpointer data) {
+    AppData* app = (AppData*)data;
+    app->refresh_source = 0;
+
+    if (app->dir_dirty) {
+        app->dir_dirty = FALSE;
+        refresh_listing(app); /* conserve la selection par nom */
+    }
+    if (app->file_dirty) {
+        app->file_dirty = FALSE;
+        if (app->viewed_path != NULL) {
+            load_file_content(app, app->viewed_name, app->viewed_path);
+        }
+    }
+    return G_SOURCE_REMOVE;
+}
+
+static void schedule_refresh(AppData* app) {
+    if (app->refresh_source == 0) {
+        app->refresh_source = g_timeout_add(150, deferred_refresh, app);
+    }
+}
+
+static void on_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file,
+                           GFileMonitorEvent event_type, gpointer data) {
+    (void)monitor; (void)file; (void)other_file;
+    switch (event_type) {
+    case G_FILE_MONITOR_EVENT_CREATED:
+    case G_FILE_MONITOR_EVENT_DELETED:
+    case G_FILE_MONITOR_EVENT_MOVED:
+    case G_FILE_MONITOR_EVENT_RENAMED:
+        ((AppData*)data)->dir_dirty = TRUE;
+        schedule_refresh((AppData*)data);
+        break;
+    default:
+        break;
+    }
+}
+
+static void on_file_changed(GFileMonitor* monitor, GFile* file, GFile* other_file,
+                            GFileMonitorEvent event_type, gpointer data) {
+    (void)monitor; (void)file; (void)other_file;
+    switch (event_type) {
+    case G_FILE_MONITOR_EVENT_CHANGED:
+    case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
+    case G_FILE_MONITOR_EVENT_DELETED:
+        ((AppData*)data)->file_dirty = TRUE;
+        schedule_refresh((AppData*)data);
+        break;
+    default:
+        break;
+    }
+}
+
+/* (Re)arme le moniteur du repertoire courant */
+static void monitor_directory(AppData* app) {
+    if (app->dir_monitor != NULL) {
+        g_object_unref(app->dir_monitor);
+        app->dir_monitor = NULL;
+    }
+    GFile* f = g_file_new_for_path(app->base_dir);
+    GError* err = NULL;
+    app->dir_monitor = g_file_monitor_directory(f, G_FILE_MONITOR_NONE, NULL, &err);
+    if (err != NULL) {
+        g_error_free(err);
+        app->dir_monitor = NULL;
+    } else {
+        g_signal_connect(app->dir_monitor, "changed", G_CALLBACK(on_dir_changed), app);
+    }
+    g_object_unref(f);
+}
+
+/* (Re)arme le moniteur du fichier affiche ; path = NULL pour couper */
+static void monitor_file(AppData* app, const char* path) {
+    if (app->file_monitor != NULL) {
+        g_object_unref(app->file_monitor);
+        app->file_monitor = NULL;
+    }
+    if (path != NULL) {
+        GFile* f = g_file_new_for_path(path);
+        GError* err = NULL;
+        app->file_monitor = g_file_monitor(f, G_FILE_MONITOR_NONE, NULL, &err);
+        if (err != NULL) {
+            g_error_free(err);
+            app->file_monitor = NULL;
+        } else {
+            g_signal_connect(app->file_monitor, "changed",
+                             G_CALLBACK(on_file_changed), app);
+        }
+        g_object_unref(f);
+    }
+}
+
 static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     AppData* app = (AppData*)user_data;
     GtkTreeModel* model = NULL;
@@ -503,58 +680,20 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
         gtk_text_buffer_set_text(app->buffer, listing->str, (gint)listing->len);
         g_string_free(listing, TRUE);
     } else {
-        /* Taille du fichier pour decider entier vs apercu */
-        struct stat st;
-        gint64 fsize = (g_stat(full, &st) == 0) ? (gint64)st.st_size : -1;
-        gchar* contents = NULL;
-        gsize len = 0;
-        gboolean preview = FALSE;
+        load_file_content(app, name, full);
+    }
 
-        if (fsize < 0) {
-            gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
-            gtk_text_buffer_set_text(app->buffer, msg, -1);
-            g_free(msg);
-        } else {
-            if (fsize > PREVIEW_THRESHOLD) {
-                /* Gros fichier : ne lire que le debut, pas le contenu entier */
-                preview = TRUE;
-                FILE* fp = g_fopen(full, "rb");
-                if (fp != NULL) {
-                    contents = g_malloc0(PREVIEW_BYTES + 1);
-                    len = fread(contents, 1, PREVIEW_BYTES, fp);
-                    contents[len] = '\0';
-                    fclose(fp);
-                }
-            } else {
-                g_file_get_contents(full, &contents, &len, NULL);
-            }
-
-            if (contents != NULL) {
-                GString* text = g_string_new(NULL);
-                if (preview) {
-                    g_string_append_printf(text,
-                            "[ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)\n"
-                            "Showing first %u bytes. Large file, display truncated.\n\n",
-                            name, fsize, (guint)len);
-                }
-
-                /* GtkTextBuffer exige de l'UTF-8 valide : nettoyer si besoin */
-                if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
-                    gchar* valid = g_utf8_make_valid(contents, (gssize)len);
-                    g_string_append(text, valid);
-                    g_free(valid);
-                } else {
-                    g_string_append_len(text, contents, (gssize)len);
-                }
-                gtk_text_buffer_set_text(app->buffer, text->str, (gint)text->len);
-                g_string_free(text, TRUE);
-                g_free(contents);
-            } else {
-                gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
-                gtk_text_buffer_set_text(app->buffer, msg, -1);
-                g_free(msg);
-            }
-        }
+    /* Suivre le fichier affiche pour recharger au changement disque */
+    g_free(app->viewed_path);
+    g_free(app->viewed_name);
+    if (g_strcmp0(type, "dir") == 0) {
+        app->viewed_path = NULL;
+        app->viewed_name = NULL;
+        monitor_file(app, NULL);
+    } else {
+        app->viewed_path = g_strdup(full);
+        app->viewed_name = g_strdup(name);
+        monitor_file(app, full);
     }
 
     g_free(full);
@@ -648,7 +787,10 @@ int main(int argc, char** argv) {
     app->tree_view = GTK_TREE_VIEW(tree_view);
     app->search_entry = search_entry;
     app->path_label = path_label;
-    update_path_label(app); /* label initial : repertoire + [tri: nom] [caches: off] */
+    update_path_label(app); /* label initial : repertoire + [sort: name] [hidden: off] */
+
+    /* Surveillance du repertoire courant des l'ouverture */
+    monitor_directory(app);
 
     GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
     gtk_tree_selection_set_mode(selection, GTK_SELECTION_SINGLE);
