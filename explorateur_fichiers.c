@@ -7,6 +7,15 @@
 #include <vte/vte.h>
 #endif
 
+#ifdef HAVE_GSV
+/* The library headers themselves use deprecated GTimeVal: silence them */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#include <gtksourceview/gtksource.h>
+#pragma GCC diagnostic pop
+#include <gio/gio.h>
+#endif
+
 /* Modes de tri cyclés par la touche o */
 enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 
@@ -786,10 +795,31 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
     return FALSE;
 }
 
+/* GtkSourceView: syntax highlighting language for the displayed entry;
+ * NULL name resets to plain text (directory listings, errors...). */
+static void apply_viewer_language(AppData* app, const gchar* name) {
+#ifdef HAVE_GSV
+    GtkSourceLanguageManager* mgr = gtk_source_language_manager_get_default();
+    GtkSourceLanguage* lang = NULL;
+    if (name != NULL) {
+        gchar* ctype = g_content_type_guess(name, NULL, 0, NULL);
+        lang = gtk_source_language_manager_guess_language(mgr, name, ctype);
+        g_free(ctype);
+    }
+    GtkSourceBuffer* sbuf = GTK_SOURCE_BUFFER(app->buffer);
+    gtk_source_buffer_set_language(sbuf, lang);
+    gtk_source_buffer_set_highlight_syntax(sbuf, lang != NULL);
+#else
+    (void)app;
+    (void)name;
+#endif
+}
+
 /* Charge le contenu du fichier selectionne dans le panneau droit */
 /* Charge le contenu d'un fichier (avec apercu + sanitization) dans le buffer
  * Utilise par la selection ET par la surveillance de fichiers */
 static void load_file_content(AppData* app, const gchar* name, const gchar* full) {
+    apply_viewer_language(app, name);
     /* Taille du fichier pour decider entier vs apercu */
     struct stat st;
     gint64 fsize = (g_stat(full, &st) == 0) ? (gint64)st.st_size : -1;
@@ -995,6 +1025,7 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
 
         gtk_text_buffer_set_text(app->buffer, listing->str, (gint)listing->len);
         app->viewer_match = -1;
+        apply_viewer_language(app, NULL); /* listings stay plain text */
         g_string_free(listing, TRUE);
     } else {
         load_file_content(app, name, full);
@@ -1231,10 +1262,21 @@ int main(int argc, char** argv) {
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_container_add(GTK_CONTAINER(left_scroll), tree_view);
 
-    /* ===== Panneau droit : visualiseur de texte (lecture seule) ===== */
+    /* ===== Panneau droit : visualiseur de texte (lecture seule) =====
+     * GtkSourceView (coloration syntaxique) si installe, sinon GtkTextView. */
+#ifdef HAVE_GSV
+    GtkWidget* text_view = gtk_source_view_new();
+#else
     GtkWidget* text_view = gtk_text_view_new();
+#endif
     gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
     gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(text_view), FALSE);
+
+#ifdef HAVE_GSV
+    /* Syntax highlighting on the source buffer backing the view */
+    gtk_source_buffer_set_highlight_syntax(
+        GTK_SOURCE_BUFFER(gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view))), TRUE);
+#endif
     GtkWidget* right_scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(right_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);

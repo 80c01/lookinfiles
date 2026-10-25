@@ -11,6 +11,13 @@ CFLAGS += -DHAVE_VTE `pkg-config --cflags vte-2.91`
 LDFLAGS += `pkg-config --libs vte-2.91`
 endif
 
+# Optional syntax highlighting: enabled automatically when gtksourceview-3.0 is installed
+HAVE_GSV != pkg-config --exists gtksourceview-3.0 && echo yes || echo no
+ifeq ($(HAVE_GSV),yes)
+CFLAGS += -DHAVE_GSV `pkg-config --cflags gtksourceview-3.0`
+LDFLAGS += `pkg-config --libs gtksourceview-3.0`
+endif
+
 TARGET = explorateur_fichiers
 SRCS = explorateur_fichiers.c
 

@@ -6,6 +6,7 @@ Simple graphical application to browse the file system.
 
 - ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), with "Name" / "Type" (`dir` / `file`) columns, and VS Code-like **emoji icons** by file type
 - ✅ Right panel: content viewer — clicking a file on the left shows its content on the right; selecting a** directory** lists its contents
+- ✅ Syntax highlighting in the viewer for text files (optional `GtkSourceView`: C, C++, Python, JS, JSON, XML, Makefile, ...)
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
 - ✅ Non-UTF-8 files are sanitized before display (invalid bytes → U+FFFD)
 - ✅ Resizable panel: draggable `GtkPaned` divider (initial position 300 px, minimum width 150 px)
@@ -85,6 +86,12 @@ sudo apt install libvte-2.91-dev
 The Makefile detects it automatically; without it the build still works and
 `Ctrl+T` shows a notice instead of the terminal.
 
+Optional (syntax highlighting in the viewer):
+```bash
+sudo apt install libgtksourceview-3.0-dev
+```
+Detected the same way; without it the viewer stays plain text.
+
 ## 🏗️ Project structure
 
 ```
@@ -100,5 +107,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.1**: Real current-directory listing, resizable panel (`GtkPaned`), content viewer linked to selection, `Ctrl+Q`
 - **v1.2**: Vim keybindings (`j`/`k`, `gg`, `G`, `/`, `n`/`N`) and tree navigation (`Enter`/`Backspace`)
 - **v1.3**: Hidden-files toggle (`I`), sort cycling (`o`), directory listing in the right panel, preview of large files, dark theme
-- **v1.4**: VS Code-like emoji icons per file type in the tree, `Ctrl+T` embedded terminal panel, `-f` fullscreen start, `Alt+←/→` panel focus cycling, read-only viewer, vim bindings and search inside the viewer
+- **v1.4**: VS Code-like emoji icons per file type in the tree, `Ctrl+T` embedded terminal panel, `-f` fullscreen start, `Alt+←/→` panel focus cycling, read-only viewer with vim bindings, in-content search and optional syntax highlighting
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)
