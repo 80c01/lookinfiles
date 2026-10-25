@@ -10,6 +10,7 @@ typedef struct {
     GtkWidget* search_entry;
     GtkWidget* path_label;
     gchar* search_term;
+    gboolean show_hidden; /* fichiers caches (prefixe .) */
     gboolean pending_g; /* pour la sequence gg */
 } AppData;
 
@@ -151,7 +152,7 @@ static gboolean on_search_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
 }
 
 /* Remplit le store avec le contenu reel du repertoire (dossiers d'abord, tries) */
-static void populate_store(GtkListStore* store, const gchar* dirname) {
+static void populate_store(GtkListStore* store, const gchar* dirname, gboolean show_hidden) {
     GtkTreeIter iter;
     gtk_list_store_clear(store);
 
@@ -167,6 +168,9 @@ static void populate_store(GtkListStore* store, const gchar* dirname) {
     GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
     const gchar* name;
     while ((name = g_dir_read_name(dir)) != NULL) {
+        if (!show_hidden && name[0] == '.') {
+            continue; /* fichier cache masque */
+        }
         g_ptr_array_add(names, g_strdup(name));
     }
     g_dir_close(dir);
@@ -212,13 +216,47 @@ static void reload_directory(AppData* app, const gchar* new_dir) {
     app->search_term = NULL;
     gtk_entry_set_text(GTK_ENTRY(app->search_entry), "");
 
-    populate_store(GTK_LIST_STORE(app->model), new_dir);
+    populate_store(GTK_LIST_STORE(app->model), new_dir, app->show_hidden);
 
     /* Vider le panneau droit */
     gtk_text_buffer_set_text(app->buffer, "", -1);
 
     /* selectionner la premiere entree */
     if (list_count(app) > 0) {
+        select_index(app, 0);
+    }
+}
+
+/* I : basculer l'affichage des fichiers caches (prefixe .) */
+static void toggle_hidden_files(AppData* app) {
+    /* memoriser la selection courante pour la retrouver apres bascule */
+    gchar* cur_name = NULL;
+    GtkTreeIter it;
+    if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+        gtk_tree_model_get(app->model, &it, 0, &cur_name, -1);
+    }
+
+    app->show_hidden = !app->show_hidden;
+    populate_store(GTK_LIST_STORE(app->model), app->base_dir, app->show_hidden);
+
+    if (cur_name != NULL) {
+        gint n = list_count(app);
+        for (gint i = 0; i < n; i++) {
+            GtkTreeIter it2;
+            if (!gtk_tree_model_iter_nth_child(app->model, &it2, NULL, i)) {
+                break;
+            }
+            gchar* name = NULL;
+            gtk_tree_model_get(app->model, &it2, 0, &name, -1);
+            gboolean same = (g_strcmp0(name, cur_name) == 0);
+            g_free(name);
+            if (same) {
+                select_index(app, i);
+                break;
+            }
+        }
+        g_free(cur_name);
+    } else if (list_count(app) > 0) {
         select_index(app, 0);
     }
 }
@@ -293,6 +331,11 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
             }
             g_free(parent);
         }
+        return TRUE;
+    case GDK_KEY_I: /* basculer les fichiers caches */
+    case GDK_KEY_i:
+        app->pending_g = FALSE;
+        toggle_hidden_files(app);
         return TRUE;
     case GDK_KEY_b: /* Ctrl+B : page precedente */
         app->pending_g = FALSE;
@@ -393,7 +436,7 @@ int main(int argc, char** argv) {
     GtkListStore* store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
     /* Enumerer le contenu reel du repertoire courant */
-    populate_store(store, cwd);
+    populate_store(store, cwd, FALSE); /* fichiers caches masques au demarrage */
 
     /* GtkTreeView avec deux colonnes (Nom / Type) */
     GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
