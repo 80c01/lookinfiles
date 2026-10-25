@@ -109,6 +109,12 @@ typedef struct {
 
     /* h: floating key-binding cheat sheet */
     GtkWidget* help_window;
+
+    /* Pane-resize feedback: small popup with both panes' sizes */
+    GtkWidget* dim_window;
+    GtkWidget* dim_label;
+    GtkWidget* dims_paned; /* paned whose handle is being dragged */
+    gboolean panning; /* a split handle is being dragged */
 } AppData;
 
 /* Moniteurs de fichiers, definis plus bas dans le fichier */
@@ -1469,6 +1475,88 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
     return TRUE;
 }
 
+/* ===== Pane-resize feedback: sizes of both sides while dragging ===== */
+
+/* Show (or refresh) the small popup centered on the split handle, listing
+ * the width x height of the panes it separates */
+static void update_pane_dims(GtkWidget* paned_widget, AppData* app) {
+    GtkPaned* paned = GTK_PANED(paned_widget);
+    GtkWidget* c1 = gtk_paned_get_child1(paned);
+    GtkWidget* c2 = gtk_paned_get_child2(paned);
+    if (!gtk_widget_get_visible(c2)) {
+        return; /* nothing to drag on that side (terminal hidden) */
+    }
+    GtkAllocation a1, a2;
+    gtk_widget_get_allocation(c1, &a1);
+    gtk_widget_get_allocation(c2, &a2);
+    if (a1.width <= 0 || a2.width <= 0) {
+        return; /* not laid out yet */
+    }
+
+    gchar* text = g_strdup_printf("%d \xc3\x97 %d  |  %d \xc3\x97 %d",
+                                  a1.width, a1.height, a2.width, a2.height);
+    gtk_label_set_text(GTK_LABEL(app->dim_label), text);
+    g_free(text);
+
+    gtk_widget_show_all(app->dim_window);
+    /* Size the popup to its content, then center it on the handle
+     * (screen coordinates of the paned's own window) */
+    GtkRequisition nat;
+    gtk_widget_get_preferred_size(app->dim_window, NULL, &nat);
+    gtk_window_resize(GTK_WINDOW(app->dim_window), nat.width, nat.height);
+    gint ox = 0;
+    gint oy = 0;
+    GdkWindow* gdk_window = gtk_widget_get_window(GTK_WIDGET(paned));
+    if (gdk_window != NULL) {
+        gdk_window_get_origin(gdk_window, &ox, &oy);
+    }
+    gtk_window_move(GTK_WINDOW(app->dim_window),
+                    ox + a1.width - nat.width / 2,
+                    oy + a1.height / 2 - nat.height / 2);
+}
+
+/* Deferred by one idle: on notify::position the children's allocations are
+ * still stale (the layout has not been re-run for the new position yet) */
+static gboolean pane_dims_idle(gpointer data) {
+    AppData* app = (AppData*)data;
+    if (app->panning && app->dims_paned != NULL) {
+        update_pane_dims(app->dims_paned, app);
+    }
+    return FALSE; /* one-shot */
+}
+
+static gboolean on_paned_button_press(GtkWidget* widget, GdkEventButton* event,
+                                      gpointer data) {
+    AppData* app = (AppData*)data;
+    if (event->button == 1) { /* the handle is grabbed: show the sizes */
+        app->panning = TRUE;
+        app->dims_paned = widget;
+        update_pane_dims(widget, app);
+    }
+    return FALSE; /* let GtkPaned start its drag */
+}
+
+static void on_paned_notify_position(GObject* object, GParamSpec* pspec,
+                                     gpointer data) {
+    (void)pspec;
+    AppData* app = (AppData*)data;
+    if (app->panning) { /* ignore programmatic set_position calls */
+        app->dims_paned = GTK_WIDGET(object);
+        g_idle_add(pane_dims_idle, app);
+    }
+}
+
+static gboolean on_paned_button_release(GtkWidget* widget,
+                                        GdkEventButton* event,
+                                        gpointer data) {
+    (void)widget;
+    (void)event;
+    AppData* app = (AppData*)data;
+    app->panning = FALSE;
+    gtk_widget_hide(app->dim_window);
+    return FALSE;
+}
+
 /* Panel boundaries: a clear rule under the status bar and thicker,
  * more contrasted paned handles between the file list and the viewer.
  * Applied at screen level so child widgets are matched (GTK3 cascade). */
@@ -1684,6 +1772,31 @@ int main(int argc, char** argv) {
 
     /* Position initiale du séparateur : 300px pour le panneau gauche */
     gtk_paned_set_position(GTK_PANED(paned), 300);
+
+    /* Pane-resize feedback popup (above everything, takes no focus) */
+    GtkWidget* dim_window = gtk_window_new(GTK_WINDOW_POPUP);
+    gtk_window_set_type_hint(GTK_WINDOW(dim_window), GDK_WINDOW_TYPE_HINT_TOOLTIP);
+    gtk_window_set_decorated(GTK_WINDOW(dim_window), FALSE);
+    gtk_window_set_default_size(GTK_WINDOW(dim_window), 1, 1);
+    gtk_container_set_border_width(GTK_CONTAINER(dim_window), 8);
+    GtkWidget* dim_label = gtk_label_new("");
+    gtk_container_add(GTK_CONTAINER(dim_window), dim_label);
+    app->dim_window = dim_window;
+    app->dim_label = dim_label;
+
+    /* Dragging either split handle shows both panes' sizes */
+    g_signal_connect(paned, "button-press-event",
+                     G_CALLBACK(on_paned_button_press), app);
+    g_signal_connect(paned, "button-release-event",
+                     G_CALLBACK(on_paned_button_release), app);
+    g_signal_connect(paned, "notify::position",
+                     G_CALLBACK(on_paned_notify_position), app);
+    g_signal_connect(right_split, "button-press-event",
+                     G_CALLBACK(on_paned_button_press), app);
+    g_signal_connect(right_split, "button-release-event",
+                     G_CALLBACK(on_paned_button_release), app);
+    g_signal_connect(right_split, "notify::position",
+                     G_CALLBACK(on_paned_notify_position), app);
 
     /* Largeur minimale du panneau gauche, mais redimensionnable au-dela */
     gtk_widget_set_size_request(left_vbox, 150, -1);

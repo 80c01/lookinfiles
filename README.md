@@ -9,7 +9,7 @@ Simple graphical application to browse the file system.
 - ✅ Syntax highlighting in the viewer for text files (optional `GtkSourceView`: C, C++, Python, JS, JSON, XML, Makefile, ...), with a **VS Code Dark+** color palette
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
 - ✅ Non-UTF-8 files are sanitized before display (invalid bytes → U+FFFD)
-- ✅ Resizable panel: draggable `GtkPaned` divider (initial position 300 px, minimum width 150 px)
+- ✅ Resizable panel: draggable `GtkPaned` divider (initial position 300 px, minimum width 150 px) — while a divider is dragged, a small popup shows both panes' sizes (`W × H | W × H`)
 - ✅ Navigation in the tree: the `Directory: …` label follows the current directory
 - ✅ Top bar shows the current directory, the sort mode and the hidden-files state
 
