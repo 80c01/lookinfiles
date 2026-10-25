@@ -8,6 +8,12 @@ int main(int argc, char** argv) {
     gtk_window_set_title(GTK_WINDOW(window), "Explorateur de Fichiers");
     gtk_window_set_default_size(GTK_WINDOW(window), 1000, 600);
 
+    /* Raccourci Ctrl+Q pour quitter l'application */
+    GtkAccelGroup* accel = gtk_accel_group_new();
+    gtk_window_add_accel_group(GTK_WINDOW(window), accel);
+    gtk_accel_group_connect(accel, GDK_KEY_q, GDK_CONTROL_MASK, 0,
+                            g_cclosure_new(G_CALLBACK(gtk_main_quit), NULL, NULL));
+
     /* Get current directory */
     char cwd_buf[2048];
     const char* cwd = (getcwd(cwd_buf, sizeof(cwd_buf)) != NULL) ? cwd_buf : "/workspace";
