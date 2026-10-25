@@ -1,5 +1,49 @@
 #include <gtk/gtk.h>
 
+/* Donnees partagees entre la selection et le visualiseur */
+typedef struct {
+    GtkTextBuffer* buffer;
+    gchar* base_dir;
+} AppData;
+
+/* Charge le contenu du fichier selectionne dans le panneau droit */
+static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
+    AppData* app = (AppData*)user_data;
+    GtkTreeModel* model = NULL;
+    GtkTreeIter it;
+
+    if (!gtk_tree_selection_get_selected(selection, &model, &it)) {
+        return;
+    }
+
+    gchar* name = NULL;
+    gchar* type = NULL;
+    gtk_tree_model_get(model, &it, 0, &name, 1, &type, -1);
+
+    gchar* full = g_build_filename(app->base_dir, name, NULL);
+
+    if (g_strcmp0(type, "dir") == 0) {
+        gchar* msg = g_strdup_printf("[ Repertoire ] %s", name);
+        gtk_text_buffer_set_text(app->buffer, msg, -1);
+        g_free(msg);
+    } else {
+        gchar* contents = NULL;
+        gsize len = 0;
+        if (g_file_get_contents(full, &contents, &len, NULL) && contents != NULL) {
+            gtk_text_buffer_set_text(app->buffer, contents, -1);
+            g_free(contents);
+        } else {
+            gchar* msg = g_strdup_printf("[ Impossible de lire : %s ]", name);
+            gtk_text_buffer_set_text(app->buffer, msg, -1);
+            g_free(msg);
+        }
+    }
+
+    g_free(full);
+    g_free(name);
+    g_free(type);
+}
+
 int main(int argc, char** argv) {
     gtk_init(&argc, &argv);
 
@@ -105,6 +149,15 @@ int main(int argc, char** argv) {
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(right_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_container_add(GTK_CONTAINER(right_scroll), text_view);
+
+    /* Signalalement : selection a gauche => contenu a droite */
+    AppData* app = g_new0(AppData, 1);
+    app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    app->base_dir = g_strdup(cwd);
+
+    GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
+    gtk_tree_selection_set_mode(selection, GTK_SELECTION_SINGLE);
+    g_signal_connect(selection, "changed", G_CALLBACK(on_selection_changed), app);
 
     /* ===== GtkPaned : poignee de redimensionnement entre les 2 panneaux ===== */
     GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
