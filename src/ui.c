@@ -375,6 +375,9 @@ void apply_panel_borders(void) {
         "  min-width: 2px;\n"
         "  min-height: 2px;\n"
         "  background-color: #6e6e6e;\n"
+        "}\n"
+        ".code-font text, textview.code-font text, .code-font {\n"
+        "  font-family: 'Consolas', 'DejaVu Sans Mono', 'Liberation Mono', 'Menlo', 'Courier New', monospace;\n"
         "}\n";
     gtk_css_provider_load_from_data(css, DATA, -1, NULL);
     gtk_style_context_add_provider_for_screen(

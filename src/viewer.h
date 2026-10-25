@@ -3,6 +3,8 @@
 
 #include "app_types.h"
 
+void set_view_monospace(GtkWidget* view, gboolean monospace);
+gboolean is_code_file(const gchar* name);
 void apply_viewer_language(AppData* app, const gchar* name);
 void apply_viewer_background(GtkWidget* view);
 #ifdef HAVE_GSV

@@ -99,6 +99,81 @@ void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view) {
 }
 #endif
 
+/* Set monospace / fixed-width font on a text view */
+void set_view_monospace(GtkWidget* view, gboolean monospace) {
+    if (view == NULL) {
+        return;
+    }
+    GtkStyleContext* ctx = gtk_widget_get_style_context(view);
+    if (monospace) {
+        gtk_style_context_add_class(ctx, "code-font");
+    } else {
+        gtk_style_context_remove_class(ctx, "code-font");
+    }
+#if GTK_CHECK_VERSION(3, 16, 0)
+    gtk_text_view_set_monospace(GTK_TEXT_VIEW(view), monospace);
+#endif
+}
+
+/* Return TRUE if file extension or content indicates source code */
+gboolean is_code_file(const gchar* name) {
+    if (name == NULL) {
+        return FALSE;
+    }
+    const gchar* ext = file_extension(name);
+    if (ext[0] != '\0') {
+#define EXT_MATCH(x) (g_ascii_strcasecmp(ext, (x)) == 0)
+        if (EXT_MATCH("c") || EXT_MATCH("h") || EXT_MATCH("cc") ||
+            EXT_MATCH("cpp") || EXT_MATCH("cxx") || EXT_MATCH("hpp") ||
+            EXT_MATCH("hh") || EXT_MATCH("hxx") || EXT_MATCH("py") ||
+            EXT_MATCH("pyw") || EXT_MATCH("pyx") || EXT_MATCH("rs") ||
+            EXT_MATCH("go") || EXT_MATCH("java") || EXT_MATCH("kt") ||
+            EXT_MATCH("kts") || EXT_MATCH("scala") || EXT_MATCH("cs") ||
+            EXT_MATCH("fs") || EXT_MATCH("vb") || EXT_MATCH("swift") ||
+            EXT_MATCH("m") || EXT_MATCH("mm") || EXT_MATCH("js") ||
+            EXT_MATCH("mjs") || EXT_MATCH("cjs") || EXT_MATCH("ts") ||
+            EXT_MATCH("tsx") || EXT_MATCH("jsx") || EXT_MATCH("vue") ||
+            EXT_MATCH("svelte") || EXT_MATCH("css") || EXT_MATCH("scss") ||
+            EXT_MATCH("sass") || EXT_MATCH("less") || EXT_MATCH("html") ||
+            EXT_MATCH("htm") || EXT_MATCH("xml") || EXT_MATCH("svg") ||
+            EXT_MATCH("json") || EXT_MATCH("yaml") || EXT_MATCH("yml") ||
+            EXT_MATCH("toml") || EXT_MATCH("ini") || EXT_MATCH("cfg") ||
+            EXT_MATCH("conf") || EXT_MATCH("sh") || EXT_MATCH("bash") ||
+            EXT_MATCH("zsh") || EXT_MATCH("fish") || EXT_MATCH("bat") ||
+            EXT_MATCH("cmd") || EXT_MATCH("ps1") || EXT_MATCH("rb") ||
+            EXT_MATCH("pl") || EXT_MATCH("pm") || EXT_MATCH("php") ||
+            EXT_MATCH("lua") || EXT_MATCH("r") || EXT_MATCH("tcl") ||
+            EXT_MATCH("awk") || EXT_MATCH("sed") || EXT_MATCH("sql") ||
+            EXT_MATCH("s") || EXT_MATCH("asm") || EXT_MATCH("diff") ||
+            EXT_MATCH("patch") || EXT_MATCH("cmake") || EXT_MATCH("mk") ||
+            EXT_MATCH("log")) {
+            return TRUE;
+        }
+#undef EXT_MATCH
+    }
+
+    if (g_ascii_strcasecmp(name, "Makefile") == 0 ||
+        g_ascii_strcasecmp(name, "makefile") == 0 ||
+        g_ascii_strcasecmp(name, "CMakeLists.txt") == 0 ||
+        g_ascii_strcasecmp(name, "meson.build") == 0 ||
+        g_ascii_strcasecmp(name, "Dockerfile") == 0 ||
+        g_ascii_strcasecmp(name, "dockerfile") == 0) {
+        return TRUE;
+    }
+
+#ifdef HAVE_GSV
+    GtkSourceLanguageManager* mgr = gtk_source_language_manager_get_default();
+    gchar* ctype = g_content_type_guess(name, NULL, 0, NULL);
+    GtkSourceLanguage* lang = gtk_source_language_manager_guess_language(mgr, name, ctype);
+    g_free(ctype);
+    if (lang != NULL) {
+        return TRUE;
+    }
+#endif
+
+    return FALSE;
+}
+
 void apply_viewer_language(AppData* app, const gchar* name) {
 #ifdef HAVE_GSV
     GtkSourceLanguageManager* mgr = gtk_source_language_manager_get_default();
@@ -230,10 +305,13 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
 
     if (is_rendered) {
         apply_viewer_language(app, NULL);
+        set_view_monospace(app->text_view, FALSE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
         gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
         gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
     } else {
+        gboolean code = is_code_file(name) || app->render_raw;
+        set_view_monospace(app->text_view, code);
         apply_viewer_language(app, name);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
         gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
@@ -419,6 +497,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     }
 
     if (g_strcmp0(type, "dir") == 0) {
+        set_view_monospace(app->text_view, FALSE);
         GString* listing = g_string_new(NULL);
         g_string_append_printf(listing, "[ Directory ] %s\n\n", name);
 

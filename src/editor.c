@@ -102,6 +102,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     gtk_text_view_set_editable(GTK_TEXT_VIEW(view), TRUE);
     gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(view), TRUE);
     editor_apply_language(buffer, name);
+    set_view_monospace(view, is_code_file(name));
 #ifdef HAVE_GSV
     apply_vscode_scheme(buffer, view);
 #endif

@@ -8,6 +8,7 @@ Simple graphical application to browse the file system.
 - ✅ Expandable directory tree: directories in the left panel can be expanded/collapsed (click expander arrow, press `Space`, `l` / `Right`, or `Enter`), displaying nested contents inline with tree hierarchy lines. Expanding/collapsing is preserved across sort and hidden toggles.
 - ✅ Right panel: content viewer — clicking a file on the left shows its content on the right; selecting a** directory** lists its contents
 - ✅ Syntax highlighting in the viewer for text files (optional `GtkSourceView`: C, C++, Python, JS, JSON, XML, Makefile, ...), with a **VS Code Dark+** color palette
+- ✅ Monospace font for code files: source code files (`*.c`, `*.py`, `*.js`, `*.sh`, `Makefile`, etc.) are displayed using a clean monospace / fixed-width font family in both the preview viewer and editor tabs, while rendered Markdown and HTML previews retain proportional typography
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
 - ✅ Non-UTF-8 files are sanitized before display (invalid bytes → U+FFFD)
 - ✅ Minimap right of the viewer: VS Code-like scaled overview of the displayed file (mini glyphs, or length-scaled bars for long files), with the viewport shown as a slider — click or drag on it to jump in the file
@@ -149,4 +150,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.7**: Rich HTML preview rendering in right panel (document title, headings, lists, blockquotes, preformatted code, Unicode border tables, inline formatting, links, and images) with `m` toggle for raw markup view
 - **v1.8**: Resizable multi-terminal layout: dynamic `GtkPaned` split hierarchy for side-by-side (`Ctrl+T`) and stacked (`Ctrl+Shift+T`) terminals, allowing smooth divider resizing across multiple open terminal panes
 - **v1.9**: Expandable & collapsible directory tree: hierarchical `GtkTreeStore` with lazy-loading subdirectories, folder icons (`📁` / `📂`), tree hierarchy guide lines, keyboard expand/collapse controls (`Space`, `l`/`Right`, `Left`, `Enter`), and multi-level tree navigation
+- **v1.10**: Monospace font for code files: automatic fixed-width font styling for source code files (`*.c`, `*.py`, etc.) and raw markup views in both the right-pane viewer and editor tabs
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)

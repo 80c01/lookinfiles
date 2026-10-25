@@ -694,6 +694,7 @@ void reload_directory(AppData* app, const gchar* new_dir) {
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
     gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
     gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 0);
+    set_view_monospace(app->text_view, FALSE);
     gtk_text_buffer_set_text(app->buffer, "", -1);
     app->viewer_match = -1;
 
