@@ -4,7 +4,177 @@
 typedef struct {
     GtkTextBuffer* buffer;
     gchar* base_dir;
+    GtkTreeModel* model;
+    GtkTreeView* tree_view;
+    GtkTreeSelection* selection;
+    GtkWidget* search_entry;
+    gchar* search_term;
+    gboolean pending_g; /* pour la sequence gg */
 } AppData;
+
+/* ===== Navigation style vim ===== */
+
+static gint list_count(AppData* app) {
+    return gtk_tree_model_iter_n_children(app->model, NULL);
+}
+
+static gint current_index(AppData* app) {
+    GtkTreeIter it;
+    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+        return -1;
+    }
+    GtkTreePath* p = gtk_tree_model_get_path(app->model, &it);
+    gint i = -1;
+    gint* ind = gtk_tree_path_get_indices(p);
+    if (ind != NULL && gtk_tree_path_get_depth(p) > 0) {
+        i = ind[0];
+    }
+    gtk_tree_path_free(p);
+    return i;
+}
+
+static void select_index(AppData* app, gint idx) {
+    gint n = list_count(app);
+    if (n <= 0) {
+        return;
+    }
+    if (idx < 0) {
+        idx = 0;
+    }
+    if (idx > n - 1) {
+        idx = n - 1;
+    }
+    GtkTreeIter it;
+    if (!gtk_tree_model_iter_nth_child(app->model, &it, NULL, idx)) {
+        return;
+    }
+    gtk_tree_selection_select_iter(app->selection, &it);
+    GtkTreePath* p = gtk_tree_model_get_path(app->model, &it);
+    gtk_tree_view_set_cursor(app->tree_view, p, NULL, FALSE);
+    gtk_tree_path_free(p);
+}
+
+/* ===== Recherche (/, n, N) ===== */
+
+static gboolean name_matches(AppData* app, gint idx) {
+    GtkTreeIter it;
+    if (!gtk_tree_model_iter_nth_child(app->model, &it, NULL, idx)) {
+        return FALSE;
+    }
+    gchar* name = NULL;
+    gtk_tree_model_get(app->model, &it, 0, &name, -1);
+    gboolean res = FALSE;
+    if (name != NULL && app->search_term != NULL) {
+        gchar* hay = g_utf8_casefold(name, -1);
+        gchar* needle = g_utf8_casefold(app->search_term, -1);
+        res = (hay != NULL && needle != NULL && strstr(hay, needle) != NULL);
+        g_free(hay);
+        g_free(needle);
+    }
+    g_free(name);
+    return res;
+}
+
+static void do_search(AppData* app, gint direction) {
+    if (app->search_term == NULL || app->search_term[0] == '\0') {
+        return;
+    }
+    gint n = list_count(app);
+    if (n <= 0) {
+        return;
+    }
+    gint cur = current_index(app);
+    for (gint k = 1; k <= n; k++) {
+        gint idx = (direction > 0) ? ((cur + k) % n + n) % n
+                                   : ((cur - k) % n + n) % n;
+        if (name_matches(app, idx)) {
+            select_index(app, idx);
+            return;
+        }
+    }
+}
+
+static void show_search(AppData* app) {
+    gtk_widget_show(app->search_entry);
+    gtk_widget_grab_focus(app->search_entry);
+}
+
+static void hide_search(AppData* app) {
+    gtk_widget_hide(app->search_entry);
+    gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+}
+
+static void on_search_changed(GtkSearchEntry* entry, gpointer data) {
+    AppData* app = (AppData*)data;
+    const gchar* text = gtk_entry_get_text(GTK_ENTRY(entry));
+    g_free(app->search_term);
+    app->search_term = g_strdup(text);
+    do_search(app, +1);
+}
+
+static void on_search_activate(GtkWidget* entry, gpointer data) {
+    (void)entry;
+    hide_search((AppData*)data);
+}
+
+static gboolean on_search_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
+    (void)widget;
+    if (event->keyval == GDK_KEY_Escape) {
+        hide_search((AppData*)data);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/* Handler clavier du treeview : j k gg G / n N */
+static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
+    (void)widget;
+    AppData* app = (AppData*)data;
+    guint key = event->keyval;
+
+    switch (key) {
+    case GDK_KEY_j:
+        app->pending_g = FALSE;
+        select_index(app, current_index(app) + 1);
+        return TRUE;
+    case GDK_KEY_k:
+        app->pending_g = FALSE;
+        select_index(app, current_index(app) - 1);
+        return TRUE;
+    case GDK_KEY_g:
+        /* gg = aller au debut */
+        if (app->pending_g) {
+            select_index(app, 0);
+            app->pending_g = FALSE;
+        } else {
+            app->pending_g = TRUE;
+        }
+        return TRUE;
+    case GDK_KEY_G:
+        app->pending_g = FALSE;
+        select_index(app, list_count(app) - 1);
+        return TRUE;
+    case GDK_KEY_slash:
+        app->pending_g = FALSE;
+        show_search(app);
+        return TRUE;
+    case GDK_KEY_n: /* occurrence suivante */
+        app->pending_g = FALSE;
+        do_search(app, +1);
+        return TRUE;
+    case GDK_KEY_N: /* occurrence precedente */
+        app->pending_g = FALSE;
+        do_search(app, -1);
+        return TRUE;
+    case GDK_KEY_Escape:
+        app->pending_g = FALSE;
+        return FALSE;
+    default:
+        app->pending_g = FALSE; /* toute autre touche annule gg */
+        break;
+    }
+    return FALSE;
+}
 
 /* Charge le contenu du fichier selectionne dans le panneau droit */
 static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
@@ -150,25 +320,47 @@ int main(int argc, char** argv) {
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_container_add(GTK_CONTAINER(right_scroll), text_view);
 
+    /* Barre de recherche vim-like (/), masquee par defaut */
+    GtkWidget* search_entry = gtk_search_entry_new();
+    gtk_widget_set_no_show_all(search_entry, TRUE);
+
     /* Signalalement : selection a gauche => contenu a droite */
     AppData* app = g_new0(AppData, 1);
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
     app->base_dir = g_strdup(cwd);
+    app->model = GTK_TREE_MODEL(store);
+    app->tree_view = GTK_TREE_VIEW(tree_view);
+    app->search_entry = search_entry;
 
     GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
     gtk_tree_selection_set_mode(selection, GTK_SELECTION_SINGLE);
+    app->selection = selection;
     g_signal_connect(selection, "changed", G_CALLBACK(on_selection_changed), app);
+
+    /* Keybindings vim sur le treeview : j k gg G / n N */
+    g_signal_connect(tree_view, "key-press-event", G_CALLBACK(on_tree_key_press), app);
+
+    /* Barre de recherche : frappe = recherche live, Entree valide, Echap ferme */
+    g_signal_connect(search_entry, "search-changed", G_CALLBACK(on_search_changed), app);
+    g_signal_connect(search_entry, "activate", G_CALLBACK(on_search_activate), app);
+    g_signal_connect(search_entry, "key-press-event", G_CALLBACK(on_search_key_press), app);
 
     /* ===== GtkPaned : poignee de redimensionnement entre les 2 panneaux ===== */
     GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_paned_pack1(GTK_PANED(paned), left_scroll, TRUE, FALSE);
+
+    /* Colonne gauche : barre de recherche (masquee) + liste */
+    GtkWidget* left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(left_vbox), search_entry, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(left_vbox), left_scroll, TRUE, TRUE, 0);
+
+    gtk_paned_pack1(GTK_PANED(paned), left_vbox, TRUE, FALSE);
     gtk_paned_pack2(GTK_PANED(paned), right_scroll, TRUE, FALSE);
 
     /* Position initiale du séparateur : 300px pour le panneau gauche */
     gtk_paned_set_position(GTK_PANED(paned), 300);
 
     /* Largeur minimale du panneau gauche, mais redimensionnable au-dela */
-    gtk_widget_set_size_request(left_scroll, 150, -1);
+    gtk_widget_set_size_request(left_vbox, 150, -1);
 
     /* Boite verticale englobante : label du chemin + paned */
     GtkWidget* outer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
