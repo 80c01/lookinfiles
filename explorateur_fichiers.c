@@ -1270,11 +1270,9 @@ int main(int argc, char** argv) {
 
     /* GtkTreeView avec deux colonnes (Nom / Type) */
     GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(tree_view), TRUE);
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(tree_view), FALSE);
 
     GtkTreeViewColumn* col_name = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col_name, "Fichiers");
-    gtk_tree_view_column_set_resizable(col_name, TRUE);
     gtk_tree_view_column_set_expand(col_name, TRUE);
     GtkCellRenderer* renderer_name = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col_name, renderer_name, TRUE);
