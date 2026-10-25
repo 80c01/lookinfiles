@@ -60,8 +60,8 @@ static void minimap_build_cache(GtkWidget* widget, AppData* app,
         cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     cairo_t* cc = cairo_create(app->mm_cache);
 
-    /* Background identical to the preview pane (#0a0b0c) */
-    cairo_set_source_rgb(cc, 10.0 / 255.0, 11.0 / 255.0, 12.0 / 255.0);
+    /* Background identical to the preview pane (#121314) */
+    cairo_set_source_rgb(cc, 18.0 / 255.0, 19.0 / 255.0, 20.0 / 255.0);
     cairo_paint(cc);
 
     gint lines = gtk_text_buffer_get_line_count(app->buffer);
@@ -189,7 +189,7 @@ gboolean on_minimap_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     }
 
     /* Thin border on the viewer side */
-    cairo_set_source_rgb(cr, 26.0 / 255.0, 28.0 / 255.0, 30.0 / 255.0);
+    cairo_set_source_rgb(cr, 40.0 / 255.0, 42.0 / 255.0, 44.0 / 255.0);
     cairo_rectangle(cr, 0, 0, 1, a.height);
     cairo_fill(cr);
 

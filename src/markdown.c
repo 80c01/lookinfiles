@@ -83,7 +83,7 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "family", "monospace",
                "scale", 0.85,
                "foreground", "#808080",
-               "background", "#0a0b0c",
+               "background", "#121314",
                "left-margin", 24,
                "pixels-above-lines", 8,
                "pixels-below-lines", 2);

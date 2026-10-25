@@ -162,7 +162,7 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
                "family", "monospace",
                "scale", 0.85,
                "foreground", "#808080",
-               "background", "#0a0b0c",
+               "background", "#121314",
                "left-margin", 16,
                "pixels-above-lines", 6,
                "pixels-below-lines", 4);
