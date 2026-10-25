@@ -818,7 +818,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "gg / G", "Jump to the start / end of the file"},
     {"Right panel (viewer)", "/", "Search in the file (n / N: next / previous match)"},
     /* Global */
-    {"Global", "Ctrl+T", "Add a terminal pane beside the running ones (exit the shell to close it)"},
+    {"Global", "Ctrl+T", "Open a terminal pane right of the running ones (exit the shell to close it)"},
+    {"Global", "Ctrl+Shift+T", "Open a new terminal pane below the running ones"},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},
     {"Global", "f", "Toggle fullscreen (Ctrl+F keeps its paging role)"},
     {"Global", "Ctrl+Shift+L", "Stack the terminal pane under the viewer, or put it back beside it (the file list stays fixed)"},
@@ -1651,7 +1652,7 @@ static void on_minimap_realize(GtkWidget* widget, gpointer data) {
     g_object_unref(cursor);
 }
 
-/* ===== Ctrl-T: embedded terminal in a panel right of the viewer ===== */
+/* ===== Ctrl+T / Ctrl+Shift+T: embedded terminals beside/below ===== */
 
 #ifdef HAVE_VTE
 /* Wired later in this section */
@@ -1719,30 +1720,52 @@ static void spawn_shell(AppData* app, VteTerminal* term) {
                              on_spawn_result, app);
 }
 
-/* One side-by-side terminal pane: theme, signals and a fresh shell */
-static void term_spawn_pane(AppData* app) {
+/* One terminal pane: theme, signals and a fresh shell. Ctrl+t packs it
+ * beside the last pane of the bottom row; Ctrl+Shift+T starts a new row
+ * below the running ones. */
+static void term_spawn_pane(AppData* app, gboolean new_row) {
     GtkWidget* vte = vte_terminal_new();
     apply_terminal_theme(VTE_TERMINAL(vte));
     g_signal_connect(vte, "child-exited",
                      G_CALLBACK(on_term_child_exited), app);
     g_signal_connect(vte, "realize", G_CALLBACK(on_vte_realize), app);
     spawn_shell(app, VTE_TERMINAL(vte));
-    gtk_box_pack_start(GTK_BOX(app->term_box), vte, TRUE, TRUE, 0);
-    /* no-show-all applies to term_scroll only, the pane needs a show() */
+
+    GtkWidget* row;
+    GList* rows = gtk_container_get_children(GTK_CONTAINER(app->term_box));
+    if (new_row || rows == NULL) {
+        /* A fresh terminal row below the running ones */
+        row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+        gtk_box_pack_start(GTK_BOX(app->term_box), row, TRUE, TRUE, 0);
+        /* no-show-all applies to term_scroll only: the row needs a show() */
+        gtk_widget_show(row);
+    } else {
+        GList* last = g_list_last(rows);
+        row = GTK_WIDGET(last->data); /* pack beside the last pane */
+    }
+    g_list_free(rows);
+    gtk_box_pack_start(GTK_BOX(row), vte, TRUE, TRUE, 0);
     gtk_widget_show(vte);
     /* Focus is taken in on_vte_realize(), once the terminal is realized */
 }
 
-/* All the visible terminal panes, in row order */
+/* All the visible terminal panes, in visual order: top row first,
+ * left to right inside each row */
 static GPtrArray* term_visible_panes(AppData* app) {
     GPtrArray* panes = g_ptr_array_new();
-    GList* children = gtk_container_get_children(GTK_CONTAINER(app->term_box));
-    for (GList* l = children; l != NULL; l = l->next) {
-        if (gtk_widget_get_visible(GTK_WIDGET(l->data))) {
-            g_ptr_array_add(panes, l->data);
+    GList* rows =
+        gtk_container_get_children(GTK_CONTAINER(app->term_box));
+    for (GList* r = rows; r != NULL; r = r->next) {
+        GList* panes_in_row =
+            gtk_container_get_children(GTK_CONTAINER(r->data));
+        for (GList* l = panes_in_row; l != NULL; l = l->next) {
+            if (gtk_widget_get_visible(GTK_WIDGET(l->data))) {
+                g_ptr_array_add(panes, l->data);
+            }
         }
+        g_list_free(panes_in_row);
     }
-    g_list_free(children);
+    g_list_free(rows);
     return panes;
 }
 #endif /* HAVE_VTE */
@@ -1751,10 +1774,15 @@ static void on_term_child_exited(VteTerminal* term, gint status, gpointer data) 
     (void)status;
     AppData* app = (AppData*)data;
 #ifdef HAVE_VTE
-    /* Drop the pane whose shell ended; the panel hides once empty */
-    GtkWidget* box = gtk_widget_get_parent(GTK_WIDGET(term));
-    if (box == GTK_WIDGET(app->term_box)) {
-        gtk_container_remove(GTK_CONTAINER(box), GTK_WIDGET(term));
+    /* Drop the pane whose shell ended, and its row when it gets empty;
+     * the whole panel hides once no shell is left */
+    GtkWidget* row = gtk_widget_get_parent(GTK_WIDGET(term));
+    if (row != NULL && gtk_widget_get_parent(row) ==
+                       GTK_WIDGET(app->term_box)) {
+        gtk_container_remove(GTK_CONTAINER(row), GTK_WIDGET(term));
+        if (gtk_container_get_children(GTK_CONTAINER(row)) == NULL) {
+            gtk_container_remove(GTK_CONTAINER(app->term_box), row);
+        }
     }
     if (gtk_container_get_children(GTK_CONTAINER(app->term_box)) == NULL) {
         gtk_widget_hide(app->term_scroll);
@@ -1782,7 +1810,7 @@ static void on_vte_realize(GtkWidget* term, gpointer data) {
 }
 
 /* Alt+Left / Alt+Right: move the keyboard focus between the open panels:
- * file list -> text viewer -> each Ctrl-T terminal pane (side by side) */
+ * file list -> text viewer -> each terminal pane (rows left to right) */
 static void focus_adjacent_panel(gint step, AppData* app) {
     GPtrArray* panels = g_ptr_array_new();
     gint count;
@@ -1843,18 +1871,22 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
         return TRUE;
     }
 
-    if ((event->state & GDK_CONTROL_MASK) == 0 || event->keyval != GDK_KEY_t) {
+    /* Ctrl+t: terminal pane beside the last running one;
+     * Ctrl+Shift+T: a new terminal row below the running ones.
+     * Shift capitalizes the keyval, which is how they differ. */
+    if ((event->state & GDK_CONTROL_MASK) == 0 ||
+        (event->keyval != GDK_KEY_t && event->keyval != GDK_KEY_T)) {
         return FALSE;
     }
 
 #ifdef HAVE_VTE
-    /* Ctrl-T opens a NEW pane beside the running ones: each pane gets its
-     * own shell in the current directory. Exit the shell (Ctrl-D / exit)
-     * to drop its pane; the panel hides when the last shell is gone. */
+    /* Each pane gets its own shell in the current directory. Exit the
+     * shell (Ctrl-D / exit) to drop its pane; the panel hides when the
+     * last shell is gone. */
     if (!gtk_widget_get_visible(app->term_scroll)) {
         gtk_widget_show(app->term_scroll);
     }
-    term_spawn_pane(app);
+    term_spawn_pane(app, event->keyval == GDK_KEY_T /* new row below? */);
 #else
     /* No VTE installed: the panel is a notice instead of a terminal */
     gtk_widget_set_visible(app->term_scroll,
@@ -2194,7 +2226,7 @@ int main(int argc, char** argv) {
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_no_show_all(term_scroll, TRUE); /* hidden until Ctrl-T */
 #ifdef HAVE_VTE
-    GtkWidget* term_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    GtkWidget* term_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2); /* rows of panes */
     gtk_container_add(GTK_CONTAINER(term_scroll), term_box);
     /* term_scroll carries no-show-all: show_all(window) never descends
      * into it, so the pane row must be shown explicitly (the whole panel

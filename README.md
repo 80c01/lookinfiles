@@ -23,7 +23,7 @@ Simple graphical application to browse the file system.
 | `Ctrl+Q` | Quit the application |
 | `f` | Toggle fullscreen (works with either panel focused; `Ctrl+F` keeps its paging role) |
 | `Ctrl+Shift+L` | Stack the terminal pane below the viewer, or put it back beside it; the file list panel stays fixed and the viewer/terminal split ratio is kept |
-| `Ctrl+T` | Add a terminal pane right of the viewer (needs `libvte-2.91-dev`); each press opens another pane beside the running ones, each with a fresh shell in the current directory — exit the shell (`Ctrl+D` / `exit`) to close its pane |
+| `Ctrl+T` | Terminal pane beside the viewer (needs `libvte-2.91-dev`): `Ctrl+T` opens a pane right of the previous ones, `Ctrl+Shift+T` opens a new pane below them — each with a fresh shell in the current directory; exit the shell (`Ctrl+D` / `exit`) to close its pane |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels: file list → viewer → terminal panel (cycles) |
 
 ### Left panel (when the list has focus)
