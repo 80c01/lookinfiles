@@ -215,6 +215,15 @@ void minimap_goto(AppData* app, gdouble y) {
         return;
     }
 
+    /* Keep horizontal scroll locked to origin so left padding is never scrolled away */
+    GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
+    if (hadj != NULL) {
+        gdouble min_h = gtk_adjustment_get_lower(hadj);
+        if (gtk_adjustment_get_value(hadj) != min_h) {
+            gtk_adjustment_set_value(hadj, min_h);
+        }
+    }
+
     gint line = CLAMP((gint)(y / mm), 0, lines - 1);
     gdouble min_v = gtk_adjustment_get_lower(vadj);
     gdouble max_v = gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj);
@@ -277,7 +286,11 @@ gboolean on_minimap_button_release(GtkWidget* widget,
                                    gpointer data) {
     (void)widget;
     (void)event;
-    ((AppData*)data)->mm_dragging = FALSE;
+    AppData* app = (AppData*)data;
+    if (app->mm_dragging) {
+        app->mm_dragging = FALSE;
+        return TRUE;
+    }
     return FALSE;
 }
 
