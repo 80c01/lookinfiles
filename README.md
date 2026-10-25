@@ -5,6 +5,7 @@ Simple graphical application to browse the file system.
 ## 🎯 Features (current version)
 
 - ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), single "Name" column with VS Code-like **emoji icons** by file type
+- ✅ Expandable directory tree: directories in the left panel can be expanded/collapsed (click expander arrow, press `Space`, `l` / `Right`, or `Enter`), displaying nested contents inline with tree hierarchy lines. Expanding/collapsing is preserved across sort and hidden toggles.
 - ✅ Right panel: content viewer — clicking a file on the left shows its content on the right; selecting a** directory** lists its contents
 - ✅ Syntax highlighting in the viewer for text files (optional `GtkSourceView`: C, C++, Python, JS, JSON, XML, Makefile, ...), with a **VS Code Dark+** color palette
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
@@ -32,14 +33,17 @@ Simple graphical application to browse the file system.
 
 | Key | Action |
 |---|---|
-| `j` / `k` | Select next / previous entry |
+| `j` / `k` | Select next / previous visible entry (navigates through expanded subdirectories) |
+| `Space` | Expand / collapse the selected directory |
+| `l` / `Right` | Expand the selected directory, or step into its first child |
+| `Left` | Collapse the selected directory, or jump to its parent directory row |
 | `Ctrl+F` | Jump one page forward (like Page Down) |
 | `Ctrl+B` | Jump one page backward (like Page Up) |
 | `gg` | Go to the top of the list |
 | `G` | Go to the bottom of the list |
 | `/` | Open the search bar (live search, case-insensitive) |
 | `n` / `N` | Next / previous match of the searched term |
-| `Enter` / `Double-click` | Enter the double-clicked directory, or open the selected file in a new editing tab of the right panel |
+| `Enter` / `Double-click` | Expand / collapse directory, or open selected file in a new editing tab of the right panel (`Ctrl+Enter` to enter directory as root) |
 | `Backspace` | Go to the parent directory |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
@@ -144,4 +148,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.6**: Modular code architecture: split monolithic codebase into dedicated modules in `src/` (`main`, `file_list`, `viewer`, `markdown`, `editor`, `minimap`, `terminal`, `search`, `ui`)
 - **v1.7**: Rich HTML preview rendering in right panel (document title, headings, lists, blockquotes, preformatted code, Unicode border tables, inline formatting, links, and images) with `m` toggle for raw markup view
 - **v1.8**: Resizable multi-terminal layout: dynamic `GtkPaned` split hierarchy for side-by-side (`Ctrl+T`) and stacked (`Ctrl+Shift+T`) terminals, allowing smooth divider resizing across multiple open terminal panes
+- **v1.9**: Expandable & collapsible directory tree: hierarchical `GtkTreeStore` with lazy-loading subdirectories, folder icons (`📁` / `📂`), tree hierarchy guide lines, keyboard expand/collapse controls (`Space`, `l`/`Right`, `Left`, `Enter`), and multi-level tree navigation
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)

@@ -405,9 +405,18 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
 
     gchar* name = NULL;
     gchar* type = NULL;
-    gtk_tree_model_get(model, &it, 0, &name, 1, &type, -1);
+    gchar* full = NULL;
+    gtk_tree_model_get(model, &it,
+                       COL_NAME, &name,
+                       COL_TYPE, &type,
+                       COL_PATH, &full, -1);
 
-    gchar* full = g_build_filename(app->base_dir, name, NULL);
+    if (name == NULL || type == NULL || g_strcmp0(type, "-") == 0 || full == NULL) {
+        g_free(name);
+        g_free(type);
+        g_free(full);
+        return;
+    }
 
     if (g_strcmp0(type, "dir") == 0) {
         GString* listing = g_string_new(NULL);

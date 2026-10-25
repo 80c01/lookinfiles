@@ -1,13 +1,13 @@
 #include "search.h"
 #include "file_list.h"
 
-static gboolean name_matches(AppData* app, gint idx) {
+static gboolean path_matches(AppData* app, GtkTreePath* path) {
     GtkTreeIter it;
-    if (!gtk_tree_model_iter_nth_child(app->model, &it, NULL, idx)) {
+    if (!gtk_tree_model_get_iter(app->model, &it, path)) {
         return FALSE;
     }
     gchar* name = NULL;
-    gtk_tree_model_get(app->model, &it, 0, &name, -1);
+    gtk_tree_model_get(app->model, &it, COL_NAME, &name, -1);
     gboolean res = FALSE;
     if (name != NULL && app->search_term != NULL) {
         gchar* hay = g_utf8_casefold(name, -1);
@@ -24,19 +24,41 @@ void do_search(AppData* app, gint direction) {
     if (app->search_term == NULL || app->search_term[0] == '\0') {
         return;
     }
-    gint n = list_count(app);
-    if (n <= 0) {
+    GPtrArray* paths = g_ptr_array_new_with_free_func((GDestroyNotify)gtk_tree_path_free);
+    GtkTreePath* p = get_first_visible_path(app->tree_view);
+    while (p != NULL) {
+        g_ptr_array_add(paths, p);
+        p = get_next_visible_path(app->tree_view, p);
+    }
+    if (paths->len == 0) {
+        g_ptr_array_unref(paths);
         return;
     }
-    gint cur = current_index(app);
+
+    gint cur = -1;
+    GtkTreeIter sel_it;
+    if (gtk_tree_selection_get_selected(app->selection, NULL, &sel_it)) {
+        GtkTreePath* sel_path = gtk_tree_model_get_path(app->model, &sel_it);
+        for (guint i = 0; i < paths->len; i++) {
+            if (gtk_tree_path_compare((GtkTreePath*)g_ptr_array_index(paths, i), sel_path) == 0) {
+                cur = (gint)i;
+                break;
+            }
+        }
+        gtk_tree_path_free(sel_path);
+    }
+
+    gint n = (gint)paths->len;
     for (gint k = 1; k <= n; k++) {
         gint idx = (direction > 0) ? ((cur + k) % n + n) % n
                                    : ((cur - k) % n + n) % n;
-        if (name_matches(app, idx)) {
-            select_index(app, idx);
-            return;
+        GtkTreePath* target = (GtkTreePath*)g_ptr_array_index(paths, idx);
+        if (path_matches(app, target)) {
+            select_path(app, target);
+            break;
         }
     }
+    g_ptr_array_unref(paths);
 }
 
 void show_search(AppData* app, gboolean from_viewer) {

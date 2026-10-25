@@ -21,6 +21,16 @@
 #include <gio/gio.h>
 #endif
 
+/* Tree model columns */
+enum {
+    COL_NAME,    /* raw file or directory name */
+    COL_TYPE,    /* "dir", "file", or "-" */
+    COL_LABEL,   /* display label with icon (emoji + space + name) */
+    COL_PATH,    /* full absolute path on disk */
+    COL_LOADED,  /* boolean: whether sub-items have been loaded */
+    COL_COUNT
+};
+
 /* Sort modes cycled with 'o' */
 enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 
@@ -66,6 +76,7 @@ typedef struct {
     gboolean search_in_viewer; /* '/' opened from viewer, not list */
     gint viewer_match;    /* last viewer match (char offset), -1 = none */
     gboolean render_raw;   /* FALSE = rendered preview (default), TRUE = raw text */
+    GHashTable* expanded_paths; /* set of full_path strings for expanded directories */
 
     /* File monitors */
     GFileMonitor* dir_monitor;   /* current directory */

@@ -66,24 +66,26 @@ int main(int argc, char** argv) {
     GtkWidget* sep_label = gtk_label_new(" ");
     gtk_widget_set_halign(sep_label, GTK_ALIGN_START);
 
-    /* Left pane: file list store
-     * col0 = raw name, col1 = type, col2 = display label (emoji + name) */
-    GtkListStore* store =
-        gtk_list_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
-
-    populate_store(store, start_dir, FALSE, SORT_NAME);
+    /* Left pane: file tree store */
+    GtkTreeStore* store =
+        gtk_tree_store_new(COL_COUNT,
+                           G_TYPE_STRING,   /* COL_NAME */
+                           G_TYPE_STRING,   /* COL_TYPE */
+                           G_TYPE_STRING,   /* COL_LABEL */
+                           G_TYPE_STRING,   /* COL_PATH */
+                           G_TYPE_BOOLEAN); /* COL_LOADED */
 
     GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
     gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(tree_view), FALSE);
+    gtk_tree_view_set_enable_tree_lines(GTK_TREE_VIEW(tree_view), TRUE);
+    gtk_tree_view_set_show_expanders(GTK_TREE_VIEW(tree_view), TRUE);
 
     GtkTreeViewColumn* col_name = gtk_tree_view_column_new();
     gtk_tree_view_column_set_expand(col_name, TRUE);
     GtkCellRenderer* renderer_name = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col_name, renderer_name, TRUE);
-    gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", 2);
+    gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", COL_LABEL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_name);
-
-    g_object_unref(store);
 
     GtkWidget* left_scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(left_scroll),
@@ -154,6 +156,9 @@ int main(int argc, char** argv) {
     app->base_dir = g_strdup(start_dir);
     app->model = GTK_TREE_MODEL(store);
     app->tree_view = GTK_TREE_VIEW(tree_view);
+    app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    populate_store(store, app, start_dir, FALSE, SORT_NAME);
+    g_object_unref(store);
     app->text_view = text_view;
     app->search_entry = search_entry;
     app->path_label = path_label;
@@ -200,6 +205,9 @@ int main(int argc, char** argv) {
     app->selection = selection;
     g_signal_connect(selection, "changed", G_CALLBACK(on_selection_changed), app);
 
+    g_signal_connect(tree_view, "test-expand-row", G_CALLBACK(on_tree_test_expand_row), app);
+    g_signal_connect(tree_view, "row-expanded", G_CALLBACK(on_tree_row_expanded), app);
+    g_signal_connect(tree_view, "row-collapsed", G_CALLBACK(on_tree_row_collapsed), app);
     g_signal_connect(tree_view, "key-press-event", G_CALLBACK(on_tree_key_press), app);
     g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), app);
     g_signal_connect(text_view, "key-press-event", G_CALLBACK(on_viewer_key_press), app);
@@ -252,6 +260,8 @@ int main(int argc, char** argv) {
     if (start_fullscreen) {
         gtk_window_fullscreen(GTK_WINDOW(window));
     }
+
+    select_first_row(app);
 
     gtk_main();
 

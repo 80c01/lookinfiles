@@ -10,12 +10,34 @@ gboolean is_renderable_file(const gchar* name);
 const gchar* file_icon(const gchar* name, gboolean is_dir);
 
 gint list_count(AppData* app);
-gint current_index(AppData* app);
-void select_index(AppData* app, gint idx);
-gboolean select_by_name(AppData* app, const gchar* name);
 gint count_visible_rows(AppData* app);
 
-void populate_store(GtkListStore* store, const gchar* dirname, gboolean show_hidden, gint sort_mode);
+GtkTreePath* get_first_visible_path(GtkTreeView* view);
+GtkTreePath* get_last_visible_path(GtkTreeView* view);
+GtkTreePath* get_next_visible_path(GtkTreeView* view, GtkTreePath* path);
+GtkTreePath* get_prev_visible_path(GtkTreeView* view, GtkTreePath* path);
+
+void select_path(AppData* app, GtkTreePath* path);
+void select_first_row(AppData* app);
+void select_last_row(AppData* app);
+void select_next_row(AppData* app);
+void select_prev_row(AppData* app);
+void page_down_rows(AppData* app);
+void page_up_rows(AppData* app);
+
+gboolean select_by_name(AppData* app, const gchar* name);
+gboolean select_by_path(AppData* app, const gchar* full_path);
+
+void populate_store(GtkTreeStore* store, AppData* app, const gchar* dirname,
+                    gboolean show_hidden, gint sort_mode);
+void reexpand_paths_recursive(AppData* app, GtkTreeIter* parent);
+
+gboolean on_tree_test_expand_row(GtkTreeView* tree_view, GtkTreeIter* iter,
+                                 GtkTreePath* path, gpointer user_data);
+void on_tree_row_expanded(GtkTreeView* tree_view, GtkTreeIter* iter,
+                          GtkTreePath* path, gpointer user_data);
+void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
+                           GtkTreePath* path, gpointer user_data);
 void update_path_label(AppData* app);
 void reload_directory(AppData* app, const gchar* new_dir);
 void refresh_listing(AppData* app);
