@@ -110,6 +110,9 @@ typedef struct {
     /* h: floating key-binding cheat sheet */
     GtkWidget* help_window;
 
+    /* Main window: f toggles fullscreen */
+    GtkWindow* window;
+
     /* Pane-resize feedback: small popup with both panes' sizes */
     GtkWidget* dim_window;
     GtkWidget* dim_label;
@@ -442,6 +445,9 @@ static void do_viewer_search(AppData* app, gint direction) {
 }
 
 /* Handler clavier du viewer : j k gg G / n N Ctrl+F Ctrl+B */
+/* f: fullscreen toggle (works from both panels) */
+static void toggle_fullscreen(GtkWindow* window);
+
 static gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
     (void)widget;
     AppData* app = (AppData*)data;
@@ -487,13 +493,14 @@ static gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_f: /* Ctrl+F : page suivante */
+    case GDK_KEY_f: /* Ctrl+F : page suivante ; f seul : plein ecran */
         app->pending_g = FALSE;
         if (event->state & GDK_CONTROL_MASK) {
             viewer_scroll_page(app, +1);
             return TRUE;
         }
-        return FALSE;
+        toggle_fullscreen(app->window);
+        return TRUE;
     case GDK_KEY_Escape:
         app->pending_g = FALSE;
         return FALSE;
@@ -709,6 +716,23 @@ static void refresh_listing(AppData* app) {
     }
 }
 
+/* f: fullscreen toggle; fullscreen state read from the GdkWindow because
+ * gtk_window_is_fullscreen() only exists since GTK 3.18 (we target 3.10) */
+static gboolean window_is_fullscreen(GtkWindow* win) {
+    GdkWindow* gdk_window =
+        gtk_widget_get_window(GTK_WIDGET(win));
+    return gdk_window != NULL &&
+           (gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_FULLSCREEN);
+}
+
+static void toggle_fullscreen(GtkWindow* window) {
+    if (window_is_fullscreen(window)) {
+        gtk_window_unfullscreen(window);
+    } else {
+        gtk_window_fullscreen(window);
+    }
+}
+
 /* I : basculer l'affichage des fichiers caches (prefixe .) */
 static void toggle_hidden_files(AppData* app) {
     app->show_hidden = !app->show_hidden;
@@ -777,6 +801,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     /* Global */
     {"Global", "Ctrl+T", "Toggle the embedded terminal panel"},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},
+    {"Global", "f", "Toggle fullscreen (Ctrl+F keeps its paging role)"},
     {"Global", "Ctrl+Q", "Quit"},
 };
 
@@ -936,13 +961,14 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_f: /* Ctrl+F : page suivante */
+    case GDK_KEY_f: /* Ctrl+F : page suivante ; f seul : plein ecran */
         app->pending_g = FALSE;
         if (event->state & GDK_CONTROL_MASK) {
             select_index(app, current_index(app) + count_visible_rows(app));
             return TRUE;
         }
-        return FALSE;
+        toggle_fullscreen(app->window);
+        return TRUE;
     case GDK_KEY_Escape:
         app->pending_g = FALSE;
         return FALSE;
@@ -1707,6 +1733,7 @@ int main(int argc, char** argv) {
 
     /* Signalalement : selection a gauche => contenu a droite */
     AppData* app = g_new0(AppData, 1);
+    app->window = GTK_WINDOW(window);
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
 #ifdef HAVE_GSV
     apply_vscode_scheme(app->buffer, text_view);
