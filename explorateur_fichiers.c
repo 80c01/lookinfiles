@@ -750,6 +750,13 @@ static void on_term_child_exited(VteTerminal* term, gint status, gpointer data) 
 
 /* Window-level handler: catches Ctrl-T before children, but only eats it
  * (other keys propagate to the focused widget / vim bindings untouched) */
+/* gtk_widget_grab_focus() requires a REALIZED widget; a freshly created
+ * terminal is not until it gets mapped, so grab the focus on realize */
+static void on_vte_realize(GtkWidget* term, gpointer data) {
+    (void)data;
+    gtk_widget_grab_focus(term);
+}
+
 static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
     (void)widget;
     AppData* app = (AppData*)data;
@@ -771,15 +778,16 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
     if (app->vte != NULL) {
         gtk_widget_destroy(app->vte);
     }
-    /* The container was never mapped: realize it BEFORE focusing the child */
     gtk_widget_show(app->term_scroll);
     app->vte = vte_terminal_new();
     gtk_container_add(GTK_CONTAINER(app->term_scroll), app->vte);
     g_signal_connect(app->vte, "child-exited",
                      G_CALLBACK(on_term_child_exited), app);
+    g_signal_connect(app->vte, "realize",
+                     G_CALLBACK(on_vte_realize), app);
     spawn_shell(app);
     gtk_widget_show_all(app->term_scroll);
-    gtk_widget_grab_focus(app->vte);
+    /* Focus is taken in on_vte_realize(), once the terminal is realized */
 #else
     /* No VTE installed: the panel is a notice instead of a terminal */
     gtk_widget_set_visible(app->term_scroll,
