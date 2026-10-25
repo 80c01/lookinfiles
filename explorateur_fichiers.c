@@ -1527,9 +1527,21 @@ int main(int argc, char** argv) {
     char cwd_buf[2048];
     const char* cwd = (getcwd(cwd_buf, sizeof(cwd_buf)) != NULL) ? cwd_buf : "/workspace";
 
+    /* Optional CLI argument: the directory to display (default: cwd).
+     * gtk_init already consumed our known options; argv[1] is left over. */
+    const char* start_dir = cwd;
+    if (argc > 1) {
+        if (g_file_test(argv[1], G_FILE_TEST_IS_DIR)) {
+            start_dir = argv[1];
+        } else {
+            g_printerr("[ '%s' is not a directory: showing %s instead ]\n",
+                       argv[1], cwd);
+        }
+    }
+
     /* Label pour montrer le path actuel (au-dessus de la zone divisée) */
     char path_text[512];
-    snprintf(path_text, sizeof(path_text), "Directory: %s", cwd);
+    snprintf(path_text, sizeof(path_text), "Directory: %s", start_dir);
     GtkWidget* path_label = gtk_label_new(path_text);
     gtk_widget_set_halign(path_label, GTK_ALIGN_START);
     gtk_widget_set_margin_start(path_label, 5);
@@ -1544,7 +1556,7 @@ int main(int argc, char** argv) {
         gtk_list_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
 
     /* Enumerer le contenu reel du repertoire courant */
-    populate_store(store, cwd, FALSE, SORT_NAME); /* caches masques, tri par nom */
+    populate_store(store, start_dir, FALSE, SORT_NAME); /* caches masques, tri par nom */
 
     /* GtkTreeView avec deux colonnes (Nom / Type) */
     GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
@@ -1611,7 +1623,7 @@ int main(int argc, char** argv) {
 #ifdef HAVE_GSV
     apply_vscode_scheme(app->buffer, text_view);
 #endif
-    app->base_dir = g_strdup(cwd);
+    app->base_dir = g_strdup(start_dir);
     app->model = GTK_TREE_MODEL(store);
     app->tree_view = GTK_TREE_VIEW(tree_view);
     app->text_view = text_view;
