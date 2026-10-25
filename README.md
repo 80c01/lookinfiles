@@ -48,7 +48,8 @@ gcc -o explorateur_fichiers explorateur_fichiers.c `pkg-config --cflags --libs g
 ## 🚀 Run
 
 ```bash
-./explorateur_fichiers
+./explorateur_fichiers            # windowed mode (default)
+./explorateur_fichiers -f         # start in fullscreen (same as --fullscreen)
 ```
 
 ## 📦 Prerequisites

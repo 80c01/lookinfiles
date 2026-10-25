@@ -800,6 +800,20 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
 }
 
 int main(int argc, char** argv) {
+    /* Strip our own options first: gtk_init aborts on unknown options.
+     * -f / --fullscreen: start in fullscreen mode. */
+    gboolean start_fullscreen = FALSE;
+    int kept = 0;
+    for (int i = 0; i < argc; i++) {
+        if (i > 0 && (g_strcmp0(argv[i], "-f") == 0 ||
+                      g_strcmp0(argv[i], "--fullscreen") == 0)) {
+            start_fullscreen = TRUE;
+            continue;
+        }
+        argv[kept++] = argv[i];
+    }
+    argv[kept] = NULL;
+    argc = kept;
     gtk_init(&argc, &argv);
 
     /* Theme sombre natif d'Adwaita */
@@ -957,6 +971,10 @@ int main(int argc, char** argv) {
 
     gtk_container_add(GTK_CONTAINER(window), outer_vbox);
     gtk_widget_show_all(window);
+
+    if (start_fullscreen) {
+        gtk_window_fullscreen(GTK_WINDOW(window));
+    }
 
     gtk_main();
 
