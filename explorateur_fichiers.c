@@ -786,7 +786,9 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
     g_signal_connect(app->vte, "realize",
                      G_CALLBACK(on_vte_realize), app);
     spawn_shell(app);
-    gtk_widget_show_all(app->term_scroll);
+    /* term_scroll has no-show-all: gtk_widget_show_all() on it would NOT
+     * reach children, so show the terminal explicitly */
+    gtk_widget_show(GTK_WIDGET(app->vte));
     /* Focus is taken in on_vte_realize(), once the terminal is realized */
 #else
     /* No VTE installed: the panel is a notice instead of a terminal */
