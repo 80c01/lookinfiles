@@ -55,6 +55,29 @@ static void select_index(AppData* app, gint idx) {
     gtk_tree_path_free(p);
 }
 
+/* Nombre de lignes visibles dans le treeview (pour Ctrl-F / Ctrl-B) */
+static gint count_visible_rows(AppData* app) {
+    GtkTreePath* start = NULL;
+    GtkTreePath* end = NULL;
+    if (!gtk_tree_view_get_visible_range(app->tree_view, &start, &end)) {
+        return 10; /* valeur de repli si le modele est vide */
+    }
+    gint s = 0;
+    gint e = 0;
+    gint* ind = gtk_tree_path_get_indices(start);
+    if (ind != NULL) {
+        s = ind[0];
+    }
+    ind = gtk_tree_path_get_indices(end);
+    if (ind != NULL) {
+        e = ind[0];
+    }
+    gtk_tree_path_free(start);
+    gtk_tree_path_free(end);
+    gint n = e - s + 1;
+    return (n > 0) ? n : 10;
+}
+
 /* ===== Recherche (/, n, N) ===== */
 
 static gboolean name_matches(AppData* app, gint idx) {
@@ -271,6 +294,20 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
             g_free(parent);
         }
         return TRUE;
+    case GDK_KEY_b: /* Ctrl+B : page precedente */
+        app->pending_g = FALSE;
+        if (event->state & GDK_CONTROL_MASK) {
+            select_index(app, current_index(app) - count_visible_rows(app));
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_f: /* Ctrl+F : page suivante */
+        app->pending_g = FALSE;
+        if (event->state & GDK_CONTROL_MASK) {
+            select_index(app, current_index(app) + count_visible_rows(app));
+            return TRUE;
+        }
+        return FALSE;
     case GDK_KEY_Escape:
         app->pending_g = FALSE;
         return FALSE;
