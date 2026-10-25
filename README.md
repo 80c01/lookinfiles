@@ -39,6 +39,21 @@ Simple graphical application to browse the file system.
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
 | `Esc` | Close the search bar |
 
+### Right panel (when the viewer has focus)
+
+Same vim bindings as the list, applied to the displayed content:
+
+| Key | Action |
+|---|---|
+| `j` / `k` | Scroll one line down / up |
+| `Ctrl+F` | Scroll one page forward (like Page Down) |
+| `Ctrl+B` | Scroll one page backward (like Page Up) |
+| `gg` | Go to the top of the file |
+| `G` | Go to the bottom of the file |
+| `/` | Open the search bar (searches in the displayed content) |
+| `n` / `N` | Next / previous occurrence (selected and centered, wraps around) |
+| `Esc` | Close the search bar |
+
 ## 📝 Build
 
 ```bash

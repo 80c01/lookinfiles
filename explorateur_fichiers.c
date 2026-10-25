@@ -80,6 +80,8 @@ typedef struct {
     gboolean show_hidden; /* fichiers caches (prefixe .) */
     gint sort_mode; /* SORT_NAME / DATE / SIZE / EXT */
     gboolean pending_g; /* pour la sequence gg */
+    gboolean search_in_viewer; /* '/' opened from the viewer, not the list */
+    gint viewer_match; /* last viewer match (char offset), -1 = none */
 
     /* Surveillance du disque (file monitors) */
     GFileMonitor* dir_monitor;   /* repertoire courant */
@@ -100,6 +102,8 @@ typedef struct {
 /* Moniteurs de fichiers, definis plus bas dans le fichier */
 static void monitor_directory(AppData* app);
 static void monitor_file(AppData* app, const char* path);
+/* Recherche dans le viewer, definie plus bas: utilisee par on_search_changed */
+static void do_viewer_search(AppData* app, gint direction);
 
 /* ===== Navigation style vim ===== */
 
@@ -206,14 +210,17 @@ static void do_search(AppData* app, gint direction) {
     }
 }
 
-static void show_search(AppData* app) {
+static void show_search(AppData* app, gboolean from_viewer) {
+    app->search_in_viewer = from_viewer;
     gtk_widget_show(app->search_entry);
     gtk_widget_grab_focus(app->search_entry);
 }
 
 static void hide_search(AppData* app) {
     gtk_widget_hide(app->search_entry);
-    gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    /* Return to the panel that opened the bar */
+    gtk_widget_grab_focus(app->search_in_viewer ? app->text_view
+                                                : GTK_WIDGET(app->tree_view));
 }
 
 static void on_search_changed(GtkSearchEntry* entry, gpointer data) {
@@ -221,7 +228,11 @@ static void on_search_changed(GtkSearchEntry* entry, gpointer data) {
     const gchar* text = gtk_entry_get_text(GTK_ENTRY(entry));
     g_free(app->search_term);
     app->search_term = g_strdup(text);
-    do_search(app, +1);
+    if (app->search_in_viewer) {
+        do_viewer_search(app, +1);
+    } else {
+        do_search(app, +1);
+    }
 }
 
 static void on_search_activate(GtkWidget* entry, gpointer data) {
@@ -236,6 +247,221 @@ static gboolean on_search_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
         return TRUE;
     }
     return FALSE;
+}
+
+/* ===== Right pane (viewer focused): same vim bindings as the list ===== */
+
+/* j / k in the viewer: scroll the viewport by one text line */
+static void viewer_scroll_lines(AppData* app, gint lines) {
+    GtkTextView* view = GTK_TEXT_VIEW(app->text_view);
+    GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+
+    /* One line height taken from the first buffered line */
+    GtkTextIter first;
+    gtk_text_buffer_get_start_iter(app->buffer, &first);
+    GdkRectangle rect;
+    gtk_text_view_get_iter_location(view, &first, &rect);
+    gdouble line_h = (rect.height > 0.0) ? rect.height : 14.0;
+
+    gtk_adjustment_set_value(adj, gtk_adjustment_get_value(adj) + lines * line_h);
+}
+
+/* Ctrl+F / Ctrl+B in the viewer: one viewport page down / up */
+static void viewer_scroll_page(AppData* app, gint direction) {
+    GtkTextView* view = GTK_TEXT_VIEW(app->text_view);
+    GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    gtk_adjustment_set_value(
+        adj, gtk_adjustment_get_value(adj) + direction * gtk_adjustment_get_page_size(adj));
+}
+
+/* gg / G in the viewer: jump to the top / bottom of the buffer */
+static void viewer_goto(AppData* app, gboolean top) {
+    GtkTextView* view = GTK_TEXT_VIEW(app->text_view);
+    GtkTextIter it;
+    if (top) {
+        gtk_text_buffer_get_start_iter(app->buffer, &it);
+    } else {
+        gtk_text_buffer_get_end_iter(app->buffer, &it);
+    }
+    gtk_text_view_scroll_to_iter(view, &it, 0.0, FALSE, 0.0, top ? 0.0 : 1.0);
+}
+
+/* Case-insensitive search (char-wise folding) from a char-offset anchor.
+ * Returns the match start offset or -1. */
+static gint utf8_ci_find_from(const gchar* hay, const gchar* needle, gint start) {
+    const gint hlen = g_utf8_strlen(hay, -1);
+    const gint nlen = g_utf8_strlen(needle, -1);
+    if (nlen == 0 || hlen == 0 || nlen > hlen) {
+        return -1;
+    }
+
+    gunichar* hcv = g_new(gunichar, hlen); /* NOSONAR: bounded by PREVIEW_BYTES */
+    gunichar* ncv = g_new(gunichar, nlen);
+    const gchar* p = hay;
+    for (gint i = 0; i < hlen; i++) {
+        hcv[i] = g_unichar_tolower(g_utf8_get_char(p));
+        p = g_utf8_next_char(p);
+    }
+    p = needle;
+    for (gint i = 0; i < nlen; i++) {
+        ncv[i] = g_unichar_tolower(g_utf8_get_char(p));
+        p = g_utf8_next_char(p);
+    }
+
+    gint max_start = hlen - nlen;
+    gint match = -1;
+    const gint kmax = (start <= max_start) ? max_start : -1;
+    for (gint k = start; k <= kmax; k++) {
+        if (hcv[k] != ncv[0]) {
+            continue;
+        }
+        gint j = 1;
+        while (j < nlen && hcv[k + j] == ncv[j]) {
+            j++;
+        }
+        if (j == nlen) {
+            match = k;
+            break;
+        }
+    }
+    g_free(hcv);
+    g_free(ncv);
+    return match;
+}
+
+/* Viewer search (/ n N): select and scroll to next/prev occurrence */
+static void do_viewer_search(AppData* app, gint direction) {
+    if (app->search_term == NULL || app->search_term[0] == '\0') {
+        return;
+    }
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(app->buffer, &start, &end);
+    gchar* text = gtk_text_buffer_get_text(app->buffer, &start, &end, FALSE);
+    if (text == NULL || text[0] == '\0') {
+        g_free(text);
+        return;
+    }
+
+    const gint hlen = g_utf8_strlen(text, -1);
+    /* Anchor: the last match start (-1 = none). For the next-occurrence
+     * direction we resume after it; for previous we stay below it. */
+    gint anchor = ((app->viewer_match >= 0 && app->viewer_match < hlen))
+                      ? app->viewer_match : -1;
+
+    gint match = -1;
+    if (direction > 0) {
+        /* After the current match (or from the top) */
+        gint from = (anchor >= 0) ? anchor : 0;
+        const gchar* ap = (anchor >= 0)
+            ? g_utf8_offset_to_pointer(text, anchor) : text;
+        from = g_utf8_pointer_to_offset(text, g_utf8_next_char(ap));
+        match = utf8_ci_find_from(text, app->search_term, from);
+        if (match < 0 && from > 0) {
+            /* Wrap around: search again from the top */
+            match = utf8_ci_find_from(text, app->search_term, 0);
+        }
+    } else {
+        /* Previous match: scan forward, keep the last one strictly before
+         * the anchor (or the last one overall when nothing is anchored) */
+        const gint limit = (anchor >= 0) ? anchor : hlen;
+        gint probe = 0;
+        while (probe <= limit) {
+            gint m = utf8_ci_find_from(text, app->search_term, probe);
+            if (m < 0 || m >= limit) {
+                break;
+            }
+            match = m;
+            probe = m + 1;
+        }
+        if (match < 0 && anchor >= 0) {
+            /* Wrap around: jump to the last occurrence in the buffer */
+            gint probe2 = 0;
+            for (;;) {
+                gint m = utf8_ci_find_from(text, app->search_term, probe2);
+                if (m < 0) {
+                    break;
+                }
+                match = m;
+                probe2 = m + 1;
+            }
+        }
+    }
+
+    if (match >= 0) {
+        gint nlen = g_utf8_strlen(app->search_term, -1);
+        GtkTextIter ms, me;
+        gtk_text_buffer_get_start_iter(app->buffer, &ms);
+        gtk_text_iter_set_offset(&ms, match);
+        gtk_text_buffer_get_start_iter(app->buffer, &me);
+        gtk_text_iter_set_offset(&me, match + nlen);
+        gtk_text_buffer_select_range(app->buffer, &ms, &me);
+        gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(app->text_view), &ms,
+                                     0.0, TRUE, 0.0, 0.5);
+        app->viewer_match = match;
+    }
+    g_free(text);
+}
+
+/* Handler clavier du viewer : j k gg G / n N Ctrl+F Ctrl+B */
+static gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
+    (void)widget;
+    AppData* app = (AppData*)data;
+    guint key = event->keyval;
+
+    switch (key) {
+    case GDK_KEY_j: /* une ligne vers le bas */
+        app->pending_g = FALSE;
+        viewer_scroll_lines(app, +1);
+        return TRUE;
+    case GDK_KEY_k: /* une ligne vers le haut */
+        app->pending_g = FALSE;
+        viewer_scroll_lines(app, -1);
+        return TRUE;
+    case GDK_KEY_g: /* gg = haut du fichier */
+        if (app->pending_g) {
+            app->pending_g = FALSE;
+            viewer_goto(app, TRUE);
+        } else {
+            app->pending_g = TRUE;
+        }
+        return TRUE;
+    case GDK_KEY_G: /* bas du fichier */
+        app->pending_g = FALSE;
+        viewer_goto(app, FALSE);
+        return TRUE;
+    case GDK_KEY_slash:
+        app->pending_g = FALSE;
+        show_search(app, TRUE);
+        return TRUE;
+    case GDK_KEY_n: /* occurrence suivante */
+        app->pending_g = FALSE;
+        do_viewer_search(app, +1);
+        return TRUE;
+    case GDK_KEY_N: /* occurrence precedente */
+        app->pending_g = FALSE;
+        do_viewer_search(app, -1);
+        return TRUE;
+    case GDK_KEY_b: /* Ctrl+B : page precedente */
+        app->pending_g = FALSE;
+        if (event->state & GDK_CONTROL_MASK) {
+            viewer_scroll_page(app, -1);
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_f: /* Ctrl+F : page suivante */
+        app->pending_g = FALSE;
+        if (event->state & GDK_CONTROL_MASK) {
+            viewer_scroll_page(app, +1);
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_Escape:
+        app->pending_g = FALSE;
+        return FALSE;
+    default:
+        app->pending_g = FALSE;
+        return FALSE;
+    }
 }
 
 /* Remplit le store avec le contenu reel du repertoire (dossiers d'abord, tries) */
@@ -316,6 +542,7 @@ static void reload_directory(AppData* app, const gchar* new_dir) {
 
     /* Vider le panneau droit */
     gtk_text_buffer_set_text(app->buffer, "", -1);
+    app->viewer_match = -1;
 
     /* Plus de fichier affiche a droite : couper son moniteur */
     g_free(app->viewed_path);
@@ -410,7 +637,7 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
         return TRUE;
     case GDK_KEY_slash:
         app->pending_g = FALSE;
-        show_search(app);
+        show_search(app, FALSE);
         return TRUE;
     case GDK_KEY_n: /* occurrence suivante */
         app->pending_g = FALSE;
@@ -499,6 +726,7 @@ static void load_file_content(AppData* app, const gchar* name, const gchar* full
         gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
         gtk_text_buffer_set_text(app->buffer, msg, -1);
         g_free(msg);
+        app->viewer_match = -1;
         return;
     }
 
@@ -534,12 +762,14 @@ static void load_file_content(AppData* app, const gchar* name, const gchar* full
             g_string_append_len(text, contents, (gssize)len);
         }
         gtk_text_buffer_set_text(app->buffer, text->str, (gint)text->len);
+        app->viewer_match = -1; /* stale anchor: content just changed */
         g_string_free(text, TRUE);
         g_free(contents);
     } else {
         gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
         gtk_text_buffer_set_text(app->buffer, msg, -1);
         g_free(msg);
+        app->viewer_match = -1;
     }
 }
 
@@ -689,6 +919,7 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
         }
 
         gtk_text_buffer_set_text(app->buffer, listing->str, (gint)listing->len);
+        app->viewer_match = -1;
         g_string_free(listing, TRUE);
     } else {
         load_file_content(app, name, full);
@@ -975,6 +1206,8 @@ int main(int argc, char** argv) {
 
     /* Keybindings vim sur le treeview : j k gg G / n N */
     g_signal_connect(tree_view, "key-press-event", G_CALLBACK(on_tree_key_press), app);
+    /* Same vim bindings on the viewer (jump + search in the file content) */
+    g_signal_connect(text_view, "key-press-event", G_CALLBACK(on_viewer_key_press), app);
 
     /* Barre de recherche : frappe = recherche live, Entree valide, Echap ferme */
     g_signal_connect(search_entry, "search-changed", G_CALLBACK(on_search_changed), app);
