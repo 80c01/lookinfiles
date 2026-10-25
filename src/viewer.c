@@ -117,7 +117,7 @@ void set_view_monospace(GtkWidget* view, gboolean monospace) {
 
 /* Return TRUE if file extension or content indicates source code */
 gboolean is_code_file(const gchar* name) {
-    if (name == NULL) {
+    if (name == NULL || is_image_file(name)) {
         return FALSE;
     }
     const gchar* ext = file_extension(name);
@@ -298,9 +298,135 @@ gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpointer dat
     }
 }
 
+/* Render image preview with centered metadata header and scaled pixbuf */
+void render_image_preview(AppData* app, const gchar* name, const gchar* full) {
+    gtk_text_buffer_set_text(app->buffer, "", -1);
+
+    gint orig_w = 0, orig_h = 0;
+    GdkPixbufFormat* fmt = gdk_pixbuf_get_file_info(full, &orig_w, &orig_h);
+    if (fmt == NULL || orig_w <= 0 || orig_h <= 0) {
+        gchar* msg = g_strdup_printf("[ Cannot decode image: %s ]", name);
+        gtk_text_buffer_set_text(app->buffer, msg, -1);
+        g_free(msg);
+        return;
+    }
+
+    gchar* fmt_name = gdk_pixbuf_format_get_name(fmt);
+    gchar* fmt_upper = g_ascii_strup(fmt_name, -1);
+    g_free(fmt_name);
+
+    struct stat st;
+    gint64 fsize = (g_stat(full, &st) == 0) ? (gint64)st.st_size : 0;
+    gchar* size_str = g_format_size((guint64)fsize);
+
+    /* Setup text tags for styling and centering */
+    GtkTextTagTable* tags = gtk_text_buffer_get_tag_table(app->buffer);
+    if (!gtk_text_tag_table_lookup(tags, "img_center")) {
+        gtk_text_buffer_create_tag(app->buffer, "img_center",
+                                   "justification", GTK_JUSTIFY_CENTER,
+                                   NULL);
+    }
+    if (!gtk_text_tag_table_lookup(tags, "img_header")) {
+        gtk_text_buffer_create_tag(app->buffer, "img_header",
+                                   "justification", GTK_JUSTIFY_CENTER,
+                                   "weight", PANGO_WEIGHT_BOLD,
+                                   "scale", 1.15,
+                                   "foreground", "#4fc1ff",
+                                   NULL);
+    }
+    if (!gtk_text_tag_table_lookup(tags, "img_sub")) {
+        gtk_text_buffer_create_tag(app->buffer, "img_sub",
+                                   "justification", GTK_JUSTIFY_CENTER,
+                                   "foreground", "#888888",
+                                   "scale", 0.9,
+                                   NULL);
+    }
+
+    /* Scaling */
+    gint target_w = orig_w;
+    gint target_h = orig_h;
+    gboolean is_fitted = FALSE;
+
+    if (!app->render_raw) {
+        /* Default mode: fit within available preview pane width and height */
+        GtkAllocation alloc;
+        gtk_widget_get_allocation(app->text_view, &alloc);
+        gint max_w = (alloc.width > 100) ? (alloc.width - 40) : 700;
+        gint max_h = (alloc.height > 140) ? (alloc.height - 120) : 500;
+        if (orig_w > max_w || orig_h > max_h) {
+            gdouble scale = MIN((gdouble)max_w / orig_w, (gdouble)max_h / orig_h);
+            target_w = MAX(1, (gint)(orig_w * scale));
+            target_h = MAX(1, (gint)(orig_h * scale));
+            is_fitted = TRUE;
+        }
+    }
+
+    GError* err = NULL;
+    GdkPixbuf* pix = gdk_pixbuf_new_from_file_at_scale(full, target_w, target_h, TRUE, &err);
+    if (pix == NULL) {
+        gchar* msg = g_strdup_printf("[ Error loading image: %s (%s) ]",
+                                     name, err ? err->message : "unknown error");
+        gtk_text_buffer_set_text(app->buffer, msg, -1);
+        g_free(msg);
+        if (err != NULL) {
+            g_error_free(err);
+        }
+        g_free(fmt_upper);
+        g_free(size_str);
+        return;
+    }
+
+    GtkTextIter iter;
+    gtk_text_buffer_get_end_iter(app->buffer, &iter);
+
+    /* Spacing */
+    gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, "\n", -1, "img_center", NULL);
+
+    /* Header title */
+    gchar* title = g_strdup_printf("🖼️  %s\n", name);
+    gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, title, -1, "img_header", NULL);
+    g_free(title);
+
+    /* Subtitle with metadata & mode hint */
+    const gchar* mode_hint = is_fitted ? "  [fitted, press m for 1:1]"
+                           : (app->render_raw && (orig_w != target_w || orig_h != target_h))
+                                       ? "  [1:1 scale, press m to fit]"
+                                       : "  [1:1 scale]";
+    gchar* meta = g_strdup_printf("%s  •  %d × %d px  •  %s%s\n\n",
+                                  fmt_upper, orig_w, orig_h, size_str, mode_hint);
+    gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, meta, -1, "img_sub", NULL);
+    g_free(meta);
+    g_free(fmt_upper);
+    g_free(size_str);
+
+    /* Insert image */
+    gtk_text_buffer_insert_pixbuf(app->buffer, &iter, pix);
+    g_object_unref(pix);
+
+    /* Apply center tag to the image line */
+    GtkTextIter start_img = iter;
+    gtk_text_iter_backward_char(&start_img);
+    gtk_text_buffer_apply_tag_by_name(app->buffer, "img_center", &start_img, &iter);
+
+    gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, "\n\n", -1, "img_center", NULL);
+}
+
 void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     gboolean is_md = is_markdown_file(name) && !app->render_raw;
     gboolean is_html = is_html_file(name) && !app->render_raw;
+    gboolean is_img = is_image_file(name);
+
+    if (is_img) {
+        apply_viewer_language(app, NULL);
+        set_view_monospace(app->text_view, FALSE);
+        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
+        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
+        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
+        render_image_preview(app, name, full);
+        app->viewer_match = -1;
+        return;
+    }
+
     gboolean is_rendered = is_md || is_html;
 
     if (is_rendered) {

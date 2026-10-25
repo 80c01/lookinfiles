@@ -1,5 +1,6 @@
 #include "editor.h"
 #include "viewer.h"
+#include "file_list.h"
 
 EditorTab* editor_current_tab(AppData* app) {
     gint page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
@@ -47,6 +48,12 @@ void editor_apply_language(GtkTextBuffer* buffer, const gchar* name) {
 }
 
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
+    if (is_image_file(name)) {
+        /* Images are previewed in the main viewer tab */
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        return;
+    }
+
     /* Already open: switch to its existing tab */
     gint index = 0;
     for (GList* l = app->editors; l != NULL; l = l->next, index++) {

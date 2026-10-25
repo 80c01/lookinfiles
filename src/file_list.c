@@ -41,9 +41,37 @@ gboolean is_html_file(const gchar* name) {
             g_ascii_strcasecmp(ext, "shtml") == 0);
 }
 
+/* Return TRUE if file name indicates an image format */
+gboolean is_image_file(const gchar* name) {
+    if (name == NULL) {
+        return FALSE;
+    }
+    const gchar* ext = file_extension(name);
+    return (g_ascii_strcasecmp(ext, "png") == 0 ||
+            g_ascii_strcasecmp(ext, "jpg") == 0 ||
+            g_ascii_strcasecmp(ext, "jpeg") == 0 ||
+            g_ascii_strcasecmp(ext, "gif") == 0 ||
+            g_ascii_strcasecmp(ext, "svg") == 0 ||
+            g_ascii_strcasecmp(ext, "svgz") == 0 ||
+            g_ascii_strcasecmp(ext, "bmp") == 0 ||
+            g_ascii_strcasecmp(ext, "ico") == 0 ||
+            g_ascii_strcasecmp(ext, "webp") == 0 ||
+            g_ascii_strcasecmp(ext, "tiff") == 0 ||
+            g_ascii_strcasecmp(ext, "tif") == 0 ||
+            g_ascii_strcasecmp(ext, "pnm") == 0 ||
+            g_ascii_strcasecmp(ext, "pbm") == 0 ||
+            g_ascii_strcasecmp(ext, "pgm") == 0 ||
+            g_ascii_strcasecmp(ext, "ppm") == 0 ||
+            g_ascii_strcasecmp(ext, "xpm") == 0 ||
+            g_ascii_strcasecmp(ext, "xbm") == 0 ||
+            g_ascii_strcasecmp(ext, "tga") == 0 ||
+            g_ascii_strcasecmp(ext, "icns") == 0 ||
+            g_ascii_strcasecmp(ext, "cur") == 0);
+}
+
 /* Return TRUE if file content can be rendered richly in preview pane */
 gboolean is_renderable_file(const gchar* name) {
-    return is_markdown_file(name) || is_html_file(name);
+    return is_markdown_file(name) || is_html_file(name) || is_image_file(name);
 }
 
 /* Sort: directories first, then according to active sort mode */

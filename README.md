@@ -17,6 +17,7 @@ Simple graphical application to browse the file system.
 - ✅ Navigation in the tree: the `Directory: …` label follows the current directory
 - ✅ Top bar shows the current directory, the sort mode and the hidden-files state
 - ✅ Markdown & HTML preview: Markdown files (`.md`, `.markdown`, etc.) and HTML files (`.html`, `.htm`, `.xhtml`, `.shtml`) are rendered with rich styling (document title, headings, formatted lists, blockquotes, code blocks, tables with Unicode borders, inline formatting, links, and images) rather than raw markup; press `m` to toggle between rendered and raw preview
+- ✅ Image preview: image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.bmp`, `.ico`, `.webp`, `.tiff`, etc.) are rendered directly in the right preview pane with a metadata header (format, native dimensions in pixels, file size) and automatic scaling to fit the window; press `m` to toggle between fitted view and 1:1 original scale
 
 ## ⌨️ Keyboard shortcuts
 
@@ -48,7 +49,7 @@ Simple graphical application to browse the file system.
 | `Backspace` | Go to the parent directory |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
-| `m` | Toggle rendered preview / raw markup view (for Markdown and HTML files) |
+| `m` | Toggle rendered preview / raw markup view (Markdown/HTML) or fitted / 1:1 scale (images) |
 | `h` | Show / hide the key-binding help panel (any key inside it closes it) |
 | `Esc` | Close the search bar |
 
@@ -65,7 +66,7 @@ Same vim bindings as the list, applied to the displayed content:
 | `G` | Go to the bottom of the file |
 | `/` | Open the search bar (searches in the displayed content) |
 | `n` / `N` | Next / previous occurrence (selected and centered, wraps around) |
-| `m` | Toggle rendered preview / raw markup view (for Markdown and HTML files) |
+| `m` | Toggle rendered preview / raw markup view (Markdown/HTML) or fitted / 1:1 scale (images) |
 | `Esc` | Close the search bar |
 
 ### Editor tabs (when the viewer zone shows a file opened for editing)
@@ -151,4 +152,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.8**: Resizable multi-terminal layout: dynamic `GtkPaned` split hierarchy for side-by-side (`Ctrl+T`) and stacked (`Ctrl+Shift+T`) terminals, allowing smooth divider resizing across multiple open terminal panes
 - **v1.9**: Expandable & collapsible directory tree: hierarchical `GtkTreeStore` with lazy-loading subdirectories, folder icons (`📁` / `📂`), tree hierarchy guide lines, keyboard expand/collapse controls (`Space`, `l`/`Right`, `Left`, `Enter`), and multi-level tree navigation
 - **v1.10**: Monospace font for code files: automatic fixed-width font styling for source code files (`*.c`, `*.py`, etc.) and raw markup views in both the right-pane viewer and editor tabs
+- **v1.11**: Image preview in right panel: direct rendering of image formats (`.png`, `.jpg`, `.svg`, `.gif`, `.bmp`, `.ico`, `.webp`, etc.) with image metadata (format, dimensions, size), centered layout, automatic window fitting, and `m` toggle for 1:1 original scale
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)
