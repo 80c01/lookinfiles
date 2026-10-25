@@ -18,6 +18,7 @@ Simple graphical application to browse the file system.
 - ✅ Top bar shows the current directory, the sort mode and the hidden-files state
 - ✅ Markdown & HTML preview: Markdown files (`.md`, `.markdown`, etc.) and HTML files (`.html`, `.htm`, `.xhtml`, `.shtml`) are rendered with rich styling (document title, headings, formatted lists, blockquotes, code blocks, tables with Unicode borders, inline formatting, links, and images) rather than raw markup; press `m` to toggle between rendered and raw preview
 - ✅ Image preview: image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.bmp`, `.ico`, `.webp`, `.tiff`, etc.) are rendered directly in the right preview pane with a metadata header (format, native dimensions in pixels, file size) and automatic scaling to fit the window; press `m` to toggle between fitted view and 1:1 original scale
+- ✅ PDF document preview: PDF files (`.pdf`) are rendered directly in the right preview pane using `poppler-glib` and Cairo, featuring a metadata banner (title, author, PDF version, page count, file size), sharp page rendering with page dividers, and an `m` toggle to switch between high-resolution rendered pages and extracted text mode (searchable with `/`)
 
 ## ⌨️ Keyboard shortcuts
 
@@ -49,7 +50,7 @@ Simple graphical application to browse the file system.
 | `Backspace` | Go to the parent directory |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
-| `m` | Toggle rendered preview / raw markup view (Markdown/HTML) or fitted / 1:1 scale (images) |
+| `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), or rendered pages / text extraction (PDF) |
 | `h` | Show / hide the key-binding help panel (any key inside it closes it) |
 | `Esc` | Close the search bar |
 
@@ -66,7 +67,7 @@ Same vim bindings as the list, applied to the displayed content:
 | `G` | Go to the bottom of the file |
 | `/` | Open the search bar (searches in the displayed content) |
 | `n` / `N` | Next / previous occurrence (selected and centered, wraps around) |
-| `m` | Toggle rendered preview / raw markup view (Markdown/HTML) or fitted / 1:1 scale (images) |
+| `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), or rendered pages / text extraction (PDF) |
 | `Esc` | Close the search bar |
 
 ### Editor tabs (when the viewer zone shows a file opened for editing)
@@ -118,6 +119,12 @@ sudo apt install libgtksourceview-3.0-dev
 ```
 Detected the same way; without it the viewer stays plain text.
 
+Optional (PDF document preview):
+```bash
+sudo apt install libpoppler-glib-dev
+```
+Detected the same way; without it, PDF files display an informative placeholder prompting to install the library.
+
 ## 🏗️ Project structure
 
 ```
@@ -128,6 +135,7 @@ src/
 ├── viewer.c/.h          # File content viewer and disk monitoring
 ├── markdown.c/.h        # Markdown rendering engine
 ├── html.c/.h            # HTML rendering engine
+├── pdf.c/.h             # PDF document renderer and text extractor
 ├── editor.c/.h          # Multi-tab file editor
 ├── minimap.c/.h         # Scaled file overview minimap
 ├── terminal.c/.h        # Embedded VTE terminal panel
@@ -153,4 +161,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.9**: Expandable & collapsible directory tree: hierarchical `GtkTreeStore` with lazy-loading subdirectories, folder icons (`📁` / `📂`), tree hierarchy guide lines, keyboard expand/collapse controls (`Space`, `l`/`Right`, `Left`, `Enter`), and multi-level tree navigation
 - **v1.10**: Monospace font for code files: automatic fixed-width font styling for source code files (`*.c`, `*.py`, etc.) and raw markup views in both the right-pane viewer and editor tabs
 - **v1.11**: Image preview in right panel: direct rendering of image formats (`.png`, `.jpg`, `.svg`, `.gif`, `.bmp`, `.ico`, `.webp`, etc.) with image metadata (format, dimensions, size), centered layout, automatic window fitting, and `m` toggle for 1:1 original scale
+- **v1.12**: PDF preview in right panel: direct document rendering for `.pdf` files using `poppler-glib` and Cairo with metadata banner (title, author, version, page count, file size), sharp page-by-page rendering, text extraction mode via `m` toggle, and dedicated icon (`📕`)
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)

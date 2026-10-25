@@ -69,9 +69,18 @@ gboolean is_image_file(const gchar* name) {
             g_ascii_strcasecmp(ext, "cur") == 0);
 }
 
+/* Return TRUE if file name indicates a PDF document */
+gboolean is_pdf_file(const gchar* name) {
+    if (name == NULL) {
+        return FALSE;
+    }
+    const gchar* ext = file_extension(name);
+    return (g_ascii_strcasecmp(ext, "pdf") == 0);
+}
+
 /* Return TRUE if file content can be rendered richly in preview pane */
 gboolean is_renderable_file(const gchar* name) {
-    return is_markdown_file(name) || is_html_file(name) || is_image_file(name);
+    return is_markdown_file(name) || is_html_file(name) || is_image_file(name) || is_pdf_file(name);
 }
 
 /* Sort: directories first, then according to active sort mode */
@@ -155,6 +164,9 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
     if (EXT_IS(".png") || EXT_IS(".jpg") || EXT_IS(".jpeg") || EXT_IS(".gif") ||
         EXT_IS(".svg") || EXT_IS(".bmp") || EXT_IS(".ico") || EXT_IS(".webp")) {
         return "🖼️";
+    }
+    if (EXT_IS(".pdf")) {
+        return "📕";
     }
     if (EXT_IS(".mp3") || EXT_IS(".wav") || EXT_IS(".ogg") || EXT_IS(".flac")) {
         return "🎵";
@@ -799,7 +811,11 @@ void activate_selected_entry(AppData* app) {
         }
         gtk_tree_path_free(path);
     } else if (g_strcmp0(type, "file") == 0 && full != NULL) {
-        editor_open_file(app, name, full);
+        if (is_image_file(name) || is_pdf_file(name)) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        } else {
+            editor_open_file(app, name, full);
+        }
     }
     g_free(name);
     g_free(type);

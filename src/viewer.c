@@ -2,6 +2,7 @@
 #include "file_list.h"
 #include "markdown.h"
 #include "html.h"
+#include "pdf.h"
 #include "search.h"
 #include "ui.h"
 
@@ -117,7 +118,7 @@ void set_view_monospace(GtkWidget* view, gboolean monospace) {
 
 /* Return TRUE if file extension or content indicates source code */
 gboolean is_code_file(const gchar* name) {
-    if (name == NULL || is_image_file(name)) {
+    if (name == NULL || is_image_file(name) || is_pdf_file(name)) {
         return FALSE;
     }
     const gchar* ext = file_extension(name);
@@ -415,6 +416,18 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     gboolean is_md = is_markdown_file(name) && !app->render_raw;
     gboolean is_html = is_html_file(name) && !app->render_raw;
     gboolean is_img = is_image_file(name);
+    gboolean is_pdf = is_pdf_file(name);
+
+    if (is_pdf) {
+        apply_viewer_language(app, NULL);
+        set_view_monospace(app->text_view, FALSE);
+        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
+        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
+        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
+        render_pdf_preview(app, name, full);
+        app->viewer_match = -1;
+        return;
+    }
 
     if (is_img) {
         apply_viewer_language(app, NULL);

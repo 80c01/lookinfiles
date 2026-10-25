@@ -48,8 +48,8 @@ void editor_apply_language(GtkTextBuffer* buffer, const gchar* name) {
 }
 
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
-    if (is_image_file(name)) {
-        /* Images are previewed in the main viewer tab */
+    if (is_image_file(name) || is_pdf_file(name)) {
+        /* Images and PDFs are previewed in the main viewer tab */
         gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         return;
     }

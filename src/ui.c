@@ -42,7 +42,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "Ctrl+F / Ctrl+B", "Scroll a page down / up"},
     {"Right panel (viewer)", "gg / G", "Jump to the start / end of the file"},
     {"Right panel (viewer)", "/", "Search in the file (n / N: next / previous match)"},
-    {"Right panel (viewer)", "m", "Toggle rendered preview / raw view (Markdown, HTML) or fitted / 1:1 scale (images)"},
+    {"Right panel (viewer)", "m", "Toggle rendered preview / raw text view (Markdown, HTML, PDF, images)"},
     {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},
     {"Editor tabs", "Ctrl+W", "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"},
     /* Global */

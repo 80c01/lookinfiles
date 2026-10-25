@@ -41,6 +41,8 @@ The codebase is organized into modules under `src/`:
   task lists, tables, styled quotes, code blocks, inline formatting, and images).
 - **`html.c` / `html.h`**: Rich HTML parser and renderer (tags setup, title, headings,
   formatted lists, blockquotes, preformatted code, tables, inline formatting, links, and images).
+- **`pdf.c` / `pdf.h`**: PDF document rendering engine using `poppler-glib` and Cairo
+  (`render_pdf_preview()`), page rasterization, metadata display, and text extraction.
 - **`editor.c` / `editor.h`**: Multi-tab editor inside viewer notebook (`editor_open_file()`,
   `editor_save_current()`, `editor_close_current()`, unsaved confirmation dialog).
 - **`minimap.c` / `minimap.h`**: Scaled file overview with Cairo caching, slider positioning,
@@ -101,8 +103,8 @@ Shortcut list to keep in sync with `README.md` when you change behavior.
 
 ## Known status
 
-Recent features are stable (v1.11 in README.md): modular architecture in `src/`,
-image preview in right panel, monospace font for code files, expandable directory tree (`GtkTreeStore`), rendered Markdown & HTML previews, resizable terminal panes (`GtkPaned`), resizable layout, vim bindings, navigation, hidden toggle,
+Recent features are stable (v1.12 in README.md): modular architecture in `src/`,
+PDF document preview in right panel, image preview in right panel, monospace font for code files, expandable directory tree (`GtkTreeStore`), rendered Markdown & HTML previews, resizable terminal panes (`GtkPaned`), resizable layout, vim bindings, navigation, hidden toggle,
 sort cycle, previews, dark theme. UI language is English end-to-end, including README.md.
 Existing French `.cpp` reference file (`exp explorateur_fichiers.cpp`) is legacy —
 do not compile or extend it.
