@@ -413,6 +413,15 @@ void render_image_preview(AppData* app, const gchar* name, const gchar* full) {
 }
 
 void load_file_content(AppData* app, const gchar* name, const gchar* full) {
+    GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
+    if (hadj != NULL) {
+        gtk_adjustment_set_value(hadj, gtk_adjustment_get_lower(hadj));
+    }
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(app->text_view));
+    if (vadj != NULL) {
+        gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
+    }
+
     gboolean is_md = is_markdown_file(name) && !app->render_raw;
     gboolean is_html = is_html_file(name) && !app->render_raw;
     gboolean is_img = is_image_file(name);

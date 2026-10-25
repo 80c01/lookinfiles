@@ -197,17 +197,54 @@ gboolean on_minimap_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
 }
 
 void minimap_goto(AppData* app, gdouble y) {
+    if (app->minimap == NULL || app->buffer == NULL || app->text_view == NULL) {
+        return;
+    }
     gdouble mm = minimap_line_height(app->minimap, app->buffer);
-    gint lines, line;
-    GtkTextIter it;
     if (mm <= 0.0) {
         return;
     }
-    lines = gtk_text_buffer_get_line_count(app->buffer);
-    line = CLAMP((gint)(y / mm), 0, lines - 1);
+    gint lines = gtk_text_buffer_get_line_count(app->buffer);
+    if (lines <= 0) {
+        return;
+    }
+
+    GtkAdjustment* vadj = app->viewer_vadj ? app->viewer_vadj
+        : gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(app->text_view));
+    if (vadj == NULL) {
+        return;
+    }
+
+    gint line = CLAMP((gint)(y / mm), 0, lines - 1);
+    gdouble min_v = gtk_adjustment_get_lower(vadj);
+    gdouble max_v = gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj);
+    if (max_v < min_v) {
+        max_v = min_v;
+    }
+
+    if (line <= 0) {
+        gtk_adjustment_set_value(vadj, min_v);
+        gtk_widget_queue_draw(app->minimap);
+        return;
+    }
+    if (line >= lines - 1) {
+        gtk_adjustment_set_value(vadj, max_v);
+        gtk_widget_queue_draw(app->minimap);
+        return;
+    }
+
+    GtkTextIter it;
     gtk_text_buffer_get_iter_at_line(app->buffer, &it, line);
-    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(app->text_view), &it, 0.0,
-                                 TRUE, 0.0, 0.5);
+    GdkRectangle iter_loc;
+    gtk_text_view_get_iter_location(GTK_TEXT_VIEW(app->text_view), &it, &iter_loc);
+
+    GdkRectangle vis;
+    gtk_text_view_get_visible_rect(GTK_TEXT_VIEW(app->text_view), &vis);
+
+    gdouble target_v = (gdouble)iter_loc.y - (vis.height - iter_loc.height) / 2.0;
+    target_v = CLAMP(target_v, min_v, max_v);
+
+    gtk_adjustment_set_value(vadj, target_v);
     gtk_widget_queue_draw(app->minimap);
 }
 
