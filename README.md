@@ -37,8 +37,7 @@ Simple graphical application to browse the file system.
 | `G` | Go to the bottom of the list |
 | `/` | Open the search bar (live search, case-insensitive) |
 | `n` / `N` | Next / previous match of the searched term |
-| `Enter` | Enter the selected directory |
-| `Double-click` | Enter the double-clicked directory (same as `Enter`) |
+| `Enter` / `Double-click` | Enter the double-clicked directory, or open the selected file in a new editing tab of the right panel |
 | `Backspace` | Go to the parent directory |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
@@ -59,6 +58,18 @@ Same vim bindings as the list, applied to the displayed content:
 | `/` | Open the search bar (searches in the displayed content) |
 | `n` / `N` | Next / previous occurrence (selected and centered, wraps around) |
 | `Esc` | Close the search bar |
+
+### Editor tabs (when the viewer zone shows a file opened for editing)
+
+Double-clicking / pressing `Enter` on a file in the list opens it in a new tab
+of the right viewer zone (page "Preview" keeps the read-only browsing view;
+the minimap stays in place while it is the selected page). A bullet before
+the tab title marks unsaved changes.
+
+| Key | Action |
+|---|---|
+| `Ctrl+S` | Save the file open in the current editor tab |
+| `Ctrl+W` | Close the current editor tab (asks first when unsaved) |
 
 ## 📝 Build
 

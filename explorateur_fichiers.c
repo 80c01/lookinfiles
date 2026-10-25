@@ -76,6 +76,16 @@ static gint compare_entries(gconstpointer a, gconstpointer b) {
     return res;
 }
 
+/* One open-for-editing file: a notebook tab in the viewer zone */
+typedef struct {
+    gchar* path;          /* absolute file path */
+    gchar* name;          /* display name (file basename) */
+    GtkWidget* scroll;    /* notebook page widget */
+    GtkWidget* view;      /* the editable text view */
+    GtkTextBuffer* buffer;
+    GtkWidget* tab_label; /* tab title, with a bullet when unsaved */
+} EditorTab;
+
 /* Donnees partagees entre la selection et le visualiseur */
 typedef struct {
     GtkTextBuffer* buffer;
@@ -107,6 +117,10 @@ typedef struct {
 #ifdef HAVE_VTE
     GtkWidget* term_box; /* row of side-by-side terminal panes */
 #endif
+
+    /* Editor tabs (double-click / Enter on a file in the list) */
+    GtkWidget* notebook; /* viewer zone: page 0 = read-only preview */
+    GList* editors;      /* EditorTab*, order matching tab order minus 1 */
 
     /* h: floating key-binding cheat sheet */
     GtkWidget* help_window;
@@ -764,8 +778,13 @@ static void cycle_sort_mode(AppData* app) {
     refresh_listing(app);
 }
 
-/* Enter the selected entry when it is a directory (Enter key / double click) */
-static void enter_selected_directory(AppData* app) {
+/* Editor tabs are defined later in the file (after the GSV scheme) */
+static void editor_open_file(AppData* app, const gchar* name,
+                             const gchar* full);
+
+/* Enter / double-click on a list entry: enter a directory, or open the
+ * file in a new editing tab of the right viewer zone */
+static void activate_selected_entry(AppData* app) {
     GtkTreeIter it;
     if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
         return;
@@ -777,18 +796,22 @@ static void enter_selected_directory(AppData* app) {
         gchar* subdir = g_build_filename(app->base_dir, name, NULL);
         reload_directory(app, subdir);
         g_free(subdir);
+    } else {
+        gchar* full = g_build_filename(app->base_dir, name, NULL);
+        editor_open_file(app, name, full);
+        g_free(full);
     }
     g_free(name);
     g_free(type);
 }
 
-/* Double click on a row: enter it when it is a directory */
+/* Double click on a row: same action as the Enter key on it */
 static void on_row_activated(GtkTreeView* view, GtkTreePath* path,
                              GtkTreeViewColumn* column, gpointer data) {
     (void)view;
     (void)path;
     (void)column;
-    enter_selected_directory((AppData*)data);
+    activate_selected_entry((AppData*)data);
 }
 
 /* ===== h: floating key-binding help panel ===== */
@@ -806,9 +829,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"File panel", "gg / G", "First / last entry"},
     {"File panel", "Ctrl+F / Ctrl+B", "Page down / up"},
     {"File panel", "/", "Search by substring (n / N: next / previous match)"},
-    {"File panel", "Enter", "Enter the selected directory"},
+    {"File panel", "Enter / Double-click", "Enter a directory, or open the selected file in an editing tab"},
     {"File panel", "Backspace", "Go to the parent directory"},
-    {"File panel", "Double-click", "Enter a directory"},
     {"File panel", "i / I", "Toggle hidden files"},
     {"File panel", "o", "Cycle sort: name, date, size, extension"},
     {"File panel", "h", "Show / hide this help panel"},
@@ -817,6 +839,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "Ctrl+F / Ctrl+B", "Scroll a page down / up"},
     {"Right panel (viewer)", "gg / G", "Jump to the start / end of the file"},
     {"Right panel (viewer)", "/", "Search in the file (n / N: next / previous match)"},
+    {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},
+    {"Editor tabs", "Ctrl+W", "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"},
     /* Global */
     {"Global", "Ctrl+T", "Open a terminal pane right of the running ones (exit the shell to close it)"},
     {"Global", "Ctrl+Shift+T", "Open a new terminal pane below the running ones"},
@@ -933,7 +957,8 @@ static gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointe
     case GDK_KEY_KP_Delete:
     case GDK_KEY_ISO_Enter:
         app->pending_g = FALSE;
-        enter_selected_directory(app);
+        /* Enter: directory => navigate in; file => editing tab */
+        activate_selected_entry(app);
         return TRUE;
     case GDK_KEY_BackSpace: /* Repertoire parent */
         app->pending_g = FALSE;
@@ -1119,6 +1144,236 @@ static void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view) {
     }
 }
 #endif
+
+/* ===== Editor tabs: open a file for editing (double-click / Enter) ===== */
+
+#define EDIT_MAX_BYTES (2 * 1024 * 1024) /* editing size cap */
+
+/* The open tab currently selected in the viewer notebook; NULL = preview */
+static EditorTab* editor_current_tab(AppData* app) {
+    gint page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
+    if (page < 1) {
+        return NULL; /* page 0 is the read-only preview */
+    }
+    gint wanted = page - 1; /* editors list follows tab order, minus 1 */
+    gint i = 0;
+    for (GList* l = app->editors; l != NULL; l = l->next, i++) {
+        if (i == wanted) {
+            return (EditorTab*)l->data;
+        }
+    }
+    return NULL;
+}
+
+/* Tab title catches the unsaved state: "name" / "bullet name" */
+static void editor_tab_label_update(EditorTab* tab) {
+    gchar* title =
+        gtk_text_buffer_get_modified(tab->buffer)
+            ? g_strdup_printf("\xe2\x80\xa2 %s", tab->name)
+            : g_strdup(tab->name);
+    gtk_label_set_text(GTK_LABEL(tab->tab_label), title);
+    g_free(title);
+}
+
+static void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data) {
+    (void)buffer;
+    editor_tab_label_update((EditorTab*)data);
+}
+
+/* Syntax highlighting language of an editor buffer, from the file name */
+static void editor_apply_language(GtkTextBuffer* buffer, const gchar* name) {
+#ifdef HAVE_GSV
+    GtkSourceLanguageManager* mgr = gtk_source_language_manager_get_default();
+    gchar* ctype = g_content_type_guess(name, NULL, 0, NULL);
+    GtkSourceLanguage* lang =
+        gtk_source_language_manager_guess_language(mgr, name, ctype);
+    g_free(ctype);
+    gtk_source_buffer_set_language(GTK_SOURCE_BUFFER(buffer), lang);
+    gtk_source_buffer_set_highlight_syntax(GTK_SOURCE_BUFFER(buffer),
+                                           lang != NULL);
+#else
+    (void)buffer;
+    (void)name;
+#endif
+}
+
+/* Open (or switch to) an editing tab for the given file, from the list.
+ * The file loads whole and editable; Syntax highlighting follows the name */
+static void editor_open_file(AppData* app, const gchar* name,
+                             const gchar* full) {
+    /* Already open: switch to its existing tab */
+    gint index = 0;
+    for (GList* l = app->editors; l != NULL; l = l->next, index++) {
+        EditorTab* t = (EditorTab*)l->data;
+        if (g_strcmp0(t->path, full) == 0) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook),
+                                          index + 1);
+            gtk_widget_grab_focus(t->view);
+            return;
+        }
+    }
+
+    struct stat st;
+    if (g_stat(full, &st) != 0) {
+        gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
+        gtk_text_buffer_set_text(app->buffer, msg, -1);
+        g_free(msg);
+        return;
+    }
+    if (st.st_size > EDIT_MAX_BYTES) {
+        gchar* msg = g_strdup_printf(
+            "[ %s is too large to edit (%" G_GINT64_FORMAT
+            " bytes, limit %d) ]", name, (gint64)st.st_size, EDIT_MAX_BYTES);
+        gtk_text_buffer_set_text(app->buffer, msg, -1);
+        g_free(msg);
+        return;
+    }
+
+    /* The file loads whole (editable documents only stay in memory) */
+    gchar* contents = NULL;
+    gsize len = 0;
+    if (!g_file_get_contents(full, &contents, &len, NULL)) {
+        gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
+        gtk_text_buffer_set_text(app->buffer, msg, -1);
+        g_free(msg);
+        return;
+    }
+    if (!g_utf8_validate(contents, len, NULL)) {
+        /* GtkTextBuffer accepts valid UTF-8 only */
+        gchar* fixed = g_utf8_make_valid(contents, (gssize)len);
+        g_free(contents);
+        contents = fixed;
+    }
+
+    EditorTab* tab = g_new0(EditorTab, 1);
+    tab->path = g_strdup(full);
+    tab->name = g_strdup(name);
+#ifdef HAVE_GSV
+    GtkTextBuffer* buffer = GTK_TEXT_BUFFER(gtk_source_buffer_new(NULL));
+#else
+    GtkTextBuffer* buffer = gtk_text_buffer_new(NULL);
+#endif
+    gtk_text_buffer_set_text(buffer, contents, -1);
+#ifdef HAVE_GSV
+    GtkWidget* view =
+        gtk_source_view_new_with_buffer(GTK_SOURCE_BUFFER(buffer));
+#else
+    GtkWidget* view = gtk_text_view_new_with_buffer(buffer);
+#endif
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(view), TRUE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(view), TRUE);
+    editor_apply_language(buffer, name);
+#ifdef HAVE_GSV
+    apply_vscode_scheme(buffer, view);
+#endif
+
+    GtkWidget* scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
+                                   GTK_POLICY_AUTOMATIC,
+                                   GTK_POLICY_AUTOMATIC);
+    gtk_container_add(GTK_CONTAINER(scroll), view);
+
+    tab->buffer = buffer;
+    tab->scroll = scroll;
+    tab->view = view;
+    tab->tab_label = gtk_label_new(tab->name);
+
+    gint page = gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook),
+                                         scroll, tab->tab_label);
+    gtk_widget_show_all(scroll);
+    gtk_widget_show(tab->tab_label);
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), page);
+    /* Type straight into the editor: the keyboard follows the new tab */
+    gtk_widget_grab_focus(view);
+
+    /* Loading filled the buffer: start in a clean (unmodified) state */
+    gtk_text_buffer_set_modified(tab->buffer, FALSE);
+    g_signal_connect(buffer, "modified-changed",
+                     G_CALLBACK(on_editor_modified_changed), tab);
+
+    app->editors = g_list_append(app->editors, tab);
+    g_free(contents);
+}
+
+/* Only the preview page (0) carries the minimap: it visualizes the
+ * preview buffer, so the column hides while an editor tab is active */
+static void on_editor_switch_page_changed(GtkNotebook* notebook,
+                                          GtkWidget* page, guint page_num,
+                                          gpointer data) {
+    (void)notebook;
+    (void)page;
+    gtk_widget_set_visible(GTK_WIDGET(((AppData*)data)->minimap),
+                           page_num == 0);
+}
+
+/* Ask before losing work: TRUE when the tab may be discarded */
+static gboolean editor_confirm_discard(EditorTab* tab) {
+    if (!gtk_text_buffer_get_modified(tab->buffer)) {
+        return TRUE;
+    }
+    GtkWidget* dlg = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL,
+                                            GTK_MESSAGE_QUESTION,
+                                            GTK_BUTTONS_NONE,
+                                            "%s has unsaved changes. "
+                                            "Close anyway?", tab->name);
+    gtk_dialog_add_button(GTK_DIALOG(dlg), "Cancel", GTK_RESPONSE_CANCEL);
+    gtk_dialog_add_button(GTK_DIALOG(dlg), "Close without saving",
+                          GTK_RESPONSE_OK);
+    gint resp = gtk_dialog_run(GTK_DIALOG(dlg));
+    gtk_widget_destroy(dlg);
+    return resp == GTK_RESPONSE_OK;
+}
+
+/* Close the editor tab at `page` (page 0 is the preview: never editable) */
+static void editor_close_page(AppData* app, gint page) {
+    if (page < 1) {
+        return;
+    }
+    gint wanted = page - 1;
+    gint i = 0;
+    EditorTab* tab = NULL;
+    for (GList* l = app->editors; l != NULL; l = l->next, i++) {
+        if (i == wanted) {
+            tab = (EditorTab*)l->data;
+            break;
+        }
+    }
+    if (tab == NULL || !editor_confirm_discard(tab)) {
+        return;
+    }
+    g_signal_handlers_disconnect_by_func(tab->buffer,
+                                         (gpointer)on_editor_modified_changed,
+                                         tab);
+    gtk_notebook_remove_page(GTK_NOTEBOOK(app->notebook), page);
+    app->editors = g_list_remove(app->editors, tab);
+    g_free(tab->path);
+    g_free(tab->name);
+    g_free(tab);
+}
+
+static void editor_close_current(AppData* app) {
+    editor_close_page(app, gtk_notebook_get_current_page(
+                          GTK_NOTEBOOK(app->notebook)));
+}
+
+/* Ctrl+S: write the current editor tab back to disk;
+ * returns FALSE when no editor tab is selected (the key keeps its role) */
+static gboolean editor_save_current(AppData* app) {
+    EditorTab* tab = editor_current_tab(app);
+    if (tab == NULL) {
+        return FALSE;
+    }
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
+    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+    if (!g_file_set_contents(tab->path, text, -1, NULL)) {
+        g_printerr("[ Cannot save: %s ]\n", tab->name);
+    } else {
+        gtk_text_buffer_set_modified(tab->buffer, FALSE);
+    }
+    g_free(text);
+    return TRUE;
+}
 
 /* Charge le contenu du fichier selectionne dans le panneau droit */
 /* Charge le contenu d'un fichier (avec apercu + sanitization) dans le buffer
@@ -1871,6 +2126,20 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
         return TRUE;
     }
 
+    /* Ctrl+S: save the editor tab being edited; Ctrl+W: close it (asks
+     * first when it has unsaved changes). Nothing happens on the
+     * preview page: both return FALSE there and keep their flow. */
+    if ((event->state & GDK_CONTROL_MASK) &&
+        !(event->state & GDK_SHIFT_MASK) &&
+        (event->keyval == GDK_KEY_s || event->keyval == GDK_KEY_S)) {
+        return editor_save_current(app);
+    }
+    if ((event->state & GDK_CONTROL_MASK) &&
+        (event->keyval == GDK_KEY_w || event->keyval == GDK_KEY_W)) {
+        editor_close_current(app);
+        return TRUE;
+    }
+
     /* Ctrl+t: terminal pane beside the last running one;
      * Ctrl+Shift+T: a new terminal row below the running ones.
      * Shift capitalizes the keyval, which is how they differ. */
@@ -2210,8 +2479,15 @@ int main(int argc, char** argv) {
     gtk_widget_add_events(minimap, GDK_BUTTON_PRESS_MASK |
                                    GDK_BUTTON_RELEASE_MASK |
                                    GDK_BUTTON1_MOTION_MASK);
+    /* Viewer zone: a tab set — page 0 the read-only preview, then one
+     * editor tab per file opened by double-click / Enter in the list.
+     * The minimap stays beside the tabs; it only tracks the preview
+     * buffer, so it hides while an editor tab is selected (below). */
+    GtkWidget* notebook = gtk_notebook_new();
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), right_scroll,
+                             gtk_label_new("Preview"));
     GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(viewer_box), right_scroll, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(viewer_box), notebook, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(viewer_box), minimap, FALSE, FALSE, 0);
 
     /* Barre de recherche vim-like (/), masquee par defaut */
@@ -2260,6 +2536,11 @@ int main(int argc, char** argv) {
 #ifdef HAVE_VTE
     app->term_box = term_box;
 #endif
+
+    /* Editor tabs: keep the minimap bound to the preview page only */
+    app->notebook = notebook;
+    g_signal_connect(notebook, "switch-page",
+                     G_CALLBACK(on_editor_switch_page_changed), app);
 
     /* Minimap wiring: buffer changes / scrolling / size move the cache and
      * the slider; clicks and drags steer the viewer */
