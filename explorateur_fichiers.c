@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include <pango/pangocairo.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <glib/gstdio.h>
@@ -118,6 +119,13 @@ typedef struct {
     GtkWidget* dim_label;
     GtkWidget* dims_paned; /* paned whose handle is being dragged */
     gboolean panning; /* a split handle is being dragged */
+
+    /* Minimap: scaled file overview right of the viewer */
+    GtkWidget* minimap;
+    cairo_surface_t* mm_cache;   /* offscreen render of the mini file */
+    gint mm_cache_w;             /* size the cache was built for */
+    gint mm_cache_h;
+    gboolean mm_dragging;        /* mouse locked on the minimap */
 } AppData;
 
 /* Moniteurs de fichiers, definis plus bas dans le fichier */
@@ -1333,6 +1341,276 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
     g_free(type);
 }
 
+/* ===== Minimap: scaled overview of the displayed content ===== */
+
+/* Width of the minimap column, in pixels */
+#define MINIMAP_WIDTH 110
+
+/* Pixels per buffer line: the whole file is fitted into the widget, with a
+ * comfortable ceiling for short files (top-aligned, like VS Code) */
+static gdouble minimap_line_height(GtkWidget* widget, GtkTextBuffer* buffer) {
+    GtkAllocation a;
+    gint lines = gtk_text_buffer_get_line_count(buffer);
+    if (widget == NULL || lines <= 0) {
+        return 0.0;
+    }
+    gtk_widget_get_allocation(widget, &a);
+    if (a.height <= 0) {
+        return 0.0;
+    }
+    return MIN(10.0, (gdouble)a.height / lines);
+}
+
+/* First and last line currently visible in the viewer */
+static void minimap_viewport(GtkTextView* view, gint* first, gint* last) {
+    GdkRectangle vis;
+    GtkTextIter it;
+    gint line_y;
+    gtk_text_view_get_visible_rect(view, &vis);
+    gtk_text_view_get_line_at_y(view, &it, vis.y, &line_y);
+    *first = gtk_text_iter_get_line(&it);
+    gtk_text_view_get_line_at_y(view, &it, vis.y + vis.height - 1, &line_y);
+    *last = gtk_text_iter_get_line(&it);
+}
+
+/* Character count and leading whitespace of one line */
+static void minimap_line_metrics(GtkTextBuffer* buffer, gint i, gint* length,
+                                 gint* leading) {
+    GtkTextIter s, e, p;
+    gtk_text_buffer_get_iter_at_line(buffer, &s, i);
+    e = s;
+    gtk_text_iter_forward_to_line_end(&e);
+    *length = gtk_text_iter_get_offset(&e) - gtk_text_iter_get_offset(&s);
+    p = s;
+    *leading = 0;
+    while (!gtk_text_iter_ends_line(&p) &&
+           g_unichar_isspace(gtk_text_iter_get_char(&p))) {
+        (*leading)++;
+        gtk_text_iter_forward_char(&p);
+    }
+}
+
+/* (Re)render every buffer line into the offscreen surface; comfortable
+ * zoom draws mini glyphs, long files fall back to length-scaled bars */
+static void minimap_build_cache(GtkWidget* widget, AppData* app, gint width,
+                                gint height) {
+    gint lines = gtk_text_buffer_get_line_count(app->buffer);
+    gdouble mm =
+        (lines > 0) ? MIN(10.0, (gdouble)height / lines) : 0.0;
+    gboolean bars = (mm < 1.5);
+    cairo_surface_t* surf = cairo_image_surface_create(
+        CAIRO_FORMAT_RGB24, MAX(1, width), MAX(1, height));
+    cairo_t* cc = cairo_create(surf);
+    PangoLayout* layout = NULL;
+
+    if (app->mm_cache != NULL) {
+        cairo_surface_destroy(app->mm_cache);
+    }
+    app->mm_cache = surf;
+
+    cairo_set_source_rgb(cc, 0x1e / 255.0, 0x1e / 255.0, 0x1e / 255.0);
+    cairo_paint(cc);
+    /* Muted glyphs like the VS Code minimap (they carry no syntax colors) */
+    cairo_set_source_rgb(cc, 0.36, 0.37, 0.40);
+
+    if (lines <= 0 || mm <= 0.0) {
+        cairo_destroy(cc);
+        return;
+    }
+
+    if (!bars) {
+        layout = gtk_widget_create_pango_layout(widget, NULL);
+        PangoFontDescription* desc = pango_font_description_from_string("Monospace");
+        pango_font_description_set_size(
+            desc, (gint)(MAX(1.0, mm * 0.8) * PANGO_SCALE));
+        pango_layout_set_font_description(layout, desc);
+        pango_font_description_free(desc);
+    }
+
+    if (mm >= 1.0) {
+        gint i;
+        for (i = 0; i < lines; i++) {
+            gdouble y = i * mm;
+            if (!bars) {
+                GtkTextIter s, e;
+                gchar* text;
+                gtk_text_buffer_get_iter_at_line(app->buffer, &s, i);
+                e = s;
+                gtk_text_iter_forward_to_line_end(&e);
+                text = gtk_text_buffer_get_slice(app->buffer, &s, &e, TRUE);
+                if (text != NULL && text[0] != '\0') {
+                    pango_layout_set_text(layout, text, -1);
+                    cairo_move_to(cc, 1.0, y);
+                    pango_cairo_show_layout(cc, layout);
+                }
+                g_free(text);
+            } else {
+                gint length, leading;
+                gdouble x, w, h;
+                minimap_line_metrics(app->buffer, i, &length, &leading);
+                if (length <= 0 || leading >= length) {
+                    continue; /* blank line */
+                }
+                x = 1.0 + leading * mm * 0.5; /* indent is preserved */
+                w = (length - leading) * mm * 0.6;
+                h = MAX(1.0, mm * 0.75);
+                w = MIN(w, width - 1 - x);
+                cairo_rectangle(cc, x, y, w, h);
+                cairo_fill(cc);
+            }
+        }
+    } else {
+        /* mm < 1: one representative line per pixel row */
+        gint py;
+        for (py = 0; py < height; py++) {
+            gint i = (gint)(py / mm);
+            gint length, leading;
+            if (i >= lines) {
+                break;
+            }
+            minimap_line_metrics(app->buffer, i, &length, &leading);
+            if (length <= 0 || leading >= length) {
+                continue;
+            }
+            cairo_rectangle(cc, 1.0 + leading * mm * 0.5, py,
+                            MIN((length - leading) * mm * 0.6,
+                                width - 1.0 - leading * mm * 0.5),
+                            1.0);
+            cairo_fill(cc);
+        }
+    }
+
+    if (layout != NULL) {
+        g_object_unref(layout);
+    }
+    cairo_destroy(cc);
+}
+
+static void minimap_invalidate(AppData* app) {
+    if (app->mm_cache != NULL) {
+        cairo_surface_destroy(app->mm_cache);
+        app->mm_cache = NULL;
+        app->mm_cache_w = 0;
+        app->mm_cache_h = 0;
+    }
+    if (app->minimap != NULL) {
+        gtk_widget_queue_draw(app->minimap);
+    }
+}
+
+static gboolean on_minimap_draw(GtkWidget* widget, cairo_t* cr,
+                                gpointer data) {
+    AppData* app = (AppData*)data;
+    GtkAllocation a;
+    gdouble mm;
+    gint first, last;
+
+    gtk_widget_get_allocation(widget, &a);
+    if (a.width <= 0 || a.height <= 0) {
+        return FALSE;
+    }
+    if (app->mm_cache == NULL || app->mm_cache_w != a.width ||
+        app->mm_cache_h != a.height) {
+        minimap_build_cache(widget, app, a.width, a.height);
+        app->mm_cache_w = a.width;
+        app->mm_cache_h = a.height;
+    }
+
+    cairo_set_source_surface(cr, app->mm_cache, 0, 0);
+    cairo_paint(cr);
+
+    /* Slider: the viewer's visible range */
+    mm = minimap_line_height(widget, app->buffer);
+    if (mm > 0.0) {
+        minimap_viewport(GTK_TEXT_VIEW(app->text_view), &first, &last);
+        cairo_set_source_rgba(cr, 0.47, 0.47, 0.47, 0.35);
+        cairo_rectangle(cr, 0, first * mm, a.width,
+                        (last - first + 1) * mm);
+        cairo_fill(cr);
+    }
+
+    /* Thin border on the viewer side */
+    cairo_set_source_rgb(cr, 0.18, 0.18, 0.18);
+    cairo_rectangle(cr, 0, 0, 1, a.height);
+    cairo_fill(cr);
+    return FALSE;
+}
+
+/* Click / drag on the minimap: scroll the viewer, clicked line centered */
+static void minimap_goto(AppData* app, gdouble y) {
+    gdouble mm = minimap_line_height(app->minimap, app->buffer);
+    gint lines, line;
+    GtkTextIter it;
+    if (mm <= 0.0) {
+        return;
+    }
+    lines = gtk_text_buffer_get_line_count(app->buffer);
+    line = CLAMP((gint)(y / mm), 0, lines - 1);
+    gtk_text_buffer_get_iter_at_line(app->buffer, &it, line);
+    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(app->text_view), &it, 0.0,
+                                 TRUE, 0.0, 0.5);
+    gtk_widget_queue_draw(app->minimap);
+}
+
+static gboolean on_minimap_button_press(GtkWidget* widget,
+                                        GdkEventButton* event,
+                                        gpointer data) {
+    (void)widget;
+    AppData* app = (AppData*)data;
+    if (event->type != GDK_BUTTON_PRESS || event->button != 1) {
+        return FALSE;
+    }
+    app->mm_dragging = TRUE;
+    minimap_goto(app, event->y);
+    return TRUE; /* do not move the focus away from the panels */
+}
+
+static gboolean on_minimap_motion(GtkWidget* widget, GdkEventMotion* event,
+                                  gpointer data) {
+    (void)widget;
+    AppData* app = (AppData*)data;
+    if (app->mm_dragging) {
+        minimap_goto(app, event->y);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static gboolean on_minimap_button_release(GtkWidget* widget,
+                                          GdkEventButton* event,
+                                          gpointer data) {
+    (void)widget;
+    (void)event;
+    ((AppData*)data)->mm_dragging = FALSE;
+    return FALSE;
+}
+
+static void on_minimap_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
+    (void)buffer;
+    minimap_invalidate((AppData*)data);
+}
+
+static void on_minimap_scroll(GtkAdjustment* adjustment, gpointer data) {
+    (void)adjustment;
+    gtk_widget_queue_draw(((AppData*)data)->minimap);
+}
+
+static void on_minimap_size_allocate(GtkWidget* widget,
+                                     GdkRectangle* allocation,
+                                     gpointer data) {
+    (void)widget;
+    (void)allocation;
+    minimap_invalidate((AppData*)data);
+}
+
+static void on_minimap_realize(GtkWidget* widget, gpointer data) {
+    (void)data;
+    GdkCursor* cursor = gdk_cursor_new_for_display(
+        gtk_widget_get_display(widget), GDK_HAND1);
+    gdk_window_set_cursor(gtk_widget_get_window(widget), cursor);
+    g_object_unref(cursor);
+}
+
 /* ===== Ctrl-T: embedded terminal in a panel right of the viewer ===== */
 
 #ifdef HAVE_VTE
@@ -1714,6 +1992,16 @@ int main(int argc, char** argv) {
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_container_add(GTK_CONTAINER(right_scroll), text_view);
 
+    /* Minimap column: scaled overview painted by the app (VS Code-like) */
+    GtkWidget* minimap = gtk_drawing_area_new();
+    gtk_widget_set_size_request(minimap, MINIMAP_WIDTH, -1);
+    gtk_widget_add_events(minimap, GDK_BUTTON_PRESS_MASK |
+                                   GDK_BUTTON_RELEASE_MASK |
+                                   GDK_BUTTON1_MOTION_MASK);
+    GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(viewer_box), right_scroll, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(viewer_box), minimap, FALSE, FALSE, 0);
+
     /* Barre de recherche vim-like (/), masquee par defaut */
     GtkWidget* search_entry = gtk_search_entry_new();
     gtk_widget_set_no_show_all(search_entry, TRUE);
@@ -1748,6 +2036,25 @@ int main(int argc, char** argv) {
 
     /* Terminal panel (created just above, wired there) */
     app->term_scroll = term_scroll;
+
+    /* Minimap wiring: buffer changes / scrolling / size move the cache and
+     * the slider; clicks and drags steer the viewer */
+    app->minimap = minimap;
+    g_signal_connect(minimap, "draw", G_CALLBACK(on_minimap_draw), app);
+    g_signal_connect(minimap, "button-press-event",
+                     G_CALLBACK(on_minimap_button_press), app);
+    g_signal_connect(minimap, "motion-notify-event",
+                     G_CALLBACK(on_minimap_motion), app);
+    g_signal_connect(minimap, "button-release-event",
+                     G_CALLBACK(on_minimap_button_release), app);
+    g_signal_connect(minimap, "size-allocate",
+                     G_CALLBACK(on_minimap_size_allocate), app);
+    g_signal_connect(minimap, "realize", G_CALLBACK(on_minimap_realize), app);
+    g_signal_connect(app->buffer, "changed",
+                     G_CALLBACK(on_minimap_buffer_changed), app);
+    g_signal_connect(
+        gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(right_scroll)),
+        "value-changed", G_CALLBACK(on_minimap_scroll), app);
 
     /* h: floating key-bindings cheat sheet (hidden; toggled by h) */
     create_help_panel(GTK_WINDOW(window), app);
@@ -1789,7 +2096,7 @@ int main(int argc, char** argv) {
 
     /* Secondary splitter: file viewer | terminal panel (Ctrl-T) */
     GtkWidget* right_split = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_paned_pack1(GTK_PANED(right_split), right_scroll, TRUE, FALSE);
+    gtk_paned_pack1(GTK_PANED(right_split), viewer_box, TRUE, FALSE);
     gtk_paned_pack2(GTK_PANED(right_split), term_scroll, FALSE, FALSE);
     gtk_paned_set_position(GTK_PANED(right_split), 500);
     gtk_widget_set_size_request(term_scroll, 250, -1);
