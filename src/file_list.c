@@ -118,75 +118,251 @@ static gint compare_entries(gconstpointer a, gconstpointer b) {
     return res;
 }
 
-/* VS Code-like emoji for a tree entry, based on kind / extension */
+/* VS Code-like emoji icon for a tree entry, based on name and extension */
 const gchar* file_icon(const gchar* name, gboolean is_dir) {
     if (is_dir) {
         return "📁";
     }
+    if (name == NULL || name[0] == '\0') {
+        return "📄";
+    }
+
+    /* 1. Exact filename matches */
+#define NAME_IS(x) (g_ascii_strcasecmp(name, (x)) == 0)
+#define NAME_EXACT(x) (g_strcmp0(name, (x)) == 0)
+
+    if (NAME_IS("Makefile") || NAME_IS("makefile") || NAME_IS("GNUmakefile") ||
+        NAME_IS("CMakeLists.txt") || NAME_IS("meson.build")) {
+        return "🛠️";
+    }
+    if (NAME_IS("Dockerfile") || NAME_IS("Containerfile") ||
+        NAME_IS("docker-compose.yml") || NAME_IS("docker-compose.yaml") ||
+        NAME_IS(".dockerignore")) {
+        return "🐳";
+    }
+    if (NAME_IS(".gitignore") || NAME_IS(".gitattributes") ||
+        NAME_IS(".gitmodules") || NAME_IS(".gitconfig")) {
+        return "🔀";
+    }
+    if (NAME_IS("package.json")) {
+        return "📦";
+    }
+    if (NAME_IS("package-lock.json") || NAME_IS("yarn.lock") ||
+        NAME_IS("pnpm-lock.yaml") || NAME_IS("Cargo.lock") ||
+        NAME_IS("Gemfile.lock") || NAME_IS("composer.lock") ||
+        NAME_IS("poetry.lock") || NAME_IS("Pipfile.lock")) {
+        return "🔒";
+    }
+    if (NAME_IS("LICENSE") || NAME_IS("LICENCE") || NAME_IS("COPYING")) {
+        return "⚖️";
+    }
+    if (NAME_IS("README") || NAME_IS("README.md") || NAME_IS("README.txt") ||
+        NAME_IS("CHANGELOG") || NAME_IS("CHANGELOG.md") ||
+        NAME_IS("CONTRIBUTING") || NAME_IS("CONTRIBUTING.md")) {
+        return "📖";
+    }
+    if (NAME_EXACT(".env") || g_str_has_prefix(name, ".env.")) {
+        return "🔑";
+    }
+    if (NAME_IS("Cargo.toml")) {
+        return "🦀";
+    }
+    if (NAME_IS("go.mod") || NAME_IS("go.sum")) {
+        return "🐹";
+    }
+    if (NAME_IS("tsconfig.json") || NAME_IS("jsconfig.json")) {
+        return "🟦";
+    }
+    if (NAME_IS(".editorconfig") || NAME_IS(".prettierrc") ||
+        g_str_has_prefix(name, ".eslintrc")) {
+        return "⚙️";
+    }
+    if (NAME_IS("Gemfile") || NAME_IS("Rakefile")) {
+        return "💎";
+    }
+#undef NAME_IS
+#undef NAME_EXACT
+
+    /* 2. Extension matches */
     const gchar* dot = strrchr(name, '.');
-    if (dot == NULL) {
-        /* Build/remote entry names without any extension */
-        if (g_strcmp0(name, "Makefile") == 0 ||
-            g_ascii_strcasecmp(name, "makefile") == 0) {
-            return "🔧";
+    if (dot == NULL || dot == name) {
+        if (name[0] == '.') {
+            const gchar* base = name + 1;
+            if (g_ascii_strcasecmp(base, "bashrc") == 0 ||
+                g_ascii_strcasecmp(base, "zshrc") == 0 ||
+                g_ascii_strcasecmp(base, "profile") == 0) {
+                return "💻";
+            }
+            return "⚙️";
         }
         return "📄";
     }
+
 #define EXT_IS(x) (g_ascii_strcasecmp(dot, (x)) == 0)
+    /* C language: blue circle like VS Code C */
     if (EXT_IS(".c") || EXT_IS(".h")) {
-        return "🛠️"; /* systems / C sources */
+        return "🔵";
     }
-    if (EXT_IS(".cc") || EXT_IS(".cpp") || EXT_IS(".cxx") || EXT_IS(".hpp")) {
-        return "🔷"; /* C++ */
+    /* C++: blue diamond */
+    if (EXT_IS(".cc") || EXT_IS(".cpp") || EXT_IS(".cxx") ||
+        EXT_IS(".hpp") || EXT_IS(".hh") || EXT_IS(".hxx") || EXT_IS(".inl")) {
+        return "🔷";
     }
-    if (EXT_IS(".py") || EXT_IS(".pyw")) {
+    /* C# */
+    if (EXT_IS(".cs") || EXT_IS(".csx")) {
+        return "🟩";
+    }
+    /* Rust */
+    if (EXT_IS(".rs")) {
+        return "🦀";
+    }
+    /* Go */
+    if (EXT_IS(".go")) {
+        return "🐹";
+    }
+    /* Python */
+    if (EXT_IS(".py") || EXT_IS(".pyw") || EXT_IS(".pyx") || EXT_IS(".ipynb")) {
         return "🐍";
     }
-    if (EXT_IS(".java") || EXT_IS(".jar")) {
+    /* Java */
+    if (EXT_IS(".java") || EXT_IS(".jar") || EXT_IS(".class")) {
         return "☕";
     }
-    if (EXT_IS(".js") || EXT_IS(".mjs") || EXT_IS(".ts")) {
-        return "📜";
+    /* Kotlin */
+    if (EXT_IS(".kt") || EXT_IS(".kts")) {
+        return "🟣";
     }
-    if (EXT_IS(".html") || EXT_IS(".htm") || EXT_IS(".xml")) {
+    /* Swift */
+    if (EXT_IS(".swift")) {
+        return "🐦";
+    }
+    /* PHP */
+    if (EXT_IS(".php")) {
+        return "🐘";
+    }
+    /* Ruby */
+    if (EXT_IS(".rb") || EXT_IS(".erb")) {
+        return "💎";
+    }
+    /* React JSX / TSX */
+    if (EXT_IS(".jsx") || EXT_IS(".tsx")) {
+        return "⚛️";
+    }
+    /* TypeScript: blue square */
+    if (EXT_IS(".ts") || EXT_IS(".mts") || EXT_IS(".cts")) {
+        return "🟦";
+    }
+    /* JavaScript: yellow square */
+    if (EXT_IS(".js") || EXT_IS(".mjs") || EXT_IS(".cjs")) {
+        return "🟨";
+    }
+    /* Vue */
+    if (EXT_IS(".vue")) {
+        return "🟢";
+    }
+    /* Svelte */
+    if (EXT_IS(".svelte")) {
+        return "🔥";
+    }
+    /* HTML */
+    if (EXT_IS(".html") || EXT_IS(".htm") || EXT_IS(".xhtml")) {
         return "🌐";
     }
-    if (EXT_IS(".css") || EXT_IS(".scss") || EXT_IS(".less")) {
+    /* CSS */
+    if (EXT_IS(".css")) {
         return "🎨";
     }
-    if (EXT_IS(".json") || EXT_IS(".yaml") || EXT_IS(".yml") ||
-        EXT_IS(".toml") || EXT_IS(".ini") || EXT_IS(".cfg")) {
+    /* SCSS / SASS: pink flower */
+    if (EXT_IS(".scss") || EXT_IS(".sass")) {
+        return "🌸";
+    }
+    if (EXT_IS(".less")) {
+        return "🎨";
+    }
+    /* JSON */
+    if (EXT_IS(".json") || EXT_IS(".jsonc") || EXT_IS(".json5")) {
+        return "📋";
+    }
+    /* YAML */
+    if (EXT_IS(".yaml") || EXT_IS(".yml")) {
         return "🧾";
     }
-    if (EXT_IS(".sh") || EXT_IS(".bash") || EXT_IS(".zsh")) {
-        return "🐚";
+    /* TOML / INI / Conf */
+    if (EXT_IS(".toml") || EXT_IS(".ini") || EXT_IS(".cfg") ||
+        EXT_IS(".conf") || EXT_IS(".properties")) {
+        return "⚙️";
     }
-    if (EXT_IS(".png") || EXT_IS(".jpg") || EXT_IS(".jpeg") || EXT_IS(".gif") ||
-        EXT_IS(".svg") || EXT_IS(".bmp") || EXT_IS(".ico") || EXT_IS(".webp")) {
-        return "🖼️";
+    /* XML */
+    if (EXT_IS(".xml") || EXT_IS(".xsl") || EXT_IS(".xsd")) {
+        return "🌐";
     }
+    /* Shell / Scripting */
+    if (EXT_IS(".sh") || EXT_IS(".bash") || EXT_IS(".zsh") ||
+        EXT_IS(".fish") || EXT_IS(".ksh") || EXT_IS(".bat") ||
+        EXT_IS(".cmd") || EXT_IS(".ps1")) {
+        return "💻";
+    }
+    /* SQL / Database */
+    if (EXT_IS(".sql") || EXT_IS(".db") || EXT_IS(".sqlite") ||
+        EXT_IS(".sqlite3") || EXT_IS(".db3")) {
+        return "🗄️";
+    }
+    /* Markdown / Documentation */
+    if (EXT_IS(".md") || EXT_IS(".markdown") || EXT_IS(".mdown") ||
+        EXT_IS(".rst")) {
+        return "📝";
+    }
+    /* PDF */
     if (EXT_IS(".pdf")) {
         return "📕";
     }
-    if (EXT_IS(".mp3") || EXT_IS(".wav") || EXT_IS(".ogg") || EXT_IS(".flac")) {
+    /* Images */
+    if (EXT_IS(".png") || EXT_IS(".jpg") || EXT_IS(".jpeg") || EXT_IS(".gif") ||
+        EXT_IS(".svg") || EXT_IS(".bmp") || EXT_IS(".ico") || EXT_IS(".webp") ||
+        EXT_IS(".tiff") || EXT_IS(".tif") || EXT_IS(".avif")) {
+        return "🖼️";
+    }
+    /* Audio */
+    if (EXT_IS(".mp3") || EXT_IS(".wav") || EXT_IS(".ogg") ||
+        EXT_IS(".flac") || EXT_IS(".aac") || EXT_IS(".m4a")) {
         return "🎵";
     }
-    if (EXT_IS(".mp4") || EXT_IS(".avi") || EXT_IS(".mkv") || EXT_IS(".mov")) {
+    /* Video */
+    if (EXT_IS(".mp4") || EXT_IS(".avi") || EXT_IS(".mkv") ||
+        EXT_IS(".mov") || EXT_IS(".webm") || EXT_IS(".flv")) {
         return "🎬";
     }
+    /* Archives */
     if (EXT_IS(".tar") || EXT_IS(".gz") || EXT_IS(".tgz") || EXT_IS(".zip") ||
-        EXT_IS(".rar") || EXT_IS(".7z") || EXT_IS(".xz") || EXT_IS(".bz2")) {
+        EXT_IS(".rar") || EXT_IS(".7z") || EXT_IS(".xz") || EXT_IS(".bz2") ||
+        EXT_IS(".zst") || EXT_IS(".tbz2")) {
         return "📦";
     }
-    if (EXT_IS(".db") || EXT_IS(".sqlite") || EXT_IS(".sqlite3")) {
-        return "🗃️";
-    }
+    /* Compiled binaries / libraries */
     if (EXT_IS(".o") || EXT_IS(".so") || EXT_IS(".a") || EXT_IS(".bin") ||
-        EXT_IS(".exe")) {
-        return "⚙️"; /* compiled artifacts */
+        EXT_IS(".exe") || EXT_IS(".dylib") || EXT_IS(".dll") || EXT_IS(".out")) {
+        return "⚙️";
     }
-    if (EXT_IS(".md") || EXT_IS(".txt") || EXT_IS(".rst") || EXT_IS(".log")) {
-        return "📝";
+    /* Lua */
+    if (EXT_IS(".lua")) {
+        return "🌙";
+    }
+    /* Dart */
+    if (EXT_IS(".dart")) {
+        return "🎯";
+    }
+    /* Lock files */
+    if (EXT_IS(".lock")) {
+        return "🔒";
+    }
+    /* Build files */
+    if (EXT_IS(".cmake") || EXT_IS(".mk")) {
+        return "🛠️";
+    }
+    /* Text / Plain */
+    if (EXT_IS(".txt") || EXT_IS(".log") || EXT_IS(".csv") ||
+        EXT_IS(".tsv") || EXT_IS(".diff") || EXT_IS(".patch")) {
+        return "📄";
     }
     return "📄";
 #undef EXT_IS

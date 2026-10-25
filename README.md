@@ -4,10 +4,11 @@ Simple graphical application to browse the file system.
 
 ## 🎯 Features (current version)
 
-- ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), single "Name" column with VS Code-like **emoji icons** by file type
+- ✅ Left panel: **real** listing of the current directory (`GDir` enumeration, alphabetical sort, directories first), single "Name" column with exact VS Code-matched **emoji icons** by file type and filename (`.c`, `.cpp`, `.rs`, `.go`, `.py`, `.js`, `.ts`, `.jsx`, `.tsx`, `.vue`, `.html`, `.css`, `.scss`, `Dockerfile`, `.gitignore`, `package.json`, `Cargo.lock`, `LICENSE`, etc.)
 - ✅ Expandable directory tree: directories in the left panel can be expanded/collapsed (click expander arrow, press `Space`, `l` / `Right`, or `Enter`), displaying nested contents inline with tree hierarchy lines. Expanding/collapsing is preserved across sort and hidden toggles.
 - ✅ Right panel: content viewer — clicking a file on the left shows its content on the right; selecting a** directory** lists its contents
 - ✅ Syntax highlighting in the viewer for text files (optional `GtkSourceView`: C, C++, Python, JS, JSON, XML, Makefile, ...), with a **VS Code Dark+** color palette
+- ✅ Full VS Code Dark+ application theme: complete dark styling matching VS Code Dark+ across the entire interface, including `#252526` sidebar with `#04395e` selection, `#1e1e1e` editor background, `#2b2b2b` subtle borders, `#3c3c3c` search input, and styled notebook tabs
 - ✅ Monospace font for code files: source code files (`*.c`, `*.py`, `*.js`, `*.sh`, `Makefile`, etc.) are displayed using a clean monospace / fixed-width font family in both the preview viewer and editor tabs, while rendered Markdown and HTML previews retain proportional typography
 - ✅ Text viewer padding: text and source code files displayed in the preview panel (as well as editor tabs) feature a slight, comfortable padding (margins) rather than adhering flush to the pane edges, improving reading and editing ergonomics
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
@@ -164,4 +165,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.11**: Image preview in right panel: direct rendering of image formats (`.png`, `.jpg`, `.svg`, `.gif`, `.bmp`, `.ico`, `.webp`, etc.) with image metadata (format, dimensions, size), centered layout, automatic window fitting, and `m` toggle for 1:1 original scale
 - **v1.12**: PDF preview in right panel: direct document rendering for `.pdf` files using `poppler-glib` and Cairo with metadata banner (title, author, version, page count, file size), sharp page-by-page rendering, text extraction mode via `m` toggle, and dedicated icon (`📕`)
 - **v1.13**: Text viewer padding: subtle, comfortable margins for text and source code files in the preview panel and editor tabs for improved readability
+- **v1.14**: VS Code Dark+ theme & icon matching: authentic VS Code Dark+ palette across all panels (`#252526` sidebar, `#1e1e1e` editor, `#04395e` selection, `#282828` borders) and exact VS Code file icon mappings for languages, frameworks, lockfiles, and config files
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)

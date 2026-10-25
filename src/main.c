@@ -76,6 +76,7 @@ int main(int argc, char** argv) {
                            G_TYPE_BOOLEAN); /* COL_LOADED */
 
     GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+    gtk_widget_set_name(tree_view, "file-tree");
     gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(tree_view), FALSE);
     gtk_tree_view_set_enable_tree_lines(GTK_TREE_VIEW(tree_view), TRUE);
     gtk_tree_view_set_show_expanders(GTK_TREE_VIEW(tree_view), TRUE);
@@ -88,6 +89,7 @@ int main(int argc, char** argv) {
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_name);
 
     GtkWidget* left_scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_set_name(left_scroll, "left-scroll");
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(left_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_container_add(GTK_CONTAINER(left_scroll), tree_view);
@@ -112,6 +114,7 @@ int main(int argc, char** argv) {
         GTK_SOURCE_BUFFER(gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view))), TRUE);
 #endif
     GtkWidget* right_scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_set_name(right_scroll, "right-scroll");
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(right_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_container_add(GTK_CONTAINER(right_scroll), text_view);
@@ -223,6 +226,7 @@ int main(int argc, char** argv) {
     g_signal_connect(search_entry, "key-press-event", G_CALLBACK(on_search_key_press), app);
 
     GtkWidget* left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_name(left_vbox, "left-sidebar");
     gtk_box_pack_start(GTK_BOX(left_vbox), search_entry, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(left_vbox), left_scroll, TRUE, TRUE, 0);
 
@@ -242,6 +246,7 @@ int main(int argc, char** argv) {
     layout_build(app, GTK_ORIENTATION_HORIZONTAL);
 
     GtkWidget* dim_window = gtk_window_new(GTK_WINDOW_POPUP);
+    gtk_widget_set_name(dim_window, "dim-window");
     gtk_window_set_type_hint(GTK_WINDOW(dim_window), GDK_WINDOW_TYPE_HINT_TOOLTIP);
     gtk_window_set_decorated(GTK_WINDOW(dim_window), FALSE);
     gtk_window_set_default_size(GTK_WINDOW(dim_window), 1, 1);
