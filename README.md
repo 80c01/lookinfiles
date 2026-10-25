@@ -11,6 +11,7 @@ Simple graphical application to browse the file system.
 - ✅ Non-UTF-8 files are sanitized before display (invalid bytes → U+FFFD)
 - ✅ Minimap right of the viewer: VS Code-like scaled overview of the displayed file (mini glyphs, or length-scaled bars for long files), with the viewport shown as a slider — click or drag on it to jump in the file
 - ✅ Resizable panel: draggable `GtkPaned` divider (initial position 300 px, minimum width 150 px) — while a divider is dragged, a small popup shows both panes' sizes (`W × H | W × H`)
+- ✅ Resizable terminal panes: multiple terminal panes (opened via `Ctrl+T` / `Ctrl+Shift+T`) are embedded in resizable `GtkPaned` dividers so each pane and the terminal panel itself can be dynamically resized
 - ✅ Navigation in the tree: the `Directory: …` label follows the current directory
 - ✅ Top bar shows the current directory, the sort mode and the hidden-files state
 - ✅ Markdown & HTML preview: Markdown files (`.md`, `.markdown`, etc.) and HTML files (`.html`, `.htm`, `.xhtml`, `.shtml`) are rendered with rich styling (document title, headings, formatted lists, blockquotes, code blocks, tables with Unicode borders, inline formatting, links, and images) rather than raw markup; press `m` to toggle between rendered and raw preview
@@ -142,4 +143,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.5**: Rendered Markdown preview in right panel (headings, task lists, tables, styled quotes, code blocks, inline formatting, and images) with `m` toggle for raw source preview
 - **v1.6**: Modular code architecture: split monolithic codebase into dedicated modules in `src/` (`main`, `file_list`, `viewer`, `markdown`, `editor`, `minimap`, `terminal`, `search`, `ui`)
 - **v1.7**: Rich HTML preview rendering in right panel (document title, headings, lists, blockquotes, preformatted code, Unicode border tables, inline formatting, links, and images) with `m` toggle for raw markup view
+- **v1.8**: Resizable multi-terminal layout: dynamic `GtkPaned` split hierarchy for side-by-side (`Ctrl+T`) and stacked (`Ctrl+Shift+T`) terminals, allowing smooth divider resizing across multiple open terminal panes
 - Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)

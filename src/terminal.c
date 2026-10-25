@@ -61,66 +61,147 @@ static void spawn_shell(AppData* app, VteTerminal* term) {
                              on_spawn_result, app);
 }
 
+static void collect_vte_panes(GtkWidget* widget, GPtrArray* panes) {
+    if (widget == NULL || !gtk_widget_get_visible(widget)) {
+        return;
+    }
+    if (VTE_IS_TERMINAL(widget)) {
+        g_ptr_array_add(panes, widget);
+        return;
+    }
+    if (GTK_IS_CONTAINER(widget)) {
+        GList* children = gtk_container_get_children(GTK_CONTAINER(widget));
+        for (GList* l = children; l != NULL; l = l->next) {
+            collect_vte_panes(GTK_WIDGET(l->data), panes);
+        }
+        g_list_free(children);
+    }
+}
+
+GPtrArray* term_visible_panes(AppData* app) {
+    GPtrArray* panes = g_ptr_array_new();
+    collect_vte_panes(app->term_box, panes);
+    return panes;
+}
+
+static gboolean on_vte_focus_in(GtkWidget* widget, GdkEventFocus* event, gpointer data) {
+    (void)event;
+    AppData* app = (AppData*)data;
+    app->last_focused_vte = widget;
+    return FALSE;
+}
+
+static GtkWidget* get_target_pane(AppData* app) {
+    GPtrArray* panes = term_visible_panes(app);
+    GtkWidget* target = NULL;
+    if (panes->len > 0) {
+        if (app->last_focused_vte != NULL) {
+            for (guint i = 0; i < panes->len; i++) {
+                if (g_ptr_array_index(panes, i) == app->last_focused_vte) {
+                    target = app->last_focused_vte;
+                    break;
+                }
+            }
+        }
+        if (target == NULL) {
+            target = GTK_WIDGET(g_ptr_array_index(panes, panes->len - 1));
+        }
+    }
+    g_ptr_array_unref(panes);
+    return target;
+}
+
 void term_spawn_pane(AppData* app, gboolean new_row) {
     GtkWidget* vte = vte_terminal_new();
     apply_terminal_theme(VTE_TERMINAL(vte));
     g_signal_connect(vte, "child-exited",
                      G_CALLBACK(on_term_child_exited), app);
     g_signal_connect(vte, "realize", G_CALLBACK(on_vte_realize), app);
+    g_signal_connect(vte, "focus-in-event", G_CALLBACK(on_vte_focus_in), app);
     spawn_shell(app, VTE_TERMINAL(vte));
 
-    GtkWidget* row;
-    GList* rows = gtk_container_get_children(GTK_CONTAINER(app->term_box));
-    if (new_row || rows == NULL) {
-        /* A fresh terminal row below the running ones */
-        row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
-        gtk_box_pack_start(GTK_BOX(app->term_box), row, TRUE, TRUE, 0);
-        gtk_widget_show(row);
+    GtkWidget* target = get_target_pane(app);
+    if (target == NULL) {
+        /* First terminal: placed directly in term_box */
+        gtk_box_pack_start(GTK_BOX(app->term_box), vte, TRUE, TRUE, 0);
+        gtk_widget_show(vte);
     } else {
-        GList* last = g_list_last(rows);
-        row = GTK_WIDGET(last->data);
-    }
-    g_list_free(rows);
-    gtk_box_pack_start(GTK_BOX(row), vte, TRUE, TRUE, 0);
-    gtk_widget_show(vte);
-}
+        GtkWidget* parent = gtk_widget_get_parent(target);
+        GtkOrientation orient = new_row ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
+        GtkWidget* new_paned = gtk_paned_new(orient);
 
-GPtrArray* term_visible_panes(AppData* app) {
-    GPtrArray* panes = g_ptr_array_new();
-    GList* rows =
-        gtk_container_get_children(GTK_CONTAINER(app->term_box));
-    for (GList* r = rows; r != NULL; r = r->next) {
-        GList* panes_in_row =
-            gtk_container_get_children(GTK_CONTAINER(r->data));
-        for (GList* l = panes_in_row; l != NULL; l = l->next) {
-            if (gtk_widget_get_visible(GTK_WIDGET(l->data))) {
-                g_ptr_array_add(panes, l->data);
+        g_object_ref(target);
+        if (parent == app->term_box) {
+            gtk_container_remove(GTK_CONTAINER(app->term_box), target);
+            gtk_paned_pack1(GTK_PANED(new_paned), target, TRUE, TRUE);
+            gtk_paned_pack2(GTK_PANED(new_paned), vte, TRUE, TRUE);
+            gtk_box_pack_start(GTK_BOX(app->term_box), new_paned, TRUE, TRUE, 0);
+        } else if (GTK_IS_PANED(parent)) {
+            gboolean is_child1 = (gtk_paned_get_child1(GTK_PANED(parent)) == target);
+            gtk_container_remove(GTK_CONTAINER(parent), target);
+            gtk_paned_pack1(GTK_PANED(new_paned), target, TRUE, TRUE);
+            gtk_paned_pack2(GTK_PANED(new_paned), vte, TRUE, TRUE);
+            if (is_child1) {
+                gtk_paned_pack1(GTK_PANED(parent), new_paned, TRUE, TRUE);
+            } else {
+                gtk_paned_pack2(GTK_PANED(parent), new_paned, TRUE, TRUE);
             }
         }
-        g_list_free(panes_in_row);
+        g_object_unref(target);
+        gtk_widget_show_all(new_paned);
     }
-    g_list_free(rows);
-    return panes;
+
+    app->last_focused_vte = vte;
 }
 
 void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
     (void)status;
     AppData* app = (AppData*)data;
-    GtkWidget* row = gtk_widget_get_parent(GTK_WIDGET(term));
-    if (row != NULL && gtk_widget_get_parent(row) ==
-                       GTK_WIDGET(app->term_box)) {
-        gtk_container_remove(GTK_CONTAINER(row), GTK_WIDGET(term));
-        if (gtk_container_get_children(GTK_CONTAINER(row)) == NULL) {
-            gtk_container_remove(GTK_CONTAINER(app->term_box), row);
-        }
+    GtkWidget* term_w = GTK_WIDGET(term);
+
+    if (app->last_focused_vte == term_w) {
+        app->last_focused_vte = NULL;
     }
-    if (gtk_container_get_children(GTK_CONTAINER(app->term_box)) == NULL) {
+
+    GtkWidget* parent = gtk_widget_get_parent(term_w);
+    if (parent == app->term_box) {
+        gtk_container_remove(GTK_CONTAINER(app->term_box), term_w);
         gtk_widget_hide(app->term_scroll);
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
-    } else {
+        return;
+    }
+
+    if (GTK_IS_PANED(parent)) {
+        GtkPaned* parent_paned = GTK_PANED(parent);
+        GtkWidget* sibling = (gtk_paned_get_child1(parent_paned) == term_w) ?
+                             gtk_paned_get_child2(parent_paned) :
+                             gtk_paned_get_child1(parent_paned);
+        GtkWidget* grandparent = gtk_widget_get_parent(parent);
+
+        g_object_ref(sibling);
+        gtk_container_remove(GTK_CONTAINER(parent), term_w);
+        gtk_container_remove(GTK_CONTAINER(parent), sibling);
+
+        if (grandparent == app->term_box) {
+            gtk_container_remove(GTK_CONTAINER(app->term_box), parent);
+            gtk_box_pack_start(GTK_BOX(app->term_box), sibling, TRUE, TRUE, 0);
+        } else if (GTK_IS_PANED(grandparent)) {
+            gboolean is_child1 = (gtk_paned_get_child1(GTK_PANED(grandparent)) == parent);
+            gtk_container_remove(GTK_CONTAINER(grandparent), parent);
+            if (is_child1) {
+                gtk_paned_pack1(GTK_PANED(grandparent), sibling, TRUE, TRUE);
+            } else {
+                gtk_paned_pack2(GTK_PANED(grandparent), sibling, TRUE, TRUE);
+            }
+        }
+        g_object_unref(sibling);
+
         GPtrArray* panes = term_visible_panes(app);
         if (panes->len > 0) {
             gtk_widget_grab_focus(GTK_WIDGET(g_ptr_array_index(panes, 0)));
+        } else {
+            gtk_widget_hide(app->term_scroll);
+            gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
         }
         g_ptr_array_unref(panes);
     }

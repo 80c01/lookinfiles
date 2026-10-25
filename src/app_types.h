@@ -79,7 +79,8 @@ typedef struct {
     /* Embedded terminal panel (Ctrl+T) */
     GtkWidget* term_scroll;
 #ifdef HAVE_VTE
-    GtkWidget* term_box; /* row of side-by-side terminal panes */
+    GtkWidget* term_box; /* root container of resizable terminal panes */
+    GtkWidget* last_focused_vte; /* last focused terminal pane for splitting */
 #endif
 
     /* Editor tabs (double-click / Enter on a file in the list) */

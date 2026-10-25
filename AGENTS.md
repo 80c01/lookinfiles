@@ -101,8 +101,8 @@ Shortcut list to keep in sync with `README.md` when you change behavior.
 
 ## Known status
 
-Recent features are stable (v1.7 in README.md): modular architecture in `src/`,
-rendered Markdown & HTML previews, resizable pane, vim bindings, navigation, hidden toggle,
+Recent features are stable (v1.8 in README.md): modular architecture in `src/`,
+rendered Markdown & HTML previews, resizable terminal panes (`GtkPaned`), resizable layout, vim bindings, navigation, hidden toggle,
 sort cycle, previews, dark theme. UI language is English end-to-end, including README.md.
 Existing French `.cpp` reference file (`exp explorateur_fichiers.cpp`) is legacy —
 do not compile or extend it.

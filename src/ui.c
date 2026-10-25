@@ -325,15 +325,15 @@ void layout_build(AppData* app, GtkOrientation orientation) {
     }
 
     GtkWidget* right_paned = gtk_paned_new(orientation);
-    gtk_paned_pack1(GTK_PANED(right_paned), app->viewer_box, TRUE, FALSE);
-    gtk_paned_pack2(GTK_PANED(right_paned), app->term_scroll, FALSE, FALSE);
+    gtk_paned_pack1(GTK_PANED(right_paned), app->viewer_box, TRUE, TRUE);
+    gtk_paned_pack2(GTK_PANED(right_paned), app->term_scroll, FALSE, TRUE);
     if (snatched) {
         g_object_unref(app->viewer_box);
         g_object_unref(app->term_scroll);
     }
 
     /* Min sizes valid for both orientations */
-    gtk_widget_set_size_request(app->term_scroll, 250, 150);
+    gtk_widget_set_size_request(app->term_scroll, 120, 80);
 
     app->right_paned = right_paned;
 
@@ -345,7 +345,7 @@ void layout_build(AppData* app, GtkOrientation orientation) {
     g_signal_connect(right_paned, "notify::position",
                      G_CALLBACK(on_paned_notify_position), app);
 
-    gtk_paned_pack2(GTK_PANED(app->main_paned), right_paned, TRUE, FALSE);
+    gtk_paned_pack2(GTK_PANED(app->main_paned), right_paned, TRUE, TRUE);
     gtk_widget_show(right_paned);
 
     /* Restore last split proportion */

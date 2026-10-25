@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_no_show_all(term_scroll, TRUE);
 #ifdef HAVE_VTE
-    GtkWidget* term_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    GtkWidget* term_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(term_scroll), term_box);
     gtk_widget_show(term_box);
 #else
@@ -213,7 +213,7 @@ int main(int argc, char** argv) {
     gtk_box_pack_start(GTK_BOX(left_vbox), left_scroll, TRUE, TRUE, 0);
 
     GtkWidget* main_paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_paned_pack1(GTK_PANED(main_paned), left_vbox, FALSE, FALSE);
+    gtk_paned_pack1(GTK_PANED(main_paned), left_vbox, FALSE, TRUE);
     gtk_widget_set_size_request(left_vbox, 150, -1);
     g_signal_connect(main_paned, "button-press-event",
                      G_CALLBACK(on_paned_button_press), app);
