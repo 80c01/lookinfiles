@@ -16,18 +16,22 @@ int main(int argc, char** argv) {
     
     /* Panneau gauche - Liste des fichiers du repertoire actuel */
     GtkWidget* left_pane = gtk_scrolled_window_new(NULL, NULL);
-    
-    /* Configuration pour permettre le redimensionnement */
     gtk_container_set_border_width(GTK_CONTAINER(left_pane), 5);
+    
+    /* Creer un GtkBox vertical pour contenir le label et le treeview */
+    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(left_pane), vbox);
     
     /* Label pour montrer le path actuel */
     char path_text[256];
     snprintf(path_text, sizeof(path_text), "Repertoire: %s", cwd);
+    GtkWidget* path_label = gtk_label_new(path_text);
+    gtk_widget_set_halign(path_label, GTK_ALIGN_START);
+    gtk_box_pack_start(GTK_BOX(vbox), path_label, FALSE, FALSE, 0);
     
-    /* Créer le GtkListStore */
+    /* Creer le GtkListStore */
     GtkTreeIter iter;
     GtkListStore* store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
-    GtkWidget* tree_view = NULL;
     
     /* En-tête */
     gtk_list_store_append(store, &iter);
@@ -55,12 +59,8 @@ int main(int argc, char** argv) {
         }
     }
     
-    /* Afficher une indication du repertoire actuel */
-    GtkWidget* path_label = gtk_label_new(path_text);
-    gtk_widget_set_halign(path_label, GTK_ALIGN_START);
-    
-    /* Créer un GtkTreeView pour afficher les fichiers */
-    tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+    /* Creer un GtkTreeView pour afficher les fichiers */
+    GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
     g_object_ref_sink(tree_view);
     
     /* Ajouter une colonne pour afficher les noms */
@@ -73,22 +73,21 @@ int main(int argc, char** argv) {
     gtk_tree_view_column_pack_start(column, renderer, TRUE);
     gtk_tree_view_column_add_attribute(column, renderer, "text", 0);
     
-    /* Ajouter le treeview */
-    gtk_container_add(GTK_CONTAINER(left_pane), tree_view);
+    /* Ajouter le treeview au vbox */
+    gtk_box_pack_start(GTK_BOX(vbox), tree_view, TRUE, TRUE, 0);
     
     /* Afficher les widgets */
-    gtk_widget_show(tree_view);
-    gtk_widget_show(path_label);
+    gtk_widget_show_all(vbox);
     
     g_object_unref(store);
     
     /* Panneau droit */
     GtkWidget* right_pane = gtk_scrolled_window_new(NULL, NULL);
+    gtk_container_set_border_width(GTK_CONTAINER(right_pane), 0);
     
     GtkWidget* text_view = gtk_text_view_new();
     gtk_container_add(GTK_CONTAINER(right_pane), text_view);
     
-    /* Pack avec FALSE pour le gauche et TRUE pour le droit */
     gtk_box_pack_start(GTK_BOX(main_box), left_pane, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(main_box), right_pane, TRUE, TRUE, 5);
     
