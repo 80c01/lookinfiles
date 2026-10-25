@@ -1,6 +1,7 @@
 #include "html.h"
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
 void ensure_html_tags(GtkTextBuffer* buffer) {
     GtkTextTagTable* tt = gtk_text_buffer_get_tag_table(buffer);
@@ -15,7 +16,7 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
                "weight", PANGO_WEIGHT_BOLD,
                "foreground", "#61afef",
                "pixels-above-lines", 8,
-               "pixels-below-lines", 6);
+               "pixels-below-lines", 4);
 
     CREATE_TAG("html_h1",
                "scale", 1.8,
@@ -74,18 +75,33 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("html_code",
                "family", "monospace",
-               "background", "#2d2d2d",
+               "background", "#252627",
                "foreground", "#ce9178");
+
+    CREATE_TAG("html_kbd",
+               "family", "monospace",
+               "background", "#252627",
+               "foreground", "#dcdcaa",
+               "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("html_pre",
                "family", "monospace",
-               "background", "#252526",
+               "background", "#1a1b1d",
                "foreground", "#d4d4d4",
                "left-margin", 24,
                "right-margin", 24,
                "wrap-mode", GTK_WRAP_NONE,
                "pixels-above-lines", 3,
                "pixels-below-lines", 3);
+
+    CREATE_TAG("html_code_header",
+               "family", "monospace",
+               "scale", 0.85,
+               "foreground", "#808080",
+               "background", "#121314",
+               "left-margin", 24,
+               "pixels-above-lines", 8,
+               "pixels-below-lines", 2);
 
     CREATE_TAG("html_quote",
                "style", PANGO_STYLE_ITALIC,
@@ -104,7 +120,7 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("html_mark",
                "background", "#e5bf00",
-               "foreground", "#1e1e1e");
+               "foreground", "#121314");
 
     CREATE_TAG("html_small",
                "scale", 0.85);
@@ -121,6 +137,14 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("html_num",
                "foreground", "#4ec9b0",
+               "weight", PANGO_WEIGHT_BOLD);
+
+    CREATE_TAG("html_task_done",
+               "foreground", "#6a9955",
+               "weight", PANGO_WEIGHT_BOLD);
+
+    CREATE_TAG("html_task_todo",
+               "foreground", "#dcdcaa",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("html_hr",
@@ -140,7 +164,7 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
                "family", "monospace",
                "weight", PANGO_WEIGHT_BOLD,
                "foreground", "#4ec9b0",
-               "background", "#252526",
+               "background", "#252627",
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 16,
                "pixels-above-lines", 1,
@@ -153,6 +177,14 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
                "left-margin", 16,
                "pixels-above-lines", 1,
                "pixels-below-lines", 1);
+
+    CREATE_TAG("html_table_caption",
+               "family", "monospace",
+               "weight", PANGO_WEIGHT_BOLD,
+               "foreground", "#4fc1ff",
+               "left-margin", 16,
+               "pixels-above-lines", 4,
+               "pixels-below-lines", 2);
 
     CREATE_TAG("html_tag",
                "scale", 0.85,
@@ -167,6 +199,39 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
                "pixels-above-lines", 6,
                "pixels-below-lines", 4);
 
+    CREATE_TAG("html_meta_sub",
+               "scale", 0.85,
+               "foreground", "#808080",
+               "style", PANGO_STYLE_ITALIC,
+               "left-margin", 16,
+               "pixels-above-lines", 2,
+               "pixels-below-lines", 6);
+
+    CREATE_TAG("html_dt",
+               "weight", PANGO_WEIGHT_BOLD,
+               "foreground", "#4ec9b0",
+               "pixels-above-lines", 6,
+               "pixels-below-lines", 2);
+
+    CREATE_TAG("html_dd",
+               "left-margin", 28,
+               "foreground", "#cccccc",
+               "pixels-below-lines", 3);
+
+    CREATE_TAG("html_summary",
+               "weight", PANGO_WEIGHT_BOLD,
+               "foreground", "#569cd6",
+               "pixels-above-lines", 6,
+               "pixels-below-lines", 3);
+
+    CREATE_TAG("html_figcaption",
+               "scale", 0.9,
+               "foreground", "#808080",
+               "style", PANGO_STYLE_ITALIC,
+               "left-margin", 24,
+               "pixels-above-lines", 2,
+               "pixels-below-lines", 4);
+
     #undef CREATE_TAG
 }
 
@@ -178,21 +243,27 @@ typedef struct {
 
     /* Parser state */
     gboolean in_pre;
+    gboolean in_pre_code;
+    gchar* pre_lang;
     gint quote_depth;
     gboolean line_needs_quote_bar;
 
-    /* Lists: depth and ordered flags */
+    /* Lists: depth, ordered flag, count, type */
     struct {
         gboolean is_ordered;
         gint count;
+        gchar type; /* '1', 'a', 'A', 'i', 'I' */
     } list_stack[16];
     gint list_depth;
 
     /* Active styling tags */
     GPtrArray* active_tags;
 
-    /* Link tracking */
+    /* Link & Abbr tracking */
     gchar* current_link_url;
+    gchar* current_abbr_title;
+    GString* current_link_text;
+    gboolean in_link;
 
     /* Spacing state */
     gboolean last_was_ws;
@@ -251,6 +322,10 @@ static void insert_styled_text(HtmlRenderContext* ctx, const gchar* text, gssize
     if (text == NULL || len == 0 || *text == '\0') return;
     if (len < 0) len = strlen(text);
 
+    if (ctx->in_link && ctx->current_link_text != NULL) {
+        g_string_append_len(ctx->current_link_text, text, len);
+    }
+
     if (ctx->line_needs_quote_bar && ctx->quote_depth > 0) {
         GtkTextMark* qm = gtk_text_buffer_create_mark(ctx->buffer, NULL, &ctx->iter, TRUE);
         gtk_text_buffer_insert(ctx->buffer, &ctx->iter, "  │ ", -1);
@@ -281,15 +356,20 @@ static void insert_styled_text(HtmlRenderContext* ctx, const gchar* text, gssize
 
 static const gchar* decode_named_entity(const gchar* name, gint len) {
     #define MATCH(s, val) if (len == (gint)strlen(s) && g_ascii_strncasecmp(name, s, len) == 0) return val;
+    /* XML / Basic */
     MATCH("amp", "&");
     MATCH("lt", "<");
     MATCH("gt", ">");
     MATCH("quot", "\"");
     MATCH("apos", "'");
+
+    /* Spaces */
     MATCH("nbsp", " ");
     MATCH("ensp", " ");
     MATCH("emsp", "  ");
     MATCH("thinsp", " ");
+
+    /* Punctuation & Typography */
     MATCH("mdash", "—");
     MATCH("ndash", "–");
     MATCH("hellip", "…");
@@ -306,6 +386,7 @@ static const gchar* decode_named_entity(const gchar* name, gint len) {
     MATCH("plusmn", "±");
     MATCH("times", "×");
     MATCH("divide", "÷");
+    MATCH("minus", "−");
     MATCH("lsquo", "‘");
     MATCH("rsquo", "’");
     MATCH("ldquo", "“");
@@ -316,6 +397,57 @@ static const gchar* decode_named_entity(const gchar* name, gint len) {
     MATCH("cross", "✗");
     MATCH("star", "★");
     MATCH("heart", "♥");
+    MATCH("sect", "§");
+    MATCH("para", "¶");
+    MATCH("dagger", "†");
+    MATCH("Dagger", "‡");
+    MATCH("permil", "‰");
+    MATCH("lowast", "∗");
+
+    /* Math & Logic */
+    MATCH("ge", "≥");
+    MATCH("le", "≤");
+    MATCH("ne", "≠");
+    MATCH("approx", "≈");
+    MATCH("equiv", "≡");
+    MATCH("infin", "∞");
+    MATCH("empty", "∅");
+    MATCH("sum", "∑");
+    MATCH("prod", "∏");
+    MATCH("radic", "√");
+    MATCH("part", "∂");
+    MATCH("int", "∫");
+    MATCH("nabla", "∇");
+    MATCH("isin", "∈");
+    MATCH("notin", "∉");
+
+    /* Arrows */
+    MATCH("larr", "←");
+    MATCH("rarr", "→");
+    MATCH("uarr", "↑");
+    MATCH("darr", "↓");
+    MATCH("harr", "↔");
+    MATCH("lArr", "⇐");
+    MATCH("rArr", "⇒");
+    MATCH("hArr", "⇔");
+
+    /* Greek Letters */
+    MATCH("alpha", "α");
+    MATCH("beta", "β");
+    MATCH("gamma", "γ");
+    MATCH("delta", "δ");
+    MATCH("epsilon", "ε");
+    MATCH("theta", "θ");
+    MATCH("lambda", "λ");
+    MATCH("mu", "μ");
+    MATCH("pi", "π");
+    MATCH("sigma", "σ");
+    MATCH("omega", "ω");
+    MATCH("Delta", "Δ");
+    MATCH("Omega", "Ω");
+    MATCH("Sigma", "Σ");
+    MATCH("Pi", "Π");
+
     #undef MATCH
     return NULL;
 }
@@ -441,9 +573,137 @@ static gchar* strip_tags_and_entities(const gchar* src) {
     return g_string_free(res, FALSE);
 }
 
+/* Base64 data URI image loader */
+static GdkPixbuf* load_pixbuf_from_base64(const gchar* data_uri, gint max_width) {
+    if (data_uri == NULL || !g_str_has_prefix(data_uri, "data:image/")) {
+        return NULL;
+    }
+    const gchar* comma = strchr(data_uri, ',');
+    if (comma == NULL) return NULL;
+
+    const gchar* meta = data_uri + 11;
+    if (strstr(meta, "base64") == NULL) {
+        return NULL;
+    }
+
+    gsize out_len = 0;
+    guchar* decoded = g_base64_decode(comma + 1, &out_len);
+    if (decoded == NULL || out_len == 0) {
+        g_free(decoded);
+        return NULL;
+    }
+
+    GdkPixbufLoader* loader = gdk_pixbuf_loader_new();
+    GError* err = NULL;
+    GdkPixbuf* pix = NULL;
+
+    if (gdk_pixbuf_loader_write(loader, decoded, out_len, &err) &&
+        gdk_pixbuf_loader_close(loader, &err)) {
+        GdkPixbuf* orig = gdk_pixbuf_loader_get_pixbuf(loader);
+        if (orig != NULL) {
+            gint w = gdk_pixbuf_get_width(orig);
+            gint h = gdk_pixbuf_get_height(orig);
+            if (max_width > 0 && w > max_width) {
+                gint new_h = (gint)((gdouble)h * max_width / w);
+                if (new_h < 1) new_h = 1;
+                pix = gdk_pixbuf_scale_simple(orig, max_width, new_h, GDK_INTERP_BILINEAR);
+            } else {
+                pix = g_object_ref(orig);
+            }
+        }
+    } else if (err != NULL) {
+        g_error_free(err);
+    }
+
+    g_object_unref(loader);
+    g_free(decoded);
+    return pix;
+}
+
+/* Extract language name from class="language-..." or class="lang-..." */
+static gchar* extract_code_lang(const gchar* tag_str) {
+    gchar* cls = html_get_attr(tag_str, "class");
+    if (cls == NULL) return NULL;
+    const gchar* p = cls;
+    gchar* lang = NULL;
+    while (*p != '\0') {
+        while (*p == ' ' || *p == '\t') p++;
+        if (g_str_has_prefix(p, "language-") || g_str_has_prefix(p, "lang-")) {
+            const gchar* lstart = strchr(p, '-') + 1;
+            const gchar* lend = lstart;
+            while (*lend != '\0' && !isspace((unsigned char)*lend) && *lend != '"' && *lend != '\'') lend++;
+            if (lend > lstart) {
+                lang = g_strndup(lstart, lend - lstart);
+                break;
+            }
+        }
+        while (*p != '\0' && !isspace((unsigned char)*p)) p++;
+    }
+    g_free(cls);
+    return lang;
+}
+
+/* Extract <meta name="..." content="..."> */
+static gchar* extract_meta_content(const gchar* html, const gchar* name) {
+    const gchar* p = html;
+    while ((p = strstr_case(p, "<meta", NULL)) != NULL) {
+        const gchar* gt = strchr(p, '>');
+        if (gt == NULL) break;
+        gchar* tag = g_strndup(p, gt - p + 1);
+        gchar* mname = html_get_attr(tag, "name");
+        if (mname == NULL) {
+            mname = html_get_attr(tag, "property");
+        }
+        if (mname != NULL && g_ascii_strcasecmp(mname, name) == 0) {
+            gchar* cont = html_get_attr(tag, "content");
+            g_free(mname);
+            g_free(tag);
+            return cont;
+        }
+        g_free(mname);
+        g_free(tag);
+        p = gt + 1;
+    }
+    return NULL;
+}
+
+typedef struct {
+    gchar* text;
+    gboolean is_num;
+} HtmlTableCell;
+
+static void free_table_cell(gpointer data) {
+    HtmlTableCell* c = (HtmlTableCell*)data;
+    if (c != NULL) {
+        g_free(c->text);
+        g_free(c);
+    }
+}
+
 static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
     const gchar* table_end = strstr_case(p, "</table", NULL);
     const gchar* search_limit = (table_end != NULL) ? table_end + 8 : p + strlen(p);
+
+    /* Extract and render table caption if present */
+    const gchar* cap_start = strstr_case(p, "<caption", search_limit);
+    if (cap_start != NULL && cap_start < search_limit) {
+        const gchar* cap_gt = strchr(cap_start, '>');
+        if (cap_gt != NULL && cap_gt < search_limit) {
+            const gchar* cap_end = strstr_case(cap_gt, "</caption", search_limit);
+            if (cap_end != NULL && cap_end < search_limit) {
+                gchar* raw_cap = g_strndup(cap_gt + 1, cap_end - (cap_gt + 1));
+                gchar* clean_cap = strip_tags_and_entities(raw_cap);
+                g_free(raw_cap);
+                if (clean_cap != NULL && clean_cap[0] != '\0') {
+                    ensure_newlines(ctx, 2);
+                    gchar* cap_str = g_strdup_printf("  📋 %s\n", clean_cap);
+                    insert_tag_text(ctx, cap_str, "html_table_caption");
+                    g_free(cap_str);
+                }
+                g_free(clean_cap);
+            }
+        }
+    }
 
     GPtrArray* rows = g_ptr_array_new();
     GArray* is_header_row = g_array_new(FALSE, FALSE, sizeof(gboolean));
@@ -462,7 +722,7 @@ static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
             tr_end = (next_tr != NULL) ? next_tr : search_limit;
         }
 
-        GPtrArray* row_cells = g_ptr_array_new_with_free_func(g_free);
+        GPtrArray* row_cells = g_ptr_array_new_with_free_func(free_table_cell);
         gboolean row_has_th = FALSE;
 
         const gchar* cell_cur = tr_close_tag + 1;
@@ -500,7 +760,20 @@ static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
             gchar* cell_raw = g_strndup(cell_close_tag + 1, cell_end - (cell_close_tag + 1));
             gchar* clean = strip_tags_and_entities(cell_raw);
             g_free(cell_raw);
-            g_ptr_array_add(row_cells, clean);
+
+            /* Detect if cell is numeric for right alignment */
+            gboolean is_num = FALSE;
+            if (clean != NULL && clean[0] != '\0') {
+                const gchar* s = clean;
+                while (*s == ' ' || *s == '$' || *s == '+' || *s == '-' ||
+                       (unsigned char)*s == 0xC2 /* non-breaking space / currency */) s++;
+                if (isdigit((unsigned char)*s)) is_num = TRUE;
+            }
+
+            HtmlTableCell* tc = g_new0(HtmlTableCell, 1);
+            tc->text = clean;
+            tc->is_num = is_num;
+            g_ptr_array_add(row_cells, tc);
 
             cell_cur = cell_end;
             if (*cell_cur == '<') {
@@ -540,8 +813,8 @@ static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
             for (guint r = 0; r < num_rows; r++) {
                 GPtrArray* rc = g_ptr_array_index(rows, r);
                 for (guint c = 0; c < rc->len && c < max_cols; c++) {
-                    const gchar* text = g_ptr_array_index(rc, c);
-                    gint clen = (gint)g_utf8_strlen(text, -1);
+                    HtmlTableCell* tc = g_ptr_array_index(rc, c);
+                    gint clen = (gint)g_utf8_strlen(tc->text, -1);
                     if (clen > 40) clen = 40;
                     if (clen > col_widths[c]) col_widths[c] = clen;
                 }
@@ -576,7 +849,8 @@ static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
                 gboolean is_hdr = g_array_index(is_header_row, gboolean, r) || (r == 0 && num_rows > 1);
                 GString* row_str = g_string_new("  │");
                 for (guint c = 0; c < max_cols; c++) {
-                    const gchar* cell_text = (c < rc->len) ? g_ptr_array_index(rc, c) : "";
+                    HtmlTableCell* tc = (c < rc->len) ? g_ptr_array_index(rc, c) : NULL;
+                    const gchar* cell_text = tc ? tc->text : "";
                     gchar* display_text = NULL;
                     gint clen = (gint)g_utf8_strlen(cell_text, -1);
                     if (clen > col_widths[c]) {
@@ -589,9 +863,15 @@ static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
                         display_text = g_strdup(cell_text);
                     }
                     gint pad = col_widths[c] - clen;
-                    g_string_append_printf(row_str, " %s", display_text);
-                    for (gint p_pad = 0; p_pad < pad; p_pad++) g_string_append_c(row_str, ' ');
-                    g_string_append(row_str, " │");
+                    if (tc && tc->is_num && !is_hdr) {
+                        g_string_append_c(row_str, ' ');
+                        for (gint p_pad = 0; p_pad < pad; p_pad++) g_string_append_c(row_str, ' ');
+                        g_string_append_printf(row_str, "%s │", display_text);
+                    } else {
+                        g_string_append_printf(row_str, " %s", display_text);
+                        for (gint p_pad = 0; p_pad < pad; p_pad++) g_string_append_c(row_str, ' ');
+                        g_string_append(row_str, " │");
+                    }
                     g_free(display_text);
                 }
                 g_string_append_c(row_str, '\n');
@@ -629,15 +909,20 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             pop_tag(ctx, "html_bold");
         } else if (strcmp(tag, "i") == 0 || strcmp(tag, "em") == 0 ||
                    strcmp(tag, "cite") == 0 || strcmp(tag, "var") == 0 ||
-                   strcmp(tag, "dfn") == 0) {
+                   strcmp(tag, "dfn") == 0 || strcmp(tag, "address") == 0) {
             pop_tag(ctx, "html_italic");
         } else if (strcmp(tag, "u") == 0 || strcmp(tag, "ins") == 0) {
             pop_tag(ctx, "html_underline");
         } else if (strcmp(tag, "s") == 0 || strcmp(tag, "del") == 0 || strcmp(tag, "strike") == 0) {
             pop_tag(ctx, "html_strike");
-        } else if (strcmp(tag, "code") == 0 || strcmp(tag, "kbd") == 0 ||
-                   strcmp(tag, "samp") == 0 || strcmp(tag, "tt") == 0) {
-            pop_tag(ctx, "html_code");
+        } else if (strcmp(tag, "code") == 0 || strcmp(tag, "samp") == 0 || strcmp(tag, "tt") == 0) {
+            if (ctx->in_pre && ctx->in_pre_code) {
+                ctx->in_pre_code = FALSE;
+            } else {
+                pop_tag(ctx, "html_code");
+            }
+        } else if (strcmp(tag, "kbd") == 0) {
+            pop_tag(ctx, "html_kbd");
         } else if (strcmp(tag, "mark") == 0) {
             pop_tag(ctx, "html_mark");
         } else if (strcmp(tag, "small") == 0) {
@@ -646,14 +931,40 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             pop_tag(ctx, "html_sub");
         } else if (strcmp(tag, "sup") == 0) {
             pop_tag(ctx, "html_sup");
+        } else if (strcmp(tag, "abbr") == 0) {
+            pop_tag(ctx, "html_underline");
+            if (ctx->current_abbr_title != NULL && ctx->current_abbr_title[0] != '\0') {
+                gchar* abbr_info = g_strdup_printf(" (%s)", ctx->current_abbr_title);
+                insert_tag_text(ctx, abbr_info, "html_tag");
+                g_free(abbr_info);
+                g_free(ctx->current_abbr_title);
+                ctx->current_abbr_title = NULL;
+            }
         } else if (strcmp(tag, "a") == 0) {
             pop_tag(ctx, "html_link");
+            ctx->in_link = FALSE;
             if (ctx->current_link_url != NULL && ctx->current_link_url[0] != '\0') {
-                gchar* link_info = g_strdup_printf(" ↗ [%s]", ctx->current_link_url);
-                insert_tag_text(ctx, link_info, "html_tag");
-                g_free(link_info);
+                const gchar* url = ctx->current_link_url;
+                gchar* trimmed = ctx->current_link_text ? g_strstrip(g_strdup(ctx->current_link_text->str)) : NULL;
+                gboolean is_anchor = (url[0] == '#');
+                gboolean same_as_text = (trimmed != NULL && g_strcmp0(trimmed, url) == 0);
+
+                if (!same_as_text && !is_anchor) {
+                    gchar* link_info = g_strdup_printf(" ↗ [%s]", url);
+                    insert_tag_text(ctx, link_info, "html_tag");
+                    g_free(link_info);
+                } else if (is_anchor && url[1] != '\0' && !same_as_text) {
+                    gchar* link_info = g_strdup_printf(" [%s]", url);
+                    insert_tag_text(ctx, link_info, "html_tag");
+                    g_free(link_info);
+                }
+                g_free(trimmed);
                 g_free(ctx->current_link_url);
                 ctx->current_link_url = NULL;
+            }
+            if (ctx->current_link_text != NULL) {
+                g_string_free(ctx->current_link_text, TRUE);
+                ctx->current_link_text = NULL;
             }
         } else if (strcmp(tag, "h1") == 0) {
             pop_tag(ctx, "html_h1");
@@ -682,11 +993,32 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
         } else if (strcmp(tag, "pre") == 0) {
             pop_tag(ctx, "html_pre");
             ctx->in_pre = FALSE;
+            ctx->in_pre_code = FALSE;
+            g_free(ctx->pre_lang);
+            ctx->pre_lang = NULL;
             ensure_newlines(ctx, 2);
         } else if (strcmp(tag, "ul") == 0 || strcmp(tag, "ol") == 0) {
             if (ctx->list_depth > 0) ctx->list_depth--;
             ensure_newlines(ctx, 1);
         } else if (strcmp(tag, "li") == 0) {
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "dl") == 0) {
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "dt") == 0) {
+            pop_tag(ctx, "html_dt");
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "dd") == 0) {
+            pop_tag(ctx, "html_dd");
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "details") == 0) {
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "summary") == 0) {
+            pop_tag(ctx, "html_summary");
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "figure") == 0) {
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "figcaption") == 0) {
+            pop_tag(ctx, "html_figcaption");
             ensure_newlines(ctx, 1);
         } else if (strcmp(tag, "div") == 0 || strcmp(tag, "section") == 0 ||
                    strcmp(tag, "article") == 0 || strcmp(tag, "header") == 0 ||
@@ -699,15 +1031,28 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             push_tag(ctx, "html_bold");
         } else if (strcmp(tag, "i") == 0 || strcmp(tag, "em") == 0 ||
                    strcmp(tag, "cite") == 0 || strcmp(tag, "var") == 0 ||
-                   strcmp(tag, "dfn") == 0) {
+                   strcmp(tag, "dfn") == 0 || strcmp(tag, "address") == 0) {
             push_tag(ctx, "html_italic");
         } else if (strcmp(tag, "u") == 0 || strcmp(tag, "ins") == 0) {
             push_tag(ctx, "html_underline");
         } else if (strcmp(tag, "s") == 0 || strcmp(tag, "del") == 0 || strcmp(tag, "strike") == 0) {
             push_tag(ctx, "html_strike");
-        } else if (strcmp(tag, "code") == 0 || strcmp(tag, "kbd") == 0 ||
-                   strcmp(tag, "samp") == 0 || strcmp(tag, "tt") == 0) {
-            push_tag(ctx, "html_code");
+        } else if (strcmp(tag, "code") == 0 || strcmp(tag, "samp") == 0 || strcmp(tag, "tt") == 0) {
+            if (ctx->in_pre) {
+                ctx->in_pre_code = TRUE;
+                if (ctx->pre_lang == NULL) {
+                    ctx->pre_lang = extract_code_lang(full_tag);
+                    if (ctx->pre_lang != NULL && ctx->pre_lang[0] != '\0') {
+                        gchar* hdr = g_strdup_printf("  ──  %s  ──\n", ctx->pre_lang);
+                        insert_tag_text(ctx, hdr, "html_code_header");
+                        g_free(hdr);
+                    }
+                }
+            } else {
+                push_tag(ctx, "html_code");
+            }
+        } else if (strcmp(tag, "kbd") == 0) {
+            push_tag(ctx, "html_kbd");
         } else if (strcmp(tag, "mark") == 0) {
             push_tag(ctx, "html_mark");
         } else if (strcmp(tag, "small") == 0) {
@@ -716,9 +1061,18 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             push_tag(ctx, "html_sub");
         } else if (strcmp(tag, "sup") == 0) {
             push_tag(ctx, "html_sup");
+        } else if (strcmp(tag, "abbr") == 0) {
+            g_free(ctx->current_abbr_title);
+            ctx->current_abbr_title = html_get_attr(full_tag, "title");
+            push_tag(ctx, "html_underline");
         } else if (strcmp(tag, "a") == 0) {
             g_free(ctx->current_link_url);
             ctx->current_link_url = html_get_attr(full_tag, "href");
+            if (ctx->current_link_text != NULL) {
+                g_string_free(ctx->current_link_text, TRUE);
+            }
+            ctx->current_link_text = g_string_new(NULL);
+            ctx->in_link = TRUE;
             push_tag(ctx, "html_link");
         } else if (strcmp(tag, "h1") == 0) {
             ensure_newlines(ctx, 2);
@@ -741,7 +1095,10 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
         } else if (strcmp(tag, "p") == 0) {
             ensure_newlines(ctx, 2);
         } else if (strcmp(tag, "br") == 0) {
-            ensure_newlines(ctx, 1);
+            gtk_text_buffer_insert(ctx->buffer, &ctx->iter, "\n", 1);
+            ctx->trailing_newlines++;
+            ctx->last_was_ws = TRUE;
+            ctx->line_needs_quote_bar = TRUE;
         } else if (strcmp(tag, "hr") == 0) {
             ensure_newlines(ctx, 1);
             insert_tag_text(ctx, "────────────────────────────────────────────────────────────────────────\n", "html_hr");
@@ -754,12 +1111,28 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
         } else if (strcmp(tag, "pre") == 0) {
             ensure_newlines(ctx, 2);
             ctx->in_pre = TRUE;
+            ctx->in_pre_code = FALSE;
+            g_free(ctx->pre_lang);
+            ctx->pre_lang = extract_code_lang(full_tag);
+            if (ctx->pre_lang != NULL && ctx->pre_lang[0] != '\0') {
+                gchar* hdr = g_strdup_printf("  ──  %s  ──\n", ctx->pre_lang);
+                insert_tag_text(ctx, hdr, "html_code_header");
+                g_free(hdr);
+            }
             push_tag(ctx, "html_pre");
         } else if (strcmp(tag, "ul") == 0 || strcmp(tag, "ol") == 0) {
             ensure_newlines(ctx, 1);
             if (ctx->list_depth < 16) {
+                gchar* type_attr = html_get_attr(full_tag, "type");
+                gchar* start_attr = html_get_attr(full_tag, "start");
+                gchar ltype = (type_attr && type_attr[0]) ? type_attr[0] : '1';
+                gint start_num = (start_attr && start_attr[0]) ? atoi(start_attr) : 1;
+                g_free(type_attr);
+                g_free(start_attr);
+
                 ctx->list_stack[ctx->list_depth].is_ordered = (strcmp(tag, "ol") == 0);
-                ctx->list_stack[ctx->list_depth].count = 0;
+                ctx->list_stack[ctx->list_depth].count = start_num - 1;
+                ctx->list_stack[ctx->list_depth].type = ltype;
                 ctx->list_depth++;
             }
         } else if (strcmp(tag, "li") == 0) {
@@ -771,7 +1144,24 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             }
             if (ctx->list_depth > 0 && ctx->list_stack[depth].is_ordered) {
                 ctx->list_stack[depth].count++;
-                gchar* num_str = g_strdup_printf("%d. ", ctx->list_stack[depth].count);
+                gint num = ctx->list_stack[depth].count;
+                gchar ltype = ctx->list_stack[depth].type;
+                gchar* num_str = NULL;
+                if (ltype == 'a' && num >= 1 && num <= 26) {
+                    num_str = g_strdup_printf("%c. ", 'a' + num - 1);
+                } else if (ltype == 'A' && num >= 1 && num <= 26) {
+                    num_str = g_strdup_printf("%c. ", 'A' + num - 1);
+                } else if (ltype == 'i' || ltype == 'I') {
+                    const gchar* romans[] = {"", "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii"};
+                    const gchar* ROMANS[] = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"};
+                    if (num >= 1 && num <= 12) {
+                        num_str = g_strdup_printf("%s. ", (ltype == 'i') ? romans[num] : ROMANS[num]);
+                    } else {
+                        num_str = g_strdup_printf("%d. ", num);
+                    }
+                } else {
+                    num_str = g_strdup_printf("%d. ", num);
+                }
                 insert_tag_text(ctx, num_str, "html_num");
                 g_free(num_str);
             } else {
@@ -780,31 +1170,64 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             }
             ctx->trailing_newlines = 0;
             ctx->last_was_ws = TRUE;
+        } else if (strcmp(tag, "dl") == 0) {
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "dt") == 0) {
+            ensure_newlines(ctx, 1);
+            push_tag(ctx, "html_dt");
+        } else if (strcmp(tag, "dd") == 0) {
+            ensure_newlines(ctx, 1);
+            gtk_text_buffer_insert(ctx->buffer, &ctx->iter, "    ", 4);
+            push_tag(ctx, "html_dd");
+        } else if (strcmp(tag, "details") == 0) {
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "summary") == 0) {
+            ensure_newlines(ctx, 1);
+            insert_tag_text(ctx, "▾ ", "html_summary");
+            push_tag(ctx, "html_summary");
+        } else if (strcmp(tag, "figure") == 0) {
+            ensure_newlines(ctx, 1);
+        } else if (strcmp(tag, "figcaption") == 0) {
+            ensure_newlines(ctx, 1);
+            push_tag(ctx, "html_figcaption");
+        } else if (strcmp(tag, "input") == 0) {
+            gchar* type = html_get_attr(full_tag, "type");
+            if (type != NULL && g_ascii_strcasecmp(type, "checkbox") == 0) {
+                gboolean checked = (html_get_attr(full_tag, "checked") != NULL ||
+                                    strstr_case(full_tag, "checked", NULL) != NULL);
+                if (checked) {
+                    insert_tag_text(ctx, "☑ ", "html_task_done");
+                } else {
+                    insert_tag_text(ctx, "☐ ", "html_task_todo");
+                }
+            }
+            g_free(type);
         } else if (strcmp(tag, "img") == 0) {
             gchar* src = html_get_attr(full_tag, "src");
             gchar* alt = html_get_attr(full_tag, "alt");
             if (src != NULL && src[0] != '\0') {
-                gchar* img_path = NULL;
-                if (g_path_is_absolute(src)) {
-                    img_path = g_strdup(src);
-                } else if (ctx->doc_dir != NULL) {
-                    img_path = g_build_filename(ctx->doc_dir, src, NULL);
-                }
-
-                gboolean loaded = FALSE;
-                if (img_path != NULL && g_file_test(img_path, G_FILE_TEST_EXISTS)) {
-                    GdkPixbuf* pix = gdk_pixbuf_new_from_file_at_scale(img_path, 480, -1, TRUE, NULL);
-                    if (pix != NULL) {
-                        ensure_newlines(ctx, 1);
-                        gtk_text_buffer_insert_pixbuf(ctx->buffer, &ctx->iter, pix);
-                        g_object_unref(pix);
-                        ensure_newlines(ctx, 1);
-                        loaded = TRUE;
+                GdkPixbuf* pix = NULL;
+                if (g_str_has_prefix(src, "data:image/")) {
+                    pix = load_pixbuf_from_base64(src, 560);
+                } else {
+                    gchar* img_path = NULL;
+                    if (g_path_is_absolute(src)) {
+                        img_path = g_strdup(src);
+                    } else if (ctx->doc_dir != NULL) {
+                        img_path = g_build_filename(ctx->doc_dir, src, NULL);
                     }
+                    if (img_path != NULL && g_file_test(img_path, G_FILE_TEST_EXISTS)) {
+                        pix = gdk_pixbuf_new_from_file_at_scale(img_path, 560, -1, TRUE, NULL);
+                    }
+                    g_free(img_path);
                 }
-                g_free(img_path);
 
-                if (!loaded) {
+                if (pix != NULL) {
+                    ensure_newlines(ctx, 1);
+                    gtk_text_buffer_insert_pixbuf(ctx->buffer, &ctx->iter, pix);
+                    g_object_unref(pix);
+                    ensure_newlines(ctx, 1);
+                } else {
                     gchar* placeholder = g_strdup_printf("🖼 [%s]", (alt && alt[0]) ? alt : src);
                     insert_tag_text(ctx, placeholder, "html_tag");
                     g_free(placeholder);
@@ -850,8 +1273,9 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
         ctx.trailing_newlines = 2;
     }
 
-    /* Extract and display document title if present */
+    /* Extract and display document title & metadata if present */
     const gchar* t_open = strstr_case(html_text, "<title", NULL);
+    gboolean title_rendered = FALSE;
     if (t_open != NULL) {
         const gchar* t_gt = strchr(t_open, '>');
         if (t_gt != NULL) {
@@ -864,12 +1288,49 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
                     insert_tag_text(&ctx, "🌐 ", "html_title");
                     insert_tag_text(&ctx, clean_title, "html_title");
                     ensure_newlines(&ctx, 1);
-                    insert_tag_text(&ctx, "────────────────────────────────────────────────────────────────────────\n\n", "html_hr");
-                    ctx.trailing_newlines = 2;
+                    title_rendered = TRUE;
                 }
                 g_free(clean_title);
             }
         }
+    }
+
+    /* Metadata subtitle: author / description */
+    gchar* raw_author = extract_meta_content(html_text, "author");
+    gchar* raw_desc = extract_meta_content(html_text, "description");
+    gchar* clean_author = raw_author ? strip_tags_and_entities(raw_author) : NULL;
+    gchar* clean_desc = raw_desc ? strip_tags_and_entities(raw_desc) : NULL;
+    g_free(raw_author);
+    g_free(raw_desc);
+
+    if (clean_desc != NULL && g_utf8_strlen(clean_desc, -1) > 120) {
+        gchar* trunc = g_strndup(clean_desc, 120);
+        gchar* tmp = g_strconcat(trunc, "…", NULL);
+        g_free(trunc);
+        g_free(clean_desc);
+        clean_desc = tmp;
+    }
+
+    if ((clean_author && clean_author[0] != '\0') || (clean_desc && clean_desc[0] != '\0')) {
+        GString* sub = g_string_new("  ");
+        if (clean_author && clean_author[0] != '\0') {
+            g_string_append_printf(sub, "👤 %s", clean_author);
+        }
+        if (clean_desc && clean_desc[0] != '\0') {
+            if (sub->len > 2) g_string_append(sub, "  •  ");
+            g_string_append_printf(sub, "📝 %s", clean_desc);
+        }
+        g_string_append_c(sub, '\n');
+        insert_tag_text(&ctx, sub->str, "html_meta_sub");
+        g_string_free(sub, TRUE);
+        title_rendered = TRUE;
+    }
+    g_free(clean_author);
+    g_free(clean_desc);
+
+    if (title_rendered) {
+        insert_tag_text(&ctx, "────────────────────────────────────────────────────────────────────────\n\n", "html_hr");
+        ctx.trailing_newlines = 2;
     }
 
     const gchar* p = html_text;
@@ -929,7 +1390,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
             break;
         }
 
-        /* Skip <head> block contents (title extracted at top) */
+        /* Skip <head> block contents (title/meta extracted at top) */
         if (p[0] == '<' && g_ascii_strncasecmp(p + 1, "head", 4) == 0 &&
             (p[5] == '>' || isspace((unsigned char)p[5]))) {
             const gchar* close = strstr_case(p, "</head", NULL);
@@ -1031,6 +1492,11 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
     ensure_newlines(&ctx, 1);
 
     g_ptr_array_free(ctx.active_tags, TRUE);
+    g_free(ctx.pre_lang);
     g_free(ctx.current_link_url);
+    g_free(ctx.current_abbr_title);
+    if (ctx.current_link_text != NULL) {
+        g_string_free(ctx.current_link_text, TRUE);
+    }
     g_free(doc_dir);
 }
