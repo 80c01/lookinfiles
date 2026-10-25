@@ -15,9 +15,10 @@ static const gchar* VSCODE_SCHEME_XML =
     "<style-scheme id=\"vscode-dark\" _name=\"VS Code Dark\" version=\"1.0\"\n"
     "               parent-scheme=\"oblivion\">\n"
     "  <_description>VS Code Dark+ palette for the file explorer viewer</_description>\n"
+    "  <style name=\"text\" background=\"#0a0b0c\" foreground=\"#d4d4d4\"/>\n"
     "  <style name=\"def\" foreground=\"#d4d4d4\"/>\n"
     "  <style name=\"selection\" background=\"#264f78\"/>\n"
-    "  <style name=\"current-line\" background=\"#2a2d2e\"/>\n"
+    "  <style name=\"current-line\" background=\"#181a1b\"/>\n"
     "  <style name=\"current-line-search\" background=\"#314365\"/>\n"
     "  <style name=\"bracket-match\" background=\"#515553\"/>\n"
     "  <style name=\"comment\" foreground=\"#6a9955\"/>\n"
@@ -66,7 +67,7 @@ void apply_viewer_background(GtkWidget* view) {
     gtk_widget_set_name(view, "viewer");
     GtkCssProvider* css = gtk_css_provider_new();
     gtk_css_provider_load_from_data(
-        css, "#viewer text { background-color: #1e1e1e; }", -1, NULL);
+        css, "#viewer text { background-color: #0a0b0c; }", -1, NULL);
     gtk_style_context_add_provider(gtk_widget_get_style_context(view),
                                    GTK_STYLE_PROVIDER(css),
                                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);

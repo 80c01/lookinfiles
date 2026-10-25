@@ -140,11 +140,13 @@ int main(int argc, char** argv) {
 
     /* Terminal panel container */
     GtkWidget* term_scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_set_name(term_scroll, "term-scroll");
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(term_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_no_show_all(term_scroll, TRUE);
 #ifdef HAVE_VTE
     GtkWidget* term_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_name(term_box, "term-box");
     gtk_container_add(GTK_CONTAINER(term_scroll), term_box);
     gtk_widget_show(term_box);
 #else

@@ -5,7 +5,7 @@
 /* VS Code Dark+ integrated-terminal palette: fg/bg like the editor, plus
  * the 16 ANSI colors it ships with (normal row then bright row). */
 static const gchar* VSCODE_TERM_FG = "#cccccc";
-static const gchar* VSCODE_TERM_BG = "#1e1e1e";
+static const gchar* VSCODE_TERM_BG = "#1f2021";
 static const gchar* VSCODE_TERM_CURSOR = "#ffffff";
 static const gchar* VSCODE_TERM_SELECTION = "#264f78";
 static const gchar* VSCODE_TERM_ANSI[16] = {
