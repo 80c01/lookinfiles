@@ -1052,6 +1052,25 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
 /* ===== Ctrl-T: embedded terminal in a panel right of the viewer ===== */
 
 #ifdef HAVE_VTE
+/* Terminal palette taken from the GTK theme so the panel matches the app:
+ * fg/bg = theme base colors, cursor = selection color. */
+static void apply_terminal_theme(AppData* app) {
+    VteTerminal* term = VTE_TERMINAL(app->vte);
+    GtkStyleContext* ctx = gtk_widget_get_style_context(GTK_WIDGET(app->tree_view));
+
+    GdkRGBA fg, bg;
+    if (!gtk_style_context_lookup_color(ctx, "theme_fg_color", &fg) ||
+        !gtk_style_context_lookup_color(ctx, "theme_bg_color", &bg)) {
+        return; /* theme without symbolic colors: keep VTE defaults */
+    }
+    vte_terminal_set_colors(term, &fg, &bg, NULL, 0);
+
+    GdkRGBA selected;
+    if (gtk_style_context_lookup_color(ctx, "theme_selected_bg_color", &selected)) {
+        vte_terminal_set_color_cursor(term, &selected);
+    }
+}
+
 /* Async spawn callback: report failures, then hand the child PID to the
  * terminal so it tracks the shell ("child-exited" stays reliable) */
 static void on_spawn_result(VteTerminal* term, GPid pid, GError* error,
@@ -1161,6 +1180,7 @@ static gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpoin
     gtk_widget_show(app->term_scroll);
     app->vte = vte_terminal_new();
     gtk_container_add(GTK_CONTAINER(app->term_scroll), app->vte);
+    apply_terminal_theme(app);
     g_signal_connect(app->vte, "child-exited",
                      G_CALLBACK(on_term_child_exited), app);
     g_signal_connect(app->vte, "realize",
