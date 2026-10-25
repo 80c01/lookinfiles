@@ -1152,22 +1152,40 @@ static void on_selection_changed(GtkTreeSelection* selection, gpointer user_data
 /* ===== Ctrl-T: embedded terminal in a panel right of the viewer ===== */
 
 #ifdef HAVE_VTE
-/* Terminal palette taken from the GTK theme so the panel matches the app:
- * fg/bg = theme base colors, cursor = selection color. */
+/* VS Code Dark+ integrated-terminal palette: fg/bg like the editor, plus
+ * the 16 ANSI colors it ships with (normal row then bright row). */
+static const gchar* VSCODE_TERM_FG = "#cccccc";
+static const gchar* VSCODE_TERM_BG = "#1e1e1e";
+static const gchar* VSCODE_TERM_CURSOR = "#ffffff";
+static const gchar* VSCODE_TERM_SELECTION = "#264f78";
+static const gchar* VSCODE_TERM_ANSI[16] = {
+    "#000000", "#cd3131", "#0dbc79", "#e5e510",
+    "#2472c8", "#bc3fbc", "#11a8cd", "#e5e5e5",
+    "#666666", "#f14c4c", "#23d18b", "#f5f543",
+    "#3b8eea", "#d670d6", "#29b8db", "#e5e5e5",
+};
+
 static void apply_terminal_theme(AppData* app) {
     VteTerminal* term = VTE_TERMINAL(app->vte);
-    GtkStyleContext* ctx = gtk_widget_get_style_context(GTK_WIDGET(app->tree_view));
-
     GdkRGBA fg, bg;
-    if (!gtk_style_context_lookup_color(ctx, "theme_fg_color", &fg) ||
-        !gtk_style_context_lookup_color(ctx, "theme_bg_color", &bg)) {
-        return; /* theme without symbolic colors: keep VTE defaults */
-    }
-    vte_terminal_set_colors(term, &fg, &bg, NULL, 0);
+    GdkRGBA ansi[16];
+    gsize i;
 
-    GdkRGBA selected;
-    if (gtk_style_context_lookup_color(ctx, "theme_selected_bg_color", &selected)) {
-        vte_terminal_set_color_cursor(term, &selected);
+    if (!gdk_rgba_parse(&fg, VSCODE_TERM_FG) || !gdk_rgba_parse(&bg, VSCODE_TERM_BG)) {
+        return; /* invalid literal: keep VTE defaults */
+    }
+    for (i = 0; i < 16; i++) {
+        gdk_rgba_parse(&ansi[i], VSCODE_TERM_ANSI[i]);
+    }
+    vte_terminal_set_colors(term, &fg, &bg, ansi, 16);
+
+    GdkRGBA cursor;
+    if (gdk_rgba_parse(&cursor, VSCODE_TERM_CURSOR)) {
+        vte_terminal_set_color_cursor(term, &cursor);
+    }
+    GdkRGBA selection;
+    if (gdk_rgba_parse(&selection, VSCODE_TERM_SELECTION)) {
+        vte_terminal_set_color_highlight(term, &selection);
     }
 }
 
