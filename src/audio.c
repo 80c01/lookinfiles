@@ -63,8 +63,11 @@ static void on_audio_error_notify(GtkMediaStream* stream, GParamSpec* pspec, gpo
     }
     const GError* err = gtk_media_stream_get_error(stream);
     if (err != NULL && app->audio_status != NULL) {
+        const gchar* err_msg = (err->message != NULL && err->message[0] != '\0')
+                                   ? err->message
+                                   : "Audio playback error";
         gchar* msg = g_strdup_printf("⚠ Media playback warning: %s (press 'm' to inspect raw file details)",
-                                     err->message);
+                                     err_msg);
         gtk_label_set_text(GTK_LABEL(app->audio_status), msg);
         gtk_widget_set_visible(app->audio_status, TRUE);
         g_free(msg);
@@ -155,32 +158,31 @@ void audio_preview_stop(AppData* app) {
     }
 
     if (app->audio_stream != NULL) {
+        GtkMediaStream* stream = app->audio_stream;
+        app->audio_stream = NULL;
+
         if (app->audio_duration_sig != 0) {
-            g_signal_handler_disconnect(app->audio_stream, app->audio_duration_sig);
+            g_signal_handler_disconnect(stream, app->audio_duration_sig);
             app->audio_duration_sig = 0;
         }
         if (app->audio_prepared_sig != 0) {
-            g_signal_handler_disconnect(app->audio_stream, app->audio_prepared_sig);
+            g_signal_handler_disconnect(stream, app->audio_prepared_sig);
             app->audio_prepared_sig = 0;
         }
         if (app->audio_error_sig != 0) {
-            g_signal_handler_disconnect(app->audio_stream, app->audio_error_sig);
+            g_signal_handler_disconnect(stream, app->audio_error_sig);
             app->audio_error_sig = 0;
+        }
+
+        if (gtk_media_stream_get_playing(stream)) {
+            gtk_media_stream_pause(stream);
         }
 
         if (app->audio_controls != NULL) {
             gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(app->audio_controls), NULL);
         }
 
-        if (gtk_media_stream_get_playing(app->audio_stream)) {
-            gtk_media_stream_pause(app->audio_stream);
-        }
-
-        if (GTK_IS_MEDIA_FILE(app->audio_stream)) {
-            gtk_media_file_clear(GTK_MEDIA_FILE(app->audio_stream));
-        }
-
-        g_clear_object(&app->audio_stream);
+        g_object_unref(stream);
     }
 
     g_free(app->audio_current_path);
@@ -345,24 +347,34 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
     update_audio_metadata_label(app, NULL);
 
     GFile* file = g_file_new_for_path(full);
-    GtkMediaStream* stream = GTK_MEDIA_STREAM(gtk_media_file_new_for_file(file));
+    if (file == NULL) {
+        return;
+    }
+    GtkMediaStream* stream = gtk_media_file_new_for_file(file);
     g_object_unref(file);
 
-    if (stream != NULL) {
-        app->audio_stream = stream;
-        if (app->audio_controls != NULL) {
-            gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(app->audio_controls), stream);
+    if (stream == NULL) {
+        if (app->audio_status != NULL) {
+            gtk_label_set_text(GTK_LABEL(app->audio_status),
+                               "⚠ Could not create media stream for file (press 'm' for details)");
+            gtk_widget_set_visible(app->audio_status, TRUE);
         }
+        return;
+    }
 
-        app->audio_duration_sig = g_signal_connect(stream, "notify::duration",
-                                                  G_CALLBACK(on_audio_duration_notify), app);
-        app->audio_prepared_sig = g_signal_connect(stream, "notify::prepared",
-                                                  G_CALLBACK(on_audio_prepared_notify), app);
-        app->audio_error_sig = g_signal_connect(stream, "notify::error",
-                                               G_CALLBACK(on_audio_error_notify), app);
+    app->audio_stream = stream;
+    if (app->audio_controls != NULL) {
+        gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(app->audio_controls), stream);
+    }
 
-        if (gtk_media_stream_is_prepared(stream)) {
-            update_audio_metadata_label(app, stream);
-        }
+    app->audio_duration_sig = g_signal_connect(stream, "notify::duration",
+                                              G_CALLBACK(on_audio_duration_notify), app);
+    app->audio_prepared_sig = g_signal_connect(stream, "notify::prepared",
+                                              G_CALLBACK(on_audio_prepared_notify), app);
+    app->audio_error_sig = g_signal_connect(stream, "notify::error",
+                                           G_CALLBACK(on_audio_error_notify), app);
+
+    if (gtk_media_stream_is_prepared(stream)) {
+        update_audio_metadata_label(app, stream);
     }
 }

@@ -73,8 +73,11 @@ static void on_video_error_notify(GtkMediaStream* stream, GParamSpec* pspec, gpo
     }
     const GError* err = gtk_media_stream_get_error(stream);
     if (err != NULL && app->video_status != NULL) {
+        const gchar* err_msg = (err->message != NULL && err->message[0] != '\0')
+                                   ? err->message
+                                   : "Video playback error";
         gchar* msg = g_strdup_printf("⚠ Media playback warning: %s (press 'm' to inspect raw file details)",
-                                     err->message);
+                                     err_msg);
         gtk_label_set_text(GTK_LABEL(app->video_status), msg);
         gtk_widget_set_visible(app->video_status, TRUE);
         g_free(msg);

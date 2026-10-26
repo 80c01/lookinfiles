@@ -92,23 +92,8 @@ int main(int argc, char** argv) {
     /* Force GTK 4 built-in Default dark theme to avoid GTK 3 system theme CSS errors */
     g_setenv("GTK_THEME", "Default:dark", TRUE);
 
-    /* Disable GStreamer playbin3 / decodebin3 to prevent upstream assertion crash (issue #3664):
-     * ERROR:../gst/playback/gstdecodebin3.c:3381:mq_slot_handle_stream_start: assertion failed: (collection)
-     * Forcing classic playbin and decodebin ensures stable playback and prevents SIGABRT. */
-    g_setenv("GST_PLAY_USE_PLAYBIN3", "0", TRUE);
-    g_setenv("USE_PLAYBIN3", "0", TRUE);
-    g_setenv("GST_USE_PLAYBIN3", "0", TRUE);
-    const gchar* cur_rank = g_getenv("GST_PLUGIN_FEATURE_RANK");
-    if (cur_rank != NULL && cur_rank[0] != '\0') {
-        gchar* rank_cfg = g_strdup_printf("%s,playbin3:NONE,decodebin3:NONE,uridecodebin3:NONE,playbin:PRIMARY,decodebin:PRIMARY",
-                                          cur_rank);
-        g_setenv("GST_PLUGIN_FEATURE_RANK", rank_cfg, TRUE);
-        g_free(rank_cfg);
-    } else {
-        g_setenv("GST_PLUGIN_FEATURE_RANK",
-                 "playbin3:NONE,decodebin3:NONE,uridecodebin3:NONE,playbin:PRIMARY,decodebin:PRIMARY",
-                 TRUE);
-    }
+    /* Prefer classic playbin in GstPlay to avoid decodebin3 collection assertions */
+    g_setenv("GST_PLAY_USE_PLAYBIN3", "0", FALSE);
 
     gtk_init();
 #ifdef HAVE_GSV
