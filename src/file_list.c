@@ -1222,6 +1222,8 @@ void update_path_label(AppData* app) {
             gtk_widget_remove_css_class(app->help_btn, "pill-active");
         }
     }
+
+    workspace_save_current(app);
 }
 
 typedef struct {

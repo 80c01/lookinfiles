@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "file_list.h"
+#include "minimap.h"
 #include "terminal.h"
 #include "editor.h"
 
@@ -44,6 +45,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},
     {"Editor tabs", "Ctrl+W", "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"},
     /* Global */
+    {"Global", "Alt+1 .. Alt+4", "Switch between the 4 virtual workspace layouts (or click top-bar minimap)"},
     {"Global", "Ctrl+T", "Open a terminal pane right of the running ones (exit the shell to close it)"},
     {"Global", "Ctrl+Shift+T", "Open a new terminal pane below the running ones"},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},
@@ -250,6 +252,13 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
+    /* Alt+1 .. Alt+4: switch virtual workspace layout */
+    if ((state & GDK_ALT_MASK) != 0 &&
+        keyval >= GDK_KEY_1 && keyval <= GDK_KEY_4) {
+        workspace_switch(app, (gint)(keyval - GDK_KEY_1));
+        return TRUE;
+    }
+
     /* Ctrl+Shift+L: stack the panels or restore side-by-side layout.
      * Shift makes the keyval uppercase, so accept both l and L. */
     if ((state & GDK_CONTROL_MASK) &&
@@ -351,6 +360,7 @@ void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointer data)
     if (app->panning) { /* ignore programmatic set_position calls */
         app->dims_paned = GTK_WIDGET(object);
         g_idle_add(pane_dims_idle, app);
+        workspace_save_current(app);
     }
 }
 
@@ -363,6 +373,7 @@ void on_paned_released(GtkGestureClick* gesture, gint n_press,
     AppData* app = (AppData*)data;
     app->panning = FALSE;
     gtk_widget_set_visible(app->dim_window, FALSE);
+    workspace_save_current(app);
 }
 
 /* Remember the viewer/terminal split as a fraction of pane size */
@@ -446,6 +457,347 @@ void layout_toggle(AppData* app) {
                          GTK_ORIENTATION_HORIZONTAL
                      ? GTK_ORIENTATION_VERTICAL
                      : GTK_ORIENTATION_HORIZONTAL);
+    workspace_save_current(app);
+}
+
+#define WS_CELL_W   32
+#define WS_CELL_H   20
+#define WS_CELL_GAP 5
+#define WS_PAD_X    2
+#define WS_PAD_Y    2
+
+void workspaces_init(AppData* app) {
+    /* Workspace 1: Standard Explorer (Files + Preview) */
+    app->workspaces[0] = (VirtualLayout){
+        .files_vis = TRUE, .preview_vis = TRUE, .term_vis = FALSE,
+        .right_orient = GTK_ORIENTATION_HORIZONTAL,
+        .main_frac = 0.25, .right_frac = 0.72
+    };
+    /* Workspace 2: IDE (Files + Preview + Bottom Terminal) */
+    app->workspaces[1] = (VirtualLayout){
+        .files_vis = TRUE, .preview_vis = TRUE, .term_vis = TRUE,
+        .right_orient = GTK_ORIENTATION_VERTICAL,
+        .main_frac = 0.23, .right_frac = 0.66
+    };
+    /* Workspace 3: 3-Column (Files + Preview + Right Terminal) */
+    app->workspaces[2] = (VirtualLayout){
+        .files_vis = TRUE, .preview_vis = TRUE, .term_vis = TRUE,
+        .right_orient = GTK_ORIENTATION_HORIZONTAL,
+        .main_frac = 0.20, .right_frac = 0.56
+    };
+    /* Workspace 4: Focus (Full Preview) */
+    app->workspaces[3] = (VirtualLayout){
+        .files_vis = FALSE, .preview_vis = TRUE, .term_vis = FALSE,
+        .right_orient = GTK_ORIENTATION_HORIZONTAL,
+        .main_frac = 0.25, .right_frac = 0.72
+    };
+    app->current_ws = 0;
+    app->hover_ws = -1;
+    app->switching_ws = FALSE;
+}
+
+void workspace_save_current(AppData* app) {
+    if (app == NULL || app->switching_ws ||
+        app->left_vbox == NULL || app->viewer_box == NULL || app->term_scroll == NULL) {
+        return;
+    }
+    VirtualLayout* ws = &app->workspaces[app->current_ws];
+    ws->files_vis = gtk_widget_get_visible(app->left_vbox);
+    ws->preview_vis = gtk_widget_get_visible(app->viewer_box);
+    ws->term_vis = gtk_widget_get_visible(app->term_scroll);
+
+    if (app->right_paned != NULL) {
+        ws->right_orient =
+            gtk_orientable_get_orientation(GTK_ORIENTABLE(app->right_paned));
+        if (ws->preview_vis && ws->term_vis) {
+            gint len = (ws->right_orient == GTK_ORIENTATION_VERTICAL)
+                           ? gtk_widget_get_height(app->right_paned)
+                           : gtk_widget_get_width(app->right_paned);
+            if (len > 40) {
+                gdouble f = (gdouble)gtk_paned_get_position(GTK_PANED(app->right_paned)) / len;
+                ws->right_frac = CLAMP(f, 0.15, 0.85);
+            }
+        }
+    }
+
+    if (app->main_paned != NULL && ws->files_vis && (ws->preview_vis || ws->term_vis)) {
+        gint mw = gtk_widget_get_width(app->main_paned);
+        if (mw > 60) {
+            gdouble f = (gdouble)gtk_paned_get_position(GTK_PANED(app->main_paned)) / mw;
+            ws->main_frac = CLAMP(f, 0.12, 0.85);
+        }
+    }
+
+    if (app->ws_minimap != NULL) {
+        gtk_widget_queue_draw(app->ws_minimap);
+    }
+}
+
+static gboolean workspace_apply_positions_idle(gpointer data) {
+    AppData* app = (AppData*)data;
+    VirtualLayout* ws = &app->workspaces[app->current_ws];
+
+    if (app->main_paned != NULL && ws->files_vis && (ws->preview_vis || ws->term_vis)) {
+        gint mw = gtk_widget_get_width(app->main_paned);
+        if (mw > 0) {
+            gtk_paned_set_position(GTK_PANED(app->main_paned),
+                                   (gint)(ws->main_frac * mw));
+        }
+    }
+    if (app->right_paned != NULL && ws->preview_vis && ws->term_vis) {
+        gint len = (ws->right_orient == GTK_ORIENTATION_VERTICAL)
+                       ? gtk_widget_get_height(app->right_paned)
+                       : gtk_widget_get_width(app->right_paned);
+        if (len > 0) {
+            gtk_paned_set_position(GTK_PANED(app->right_paned),
+                                   (gint)(ws->right_frac * len));
+        }
+    }
+    return FALSE;
+}
+
+void workspace_switch(AppData* app, gint idx) {
+    if (app == NULL || idx < 0 || idx >= NUM_VIRTUAL_LAYOUTS) {
+        return;
+    }
+    workspace_save_current(app);
+    app->switching_ws = TRUE;
+    app->current_ws = idx;
+
+    VirtualLayout* ws = &app->workspaces[idx];
+    if (app->left_vbox != NULL) {
+        gtk_widget_set_visible(app->left_vbox, ws->files_vis);
+    }
+    if (app->viewer_box != NULL) {
+        gtk_widget_set_visible(app->viewer_box, ws->preview_vis);
+    }
+    if (app->right_paned != NULL) {
+        gtk_widget_set_visible(app->right_paned, ws->preview_vis || ws->term_vis);
+        gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), ws->right_orient);
+    }
+    if (app->term_scroll != NULL) {
+        gtk_widget_set_visible(app->term_scroll, ws->term_vis);
+    }
+    app->right_frac = ws->right_frac;
+
+#ifdef HAVE_VTE
+    if (ws->term_vis) {
+        GPtrArray* panes = term_visible_panes(app);
+        if (panes->len == 0) {
+            term_spawn_pane(app, FALSE);
+        }
+        g_ptr_array_unref(panes);
+    }
+#endif
+
+    minimap_update_visibility(app);
+    app->switching_ws = FALSE;
+    update_path_label(app);
+    g_idle_add(workspace_apply_positions_idle, app);
+
+    if (ws->files_vis && app->tree_view != NULL) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    } else if (ws->preview_vis && app->text_view != NULL) {
+        gtk_widget_grab_focus(app->text_view);
+    }
+}
+
+static void draw_rounded_rect(cairo_t* cr, gdouble x, gdouble y,
+                              gdouble w, gdouble h, gdouble r) {
+    if (w <= 0.0 || h <= 0.0) {
+        return;
+    }
+    if (r > w * 0.5) r = w * 0.5;
+    if (r > h * 0.5) r = h * 0.5;
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, x + w - r, y + r, r, -G_PI * 0.5, 0.0);
+    cairo_arc(cr, x + w - r, y + h - r, r, 0.0, G_PI * 0.5);
+    cairo_arc(cr, x + r, y + h - r, r, G_PI * 0.5, G_PI);
+    cairo_arc(cr, x + r, y + r, r, G_PI, G_PI * 1.5);
+    cairo_close_path(cr);
+}
+
+static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
+                               int width, int height, gpointer data) {
+    (void)area;
+    (void)width;
+    AppData* app = (AppData*)data;
+    gdouble start_y = (height - WS_CELL_H) * 0.5;
+
+    for (gint i = 0; i < NUM_VIRTUAL_LAYOUTS; i++) {
+        VirtualLayout* ws = &app->workspaces[i];
+        gboolean is_active = (i == app->current_ws);
+        gboolean is_hover = (i == app->hover_ws);
+        gdouble bx = WS_PAD_X + i * (WS_CELL_W + WS_CELL_GAP);
+        gdouble by = start_y;
+
+        /* Outer desktop frame */
+        draw_rounded_rect(cr, bx, by, WS_CELL_W, WS_CELL_H, 3.0);
+        if (is_active) {
+            cairo_set_source_rgb(cr, 0.11, 0.16, 0.21);
+        } else if (is_hover) {
+            cairo_set_source_rgb(cr, 0.15, 0.17, 0.19);
+        } else {
+            cairo_set_source_rgb(cr, 0.08, 0.09, 0.10);
+        }
+        cairo_fill_preserve(cr);
+
+        if (is_active) {
+            cairo_set_source_rgb(cr, 0.0, 0.48, 0.80); /* #007acc */
+            cairo_set_line_width(cr, 1.5);
+        } else if (is_hover) {
+            cairo_set_source_rgb(cr, 0.45, 0.50, 0.56);
+            cairo_set_line_width(cr, 1.0);
+        } else {
+            cairo_set_source_rgb(cr, 0.22, 0.24, 0.27);
+            cairo_set_line_width(cr, 1.0);
+        }
+        cairo_stroke(cr);
+
+        /* Inner miniature panes */
+        gdouble ix = bx + 2.5;
+        gdouble iy = by + 2.5;
+        gdouble iw = WS_CELL_W - 5.0;
+        gdouble ih = WS_CELL_H - 5.0;
+        gdouble alpha = is_active ? 0.82 : (is_hover ? 0.58 : 0.38);
+
+        gdouble rx = ix;
+        gdouble rw = iw;
+
+        if (ws->files_vis) {
+            gdouble fw = (ws->preview_vis || ws->term_vis)
+                             ? (iw * CLAMP(ws->main_frac, 0.22, 0.72) - 0.8)
+                             : iw;
+            cairo_set_source_rgba(cr, 0.31, 0.76, 1.0, alpha); /* Files: cyan-blue */
+            cairo_rectangle(cr, ix, iy, fw, ih);
+            cairo_fill(cr);
+            rx = ix + fw + 1.5;
+            rw = iw - fw - 1.5;
+        }
+
+        if (rw > 1.0 && (ws->preview_vis || ws->term_vis)) {
+            if (ws->preview_vis && ws->term_vis) {
+                if (ws->right_orient == GTK_ORIENTATION_VERTICAL) {
+                    gdouble ph = ih * CLAMP(ws->right_frac, 0.25, 0.75) - 0.8;
+                    /* Top: Preview */
+                    cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                    cairo_rectangle(cr, rx, iy, rw, ph);
+                    cairo_fill(cr);
+                    /* Bottom: Terminal */
+                    cairo_set_source_rgba(cr, 0.14, 0.82, 0.55, alpha);
+                    cairo_rectangle(cr, rx, iy + ph + 1.5, rw, ih - ph - 1.5);
+                    cairo_fill(cr);
+                } else {
+                    gdouble pw = rw * CLAMP(ws->right_frac, 0.25, 0.75) - 0.8;
+                    /* Left: Preview */
+                    cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                    cairo_rectangle(cr, rx, iy, pw, ih);
+                    cairo_fill(cr);
+                    /* Right: Terminal */
+                    cairo_set_source_rgba(cr, 0.14, 0.82, 0.55, alpha);
+                    cairo_rectangle(cr, rx + pw + 1.5, iy, rw - pw - 1.5, ih);
+                    cairo_fill(cr);
+                }
+            } else if (ws->preview_vis) {
+                cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                cairo_rectangle(cr, rx, iy, rw, ih);
+                cairo_fill(cr);
+            } else if (ws->term_vis) {
+                cairo_set_source_rgba(cr, 0.14, 0.82, 0.55, alpha);
+                cairo_rectangle(cr, rx, iy, rw, ih);
+                cairo_fill(cr);
+            }
+        }
+    }
+}
+
+static gint ws_index_at_x(gdouble x) {
+    for (gint i = 0; i < NUM_VIRTUAL_LAYOUTS; i++) {
+        gdouble bx = WS_PAD_X + i * (WS_CELL_W + WS_CELL_GAP);
+        if (x >= bx && x <= bx + WS_CELL_W) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static void on_ws_minimap_pressed(GtkGestureClick* gesture, gint n_press,
+                                  gdouble x, gdouble y, gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)y;
+    AppData* app = (AppData*)data;
+    gint idx = ws_index_at_x(x);
+    if (idx >= 0) {
+        workspace_switch(app, idx);
+    }
+}
+
+static void on_ws_minimap_motion(GtkEventControllerMotion* ctrl,
+                                 gdouble x, gdouble y, gpointer data) {
+    (void)ctrl;
+    (void)y;
+    AppData* app = (AppData*)data;
+    gint idx = ws_index_at_x(x);
+    if (idx != app->hover_ws) {
+        app->hover_ws = idx;
+        gtk_widget_queue_draw(app->ws_minimap);
+    }
+}
+
+static void on_ws_minimap_leave(GtkEventControllerMotion* ctrl, gpointer data) {
+    (void)ctrl;
+    AppData* app = (AppData*)data;
+    if (app->hover_ws != -1) {
+        app->hover_ws = -1;
+        gtk_widget_queue_draw(app->ws_minimap);
+    }
+}
+
+static gboolean on_ws_minimap_scroll(GtkEventControllerScroll* ctrl,
+                                     gdouble dx, gdouble dy, gpointer data) {
+    (void)ctrl;
+    AppData* app = (AppData*)data;
+    gint step = (dy > 0.0 || dx > 0.0) ? 1 : ((dy < 0.0 || dx < 0.0) ? -1 : 0);
+    if (step != 0) {
+        gint next = (app->current_ws + step + NUM_VIRTUAL_LAYOUTS) % NUM_VIRTUAL_LAYOUTS;
+        workspace_switch(app, next);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+GtkWidget* create_workspace_minimap(AppData* app) {
+    gint total_w = WS_PAD_X * 2 + NUM_VIRTUAL_LAYOUTS * WS_CELL_W +
+                   (NUM_VIRTUAL_LAYOUTS - 1) * WS_CELL_GAP;
+    gint total_h = WS_CELL_H + WS_PAD_Y * 2;
+
+    GtkWidget* area = gtk_drawing_area_new();
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(area), total_w);
+    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(area), total_h);
+    gtk_widget_set_valign(area, GTK_ALIGN_CENTER);
+    gtk_widget_set_tooltip_text(
+        area,
+        "Virtual Workspace Layouts (click, scroll, or press Alt+1..4 to switch)");
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area),
+                                   on_ws_minimap_draw, app, NULL);
+
+    GtkGesture* click = gtk_gesture_click_new();
+    g_signal_connect(click, "pressed", G_CALLBACK(on_ws_minimap_pressed), app);
+    gtk_widget_add_controller(area, GTK_EVENT_CONTROLLER(click));
+
+    GtkEventController* motion = gtk_event_controller_motion_new();
+    g_signal_connect(motion, "motion", G_CALLBACK(on_ws_minimap_motion), app);
+    g_signal_connect(motion, "leave", G_CALLBACK(on_ws_minimap_leave), app);
+    gtk_widget_add_controller(area, motion);
+
+    GtkEventController* scroll =
+        gtk_event_controller_scroll_new(GTK_EVENT_CONTROLLER_SCROLL_BOTH_AXES);
+    g_signal_connect(scroll, "scroll", G_CALLBACK(on_ws_minimap_scroll), app);
+    gtk_widget_add_controller(area, scroll);
+
+    app->ws_minimap = area;
+    return area;
 }
 
 /* Panel boundaries and VS Code Dark+ theme styling */

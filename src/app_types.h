@@ -64,6 +64,18 @@ typedef struct {
     GtkWidget* tab_label; /* tab title, with a bullet when unsaved */
 } EditorTab;
 
+/* Virtual workspace layout state (like virtual desktops) */
+#define NUM_VIRTUAL_LAYOUTS 4
+
+typedef struct {
+    gboolean files_vis;
+    gboolean preview_vis;
+    gboolean term_vis;
+    GtkOrientation right_orient;
+    gdouble main_frac;
+    gdouble right_frac;
+} VirtualLayout;
+
 /* Shared application state */
 typedef struct {
     GtkTextBuffer* buffer;
@@ -140,6 +152,13 @@ typedef struct {
     GtkWidget* main_paned;   /* list | rest (fixed split) */
     GtkWidget* right_paned;  /* viewer | terminal (rebuilt on toggle) */
     gdouble right_frac;      /* viewer share of viewer/terminal pair */
+
+    /* Virtual workspace layouts & top-bar workspace minimap */
+    VirtualLayout workspaces[NUM_VIRTUAL_LAYOUTS];
+    gint current_ws;
+    gint hover_ws;
+    gboolean switching_ws;
+    GtkWidget* ws_minimap;
 } AppData;
 
 #endif /* APP_TYPES_H */

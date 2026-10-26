@@ -235,6 +235,10 @@ int main(int argc, char** argv) {
     AppData* app = g_new0(AppData, 1);
     app->window = GTK_WINDOW(window);
     app->main_loop = loop;
+    workspaces_init(app);
+    GtkWidget* ws_minimap = create_workspace_minimap(app);
+    GtkWidget* ws_div_label = gtk_label_new("|");
+    gtk_widget_add_css_class(ws_div_label, "breadcrumb-sep");
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
 #ifdef HAVE_GSV
     apply_vscode_scheme(app->buffer, text_view);
@@ -394,6 +398,8 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), path_label);
     gtk_box_append(GTK_BOX(label_row), breadcrumb_box);
     gtk_box_append(GTK_BOX(label_row), sep_label);
+    gtk_box_append(GTK_BOX(label_row), ws_minimap);
+    gtk_box_append(GTK_BOX(label_row), ws_div_label);
     gtk_box_append(GTK_BOX(label_row), files_btn);
     gtk_box_append(GTK_BOX(label_row), preview_btn);
     gtk_box_append(GTK_BOX(label_row), term_btn);
