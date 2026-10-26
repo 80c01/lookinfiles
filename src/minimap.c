@@ -128,28 +128,49 @@ void minimap_invalidate(AppData* app) {
         app->mm_cache_w = 0;
         app->mm_cache_h = 0;
     }
-    if (app->minimap != NULL) {
+    if (app->minimap != NULL && gtk_widget_get_visible(app->minimap)) {
         gtk_widget_queue_draw(app->minimap);
     }
 }
 
+static gboolean minimap_is_useful(AppData* app) {
+    if (app->minimap == NULL || app->viewer_vadj == NULL) {
+        return FALSE;
+    }
+    if (app->notebook != NULL &&
+        gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook)) != 0) {
+        return FALSE;
+    }
+    GtkAdjustment* adj = app->viewer_vadj;
+    return gtk_adjustment_get_upper(adj) >
+           gtk_adjustment_get_page_size(adj) + 1.5;
+}
+
+static gboolean minimap_vis_idle(gpointer data) {
+    AppData* app = (AppData*)data;
+    app->mm_vis_source = 0;
+    if (app->minimap == NULL) {
+        return G_SOURCE_REMOVE;
+    }
+    gboolean useful = minimap_is_useful(app);
+    if (gtk_widget_get_visible(app->minimap) != useful) {
+        if (!useful) {
+            minimap_invalidate(app);
+        }
+        gtk_widget_set_visible(app->minimap, useful);
+    }
+    return G_SOURCE_REMOVE;
+}
+
 /* Hide the minimap when the whole file is visible in the viewer */
 void minimap_update_visibility(AppData* app) {
-    GtkAdjustment* adj;
-    gboolean useful;
     if (app->minimap == NULL || app->viewer_vadj == NULL) {
         return;
     }
-    adj = app->viewer_vadj;
-    useful = gtk_adjustment_get_upper(adj) >
-             gtk_adjustment_get_page_size(adj) + 1.5;
-    if (gtk_widget_get_visible(app->minimap) == useful) {
-        return;
+    /* Defer visibility change to idle so it never runs mid-size_allocate */
+    if (app->mm_vis_source == 0) {
+        app->mm_vis_source = g_idle_add(minimap_vis_idle, app);
     }
-    if (!useful) {
-        minimap_invalidate(app);
-    }
-    gtk_widget_set_visible(app->minimap, useful);
 }
 
 void on_minimap_adj_changed(GtkAdjustment* adjustment, gpointer data) {
@@ -291,7 +312,10 @@ void on_minimap_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
 
 void on_minimap_scroll(GtkAdjustment* adjustment, gpointer data) {
     (void)adjustment;
-    gtk_widget_queue_draw(((AppData*)data)->minimap);
+    AppData* app = (AppData*)data;
+    if (app->minimap != NULL && gtk_widget_get_visible(app->minimap)) {
+        gtk_widget_queue_draw(app->minimap);
+    }
 }
 
 void on_minimap_resize(GtkDrawingArea* area, gint width, gint height,

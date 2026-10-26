@@ -32,15 +32,21 @@ int main(int argc, char** argv) {
     argv[kept] = NULL;
     argc = kept;
 
+    /* Force GTK 4 built-in Default dark theme to avoid GTK 3 system theme CSS errors */
+    g_setenv("GTK_THEME", "Default:dark", TRUE);
+
     gtk_init();
 #ifdef HAVE_GSV
     gtk_source_init();
 #endif
 
-    /* Adwaita dark theme */
+    /* Adwaita / Default dark theme */
     GtkSettings* settings = gtk_settings_get_default();
     if (settings != NULL) {
-        g_object_set(settings, "gtk-application-prefer-dark-theme", TRUE, NULL);
+        g_object_set(settings,
+                     "gtk-theme-name", "Default",
+                     "gtk-application-prefer-dark-theme", TRUE,
+                     NULL);
     }
 
     GMainLoop* loop = g_main_loop_new(NULL, FALSE);
@@ -105,6 +111,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_name(left_scroll, "left-scroll");
     gtk_widget_set_vexpand(left_scroll, TRUE);
     gtk_widget_set_hexpand(left_scroll, TRUE);
+    gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(left_scroll), FALSE);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(left_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(left_scroll), tree_view);
@@ -130,6 +137,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_name(right_scroll, "right-scroll");
     gtk_widget_set_vexpand(right_scroll, TRUE);
     gtk_widget_set_hexpand(right_scroll, TRUE);
+    gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(right_scroll), FALSE);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(right_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(right_scroll), text_view);
@@ -160,8 +168,14 @@ int main(int argc, char** argv) {
     /* Terminal panel container */
     GtkWidget* term_scroll = gtk_scrolled_window_new();
     gtk_widget_set_name(term_scroll, "term-scroll");
+    gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(term_scroll), FALSE);
+#ifdef HAVE_VTE
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(term_scroll),
+                                   GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+#else
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(term_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+#endif
     gtk_widget_set_visible(term_scroll, FALSE);
 #ifdef HAVE_VTE
     GtkWidget* term_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);

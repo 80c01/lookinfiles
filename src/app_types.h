@@ -125,6 +125,7 @@ typedef struct {
     gint mm_cache_w;
     gint mm_cache_h;
     gboolean mm_dragging;
+    guint mm_vis_source;         /* idle source for safe visibility toggle */
 
     /* Layout of the viewer/terminal pair (Ctrl+Shift+L) */
     GtkWidget* viewer_box;   /* right pane content: viewer + minimap */

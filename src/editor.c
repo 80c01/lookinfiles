@@ -1,6 +1,7 @@
 #include "editor.h"
 #include "viewer.h"
 #include "file_list.h"
+#include "minimap.h"
 
 EditorTab* editor_current_tab(AppData* app) {
     gint page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
@@ -121,6 +122,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
 #endif
 
     GtkWidget* scroll = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(scroll), FALSE);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
                                    GTK_POLICY_AUTOMATIC,
                                    GTK_POLICY_AUTOMATIC);
@@ -149,8 +151,8 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
                                    gpointer data) {
     (void)notebook;
     (void)page;
-    gtk_widget_set_visible(GTK_WIDGET(((AppData*)data)->minimap),
-                           page_num == 0);
+    (void)page_num;
+    minimap_update_visibility((AppData*)data);
 }
 
 typedef struct {
