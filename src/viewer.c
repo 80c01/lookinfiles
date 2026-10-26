@@ -291,7 +291,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_h:
+    case GDK_KEY_question:
         if ((state & GDK_CONTROL_MASK) == 0) {
             app->pending_g = FALSE;
             toggle_help_panel(app);

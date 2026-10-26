@@ -55,7 +55,7 @@ Simple graphical application to browse the file system.
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
 | `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), or rendered pages / text extraction (PDF) |
-| `h` | Show / hide the key-binding help panel (any key inside it closes it) |
+| `?` | Show / hide the key-binding help panel (any key inside it closes it) |
 | `Esc` | Close the search bar |
 
 ### Right panel (when the viewer has focus)

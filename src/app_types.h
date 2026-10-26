@@ -138,7 +138,7 @@ typedef struct {
     GtkWidget* notebook; /* viewer zone: page 0 = read-only preview */
     GList* editors;      /* EditorTab*, order matching tab order minus 1 */
 
-    /* Floating key-binding cheat sheet (toggled by 'h') */
+    /* Floating key-binding cheat sheet (toggled by '?') */
     GtkWidget* help_window;
 
     /* Main window: 'f' toggles fullscreen */

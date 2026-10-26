@@ -37,7 +37,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"File panel", "Backspace", "Go to the parent directory"},
     {"File panel", "i / I", "Toggle hidden files"},
     {"File panel", "o", "Cycle sort: name, date, size, extension"},
-    {"File panel", "h", "Show / hide this help panel"},
+    {"File panel", "?", "Show / hide this help panel"},
     /* Viewer panel */
     {"Right panel (viewer)", "j / k", "Scroll a line down / up"},
     {"Right panel (viewer)", "Ctrl+F / Ctrl+B", "Scroll a page down / up"},
@@ -81,21 +81,21 @@ static void on_help_close_clicked(GtkButton* btn, gpointer data) {
     toggle_help_panel((AppData*)data);
 }
 
-/* In the help panel, h or Escape closes it and gives keyboard focus back to the file list */
+/* In the help panel, ? or Escape closes it and gives keyboard focus back to the file list */
 gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval,
                            guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
     (void)keycode;
     (void)state;
     AppData* app = (AppData*)data;
-    if (keyval == GDK_KEY_h || keyval == GDK_KEY_H || keyval == GDK_KEY_Escape) {
+    if (keyval == GDK_KEY_question || keyval == GDK_KEY_Escape) {
         toggle_help_panel(app);
         return TRUE;
     }
     return FALSE;
 }
 
-/* Build internal help panel toggled by 'h' or the '? Help' top bar button */
+/* Build internal help panel toggled by '?' or the '? Help' top bar button */
 void create_help_panel(GtkWindow* parent, AppData* app) {
     (void)parent;
     GtkWidget* panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -117,7 +117,7 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(close_btn), FALSE);
     gtk_widget_set_focusable(close_btn, FALSE);
     gtk_widget_add_css_class(close_btn, "help-close-btn");
-    gtk_widget_set_tooltip_text(close_btn, "Close help panel (h)");
+    gtk_widget_set_tooltip_text(close_btn, "Close help panel (?)");
     g_signal_connect(close_btn, "clicked",
                      G_CALLBACK(on_help_close_clicked), app);
 

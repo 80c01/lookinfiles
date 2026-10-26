@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
     gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);
     gtk_widget_set_focusable(help_btn, FALSE);
     gtk_widget_add_css_class(help_btn, "status-pill");
-    gtk_widget_set_tooltip_text(help_btn, "Show keyboard shortcuts (h)");
+    gtk_widget_set_tooltip_text(help_btn, "Show keyboard shortcuts (?)");
 
     /* Spacer label for top bar */
     GtkWidget* sep_label = gtk_label_new(" ");
