@@ -109,7 +109,6 @@ typedef struct {
     GtkWidget* term_btn;
     GtkWidget* sort_btn;
     GtkWidget* hidden_btn;
-    GtkWidget* bookmarks_btn;
     GtkWidget* help_btn;
     GtkWidget* left_vbox;
     gchar* search_term;
@@ -225,6 +224,8 @@ typedef struct {
     /* VS Code-style chrome: explorer panel header and bottom status bar */
     GtkWidget* sidebar_title;     /* "EXPLORER" / "BOOKMARKS" header label */
     GtkWidget* sidebar_section;   /* current folder section label (files view) */
+    GtkWidget* sidebar_files_btn; /* mini icon button: switch to Explorer view */
+    GtkWidget* sidebar_bm_btn;    /* mini icon button: switch to Bookmarks view */
     GtkWidget* status_branch;     /* bottom bar: Git branch of base_dir */
     GtkWidget* status_selection;  /* bottom bar: selected entry name */
     GtkWidget* status_size;       /* bottom bar: selected file size */

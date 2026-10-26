@@ -1197,11 +1197,6 @@ void toggle_bookmarks_view(AppData* app) {
     }
 }
 
-void on_bookmarks_pill_clicked(GtkButton* btn, gpointer data) {
-    (void)btn;
-    toggle_bookmarks_view((AppData*)data);
-}
-
 static void append_bookmarks_to_store(GtkTreeStore* store, AppData* app) {
     if (store == NULL || app == NULL || !app->show_bookmarks) {
         return;
@@ -1787,17 +1782,6 @@ void update_path_label(AppData* app) {
         }
     }
 
-    if (app->bookmarks_btn != NULL) {
-        gtk_button_set_label(GTK_BUTTON(app->bookmarks_btn),
-                             app->show_bookmarks ? "🔖 Bookmarks: On"
-                                                 : "🔖 Bookmarks: Off");
-        if (app->show_bookmarks) {
-            gtk_widget_add_css_class(app->bookmarks_btn, "pill-active");
-        } else {
-            gtk_widget_remove_css_class(app->bookmarks_btn, "pill-active");
-        }
-    }
-
     gboolean files_vis = (app->left_vbox == NULL) || gtk_widget_get_visible(app->left_vbox);
     gboolean preview_vis = (app->viewer_box == NULL) || gtk_widget_get_visible(app->viewer_box);
     gboolean editor_vis = app->editor_dedicated && (app->editor_box != NULL) && gtk_widget_get_visible(app->editor_box);
@@ -1853,6 +1837,20 @@ void update_path_label(AppData* app) {
     if (app->sidebar_title != NULL) {
         gtk_label_set_text(GTK_LABEL(app->sidebar_title),
                            app->show_bookmarks ? "BOOKMARKS" : "EXPLORER");
+    }
+    if (app->sidebar_files_btn != NULL) {
+        if (!app->show_bookmarks) {
+            gtk_widget_add_css_class(app->sidebar_files_btn, "sidebar-icon-active");
+        } else {
+            gtk_widget_remove_css_class(app->sidebar_files_btn, "sidebar-icon-active");
+        }
+    }
+    if (app->sidebar_bm_btn != NULL) {
+        if (app->show_bookmarks) {
+            gtk_widget_add_css_class(app->sidebar_bm_btn, "sidebar-icon-active");
+        } else {
+            gtk_widget_remove_css_class(app->sidebar_bm_btn, "sidebar-icon-active");
+        }
     }
     if (app->sidebar_section != NULL && app->base_dir != NULL) {
         gchar* base = g_path_get_basename(app->base_dir);

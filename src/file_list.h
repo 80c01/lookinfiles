@@ -55,7 +55,6 @@ void on_editor_pill_clicked(GtkButton* btn, gpointer data);
 void on_term_pill_clicked(GtkButton* btn, gpointer data);
 void on_sort_pill_clicked(GtkButton* btn, gpointer data);
 void on_hidden_pill_clicked(GtkButton* btn, gpointer data);
-void on_bookmarks_pill_clicked(GtkButton* btn, gpointer data);
 void on_help_pill_clicked(GtkButton* btn, gpointer data);
 void reload_directory(AppData* app, const gchar* new_dir);
 void refresh_listing(AppData* app);

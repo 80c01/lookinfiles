@@ -1520,16 +1520,70 @@ GtkWidget* create_workspace_minimap(AppData* app) {
     return area;
 }
 
-/* VS Code-style explorer panel header: "EXPLORER" title + current folder section */
+static void on_sidebar_files_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app == NULL) {
+        return;
+    }
+    if (app->show_bookmarks) {
+        toggle_bookmarks_view(app);
+    } else if (app->tree_view != NULL) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+}
+
+static void on_sidebar_bm_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app == NULL) {
+        return;
+    }
+    if (!app->show_bookmarks) {
+        toggle_bookmarks_view(app);
+    } else if (app->tree_view != NULL) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+}
+
+/* VS Code-style explorer panel header: "EXPLORER" title + mini view icons + current folder section */
 GtkWidget* create_sidebar_header(AppData* app) {
     GtkWidget* header = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(header, "sidebar-header");
+
+    GtkWidget* title_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    gtk_widget_set_name(title_row, "sidebar-title-row");
 
     GtkWidget* title = gtk_label_new("EXPLORER");
     gtk_widget_set_name(title, "sidebar-title");
     gtk_label_set_xalign(GTK_LABEL(title), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(title), PANGO_ELLIPSIZE_END);
-    gtk_box_append(GTK_BOX(header), title);
+    gtk_widget_set_hexpand(title, TRUE);
+    gtk_box_append(GTK_BOX(title_row), title);
+
+    GtkWidget* files_btn = gtk_button_new_with_label("📁");
+    gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
+    gtk_widget_set_focusable(files_btn, FALSE);
+    gtk_widget_add_css_class(files_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(files_btn, "Files Explorer (Ctrl+A)");
+    g_signal_connect(files_btn, "clicked", G_CALLBACK(on_sidebar_files_clicked), app);
+    gtk_box_append(GTK_BOX(title_row), files_btn);
+
+    GtkWidget* bm_btn = gtk_button_new_with_label("🔖");
+    gtk_button_set_has_frame(GTK_BUTTON(bm_btn), FALSE);
+    gtk_widget_set_focusable(bm_btn, FALSE);
+    gtk_widget_add_css_class(bm_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(bm_btn, "Bookmarks (Ctrl+A)");
+    g_signal_connect(bm_btn, "clicked", G_CALLBACK(on_sidebar_bm_clicked), app);
+    gtk_box_append(GTK_BOX(title_row), bm_btn);
+
+    if (app != NULL && app->show_bookmarks) {
+        gtk_widget_add_css_class(bm_btn, "sidebar-icon-active");
+    } else {
+        gtk_widget_add_css_class(files_btn, "sidebar-icon-active");
+    }
+
+    gtk_box_append(GTK_BOX(header), title_row);
 
     GtkWidget* section = gtk_label_new("");
     gtk_widget_set_name(section, "sidebar-section");
@@ -1540,6 +1594,8 @@ GtkWidget* create_sidebar_header(AppData* app) {
     if (app != NULL) {
         app->sidebar_title = title;
         app->sidebar_section = section;
+        app->sidebar_files_btn = files_btn;
+        app->sidebar_bm_btn = bm_btn;
     }
     return header;
 }
@@ -1838,12 +1894,44 @@ void apply_panel_borders(void) {
         "#sidebar-header {\n"
         "  background-color: #191a1b;\n"
         "}\n"
+        "#sidebar-title-row {\n"
+        "  padding: 6px 8px 4px 16px;\n"
+        "  min-height: 28px;\n"
+        "}\n"
         "#sidebar-title {\n"
         "  color: #bbbbbb;\n"
         "  font-size: 11px;\n"
         "  font-weight: 600;\n"
         "  letter-spacing: 1px;\n"
-        "  padding: 9px 12px 7px 20px;\n"
+        "}\n"
+        "button.sidebar-icon-btn {\n"
+        "  background: transparent;\n"
+        "  border: none;\n"
+        "  border-radius: 4px;\n"
+        "  padding: 1px 4px;\n"
+        "  margin: 0px 1px;\n"
+        "  min-height: 20px;\n"
+        "  min-width: 22px;\n"
+        "  box-shadow: none;\n"
+        "  opacity: 0.55;\n"
+        "}\n"
+        "button.sidebar-icon-btn label {\n"
+        "  color: #cccccc;\n"
+        "  font-size: 12px;\n"
+        "}\n"
+        "button.sidebar-icon-btn:hover {\n"
+        "  background-color: rgba(90, 93, 94, 0.31);\n"
+        "  opacity: 1.0;\n"
+        "}\n"
+        "button.sidebar-icon-btn:hover label {\n"
+        "  color: #ffffff;\n"
+        "}\n"
+        "button.sidebar-icon-btn.sidebar-icon-active {\n"
+        "  background-color: rgba(255, 255, 255, 0.12);\n"
+        "  opacity: 1.0;\n"
+        "}\n"
+        "button.sidebar-icon-btn.sidebar-icon-active label {\n"
+        "  color: #ffffff;\n"
         "}\n"
         "#sidebar-section {\n"
         "  color: #cccccc;\n"
