@@ -2,6 +2,7 @@
 #define APP_TYPES_H
 
 #include <gtk/gtk.h>
+#include <gio/gio.h>
 #include <pango/pangocairo.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -82,9 +83,11 @@ typedef struct {
     gboolean render_raw;   /* FALSE = rendered preview (default), TRUE = raw text */
     GHashTable* expanded_paths; /* set of full_path strings for expanded directories */
 
-    /* File monitors */
+    /* File monitors & async I/O cancellation */
     GFileMonitor* dir_monitor;   /* current directory */
     GFileMonitor* file_monitor;  /* viewed file in right pane */
+    GCancellable* dir_cancellable;     /* active left-pane directory scan GTask */
+    GCancellable* preview_cancellable; /* active right-pane preview GTask */
     gchar* viewed_path;          /* path of displayed file, NULL otherwise */
     gchar* viewed_name;          /* name of displayed file */
     gboolean dir_dirty;          /* pending directory event */

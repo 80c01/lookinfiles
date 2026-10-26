@@ -4,9 +4,6 @@
 #include "search.h"
 #include "ui.h"
 
-/* Comparator context (single-threaded: GTK main loop only) */
-static gint cur_sort_mode = SORT_NAME;
-
 /* File extension ("" if none), ignoring dot-files initial dot */
 const gchar* file_extension(const gchar* name) {
     if (name == NULL) {
@@ -83,17 +80,18 @@ gboolean is_renderable_file(const gchar* name) {
     return is_markdown_file(name) || is_html_file(name) || is_image_file(name) || is_pdf_file(name);
 }
 
-/* Sort: directories first, then according to active sort mode */
-static gint compare_entries(gconstpointer a, gconstpointer b) {
+/* Sort: directories first, then according to active sort mode (thread-safe) */
+static gint compare_entries_with_data(gconstpointer a, gconstpointer b, gpointer user_data) {
     const FileEntry* ea = (const FileEntry*)a;
     const FileEntry* eb = (const FileEntry*)b;
+    gint sort_mode = GPOINTER_TO_INT(user_data);
 
     if (ea->is_dir != eb->is_dir) {
         return ea->is_dir ? -1 : 1;
     }
 
     gint res = 0;
-    switch (cur_sort_mode) {
+    switch (sort_mode) {
     case SORT_DATE:
         res = (ea->mtime > eb->mtime) ? -1 : (ea->mtime < eb->mtime) ? 1 : 0; /* newest first */
         break;
@@ -664,11 +662,102 @@ gboolean select_by_path(AppData* app, const gchar* full_path) {
     return FALSE;
 }
 
-/* Populate one directory level under parent in the GtkTreeStore */
-static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* parent,
-                           const gchar* dirname, gboolean show_hidden, gint sort_mode) {
+/* Off-thread directory scan snapshot node */
+typedef struct DirScanNode {
+    gchar* dirname;
+    gboolean unreadable;
+    GArray* entries;      /* FileEntry elements */
+    GPtrArray* children;  /* DirScanNode* per entry (NULL if not expanded dir) */
+} DirScanNode;
+
+static void dir_scan_node_free(gpointer data) {
+    DirScanNode* node = (DirScanNode*)data;
+    if (node == NULL) {
+        return;
+    }
+    g_free(node->dirname);
+    if (node->entries != NULL) {
+        for (guint i = 0; i < node->entries->len; i++) {
+            g_free(g_array_index(node->entries, FileEntry, i).name);
+        }
+        g_array_unref(node->entries);
+    }
+    if (node->children != NULL) {
+        for (guint i = 0; i < node->children->len; i++) {
+            dir_scan_node_free(g_ptr_array_index(node->children, i));
+        }
+        g_ptr_array_unref(node->children);
+    }
+    g_free(node);
+}
+
+/* Scan and sort one directory level (and any expanded subdirectories) off-thread */
+static DirScanNode* scan_dir_node_recursive(const gchar* dirname,
+                                            gboolean show_hidden,
+                                            gint sort_mode,
+                                            GHashTable* expanded_set,
+                                            GCancellable* cancellable) {
+    DirScanNode* node = g_new0(DirScanNode, 1);
+    node->dirname = g_strdup(dirname);
+
     GDir* dir = g_dir_open(dirname, 0, NULL);
     if (dir == NULL) {
+        node->unreadable = TRUE;
+        return node;
+    }
+
+    node->entries = g_array_new(FALSE, FALSE, sizeof(FileEntry));
+    const gchar* name;
+    while ((name = g_dir_read_name(dir)) != NULL) {
+        if (cancellable != NULL && g_cancellable_is_cancelled(cancellable)) {
+            g_dir_close(dir);
+            return node;
+        }
+        if (!show_hidden && name[0] == '.') {
+            continue;
+        }
+        gchar* full = g_build_filename(dirname, name, NULL);
+        struct stat st;
+        gboolean ok = (g_stat(full, &st) == 0);
+        FileEntry e;
+        e.name = g_strdup(name);
+        e.is_dir = ok ? S_ISDIR(st.st_mode) : FALSE;
+        e.mtime = ok ? (gint64)st.st_mtime : 0;
+        e.size = (ok && !e.is_dir) ? (gint64)st.st_size : 0;
+        g_free(full);
+        g_array_append_vals(node->entries, &e, 1);
+    }
+    g_dir_close(dir);
+
+    g_array_sort_with_data(node->entries, compare_entries_with_data,
+                           GINT_TO_POINTER(sort_mode));
+
+    node->children = g_ptr_array_sized_new(node->entries->len);
+    for (guint i = 0; i < node->entries->len; i++) {
+        const FileEntry* e = &g_array_index(node->entries, FileEntry, i);
+        DirScanNode* child_node = NULL;
+        if (e->is_dir && expanded_set != NULL) {
+            gchar* full = g_build_filename(dirname, e->name, NULL);
+            if (g_hash_table_contains(expanded_set, full)) {
+                child_node = scan_dir_node_recursive(full, show_hidden, sort_mode,
+                                                     expanded_set, cancellable);
+            }
+            g_free(full);
+        }
+        g_ptr_array_add(node->children, child_node);
+    }
+
+    return node;
+}
+
+/* Apply a pre-scanned DirScanNode tree into GtkTreeStore on the main thread */
+static void apply_dir_node_to_store(GtkTreeStore* store, GtkTreeIter* parent,
+                                    const DirScanNode* node) {
+    if (node == NULL) {
+        return;
+    }
+
+    if (node->unreadable) {
         GtkTreeIter iter;
         gtk_tree_store_append(store, &iter, parent);
         gtk_tree_store_set(store, &iter,
@@ -676,35 +765,13 @@ static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* paren
                            COL_TYPE, "-",
                            COL_LABEL, (parent == NULL) ? "📄 (cannot read directory)"
                                                        : "  (cannot read directory)",
-                           COL_PATH, dirname,
+                           COL_PATH, node->dirname,
                            COL_LOADED, TRUE,
                            -1);
         return;
     }
 
-    /* Collect entries with metadata for sorting */
-    GArray* entries = g_array_new(FALSE, FALSE, sizeof(FileEntry));
-    const gchar* name;
-    while ((name = g_dir_read_name(dir)) != NULL) {
-        if (!show_hidden && name[0] == '.') {
-            continue;
-        }
-        gchar* full = g_build_filename(dirname, name, NULL);
-        struct stat st;
-        FileEntry e;
-        e.name = g_strdup(name);
-        e.is_dir = g_file_test(full, G_FILE_TEST_IS_DIR);
-        e.mtime = (g_stat(full, &st) == 0) ? (gint64)st.st_mtime : 0;
-        e.size = (e.is_dir) ? 0 : (gint64)st.st_size;
-        g_free(full);
-        g_array_append_vals(entries, &e, 1);
-    }
-    g_dir_close(dir);
-
-    cur_sort_mode = sort_mode;
-    g_array_sort(entries, compare_entries);
-
-    if (entries->len == 0 && parent != NULL) {
+    if (node->entries->len == 0 && parent != NULL) {
         GtkTreeIter iter;
         gtk_tree_store_append(store, &iter, parent);
         gtk_tree_store_set(store, &iter,
@@ -714,17 +781,21 @@ static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* paren
                            COL_PATH, "",
                            COL_LOADED, TRUE,
                            -1);
+        return;
     }
 
-    for (guint i = 0; i < entries->len; i++) {
-        const FileEntry* e = &g_array_index(entries, FileEntry, i);
-        gchar* full = g_build_filename(dirname, e->name, NULL);
+    for (guint i = 0; i < node->entries->len; i++) {
+        const FileEntry* e = &g_array_index(node->entries, FileEntry, i);
+        const DirScanNode* child_node =
+            (node->children != NULL && i < node->children->len)
+                ? (const DirScanNode*)g_ptr_array_index(node->children, i)
+                : NULL;
+        gchar* full = g_build_filename(node->dirname, e->name, NULL);
         GtkTreeIter iter;
         gtk_tree_store_append(store, &iter, parent);
 
         if (e->is_dir) {
-            gboolean is_expanded = (app != NULL && app->expanded_paths != NULL &&
-                                    g_hash_table_contains(app->expanded_paths, full));
+            gboolean is_expanded = (child_node != NULL);
             const gchar* icon = is_expanded ? "📂" : "📁";
             gchar* label = g_strconcat(icon, " ", e->name, NULL);
             gtk_tree_store_set(store, &iter,
@@ -737,7 +808,7 @@ static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* paren
             g_free(label);
 
             if (is_expanded) {
-                populate_level(store, app, &iter, full, show_hidden, sort_mode);
+                apply_dir_node_to_store(store, &iter, child_node);
             } else {
                 /* Add dummy child so expander arrow is shown */
                 GtkTreeIter dummy;
@@ -763,11 +834,15 @@ static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* paren
         }
         g_free(full);
     }
+}
 
-    for (guint i = 0; i < entries->len; i++) {
-        g_free(g_array_index(entries, FileEntry, i).name);
-    }
-    g_array_unref(entries);
+/* Populate one directory level under parent in the GtkTreeStore */
+static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* parent,
+                           const gchar* dirname, gboolean show_hidden, gint sort_mode) {
+    GHashTable* exp = (app != NULL) ? app->expanded_paths : NULL;
+    DirScanNode* node = scan_dir_node_recursive(dirname, show_hidden, sort_mode, exp, NULL);
+    apply_dir_node_to_store(store, parent, node);
+    dir_scan_node_free(node);
 }
 
 /* Populate the tree store with directory contents */
@@ -884,10 +959,131 @@ void update_path_label(AppData* app) {
     g_free(text);
 }
 
-/* Navigate to a new directory (Enter / Backspace) */
-void reload_directory(AppData* app, const gchar* new_dir) {
+typedef struct {
+    AppData* app;
+    gchar* dirname;
+    gboolean show_hidden;
+    gint sort_mode;
+    GHashTable* expanded_snapshot;
+    gchar* select_path;
+    gchar* select_name;
+    DirScanNode* root_node;
+} DirScanTaskData;
+
+static void dir_scan_task_data_free(gpointer data) {
+    DirScanTaskData* td = (DirScanTaskData*)data;
+    if (td == NULL) {
+        return;
+    }
+    g_free(td->dirname);
+    if (td->expanded_snapshot != NULL) {
+        g_hash_table_destroy(td->expanded_snapshot);
+    }
+    g_free(td->select_path);
+    g_free(td->select_name);
+    dir_scan_node_free(td->root_node);
+    g_free(td);
+}
+
+static GHashTable* clone_string_set(GHashTable* src) {
+    GHashTable* copy = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    if (src != NULL) {
+        GHashTableIter iter;
+        gpointer key;
+        g_hash_table_iter_init(&iter, src);
+        while (g_hash_table_iter_next(&iter, &key, NULL)) {
+            g_hash_table_add(copy, g_strdup((const gchar*)key));
+        }
+    }
+    return copy;
+}
+
+static void dir_scan_thread_func(GTask* task, gpointer source_object,
+                                 gpointer task_data, GCancellable* cancellable) {
+    (void)source_object;
+    DirScanTaskData* td = (DirScanTaskData*)task_data;
+
+    if (g_task_return_error_if_cancelled(task)) {
+        return;
+    }
+
+    td->root_node = scan_dir_node_recursive(td->dirname, td->show_hidden,
+                                            td->sort_mode, td->expanded_snapshot,
+                                            cancellable);
+
+    if (g_task_return_error_if_cancelled(task)) {
+        return;
+    }
+    g_task_return_boolean(task, TRUE);
+}
+
+static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
+                              gpointer user_data) {
+    (void)source_object;
+    (void)user_data;
+    GTask* task = G_TASK(res);
+    GCancellable* cancellable = g_task_get_cancellable(task);
+    DirScanTaskData* td = (DirScanTaskData*)g_task_get_task_data(task);
+
+    if (td == NULL || td->root_node == NULL ||
+        g_cancellable_is_cancelled(cancellable) ||
+        cancellable != td->app->dir_cancellable) {
+        return;
+    }
+
+    AppData* app = td->app;
+    GtkTreeStore* store = GTK_TREE_STORE(app->model);
+
+    gtk_tree_store_clear(store);
+    apply_dir_node_to_store(store, NULL, td->root_node);
+    reexpand_paths_recursive(app, NULL);
+    update_path_label(app);
+
+    if (td->select_path != NULL) {
+        if (!select_by_path(app, td->select_path)) {
+            select_first_row(app);
+        }
+    } else if (td->select_name != NULL) {
+        if (!select_by_name(app, td->select_name)) {
+            select_first_row(app);
+        }
+    } else {
+        select_first_row(app);
+    }
+}
+
+static void start_async_dir_scan(AppData* app, const gchar* dirname,
+                                 const gchar* select_path, const gchar* select_name) {
+    if (app->dir_cancellable != NULL) {
+        g_cancellable_cancel(app->dir_cancellable);
+        g_clear_object(&app->dir_cancellable);
+    }
+    app->dir_cancellable = g_cancellable_new();
+
+    DirScanTaskData* td = g_new0(DirScanTaskData, 1);
+    td->app = app;
+    td->dirname = g_strdup(dirname);
+    td->show_hidden = app->show_hidden;
+    td->sort_mode = app->sort_mode;
+    td->expanded_snapshot = clone_string_set(app->expanded_paths);
+    td->select_path = g_strdup(select_path);
+    td->select_name = g_strdup(select_name);
+
+    GTask* task = g_task_new(NULL, app->dir_cancellable, on_dir_scan_ready, NULL);
+    g_task_set_task_data(task, td, dir_scan_task_data_free);
+    g_task_run_in_thread(task, dir_scan_thread_func);
+    g_object_unref(task);
+}
+
+static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
+                                            const gchar* select_name) {
     if (!g_file_test(new_dir, G_FILE_TEST_IS_DIR)) {
         return;
+    }
+
+    if (app->preview_cancellable != NULL) {
+        g_cancellable_cancel(app->preview_cancellable);
+        g_clear_object(&app->preview_cancellable);
     }
 
     g_free(app->base_dir);
@@ -904,16 +1100,12 @@ void reload_directory(AppData* app, const gchar* new_dir) {
         g_hash_table_remove_all(app->expanded_paths);
     }
 
-    populate_store(GTK_TREE_STORE(app->model), app, new_dir, app->show_hidden, app->sort_mode);
-
     /* Clear right pane */
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
     gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
     gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 0);
-#if GTK_CHECK_VERSION(3, 18, 0)
     gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
     gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
-#endif
     set_view_monospace(app->text_view, FALSE);
     gtk_text_buffer_set_text(app->buffer, "", -1);
     app->viewer_match = -1;
@@ -928,8 +1120,13 @@ void reload_directory(AppData* app, const gchar* new_dir) {
     monitor_file(app, NULL);
     monitor_directory(app);
 
-    /* Select first entry */
-    select_first_row(app);
+    /* Scan directory asynchronously off the UI thread */
+    start_async_dir_scan(app, new_dir, NULL, select_name);
+}
+
+/* Navigate to a new directory (Enter / Backspace) */
+void reload_directory(AppData* app, const gchar* new_dir) {
+    reload_directory_with_selection(app, new_dir, NULL);
 }
 
 /* Refresh the list while preserving selected entry and open expansions */
@@ -940,20 +1137,9 @@ void refresh_listing(AppData* app) {
         gtk_tree_model_get(app->model, &it, COL_PATH, &cur_path, -1);
     }
 
-    populate_store(GTK_TREE_STORE(app->model), app, app->base_dir,
-                   app->show_hidden, app->sort_mode);
-
-    reexpand_paths_recursive(app, NULL);
     update_path_label(app);
-
-    if (cur_path != NULL) {
-        if (!select_by_path(app, cur_path)) {
-            select_first_row(app);
-        }
-        g_free(cur_path);
-    } else {
-        select_first_row(app);
-    }
+    start_async_dir_scan(app, app->base_dir, cur_path, NULL);
+    g_free(cur_path);
 }
 
 /* Toggle visibility of hidden files (dot-prefixed) */
@@ -1154,10 +1340,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             if (g_strcmp0(parent, app->base_dir) != 0) {
                 /* Remember directory left to highlight it again in parent */
                 gchar* came_from = g_path_get_basename(app->base_dir);
-                reload_directory(app, parent);
-                if (!select_by_name(app, came_from)) {
-                    select_first_row(app);
-                }
+                reload_directory_with_selection(app, parent, came_from);
                 g_free(came_from);
             }
             g_free(parent);

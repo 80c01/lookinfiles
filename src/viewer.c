@@ -299,28 +299,151 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     }
 }
 
-/* Render image preview with centered metadata header and scaled pixbuf */
-void render_image_preview(AppData* app, const gchar* name, const gchar* full) {
-    gtk_text_buffer_set_text(app->buffer, "", -1);
+typedef struct {
+    AppData* app;
+    gchar* name;
+    gchar* full;
+    gboolean render_raw;
+    gint alloc_w;
+    gint alloc_h;
+
+    /* Results populated by worker thread */
+    gchar* error_msg;
+    gchar* fmt_upper;
+    gchar* size_str;
+    gint orig_w;
+    gint orig_h;
+    gint target_w;
+    gint target_h;
+    gboolean is_fitted;
+    GdkTexture* texture;
+} ImagePreviewTaskData;
+
+static void image_preview_task_data_free(gpointer data) {
+    ImagePreviewTaskData* td = (ImagePreviewTaskData*)data;
+    if (td == NULL) {
+        return;
+    }
+    g_free(td->name);
+    g_free(td->full);
+    g_free(td->error_msg);
+    g_free(td->fmt_upper);
+    g_free(td->size_str);
+    if (td->texture != NULL) {
+        g_object_unref(td->texture);
+    }
+    g_free(td);
+}
+
+static void image_preview_thread_func(GTask* task, gpointer source_object,
+                                      gpointer task_data, GCancellable* cancellable) {
+    (void)source_object;
+    (void)cancellable;
+    ImagePreviewTaskData* td = (ImagePreviewTaskData*)task_data;
+
+    if (g_task_return_error_if_cancelled(task)) {
+        return;
+    }
 
     gint orig_w = 0, orig_h = 0;
-    GdkPixbufFormat* fmt = gdk_pixbuf_get_file_info(full, &orig_w, &orig_h);
+    GdkPixbufFormat* fmt = gdk_pixbuf_get_file_info(td->full, &orig_w, &orig_h);
     if (fmt == NULL || orig_w <= 0 || orig_h <= 0) {
-        gchar* msg = g_strdup_printf("[ Cannot decode image: %s ]", name);
-        gtk_text_buffer_set_text(app->buffer, msg, -1);
-        g_free(msg);
+        td->error_msg = g_strdup_printf("[ Cannot decode image: %s ]", td->name);
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
+
+    if (g_task_return_error_if_cancelled(task)) {
         return;
     }
 
     gchar* fmt_name = gdk_pixbuf_format_get_name(fmt);
-    gchar* fmt_upper = g_ascii_strup(fmt_name, -1);
+    td->fmt_upper = g_ascii_strup(fmt_name, -1);
     g_free(fmt_name);
 
     struct stat st;
-    gint64 fsize = (g_stat(full, &st) == 0) ? (gint64)st.st_size : 0;
-    gchar* size_str = g_format_size((guint64)fsize);
+    gint64 fsize = (g_stat(td->full, &st) == 0) ? (gint64)st.st_size : 0;
+    td->size_str = g_format_size((guint64)fsize);
+    td->orig_w = orig_w;
+    td->orig_h = orig_h;
+    td->target_w = orig_w;
+    td->target_h = orig_h;
+    td->is_fitted = FALSE;
 
-    /* Setup text tags for styling and centering */
+    if (!td->render_raw) {
+        gint max_w = (td->alloc_w > 100) ? (td->alloc_w - 40) : 700;
+        gint max_h = (td->alloc_h > 140) ? (td->alloc_h - 120) : 500;
+        if (orig_w > max_w || orig_h > max_h) {
+            gdouble scale = MIN((gdouble)max_w / orig_w, (gdouble)max_h / orig_h);
+            td->target_w = MAX(1, (gint)(orig_w * scale));
+            td->target_h = MAX(1, (gint)(orig_h * scale));
+            td->is_fitted = TRUE;
+        }
+    }
+
+    GError* err = NULL;
+    GdkPixbuf* pix = gdk_pixbuf_new_from_file_at_scale(
+        td->full, td->target_w, td->target_h, TRUE, &err);
+    if (pix == NULL) {
+        td->error_msg = g_strdup_printf("[ Error loading image: %s (%s) ]",
+                                        td->name, err ? err->message : "unknown error");
+        if (err != NULL) {
+            g_error_free(err);
+        }
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
+
+    if (g_task_return_error_if_cancelled(task)) {
+        g_object_unref(pix);
+        return;
+    }
+
+    td->texture = gdk_texture_new_for_pixbuf(pix);
+    g_object_unref(pix);
+    g_task_return_boolean(task, TRUE);
+}
+
+static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
+                                   gpointer user_data) {
+    (void)source_object;
+    (void)user_data;
+    GTask* task = G_TASK(res);
+    GCancellable* cancellable = g_task_get_cancellable(task);
+    ImagePreviewTaskData* td = (ImagePreviewTaskData*)g_task_get_task_data(task);
+
+    if (td == NULL || g_cancellable_is_cancelled(cancellable) ||
+        cancellable != td->app->preview_cancellable) {
+        return;
+    }
+
+    AppData* app = td->app;
+
+    apply_viewer_language(app, NULL);
+    set_view_monospace(app->text_view, FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
+    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
+    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
+    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
+    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+
+    GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
+    if (hadj != NULL) {
+        gtk_adjustment_set_value(hadj, gtk_adjustment_get_lower(hadj));
+    }
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(app->text_view));
+    if (vadj != NULL) {
+        gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
+    }
+
+    gtk_text_buffer_set_text(app->buffer, "", -1);
+    app->viewer_match = -1;
+
+    if (td->error_msg != NULL) {
+        gtk_text_buffer_set_text(app->buffer, td->error_msg, -1);
+        return;
+    }
+
     GtkTextTagTable* tags = gtk_text_buffer_get_tag_table(app->buffer);
     if (!gtk_text_tag_table_lookup(tags, "img_center")) {
         gtk_text_buffer_create_tag(app->buffer, "img_center",
@@ -343,78 +466,153 @@ void render_image_preview(AppData* app, const gchar* name, const gchar* full) {
                                    NULL);
     }
 
-    /* Scaling */
-    gint target_w = orig_w;
-    gint target_h = orig_h;
-    gboolean is_fitted = FALSE;
-
-    if (!app->render_raw) {
-        /* Default mode: fit within available preview pane width and height */
-        gint alloc_w = gtk_widget_get_width(app->text_view);
-        gint alloc_h = gtk_widget_get_height(app->text_view);
-        gint max_w = (alloc_w > 100) ? (alloc_w - 40) : 700;
-        gint max_h = (alloc_h > 140) ? (alloc_h - 120) : 500;
-        if (orig_w > max_w || orig_h > max_h) {
-            gdouble scale = MIN((gdouble)max_w / orig_w, (gdouble)max_h / orig_h);
-            target_w = MAX(1, (gint)(orig_w * scale));
-            target_h = MAX(1, (gint)(orig_h * scale));
-            is_fitted = TRUE;
-        }
-    }
-
-    GError* err = NULL;
-    GdkPixbuf* pix = gdk_pixbuf_new_from_file_at_scale(full, target_w, target_h, TRUE, &err);
-    if (pix == NULL) {
-        gchar* msg = g_strdup_printf("[ Error loading image: %s (%s) ]",
-                                     name, err ? err->message : "unknown error");
-        gtk_text_buffer_set_text(app->buffer, msg, -1);
-        g_free(msg);
-        if (err != NULL) {
-            g_error_free(err);
-        }
-        g_free(fmt_upper);
-        g_free(size_str);
-        return;
-    }
-
     GtkTextIter iter;
     gtk_text_buffer_get_end_iter(app->buffer, &iter);
 
-    /* Spacing */
     gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, "\n", -1, "img_center", NULL);
 
-    /* Header title */
-    gchar* title = g_strdup_printf("🖼️  %s\n", name);
+    gchar* title = g_strdup_printf("🖼️  %s\n", td->name);
     gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, title, -1, "img_header", NULL);
     g_free(title);
 
-    /* Subtitle with metadata & mode hint */
-    const gchar* mode_hint = is_fitted ? "  [fitted, press m for 1:1]"
-                           : (app->render_raw && (orig_w != target_w || orig_h != target_h))
+    const gchar* mode_hint = td->is_fitted ? "  [fitted, press m for 1:1]"
+                           : (td->render_raw && (td->orig_w != td->target_w || td->orig_h != td->target_h))
                                        ? "  [1:1 scale, press m to fit]"
                                        : "  [1:1 scale]";
     gchar* meta = g_strdup_printf("%s  •  %d × %d px  •  %s%s\n\n",
-                                  fmt_upper, orig_w, orig_h, size_str, mode_hint);
+                                  td->fmt_upper, td->orig_w, td->orig_h, td->size_str, mode_hint);
     gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, meta, -1, "img_sub", NULL);
     g_free(meta);
-    g_free(fmt_upper);
-    g_free(size_str);
 
-    /* Insert image */
-    GdkTexture* tex = gdk_texture_new_for_pixbuf(pix);
-    gtk_text_buffer_insert_paintable(app->buffer, &iter, GDK_PAINTABLE(tex));
-    g_object_unref(tex);
-    g_object_unref(pix);
+    if (td->texture != NULL) {
+        gtk_text_buffer_insert_paintable(app->buffer, &iter, GDK_PAINTABLE(td->texture));
 
-    /* Apply center tag to the image line */
-    GtkTextIter start_img = iter;
-    gtk_text_iter_backward_char(&start_img);
-    gtk_text_buffer_apply_tag_by_name(app->buffer, "img_center", &start_img, &iter);
+        GtkTextIter start_img = iter;
+        gtk_text_iter_backward_char(&start_img);
+        gtk_text_buffer_apply_tag_by_name(app->buffer, "img_center", &start_img, &iter);
+    }
 
     gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, "\n\n", -1, "img_center", NULL);
 }
 
-void load_file_content(AppData* app, const gchar* name, const gchar* full) {
+/* Render image preview asynchronously on a worker thread */
+void render_image_preview(AppData* app, const gchar* name, const gchar* full) {
+    if (app->preview_cancellable != NULL) {
+        g_cancellable_cancel(app->preview_cancellable);
+        g_clear_object(&app->preview_cancellable);
+    }
+    app->preview_cancellable = g_cancellable_new();
+
+    ImagePreviewTaskData* td = g_new0(ImagePreviewTaskData, 1);
+    td->app = app;
+    td->name = g_strdup(name);
+    td->full = g_strdup(full);
+    td->render_raw = app->render_raw;
+    td->alloc_w = gtk_widget_get_width(app->text_view);
+    td->alloc_h = gtk_widget_get_height(app->text_view);
+
+    GTask* task = g_task_new(NULL, app->preview_cancellable, on_image_preview_ready, NULL);
+    g_task_set_task_data(task, td, image_preview_task_data_free);
+    g_task_run_in_thread(task, image_preview_thread_func);
+    g_object_unref(task);
+}
+
+typedef struct {
+    AppData* app;
+    gchar* name;
+    gchar* full;
+    gboolean is_md;
+    gboolean is_html;
+    gboolean render_raw;
+
+    /* Results populated by worker thread */
+    gint64 fsize;
+    gsize raw_len;
+    gboolean preview;
+    gchar* utf8_text;
+    gchar* error_msg;
+} TextPreviewTaskData;
+
+static void text_preview_task_data_free(gpointer data) {
+    TextPreviewTaskData* td = (TextPreviewTaskData*)data;
+    if (td == NULL) {
+        return;
+    }
+    g_free(td->name);
+    g_free(td->full);
+    g_free(td->utf8_text);
+    g_free(td->error_msg);
+    g_free(td);
+}
+
+static void text_preview_thread_func(GTask* task, gpointer source_object,
+                                     gpointer task_data, GCancellable* cancellable) {
+    (void)source_object;
+    (void)cancellable;
+    TextPreviewTaskData* td = (TextPreviewTaskData*)task_data;
+
+    if (g_task_return_error_if_cancelled(task)) {
+        return;
+    }
+
+    struct stat st;
+    td->fsize = (g_stat(td->full, &st) == 0) ? (gint64)st.st_size : -1;
+    if (td->fsize < 0) {
+        td->error_msg = g_strdup_printf("[ Cannot read: %s ]", td->name);
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
+
+    gchar* contents = NULL;
+    gsize len = 0;
+    if (td->fsize > PREVIEW_THRESHOLD) {
+        td->preview = TRUE;
+        FILE* fp = g_fopen(td->full, "rb");
+        if (fp != NULL) {
+            contents = g_malloc0(PREVIEW_BYTES + 1);
+            len = fread(contents, 1, PREVIEW_BYTES, fp);
+            contents[len] = '\0';
+            fclose(fp);
+        }
+    } else {
+        g_file_get_contents(td->full, &contents, &len, NULL);
+    }
+
+    if (g_task_return_error_if_cancelled(task)) {
+        g_free(contents);
+        return;
+    }
+
+    if (contents != NULL) {
+        td->raw_len = len;
+        if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
+            td->utf8_text = g_utf8_make_valid(contents, (gssize)len);
+            g_free(contents);
+        } else {
+            td->utf8_text = contents;
+        }
+    } else {
+        td->error_msg = g_strdup_printf("[ Cannot read: %s ]", td->name);
+    }
+
+    g_task_return_boolean(task, TRUE);
+}
+
+static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
+                                  gpointer user_data) {
+    (void)source_object;
+    (void)user_data;
+    GTask* task = G_TASK(res);
+    GCancellable* cancellable = g_task_get_cancellable(task);
+    TextPreviewTaskData* td = (TextPreviewTaskData*)g_task_get_task_data(task);
+
+    if (td == NULL || g_cancellable_is_cancelled(cancellable) ||
+        cancellable != td->app->preview_cancellable) {
+        return;
+    }
+
+    AppData* app = td->app;
+
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
     if (hadj != NULL) {
         gtk_adjustment_set_value(hadj, gtk_adjustment_get_lower(hadj));
@@ -424,127 +622,86 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
     }
 
-    gboolean is_md = is_markdown_file(name) && !app->render_raw;
-    gboolean is_html = is_html_file(name) && !app->render_raw;
-    gboolean is_img = is_image_file(name);
-    gboolean is_pdf = is_pdf_file(name);
-
-    if (is_pdf) {
-        apply_viewer_language(app, NULL);
-        set_view_monospace(app->text_view, FALSE);
-        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
-        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
-        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
-#if GTK_CHECK_VERSION(3, 18, 0)
-        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
-        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
-#endif
-        render_pdf_preview(app, name, full);
-        app->viewer_match = -1;
-        return;
-    }
-
-    if (is_img) {
-        apply_viewer_language(app, NULL);
-        set_view_monospace(app->text_view, FALSE);
-        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
-        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
-#if GTK_CHECK_VERSION(3, 18, 0)
-        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
-        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
-#endif
-        render_image_preview(app, name, full);
-        app->viewer_match = -1;
-        return;
-    }
-
-    gboolean is_rendered = is_md || is_html;
-
+    gboolean is_rendered = td->is_md || td->is_html;
     if (is_rendered) {
         apply_viewer_language(app, NULL);
         set_view_monospace(app->text_view, FALSE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
         gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
         gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
-#if GTK_CHECK_VERSION(3, 18, 0)
         gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
         gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
-#endif
     } else {
-        gboolean code = is_code_file(name) || app->render_raw;
+        gboolean code = is_code_file(td->name) || td->render_raw;
         set_view_monospace(app->text_view, code);
-        apply_viewer_language(app, name);
+        apply_viewer_language(app, td->name);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
         gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_X);
         gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_X);
-#if GTK_CHECK_VERSION(3, 18, 0)
         gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_Y);
         gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_Y);
-#endif
     }
 
-    struct stat st;
-    gint64 fsize = (g_stat(full, &st) == 0) ? (gint64)st.st_size : -1;
-    gchar* contents = NULL;
-    gsize len = 0;
-    gboolean preview = FALSE;
+    app->viewer_match = -1;
 
-    if (fsize < 0) {
-        gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
-        gtk_text_buffer_set_text(app->buffer, msg, -1);
-        g_free(msg);
-        app->viewer_match = -1;
+    if (td->error_msg != NULL) {
+        gtk_text_buffer_set_text(app->buffer, td->error_msg, -1);
         return;
     }
 
-    if (fsize > PREVIEW_THRESHOLD) {
-        preview = TRUE;
-        FILE* fp = g_fopen(full, "rb");
-        if (fp != NULL) {
-            contents = g_malloc0(PREVIEW_BYTES + 1);
-            len = fread(contents, 1, PREVIEW_BYTES, fp);
-            contents[len] = '\0';
-            fclose(fp);
-        }
-    } else {
-        g_file_get_contents(full, &contents, &len, NULL);
-    }
-
-    if (contents != NULL) {
-        gchar* valid_text = NULL;
-        if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
-            valid_text = g_utf8_make_valid(contents, (gssize)len);
-        }
-        const gchar* src = valid_text ? valid_text : contents;
-
-        if (is_md) {
+    if (td->utf8_text != NULL) {
+        if (td->is_md) {
             ensure_markdown_tags(app->buffer);
-            render_markdown_to_buffer(app->buffer, src, full, preview, name, fsize);
-        } else if (is_html) {
+            render_markdown_to_buffer(app->buffer, td->utf8_text, td->full,
+                                      td->preview, td->name, td->fsize);
+        } else if (td->is_html) {
             ensure_html_tags(app->buffer);
-            render_html_to_buffer(app->buffer, src, full, preview, name, fsize);
+            render_html_to_buffer(app->buffer, td->utf8_text, td->full,
+                                  td->preview, td->name, td->fsize);
         } else {
             GString* text = g_string_new(NULL);
-            if (preview) {
+            if (td->preview) {
                 g_string_append_printf(text,
                         "[ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)\n"
                         "Showing first %u bytes. Large file, display truncated.\n\n",
-                        name, fsize, (guint)len);
+                        td->name, td->fsize, (guint)td->raw_len);
             }
-            g_string_append(text, src);
+            g_string_append(text, td->utf8_text);
             gtk_text_buffer_set_text(app->buffer, text->str, (gint)text->len);
             g_string_free(text, TRUE);
         }
-        app->viewer_match = -1;
-        g_free(valid_text);
-        g_free(contents);
-    } else {
-        gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
-        gtk_text_buffer_set_text(app->buffer, msg, -1);
-        g_free(msg);
-        app->viewer_match = -1;
     }
+}
+
+void load_file_content(AppData* app, const gchar* name, const gchar* full) {
+    if (is_pdf_file(name)) {
+        render_pdf_preview(app, name, full);
+        return;
+    }
+
+    if (is_image_file(name)) {
+        render_image_preview(app, name, full);
+        return;
+    }
+
+    if (app->preview_cancellable != NULL) {
+        g_cancellable_cancel(app->preview_cancellable);
+        g_clear_object(&app->preview_cancellable);
+    }
+    app->preview_cancellable = g_cancellable_new();
+
+    TextPreviewTaskData* td = g_new0(TextPreviewTaskData, 1);
+    td->app = app;
+    td->name = g_strdup(name);
+    td->full = g_strdup(full);
+    td->render_raw = app->render_raw;
+    td->is_md = is_markdown_file(name) && !app->render_raw;
+    td->is_html = is_html_file(name) && !app->render_raw;
+
+    GTask* task = g_task_new(NULL, app->preview_cancellable, on_text_preview_ready, NULL);
+    g_task_set_task_data(task, td, text_preview_task_data_free);
+    g_task_run_in_thread(task, text_preview_thread_func);
+    g_object_unref(task);
 }
 
 static gboolean deferred_refresh(gpointer data) {
@@ -638,6 +795,117 @@ void monitor_file(AppData* app, const char* path) {
     }
 }
 
+typedef struct {
+    AppData* app;
+    gchar* name;
+    gchar* full;
+    gboolean show_hidden;
+    GString* listing;
+} DirPreviewTaskData;
+
+static void dir_preview_task_data_free(gpointer data) {
+    DirPreviewTaskData* td = (DirPreviewTaskData*)data;
+    if (td == NULL) {
+        return;
+    }
+    g_free(td->name);
+    g_free(td->full);
+    if (td->listing != NULL) {
+        g_string_free(td->listing, TRUE);
+    }
+    g_free(td);
+}
+
+static gint cmp_str_ptr(gconstpointer a, gconstpointer b) {
+    const gchar* sa = *(const gchar* const*)a;
+    const gchar* sb = *(const gchar* const*)b;
+    return g_strcmp0(sa, sb);
+}
+
+static void dir_preview_thread_func(GTask* task, gpointer source_object,
+                                    gpointer task_data, GCancellable* cancellable) {
+    (void)source_object;
+    DirPreviewTaskData* td = (DirPreviewTaskData*)task_data;
+
+    if (g_task_return_error_if_cancelled(task)) {
+        return;
+    }
+
+    td->listing = g_string_new(NULL);
+    g_string_append_printf(td->listing, "[ Directory ] %s\n\n", td->name);
+
+    GDir* sub = g_dir_open(td->full, 0, NULL);
+    if (sub != NULL) {
+        GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
+        const gchar* sub_name;
+        while ((sub_name = g_dir_read_name(sub)) != NULL) {
+            if (g_cancellable_is_cancelled(cancellable)) {
+                g_dir_close(sub);
+                g_ptr_array_unref(names);
+                g_task_return_error_if_cancelled(task);
+                return;
+            }
+            if (!td->show_hidden && sub_name[0] == '.') {
+                continue;
+            }
+            g_ptr_array_add(names, g_strdup(sub_name));
+        }
+        g_dir_close(sub);
+        g_ptr_array_sort(names, cmp_str_ptr);
+
+        for (guint i = 0; i < names->len; i++) {
+            if (g_cancellable_is_cancelled(cancellable)) {
+                g_ptr_array_unref(names);
+                g_task_return_error_if_cancelled(task);
+                return;
+            }
+            const gchar* sub_entry = g_ptr_array_index(names, i);
+            gchar* sub_full = g_build_filename(td->full, sub_entry, NULL);
+            gboolean sub_is_dir = g_file_test(sub_full, G_FILE_TEST_IS_DIR);
+            g_free(sub_full);
+            g_string_append_printf(td->listing, "  %s%s\n",
+                                   sub_entry, sub_is_dir ? "/" : "");
+        }
+        if (names->len == 0) {
+            g_string_append(td->listing, "  (empty)\n");
+        }
+        g_ptr_array_unref(names);
+    } else {
+        g_string_append(td->listing, "  (cannot read directory)\n");
+    }
+
+    if (g_task_return_error_if_cancelled(task)) {
+        return;
+    }
+    g_task_return_boolean(task, TRUE);
+}
+
+static void on_dir_preview_ready(GObject* source_object, GAsyncResult* res,
+                                 gpointer user_data) {
+    (void)source_object;
+    (void)user_data;
+    GTask* task = G_TASK(res);
+    GCancellable* cancellable = g_task_get_cancellable(task);
+    DirPreviewTaskData* td = (DirPreviewTaskData*)g_task_get_task_data(task);
+
+    if (td == NULL || td->listing == NULL ||
+        g_cancellable_is_cancelled(cancellable) ||
+        cancellable != td->app->preview_cancellable) {
+        return;
+    }
+
+    AppData* app = td->app;
+    set_view_monospace(app->text_view, FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
+    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
+    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 0);
+    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
+    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+    gtk_text_buffer_set_text(app->buffer, td->listing->str, (gint)td->listing->len);
+    app->viewer_match = -1;
+    apply_viewer_language(app, NULL);
+}
+
 void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     AppData* app = (AppData*)user_data;
     GtkTreeModel* model = NULL;
@@ -663,50 +931,22 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     }
 
     if (g_strcmp0(type, "dir") == 0) {
-        set_view_monospace(app->text_view, FALSE);
-        GString* listing = g_string_new(NULL);
-        g_string_append_printf(listing, "[ Directory ] %s\n\n", name);
-
-        GDir* sub = g_dir_open(full, 0, NULL);
-        if (sub != NULL) {
-            GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
-            const gchar* sub_name;
-            while ((sub_name = g_dir_read_name(sub)) != NULL) {
-                if (!app->show_hidden && sub_name[0] == '.') {
-                    continue;
-                }
-                g_ptr_array_add(names, g_strdup(sub_name));
-            }
-            g_dir_close(sub);
-            g_ptr_array_sort(names, (GCompareFunc)g_strcmp0);
-
-            for (guint i = 0; i < names->len; i++) {
-                const gchar* sub_entry = g_ptr_array_index(names, i);
-                gchar* sub_full = g_build_filename(full, sub_entry, NULL);
-                gboolean sub_is_dir = g_file_test(sub_full, G_FILE_TEST_IS_DIR);
-                g_free(sub_full);
-                g_string_append_printf(listing, "  %s%s\n",
-                                       sub_entry, sub_is_dir ? "/" : "");
-            }
-            if (names->len == 0) {
-                g_string_append(listing, "  (empty)\n");
-            }
-            g_ptr_array_unref(names);
-        } else {
-            g_string_append(listing, "  (cannot read directory)\n");
+        if (app->preview_cancellable != NULL) {
+            g_cancellable_cancel(app->preview_cancellable);
+            g_clear_object(&app->preview_cancellable);
         }
+        app->preview_cancellable = g_cancellable_new();
 
-        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
-        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 0);
-#if GTK_CHECK_VERSION(3, 18, 0)
-        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
-        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
-#endif
-        gtk_text_buffer_set_text(app->buffer, listing->str, (gint)listing->len);
-        app->viewer_match = -1;
-        apply_viewer_language(app, NULL);
-        g_string_free(listing, TRUE);
+        DirPreviewTaskData* td = g_new0(DirPreviewTaskData, 1);
+        td->app = app;
+        td->name = g_strdup(name);
+        td->full = g_strdup(full);
+        td->show_hidden = app->show_hidden;
+
+        GTask* task = g_task_new(NULL, app->preview_cancellable, on_dir_preview_ready, NULL);
+        g_task_set_task_data(task, td, dir_preview_task_data_free);
+        g_task_run_in_thread(task, dir_preview_thread_func);
+        g_object_unref(task);
     } else {
         if (g_strcmp0(name, app->viewed_name) != 0) {
             app->render_raw = FALSE;

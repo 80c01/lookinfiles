@@ -331,6 +331,16 @@ int main(int argc, char** argv) {
     gtk_widget_grab_focus(tree_view);
 
     g_main_loop_run(loop);
+
+    if (app->dir_cancellable != NULL) {
+        g_cancellable_cancel(app->dir_cancellable);
+        g_clear_object(&app->dir_cancellable);
+    }
+    if (app->preview_cancellable != NULL) {
+        g_cancellable_cancel(app->preview_cancellable);
+        g_clear_object(&app->preview_cancellable);
+    }
+
     g_main_loop_unref(loop);
 
     return 0;
