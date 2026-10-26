@@ -484,6 +484,10 @@ int main(int argc, char** argv) {
         g_cancellable_cancel(app->preview_cancellable);
         g_clear_object(&app->preview_cancellable);
     }
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        editor_free_tabs(app, app->workspaces[i].editors, (i == app->current_ws));
+        app->workspaces[i].editors = NULL;
+    }
 
     g_main_loop_unref(loop);
 

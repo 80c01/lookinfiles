@@ -15,5 +15,9 @@ gboolean editor_confirm_discard(AppData* app, EditorTab* tab);
 void editor_close_page(AppData* app, gint page);
 void editor_close_current(AppData* app);
 gboolean editor_save_current(AppData* app);
+void editor_detach_tabs(AppData* app);
+void editor_attach_tabs(AppData* app, GList* editors);
+void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first);
+gboolean editor_confirm_discard_workspace(AppData* app, GList* editors);
 
 #endif /* EDITOR_H */

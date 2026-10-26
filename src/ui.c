@@ -236,7 +236,12 @@ void focus_adjacent_panel(gint step, AppData* app) {
         g_ptr_array_add(panels, GTK_WIDGET(app->tree_view));
     }
     if (app->viewer_box == NULL || gtk_widget_get_visible(app->viewer_box)) {
-        g_ptr_array_add(panels, app->text_view);
+        EditorTab* cur_tab = editor_current_tab(app);
+        if (cur_tab != NULL && cur_tab->view != NULL) {
+            g_ptr_array_add(panels, cur_tab->view);
+        } else {
+            g_ptr_array_add(panels, app->text_view);
+        }
     }
 #ifdef HAVE_VTE
     if (gtk_widget_get_visible(app->term_scroll)) {
@@ -283,6 +288,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     /* Ctrl+Q: quit */
     if ((state & GDK_CONTROL_MASK) &&
         (keyval == GDK_KEY_q || keyval == GDK_KEY_Q)) {
+        for (gint i = 0; i < app->num_workspaces; i++) {
+            if (!editor_confirm_discard_workspace(app, app->workspaces[i].editors)) {
+                return TRUE;
+            }
+        }
         if (app->main_loop != NULL && g_main_loop_is_running(app->main_loop)) {
             g_main_loop_quit(app->main_loop);
         }
@@ -715,6 +725,7 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->show_bookmarks = app->show_bookmarks;
     ws->sort_mode = app->sort_mode;
     ws->notebook_page = 0;
+    ws->editors = NULL;
     ws->render_raw = FALSE;
 #ifdef HAVE_VTE
     if (app->term_stack != NULL) {
@@ -767,6 +778,7 @@ void workspace_save_current(AppData* app) {
             ws->notebook_page = cur_page;
         }
     }
+    ws->editors = app->editors;
 
     g_free(ws->base_dir);
     ws->base_dir = g_strdup(app->base_dir);
@@ -928,16 +940,26 @@ void workspace_switch(AppData* app, gint idx) {
     if (app == NULL || idx < 0 || idx >= app->num_workspaces) {
         return;
     }
-    if (idx != app->current_ws) {
+    gboolean ws_changed = (idx != app->current_ws);
+    if (ws_changed && app->current_ws >= 0) {
         workspace_save_current(app);
     }
     app->switching_ws = TRUE;
     app->applying_layout = TRUE;
+
+    if (ws_changed) {
+        editor_detach_tabs(app);
+    }
+
     app->current_ws = idx;
 
     VirtualLayout* ws = &app->workspaces[idx];
     gchar* target_path = g_strdup(ws->selected_path);
     app->right_frac = ws->right_frac;
+
+    if (ws_changed) {
+        editor_attach_tabs(app, ws->editors);
+    }
 
 #ifdef HAVE_VTE
     app->term_box = ws->term_box;
@@ -1023,6 +1045,13 @@ void workspace_switch(AppData* app, gint idx) {
 
     if (ws->files_vis && app->tree_view != NULL) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    } else if (ws->notebook_page > 0 && app->editors != NULL) {
+        EditorTab* cur_tab = editor_current_tab(app);
+        if (cur_tab != NULL && cur_tab->view != NULL) {
+            gtk_widget_grab_focus(cur_tab->view);
+        } else if (ws->preview_vis && app->text_view != NULL) {
+            gtk_widget_grab_focus(app->text_view);
+        }
     } else if (ws->preview_vis && app->text_view != NULL) {
         gtk_widget_grab_focus(app->text_view);
     }
@@ -1045,7 +1074,8 @@ void workspace_add(AppData* app) {
         nw->right_orient = cur->right_orient;
         nw->main_frac = cur->main_frac;
         nw->right_frac = cur->right_frac;
-        nw->notebook_page = cur->notebook_page;
+        nw->notebook_page = 0;
+        nw->editors = NULL;
         nw->render_raw = cur->render_raw;
         nw->show_bookmarks = cur->show_bookmarks;
         g_free(nw->selected_path);
@@ -1065,10 +1095,18 @@ void workspace_remove(AppData* app, gint idx) {
         idx < 0 || idx >= app->num_workspaces) {
         return;
     }
-    if (idx != app->current_ws) {
+    VirtualLayout* rm = &app->workspaces[idx];
+    if (rm->editors != NULL && !editor_confirm_discard_workspace(app, rm->editors)) {
+        return;
+    }
+
+    if (idx == app->current_ws) {
+        editor_detach_tabs(app);
+        app->editors = NULL;
+    } else {
         workspace_save_current(app);
     }
-    VirtualLayout* rm = &app->workspaces[idx];
+
     g_free(rm->base_dir);
     if (rm->expanded_paths != NULL) {
         g_hash_table_destroy(rm->expanded_paths);
@@ -1079,6 +1117,9 @@ void workspace_remove(AppData* app, gint idx) {
         gtk_stack_remove(GTK_STACK(app->term_stack), rm->term_box);
     }
 #endif
+
+    editor_free_tabs(app, rm->editors, FALSE);
+    rm->editors = NULL;
 
     for (gint i = idx; i < app->num_workspaces - 1; i++) {
         app->workspaces[i] = app->workspaces[i + 1];
@@ -1092,7 +1133,7 @@ void workspace_remove(AppData* app, gint idx) {
     } else if (idx < app->current_ws) {
         target = app->current_ws - 1;
     }
-    app->current_ws = target;
+    app->current_ws = -1;
     ws_minimap_update_size(app);
     workspace_switch(app, target);
 }

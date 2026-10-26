@@ -81,6 +81,7 @@ typedef struct {
     gboolean show_bookmarks;
     gint sort_mode;
     gint notebook_page;
+    GList* editors;
     gboolean render_raw;
 #ifdef HAVE_VTE
     GtkWidget* term_box;

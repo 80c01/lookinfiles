@@ -134,6 +134,8 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
 
     gint page = gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook),
                                          scroll, tab->tab_label);
+    g_object_ref(tab->scroll);
+    g_object_ref(tab->tab_label);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), page);
     gtk_widget_grab_focus(view);
 
@@ -142,6 +144,10 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
                      G_CALLBACK(on_editor_modified_changed), tab);
 
     app->editors = g_list_append(app->editors, tab);
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+        app->workspaces[app->current_ws].editors = app->editors;
+        app->workspaces[app->current_ws].notebook_page = page;
+    }
     g_free(contents);
 }
 
@@ -216,9 +222,82 @@ void editor_close_page(AppData* app, gint page) {
                                          tab);
     gtk_notebook_remove_page(GTK_NOTEBOOK(app->notebook), page);
     app->editors = g_list_remove(app->editors, tab);
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+        app->workspaces[app->current_ws].editors = app->editors;
+        gint cur = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
+        app->workspaces[app->current_ws].notebook_page = (cur >= 0 ? cur : 0);
+    }
+    g_object_unref(tab->scroll);
+    g_object_unref(tab->tab_label);
     g_free(tab->path);
     g_free(tab->name);
     g_free(tab);
+}
+
+void editor_detach_tabs(AppData* app) {
+    if (app == NULL || app->notebook == NULL) {
+        return;
+    }
+    gint n = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->notebook));
+    while (n > 1) {
+        gtk_notebook_remove_page(GTK_NOTEBOOK(app->notebook), n - 1);
+        n--;
+    }
+    app->editors = NULL;
+}
+
+void editor_attach_tabs(AppData* app, GList* editors) {
+    if (app == NULL || app->notebook == NULL) {
+        return;
+    }
+    for (GList* l = editors; l != NULL; l = l->next) {
+        EditorTab* tab = (EditorTab*)l->data;
+        if (tab != NULL && tab->scroll != NULL && tab->tab_label != NULL) {
+            gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook),
+                                     tab->scroll, tab->tab_label);
+        }
+    }
+    app->editors = editors;
+}
+
+gboolean editor_confirm_discard_workspace(AppData* app, GList* editors) {
+    for (GList* l = editors; l != NULL; l = l->next) {
+        EditorTab* tab = (EditorTab*)l->data;
+        if (tab != NULL && tab->buffer != NULL &&
+            gtk_text_buffer_get_modified(tab->buffer)) {
+            if (!editor_confirm_discard(app, tab)) {
+                return FALSE;
+            }
+        }
+    }
+    return TRUE;
+}
+
+void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
+    if (detach_first && app != NULL && app->notebook != NULL) {
+        editor_detach_tabs(app);
+    }
+    for (GList* l = editors; l != NULL; l = l->next) {
+        EditorTab* tab = (EditorTab*)l->data;
+        if (tab == NULL) {
+            continue;
+        }
+        g_signal_handlers_disconnect_by_func(tab->buffer,
+                                             (gpointer)on_editor_modified_changed,
+                                             tab);
+        if (tab->scroll != NULL) {
+            g_object_unref(tab->scroll);
+            tab->scroll = NULL;
+        }
+        if (tab->tab_label != NULL) {
+            g_object_unref(tab->tab_label);
+            tab->tab_label = NULL;
+        }
+        g_free(tab->path);
+        g_free(tab->name);
+        g_free(tab);
+    }
+    g_list_free(editors);
 }
 
 void editor_close_current(AppData* app) {
