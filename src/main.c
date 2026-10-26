@@ -434,6 +434,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_vexpand(workspace_hbox, TRUE);
     gtk_box_append(GTK_BOX(workspace_hbox), overlay);
     gtk_box_append(GTK_BOX(workspace_hbox), app->help_window);
+    app->workspace_hbox = workspace_hbox;
 
     GtkWidget* outer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget* label_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);

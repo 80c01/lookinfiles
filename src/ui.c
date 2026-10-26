@@ -60,9 +60,44 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Ctrl+Q", "Quit"},
 };
 
+static gint get_workspace_total_width(AppData* app) {
+    if (app == NULL) {
+        return 0;
+    }
+    if (app->workspace_hbox != NULL) {
+        gint w = gtk_widget_get_width(app->workspace_hbox);
+        if (w > 60) {
+            return w;
+        }
+    }
+    if (app->window != NULL) {
+        gint w = gtk_widget_get_width(GTK_WIDGET(app->window));
+        if (w > 60) {
+            return w;
+        }
+    }
+    if (app->main_paned != NULL) {
+        gint mw = gtk_widget_get_width(app->main_paned);
+        gboolean help_vis = (app->help_window != NULL) && gtk_widget_get_visible(app->help_window);
+        gint help_w = (help_vis && app->help_window != NULL) ? gtk_widget_get_width(app->help_window) : 0;
+        if (help_vis && help_w <= 0) {
+            help_w = 400;
+        }
+        return mw + help_w;
+    }
+    return 0;
+}
+
 void toggle_help_panel(AppData* app) {
     if (app == NULL || app->help_window == NULL) {
         return;
+    }
+    if (app->main_paned != NULL && app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+        gint cur_pos = gtk_paned_get_position(GTK_PANED(app->main_paned));
+        gint total_w = get_workspace_total_width(app);
+        if (total_w > 60 && cur_pos > 0 && cur_pos < total_w) {
+            app->workspaces[app->current_ws].main_frac = CLAMP((gdouble)cur_pos / total_w, 0.05, 0.95);
+        }
     }
     workspace_save_current(app);
     gboolean vis = gtk_widget_get_visible(app->help_window);
@@ -422,8 +457,12 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
         if (ws->files_vis && (ws->preview_vis || ws->term_vis)) {
             gint mw = gtk_widget_get_width(app->main_paned);
             gint pos = gtk_paned_get_position(GTK_PANED(app->main_paned));
-            if (mw > 60 && pos > 0 && pos < mw) {
-                ws->main_frac = CLAMP((gdouble)pos / mw, 0.05, 0.95);
+            gint total_w = get_workspace_total_width(app);
+            if (total_w <= 0) {
+                total_w = mw;
+            }
+            if (total_w > 60 && pos > 0 && pos < total_w) {
+                ws->main_frac = CLAMP((gdouble)pos / total_w, 0.05, 0.95);
                 if (app->right_paned != NULL && ws->preview_vis && ws->term_vis &&
                     ws->right_orient == GTK_ORIENTATION_HORIZONTAL) {
                     gint rw = mw - pos;
@@ -794,11 +833,19 @@ static gboolean apply_ws_positions_now(AppData* app) {
     gboolean ready = TRUE;
     gint mw = (app->main_paned != NULL) ? gtk_widget_get_width(app->main_paned) : 0;
     gint mh = (app->main_paned != NULL) ? gtk_widget_get_height(app->main_paned) : 0;
+    gint total_w = get_workspace_total_width(app);
+    if (total_w <= 0) {
+        total_w = mw;
+    }
+
+    gint target_file_w = (gint)(ws->main_frac * total_w + 0.5);
+    if (target_file_w > mw - 40 && mw > 80) {
+        target_file_w = mw - 40;
+    }
 
     if (app->main_paned != NULL && ws->files_vis && (ws->preview_vis || ws->term_vis)) {
         if (mw > 60) {
-            gtk_paned_set_position(GTK_PANED(app->main_paned),
-                                   (gint)(ws->main_frac * mw + 0.5));
+            gtk_paned_set_position(GTK_PANED(app->main_paned), target_file_w);
         } else {
             ready = FALSE;
         }
@@ -813,7 +860,7 @@ static gboolean apply_ws_positions_now(AppData* app) {
                        : gtk_widget_get_width(app->right_paned);
         if (ws->right_orient == GTK_ORIENTATION_HORIZONTAL) {
             gint target_rw = (ws->files_vis && mw > 60)
-                                 ? (mw - (gint)(ws->main_frac * mw + 0.5))
+                                 ? (mw - target_file_w)
                                  : mw;
             if (app->layout_apply_frames <= 1 || len <= 40) {
                 len = target_rw;

@@ -144,6 +144,7 @@ typedef struct {
 
     /* Floating key-binding cheat sheet (toggled by '?') */
     GtkWidget* help_window;
+    GtkWidget* workspace_hbox;
 
     /* Main window: 'f' toggles fullscreen */
     GtkWindow* window;
