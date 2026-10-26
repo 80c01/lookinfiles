@@ -1,5 +1,7 @@
 #include "file_list.h"
 #include "editor.h"
+#include "minimap.h"
+#include "terminal.h"
 #include "viewer.h"
 #include "search.h"
 #include "ui.h"
@@ -957,6 +959,90 @@ static void on_breadcrumb_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
+void on_files_pill_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app->left_vbox == NULL) {
+        return;
+    }
+    gboolean cur = gtk_widget_get_visible(app->left_vbox);
+    gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
+    gboolean term_vis = (app->term_scroll != NULL) && gtk_widget_get_visible(app->term_scroll);
+    if (cur && !preview_vis && !term_vis) {
+        return; /* keep at least one panel visible */
+    }
+    gtk_widget_set_visible(app->left_vbox, !cur);
+    update_path_label(app);
+    if (!cur) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    } else if (preview_vis) {
+        gtk_widget_grab_focus(app->text_view);
+    }
+}
+
+void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app->viewer_box == NULL) {
+        return;
+    }
+    gboolean cur = gtk_widget_get_visible(app->viewer_box);
+    gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
+    gboolean term_vis = (app->term_scroll != NULL) && gtk_widget_get_visible(app->term_scroll);
+    if (cur && !files_vis && !term_vis) {
+        return; /* keep at least one panel visible */
+    }
+    gtk_widget_set_visible(app->viewer_box, !cur);
+    update_path_label(app);
+    if (!cur) {
+        minimap_update_visibility(app);
+        gtk_widget_grab_focus(app->text_view);
+    } else if (files_vis) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+}
+
+void on_term_pill_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app->term_scroll == NULL) {
+        return;
+    }
+    gboolean cur = gtk_widget_get_visible(app->term_scroll);
+    gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
+    gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
+    if (cur) {
+        if (!files_vis && !preview_vis) {
+            return; /* keep at least one panel visible */
+        }
+        gtk_widget_set_visible(app->term_scroll, FALSE);
+        update_path_label(app);
+        if (files_vis) {
+            gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+        } else if (preview_vis) {
+            gtk_widget_grab_focus(app->text_view);
+        }
+    } else {
+        if (app->right_paned != NULL) {
+            gtk_widget_set_visible(app->right_paned, TRUE);
+        }
+        gtk_widget_set_visible(app->term_scroll, TRUE);
+#ifdef HAVE_VTE
+        GPtrArray* panes = term_visible_panes(app);
+        if (panes->len == 0) {
+            term_spawn_pane(app, FALSE);
+        } else {
+            GtkWidget* target = (app->last_focused_vte != NULL)
+                                    ? app->last_focused_vte
+                                    : GTK_WIDGET(g_ptr_array_index(panes, 0));
+            gtk_widget_grab_focus(target);
+        }
+        g_ptr_array_unref(panes);
+#endif
+        update_path_label(app);
+    }
+}
+
 void on_sort_pill_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     cycle_sort_mode((AppData*)data);
@@ -1103,6 +1189,36 @@ void update_path_label(AppData* app) {
             gtk_widget_add_css_class(app->hidden_btn, "pill-active");
         } else {
             gtk_widget_remove_css_class(app->hidden_btn, "pill-active");
+        }
+    }
+
+    gboolean files_vis = (app->left_vbox == NULL) || gtk_widget_get_visible(app->left_vbox);
+    gboolean preview_vis = (app->viewer_box == NULL) || gtk_widget_get_visible(app->viewer_box);
+    gboolean term_vis = (app->term_scroll != NULL) && gtk_widget_get_visible(app->term_scroll);
+
+    if (app->right_paned != NULL) {
+        gtk_widget_set_visible(app->right_paned, preview_vis || term_vis);
+    }
+
+    if (app->files_btn != NULL) {
+        if (files_vis) {
+            gtk_widget_add_css_class(app->files_btn, "pill-active");
+        } else {
+            gtk_widget_remove_css_class(app->files_btn, "pill-active");
+        }
+    }
+    if (app->preview_btn != NULL) {
+        if (preview_vis) {
+            gtk_widget_add_css_class(app->preview_btn, "pill-active");
+        } else {
+            gtk_widget_remove_css_class(app->preview_btn, "pill-active");
+        }
+    }
+    if (app->term_btn != NULL) {
+        if (term_vis) {
+            gtk_widget_add_css_class(app->term_btn, "pill-active");
+        } else {
+            gtk_widget_remove_css_class(app->term_btn, "pill-active");
         }
     }
 }
@@ -1335,6 +1451,10 @@ void activate_selected_entry(AppData* app) {
         }
         gtk_tree_path_free(path);
     } else if (g_strcmp0(type, "file") == 0 && full != NULL) {
+        if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+            gtk_widget_set_visible(app->viewer_box, TRUE);
+            update_path_label(app);
+        }
         if (is_image_file(name) || is_pdf_file(name)) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         } else {

@@ -41,6 +41,9 @@ void on_tree_row_expanded(GtkTreeView* tree_view, GtkTreeIter* iter,
 void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
                            GtkTreePath* path, gpointer user_data);
 void update_path_label(AppData* app);
+void on_files_pill_clicked(GtkButton* btn, gpointer data);
+void on_preview_pill_clicked(GtkButton* btn, gpointer data);
+void on_term_pill_clicked(GtkButton* btn, gpointer data);
 void on_sort_pill_clicked(GtkButton* btn, gpointer data);
 void on_hidden_pill_clicked(GtkButton* btn, gpointer data);
 void on_help_pill_clicked(GtkButton* btn, gpointer data);

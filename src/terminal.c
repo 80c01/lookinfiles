@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "file_list.h"
 
 #ifdef HAVE_VTE
 
@@ -184,7 +185,18 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
     if (parent == app->term_box) {
         gtk_box_remove(GTK_BOX(app->term_box), term_w);
         gtk_widget_set_visible(app->term_scroll, FALSE);
-        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+        gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
+        gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
+        if (!files_vis && !preview_vis && app->viewer_box != NULL) {
+            gtk_widget_set_visible(app->viewer_box, TRUE);
+            preview_vis = TRUE;
+        }
+        update_path_label(app);
+        if (files_vis) {
+            gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+        } else if (preview_vis) {
+            gtk_widget_grab_focus(app->text_view);
+        }
         return;
     }
 
@@ -217,7 +229,18 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
             gtk_widget_grab_focus(GTK_WIDGET(g_ptr_array_index(panes, 0)));
         } else {
             gtk_widget_set_visible(app->term_scroll, FALSE);
-            gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+            gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
+            gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
+            if (!files_vis && !preview_vis && app->viewer_box != NULL) {
+                gtk_widget_set_visible(app->viewer_box, TRUE);
+                preview_vis = TRUE;
+            }
+            update_path_label(app);
+            if (files_vis) {
+                gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+            } else if (preview_vis) {
+                gtk_widget_grab_focus(app->text_view);
+            }
         }
         g_ptr_array_unref(panes);
     }

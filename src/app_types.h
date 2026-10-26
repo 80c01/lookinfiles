@@ -75,9 +75,13 @@ typedef struct {
     GtkWidget* search_entry;
     GtkWidget* path_label;
     GtkWidget* breadcrumb_box;
+    GtkWidget* files_btn;
+    GtkWidget* preview_btn;
+    GtkWidget* term_btn;
     GtkWidget* sort_btn;
     GtkWidget* hidden_btn;
     GtkWidget* help_btn;
+    GtkWidget* left_vbox;
     gchar* search_term;
     gboolean show_hidden; /* hidden files (dot-prefixed) */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */

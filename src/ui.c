@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "file_list.h"
 #include "terminal.h"
 #include "editor.h"
 
@@ -125,8 +126,12 @@ void focus_adjacent_panel(gint step, AppData* app) {
     gint count;
     gint current = -1;
 
-    g_ptr_array_add(panels, GTK_WIDGET(app->tree_view));
-    g_ptr_array_add(panels, app->text_view);
+    if (app->left_vbox == NULL || gtk_widget_get_visible(app->left_vbox)) {
+        g_ptr_array_add(panels, GTK_WIDGET(app->tree_view));
+    }
+    if (app->viewer_box == NULL || gtk_widget_get_visible(app->viewer_box)) {
+        g_ptr_array_add(panels, app->text_view);
+    }
 #ifdef HAVE_VTE
     if (gtk_widget_get_visible(app->term_scroll)) {
         GPtrArray* panes = term_visible_panes(app);
@@ -137,6 +142,10 @@ void focus_adjacent_panel(gint step, AppData* app) {
     }
 #endif
     count = (gint)panels->len;
+    if (count == 0) {
+        g_ptr_array_unref(panels);
+        return;
+    }
 
     /* Which panel owns the focus? Walk the focused widget's ancestors */
     GtkWidget* w = gtk_window_get_focus(app->window);
@@ -211,14 +220,19 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
 
 #ifdef HAVE_VTE
     /* Each pane gets its own shell in the current directory */
+    if (app->right_paned != NULL) {
+        gtk_widget_set_visible(app->right_paned, TRUE);
+    }
     if (!gtk_widget_get_visible(app->term_scroll)) {
         gtk_widget_set_visible(app->term_scroll, TRUE);
     }
     term_spawn_pane(app, keyval == GDK_KEY_T /* new row below? */);
+    update_path_label(app);
 #else
     /* No VTE installed: the panel is a notice instead of a terminal */
     gtk_widget_set_visible(app->term_scroll,
                            !gtk_widget_get_visible(app->term_scroll));
+    update_path_label(app);
     gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
 #endif
     return TRUE;
@@ -229,8 +243,9 @@ void update_pane_dims(GtkWidget* paned_widget, AppData* app) {
     GtkPaned* paned = GTK_PANED(paned_widget);
     GtkWidget* c1 = gtk_paned_get_start_child(paned);
     GtkWidget* c2 = gtk_paned_get_end_child(paned);
-    if (c1 == NULL || c2 == NULL || !gtk_widget_get_visible(c2)) {
-        return; /* nothing to drag on that side (terminal hidden) */
+    if (c1 == NULL || c2 == NULL ||
+        !gtk_widget_get_visible(c1) || !gtk_widget_get_visible(c2)) {
+        return; /* nothing to drag on that side (panel hidden) */
     }
     gint w1 = gtk_widget_get_width(c1);
     gint h1 = gtk_widget_get_height(c1);

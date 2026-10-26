@@ -80,6 +80,27 @@ int main(int argc, char** argv) {
     GtkWidget* breadcrumb_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_set_valign(breadcrumb_box, GTK_ALIGN_CENTER);
 
+    GtkWidget* files_btn = gtk_button_new_with_label("📁 Files");
+    gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
+    gtk_widget_set_focusable(files_btn, FALSE);
+    gtk_widget_add_css_class(files_btn, "status-pill");
+    gtk_widget_set_tooltip_text(files_btn, "Show/hide File panel");
+
+    GtkWidget* preview_btn = gtk_button_new_with_label("📄 Preview");
+    gtk_button_set_has_frame(GTK_BUTTON(preview_btn), FALSE);
+    gtk_widget_set_focusable(preview_btn, FALSE);
+    gtk_widget_add_css_class(preview_btn, "status-pill");
+    gtk_widget_set_tooltip_text(preview_btn, "Show/hide Preview panel");
+
+    GtkWidget* term_btn = gtk_button_new_with_label(">_ Terminal");
+    gtk_button_set_has_frame(GTK_BUTTON(term_btn), FALSE);
+    gtk_widget_set_focusable(term_btn, FALSE);
+    gtk_widget_add_css_class(term_btn, "status-pill");
+    gtk_widget_set_tooltip_text(term_btn, "Show/hide Terminal panel (Ctrl+T)");
+
+    GtkWidget* pill_div_label = gtk_label_new("|");
+    gtk_widget_add_css_class(pill_div_label, "breadcrumb-sep");
+
     GtkWidget* sort_btn = gtk_button_new_with_label("⇅ Sort: Name");
     gtk_button_set_has_frame(GTK_BUTTON(sort_btn), FALSE);
     gtk_widget_set_focusable(sort_btn, FALSE);
@@ -186,6 +207,8 @@ int main(int argc, char** argv) {
     /* Terminal panel container */
     GtkWidget* term_scroll = gtk_scrolled_window_new();
     gtk_widget_set_name(term_scroll, "term-scroll");
+    gtk_widget_set_hexpand(term_scroll, TRUE);
+    gtk_widget_set_vexpand(term_scroll, TRUE);
 #ifdef HAVE_VTE
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(term_scroll),
                                    GTK_POLICY_NEVER, GTK_POLICY_NEVER);
@@ -226,18 +249,24 @@ int main(int argc, char** argv) {
     app->search_entry = search_entry;
     app->path_label = path_label;
     app->breadcrumb_box = breadcrumb_box;
+    app->files_btn = files_btn;
+    app->preview_btn = preview_btn;
+    app->term_btn = term_btn;
     app->sort_btn = sort_btn;
     app->hidden_btn = hidden_btn;
     app->help_btn = help_btn;
+    g_signal_connect(files_btn, "clicked", G_CALLBACK(on_files_pill_clicked), app);
+    g_signal_connect(preview_btn, "clicked", G_CALLBACK(on_preview_pill_clicked), app);
+    g_signal_connect(term_btn, "clicked", G_CALLBACK(on_term_pill_clicked), app);
     g_signal_connect(sort_btn, "clicked", G_CALLBACK(on_sort_pill_clicked), app);
     g_signal_connect(hidden_btn, "clicked", G_CALLBACK(on_hidden_pill_clicked), app);
     g_signal_connect(help_btn, "clicked", G_CALLBACK(on_help_pill_clicked), app);
-    update_path_label(app);
 
     app->term_scroll = term_scroll;
 #ifdef HAVE_VTE
     app->term_box = term_box;
 #endif
+    update_path_label(app);
 
     app->notebook = notebook;
     g_signal_connect(notebook, "switch-page",
@@ -308,6 +337,8 @@ int main(int argc, char** argv) {
 
     GtkWidget* left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(left_vbox, "left-sidebar");
+    gtk_widget_set_hexpand(left_vbox, TRUE);
+    gtk_widget_set_vexpand(left_vbox, TRUE);
     gtk_box_append(GTK_BOX(left_vbox), search_entry);
     gtk_box_append(GTK_BOX(left_vbox), left_scroll);
 
@@ -327,10 +358,12 @@ int main(int argc, char** argv) {
     g_signal_connect(main_paned, "notify::position",
                      G_CALLBACK(on_paned_notify_position), app);
 
+    app->left_vbox = left_vbox;
     app->main_paned = main_paned;
     app->viewer_box = viewer_box;
     app->right_frac = 0.72;
     layout_build(app, GTK_ORIENTATION_HORIZONTAL);
+    update_path_label(app);
 
     /* Overlay badge for pane resize dimensions feedback */
     GtkWidget* overlay = gtk_overlay_new();
@@ -355,6 +388,10 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), path_label);
     gtk_box_append(GTK_BOX(label_row), breadcrumb_box);
     gtk_box_append(GTK_BOX(label_row), sep_label);
+    gtk_box_append(GTK_BOX(label_row), files_btn);
+    gtk_box_append(GTK_BOX(label_row), preview_btn);
+    gtk_box_append(GTK_BOX(label_row), term_btn);
+    gtk_box_append(GTK_BOX(label_row), pill_div_label);
     gtk_box_append(GTK_BOX(label_row), sort_btn);
     gtk_box_append(GTK_BOX(label_row), hidden_btn);
     gtk_box_append(GTK_BOX(label_row), help_btn);
