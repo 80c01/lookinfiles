@@ -47,11 +47,16 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data);
 void on_term_pill_clicked(GtkButton* btn, gpointer data);
 void on_sort_pill_clicked(GtkButton* btn, gpointer data);
 void on_hidden_pill_clicked(GtkButton* btn, gpointer data);
+void on_bookmarks_pill_clicked(GtkButton* btn, gpointer data);
 void on_help_pill_clicked(GtkButton* btn, gpointer data);
 void reload_directory(AppData* app, const gchar* new_dir);
 void refresh_listing(AppData* app);
 void refresh_listing_with_path(AppData* app, const gchar* select_path);
 void toggle_hidden_files(AppData* app);
+void toggle_bookmarks_view(AppData* app);
+void bookmarks_init(AppData* app);
+void bookmarks_save(AppData* app);
+void bookmark_toggle_current(AppData* app);
 void cycle_sort_mode(AppData* app);
 
 void activate_selected_entry(AppData* app);

@@ -271,6 +271,22 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
             return TRUE;
         }
         return FALSE;
+    case GDK_KEY_d:
+    case GDK_KEY_D:
+        app->pending_g = FALSE;
+        if (state & GDK_CONTROL_MASK) {
+            bookmark_toggle_current(app);
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_a:
+    case GDK_KEY_A:
+        app->pending_g = FALSE;
+        if (state & GDK_CONTROL_MASK) {
+            toggle_bookmarks_view(app);
+            return TRUE;
+        }
+        return FALSE;
     case GDK_KEY_f:
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
@@ -943,7 +959,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         return;
     }
 
-    if (g_strcmp0(type, "dir") == 0) {
+    if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bookmark") == 0) {
         if (app->preview_cancellable != NULL) {
             g_cancellable_cancel(app->preview_cancellable);
             g_clear_object(&app->preview_cancellable);
@@ -980,7 +996,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
 
     g_free(app->viewed_path);
     g_free(app->viewed_name);
-    if (g_strcmp0(type, "dir") == 0) {
+    if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bookmark") == 0) {
         app->viewed_path = NULL;
         app->viewed_name = NULL;
         monitor_file(app, NULL);

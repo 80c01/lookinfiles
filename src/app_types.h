@@ -78,6 +78,7 @@ typedef struct {
     GHashTable* expanded_paths;
     gchar* selected_path;
     gboolean show_hidden;
+    gboolean show_bookmarks;
     gint sort_mode;
     gint notebook_page;
     gboolean render_raw;
@@ -103,10 +104,13 @@ typedef struct {
     GtkWidget* term_btn;
     GtkWidget* sort_btn;
     GtkWidget* hidden_btn;
+    GtkWidget* bookmarks_btn;
     GtkWidget* help_btn;
     GtkWidget* left_vbox;
     gchar* search_term;
     gboolean show_hidden; /* hidden files (dot-prefixed) */
+    gboolean show_bookmarks; /* bookmarks shown in file panel */
+    GPtrArray* bookmarks; /* bookmarked directory paths */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
     gboolean pending_g;   /* for the 'gg' key sequence */
     gboolean pending_z;   /* for the 'zz' key sequence */

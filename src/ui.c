@@ -35,6 +35,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"File panel", "/", "Search by substring (n / N: next / previous match)"},
     {"File panel", "Enter / Double-click", "Expand/collapse directory, or open file in an editing tab (Ctrl+Enter to enter directory)"},
     {"File panel", "Backspace", "Go to the parent directory"},
+    {"File panel", "Ctrl+D", "Bookmark current directory (or remove selected bookmark)"},
+    {"File panel", "Ctrl+A", "Toggle display of bookmarks"},
     {"File panel", "i / I", "Toggle hidden files"},
     {"File panel", "o", "Cycle sort: name, date, size, extension"},
     {"File panel", "?", "Show / hide this help panel"},
@@ -670,6 +672,7 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     ws->selected_path = NULL;
     ws->show_hidden = app->show_hidden;
+    ws->show_bookmarks = app->show_bookmarks;
     ws->sort_mode = app->sort_mode;
     ws->notebook_page = 0;
     ws->render_raw = FALSE;
@@ -715,6 +718,7 @@ void workspace_save_current(AppData* app) {
     ws->preview_vis = gtk_widget_get_visible(app->viewer_box);
     ws->term_vis = gtk_widget_get_visible(app->term_scroll);
     ws->show_hidden = app->show_hidden;
+    ws->show_bookmarks = app->show_bookmarks;
     ws->sort_mode = app->sort_mode;
     ws->render_raw = app->render_raw;
     if (app->notebook != NULL) {
@@ -922,10 +926,12 @@ void workspace_switch(AppData* app, gint idx) {
     gboolean need_rescan = app->dir_scan_pending ||
                            (g_strcmp0(app->base_dir, ws->base_dir) != 0) ||
                            (app->show_hidden != ws->show_hidden) ||
+                           (app->show_bookmarks != ws->show_bookmarks) ||
                            (app->sort_mode != ws->sort_mode) ||
                            !ws_paths_equal(app->expanded_paths, ws->expanded_paths);
 
     app->show_hidden = ws->show_hidden;
+    app->show_bookmarks = ws->show_bookmarks;
     app->sort_mode = ws->sort_mode;
     if (ws->base_dir != NULL && g_strcmp0(app->base_dir, ws->base_dir) != 0) {
         g_free(app->base_dir);
@@ -993,6 +999,7 @@ void workspace_add(AppData* app) {
         nw->right_frac = cur->right_frac;
         nw->notebook_page = cur->notebook_page;
         nw->render_raw = cur->render_raw;
+        nw->show_bookmarks = cur->show_bookmarks;
         g_free(nw->selected_path);
         nw->selected_path = g_strdup(cur->selected_path);
         if (nw->expanded_paths != NULL) {

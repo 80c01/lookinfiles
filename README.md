@@ -52,6 +52,8 @@ Simple graphical application to browse the file system.
 | `n` / `N` | Next / previous match of the searched term |
 | `Enter` / `Double-click` | Expand / collapse directory, or open selected file in a new editing tab of the right panel (`Ctrl+Enter` to enter directory as root) |
 | `Backspace` | Go to the parent directory |
+| `Ctrl+D` | Bookmark the current directory (or remove selected bookmark) |
+| `Ctrl+A` | Toggle display of bookmarks in the file panel |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
 | `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), or rendered pages / text extraction (PDF) |
