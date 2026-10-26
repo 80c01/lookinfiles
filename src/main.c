@@ -2,6 +2,7 @@
 #include "file_list.h"
 #include "viewer.h"
 #include "video.h"
+#include "audio.h"
 #include "editor.h"
 #include "minimap.h"
 #include "terminal.h"
@@ -391,6 +392,7 @@ int main(int argc, char** argv) {
     app->notebook = notebook;
     app->preview_stack = preview_stack;
     video_preview_init(app);
+    audio_preview_init(app);
     g_signal_connect(notebook, "switch-page",
                      G_CALLBACK(on_editor_switch_page_changed), app);
     g_signal_connect(editor_notebook, "switch-page",
@@ -546,6 +548,7 @@ int main(int argc, char** argv) {
 
     g_main_loop_run(loop);
 
+    audio_preview_stop(app);
     video_preview_stop(app);
     stop_directory_monitors(app);
     if (app->git_statuses != NULL) {

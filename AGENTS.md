@@ -45,6 +45,8 @@ The codebase is organized into modules under `src/`:
   (`render_pdf_preview()`), page rasterization, metadata display, and text extraction.
 - **`video.c` / `video.h`**: Interactive video playback and preview engine using GTK 4 `GtkVideo`
   and `GtkMediaStream` (`render_video_preview()`), metadata extraction, playback controls, and raw header mode.
+- **`audio.c` / `audio.h`**: Native audio playback and preview engine using GTK 4 `GtkMediaControls`
+  and `GtkMediaFile` (`render_audio_preview()`), metadata extraction, styled player card, and raw header mode.
 - **`editor.c` / `editor.h`**: Multi-tab editor inside viewer notebook (`editor_open_file()`,
   `editor_save_current()`, `editor_close_current()`, unsaved confirmation dialog).
 - **`minimap.c` / `minimap.h`**: Scaled file overview with Cairo caching, slider positioning,

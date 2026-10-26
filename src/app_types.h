@@ -154,7 +154,7 @@ typedef struct {
     GList* editors;             /* EditorTab*, order matching tab order */
 
     /* Video preview */
-    GtkWidget* preview_stack;   /* GtkStack: "text" (text_view) or "video" (video_player) */
+    GtkWidget* preview_stack;   /* GtkStack: "text" (text_view), "video" (video_player), or "audio" (audio_player) */
     GtkWidget* video_scroll;    /* Scrolled window wrapping video_box */
     GtkWidget* video_box;       /* Box container for video preview */
     GtkWidget* video_widget;    /* GtkVideo widget */
@@ -165,6 +165,20 @@ typedef struct {
     gulong video_prepared_sig;  /* Signal ID for notify::prepared */
     gulong video_error_sig;     /* Signal ID for notify::error */
     gchar* video_current_path;  /* Canonical path of currently loaded video */
+
+    /* Audio preview */
+    GtkWidget* audio_scroll;    /* Scrolled window wrapping audio_box */
+    GtkWidget* audio_box;       /* Box container for audio preview */
+    GtkWidget* audio_card;      /* Centered player card inside audio_box */
+    GtkWidget* audio_controls;  /* GtkMediaControls widget */
+    GtkWidget* audio_title;     /* Audio title label */
+    GtkWidget* audio_meta;      /* Audio metadata info label */
+    GtkWidget* audio_status;    /* Audio warning/error status label */
+    GtkMediaStream* audio_stream; /* Active audio GtkMediaStream */
+    gulong audio_duration_sig;  /* Signal ID for notify::duration */
+    gulong audio_prepared_sig;  /* Signal ID for notify::prepared */
+    gulong audio_error_sig;     /* Signal ID for notify::error */
+    gchar* audio_current_path;  /* Canonical path of currently loaded audio */
 
     /* Floating key-binding cheat sheet (toggled by '?') */
     GtkWidget* help_window;

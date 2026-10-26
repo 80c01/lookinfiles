@@ -4,6 +4,7 @@
 #include "html.h"
 #include "pdf.h"
 #include "video.h"
+#include "audio.h"
 #include "search.h"
 #include "ui.h"
 
@@ -117,7 +118,7 @@ void set_view_monospace(GtkWidget* view, gboolean monospace) {
 
 /* Return TRUE if file extension or content indicates source code */
 gboolean is_code_file(const gchar* name) {
-    if (name == NULL || is_image_file(name) || is_pdf_file(name) || is_video_file(name)) {
+    if (name == NULL || is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
         return FALSE;
     }
     const gchar* ext = file_extension(name);
@@ -300,9 +301,14 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_P:
     case GDK_KEY_space:
         app->pending_g = FALSE;
-        if (app->viewed_name != NULL && is_video_file(app->viewed_name) && !app->render_raw) {
-            video_preview_toggle_play(app);
-            return TRUE;
+        if (app->viewed_name != NULL && !app->render_raw) {
+            if (is_video_file(app->viewed_name)) {
+                video_preview_toggle_play(app);
+                return TRUE;
+            } else if (is_audio_file(app->viewed_name)) {
+                audio_preview_toggle_play(app);
+                return TRUE;
+            }
         }
         return FALSE;
     case GDK_KEY_m:
@@ -713,11 +719,19 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
 }
 
 void load_file_content(AppData* app, const gchar* name, const gchar* full) {
+    if (is_audio_file(name)) {
+        video_preview_stop(app);
+        render_audio_preview(app, name, full);
+        return;
+    }
+
     if (is_video_file(name)) {
+        audio_preview_stop(app);
         render_video_preview(app, name, full);
         return;
     }
 
+    audio_preview_stop(app);
     video_preview_stop(app);
     if (app->preview_stack != NULL) {
         gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
@@ -1108,6 +1122,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     }
 
     if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bookmark") == 0) {
+        audio_preview_stop(app);
         video_preview_stop(app);
         if (app->preview_stack != NULL) {
             gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
@@ -1130,7 +1145,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         g_object_unref(task);
     } else {
         if (g_strcmp0(full, app->viewed_path) == 0 && !app->file_dirty &&
-            (is_video_file(name) || gtk_text_buffer_get_char_count(app->buffer) > 0)) {
+            (is_video_file(name) || is_audio_file(name) || gtk_text_buffer_get_char_count(app->buffer) > 0)) {
             if (!app->switching_ws) {
                 workspace_save_current(app);
             }

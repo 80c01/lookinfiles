@@ -4,6 +4,7 @@
 #include "terminal.h"
 #include "viewer.h"
 #include "video.h"
+#include "audio.h"
 #include "search.h"
 #include "ui.h"
 
@@ -104,9 +105,32 @@ gboolean is_video_file(const gchar* name) {
             g_ascii_strcasecmp(ext, "mpeg") == 0);
 }
 
+/* Return TRUE if file name indicates an audio file */
+gboolean is_audio_file(const gchar* name) {
+    if (name == NULL) {
+        return FALSE;
+    }
+    const gchar* ext = file_extension(name);
+    return (g_ascii_strcasecmp(ext, "mp3") == 0 ||
+            g_ascii_strcasecmp(ext, "wav") == 0 ||
+            g_ascii_strcasecmp(ext, "wave") == 0 ||
+            g_ascii_strcasecmp(ext, "ogg") == 0 ||
+            g_ascii_strcasecmp(ext, "oga") == 0 ||
+            g_ascii_strcasecmp(ext, "opus") == 0 ||
+            g_ascii_strcasecmp(ext, "flac") == 0 ||
+            g_ascii_strcasecmp(ext, "aac") == 0 ||
+            g_ascii_strcasecmp(ext, "m4a") == 0 ||
+            g_ascii_strcasecmp(ext, "wma") == 0 ||
+            g_ascii_strcasecmp(ext, "aiff") == 0 ||
+            g_ascii_strcasecmp(ext, "aif") == 0 ||
+            g_ascii_strcasecmp(ext, "alac") == 0 ||
+            g_ascii_strcasecmp(ext, "mid") == 0 ||
+            g_ascii_strcasecmp(ext, "midi") == 0);
+}
+
 /* Return TRUE if file content can be rendered richly in preview pane */
 gboolean is_renderable_file(const gchar* name) {
-    return is_markdown_file(name) || is_html_file(name) || is_image_file(name) || is_pdf_file(name) || is_video_file(name);
+    return is_markdown_file(name) || is_html_file(name) || is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name);
 }
 
 /* Sort: directories first, then according to active sort mode (thread-safe) */
@@ -350,8 +374,7 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
         return "🖼️";
     }
     /* Audio */
-    if (EXT_IS(".mp3") || EXT_IS(".wav") || EXT_IS(".ogg") ||
-        EXT_IS(".flac") || EXT_IS(".aac") || EXT_IS(".m4a")) {
+    if (is_audio_file(name)) {
         return "🎵";
     }
     /* Video */
@@ -2014,6 +2037,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     update_path_label(app);
 
     /* Clear right pane */
+    audio_preview_stop(app);
     video_preview_stop(app);
     if (app->preview_stack != NULL) {
         gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
@@ -2108,7 +2132,7 @@ void activate_selected_entry(AppData* app) {
             update_path_label(app);
             workspace_apply_positions(app);
         }
-        if (is_image_file(name) || is_pdf_file(name) || is_video_file(name)) {
+        if (is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         } else {
             editor_open_file(app, name, full);
