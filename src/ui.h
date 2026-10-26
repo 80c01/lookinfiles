@@ -7,6 +7,7 @@ gboolean window_is_fullscreen(GtkWindow* win);
 void toggle_fullscreen(GtkWindow* window);
 
 void create_help_panel(GtkWindow* parent, AppData* app);
+void toggle_help_panel(AppData* app);
 gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
 
 void focus_adjacent_panel(gint step, AppData* app);

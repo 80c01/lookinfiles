@@ -52,33 +52,81 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Ctrl+Q", "Quit"},
 };
 
-/* In the help panel, any key closes it and gives keyboard focus back to the file list */
+void toggle_help_panel(AppData* app) {
+    if (app == NULL || app->help_window == NULL) {
+        return;
+    }
+    gboolean vis = gtk_widget_get_visible(app->help_window);
+    gtk_widget_set_visible(app->help_window, !vis);
+    update_path_label(app);
+    if (vis) {
+        if (app->left_vbox == NULL || gtk_widget_get_visible(app->left_vbox)) {
+            gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+        } else if (app->viewer_box != NULL && gtk_widget_get_visible(app->viewer_box)) {
+            gtk_widget_grab_focus(app->text_view);
+        }
+    }
+}
+
+static void on_help_close_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    toggle_help_panel((AppData*)data);
+}
+
+/* In the help panel, h or Escape closes it and gives keyboard focus back to the file list */
 gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval,
                            guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
-    (void)keyval;
     (void)keycode;
     (void)state;
     AppData* app = (AppData*)data;
-    gtk_widget_set_visible(app->help_window, FALSE);
-    gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
-    return TRUE;
+    if (keyval == GDK_KEY_h || keyval == GDK_KEY_H || keyval == GDK_KEY_Escape) {
+        toggle_help_panel(app);
+        return TRUE;
+    }
+    return FALSE;
 }
 
-/* Build floating cheat sheet toggled by 'h' */
+/* Build internal help panel toggled by 'h' or the '? Help' top bar button */
 void create_help_panel(GtkWindow* parent, AppData* app) {
-    GtkWidget* win = gtk_window_new();
-    gtk_widget_set_name(win, "help-window");
-    gtk_window_set_title(GTK_WINDOW(win),
-                         "Key bindings - press h or any key to close");
-    gtk_window_set_transient_for(GTK_WINDOW(win), parent);
-    gtk_window_set_resizable(GTK_WINDOW(win), FALSE);
-    gtk_window_set_hide_on_close(GTK_WINDOW(win), TRUE);
+    (void)parent;
+    GtkWidget* panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_name(panel, "help-panel");
+    gtk_widget_set_vexpand(panel, TRUE);
+    gtk_widget_set_hexpand(panel, FALSE);
+    gtk_widget_set_size_request(panel, 400, -1);
+    gtk_widget_set_visible(panel, FALSE);
+
+    GtkWidget* header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_name(header_box, "help-header");
+    GtkWidget* title_label = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(title_label),
+                         "<b>⌨  Keyboard Shortcuts</b>");
+    gtk_widget_set_halign(title_label, GTK_ALIGN_START);
+    gtk_widget_set_hexpand(title_label, TRUE);
+
+    GtkWidget* close_btn = gtk_button_new_with_label("✕");
+    gtk_button_set_has_frame(GTK_BUTTON(close_btn), FALSE);
+    gtk_widget_set_focusable(close_btn, FALSE);
+    gtk_widget_add_css_class(close_btn, "help-close-btn");
+    gtk_widget_set_tooltip_text(close_btn, "Close help panel (h)");
+    g_signal_connect(close_btn, "clicked",
+                     G_CALLBACK(on_help_close_clicked), app);
+
+    gtk_box_append(GTK_BOX(header_box), title_label);
+    gtk_box_append(GTK_BOX(header_box), close_btn);
+    gtk_box_append(GTK_BOX(panel), header_box);
+
+    GtkWidget* scroll = gtk_scrolled_window_new();
+    gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_widget_set_hexpand(scroll, TRUE);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
+                                   GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
     GtkGrid* grid = GTK_GRID(gtk_grid_new());
-    gtk_grid_set_row_spacing(grid, 3);
-    gtk_grid_set_column_spacing(grid, 16);
-    gtk_widget_set_margin_top(GTK_WIDGET(grid), 14);
+    gtk_grid_set_row_spacing(grid, 6);
+    gtk_grid_set_column_spacing(grid, 14);
+    gtk_widget_set_margin_top(GTK_WIDGET(grid), 12);
     gtk_widget_set_margin_bottom(GTK_WIDGET(grid), 14);
     gtk_widget_set_margin_start(GTK_WIDGET(grid), 14);
     gtk_widget_set_margin_end(GTK_WIDGET(grid), 14);
@@ -90,35 +138,47 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
             g_strcmp0(current_section, KEY_HELP[i].section) != 0) {
             current_section = KEY_HELP[i].section;
             gchar* header =
-                g_strdup_printf("<span weight=\"bold\">%s</span>\n",
+                g_strdup_printf("<span foreground=\"#4fc1ff\" weight=\"bold\">%s</span>",
                                 current_section);
             GtkWidget* section_label = gtk_label_new(NULL);
             gtk_label_set_markup(GTK_LABEL(section_label), header);
             gtk_widget_set_halign(section_label, GTK_ALIGN_START);
+            if (row > 0) {
+                gtk_widget_set_margin_top(section_label, 10);
+            }
             g_free(header);
             gtk_grid_attach(grid, section_label, 0, row++, 2, 1);
         }
         GtkWidget* key_label = gtk_label_new(NULL);
         gchar* key_markup =
-            g_strdup_printf("<tt><b>%s</b></tt>", KEY_HELP[i].key);
+            g_strdup_printf("<span foreground=\"#dcdcaa\"><tt><b>%s</b></tt></span>",
+                            KEY_HELP[i].key);
         gtk_label_set_markup(GTK_LABEL(key_label), key_markup);
         g_free(key_markup);
         gtk_widget_set_halign(key_label, GTK_ALIGN_START);
+        gtk_widget_set_valign(key_label, GTK_ALIGN_START);
+
         GtkWidget* desc_label = gtk_label_new(KEY_HELP[i].description);
-        gtk_widget_set_halign(desc_label, GTK_ALIGN_START);
+        gtk_label_set_wrap(GTK_LABEL(desc_label), TRUE);
+        gtk_label_set_xalign(GTK_LABEL(desc_label), 0.0f);
+        gtk_widget_set_hexpand(desc_label, TRUE);
+        gtk_widget_set_halign(desc_label, GTK_ALIGN_FILL);
+        gtk_widget_set_valign(desc_label, GTK_ALIGN_START);
+
         gtk_grid_attach(grid, key_label, 0, row, 1, 1);
         gtk_grid_attach(grid, desc_label, 1, row, 1, 1);
         row++;
     }
 
-    gtk_window_set_child(GTK_WINDOW(win), GTK_WIDGET(grid));
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), GTK_WIDGET(grid));
+    gtk_box_append(GTK_BOX(panel), scroll);
 
     GtkEventController* key_ctrl = gtk_event_controller_key_new();
     g_signal_connect(key_ctrl, "key-pressed",
                      G_CALLBACK(on_help_key_press), app);
-    gtk_widget_add_controller(win, key_ctrl);
+    gtk_widget_add_controller(panel, key_ctrl);
 
-    app->help_window = win;
+    app->help_window = panel;
 }
 
 void focus_adjacent_panel(gint step, AppData* app) {
@@ -580,11 +640,39 @@ void apply_panel_borders(void) {
         "scrollbar slider:active {\n"
         "  background-color: rgba(191, 191, 191, 0.4);\n"
         "}\n"
-        "#dim-window, #help-window {\n"
+        "#dim-window {\n"
         "  background-color: #191a1b;\n"
         "  border: 1px solid #007acc;\n"
         "  color: #cccccc;\n"
         "  padding: 6px 10px;\n"
+        "}\n"
+        "#help-panel {\n"
+        "  background-color: #191a1b;\n"
+        "  border-left: 1px solid #26282a;\n"
+        "  color: #cccccc;\n"
+        "}\n"
+        "#help-header {\n"
+        "  background-color: #18191a;\n"
+        "  padding: 6px 12px;\n"
+        "  border-bottom: 1px solid #26282a;\n"
+        "}\n"
+        "button.help-close-btn {\n"
+        "  background: transparent;\n"
+        "  border: none;\n"
+        "  border-radius: 4px;\n"
+        "  padding: 2px 6px;\n"
+        "  min-height: 20px;\n"
+        "  min-width: 20px;\n"
+        "  box-shadow: none;\n"
+        "}\n"
+        "button.help-close-btn label {\n"
+        "  color: #9da5b4;\n"
+        "}\n"
+        "button.help-close-btn:hover {\n"
+        "  background-color: #2d3136;\n"
+        "}\n"
+        "button.help-close-btn:hover label {\n"
+        "  color: #ffffff;\n"
         "}\n"
         ".code-font text, textview.code-font text, .code-font {\n"
         "  font-family: 'Consolas', 'DejaVu Sans Mono', 'Liberation Mono', 'Menlo', 'Courier New', monospace;\n"

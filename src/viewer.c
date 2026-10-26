@@ -290,8 +290,20 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
             return TRUE;
         }
         return FALSE;
+    case GDK_KEY_h:
+        if ((state & GDK_CONTROL_MASK) == 0) {
+            app->pending_g = FALSE;
+            toggle_help_panel(app);
+            return TRUE;
+        }
+        app->pending_g = FALSE;
+        return FALSE;
     case GDK_KEY_Escape:
         app->pending_g = FALSE;
+        if (app->help_window != NULL && gtk_widget_get_visible(app->help_window)) {
+            toggle_help_panel(app);
+            return TRUE;
+        }
         return FALSE;
     default:
         app->pending_g = FALSE;

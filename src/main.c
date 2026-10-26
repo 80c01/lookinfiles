@@ -382,6 +382,12 @@ int main(int argc, char** argv) {
     app->dim_window = dim_box;
     app->dim_label = dim_label;
 
+    GtkWidget* workspace_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(workspace_hbox, TRUE);
+    gtk_widget_set_vexpand(workspace_hbox, TRUE);
+    gtk_box_append(GTK_BOX(workspace_hbox), overlay);
+    gtk_box_append(GTK_BOX(workspace_hbox), app->help_window);
+
     GtkWidget* outer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget* label_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_set_name(label_row, "statusbar");
@@ -396,7 +402,7 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), hidden_btn);
     gtk_box_append(GTK_BOX(label_row), help_btn);
     gtk_box_append(GTK_BOX(outer_vbox), label_row);
-    gtk_box_append(GTK_BOX(outer_vbox), overlay);
+    gtk_box_append(GTK_BOX(outer_vbox), workspace_hbox);
 
     gtk_window_set_child(GTK_WINDOW(window), outer_vbox);
     apply_panel_borders();

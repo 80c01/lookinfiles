@@ -1055,14 +1055,7 @@ void on_hidden_pill_clicked(GtkButton* btn, gpointer data) {
 
 void on_help_pill_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    AppData* app = (AppData*)data;
-    if (app->help_window != NULL) {
-        if (gtk_widget_get_visible(app->help_window)) {
-            gtk_widget_set_visible(app->help_window, FALSE);
-        } else {
-            gtk_window_present(GTK_WINDOW(app->help_window));
-        }
-    }
+    toggle_help_panel((AppData*)data);
 }
 
 typedef struct {
@@ -1219,6 +1212,14 @@ void update_path_label(AppData* app) {
             gtk_widget_add_css_class(app->term_btn, "pill-active");
         } else {
             gtk_widget_remove_css_class(app->term_btn, "pill-active");
+        }
+    }
+    if (app->help_btn != NULL) {
+        gboolean help_vis = (app->help_window != NULL) && gtk_widget_get_visible(app->help_window);
+        if (help_vis) {
+            gtk_widget_add_css_class(app->help_btn, "pill-active");
+        } else {
+            gtk_widget_remove_css_class(app->help_btn, "pill-active");
         }
     }
 }
@@ -1624,14 +1625,10 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             g_free(parent);
         }
         return TRUE;
-    case GDK_KEY_h: /* h: toggle floating keybindings help */
+    case GDK_KEY_h: /* h: toggle internal keybindings help panel */
         if ((state & GDK_CONTROL_MASK) == 0) {
             app->pending_g = FALSE;
-            if (gtk_widget_get_visible(app->help_window)) {
-                gtk_widget_set_visible(app->help_window, FALSE);
-            } else {
-                gtk_window_present(GTK_WINDOW(app->help_window));
-            }
+            toggle_help_panel(app);
             return TRUE;
         }
         app->pending_g = FALSE;
@@ -1673,6 +1670,10 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     case GDK_KEY_Escape:
         app->pending_g = FALSE;
+        if (app->help_window != NULL && gtk_widget_get_visible(app->help_window)) {
+            toggle_help_panel(app);
+            return TRUE;
+        }
         return FALSE;
     default:
         app->pending_g = FALSE; /* Any other key cancels gg */
