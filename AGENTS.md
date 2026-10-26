@@ -15,6 +15,8 @@ directory listing, both inside a resizable `GtkPaned`.
 
 ```bash
 make              # build (gcc -Wall -Wextra, pkg-config gtk4)
+make bundle       # create portable standalone bundle
+make static       # static build (requires static GTK 4, or STATIC=1 make)
 make clean        # remove binary
 ./explorateur_fichiers   # run (requires a display; shows a warning without one)
 ```

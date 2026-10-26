@@ -99,7 +99,9 @@ the tab title marks unsaved changes.
 
 ```bash
 make                           # build with make (recommended)
-make clean                     # remove binary
+make bundle                    # create self-contained portable bundle (bundle/explorateur_fichiers)
+make static                    # build static binary (requires static GTK 4, or STATIC=1 make)
+make clean                     # remove binary and bundles
 ```
 
 ## 🚀 Run
