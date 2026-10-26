@@ -26,6 +26,7 @@ void select_next_row(AppData* app);
 void select_prev_row(AppData* app);
 void page_down_rows(AppData* app);
 void page_up_rows(AppData* app);
+void center_selected_row(AppData* app);
 
 gboolean select_by_name(AppData* app, const gchar* name);
 gboolean select_by_path(AppData* app, const gchar* full_path);

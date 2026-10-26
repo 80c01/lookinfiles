@@ -606,6 +606,19 @@ void page_up_rows(AppData* app) {
     gtk_tree_path_free(cur);
 }
 
+/* Center the currently selected row vertically in the tree view (vim 'zz') */
+void center_selected_row(AppData* app) {
+    GtkTreeIter it;
+    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+        return;
+    }
+    GtkTreePath* path = gtk_tree_model_get_path(app->model, &it);
+    if (path != NULL) {
+        gtk_tree_view_scroll_to_cell(app->tree_view, path, NULL, TRUE, 0.5f, 0.0f);
+        gtk_tree_path_free(path);
+    }
+}
+
 /* Select top-level row matching name (e.g. directory just left) */
 gboolean select_by_name(AppData* app, const gchar* name) {
     if (name == NULL) {
@@ -1516,13 +1529,17 @@ void on_row_activated(GtkTreeView* view, GtkTreePath* path,
     activate_selected_entry((AppData*)data);
 }
 
-/* Treeview key press handler: j k gg G / n N BackSpace h i o Ctrl+B Ctrl+F f m space l Right Left */
+/* Treeview key press handler: j k gg G zz / n N BackSpace h i o Ctrl+B Ctrl+F f m space l Right Left */
 gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
                            guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
     (void)keycode;
     AppData* app = (AppData*)data;
     guint key = keyval;
+
+    if (key != GDK_KEY_z) {
+        app->pending_z = FALSE;
+    }
 
     switch (key) {
     case GDK_KEY_j:
@@ -1546,6 +1563,20 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         app->pending_g = FALSE;
         select_last_row(app);
         return TRUE;
+    case GDK_KEY_z:
+        /* zz = center selected row vertically */
+        app->pending_g = FALSE;
+        if ((state & GDK_CONTROL_MASK) == 0) {
+            if (app->pending_z) {
+                center_selected_row(app);
+                app->pending_z = FALSE;
+            } else {
+                app->pending_z = TRUE;
+            }
+            return TRUE;
+        }
+        app->pending_z = FALSE;
+        return FALSE;
     case GDK_KEY_l:
     case GDK_KEY_Right:
         app->pending_g = FALSE;

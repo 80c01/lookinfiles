@@ -47,6 +47,7 @@ Simple graphical application to browse the file system.
 | `Ctrl+B` | Jump one page backward (like Page Up) |
 | `gg` | Go to the top of the list |
 | `G` | Go to the bottom of the list |
+| `zz` | Center the selected entry vertically in the panel |
 | `/` | Open the search bar (live search, case-insensitive) |
 | `n` / `N` | Next / previous match of the searched term |
 | `Enter` / `Double-click` | Expand / collapse directory, or open selected file in a new editing tab of the right panel (`Ctrl+Enter` to enter directory as root) |
