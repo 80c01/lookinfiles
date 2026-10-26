@@ -72,9 +72,9 @@ int main(int argc, char** argv) {
     }
 
     /* Top bar path label & interactive breadcrumbs / status pills */
-    char path_text[512];
-    snprintf(path_text, sizeof(path_text), "Directory: %s", start_dir);
+    gchar* path_text = g_strdup_printf("Directory: %s", start_dir);
     GtkWidget* path_label = gtk_label_new(path_text);
+    g_free(path_text);
     gtk_widget_set_visible(path_label, FALSE);
 
     GtkWidget* breadcrumb_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
