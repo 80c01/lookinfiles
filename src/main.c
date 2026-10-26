@@ -16,6 +16,21 @@ static void on_window_destroy(GtkWidget* widget, gpointer data) {
     }
 }
 
+static void git_status_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* cell,
+                                      GtkTreeModel* model, GtkTreeIter* iter,
+                                      gpointer data) {
+    (void)col;
+    (void)data;
+    gchar* status = NULL;
+    gtk_tree_model_get(model, iter, COL_GIT_STATUS, &status, -1);
+    gboolean has_status = (status != NULL && status[0] != '\0');
+    g_object_set(cell,
+                 "visible", has_status,
+                 "markup", has_status ? status : "",
+                 NULL);
+    g_free(status);
+}
+
 int main(int argc, char** argv) {
     /* Strip custom options first:
      * -f / --fullscreen: start in fullscreen mode.
@@ -197,14 +212,15 @@ int main(int argc, char** argv) {
     gtk_tree_view_column_set_expand(col_name, TRUE);
     GtkCellRenderer* renderer_name = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_padding(renderer_name, 6, 4);
-    gtk_tree_view_column_pack_start(col_name, renderer_name, TRUE);
+    g_object_set(renderer_name, "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+    gtk_tree_view_column_pack_start(col_name, renderer_name, FALSE);
     gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", COL_LABEL);
 
     GtkCellRenderer* renderer_git = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(renderer_git, 6, 4);
-    gtk_cell_renderer_set_alignment(renderer_git, 1.0f, 0.5f);
-    gtk_tree_view_column_pack_end(col_name, renderer_git, FALSE);
-    gtk_tree_view_column_add_attribute(col_name, renderer_git, "markup", COL_GIT_STATUS);
+    gtk_cell_renderer_set_padding(renderer_git, 4, 4);
+    gtk_cell_renderer_set_alignment(renderer_git, 0.0f, 0.5f);
+    gtk_tree_view_column_pack_start(col_name, renderer_git, FALSE);
+    gtk_tree_view_column_set_cell_data_func(col_name, renderer_git, git_status_cell_data_func, NULL, NULL);
 
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_name);
 
@@ -290,6 +306,7 @@ int main(int argc, char** argv) {
     /* Search bar */
     GtkWidget* search_entry = gtk_search_entry_new();
     gtk_widget_set_visible(search_entry, FALSE);
+    gtk_editable_set_width_chars(GTK_EDITABLE(search_entry), 5);
 
     /* Terminal panel container */
     GtkWidget* term_scroll = gtk_scrolled_window_new();
@@ -446,7 +463,7 @@ int main(int argc, char** argv) {
     gtk_paned_set_start_child(GTK_PANED(main_paned), left_vbox);
     gtk_paned_set_resize_start_child(GTK_PANED(main_paned), FALSE);
     gtk_paned_set_shrink_start_child(GTK_PANED(main_paned), TRUE);
-    gtk_widget_set_size_request(left_vbox, 150, -1);
+    gtk_widget_set_size_request(left_vbox, 80, -1);
 
     wire_paned_controllers(main_paned, app);
     wire_paned_controllers(editor_paned, app);
