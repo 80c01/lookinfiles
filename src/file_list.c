@@ -606,17 +606,31 @@ void page_up_rows(AppData* app) {
     gtk_tree_path_free(cur);
 }
 
-/* Center the currently selected row vertically in the tree view (vim 'zz') */
-void center_selected_row(AppData* app) {
+static void scroll_selected_row_aligned(AppData* app, gfloat row_align) {
     GtkTreeIter it;
     if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
         return;
     }
     GtkTreePath* path = gtk_tree_model_get_path(app->model, &it);
     if (path != NULL) {
-        gtk_tree_view_scroll_to_cell(app->tree_view, path, NULL, TRUE, 0.5f, 0.0f);
+        gtk_tree_view_scroll_to_cell(app->tree_view, path, NULL, TRUE, row_align, 0.0f);
         gtk_tree_path_free(path);
     }
+}
+
+/* Center the currently selected row vertically in the tree view (vim 'zz') */
+void center_selected_row(AppData* app) {
+    scroll_selected_row_aligned(app, 0.5f);
+}
+
+/* Scroll the currently selected row to the top of the tree view (vim 'zt') */
+void top_selected_row(AppData* app) {
+    scroll_selected_row_aligned(app, 0.0f);
+}
+
+/* Scroll the currently selected row to the bottom of the tree view (vim 'zb') */
+void bottom_selected_row(AppData* app) {
+    scroll_selected_row_aligned(app, 1.0f);
 }
 
 /* Select top-level row matching name (e.g. directory just left) */
@@ -1775,7 +1789,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
     AppData* app = (AppData*)data;
     guint key = keyval;
 
-    if (key != GDK_KEY_z) {
+    if (key != GDK_KEY_z && key != GDK_KEY_t && key != GDK_KEY_b) {
         app->pending_z = FALSE;
     }
 
@@ -1811,6 +1825,16 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             } else {
                 app->pending_z = TRUE;
             }
+            return TRUE;
+        }
+        app->pending_z = FALSE;
+        return FALSE;
+    case GDK_KEY_t:
+        /* zt = scroll selected row to top of the panel */
+        app->pending_g = FALSE;
+        if ((state & GDK_CONTROL_MASK) == 0 && app->pending_z) {
+            top_selected_row(app);
+            app->pending_z = FALSE;
             return TRUE;
         }
         app->pending_z = FALSE;
@@ -1958,12 +1982,19 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         app->pending_g = FALSE;
         cycle_sort_mode(app);
         return TRUE;
-    case GDK_KEY_b: /* Ctrl+B: page up */
+    case GDK_KEY_b: /* Ctrl+B: page up; zb: scroll selected row to bottom of panel */
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
+            app->pending_z = FALSE;
             page_up_rows(app);
             return TRUE;
         }
+        if (app->pending_z) {
+            bottom_selected_row(app);
+            app->pending_z = FALSE;
+            return TRUE;
+        }
+        app->pending_z = FALSE;
         return FALSE;
     case GDK_KEY_d: /* Ctrl+D: bookmark current directory / remove selected bookmark */
     case GDK_KEY_D:
@@ -2009,7 +2040,8 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         }
         return FALSE;
     default:
-        app->pending_g = FALSE; /* Any other key cancels gg */
+        app->pending_g = FALSE; /* Any other key cancels gg and z sequences */
+        app->pending_z = FALSE;
         break;
     }
     return FALSE;

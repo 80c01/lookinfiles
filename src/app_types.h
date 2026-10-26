@@ -113,7 +113,7 @@ typedef struct {
     GPtrArray* bookmarks; /* bookmarked directory paths */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
     gboolean pending_g;   /* for the 'gg' key sequence */
-    gboolean pending_z;   /* for the 'zz' key sequence */
+    gboolean pending_z;   /* for the 'zz', 'zt', 'zb' key sequence */
     gboolean search_in_viewer; /* '/' opened from viewer, not list */
     gint viewer_match;    /* last viewer match (char offset), -1 = none */
     gboolean render_raw;   /* FALSE = rendered preview (default), TRUE = raw text */
