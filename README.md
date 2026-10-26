@@ -23,6 +23,7 @@ Simple graphical application to browse the file system.
 - ✅ Hanging indent for list items: long lines in unordered, ordered, and task list items wrap automatically to fit available width, with wrapped lines and multi-paragraph items (`<p>` within `<li>` or continuation lines) staying cleanly aligned with the item text rather than falling back to the bullet or margin
 - ✅ Image preview: image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.bmp`, `.ico`, `.webp`, `.tiff`, etc.) are rendered directly in the right preview pane with a metadata header (format, native dimensions in pixels, file size) and automatic scaling to fit the window; press `m` to toggle between fitted view and 1:1 original scale
 - ✅ PDF document preview: PDF files (`.pdf`) are rendered directly in the right preview pane using `poppler-glib` and Cairo, featuring a metadata banner (title, author, PDF version, page count, file size), sharp page rendering with page dividers, and an `m` toggle to switch between high-resolution rendered pages and extracted text mode (searchable with `/`)
+- ✅ Dedicated Editor panel: editor tabs can either be docked inside the preview notebook or placed in a dedicated panel positioned to the right of the preview panel (`Ctrl+E` or click the top-bar `✏ Editor: Docked / Dedicated` pill button). When in dedicated mode, browse and preview files on the center panel while editing code on the right panel across resizable dividers, preserved per virtual workspace.
 
 ## ⌨️ Keyboard shortcuts
 
@@ -89,6 +90,7 @@ the tab title marks unsaved changes.
 |---|---|
 | `Ctrl+S` | Save the file open in the current editor tab |
 | `Ctrl+W` | Close the current editor tab (asks first when unsaved) |
+| `Ctrl+E` | Move editor tabs to dedicated panel right of preview, or dock back |
 
 ## 📝 Build
 

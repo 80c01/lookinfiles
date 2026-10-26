@@ -147,7 +147,7 @@ static gboolean minimap_is_useful(AppData* app) {
     if (app->minimap == NULL || app->viewer_vadj == NULL) {
         return FALSE;
     }
-    if (app->notebook != NULL &&
+    if (!app->editor_dedicated && app->notebook != NULL &&
         gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook)) != 0) {
         return FALSE;
     }

@@ -49,6 +49,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "m", "Toggle rendered preview / raw text view (Markdown, HTML, PDF, images)"},
     {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},
     {"Editor tabs", "Ctrl+W", "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"},
+    {"Editor tabs", "Ctrl+E", "Move editor tabs to dedicated panel right of preview, or dock back"},
     /* Global */
     {"Global", "Alt+1 .. Alt+8", "Switch between virtual workspaces (or click/scroll top-bar minimap)"},
     {"Global", "Alt++ / Alt+-", "Add a new virtual workspace (+) or close the current workspace (-)"},
@@ -236,11 +237,23 @@ void focus_adjacent_panel(gint step, AppData* app) {
         g_ptr_array_add(panels, GTK_WIDGET(app->tree_view));
     }
     if (app->viewer_box == NULL || gtk_widget_get_visible(app->viewer_box)) {
+        if (!app->editor_dedicated) {
+            EditorTab* cur_tab = editor_current_tab(app);
+            if (cur_tab != NULL && cur_tab->view != NULL) {
+                g_ptr_array_add(panels, cur_tab->view);
+            } else {
+                g_ptr_array_add(panels, app->text_view);
+            }
+        } else {
+            g_ptr_array_add(panels, app->text_view);
+        }
+    }
+    if (app->editor_dedicated && app->editor_box != NULL && gtk_widget_get_visible(app->editor_box)) {
         EditorTab* cur_tab = editor_current_tab(app);
         if (cur_tab != NULL && cur_tab->view != NULL) {
             g_ptr_array_add(panels, cur_tab->view);
-        } else {
-            g_ptr_array_add(panels, app->text_view);
+        } else if (app->editor_notebook != NULL) {
+            g_ptr_array_add(panels, app->editor_notebook);
         }
     }
 #ifdef HAVE_VTE
@@ -343,6 +356,14 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     if ((state & GDK_CONTROL_MASK) &&
         (keyval == GDK_KEY_w || keyval == GDK_KEY_W)) {
         editor_close_current(app);
+        return TRUE;
+    }
+
+    /* Ctrl+E: move editor tabs to dedicated panel right of preview, or dock back */
+    if ((state & GDK_CONTROL_MASK) &&
+        !(state & GDK_SHIFT_MASK) &&
+        (keyval == GDK_KEY_e || keyval == GDK_KEY_E)) {
+        editor_toggle_dedicated(app);
         return TRUE;
     }
 
@@ -464,7 +485,7 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
     VirtualLayout* ws = &app->workspaces[app->current_ws];
 
     if (widget == app->main_paned) {
-        if (ws->files_vis && (ws->preview_vis || ws->term_vis)) {
+        if (ws->files_vis && (ws->preview_vis || ws->editor_dedicated || ws->term_vis)) {
             gint mw = gtk_widget_get_width(app->main_paned);
             gint pos = gtk_paned_get_position(GTK_PANED(app->main_paned));
             gint total_w = get_workspace_total_width(app);
@@ -473,7 +494,7 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
             }
             if (total_w > 60 && pos > 0 && pos < total_w) {
                 ws->main_frac = CLAMP((gdouble)pos / total_w, 0.05, 0.95);
-                if (app->right_paned != NULL && ws->preview_vis && ws->term_vis &&
+                if (app->right_paned != NULL && (ws->preview_vis || ws->editor_dedicated) && ws->term_vis &&
                     ws->right_orient == GTK_ORIENTATION_HORIZONTAL) {
                     gint rw = mw - pos;
                     if (rw > 40) {
@@ -485,8 +506,17 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
                 }
             }
         }
+    } else if (widget == app->editor_paned) {
+        if (ws->preview_vis && ws->editor_dedicated) {
+            gint len = gtk_widget_get_width(app->editor_paned);
+            gint pos = gtk_paned_get_position(GTK_PANED(app->editor_paned));
+            if (len > 40 && pos > 0 && pos < len) {
+                ws->editor_frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
+                app->editor_frac = ws->editor_frac;
+            }
+        }
     } else if (widget == app->right_paned) {
-        if (ws->preview_vis && ws->term_vis) {
+        if ((ws->preview_vis || ws->editor_dedicated) && ws->term_vis) {
             gint len = (ws->right_orient == GTK_ORIENTATION_VERTICAL)
                            ? gtk_widget_get_height(app->right_paned)
                            : gtk_widget_get_width(app->right_paned);
@@ -615,7 +645,8 @@ void layout_build(AppData* app, GtkOrientation orientation) {
     GtkWidget* right_paned = gtk_paned_new(orientation);
     gtk_widget_set_hexpand(right_paned, TRUE);
     gtk_widget_set_vexpand(right_paned, TRUE);
-    gtk_paned_set_start_child(GTK_PANED(right_paned), app->viewer_box);
+    GtkWidget* center_child = (app->editor_paned != NULL) ? app->editor_paned : app->viewer_box;
+    gtk_paned_set_start_child(GTK_PANED(right_paned), center_child);
     gtk_paned_set_resize_start_child(GTK_PANED(right_paned), FALSE);
     gtk_paned_set_shrink_start_child(GTK_PANED(right_paned), TRUE);
     gtk_paned_set_end_child(GTK_PANED(right_paned), app->term_scroll);
@@ -726,6 +757,8 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->sort_mode = app->sort_mode;
     ws->notebook_page = 0;
     ws->editors = NULL;
+    ws->editor_dedicated = FALSE;
+    ws->editor_frac = 0.50;
     ws->render_raw = FALSE;
 #ifdef HAVE_VTE
     if (app->term_stack != NULL) {
@@ -772,7 +805,14 @@ void workspace_save_current(AppData* app) {
     ws->show_bookmarks = app->show_bookmarks;
     ws->sort_mode = app->sort_mode;
     ws->render_raw = app->render_raw;
-    if (app->notebook != NULL) {
+    ws->editor_dedicated = app->editor_dedicated;
+    ws->editor_frac = app->editor_frac;
+    if (app->editor_dedicated && app->editor_notebook != NULL) {
+        gint cur_page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->editor_notebook));
+        if (cur_page >= 0) {
+            ws->notebook_page = cur_page;
+        }
+    } else if (app->notebook != NULL) {
         gint cur_page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
         if (cur_page >= 0) {
             ws->notebook_page = cur_page;
@@ -855,7 +895,7 @@ static gboolean apply_ws_positions_now(AppData* app) {
         target_file_w = mw - 40;
     }
 
-    if (app->main_paned != NULL && ws->files_vis && (ws->preview_vis || ws->term_vis)) {
+    if (app->main_paned != NULL && ws->files_vis && (ws->preview_vis || ws->editor_dedicated || ws->term_vis)) {
         if (mw > 60) {
             gtk_paned_set_position(GTK_PANED(app->main_paned), target_file_w);
         } else {
@@ -863,7 +903,29 @@ static gboolean apply_ws_positions_now(AppData* app) {
         }
     }
 
-    if (app->right_paned != NULL && (ws->preview_vis || ws->term_vis)) {
+    if (app->editor_paned != NULL && ws->preview_vis && ws->editor_dedicated) {
+        gint ew = gtk_widget_get_width(app->editor_paned);
+        if (ew <= 40) {
+            if (app->right_paned != NULL && ws->term_vis && ws->right_orient == GTK_ORIENTATION_HORIZONTAL) {
+                gint r_pos = gtk_paned_get_position(GTK_PANED(app->right_paned));
+                if (r_pos > 40) {
+                    ew = r_pos;
+                }
+            } else if (ws->files_vis && mw > 60) {
+                ew = mw - target_file_w;
+            } else if (mw > 40) {
+                ew = mw;
+            }
+        }
+        if (ew > 40) {
+            gtk_paned_set_position(GTK_PANED(app->editor_paned),
+                                   (gint)(ws->editor_frac * ew + 0.5));
+        } else {
+            ready = FALSE;
+        }
+    }
+
+    if (app->right_paned != NULL && (ws->preview_vis || ws->editor_dedicated || ws->term_vis)) {
         gtk_paned_set_resize_start_child(GTK_PANED(app->right_paned), FALSE);
         gtk_paned_set_resize_end_child(GTK_PANED(app->right_paned), TRUE);
 
@@ -956,6 +1018,8 @@ void workspace_switch(AppData* app, gint idx) {
     VirtualLayout* ws = &app->workspaces[idx];
     gchar* target_path = g_strdup(ws->selected_path);
     app->right_frac = ws->right_frac;
+    app->editor_dedicated = ws->editor_dedicated;
+    app->editor_frac = ws->editor_frac;
 
     if (ws_changed) {
         editor_attach_tabs(app, ws->editors);
@@ -975,9 +1039,12 @@ void workspace_switch(AppData* app, gint idx) {
     if (app->viewer_box != NULL) {
         gtk_widget_set_visible(app->viewer_box, ws->preview_vis);
     }
+    if (app->editor_box != NULL) {
+        gtk_widget_set_visible(app->editor_box, ws->editor_dedicated);
+    }
     if (app->right_paned != NULL) {
         gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), ws->right_orient);
-        gtk_widget_set_visible(app->right_paned, ws->preview_vis || ws->term_vis);
+        gtk_widget_set_visible(app->right_paned, ws->preview_vis || ws->editor_dedicated || ws->term_vis);
     }
     if (app->term_scroll != NULL) {
         gtk_widget_set_visible(app->term_scroll, ws->term_vis);
@@ -1017,7 +1084,16 @@ void workspace_switch(AppData* app, gint idx) {
         app->render_raw = ws->render_raw;
         app->file_dirty = TRUE;
     }
-    if (app->notebook != NULL) {
+    if (app->editor_dedicated && app->editor_notebook != NULL) {
+        gint n_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->editor_notebook));
+        gint target_page = (ws->notebook_page >= 0 && ws->notebook_page < n_pages)
+                               ? ws->notebook_page
+                               : 0;
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->editor_notebook), target_page);
+        if (app->notebook != NULL) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        }
+    } else if (app->notebook != NULL) {
         gint n_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->notebook));
         gint target_page = (ws->notebook_page >= 0 && ws->notebook_page < n_pages)
                                ? ws->notebook_page
@@ -1071,6 +1147,8 @@ void workspace_add(AppData* app) {
         VirtualLayout* nw = &app->workspaces[new_idx];
         nw->files_vis = cur->files_vis;
         nw->preview_vis = cur->preview_vis;
+        nw->editor_dedicated = cur->editor_dedicated;
+        nw->editor_frac = cur->editor_frac;
         nw->right_orient = cur->right_orient;
         nw->main_frac = cur->main_frac;
         nw->right_frac = cur->right_frac;
@@ -1200,8 +1278,10 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
         gdouble rx = ix;
         gdouble rw = iw;
 
+        gboolean center_vis = ws->preview_vis || ws->editor_dedicated;
+
         if (ws->files_vis) {
-            gdouble fw = (ws->preview_vis || ws->term_vis)
+            gdouble fw = (center_vis || ws->term_vis)
                              ? (iw * CLAMP(ws->main_frac, 0.22, 0.72) - 0.8)
                              : iw;
             cairo_set_source_rgba(cr, 0.31, 0.76, 1.0, alpha); /* Files: cyan-blue */
@@ -1211,33 +1291,75 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
             rw = iw - fw - 1.5;
         }
 
-        if (rw > 1.0 && (ws->preview_vis || ws->term_vis)) {
-            if (ws->preview_vis && ws->term_vis) {
+        if (rw > 1.0 && (center_vis || ws->term_vis)) {
+            if (center_vis && ws->term_vis) {
                 if (ws->right_orient == GTK_ORIENTATION_VERTICAL) {
                     gdouble ph = ih * CLAMP(ws->right_frac, 0.25, 0.75) - 0.8;
-                    /* Top: Preview */
-                    cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
-                    cairo_rectangle(cr, rx, iy, rw, ph);
-                    cairo_fill(cr);
+                    /* Top: Center area */
+                    if (ws->preview_vis && ws->editor_dedicated) {
+                        gdouble ew = rw * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
+                        cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                        cairo_rectangle(cr, rx, iy, ew, ph);
+                        cairo_fill(cr);
+                        cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                        cairo_rectangle(cr, rx + ew + 1.5, iy, rw - ew - 1.5, ph);
+                        cairo_fill(cr);
+                    } else if (ws->preview_vis) {
+                        cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                        cairo_rectangle(cr, rx, iy, rw, ph);
+                        cairo_fill(cr);
+                    } else {
+                        cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                        cairo_rectangle(cr, rx, iy, rw, ph);
+                        cairo_fill(cr);
+                    }
                     /* Bottom: Terminal */
                     cairo_set_source_rgba(cr, 0.14, 0.82, 0.55, alpha);
                     cairo_rectangle(cr, rx, iy + ph + 1.5, rw, ih - ph - 1.5);
                     cairo_fill(cr);
                 } else {
                     gdouble pw = rw * CLAMP(ws->right_frac, 0.25, 0.75) - 0.8;
-                    /* Left: Preview */
-                    cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
-                    cairo_rectangle(cr, rx, iy, pw, ih);
-                    cairo_fill(cr);
+                    /* Left: Center area */
+                    if (ws->preview_vis && ws->editor_dedicated) {
+                        gdouble ew = pw * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
+                        cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                        cairo_rectangle(cr, rx, iy, ew, ih);
+                        cairo_fill(cr);
+                        cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                        cairo_rectangle(cr, rx + ew + 1.5, iy, pw - ew - 1.5, ih);
+                        cairo_fill(cr);
+                    } else if (ws->preview_vis) {
+                        cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                        cairo_rectangle(cr, rx, iy, pw, ih);
+                        cairo_fill(cr);
+                    } else {
+                        cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                        cairo_rectangle(cr, rx, iy, pw, ih);
+                        cairo_fill(cr);
+                    }
                     /* Right: Terminal */
                     cairo_set_source_rgba(cr, 0.14, 0.82, 0.55, alpha);
                     cairo_rectangle(cr, rx + pw + 1.5, iy, rw - pw - 1.5, ih);
                     cairo_fill(cr);
                 }
-            } else if (ws->preview_vis) {
-                cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
-                cairo_rectangle(cr, rx, iy, rw, ih);
-                cairo_fill(cr);
+            } else if (center_vis) {
+                if (ws->preview_vis && ws->editor_dedicated) {
+                    gdouble ew = rw * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
+                    cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                    cairo_rectangle(cr, rx, iy, ew, ih);
+                    cairo_fill(cr);
+                    cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                    cairo_rectangle(cr, rx + ew + 1.5, iy, rw - ew - 1.5, ih);
+                    cairo_fill(cr);
+                } else if (ws->preview_vis) {
+                    cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                    cairo_rectangle(cr, rx, iy, rw, ih);
+                    cairo_fill(cr);
+                } else {
+                    cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                    cairo_rectangle(cr, rx, iy, rw, ih);
+                    cairo_fill(cr);
+                }
             } else if (ws->term_vis) {
                 cairo_set_source_rgba(cr, 0.14, 0.82, 0.55, alpha);
                 cairo_rectangle(cr, rx, iy, rw, ih);

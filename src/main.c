@@ -132,6 +132,12 @@ int main(int argc, char** argv) {
     gtk_widget_add_css_class(preview_btn, "status-pill");
     gtk_widget_set_tooltip_text(preview_btn, "Show/hide Preview panel");
 
+    GtkWidget* editor_btn = gtk_button_new_with_label("✏ Editor: Docked");
+    gtk_button_set_has_frame(GTK_BUTTON(editor_btn), FALSE);
+    gtk_widget_set_focusable(editor_btn, FALSE);
+    gtk_widget_add_css_class(editor_btn, "status-pill");
+    gtk_widget_set_tooltip_text(editor_btn, "Move editor tabs to dedicated panel right of preview, or dock back (Ctrl+E)");
+
     GtkWidget* term_btn = gtk_button_new_with_label(">_ Terminal");
     gtk_button_set_has_frame(GTK_BUTTON(term_btn), FALSE);
     gtk_widget_set_focusable(term_btn, FALSE);
@@ -254,6 +260,33 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(viewer_box), notebook);
     gtk_box_append(GTK_BOX(viewer_box), minimap);
 
+    /* Dedicated editor panel (when tabs moved right of preview) */
+    GtkWidget* editor_notebook = gtk_notebook_new();
+    gtk_widget_set_name(editor_notebook, "editor-notebook");
+    gtk_widget_set_hexpand(editor_notebook, TRUE);
+    gtk_widget_set_vexpand(editor_notebook, TRUE);
+    gtk_notebook_set_scrollable(GTK_NOTEBOOK(editor_notebook), TRUE);
+
+    GtkWidget* editor_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_name(editor_box, "editor-panel");
+    gtk_widget_set_hexpand(editor_box, TRUE);
+    gtk_widget_set_vexpand(editor_box, TRUE);
+    gtk_widget_set_size_request(editor_box, 150, -1);
+    gtk_box_append(GTK_BOX(editor_box), editor_notebook);
+    gtk_widget_set_visible(editor_box, FALSE);
+
+    GtkWidget* editor_paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_name(editor_paned, "editor-paned");
+    gtk_widget_set_hexpand(editor_paned, TRUE);
+    gtk_widget_set_vexpand(editor_paned, TRUE);
+    gtk_paned_set_start_child(GTK_PANED(editor_paned), viewer_box);
+    gtk_paned_set_resize_start_child(GTK_PANED(editor_paned), TRUE);
+    gtk_paned_set_shrink_start_child(GTK_PANED(editor_paned), TRUE);
+    gtk_paned_set_end_child(GTK_PANED(editor_paned), editor_box);
+    gtk_paned_set_resize_end_child(GTK_PANED(editor_paned), TRUE);
+    gtk_paned_set_shrink_end_child(GTK_PANED(editor_paned), TRUE);
+    gtk_widget_set_size_request(viewer_box, 150, -1);
+
     /* Search bar */
     GtkWidget* search_entry = gtk_search_entry_new();
     gtk_widget_set_visible(search_entry, FALSE);
@@ -315,6 +348,7 @@ int main(int argc, char** argv) {
     app->breadcrumb_box = breadcrumb_box;
     app->files_btn = files_btn;
     app->preview_btn = preview_btn;
+    app->editor_btn = editor_btn;
     app->term_btn = term_btn;
     app->sort_btn = sort_btn;
     app->hidden_btn = hidden_btn;
@@ -322,6 +356,7 @@ int main(int argc, char** argv) {
     app->help_btn = help_btn;
     g_signal_connect(files_btn, "clicked", G_CALLBACK(on_files_pill_clicked), app);
     g_signal_connect(preview_btn, "clicked", G_CALLBACK(on_preview_pill_clicked), app);
+    g_signal_connect(editor_btn, "clicked", G_CALLBACK(on_editor_pill_clicked), app);
     g_signal_connect(term_btn, "clicked", G_CALLBACK(on_term_pill_clicked), app);
     g_signal_connect(sort_btn, "clicked", G_CALLBACK(on_sort_pill_clicked), app);
     g_signal_connect(hidden_btn, "clicked", G_CALLBACK(on_hidden_pill_clicked), app);
@@ -331,6 +366,8 @@ int main(int argc, char** argv) {
 
     app->notebook = notebook;
     g_signal_connect(notebook, "switch-page",
+                     G_CALLBACK(on_editor_switch_page_changed), app);
+    g_signal_connect(editor_notebook, "switch-page",
                      G_CALLBACK(on_editor_switch_page_changed), app);
 
     app->minimap = minimap;
@@ -412,10 +449,16 @@ int main(int argc, char** argv) {
     gtk_widget_set_size_request(left_vbox, 150, -1);
 
     wire_paned_controllers(main_paned, app);
+    wire_paned_controllers(editor_paned, app);
 
     app->left_vbox = left_vbox;
     app->main_paned = main_paned;
     app->viewer_box = viewer_box;
+    app->editor_paned = editor_paned;
+    app->editor_box = editor_box;
+    app->editor_notebook = editor_notebook;
+    app->editor_dedicated = FALSE;
+    app->editor_frac = 0.50;
     app->right_frac = 0.70;
     layout_build(app, GTK_ORIENTATION_HORIZONTAL);
     update_path_label(app);
@@ -454,6 +497,7 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), ws_div_label);
     gtk_box_append(GTK_BOX(label_row), files_btn);
     gtk_box_append(GTK_BOX(label_row), preview_btn);
+    gtk_box_append(GTK_BOX(label_row), editor_btn);
     gtk_box_append(GTK_BOX(label_row), term_btn);
     gtk_box_append(GTK_BOX(label_row), pill_div_label);
     gtk_box_append(GTK_BOX(label_row), sort_btn);

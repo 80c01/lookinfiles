@@ -19,5 +19,7 @@ void editor_detach_tabs(AppData* app);
 void editor_attach_tabs(AppData* app, GList* editors);
 void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first);
 gboolean editor_confirm_discard_workspace(AppData* app, GList* editors);
+void editor_toggle_dedicated(AppData* app);
+void editor_set_dedicated(AppData* app, gboolean dedicated);
 
 #endif /* EDITOR_H */

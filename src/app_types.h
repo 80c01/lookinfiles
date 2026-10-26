@@ -72,9 +72,11 @@ typedef struct {
     gboolean files_vis;
     gboolean preview_vis;
     gboolean term_vis;
+    gboolean editor_dedicated;
     GtkOrientation right_orient;
     gdouble main_frac;
     gdouble right_frac;
+    gdouble editor_frac;
     gchar* base_dir;
     GHashTable* expanded_paths;
     gchar* selected_path;
@@ -103,6 +105,7 @@ typedef struct {
     GtkWidget* breadcrumb_box;
     GtkWidget* files_btn;
     GtkWidget* preview_btn;
+    GtkWidget* editor_btn;
     GtkWidget* term_btn;
     GtkWidget* sort_btn;
     GtkWidget* hidden_btn;
@@ -142,8 +145,13 @@ typedef struct {
 #endif
 
     /* Editor tabs (double-click / Enter on a file in the list) */
-    GtkWidget* notebook; /* viewer zone: page 0 = read-only preview */
-    GList* editors;      /* EditorTab*, order matching tab order minus 1 */
+    GtkWidget* notebook;        /* preview notebook (page 0 = read-only preview; page 1+ = docked tabs) */
+    GtkWidget* editor_notebook; /* dedicated editor notebook (when editor tabs moved to dedicated panel) */
+    GtkWidget* editor_box;      /* dedicated editor panel container right of preview */
+    GtkWidget* editor_paned;    /* resizable paned divider between preview_box and editor_box */
+    gboolean editor_dedicated;  /* TRUE when editor tabs are in dedicated panel right of preview */
+    gdouble editor_frac;        /* split ratio between preview panel and editor panel */
+    GList* editors;             /* EditorTab*, order matching tab order */
 
     /* Floating key-binding cheat sheet (toggled by '?') */
     GtkWidget* help_window;

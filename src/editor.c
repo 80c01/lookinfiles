@@ -2,13 +2,30 @@
 #include "viewer.h"
 #include "file_list.h"
 #include "minimap.h"
+#include "ui.h"
+
+static GtkNotebook* editor_target_notebook(AppData* app) {
+    if (app == NULL) {
+        return NULL;
+    }
+    return (app->editor_dedicated && app->editor_notebook != NULL)
+               ? GTK_NOTEBOOK(app->editor_notebook)
+               : GTK_NOTEBOOK(app->notebook);
+}
 
 EditorTab* editor_current_tab(AppData* app) {
-    gint page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
-    if (page < 1) {
-        return NULL; /* page 0 is read-only preview */
+    if (app == NULL) {
+        return NULL;
     }
-    gint wanted = page - 1;
+    GtkNotebook* nb = editor_target_notebook(app);
+    if (nb == NULL) {
+        return NULL;
+    }
+    gint page = gtk_notebook_get_current_page(nb);
+    gint wanted = app->editor_dedicated ? page : (page - 1);
+    if (wanted < 0) {
+        return NULL; /* page 0 is read-only preview when docked */
+    }
     gint i = 0;
     for (GList* l = app->editors; l != NULL; l = l->next, i++) {
         if (i == wanted) {
@@ -51,7 +68,14 @@ void editor_apply_language(GtkTextBuffer* buffer, const gchar* name) {
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     if (is_image_file(name) || is_pdf_file(name)) {
         /* Images and PDFs are previewed in the main viewer tab */
-        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        if (app->notebook != NULL) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        }
+        return;
+    }
+
+    GtkNotebook* target_nb = editor_target_notebook(app);
+    if (target_nb == NULL) {
         return;
     }
 
@@ -60,8 +84,8 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     for (GList* l = app->editors; l != NULL; l = l->next, index++) {
         EditorTab* t = (EditorTab*)l->data;
         if (g_strcmp0(t->path, full) == 0) {
-            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook),
-                                          index + 1);
+            gint target_page = app->editor_dedicated ? index : (index + 1);
+            gtk_notebook_set_current_page(target_nb, target_page);
             gtk_widget_grab_focus(t->view);
             return;
         }
@@ -132,11 +156,10 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     tab->view = view;
     tab->tab_label = gtk_label_new(tab->name);
 
-    gint page = gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook),
-                                         scroll, tab->tab_label);
+    gint page = gtk_notebook_append_page(target_nb, scroll, tab->tab_label);
     g_object_ref(tab->scroll);
     g_object_ref(tab->tab_label);
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), page);
+    gtk_notebook_set_current_page(target_nb, page);
     gtk_widget_grab_focus(view);
 
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
@@ -144,10 +167,15 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
                      G_CALLBACK(on_editor_modified_changed), tab);
 
     app->editors = g_list_append(app->editors, tab);
+    if (app->editor_dedicated && app->editor_box != NULL) {
+        gtk_widget_set_visible(app->editor_box, TRUE);
+        workspace_apply_positions(app);
+    }
     if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
         app->workspaces[app->current_ws].editors = app->editors;
         app->workspaces[app->current_ws].notebook_page = page;
     }
+    minimap_update_visibility(app);
     g_free(contents);
 }
 
@@ -202,10 +230,14 @@ gboolean editor_confirm_discard(AppData* app, EditorTab* tab) {
 }
 
 void editor_close_page(AppData* app, gint page) {
-    if (page < 1) {
+    if (app == NULL) {
         return;
     }
-    gint wanted = page - 1;
+    gint min_page = app->editor_dedicated ? 0 : 1;
+    if (page < min_page) {
+        return;
+    }
+    gint wanted = app->editor_dedicated ? page : (page - 1);
     gint i = 0;
     EditorTab* tab = NULL;
     for (GList* l = app->editors; l != NULL; l = l->next, i++) {
@@ -220,11 +252,14 @@ void editor_close_page(AppData* app, gint page) {
     g_signal_handlers_disconnect_by_func(tab->buffer,
                                          (gpointer)on_editor_modified_changed,
                                          tab);
-    gtk_notebook_remove_page(GTK_NOTEBOOK(app->notebook), page);
+    GtkNotebook* nb = editor_target_notebook(app);
+    if (nb != NULL) {
+        gtk_notebook_remove_page(nb, page);
+    }
     app->editors = g_list_remove(app->editors, tab);
     if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
         app->workspaces[app->current_ws].editors = app->editors;
-        gint cur = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
+        gint cur = nb ? gtk_notebook_get_current_page(nb) : 0;
         app->workspaces[app->current_ws].notebook_page = (cur >= 0 ? cur : 0);
     }
     g_object_unref(tab->scroll);
@@ -232,32 +267,48 @@ void editor_close_page(AppData* app, gint page) {
     g_free(tab->path);
     g_free(tab->name);
     g_free(tab);
+    minimap_update_visibility(app);
 }
 
 void editor_detach_tabs(AppData* app) {
-    if (app == NULL || app->notebook == NULL) {
+    if (app == NULL) {
         return;
     }
-    gint n = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->notebook));
-    while (n > 1) {
-        gtk_notebook_remove_page(GTK_NOTEBOOK(app->notebook), n - 1);
-        n--;
+    if (app->notebook != NULL) {
+        gint n = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->notebook));
+        while (n > 1) {
+            gtk_notebook_remove_page(GTK_NOTEBOOK(app->notebook), n - 1);
+            n--;
+        }
+    }
+    if (app->editor_notebook != NULL) {
+        gint n = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->editor_notebook));
+        while (n > 0) {
+            gtk_notebook_remove_page(GTK_NOTEBOOK(app->editor_notebook), n - 1);
+            n--;
+        }
     }
     app->editors = NULL;
 }
 
 void editor_attach_tabs(AppData* app, GList* editors) {
-    if (app == NULL || app->notebook == NULL) {
+    if (app == NULL) {
+        return;
+    }
+    GtkNotebook* nb = editor_target_notebook(app);
+    if (nb == NULL) {
         return;
     }
     for (GList* l = editors; l != NULL; l = l->next) {
         EditorTab* tab = (EditorTab*)l->data;
         if (tab != NULL && tab->scroll != NULL && tab->tab_label != NULL) {
-            gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook),
-                                     tab->scroll, tab->tab_label);
+            gtk_notebook_append_page(nb, tab->scroll, tab->tab_label);
         }
     }
     app->editors = editors;
+    if (app->editor_dedicated && app->editor_box != NULL) {
+        gtk_widget_set_visible(app->editor_box, TRUE);
+    }
 }
 
 gboolean editor_confirm_discard_workspace(AppData* app, GList* editors) {
@@ -274,7 +325,7 @@ gboolean editor_confirm_discard_workspace(AppData* app, GList* editors) {
 }
 
 void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
-    if (detach_first && app != NULL && app->notebook != NULL) {
+    if (detach_first && app != NULL) {
         editor_detach_tabs(app);
     }
     for (GList* l = editors; l != NULL; l = l->next) {
@@ -301,8 +352,60 @@ void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
 }
 
 void editor_close_current(AppData* app) {
-    editor_close_page(app, gtk_notebook_get_current_page(
-                          GTK_NOTEBOOK(app->notebook)));
+    if (app == NULL) {
+        return;
+    }
+    GtkNotebook* nb = editor_target_notebook(app);
+    if (nb != NULL) {
+        editor_close_page(app, gtk_notebook_get_current_page(nb));
+    }
+}
+
+void editor_set_dedicated(AppData* app, gboolean dedicated) {
+    if (app == NULL || app->editor_dedicated == dedicated) {
+        return;
+    }
+    workspace_save_current(app);
+
+    GList* current_editors = app->editors;
+    editor_detach_tabs(app);
+
+    app->editor_dedicated = dedicated;
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+        app->workspaces[app->current_ws].editor_dedicated = dedicated;
+    }
+
+    editor_attach_tabs(app, current_editors);
+
+    if (app->editor_box != NULL) {
+        gtk_widget_set_visible(app->editor_box, dedicated);
+    }
+    if (dedicated) {
+        if (app->notebook != NULL) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        }
+        if (app->editor_notebook != NULL && app->editors != NULL) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->editor_notebook), 0);
+        }
+    }
+
+    update_path_label(app);
+    workspace_apply_positions(app);
+    minimap_update_visibility(app);
+
+    if (dedicated) {
+        EditorTab* cur = editor_current_tab(app);
+        if (cur != NULL && cur->view != NULL) {
+            gtk_widget_grab_focus(cur->view);
+        }
+    }
+}
+
+void editor_toggle_dedicated(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    editor_set_dedicated(app, !app->editor_dedicated);
 }
 
 gboolean editor_save_current(AppData* app) {

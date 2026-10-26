@@ -1506,8 +1506,9 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
     }
     gboolean cur = gtk_widget_get_visible(app->viewer_box);
     gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
+    gboolean editor_vis = app->editor_dedicated && (app->editor_box != NULL) && gtk_widget_get_visible(app->editor_box);
     gboolean term_vis = (app->term_scroll != NULL) && gtk_widget_get_visible(app->term_scroll);
-    if (cur && !files_vis && !term_vis) {
+    if (cur && !files_vis && !term_vis && !editor_vis) {
         return; /* keep at least one panel visible */
     }
     workspace_save_current(app);
@@ -1523,6 +1524,11 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
+void on_editor_pill_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    editor_toggle_dedicated((AppData*)data);
+}
+
 void on_term_pill_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     AppData* app = (AppData*)data;
@@ -1532,8 +1538,9 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
     gboolean cur = gtk_widget_get_visible(app->term_scroll);
     gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
     gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
+    gboolean editor_vis = app->editor_dedicated && (app->editor_box != NULL) && gtk_widget_get_visible(app->editor_box);
     if (cur) {
-        if (!files_vis && !preview_vis) {
+        if (!files_vis && !preview_vis && !editor_vis) {
             return; /* keep at least one panel visible */
         }
         workspace_save_current(app);
@@ -1726,10 +1733,14 @@ void update_path_label(AppData* app) {
 
     gboolean files_vis = (app->left_vbox == NULL) || gtk_widget_get_visible(app->left_vbox);
     gboolean preview_vis = (app->viewer_box == NULL) || gtk_widget_get_visible(app->viewer_box);
+    gboolean editor_vis = app->editor_dedicated && (app->editor_box != NULL) && gtk_widget_get_visible(app->editor_box);
     gboolean term_vis = (app->term_scroll != NULL) && gtk_widget_get_visible(app->term_scroll);
 
+    if (app->editor_paned != NULL) {
+        gtk_widget_set_visible(app->editor_paned, preview_vis || editor_vis);
+    }
     if (app->right_paned != NULL) {
-        gtk_widget_set_visible(app->right_paned, preview_vis || term_vis);
+        gtk_widget_set_visible(app->right_paned, preview_vis || editor_vis || term_vis);
     }
 
     if (app->files_btn != NULL) {
@@ -1744,6 +1755,15 @@ void update_path_label(AppData* app) {
             gtk_widget_add_css_class(app->preview_btn, "pill-active");
         } else {
             gtk_widget_remove_css_class(app->preview_btn, "pill-active");
+        }
+    }
+    if (app->editor_btn != NULL) {
+        if (editor_vis) {
+            gtk_widget_add_css_class(app->editor_btn, "pill-active");
+            gtk_button_set_label(GTK_BUTTON(app->editor_btn), "✏ Editor: Dedicated");
+        } else {
+            gtk_widget_remove_css_class(app->editor_btn, "pill-active");
+            gtk_button_set_label(GTK_BUTTON(app->editor_btn), "✏ Editor: Docked");
         }
     }
     if (app->term_btn != NULL) {
