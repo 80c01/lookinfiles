@@ -259,10 +259,12 @@ gboolean pane_dims_idle(gpointer data) {
 void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
                       gdouble x, gdouble y, gpointer data) {
     (void)n_press;
-    (void)x;
-    (void)y;
     AppData* app = (AppData*)data;
     GtkWidget* widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+    GtkWidget* picked = gtk_widget_pick(widget, x, y, GTK_PICK_DEFAULT);
+    if (picked == NULL || g_strcmp0(gtk_widget_get_css_name(picked), "separator") != 0) {
+        return;
+    }
     app->panning = TRUE;
     app->dims_paned = widget;
     update_pane_dims(widget, app);
@@ -322,14 +324,10 @@ gboolean layout_position_idle(gpointer data) {
 
 /* Assemble viewer and terminal into a pane pair with given orientation */
 void layout_build(AppData* app, GtkOrientation orientation) {
-    gboolean snatched = (app->right_paned != NULL);
-    if (snatched) {
-        /* Hold panels so removing paned does not destroy them */
-        g_object_ref(app->viewer_box);
-        g_object_ref(app->term_scroll);
-        gtk_paned_set_start_child(GTK_PANED(app->right_paned), NULL);
-        gtk_paned_set_end_child(GTK_PANED(app->right_paned), NULL);
-        gtk_paned_set_end_child(GTK_PANED(app->main_paned), NULL);
+    if (app->right_paned != NULL) {
+        gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), orientation);
+        g_idle_add(layout_position_idle, app);
+        return;
     }
 
     GtkWidget* right_paned = gtk_paned_new(orientation);
@@ -341,10 +339,6 @@ void layout_build(AppData* app, GtkOrientation orientation) {
     gtk_paned_set_end_child(GTK_PANED(right_paned), app->term_scroll);
     gtk_paned_set_resize_end_child(GTK_PANED(right_paned), FALSE);
     gtk_paned_set_shrink_end_child(GTK_PANED(right_paned), TRUE);
-    if (snatched) {
-        g_object_unref(app->viewer_box);
-        g_object_unref(app->term_scroll);
-    }
 
     /* Min sizes valid for both orientations */
     gtk_widget_set_size_request(app->term_scroll, 120, 80);

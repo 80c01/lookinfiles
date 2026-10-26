@@ -15,14 +15,24 @@ gdouble minimap_line_height(GtkWidget* widget, GtkTextBuffer* buffer) {
 
 /* First and last line currently visible in the viewer */
 void minimap_viewport(GtkTextView* view, gint* first, gint* last) {
-    GdkRectangle vis;
-    GtkTextIter it;
-    gint line_y;
-    gtk_text_view_get_visible_rect(view, &vis);
-    gtk_text_view_get_line_at_y(view, &it, vis.y, &line_y);
-    *first = gtk_text_iter_get_line(&it);
-    gtk_text_view_get_line_at_y(view, &it, vis.y + vis.height - 1, &line_y);
-    *last = gtk_text_iter_get_line(&it);
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    GtkTextBuffer* buf = gtk_text_view_get_buffer(view);
+    gint lines = gtk_text_buffer_get_line_count(buf);
+    if (vadj == NULL || lines <= 0) {
+        *first = 0;
+        *last = 0;
+        return;
+    }
+    gdouble upper = gtk_adjustment_get_upper(vadj);
+    gdouble val = gtk_adjustment_get_value(vadj);
+    gdouble page = gtk_adjustment_get_page_size(vadj);
+    if (upper <= 0.0) {
+        *first = 0;
+        *last = lines - 1;
+        return;
+    }
+    *first = CLAMP((gint)((val / upper) * lines), 0, MAX(0, lines - 1));
+    *last = CLAMP((gint)(((val + page) / upper) * lines), *first, MAX(0, lines - 1));
 }
 
 /* Character count and leading whitespace of one line */

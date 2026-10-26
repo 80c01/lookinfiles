@@ -948,6 +948,12 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         g_task_run_in_thread(task, dir_preview_thread_func);
         g_object_unref(task);
     } else {
+        if (g_strcmp0(full, app->viewed_path) == 0 && !app->file_dirty) {
+            g_free(full);
+            g_free(name);
+            g_free(type);
+            return;
+        }
         if (g_strcmp0(name, app->viewed_name) != 0) {
             app->render_raw = FALSE;
         }

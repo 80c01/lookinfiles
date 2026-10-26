@@ -111,7 +111,6 @@ int main(int argc, char** argv) {
     gtk_widget_set_name(left_scroll, "left-scroll");
     gtk_widget_set_vexpand(left_scroll, TRUE);
     gtk_widget_set_hexpand(left_scroll, TRUE);
-    gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(left_scroll), FALSE);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(left_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(left_scroll), tree_view);
@@ -137,7 +136,6 @@ int main(int argc, char** argv) {
     gtk_widget_set_name(right_scroll, "right-scroll");
     gtk_widget_set_vexpand(right_scroll, TRUE);
     gtk_widget_set_hexpand(right_scroll, TRUE);
-    gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(right_scroll), FALSE);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(right_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(right_scroll), text_view);
@@ -168,7 +166,6 @@ int main(int argc, char** argv) {
     /* Terminal panel container */
     GtkWidget* term_scroll = gtk_scrolled_window_new();
     gtk_widget_set_name(term_scroll, "term-scroll");
-    gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(term_scroll), FALSE);
 #ifdef HAVE_VTE
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(term_scroll),
                                    GTK_POLICY_NEVER, GTK_POLICY_NEVER);

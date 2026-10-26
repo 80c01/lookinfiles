@@ -1034,10 +1034,20 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     AppData* app = td->app;
     GtkTreeStore* store = GTK_TREE_STORE(app->model);
 
+    if (app->selection != NULL) {
+        g_signal_handlers_block_by_func(app->selection,
+                                        (gpointer)on_selection_changed, app);
+    }
+
     gtk_tree_store_clear(store);
     apply_dir_node_to_store(store, NULL, td->root_node);
     reexpand_paths_recursive(app, NULL);
     update_path_label(app);
+
+    if (app->selection != NULL) {
+        g_signal_handlers_unblock_by_func(app->selection,
+                                          (gpointer)on_selection_changed, app);
+    }
 
     if (td->select_path != NULL) {
         if (!select_by_path(app, td->select_path)) {
