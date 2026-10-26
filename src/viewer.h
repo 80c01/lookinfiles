@@ -21,6 +21,8 @@ void render_image_preview(AppData* app, const gchar* name, const gchar* full);
 void on_selection_changed(GtkTreeSelection* selection, gpointer user_data);
 
 void monitor_directory(AppData* app);
+void sync_directory_monitors(AppData* app);
+void stop_directory_monitors(AppData* app);
 void monitor_file(AppData* app, const char* path);
 void schedule_refresh(AppData* app);
 

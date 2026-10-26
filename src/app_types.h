@@ -120,8 +120,8 @@ typedef struct {
     GHashTable* expanded_paths; /* set of full_path strings for expanded directories */
 
     /* File monitors & async I/O cancellation */
-    GFileMonitor* dir_monitor;   /* current directory */
-    GFileMonitor* file_monitor;  /* viewed file in right pane */
+    GHashTable* dir_monitors;          /* active directory monitors: full_path -> GFileMonitor* */
+    GFileMonitor* file_monitor;        /* viewed file in right pane */
     GCancellable* dir_cancellable;     /* active left-pane directory scan GTask */
     GCancellable* preview_cancellable; /* active right-pane preview GTask */
     gchar* viewed_path;          /* path of displayed file, NULL otherwise */

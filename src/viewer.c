@@ -764,6 +764,8 @@ static void on_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file
     case G_FILE_MONITOR_EVENT_DELETED:
     case G_FILE_MONITOR_EVENT_MOVED:
     case G_FILE_MONITOR_EVENT_RENAMED:
+    case G_FILE_MONITOR_EVENT_MOVED_IN:
+    case G_FILE_MONITOR_EVENT_MOVED_OUT:
         ((AppData*)data)->dir_dirty = TRUE;
         schedule_refresh((AppData*)data);
         break;
@@ -787,21 +789,96 @@ static void on_file_changed(GFileMonitor* monitor, GFile* file, GFile* other_fil
     }
 }
 
-void monitor_directory(AppData* app) {
-    if (app->dir_monitor != NULL) {
-        g_object_unref(app->dir_monitor);
-        app->dir_monitor = NULL;
+static void add_single_dir_monitor(AppData* app, const gchar* path) {
+    if (app == NULL || path == NULL || path[0] == '\0') {
+        return;
     }
-    GFile* f = g_file_new_for_path(app->base_dir);
+    if (app->dir_monitors == NULL) {
+        app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+    }
+    if (g_hash_table_contains(app->dir_monitors, path)) {
+        return;
+    }
+    if (!g_file_test(path, G_FILE_TEST_IS_DIR)) {
+        return;
+    }
+    GFile* f = g_file_new_for_path(path);
     GError* err = NULL;
-    app->dir_monitor = g_file_monitor_directory(f, G_FILE_MONITOR_NONE, NULL, &err);
+    GFileMonitor* mon = g_file_monitor_directory(f, G_FILE_MONITOR_NONE, NULL, &err);
     if (err != NULL) {
         g_error_free(err);
-        app->dir_monitor = NULL;
-    } else {
-        g_signal_connect(app->dir_monitor, "changed", G_CALLBACK(on_dir_changed), app);
+    } else if (mon != NULL) {
+        g_signal_connect(mon, "changed", G_CALLBACK(on_dir_changed), app);
+        g_hash_table_insert(app->dir_monitors, g_strdup(path), mon);
     }
     g_object_unref(f);
+}
+
+void stop_directory_monitors(AppData* app) {
+    if (app == NULL || app->dir_monitors == NULL) {
+        return;
+    }
+    g_hash_table_destroy(app->dir_monitors);
+    app->dir_monitors = NULL;
+}
+
+void sync_directory_monitors(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    if (app->dir_monitors == NULL) {
+        app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+    }
+
+    /* Collect all paths that should currently be monitored:
+     * base_dir and all existing expanded subdirectories */
+    GHashTable* needed = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    if (app->base_dir != NULL && g_file_test(app->base_dir, G_FILE_TEST_IS_DIR)) {
+        g_hash_table_add(needed, g_strdup(app->base_dir));
+    }
+
+    if (app->expanded_paths != NULL) {
+        GHashTableIter iter;
+        gpointer key, value;
+        g_hash_table_iter_init(&iter, app->expanded_paths);
+        while (g_hash_table_iter_next(&iter, &key, &value)) {
+            const gchar* p = (const gchar*)key;
+            if (g_file_test(p, G_FILE_TEST_IS_DIR)) {
+                g_hash_table_add(needed, g_strdup(p));
+            } else {
+                /* Prune non-existent directory path from expanded_paths */
+                g_hash_table_iter_remove(&iter);
+            }
+        }
+    }
+
+    /* Remove monitors that are no longer needed */
+    GHashTableIter miter;
+    gpointer mkey, mvalue;
+    g_hash_table_iter_init(&miter, app->dir_monitors);
+    while (g_hash_table_iter_next(&miter, &mkey, &mvalue)) {
+        const gchar* mp = (const gchar*)mkey;
+        if (!g_hash_table_contains(needed, mp)) {
+            g_hash_table_iter_remove(&miter);
+        }
+    }
+
+    /* Add monitors for any needed paths not yet monitored */
+    GHashTableIter niter;
+    gpointer nkey, nvalue;
+    g_hash_table_iter_init(&niter, needed);
+    while (g_hash_table_iter_next(&niter, &nkey, &nvalue)) {
+        const gchar* np = (const gchar*)nkey;
+        if (!g_hash_table_contains(app->dir_monitors, np)) {
+            add_single_dir_monitor(app, np);
+        }
+    }
+
+    g_hash_table_destroy(needed);
+}
+
+void monitor_directory(AppData* app) {
+    sync_directory_monitors(app);
 }
 
 void monitor_file(AppData* app, const char* path) {

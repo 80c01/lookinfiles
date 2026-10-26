@@ -937,12 +937,12 @@ void workspace_switch(AppData* app, gint idx) {
     if (ws->base_dir != NULL && g_strcmp0(app->base_dir, ws->base_dir) != 0) {
         g_free(app->base_dir);
         app->base_dir = g_strdup(ws->base_dir);
-        monitor_directory(app);
     }
     if (app->expanded_paths != NULL) {
         g_hash_table_destroy(app->expanded_paths);
     }
     app->expanded_paths = clone_ws_paths(ws->expanded_paths);
+    sync_directory_monitors(app);
 
     if (app->render_raw != ws->render_raw) {
         app->render_raw = ws->render_raw;

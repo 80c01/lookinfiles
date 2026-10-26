@@ -1173,6 +1173,7 @@ void on_tree_row_expanded(GtkTreeView* tree_view, GtkTreeIter* iter,
                        COL_PATH, &full_path, -1);
     if (full_path != NULL && app->expanded_paths != NULL) {
         g_hash_table_add(app->expanded_paths, g_strdup(full_path));
+        sync_directory_monitors(app);
     }
     if (name != NULL) {
         gchar* label = g_strconcat("📂 ", name, NULL);
@@ -1198,13 +1199,41 @@ void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
                        COL_NAME, &name,
                        COL_PATH, &full_path, -1);
     if (full_path != NULL && app->expanded_paths != NULL) {
-        g_hash_table_remove(app->expanded_paths, full_path);
+        gchar* prefix = g_strdup_printf("%s/", full_path);
+        GHashTableIter hiter;
+        gpointer hkey, hval;
+        g_hash_table_iter_init(&hiter, app->expanded_paths);
+        while (g_hash_table_iter_next(&hiter, &hkey, &hval)) {
+            const gchar* p = (const gchar*)hkey;
+            if (g_strcmp0(p, full_path) == 0 || g_str_has_prefix(p, prefix)) {
+                g_hash_table_iter_remove(&hiter);
+            }
+        }
+        g_free(prefix);
+        sync_directory_monitors(app);
     }
     if (name != NULL) {
         gchar* label = g_strconcat("📁 ", name, NULL);
         gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LABEL, label, -1);
         g_free(label);
     }
+
+    /* Reset children to dummy row so future re-expansion reloads fresh from disk */
+    GtkTreeIter child;
+    while (gtk_tree_model_iter_children(app->model, &child, iter)) {
+        gtk_tree_store_remove(GTK_TREE_STORE(app->model), &child);
+    }
+    GtkTreeIter dummy;
+    gtk_tree_store_append(GTK_TREE_STORE(app->model), &dummy, iter);
+    gtk_tree_store_set(GTK_TREE_STORE(app->model), &dummy,
+                       COL_NAME, "",
+                       COL_TYPE, "-",
+                       COL_LABEL, "...",
+                       COL_PATH, "",
+                       COL_LOADED, TRUE,
+                       -1);
+    gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LOADED, FALSE, -1);
+
     if (!app->switching_ws && !app->dir_scan_pending) {
         workspace_save_current(app);
     }
@@ -1594,6 +1623,7 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     gtk_tree_store_clear(store);
     apply_dir_node_to_store(store, app, NULL, td->root_node);
     reexpand_paths_recursive(app, NULL);
+    sync_directory_monitors(app);
     app->dir_scan_pending = FALSE;
 
     if (app->selection != NULL) {

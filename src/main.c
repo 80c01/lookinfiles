@@ -297,6 +297,7 @@ int main(int argc, char** argv) {
     app->model = GTK_TREE_MODEL(store);
     app->tree_view = GTK_TREE_VIEW(tree_view);
     app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     bookmarks_init(app);
     populate_store(store, app, start_dir, FALSE, SORT_NAME);
     g_object_unref(store);
@@ -466,6 +467,11 @@ int main(int argc, char** argv) {
 
     g_main_loop_run(loop);
 
+    stop_directory_monitors(app);
+    if (app->expanded_paths != NULL) {
+        g_hash_table_destroy(app->expanded_paths);
+        app->expanded_paths = NULL;
+    }
     if (app->bookmarks != NULL) {
         g_ptr_array_unref(app->bookmarks);
     }
