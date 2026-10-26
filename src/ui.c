@@ -60,8 +60,10 @@ void toggle_help_panel(AppData* app) {
     if (app == NULL || app->help_window == NULL) {
         return;
     }
+    workspace_save_current(app);
     gboolean vis = gtk_widget_get_visible(app->help_window);
     gtk_widget_set_visible(app->help_window, !vis);
+    workspace_apply_positions(app);
     update_path_label(app);
     if (vis) {
         if (app->left_vbox == NULL || gtk_widget_get_visible(app->left_vbox)) {
@@ -303,18 +305,26 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
 
 #ifdef HAVE_VTE
     /* Each pane gets its own shell in the current directory */
+    gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
     if (app->right_paned != NULL) {
         gtk_widget_set_visible(app->right_paned, TRUE);
     }
-    if (!gtk_widget_get_visible(app->term_scroll)) {
+    if (!was_term_vis) {
         gtk_widget_set_visible(app->term_scroll, TRUE);
+        workspace_apply_positions(app);
     }
     term_spawn_pane(app, keyval == GDK_KEY_T /* new row below? */);
     update_path_label(app);
 #else
     /* No VTE installed: the panel is a notice instead of a terminal */
-    gtk_widget_set_visible(app->term_scroll,
-                           !gtk_widget_get_visible(app->term_scroll));
+    gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
+    if (was_term_vis) {
+        workspace_save_current(app);
+    }
+    gtk_widget_set_visible(app->term_scroll, !was_term_vis);
+    if (!was_term_vis) {
+        workspace_apply_positions(app);
+    }
     update_path_label(app);
     gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
 #endif
@@ -359,23 +369,80 @@ void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
     (void)n_press;
     AppData* app = (AppData*)data;
     GtkWidget* widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
-    GtkWidget* picked = gtk_widget_pick(widget, x, y, GTK_PICK_DEFAULT);
-    if (picked == NULL || g_strcmp0(gtk_widget_get_css_name(picked), "separator") != 0) {
+    if (!GTK_IS_PANED(widget)) {
         return;
+    }
+    GtkWidget* c1 = gtk_paned_get_start_child(GTK_PANED(widget));
+    GtkWidget* c2 = gtk_paned_get_end_child(GTK_PANED(widget));
+    if (c1 == NULL || c2 == NULL ||
+        !gtk_widget_get_visible(c1) || !gtk_widget_get_visible(c2)) {
+        return;
+    }
+    GtkWidget* picked = gtk_widget_pick(widget, x, y, GTK_PICK_DEFAULT);
+    gboolean on_own_sep = (picked != NULL &&
+                           g_strcmp0(gtk_widget_get_css_name(picked), "separator") == 0 &&
+                           gtk_widget_get_parent(picked) == widget);
+    if (!on_own_sep) {
+        /* Also check grab tolerance around this paned's divider position,
+         * unless the click landed on a nested child paned's separator. */
+        if (picked != NULL &&
+            g_strcmp0(gtk_widget_get_css_name(picked), "separator") == 0 &&
+            gtk_widget_get_parent(picked) != widget) {
+            return;
+        }
+        GtkOrientation o = gtk_orientable_get_orientation(GTK_ORIENTABLE(widget));
+        gint sep_pos = gtk_paned_get_position(GTK_PANED(widget));
+        gdouble coord = (o == GTK_ORIENTATION_VERTICAL) ? y : x;
+        if (sep_pos <= 0 || ABS((gint)coord - sep_pos) > 8) {
+            return;
+        }
     }
     app->panning = TRUE;
     app->dims_paned = widget;
     update_pane_dims(widget, app);
 }
 
+static gboolean on_paned_legacy_event(GtkEventControllerLegacy* ctrl,
+                                      GdkEvent* event, gpointer data) {
+    (void)ctrl;
+    AppData* app = (AppData*)data;
+    if (app->panning && gdk_event_get_event_type(event) == GDK_BUTTON_RELEASE) {
+        app->panning = FALSE;
+        gtk_widget_set_visible(app->dim_window, FALSE);
+        workspace_save_current(app);
+    }
+    return FALSE;
+}
+
 void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointer data) {
     (void)pspec;
     AppData* app = (AppData*)data;
-    if (app->panning) { /* ignore programmatic set_position calls */
-        app->dims_paned = GTK_WIDGET(object);
-        g_idle_add(pane_dims_idle, app);
-        workspace_save_current(app);
+    if (app == NULL || app->switching_ws || app->applying_layout) {
+        return;
     }
+    GtkWidget* widget = GTK_WIDGET(object);
+    if (app->panning) {
+        app->dims_paned = widget;
+        g_idle_add(pane_dims_idle, app);
+    }
+    if (widget != app->main_paned && widget != app->right_paned && GTK_IS_PANED(widget)) {
+        GtkWidget* c1 = gtk_paned_get_start_child(GTK_PANED(widget));
+        GtkWidget* c2 = gtk_paned_get_end_child(GTK_PANED(widget));
+        if (c1 != NULL && c2 != NULL &&
+            gtk_widget_get_width(c1) > 0 && gtk_widget_get_width(c2) > 0) {
+            GtkOrientation o = gtk_orientable_get_orientation(GTK_ORIENTABLE(widget));
+            gint len = (o == GTK_ORIENTATION_VERTICAL)
+                           ? gtk_widget_get_height(widget)
+                           : gtk_widget_get_width(widget);
+            gint pos = gtk_paned_get_position(GTK_PANED(widget));
+            if (len > 40 && pos > 0 && pos < len) {
+                gdouble* frac = g_new(gdouble, 1);
+                *frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
+                g_object_set_data_full(object, "term-paned-frac", frac, g_free);
+            }
+        }
+    }
+    workspace_save_current(app);
 }
 
 void on_paned_released(GtkGestureClick* gesture, gint n_press,
@@ -390,6 +457,23 @@ void on_paned_released(GtkGestureClick* gesture, gint n_press,
     workspace_save_current(app);
 }
 
+void wire_paned_controllers(GtkWidget* paned, AppData* app) {
+    GtkGesture* click = gtk_gesture_click_new();
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(click),
+                                               GTK_PHASE_CAPTURE);
+    g_signal_connect(click, "pressed", G_CALLBACK(on_paned_pressed), app);
+    g_signal_connect(click, "released", G_CALLBACK(on_paned_released), app);
+    gtk_widget_add_controller(paned, GTK_EVENT_CONTROLLER(click));
+
+    GtkEventController* legacy = gtk_event_controller_legacy_new();
+    gtk_event_controller_set_propagation_phase(legacy, GTK_PHASE_CAPTURE);
+    g_signal_connect(legacy, "event", G_CALLBACK(on_paned_legacy_event), app);
+    gtk_widget_add_controller(paned, legacy);
+
+    g_signal_connect(paned, "notify::position",
+                     G_CALLBACK(on_paned_notify_position), app);
+}
+
 /* Remember the viewer/terminal split as a fraction of pane size */
 void layout_save_frac(AppData* app) {
     if (app->right_paned == NULL) {
@@ -400,33 +484,26 @@ void layout_save_frac(AppData* app) {
     gint len = (o == GTK_ORIENTATION_VERTICAL
                     ? gtk_widget_get_height(app->right_paned)
                     : gtk_widget_get_width(app->right_paned));
-    if (len > 0) {
-        app->right_frac = (gdouble)gtk_paned_get_position(
-            GTK_PANED(app->right_paned)) / len;
+    if (len > 40) {
+        gint pos = gtk_paned_get_position(GTK_PANED(app->right_paned));
+        if (pos > 0 && pos < len) {
+            app->right_frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
+        }
     }
 }
 
 /* Restore saved split proportion once new paned is laid out */
 gboolean layout_position_idle(gpointer data) {
     AppData* app = (AppData*)data;
-    GtkOrientation o =
-        gtk_orientable_get_orientation(GTK_ORIENTABLE(app->right_paned));
-    gint len = (o == GTK_ORIENTATION_VERTICAL
-                    ? gtk_widget_get_height(app->right_paned)
-                    : gtk_widget_get_width(app->right_paned));
-    if (len > 0) {
-        gtk_paned_set_position(GTK_PANED(app->right_paned),
-                               (gint)(app->right_frac * len));
-        return FALSE; /* done */
-    }
-    return TRUE; /* try again next idle */
+    workspace_apply_positions(app);
+    return FALSE;
 }
 
 /* Assemble viewer and terminal into a pane pair with given orientation */
 void layout_build(AppData* app, GtkOrientation orientation) {
     if (app->right_paned != NULL) {
         gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), orientation);
-        g_idle_add(layout_position_idle, app);
+        workspace_apply_positions(app);
         return;
     }
 
@@ -445,33 +522,31 @@ void layout_build(AppData* app, GtkOrientation orientation) {
 
     app->right_paned = right_paned;
 
-    /* Divider feedback handlers */
-    GtkGesture* click = gtk_gesture_click_new();
-    g_signal_connect(click, "pressed", G_CALLBACK(on_paned_pressed), app);
-    g_signal_connect(click, "released", G_CALLBACK(on_paned_released), app);
-    gtk_widget_add_controller(right_paned, GTK_EVENT_CONTROLLER(click));
-
-    g_signal_connect(right_paned, "notify::position",
-                     G_CALLBACK(on_paned_notify_position), app);
+    wire_paned_controllers(right_paned, app);
 
     gtk_paned_set_end_child(GTK_PANED(app->main_paned), right_paned);
     gtk_paned_set_resize_end_child(GTK_PANED(app->main_paned), TRUE);
     gtk_paned_set_shrink_end_child(GTK_PANED(app->main_paned), TRUE);
 
-    /* Restore last split proportion */
-    g_idle_add(layout_position_idle, app);
+    /* Restore saved split proportions */
+    workspace_apply_positions(app);
 }
 
 /* Ctrl+Shift+L: stack terminal pane under viewer or place it beside it */
 void layout_toggle(AppData* app) {
-    layout_save_frac(app);
-    layout_build(app,
-                 gtk_orientable_get_orientation(
-                     GTK_ORIENTABLE(app->right_paned)) ==
-                         GTK_ORIENTATION_HORIZONTAL
-                     ? GTK_ORIENTATION_VERTICAL
-                     : GTK_ORIENTATION_HORIZONTAL);
     workspace_save_current(app);
+    GtkOrientation next_orient =
+        gtk_orientable_get_orientation(GTK_ORIENTABLE(app->right_paned)) ==
+                GTK_ORIENTATION_HORIZONTAL
+            ? GTK_ORIENTATION_VERTICAL
+            : GTK_ORIENTATION_HORIZONTAL;
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+        app->workspaces[app->current_ws].right_orient = next_orient;
+    }
+    layout_build(app, next_orient);
+    if (app->ws_minimap != NULL) {
+        gtk_widget_queue_draw(app->ws_minimap);
+    }
 }
 
 #define WS_CELL_W   32
@@ -539,6 +614,9 @@ void workspaces_init(AppData* app) {
     app->current_ws = 0;
     app->hover_ws = -1;
     app->switching_ws = FALSE;
+    app->applying_layout = FALSE;
+    app->layout_tick_id = 0;
+    app->layout_apply_frames = 0;
     init_workspace_slot(app, 0, app->base_dir);
 #ifdef HAVE_VTE
     app->term_box = app->workspaces[0].term_box;
@@ -585,22 +663,33 @@ void workspace_save_current(AppData* app) {
     if (app->right_paned != NULL) {
         ws->right_orient =
             gtk_orientable_get_orientation(GTK_ORIENTABLE(app->right_paned));
-        if (ws->preview_vis && ws->term_vis) {
+    }
+
+    if (!app->applying_layout) {
+        if (app->right_paned != NULL && ws->preview_vis && ws->term_vis &&
+            gtk_widget_get_width(app->viewer_box) > 0 &&
+            gtk_widget_get_height(app->viewer_box) > 0 &&
+            gtk_widget_get_width(app->term_scroll) > 0 &&
+            gtk_widget_get_height(app->term_scroll) > 0) {
             gint len = (ws->right_orient == GTK_ORIENTATION_VERTICAL)
                            ? gtk_widget_get_height(app->right_paned)
                            : gtk_widget_get_width(app->right_paned);
-            if (len > 40) {
-                gdouble f = (gdouble)gtk_paned_get_position(GTK_PANED(app->right_paned)) / len;
-                ws->right_frac = CLAMP(f, 0.15, 0.85);
+            gint pos = gtk_paned_get_position(GTK_PANED(app->right_paned));
+            if (len > 40 && pos > 0 && pos < len) {
+                ws->right_frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
+                app->right_frac = ws->right_frac;
             }
         }
-    }
 
-    if (app->main_paned != NULL && ws->files_vis && (ws->preview_vis || ws->term_vis)) {
-        gint mw = gtk_widget_get_width(app->main_paned);
-        if (mw > 60) {
-            gdouble f = (gdouble)gtk_paned_get_position(GTK_PANED(app->main_paned)) / mw;
-            ws->main_frac = CLAMP(f, 0.12, 0.85);
+        if (app->main_paned != NULL && ws->files_vis &&
+            (ws->preview_vis || ws->term_vis) &&
+            gtk_widget_get_width(app->left_vbox) > 0 &&
+            gtk_widget_get_width(app->right_paned) > 0) {
+            gint mw = gtk_widget_get_width(app->main_paned);
+            gint pos = gtk_paned_get_position(GTK_PANED(app->main_paned));
+            if (mw > 60 && pos > 0 && pos < mw) {
+                ws->main_frac = CLAMP((gdouble)pos / mw, 0.05, 0.95);
+            }
         }
     }
 
@@ -609,27 +698,130 @@ void workspace_save_current(AppData* app) {
     }
 }
 
-static gboolean workspace_apply_positions_idle(gpointer data) {
-    AppData* app = (AppData*)data;
+#ifdef HAVE_VTE
+static void apply_term_paned_positions_recursive(GtkWidget* widget) {
+    if (widget == NULL || !gtk_widget_get_visible(widget)) {
+        return;
+    }
+    if (GTK_IS_PANED(widget)) {
+        gdouble* frac = (gdouble*)g_object_get_data(G_OBJECT(widget), "term-paned-frac");
+        if (frac != NULL) {
+            GtkOrientation o = gtk_orientable_get_orientation(GTK_ORIENTABLE(widget));
+            gint len = (o == GTK_ORIENTATION_VERTICAL)
+                           ? gtk_widget_get_height(widget)
+                           : gtk_widget_get_width(widget);
+            if (len > 40) {
+                gtk_paned_set_position(GTK_PANED(widget),
+                                       (gint)((*frac) * len + 0.5));
+            }
+        }
+    }
+    for (GtkWidget* child = gtk_widget_get_first_child(widget);
+         child != NULL;
+         child = gtk_widget_get_next_sibling(child)) {
+        apply_term_paned_positions_recursive(child);
+    }
+}
+#endif
+
+static gboolean apply_ws_positions_now(AppData* app) {
+    if (app == NULL || app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
+        return TRUE;
+    }
     VirtualLayout* ws = &app->workspaces[app->current_ws];
+    gboolean ready = TRUE;
 
     if (app->main_paned != NULL && ws->files_vis && (ws->preview_vis || ws->term_vis)) {
         gint mw = gtk_widget_get_width(app->main_paned);
-        if (mw > 0) {
+        if (mw > 60) {
             gtk_paned_set_position(GTK_PANED(app->main_paned),
-                                   (gint)(ws->main_frac * mw));
+                                   (gint)(ws->main_frac * mw + 0.5));
+        } else {
+            ready = FALSE;
         }
     }
+
     if (app->right_paned != NULL && ws->preview_vis && ws->term_vis) {
+        gtk_paned_set_resize_start_child(GTK_PANED(app->right_paned), FALSE);
+        gtk_paned_set_resize_end_child(GTK_PANED(app->right_paned), TRUE);
+
         gint len = (ws->right_orient == GTK_ORIENTATION_VERTICAL)
                        ? gtk_widget_get_height(app->right_paned)
                        : gtk_widget_get_width(app->right_paned);
-        if (len > 0) {
+        if (ws->right_orient == GTK_ORIENTATION_HORIZONTAL &&
+            ws->files_vis && app->main_paned != NULL) {
+            gint mw = gtk_widget_get_width(app->main_paned);
+            if (mw > 60) {
+                gint expected_rw = mw - (gint)(ws->main_frac * mw + 0.5);
+                if (len <= 40 || ABS(len - expected_rw) > 16) {
+                    if (expected_rw > 40) {
+                        gtk_paned_set_position(GTK_PANED(app->right_paned),
+                                               (gint)(ws->right_frac * expected_rw + 0.5));
+                    }
+                    ready = FALSE;
+                }
+            }
+        }
+        if (len > 40) {
             gtk_paned_set_position(GTK_PANED(app->right_paned),
-                                   (gint)(ws->right_frac * len));
+                                   (gint)(ws->right_frac * len + 0.5));
+        } else {
+            ready = FALSE;
         }
     }
-    return FALSE;
+
+#ifdef HAVE_VTE
+    if (ws->term_vis && ws->term_box != NULL) {
+        apply_term_paned_positions_recursive(ws->term_box);
+    }
+#endif
+    return ready;
+}
+
+static gboolean workspace_apply_positions_tick(GtkWidget* widget,
+                                               GdkFrameClock* frame_clock,
+                                               gpointer data) {
+    (void)widget;
+    (void)frame_clock;
+    AppData* app = (AppData*)data;
+    app->layout_apply_frames++;
+
+    if (app->layout_apply_frames <= 2) {
+        gboolean ready = apply_ws_positions_now(app);
+        if (!ready && app->layout_apply_frames == 2) {
+            app->layout_apply_frames = 1; /* wait until widgets are allocated */
+        }
+        return G_SOURCE_CONTINUE;
+    }
+
+    if (app->layout_apply_frames == 3) {
+        apply_ws_positions_now(app);
+        if (app->right_paned != NULL) {
+            gtk_paned_set_resize_start_child(GTK_PANED(app->right_paned), TRUE);
+            gtk_paned_set_resize_end_child(GTK_PANED(app->right_paned), FALSE);
+        }
+        return G_SOURCE_CONTINUE;
+    }
+
+    app->applying_layout = FALSE;
+    app->layout_tick_id = 0;
+    if (app->ws_minimap != NULL) {
+        gtk_widget_queue_draw(app->ws_minimap);
+    }
+    return G_SOURCE_REMOVE;
+}
+
+void workspace_apply_positions(AppData* app) {
+    if (app == NULL || app->main_paned == NULL) {
+        return;
+    }
+    app->applying_layout = TRUE;
+    app->layout_apply_frames = 0;
+    apply_ws_positions_now(app);
+    if (app->layout_tick_id == 0) {
+        app->layout_tick_id = gtk_widget_add_tick_callback(
+            app->main_paned, workspace_apply_positions_tick, app, NULL);
+    }
 }
 
 void workspace_switch(AppData* app, gint idx) {
@@ -640,22 +832,10 @@ void workspace_switch(AppData* app, gint idx) {
         workspace_save_current(app);
     }
     app->switching_ws = TRUE;
+    app->applying_layout = TRUE;
     app->current_ws = idx;
 
     VirtualLayout* ws = &app->workspaces[idx];
-    if (app->left_vbox != NULL) {
-        gtk_widget_set_visible(app->left_vbox, ws->files_vis);
-    }
-    if (app->viewer_box != NULL) {
-        gtk_widget_set_visible(app->viewer_box, ws->preview_vis);
-    }
-    if (app->right_paned != NULL) {
-        gtk_widget_set_visible(app->right_paned, ws->preview_vis || ws->term_vis);
-        gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), ws->right_orient);
-    }
-    if (app->term_scroll != NULL) {
-        gtk_widget_set_visible(app->term_scroll, ws->term_vis);
-    }
     app->right_frac = ws->right_frac;
 
 #ifdef HAVE_VTE
@@ -664,6 +844,23 @@ void workspace_switch(AppData* app, gint idx) {
     if (app->term_stack != NULL && ws->term_box != NULL) {
         gtk_stack_set_visible_child(GTK_STACK(app->term_stack), ws->term_box);
     }
+#endif
+
+    if (app->left_vbox != NULL) {
+        gtk_widget_set_visible(app->left_vbox, ws->files_vis);
+    }
+    if (app->viewer_box != NULL) {
+        gtk_widget_set_visible(app->viewer_box, ws->preview_vis);
+    }
+    if (app->right_paned != NULL) {
+        gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), ws->right_orient);
+        gtk_widget_set_visible(app->right_paned, ws->preview_vis || ws->term_vis);
+    }
+    if (app->term_scroll != NULL) {
+        gtk_widget_set_visible(app->term_scroll, ws->term_vis);
+    }
+
+#ifdef HAVE_VTE
     if (ws->term_vis && ws->term_box != NULL) {
         GPtrArray* panes = term_visible_panes(app);
         if (panes->len == 0) {
@@ -692,9 +889,9 @@ void workspace_switch(AppData* app, gint idx) {
     app->expanded_paths = clone_ws_paths(ws->expanded_paths);
 
     minimap_update_visibility(app);
+    workspace_apply_positions(app);
     app->switching_ws = FALSE;
     update_path_label(app);
-    g_idle_add(workspace_apply_positions_idle, app);
 
     if (need_rescan) {
         refresh_listing_with_path(app, ws->selected_path);
@@ -720,6 +917,10 @@ void workspace_add(AppData* app) {
 
     gint new_idx = app->num_workspaces;
     init_workspace_slot(app, new_idx, app->base_dir);
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+        app->workspaces[new_idx].main_frac = app->workspaces[app->current_ws].main_frac;
+        app->workspaces[new_idx].right_frac = app->workspaces[app->current_ws].right_frac;
+    }
     app->num_workspaces++;
     ws_minimap_update_size(app);
     workspace_switch(app, new_idx);
@@ -729,6 +930,9 @@ void workspace_remove(AppData* app, gint idx) {
     if (app == NULL || app->num_workspaces <= 1 ||
         idx < 0 || idx >= app->num_workspaces) {
         return;
+    }
+    if (idx != app->current_ws) {
+        workspace_save_current(app);
     }
     VirtualLayout* rm = &app->workspaces[idx];
     g_free(rm->base_dir);

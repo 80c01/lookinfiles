@@ -971,7 +971,9 @@ void on_files_pill_clicked(GtkButton* btn, gpointer data) {
     if (cur && !preview_vis && !term_vis) {
         return; /* keep at least one panel visible */
     }
+    workspace_save_current(app);
     gtk_widget_set_visible(app->left_vbox, !cur);
+    workspace_apply_positions(app);
     update_path_label(app);
     if (!cur) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
@@ -992,7 +994,9 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
     if (cur && !files_vis && !term_vis) {
         return; /* keep at least one panel visible */
     }
+    workspace_save_current(app);
     gtk_widget_set_visible(app->viewer_box, !cur);
+    workspace_apply_positions(app);
     update_path_label(app);
     if (!cur) {
         minimap_update_visibility(app);
@@ -1015,7 +1019,9 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
         if (!files_vis && !preview_vis) {
             return; /* keep at least one panel visible */
         }
+        workspace_save_current(app);
         gtk_widget_set_visible(app->term_scroll, FALSE);
+        workspace_apply_positions(app);
         update_path_label(app);
         if (files_vis) {
             gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
@@ -1023,10 +1029,12 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
             gtk_widget_grab_focus(app->text_view);
         }
     } else {
+        workspace_save_current(app);
         if (app->right_paned != NULL) {
             gtk_widget_set_visible(app->right_paned, TRUE);
         }
         gtk_widget_set_visible(app->term_scroll, TRUE);
+        workspace_apply_positions(app);
 #ifdef HAVE_VTE
         GPtrArray* panes = term_visible_panes(app);
         if (panes->len == 0) {
@@ -1459,7 +1467,9 @@ void activate_selected_entry(AppData* app) {
         gtk_tree_path_free(path);
     } else if (g_strcmp0(type, "file") == 0 && full != NULL) {
         if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+            workspace_save_current(app);
             gtk_widget_set_visible(app->viewer_box, TRUE);
+            workspace_apply_positions(app);
             update_path_label(app);
         }
         if (is_image_file(name) || is_pdf_file(name)) {

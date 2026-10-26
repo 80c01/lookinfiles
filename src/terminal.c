@@ -1,5 +1,6 @@
 #include "terminal.h"
 #include "file_list.h"
+#include "ui.h"
 
 #ifdef HAVE_VTE
 
@@ -136,6 +137,7 @@ void term_spawn_pane(AppData* app, gboolean new_row) {
         GtkWidget* new_paned = gtk_paned_new(orient);
         gtk_widget_set_hexpand(new_paned, TRUE);
         gtk_widget_set_vexpand(new_paned, TRUE);
+        wire_paned_controllers(new_paned, app);
 
         g_object_ref(target);
         if (parent == app->term_box) {
@@ -185,7 +187,9 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
     if (GTK_IS_BOX(parent)) {
         gtk_box_remove(GTK_BOX(parent), term_w);
         if (parent == app->term_box) {
+            workspace_save_current(app);
             gtk_widget_set_visible(app->term_scroll, FALSE);
+            workspace_apply_positions(app);
             gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
             gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
             if (!files_vis && !preview_vis && app->viewer_box != NULL) {
@@ -230,7 +234,9 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
         if (panes->len > 0) {
             gtk_widget_grab_focus(GTK_WIDGET(g_ptr_array_index(panes, 0)));
         } else {
+            workspace_save_current(app);
             gtk_widget_set_visible(app->term_scroll, FALSE);
+            workspace_apply_positions(app);
             gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
             gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
             if (!files_vis && !preview_vis && app->viewer_box != NULL) {

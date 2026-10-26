@@ -169,6 +169,9 @@ typedef struct {
     gint current_ws;
     gint hover_ws;
     gboolean switching_ws;
+    gboolean applying_layout;
+    guint layout_tick_id;
+    gint layout_apply_frames;
     GtkWidget* ws_minimap;
 } AppData;
 

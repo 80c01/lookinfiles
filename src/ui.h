@@ -18,6 +18,7 @@ gboolean pane_dims_idle(gpointer data);
 void on_paned_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data);
 void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointer data);
 void on_paned_released(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data);
+void wire_paned_controllers(GtkWidget* paned, AppData* app);
 
 void layout_save_frac(AppData* app);
 gboolean layout_position_idle(gpointer data);
@@ -26,6 +27,7 @@ void layout_toggle(AppData* app);
 
 void workspaces_init(AppData* app);
 void workspace_save_current(AppData* app);
+void workspace_apply_positions(AppData* app);
 void workspace_switch(AppData* app, gint idx);
 void workspace_add(AppData* app);
 void workspace_remove(AppData* app, gint idx);

@@ -353,18 +353,12 @@ int main(int argc, char** argv) {
     gtk_paned_set_shrink_start_child(GTK_PANED(main_paned), TRUE);
     gtk_widget_set_size_request(left_vbox, 150, -1);
 
-    GtkGesture* paned_click = gtk_gesture_click_new();
-    g_signal_connect(paned_click, "pressed", G_CALLBACK(on_paned_pressed), app);
-    g_signal_connect(paned_click, "released", G_CALLBACK(on_paned_released), app);
-    gtk_widget_add_controller(main_paned, GTK_EVENT_CONTROLLER(paned_click));
-
-    g_signal_connect(main_paned, "notify::position",
-                     G_CALLBACK(on_paned_notify_position), app);
+    wire_paned_controllers(main_paned, app);
 
     app->left_vbox = left_vbox;
     app->main_paned = main_paned;
     app->viewer_box = viewer_box;
-    app->right_frac = 0.72;
+    app->right_frac = 0.70;
     layout_build(app, GTK_ORIENTATION_HORIZONTAL);
     update_path_label(app);
 
