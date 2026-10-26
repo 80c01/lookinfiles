@@ -777,12 +777,14 @@ static void on_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file
 static void on_file_changed(GFileMonitor* monitor, GFile* file, GFile* other_file,
                             GFileMonitorEvent event_type, gpointer data) {
     (void)monitor; (void)file; (void)other_file;
+    AppData* app = (AppData*)data;
     switch (event_type) {
     case G_FILE_MONITOR_EVENT_CHANGED:
     case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
     case G_FILE_MONITOR_EVENT_DELETED:
-        ((AppData*)data)->file_dirty = TRUE;
-        schedule_refresh((AppData*)data);
+        app->file_dirty = TRUE;
+        app->dir_dirty = TRUE;
+        schedule_refresh(app);
         break;
     default:
         break;
@@ -849,6 +851,19 @@ void sync_directory_monitors(AppData* app) {
                 /* Prune non-existent directory path from expanded_paths */
                 g_hash_table_iter_remove(&iter);
             }
+        }
+    }
+
+    /* Also monitor the .git directory if present to detect git commit/add/checkout changes */
+    if (app->base_dir != NULL) {
+        gchar* git_root = find_git_root(app->base_dir);
+        if (git_root != NULL) {
+            gchar* git_dir = g_build_filename(git_root, ".git", NULL);
+            if (g_file_test(git_dir, G_FILE_TEST_IS_DIR)) {
+                g_hash_table_add(needed, g_strdup(git_dir));
+            }
+            g_free(git_dir);
+            g_free(git_root);
         }
     }
 

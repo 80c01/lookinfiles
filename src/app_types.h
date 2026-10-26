@@ -24,11 +24,12 @@
 
 /* Tree model columns */
 enum {
-    COL_NAME,    /* raw file or directory name */
-    COL_TYPE,    /* "dir", "file", or "-" */
-    COL_LABEL,   /* display label with icon (emoji + space + name) */
-    COL_PATH,    /* full absolute path on disk */
-    COL_LOADED,  /* boolean: whether sub-items have been loaded */
+    COL_NAME,       /* raw file or directory name */
+    COL_TYPE,       /* "dir", "file", or "-" */
+    COL_LABEL,      /* display label with icon (emoji + space + name) */
+    COL_PATH,       /* full absolute path on disk */
+    COL_LOADED,     /* boolean: whether sub-items have been loaded */
+    COL_GIT_STATUS, /* markup for git status badge */
     COL_COUNT
 };
 
@@ -122,6 +123,7 @@ typedef struct {
 
     /* File monitors & async I/O cancellation */
     GHashTable* dir_monitors;          /* active directory monitors: full_path -> GFileMonitor* */
+    GHashTable* git_statuses;          /* Git status badges: full_path -> markup string */
     GFileMonitor* file_monitor;        /* viewed file in right pane */
     GCancellable* dir_cancellable;     /* active left-pane directory scan GTask */
     GCancellable* preview_cancellable; /* active right-pane preview GTask */

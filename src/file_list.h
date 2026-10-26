@@ -33,6 +33,9 @@ void bottom_selected_row(AppData* app);
 gboolean select_by_name(AppData* app, const gchar* name);
 gboolean select_by_path(AppData* app, const gchar* full_path);
 
+gchar* find_git_root(const gchar* start_dir);
+GHashTable* scan_git_statuses(const gchar* dir);
+
 void populate_store(GtkTreeStore* store, AppData* app, const gchar* dirname,
                     gboolean show_hidden, gint sort_mode);
 void reexpand_paths_recursive(AppData* app, GtkTreeIter* parent);

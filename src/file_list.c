@@ -716,6 +716,201 @@ gboolean select_by_path(AppData* app, const gchar* full_path) {
     return FALSE;
 }
 
+/* Find Git repository root directory from start_dir (or any parent), NULL if not in repo */
+gchar* find_git_root(const gchar* start_dir) {
+    if (start_dir == NULL || start_dir[0] == '\0') {
+        return NULL;
+    }
+    gchar* curr = g_strdup(start_dir);
+    while (curr != NULL && curr[0] != '\0') {
+        gchar* dot_git = g_build_filename(curr, ".git", NULL);
+        gboolean exists = g_file_test(dot_git, G_FILE_TEST_EXISTS);
+        g_free(dot_git);
+        if (exists) {
+            return curr; /* found git root */
+        }
+        gchar* parent = g_path_get_dirname(curr);
+        if (g_strcmp0(curr, parent) == 0 || g_strcmp0(parent, ".") == 0) {
+            g_free(parent);
+            break;
+        }
+        g_free(curr);
+        curr = parent;
+    }
+    g_free(curr);
+    return NULL;
+}
+
+/* Run 'git status --porcelain=v1 -uall' and return a mapping of full_path -> badge markup */
+GHashTable* scan_git_statuses(const gchar* dir) {
+    gchar* git_root = find_git_root(dir);
+    if (git_root == NULL) {
+        return NULL;
+    }
+
+    gchar* argv[] = {
+        "git",
+        "-c",
+        "core.quotepath=false",
+        "status",
+        "--porcelain=v1",
+        "-uall",
+        NULL
+    };
+
+    gchar* stdout_buf = NULL;
+    gchar* stderr_buf = NULL;
+    gint exit_status = 0;
+    GError* err = NULL;
+    gboolean ok = g_spawn_sync(git_root,
+                               argv,
+                               NULL,
+                               G_SPAWN_SEARCH_PATH,
+                               NULL,
+                               NULL,
+                               &stdout_buf,
+                               &stderr_buf,
+                               &exit_status,
+                               &err);
+    if (err != NULL) {
+        g_error_free(err);
+    }
+    g_free(stderr_buf);
+
+    if (!ok || exit_status != 0 || stdout_buf == NULL) {
+        g_free(stdout_buf);
+        g_free(git_root);
+        return NULL;
+    }
+
+    GHashTable* statuses = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    gsize root_len = strlen(git_root);
+
+    gchar** lines = g_strsplit(stdout_buf, "\n", -1);
+    for (gint i = 0; lines != NULL && lines[i] != NULL; i++) {
+        const gchar* line = lines[i];
+        if (strlen(line) < 4) {
+            continue;
+        }
+        gchar x = line[0];
+        gchar y = line[1];
+        const gchar* rel = line + 3;
+        while (*rel == ' ') {
+            rel++;
+        }
+        if (*rel == '\0') {
+            continue;
+        }
+
+        /* If renamed: "R  old -> new", target is "new" */
+        const gchar* arrow = strstr(rel, " -> ");
+        if (arrow != NULL) {
+            rel = arrow + 4;
+        }
+
+        /* Unquote if enclosed in double quotes */
+        gchar* unquoted = NULL;
+        if (rel[0] == '"') {
+            gsize len = strlen(rel);
+            if (len >= 2 && rel[len - 1] == '"') {
+                unquoted = g_strndup(rel + 1, len - 2);
+                rel = unquoted;
+            }
+        }
+
+        const gchar* badge = NULL;
+        gboolean is_modified = FALSE;
+        gboolean is_untracked = FALSE;
+
+        if (x == '?' && y == '?') {
+            /* Untracked */
+            badge = "<span foreground=\"#73c991\" weight=\"bold\">U</span>";
+            is_untracked = TRUE;
+        } else if (x == 'U' || y == 'U' || (x == 'A' && y == 'A') || (x == 'D' && y == 'D')) {
+            /* Conflict / Unmerged */
+            badge = "<span foreground=\"#e51400\" weight=\"bold\">!</span>";
+            is_modified = TRUE;
+        } else if (x == 'A' && (y == ' ' || y == '\0')) {
+            /* Added / Staged */
+            badge = "<span foreground=\"#73c991\" weight=\"bold\">A</span>";
+            is_modified = TRUE;
+        } else if (x == 'D' || y == 'D') {
+            /* Deleted */
+            badge = "<span foreground=\"#c74e39\" weight=\"bold\">D</span>";
+            is_modified = TRUE;
+        } else if (x == 'R' || y == 'R') {
+            /* Renamed */
+            badge = "<span foreground=\"#4fc1ff\" weight=\"bold\">R</span>";
+            is_modified = TRUE;
+        } else if (x == 'M' || y == 'M' || x == 'A' || x == 'T' || y == 'T') {
+            /* Modified */
+            badge = "<span foreground=\"#e2c08d\" weight=\"bold\">M</span>";
+            is_modified = TRUE;
+        } else {
+            /* Other working tree change */
+            badge = "<span foreground=\"#e2c08d\" weight=\"bold\">M</span>";
+            is_modified = TRUE;
+        }
+
+        gchar* full_raw = g_build_filename(git_root, rel, NULL);
+        gchar* full_path = g_canonicalize_filename(full_raw, NULL);
+        g_free(full_raw);
+        if (unquoted != NULL) {
+            g_free(unquoted);
+        }
+
+        /* Store file's status */
+        g_hash_table_insert(statuses, g_strdup(full_path), g_strdup(badge));
+
+        /* Rollup to parent directories up to git_root */
+        gchar* parent = g_path_get_dirname(full_path);
+        g_free(full_path);
+
+        while (parent != NULL) {
+            gboolean under_root = (g_strcmp0(parent, git_root) == 0) ||
+                                  (g_str_has_prefix(parent, git_root) && parent[root_len] == '/');
+            if (!under_root) {
+                g_free(parent);
+                break;
+            }
+
+            const gchar* existing = (const gchar*)g_hash_table_lookup(statuses, parent);
+            if (is_modified) {
+                /* Modification takes precedence over untracked */
+                if (existing == NULL || strstr(existing, ">M<") == NULL) {
+                    g_hash_table_insert(statuses, g_strdup(parent),
+                                        g_strdup("<span foreground=\"#e2c08d\" weight=\"bold\">M</span>"));
+                }
+            } else if (is_untracked) {
+                if (existing == NULL) {
+                    g_hash_table_insert(statuses, g_strdup(parent),
+                                        g_strdup("<span foreground=\"#73c991\" weight=\"bold\">U</span>"));
+                }
+            }
+
+            if (g_strcmp0(parent, git_root) == 0) {
+                g_free(parent);
+                break;
+            }
+
+            gchar* next = g_path_get_dirname(parent);
+            if (g_strcmp0(next, parent) == 0 || g_strcmp0(next, ".") == 0) {
+                g_free(next);
+                g_free(parent);
+                break;
+            }
+            g_free(parent);
+            parent = next;
+        }
+    }
+
+    g_strfreev(lines);
+    g_free(stdout_buf);
+    g_free(git_root);
+
+    return statuses;
+}
+
 /* Off-thread directory scan snapshot node */
 typedef struct DirScanNode {
     gchar* dirname;
@@ -988,6 +1183,7 @@ static void append_bookmarks_to_store(GtkTreeStore* store, AppData* app) {
                                COL_LABEL, label,
                                COL_PATH, bpath,
                                COL_LOADED, TRUE,
+                               COL_GIT_STATUS, "",
                                -1);
             g_free(label);
             g_free(display_path);
@@ -1002,6 +1198,7 @@ static void append_bookmarks_to_store(GtkTreeStore* store, AppData* app) {
                            COL_LABEL, "🔖 (no bookmarks — Ctrl+D to add)",
                            COL_PATH, "",
                            COL_LOADED, TRUE,
+                           COL_GIT_STATUS, "",
                            -1);
     }
 }
@@ -1028,6 +1225,7 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                                                        : "  (cannot read directory)",
                            COL_PATH, node->dirname,
                            COL_LOADED, TRUE,
+                           COL_GIT_STATUS, "",
                            -1);
         return;
     }
@@ -1041,6 +1239,7 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                            COL_LABEL, "  (empty)",
                            COL_PATH, "",
                            COL_LOADED, TRUE,
+                           COL_GIT_STATUS, "",
                            -1);
         return;
     }
@@ -1052,6 +1251,14 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                 ? (const DirScanNode*)g_ptr_array_index(node->children, i)
                 : NULL;
         gchar* full = g_build_filename(node->dirname, e->name, NULL);
+        const gchar* git_badge = "";
+        if (app != NULL && app->git_statuses != NULL) {
+            const gchar* b = (const gchar*)g_hash_table_lookup(app->git_statuses, full);
+            if (b != NULL) {
+                git_badge = b;
+            }
+        }
+
         GtkTreeIter iter;
         gtk_tree_store_append(store, &iter, parent);
 
@@ -1065,6 +1272,7 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                                COL_LABEL, label,
                                COL_PATH, full,
                                COL_LOADED, is_expanded,
+                               COL_GIT_STATUS, git_badge,
                                -1);
             g_free(label);
 
@@ -1080,6 +1288,7 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                                    COL_LABEL, "...",
                                    COL_PATH, "",
                                    COL_LOADED, TRUE,
+                                   COL_GIT_STATUS, "",
                                    -1);
             }
         } else {
@@ -1090,6 +1299,7 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                                COL_LABEL, label,
                                COL_PATH, full,
                                COL_LOADED, TRUE,
+                               COL_GIT_STATUS, git_badge,
                                -1);
             g_free(label);
         }
@@ -1109,6 +1319,13 @@ static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* paren
 /* Populate the tree store with directory contents */
 void populate_store(GtkTreeStore* store, AppData* app, const gchar* dirname,
                     gboolean show_hidden, gint sort_mode) {
+    if (app != NULL) {
+        if (app->git_statuses != NULL) {
+            g_hash_table_destroy(app->git_statuses);
+            app->git_statuses = NULL;
+        }
+        app->git_statuses = scan_git_statuses(dirname);
+    }
     gtk_tree_store_clear(store);
     populate_level(store, app, NULL, dirname, show_hidden, sort_mode);
 }
@@ -1235,6 +1452,7 @@ void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
                        COL_LABEL, "...",
                        COL_PATH, "",
                        COL_LOADED, TRUE,
+                       COL_GIT_STATUS, "",
                        -1);
     gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LOADED, FALSE, -1);
 
@@ -1556,6 +1774,7 @@ typedef struct {
     gchar* select_path;
     gchar* select_name;
     DirScanNode* root_node;
+    GHashTable* git_statuses;
 } DirScanTaskData;
 
 static void dir_scan_task_data_free(gpointer data) {
@@ -1566,6 +1785,9 @@ static void dir_scan_task_data_free(gpointer data) {
     g_free(td->dirname);
     if (td->expanded_snapshot != NULL) {
         g_hash_table_destroy(td->expanded_snapshot);
+    }
+    if (td->git_statuses != NULL) {
+        g_hash_table_destroy(td->git_statuses);
     }
     g_free(td->select_path);
     g_free(td->select_name);
@@ -1602,6 +1824,12 @@ static void dir_scan_thread_func(GTask* task, gpointer source_object,
     if (g_task_return_error_if_cancelled(task)) {
         return;
     }
+
+    td->git_statuses = scan_git_statuses(td->dirname);
+
+    if (g_task_return_error_if_cancelled(task)) {
+        return;
+    }
     g_task_return_boolean(task, TRUE);
 }
 
@@ -1625,6 +1853,15 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     if (app->selection != NULL) {
         g_signal_handlers_block_by_func(app->selection,
                                         (gpointer)on_selection_changed, app);
+    }
+
+    if (app->git_statuses != NULL) {
+        g_hash_table_destroy(app->git_statuses);
+        app->git_statuses = NULL;
+    }
+    if (td->git_statuses != NULL) {
+        app->git_statuses = td->git_statuses;
+        td->git_statuses = NULL;
     }
 
     gtk_tree_store_clear(store);

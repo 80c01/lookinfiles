@@ -177,7 +177,8 @@ int main(int argc, char** argv) {
                            G_TYPE_STRING,   /* COL_TYPE */
                            G_TYPE_STRING,   /* COL_LABEL */
                            G_TYPE_STRING,   /* COL_PATH */
-                           G_TYPE_BOOLEAN); /* COL_LOADED */
+                           G_TYPE_BOOLEAN,  /* COL_LOADED */
+                           G_TYPE_STRING);  /* COL_GIT_STATUS */
 
     GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
     gtk_widget_set_name(tree_view, "file-tree");
@@ -192,6 +193,13 @@ int main(int argc, char** argv) {
     gtk_cell_renderer_set_padding(renderer_name, 6, 4);
     gtk_tree_view_column_pack_start(col_name, renderer_name, TRUE);
     gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", COL_LABEL);
+
+    GtkCellRenderer* renderer_git = gtk_cell_renderer_text_new();
+    gtk_cell_renderer_set_padding(renderer_git, 6, 4);
+    gtk_cell_renderer_set_alignment(renderer_git, 1.0f, 0.5f);
+    gtk_tree_view_column_pack_end(col_name, renderer_git, FALSE);
+    gtk_tree_view_column_add_attribute(col_name, renderer_git, "markup", COL_GIT_STATUS);
+
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_name);
 
     GtkWidget* left_scroll = gtk_scrolled_window_new();
@@ -469,6 +477,10 @@ int main(int argc, char** argv) {
     g_main_loop_run(loop);
 
     stop_directory_monitors(app);
+    if (app->git_statuses != NULL) {
+        g_hash_table_destroy(app->git_statuses);
+        app->git_statuses = NULL;
+    }
     if (app->expanded_paths != NULL) {
         g_hash_table_destroy(app->expanded_paths);
         app->expanded_paths = NULL;
