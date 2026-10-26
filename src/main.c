@@ -71,12 +71,32 @@ int main(int argc, char** argv) {
         }
     }
 
-    /* Top bar path label */
+    /* Top bar path label & interactive breadcrumbs / status pills */
     char path_text[512];
     snprintf(path_text, sizeof(path_text), "Directory: %s", start_dir);
     GtkWidget* path_label = gtk_label_new(path_text);
-    gtk_widget_set_halign(path_label, GTK_ALIGN_START);
-    gtk_widget_set_margin_start(path_label, 5);
+    gtk_widget_set_visible(path_label, FALSE);
+
+    GtkWidget* breadcrumb_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    gtk_widget_set_valign(breadcrumb_box, GTK_ALIGN_CENTER);
+
+    GtkWidget* sort_btn = gtk_button_new_with_label("⇅ Sort: Name");
+    gtk_button_set_has_frame(GTK_BUTTON(sort_btn), FALSE);
+    gtk_widget_set_focusable(sort_btn, FALSE);
+    gtk_widget_add_css_class(sort_btn, "status-pill");
+    gtk_widget_set_tooltip_text(sort_btn, "Cycle sort order (o)");
+
+    GtkWidget* hidden_btn = gtk_button_new_with_label("👁 Hidden: Off");
+    gtk_button_set_has_frame(GTK_BUTTON(hidden_btn), FALSE);
+    gtk_widget_set_focusable(hidden_btn, FALSE);
+    gtk_widget_add_css_class(hidden_btn, "status-pill");
+    gtk_widget_set_tooltip_text(hidden_btn, "Toggle hidden files (i)");
+
+    GtkWidget* help_btn = gtk_button_new_with_label("? Help");
+    gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);
+    gtk_widget_set_focusable(help_btn, FALSE);
+    gtk_widget_add_css_class(help_btn, "status-pill");
+    gtk_widget_set_tooltip_text(help_btn, "Show keyboard shortcuts (h)");
 
     /* Spacer label for top bar */
     GtkWidget* sep_label = gtk_label_new(" ");
@@ -205,6 +225,13 @@ int main(int argc, char** argv) {
     app->text_view = text_view;
     app->search_entry = search_entry;
     app->path_label = path_label;
+    app->breadcrumb_box = breadcrumb_box;
+    app->sort_btn = sort_btn;
+    app->hidden_btn = hidden_btn;
+    app->help_btn = help_btn;
+    g_signal_connect(sort_btn, "clicked", G_CALLBACK(on_sort_pill_clicked), app);
+    g_signal_connect(hidden_btn, "clicked", G_CALLBACK(on_hidden_pill_clicked), app);
+    g_signal_connect(help_btn, "clicked", G_CALLBACK(on_help_pill_clicked), app);
     update_path_label(app);
 
     app->term_scroll = term_scroll;
@@ -322,11 +349,15 @@ int main(int argc, char** argv) {
     app->dim_window = dim_box;
     app->dim_label = dim_label;
 
-    GtkWidget* outer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    GtkWidget* label_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    GtkWidget* outer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget* label_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_set_name(label_row, "statusbar");
     gtk_box_append(GTK_BOX(label_row), path_label);
+    gtk_box_append(GTK_BOX(label_row), breadcrumb_box);
     gtk_box_append(GTK_BOX(label_row), sep_label);
+    gtk_box_append(GTK_BOX(label_row), sort_btn);
+    gtk_box_append(GTK_BOX(label_row), hidden_btn);
+    gtk_box_append(GTK_BOX(label_row), help_btn);
     gtk_box_append(GTK_BOX(outer_vbox), label_row);
     gtk_box_append(GTK_BOX(outer_vbox), overlay);
 

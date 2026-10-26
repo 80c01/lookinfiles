@@ -74,6 +74,10 @@ typedef struct {
     GtkTreeSelection* selection;
     GtkWidget* search_entry;
     GtkWidget* path_label;
+    GtkWidget* breadcrumb_box;
+    GtkWidget* sort_btn;
+    GtkWidget* hidden_btn;
+    GtkWidget* help_btn;
     gchar* search_term;
     gboolean show_hidden; /* hidden files (dot-prefixed) */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */

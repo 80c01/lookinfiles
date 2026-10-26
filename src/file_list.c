@@ -949,14 +949,162 @@ void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
     g_free(full_path);
 }
 
-/* Top bar label: current directory + sort mode + hidden files state */
+static void on_breadcrumb_clicked(GtkButton* btn, gpointer data) {
+    AppData* app = (AppData*)data;
+    const gchar* target = (const gchar*)g_object_get_data(G_OBJECT(btn), "target-path");
+    if (target != NULL && g_strcmp0(target, app->base_dir) != 0) {
+        reload_directory(app, target);
+    }
+}
+
+void on_sort_pill_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    cycle_sort_mode((AppData*)data);
+}
+
+void on_hidden_pill_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    toggle_hidden_files((AppData*)data);
+}
+
+void on_help_pill_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app->help_window != NULL) {
+        if (gtk_widget_get_visible(app->help_window)) {
+            gtk_widget_set_visible(app->help_window, FALSE);
+        } else {
+            gtk_window_present(GTK_WINDOW(app->help_window));
+        }
+    }
+}
+
+typedef struct {
+    gchar* label;
+    gchar* full_path;
+} BreadcrumbSeg;
+
+/* Top bar: clickable path breadcrumbs + right-aligned sort/hidden/help pills */
 void update_path_label(AppData* app) {
     static const gchar* sort_names[SORT_COUNT] = {"name", "date", "size", "ext"};
-    gchar* text = g_strdup_printf("Directory: %s   [sort: %s] [hidden: %s]",
-                                   app->base_dir, sort_names[app->sort_mode],
-                                   app->show_hidden ? "on" : "off");
-    gtk_label_set_text(GTK_LABEL(app->path_label), text);
-    g_free(text);
+    static const gchar* sort_pill_labels[SORT_COUNT] = {
+        "⇅ Sort: Name", "⇅ Sort: Date", "⇅ Sort: Size", "⇅ Sort: Ext"
+    };
+
+    if (app->path_label != NULL) {
+        gchar* text = g_strdup_printf("Directory: %s   [sort: %s] [hidden: %s]",
+                                       app->base_dir, sort_names[app->sort_mode],
+                                       app->show_hidden ? "on" : "off");
+        gtk_label_set_text(GTK_LABEL(app->path_label), text);
+        g_free(text);
+    }
+
+    if (app->breadcrumb_box != NULL && app->base_dir != NULL) {
+        GtkWidget* child;
+        while ((child = gtk_widget_get_first_child(app->breadcrumb_box)) != NULL) {
+            gtk_box_remove(GTK_BOX(app->breadcrumb_box), child);
+        }
+
+        GArray* segs = g_array_new(FALSE, FALSE, sizeof(BreadcrumbSeg));
+        const gchar* home = g_get_home_dir();
+        gsize home_len = (home != NULL) ? strlen(home) : 0;
+        gboolean under_home = (home_len > 1 &&
+                               g_str_has_prefix(app->base_dir, home) &&
+                               (app->base_dir[home_len] == '\0' ||
+                                app->base_dir[home_len] == '/'));
+
+        gchar* accum = NULL;
+        const gchar* rest = NULL;
+        if (under_home) {
+            BreadcrumbSeg root_seg = { g_strdup("🏠 ~"), g_strdup(home) };
+            g_array_append_val(segs, root_seg);
+            accum = g_strdup(home);
+            rest = app->base_dir + home_len;
+        } else {
+            BreadcrumbSeg root_seg = { g_strdup("📁 /"), g_strdup("/") };
+            g_array_append_val(segs, root_seg);
+            accum = g_strdup("/");
+            rest = app->base_dir;
+        }
+
+        gchar** parts = g_strsplit(rest, "/", -1);
+        for (gint i = 0; parts != NULL && parts[i] != NULL; i++) {
+            if (parts[i][0] == '\0') {
+                continue;
+            }
+            gchar* next_accum = g_build_filename(accum, parts[i], NULL);
+            g_free(accum);
+            accum = next_accum;
+
+            BreadcrumbSeg seg = { g_strdup(parts[i]), g_strdup(accum) };
+            g_array_append_val(segs, seg);
+        }
+        g_strfreev(parts);
+        g_free(accum);
+
+        guint total = segs->len;
+        for (guint i = 0; i < total; i++) {
+            /* Collapse middle segments if path is very deep (> 6 segments) */
+            if (total > 6 && i == 1) {
+                GtkWidget* sep = gtk_label_new("›");
+                gtk_widget_add_css_class(sep, "breadcrumb-sep");
+                gtk_box_append(GTK_BOX(app->breadcrumb_box), sep);
+
+                GtkWidget* dots = gtk_label_new("…");
+                gtk_widget_add_css_class(dots, "breadcrumb-sep");
+                gtk_box_append(GTK_BOX(app->breadcrumb_box), dots);
+
+                i = total - 4;
+            }
+
+            if (i > 0) {
+                GtkWidget* sep = gtk_label_new("›");
+                gtk_widget_add_css_class(sep, "breadcrumb-sep");
+                gtk_box_append(GTK_BOX(app->breadcrumb_box), sep);
+            }
+
+            BreadcrumbSeg* s = &g_array_index(segs, BreadcrumbSeg, i);
+            gboolean is_last = (i == total - 1);
+            gchar* btn_text = (is_last && i > 0)
+                                  ? g_strdup_printf("📂 %s", s->label)
+                                  : g_strdup(s->label);
+            GtkWidget* btn = gtk_button_new_with_label(btn_text);
+            g_free(btn_text);
+            gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+            gtk_widget_set_focusable(btn, FALSE);
+            gtk_widget_add_css_class(btn, is_last ? "breadcrumb-current"
+                                                  : "breadcrumb-item");
+            gtk_widget_set_tooltip_text(btn, s->full_path);
+            g_object_set_data_full(G_OBJECT(btn), "target-path",
+                                   g_strdup(s->full_path), g_free);
+            g_signal_connect(btn, "clicked",
+                             G_CALLBACK(on_breadcrumb_clicked), app);
+            gtk_box_append(GTK_BOX(app->breadcrumb_box), btn);
+        }
+
+        for (guint i = 0; i < segs->len; i++) {
+            BreadcrumbSeg* s = &g_array_index(segs, BreadcrumbSeg, i);
+            g_free(s->label);
+            g_free(s->full_path);
+        }
+        g_array_unref(segs);
+    }
+
+    if (app->sort_btn != NULL) {
+        gtk_button_set_label(GTK_BUTTON(app->sort_btn),
+                             sort_pill_labels[app->sort_mode]);
+    }
+
+    if (app->hidden_btn != NULL) {
+        gtk_button_set_label(GTK_BUTTON(app->hidden_btn),
+                             app->show_hidden ? "👁 Hidden: On"
+                                              : "👁 Hidden: Off");
+        if (app->show_hidden) {
+            gtk_widget_add_css_class(app->hidden_btn, "pill-active");
+        } else {
+            gtk_widget_remove_css_class(app->hidden_btn, "pill-active");
+        }
+    }
 }
 
 typedef struct {
