@@ -98,8 +98,10 @@ make clean                     # remove binary
 ## 🚀 Run
 
 ```bash
-./explorateur_fichiers            # windowed mode (default)
-./explorateur_fichiers -f         # start in fullscreen (same as --fullscreen)
+./explorateur_fichiers                        # windowed mode (default 1000x600)
+./explorateur_fichiers --size 1920x1080       # start with specific window size (or -s 1920x1080)
+./explorateur_fichiers -f                     # start in fullscreen (same as --fullscreen)
+./explorateur_fichiers /path/to/directory     # start in specific directory
 ```
 
 ## 📦 Prerequisites

@@ -54,8 +54,9 @@ The codebase is organized into modules under `src/`:
 - **`ui.c` / `ui.h`**: Paned layout toggle/rebuild (`Ctrl+Shift+L`), pane resize feedback
   popup, floating help cheat sheet (`h`), fullscreen toggle (`f`), panel focus cycling
   (`Alt+Left/Right`), and screen CSS styling.
-- **`main.c`**: Application entry point, CLI arguments parsing (`-f`/`--fullscreen`),
-  widget creation and layout assembly, signal wiring, and `gtk_main()`.
+- **`main.c`**: Application entry point, CLI arguments parsing (`-f`/`--fullscreen`,
+  `-s`/`--size WIDTHxHEIGHT`), widget creation and layout assembly, signal wiring,
+  and `gtk_main()`.
 
 Key widgets, in creation order in `main()`:
 window → `path_label` (top bar) → store/tree_view → left/right `GtkScrolledWindow`

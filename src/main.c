@@ -18,14 +18,54 @@ static void on_window_destroy(GtkWidget* widget, gpointer data) {
 
 int main(int argc, char** argv) {
     /* Strip custom options first:
-     * -f / --fullscreen: start in fullscreen mode. */
+     * -f / --fullscreen: start in fullscreen mode.
+     * -s / --size WIDTHxHEIGHT: start with specific window size (e.g. 1920x1080). */
     gboolean start_fullscreen = FALSE;
+    int win_width = 1000;
+    int win_height = 600;
     int kept = 0;
     for (int i = 0; i < argc; i++) {
-        if (i > 0 && (g_strcmp0(argv[i], "-f") == 0 ||
-                      g_strcmp0(argv[i], "--fullscreen") == 0)) {
-            start_fullscreen = TRUE;
-            continue;
+        if (i > 0) {
+            if (g_strcmp0(argv[i], "-f") == 0 ||
+                g_strcmp0(argv[i], "--fullscreen") == 0) {
+                start_fullscreen = TRUE;
+                continue;
+            }
+            if (g_strcmp0(argv[i], "-s") == 0 ||
+                g_strcmp0(argv[i], "--size") == 0) {
+                if (i + 1 < argc) {
+                    i++;
+                    int w = 0, h = 0;
+                    char sep = 0, tail = 0;
+                    if (sscanf(argv[i], "%d %c %d %c", &w, &sep, &h, &tail) == 3 &&
+                        (sep == 'x' || sep == 'X') && w > 0 && h > 0) {
+                        win_width = w;
+                        win_height = h;
+                    } else {
+                        g_printerr("[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n",
+                                   argv[i]);
+                    }
+                } else {
+                    g_printerr("[ Option '%s' requires an argument (e.g. --size 1920x1080) ]\n",
+                               argv[i]);
+                }
+                continue;
+            }
+            if (g_str_has_prefix(argv[i], "--size=") ||
+                g_str_has_prefix(argv[i], "-s=")) {
+                const char* val = strchr(argv[i], '=') + 1;
+                int w = 0, h = 0;
+                char sep = 0, tail = 0;
+                if (sscanf(val, "%d %c %d %c", &w, &sep, &h, &tail) == 3 &&
+                    (sep == 'x' || sep == 'X') && w > 0 && h > 0) {
+                    win_width = w;
+                    win_height = h;
+                } else {
+                    g_printerr("[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n",
+                               val);
+                }
+                continue;
+            }
         }
         argv[kept++] = argv[i];
     }
@@ -54,7 +94,7 @@ int main(int argc, char** argv) {
     GtkWidget* window = gtk_window_new();
     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), loop);
     gtk_window_set_title(GTK_WINDOW(window), "File Explorer");
-    gtk_window_set_default_size(GTK_WINDOW(window), 1000, 600);
+    gtk_window_set_default_size(GTK_WINDOW(window), win_width, win_height);
 
     /* Get current directory */
     char cwd_buf[2048];
