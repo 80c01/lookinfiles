@@ -3,6 +3,7 @@
 #include "minimap.h"
 #include "terminal.h"
 #include "viewer.h"
+#include "video.h"
 #include "search.h"
 #include "ui.h"
 
@@ -77,9 +78,35 @@ gboolean is_pdf_file(const gchar* name) {
     return (g_ascii_strcasecmp(ext, "pdf") == 0);
 }
 
+/* Return TRUE if file name indicates a video file */
+gboolean is_video_file(const gchar* name) {
+    if (name == NULL) {
+        return FALSE;
+    }
+    const gchar* ext = file_extension(name);
+    return (g_ascii_strcasecmp(ext, "mp4") == 0 ||
+            g_ascii_strcasecmp(ext, "m4v") == 0 ||
+            g_ascii_strcasecmp(ext, "mkv") == 0 ||
+            g_ascii_strcasecmp(ext, "webm") == 0 ||
+            g_ascii_strcasecmp(ext, "mov") == 0 ||
+            g_ascii_strcasecmp(ext, "qt") == 0 ||
+            g_ascii_strcasecmp(ext, "avi") == 0 ||
+            g_ascii_strcasecmp(ext, "flv") == 0 ||
+            g_ascii_strcasecmp(ext, "wmv") == 0 ||
+            g_ascii_strcasecmp(ext, "asf") == 0 ||
+            g_ascii_strcasecmp(ext, "ogv") == 0 ||
+            g_ascii_strcasecmp(ext, "ts") == 0 ||
+            g_ascii_strcasecmp(ext, "mts") == 0 ||
+            g_ascii_strcasecmp(ext, "m2ts") == 0 ||
+            g_ascii_strcasecmp(ext, "3gp") == 0 ||
+            g_ascii_strcasecmp(ext, "vob") == 0 ||
+            g_ascii_strcasecmp(ext, "mpg") == 0 ||
+            g_ascii_strcasecmp(ext, "mpeg") == 0);
+}
+
 /* Return TRUE if file content can be rendered richly in preview pane */
 gboolean is_renderable_file(const gchar* name) {
-    return is_markdown_file(name) || is_html_file(name) || is_image_file(name) || is_pdf_file(name);
+    return is_markdown_file(name) || is_html_file(name) || is_image_file(name) || is_pdf_file(name) || is_video_file(name);
 }
 
 /* Sort: directories first, then according to active sort mode (thread-safe) */
@@ -328,8 +355,7 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
         return "🎵";
     }
     /* Video */
-    if (EXT_IS(".mp4") || EXT_IS(".avi") || EXT_IS(".mkv") ||
-        EXT_IS(".mov") || EXT_IS(".webm") || EXT_IS(".flv")) {
+    if (is_video_file(name)) {
         return "🎬";
     }
     /* Archives */
@@ -1988,6 +2014,10 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     update_path_label(app);
 
     /* Clear right pane */
+    video_preview_stop(app);
+    if (app->preview_stack != NULL) {
+        gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
+    }
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
     gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
     gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 0);
@@ -2078,7 +2108,7 @@ void activate_selected_entry(AppData* app) {
             update_path_label(app);
             workspace_apply_positions(app);
         }
-        if (is_image_file(name) || is_pdf_file(name)) {
+        if (is_image_file(name) || is_pdf_file(name) || is_video_file(name)) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         } else {
             editor_open_file(app, name, full);

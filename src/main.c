@@ -1,6 +1,7 @@
 #include "app_types.h"
 #include "file_list.h"
 #include "viewer.h"
+#include "video.h"
 #include "editor.h"
 #include "minimap.h"
 #include "terminal.h"
@@ -264,11 +265,17 @@ int main(int argc, char** argv) {
     gtk_widget_set_vexpand(minimap, TRUE);
     gtk_widget_set_visible(minimap, FALSE);
 
-    /* Viewer zone: notebook (page 0 is preview, additional pages are editor tabs) */
+    /* Viewer zone: notebook (page 0 is preview stack, additional pages are editor tabs) */
+    GtkWidget* preview_stack = gtk_stack_new();
+    gtk_widget_set_name(preview_stack, "preview-stack");
+    gtk_widget_set_hexpand(preview_stack, TRUE);
+    gtk_widget_set_vexpand(preview_stack, TRUE);
+    gtk_stack_add_named(GTK_STACK(preview_stack), right_scroll, "text");
+
     GtkWidget* notebook = gtk_notebook_new();
     gtk_widget_set_hexpand(notebook, TRUE);
     gtk_widget_set_vexpand(notebook, TRUE);
-    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), right_scroll,
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
                              gtk_label_new("Preview"));
     GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(viewer_box, TRUE);
@@ -382,6 +389,8 @@ int main(int argc, char** argv) {
     update_path_label(app);
 
     app->notebook = notebook;
+    app->preview_stack = preview_stack;
+    video_preview_init(app);
     g_signal_connect(notebook, "switch-page",
                      G_CALLBACK(on_editor_switch_page_changed), app);
     g_signal_connect(editor_notebook, "switch-page",
@@ -537,6 +546,7 @@ int main(int argc, char** argv) {
 
     g_main_loop_run(loop);
 
+    video_preview_stop(app);
     stop_directory_monitors(app);
     if (app->git_statuses != NULL) {
         g_hash_table_destroy(app->git_statuses);

@@ -3,6 +3,7 @@
 #include "markdown.h"
 #include "html.h"
 #include "pdf.h"
+#include "video.h"
 #include "search.h"
 #include "ui.h"
 
@@ -116,7 +117,7 @@ void set_view_monospace(GtkWidget* view, gboolean monospace) {
 
 /* Return TRUE if file extension or content indicates source code */
 gboolean is_code_file(const gchar* name) {
-    if (name == NULL || is_image_file(name) || is_pdf_file(name)) {
+    if (name == NULL || is_image_file(name) || is_pdf_file(name) || is_video_file(name)) {
         return FALSE;
     }
     const gchar* ext = file_extension(name);
@@ -295,6 +296,15 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         }
         toggle_fullscreen(app->window);
         return TRUE;
+    case GDK_KEY_p:
+    case GDK_KEY_P:
+    case GDK_KEY_space:
+        app->pending_g = FALSE;
+        if (app->viewed_name != NULL && is_video_file(app->viewed_name) && !app->render_raw) {
+            video_preview_toggle_play(app);
+            return TRUE;
+        }
+        return FALSE;
     case GDK_KEY_m:
     case GDK_KEY_M:
         app->pending_g = FALSE;
@@ -703,6 +713,16 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
 }
 
 void load_file_content(AppData* app, const gchar* name, const gchar* full) {
+    if (is_video_file(name)) {
+        render_video_preview(app, name, full);
+        return;
+    }
+
+    video_preview_stop(app);
+    if (app->preview_stack != NULL) {
+        gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
+    }
+
     if (is_pdf_file(name)) {
         render_pdf_preview(app, name, full);
         return;
@@ -1088,6 +1108,10 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     }
 
     if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bookmark") == 0) {
+        video_preview_stop(app);
+        if (app->preview_stack != NULL) {
+            gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
+        }
         if (app->preview_cancellable != NULL) {
             g_cancellable_cancel(app->preview_cancellable);
             g_clear_object(&app->preview_cancellable);
@@ -1106,7 +1130,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         g_object_unref(task);
     } else {
         if (g_strcmp0(full, app->viewed_path) == 0 && !app->file_dirty &&
-            gtk_text_buffer_get_char_count(app->buffer) > 0) {
+            (is_video_file(name) || gtk_text_buffer_get_char_count(app->buffer) > 0)) {
             if (!app->switching_ws) {
                 workspace_save_current(app);
             }

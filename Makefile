@@ -29,6 +29,7 @@ TARGET = explorateur_fichiers
 SRCS = src/main.c \
        src/file_list.c \
        src/viewer.c \
+       src/video.c \
        src/markdown.c \
        src/html.c \
        src/pdf.c \

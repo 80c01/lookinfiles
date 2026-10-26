@@ -153,6 +153,19 @@ typedef struct {
     gdouble editor_frac;        /* split ratio between preview panel and editor panel */
     GList* editors;             /* EditorTab*, order matching tab order */
 
+    /* Video preview */
+    GtkWidget* preview_stack;   /* GtkStack: "text" (text_view) or "video" (video_player) */
+    GtkWidget* video_scroll;    /* Scrolled window wrapping video_box */
+    GtkWidget* video_box;       /* Box container for video preview */
+    GtkWidget* video_widget;    /* GtkVideo widget */
+    GtkWidget* video_title;     /* Video title label */
+    GtkWidget* video_meta;      /* Video metadata info label */
+    GtkWidget* video_status;    /* Video warning/error status label */
+    gulong video_duration_sig;  /* Signal ID for notify::duration */
+    gulong video_prepared_sig;  /* Signal ID for notify::prepared */
+    gulong video_error_sig;     /* Signal ID for notify::error */
+    gchar* video_current_path;  /* Canonical path of currently loaded video */
+
     /* Floating key-binding cheat sheet (toggled by '?') */
     GtkWidget* help_window;
     GtkWidget* workspace_hbox;

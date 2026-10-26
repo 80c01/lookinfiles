@@ -1,6 +1,7 @@
 #include "ui.h"
 #include "file_list.h"
 #include "viewer.h"
+#include "video.h"
 #include "minimap.h"
 #include "terminal.h"
 #include "editor.h"
@@ -46,7 +47,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "Ctrl+F / Ctrl+B", "Scroll a page down / up"},
     {"Right panel (viewer)", "gg / G", "Jump to the start / end of the file"},
     {"Right panel (viewer)", "/", "Search in the file (n / N: next / previous match)"},
-    {"Right panel (viewer)", "m", "Toggle rendered preview / raw text view (Markdown, HTML, PDF, images)"},
+    {"Right panel (viewer)", "m", "Toggle rendered preview / raw text view (Markdown, HTML, PDF, images, video)"},
+    {"Right panel (viewer)", "Space / p", "Play / pause active video preview"},
     {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},
     {"Editor tabs", "Ctrl+W", "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"},
     {"Editor tabs", "Ctrl+E", "Move editor tabs to dedicated panel right of preview, or dock back"},
@@ -1010,6 +1012,7 @@ void workspace_switch(AppData* app, gint idx) {
     app->applying_layout = TRUE;
 
     if (ws_changed) {
+        video_preview_stop(app);
         editor_detach_tabs(app);
     }
 
@@ -1651,9 +1654,27 @@ void apply_panel_borders(void) {
         "#file-tree:selected expander {\n"
         "  color: #ffffff;\n"
         "}\n"
-        "#viewer text, textview text, textview, #right-scroll, #right-scroll viewport {\n"
+        "#viewer text, textview text, textview, #right-scroll, #right-scroll viewport,\n"
+        "#video-scroll, #video-scroll viewport, #video-box {\n"
         "  background-color: #121314;\n"
         "  color: #d4d4d4;\n"
+        "}\n"
+        "#video-title {\n"
+        "  color: #4fc1ff;\n"
+        "  font-weight: bold;\n"
+        "  font-size: 1.15em;\n"
+        "}\n"
+        "#video-meta {\n"
+        "  color: #888888;\n"
+        "  font-size: 0.9em;\n"
+        "}\n"
+        "#video-status {\n"
+        "  color: #f14c4c;\n"
+        "  font-size: 0.85em;\n"
+        "}\n"
+        "#video-player, video {\n"
+        "  background-color: #000000;\n"
+        "  border-radius: 4px;\n"
         "}\n"
         "notebook, notebook stack {\n"
         "  background-color: #121314;\n"

@@ -23,6 +23,7 @@ Simple graphical application to browse the file system.
 - ✅ Hanging indent for list items: long lines in unordered, ordered, and task list items wrap automatically to fit available width, with wrapped lines and multi-paragraph items (`<p>` within `<li>` or continuation lines) staying cleanly aligned with the item text rather than falling back to the bullet or margin
 - ✅ Image preview: image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.bmp`, `.ico`, `.webp`, `.tiff`, etc.) are rendered directly in the right preview pane with a metadata header (format, native dimensions in pixels, file size) and automatic scaling to fit the window; press `m` to toggle between fitted view and 1:1 original scale
 - ✅ PDF document preview: PDF files (`.pdf`) are rendered directly in the right preview pane using `poppler-glib` and Cairo, featuring a metadata banner (title, author, PDF version, page count, file size), sharp page rendering with page dividers, and an `m` toggle to switch between high-resolution rendered pages and extracted text mode (searchable with `/`)
+- ✅ Video preview: video files (`.mp4`, `.mkv`, `.webm`, `.mov`, `.avi`, `.flv`, `.wmv`, `.m4v`, `.ts`, `.mpg`, etc.) are previewed directly in the right preview pane using GTK 4's native `GtkVideo` and `GtkMediaStream` player, complete with an aligned Dark+ metadata header (title, container, duration, audio/video streams, file size), transport controls (play/pause, seek timeline, volume), and an `m` toggle to inspect raw file details and binary header hex dump
 - ✅ Dedicated Editor panel: editor tabs can either be docked inside the preview notebook or placed in a dedicated panel positioned to the right of the preview panel (`Ctrl+E` or click the top-bar `✏ Editor: Docked / Dedicated` pill button). When in dedicated mode, browse and preview files on the center panel while editing code on the right panel across resizable dividers, preserved per virtual workspace.
 
 ## ⌨️ Keyboard shortcuts
@@ -59,7 +60,7 @@ Simple graphical application to browse the file system.
 | `Ctrl+A` | Switch between files and bookmarks views in the explorer panel |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
-| `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), or rendered pages / text extraction (PDF) |
+| `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), rendered pages / text extraction (PDF), or player / raw header mode (video) |
 | `?` | Show / hide the key-binding help panel (any key inside it closes it) |
 | `Esc` | Close the search bar |
 
@@ -76,7 +77,8 @@ Same vim bindings as the list, applied to the displayed content:
 | `G` | Go to the bottom of the file |
 | `/` | Open the search bar (searches in the displayed content) |
 | `n` / `N` | Next / previous occurrence (selected and centered, wraps around) |
-| `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), or rendered pages / text extraction (PDF) |
+| `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), rendered pages / text extraction (PDF), or player / raw header mode (video) |
+| `Space` / `p` | Play / pause video playback when previewing a video |
 | `Esc` | Close the search bar |
 
 ### Editor tabs (when the viewer zone shows a file opened for editing)

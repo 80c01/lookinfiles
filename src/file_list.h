@@ -8,6 +8,7 @@ gboolean is_markdown_file(const gchar* name);
 gboolean is_html_file(const gchar* name);
 gboolean is_image_file(const gchar* name);
 gboolean is_pdf_file(const gchar* name);
+gboolean is_video_file(const gchar* name);
 gboolean is_renderable_file(const gchar* name);
 const gchar* file_icon(const gchar* name, gboolean is_dir);
 
