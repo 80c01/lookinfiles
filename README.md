@@ -42,7 +42,7 @@ Simple graphical application to browse the file system.
 | `j` / `k` | Select next / previous visible entry (navigates through expanded subdirectories) |
 | `Space` | Expand / collapse the selected directory |
 | `l` / `Right` | Expand the selected directory, or step into its first child |
-| `Left` | Collapse the selected directory, or jump to its parent directory row |
+| `h` / `Left` | Collapse the selected directory, or jump to its parent directory row |
 | `Ctrl+F` | Jump one page forward (like Page Down) |
 | `Ctrl+B` | Jump one page backward (like Page Up) |
 | `gg` | Go to the top of the list |

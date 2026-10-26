@@ -1529,7 +1529,7 @@ void on_row_activated(GtkTreeView* view, GtkTreePath* path,
     activate_selected_entry((AppData*)data);
 }
 
-/* Treeview key press handler: j k gg G zz / n N BackSpace ? i o Ctrl+B Ctrl+F f m space l Right Left */
+/* Treeview key press handler: j k gg G zz / n N BackSpace ? i o Ctrl+B Ctrl+F f m space l Right h Left */
 gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
                            guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
@@ -1605,6 +1605,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             }
         }
         return TRUE;
+    case GDK_KEY_h:
     case GDK_KEY_Left:
         app->pending_g = FALSE;
         {

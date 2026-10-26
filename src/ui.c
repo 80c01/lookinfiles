@@ -31,7 +31,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"File panel", "zz", "Center selected entry in the panel"},
     {"File panel", "Ctrl+F / Ctrl+B", "Page down / up"},
     {"File panel", "Space / l / Right", "Expand / collapse directory (or step into first child)"},
-    {"File panel", "Left", "Collapse directory or jump to parent"},
+    {"File panel", "h / Left", "Collapse directory or jump to parent"},
     {"File panel", "/", "Search by substring (n / N: next / previous match)"},
     {"File panel", "Enter / Double-click", "Expand/collapse directory, or open file in an editing tab (Ctrl+Enter to enter directory)"},
     {"File panel", "Backspace", "Go to the parent directory"},
