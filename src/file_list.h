@@ -48,6 +48,6 @@ void cycle_sort_mode(AppData* app);
 
 void activate_selected_entry(AppData* app);
 void on_row_activated(GtkTreeView* view, GtkTreePath* path, GtkTreeViewColumn* column, gpointer data);
-gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data);
+gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
 
 #endif /* FILE_LIST_H */

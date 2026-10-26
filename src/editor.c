@@ -120,11 +120,11 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     apply_vscode_scheme(buffer, view);
 #endif
 
-    GtkWidget* scroll = gtk_scrolled_window_new(NULL, NULL);
+    GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
                                    GTK_POLICY_AUTOMATIC,
                                    GTK_POLICY_AUTOMATIC);
-    gtk_container_add(GTK_CONTAINER(scroll), view);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), view);
 
     tab->buffer = buffer;
     tab->scroll = scroll;
@@ -133,8 +133,6 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
 
     gint page = gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook),
                                          scroll, tab->tab_label);
-    gtk_widget_show_all(scroll);
-    gtk_widget_show(tab->tab_label);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), page);
     gtk_widget_grab_focus(view);
 
@@ -155,11 +153,26 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
                            page_num == 0);
 }
 
-gboolean editor_confirm_discard(EditorTab* tab) {
+typedef struct {
+    GMainLoop* loop;
+    gint response;
+} DiscardDialogData;
+
+static void on_discard_dialog_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
+    (void)dlg;
+    DiscardDialogData* d = (DiscardDialogData*)user_data;
+    d->response = response_id;
+    if (g_main_loop_is_running(d->loop)) {
+        g_main_loop_quit(d->loop);
+    }
+}
+
+gboolean editor_confirm_discard(AppData* app, EditorTab* tab) {
     if (!gtk_text_buffer_get_modified(tab->buffer)) {
         return TRUE;
     }
-    GtkWidget* dlg = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL,
+    GtkWidget* dlg = gtk_message_dialog_new(app ? app->window : NULL,
+                                            GTK_DIALOG_MODAL,
                                             GTK_MESSAGE_QUESTION,
                                             GTK_BUTTONS_NONE,
                                             "%s has unsaved changes. "
@@ -167,9 +180,14 @@ gboolean editor_confirm_discard(EditorTab* tab) {
     gtk_dialog_add_button(GTK_DIALOG(dlg), "Cancel", GTK_RESPONSE_CANCEL);
     gtk_dialog_add_button(GTK_DIALOG(dlg), "Close without saving",
                           GTK_RESPONSE_OK);
-    gint resp = gtk_dialog_run(GTK_DIALOG(dlg));
-    gtk_widget_destroy(dlg);
-    return resp == GTK_RESPONSE_OK;
+
+    DiscardDialogData d = { g_main_loop_new(NULL, FALSE), GTK_RESPONSE_CANCEL };
+    g_signal_connect(dlg, "response", G_CALLBACK(on_discard_dialog_response), &d);
+    gtk_window_present(GTK_WINDOW(dlg));
+    g_main_loop_run(d.loop);
+    g_main_loop_unref(d.loop);
+    gtk_window_destroy(GTK_WINDOW(dlg));
+    return d.response == GTK_RESPONSE_OK;
 }
 
 void editor_close_page(AppData* app, gint page) {
@@ -185,7 +203,7 @@ void editor_close_page(AppData* app, gint page) {
             break;
         }
     }
-    if (tab == NULL || !editor_confirm_discard(tab)) {
+    if (tab == NULL || !editor_confirm_discard(app, tab)) {
         return;
     }
     g_signal_handlers_disconnect_by_func(tab->buffer,

@@ -14,7 +14,7 @@ void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view);
 void viewer_scroll_lines(AppData* app, gint lines);
 void viewer_scroll_page(AppData* app, gint direction);
 void viewer_goto(AppData* app, gboolean top);
-gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data);
+gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
 
 void load_file_content(AppData* app, const gchar* name, const gchar* full);
 void render_image_preview(AppData* app, const gchar* name, const gchar* full);

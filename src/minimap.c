@@ -2,16 +2,15 @@
 
 /* Pixels per buffer line: fitted into widget with a ceiling for short files */
 gdouble minimap_line_height(GtkWidget* widget, GtkTextBuffer* buffer) {
-    GtkAllocation a;
     gint lines = gtk_text_buffer_get_line_count(buffer);
     if (widget == NULL || lines <= 0) {
         return 0.0;
     }
-    gtk_widget_get_allocation(widget, &a);
-    if (a.height <= 0) {
+    gint height = gtk_widget_get_height(widget);
+    if (height <= 0) {
         return 0.0;
     }
-    return MIN(10.0, (gdouble)a.height / lines);
+    return MIN(10.0, (gdouble)height / lines);
 }
 
 /* First and last line currently visible in the viewer */
@@ -158,21 +157,20 @@ void on_minimap_adj_changed(GtkAdjustment* adjustment, gpointer data) {
     minimap_update_visibility((AppData*)data);
 }
 
-gboolean on_minimap_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
+void on_minimap_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
+    GtkWidget* widget = GTK_WIDGET(area);
     AppData* app = (AppData*)data;
-    GtkAllocation a;
     gdouble mm;
     gint first, last;
 
-    gtk_widget_get_allocation(widget, &a);
-    if (a.width <= 0 || a.height <= 0) {
-        return FALSE;
+    if (width <= 0 || height <= 0) {
+        return;
     }
-    if (app->mm_cache == NULL || app->mm_cache_w != a.width ||
-        app->mm_cache_h != a.height) {
-        minimap_build_cache(widget, app, a.width, a.height);
-        app->mm_cache_w = a.width;
-        app->mm_cache_h = a.height;
+    if (app->mm_cache == NULL || app->mm_cache_w != width ||
+        app->mm_cache_h != height) {
+        minimap_build_cache(widget, app, width, height);
+        app->mm_cache_w = width;
+        app->mm_cache_h = height;
     }
 
     cairo_set_source_surface(cr, app->mm_cache, 0, 0);
@@ -183,17 +181,15 @@ gboolean on_minimap_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     if (mm > 0.0) {
         minimap_viewport(GTK_TEXT_VIEW(app->text_view), &first, &last);
         cairo_set_source_rgba(cr, 0.47, 0.47, 0.47, 0.35);
-        cairo_rectangle(cr, 0, first * mm, a.width,
+        cairo_rectangle(cr, 0, first * mm, width,
                         (last - first + 1) * mm);
         cairo_fill(cr);
     }
 
     /* Thin border on the viewer side */
     cairo_set_source_rgb(cr, 40.0 / 255.0, 42.0 / 255.0, 44.0 / 255.0);
-    cairo_rectangle(cr, 0, 0, 1, a.height);
+    cairo_rectangle(cr, 0, 0, 1, height);
     cairo_fill(cr);
-
-    return FALSE;
 }
 
 void minimap_goto(AppData* app, gdouble y) {
@@ -257,41 +253,34 @@ void minimap_goto(AppData* app, gdouble y) {
     gtk_widget_queue_draw(app->minimap);
 }
 
-gboolean on_minimap_button_press(GtkWidget* widget,
-                                 GdkEventButton* event,
-                                 gpointer data) {
-    (void)widget;
+void on_minimap_pressed(GtkGestureClick* gesture, gint n_press,
+                        gdouble x, gdouble y, gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
     AppData* app = (AppData*)data;
-    if (event->type != GDK_BUTTON_PRESS || event->button != 1) {
-        return FALSE;
-    }
     app->mm_dragging = TRUE;
-    minimap_goto(app, event->y);
-    return TRUE;
+    minimap_goto(app, y);
 }
 
-gboolean on_minimap_motion(GtkWidget* widget, GdkEventMotion* event,
-                           gpointer data) {
-    (void)widget;
+void on_minimap_motion(GtkEventControllerMotion* ctrl,
+                       gdouble x, gdouble y, gpointer data) {
+    (void)ctrl;
+    (void)x;
     AppData* app = (AppData*)data;
     if (app->mm_dragging) {
-        minimap_goto(app, event->y);
-        return TRUE;
+        minimap_goto(app, y);
     }
-    return FALSE;
 }
 
-gboolean on_minimap_button_release(GtkWidget* widget,
-                                   GdkEventButton* event,
-                                   gpointer data) {
-    (void)widget;
-    (void)event;
+void on_minimap_released(GtkGestureClick* gesture, gint n_press,
+                         gdouble x, gdouble y, gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    (void)y;
     AppData* app = (AppData*)data;
-    if (app->mm_dragging) {
-        app->mm_dragging = FALSE;
-        return TRUE;
-    }
-    return FALSE;
+    app->mm_dragging = FALSE;
 }
 
 void on_minimap_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
@@ -305,10 +294,11 @@ void on_minimap_scroll(GtkAdjustment* adjustment, gpointer data) {
     gtk_widget_queue_draw(((AppData*)data)->minimap);
 }
 
-void on_minimap_size_allocate(GtkWidget* widget, GtkAllocation* allocation,
-                              gpointer data) {
-    (void)widget;
-    (void)allocation;
+void on_minimap_resize(GtkDrawingArea* area, gint width, gint height,
+                       gpointer data) {
+    (void)area;
+    (void)width;
+    (void)height;
     minimap_invalidate((AppData*)data);
 }
 

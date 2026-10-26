@@ -1,4 +1,4 @@
-# 📁 File Explorer in C with GTK+ 3
+# 📁 File Explorer in C with GTK 4
 
 Simple graphical application to browse the file system.
 
@@ -32,7 +32,7 @@ Simple graphical application to browse the file system.
 | `Ctrl+Q` | Quit the application |
 | `f` | Toggle fullscreen (works with either panel focused; `Ctrl+F` keeps its paging role) |
 | `Ctrl+Shift+L` | Stack the terminal pane below the viewer, or put it back beside it; the file list panel stays fixed and the viewer/terminal split ratio is kept |
-| `Ctrl+T` | Terminal pane beside the viewer (needs `libvte-2.91-dev`): `Ctrl+T` opens a pane right of the previous ones, `Ctrl+Shift+T` opens a new pane below them — each with a fresh shell in the current directory; exit the shell (`Ctrl+D` / `exit`) to close its pane |
+| `Ctrl+T` | Terminal pane beside the viewer (needs `libvte-2.91-gtk4-dev`): `Ctrl+T` opens a pane right of the previous ones, `Ctrl+Shift+T` opens a new pane below them — each with a fresh shell in the current directory; exit the shell (`Ctrl+D` / `exit`) to close its pane |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels: file list → viewer → terminal panel (cycles) |
 
 ### Left panel (when the list has focus)
@@ -101,24 +101,24 @@ make clean                     # remove binary
 
 ## 📦 Prerequisites
 
-- GTK+ 3 Development: `libgtk-3-dev`
+- GTK 4 Development: `libgtk-4-dev`
 - GCC: `gcc`
 
 Install on Debian/Ubuntu:
 ```bash
-sudo apt install libgtk-3-dev build-essential
+sudo apt install libgtk-4-dev build-essential
 ```
 
 Optional (embedded terminal panel, recommended):
 ```bash
-sudo apt install libvte-2.91-dev
+sudo apt install libvte-2.91-gtk4-dev
 ```
 The Makefile detects it automatically; without it the build still works and
 `Ctrl+T` shows a notice instead of the terminal.
 
 Optional (syntax highlighting in the viewer):
 ```bash
-sudo apt install libgtksourceview-3.0-dev
+sudo apt install libgtksourceview-5-dev
 ```
 Detected the same way; without it the viewer stays plain text.
 
@@ -170,4 +170,5 @@ explorateur_fichiers     # Compiled binary
 - **v1.15**: Custom panel backgrounds & selection highlight: `#191A1B` for the file explorer sidebar with high-contrast active (`#0e639c`) and backdrop (`#094771`) selection with bold white text and comfortable padding, `#121314` for the preview and editor panel (with synchronized GtkSourceView syntax scheme and minimap background), and `#1f2021` for the integrated terminal
 - **v1.16**: Enhanced HTML preview rendering: base64 data URI image support (`data:image/...;base64`), code blocks with language extraction and banners, description lists (`<dl>`, `<dt>`, `<dd>`), `<details>`/`<summary>` disclosure, task list checkboxes (`☑`/`☐`), keyboard badges (`<kbd>`), `<abbr>` tooltips, table captions (`<caption>`) & numeric cell alignment, document metadata banner (author & description), smart links, and over 40 math, Greek, and arrow HTML entities
 - **v1.17**: Hanging indent and aligned paragraph wrapping for list items: automatic line wrapping in rendered HTML and Markdown previews with hanging indentation (`left-margin` and negative first-line `indent`) across unordered, ordered, and task lists at all nesting depths ($d=0..7$), ensuring wrapped continuation lines and multi-paragraph list items (`<p>` within `<li>` or indented continuation blocks) align under the item text
-- Compatible with GTK+ 3.10+ (needed for `GtkSearchEntry`)
+- **v2.0**: Migrated to **GTK 4** (`gtk4`, `gtksourceview-5`, `vte-2.91-gtk4`) with GSK GPU-accelerated rendering, `GdkPaintable`/`GdkTexture` image & PDF rendering, and GTK 4 event controllers (`GtkEventControllerKey`, `GtkGestureClick`, `GtkEventControllerMotion`, `GtkEventControllerFocus`)
+- Compatible with GTK 4.0+

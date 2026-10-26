@@ -13,7 +13,7 @@ static const gchar* VSCODE_SCHEME_XML =
     "<!-- Inherits from a built-in dark scheme so languages whose style ids\n"
     "     are not overridden here keep Dark+ compatible colors. -->\n"
     "<style-scheme id=\"vscode-dark\" _name=\"VS Code Dark\" version=\"1.0\"\n"
-    "               parent-scheme=\"oblivion\">\n"
+    "               parent-scheme=\"Adwaita-dark\">\n"
     "  <_description>VS Code Dark+ palette for the file explorer viewer</_description>\n"
     "  <style name=\"text\" background=\"#121314\" foreground=\"#d4d4d4\"/>\n"
     "  <style name=\"def\" foreground=\"#d4d4d4\"/>\n"
@@ -66,8 +66,8 @@ static const gchar* VSCODE_SCHEME_XML =
 void apply_viewer_background(GtkWidget* view) {
     gtk_widget_set_name(view, "viewer");
     GtkCssProvider* css = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(
-        css, "#viewer text { background-color: #121314; }", -1, NULL);
+    gtk_css_provider_load_from_string(
+        css, "#viewer text { background-color: #121314; }");
     gtk_style_context_add_provider(gtk_widget_get_style_context(view),
                                    GTK_STYLE_PROVIDER(css),
                                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -106,15 +106,12 @@ void set_view_monospace(GtkWidget* view, gboolean monospace) {
     if (view == NULL) {
         return;
     }
-    GtkStyleContext* ctx = gtk_widget_get_style_context(view);
     if (monospace) {
-        gtk_style_context_add_class(ctx, "code-font");
+        gtk_widget_add_css_class(view, "code-font");
     } else {
-        gtk_style_context_remove_class(ctx, "code-font");
+        gtk_widget_remove_css_class(view, "code-font");
     }
-#if GTK_CHECK_VERSION(3, 16, 0)
     gtk_text_view_set_monospace(GTK_TEXT_VIEW(view), monospace);
-#endif
 }
 
 /* Return TRUE if file extension or content indicates source code */
@@ -227,10 +224,12 @@ void viewer_goto(AppData* app, gboolean top) {
     gtk_text_view_scroll_to_iter(view, &it, 0.0, FALSE, 0.0, top ? 0.0 : 1.0);
 }
 
-gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
-    (void)widget;
+gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
+                             guint keycode, GdkModifierType state, gpointer data) {
+    (void)controller;
+    (void)keycode;
     AppData* app = (AppData*)data;
-    guint key = event->keyval;
+    guint key = keyval;
 
     switch (key) {
     case GDK_KEY_j:
@@ -267,14 +266,14 @@ gboolean on_viewer_key_press(GtkWidget* widget, GdkEventKey* event, gpointer dat
         return TRUE;
     case GDK_KEY_b:
         app->pending_g = FALSE;
-        if (event->state & GDK_CONTROL_MASK) {
+        if (state & GDK_CONTROL_MASK) {
             viewer_scroll_page(app, -1);
             return TRUE;
         }
         return FALSE;
     case GDK_KEY_f:
         app->pending_g = FALSE;
-        if (event->state & GDK_CONTROL_MASK) {
+        if (state & GDK_CONTROL_MASK) {
             viewer_scroll_page(app, +1);
             return TRUE;
         }
@@ -351,10 +350,10 @@ void render_image_preview(AppData* app, const gchar* name, const gchar* full) {
 
     if (!app->render_raw) {
         /* Default mode: fit within available preview pane width and height */
-        GtkAllocation alloc;
-        gtk_widget_get_allocation(app->text_view, &alloc);
-        gint max_w = (alloc.width > 100) ? (alloc.width - 40) : 700;
-        gint max_h = (alloc.height > 140) ? (alloc.height - 120) : 500;
+        gint alloc_w = gtk_widget_get_width(app->text_view);
+        gint alloc_h = gtk_widget_get_height(app->text_view);
+        gint max_w = (alloc_w > 100) ? (alloc_w - 40) : 700;
+        gint max_h = (alloc_h > 140) ? (alloc_h - 120) : 500;
         if (orig_w > max_w || orig_h > max_h) {
             gdouble scale = MIN((gdouble)max_w / orig_w, (gdouble)max_h / orig_h);
             target_w = MAX(1, (gint)(orig_w * scale));
@@ -402,7 +401,9 @@ void render_image_preview(AppData* app, const gchar* name, const gchar* full) {
     g_free(size_str);
 
     /* Insert image */
-    gtk_text_buffer_insert_pixbuf(app->buffer, &iter, pix);
+    GdkTexture* tex = gdk_texture_new_for_pixbuf(pix);
+    gtk_text_buffer_insert_paintable(app->buffer, &iter, GDK_PAINTABLE(tex));
+    g_object_unref(tex);
     g_object_unref(pix);
 
     /* Apply center tag to the image line */

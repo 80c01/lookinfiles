@@ -63,12 +63,12 @@ void do_search(AppData* app, gint direction) {
 
 void show_search(AppData* app, gboolean from_viewer) {
     app->search_in_viewer = from_viewer;
-    gtk_widget_show(app->search_entry);
+    gtk_widget_set_visible(app->search_entry, TRUE);
     gtk_widget_grab_focus(app->search_entry);
 }
 
 void hide_search(AppData* app) {
-    gtk_widget_hide(app->search_entry);
+    gtk_widget_set_visible(app->search_entry, FALSE);
     /* Return to the panel that opened the bar */
     gtk_widget_grab_focus(app->search_in_viewer ? app->text_view
                                                 : GTK_WIDGET(app->tree_view));
@@ -76,7 +76,7 @@ void hide_search(AppData* app) {
 
 void on_search_changed(GtkSearchEntry* entry, gpointer data) {
     AppData* app = (AppData*)data;
-    const gchar* text = gtk_entry_get_text(GTK_ENTRY(entry));
+    const gchar* text = gtk_editable_get_text(GTK_EDITABLE(entry));
     g_free(app->search_term);
     app->search_term = g_strdup(text);
     if (app->search_in_viewer) {
@@ -86,14 +86,17 @@ void on_search_changed(GtkSearchEntry* entry, gpointer data) {
     }
 }
 
-void on_search_activate(GtkWidget* entry, gpointer data) {
+void on_search_activate(GtkSearchEntry* entry, gpointer data) {
     (void)entry;
     hide_search((AppData*)data);
 }
 
-gboolean on_search_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
-    (void)widget;
-    if (event->keyval == GDK_KEY_Escape) {
+gboolean on_search_key_press(GtkEventControllerKey* controller, guint keyval,
+                             guint keycode, GdkModifierType state, gpointer data) {
+    (void)controller;
+    (void)keycode;
+    (void)state;
+    if (keyval == GDK_KEY_Escape) {
         hide_search((AppData*)data);
         return TRUE;
     }

@@ -1,21 +1,21 @@
-# Makefile for the GTK+ 3 file explorer
+# Makefile for the GTK 4 file explorer
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Isrc `pkg-config --cflags gtk+-3.0`
-LDFLAGS = `pkg-config --libs gtk+-3.0`
+CFLAGS = -Wall -Wextra -Wno-deprecated-declarations -Isrc `pkg-config --cflags gtk4`
+LDFLAGS = `pkg-config --libs gtk4`
 
-# Optional embedded terminal: enabled automatically when libvte-2.91 is installed
-HAVE_VTE != pkg-config --exists vte-2.91 && echo yes || echo no
+# Optional embedded terminal: enabled automatically when vte-2.91-gtk4 is installed
+HAVE_VTE != pkg-config --exists vte-2.91-gtk4 && echo yes || echo no
 ifeq ($(HAVE_VTE),yes)
-CFLAGS += -DHAVE_VTE `pkg-config --cflags vte-2.91`
-LDFLAGS += `pkg-config --libs vte-2.91`
+CFLAGS += -DHAVE_VTE `pkg-config --cflags vte-2.91-gtk4`
+LDFLAGS += `pkg-config --libs vte-2.91-gtk4`
 endif
 
-# Optional syntax highlighting: enabled automatically when gtksourceview-3.0 is installed
-HAVE_GSV != pkg-config --exists gtksourceview-3.0 && echo yes || echo no
+# Optional syntax highlighting: enabled automatically when gtksourceview-5 is installed
+HAVE_GSV != pkg-config --exists gtksourceview-5 && echo yes || echo no
 ifeq ($(HAVE_GSV),yes)
-CFLAGS += -DHAVE_GSV `pkg-config --cflags gtksourceview-3.0`
-LDFLAGS += `pkg-config --libs gtksourceview-3.0`
+CFLAGS += -DHAVE_GSV `pkg-config --cflags gtksourceview-5`
+LDFLAGS += `pkg-config --libs gtksourceview-5`
 endif
 
 # Optional PDF rendering: enabled automatically when poppler-glib is installed

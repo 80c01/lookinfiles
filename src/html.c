@@ -1401,7 +1401,9 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
 
                 if (pix != NULL) {
                     ensure_newlines(ctx, 1);
-                    gtk_text_buffer_insert_pixbuf(ctx->buffer, &ctx->iter, pix);
+                    GdkTexture* tex = gdk_texture_new_for_pixbuf(pix);
+                    gtk_text_buffer_insert_paintable(ctx->buffer, &ctx->iter, GDK_PAINTABLE(tex));
+                    g_object_unref(tex);
                     g_object_unref(pix);
                     ensure_newlines(ctx, 1);
                 } else {

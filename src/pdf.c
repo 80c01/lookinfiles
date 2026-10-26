@@ -112,10 +112,9 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
     g_free(meta_text);
 
     if (!app->render_raw) {
-        /* Rendered pages mode: draw each page via Cairo into a pixbuf */
-        GtkAllocation alloc;
-        gtk_widget_get_allocation(app->text_view, &alloc);
-        gint max_w = (alloc.width > 120) ? (alloc.width - 60) : 700;
+        /* Rendered pages mode: draw each page via Cairo into a texture */
+        gint alloc_w = gtk_widget_get_width(app->text_view);
+        gint max_w = (alloc_w > 120) ? (alloc_w - 60) : 700;
 
         gint render_count = MIN(total_pages, MAX_RENDER_PAGES);
         for (gint i = 0; i < render_count; i++) {
@@ -140,11 +139,17 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
             poppler_page_render(page, cr);
             cairo_destroy(cr);
 
-            GdkPixbuf* pix = gdk_pixbuf_get_from_surface(surface, 0, 0, rw, rh);
+            cairo_surface_flush(surface);
+            gint stride = cairo_image_surface_get_stride(surface);
+            GBytes* bytes = g_bytes_new(cairo_image_surface_get_data(surface),
+                                        (gsize)stride * (gsize)rh);
+            GdkTexture* tex = gdk_memory_texture_new(
+                rw, rh, GDK_MEMORY_B8G8R8A8_PREMULTIPLIED, bytes, (gsize)stride);
+            g_bytes_unref(bytes);
             cairo_surface_destroy(surface);
             g_object_unref(page);
 
-            if (pix != NULL) {
+            if (tex != NULL) {
                 /* Page badge separator */
                 gchar* page_badge = g_strdup_printf("─── Page %d of %d ───\n\n",
                                                     i + 1, total_pages);
@@ -153,9 +158,9 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
                                                          "pdf_page_badge", NULL);
                 g_free(page_badge);
 
-                /* Insert rendered page pixbuf */
-                gtk_text_buffer_insert_pixbuf(app->buffer, &iter, pix);
-                g_object_unref(pix);
+                /* Insert rendered page texture */
+                gtk_text_buffer_insert_paintable(app->buffer, &iter, GDK_PAINTABLE(tex));
+                g_object_unref(tex);
 
                 GtkTextIter start_img = iter;
                 gtk_text_iter_backward_char(&start_img);

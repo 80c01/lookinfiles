@@ -284,7 +284,9 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
                     if (img_path != NULL && g_file_test(img_path, G_FILE_TEST_EXISTS)) {
                         GdkPixbuf* pix = gdk_pixbuf_new_from_file_at_scale(img_path, 480, -1, TRUE, NULL);
                         if (pix != NULL) {
-                            gtk_text_buffer_insert_pixbuf(buffer, iter, pix);
+                            GdkTexture* tex = gdk_texture_new_for_pixbuf(pix);
+                            gtk_text_buffer_insert_paintable(buffer, iter, GDK_PAINTABLE(tex));
+                            g_object_unref(tex);
                             g_object_unref(pix);
                             loaded = TRUE;
                         }

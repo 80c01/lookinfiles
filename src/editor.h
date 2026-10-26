@@ -11,7 +11,7 @@ void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data);
 void editor_apply_language(GtkTextBuffer* buffer, const gchar* name);
 void editor_open_file(AppData* app, const gchar* name, const gchar* full);
 void on_editor_switch_page_changed(GtkNotebook* notebook, GtkWidget* page, guint page_num, gpointer data);
-gboolean editor_confirm_discard(EditorTab* tab);
+gboolean editor_confirm_discard(AppData* app, EditorTab* tab);
 void editor_close_page(AppData* app, gint page);
 void editor_close_current(AppData* app);
 gboolean editor_save_current(AppData* app);

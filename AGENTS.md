@@ -4,8 +4,8 @@ Guidelines for AI coding agents working in this repository.
 
 ## Project overview
 
-`file explorer` written in C with GTK+ 3 (API 3.10+). Modular architecture in `src/`,
-no external dependencies beyond GTK (with optional VTE and GtkSourceView).
+`file explorer` written in C with GTK 4 (API 4.0+). Modular architecture in `src/`,
+no external dependencies beyond GTK (with optional VTE for GTK 4, GtkSourceView 5, and poppler-glib).
 
 Two-pane layout: left = real listing of the current working directory
 (`GtkTreeView` + `GtkTreeStore`, expandable directory tree with lazy-loading), right = text viewer /
@@ -14,7 +14,7 @@ directory listing, both inside a resizable `GtkPaned`.
 ## Build & run
 
 ```bash
-make              # build (gcc -Wall -Wextra, pkg-config gtk+-3.0)
+make              # build (gcc -Wall -Wextra, pkg-config gtk4)
 make clean        # remove binary
 ./explorateur_fichiers   # run (requires a display; shows a warning without one)
 ```

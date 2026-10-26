@@ -2,11 +2,8 @@
 #include "terminal.h"
 #include "editor.h"
 
-/* Fullscreen state read from GdkWindow (gtk_window_is_fullscreen requires GTK 3.18+) */
 gboolean window_is_fullscreen(GtkWindow* win) {
-    GdkWindow* gdk_window = gtk_widget_get_window(GTK_WIDGET(win));
-    return gdk_window != NULL &&
-           (gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_FULLSCREEN);
+    return gtk_window_is_fullscreen(win);
 }
 
 void toggle_fullscreen(GtkWindow* window) {
@@ -55,29 +52,35 @@ static const KeyHelpEntry KEY_HELP[] = {
 };
 
 /* In the help panel, any key closes it and gives keyboard focus back to the file list */
-gboolean on_help_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
-    (void)widget;
-    (void)event;
+gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval,
+                           guint keycode, GdkModifierType state, gpointer data) {
+    (void)controller;
+    (void)keyval;
+    (void)keycode;
+    (void)state;
     AppData* app = (AppData*)data;
-    gtk_widget_hide(app->help_window);
+    gtk_widget_set_visible(app->help_window, FALSE);
     gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     return TRUE;
 }
 
 /* Build floating cheat sheet toggled by 'h' */
 void create_help_panel(GtkWindow* parent, AppData* app) {
-    GtkWidget* win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    GtkWidget* win = gtk_window_new();
     gtk_widget_set_name(win, "help-window");
     gtk_window_set_title(GTK_WINDOW(win),
                          "Key bindings - press h or any key to close");
     gtk_window_set_transient_for(GTK_WINDOW(win), parent);
     gtk_window_set_resizable(GTK_WINDOW(win), FALSE);
-    gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER_ON_PARENT);
-    gtk_container_set_border_width(GTK_CONTAINER(win), 14);
+    gtk_window_set_hide_on_close(GTK_WINDOW(win), TRUE);
 
     GtkGrid* grid = GTK_GRID(gtk_grid_new());
     gtk_grid_set_row_spacing(grid, 3);
     gtk_grid_set_column_spacing(grid, 16);
+    gtk_widget_set_margin_top(GTK_WIDGET(grid), 14);
+    gtk_widget_set_margin_bottom(GTK_WIDGET(grid), 14);
+    gtk_widget_set_margin_start(GTK_WIDGET(grid), 14);
+    gtk_widget_set_margin_end(GTK_WIDGET(grid), 14);
 
     const gchar* current_section = NULL;
     gint row = 0;
@@ -107,10 +110,13 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
         row++;
     }
 
-    gtk_container_add(GTK_CONTAINER(win), GTK_WIDGET(grid));
+    gtk_window_set_child(GTK_WINDOW(win), GTK_WIDGET(grid));
 
-    g_signal_connect(win, "key-press-event",
+    GtkEventController* key_ctrl = gtk_event_controller_key_new();
+    g_signal_connect(key_ctrl, "key-pressed",
                      G_CALLBACK(on_help_key_press), app);
+    gtk_widget_add_controller(win, key_ctrl);
+
     app->help_window = win;
 }
 
@@ -133,8 +139,7 @@ void focus_adjacent_panel(gint step, AppData* app) {
     count = (gint)panels->len;
 
     /* Which panel owns the focus? Walk the focused widget's ancestors */
-    GtkWidget* w = gtk_window_get_focus(GTK_WINDOW(
-        gtk_widget_get_toplevel(GTK_WIDGET(app->tree_view))));
+    GtkWidget* w = gtk_window_get_focus(app->window);
     while (w != NULL && current < 0) {
         guint i;
         for (i = 0; i < panels->len; i++) {
@@ -154,51 +159,62 @@ void focus_adjacent_panel(gint step, AppData* app) {
     g_ptr_array_unref(panels);
 }
 
-gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
-    (void)widget;
+gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
+                             guint keycode, GdkModifierType state, gpointer data) {
+    (void)controller;
+    (void)keycode;
     AppData* app = (AppData*)data;
 
+    /* Ctrl+Q: quit */
+    if ((state & GDK_CONTROL_MASK) &&
+        (keyval == GDK_KEY_q || keyval == GDK_KEY_Q)) {
+        if (app->main_loop != NULL && g_main_loop_is_running(app->main_loop)) {
+            g_main_loop_quit(app->main_loop);
+        }
+        return TRUE;
+    }
+
     /* Alt+Left / Alt+Right: panel focus cycling */
-    if ((event->state & GDK_MOD1_MASK) != 0 &&
-        (event->keyval == GDK_KEY_Left || event->keyval == GDK_KEY_Right)) {
-        focus_adjacent_panel(event->keyval == GDK_KEY_Right ? 1 : -1, app);
+    if ((state & GDK_ALT_MASK) != 0 &&
+        (keyval == GDK_KEY_Left || keyval == GDK_KEY_Right)) {
+        focus_adjacent_panel(keyval == GDK_KEY_Right ? 1 : -1, app);
         return TRUE;
     }
 
     /* Ctrl+Shift+L: stack the panels or restore side-by-side layout.
      * Shift makes the keyval uppercase, so accept both l and L. */
-    if ((event->state & GDK_CONTROL_MASK) &&
-        (event->state & GDK_SHIFT_MASK) &&
-        (event->keyval == GDK_KEY_l || event->keyval == GDK_KEY_L)) {
+    if ((state & GDK_CONTROL_MASK) &&
+        (state & GDK_SHIFT_MASK) &&
+        (keyval == GDK_KEY_l || keyval == GDK_KEY_L)) {
         layout_toggle(app);
         return TRUE;
     }
 
     /* Ctrl+S: save current editor tab; Ctrl+W: close current editor tab */
-    if ((event->state & GDK_CONTROL_MASK) &&
-        !(event->state & GDK_SHIFT_MASK) &&
-        (event->keyval == GDK_KEY_s || event->keyval == GDK_KEY_S)) {
+    if ((state & GDK_CONTROL_MASK) &&
+        !(state & GDK_SHIFT_MASK) &&
+        (keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
         return editor_save_current(app);
     }
-    if ((event->state & GDK_CONTROL_MASK) &&
-        (event->keyval == GDK_KEY_w || event->keyval == GDK_KEY_W)) {
+    if ((state & GDK_CONTROL_MASK) &&
+        (keyval == GDK_KEY_w || keyval == GDK_KEY_W)) {
         editor_close_current(app);
         return TRUE;
     }
 
     /* Ctrl+T: terminal pane beside last running one;
      * Ctrl+Shift+T: new terminal row below running ones */
-    if ((event->state & GDK_CONTROL_MASK) == 0 ||
-        (event->keyval != GDK_KEY_t && event->keyval != GDK_KEY_T)) {
+    if ((state & GDK_CONTROL_MASK) == 0 ||
+        (keyval != GDK_KEY_t && keyval != GDK_KEY_T)) {
         return FALSE;
     }
 
 #ifdef HAVE_VTE
     /* Each pane gets its own shell in the current directory */
     if (!gtk_widget_get_visible(app->term_scroll)) {
-        gtk_widget_show(app->term_scroll);
+        gtk_widget_set_visible(app->term_scroll, TRUE);
     }
-    term_spawn_pane(app, event->keyval == GDK_KEY_T /* new row below? */);
+    term_spawn_pane(app, keyval == GDK_KEY_T /* new row below? */);
 #else
     /* No VTE installed: the panel is a notice instead of a terminal */
     gtk_widget_set_visible(app->term_scroll,
@@ -208,40 +224,28 @@ gboolean on_window_key_press(GtkWidget* widget, GdkEventKey* event, gpointer dat
     return TRUE;
 }
 
-/* Show or refresh small popup centered on split handle, listing w x h of panes */
+/* Show or refresh small overlay badge listing w x h of panes */
 void update_pane_dims(GtkWidget* paned_widget, AppData* app) {
     GtkPaned* paned = GTK_PANED(paned_widget);
-    GtkWidget* c1 = gtk_paned_get_child1(paned);
-    GtkWidget* c2 = gtk_paned_get_child2(paned);
-    if (!gtk_widget_get_visible(c2)) {
+    GtkWidget* c1 = gtk_paned_get_start_child(paned);
+    GtkWidget* c2 = gtk_paned_get_end_child(paned);
+    if (c1 == NULL || c2 == NULL || !gtk_widget_get_visible(c2)) {
         return; /* nothing to drag on that side (terminal hidden) */
     }
-    GtkAllocation a1, a2;
-    gtk_widget_get_allocation(c1, &a1);
-    gtk_widget_get_allocation(c2, &a2);
-    if (a1.width <= 0 || a2.width <= 0) {
+    gint w1 = gtk_widget_get_width(c1);
+    gint h1 = gtk_widget_get_height(c1);
+    gint w2 = gtk_widget_get_width(c2);
+    gint h2 = gtk_widget_get_height(c2);
+    if (w1 <= 0 || w2 <= 0) {
         return; /* not laid out yet */
     }
 
     gchar* text = g_strdup_printf("%d \xc3\x97 %d  |  %d \xc3\x97 %d",
-                                  a1.width, a1.height, a2.width, a2.height);
+                                  w1, h1, w2, h2);
     gtk_label_set_text(GTK_LABEL(app->dim_label), text);
     g_free(text);
 
-    gtk_widget_show_all(app->dim_window);
-    /* Size popup to content, center on handle (screen coordinates) */
-    GtkRequisition nat;
-    gtk_widget_get_preferred_size(app->dim_window, NULL, &nat);
-    gtk_window_resize(GTK_WINDOW(app->dim_window), nat.width, nat.height);
-    gint ox = 0;
-    gint oy = 0;
-    GdkWindow* gdk_window = gtk_widget_get_window(GTK_WIDGET(paned));
-    if (gdk_window != NULL) {
-        gdk_window_get_origin(gdk_window, &ox, &oy);
-    }
-    gtk_window_move(GTK_WINDOW(app->dim_window),
-                    ox + a1.width - nat.width / 2,
-                    oy + a1.height / 2 - nat.height / 2);
+    gtk_widget_set_visible(app->dim_window, TRUE);
 }
 
 gboolean pane_dims_idle(gpointer data) {
@@ -252,14 +256,16 @@ gboolean pane_dims_idle(gpointer data) {
     return FALSE; /* one-shot */
 }
 
-gboolean on_paned_button_press(GtkWidget* widget, GdkEventButton* event, gpointer data) {
+void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
+                      gdouble x, gdouble y, gpointer data) {
+    (void)n_press;
+    (void)x;
+    (void)y;
     AppData* app = (AppData*)data;
-    if (event->button == 1) { /* handle grabbed: show sizes */
-        app->panning = TRUE;
-        app->dims_paned = widget;
-        update_pane_dims(widget, app);
-    }
-    return FALSE; /* let GtkPaned start drag */
+    GtkWidget* widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+    app->panning = TRUE;
+    app->dims_paned = widget;
+    update_pane_dims(widget, app);
 }
 
 void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointer data) {
@@ -271,25 +277,27 @@ void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointer data)
     }
 }
 
-gboolean on_paned_button_release(GtkWidget* widget, GdkEventButton* event, gpointer data) {
-    (void)widget;
-    (void)event;
+void on_paned_released(GtkGestureClick* gesture, gint n_press,
+                       gdouble x, gdouble y, gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    (void)y;
     AppData* app = (AppData*)data;
     app->panning = FALSE;
-    gtk_widget_hide(app->dim_window);
-    return FALSE;
+    gtk_widget_set_visible(app->dim_window, FALSE);
 }
 
 /* Remember the viewer/terminal split as a fraction of pane size */
 void layout_save_frac(AppData* app) {
-    GtkAllocation a;
     if (app->right_paned == NULL) {
         return;
     }
     GtkOrientation o =
         gtk_orientable_get_orientation(GTK_ORIENTABLE(app->right_paned));
-    gtk_widget_get_allocation(app->right_paned, &a);
-    gint len = (o == GTK_ORIENTATION_VERTICAL ? a.height : a.width);
+    gint len = (o == GTK_ORIENTATION_VERTICAL
+                    ? gtk_widget_get_height(app->right_paned)
+                    : gtk_widget_get_width(app->right_paned));
     if (len > 0) {
         app->right_frac = (gdouble)gtk_paned_get_position(
             GTK_PANED(app->right_paned)) / len;
@@ -299,11 +307,11 @@ void layout_save_frac(AppData* app) {
 /* Restore saved split proportion once new paned is laid out */
 gboolean layout_position_idle(gpointer data) {
     AppData* app = (AppData*)data;
-    GtkAllocation a;
     GtkOrientation o =
         gtk_orientable_get_orientation(GTK_ORIENTABLE(app->right_paned));
-    gtk_widget_get_allocation(app->right_paned, &a);
-    gint len = (o == GTK_ORIENTATION_VERTICAL ? a.height : a.width);
+    gint len = (o == GTK_ORIENTATION_VERTICAL
+                    ? gtk_widget_get_height(app->right_paned)
+                    : gtk_widget_get_width(app->right_paned));
     if (len > 0) {
         gtk_paned_set_position(GTK_PANED(app->right_paned),
                                (gint)(app->right_frac * len));
@@ -319,17 +327,20 @@ void layout_build(AppData* app, GtkOrientation orientation) {
         /* Hold panels so removing paned does not destroy them */
         g_object_ref(app->viewer_box);
         g_object_ref(app->term_scroll);
-        gtk_container_remove(GTK_CONTAINER(app->right_paned),
-                             app->viewer_box);
-        gtk_container_remove(GTK_CONTAINER(app->right_paned),
-                             app->term_scroll);
-        gtk_container_remove(GTK_CONTAINER(app->main_paned),
-                             app->right_paned);
+        gtk_paned_set_start_child(GTK_PANED(app->right_paned), NULL);
+        gtk_paned_set_end_child(GTK_PANED(app->right_paned), NULL);
+        gtk_paned_set_end_child(GTK_PANED(app->main_paned), NULL);
     }
 
     GtkWidget* right_paned = gtk_paned_new(orientation);
-    gtk_paned_pack1(GTK_PANED(right_paned), app->viewer_box, TRUE, TRUE);
-    gtk_paned_pack2(GTK_PANED(right_paned), app->term_scroll, FALSE, TRUE);
+    gtk_widget_set_hexpand(right_paned, TRUE);
+    gtk_widget_set_vexpand(right_paned, TRUE);
+    gtk_paned_set_start_child(GTK_PANED(right_paned), app->viewer_box);
+    gtk_paned_set_resize_start_child(GTK_PANED(right_paned), TRUE);
+    gtk_paned_set_shrink_start_child(GTK_PANED(right_paned), TRUE);
+    gtk_paned_set_end_child(GTK_PANED(right_paned), app->term_scroll);
+    gtk_paned_set_resize_end_child(GTK_PANED(right_paned), FALSE);
+    gtk_paned_set_shrink_end_child(GTK_PANED(right_paned), TRUE);
     if (snatched) {
         g_object_unref(app->viewer_box);
         g_object_unref(app->term_scroll);
@@ -341,15 +352,17 @@ void layout_build(AppData* app, GtkOrientation orientation) {
     app->right_paned = right_paned;
 
     /* Divider feedback handlers */
-    g_signal_connect(right_paned, "button-press-event",
-                     G_CALLBACK(on_paned_button_press), app);
-    g_signal_connect(right_paned, "button-release-event",
-                     G_CALLBACK(on_paned_button_release), app);
+    GtkGesture* click = gtk_gesture_click_new();
+    g_signal_connect(click, "pressed", G_CALLBACK(on_paned_pressed), app);
+    g_signal_connect(click, "released", G_CALLBACK(on_paned_released), app);
+    gtk_widget_add_controller(right_paned, GTK_EVENT_CONTROLLER(click));
+
     g_signal_connect(right_paned, "notify::position",
                      G_CALLBACK(on_paned_notify_position), app);
 
-    gtk_paned_pack2(GTK_PANED(app->main_paned), right_paned, TRUE, TRUE);
-    gtk_widget_show(right_paned);
+    gtk_paned_set_end_child(GTK_PANED(app->main_paned), right_paned);
+    gtk_paned_set_resize_end_child(GTK_PANED(app->main_paned), TRUE);
+    gtk_paned_set_shrink_end_child(GTK_PANED(app->main_paned), TRUE);
 
     /* Restore last split proportion */
     g_idle_add(layout_position_idle, app);
@@ -384,7 +397,6 @@ void apply_panel_borders(void) {
         "  color: #cccccc;\n"
         "}\n"
         "paned > separator {\n"
-        "  -gtk-icon-source: none;\n"
         "  min-width: 2px;\n"
         "  min-height: 2px;\n"
         "  background-color: #232527;\n"
@@ -481,7 +493,7 @@ void apply_panel_borders(void) {
         "  border: 1px solid #2e3134;\n"
         "  border-radius: 2px;\n"
         "}\n"
-        "entry:focus, searchentry:focus {\n"
+        "entry:focus-within, searchentry:focus-within {\n"
         "  border-color: #007acc;\n"
         "}\n"
         "scrollbar trough {\n"
@@ -504,13 +516,17 @@ void apply_panel_borders(void) {
         "  background-color: #191a1b;\n"
         "  border: 1px solid #007acc;\n"
         "  color: #cccccc;\n"
+        "  padding: 6px 10px;\n"
         "}\n"
         ".code-font text, textview.code-font text, .code-font {\n"
         "  font-family: 'Consolas', 'DejaVu Sans Mono', 'Liberation Mono', 'Menlo', 'Courier New', monospace;\n"
         "}\n";
-    gtk_css_provider_load_from_data(css, DATA, -1, NULL);
-    gtk_style_context_add_provider_for_screen(
-        gdk_screen_get_default(), GTK_STYLE_PROVIDER(css),
-        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    gtk_css_provider_load_from_string(css, DATA);
+    GdkDisplay* display = gdk_display_get_default();
+    if (display != NULL) {
+        gtk_style_context_add_provider_for_display(
+            display, GTK_STYLE_PROVIDER(css),
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    }
     g_object_unref(css);
 }

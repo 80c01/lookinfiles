@@ -897,7 +897,7 @@ void reload_directory(AppData* app, const gchar* new_dir) {
     /* Clear prior search term */
     g_free(app->search_term);
     app->search_term = NULL;
-    gtk_entry_set_text(GTK_ENTRY(app->search_entry), "");
+    gtk_editable_set_text(GTK_EDITABLE(app->search_entry), "");
 
     /* Reset expanded paths when changing root directory */
     if (app->expanded_paths != NULL) {
@@ -1012,10 +1012,12 @@ void on_row_activated(GtkTreeView* view, GtkTreePath* path,
 }
 
 /* Treeview key press handler: j k gg G / n N BackSpace h i o Ctrl+B Ctrl+F f m space l Right Left */
-gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data) {
-    (void)widget;
+gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
+                           guint keycode, GdkModifierType state, gpointer data) {
+    (void)controller;
+    (void)keycode;
     AppData* app = (AppData*)data;
-    guint key = event->keyval;
+    guint key = keyval;
 
     switch (key) {
     case GDK_KEY_j:
@@ -1126,7 +1128,7 @@ gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data)
     case GDK_KEY_KP_Delete:
     case GDK_KEY_ISO_Enter:
         app->pending_g = FALSE;
-        if ((event->state & GDK_CONTROL_MASK) != 0) {
+        if ((state & GDK_CONTROL_MASK) != 0) {
             /* Ctrl+Enter: enter directory as root */
             GtkTreeIter it;
             if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
@@ -1162,12 +1164,12 @@ gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data)
         }
         return TRUE;
     case GDK_KEY_h: /* h: toggle floating keybindings help */
-        if ((event->state & GDK_CONTROL_MASK) == 0) {
+        if ((state & GDK_CONTROL_MASK) == 0) {
             app->pending_g = FALSE;
             if (gtk_widget_get_visible(app->help_window)) {
-                gtk_widget_hide(app->help_window);
+                gtk_widget_set_visible(app->help_window, FALSE);
             } else {
-                gtk_widget_show_all(app->help_window);
+                gtk_window_present(GTK_WINDOW(app->help_window));
             }
             return TRUE;
         }
@@ -1184,14 +1186,14 @@ gboolean on_tree_key_press(GtkWidget* widget, GdkEventKey* event, gpointer data)
         return TRUE;
     case GDK_KEY_b: /* Ctrl+B: page up */
         app->pending_g = FALSE;
-        if (event->state & GDK_CONTROL_MASK) {
+        if (state & GDK_CONTROL_MASK) {
             page_up_rows(app);
             return TRUE;
         }
         return FALSE;
     case GDK_KEY_f: /* Ctrl+F: page down; f alone: fullscreen */
         app->pending_g = FALSE;
-        if (event->state & GDK_CONTROL_MASK) {
+        if (state & GDK_CONTROL_MASK) {
             page_down_rows(app);
             return TRUE;
         }

@@ -107,6 +107,7 @@ typedef struct {
 
     /* Main window: 'f' toggles fullscreen */
     GtkWindow* window;
+    GMainLoop* main_loop;
 
     /* Pane-resize feedback popup */
     GtkWidget* dim_window;
