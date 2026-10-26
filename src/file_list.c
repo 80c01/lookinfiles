@@ -721,7 +721,11 @@ gchar* find_git_root(const gchar* start_dir) {
     if (start_dir == NULL || start_dir[0] == '\0') {
         return NULL;
     }
-    gchar* curr = g_strdup(start_dir);
+    if (strstr(start_dir, "/.git/") != NULL || g_str_has_suffix(start_dir, "/.git") ||
+        g_strcmp0(start_dir, ".git") == 0) {
+        return NULL;
+    }
+    gchar* curr = g_canonicalize_filename(start_dir, NULL);
     while (curr != NULL && curr[0] != '\0') {
         gchar* dot_git = g_build_filename(curr, ".git", NULL);
         gboolean exists = g_file_test(dot_git, G_FILE_TEST_EXISTS);
@@ -743,13 +747,16 @@ gchar* find_git_root(const gchar* start_dir) {
 
 /* Run 'git status --porcelain=v1 -uall' and return a mapping of full_path -> badge markup */
 GHashTable* scan_git_statuses(const gchar* dir) {
-    gchar* git_root = find_git_root(dir);
-    if (git_root == NULL) {
+    gchar* raw_root = find_git_root(dir);
+    if (raw_root == NULL) {
         return NULL;
     }
+    gchar* git_root = g_canonicalize_filename(raw_root, NULL);
+    g_free(raw_root);
 
     gchar* argv[] = {
         "git",
+        "--no-optional-locks",
         "-c",
         "core.quotepath=false",
         "status",
@@ -860,15 +867,18 @@ GHashTable* scan_git_statuses(const gchar* dir) {
         }
 
         /* Store file's status */
-        g_hash_table_insert(statuses, g_strdup(full_path), g_strdup(badge));
+        g_hash_table_replace(statuses, g_strdup(full_path), g_strdup(badge));
 
         /* Rollup to parent directories up to git_root */
         gchar* parent = g_path_get_dirname(full_path);
         g_free(full_path);
 
         while (parent != NULL) {
+            gsize parent_len = strlen(parent);
             gboolean under_root = (g_strcmp0(parent, git_root) == 0) ||
-                                  (g_str_has_prefix(parent, git_root) && parent[root_len] == '/');
+                                  (parent_len > root_len &&
+                                   g_str_has_prefix(parent, git_root) &&
+                                   parent[root_len] == '/');
             if (!under_root) {
                 g_free(parent);
                 break;
@@ -878,13 +888,13 @@ GHashTable* scan_git_statuses(const gchar* dir) {
             if (is_modified) {
                 /* Modification takes precedence over untracked */
                 if (existing == NULL || strstr(existing, ">M<") == NULL) {
-                    g_hash_table_insert(statuses, g_strdup(parent),
-                                        g_strdup("<span foreground=\"#e2c08d\" weight=\"bold\">M</span>"));
+                    g_hash_table_replace(statuses, g_strdup(parent),
+                                         g_strdup("<span foreground=\"#e2c08d\" weight=\"bold\">M</span>"));
                 }
             } else if (is_untracked) {
                 if (existing == NULL) {
-                    g_hash_table_insert(statuses, g_strdup(parent),
-                                        g_strdup("<span foreground=\"#73c991\" weight=\"bold\">U</span>"));
+                    g_hash_table_replace(statuses, g_strdup(parent),
+                                         g_strdup("<span foreground=\"#73c991\" weight=\"bold\">U</span>"));
                 }
             }
 
@@ -1251,9 +1261,11 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                 ? (const DirScanNode*)g_ptr_array_index(node->children, i)
                 : NULL;
         gchar* full = g_build_filename(node->dirname, e->name, NULL);
+        gchar* can_full = g_canonicalize_filename(full, NULL);
+        g_free(full);
         const gchar* git_badge = "";
         if (app != NULL && app->git_statuses != NULL) {
-            const gchar* b = (const gchar*)g_hash_table_lookup(app->git_statuses, full);
+            const gchar* b = (const gchar*)g_hash_table_lookup(app->git_statuses, can_full);
             if (b != NULL) {
                 git_badge = b;
             }
@@ -1270,7 +1282,7 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                                COL_NAME, e->name,
                                COL_TYPE, "dir",
                                COL_LABEL, label,
-                               COL_PATH, full,
+                               COL_PATH, can_full,
                                COL_LOADED, is_expanded,
                                COL_GIT_STATUS, git_badge,
                                -1);
@@ -1297,13 +1309,13 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                                COL_NAME, e->name,
                                COL_TYPE, "file",
                                COL_LABEL, label,
-                               COL_PATH, full,
+                               COL_PATH, can_full,
                                COL_LOADED, TRUE,
                                COL_GIT_STATUS, git_badge,
                                -1);
             g_free(label);
         }
-        g_free(full);
+        g_free(can_full);
     }
 }
 
@@ -1614,94 +1626,100 @@ void update_path_label(AppData* app) {
     }
 
     if (app->breadcrumb_box != NULL && app->base_dir != NULL) {
-        GtkWidget* child;
-        while ((child = gtk_widget_get_first_child(app->breadcrumb_box)) != NULL) {
-            gtk_box_remove(GTK_BOX(app->breadcrumb_box), child);
-        }
-
-        GArray* segs = g_array_new(FALSE, FALSE, sizeof(BreadcrumbSeg));
-        const gchar* home = g_get_home_dir();
-        gsize home_len = (home != NULL) ? strlen(home) : 0;
-        gboolean under_home = (home_len > 1 &&
-                               g_str_has_prefix(app->base_dir, home) &&
-                               (app->base_dir[home_len] == '\0' ||
-                                app->base_dir[home_len] == '/'));
-
-        gchar* accum = NULL;
-        const gchar* rest = NULL;
-        if (under_home) {
-            BreadcrumbSeg root_seg = { g_strdup("🏠 ~"), g_strdup(home) };
-            g_array_append_val(segs, root_seg);
-            accum = g_strdup(home);
-            rest = app->base_dir + home_len;
-        } else {
-            BreadcrumbSeg root_seg = { g_strdup("📁 /"), g_strdup("/") };
-            g_array_append_val(segs, root_seg);
-            accum = g_strdup("/");
-            rest = app->base_dir;
-        }
-
-        gchar** parts = g_strsplit(rest, "/", -1);
-        for (gint i = 0; parts != NULL && parts[i] != NULL; i++) {
-            if (parts[i][0] == '\0') {
-                continue;
+        const gchar* built_dir = (const gchar*)g_object_get_data(G_OBJECT(app->breadcrumb_box), "built-dir");
+        if (g_strcmp0(built_dir, app->base_dir) != 0) {
+            GtkWidget* child;
+            while ((child = gtk_widget_get_first_child(app->breadcrumb_box)) != NULL) {
+                gtk_box_remove(GTK_BOX(app->breadcrumb_box), child);
             }
-            gchar* next_accum = g_build_filename(accum, parts[i], NULL);
+
+            GArray* segs = g_array_new(FALSE, FALSE, sizeof(BreadcrumbSeg));
+            const gchar* home = g_get_home_dir();
+            gsize home_len = (home != NULL) ? strlen(home) : 0;
+            gboolean under_home = (home_len > 1 &&
+                                   g_str_has_prefix(app->base_dir, home) &&
+                                   (app->base_dir[home_len] == '\0' ||
+                                    app->base_dir[home_len] == '/'));
+
+            gchar* accum = NULL;
+            const gchar* rest = NULL;
+            if (under_home) {
+                BreadcrumbSeg root_seg = { g_strdup("🏠 ~"), g_strdup(home) };
+                g_array_append_val(segs, root_seg);
+                accum = g_strdup(home);
+                rest = app->base_dir + home_len;
+            } else {
+                BreadcrumbSeg root_seg = { g_strdup("📁 /"), g_strdup("/") };
+                g_array_append_val(segs, root_seg);
+                accum = g_strdup("/");
+                rest = app->base_dir;
+            }
+
+            gchar** parts = g_strsplit(rest, "/", -1);
+            for (gint i = 0; parts != NULL && parts[i] != NULL; i++) {
+                if (parts[i][0] == '\0') {
+                    continue;
+                }
+                gchar* next_accum = g_build_filename(accum, parts[i], NULL);
+                g_free(accum);
+                accum = next_accum;
+
+                BreadcrumbSeg seg = { g_strdup(parts[i]), g_strdup(accum) };
+                g_array_append_val(segs, seg);
+            }
+            g_strfreev(parts);
             g_free(accum);
-            accum = next_accum;
 
-            BreadcrumbSeg seg = { g_strdup(parts[i]), g_strdup(accum) };
-            g_array_append_val(segs, seg);
-        }
-        g_strfreev(parts);
-        g_free(accum);
+            guint total = segs->len;
+            for (guint i = 0; i < total; i++) {
+                /* Collapse middle segments if path is very deep (> 6 segments) */
+                if (total > 6 && i == 1) {
+                    GtkWidget* sep = gtk_label_new("›");
+                    gtk_widget_add_css_class(sep, "breadcrumb-sep");
+                    gtk_box_append(GTK_BOX(app->breadcrumb_box), sep);
 
-        guint total = segs->len;
-        for (guint i = 0; i < total; i++) {
-            /* Collapse middle segments if path is very deep (> 6 segments) */
-            if (total > 6 && i == 1) {
-                GtkWidget* sep = gtk_label_new("›");
-                gtk_widget_add_css_class(sep, "breadcrumb-sep");
-                gtk_box_append(GTK_BOX(app->breadcrumb_box), sep);
+                    GtkWidget* dots = gtk_label_new("…");
+                    gtk_widget_add_css_class(dots, "breadcrumb-sep");
+                    gtk_box_append(GTK_BOX(app->breadcrumb_box), dots);
 
-                GtkWidget* dots = gtk_label_new("…");
-                gtk_widget_add_css_class(dots, "breadcrumb-sep");
-                gtk_box_append(GTK_BOX(app->breadcrumb_box), dots);
+                    i = total - 4;
+                }
 
-                i = total - 4;
+                if (i > 0) {
+                    GtkWidget* sep = gtk_label_new("›");
+                    gtk_widget_add_css_class(sep, "breadcrumb-sep");
+                    gtk_box_append(GTK_BOX(app->breadcrumb_box), sep);
+                }
+
+                BreadcrumbSeg* s = &g_array_index(segs, BreadcrumbSeg, i);
+                gboolean is_last = (i == total - 1);
+                gchar* btn_text = (is_last && i > 0)
+                                      ? g_strdup_printf("📂 %s", s->label)
+                                      : g_strdup(s->label);
+                GtkWidget* btn = gtk_button_new_with_label(btn_text);
+                g_free(btn_text);
+                gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+                gtk_widget_set_focusable(btn, FALSE);
+                gtk_widget_add_css_class(btn, is_last ? "breadcrumb-current"
+                                                      : "breadcrumb-item");
+                gtk_widget_set_tooltip_text(btn, s->full_path);
+                g_object_set_data_full(G_OBJECT(btn), "target-path",
+                                       g_strdup(s->full_path), g_free);
+                g_signal_connect(btn, "clicked",
+                                 G_CALLBACK(on_breadcrumb_clicked), app);
+                gtk_box_append(GTK_BOX(app->breadcrumb_box), btn);
             }
 
-            if (i > 0) {
-                GtkWidget* sep = gtk_label_new("›");
-                gtk_widget_add_css_class(sep, "breadcrumb-sep");
-                gtk_box_append(GTK_BOX(app->breadcrumb_box), sep);
+            for (guint i = 0; i < segs->len; i++) {
+                BreadcrumbSeg* s = &g_array_index(segs, BreadcrumbSeg, i);
+                g_free(s->label);
+                g_free(s->full_path);
             }
+            g_array_unref(segs);
 
-            BreadcrumbSeg* s = &g_array_index(segs, BreadcrumbSeg, i);
-            gboolean is_last = (i == total - 1);
-            gchar* btn_text = (is_last && i > 0)
-                                  ? g_strdup_printf("📂 %s", s->label)
-                                  : g_strdup(s->label);
-            GtkWidget* btn = gtk_button_new_with_label(btn_text);
-            g_free(btn_text);
-            gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
-            gtk_widget_set_focusable(btn, FALSE);
-            gtk_widget_add_css_class(btn, is_last ? "breadcrumb-current"
-                                                  : "breadcrumb-item");
-            gtk_widget_set_tooltip_text(btn, s->full_path);
-            g_object_set_data_full(G_OBJECT(btn), "target-path",
-                                   g_strdup(s->full_path), g_free);
-            g_signal_connect(btn, "clicked",
-                             G_CALLBACK(on_breadcrumb_clicked), app);
-            gtk_box_append(GTK_BOX(app->breadcrumb_box), btn);
+            g_object_set_data_full(G_OBJECT(app->breadcrumb_box), "built-dir",
+                                   g_strdup(app->base_dir), g_free);
         }
-
-        for (guint i = 0; i < segs->len; i++) {
-            BreadcrumbSeg* s = &g_array_index(segs, BreadcrumbSeg, i);
-            g_free(s->label);
-            g_free(s->full_path);
-        }
-        g_array_unref(segs);
     }
 
     if (app->sort_btn != NULL) {
@@ -1861,13 +1879,18 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     GCancellable* cancellable = g_task_get_cancellable(task);
     DirScanTaskData* td = (DirScanTaskData*)g_task_get_task_data(task);
 
-    if (td == NULL || td->root_node == NULL ||
-        g_cancellable_is_cancelled(cancellable) ||
+    if (td == NULL || g_cancellable_is_cancelled(cancellable) ||
         cancellable != td->app->dir_cancellable) {
         return;
     }
 
     AppData* app = td->app;
+    app->dir_scan_pending = FALSE;
+
+    if (td->root_node == NULL) {
+        return;
+    }
+
     GtkTreeStore* store = GTK_TREE_STORE(app->model);
 
     if (app->selection != NULL) {
@@ -1888,7 +1911,6 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     apply_dir_node_to_store(store, app, NULL, td->root_node);
     reexpand_paths_recursive(app, NULL);
     sync_directory_monitors(app);
-    app->dir_scan_pending = FALSE;
 
     if (app->selection != NULL) {
         g_signal_handlers_unblock_by_func(app->selection,
@@ -1921,11 +1943,11 @@ static void start_async_dir_scan(AppData* app, const gchar* dirname,
 
     DirScanTaskData* td = g_new0(DirScanTaskData, 1);
     td->app = app;
-    td->dirname = g_strdup(dirname);
+    td->dirname = g_canonicalize_filename(dirname, NULL);
     td->show_hidden = app->show_hidden;
     td->sort_mode = app->sort_mode;
     td->expanded_snapshot = clone_string_set(app->expanded_paths);
-    td->select_path = g_strdup(select_path);
+    td->select_path = (select_path != NULL) ? g_canonicalize_filename(select_path, NULL) : NULL;
     td->select_name = g_strdup(select_name);
 
     GTask* task = g_task_new(NULL, app->dir_cancellable, on_dir_scan_ready, NULL);
@@ -1946,7 +1968,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     }
 
     g_free(app->base_dir);
-    app->base_dir = g_strdup(new_dir);
+    app->base_dir = g_canonicalize_filename(new_dir, NULL);
     app->dir_scan_pending = TRUE;
     if (!app->switching_ws && app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
         g_free(app->workspaces[app->current_ws].selected_path);

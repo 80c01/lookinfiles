@@ -758,7 +758,32 @@ void schedule_refresh(AppData* app) {
 
 static void on_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file,
                            GFileMonitorEvent event_type, gpointer data) {
-    (void)monitor; (void)file; (void)other_file;
+    (void)monitor; (void)other_file;
+    AppData* app = (AppData*)data;
+
+    /* Ignore events for .git directory, git internals, and temporary lock/swap files */
+    if (file != NULL) {
+        gchar* name = g_file_get_basename(file);
+        if (name != NULL) {
+            if (g_strcmp0(name, ".git") == 0 ||
+                g_str_has_suffix(name, ".lock") ||
+                g_str_has_suffix(name, ".tmp") ||
+                g_str_has_suffix(name, "~")) {
+                g_free(name);
+                return;
+            }
+            g_free(name);
+        }
+        gchar* path = g_file_get_path(file);
+        if (path != NULL) {
+            if (strstr(path, "/.git/") != NULL || g_str_has_suffix(path, "/.git")) {
+                g_free(path);
+                return;
+            }
+            g_free(path);
+        }
+    }
+
     switch (event_type) {
     case G_FILE_MONITOR_EVENT_CREATED:
     case G_FILE_MONITOR_EVENT_DELETED:
@@ -766,8 +791,8 @@ static void on_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file
     case G_FILE_MONITOR_EVENT_RENAMED:
     case G_FILE_MONITOR_EVENT_MOVED_IN:
     case G_FILE_MONITOR_EVENT_MOVED_OUT:
-        ((AppData*)data)->dir_dirty = TRUE;
-        schedule_refresh((AppData*)data);
+        app->dir_dirty = TRUE;
+        schedule_refresh(app);
         break;
     default:
         break;
@@ -776,8 +801,20 @@ static void on_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file
 
 static void on_file_changed(GFileMonitor* monitor, GFile* file, GFile* other_file,
                             GFileMonitorEvent event_type, gpointer data) {
-    (void)monitor; (void)file; (void)other_file;
+    (void)monitor; (void)other_file;
     AppData* app = (AppData*)data;
+
+    if (file != NULL) {
+        gchar* path = g_file_get_path(file);
+        if (path != NULL) {
+            if (strstr(path, "/.git/") != NULL || g_str_has_suffix(path, "/.git")) {
+                g_free(path);
+                return;
+            }
+            g_free(path);
+        }
+    }
+
     switch (event_type) {
     case G_FILE_MONITOR_EVENT_CHANGED:
     case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
@@ -820,6 +857,14 @@ void stop_directory_monitors(AppData* app) {
     if (app == NULL || app->dir_monitors == NULL) {
         return;
     }
+    GHashTableIter iter;
+    gpointer value;
+    g_hash_table_iter_init(&iter, app->dir_monitors);
+    while (g_hash_table_iter_next(&iter, NULL, &value)) {
+        if (value != NULL) {
+            g_file_monitor_cancel(G_FILE_MONITOR(value));
+        }
+    }
     g_hash_table_destroy(app->dir_monitors);
     app->dir_monitors = NULL;
 }
@@ -854,19 +899,6 @@ void sync_directory_monitors(AppData* app) {
         }
     }
 
-    /* Also monitor the .git directory if present to detect git commit/add/checkout changes */
-    if (app->base_dir != NULL) {
-        gchar* git_root = find_git_root(app->base_dir);
-        if (git_root != NULL) {
-            gchar* git_dir = g_build_filename(git_root, ".git", NULL);
-            if (g_file_test(git_dir, G_FILE_TEST_IS_DIR)) {
-                g_hash_table_add(needed, g_strdup(git_dir));
-            }
-            g_free(git_dir);
-            g_free(git_root);
-        }
-    }
-
     /* Remove monitors that are no longer needed */
     GHashTableIter miter;
     gpointer mkey, mvalue;
@@ -874,6 +906,9 @@ void sync_directory_monitors(AppData* app) {
     while (g_hash_table_iter_next(&miter, &mkey, &mvalue)) {
         const gchar* mp = (const gchar*)mkey;
         if (!g_hash_table_contains(needed, mp)) {
+            if (mvalue != NULL) {
+                g_file_monitor_cancel(G_FILE_MONITOR(mvalue));
+            }
             g_hash_table_iter_remove(&miter);
         }
     }
@@ -898,6 +933,7 @@ void monitor_directory(AppData* app) {
 
 void monitor_file(AppData* app, const char* path) {
     if (app->file_monitor != NULL) {
+        g_file_monitor_cancel(app->file_monitor);
         g_object_unref(app->file_monitor);
         app->file_monitor = NULL;
     }
