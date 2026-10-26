@@ -120,11 +120,11 @@ int main(int argc, char** argv) {
     GtkWidget* breadcrumb_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_set_valign(breadcrumb_box, GTK_ALIGN_CENTER);
 
-    GtkWidget* files_btn = gtk_button_new_with_label("📁 Files");
+    GtkWidget* files_btn = gtk_button_new_with_label("📁 Explorer");
     gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
     gtk_widget_set_focusable(files_btn, FALSE);
     gtk_widget_add_css_class(files_btn, "status-pill");
-    gtk_widget_set_tooltip_text(files_btn, "Show/hide File panel");
+    gtk_widget_set_tooltip_text(files_btn, "Show/hide Explorer panel");
 
     GtkWidget* preview_btn = gtk_button_new_with_label("📄 Preview");
     gtk_button_set_has_frame(GTK_BUTTON(preview_btn), FALSE);
@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
     gtk_button_set_has_frame(GTK_BUTTON(bookmarks_btn), FALSE);
     gtk_widget_set_focusable(bookmarks_btn, FALSE);
     gtk_widget_add_css_class(bookmarks_btn, "status-pill");
-    gtk_widget_set_tooltip_text(bookmarks_btn, "Toggle bookmarks (Ctrl+A)");
+    gtk_widget_set_tooltip_text(bookmarks_btn, "Switch between files and bookmarks views (Ctrl+A)");
 
     GtkWidget* help_btn = gtk_button_new_with_label("? Help");
     gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);

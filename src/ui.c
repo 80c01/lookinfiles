@@ -25,22 +25,22 @@ typedef struct {
 } KeyHelpEntry;
 
 static const KeyHelpEntry KEY_HELP[] = {
-    /* File panel */
-    {"File panel", "j / k", "Move down / up"},
-    {"File panel", "gg / G", "First / last entry"},
-    {"File panel", "zz", "Center selected entry in the panel"},
-    {"File panel", "zt / zb", "Scroll selected entry to top / bottom of the panel"},
-    {"File panel", "Ctrl+F / Ctrl+B", "Page down / up"},
-    {"File panel", "Space / l / Right", "Expand / collapse directory (or step into first child)"},
-    {"File panel", "h / Left", "Collapse directory or jump to parent"},
-    {"File panel", "/", "Search by substring (n / N: next / previous match)"},
-    {"File panel", "Enter / Double-click", "Expand/collapse directory, or open file in an editing tab (Ctrl+Enter to enter directory)"},
-    {"File panel", "Backspace", "Go to the parent directory"},
-    {"File panel", "Ctrl+D", "Bookmark current directory (or remove selected bookmark)"},
-    {"File panel", "Ctrl+A", "Toggle display of bookmarks"},
-    {"File panel", "i / I", "Toggle hidden files"},
-    {"File panel", "o", "Cycle sort: name, date, size, extension"},
-    {"File panel", "?", "Show / hide this help panel"},
+    /* Explorer panel */
+    {"Explorer panel", "j / k", "Move down / up"},
+    {"Explorer panel", "gg / G", "First / last entry"},
+    {"Explorer panel", "zz", "Center selected entry in the panel"},
+    {"Explorer panel", "zt / zb", "Scroll selected entry to top / bottom of the panel"},
+    {"Explorer panel", "Ctrl+F / Ctrl+B", "Page down / up"},
+    {"Explorer panel", "Space / l / Right", "Expand / collapse directory (or step into first child)"},
+    {"Explorer panel", "h / Left", "Collapse directory or jump to parent"},
+    {"Explorer panel", "/", "Search by substring (n / N: next / previous match)"},
+    {"Explorer panel", "Enter / Double-click", "Expand/collapse directory, open file in editor, or open bookmark (Ctrl+Enter to enter directory)"},
+    {"Explorer panel", "Backspace", "Go to the parent directory (or return to files view from bookmarks)"},
+    {"Explorer panel", "Ctrl+D", "Bookmark current directory (or remove selected bookmark)"},
+    {"Explorer panel", "Ctrl+A", "Switch between files and bookmarks views in Explorer"},
+    {"Explorer panel", "i / I", "Toggle hidden files"},
+    {"Explorer panel", "o", "Cycle sort: name, date, size, extension"},
+    {"Explorer panel", "?", "Show / hide this help panel"},
     /* Viewer panel */
     {"Right panel (viewer)", "j / k", "Scroll a line down / up"},
     {"Right panel (viewer)", "Ctrl+F / Ctrl+B", "Scroll a page down / up"},
@@ -56,7 +56,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Ctrl+Shift+T", "Open a new terminal pane below the running ones"},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},
     {"Global", "f", "Toggle fullscreen (Ctrl+F keeps its paging role)"},
-    {"Global", "Ctrl+Shift+L", "Stack the terminal pane under the viewer, or put it back beside it (the file list stays fixed)"},
+    {"Global", "Ctrl+Shift+L", "Stack the terminal pane under the viewer, or put it back beside it (the explorer panel stays fixed)"},
     {"Global", "Ctrl+Q", "Quit"},
 };
 
@@ -119,7 +119,7 @@ static void on_help_close_clicked(GtkButton* btn, gpointer data) {
     toggle_help_panel((AppData*)data);
 }
 
-/* In the help panel, ? or Escape closes it and gives keyboard focus back to the file list */
+/* In the help panel, ? or Escape closes it and gives keyboard focus back to the explorer panel */
 gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval,
                            guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;

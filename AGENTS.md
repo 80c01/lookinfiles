@@ -7,8 +7,8 @@ Guidelines for AI coding agents working in this repository.
 `file explorer` written in C with GTK 4 (API 4.0+). Modular architecture in `src/`,
 no external dependencies beyond GTK (with optional VTE for GTK 4, GtkSourceView 5, and poppler-glib).
 
-Two-pane layout: left = real listing of the current working directory
-(`GtkTreeView` + `GtkTreeStore`, expandable directory tree with lazy-loading), right = text viewer /
+Two-pane layout: left = explorer panel (files or bookmarks view,
+`GtkTreeView` + `GtkTreeStore`, expandable directory tree with lazy-loading), right = text viewer /
 directory listing, both inside a resizable `GtkPaned`.
 
 ## Build & run

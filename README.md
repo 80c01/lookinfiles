@@ -31,11 +31,11 @@ Simple graphical application to browse the file system.
 |---|---|
 | `Ctrl+Q` | Quit the application |
 | `f` | Toggle fullscreen (works with either panel focused; `Ctrl+F` keeps its paging role) |
-| `Ctrl+Shift+L` | Stack the terminal pane below the viewer, or put it back beside it; the file list panel stays fixed and the viewer/terminal split ratio is kept |
+| `Ctrl+Shift+L` | Stack the terminal pane below the viewer, or put it back beside it; the explorer panel stays fixed and the viewer/terminal split ratio is kept |
 | `Ctrl+T` | Terminal pane beside the viewer (needs `libvte-2.91-gtk4-dev`): `Ctrl+T` opens a pane right of the previous ones, `Ctrl+Shift+T` opens a new pane below them — each with a fresh shell in the current directory; exit the shell (`Ctrl+D` / `exit`) to close its pane |
-| `Alt+Left` / `Alt+Right` | Move the focus between the open panels: file list → viewer → terminal panel (cycles) |
+| `Alt+Left` / `Alt+Right` | Move the focus between the open panels: explorer panel → viewer → terminal panel (cycles) |
 
-### Left panel (when the list has focus)
+### Explorer panel (when the list has focus)
 
 | Key | Action |
 |---|---|
@@ -51,10 +51,10 @@ Simple graphical application to browse the file system.
 | `zt` / `zb` | Scroll the selected entry to the top / bottom of the panel |
 | `/` | Open the search bar (live search, case-insensitive) |
 | `n` / `N` | Next / previous match of the searched term |
-| `Enter` / `Double-click` | Expand / collapse directory, or open selected file in a new editing tab of the right panel (`Ctrl+Enter` to enter directory as root) |
-| `Backspace` | Go to the parent directory |
-| `Ctrl+D` | Bookmark the current directory (or remove selected bookmark) |
-| `Ctrl+A` | Toggle display of bookmarks in the file panel |
+| `Enter` / `Double-click` | Expand / collapse directory, open selected file in a new editing tab of the right panel, or navigate to bookmarked directory (`Ctrl+Enter` to enter directory as root) |
+| `Backspace` | Go to the parent directory (or return to files view from bookmarks) |
+| `Ctrl+D` | Bookmark the current directory (or remove selected bookmark in bookmarks view) |
+| `Ctrl+A` | Switch between files and bookmarks views in the explorer panel |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
 | `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), or rendered pages / text extraction (PDF) |

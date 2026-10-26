@@ -110,7 +110,7 @@ typedef struct {
     GtkWidget* left_vbox;
     gchar* search_term;
     gboolean show_hidden; /* hidden files (dot-prefixed) */
-    gboolean show_bookmarks; /* bookmarks shown in file panel */
+    gboolean show_bookmarks; /* bookmarks view active in explorer panel */
     GPtrArray* bookmarks; /* bookmarked directory paths */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
     gboolean pending_g;   /* for the 'gg' key sequence */

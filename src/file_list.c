@@ -918,7 +918,6 @@ void bookmark_toggle_current(AppData* app) {
 
     if (!found) {
         g_ptr_array_add(app->bookmarks, g_strdup(app->base_dir));
-        app->show_bookmarks = TRUE;
     }
 
     bookmarks_save(app);
@@ -931,6 +930,10 @@ void bookmark_toggle_current(AppData* app) {
 void toggle_bookmarks_view(AppData* app) {
     if (app == NULL) {
         return;
+    }
+    if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
+        gtk_widget_set_visible(app->left_vbox, TRUE);
+        workspace_apply_positions(app);
     }
     app->show_bookmarks = !app->show_bookmarks;
     update_path_label(app);
@@ -1008,6 +1011,7 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                                     const DirScanNode* node) {
     if (parent == NULL && app != NULL && app->show_bookmarks) {
         append_bookmarks_to_store(store, app);
+        return;
     }
 
     if (node == NULL) {
@@ -1244,8 +1248,11 @@ void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
 static void on_breadcrumb_clicked(GtkButton* btn, gpointer data) {
     AppData* app = (AppData*)data;
     const gchar* target = (const gchar*)g_object_get_data(G_OBJECT(btn), "target-path");
-    if (target != NULL && g_strcmp0(target, app->base_dir) != 0) {
-        reload_directory(app, target);
+    if (target != NULL) {
+        if (app->show_bookmarks || g_strcmp0(target, app->base_dir) != 0) {
+            app->show_bookmarks = FALSE;
+            reload_directory(app, target);
+        }
     }
 }
 
@@ -1373,10 +1380,10 @@ void update_path_label(AppData* app) {
     };
 
     if (app->path_label != NULL) {
-        gchar* text = g_strdup_printf("Directory: %s   [sort: %s] [hidden: %s] [bookmarks: %s]",
+        gchar* text = g_strdup_printf("Directory: %s   [sort: %s] [hidden: %s] [view: %s]",
                                        app->base_dir, sort_names[app->sort_mode],
                                        app->show_hidden ? "on" : "off",
-                                       app->show_bookmarks ? "on" : "off");
+                                       app->show_bookmarks ? "bookmarks" : "files");
         gtk_label_set_text(GTK_LABEL(app->path_label), text);
         g_free(text);
     }
@@ -1774,6 +1781,7 @@ void activate_selected_entry(AppData* app) {
                        COL_PATH, &full, -1);
 
     if (g_strcmp0(type, "bookmark") == 0 && full != NULL) {
+        app->show_bookmarks = FALSE;
         reload_directory(app, full);
     } else if (g_strcmp0(type, "dir") == 0) {
         GtkTreePath* path = gtk_tree_model_get_path(app->model, &it);
@@ -1982,8 +1990,13 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             activate_selected_entry(app);
         }
         return TRUE;
-    case GDK_KEY_BackSpace: /* Parent directory */
+    case GDK_KEY_BackSpace: /* Parent directory (or return to files view from bookmarks) */
         app->pending_g = FALSE;
+        if (app->show_bookmarks) {
+            app->show_bookmarks = FALSE;
+            refresh_listing(app);
+            return TRUE;
+        }
         {
             gchar* parent = g_path_get_dirname(app->base_dir);
             if (g_strcmp0(parent, app->base_dir) != 0) {
@@ -2034,7 +2047,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_a: /* Ctrl+A: toggle display of bookmarks in file panel */
+    case GDK_KEY_a: /* Ctrl+A: switch between files and bookmarks views in explorer panel */
     case GDK_KEY_A:
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
