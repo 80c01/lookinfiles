@@ -150,8 +150,12 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
                                    gpointer data) {
     (void)notebook;
     (void)page;
-    (void)page_num;
-    minimap_update_visibility((AppData*)data);
+    AppData* app = (AppData*)data;
+    if (app != NULL && !app->switching_ws &&
+        app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+        app->workspaces[app->current_ws].notebook_page = (gint)page_num;
+    }
+    minimap_update_visibility(app);
 }
 
 typedef struct {

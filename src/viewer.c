@@ -284,6 +284,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         app->pending_g = FALSE;
         if (app->viewed_name != NULL && is_renderable_file(app->viewed_name)) {
             app->render_raw = !app->render_raw;
+            workspace_save_current(app);
             if (app->viewed_path != NULL) {
                 load_file_content(app, app->viewed_name, app->viewed_path);
             }
@@ -960,15 +961,20 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         g_task_run_in_thread(task, dir_preview_thread_func);
         g_object_unref(task);
     } else {
-        if (g_strcmp0(full, app->viewed_path) == 0 && !app->file_dirty) {
+        if (g_strcmp0(full, app->viewed_path) == 0 && !app->file_dirty &&
+            gtk_text_buffer_get_char_count(app->buffer) > 0) {
+            if (!app->switching_ws) {
+                workspace_save_current(app);
+            }
             g_free(full);
             g_free(name);
             g_free(type);
             return;
         }
-        if (g_strcmp0(name, app->viewed_name) != 0) {
+        if (!app->switching_ws && g_strcmp0(name, app->viewed_name) != 0) {
             app->render_raw = FALSE;
         }
+        app->file_dirty = FALSE;
         load_file_content(app, name, full);
     }
 
@@ -982,6 +988,10 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         app->viewed_path = g_strdup(full);
         app->viewed_name = g_strdup(name);
         monitor_file(app, full);
+    }
+
+    if (!app->switching_ws) {
+        workspace_save_current(app);
     }
 
     g_free(full);

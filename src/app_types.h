@@ -79,6 +79,8 @@ typedef struct {
     gchar* selected_path;
     gboolean show_hidden;
     gint sort_mode;
+    gint notebook_page;
+    gboolean render_raw;
 #ifdef HAVE_VTE
     GtkWidget* term_box;
     GtkWidget* last_focused_vte;
@@ -170,8 +172,10 @@ typedef struct {
     gint hover_ws;
     gboolean switching_ws;
     gboolean applying_layout;
+    gboolean dir_scan_pending;
     guint layout_tick_id;
     gint layout_apply_frames;
+    gint layout_retry_count;
     GtkWidget* ws_minimap;
 } AppData;
 

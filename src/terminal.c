@@ -188,8 +188,8 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
         gtk_box_remove(GTK_BOX(parent), term_w);
         if (parent == app->term_box) {
             workspace_save_current(app);
+            app->applying_layout = TRUE;
             gtk_widget_set_visible(app->term_scroll, FALSE);
-            workspace_apply_positions(app);
             gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
             gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
             if (!files_vis && !preview_vis && app->viewer_box != NULL) {
@@ -197,6 +197,7 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
                 preview_vis = TRUE;
             }
             update_path_label(app);
+            workspace_apply_positions(app);
             if (files_vis) {
                 gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
             } else if (preview_vis) {
@@ -235,8 +236,8 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
             gtk_widget_grab_focus(GTK_WIDGET(g_ptr_array_index(panes, 0)));
         } else {
             workspace_save_current(app);
+            app->applying_layout = TRUE;
             gtk_widget_set_visible(app->term_scroll, FALSE);
-            workspace_apply_positions(app);
             gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
             gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
             if (!files_vis && !preview_vis && app->viewer_box != NULL) {
@@ -244,6 +245,7 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
                 preview_vis = TRUE;
             }
             update_path_label(app);
+            workspace_apply_positions(app);
             if (files_vis) {
                 gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
             } else if (preview_vis) {

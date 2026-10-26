@@ -481,9 +481,13 @@ void select_path(AppData* app, GtkTreePath* path) {
     if (path == NULL) {
         return;
     }
+    gboolean was_selected = gtk_tree_selection_path_is_selected(app->selection, path);
     gtk_tree_selection_select_path(app->selection, path);
     gtk_tree_view_set_cursor(app->tree_view, path, NULL, FALSE);
     gtk_tree_view_scroll_to_cell(app->tree_view, path, NULL, FALSE, 0.0, 0.0);
+    if (was_selected) {
+        on_selection_changed(app->selection, app);
+    }
 }
 
 /* Select the first visible row */
@@ -924,6 +928,9 @@ void on_tree_row_expanded(GtkTreeView* tree_view, GtkTreeIter* iter,
         gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LABEL, label, -1);
         g_free(label);
     }
+    if (!app->switching_ws && !app->dir_scan_pending) {
+        workspace_save_current(app);
+    }
     g_free(name);
     g_free(full_path);
 }
@@ -946,6 +953,9 @@ void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
         gchar* label = g_strconcat("📁 ", name, NULL);
         gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LABEL, label, -1);
         g_free(label);
+    }
+    if (!app->switching_ws && !app->dir_scan_pending) {
+        workspace_save_current(app);
     }
     g_free(name);
     g_free(full_path);
@@ -972,9 +982,10 @@ void on_files_pill_clicked(GtkButton* btn, gpointer data) {
         return; /* keep at least one panel visible */
     }
     workspace_save_current(app);
+    app->applying_layout = TRUE;
     gtk_widget_set_visible(app->left_vbox, !cur);
-    workspace_apply_positions(app);
     update_path_label(app);
+    workspace_apply_positions(app);
     if (!cur) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     } else if (preview_vis) {
@@ -995,9 +1006,10 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
         return; /* keep at least one panel visible */
     }
     workspace_save_current(app);
+    app->applying_layout = TRUE;
     gtk_widget_set_visible(app->viewer_box, !cur);
-    workspace_apply_positions(app);
     update_path_label(app);
+    workspace_apply_positions(app);
     if (!cur) {
         minimap_update_visibility(app);
         gtk_widget_grab_focus(app->text_view);
@@ -1020,9 +1032,10 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
             return; /* keep at least one panel visible */
         }
         workspace_save_current(app);
+        app->applying_layout = TRUE;
         gtk_widget_set_visible(app->term_scroll, FALSE);
-        workspace_apply_positions(app);
         update_path_label(app);
+        workspace_apply_positions(app);
         if (files_vis) {
             gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
         } else if (preview_vis) {
@@ -1030,11 +1043,11 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
         }
     } else {
         workspace_save_current(app);
+        app->applying_layout = TRUE;
         if (app->right_paned != NULL) {
             gtk_widget_set_visible(app->right_paned, TRUE);
         }
         gtk_widget_set_visible(app->term_scroll, TRUE);
-        workspace_apply_positions(app);
 #ifdef HAVE_VTE
         GPtrArray* panes = term_visible_panes(app);
         if (panes->len == 0) {
@@ -1048,6 +1061,7 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
         g_ptr_array_unref(panes);
 #endif
         update_path_label(app);
+        workspace_apply_positions(app);
     }
 }
 
@@ -1317,7 +1331,7 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     gtk_tree_store_clear(store);
     apply_dir_node_to_store(store, NULL, td->root_node);
     reexpand_paths_recursive(app, NULL);
-    update_path_label(app);
+    app->dir_scan_pending = FALSE;
 
     if (app->selection != NULL) {
         g_signal_handlers_unblock_by_func(app->selection,
@@ -1335,6 +1349,8 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     } else {
         select_first_row(app);
     }
+
+    update_path_label(app);
 }
 
 static void start_async_dir_scan(AppData* app, const gchar* dirname,
@@ -1344,6 +1360,7 @@ static void start_async_dir_scan(AppData* app, const gchar* dirname,
         g_clear_object(&app->dir_cancellable);
     }
     app->dir_cancellable = g_cancellable_new();
+    app->dir_scan_pending = TRUE;
 
     DirScanTaskData* td = g_new0(DirScanTaskData, 1);
     td->app = app;
@@ -1373,7 +1390,11 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
 
     g_free(app->base_dir);
     app->base_dir = g_strdup(new_dir);
-    update_path_label(app);
+    app->dir_scan_pending = TRUE;
+    if (!app->switching_ws && app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+        g_free(app->workspaces[app->current_ws].selected_path);
+        app->workspaces[app->current_ws].selected_path = NULL;
+    }
 
     /* Clear prior search term */
     g_free(app->search_term);
@@ -1384,6 +1405,8 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     if (app->expanded_paths != NULL) {
         g_hash_table_remove_all(app->expanded_paths);
     }
+
+    update_path_label(app);
 
     /* Clear right pane */
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
@@ -1416,8 +1439,8 @@ void reload_directory(AppData* app, const gchar* new_dir) {
 
 /* Refresh the list while preserving selected entry and open expansions */
 void refresh_listing_with_path(AppData* app, const gchar* select_path) {
-    update_path_label(app);
     start_async_dir_scan(app, app->base_dir, select_path, NULL);
+    update_path_label(app);
 }
 
 void refresh_listing(AppData* app) {
@@ -1468,9 +1491,10 @@ void activate_selected_entry(AppData* app) {
     } else if (g_strcmp0(type, "file") == 0 && full != NULL) {
         if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
             workspace_save_current(app);
+            app->applying_layout = TRUE;
             gtk_widget_set_visible(app->viewer_box, TRUE);
-            workspace_apply_positions(app);
             update_path_label(app);
+            workspace_apply_positions(app);
         }
         if (is_image_file(name) || is_pdf_file(name)) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
@@ -1678,6 +1702,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         app->pending_g = FALSE;
         if (app->viewed_name != NULL && is_renderable_file(app->viewed_name)) {
             app->render_raw = !app->render_raw;
+            workspace_save_current(app);
             if (app->viewed_path != NULL) {
                 load_file_content(app, app->viewed_name, app->viewed_path);
             }
