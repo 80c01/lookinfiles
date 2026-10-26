@@ -103,7 +103,8 @@ Shortcut list to keep in sync with `README.md` when you change behavior.
 
 ## Known status
 
-Recent features are stable (v1.16 in README.md): modular architecture in `src/`,
+Recent features are stable (v1.17 in README.md): modular architecture in `src/`,
+hanging indent and aligned paragraph wrapping for HTML & Markdown lists,
 enhanced HTML renderer (base64 images, code blocks, task lists, description lists, details/summary, table captions, math/arrow/Greek entities, metadata banner),
 custom panel backgrounds (#191A1B file panel, #121314 preview, #1f2021 terminal),
 VS Code Dark+ full theme & icon matching, text viewer padding for text/code files, PDF document preview in right panel, image preview in right panel, monospace font for code files, expandable directory tree (`GtkTreeStore`), rendered Markdown & HTML previews, resizable terminal panes (`GtkPaned`), resizable layout, vim bindings, navigation, hidden toggle,

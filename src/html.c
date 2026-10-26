@@ -233,6 +233,60 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
                "pixels-below-lines", 4);
 
     #undef CREATE_TAG
+
+    for (gint d = 0; d < 8; d++) {
+        gchar tname[32];
+        gint base_margin = 18 + d * 20;
+
+        /* Unordered list item: bullet at base_margin, text & wrapped lines at base_margin + 14 */
+        g_snprintf(tname, sizeof(tname), "html_li_ul_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin,
+                "indent", -14,
+                NULL);
+        }
+
+        /* Ordered list item: number at base_margin, text & wrapped lines at base_margin + 19 */
+        g_snprintf(tname, sizeof(tname), "html_li_ol_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin,
+                "indent", -19,
+                NULL);
+        }
+
+        /* Task list item: checkbox at base_margin, text & wrapped lines at base_margin + 17 */
+        g_snprintf(tname, sizeof(tname), "html_li_task_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin,
+                "indent", -17,
+                NULL);
+        }
+
+        /* Continuation paragraph in unordered list: aligns with text at base_margin + 14 */
+        g_snprintf(tname, sizeof(tname), "html_li_p_ul_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin + 14,
+                "indent", 0,
+                "pixels-above-lines", 6,
+                "pixels-below-lines", 4,
+                NULL);
+        }
+
+        /* Continuation paragraph in ordered / task list: aligns with text at base_margin + 19 */
+        g_snprintf(tname, sizeof(tname), "html_li_p_ol_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin + 19,
+                "indent", 0,
+                "pixels-above-lines", 6,
+                "pixels-below-lines", 4,
+                NULL);
+        }
+    }
 }
 
 /* Renderer context */
@@ -240,6 +294,7 @@ typedef struct {
     GtkTextBuffer* buffer;
     GtkTextIter iter;
     const gchar* doc_dir;
+    const gchar* p_cur;
 
     /* Parser state */
     gboolean in_pre;
@@ -255,6 +310,14 @@ typedef struct {
         gchar type; /* '1', 'a', 'A', 'i', 'I' */
     } list_stack[16];
     gint list_depth;
+
+    /* List item (li) state */
+    gboolean in_li;
+    gchar current_li_tag[32];
+    gint current_li_depth;
+    gboolean current_li_ordered;
+    gboolean li_has_text;
+    gint li_paragraph_count;
 
     /* Active styling tags */
     GPtrArray* active_tags;
@@ -299,11 +362,26 @@ static void pop_tag(HtmlRenderContext* ctx, const gchar* tag_name) {
     }
 }
 
+static void close_current_li(HtmlRenderContext* ctx) {
+    if (ctx->in_li) {
+        if (ctx->current_li_tag[0] != '\0') {
+            pop_tag(ctx, ctx->current_li_tag);
+            ctx->current_li_tag[0] = '\0';
+        }
+        ctx->in_li = FALSE;
+        ctx->li_has_text = FALSE;
+        ctx->li_paragraph_count = 0;
+    }
+}
+
 static void insert_tag_text(HtmlRenderContext* ctx, const gchar* text, const gchar* tag_name) {
     if (text == NULL || *text == '\0') return;
     GtkTextMark* m = gtk_text_buffer_create_mark(ctx->buffer, NULL, &ctx->iter, TRUE);
     gtk_text_buffer_insert(ctx->buffer, &ctx->iter, text, -1);
     apply_tag_mark(ctx->buffer, tag_name, m, &ctx->iter);
+    if (ctx->in_li && ctx->current_li_tag[0] != '\0') {
+        apply_tag_mark(ctx->buffer, ctx->current_li_tag, m, &ctx->iter);
+    }
     gtk_text_buffer_delete_mark(ctx->buffer, m);
 
     gint tlen = (gint)strlen(text);
@@ -324,6 +402,15 @@ static void insert_styled_text(HtmlRenderContext* ctx, const gchar* text, gssize
 
     if (ctx->in_link && ctx->current_link_text != NULL) {
         g_string_append_len(ctx->current_link_text, text, len);
+    }
+
+    if (ctx->in_li && len > 0) {
+        for (gssize k = 0; k < len; k++) {
+            if (!g_ascii_isspace(text[k])) {
+                ctx->li_has_text = TRUE;
+                break;
+            }
+        }
     }
 
     if (ctx->line_needs_quote_bar && ctx->quote_depth > 0) {
@@ -985,7 +1072,11 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             pop_tag(ctx, "html_h6");
             ensure_newlines(ctx, 2);
         } else if (strcmp(tag, "p") == 0) {
-            ensure_newlines(ctx, 2);
+            if (ctx->in_li) {
+                ensure_newlines(ctx, 1);
+            } else {
+                ensure_newlines(ctx, 2);
+            }
         } else if (strcmp(tag, "blockquote") == 0) {
             pop_tag(ctx, "html_quote");
             if (ctx->quote_depth > 0) ctx->quote_depth--;
@@ -998,9 +1089,11 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             ctx->pre_lang = NULL;
             ensure_newlines(ctx, 2);
         } else if (strcmp(tag, "ul") == 0 || strcmp(tag, "ol") == 0) {
+            close_current_li(ctx);
             if (ctx->list_depth > 0) ctx->list_depth--;
             ensure_newlines(ctx, 1);
         } else if (strcmp(tag, "li") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 1);
         } else if (strcmp(tag, "dl") == 0) {
             ensure_newlines(ctx, 1);
@@ -1075,40 +1168,83 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             ctx->in_link = TRUE;
             push_tag(ctx, "html_link");
         } else if (strcmp(tag, "h1") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 2);
             push_tag(ctx, "html_h1");
         } else if (strcmp(tag, "h2") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 2);
             push_tag(ctx, "html_h2");
         } else if (strcmp(tag, "h3") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 2);
             push_tag(ctx, "html_h3");
         } else if (strcmp(tag, "h4") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 2);
             push_tag(ctx, "html_h4");
         } else if (strcmp(tag, "h5") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 2);
             push_tag(ctx, "html_h5");
         } else if (strcmp(tag, "h6") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 2);
             push_tag(ctx, "html_h6");
         } else if (strcmp(tag, "p") == 0) {
-            ensure_newlines(ctx, 2);
+            if (ctx->in_li) {
+                if (ctx->li_has_text) {
+                    if (ctx->current_li_tag[0] != '\0') {
+                        pop_tag(ctx, ctx->current_li_tag);
+                    }
+                    if (ctx->current_li_ordered) {
+                        g_snprintf(ctx->current_li_tag, sizeof(ctx->current_li_tag),
+                                   "html_li_p_ol_d%d", ctx->current_li_depth);
+                    } else {
+                        g_snprintf(ctx->current_li_tag, sizeof(ctx->current_li_tag),
+                                   "html_li_p_ul_d%d", ctx->current_li_depth);
+                    }
+                    push_tag(ctx, ctx->current_li_tag);
+                    ctx->li_paragraph_count++;
+                    ctx->li_has_text = FALSE;
+                    ensure_newlines(ctx, 1);
+                }
+            } else {
+                ensure_newlines(ctx, 2);
+            }
         } else if (strcmp(tag, "br") == 0) {
             gtk_text_buffer_insert(ctx->buffer, &ctx->iter, "\n", 1);
             ctx->trailing_newlines++;
             ctx->last_was_ws = TRUE;
             ctx->line_needs_quote_bar = TRUE;
+            if (ctx->in_li && ctx->li_paragraph_count == 1) {
+                if (ctx->current_li_tag[0] != '\0') {
+                    pop_tag(ctx, ctx->current_li_tag);
+                }
+                if (ctx->current_li_ordered) {
+                    g_snprintf(ctx->current_li_tag, sizeof(ctx->current_li_tag),
+                               "html_li_p_ol_d%d", ctx->current_li_depth);
+                } else {
+                    g_snprintf(ctx->current_li_tag, sizeof(ctx->current_li_tag),
+                               "html_li_p_ul_d%d", ctx->current_li_depth);
+                }
+                push_tag(ctx, ctx->current_li_tag);
+                ctx->li_paragraph_count++;
+                ctx->li_has_text = FALSE;
+            }
         } else if (strcmp(tag, "hr") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 1);
             insert_tag_text(ctx, "────────────────────────────────────────────────────────────────────────\n", "html_hr");
             ensure_newlines(ctx, 1);
         } else if (strcmp(tag, "blockquote") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 2);
             ctx->quote_depth++;
             ctx->line_needs_quote_bar = TRUE;
             push_tag(ctx, "html_quote");
         } else if (strcmp(tag, "pre") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 2);
             ctx->in_pre = TRUE;
             ctx->in_pre_code = FALSE;
@@ -1121,6 +1257,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             }
             push_tag(ctx, "html_pre");
         } else if (strcmp(tag, "ul") == 0 || strcmp(tag, "ol") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 1);
             if (ctx->list_depth < 16) {
                 gchar* type_attr = html_get_attr(full_tag, "type");
@@ -1136,13 +1273,48 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
                 ctx->list_depth++;
             }
         } else if (strcmp(tag, "li") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 1);
             gint depth = (ctx->list_depth > 0) ? ctx->list_depth - 1 : 0;
-            gint indent_spaces = depth * 3 + 2;
-            for (gint s = 0; s < indent_spaces; s++) {
-                gtk_text_buffer_insert(ctx->buffer, &ctx->iter, " ", 1);
+            if (depth > 7) depth = 7;
+            gboolean ordered = (ctx->list_depth > 0 && ctx->list_stack[depth].is_ordered);
+
+            ctx->current_li_depth = depth;
+            ctx->current_li_ordered = ordered;
+            ctx->in_li = TRUE;
+            ctx->li_has_text = FALSE;
+            ctx->li_paragraph_count = 1;
+
+            /* Check if this li is a task list item */
+            gboolean is_task = FALSE;
+            if (strstr_case(full_tag, "task", NULL) != NULL) {
+                is_task = TRUE;
+            } else if (ctx->p_cur != NULL) {
+                const gchar* peek = ctx->p_cur;
+                while (*peek == ' ' || *peek == '\t' || *peek == '\r' || *peek == '\n') peek++;
+                if (peek[0] == '<' && (peek[1] == 'i' || peek[1] == 'I') &&
+                    g_ascii_strncasecmp(peek + 1, "input", 5) == 0) {
+                    const gchar* gt = strchr(peek, '>');
+                    if (gt != NULL) {
+                        gchar* inp = g_strndup(peek, gt - peek + 1);
+                        gchar* itype = html_get_attr(inp, "type");
+                        if (itype != NULL && g_ascii_strcasecmp(itype, "checkbox") == 0) {
+                            is_task = TRUE;
+                        }
+                        g_free(itype);
+                        g_free(inp);
+                    }
+                }
             }
-            if (ctx->list_depth > 0 && ctx->list_stack[depth].is_ordered) {
+
+            if (is_task) {
+                g_snprintf(ctx->current_li_tag, sizeof(ctx->current_li_tag), "html_li_task_d%d", depth);
+                push_tag(ctx, ctx->current_li_tag);
+                /* Do not insert bullet; the <input type="checkbox"> will be the bullet */
+            } else if (ordered) {
+                g_snprintf(ctx->current_li_tag, sizeof(ctx->current_li_tag), "html_li_ol_d%d", depth);
+                push_tag(ctx, ctx->current_li_tag);
+
                 ctx->list_stack[depth].count++;
                 gint num = ctx->list_stack[depth].count;
                 gchar ltype = ctx->list_stack[depth].type;
@@ -1165,19 +1337,24 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
                 insert_tag_text(ctx, num_str, "html_num");
                 g_free(num_str);
             } else {
+                g_snprintf(ctx->current_li_tag, sizeof(ctx->current_li_tag), "html_li_ul_d%d", depth);
+                push_tag(ctx, ctx->current_li_tag);
+
                 const gchar* bullet = (depth % 3 == 0) ? "• " : (depth % 3 == 1) ? "◦ " : "▪ ";
                 insert_tag_text(ctx, bullet, "html_bullet");
             }
             ctx->trailing_newlines = 0;
             ctx->last_was_ws = TRUE;
         } else if (strcmp(tag, "dl") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 1);
         } else if (strcmp(tag, "dt") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 1);
             push_tag(ctx, "html_dt");
         } else if (strcmp(tag, "dd") == 0) {
+            close_current_li(ctx);
             ensure_newlines(ctx, 1);
-            gtk_text_buffer_insert(ctx->buffer, &ctx->iter, "    ", 4);
             push_tag(ctx, "html_dd");
         } else if (strcmp(tag, "details") == 0) {
             ensure_newlines(ctx, 1);
@@ -1406,6 +1583,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
         /* Table */
         if (p[0] == '<' && g_ascii_strncasecmp(p + 1, "table", 5) == 0 &&
             (p[6] == '>' || isspace((unsigned char)p[6]))) {
+            close_current_li(&ctx);
             p = render_html_table(&ctx, p);
             continue;
         }
@@ -1432,6 +1610,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
             gchar* tag_name = g_ascii_strdown(name_start, name_end - name_start);
             gchar* full_tag = g_strndup(tag_start, tag_end - tag_start + 1);
 
+            ctx.p_cur = tag_end + 1;
             handle_html_tag(&ctx, tag_name, full_tag, is_closing);
 
             g_free(tag_name);
@@ -1489,6 +1668,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
         p = text_end;
     }
 
+    close_current_li(&ctx);
     ensure_newlines(&ctx, 1);
 
     g_ptr_array_free(ctx.active_tags, TRUE);

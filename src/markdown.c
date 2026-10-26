@@ -189,6 +189,60 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "pixels-below-lines", 8);
 
     #undef CREATE_TAG
+
+    for (gint d = 0; d < 8; d++) {
+        gchar tname[32];
+        gint base_margin = 18 + d * 20;
+
+        /* Unordered list item: bullet at base_margin, text & wrapped lines at base_margin + 14 */
+        g_snprintf(tname, sizeof(tname), "md_li_ul_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin,
+                "indent", -14,
+                NULL);
+        }
+
+        /* Ordered list item: number at base_margin, text & wrapped lines at base_margin + 19 */
+        g_snprintf(tname, sizeof(tname), "md_li_ol_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin,
+                "indent", -19,
+                NULL);
+        }
+
+        /* Task list item: checkbox at base_margin, text & wrapped lines at base_margin + 17 */
+        g_snprintf(tname, sizeof(tname), "md_li_task_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin,
+                "indent", -17,
+                NULL);
+        }
+
+        /* Continuation paragraph in unordered list: aligns with text at base_margin + 14 */
+        g_snprintf(tname, sizeof(tname), "md_li_p_ul_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin + 14,
+                "indent", 0,
+                "pixels-above-lines", 6,
+                "pixels-below-lines", 4,
+                NULL);
+        }
+
+        /* Continuation paragraph in ordered / task list: aligns with text at base_margin + 19 */
+        g_snprintf(tname, sizeof(tname), "md_li_p_ol_d%d", d);
+        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+            gtk_text_buffer_create_tag(buffer, tname,
+                "left-margin", base_margin + 19,
+                "indent", 0,
+                "pixels-above-lines", 6,
+                "pixels-below-lines", 4,
+                NULL);
+        }
+    }
 }
 
 static void apply_tag_mark(GtkTextBuffer* buffer, const gchar* tag_name,
@@ -563,6 +617,9 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
     gchar code_fence_char = '`';
     gint code_fence_len = 0;
     gboolean prev_was_empty = FALSE;
+    gboolean last_was_li = FALSE;
+    gint last_li_level = 0;
+    gboolean last_li_is_ordered = FALSE;
 
     for (gint i = 0; i < num_lines; i++) {
         const gchar* line = lines[i];
@@ -572,6 +629,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
         while (*trim == ' ') trim++;
         if (!in_code_block && (g_str_has_prefix(trim, "```") || g_str_has_prefix(trim, "~~~"))) {
             in_code_block = TRUE;
+            last_was_li = FALSE;
             code_fence_char = trim[0];
             code_fence_len = 0;
             while (trim[code_fence_len] == code_fence_char) code_fence_len++;
@@ -593,6 +651,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
         }
 
         if (in_code_block) {
+            last_was_li = FALSE;
             gint count = 0;
             const gchar* c = trim;
             while (*c == code_fence_char) { count++; c++; }
@@ -616,6 +675,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             gint h_level = 0;
             while (trim[h_level] == '#') h_level++;
             if (h_level >= 1 && h_level <= 6 && (trim[h_level] == ' ' || trim[h_level] == '\0')) {
+                last_was_li = FALSE;
                 const gchar* h_text = trim + h_level;
                 while (*h_text == ' ') h_text++;
                 gchar* h_clean = g_strdup(h_text);
@@ -653,6 +713,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
 
         /* Check for Horizontal Rule */
         if (is_hr_line(line)) {
+            last_was_li = FALSE;
             GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
             gtk_text_buffer_insert(buffer, &iter, "────────────────────────────────────────────────────────────\n", -1);
             apply_tag_mark(buffer, "md_hr", m, &iter);
@@ -663,6 +724,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
 
         /* Check for Blockquote & GitHub Alerts */
         if (trim[0] == '>') {
+            last_was_li = FALSE;
             const gchar* q_text = trim + 1;
             while (*q_text == ' ') q_text++;
 
@@ -733,6 +795,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             }
 
             if (is_table) {
+                last_was_li = FALSE;
                 GPtrArray* parsed_rows = g_ptr_array_new();
                 g_ptr_array_add(parsed_rows, split_table_row_cells(lines[i])); /* header */
                 i += 2; /* skip header and separator row */
@@ -841,6 +904,8 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
         gint leading_spaces = 0;
         while (line[leading_spaces] == ' ') leading_spaces++;
         const gchar* item_trim = line + leading_spaces;
+        gint level = leading_spaces / 2;
+        if (level > 7) level = 7;
 
         /* Task list item: - [ ] or - [x] or * [ ] etc. */
         if ((item_trim[0] == '-' || item_trim[0] == '*' || item_trim[0] == '+') &&
@@ -850,27 +915,42 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             gboolean done = (item_trim[3] == 'x' || item_trim[3] == 'X');
             const gchar* task_text = item_trim + 6;
 
-            for (gint s = 0; s < leading_spaces; s++) gtk_text_buffer_insert(buffer, &iter, " ", 1);
+            gchar tag_name[32];
+            g_snprintf(tag_name, sizeof(tag_name), "md_li_task_d%d", level);
+
+            GtkTextMark* lm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
 
             GtkTextMark* bm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            gtk_text_buffer_insert(buffer, &iter, done ? "  ☑  " : "  ☐  ", -1);
+            gtk_text_buffer_insert(buffer, &iter, done ? "☑ " : "☐ ", -1);
             apply_tag_mark(buffer, done ? "md_list_task_done" : "md_list_task_todo", bm, &iter);
             gtk_text_buffer_delete_mark(buffer, bm);
 
             GtkTextMark* im = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
             render_inline_text(buffer, &iter, task_text, doc_dir);
-            gtk_text_buffer_insert(buffer, &iter, "\n", 1);
             if (done) apply_tag_mark(buffer, "md_strike", im, &iter);
             gtk_text_buffer_delete_mark(buffer, im);
+
+            GtkTextIter line_end = iter;
+            apply_tag_mark(buffer, tag_name, lm, &line_end);
+            gtk_text_buffer_delete_mark(buffer, lm);
+
+            gtk_text_buffer_insert(buffer, &iter, "\n", 1);
             prev_was_empty = FALSE;
+            last_was_li = TRUE;
+            last_li_level = level;
+            last_li_is_ordered = FALSE;
             continue;
         }
 
         /* Unordered list item: - , * , + */
         if ((item_trim[0] == '-' || item_trim[0] == '*' || item_trim[0] == '+') && item_trim[1] == ' ') {
             const gchar* list_text = item_trim + 2;
-            gint level = leading_spaces / 2;
-            const gchar* bullet = (level == 0) ? "  • " : (level == 1) ? "    ◦ " : "      ▪ ";
+            const gchar* bullet = (level % 3 == 0) ? "• " : (level % 3 == 1) ? "◦ " : "▪ ";
+
+            gchar tag_name[32];
+            g_snprintf(tag_name, sizeof(tag_name), "md_li_ul_d%d", level);
+
+            GtkTextMark* lm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
 
             GtkTextMark* bm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
             gtk_text_buffer_insert(buffer, &iter, bullet, -1);
@@ -878,8 +958,16 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             gtk_text_buffer_delete_mark(buffer, bm);
 
             render_inline_text(buffer, &iter, list_text, doc_dir);
+
+            GtkTextIter line_end = iter;
+            apply_tag_mark(buffer, tag_name, lm, &line_end);
+            gtk_text_buffer_delete_mark(buffer, lm);
+
             gtk_text_buffer_insert(buffer, &iter, "\n", 1);
             prev_was_empty = FALSE;
+            last_was_li = TRUE;
+            last_li_level = level;
+            last_li_is_ordered = FALSE;
             continue;
         }
 
@@ -891,21 +979,50 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 gchar* num_str = g_strndup(item_trim, odot - item_trim + 2);
                 const gchar* list_text = odot + 2;
 
-                for (gint s = 0; s < leading_spaces; s++) gtk_text_buffer_insert(buffer, &iter, " ", 1);
+                gchar tag_name[32];
+                g_snprintf(tag_name, sizeof(tag_name), "md_li_ol_d%d", level);
+
+                GtkTextMark* lm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
 
                 GtkTextMark* bm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                gchar* full_num = g_strdup_printf("  %s ", num_str);
-                gtk_text_buffer_insert(buffer, &iter, full_num, -1);
-                g_free(full_num);
+                gtk_text_buffer_insert(buffer, &iter, num_str, -1);
                 g_free(num_str);
                 apply_tag_mark(buffer, "md_list_bullet", bm, &iter);
                 gtk_text_buffer_delete_mark(buffer, bm);
 
                 render_inline_text(buffer, &iter, list_text, doc_dir);
+
+                GtkTextIter line_end = iter;
+                apply_tag_mark(buffer, tag_name, lm, &line_end);
+                gtk_text_buffer_delete_mark(buffer, lm);
+
                 gtk_text_buffer_insert(buffer, &iter, "\n", 1);
                 prev_was_empty = FALSE;
+                last_was_li = TRUE;
+                last_li_level = level;
+                last_li_is_ordered = TRUE;
                 continue;
             }
+        }
+
+        /* Indented continuation paragraph for list item */
+        if (last_was_li && leading_spaces >= 2 && trim[0] != '\0') {
+            gchar tag_name[32];
+            if (last_li_is_ordered) {
+                g_snprintf(tag_name, sizeof(tag_name), "md_li_p_ol_d%d", last_li_level);
+            } else {
+                g_snprintf(tag_name, sizeof(tag_name), "md_li_p_ul_d%d", last_li_level);
+            }
+
+            GtkTextMark* lm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
+            render_inline_text(buffer, &iter, item_trim, doc_dir);
+            GtkTextIter line_end = iter;
+            apply_tag_mark(buffer, tag_name, lm, &line_end);
+            gtk_text_buffer_delete_mark(buffer, lm);
+
+            gtk_text_buffer_insert(buffer, &iter, "\n", 1);
+            prev_was_empty = FALSE;
+            continue;
         }
 
         /* Setext heading check: line followed by === or --- */
@@ -913,6 +1030,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             const gchar* next_trim = lines[i + 1];
             while (*next_trim == ' ') next_trim++;
             if (next_trim[0] == '=' && next_trim[1] == '=') {
+                last_was_li = FALSE;
                 GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
                 render_inline_text(buffer, &iter, trim, doc_dir);
                 gtk_text_buffer_insert(buffer, &iter, "\n", 1);
@@ -929,6 +1047,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 continue;
             }
             if (next_trim[0] == '-' && next_trim[1] == '-' && !is_hr_line(next_trim)) {
+                last_was_li = FALSE;
                 GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
                 render_inline_text(buffer, &iter, trim, doc_dir);
                 gtk_text_buffer_insert(buffer, &iter, "\n", 1);
@@ -956,6 +1075,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
         }
 
         /* Regular paragraph line */
+        last_was_li = FALSE;
         render_inline_text(buffer, &iter, line, doc_dir);
         gtk_text_buffer_insert(buffer, &iter, "\n", 1);
         prev_was_empty = FALSE;
