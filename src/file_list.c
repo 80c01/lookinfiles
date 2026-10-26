@@ -1407,6 +1407,11 @@ void reload_directory(AppData* app, const gchar* new_dir) {
 }
 
 /* Refresh the list while preserving selected entry and open expansions */
+void refresh_listing_with_path(AppData* app, const gchar* select_path) {
+    update_path_label(app);
+    start_async_dir_scan(app, app->base_dir, select_path, NULL);
+}
+
 void refresh_listing(AppData* app) {
     gchar* cur_path = NULL;
     GtkTreeIter it;
@@ -1414,8 +1419,7 @@ void refresh_listing(AppData* app) {
         gtk_tree_model_get(app->model, &it, COL_PATH, &cur_path, -1);
     }
 
-    update_path_label(app);
-    start_async_dir_scan(app, app->base_dir, cur_path, NULL);
+    refresh_listing_with_path(app, cur_path);
     g_free(cur_path);
 }
 

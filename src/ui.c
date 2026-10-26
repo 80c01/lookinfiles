@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "file_list.h"
+#include "viewer.h"
 #include "minimap.h"
 #include "terminal.h"
 #include "editor.h"
@@ -45,7 +46,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},
     {"Editor tabs", "Ctrl+W", "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"},
     /* Global */
-    {"Global", "Alt+1 .. Alt+4", "Switch between the 4 virtual workspace layouts (or click top-bar minimap)"},
+    {"Global", "Alt+1 .. Alt+8", "Switch between virtual workspaces (or click/scroll top-bar minimap)"},
+    {"Global", "Alt++ / Alt+-", "Add a new virtual workspace (+) or close the current workspace (-)"},
     {"Global", "Ctrl+T", "Open a terminal pane right of the running ones (exit the shell to close it)"},
     {"Global", "Ctrl+Shift+T", "Open a new terminal pane below the running ones"},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},
@@ -252,11 +254,23 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
-    /* Alt+1 .. Alt+4: switch virtual workspace layout */
-    if ((state & GDK_ALT_MASK) != 0 &&
-        keyval >= GDK_KEY_1 && keyval <= GDK_KEY_4) {
-        workspace_switch(app, (gint)(keyval - GDK_KEY_1));
-        return TRUE;
+    /* Alt+1 .. Alt+8: switch virtual workspace; Alt++ / Alt+-: add/remove workspace */
+    if ((state & GDK_ALT_MASK) != 0) {
+        if (keyval >= GDK_KEY_1 && keyval <= GDK_KEY_8) {
+            gint idx = (gint)(keyval - GDK_KEY_1);
+            if (idx < app->num_workspaces) {
+                workspace_switch(app, idx);
+            }
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_plus || keyval == GDK_KEY_equal || keyval == GDK_KEY_KP_Add) {
+            workspace_add(app);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_minus || keyval == GDK_KEY_KP_Subtract) {
+            workspace_remove(app, app->current_ws);
+            return TRUE;
+        }
     }
 
     /* Ctrl+Shift+L: stack the panels or restore side-by-side layout.
@@ -461,43 +475,82 @@ void layout_toggle(AppData* app) {
 }
 
 #define WS_CELL_W   32
+#define WS_ADD_W    22
 #define WS_CELL_H   20
 #define WS_CELL_GAP 5
 #define WS_PAD_X    2
 #define WS_PAD_Y    2
 
+static GHashTable* clone_ws_paths(GHashTable* src) {
+    GHashTable* copy = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    if (src != NULL) {
+        GHashTableIter iter;
+        gpointer key;
+        g_hash_table_iter_init(&iter, src);
+        while (g_hash_table_iter_next(&iter, &key, NULL)) {
+            g_hash_table_add(copy, g_strdup((const gchar*)key));
+        }
+    }
+    return copy;
+}
+
+static void ws_minimap_update_size(AppData* app) {
+    if (app == NULL || app->ws_minimap == NULL) {
+        return;
+    }
+    gboolean has_add = (app->num_workspaces < MAX_VIRTUAL_LAYOUTS);
+    gint total_w = WS_PAD_X * 2 + app->num_workspaces * WS_CELL_W +
+                   (app->num_workspaces - 1) * WS_CELL_GAP +
+                   (has_add ? (WS_CELL_GAP + WS_ADD_W) : 0);
+    gint total_h = WS_CELL_H + WS_PAD_Y * 2;
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(app->ws_minimap), total_w);
+    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(app->ws_minimap), total_h);
+    gtk_widget_queue_draw(app->ws_minimap);
+}
+
+static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
+    VirtualLayout* ws = &app->workspaces[idx];
+    memset(ws, 0, sizeof(VirtualLayout));
+    ws->files_vis = TRUE;
+    ws->preview_vis = TRUE;
+    ws->term_vis = FALSE;
+    ws->right_orient = GTK_ORIENTATION_HORIZONTAL;
+    ws->main_frac = 0.25;
+    ws->right_frac = 0.70;
+    ws->base_dir = g_strdup(dir != NULL ? dir : app->base_dir);
+    ws->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    ws->selected_path = NULL;
+    ws->show_hidden = app->show_hidden;
+    ws->sort_mode = app->sort_mode;
+#ifdef HAVE_VTE
+    if (app->term_stack != NULL) {
+        GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        gtk_widget_set_hexpand(box, TRUE);
+        gtk_widget_set_vexpand(box, TRUE);
+        gtk_stack_add_child(GTK_STACK(app->term_stack), box);
+        ws->term_box = box;
+    }
+    ws->last_focused_vte = NULL;
+#endif
+}
+
 void workspaces_init(AppData* app) {
-    /* Workspace 1: Standard Explorer (Files + Preview) */
-    app->workspaces[0] = (VirtualLayout){
-        .files_vis = TRUE, .preview_vis = TRUE, .term_vis = FALSE,
-        .right_orient = GTK_ORIENTATION_HORIZONTAL,
-        .main_frac = 0.25, .right_frac = 0.72
-    };
-    /* Workspace 2: IDE (Files + Preview + Bottom Terminal) */
-    app->workspaces[1] = (VirtualLayout){
-        .files_vis = TRUE, .preview_vis = TRUE, .term_vis = TRUE,
-        .right_orient = GTK_ORIENTATION_VERTICAL,
-        .main_frac = 0.23, .right_frac = 0.66
-    };
-    /* Workspace 3: 3-Column (Files + Preview + Right Terminal) */
-    app->workspaces[2] = (VirtualLayout){
-        .files_vis = TRUE, .preview_vis = TRUE, .term_vis = TRUE,
-        .right_orient = GTK_ORIENTATION_HORIZONTAL,
-        .main_frac = 0.20, .right_frac = 0.56
-    };
-    /* Workspace 4: Focus (Full Preview) */
-    app->workspaces[3] = (VirtualLayout){
-        .files_vis = FALSE, .preview_vis = TRUE, .term_vis = FALSE,
-        .right_orient = GTK_ORIENTATION_HORIZONTAL,
-        .main_frac = 0.25, .right_frac = 0.72
-    };
+    app->num_workspaces = 1;
     app->current_ws = 0;
     app->hover_ws = -1;
     app->switching_ws = FALSE;
+    init_workspace_slot(app, 0, app->base_dir);
+#ifdef HAVE_VTE
+    app->term_box = app->workspaces[0].term_box;
+    if (app->term_stack != NULL && app->term_box != NULL) {
+        gtk_stack_set_visible_child(GTK_STACK(app->term_stack), app->term_box);
+    }
+#endif
 }
 
 void workspace_save_current(AppData* app) {
     if (app == NULL || app->switching_ws ||
+        app->current_ws < 0 || app->current_ws >= app->num_workspaces ||
         app->left_vbox == NULL || app->viewer_box == NULL || app->term_scroll == NULL) {
         return;
     }
@@ -505,6 +558,29 @@ void workspace_save_current(AppData* app) {
     ws->files_vis = gtk_widget_get_visible(app->left_vbox);
     ws->preview_vis = gtk_widget_get_visible(app->viewer_box);
     ws->term_vis = gtk_widget_get_visible(app->term_scroll);
+    ws->show_hidden = app->show_hidden;
+    ws->sort_mode = app->sort_mode;
+
+    g_free(ws->base_dir);
+    ws->base_dir = g_strdup(app->base_dir);
+
+    if (ws->expanded_paths != NULL) {
+        g_hash_table_destroy(ws->expanded_paths);
+    }
+    ws->expanded_paths = clone_ws_paths(app->expanded_paths);
+
+    if (app->selection != NULL) {
+        GtkTreeIter it;
+        g_free(ws->selected_path);
+        ws->selected_path = NULL;
+        if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+            gtk_tree_model_get(app->model, &it, COL_PATH, &ws->selected_path, -1);
+        }
+    }
+
+#ifdef HAVE_VTE
+    ws->last_focused_vte = app->last_focused_vte;
+#endif
 
     if (app->right_paned != NULL) {
         ws->right_orient =
@@ -557,10 +633,12 @@ static gboolean workspace_apply_positions_idle(gpointer data) {
 }
 
 void workspace_switch(AppData* app, gint idx) {
-    if (app == NULL || idx < 0 || idx >= NUM_VIRTUAL_LAYOUTS) {
+    if (app == NULL || idx < 0 || idx >= app->num_workspaces) {
         return;
     }
-    workspace_save_current(app);
+    if (idx != app->current_ws) {
+        workspace_save_current(app);
+    }
     app->switching_ws = TRUE;
     app->current_ws = idx;
 
@@ -581,7 +659,12 @@ void workspace_switch(AppData* app, gint idx) {
     app->right_frac = ws->right_frac;
 
 #ifdef HAVE_VTE
-    if (ws->term_vis) {
+    app->term_box = ws->term_box;
+    app->last_focused_vte = ws->last_focused_vte;
+    if (app->term_stack != NULL && ws->term_box != NULL) {
+        gtk_stack_set_visible_child(GTK_STACK(app->term_stack), ws->term_box);
+    }
+    if (ws->term_vis && ws->term_box != NULL) {
         GPtrArray* panes = term_visible_panes(app);
         if (panes->len == 0) {
             term_spawn_pane(app, FALSE);
@@ -590,16 +673,90 @@ void workspace_switch(AppData* app, gint idx) {
     }
 #endif
 
+    gboolean need_rescan = (g_strcmp0(app->base_dir, ws->base_dir) != 0) ||
+                           (app->show_hidden != ws->show_hidden) ||
+                           (app->sort_mode != ws->sort_mode) ||
+                           (g_hash_table_size(app->expanded_paths) !=
+                            g_hash_table_size(ws->expanded_paths));
+
+    app->show_hidden = ws->show_hidden;
+    app->sort_mode = ws->sort_mode;
+    if (ws->base_dir != NULL && g_strcmp0(app->base_dir, ws->base_dir) != 0) {
+        g_free(app->base_dir);
+        app->base_dir = g_strdup(ws->base_dir);
+        monitor_directory(app);
+    }
+    if (app->expanded_paths != NULL) {
+        g_hash_table_destroy(app->expanded_paths);
+    }
+    app->expanded_paths = clone_ws_paths(ws->expanded_paths);
+
     minimap_update_visibility(app);
     app->switching_ws = FALSE;
     update_path_label(app);
     g_idle_add(workspace_apply_positions_idle, app);
+
+    if (need_rescan) {
+        refresh_listing_with_path(app, ws->selected_path);
+    } else if (ws->selected_path != NULL) {
+        if (!select_by_path(app, ws->selected_path)) {
+            select_first_row(app);
+        }
+    }
 
     if (ws->files_vis && app->tree_view != NULL) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     } else if (ws->preview_vis && app->text_view != NULL) {
         gtk_widget_grab_focus(app->text_view);
     }
+}
+
+void workspace_add(AppData* app) {
+    if (app == NULL || app->num_workspaces >= MAX_VIRTUAL_LAYOUTS) {
+        return;
+    }
+    /* Save the current workspace intact before creating the new one */
+    workspace_save_current(app);
+
+    gint new_idx = app->num_workspaces;
+    init_workspace_slot(app, new_idx, app->base_dir);
+    app->num_workspaces++;
+    ws_minimap_update_size(app);
+    workspace_switch(app, new_idx);
+}
+
+void workspace_remove(AppData* app, gint idx) {
+    if (app == NULL || app->num_workspaces <= 1 ||
+        idx < 0 || idx >= app->num_workspaces) {
+        return;
+    }
+    VirtualLayout* rm = &app->workspaces[idx];
+    g_free(rm->base_dir);
+    if (rm->expanded_paths != NULL) {
+        g_hash_table_destroy(rm->expanded_paths);
+    }
+    g_free(rm->selected_path);
+#ifdef HAVE_VTE
+    if (app->term_stack != NULL && rm->term_box != NULL) {
+        gtk_stack_remove(GTK_STACK(app->term_stack), rm->term_box);
+    }
+#endif
+
+    for (gint i = idx; i < app->num_workspaces - 1; i++) {
+        app->workspaces[i] = app->workspaces[i + 1];
+    }
+    memset(&app->workspaces[app->num_workspaces - 1], 0, sizeof(VirtualLayout));
+    app->num_workspaces--;
+
+    gint target = app->current_ws;
+    if (target >= app->num_workspaces) {
+        target = app->num_workspaces - 1;
+    } else if (idx < app->current_ws) {
+        target = app->current_ws - 1;
+    }
+    app->current_ws = target;
+    ws_minimap_update_size(app);
+    workspace_switch(app, target);
 }
 
 static void draw_rounded_rect(cairo_t* cr, gdouble x, gdouble y,
@@ -624,7 +781,7 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
     AppData* app = (AppData*)data;
     gdouble start_y = (height - WS_CELL_H) * 0.5;
 
-    for (gint i = 0; i < NUM_VIRTUAL_LAYOUTS; i++) {
+    for (gint i = 0; i < app->num_workspaces; i++) {
         VirtualLayout* ws = &app->workspaces[i];
         gboolean is_active = (i == app->current_ws);
         gboolean is_hover = (i == app->hover_ws);
@@ -709,13 +866,60 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
             }
         }
     }
+
+    /* Draw the '+' Add Workspace button at the right end (Ubuntu style) */
+    if (app->num_workspaces < MAX_VIRTUAL_LAYOUTS) {
+        gboolean add_hover = (app->hover_ws == app->num_workspaces);
+        gdouble ax = WS_PAD_X + app->num_workspaces * (WS_CELL_W + WS_CELL_GAP);
+        gdouble ay = start_y;
+
+        draw_rounded_rect(cr, ax, ay, WS_ADD_W, WS_CELL_H, 3.0);
+        if (add_hover) {
+            cairo_set_source_rgb(cr, 0.16, 0.20, 0.25);
+        } else {
+            cairo_set_source_rgb(cr, 0.10, 0.11, 0.12);
+        }
+        cairo_fill_preserve(cr);
+
+        if (add_hover) {
+            cairo_set_source_rgb(cr, 0.0, 0.48, 0.80);
+            cairo_set_line_width(cr, 1.3);
+        } else {
+            cairo_set_source_rgb(cr, 0.25, 0.28, 0.31);
+            cairo_set_line_width(cr, 1.0);
+        }
+        cairo_stroke(cr);
+
+        /* Plus '+' icon */
+        gdouble cx = ax + WS_ADD_W * 0.5;
+        gdouble cy = ay + WS_CELL_H * 0.5;
+        gdouble arm = 4.0;
+        if (add_hover) {
+            cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+        } else {
+            cairo_set_source_rgb(cr, 0.68, 0.72, 0.76);
+        }
+        cairo_set_line_width(cr, 1.6);
+        cairo_move_to(cr, cx - arm, cy);
+        cairo_line_to(cr, cx + arm, cy);
+        cairo_move_to(cr, cx, cy - arm);
+        cairo_line_to(cr, cx, cy + arm);
+        cairo_stroke(cr);
+    }
 }
 
-static gint ws_index_at_x(gdouble x) {
-    for (gint i = 0; i < NUM_VIRTUAL_LAYOUTS; i++) {
+/* Returns 0..num_workspaces-1 for a workspace cell, num_workspaces for '+', or -1 */
+static gint ws_index_at_x(AppData* app, gdouble x) {
+    for (gint i = 0; i < app->num_workspaces; i++) {
         gdouble bx = WS_PAD_X + i * (WS_CELL_W + WS_CELL_GAP);
         if (x >= bx && x <= bx + WS_CELL_W) {
             return i;
+        }
+    }
+    if (app->num_workspaces < MAX_VIRTUAL_LAYOUTS) {
+        gdouble ax = WS_PAD_X + app->num_workspaces * (WS_CELL_W + WS_CELL_GAP);
+        if (x >= ax && x <= ax + WS_ADD_W) {
+            return app->num_workspaces;
         }
     }
     return -1;
@@ -723,12 +927,23 @@ static gint ws_index_at_x(gdouble x) {
 
 static void on_ws_minimap_pressed(GtkGestureClick* gesture, gint n_press,
                                   gdouble x, gdouble y, gpointer data) {
-    (void)gesture;
     (void)n_press;
     (void)y;
     AppData* app = (AppData*)data;
-    gint idx = ws_index_at_x(x);
-    if (idx >= 0) {
+    guint button = gtk_gesture_single_get_current_button(GTK_GESTURE_SINGLE(gesture));
+    gint idx = ws_index_at_x(app, x);
+    if (idx < 0) {
+        return;
+    }
+    if (idx == app->num_workspaces) {
+        if (button == GDK_BUTTON_PRIMARY) {
+            workspace_add(app);
+        }
+        return;
+    }
+    if (button == GDK_BUTTON_MIDDLE || button == GDK_BUTTON_SECONDARY) {
+        workspace_remove(app, idx);
+    } else if (button == GDK_BUTTON_PRIMARY) {
         workspace_switch(app, idx);
     }
 }
@@ -738,7 +953,7 @@ static void on_ws_minimap_motion(GtkEventControllerMotion* ctrl,
     (void)ctrl;
     (void)y;
     AppData* app = (AppData*)data;
-    gint idx = ws_index_at_x(x);
+    gint idx = ws_index_at_x(app, x);
     if (idx != app->hover_ws) {
         app->hover_ws = idx;
         gtk_widget_queue_draw(app->ws_minimap);
@@ -758,9 +973,12 @@ static gboolean on_ws_minimap_scroll(GtkEventControllerScroll* ctrl,
                                      gdouble dx, gdouble dy, gpointer data) {
     (void)ctrl;
     AppData* app = (AppData*)data;
+    if (app->num_workspaces <= 1) {
+        return FALSE;
+    }
     gint step = (dy > 0.0 || dx > 0.0) ? 1 : ((dy < 0.0 || dx < 0.0) ? -1 : 0);
     if (step != 0) {
-        gint next = (app->current_ws + step + NUM_VIRTUAL_LAYOUTS) % NUM_VIRTUAL_LAYOUTS;
+        gint next = (app->current_ws + step + app->num_workspaces) % app->num_workspaces;
         workspace_switch(app, next);
         return TRUE;
     }
@@ -768,21 +986,16 @@ static gboolean on_ws_minimap_scroll(GtkEventControllerScroll* ctrl,
 }
 
 GtkWidget* create_workspace_minimap(AppData* app) {
-    gint total_w = WS_PAD_X * 2 + NUM_VIRTUAL_LAYOUTS * WS_CELL_W +
-                   (NUM_VIRTUAL_LAYOUTS - 1) * WS_CELL_GAP;
-    gint total_h = WS_CELL_H + WS_PAD_Y * 2;
-
     GtkWidget* area = gtk_drawing_area_new();
-    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(area), total_w);
-    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(area), total_h);
     gtk_widget_set_valign(area, GTK_ALIGN_CENTER);
     gtk_widget_set_tooltip_text(
         area,
-        "Virtual Workspace Layouts (click, scroll, or press Alt+1..4 to switch)");
+        "Workspaces: left-click to switch, click '+' to add new workspace (Alt++), right/middle-click to close (Alt+-)");
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area),
                                    on_ws_minimap_draw, app, NULL);
 
     GtkGesture* click = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), 0);
     g_signal_connect(click, "pressed", G_CALLBACK(on_ws_minimap_pressed), app);
     gtk_widget_add_controller(area, GTK_EVENT_CONTROLLER(click));
 
@@ -797,6 +1010,7 @@ GtkWidget* create_workspace_minimap(AppData* app) {
     gtk_widget_add_controller(area, scroll);
 
     app->ws_minimap = area;
+    ws_minimap_update_size(app);
     return area;
 }
 

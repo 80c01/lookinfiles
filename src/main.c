@@ -218,11 +218,11 @@ int main(int argc, char** argv) {
 #endif
     gtk_widget_set_visible(term_scroll, FALSE);
 #ifdef HAVE_VTE
-    GtkWidget* term_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_name(term_box, "term-box");
-    gtk_widget_set_hexpand(term_box, TRUE);
-    gtk_widget_set_vexpand(term_box, TRUE);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(term_scroll), term_box);
+    GtkWidget* term_stack = gtk_stack_new();
+    gtk_widget_set_name(term_stack, "term-box");
+    gtk_widget_set_hexpand(term_stack, TRUE);
+    gtk_widget_set_vexpand(term_stack, TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(term_scroll), term_stack);
 #else
     GtkWidget* term_stub = gtk_label_new(
         "Terminal panel disabled:\ninstall libvte-2.91-gtk4-dev then rebuild (make).");
@@ -235,15 +235,19 @@ int main(int argc, char** argv) {
     AppData* app = g_new0(AppData, 1);
     app->window = GTK_WINDOW(window);
     app->main_loop = loop;
-    workspaces_init(app);
-    GtkWidget* ws_minimap = create_workspace_minimap(app);
-    GtkWidget* ws_div_label = gtk_label_new("|");
-    gtk_widget_add_css_class(ws_div_label, "breadcrumb-sep");
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
 #ifdef HAVE_GSV
     apply_vscode_scheme(app->buffer, text_view);
 #endif
     app->base_dir = g_strdup(start_dir);
+    app->term_scroll = term_scroll;
+#ifdef HAVE_VTE
+    app->term_stack = term_stack;
+#endif
+    workspaces_init(app);
+    GtkWidget* ws_minimap = create_workspace_minimap(app);
+    GtkWidget* ws_div_label = gtk_label_new("|");
+    gtk_widget_add_css_class(ws_div_label, "breadcrumb-sep");
     app->model = GTK_TREE_MODEL(store);
     app->tree_view = GTK_TREE_VIEW(tree_view);
     app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -265,11 +269,6 @@ int main(int argc, char** argv) {
     g_signal_connect(sort_btn, "clicked", G_CALLBACK(on_sort_pill_clicked), app);
     g_signal_connect(hidden_btn, "clicked", G_CALLBACK(on_hidden_pill_clicked), app);
     g_signal_connect(help_btn, "clicked", G_CALLBACK(on_help_pill_clicked), app);
-
-    app->term_scroll = term_scroll;
-#ifdef HAVE_VTE
-    app->term_box = term_box;
-#endif
     update_path_label(app);
 
     app->notebook = notebook;

@@ -64,8 +64,8 @@ typedef struct {
     GtkWidget* tab_label; /* tab title, with a bullet when unsaved */
 } EditorTab;
 
-/* Virtual workspace layout state (like virtual desktops) */
-#define NUM_VIRTUAL_LAYOUTS 4
+/* Virtual workspace layout state (dynamic workspaces like Ubuntu) */
+#define MAX_VIRTUAL_LAYOUTS 8
 
 typedef struct {
     gboolean files_vis;
@@ -74,6 +74,15 @@ typedef struct {
     GtkOrientation right_orient;
     gdouble main_frac;
     gdouble right_frac;
+    gchar* base_dir;
+    GHashTable* expanded_paths;
+    gchar* selected_path;
+    gboolean show_hidden;
+    gint sort_mode;
+#ifdef HAVE_VTE
+    GtkWidget* term_box;
+    GtkWidget* last_focused_vte;
+#endif
 } VirtualLayout;
 
 /* Shared application state */
@@ -117,7 +126,8 @@ typedef struct {
     /* Embedded terminal panel (Ctrl+T) */
     GtkWidget* term_scroll;
 #ifdef HAVE_VTE
-    GtkWidget* term_box; /* root container of resizable terminal panes */
+    GtkWidget* term_stack; /* stack holding each workspace's independent term_box */
+    GtkWidget* term_box; /* active workspace's root container of terminal panes */
     GtkWidget* last_focused_vte; /* last focused terminal pane for splitting */
 #endif
 
@@ -154,7 +164,8 @@ typedef struct {
     gdouble right_frac;      /* viewer share of viewer/terminal pair */
 
     /* Virtual workspace layouts & top-bar workspace minimap */
-    VirtualLayout workspaces[NUM_VIRTUAL_LAYOUTS];
+    VirtualLayout workspaces[MAX_VIRTUAL_LAYOUTS];
+    gint num_workspaces;
     gint current_ws;
     gint hover_ws;
     gboolean switching_ws;

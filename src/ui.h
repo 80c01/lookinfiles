@@ -27,6 +27,8 @@ void layout_toggle(AppData* app);
 void workspaces_init(AppData* app);
 void workspace_save_current(AppData* app);
 void workspace_switch(AppData* app, gint idx);
+void workspace_add(AppData* app);
+void workspace_remove(AppData* app, gint idx);
 GtkWidget* create_workspace_minimap(AppData* app);
 
 void apply_panel_borders(void);

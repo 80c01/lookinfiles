@@ -49,6 +49,7 @@ void on_hidden_pill_clicked(GtkButton* btn, gpointer data);
 void on_help_pill_clicked(GtkButton* btn, gpointer data);
 void reload_directory(AppData* app, const gchar* new_dir);
 void refresh_listing(AppData* app);
+void refresh_listing_with_path(AppData* app, const gchar* select_path);
 void toggle_hidden_files(AppData* app);
 void cycle_sort_mode(AppData* app);
 

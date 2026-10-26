@@ -182,20 +182,22 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
     }
 
     GtkWidget* parent = gtk_widget_get_parent(term_w);
-    if (parent == app->term_box) {
-        gtk_box_remove(GTK_BOX(app->term_box), term_w);
-        gtk_widget_set_visible(app->term_scroll, FALSE);
-        gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
-        gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
-        if (!files_vis && !preview_vis && app->viewer_box != NULL) {
-            gtk_widget_set_visible(app->viewer_box, TRUE);
-            preview_vis = TRUE;
-        }
-        update_path_label(app);
-        if (files_vis) {
-            gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
-        } else if (preview_vis) {
-            gtk_widget_grab_focus(app->text_view);
+    if (GTK_IS_BOX(parent)) {
+        gtk_box_remove(GTK_BOX(parent), term_w);
+        if (parent == app->term_box) {
+            gtk_widget_set_visible(app->term_scroll, FALSE);
+            gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
+            gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
+            if (!files_vis && !preview_vis && app->viewer_box != NULL) {
+                gtk_widget_set_visible(app->viewer_box, TRUE);
+                preview_vis = TRUE;
+            }
+            update_path_label(app);
+            if (files_vis) {
+                gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+            } else if (preview_vis) {
+                gtk_widget_grab_focus(app->text_view);
+            }
         }
         return;
     }
@@ -211,9 +213,9 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
         gtk_paned_set_start_child(parent_paned, NULL);
         gtk_paned_set_end_child(parent_paned, NULL);
 
-        if (grandparent == app->term_box) {
-            gtk_box_remove(GTK_BOX(app->term_box), parent);
-            gtk_box_append(GTK_BOX(app->term_box), sibling);
+        if (GTK_IS_BOX(grandparent)) {
+            gtk_box_remove(GTK_BOX(grandparent), parent);
+            gtk_box_append(GTK_BOX(grandparent), sibling);
         } else if (GTK_IS_PANED(grandparent)) {
             gboolean is_start = (gtk_paned_get_start_child(GTK_PANED(grandparent)) == parent);
             if (is_start) {
