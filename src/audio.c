@@ -150,36 +150,39 @@ void audio_preview_init(AppData* app) {
 }
 
 void audio_preview_stop(AppData* app) {
-    if (app == NULL || app->audio_stream == NULL) {
+    if (app == NULL || (app->audio_stream == NULL && app->audio_current_path == NULL)) {
         return;
     }
 
-    if (app->audio_duration_sig != 0) {
-        g_signal_handler_disconnect(app->audio_stream, app->audio_duration_sig);
-        app->audio_duration_sig = 0;
-    }
-    if (app->audio_prepared_sig != 0) {
-        g_signal_handler_disconnect(app->audio_stream, app->audio_prepared_sig);
-        app->audio_prepared_sig = 0;
-    }
-    if (app->audio_error_sig != 0) {
-        g_signal_handler_disconnect(app->audio_stream, app->audio_error_sig);
-        app->audio_error_sig = 0;
+    if (app->audio_stream != NULL) {
+        if (app->audio_duration_sig != 0) {
+            g_signal_handler_disconnect(app->audio_stream, app->audio_duration_sig);
+            app->audio_duration_sig = 0;
+        }
+        if (app->audio_prepared_sig != 0) {
+            g_signal_handler_disconnect(app->audio_stream, app->audio_prepared_sig);
+            app->audio_prepared_sig = 0;
+        }
+        if (app->audio_error_sig != 0) {
+            g_signal_handler_disconnect(app->audio_stream, app->audio_error_sig);
+            app->audio_error_sig = 0;
+        }
+
+        if (app->audio_controls != NULL) {
+            gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(app->audio_controls), NULL);
+        }
+
+        if (gtk_media_stream_get_playing(app->audio_stream)) {
+            gtk_media_stream_pause(app->audio_stream);
+        }
+
+        if (GTK_IS_MEDIA_FILE(app->audio_stream)) {
+            gtk_media_file_clear(GTK_MEDIA_FILE(app->audio_stream));
+        }
+
+        g_clear_object(&app->audio_stream);
     }
 
-    if (gtk_media_stream_get_playing(app->audio_stream)) {
-        gtk_media_stream_pause(app->audio_stream);
-    }
-
-    if (GTK_IS_MEDIA_FILE(app->audio_stream)) {
-        gtk_media_file_clear(GTK_MEDIA_FILE(app->audio_stream));
-    }
-
-    if (app->audio_controls != NULL) {
-        gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(app->audio_controls), NULL);
-    }
-
-    g_clear_object(&app->audio_stream);
     g_free(app->audio_current_path);
     app->audio_current_path = NULL;
 }

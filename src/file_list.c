@@ -2281,11 +2281,30 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
                         gtk_tree_view_expand_row(app->tree_view, p, FALSE);
                     }
                     gtk_tree_path_free(p);
+                } else if (app->viewed_name != NULL && !app->render_raw) {
+                    if (is_video_file(app->viewed_name)) {
+                        video_preview_toggle_play(app);
+                    } else if (is_audio_file(app->viewed_name)) {
+                        audio_preview_toggle_play(app);
+                    }
                 }
                 g_free(type);
             }
         }
         return TRUE;
+    case GDK_KEY_p:
+    case GDK_KEY_P:
+        app->pending_g = FALSE;
+        if (app->viewed_name != NULL && !app->render_raw) {
+            if (is_video_file(app->viewed_name)) {
+                video_preview_toggle_play(app);
+                return TRUE;
+            } else if (is_audio_file(app->viewed_name)) {
+                audio_preview_toggle_play(app);
+                return TRUE;
+            }
+        }
+        return FALSE;
     case GDK_KEY_slash:
         app->pending_g = FALSE;
         show_search(app, FALSE);

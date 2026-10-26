@@ -155,6 +155,10 @@ void video_preview_stop(AppData* app) {
     if (app == NULL || app->video_widget == NULL) {
         return;
     }
+    if (app->video_current_path == NULL &&
+        gtk_video_get_media_stream(GTK_VIDEO(app->video_widget)) == NULL) {
+        return;
+    }
 
     GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
     if (stream != NULL) {
@@ -325,10 +329,10 @@ void render_video_preview(AppData* app, const gchar* name, const gchar* full) {
     update_video_metadata_label(app, NULL);
 
     if (app->video_widget != NULL) {
+        gtk_video_set_autoplay(GTK_VIDEO(app->video_widget), FALSE);
         GFile* file = g_file_new_for_path(full);
         gtk_video_set_file(GTK_VIDEO(app->video_widget), file);
         g_object_unref(file);
-        gtk_video_set_autoplay(GTK_VIDEO(app->video_widget), FALSE);
 
         GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
         if (stream != NULL) {
