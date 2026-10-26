@@ -1520,122 +1520,368 @@ GtkWidget* create_workspace_minimap(AppData* app) {
     return area;
 }
 
-/* Panel boundaries and VS Code Dark+ theme styling */
+/* VS Code-style explorer panel header: "EXPLORER" title + current folder section */
+GtkWidget* create_sidebar_header(AppData* app) {
+    GtkWidget* header = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_name(header, "sidebar-header");
+
+    GtkWidget* title = gtk_label_new("EXPLORER");
+    gtk_widget_set_name(title, "sidebar-title");
+    gtk_label_set_xalign(GTK_LABEL(title), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(title), PANGO_ELLIPSIZE_END);
+    gtk_box_append(GTK_BOX(header), title);
+
+    GtkWidget* section = gtk_label_new("");
+    gtk_widget_set_name(section, "sidebar-section");
+    gtk_label_set_xalign(GTK_LABEL(section), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(section), PANGO_ELLIPSIZE_END);
+    gtk_box_append(GTK_BOX(header), section);
+
+    if (app != NULL) {
+        app->sidebar_title = title;
+        app->sidebar_section = section;
+    }
+    return header;
+}
+
+static GtkWidget* status_item_new(void) {
+    GtkWidget* label = gtk_label_new("");
+    gtk_widget_add_css_class(label, "status-item");
+    gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_MIDDLE);
+    gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
+    gtk_widget_set_visible(label, FALSE);
+    return label;
+}
+
+/* VS Code-style bottom status bar: Git branch + selection on the left, size + type on the right */
+GtkWidget* create_status_bar(AppData* app) {
+    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_name(bar, "bottom-statusbar");
+
+    GtkWidget* status_branch = status_item_new();
+    gtk_widget_add_css_class(status_branch, "status-branch");
+    gtk_box_append(GTK_BOX(bar), status_branch);
+
+    GtkWidget* status_selection = status_item_new();
+    gtk_widget_add_css_class(status_selection, "status-dim");
+    gtk_box_append(GTK_BOX(bar), status_selection);
+
+    GtkWidget* spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(spacer, TRUE);
+    gtk_box_append(GTK_BOX(bar), spacer);
+
+    GtkWidget* status_size = status_item_new();
+    gtk_box_append(GTK_BOX(bar), status_size);
+
+    GtkWidget* status_type = status_item_new();
+    gtk_box_append(GTK_BOX(bar), status_type);
+
+    GtkWidget* status_encoding = status_item_new();
+    gtk_label_set_text(GTK_LABEL(status_encoding), "UTF-8");
+    gtk_widget_set_visible(status_encoding, TRUE);
+    gtk_box_append(GTK_BOX(bar), status_encoding);
+
+    if (app != NULL) {
+        app->status_branch = status_branch;
+        app->status_selection = status_selection;
+        app->status_size = status_size;
+        app->status_type = status_type;
+    }
+
+    return bar;
+}
+
+/* Current Git branch of dir (short SHA when detached HEAD), NULL outside a repository.
+ * Reads .git/HEAD directly: no subprocess on the UI thread. */
+static gchar* read_git_branch(const gchar* dir) {
+    gchar* root = find_git_root(dir);
+    if (root == NULL) {
+        return NULL;
+    }
+
+    gchar* dot_git = g_build_filename(root, ".git", NULL);
+    gchar* git_dir = NULL;
+    if (g_file_test(dot_git, G_FILE_TEST_IS_DIR)) {
+        git_dir = g_strdup(dot_git);
+    } else {
+        /* Worktrees and submodules: ".git" is a file containing "gitdir: <path>" */
+        gchar* contents = NULL;
+        if (g_file_get_contents(dot_git, &contents, NULL, NULL) &&
+            g_str_has_prefix(contents, "gitdir:")) {
+            gchar* p = g_strstrip(contents + strlen("gitdir:"));
+            git_dir = g_path_is_absolute(p) ? g_strdup(p) : g_build_filename(root, p, NULL);
+        }
+        g_free(contents);
+    }
+    g_free(dot_git);
+    g_free(root);
+    if (git_dir == NULL) {
+        return NULL;
+    }
+
+    gchar* head_path = g_build_filename(git_dir, "HEAD", NULL);
+    g_free(git_dir);
+    gchar* head = NULL;
+    gchar* branch = NULL;
+    if (g_file_get_contents(head_path, &head, NULL, NULL)) {
+        g_strstrip(head);
+        if (g_str_has_prefix(head, "ref: refs/heads/")) {
+            branch = g_strdup(head + strlen("ref: refs/heads/"));
+        } else if (g_str_has_prefix(head, "ref: ")) {
+            branch = g_strdup(head + strlen("ref: "));
+        } else if (head[0] != '\0') {
+            branch = g_strndup(head, 7);
+        }
+    }
+    g_free(head);
+    g_free(head_path);
+    return branch;
+}
+
+/* Human-readable type / language of an explorer entry, like VS Code's language mode */
+static gchar* status_type_label(const gchar* name, const gchar* type) {
+    if (g_strcmp0(type, "dir") == 0) {
+        return g_strdup("Folder");
+    }
+    if (g_strcmp0(type, "bookmark") == 0) {
+        return g_strdup("Bookmark");
+    }
+    if (is_markdown_file(name)) {
+        return g_strdup("Markdown");
+    }
+    if (is_html_file(name)) {
+        return g_strdup("HTML");
+    }
+    if (is_pdf_file(name)) {
+        return g_strdup("PDF");
+    }
+    if (is_image_file(name)) {
+        return g_strdup("Image");
+    }
+    if (is_video_file(name)) {
+        return g_strdup("Video");
+    }
+    if (is_audio_file(name)) {
+        return g_strdup("Audio");
+    }
+#ifdef HAVE_GSV
+    GtkSourceLanguageManager* lm = gtk_source_language_manager_get_default();
+    GtkSourceLanguage* lang = gtk_source_language_manager_guess_language(lm, name, NULL);
+    if (lang != NULL) {
+        return g_strdup(gtk_source_language_get_name(lang));
+    }
+#endif
+    const gchar* ext = file_extension(name);
+    if (ext[0] != '\0') {
+        return g_ascii_strup(ext, -1);
+    }
+    return g_strdup("Plain Text");
+}
+
+/* Refresh the bottom status bar from the current directory and explorer selection */
+void update_status_bar(AppData* app) {
+    if (app == NULL || app->status_branch == NULL) {
+        return;
+    }
+
+    gchar* branch = read_git_branch(app->base_dir);
+    if (branch != NULL) {
+        gchar* text = g_strdup_printf("⎇ %s", branch);
+        gtk_label_set_text(GTK_LABEL(app->status_branch), text);
+        gtk_widget_set_tooltip_text(app->status_branch, "Git branch of the current directory");
+        g_free(text);
+    }
+    gtk_widget_set_visible(app->status_branch, branch != NULL);
+    g_free(branch);
+
+    gchar* name = NULL;
+    gchar* type = NULL;
+    gchar* full = NULL;
+    GtkTreeIter it;
+    if (app->selection != NULL && app->model != NULL &&
+        gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+        gtk_tree_model_get(app->model, &it,
+                           COL_NAME, &name,
+                           COL_TYPE, &type,
+                           COL_PATH, &full, -1);
+    }
+
+    gboolean has_sel = (name != NULL && type != NULL && g_strcmp0(type, "-") != 0);
+    gboolean has_size = FALSE;
+    if (has_sel) {
+        gtk_label_set_text(GTK_LABEL(app->status_selection), name);
+        gtk_widget_set_tooltip_text(app->status_selection, full);
+
+        gchar* type_label = status_type_label(name, type);
+        gtk_label_set_text(GTK_LABEL(app->status_type), type_label);
+        g_free(type_label);
+
+        gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0);
+        struct stat st;
+        if (is_file && full != NULL && g_stat(full, &st) == 0) {
+            gchar* size_str = g_format_size((guint64)st.st_size);
+            gtk_label_set_text(GTK_LABEL(app->status_size), size_str);
+            g_free(size_str);
+            has_size = TRUE;
+        }
+    }
+    gtk_widget_set_visible(app->status_selection, has_sel);
+    gtk_widget_set_visible(app->status_type, has_sel);
+    gtk_widget_set_visible(app->status_size, has_size);
+
+    g_free(name);
+    g_free(type);
+    g_free(full);
+}
+
+/* Panel boundaries and VS Code (Dark Modern) inspired theme styling */
 void apply_panel_borders(void) {
     GtkCssProvider* css = gtk_css_provider_new();
     static const gchar* DATA =
+        /* ---- Base ---- */
         "window, .background {\n"
         "  background-color: #191a1b;\n"
         "  color: #cccccc;\n"
         "}\n"
+        /* Application chrome uses the system UI font at VS Code's 13px */
+        "#statusbar, #bottom-statusbar, #sidebar-header, #left-sidebar treeview,\n"
+        "notebook > header tab, #help-panel, tooltip {\n"
+        "  font-family: 'Segoe UI', 'Ubuntu', 'Cantarell', 'Noto Sans', sans-serif;\n"
+        "  font-size: 13px;\n"
+        "}\n"
+        /* ---- Top bar (title bar) ---- */
         "#statusbar {\n"
         "  background-color: #18191a;\n"
-        "  padding: 4px 10px;\n"
-        "  border-bottom: 1px solid #26282a;\n"
+        "  padding: 3px 8px;\n"
+        "  min-height: 28px;\n"
+        "  border-bottom: 1px solid #2b2b2b;\n"
         "  color: #cccccc;\n"
         "}\n"
         "#statusbar label {\n"
         "  color: #cccccc;\n"
         "}\n"
+        /* Breadcrumbs */
         "button.breadcrumb-item,\n"
         "button.breadcrumb-current {\n"
         "  background: transparent;\n"
         "  border: none;\n"
         "  border-radius: 4px;\n"
-        "  padding: 2px 6px;\n"
+        "  padding: 1px 5px;\n"
         "  min-height: 22px;\n"
         "  min-width: 0px;\n"
         "  box-shadow: none;\n"
         "}\n"
         "button.breadcrumb-item label {\n"
-        "  color: #9da5b4;\n"
-        "  font-size: 0.94em;\n"
+        "  color: #a9a9a9;\n"
         "}\n"
         "button.breadcrumb-item:hover,\n"
         "button.breadcrumb-current:hover {\n"
-        "  background-color: #26292c;\n"
+        "  background-color: rgba(90, 93, 94, 0.31);\n"
         "}\n"
         "button.breadcrumb-item:hover label {\n"
-        "  color: #e5e5e5;\n"
+        "  color: #e0e0e0;\n"
         "}\n"
         "button.breadcrumb-current label {\n"
         "  color: #ffffff;\n"
-        "  font-weight: bold;\n"
-        "  font-size: 0.95em;\n"
+        "  font-weight: 600;\n"
         "}\n"
         "label.breadcrumb-sep {\n"
-        "  color: #5c6370;\n"
+        "  color: #6e7681;\n"
         "  padding: 0px 2px;\n"
-        "  font-weight: bold;\n"
         "}\n"
+        /* Flat toolbar toggles (VS Code title bar layout controls) */
         "button.status-pill {\n"
-        "  background-color: #232528;\n"
-        "  border: 1px solid #2f3236;\n"
-        "  border-radius: 10px;\n"
-        "  padding: 2px 10px;\n"
-        "  min-height: 20px;\n"
+        "  background-color: transparent;\n"
+        "  border: none;\n"
+        "  border-radius: 5px;\n"
+        "  padding: 2px 8px;\n"
+        "  margin: 0px 1px;\n"
+        "  min-height: 22px;\n"
         "  min-width: 0px;\n"
         "  box-shadow: none;\n"
         "}\n"
         "button.status-pill label {\n"
-        "  color: #b8bfc6;\n"
-        "  font-size: 0.88em;\n"
+        "  color: #9d9d9d;\n"
+        "  font-size: 12px;\n"
         "}\n"
         "button.status-pill:hover {\n"
-        "  background-color: #2d3136;\n"
-        "  border-color: #007acc;\n"
+        "  background-color: rgba(90, 93, 94, 0.31);\n"
         "}\n"
         "button.status-pill:hover label {\n"
         "  color: #ffffff;\n"
         "}\n"
+        "button.status-pill:active {\n"
+        "  background-color: rgba(90, 93, 94, 0.45);\n"
+        "}\n"
         "button.status-pill.pill-active {\n"
-        "  background-color: #094771;\n"
-        "  border-color: #0e639c;\n"
+        "  background-color: rgba(0, 120, 212, 0.16);\n"
+        "  box-shadow: inset 0 -2px #0078d4;\n"
         "}\n"
         "button.status-pill.pill-active label {\n"
         "  color: #ffffff;\n"
-        "  font-weight: bold;\n"
         "}\n"
+        /* ---- Pane dividers: thin 1px lines, accent on hover (VS Code sash) ---- */
         "paned > separator {\n"
-        "  min-width: 2px;\n"
-        "  min-height: 2px;\n"
-        "  background-color: #232527;\n"
+        "  min-width: 1px;\n"
+        "  min-height: 1px;\n"
+        "  background-color: #2b2b2b;\n"
+        "  background-image: none;\n"
         "}\n"
         "paned > separator:hover {\n"
-        "  background-color: #007acc;\n"
+        "  background-color: #0078d4;\n"
         "}\n"
+        /* ---- Explorer panel ---- */
         "#left-sidebar, #left-scroll, #left-scroll viewport, treeview, treeview.view {\n"
         "  background-color: #191a1b;\n"
         "  color: #cccccc;\n"
         "}\n"
+        "#sidebar-header {\n"
+        "  background-color: #191a1b;\n"
+        "}\n"
+        "#sidebar-title {\n"
+        "  color: #bbbbbb;\n"
+        "  font-size: 11px;\n"
+        "  font-weight: 600;\n"
+        "  letter-spacing: 1px;\n"
+        "  padding: 9px 12px 7px 20px;\n"
+        "}\n"
+        "#sidebar-section {\n"
+        "  color: #cccccc;\n"
+        "  font-size: 11px;\n"
+        "  font-weight: bold;\n"
+        "  padding: 4px 8px;\n"
+        "  border-top: 1px solid #2b2b2b;\n"
+        "}\n"
+        "#left-sidebar searchentry {\n"
+        "  margin: 4px 8px;\n"
+        "}\n"
+        /* Tree lines drawn as subtle indent guides (border-left-color = tree line color) */
+        "#file-tree.view {\n"
+        "  border-left-color: #3a3d41;\n"
+        "}\n"
         "treeview:hover, #file-tree:hover {\n"
-        "  background-color: #252729;\n"
+        "  background-color: #2a2d2e;\n"
         "}\n"
         "treeview:selected,\n"
         "treeview:selected:focus,\n"
         "treeview.view:selected,\n"
         "treeview.view:selected:focus,\n"
-        "#file-tree:selected,\n"
-        "#file-tree:selected:focus,\n"
-        "#file-tree.view:selected,\n"
-        "#file-tree.view:selected:focus,\n"
-        "#left-scroll treeview:selected,\n"
-        "#left-scroll treeview:selected:focus,\n"
-        "#left-sidebar treeview:selected,\n"
-        "#left-sidebar treeview:selected:focus {\n"
-        "  background-color: #0e639c;\n"
-        "  color: #ffffff;\n"
-        "  font-weight: bold;\n"
-        "}\n"
         "treeview:selected:hover,\n"
         "treeview.view:selected:hover,\n"
+        "#file-tree:selected,\n"
+        "#file-tree:selected:focus,\n"
         "#file-tree:selected:hover,\n"
+        "#file-tree.view:selected,\n"
+        "#file-tree.view:selected:focus,\n"
         "#file-tree.view:selected:hover,\n"
+        "#left-scroll treeview:selected,\n"
+        "#left-scroll treeview:selected:focus,\n"
         "#left-scroll treeview:selected:hover,\n"
+        "#left-sidebar treeview:selected,\n"
+        "#left-sidebar treeview:selected:focus,\n"
         "#left-sidebar treeview:selected:hover {\n"
-        "  background-color: #1177bb;\n"
+        "  background-color: #04395e;\n"
         "  color: #ffffff;\n"
-        "  font-weight: bold;\n"
         "}\n"
         "treeview:selected:backdrop,\n"
         "treeview:backdrop:selected,\n"
@@ -1647,27 +1893,31 @@ void apply_panel_borders(void) {
         "#file-tree.view:backdrop:selected,\n"
         "#left-scroll treeview:selected:backdrop,\n"
         "#left-sidebar treeview:selected:backdrop {\n"
-        "  background-color: #04395e;\n"
+        "  background-color: #37373d;\n"
         "  color: #ffffff;\n"
-        "  font-weight: bold;\n"
+        "}\n"
+        "treeview expander,\n"
+        "#file-tree expander {\n"
+        "  color: #c5c5c5;\n"
         "}\n"
         "treeview:selected expander,\n"
         "treeview.view:selected expander,\n"
         "#file-tree:selected expander {\n"
         "  color: #ffffff;\n"
         "}\n"
+        /* ---- Preview panel ---- */
         "#viewer text, textview text, textview, #right-scroll, #right-scroll viewport,\n"
         "#video-scroll, #video-scroll viewport, #video-box {\n"
         "  background-color: #121314;\n"
         "  color: #d4d4d4;\n"
         "}\n"
         "#video-title {\n"
-        "  color: #4fc1ff;\n"
-        "  font-weight: bold;\n"
+        "  color: #e0e0e0;\n"
+        "  font-weight: 600;\n"
         "  font-size: 1.15em;\n"
         "}\n"
         "#video-meta {\n"
-        "  color: #888888;\n"
+        "  color: #8b949e;\n"
         "  font-size: 0.9em;\n"
         "}\n"
         "#video-status {\n"
@@ -1676,29 +1926,30 @@ void apply_panel_borders(void) {
         "}\n"
         "#video-player, video {\n"
         "  background-color: #000000;\n"
-        "  border-radius: 4px;\n"
+        "  border-radius: 6px;\n"
         "}\n"
         "#audio-scroll, #audio-scroll viewport, #audio-box {\n"
         "  background-color: #121314;\n"
         "}\n"
         "#audio-card {\n"
-        "  background-color: #1a1c1e;\n"
-        "  border: 1px solid #282a2d;\n"
+        "  background-color: #1d1e20;\n"
+        "  border: 1px solid #2b2b2b;\n"
         "  border-radius: 8px;\n"
         "  padding: 24px 32px;\n"
         "  min-width: 360px;\n"
+        "  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);\n"
         "}\n"
         "#audio-icon {\n"
         "  font-size: 2.8em;\n"
         "  margin-bottom: 4px;\n"
         "}\n"
         "#audio-title {\n"
-        "  color: #4fc1ff;\n"
-        "  font-weight: bold;\n"
+        "  color: #e0e0e0;\n"
+        "  font-weight: 600;\n"
         "  font-size: 1.15em;\n"
         "}\n"
         "#audio-meta {\n"
-        "  color: #9d9d9d;\n"
+        "  color: #8b949e;\n"
         "  font-size: 0.9em;\n"
         "}\n"
         "#audio-status {\n"
@@ -1706,53 +1957,83 @@ void apply_panel_borders(void) {
         "  font-size: 0.85em;\n"
         "}\n"
         "#audio-controls {\n"
-        "  background-color: #232527;\n"
+        "  background-color: #252627;\n"
         "  border-radius: 6px;\n"
         "  padding: 4px 10px;\n"
         "}\n"
+        /* ---- Tab strip (preview + editor notebooks) ---- */
         "notebook, notebook stack {\n"
         "  background-color: #121314;\n"
         "}\n"
-        "notebook header {\n"
-        "  background-color: #191a1b;\n"
+        "notebook > header {\n"
+        "  background-color: #18191a;\n"
         "  border: none;\n"
-        "  border-bottom: 1px solid #232527;\n"
+        "  box-shadow: inset 0 -1px #2b2b2b;\n"
+        "  padding: 0px;\n"
         "}\n"
-        "notebook tab {\n"
-        "  background-color: #222426;\n"
-        "  color: #969696;\n"
+        "notebook > header tabs {\n"
+        "  margin: 0px;\n"
+        "}\n"
+        "notebook > header tab {\n"
+        "  background-color: #18191a;\n"
+        "  color: #9d9d9d;\n"
         "  border: none;\n"
-        "  border-right: 1px solid #191a1b;\n"
-        "  padding: 4px 10px;\n"
+        "  border-right: 1px solid #2b2b2b;\n"
+        "  border-radius: 0px;\n"
+        "  padding: 6px 14px;\n"
+        "  margin: 0px;\n"
+        "  min-height: 22px;\n"
+        "  box-shadow: none;\n"
+        "  outline: none;\n"
         "}\n"
-        "notebook tab:checked {\n"
+        "notebook > header tab label {\n"
+        "  color: inherit;\n"
+        "}\n"
+        "notebook > header tab:checked {\n"
         "  background-color: #121314;\n"
         "  color: #ffffff;\n"
-        "  border-top: 2px solid #007acc;\n"
+        "  box-shadow: inset 0 2px #0078d4;\n"
         "}\n"
-        "notebook tab:hover:not(:checked) {\n"
-        "  background-color: #2b2d30;\n"
+        "notebook > header tab:hover:not(:checked) {\n"
+        "  background-color: #1f2021;\n"
         "  color: #cccccc;\n"
         "}\n"
+        /* ---- Terminal panel ---- */
         "#term-scroll, #term-scroll viewport, #term-box, vte-terminal {\n"
         "  background-color: #1f2021;\n"
         "}\n"
+        /* ---- Inputs & buttons ---- */
         "entry, searchentry {\n"
-        "  background-color: #232527;\n"
+        "  background-color: #313131;\n"
         "  color: #cccccc;\n"
-        "  border: 1px solid #2e3134;\n"
-        "  border-radius: 2px;\n"
+        "  border: 1px solid #3c3c3c;\n"
+        "  border-radius: 4px;\n"
+        "  box-shadow: none;\n"
+        "  min-height: 24px;\n"
         "}\n"
         "entry:focus-within, searchentry:focus-within {\n"
-        "  border-color: #007acc;\n"
+        "  border-color: #0078d4;\n"
+        "  outline: none;\n"
         "}\n"
-        "scrollbar trough {\n"
+        "button.suggested-action {\n"
+        "  background-color: #0078d4;\n"
+        "  background-image: none;\n"
+        "  color: #ffffff;\n"
+        "  border: none;\n"
+        "  border-radius: 4px;\n"
+        "}\n"
+        "button.suggested-action:hover {\n"
+        "  background-color: #026ec1;\n"
+        "}\n"
+        /* ---- Scrollbars: square sliders like VS Code ---- */
+        "scrollbar, scrollbar trough {\n"
         "  background-color: transparent;\n"
         "  border: none;\n"
         "}\n"
         "scrollbar slider {\n"
         "  background-color: rgba(121, 121, 121, 0.4);\n"
-        "  border-radius: 4px;\n"
+        "  border: none;\n"
+        "  border-radius: 0px;\n"
         "  min-width: 8px;\n"
         "  min-height: 8px;\n"
         "}\n"
@@ -1762,39 +2043,77 @@ void apply_panel_borders(void) {
         "scrollbar slider:active {\n"
         "  background-color: rgba(191, 191, 191, 0.4);\n"
         "}\n"
-        "#dim-window {\n"
-        "  background-color: #191a1b;\n"
-        "  border: 1px solid #007acc;\n"
+        /* ---- Tooltips & floating widgets ---- */
+        "tooltip, tooltip.background {\n"
+        "  background-color: #202122;\n"
         "  color: #cccccc;\n"
-        "  padding: 6px 10px;\n"
+        "  border: 1px solid #454545;\n"
+        "  border-radius: 4px;\n"
+        "}\n"
+        "tooltip label {\n"
+        "  color: #cccccc;\n"
+        "}\n"
+        "#dim-window {\n"
+        "  background-color: #202122;\n"
+        "  border: 1px solid #0078d4;\n"
+        "  border-radius: 6px;\n"
+        "  color: #cccccc;\n"
+        "  padding: 6px 12px;\n"
+        "  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);\n"
         "}\n"
         "#help-panel {\n"
         "  background-color: #191a1b;\n"
-        "  border-left: 1px solid #26282a;\n"
+        "  border-left: 1px solid #2b2b2b;\n"
         "  color: #cccccc;\n"
         "}\n"
         "#help-header {\n"
         "  background-color: #18191a;\n"
         "  padding: 6px 12px;\n"
-        "  border-bottom: 1px solid #26282a;\n"
+        "  border-bottom: 1px solid #2b2b2b;\n"
         "}\n"
         "button.help-close-btn {\n"
         "  background: transparent;\n"
         "  border: none;\n"
-        "  border-radius: 4px;\n"
+        "  border-radius: 5px;\n"
         "  padding: 2px 6px;\n"
         "  min-height: 20px;\n"
         "  min-width: 20px;\n"
         "  box-shadow: none;\n"
         "}\n"
         "button.help-close-btn label {\n"
-        "  color: #9da5b4;\n"
+        "  color: #9d9d9d;\n"
         "}\n"
         "button.help-close-btn:hover {\n"
-        "  background-color: #2d3136;\n"
+        "  background-color: rgba(90, 93, 94, 0.31);\n"
         "}\n"
         "button.help-close-btn:hover label {\n"
         "  color: #ffffff;\n"
+        "}\n"
+        /* ---- Bottom status bar ---- */
+        "#bottom-statusbar {\n"
+        "  background-color: #18191a;\n"
+        "  border-top: 1px solid #2b2b2b;\n"
+        "  min-height: 22px;\n"
+        "  padding: 0px 4px 0px 0px;\n"
+        "}\n"
+        "#bottom-statusbar label.status-item {\n"
+        "  color: #cccccc;\n"
+        "  font-size: 12px;\n"
+        "  padding: 2px 8px;\n"
+        "}\n"
+        "#bottom-statusbar label.status-item:hover {\n"
+        "  background-color: rgba(255, 255, 255, 0.12);\n"
+        "}\n"
+        "#bottom-statusbar label.status-dim {\n"
+        "  color: #9d9d9d;\n"
+        "}\n"
+        "#bottom-statusbar label.status-branch {\n"
+        "  background-color: #0078d4;\n"
+        "  color: #ffffff;\n"
+        "  padding: 2px 10px;\n"
+        "}\n"
+        "#bottom-statusbar label.status-branch:hover {\n"
+        "  background-color: #026ec1;\n"
         "}\n"
         ".code-font text, textview.code-font text, .code-font {\n"
         "  font-family: 'Consolas', 'DejaVu Sans Mono', 'Liberation Mono', 'Menlo', 'Courier New', monospace;\n"

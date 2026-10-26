@@ -231,13 +231,13 @@ int main(int argc, char** argv) {
     GtkTreeViewColumn* col_name = gtk_tree_view_column_new();
     gtk_tree_view_column_set_expand(col_name, TRUE);
     GtkCellRenderer* renderer_name = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(renderer_name, 6, 4);
+    gtk_cell_renderer_set_padding(renderer_name, 6, 2);
     g_object_set(renderer_name, "ellipsize", PANGO_ELLIPSIZE_END, NULL);
     gtk_tree_view_column_pack_start(col_name, renderer_name, FALSE);
     gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", COL_LABEL);
 
     GtkCellRenderer* renderer_git = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(renderer_git, 4, 4);
+    gtk_cell_renderer_set_padding(renderer_git, 4, 2);
     gtk_cell_renderer_set_alignment(renderer_git, 0.0f, 0.5f);
     gtk_tree_view_column_pack_start(col_name, renderer_git, FALSE);
     gtk_tree_view_column_set_cell_data_func(col_name, renderer_git, git_status_cell_data_func, NULL, NULL);
@@ -295,7 +295,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_hexpand(notebook, TRUE);
     gtk_widget_set_vexpand(notebook, TRUE);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
-                             gtk_label_new("Preview"));
+                             gtk_label_new("📄 Preview"));
     GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(viewer_box, TRUE);
     gtk_widget_set_vexpand(viewer_box, TRUE);
@@ -483,6 +483,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_name(left_vbox, "left-sidebar");
     gtk_widget_set_hexpand(left_vbox, TRUE);
     gtk_widget_set_vexpand(left_vbox, TRUE);
+    gtk_box_append(GTK_BOX(left_vbox), create_sidebar_header(app));
     gtk_box_append(GTK_BOX(left_vbox), search_entry);
     gtk_box_append(GTK_BOX(left_vbox), left_scroll);
 
@@ -552,6 +553,8 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), help_btn);
     gtk_box_append(GTK_BOX(outer_vbox), label_row);
     gtk_box_append(GTK_BOX(outer_vbox), workspace_hbox);
+    gtk_box_append(GTK_BOX(outer_vbox), create_status_bar(app));
+    update_status_bar(app);
 
     gtk_window_set_child(GTK_WINDOW(window), outer_vbox);
     apply_panel_borders();

@@ -221,6 +221,14 @@ typedef struct {
     gint layout_apply_frames;
     gint layout_retry_count;
     GtkWidget* ws_minimap;
+
+    /* VS Code-style chrome: explorer panel header and bottom status bar */
+    GtkWidget* sidebar_title;     /* "EXPLORER" / "BOOKMARKS" header label */
+    GtkWidget* sidebar_section;   /* current folder section label (files view) */
+    GtkWidget* status_branch;     /* bottom bar: Git branch of base_dir */
+    GtkWidget* status_selection;  /* bottom bar: selected entry name */
+    GtkWidget* status_size;       /* bottom bar: selected file size */
+    GtkWidget* status_type;       /* bottom bar: selected file type / language */
 } AppData;
 
 #endif /* APP_TYPES_H */

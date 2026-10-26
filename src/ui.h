@@ -33,6 +33,10 @@ void workspace_add(AppData* app);
 void workspace_remove(AppData* app, gint idx);
 GtkWidget* create_workspace_minimap(AppData* app);
 
+GtkWidget* create_sidebar_header(AppData* app);
+GtkWidget* create_status_bar(AppData* app);
+void update_status_bar(AppData* app);
+
 void apply_panel_borders(void);
 
 #endif /* UI_H */

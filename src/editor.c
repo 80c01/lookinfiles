@@ -36,10 +36,11 @@ EditorTab* editor_current_tab(AppData* app) {
 }
 
 void editor_tab_label_update(EditorTab* tab) {
+    const gchar* icon = file_icon(tab->name, FALSE);
     gchar* title =
         gtk_text_buffer_get_modified(tab->buffer)
-            ? g_strdup_printf("\xe2\x80\xa2 %s", tab->name)
-            : g_strdup(tab->name);
+            ? g_strdup_printf("%s %s  \xe2\x80\xa2", icon, tab->name)
+            : g_strdup_printf("%s %s", icon, tab->name);
     gtk_label_set_text(GTK_LABEL(tab->tab_label), title);
     g_free(title);
 }
@@ -154,7 +155,8 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     tab->buffer = buffer;
     tab->scroll = scroll;
     tab->view = view;
-    tab->tab_label = gtk_label_new(tab->name);
+    tab->tab_label = gtk_label_new("");
+    editor_tab_label_update(tab);
 
     gint page = gtk_notebook_append_page(target_nb, scroll, tab->tab_label);
     g_object_ref(tab->scroll);

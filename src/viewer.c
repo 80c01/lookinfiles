@@ -1177,6 +1177,8 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         workspace_save_current(app);
     }
 
+    update_status_bar(app);
+
     g_free(full);
     g_free(name);
     g_free(type);

@@ -1849,6 +1849,24 @@ void update_path_label(AppData* app) {
         }
     }
 
+    /* Explorer panel header (VS Code style): view title + current folder section */
+    if (app->sidebar_title != NULL) {
+        gtk_label_set_text(GTK_LABEL(app->sidebar_title),
+                           app->show_bookmarks ? "BOOKMARKS" : "EXPLORER");
+    }
+    if (app->sidebar_section != NULL && app->base_dir != NULL) {
+        gchar* base = g_path_get_basename(app->base_dir);
+        gchar* upper = g_utf8_strup(base, -1);
+        gchar* section = g_strdup_printf("▾ %s", upper);
+        gtk_label_set_text(GTK_LABEL(app->sidebar_section), section);
+        gtk_widget_set_tooltip_text(app->sidebar_section, app->base_dir);
+        gtk_widget_set_visible(app->sidebar_section, !app->show_bookmarks);
+        g_free(section);
+        g_free(upper);
+        g_free(base);
+    }
+
+    update_status_bar(app);
     workspace_save_current(app);
 }
 
