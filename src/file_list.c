@@ -1,4 +1,5 @@
 #include "file_list.h"
+#include "git_tab.h"
 #include "editor.h"
 #include "minimap.h"
 #include "terminal.h"
@@ -1995,6 +1996,7 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     }
 
     update_path_label(app);
+    git_tab_update(app, app->base_dir);
 }
 
 static void start_async_dir_scan(AppData* app, const gchar* dirname,

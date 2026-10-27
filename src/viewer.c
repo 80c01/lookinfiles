@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "git_tab.h"
 #include "file_list.h"
 #include "markdown.h"
 #include "html.h"
@@ -774,6 +775,7 @@ static gboolean deferred_refresh(gpointer data) {
     if (app->dir_dirty) {
         app->dir_dirty = FALSE;
         refresh_listing(app);
+        git_tab_update(app, app->base_dir);
     }
     if (app->file_dirty) {
         app->file_dirty = FALSE;
@@ -1098,6 +1100,10 @@ static void on_dir_preview_ready(GObject* source_object, GAsyncResult* res,
 }
 
 void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
+    AppData* app_sel = (AppData*)user_data;
+    if (app_sel != NULL && !app_sel->editor_dedicated && app_sel->notebook != NULL) {
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(app_sel->notebook), 0);
+    }
     AppData* app = (AppData*)user_data;
     GtkTreeModel* model = NULL;
     GtkTreeIter it;

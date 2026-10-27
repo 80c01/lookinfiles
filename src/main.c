@@ -8,6 +8,7 @@
 #include "terminal.h"
 #include "search.h"
 #include "ui.h"
+#include "git_tab.h"
 #include <unistd.h>
 
 static void on_window_destroy(GtkWidget* widget, gpointer data) {
@@ -388,6 +389,7 @@ int main(int argc, char** argv) {
     app->preview_stack = preview_stack;
     video_preview_init(app);
     audio_preview_init(app);
+    git_tab_init(app);
     g_signal_connect(notebook, "switch-page",
                      G_CALLBACK(on_editor_switch_page_changed), app);
     g_signal_connect(editor_notebook, "switch-page",
@@ -548,6 +550,7 @@ int main(int argc, char** argv) {
     audio_preview_stop(app);
     video_preview_stop(app);
     stop_directory_monitors(app);
+    git_tab_cleanup(app);
     if (app->git_statuses != NULL) {
         g_hash_table_destroy(app->git_statuses);
         app->git_statuses = NULL;

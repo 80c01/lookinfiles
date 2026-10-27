@@ -49,6 +49,8 @@ The codebase is organized into modules under `src/`:
   and `GtkMediaStream` (`render_video_preview()`), metadata extraction, playback controls, and raw header mode.
 - **`audio.c` / `audio.h`**: Native audio playback and preview engine using GTK 4 `GtkMediaControls`
   and `GtkMediaFile` (`render_audio_preview()`), metadata extraction, styled player card, and raw header mode.
+- **`git_tab.c` / `git_tab.h`**: Git commits tab in the preview panel (`git_tab_init()`,
+  `git_tab_update()`, `git_tab_cleanup()`), listing repository commits with metadata and diff view.
 - **`editor.c` / `editor.h`**: Multi-tab editor inside viewer notebook (`editor_open_file()`,
   `editor_save_current()`, `editor_close_current()`, unsaved confirmation dialog).
 - **`minimap.c` / `minimap.h`**: Scaled file overview with Cairo caching, slider positioning,

@@ -25,6 +25,7 @@ Simple graphical application to browse the file system.
 - ✅ PDF document preview: PDF files (`.pdf`) are rendered directly in the right preview pane using `poppler-glib` and Cairo, featuring a metadata banner (title, author, PDF version, page count, file size), sharp page rendering with page dividers, and an `m` toggle to switch between high-resolution rendered pages and extracted text mode (searchable with `/`)
 - ✅ Video preview: video files (`.mp4`, `.mkv`, `.webm`, `.mov`, `.avi`, `.flv`, `.wmv`, `.m4v`, `.ts`, `.mpg`, etc.) are previewed directly in the right preview pane using GTK 4's native `GtkVideo` and `GtkMediaStream` player, complete with an aligned Dark+ metadata header (title, container, duration, audio/video streams, file size), transport controls (play/pause, seek timeline, volume), and an `m` toggle to inspect raw file details and binary header hex dump
 - ✅ Audio preview: audio files (`.mp3`, `.wav`, `.ogg`, `.flac`, `.aac`, `.m4a`, `.wma`, `.aiff`, `.opus`, etc.) are previewed directly in the right preview pane with a native player card using GTK 4's `GtkMediaControls` and `GtkMediaFile`, featuring a centered player card (title, container, duration, file size), transport controls (play/pause, seek timeline, volume), and an `m` toggle to inspect raw file details and binary header hex dump
+- ✅ Git Commits tab in Preview panel: for directories inside a Git repository, a dedicated "📦 Git Commits" tab appears directly to the right of the Preview tab. It displays an interactive table of repository commits (short hash in cyan, commit message, author, and relative date) along with an interactive patch/diff viewer highlighting changes with VS Code Dark+ diff colors (added lines in green, deleted lines in red, hunk headers in blue, metadata in yellow).
 - ✅ Dedicated Editor panel: editor tabs can either be docked inside the preview notebook or placed in a dedicated panel positioned to the right of the preview panel (`Ctrl+E` or click the top-bar `✏ Editor: Docked / Dedicated` pill button). When in dedicated mode, browse and preview files on the center panel while editing code on the right panel across resizable dividers, preserved per virtual workspace.
 
 ## ⌨️ Keyboard shortcuts
@@ -153,6 +154,7 @@ src/
 ├── markdown.c/.h        # Markdown rendering engine
 ├── html.c/.h            # HTML rendering engine
 ├── pdf.c/.h             # PDF document renderer and text extractor
+├── git_tab.c/.h         # Git repository commits tab and diff viewer
 ├── editor.c/.h          # Multi-tab file editor
 ├── minimap.c/.h         # Scaled file overview minimap
 ├── terminal.c/.h        # Embedded VTE terminal panel

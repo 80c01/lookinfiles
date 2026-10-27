@@ -22,7 +22,8 @@ EditorTab* editor_current_tab(AppData* app) {
         return NULL;
     }
     gint page = gtk_notebook_get_current_page(nb);
-    gint wanted = app->editor_dedicated ? page : (page - 1);
+    gint base_offset = (app->git_tab_box != NULL) ? 2 : 1;
+    gint wanted = app->editor_dedicated ? page : (page - base_offset);
     if (wanted < 0) {
         return NULL; /* page 0 is read-only preview when docked */
     }
@@ -85,7 +86,8 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     for (GList* l = app->editors; l != NULL; l = l->next, index++) {
         EditorTab* t = (EditorTab*)l->data;
         if (g_strcmp0(t->path, full) == 0) {
-            gint target_page = app->editor_dedicated ? index : (index + 1);
+            gint base_offset = (app->git_tab_box != NULL) ? 2 : 1;
+            gint target_page = app->editor_dedicated ? index : (index + base_offset);
             gtk_notebook_set_current_page(target_nb, target_page);
             gtk_widget_grab_focus(t->view);
             return;
@@ -255,11 +257,12 @@ void editor_close_page(AppData* app, gint page) {
     if (app == NULL) {
         return;
     }
-    gint min_page = app->editor_dedicated ? 0 : 1;
+    gint base_offset = (app->git_tab_box != NULL) ? 2 : 1;
+    gint min_page = app->editor_dedicated ? 0 : base_offset;
     if (page < min_page) {
         return;
     }
-    gint wanted = app->editor_dedicated ? page : (page - 1);
+    gint wanted = app->editor_dedicated ? page : (page - base_offset);
     gint i = 0;
     EditorTab* tab = NULL;
     for (GList* l = app->editors; l != NULL; l = l->next, i++) {
@@ -306,7 +309,8 @@ void editor_detach_tabs(AppData* app) {
     }
     if (app->notebook != NULL) {
         gint n = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->notebook));
-        while (n > 1) {
+        gint keep = (app->git_tab_box != NULL) ? 2 : 1;
+        while (n > keep) {
             gtk_notebook_remove_page(GTK_NOTEBOOK(app->notebook), n - 1);
             n--;
         }

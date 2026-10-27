@@ -51,6 +51,7 @@ SRCS = src/main.c \
        src/markdown.c \
        src/html.c \
        src/pdf.c \
+       src/git_tab.c \
        src/editor.c \
        src/minimap.c \
        src/terminal.c \
