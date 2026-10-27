@@ -89,6 +89,7 @@ static void on_vte_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
     GtkWidget* widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
     if (widget != NULL) {
         app->last_focused_vte = widget;
+        update_active_panel_highlight(app);
     }
 }
 

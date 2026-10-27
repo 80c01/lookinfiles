@@ -231,6 +231,73 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
     app->help_window = panel;
 }
 
+
+/* Update the active-panel CSS highlight based on which panel owns keyboard focus */
+void update_active_panel_highlight(AppData* app) {
+    if (app == NULL || app->window == NULL) {
+        return;
+    }
+
+    GtkWidget* focused = gtk_window_get_focus(app->window);
+    GtkWidget* target_panel = NULL;
+
+    GtkWidget* w = focused;
+    while (w != NULL) {
+        if (app->left_vbox != NULL && w == app->left_vbox) {
+            target_panel = app->left_vbox;
+            break;
+        }
+        if (app->viewer_box != NULL && w == app->viewer_box) {
+            target_panel = app->viewer_box;
+            break;
+        }
+        if (app->editor_box != NULL && w == app->editor_box) {
+            target_panel = app->editor_box;
+            break;
+        }
+        if (app->term_scroll != NULL && w == app->term_scroll) {
+            target_panel = app->term_scroll;
+            break;
+        }
+        if (app->help_window != NULL && w == app->help_window) {
+            target_panel = app->help_window;
+            break;
+        }
+        w = gtk_widget_get_parent(w);
+    }
+
+    if (app->active_panel == target_panel) {
+        return;
+    }
+
+    if (app->active_panel != NULL) {
+        gtk_widget_remove_css_class(app->active_panel, "panel-focused");
+    }
+
+    app->active_panel = target_panel;
+
+    if (app->active_panel != NULL) {
+        gtk_widget_add_css_class(app->active_panel, "panel-focused");
+    }
+}
+
+static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, gpointer user_data) {
+    (void)gobject;
+    (void)pspec;
+    AppData* app = (AppData*)user_data;
+    if (app != NULL) {
+        update_active_panel_highlight(app);
+    }
+}
+void wire_focus_tracking(AppData* app) {
+    if (app == NULL || app->window == NULL) {
+        return;
+    }
+    g_signal_connect(app->window, "notify::focus-widget",
+                     G_CALLBACK(on_window_notify_focus_widget), app);
+    update_active_panel_highlight(app);
+}
+
 void focus_adjacent_panel(gint step, AppData* app) {
     GPtrArray* panels = g_ptr_array_new();
     gint count;
@@ -2085,6 +2152,26 @@ void apply_panel_borders(void) {
         "notebook > header tab:hover:not(:checked) {\n"
         "  background-color: #1f2021;\n"
         "  color: #cccccc;\n"
+        "}\n"
+        /* ---- Focused panel highlight (VS Code active pane border & header tint) ---- */
+        ".panel-focused {\n"
+        "  outline: 1px solid #0078d4;\n"
+        "  outline-offset: -1px;\n"
+        "}\n"
+        "#left-sidebar.panel-focused #sidebar-header {\n"
+        "  border-bottom: 1px solid #0078d4;\n"
+        "}\n"
+        "#left-sidebar.panel-focused #sidebar-title {\n"
+        "  color: #ffffff;\n"
+        "}\n"
+        "#viewer-box.panel-focused notebook > header {\n"
+        "  box-shadow: inset 0 -2px #0078d4;\n"
+        "}\n"
+        "#editor-panel.panel-focused notebook > header {\n"
+        "  box-shadow: inset 0 -2px #0078d4;\n"
+        "}\n"
+        "#help-panel.panel-focused {\n"
+        "  border-left: 1px solid #0078d4;\n"
         "}\n"
         /* ---- Terminal panel ---- */
         "#term-scroll, #term-scroll viewport, #term-box, vte-terminal {\n"

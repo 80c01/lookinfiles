@@ -277,6 +277,7 @@ int main(int argc, char** argv) {
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
                              gtk_label_new("📄 Preview"));
     GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_name(viewer_box, "viewer-box");
     gtk_widget_set_hexpand(viewer_box, TRUE);
     gtk_widget_set_vexpand(viewer_box, TRUE);
     gtk_box_append(GTK_BOX(viewer_box), notebook);
@@ -476,6 +477,7 @@ int main(int argc, char** argv) {
 
     wire_paned_controllers(main_paned, app);
     wire_paned_controllers(editor_paned, app);
+    wire_focus_tracking(app);
 
     app->left_vbox = left_vbox;
     app->main_paned = main_paned;

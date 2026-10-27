@@ -10,6 +10,8 @@ void create_help_panel(GtkWindow* parent, AppData* app);
 void toggle_help_panel(AppData* app);
 gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
 
+void update_active_panel_highlight(AppData* app);
+void wire_focus_tracking(AppData* app);
 void focus_adjacent_panel(gint step, AppData* app);
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
 

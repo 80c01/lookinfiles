@@ -228,6 +228,8 @@ typedef struct {
     GtkWidget* right_paned;  /* viewer | terminal (rebuilt on toggle) */
     gdouble right_frac;      /* viewer share of viewer/terminal pair */
 
+    /* Active focused panel tracking and visual highlight */
+    GtkWidget* active_panel;     /* currently focused panel container widget */
     /* Virtual workspace layouts & top-bar workspace minimap */
     VirtualLayout workspaces[MAX_VIRTUAL_LAYOUTS];
     gint num_workspaces;
