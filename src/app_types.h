@@ -66,6 +66,7 @@ typedef struct {
 typedef struct {
     gchar* path;          /* absolute file path */
     gchar* name;          /* display name (file basename) */
+    gboolean is_buffer;   /* TRUE if backing file is a buffer in ~/.config */
     GtkWidget* container; /* notebook page container (scroll + minimap) */
     GtkWidget* scroll;    /* scrolled window holding view */
     GtkWidget* view;      /* the editable text view */

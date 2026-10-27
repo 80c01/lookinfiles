@@ -37,7 +37,7 @@ EditorTab* editor_current_tab(AppData* app) {
 }
 
 void editor_tab_label_update(EditorTab* tab) {
-    const gchar* icon = file_icon(tab->name, FALSE);
+    const gchar* icon = tab->is_buffer ? "📝" : file_icon(tab->name, FALSE);
     gchar* title =
         gtk_text_buffer_get_modified(tab->buffer)
             ? g_strdup_printf("%s %s  \xe2\x80\xa2", icon, tab->name)
@@ -48,7 +48,16 @@ void editor_tab_label_update(EditorTab* tab) {
 
 void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
-    editor_tab_label_update((EditorTab*)data);
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL && tab->is_buffer && tab->path != NULL) {
+        /* Automatically back buffer to ~/.config file so user doesn't lose changes */
+        GtkTextIter start, end;
+        gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
+        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+        g_file_set_contents(tab->path, text, -1, NULL);
+        g_free(text);
+    }
+    editor_tab_label_update(tab);
 }
 
 void editor_apply_language(GtkTextBuffer* buffer, const gchar* name) {
@@ -122,6 +131,8 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     EditorTab* tab = g_new0(EditorTab, 1);
     tab->path = g_strdup(full);
     tab->name = g_strdup(name);
+    const gchar* cfg = g_get_user_config_dir();
+    tab->is_buffer = (cfg != NULL && g_str_has_prefix(full, cfg));
 #ifdef HAVE_GSV
     GtkTextBuffer* buffer = GTK_TEXT_BUFFER(gtk_source_buffer_new(NULL));
 #else
@@ -455,6 +466,23 @@ void editor_toggle_dedicated(AppData* app) {
         return;
     }
     editor_set_dedicated(app, !app->editor_dedicated);
+}
+
+void editor_save_all_buffers(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* tab = (EditorTab*)l->data;
+        if (tab != NULL && tab->is_buffer && tab->path != NULL && tab->buffer != NULL) {
+            GtkTextIter start, end;
+            gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
+            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+            g_file_set_contents(tab->path, text, -1, NULL);
+            g_free(text);
+            gtk_text_buffer_set_modified(tab->buffer, FALSE);
+        }
+    }
 }
 
 gboolean editor_save_current(AppData* app) {

@@ -1224,18 +1224,43 @@ void toggle_buffers_view(AppData* app) {
     select_first_row(app);
 }
 
+static gchar* get_buffers_dir_path(void) {
+    const gchar* cfg_dir = g_get_user_config_dir();
+    gchar* dir = g_build_filename(cfg_dir, "explorateur_fichiers", "buffers", NULL);
+    g_mkdir_with_parents(dir, 0755);
+    return dir;
+}
+
 void buffers_init(AppData* app) {
     if (app == NULL) {
         return;
     }
     app->buffers = g_ptr_array_new_with_free_func(g_free);
     app->next_buffer_id = 1;
-}
 
-static gchar* get_buffers_dir_path(void) {
-    gchar* dir = g_build_filename(g_get_user_cache_dir(), "file-explorer", "buffers", NULL);
-    g_mkdir_with_parents(dir, 0755);
-    return dir;
+    /* Scan existing buffers from ~/.config/explorateur_fichiers/buffers */
+    gchar* buf_dir = get_buffers_dir_path();
+    GDir* d = g_dir_open(buf_dir, 0, NULL);
+    if (d != NULL) {
+        const gchar* name = NULL;
+        while ((name = g_dir_read_name(d)) != NULL) {
+            if (name[0] == '.') {
+                continue;
+            }
+            gchar* full_path = g_build_filename(buf_dir, name, NULL);
+            g_ptr_array_add(app->buffers, full_path);
+
+            /* Track highest Untitled-N index so new ones continue sequentially */
+            if (g_str_has_prefix(name, "Untitled-")) {
+                gint id = atoi(name + 9);
+                if (id >= app->next_buffer_id) {
+                    app->next_buffer_id = id + 1;
+                }
+            }
+        }
+        g_dir_close(d);
+    }
+    g_free(buf_dir);
 }
 
 void create_new_buffer(AppData* app) {
@@ -1243,7 +1268,7 @@ void create_new_buffer(AppData* app) {
         return;
     }
     gchar* buf_dir = get_buffers_dir_path();
-    gchar* buf_name = g_strdup_printf("Untitled-%d.txt", app->next_buffer_id++);
+    gchar* buf_name = g_strdup_printf("Untitled-%d", app->next_buffer_id++);
     gchar* full_path = g_build_filename(buf_dir, buf_name, NULL);
 
     if (!g_file_test(full_path, G_FILE_TEST_EXISTS)) {

@@ -554,6 +554,7 @@ int main(int argc, char** argv) {
 
     audio_preview_stop(app);
     video_preview_stop(app);
+    editor_save_all_buffers(app);
     stop_directory_monitors(app);
     git_tab_cleanup(app);
     if (app->git_statuses != NULL) {
