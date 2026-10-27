@@ -261,6 +261,7 @@ typedef struct {
     GtkWidget* sidebar_files_btn;   /* mini icon button: switch to Explorer view */
     GtkWidget* sidebar_bm_btn;      /* mini icon button: switch to Bookmarks view */
     GtkWidget* sidebar_buffers_btn; /* mini icon button: switch to Buffers view */
+    GtkWidget* sidebar_buf_actions; /* mini icon bar for buffer actions (new, folder, collapse, expand) */
     GtkWidget* status_branch;     /* bottom bar: Git branch of base_dir */
     GtkWidget* status_selection;  /* bottom bar: selected entry name */
     GtkWidget* status_size;       /* bottom bar: selected file size */

@@ -1231,6 +1231,33 @@ static gchar* get_buffers_dir_path(void) {
     return dir;
 }
 
+static void scan_buffers_recursive(AppData* app, const gchar* dir_path) {
+    GDir* d = g_dir_open(dir_path, 0, NULL);
+    if (d == NULL) {
+        return;
+    }
+    const gchar* name = NULL;
+    while ((name = g_dir_read_name(d)) != NULL) {
+        if (name[0] == '.') {
+            continue;
+        }
+        gchar* full_path = g_build_filename(dir_path, name, NULL);
+        if (g_file_test(full_path, G_FILE_TEST_IS_DIR)) {
+            scan_buffers_recursive(app, full_path);
+        } else {
+            g_ptr_array_add(app->buffers, g_strdup(full_path));
+            if (g_str_has_prefix(name, "Untitled-")) {
+                gint id = atoi(name + 9);
+                if (id >= app->next_buffer_id) {
+                    app->next_buffer_id = id + 1;
+                }
+            }
+        }
+        g_free(full_path);
+    }
+    g_dir_close(d);
+}
+
 void buffers_init(AppData* app) {
     if (app == NULL) {
         return;
@@ -1240,40 +1267,70 @@ void buffers_init(AppData* app) {
 
     /* Scan existing buffers from ~/.config/explorateur_fichiers/buffers */
     gchar* buf_dir = get_buffers_dir_path();
-    GDir* d = g_dir_open(buf_dir, 0, NULL);
-    if (d != NULL) {
-        const gchar* name = NULL;
-        while ((name = g_dir_read_name(d)) != NULL) {
-            if (name[0] == '.') {
-                continue;
-            }
-            gchar* full_path = g_build_filename(buf_dir, name, NULL);
-            g_ptr_array_add(app->buffers, full_path);
-
-            /* Track highest Untitled-N index so new ones continue sequentially */
-            if (g_str_has_prefix(name, "Untitled-")) {
-                gint id = atoi(name + 9);
-                if (id >= app->next_buffer_id) {
-                    app->next_buffer_id = id + 1;
-                }
-            }
-        }
-        g_dir_close(d);
-    }
+    scan_buffers_recursive(app, buf_dir);
     g_free(buf_dir);
+}
+
+static gchar* get_target_buffer_dir(AppData* app) {
+    gchar* root = get_buffers_dir_path();
+    if (app == NULL || app->sidebar_view != SIDEBAR_VIEW_BUFFERS || app->selection == NULL) {
+        return root;
+    }
+
+    GtkTreeIter it;
+    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+        return root;
+    }
+
+    gchar* path = NULL;
+    gchar* type = NULL;
+    gtk_tree_model_get(app->model, &it,
+                       COL_TYPE, &type,
+                       COL_PATH, &path, -1);
+
+    if (path == NULL || path[0] == '\0') {
+        g_free(type);
+        g_free(path);
+        return root;
+    }
+
+    gchar* target = NULL;
+    if (g_strcmp0(type, "dir") == 0 && g_file_test(path, G_FILE_TEST_IS_DIR)) {
+        target = g_strdup(path);
+    } else if (g_file_test(path, G_FILE_TEST_EXISTS)) {
+        target = g_path_get_dirname(path);
+    }
+
+    g_free(type);
+    g_free(path);
+
+    if (target != NULL) {
+        if (g_str_has_prefix(target, root)) {
+            g_free(root);
+            return target;
+        }
+        g_free(target);
+    }
+
+    return root;
 }
 
 void create_new_buffer(AppData* app) {
     if (app == NULL) {
         return;
     }
-    gchar* buf_dir = get_buffers_dir_path();
-    gchar* buf_name = g_strdup_printf("Untitled-%d", app->next_buffer_id++);
-    gchar* full_path = g_build_filename(buf_dir, buf_name, NULL);
+    gchar* target_dir = get_target_buffer_dir(app);
+    gchar* buf_name = NULL;
+    gchar* full_path = NULL;
 
-    if (!g_file_test(full_path, G_FILE_TEST_EXISTS)) {
-        g_file_set_contents(full_path, "", 0, NULL);
-    }
+    do {
+        g_free(buf_name);
+        g_free(full_path);
+        buf_name = g_strdup_printf("Untitled-%d", app->next_buffer_id++);
+        full_path = g_build_filename(target_dir, buf_name, NULL);
+    } while (g_file_test(full_path, G_FILE_TEST_EXISTS));
+
+    g_file_set_contents(full_path, "", 0, NULL);
 
     gboolean exists = FALSE;
     if (app->buffers != NULL) {
@@ -1288,6 +1345,24 @@ void create_new_buffer(AppData* app) {
         }
     }
 
+    /* Expand ancestor directories in tree so new buffer is visible */
+    if (app->expanded_paths != NULL) {
+        gchar* cur = g_strdup(target_dir);
+        gchar* root = get_buffers_dir_path();
+        while (cur != NULL && strlen(cur) >= strlen(root) && g_str_has_prefix(cur, root)) {
+            g_hash_table_add(app->expanded_paths, g_strdup(cur));
+            gchar* pdir = g_path_get_dirname(cur);
+            if (g_strcmp0(pdir, cur) == 0) {
+                g_free(pdir);
+                break;
+            }
+            g_free(cur);
+            cur = pdir;
+        }
+        g_free(cur);
+        g_free(root);
+    }
+
     /* Open buffer in editor */
     editor_open_file(app, buf_name, full_path);
 
@@ -1297,7 +1372,7 @@ void create_new_buffer(AppData* app) {
         refresh_listing(app);
     }
 
-    g_free(buf_dir);
+    g_free(target_dir);
     g_free(buf_name);
     g_free(full_path);
 }
@@ -1327,8 +1402,11 @@ static void on_rename_buffer_response(GtkDialog* dlg, gint response_id, gpointer
     }
 }
 
-static gchar* prompt_rename_buffer_dialog(GtkWindow* parent_win, const gchar* current_name) {
-    GtkWidget* dlg = gtk_dialog_new_with_buttons("Rename Buffer", parent_win,
+static gchar* prompt_rename_buffer_dialog(GtkWindow* parent_win, const gchar* current_name, gboolean is_folder) {
+    const gchar* title = is_folder ? "Rename Folder" : "Rename Buffer";
+    const gchar* prompt_label = is_folder ? "Enter new folder name:" : "Enter new buffer name:";
+
+    GtkWidget* dlg = gtk_dialog_new_with_buttons(title, parent_win,
                                                  GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                                                  "Cancel", GTK_RESPONSE_CANCEL,
                                                  "Rename", GTK_RESPONSE_OK,
@@ -1341,7 +1419,7 @@ static gchar* prompt_rename_buffer_dialog(GtkWindow* parent_win, const gchar* cu
     gtk_widget_set_margin_start(box, 16);
     gtk_widget_set_margin_end(box, 16);
 
-    GtkWidget* label = gtk_label_new("Enter new buffer name:");
+    GtkWidget* label = gtk_label_new(prompt_label);
     gtk_widget_set_halign(label, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(box), label);
 
@@ -1365,6 +1443,130 @@ static gchar* prompt_rename_buffer_dialog(GtkWindow* parent_win, const gchar* cu
     return d.result;
 }
 
+static gchar* prompt_new_folder_dialog(GtkWindow* parent_win) {
+    GtkWidget* dlg = gtk_dialog_new_with_buttons("New Folder", parent_win,
+                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                 "Cancel", GTK_RESPONSE_CANCEL,
+                                                 "Create", GTK_RESPONSE_OK,
+                                                 NULL);
+    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
+    GtkWidget* content = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_set_margin_top(box, 14);
+    gtk_widget_set_margin_bottom(box, 14);
+    gtk_widget_set_margin_start(box, 16);
+    gtk_widget_set_margin_end(box, 16);
+
+    GtkWidget* label = gtk_label_new("Enter folder name:");
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(box), label);
+
+    GtkWidget* entry = gtk_entry_new();
+    gtk_editable_set_text(GTK_EDITABLE(entry), "folder");
+    gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
+    gtk_box_append(GTK_BOX(box), entry);
+    gtk_box_append(GTK_BOX(content), box);
+
+    RenameBufferDialogData d = { g_main_loop_new(NULL, FALSE), NULL, entry };
+    g_signal_connect(dlg, "response", G_CALLBACK(on_rename_buffer_response), &d);
+
+    gtk_window_present(GTK_WINDOW(dlg));
+    gtk_widget_grab_focus(entry);
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1);
+    g_main_loop_run(d.loop);
+    g_main_loop_unref(d.loop);
+    gtk_window_destroy(GTK_WINDOW(dlg));
+
+    return d.result;
+}
+
+void create_new_buffer_folder(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+
+    gchar* target_parent = get_target_buffer_dir(app);
+    gchar* folder_name = prompt_new_folder_dialog(app->window);
+    if (folder_name == NULL) {
+        g_free(target_parent);
+        return;
+    }
+
+    /* Validate folder name */
+    if (strchr(folder_name, '/') != NULL || strchr(folder_name, '\\') != NULL ||
+        g_strcmp0(folder_name, ".") == 0 || g_strcmp0(folder_name, "..") == 0) {
+        g_free(folder_name);
+        g_free(target_parent);
+        return;
+    }
+
+    gchar* new_folder_path = g_build_filename(target_parent, folder_name, NULL);
+    g_mkdir_with_parents(new_folder_path, 0755);
+
+    /* Ensure parent directories and new folder are expanded in tree */
+    if (app->expanded_paths != NULL) {
+        g_hash_table_add(app->expanded_paths, g_strdup(target_parent));
+        g_hash_table_add(app->expanded_paths, g_strdup(new_folder_path));
+    }
+
+    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+        refresh_listing_with_path(app, new_folder_path);
+    } else {
+        refresh_listing(app);
+    }
+
+    g_free(folder_name);
+    g_free(new_folder_path);
+    g_free(target_parent);
+}
+
+static void add_all_subdirs_to_expanded(const gchar* dir_path, GHashTable* expanded_paths) {
+    GDir* d = g_dir_open(dir_path, 0, NULL);
+    if (d == NULL) {
+        return;
+    }
+    const gchar* name = NULL;
+    while ((name = g_dir_read_name(d)) != NULL) {
+        if (name[0] == '.') {
+            continue;
+        }
+        gchar* sub = g_build_filename(dir_path, name, NULL);
+        if (g_file_test(sub, G_FILE_TEST_IS_DIR)) {
+            g_hash_table_add(expanded_paths, g_strdup(sub));
+            add_all_subdirs_to_expanded(sub, expanded_paths);
+        }
+        g_free(sub);
+    }
+    g_dir_close(d);
+}
+
+void buffers_collapse_all(AppData* app) {
+    if (app == NULL || app->tree_view == NULL) {
+        return;
+    }
+    gtk_tree_view_collapse_all(app->tree_view);
+    if (app->expanded_paths != NULL) {
+        g_hash_table_remove_all(app->expanded_paths);
+    }
+}
+
+void buffers_expand_all(AppData* app) {
+    if (app == NULL || app->tree_view == NULL) {
+        return;
+    }
+    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+        gchar* buf_dir = get_buffers_dir_path();
+        if (app->expanded_paths != NULL) {
+            add_all_subdirs_to_expanded(buf_dir, app->expanded_paths);
+        }
+        g_free(buf_dir);
+        refresh_listing(app);
+        gtk_tree_view_expand_all(app->tree_view);
+    } else {
+        gtk_tree_view_expand_all(app->tree_view);
+    }
+}
+
 void rename_selected_buffer(AppData* app) {
     if (app == NULL) {
         return;
@@ -1372,6 +1574,7 @@ void rename_selected_buffer(AppData* app) {
 
     gchar* old_path = NULL;
     gchar* old_name = NULL;
+    gboolean is_folder = FALSE;
 
     /* If we are in Buffers sidebar view, check selected row */
     if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS && app->selection != NULL) {
@@ -1382,15 +1585,24 @@ void rename_selected_buffer(AppData* app) {
                                COL_NAME, &old_name,
                                COL_TYPE, &type,
                                COL_PATH, &old_path, -1);
-            if (g_strcmp0(type, "buffer") != 0 || old_path == NULL || old_path[0] == '\0') {
-                g_free(type);
+            gboolean is_dir_entry = (g_strcmp0(type, "dir") == 0);
+            gboolean is_buf_entry = (g_strcmp0(type, "buffer") == 0);
+            gchar* buf_root = get_buffers_dir_path();
+            gboolean under_buf_root = (old_path != NULL && g_str_has_prefix(old_path, buf_root) &&
+                                       g_strcmp0(old_path, buf_root) != 0);
+            g_free(buf_root);
+
+            if ((is_buf_entry || (is_dir_entry && under_buf_root)) && old_path != NULL && old_path[0] != '\0') {
+                if (is_dir_entry) {
+                    is_folder = TRUE;
+                }
+            } else {
                 g_free(old_name);
                 g_free(old_path);
                 old_name = NULL;
                 old_path = NULL;
-            } else {
-                g_free(type);
             }
+            g_free(type);
         }
     }
 
@@ -1410,7 +1622,7 @@ void rename_selected_buffer(AppData* app) {
     }
 
     /* Prompt user for new buffer name */
-    gchar* new_name = prompt_rename_buffer_dialog(app->window, old_name);
+    gchar* new_name = prompt_rename_buffer_dialog(app->window, old_name, is_folder);
     if (new_name == NULL || g_strcmp0(new_name, old_name) == 0) {
         g_free(new_name);
         g_free(old_name);
@@ -1426,9 +1638,9 @@ void rename_selected_buffer(AppData* app) {
         return;
     }
 
-    gchar* buf_dir = get_buffers_dir_path();
-    gchar* new_path = g_build_filename(buf_dir, new_name, NULL);
-    g_free(buf_dir);
+    gchar* parent_dir = g_path_get_dirname(old_path);
+    gchar* new_path = g_build_filename(parent_dir, new_name, NULL);
+    g_free(parent_dir);
 
     /* If new_path already exists and is different from old_path, do not overwrite */
     if (g_file_test(new_path, G_FILE_TEST_EXISTS) && g_strcmp0(new_path, old_path) != 0) {
@@ -1439,7 +1651,7 @@ void rename_selected_buffer(AppData* app) {
         return;
     }
 
-    /* Rename file on disk */
+    /* Rename file or directory on disk */
     if (g_rename(old_path, new_path) != 0) {
         g_free(new_name);
         g_free(new_path);
@@ -1448,28 +1660,77 @@ void rename_selected_buffer(AppData* app) {
         return;
     }
 
-    /* Update app->buffers list */
-    if (app->buffers != NULL) {
-        for (guint i = 0; i < app->buffers->len; i++) {
-            if (g_strcmp0((const gchar*)g_ptr_array_index(app->buffers, i), old_path) == 0) {
-                g_free(g_ptr_array_index(app->buffers, i));
-                app->buffers->pdata[i] = g_strdup(new_path);
-                break;
+    if (is_folder) {
+        /* Update expanded_paths: replace prefix old_path with new_path */
+        if (app->expanded_paths != NULL) {
+            GList* to_replace = NULL;
+            GHashTableIter hiter;
+            gpointer hkey, hval;
+            g_hash_table_iter_init(&hiter, app->expanded_paths);
+            while (g_hash_table_iter_next(&hiter, &hkey, &hval)) {
+                const gchar* p = (const gchar*)hkey;
+                if (g_str_has_prefix(p, old_path)) {
+                    to_replace = g_list_prepend(to_replace, g_strdup(p));
+                }
+            }
+            for (GList* l = to_replace; l != NULL; l = l->next) {
+                gchar* op = (gchar*)l->data;
+                g_hash_table_remove(app->expanded_paths, op);
+                gchar* np = g_strdup_printf("%s%s", new_path, op + strlen(old_path));
+                g_hash_table_add(app->expanded_paths, np);
+                g_free(op);
+            }
+            g_list_free(to_replace);
+        }
+
+        /* Update any open editor tabs that were inside old_path */
+        gsize old_len = strlen(old_path);
+        for (gint w = 0; w < app->num_workspaces; w++) {
+            for (GList* l = app->workspaces[w].editors; l != NULL; l = l->next) {
+                EditorTab* tab = (EditorTab*)l->data;
+                if (tab != NULL && tab->path != NULL && g_str_has_prefix(tab->path, old_path) &&
+                    (tab->path[old_len] == '/' || tab->path[old_len] == '\0')) {
+                    gchar* np = g_strdup_printf("%s%s", new_path, tab->path + old_len);
+                    g_free(tab->path);
+                    tab->path = np;
+                }
+            }
+        }
+    } else {
+        /* Update any open EditorTab with old_path across all workspaces */
+        for (gint w = 0; w < app->num_workspaces; w++) {
+            for (GList* l = app->workspaces[w].editors; l != NULL; l = l->next) {
+                EditorTab* tab = (EditorTab*)l->data;
+                if (tab != NULL && g_strcmp0(tab->path, old_path) == 0) {
+                    g_free(tab->path);
+                    g_free(tab->name);
+                    tab->path = g_strdup(new_path);
+                    tab->name = g_strdup(new_name);
+                    editor_tab_label_update(tab);
+                    editor_apply_language(tab->buffer, new_name);
+                }
             }
         }
     }
 
-    /* Update any open EditorTab with old_path across all workspaces */
-    for (gint w = 0; w < app->num_workspaces; w++) {
-        for (GList* l = app->workspaces[w].editors; l != NULL; l = l->next) {
-            EditorTab* tab = (EditorTab*)l->data;
-            if (tab != NULL && g_strcmp0(tab->path, old_path) == 0) {
-                g_free(tab->path);
-                g_free(tab->name);
-                tab->path = g_strdup(new_path);
-                tab->name = g_strdup(new_name);
-                editor_tab_label_update(tab);
-                editor_apply_language(tab->buffer, new_name);
+    /* Update app->buffers list */
+    if (app->buffers != NULL) {
+        gsize old_len = strlen(old_path);
+        for (guint i = 0; i < app->buffers->len; i++) {
+            const gchar* cur_bpath = (const gchar*)g_ptr_array_index(app->buffers, i);
+            if (is_folder) {
+                if (g_str_has_prefix(cur_bpath, old_path) &&
+                    (cur_bpath[old_len] == '/' || cur_bpath[old_len] == '\0')) {
+                    gchar* np = g_strdup_printf("%s%s", new_path, cur_bpath + old_len);
+                    g_free(app->buffers->pdata[i]);
+                    app->buffers->pdata[i] = np;
+                }
+            } else {
+                if (g_strcmp0(cur_bpath, old_path) == 0) {
+                    g_free(app->buffers->pdata[i]);
+                    app->buffers->pdata[i] = g_strdup(new_path);
+                    break;
+                }
             }
         }
     }
@@ -1485,6 +1746,87 @@ void rename_selected_buffer(AppData* app) {
     g_free(new_path);
     g_free(old_name);
     g_free(old_path);
+}
+
+static void append_buffer_entries_recursive(GtkTreeStore* store, AppData* app,
+                                            GtkTreeIter* parent, const gchar* current_dir,
+                                            guint* out_count) {
+    GDir* d = g_dir_open(current_dir, 0, NULL);
+    if (d == NULL) {
+        return;
+    }
+
+    GPtrArray* subdirs = g_ptr_array_new_with_free_func(g_free);
+    GPtrArray* files = g_ptr_array_new_with_free_func(g_free);
+
+    const gchar* name = NULL;
+    while ((name = g_dir_read_name(d)) != NULL) {
+        if (name[0] == '.') {
+            continue;
+        }
+        gchar* full = g_build_filename(current_dir, name, NULL);
+        if (g_file_test(full, G_FILE_TEST_IS_DIR)) {
+            g_ptr_array_add(subdirs, g_strdup(name));
+        } else {
+            g_ptr_array_add(files, g_strdup(name));
+        }
+        g_free(full);
+    }
+    g_dir_close(d);
+
+    g_ptr_array_sort(subdirs, (GCompareFunc)g_ascii_strcasecmp);
+    g_ptr_array_sort(files, (GCompareFunc)g_ascii_strcasecmp);
+
+    /* 1. Subdirectories */
+    for (guint i = 0; i < subdirs->len; i++) {
+        const gchar* sname = (const gchar*)g_ptr_array_index(subdirs, i);
+        gchar* spath = g_build_filename(current_dir, sname, NULL);
+        gboolean is_expanded = (app->expanded_paths != NULL &&
+                                g_hash_table_contains(app->expanded_paths, spath));
+
+        gchar* label = g_strdup_printf("%s %s", is_expanded ? "📂" : "📁", sname);
+        GtkTreeIter diter;
+        gtk_tree_store_append(store, &diter, parent);
+        gtk_tree_store_set(store, &diter,
+                           COL_NAME, sname,
+                           COL_TYPE, "dir",
+                           COL_LABEL, label,
+                           COL_PATH, spath,
+                           COL_LOADED, TRUE,
+                           COL_GIT_STATUS, "",
+                           -1);
+        g_free(label);
+
+        (*out_count)++;
+
+        append_buffer_entries_recursive(store, app, &diter, spath, out_count);
+        g_free(spath);
+    }
+
+    /* 2. Buffer files */
+    for (guint i = 0; i < files->len; i++) {
+        const gchar* fname = (const gchar*)g_ptr_array_index(files, i);
+        gchar* fpath = g_build_filename(current_dir, fname, NULL);
+        gchar* label = g_strdup_printf("📝 %s", fname);
+
+        GtkTreeIter fiter;
+        gtk_tree_store_append(store, &fiter, parent);
+        gtk_tree_store_set(store, &fiter,
+                           COL_NAME, fname,
+                           COL_TYPE, "buffer",
+                           COL_LABEL, label,
+                           COL_PATH, fpath,
+                           COL_LOADED, TRUE,
+                           COL_GIT_STATUS, "",
+                           -1);
+        g_free(label);
+        g_free(fpath);
+
+        (*out_count)++;
+    }
+
+    g_ptr_array_unref(subdirs);
+    g_ptr_array_unref(files);
 }
 
 static void append_buffers_to_store(GtkTreeStore* store, AppData* app) {
@@ -1504,30 +1846,12 @@ static void append_buffers_to_store(GtkTreeStore* store, AppData* app) {
                        COL_GIT_STATUS, "",
                        -1);
 
-    guint count = (app->buffers != NULL) ? app->buffers->len : 0;
-    if (count > 0) {
-        for (guint i = 0; i < count; i++) {
-            const gchar* bpath = (const gchar*)g_ptr_array_index(app->buffers, i);
-            if (bpath == NULL || bpath[0] == '\0') {
-                continue;
-            }
-            gchar* bname = g_path_get_basename(bpath);
-            gchar* label = g_strdup_printf("📝 %s", bname);
+    guint count = 0;
+    gchar* buf_dir = get_buffers_dir_path();
+    append_buffer_entries_recursive(store, app, NULL, buf_dir, &count);
+    g_free(buf_dir);
 
-            GtkTreeIter iter;
-            gtk_tree_store_append(store, &iter, NULL);
-            gtk_tree_store_set(store, &iter,
-                               COL_NAME, bname,
-                               COL_TYPE, "buffer",
-                               COL_LABEL, label,
-                               COL_PATH, bpath,
-                               COL_LOADED, TRUE,
-                               COL_GIT_STATUS, "",
-                               -1);
-            g_free(label);
-            g_free(bname);
-        }
-    } else {
+    if (count == 0) {
         GtkTreeIter iter;
         gtk_tree_store_append(store, &iter, NULL);
         gtk_tree_store_set(store, &iter,
@@ -1698,10 +2022,13 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                                    -1);
             }
         } else {
-            gchar* label = g_strconcat(file_icon(e->name, FALSE), " ", e->name, NULL);
+            gboolean is_buf = (app != NULL && app->sidebar_view == SIDEBAR_VIEW_BUFFERS);
+            const gchar* type_name = is_buf ? "buffer" : "file";
+            const gchar* icon_name = is_buf ? "📝" : file_icon(e->name, FALSE);
+            gchar* label = g_strconcat(icon_name, " ", e->name, NULL);
             gtk_tree_store_set(store, &iter,
                                COL_NAME, e->name,
-                               COL_TYPE, "file",
+                               COL_TYPE, type_name,
                                COL_LABEL, label,
                                COL_PATH, can_full,
                                COL_LOADED, TRUE,
@@ -2215,6 +2542,10 @@ void update_path_label(AppData* app) {
         } else {
             gtk_widget_remove_css_class(app->sidebar_buffers_btn, "sidebar-icon-active");
         }
+    }
+    if (app->sidebar_buf_actions != NULL) {
+        gtk_widget_set_visible(app->sidebar_buf_actions,
+                               app->sidebar_view == SIDEBAR_VIEW_BUFFERS);
     }
     if (app->sidebar_section != NULL && app->base_dir != NULL) {
         gchar* base = g_path_get_basename(app->base_dir);

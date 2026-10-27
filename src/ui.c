@@ -1644,6 +1644,26 @@ static void on_sidebar_buffers_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
+static void on_sidebar_buf_new_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    create_new_buffer((AppData*)data);
+}
+
+static void on_sidebar_buf_new_folder_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    create_new_buffer_folder((AppData*)data);
+}
+
+static void on_sidebar_buf_collapse_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    buffers_collapse_all((AppData*)data);
+}
+
+static void on_sidebar_buf_expand_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    buffers_expand_all((AppData*)data);
+}
+
 /* VS Code-style explorer panel header: "EXPLORER" title + mini view icons + current folder section */
 GtkWidget* create_sidebar_header(AppData* app) {
     GtkWidget* header = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -1658,6 +1678,46 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_label_set_ellipsize(GTK_LABEL(title), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(title, TRUE);
     gtk_box_append(GTK_BOX(title_row), title);
+
+    /* Mini icon bar for buffers actions: create buffer, create folder, collapse, expand */
+    GtkWidget* buf_actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 1);
+    gtk_widget_set_name(buf_actions, "sidebar-buf-actions");
+    gtk_widget_set_margin_end(buf_actions, 4);
+
+    GtkWidget* new_buf_btn = gtk_button_new_with_label("➕");
+    gtk_button_set_has_frame(GTK_BUTTON(new_buf_btn), FALSE);
+    gtk_widget_set_focusable(new_buf_btn, FALSE);
+    gtk_widget_add_css_class(new_buf_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(new_buf_btn, "New Buffer");
+    g_signal_connect(new_buf_btn, "clicked", G_CALLBACK(on_sidebar_buf_new_clicked), app);
+    gtk_box_append(GTK_BOX(buf_actions), new_buf_btn);
+
+    GtkWidget* new_folder_btn = gtk_button_new_with_label("📁+");
+    gtk_button_set_has_frame(GTK_BUTTON(new_folder_btn), FALSE);
+    gtk_widget_set_focusable(new_folder_btn, FALSE);
+    gtk_widget_add_css_class(new_folder_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(new_folder_btn, "New Folder");
+    g_signal_connect(new_folder_btn, "clicked", G_CALLBACK(on_sidebar_buf_new_folder_clicked), app);
+    gtk_box_append(GTK_BOX(buf_actions), new_folder_btn);
+
+    GtkWidget* collapse_btn = gtk_button_new_with_label("▲");
+    gtk_button_set_has_frame(GTK_BUTTON(collapse_btn), FALSE);
+    gtk_widget_set_focusable(collapse_btn, FALSE);
+    gtk_widget_add_css_class(collapse_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(collapse_btn, "Collapse All");
+    g_signal_connect(collapse_btn, "clicked", G_CALLBACK(on_sidebar_buf_collapse_clicked), app);
+    gtk_box_append(GTK_BOX(buf_actions), collapse_btn);
+
+    GtkWidget* expand_btn = gtk_button_new_with_label("▼");
+    gtk_button_set_has_frame(GTK_BUTTON(expand_btn), FALSE);
+    gtk_widget_set_focusable(expand_btn, FALSE);
+    gtk_widget_add_css_class(expand_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(expand_btn, "Expand All");
+    g_signal_connect(expand_btn, "clicked", G_CALLBACK(on_sidebar_buf_expand_clicked), app);
+    gtk_box_append(GTK_BOX(buf_actions), expand_btn);
+
+    gtk_widget_set_visible(buf_actions, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_BUFFERS));
+    gtk_box_append(GTK_BOX(title_row), buf_actions);
 
     GtkWidget* files_btn = gtk_button_new_with_label("📁");
     gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
@@ -1705,6 +1765,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
         app->sidebar_files_btn = files_btn;
         app->sidebar_bm_btn = bm_btn;
         app->sidebar_buffers_btn = buf_btn;
+        app->sidebar_buf_actions = buf_actions;
     }
     return header;
 }
@@ -2041,6 +2102,9 @@ void apply_panel_borders(void) {
         "}\n"
         "button.sidebar-icon-btn.sidebar-icon-active label {\n"
         "  color: #ffffff;\n"
+        "}\n"
+        "#sidebar-buf-actions {\n"
+        "  margin-right: 4px;\n"
         "}\n"
         "#sidebar-section {\n"
         "  color: #cccccc;\n"
