@@ -1567,6 +1567,266 @@ void buffers_expand_all(AppData* app) {
     }
 }
 
+static gchar* get_target_files_dir(AppData* app) {
+    if (app == NULL || app->tree_view == NULL || app->selection == NULL) {
+        return (app && app->base_dir) ? g_strdup(app->base_dir) : g_strdup(g_get_home_dir());
+    }
+    GtkTreeIter it;
+    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+        return (app->base_dir) ? g_strdup(app->base_dir) : g_strdup(g_get_home_dir());
+    }
+    gchar* path = NULL;
+    gchar* type = NULL;
+    gtk_tree_model_get(app->model, &it, COL_PATH, &path, COL_TYPE, &type, -1);
+    if (path == NULL || path[0] == '\0') {
+        g_free(type);
+        g_free(path);
+        return (app->base_dir) ? g_strdup(app->base_dir) : g_strdup(g_get_home_dir());
+    }
+    gchar* target = NULL;
+    if (g_strcmp0(type, "dir") == 0 && g_file_test(path, G_FILE_TEST_IS_DIR)) {
+        target = g_strdup(path);
+    } else {
+        target = g_path_get_dirname(path);
+    }
+    g_free(type);
+    g_free(path);
+    return target;
+}
+
+static gchar* prompt_new_file_dialog(GtkWindow* parent_win) {
+    GtkWidget* dlg = gtk_dialog_new_with_buttons("New File", parent_win,
+                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                 "Cancel", GTK_RESPONSE_CANCEL,
+                                                 "Create", GTK_RESPONSE_OK,
+                                                 NULL);
+    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
+    GtkWidget* content = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_set_margin_top(box, 14);
+    gtk_widget_set_margin_bottom(box, 14);
+    gtk_widget_set_margin_start(box, 16);
+    gtk_widget_set_margin_end(box, 16);
+
+    GtkWidget* label = gtk_label_new("Enter file name:");
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(box), label);
+
+    GtkWidget* entry = gtk_entry_new();
+    gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
+    gtk_box_append(GTK_BOX(box), entry);
+    gtk_box_append(GTK_BOX(content), box);
+
+    RenameBufferDialogData d = { g_main_loop_new(NULL, FALSE), NULL, entry };
+    g_signal_connect(dlg, "response", G_CALLBACK(on_rename_buffer_response), &d);
+
+    gtk_window_present(GTK_WINDOW(dlg));
+    gtk_widget_grab_focus(entry);
+    g_main_loop_run(d.loop);
+    g_main_loop_unref(d.loop);
+    gtk_window_destroy(GTK_WINDOW(dlg));
+
+    return d.result;
+}
+
+void create_new_file_in_tree(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    gchar* target_dir = get_target_files_dir(app);
+    gchar* filename = prompt_new_file_dialog(app->window);
+    if (filename == NULL) {
+        g_free(target_dir);
+        return;
+    }
+
+    if (strchr(filename, '/') != NULL || strchr(filename, '\\') != NULL ||
+        g_strcmp0(filename, ".") == 0 || g_strcmp0(filename, "..") == 0) {
+        g_free(filename);
+        g_free(target_dir);
+        return;
+    }
+
+    gchar* full_path = g_build_filename(target_dir, filename, NULL);
+    if (!g_file_test(full_path, G_FILE_TEST_EXISTS)) {
+        g_file_set_contents(full_path, "", 0, NULL);
+    }
+
+    if (app->expanded_paths != NULL && g_strcmp0(target_dir, app->base_dir) != 0) {
+        g_hash_table_add(app->expanded_paths, g_strdup(target_dir));
+    }
+
+    editor_open_file(app, filename, full_path);
+    refresh_listing_with_path(app, full_path);
+
+    g_free(filename);
+    g_free(full_path);
+    g_free(target_dir);
+}
+
+void create_new_folder_in_tree(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    gchar* target_dir = get_target_files_dir(app);
+    gchar* folder_name = prompt_new_folder_dialog(app->window);
+    if (folder_name == NULL) {
+        g_free(target_dir);
+        return;
+    }
+
+    if (strchr(folder_name, '/') != NULL || strchr(folder_name, '\\') != NULL ||
+        g_strcmp0(folder_name, ".") == 0 || g_strcmp0(folder_name, "..") == 0) {
+        g_free(folder_name);
+        g_free(target_dir);
+        return;
+    }
+
+    gchar* new_path = g_build_filename(target_dir, folder_name, NULL);
+    g_mkdir_with_parents(new_path, 0755);
+
+    if (app->expanded_paths != NULL) {
+        if (g_strcmp0(target_dir, app->base_dir) != 0) {
+            g_hash_table_add(app->expanded_paths, g_strdup(target_dir));
+        }
+        g_hash_table_add(app->expanded_paths, g_strdup(new_path));
+    }
+
+    refresh_listing_with_path(app, new_path);
+
+    g_free(folder_name);
+    g_free(new_path);
+    g_free(target_dir);
+}
+
+void toggle_collapse_expand_files(AppData* app) {
+    if (app == NULL || app->tree_view == NULL) {
+        return;
+    }
+    gboolean has_expanded = (app->expanded_paths != NULL &&
+                             g_hash_table_size(app->expanded_paths) > 0);
+    if (has_expanded) {
+        gtk_tree_view_collapse_all(app->tree_view);
+        if (app->expanded_paths != NULL) {
+            g_hash_table_remove_all(app->expanded_paths);
+        }
+    } else {
+        gtk_tree_view_expand_all(app->tree_view);
+    }
+}
+
+void create_folder_in_bookmarks(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    gchar* target_parent = NULL;
+    if (app->selection != NULL) {
+        GtkTreeIter it;
+        if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+            gchar* path = NULL;
+            gtk_tree_model_get(app->model, &it, COL_PATH, &path, -1);
+            if (path != NULL && path[0] != '\0' && g_file_test(path, G_FILE_TEST_IS_DIR)) {
+                target_parent = path;
+            } else {
+                g_free(path);
+            }
+        }
+    }
+    if (target_parent == NULL) {
+        target_parent = (app->base_dir != NULL) ? g_strdup(app->base_dir) : g_strdup(g_get_home_dir());
+    }
+
+    gchar* folder_name = prompt_new_folder_dialog(app->window);
+    if (folder_name == NULL) {
+        g_free(target_parent);
+        return;
+    }
+
+    if (strchr(folder_name, '/') != NULL || strchr(folder_name, '\\') != NULL ||
+        g_strcmp0(folder_name, ".") == 0 || g_strcmp0(folder_name, "..") == 0) {
+        g_free(folder_name);
+        g_free(target_parent);
+        return;
+    }
+
+    gchar* new_folder_path = g_build_filename(target_parent, folder_name, NULL);
+    g_mkdir_with_parents(new_folder_path, 0755);
+
+    if (app->bookmarks != NULL) {
+        gboolean exists = FALSE;
+        for (guint i = 0; i < app->bookmarks->len; i++) {
+            if (g_strcmp0((const gchar*)g_ptr_array_index(app->bookmarks, i), new_folder_path) == 0) {
+                exists = TRUE;
+                break;
+            }
+        }
+        if (!exists) {
+            g_ptr_array_add(app->bookmarks, g_strdup(new_folder_path));
+            bookmarks_save(app);
+        }
+    }
+
+    refresh_listing_with_path(app, new_folder_path);
+
+    g_free(folder_name);
+    g_free(new_folder_path);
+    g_free(target_parent);
+}
+
+static gint compare_bookmarks_asc(gconstpointer a, gconstpointer b) {
+    const gchar* pa = *(const gchar**)a;
+    const gchar* pb = *(const gchar**)b;
+    gchar* na = g_path_get_basename(pa);
+    gchar* nb = g_path_get_basename(pb);
+    gint res = g_ascii_strcasecmp(na, nb);
+    g_free(na);
+    g_free(nb);
+    return res;
+}
+
+static gint compare_bookmarks_desc(gconstpointer a, gconstpointer b) {
+    return -compare_bookmarks_asc(a, b);
+}
+
+void toggle_sort_bookmarks(AppData* app) {
+    if (app == NULL || app->bookmarks == NULL || app->bookmarks->len < 2) {
+        return;
+    }
+    app->bookmarks_sort_desc = !app->bookmarks_sort_desc;
+    if (app->bookmarks_sort_desc) {
+        g_ptr_array_sort(app->bookmarks, compare_bookmarks_desc);
+    } else {
+        g_ptr_array_sort(app->bookmarks, compare_bookmarks_asc);
+    }
+    bookmarks_save(app);
+    refresh_listing(app);
+}
+
+void toggle_collapse_expand_bookmarks(AppData* app) {
+    if (app == NULL || app->tree_view == NULL) {
+        return;
+    }
+    gboolean has_expanded = (app->expanded_paths != NULL &&
+                             g_hash_table_size(app->expanded_paths) > 0);
+    if (has_expanded) {
+        gtk_tree_view_collapse_all(app->tree_view);
+        if (app->expanded_paths != NULL) {
+            g_hash_table_remove_all(app->expanded_paths);
+        }
+    } else {
+        if (app->bookmarks != NULL && app->expanded_paths != NULL) {
+            for (guint i = 0; i < app->bookmarks->len; i++) {
+                const gchar* b = (const gchar*)g_ptr_array_index(app->bookmarks, i);
+                if (b != NULL && g_file_test(b, G_FILE_TEST_IS_DIR)) {
+                    g_hash_table_add(app->expanded_paths, g_strdup(b));
+                }
+            }
+        }
+        refresh_listing(app);
+        gtk_tree_view_expand_all(app->tree_view);
+    }
+}
+
 void rename_selected_buffer(AppData* app) {
     if (app == NULL) {
         return;
@@ -1853,6 +2113,9 @@ static void append_buffers_to_store(GtkTreeStore* store, AppData* app) {
     }
 }
 
+static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* parent,
+                           const gchar* dirname, gboolean show_hidden, gint sort_mode);
+
 static void append_bookmarks_to_store(GtkTreeStore* store, AppData* app) {
     if (store == NULL || app == NULL || !app->show_bookmarks) {
         return;
@@ -1885,6 +2148,10 @@ static void append_bookmarks_to_store(GtkTreeStore* store, AppData* app) {
                 label = g_strdup_printf("🔖 %s  (%s)", bname, display_path);
             }
 
+            gboolean is_dir = g_file_test(bpath, G_FILE_TEST_IS_DIR);
+            gboolean is_expanded = is_dir && (app->expanded_paths != NULL &&
+                                              g_hash_table_contains(app->expanded_paths, bpath));
+
             GtkTreeIter iter;
             gtk_tree_store_append(store, &iter, NULL);
             gtk_tree_store_set(store, &iter,
@@ -1892,9 +2159,26 @@ static void append_bookmarks_to_store(GtkTreeStore* store, AppData* app) {
                                COL_TYPE, "bookmark",
                                COL_LABEL, label,
                                COL_PATH, bpath,
-                               COL_LOADED, TRUE,
+                               COL_LOADED, is_expanded,
                                COL_GIT_STATUS, "",
                                -1);
+
+            if (is_dir) {
+                if (is_expanded) {
+                    populate_level(store, app, &iter, bpath, app->show_hidden, app->sort_mode);
+                } else {
+                    GtkTreeIter dummy;
+                    gtk_tree_store_append(store, &dummy, &iter);
+                    gtk_tree_store_set(store, &dummy,
+                                       COL_NAME, "",
+                                       COL_TYPE, "-",
+                                       COL_LABEL, "...",
+                                       COL_PATH, "",
+                                       COL_LOADED, TRUE,
+                                       COL_GIT_STATUS, "",
+                                       -1);
+                }
+            }
             g_free(label);
             g_free(display_path);
             g_free(bname);
@@ -2531,9 +2815,24 @@ void update_path_label(AppData* app) {
             gtk_widget_remove_css_class(app->sidebar_buffers_btn, "sidebar-icon-active");
         }
     }
+    if (app->sidebar_files_toolbar != NULL) {
+        gtk_widget_set_visible(app->sidebar_files_toolbar,
+                               app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
+    }
+    if (app->sidebar_bm_toolbar != NULL) {
+        gtk_widget_set_visible(app->sidebar_bm_toolbar,
+                               app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks);
+    }
     if (app->sidebar_buf_actions != NULL) {
         gtk_widget_set_visible(app->sidebar_buf_actions,
                                app->sidebar_view == SIDEBAR_VIEW_BUFFERS);
+    }
+    if (app->sidebar_files_hidden_btn != NULL) {
+        if (app->show_hidden) {
+            gtk_widget_add_css_class(app->sidebar_files_hidden_btn, "sidebar-icon-active");
+        } else {
+            gtk_widget_remove_css_class(app->sidebar_files_hidden_btn, "sidebar-icon-active");
+        }
     }
     if (app->sidebar_section != NULL && app->base_dir != NULL) {
         gchar* base = g_path_get_basename(app->base_dir);
@@ -2541,7 +2840,6 @@ void update_path_label(AppData* app) {
         gchar* section = g_strdup_printf("▾ %s", upper);
         gtk_label_set_text(GTK_LABEL(app->sidebar_section), section);
         gtk_widget_set_tooltip_text(app->sidebar_section, app->base_dir);
-        gtk_widget_set_visible(app->sidebar_section, app->sidebar_view == SIDEBAR_VIEW_FILES);
         g_free(section);
         g_free(upper);
         g_free(base);

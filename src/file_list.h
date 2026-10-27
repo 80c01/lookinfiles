@@ -72,6 +72,12 @@ void bookmarks_init(AppData* app);
 void bookmarks_save(AppData* app);
 void bookmark_toggle_current(AppData* app);
 void cycle_sort_mode(AppData* app);
+void create_new_file_in_tree(AppData* app);
+void create_new_folder_in_tree(AppData* app);
+void toggle_collapse_expand_files(AppData* app);
+void create_folder_in_bookmarks(AppData* app);
+void toggle_sort_bookmarks(AppData* app);
+void toggle_collapse_expand_bookmarks(AppData* app);
 
 void activate_selected_entry(AppData* app);
 void on_row_activated(GtkTreeView* view, GtkTreePath* path, GtkTreeViewColumn* column, gpointer data);

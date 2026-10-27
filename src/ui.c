@@ -1644,6 +1644,46 @@ static void on_sidebar_buffers_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
+static void on_sidebar_files_new_file_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    create_new_file_in_tree((AppData*)data);
+}
+
+static void on_sidebar_files_new_folder_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    create_new_folder_in_tree((AppData*)data);
+}
+
+static void on_sidebar_files_hidden_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    toggle_hidden_files((AppData*)data);
+}
+
+static void on_sidebar_files_sort_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    cycle_sort_mode((AppData*)data);
+}
+
+static void on_sidebar_files_collapse_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    toggle_collapse_expand_files((AppData*)data);
+}
+
+static void on_sidebar_bm_new_folder_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    create_folder_in_bookmarks((AppData*)data);
+}
+
+static void on_sidebar_bm_sort_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    toggle_sort_bookmarks((AppData*)data);
+}
+
+static void on_sidebar_bm_collapse_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    toggle_collapse_expand_bookmarks((AppData*)data);
+}
+
 static void on_sidebar_buf_new_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     create_new_buffer((AppData*)data);
@@ -1664,7 +1704,7 @@ static void on_sidebar_buf_expand_clicked(GtkButton* btn, gpointer data) {
     buffers_expand_all((AppData*)data);
 }
 
-/* VS Code-style explorer panel header: "EXPLORER" title + mini view icons + current folder section */
+/* VS Code-style explorer panel header: "EXPLORER" title + mini view icons + action bars */
 GtkWidget* create_sidebar_header(AppData* app) {
     GtkWidget* header = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(header, "sidebar-header");
@@ -1713,15 +1753,111 @@ GtkWidget* create_sidebar_header(AppData* app) {
 
     gtk_box_append(GTK_BOX(header), title_row);
 
+    /* 1. Files Explorer Toolbar: Section label + 5 mini action icons */
+    GtkWidget* files_toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    gtk_widget_set_name(files_toolbar, "sidebar-files-toolbar");
+
     GtkWidget* section = gtk_label_new("");
     gtk_widget_set_name(section, "sidebar-section");
     gtk_label_set_xalign(GTK_LABEL(section), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(section), PANGO_ELLIPSIZE_END);
-    gtk_box_append(GTK_BOX(header), section);
+    gtk_widget_set_hexpand(section, TRUE);
+    gtk_box_append(GTK_BOX(files_toolbar), section);
 
-    /* Mini icon toolbar for buffers view (placed at former [Create New Buffer] location) */
+    GtkWidget* files_new_file_btn = gtk_button_new_with_label("📄+");
+    gtk_button_set_has_frame(GTK_BUTTON(files_new_file_btn), FALSE);
+    gtk_widget_set_focusable(files_new_file_btn, FALSE);
+    gtk_widget_add_css_class(files_new_file_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(files_new_file_btn, "New File");
+    g_signal_connect(files_new_file_btn, "clicked", G_CALLBACK(on_sidebar_files_new_file_clicked), app);
+    gtk_box_append(GTK_BOX(files_toolbar), files_new_file_btn);
+
+    GtkWidget* files_new_folder_btn = gtk_button_new_with_label("📁+");
+    gtk_button_set_has_frame(GTK_BUTTON(files_new_folder_btn), FALSE);
+    gtk_widget_set_focusable(files_new_folder_btn, FALSE);
+    gtk_widget_add_css_class(files_new_folder_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(files_new_folder_btn, "New Folder");
+    g_signal_connect(files_new_folder_btn, "clicked", G_CALLBACK(on_sidebar_files_new_folder_clicked), app);
+    gtk_box_append(GTK_BOX(files_toolbar), files_new_folder_btn);
+
+    GtkWidget* files_hidden_btn = gtk_button_new_with_label("👁");
+    gtk_button_set_has_frame(GTK_BUTTON(files_hidden_btn), FALSE);
+    gtk_widget_set_focusable(files_hidden_btn, FALSE);
+    gtk_widget_add_css_class(files_hidden_btn, "sidebar-icon-btn");
+    if (app != NULL && app->show_hidden) {
+        gtk_widget_add_css_class(files_hidden_btn, "sidebar-icon-active");
+    }
+    gtk_widget_set_tooltip_text(files_hidden_btn, "Toggle Hidden Files (i / I)");
+    g_signal_connect(files_hidden_btn, "clicked", G_CALLBACK(on_sidebar_files_hidden_clicked), app);
+    gtk_box_append(GTK_BOX(files_toolbar), files_hidden_btn);
+
+    GtkWidget* files_sort_btn = gtk_button_new_with_label("⇅");
+    gtk_button_set_has_frame(GTK_BUTTON(files_sort_btn), FALSE);
+    gtk_widget_set_focusable(files_sort_btn, FALSE);
+    gtk_widget_add_css_class(files_sort_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(files_sort_btn, "Cycle Sort: Name / Date / Size / Ext (o)");
+    g_signal_connect(files_sort_btn, "clicked", G_CALLBACK(on_sidebar_files_sort_clicked), app);
+    gtk_box_append(GTK_BOX(files_toolbar), files_sort_btn);
+
+    GtkWidget* files_collapse_btn = gtk_button_new_with_label("▲▼");
+    gtk_button_set_has_frame(GTK_BUTTON(files_collapse_btn), FALSE);
+    gtk_widget_set_focusable(files_collapse_btn, FALSE);
+    gtk_widget_add_css_class(files_collapse_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(files_collapse_btn, "Toggle Collapse / Expand Folders");
+    g_signal_connect(files_collapse_btn, "clicked", G_CALLBACK(on_sidebar_files_collapse_clicked), app);
+    gtk_box_append(GTK_BOX(files_toolbar), files_collapse_btn);
+
+    gtk_widget_set_visible(files_toolbar, (app == NULL || (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks)));
+    gtk_box_append(GTK_BOX(header), files_toolbar);
+
+    /* 2. Bookmarks Toolbar: Section label + 3 mini action icons */
+    GtkWidget* bm_toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    gtk_widget_set_name(bm_toolbar, "sidebar-bm-toolbar");
+
+    GtkWidget* bm_section = gtk_label_new("▾ BOOKMARKS");
+    gtk_widget_add_css_class(bm_section, "sidebar-section-title");
+    gtk_label_set_xalign(GTK_LABEL(bm_section), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(bm_section), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_hexpand(bm_section, TRUE);
+    gtk_box_append(GTK_BOX(bm_toolbar), bm_section);
+
+    GtkWidget* bm_new_folder_btn = gtk_button_new_with_label("📁+");
+    gtk_button_set_has_frame(GTK_BUTTON(bm_new_folder_btn), FALSE);
+    gtk_widget_set_focusable(bm_new_folder_btn, FALSE);
+    gtk_widget_add_css_class(bm_new_folder_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(bm_new_folder_btn, "New Bookmarked Folder");
+    g_signal_connect(bm_new_folder_btn, "clicked", G_CALLBACK(on_sidebar_bm_new_folder_clicked), app);
+    gtk_box_append(GTK_BOX(bm_toolbar), bm_new_folder_btn);
+
+    GtkWidget* bm_sort_btn = gtk_button_new_with_label("⇅");
+    gtk_button_set_has_frame(GTK_BUTTON(bm_sort_btn), FALSE);
+    gtk_widget_set_focusable(bm_sort_btn, FALSE);
+    gtk_widget_add_css_class(bm_sort_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(bm_sort_btn, "Toggle Sort: A-Z / Z-A");
+    g_signal_connect(bm_sort_btn, "clicked", G_CALLBACK(on_sidebar_bm_sort_clicked), app);
+    gtk_box_append(GTK_BOX(bm_toolbar), bm_sort_btn);
+
+    GtkWidget* bm_collapse_btn = gtk_button_new_with_label("▲▼");
+    gtk_button_set_has_frame(GTK_BUTTON(bm_collapse_btn), FALSE);
+    gtk_widget_set_focusable(bm_collapse_btn, FALSE);
+    gtk_widget_add_css_class(bm_collapse_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(bm_collapse_btn, "Toggle Collapse / Expand Bookmarks");
+    g_signal_connect(bm_collapse_btn, "clicked", G_CALLBACK(on_sidebar_bm_collapse_clicked), app);
+    gtk_box_append(GTK_BOX(bm_toolbar), bm_collapse_btn);
+
+    gtk_widget_set_visible(bm_toolbar, (app != NULL && (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks)));
+    gtk_box_append(GTK_BOX(header), bm_toolbar);
+
+    /* 3. Buffers Toolbar: Section label + 4 mini action icons */
     GtkWidget* buf_toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_set_name(buf_toolbar, "sidebar-buf-toolbar");
+
+    GtkWidget* buf_section = gtk_label_new("▾ BUFFERS");
+    gtk_widget_add_css_class(buf_section, "sidebar-section-title");
+    gtk_label_set_xalign(GTK_LABEL(buf_section), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(buf_section), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_hexpand(buf_section, TRUE);
+    gtk_box_append(GTK_BOX(buf_toolbar), buf_section);
 
     GtkWidget* new_buf_btn = gtk_button_new_with_label("➕");
     gtk_button_set_has_frame(GTK_BUTTON(new_buf_btn), FALSE);
@@ -1764,7 +1900,10 @@ GtkWidget* create_sidebar_header(AppData* app) {
         app->sidebar_files_btn = files_btn;
         app->sidebar_bm_btn = bm_btn;
         app->sidebar_buffers_btn = buf_btn;
+        app->sidebar_files_toolbar = files_toolbar;
+        app->sidebar_bm_toolbar = bm_toolbar;
         app->sidebar_buf_actions = buf_toolbar;
+        app->sidebar_files_hidden_btn = files_hidden_btn;
     }
     return header;
 }
@@ -2102,17 +2241,19 @@ void apply_panel_borders(void) {
         "button.sidebar-icon-btn.sidebar-icon-active label {\n"
         "  color: #ffffff;\n"
         "}\n"
+        "#sidebar-files-toolbar,\n"
+        "#sidebar-bm-toolbar,\n"
         "#sidebar-buf-toolbar {\n"
         "  padding: 3px 8px;\n"
         "  border-top: 1px solid #2b2b2b;\n"
         "  background-color: #191a1b;\n"
+        "  min-height: 26px;\n"
         "}\n"
-        "#sidebar-section {\n"
+        "#sidebar-section,\n"
+        "label.sidebar-section-title {\n"
         "  color: #cccccc;\n"
         "  font-size: 11px;\n"
         "  font-weight: bold;\n"
-        "  padding: 4px 8px;\n"
-        "  border-top: 1px solid #2b2b2b;\n"
         "}\n"
         "#left-sidebar searchentry {\n"
         "  margin: 4px 8px;\n"
