@@ -168,6 +168,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
         gtk_box_append(GTK_BOX(container), tab->minimap);
     }
     tab->container = container;
+    gtk_text_buffer_set_modified(tab->buffer, FALSE);
     tab->tab_label = gtk_label_new("");
     editor_tab_label_update(tab);
 
