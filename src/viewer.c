@@ -788,7 +788,21 @@ static gboolean deferred_refresh(gpointer data) {
     }
     if (app->file_dirty) {
         app->file_dirty = FALSE;
+        /* Do not overwrite preview if the viewed file is an open buffer being edited */
+        gboolean is_open_buffer = FALSE;
         if (app->viewed_path != NULL) {
+            const gchar* cfg = g_get_user_config_dir();
+            if (cfg != NULL && g_str_has_prefix(app->viewed_path, cfg)) {
+                for (GList* l = app->editors; l != NULL; l = l->next) {
+                    EditorTab* tab = (EditorTab*)l->data;
+                    if (tab != NULL && g_strcmp0(tab->path, app->viewed_path) == 0) {
+                        is_open_buffer = TRUE;
+                        break;
+                    }
+                }
+            }
+        }
+        if (app->viewed_path != NULL && !is_open_buffer) {
             load_file_content(app, app->viewed_name, app->viewed_path);
         }
     }
@@ -865,7 +879,6 @@ static void on_file_changed(GFileMonitor* monitor, GFile* file, GFile* other_fil
     case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
     case G_FILE_MONITOR_EVENT_DELETED:
         app->file_dirty = TRUE;
-        app->dir_dirty = TRUE;
         schedule_refresh(app);
         break;
     default:
