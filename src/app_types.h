@@ -47,6 +47,13 @@ enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 #define PREVIEW_TEXT_PADDING_X 10
 #define PREVIEW_TEXT_PADDING_Y 6
 
+/* Sidebar explorer view mode */
+enum {
+    SIDEBAR_VIEW_FILES = 0,
+    SIDEBAR_VIEW_BOOKMARKS,
+    SIDEBAR_VIEW_BUFFERS
+};
+
 /* Entry collected for directory sorting */
 typedef struct {
     gchar* name;
@@ -89,6 +96,7 @@ typedef struct {
     gchar* selected_path;
     gboolean show_hidden;
     gboolean show_bookmarks;
+    gint sidebar_view;   /* SIDEBAR_VIEW_FILES / BOOKMARKS / BUFFERS */
     gint sort_mode;
     gint notebook_page;
     GList* editors;
@@ -121,7 +129,10 @@ typedef struct {
     gchar* search_term;
     gboolean show_hidden; /* hidden files (dot-prefixed) */
     gboolean show_bookmarks; /* bookmarks view active in explorer panel */
-    GPtrArray* bookmarks; /* bookmarked directory paths */
+    gint sidebar_view;       /* SIDEBAR_VIEW_FILES / BOOKMARKS / BUFFERS */
+    GPtrArray* bookmarks;    /* bookmarked directory paths */
+    GPtrArray* buffers;      /* temporary/custom buffer names or paths */
+    gint next_buffer_id;     /* incremental counter for Untitled buffers */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
     gboolean pending_g;   /* for the 'gg' key sequence */
     gboolean pending_z;   /* for the 'zz', 'zt', 'zb' key sequence */
@@ -246,8 +257,9 @@ typedef struct {
     /* VS Code-style chrome: explorer panel header and bottom status bar */
     GtkWidget* sidebar_title;     /* "EXPLORER" / "BOOKMARKS" header label */
     GtkWidget* sidebar_section;   /* current folder section label (files view) */
-    GtkWidget* sidebar_files_btn; /* mini icon button: switch to Explorer view */
-    GtkWidget* sidebar_bm_btn;    /* mini icon button: switch to Bookmarks view */
+    GtkWidget* sidebar_files_btn;   /* mini icon button: switch to Explorer view */
+    GtkWidget* sidebar_bm_btn;      /* mini icon button: switch to Bookmarks view */
+    GtkWidget* sidebar_buffers_btn; /* mini icon button: switch to Buffers view */
     GtkWidget* status_branch;     /* bottom bar: Git branch of base_dir */
     GtkWidget* status_selection;  /* bottom bar: selected entry name */
     GtkWidget* status_size;       /* bottom bar: selected file size */

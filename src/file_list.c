@@ -1190,11 +1190,144 @@ void toggle_bookmarks_view(AppData* app) {
         gtk_widget_set_visible(app->left_vbox, TRUE);
         workspace_apply_positions(app);
     }
-    app->show_bookmarks = !app->show_bookmarks;
+    if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
+        app->sidebar_view = SIDEBAR_VIEW_FILES;
+        app->show_bookmarks = FALSE;
+    } else {
+        app->sidebar_view = SIDEBAR_VIEW_BOOKMARKS;
+        app->show_bookmarks = TRUE;
+    }
     update_path_label(app);
     refresh_listing(app);
-    if (app->show_bookmarks) {
+    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
         select_first_row(app);
+    }
+}
+
+void toggle_buffers_view(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
+        gtk_widget_set_visible(app->left_vbox, TRUE);
+        workspace_apply_positions(app);
+    }
+    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+        app->sidebar_view = SIDEBAR_VIEW_FILES;
+        app->show_bookmarks = FALSE;
+    } else {
+        app->sidebar_view = SIDEBAR_VIEW_BUFFERS;
+        app->show_bookmarks = FALSE;
+    }
+    update_path_label(app);
+    refresh_listing(app);
+    select_first_row(app);
+}
+
+void buffers_init(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    app->buffers = g_ptr_array_new_with_free_func(g_free);
+    app->next_buffer_id = 1;
+}
+
+static gchar* get_buffers_dir_path(void) {
+    gchar* dir = g_build_filename(g_get_user_cache_dir(), "file-explorer", "buffers", NULL);
+    g_mkdir_with_parents(dir, 0755);
+    return dir;
+}
+
+void create_new_buffer(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    gchar* buf_dir = get_buffers_dir_path();
+    gchar* buf_name = g_strdup_printf("Untitled-%d.txt", app->next_buffer_id++);
+    gchar* full_path = g_build_filename(buf_dir, buf_name, NULL);
+
+    if (!g_file_test(full_path, G_FILE_TEST_EXISTS)) {
+        g_file_set_contents(full_path, "", 0, NULL);
+    }
+
+    gboolean exists = FALSE;
+    if (app->buffers != NULL) {
+        for (guint i = 0; i < app->buffers->len; i++) {
+            if (g_strcmp0((const gchar*)g_ptr_array_index(app->buffers, i), full_path) == 0) {
+                exists = TRUE;
+                break;
+            }
+        }
+        if (!exists) {
+            g_ptr_array_add(app->buffers, g_strdup(full_path));
+        }
+    }
+
+    /* Open buffer in editor */
+    editor_open_file(app, buf_name, full_path);
+
+    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+        refresh_listing_with_path(app, full_path);
+    } else {
+        refresh_listing(app);
+    }
+
+    g_free(buf_dir);
+    g_free(buf_name);
+    g_free(full_path);
+}
+
+static void append_buffers_to_store(GtkTreeStore* store, AppData* app) {
+    if (store == NULL || app == NULL || app->sidebar_view != SIDEBAR_VIEW_BUFFERS) {
+        return;
+    }
+
+    /* First row: action to create a new buffer */
+    GtkTreeIter new_iter;
+    gtk_tree_store_append(store, &new_iter, NULL);
+    gtk_tree_store_set(store, &new_iter,
+                       COL_NAME, "+ New Buffer",
+                       COL_TYPE, "buffer_create",
+                       COL_LABEL, "➕ [Create New Buffer]",
+                       COL_PATH, "",
+                       COL_LOADED, TRUE,
+                       COL_GIT_STATUS, "",
+                       -1);
+
+    guint count = (app->buffers != NULL) ? app->buffers->len : 0;
+    if (count > 0) {
+        for (guint i = 0; i < count; i++) {
+            const gchar* bpath = (const gchar*)g_ptr_array_index(app->buffers, i);
+            if (bpath == NULL || bpath[0] == '\0') {
+                continue;
+            }
+            gchar* bname = g_path_get_basename(bpath);
+            gchar* label = g_strdup_printf("📝 %s", bname);
+
+            GtkTreeIter iter;
+            gtk_tree_store_append(store, &iter, NULL);
+            gtk_tree_store_set(store, &iter,
+                               COL_NAME, bname,
+                               COL_TYPE, "buffer",
+                               COL_LABEL, label,
+                               COL_PATH, bpath,
+                               COL_LOADED, TRUE,
+                               COL_GIT_STATUS, "",
+                               -1);
+            g_free(label);
+            g_free(bname);
+        }
+    } else {
+        GtkTreeIter iter;
+        gtk_tree_store_append(store, &iter, NULL);
+        gtk_tree_store_set(store, &iter,
+                           COL_NAME, "No buffers",
+                           COL_TYPE, "-",
+                           COL_LABEL, "  (no buffers open — click [+] above)",
+                           COL_PATH, "",
+                           COL_LOADED, TRUE,
+                           COL_GIT_STATUS, "",
+                           -1);
     }
 }
 
@@ -1261,9 +1394,15 @@ static void append_bookmarks_to_store(GtkTreeStore* store, AppData* app) {
 /* Apply a pre-scanned DirScanNode tree into GtkTreeStore on the main thread */
 static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIter* parent,
                                     const DirScanNode* node) {
-    if (parent == NULL && app != NULL && app->show_bookmarks) {
-        append_bookmarks_to_store(store, app);
-        return;
+    if (parent == NULL && app != NULL) {
+        if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+            append_buffers_to_store(store, app);
+            return;
+        }
+        if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
+            append_bookmarks_to_store(store, app);
+            return;
+        }
     }
 
     if (node == NULL) {
@@ -1838,21 +1977,33 @@ void update_path_label(AppData* app) {
 
     /* Explorer panel header (VS Code style): view title + current folder section */
     if (app->sidebar_title != NULL) {
-        gtk_label_set_text(GTK_LABEL(app->sidebar_title),
-                           app->show_bookmarks ? "BOOKMARKS" : "EXPLORER");
+        const gchar* title = "EXPLORER";
+        if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+            title = "BUFFERS";
+        } else if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
+            title = "BOOKMARKS";
+        }
+        gtk_label_set_text(GTK_LABEL(app->sidebar_title), title);
     }
     if (app->sidebar_files_btn != NULL) {
-        if (!app->show_bookmarks) {
+        if (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks) {
             gtk_widget_add_css_class(app->sidebar_files_btn, "sidebar-icon-active");
         } else {
             gtk_widget_remove_css_class(app->sidebar_files_btn, "sidebar-icon-active");
         }
     }
     if (app->sidebar_bm_btn != NULL) {
-        if (app->show_bookmarks) {
+        if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
             gtk_widget_add_css_class(app->sidebar_bm_btn, "sidebar-icon-active");
         } else {
             gtk_widget_remove_css_class(app->sidebar_bm_btn, "sidebar-icon-active");
+        }
+    }
+    if (app->sidebar_buffers_btn != NULL) {
+        if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+            gtk_widget_add_css_class(app->sidebar_buffers_btn, "sidebar-icon-active");
+        } else {
+            gtk_widget_remove_css_class(app->sidebar_buffers_btn, "sidebar-icon-active");
         }
     }
     if (app->sidebar_section != NULL && app->base_dir != NULL) {
@@ -1861,7 +2012,7 @@ void update_path_label(AppData* app) {
         gchar* section = g_strdup_printf("▾ %s", upper);
         gtk_label_set_text(GTK_LABEL(app->sidebar_section), section);
         gtk_widget_set_tooltip_text(app->sidebar_section, app->base_dir);
-        gtk_widget_set_visible(app->sidebar_section, !app->show_bookmarks);
+        gtk_widget_set_visible(app->sidebar_section, app->sidebar_view == SIDEBAR_VIEW_FILES);
         g_free(section);
         g_free(upper);
         g_free(base);
@@ -2133,7 +2284,19 @@ void activate_selected_entry(AppData* app) {
                        COL_TYPE, &type,
                        COL_PATH, &full, -1);
 
-    if (g_strcmp0(type, "bookmark") == 0 && full != NULL) {
+    if (g_strcmp0(type, "buffer_create") == 0) {
+        create_new_buffer(app);
+    } else if (g_strcmp0(type, "buffer") == 0 && full != NULL) {
+        if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+            workspace_save_current(app);
+            app->applying_layout = TRUE;
+            gtk_widget_set_visible(app->viewer_box, TRUE);
+            update_path_label(app);
+            workspace_apply_positions(app);
+        }
+        editor_open_file(app, name, full);
+    } else if (g_strcmp0(type, "bookmark") == 0 && full != NULL) {
+        app->sidebar_view = SIDEBAR_VIEW_FILES;
         app->show_bookmarks = FALSE;
         reload_directory(app, full);
     } else if (g_strcmp0(type, "dir") == 0) {
@@ -2362,9 +2525,10 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             activate_selected_entry(app);
         }
         return TRUE;
-    case GDK_KEY_BackSpace: /* Parent directory (or return to files view from bookmarks) */
+    case GDK_KEY_BackSpace: /* Parent directory (or return to files view from bookmarks / buffers) */
         app->pending_g = FALSE;
-        if (app->show_bookmarks) {
+        if (app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
+            app->sidebar_view = SIDEBAR_VIEW_FILES;
             app->show_bookmarks = FALSE;
             refresh_listing(app);
             return TRUE;
@@ -2424,6 +2588,14 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
             toggle_bookmarks_view(app);
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_u: /* Ctrl+U: toggle text buffers view in explorer panel */
+    case GDK_KEY_U:
+        app->pending_g = FALSE;
+        if (state & GDK_CONTROL_MASK) {
+            toggle_buffers_view(app);
             return TRUE;
         }
         return FALSE;

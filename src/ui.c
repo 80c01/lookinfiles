@@ -824,6 +824,7 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->selected_path = NULL;
     ws->show_hidden = app->show_hidden;
     ws->show_bookmarks = app->show_bookmarks;
+    ws->sidebar_view = app->sidebar_view;
     ws->sort_mode = app->sort_mode;
     ws->notebook_page = 0;
     ws->editors = NULL;
@@ -873,6 +874,7 @@ void workspace_save_current(AppData* app) {
     ws->term_vis = gtk_widget_get_visible(app->term_scroll);
     ws->show_hidden = app->show_hidden;
     ws->show_bookmarks = app->show_bookmarks;
+    ws->sidebar_view = app->sidebar_view;
     ws->sort_mode = app->sort_mode;
     ws->render_raw = app->render_raw;
     ws->editor_dedicated = app->editor_dedicated;
@@ -1136,11 +1138,13 @@ void workspace_switch(AppData* app, gint idx) {
                            (g_strcmp0(app->base_dir, ws->base_dir) != 0) ||
                            (app->show_hidden != ws->show_hidden) ||
                            (app->show_bookmarks != ws->show_bookmarks) ||
+                           (app->sidebar_view != ws->sidebar_view) ||
                            (app->sort_mode != ws->sort_mode) ||
                            !ws_paths_equal(app->expanded_paths, ws->expanded_paths);
 
     app->show_hidden = ws->show_hidden;
     app->show_bookmarks = ws->show_bookmarks;
+    app->sidebar_view = ws->sidebar_view;
     app->sort_mode = ws->sort_mode;
     if (ws->base_dir != NULL && g_strcmp0(app->base_dir, ws->base_dir) != 0) {
         g_free(app->base_dir);
@@ -1228,6 +1232,7 @@ void workspace_add(AppData* app) {
         nw->editors = NULL;
         nw->render_raw = cur->render_raw;
         nw->show_bookmarks = cur->show_bookmarks;
+        nw->sidebar_view = cur->sidebar_view;
         g_free(nw->selected_path);
         nw->selected_path = g_strdup(cur->selected_path);
         if (nw->expanded_paths != NULL) {
@@ -1593,8 +1598,11 @@ static void on_sidebar_files_clicked(GtkButton* btn, gpointer data) {
     if (app == NULL) {
         return;
     }
-    if (app->show_bookmarks) {
-        toggle_bookmarks_view(app);
+    if (app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
+        app->sidebar_view = SIDEBAR_VIEW_FILES;
+        app->show_bookmarks = FALSE;
+        update_path_label(app);
+        refresh_listing(app);
     } else if (app->tree_view != NULL) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     }
@@ -1606,8 +1614,21 @@ static void on_sidebar_bm_clicked(GtkButton* btn, gpointer data) {
     if (app == NULL) {
         return;
     }
-    if (!app->show_bookmarks) {
+    if (app->sidebar_view != SIDEBAR_VIEW_BOOKMARKS) {
         toggle_bookmarks_view(app);
+    } else if (app->tree_view != NULL) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+}
+
+static void on_sidebar_buffers_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app == NULL) {
+        return;
+    }
+    if (app->sidebar_view != SIDEBAR_VIEW_BUFFERS) {
+        toggle_buffers_view(app);
     } else if (app->tree_view != NULL) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     }
@@ -1644,7 +1665,17 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_btn, "clicked", G_CALLBACK(on_sidebar_bm_clicked), app);
     gtk_box_append(GTK_BOX(title_row), bm_btn);
 
-    if (app != NULL && app->show_bookmarks) {
+    GtkWidget* buf_btn = gtk_button_new_with_label("📝");
+    gtk_button_set_has_frame(GTK_BUTTON(buf_btn), FALSE);
+    gtk_widget_set_focusable(buf_btn, FALSE);
+    gtk_widget_add_css_class(buf_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(buf_btn, "Text Buffers (Ctrl+U)");
+    g_signal_connect(buf_btn, "clicked", G_CALLBACK(on_sidebar_buffers_clicked), app);
+    gtk_box_append(GTK_BOX(title_row), buf_btn);
+
+    if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+        gtk_widget_add_css_class(buf_btn, "sidebar-icon-active");
+    } else if (app != NULL && (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks)) {
         gtk_widget_add_css_class(bm_btn, "sidebar-icon-active");
     } else {
         gtk_widget_add_css_class(files_btn, "sidebar-icon-active");
@@ -1663,6 +1694,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
         app->sidebar_section = section;
         app->sidebar_files_btn = files_btn;
         app->sidebar_bm_btn = bm_btn;
+        app->sidebar_buffers_btn = buf_btn;
     }
     return header;
 }

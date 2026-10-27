@@ -367,6 +367,7 @@ int main(int argc, char** argv) {
     app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     bookmarks_init(app);
+    buffers_init(app);
     populate_store(store, app, start_dir, FALSE, SORT_NAME);
     g_object_unref(store);
     app->text_view = text_view;
@@ -565,6 +566,9 @@ int main(int argc, char** argv) {
     }
     if (app->bookmarks != NULL) {
         g_ptr_array_unref(app->bookmarks);
+    }
+    if (app->buffers != NULL) {
+        g_ptr_array_unref(app->buffers);
     }
     if (app->dir_cancellable != NULL) {
         g_cancellable_cancel(app->dir_cancellable);
