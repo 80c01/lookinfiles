@@ -112,8 +112,7 @@ typedef struct {
     GtkWidget* breadcrumb_box;
     GtkWidget* files_btn;
     GtkWidget* preview_btn;
-    GtkWidget* split_btn;         /* dedicated tab button to split/dock editor panel */
-    GtkWidget* split_page;        /* dummy notebook page holding the split button tab */
+    GtkWidget* split_btn;         /* tab action button to split/dock editor panel */
     GtkWidget* term_btn;
     GtkWidget* sort_btn;
     GtkWidget* hidden_btn;

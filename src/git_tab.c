@@ -510,7 +510,7 @@ void git_tab_init(AppData* app) {
     app->git_tab_box = tab_box;
 
     app->git_tab_label = gtk_label_new("📦 Git Commits");
-    gtk_notebook_insert_page(GTK_NOTEBOOK(app->notebook), tab_box, app->git_tab_label, 1);
+    gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), tab_box, app->git_tab_label);
 
     git_tab_update(app, app->base_dir);
 }
