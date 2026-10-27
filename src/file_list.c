@@ -1834,18 +1834,6 @@ static void append_buffers_to_store(GtkTreeStore* store, AppData* app) {
         return;
     }
 
-    /* First row: action to create a new buffer */
-    GtkTreeIter new_iter;
-    gtk_tree_store_append(store, &new_iter, NULL);
-    gtk_tree_store_set(store, &new_iter,
-                       COL_NAME, "+ New Buffer",
-                       COL_TYPE, "buffer_create",
-                       COL_LABEL, "➕ [Create New Buffer]",
-                       COL_PATH, "",
-                       COL_LOADED, TRUE,
-                       COL_GIT_STATUS, "",
-                       -1);
-
     guint count = 0;
     gchar* buf_dir = get_buffers_dir_path();
     append_buffer_entries_recursive(store, app, NULL, buf_dir, &count);
