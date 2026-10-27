@@ -270,14 +270,14 @@ int main(int argc, char** argv) {
     gtk_widget_set_vexpand(notebook, TRUE);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
                              gtk_label_new("📄 Preview"));
-    /* Right-aligned action widget inside preview notebook tab header: Split/Dock button */
+    /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
     GtkWidget* split_btn = gtk_button_new_with_label("◫");
     gtk_widget_set_name(split_btn, "tab-split-btn");
     gtk_button_set_has_frame(GTK_BUTTON(split_btn), FALSE);
     gtk_widget_set_focusable(split_btn, FALSE);
     gtk_widget_add_css_class(split_btn, "tab-action-btn");
     gtk_widget_set_tooltip_text(split_btn, "Split editor tabs to dedicated panel right of preview (Ctrl+E)");
-    gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), split_btn, GTK_PACK_END);
+    gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), split_btn, GTK_PACK_START);
 
     GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_name(viewer_box, "viewer-box");

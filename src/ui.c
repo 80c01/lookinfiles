@@ -2158,7 +2158,7 @@ void apply_panel_borders(void) {
         "  border: none;\n"
         "  border-radius: 4px;\n"
         "  padding: 2px 7px;\n"
-        "  margin: 3px 6px 3px 2px;\n"
+        "  margin: 3px 2px 3px 6px;\n"
         "  min-height: 22px;\n"
         "  min-width: 24px;\n"
         "  box-shadow: none;\n"
