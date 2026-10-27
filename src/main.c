@@ -268,20 +268,19 @@ int main(int argc, char** argv) {
     GtkWidget* notebook = gtk_notebook_new();
     gtk_widget_set_hexpand(notebook, TRUE);
     gtk_widget_set_vexpand(notebook, TRUE);
-    GtkWidget* preview_tab_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    GtkWidget* preview_tab_lbl = gtk_label_new("📄 Preview");
-    gtk_box_append(GTK_BOX(preview_tab_box), preview_tab_lbl);
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
+                             gtk_label_new("📄 Preview"));
 
-    /* Split/Dock button placed between preview/git tabs and editor tabs */
+    /* Dedicated Split/Dock button placed as a dedicated tab after preview/git tabs */
     GtkWidget* split_btn = gtk_button_new_with_label("◫");
     gtk_widget_set_name(split_btn, "tab-split-btn");
     gtk_button_set_has_frame(GTK_BUTTON(split_btn), FALSE);
     gtk_widget_set_focusable(split_btn, FALSE);
     gtk_widget_add_css_class(split_btn, "tab-action-btn");
     gtk_widget_set_tooltip_text(split_btn, "Split editor tabs to dedicated panel right of preview (Ctrl+E)");
-    gtk_box_append(GTK_BOX(preview_tab_box), split_btn);
 
-    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack, preview_tab_box);
+    GtkWidget* split_dummy_page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), split_dummy_page, split_btn);
 
     GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_name(viewer_box, "viewer-box");
@@ -380,7 +379,7 @@ int main(int argc, char** argv) {
     app->files_btn = files_btn;
     app->preview_btn = preview_btn;
     app->split_btn = split_btn;
-    app->preview_tab_label = preview_tab_box;
+    app->split_page = split_dummy_page;
     app->term_btn = term_btn;
     app->sort_btn = sort_btn;
     app->hidden_btn = hidden_btn;

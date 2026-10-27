@@ -8,7 +8,6 @@ void git_tab_init(AppData* app);
 
 /* Update the Git tab availability and commit listing for the given directory */
 void git_tab_update(AppData* app, const gchar* dir);
-void git_tab_refresh_split_btn(AppData* app);
 
 /* Clean up Git tab resources */
 void git_tab_cleanup(AppData* app);

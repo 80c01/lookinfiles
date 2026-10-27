@@ -112,7 +112,8 @@ typedef struct {
     GtkWidget* breadcrumb_box;
     GtkWidget* files_btn;
     GtkWidget* preview_btn;
-    GtkWidget* split_btn;         /* tab action button to split/dock editor panel */
+    GtkWidget* split_btn;         /* dedicated tab button to split/dock editor panel */
+    GtkWidget* split_page;        /* dummy notebook page holding the split button tab */
     GtkWidget* term_btn;
     GtkWidget* sort_btn;
     GtkWidget* hidden_btn;
@@ -189,7 +190,6 @@ typedef struct {
 
     /* Git commits tab in preview panel */
     GtkWidget* git_tab_box;       /* Box widget container for the Git tab */
-    GtkWidget* preview_tab_label; /* Label widget for Preview tab header */
     GtkWidget* git_tab_label;     /* Label widget for Git tab header */
     GtkWidget* git_paned;         /* Paned separating commit list and commit details */
     GtkListStore* git_store;      /* Tree model for commit list */

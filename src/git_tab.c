@@ -351,42 +351,18 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
     }
 }
 
-void git_tab_refresh_split_btn(AppData* app) {
-    if (app == NULL || app->split_btn == NULL) return;
-
-    gboolean git_vis = (app->git_tab_box != NULL && gtk_widget_get_visible(app->git_tab_box));
-
-    /* Remove split_btn from current parent if attached */
-    GtkWidget* parent = gtk_widget_get_parent(app->split_btn);
-    if (parent != NULL && GTK_IS_BOX(parent)) {
-        g_object_ref(app->split_btn);
-        gtk_box_remove(GTK_BOX(parent), app->split_btn);
-    } else {
-        g_object_ref(app->split_btn);
-    }
-
-    if (git_vis && app->git_tab_label != NULL && GTK_IS_BOX(app->git_tab_label)) {
-        gtk_box_append(GTK_BOX(app->git_tab_label), app->split_btn);
-    } else if (app->preview_tab_label != NULL && GTK_IS_BOX(app->preview_tab_label)) {
-        gtk_box_append(GTK_BOX(app->preview_tab_label), app->split_btn);
-    }
-    g_object_unref(app->split_btn);
-}
-
 void git_tab_update(AppData* app, const gchar* dir) {
     if (app == NULL || app->git_tab_box == NULL) return;
 
     gchar* root = find_git_root(dir);
     if (root == NULL) {
         gtk_widget_set_visible(app->git_tab_box, FALSE);
-        git_tab_refresh_split_btn(app);
         g_free(app->git_current_root);
         app->git_current_root = NULL;
         return;
     }
 
     gtk_widget_set_visible(app->git_tab_box, TRUE);
-    git_tab_refresh_split_btn(app);
 
     if (g_strcmp0(app->git_current_root, root) == 0) {
         g_free(root);
@@ -533,14 +509,10 @@ void git_tab_init(AppData* app) {
     gtk_box_append(GTK_BOX(tab_box), paned);
     app->git_tab_box = tab_box;
 
-    GtkWidget* git_lbl_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    GtkWidget* git_lbl = gtk_label_new("📦 Git Commits");
-    gtk_box_append(GTK_BOX(git_lbl_box), git_lbl);
-    app->git_tab_label = git_lbl_box;
-    gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), tab_box, app->git_tab_label);
+    app->git_tab_label = gtk_label_new("📦 Git Commits");
+    gtk_notebook_insert_page(GTK_NOTEBOOK(app->notebook), tab_box, app->git_tab_label, 1);
 
     git_tab_update(app, app->base_dir);
-    git_tab_refresh_split_btn(app);
 }
 
 void git_tab_cleanup(AppData* app) {
