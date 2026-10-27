@@ -162,18 +162,6 @@ int main(int argc, char** argv) {
     GtkWidget* pill_div_label = gtk_label_new("|");
     gtk_widget_add_css_class(pill_div_label, "breadcrumb-sep");
 
-    GtkWidget* sort_btn = gtk_button_new_with_label("⇅ Sort: Name");
-    gtk_button_set_has_frame(GTK_BUTTON(sort_btn), FALSE);
-    gtk_widget_set_focusable(sort_btn, FALSE);
-    gtk_widget_add_css_class(sort_btn, "status-pill");
-    gtk_widget_set_tooltip_text(sort_btn, "Cycle sort order (o)");
-
-    GtkWidget* hidden_btn = gtk_button_new_with_label("👁 Hidden: Off");
-    gtk_button_set_has_frame(GTK_BUTTON(hidden_btn), FALSE);
-    gtk_widget_set_focusable(hidden_btn, FALSE);
-    gtk_widget_add_css_class(hidden_btn, "status-pill");
-    gtk_widget_set_tooltip_text(hidden_btn, "Toggle hidden files (i)");
-
     GtkWidget* help_btn = gtk_button_new_with_label("? Help");
     gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);
     gtk_widget_set_focusable(help_btn, FALSE);
@@ -378,15 +366,13 @@ int main(int argc, char** argv) {
     app->preview_btn = preview_btn;
     app->split_btn = split_btn;
     app->term_btn = term_btn;
-    app->sort_btn = sort_btn;
-    app->hidden_btn = hidden_btn;
+    app->sort_btn = NULL;
+    app->hidden_btn = NULL;
     app->help_btn = help_btn;
     g_signal_connect(files_btn, "clicked", G_CALLBACK(on_files_pill_clicked), app);
     g_signal_connect(preview_btn, "clicked", G_CALLBACK(on_preview_pill_clicked), app);
     g_signal_connect(split_btn, "clicked", G_CALLBACK(on_split_btn_clicked), app);
     g_signal_connect(term_btn, "clicked", G_CALLBACK(on_term_pill_clicked), app);
-    g_signal_connect(sort_btn, "clicked", G_CALLBACK(on_sort_pill_clicked), app);
-    g_signal_connect(hidden_btn, "clicked", G_CALLBACK(on_hidden_pill_clicked), app);
     g_signal_connect(help_btn, "clicked", G_CALLBACK(on_help_pill_clicked), app);
     update_path_label(app);
 
@@ -531,8 +517,6 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), preview_btn);
     gtk_box_append(GTK_BOX(label_row), term_btn);
     gtk_box_append(GTK_BOX(label_row), pill_div_label);
-    gtk_box_append(GTK_BOX(label_row), sort_btn);
-    gtk_box_append(GTK_BOX(label_row), hidden_btn);
     gtk_box_append(GTK_BOX(label_row), help_btn);
     gtk_box_append(GTK_BOX(outer_vbox), label_row);
     gtk_box_append(GTK_BOX(outer_vbox), workspace_hbox);
