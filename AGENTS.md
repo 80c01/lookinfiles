@@ -101,6 +101,9 @@ Shortcut list to keep in sync with `README.md` when you change behavior.
 7. Language: C99-ish (`-Wall -Wextra` must stay clean; the only tolerated
    warning is `-Wformat-truncation` on the initial label `snprintf`).
    Zero warnings are expected otherwise (unused variables do not compile here).
+8. **Always compile after modification**: always run a compilation (`make`) after
+   every modification to verify that the code compiles cleanly with zero warnings
+   before completing a task or committing.
 
 ## Git
 
