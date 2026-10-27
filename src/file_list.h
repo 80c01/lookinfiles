@@ -63,6 +63,7 @@ void toggle_hidden_files(AppData* app);
 void toggle_bookmarks_view(AppData* app);
 void toggle_buffers_view(AppData* app);
 void create_new_buffer(AppData* app);
+void rename_selected_buffer(AppData* app);
 void buffers_init(AppData* app);
 void bookmarks_init(AppData* app);
 void bookmarks_save(AppData* app);

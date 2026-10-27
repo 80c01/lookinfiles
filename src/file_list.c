@@ -1302,6 +1302,191 @@ void create_new_buffer(AppData* app) {
     g_free(full_path);
 }
 
+typedef struct {
+    GMainLoop* loop;
+    gchar* result;
+    GtkWidget* entry;
+} RenameBufferDialogData;
+
+static void on_rename_buffer_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
+    (void)dlg;
+    RenameBufferDialogData* data = (RenameBufferDialogData*)user_data;
+    if (response_id == GTK_RESPONSE_OK && data->entry != NULL) {
+        const gchar* text = gtk_editable_get_text(GTK_EDITABLE(data->entry));
+        if (text != NULL) {
+            gchar* trimmed = g_strstrip(g_strdup(text));
+            if (trimmed[0] != '\0') {
+                data->result = trimmed;
+            } else {
+                g_free(trimmed);
+            }
+        }
+    }
+    if (g_main_loop_is_running(data->loop)) {
+        g_main_loop_quit(data->loop);
+    }
+}
+
+static gchar* prompt_rename_buffer_dialog(GtkWindow* parent_win, const gchar* current_name) {
+    GtkWidget* dlg = gtk_dialog_new_with_buttons("Rename Buffer", parent_win,
+                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                 "Cancel", GTK_RESPONSE_CANCEL,
+                                                 "Rename", GTK_RESPONSE_OK,
+                                                 NULL);
+    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
+    GtkWidget* content = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_set_margin_top(box, 14);
+    gtk_widget_set_margin_bottom(box, 14);
+    gtk_widget_set_margin_start(box, 16);
+    gtk_widget_set_margin_end(box, 16);
+
+    GtkWidget* label = gtk_label_new("Enter new buffer name:");
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(box), label);
+
+    GtkWidget* entry = gtk_entry_new();
+    if (current_name != NULL) {
+        gtk_editable_set_text(GTK_EDITABLE(entry), current_name);
+    }
+    gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
+    gtk_box_append(GTK_BOX(box), entry);
+    gtk_box_append(GTK_BOX(content), box);
+
+    RenameBufferDialogData d = { g_main_loop_new(NULL, FALSE), NULL, entry };
+    g_signal_connect(dlg, "response", G_CALLBACK(on_rename_buffer_response), &d);
+
+    gtk_window_present(GTK_WINDOW(dlg));
+    gtk_widget_grab_focus(entry);
+    g_main_loop_run(d.loop);
+    g_main_loop_unref(d.loop);
+    gtk_window_destroy(GTK_WINDOW(dlg));
+
+    return d.result;
+}
+
+void rename_selected_buffer(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+
+    gchar* old_path = NULL;
+    gchar* old_name = NULL;
+
+    /* If we are in Buffers sidebar view, check selected row */
+    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS && app->selection != NULL) {
+        GtkTreeIter it;
+        if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+            gchar* type = NULL;
+            gtk_tree_model_get(app->model, &it,
+                               COL_NAME, &old_name,
+                               COL_TYPE, &type,
+                               COL_PATH, &old_path, -1);
+            if (g_strcmp0(type, "buffer") != 0 || old_path == NULL || old_path[0] == '\0') {
+                g_free(type);
+                g_free(old_name);
+                g_free(old_path);
+                old_name = NULL;
+                old_path = NULL;
+            } else {
+                g_free(type);
+            }
+        }
+    }
+
+    /* If no buffer was selected from the sidebar, check currently active editor tab */
+    if (old_path == NULL) {
+        EditorTab* cur_tab = editor_current_tab(app);
+        if (cur_tab != NULL && cur_tab->is_buffer && cur_tab->path != NULL) {
+            old_path = g_strdup(cur_tab->path);
+            old_name = g_strdup(cur_tab->name);
+        }
+    }
+
+    if (old_path == NULL || old_name == NULL) {
+        g_free(old_path);
+        g_free(old_name);
+        return;
+    }
+
+    /* Prompt user for new buffer name */
+    gchar* new_name = prompt_rename_buffer_dialog(app->window, old_name);
+    if (new_name == NULL || g_strcmp0(new_name, old_name) == 0) {
+        g_free(new_name);
+        g_free(old_name);
+        g_free(old_path);
+        return;
+    }
+
+    /* Make sure name does not contain path separators */
+    if (strchr(new_name, '/') != NULL || strchr(new_name, '\\') != NULL) {
+        g_free(new_name);
+        g_free(old_name);
+        g_free(old_path);
+        return;
+    }
+
+    gchar* buf_dir = get_buffers_dir_path();
+    gchar* new_path = g_build_filename(buf_dir, new_name, NULL);
+    g_free(buf_dir);
+
+    /* If new_path already exists and is different from old_path, do not overwrite */
+    if (g_file_test(new_path, G_FILE_TEST_EXISTS) && g_strcmp0(new_path, old_path) != 0) {
+        g_free(new_name);
+        g_free(new_path);
+        g_free(old_name);
+        g_free(old_path);
+        return;
+    }
+
+    /* Rename file on disk */
+    if (g_rename(old_path, new_path) != 0) {
+        g_free(new_name);
+        g_free(new_path);
+        g_free(old_name);
+        g_free(old_path);
+        return;
+    }
+
+    /* Update app->buffers list */
+    if (app->buffers != NULL) {
+        for (guint i = 0; i < app->buffers->len; i++) {
+            if (g_strcmp0((const gchar*)g_ptr_array_index(app->buffers, i), old_path) == 0) {
+                g_free(g_ptr_array_index(app->buffers, i));
+                app->buffers->pdata[i] = g_strdup(new_path);
+                break;
+            }
+        }
+    }
+
+    /* Update any open EditorTab with old_path across all workspaces */
+    for (gint w = 0; w < app->num_workspaces; w++) {
+        for (GList* l = app->workspaces[w].editors; l != NULL; l = l->next) {
+            EditorTab* tab = (EditorTab*)l->data;
+            if (tab != NULL && g_strcmp0(tab->path, old_path) == 0) {
+                g_free(tab->path);
+                g_free(tab->name);
+                tab->path = g_strdup(new_path);
+                tab->name = g_strdup(new_name);
+                editor_tab_label_update(tab);
+                editor_apply_language(tab->buffer, new_name);
+            }
+        }
+    }
+
+    /* Refresh buffer listing in sidebar if currently viewing buffers */
+    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+        refresh_listing_with_path(app, new_path);
+    } else {
+        refresh_listing(app);
+    }
+
+    g_free(new_name);
+    g_free(new_path);
+    g_free(old_name);
+    g_free(old_path);
+}
+
 static void append_buffers_to_store(GtkTreeStore* store, AppData* app) {
     if (store == NULL || app == NULL || app->sidebar_view != SIDEBAR_VIEW_BUFFERS) {
         return;
@@ -2624,6 +2809,18 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             return TRUE;
         }
         return FALSE;
+    case GDK_KEY_r: /* r in buffers view / Ctrl+R / F2: rename selected buffer */
+    case GDK_KEY_R:
+        app->pending_g = FALSE;
+        if ((state & GDK_CONTROL_MASK) != 0 || app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+            rename_selected_buffer(app);
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_F2:
+        app->pending_g = FALSE;
+        rename_selected_buffer(app);
+        return TRUE;
     case GDK_KEY_f: /* Ctrl+F: page down; f alone: fullscreen */
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {

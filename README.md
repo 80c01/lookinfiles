@@ -63,6 +63,7 @@ Simple graphical application to browse the file system.
 | `Ctrl+D` | Bookmark the current directory (or remove selected bookmark in bookmarks view) |
 | `Ctrl+A` | Switch between files and bookmarks views in the explorer panel |
 | `Ctrl+U` | Switch between files and text buffers view in the explorer panel |
+| `r` / `F2` | Rename selected buffer (in Buffers view) or current editor buffer (`Ctrl+R`) |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
 | `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), rendered pages / text extraction (PDF), or player / raw header mode (video/audio) |
@@ -98,6 +99,7 @@ the tab title marks unsaved changes.
 | `Ctrl+S` | Save the file open in the current editor tab |
 | `Ctrl+W` | Close the current editor tab (asks first when unsaved) |
 | `Ctrl+E` | Move editor tabs to dedicated panel right of preview, or dock back |
+| `Ctrl+R` / `F2` | Rename active buffer tab |
 
 ## 📝 Build
 

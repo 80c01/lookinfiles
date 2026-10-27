@@ -40,6 +40,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Explorer panel", "Backspace", "Go to the parent directory (or return to files view from bookmarks)"},
     {"Explorer panel", "Ctrl+D", "Bookmark current directory (or remove selected bookmark)"},
     {"Explorer panel", "Ctrl+A", "Switch between files and bookmarks views in Explorer"},
+    {"Explorer panel", "Ctrl+U", "Switch between files and text buffers view in Explorer"},
+    {"Explorer panel", "r / F2", "Rename selected text buffer (in Buffers view)"},
     {"Explorer panel", "i / I", "Toggle hidden files"},
     {"Explorer panel", "o", "Cycle sort: name, date, size, extension"},
     {"Explorer panel", "?", "Show / hide this help panel"},
@@ -53,6 +55,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},
     {"Editor tabs", "Ctrl+W", "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"},
     {"Editor tabs", "Ctrl+E", "Move editor tabs to dedicated panel right of preview, or dock back"},
+    {"Editor tabs", "Ctrl+R / F2", "Rename current text buffer"},
     /* Global */
     {"Global", "Alt+1 .. Alt+8", "Switch between virtual workspaces (or click/scroll top-bar minimap)"},
     {"Global", "Alt++ / Alt+-", "Add a new virtual workspace (+) or close the current workspace (-)"},
@@ -434,6 +437,13 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         !(state & GDK_SHIFT_MASK) &&
         (keyval == GDK_KEY_e || keyval == GDK_KEY_E)) {
         editor_toggle_dedicated(app);
+        return TRUE;
+    }
+
+    /* Ctrl+R or F2: rename current buffer if an editor tab or buffer row is active */
+    if (((state & GDK_CONTROL_MASK) && !(state & GDK_SHIFT_MASK) && (keyval == GDK_KEY_r || keyval == GDK_KEY_R)) ||
+        keyval == GDK_KEY_F2) {
+        rename_selected_buffer(app);
         return TRUE;
     }
 
