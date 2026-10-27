@@ -55,31 +55,30 @@ static void minimap_line_metrics(GtkTextBuffer* buffer, gint i, gint* length,
 }
 
 /* Draw the entire file into an offscreen image surface (cached) */
-static void minimap_build_cache(GtkWidget* widget, AppData* app,
-                                gint width, gint height) {
-    if (app->mm_cache != NULL) {
-        cairo_surface_destroy(app->mm_cache);
-        app->mm_cache = NULL;
+void minimap_build_cache_for_buffer(GtkWidget* widget, GtkTextBuffer* buffer,
+                                    cairo_surface_t** cache, gint width, gint height) {
+    if (*cache != NULL) {
+        cairo_surface_destroy(*cache);
+        *cache = NULL;
     }
-    if (width <= 0 || height <= 0) {
+    if (width <= 0 || height <= 0 || buffer == NULL) {
         return;
     }
 
-    app->mm_cache =
-        cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-    cairo_t* cc = cairo_create(app->mm_cache);
+    *cache = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+    cairo_t* cc = cairo_create(*cache);
 
     /* Background identical to the preview pane (#121314) */
     cairo_set_source_rgb(cc, 18.0 / 255.0, 19.0 / 255.0, 20.0 / 255.0);
     cairo_paint(cc);
 
-    gint lines = gtk_text_buffer_get_line_count(app->buffer);
+    gint lines = gtk_text_buffer_get_line_count(buffer);
     if (lines <= 0) {
         cairo_destroy(cc);
         return;
     }
 
-    gdouble mm = minimap_line_height(widget, app->buffer);
+    gdouble mm = minimap_line_height(widget, buffer);
     PangoLayout* layout = NULL;
     if (mm >= 4.0) {
         PangoFontDescription* fd =
@@ -100,10 +99,10 @@ static void minimap_build_cache(GtkWidget* widget, AppData* app,
 
         if (layout != NULL) {
             GtkTextIter s, e;
-            gtk_text_buffer_get_iter_at_line(app->buffer, &s, i);
+            gtk_text_buffer_get_iter_at_line(buffer, &s, i);
             e = s;
             gtk_text_iter_forward_to_line_end(&e);
-            gchar* line_text = gtk_text_buffer_get_text(app->buffer, &s, &e, FALSE);
+            gchar* line_text = gtk_text_buffer_get_text(buffer, &s, &e, FALSE);
             if (line_text != NULL) {
                 pango_layout_set_text(layout, line_text, -1);
                 cairo_move_to(cc, 2.0, py);
@@ -113,7 +112,7 @@ static void minimap_build_cache(GtkWidget* widget, AppData* app,
         } else {
             gint length = 0;
             gint leading = 0;
-            minimap_line_metrics(app->buffer, i, &length, &leading);
+            minimap_line_metrics(buffer, i, &length, &leading);
             if (length <= 0 || leading >= length) {
                 continue;
             }
@@ -130,6 +129,7 @@ static void minimap_build_cache(GtkWidget* widget, AppData* app,
     }
     cairo_destroy(cc);
 }
+
 
 void minimap_invalidate(AppData* app) {
     if (app->mm_cache != NULL) {
@@ -188,62 +188,70 @@ void on_minimap_adj_changed(GtkAdjustment* adjustment, gpointer data) {
     minimap_update_visibility((AppData*)data);
 }
 
-void on_minimap_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
-    GtkWidget* widget = GTK_WIDGET(area);
-    AppData* app = (AppData*)data;
-    gdouble mm;
-    gint first, last;
-
-    if (width <= 0 || height <= 0) {
+void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
+                          GtkTextBuffer* buffer, GtkTextView* text_view,
+                          cairo_surface_t** cache, gint* cache_w, gint* cache_h) {
+    if (width <= 0 || height <= 0 || buffer == NULL || text_view == NULL) {
         return;
     }
-    if (app->mm_cache == NULL || app->mm_cache_w != width ||
-        app->mm_cache_h != height) {
-        minimap_build_cache(widget, app, width, height);
-        app->mm_cache_w = width;
-        app->mm_cache_h = height;
+    if (*cache == NULL || *cache_w != width || *cache_h != height) {
+        minimap_build_cache_for_buffer(widget, buffer, cache, width, height);
+        *cache_w = width;
+        *cache_h = height;
     }
 
-    cairo_set_source_surface(cr, app->mm_cache, 0, 0);
-    cairo_paint(cr);
+    if (*cache != NULL) {
+        cairo_set_source_surface(cr, *cache, 0, 0);
+        cairo_paint(cr);
+    }
 
-    /* Slider: the viewer's visible range */
-    mm = minimap_line_height(widget, app->buffer);
+    /* Slider: the view's visible range */
+    gdouble mm = minimap_line_height(widget, buffer);
     if (mm > 0.0) {
-        minimap_viewport(GTK_TEXT_VIEW(app->text_view), &first, &last);
+        gint first = 0, last = 0;
+        minimap_viewport(text_view, &first, &last);
         cairo_set_source_rgba(cr, 0.47, 0.47, 0.47, 0.35);
         cairo_rectangle(cr, 0, first * mm, width,
                         (last - first + 1) * mm);
         cairo_fill(cr);
     }
 
-    /* Thin border on the viewer side */
+    /* Thin border on the viewer/editor side */
     cairo_set_source_rgb(cr, 40.0 / 255.0, 42.0 / 255.0, 44.0 / 255.0);
     cairo_rectangle(cr, 0, 0, 1, height);
     cairo_fill(cr);
 }
 
-void minimap_goto(AppData* app, gdouble y) {
-    if (app->minimap == NULL || app->buffer == NULL || app->text_view == NULL) {
+void on_minimap_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
+    AppData* app = (AppData*)data;
+    if (app == NULL || app->buffer == NULL || app->text_view == NULL) {
         return;
     }
-    gdouble mm = minimap_line_height(app->minimap, app->buffer);
+    minimap_draw_content(GTK_WIDGET(area), cr, width, height,
+                         app->buffer, GTK_TEXT_VIEW(app->text_view),
+                         &app->mm_cache, &app->mm_cache_w, &app->mm_cache_h);
+}
+
+void minimap_goto_view(GtkWidget* minimap, GtkTextBuffer* buffer, GtkTextView* text_view, gdouble y) {
+    if (minimap == NULL || buffer == NULL || text_view == NULL) {
+        return;
+    }
+    gdouble mm = minimap_line_height(minimap, buffer);
     if (mm <= 0.0) {
         return;
     }
-    gint lines = gtk_text_buffer_get_line_count(app->buffer);
+    gint lines = gtk_text_buffer_get_line_count(buffer);
     if (lines <= 0) {
         return;
     }
 
-    GtkAdjustment* vadj = app->viewer_vadj ? app->viewer_vadj
-        : gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(app->text_view));
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(text_view));
     if (vadj == NULL) {
         return;
     }
 
     /* Keep horizontal scroll locked to origin so left padding is never scrolled away */
-    GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
+    GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(text_view));
     if (hadj != NULL) {
         gdouble min_h = gtk_adjustment_get_lower(hadj);
         if (gtk_adjustment_get_value(hadj) != min_h) {
@@ -260,28 +268,222 @@ void minimap_goto(AppData* app, gdouble y) {
 
     if (line <= 0) {
         gtk_adjustment_set_value(vadj, min_v);
-        gtk_widget_queue_draw(app->minimap);
+        gtk_widget_queue_draw(minimap);
         return;
     }
     if (line >= lines - 1) {
         gtk_adjustment_set_value(vadj, max_v);
-        gtk_widget_queue_draw(app->minimap);
+        gtk_widget_queue_draw(minimap);
         return;
     }
 
     GtkTextIter it;
-    gtk_text_buffer_get_iter_at_line(app->buffer, &it, line);
+    gtk_text_buffer_get_iter_at_line(buffer, &it, line);
     GdkRectangle iter_loc;
-    gtk_text_view_get_iter_location(GTK_TEXT_VIEW(app->text_view), &it, &iter_loc);
+    gtk_text_view_get_iter_location(text_view, &it, &iter_loc);
 
     GdkRectangle vis;
-    gtk_text_view_get_visible_rect(GTK_TEXT_VIEW(app->text_view), &vis);
+    gtk_text_view_get_visible_rect(text_view, &vis);
 
     gdouble target_v = (gdouble)iter_loc.y - (vis.height - iter_loc.height) / 2.0;
     target_v = CLAMP(target_v, min_v, max_v);
 
     gtk_adjustment_set_value(vadj, target_v);
-    gtk_widget_queue_draw(app->minimap);
+    gtk_widget_queue_draw(minimap);
+}
+
+void minimap_goto(AppData* app, gdouble y) {
+    if (app == NULL || app->minimap == NULL || app->buffer == NULL || app->text_view == NULL) {
+        return;
+    }
+    minimap_goto_view(app->minimap, app->buffer, GTK_TEXT_VIEW(app->text_view), y);
+}
+
+/* =========================================================================
+ * Editor Tab Minimap Implementation
+ * ========================================================================= */
+
+void editor_minimap_invalidate(EditorTab* tab) {
+    if (tab == NULL) {
+        return;
+    }
+    if (tab->mm_cache != NULL) {
+        cairo_surface_destroy(tab->mm_cache);
+        tab->mm_cache = NULL;
+        tab->mm_cache_w = 0;
+        tab->mm_cache_h = 0;
+    }
+    if (tab->minimap != NULL && gtk_widget_get_visible(tab->minimap)) {
+        gtk_widget_queue_draw(tab->minimap);
+    }
+}
+
+static gboolean editor_minimap_is_useful(EditorTab* tab) {
+    if (tab == NULL || tab->minimap == NULL || tab->view == NULL) {
+        return FALSE;
+    }
+    GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(tab->view));
+    if (adj == NULL) {
+        return FALSE;
+    }
+    return gtk_adjustment_get_upper(adj) >
+           gtk_adjustment_get_page_size(adj) + 1.5;
+}
+
+static gboolean editor_minimap_vis_idle(gpointer data) {
+    EditorTab* tab = (EditorTab*)data;
+    if (tab == NULL) {
+        return G_SOURCE_REMOVE;
+    }
+    tab->mm_vis_source = 0;
+    if (tab->minimap == NULL) {
+        return G_SOURCE_REMOVE;
+    }
+    gboolean useful = editor_minimap_is_useful(tab);
+    if (gtk_widget_get_visible(tab->minimap) != useful) {
+        if (!useful) {
+            editor_minimap_invalidate(tab);
+        }
+        gtk_widget_set_visible(tab->minimap, useful);
+    }
+    return G_SOURCE_REMOVE;
+}
+
+void editor_minimap_update_visibility(EditorTab* tab) {
+    if (tab == NULL || tab->minimap == NULL || tab->view == NULL) {
+        return;
+    }
+    if (tab->mm_vis_source == 0) {
+        tab->mm_vis_source = g_idle_add(editor_minimap_vis_idle, tab);
+    }
+}
+
+static void on_editor_minimap_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
+    EditorTab* tab = (EditorTab*)data;
+    if (tab == NULL || tab->buffer == NULL || tab->view == NULL) {
+        return;
+    }
+    minimap_draw_content(GTK_WIDGET(area), cr, width, height,
+                         tab->buffer, GTK_TEXT_VIEW(tab->view),
+                         &tab->mm_cache, &tab->mm_cache_w, &tab->mm_cache_h);
+}
+
+static void on_editor_minimap_pressed(GtkGestureClick* gesture, gint n_press,
+                                      gdouble x, gdouble y, gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL && tab->buffer != NULL && tab->view != NULL) {
+        tab->mm_dragging = TRUE;
+        minimap_goto_view(tab->minimap, tab->buffer, GTK_TEXT_VIEW(tab->view), y);
+    }
+}
+
+static void on_editor_minimap_motion(GtkEventControllerMotion* ctrl,
+                                     gdouble x, gdouble y, gpointer data) {
+    (void)ctrl;
+    (void)x;
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL && tab->mm_dragging && tab->buffer != NULL && tab->view != NULL) {
+        minimap_goto_view(tab->minimap, tab->buffer, GTK_TEXT_VIEW(tab->view), y);
+    }
+}
+
+static void on_editor_minimap_released(GtkGestureClick* gesture, gint n_press,
+                                       gdouble x, gdouble y, gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    (void)y;
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL) {
+        tab->mm_dragging = FALSE;
+    }
+}
+
+static void on_editor_minimap_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
+    (void)buffer;
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL) {
+        editor_minimap_invalidate(tab);
+        editor_minimap_update_visibility(tab);
+    }
+}
+
+static void on_editor_minimap_scroll(GtkAdjustment* adjustment, gpointer data) {
+    (void)adjustment;
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL && tab->minimap != NULL && gtk_widget_get_visible(tab->minimap)) {
+        gtk_widget_queue_draw(tab->minimap);
+    }
+}
+
+static void on_editor_minimap_adj_changed(GtkAdjustment* adjustment, gpointer data) {
+    (void)adjustment;
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL) {
+        editor_minimap_update_visibility(tab);
+    }
+}
+
+static void on_editor_minimap_resize(GtkDrawingArea* area, gint width, gint height, gpointer data) {
+    (void)area;
+    (void)width;
+    (void)height;
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL) {
+        editor_minimap_invalidate(tab);
+    }
+}
+
+static void on_editor_minimap_realize(GtkWidget* widget, gpointer data) {
+    (void)widget;
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL) {
+        editor_minimap_update_visibility(tab);
+    }
+}
+
+void editor_minimap_init(EditorTab* tab) {
+    if (tab == NULL || tab->view == NULL || tab->buffer == NULL) {
+        return;
+    }
+
+    GtkWidget* minimap = gtk_drawing_area_new();
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(minimap), MINIMAP_WIDTH);
+    gtk_widget_set_size_request(minimap, MINIMAP_WIDTH, -1);
+    gtk_widget_set_vexpand(minimap, TRUE);
+    gtk_widget_set_visible(minimap, FALSE);
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(minimap),
+                                   on_editor_minimap_draw, tab, NULL);
+
+    GtkGesture* mm_click = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mm_click), GDK_BUTTON_PRIMARY);
+    g_signal_connect(mm_click, "pressed", G_CALLBACK(on_editor_minimap_pressed), tab);
+    g_signal_connect(mm_click, "released", G_CALLBACK(on_editor_minimap_released), tab);
+    gtk_widget_add_controller(minimap, GTK_EVENT_CONTROLLER(mm_click));
+
+    GtkEventController* mm_motion = gtk_event_controller_motion_new();
+    g_signal_connect(mm_motion, "motion", G_CALLBACK(on_editor_minimap_motion), tab);
+    gtk_widget_add_controller(minimap, mm_motion);
+
+    g_signal_connect(minimap, "resize", G_CALLBACK(on_editor_minimap_resize), tab);
+    g_signal_connect(minimap, "realize", G_CALLBACK(on_editor_minimap_realize), tab);
+    g_signal_connect(tab->buffer, "changed", G_CALLBACK(on_editor_minimap_buffer_changed), tab);
+
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(tab->view));
+    if (vadj != NULL) {
+        g_signal_connect(vadj, "value-changed", G_CALLBACK(on_editor_minimap_scroll), tab);
+        g_signal_connect(vadj, "changed", G_CALLBACK(on_editor_minimap_adj_changed), tab);
+    }
+
+    tab->minimap = minimap;
+    tab->mm_cache = NULL;
+    tab->mm_cache_w = 0;
+    tab->mm_cache_h = 0;
+    tab->mm_dragging = FALSE;
+    tab->mm_vis_source = 0;
 }
 
 void on_minimap_pressed(GtkGestureClick* gesture, gint n_press,

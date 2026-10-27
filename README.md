@@ -14,7 +14,7 @@ Simple graphical application to browse the file system.
 - ✅ Text viewer padding: text and source code files displayed in the preview panel (as well as editor tabs) feature a slight, comfortable padding (margins) rather than adhering flush to the pane edges, improving reading and editing ergonomics
 - ✅ Large files: only a **preview** (first 64 KB) is loaded above 512 KB
 - ✅ Non-UTF-8 files are sanitized before display (invalid bytes → U+FFFD)
-- ✅ Minimap right of the viewer: VS Code-like scaled overview of the displayed file (mini glyphs, or length-scaled bars for long files), with the viewport shown as a slider — click or drag on it to jump in the file
+- ✅ Minimap right of the viewer and editor: VS Code-like scaled overview of the displayed file (mini glyphs, or length-scaled bars for long files), with the viewport shown as a slider — click or drag on it to jump in the file
 - ✅ Resizable panel: draggable `GtkPaned` divider (initial position 300 px, compact minimum width 80 px) — while a divider is dragged, a small popup shows both panes' sizes (`W × H | W × H`)
 - ✅ Resizable terminal panes: multiple terminal panes (opened via `Ctrl+T` / `Ctrl+Shift+T`) are embedded in resizable `GtkPaned` dividers so each pane and the terminal panel itself can be dynamically resized
 - ✅ Navigation in the tree: the `Directory: …` label follows the current directory
@@ -85,8 +85,8 @@ Same vim bindings as the list, applied to the displayed content:
 ### Editor tabs (when the viewer zone shows a file opened for editing)
 
 Double-clicking / pressing `Enter` on a file in the list opens it in a new tab
-of the right viewer zone (page "Preview" keeps the read-only browsing view;
-the minimap stays in place while it is the selected page). A bullet before
+of the right viewer zone (page "Preview" keeps the read-only browsing view).
+Each editor tab features its own interactive minimap. A bullet before
 the tab title marks unsaved changes.
 
 | Key | Action |

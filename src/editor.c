@@ -151,18 +151,33 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
                                    GTK_POLICY_AUTOMATIC,
                                    GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), view);
+    gtk_widget_set_hexpand(scroll, TRUE);
+    gtk_widget_set_vexpand(scroll, TRUE);
 
     tab->buffer = buffer;
     tab->scroll = scroll;
     tab->view = view;
+
+    editor_minimap_init(tab);
+
+    GtkWidget* container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(container, TRUE);
+    gtk_widget_set_vexpand(container, TRUE);
+    gtk_box_append(GTK_BOX(container), scroll);
+    if (tab->minimap != NULL) {
+        gtk_box_append(GTK_BOX(container), tab->minimap);
+    }
+    tab->container = container;
     tab->tab_label = gtk_label_new("");
     editor_tab_label_update(tab);
 
-    gint page = gtk_notebook_append_page(target_nb, scroll, tab->tab_label);
-    g_object_ref(tab->scroll);
+    gint page = gtk_notebook_append_page(target_nb, container, tab->tab_label);
+    g_object_ref(tab->container);
     g_object_ref(tab->tab_label);
     gtk_notebook_set_current_page(target_nb, page);
     gtk_widget_grab_focus(view);
+
+    editor_minimap_update_visibility(tab);
 
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
     g_signal_connect(buffer, "modified-changed",
@@ -190,6 +205,10 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
     if (app != NULL && !app->switching_ws &&
         app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
         app->workspaces[app->current_ws].notebook_page = (gint)page_num;
+    }
+    EditorTab* cur = editor_current_tab(app);
+    if (cur != NULL) {
+        editor_minimap_update_visibility(cur);
     }
     minimap_update_visibility(app);
 }
@@ -264,7 +283,15 @@ void editor_close_page(AppData* app, gint page) {
         gint cur = nb ? gtk_notebook_get_current_page(nb) : 0;
         app->workspaces[app->current_ws].notebook_page = (cur >= 0 ? cur : 0);
     }
-    g_object_unref(tab->scroll);
+    if (tab->mm_vis_source != 0) {
+        g_source_remove(tab->mm_vis_source);
+        tab->mm_vis_source = 0;
+    }
+    if (tab->mm_cache != NULL) {
+        cairo_surface_destroy(tab->mm_cache);
+        tab->mm_cache = NULL;
+    }
+    g_object_unref(tab->container);
     g_object_unref(tab->tab_label);
     g_free(tab->path);
     g_free(tab->name);
@@ -303,8 +330,9 @@ void editor_attach_tabs(AppData* app, GList* editors) {
     }
     for (GList* l = editors; l != NULL; l = l->next) {
         EditorTab* tab = (EditorTab*)l->data;
-        if (tab != NULL && tab->scroll != NULL && tab->tab_label != NULL) {
-            gtk_notebook_append_page(nb, tab->scroll, tab->tab_label);
+        if (tab != NULL && tab->container != NULL && tab->tab_label != NULL) {
+            gtk_notebook_append_page(nb, tab->container, tab->tab_label);
+            editor_minimap_update_visibility(tab);
         }
     }
     app->editors = editors;
@@ -338,9 +366,17 @@ void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
         g_signal_handlers_disconnect_by_func(tab->buffer,
                                              (gpointer)on_editor_modified_changed,
                                              tab);
-        if (tab->scroll != NULL) {
-            g_object_unref(tab->scroll);
-            tab->scroll = NULL;
+        if (tab->mm_vis_source != 0) {
+            g_source_remove(tab->mm_vis_source);
+            tab->mm_vis_source = 0;
+        }
+        if (tab->mm_cache != NULL) {
+            cairo_surface_destroy(tab->mm_cache);
+            tab->mm_cache = NULL;
+        }
+        if (tab->container != NULL) {
+            g_object_unref(tab->container);
+            tab->container = NULL;
         }
         if (tab->tab_label != NULL) {
             g_object_unref(tab->tab_label);
@@ -399,6 +435,12 @@ void editor_set_dedicated(AppData* app, gboolean dedicated) {
         EditorTab* cur = editor_current_tab(app);
         if (cur != NULL && cur->view != NULL) {
             gtk_widget_grab_focus(cur->view);
+            editor_minimap_update_visibility(cur);
+        }
+    } else {
+        EditorTab* cur = editor_current_tab(app);
+        if (cur != NULL) {
+            editor_minimap_update_visibility(cur);
         }
     }
 }

@@ -59,10 +59,17 @@ typedef struct {
 typedef struct {
     gchar* path;          /* absolute file path */
     gchar* name;          /* display name (file basename) */
-    GtkWidget* scroll;    /* notebook page widget */
+    GtkWidget* container; /* notebook page container (scroll + minimap) */
+    GtkWidget* scroll;    /* scrolled window holding view */
     GtkWidget* view;      /* the editable text view */
     GtkTextBuffer* buffer;
     GtkWidget* tab_label; /* tab title, with a bullet when unsaved */
+    GtkWidget* minimap;   /* minimap drawing area */
+    cairo_surface_t* mm_cache;
+    gint mm_cache_w;
+    gint mm_cache_h;
+    gboolean mm_dragging;
+    guint mm_vis_source;
 } EditorTab;
 
 /* Virtual workspace layout state (dynamic workspaces like Ubuntu) */
