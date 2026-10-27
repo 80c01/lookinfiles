@@ -153,12 +153,6 @@ int main(int argc, char** argv) {
     gtk_widget_add_css_class(preview_btn, "status-pill");
     gtk_widget_set_tooltip_text(preview_btn, "Show/hide Preview panel");
 
-    GtkWidget* editor_btn = gtk_button_new_with_label("✏ Editor: Docked");
-    gtk_button_set_has_frame(GTK_BUTTON(editor_btn), FALSE);
-    gtk_widget_set_focusable(editor_btn, FALSE);
-    gtk_widget_add_css_class(editor_btn, "status-pill");
-    gtk_widget_set_tooltip_text(editor_btn, "Move editor tabs to dedicated panel right of preview, or dock back (Ctrl+E)");
-
     GtkWidget* term_btn = gtk_button_new_with_label(">_ Terminal");
     gtk_button_set_has_frame(GTK_BUTTON(term_btn), FALSE);
     gtk_widget_set_focusable(term_btn, FALSE);
@@ -276,6 +270,15 @@ int main(int argc, char** argv) {
     gtk_widget_set_vexpand(notebook, TRUE);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
                              gtk_label_new("📄 Preview"));
+    /* Right-aligned action widget inside preview notebook tab header: Split/Dock button */
+    GtkWidget* split_btn = gtk_button_new_with_label("◫");
+    gtk_widget_set_name(split_btn, "tab-split-btn");
+    gtk_button_set_has_frame(GTK_BUTTON(split_btn), FALSE);
+    gtk_widget_set_focusable(split_btn, FALSE);
+    gtk_widget_add_css_class(split_btn, "tab-action-btn");
+    gtk_widget_set_tooltip_text(split_btn, "Split editor tabs to dedicated panel right of preview (Ctrl+E)");
+    gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), split_btn, GTK_PACK_END);
+
     GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_name(viewer_box, "viewer-box");
     gtk_widget_set_hexpand(viewer_box, TRUE);
@@ -372,14 +375,14 @@ int main(int argc, char** argv) {
     app->breadcrumb_box = breadcrumb_box;
     app->files_btn = files_btn;
     app->preview_btn = preview_btn;
-    app->editor_btn = editor_btn;
+    app->split_btn = split_btn;
     app->term_btn = term_btn;
     app->sort_btn = sort_btn;
     app->hidden_btn = hidden_btn;
     app->help_btn = help_btn;
     g_signal_connect(files_btn, "clicked", G_CALLBACK(on_files_pill_clicked), app);
     g_signal_connect(preview_btn, "clicked", G_CALLBACK(on_preview_pill_clicked), app);
-    g_signal_connect(editor_btn, "clicked", G_CALLBACK(on_editor_pill_clicked), app);
+    g_signal_connect(split_btn, "clicked", G_CALLBACK(on_split_btn_clicked), app);
     g_signal_connect(term_btn, "clicked", G_CALLBACK(on_term_pill_clicked), app);
     g_signal_connect(sort_btn, "clicked", G_CALLBACK(on_sort_pill_clicked), app);
     g_signal_connect(hidden_btn, "clicked", G_CALLBACK(on_hidden_pill_clicked), app);
@@ -525,7 +528,6 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), ws_div_label);
     gtk_box_append(GTK_BOX(label_row), files_btn);
     gtk_box_append(GTK_BOX(label_row), preview_btn);
-    gtk_box_append(GTK_BOX(label_row), editor_btn);
     gtk_box_append(GTK_BOX(label_row), term_btn);
     gtk_box_append(GTK_BOX(label_row), pill_div_label);
     gtk_box_append(GTK_BOX(label_row), sort_btn);

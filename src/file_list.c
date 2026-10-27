@@ -1581,7 +1581,7 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
-void on_editor_pill_clicked(GtkButton* btn, gpointer data) {
+void on_split_btn_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     editor_toggle_dedicated((AppData*)data);
 }
@@ -1809,13 +1809,15 @@ void update_path_label(AppData* app) {
             gtk_widget_remove_css_class(app->preview_btn, "pill-active");
         }
     }
-    if (app->editor_btn != NULL) {
-        if (editor_vis) {
-            gtk_widget_add_css_class(app->editor_btn, "pill-active");
-            gtk_button_set_label(GTK_BUTTON(app->editor_btn), "✏ Editor: Dedicated");
+    if (app->split_btn != NULL) {
+        if (app->editor_dedicated) {
+            gtk_widget_add_css_class(app->split_btn, "tab-action-active");
+            gtk_button_set_label(GTK_BUTTON(app->split_btn), "◨");
+            gtk_widget_set_tooltip_text(app->split_btn, "Dock editor tabs into preview panel (Ctrl+E)");
         } else {
-            gtk_widget_remove_css_class(app->editor_btn, "pill-active");
-            gtk_button_set_label(GTK_BUTTON(app->editor_btn), "✏ Editor: Docked");
+            gtk_widget_remove_css_class(app->split_btn, "tab-action-active");
+            gtk_button_set_label(GTK_BUTTON(app->split_btn), "◫");
+            gtk_widget_set_tooltip_text(app->split_btn, "Split editor tabs to dedicated panel right of preview (Ctrl+E)");
         }
     }
     if (app->term_btn != NULL) {
