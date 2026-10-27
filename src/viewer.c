@@ -1133,15 +1133,6 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         return;
     }
 
-    if (g_strcmp0(type, "buffer") == 0) {
-        /* When selecting a buffer item, activate/open it in the editor notebook */
-        editor_open_file(app, name, full);
-        g_free(name);
-        g_free(type);
-        g_free(full);
-        return;
-    }
-
     if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
         gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
     }
