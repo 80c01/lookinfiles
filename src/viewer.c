@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "editor.h"
 #include "git_tab.h"
 #include "file_list.h"
 #include "markdown.h"
@@ -1108,10 +1109,6 @@ static void on_dir_preview_ready(GObject* source_object, GAsyncResult* res,
 }
 
 void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
-    AppData* app_sel = (AppData*)user_data;
-    if (app_sel != NULL && !app_sel->editor_dedicated && app_sel->notebook != NULL) {
-        gtk_notebook_set_current_page(GTK_NOTEBOOK(app_sel->notebook), 0);
-    }
     AppData* app = (AppData*)user_data;
     GtkTreeModel* model = NULL;
     GtkTreeIter it;
@@ -1128,11 +1125,25 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
                        COL_TYPE, &type,
                        COL_PATH, &full, -1);
 
-    if (name == NULL || type == NULL || g_strcmp0(type, "-") == 0 || full == NULL) {
+    if (name == NULL || type == NULL || g_strcmp0(type, "-") == 0 ||
+        g_strcmp0(type, "buffer_create") == 0 || full == NULL) {
         g_free(name);
         g_free(type);
         g_free(full);
         return;
+    }
+
+    if (g_strcmp0(type, "buffer") == 0) {
+        /* When selecting a buffer item, activate/open it in the editor notebook */
+        editor_open_file(app, name, full);
+        g_free(name);
+        g_free(type);
+        g_free(full);
+        return;
+    }
+
+    if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
     }
 
     if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bookmark") == 0) {

@@ -39,7 +39,7 @@ EditorTab* editor_current_tab(AppData* app) {
 void editor_tab_label_update(EditorTab* tab) {
     const gchar* icon = tab->is_buffer ? "📝" : file_icon(tab->name, FALSE);
     gchar* title =
-        gtk_text_buffer_get_modified(tab->buffer)
+        (!tab->is_buffer && gtk_text_buffer_get_modified(tab->buffer))
             ? g_strdup_printf("%s %s  \xe2\x80\xa2", icon, tab->name)
             : g_strdup_printf("%s %s", icon, tab->name);
     gtk_label_set_text(GTK_LABEL(tab->tab_label), title);
@@ -56,6 +56,7 @@ void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data) {
         gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
         g_file_set_contents(tab->path, text, -1, NULL);
         g_free(text);
+        gtk_text_buffer_set_modified(tab->buffer, FALSE);
     }
     editor_tab_label_update(tab);
 }
@@ -242,7 +243,7 @@ static void on_discard_dialog_response(GtkDialog* dlg, gint response_id, gpointe
 }
 
 gboolean editor_confirm_discard(AppData* app, EditorTab* tab) {
-    if (!gtk_text_buffer_get_modified(tab->buffer)) {
+    if (tab == NULL || tab->is_buffer || !gtk_text_buffer_get_modified(tab->buffer)) {
         return TRUE;
     }
     GtkWidget* dlg = gtk_message_dialog_new(app ? app->window : NULL,
