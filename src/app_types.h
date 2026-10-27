@@ -189,6 +189,7 @@ typedef struct {
 
     /* Git commits tab in preview panel */
     GtkWidget* git_tab_box;       /* Box widget container for the Git tab */
+    GtkWidget* preview_tab_label; /* Label widget for Preview tab header */
     GtkWidget* git_tab_label;     /* Label widget for Git tab header */
     GtkWidget* git_paned;         /* Paned separating commit list and commit details */
     GtkListStore* git_store;      /* Tree model for commit list */
