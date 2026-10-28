@@ -845,11 +845,20 @@ static void bm_delete_node(AppData* app, GNode* node, gboolean confirm) {
         return;
     }
     BookmarkItem* it = bm_item(node);
-    if (confirm && it->is_folder && node->children != NULL) {
-        guint n = g_node_n_nodes(node, G_TRAVERSE_ALL) - 1;
-        gchar* msg = g_strdup_printf("Delete the folder “%s” and the %u item%s it contains?",
-                                     it->name, n, n == 1 ? "" : "s");
-        gboolean ok = bm_message(app, "Delete Folder", msg, "Delete", "Cancel");
+    if (confirm) {
+        /* Always confirm, like the other views: bookmarks have no undo or trash */
+        gchar* msg = NULL;
+        if (it->is_folder && node->children != NULL) {
+            guint n = g_node_n_nodes(node, G_TRAVERSE_ALL) - 1;
+            msg = g_strdup_printf("Delete the folder “%s” and the %u item%s it contains?",
+                                  it->name, n, n == 1 ? "" : "s");
+        } else if (it->is_folder) {
+            msg = g_strdup_printf("Delete the empty folder “%s”?", it->name);
+        } else {
+            msg = g_strdup_printf("Delete the bookmark “%s”?", it->name);
+        }
+        gboolean ok = bm_message(app, it->is_folder ? "Delete Folder" : "Delete Bookmark", msg,
+                                 "_Delete", "_Cancel");
         g_free(msg);
         if (!ok) {
             return;
