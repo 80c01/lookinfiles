@@ -1719,7 +1719,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_hexpand(title, TRUE);
     gtk_box_append(GTK_BOX(title_row), title);
 
-    GtkWidget* files_btn = gtk_button_new_with_label("");
+    GtkWidget* files_btn = gtk_button_new_with_label("📁");
     gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
     gtk_widget_set_focusable(files_btn, FALSE);
     gtk_widget_add_css_class(files_btn, "sidebar-icon-btn");
@@ -1727,7 +1727,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_btn, "clicked", G_CALLBACK(on_sidebar_files_clicked), app);
     gtk_box_append(GTK_BOX(title_row), files_btn);
 
-    GtkWidget* bm_btn = gtk_button_new_with_label("");
+    GtkWidget* bm_btn = gtk_button_new_with_label("🔖");
     gtk_button_set_has_frame(GTK_BUTTON(bm_btn), FALSE);
     gtk_widget_set_focusable(bm_btn, FALSE);
     gtk_widget_add_css_class(bm_btn, "sidebar-icon-btn");
@@ -1735,7 +1735,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_btn, "clicked", G_CALLBACK(on_sidebar_bm_clicked), app);
     gtk_box_append(GTK_BOX(title_row), bm_btn);
 
-    GtkWidget* buf_btn = gtk_button_new_with_label("");
+    GtkWidget* buf_btn = gtk_button_new_with_label("📝");
     gtk_button_set_has_frame(GTK_BUTTON(buf_btn), FALSE);
     gtk_widget_set_focusable(buf_btn, FALSE);
     gtk_widget_add_css_class(buf_btn, "sidebar-icon-btn");
@@ -1764,7 +1764,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_hexpand(section, TRUE);
     gtk_box_append(GTK_BOX(files_toolbar), section);
 
-    GtkWidget* files_new_file_btn = gtk_button_new_with_label("");
+    GtkWidget* files_new_file_btn = gtk_button_new_with_label("📄+");
     gtk_button_set_has_frame(GTK_BUTTON(files_new_file_btn), FALSE);
     gtk_widget_set_focusable(files_new_file_btn, FALSE);
     gtk_widget_add_css_class(files_new_file_btn, "sidebar-icon-btn");
@@ -1772,7 +1772,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_new_file_btn, "clicked", G_CALLBACK(on_sidebar_files_new_file_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_new_file_btn);
 
-    GtkWidget* files_new_folder_btn = gtk_button_new_with_label("");
+    GtkWidget* files_new_folder_btn = gtk_button_new_with_label("📁+");
     gtk_button_set_has_frame(GTK_BUTTON(files_new_folder_btn), FALSE);
     gtk_widget_set_focusable(files_new_folder_btn, FALSE);
     gtk_widget_add_css_class(files_new_folder_btn, "sidebar-icon-btn");
@@ -1780,7 +1780,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_new_folder_btn, "clicked", G_CALLBACK(on_sidebar_files_new_folder_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_new_folder_btn);
 
-    GtkWidget* files_hidden_btn = gtk_button_new_with_label("");
+    GtkWidget* files_hidden_btn = gtk_button_new_with_label("👁");
     gtk_button_set_has_frame(GTK_BUTTON(files_hidden_btn), FALSE);
     gtk_widget_set_focusable(files_hidden_btn, FALSE);
     gtk_widget_add_css_class(files_hidden_btn, "sidebar-icon-btn");
@@ -1791,7 +1791,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_hidden_btn, "clicked", G_CALLBACK(on_sidebar_files_hidden_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_hidden_btn);
 
-    GtkWidget* files_sort_btn = gtk_button_new_with_label("");
+    GtkWidget* files_sort_btn = gtk_button_new_with_label("⇅");
     gtk_button_set_has_frame(GTK_BUTTON(files_sort_btn), FALSE);
     gtk_widget_set_focusable(files_sort_btn, FALSE);
     gtk_widget_add_css_class(files_sort_btn, "sidebar-icon-btn");
@@ -1799,7 +1799,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_sort_btn, "clicked", G_CALLBACK(on_sidebar_files_sort_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_sort_btn);
 
-    GtkWidget* files_collapse_btn = gtk_button_new_with_label("");
+    GtkWidget* files_collapse_btn = gtk_button_new_with_label("▲▼");
     gtk_button_set_has_frame(GTK_BUTTON(files_collapse_btn), FALSE);
     gtk_widget_set_focusable(files_collapse_btn, FALSE);
     gtk_widget_add_css_class(files_collapse_btn, "sidebar-icon-btn");
@@ -1821,7 +1821,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_hexpand(bm_section, TRUE);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_section);
 
-    GtkWidget* bm_new_folder_btn = gtk_button_new_with_label("");
+    GtkWidget* bm_new_folder_btn = gtk_button_new_with_label("📁+");
     gtk_button_set_has_frame(GTK_BUTTON(bm_new_folder_btn), FALSE);
     gtk_widget_set_focusable(bm_new_folder_btn, FALSE);
     gtk_widget_add_css_class(bm_new_folder_btn, "sidebar-icon-btn");
@@ -1829,7 +1829,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_new_folder_btn, "clicked", G_CALLBACK(on_sidebar_bm_new_folder_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_new_folder_btn);
 
-    GtkWidget* bm_sort_btn = gtk_button_new_with_label("");
+    GtkWidget* bm_sort_btn = gtk_button_new_with_label("⇅");
     gtk_button_set_has_frame(GTK_BUTTON(bm_sort_btn), FALSE);
     gtk_widget_set_focusable(bm_sort_btn, FALSE);
     gtk_widget_add_css_class(bm_sort_btn, "sidebar-icon-btn");
@@ -1837,7 +1837,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_sort_btn, "clicked", G_CALLBACK(on_sidebar_bm_sort_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_sort_btn);
 
-    GtkWidget* bm_collapse_btn = gtk_button_new_with_label("");
+    GtkWidget* bm_collapse_btn = gtk_button_new_with_label("▲▼");
     gtk_button_set_has_frame(GTK_BUTTON(bm_collapse_btn), FALSE);
     gtk_widget_set_focusable(bm_collapse_btn, FALSE);
     gtk_widget_add_css_class(bm_collapse_btn, "sidebar-icon-btn");
@@ -1859,7 +1859,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_hexpand(buf_section, TRUE);
     gtk_box_append(GTK_BOX(buf_toolbar), buf_section);
 
-    GtkWidget* new_buf_btn = gtk_button_new_with_label("");
+    GtkWidget* new_buf_btn = gtk_button_new_with_label("➕");
     gtk_button_set_has_frame(GTK_BUTTON(new_buf_btn), FALSE);
     gtk_widget_set_focusable(new_buf_btn, FALSE);
     gtk_widget_add_css_class(new_buf_btn, "sidebar-icon-btn");
@@ -1867,7 +1867,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(new_buf_btn, "clicked", G_CALLBACK(on_sidebar_buf_new_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), new_buf_btn);
 
-    GtkWidget* new_folder_btn = gtk_button_new_with_label("");
+    GtkWidget* new_folder_btn = gtk_button_new_with_label("📁+");
     gtk_button_set_has_frame(GTK_BUTTON(new_folder_btn), FALSE);
     gtk_widget_set_focusable(new_folder_btn, FALSE);
     gtk_widget_add_css_class(new_folder_btn, "sidebar-icon-btn");
@@ -1875,7 +1875,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(new_folder_btn, "clicked", G_CALLBACK(on_sidebar_buf_new_folder_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), new_folder_btn);
 
-    GtkWidget* collapse_btn = gtk_button_new_with_label("");
+    GtkWidget* collapse_btn = gtk_button_new_with_label("▲");
     gtk_button_set_has_frame(GTK_BUTTON(collapse_btn), FALSE);
     gtk_widget_set_focusable(collapse_btn, FALSE);
     gtk_widget_add_css_class(collapse_btn, "sidebar-icon-btn");
@@ -1883,7 +1883,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(collapse_btn, "clicked", G_CALLBACK(on_sidebar_buf_collapse_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), collapse_btn);
 
-    GtkWidget* expand_btn = gtk_button_new_with_label("");
+    GtkWidget* expand_btn = gtk_button_new_with_label("▼");
     gtk_button_set_has_frame(GTK_BUTTON(expand_btn), FALSE);
     gtk_widget_set_focusable(expand_btn, FALSE);
     gtk_widget_add_css_class(expand_btn, "sidebar-icon-btn");
