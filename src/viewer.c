@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "git_utils.h"
 #include "file_types.h"
 #include "editor.h"
 #include "git_tab.h"
@@ -974,21 +975,7 @@ static void sync_git_monitor(AppData* app) {
         return;
     }
 
-    gchar* dot_git = g_build_filename(git_root, ".git", NULL);
-    gchar* git_dir = NULL;
-    if (g_file_test(dot_git, G_FILE_TEST_IS_DIR)) {
-        git_dir = g_strdup(dot_git);
-    } else {
-        /* Worktrees and submodules: ".git" is a file containing "gitdir: <path>" */
-        gchar* contents = NULL;
-        if (g_file_get_contents(dot_git, &contents, NULL, NULL) &&
-            g_str_has_prefix(contents, "gitdir:")) {
-            gchar* p = g_strstrip(contents + strlen("gitdir:"));
-            git_dir = g_path_is_absolute(p) ? g_strdup(p) : g_build_filename(git_root, p, NULL);
-        }
-        g_free(contents);
-    }
-    g_free(dot_git);
+    gchar* git_dir = git_resolve_dir(git_root);
     g_free(git_root);
 
     if (git_dir == NULL) {

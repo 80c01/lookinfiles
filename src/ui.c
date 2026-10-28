@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "git_utils.h"
 #include "file_types.h"
 #include "file_list.h"
 #include "viewer.h"
@@ -12,8 +13,6 @@
 #include "remote.h"
 #include "editor.h"
 
-void on_mode_item_clicked(GtkButton* b, gpointer data);
-void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data);
 
 gboolean window_is_fullscreen(GtkWindow* win) {
     return gtk_window_is_fullscreen(win);
@@ -2250,6 +2249,8 @@ GtkWidget* create_sidebar_header(AppData* app) {
     return header;
 }
 
+static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data);
+
 static GtkWidget* status_item_new(void) {
     GtkWidget* label = gtk_label_new("");
     gtk_widget_add_css_class(label, "status-item");
@@ -2312,7 +2313,7 @@ GtkWidget* create_status_bar(AppData* app) {
     return bar;
 }
 
-void on_mode_item_clicked(GtkButton* b, gpointer data) {
+static void on_mode_item_clicked(GtkButton* b, gpointer data) {
     GtkWidget* popover = GTK_WIDGET(data);
     AppData* app = g_object_get_data(G_OBJECT(b), "app");
     EditorTab* tab = g_object_get_data(G_OBJECT(b), "tab");
@@ -2328,7 +2329,7 @@ void on_mode_item_clicked(GtkButton* b, gpointer data) {
     }
 }
 
-void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
+static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
     AppData* app = (AppData*)user_data;
     if (app == NULL) return;
     GtkWidget* popover = gtk_popover_new();
@@ -2368,55 +2369,6 @@ void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
     gtk_popover_popup(GTK_POPOVER(popover));
 }
 
-void on_mode_item_clicked(GtkButton* b, gpointer data);
-void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data);
-
-/* Current Git branch of dir (short SHA when detached HEAD), NULL outside a repository.
- * Reads .git/HEAD directly: no subprocess on the UI thread. */
-static gchar* read_git_branch(const gchar* dir) {
-    gchar* root = find_git_root(dir);
-    if (root == NULL) {
-        return NULL;
-    }
-
-    gchar* dot_git = g_build_filename(root, ".git", NULL);
-    gchar* git_dir = NULL;
-    if (g_file_test(dot_git, G_FILE_TEST_IS_DIR)) {
-        git_dir = g_strdup(dot_git);
-    } else {
-        /* Worktrees and submodules: ".git" is a file containing "gitdir: <path>" */
-        gchar* contents = NULL;
-        if (g_file_get_contents(dot_git, &contents, NULL, NULL) &&
-            g_str_has_prefix(contents, "gitdir:")) {
-            gchar* p = g_strstrip(contents + strlen("gitdir:"));
-            git_dir = g_path_is_absolute(p) ? g_strdup(p) : g_build_filename(root, p, NULL);
-        }
-        g_free(contents);
-    }
-    g_free(dot_git);
-    g_free(root);
-    if (git_dir == NULL) {
-        return NULL;
-    }
-
-    gchar* head_path = g_build_filename(git_dir, "HEAD", NULL);
-    g_free(git_dir);
-    gchar* head = NULL;
-    gchar* branch = NULL;
-    if (g_file_get_contents(head_path, &head, NULL, NULL)) {
-        g_strstrip(head);
-        if (g_str_has_prefix(head, "ref: refs/heads/")) {
-            branch = g_strdup(head + strlen("ref: refs/heads/"));
-        } else if (g_str_has_prefix(head, "ref: ")) {
-            branch = g_strdup(head + strlen("ref: "));
-        } else if (head[0] != '\0') {
-            branch = g_strndup(head, 7);
-        }
-    }
-    g_free(head);
-    g_free(head_path);
-    return branch;
-}
 
 /* Human-readable type / language of an explorer entry, like VS Code's language mode */
 static gchar* status_type_label(const gchar* name, const gchar* type) {
@@ -2482,7 +2434,7 @@ void update_status_bar(AppData* app) {
         return;
     }
 
-    gchar* branch = read_git_branch(app->base_dir);
+    gchar* branch = git_read_branch(app->base_dir);
     if (branch != NULL) {
         gchar* text = g_strdup_printf("⎇ %s", branch);
         gtk_label_set_text(GTK_LABEL(app->status_branch), text);
