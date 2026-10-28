@@ -1204,7 +1204,7 @@ void toggle_bookmarks_view(AppData* app) {
     }
 }
 
-void toggle_buffers_view(AppData* app) {
+void toggle_notes_view(AppData* app) {
     if (app == NULL) {
         return;
     }
@@ -1212,11 +1212,11 @@ void toggle_buffers_view(AppData* app) {
         gtk_widget_set_visible(app->left_vbox, TRUE);
         workspace_apply_positions(app);
     }
-    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+    if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
         app->sidebar_view = SIDEBAR_VIEW_FILES;
         app->show_bookmarks = FALSE;
     } else {
-        app->sidebar_view = SIDEBAR_VIEW_BUFFERS;
+        app->sidebar_view = SIDEBAR_VIEW_NOTES;
         app->show_bookmarks = FALSE;
     }
     update_path_label(app);
@@ -1224,14 +1224,14 @@ void toggle_buffers_view(AppData* app) {
     select_first_row(app);
 }
 
-static gchar* get_buffers_dir_path(void) {
+static gchar* get_notes_dir_path(void) {
     const gchar* cfg_dir = g_get_user_config_dir();
     gchar* dir = g_build_filename(cfg_dir, "explorateur_fichiers", "buffers", NULL);
     g_mkdir_with_parents(dir, 0755);
     return dir;
 }
 
-static void scan_buffers_recursive(AppData* app, const gchar* dir_path) {
+static void scan_notes_recursive(AppData* app, const gchar* dir_path) {
     GDir* d = g_dir_open(dir_path, 0, NULL);
     if (d == NULL) {
         return;
@@ -1243,7 +1243,7 @@ static void scan_buffers_recursive(AppData* app, const gchar* dir_path) {
         }
         gchar* full_path = g_build_filename(dir_path, name, NULL);
         if (g_file_test(full_path, G_FILE_TEST_IS_DIR)) {
-            scan_buffers_recursive(app, full_path);
+            scan_notes_recursive(app, full_path);
         } else {
             g_ptr_array_add(app->buffers, g_strdup(full_path));
             if (g_str_has_prefix(name, "Untitled-")) {
@@ -1258,7 +1258,7 @@ static void scan_buffers_recursive(AppData* app, const gchar* dir_path) {
     g_dir_close(d);
 }
 
-void buffers_init(AppData* app) {
+void notes_init(AppData* app) {
     if (app == NULL) {
         return;
     }
@@ -1266,14 +1266,14 @@ void buffers_init(AppData* app) {
     app->next_buffer_id = 1;
 
     /* Scan existing buffers from ~/.config/explorateur_fichiers/buffers */
-    gchar* buf_dir = get_buffers_dir_path();
-    scan_buffers_recursive(app, buf_dir);
+    gchar* buf_dir = get_notes_dir_path();
+    scan_notes_recursive(app, buf_dir);
     g_free(buf_dir);
 }
 
 static gchar* get_target_buffer_dir(AppData* app) {
-    gchar* root = get_buffers_dir_path();
-    if (app == NULL || app->sidebar_view != SIDEBAR_VIEW_BUFFERS || app->selection == NULL) {
+    gchar* root = get_notes_dir_path();
+    if (app == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES || app->selection == NULL) {
         return root;
     }
 
@@ -1348,7 +1348,7 @@ void create_new_buffer(AppData* app) {
     /* Expand ancestor directories in tree so new buffer is visible */
     if (app->expanded_paths != NULL) {
         gchar* cur = g_strdup(target_dir);
-        gchar* root = get_buffers_dir_path();
+        gchar* root = get_notes_dir_path();
         while (cur != NULL && strlen(cur) >= strlen(root) && g_str_has_prefix(cur, root)) {
             g_hash_table_add(app->expanded_paths, g_strdup(cur));
             gchar* pdir = g_path_get_dirname(cur);
@@ -1366,7 +1366,7 @@ void create_new_buffer(AppData* app) {
     /* Open buffer in editor */
     editor_open_file(app, buf_name, full_path);
 
-    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+    if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
         refresh_listing_with_path(app, full_path);
     } else {
         refresh_listing(app);
@@ -1509,7 +1509,7 @@ void create_new_buffer_folder(AppData* app) {
         g_hash_table_add(app->expanded_paths, g_strdup(new_folder_path));
     }
 
-    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+    if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
         refresh_listing_with_path(app, new_folder_path);
     } else {
         refresh_listing(app);
@@ -1554,8 +1554,8 @@ void buffers_expand_all(AppData* app) {
     if (app == NULL || app->tree_view == NULL) {
         return;
     }
-    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
-        gchar* buf_dir = get_buffers_dir_path();
+    if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
+        gchar* buf_dir = get_notes_dir_path();
         if (app->expanded_paths != NULL) {
             add_all_subdirs_to_expanded(buf_dir, app->expanded_paths);
         }
@@ -1837,7 +1837,7 @@ void rename_selected_buffer(AppData* app) {
     gboolean is_folder = FALSE;
 
     /* If we are in Buffers sidebar view, check selected row */
-    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS && app->selection != NULL) {
+    if (app->sidebar_view == SIDEBAR_VIEW_NOTES && app->selection != NULL) {
         GtkTreeIter it;
         if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
             gchar* type = NULL;
@@ -1847,7 +1847,7 @@ void rename_selected_buffer(AppData* app) {
                                COL_PATH, &old_path, -1);
             gboolean is_dir_entry = (g_strcmp0(type, "dir") == 0);
             gboolean is_buf_entry = (g_strcmp0(type, "buffer") == 0);
-            gchar* buf_root = get_buffers_dir_path();
+            gchar* buf_root = get_notes_dir_path();
             gboolean under_buf_root = (old_path != NULL && g_str_has_prefix(old_path, buf_root) &&
                                        g_strcmp0(old_path, buf_root) != 0);
             g_free(buf_root);
@@ -1996,7 +1996,7 @@ void rename_selected_buffer(AppData* app) {
     }
 
     /* Refresh buffer listing in sidebar if currently viewing buffers */
-    if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+    if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
         refresh_listing_with_path(app, new_path);
     } else {
         refresh_listing(app);
@@ -2090,12 +2090,12 @@ static void append_buffer_entries_recursive(GtkTreeStore* store, AppData* app,
 }
 
 static void append_buffers_to_store(GtkTreeStore* store, AppData* app) {
-    if (store == NULL || app == NULL || app->sidebar_view != SIDEBAR_VIEW_BUFFERS) {
+    if (store == NULL || app == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
         return;
     }
 
     guint count = 0;
-    gchar* buf_dir = get_buffers_dir_path();
+    gchar* buf_dir = get_notes_dir_path();
     append_buffer_entries_recursive(store, app, NULL, buf_dir, &count);
     g_free(buf_dir);
 
@@ -2201,7 +2201,7 @@ static void append_bookmarks_to_store(GtkTreeStore* store, AppData* app) {
 static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIter* parent,
                                     const DirScanNode* node) {
     if (parent == NULL && app != NULL) {
-        if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+        if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
             append_buffers_to_store(store, app);
             return;
         }
@@ -2294,7 +2294,7 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
                                    -1);
             }
         } else {
-            gboolean is_buf = (app != NULL && app->sidebar_view == SIDEBAR_VIEW_BUFFERS);
+            gboolean is_buf = (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES);
             const gchar* type_name = is_buf ? "buffer" : "file";
             const gchar* icon_name = is_buf ? "📝" : file_icon(e->name, FALSE);
             gchar* label = g_strconcat(icon_name, " ", e->name, NULL);
@@ -2787,8 +2787,8 @@ void update_path_label(AppData* app) {
     /* Explorer panel header (VS Code style): view title + current folder section */
     if (app->sidebar_title != NULL) {
         const gchar* title = "EXPLORER";
-        if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
-            title = "BUFFERS";
+        if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
+            title = "NOTES";
         } else if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
             title = "BOOKMARKS";
         }
@@ -2808,11 +2808,11 @@ void update_path_label(AppData* app) {
             gtk_widget_remove_css_class(app->sidebar_bm_btn, "sidebar-icon-active");
         }
     }
-    if (app->sidebar_buffers_btn != NULL) {
-        if (app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
-            gtk_widget_add_css_class(app->sidebar_buffers_btn, "sidebar-icon-active");
+    if (app->sidebar_notes_btn != NULL) {
+        if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
+            gtk_widget_add_css_class(app->sidebar_notes_btn, "sidebar-icon-active");
         } else {
-            gtk_widget_remove_css_class(app->sidebar_buffers_btn, "sidebar-icon-active");
+            gtk_widget_remove_css_class(app->sidebar_notes_btn, "sidebar-icon-active");
         }
     }
     if (app->sidebar_files_toolbar != NULL) {
@@ -2823,9 +2823,9 @@ void update_path_label(AppData* app) {
         gtk_widget_set_visible(app->sidebar_bm_toolbar,
                                app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks);
     }
-    if (app->sidebar_buf_actions != NULL) {
-        gtk_widget_set_visible(app->sidebar_buf_actions,
-                               app->sidebar_view == SIDEBAR_VIEW_BUFFERS);
+    if (app->sidebar_notes_actions != NULL) {
+        gtk_widget_set_visible(app->sidebar_notes_actions,
+                               app->sidebar_view == SIDEBAR_VIEW_NOTES);
     }
     if (app->sidebar_files_hidden_btn != NULL) {
         if (app->show_hidden) {
@@ -3413,18 +3413,18 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_u: /* Ctrl+U: toggle text buffers view in explorer panel */
+    case GDK_KEY_u: /* Ctrl+U: toggle notes view in explorer panel */
     case GDK_KEY_U:
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
-            toggle_buffers_view(app);
+            toggle_notes_view(app);
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_r: /* r in buffers view / Ctrl+R / F2: rename selected buffer */
+    case GDK_KEY_r: /* r in notes view / Ctrl+R / F2: rename selected buffer */
     case GDK_KEY_R:
         app->pending_g = FALSE;
-        if ((state & GDK_CONTROL_MASK) != 0 || app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+        if ((state & GDK_CONTROL_MASK) != 0 || app->sidebar_view == SIDEBAR_VIEW_NOTES) {
             rename_selected_buffer(app);
             return TRUE;
         }

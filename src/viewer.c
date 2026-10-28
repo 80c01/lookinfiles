@@ -295,7 +295,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_U:
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
-            toggle_buffers_view(app);
+            toggle_notes_view(app);
             return TRUE;
         }
         return FALSE;

@@ -27,7 +27,7 @@ Simple graphical application to browse the file system.
 - ✅ Audio preview: audio files (`.mp3`, `.wav`, `.ogg`, `.flac`, `.aac`, `.m4a`, `.wma`, `.aiff`, `.opus`, etc.) are previewed directly in the right preview pane with a native player card using GTK 4's `GtkMediaControls` and `GtkMediaFile`, featuring a centered player card (title, container, duration, file size), transport controls (play/pause, seek timeline, volume), and an `m` toggle to inspect raw file details and binary header hex dump
 - ✅ Git Commits tab in Preview panel: for directories inside a Git repository, a dedicated "📦 Git Commits" tab appears directly to the right of the Preview tab. It displays an interactive table of repository commits (short hash in cyan, commit message, author, and relative date) along with an interactive patch/diff viewer highlighting changes with VS Code Dark+ diff colors (added lines in green, deleted lines in red, hunk headers in blue, metadata in yellow).
 - ✅ Dedicated Editor panel: editor tabs can either be docked inside the preview notebook or placed in a dedicated panel positioned to the right of the preview panel (`Ctrl+E` or click the `◫` split button at the top-left of the preview notebook tab strip). When in dedicated mode, browse and preview files on the center panel while editing code on the right panel across resizable dividers, preserved per virtual workspace.
-- ✅ Buffer view: a dedicated "BUFFERS" view accessible from the explorer header via the mini `📝` icon or `Ctrl+U`, featuring a mini icon bar in the buffers header to create a buffer (`➕`), create a folder (`📁+`), collapse all (`▲`), and expand all (`▼`), enabling hierarchical organization in folders, instant preview, automatic background saving, and scratchpad editing.
+- ✅ Notes view: a dedicated "NOTES" view accessible from the explorer header via the mini `📝` icon or `Ctrl+U`, featuring a mini icon bar in the notes header to create a note (`➕`), create a folder (`📁+`), collapse all (`▲`), and expand all (`▼`), enabling hierarchical organization in folders, instant preview, automatic background saving, and scratchpad editing.
 - ✅ Explorer & Bookmarks mini action bars: dedicated action toolbars positioned right beneath the header across sidebar views:
   - **Files Explorer**: create new file (`📄+`), create new folder (`📁+`), toggle hidden files (`👁`), cycle sort mode (`⇅`), and toggle collapse/expand folders (`▲▼`).
   - **Bookmarks view**: create folder in bookmarks (`📁+`), toggle sort order (`⇅`), and toggle collapse/expand bookmarks (`▲▼`).
@@ -66,7 +66,7 @@ Simple graphical application to browse the file system.
 | `Backspace` | Go to the parent directory (or return to files view from bookmarks) |
 | `Ctrl+D` | Bookmark the current directory (or remove selected bookmark in bookmarks view) |
 | `Ctrl+A` | Switch between files and bookmarks views in the explorer panel |
-| `Ctrl+U` | Switch between files and text buffers view in the explorer panel |
+| `Ctrl+U` | Switch between files and notes view in the explorer panel |
 | `r` / `F2` | Rename selected buffer (in Buffers view) or current editor buffer (`Ctrl+R`) |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |

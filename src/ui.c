@@ -40,7 +40,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Explorer panel", "Backspace", "Go to the parent directory (or return to files view from bookmarks)"},
     {"Explorer panel", "Ctrl+D", "Bookmark current directory (or remove selected bookmark)"},
     {"Explorer panel", "Ctrl+A", "Switch between files and bookmarks views in Explorer"},
-    {"Explorer panel", "Ctrl+U", "Switch between files and text buffers view in Explorer"},
+    {"Explorer panel", "Ctrl+U", "Switch between files and notes view in Explorer"},
     {"Explorer panel", "r / F2", "Rename selected text buffer (in Buffers view)"},
     {"Explorer panel", "i / I", "Toggle hidden files"},
     {"Explorer panel", "o", "Cycle sort: name, date, size, extension"},
@@ -1631,14 +1631,14 @@ static void on_sidebar_bm_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
-static void on_sidebar_buffers_clicked(GtkButton* btn, gpointer data) {
+static void on_sidebar_notes_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     AppData* app = (AppData*)data;
     if (app == NULL) {
         return;
     }
-    if (app->sidebar_view != SIDEBAR_VIEW_BUFFERS) {
-        toggle_buffers_view(app);
+    if (app->sidebar_view != SIDEBAR_VIEW_NOTES) {
+        toggle_notes_view(app);
     } else if (app->tree_view != NULL) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     }
@@ -1684,22 +1684,22 @@ static void on_sidebar_bm_collapse_clicked(GtkButton* btn, gpointer data) {
     toggle_collapse_expand_bookmarks((AppData*)data);
 }
 
-static void on_sidebar_buf_new_clicked(GtkButton* btn, gpointer data) {
+static void on_sidebar_notes_new_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     create_new_buffer((AppData*)data);
 }
 
-static void on_sidebar_buf_new_folder_clicked(GtkButton* btn, gpointer data) {
+static void on_sidebar_notes_new_folder_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     create_new_buffer_folder((AppData*)data);
 }
 
-static void on_sidebar_buf_collapse_clicked(GtkButton* btn, gpointer data) {
+static void on_sidebar_notes_collapse_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     buffers_collapse_all((AppData*)data);
 }
 
-static void on_sidebar_buf_expand_clicked(GtkButton* btn, gpointer data) {
+static void on_sidebar_notes_expand_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     buffers_expand_all((AppData*)data);
 }
@@ -1739,11 +1739,11 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(buf_btn), FALSE);
     gtk_widget_set_focusable(buf_btn, FALSE);
     gtk_widget_add_css_class(buf_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(buf_btn, "Text Buffers (Ctrl+U)");
-    g_signal_connect(buf_btn, "clicked", G_CALLBACK(on_sidebar_buffers_clicked), app);
+    gtk_widget_set_tooltip_text(buf_btn, "Notes (Ctrl+U)");
+    g_signal_connect(buf_btn, "clicked", G_CALLBACK(on_sidebar_notes_clicked), app);
     gtk_box_append(GTK_BOX(title_row), buf_btn);
 
-    if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_BUFFERS) {
+    if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES) {
         gtk_widget_add_css_class(buf_btn, "sidebar-icon-active");
     } else if (app != NULL && (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks)) {
         gtk_widget_add_css_class(bm_btn, "sidebar-icon-active");
@@ -1867,7 +1867,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_focusable(new_buf_btn, FALSE);
     gtk_widget_add_css_class(new_buf_btn, "sidebar-icon-btn");
     gtk_widget_set_tooltip_text(new_buf_btn, "New Buffer");
-    g_signal_connect(new_buf_btn, "clicked", G_CALLBACK(on_sidebar_buf_new_clicked), app);
+    g_signal_connect(new_buf_btn, "clicked", G_CALLBACK(on_sidebar_notes_new_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), new_buf_btn);
 
     GtkWidget* new_folder_btn = gtk_button_new_with_label("📁+");
@@ -1875,7 +1875,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_focusable(new_folder_btn, FALSE);
     gtk_widget_add_css_class(new_folder_btn, "sidebar-icon-btn");
     gtk_widget_set_tooltip_text(new_folder_btn, "New Folder");
-    g_signal_connect(new_folder_btn, "clicked", G_CALLBACK(on_sidebar_buf_new_folder_clicked), app);
+    g_signal_connect(new_folder_btn, "clicked", G_CALLBACK(on_sidebar_notes_new_folder_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), new_folder_btn);
 
     GtkWidget* collapse_btn = gtk_button_new_with_label("▲");
@@ -1883,7 +1883,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_focusable(collapse_btn, FALSE);
     gtk_widget_add_css_class(collapse_btn, "sidebar-icon-btn");
     gtk_widget_set_tooltip_text(collapse_btn, "Collapse All");
-    g_signal_connect(collapse_btn, "clicked", G_CALLBACK(on_sidebar_buf_collapse_clicked), app);
+    g_signal_connect(collapse_btn, "clicked", G_CALLBACK(on_sidebar_notes_collapse_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), collapse_btn);
 
     GtkWidget* expand_btn = gtk_button_new_with_label("▼");
@@ -1891,10 +1891,10 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_focusable(expand_btn, FALSE);
     gtk_widget_add_css_class(expand_btn, "sidebar-icon-btn");
     gtk_widget_set_tooltip_text(expand_btn, "Expand All");
-    g_signal_connect(expand_btn, "clicked", G_CALLBACK(on_sidebar_buf_expand_clicked), app);
+    g_signal_connect(expand_btn, "clicked", G_CALLBACK(on_sidebar_notes_expand_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), expand_btn);
 
-    gtk_widget_set_visible(buf_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_BUFFERS));
+    gtk_widget_set_visible(buf_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES));
     gtk_box_append(GTK_BOX(header), buf_toolbar);
 
     if (app != NULL) {
@@ -1902,10 +1902,10 @@ GtkWidget* create_sidebar_header(AppData* app) {
         app->sidebar_section = section;
         app->sidebar_files_btn = files_btn;
         app->sidebar_bm_btn = bm_btn;
-        app->sidebar_buffers_btn = buf_btn;
+        app->sidebar_notes_btn = buf_btn;
         app->sidebar_files_toolbar = files_toolbar;
         app->sidebar_bm_toolbar = bm_toolbar;
-        app->sidebar_buf_actions = buf_toolbar;
+        app->sidebar_notes_actions = buf_toolbar;
         app->sidebar_files_hidden_btn = files_hidden_btn;
     }
     return header;

@@ -51,7 +51,7 @@ enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 enum {
     SIDEBAR_VIEW_FILES = 0,
     SIDEBAR_VIEW_BOOKMARKS,
-    SIDEBAR_VIEW_BUFFERS
+    SIDEBAR_VIEW_NOTES
 };
 
 /* Entry collected for directory sorting */
@@ -97,7 +97,7 @@ typedef struct {
     gchar* selected_path;
     gboolean show_hidden;
     gboolean show_bookmarks;
-    gint sidebar_view;   /* SIDEBAR_VIEW_FILES / BOOKMARKS / BUFFERS */
+    gint sidebar_view;   /* SIDEBAR_VIEW_FILES / BOOKMARKS / NOTES */
     gint sort_mode;
     gint notebook_page;
     GList* editors;
@@ -130,7 +130,7 @@ typedef struct {
     gchar* search_term;
     gboolean show_hidden; /* hidden files (dot-prefixed) */
     gboolean show_bookmarks; /* bookmarks view active in explorer panel */
-    gint sidebar_view;       /* SIDEBAR_VIEW_FILES / BOOKMARKS / BUFFERS */
+    gint sidebar_view;       /* SIDEBAR_VIEW_FILES / BOOKMARKS / NOTES */
     GPtrArray* bookmarks;    /* bookmarked directory paths */
     GPtrArray* buffers;      /* temporary/custom buffer names or paths */
     gint next_buffer_id;     /* incremental counter for Untitled buffers */
@@ -260,8 +260,8 @@ typedef struct {
     GtkWidget* sidebar_section;   /* current folder section label (files view) */
     GtkWidget* sidebar_files_btn;   /* mini icon button: switch to Explorer view */
     GtkWidget* sidebar_bm_btn;      /* mini icon button: switch to Bookmarks view */
-    GtkWidget* sidebar_buffers_btn; /* mini icon button: switch to Buffers view */
-    GtkWidget* sidebar_buf_actions; /* mini icon bar for buffer actions (new, folder, collapse, expand) */
+    GtkWidget* sidebar_notes_btn;   /* mini icon button: switch to Notes view */
+    GtkWidget* sidebar_notes_actions; /* mini icon bar for note actions (new, folder, collapse, expand) */
     GtkWidget* sidebar_files_toolbar; /* mini action bar for files tree */
     GtkWidget* sidebar_bm_toolbar;    /* mini action bar for bookmarks */
     GtkWidget* sidebar_files_hidden_btn; /* toggle hidden button in files action bar */
