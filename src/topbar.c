@@ -1,14 +1,13 @@
 /* Top bar: clickable path breadcrumbs and the layout/sort/hidden/help toggle pills. */
 #include "topbar.h"
+#include "app_events.h"
 #include "file_list.h"
 #include "editor.h"
 #include "git_tab.h"
 #include "help.h"
 #include "minimap.h"
 #include "remote.h"
-#include "status_bar.h"
 #include "terminal.h"
-#include "workspace.h"
 
 static void on_breadcrumb_clicked(GtkButton* btn, gpointer data) {
     AppData* app = (AppData*)data;
@@ -36,11 +35,11 @@ void on_files_pill_clicked(GtkButton* btn, gpointer data) {
     if (cur && !preview_vis && !term_vis) {
         return; /* keep at least one panel visible */
     }
-    workspace_save_current(app);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     app->applying_layout = TRUE;
     gtk_widget_set_visible(app->left_vbox, !cur);
     update_path_label(app);
-    workspace_apply_positions(app);
+    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     if (!cur) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     } else if (preview_vis) {
@@ -61,11 +60,11 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
     if (cur && !files_vis && !term_vis && !editor_vis) {
         return; /* keep at least one panel visible */
     }
-    workspace_save_current(app);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     app->applying_layout = TRUE;
     gtk_widget_set_visible(app->viewer_box, !cur);
     update_path_label(app);
-    workspace_apply_positions(app);
+    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     if (!cur) {
         minimap_update_visibility(app);
         gtk_widget_grab_focus(app->text_view);
@@ -93,18 +92,18 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
         if (!files_vis && !preview_vis && !editor_vis) {
             return; /* keep at least one panel visible */
         }
-        workspace_save_current(app);
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
         app->applying_layout = TRUE;
         gtk_widget_set_visible(app->term_scroll, FALSE);
         update_path_label(app);
-        workspace_apply_positions(app);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
         if (files_vis) {
             gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
         } else if (preview_vis) {
             gtk_widget_grab_focus(app->text_view);
         }
     } else {
-        workspace_save_current(app);
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
         app->applying_layout = TRUE;
         if (app->right_paned != NULL) {
             gtk_widget_set_visible(app->right_paned, TRUE);
@@ -123,7 +122,7 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
         g_ptr_array_unref(panes);
 #endif
         update_path_label(app);
-        workspace_apply_positions(app);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
 }
 
@@ -428,6 +427,6 @@ void update_path_label(AppData* app) {
         g_free(base);
     }
 
-    update_status_bar(app);
-    workspace_save_current(app);
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
 }

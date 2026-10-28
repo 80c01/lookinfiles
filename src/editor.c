@@ -1,11 +1,8 @@
 #include "editor.h"
+#include "app_events.h"
 #include "text_style.h"
-#include "topbar.h"
-#include "status_bar.h"
-#include "workspace.h"
 #include "file_types.h"
 #include "viewer.h"
-#include "file_list.h"
 #include "minimap.h"
 #include "ui.h"
 
@@ -145,8 +142,8 @@ static void editor_update_panel_visibilities(AppData* app) {
         gboolean preview_vis = (app->viewer_box != NULL && gtk_widget_get_visible(app->viewer_box));
         gtk_widget_set_visible(app->editor_paned, preview_vis || dedicated);
     }
-    update_path_label(app);
-    workspace_apply_positions(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
+    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
 }
 
 static void sync_editors_order_from_notebook(AppData* app, GtkNotebook* nb) {
@@ -243,7 +240,7 @@ static void on_editor_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) 
         AppData* app = (AppData*)tab->app;
         app->last_focused_editor = tab;
         update_active_panel_highlight(app);
-        update_status_bar(app);
+        app_emit(app, APP_EVENT_STATUS_CHANGED);
         editor_modes_update_status(tab);
     }
 }
@@ -680,11 +677,11 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     if (is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
         /* Images, PDFs, Videos, and Audio are previewed in the main viewer tab */
         if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-            workspace_save_current(app);
+            app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             app->applying_layout = TRUE;
             gtk_widget_set_visible(app->viewer_box, TRUE);
-            update_path_label(app);
-            workspace_apply_positions(app);
+            app_emit(app, APP_EVENT_CHROME_CHANGED);
+            app_emit(app, APP_EVENT_LAYOUT_REBUILT);
         }
         if (app->notebook != NULL) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
@@ -704,19 +701,19 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
             GtkNotebook* t_nb = editor_tab_notebook(app, t);
             if (GTK_WIDGET(t_nb) != app->notebook) {
                 if (app->editor_box != NULL && !gtk_widget_get_visible(app->editor_box)) {
-                    workspace_save_current(app);
+                    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
                     app->applying_layout = TRUE;
                     gtk_widget_set_visible(app->editor_box, TRUE);
-                    update_path_label(app);
-                    workspace_apply_positions(app);
+                    app_emit(app, APP_EVENT_CHROME_CHANGED);
+                    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
                 }
             } else {
                 if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-                    workspace_save_current(app);
+                    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
                     app->applying_layout = TRUE;
                     gtk_widget_set_visible(app->viewer_box, TRUE);
-                    update_path_label(app);
-                    workspace_apply_positions(app);
+                    app_emit(app, APP_EVENT_CHROME_CHANGED);
+                    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
                 }
             }
             gint target_page = gtk_notebook_page_num(t_nb, t->container);
@@ -758,23 +755,23 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
 
     if (app->editor_dedicated) {
         if (app->editor_box != NULL && !gtk_widget_get_visible(app->editor_box)) {
-            workspace_save_current(app);
+            app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             app->applying_layout = TRUE;
             gtk_widget_set_visible(app->editor_box, TRUE);
             app->editor_dedicated = TRUE;
             if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
                 app->workspaces[app->current_ws].editor_dedicated = TRUE;
             }
-            update_path_label(app);
-            workspace_apply_positions(app);
+            app_emit(app, APP_EVENT_CHROME_CHANGED);
+            app_emit(app, APP_EVENT_LAYOUT_REBUILT);
         }
     } else {
         if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-            workspace_save_current(app);
+            app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             app->applying_layout = TRUE;
             gtk_widget_set_visible(app->viewer_box, TRUE);
-            update_path_label(app);
-            workspace_apply_positions(app);
+            app_emit(app, APP_EVENT_CHROME_CHANGED);
+            app_emit(app, APP_EVENT_LAYOUT_REBUILT);
         }
     }
 
@@ -909,7 +906,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     app->last_focused_editor = tab;
     if (app->editor_dedicated && app->editor_box != NULL) {
         gtk_widget_set_visible(app->editor_box, TRUE);
-        workspace_apply_positions(app);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
     if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
         app->workspaces[app->current_ws].editors = app->editors;
@@ -959,7 +956,7 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
                 app->last_focused_editor = t;
                 editor_minimap_update_visibility(t);
                 editor_modes_update_status(t);
-                update_status_bar(app);
+                app_emit(app, APP_EVENT_STATUS_CHANGED);
                 break;
             }
         }
@@ -1221,7 +1218,7 @@ void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode) {
 
 void editor_set_dedicated(AppData* app, gboolean dedicated) {
     if (app == NULL) return;
-    workspace_save_current(app);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
 
     if (dedicated) {
         GList* to_move = NULL;
@@ -1250,7 +1247,7 @@ void editor_set_dedicated(AppData* app, gboolean dedicated) {
     }
 
     editor_update_panel_visibilities(app);
-    workspace_apply_positions(app);
+    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     minimap_update_visibility(app);
 
     EditorTab* cur = editor_current_tab(app);
@@ -1300,7 +1297,7 @@ gboolean editor_save_current(AppData* app) {
     } else {
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
         editor_tab_label_update(tab);
-        refresh_listing(app);
+        app_emit(app, APP_EVENT_FILES_CHANGED);
         if (app->viewed_path != NULL && g_strcmp0(app->viewed_path, tab->path) == 0) {
             app->file_dirty = FALSE;
             load_file_content(app, app->viewed_name ? app->viewed_name : tab->name, app->viewed_path);

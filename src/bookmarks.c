@@ -1,5 +1,5 @@
 #include "bookmarks.h"
-#include "topbar.h"
+#include "app_events.h"
 #include "tree_nav.h"
 #include "file_types.h"
 #include "file_list.h"
@@ -511,7 +511,7 @@ static GNode* bm_selected_node(AppData* app) {
 static void bm_refresh_select(AppData* app, guint select_id) {
     if (app == NULL || app->model == NULL || app->sidebar_view != SIDEBAR_VIEW_BOOKMARKS) {
         if (app != NULL) {
-            update_path_label(app);
+            app_emit(app, APP_EVENT_CHROME_CHANGED);
         }
         return;
     }
@@ -534,7 +534,7 @@ static void bm_refresh_select(AppData* app, guint select_id) {
     if (!bm_select_id(app, select_id)) {
         select_first_row(app);
     }
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
 void bookmarks_refresh(AppData* app) {

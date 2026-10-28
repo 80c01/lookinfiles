@@ -1,7 +1,7 @@
 /* Explorer panel header: view switcher buttons (files, bookmarks, notes, remote) and per-view action toolbars. */
 #include "sidebar.h"
+#include "app_events.h"
 #include "file_actions.h"
-#include "topbar.h"
 #include "bookmarks.h"
 #include "file_list.h"
 #include "notes.h"
@@ -16,8 +16,8 @@ static void on_sidebar_files_clicked(GtkButton* btn, gpointer data) {
     if (app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
         app->sidebar_view = SIDEBAR_VIEW_FILES;
         app->show_bookmarks = FALSE;
-        update_path_label(app);
-        refresh_listing(app);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
+        app_emit(app, APP_EVENT_FILES_CHANGED);
     } else if (app->tree_view != NULL) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     }

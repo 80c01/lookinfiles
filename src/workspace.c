@@ -1,6 +1,6 @@
 /* Virtual workspaces (Alt+1..8): per-workspace layout snapshots and the top-bar workspace minimap. */
 #include "workspace.h"
-#include "topbar.h"
+#include "app_events.h"
 #include "tree_nav.h"
 #include "ui.h"
 #include "audio.h"
@@ -438,7 +438,7 @@ void workspace_switch(AppData* app, gint idx) {
         gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), target_page);
     }
 
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 
     if (need_rescan) {
         refresh_listing_with_path(app, target_path);

@@ -1,7 +1,6 @@
 #include "viewer.h"
+#include "app_events.h"
 #include "text_style.h"
-#include "status_bar.h"
-#include "workspace.h"
 #include "help.h"
 #include "git_utils.h"
 #include "file_types.h"
@@ -154,7 +153,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         app->pending_g = FALSE;
         if (app->viewed_name != NULL && is_renderable_file(app->viewed_name)) {
             app->render_raw = !app->render_raw;
-            workspace_save_current(app);
+            app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             if (app->viewed_path != NULL) {
                 load_file_content(app, app->viewed_name, app->viewed_path);
             }
@@ -634,7 +633,7 @@ static gboolean deferred_refresh(gpointer data) {
     if (app->dir_dirty) {
         app->dir_dirty = FALSE;
         app->git_dirty = FALSE;
-        refresh_listing(app);
+        app_emit(app, APP_EVENT_FILES_CHANGED);
         git_tab_update(app, app->base_dir);
     } else if (app->git_dirty) {
         app->git_dirty = FALSE;
@@ -1151,7 +1150,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         g_free(name);
         g_free(type);
         g_free(full);
-        update_status_bar(app);
+        app_emit(app, APP_EVENT_STATUS_CHANGED);
         return;
     }
 
@@ -1164,7 +1163,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         g_free(name);
         g_free(type);
         g_free(full);
-        update_status_bar(app);
+        app_emit(app, APP_EVENT_STATUS_CHANGED);
         return;
     }
     gboolean as_dir = (g_strcmp0(type, "dir") == 0) ||
@@ -1231,7 +1230,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         if (g_strcmp0(full, app->viewed_path) == 0 && !app->file_dirty &&
             (is_video_file(name) || is_audio_file(name) || gtk_text_buffer_get_char_count(app->buffer) > 0)) {
             if (!app->switching_ws) {
-                workspace_save_current(app);
+                app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             }
             g_free(full);
             g_free(name);
@@ -1258,10 +1257,10 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     }
 
     if (!app->switching_ws) {
-        workspace_save_current(app);
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
 
-    update_status_bar(app);
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
 
     g_free(full);
     g_free(name);

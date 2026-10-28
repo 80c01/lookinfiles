@@ -1,9 +1,7 @@
 /* Floating key-binding cheat sheet ('?' / top bar Help button). Keep KEY_HELP in sync with README.md. */
 #include "help.h"
-#include "topbar.h"
-#include "workspace.h"
+#include "app_events.h"
 #include "ui.h"
-#include "file_list.h"
 
 /* Cheat sheet entry: section header, key column, description */
 typedef struct {
@@ -130,12 +128,12 @@ void toggle_help_panel(AppData* app) {
             app->workspaces[app->current_ws].main_frac = CLAMP((gdouble)cur_pos / total_w, 0.05, 0.95);
         }
     }
-    workspace_save_current(app);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     gboolean vis = gtk_widget_get_visible(app->help_window);
     app->applying_layout = TRUE;
     gtk_widget_set_visible(app->help_window, !vis);
-    update_path_label(app);
-    workspace_apply_positions(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
+    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     if (vis) {
         if (app->left_vbox == NULL || gtk_widget_get_visible(app->left_vbox)) {
             gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));

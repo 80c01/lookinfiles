@@ -1,8 +1,7 @@
 #include "file_list.h"
+#include "app_events.h"
 #include "text_style.h"
-#include "topbar.h"
 #include "tree_nav.h"
-#include "workspace.h"
 #include "help.h"
 #include "git_utils.h"
 #include "file_types.h"
@@ -110,7 +109,7 @@ void refresh_git_status_in_place(AppData* app) {
     app->git_statuses = new_statuses;
 
     update_tree_git_statuses_recursive(app->model, NULL, app->git_statuses);
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
 /* Off-thread directory scan snapshot node */
@@ -207,7 +206,7 @@ void toggle_bookmarks_view(AppData* app) {
     }
     if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
         gtk_widget_set_visible(app->left_vbox, TRUE);
-        workspace_apply_positions(app);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
     if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
         app->sidebar_view = SIDEBAR_VIEW_FILES;
@@ -216,7 +215,7 @@ void toggle_bookmarks_view(AppData* app) {
         app->sidebar_view = SIDEBAR_VIEW_BOOKMARKS;
         app->show_bookmarks = TRUE;
     }
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
     refresh_listing(app);
     if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
         select_first_row(app);
@@ -229,7 +228,7 @@ void toggle_notes_view(AppData* app) {
     }
     if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
         gtk_widget_set_visible(app->left_vbox, TRUE);
-        workspace_apply_positions(app);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
     if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
         app->sidebar_view = SIDEBAR_VIEW_FILES;
@@ -238,7 +237,7 @@ void toggle_notes_view(AppData* app) {
         app->sidebar_view = SIDEBAR_VIEW_NOTES;
         app->show_bookmarks = FALSE;
     }
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
     refresh_listing(app);
     select_first_row(app);
 }
@@ -249,7 +248,7 @@ void toggle_remote_view(AppData* app) {
     }
     if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
         gtk_widget_set_visible(app->left_vbox, TRUE);
-        workspace_apply_positions(app);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
     if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
         app->sidebar_view = SIDEBAR_VIEW_FILES;
@@ -258,7 +257,7 @@ void toggle_remote_view(AppData* app) {
         app->sidebar_view = SIDEBAR_VIEW_REMOTE;
         app->show_bookmarks = FALSE;
     }
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
     refresh_listing(app);
     select_first_row(app);
 }
@@ -496,7 +495,7 @@ void on_tree_row_expanded(GtkTreeView* tree_view, GtkTreeIter* iter,
         g_free(label);
     }
     if (!app->switching_ws && !app->dir_scan_pending) {
-        workspace_save_current(app);
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
     g_free(name);
     g_free(full_path);
@@ -557,7 +556,7 @@ void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
     gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LOADED, FALSE, -1);
 
     if (!app->switching_ws && !app->dir_scan_pending) {
-        workspace_save_current(app);
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
     g_free(name);
     g_free(full_path);
@@ -711,7 +710,7 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
         gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), saved_page);
     }
 
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
     git_tab_update(app, app->base_dir);
 }
 
@@ -768,7 +767,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
         g_hash_table_remove_all(app->expanded_paths);
     }
 
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 
     /* Clear right pane */
     audio_preview_stop(app);
@@ -838,7 +837,7 @@ void refresh_listing_with_path(AppData* app, const gchar* select_path) {
         return;
     }
     start_async_dir_scan(app, app->base_dir, select_path, NULL);
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
 void refresh_listing(AppData* app) {
@@ -897,11 +896,11 @@ void activate_selected_entry(AppData* app) {
     } else if (g_strcmp0(type, "file") == 0 && full != NULL) {
         if (is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
             if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-                workspace_save_current(app);
+                app_emit(app, APP_EVENT_LAYOUT_CHANGED);
                 app->applying_layout = TRUE;
                 gtk_widget_set_visible(app->viewer_box, TRUE);
-                update_path_label(app);
-                workspace_apply_positions(app);
+                app_emit(app, APP_EVENT_CHROME_CHANGED);
+                app_emit(app, APP_EVENT_LAYOUT_REBUILT);
             }
             if (app->notebook != NULL) {
                 gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
@@ -1235,7 +1234,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         app->pending_g = FALSE;
         if (app->viewed_name != NULL && is_renderable_file(app->viewed_name)) {
             app->render_raw = !app->render_raw;
-            workspace_save_current(app);
+            app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             if (app->viewed_path != NULL) {
                 load_file_content(app, app->viewed_name, app->viewed_path);
             }

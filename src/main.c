@@ -1,4 +1,5 @@
 #include "topbar.h"
+#include "app_events.h"
 #include "text_style.h"
 #include "tree_nav.h"
 #include "theme.h"
@@ -425,6 +426,13 @@ int main(int argc, char** argv) {
 
     /* Allocate and wire AppData */
     AppData* app = g_new0(AppData, 1);
+
+    /* Event subscriptions: before any code can emit (see app_events.h) */
+    app_events_subscribe(app, APP_EVENT_CHROME_CHANGED, update_path_label);
+    app_events_subscribe(app, APP_EVENT_STATUS_CHANGED, update_status_bar);
+    app_events_subscribe(app, APP_EVENT_LAYOUT_CHANGED, workspace_save_current);
+    app_events_subscribe(app, APP_EVENT_LAYOUT_REBUILT, workspace_apply_positions);
+    app_events_subscribe(app, APP_EVENT_FILES_CHANGED, refresh_listing);
     app->window = GTK_WINDOW(window);
     app->main_loop = loop;
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
@@ -470,7 +478,7 @@ int main(int argc, char** argv) {
     g_signal_connect(split_btn, "clicked", G_CALLBACK(on_split_btn_clicked), app);
     g_signal_connect(term_btn, "clicked", G_CALLBACK(on_term_pill_clicked), app);
     g_signal_connect(help_btn, "clicked", G_CALLBACK(on_help_pill_clicked), app);
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 
     app->notebook = notebook;
     app->preview_stack = preview_stack;
@@ -590,7 +598,7 @@ int main(int argc, char** argv) {
     app->editor_frac = 0.50;
     app->right_frac = 0.70;
     layout_build(app, GTK_ORIENTATION_HORIZONTAL);
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 
     /* Overlay badge for pane resize dimensions feedback */
     GtkWidget* overlay = gtk_overlay_new();
@@ -632,7 +640,7 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(outer_vbox), label_row);
     gtk_box_append(GTK_BOX(outer_vbox), workspace_hbox);
     gtk_box_append(GTK_BOX(outer_vbox), create_status_bar(app));
-    update_status_bar(app);
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
 
     gtk_window_set_child(GTK_WINDOW(window), outer_vbox);
     apply_panel_borders();

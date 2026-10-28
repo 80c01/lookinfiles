@@ -1,5 +1,5 @@
 #include "remote.h"
-#include "topbar.h"
+#include "app_events.h"
 #include "file_list.h"
 #include "terminal.h"
 
@@ -441,7 +441,7 @@ void remote_refresh(AppData* app) {
     GtkTreeStore* store = GTK_TREE_STORE(app->model);
     gtk_tree_store_clear(store);
     remote_append_to_store(store, app);
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -700,7 +700,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         }
         app->sidebar_view = SIDEBAR_VIEW_FILES;
         reload_directory(app, rm->mount_point);
-        update_path_label(app);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
         g_free(mount_dir);
         return TRUE;
     }
@@ -789,7 +789,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     /* Switch to Files Explorer view and navigate into remote mount */
     app->sidebar_view = SIDEBAR_VIEW_FILES;
     reload_directory(app, rm->mount_point);
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
     return TRUE;
 }
 
@@ -822,7 +822,7 @@ gboolean remote_disconnect_machine(AppData* app, RemoteMachine* rm) {
     }
     if (app != NULL) {
         remote_refresh(app);
-        update_path_label(app);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
     }
     return TRUE;
 }
@@ -883,7 +883,7 @@ void remote_open_terminal(AppData* app, RemoteMachine* rm) {
         if (app->right_paned != NULL) {
             gtk_widget_set_visible(app->right_paned, TRUE);
         }
-        update_path_label(app);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
     }
 
 #ifdef HAVE_VTE
@@ -895,7 +895,7 @@ void remote_open_terminal(AppData* app, RemoteMachine* rm) {
         g_free(cur->remote_id);
         cur->remote_id = g_strdup(rm->id);
     }
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
     term_spawn_pane(app, FALSE);
 #endif
 }

@@ -1,9 +1,8 @@
 #include "editor_modes.h"
+#include "app_events.h"
 #include "text_style.h"
-#include "status_bar.h"
 #include "file_types.h"
 #include "editor.h"
-#include "file_list.h"
 #include "orgmode.h"
 #include <ctype.h>
 #include <string.h>
@@ -241,8 +240,8 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
 
     editor_tab_label_update(tab);
     if (app != NULL) {
-        refresh_listing(app);
-        update_status_bar(app);
+        app_emit(app, APP_EVENT_FILES_CHANGED);
+        app_emit(app, APP_EVENT_STATUS_CHANGED);
     }
 
     gint line_count = gtk_text_buffer_get_line_count(tab->buffer);
@@ -793,7 +792,7 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
 
     editor_modes_update_status(tab);
     if (app != NULL) {
-        update_status_bar(app);
+        app_emit(app, APP_EVENT_STATUS_CHANGED);
     }
 }
 

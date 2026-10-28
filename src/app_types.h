@@ -161,6 +161,7 @@ typedef struct {
     GPtrArray* buffers;      /* temporary/custom buffer names or paths */
     gint next_buffer_id;     /* incremental counter for Untitled buffers */
     gpointer notes_mgr;      /* NotesManager* instance (see notes.c) */
+    gpointer events;         /* AppEvents* subscription table (see app_events.c) */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
     gboolean pending_g;   /* for the 'gg' key sequence */
     gboolean pending_z;   /* for the 'zz', 'zt', 'zb' key sequence */

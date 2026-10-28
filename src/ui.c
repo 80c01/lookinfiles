@@ -1,5 +1,5 @@
 #include "ui.h"
-#include "topbar.h"
+#include "app_events.h"
 #include "workspace.h"
 #include "file_list.h"
 #include "terminal.h"
@@ -323,7 +323,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     /* Each pane gets its own shell in the current directory */
     gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
     if (!was_term_vis) {
-        workspace_save_current(app);
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
         app->applying_layout = TRUE;
     }
     if (app->right_paned != NULL) {
@@ -333,18 +333,18 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         gtk_widget_set_visible(app->term_scroll, TRUE);
     }
     term_spawn_pane(app, keyval == GDK_KEY_T /* new row below? */);
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
     if (!was_term_vis) {
-        workspace_apply_positions(app);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
 #else
     /* No VTE installed: the panel is a notice instead of a terminal */
     gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
-    workspace_save_current(app);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     app->applying_layout = TRUE;
     gtk_widget_set_visible(app->term_scroll, !was_term_vis);
-    update_path_label(app);
-    workspace_apply_positions(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
+    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
 #endif
     return TRUE;
@@ -501,7 +501,7 @@ static gboolean on_paned_legacy_event(GtkEventControllerLegacy* ctrl,
         app->panning = FALSE;
         app->dims_paned = NULL;
         gtk_widget_set_visible(app->dim_window, FALSE);
-        workspace_save_current(app);
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
     return FALSE;
 }
@@ -517,7 +517,7 @@ void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointer data)
         app->dims_paned = widget;
         record_paned_fraction(app, widget);
         g_idle_add(pane_dims_idle, app);
-        workspace_save_current(app);
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
 }
 
@@ -534,7 +534,7 @@ void on_paned_released(GtkGestureClick* gesture, gint n_press,
     app->panning = FALSE;
     app->dims_paned = NULL;
     gtk_widget_set_visible(app->dim_window, FALSE);
-    workspace_save_current(app);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
 }
 
 void wire_paned_controllers(GtkWidget* paned, AppData* app) {
@@ -575,7 +575,7 @@ void layout_save_frac(AppData* app) {
 /* Restore saved split proportion once new paned is laid out */
 gboolean layout_position_idle(gpointer data) {
     AppData* app = (AppData*)data;
-    workspace_apply_positions(app);
+    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     return FALSE;
 }
 
@@ -583,7 +583,7 @@ gboolean layout_position_idle(gpointer data) {
 void layout_build(AppData* app, GtkOrientation orientation) {
     if (app->right_paned != NULL) {
         gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), orientation);
-        workspace_apply_positions(app);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
         return;
     }
 
@@ -610,12 +610,12 @@ void layout_build(AppData* app, GtkOrientation orientation) {
     gtk_paned_set_shrink_end_child(GTK_PANED(app->main_paned), TRUE);
 
     /* Restore saved split proportions */
-    workspace_apply_positions(app);
+    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
 }
 
 /* Ctrl+Shift+L: stack terminal pane under viewer or place it beside it */
 void layout_toggle(AppData* app) {
-    workspace_save_current(app);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     GtkOrientation next_orient =
         gtk_orientable_get_orientation(GTK_ORIENTABLE(app->right_paned)) ==
                 GTK_ORIENTATION_HORIZONTAL

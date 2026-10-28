@@ -1,5 +1,5 @@
 #include "notes.h"
-#include "topbar.h"
+#include "app_events.h"
 #include "tree_nav.h"
 #include "file_types.h"
 #include "editor.h"
@@ -1195,7 +1195,7 @@ void notes_refresh(AppData* app) {
     } else {
         select_first_row(app);
     }
-    update_path_label(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
 /* ------------------------------------------------------------------------- */

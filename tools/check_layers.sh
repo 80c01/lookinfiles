@@ -20,6 +20,7 @@ markdown:app_types
 html:app_types
 minimap:app_types
 tree_nav:app_types
+app_events:app_types
 "
 
 for rule in $RULES; do
@@ -42,6 +43,21 @@ for f in $(grep -l '#include "editor_modes_private.h"' src/*.c src/*.h); do
         src/editor_modes.c|src/editor_notepad.c|src/editor_emacs.c|src/editor_vim.c) ;;
         *) echo "layering: $f includes editor_modes_private.h (internal to editor mode files)"; status=1 ;;
     esac
+done
+
+# Event subscribers are called through app_emit() (app_events.h), not directly,
+# outside their own module and main.c (where they are subscribed).
+for pair in update_path_label:topbar update_status_bar:status_bar \
+            workspace_save_current:workspace workspace_apply_positions:workspace \
+            refresh_listing:file_list; do
+    fn=${pair%%:*}
+    owner=${pair#*:}
+    for f in $(grep -lE "\b$fn\(" src/*.c); do
+        case "$f" in
+            src/$owner.c|src/main.c) ;;
+            *) echo "layering: $f calls $fn() directly; use app_emit() (see app_events.h)"; status=1 ;;
+        esac
+    done
 done
 
 [ $status -eq 0 ] && echo "Layering OK."

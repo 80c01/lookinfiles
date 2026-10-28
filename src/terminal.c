@@ -1,6 +1,5 @@
 #include "terminal.h"
-#include "topbar.h"
-#include "workspace.h"
+#include "app_events.h"
 #include "remote.h"
 #include "ui.h"
 
@@ -225,7 +224,7 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
     if (GTK_IS_BOX(parent)) {
         gtk_box_remove(GTK_BOX(parent), term_w);
         if (parent == app->term_box) {
-            workspace_save_current(app);
+            app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             app->applying_layout = TRUE;
             gtk_widget_set_visible(app->term_scroll, FALSE);
             gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
@@ -234,8 +233,8 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
                 gtk_widget_set_visible(app->viewer_box, TRUE);
                 preview_vis = TRUE;
             }
-            update_path_label(app);
-            workspace_apply_positions(app);
+            app_emit(app, APP_EVENT_CHROME_CHANGED);
+            app_emit(app, APP_EVENT_LAYOUT_REBUILT);
             if (files_vis) {
                 gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
             } else if (preview_vis) {
@@ -273,7 +272,7 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
         if (panes->len > 0) {
             gtk_widget_grab_focus(GTK_WIDGET(g_ptr_array_index(panes, 0)));
         } else {
-            workspace_save_current(app);
+            app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             app->applying_layout = TRUE;
             gtk_widget_set_visible(app->term_scroll, FALSE);
             gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
@@ -282,8 +281,8 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
                 gtk_widget_set_visible(app->viewer_box, TRUE);
                 preview_vis = TRUE;
             }
-            update_path_label(app);
-            workspace_apply_positions(app);
+            app_emit(app, APP_EVENT_CHROME_CHANGED);
+            app_emit(app, APP_EVENT_LAYOUT_REBUILT);
             if (files_vis) {
                 gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
             } else if (preview_vis) {
