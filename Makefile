@@ -1,4 +1,8 @@
 # Makefile for the GTK 4 file explorer
+#
+# Each source file is compiled to its own object in build/ with automatic
+# header dependency tracking (-MMD -MP): editing a header rebuilds every
+# file that includes it, and only those files.
 
 CC = gcc
 PKG_CONFIG ?= pkg-config
@@ -7,6 +11,7 @@ CFLAGS = -Wall -Wextra -Wno-deprecated-declarations -Isrc `$(PKG_CONFIG) --cflag
 # Check deprecation:
 #FLAGS = -Wall -Wextra -Werror -Isrc `$(PKG_CONFIG) --cflags gtk4`
 LDFLAGS = `$(PKG_CONFIG) --libs gtk4`
+DEPFLAGS = -MMD -MP
 
 # Optional embedded terminal: enabled automatically when vte-2.91-gtk4 is installed
 HAVE_VTE != $(PKG_CONFIG) --exists vte-2.91-gtk4 2>/dev/null && echo yes || echo no
@@ -30,38 +35,30 @@ LDFLAGS += `$(PKG_CONFIG) --libs poppler-glib`
 endif
 
 TARGET = explorateur_fichiers
-BUNDLE_DIR = bundle
-BUNDLE_APP = $(BUNDLE_DIR)/$(TARGET)
-BUNDLE_LIB = $(BUNDLE_DIR)/lib
+BUILD_DIR = build
 
-SRCS = src/main.c \
-       src/file_list.c \
-       src/bookmarks.c \
-       src/notes.c \
-       src/remote.c \
-       src/orgmode.c \
-       src/viewer.c \
-       src/video.c \
-       src/audio.c \
-       src/markdown.c \
-       src/html.c \
-       src/pdf.c \
-       src/git_tab.c \
-       src/editor.c \
-       src/editor_modes.c \
-       src/minimap.c \
-       src/terminal.c \
-       src/search.c \
-       src/ui.c
+# Every .c file in src/ is part of the application: adding a module only
+# requires creating src/<module>.c and src/<module>.h.
+SRCS = $(sort $(wildcard src/*.c))
+OBJS = $(SRCS:src/%.c=$(BUILD_DIR)/%.o)
+DEPS = $(OBJS:.o=.d)
 
 all: $(TARGET)
 
-$(TARGET): $(SRCS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+$(TARGET): $(OBJS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 	@echo "Build succeeded!"
 	@ls -lh $(TARGET)
 
+$(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(DEPFLAGS) -c -o $@ $<
+
+$(BUILD_DIR):
+	mkdir -p $@
+
 clean:
-	rm -rf $(TARGET)
+	rm -rf $(TARGET) $(BUILD_DIR)
+
+-include $(DEPS)
 
 .PHONY: all clean
