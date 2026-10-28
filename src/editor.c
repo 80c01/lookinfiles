@@ -1,10 +1,10 @@
 #include "editor.h"
+#include "panels.h"
 #include "app_events.h"
 #include "text_style.h"
 #include "file_types.h"
 #include "viewer.h"
 #include "minimap.h"
-#include "ui.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;

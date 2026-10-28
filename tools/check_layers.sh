@@ -21,6 +21,7 @@ html:app_types
 minimap:app_types
 tree_nav:app_types
 app_events:app_types
+panels:app_types,app_events
 "
 
 for rule in $RULES; do

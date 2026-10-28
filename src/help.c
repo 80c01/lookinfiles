@@ -1,7 +1,7 @@
 /* Floating key-binding cheat sheet ('?' / top bar Help button). Keep KEY_HELP in sync with README.md. */
 #include "help.h"
+#include "panels.h"
 #include "app_events.h"
-#include "ui.h"
 
 /* Cheat sheet entry: section header, key column, description */
 typedef struct {

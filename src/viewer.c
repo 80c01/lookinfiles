@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "panels.h"
 #include "app_events.h"
 #include "text_style.h"
 #include "help.h"
@@ -13,7 +14,6 @@
 #include "video.h"
 #include "audio.h"
 #include "search.h"
-#include "ui.h"
 #include "bookmarks.h"
 #include "remote.h"
 #include "orgmode.h"

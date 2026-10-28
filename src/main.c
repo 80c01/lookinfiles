@@ -1,4 +1,5 @@
 #include "topbar.h"
+#include "panels.h"
 #include "app_events.h"
 #include "text_style.h"
 #include "tree_nav.h"
