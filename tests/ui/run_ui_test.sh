@@ -7,6 +7,9 @@
 #
 # Environment:
 #   UI_OUT       output directory (default: build/ui); screenshots go to $UI_OUT/shots
+#   UI_ICON_THEME  optional icon theme to force (e.g. hicolor, which has no
+#                symbolic icons: checks that every icon falls back to one built
+#                into GTK; a missing icon logs a warning and fails the test)
 #   UI_BASELINE  optional directory of reference screenshots (e.g. the shots of a
 #                run on another branch); every step except the terminal one must
 #                match it within UI_TOLERANCE differing pixels (default: 50,
@@ -39,6 +42,9 @@ mkdir -p "$SHOTS" "$FIX/home/.config/gtk-4.0" "$FIX/work/src" "$FIX/work/docs"
 
 # --- Fixture: small git repository with one modified and several untracked files
 printf '[Settings]\ngtk-cursor-blink=false\n' > "$FIX/home/.config/gtk-4.0/settings.ini"
+if [ -n "${UI_ICON_THEME:-}" ]; then
+    printf 'gtk-icon-theme-name=%s\n' "$UI_ICON_THEME" >> "$FIX/home/.config/gtk-4.0/settings.ini"
+fi
 CFG="$FIX/home/.config/explorateur_fichiers"
 mkdir -p "$CFG/notes/General" "$CFG/notes/Projects and long notebook name"
 echo a > "$CFG/notes/General/short.txt"

@@ -197,6 +197,10 @@ Check these before adding or changing an action, a tooltip or a dialog:
   permanent delete and `user-trash` for a move to trash. Emoji are kept only
   for file-type icons in the tree and editor tabs. The CSS colours `label`
   and `image` nodes together (symbolic icons follow the text colour).
+  Icon names differ between Adwaita versions: any icon not built into libgtk
+  needs an entry in the `FALLBACKS` table of `icons.c` ending with a built-in
+  icon (list in that file). Check with `UI_ICON_THEME=hicolor make ui-test`,
+  which fails if a button ends up without an icon.
 - **Preview text views** all use `set_view_text_padding()` (10 px sides).
 - **Names**: `Org-mode`, `Rich Format`, `Plain Text`; view titles EXPLORER,
   BOOKMARKS, NOTES, REMOTE.
