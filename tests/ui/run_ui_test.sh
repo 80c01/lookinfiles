@@ -129,6 +129,8 @@ key alt+plus;           shot workspace_added
 key alt+1;              shot workspace_1
 key i;                  shot hidden_toggle
 key o;                  shot sort_cycle
+echo "external" > "$FIX/work/external.txt"   # created outside the app: the tree must update
+sleep 1;                shot external_file_created
 key ctrl+t; sleep 1;    shot terminal
 key ctrl+q
 
