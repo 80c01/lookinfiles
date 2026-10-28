@@ -1,7 +1,6 @@
 /* Emacs editor mode (visual clone): modeline, minibuffer, prefix keys and commands. */
 #include "editor_modes_private.h"
 #include "editor.h"
-#include "orgmode.h"
 #include <ctype.h>
 #include <string.h>
 

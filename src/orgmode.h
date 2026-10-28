@@ -29,14 +29,13 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y);
 /* Handle Org-mode key shortcuts in the viewer panel (Tab: fold heading, Shift+Tab: global fold cycle, t: cycle TODO, Space: toggle checkbox) */
 gboolean orgmode_handle_viewer_key(AppData* app, guint keyval, GdkModifierType state);
 
-/* Handle Org-mode key shortcuts in Editor tabs (Tab, Shift+Tab, Shift+Right/Left TODO cycle, Alt+Enter insert heading, Ctrl+C Ctrl+C toggle checkbox) */
-gboolean orgmode_editor_handle_key(AppData* app, EditorTab* tab, guint keyval, GdkModifierType state);
+/* Heading level of an Org line ("** Title" -> 2), 0 if not a heading */
+gint orgmode_heading_level(const gchar* line);
 
-/* Toggle fold/unfold of heading at cursor in editor tab */
-gboolean orgmode_editor_toggle_heading_fold(EditorTab* tab);
-
-/* Cycle global fold state in editor tab (Overview -> Contents -> Show All) */
-void orgmode_editor_cycle_global_fold(EditorTab* tab);
+/* Cycle the TODO keyword / toggle the checkbox on file_line of an Org file.
+ * With editor_buffer, edit that buffer instead of the file on disk. */
+gboolean orgmode_cycle_todo_at_line(const gchar* file_path, gint file_line, GtkTextBuffer* editor_buffer);
+gboolean orgmode_toggle_checkbox_at_line(const gchar* file_path, gint file_line, GtkTextBuffer* editor_buffer);
 
 /* Cycle global folding state (Show All -> Overview -> Contents -> Show All) */
 void orgmode_cycle_global_fold(AppData* app);

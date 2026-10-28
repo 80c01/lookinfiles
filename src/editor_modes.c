@@ -2,7 +2,6 @@
 #include "app_events.h"
 #include "text_style.h"
 #include "file_types.h"
-#include "orgmode.h"
 #include <ctype.h>
 #include <string.h>
 

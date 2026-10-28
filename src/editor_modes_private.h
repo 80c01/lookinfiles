@@ -2,7 +2,7 @@
 #define EDITOR_MODES_PRIVATE_H
 
 /* Internal header shared by editor_modes.c and the per-mode files
- * (editor_notepad.c, editor_emacs.c, editor_vim.c). Other modules must
+ * (editor_notepad.c, editor_emacs.c, editor_vim.c, editor_org.c). Other modules must
  * use editor_modes.h instead. */
 #include "editor_modes.h"
 
@@ -122,6 +122,11 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
                           guint keyval, GdkModifierType state);
 gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
                         guint keyval, GdkModifierType state);
+
+/* Org-mode editing (editor_org.c), active in tabs showing an Org file */
+gboolean orgmode_editor_handle_key(AppData* app, EditorTab* tab, guint keyval, GdkModifierType state);
+gboolean orgmode_editor_toggle_heading_fold(EditorTab* tab);
+void orgmode_editor_cycle_global_fold(EditorTab* tab);
 
 /* Mode state transitions used when switching modes */
 void emacs_close_minibuffer(EditorTab* tab);

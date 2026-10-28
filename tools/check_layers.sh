@@ -41,7 +41,7 @@ done
 # editor_modes_private.h is internal to the editor mode files
 for f in $(grep -l '#include "editor_modes_private.h"' src/*.c src/*.h); do
     case "$f" in
-        src/editor_modes.c|src/editor_notepad.c|src/editor_emacs.c|src/editor_vim.c) ;;
+        src/editor_modes.c|src/editor_notepad.c|src/editor_emacs.c|src/editor_vim.c|src/editor_org.c) ;;
         *) echo "layering: $f includes editor_modes_private.h (internal to editor mode files)"; status=1 ;;
     esac
 done
