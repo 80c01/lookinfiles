@@ -318,7 +318,7 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
 
     GtkTextIter start, end;
     gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
     GError* err = NULL;
 
     if (!g_file_set_contents(full_path, text, -1, &err)) {
@@ -484,7 +484,7 @@ void editor_mode_format_paragraph(EditorTab* tab, gint target_width) {
         }
     }
 
-    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
     gchar** words = g_strsplit_set(text, " \t\r\n", -1);
     g_free(text);
 
@@ -529,7 +529,7 @@ void editor_mode_change_case(EditorTab* tab, gint mode) {
         gtk_text_iter_forward_word_end(&end);
     }
 
-    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
     if (!text || text[0] == '\0') {
         g_free(text);
         return;
@@ -963,6 +963,12 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
             } else if (strstr(cmd, "set-justification-full")) {
                 editor_mode_align_text(tab, GTK_JUSTIFY_FILL, 80);
                 emacs_echo(tab, "Full justified");
+                emacs_close_minibuffer(tab);
+            } else if (strstr(cmd, "org-cycle") || strstr(cmd, "fold")) {
+                orgmode_editor_toggle_heading_fold(tab);
+                emacs_close_minibuffer(tab);
+            } else if (strstr(cmd, "org-global-cycle") || strstr(cmd, "global-fold")) {
+                orgmode_editor_cycle_global_fold(tab);
                 emacs_close_minibuffer(tab);
             } else if (strstr(cmd, "vim-mode")) {
                 editor_set_tab_mode((AppData*)tab->app, tab, EDITOR_MODE_VIM);
@@ -1851,7 +1857,7 @@ static gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         } else {
             gtk_text_iter_forward_to_line_end(&end);
         }
-        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
         GdkClipboard* clip = gtk_widget_get_clipboard(tab->view);
         gdk_clipboard_set_text(clip, text);
         g_free(text);
@@ -2125,7 +2131,7 @@ static gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
                     break;
                 }
             }
-            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
             GdkClipboard* clip = gtk_widget_get_clipboard(tab->view);
             gdk_clipboard_set_text(clip, text);
             g_free(text);
@@ -2183,7 +2189,7 @@ static gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
             if (!gtk_text_iter_forward_line(&end)) {
                 gtk_text_iter_forward_to_line_end(&end);
             }
-            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
             GdkClipboard* clip = gtk_widget_get_clipboard(tab->view);
             gdk_clipboard_set_text(clip, text);
             g_free(text);
@@ -2195,7 +2201,7 @@ static gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
             gtk_text_buffer_get_iter_at_mark(tab->buffer, &start, gtk_text_buffer_get_insert(tab->buffer));
             end = start;
             gtk_text_iter_forward_word_end(&end);
-            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
             GdkClipboard* clip = gtk_widget_get_clipboard(tab->view);
             gdk_clipboard_set_text(clip, text);
             g_free(text);
@@ -2482,7 +2488,7 @@ static gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
         gtk_text_iter_set_line_offset(&start, 0);
         end = start;
         if (!gtk_text_iter_forward_line(&end)) gtk_text_iter_forward_to_line_end(&end);
-        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
         GdkClipboard* clip = gtk_widget_get_clipboard(tab->view);
         gdk_clipboard_set_text(clip, text);
         g_free(text);
@@ -2517,7 +2523,7 @@ static gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
         end = start;
         if (!gtk_text_iter_ends_line(&end)) {
             gtk_text_iter_forward_cursor_position(&end);
-            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
             GdkClipboard* clip = gtk_widget_get_clipboard(tab->view);
             gdk_clipboard_set_text(clip, text);
             g_free(text);
@@ -2629,9 +2635,12 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
     if (tab == NULL || tab->mode_state == NULL) return FALSE;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
 
-    if (tab->mode == EDITOR_MODE_ORGMODE) {
+    if (tab->mode == EDITOR_MODE_ORGMODE || (tab->name != NULL && is_org_file(tab->name))) {
         if (orgmode_editor_handle_key(app, tab, keyval, state)) {
             return TRUE;
+        }
+        if (tab->mode == EDITOR_MODE_VIM) {
+            return vim_handle_key(tab, st, keyval, state);
         }
         return emacs_handle_key(tab, st, keyval, state);
     }

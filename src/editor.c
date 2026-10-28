@@ -273,7 +273,7 @@ void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data) {
         /* Automatically back buffer to ~/.config file so user doesn't lose changes */
         GtkTextIter start, end;
         gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
         g_file_set_contents(tab->path, text, -1, NULL);
         g_free(text);
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
@@ -934,7 +934,7 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
                 if (t->buffer != NULL && (t->is_buffer || gtk_text_buffer_get_modified(t->buffer))) {
                     GtkTextIter start, end;
                     gtk_text_buffer_get_bounds(t->buffer, &start, &end);
-                    gchar* text = gtk_text_buffer_get_text(t->buffer, &start, &end, FALSE);
+                    gchar* text = gtk_text_buffer_get_text(t->buffer, &start, &end, TRUE);
                     g_file_set_contents(t->path, text, -1, NULL);
                     g_free(text);
                     gtk_text_buffer_set_modified(t->buffer, FALSE);
@@ -1007,7 +1007,7 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
     if (tab->buffer != NULL && tab->is_buffer && tab->path != NULL) {
         GtkTextIter start, end;
         gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
         g_file_set_contents(tab->path, text, -1, NULL);
         g_free(text);
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
@@ -1275,7 +1275,7 @@ void editor_save_all_buffers(AppData* app) {
         if (tab != NULL && tab->is_buffer && tab->path != NULL && tab->buffer != NULL) {
             GtkTextIter start, end;
             gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
             g_file_set_contents(tab->path, text, -1, NULL);
             g_free(text);
             gtk_text_buffer_set_modified(tab->buffer, FALSE);
@@ -1290,7 +1290,7 @@ gboolean editor_save_current(AppData* app) {
     }
     GtkTextIter start, end;
     gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
     if (!g_file_set_contents(tab->path, text, -1, NULL)) {
         g_printerr("[ Cannot save: %s ]\n", tab->name);
     } else {
