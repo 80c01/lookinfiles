@@ -1712,7 +1712,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     GtkWidget* title_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_set_name(title_row, "sidebar-title-row");
 
-    GtkWidget* title = gtk_label_new("EXPLORER");
+    GtkWidget* title = gtk_label_new("");
     gtk_widget_set_name(title, "sidebar-title");
     gtk_label_set_xalign(GTK_LABEL(title), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(title), PANGO_ELLIPSIZE_END);
@@ -1753,7 +1753,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
 
     gtk_box_append(GTK_BOX(header), title_row);
 
-    /* 1. Files Explorer Toolbar: Section label + 5 mini action icons */
+    /* 1. Files Explorer Toolbar: mini action icons */
     GtkWidget* files_toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_set_name(files_toolbar, "sidebar-files-toolbar");
 
@@ -1762,6 +1762,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_label_set_xalign(GTK_LABEL(section), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(section), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(section, TRUE);
+    gtk_widget_set_visible(section, FALSE);
     gtk_box_append(GTK_BOX(files_toolbar), section);
 
     GtkWidget* files_new_file_btn = gtk_button_new_with_label("📄+");
@@ -1810,15 +1811,16 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(files_toolbar, (app == NULL || (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks)));
     gtk_box_append(GTK_BOX(header), files_toolbar);
 
-    /* 2. Bookmarks Toolbar: Section label + 3 mini action icons */
+    /* 2. Bookmarks Toolbar: mini action icons */
     GtkWidget* bm_toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_set_name(bm_toolbar, "sidebar-bm-toolbar");
 
-    GtkWidget* bm_section = gtk_label_new("▾ BOOKMARKS");
+    GtkWidget* bm_section = gtk_label_new("");
     gtk_widget_add_css_class(bm_section, "sidebar-section-title");
     gtk_label_set_xalign(GTK_LABEL(bm_section), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(bm_section), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(bm_section, TRUE);
+    gtk_widget_set_visible(bm_section, FALSE);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_section);
 
     GtkWidget* bm_new_folder_btn = gtk_button_new_with_label("📁+");
@@ -1848,15 +1850,16 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(bm_toolbar, (app != NULL && (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks)));
     gtk_box_append(GTK_BOX(header), bm_toolbar);
 
-    /* 3. Buffers Toolbar: Section label + 4 mini action icons */
+    /* 3. Buffers Toolbar: mini action icons */
     GtkWidget* buf_toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_set_name(buf_toolbar, "sidebar-buf-toolbar");
 
-    GtkWidget* buf_section = gtk_label_new("▾ BUFFERS");
+    GtkWidget* buf_section = gtk_label_new("");
     gtk_widget_add_css_class(buf_section, "sidebar-section-title");
     gtk_label_set_xalign(GTK_LABEL(buf_section), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(buf_section), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(buf_section, TRUE);
+    gtk_widget_set_visible(buf_section, FALSE);
     gtk_box_append(GTK_BOX(buf_toolbar), buf_section);
 
     GtkWidget* new_buf_btn = gtk_button_new_with_label("➕");
