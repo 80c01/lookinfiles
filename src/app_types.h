@@ -140,6 +140,7 @@ typedef struct {
     GtkTreeView* tree_view;
     GtkWidget* text_view; /* right pane viewer (Alt+Left/Right cycling) */
     GtkTreeSelection* selection;
+    gulong selection_changed_id; /* preview handler on selection "changed" (main.c), 0 = not connected */
     GtkWidget* search_entry;
     GtkWidget* path_label;
     GtkWidget* breadcrumb_box;

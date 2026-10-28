@@ -536,7 +536,8 @@ int main(int argc, char** argv) {
     GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
     gtk_tree_selection_set_mode(selection, GTK_SELECTION_SINGLE);
     app->selection = selection;
-    g_signal_connect(selection, "changed", G_CALLBACK(on_selection_changed), app);
+    app->selection_changed_id =
+        g_signal_connect(selection, "changed", G_CALLBACK(on_selection_changed), app);
 
     g_signal_connect(tree_view, "test-expand-row", G_CALLBACK(on_tree_test_expand_row), app);
     g_signal_connect(tree_view, "row-expanded", G_CALLBACK(on_tree_row_expanded), app);

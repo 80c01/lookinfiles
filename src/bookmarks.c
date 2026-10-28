@@ -3,7 +3,6 @@
 #include "tree_nav.h"
 #include "file_types.h"
 #include "file_list.h"
-#include "viewer.h"
 
 #include <string.h>
 
@@ -522,15 +521,11 @@ static void bm_refresh_select(AppData* app, guint select_id) {
     }
     app->dir_scan_pending = FALSE;
 
-    if (app->selection != NULL) {
-        g_signal_handlers_block_by_func(app->selection, (gpointer)on_selection_changed, app);
-    }
+    tree_nav_block_selection_handler(app);
     gtk_tree_store_clear(GTK_TREE_STORE(app->model));
     bookmarks_append_to_store(GTK_TREE_STORE(app->model), app);
     bm_reexpand_level(app, NULL);
-    if (app->selection != NULL) {
-        g_signal_handlers_unblock_by_func(app->selection, (gpointer)on_selection_changed, app);
-    }
+    tree_nav_unblock_selection_handler(app);
     if (!bm_select_id(app, select_id)) {
         select_first_row(app);
     }

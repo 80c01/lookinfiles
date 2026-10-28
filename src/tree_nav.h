@@ -23,4 +23,8 @@ void bottom_selected_row(AppData* app);
 gboolean select_by_name(AppData* app, const gchar* name);
 gboolean select_by_path(AppData* app, const gchar* full_path);
 
+/* Suspend / resume the preview handler on selection "changed" */
+void tree_nav_block_selection_handler(AppData* app);
+void tree_nav_unblock_selection_handler(AppData* app);
+
 #endif /* TREE_NAV_H */

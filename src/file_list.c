@@ -9,7 +9,6 @@
 #include "file_types.h"
 #include "git_tab.h"
 #include "editor.h"
-#include "viewer.h"
 #include "video.h"
 #include "audio.h"
 #include "search.h"
@@ -654,10 +653,7 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
 
     GtkTreeStore* store = GTK_TREE_STORE(app->model);
 
-    if (app->selection != NULL) {
-        g_signal_handlers_block_by_func(app->selection,
-                                        (gpointer)on_selection_changed, app);
-    }
+    tree_nav_block_selection_handler(app);
 
     if (app->git_statuses != NULL) {
         g_hash_table_destroy(app->git_statuses);
@@ -682,22 +678,13 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
 
     if (td->select_path != NULL) {
         if (!select_by_path(app, td->select_path)) {
-            if (app->selection != NULL) {
-                g_signal_handlers_unblock_by_func(app->selection,
-                                                  (gpointer)on_selection_changed, app);
-            }
+            tree_nav_unblock_selection_handler(app);
             select_first_row(app);
         } else {
-            if (app->selection != NULL) {
-                g_signal_handlers_unblock_by_func(app->selection,
-                                                  (gpointer)on_selection_changed, app);
-            }
+            tree_nav_unblock_selection_handler(app);
         }
     } else {
-        if (app->selection != NULL) {
-            g_signal_handlers_unblock_by_func(app->selection,
-                                              (gpointer)on_selection_changed, app);
-        }
+        tree_nav_unblock_selection_handler(app);
         if (td->select_name != NULL) {
             if (!select_by_name(app, td->select_name)) {
                 select_first_row(app);

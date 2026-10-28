@@ -350,3 +350,17 @@ gboolean select_by_path(AppData* app, const gchar* full_path) {
     }
     return FALSE;
 }
+
+/* Suspend / resume the preview update on selection changes (while the tree store
+ * is rebuilt). No-op until main.c has connected the handler. */
+void tree_nav_block_selection_handler(AppData* app) {
+    if (app->selection != NULL && app->selection_changed_id != 0) {
+        g_signal_handler_block(app->selection, app->selection_changed_id);
+    }
+}
+
+void tree_nav_unblock_selection_handler(AppData* app) {
+    if (app->selection != NULL && app->selection_changed_id != 0) {
+        g_signal_handler_unblock(app->selection, app->selection_changed_id);
+    }
+}

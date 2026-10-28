@@ -1170,17 +1170,13 @@ void notes_refresh(AppData* app) {
         gtk_tree_model_get(app->model, &sel_iter, COL_PATH, &sel_path, -1);
     }
 
-    if (app->selection != NULL) {
-        g_signal_handlers_block_by_func(app->selection, (gpointer)on_selection_changed, app);
-    }
+    tree_nav_block_selection_handler(app);
 
     gtk_tree_store_clear(GTK_TREE_STORE(app->model));
     notes_append_to_store(GTK_TREE_STORE(app->model), app);
     notes_reexpand(app);
 
-    if (app->selection != NULL) {
-        g_signal_handlers_unblock_by_func(app->selection, (gpointer)on_selection_changed, app);
-    }
+    tree_nav_unblock_selection_handler(app);
 
     if (sel_path != NULL) {
         GtkTreeIter found;
