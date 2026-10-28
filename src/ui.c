@@ -70,7 +70,9 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "Space / p", "Play / pause active video or audio preview"},
     {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},
     {"Editor tabs", "Ctrl+W", "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"},
-    {"Editor tabs", "Ctrl+E", "Move editor tabs to dedicated panel right of preview, or dock back"},
+    {"Editor tabs", "Ctrl+E", "Move active editor tab to dedicated panel right of preview, or dock back"},
+    {"Editor tabs", "Ctrl+Alt+Arrows / HJKL", "Move active editor tab right / left / down / up (split panels)"},
+    {"Editor tabs", "Right-click tab header", "Context menu to move, split, or close the editor tab"},
     {"Editor tabs", "Ctrl+R / F2", "Rename current text buffer"},
     /* Global */
     {"Global", "Alt+1 .. Alt+8", "Switch between virtual workspaces (or click/scroll top-bar minimap)"},
@@ -326,24 +328,30 @@ void focus_adjacent_panel(gint step, AppData* app) {
         g_ptr_array_add(panels, GTK_WIDGET(app->tree_view));
     }
     if (app->viewer_box == NULL || gtk_widget_get_visible(app->viewer_box)) {
-        if (!app->editor_dedicated) {
-            EditorTab* cur_tab = editor_current_tab(app);
-            if (cur_tab != NULL && cur_tab->view != NULL) {
-                g_ptr_array_add(panels, cur_tab->view);
-            } else {
-                g_ptr_array_add(panels, app->text_view);
-            }
+        EditorTab* cur_tab = editor_current_tab(app);
+        if (cur_tab != NULL && cur_tab->nb == app->notebook && cur_tab->view != NULL) {
+            g_ptr_array_add(panels, cur_tab->view);
         } else {
             g_ptr_array_add(panels, app->text_view);
         }
     }
-    if (app->editor_dedicated && app->editor_box != NULL && gtk_widget_get_visible(app->editor_box)) {
-        EditorTab* cur_tab = editor_current_tab(app);
-        if (cur_tab != NULL && cur_tab->view != NULL) {
-            g_ptr_array_add(panels, cur_tab->view);
-        } else if (app->editor_notebook != NULL) {
-            g_ptr_array_add(panels, app->editor_notebook);
+    if (app->editor_box != NULL && gtk_widget_get_visible(app->editor_box)) {
+        GPtrArray* arr = editor_get_all_notebooks(app);
+        for (guint i = 0; i < arr->len; i++) {
+            GtkNotebook* nb = GTK_NOTEBOOK(g_ptr_array_index(arr, i));
+            gint cur_p = gtk_notebook_get_current_page(nb);
+            if (cur_p >= 0) {
+                GtkWidget* child = gtk_notebook_get_nth_page(nb, cur_p);
+                for (GList* l = app->editors; l != NULL; l = l->next) {
+                    EditorTab* t = (EditorTab*)l->data;
+                    if (t != NULL && t->container == child && t->view != NULL) {
+                        g_ptr_array_add(panels, t->view);
+                        break;
+                    }
+                }
+            }
         }
+        g_ptr_array_unref(arr);
     }
 #ifdef HAVE_VTE
     if (gtk_widget_get_visible(app->term_scroll)) {
@@ -448,11 +456,35 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
-    /* Ctrl+E: move editor tabs to dedicated panel right of preview, or dock back */
+    /* Ctrl+Alt+Arrow / Ctrl+Alt+VIM / Ctrl+Alt+D: move editor tab */
+    if ((state & GDK_CONTROL_MASK) && (state & GDK_ALT_MASK)) {
+        if (keyval == GDK_KEY_Right || keyval == GDK_KEY_l || keyval == GDK_KEY_L) {
+            editor_move_tab_direction(app, NULL, EDITOR_MOVE_RIGHT);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_Left || keyval == GDK_KEY_h || keyval == GDK_KEY_H) {
+            editor_move_tab_direction(app, NULL, EDITOR_MOVE_LEFT);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_Down || keyval == GDK_KEY_j || keyval == GDK_KEY_J) {
+            editor_move_tab_direction(app, NULL, EDITOR_MOVE_DOWN);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_Up || keyval == GDK_KEY_k || keyval == GDK_KEY_K) {
+            editor_move_tab_direction(app, NULL, EDITOR_MOVE_UP);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_d || keyval == GDK_KEY_D) {
+            editor_move_tab_dedicated(app, NULL);
+            return TRUE;
+        }
+    }
+
+    /* Ctrl+E: move active editor tab to dedicated panel right of preview, or dock back */
     if ((state & GDK_CONTROL_MASK) &&
         !(state & GDK_SHIFT_MASK) &&
         (keyval == GDK_KEY_e || keyval == GDK_KEY_E)) {
-        editor_toggle_dedicated(app);
+        editor_move_tab_dedicated(app, NULL);
         return TRUE;
     }
 
@@ -2560,6 +2592,23 @@ void apply_panel_borders(void) {
         "}\n"
         "button.tab-action-btn.tab-action-active label {\n"
         "  color: #4fc1ff;\n"
+        "}\n"
+        "button#tab-context-btn {\n"
+        "  background: transparent;\n"
+        "  border: none;\n"
+        "  border-radius: 4px;\n"
+        "  padding: 4px 8px;\n"
+        "  margin: 1px 0;\n"
+        "  box-shadow: none;\n"
+        "  color: #cccccc;\n"
+        "}\n"
+        "button#tab-context-btn:hover {\n"
+        "  background-color: #04395e;\n"
+        "  color: #ffffff;\n"
+        "}\n"
+        "button#tab-context-btn label {\n"
+        "  color: inherit;\n"
+        "  font-size: 12px;\n"
         "}\n"
         /* ---- Focused panel highlight (VS Code active pane border & header tint) ---- */
         ".panel-focused {\n"

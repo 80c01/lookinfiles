@@ -26,7 +26,7 @@ Simple graphical application to browse the file system.
 - ✅ Video preview: video files (`.mp4`, `.mkv`, `.webm`, `.mov`, `.avi`, `.flv`, `.wmv`, `.m4v`, `.ts`, `.mpg`, etc.) are previewed directly in the right preview pane using GTK 4's native `GtkVideo` and `GtkMediaStream` player, complete with an aligned Dark+ metadata header (title, container, duration, audio/video streams, file size), transport controls (play/pause, seek timeline, volume), and an `m` toggle to inspect raw file details and binary header hex dump
 - ✅ Audio preview: audio files (`.mp3`, `.wav`, `.ogg`, `.flac`, `.aac`, `.m4a`, `.wma`, `.aiff`, `.opus`, etc.) are previewed directly in the right preview pane with a native player card using GTK 4's `GtkMediaControls` and `GtkMediaFile`, featuring a centered player card (title, container, duration, file size), transport controls (play/pause, seek timeline, volume), and an `m` toggle to inspect raw file details and binary header hex dump
 - ✅ Git Commits tab in Preview panel: for directories inside a Git repository, a dedicated "📦 Git Commits" tab appears directly to the right of the Preview tab. It displays an interactive table of repository commits (short hash in cyan, commit message, author, and relative date) along with an interactive patch/diff viewer highlighting changes with VS Code Dark+ diff colors (added lines in green, deleted lines in red, hunk headers in blue, metadata in yellow).
-- ✅ Dedicated Editor panel: editor tabs can either be docked inside the preview notebook or placed in a dedicated panel positioned to the right of the preview panel (`Ctrl+E` or click the `◫` split button at the top-left of the preview notebook tab strip). When in dedicated mode, browse and preview files on the center panel while editing code on the right panel across resizable dividers, preserved per virtual workspace.
+- ✅ Dedicated & Split Editor panels: editor tabs can either be docked inside the preview notebook or placed in dedicated panels (`Ctrl+E` or click the `◫` split button). Any editor tab can be split or moved in any direction—right, left, down, up (`Ctrl+Alt+Arrows` or `H/J/K/L`) or via right-click tab context menu—creating multi-pane split layouts across resizable dividers, preserved per virtual workspace. Empty panels collapse automatically.
 - ✅ Notes & Notebooks Manager: a dedicated "NOTES" view accessible from the explorer header via the mini `📝` icon or `Ctrl+U`. Organizes notes hierarchically into notebooks (carnets de notes) and includes a trash bin (corbeille) with XML persistence (`~/.config/explorateur_fichiers/notes/notes.xml`):
   - **Notebooks**: create, rename, reorder, and delete notebooks with custom icons (`📓`, `💼`, `💡`, `📚`, etc.).
   - **Trash Bin**: soft-delete notes and entire notebooks into `.trash/`, track original notebook origins, restore trashed notes back to their original notebook (`Shift+R`), or empty the trash bin (`🧹`).
@@ -118,7 +118,12 @@ the tab title marks unsaved changes.
 |---|---|
 | `Ctrl+S` | Save the file open in the current editor tab |
 | `Ctrl+W` | Close the current editor tab (asks first when unsaved) |
-| `Ctrl+E` | Move editor tabs to dedicated panel right of preview, or dock back |
+| `Ctrl+E` | Move active editor tab to dedicated panel right of preview, or dock back |
+| `Ctrl+Alt+Right` / `L` | Move / split active editor tab to the right |
+| `Ctrl+Alt+Left` / `H` | Move / split active editor tab to the left |
+| `Ctrl+Alt+Down` / `J` | Move / split active editor tab down |
+| `Ctrl+Alt+Up` / `K` | Move / split active editor tab up |
+| `Right-click tab` | Context menu to move, split, or close the editor tab |
 | `Ctrl+R` / `F2` | Rename active buffer tab |
 
 ## 📝 Build

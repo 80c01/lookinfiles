@@ -79,6 +79,8 @@ typedef struct {
     gint mm_cache_h;
     gboolean mm_dragging;
     guint mm_vis_source;
+    GtkWidget* nb;        /* GtkNotebook containing this tab */
+    gpointer app;         /* pointer to AppData */
 } EditorTab;
 
 /* Virtual workspace layout state (dynamic workspaces like Ubuntu) */
@@ -174,6 +176,7 @@ typedef struct {
     gboolean editor_dedicated;  /* TRUE when editor tabs are in dedicated panel right of preview */
     gdouble editor_frac;        /* split ratio between preview panel and editor panel */
     GList* editors;             /* EditorTab*, order matching tab order */
+    EditorTab* last_focused_editor; /* last focused editor tab */
 
     /* Video preview */
     GtkWidget* preview_stack;   /* GtkStack: "text" (text_view), "video" (video_player), or "audio" (audio_player) */

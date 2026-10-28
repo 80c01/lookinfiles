@@ -272,6 +272,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_hexpand(notebook, TRUE);
     gtk_widget_set_vexpand(notebook, TRUE);
     gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), TRUE);
+    gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "editor-tabs");
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
                              gtk_label_new("📄 Preview"));
     /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
@@ -296,6 +297,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_hexpand(editor_notebook, TRUE);
     gtk_widget_set_vexpand(editor_notebook, TRUE);
     gtk_notebook_set_scrollable(GTK_NOTEBOOK(editor_notebook), TRUE);
+    gtk_notebook_set_group_name(GTK_NOTEBOOK(editor_notebook), "editor-tabs");
 
     GtkWidget* editor_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(editor_box, "editor-panel");
