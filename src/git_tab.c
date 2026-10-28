@@ -1,6 +1,6 @@
 #include "git_tab.h"
+#include "text_style.h"
 #include "git_utils.h"
-#include "viewer.h"
 #include <string.h>
 
 enum {

@@ -1,4 +1,5 @@
 #include "topbar.h"
+#include "text_style.h"
 #include "tree_nav.h"
 #include "theme.h"
 #include "status_bar.h"

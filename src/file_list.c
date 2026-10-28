@@ -1,4 +1,5 @@
 #include "file_list.h"
+#include "text_style.h"
 #include "topbar.h"
 #include "tree_nav.h"
 #include "workspace.h"

@@ -1,5 +1,5 @@
 #include "pdf.h"
-#include "viewer.h"
+#include "text_style.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 

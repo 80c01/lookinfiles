@@ -1,6 +1,6 @@
 #include "audio.h"
+#include "text_style.h"
 #include "file_types.h"
-#include "viewer.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 

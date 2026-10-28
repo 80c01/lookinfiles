@@ -1,10 +1,10 @@
 #include "editor_modes.h"
+#include "text_style.h"
 #include "status_bar.h"
 #include "file_types.h"
 #include "editor.h"
 #include "file_list.h"
 #include "orgmode.h"
-#include "viewer.h"
 #include <ctype.h>
 #include <string.h>
 

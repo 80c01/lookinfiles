@@ -3,14 +3,6 @@
 
 #include "app_types.h"
 
-void set_view_monospace(GtkWidget* view, gboolean monospace);
-gboolean is_code_file(const gchar* name);
-void apply_viewer_language(AppData* app, const gchar* name);
-void apply_viewer_background(GtkWidget* view);
-#ifdef HAVE_GSV
-void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view);
-#endif
-
 void viewer_scroll_lines(AppData* app, gint lines);
 void viewer_scroll_page(AppData* app, gint direction);
 void viewer_goto(AppData* app, gboolean top);
