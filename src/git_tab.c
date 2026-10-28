@@ -314,6 +314,17 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
         g_signal_handlers_block_by_func(sel, (gpointer)on_git_selection_changed, app);
     }
 
+    /* Follow the newest commit unless an older one was selected on purpose */
+    gboolean follow_head = TRUE;
+    GtkTreeIter old_first;
+    if (app->git_selected_hash != NULL &&
+        gtk_tree_model_get_iter_first(GTK_TREE_MODEL(app->git_store), &old_first)) {
+        gchar* old_head = NULL;
+        gtk_tree_model_get(GTK_TREE_MODEL(app->git_store), &old_first, GIT_COL_HASH, &old_head, -1);
+        follow_head = (g_strcmp0(old_head, app->git_selected_hash) == 0);
+        g_free(old_head);
+    }
+
     gtk_list_store_clear(app->git_store);
 
     if (td->commits != NULL) {
@@ -334,11 +345,25 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
         g_signal_handlers_unblock_by_func(sel, (gpointer)on_git_selection_changed, app);
     }
 
-    /* Select first commit if available */
+    /* Select the newest commit, or keep an older commit the user selected */
     GtkTreeIter first_iter;
     if (gtk_tree_model_get_iter_first(GTK_TREE_MODEL(app->git_store), &first_iter)) {
+        GtkTreeIter target = first_iter;
+        if (!follow_head && app->git_selected_hash != NULL) {
+            GtkTreeIter it = first_iter;
+            do {
+                gchar* hash = NULL;
+                gtk_tree_model_get(GTK_TREE_MODEL(app->git_store), &it, GIT_COL_HASH, &hash, -1);
+                gboolean match = (g_strcmp0(hash, app->git_selected_hash) == 0);
+                g_free(hash);
+                if (match) {
+                    target = it;
+                    break;
+                }
+            } while (gtk_tree_model_iter_next(GTK_TREE_MODEL(app->git_store), &it));
+        }
         if (sel != NULL) {
-            gtk_tree_selection_select_iter(sel, &first_iter);
+            gtk_tree_selection_select_iter(sel, &target);
             on_git_selection_changed(sel, app);
         }
     } else {
@@ -349,6 +374,17 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
             gtk_text_buffer_set_text(app->git_detail_buf, "", -1);
         }
     }
+}
+
+/* Re-read the history of the current repository even if the root is unchanged
+ * (called when .git changed: commit, checkout, reset, pull...) */
+void git_tab_reload(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    g_free(app->git_current_root);
+    app->git_current_root = NULL;
+    git_tab_update(app, app->base_dir);
 }
 
 void git_tab_update(AppData* app, const gchar* dir) {

@@ -10,14 +10,18 @@ static gboolean deferred_refresh(gpointer data) {
     AppData* app = (AppData*)data;
     app->refresh_source = 0;
 
-    if (app->dir_dirty) {
-        app->dir_dirty = FALSE;
-        app->git_dirty = FALSE;
-        app_emit(app, APP_EVENT_FILES_CHANGED);
-        git_tab_update(app, app->base_dir);
-    } else if (app->git_dirty) {
-        app->git_dirty = FALSE;
+    gboolean dir_changed = app->dir_dirty;
+    gboolean git_changed = app->git_dirty;
+    app->dir_dirty = FALSE;
+    app->git_dirty = FALSE;
+    if (dir_changed) {
+        app_emit(app, APP_EVENT_FILES_CHANGED); /* rescans git badges too */
+    } else if (git_changed) {
         app_emit(app, APP_EVENT_GIT_STATUS_CHANGED);
+    }
+    if (git_changed) {
+        git_tab_reload(app); /* .git changed: commits may have been added */
+    } else if (dir_changed) {
         git_tab_update(app, app->base_dir);
     }
     if (app->file_dirty) {

@@ -152,6 +152,12 @@ key ctrl+shift+r;       shot remote_view
 key ctrl+shift+r;       shot files_view_back
 echo "external" > "$FIX/work/external.txt"   # created outside the app: the tree must update
 sleep 3;                shot external_file_created   # let the async rescan settle
+xdotool mousemove 508 50 click 1     # Git Commits tab
+# Commit made outside the app: the Git tab must list it (fixed date: stable shot)
+( cd "$FIX/work" && git add external.txt &&
+  GIT_AUTHOR_DATE="2000-01-02T00:00:00Z" GIT_COMMITTER_DATE="2000-01-02T00:00:00Z" \
+      git -c user.email=ui@test -c user.name=ui commit -qm "external commit" )
+sleep 3;                shot git_tab_after_commit
 key ctrl+t; sleep 1;    shot terminal
 key ctrl+q
 
