@@ -42,6 +42,9 @@ The codebase is organized into modules under `src/`:
 - **`notes.c` / `notes.h`**: Full notes & notebooks manager organizing notes into notebooks
   with custom icons, a trash bin for soft-deleted items with restoration support, custom manual
   reordering (`Shift+J`/`Shift+K`), sorting modes, move dialogs, and XML persistence (`notes.xml`).
+- **`remote.c` / `remote.h`**: Remote SSH machine manager (`SIDEBAR_VIEW_REMOTE`), auto-discovery
+  from `~/.ssh/config`, manual management with XML persistence (`remotes.xml`), SSHFS mounting
+  for seamless remote browsing/editing in Explorer, and automatic remote SSH terminal integration.
 - **`viewer.c` / `viewer.h`**: Right-pane viewer logic, file content loading, syntax
   highlighting and Dark+ scheme setup, text scrolling/jumping, selection changed listener,
   and filesystem monitoring (`GFileMonitor`).

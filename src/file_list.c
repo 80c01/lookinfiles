@@ -10,6 +10,7 @@
 #include "ui.h"
 #include "bookmarks.h"
 #include "notes.h"
+#include "remote.h"
 
 /* File extension ("" if none), ignoring dot-files initial dot */
 const gchar* file_extension(const gchar* name) {
@@ -1194,6 +1195,26 @@ void toggle_notes_view(AppData* app) {
     select_first_row(app);
 }
 
+void toggle_remote_view(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
+        gtk_widget_set_visible(app->left_vbox, TRUE);
+        workspace_apply_positions(app);
+    }
+    if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
+        app->sidebar_view = SIDEBAR_VIEW_FILES;
+        app->show_bookmarks = FALSE;
+    } else {
+        app->sidebar_view = SIDEBAR_VIEW_REMOTE;
+        app->show_bookmarks = FALSE;
+    }
+    update_path_label(app);
+    refresh_listing(app);
+    select_first_row(app);
+}
+
 
 
 typedef struct {
@@ -1858,9 +1879,20 @@ void update_path_label(AppData* app) {
                                    (app->base_dir[home_len] == '\0' ||
                                     app->base_dir[home_len] == '/'));
 
+            RemoteMachine* act_rm = remote_get_active_machine(app);
+            gboolean is_remote_mount = (act_rm != NULL && act_rm->mount_point != NULL &&
+                                        g_str_has_prefix(app->base_dir, act_rm->mount_point));
+
             gchar* accum = NULL;
             const gchar* rest = NULL;
-            if (under_home) {
+            if (is_remote_mount) {
+                gsize mount_len = strlen(act_rm->mount_point);
+                gchar* root_title = g_strdup_printf("🌐 %s", act_rm->name ? act_rm->name : act_rm->host);
+                BreadcrumbSeg root_seg = { root_title, g_strdup(act_rm->mount_point) };
+                g_array_append_val(segs, root_seg);
+                accum = g_strdup(act_rm->mount_point);
+                rest = app->base_dir + mount_len;
+            } else if (under_home) {
                 BreadcrumbSeg root_seg = { g_strdup("🏠 ~"), g_strdup(home) };
                 g_array_append_val(segs, root_seg);
                 accum = g_strdup(home);
@@ -1993,6 +2025,19 @@ void update_path_label(AppData* app) {
         }
     }
     if (app->term_btn != NULL) {
+        RemoteMachine* act_rm = remote_get_active_machine(app);
+        if (act_rm != NULL) {
+            gchar* term_label = g_strdup_printf("🌐 >_ SSH: %s", act_rm->name ? act_rm->name : act_rm->host);
+            gtk_button_set_label(GTK_BUTTON(app->term_btn), term_label);
+            g_free(term_label);
+            gchar* tip = g_strdup_printf("Connected to remote machine: %s (%s). Click to toggle SSH terminal (Ctrl+T)",
+                                         act_rm->name ? act_rm->name : act_rm->host, act_rm->host);
+            gtk_widget_set_tooltip_text(app->term_btn, tip);
+            g_free(tip);
+        } else {
+            gtk_button_set_label(GTK_BUTTON(app->term_btn), ">_ Terminal");
+            gtk_widget_set_tooltip_text(app->term_btn, "Toggle embedded terminal panel (Ctrl+T)");
+        }
         if (term_vis) {
             gtk_widget_add_css_class(app->term_btn, "pill-active");
         } else {
@@ -2015,6 +2060,8 @@ void update_path_label(AppData* app) {
             title = "NOTES";
         } else if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
             title = "BOOKMARKS";
+        } else if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
+            title = "REMOTE (SSH)";
         }
         gtk_label_set_text(GTK_LABEL(app->sidebar_title), title);
         git_tab_update(app, app->base_dir);
@@ -2040,6 +2087,13 @@ void update_path_label(AppData* app) {
             gtk_widget_remove_css_class(app->sidebar_notes_btn, "sidebar-icon-active");
         }
     }
+    if (app->sidebar_remote_btn != NULL) {
+        if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
+            gtk_widget_add_css_class(app->sidebar_remote_btn, "sidebar-icon-active");
+        } else {
+            gtk_widget_remove_css_class(app->sidebar_remote_btn, "sidebar-icon-active");
+        }
+    }
     if (app->sidebar_files_toolbar != NULL) {
         gtk_widget_set_visible(app->sidebar_files_toolbar,
                                app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
@@ -2051,6 +2105,10 @@ void update_path_label(AppData* app) {
     if (app->sidebar_notes_actions != NULL) {
         gtk_widget_set_visible(app->sidebar_notes_actions,
                                app->sidebar_view == SIDEBAR_VIEW_NOTES);
+    }
+    if (app->sidebar_remote_toolbar != NULL) {
+        gtk_widget_set_visible(app->sidebar_remote_toolbar,
+                               app->sidebar_view == SIDEBAR_VIEW_REMOTE);
     }
     if (app->sidebar_files_hidden_btn != NULL) {
         if (app->show_hidden) {
@@ -2342,6 +2400,11 @@ void refresh_listing_with_path(AppData* app, const gchar* select_path) {
         notes_refresh(app);
         return;
     }
+    if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
+        /* Remote machines live in memory & config: rebuild synchronously */
+        remote_refresh(app);
+        return;
+    }
     start_async_dir_scan(app, app->base_dir, select_path, NULL);
     update_path_label(app);
 }
@@ -2389,6 +2452,8 @@ void activate_selected_entry(AppData* app) {
         notes_activate_selected(app);
     } else if (g_strcmp0(type, "bookmark") == 0 || g_strcmp0(type, "bm_folder") == 0) {
         bookmarks_activate_selected(app);
+    } else if (g_strcmp0(type, "remote") == 0 || app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
+        remote_activate_selected(app);
     } else if (g_strcmp0(type, "dir") == 0) {
         GtkTreePath* path = gtk_tree_model_get_path(app->model, &it);
         if (gtk_tree_view_row_expanded(app->tree_view, path)) {
@@ -2442,6 +2507,11 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
 
     /* Notes manager keys (new note, new notebook, edit, move, delete, restore, reorder) */
     if (notes_handle_key(app, keyval, state)) {
+        return TRUE;
+    }
+
+    /* Remote manager keys (connect, terminal, add, edit, delete) */
+    if (remote_handle_key(app, keyval, state)) {
         return TRUE;
     }
 

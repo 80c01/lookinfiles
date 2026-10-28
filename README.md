@@ -34,10 +34,16 @@ Simple graphical application to browse the file system.
   - **Manual Ordering & Sorting**: place notes and notebooks in any custom order using `Shift+K` (up) and `Shift+J` (down), or cycle sorting modes (`⇅`: Manual, A-Z, Z-A).
   - **Context Menus**: comprehensive secondary-click context menus for notes, notebooks, and the trash bin.
 - ✅ Full Bookmark Manager: store, name, and organize bookmarks to directories, files, or web URLs in hierarchical folders with XML persistence (`~/.config/explorateur_fichiers/bookmarks.xml`, with automatic migration of legacy flat bookmarks), inline child counts, missing-location alerts (`⚠`), and right-click context menu.
-- ✅ Explorer, Bookmarks & Notes mini action bars: dedicated action toolbars positioned right beneath the header across sidebar views:
+- ✅ Remote SSH Mode: a dedicated "REMOTE" mode accessible from the explorer header via the mini `🌐` icon or `Ctrl+Shift+R`. Browse, preview, and edit files on remote SSH servers as smoothly as local files:
+  - **Machine Manager**: auto-discovers SSH servers from `~/.ssh/config` and supports adding, editing, and deleting custom remote hosts with XML persistence (`~/.config/explorateur_fichiers/remotes.xml`).
+  - **Remote Browsing via SSHFS**: connecting mounts the remote machine via SSHFS and switches directly to the Explorer file tree view, enabling tree navigation, file previews, and full multi-tab editing on the remote server.
+  - **Remote Terminal Integration**: in any workspace connected to a remote host, the terminal button and `Ctrl+T` / `Ctrl+Shift+T` automatically launch an interactive SSH shell directly into the remote machine.
+  - **Per-Workspace Remote Binding**: virtual layouts/workspaces remember remote connections, allowing seamless switching between local and remote development environments.
+- ✅ Explorer, Bookmarks, Notes & Remote mini action bars: dedicated action toolbars positioned right beneath the header across sidebar views:
   - **Files Explorer**: create new file (`📄+`), create new folder (`📁+`), toggle hidden files (`👁`), cycle sort mode (`⇅`), and toggle collapse/expand folders (`▲▼`).
   - **Bookmarks view**: add bookmark (`🔖+` or `a`), create folder (`📁+` or `A`), edit/rename/move (`✎` or `F2`/`r`/`e`), delete (`🗑` or `d`/`Delete`), toggle sort order (`⇅`), and toggle collapse/expand bookmarks (`▲▼`).
   - **Notes view**: create note (`➕` or `a`), create notebook (`📓+` or `Shift+A`), rename (`✎` or `F2`/`r`), move to notebook (`📁→` or `m`), delete to trash (`🗑` or `d`/`Delete`), toggle sort order (`⇅`), toggle collapse/expand (`▲▼`), and empty trash (`🧹`).
+  - **Remote view**: connect/mount (`🔌` or `c`/`Enter`), open remote SSH terminal (`>_` or `t`), add machine (`➕` or `a`), edit machine (`✎` or `e`/`F2`), delete machine (`🗑` or `d`/`Delete`), and refresh/re-scan `~/.ssh/config` (`↻` or `r`).
 - ✅ Focused panel highlight: the panel that owns active keyboard focus (Explorer sidebar, Preview panel, Editor panel, Terminal panel, or Help cheatsheet) is dynamically highlighted with a subtle VS Code-style blue accent outline (`#0078d4`) and header emphasis, updating live as focus cycles (`Alt+Left` / `Alt+Right`) or when clicking widgets.
 
 ## ⌨️ Keyboard shortcuts
@@ -77,6 +83,7 @@ Simple graphical application to browse the file system.
 | `d` / `Delete` | Delete selected bookmark or folder in bookmarks view |
 | `J` / `K` (Shift) | Move selected bookmark or folder down / up within its folder |
 | `Ctrl+U` | Switch between files and notes view in the explorer panel |
+| `Ctrl+Shift+R` | Switch between files and remote SSH machines view in the explorer panel |
 | `a` / `A` | In Notes view: create new note (`a`) / new notebook with custom icon (`Shift+A`) |
 | `F2` / `r` / `e` | In Notes view: edit/rename note or notebook (name and custom icon) |
 | `i` | In Notes view: change notebook custom icon |
@@ -84,6 +91,12 @@ Simple graphical application to browse the file system.
 | `d` / `Delete` | In Notes view: move note to trash (or permanently delete from trash); delete notebook |
 | `R` (Shift) | In Notes view: restore trashed note to original notebook |
 | `J` / `K` (Shift) | In Notes view: manually reorder selected note or notebook down / up |
+| `c` / `Enter` | In Remote view: connect / mount selected machine and browse in Explorer |
+| `t` | In Remote view: open SSH terminal to selected machine |
+| `a` | In Remote view: add new SSH machine |
+| `e` / `F2` | In Remote view: edit selected machine configuration |
+| `d` / `Delete` | In Remote view: delete selected machine configuration |
+| `r` | In Remote view: refresh / re-scan `~/.ssh/config` |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
 | `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), rendered pages / text extraction (PDF), or player / raw header mode (video/audio) |

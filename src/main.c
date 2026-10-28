@@ -11,6 +11,7 @@
 #include "git_tab.h"
 #include "bookmarks.h"
 #include "notes.h"
+#include "remote.h"
 #include <unistd.h>
 
 static void on_window_destroy(GtkWidget* widget, gpointer data) {
@@ -431,6 +432,8 @@ int main(int argc, char** argv) {
     bookmarks_attach_context_menu(app);
     notes_init(app);
     notes_attach_context_menu(app);
+    remote_init(app);
+    remote_attach_context_menu(app);
     populate_store(store, app, start_dir, FALSE, SORT_NAME);
     g_object_unref(store);
     app->text_view = text_view;
@@ -636,6 +639,7 @@ int main(int argc, char** argv) {
     }
     bookmarks_free(app);
     notes_free(app);
+    remote_free(app);
     if (app->buffers != NULL) {
         g_ptr_array_unref(app->buffers);
     }
@@ -650,6 +654,8 @@ int main(int argc, char** argv) {
     for (gint i = 0; i < app->num_workspaces; i++) {
         editor_free_tabs(app, app->workspaces[i].editors, (i == app->current_ws));
         app->workspaces[i].editors = NULL;
+        g_free(app->workspaces[i].remote_id);
+        app->workspaces[i].remote_id = NULL;
     }
 
     g_main_loop_unref(loop);

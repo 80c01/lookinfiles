@@ -10,6 +10,7 @@
 #include "search.h"
 #include "ui.h"
 #include "bookmarks.h"
+#include "remote.h"
 
 #ifdef HAVE_GSV
 /* VS Code Dark+ palette, as a GtkSourceView style scheme. */
@@ -1275,6 +1276,65 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
                        COL_NAME, &name,
                        COL_TYPE, &type,
                        COL_PATH, &full, -1);
+
+    if (g_strcmp0(type, "remote") == 0) {
+        if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        }
+        audio_preview_stop(app);
+        video_preview_stop(app);
+        if (app->preview_stack != NULL) {
+            gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
+        }
+        if (app->preview_cancellable != NULL) {
+            g_cancellable_cancel(app->preview_cancellable);
+            g_clear_object(&app->preview_cancellable);
+        }
+
+        RemoteMachine* rm = remote_find_by_id(app, full);
+        if (rm != NULL && app->buffer != NULL) {
+            GString* s = g_string_new(NULL);
+            g_string_append_printf(s, "🌐 Remote Machine: %s\n", rm->name ? rm->name : "Unknown");
+            g_string_append(s, "============================================================\n\n");
+            g_string_append_printf(s, "  Status:        %s\n", rm->is_connected ? "🟢 Connected (Mounted via SSHFS)" : "⚪ Disconnected");
+            g_string_append_printf(s, "  Host:          %s\n", rm->host ? rm->host : "(none)");
+            g_string_append_printf(s, "  User:          %s\n", (rm->user && *rm->user) ? rm->user : "(default)");
+            g_string_append_printf(s, "  Port:          %d\n", rm->port);
+            g_string_append_printf(s, "  Remote Path:   %s\n", rm->remote_path ? rm->remote_path : "~");
+            if (rm->identity_file && *rm->identity_file) {
+                g_string_append_printf(s, "  Identity Key:  %s\n", rm->identity_file);
+            }
+            if (rm->is_connected && rm->mount_point) {
+                g_string_append_printf(s, "  Mount Point:   %s\n", rm->mount_point);
+            }
+            if (rm->from_ssh_config) {
+                g_string_append(s, "  Source:        Auto-discovered from ~/.ssh/config\n");
+            } else {
+                g_string_append(s, "  Source:        Configured manually\n");
+            }
+            g_string_append(s, "\nQuick Actions:\n");
+            g_string_append(s, "  • Double-click / Enter: Connect and browse remote files in Explorer\n");
+            g_string_append(s, "  • Ctrl+T:               Open SSH terminal to this machine\n");
+            g_string_append(s, "  • e:                    Edit machine configuration\n");
+            g_string_append(s, "  • d / Delete:           Remove machine\n");
+            g_string_append(s, "  • a:                    Add new remote machine\n");
+            g_string_append(s, "  • r:                    Refresh list / re-scan ~/.ssh/config\n");
+
+            gtk_text_buffer_set_text(app->buffer, s->str, -1);
+            g_string_free(s, TRUE);
+        }
+        g_free(app->viewed_path);
+        g_free(app->viewed_name);
+        app->viewed_path = NULL;
+        app->viewed_name = NULL;
+        monitor_file(app, NULL);
+
+        g_free(name);
+        g_free(type);
+        g_free(full);
+        update_status_bar(app);
+        return;
+    }
 
     /* Bookmark folders, URL bookmarks and bookmarks to missing locations have no preview */
     gboolean is_bookmark = (g_strcmp0(type, "bookmark") == 0);

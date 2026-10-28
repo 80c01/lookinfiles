@@ -47,6 +47,7 @@ SRCS = src/main.c \
        src/file_list.c \
        src/bookmarks.c \
        src/notes.c \
+       src/remote.c \
        src/viewer.c \
        src/video.c \
        src/audio.c \

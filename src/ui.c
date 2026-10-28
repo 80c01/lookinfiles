@@ -8,6 +8,7 @@
 #include "editor.h"
 #include "bookmarks.h"
 #include "notes.h"
+#include "remote.h"
 
 gboolean window_is_fullscreen(GtkWindow* win) {
     return gtk_window_is_fullscreen(win);
@@ -82,6 +83,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},
     {"Global", "f", "Toggle fullscreen (Ctrl+F keeps its paging role)"},
     {"Global", "Ctrl+Shift+L", "Stack the terminal pane under the viewer, or put it back beside it (the explorer panel stays fixed)"},
+    {"Global", "Ctrl+Shift+R", "Toggle Remote (SSH) machines view in sidebar"},
     {"Global", "Ctrl+Q", "Quit"},
 };
 
@@ -485,6 +487,14 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         !(state & GDK_SHIFT_MASK) &&
         (keyval == GDK_KEY_e || keyval == GDK_KEY_E)) {
         editor_move_tab_dedicated(app, NULL);
+        return TRUE;
+    }
+
+    /* Ctrl+Shift+R: toggle Remote (SSH) view */
+    if ((state & GDK_CONTROL_MASK) &&
+        (state & GDK_SHIFT_MASK) &&
+        (keyval == GDK_KEY_r || keyval == GDK_KEY_R)) {
+        toggle_remote_view(app);
         return TRUE;
     }
 
@@ -952,6 +962,9 @@ void workspace_save_current(AppData* app) {
     }
     ws->editors = app->editors;
 
+    g_free(ws->remote_id);
+    ws->remote_id = g_strdup(app->current_remote_id);
+
     g_free(ws->base_dir);
     ws->base_dir = g_strdup(app->base_dir);
 
@@ -1206,6 +1219,8 @@ void workspace_switch(AppData* app, gint idx) {
     app->show_bookmarks = ws->show_bookmarks;
     app->sidebar_view = ws->sidebar_view;
     app->sort_mode = ws->sort_mode;
+    g_free(app->current_remote_id);
+    app->current_remote_id = g_strdup(ws->remote_id);
     if (ws->base_dir != NULL && g_strcmp0(app->base_dir, ws->base_dir) != 0) {
         g_free(app->base_dir);
         app->base_dir = g_strdup(ws->base_dir);
@@ -1694,6 +1709,49 @@ static void on_sidebar_notes_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
+static void on_sidebar_remote_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app == NULL) {
+        return;
+    }
+    if (app->sidebar_view != SIDEBAR_VIEW_REMOTE) {
+        toggle_remote_view(app);
+    } else if (app->tree_view != NULL) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+}
+
+static void on_sidebar_remote_add_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    remote_add_dialog((AppData*)data);
+}
+
+static void on_sidebar_remote_connect_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    remote_toggle_connect_selected((AppData*)data);
+}
+
+static void on_sidebar_remote_term_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    remote_open_terminal_selected((AppData*)data);
+}
+
+static void on_sidebar_remote_edit_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    remote_edit_dialog((AppData*)data);
+}
+
+static void on_sidebar_remote_delete_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    remote_delete_selected((AppData*)data);
+}
+
+static void on_sidebar_remote_refresh_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    remote_refresh((AppData*)data);
+}
+
 static void on_sidebar_files_new_file_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     create_new_file_in_tree((AppData*)data);
@@ -1828,7 +1886,17 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(buf_btn, "clicked", G_CALLBACK(on_sidebar_notes_clicked), app);
     gtk_box_append(GTK_BOX(title_row), buf_btn);
 
-    if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES) {
+    GtkWidget* remote_btn = gtk_button_new_with_label("🌐");
+    gtk_button_set_has_frame(GTK_BUTTON(remote_btn), FALSE);
+    gtk_widget_set_focusable(remote_btn, FALSE);
+    gtk_widget_add_css_class(remote_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_btn, "Remote SSH (Ctrl+Shift+R)");
+    g_signal_connect(remote_btn, "clicked", G_CALLBACK(on_sidebar_remote_clicked), app);
+    gtk_box_append(GTK_BOX(title_row), remote_btn);
+
+    if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
+        gtk_widget_add_css_class(remote_btn, "sidebar-icon-active");
+    } else if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES) {
         gtk_widget_add_css_class(buf_btn, "sidebar-icon-active");
     } else if (app != NULL && (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks)) {
         gtk_widget_add_css_class(bm_btn, "sidebar-icon-active");
@@ -2038,15 +2106,80 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(buf_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES));
     gtk_box_append(GTK_BOX(header), buf_toolbar);
 
+    /* 4. Remote SSH Toolbar: mini action icons */
+    GtkWidget* remote_toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    gtk_widget_set_name(remote_toolbar, "sidebar-remote-toolbar");
+
+    GtkWidget* remote_section = gtk_label_new("");
+    gtk_widget_add_css_class(remote_section, "sidebar-section-title");
+    gtk_label_set_xalign(GTK_LABEL(remote_section), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(remote_section), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_hexpand(remote_section, TRUE);
+    gtk_widget_set_visible(remote_section, FALSE);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_section);
+
+    GtkWidget* remote_conn_btn = gtk_button_new_with_label("🔌");
+    gtk_button_set_has_frame(GTK_BUTTON(remote_conn_btn), FALSE);
+    gtk_widget_set_focusable(remote_conn_btn, FALSE);
+    gtk_widget_add_css_class(remote_conn_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_conn_btn, "Connect / Disconnect Selected (Enter / c)");
+    g_signal_connect(remote_conn_btn, "clicked", G_CALLBACK(on_sidebar_remote_connect_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_conn_btn);
+
+    GtkWidget* remote_term_btn = gtk_button_new_with_label(">_");
+    gtk_button_set_has_frame(GTK_BUTTON(remote_term_btn), FALSE);
+    gtk_widget_set_focusable(remote_term_btn, FALSE);
+    gtk_widget_add_css_class(remote_term_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_term_btn, "Open Remote SSH Terminal (t)");
+    g_signal_connect(remote_term_btn, "clicked", G_CALLBACK(on_sidebar_remote_term_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_term_btn);
+
+    GtkWidget* remote_add_btn = gtk_button_new_with_label("➕");
+    gtk_button_set_has_frame(GTK_BUTTON(remote_add_btn), FALSE);
+    gtk_widget_set_focusable(remote_add_btn, FALSE);
+    gtk_widget_add_css_class(remote_add_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_add_btn, "Add Remote Machine (a)");
+    g_signal_connect(remote_add_btn, "clicked", G_CALLBACK(on_sidebar_remote_add_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_add_btn);
+
+    GtkWidget* remote_edit_btn = gtk_button_new_with_label("✎");
+    gtk_button_set_has_frame(GTK_BUTTON(remote_edit_btn), FALSE);
+    gtk_widget_set_focusable(remote_edit_btn, FALSE);
+    gtk_widget_add_css_class(remote_edit_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_edit_btn, "Edit Remote Machine (F2 / r)");
+    g_signal_connect(remote_edit_btn, "clicked", G_CALLBACK(on_sidebar_remote_edit_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_edit_btn);
+
+    GtkWidget* remote_del_btn = gtk_button_new_with_label("🗑");
+    gtk_button_set_has_frame(GTK_BUTTON(remote_del_btn), FALSE);
+    gtk_widget_set_focusable(remote_del_btn, FALSE);
+    gtk_widget_add_css_class(remote_del_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_del_btn, "Delete Remote Machine (Delete / d)");
+    g_signal_connect(remote_del_btn, "clicked", G_CALLBACK(on_sidebar_remote_delete_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_del_btn);
+
+    GtkWidget* remote_ref_btn = gtk_button_new_with_label("↻");
+    gtk_button_set_has_frame(GTK_BUTTON(remote_ref_btn), FALSE);
+    gtk_widget_set_focusable(remote_ref_btn, FALSE);
+    gtk_widget_add_css_class(remote_ref_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_ref_btn, "Refresh Remote Machines (R)");
+    g_signal_connect(remote_ref_btn, "clicked", G_CALLBACK(on_sidebar_remote_refresh_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_ref_btn);
+
+    gtk_widget_set_visible(remote_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_REMOTE));
+    gtk_box_append(GTK_BOX(header), remote_toolbar);
+
     if (app != NULL) {
         app->sidebar_title = title;
         app->sidebar_section = section;
         app->sidebar_files_btn = files_btn;
         app->sidebar_bm_btn = bm_btn;
         app->sidebar_notes_btn = buf_btn;
+        app->sidebar_remote_btn = remote_btn;
         app->sidebar_files_toolbar = files_toolbar;
         app->sidebar_bm_toolbar = bm_toolbar;
         app->sidebar_notes_actions = buf_toolbar;
+        app->sidebar_remote_toolbar = remote_toolbar;
         app->sidebar_files_hidden_btn = files_hidden_btn;
     }
     return header;

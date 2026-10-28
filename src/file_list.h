@@ -64,6 +64,7 @@ void refresh_listing_with_path(AppData* app, const gchar* select_path);
 void toggle_hidden_files(AppData* app);
 void toggle_bookmarks_view(AppData* app);
 void toggle_notes_view(AppData* app);
+void toggle_remote_view(AppData* app);
 void cycle_sort_mode(AppData* app);
 void create_new_file_in_tree(AppData* app);
 void create_new_folder_in_tree(AppData* app);

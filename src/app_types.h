@@ -52,7 +52,8 @@ enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 enum {
     SIDEBAR_VIEW_FILES = 0,
     SIDEBAR_VIEW_BOOKMARKS,
-    SIDEBAR_VIEW_NOTES
+    SIDEBAR_VIEW_NOTES,
+    SIDEBAR_VIEW_REMOTE
 };
 
 /* Entry collected for directory sorting */
@@ -105,6 +106,7 @@ typedef struct {
     gint notebook_page;
     GList* editors;
     gboolean render_raw;
+    gchar* remote_id;    /* ID of remote machine if workspace is connected to remote */
 #ifdef HAVE_VTE
     GtkWidget* term_box;
     GtkWidget* last_focused_vte;
@@ -271,10 +273,14 @@ typedef struct {
     GtkWidget* sidebar_files_btn;   /* mini icon button: switch to Explorer view */
     GtkWidget* sidebar_bm_btn;      /* mini icon button: switch to Bookmarks view */
     GtkWidget* sidebar_notes_btn;   /* mini icon button: switch to Notes view */
+    GtkWidget* sidebar_remote_btn;  /* mini icon button: switch to Remote (SSH) view */
     GtkWidget* sidebar_notes_actions; /* mini icon bar for note actions (new, folder, collapse, expand) */
     GtkWidget* sidebar_files_toolbar; /* mini action bar for files tree */
     GtkWidget* sidebar_bm_toolbar;    /* mini action bar for bookmarks */
+    GtkWidget* sidebar_remote_toolbar; /* mini action bar for remote machines */
     GtkWidget* sidebar_files_hidden_btn; /* toggle hidden button in files action bar */
+    GList* remotes;                   /* list of RemoteMachine* */
+    gchar* current_remote_id;         /* active remote machine ID for the current workspace */
     gboolean bookmarks_sort_desc;        /* sort order for bookmarks view */
     GtkWidget* status_branch;     /* bottom bar: Git branch of base_dir */
     GtkWidget* status_selection;  /* bottom bar: selected entry name */

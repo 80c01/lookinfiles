@@ -1,5 +1,6 @@
 #include "terminal.h"
 #include "file_list.h"
+#include "remote.h"
 #include "ui.h"
 
 #ifdef HAVE_VTE
@@ -53,6 +54,41 @@ static void on_spawn_result(VteTerminal* term, GPid pid, GError* error,
 }
 
 static void spawn_shell(AppData* app, VteTerminal* term) {
+    RemoteMachine* rm = remote_get_active_machine(app);
+    if (rm != NULL && rm->host != NULL && rm->host[0] != '\0') {
+        GPtrArray* args = g_ptr_array_new_with_free_func(g_free);
+        g_ptr_array_add(args, g_strdup("ssh"));
+        g_ptr_array_add(args, g_strdup("-t"));
+        if (rm->port > 0 && rm->port != 22) {
+            g_ptr_array_add(args, g_strdup("-p"));
+            g_ptr_array_add(args, g_strdup_printf("%d", rm->port));
+        }
+        if (rm->identity_file != NULL && rm->identity_file[0] != '\0') {
+            g_ptr_array_add(args, g_strdup("-i"));
+            g_ptr_array_add(args, g_strdup(rm->identity_file));
+        }
+
+        gchar* target = NULL;
+        if (rm->user != NULL && rm->user[0] != '\0') {
+            target = g_strdup_printf("%s@%s", rm->user, rm->host);
+        } else {
+            target = g_strdup(rm->host);
+        }
+        g_ptr_array_add(args, target);
+
+        if (rm->remote_path != NULL && rm->remote_path[0] != '\0' &&
+            g_strcmp0(rm->remote_path, "~") != 0 && g_strcmp0(rm->remote_path, "") != 0) {
+            g_ptr_array_add(args, g_strdup_printf("cd %s 2>/dev/null; exec $SHELL -l", rm->remote_path));
+        }
+        g_ptr_array_add(args, NULL);
+
+        vte_terminal_spawn_async(term, VTE_PTY_DEFAULT, NULL, (gchar**)args->pdata, NULL,
+                                 G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, -1, NULL,
+                                 on_spawn_result, app);
+        g_ptr_array_free(args, TRUE);
+        return;
+    }
+
     const gchar* shell = g_getenv("SHELL");
     if (shell == NULL || shell[0] == '\0') {
         shell = "/bin/bash";
