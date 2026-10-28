@@ -48,10 +48,28 @@ static void file_name_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* ce
     (void)data;
     gchar* label = NULL;
     gchar* status = NULL;
+    gchar* type = NULL;
     gtk_tree_model_get(model, iter,
                        COL_LABEL, &label,
                        COL_GIT_STATUS, &status,
+                       COL_TYPE, &type,
                        -1);
+
+    /* Bookmarks: show the target right after the name in the same cell, so the
+     * name keeps priority and the target uses all the remaining width (the
+     * whole line is ellipsized at the end only when space runs out). */
+    if (g_strcmp0(type, "bookmark") == 0 && status != NULL && status[0] != '\0') {
+        gchar* name_esc = g_markup_escape_text(label ? label : "", -1);
+        gchar* markup = g_strdup_printf("%s  %s", name_esc, status); /* status is escaped markup */
+        g_object_set(cell, "markup", markup, "foreground-set", FALSE, NULL);
+        g_free(markup);
+        g_free(name_esc);
+        g_free(label);
+        g_free(status);
+        g_free(type);
+        return;
+    }
+    g_free(type);
 
     const gchar* fg_color = NULL;
     if (status != NULL && status[0] != '\0') {
@@ -92,8 +110,11 @@ static void git_status_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* c
     (void)col;
     (void)data;
     gchar* status = NULL;
-    gtk_tree_model_get(model, iter, COL_GIT_STATUS, &status, -1);
-    gboolean has_status = (status != NULL && status[0] != '\0');
+    gchar* type = NULL;
+    gtk_tree_model_get(model, iter, COL_GIT_STATUS, &status, COL_TYPE, &type, -1);
+    /* Bookmark targets are drawn inline by file_name_cell_data_func */
+    gboolean has_status = (status != NULL && status[0] != '\0' && g_strcmp0(type, "bookmark") != 0);
+    g_free(type);
     g_object_set(cell,
                  "visible", has_status,
                  "markup", has_status ? status : "",
@@ -291,8 +312,9 @@ int main(int argc, char** argv) {
     GtkCellRenderer* renderer_git = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_padding(renderer_git, 4, 2);
     gtk_cell_renderer_set_alignment(renderer_git, 0.0f, 0.5f);
-    /* Secondary text (git badge, note count, bookmark path) is capped at 24
-     * characters and ellipsized, so a long bookmark path never squeezes the name. */
+    /* Short secondary text only (git badge, note/bookmark count, note type):
+     * capped and ellipsized so it never squeezes the name. Bookmark targets are
+     * drawn inline in the name cell instead. */
     g_object_set(renderer_git, "ellipsize", PANGO_ELLIPSIZE_END, "max-width-chars", 8, NULL);
     gtk_tree_view_column_pack_start(col_name, renderer_git, FALSE);
     gtk_tree_view_column_set_cell_data_func(col_name, renderer_git, git_status_cell_data_func, NULL, NULL);
