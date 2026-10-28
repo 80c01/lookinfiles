@@ -8,6 +8,7 @@
 #include "terminal.h"
 #include "search.h"
 #include "ui.h"
+#include "editor.h"
 #include "git_tab.h"
 #include "bookmarks.h"
 #include "notes.h"

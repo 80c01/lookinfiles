@@ -9,6 +9,10 @@
 #include "bookmarks.h"
 #include "notes.h"
 #include "remote.h"
+#include "editor.h"
+
+void on_mode_item_clicked(GtkButton* b, gpointer data);
+void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data);
 
 gboolean window_is_fullscreen(GtkWindow* win) {
     return gtk_window_is_fullscreen(win);
@@ -2229,15 +2233,90 @@ GtkWidget* create_status_bar(AppData* app) {
     gtk_widget_set_visible(status_encoding, TRUE);
     gtk_box_append(GTK_BOX(bar), status_encoding);
 
+    GtkWidget* status_mode_btn = gtk_button_new();
+    gtk_button_set_has_frame(GTK_BUTTON(status_mode_btn), FALSE);
+    GtkWidget* status_mode_label = gtk_label_new("NOTEPAD");
+    gtk_button_set_child(GTK_BUTTON(status_mode_btn), status_mode_label);
+    gtk_widget_add_css_class(status_mode_btn, "status-item");
+    gtk_widget_set_visible(status_mode_btn, TRUE);
+    if (app != NULL) {
+        g_object_set_data(G_OBJECT(status_mode_btn), "app-data", app);
+        g_signal_connect(status_mode_btn, "clicked", G_CALLBACK(on_status_mode_clicked_cb), app);
+    }
+    gtk_box_append(GTK_BOX(bar), status_mode_btn);
+
     if (app != NULL) {
         app->status_branch = status_branch;
         app->status_selection = status_selection;
         app->status_size = status_size;
         app->status_type = status_type;
+        app->status_encoding = status_encoding;
+        app->status_mode = status_mode_label;
+        app->status_mode_btn = status_mode_btn;
     }
 
     return bar;
 }
+
+void on_mode_item_clicked(GtkButton* b, gpointer data) {
+    GtkWidget* popover = GTK_WIDGET(data);
+    AppData* app = g_object_get_data(G_OBJECT(b), "app");
+    EditorTab* tab = g_object_get_data(G_OBJECT(b), "tab");
+    gint mode = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "mode"));
+    if (app != NULL && tab == NULL && app->editors != NULL) {
+        tab = app->last_focused_editor ? app->last_focused_editor : (EditorTab*)app->editors->data;
+    }
+    if (app != NULL && tab != NULL) {
+        editor_set_tab_mode(app, tab, (EditorMode)mode);
+    }
+    if (popover != NULL) {
+        gtk_popover_popdown(GTK_POPOVER(popover));
+    }
+}
+
+void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
+    AppData* app = (AppData*)user_data;
+    if (app == NULL) return;
+    GtkWidget* popover = gtk_popover_new();
+    gtk_widget_set_parent(popover, GTK_WIDGET(btn));
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), TRUE);
+    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_TOP);
+
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    gtk_widget_set_margin_start(box, 6);
+    gtk_widget_set_margin_end(box, 6);
+    gtk_widget_set_margin_top(box, 6);
+    gtk_widget_set_margin_bottom(box, 6);
+
+    EditorTab* cur = app->last_focused_editor;
+    if (cur == NULL && app->editors != NULL) {
+        cur = (EditorTab*)app->editors->data;
+    }
+
+    const struct { const gchar* label; EditorMode mode; } modes[] = {
+        {"Notepad", EDITOR_MODE_NOTEPAD},
+        {"Emacs", EDITOR_MODE_EMACS},
+        {"Vim", EDITOR_MODE_VIM},
+        {"Org/Emacs", EDITOR_MODE_ORGMODE}
+    };
+
+    for (gsize i = 0; i < G_N_ELEMENTS(modes); i++) {
+        GtkWidget* b = gtk_button_new_with_label(modes[i].label);
+        gtk_button_set_has_frame(GTK_BUTTON(b), FALSE);
+        g_object_set_data(G_OBJECT(b), "app", app);
+        g_object_set_data(G_OBJECT(b), "tab", cur);
+        g_object_set_data(G_OBJECT(b), "mode", GINT_TO_POINTER(modes[i].mode));
+        g_signal_connect(b, "clicked", G_CALLBACK(on_mode_item_clicked), popover);
+        gtk_box_append(GTK_BOX(box), b);
+    }
+
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
+    g_signal_connect_swapped(popover, "closed", G_CALLBACK(gtk_widget_unparent), popover);
+    gtk_popover_popup(GTK_POPOVER(popover));
+}
+
+void on_mode_item_clicked(GtkButton* b, gpointer data);
+void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data);
 
 /* Current Git branch of dir (short SHA when detached HEAD), NULL outside a repository.
  * Reads .git/HEAD directly: no subprocess on the UI thread. */
@@ -2396,6 +2475,36 @@ void update_status_bar(AppData* app) {
     gtk_widget_set_visible(app->status_selection, has_sel);
     gtk_widget_set_visible(app->status_type, has_sel);
     gtk_widget_set_visible(app->status_size, has_size);
+
+    /* Update editor mode in status bar */
+    if (app->status_mode != NULL) {
+        EditorTab* cur = NULL;
+        /* Try to find current editor tab */
+        if (app->editors != NULL) {
+            /* Prefer last focused */
+            if (app->last_focused_editor != NULL) {
+                cur = app->last_focused_editor;
+            } else {
+                cur = (EditorTab*)app->editors->data;
+            }
+        }
+        const gchar* mstr = "NOTEPAD";
+        if (cur != NULL) {
+            if (cur->mode == EDITOR_MODE_ORGMODE || (cur->name != NULL && is_org_file(cur->name))) {
+                mstr = "ORG/EMACS";
+            } else if (cur->mode == EDITOR_MODE_VIM) {
+                mstr = "VIM";
+            } else if (cur->mode == EDITOR_MODE_EMACS) {
+                mstr = "EMACS";
+            } else {
+                mstr = "NOTEPAD";
+            }
+        } else if (name != NULL && is_org_file(name)) {
+            mstr = "ORG/EMACS";
+        }
+        gtk_label_set_text(GTK_LABEL(app->status_mode), mstr);
+        gtk_widget_set_visible(app->status_mode, TRUE);
+    }
 
     g_free(name);
     g_free(type);

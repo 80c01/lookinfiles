@@ -63,6 +63,14 @@ typedef enum {
     NOTE_TYPE_ORG  = 2     /* Emacs Org-mode note (.org - tasks, TODOs, checkboxes, folding) */
 } NoteType;
 
+/* Editor modes */
+typedef enum {
+    EDITOR_MODE_NOTEPAD = 0, /* Default simple editor */
+    EDITOR_MODE_VIM,         /* Vim-like modal editor */
+    EDITOR_MODE_EMACS,       /* Emacs-style editor */
+    EDITOR_MODE_ORGMODE      /* Org-mode focused emacs style */
+} EditorMode;
+
 /* Entry collected for directory sorting */
 typedef struct {
     gchar* name;
@@ -89,6 +97,9 @@ typedef struct {
     guint mm_vis_source;
     GtkWidget* nb;        /* GtkNotebook containing this tab */
     gpointer app;         /* pointer to AppData */
+    EditorMode mode;      /* current editor mode */
+    GtkWidget* status_bar; /* status line for this editor tab */
+    gchar* status_text;   /* status message */
 } EditorTab;
 
 /* Virtual workspace layout state (dynamic workspaces like Ubuntu) */
@@ -295,6 +306,9 @@ typedef struct {
     GtkWidget* status_selection;  /* bottom bar: selected entry name */
     GtkWidget* status_size;       /* bottom bar: selected file size */
     GtkWidget* status_type;       /* bottom bar: selected file type / language */
+    GtkWidget* status_encoding;   /* bottom bar: encoding */
+    GtkWidget* status_mode;       /* bottom bar: editor mode label */
+    GtkWidget* status_mode_btn;   /* bottom bar: editor mode button */
 } AppData;
 
 #endif /* APP_TYPES_H */

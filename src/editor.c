@@ -762,6 +762,11 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     tab->nb = GTK_WIDGET(target_nb);
     const gchar* cfg = g_get_user_config_dir();
     tab->is_buffer = (cfg != NULL && g_str_has_prefix(full, cfg));
+    if (is_org_file(name)) {
+        tab->mode = EDITOR_MODE_ORGMODE;
+    } else {
+        tab->mode = EDITOR_MODE_NOTEPAD;
+    }
 #ifdef HAVE_GSV
     GtkTextBuffer* buffer = GTK_TEXT_BUFFER(gtk_source_buffer_new(NULL));
 #else
@@ -817,13 +822,37 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
 
     editor_minimap_init(tab);
 
-    GtkWidget* container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    GtkWidget* container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_hexpand(container, TRUE);
     gtk_widget_set_vexpand(container, TRUE);
-    gtk_box_append(GTK_BOX(container), scroll);
+
+    GtkWidget* hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(hbox, TRUE);
+    gtk_widget_set_vexpand(hbox, TRUE);
+    gtk_box_append(GTK_BOX(hbox), scroll);
     if (tab->minimap != NULL) {
-        gtk_box_append(GTK_BOX(container), tab->minimap);
+        gtk_box_append(GTK_BOX(hbox), tab->minimap);
     }
+    gtk_box_append(GTK_BOX(container), hbox);
+
+    /* Status line for this editor */
+    tab->status_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_add_css_class(tab->status_bar, "editor-statusbar");
+    GtkWidget* stat_lbl = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(stat_lbl), 0.0f);
+    gtk_widget_set_hexpand(stat_lbl, TRUE);
+    if (is_org_file(name) || tab->mode == EDITOR_MODE_ORGMODE) {
+        gtk_label_set_text(GTK_LABEL(stat_lbl), "Org-mode (Emacs style) | Tab/Shift+Tab: fold | C-RET/C-SPC: checkbox | M-RET: heading | S-<->: TODO");
+    } else if (tab->mode == EDITOR_MODE_VIM) {
+        gtk_label_set_text(GTK_LABEL(stat_lbl), "VIM -- NORMAL --");
+    } else if (tab->mode == EDITOR_MODE_EMACS) {
+        gtk_label_set_text(GTK_LABEL(stat_lbl), "Emacs mode");
+    } else {
+        gtk_label_set_text(GTK_LABEL(stat_lbl), "Notepad mode");
+    }
+    g_object_set_data(G_OBJECT(tab->status_bar), "label", stat_lbl);
+    gtk_box_append(GTK_BOX(tab->status_bar), stat_lbl);
+    gtk_box_append(GTK_BOX(container), tab->status_bar);
     tab->container = container;
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
     tab->tab_label = gtk_label_new("");
@@ -1155,6 +1184,28 @@ void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
         g_free(tab);
     }
     g_list_free(editors);
+}
+
+void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode) {
+    if (tab == NULL) return;
+    tab->mode = mode;
+    if (tab->status_bar != NULL) {
+        GtkWidget* lbl = g_object_get_data(G_OBJECT(tab->status_bar), "label");
+        if (lbl != NULL && GTK_IS_LABEL(lbl)) {
+            if (is_org_file(tab->name) || mode == EDITOR_MODE_ORGMODE) {
+                gtk_label_set_text(GTK_LABEL(lbl), "Org-mode (Emacs style) | Tab/Shift+Tab: fold | C-RET/C-SPC: checkbox | M-RET: heading | S-<->: TODO");
+            } else if (mode == EDITOR_MODE_VIM) {
+                gtk_label_set_text(GTK_LABEL(lbl), "VIM -- NORMAL --");
+            } else if (mode == EDITOR_MODE_EMACS) {
+                gtk_label_set_text(GTK_LABEL(lbl), "Emacs mode");
+            } else {
+                gtk_label_set_text(GTK_LABEL(lbl), "Notepad mode");
+            }
+        }
+    }
+    if (app != NULL) {
+        update_status_bar(app);
+    }
 }
 
 void editor_set_dedicated(AppData* app, gboolean dedicated) {
