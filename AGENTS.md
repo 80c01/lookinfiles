@@ -34,8 +34,11 @@ The codebase is organized into modules under `src/`:
   sort enums (`SORT_*`), constants (`PREVIEW_*`, `MINIMAP_WIDTH`), and library headers.
 - **`file_list.c` / `file_list.h`**: Directory enumeration, file icons, sorting
   (`populate_store()`, `compare_entries()`), directory navigation (`reload_directory()`,
-  `refresh_listing()`, `activate_selected_entry()`), top bar label (`update_path_label()`),
+  `navigate_to_path()`, `refresh_listing()`, `activate_selected_entry()`), top bar label (`update_path_label()`),
   and tree key event handling (`on_tree_key_press()`).
+- **`bookmarks.c` / `bookmarks.h`**: Full bookmark manager storing named links to locations
+  (directories, files, URLs) organized hierarchically in folders with XML persistence,
+  interactive add/edit/delete modal dialogs, reordering, right-click context menu, and tree view integration.
 - **`viewer.c` / `viewer.h`**: Right-pane viewer logic, file content loading, syntax
   highlighting and Dark+ scheme setup, text scrolling/jumping, selection changed listener,
   and filesystem monitoring (`GFileMonitor`).

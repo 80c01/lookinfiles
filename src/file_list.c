@@ -8,6 +8,7 @@
 #include "audio.h"
 #include "search.h"
 #include "ui.h"
+#include "bookmarks.h"
 
 /* File extension ("" if none), ignoring dot-files initial dot */
 const gchar* file_extension(const gchar* name) {
@@ -1059,129 +1060,6 @@ static DirScanNode* scan_dir_node_recursive(const gchar* dirname,
     return node;
 }
 
-static gchar* get_bookmarks_file_path(void) {
-    const gchar* cfg_dir = g_get_user_config_dir();
-    gchar* dir = g_build_filename(cfg_dir, "explorateur_fichiers", NULL);
-    g_mkdir_with_parents(dir, 0755);
-    gchar* path = g_build_filename(dir, "bookmarks", NULL);
-    g_free(dir);
-    return path;
-}
-
-void bookmarks_save(AppData* app) {
-    if (app == NULL || app->bookmarks == NULL) {
-        return;
-    }
-    gchar* path = get_bookmarks_file_path();
-    GString* content = g_string_new("");
-    for (guint i = 0; i < app->bookmarks->len; i++) {
-        const gchar* b = (const gchar*)g_ptr_array_index(app->bookmarks, i);
-        if (b != NULL && b[0] != '\0') {
-            g_string_append(content, b);
-            g_string_append_c(content, '\n');
-        }
-    }
-    GError* error = NULL;
-    g_file_set_contents(path, content->str, (gssize)content->len, &error);
-    if (error != NULL) {
-        g_error_free(error);
-    }
-    g_string_free(content, TRUE);
-    g_free(path);
-}
-
-void bookmarks_init(AppData* app) {
-    if (app == NULL) {
-        return;
-    }
-    app->bookmarks = g_ptr_array_new_with_free_func(g_free);
-    app->show_bookmarks = FALSE;
-
-    gchar* path = get_bookmarks_file_path();
-    gchar* content = NULL;
-    gsize length = 0;
-    if (g_file_get_contents(path, &content, &length, NULL)) {
-        gchar** lines = g_strsplit(content, "\n", -1);
-        for (gint i = 0; lines != NULL && lines[i] != NULL; i++) {
-            gchar* line = g_strstrip(lines[i]);
-            if (line[0] != '\0') {
-                gboolean exists = FALSE;
-                for (guint j = 0; j < app->bookmarks->len; j++) {
-                    if (g_strcmp0((const gchar*)g_ptr_array_index(app->bookmarks, j), line) == 0) {
-                        exists = TRUE;
-                        break;
-                    }
-                }
-                if (!exists) {
-                    g_ptr_array_add(app->bookmarks, g_strdup(line));
-                }
-            }
-        }
-        g_strfreev(lines);
-        g_free(content);
-    }
-    g_free(path);
-}
-
-void bookmark_toggle_current(AppData* app) {
-    if (app == NULL) {
-        return;
-    }
-
-    /* Check if a bookmark row is currently selected in tree view */
-    if (app->selection != NULL) {
-        GtkTreeIter it;
-        if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-            gchar* type = NULL;
-            gchar* full = NULL;
-            gtk_tree_model_get(app->model, &it,
-                               COL_TYPE, &type,
-                               COL_PATH, &full, -1);
-            if (g_strcmp0(type, "bookmark") == 0 && full != NULL) {
-                for (guint i = 0; i < app->bookmarks->len; i++) {
-                    const gchar* b = (const gchar*)g_ptr_array_index(app->bookmarks, i);
-                    if (g_strcmp0(b, full) == 0) {
-                        g_ptr_array_remove_index(app->bookmarks, i);
-                        bookmarks_save(app);
-                        refresh_listing(app);
-                        break;
-                    }
-                }
-                g_free(type);
-                g_free(full);
-                return;
-            }
-            g_free(type);
-            g_free(full);
-        }
-    }
-
-    /* Otherwise, toggle bookmark for the current working directory */
-    if (app->base_dir == NULL || app->base_dir[0] == '\0') {
-        return;
-    }
-
-    gboolean found = FALSE;
-    for (guint i = 0; i < app->bookmarks->len; i++) {
-        const gchar* b = (const gchar*)g_ptr_array_index(app->bookmarks, i);
-        if (g_strcmp0(b, app->base_dir) == 0) {
-            g_ptr_array_remove_index(app->bookmarks, i);
-            found = TRUE;
-            break;
-        }
-    }
-
-    if (!found) {
-        g_ptr_array_add(app->bookmarks, g_strdup(app->base_dir));
-    }
-
-    bookmarks_save(app);
-    update_path_label(app);
-    if (app->show_bookmarks) {
-        refresh_listing(app);
-    }
-}
-
 void toggle_bookmarks_view(AppData* app) {
     if (app == NULL) {
         return;
@@ -1715,111 +1593,6 @@ void toggle_collapse_expand_files(AppData* app) {
     }
 }
 
-void create_folder_in_bookmarks(AppData* app) {
-    if (app == NULL) {
-        return;
-    }
-
-    gchar* folder_name = prompt_new_folder_dialog(app->window);
-    if (folder_name == NULL) {
-        return;
-    }
-
-    if (strchr(folder_name, '/') != NULL || strchr(folder_name, '\\') != NULL ||
-        g_strcmp0(folder_name, ".") == 0 || g_strcmp0(folder_name, "..") == 0) {
-        g_free(folder_name);
-        return;
-    }
-
-    /* Bookmark folders are virtual organizational folders, not real directories */
-    gchar* virtual_folder = g_strdup_printf("BM::%s", folder_name);
-
-    if (app->bookmarks != NULL) {
-        gboolean exists = FALSE;
-        for (guint i = 0; i < app->bookmarks->len; i++) {
-            if (g_strcmp0((const gchar*)g_ptr_array_index(app->bookmarks, i), virtual_folder) == 0) {
-                exists = TRUE;
-                break;
-            }
-        }
-        if (!exists) {
-            g_ptr_array_add(app->bookmarks, g_strdup(virtual_folder));
-            bookmarks_save(app);
-        }
-    }
-
-    refresh_listing(app);
-
-    g_free(folder_name);
-    g_free(virtual_folder);
-}
-
-static gint compare_bookmarks_asc(gconstpointer a, gconstpointer b) {
-    const gchar* pa = *(const gchar**)a;
-    const gchar* pb = *(const gchar**)b;
-    const gchar* na_src = g_str_has_prefix(pa, "BM::") ? (pa + 4) : g_path_get_basename(pa);
-    const gchar* nb_src = g_str_has_prefix(pb, "BM::") ? (pb + 4) : g_path_get_basename(pb);
-    gchar* na = g_strdup(na_src);
-    gchar* nb = g_strdup(nb_src);
-    /* Virtual folders come before real bookmarks */
-    gboolean va = g_str_has_prefix(pa, "BM::");
-    gboolean vb = g_str_has_prefix(pb, "BM::");
-    gint res = 0;
-    if (va && !vb) {
-        res = -1;
-    } else if (!va && vb) {
-        res = 1;
-    } else {
-        res = g_ascii_strcasecmp(na, nb);
-    }
-    g_free(na);
-    g_free(nb);
-    return res;
-}
-
-static gint compare_bookmarks_desc(gconstpointer a, gconstpointer b) {
-    return -compare_bookmarks_asc(a, b);
-}
-
-void toggle_sort_bookmarks(AppData* app) {
-    if (app == NULL || app->bookmarks == NULL || app->bookmarks->len < 2) {
-        return;
-    }
-    app->bookmarks_sort_desc = !app->bookmarks_sort_desc;
-    if (app->bookmarks_sort_desc) {
-        g_ptr_array_sort(app->bookmarks, compare_bookmarks_desc);
-    } else {
-        g_ptr_array_sort(app->bookmarks, compare_bookmarks_asc);
-    }
-    bookmarks_save(app);
-    refresh_listing(app);
-}
-
-void toggle_collapse_expand_bookmarks(AppData* app) {
-    if (app == NULL || app->tree_view == NULL) {
-        return;
-    }
-    gboolean has_expanded = (app->expanded_paths != NULL &&
-                             g_hash_table_size(app->expanded_paths) > 0);
-    if (has_expanded) {
-        gtk_tree_view_collapse_all(app->tree_view);
-        if (app->expanded_paths != NULL) {
-            g_hash_table_remove_all(app->expanded_paths);
-        }
-    } else {
-        if (app->bookmarks != NULL && app->expanded_paths != NULL) {
-            for (guint i = 0; i < app->bookmarks->len; i++) {
-                const gchar* b = (const gchar*)g_ptr_array_index(app->bookmarks, i);
-                if (b != NULL && g_file_test(b, G_FILE_TEST_IS_DIR)) {
-                    g_hash_table_add(app->expanded_paths, g_strdup(b));
-                }
-            }
-        }
-        refresh_listing(app);
-        gtk_tree_view_expand_all(app->tree_view);
-    }
-}
-
 void rename_selected_buffer(AppData* app) {
     if (app == NULL) {
         return;
@@ -2106,90 +1879,6 @@ static void append_buffers_to_store(GtkTreeStore* store, AppData* app) {
     }
 }
 
-static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* parent,
-                           const gchar* dirname, gboolean show_hidden, gint sort_mode);
-
-static void append_bookmarks_to_store(GtkTreeStore* store, AppData* app) {
-    if (store == NULL || app == NULL || !app->show_bookmarks) {
-        return;
-    }
-
-    if (app->bookmarks != NULL && app->bookmarks->len > 0) {
-        const gchar* home = g_get_home_dir();
-        gsize home_len = (home != NULL) ? strlen(home) : 0;
-
-        for (guint i = 0; i < app->bookmarks->len; i++) {
-            const gchar* bpath = (const gchar*)g_ptr_array_index(app->bookmarks, i);
-            if (bpath == NULL || bpath[0] == '\0') {
-                continue;
-            }
-
-            gchar* bname = g_path_get_basename(bpath);
-            gchar* display_path = NULL;
-
-            if (home_len > 1 && g_str_has_prefix(bpath, home) &&
-                (bpath[home_len] == '\0' || bpath[home_len] == '/')) {
-                display_path = g_strdup_printf("~%s", bpath + home_len);
-            } else {
-                display_path = g_strdup(bpath);
-            }
-
-            gchar* label = NULL;
-            if (g_strcmp0(bname, "/") == 0 || g_strcmp0(bpath, home) == 0) {
-                label = g_strdup_printf("🔖 %s", display_path);
-            } else {
-                label = g_strdup_printf("🔖 %s  (%s)", bname, display_path);
-            }
-
-            gboolean is_dir = g_file_test(bpath, G_FILE_TEST_IS_DIR);
-            gboolean is_expanded = is_dir && (app->expanded_paths != NULL &&
-                                              g_hash_table_contains(app->expanded_paths, bpath));
-
-            GtkTreeIter iter;
-            gtk_tree_store_append(store, &iter, NULL);
-            gtk_tree_store_set(store, &iter,
-                               COL_NAME, bname,
-                               COL_TYPE, "bookmark",
-                               COL_LABEL, label,
-                               COL_PATH, bpath,
-                               COL_LOADED, is_expanded,
-                               COL_GIT_STATUS, "",
-                               -1);
-
-            if (is_dir) {
-                if (is_expanded) {
-                    populate_level(store, app, &iter, bpath, app->show_hidden, app->sort_mode);
-                } else {
-                    GtkTreeIter dummy;
-                    gtk_tree_store_append(store, &dummy, &iter);
-                    gtk_tree_store_set(store, &dummy,
-                                       COL_NAME, "",
-                                       COL_TYPE, "-",
-                                       COL_LABEL, "...",
-                                       COL_PATH, "",
-                                       COL_LOADED, TRUE,
-                                       COL_GIT_STATUS, "",
-                                       -1);
-                }
-            }
-            g_free(label);
-            g_free(display_path);
-            g_free(bname);
-        }
-    } else {
-        GtkTreeIter iter;
-        gtk_tree_store_append(store, &iter, NULL);
-        gtk_tree_store_set(store, &iter,
-                           COL_NAME, "Bookmarks",
-                           COL_TYPE, "-",
-                           COL_LABEL, "🔖 (no bookmarks — Ctrl+D to add)",
-                           COL_PATH, "",
-                           COL_LOADED, TRUE,
-                           COL_GIT_STATUS, "",
-                           -1);
-    }
-}
-
 /* Apply a pre-scanned DirScanNode tree into GtkTreeStore on the main thread */
 static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIter* parent,
                                     const DirScanNode* node) {
@@ -2199,7 +1888,7 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
             return;
         }
         if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
-            append_bookmarks_to_store(store, app);
+            bookmarks_append_to_store(store, app);
             return;
         }
     }
@@ -2385,6 +2074,9 @@ void on_tree_row_expanded(GtkTreeView* tree_view, GtkTreeIter* iter,
     (void)tree_view;
     (void)path;
     AppData* app = (AppData*)user_data;
+    if (bookmarks_handle_row_toggled(app, iter, TRUE)) {
+        return;
+    }
     gchar* name = NULL;
     gchar* full_path = NULL;
     gtk_tree_model_get(app->model, iter,
@@ -2412,6 +2104,9 @@ void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
     (void)tree_view;
     (void)path;
     AppData* app = (AppData*)user_data;
+    if (bookmarks_handle_row_toggled(app, iter, FALSE)) {
+        return;
+    }
     gchar* name = NULL;
     gchar* full_path = NULL;
     gtk_tree_model_get(app->model, iter,
@@ -2467,6 +2162,9 @@ static void on_breadcrumb_clicked(GtkButton* btn, gpointer data) {
     if (target != NULL) {
         if (app->show_bookmarks || g_strcmp0(target, app->base_dir) != 0) {
             app->show_bookmarks = FALSE;
+            if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
+                app->sidebar_view = SIDEBAR_VIEW_FILES;
+            }
             reload_directory(app, target);
         }
     }
@@ -2950,6 +2648,7 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     gtk_tree_store_clear(store);
     apply_dir_node_to_store(store, app, NULL, td->root_node);
     reexpand_paths_recursive(app, NULL);
+    bookmarks_reexpand(app);
     sync_directory_monitors(app);
 
     if (app->selection != NULL) {
@@ -3062,8 +2761,29 @@ void reload_directory(AppData* app, const gchar* new_dir) {
     reload_directory_with_selection(app, new_dir, NULL);
 }
 
+/* Open a location: enter a directory, or enter a file's directory and select the file */
+void navigate_to_path(AppData* app, const gchar* path) {
+    if (app == NULL || path == NULL) {
+        return;
+    }
+    if (g_file_test(path, G_FILE_TEST_IS_DIR)) {
+        reload_directory_with_selection(app, path, NULL);
+        return;
+    }
+    gchar* parent = g_path_get_dirname(path);
+    gchar* base = g_path_get_basename(path);
+    reload_directory_with_selection(app, parent, base);
+    g_free(base);
+    g_free(parent);
+}
+
 /* Refresh the list while preserving selected entry and open expansions */
 void refresh_listing_with_path(AppData* app, const gchar* select_path) {
+    if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
+        /* Bookmarks live in memory: rebuild synchronously, keeping the selected item */
+        bookmarks_refresh(app);
+        return;
+    }
     start_async_dir_scan(app, app->base_dir, select_path, NULL);
     update_path_label(app);
 }
@@ -3109,10 +2829,8 @@ void activate_selected_entry(AppData* app) {
         create_new_buffer(app);
     } else if (g_strcmp0(type, "buffer") == 0 && full != NULL) {
         editor_open_file(app, name, full);
-    } else if (g_strcmp0(type, "bookmark") == 0 && full != NULL) {
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
-        app->show_bookmarks = FALSE;
-        reload_directory(app, full);
+    } else if (g_strcmp0(type, "bookmark") == 0 || g_strcmp0(type, "bm_folder") == 0) {
+        bookmarks_activate_selected(app);
     } else if (g_strcmp0(type, "dir") == 0) {
         GtkTreePath* path = gtk_tree_model_get_path(app->model, &it);
         if (gtk_tree_view_row_expanded(app->tree_view, path)) {
@@ -3158,6 +2876,11 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
     (void)keycode;
     AppData* app = (AppData*)data;
     guint key = keyval;
+
+    /* Bookmark manager keys (add, new folder, edit, delete, reorder) */
+    if (bookmarks_handle_key(app, keyval, state)) {
+        return TRUE;
+    }
 
     if (key != GDK_KEY_z && key != GDK_KEY_t && key != GDK_KEY_b) {
         app->pending_z = FALSE;
@@ -3220,9 +2943,9 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
                 gtk_tree_model_get(app->model, &it,
                                    COL_TYPE, &type,
                                    COL_PATH, &full, -1);
-                if (g_strcmp0(type, "bookmark") == 0 && full != NULL) {
-                    reload_directory(app, full);
-                } else if (g_strcmp0(type, "dir") == 0) {
+                if (g_strcmp0(type, "bookmark") == 0) {
+                    bookmarks_activate_selected(app);
+                } else if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bm_folder") == 0) {
                     GtkTreePath* p = gtk_tree_model_get_path(app->model, &it);
                     if (!gtk_tree_view_row_expanded(app->tree_view, p)) {
                         gtk_tree_view_expand_row(app->tree_view, p, FALSE);
@@ -3252,7 +2975,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
                 gchar* type = NULL;
                 gtk_tree_model_get(app->model, &it, COL_TYPE, &type, -1);
                 GtkTreePath* p = gtk_tree_model_get_path(app->model, &it);
-                if (g_strcmp0(type, "dir") == 0 &&
+                if ((g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bm_folder") == 0) &&
                     gtk_tree_view_row_expanded(app->tree_view, p)) {
                     gtk_tree_view_collapse_row(app->tree_view, p);
                 } else if (gtk_tree_path_get_depth(p) > 1) {
@@ -3272,7 +2995,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
                 gchar* type = NULL;
                 gtk_tree_model_get(app->model, &it, COL_TYPE, &type, -1);
-                if (g_strcmp0(type, "dir") == 0) {
+                if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bm_folder") == 0) {
                     GtkTreePath* p = gtk_tree_model_get_path(app->model, &it);
                     if (gtk_tree_view_row_expanded(app->tree_view, p)) {
                         gtk_tree_view_collapse_row(app->tree_view, p);
@@ -3391,11 +3114,11 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         }
         app->pending_z = FALSE;
         return FALSE;
-    case GDK_KEY_d: /* Ctrl+D: bookmark current directory / remove selected bookmark */
+    case GDK_KEY_d: /* Ctrl+D: bookmark selected entry (or edit / remove its existing bookmark) */
     case GDK_KEY_D:
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
-            bookmark_toggle_current(app);
+            bookmarks_add_from_context(app);
             return TRUE;
         }
         return FALSE;

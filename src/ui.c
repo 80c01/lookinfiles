@@ -6,6 +6,7 @@
 #include "minimap.h"
 #include "terminal.h"
 #include "editor.h"
+#include "bookmarks.h"
 
 gboolean window_is_fullscreen(GtkWindow* win) {
     return gtk_window_is_fullscreen(win);
@@ -38,8 +39,14 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Explorer panel", "/", "Search by substring (n / N: next / previous match)"},
     {"Explorer panel", "Enter / Double-click", "Expand/collapse directory, open file in editor, or open bookmark (Ctrl+Enter to enter directory)"},
     {"Explorer panel", "Backspace", "Go to the parent directory (or return to files view from bookmarks)"},
-    {"Explorer panel", "Ctrl+D", "Bookmark current directory (or remove selected bookmark)"},
+    {"Explorer panel", "Ctrl+D", "Bookmark selected entry or current directory (edit / remove if already bookmarked)"},
     {"Explorer panel", "Ctrl+A", "Switch between files and bookmarks views in Explorer"},
+    {"Bookmarks view", "Enter / l", "Open bookmark (directory, file or URL) / expand folder"},
+    {"Bookmarks view", "a / Shift+A", "Add bookmark / new folder (in selected folder)"},
+    {"Bookmarks view", "F2 / r / e", "Edit selected: name, location and folder"},
+    {"Bookmarks view", "d / Delete", "Delete selected bookmark or folder"},
+    {"Bookmarks view", "Shift+K / Shift+J", "Move selected item up / down"},
+    {"Bookmarks view", "Right-click", "Bookmark context menu"},
     {"Explorer panel", "Ctrl+U", "Switch between files and notes view in Explorer"},
     {"Explorer panel", "r / F2", "Rename selected text buffer (in Buffers view)"},
     {"Explorer panel", "i / I", "Toggle hidden files"},
@@ -1669,19 +1676,34 @@ static void on_sidebar_files_collapse_clicked(GtkButton* btn, gpointer data) {
     toggle_collapse_expand_files((AppData*)data);
 }
 
+static void on_sidebar_bm_add_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    bookmarks_add((AppData*)data);
+}
+
 static void on_sidebar_bm_new_folder_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    create_folder_in_bookmarks((AppData*)data);
+    bookmarks_new_folder((AppData*)data);
+}
+
+static void on_sidebar_bm_edit_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    bookmarks_edit_selected((AppData*)data);
+}
+
+static void on_sidebar_bm_delete_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    bookmarks_delete_selected((AppData*)data);
 }
 
 static void on_sidebar_bm_sort_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    toggle_sort_bookmarks((AppData*)data);
+    bookmarks_toggle_sort((AppData*)data);
 }
 
 static void on_sidebar_bm_collapse_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    toggle_collapse_expand_bookmarks((AppData*)data);
+    bookmarks_toggle_collapse_expand((AppData*)data);
 }
 
 static void on_sidebar_notes_new_clicked(GtkButton* btn, gpointer data) {
@@ -1823,13 +1845,37 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(bm_section, FALSE);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_section);
 
+    GtkWidget* bm_add_btn = gtk_button_new_with_label("🔖+");
+    gtk_button_set_has_frame(GTK_BUTTON(bm_add_btn), FALSE);
+    gtk_widget_set_focusable(bm_add_btn, FALSE);
+    gtk_widget_add_css_class(bm_add_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(bm_add_btn, "Add Bookmark (a)");
+    g_signal_connect(bm_add_btn, "clicked", G_CALLBACK(on_sidebar_bm_add_clicked), app);
+    gtk_box_append(GTK_BOX(bm_toolbar), bm_add_btn);
+
     GtkWidget* bm_new_folder_btn = gtk_button_new_with_label("📁+");
     gtk_button_set_has_frame(GTK_BUTTON(bm_new_folder_btn), FALSE);
     gtk_widget_set_focusable(bm_new_folder_btn, FALSE);
     gtk_widget_add_css_class(bm_new_folder_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(bm_new_folder_btn, "New Bookmarked Folder");
+    gtk_widget_set_tooltip_text(bm_new_folder_btn, "New Bookmark Folder (Shift+A)");
     g_signal_connect(bm_new_folder_btn, "clicked", G_CALLBACK(on_sidebar_bm_new_folder_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_new_folder_btn);
+
+    GtkWidget* bm_edit_btn = gtk_button_new_with_label("✎");
+    gtk_button_set_has_frame(GTK_BUTTON(bm_edit_btn), FALSE);
+    gtk_widget_set_focusable(bm_edit_btn, FALSE);
+    gtk_widget_add_css_class(bm_edit_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(bm_edit_btn, "Edit / Rename / Move Selected (F2)");
+    g_signal_connect(bm_edit_btn, "clicked", G_CALLBACK(on_sidebar_bm_edit_clicked), app);
+    gtk_box_append(GTK_BOX(bm_toolbar), bm_edit_btn);
+
+    GtkWidget* bm_delete_btn = gtk_button_new_with_label("🗑");
+    gtk_button_set_has_frame(GTK_BUTTON(bm_delete_btn), FALSE);
+    gtk_widget_set_focusable(bm_delete_btn, FALSE);
+    gtk_widget_add_css_class(bm_delete_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(bm_delete_btn, "Delete Selected (d / Delete)");
+    g_signal_connect(bm_delete_btn, "clicked", G_CALLBACK(on_sidebar_bm_delete_clicked), app);
+    gtk_box_append(GTK_BOX(bm_toolbar), bm_delete_btn);
 
     GtkWidget* bm_sort_btn = gtk_button_new_with_label("⇅");
     gtk_button_set_has_frame(GTK_BUTTON(bm_sort_btn), FALSE);
@@ -2013,6 +2059,9 @@ static gchar* status_type_label(const gchar* name, const gchar* type) {
     if (g_strcmp0(type, "bookmark") == 0) {
         return g_strdup("Bookmark");
     }
+    if (g_strcmp0(type, "bm_folder") == 0) {
+        return g_strdup("Bookmark Folder");
+    }
     if (is_markdown_file(name)) {
         return g_strdup("Markdown");
     }
@@ -2083,7 +2132,8 @@ void update_status_bar(AppData* app) {
         gtk_label_set_text(GTK_LABEL(app->status_type), type_label);
         g_free(type_label);
 
-        gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0);
+        gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0 &&
+                            g_strcmp0(type, "bm_folder") != 0);
         struct stat st;
         if (is_file && full != NULL && g_stat(full, &st) == 0) {
             gchar* size_str = g_format_size((guint64)st.st_size);

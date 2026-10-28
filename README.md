@@ -28,10 +28,11 @@ Simple graphical application to browse the file system.
 - ✅ Git Commits tab in Preview panel: for directories inside a Git repository, a dedicated "📦 Git Commits" tab appears directly to the right of the Preview tab. It displays an interactive table of repository commits (short hash in cyan, commit message, author, and relative date) along with an interactive patch/diff viewer highlighting changes with VS Code Dark+ diff colors (added lines in green, deleted lines in red, hunk headers in blue, metadata in yellow).
 - ✅ Dedicated Editor panel: editor tabs can either be docked inside the preview notebook or placed in a dedicated panel positioned to the right of the preview panel (`Ctrl+E` or click the `◫` split button at the top-left of the preview notebook tab strip). When in dedicated mode, browse and preview files on the center panel while editing code on the right panel across resizable dividers, preserved per virtual workspace.
 - ✅ Notes view: a dedicated "NOTES" view accessible from the explorer header via the mini `📝` icon or `Ctrl+U`, featuring a mini icon bar in the notes header to create a note (`➕`), create a folder (`📁+`), collapse all (`▲`), and expand all (`▼`), enabling hierarchical organization in folders, instant preview, automatic background saving, and scratchpad editing.
+- ✅ Full Bookmark Manager: store, name, and organize bookmarks to directories, files, or web URLs in hierarchical folders with XML persistence (`~/.config/explorateur_fichiers/bookmarks.xml`, with automatic migration of legacy flat bookmarks), inline child counts, missing-location alerts (`⚠`), and right-click context menu.
 - ✅ Explorer & Bookmarks mini action bars: dedicated action toolbars positioned right beneath the header across sidebar views:
   - **Files Explorer**: create new file (`📄+`), create new folder (`📁+`), toggle hidden files (`👁`), cycle sort mode (`⇅`), and toggle collapse/expand folders (`▲▼`).
-  - **Bookmarks view**: create folder in bookmarks (`📁+`), toggle sort order (`⇅`), and toggle collapse/expand bookmarks (`▲▼`).
-  - **Buffers view**: create new buffer (`➕`), create folder (`📁+`), collapse all (`▲`), and expand all (`▼`).
+  - **Bookmarks view**: add bookmark (`🔖+` or `a`), create folder (`📁+` or `A`), edit/rename/move (`✎` or `F2`/`r`/`e`), delete (`🗑` or `d`/`Delete`), toggle sort order (`⇅`), and toggle collapse/expand bookmarks (`▲▼`).
+  - **Notes view**: create new note (`➕`), create folder (`📁+`), collapse all (`▲`), and expand all (`▼`).
 - ✅ Focused panel highlight: the panel that owns active keyboard focus (Explorer sidebar, Preview panel, Editor panel, Terminal panel, or Help cheatsheet) is dynamically highlighted with a subtle VS Code-style blue accent outline (`#0078d4`) and header emphasis, updating live as focus cycles (`Alt+Left` / `Alt+Right`) or when clicking widgets.
 
 ## ⌨️ Keyboard shortcuts
@@ -62,10 +63,14 @@ Simple graphical application to browse the file system.
 | `zt` / `zb` | Scroll the selected entry to the top / bottom of the panel |
 | `/` | Open the search bar (live search, case-insensitive) |
 | `n` / `N` | Next / previous match of the searched term |
-| `Enter` / `Double-click` | Expand / collapse directory, open selected file in a new editing tab of the right panel, or navigate to bookmarked directory (`Ctrl+Enter` to enter directory as root) |
-| `Backspace` | Go to the parent directory (or return to files view from bookmarks) |
-| `Ctrl+D` | Bookmark the current directory (or remove selected bookmark in bookmarks view) |
+| `Enter` / `Double-click` | Expand / collapse directory or bookmark folder, open selected file in editor, open bookmark (directory, file, or URL; `Ctrl+Enter` to enter directory as root) |
+| `Backspace` | Go to the parent directory (or return to files view from bookmarks / notes) |
+| `Ctrl+D` | Bookmark selected entry or current directory (edit / remove if already bookmarked); add bookmark in bookmarks view |
 | `Ctrl+A` | Switch between files and bookmarks views in the explorer panel |
+| `a` / `A` | Add bookmark / new folder in the bookmarks view (inside the selected folder) |
+| `F2` / `r` / `e` | Edit selected bookmark or folder (name, location, and folder) in bookmarks view |
+| `d` / `Delete` | Delete selected bookmark or folder in bookmarks view |
+| `J` / `K` (Shift) | Move selected bookmark or folder down / up within its folder |
 | `Ctrl+U` | Switch between files and notes view in the explorer panel |
 | `r` / `F2` | Rename selected buffer (in Buffers view) or current editor buffer (`Ctrl+R`) |
 | `I` | Toggle hidden files (dot-prefixed) |

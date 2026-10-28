@@ -9,6 +9,7 @@
 #include "audio.h"
 #include "search.h"
 #include "ui.h"
+#include "bookmarks.h"
 
 #ifdef HAVE_GSV
 /* VS Code Dark+ palette, as a GtkSourceView style scheme. */
@@ -279,7 +280,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_D:
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
-            bookmark_toggle_current(app);
+            bookmarks_add_from_context(app);
             return TRUE;
         }
         return FALSE;
@@ -1138,19 +1139,30 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
                        COL_TYPE, &type,
                        COL_PATH, &full, -1);
 
+    /* Bookmark folders, URL bookmarks and bookmarks to missing locations have no preview */
+    gboolean is_bookmark = (g_strcmp0(type, "bookmark") == 0);
     if (name == NULL || type == NULL || g_strcmp0(type, "-") == 0 ||
-        g_strcmp0(type, "buffer_create") == 0 || full == NULL) {
+        g_strcmp0(type, "buffer_create") == 0 || g_strcmp0(type, "bm_folder") == 0 ||
+        full == NULL || (is_bookmark && !g_file_test(full, G_FILE_TEST_EXISTS))) {
         g_free(name);
         g_free(type);
         g_free(full);
+        update_status_bar(app);
         return;
+    }
+    gboolean as_dir = (g_strcmp0(type, "dir") == 0) ||
+                      (is_bookmark && g_file_test(full, G_FILE_TEST_IS_DIR));
+    if (is_bookmark && !as_dir) {
+        /* Bookmark to a file: detect the file type from its real name */
+        g_free(name);
+        name = g_path_get_basename(full);
     }
 
     if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
         gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
     }
 
-    if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bookmark") == 0) {
+    if (as_dir) {
         audio_preview_stop(app);
         video_preview_stop(app);
         if (app->preview_stack != NULL) {
@@ -1192,7 +1204,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
 
     g_free(app->viewed_path);
     g_free(app->viewed_name);
-    if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bookmark") == 0) {
+    if (as_dir) {
         app->viewed_path = NULL;
         app->viewed_name = NULL;
         monitor_file(app, NULL);

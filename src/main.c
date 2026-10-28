@@ -9,6 +9,7 @@
 #include "search.h"
 #include "ui.h"
 #include "git_tab.h"
+#include "bookmarks.h"
 #include <unistd.h>
 
 static void on_window_destroy(GtkWidget* widget, gpointer data) {
@@ -181,7 +182,8 @@ int main(int argc, char** argv) {
                            G_TYPE_STRING,   /* COL_LABEL */
                            G_TYPE_STRING,   /* COL_PATH */
                            G_TYPE_BOOLEAN,  /* COL_LOADED */
-                           G_TYPE_STRING);  /* COL_GIT_STATUS */
+                           G_TYPE_STRING,   /* COL_GIT_STATUS */
+                           G_TYPE_UINT);    /* COL_BM_ID */
 
     GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
     gtk_widget_set_name(tree_view, "file-tree");
@@ -356,6 +358,7 @@ int main(int argc, char** argv) {
     app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     bookmarks_init(app);
+    bookmarks_attach_context_menu(app);
     notes_init(app);
     populate_store(store, app, start_dir, FALSE, SORT_NAME);
     g_object_unref(store);
@@ -554,9 +557,7 @@ int main(int argc, char** argv) {
         g_hash_table_destroy(app->expanded_paths);
         app->expanded_paths = NULL;
     }
-    if (app->bookmarks != NULL) {
-        g_ptr_array_unref(app->bookmarks);
-    }
+    bookmarks_free(app);
     if (app->buffers != NULL) {
         g_ptr_array_unref(app->buffers);
     }

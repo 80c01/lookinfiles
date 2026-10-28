@@ -30,6 +30,7 @@ enum {
     COL_PATH,       /* full absolute path on disk */
     COL_LOADED,     /* boolean: whether sub-items have been loaded */
     COL_GIT_STATUS, /* markup for git status badge */
+    COL_BM_ID,      /* uint: bookmark item id (bookmarks view rows only, 0 otherwise) */
     COL_COUNT
 };
 
@@ -131,7 +132,9 @@ typedef struct {
     gboolean show_hidden; /* hidden files (dot-prefixed) */
     gboolean show_bookmarks; /* bookmarks view active in explorer panel */
     gint sidebar_view;       /* SIDEBAR_VIEW_FILES / BOOKMARKS / NOTES */
-    GPtrArray* bookmarks;    /* bookmarked directory paths */
+    GNode* bookmarks;        /* bookmark tree root (see bookmarks.c): named folders and links */
+    guint bm_next_id;        /* last assigned bookmark item id */
+    guint bm_last_folder_id; /* folder last used when adding a bookmark (0 = top level) */
     GPtrArray* buffers;      /* temporary/custom buffer names or paths */
     gint next_buffer_id;     /* incremental counter for Untitled buffers */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
