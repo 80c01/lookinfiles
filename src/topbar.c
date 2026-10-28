@@ -1,5 +1,6 @@
 /* Top bar: clickable path breadcrumbs and the layout/sort/hidden/help toggle pills. */
 #include "topbar.h"
+#include "icons.h"
 #include "app_events.h"
 #include "file_list.h"
 #include "editor.h"
@@ -315,26 +316,26 @@ void update_path_label(AppData* app) {
     if (app->split_btn != NULL) {
         if (app->editor_dedicated) {
             gtk_widget_add_css_class(app->split_btn, "tab-action-active");
-            gtk_button_set_label(GTK_BUTTON(app->split_btn), "◨");
+            icon_button_set_content(app->split_btn, "view-paged", NULL);
             gtk_widget_set_tooltip_text(app->split_btn, "Dock Editor Tabs into Preview Panel (Ctrl+E)");
         } else {
             gtk_widget_remove_css_class(app->split_btn, "tab-action-active");
-            gtk_button_set_label(GTK_BUTTON(app->split_btn), "◫");
+            icon_button_set_content(app->split_btn, "view-dual", NULL);
             gtk_widget_set_tooltip_text(app->split_btn, "Move Editor Tabs to a Dedicated Panel (Ctrl+E)");
         }
     }
     if (app->term_btn != NULL) {
         RemoteMachine* act_rm = remote_get_active_machine(app);
         if (act_rm != NULL) {
-            gchar* term_label = g_strdup_printf("🌐 >_ SSH: %s", act_rm->name ? act_rm->name : act_rm->host);
-            gtk_button_set_label(GTK_BUTTON(app->term_btn), term_label);
+            gchar* term_label = g_strdup_printf("SSH: %s", act_rm->name ? act_rm->name : act_rm->host);
+            icon_button_set_content(app->term_btn, "network-server", term_label);
             g_free(term_label);
             gchar* tip = g_strdup_printf("Connected to remote machine: %s (%s). Click to toggle SSH terminal (Ctrl+T)",
                                          act_rm->name ? act_rm->name : act_rm->host, act_rm->host);
             gtk_widget_set_tooltip_text(app->term_btn, tip);
             g_free(tip);
         } else {
-            gtk_button_set_label(GTK_BUTTON(app->term_btn), ">_ Terminal");
+            icon_button_set_content(app->term_btn, "utilities-terminal", "Terminal");
             gtk_widget_set_tooltip_text(app->term_btn, "Show / Hide Terminal Panel (Ctrl+T)");
         }
         if (term_vis) {

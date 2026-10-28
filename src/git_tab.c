@@ -1,4 +1,5 @@
 #include "git_tab.h"
+#include "icons.h"
 #include "panels.h"
 #include "text_style.h"
 #include "git_utils.h"
@@ -516,10 +517,7 @@ void git_tab_init(AppData* app) {
     app->git_detail_view = gtk_text_view_new_with_buffer(app->git_detail_buf);
     gtk_text_view_set_editable(GTK_TEXT_VIEW(app->git_detail_view), FALSE);
     gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(app->git_detail_view), FALSE);
-    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->git_detail_view), 12);
-    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->git_detail_view), 12);
-    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->git_detail_view), 8);
-    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->git_detail_view), 8);
+    set_view_text_padding(app->git_detail_view);
     set_view_monospace(app->git_detail_view, TRUE);
     apply_viewer_background(app->git_detail_view);
 
@@ -554,7 +552,7 @@ void git_tab_init(AppData* app) {
     gtk_box_append(GTK_BOX(tab_box), paned);
     app->git_tab_box = tab_box;
 
-    app->git_tab_label = gtk_label_new("📦 Git Commits");
+    app->git_tab_label = icon_label_new("document-open-recent", "Git Commits");
     gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), tab_box, app->git_tab_label);
 
     git_tab_update(app, app->base_dir);

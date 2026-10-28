@@ -1,5 +1,6 @@
 /* Notepad editor mode: find/replace and save-as bars, Windows-style key bindings. */
 #include "editor_modes_private.h"
+#include "icons.h"
 #include "editor.h"
 #include <ctype.h>
 #include <string.h>
@@ -129,7 +130,7 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     gtk_widget_set_hexpand(st->np_find_entry, TRUE);
     GtkWidget* btn_fn = gtk_button_new_with_label("Find Next");
     GtkWidget* btn_fp = gtk_button_new_with_label("Find Prev");
-    GtkWidget* btn_fc = gtk_button_new_with_label("✕");
+    GtkWidget* btn_fc = icon_button_new("window-close", "Close Find Bar (Esc)");
 
     g_signal_connect(btn_fn, "clicked", G_CALLBACK(on_np_find_next_clicked), tab);
     g_signal_connect(btn_fp, "clicked", G_CALLBACK(on_np_find_prev_clicked), tab);

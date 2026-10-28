@@ -1,5 +1,6 @@
 /* Floating key-binding cheat sheet ('?' / top bar Help button). Keep KEY_HELP in sync with README.md. */
 #include "help.h"
+#include "icons.h"
 #include "panels.h"
 #include "app_events.h"
 
@@ -191,7 +192,7 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
     gtk_widget_set_halign(title_label, GTK_ALIGN_START);
     gtk_widget_set_hexpand(title_label, TRUE);
 
-    GtkWidget* close_btn = gtk_button_new_with_label("✕");
+    GtkWidget* close_btn = icon_button_new("window-close", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(close_btn), FALSE);
     gtk_widget_set_focusable(close_btn, FALSE);
     gtk_widget_add_css_class(close_btn, "help-close-btn");

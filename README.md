@@ -240,6 +240,10 @@ Install on Debian/Ubuntu:
 sudo apt install libgtk-4-dev build-essential
 ```
 
+Toolbar and tab icons come from the GTK icon theme (Adwaita symbolic icons,
+loaded through librsvg). Both are present on any GTK desktop; on a minimal
+system install them with `sudo apt install adwaita-icon-theme librsvg2-common`.
+
 Optional (embedded terminal panel, recommended):
 ```bash
 sudo apt install libvte-2.91-gtk4-dev
@@ -286,6 +290,7 @@ src/
 ├── preview_summary.c/.h     # Preview summaries: machine, notebook, bookmark folder, trash
 ├── text_style.c/.h          # Dark+ scheme, monospace, syntax language
 ├── theme.c/.h               # Global CSS theme
+├── icons.c/.h               # Theme icon buttons and tab headers
 ├── tree_nav.c/.h            # Explorer row navigation and selection
 ├── markdown.c/.h            # Markdown rendering engine
 ├── html.c/.h                # HTML rendering engine

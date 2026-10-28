@@ -1,5 +1,6 @@
 /* Explorer panel header: view switcher buttons (files, bookmarks, notes, remote) and per-view action toolbars. */
 #include "sidebar.h"
+#include "icons.h"
 #include "app_events.h"
 #include "bookmarks.h"
 #include "file_list.h"
@@ -201,7 +202,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_hexpand(title, TRUE);
     gtk_box_append(GTK_BOX(title_row), title);
 
-    GtkWidget* files_btn = gtk_button_new_with_label("📁");
+    GtkWidget* files_btn = icon_button_new("folder", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
     gtk_widget_set_focusable(files_btn, FALSE);
     gtk_widget_add_css_class(files_btn, "sidebar-icon-btn");
@@ -209,7 +210,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_btn, "clicked", G_CALLBACK(on_sidebar_files_clicked), app);
     gtk_box_append(GTK_BOX(title_row), files_btn);
 
-    GtkWidget* bm_btn = gtk_button_new_with_label("🔖");
+    GtkWidget* bm_btn = icon_button_new("user-bookmarks", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(bm_btn), FALSE);
     gtk_widget_set_focusable(bm_btn, FALSE);
     gtk_widget_add_css_class(bm_btn, "sidebar-icon-btn");
@@ -217,7 +218,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_btn, "clicked", G_CALLBACK(on_sidebar_bm_clicked), app);
     gtk_box_append(GTK_BOX(title_row), bm_btn);
 
-    GtkWidget* buf_btn = gtk_button_new_with_label("📝");
+    GtkWidget* buf_btn = icon_button_new("accessories-text-editor", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(buf_btn), FALSE);
     gtk_widget_set_focusable(buf_btn, FALSE);
     gtk_widget_add_css_class(buf_btn, "sidebar-icon-btn");
@@ -225,7 +226,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(buf_btn, "clicked", G_CALLBACK(on_sidebar_notes_clicked), app);
     gtk_box_append(GTK_BOX(title_row), buf_btn);
 
-    GtkWidget* remote_btn = gtk_button_new_with_label("🌐");
+    GtkWidget* remote_btn = icon_button_new("network-server", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_btn), FALSE);
     gtk_widget_set_focusable(remote_btn, FALSE);
     gtk_widget_add_css_class(remote_btn, "sidebar-icon-btn");
@@ -257,7 +258,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(section, FALSE);
     gtk_box_append(GTK_BOX(files_toolbar), section);
 
-    GtkWidget* files_new_file_btn = gtk_button_new_with_label("📄+");
+    GtkWidget* files_new_file_btn = icon_button_new("document-new", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(files_new_file_btn), FALSE);
     gtk_widget_set_focusable(files_new_file_btn, FALSE);
     gtk_widget_add_css_class(files_new_file_btn, "sidebar-icon-btn");
@@ -265,7 +266,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_new_file_btn, "clicked", G_CALLBACK(on_sidebar_files_new_file_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_new_file_btn);
 
-    GtkWidget* files_new_folder_btn = gtk_button_new_with_label("📁+");
+    GtkWidget* files_new_folder_btn = icon_button_new("folder-new", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(files_new_folder_btn), FALSE);
     gtk_widget_set_focusable(files_new_folder_btn, FALSE);
     gtk_widget_add_css_class(files_new_folder_btn, "sidebar-icon-btn");
@@ -273,7 +274,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_new_folder_btn, "clicked", G_CALLBACK(on_sidebar_files_new_folder_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_new_folder_btn);
 
-    GtkWidget* files_hidden_btn = gtk_button_new_with_label("👁");
+    GtkWidget* files_hidden_btn = icon_button_new("view-reveal", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(files_hidden_btn), FALSE);
     gtk_widget_set_focusable(files_hidden_btn, FALSE);
     gtk_widget_add_css_class(files_hidden_btn, "sidebar-icon-btn");
@@ -284,7 +285,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_hidden_btn, "clicked", G_CALLBACK(on_sidebar_files_hidden_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_hidden_btn);
 
-    GtkWidget* files_sort_btn = gtk_button_new_with_label("⇅");
+    GtkWidget* files_sort_btn = icon_button_new("view-sort-ascending", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(files_sort_btn), FALSE);
     gtk_widget_set_focusable(files_sort_btn, FALSE);
     gtk_widget_add_css_class(files_sort_btn, "sidebar-icon-btn");
@@ -292,7 +293,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_sort_btn, "clicked", G_CALLBACK(on_sidebar_files_sort_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_sort_btn);
 
-    GtkWidget* files_collapse_btn = gtk_button_new_with_label("▲▼");
+    GtkWidget* files_collapse_btn = icon_button_new("pan-up", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(files_collapse_btn), FALSE);
     gtk_widget_set_focusable(files_collapse_btn, FALSE);
     gtk_widget_add_css_class(files_collapse_btn, "sidebar-icon-btn");
@@ -315,7 +316,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(bm_section, FALSE);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_section);
 
-    GtkWidget* bm_add_btn = gtk_button_new_with_label("🔖+");
+    GtkWidget* bm_add_btn = icon_button_new("bookmark-new", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(bm_add_btn), FALSE);
     gtk_widget_set_focusable(bm_add_btn, FALSE);
     gtk_widget_add_css_class(bm_add_btn, "sidebar-icon-btn");
@@ -323,7 +324,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_add_btn, "clicked", G_CALLBACK(on_sidebar_bm_add_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_add_btn);
 
-    GtkWidget* bm_new_folder_btn = gtk_button_new_with_label("📁+");
+    GtkWidget* bm_new_folder_btn = icon_button_new("folder-new", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(bm_new_folder_btn), FALSE);
     gtk_widget_set_focusable(bm_new_folder_btn, FALSE);
     gtk_widget_add_css_class(bm_new_folder_btn, "sidebar-icon-btn");
@@ -331,7 +332,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_new_folder_btn, "clicked", G_CALLBACK(on_sidebar_bm_new_folder_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_new_folder_btn);
 
-    GtkWidget* bm_edit_btn = gtk_button_new_with_label("✎");
+    GtkWidget* bm_edit_btn = icon_button_new("document-edit", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(bm_edit_btn), FALSE);
     gtk_widget_set_focusable(bm_edit_btn, FALSE);
     gtk_widget_add_css_class(bm_edit_btn, "sidebar-icon-btn");
@@ -339,7 +340,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_edit_btn, "clicked", G_CALLBACK(on_sidebar_bm_edit_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_edit_btn);
 
-    GtkWidget* bm_delete_btn = gtk_button_new_with_label("🗑");
+    GtkWidget* bm_delete_btn = icon_button_new("edit-delete", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(bm_delete_btn), FALSE);
     gtk_widget_set_focusable(bm_delete_btn, FALSE);
     gtk_widget_add_css_class(bm_delete_btn, "sidebar-icon-btn");
@@ -347,7 +348,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_delete_btn, "clicked", G_CALLBACK(on_sidebar_bm_delete_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_delete_btn);
 
-    GtkWidget* bm_sort_btn = gtk_button_new_with_label("⇅");
+    GtkWidget* bm_sort_btn = icon_button_new("view-sort-ascending", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(bm_sort_btn), FALSE);
     gtk_widget_set_focusable(bm_sort_btn, FALSE);
     gtk_widget_add_css_class(bm_sort_btn, "sidebar-icon-btn");
@@ -355,7 +356,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_sort_btn, "clicked", G_CALLBACK(on_sidebar_bm_sort_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_sort_btn);
 
-    GtkWidget* bm_collapse_btn = gtk_button_new_with_label("▲▼");
+    GtkWidget* bm_collapse_btn = icon_button_new("pan-up", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(bm_collapse_btn), FALSE);
     gtk_widget_set_focusable(bm_collapse_btn, FALSE);
     gtk_widget_add_css_class(bm_collapse_btn, "sidebar-icon-btn");
@@ -378,7 +379,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(buf_section, FALSE);
     gtk_box_append(GTK_BOX(buf_toolbar), buf_section);
 
-    GtkWidget* new_note_btn = gtk_button_new_with_label("➕");
+    GtkWidget* new_note_btn = icon_button_new("document-new", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(new_note_btn), FALSE);
     gtk_widget_set_focusable(new_note_btn, FALSE);
     gtk_widget_add_css_class(new_note_btn, "sidebar-icon-btn");
@@ -386,7 +387,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(new_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_new_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), new_note_btn);
 
-    GtkWidget* new_nb_btn = gtk_button_new_with_label("📓+");
+    GtkWidget* new_nb_btn = icon_button_new("folder-new", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(new_nb_btn), FALSE);
     gtk_widget_set_focusable(new_nb_btn, FALSE);
     gtk_widget_add_css_class(new_nb_btn, "sidebar-icon-btn");
@@ -394,7 +395,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(new_nb_btn, "clicked", G_CALLBACK(on_sidebar_notes_new_notebook_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), new_nb_btn);
 
-    GtkWidget* edit_note_btn = gtk_button_new_with_label("✎");
+    GtkWidget* edit_note_btn = icon_button_new("document-edit", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(edit_note_btn), FALSE);
     gtk_widget_set_focusable(edit_note_btn, FALSE);
     gtk_widget_add_css_class(edit_note_btn, "sidebar-icon-btn");
@@ -402,7 +403,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(edit_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_edit_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), edit_note_btn);
 
-    GtkWidget* move_note_btn = gtk_button_new_with_label("📁→");
+    GtkWidget* move_note_btn = icon_button_new("document-send", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(move_note_btn), FALSE);
     gtk_widget_set_focusable(move_note_btn, FALSE);
     gtk_widget_add_css_class(move_note_btn, "sidebar-icon-btn");
@@ -410,7 +411,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(move_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_move_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), move_note_btn);
 
-    GtkWidget* del_note_btn = gtk_button_new_with_label("🗑");
+    GtkWidget* del_note_btn = icon_button_new("user-trash", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(del_note_btn), FALSE);
     gtk_widget_set_focusable(del_note_btn, FALSE);
     gtk_widget_add_css_class(del_note_btn, "sidebar-icon-btn");
@@ -418,7 +419,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(del_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_delete_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), del_note_btn);
 
-    GtkWidget* sort_note_btn = gtk_button_new_with_label("⇅");
+    GtkWidget* sort_note_btn = icon_button_new("view-sort-ascending", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(sort_note_btn), FALSE);
     gtk_widget_set_focusable(sort_note_btn, FALSE);
     gtk_widget_add_css_class(sort_note_btn, "sidebar-icon-btn");
@@ -426,7 +427,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(sort_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_sort_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), sort_note_btn);
 
-    GtkWidget* collapse_note_btn = gtk_button_new_with_label("▲▼");
+    GtkWidget* collapse_note_btn = icon_button_new("pan-up", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(collapse_note_btn), FALSE);
     gtk_widget_set_focusable(collapse_note_btn, FALSE);
     gtk_widget_add_css_class(collapse_note_btn, "sidebar-icon-btn");
@@ -434,7 +435,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(collapse_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_collapse_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), collapse_note_btn);
 
-    GtkWidget* empty_trash_btn = gtk_button_new_with_label("🧹");
+    GtkWidget* empty_trash_btn = icon_button_new("edit-clear-all", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(empty_trash_btn), FALSE);
     gtk_widget_set_focusable(empty_trash_btn, FALSE);
     gtk_widget_add_css_class(empty_trash_btn, "sidebar-icon-btn");
@@ -457,7 +458,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(remote_section, FALSE);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_section);
 
-    GtkWidget* remote_conn_btn = gtk_button_new_with_label("🔌");
+    GtkWidget* remote_conn_btn = icon_button_new("network-transmit-receive", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_conn_btn), FALSE);
     gtk_widget_set_focusable(remote_conn_btn, FALSE);
     gtk_widget_add_css_class(remote_conn_btn, "sidebar-icon-btn");
@@ -465,7 +466,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(remote_conn_btn, "clicked", G_CALLBACK(on_sidebar_remote_connect_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_conn_btn);
 
-    GtkWidget* remote_term_btn = gtk_button_new_with_label(">_");
+    GtkWidget* remote_term_btn = icon_button_new("utilities-terminal", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_term_btn), FALSE);
     gtk_widget_set_focusable(remote_term_btn, FALSE);
     gtk_widget_add_css_class(remote_term_btn, "sidebar-icon-btn");
@@ -473,7 +474,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(remote_term_btn, "clicked", G_CALLBACK(on_sidebar_remote_term_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_term_btn);
 
-    GtkWidget* remote_add_btn = gtk_button_new_with_label("➕");
+    GtkWidget* remote_add_btn = icon_button_new("list-add", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_add_btn), FALSE);
     gtk_widget_set_focusable(remote_add_btn, FALSE);
     gtk_widget_add_css_class(remote_add_btn, "sidebar-icon-btn");
@@ -481,7 +482,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(remote_add_btn, "clicked", G_CALLBACK(on_sidebar_remote_add_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_add_btn);
 
-    GtkWidget* remote_edit_btn = gtk_button_new_with_label("✎");
+    GtkWidget* remote_edit_btn = icon_button_new("document-edit", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_edit_btn), FALSE);
     gtk_widget_set_focusable(remote_edit_btn, FALSE);
     gtk_widget_add_css_class(remote_edit_btn, "sidebar-icon-btn");
@@ -489,7 +490,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(remote_edit_btn, "clicked", G_CALLBACK(on_sidebar_remote_edit_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_edit_btn);
 
-    GtkWidget* remote_del_btn = gtk_button_new_with_label("🗑");
+    GtkWidget* remote_del_btn = icon_button_new("edit-delete", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_del_btn), FALSE);
     gtk_widget_set_focusable(remote_del_btn, FALSE);
     gtk_widget_add_css_class(remote_del_btn, "sidebar-icon-btn");
@@ -497,7 +498,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(remote_del_btn, "clicked", G_CALLBACK(on_sidebar_remote_delete_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_del_btn);
 
-    GtkWidget* remote_ref_btn = gtk_button_new_with_label("↻");
+    GtkWidget* remote_ref_btn = icon_button_new("view-refresh", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_ref_btn), FALSE);
     gtk_widget_set_focusable(remote_ref_btn, FALSE);
     gtk_widget_add_css_class(remote_ref_btn, "sidebar-icon-btn");

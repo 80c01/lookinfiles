@@ -1,4 +1,5 @@
 #include "topbar.h"
+#include "icons.h"
 #include "fs_watch.h"
 #include "panels.h"
 #include "app_events.h"
@@ -253,19 +254,22 @@ int main(int argc, char** argv) {
     GtkWidget* breadcrumb_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_set_valign(breadcrumb_box, GTK_ALIGN_CENTER);
 
-    GtkWidget* files_btn = gtk_button_new_with_label("📁 Explorer");
+    GtkWidget* files_btn = gtk_button_new();
+    icon_button_set_content(files_btn, "folder", "Explorer");
     gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
     gtk_widget_set_focusable(files_btn, FALSE);
     gtk_widget_add_css_class(files_btn, "status-pill");
     gtk_widget_set_tooltip_text(files_btn, "Show / Hide Explorer Panel");
 
-    GtkWidget* preview_btn = gtk_button_new_with_label("📄 Preview");
+    GtkWidget* preview_btn = gtk_button_new();
+    icon_button_set_content(preview_btn, "x-office-document", "Preview");
     gtk_button_set_has_frame(GTK_BUTTON(preview_btn), FALSE);
     gtk_widget_set_focusable(preview_btn, FALSE);
     gtk_widget_add_css_class(preview_btn, "status-pill");
     gtk_widget_set_tooltip_text(preview_btn, "Show / Hide Preview Panel");
 
-    GtkWidget* term_btn = gtk_button_new_with_label(">_ Terminal");
+    GtkWidget* term_btn = gtk_button_new();
+    icon_button_set_content(term_btn, "utilities-terminal", "Terminal");
     gtk_button_set_has_frame(GTK_BUTTON(term_btn), FALSE);
     gtk_widget_set_focusable(term_btn, FALSE);
     gtk_widget_add_css_class(term_btn, "status-pill");
@@ -274,7 +278,8 @@ int main(int argc, char** argv) {
     GtkWidget* pill_div_label = gtk_label_new("|");
     gtk_widget_add_css_class(pill_div_label, "breadcrumb-sep");
 
-    GtkWidget* help_btn = gtk_button_new_with_label("? Help");
+    GtkWidget* help_btn = gtk_button_new();
+    icon_button_set_content(help_btn, "help-browser", "Help");
     gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);
     gtk_widget_set_focusable(help_btn, FALSE);
     gtk_widget_add_css_class(help_btn, "status-pill");
@@ -376,9 +381,9 @@ int main(int argc, char** argv) {
     gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), TRUE);
     gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "editor-tabs");
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
-                             gtk_label_new("📄 Preview"));
+                             icon_label_new("x-office-document", "Preview"));
     /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
-    GtkWidget* split_btn = gtk_button_new_with_label("◫");
+    GtkWidget* split_btn = icon_button_new("view-dual", NULL);
     gtk_widget_set_name(split_btn, "tab-split-btn");
     gtk_button_set_has_frame(GTK_BUTTON(split_btn), FALSE);
     gtk_widget_set_focusable(split_btn, FALSE);
