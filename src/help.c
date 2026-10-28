@@ -31,7 +31,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Bookmarks view", "Shift+K / Shift+J", "Move selected item up / down"},
     {"Bookmarks view", "o", "Cycle sort: A-Z / Z-A"},
     {"Bookmarks view", "Right-click", "Bookmark context menu"},
-    {"Notes view", "a / Shift+A", "Create new note (Plain Text, Rich, Orgmode) / new notebook"},
+    {"Notes view", "a / Shift+A", "Create new note (Plain Text, Rich, Org-mode) / new notebook"},
     {"Notes view", "F2 / r / e", "Edit note (title and format) or notebook (name and icon)"},
     {"Notes view", "i", "Change notebook icon"},
     {"Notes view", "m", "Move note to another notebook"},

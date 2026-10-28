@@ -95,7 +95,7 @@ static void test_bookmark_folder_and_trash(void) {
 
     add_row(store, &empty, NULL, "bm_folder", "Empty", "", "");
     s = preview_summary_container(GTK_TREE_MODEL(store), &empty);
-    g_assert_nonnull(strstr(s, "(empty folder)"));
+    g_assert_nonnull(strstr(s, "\n(empty)\n"));
     g_free(s);
 
     add_row(store, &trash, NULL, "trash", "Trash", "/notes/.trash", "");

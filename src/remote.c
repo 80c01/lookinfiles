@@ -44,9 +44,9 @@ void remote_append_to_store(GtkTreeStore* store, AppData* app) {
         GtkTreeIter iter;
         gtk_tree_store_append(store, &iter, NULL);
         gtk_tree_store_set(store, &iter,
-                           COL_NAME, "(no remote machines configured)",
+                           COL_NAME, "",
                            COL_TYPE, "-",
-                           COL_LABEL, "🌐 (no remote machines — click + to add)",
+                           COL_LABEL, "🌐 No remote machines yet — press a to add one",
                            COL_PATH, "",
                            COL_LOADED, TRUE,
                            COL_GIT_STATUS, "",
@@ -343,7 +343,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         GtkWidget* dlg = gtk_dialog_new_with_buttons("sshfs Required",
                                                      app->window,
                                                      GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                     "_OK", GTK_RESPONSE_OK,
+                                                     "_Close", GTK_RESPONSE_OK,
                                                      NULL);
         GtkWidget* box = remote_dialog_body(dlg);
         GtkWidget* lbl = gtk_label_new("To browse and edit remote files, 'sshfs' is required.\n\n"
@@ -427,7 +427,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         GtkWidget* dlg = gtk_dialog_new_with_buttons("Connection Failed",
                                                      app->window,
                                                      GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                     "_OK", GTK_RESPONSE_OK,
+                                                     "_Close", GTK_RESPONSE_OK,
                                                      NULL);
         GtkWidget* box = remote_dialog_body(dlg);
         gchar* err_msg = g_strdup_printf("Could not connect to '%s' (%s):\n\n%s",
@@ -657,7 +657,7 @@ static void on_remote_ctx_action(GtkButton* btn, gpointer user_data) {
     case 4: remote_edit_dialog(app); break;
     case 5: remote_delete_selected(app); break;
     case 6: remote_add_dialog(app); break;
-    case 7: remote_refresh(app); break;
+    case 7: remote_rescan(app); break;
     default: break;
     }
 }
@@ -721,15 +721,15 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
             add_menu_item(box, popover, app, "Disconnect", "c", 2);
         }
         add_menu_item(box, popover, app, "Open SSH Terminal", "t", 3);
-        add_menu_item(box, popover, app, "Edit Machine...", "F2", 4);
+        add_menu_item(box, popover, app, "Edit Machine…", "F2", 4);
         add_menu_item(box, popover, app, "Delete Machine", "Delete", 5);
 
         GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
         gtk_box_append(GTK_BOX(box), sep);
     }
 
-    add_menu_item(box, popover, app, "Add Remote Machine...", "a", 6);
-    add_menu_item(box, popover, app, "Refresh List", "R", 7);
+    add_menu_item(box, popover, app, "Add Remote Machine…", "a", 6);
+    add_menu_item(box, popover, app, "Re-scan ~/.ssh/config", "F5", 7);
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     gtk_popover_popup(GTK_POPOVER(popover));

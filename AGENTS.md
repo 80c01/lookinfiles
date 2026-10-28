@@ -171,6 +171,30 @@ code down a layer (as done for `panels`, `fs_watch`, `remote_store`, `editor_org
 
 Shortcut list to keep in sync with `README.md` and `help.c` when you change behavior.
 
+## UI conventions (keep views consistent)
+
+The explorer views (files, bookmarks, notes, remote) share one vocabulary.
+Check these before adding or changing an action, a tooltip or a dialog:
+
+- **Same action, same key, in every view**: `a` add, `Shift+A` new folder /
+  notebook, `F2 / r / e` edit or rename, `d / Delete` delete (with
+  confirmation, or move to a trash), `Shift+K / Shift+J` move up / down,
+  `o` cycle the sort of the current view, `Enter` open. A key that has no
+  meaning in a view does nothing there (never acts on another view).
+- **Tooltips**: Title Case action, then the keys in parentheses, primary key
+  first: `Edit Selected (F2 / r / e)`, `Delete Selected (d / Delete)`.
+- **Context menus**: same labels as tooltips, `…` (single character) when a
+  dialog follows, key hint written `Shift+A`, `Delete`, `F2`.
+- **Dialogs**: every button has a mnemonic (`_Cancel`, `_Save`); the confirm
+  button is a verb (`_Create`, `_Rename`, `_Move to Trash`), never `OK`;
+  information-only messages have a single `_Close` button; destructive
+  confirmations default to Cancel.
+- **Empty states**: an empty container shows `(empty)`; an empty view shows
+  `No <items> yet — press a to add one`.
+- **Names**: `Org-mode`, `Rich Format`, `Plain Text`; view titles EXPLORER,
+  BOOKMARKS, NOTES, REMOTE.
+- Keep `help.c` (`KEY_HELP`) and the README shortcut tables in sync.
+
 ## Conventions and hard rules
 
 1. **English only** — every user-visible string, code comment, commit message,

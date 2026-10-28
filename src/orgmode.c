@@ -565,7 +565,7 @@ void render_orgmode_to_buffer(GtkTextBuffer* buffer,
     /* Render preview header banner if large file or metadata exists */
     if (is_preview && file_name != NULL) {
         GtkTextMark* bm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-        gchar* banner = g_strdup_printf("🦄 [ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)  •  Org Mode\n\n",
+        gchar* banner = g_strdup_printf("🦄 [ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)  •  Org-mode\n\n",
                                         file_name, total_size);
         gtk_text_buffer_insert(buffer, &iter, banner, -1);
         GtkTextIter bs;

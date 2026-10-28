@@ -978,8 +978,8 @@ gboolean editor_confirm_discard(AppData* app, EditorTab* tab) {
                                             GTK_BUTTONS_NONE,
                                             "%s has unsaved changes. "
                                             "Close anyway?", tab->name);
-    gtk_dialog_add_button(GTK_DIALOG(dlg), "Cancel", GTK_RESPONSE_CANCEL);
-    gtk_dialog_add_button(GTK_DIALOG(dlg), "Close without saving",
+    gtk_dialog_add_button(GTK_DIALOG(dlg), "_Cancel", GTK_RESPONSE_CANCEL);
+    gtk_dialog_add_button(GTK_DIALOG(dlg), "Close _Without Saving",
                           GTK_RESPONSE_OK);
 
     DiscardDialogData d = { g_main_loop_new(NULL, FALSE), GTK_RESPONSE_CANCEL };

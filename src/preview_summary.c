@@ -214,7 +214,7 @@ gchar* preview_summary_container(GtkTreeModel* model, GtkTreeIter* iter) {
             g_string_append_c(s, '\n');
         }
     } else {
-        g_string_append(s, is_bm_folder ? "\n(empty folder)\n" : "\n(empty)\n");
+        g_string_append(s, "\n(empty)\n");
     }
 
     if (is_notebook) {

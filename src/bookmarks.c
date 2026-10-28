@@ -397,7 +397,7 @@ static void bm_append_children(GtkTreeStore* store, GNode* node, GtkTreeIter* pa
             if (c->children != NULL) {
                 bm_append_children(store, c, &iter);
             } else {
-                bm_append_placeholder(store, &iter, "  (empty folder)");
+                bm_append_placeholder(store, &iter, "  (empty)");
             }
         } else {
             gchar* label = bm_link_icon_label(it);
@@ -704,10 +704,10 @@ static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok
                                                  GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                                                  NULL, NULL);
     if (allow_remove) {
-        GtkWidget* rm = gtk_dialog_add_button(GTK_DIALOG(dlg), "Remove Bookmark", GTK_RESPONSE_REJECT);
+        GtkWidget* rm = gtk_dialog_add_button(GTK_DIALOG(dlg), "_Remove Bookmark", GTK_RESPONSE_REJECT);
         gtk_widget_add_css_class(rm, "destructive-action");
     }
-    gtk_dialog_add_button(GTK_DIALOG(dlg), "Cancel", GTK_RESPONSE_CANCEL);
+    gtk_dialog_add_button(GTK_DIALOG(dlg), "_Cancel", GTK_RESPONSE_CANCEL);
     GtkWidget* ok = gtk_dialog_add_button(GTK_DIALOG(dlg), ok_label, GTK_RESPONSE_OK);
     gtk_widget_add_css_class(ok, "suggested-action");
     gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
@@ -823,7 +823,7 @@ static void bm_add_dialog(AppData* app, const gchar* init_target, GNode* parent)
     gchar* name = NULL;
     gchar* target = NULL;
     GNode* out_parent = NULL;
-    gint resp = bm_run_item_dialog(app, "Add Bookmark", "Add", FALSE, FALSE,
+    gint resp = bm_run_item_dialog(app, "Add Bookmark", "_Add", FALSE, FALSE,
                                    init_name, init_target, parent, NULL,
                                    &name, &target, &out_parent);
     if (resp == GTK_RESPONSE_OK && target != NULL && out_parent != NULL) {
@@ -885,7 +885,7 @@ static void bm_edit_node(AppData* app, GNode* node, gboolean allow_remove) {
     gchar* name = NULL;
     gchar* target = NULL;
     GNode* out_parent = NULL;
-    gint resp = bm_run_item_dialog(app, it->is_folder ? "Edit Folder" : "Edit Bookmark", "Save",
+    gint resp = bm_run_item_dialog(app, it->is_folder ? "Edit Folder" : "Edit Bookmark", "_Save",
                                    it->is_folder, allow_remove, it->name, it->target,
                                    node->parent, it->is_folder ? node : NULL,
                                    &name, &target, &out_parent);
@@ -970,7 +970,7 @@ void bookmarks_new_folder(AppData* app) {
     gchar* name = NULL;
     gchar* target = NULL;
     GNode* out_parent = NULL;
-    gint resp = bm_run_item_dialog(app, "New Bookmark Folder", "Create", TRUE, FALSE,
+    gint resp = bm_run_item_dialog(app, "New Bookmark Folder", "_Create", TRUE, FALSE,
                                    NULL, NULL, bm_context_folder(app), NULL,
                                    &name, &target, &out_parent);
     if (resp == GTK_RESPONSE_OK && name != NULL && name[0] != '\0' && out_parent != NULL) {
@@ -1120,7 +1120,7 @@ void bookmarks_activate_selected(AppData* app) {
         if (!g_app_info_launch_default_for_uri(it->target, NULL, &err)) {
             gchar* msg = g_strdup_printf("Could not open “%s”:\n%s", it->target,
                                          err != NULL ? err->message : "unknown error");
-            bm_message(app, "Open Bookmark", msg, "OK", NULL);
+            bm_message(app, "Open Bookmark", msg, "_Close", NULL);
             g_free(msg);
         }
         g_clear_error(&err);
@@ -1130,7 +1130,7 @@ void bookmarks_activate_selected(AppData* app) {
     if (!g_file_test(it->target, G_FILE_TEST_EXISTS)) {
         gchar* msg = g_strdup_printf("The location of “%s” no longer exists:\n%s\n\nRemove this bookmark?",
                                      it->name, it->target);
-        if (bm_message(app, "Missing Location", msg, "Remove", "Keep")) {
+        if (bm_message(app, "Missing Location", msg, "_Remove", "_Keep")) {
             bm_delete_node(app, node, FALSE);
         }
         g_free(msg);
@@ -1315,29 +1315,29 @@ static void bm_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x,
         gboolean folder = bm_is_folder(node);
         if (folder) {
             bm_menu_item(box, popover, app, "Add Bookmark Here…", "a", BM_ACTION_ADD, TRUE);
-            bm_menu_item(box, popover, app, "New Subfolder…", "A", BM_ACTION_ADD_FOLDER, TRUE);
+            bm_menu_item(box, popover, app, "New Subfolder…", "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
             bm_menu_separator(box);
             bm_menu_item(box, popover, app, "Rename / Move…", "F2", BM_ACTION_EDIT, TRUE);
-            bm_menu_item(box, popover, app, "Delete Folder", "d", BM_ACTION_DELETE, TRUE);
+            bm_menu_item(box, popover, app, "Delete Folder", "Delete", BM_ACTION_DELETE, TRUE);
         } else {
             bm_menu_item(box, popover, app, "Open", "Enter", BM_ACTION_OPEN, TRUE);
             bm_menu_item(box, popover, app, "Edit…", "F2", BM_ACTION_EDIT, TRUE);
-            bm_menu_item(box, popover, app, "Delete", "d", BM_ACTION_DELETE, TRUE);
+            bm_menu_item(box, popover, app, "Delete", "Delete", BM_ACTION_DELETE, TRUE);
         }
         bm_menu_separator(box);
-        bm_menu_item(box, popover, app, "Move Up", "K", BM_ACTION_MOVE_UP, node->prev != NULL);
-        bm_menu_item(box, popover, app, "Move Down", "J", BM_ACTION_MOVE_DOWN, node->next != NULL);
+        bm_menu_item(box, popover, app, "Move Up", "Shift+K", BM_ACTION_MOVE_UP, node->prev != NULL);
+        bm_menu_item(box, popover, app, "Move Down", "Shift+J", BM_ACTION_MOVE_DOWN, node->next != NULL);
         if (!folder) {
             bm_menu_separator(box);
             bm_menu_item(box, popover, app, "Add Bookmark…", "a", BM_ACTION_ADD, TRUE);
-            bm_menu_item(box, popover, app, "New Folder…", "A", BM_ACTION_ADD_FOLDER, TRUE);
+            bm_menu_item(box, popover, app, "New Folder…", "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
         }
     } else {
         bm_menu_item(box, popover, app, "Add Bookmark…", "a", BM_ACTION_ADD, TRUE);
-        bm_menu_item(box, popover, app, "New Folder…", "A", BM_ACTION_ADD_FOLDER, TRUE);
+        bm_menu_item(box, popover, app, "New Folder…", "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
     }
     bm_menu_separator(box);
-    bm_menu_item(box, popover, app, "Sort A–Z / Z–A", NULL, BM_ACTION_SORT, app->bookmarks->children != NULL);
+    bm_menu_item(box, popover, app, "Sort A–Z / Z–A", "o", BM_ACTION_SORT, app->bookmarks->children != NULL);
     bm_menu_item(box, popover, app, "Collapse / Expand All", NULL, BM_ACTION_COLLAPSE, app->bookmarks->children != NULL);
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);
