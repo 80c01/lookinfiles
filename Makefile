@@ -56,9 +56,28 @@ $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
 $(BUILD_DIR):
 	mkdir -p $@
 
+# Unit tests (GLib g_test, no display needed): tests/test_<module>.c links
+# against the listed objects only. Modules under test must not depend on
+# AppData or widgets. Register new tests in TESTS and TEST_DEPS_<name>.
+TEST_CFLAGS = -Wall -Wextra -Isrc `$(PKG_CONFIG) --cflags glib-2.0`
+TEST_LDFLAGS = `$(PKG_CONFIG) --libs glib-2.0`
+TESTS = test_file_types test_git_utils
+TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
+TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o
+TEST_DEPS_test_git_utils = $(BUILD_DIR)/git_utils.o
+
+.SECONDEXPANSION:
+$(BUILD_DIR)/tests/%: tests/%.c $$(TEST_DEPS_%) | $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)/tests
+	$(CC) $(TEST_CFLAGS) $(DEPFLAGS) -o $@ $< $(TEST_DEPS_$*) $(TEST_LDFLAGS)
+
+test: $(TEST_BINS)
+	@for t in $(TEST_BINS); do echo "== $$t"; $$t || exit 1; done
+	@echo "All tests passed."
+
 clean:
 	rm -rf $(TARGET) $(BUILD_DIR)
 
--include $(DEPS)
+-include $(DEPS) $(TEST_BINS:=.d)
 
-.PHONY: all clean
+.PHONY: all clean test
