@@ -281,7 +281,18 @@ void on_paned_released(GtkGestureClick* gesture, gint n_press,
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
 }
 
+/* A non-wide GtkPaned handle grabs the pointer ~15 px on each side of its
+ * 1 px line, over the panel contents, which prevents selecting text near the
+ * edge. A wide handle only reacts to its own box: the theme gives it a 1 px
+ * visible line inside 2 px transparent borders (5 px grab zone). */
+void paned_use_thin_handle(GtkWidget* paned) {
+    if (GTK_IS_PANED(paned)) {
+        gtk_paned_set_wide_handle(GTK_PANED(paned), TRUE);
+    }
+}
+
 void wire_paned_controllers(GtkWidget* paned, AppData* app) {
+    paned_use_thin_handle(paned);
     GtkGesture* click = gtk_gesture_click_new();
     gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(click),
                                                GTK_PHASE_CAPTURE);

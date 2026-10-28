@@ -534,10 +534,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         set_view_monospace(app->text_view, code);
         apply_viewer_language(app, td->name);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_X);
-        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_X);
-        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_Y);
-        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), PREVIEW_TEXT_PADDING_Y);
+        set_view_text_padding(app->text_view);
     }
 
     app->viewer_match = -1;
@@ -738,10 +735,7 @@ static void on_dir_preview_ready(GObject* source_object, GAsyncResult* res,
     AppData* app = td->app;
     set_view_monospace(app->text_view, FALSE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
-    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 0);
-    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
-    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+    set_view_text_padding(app->text_view);
     gtk_text_buffer_set_text(app->buffer, td->listing->str, (gint)td->listing->len);
     app->viewer_match = -1;
     apply_viewer_language(app, NULL);
@@ -784,6 +778,8 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         }
         if (summary != NULL && app->buffer != NULL) {
             apply_viewer_language(app, NULL);
+            gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
+            set_view_text_padding(app->text_view);
             set_view_monospace(app->text_view, TRUE); /* summary columns are space-aligned */
             gtk_text_buffer_set_text(app->buffer, summary, -1);
         }

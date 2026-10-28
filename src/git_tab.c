@@ -1,4 +1,5 @@
 #include "git_tab.h"
+#include "panels.h"
 #include "text_style.h"
 #include "git_utils.h"
 #include <string.h>
@@ -534,6 +535,7 @@ void git_tab_init(AppData* app) {
 
     /* Paned dividing commits table and commit diff */
     GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
+    paned_use_thin_handle(paned);
     gtk_widget_set_hexpand(paned, TRUE);
     gtk_widget_set_vexpand(paned, TRUE);
     gtk_paned_set_start_child(GTK_PANED(paned), tree_scroll);

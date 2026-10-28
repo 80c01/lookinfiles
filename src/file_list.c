@@ -766,10 +766,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
         gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
     }
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 0);
-    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 0);
-    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
-    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+    set_view_text_padding(app->text_view);
     set_view_monospace(app->text_view, FALSE);
     gtk_text_buffer_set_text(app->buffer, "", -1);
     app->viewer_match = -1;

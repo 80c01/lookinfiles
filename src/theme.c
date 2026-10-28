@@ -99,6 +99,22 @@ void apply_panel_borders(void) {
         "paned > separator:hover {\n"
         "  background-color: #0078d4;\n"
         "}\n"
+        /* Wide handles (see paned_use_thin_handle): 1px line, 2px transparent
+         * borders on each side form a 5px grab zone that does not overlap text */
+        "paned > separator.wide {\n"
+        "  min-width: 1px;\n"
+        "  min-height: 1px;\n"
+        "  border: 0 solid transparent;\n"
+        "  background-clip: content-box;\n"
+        "}\n"
+        "paned.horizontal > separator.wide {\n"
+        "  border-left-width: 2px;\n"
+        "  border-right-width: 2px;\n"
+        "}\n"
+        "paned.vertical > separator.wide {\n"
+        "  border-top-width: 2px;\n"
+        "  border-bottom-width: 2px;\n"
+        "}\n"
         /* ---- Explorer panel ---- */
         "#left-sidebar, #left-scroll, #left-scroll viewport, treeview, treeview.view {\n"
         "  background-color: #191a1b;\n"

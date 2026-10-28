@@ -17,6 +17,8 @@ gint get_workspace_total_width(AppData* app);
  * current workspace (emits APP_EVENT_LAYOUT_CHANGED). Call wire_paned_controllers()
  * on every GtkPaned of the layout. */
 void wire_paned_controllers(GtkWidget* paned, AppData* app);
+/* Limit the separator grab zone to a few pixels (done by wire_paned_controllers) */
+void paned_use_thin_handle(GtkWidget* paned);
 void update_pane_dims(GtkWidget* paned_widget, AppData* app);
 gboolean pane_dims_idle(gpointer data);
 void on_paned_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data);

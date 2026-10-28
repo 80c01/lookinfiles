@@ -7,6 +7,9 @@
 /* Monospace font toggle for a GtkTextView */
 void set_view_monospace(GtkWidget* view, gboolean monospace);
 
+/* Standard text padding (PREVIEW_TEXT_PADDING_X / _Y) of the preview text view */
+void set_view_text_padding(GtkWidget* view);
+
 /* TRUE if the name looks like source code (extension list, then GtkSourceView guess) */
 gboolean is_code_file(const gchar* name);
 

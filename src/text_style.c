@@ -189,3 +189,11 @@ void apply_viewer_language(AppData* app, const gchar* name) {
     (void)name;
 #endif
 }
+
+/* Padding of plain text, directory listings and summaries in the preview */
+void set_view_text_padding(GtkWidget* view) {
+    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_X);
+    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_X);
+    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_Y);
+    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_Y);
+}

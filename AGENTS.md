@@ -62,7 +62,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   tree columns (`COL_*`), `SORT_*`, `SIDEBAR_VIEW_*`, `PREVIEW_*` constants.
 - `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below.
 - `panels` — fullscreen, focused-panel highlight, workspace width, split-handle
-  drag feedback and fractions (`wire_paned_controllers()`).
+  drag feedback and fractions (`wire_paned_controllers()`). Every new
+  `GtkPaned` must go through `wire_paned_controllers()` or at least
+  `paned_use_thin_handle()`: a default handle grabs the mouse ~15 px into the
+  neighbouring panels and blocks text selection near the edge.
 - `text_style` — Dark+ GtkSourceView scheme, monospace, panel background,
   syntax language (`is_code_file()`, `apply_viewer_language()`).
 - `theme` — global CSS provider (`apply_panel_borders()`).
