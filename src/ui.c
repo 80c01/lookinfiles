@@ -57,6 +57,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "Ctrl+F / Ctrl+B", "Scroll a page down / up"},
     {"Right panel (viewer)", "gg / G", "Jump to the start / end of the file"},
     {"Right panel (viewer)", "/", "Search in the file (n / N: next / previous match)"},
+    {"Right panel (viewer)", "e", "Open the current file in the editor (text files only)"},
     {"Right panel (viewer)", "m", "Toggle rendered preview / raw text view (Markdown, HTML, PDF, images, video, audio)"},
     {"Right panel (viewer)", "Space / p", "Play / pause active video or audio preview"},
     {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},

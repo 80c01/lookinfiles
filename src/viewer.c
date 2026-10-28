@@ -334,6 +334,21 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
             return TRUE;
         }
         return FALSE;
+    case GDK_KEY_e:
+    case GDK_KEY_E:
+        app->pending_g = FALSE;
+        if (app->viewed_path != NULL && app->viewed_name != NULL) {
+            if (g_file_test(app->viewed_path, G_FILE_TEST_IS_DIR)) {
+                return FALSE;
+            }
+            if (is_image_file(app->viewed_name) || is_pdf_file(app->viewed_name) ||
+                is_video_file(app->viewed_name) || is_audio_file(app->viewed_name)) {
+                return FALSE;
+            }
+            editor_open_file(app, app->viewed_name, app->viewed_path);
+            return TRUE;
+        }
+        return FALSE;
     case GDK_KEY_question:
         if ((state & GDK_CONTROL_MASK) == 0) {
             app->pending_g = FALSE;
