@@ -40,11 +40,16 @@ The codebase is organized into modules under `src/`:
   (directories, files, URLs) organized hierarchically in folders with XML persistence,
   interactive add/edit/delete modal dialogs, reordering, right-click context menu, and tree view integration.
 - **`notes.c` / `notes.h`**: Full notes & notebooks manager organizing notes into notebooks
-  with custom icons, a trash bin for soft-deleted items with restoration support, custom manual
-  reordering (`Shift+J`/`Shift+K`), sorting modes, move dialogs, and XML persistence (`notes.xml`).
+  with custom icons, support for 3 note types (Plain Text 📄, Rich Format ✨ with Markdown/images/tables, and Emacs Org-mode 🦄),
+  a trash bin for soft-deleted items with restoration support, custom manual reordering (`Shift+J`/`Shift+K`),
+  sorting modes, type conversion, move dialogs, and XML persistence (`notes.xml`).
 - **`remote.c` / `remote.h`**: Remote SSH machine manager (`SIDEBAR_VIEW_REMOTE`), auto-discovery
   from `~/.ssh/config`, manual management with XML persistence (`remotes.xml`), SSHFS mounting
   for seamless remote browsing/editing in Explorer, and automatic remote SSH terminal integration.
+- **`orgmode.c` / `orgmode.h`**: Emacs Org-mode rendering and behavior engine (`.org`), supporting
+  interactive heading visibility folding (`Tab` / `Shift+Tab`), TODO keyword cycling (`TODO`, `NEXT`, `DONE`, `WAITING`, `CANCELLED`),
+  interactive checkboxes (`[ ]` <-> `[X]`), planning & timestamps (`SCHEDULED`, `DEADLINE`), tables, code blocks,
+  inline image rendering, and GtkSourceView 5 syntax specification generation.
 - **`viewer.c` / `viewer.h`**: Right-pane viewer logic, file content loading, syntax
   highlighting and Dark+ scheme setup, text scrolling/jumping, selection changed listener,
   and filesystem monitoring (`GFileMonitor`).

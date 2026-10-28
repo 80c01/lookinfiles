@@ -12,6 +12,7 @@
 #include "bookmarks.h"
 #include "notes.h"
 #include "remote.h"
+#include "orgmode.h"
 #include <unistd.h>
 
 static void on_window_destroy(GtkWidget* widget, gpointer data) {
@@ -100,6 +101,16 @@ static void on_tree_click_pressed(GtkGestureClick* gesture, gint n_press,
     AppData* app = (AppData*)user_data;
     if (app != NULL && app->tree_view != NULL) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+}
+
+static void on_viewer_click_pressed(GtkGestureClick* gesture, gint n_press,
+                                    gdouble x, gdouble y, gpointer user_data) {
+    (void)gesture;
+    (void)n_press;
+    AppData* app = (AppData*)user_data;
+    if (app != NULL) {
+        orgmode_handle_click(app, x, y);
     }
 }
 
@@ -434,6 +445,7 @@ int main(int argc, char** argv) {
     notes_attach_context_menu(app);
     remote_init(app);
     remote_attach_context_menu(app);
+    orgmode_install_gtksourceview_spec();
     populate_store(store, app, start_dir, FALSE, SORT_NAME);
     g_object_unref(store);
     app->text_view = text_view;
@@ -528,6 +540,11 @@ int main(int argc, char** argv) {
     gtk_event_controller_set_propagation_phase(viewer_key_ctrl, GTK_PHASE_CAPTURE);
     g_signal_connect(viewer_key_ctrl, "key-pressed", G_CALLBACK(on_viewer_key_press), app);
     gtk_widget_add_controller(text_view, viewer_key_ctrl);
+
+    GtkGesture* viewer_click_ctrl = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(viewer_click_ctrl), GDK_BUTTON_PRIMARY);
+    g_signal_connect(viewer_click_ctrl, "pressed", G_CALLBACK(on_viewer_click_pressed), app);
+    gtk_widget_add_controller(text_view, GTK_EVENT_CONTROLLER(viewer_click_ctrl));
 
     g_signal_connect(search_entry, "search-changed", G_CALLBACK(on_search_changed), app);
     g_signal_connect(search_entry, "activate", G_CALLBACK(on_search_activate), app);
@@ -640,6 +657,10 @@ int main(int argc, char** argv) {
     bookmarks_free(app);
     notes_free(app);
     remote_free(app);
+    if (app->org_folded_lines != NULL) {
+        g_hash_table_destroy(app->org_folded_lines);
+        app->org_folded_lines = NULL;
+    }
     if (app->buffers != NULL) {
         g_ptr_array_unref(app->buffers);
     }

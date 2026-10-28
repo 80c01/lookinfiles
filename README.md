@@ -28,9 +28,13 @@ Simple graphical application to browse the file system.
 - ✅ Git Commits tab in Preview panel: for directories inside a Git repository, a dedicated "📦 Git Commits" tab appears directly to the right of the Preview tab. It displays an interactive table of repository commits (short hash in cyan, commit message, author, and relative date) along with an interactive patch/diff viewer highlighting changes with VS Code Dark+ diff colors (added lines in green, deleted lines in red, hunk headers in blue, metadata in yellow).
 - ✅ Dedicated & Split Editor panels: editor tabs can either be docked inside the preview notebook or placed in dedicated panels (`Ctrl+E` or click the `◫` split button). Any editor tab can be split or moved in any direction—right, left, down, up (`Ctrl+Alt+Arrows` or `H/J/K/L`) or via right-click tab context menu—creating multi-pane split layouts across resizable dividers, preserved per virtual workspace. Empty panels collapse automatically.
 - ✅ Notes & Notebooks Manager: a dedicated "NOTES" view accessible from the explorer header via the mini `📝` icon or `Ctrl+U`. Organizes notes hierarchically into notebooks (carnets de notes) and includes a trash bin (corbeille) with XML persistence (`~/.config/explorateur_fichiers/notes/notes.xml`):
+  - **3 Note Types**:
+    - **Plain Text (`📄 .txt`)**: lightweight unformatted text files.
+    - **Rich Format (`✨ .md`)**: rich Markdown with formatted headings, bold/italic, blockquotes, code blocks, tables, task lists, and embedded local or base64 images.
+    - **Org-mode (`🦄 .org`)**: authentic Emacs Org-mode display and behavior — interactive heading visibility folding (`Tab` / `Shift+Tab`), TODO keyword cycling (`TODO` -> `NEXT` -> `DONE` -> none), interactive checkboxes (`[ ]` <-> `[X]`) with parent progress cookie updates (`[1/2]` or `[50%]`), planning & timestamps (`SCHEDULED`, `DEADLINE`), drawers (`:PROPERTIES:`), code blocks (`#+BEGIN_SRC`), styled tables, and inline image rendering (`[[file:image.png]]`).
   - **Notebooks**: create, rename, reorder, and delete notebooks with custom icons (`📓`, `💼`, `💡`, `📚`, etc.).
   - **Trash Bin**: soft-delete notes and entire notebooks into `.trash/`, track original notebook origins, restore trashed notes back to their original notebook (`Shift+R`), or empty the trash bin (`🧹`).
-  - **Note Management**: create new notes (`➕`), rename notes (`✎` or `F2`/`r`), move notes between notebooks (`📁→` or `m`), and open in editor tabs with automatic background saving.
+  - **Note Management**: create new notes with format selection (`➕` or `a`), rename and convert note formats (`✎` or `F2`/`r`), move notes between notebooks (`📁→` or `m`), 1-click format conversion via context menu, and open in editor tabs with automatic background saving.
   - **Manual Ordering & Sorting**: place notes and notebooks in any custom order using `Shift+K` (up) and `Shift+J` (down), or cycle sorting modes (`⇅`: Manual, A-Z, Z-A).
   - **Context Menus**: comprehensive secondary-click context menus for notes, notebooks, and the trash bin.
 - ✅ Full Bookmark Manager: store, name, and organize bookmarks to directories, files, or web URLs in hierarchical folders with XML persistence (`~/.config/explorateur_fichiers/bookmarks.xml`, with automatic migration of legacy flat bookmarks), inline child counts, missing-location alerts (`⚠`), and right-click context menu.
@@ -116,8 +120,10 @@ Same vim bindings as the list, applied to the displayed content:
 | `G` | Go to the bottom of the file |
 | `/` | Open the search bar (searches in the displayed content) |
 | `n` / `N` | Next / previous occurrence (selected and centered, wraps around) |
-| `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), rendered pages / text extraction (PDF), or player / raw header mode (video/audio) |
-| `Space` / `p` | Play / pause media playback when previewing a video or audio file |
+| `m` | Toggle rendered preview / raw markup view (Markdown/HTML/Org-mode), fitted / 1:1 scale (images), rendered pages / text extraction (PDF), or player / raw header mode (video/audio) |
+| `Tab` / `Shift+Tab` | In Org-mode preview: fold / unfold current heading or cycle global visibility (Overview → Contents → Show All) |
+| `t` | In Org-mode preview: cycle TODO keyword (`TODO` → `NEXT` → `DONE` → none) |
+| `Space` / `Return` | In Org-mode preview: toggle checkbox `[ ]` <-> `[X]` (or play / pause media playback when previewing a video or audio file) |
 | `Esc` | Close the search bar |
 
 ### Editor tabs (when the viewer zone shows a file opened for editing)
@@ -134,6 +140,13 @@ the tab title marks unsaved changes.
 | `Ctrl+E` | Move active editor tab to dedicated panel right of preview, or dock back |
 | `Ctrl+Alt+Right` / `L` | Move / split active editor tab to the right |
 | `Ctrl+Alt+Left` / `H` | Move / split active editor tab to the left |
+| `Ctrl+Alt+Down` / `J` | Move / split active editor tab downwards |
+| `Ctrl+Alt+Up` / `K` | Move / split active editor tab upwards |
+| `Tab` | In Org-mode editor: fold / unfold heading visibility (or normal indent on text lines) |
+| `Shift+Tab` | In Org-mode editor: cycle global visibility (Overview → Contents → Show All) |
+| `Shift+Right` / `Shift+Left` | In Org-mode editor: cycle heading TODO keyword (`TODO` → `NEXT` → `DONE` → none) |
+| `Alt+Enter` | In Org-mode editor: insert new heading at current heading level (`M-RET`) |
+| `Ctrl+Enter` / `Ctrl+Space` | In Org-mode editor: toggle checkbox `[ ]` <-> `[X]` and update parent progress statistics |
 | `Ctrl+Alt+Down` / `J` | Move / split active editor tab down |
 | `Ctrl+Alt+Up` / `K` | Move / split active editor tab up |
 | `Right-click tab` | Context menu to move, split, or close the editor tab |

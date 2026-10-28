@@ -11,6 +11,7 @@
 #include "ui.h"
 #include "bookmarks.h"
 #include "remote.h"
+#include "orgmode.h"
 
 #ifdef HAVE_GSV
 /* VS Code Dark+ palette, as a GtkSourceView style scheme. */
@@ -235,6 +236,11 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     (void)controller;
     (void)keycode;
     AppData* app = (AppData*)data;
+
+    if (orgmode_handle_viewer_key(app, keyval, state)) {
+        return TRUE;
+    }
+
     guint key = keyval;
 
     switch (key) {
@@ -595,6 +601,7 @@ typedef struct {
     gchar* full;
     gboolean is_md;
     gboolean is_html;
+    gboolean is_org;
     gboolean render_raw;
 
     /* Results populated by worker thread */
@@ -694,7 +701,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
     }
 
-    gboolean is_rendered = td->is_md || td->is_html;
+    gboolean is_rendered = td->is_md || td->is_html || td->is_org;
     if (is_rendered) {
         apply_viewer_language(app, NULL);
         set_view_monospace(app->text_view, FALSE);
@@ -730,6 +737,11 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
             ensure_html_tags(app->buffer);
             render_html_to_buffer(app->buffer, td->utf8_text, td->full,
                                   td->preview, td->name, td->fsize);
+        } else if (td->is_org) {
+            ensure_orgmode_tags(app->buffer);
+            render_orgmode_to_buffer(app->buffer, td->utf8_text, td->full,
+                                     td->preview, td->name, td->fsize,
+                                     app->org_folded_lines, app->org_global_fold);
         } else {
             GString* text = g_string_new(NULL);
             if (td->preview) {
@@ -787,6 +799,7 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     td->render_raw = app->render_raw;
     td->is_md = is_markdown_file(name) && !app->render_raw;
     td->is_html = is_html_file(name) && !app->render_raw;
+    td->is_org = is_org_file(name) && !app->render_raw;
 
     GTask* task = g_task_new(NULL, app->preview_cancellable, on_text_preview_ready, NULL);
     g_task_set_task_data(task, td, text_preview_task_data_free);

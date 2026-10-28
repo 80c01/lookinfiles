@@ -27,6 +27,7 @@ void notes_attach_context_menu(AppData* app);
 void notes_new_note(AppData* app);
 void notes_new_notebook(AppData* app);
 void notes_edit_selected(AppData* app);
+void notes_convert_selected_type(AppData* app, NoteType target_type);
 void notes_change_notebook_icon(AppData* app);
 void notes_move_selected(AppData* app);
 void notes_delete_selected(AppData* app);

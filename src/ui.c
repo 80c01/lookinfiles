@@ -49,14 +49,14 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Bookmarks view", "d / Delete", "Delete selected bookmark or folder"},
     {"Bookmarks view", "Shift+K / Shift+J", "Move selected item up / down"},
     {"Bookmarks view", "Right-click", "Bookmark context menu"},
-    {"Notes view", "a / Shift+A", "Create new note / new notebook (with custom icon)"},
-    {"Notes view", "F2 / r / e", "Edit note or notebook (name and icon)"},
+    {"Notes view", "a / Shift+A", "Create new note (Plain Text, Rich, Orgmode) / new notebook"},
+    {"Notes view", "F2 / r / e", "Edit note (title and format) or notebook (name and icon)"},
     {"Notes view", "i", "Change notebook icon"},
     {"Notes view", "m", "Move note to another notebook"},
     {"Notes view", "d / Delete", "Delete note (to Trash) or notebook"},
     {"Notes view", "Shift+R", "Restore note from Trash to original notebook"},
     {"Notes view", "Shift+K / Shift+J", "Move selected note or notebook up / down"},
-    {"Notes view", "Right-click", "Notes context menu"},
+    {"Notes view", "Right-click", "Context menu: 1-click format conversion (Text, Rich, Org), rename, move"},
     {"Explorer panel", "Ctrl+U", "Switch between files and notes view in Explorer"},
     {"Explorer panel", "i / I", "Toggle hidden files"},
     {"Explorer panel", "o", "Cycle sort: name, date, size, extension"},
@@ -67,12 +67,19 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "gg / G", "Jump to the start / end of the file"},
     {"Right panel (viewer)", "/", "Search in the file (n / N: next / previous match)"},
     {"Right panel (viewer)", "e", "Open the current file in the editor (text files only)"},
-    {"Right panel (viewer)", "m", "Toggle rendered preview / raw text view (Markdown, HTML, PDF, images, video, audio)"},
+    {"Right panel (viewer)", "m", "Toggle rendered preview / raw text view (Markdown, HTML, Org, PDF, images, video, audio)"},
     {"Right panel (viewer)", "Space / p", "Play / pause active video or audio preview"},
+    {"Org-mode", "Tab / Shift+Tab", "In Org view: Fold/unfold heading or cycle global visibility (Overview -> Contents -> Show All)"},
+    {"Org-mode", "t / Space / Return", "In Org view: Cycle TODO state / toggle checkbox [ ] <-> [X]"},
+    {"Org-mode", "Click heading/todo/box", "Interactive click: toggle fold, cycle TODO, toggle checkbox, open link"},
     {"Editor tabs", "Ctrl+S", "Save the file open in the current editor tab"},
     {"Editor tabs", "Ctrl+W", "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"},
     {"Editor tabs", "Ctrl+E", "Move active editor tab to dedicated panel right of preview, or dock back"},
     {"Editor tabs", "Ctrl+Alt+Arrows / HJKL", "Move active editor tab right / left / down / up (split panels)"},
+    {"Editor tabs", "Tab / Shift+Tab", "In Org editor: toggle heading fold or cycle global visibility"},
+    {"Editor tabs", "Shift+Right / Left", "In Org editor: cycle TODO keyword (TODO -> NEXT -> DONE -> none)"},
+    {"Editor tabs", "Alt+Enter", "In Org editor: insert new heading at current level (M-RET)"},
+    {"Editor tabs", "Ctrl+Enter / Space", "In Org editor: toggle checkbox [ ] <-> [X] and update progress statistics"},
     {"Editor tabs", "Right-click tab header", "Context menu to move, split, or close the editor tab"},
     {"Editor tabs", "Ctrl+R / F2", "Rename current text buffer"},
     /* Global */
@@ -2304,6 +2311,9 @@ static gchar* status_type_label(const gchar* name, const gchar* type) {
     }
     if (is_markdown_file(name)) {
         return g_strdup("Markdown");
+    }
+    if (is_org_file(name)) {
+        return g_strdup("Org Mode");
     }
     if (is_html_file(name)) {
         return g_strdup("HTML");

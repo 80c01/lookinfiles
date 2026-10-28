@@ -56,6 +56,13 @@ enum {
     SIDEBAR_VIEW_REMOTE
 };
 
+/* Note types */
+typedef enum {
+    NOTE_TYPE_TEXT = 0,    /* Plain text note (.txt) */
+    NOTE_TYPE_RICH = 1,    /* Rich format note (.md - headings, formatting, tables, images) */
+    NOTE_TYPE_ORG  = 2     /* Emacs Org-mode note (.org - tasks, TODOs, checkboxes, folding) */
+} NoteType;
+
 /* Entry collected for directory sorting */
 typedef struct {
     gchar* name;
@@ -282,6 +289,8 @@ typedef struct {
     GList* remotes;                   /* list of RemoteMachine* */
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */
     gboolean bookmarks_sort_desc;        /* sort order for bookmarks view */
+    GHashTable* org_folded_lines;     /* set of line numbers folded in currently viewed org file */
+    gint org_global_fold;             /* 0 = all expanded, 1 = overview, 2 = contents */
     GtkWidget* status_branch;     /* bottom bar: Git branch of base_dir */
     GtkWidget* status_selection;  /* bottom bar: selected entry name */
     GtkWidget* status_size;       /* bottom bar: selected file size */

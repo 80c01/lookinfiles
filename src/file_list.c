@@ -46,6 +46,16 @@ gboolean is_html_file(const gchar* name) {
             g_ascii_strcasecmp(ext, "shtml") == 0);
 }
 
+/* Return TRUE if file name indicates Emacs Org-mode content */
+gboolean is_org_file(const gchar* name) {
+    if (name == NULL) {
+        return FALSE;
+    }
+    const gchar* ext = file_extension(name);
+    return (g_ascii_strcasecmp(ext, "org") == 0 ||
+            g_ascii_strcasecmp(ext, "org_archive") == 0);
+}
+
 /* Return TRUE if file name indicates an image format */
 gboolean is_image_file(const gchar* name) {
     if (name == NULL) {
@@ -134,7 +144,7 @@ gboolean is_audio_file(const gchar* name) {
 
 /* Return TRUE if file content can be rendered richly in preview pane */
 gboolean is_renderable_file(const gchar* name) {
-    return is_markdown_file(name) || is_html_file(name) || is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name);
+    return is_markdown_file(name) || is_html_file(name) || is_org_file(name) || is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name);
 }
 
 /* Sort: directories first, then according to active sort mode (thread-safe) */
@@ -366,6 +376,10 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
     if (EXT_IS(".md") || EXT_IS(".markdown") || EXT_IS(".mdown") ||
         EXT_IS(".rst")) {
         return "📝";
+    }
+    /* Emacs Org-mode */
+    if (EXT_IS(".org") || EXT_IS(".org_archive")) {
+        return "🦄";
     }
     /* PDF */
     if (EXT_IS(".pdf")) {

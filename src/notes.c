@@ -12,9 +12,10 @@
 
 /* Data structures for notes manager */
 typedef struct {
-    gchar* filename;     /* e.g. "Meeting.txt" */
+    gchar* filename;     /* e.g. "Meeting.txt", "Spec.md", "Tasks.org" */
     gchar* title;        /* e.g. "Meeting" */
     gchar* path;         /* full path on disk */
+    NoteType type;       /* NOTE_TYPE_TEXT, NOTE_TYPE_RICH, NOTE_TYPE_ORG */
 } NoteItem;
 
 typedef struct {
@@ -31,6 +32,7 @@ typedef struct {
     gchar* path;         /* path in .trash */
     gchar* original_nb;  /* name of notebook it came from */
     gint64 trashed_at;   /* timestamp */
+    NoteType type;       /* note type */
 } TrashNoteItem;
 
 typedef struct {
@@ -54,18 +56,80 @@ enum {
     NOTE_ACTION_MOVE_UP,
     NOTE_ACTION_MOVE_DOWN,
     NOTE_ACTION_SORT,
-    NOTE_ACTION_COLLAPSE
+    NOTE_ACTION_COLLAPSE,
+    NOTE_ACTION_CONVERT_TEXT,
+    NOTE_ACTION_CONVERT_RICH,
+    NOTE_ACTION_CONVERT_ORG
 };
+
+/* ------------------------------------------------------------------------- */
+/* Note Type Helpers                                                         */
+/* ------------------------------------------------------------------------- */
+
+static NoteType note_type_from_filename(const gchar* filename) {
+    if (filename == NULL) return NOTE_TYPE_TEXT;
+    const gchar* ext = file_extension(filename);
+    if (g_ascii_strcasecmp(ext, "org") == 0 || g_ascii_strcasecmp(ext, "org_archive") == 0) {
+        return NOTE_TYPE_ORG;
+    }
+    if (g_ascii_strcasecmp(ext, "md") == 0 || g_ascii_strcasecmp(ext, "markdown") == 0 ||
+        g_ascii_strcasecmp(ext, "mdown") == 0 || g_ascii_strcasecmp(ext, "mkd") == 0) {
+        return NOTE_TYPE_RICH;
+    }
+    return NOTE_TYPE_TEXT;
+}
+
+static const gchar* note_type_to_str(NoteType type) {
+    switch (type) {
+        case NOTE_TYPE_ORG: return "org";
+        case NOTE_TYPE_RICH: return "rich";
+        default: return "text";
+    }
+}
+
+static NoteType note_type_from_str(const gchar* str, const gchar* filename) {
+    if (str != NULL) {
+        if (g_ascii_strcasecmp(str, "org") == 0) return NOTE_TYPE_ORG;
+        if (g_ascii_strcasecmp(str, "rich") == 0) return NOTE_TYPE_RICH;
+        if (g_ascii_strcasecmp(str, "text") == 0) return NOTE_TYPE_TEXT;
+    }
+    return note_type_from_filename(filename);
+}
+
+static const gchar* note_type_to_ext(NoteType type) {
+    switch (type) {
+        case NOTE_TYPE_ORG: return ".org";
+        case NOTE_TYPE_RICH: return ".md";
+        default: return ".txt";
+    }
+}
+
+static const gchar* note_type_to_icon(NoteType type) {
+    switch (type) {
+        case NOTE_TYPE_ORG: return "🦄";
+        case NOTE_TYPE_RICH: return "✨";
+        default: return "📄";
+    }
+}
+
+static const gchar* note_type_to_name(NoteType type) {
+    switch (type) {
+        case NOTE_TYPE_ORG: return "Orgmode";
+        case NOTE_TYPE_RICH: return "Rich Format";
+        default: return "Plain Text";
+    }
+}
 
 /* ------------------------------------------------------------------------- */
 /* Memory helpers                                                            */
 /* ------------------------------------------------------------------------- */
 
-static NoteItem* note_item_new(const gchar* filename, const gchar* title, const gchar* path) {
+static NoteItem* note_item_new(const gchar* filename, const gchar* title, const gchar* path, NoteType type) {
     NoteItem* item = g_new0(NoteItem, 1);
     item->filename = g_strdup(filename);
     item->title = g_strdup(title);
     item->path = g_strdup(path);
+    item->type = type;
     return item;
 }
 
@@ -97,13 +161,15 @@ static void notebook_item_free(NotebookItem* nb) {
 }
 
 static TrashNoteItem* trash_item_new(const gchar* filename, const gchar* title,
-                                     const gchar* path, const gchar* original_nb, gint64 trashed_at) {
+                                     const gchar* path, const gchar* original_nb,
+                                     gint64 trashed_at, NoteType type) {
     TrashNoteItem* item = g_new0(TrashNoteItem, 1);
     item->filename = g_strdup(filename);
     item->title = g_strdup(title);
     item->path = g_strdup(path);
     item->original_nb = g_strdup(original_nb);
     item->trashed_at = trashed_at;
+    item->type = type;
     return item;
 }
 
@@ -163,8 +229,8 @@ void notes_save(AppData* app) {
 
         for (GList* nl = nb->notes; nl != NULL; nl = nl->next) {
             NoteItem* note = (NoteItem*)nl->data;
-            gchar* n_line = g_markup_printf_escaped("    <note filename=\"%s\" title=\"%s\"/>\n",
-                                                   note->filename, note->title);
+            gchar* n_line = g_markup_printf_escaped("    <note filename=\"%s\" title=\"%s\" type=\"%s\"/>\n",
+                                                   note->filename, note->title, note_type_to_str(note->type));
             g_string_append(out, n_line);
             g_free(n_line);
         }
@@ -174,8 +240,8 @@ void notes_save(AppData* app) {
     g_string_append(out, "  <trash>\n");
     for (GList* tl = mgr->trash; tl != NULL; tl = tl->next) {
         TrashNoteItem* t = (TrashNoteItem*)tl->data;
-        gchar* t_line = g_markup_printf_escaped("    <trashed_note filename=\"%s\" title=\"%s\" original_nb=\"%s\" trashed_at=\"%" G_GINT64_FORMAT "\"/>\n",
-                                               t->filename, t->title, t->original_nb ? t->original_nb : "General", t->trashed_at);
+        gchar* t_line = g_markup_printf_escaped("    <trashed_note filename=\"%s\" title=\"%s\" original_nb=\"%s\" trashed_at=\"%" G_GINT64_FORMAT "\" type=\"%s\"/>\n",
+                                               t->filename, t->title, t->original_nb ? t->original_nb : "General", t->trashed_at, note_type_to_str(t->type));
         g_string_append(out, t_line);
         g_free(t_line);
     }
@@ -209,6 +275,7 @@ static void notes_parse_start(GMarkupParseContext* ctx, const gchar* element,
     const gchar* sort_str = NULL;
     const gchar* next_id_str = NULL;
     const gchar* trashed_at_str = NULL;
+    const gchar* type_str = NULL;
 
     for (gint i = 0; attr_names[i] != NULL; i++) {
         if (g_strcmp0(attr_names[i], "name") == 0) name = attr_values[i];
@@ -220,6 +287,7 @@ static void notes_parse_start(GMarkupParseContext* ctx, const gchar* element,
         else if (g_strcmp0(attr_names[i], "sort") == 0) sort_str = attr_values[i];
         else if (g_strcmp0(attr_names[i], "next_id") == 0) next_id_str = attr_values[i];
         else if (g_strcmp0(attr_names[i], "trashed_at") == 0) trashed_at_str = attr_values[i];
+        else if (g_strcmp0(attr_names[i], "type") == 0) type_str = attr_values[i];
         else if (g_strcmp0(attr_names[i], "trash_expanded") == 0) {
             st->mgr->trash_expanded = (g_strcmp0(attr_values[i], "true") == 0);
         }
@@ -243,7 +311,8 @@ static void notes_parse_start(GMarkupParseContext* ctx, const gchar* element,
         gchar* note_path = g_build_filename(st->current_nb->path, filename, NULL);
         if (g_file_test(note_path, G_FILE_TEST_EXISTS)) {
             const gchar* t = (title != NULL && title[0] != '\0') ? title : filename;
-            NoteItem* note = note_item_new(filename, t, note_path);
+            NoteType ntype = note_type_from_str(type_str, filename);
+            NoteItem* note = note_item_new(filename, t, note_path, ntype);
             st->current_nb->notes = g_list_append(st->current_nb->notes, note);
         }
         g_free(note_path);
@@ -256,7 +325,8 @@ static void notes_parse_start(GMarkupParseContext* ctx, const gchar* element,
         if (g_file_test(t_path, G_FILE_TEST_EXISTS)) {
             gint64 tat = trashed_at_str ? g_ascii_strtoll(trashed_at_str, NULL, 10) : g_get_real_time() / G_USEC_PER_SEC;
             const gchar* t = (title != NULL && title[0] != '\0') ? title : filename;
-            TrashNoteItem* item = trash_item_new(filename, t, t_path, original_nb ? original_nb : "General", tat);
+            NoteType ntype = note_type_from_str(type_str, filename);
+            TrashNoteItem* item = trash_item_new(filename, t, t_path, original_nb ? original_nb : "General", tat, ntype);
             st->mgr->trash = g_list_append(st->mgr->trash, item);
         }
         g_free(t_path);
@@ -362,12 +432,17 @@ static void notes_reconcile_with_disk(NotesManager* mgr) {
                             }
                         }
                         if (!found) {
-                            /* Strip .txt extension for display title if present */
+                            /* Strip extension for display title if present */
                             gchar* title = g_strdup(fname);
-                            if (g_str_has_suffix(title, ".txt") && strlen(title) > 4) {
-                                title[strlen(title) - 4] = '\0';
+                            const gchar* ext = file_extension(title);
+                            if (ext[0] != '\0' && (g_ascii_strcasecmp(ext, "txt") == 0 ||
+                                                   g_ascii_strcasecmp(ext, "md") == 0 ||
+                                                   g_ascii_strcasecmp(ext, "org") == 0)) {
+                                gchar* dot = strrchr(title, '.');
+                                if (dot != NULL) *dot = '\0';
                             }
-                            NoteItem* item = note_item_new(fname, title, fpath);
+                            NoteType ntype = note_type_from_filename(fname);
+                            NoteItem* item = note_item_new(fname, title, fpath, ntype);
                             target_nb->notes = g_list_append(target_nb->notes, item);
                             g_free(title);
                         }
@@ -395,6 +470,7 @@ static void notes_reconcile_with_disk(NotesManager* mgr) {
         const gchar* welcome_text =
             "# Welcome to Notes!\n\n"
             "This notebook manager lets you organize and order your notes:\n"
+            "- 3 Note Types: Plain Text (📄), Rich Format (✨ with Markdown, tables, images), and Org-mode (🦄)\n"
             "- Create notebooks (carnets) with custom icons (📓, 💼, 💡, 📚, etc.)\n"
             "- Move notes between notebooks easily\n"
             "- Reorder notes and notebooks using Shift+J / Shift+K\n"
@@ -402,7 +478,7 @@ static void notes_reconcile_with_disk(NotesManager* mgr) {
             "- Right-click any note or notebook for full action menus\n";
         g_file_set_contents(note_path, welcome_text, -1, NULL);
 
-        NoteItem* item = note_item_new("Welcome Note.txt", "Welcome Note", note_path);
+        NoteItem* item = note_item_new("Welcome Note.txt", "Welcome Note", note_path, NOTE_TYPE_TEXT);
         gen->notes = g_list_append(gen->notes, item);
 
         g_free(note_path);
@@ -486,9 +562,60 @@ static GtkWidget* notes_dialog_body(GtkWidget* dlg) {
     return box;
 }
 
-static gchar* prompt_text_dialog(GtkWindow* parent_win, const gchar* title,
-                                 const gchar* prompt_label, const gchar* default_val,
-                                 const gchar* ok_btn_text) {
+typedef struct {
+    GMainLoop* loop;
+    gint response;
+    GtkWidget* entry;
+    GtkWidget* rb_rich;
+    GtkWidget* rb_org;
+    GtkWidget* rb_text;
+    GtkWidget* preview_label;
+} NoteDialogData;
+
+static void update_note_dialog_preview(NoteDialogData* d) {
+    if (d->preview_label == NULL || d->entry == NULL) return;
+    const gchar* text = gtk_editable_get_text(GTK_EDITABLE(d->entry));
+    gchar* title = (text != NULL) ? g_strstrip(g_strdup(text)) : NULL;
+    const gchar* disp_title = (title != NULL && title[0] != '\0') ? title : "Untitled";
+
+    NoteType type = NOTE_TYPE_RICH;
+    if (d->rb_org && gtk_check_button_get_active(GTK_CHECK_BUTTON(d->rb_org))) {
+        type = NOTE_TYPE_ORG;
+    } else if (d->rb_text && gtk_check_button_get_active(GTK_CHECK_BUTTON(d->rb_text))) {
+        type = NOTE_TYPE_TEXT;
+    }
+
+    const gchar* icon = note_type_to_icon(type);
+    const gchar* ext = note_type_to_ext(type);
+
+    gchar* markup = g_markup_printf_escaped("File Preview: <span size=\"large\">%s</span> <b>%s%s</b>  <span foreground=\"#808080\">(%s)</span>",
+                                           icon, disp_title, ext, note_type_to_name(type));
+    gtk_label_set_markup(GTK_LABEL(d->preview_label), markup);
+    g_free(markup);
+    g_free(title);
+}
+
+static void on_note_dlg_field_changed(GtkWidget* widget, gpointer user_data) {
+    (void)widget;
+    update_note_dialog_preview((NoteDialogData*)user_data);
+}
+
+static void on_note_dlg_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
+    (void)dlg;
+    NoteDialogData* d = (NoteDialogData*)user_data;
+    d->response = response_id;
+    if (g_main_loop_is_running(d->loop)) {
+        g_main_loop_quit(d->loop);
+    }
+}
+
+static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
+                                   const gchar* ok_btn_text,
+                                   const gchar* init_title, NoteType init_type,
+                                   gchar** out_title, NoteType* out_type) {
+    *out_title = NULL;
+    *out_type = init_type;
+
     GtkWidget* dlg = gtk_dialog_new_with_buttons(title, parent_win,
                                                  GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                                                  "Cancel", GTK_RESPONSE_CANCEL,
@@ -497,42 +624,109 @@ static gchar* prompt_text_dialog(GtkWindow* parent_win, const gchar* title,
     gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
     GtkWidget* box = notes_dialog_body(dlg);
 
-    GtkWidget* lbl = gtk_label_new(prompt_label);
+    GtkWidget* lbl = gtk_label_new("Note Title:");
     gtk_widget_set_halign(lbl, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(box), lbl);
 
     GtkWidget* entry = gtk_entry_new();
-    if (default_val != NULL) {
-        gtk_editable_set_text(GTK_EDITABLE(entry), default_val);
+    if (init_title != NULL) {
+        gtk_editable_set_text(GTK_EDITABLE(entry), init_title);
     }
     gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
     gtk_box_append(GTK_BOX(box), entry);
 
-    SimpleDialogData d = { g_main_loop_new(NULL, FALSE), GTK_RESPONSE_CANCEL, entry };
-    g_signal_connect(dlg, "response", G_CALLBACK(on_simple_dlg_response), &d);
+    GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_margin_top(sep, 6);
+    gtk_widget_set_margin_bottom(sep, 6);
+    gtk_box_append(GTK_BOX(box), sep);
+
+    GtkWidget* tlabel = gtk_label_new("Select Note Format & Type:");
+    gtk_widget_set_halign(tlabel, GTK_ALIGN_START);
+    gtk_widget_add_css_class(tlabel, "dim-label");
+    gtk_box_append(GTK_BOX(box), tlabel);
+
+    GtkWidget* type_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    gtk_widget_set_margin_start(type_vbox, 8);
+
+    GtkWidget* rb_rich = gtk_check_button_new_with_label("✨ Rich Format (.md - headings, lists, tables, images)");
+    GtkWidget* rb_org = gtk_check_button_new_with_label("🦄 Org-mode (.org - Emacs tasks, TODOs, checkboxes, folding)");
+    GtkWidget* rb_text = gtk_check_button_new_with_label("📄 Plain Text (.txt - unformatted plain text)");
+
+    gtk_check_button_set_group(GTK_CHECK_BUTTON(rb_org), GTK_CHECK_BUTTON(rb_rich));
+    gtk_check_button_set_group(GTK_CHECK_BUTTON(rb_text), GTK_CHECK_BUTTON(rb_rich));
+
+    if (init_type == NOTE_TYPE_ORG) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(rb_org), TRUE);
+    } else if (init_type == NOTE_TYPE_TEXT) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(rb_text), TRUE);
+    } else {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(rb_rich), TRUE);
+    }
+
+    gtk_box_append(GTK_BOX(type_vbox), rb_rich);
+    gtk_box_append(GTK_BOX(type_vbox), rb_org);
+    gtk_box_append(GTK_BOX(type_vbox), rb_text);
+    gtk_box_append(GTK_BOX(box), type_vbox);
+
+    GtkWidget* sep2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_margin_top(sep2, 6);
+    gtk_widget_set_margin_bottom(sep2, 6);
+    gtk_box_append(GTK_BOX(box), sep2);
+
+    GtkWidget* preview_label = gtk_label_new(NULL);
+    gtk_widget_set_halign(preview_label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(box), preview_label);
+
+    NoteDialogData d = {
+        g_main_loop_new(NULL, FALSE),
+        GTK_RESPONSE_CANCEL,
+        entry,
+        rb_rich,
+        rb_org,
+        rb_text,
+        preview_label
+    };
+
+    update_note_dialog_preview(&d);
+
+    g_signal_connect(entry, "changed", G_CALLBACK(on_note_dlg_field_changed), &d);
+    g_signal_connect(rb_rich, "toggled", G_CALLBACK(on_note_dlg_field_changed), &d);
+    g_signal_connect(rb_org, "toggled", G_CALLBACK(on_note_dlg_field_changed), &d);
+    g_signal_connect(rb_text, "toggled", G_CALLBACK(on_note_dlg_field_changed), &d);
+    g_signal_connect(dlg, "response", G_CALLBACK(on_note_dlg_response), &d);
 
     gtk_window_present(GTK_WINDOW(dlg));
     gtk_widget_grab_focus(entry);
-    if (default_val != NULL) {
+    if (init_title != NULL) {
         gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1);
     }
+
     g_main_loop_run(d.loop);
     g_main_loop_unref(d.loop);
 
-    gchar* result = NULL;
+    gboolean ok = FALSE;
     if (d.response == GTK_RESPONSE_OK) {
-        const gchar* text = gtk_editable_get_text(GTK_EDITABLE(entry));
-        if (text != NULL) {
-            gchar* trimmed = g_strstrip(g_strdup(text));
+        const gchar* raw = gtk_editable_get_text(GTK_EDITABLE(entry));
+        if (raw != NULL) {
+            gchar* trimmed = g_strstrip(g_strdup(raw));
             if (trimmed[0] != '\0' && strchr(trimmed, '/') == NULL && strchr(trimmed, '\\') == NULL) {
-                result = trimmed;
+                *out_title = trimmed;
+                if (gtk_check_button_get_active(GTK_CHECK_BUTTON(rb_org))) {
+                    *out_type = NOTE_TYPE_ORG;
+                } else if (gtk_check_button_get_active(GTK_CHECK_BUTTON(rb_text))) {
+                    *out_type = NOTE_TYPE_TEXT;
+                } else {
+                    *out_type = NOTE_TYPE_RICH;
+                }
+                ok = TRUE;
             } else {
                 g_free(trimmed);
             }
         }
     }
+
     gtk_window_destroy(GTK_WINDOW(dlg));
-    return result;
+    return ok;
 }
 
 typedef struct {
@@ -797,7 +991,10 @@ void notes_append_to_store(GtkTreeStore* store, AppData* app) {
         } else {
             for (GList* nl = nb->notes; nl != NULL; nl = nl->next) {
                 NoteItem* note = (NoteItem*)nl->data;
-                gchar* nlabel = g_strdup_printf("📝 %s", note->title);
+                const gchar* nicon = note_type_to_icon(note->type);
+                gchar* nlabel = g_strdup_printf("%s %s", nicon, note->title);
+                const gchar* tbadge = (note->type == NOTE_TYPE_ORG) ? "<span foreground=\"#c586c0\" size=\"small\">org</span>" :
+                                      ((note->type == NOTE_TYPE_RICH) ? "<span foreground=\"#4ec9b0\" size=\"small\">rich</span>" : "");
                 GtkTreeIter fiter;
                 gtk_tree_store_append(store, &fiter, &diter);
                 gtk_tree_store_set(store, &fiter,
@@ -806,7 +1003,7 @@ void notes_append_to_store(GtkTreeStore* store, AppData* app) {
                                    COL_LABEL, nlabel,
                                    COL_PATH, note->path,
                                    COL_LOADED, TRUE,
-                                   COL_GIT_STATUS, "",
+                                   COL_GIT_STATUS, tbadge,
                                    -1);
                 g_free(nlabel);
             }
@@ -848,7 +1045,8 @@ void notes_append_to_store(GtkTreeStore* store, AppData* app) {
     } else {
         for (GList* tl = mgr->trash; tl != NULL; tl = tl->next) {
             TrashNoteItem* tnote = (TrashNoteItem*)tl->data;
-            gchar* nlabel = g_strdup_printf("📝 %s", tnote->title);
+            const gchar* nicon = note_type_to_icon(tnote->type);
+            gchar* nlabel = g_strdup_printf("%s %s", nicon, tnote->title);
             gchar* origin_badge = g_strdup_printf("<span foreground=\"#6e7681\" size=\"small\">from %s</span>",
                                                   tnote->original_nb ? tnote->original_nb : "General");
             GtkTreeIter fiter;
@@ -1117,11 +1315,17 @@ void notes_new_note(AppData* app) {
     if (target_nb == NULL) return;
 
     gchar* default_title = g_strdup_printf("Untitled-%d", mgr->next_note_id++);
-    gchar* title = prompt_text_dialog(app->window, "New Note", "Enter note title:", default_title, "Create");
+    gchar* title = NULL;
+    NoteType type = NOTE_TYPE_RICH;
+    if (!prompt_note_dialog(app->window, "New Note", "Create", default_title, NOTE_TYPE_RICH, &title, &type)) {
+        g_free(default_title);
+        return;
+    }
     g_free(default_title);
     if (title == NULL) return;
 
-    gchar* filename = g_strdup_printf("%s.txt", title);
+    const gchar* ext = note_type_to_ext(type);
+    gchar* filename = g_strdup_printf("%s%s", title, ext);
     gchar* file_path = g_build_filename(target_nb->path, filename, NULL);
 
     /* If file exists, find an available unique filename */
@@ -1130,14 +1334,44 @@ void notes_new_note(AppData* app) {
         do {
             g_free(filename);
             g_free(file_path);
-            filename = g_strdup_printf("%s (%d).txt", title, counter++);
+            filename = g_strdup_printf("%s (%d)%s", title, counter++, ext);
             file_path = g_build_filename(target_nb->path, filename, NULL);
         } while (g_file_test(file_path, G_FILE_TEST_EXISTS));
     }
 
-    g_file_set_contents(file_path, "", 0, NULL);
+    /* Template content based on note type */
+    gchar* starter = NULL;
+    if (type == NOTE_TYPE_RICH) {
+        starter = g_strdup_printf(
+            "# %s\n\n"
+            "Rich format note supporting **bold**, *italic*, lists, tables, and images.\n\n"
+            "- [ ] Task 1\n"
+            "- [ ] Task 2\n",
+            title);
+    } else if (type == NOTE_TYPE_ORG) {
+        GDateTime* dt = g_date_time_new_now_local();
+        gchar* cur_date = g_date_time_format(dt, "%Y-%m-%d");
+        g_date_time_unref(dt);
 
-    NoteItem* note = note_item_new(filename, title, file_path);
+        starter = g_strdup_printf(
+            "#+TITLE: %s\n"
+            "#+DATE: <%s>\n\n"
+            "* TODO Welcome to Org-mode!\n"
+            "  SCHEDULED: <%s>\n"
+            "  - [ ] First task\n"
+            "  - [ ] Second task\n\n"
+            "* Notes\n"
+            "  Org-mode supports *bold*, /italic/, =code=, tables, and folding.\n",
+            title, cur_date ? cur_date : "2026-10-28", cur_date ? cur_date : "2026-10-28");
+        g_free(cur_date);
+    } else {
+        starter = g_strdup("");
+    }
+
+    g_file_set_contents(file_path, starter, -1, NULL);
+    g_free(starter);
+
+    NoteItem* note = note_item_new(filename, title, file_path, type);
     target_nb->notes = g_list_append(target_nb->notes, note);
     target_nb->expanded = TRUE;
 
@@ -1202,6 +1436,44 @@ void notes_new_notebook(AppData* app) {
     g_free(dir_path);
 }
 
+void notes_convert_selected_type(AppData* app, NoteType target_type) {
+    NotebookItem* nb = NULL;
+    NoteItem* note = NULL;
+    NotesSelectionType sel = get_selected_info(app, &nb, &note, NULL);
+    if (sel != SEL_NOTE || note == NULL || nb == NULL) return;
+    if (note->type == target_type) return;
+
+    const gchar* ext = note_type_to_ext(target_type);
+    gchar* new_filename = g_strdup_printf("%s%s", note->title, ext);
+    gchar* new_path = g_build_filename(nb->path, new_filename, NULL);
+
+    if (g_file_test(new_path, G_FILE_TEST_EXISTS) && g_strcmp0(new_path, note->path) != 0) {
+        notes_confirm(app, "Note Exists", "A note with this name and format already exists in this notebook.", "OK", FALSE);
+        g_free(new_filename);
+        g_free(new_path);
+        return;
+    }
+
+    if (g_rename(note->path, new_path) == 0) {
+        update_open_editors(app, note->path, new_path, note->title);
+        g_free(note->filename);
+        g_free(note->path);
+        note->filename = new_filename;
+        note->path = new_path;
+        note->type = target_type;
+
+        notes_save(app);
+        notes_refresh(app);
+
+        if (app->viewed_path != NULL) {
+            load_file_content(app, note->filename, note->path);
+        }
+    } else {
+        g_free(new_filename);
+        g_free(new_path);
+    }
+}
+
 void notes_edit_selected(AppData* app) {
     NotebookItem* nb = NULL;
     NoteItem* note = NULL;
@@ -1209,17 +1481,26 @@ void notes_edit_selected(AppData* app) {
     NotesSelectionType sel = get_selected_info(app, &nb, &note, &tnote);
 
     if (sel == SEL_NOTE && note != NULL && nb != NULL) {
-        gchar* new_title = prompt_text_dialog(app->window, "Rename Note", "Enter new note title:", note->title, "Rename");
-        if (new_title == NULL || g_strcmp0(new_title, note->title) == 0) {
+        gchar* new_title = NULL;
+        NoteType new_type = note->type;
+        if (!prompt_note_dialog(app->window, "Edit Note", "Save", note->title, note->type, &new_title, &new_type)) {
+            return;
+        }
+
+        gboolean title_changed = (g_strcmp0(new_title, note->title) != 0);
+        gboolean type_changed = (new_type != note->type);
+
+        if (!title_changed && !type_changed) {
             g_free(new_title);
             return;
         }
 
-        gchar* new_filename = g_strdup_printf("%s.txt", new_title);
+        const gchar* ext = note_type_to_ext(new_type);
+        gchar* new_filename = g_strdup_printf("%s%s", new_title, ext);
         gchar* new_path = g_build_filename(nb->path, new_filename, NULL);
 
         if (g_file_test(new_path, G_FILE_TEST_EXISTS) && g_strcmp0(new_path, note->path) != 0) {
-            notes_confirm(app, "Note Exists", "A note with that title already exists in this notebook.", "OK", FALSE);
+            notes_confirm(app, "Note Exists", "A note with that title and format already exists in this notebook.", "OK", FALSE);
             g_free(new_title);
             g_free(new_filename);
             g_free(new_path);
@@ -1234,9 +1515,14 @@ void notes_edit_selected(AppData* app) {
             note->filename = new_filename;
             note->title = new_title;
             note->path = new_path;
+            note->type = new_type;
 
             notes_save(app);
             notes_refresh(app);
+
+            if (app->viewed_path != NULL) {
+                load_file_content(app, note->filename, note->path);
+            }
         } else {
             g_free(new_title);
             g_free(new_filename);
@@ -1453,7 +1739,7 @@ void notes_delete_selected(AppData* app) {
         g_free(trash_dir);
 
         if (g_rename(note->path, trash_path) == 0) {
-            TrashNoteItem* item = trash_item_new(trash_filename, note->title, trash_path, nb->name, (gint64)time(NULL));
+            TrashNoteItem* item = trash_item_new(trash_filename, note->title, trash_path, nb->name, (gint64)time(NULL), note->type);
             mgr->trash = g_list_append(mgr->trash, item);
 
             nb->notes = g_list_remove(nb->notes, note);
@@ -1479,7 +1765,7 @@ void notes_delete_selected(AppData* app) {
             gchar* t_filename = g_strdup_printf("%" G_GINT64_FORMAT "_%s", (gint64)time(NULL), n->filename);
             gchar* t_path = g_build_filename(trash_dir, t_filename, NULL);
             if (g_rename(n->path, t_path) == 0) {
-                TrashNoteItem* titem = trash_item_new(t_filename, n->title, t_path, nb->name, (gint64)time(NULL));
+                TrashNoteItem* titem = trash_item_new(t_filename, n->title, t_path, nb->name, (gint64)time(NULL), n->type);
                 mgr->trash = g_list_append(mgr->trash, titem);
             }
             g_free(t_filename);
@@ -1544,7 +1830,8 @@ void notes_restore_selected(AppData* app) {
         g_free(nb_path);
     }
 
-    gchar* note_filename = g_strdup_printf("%s.txt", tnote->title);
+    const gchar* ext = note_type_to_ext(tnote->type);
+    gchar* note_filename = g_strdup_printf("%s%s", tnote->title, ext);
     gchar* target_path = g_build_filename(dest_nb->path, note_filename, NULL);
 
     if (g_file_test(target_path, G_FILE_TEST_EXISTS)) {
@@ -1552,13 +1839,13 @@ void notes_restore_selected(AppData* app) {
         do {
             g_free(note_filename);
             g_free(target_path);
-            note_filename = g_strdup_printf("%s (%d).txt", tnote->title, counter++);
+            note_filename = g_strdup_printf("%s (%d)%s", tnote->title, counter++, ext);
             target_path = g_build_filename(dest_nb->path, note_filename, NULL);
         } while (g_file_test(target_path, G_FILE_TEST_EXISTS));
     }
 
     if (g_rename(tnote->path, target_path) == 0) {
-        NoteItem* item = note_item_new(note_filename, tnote->title, target_path);
+        NoteItem* item = note_item_new(note_filename, tnote->title, target_path, tnote->type);
         dest_nb->notes = g_list_append(dest_nb->notes, item);
         dest_nb->expanded = TRUE;
 
@@ -1855,6 +2142,9 @@ static gboolean notes_run_menu_action(gpointer data) {
     case NOTE_ACTION_MOVE_DOWN:      notes_move_reorder(app, +1); break;
     case NOTE_ACTION_SORT:           notes_toggle_sort(app); break;
     case NOTE_ACTION_COLLAPSE:       notes_toggle_collapse_expand(app); break;
+    case NOTE_ACTION_CONVERT_TEXT:   notes_convert_selected_type(app, NOTE_TYPE_TEXT); break;
+    case NOTE_ACTION_CONVERT_RICH:   notes_convert_selected_type(app, NOTE_TYPE_RICH); break;
+    case NOTE_ACTION_CONVERT_ORG:    notes_convert_selected_type(app, NOTE_TYPE_ORG); break;
     default: break;
     }
     g_free(a);
@@ -1944,8 +2234,18 @@ static void notes_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble
 
     if (sel == SEL_NOTE) {
         note_menu_item(box, popover, app, "Open Note", "Enter", NOTE_ACTION_OPEN, TRUE);
-        note_menu_item(box, popover, app, "Rename Note...", "F2", NOTE_ACTION_RENAME, TRUE);
+        note_menu_item(box, popover, app, "Edit / Rename Note...", "F2", NOTE_ACTION_RENAME, TRUE);
         note_menu_item(box, popover, app, "Move to Notebook...", "m", NOTE_ACTION_MOVE, TRUE);
+        note_menu_separator(box);
+        if (note != NULL && note->type != NOTE_TYPE_TEXT) {
+            note_menu_item(box, popover, app, "Convert to Plain Text (📄 .txt)", NULL, NOTE_ACTION_CONVERT_TEXT, TRUE);
+        }
+        if (note != NULL && note->type != NOTE_TYPE_RICH) {
+            note_menu_item(box, popover, app, "Convert to Rich Format (✨ .md)", NULL, NOTE_ACTION_CONVERT_RICH, TRUE);
+        }
+        if (note != NULL && note->type != NOTE_TYPE_ORG) {
+            note_menu_item(box, popover, app, "Convert to Org-mode (🦄 .org)", NULL, NOTE_ACTION_CONVERT_ORG, TRUE);
+        }
         note_menu_separator(box);
         note_menu_item(box, popover, app, "Move Up", "Shift+K", NOTE_ACTION_MOVE_UP, TRUE);
         note_menu_item(box, popover, app, "Move Down", "Shift+J", NOTE_ACTION_MOVE_DOWN, TRUE);

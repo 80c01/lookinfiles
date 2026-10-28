@@ -6,6 +6,7 @@
 const gchar* file_extension(const gchar* name);
 gboolean is_markdown_file(const gchar* name);
 gboolean is_html_file(const gchar* name);
+gboolean is_org_file(const gchar* name);
 gboolean is_image_file(const gchar* name);
 gboolean is_pdf_file(const gchar* name);
 gboolean is_video_file(const gchar* name);

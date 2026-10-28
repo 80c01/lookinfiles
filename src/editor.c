@@ -3,6 +3,7 @@
 #include "file_list.h"
 #include "minimap.h"
 #include "ui.h"
+#include "orgmode.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;
@@ -239,6 +240,19 @@ static void on_editor_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) 
         app->last_focused_editor = tab;
         update_active_panel_highlight(app);
     }
+}
+
+static gboolean on_editor_view_key_press(GtkEventControllerKey* controller, guint keyval,
+                                         guint keycode, GdkModifierType state, gpointer data) {
+    (void)controller;
+    (void)keycode;
+    EditorTab* tab = (EditorTab*)data;
+    if (tab != NULL && tab->app != NULL) {
+        if (orgmode_editor_handle_key((AppData*)tab->app, tab, keyval, state)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 void editor_tab_label_update(EditorTab* tab) {
@@ -789,6 +803,11 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     GtkEventController* focus_ctrl = gtk_event_controller_focus_new();
     g_signal_connect(focus_ctrl, "enter", G_CALLBACK(on_editor_focus_enter), tab);
     gtk_widget_add_controller(view, focus_ctrl);
+
+    GtkEventController* key_ctrl = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(key_ctrl, GTK_PHASE_CAPTURE);
+    g_signal_connect(key_ctrl, "key-pressed", G_CALLBACK(on_editor_view_key_press), tab);
+    gtk_widget_add_controller(view, key_ctrl);
 
     editor_minimap_init(tab);
 
