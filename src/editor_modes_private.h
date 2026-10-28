@@ -110,6 +110,10 @@ typedef struct {
 
 } EditorModeState;
 
+/* Mode bar helpers: keep bars from imposing a minimum width (editor_modes.c) */
+void editor_bar_label_shrinkable(GtkWidget* label, PangoEllipsizeMode mode);
+GtkWidget* editor_bar_clip(GtkWidget* child);
+
 /* Per-mode UI construction (called once from editor_modes_init_tab) */
 void notepad_build_ui(EditorTab* tab, EditorModeState* st);
 void emacs_build_ui(EditorTab* tab, EditorModeState* st);

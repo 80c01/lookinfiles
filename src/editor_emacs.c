@@ -187,12 +187,13 @@ void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
     gtk_label_set_xalign(GTK_LABEL(ml_dash), 0.0f);
     gtk_widget_add_css_class(ml_dash, "emacs-modeline-pos");
 
+    editor_bar_label_shrinkable(st->emacs_ml_bufname, PANGO_ELLIPSIZE_MIDDLE);
     gtk_box_append(GTK_BOX(modeline), st->emacs_ml_status);
     gtk_box_append(GTK_BOX(modeline), st->emacs_ml_bufname);
     gtk_box_append(GTK_BOX(modeline), st->emacs_ml_modes);
     gtk_box_append(GTK_BOX(modeline), st->emacs_ml_pos);
     gtk_box_append(GTK_BOX(modeline), st->emacs_ml_linecol);
-    gtk_box_append(GTK_BOX(modeline), ml_dash);
+    gtk_box_append(GTK_BOX(modeline), editor_bar_clip(ml_dash));
     st->emacs_modeline = modeline;
 
     /* Minibuffer */
@@ -209,6 +210,7 @@ void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
     gtk_widget_set_visible(st->emacs_mb_entry, FALSE);
 
     st->emacs_mb_echo = gtk_label_new("Emacs mode ready");
+    editor_bar_label_shrinkable(st->emacs_mb_echo, PANGO_ELLIPSIZE_END);
     gtk_label_set_xalign(GTK_LABEL(st->emacs_mb_echo), 0.0f);
     gtk_widget_set_hexpand(st->emacs_mb_echo, TRUE);
     gtk_widget_add_css_class(st->emacs_mb_echo, "emacs-minibuffer-echo");

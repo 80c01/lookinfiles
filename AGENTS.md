@@ -105,6 +105,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim`, and
   `editor_org` (Org editing keys in tabs). `editor_modes_private.h` (state
   struct, mode enums) is internal to these 5 files.
+  Mode bar labels whose text can grow (file names, messages) must use
+  `editor_bar_label_shrinkable()`, and filler text `editor_bar_clip()`: a bar
+  wider than the panel pushes the minimap out of the window.
 - `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette; ssh into
   the active remote machine.
 - `search` — live search entry (`/`, `n`, `N`) for list and viewer.

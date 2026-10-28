@@ -150,6 +150,27 @@ static void editor_modes_ensure_css(void) {
 /* Text Buffer Tag Setup                                                     */
 /* ------------------------------------------------------------------------- */
 
+/* Mode bars must never impose a minimum width on the editor tab: a label wider
+ * than the panel makes GTK lay the tab out wider than the visible area, which
+ * pushes the minimap out of the window. */
+
+/* Let a label shrink with an ellipsis (END for messages, MIDDLE for file names) */
+void editor_bar_label_shrinkable(GtkWidget* label, PangoEllipsizeMode mode) {
+    gtk_label_set_ellipsize(GTK_LABEL(label), mode);
+}
+
+/* Wrap filler content (e.g. Emacs modeline dashes) so it is clipped instead of
+ * requesting its full width */
+GtkWidget* editor_bar_clip(GtkWidget* child) {
+    GtkWidget* clip = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(clip), GTK_POLICY_EXTERNAL, GTK_POLICY_NEVER);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(clip), TRUE);
+    gtk_widget_set_hexpand(clip, gtk_widget_get_hexpand(child));
+    gtk_widget_set_can_target(clip, FALSE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(clip), child);
+    return clip;
+}
+
 static void init_buffer_tags(EditorTab* tab) {
     if (tab == NULL || tab->buffer == NULL) return;
     GtkTextTagTable* table = gtk_text_buffer_get_tag_table(tab->buffer);

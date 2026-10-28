@@ -213,6 +213,7 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     gtk_widget_add_css_class(st->vim_sl_mode, "vim-mode-normal");
 
     st->vim_sl_file = gtk_label_new(tab->name ? tab->name : "[No Name]");
+    editor_bar_label_shrinkable(st->vim_sl_file, PANGO_ELLIPSIZE_MIDDLE);
     gtk_label_set_xalign(GTK_LABEL(st->vim_sl_file), 0.0f);
     gtk_widget_set_hexpand(st->vim_sl_file, TRUE);
 
@@ -238,6 +239,7 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     gtk_widget_set_visible(st->vim_cl_entry, FALSE);
 
     st->vim_cl_echo = gtk_label_new("");
+    editor_bar_label_shrinkable(st->vim_cl_echo, PANGO_ELLIPSIZE_END);
     gtk_label_set_xalign(GTK_LABEL(st->vim_cl_echo), 0.0f);
     gtk_widget_set_hexpand(st->vim_cl_echo, TRUE);
 
