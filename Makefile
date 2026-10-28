@@ -84,9 +84,14 @@ check:
 	@$(MAKE) --no-print-directory test
 	@sh tools/check_layers.sh
 
+# Headless UI smoke test (needs Xvfb, xdotool, ImageMagick). Screenshots go to
+# build/ui/shots; set UI_BASELINE=<dir of shots> to compare with a reference run.
+ui-test: $(TARGET)
+	@sh tests/ui/run_ui_test.sh ./$(TARGET)
+
 clean:
 	rm -rf $(TARGET) $(BUILD_DIR)
 
 -include $(DEPS) $(TEST_BINS:=.d)
 
-.PHONY: all clean test check
+.PHONY: all clean test check ui-test

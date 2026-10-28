@@ -213,6 +213,7 @@ Authentic Vim visual clone featuring the inverted console statusline (`-- NORMAL
 make                           # incremental build (objects in build/)
 make test                      # run unit tests (no display needed)
 make check                     # zero-warning build + unit tests + module layering rules
+make ui-test                   # headless UI smoke test (screenshots in build/ui/shots)
 make clean                     # remove binary and build/
 ```
 
@@ -253,6 +254,16 @@ Optional (PDF document preview):
 sudo apt install libpoppler-glib-dev
 ```
 Detected the same way; without it, PDF files display an informative placeholder prompting to install the library.
+
+Optional (headless UI test, `make ui-test`):
+```bash
+sudo apt install xvfb xdotool imagemagick
+```
+The test runs the application on a virtual X display (Xvfb), drives it with
+keyboard and mouse events (xdotool), and takes a screenshot of every step
+(ImageMagick). It fails if the window does not open, GTK logs a warning or
+critical, or `Ctrl+Q` does not quit cleanly. Set `UI_BASELINE=<directory>` to
+compare the screenshots with a reference run (for example one from another branch).
 
 ## 🏗️ Project structure
 
@@ -297,6 +308,7 @@ src/
 ├── search.c/.h              # Interactive search bar
 └── ui.c/.h                  # Focus, global keys, pane resizing, layout toggle
 tests/                       # GLib unit tests (make test)
+tests/ui/run_ui_test.sh      # Headless UI smoke test (make ui-test)
 tools/check_layers.sh        # Module layering rules (make check)
 Makefile                     # Build configuration
 README.md                    # Documentation
