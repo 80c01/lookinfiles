@@ -7,6 +7,7 @@
 #include "terminal.h"
 #include "editor.h"
 #include "bookmarks.h"
+#include "notes.h"
 
 gboolean window_is_fullscreen(GtkWindow* win) {
     return gtk_window_is_fullscreen(win);
@@ -47,8 +48,14 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Bookmarks view", "d / Delete", "Delete selected bookmark or folder"},
     {"Bookmarks view", "Shift+K / Shift+J", "Move selected item up / down"},
     {"Bookmarks view", "Right-click", "Bookmark context menu"},
+    {"Notes view", "a / Shift+A", "Create new note / new notebook"},
+    {"Notes view", "F2 / r / e", "Rename note or notebook"},
+    {"Notes view", "m", "Move note to another notebook"},
+    {"Notes view", "d / Delete", "Delete note (to Trash) or notebook"},
+    {"Notes view", "Shift+R", "Restore note from Trash to original notebook"},
+    {"Notes view", "Shift+K / Shift+J", "Move selected note or notebook up / down"},
+    {"Notes view", "Right-click", "Notes context menu"},
     {"Explorer panel", "Ctrl+U", "Switch between files and notes view in Explorer"},
-    {"Explorer panel", "r / F2", "Rename selected text buffer (in Buffers view)"},
     {"Explorer panel", "i / I", "Toggle hidden files"},
     {"Explorer panel", "o", "Cycle sort: name, date, size, extension"},
     {"Explorer panel", "?", "Show / hide this help panel"},
@@ -448,11 +455,13 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
-    /* Ctrl+R or F2: rename current buffer if an editor tab or buffer row is active */
+    /* Ctrl+R or F2: rename current note / notebook if notes view is active */
     if (((state & GDK_CONTROL_MASK) && !(state & GDK_SHIFT_MASK) && (keyval == GDK_KEY_r || keyval == GDK_KEY_R)) ||
         keyval == GDK_KEY_F2) {
-        rename_selected_buffer(app);
-        return TRUE;
+        if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
+            notes_edit_selected(app);
+            return TRUE;
+        }
     }
 
     /* Ctrl+T: terminal pane beside last running one;
@@ -1709,22 +1718,42 @@ static void on_sidebar_bm_collapse_clicked(GtkButton* btn, gpointer data) {
 
 static void on_sidebar_notes_new_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    create_new_buffer((AppData*)data);
+    notes_new_note((AppData*)data);
 }
 
-static void on_sidebar_notes_new_folder_clicked(GtkButton* btn, gpointer data) {
+static void on_sidebar_notes_new_notebook_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    create_new_buffer_folder((AppData*)data);
+    notes_new_notebook((AppData*)data);
+}
+
+static void on_sidebar_notes_edit_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    notes_edit_selected((AppData*)data);
+}
+
+static void on_sidebar_notes_move_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    notes_move_selected((AppData*)data);
+}
+
+static void on_sidebar_notes_delete_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    notes_delete_selected((AppData*)data);
+}
+
+static void on_sidebar_notes_sort_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    notes_toggle_sort((AppData*)data);
 }
 
 static void on_sidebar_notes_collapse_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    buffers_collapse_all((AppData*)data);
+    notes_toggle_collapse_expand((AppData*)data);
 }
 
-static void on_sidebar_notes_expand_clicked(GtkButton* btn, gpointer data) {
+static void on_sidebar_notes_empty_trash_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    buffers_expand_all((AppData*)data);
+    notes_empty_trash((AppData*)data);
 }
 
 /* VS Code-style explorer panel header: "EXPLORER" title + mini view icons + action bars */
@@ -1909,37 +1938,69 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(buf_section, FALSE);
     gtk_box_append(GTK_BOX(buf_toolbar), buf_section);
 
-    GtkWidget* new_buf_btn = gtk_button_new_with_label("➕");
-    gtk_button_set_has_frame(GTK_BUTTON(new_buf_btn), FALSE);
-    gtk_widget_set_focusable(new_buf_btn, FALSE);
-    gtk_widget_add_css_class(new_buf_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(new_buf_btn, "New Buffer");
-    g_signal_connect(new_buf_btn, "clicked", G_CALLBACK(on_sidebar_notes_new_clicked), app);
-    gtk_box_append(GTK_BOX(buf_toolbar), new_buf_btn);
+    GtkWidget* new_note_btn = gtk_button_new_with_label("➕");
+    gtk_button_set_has_frame(GTK_BUTTON(new_note_btn), FALSE);
+    gtk_widget_set_focusable(new_note_btn, FALSE);
+    gtk_widget_add_css_class(new_note_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(new_note_btn, "New Note (a)");
+    g_signal_connect(new_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_new_clicked), app);
+    gtk_box_append(GTK_BOX(buf_toolbar), new_note_btn);
 
-    GtkWidget* new_folder_btn = gtk_button_new_with_label("📁+");
-    gtk_button_set_has_frame(GTK_BUTTON(new_folder_btn), FALSE);
-    gtk_widget_set_focusable(new_folder_btn, FALSE);
-    gtk_widget_add_css_class(new_folder_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(new_folder_btn, "New Folder");
-    g_signal_connect(new_folder_btn, "clicked", G_CALLBACK(on_sidebar_notes_new_folder_clicked), app);
-    gtk_box_append(GTK_BOX(buf_toolbar), new_folder_btn);
+    GtkWidget* new_nb_btn = gtk_button_new_with_label("📓+");
+    gtk_button_set_has_frame(GTK_BUTTON(new_nb_btn), FALSE);
+    gtk_widget_set_focusable(new_nb_btn, FALSE);
+    gtk_widget_add_css_class(new_nb_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(new_nb_btn, "New Notebook (Shift+A)");
+    g_signal_connect(new_nb_btn, "clicked", G_CALLBACK(on_sidebar_notes_new_notebook_clicked), app);
+    gtk_box_append(GTK_BOX(buf_toolbar), new_nb_btn);
 
-    GtkWidget* collapse_btn = gtk_button_new_with_label("▲");
-    gtk_button_set_has_frame(GTK_BUTTON(collapse_btn), FALSE);
-    gtk_widget_set_focusable(collapse_btn, FALSE);
-    gtk_widget_add_css_class(collapse_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(collapse_btn, "Collapse All");
-    g_signal_connect(collapse_btn, "clicked", G_CALLBACK(on_sidebar_notes_collapse_clicked), app);
-    gtk_box_append(GTK_BOX(buf_toolbar), collapse_btn);
+    GtkWidget* edit_note_btn = gtk_button_new_with_label("✎");
+    gtk_button_set_has_frame(GTK_BUTTON(edit_note_btn), FALSE);
+    gtk_widget_set_focusable(edit_note_btn, FALSE);
+    gtk_widget_add_css_class(edit_note_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(edit_note_btn, "Rename / Edit Selected (F2 / r)");
+    g_signal_connect(edit_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_edit_clicked), app);
+    gtk_box_append(GTK_BOX(buf_toolbar), edit_note_btn);
 
-    GtkWidget* expand_btn = gtk_button_new_with_label("▼");
-    gtk_button_set_has_frame(GTK_BUTTON(expand_btn), FALSE);
-    gtk_widget_set_focusable(expand_btn, FALSE);
-    gtk_widget_add_css_class(expand_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(expand_btn, "Expand All");
-    g_signal_connect(expand_btn, "clicked", G_CALLBACK(on_sidebar_notes_expand_clicked), app);
-    gtk_box_append(GTK_BOX(buf_toolbar), expand_btn);
+    GtkWidget* move_note_btn = gtk_button_new_with_label("📁→");
+    gtk_button_set_has_frame(GTK_BUTTON(move_note_btn), FALSE);
+    gtk_widget_set_focusable(move_note_btn, FALSE);
+    gtk_widget_add_css_class(move_note_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(move_note_btn, "Move Note to Notebook (m)");
+    g_signal_connect(move_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_move_clicked), app);
+    gtk_box_append(GTK_BOX(buf_toolbar), move_note_btn);
+
+    GtkWidget* del_note_btn = gtk_button_new_with_label("🗑");
+    gtk_button_set_has_frame(GTK_BUTTON(del_note_btn), FALSE);
+    gtk_widget_set_focusable(del_note_btn, FALSE);
+    gtk_widget_add_css_class(del_note_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(del_note_btn, "Move to Trash / Delete (d / Delete)");
+    g_signal_connect(del_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_delete_clicked), app);
+    gtk_box_append(GTK_BOX(buf_toolbar), del_note_btn);
+
+    GtkWidget* sort_note_btn = gtk_button_new_with_label("⇅");
+    gtk_button_set_has_frame(GTK_BUTTON(sort_note_btn), FALSE);
+    gtk_widget_set_focusable(sort_note_btn, FALSE);
+    gtk_widget_add_css_class(sort_note_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(sort_note_btn, "Toggle Sort Mode (Manual / A-Z / Z-A)");
+    g_signal_connect(sort_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_sort_clicked), app);
+    gtk_box_append(GTK_BOX(buf_toolbar), sort_note_btn);
+
+    GtkWidget* collapse_note_btn = gtk_button_new_with_label("▲▼");
+    gtk_button_set_has_frame(GTK_BUTTON(collapse_note_btn), FALSE);
+    gtk_widget_set_focusable(collapse_note_btn, FALSE);
+    gtk_widget_add_css_class(collapse_note_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(collapse_note_btn, "Toggle Collapse / Expand Notebooks");
+    g_signal_connect(collapse_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_collapse_clicked), app);
+    gtk_box_append(GTK_BOX(buf_toolbar), collapse_note_btn);
+
+    GtkWidget* empty_trash_btn = gtk_button_new_with_label("🧹");
+    gtk_button_set_has_frame(GTK_BUTTON(empty_trash_btn), FALSE);
+    gtk_widget_set_focusable(empty_trash_btn, FALSE);
+    gtk_widget_add_css_class(empty_trash_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(empty_trash_btn, "Empty Trash Bin");
+    g_signal_connect(empty_trash_btn, "clicked", G_CALLBACK(on_sidebar_notes_empty_trash_clicked), app);
+    gtk_box_append(GTK_BOX(buf_toolbar), empty_trash_btn);
 
     gtk_widget_set_visible(buf_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES));
     gtk_box_append(GTK_BOX(header), buf_toolbar);
@@ -2063,6 +2124,18 @@ static gchar* status_type_label(const gchar* name, const gchar* type) {
     if (g_strcmp0(type, "bm_folder") == 0) {
         return g_strdup("Bookmark Folder");
     }
+    if (g_strcmp0(type, "notebook") == 0) {
+        return g_strdup("Notebook");
+    }
+    if (g_strcmp0(type, "trash") == 0) {
+        return g_strdup("Trash");
+    }
+    if (g_strcmp0(type, "trash_note") == 0) {
+        return g_strdup("Trashed Note");
+    }
+    if (g_strcmp0(type, "note") == 0 || g_strcmp0(type, "buffer") == 0) {
+        return g_strdup("Note");
+    }
     if (is_markdown_file(name)) {
         return g_strdup("Markdown");
     }
@@ -2134,7 +2207,8 @@ void update_status_bar(AppData* app) {
         g_free(type_label);
 
         gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0 &&
-                            g_strcmp0(type, "bm_folder") != 0);
+                            g_strcmp0(type, "bm_folder") != 0 && g_strcmp0(type, "notebook") != 0 &&
+                            g_strcmp0(type, "trash") != 0);
         struct stat st;
         if (is_file && full != NULL && g_stat(full, &st) == 0) {
             gchar* size_str = g_format_size((guint64)st.st_size);

@@ -10,6 +10,7 @@
 #include "ui.h"
 #include "git_tab.h"
 #include "bookmarks.h"
+#include "notes.h"
 #include <unistd.h>
 
 static void on_window_destroy(GtkWidget* widget, gpointer data) {
@@ -360,6 +361,7 @@ int main(int argc, char** argv) {
     bookmarks_init(app);
     bookmarks_attach_context_menu(app);
     notes_init(app);
+    notes_attach_context_menu(app);
     populate_store(store, app, start_dir, FALSE, SORT_NAME);
     g_object_unref(store);
     app->text_view = text_view;
@@ -558,6 +560,7 @@ int main(int argc, char** argv) {
         app->expanded_paths = NULL;
     }
     bookmarks_free(app);
+    notes_free(app);
     if (app->buffers != NULL) {
         g_ptr_array_unref(app->buffers);
     }

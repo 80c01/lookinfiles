@@ -1158,6 +1158,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     gboolean is_bookmark = (g_strcmp0(type, "bookmark") == 0);
     if (name == NULL || type == NULL || g_strcmp0(type, "-") == 0 ||
         g_strcmp0(type, "buffer_create") == 0 || g_strcmp0(type, "bm_folder") == 0 ||
+        g_strcmp0(type, "notebook") == 0 || g_strcmp0(type, "trash") == 0 ||
         full == NULL || (is_bookmark && !g_file_test(full, G_FILE_TEST_EXISTS))) {
         g_free(name);
         g_free(type);

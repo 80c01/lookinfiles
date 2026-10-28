@@ -39,6 +39,9 @@ The codebase is organized into modules under `src/`:
 - **`bookmarks.c` / `bookmarks.h`**: Full bookmark manager storing named links to locations
   (directories, files, URLs) organized hierarchically in folders with XML persistence,
   interactive add/edit/delete modal dialogs, reordering, right-click context menu, and tree view integration.
+- **`notes.c` / `notes.h`**: Full notes & notebooks manager organizing notes into notebooks
+  with custom icons, a trash bin for soft-deleted items with restoration support, custom manual
+  reordering (`Shift+J`/`Shift+K`), sorting modes, move dialogs, and XML persistence (`notes.xml`).
 - **`viewer.c` / `viewer.h`**: Right-pane viewer logic, file content loading, syntax
   highlighting and Dark+ scheme setup, text scrolling/jumping, selection changed listener,
   and filesystem monitoring (`GFileMonitor`).
