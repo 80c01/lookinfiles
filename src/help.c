@@ -215,7 +215,7 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
             g_strcmp0(current_section, KEY_HELP[i].section) != 0) {
             current_section = KEY_HELP[i].section;
             gchar* header =
-                g_strdup_printf("<span foreground=\"#4fc1ff\" weight=\"bold\">%s</span>",
+                g_markup_printf_escaped("<span foreground=\"#4fc1ff\" weight=\"bold\">%s</span>",
                                 current_section);
             GtkWidget* section_label = gtk_label_new(NULL);
             gtk_label_set_markup(GTK_LABEL(section_label), header);
@@ -228,7 +228,7 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
         }
         GtkWidget* key_label = gtk_label_new(NULL);
         gchar* key_markup =
-            g_strdup_printf("<span foreground=\"#dcdcaa\"><tt><b>%s</b></tt></span>",
+            g_markup_printf_escaped("<span foreground=\"#dcdcaa\"><tt><b>%s</b></tt></span>",
                             KEY_HELP[i].key);
         gtk_label_set_markup(GTK_LABEL(key_label), key_markup);
         g_free(key_markup);

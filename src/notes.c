@@ -1048,7 +1048,7 @@ void notes_append_to_store(GtkTreeStore* store, AppData* app) {
             TrashNoteItem* tnote = (TrashNoteItem*)tl->data;
             const gchar* nicon = note_type_to_icon(tnote->type);
             gchar* nlabel = g_strdup_printf("%s %s", nicon, tnote->title);
-            gchar* origin_badge = g_strdup_printf("<span foreground=\"#6e7681\" size=\"small\">from %s</span>",
+            gchar* origin_badge = g_markup_printf_escaped("<span foreground=\"#6e7681\" size=\"small\">from %s</span>",
                                                   tnote->original_nb ? tnote->original_nb : "General");
             GtkTreeIter fiter;
             gtk_tree_store_append(store, &fiter, &titer);

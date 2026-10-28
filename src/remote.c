@@ -409,10 +409,10 @@ void remote_append_to_store(GtkTreeStore* store, AppData* app) {
 
         gchar* status_markup = NULL;
         if (rm->is_connected) {
-            status_markup = g_strdup_printf("<span foreground=\"#73c991\" weight=\"bold\">● Connected</span>  <span foreground=\"#888888\">(%s:%d)</span>",
+            status_markup = g_markup_printf_escaped("<span foreground=\"#73c991\" weight=\"bold\">● Connected</span>  <span foreground=\"#888888\">(%s:%d)</span>",
                                             target, rm->port);
         } else {
-            status_markup = g_strdup_printf("<span foreground=\"#888888\">%s:%d</span>",
+            status_markup = g_markup_printf_escaped("<span foreground=\"#888888\">%s:%d</span>",
                                             target, rm->port);
         }
 
