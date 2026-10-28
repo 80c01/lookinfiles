@@ -77,8 +77,9 @@ Simple graphical application to browse the file system.
 | `d` / `Delete` | Delete selected bookmark or folder in bookmarks view |
 | `J` / `K` (Shift) | Move selected bookmark or folder down / up within its folder |
 | `Ctrl+U` | Switch between files and notes view in the explorer panel |
-| `a` / `A` | In Notes view: create new note (`a`) / new notebook (`Shift+A`) |
-| `F2` / `r` / `e` | In Notes view: rename note or notebook |
+| `a` / `A` | In Notes view: create new note (`a`) / new notebook with custom icon (`Shift+A`) |
+| `F2` / `r` / `e` | In Notes view: edit/rename note or notebook (name and custom icon) |
+| `i` | In Notes view: change notebook custom icon |
 | `m` | In Notes view: move note to another notebook |
 | `d` / `Delete` | In Notes view: move note to trash (or permanently delete from trash); delete notebook |
 | `R` (Shift) | In Notes view: restore trashed note to original notebook |
