@@ -221,10 +221,7 @@ static void render_video_raw(AppData* app, const gchar* name, const gchar* full)
     apply_viewer_language(app, NULL);
     set_view_monospace(app->text_view, TRUE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
-    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
-    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 12);
-    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 12);
+    set_view_text_padding(app->text_view);
 
     struct stat st;
     gint64 fsize = (g_stat(full, &st) == 0) ? (gint64)st.st_size : 0;

@@ -319,10 +319,7 @@ static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
     apply_viewer_language(app, NULL);
     set_view_monospace(app->text_view, FALSE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
-    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
-    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
-    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+    set_view_text_padding(app->text_view);
 
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
     if (hadj != NULL) {
@@ -525,10 +522,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         apply_viewer_language(app, NULL);
         set_view_monospace(app->text_view, FALSE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
-        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(app->text_view), 14);
-        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(app->text_view), 14);
-        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(app->text_view), 0);
-        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(app->text_view), 0);
+        set_view_text_padding(app->text_view);
     } else {
         gboolean code = is_code_file(td->name) || td->render_raw;
         set_view_monospace(app->text_view, code);

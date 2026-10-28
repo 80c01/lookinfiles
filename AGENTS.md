@@ -191,6 +191,13 @@ Check these before adding or changing an action, a tooltip or a dialog:
   confirmations default to Cancel.
 - **Empty states**: an empty container shows `(empty)`; an empty view shows
   `No <items> yet — press a to add one`.
+- **Icons**: buttons and fixed tab headers use GTK theme icons through
+  `icons.c` (`icon_button_new()`, `icon_button_set_content()`,
+  `icon_label_new()`), never emoji or text symbols; use `edit-delete` for a
+  permanent delete and `user-trash` for a move to trash. Emoji are kept only
+  for file-type icons in the tree and editor tabs. The CSS colours `label`
+  and `image` nodes together (symbolic icons follow the text colour).
+- **Preview text views** all use `set_view_text_padding()` (10 px sides).
 - **Names**: `Org-mode`, `Rich Format`, `Plain Text`; view titles EXPLORER,
   BOOKMARKS, NOTES, REMOTE.
 - Keep `help.c` (`KEY_HELP`) and the README shortcut tables in sync.
