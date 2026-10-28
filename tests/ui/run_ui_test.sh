@@ -39,6 +39,8 @@ mkdir -p "$SHOTS" "$FIX/home/.config/gtk-4.0" "$FIX/work/src" "$FIX/work/docs"
 
 # --- Fixture: small git repository with one modified and several untracked files
 printf '[Settings]\ngtk-cursor-blink=false\n' > "$FIX/home/.config/gtk-4.0/settings.ini"
+mkdir -p "$FIX/home/.ssh"
+printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home/.ssh/config"
 (
     cd "$FIX/work" || exit 1
     printf '# Title\n\nSome *markdown* text.\n\n- item one\n- item two\n' > README.md
@@ -129,8 +131,10 @@ key alt+plus;           shot workspace_added
 key alt+1;              shot workspace_1
 key i;                  shot hidden_toggle
 key o;                  shot sort_cycle
+key ctrl+shift+r;       shot remote_view
+key ctrl+shift+r;       shot files_view_back
 echo "external" > "$FIX/work/external.txt"   # created outside the app: the tree must update
-sleep 1;                shot external_file_created
+sleep 3;                shot external_file_created   # let the async rescan settle
 key ctrl+t; sleep 1;    shot terminal
 key ctrl+q
 
