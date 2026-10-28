@@ -57,14 +57,16 @@ $(BUILD_DIR):
 	mkdir -p $@
 
 # Unit tests (GLib g_test, no display needed): tests/test_<module>.c links
-# against the listed objects only. Modules under test must not depend on
-# AppData or widgets. Register new tests in TESTS and TEST_DEPS_<name>.
-TEST_CFLAGS = -Wall -Wextra -Isrc `$(PKG_CONFIG) --cflags glib-2.0`
-TEST_LDFLAGS = `$(PKG_CONFIG) --libs glib-2.0`
-TESTS = test_file_types test_git_utils
+# against the listed objects only. Modules under test must not create widgets.
+# Tests use the application CFLAGS so that AppData has the same layout as in
+# the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
+TEST_CFLAGS = $(CFLAGS)
+TEST_LDFLAGS = $(LDFLAGS)
+TESTS = test_file_types test_git_utils test_remote_store
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o
 TEST_DEPS_test_git_utils = $(BUILD_DIR)/git_utils.o
+TEST_DEPS_test_remote_store = $(BUILD_DIR)/remote_store.o
 
 .SECONDEXPANSION:
 $(BUILD_DIR)/tests/%: tests/%.c $$(TEST_DEPS_%) | $(BUILD_DIR)

@@ -63,91 +63,66 @@ RemoteMachine* remote_get_active_machine(AppData* app) {
 /* XML and SSH Config Persistence                                            */
 /* ------------------------------------------------------------------------- */
 
+/* <machine id="" name="" host="" user="" port="" path="" key=""/> in remotes.xml */
+static void on_remotes_xml_start(GMarkupParseContext* ctx, const gchar* element,
+                                 const gchar** names, const gchar** values,
+                                 gpointer user_data, GError** error) {
+    (void)ctx;
+    (void)error;
+    if (g_strcmp0(element, "machine") != 0) {
+        return;
+    }
+    AppData* app = (AppData*)user_data;
+    const gchar* id = NULL;
+    const gchar* name = NULL;
+    const gchar* host = NULL;
+    const gchar* user = NULL;
+    const gchar* port_str = NULL;
+    const gchar* remote_path = NULL;
+    const gchar* key = NULL;
+    for (gint i = 0; names[i] != NULL; i++) {
+        if (g_strcmp0(names[i], "id") == 0) id = values[i];
+        else if (g_strcmp0(names[i], "name") == 0) name = values[i];
+        else if (g_strcmp0(names[i], "host") == 0) host = values[i];
+        else if (g_strcmp0(names[i], "user") == 0) user = values[i];
+        else if (g_strcmp0(names[i], "port") == 0) port_str = values[i];
+        else if (g_strcmp0(names[i], "path") == 0) remote_path = values[i];
+        else if (g_strcmp0(names[i], "key") == 0) key = values[i];
+    }
+    if (host == NULL || host[0] == '\0') {
+        return;
+    }
+    RemoteMachine* rm = g_new0(RemoteMachine, 1);
+    rm->id = id ? g_strdup(id) : g_strdup_printf("rem_%u", (guint)g_random_int());
+    rm->name = g_strdup(name ? name : host);
+    rm->host = g_strdup(host);
+    rm->user = g_strdup(user ? user : "");
+    rm->port = (port_str && atoi(port_str) > 0) ? atoi(port_str) : 22;
+    rm->remote_path = g_strdup(remote_path ? remote_path : "~");
+    rm->identity_file = g_strdup(key ? key : "");
+    rm->from_ssh_config = FALSE;
+    rm->is_connected = FALSE;
+    rm->mount_point = NULL;
+    app->remotes = g_list_append(app->remotes, rm);
+}
+
+/* Append the machines saved in remotes.xml to app->remotes (entities decoded) */
 static void parse_remotes_xml(AppData* app, const gchar* path) {
     gchar* contents = NULL;
     gsize length = 0;
     if (!g_file_get_contents(path, &contents, &length, NULL) || contents == NULL) {
         return;
     }
-
-    gchar** lines = g_strsplit(contents, "\n", -1);
+    static const GMarkupParser parser = {on_remotes_xml_start, NULL, NULL, NULL, NULL};
+    GMarkupParseContext* ctx = g_markup_parse_context_new(&parser, 0, app, NULL);
+    GError* err = NULL;
+    if (!g_markup_parse_context_parse(ctx, contents, (gssize)length, &err) ||
+        !g_markup_parse_context_end_parse(ctx, &err)) {
+        g_printerr("[ remotes.xml: %s ]\n", err != NULL ? err->message : "parse error");
+        g_clear_error(&err);
+    }
+    g_markup_parse_context_free(ctx);
     g_free(contents);
-    if (lines == NULL) {
-        return;
-    }
-
-    for (gint i = 0; lines[i] != NULL; i++) {
-        gchar* line = g_strstrip(lines[i]);
-        if (!g_str_has_prefix(line, "<machine")) {
-            continue;
-        }
-
-        /* Extract attributes */
-        gchar* id = NULL;
-        gchar* name = NULL;
-        gchar* host = NULL;
-        gchar* user = NULL;
-        gchar* port_str = NULL;
-        gchar* remote_path = NULL;
-        gchar* key = NULL;
-
-        const gchar* p = line;
-        while ((p = strstr(p, "=\"")) != NULL) {
-            /* Find attribute name before =" */
-            const gchar* attr_end = p;
-            const gchar* attr_start = attr_end - 1;
-            while (attr_start > line && *attr_start != ' ') {
-                attr_start--;
-            }
-            if (*attr_start == ' ') {
-                attr_start++;
-            }
-            gchar* attr_name = g_strndup(attr_start, attr_end - attr_start);
-
-            /* Find value */
-            const gchar* val_start = p + 2;
-            const gchar* val_end = strchr(val_start, '"');
-            if (val_end != NULL) {
-                gchar* val = g_strndup(val_start, val_end - val_start);
-                if (g_strcmp0(attr_name, "id") == 0) id = val;
-                else if (g_strcmp0(attr_name, "name") == 0) name = val;
-                else if (g_strcmp0(attr_name, "host") == 0) host = val;
-                else if (g_strcmp0(attr_name, "user") == 0) user = val;
-                else if (g_strcmp0(attr_name, "port") == 0) port_str = val;
-                else if (g_strcmp0(attr_name, "path") == 0) remote_path = val;
-                else if (g_strcmp0(attr_name, "key") == 0) key = val;
-                else g_free(val);
-                p = val_end + 1;
-            } else {
-                p = p + 2;
-            }
-            g_free(attr_name);
-        }
-
-        if (host != NULL && host[0] != '\0') {
-            RemoteMachine* rm = g_new0(RemoteMachine, 1);
-            rm->id = id ? id : g_strdup_printf("rem_%u", (guint)g_random_int());
-            rm->name = name ? name : g_strdup(host);
-            rm->host = host;
-            rm->user = user ? user : g_strdup("");
-            rm->port = (port_str && atoi(port_str) > 0) ? atoi(port_str) : 22;
-            rm->remote_path = remote_path ? remote_path : g_strdup("~");
-            rm->identity_file = key ? key : g_strdup("");
-            rm->from_ssh_config = FALSE;
-            rm->is_connected = FALSE;
-            rm->mount_point = NULL;
-            app->remotes = g_list_append(app->remotes, rm);
-        } else {
-            g_free(id);
-            g_free(name);
-            g_free(host);
-            g_free(user);
-            g_free(remote_path);
-            g_free(key);
-        }
-        g_free(port_str);
-    }
-    g_strfreev(lines);
 }
 
 static void parse_ssh_config(AppData* app) {
