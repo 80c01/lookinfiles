@@ -2015,7 +2015,7 @@ void notes_activate_selected(AppData* app) {
     NotesSelectionType sel = get_selected_info(app, &nb, &note, &tnote);
 
     if (sel == SEL_NOTE && note != NULL) {
-        editor_open_file(app, note->title, note->path);
+        editor_open_file(app, note->filename ? note->filename : note->title, note->path);
     } else if (sel == SEL_TRASH_NOTE && tnote != NULL) {
         gchar* msg = g_strdup_printf("Note '%s' is in the Trash bin.\nDo you want to restore it so you can edit it?", tnote->title);
         if (notes_confirm(app, "Restore Note", msg, "Restore", FALSE)) {

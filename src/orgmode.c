@@ -1382,6 +1382,19 @@ gboolean orgmode_editor_handle_key(AppData* app, EditorTab* tab, guint keyval, G
     if ((keyval == GDK_KEY_ISO_Left_Tab) || (keyval == GDK_KEY_Tab && (state & GDK_SHIFT_MASK))) {
         /* Cycle overview / contents / all in preview */
         orgmode_cycle_global_fold(app);
+        /* Also reload current viewed file if it's this file */
+        if (app->viewed_path != NULL && g_strcmp0(app->viewed_path, tab->path) == 0 && is_org_file(app->viewed_path)) {
+            load_file_content(app, app->viewed_name ? app->viewed_name : tab->name, app->viewed_path);
+        }
+        return TRUE;
+    }
+
+    /* Tab: Cycle global fold in editor mode too */
+    if (keyval == GDK_KEY_Tab && !(state & (GDK_CONTROL_MASK | GDK_ALT_MASK))) {
+        orgmode_cycle_global_fold(app);
+        if (app->viewed_path != NULL && g_strcmp0(app->viewed_path, tab->path) == 0 && is_org_file(app->viewed_path)) {
+            load_file_content(app, app->viewed_name ? app->viewed_name : tab->name, app->viewed_path);
+        }
         return TRUE;
     }
 

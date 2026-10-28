@@ -782,11 +782,17 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     gtk_text_view_set_top_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_Y);
     gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_Y);
 #endif
-    editor_apply_language(buffer, name);
-    set_view_monospace(view, is_code_file(name));
+    gchar* detect_name = g_path_get_basename(full);
+    if (detect_name == NULL || detect_name[0] == '\0') {
+        g_free(detect_name);
+        detect_name = g_strdup(name);
+    }
+    editor_apply_language(buffer, detect_name);
+    set_view_monospace(view, is_code_file(detect_name));
 #ifdef HAVE_GSV
     apply_vscode_scheme(buffer, view);
 #endif
+    g_free(detect_name);
 
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
