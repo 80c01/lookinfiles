@@ -1176,9 +1176,12 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
 
     if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
         /* Do not return to preview tab if the user is currently editing in an editor tab,
-         * unless the tree view has focus (e.g. user explicitly navigating in the tree view). */
-        if (editor_current_tab(app) == NULL ||
-            (app->tree_view != NULL && gtk_widget_has_focus(GTK_WIDGET(app->tree_view)))) {
+         * unless the tree view has focus (e.g. user navigating or clicking in the tree view)
+         * or a different file/note was selected in the explorer panel. */
+        EditorTab* cur = editor_current_tab(app);
+        gboolean is_diff_file = (cur != NULL && full != NULL && g_strcmp0(full, cur->path) != 0);
+        gboolean tree_focused = (app->tree_view != NULL && gtk_widget_has_focus(GTK_WIDGET(app->tree_view)));
+        if (cur == NULL || is_diff_file || tree_focused) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         }
     }

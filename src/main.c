@@ -36,6 +36,18 @@ static void git_status_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* c
     g_free(status);
 }
 
+static void on_tree_click_pressed(GtkGestureClick* gesture, gint n_press,
+                                  gdouble x, gdouble y, gpointer user_data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    (void)y;
+    AppData* app = (AppData*)user_data;
+    if (app != NULL && app->tree_view != NULL) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+}
+
 int main(int argc, char** argv) {
     /* Strip custom options first:
      * -f / --fullscreen: start in fullscreen mode.
@@ -445,6 +457,12 @@ int main(int argc, char** argv) {
     gtk_event_controller_set_propagation_phase(tree_key_ctrl, GTK_PHASE_CAPTURE);
     g_signal_connect(tree_key_ctrl, "key-pressed", G_CALLBACK(on_tree_key_press), app);
     gtk_widget_add_controller(tree_view, tree_key_ctrl);
+
+    GtkGesture* tree_click_ctrl = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(tree_click_ctrl), GDK_BUTTON_PRIMARY);
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(tree_click_ctrl), GTK_PHASE_CAPTURE);
+    g_signal_connect(tree_click_ctrl, "pressed", G_CALLBACK(on_tree_click_pressed), app);
+    gtk_widget_add_controller(tree_view, GTK_EVENT_CONTROLLER(tree_click_ctrl));
 
     GtkEventController* viewer_key_ctrl = gtk_event_controller_key_new();
     gtk_event_controller_set_propagation_phase(viewer_key_ctrl, GTK_PHASE_CAPTURE);
