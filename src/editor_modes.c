@@ -1,4 +1,5 @@
 #include "editor_modes.h"
+#include "file_types.h"
 #include "editor.h"
 #include "file_list.h"
 #include "orgmode.h"

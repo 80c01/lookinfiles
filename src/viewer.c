@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "file_types.h"
 #include "editor.h"
 #include "git_tab.h"
 #include "file_list.h"

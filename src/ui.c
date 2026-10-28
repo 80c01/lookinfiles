@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "file_types.h"
 #include "file_list.h"
 #include "viewer.h"
 #include "video.h"

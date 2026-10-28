@@ -3,16 +3,6 @@
 
 #include "app_types.h"
 
-const gchar* file_extension(const gchar* name);
-gboolean is_markdown_file(const gchar* name);
-gboolean is_html_file(const gchar* name);
-gboolean is_org_file(const gchar* name);
-gboolean is_image_file(const gchar* name);
-gboolean is_pdf_file(const gchar* name);
-gboolean is_video_file(const gchar* name);
-gboolean is_audio_file(const gchar* name);
-gboolean is_renderable_file(const gchar* name);
-const gchar* file_icon(const gchar* name, gboolean is_dir);
 
 gint list_count(AppData* app);
 gint count_visible_rows(AppData* app);

@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "file_types.h"
 #include "viewer.h"
 #include "file_list.h"
 #include "minimap.h"
