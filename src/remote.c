@@ -1,4 +1,5 @@
 #include "remote.h"
+#include "tree_nav.h"
 #include "app_events.h"
 #include "file_list.h"
 #include "terminal.h"
@@ -103,6 +104,7 @@ void remote_refresh(AppData* app) {
     }
     GtkTreeStore* store = GTK_TREE_STORE(app->model);
     gtk_tree_store_clear(store);
+    tree_nav_reset_column_widths(app);
     remote_append_to_store(store, app);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }

@@ -27,4 +27,7 @@ gboolean select_by_path(AppData* app, const gchar* full_path);
 void tree_nav_block_selection_handler(AppData* app);
 void tree_nav_unblock_selection_handler(AppData* app);
 
+/* Forget cached column widths (call when the store is cleared and refilled) */
+void tree_nav_reset_column_widths(AppData* app);
+
 #endif /* TREE_NAV_H */

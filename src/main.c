@@ -285,12 +285,15 @@ int main(int argc, char** argv) {
     GtkCellRenderer* renderer_name = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_padding(renderer_name, 6, 2);
     g_object_set(renderer_name, "ellipsize", PANGO_ELLIPSIZE_END, NULL);
-    gtk_tree_view_column_pack_start(col_name, renderer_name, FALSE);
+    gtk_tree_view_column_pack_start(col_name, renderer_name, TRUE); /* name takes the free width */
     gtk_tree_view_column_set_cell_data_func(col_name, renderer_name, file_name_cell_data_func, NULL, NULL);
 
     GtkCellRenderer* renderer_git = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_padding(renderer_git, 4, 2);
     gtk_cell_renderer_set_alignment(renderer_git, 0.0f, 0.5f);
+    /* Secondary text (git badge, note count, bookmark path) is capped at 24
+     * characters and ellipsized, so a long bookmark path never squeezes the name. */
+    g_object_set(renderer_git, "ellipsize", PANGO_ELLIPSIZE_END, "max-width-chars", 8, NULL);
     gtk_tree_view_column_pack_start(col_name, renderer_git, FALSE);
     gtk_tree_view_column_set_cell_data_func(col_name, renderer_git, git_status_cell_data_func, NULL, NULL);
 

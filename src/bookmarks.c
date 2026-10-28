@@ -523,6 +523,7 @@ static void bm_refresh_select(AppData* app, guint select_id) {
 
     tree_nav_block_selection_handler(app);
     gtk_tree_store_clear(GTK_TREE_STORE(app->model));
+    tree_nav_reset_column_widths(app);
     bookmarks_append_to_store(GTK_TREE_STORE(app->model), app);
     bm_reexpand_level(app, NULL);
     tree_nav_unblock_selection_handler(app);

@@ -414,6 +414,7 @@ void populate_store(GtkTreeStore* store, AppData* app, const gchar* dirname,
         app->git_statuses = scan_git_statuses(dirname);
     }
     gtk_tree_store_clear(store);
+    tree_nav_reset_column_widths(app);
     populate_level(store, app, NULL, dirname, show_hidden, sort_mode);
 }
 
@@ -670,6 +671,7 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     }
 
     gtk_tree_store_clear(store);
+    tree_nav_reset_column_widths(app);
     apply_dir_node_to_store(store, app, NULL, td->root_node);
     reexpand_paths_recursive(app, NULL);
     bookmarks_reexpand(app);

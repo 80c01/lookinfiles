@@ -39,6 +39,16 @@ mkdir -p "$SHOTS" "$FIX/home/.config/gtk-4.0" "$FIX/work/src" "$FIX/work/docs"
 
 # --- Fixture: small git repository with one modified and several untracked files
 printf '[Settings]\ngtk-cursor-blink=false\n' > "$FIX/home/.config/gtk-4.0/settings.ini"
+CFG="$FIX/home/.config/explorateur_fichiers"
+mkdir -p "$CFG/notes/General" "$CFG/notes/Projects and long notebook name"
+echo a > "$CFG/notes/General/short.txt"
+echo c > "$CFG/notes/Projects and long notebook name/plan.md"
+{
+    printf '<?xml version="1.0" encoding="UTF-8"?>\n<bookmarks version="2">\n'
+    printf '<folder name="Work folders" expanded="true">\n'
+    printf '<bookmark name="Source directory of the project" target="%s/work/src"/>\n' "$FIX"
+    printf '</folder>\n</bookmarks>\n'
+} > "$CFG/bookmarks.xml"
 mkdir -p "$FIX/home/.ssh"
 printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home/.ssh/config"
 (
@@ -133,6 +143,11 @@ key alt+plus;           shot workspace_added
 key alt+1;              shot workspace_1
 key i;                  shot hidden_toggle
 key o;                  shot sort_cycle
+# Cycling views must not leave names ellipsized (cached cell widths)
+key ctrl+a;             shot bookmarks_view
+key ctrl+a;             shot files_after_bookmarks
+key ctrl+u;             shot notes_view
+key ctrl+u;             shot files_after_notes
 key ctrl+shift+r;       shot remote_view
 key ctrl+shift+r;       shot files_view_back
 echo "external" > "$FIX/work/external.txt"   # created outside the app: the tree must update

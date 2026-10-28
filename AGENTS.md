@@ -68,7 +68,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `theme` — global CSS provider (`apply_panel_borders()`).
 - `tree_nav` — explorer row traversal and selection (j/k, gg/G, Ctrl+F/B,
   zz/zt/zb, `select_by_path()`), and suspending the preview handler while the
-  store is rebuilt (`tree_nav_block_selection_handler()`).
+  store is rebuilt (`tree_nav_block_selection_handler()`). After every
+  `gtk_tree_store_clear()` of the explorer store, call
+  `tree_nav_reset_column_widths()`: GTK otherwise keeps the widest cell widths
+  of the previous view and ellipsizes the names.
 - `remote_store` — `RemoteMachine` list, `remotes.xml`, `~/.ssh/config`
   discovery, lookups (unit-tested).
 - `fs_watch` — `GFileMonitor`s on expanded directories, the previewed file and

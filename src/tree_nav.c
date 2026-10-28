@@ -364,3 +364,13 @@ void tree_nav_unblock_selection_handler(AppData* app) {
         g_signal_handler_unblock(app->selection, app->selection_changed_id);
     }
 }
+
+/* Forget the cached cell widths of the explorer column. GTK keeps the widest
+ * width ever measured for each cell of a column, so after a view with long
+ * secondary text (bookmark paths) the names of the next view would stay
+ * ellipsized. Call after clearing the store, before repopulating it. */
+void tree_nav_reset_column_widths(AppData* app) {
+    if (app->tree_view != NULL) {
+        gtk_tree_view_columns_autosize(app->tree_view);
+    }
+}

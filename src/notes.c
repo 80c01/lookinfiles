@@ -1173,6 +1173,7 @@ void notes_refresh(AppData* app) {
     tree_nav_block_selection_handler(app);
 
     gtk_tree_store_clear(GTK_TREE_STORE(app->model));
+    tree_nav_reset_column_widths(app);
     notes_append_to_store(GTK_TREE_STORE(app->model), app);
     notes_reexpand(app);
 
