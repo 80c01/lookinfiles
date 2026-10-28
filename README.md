@@ -49,6 +49,12 @@ Simple graphical application to browse the file system.
   - **Notes view**: create note (`➕` or `a`), create notebook (`📓+` or `Shift+A`), rename (`✎` or `F2`/`r`), move to notebook (`📁→` or `m`), delete to trash (`🗑` or `d`/`Delete`), toggle sort order (`⇅`), toggle collapse/expand (`▲▼`), and empty trash (`🧹`).
   - **Remote view**: connect/mount (`🔌` or `c`/`Enter`), open remote SSH terminal (`>_` or `t`), add machine (`➕` or `a`), edit machine (`✎` or `e`/`F2`), delete machine (`🗑` or `d`/`Delete`), and refresh/re-scan `~/.ssh/config` (`↻` or `r`).
 - ✅ Focused panel highlight: the panel that owns active keyboard focus (Explorer sidebar, Preview panel, Editor panel, Terminal panel, or Help cheatsheet) is dynamically highlighted with a subtle VS Code-style blue accent outline (`#0078d4`) and header emphasis, updating live as focus cycles (`Alt+Left` / `Alt+Right`) or when clicking widgets.
+- ✅ Multi-Mode Editor Engine (Notepad, Emacs, Vim) with Visual Clones:
+  Each editor tab supports switching between 3 distinct editor modes, complete with visual clone fidelity and full feature parity:
+  - **Notepad Mode (Default)**: Windows Notepad aesthetic with clean bottom status bar (`Ln X, Col Y | 100% | Windows (CRLF) | UTF-8`), docked search & replace bar (`Ctrl+F` / `Ctrl+H`), in-app Save As bar (`Ctrl+Shift+S`), paragraph alignment shortcuts (`Ctrl+L/E/R/J`), undo/redo (`Ctrl+Z` / `Ctrl+Y`), and goto line (`Ctrl+G`).
+  - **Emacs Mode (Visual Clone of GNU Emacs)**: Authentic GNU Emacs mode-line (`-U:---  *filename*  (Text Fill)  Top  L1 C0  ----...`) with 3D/shadow border styling and live minibuffer / echo area at the bottom. Full Emacs editing model: `C-x C-s` (save buffer), `C-x C-w` (write file / Save As with chosen name), `C-w` (kill region), `M-w` (kill ring save), `C-y` (yank), `C-d` / `M-d` / `C-k` (delete char, kill word, kill line), `C-SPC` (set mark), `C-s` / `C-r` (I-search forward/backward in minibuffer), `M-%` (query replace in minibuffer), `M-q` (fill paragraph 72 cols), `M-u`/`M-l`/`M-c` (case changes), `C-/` / `C-Shift-_` (undo/redo), `C-f`/`C-b`/`C-n`/`C-p` (navigation), `M-g g` (goto line), and `M-x` (command prompt).
+  - **Vim Mode (Visual Clone of Vim)**: Authentic Vim inverted statusline with mode badges (`-- NORMAL --`, `-- INSERT --`, `-- VISUAL --`, `-- VISUAL LINE --`, `COMMAND`), file status (`"file.txt" [+] [utf-8]`), ruler (`line,col  percentage`), dynamic cursor styling (block cursor in Normal/Visual, I-beam in Insert), and bottom command-line / echo area (`:`, `/`, `?`). Full modal editing: `i`/`a`/`o`/`O`/`s`/`S`/`C` (insert), `Esc` / `Ctrl+[` (normal mode), `x`/`dd`/`dw`/`d$`/`D` (delete/cut), `yy`/`yw` (yank), `p`/`P` (put), `v`/`V` (visual selection), `h`/`j`/`k`/`l`/`w`/`b`/`e`/`0`/`^`/`$`/`gg`/`G` (navigation), `/` and `?` (search forward/backward with `n`/`N`/`*`), `:%s/old/new/g` (substitute/replace), `==`/`>>`/`<<`/`gq` (auto-indent and paragraph format), `:center [width]`/`:right [width]`/`:left` (alignment), `u`/`Ctrl+R` (undo/redo), `:w`/`:w <file>`/`:saveas <file>` (save and save as with chosen file name), and `ZZ`/`:wq`/`:q`/`:q!` (quit).
+  - **Seamless Mode Switching**: switch anytime via the bottom status bar mode popover button, tab header right-click context menu, Vim `:set mode=vim/emacs/notepad`, or Emacs `M-x vim-mode/emacs-mode/notepad-mode`.
 
 ## ⌨️ Keyboard shortcuts
 
@@ -147,10 +153,59 @@ the tab title marks unsaved changes.
 | `Shift+Right` / `Shift+Left` | In Org-mode editor: cycle heading TODO keyword (`TODO` → `NEXT` → `DONE` → none) |
 | `Alt+Enter` | In Org-mode editor: insert new heading at current heading level (`M-RET`) |
 | `Ctrl+Enter` / `Ctrl+Space` | In Org-mode editor: toggle checkbox `[ ]` <-> `[X]` and update parent progress statistics |
-| `Ctrl+Alt+Down` / `J` | Move / split active editor tab down |
-| `Ctrl+Alt+Up` / `K` | Move / split active editor tab up |
-| `Right-click tab` | Context menu to move, split, or close the editor tab |
+| `Right-click tab` | Context menu to change mode (Notepad/Emacs/Vim), move, split, or close the editor tab |
 | `Ctrl+R` / `F2` | Rename active buffer tab |
+
+### Key Capabilities by Editor Mode
+
+The editor provides 3 dedicated editing modes, with Emacs and Vim functioning as visual clones of their respective editors.
+
+#### Mode Switching
+
+- **Status bar button**: click the `NOTEPAD`, `EMACS`, or `VIM` button in the bottom status bar to open the mode selector popover.
+- **Tab context menu**: right-click any editor tab title -> select `Mode: Notepad`, `Mode: Emacs`, or `Mode: Vim`.
+- **Vim command line**: `:set mode=vim`, `:set mode=emacs`, or `:set mode=notepad`.
+- **Emacs minibuffer**: `M-x vim-mode`, `M-x emacs-mode`, or `M-x notepad-mode`.
+
+#### 1. Notepad Mode (Default)
+
+Clean Windows Notepad styling with bottom status bar (`Ln X, Col Y | 100% | Windows (CRLF) | UTF-8`).
+
+| Operation | Shortcuts & Actions |
+|---|---|
+| **Enter and edit text** | Direct typing, Backspace, Delete, Select all (`Ctrl+A`), Cut (`Ctrl+X`), Copy (`Ctrl+C`), Paste (`Ctrl+V`) |
+| **Move around document** | Arrow keys, `Ctrl+Left` / `Ctrl+Right` (word jump), `Home` / `End`, `Ctrl+Home` / `Ctrl+End`, `Page Up` / `Page Down`, Go to line (`Ctrl+G`) |
+| **Find and replace** | `Ctrl+F` (Find bar), `Ctrl+H` (Replace bar), `F3` (Find next), `Shift+F3` (Find prev), `Enter` to find, `Esc` to close |
+| **Format text** | Align Left (`Ctrl+L`), Align Center (`Ctrl+E`), Align Right (`Ctrl+R`), Align Justify (`Ctrl+J`); quick align buttons in toolbar; indent (`Tab`), unindent (`Shift+Tab`) |
+| **Undo and redo** | Undo (`Ctrl+Z`), Redo (`Ctrl+Y` and `Ctrl+Shift+Z`) |
+| **Save document** | Save file (`Ctrl+S`), Save As with chosen file name (`Ctrl+Shift+S` with inline filename bar) |
+
+#### 2. Emacs Mode (Visual Clone of GNU Emacs)
+
+Authentic GNU Emacs visual clone featuring the classic modeline (`-U:---  *filename*  (Text Fill)  Top  L1 C0  ----...`) with 3D shadow border and the bottom echo area / minibuffer.
+
+| Operation | Shortcuts & Actions |
+|---|---|
+| **Enter and edit text** | Direct typing; Delete char (`C-d`), Kill word forward (`M-d`), Kill word backward (`M-DEL` / `M-Backspace`), Kill line (`C-k`); Set mark (`C-SPC` or `C-@`), Cancel mark (`C-g`); Cut / Kill region (`C-w`), Copy / Kill ring save (`M-w`), Paste / Yank (`C-y`) |
+| **Move around document** | Forward/backward char (`C-f` / `C-b`), Next/previous line (`C-n` / `C-p`), Forward/backward word (`M-f` / `M-b`), Line start/end (`C-a` / `C-e`), Buffer start/end (`M-<` / `M->`), Scroll down/up (`C-v` / `M-v`), Recenter cursor (`C-l`), Goto line prompt in minibuffer (`M-g g` or `M-g M-g`) |
+| **Find and replace** | Incremental search forward (`C-s`: `I-search: ` prompt in minibuffer with live match jumping), Incremental search backward (`C-r`: `I-search backward: `); Query replace (`M-%`: prompts for target and replacement in minibuffer, then replaces occurrences with count feedback) |
+| **Format text** | Fill paragraph (`M-q`: wrap lines to 72 columns); Case conversion: Upcase word (`M-u`), Downcase word (`M-l`), Capitalize word (`M-c`); Minibuffer commands (`M-x set-justification-center`, `set-justification-left`, `set-justification-right`, `set-justification-full`) |
+| **Undo and redo** | Undo (`C-/`, `C-_`, or `C-x u`), Redo (`C-Shift-_`, `M-_`, or `C-Shift-Z`) |
+| **Save document** | Save buffer (`C-x C-s`: echoes `Wrote <path>`), Write file / Save As with chosen file name (`C-x C-w`: prompts in minibuffer `Write file: `, saves to chosen path and updates tab) |
+| **Commands & Minibuffer** | `M-x` command prompt (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `set-justification-center`, `vim-mode`, `notepad-mode`, `undo`, `redo`); cancel with `C-g` (`Quit`) |
+
+#### 3. Vim Mode (Visual Clone of Vim)
+
+Authentic Vim visual clone featuring the inverted console statusline (`-- NORMAL --`, `-- INSERT --`, `-- VISUAL --`, `-- VISUAL LINE --`, `COMMAND`), file status `[+] [utf-8]`, position ruler (`line,col  Top/Bot/All`), cursor styles (block in Normal/Visual, I-beam in Insert), and bottom command-line / echo area (`:`, `/`, `?`).
+
+| Operation | Shortcuts & Actions |
+|---|---|
+| **Enter and edit text** | Insert mode (`i` before cursor, `I` first non-blank, `a` after cursor, `A` line end, `o` open line below, `O` open line above, `s` substitute char, `S`/`cc` change line, `C`/`c$` change to line end, `cw` change word); Exit to Normal mode (`Esc` or `Ctrl+[`); Insert mode delete word (`Ctrl+W`), delete line (`Ctrl+U`); Normal mode delete char (`x`), delete char back (`X`), delete line (`dd`), delete word (`dw`), delete to line end (`d$` / `D`), delete to line start (`d0`), delete to document end (`dG`), replace char (`r <char>`); Visual mode (`v` char, `V` line): cut (`d` / `x`), yank (`y`), change (`c`); Yank line (`yy` / `Y`), Yank word (`yw`); Put / paste after cursor (`p`), Put before cursor (`P`) |
+| **Move around document** | Left/down/up/right (`h` / `j` / `k` / `l`), Word forward/backward/end (`w` / `b` / `e`), Line start/non-blank/end (`0` / `^` / `$`), Document start/end (`gg` / `G`), Goto line (`[count]G` or `:<line><CR>`), Page down/up (`Ctrl+F` / `Ctrl+B`), Half page down/up (`Ctrl+D` / `Ctrl+U`), Recenter cursor (`zz` or `z z`) |
+| **Find and replace** | Search forward (`/pattern<CR>`), Search backward (`?pattern<CR>`), Next/previous match (`n` / `N`), Search word under cursor forward (`*`), Substitute / replace in buffer (`:%s/old/new/g` or `:s/old/new/g` with substitution count feedback) |
+| **Format text** | Auto-indent current line (`==`), Indent line/selection (`>` / `>>`), Unindent line/selection (`<` / `<<`), Format paragraph (`gq`: wrap to 80 columns); Toggle case (`~`), Visual mode lowercase (`u`) / uppercase (`U`); Ex-command alignment (`:center [width]`, `:right [width]`, `:left`) |
+| **Undo and redo** | Undo (`u` in Normal mode, echoes change count), Redo (`Ctrl+R` in Normal mode) |
+| **Save document** | Save document (`:w` or `:write`), Save to chosen file name (`:w <filename>`, `:write <filename>`, or `:saveas <filename>`), Save and quit (`ZZ` or `:wq` or `:x`), Quit tab (`:q`), Quit discarding changes (`:q!`) |
 
 ## 📝 Build
 
