@@ -275,6 +275,10 @@ src/
 ├── file_types.c/.h          # File type detection and emoji icons
 ├── git_utils.c/.h           # Git root/dir/branch discovery and status scan
 │   Shared UI helpers
+├── app_events.c/.h          # Event bus: lower layers notify the window chrome
+├── panels.c/.h              # Fullscreen, focused panel, split handle feedback
+├── fs_watch.c/.h            # File/directory/.git monitors, debounced refresh
+├── remote_store.c/.h        # Remote machines: remotes.xml, ~/.ssh/config
 ├── text_style.c/.h          # Dark+ scheme, monospace, syntax language
 ├── theme.c/.h               # Global CSS theme
 ├── tree_nav.c/.h            # Explorer row navigation and selection
@@ -287,9 +291,9 @@ src/
 ├── sidebar.c/.h             # Explorer header and per-view toolbars
 ├── bookmarks.c/.h           # Hierarchical bookmark manager with XML persistence
 ├── notes.c/.h               # Notebooks, notes, and trash bin with custom reordering
-├── remote.c/.h              # SSH remote machines and SSHFS mounting
+├── remote.c/.h              # SSH remote view, dialogs and SSHFS mounting
 │   Preview and editing
-├── viewer.c/.h              # Preview dispatch, file/dir previews, disk monitoring
+├── viewer.c/.h              # Preview dispatch, file/dir/image previews
 ├── orgmode.c/.h             # Org-mode rendering and interaction
 ├── pdf.c/.h                 # PDF document renderer and text extractor
 ├── video.c/.h, audio.c/.h   # Media previews
@@ -299,6 +303,7 @@ src/
 ├── editor_notepad.c         # Notepad mode
 ├── editor_emacs.c           # Emacs mode
 ├── editor_vim.c             # Vim mode
+├── editor_org.c             # Org-mode editing keys in editor tabs
 │   Window chrome
 ├── topbar.c/.h              # Breadcrumbs and toggle pills
 ├── status_bar.c/.h          # Bottom status bar
@@ -306,7 +311,7 @@ src/
 ├── workspace.c/.h           # Virtual workspaces and workspace minimap
 ├── terminal.c/.h            # Embedded VTE terminal panel
 ├── search.c/.h              # Interactive search bar
-└── ui.c/.h                  # Focus, global keys, pane resizing, layout toggle
+└── ui.c/.h                  # Focus, global keys, layout toggle
 tests/                       # GLib unit tests (make test)
 tests/ui/run_ui_test.sh      # Headless UI smoke test (make ui-test)
 tools/check_layers.sh        # Module layering rules (make check)

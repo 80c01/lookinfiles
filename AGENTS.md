@@ -57,14 +57,22 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
   `git_read_branch()`, `scan_git_statuses()` (spawns git: worker thread only).
 
-**2. Shared types & leaf UI helpers — may use `AppData` and layer 1 only:**
+**2. Shared types, events & leaf helpers — may use `AppData` and layer 1 only:**
 - `app_types.h` — `AppData`, `EditorTab`, `VirtualLayout`, `FileEntry`,
   tree columns (`COL_*`), `SORT_*`, `SIDEBAR_VIEW_*`, `PREVIEW_*` constants.
+- `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below.
+- `panels` — fullscreen, focused-panel highlight, workspace width, split-handle
+  drag feedback and fractions (`wire_paned_controllers()`).
 - `text_style` — Dark+ GtkSourceView scheme, monospace, panel background,
   syntax language (`is_code_file()`, `apply_viewer_language()`).
 - `theme` — global CSS provider (`apply_panel_borders()`).
 - `tree_nav` — explorer row traversal and selection (j/k, gg/G, Ctrl+F/B,
-  zz/zt/zb, `select_by_path()`).
+  zz/zt/zb, `select_by_path()`), and suspending the preview handler while the
+  store is rebuilt (`tree_nav_block_selection_handler()`).
+- `remote_store` — `RemoteMachine` list, `remotes.xml`, `~/.ssh/config`
+  discovery, lookups (unit-tested).
+- `fs_watch` — `GFileMonitor`s on expanded directories, the previewed file and
+  `.git`, debounced `schedule_refresh()`; reports through events only.
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
 - `minimap` — scaled file overview.
 
@@ -75,37 +83,61 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `activate_selected_entry()`), sidebar view toggles, tree key handler
   (`on_tree_key_press()`).
 - `file_actions` — new file / new folder prompts.
-- `topbar` — breadcrumbs and toggle pills; `update_path_label()`.
-- `sidebar` — explorer header: view switcher and per-view action toolbars.
-- `status_bar` — bottom bar (branch, selection, size, type, editor mode menu).
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
-  (XML persistence: `bookmarks.xml`, `notes.xml`, `remotes.xml`).
+  (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
 - `viewer` — right-pane preview dispatch (`on_selection_changed()`,
-  `load_file_content()`), image/text/dir previews, viewer keys, file and
-  directory monitors (`GFileMonitor`, debounced `schedule_refresh()`).
+  `load_file_content()`, `viewer_reload_preview()`), image/text/dir previews,
+  viewer keys.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
+  `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
 - `editor` — editor tabs in the notebook(s): open, save, close, move, dedicated panel.
 - `editor_modes` — per-tab mode state, shared editing operations (align,
-  format, case, indent, find/replace, goto line), status, key dispatch.
-  Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim`.
-  `editor_modes_private.h` (state struct, mode enums) is internal to these 4 files.
-- `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette.
+  format, case, indent, find/replace, goto line), tab label, status, key dispatch.
+  Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim`, and
+  `editor_org` (Org editing keys in tabs). `editor_modes_private.h` (state
+  struct, mode enums) is internal to these 5 files.
+- `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette; ssh into
+  the active remote machine.
 - `search` — live search entry (`/`, `n`, `N`) for list and viewer.
+
+**4. Window chrome — may call features:**
+- `topbar` — breadcrumbs and toggle pills; `update_path_label()`.
+- `status_bar` — bottom bar (branch, selection, size, type, editor mode menu).
+- `sidebar` — explorer header: view switcher and per-view action toolbars.
 - `help` — cheat sheet (`?`); `KEY_HELP` must stay in sync with `README.md`.
 - `workspace` — virtual workspaces (Alt+1..8): save/apply layout snapshots,
   top-bar workspace minimap.
-- `ui` — fullscreen, focus tracking and cycling, global key handler
-  (`on_window_key_press()`, incl. `Ctrl+Q`), pane resize popup, layout toggle.
+- `ui` — focus tracking and cycling, global key handler
+  (`on_window_key_press()`, incl. `Ctrl+Q`), layout toggle.
 
-**4. Entry point:** `main.c` — CLI (`-f`/`--fullscreen`, `-s`/`--size WxH`,
-start directory), widget creation and assembly, signal wiring, `GMainLoop`.
+**5. Entry point:** `main.c` — CLI (`-f`/`--fullscreen`, `-s`/`--size WxH`,
+start directory), widget creation and assembly, signal wiring, event
+subscriptions, `GMainLoop`.
+
+### Notifying the chrome (app_events)
+
+Lower layers never call the chrome or the workspace directly. They emit:
+
+| Emit (`app_emit(app, ...)`)      | When                                         | Subscriber (main.c)            |
+|----------------------------------|----------------------------------------------|--------------------------------|
+| `APP_EVENT_CHROME_CHANGED`       | dir, sort, hidden, panels, view, remote changed | `update_path_label()`       |
+| `APP_EVENT_STATUS_CHANGED`       | selection / file info / editor mode changed  | `update_status_bar()`          |
+| `APP_EVENT_LAYOUT_CHANGED`       | panel visibility or split fractions changed  | `workspace_save_current()`     |
+| `APP_EVENT_LAYOUT_REBUILT`       | panes shown, hidden or rebuilt               | `workspace_apply_positions()`  |
+| `APP_EVENT_FILES_CHANGED`        | files created/renamed/saved                  | `refresh_listing()`            |
+| `APP_EVENT_PREVIEW_STALE`        | previewed file changed                       | `viewer_reload_preview()`      |
+| `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`|
+
+Handlers run synchronously inside `app_emit()`. `make check` rejects direct
+calls to the first five subscribers outside their module and `main.c`. A new
+upward notification = a new `AppEvent` + one `app_events_subscribe()` in `main.c`.
 
 ### Where to put new code
 
-- Logic that does not need widgets (parsing, classification, path or git
-  handling): a foundation module + a test in `tests/test_<module>.c`
-  (register it in `TESTS` / `TEST_DEPS_*` in the Makefile, and in
-  `tools/check_layers.sh` for its allowed includes).
+- Logic that does not need widgets (parsing, classification, persistence, path
+  or git handling): a layer 1–2 module + a test in `tests/test_<module>.c`
+  (register it in `TESTS` / `TEST_DEPS_*` in the Makefile, and its allowed
+  includes in `tools/check_layers.sh`).
 - A new feature: its own `src/<feature>.c/.h`, not appended to an already
   large file (`notes.c`, `html.c`, `orgmode.c`, `viewer.c` are > 1200 lines).
 - Include the header of every module you call, directly. Do not rely on
@@ -113,16 +145,17 @@ start directory), widget creation and assembly, signal wiring, `GMainLoop`.
 - Callbacks used in one file are `static`; never declare another module's
   function locally in a `.c` file — add it to that module's header.
 - To refresh the preview after changing the selection programmatically, emit
-  the selection `"changed"` signal rather than calling viewer functions from
-  lower layers.
+  the selection `"changed"` signal; to re-render the current preview, emit
+  `APP_EVENT_PREVIEW_STALE`.
 
 ### Known coupling (avoid making it worse)
 
-`AppData` is one shared mutable struct; most feature modules call each other
-(`update_path_label()`, `workspace_save_current()`, `update_status_bar()`,
-`refresh_listing()`), so several pairs include each other (e.g. `file_list` ↔
-`viewer`, `editor` ↔ `workspace`). Do not add new cross-calls from layer 1–2
-modules into features; `make check` enforces this for the listed modules.
+`make check` fails on any include cycle (two `.c` files including each other's
+header), except the two accepted ones: `file_list` ↔ `bookmarks` and
+`file_list` ↔ `remote`. The explorer dispatches keys and rows to these sidebar
+views, and the views ask the explorer to navigate (`navigate_to_path()`,
+`reload_directory()`). Breaking a new cycle: emit an event, or move the shared
+code down a layer (as done for `panels`, `fs_watch`, `remote_store`, `editor_org`).
 
 Shortcut list to keep in sync with `README.md` and `help.c` when you change behavior.
 

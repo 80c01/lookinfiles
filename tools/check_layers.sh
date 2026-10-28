@@ -63,5 +63,23 @@ for pair in update_path_label:topbar update_status_bar:status_bar \
     done
 done
 
+# No new include cycles: two modules must not include each other's header.
+# The remaining pairs are the explorer host and its sidebar views (the explorer
+# dispatches keys/rows to the view, the view asks the explorer to navigate).
+ALLOWED_CYCLES="bookmarks:file_list file_list:remote"
+for c in src/*.c; do
+    a=$(basename "$c" .c)
+    for h in $(sed -n 's/^#include "\([a-z_]*\)\.h".*/\1/p' "$c"); do
+        [ "$h" = "$a" ] && continue
+        [ -f "src/$h.c" ] || continue
+        grep -q "^#include \"$a.h\"" "src/$h.c" || continue
+        [ "$a" \< "$h" ] || continue
+        case " $ALLOWED_CYCLES " in
+            *" $a:$h "*) ;;
+            *) echo "layering: include cycle $a.c <-> $h.c (use app_events or move the shared code down a layer)"; status=1 ;;
+        esac
+    done
+done
+
 [ $status -eq 0 ] && echo "Layering OK."
 exit $status
