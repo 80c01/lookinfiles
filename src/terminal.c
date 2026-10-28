@@ -1,7 +1,7 @@
 #include "terminal.h"
 #include "panels.h"
 #include "app_events.h"
-#include "remote.h"
+#include "remote_store.h"
 
 #ifdef HAVE_VTE
 
