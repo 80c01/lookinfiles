@@ -26,6 +26,12 @@ void toggle_remote_view(AppData* app);
 void cycle_sort_mode(AppData* app);
 void toggle_collapse_expand_files(AppData* app);
 
+/* Files view actions (keys a / Shift+A, F2 / r / e, d / Delete and the toolbar) */
+void create_new_file_in_tree(AppData* app);
+void create_new_folder_in_tree(AppData* app);
+void rename_selected_in_tree(AppData* app);
+void trash_selected_in_tree(AppData* app);
+
 void activate_selected_entry(AppData* app);
 void on_row_activated(GtkTreeView* view, GtkTreePath* path, GtkTreeViewColumn* column, gpointer data);
 gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);

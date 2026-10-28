@@ -1,4 +1,5 @@
 #include "file_list.h"
+#include "file_actions.h"
 #include "fs_watch.h"
 #include "panels.h"
 #include "app_events.h"
@@ -911,6 +912,36 @@ void on_row_activated(GtkTreeView* view, GtkTreePath* path,
 }
 
 /* Treeview key press handler: j k gg G zz / n N BackSpace ? i o Ctrl+B Ctrl+F f m space l Right h Left */
+/* Run a file action, then refresh the tree selecting what it returned */
+static void run_file_action(AppData* app, gchar* (*action)(AppData*)) {
+    gchar* select = action(app);
+    if (select != NULL) {
+        refresh_listing_with_path(app, select);
+        g_free(select);
+    }
+}
+
+void create_new_file_in_tree(AppData* app) {
+    run_file_action(app, file_action_new_file);
+}
+
+void create_new_folder_in_tree(AppData* app) {
+    run_file_action(app, file_action_new_folder);
+}
+
+void rename_selected_in_tree(AppData* app) {
+    run_file_action(app, file_action_rename_selected);
+}
+
+void trash_selected_in_tree(AppData* app) {
+    run_file_action(app, file_action_trash_selected);
+}
+
+/* Files view (not bookmarks / notes / remote) */
+static gboolean is_files_view(AppData* app) {
+    return app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks;
+}
+
 gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
                            guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
@@ -1095,8 +1126,6 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     case GDK_KEY_Return: /* Enter selected directory or open editor tab */
     case GDK_KEY_KP_Enter:
-    case GDK_KEY_Delete:
-    case GDK_KEY_KP_Delete:
     case GDK_KEY_ISO_Enter:
         app->pending_g = FALSE;
         if ((state & GDK_CONTROL_MASK) != 0) {
@@ -1168,19 +1197,46 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         }
         app->pending_z = FALSE;
         return FALSE;
-    case GDK_KEY_d: /* Ctrl+D: bookmark selected entry (or edit / remove its existing bookmark) */
+    case GDK_KEY_d: /* Ctrl+D: bookmark selected entry; d: move selected file to trash */
     case GDK_KEY_D:
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
             bookmarks_add_from_context(app);
             return TRUE;
         }
+        if (keyval == GDK_KEY_d && is_files_view(app)) {
+            trash_selected_in_tree(app);
+            return TRUE;
+        }
         return FALSE;
-    case GDK_KEY_a: /* Ctrl+A: switch between files and bookmarks views in explorer panel */
+    case GDK_KEY_Delete: /* Delete: move selected file or folder to trash */
+    case GDK_KEY_KP_Delete:
+        app->pending_g = FALSE;
+        if (is_files_view(app)) {
+            trash_selected_in_tree(app);
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_a: /* Ctrl+A: switch files / bookmarks views; a / Shift+A: new file / folder */
     case GDK_KEY_A:
         app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
             toggle_bookmarks_view(app);
+            return TRUE;
+        }
+        if (is_files_view(app)) {
+            if (keyval == GDK_KEY_A) {
+                create_new_folder_in_tree(app);
+            } else {
+                create_new_file_in_tree(app);
+            }
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_e: /* e: rename selected file or folder (like F2 / r) */
+        app->pending_g = FALSE;
+        if (is_files_view(app) && !(state & GDK_CONTROL_MASK)) {
+            rename_selected_in_tree(app);
             return TRUE;
         }
         return FALSE;
@@ -1201,11 +1257,17 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             }
             return TRUE;
         }
+        if (keyval == GDK_KEY_r && is_files_view(app)) {
+            rename_selected_in_tree(app);
+            return TRUE;
+        }
         return FALSE;
     case GDK_KEY_F2:
         app->pending_g = FALSE;
         if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
             notes_edit_selected(app);
+        } else if (is_files_view(app)) {
+            rename_selected_in_tree(app);
         }
         return TRUE;
     case GDK_KEY_f: /* Ctrl+F: page down; f alone: fullscreen */

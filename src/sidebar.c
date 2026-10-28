@@ -1,7 +1,6 @@
 /* Explorer panel header: view switcher buttons (files, bookmarks, notes, remote) and per-view action toolbars. */
 #include "sidebar.h"
 #include "app_events.h"
-#include "file_actions.h"
 #include "bookmarks.h"
 #include "file_list.h"
 #include "notes.h"
