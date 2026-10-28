@@ -797,14 +797,12 @@ gchar* find_git_root(const gchar* start_dir) {
     return NULL;
 }
 
-/* Run 'git status --porcelain=v1 -uall' and return a mapping of full_path -> badge markup */
-GHashTable* scan_git_statuses(const gchar* dir) {
-    gchar* raw_root = find_git_root(dir);
-    if (raw_root == NULL) {
-        return NULL;
+/* Scan a single git repository root and populate full_path -> badge markup in statuses */
+static void scan_git_repo_into(GHashTable* statuses, const gchar* raw_root) {
+    if (statuses == NULL || raw_root == NULL) {
+        return;
     }
     gchar* git_root = g_canonicalize_filename(raw_root, NULL);
-    g_free(raw_root);
 
     gchar* argv[] = {
         "git",
@@ -839,10 +837,9 @@ GHashTable* scan_git_statuses(const gchar* dir) {
     if (!ok || exit_status != 0 || stdout_buf == NULL) {
         g_free(stdout_buf);
         g_free(git_root);
-        return NULL;
+        return;
     }
 
-    GHashTable* statuses = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     gsize root_len = strlen(git_root);
 
     gchar** lines = g_strsplit(stdout_buf, "\n", -1);
@@ -969,8 +966,102 @@ GHashTable* scan_git_statuses(const gchar* dir) {
     g_strfreev(lines);
     g_free(stdout_buf);
     g_free(git_root);
+}
+
+/* Run 'git status --porcelain=v1 -uall' and return a mapping of full_path -> badge markup */
+GHashTable* scan_git_statuses(const gchar* dir) {
+    if (dir == NULL || dir[0] == '\0') {
+        return NULL;
+    }
+    GHashTable* statuses = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+
+    gchar* raw_root = find_git_root(dir);
+    if (raw_root != NULL) {
+        scan_git_repo_into(statuses, raw_root);
+        g_free(raw_root);
+    } else if (g_file_test(dir, G_FILE_TEST_IS_DIR)) {
+        /* If dir is not itself in a git repo, check if any immediate child directory is a git repo */
+        GDir* d = g_dir_open(dir, 0, NULL);
+        if (d != NULL) {
+            const gchar* entry_name = NULL;
+            while ((entry_name = g_dir_read_name(d)) != NULL) {
+                gchar* sub = g_build_filename(dir, entry_name, NULL);
+                gchar* dot_git = g_build_filename(sub, ".git", NULL);
+                if (g_file_test(dot_git, G_FILE_TEST_EXISTS)) {
+                    scan_git_repo_into(statuses, sub);
+                }
+                g_free(dot_git);
+                g_free(sub);
+            }
+            g_dir_close(d);
+        }
+    }
+
+    if (g_hash_table_size(statuses) == 0) {
+        g_hash_table_destroy(statuses);
+        return NULL;
+    }
 
     return statuses;
+}
+
+static void update_tree_git_statuses_recursive(GtkTreeModel* model, GtkTreeIter* parent,
+                                               GHashTable* statuses) {
+    GtkTreeIter iter;
+    if (!gtk_tree_model_iter_children(model, &iter, parent)) {
+        return;
+    }
+    do {
+        gchar* path = NULL;
+        gchar* old_badge = NULL;
+        gtk_tree_model_get(model, &iter,
+                           COL_PATH, &path,
+                           COL_GIT_STATUS, &old_badge,
+                           -1);
+
+        if (path != NULL && path[0] != '\0') {
+            const gchar* new_badge = "";
+            if (statuses != NULL) {
+                const gchar* b = (const gchar*)g_hash_table_lookup(statuses, path);
+                if (b != NULL) {
+                    new_badge = b;
+                }
+            }
+            if (g_strcmp0(old_badge, new_badge) != 0) {
+                gtk_tree_store_set(GTK_TREE_STORE(model), &iter,
+                                   COL_GIT_STATUS, new_badge,
+                                   -1);
+            }
+        }
+        g_free(path);
+        g_free(old_badge);
+
+        /* Recurse into children */
+        update_tree_git_statuses_recursive(model, &iter, statuses);
+    } while (gtk_tree_model_iter_next(model, &iter));
+}
+
+void refresh_git_status_in_place(AppData* app) {
+    if (app == NULL || app->model == NULL) {
+        return;
+    }
+    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
+        return;
+    }
+    if (app->base_dir == NULL) {
+        return;
+    }
+
+    GHashTable* new_statuses = scan_git_statuses(app->base_dir);
+
+    if (app->git_statuses != NULL) {
+        g_hash_table_destroy(app->git_statuses);
+        app->git_statuses = NULL;
+    }
+    app->git_statuses = new_statuses;
+
+    update_tree_git_statuses_recursive(app->model, NULL, app->git_statuses);
+    update_path_label(app);
 }
 
 /* Off-thread directory scan snapshot node */

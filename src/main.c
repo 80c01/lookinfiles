@@ -21,6 +21,60 @@ static void on_window_destroy(GtkWidget* widget, gpointer data) {
     }
 }
 
+static void on_window_active_changed(GObject* object, GParamSpec* pspec, gpointer user_data) {
+    (void)pspec;
+    AppData* app = (AppData*)user_data;
+    if (app != NULL && gtk_window_is_active(GTK_WINDOW(object))) {
+        app->git_dirty = TRUE;
+        schedule_refresh(app);
+    }
+}
+
+static void file_name_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* cell,
+                                     GtkTreeModel* model, GtkTreeIter* iter,
+                                     gpointer data) {
+    (void)col;
+    (void)data;
+    gchar* label = NULL;
+    gchar* status = NULL;
+    gtk_tree_model_get(model, iter,
+                       COL_LABEL, &label,
+                       COL_GIT_STATUS, &status,
+                       -1);
+
+    const gchar* fg_color = NULL;
+    if (status != NULL && status[0] != '\0') {
+        if (strstr(status, ">M<") != NULL) {
+            fg_color = "#e2c08d"; /* Amber / Modified */
+        } else if (strstr(status, ">U<") != NULL) {
+            fg_color = "#73c991"; /* Green / Untracked */
+        } else if (strstr(status, ">A<") != NULL) {
+            fg_color = "#73c991"; /* Green / Added */
+        } else if (strstr(status, ">D<") != NULL) {
+            fg_color = "#c74e39"; /* Red / Deleted */
+        } else if (strstr(status, ">!<") != NULL) {
+            fg_color = "#e51400"; /* Bright Red / Conflict */
+        } else if (strstr(status, ">R<") != NULL) {
+            fg_color = "#4fc1ff"; /* Blue / Renamed */
+        }
+    }
+
+    if (fg_color != NULL) {
+        g_object_set(cell,
+                     "text", label ? label : "",
+                     "foreground", fg_color,
+                     NULL);
+    } else {
+        g_object_set(cell,
+                     "text", label ? label : "",
+                     "foreground-set", FALSE,
+                     NULL);
+    }
+
+    g_free(label);
+    g_free(status);
+}
+
 static void git_status_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* cell,
                                       GtkTreeModel* model, GtkTreeIter* iter,
                                       gpointer data) {
@@ -211,7 +265,7 @@ int main(int argc, char** argv) {
     gtk_cell_renderer_set_padding(renderer_name, 6, 2);
     g_object_set(renderer_name, "ellipsize", PANGO_ELLIPSIZE_END, NULL);
     gtk_tree_view_column_pack_start(col_name, renderer_name, FALSE);
-    gtk_tree_view_column_add_attribute(col_name, renderer_name, "text", COL_LABEL);
+    gtk_tree_view_column_set_cell_data_func(col_name, renderer_name, file_name_cell_data_func, NULL, NULL);
 
     GtkCellRenderer* renderer_git = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_padding(renderer_git, 4, 2);
@@ -372,6 +426,7 @@ int main(int argc, char** argv) {
     app->tree_view = GTK_TREE_VIEW(tree_view);
     app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+    g_signal_connect(window, "notify::is-active", G_CALLBACK(on_window_active_changed), app);
     bookmarks_init(app);
     bookmarks_attach_context_menu(app);
     notes_init(app);

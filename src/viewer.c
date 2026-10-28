@@ -799,7 +799,12 @@ static gboolean deferred_refresh(gpointer data) {
 
     if (app->dir_dirty) {
         app->dir_dirty = FALSE;
+        app->git_dirty = FALSE;
         refresh_listing(app);
+        git_tab_update(app, app->base_dir);
+    } else if (app->git_dirty) {
+        app->git_dirty = FALSE;
+        refresh_git_status_in_place(app);
         git_tab_update(app, app->base_dir);
     }
     if (app->file_dirty) {
@@ -869,6 +874,19 @@ static void on_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file
         app->dir_dirty = TRUE;
         schedule_refresh(app);
         break;
+    case G_FILE_MONITOR_EVENT_CHANGED:
+    case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
+    case G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
+        app->git_dirty = TRUE;
+        if (file != NULL && app->viewed_path != NULL) {
+            gchar* p = g_file_get_path(file);
+            if (p != NULL && g_strcmp0(p, app->viewed_path) == 0) {
+                app->file_dirty = TRUE;
+            }
+            g_free(p);
+        }
+        schedule_refresh(app);
+        break;
     default:
         break;
     }
@@ -895,11 +913,103 @@ static void on_file_changed(GFileMonitor* monitor, GFile* file, GFile* other_fil
     case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
     case G_FILE_MONITOR_EVENT_DELETED:
         app->file_dirty = TRUE;
+        app->git_dirty = TRUE;
         schedule_refresh(app);
         break;
     default:
         break;
     }
+}
+
+static void on_git_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file,
+                               GFileMonitorEvent event_type, gpointer data) {
+    (void)monitor; (void)other_file; (void)event_type;
+    AppData* app = (AppData*)data;
+    if (app == NULL) {
+        return;
+    }
+    if (file != NULL) {
+        gchar* name = g_file_get_basename(file);
+        if (name != NULL) {
+            /* Ignore temporary lock files created and destroyed during git commands */
+            if (g_str_has_suffix(name, ".lock")) {
+                g_free(name);
+                return;
+            }
+            g_free(name);
+        }
+    }
+    app->git_dirty = TRUE;
+    schedule_refresh(app);
+}
+
+static void sync_git_monitor(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    gchar* git_root = (app->base_dir != NULL) ? find_git_root(app->base_dir) : NULL;
+    if (git_root == NULL) {
+        if (app->git_monitor != NULL) {
+            g_file_monitor_cancel(app->git_monitor);
+            g_object_unref(app->git_monitor);
+            app->git_monitor = NULL;
+        }
+        g_free(app->git_monitored_path);
+        app->git_monitored_path = NULL;
+        return;
+    }
+
+    gchar* dot_git = g_build_filename(git_root, ".git", NULL);
+    gchar* git_dir = NULL;
+    if (g_file_test(dot_git, G_FILE_TEST_IS_DIR)) {
+        git_dir = g_strdup(dot_git);
+    } else {
+        /* Worktrees and submodules: ".git" is a file containing "gitdir: <path>" */
+        gchar* contents = NULL;
+        if (g_file_get_contents(dot_git, &contents, NULL, NULL) &&
+            g_str_has_prefix(contents, "gitdir:")) {
+            gchar* p = g_strstrip(contents + strlen("gitdir:"));
+            git_dir = g_path_is_absolute(p) ? g_strdup(p) : g_build_filename(git_root, p, NULL);
+        }
+        g_free(contents);
+    }
+    g_free(dot_git);
+    g_free(git_root);
+
+    if (git_dir == NULL) {
+        if (app->git_monitor != NULL) {
+            g_file_monitor_cancel(app->git_monitor);
+            g_object_unref(app->git_monitor);
+            app->git_monitor = NULL;
+        }
+        g_free(app->git_monitored_path);
+        app->git_monitored_path = NULL;
+        return;
+    }
+
+    if (app->git_monitor != NULL && g_strcmp0(app->git_monitored_path, git_dir) == 0) {
+        g_free(git_dir);
+        return;
+    }
+
+    if (app->git_monitor != NULL) {
+        g_file_monitor_cancel(app->git_monitor);
+        g_object_unref(app->git_monitor);
+        app->git_monitor = NULL;
+    }
+    g_free(app->git_monitored_path);
+    app->git_monitored_path = git_dir;
+
+    GFile* gf = g_file_new_for_path(git_dir);
+    GError* err = NULL;
+    app->git_monitor = g_file_monitor_directory(gf, G_FILE_MONITOR_NONE, NULL, &err);
+    if (err != NULL) {
+        g_error_free(err);
+        app->git_monitor = NULL;
+    } else if (app->git_monitor != NULL) {
+        g_signal_connect(app->git_monitor, "changed", G_CALLBACK(on_git_dir_changed), app);
+    }
+    g_object_unref(gf);
 }
 
 static void add_single_dir_monitor(AppData* app, const gchar* path) {
@@ -928,7 +1038,18 @@ static void add_single_dir_monitor(AppData* app, const gchar* path) {
 }
 
 void stop_directory_monitors(AppData* app) {
-    if (app == NULL || app->dir_monitors == NULL) {
+    if (app == NULL) {
+        return;
+    }
+    if (app->git_monitor != NULL) {
+        g_file_monitor_cancel(app->git_monitor);
+        g_object_unref(app->git_monitor);
+        app->git_monitor = NULL;
+    }
+    g_free(app->git_monitored_path);
+    app->git_monitored_path = NULL;
+
+    if (app->dir_monitors == NULL) {
         return;
     }
     GHashTableIter iter;
@@ -999,6 +1120,7 @@ void sync_directory_monitors(AppData* app) {
     }
 
     g_hash_table_destroy(needed);
+    sync_git_monitor(app);
 }
 
 void monitor_directory(AppData* app) {

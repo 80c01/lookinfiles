@@ -37,6 +37,7 @@ gboolean select_by_path(AppData* app, const gchar* full_path);
 
 gchar* find_git_root(const gchar* start_dir);
 GHashTable* scan_git_statuses(const gchar* dir);
+void refresh_git_status_in_place(AppData* app);
 
 void populate_store(GtkTreeStore* store, AppData* app, const gchar* dirname,
                     gboolean show_hidden, gint sort_mode);

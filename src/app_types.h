@@ -152,12 +152,15 @@ typedef struct {
     GHashTable* dir_monitors;          /* active directory monitors: full_path -> GFileMonitor* */
     GHashTable* git_statuses;          /* Git status badges: full_path -> markup string */
     GFileMonitor* file_monitor;        /* viewed file in right pane */
+    GFileMonitor* git_monitor;         /* .git monitor for git status & commits updates */
+    gchar* git_monitored_path;         /* path to current monitored .git dir */
     GCancellable* dir_cancellable;     /* active left-pane directory scan GTask */
     GCancellable* preview_cancellable; /* active right-pane preview GTask */
     gchar* viewed_path;          /* path of displayed file, NULL otherwise */
     gchar* viewed_name;          /* name of displayed file */
     gboolean dir_dirty;          /* pending directory event */
     gboolean file_dirty;         /* pending file event */
+    gboolean git_dirty;          /* pending git status update */
     guint refresh_source;        /* debounce timeout id, 0 = idle */
 
     /* Embedded terminal panel (Ctrl+T) */
