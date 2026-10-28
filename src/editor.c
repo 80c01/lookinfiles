@@ -140,6 +140,13 @@ void editor_apply_language(GtkTextBuffer* buffer, const gchar* name) {
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     if (is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
         /* Images, PDFs, Videos, and Audio are previewed in the main viewer tab */
+        if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+            workspace_save_current(app);
+            app->applying_layout = TRUE;
+            gtk_widget_set_visible(app->viewer_box, TRUE);
+            update_path_label(app);
+            workspace_apply_positions(app);
+        }
         if (app->notebook != NULL) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         }
@@ -156,6 +163,27 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     for (GList* l = app->editors; l != NULL; l = l->next, index++) {
         EditorTab* t = (EditorTab*)l->data;
         if (g_strcmp0(t->path, full) == 0) {
+            if (app->editor_dedicated) {
+                if (app->editor_box != NULL && !gtk_widget_get_visible(app->editor_box)) {
+                    workspace_save_current(app);
+                    app->applying_layout = TRUE;
+                    gtk_widget_set_visible(app->editor_box, TRUE);
+                    app->editor_dedicated = TRUE;
+                    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+                        app->workspaces[app->current_ws].editor_dedicated = TRUE;
+                    }
+                    update_path_label(app);
+                    workspace_apply_positions(app);
+                }
+            } else {
+                if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+                    workspace_save_current(app);
+                    app->applying_layout = TRUE;
+                    gtk_widget_set_visible(app->viewer_box, TRUE);
+                    update_path_label(app);
+                    workspace_apply_positions(app);
+                }
+            }
             gint base_offset = (app->git_tab_box != NULL) ? 2 : 1;
             gint target_page = app->editor_dedicated ? index : (index + base_offset);
             gtk_notebook_set_current_page(target_nb, target_page);
@@ -187,6 +215,28 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
         gtk_text_buffer_set_text(app->buffer, msg, -1);
         g_free(msg);
         return;
+    }
+
+    if (app->editor_dedicated) {
+        if (app->editor_box != NULL && !gtk_widget_get_visible(app->editor_box)) {
+            workspace_save_current(app);
+            app->applying_layout = TRUE;
+            gtk_widget_set_visible(app->editor_box, TRUE);
+            app->editor_dedicated = TRUE;
+            if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+                app->workspaces[app->current_ws].editor_dedicated = TRUE;
+            }
+            update_path_label(app);
+            workspace_apply_positions(app);
+        }
+    } else {
+        if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+            workspace_save_current(app);
+            app->applying_layout = TRUE;
+            gtk_widget_set_visible(app->viewer_box, TRUE);
+            update_path_label(app);
+            workspace_apply_positions(app);
+        }
     }
 
     EditorTab* tab = g_new0(EditorTab, 1);

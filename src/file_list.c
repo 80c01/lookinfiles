@@ -3114,13 +3114,6 @@ void activate_selected_entry(AppData* app) {
     if (g_strcmp0(type, "buffer_create") == 0) {
         create_new_buffer(app);
     } else if (g_strcmp0(type, "buffer") == 0 && full != NULL) {
-        if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-            workspace_save_current(app);
-            app->applying_layout = TRUE;
-            gtk_widget_set_visible(app->viewer_box, TRUE);
-            update_path_label(app);
-            workspace_apply_positions(app);
-        }
         editor_open_file(app, name, full);
     } else if (g_strcmp0(type, "bookmark") == 0 && full != NULL) {
         app->sidebar_view = SIDEBAR_VIEW_FILES;
@@ -3135,15 +3128,17 @@ void activate_selected_entry(AppData* app) {
         }
         gtk_tree_path_free(path);
     } else if (g_strcmp0(type, "file") == 0 && full != NULL) {
-        if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-            workspace_save_current(app);
-            app->applying_layout = TRUE;
-            gtk_widget_set_visible(app->viewer_box, TRUE);
-            update_path_label(app);
-            workspace_apply_positions(app);
-        }
         if (is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
-            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+            if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+                workspace_save_current(app);
+                app->applying_layout = TRUE;
+                gtk_widget_set_visible(app->viewer_box, TRUE);
+                update_path_label(app);
+                workspace_apply_positions(app);
+            }
+            if (app->notebook != NULL) {
+                gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+            }
         } else {
             editor_open_file(app, name, full);
         }
