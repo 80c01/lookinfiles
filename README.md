@@ -243,6 +243,9 @@ sudo apt install libgtk-4-dev build-essential
 Toolbar and tab icons come from the GTK icon theme (Adwaita symbolic icons,
 loaded through librsvg). Both are present on any GTK desktop; on a minimal
 system install them with `sudo apt install adwaita-icon-theme librsvg2-common`.
+If some buttons have no icon, run `EXPLORATEUR_DEBUG_ICONS=1 ./explorateur_fichiers`:
+it prints the GTK version, the icon theme, whether SVG icons can be loaded, and
+which icon name and file each button uses.
 
 Optional (embedded terminal panel, recommended):
 ```bash

@@ -31,6 +31,37 @@ static const IconFallback FALLBACKS[] = {
     {"view-paged", {"view-list", NULL}},
 };
 
+/* EXPLORATEUR_DEBUG_ICONS=1: print how each icon is resolved (to diagnose
+ * missing icons on a given system) */
+static void debug_print_icon(GdkDisplay* display, const gchar* requested, GIcon* icon) {
+    static gboolean header_done = FALSE;
+    GtkIconTheme* theme = gtk_icon_theme_get_for_display(display);
+    if (!header_done) {
+        header_done = TRUE;
+        gboolean svg = FALSE;
+        GSList* formats = gdk_pixbuf_get_formats();
+        for (GSList* l = formats; l != NULL; l = l->next) {
+            gchar* fmt = gdk_pixbuf_format_get_name((GdkPixbufFormat*)l->data);
+            svg = svg || g_strcmp0(fmt, "svg") == 0;
+            g_free(fmt);
+        }
+        g_slist_free(formats);
+        gchar* theme_name = gtk_icon_theme_get_theme_name(theme);
+        g_printerr("[icons] GTK %u.%u.%u, icon theme \"%s\", SVG loader: %s\n",
+                   gtk_get_major_version(), gtk_get_minor_version(), gtk_get_micro_version(),
+                   theme_name ? theme_name : "?", svg ? "yes" : "NO");
+        g_free(theme_name);
+    }
+    GtkIconPaintable* p = gtk_icon_theme_lookup_by_gicon(theme, icon, 16, 1, GTK_TEXT_DIR_LTR, 0);
+    GFile* file = p ? gtk_icon_paintable_get_file(p) : NULL;
+    gchar* where = file ? g_file_get_uri(file) : g_strdup("(none)");
+    g_printerr("[icons] %-26s -> %-32s %s\n", requested,
+               p && gtk_icon_paintable_get_icon_name(p) ? gtk_icon_paintable_get_icon_name(p) : "?", where);
+    g_free(where);
+    if (file) g_object_unref(file);
+    if (p) g_object_unref(p);
+}
+
 static GIcon* themed_icon_with_fallbacks(const gchar* icon_name) {
     GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(names, g_strconcat(icon_name, "-symbolic", NULL));
@@ -49,6 +80,9 @@ static GIcon* themed_icon_with_fallbacks(const gchar* icon_name) {
     if (display != NULL &&
         !gtk_icon_theme_has_gicon(gtk_icon_theme_get_for_display(display), icon)) {
         g_warning("icons: no icon available for \"%s\" in the current icon theme", icon_name);
+    }
+    if (display != NULL && g_getenv("EXPLORATEUR_DEBUG_ICONS") != NULL) {
+        debug_print_icon(display, icon_name, icon);
     }
     g_ptr_array_free(names, TRUE);
     return icon;
