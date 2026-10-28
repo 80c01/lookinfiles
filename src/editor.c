@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "topbar.h"
 #include "status_bar.h"
 #include "workspace.h"
 #include "file_types.h"

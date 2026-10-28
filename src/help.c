@@ -1,5 +1,6 @@
 /* Floating key-binding cheat sheet ('?' / top bar Help button). Keep KEY_HELP in sync with README.md. */
 #include "help.h"
+#include "topbar.h"
 #include "workspace.h"
 #include "ui.h"
 #include "file_list.h"

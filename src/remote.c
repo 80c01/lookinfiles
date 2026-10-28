@@ -1,4 +1,5 @@
 #include "remote.h"
+#include "topbar.h"
 #include "file_list.h"
 #include "terminal.h"
 #include "ui.h"

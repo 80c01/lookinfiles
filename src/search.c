@@ -1,4 +1,5 @@
 #include "search.h"
+#include "tree_nav.h"
 #include "file_list.h"
 
 static gboolean path_matches(AppData* app, GtkTreePath* path) {

@@ -3,29 +3,6 @@
 
 #include "app_types.h"
 
-
-gint list_count(AppData* app);
-gint count_visible_rows(AppData* app);
-
-GtkTreePath* get_first_visible_path(GtkTreeView* view);
-GtkTreePath* get_last_visible_path(GtkTreeView* view);
-GtkTreePath* get_next_visible_path(GtkTreeView* view, GtkTreePath* path);
-GtkTreePath* get_prev_visible_path(GtkTreeView* view, GtkTreePath* path);
-
-void select_path(AppData* app, GtkTreePath* path);
-void select_first_row(AppData* app);
-void select_last_row(AppData* app);
-void select_next_row(AppData* app);
-void select_prev_row(AppData* app);
-void page_down_rows(AppData* app);
-void page_up_rows(AppData* app);
-void center_selected_row(AppData* app);
-void top_selected_row(AppData* app);
-void bottom_selected_row(AppData* app);
-
-gboolean select_by_name(AppData* app, const gchar* name);
-gboolean select_by_path(AppData* app, const gchar* full_path);
-
 void refresh_git_status_in_place(AppData* app);
 
 void populate_store(GtkTreeStore* store, AppData* app, const gchar* dirname,
@@ -38,14 +15,6 @@ void on_tree_row_expanded(GtkTreeView* tree_view, GtkTreeIter* iter,
                           GtkTreePath* path, gpointer user_data);
 void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
                            GtkTreePath* path, gpointer user_data);
-void update_path_label(AppData* app);
-void on_files_pill_clicked(GtkButton* btn, gpointer data);
-void on_preview_pill_clicked(GtkButton* btn, gpointer data);
-void on_split_btn_clicked(GtkButton* btn, gpointer data);
-void on_term_pill_clicked(GtkButton* btn, gpointer data);
-void on_sort_pill_clicked(GtkButton* btn, gpointer data);
-void on_hidden_pill_clicked(GtkButton* btn, gpointer data);
-void on_help_pill_clicked(GtkButton* btn, gpointer data);
 void reload_directory(AppData* app, const gchar* new_dir);
 void navigate_to_path(AppData* app, const gchar* path);
 void refresh_listing(AppData* app);
@@ -55,8 +24,6 @@ void toggle_bookmarks_view(AppData* app);
 void toggle_notes_view(AppData* app);
 void toggle_remote_view(AppData* app);
 void cycle_sort_mode(AppData* app);
-void create_new_file_in_tree(AppData* app);
-void create_new_folder_in_tree(AppData* app);
 void toggle_collapse_expand_files(AppData* app);
 
 void activate_selected_entry(AppData* app);

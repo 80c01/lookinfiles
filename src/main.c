@@ -1,4 +1,6 @@
 #include "app_types.h"
+#include "topbar.h"
+#include "tree_nav.h"
 #include "theme.h"
 #include "status_bar.h"
 #include "sidebar.h"

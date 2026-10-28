@@ -1,5 +1,7 @@
 /* Virtual workspaces (Alt+1..8): per-workspace layout snapshots and the top-bar workspace minimap. */
 #include "workspace.h"
+#include "topbar.h"
+#include "tree_nav.h"
 #include "ui.h"
 #include "audio.h"
 #include "editor.h"

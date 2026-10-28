@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "topbar.h"
 #include "workspace.h"
 #include "file_list.h"
 #include "terminal.h"
