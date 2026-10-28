@@ -127,6 +127,8 @@ xdotool type --delay 80 "Edited "
                         shot editor_modified
 key ctrl+s;             shot editor_saved
 key ctrl+w;             shot editor_closed
+xdotool mousemove 150 600 click 1    # focus the explorer (empty area)
+key ctrl+w;             shot last_editor_closed   # must show Preview, not Git Commits
 key alt+plus;           shot workspace_added
 key alt+1;              shot workspace_1
 key i;                  shot hidden_toggle

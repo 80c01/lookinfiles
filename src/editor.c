@@ -1016,7 +1016,14 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
     if (nb != NULL) {
         gint page_idx = gtk_notebook_page_num(nb, tab->container);
         if (page_idx >= 0) {
+            gboolean was_current = (gtk_notebook_get_current_page(nb) == page_idx);
             gtk_notebook_remove_page(nb, page_idx);
+            /* GTK selects the neighbour page: when closing the current tab lands on
+             * the Git tab (no editor tab left beside it), show the preview instead */
+            if (was_current && nb_widget == app->notebook && app->git_tab_box != NULL &&
+                gtk_notebook_get_current_page(nb) == gtk_notebook_page_num(nb, app->git_tab_box)) {
+                gtk_notebook_set_current_page(nb, 0);
+            }
         }
     }
 
