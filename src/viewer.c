@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "preview_summary.h"
 #include "fs_watch.h"
 #include "panels.h"
 #include "app_events.h"
@@ -763,7 +764,12 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
                        COL_TYPE, &type,
                        COL_PATH, &full, -1);
 
-    if (g_strcmp0(type, "remote") == 0) {
+    /* Rows without file content (remote machine, notebook, bookmark folder,
+     * notes trash): show a text summary instead of keeping the previous preview */
+    gboolean is_remote = (g_strcmp0(type, "remote") == 0);
+    gchar* summary = is_remote ? preview_summary_remote(remote_find_by_id(app, full))
+                               : preview_summary_container(model, &it);
+    if (is_remote || summary != NULL) {
         if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         }
@@ -776,39 +782,12 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
             g_cancellable_cancel(app->preview_cancellable);
             g_clear_object(&app->preview_cancellable);
         }
-
-        RemoteMachine* rm = remote_find_by_id(app, full);
-        if (rm != NULL && app->buffer != NULL) {
-            GString* s = g_string_new(NULL);
-            g_string_append_printf(s, "🌐 Remote Machine: %s\n", rm->name ? rm->name : "Unknown");
-            g_string_append(s, "============================================================\n\n");
-            g_string_append_printf(s, "  Status:        %s\n", rm->is_connected ? "🟢 Connected (Mounted via SSHFS)" : "⚪ Disconnected");
-            g_string_append_printf(s, "  Host:          %s\n", rm->host ? rm->host : "(none)");
-            g_string_append_printf(s, "  User:          %s\n", (rm->user && *rm->user) ? rm->user : "(default)");
-            g_string_append_printf(s, "  Port:          %d\n", rm->port);
-            g_string_append_printf(s, "  Remote Path:   %s\n", rm->remote_path ? rm->remote_path : "~");
-            if (rm->identity_file && *rm->identity_file) {
-                g_string_append_printf(s, "  Identity Key:  %s\n", rm->identity_file);
-            }
-            if (rm->is_connected && rm->mount_point) {
-                g_string_append_printf(s, "  Mount Point:   %s\n", rm->mount_point);
-            }
-            if (rm->from_ssh_config) {
-                g_string_append(s, "  Source:        Auto-discovered from ~/.ssh/config\n");
-            } else {
-                g_string_append(s, "  Source:        Configured manually\n");
-            }
-            g_string_append(s, "\nQuick Actions:\n");
-            g_string_append(s, "  • Enter / c / Double-click: Connect and browse remote files in Explorer\n");
-            g_string_append(s, "  • t:                        Open SSH terminal to this machine\n");
-            g_string_append(s, "  • F2 / r / e:               Edit machine configuration\n");
-            g_string_append(s, "  • d / Delete:               Remove machine\n");
-            g_string_append(s, "  • a:                        Add new remote machine\n");
-            g_string_append(s, "  • F5:                       Re-scan ~/.ssh/config\n");
-
-            gtk_text_buffer_set_text(app->buffer, s->str, -1);
-            g_string_free(s, TRUE);
+        if (summary != NULL && app->buffer != NULL) {
+            apply_viewer_language(app, NULL);
+            set_view_monospace(app->text_view, TRUE); /* summary columns are space-aligned */
+            gtk_text_buffer_set_text(app->buffer, summary, -1);
         }
+        g_free(summary);
         g_free(app->viewed_path);
         g_free(app->viewed_name);
         app->viewed_path = NULL;
@@ -822,11 +801,10 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         return;
     }
 
-    /* Bookmark folders, URL bookmarks and bookmarks to missing locations have no preview */
+    /* Placeholders, URL bookmarks and bookmarks to missing locations have no preview */
     gboolean is_bookmark = (g_strcmp0(type, "bookmark") == 0);
     if (name == NULL || type == NULL || g_strcmp0(type, "-") == 0 ||
-        g_strcmp0(type, "buffer_create") == 0 || g_strcmp0(type, "bm_folder") == 0 ||
-        g_strcmp0(type, "notebook") == 0 || g_strcmp0(type, "trash") == 0 ||
+        g_strcmp0(type, "buffer_create") == 0 ||
         full == NULL || (is_bookmark && !g_file_test(full, G_FILE_TEST_EXISTS))) {
         g_free(name);
         g_free(type);
@@ -836,7 +814,7 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     }
     gboolean as_dir = (g_strcmp0(type, "dir") == 0) ||
                       (is_bookmark && g_file_test(full, G_FILE_TEST_IS_DIR));
-    if ((is_bookmark || g_strcmp0(type, "note") == 0 || g_strcmp0(type, "trashed_note") == 0) && !as_dir) {
+    if ((is_bookmark || g_strcmp0(type, "note") == 0 || g_strcmp0(type, "trash_note") == 0) && !as_dir) {
         /* Detect the file type from its real name */
         g_free(name);
         name = g_path_get_basename(full);

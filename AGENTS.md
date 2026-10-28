@@ -74,6 +74,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   of the previous view and ellipsizes the names.
 - `remote_store` — `RemoteMachine` list, `remotes.xml`, `~/.ssh/config`
   discovery, lookups (unit-tested).
+- `preview_summary` — text summaries shown in the preview for rows without
+  file content (remote machine, notebook, bookmark folder, trash); columns
+  padded for a monospace font (unit-tested).
 - `fs_watch` — `GFileMonitor`s on expanded directories, the previewed file and
   `.git`, debounced `schedule_refresh()`; reports through events only.
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.

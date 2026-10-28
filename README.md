@@ -279,6 +279,7 @@ src/
 ├── panels.c/.h              # Fullscreen, focused panel, split handle feedback
 ├── fs_watch.c/.h            # File/directory/.git monitors, debounced refresh
 ├── remote_store.c/.h        # Remote machines: remotes.xml, ~/.ssh/config
+├── preview_summary.c/.h     # Preview summaries: machine, notebook, bookmark folder, trash
 ├── text_style.c/.h          # Dark+ scheme, monospace, syntax language
 ├── theme.c/.h               # Global CSS theme
 ├── tree_nav.c/.h            # Explorer row navigation and selection

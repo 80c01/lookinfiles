@@ -23,6 +23,7 @@ tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events
 remote_store:app_types
+preview_summary:app_types,remote_store
 fs_watch:app_types,app_events,git_utils,git_tab
 "
 
