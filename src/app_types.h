@@ -100,6 +100,7 @@ typedef struct {
     EditorMode mode;      /* current editor mode */
     GtkWidget* status_bar; /* status line for this editor tab */
     gchar* status_text;   /* status message */
+    gpointer mode_state;  /* mode-specific state (EditorModeState*) */
 } EditorTab;
 
 /* Virtual workspace layout state (dynamic workspaces like Ubuntu) */

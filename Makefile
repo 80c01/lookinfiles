@@ -57,6 +57,7 @@ SRCS = src/main.c \
        src/pdf.c \
        src/git_tab.c \
        src/editor.c \
+       src/editor_modes.c \
        src/minimap.c \
        src/terminal.c \
        src/search.c \

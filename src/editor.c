@@ -239,16 +239,17 @@ static void on_editor_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) 
         AppData* app = (AppData*)tab->app;
         app->last_focused_editor = tab;
         update_active_panel_highlight(app);
+        update_status_bar(app);
+        editor_modes_update_status(tab);
     }
 }
 
 static gboolean on_editor_view_key_press(GtkEventControllerKey* controller, guint keyval,
                                          guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
-    (void)keycode;
     EditorTab* tab = (EditorTab*)data;
     if (tab != NULL && tab->app != NULL) {
-        if (orgmode_editor_handle_key((AppData*)tab->app, tab, keyval, state)) {
+        if (editor_modes_handle_key((AppData*)tab->app, tab, keyval, keycode, state)) {
             return TRUE;
         }
     }
@@ -332,6 +333,15 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
     case TAB_ACTION_CLOSE:
         editor_close_tab(app, tab);
         break;
+    case TAB_ACTION_MODE_NOTEPAD:
+        editor_set_tab_mode(app, tab, EDITOR_MODE_NOTEPAD);
+        break;
+    case TAB_ACTION_MODE_EMACS:
+        editor_set_tab_mode(app, tab, EDITOR_MODE_EMACS);
+        break;
+    case TAB_ACTION_MODE_VIM:
+        editor_set_tab_mode(app, tab, EDITOR_MODE_VIM);
+        break;
     default:
         break;
     }
@@ -403,6 +413,15 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     gtk_widget_set_margin_top(sep2, 4);
     gtk_widget_set_margin_bottom(sep2, 4);
     gtk_box_append(GTK_BOX(box), sep2);
+
+    tab_menu_item(box, popover, app, tab, "Mode: Notepad", NULL, TAB_ACTION_MODE_NOTEPAD);
+    tab_menu_item(box, popover, app, tab, "Mode: Emacs", NULL, TAB_ACTION_MODE_EMACS);
+    tab_menu_item(box, popover, app, tab, "Mode: Vim", NULL, TAB_ACTION_MODE_VIM);
+
+    GtkWidget* sep3 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_margin_top(sep3, 4);
+    gtk_widget_set_margin_bottom(sep3, 4);
+    gtk_box_append(GTK_BOX(box), sep3);
 
     tab_menu_item(box, popover, app, tab, "Close Tab", "Ctrl+W", TAB_ACTION_CLOSE);
 
@@ -854,6 +873,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     gtk_box_append(GTK_BOX(tab->status_bar), stat_lbl);
     gtk_box_append(GTK_BOX(container), tab->status_bar);
     tab->container = container;
+    editor_modes_init_tab(app, tab);
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
     tab->tab_label = gtk_label_new("");
     editor_tab_label_update(tab);
@@ -934,6 +954,8 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
             if (t != NULL && t->container == cur_child) {
                 app->last_focused_editor = t;
                 editor_minimap_update_visibility(t);
+                editor_modes_update_status(t);
+                update_status_bar(app);
                 break;
             }
         }
@@ -1035,6 +1057,7 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
     }
     g_object_unref(tab->container);
     g_object_unref(tab->tab_label);
+    editor_modes_free_tab(tab);
     g_free(tab->path);
     g_free(tab->name);
     g_free(tab);
@@ -1179,6 +1202,7 @@ void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
             g_object_unref(tab->tab_label);
             tab->tab_label = NULL;
         }
+        editor_modes_free_tab(tab);
         g_free(tab->path);
         g_free(tab->name);
         g_free(tab);
@@ -1188,24 +1212,7 @@ void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
 
 void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode) {
     if (tab == NULL) return;
-    tab->mode = mode;
-    if (tab->status_bar != NULL) {
-        GtkWidget* lbl = g_object_get_data(G_OBJECT(tab->status_bar), "label");
-        if (lbl != NULL && GTK_IS_LABEL(lbl)) {
-            if (is_org_file(tab->name) || mode == EDITOR_MODE_ORGMODE) {
-                gtk_label_set_text(GTK_LABEL(lbl), "Org-mode (Emacs style) | Tab/Shift+Tab: fold | C-RET/C-SPC: checkbox | M-RET: heading | S-<->: TODO");
-            } else if (mode == EDITOR_MODE_VIM) {
-                gtk_label_set_text(GTK_LABEL(lbl), "VIM -- NORMAL --");
-            } else if (mode == EDITOR_MODE_EMACS) {
-                gtk_label_set_text(GTK_LABEL(lbl), "Emacs mode");
-            } else {
-                gtk_label_set_text(GTK_LABEL(lbl), "Notepad mode");
-            }
-        }
-    }
-    if (app != NULL) {
-        update_status_bar(app);
-    }
+    editor_modes_apply_mode(app, tab, mode);
 }
 
 void editor_set_dedicated(AppData* app, gboolean dedicated) {

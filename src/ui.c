@@ -457,16 +457,27 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
-    /* Ctrl+S: save current editor tab; Ctrl+W: close current editor tab */
-    if ((state & GDK_CONTROL_MASK) &&
-        !(state & GDK_SHIFT_MASK) &&
-        (keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
-        return editor_save_current(app);
-    }
-    if ((state & GDK_CONTROL_MASK) &&
-        (keyval == GDK_KEY_w || keyval == GDK_KEY_W)) {
-        editor_close_current(app);
-        return TRUE;
+    GtkWidget* focus_w = (app->window != NULL) ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
+    EditorTab* cur_tab = app->last_focused_editor;
+    gboolean is_modal_tab = (cur_tab != NULL && focus_w != NULL &&
+                             (cur_tab->mode == EDITOR_MODE_EMACS ||
+                              cur_tab->mode == EDITOR_MODE_ORGMODE ||
+                              cur_tab->mode == EDITOR_MODE_VIM) &&
+                             (focus_w == cur_tab->view ||
+                              gtk_widget_is_ancestor(focus_w, cur_tab->container)));
+
+    if (!is_modal_tab) {
+        /* Ctrl+S: save current editor tab; Ctrl+W: close current editor tab */
+        if ((state & GDK_CONTROL_MASK) &&
+            !(state & GDK_SHIFT_MASK) &&
+            (keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
+            return editor_save_current(app);
+        }
+        if ((state & GDK_CONTROL_MASK) &&
+            (keyval == GDK_KEY_w || keyval == GDK_KEY_W)) {
+            editor_close_current(app);
+            return TRUE;
+        }
     }
 
     /* Ctrl+Alt+Arrow / Ctrl+Alt+VIM / Ctrl+Alt+D: move editor tab */

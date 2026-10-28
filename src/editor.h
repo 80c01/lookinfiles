@@ -2,6 +2,7 @@
 #define EDITOR_H
 
 #include "app_types.h"
+#include "editor_modes.h"
 
 #define EDIT_MAX_BYTES (2 * 1024 * 1024) /* editing size cap */
 
@@ -18,7 +19,10 @@ enum {
     TAB_ACTION_MOVE_LEFT,
     TAB_ACTION_MOVE_UP,
     TAB_ACTION_MOVE_DOWN,
-    TAB_ACTION_CLOSE
+    TAB_ACTION_CLOSE,
+    TAB_ACTION_MODE_NOTEPAD,
+    TAB_ACTION_MODE_EMACS,
+    TAB_ACTION_MODE_VIM
 };
 
 EditorTab* editor_current_tab(AppData* app);
