@@ -7,7 +7,6 @@
 #include "file_list.h"
 #include "minimap.h"
 #include "ui.h"
-#include "orgmode.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;

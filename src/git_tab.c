@@ -1,6 +1,5 @@
 #include "git_tab.h"
 #include "git_utils.h"
-#include "file_list.h"
 #include "viewer.h"
 #include <string.h>
 

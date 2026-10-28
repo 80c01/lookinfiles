@@ -4,7 +4,6 @@
 #include "file_types.h"
 #include "file_list.h"
 #include "viewer.h"
-#include "ui.h"
 
 #include <string.h>
 

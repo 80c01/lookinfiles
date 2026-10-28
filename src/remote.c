@@ -2,8 +2,6 @@
 #include "topbar.h"
 #include "file_list.h"
 #include "terminal.h"
-#include "ui.h"
-#include "viewer.h"
 
 #include <stdio.h>
 #include <stdlib.h>

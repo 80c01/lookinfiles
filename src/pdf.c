@@ -1,5 +1,4 @@
 #include "pdf.h"
-#include "file_list.h"
 #include "viewer.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>

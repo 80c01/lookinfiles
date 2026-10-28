@@ -2,10 +2,8 @@
 #include "topbar.h"
 #include "tree_nav.h"
 #include "file_types.h"
-#include "file_list.h"
 #include "editor.h"
 #include "viewer.h"
-#include "ui.h"
 
 #include <string.h>
 #include <stdio.h>

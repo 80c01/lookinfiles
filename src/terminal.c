@@ -1,7 +1,6 @@
 #include "terminal.h"
 #include "topbar.h"
 #include "workspace.h"
-#include "file_list.h"
 #include "remote.h"
 #include "ui.h"
 
