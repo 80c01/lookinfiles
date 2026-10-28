@@ -22,7 +22,9 @@ OUT=${UI_OUT:-$ROOT/build/ui}
 case "$OUT" in /*) ;; *) OUT=$ROOT/$OUT ;; esac
 TOLERANCE=${UI_TOLERANCE:-50}
 SHOTS=$OUT/shots
-FIX=$OUT/fixture
+# Fixed fixture path: the top bar shows it, so screenshots stay comparable
+# between runs from different checkouts or output directories.
+FIX=${TMPDIR:-/tmp}/explorateur_fichiers-ui
 
 for tool in Xvfb xdotool import compare; do
     if ! command -v $tool >/dev/null 2>&1; then
@@ -32,7 +34,7 @@ for tool in Xvfb xdotool import compare; do
 done
 [ -x "$BIN" ] || { echo "ui-test: binary not found: $BIN (run make first)"; exit 1; }
 
-rm -rf "$OUT"
+rm -rf "$OUT" "$FIX"
 mkdir -p "$SHOTS" "$FIX/home/.config/gtk-4.0" "$FIX/work/src" "$FIX/work/docs"
 
 # --- Fixture: small git repository with one modified and several untracked files
@@ -99,6 +101,9 @@ key g g;                shot gg_first_row
 key g g;                shot gg_reselect_same_row
 key space;              shot expand_docs
 key j;                  shot select_plan_org
+xdotool mousemove 390 88 click 1
+                        shot org_todo_clicked
+key alt+Left;           shot explorer_focused
 key question;           shot help_open
 key question;           shot help_closed
 key G;                  shot G_last_row
@@ -107,7 +112,11 @@ key j j;                shot select_next_rows
 key Return;             shot open_editor_notepad
 xdotool mousemove 1237 783 click 1
                         shot mode_menu
-key Escape; sleep 0.5
+xdotool mousemove 1205 650 click 1   # pick "Notepad" (closes the menu)
+xdotool mousemove 700 300 click 1    # focus the editor text
+xdotool type --delay 80 "Edited "
+                        shot editor_modified
+key ctrl+s;             shot editor_saved
 key ctrl+w;             shot editor_closed
 key alt+plus;           shot workspace_added
 key alt+1;              shot workspace_1
