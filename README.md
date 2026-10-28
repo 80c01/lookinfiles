@@ -101,12 +101,16 @@ Simple graphical application to browse the file system.
 | `d` / `Delete` | In Notes view: move note to trash (or permanently delete from trash); delete notebook |
 | `R` (Shift) | In Notes view: restore trashed note to original notebook |
 | `J` / `K` (Shift) | In Notes view: manually reorder selected note or notebook down / up |
+| `o` | In Bookmarks / Notes view: cycle sort (A-Z / Z-A; Notes also manual order) |
 | `c` / `Enter` | In Remote view: connect / mount selected machine and browse in Explorer |
 | `t` | In Remote view: open SSH terminal to selected machine |
 | `a` | In Remote view: add new SSH machine |
 | `F2` / `r` / `e` | In Remote view: edit selected machine configuration |
 | `d` / `Delete` | In Remote view: delete selected machine configuration |
 | `F5` | In Remote view: re-scan `~/.ssh/config` |
+| `a` / `A` | In Files view: new file (opened in the editor) / new folder (`Shift+A`) in the selected directory |
+| `F2` / `r` / `e` | In Files view: rename selected file or folder (open editor tabs follow) |
+| `d` / `Delete` | In Files view: move selected file or folder to the trash, after confirmation |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
 | `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), rendered pages / text extraction (PDF), or player / raw header mode (video/audio) |

@@ -205,7 +205,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
     gtk_widget_set_focusable(files_btn, FALSE);
     gtk_widget_add_css_class(files_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(files_btn, "Files Explorer (Ctrl+A)");
+    gtk_widget_set_tooltip_text(files_btn, "Explorer (Ctrl+A)");
     g_signal_connect(files_btn, "clicked", G_CALLBACK(on_sidebar_files_clicked), app);
     gtk_box_append(GTK_BOX(title_row), files_btn);
 
@@ -229,7 +229,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(remote_btn), FALSE);
     gtk_widget_set_focusable(remote_btn, FALSE);
     gtk_widget_add_css_class(remote_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_btn, "Remote SSH (Ctrl+Shift+R)");
+    gtk_widget_set_tooltip_text(remote_btn, "Remote (Ctrl+Shift+R)");
     g_signal_connect(remote_btn, "clicked", G_CALLBACK(on_sidebar_remote_clicked), app);
     gtk_box_append(GTK_BOX(title_row), remote_btn);
 
@@ -261,7 +261,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(files_new_file_btn), FALSE);
     gtk_widget_set_focusable(files_new_file_btn, FALSE);
     gtk_widget_add_css_class(files_new_file_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(files_new_file_btn, "New File");
+    gtk_widget_set_tooltip_text(files_new_file_btn, "New File (a)");
     g_signal_connect(files_new_file_btn, "clicked", G_CALLBACK(on_sidebar_files_new_file_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_new_file_btn);
 
@@ -269,7 +269,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(files_new_folder_btn), FALSE);
     gtk_widget_set_focusable(files_new_folder_btn, FALSE);
     gtk_widget_add_css_class(files_new_folder_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(files_new_folder_btn, "New Folder");
+    gtk_widget_set_tooltip_text(files_new_folder_btn, "New Folder (Shift+A)");
     g_signal_connect(files_new_folder_btn, "clicked", G_CALLBACK(on_sidebar_files_new_folder_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_new_folder_btn);
 
@@ -335,7 +335,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(bm_edit_btn), FALSE);
     gtk_widget_set_focusable(bm_edit_btn, FALSE);
     gtk_widget_add_css_class(bm_edit_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(bm_edit_btn, "Edit / Rename / Move Selected (F2)");
+    gtk_widget_set_tooltip_text(bm_edit_btn, "Edit Selected (F2 / r / e)");
     g_signal_connect(bm_edit_btn, "clicked", G_CALLBACK(on_sidebar_bm_edit_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_edit_btn);
 
@@ -351,7 +351,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(bm_sort_btn), FALSE);
     gtk_widget_set_focusable(bm_sort_btn, FALSE);
     gtk_widget_add_css_class(bm_sort_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(bm_sort_btn, "Toggle Sort: A-Z / Z-A");
+    gtk_widget_set_tooltip_text(bm_sort_btn, "Cycle Sort: A-Z / Z-A (o)");
     g_signal_connect(bm_sort_btn, "clicked", G_CALLBACK(on_sidebar_bm_sort_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_sort_btn);
 
@@ -398,7 +398,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(edit_note_btn), FALSE);
     gtk_widget_set_focusable(edit_note_btn, FALSE);
     gtk_widget_add_css_class(edit_note_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(edit_note_btn, "Rename / Edit Selected (F2 / r)");
+    gtk_widget_set_tooltip_text(edit_note_btn, "Edit Selected (F2 / r / e)");
     g_signal_connect(edit_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_edit_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), edit_note_btn);
 
@@ -422,7 +422,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(sort_note_btn), FALSE);
     gtk_widget_set_focusable(sort_note_btn, FALSE);
     gtk_widget_add_css_class(sort_note_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(sort_note_btn, "Toggle Sort Mode (Manual / A-Z / Z-A)");
+    gtk_widget_set_tooltip_text(sort_note_btn, "Cycle Sort: Manual / A-Z / Z-A (o)");
     g_signal_connect(sort_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_sort_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), sort_note_btn);
 
@@ -438,7 +438,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(empty_trash_btn), FALSE);
     gtk_widget_set_focusable(empty_trash_btn, FALSE);
     gtk_widget_add_css_class(empty_trash_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(empty_trash_btn, "Empty Trash Bin");
+    gtk_widget_set_tooltip_text(empty_trash_btn, "Empty Trash");
     g_signal_connect(empty_trash_btn, "clicked", G_CALLBACK(on_sidebar_notes_empty_trash_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), empty_trash_btn);
 
@@ -493,7 +493,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(remote_del_btn), FALSE);
     gtk_widget_set_focusable(remote_del_btn, FALSE);
     gtk_widget_add_css_class(remote_del_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_del_btn, "Delete Remote Machine (Delete / d)");
+    gtk_widget_set_tooltip_text(remote_del_btn, "Delete Remote Machine (d / Delete)");
     g_signal_connect(remote_del_btn, "clicked", G_CALLBACK(on_sidebar_remote_delete_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_del_btn);
 

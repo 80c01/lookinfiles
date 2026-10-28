@@ -1174,14 +1174,22 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         }
         app->pending_g = FALSE;
         return FALSE;
-    case GDK_KEY_I: /* Toggle hidden files */
+    case GDK_KEY_I: /* Toggle hidden files (files view only) */
     case GDK_KEY_i:
         app->pending_g = FALSE;
-        toggle_hidden_files(app);
+        if (is_files_view(app)) {
+            toggle_hidden_files(app);
+        }
         return TRUE;
-    case GDK_KEY_o: /* Cycle sort: name -> date -> size -> ext */
+    case GDK_KEY_o: /* Cycle the sort of the current view */
         app->pending_g = FALSE;
-        cycle_sort_mode(app);
+        if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
+            bookmarks_toggle_sort(app);
+        } else if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
+            notes_toggle_sort(app);
+        } else if (is_files_view(app)) {
+            cycle_sort_mode(app); /* name -> date -> size -> ext */
+        }
         return TRUE;
     case GDK_KEY_b: /* Ctrl+B: page up; zb: scroll selected row to bottom of panel */
         app->pending_g = FALSE;

@@ -29,6 +29,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Bookmarks view", "F2 / r / e", "Edit selected: name, location and folder"},
     {"Bookmarks view", "d / Delete", "Delete selected bookmark or folder"},
     {"Bookmarks view", "Shift+K / Shift+J", "Move selected item up / down"},
+    {"Bookmarks view", "o", "Cycle sort: A-Z / Z-A"},
     {"Bookmarks view", "Right-click", "Bookmark context menu"},
     {"Notes view", "a / Shift+A", "Create new note (Plain Text, Rich, Orgmode) / new notebook"},
     {"Notes view", "F2 / r / e", "Edit note (title and format) or notebook (name and icon)"},
@@ -37,6 +38,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Notes view", "d / Delete", "Delete note (to Trash) or notebook"},
     {"Notes view", "Shift+R", "Restore note from Trash to original notebook"},
     {"Notes view", "Shift+K / Shift+J", "Move selected note or notebook up / down"},
+    {"Notes view", "o", "Cycle sort: manual / A-Z / Z-A"},
     {"Notes view", "Right-click", "Context menu: 1-click format conversion (Text, Rich, Org), rename, move"},
     {"Remote view", "Enter / c", "Connect selected machine (SSHFS) and browse it in Explorer"},
     {"Remote view", "t", "Open SSH terminal to selected machine"},
@@ -45,6 +47,9 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Remote view", "d / Delete", "Delete selected machine"},
     {"Remote view", "F5", "Re-scan ~/.ssh/config"},
     {"Explorer panel", "Ctrl+U", "Switch between files and notes view in Explorer"},
+    {"Explorer panel", "a / Shift+A", "New file / new folder in the selected directory"},
+    {"Explorer panel", "F2 / r / e", "Rename selected file or folder"},
+    {"Explorer panel", "d / Delete", "Move selected file or folder to the trash (asks first)"},
     {"Explorer panel", "i / I", "Toggle hidden files"},
     {"Explorer panel", "o", "Cycle sort: name, date, size, extension"},
     {"Explorer panel", "?", "Show / hide this help panel"},
@@ -190,7 +195,7 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(close_btn), FALSE);
     gtk_widget_set_focusable(close_btn, FALSE);
     gtk_widget_add_css_class(close_btn, "help-close-btn");
-    gtk_widget_set_tooltip_text(close_btn, "Close help panel (?)");
+    gtk_widget_set_tooltip_text(close_btn, "Close Help Panel (?)");
     g_signal_connect(close_btn, "clicked",
                      G_CALLBACK(on_help_close_clicked), app);
 

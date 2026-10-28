@@ -316,11 +316,11 @@ void update_path_label(AppData* app) {
         if (app->editor_dedicated) {
             gtk_widget_add_css_class(app->split_btn, "tab-action-active");
             gtk_button_set_label(GTK_BUTTON(app->split_btn), "◨");
-            gtk_widget_set_tooltip_text(app->split_btn, "Dock editor tabs into preview panel (Ctrl+E)");
+            gtk_widget_set_tooltip_text(app->split_btn, "Dock Editor Tabs into Preview Panel (Ctrl+E)");
         } else {
             gtk_widget_remove_css_class(app->split_btn, "tab-action-active");
             gtk_button_set_label(GTK_BUTTON(app->split_btn), "◫");
-            gtk_widget_set_tooltip_text(app->split_btn, "Split editor tabs to dedicated panel right of preview (Ctrl+E)");
+            gtk_widget_set_tooltip_text(app->split_btn, "Move Editor Tabs to a Dedicated Panel (Ctrl+E)");
         }
     }
     if (app->term_btn != NULL) {
@@ -335,7 +335,7 @@ void update_path_label(AppData* app) {
             g_free(tip);
         } else {
             gtk_button_set_label(GTK_BUTTON(app->term_btn), ">_ Terminal");
-            gtk_widget_set_tooltip_text(app->term_btn, "Toggle embedded terminal panel (Ctrl+T)");
+            gtk_widget_set_tooltip_text(app->term_btn, "Show / Hide Terminal Panel (Ctrl+T)");
         }
         if (term_vis) {
             gtk_widget_add_css_class(app->term_btn, "pill-active");

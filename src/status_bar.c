@@ -198,7 +198,7 @@ void update_status_bar(AppData* app) {
     if (branch != NULL) {
         gchar* text = g_strdup_printf("⎇ %s", branch);
         gtk_label_set_text(GTK_LABEL(app->status_branch), text);
-        gtk_widget_set_tooltip_text(app->status_branch, "Git branch of the current directory");
+        gtk_widget_set_tooltip_text(app->status_branch, "Git Branch of the Current Directory");
         g_free(text);
     }
     gtk_widget_set_visible(app->status_branch, branch != NULL);

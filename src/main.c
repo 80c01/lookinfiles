@@ -257,19 +257,19 @@ int main(int argc, char** argv) {
     gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
     gtk_widget_set_focusable(files_btn, FALSE);
     gtk_widget_add_css_class(files_btn, "status-pill");
-    gtk_widget_set_tooltip_text(files_btn, "Show/hide Explorer panel");
+    gtk_widget_set_tooltip_text(files_btn, "Show / Hide Explorer Panel");
 
     GtkWidget* preview_btn = gtk_button_new_with_label("📄 Preview");
     gtk_button_set_has_frame(GTK_BUTTON(preview_btn), FALSE);
     gtk_widget_set_focusable(preview_btn, FALSE);
     gtk_widget_add_css_class(preview_btn, "status-pill");
-    gtk_widget_set_tooltip_text(preview_btn, "Show/hide Preview panel");
+    gtk_widget_set_tooltip_text(preview_btn, "Show / Hide Preview Panel");
 
     GtkWidget* term_btn = gtk_button_new_with_label(">_ Terminal");
     gtk_button_set_has_frame(GTK_BUTTON(term_btn), FALSE);
     gtk_widget_set_focusable(term_btn, FALSE);
     gtk_widget_add_css_class(term_btn, "status-pill");
-    gtk_widget_set_tooltip_text(term_btn, "Show/hide Terminal panel (Ctrl+T)");
+    gtk_widget_set_tooltip_text(term_btn, "Show / Hide Terminal Panel (Ctrl+T)");
 
     GtkWidget* pill_div_label = gtk_label_new("|");
     gtk_widget_add_css_class(pill_div_label, "breadcrumb-sep");
@@ -278,7 +278,7 @@ int main(int argc, char** argv) {
     gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);
     gtk_widget_set_focusable(help_btn, FALSE);
     gtk_widget_add_css_class(help_btn, "status-pill");
-    gtk_widget_set_tooltip_text(help_btn, "Show keyboard shortcuts (?)");
+    gtk_widget_set_tooltip_text(help_btn, "Show Keyboard Shortcuts (?)");
 
     /* Spacer label for top bar */
     GtkWidget* sep_label = gtk_label_new(" ");
@@ -383,7 +383,7 @@ int main(int argc, char** argv) {
     gtk_button_set_has_frame(GTK_BUTTON(split_btn), FALSE);
     gtk_widget_set_focusable(split_btn, FALSE);
     gtk_widget_add_css_class(split_btn, "tab-action-btn");
-    gtk_widget_set_tooltip_text(split_btn, "Split editor tabs to dedicated panel right of preview (Ctrl+E)");
+    gtk_widget_set_tooltip_text(split_btn, "Move Editor Tabs to a Dedicated Panel (Ctrl+E)");
     gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), split_btn, GTK_PACK_START);
 
     GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
