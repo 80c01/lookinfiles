@@ -1,5 +1,6 @@
 /* Virtual workspaces (Alt+1..8): per-workspace layout snapshots and the top-bar workspace minimap. */
 #include "workspace.h"
+#include "fs_watch.h"
 #include "panels.h"
 #include "app_events.h"
 #include "tree_nav.h"
@@ -9,7 +10,6 @@
 #include "minimap.h"
 #include "terminal.h"
 #include "video.h"
-#include "viewer.h"
 
 #define WS_CELL_W   32
 #define WS_ADD_W    22

@@ -1,4 +1,5 @@
 #include "file_list.h"
+#include "fs_watch.h"
 #include "panels.h"
 #include "app_events.h"
 #include "text_style.h"
@@ -1236,7 +1237,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             app->render_raw = !app->render_raw;
             app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             if (app->viewed_path != NULL) {
-                load_file_content(app, app->viewed_name, app->viewed_path);
+                app_emit(app, APP_EVENT_PREVIEW_STALE);
             }
             return TRUE;
         }

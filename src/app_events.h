@@ -15,6 +15,7 @@
  *   APP_EVENT_LAYOUT_REBUILT  -> workspace_apply_positions()  (workspace.c)
  *   APP_EVENT_FILES_CHANGED   -> refresh_listing()            (file_list.c)
  *   APP_EVENT_PREVIEW_STALE   -> viewer_reload_preview()      (viewer.c)
+ *   APP_EVENT_GIT_STATUS_CHANGED -> refresh_git_status_in_place() (file_list.c)
  */
 #include "app_types.h"
 
@@ -32,6 +33,8 @@ typedef enum {
     APP_EVENT_FILES_CHANGED,
     /* The file shown in the preview changed (saved, Org state toggled): re-render it */
     APP_EVENT_PREVIEW_STALE,
+    /* The repository state changed (.git updated): refresh the Git badges in the tree */
+    APP_EVENT_GIT_STATUS_CHANGED,
     APP_EVENT_COUNT
 } AppEvent;
 
