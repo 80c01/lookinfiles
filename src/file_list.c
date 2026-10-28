@@ -1719,66 +1719,59 @@ void create_folder_in_bookmarks(AppData* app) {
     if (app == NULL) {
         return;
     }
-    gchar* target_parent = NULL;
-    if (app->selection != NULL) {
-        GtkTreeIter it;
-        if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-            gchar* path = NULL;
-            gtk_tree_model_get(app->model, &it, COL_PATH, &path, -1);
-            if (path != NULL && path[0] != '\0' && g_file_test(path, G_FILE_TEST_IS_DIR)) {
-                target_parent = path;
-            } else {
-                g_free(path);
-            }
-        }
-    }
-    if (target_parent == NULL) {
-        target_parent = (app->base_dir != NULL) ? g_strdup(app->base_dir) : g_strdup(g_get_home_dir());
-    }
 
     gchar* folder_name = prompt_new_folder_dialog(app->window);
     if (folder_name == NULL) {
-        g_free(target_parent);
         return;
     }
 
     if (strchr(folder_name, '/') != NULL || strchr(folder_name, '\\') != NULL ||
         g_strcmp0(folder_name, ".") == 0 || g_strcmp0(folder_name, "..") == 0) {
         g_free(folder_name);
-        g_free(target_parent);
         return;
     }
 
-    gchar* new_folder_path = g_build_filename(target_parent, folder_name, NULL);
-    g_mkdir_with_parents(new_folder_path, 0755);
+    /* Bookmark folders are virtual organizational folders, not real directories */
+    gchar* virtual_folder = g_strdup_printf("BM::%s", folder_name);
 
     if (app->bookmarks != NULL) {
         gboolean exists = FALSE;
         for (guint i = 0; i < app->bookmarks->len; i++) {
-            if (g_strcmp0((const gchar*)g_ptr_array_index(app->bookmarks, i), new_folder_path) == 0) {
+            if (g_strcmp0((const gchar*)g_ptr_array_index(app->bookmarks, i), virtual_folder) == 0) {
                 exists = TRUE;
                 break;
             }
         }
         if (!exists) {
-            g_ptr_array_add(app->bookmarks, g_strdup(new_folder_path));
+            g_ptr_array_add(app->bookmarks, g_strdup(virtual_folder));
             bookmarks_save(app);
         }
     }
 
-    refresh_listing_with_path(app, new_folder_path);
+    refresh_listing(app);
 
     g_free(folder_name);
-    g_free(new_folder_path);
-    g_free(target_parent);
+    g_free(virtual_folder);
 }
 
 static gint compare_bookmarks_asc(gconstpointer a, gconstpointer b) {
     const gchar* pa = *(const gchar**)a;
     const gchar* pb = *(const gchar**)b;
-    gchar* na = g_path_get_basename(pa);
-    gchar* nb = g_path_get_basename(pb);
-    gint res = g_ascii_strcasecmp(na, nb);
+    const gchar* na_src = g_str_has_prefix(pa, "BM::") ? (pa + 4) : g_path_get_basename(pa);
+    const gchar* nb_src = g_str_has_prefix(pb, "BM::") ? (pb + 4) : g_path_get_basename(pb);
+    gchar* na = g_strdup(na_src);
+    gchar* nb = g_strdup(nb_src);
+    /* Virtual folders come before real bookmarks */
+    gboolean va = g_str_has_prefix(pa, "BM::");
+    gboolean vb = g_str_has_prefix(pb, "BM::");
+    gint res = 0;
+    if (va && !vb) {
+        res = -1;
+    } else if (!va && vb) {
+        res = 1;
+    } else {
+        res = g_ascii_strcasecmp(na, nb);
+    }
     g_free(na);
     g_free(nb);
     return res;
