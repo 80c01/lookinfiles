@@ -89,7 +89,7 @@ static void on_sidebar_remote_delete_clicked(GtkButton* btn, gpointer data) {
 
 static void on_sidebar_remote_refresh_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    remote_refresh((AppData*)data);
+    remote_rescan((AppData*)data);
 }
 
 static void on_sidebar_files_new_file_clicked(GtkButton* btn, gpointer data) {
@@ -486,7 +486,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(remote_edit_btn), FALSE);
     gtk_widget_set_focusable(remote_edit_btn, FALSE);
     gtk_widget_add_css_class(remote_edit_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_edit_btn, "Edit Remote Machine (F2 / r)");
+    gtk_widget_set_tooltip_text(remote_edit_btn, "Edit Remote Machine (F2 / r / e)");
     g_signal_connect(remote_edit_btn, "clicked", G_CALLBACK(on_sidebar_remote_edit_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_edit_btn);
 
@@ -502,7 +502,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(remote_ref_btn), FALSE);
     gtk_widget_set_focusable(remote_ref_btn, FALSE);
     gtk_widget_add_css_class(remote_ref_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_ref_btn, "Refresh Remote Machines (R)");
+    gtk_widget_set_tooltip_text(remote_ref_btn, "Re-scan ~/.ssh/config (F5)");
     g_signal_connect(remote_ref_btn, "clicked", G_CALLBACK(on_sidebar_remote_refresh_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_ref_btn);
 

@@ -799,12 +799,12 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
                 g_string_append(s, "  Source:        Configured manually\n");
             }
             g_string_append(s, "\nQuick Actions:\n");
-            g_string_append(s, "  • Double-click / Enter: Connect and browse remote files in Explorer\n");
-            g_string_append(s, "  • Ctrl+T:               Open SSH terminal to this machine\n");
-            g_string_append(s, "  • e:                    Edit machine configuration\n");
-            g_string_append(s, "  • d / Delete:           Remove machine\n");
-            g_string_append(s, "  • a:                    Add new remote machine\n");
-            g_string_append(s, "  • r:                    Refresh list / re-scan ~/.ssh/config\n");
+            g_string_append(s, "  • Enter / c / Double-click: Connect and browse remote files in Explorer\n");
+            g_string_append(s, "  • t:                        Open SSH terminal to this machine\n");
+            g_string_append(s, "  • F2 / r / e:               Edit machine configuration\n");
+            g_string_append(s, "  • d / Delete:               Remove machine\n");
+            g_string_append(s, "  • a:                        Add new remote machine\n");
+            g_string_append(s, "  • F5:                       Re-scan ~/.ssh/config\n");
 
             gtk_text_buffer_set_text(app->buffer, s->str, -1);
             g_string_free(s, TRUE);

@@ -139,6 +139,9 @@ static gchar* status_type_label(const gchar* name, const gchar* type) {
     if (g_strcmp0(type, "notebook") == 0) {
         return g_strdup("Notebook");
     }
+    if (g_strcmp0(type, "remote") == 0) {
+        return g_strdup("Remote Machine");
+    }
     if (g_strcmp0(type, "trash") == 0) {
         return g_strdup("Trash");
     }

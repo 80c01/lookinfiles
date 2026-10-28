@@ -26,6 +26,9 @@ void remote_free(AppData* app);
 void remote_save(AppData* app);
 void remote_machine_free(RemoteMachine* rm);
 
+/* Re-read ~/.ssh/config: new hosts added, removed ones dropped (connected ones kept) */
+void remote_reload_ssh_config(AppData* app);
+
 RemoteMachine* remote_find_by_id(AppData* app, const gchar* id);
 /* Machine of the current workspace connection (app->current_remote_id), NULL if local */
 RemoteMachine* remote_get_active_machine(AppData* app);

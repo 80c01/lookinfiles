@@ -157,6 +157,27 @@ static void test_active_machine(void) {
     free_app(app);
 }
 
+static void test_reload_ssh_config(void) {
+    reset_files();
+    write_remotes_xml("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<remotes>\n"
+                      "  <machine id=\"rem_1\" name=\"manual\" host=\"10.0.0.1\" user=\"\" "
+                      "port=\"22\" path=\"~\" key=\"\"/>\n</remotes>\n");
+    write_ssh_config("Host old\nHost busy\n");
+    AppData* app = new_app();
+    g_assert_cmpuint(g_list_length(app->remotes), ==, 3);
+    remote_find_by_id(app, "ssh_busy")->is_connected = TRUE;
+
+    write_ssh_config("Host new\n");
+    remote_reload_ssh_config(app);
+    g_assert_nonnull(remote_find_by_id(app, "rem_1"));     /* manual machine untouched */
+    g_assert_nonnull(remote_find_by_id(app, "ssh_new"));   /* added to config */
+    g_assert_null(remote_find_by_id(app, "ssh_old"));      /* removed from config */
+    g_assert_nonnull(remote_find_by_id(app, "ssh_busy"));  /* connected: kept */
+    g_assert_cmpuint(g_list_length(app->remotes), ==, 3);
+    remote_find_by_id(app, "ssh_busy")->is_connected = FALSE; /* no unmount in free */
+    free_app(app);
+}
+
 static void remove_tree(const gchar* path) {
     if (g_file_test(path, G_FILE_TEST_IS_DIR)) {
         GDir* d = g_dir_open(path, 0, NULL);
@@ -190,6 +211,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/remote_store/save_and_reload", test_save_and_reload);
     g_test_add_func("/remote_store/ssh_host_already_saved", test_ssh_host_already_saved);
     g_test_add_func("/remote_store/active_machine", test_active_machine);
+    g_test_add_func("/remote_store/reload_ssh_config", test_reload_ssh_config);
     gint rc = g_test_run();
 
     remove_tree(tmp_home);

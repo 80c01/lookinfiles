@@ -247,6 +247,25 @@ static void parse_ssh_config(AppData* app) {
     g_strfreev(lines);
 }
 
+/* Drop the ~/.ssh/config machines that are not connected, then parse the file
+ * again: new hosts appear, removed ones disappear, connected ones are kept. */
+void remote_reload_ssh_config(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    GList* l = app->remotes;
+    while (l != NULL) {
+        GList* next = l->next;
+        RemoteMachine* rm = (RemoteMachine*)l->data;
+        if (rm != NULL && rm->from_ssh_config && !rm->is_connected) {
+            remote_machine_free(rm);
+            app->remotes = g_list_delete_link(app->remotes, l);
+        }
+        l = next;
+    }
+    parse_ssh_config(app);
+}
+
 void remote_init(AppData* app) {
     if (app == NULL) {
         return;

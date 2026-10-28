@@ -47,7 +47,7 @@ Simple graphical application to browse the file system.
   - **Files Explorer**: create new file (`📄+`), create new folder (`📁+`), toggle hidden files (`👁`), cycle sort mode (`⇅`), and toggle collapse/expand folders (`▲▼`).
   - **Bookmarks view**: add bookmark (`🔖+` or `a`), create folder (`📁+` or `A`), edit/rename/move (`✎` or `F2`/`r`/`e`), delete (`🗑` or `d`/`Delete`), toggle sort order (`⇅`), and toggle collapse/expand bookmarks (`▲▼`).
   - **Notes view**: create note (`➕` or `a`), create notebook (`📓+` or `Shift+A`), rename (`✎` or `F2`/`r`), move to notebook (`📁→` or `m`), delete to trash (`🗑` or `d`/`Delete`), toggle sort order (`⇅`), toggle collapse/expand (`▲▼`), and empty trash (`🧹`).
-  - **Remote view**: connect/mount (`🔌` or `c`/`Enter`), open remote SSH terminal (`>_` or `t`), add machine (`➕` or `a`), edit machine (`✎` or `e`/`F2`), delete machine (`🗑` or `d`/`Delete`), and refresh/re-scan `~/.ssh/config` (`↻` or `r`).
+  - **Remote view**: connect/mount (`🔌` or `c`/`Enter`), open remote SSH terminal (`>_` or `t`), add machine (`➕` or `a`), edit machine (`✎` or `F2`/`r`/`e`), delete machine (`🗑` or `d`/`Delete`), and re-scan `~/.ssh/config` (`↻` or `F5`).
 - ✅ Focused panel highlight: the panel that owns active keyboard focus (Explorer sidebar, Preview panel, Editor panel, Terminal panel, or Help cheatsheet) is dynamically highlighted with a subtle VS Code-style blue accent outline (`#0078d4`) and header emphasis, updating live as focus cycles (`Alt+Left` / `Alt+Right`) or when clicking widgets.
 - ✅ Multi-Mode Editor Engine (Notepad, Emacs, Vim) with Visual Clones:
   Each editor tab supports switching between 3 distinct editor modes, complete with visual clone fidelity and full feature parity:
@@ -104,9 +104,9 @@ Simple graphical application to browse the file system.
 | `c` / `Enter` | In Remote view: connect / mount selected machine and browse in Explorer |
 | `t` | In Remote view: open SSH terminal to selected machine |
 | `a` | In Remote view: add new SSH machine |
-| `e` / `F2` | In Remote view: edit selected machine configuration |
+| `F2` / `r` / `e` | In Remote view: edit selected machine configuration |
 | `d` / `Delete` | In Remote view: delete selected machine configuration |
-| `r` | In Remote view: refresh / re-scan `~/.ssh/config` |
+| `F5` | In Remote view: re-scan `~/.ssh/config` |
 | `I` | Toggle hidden files (dot-prefixed) |
 | `o` | Cycle sort: name → date (newest first) → size (largest first) → extension |
 | `m` | Toggle rendered preview / raw markup view (Markdown/HTML), fitted / 1:1 scale (images), rendered pages / text extraction (PDF), or player / raw header mode (video/audio) |

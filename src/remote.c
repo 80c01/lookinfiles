@@ -98,6 +98,15 @@ void remote_append_to_store(GtkTreeStore* store, AppData* app) {
     }
 }
 
+/* F5 / refresh button: re-read ~/.ssh/config, then redraw the list */
+void remote_rescan(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    remote_reload_ssh_config(app);
+    remote_refresh(app);
+}
+
 void remote_refresh(AppData* app) {
     if (app == NULL || app->model == NULL || app->sidebar_view != SIDEBAR_VIEW_REMOTE) {
         return;
@@ -594,6 +603,7 @@ gboolean remote_handle_key(AppData* app, guint keyval, GdkModifierType state) {
             return TRUE;
         }
         break;
+    case GDK_KEY_e:
     case GDK_KEY_r:
     case GDK_KEY_F2:
         if (!ctrl) {
@@ -601,8 +611,12 @@ gboolean remote_handle_key(AppData* app, guint keyval, GdkModifierType state) {
             return TRUE;
         }
         break;
+    case GDK_KEY_F5:
+        remote_rescan(app);
+        return TRUE;
     case GDK_KEY_d:
     case GDK_KEY_Delete:
+    case GDK_KEY_KP_Delete:
         if (!ctrl) {
             remote_delete_selected(app);
             return TRUE;

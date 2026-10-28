@@ -55,10 +55,11 @@ static void file_name_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* ce
                        COL_TYPE, &type,
                        -1);
 
-    /* Bookmarks: show the target right after the name in the same cell, so the
-     * name keeps priority and the target uses all the remaining width (the
-     * whole line is ellipsized at the end only when space runs out). */
-    if (g_strcmp0(type, "bookmark") == 0 && status != NULL && status[0] != '\0') {
+    /* Bookmarks and remote machines: show the target / address right after the
+     * name in the same cell, so the name keeps priority and the target uses all
+     * the remaining width (ellipsized at the end only when space runs out). */
+    gboolean inline_secondary = (g_strcmp0(type, "bookmark") == 0 || g_strcmp0(type, "remote") == 0);
+    if (inline_secondary && status != NULL && status[0] != '\0') {
         gchar* name_esc = g_markup_escape_text(label ? label : "", -1);
         gchar* markup = g_strdup_printf("%s  %s", name_esc, status); /* status is escaped markup */
         g_object_set(cell, "markup", markup, "foreground-set", FALSE, NULL);
@@ -112,8 +113,9 @@ static void git_status_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* c
     gchar* status = NULL;
     gchar* type = NULL;
     gtk_tree_model_get(model, iter, COL_GIT_STATUS, &status, COL_TYPE, &type, -1);
-    /* Bookmark targets are drawn inline by file_name_cell_data_func */
-    gboolean has_status = (status != NULL && status[0] != '\0' && g_strcmp0(type, "bookmark") != 0);
+    /* Bookmark targets and remote addresses are drawn inline by file_name_cell_data_func */
+    gboolean has_status = (status != NULL && status[0] != '\0' &&
+                           g_strcmp0(type, "bookmark") != 0 && g_strcmp0(type, "remote") != 0);
     g_free(type);
     g_object_set(cell,
                  "visible", has_status,

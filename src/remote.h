@@ -7,6 +7,8 @@
 /* Explorer panel integration */
 void remote_append_to_store(GtkTreeStore* store, AppData* app);
 void remote_refresh(AppData* app);
+/* Re-read ~/.ssh/config (F5 / refresh button) and redraw */
+void remote_rescan(AppData* app);
 gboolean remote_handle_key(AppData* app, guint keyval, GdkModifierType state);
 void remote_attach_context_menu(AppData* app);
 

@@ -354,8 +354,9 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
 void git_tab_update(AppData* app, const gchar* dir) {
     if (app == NULL || app->git_tab_box == NULL) return;
 
-    /* Hide git commits tab when in Bookmarks or Notes view */
-    if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->sidebar_view == SIDEBAR_VIEW_NOTES || app->show_bookmarks) {
+    /* Hide git commits tab when in Bookmarks, Notes or Remote view */
+    if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->sidebar_view == SIDEBAR_VIEW_NOTES ||
+        app->sidebar_view == SIDEBAR_VIEW_REMOTE || app->show_bookmarks) {
         gtk_widget_set_visible(app->git_tab_box, FALSE);
         return;
     }

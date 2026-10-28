@@ -360,7 +360,7 @@ void update_path_label(AppData* app) {
         } else if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
             title = "BOOKMARKS";
         } else if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
-            title = "REMOTE (SSH)";
+            title = "REMOTE";
         }
         gtk_label_set_text(GTK_LABEL(app->sidebar_title), title);
         git_tab_update(app, app->base_dir);
