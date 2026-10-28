@@ -104,6 +104,13 @@ key j;                  shot select_plan_org
 xdotool mousemove 390 88 click 1
                         shot org_todo_clicked
 key alt+Left;           shot explorer_focused
+key Return;             shot open_org_in_editor
+xdotool mousemove 600 79 click 1     # cursor on the first heading
+key shift+Right;        shot org_editor_todo_cycled
+# Org files open in Emacs mode: C-x C-s with Ctrl held down
+xdotool keydown ctrl key --delay 120 x s keyup ctrl
+                        shot org_editor_saved
+key alt+Left;           shot explorer_focused_again
 key question;           shot help_open
 key question;           shot help_closed
 key G;                  shot G_last_row
