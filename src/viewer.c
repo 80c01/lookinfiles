@@ -1168,8 +1168,8 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     }
     gboolean as_dir = (g_strcmp0(type, "dir") == 0) ||
                       (is_bookmark && g_file_test(full, G_FILE_TEST_IS_DIR));
-    if (is_bookmark && !as_dir) {
-        /* Bookmark to a file: detect the file type from its real name */
+    if ((is_bookmark || g_strcmp0(type, "note") == 0 || g_strcmp0(type, "trashed_note") == 0) && !as_dir) {
+        /* Detect the file type from its real name */
         g_free(name);
         name = g_path_get_basename(full);
     }
@@ -1206,6 +1206,24 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
         g_task_run_in_thread(task, dir_preview_thread_func);
         g_object_unref(task);
     } else {
+        /* If there's an open editor tab for this file with modified/buffered content, flush it */
+        for (GList* l = app->editors; l != NULL; l = l->next) {
+            EditorTab* t = (EditorTab*)l->data;
+            if (t != NULL && g_strcmp0(t->path, full) == 0) {
+                if (t->buffer != NULL && (t->is_buffer || gtk_text_buffer_get_modified(t->buffer))) {
+                    GtkTextIter start, end;
+                    gtk_text_buffer_get_bounds(t->buffer, &start, &end);
+                    gchar* text = gtk_text_buffer_get_text(t->buffer, &start, &end, FALSE);
+                    g_file_set_contents(t->path, text, -1, NULL);
+                    g_free(text);
+                    gtk_text_buffer_set_modified(t->buffer, FALSE);
+                    editor_tab_label_update(t);
+                    app->file_dirty = TRUE;
+                }
+                break;
+            }
+        }
+
         if (g_strcmp0(full, app->viewed_path) == 0 && !app->file_dirty &&
             (is_video_file(name) || is_audio_file(name) || gtk_text_buffer_get_char_count(app->buffer) > 0)) {
             if (!app->switching_ws) {

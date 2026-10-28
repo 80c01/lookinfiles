@@ -332,6 +332,25 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
         app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
         app->workspaces[app->current_ws].notebook_page = (gint)page_num;
     }
+    if (page_num == 0 && app != NULL && !app->editor_dedicated && app->viewed_path != NULL) {
+        for (GList* l = app->editors; l != NULL; l = l->next) {
+            EditorTab* t = (EditorTab*)l->data;
+            if (t != NULL && g_strcmp0(t->path, app->viewed_path) == 0) {
+                if (t->buffer != NULL && (t->is_buffer || gtk_text_buffer_get_modified(t->buffer))) {
+                    GtkTextIter start, end;
+                    gtk_text_buffer_get_bounds(t->buffer, &start, &end);
+                    gchar* text = gtk_text_buffer_get_text(t->buffer, &start, &end, FALSE);
+                    g_file_set_contents(t->path, text, -1, NULL);
+                    g_free(text);
+                    gtk_text_buffer_set_modified(t->buffer, FALSE);
+                    editor_tab_label_update(t);
+                }
+                app->file_dirty = FALSE;
+                load_file_content(app, app->viewed_name, app->viewed_path);
+                break;
+            }
+        }
+    }
     EditorTab* cur = editor_current_tab(app);
     if (cur != NULL) {
         editor_minimap_update_visibility(cur);
@@ -397,6 +416,19 @@ void editor_close_page(AppData* app, gint page) {
     if (tab == NULL || !editor_confirm_discard(app, tab)) {
         return;
     }
+
+    if (tab->buffer != NULL && tab->is_buffer && tab->path != NULL) {
+        GtkTextIter start, end;
+        gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
+        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
+        g_file_set_contents(tab->path, text, -1, NULL);
+        g_free(text);
+        gtk_text_buffer_set_modified(tab->buffer, FALSE);
+    }
+
+    gchar* closed_path = g_strdup(tab->path);
+    gchar* closed_name = g_strdup(tab->name);
+
     g_signal_handlers_disconnect_by_func(tab->buffer,
                                          (gpointer)on_editor_modified_changed,
                                          tab);
@@ -424,6 +456,38 @@ void editor_close_page(AppData* app, gint page) {
     g_free(tab->name);
     g_free(tab);
     minimap_update_visibility(app);
+
+    if (closed_path != NULL) {
+        gboolean is_viewed = (app->viewed_path != NULL && g_strcmp0(app->viewed_path, closed_path) == 0);
+        gboolean is_selected = FALSE;
+        gchar* sel_path = NULL;
+        gchar* sel_name = NULL;
+
+        if (app->selection != NULL && app->model != NULL) {
+            GtkTreeIter it;
+            if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+                gtk_tree_model_get(app->model, &it, COL_PATH, &sel_path, COL_NAME, &sel_name, -1);
+                if (g_strcmp0(sel_path, closed_path) == 0) {
+                    is_selected = TRUE;
+                }
+            }
+        }
+
+        if (is_viewed || is_selected) {
+            if (!is_viewed) {
+                g_free(app->viewed_path);
+                g_free(app->viewed_name);
+                app->viewed_path = g_strdup(closed_path);
+                app->viewed_name = g_path_get_basename(closed_path);
+            }
+            app->file_dirty = FALSE;
+            load_file_content(app, app->viewed_name, app->viewed_path);
+        }
+        g_free(sel_path);
+        g_free(sel_name);
+        g_free(closed_path);
+        g_free(closed_name);
+    }
 }
 
 void editor_detach_tabs(AppData* app) {
@@ -612,6 +676,10 @@ gboolean editor_save_current(AppData* app) {
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
         editor_tab_label_update(tab);
         refresh_listing(app);
+        if (app->viewed_path != NULL && g_strcmp0(app->viewed_path, tab->path) == 0) {
+            app->file_dirty = FALSE;
+            load_file_content(app, app->viewed_name ? app->viewed_name : tab->name, app->viewed_path);
+        }
         if (tab->view != NULL) {
             gtk_widget_grab_focus(tab->view);
         }
