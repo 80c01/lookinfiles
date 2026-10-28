@@ -27,7 +27,6 @@ enum {
 
 EditorTab* editor_current_tab(AppData* app);
 GPtrArray* editor_get_all_notebooks(AppData* app);
-void editor_tab_label_update(EditorTab* tab);
 void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode);
 void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data);
 void editor_apply_language(GtkTextBuffer* buffer, const gchar* name);

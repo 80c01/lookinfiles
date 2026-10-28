@@ -1,7 +1,7 @@
 #include "orgmode.h"
+#include "app_events.h"
 #include "file_types.h"
 #include "editor.h"
-#include "viewer.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -1036,7 +1036,7 @@ gboolean orgmode_toggle_heading_fold(AppData* app, gint file_line) {
     }
 
     if (app->viewed_path != NULL && is_org_file(app->viewed_path)) {
-        load_file_content(app, app->viewed_name, app->viewed_path);
+        app_emit(app, APP_EVENT_PREVIEW_STALE);
         return TRUE;
     }
     return FALSE;
@@ -1049,7 +1049,7 @@ void orgmode_cycle_global_fold(AppData* app) {
         g_hash_table_remove_all(app->org_folded_lines);
     }
     if (app->viewed_path != NULL && is_org_file(app->viewed_path)) {
-        load_file_content(app, app->viewed_name, app->viewed_path);
+        app_emit(app, APP_EVENT_PREVIEW_STALE);
     }
 }
 
@@ -1296,7 +1296,7 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
         if (on_todo) {
             /* Cycle TODO state */
             orgmode_cycle_todo_at_line(app->viewed_path, info->file_line, NULL);
-            load_file_content(app, app->viewed_name, app->viewed_path);
+            app_emit(app, APP_EVENT_PREVIEW_STALE);
             return TRUE;
         } else {
             /* Toggle heading folding */
@@ -1308,7 +1308,7 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
     /* 2. If line has checkbox, toggle it */
     if (info->is_checkbox) {
         orgmode_toggle_checkbox_at_line(app->viewed_path, info->file_line, NULL);
-        load_file_content(app, app->viewed_name, app->viewed_path);
+        app_emit(app, APP_EVENT_PREVIEW_STALE);
         return TRUE;
     }
 
@@ -1348,7 +1348,7 @@ gboolean orgmode_handle_viewer_key(AppData* app, guint keyval, GdkModifierType s
         OrgLineInfo* info = find_line_info(app->buffer, buf_line);
         if (info != NULL && info->heading_level > 0) {
             orgmode_cycle_todo_at_line(app->viewed_path, info->file_line, NULL);
-            load_file_content(app, app->viewed_name, app->viewed_path);
+            app_emit(app, APP_EVENT_PREVIEW_STALE);
             return TRUE;
         }
     }
@@ -1361,7 +1361,7 @@ gboolean orgmode_handle_viewer_key(AppData* app, guint keyval, GdkModifierType s
         OrgLineInfo* info = find_line_info(app->buffer, buf_line);
         if (info != NULL && info->is_checkbox) {
             orgmode_toggle_checkbox_at_line(app->viewed_path, info->file_line, NULL);
-            load_file_content(app, app->viewed_name, app->viewed_path);
+            app_emit(app, APP_EVENT_PREVIEW_STALE);
             return TRUE;
         }
     }

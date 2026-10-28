@@ -626,6 +626,15 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     g_object_unref(task);
 }
 
+/* Re-render the file currently shown in the preview (APP_EVENT_PREVIEW_STALE) */
+void viewer_reload_preview(AppData* app) {
+    gchar* fallback = (app->viewed_name == NULL && app->viewed_path != NULL)
+                          ? g_path_get_basename(app->viewed_path)
+                          : NULL;
+    load_file_content(app, app->viewed_name != NULL ? app->viewed_name : fallback, app->viewed_path);
+    g_free(fallback);
+}
+
 static gboolean deferred_refresh(gpointer data) {
     AppData* app = (AppData*)data;
     app->refresh_source = 0;

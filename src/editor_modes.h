@@ -20,6 +20,9 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
 void editor_modes_update_status(EditorTab* tab);
 gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path);
 
+/* Refresh the tab title: file icon, name, and a bullet when unsaved */
+void editor_tab_label_update(EditorTab* tab);
+
 /* Common editing, formatting, and search operations */
 void editor_mode_align_text(EditorTab* tab, GtkJustification just, gint target_width);
 void editor_mode_format_paragraph(EditorTab* tab, gint target_width);

@@ -434,6 +434,7 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_LAYOUT_CHANGED, workspace_save_current);
     app_events_subscribe(app, APP_EVENT_LAYOUT_REBUILT, workspace_apply_positions);
     app_events_subscribe(app, APP_EVENT_FILES_CHANGED, refresh_listing);
+    app_events_subscribe(app, APP_EVENT_PREVIEW_STALE, viewer_reload_preview);
     app->window = GTK_WINDOW(window);
     app->main_loop = loop;
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));

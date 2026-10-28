@@ -2,7 +2,6 @@
 #include "app_events.h"
 #include "text_style.h"
 #include "file_types.h"
-#include "editor.h"
 #include "orgmode.h"
 #include <ctype.h>
 #include <string.h>
@@ -825,4 +824,14 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
     }
 
     return notepad_handle_key(tab, st, keyval, state);
+}
+
+void editor_tab_label_update(EditorTab* tab) {
+    const gchar* icon = tab->is_buffer ? "📝" : file_icon(tab->name, FALSE);
+    gchar* title =
+        (!tab->is_buffer && gtk_text_buffer_get_modified(tab->buffer))
+            ? g_strdup_printf("%s %s  \xe2\x80\xa2", icon, tab->name)
+            : g_strdup_printf("%s %s", icon, tab->name);
+    gtk_label_set_text(GTK_LABEL(tab->tab_label), title);
+    g_free(title);
 }

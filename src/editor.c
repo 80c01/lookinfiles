@@ -3,7 +3,6 @@
 #include "app_events.h"
 #include "text_style.h"
 #include "file_types.h"
-#include "viewer.h"
 #include "minimap.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
@@ -257,15 +256,6 @@ static gboolean on_editor_view_key_press(GtkEventControllerKey* controller, guin
     return FALSE;
 }
 
-void editor_tab_label_update(EditorTab* tab) {
-    const gchar* icon = tab->is_buffer ? "📝" : file_icon(tab->name, FALSE);
-    gchar* title =
-        (!tab->is_buffer && gtk_text_buffer_get_modified(tab->buffer))
-            ? g_strdup_printf("%s %s  \xe2\x80\xa2", icon, tab->name)
-            : g_strdup_printf("%s %s", icon, tab->name);
-    gtk_label_set_text(GTK_LABEL(tab->tab_label), title);
-    g_free(title);
-}
 
 void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
@@ -942,7 +932,7 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
                     editor_tab_label_update(t);
                 }
                 app->file_dirty = FALSE;
-                load_file_content(app, app->viewed_name, app->viewed_path);
+                app_emit(app, APP_EVENT_PREVIEW_STALE);
                 break;
             }
         }
@@ -1088,7 +1078,7 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
                 app->viewed_name = g_path_get_basename(closed_path);
             }
             app->file_dirty = FALSE;
-            load_file_content(app, app->viewed_name, app->viewed_path);
+            app_emit(app, APP_EVENT_PREVIEW_STALE);
         }
         g_free(sel_path);
         g_free(sel_name);
@@ -1300,7 +1290,7 @@ gboolean editor_save_current(AppData* app) {
         app_emit(app, APP_EVENT_FILES_CHANGED);
         if (app->viewed_path != NULL && g_strcmp0(app->viewed_path, tab->path) == 0) {
             app->file_dirty = FALSE;
-            load_file_content(app, app->viewed_name ? app->viewed_name : tab->name, app->viewed_path);
+            app_emit(app, APP_EVENT_PREVIEW_STALE);
         }
         if (tab->view != NULL) {
             gtk_widget_grab_focus(tab->view);
