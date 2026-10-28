@@ -610,7 +610,11 @@ gboolean editor_save_current(AppData* app) {
         g_printerr("[ Cannot save: %s ]\n", tab->name);
     } else {
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
+        editor_tab_label_update(tab);
         refresh_listing(app);
+        if (tab->view != NULL) {
+            gtk_widget_grab_focus(tab->view);
+        }
     }
     g_free(text);
     return TRUE;

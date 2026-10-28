@@ -2645,27 +2645,46 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
         td->git_statuses = NULL;
     }
 
+    gint saved_page = -1;
+    if (app->notebook != NULL && !app->editor_dedicated) {
+        saved_page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
+    }
+
     gtk_tree_store_clear(store);
     apply_dir_node_to_store(store, app, NULL, td->root_node);
     reexpand_paths_recursive(app, NULL);
     bookmarks_reexpand(app);
     sync_directory_monitors(app);
 
-    if (app->selection != NULL) {
-        g_signal_handlers_unblock_by_func(app->selection,
-                                          (gpointer)on_selection_changed, app);
-    }
-
     if (td->select_path != NULL) {
         if (!select_by_path(app, td->select_path)) {
+            if (app->selection != NULL) {
+                g_signal_handlers_unblock_by_func(app->selection,
+                                                  (gpointer)on_selection_changed, app);
+            }
             select_first_row(app);
-        }
-    } else if (td->select_name != NULL) {
-        if (!select_by_name(app, td->select_name)) {
-            select_first_row(app);
+        } else {
+            if (app->selection != NULL) {
+                g_signal_handlers_unblock_by_func(app->selection,
+                                                  (gpointer)on_selection_changed, app);
+            }
         }
     } else {
-        select_first_row(app);
+        if (app->selection != NULL) {
+            g_signal_handlers_unblock_by_func(app->selection,
+                                              (gpointer)on_selection_changed, app);
+        }
+        if (td->select_name != NULL) {
+            if (!select_by_name(app, td->select_name)) {
+                select_first_row(app);
+            }
+        } else {
+            select_first_row(app);
+        }
+    }
+
+    if (saved_page > 0 && app->notebook != NULL && !app->editor_dedicated) {
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), saved_page);
     }
 
     update_path_label(app);

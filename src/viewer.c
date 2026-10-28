@@ -1159,7 +1159,12 @@ void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
     }
 
     if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
-        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        /* Do not return to preview tab if the user is currently editing in an editor tab,
+         * unless the tree view has focus (e.g. user explicitly navigating in the tree view). */
+        if (editor_current_tab(app) == NULL ||
+            (app->tree_view != NULL && gtk_widget_has_focus(GTK_WIDGET(app->tree_view)))) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        }
     }
 
     if (as_dir) {
