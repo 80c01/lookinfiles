@@ -1,4 +1,7 @@
 #include "viewer.h"
+#include "status_bar.h"
+#include "workspace.h"
+#include "help.h"
 #include "git_utils.h"
 #include "file_types.h"
 #include "editor.h"

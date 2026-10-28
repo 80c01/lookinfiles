@@ -6,13 +6,12 @@
 gboolean window_is_fullscreen(GtkWindow* win);
 void toggle_fullscreen(GtkWindow* window);
 
-void create_help_panel(GtkWindow* parent, AppData* app);
-void toggle_help_panel(AppData* app);
-gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
-
 void update_active_panel_highlight(AppData* app);
 void wire_focus_tracking(AppData* app);
 void focus_adjacent_panel(gint step, AppData* app);
+
+/* Usable width of the workspace area (falls back to window / main paned width) */
+gint get_workspace_total_width(AppData* app);
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
 
 void update_pane_dims(GtkWidget* paned_widget, AppData* app);
@@ -26,19 +25,5 @@ void layout_save_frac(AppData* app);
 gboolean layout_position_idle(gpointer data);
 void layout_build(AppData* app, GtkOrientation orientation);
 void layout_toggle(AppData* app);
-
-void workspaces_init(AppData* app);
-void workspace_save_current(AppData* app);
-void workspace_apply_positions(AppData* app);
-void workspace_switch(AppData* app, gint idx);
-void workspace_add(AppData* app);
-void workspace_remove(AppData* app, gint idx);
-GtkWidget* create_workspace_minimap(AppData* app);
-
-GtkWidget* create_sidebar_header(AppData* app);
-GtkWidget* create_status_bar(AppData* app);
-void update_status_bar(AppData* app);
-
-void apply_panel_borders(void);
 
 #endif /* UI_H */

@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "workspace.h"
 #include "file_list.h"
 #include "remote.h"
 #include "ui.h"
