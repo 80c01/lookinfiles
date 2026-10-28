@@ -192,7 +192,9 @@ void update_status_bar(AppData* app) {
         return;
     }
 
-    gchar* branch = git_read_branch(app->base_dir);
+    /* The branch only makes sense for the files view (like the Git Commits tab) */
+    gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
+    gchar* branch = files_view ? git_read_branch(app->base_dir) : NULL;
     if (branch != NULL) {
         gchar* text = g_strdup_printf("⎇ %s", branch);
         gtk_label_set_text(GTK_LABEL(app->status_branch), text);
