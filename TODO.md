@@ -50,6 +50,10 @@
 - [ ] add a search engine in the left side panel
 - [ ] implement wrap line option in editors
 
+### README
+
+- [ ] dev env for agent tests: sudo apt install xvfb xdotool imagemagick
+
 ## Bugs
 
 - [x] DONE, TO BE CONFIRMED - git status in explorer panel for modified files is not up to date, or at least there is a huge delay
