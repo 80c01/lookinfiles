@@ -2786,6 +2786,7 @@ void update_path_label(AppData* app) {
             title = "BOOKMARKS";
         }
         gtk_label_set_text(GTK_LABEL(app->sidebar_title), title);
+        git_tab_update(app, app->base_dir);
     }
     if (app->sidebar_files_btn != NULL) {
         if (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks) {
