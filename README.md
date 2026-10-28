@@ -210,10 +210,10 @@ Authentic Vim visual clone featuring the inverted console statusline (`-- NORMAL
 ## 📝 Build
 
 ```bash
-make                           # build with make (recommended)
-make bundle                    # create self-contained portable bundle (bundle/explorateur_fichiers)
-make static                    # build static binary (requires static GTK 4, or STATIC=1 make)
-make clean                     # remove binary and bundles
+make                           # incremental build (objects in build/)
+make test                      # run unit tests (no display needed)
+make check                     # zero-warning build + unit tests + module layering rules
+make clean                     # remove binary and build/
 ```
 
 ## 🚀 Run
@@ -258,25 +258,49 @@ Detected the same way; without it, PDF files display an informative placeholder 
 
 ```
 src/
-├── app_types.h          # Shared structs, enums, constants
-├── main.c               # Entry point and widget assembly
-├── file_list.c/.h       # Directory enumeration, sorting, navigation
-├── bookmarks.c/.h       # Hierarchical bookmark manager with XML persistence
-├── notes.c/.h           # Notebooks, notes, and trash bin with custom reordering
-├── viewer.c/.h          # File content viewer and disk monitoring
-├── markdown.c/.h        # Markdown rendering engine
-├── html.c/.h            # HTML rendering engine
-├── pdf.c/.h             # PDF document renderer and text extractor
-├── git_tab.c/.h         # Git repository commits tab and diff viewer
-├── editor.c/.h          # Multi-tab file editor
-├── minimap.c/.h         # Scaled file overview minimap
-├── terminal.c/.h        # Embedded VTE terminal panel
-├── search.c/.h          # Interactive search bar
-└── ui.c/.h              # Paned layouts, help popup, fullscreen, borders
-Makefile                 # Build configuration
-README.md                # Documentation
-AGENTS.md                # AI coding agent guidelines
-explorateur_fichiers     # Compiled binary
+├── app_types.h              # Shared structs (AppData, EditorTab), enums, constants
+├── main.c                   # Entry point, CLI options, widget assembly
+│   Foundation (pure, unit-tested)
+├── file_types.c/.h          # File type detection and emoji icons
+├── git_utils.c/.h           # Git root/dir/branch discovery and status scan
+│   Shared UI helpers
+├── text_style.c/.h          # Dark+ scheme, monospace, syntax language
+├── theme.c/.h               # Global CSS theme
+├── tree_nav.c/.h            # Explorer row navigation and selection
+├── markdown.c/.h            # Markdown rendering engine
+├── html.c/.h                # HTML rendering engine
+├── minimap.c/.h             # Scaled file overview minimap
+│   Explorer panel
+├── file_list.c/.h           # Async directory scan, tree store, expand/collapse, keys
+├── file_actions.c/.h        # New file / new folder
+├── sidebar.c/.h             # Explorer header and per-view toolbars
+├── bookmarks.c/.h           # Hierarchical bookmark manager with XML persistence
+├── notes.c/.h               # Notebooks, notes, and trash bin with custom reordering
+├── remote.c/.h              # SSH remote machines and SSHFS mounting
+│   Preview and editing
+├── viewer.c/.h              # Preview dispatch, file/dir previews, disk monitoring
+├── orgmode.c/.h             # Org-mode rendering and interaction
+├── pdf.c/.h                 # PDF document renderer and text extractor
+├── video.c/.h, audio.c/.h   # Media previews
+├── git_tab.c/.h             # Git repository commits tab and diff viewer
+├── editor.c/.h              # Multi-tab file editor
+├── editor_modes.c/.h        # Editor mode state, shared editing operations
+├── editor_notepad.c         # Notepad mode
+├── editor_emacs.c           # Emacs mode
+├── editor_vim.c             # Vim mode
+│   Window chrome
+├── topbar.c/.h              # Breadcrumbs and toggle pills
+├── status_bar.c/.h          # Bottom status bar
+├── help.c/.h                # Key-binding cheat sheet
+├── workspace.c/.h           # Virtual workspaces and workspace minimap
+├── terminal.c/.h            # Embedded VTE terminal panel
+├── search.c/.h              # Interactive search bar
+└── ui.c/.h                  # Focus, global keys, pane resizing, layout toggle
+tests/                       # GLib unit tests (make test)
+tools/check_layers.sh        # Module layering rules (make check)
+Makefile                     # Build configuration
+README.md                    # Documentation
+AGENTS.md                    # AI coding agent guidelines
 ```
 
 ## 📝 Release notes
