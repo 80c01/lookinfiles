@@ -2349,8 +2349,7 @@ void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
     const struct { const gchar* label; EditorMode mode; } modes[] = {
         {"Notepad", EDITOR_MODE_NOTEPAD},
         {"Emacs", EDITOR_MODE_EMACS},
-        {"Vim", EDITOR_MODE_VIM},
-        {"Org/Emacs", EDITOR_MODE_ORGMODE}
+        {"Vim", EDITOR_MODE_VIM}
     };
 
     for (gsize i = 0; i < G_N_ELEMENTS(modes); i++) {
@@ -2541,19 +2540,19 @@ void update_status_bar(AppData* app) {
                 cur = (EditorTab*)app->editors->data;
             }
         }
-        const gchar* mstr = "NOTEPAD";
+        const gchar* mstr = "Notepad";
         if (cur != NULL) {
             if (cur->mode == EDITOR_MODE_ORGMODE || (cur->name != NULL && is_org_file(cur->name))) {
-                mstr = "ORG/EMACS";
+                mstr = "OrgMode";
             } else if (cur->mode == EDITOR_MODE_VIM) {
-                mstr = "VIM";
+                mstr = "Vim";
             } else if (cur->mode == EDITOR_MODE_EMACS) {
-                mstr = "EMACS";
+                mstr = "Emacs";
             } else {
-                mstr = "NOTEPAD";
+                mstr = "Notepad";
             }
         } else if (name != NULL && is_org_file(name)) {
-            mstr = "ORG/EMACS";
+            mstr = "OrgMode";
         }
         gtk_label_set_text(GTK_LABEL(app->status_mode), mstr);
         gtk_widget_set_visible(app->status_mode, TRUE);
