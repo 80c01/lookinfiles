@@ -1,6 +1,5 @@
 /* Explorer tree navigation: visible-row traversal, selection moves (j/k, gg/G, Ctrl+F/B, zz/zt/zb) and lookup by name or path. */
 #include "tree_nav.h"
-#include "viewer.h"
 
 /* Total top-level entries in the model */
 gint list_count(AppData* app) {
@@ -120,7 +119,9 @@ void select_path(AppData* app, GtkTreePath* path) {
     gtk_tree_view_set_cursor(app->tree_view, path, NULL, FALSE);
     gtk_tree_view_scroll_to_cell(app->tree_view, path, NULL, FALSE, 0.0, 0.0);
     if (was_selected) {
-        on_selection_changed(app->selection, app);
+        /* Re-selecting the same row emits nothing: notify listeners (the viewer
+         * preview) explicitly so the action still refreshes the right pane. */
+        g_signal_emit_by_name(app->selection, "changed");
     }
 }
 

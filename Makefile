@@ -75,9 +75,18 @@ test: $(TEST_BINS)
 	@for t in $(TEST_BINS); do echo "== $$t"; $$t || exit 1; done
 	@echo "All tests passed."
 
+# Full validation for agents: zero-warning build, unit tests, module layering
+check:
+	@$(MAKE) --no-print-directory all > $(BUILD_DIR).log 2>&1; rc=$$?; cat $(BUILD_DIR).log; \
+	if [ $$rc -ne 0 ]; then rm -f $(BUILD_DIR).log; echo "check: build failed"; exit 1; fi; \
+	if grep -q "warning:" $(BUILD_DIR).log; then rm -f $(BUILD_DIR).log; echo "check: compiler warnings found"; exit 1; fi; \
+	rm -f $(BUILD_DIR).log
+	@$(MAKE) --no-print-directory test
+	@sh tools/check_layers.sh
+
 clean:
 	rm -rf $(TARGET) $(BUILD_DIR)
 
 -include $(DEPS) $(TEST_BINS:=.d)
 
-.PHONY: all clean test
+.PHONY: all clean test check

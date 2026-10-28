@@ -1,6 +1,8 @@
 /* Application-wide CSS theme (VS Code Dark Modern inspired panels, toolbars, tabs). */
 #include "theme.h"
 
+#include <gtk/gtk.h>
+
 /* Panel boundaries and VS Code (Dark Modern) inspired theme styling */
 void apply_panel_borders(void) {
     GtkCssProvider* css = gtk_css_provider_new();
