@@ -13,6 +13,66 @@ static GtkNotebook* editor_target_notebook(AppData* app) {
                : GTK_NOTEBOOK(app->notebook);
 }
 
+static void sync_editors_order_from_notebook(AppData* app, GtkNotebook* nb) {
+    if (app == NULL || nb == NULL || app->editors == NULL) {
+        return;
+    }
+    gint n_pages = gtk_notebook_get_n_pages(nb);
+    gint base_offset = 0;
+    if (!app->editor_dedicated && app->git_tab_box != NULL) {
+        base_offset = 2;
+    } else if (!app->editor_dedicated) {
+        base_offset = 1;
+    } else {
+        base_offset = 0;
+    }
+    GList* new_list = NULL;
+    for (gint p = 0; p < n_pages; p++) {
+        GtkWidget* child = gtk_notebook_get_nth_page(nb, p);
+        if (child == NULL) {
+            continue;
+        }
+        if (!app->editor_dedicated && p < base_offset) {
+            continue;
+        }
+        if (app->git_tab_box != NULL && !app->editor_dedicated && child == app->git_tab_box) {
+            continue;
+        }
+        for (GList* l = app->editors; l != NULL; l = l->next) {
+            EditorTab* tab = (EditorTab*)l->data;
+            if (tab != NULL && tab->container == child) {
+                new_list = g_list_append(new_list, tab);
+                break;
+            }
+        }
+    }
+    if (new_list != NULL || g_list_length(app->editors) == 0) {
+        /* If we couldn't map some (shouldn't happen), just leave as-is */
+        if (new_list != NULL && g_list_length(new_list) == g_list_length(app->editors)) {
+            g_list_free(app->editors);
+            app->editors = new_list;
+            if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+                app->workspaces[app->current_ws].editors = app->editors;
+            }
+        } else {
+            g_list_free(new_list);
+        }
+    } else {
+        g_list_free(new_list);
+    }
+}
+
+static void on_notebook_page_reordered_impl(GtkNotebook* notebook, GtkWidget* child,
+                                           guint page_num, gpointer data) {
+    (void)child;
+    (void)page_num;
+    sync_editors_order_from_notebook((AppData*)data, notebook);
+}
+void on_notebook_page_reordered(GtkNotebook* notebook, GtkWidget* child,
+                                guint page_num, gpointer data) {
+    on_notebook_page_reordered_impl(notebook, child, page_num, data);
+}
+
 EditorTab* editor_current_tab(AppData* app) {
     if (app == NULL) {
         return NULL;
@@ -187,6 +247,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     editor_tab_label_update(tab);
 
     gint page = gtk_notebook_append_page(target_nb, container, tab->tab_label);
+    gtk_notebook_set_tab_reorderable(target_nb, container, TRUE);
     g_object_ref(tab->container);
     g_object_ref(tab->tab_label);
     gtk_notebook_set_current_page(target_nb, page);
@@ -349,6 +410,7 @@ void editor_attach_tabs(AppData* app, GList* editors) {
         EditorTab* tab = (EditorTab*)l->data;
         if (tab != NULL && tab->container != NULL && tab->tab_label != NULL) {
             gtk_notebook_append_page(nb, tab->container, tab->tab_label);
+            gtk_notebook_set_tab_reorderable(nb, tab->container, TRUE);
             editor_minimap_update_visibility(tab);
         }
     }

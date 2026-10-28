@@ -256,6 +256,7 @@ int main(int argc, char** argv) {
     GtkWidget* notebook = gtk_notebook_new();
     gtk_widget_set_hexpand(notebook, TRUE);
     gtk_widget_set_vexpand(notebook, TRUE);
+    gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), TRUE);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
                              gtk_label_new("📄 Preview"));
     /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
@@ -385,6 +386,10 @@ int main(int argc, char** argv) {
                      G_CALLBACK(on_editor_switch_page_changed), app);
     g_signal_connect(editor_notebook, "switch-page",
                      G_CALLBACK(on_editor_switch_page_changed), app);
+    g_signal_connect(notebook, "page-reordered",
+                     G_CALLBACK(on_notebook_page_reordered), app);
+    g_signal_connect(editor_notebook, "page-reordered",
+                     G_CALLBACK(on_notebook_page_reordered), app);
 
     app->minimap = minimap;
     app->viewer_vadj =

@@ -22,5 +22,7 @@ void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first);
 gboolean editor_confirm_discard_workspace(AppData* app, GList* editors);
 void editor_toggle_dedicated(AppData* app);
 void editor_set_dedicated(AppData* app, gboolean dedicated);
+void on_notebook_page_reordered(GtkNotebook* notebook, GtkWidget* child,
+                                guint page_num, gpointer data);
 
 #endif /* EDITOR_H */
