@@ -114,6 +114,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Emacs mode", "M-f / M-b / C-a / C-e", "Move forward / backward word, line start / line end"},
     {"Editor: Emacs mode", "M-g g / M-g M-g", "Goto line prompt in minibuffer"},
     {"Editor: Emacs mode", "M-x", "Execute command (e.g. set-justification-center, goto-line, save-buffer)"},
+    {"Editor: Emacs mode", "Tab / C-g (minibuffer)", "Complete the command, tag or *Heading link (lists candidates) / quit the prompt"},
     /* Editor: Vim Mode (Visual Clone) */
     {"Editor: Vim mode", "i / a / o / O / s / S / C", "Enter Insert mode (insert, append, open line below/above, change)"},
     {"Editor: Vim mode", "Esc / Ctrl+[", "Return to Normal mode (switches to block cursor)"},

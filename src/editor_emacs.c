@@ -18,16 +18,44 @@ void emacs_close_minibuffer(EditorTab* tab) {
     st->emacs_prefix = EMACS_PREFIX_NONE;
     st->emacs_prompt_cb = NULL;
     g_clear_pointer(&st->emacs_prompt_data, g_free);
+    g_clear_pointer(&st->emacs_completions, g_ptr_array_unref);
     gtk_widget_set_visible(st->emacs_mb_prompt, FALSE);
     gtk_widget_set_visible(st->emacs_mb_entry, FALSE);
     gtk_widget_set_visible(st->emacs_mb_echo, TRUE);
     if (tab->view) gtk_widget_grab_focus(tab->view);
 }
 
+/* M-x command names offered by Tab completion */
+static const gchar* MX_COMMANDS[] = {
+    "display-line-numbers-mode", "fill-paragraph", "goto-line", "notepad-mode",
+    "query-replace", "redo", "save-buffer", "set-justification-center",
+    "set-justification-full", "set-justification-left", "set-justification-right",
+    "undo", "vim-mode", "write-file",
+};
+
+static gint compare_names(gconstpointer a, gconstpointer b) {
+    return g_strcmp0(*(const gchar* const*)a, *(const gchar* const*)b);
+}
+
+void emacs_prompt_set_completions(EditorTab* tab, GPtrArray* candidates, gboolean last_word) {
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    if (st->emacs_completions != NULL) g_ptr_array_unref(st->emacs_completions);
+    st->emacs_completions = candidates;
+    st->emacs_complete_word = last_word;
+}
+
 static void emacs_open_minibuffer(EditorTab* tab, EmacsMiniMode mode,
                                   const gchar* prompt, const gchar* default_val) {
     EditorModeState* st = (EditorModeState*)tab->mode_state;
     st->emacs_mini_mode = mode;
+    g_clear_pointer(&st->emacs_completions, g_ptr_array_unref);
+    if (mode == EMACS_MINI_MX) {
+        GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
+        for (guint i = 0; i < G_N_ELEMENTS(MX_COMMANDS); i++) g_ptr_array_add(names, g_strdup(MX_COMMANDS[i]));
+        orgmode_editor_add_command_names(tab, names);
+        g_ptr_array_sort(names, compare_names);
+        emacs_prompt_set_completions(tab, names, FALSE);
+    }
     gtk_label_set_text(GTK_LABEL(st->emacs_mb_prompt), prompt);
     gtk_editable_set_text(GTK_EDITABLE(st->emacs_mb_entry), default_val ? default_val : "");
     gtk_widget_set_visible(st->emacs_mb_prompt, TRUE);
@@ -178,6 +206,9 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
 static void on_emacs_mb_entry_changed(GtkEditable* editable, gpointer user_data) {
     EditorTab* tab = (EditorTab*)user_data;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
+    if (st->emacs_mini_mode != EMACS_MINI_NONE) {
+        gtk_widget_set_visible(st->emacs_mb_echo, FALSE); /* typing hides the completion list */
+    }
     if (st->emacs_mini_mode == EMACS_MINI_ISEARCH_FWD || st->emacs_mini_mode == EMACS_MINI_ISEARCH_BWD) {
         const gchar* q = gtk_editable_get_text(editable);
         if (q && q[0] != '\0') {
@@ -185,6 +216,93 @@ static void on_emacs_mb_entry_changed(GtkEditable* editable, gpointer user_data)
             editor_mode_find_next(tab, q, fwd, TRUE);
         }
     }
+}
+
+/* Show a hint (completions, "[No match]") beside the minibuffer entry */
+static void emacs_minibuffer_hint(EditorModeState* st, const gchar* hint) {
+    gtk_label_set_text(GTK_LABEL(st->emacs_mb_echo), hint);
+    gtk_widget_set_visible(st->emacs_mb_echo, TRUE);
+}
+
+/* Tab in the minibuffer: complete to the longest common prefix of the
+ * candidates and list them when several remain */
+static void emacs_complete(EditorModeState* st) {
+    if (st->emacs_completions == NULL || st->emacs_completions->len == 0) {
+        emacs_minibuffer_hint(st, "[No completions]");
+        return;
+    }
+    const gchar* text = gtk_editable_get_text(GTK_EDITABLE(st->emacs_mb_entry));
+    gsize start = 0;
+    if (st->emacs_complete_word) {
+        for (gsize i = 0; text[i] != '\0'; i++) {
+            if (text[i] == ':' || text[i] == ' ') start = i + 1;
+        }
+    }
+    const gchar* prefix = text + start;
+    GPtrArray* matches = g_ptr_array_new();
+    for (guint i = 0; i < st->emacs_completions->len; i++) {
+        const gchar* c = g_ptr_array_index(st->emacs_completions, i);
+        if (g_str_has_prefix(c, prefix)) g_ptr_array_add(matches, (gpointer)c);
+    }
+    if (matches->len == 0) {
+        g_ptr_array_unref(matches);
+        emacs_minibuffer_hint(st, "[No match]");
+        return;
+    }
+    /* Longest common prefix of the matches */
+    const gchar* first = g_ptr_array_index(matches, 0);
+    gsize common = strlen(first);
+    for (guint i = 1; i < matches->len; i++) {
+        const gchar* c = g_ptr_array_index(matches, i);
+        gsize k = 0;
+        while (k < common && c[k] == first[k]) k++;
+        common = k;
+    }
+    while (common > 0 && ((guchar)first[common] & 0xC0) == 0x80) common--;
+    gchar* head = g_strndup(text, start);
+    gchar* completed = g_strdup_printf("%s%.*s", head, (gint)common, first);
+    gboolean grew = strlen(completed) > strlen(text);
+    if (grew) {
+        gtk_editable_set_text(GTK_EDITABLE(st->emacs_mb_entry), completed);
+        gtk_editable_set_position(GTK_EDITABLE(st->emacs_mb_entry), -1);
+    }
+    if (matches->len == 1) {
+        emacs_minibuffer_hint(st, "[Sole completion]");
+    } else {
+        GString* list = g_string_new("{");
+        for (guint i = 0; i < matches->len && i < 30; i++) {
+            if (i > 0) g_string_append(list, " | ");
+            g_string_append(list, g_ptr_array_index(matches, i));
+        }
+        if (matches->len > 30) g_string_append(list, " | ...");
+        g_string_append_c(list, '}');
+        emacs_minibuffer_hint(st, list->str);
+        g_string_free(list, TRUE);
+    }
+    g_free(head);
+    g_free(completed);
+    g_ptr_array_unref(matches);
+}
+
+/* Keys of the minibuffer entry: Tab completes (GTK would move the focus
+ * away), C-g / Escape quit */
+static gboolean on_emacs_mb_key_press(GtkEventControllerKey* controller, guint keyval,
+                                      guint keycode, GdkModifierType state, gpointer data) {
+    (void)controller;
+    (void)keycode;
+    EditorTab* tab = data;
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
+    if (keyval == GDK_KEY_Escape || (ctrl && (keyval == GDK_KEY_g || keyval == GDK_KEY_G))) {
+        emacs_close_minibuffer(tab);
+        emacs_echo(tab, "Quit");
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_Tab || keyval == GDK_KEY_ISO_Left_Tab || keyval == GDK_KEY_KP_Tab) {
+        if (!ctrl && !(state & GDK_ALT_MASK)) emacs_complete(st);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -249,6 +367,10 @@ void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
 
     g_signal_connect(st->emacs_mb_entry, "activate", G_CALLBACK(on_emacs_mb_entry_activate), tab);
     g_signal_connect(st->emacs_mb_entry, "changed", G_CALLBACK(on_emacs_mb_entry_changed), tab);
+    GtkEventController* mb_keys = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(mb_keys, GTK_PHASE_CAPTURE);
+    g_signal_connect(mb_keys, "key-pressed", G_CALLBACK(on_emacs_mb_key_press), tab);
+    gtk_widget_add_controller(st->emacs_mb_entry, mb_keys);
 
     gtk_box_append(GTK_BOX(minibuffer), st->emacs_mb_prompt);
     gtk_box_append(GTK_BOX(minibuffer), st->emacs_mb_entry);

@@ -177,6 +177,11 @@ xdotool type --delay 60 "apple"
 key Tab
 xdotool type --delay 60 "12"
 key Tab;                shot org_editor_table_aligned
+# Minibuffer: Tab completes M-x command names, Escape quits
+key alt+x
+xdotool type --delay 60 "org-cl"
+key Tab;                shot minibuffer_tab_completion
+key Escape;             shot minibuffer_quit
 # C-SPC sets the mark, then C-f / C-n extend the region; C-g drops it
 key alt+comma           # M-<: beginning of buffer
 xdotool keydown ctrl key --delay 120 space f f f f f n keyup ctrl

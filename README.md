@@ -248,7 +248,7 @@ The editor mode is changed from the status bar button, the tab menu,
 Tabs showing an `.org` file open in the **Org-mode** editor mode (Emacs keys)
 and get the Emacs Org-mode commands. Keys without `C-c` also work in the
 Notepad and Vim modes; commands that ask a question (dates, tags, links) use
-the Emacs minibuffer. `M-x org-…` runs the commands by their Emacs name
+the Emacs minibuffer (`Tab` completes tags and `*Heading` links). `M-x org-…` runs the commands by their Emacs name
 (`org-todo`, `org-schedule`, `org-clock-in`, `org-show-todo-tree`…).
 `Alt` is Emacs' Meta (`M-`), `C-c C-t` means `Ctrl+C` then `Ctrl+T`.
 
@@ -318,6 +318,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Undo and redo | `C-/`, `C-_`, `C-x u` / `C-Shift-_`, `M-_` |
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
 | Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, mode switches) |
+| Minibuffer | `Tab` completes (`M-x` command names, Org tags, `*Heading` links) and lists the candidates; `C-g` / `Esc` quits |
 
 </details>
 

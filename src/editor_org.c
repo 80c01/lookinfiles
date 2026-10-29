@@ -575,6 +575,7 @@ static void prompt_tags(EditorTab* tab) {
     gchar* tags = org_get_tags(lines, h, cfg);
     gchar* initial = tags != NULL ? g_strndup(tags + 1, strlen(tags) - 2) : g_strdup("");
     emacs_prompt(tab, "Tags (a:b or a b): ", initial, on_tags_answer, NULL);
+    emacs_prompt_set_completions(tab, org_collect_tags(lines, cfg), TRUE);
     g_free(initial);
     g_free(tags);
     org_todo_config_free(cfg);
@@ -603,6 +604,19 @@ static void on_link_answer(EditorTab* tab, const gchar* text, gchar* data) {
 static void prompt_link(EditorTab* tab) {
     if (!can_prompt(tab)) return;
     emacs_prompt(tab, "Link (URL, file:path, *Heading): ", "", on_link_answer, NULL);
+    /* Tab completes internal links to the headings of the file */
+    GPtrArray* lines = buffer_lines(tab);
+    OrgTodoConfig* cfg = org_todo_config_new(lines);
+    GPtrArray* targets = g_ptr_array_new_with_free_func(g_free);
+    for (guint i = 0; i < lines->len; i++) {
+        OrgHeading h;
+        if (!org_heading_parse(org_line(lines, (gint)i), cfg, &h)) continue;
+        if (h.title != NULL && h.title[0] != '\0') g_ptr_array_add(targets, g_strdup_printf("*%s", h.title));
+        org_heading_clear(&h);
+    }
+    emacs_prompt_set_completions(tab, targets, FALSE);
+    org_todo_config_free(cfg);
+    g_ptr_array_unref(lines);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -965,6 +979,11 @@ static gboolean do_action(EditorTab* tab, OrgAction act) {
             return TRUE;
     }
     return FALSE;
+}
+
+void orgmode_editor_add_command_names(EditorTab* tab, GPtrArray* names) {
+    if (!orgmode_editor_is_org(tab)) return;
+    for (guint i = 0; i < G_N_ELEMENTS(COMMANDS); i++) g_ptr_array_add(names, g_strdup(COMMANDS[i].name));
 }
 
 gboolean orgmode_editor_command(EditorTab* tab, const gchar* name) {

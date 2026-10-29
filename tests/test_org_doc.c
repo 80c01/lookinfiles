@@ -253,6 +253,18 @@ static void test_tags(void) {
     g_ptr_array_unref(l);
 }
 
+static void test_collect_tags(void) {
+    GPtrArray* l = org_lines_new("#+TAGS: { home work(w) } urgent\n* A :work:x:\n* B :x:\ntext :not:\n");
+    GPtrArray* tags = org_collect_tags(l, NULL);
+    g_assert_cmpint(tags->len, ==, 4);
+    g_assert_cmpstr(g_ptr_array_index(tags, 0), ==, "home");
+    g_assert_cmpstr(g_ptr_array_index(tags, 1), ==, "urgent");
+    g_assert_cmpstr(g_ptr_array_index(tags, 2), ==, "work");
+    g_assert_cmpstr(g_ptr_array_index(tags, 3), ==, "x");
+    g_ptr_array_unref(tags);
+    g_ptr_array_unref(l);
+}
+
 static void test_planning(void) {
     check("* Task‸\nbody\n", op_schedule, (gpointer) "<2026-11-02 Mon>", TRUE,
           "* Task‸\nSCHEDULED: <2026-11-02 Mon>\nbody\n");
@@ -390,6 +402,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/org_doc/todo_logdone_and_repeat", test_todo_logdone_and_repeat);
     g_test_add_func("/org_doc/priority", test_priority);
     g_test_add_func("/org_doc/tags", test_tags);
+    g_test_add_func("/org_doc/collect_tags", test_collect_tags);
     g_test_add_func("/org_doc/planning", test_planning);
     g_test_add_func("/org_doc/clock", test_clock);
     g_test_add_func("/org_doc/item_parse", test_item_parse);

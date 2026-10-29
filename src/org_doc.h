@@ -114,6 +114,9 @@ gboolean org_priority(GPtrArray* lines, OrgPos* pos, gint h, const OrgTodoConfig
 gchar* org_get_tags(GPtrArray* lines, gint h, const OrgTodoConfig* cfg);
 gboolean org_set_tags(GPtrArray* lines, OrgPos* pos, gint h, const OrgTodoConfig* cfg,
                       const gchar* tags);
+/* Every tag used in the document (#+TAGS: lines and headings), sorted,
+ * without duplicates (GPtrArray of gchar*, g_free) */
+GPtrArray* org_collect_tags(GPtrArray* lines, const OrgTodoConfig* cfg);
 
 /* ---- Planning, clock ---- */
 /* Set SCHEDULED / DEADLINE / CLOSED of heading h to ts_text (NULL removes) */

@@ -827,6 +827,48 @@ gboolean org_set_tags(GPtrArray* lines, OrgPos* pos, gint h, const OrgTodoConfig
     return TRUE;
 }
 
+static void add_tag_words(GHashTable* set, const gchar* text) {
+    gchar** parts = g_strsplit_set(text, ": \t", -1);
+    for (gint i = 0; parts[i] != NULL; i++) {
+        /* "#+TAGS: { a b }" groups and "work(w)" fast keys */
+        gchar* w = parts[i];
+        gchar* paren = strchr(w, '(');
+        if (paren != NULL) *paren = '\0';
+        if (w[0] != '\0' && strchr("{}[]", w[0]) == NULL) g_hash_table_add(set, g_strdup(w));
+    }
+    g_strfreev(parts);
+}
+
+static gint compare_str(gconstpointer a, gconstpointer b) {
+    return g_strcmp0(*(const gchar* const*)a, *(const gchar* const*)b);
+}
+
+GPtrArray* org_collect_tags(GPtrArray* lines, const OrgTodoConfig* cfg) {
+    GHashTable* set = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    for (gint i = 0; i < n_lines(lines); i++) {
+        const gchar* l = org_line(lines, i);
+        if (has_prefix_ci(l, "#+TAGS:")) {
+            add_tag_words(set, l + 7);
+            continue;
+        }
+        OrgHeading h;
+        if (!org_heading_parse(l, cfg, &h)) continue;
+        if (h.tags != NULL) add_tag_words(set, h.tags);
+        org_heading_clear(&h);
+    }
+    GPtrArray* out = g_ptr_array_new_with_free_func(g_free);
+    GHashTableIter it;
+    gpointer key;
+    g_hash_table_iter_init(&it, set);
+    while (g_hash_table_iter_next(&it, &key, NULL)) {
+        g_ptr_array_add(out, key);
+        g_hash_table_iter_steal(&it);
+    }
+    g_hash_table_destroy(set);
+    g_ptr_array_sort(out, compare_str);
+    return out;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Clock                                                                     */
 /* ------------------------------------------------------------------------- */

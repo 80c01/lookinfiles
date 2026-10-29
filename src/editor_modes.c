@@ -784,6 +784,7 @@ void editor_modes_free_tab(EditorTab* tab) {
     g_free(st->emacs_qr_rep);
     g_free(st->vim_last_search);
     g_free(st->emacs_prompt_data);
+    if (st->emacs_completions != NULL) g_ptr_array_unref(st->emacs_completions);
     g_free(st);
     tab->mode_state = NULL;
 }

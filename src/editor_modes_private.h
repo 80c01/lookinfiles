@@ -104,6 +104,8 @@ typedef struct {
     GtkTextMark* emacs_search_start_mark;
     EmacsPromptFunc emacs_prompt_cb; /* EMACS_MINI_CALLBACK */
     gchar* emacs_prompt_data;        /* owned, given to the callback */
+    GPtrArray* emacs_completions;    /* Tab completion candidates (gchar*), or NULL */
+    gboolean emacs_complete_word;    /* complete the last word (after ':' or ' ') only */
 
     /* --- Org-mode (editor_org.c) --- */
     OrgPrefix org_prefix;
@@ -156,6 +158,12 @@ gboolean orgmode_editor_handle_key(AppData* app, EditorTab* tab, guint keyval, G
 gboolean orgmode_editor_claims_key(EditorTab* tab, guint keyval, GdkModifierType state);
 /* Run an Org command by its Emacs name ("org-todo", "org-cycle"...) */
 gboolean orgmode_editor_command(EditorTab* tab, const gchar* name);
+
+/* Tab completion for the open minibuffer prompt: candidates (gchar*, taken
+ * over); last_word completes only the text after the last ':' or ' ' */
+void emacs_prompt_set_completions(EditorTab* tab, GPtrArray* candidates, gboolean last_word);
+/* Org command names for M-x completion (when tab shows an Org file) */
+void orgmode_editor_add_command_names(EditorTab* tab, GPtrArray* names);
 
 /* Ask a question in the Emacs minibuffer; cb gets the answer (data is
  * owned by the prompt and freed after the callback or on cancel) */
