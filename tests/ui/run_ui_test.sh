@@ -200,6 +200,14 @@ key alt+comma           # M-<: beginning of buffer
 xdotool keydown ctrl key --delay 120 space f f f f f n keyup ctrl
                         shot emacs_region
 key ctrl+g;             shot emacs_region_cleared
+# M-x text-mode: plain Emacs editing of the .org file (unfolded, modeline Text);
+# M-x org-mode: back to Org-mode, folded as at startup
+key alt+x; xdotool type --delay 60 "text-mode"; key Return
+                        shot emacs_text_mode
+key Tab;                shot text_mode_tab_no_fold
+key ctrl+slash          # undo the Tab
+key alt+x; xdotool type --delay 60 "org-mode"; key Return
+                        shot emacs_org_mode
 # Org files open in Emacs mode: C-x C-s with Ctrl held down
 xdotool keydown ctrl key --delay 120 x s keyup ctrl
                         shot org_editor_saved

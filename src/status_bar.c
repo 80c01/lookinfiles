@@ -253,7 +253,8 @@ void update_status_bar(AppData* app) {
         }
         const gchar* mstr = "Notepad";
         if (cur != NULL) {
-            if (cur->mode == EDITOR_MODE_ORGMODE || (cur->name != NULL && is_org_file(cur->name))) {
+            if (cur->mode == EDITOR_MODE_ORGMODE ||
+                (!cur->text_mode && cur->name != NULL && is_org_file(cur->name))) {
                 mstr = "Org-mode";
             } else if (cur->mode == EDITOR_MODE_VIM) {
                 mstr = "Vim";

@@ -794,6 +794,9 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
     if (tab == NULL || tab->mode_state == NULL) return;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
     tab->mode = mode;
+    if (mode == EDITOR_MODE_ORGMODE) {
+        tab->text_mode = FALSE;
+    }
 
     /* Hide all mode boxes initially */
     gtk_widget_set_visible(st->np_box, FALSE);
@@ -806,7 +809,7 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
         emacs_close_minibuffer(tab);
         set_view_monospace(tab->view, TRUE);
         gtk_text_view_set_overwrite(GTK_TEXT_VIEW(tab->view), FALSE);
-        if (is_org_file(tab->name) || mode == EDITOR_MODE_ORGMODE) {
+        if (orgmode_editor_is_org(tab)) {
             gtk_label_set_text(GTK_LABEL(st->emacs_ml_modes), "  (Org)  ");
         } else {
             gtk_label_set_text(GTK_LABEL(st->emacs_ml_modes), "  (Text Fill)  ");

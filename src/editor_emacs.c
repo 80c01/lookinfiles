@@ -371,9 +371,9 @@ void emacs_close_minibuffer(EditorTab* tab) {
 /* M-x command names offered by Tab completion */
 static const gchar* MX_COMMANDS[] = {
     "display-line-numbers-mode", "fill-paragraph", "goto-line", "notepad-mode",
-    "query-replace", "redo", "save-buffer", "set-justification-center",
+    "org-mode", "query-replace", "redo", "save-buffer", "set-justification-center",
     "set-justification-full", "set-justification-left", "set-justification-right",
-    "undo", "vim-mode", "write-file",
+    "text-mode", "undo", "vim-mode", "write-file",
 };
 
 static gint compare_names(gconstpointer a, gconstpointer b) {
@@ -471,8 +471,15 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
             break;
         }
         case EMACS_MINI_MX: {
-            gchar* cmd = g_ascii_strdown(text, -1);
-            if (strstr(cmd, "goto-line")) {
+            gchar* cmd = g_strstrip(g_ascii_strdown(text, -1));
+            if (g_strcmp0(cmd, "org-mode") == 0 || g_strcmp0(cmd, "text-mode") == 0) {
+                /* Major modes: Org-mode, or plain Emacs editing even for a .org file */
+                gboolean org = (cmd[0] == 'o');
+                tab->text_mode = !org;
+                editor_set_tab_mode((AppData*)tab->app, tab, org ? EDITOR_MODE_ORGMODE : EDITOR_MODE_EMACS);
+                orgmode_editor_reset_visibility(tab);
+                emacs_echo(tab, org ? "Org-mode enabled" : "Text mode enabled");
+            } else if (strstr(cmd, "goto-line")) {
                 emacs_open_minibuffer(tab, EMACS_MINI_GOTO_LINE, "Goto line: ", "");
             } else if (strstr(cmd, "query-replace")) {
                 emacs_open_minibuffer(tab, EMACS_MINI_QUERY_REPLACE_FIND, "Query replace: ", "");

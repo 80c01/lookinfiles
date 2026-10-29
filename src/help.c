@@ -93,6 +93,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Mode switching", "Status bar / Tab menu", "Switch between Notepad, Emacs, and Vim editor modes"},
     {"Editor: Mode switching", ":set mode=vim/emacs/notepad", "In Vim command line: switch active editor mode"},
     {"Editor: Mode switching", "M-x vim-mode / notepad-mode", "In Emacs minibuffer: switch active editor mode"},
+    {"Editor: Mode switching", "M-x org-mode / text-mode", "In Emacs minibuffer: turn Org-mode editing on / off (also for .org files)"},
     /* Editor: Notepad Mode */
     {"Editor: Notepad mode", "Ctrl+X / Ctrl+C / Ctrl+V", "Cut, copy, and paste text to system clipboard"},
     {"Editor: Notepad mode", "Ctrl+F / Ctrl+H", "Find / Replace words or phrases (F3 / Shift+F3: repeat find)"},

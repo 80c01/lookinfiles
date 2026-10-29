@@ -256,7 +256,9 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 
 The editor mode is changed from the status bar button, the tab menu,
 `:set mode=vim|emacs|notepad` in Vim mode or `M-x vim-mode` / `emacs-mode` /
-`notepad-mode` in Emacs mode.
+`notepad-mode` in Emacs mode. In Emacs mode, `M-x org-mode` turns on Org-mode
+editing for any file, and `M-x text-mode` turns it off (even for a `.org`
+file, whose folded headings are then shown).
 
 #### Org-mode editing
 
@@ -334,7 +336,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Format | `M-q` fill paragraph (72 columns), `M-u` / `M-l` / `M-c` case, `M-x set-justification-left` / `center` / `right` / `full` |
 | Undo and redo | `C-/`, `C-_`, `C-x u` / `C-Shift-_`, `M-_` |
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
-| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, mode switches) |
+| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `org-mode`, `text-mode`, mode switches) |
 | Minibuffer | `Tab` completes (`M-x` command names, Org tags, `*Heading` links) and lists the candidates; `C-g` / `Esc` quits |
 
 </details>

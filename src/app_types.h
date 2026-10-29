@@ -92,6 +92,7 @@ typedef struct {
     GtkWidget* nb;        /* GtkNotebook containing this tab */
     gpointer app;         /* pointer to AppData */
     EditorMode mode;      /* current editor mode */
+    gboolean text_mode;   /* M-x text-mode: no Org-mode, even for a .org file */
     GtkWidget* status_bar; /* status line for this editor tab */
     gchar* status_text;   /* status message */
     gpointer mode_state;  /* mode-specific state (EditorModeState*) */

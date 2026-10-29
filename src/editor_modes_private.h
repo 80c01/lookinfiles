@@ -165,6 +165,8 @@ gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
 /* Org-mode editing (editor_org.c), active in tabs showing an Org file */
 gboolean orgmode_editor_is_org(EditorTab* tab);
 void orgmode_editor_init(EditorTab* tab);
+/* Fold as at startup in Org-mode, unfold everything otherwise */
+void orgmode_editor_reset_visibility(EditorTab* tab);
 gboolean orgmode_editor_handle_key(AppData* app, EditorTab* tab, guint keyval, GdkModifierType state);
 /* TRUE when tab needs keyval although the window binds it (pending prefix,
  * Alt+Left/Right on a heading, item or table) */

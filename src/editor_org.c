@@ -22,7 +22,8 @@
 
 gboolean orgmode_editor_is_org(EditorTab* tab) {
     return tab != NULL && tab->buffer != NULL &&
-           (tab->mode == EDITOR_MODE_ORGMODE || (tab->name != NULL && is_org_file(tab->name)));
+           (tab->mode == EDITOR_MODE_ORGMODE ||
+            (!tab->text_mode && tab->name != NULL && is_org_file(tab->name)));
 }
 
 static EditorModeState* state_of(EditorTab* tab) {
@@ -180,10 +181,18 @@ static void set_global_visibility(EditorTab* tab, GPtrArray* lines, gint state);
 
 void orgmode_editor_init(EditorTab* tab) {
     g_signal_connect(tab->buffer, "notify::cursor-position", G_CALLBACK(on_org_cursor_moved), tab);
-    if (!orgmode_editor_is_org(tab)) return;
+    orgmode_editor_reset_visibility(tab);
+}
+
+void orgmode_editor_reset_visibility(EditorTab* tab) {
+    if (!orgmode_editor_is_org(tab)) {
+        show_all(tab); /* text-mode: nothing stays hidden */
+        return;
+    }
     /* Like Emacs: the file opens folded unless #+STARTUP says otherwise */
     GPtrArray* lines = buffer_lines(tab);
     set_global_visibility(tab, lines, (gint)org_startup_visibility(lines));
+    fix_cursor(tab);
     g_ptr_array_unref(lines);
 }
 
