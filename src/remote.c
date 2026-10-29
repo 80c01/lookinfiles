@@ -1,4 +1,5 @@
 #include "remote.h"
+#include "dialog.h"
 #include "tree_nav.h"
 #include "app_events.h"
 #include "file_list.h"
@@ -127,7 +128,7 @@ typedef struct {
     gint response;
 } RemoteDialogHelper;
 
-static void on_remote_dlg_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
+static void on_remote_dlg_response(AppDialog* dlg, gint response_id, gpointer user_data) {
     (void)dlg;
     RemoteDialogHelper* d = (RemoteDialogHelper*)user_data;
     d->response = response_id;
@@ -138,7 +139,7 @@ static void on_remote_dlg_response(GtkDialog* dlg, gint response_id, gpointer us
 
 static gint remote_run_modal(GtkWidget* dlg, RemoteDialogHelper* d, GtkWidget* focus) {
     d->loop = g_main_loop_new(NULL, FALSE);
-    d->response = GTK_RESPONSE_CANCEL;
+    d->response = APP_RESPONSE_CANCEL;
     g_signal_connect(dlg, "response", G_CALLBACK(on_remote_dlg_response), d);
     gtk_window_present(GTK_WINDOW(dlg));
     if (focus != NULL) {
@@ -150,7 +151,7 @@ static gint remote_run_modal(GtkWidget* dlg, RemoteDialogHelper* d, GtkWidget* f
 }
 
 static GtkWidget* remote_dialog_body(GtkWidget* dlg) {
-    GtkWidget* content = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
+    GtkWidget* content = app_dialog_get_content_area(APP_DIALOG(dlg));
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_set_margin_top(box, 14);
     gtk_widget_set_margin_bottom(box, 14);
@@ -182,14 +183,12 @@ void remote_add_dialog(AppData* app) {
     if (app == NULL) {
         return;
     }
-    GtkWidget* dlg = gtk_dialog_new_with_buttons("Add Remote Machine (SSH)",
-                                                 app->window,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Cancel", GTK_RESPONSE_CANCEL,
-                                                 "_Save & Connect", GTK_RESPONSE_APPLY,
-                                                 "_Save", GTK_RESPONSE_OK,
-                                                 NULL);
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
+    GtkWidget* dlg = app_dialog_new("Add Remote Machine (SSH)", app->window,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    "_Save & Connect", APP_RESPONSE_APPLY,
+                                    "_Save", APP_RESPONSE_OK,
+                                    NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = remote_dialog_body(dlg);
 
     GtkWidget* name_ent = create_labeled_entry(box, "Friendly Name:", "Dev Server", "e.g. AWS Production");
@@ -199,10 +198,10 @@ void remote_add_dialog(AppData* app) {
     GtkWidget* path_ent = create_labeled_entry(box, "Remote Directory:", "~", "default: ~ or /var/www");
     GtkWidget* key_ent  = create_labeled_entry(box, "Identity Key Path (optional):", "", "e.g. ~/.ssh/id_ed25519");
 
-    RemoteDialogHelper d = { NULL, GTK_RESPONSE_CANCEL };
+    RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
     gint resp = remote_run_modal(dlg, &d, host_ent);
 
-    if (resp == GTK_RESPONSE_OK || resp == GTK_RESPONSE_APPLY) {
+    if (resp == APP_RESPONSE_OK || resp == APP_RESPONSE_APPLY) {
         const gchar* host_txt = gtk_editable_get_text(GTK_EDITABLE(host_ent));
         const gchar* name_txt = gtk_editable_get_text(GTK_EDITABLE(name_ent));
         const gchar* user_txt = gtk_editable_get_text(GTK_EDITABLE(user_ent));
@@ -225,7 +224,7 @@ void remote_add_dialog(AppData* app) {
             remote_save(app);
             remote_refresh(app);
 
-            if (resp == GTK_RESPONSE_APPLY) {
+            if (resp == APP_RESPONSE_APPLY) {
                 gtk_window_destroy(GTK_WINDOW(dlg));
                 remote_connect_machine(app, rm);
                 return;
@@ -241,13 +240,11 @@ void remote_edit_dialog(AppData* app) {
         return;
     }
 
-    GtkWidget* dlg = gtk_dialog_new_with_buttons("Edit Remote Machine",
-                                                 app->window,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Cancel", GTK_RESPONSE_CANCEL,
-                                                 "_Save", GTK_RESPONSE_OK,
-                                                 NULL);
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
+    GtkWidget* dlg = app_dialog_new("Edit Remote Machine", app->window,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    "_Save", APP_RESPONSE_OK,
+                                    NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = remote_dialog_body(dlg);
 
     gchar port_buf[16];
@@ -260,10 +257,10 @@ void remote_edit_dialog(AppData* app) {
     GtkWidget* path_ent = create_labeled_entry(box, "Remote Directory:", rm->remote_path, "");
     GtkWidget* key_ent  = create_labeled_entry(box, "Identity Key Path (optional):", rm->identity_file, "");
 
-    RemoteDialogHelper d = { NULL, GTK_RESPONSE_CANCEL };
+    RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
     gint resp = remote_run_modal(dlg, &d, name_ent);
 
-    if (resp == GTK_RESPONSE_OK) {
+    if (resp == APP_RESPONSE_OK) {
         const gchar* host_txt = gtk_editable_get_text(GTK_EDITABLE(host_ent));
         const gchar* name_txt = gtk_editable_get_text(GTK_EDITABLE(name_ent));
         const gchar* user_txt = gtk_editable_get_text(GTK_EDITABLE(user_ent));
@@ -300,13 +297,11 @@ void remote_delete_selected(AppData* app) {
 
     gchar* msg = g_strdup_printf("Are you sure you want to remove remote machine '%s' (%s)?",
                                  rm->name ? rm->name : rm->host, rm->host);
-    GtkWidget* dlg = gtk_dialog_new_with_buttons("Remove Remote Machine",
-                                                 app->window,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Cancel", GTK_RESPONSE_CANCEL,
-                                                 "_Delete", GTK_RESPONSE_OK,
-                                                 NULL);
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_CANCEL);
+    GtkWidget* dlg = app_dialog_new("Remove Remote Machine", app->window,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    "_Delete", APP_RESPONSE_OK,
+                                    NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL);
     GtkWidget* box = remote_dialog_body(dlg);
     GtkWidget* lbl = gtk_label_new(msg);
     gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
@@ -314,11 +309,11 @@ void remote_delete_selected(AppData* app) {
     gtk_box_append(GTK_BOX(box), lbl);
     g_free(msg);
 
-    RemoteDialogHelper d = { NULL, GTK_RESPONSE_CANCEL };
+    RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
     gint resp = remote_run_modal(dlg, &d, NULL);
     gtk_window_destroy(GTK_WINDOW(dlg));
 
-    if (resp == GTK_RESPONSE_OK) {
+    if (resp == APP_RESPONSE_OK) {
         if (rm->is_connected) {
             remote_disconnect_machine(app, rm);
         }
@@ -340,11 +335,9 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
 
     /* Check if sshfs is installed */
     if (g_find_program_in_path("sshfs") == NULL) {
-        GtkWidget* dlg = gtk_dialog_new_with_buttons("sshfs Required",
-                                                     app->window,
-                                                     GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                     "_Close", GTK_RESPONSE_OK,
-                                                     NULL);
+        GtkWidget* dlg = app_dialog_new("sshfs Required", app->window,
+                                        "_Close", APP_RESPONSE_OK,
+                                        NULL);
         GtkWidget* box = remote_dialog_body(dlg);
         GtkWidget* lbl = gtk_label_new("To browse and edit remote files, 'sshfs' is required.\n\n"
                                        "Please install it:\n"
@@ -355,7 +348,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
         gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
         gtk_box_append(GTK_BOX(box), lbl);
-        RemoteDialogHelper d = { NULL, GTK_RESPONSE_OK };
+        RemoteDialogHelper d = { NULL, APP_RESPONSE_OK };
         remote_run_modal(dlg, &d, NULL);
         gtk_window_destroy(GTK_WINDOW(dlg));
         return FALSE;
@@ -424,11 +417,9 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     }
 
     if (!ok || exit_status != 0) {
-        GtkWidget* dlg = gtk_dialog_new_with_buttons("Connection Failed",
-                                                     app->window,
-                                                     GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                     "_Close", GTK_RESPONSE_OK,
-                                                     NULL);
+        GtkWidget* dlg = app_dialog_new("Connection Failed", app->window,
+                                        "_Close", APP_RESPONSE_OK,
+                                        NULL);
         GtkWidget* box = remote_dialog_body(dlg);
         gchar* err_msg = g_strdup_printf("Could not connect to '%s' (%s):\n\n%s",
                                          rm->name ? rm->name : rm->host, rm->host,
@@ -439,7 +430,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         gtk_box_append(GTK_BOX(box), lbl);
         g_free(err_msg);
         g_free(stderr_buf);
-        RemoteDialogHelper d = { NULL, GTK_RESPONSE_OK };
+        RemoteDialogHelper d = { NULL, APP_RESPONSE_OK };
         remote_run_modal(dlg, &d, NULL);
         gtk_window_destroy(GTK_WINDOW(dlg));
         g_free(mount_dir);

@@ -1,4 +1,5 @@
 #include "notes.h"
+#include "dialog.h"
 #include "app_events.h"
 #include "tree_nav.h"
 #include "file_types.h"
@@ -543,7 +544,7 @@ typedef struct {
     GtkWidget* entry;
 } SimpleDialogData;
 
-static void on_simple_dlg_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
+static void on_simple_dlg_response(AppDialog* dlg, gint response_id, gpointer user_data) {
     (void)dlg;
     SimpleDialogData* d = (SimpleDialogData*)user_data;
     d->response = response_id;
@@ -553,7 +554,7 @@ static void on_simple_dlg_response(GtkDialog* dlg, gint response_id, gpointer us
 }
 
 static GtkWidget* notes_dialog_body(GtkWidget* dlg) {
-    GtkWidget* content = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
+    GtkWidget* content = app_dialog_get_content_area(APP_DIALOG(dlg));
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_set_margin_top(box, 16);
     gtk_widget_set_margin_bottom(box, 16);
@@ -601,7 +602,7 @@ static void on_note_dlg_field_changed(GtkWidget* widget, gpointer user_data) {
     update_note_dialog_preview((NoteDialogData*)user_data);
 }
 
-static void on_note_dlg_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
+static void on_note_dlg_response(AppDialog* dlg, gint response_id, gpointer user_data) {
     (void)dlg;
     NoteDialogData* d = (NoteDialogData*)user_data;
     d->response = response_id;
@@ -617,12 +618,11 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
     *out_title = NULL;
     *out_type = init_type;
 
-    GtkWidget* dlg = gtk_dialog_new_with_buttons(title, parent_win,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Cancel", GTK_RESPONSE_CANCEL,
-                                                 ok_btn_text ? ok_btn_text : "_OK", GTK_RESPONSE_OK,
-                                                 NULL);
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
+    GtkWidget* dlg = app_dialog_new(title, parent_win,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    ok_btn_text ? ok_btn_text : "_OK", APP_RESPONSE_OK,
+                                    NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = notes_dialog_body(dlg);
 
     GtkWidget* lbl = gtk_label_new("Note Title:");
@@ -680,7 +680,7 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
 
     NoteDialogData d = {
         g_main_loop_new(NULL, FALSE),
-        GTK_RESPONSE_CANCEL,
+        APP_RESPONSE_CANCEL,
         entry,
         rb_rich,
         rb_org,
@@ -706,7 +706,7 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
     g_main_loop_unref(d.loop);
 
     gboolean ok = FALSE;
-    if (d.response == GTK_RESPONSE_OK) {
+    if (d.response == APP_RESPONSE_OK) {
         const gchar* raw = gtk_editable_get_text(GTK_EDITABLE(entry));
         if (raw != NULL) {
             gchar* trimmed = g_strstrip(g_strdup(raw));
@@ -769,7 +769,7 @@ static void on_preset_icon_clicked(GtkButton* btn, gpointer user_data) {
     }
 }
 
-static void on_notebook_dlg_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
+static void on_notebook_dlg_response(AppDialog* dlg, gint response_id, gpointer user_data) {
     (void)dlg;
     NotebookDialogData* d = (NotebookDialogData*)user_data;
     d->response = response_id;
@@ -786,18 +786,17 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
     *out_name = NULL;
     *out_icon = NULL;
 
-    GtkWidget* dlg = gtk_dialog_new_with_buttons(title, parent_win,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Cancel", GTK_RESPONSE_CANCEL,
-                                                 ok_btn_text ? ok_btn_text : "_OK", GTK_RESPONSE_OK,
-                                                 NULL);
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
+    GtkWidget* dlg = app_dialog_new(title, parent_win,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    ok_btn_text ? ok_btn_text : "_OK", APP_RESPONSE_OK,
+                                    NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = notes_dialog_body(dlg);
 
     NotebookDialogData d;
     memset(&d, 0, sizeof(d));
     d.loop = g_main_loop_new(NULL, FALSE);
-    d.response = GTK_RESPONSE_CANCEL;
+    d.response = APP_RESPONSE_CANCEL;
 
     /* 1. Notebook Name */
     GtkWidget* name_lbl = gtk_label_new("Notebook Name:");
@@ -888,7 +887,7 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
     g_main_loop_unref(d.loop);
 
     gboolean success = FALSE;
-    if (d.response == GTK_RESPONSE_OK) {
+    if (d.response == APP_RESPONSE_OK) {
         const gchar* raw_name = gtk_editable_get_text(GTK_EDITABLE(name_entry));
         const gchar* raw_icon = gtk_editable_get_text(GTK_EDITABLE(icon_entry));
         gchar* trimmed_name = (raw_name != NULL) ? g_strstrip(g_strdup(raw_name)) : NULL;
@@ -915,17 +914,16 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
 
 static gboolean notes_confirm(AppData* app, const gchar* title, const gchar* message,
                               const gchar* ok_label, gboolean destructive) {
-    GtkWidget* dlg = gtk_dialog_new_with_buttons(title, app ? app->window : NULL,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Cancel", GTK_RESPONSE_CANCEL,
-                                                 NULL);
-    GtkWidget* ok_btn = gtk_dialog_add_button(GTK_DIALOG(dlg), ok_label, GTK_RESPONSE_OK);
+    GtkWidget* dlg = app_dialog_new(title, app ? app->window : NULL,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    NULL);
+    GtkWidget* ok_btn = app_dialog_add_button(APP_DIALOG(dlg), ok_label, APP_RESPONSE_OK);
     if (destructive) {
         gtk_widget_add_css_class(ok_btn, "destructive-action");
     } else {
         gtk_widget_add_css_class(ok_btn, "suggested-action");
     }
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg), destructive ? GTK_RESPONSE_CANCEL : GTK_RESPONSE_OK);
+    app_dialog_set_default_response(APP_DIALOG(dlg), destructive ? APP_RESPONSE_CANCEL : APP_RESPONSE_OK);
 
     GtkWidget* box = notes_dialog_body(dlg);
     GtkWidget* lbl = gtk_label_new(message);
@@ -934,7 +932,7 @@ static gboolean notes_confirm(AppData* app, const gchar* title, const gchar* mes
     gtk_widget_set_halign(lbl, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(box), lbl);
 
-    SimpleDialogData d = { g_main_loop_new(NULL, FALSE), GTK_RESPONSE_CANCEL, NULL };
+    SimpleDialogData d = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL };
     g_signal_connect(dlg, "response", G_CALLBACK(on_simple_dlg_response), &d);
 
     gtk_window_present(GTK_WINDOW(dlg));
@@ -942,14 +940,13 @@ static gboolean notes_confirm(AppData* app, const gchar* title, const gchar* mes
     g_main_loop_unref(d.loop);
     gtk_window_destroy(GTK_WINDOW(dlg));
 
-    return (d.response == GTK_RESPONSE_OK);
+    return (d.response == APP_RESPONSE_OK);
 }
 
 /* Information message with a single Close button */
 static void notes_notice(AppData* app, const gchar* title, const gchar* message) {
-    GtkWidget* dlg = gtk_dialog_new_with_buttons(title, app ? app->window : NULL,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Close", GTK_RESPONSE_CLOSE, NULL);
+    GtkWidget* dlg = app_dialog_new(title, app ? app->window : NULL,
+                                    "_Close", APP_RESPONSE_CLOSE, NULL);
     GtkWidget* box = notes_dialog_body(dlg);
     GtkWidget* lbl = gtk_label_new(message);
     gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
@@ -1670,12 +1667,11 @@ void notes_move_selected(AppData* app) {
     }
 
     /* Build dialog with dropdown of target notebooks */
-    GtkWidget* dlg = gtk_dialog_new_with_buttons("Move Note to Notebook", app->window,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Cancel", GTK_RESPONSE_CANCEL,
-                                                 "_Move", GTK_RESPONSE_OK,
-                                                 NULL);
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
+    GtkWidget* dlg = app_dialog_new("Move Note to Notebook", app->window,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    "_Move", APP_RESPONSE_OK,
+                                    NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = notes_dialog_body(dlg);
 
     gchar* prompt = g_strdup_printf("Move note '%s' to notebook:", note->title);
@@ -1699,14 +1695,14 @@ void notes_move_selected(AppData* app) {
     gtk_drop_down_set_selected(GTK_DROP_DOWN(dd), 0);
     gtk_box_append(GTK_BOX(box), dd);
 
-    SimpleDialogData d = { g_main_loop_new(NULL, FALSE), GTK_RESPONSE_CANCEL, NULL };
+    SimpleDialogData d = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL };
     g_signal_connect(dlg, "response", G_CALLBACK(on_simple_dlg_response), &d);
 
     gtk_window_present(GTK_WINDOW(dlg));
     g_main_loop_run(d.loop);
     g_main_loop_unref(d.loop);
 
-    if (d.response == GTK_RESPONSE_OK) {
+    if (d.response == APP_RESPONSE_OK) {
         guint idx = gtk_drop_down_get_selected(GTK_DROP_DOWN(dd));
         if (idx < target_notebooks->len) {
             NotebookItem* dest_nb = (NotebookItem*)g_ptr_array_index(target_notebooks, idx);

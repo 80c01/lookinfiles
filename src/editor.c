@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "dialog.h"
 #include "panels.h"
 #include "app_events.h"
 #include "text_style.h"
@@ -954,41 +955,32 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
     minimap_update_visibility(app);
 }
 
-typedef struct {
-    GMainLoop* loop;
-    gint response;
-} DiscardDialogData;
-
-static void on_discard_dialog_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
-    (void)dlg;
-    DiscardDialogData* d = (DiscardDialogData*)user_data;
-    d->response = response_id;
-    if (g_main_loop_is_running(d->loop)) {
-        g_main_loop_quit(d->loop);
-    }
-}
-
 gboolean editor_confirm_discard(AppData* app, EditorTab* tab) {
     if (tab == NULL || tab->is_buffer || !gtk_text_buffer_get_modified(tab->buffer)) {
         return TRUE;
     }
-    GtkWidget* dlg = gtk_message_dialog_new(app ? app->window : NULL,
-                                            GTK_DIALOG_MODAL,
-                                            GTK_MESSAGE_QUESTION,
-                                            GTK_BUTTONS_NONE,
-                                            "%s has unsaved changes. "
-                                            "Close anyway?", tab->name);
-    gtk_dialog_add_button(GTK_DIALOG(dlg), "_Cancel", GTK_RESPONSE_CANCEL);
-    gtk_dialog_add_button(GTK_DIALOG(dlg), "Close _Without Saving",
-                          GTK_RESPONSE_OK);
+    GtkWidget* dlg = app_dialog_new("Unsaved Changes", app ? app->window : NULL,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    "Close _Without Saving", APP_RESPONSE_OK,
+                                    NULL);
+    gchar* message = g_strdup_printf("%s has unsaved changes. Close anyway?", tab->name);
+    GtkWidget* label = gtk_label_new(message);
+    g_free(message);
+    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(label), 60);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_widget_set_margin_top(label, 14);
+    gtk_widget_set_margin_bottom(label, 14);
+    gtk_widget_set_margin_start(label, 16);
+    gtk_widget_set_margin_end(label, 16);
+    gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), label);
+    /* Destructive choice: Enter keeps the changes */
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL);
 
-    DiscardDialogData d = { g_main_loop_new(NULL, FALSE), GTK_RESPONSE_CANCEL };
-    g_signal_connect(dlg, "response", G_CALLBACK(on_discard_dialog_response), &d);
-    gtk_window_present(GTK_WINDOW(dlg));
-    g_main_loop_run(d.loop);
-    g_main_loop_unref(d.loop);
+    gint response = app_dialog_run(APP_DIALOG(dlg),
+                                   app_dialog_get_widget_for_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL));
     gtk_window_destroy(GTK_WINDOW(dlg));
-    return d.response == GTK_RESPONSE_OK;
+    return response == APP_RESPONSE_OK;
 }
 
 void editor_close_tab(AppData* app, EditorTab* tab) {

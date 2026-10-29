@@ -1,6 +1,7 @@
 /* Explorer file actions on the files view: new file / new folder (a / Shift+A),
  * rename (F2 / r / e) and move to trash (d / Delete), with their dialogs. */
 #include "file_actions.h"
+#include "dialog.h"
 #include "editor.h"
 
 #include <errno.h>
@@ -14,11 +15,11 @@ typedef struct {
     GtkWidget* entry;
 } DialogRun;
 
-static void on_dialog_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
+static void on_dialog_response(AppDialog* dlg, gint response_id, gpointer user_data) {
     (void)dlg;
     DialogRun* run = (DialogRun*)user_data;
     run->response = response_id;
-    if (response_id == GTK_RESPONSE_OK && run->entry != NULL) {
+    if (response_id == APP_RESPONSE_OK && run->entry != NULL) {
         gchar* trimmed = g_strstrip(g_strdup(gtk_editable_get_text(GTK_EDITABLE(run->entry))));
         if (trimmed[0] != '\0') {
             run->result = trimmed;
@@ -36,14 +37,13 @@ static void on_dialog_response(GtkDialog* dlg, gint response_id, gpointer user_d
 static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* message,
                        const gchar* entry_text, gboolean select_stem,
                        const gchar* ok_label, gchar** out_text) {
-    GtkWidget* dlg = gtk_dialog_new_with_buttons(title, parent,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Cancel", GTK_RESPONSE_CANCEL,
-                                                 ok_label, GTK_RESPONSE_OK,
-                                                 NULL);
+    GtkWidget* dlg = app_dialog_new(title, parent,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    ok_label, APP_RESPONSE_OK,
+                                    NULL);
     /* Confirmations (no entry) default to Cancel, like the other delete dialogs */
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg),
-                                    entry_text != NULL ? GTK_RESPONSE_OK : GTK_RESPONSE_CANCEL);
+    app_dialog_set_default_response(APP_DIALOG(dlg),
+                                    entry_text != NULL ? APP_RESPONSE_OK : APP_RESPONSE_CANCEL);
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_widget_set_margin_top(box, 14);
     gtk_widget_set_margin_bottom(box, 14);
@@ -62,9 +62,9 @@ static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* messa
         gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
         gtk_box_append(GTK_BOX(box), entry);
     }
-    gtk_box_append(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dlg))), box);
+    gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), box);
 
-    DialogRun run = { g_main_loop_new(NULL, FALSE), GTK_RESPONSE_CANCEL, NULL, entry };
+    DialogRun run = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL, entry };
     g_signal_connect(dlg, "response", G_CALLBACK(on_dialog_response), &run);
     gtk_window_present(GTK_WINDOW(dlg));
     if (entry != NULL) {
@@ -75,7 +75,7 @@ static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* messa
                        ? (gint)g_utf8_pointer_to_offset(entry_text, dot) : -1;
         gtk_editable_select_region(GTK_EDITABLE(entry), 0, end);
     } else {
-        gtk_widget_grab_focus(gtk_dialog_get_widget_for_response(GTK_DIALOG(dlg), GTK_RESPONSE_CANCEL));
+        gtk_widget_grab_focus(app_dialog_get_widget_for_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL));
     }
     g_main_loop_run(run.loop);
     g_main_loop_unref(run.loop);
@@ -90,16 +90,15 @@ static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* messa
 }
 
 static void show_error(GtkWindow* parent, const gchar* title, const gchar* message) {
-    GtkWidget* dlg = gtk_dialog_new_with_buttons(title, parent,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 "_Close", GTK_RESPONSE_CLOSE, NULL);
+    GtkWidget* dlg = app_dialog_new(title, parent,
+                                    "_Close", APP_RESPONSE_CLOSE, NULL);
     GtkWidget* label = gtk_label_new(message);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
     gtk_widget_set_margin_top(label, 14);
     gtk_widget_set_margin_bottom(label, 14);
     gtk_widget_set_margin_start(label, 16);
     gtk_widget_set_margin_end(label, 16);
-    gtk_box_append(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dlg))), label);
+    gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), label);
     g_signal_connect(dlg, "response", G_CALLBACK(gtk_window_destroy), NULL);
     gtk_window_present(GTK_WINDOW(dlg));
 }
@@ -167,7 +166,7 @@ gchar* file_action_new_file(AppData* app) {
     }
     gchar* filename = NULL;
     if (run_dialog(app->window, "New File", "Enter file name:", "", FALSE, "_Create", &filename) !=
-            GTK_RESPONSE_OK || !is_valid_name(filename)) {
+            APP_RESPONSE_OK || !is_valid_name(filename)) {
         g_free(filename);
         return NULL;
     }
@@ -194,7 +193,7 @@ gchar* file_action_new_folder(AppData* app) {
     }
     gchar* folder_name = NULL;
     if (run_dialog(app->window, "New Folder", "Enter folder name:", "folder", FALSE, "_Create",
-                   &folder_name) != GTK_RESPONSE_OK || !is_valid_name(folder_name)) {
+                   &folder_name) != APP_RESPONSE_OK || !is_valid_name(folder_name)) {
         g_free(folder_name);
         return NULL;
     }
@@ -250,7 +249,7 @@ gchar* file_action_rename_selected(AppData* app) {
                                old_name, !is_dir, "_Rename", &new_name);
     g_free(message);
 
-    if (response == GTK_RESPONSE_OK && new_name != NULL && g_strcmp0(new_name, old_name) != 0) {
+    if (response == APP_RESPONSE_OK && new_name != NULL && g_strcmp0(new_name, old_name) != 0) {
         gchar* dir = g_path_get_dirname(path);
         gchar* new_path = g_build_filename(dir, new_name, NULL);
         if (!is_valid_name(new_name)) {
@@ -293,7 +292,7 @@ gchar* file_action_trash_selected(AppData* app) {
                                NULL, FALSE, "_Move to Trash", NULL);
     g_free(message);
 
-    if (response == GTK_RESPONSE_OK) {
+    if (response == APP_RESPONSE_OK) {
         GFile* file = g_file_new_for_path(path);
         GError* err = NULL;
         if (!g_file_trash(file, NULL, &err)) {

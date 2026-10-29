@@ -1,4 +1,5 @@
 #include "bookmarks.h"
+#include "dialog.h"
 #include "app_events.h"
 #include "tree_nav.h"
 #include "file_types.h"
@@ -587,10 +588,10 @@ static gboolean bm_entry_is_blank(GtkWidget* entry) {
     return TRUE;
 }
 
-static void bm_on_dialog_response(GtkDialog* dlg, gint response_id, gpointer user_data) {
+static void bm_on_dialog_response(AppDialog* dlg, gint response_id, gpointer user_data) {
     (void)dlg;
     BmDialog* d = (BmDialog*)user_data;
-    if (response_id == GTK_RESPONSE_OK) {
+    if (response_id == APP_RESPONSE_OK) {
         GtkWidget* required = (d->target_entry != NULL) ? d->target_entry : d->name_entry;
         if (required != NULL && bm_entry_is_blank(required)) {
             gtk_widget_add_css_class(required, "error");
@@ -606,7 +607,7 @@ static void bm_on_dialog_response(GtkDialog* dlg, gint response_id, gpointer use
 
 static gint bm_run_modal(GtkWidget* dlg, BmDialog* d, GtkWidget* focus) {
     d->loop = g_main_loop_new(NULL, FALSE);
-    d->response = GTK_RESPONSE_CANCEL;
+    d->response = APP_RESPONSE_CANCEL;
     g_signal_connect(dlg, "response", G_CALLBACK(bm_on_dialog_response), d);
     gtk_window_present(GTK_WINDOW(dlg));
     if (focus != NULL) {
@@ -618,7 +619,7 @@ static gint bm_run_modal(GtkWidget* dlg, BmDialog* d, GtkWidget* focus) {
 }
 
 static GtkWidget* bm_dialog_body(GtkWidget* dlg) {
-    GtkWidget* content = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
+    GtkWidget* content = app_dialog_get_content_area(APP_DIALOG(dlg));
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_widget_set_margin_top(box, 14);
     gtk_widget_set_margin_bottom(box, 14);
@@ -631,14 +632,13 @@ static GtkWidget* bm_dialog_body(GtkWidget* dlg) {
 /* Simple message / confirmation dialog; returns TRUE when ok_label was chosen */
 static gboolean bm_message(AppData* app, const gchar* title, const gchar* message,
                            const gchar* ok_label, const gchar* cancel_label) {
-    GtkWidget* dlg = gtk_dialog_new_with_buttons(title, app->window,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 NULL, NULL);
+    GtkWidget* dlg = app_dialog_new(title, app->window,
+                                    NULL, NULL);
     if (cancel_label != NULL) {
-        gtk_dialog_add_button(GTK_DIALOG(dlg), cancel_label, GTK_RESPONSE_CANCEL);
+        app_dialog_add_button(APP_DIALOG(dlg), cancel_label, APP_RESPONSE_CANCEL);
     }
-    gtk_dialog_add_button(GTK_DIALOG(dlg), ok_label, GTK_RESPONSE_OK);
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg), cancel_label != NULL ? GTK_RESPONSE_CANCEL : GTK_RESPONSE_OK);
+    app_dialog_add_button(APP_DIALOG(dlg), ok_label, APP_RESPONSE_OK);
+    app_dialog_set_default_response(APP_DIALOG(dlg), cancel_label != NULL ? APP_RESPONSE_CANCEL : APP_RESPONSE_OK);
     GtkWidget* box = bm_dialog_body(dlg);
     GtkWidget* label = gtk_label_new(message);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
@@ -646,10 +646,10 @@ static gboolean bm_message(AppData* app, const gchar* title, const gchar* messag
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_box_append(GTK_BOX(box), label);
 
-    BmDialog d = { NULL, GTK_RESPONSE_CANCEL, NULL, NULL };
+    BmDialog d = { NULL, APP_RESPONSE_CANCEL, NULL, NULL };
     gint resp = bm_run_modal(dlg, &d, NULL);
     gtk_window_destroy(GTK_WINDOW(dlg));
-    return resp == GTK_RESPONSE_OK;
+    return resp == APP_RESPONSE_OK;
 }
 
 /* Folder chooser entries: "Top level" + every folder except `exclude` and its subtree */
@@ -693,24 +693,23 @@ static GtkWidget* bm_field_label(const gchar* text) {
 }
 
 /* Add / edit dialog for a bookmark (is_folder FALSE) or a folder (is_folder TRUE).
- * Returns GTK_RESPONSE_OK (outputs filled), GTK_RESPONSE_REJECT (remove requested)
+ * Returns APP_RESPONSE_OK (outputs filled), APP_RESPONSE_REJECT (remove requested)
  * or another response for cancel. */
 static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok_label,
                                gboolean is_folder, gboolean allow_remove,
                                const gchar* init_name, const gchar* init_target,
                                GNode* init_parent, GNode* exclude,
                                gchar** out_name, gchar** out_target, GNode** out_parent) {
-    GtkWidget* dlg = gtk_dialog_new_with_buttons(title, app->window,
-                                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                 NULL, NULL);
+    GtkWidget* dlg = app_dialog_new(title, app->window,
+                                    NULL, NULL);
     if (allow_remove) {
-        GtkWidget* rm = gtk_dialog_add_button(GTK_DIALOG(dlg), "_Remove Bookmark", GTK_RESPONSE_REJECT);
+        GtkWidget* rm = app_dialog_add_button(APP_DIALOG(dlg), "_Remove Bookmark", APP_RESPONSE_REJECT);
         gtk_widget_add_css_class(rm, "destructive-action");
     }
-    gtk_dialog_add_button(GTK_DIALOG(dlg), "_Cancel", GTK_RESPONSE_CANCEL);
-    GtkWidget* ok = gtk_dialog_add_button(GTK_DIALOG(dlg), ok_label, GTK_RESPONSE_OK);
+    app_dialog_add_button(APP_DIALOG(dlg), "_Cancel", APP_RESPONSE_CANCEL);
+    GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), ok_label, APP_RESPONSE_OK);
     gtk_widget_add_css_class(ok, "suggested-action");
-    gtk_dialog_set_default_response(GTK_DIALOG(dlg), GTK_RESPONSE_OK);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     gtk_window_set_default_size(GTK_WINDOW(dlg), 480, -1);
 
     GtkWidget* box = bm_dialog_body(dlg);
@@ -771,11 +770,11 @@ static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok
     gtk_drop_down_set_selected(GTK_DROP_DOWN(folder_dd), selected);
     gtk_box_append(GTK_BOX(box), folder_dd);
 
-    BmDialog d = { NULL, GTK_RESPONSE_CANCEL, is_folder ? name_entry : NULL, target_entry };
+    BmDialog d = { NULL, APP_RESPONSE_CANCEL, is_folder ? name_entry : NULL, target_entry };
     GtkWidget* focus = (!is_folder && init_target == NULL) ? target_entry : name_entry;
     gint resp = bm_run_modal(dlg, &d, focus);
 
-    if (resp == GTK_RESPONSE_OK) {
+    if (resp == APP_RESPONSE_OK) {
         guint idx = gtk_drop_down_get_selected(GTK_DROP_DOWN(folder_dd));
         *out_parent = (idx < nodes->len) ? (GNode*)g_ptr_array_index(nodes, idx) : app->bookmarks;
         *out_target = (target_entry != NULL)
@@ -826,7 +825,7 @@ static void bm_add_dialog(AppData* app, const gchar* init_target, GNode* parent)
     gint resp = bm_run_item_dialog(app, "Add Bookmark", "_Add", FALSE, FALSE,
                                    init_name, init_target, parent, NULL,
                                    &name, &target, &out_parent);
-    if (resp == GTK_RESPONSE_OK && target != NULL && out_parent != NULL) {
+    if (resp == APP_RESPONSE_OK && target != NULL && out_parent != NULL) {
         GNode* node = bm_new_node(app, FALSE, name, target);
         g_node_append(out_parent, node);
         if (bm_is_folder(out_parent)) {
@@ -889,9 +888,9 @@ static void bm_edit_node(AppData* app, GNode* node, gboolean allow_remove) {
                                    it->is_folder, allow_remove, it->name, it->target,
                                    node->parent, it->is_folder ? node : NULL,
                                    &name, &target, &out_parent);
-    if (resp == GTK_RESPONSE_REJECT) {
+    if (resp == APP_RESPONSE_REJECT) {
         bm_delete_node(app, node, FALSE);
-    } else if (resp == GTK_RESPONSE_OK) {
+    } else if (resp == APP_RESPONSE_OK) {
         g_free(it->name);
         it->name = name;
         name = NULL;
@@ -973,7 +972,7 @@ void bookmarks_new_folder(AppData* app) {
     gint resp = bm_run_item_dialog(app, "New Bookmark Folder", "_Create", TRUE, FALSE,
                                    NULL, NULL, bm_context_folder(app), NULL,
                                    &name, &target, &out_parent);
-    if (resp == GTK_RESPONSE_OK && name != NULL && name[0] != '\0' && out_parent != NULL) {
+    if (resp == APP_RESPONSE_OK && name != NULL && name[0] != '\0' && out_parent != NULL) {
         GNode* node = bm_new_node(app, TRUE, name, NULL);
         bm_item(node)->expanded = TRUE;
         g_node_append(out_parent, node);
