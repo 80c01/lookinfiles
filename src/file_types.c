@@ -1,7 +1,9 @@
-/* File type detection and icons, based on file names only.
- * Pure functions: no AppData, no widgets, no I/O (unit-tested in tests/). */
+/* File type detection (by name, and by content: magic numbers) and icons.
+ * No AppData, no widgets; the only I/O is file_kind_of_path() (unit-tested in tests/). */
 #include "file_types.h"
 
+#include <glib/gstdio.h>
+#include <stdio.h>
 #include <string.h>
 
 /* File extension ("" if none), ignoring dot-files initial dot */
@@ -139,6 +141,227 @@ gboolean is_renderable_file(const gchar* name) {
     return is_markdown_file(name) || is_html_file(name) || is_org_file(name) || is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name);
 }
 
+FileKind file_kind_from_name(const gchar* name) {
+    if (is_markdown_file(name)) return FILE_KIND_MARKDOWN;
+    if (is_html_file(name)) return FILE_KIND_HTML;
+    if (is_org_file(name)) return FILE_KIND_ORG;
+    if (is_image_file(name)) return FILE_KIND_IMAGE;
+    if (is_pdf_file(name)) return FILE_KIND_PDF;
+    if (is_video_file(name)) return FILE_KIND_VIDEO;
+    if (is_audio_file(name)) return FILE_KIND_AUDIO;
+    return FILE_KIND_TEXT;
+}
+
+gboolean file_kind_is_media(FileKind kind) {
+    return kind == FILE_KIND_IMAGE || kind == FILE_KIND_PDF ||
+           kind == FILE_KIND_VIDEO || kind == FILE_KIND_AUDIO;
+}
+
+gboolean file_kind_is_renderable(FileKind kind) {
+    return kind == FILE_KIND_MARKDOWN || kind == FILE_KIND_HTML ||
+           kind == FILE_KIND_ORG || file_kind_is_media(kind);
+}
+
+/* TRUE if head starts with the given bytes at offset off */
+static gboolean has_bytes(const guchar* head, gsize len, gsize off, const void* magic, gsize mlen) {
+    return len >= off + mlen && memcmp(head + off, magic, mlen) == 0;
+}
+#define HAS(off, lit) has_bytes(head, len, (off), (lit), sizeof(lit) - 1)
+
+/* Case-insensitive search of needle in the first len bytes */
+static const guchar* find_ci(const guchar* head, gsize len, const gchar* needle) {
+    gsize nlen = strlen(needle);
+    for (gsize i = 0; i + nlen <= len; i++) {
+        if (g_ascii_strncasecmp((const gchar*)head + i, needle, nlen) == 0) {
+            return head + i;
+        }
+    }
+    return NULL;
+}
+
+/* TRUE if the bytes look like text: no NUL, valid UTF-8 (a sequence cut by
+ * the end of the buffer is fine) or few control characters (legacy 8-bit text). */
+static gboolean looks_like_text(const guchar* head, gsize len) {
+    if (HAS(0, "\xFF\xFE") || HAS(0, "\xFE\xFF")) {
+        return TRUE; /* UTF-16 byte order mark */
+    }
+    if (memchr(head, '\0', len) != NULL) {
+        return FALSE;
+    }
+    const gchar* end = NULL;
+    if (g_utf8_validate((const gchar*)head, (gssize)len, &end) ||
+        (gsize)((const guchar*)end - head) + 4 > len) {
+        return TRUE;
+    }
+    gsize controls = 0;
+    for (gsize i = 0; i < len; i++) {
+        guchar c = head[i];
+        if (c < 0x20 && c != '\t' && c != '\n' && c != '\r' && c != '\f' &&
+            c != '\b' && c != 0x1b) {
+            controls++;
+        }
+    }
+    return controls * 32 <= len;
+}
+
+/* Offset of the first non-blank byte, skipping a UTF-8 byte order mark */
+static gsize skip_blank(const guchar* head, gsize len) {
+    gsize i = HAS(0, "\xEF\xBB\xBF") ? 3 : 0;
+    while (i < len && g_ascii_isspace(head[i])) {
+        i++;
+    }
+    return i;
+}
+
+/* Magic numbers that cannot be mistaken for text */
+static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_name) {
+    gboolean name_media_av = (by_name == FILE_KIND_AUDIO || by_name == FILE_KIND_VIDEO);
+
+    if (HAS(0, "\x89PNG\r\n\x1a\n") || HAS(0, "\xFF\xD8\xFF") ||
+        HAS(0, "GIF87a") || HAS(0, "GIF89a") ||
+        (HAS(0, "RIFF") && HAS(8, "WEBP")) ||
+        HAS(0, "II*\0") || HAS(0, "MM\0*") ||
+        ((HAS(0, "\0\0\1\0") || HAS(0, "\0\0\2\0")) && len >= 6 && (head[4] | head[5]) != 0) || /* ICO, CUR */
+        HAS(0, "icns") || (HAS(0, "\x1F\x8B") && by_name == FILE_KIND_IMAGE) /* svgz */ ||
+        (HAS(4, "ftyp") && (HAS(8, "avif") || HAS(8, "avis") || HAS(8, "heic") || HAS(8, "mif1"))) ||
+        HAS(0, "\xFF\x0A") || HAS(0, "\0\0\0\x0CJXL ")) {
+        return FILE_KIND_IMAGE;
+    }
+    if (HAS(0, "%PDF-")) {
+        return FILE_KIND_PDF;
+    }
+    if (HAS(0, "fLaC") || HAS(0, "ID3") || HAS(0, "MThd") ||
+        (HAS(0, "RIFF") && HAS(8, "WAVE")) ||
+        (HAS(0, "FORM") && (HAS(8, "AIFF") || HAS(8, "AIFC"))) ||
+        (HAS(4, "ftyp") && (HAS(8, "M4A ") || HAS(8, "M4B ") || HAS(8, "M4P ") || HAS(8, "F4A ")))) {
+        return FILE_KIND_AUDIO;
+    }
+    if ((HAS(0, "RIFF") && HAS(8, "AVI ")) || HAS(0, "FLV\x01") ||
+        HAS(0, "\0\0\x01\xBA") || HAS(0, "\0\0\x01\xB3")) {
+        return FILE_KIND_VIDEO;
+    }
+    /* Containers that hold audio or video: trust the name if it says which */
+    gboolean ogg = HAS(0, "OggS");
+    if (ogg || HAS(0, "\x1A\x45\xDF\xA3") || HAS(4, "ftyp") ||
+        HAS(0, "\x30\x26\xB2\x75\x8E\x66\xCF\x11")) {
+        if (name_media_av) {
+            return by_name;
+        }
+        if (ogg) {
+            return (find_ci(head, len, "theora") != NULL || find_ci(head, len, "\x01video") != NULL)
+                       ? FILE_KIND_VIDEO : FILE_KIND_AUDIO;
+        }
+        return FILE_KIND_VIDEO;
+    }
+    return FILE_KIND_TEXT; /* no match */
+}
+
+/* Weak signatures, only checked on content that is not text */
+static FileKind detect_weak_magic(const guchar* head, gsize len) {
+    /* MPEG transport stream: a sync byte every 188 bytes */
+    if (len > 376 && head[0] == 0x47 && head[188] == 0x47 && head[376] == 0x47) {
+        return FILE_KIND_VIDEO;
+    }
+    /* MPEG audio frame or AAC ADTS header */
+    if (len >= 2 && head[0] == 0xFF && (head[1] & 0xE0) == 0xE0) {
+        return FILE_KIND_AUDIO;
+    }
+    if (HAS(0, "BM") && len >= 14) {
+        return FILE_KIND_IMAGE;
+    }
+    return FILE_KIND_BINARY;
+}
+
+/* TRUE if the root element of an XML document is <svg>: skips the XML
+ * declaration, comments and the doctype before the first element. */
+static gboolean is_svg_document(const guchar* head, gsize len, gsize i) {
+    while (i < len && head[i] == '<') {
+        const gchar* close = NULL;
+        if (HAS(i, "<?")) {
+            close = "?>";
+        } else if (HAS(i, "<!--")) {
+            close = "-->";
+        } else if (HAS(i, "<!")) {
+            close = ">";
+        } else {
+            return HAS(i, "<svg") && i + 4 < len &&
+                   (g_ascii_isspace(head[i + 4]) || head[i + 4] == '>');
+        }
+        const gchar* end = g_strstr_len((const gchar*)head + i, (gssize)(len - i), close);
+        if (end == NULL) {
+            return FALSE;
+        }
+        i = (gsize)((const guchar*)end - head) + strlen(close);
+        while (i < len && g_ascii_isspace(head[i])) {
+            i++;
+        }
+    }
+    return FALSE;
+}
+
+/* Text images: SVG (any name), XPM / XBM / ASCII PNM (when the name says image) */
+static gboolean is_text_image(const guchar* head, gsize len, gsize start, FileKind by_name) {
+    if (is_svg_document(head, len, start)) {
+        return TRUE;
+    }
+    if (by_name != FILE_KIND_IMAGE) {
+        return FALSE;
+    }
+    return HAS(start, "/* XPM */") || HAS(start, "#define") ||
+           (len >= start + 3 && head[start] == 'P' && head[start + 1] >= '1' &&
+            head[start + 1] <= '3' && g_ascii_isspace(head[start + 2]));
+}
+
+FileKind file_kind_detect(const gchar* name, const guchar* head, gsize len) {
+    FileKind by_name = file_kind_from_name(name);
+    if (head == NULL || len == 0) {
+        /* Empty file: nothing to show but text */
+        return file_kind_is_media(by_name) ? FILE_KIND_TEXT : by_name;
+    }
+
+    FileKind magic = detect_binary_magic(head, len, by_name);
+    if (magic != FILE_KIND_TEXT) {
+        return magic;
+    }
+    if (!looks_like_text(head, len)) {
+        FileKind weak = detect_weak_magic(head, len);
+        if (weak == FILE_KIND_BINARY && file_kind_is_media(by_name)) {
+            return by_name; /* a format without a known signature (TGA, WMA...) */
+        }
+        return weak;
+    }
+
+    gsize start = skip_blank(head, len);
+    if (is_text_image(head, len, start, by_name)) {
+        return FILE_KIND_IMAGE;
+    }
+    if (HAS(start, "<") &&
+        (find_ci(head + start, MIN(len - start, 16), "<!doctype html") == head + start ||
+         find_ci(head + start, MIN(len - start, 6), "<html") == head + start ||
+         (HAS(start, "<?xml") && find_ci(head, len, "<html") != NULL))) {
+        return FILE_KIND_HTML;
+    }
+    /* Markdown, Org and HTML fragments are only known by their name */
+    if (by_name == FILE_KIND_MARKDOWN || by_name == FILE_KIND_ORG || by_name == FILE_KIND_HTML) {
+        return by_name;
+    }
+    return FILE_KIND_TEXT;
+}
+#undef HAS
+
+FileKind file_kind_of_path(const gchar* path, const gchar* name) {
+    if (path == NULL) {
+        return file_kind_from_name(name);
+    }
+    FILE* fp = g_fopen(path, "rb");
+    if (fp == NULL) {
+        return file_kind_from_name(name);
+    }
+    guchar head[FILE_SNIFF_BYTES];
+    gsize len = fread(head, 1, sizeof(head), fp);
+    fclose(fp);
+    return file_kind_detect(name, head, len);
+}
 
 /* VS Code-like emoji icon for a tree entry, based on name and extension */
 const gchar* file_icon(const gchar* name, gboolean is_dir) {

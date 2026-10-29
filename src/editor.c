@@ -759,7 +759,9 @@ static void on_editor_cursor_moved(GtkTextBuffer* buffer, const GtkTextIter* loc
 }
 
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
-    if (is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
+    FileKind kind = (g_strcmp0(full, app->viewed_path) == 0) ? app->viewed_kind
+                                                             : file_kind_of_path(full, name);
+    if (file_kind_is_media(kind)) {
         /* Images, PDFs, Videos, and Audio are previewed in the main viewer tab */
         if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
             app_emit(app, APP_EVENT_LAYOUT_CHANGED);

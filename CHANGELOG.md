@@ -7,6 +7,9 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Preview detects file types from their content (magic numbers, text or
+  binary) instead of the extension: images, PDFs, video and audio without or
+  with a wrong extension, `#!` scripts highlighted, binary files noticed.
 - Markdown preview shows in-progress tasks (`- [/]` or `- [-]`) with a
   half-filled amber box.
 - Workspace layouts (`Alt+L`): save the panel arrangement and terminal panes

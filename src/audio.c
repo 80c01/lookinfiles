@@ -216,7 +216,7 @@ static void render_audio_raw(AppData* app, const gchar* name, const gchar* full)
         gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
     }
 
-    apply_viewer_language(app, NULL);
+    apply_viewer_language(app, NULL, NULL);
     set_view_monospace(app->text_view, TRUE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
     set_view_text_padding(app->text_view);

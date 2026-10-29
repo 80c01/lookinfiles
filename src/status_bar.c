@@ -126,7 +126,8 @@ static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
 
 
 /* Human-readable type / language of an explorer entry, like VS Code's language mode */
-static gchar* status_type_label(const gchar* name, const gchar* type) {
+static gchar* status_type_label(const gchar* name, const gchar* type, FileKind kind,
+                                const gchar* content_type) {
     if (g_strcmp0(type, "dir") == 0) {
         return g_strdup("Folder");
     }
@@ -151,33 +152,26 @@ static gchar* status_type_label(const gchar* name, const gchar* type) {
     if (g_strcmp0(type, "note") == 0 || g_strcmp0(type, "buffer") == 0) {
         return g_strdup("Note");
     }
-    if (is_markdown_file(name)) {
-        return g_strdup("Markdown");
-    }
-    if (is_org_file(name)) {
-        return g_strdup("Org-mode");
-    }
-    if (is_html_file(name)) {
-        return g_strdup("HTML");
-    }
-    if (is_pdf_file(name)) {
-        return g_strdup("PDF");
-    }
-    if (is_image_file(name)) {
-        return g_strdup("Image");
-    }
-    if (is_video_file(name)) {
-        return g_strdup("Video");
-    }
-    if (is_audio_file(name)) {
-        return g_strdup("Audio");
+    switch (kind) {
+    case FILE_KIND_MARKDOWN: return g_strdup("Markdown");
+    case FILE_KIND_ORG:      return g_strdup("Org-mode");
+    case FILE_KIND_HTML:     return g_strdup("HTML");
+    case FILE_KIND_PDF:      return g_strdup("PDF");
+    case FILE_KIND_IMAGE:    return g_strdup("Image");
+    case FILE_KIND_VIDEO:    return g_strdup("Video");
+    case FILE_KIND_AUDIO:    return g_strdup("Audio");
+    case FILE_KIND_BINARY:   return g_strdup("Binary");
+    case FILE_KIND_TEXT:     break;
     }
 #ifdef HAVE_GSV
+    /* The content type of the previewed text also finds scripts without extension (#!) */
     GtkSourceLanguageManager* lm = gtk_source_language_manager_get_default();
-    GtkSourceLanguage* lang = gtk_source_language_manager_guess_language(lm, name, NULL);
+    GtkSourceLanguage* lang = gtk_source_language_manager_guess_language(lm, name, content_type);
     if (lang != NULL) {
         return g_strdup(gtk_source_language_get_name(lang));
     }
+#else
+    (void)content_type;
 #endif
     const gchar* ext = file_extension(name);
     if (ext[0] != '\0') {
@@ -220,7 +214,11 @@ void update_status_bar(AppData* app) {
         gtk_label_set_text(GTK_LABEL(app->status_selection), name);
         gtk_widget_set_tooltip_text(app->status_selection, full);
 
-        gchar* type_label = status_type_label(name, type);
+        /* The previewed file's kind comes from its content; others from their name */
+        gboolean previewed = (full != NULL && g_strcmp0(full, app->viewed_path) == 0);
+        FileKind kind = previewed ? app->viewed_kind : file_kind_from_name(name);
+        gchar* type_label = status_type_label(name, type, kind,
+                                              previewed ? app->viewed_content_type : NULL);
         gtk_label_set_text(GTK_LABEL(app->status_type), type_label);
         g_free(type_label);
 

@@ -44,6 +44,9 @@ workspaces, in a VS Code Dark+ look.
 - Directory listings and summaries of notebooks, bookmark folders and machines.
 - A **Git Commits** tab listing the repository history with each commit's diff.
 - A minimap that mirrors the displayed layout and scrolls the view.
+- File types are detected from the content (an image or a `#!` script without
+  extension, TypeScript `.ts` that is not a video); unknown binary files show a
+  short notice instead of garbled text.
 - `m` switches between the rendered and the raw view; files over 512 KB are
   previewed from their first 64 KB.
 

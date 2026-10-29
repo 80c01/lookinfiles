@@ -217,7 +217,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
 
     AppData* app = td->app;
 
-    apply_viewer_language(app, NULL);
+    apply_viewer_language(app, NULL, NULL);
     set_view_monospace(app->text_view, FALSE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
     set_view_text_padding(app->text_view);

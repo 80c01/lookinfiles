@@ -10,6 +10,7 @@
 #include <ctype.h>
 
 #include "explorer_tree.h"
+#include "file_types.h"
 
 #ifdef HAVE_VTE
 #include <vte/vte.h>
@@ -174,6 +175,8 @@ typedef struct {
     GCancellable* preview_cancellable; /* active right-pane preview GTask */
     gchar* viewed_path;          /* path of displayed file, NULL otherwise */
     gchar* viewed_name;          /* name of displayed file */
+    FileKind viewed_kind;        /* kind of displayed file, detected from its content */
+    gchar* viewed_content_type;  /* GIO content type of displayed text, NULL until read */
     gboolean dir_dirty;          /* pending directory event */
     gboolean file_dirty;         /* pending file event */
     gboolean git_dirty;          /* pending git status update */

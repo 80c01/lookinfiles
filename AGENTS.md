@@ -53,8 +53,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 (a module may only depend on modules in its own layer or below):
 
 **1. Foundation — pure helpers, no `AppData`, no widgets, unit-tested in `tests/`:**
-- `file_types` — name-based detection (`file_extension()`, `is_*_file()`,
-  `is_renderable_file()`) and emoji icons (`file_icon()`).
+- `file_types` — file type detection: by name (`file_extension()`,
+  `is_*_file()`, `file_kind_from_name()`) and by content (`FileKind`,
+  `file_kind_detect()` on the first `FILE_SNIFF_BYTES`: magic numbers, text vs
+  binary; `file_kind_of_path()`), and emoji icons (`file_icon()`). The preview
+  detects the kind in its worker thread (`app->viewed_kind`): decide on the
+  displayed file with `viewed_kind`, not with its name.
 - `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
   `git_read_branch()`, `scan_git_statuses()` (spawns git: worker thread only).
 - `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility,

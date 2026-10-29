@@ -140,10 +140,10 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_space:
         app->pending_g = FALSE;
         if (app->viewed_name != NULL && !app->render_raw) {
-            if (is_video_file(app->viewed_name)) {
+            if (app->viewed_kind == FILE_KIND_VIDEO) {
                 video_preview_toggle_play(app);
                 return TRUE;
-            } else if (is_audio_file(app->viewed_name)) {
+            } else if (app->viewed_kind == FILE_KIND_AUDIO) {
                 audio_preview_toggle_play(app);
                 return TRUE;
             }
@@ -152,7 +152,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_m:
     case GDK_KEY_M:
         app->pending_g = FALSE;
-        if (app->viewed_name != NULL && is_renderable_file(app->viewed_name)) {
+        if (app->viewed_name != NULL && file_kind_is_renderable(app->viewed_kind)) {
             app->render_raw = !app->render_raw;
             app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             if (app->viewed_path != NULL) {
@@ -168,8 +168,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
             if (g_file_test(app->viewed_path, G_FILE_TEST_IS_DIR)) {
                 return FALSE;
             }
-            if (is_image_file(app->viewed_name) || is_pdf_file(app->viewed_name) ||
-                is_video_file(app->viewed_name) || is_audio_file(app->viewed_name)) {
+            if (file_kind_is_media(app->viewed_kind)) {
                 return FALSE;
             }
             editor_open_file(app, app->viewed_name, app->viewed_path);
@@ -317,7 +316,7 @@ static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
 
     AppData* app = td->app;
 
-    apply_viewer_language(app, NULL);
+    apply_viewer_language(app, NULL, NULL);
     set_view_monospace(app->text_view, FALSE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
     set_view_text_padding(app->text_view);
@@ -416,12 +415,11 @@ typedef struct {
     AppData* app;
     gchar* name;
     gchar* full;
-    gboolean is_md;
-    gboolean is_html;
-    gboolean is_org;
     gboolean render_raw;
 
     /* Results populated by worker thread */
+    FileKind kind;         /* detected from the first bytes */
+    gchar* content_type;   /* GIO content type of text files (syntax highlighting) */
     gint64 fsize;
     gsize raw_len;
     gboolean preview;
@@ -436,50 +434,72 @@ static void text_preview_task_data_free(gpointer data) {
     }
     g_free(td->name);
     g_free(td->full);
+    g_free(td->content_type);
     g_free(td->utf8_text);
     g_free(td->error_msg);
     g_free(td);
 }
 
+/* Worker thread: read the first bytes, detect the file kind, then read the
+ * text (up to PREVIEW_BYTES for large files) unless a media viewer takes it. */
 static void text_preview_thread_func(GTask* task, gpointer source_object,
                                      gpointer task_data, GCancellable* cancellable) {
     (void)source_object;
-    (void)cancellable;
     TextPreviewTaskData* td = (TextPreviewTaskData*)task_data;
 
     if (g_task_return_error_if_cancelled(task)) {
         return;
     }
 
+    td->kind = file_kind_from_name(td->name);
     struct stat st;
     td->fsize = (g_stat(td->full, &st) == 0) ? (gint64)st.st_size : -1;
-    if (td->fsize < 0) {
+    FILE* fp = (td->fsize >= 0) ? g_fopen(td->full, "rb") : NULL;
+    if (fp == NULL) {
         td->error_msg = g_strdup_printf("[ Cannot read: %s ]", td->name);
         g_task_return_boolean(task, TRUE);
         return;
     }
 
-    gchar* contents = NULL;
-    gsize len = 0;
-    if (td->fsize > PREVIEW_THRESHOLD) {
-        td->preview = TRUE;
-        FILE* fp = g_fopen(td->full, "rb");
-        if (fp != NULL) {
-            contents = g_malloc0(PREVIEW_BYTES + 1);
-            len = fread(contents, 1, PREVIEW_BYTES, fp);
-            contents[len] = '\0';
-            fclose(fp);
-        }
-    } else {
-        g_file_get_contents(td->full, &contents, &len, NULL);
+    td->preview = (td->fsize > PREVIEW_THRESHOLD);
+    gsize cap = td->preview ? PREVIEW_BYTES : (gsize)td->fsize + 1;
+    if (cap < FILE_SNIFF_BYTES) {
+        cap = FILE_SNIFF_BYTES;
     }
+    gchar* contents = g_malloc(cap + 1);
+    gsize len = fread(contents, 1, FILE_SNIFF_BYTES, fp);
+    td->kind = file_kind_detect(td->name, (const guchar*)contents, len);
+
+    if (!file_kind_is_media(td->kind) && td->kind != FILE_KIND_BINARY) {
+        /* Rest of the text: to the end (the file may have grown), capped for large files */
+        while (!g_cancellable_is_cancelled(cancellable)) {
+            if (len == cap) {
+                if (td->preview) {
+                    break;
+                }
+                cap *= 2;
+                contents = g_realloc(contents, cap + 1);
+            }
+            gsize n = fread(contents + len, 1, cap - len, fp);
+            if (n == 0) {
+                break;
+            }
+            len += n;
+        }
+        contents[len] = '\0';
+        td->content_type = g_content_type_guess(td->name, (const guchar*)contents,
+                                                MIN(len, FILE_SNIFF_BYTES), NULL);
+    }
+    fclose(fp);
 
     if (g_task_return_error_if_cancelled(task)) {
         g_free(contents);
         return;
     }
 
-    if (contents != NULL) {
+    if (file_kind_is_media(td->kind) || td->kind == FILE_KIND_BINARY) {
+        g_free(contents);
+    } else {
         td->raw_len = len;
         if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
             td->utf8_text = g_utf8_make_valid(contents, (gssize)len);
@@ -487,11 +507,33 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         } else {
             td->utf8_text = contents;
         }
-    } else {
-        td->error_msg = g_strdup_printf("[ Cannot read: %s ]", td->name);
     }
 
     g_task_return_boolean(task, TRUE);
+}
+
+/* Show a file in a media viewer (main thread) */
+static void show_media_preview(AppData* app, FileKind kind, const gchar* name, const gchar* full) {
+    if (kind == FILE_KIND_AUDIO) {
+        video_preview_stop(app);
+        render_audio_preview(app, name, full);
+        return;
+    }
+    if (kind == FILE_KIND_VIDEO) {
+        audio_preview_stop(app);
+        render_video_preview(app, name, full);
+        return;
+    }
+    audio_preview_stop(app);
+    video_preview_stop(app);
+    if (app->preview_stack != NULL) {
+        gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
+    }
+    if (kind == FILE_KIND_PDF) {
+        render_pdf_preview(app, name, full);
+    } else {
+        render_image_preview(app, name, full);
+    }
 }
 
 static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
@@ -509,6 +551,25 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
 
     AppData* app = td->app;
 
+    if (g_strcmp0(td->full, app->viewed_path) == 0 &&
+        (app->viewed_kind != td->kind || g_strcmp0(app->viewed_content_type, td->content_type) != 0)) {
+        app->viewed_kind = td->kind;
+        g_free(app->viewed_content_type);
+        app->viewed_content_type = g_strdup(td->content_type);
+        app_emit(app, APP_EVENT_STATUS_CHANGED);
+    }
+
+    if (file_kind_is_media(td->kind)) {
+        show_media_preview(app, td->kind, td->name, td->full);
+        return;
+    }
+
+    audio_preview_stop(app);
+    video_preview_stop(app);
+    if (app->preview_stack != NULL) {
+        gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
+    }
+
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
     if (hadj != NULL) {
         gtk_adjustment_set_value(hadj, gtk_adjustment_get_lower(hadj));
@@ -518,16 +579,20 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
     }
 
-    gboolean is_rendered = td->is_md || td->is_html || td->is_org;
-    if (is_rendered) {
-        apply_viewer_language(app, NULL);
+    gboolean is_md = (td->kind == FILE_KIND_MARKDOWN) && !td->render_raw;
+    gboolean is_html = (td->kind == FILE_KIND_HTML) && !td->render_raw;
+    gboolean is_org = (td->kind == FILE_KIND_ORG) && !td->render_raw;
+    gboolean is_rendered = is_md || is_html || is_org;
+    if (is_rendered || td->kind == FILE_KIND_BINARY) {
+        apply_viewer_language(app, NULL, NULL);
         set_view_monospace(app->text_view, FALSE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
         set_view_text_padding(app->text_view);
     } else {
-        gboolean code = is_code_file(td->name) || td->render_raw;
+        gboolean has_lang = apply_viewer_language(app, td->name, td->content_type);
+        gboolean code = has_lang || is_code_file(td->name) || td->render_raw ||
+                        (td->utf8_text != NULL && g_str_has_prefix(td->utf8_text, "#!"));
         set_view_monospace(app->text_view, code);
-        apply_viewer_language(app, td->name);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
         set_view_text_padding(app->text_view);
     }
@@ -539,16 +604,26 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         return;
     }
 
+    if (td->kind == FILE_KIND_BINARY) {
+        gchar* size_str = g_format_size((guint64)td->fsize);
+        gchar* text = g_strdup_printf("[ Binary file ] %s (%s)\n\nNo preview for this file type.",
+                                      td->name, size_str);
+        gtk_text_buffer_set_text(app->buffer, text, -1);
+        g_free(text);
+        g_free(size_str);
+        return;
+    }
+
     if (td->utf8_text != NULL) {
-        if (td->is_md) {
+        if (is_md) {
             ensure_markdown_tags(app->buffer);
             render_markdown_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,
                                       td->preview, td->name, td->fsize);
-        } else if (td->is_html) {
+        } else if (is_html) {
             ensure_html_tags(app->buffer);
             render_html_to_buffer(app->buffer, td->utf8_text, td->full,
                                   td->preview, td->name, td->fsize);
-        } else if (td->is_org) {
+        } else if (is_org) {
             ensure_orgmode_tags(app->buffer);
             render_orgmode_to_buffer(app->buffer, td->utf8_text, td->full,
                                      td->preview, td->name, td->fsize,
@@ -568,35 +643,9 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
     }
 }
 
+/* Preview a file. Its kind is detected from its content in a worker thread
+ * (one read serves detection and text), so the UI thread does no file I/O. */
 void load_file_content(AppData* app, const gchar* name, const gchar* full) {
-    if (is_audio_file(name)) {
-        video_preview_stop(app);
-        render_audio_preview(app, name, full);
-        return;
-    }
-
-    if (is_video_file(name)) {
-        audio_preview_stop(app);
-        render_video_preview(app, name, full);
-        return;
-    }
-
-    audio_preview_stop(app);
-    video_preview_stop(app);
-    if (app->preview_stack != NULL) {
-        gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
-    }
-
-    if (is_pdf_file(name)) {
-        render_pdf_preview(app, name, full);
-        return;
-    }
-
-    if (is_image_file(name)) {
-        render_image_preview(app, name, full);
-        return;
-    }
-
     if (app->preview_cancellable != NULL) {
         g_cancellable_cancel(app->preview_cancellable);
         g_clear_object(&app->preview_cancellable);
@@ -608,9 +657,11 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     td->name = g_strdup(name);
     td->full = g_strdup(full);
     td->render_raw = app->render_raw;
-    td->is_md = is_markdown_file(name) && !app->render_raw;
-    td->is_html = is_html_file(name) && !app->render_raw;
-    td->is_org = is_org_file(name) && !app->render_raw;
+    if (g_strcmp0(full, app->viewed_path) != 0) {
+        /* Provisional kind until the content is read */
+        app->viewed_kind = file_kind_from_name(name);
+        g_clear_pointer(&app->viewed_content_type, g_free);
+    }
 
     GTask* task = g_task_new(NULL, app->preview_cancellable, on_text_preview_ready, NULL);
     g_task_set_task_data(task, td, text_preview_task_data_free);
@@ -733,7 +784,7 @@ static void on_dir_preview_ready(GObject* source_object, GAsyncResult* res,
     set_view_text_padding(app->text_view);
     gtk_text_buffer_set_text(app->buffer, td->listing->str, (gint)td->listing->len);
     app->viewer_match = -1;
-    apply_viewer_language(app, NULL);
+    apply_viewer_language(app, NULL, NULL);
 }
 
 void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
@@ -766,7 +817,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
             g_clear_object(&app->preview_cancellable);
         }
         if (summary != NULL && app->buffer != NULL) {
-            apply_viewer_language(app, NULL);
+            apply_viewer_language(app, NULL, NULL);
             gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
             set_view_text_padding(app->text_view);
             set_view_monospace(app->text_view, TRUE); /* summary columns are space-aligned */
@@ -859,7 +910,8 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
         }
 
         if (g_strcmp0(full, app->viewed_path) == 0 && !app->file_dirty &&
-            (is_video_file(name) || is_audio_file(name) || gtk_text_buffer_get_char_count(app->buffer) > 0)) {
+            (app->viewed_kind == FILE_KIND_VIDEO || app->viewed_kind == FILE_KIND_AUDIO ||
+             gtk_text_buffer_get_char_count(app->buffer) > 0)) {
             if (!app->switching_ws) {
                 app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             }

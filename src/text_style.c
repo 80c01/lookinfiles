@@ -116,9 +116,9 @@ void set_view_monospace(GtkWidget* view, gboolean monospace) {
     gtk_text_view_set_monospace(GTK_TEXT_VIEW(view), monospace);
 }
 
-/* Return TRUE if file extension or content indicates source code */
+/* Return TRUE if the name of a text file indicates source code */
 gboolean is_code_file(const gchar* name) {
-    if (name == NULL || is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
+    if (name == NULL) {
         return FALSE;
     }
     const gchar* ext = file_extension(name);
@@ -175,12 +175,13 @@ gboolean is_code_file(const gchar* name) {
     return FALSE;
 }
 
-void apply_viewer_language(AppData* app, const gchar* name) {
+gboolean apply_viewer_language(AppData* app, const gchar* name, const gchar* content_type) {
 #ifdef HAVE_GSV
     GtkSourceLanguageManager* mgr = gtk_source_language_manager_get_default();
     GtkSourceLanguage* lang = NULL;
     if (name != NULL) {
-        gchar* ctype = g_content_type_guess(name, NULL, 0, NULL);
+        gchar* ctype = (content_type != NULL) ? g_strdup(content_type)
+                                              : g_content_type_guess(name, NULL, 0, NULL);
         lang = gtk_source_language_manager_guess_language(mgr, name, ctype);
         g_free(ctype);
     }
@@ -189,9 +190,12 @@ void apply_viewer_language(AppData* app, const gchar* name) {
         gtk_source_buffer_set_language(sbuf, lang);
         gtk_source_buffer_set_highlight_syntax(sbuf, lang != NULL);
     }
+    return lang != NULL;
 #else
     (void)app;
     (void)name;
+    (void)content_type;
+    return FALSE;
 #endif
 }
 

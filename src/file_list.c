@@ -735,8 +735,10 @@ void activate_selected_entry(AppData* app) {
     } else if (g_strcmp0(type, "dir") == 0) {
         explorer_tree_toggle_expanded(app->tree, row);
     } else if (g_strcmp0(type, "file") == 0 && row->path[0] != '\0') {
-        if (is_image_file(row->name) || is_pdf_file(row->name) || is_video_file(row->name) ||
-            is_audio_file(row->name)) {
+        FileKind kind = (g_strcmp0(row->path, app->viewed_path) == 0)
+                            ? app->viewed_kind
+                            : file_kind_of_path(row->path, row->name);
+        if (file_kind_is_media(kind)) {
             if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
                 app_emit(app, APP_EVENT_LAYOUT_CHANGED);
                 app->applying_layout = TRUE;
@@ -934,9 +936,9 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
             if (is_container_row(row)) {
                 explorer_tree_toggle_expanded(app->tree, row);
             } else if (row != NULL && app->viewed_name != NULL && !app->render_raw) {
-                if (is_video_file(app->viewed_name)) {
+                if (app->viewed_kind == FILE_KIND_VIDEO) {
                     video_preview_toggle_play(app);
-                } else if (is_audio_file(app->viewed_name)) {
+                } else if (app->viewed_kind == FILE_KIND_AUDIO) {
                     audio_preview_toggle_play(app);
                 }
             }
@@ -946,10 +948,10 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_P:
         app->pending_g = FALSE;
         if (app->viewed_name != NULL && !app->render_raw) {
-            if (is_video_file(app->viewed_name)) {
+            if (app->viewed_kind == FILE_KIND_VIDEO) {
                 video_preview_toggle_play(app);
                 return TRUE;
-            } else if (is_audio_file(app->viewed_name)) {
+            } else if (app->viewed_kind == FILE_KIND_AUDIO) {
                 audio_preview_toggle_play(app);
                 return TRUE;
             }
@@ -1125,7 +1127,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_m:
     case GDK_KEY_M:
         app->pending_g = FALSE;
-        if (app->viewed_name != NULL && is_renderable_file(app->viewed_name)) {
+        if (app->viewed_name != NULL && file_kind_is_renderable(app->viewed_kind)) {
             app->render_raw = !app->render_raw;
             app_emit(app, APP_EVENT_LAYOUT_CHANGED);
             if (app->viewed_path != NULL) {
