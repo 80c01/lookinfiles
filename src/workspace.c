@@ -480,6 +480,43 @@ void workspace_switch(AppData* app, gint idx) {
     }
 }
 
+/* Default layout of new workspaces (layouts.ini, built-in if none). Caller frees. */
+static SavedLayout* load_default_layout(void) {
+    gchar* path = layout_store_default_path();
+    SavedLayout* def = layout_store_load_default(path);
+    g_free(path);
+    return def;
+}
+
+/* Panels of the default layout on a workspace (its folder and view are kept) */
+static void set_default_panels(VirtualLayout* ws, const SavedLayout* def) {
+    ws->files_vis = def->files_vis;
+    ws->preview_vis = def->preview_vis;
+    ws->term_vis = def->term_vis;
+    ws->right_orient = def->stacked ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
+    ws->main_frac = def->main_frac;
+    ws->right_frac = def->right_frac;
+    ws->editor_frac = def->editor_frac; /* no editor yet: the dedicated panel opens with them */
+    if (!ws->files_vis && !ws->preview_vis && !ws->term_vis) {
+        ws->preview_vis = TRUE;
+    }
+}
+
+/* After the switch to the workspace (which opens one terminal): its terminal panes */
+static void apply_default_terminals(AppData* app, const SavedLayout* def) {
+#ifdef HAVE_VTE
+    TermLayoutNode* tree = def->term_vis ? term_layout_parse(def->terminals) : NULL;
+    if (term_layout_count(tree) > 1) {
+        term_layout_apply(app, def->terminals);
+        workspace_apply_positions(app);
+    }
+    term_layout_free(tree);
+#else
+    (void)app;
+    (void)def;
+#endif
+}
+
 void workspace_add(AppData* app) {
     if (app == NULL || app->num_workspaces >= MAX_VIRTUAL_LAYOUTS) {
         return;
@@ -492,31 +529,25 @@ void workspace_add(AppData* app) {
      * current workspace */
     gint new_idx = app->num_workspaces;
     init_workspace_slot(app, new_idx, app->start_dir);
-    gchar* path = layout_store_default_path();
-    SavedLayout* def = layout_store_load_default(path);
-    g_free(path);
-    VirtualLayout* ws = &app->workspaces[new_idx];
-    ws->files_vis = def->files_vis;
-    ws->preview_vis = def->preview_vis;
-    ws->term_vis = def->term_vis;
-    ws->right_orient = def->stacked ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
-    ws->main_frac = def->main_frac;
-    ws->right_frac = def->right_frac;
-    ws->editor_frac = def->editor_frac; /* no editor yet: the dedicated panel opens with them */
-    if (!ws->files_vis && !ws->preview_vis && !ws->term_vis) {
-        ws->preview_vis = TRUE;
-    }
+    SavedLayout* def = load_default_layout();
+    set_default_panels(&app->workspaces[new_idx], def);
     app->num_workspaces++;
     ws_minimap_update_size(app);
     workspace_switch(app, new_idx); /* opens one terminal if term_vis */
-#ifdef HAVE_VTE
-    TermLayoutNode* tree = def->term_vis ? term_layout_parse(def->terminals) : NULL;
-    if (term_layout_count(tree) > 1) {
-        term_layout_apply(app, def->terminals);
-        workspace_apply_positions(app);
+    apply_default_terminals(app, def);
+    saved_layout_free(def);
+}
+
+void workspace_apply_default_layout(AppData* app) {
+    if (app == NULL || app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
+        return;
     }
-    term_layout_free(tree);
-#endif
+    SavedLayout* def = load_default_layout();
+    if (layout_store_is_customized(def)) {
+        set_default_panels(&app->workspaces[app->current_ws], def);
+        workspace_switch(app, app->current_ws); /* re-applies the current workspace */
+        apply_default_terminals(app, def);
+    }
     saved_layout_free(def);
 }
 

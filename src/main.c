@@ -574,6 +574,7 @@ int main(int argc, char** argv) {
 
     select_first_row(app);
     gtk_widget_grab_focus(tree_view);
+    workspace_apply_default_layout(app); /* saved default layout (Alt+L), if any */
 
     g_main_loop_run(loop);
 
