@@ -38,6 +38,12 @@ void notes_toggle_sort(AppData* app);
 void notes_toggle_collapse_expand(AppData* app);
 void notes_activate_selected(AppData* app);
 
+/* Note named on the command line: "Title" (any notebook) or "Notebook/Title";
+ * a .org / .md / .txt extension matches the file name and sets the type of a
+ * new note. Created (with its notebook) when missing. Returns its path (free
+ * it), or NULL if the name is invalid. */
+gchar* notes_find_or_create(AppData* app, const gchar* spec);
+
 /* Helper to get root notes directory */
 gchar* notes_get_root_dir(void);
 

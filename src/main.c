@@ -105,18 +105,22 @@ static void open_start_file(AppData* app, const gchar* path) {
 static void print_usage(FILE* out) {
     fprintf(out,
             "Usage: %s [options] [<file>|<folder>]\n"
+            "       %s [options] -n <note>\n"
             "\n"
             "Without argument, shows the current directory.\n"
             "A folder is shown in the explorer; a file is opened in the dedicated\n"
             "editor panel, with the explorer and the preview hidden.\n"
+            "With -n, the argument is a note: \"Title\" or \"Notebook/Title\"; a\n"
+            ".org, .md or .txt extension sets the type. Missing notes are created.\n"
             "\n"
             "Options:\n"
             "  -h, --help                       show this help and exit\n"
             "  -e, --editor emacs|vim|notepad   default editor mode of new tabs\n"
             "                                   (Org files always open in Org-mode)\n"
+            "  -n, --note                       the argument is a note, not a file\n"
             "  -f, --fullscreen                 start in fullscreen\n"
             "  -s, --size WIDTHxHEIGHT          window size (e.g. 1920x1080)\n",
-            APP_DIR_NAME);
+            APP_DIR_NAME, APP_DIR_NAME);
 }
 
 /* -e / --editor value: FALSE if it is not a known editor mode */
@@ -174,6 +178,7 @@ int main(int argc, char** argv) {
     EditorMode default_editor_mode = EDITOR_MODE_NOTEPAD;
     const char* target = NULL; /* <file> or <folder> argument */
     gboolean options_done = FALSE;
+    gboolean target_is_note = FALSE;
     for (int i = 1; i < argc; i++) {
         const char* arg = argv[i];
         const char* val = NULL;
@@ -189,6 +194,8 @@ int main(int argc, char** argv) {
         } else if (g_strcmp0(arg, "-h") == 0 || g_strcmp0(arg, "--help") == 0) {
             print_usage(stdout);
             return 0;
+        } else if (g_strcmp0(arg, "-n") == 0 || g_strcmp0(arg, "--note") == 0) {
+            target_is_note = TRUE;
         } else if (g_strcmp0(arg, "-f") == 0 || g_strcmp0(arg, "--fullscreen") == 0) {
             start_fullscreen = TRUE;
         } else if ((val = option_value(argc, argv, &i, "-e", "--editor")) != NULL) {
@@ -207,6 +214,12 @@ int main(int argc, char** argv) {
             print_usage(stderr);
             return 2;
         }
+    }
+
+    if (target_is_note && target == NULL) {
+        g_printerr("%s: option '-n' needs a note name\n", APP_DIR_NAME);
+        print_usage(stderr);
+        return 2;
     }
 
     g_set_prgname(APP_DIR_NAME);
@@ -247,7 +260,7 @@ int main(int argc, char** argv) {
     const char* start_dir = cwd;
     gchar* target_dir = NULL;  /* parent directory of the file to edit */
     gchar* start_file = NULL;  /* absolute path of the file to edit */
-    if (target != NULL) {
+    if (target != NULL && !target_is_note) {
         if (g_file_test(target, G_FILE_TEST_IS_DIR)) {
             start_dir = target;
         } else if (g_file_test(target, G_FILE_TEST_IS_REGULAR)) {
@@ -680,7 +693,18 @@ int main(int argc, char** argv) {
     select_first_row(app);
     gtk_widget_grab_focus(tree_view);
     workspace_apply_default_layout(app); /* saved default layout (Alt+L), if any */
-    if (start_file != NULL) {
+    if (target_is_note) {
+        gchar* note_path = notes_find_or_create(app, target);
+        if (note_path != NULL) {
+            if (app->sidebar_view != SIDEBAR_VIEW_NOTES) {
+                toggle_notes_view(app);
+            }
+            open_start_file(app, note_path);
+            g_free(note_path);
+        } else {
+            g_printerr("[ Invalid note name '%s': expected Title or Notebook/Title ]\n", target);
+        }
+    } else if (start_file != NULL) {
         open_start_file(app, start_file);
     }
     g_free(start_file);

@@ -122,6 +122,7 @@ in `build/`). `make clean` removes both.
 ./lookin /path/to/directory  # start in another directory
 ./lookin path/to/file.txt    # edit a file in the dedicated editor panel only
 ./lookin --editor vim        # default editor mode: emacs, vim or notepad (also -e)
+./lookin --note Work/Ideas   # open (or create) a note, see below (also -n)
 ./lookin --size 1920x1080    # window size (also -s)
 ./lookin --fullscreen        # start in fullscreen (also -f)
 ./lookin --help              # list the options (also -h)
@@ -129,6 +130,12 @@ in `build/`). `make clean` removes both.
 
 `--editor` sets the mode of new editor tabs; Org files always open in
 Org-mode.
+
+With `--note`, the argument names a note instead of a file: `Title` (searched
+in every notebook) or `Notebook/Title`. A `.org`, `.md` or `.txt` extension
+matches the note's file name and sets the type of a new note (Rich Format
+otherwise). A missing note, or notebook, is created. The note opens like a
+file, with the explorer switched to the NOTES view.
 
 Press `?` at any time for the list of shortcuts, `Alt+Left` / `Alt+Right` to
 move between panels, and `Ctrl+Q` to quit.

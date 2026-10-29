@@ -1214,6 +1214,39 @@ static void update_open_editors(AppData* app, const gchar* old_path, const gchar
 /* User Actions                                                              */
 /* ------------------------------------------------------------------------- */
 
+/* Initial content of a new note */
+static gchar* note_starter(NoteType type, const gchar* title) {
+    gchar* starter = NULL;
+    if (type == NOTE_TYPE_RICH) {
+        starter = g_strdup_printf(
+            "# %s\n\n"
+            "Rich format note supporting **bold**, *italic*, lists, tables, and images.\n\n"
+            "- [ ] Task 1\n"
+            "- [ ] Task 2\n",
+            title);
+    } else if (type == NOTE_TYPE_ORG) {
+        GDateTime* dt = g_date_time_new_now_local();
+        gchar* cur_date = g_date_time_format(dt, "%Y-%m-%d");
+        g_date_time_unref(dt);
+
+        starter = g_strdup_printf(
+            "#+TITLE: %s\n"
+            "#+DATE: <%s>\n\n"
+            "* TODO Welcome to Org-mode!\n"
+            "  SCHEDULED: <%s>\n"
+            "  - [ ] First task\n"
+            "  - [ ] Second task\n\n"
+            "* Notes\n"
+            "  Org-mode supports *bold*, /italic/, =code=, tables, and folding.\n",
+            title, cur_date ? cur_date : "2026-10-28", cur_date ? cur_date : "2026-10-28");
+        g_free(cur_date);
+    } else {
+        starter = g_strdup("");
+    }
+
+    return starter;
+}
+
 void notes_new_note(AppData* app) {
     NotesManager* mgr = get_notes_mgr(app);
     if (mgr == NULL) return;
@@ -1252,35 +1285,7 @@ void notes_new_note(AppData* app) {
         } while (g_file_test(file_path, G_FILE_TEST_EXISTS));
     }
 
-    /* Template content based on note type */
-    gchar* starter = NULL;
-    if (type == NOTE_TYPE_RICH) {
-        starter = g_strdup_printf(
-            "# %s\n\n"
-            "Rich format note supporting **bold**, *italic*, lists, tables, and images.\n\n"
-            "- [ ] Task 1\n"
-            "- [ ] Task 2\n",
-            title);
-    } else if (type == NOTE_TYPE_ORG) {
-        GDateTime* dt = g_date_time_new_now_local();
-        gchar* cur_date = g_date_time_format(dt, "%Y-%m-%d");
-        g_date_time_unref(dt);
-
-        starter = g_strdup_printf(
-            "#+TITLE: %s\n"
-            "#+DATE: <%s>\n\n"
-            "* TODO Welcome to Org-mode!\n"
-            "  SCHEDULED: <%s>\n"
-            "  - [ ] First task\n"
-            "  - [ ] Second task\n\n"
-            "* Notes\n"
-            "  Org-mode supports *bold*, /italic/, =code=, tables, and folding.\n",
-            title, cur_date ? cur_date : "2026-10-28", cur_date ? cur_date : "2026-10-28");
-        g_free(cur_date);
-    } else {
-        starter = g_strdup("");
-    }
-
+    gchar* starter = note_starter(type, title);
     g_file_set_contents(file_path, starter, -1, NULL);
     g_free(starter);
 
@@ -1300,6 +1305,101 @@ void notes_new_note(AppData* app) {
     g_free(title);
     g_free(filename);
     g_free(file_path);
+}
+
+/* Notebook named `name`, created when missing */
+static NotebookItem* notes_ensure_notebook(NotesManager* mgr, const gchar* name) {
+    for (GList* l = mgr->notebooks; l != NULL; l = l->next) {
+        NotebookItem* nb = (NotebookItem*)l->data;
+        if (g_strcmp0(nb->name, name) == 0) return nb;
+    }
+    gchar* root = notes_get_root_dir();
+    gchar* dir_path = g_build_filename(root, name, NULL);
+    g_free(root);
+    g_mkdir_with_parents(dir_path, 0755);
+    NotebookItem* nb = notebook_item_new(name, "📓", dir_path);
+    mgr->notebooks = g_list_append(mgr->notebooks, nb);
+    g_free(dir_path);
+    return nb;
+}
+
+/* A notebook or note name: not empty, no '/', not hidden */
+static gboolean notes_valid_name(const gchar* name) {
+    return name != NULL && name[0] != '\0' && name[0] != '.' && strchr(name, '/') == NULL;
+}
+
+gchar* notes_find_or_create(AppData* app, const gchar* spec) {
+    NotesManager* mgr = get_notes_mgr(app);
+    if (mgr == NULL || spec == NULL) return NULL;
+
+    gchar* nb_name = NULL;
+    const gchar* name = spec;
+    const gchar* slash = strchr(spec, '/');
+    if (slash != NULL) {
+        nb_name = g_strndup(spec, slash - spec);
+        name = slash + 1;
+    }
+    if ((nb_name != NULL && !notes_valid_name(nb_name)) || !notes_valid_name(name)) {
+        g_free(nb_name);
+        return NULL;
+    }
+
+    /* A note extension (.org, .md, .txt...) chooses the file; otherwise the title does */
+    const gchar* ext = file_extension(name);
+    gboolean by_filename = (g_ascii_strcasecmp(ext, "org") == 0 ||
+                            g_ascii_strcasecmp(ext, "md") == 0 ||
+                            g_ascii_strcasecmp(ext, "markdown") == 0 ||
+                            g_ascii_strcasecmp(ext, "txt") == 0);
+
+    for (GList* l = mgr->notebooks; l != NULL; l = l->next) {
+        NotebookItem* nb = (NotebookItem*)l->data;
+        if (nb_name != NULL && g_strcmp0(nb->name, nb_name) != 0) continue;
+        for (GList* n = nb->notes; n != NULL; n = n->next) {
+            NoteItem* note = (NoteItem*)n->data;
+            if (g_strcmp0(by_filename ? note->filename : note->title, name) == 0) {
+                nb->expanded = TRUE;
+                g_free(nb_name);
+                return g_strdup(note->path);
+            }
+        }
+    }
+
+    /* Not found: create it, in the named notebook or the first one */
+    NotebookItem* nb = (nb_name != NULL) ? notes_ensure_notebook(mgr, nb_name)
+                     : (mgr->notebooks != NULL) ? (NotebookItem*)mgr->notebooks->data
+                     : notes_ensure_notebook(mgr, "General");
+    g_free(nb_name);
+
+    gchar* title = NULL;
+    gchar* filename = NULL;
+    NoteType type;
+    if (by_filename) {
+        title = g_strndup(name, strlen(name) - strlen(ext) - 1);
+        filename = g_strdup(name);
+        type = note_type_from_filename(name);
+    } else {
+        title = g_strdup(name);
+        type = NOTE_TYPE_RICH;
+        filename = g_strdup_printf("%s%s", title, note_type_to_ext(type));
+    }
+    gchar* file_path = g_build_filename(nb->path, filename, NULL);
+    if (!g_file_test(file_path, G_FILE_TEST_EXISTS)) {
+        gchar* starter = note_starter(type, title);
+        if (!g_file_set_contents(file_path, starter, -1, NULL)) {
+            g_free(starter);
+            g_free(title);
+            g_free(filename);
+            g_free(file_path);
+            return NULL;
+        }
+        g_free(starter);
+    }
+    nb->notes = g_list_append(nb->notes, note_item_new(filename, title, file_path, type));
+    nb->expanded = TRUE;
+    notes_save(app);
+    g_free(title);
+    g_free(filename);
+    return file_path;
 }
 
 void notes_new_notebook(AppData* app) {
