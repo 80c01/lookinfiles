@@ -13,6 +13,7 @@
     cp "$ROOT/tests/ui/fixtures/report.docx" 03-report.docx
     cp "$ROOT/tests/fixtures/preview/sample.csv" 04-orders.csv
     cp "$ROOT/tests/fixtures/preview/sample.json" 05-package.json
+    cp "$ROOT/tests/fixtures/preview/fix-parser.patch" 06-fix-parser.patch
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -25,4 +26,5 @@ format_scenario() {
     key m;              shot fmt_csv_raw
     key m
     key j;              shot fmt_json_pretty
+    key j;              shot fmt_diff
 }

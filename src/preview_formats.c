@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "csv.h"
+#include "diff_view.h"
 #include "docx.h"
 #include "elf_info.h"
 #include "hex_dump.h"
@@ -142,6 +143,22 @@ static PreviewDoc* build_json(const PreviewInput* in, GCancellable* cancellable,
     return doc;
 }
 
+/* --- Diff / patch --- */
+
+static PreviewDoc* build_diff(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    note_truncated_text(doc, in);
+    if (!diff_view_append(doc, in->text, in->text_len)) {
+        preview_doc_free(doc);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "no file changes found");
+        return NULL;
+    }
+    return doc;
+}
+
 /* --- ELF executables, libraries, objects --- */
 
 static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -214,6 +231,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_csv;
     case FILE_KIND_JSON:
         return build_json;
+    case FILE_KIND_DIFF:
+        return build_diff;
     default:
         return NULL;
     }

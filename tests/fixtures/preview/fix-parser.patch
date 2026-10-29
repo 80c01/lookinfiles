@@ -1,0 +1,32 @@
+From 3f2a1c9e5b7d4a6f8e0c1b2d3e4f5a6b7c8d9e0f Mon Sep 17 00:00:00 2001
+From: Ada Lovelace <ada@example.org>
+Date: Thu, 29 Oct 2026 10:00:00 +0100
+Subject: [PATCH] Fix the parser on empty input
+
+An empty file made the parser read past the end of its buffer.
+---
+ src/parser.c | 6 ++++--
+ tests/empty  | 0
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/parser.c b/src/parser.c
+index 1a2b3c4..5d6e7f8 100644
+--- a/src/parser.c
++++ b/src/parser.c
+@@ -10,7 +10,9 @@ static int parse(const char* text, size_t len)
+ {
+     size_t i = 0;
+-    while (text[i] != '\0') {
+--- this removed line looks like a header
++    if (len == 0) {
++        return 0;
++    }
++    while (i < len && text[i] != '\0') {
+         i++;
+     }
+     return (int)i;
+diff --git a/tests/empty b/tests/empty
+new file mode 100644
+index 0000000..e69de29
+-- 
+2.47.0

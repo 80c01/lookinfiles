@@ -88,6 +88,11 @@ static void test_json(void) {
     g_assert_true(g_str_has_prefix(lines->text->str, "JSON Lines · 3 records\n"));
 }
 
+static void test_diff(void) {
+    g_autoptr(PreviewDoc) doc = build_fixture("fix-parser.patch", FILE_KIND_DIFF);
+    g_assert_nonnull(strstr(doc->text->str, "2 files changed, +4 −2"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -112,5 +117,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/damaged_document", test_damaged_document);
     g_test_add_func("/preview_formats/csv", test_csv);
     g_test_add_func("/preview_formats/json", test_json);
+    g_test_add_func("/preview_formats/diff", test_diff);
     return g_test_run();
 }

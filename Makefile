@@ -70,7 +70,7 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex
+TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o
@@ -89,8 +89,11 @@ TEST_DEPS_test_zip_reader = $(BUILD_DIR)/zip_reader.o
 TEST_DEPS_test_docx = $(BUILD_DIR)/docx.o $(BUILD_DIR)/zip_reader.o
 TEST_DEPS_test_preview_doc = $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_json_view = $(BUILD_DIR)/json_view.o $(BUILD_DIR)/preview_doc.o
+TEST_DEPS_test_diff_view = $(BUILD_DIR)/diff_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_csv = $(BUILD_DIR)/csv.o $(BUILD_DIR)/preview_doc.o
-PREVIEW_FORMAT_OBJS = $(BUILD_DIR)/preview_formats.o $(BUILD_DIR)/preview_doc.o $(BUILD_DIR)/csv.o $(BUILD_DIR)/json_view.o $(BUILD_DIR)/file_types.o $(BUILD_DIR)/docx.o $(BUILD_DIR)/zip_reader.o $(BUILD_DIR)/elf_info.o $(BUILD_DIR)/hex_dump.o
+# Modules of the structured previews (preview_formats and the parsers it calls)
+PREVIEW_MODULES = preview_formats preview_doc file_types hex_dump elf_info zip_reader docx csv json_view diff_view
+PREVIEW_FORMAT_OBJS = $(PREVIEW_MODULES:%=$(BUILD_DIR)/%.o)
 TEST_DEPS_test_preview_formats = $(PREVIEW_FORMAT_OBJS)
 TEST_DEPS_test_org_time = $(BUILD_DIR)/org_time.o
 TEST_DEPS_test_org_doc = $(BUILD_DIR)/org_doc.o $(BUILD_DIR)/org_time.o
