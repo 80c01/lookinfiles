@@ -21,6 +21,19 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(ZipReader, zip_reader_free)
 guint zip_reader_get_n_entries(const ZipReader* zip);
 const gchar* zip_reader_get_name(const ZipReader* zip, guint i);
 
+typedef struct {
+    const gchar* name;        /* owned by the reader */
+    guint64 size;             /* uncompressed */
+    guint64 compressed_size;
+    guint16 method;           /* 0 stored, 8 deflated, others unsupported */
+    gboolean encrypted;
+    gboolean is_dir;          /* name ends with '/' */
+    gint64 mtime;             /* DOS local date and time as if UTC, -1 if invalid */
+} ZipEntryInfo;
+
+/* Details of entry i; FALSE if there is none */
+gboolean zip_reader_get_info(const ZipReader* zip, guint i, ZipEntryInfo* info);
+
 /* TRUE if the archive has an entry with this exact name */
 gboolean zip_reader_has(const ZipReader* zip, const gchar* name);
 

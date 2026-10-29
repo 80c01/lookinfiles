@@ -146,6 +146,8 @@ void preview_table_set_header(PreviewTable* table, const gchar* const* cells);
 void preview_table_add_row(PreviewTable* table, const gchar* const* cells, guint n_cells);
 /* Show a dimmed row number column ("1", "2"...) before the cells */
 void preview_table_set_row_numbers(PreviewTable* table, gboolean row_numbers);
+/* Right-align a column (numeric columns are right-aligned anyway) */
+void preview_table_set_right_aligned(PreviewTable* table, guint col);
 /* Widest cell in characters; longer cells end with "…" (default 40) */
 void preview_table_set_max_cell_width(PreviewTable* table, guint width);
 

@@ -23,6 +23,8 @@ typedef struct {
     guint64 comp_size;
     guint64 size;
     guint64 local_offset;
+    guint16 dos_time;
+    guint16 dos_date;
 } ZipEntry;
 
 struct ZipReader {
@@ -193,6 +195,8 @@ static gboolean read_central_dir(ZipReader* zip, GError** error) {
         e->comp_size = get_u32(h + 20);
         e->size = get_u32(h + 24);
         e->local_offset = get_u32(h + 42);
+        e->dos_time = get_u16(h + 12);
+        e->dos_date = get_u16(h + 14);
         const gchar* name = (const gchar*)h + CENTRAL_HEADER_SIZE;
         e->name = g_utf8_make_valid(name, (gssize)name_len);
         apply_zip64_extra(e, h + CENTRAL_HEADER_SIZE + name_len, extra_len,
@@ -266,6 +270,35 @@ guint zip_reader_get_n_entries(const ZipReader* zip) {
 const gchar* zip_reader_get_name(const ZipReader* zip, guint i) {
     g_return_val_if_fail(i < zip->entries->len, NULL);
     return ((const ZipEntry*)g_ptr_array_index(zip->entries, i))->name;
+}
+
+gboolean zip_reader_get_info(const ZipReader* zip, guint i, ZipEntryInfo* info) {
+    if (i >= zip->entries->len) {
+        return FALSE;
+    }
+    const ZipEntry* e = g_ptr_array_index(zip->entries, i);
+    info->name = e->name;
+    info->size = e->size;
+    info->compressed_size = e->comp_size;
+    info->method = e->method;
+    info->encrypted = (e->flags & FLAG_ENCRYPTED) != 0;
+    info->is_dir = g_str_has_suffix(e->name, "/");
+    /* DOS date and time: local time, 2-second precision */
+    guint year = 1980 + (e->dos_date >> 9);
+    guint month = (e->dos_date >> 5) & 0x0F;
+    guint day = e->dos_date & 0x1F;
+    guint hour = e->dos_time >> 11;
+    guint minute = (e->dos_time >> 5) & 0x3F;
+    info->mtime = -1;
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && hour < 24 && minute < 60) {
+        GDateTime* dt = g_date_time_new_utc((gint)year, (gint)month, (gint)day, (gint)hour,
+                                            (gint)minute, (e->dos_time & 0x1F) * 2.0);
+        if (dt != NULL) {
+            info->mtime = g_date_time_to_unix(dt);
+            g_date_time_unref(dt);
+        }
+    }
+    return TRUE;
 }
 
 gboolean zip_reader_has(const ZipReader* zip, const gchar* name) {

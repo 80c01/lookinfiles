@@ -190,6 +190,7 @@ struct PreviewTable {
     GPtrArray* rows;      /* gchar** of n_cols cells */
     gboolean row_numbers;
     guint max_cell;
+    gboolean* right;      /* n_cols: right-aligned columns */
 };
 
 PreviewTable* preview_table_new(guint n_cols) {
@@ -197,6 +198,7 @@ PreviewTable* preview_table_new(guint n_cols) {
     t->n_cols = MAX(n_cols, 1);
     t->rows = g_ptr_array_new_with_free_func((GDestroyNotify)g_strfreev);
     t->max_cell = 40;
+    t->right = g_new0(gboolean, t->n_cols);
     return t;
 }
 
@@ -206,6 +208,7 @@ void preview_table_free(PreviewTable* table) {
     }
     g_strfreev(table->header);
     g_ptr_array_free(table->rows, TRUE);
+    g_free(table->right);
     g_free(table);
 }
 
@@ -250,6 +253,12 @@ void preview_table_add_row(PreviewTable* table, const gchar* const* cells, guint
 
 void preview_table_set_row_numbers(PreviewTable* table, gboolean row_numbers) {
     table->row_numbers = row_numbers;
+}
+
+void preview_table_set_right_aligned(PreviewTable* table, guint col) {
+    if (col < table->n_cols) {
+        table->right[col] = TRUE;
+    }
 }
 
 void preview_table_set_max_cell_width(PreviewTable* table, guint width) {
@@ -358,7 +367,7 @@ static void append_table_line(PreviewDoc* doc, const PreviewTable* t, gchar** ce
     for (guint c = 0; c < t->n_cols; c++) {
         gchar* text = fit_cell(cells[c], t->max_cell);
         guint pad = widths[c] - preview_text_width(text);
-        gboolean right = numeric[c] && !header;
+        gboolean right = (numeric[c] || t->right[c]) && !header;
         if (right) {
             append_spaces(doc, pad);
         }

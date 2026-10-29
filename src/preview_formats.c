@@ -4,6 +4,7 @@
 #include <glib/gstdio.h>
 #include <string.h>
 
+#include "archive.h"
 #include "csv.h"
 #include "diff_view.h"
 #include "docx.h"
@@ -159,6 +160,186 @@ static PreviewDoc* build_diff(const PreviewInput* in, GCancellable* cancellable,
     return doc;
 }
 
+/* --- Archives --- */
+
+#define ARCHIVE_MAX_ENTRIES 1000
+
+/* "2026-10-29 10:00" (utc: the time is already local, as in ZIP files) */
+static gchar* format_time(gint64 t, gboolean utc) {
+    if (t < 0) {
+        return g_strdup("");
+    }
+    GDateTime* dt = utc ? g_date_time_new_from_unix_utc(t) : g_date_time_new_from_unix_local(t);
+    if (dt == NULL) {
+        return g_strdup("");
+    }
+    gchar* s = g_date_time_format(dt, "%Y-%m-%d %H:%M");
+    g_date_time_unref(dt);
+    return s;
+}
+
+static gchar* format_percent_saved(guint64 packed, guint64 size) {
+    if (size == 0 || packed > size) {
+        return NULL;
+    }
+    return g_strdup_printf("%.0f %% saved", 100.0 * (gdouble)(size - packed) / (gdouble)size);
+}
+
+/* Decompressed content of a single compressed file: its own structured
+ * preview (CSV, JSON, log...), its text, or a hex dump */
+static void append_inner_content(PreviewDoc* doc, GBytes* bytes, const gchar* inner_name,
+                                 const gchar* outer_name, gint64 inner_size) {
+    gsize len = 0;
+    const guchar* data = g_bytes_get_data(bytes, &len);
+    preview_doc_section(doc, "Content");
+    /* "notes.csv.gz" names "notes.csv" when the header has no name */
+    gchar* name = inner_name != NULL ? g_strdup(inner_name) : g_strdup(outer_name);
+    gchar* dot = strrchr(name, '.');
+    if (inner_name == NULL && dot != NULL && dot != name) {
+        *dot = '\0';
+    }
+    gboolean text = len > 0 && file_content_is_text(data, MIN(len, (gsize)FILE_SNIFF_BYTES));
+    FileKind kind = file_kind_detect(name, data, MIN(len, (gsize)FILE_SNIFF_BYTES));
+    if (text && kind != FILE_KIND_ARCHIVE && file_kind_is_text(kind) && preview_format_has_builder(kind)) {
+        gchar* utf8 = g_utf8_make_valid((const gchar*)data, (gssize)len);
+        PreviewInput in = { .path = NULL, .name = name, .size = inner_size, .kind = kind,
+                            .head = (const guchar*)utf8, .head_len = MIN(strlen(utf8), (gsize)FILE_SNIFF_BYTES),
+                            .text = utf8, .text_len = strlen(utf8),
+                            .text_truncated = inner_size > (gint64)len };
+        g_autoptr(PreviewDoc) inner = preview_format_build(&in, NULL, NULL);
+        g_free(utf8);
+        if (inner != NULL && inner->format == PREVIEW_DOC_TEXT) {
+            append_doc(doc, inner);
+            g_free(name);
+            return;
+        }
+    }
+    g_free(name);
+    if (len == 0) {
+        preview_doc_note(doc, "(empty)");
+    } else if (text) {
+        preview_doc_append_len(doc, (const gchar*)data, (gssize)len);
+        preview_doc_append_len(doc, "\n", 1);
+    } else {
+        g_autoptr(PreviewDoc) hex = preview_format_hex_dump("", FILE_KIND_BINARY, -1, data,
+                                                            MIN(len, (gsize)4096), NULL);
+        /* Skip the header line of the hex dump */
+        const gchar* body = strstr(hex->text->str, "\n\n");
+        preview_doc_append_len(doc, body != NULL ? body + 2 : hex->text->str, -1);
+    }
+}
+
+static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    GError* err = NULL;
+    g_autoptr(ArchiveListing) l = archive_list(in->path, ARCHIVE_MAX_ENTRIES, cancellable, &err);
+    const gchar* format = l != NULL ? l->format : archive_format_name(in->head, in->head_len);
+    if (l == NULL && (format == NULL || !g_error_matches(err, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED))) {
+        g_propagate_error(error, err);
+        return NULL;
+    }
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* size = preview_format_size(in->size);
+    gchar* subtitle = g_strdup_printf("%s · %s", format, size);
+    gchar* title_format = g_strdup(subtitle);
+    title_format[0] = g_ascii_toupper(title_format[0]);
+    preview_doc_title(doc, in->name, title_format);
+    g_free(title_format);
+    g_free(subtitle);
+    g_free(size);
+    if (l == NULL) {
+        g_clear_error(&err);
+        preview_doc_note(doc, "Listing the content of this format is not supported yet.");
+        return doc;
+    }
+
+    if (l->single) {
+        preview_doc_field(doc, "Original name", l->inner_name);
+        if (l->inner_size >= 0) {
+            gchar* inner = g_format_size((guint64)l->inner_size);
+            preview_doc_field(doc, "Original size", inner);
+            g_free(inner);
+            gchar* saved = in->size >= 0 ? format_percent_saved((guint64)in->size, (guint64)l->inner_size) : NULL;
+            preview_doc_field(doc, "Compression", saved);
+            g_free(saved);
+        }
+        append_inner_content(doc, l->inner_head, l->inner_name, in->name, l->inner_size);
+        return doc;
+    }
+
+    gchar* files = format_count(l->n_files);
+    gchar* contents = g_strdup_printf("%s%s %s, %u %s", l->incomplete ? "at least " : "", files,
+                                      l->n_files == 1 ? "file" : "files", l->n_dirs,
+                                      l->n_dirs == 1 ? "folder" : "folders");
+    preview_doc_field(doc, "Contents", contents);
+    g_free(contents);
+    g_free(files);
+    gchar* unpacked = g_format_size(l->total_size);
+    preview_doc_field(doc, "Unpacked", unpacked);
+    g_free(unpacked);
+    gboolean zip = g_str_has_prefix(l->format, "ZIP");
+    if (zip) {
+        gchar* saved = format_percent_saved(l->total_packed, l->total_size);
+        preview_doc_field(doc, "Compression", saved);
+        g_free(saved);
+    }
+    if (l->manifest != NULL) {
+        gchar** lines = g_strsplit(l->manifest, "\n", -1);
+        for (gint i = 0; lines[i] != NULL; i++) {
+            gchar* colon = strstr(lines[i], ": ");
+            if (colon != NULL && (g_str_has_prefix(lines[i], "Main-Class") ||
+                                  g_str_has_prefix(lines[i], "Implementation-") ||
+                                  g_str_has_prefix(lines[i], "Bundle-Name") ||
+                                  g_str_has_prefix(lines[i], "Bundle-Version") ||
+                                  g_str_has_prefix(lines[i], "Automatic-Module-Name"))) {
+                *colon = '\0';
+                preview_doc_field(doc, lines[i], colon + 2);
+            }
+        }
+        g_strfreev(lines);
+    }
+    preview_doc_append_len(doc, "\n", 1);
+
+    guint n_cols = zip ? 4 : 3;
+    g_autoptr(PreviewTable) table = preview_table_new(n_cols);
+    const gchar* zip_header[] = { "Name", "Size", "Packed", "Modified" };
+    const gchar* header[] = { "Name", "Size", "Modified" };
+    preview_table_set_header(table, zip ? zip_header : header);
+    preview_table_set_right_aligned(table, 1);
+    if (zip) {
+        preview_table_set_right_aligned(table, 2);
+    }
+    preview_table_set_max_cell_width(table, 80);
+    for (guint i = 0; i < l->entries->len; i++) {
+        const ArchiveEntry* e = &g_array_index(l->entries, ArchiveEntry, i);
+        gchar* name = e->link != NULL ? g_strdup_printf("%s → %s", e->path, e->link)
+                      : e->encrypted ? g_strdup_printf("%s (encrypted)", e->path)
+                      : g_strdup(e->path);
+        gboolean dir = (e->type == ARCHIVE_ENTRY_DIR);
+        gchar* esize = dir ? g_strdup("") : g_format_size(e->size);
+        gchar* packed = (dir || e->packed < 0) ? g_strdup("") : g_format_size((guint64)e->packed);
+        gchar* mtime = format_time(e->mtime, zip);
+        const gchar* zip_row[] = { name, esize, packed, mtime };
+        const gchar* row[] = { name, esize, mtime };
+        preview_table_add_row(table, zip ? zip_row : row, n_cols);
+        g_free(mtime);
+        g_free(packed);
+        g_free(esize);
+        g_free(name);
+    }
+    preview_doc_add_table(doc, table);
+    if (l->n_entries > l->entries->len || l->incomplete) {
+        gchar* shown = format_count(l->entries->len);
+        gchar* note = g_strdup_printf("\nShowing the first %s entries%s.", shown,
+                                      l->incomplete ? " (the archive was not read to the end)" : "");
+        preview_doc_note(doc, note);
+        g_free(note);
+        g_free(shown);
+    }
+    return doc;
+}
+
 /* --- ELF executables, libraries, objects --- */
 
 static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -233,6 +414,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_json;
     case FILE_KIND_DIFF:
         return build_diff;
+    case FILE_KIND_ARCHIVE:
+        return build_archive;
     default:
         return NULL;
     }

@@ -93,6 +93,20 @@ static void test_diff(void) {
     g_assert_nonnull(strstr(doc->text->str, "2 files changed, +4 −2"));
 }
 
+static void test_archives(void) {
+    g_autoptr(PreviewDoc) zip = build_fixture("sample.zip", FILE_KIND_ARCHIVE);
+    g_assert_true(g_str_has_prefix(zip->text->str, "sample.zip\nZIP archive · "));
+    g_assert_nonnull(strstr(zip->text->str, "4 files, 3 folders"));
+    g_assert_nonnull(strstr(zip->text->str, "demo/src/main.c"));
+    g_assert_nonnull(strstr(zip->text->str, "2026-10-29 10:30"));
+    g_autoptr(PreviewDoc) tgz = build_fixture("sample.tar.gz", FILE_KIND_ARCHIVE);
+    g_assert_nonnull(strstr(tgz->text->str, "Gzip-compressed tar archive"));
+    g_assert_nonnull(strstr(tgz->text->str, "demo/latest → README.md"));
+    g_autoptr(PreviewDoc) gz = build_fixture("server.log.gz", FILE_KIND_ARCHIVE);
+    g_assert_nonnull(strstr(gz->text->str, "Original name  server.log"));
+    g_assert_nonnull(strstr(gz->text->str, "INFO request 49 served"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -118,5 +132,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/csv", test_csv);
     g_test_add_func("/preview_formats/json", test_json);
     g_test_add_func("/preview_formats/diff", test_diff);
+    g_test_add_func("/preview_formats/archives", test_archives);
     return g_test_run();
 }

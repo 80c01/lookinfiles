@@ -14,6 +14,9 @@
     cp "$ROOT/tests/fixtures/preview/sample.csv" 04-orders.csv
     cp "$ROOT/tests/fixtures/preview/sample.json" 05-package.json
     cp "$ROOT/tests/fixtures/preview/fix-parser.patch" 06-fix-parser.patch
+    cp "$ROOT/tests/fixtures/preview/sample.zip" 07-sources.zip
+    cp "$ROOT/tests/fixtures/preview/sample.tar.gz" 08-sources.tar.gz
+    cp "$ROOT/tests/fixtures/preview/server.log.gz" 09-server.log.gz
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -27,4 +30,7 @@ format_scenario() {
     key m
     key j;              shot fmt_json_pretty
     key j;              shot fmt_diff
+    key j;              shot fmt_zip
+    key j;              shot fmt_tar_gz
+    key j;              shot fmt_gzip_single
 }
