@@ -41,8 +41,12 @@ void editor_close_page(AppData* app, gint page);
 void editor_close_current(AppData* app);
 void editor_save_all_buffers(AppData* app);
 gboolean editor_save_current(AppData* app);
-void editor_detach_tabs(AppData* app);
-void editor_attach_tabs(AppData* app, GList* editors);
+/* Take the workspace's tabs out of the window. Returns the content of the
+ * dedicated editor panel (notebooks and splits, with their tabs; a reference
+ * the caller owns, NULL if empty) to give back to editor_attach_tabs(). */
+GtkWidget* editor_detach_tabs(AppData* app);
+/* Show a workspace's tabs; panel (from editor_detach_tabs(), may be NULL) is consumed */
+void editor_attach_tabs(AppData* app, GList* editors, GtkWidget* panel);
 void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first);
 gboolean editor_confirm_discard_workspace(AppData* app, GList* editors);
 void editor_toggle_dedicated(AppData* app);

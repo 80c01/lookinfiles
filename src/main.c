@@ -627,6 +627,7 @@ int main(int argc, char** argv) {
     for (gint i = 0; i < app->num_workspaces; i++) {
         editor_free_tabs(app, app->workspaces[i].editors, (i == app->current_ws));
         app->workspaces[i].editors = NULL;
+        g_clear_object(&app->workspaces[i].editor_panel);
         g_free(app->workspaces[i].remote_id);
         app->workspaces[i].remote_id = NULL;
     }

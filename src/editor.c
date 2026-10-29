@@ -1324,8 +1324,8 @@ void editor_close_current(AppData* app) {
     }
 }
 
-void editor_detach_tabs(AppData* app) {
-    if (app == NULL) return;
+GtkWidget* editor_detach_tabs(AppData* app) {
+    if (app == NULL) return NULL;
     if (app->notebook != NULL) {
         gint n = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->notebook));
         gint keep = (app->git_tab_box != NULL) ? 2 : 1;
@@ -1334,32 +1334,51 @@ void editor_detach_tabs(AppData* app) {
             n--;
         }
     }
+    /* The dedicated panel keeps its notebooks, splits and tabs: the whole
+     * content leaves the panel and belongs to the workspace until it returns */
+    GtkWidget* panel = NULL;
     if (app->editor_box != NULL) {
-        GPtrArray* arr = editor_get_all_notebooks(app);
-        for (guint i = 0; i < arr->len; i++) {
-            GtkNotebook* nb = GTK_NOTEBOOK(g_ptr_array_index(arr, i));
-            gint n = gtk_notebook_get_n_pages(nb);
-            while (n > 0) {
-                gtk_notebook_remove_page(nb, n - 1);
-                n--;
+        GtkWidget* child = gtk_widget_get_first_child(app->editor_box);
+        if (child != NULL) {
+            GtkRoot* root = gtk_widget_get_root(child);
+            GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+            if (focus != NULL && gtk_widget_is_ancestor(focus, child)) {
+                gtk_root_set_focus(root, NULL);
             }
+            panel = g_object_ref(child);
+            gtk_box_remove(GTK_BOX(app->editor_box), child);
         }
-        g_ptr_array_unref(arr);
     }
+    app->editor_notebook = NULL;
     app->editors = NULL;
+    return panel;
 }
 
-void editor_attach_tabs(AppData* app, GList* editors) {
-    if (app == NULL) return;
+void editor_attach_tabs(AppData* app, GList* editors, GtkWidget* panel) {
+    if (app == NULL) {
+        if (panel != NULL) g_object_unref(panel);
+        return;
+    }
+    if (panel != NULL && app->editor_box != NULL) {
+        gtk_box_append(GTK_BOX(app->editor_box), panel);
+    }
+    if (panel != NULL) {
+        g_object_unref(panel);
+    }
+    GPtrArray* arr = editor_get_all_notebooks(app);
+    app->editor_notebook = (arr->len > 0) ? GTK_WIDGET(g_ptr_array_index(arr, 0)) : NULL;
+    g_ptr_array_unref(arr);
+
     for (GList* l = editors; l != NULL; l = l->next) {
         EditorTab* tab = (EditorTab*)l->data;
-        if (tab != NULL && tab->container != NULL && tab->tab_label != NULL) {
-            GtkNotebook* nb = editor_tab_notebook(app, tab);
-            if (nb != NULL) {
-                gtk_notebook_append_page(nb, tab->container, tab->tab_label);
-                editor_page_set_draggable(nb, tab->container);
-                editor_minimap_update_visibility(tab);
-            }
+        if (tab != NULL && tab->container != NULL && tab->tab_label != NULL &&
+            tab->nb == app->notebook && app->notebook != NULL) {
+            GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+            gtk_notebook_append_page(nb, tab->container, tab->tab_label);
+            editor_page_set_draggable(nb, tab->container);
+        }
+        if (tab != NULL) {
+            editor_minimap_update_visibility(tab);
         }
     }
     app->editors = editors;
@@ -1381,7 +1400,8 @@ gboolean editor_confirm_discard_workspace(AppData* app, GList* editors) {
 
 void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
     if (detach_first && app != NULL) {
-        editor_detach_tabs(app);
+        GtkWidget* panel = editor_detach_tabs(app);
+        if (panel != NULL) g_object_unref(panel);
     }
     for (GList* l = editors; l != NULL; l = l->next) {
         EditorTab* tab = (EditorTab*)l->data;

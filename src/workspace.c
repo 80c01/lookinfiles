@@ -343,7 +343,12 @@ void workspace_switch(AppData* app, gint idx) {
     if (ws_changed) {
         audio_preview_stop(app);
         video_preview_stop(app);
-        editor_detach_tabs(app);
+        GtkWidget* panel = editor_detach_tabs(app);
+        if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+            app->workspaces[app->current_ws].editor_panel = panel;
+        } else if (panel != NULL) {
+            g_object_unref(panel);
+        }
     }
 
     app->current_ws = idx;
@@ -355,7 +360,9 @@ void workspace_switch(AppData* app, gint idx) {
     app->editor_frac = ws->editor_frac;
 
     if (ws_changed) {
-        editor_attach_tabs(app, ws->editors);
+        GtkWidget* panel = ws->editor_panel;
+        ws->editor_panel = NULL;
+        editor_attach_tabs(app, ws->editors, panel);
     }
 
 #ifdef HAVE_VTE
@@ -421,12 +428,8 @@ void workspace_switch(AppData* app, gint idx) {
         app->render_raw = ws->render_raw;
         app->file_dirty = TRUE;
     }
-    if (app->editor_dedicated && app->editor_notebook != NULL) {
-        gint n_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->editor_notebook));
-        gint target_page = (ws->notebook_page >= 0 && ws->notebook_page < n_pages)
-                               ? ws->notebook_page
-                               : 0;
-        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->editor_notebook), target_page);
+    if (app->editor_dedicated) {
+        /* The dedicated panel's notebooks kept their own current tab */
         if (app->notebook != NULL) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         }
@@ -562,8 +565,10 @@ void workspace_remove(AppData* app, gint idx) {
     }
 
     if (idx == app->current_ws) {
-        editor_detach_tabs(app);
-        app->editors = NULL;
+        GtkWidget* panel = editor_detach_tabs(app);
+        if (panel != NULL) {
+            g_object_unref(panel);
+        }
     } else {
         workspace_save_current(app);
     }
@@ -581,6 +586,7 @@ void workspace_remove(AppData* app, gint idx) {
 
     editor_free_tabs(app, rm->editors, FALSE);
     rm->editors = NULL;
+    g_clear_object(&rm->editor_panel);
 
     for (gint i = idx; i < app->num_workspaces - 1; i++) {
         app->workspaces[i] = app->workspaces[i + 1];

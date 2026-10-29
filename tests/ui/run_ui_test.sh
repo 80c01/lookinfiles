@@ -220,6 +220,16 @@ xdotool mousemove 347 50 click 1;   shot tab_docked   # plan.org to the editor p
 xdotool mousemove 80 282 click 1; key Return;  shot second_editor_tab   # README.md, beside plan.org
 drag 900 50 1000 700 tab_drag_bottom_edge;     shot tab_dropped_split_down
 drag 860 359 1100 50 tab_drag_tab_bar;        shot tab_dropped_back
+# Each workspace keeps its own editor splits: workspace 3 moves tabs between
+# notebooks without touching (or closing) the splits of workspace 1
+key ctrl+alt+Down;      shot ws1_editor_split
+key alt+plus;           shot ws3_added
+key G Return ctrl+alt+d; shot ws3_editor_dedicated
+key alt+Left alt+Left k Return ctrl+alt+Down; shot ws3_editor_split
+key ctrl+alt+Up;        shot ws3_editor_unsplit
+key alt+1;              shot ws1_editor_split_kept
+key alt+3;              shot ws3_editors_kept
+key alt+minus;          shot ws3_removed
 key ctrl+t; sleep 1;    shot terminal
 key ctrl+q
 

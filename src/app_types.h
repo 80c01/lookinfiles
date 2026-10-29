@@ -118,6 +118,7 @@ typedef struct {
     gint sort_mode;
     gint notebook_page;
     GList* editors;
+    GtkWidget* editor_panel; /* dedicated editor panel content while another workspace is shown (owned ref) */
     gboolean render_raw;
     gchar* remote_id;    /* ID of remote machine if workspace is connected to remote */
 #ifdef HAVE_VTE
