@@ -292,7 +292,7 @@ Check these before adding or changing an action, a tooltip or a dialog:
 
 ## Known status
 
-Recent features are stable (v1.17 in README.md): modular architecture in `src/`,
+Recent features are stable (release history in CHANGELOG.md): modular architecture in `src/`,
 hanging indent and aligned paragraph wrapping for HTML & Markdown lists,
 enhanced HTML renderer (base64 images, code blocks, task lists, description lists, details/summary, table captions, math/arrow/Greek entities, metadata banner),
 custom panel backgrounds (#191A1B file panel, #121314 preview, #1f2021 terminal),
