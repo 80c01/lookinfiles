@@ -90,11 +90,31 @@ void dir_summary_sort(DirSummary* s, DirSummarySort sort) {
 }
 
 gchar* dir_summary_kinds_line(const DirSummary* s) {
-    guint docs = s->kinds[FILE_KIND_MARKDOWN] + s->kinds[FILE_KIND_HTML] +
-                 s->kinds[FILE_KIND_ORG] + s->kinds[FILE_KIND_PDF] +
-                 s->kinds[FILE_KIND_DOCUMENT];
-    guint other = s->kinds[FILE_KIND_TEXT] + s->kinds[FILE_KIND_BINARY] +
-                  s->kinds[FILE_KIND_EXECUTABLE];
+    guint docs = 0;
+    guint other = 0;
+    for (gint k = 0; k <= FILE_KIND_LAST; k++) {
+        switch ((FileKind)k) {
+        case FILE_KIND_MARKDOWN:
+        case FILE_KIND_HTML:
+        case FILE_KIND_ORG:
+        case FILE_KIND_PDF:
+        case FILE_KIND_DOCUMENT:
+        case FILE_KIND_SPREADSHEET:
+        case FILE_KIND_PRESENTATION:
+        case FILE_KIND_EBOOK:
+        case FILE_KIND_NOTEBOOK:
+        case FILE_KIND_RTF:
+            docs += s->kinds[k];
+            break;
+        case FILE_KIND_IMAGE:
+        case FILE_KIND_VIDEO:
+        case FILE_KIND_AUDIO:
+            break;
+        default:
+            other += s->kinds[k];
+            break;
+        }
+    }
     const struct { guint n; const gchar* one; const gchar* many; } parts[] = {
         { docs, "document", "documents" },
         { s->kinds[FILE_KIND_IMAGE], "image", "images" },

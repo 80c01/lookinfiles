@@ -220,7 +220,8 @@ key alt+x; xdotool type --delay 60 "org-mode"; key Return
 # Org files open in Emacs mode: C-x C-s with Ctrl held down
 xdotool keydown ctrl key --delay 120 x s keyup ctrl
                         shot org_editor_saved
-key alt+Left;           shot explorer_focused_again
+xdotool mousemove 90 122 click 1     # plan.org row: focus the explorer (M-Left is an Emacs key)
+                        shot explorer_focused_again
 key j;                  shot detect_image_without_extension
 key j;                  shot detect_script_without_extension
 key j;                  shot elf_summary
@@ -344,10 +345,44 @@ else
     [ $rc -eq 0 ] || { echo "ui-test: FAIL - application exited with code $rc"; status=1; }
 fi
 
+# --- Second session: one preview per file format (fixtures from tests/ui/formats.sh)
+FMT="$FIX/formats"
+mkdir -p "$FMT"
+. "$ROOT/tests/ui/formats.sh"
+cd "$FMT" || exit 1
+"$BIN" -s 1280x800 "$FMT" > "$OUT/app_formats.log" 2>&1 &
+APP=$!
+WIN=
+i=0
+while [ -z "$WIN" ] && [ $i -lt 50 ]; do
+    sleep 0.2
+    WIN=$(xdotool search --pid $APP 2>/dev/null | tail -1)
+    i=$((i + 1))
+done
+if [ -z "$WIN" ]; then
+    echo "ui-test: FAIL - format session window did not open"
+    status=1
+else
+    sleep 2
+    xdotool windowfocus --sync "$WIN" 2>/dev/null
+    format_scenario
+    key ctrl+q
+    i=0
+    while kill -0 $APP 2>/dev/null && [ $i -lt 30 ]; do sleep 0.1; i=$((i + 1)); done
+    if kill -0 $APP 2>/dev/null; then
+        echo "ui-test: FAIL - Ctrl+Q did not quit the format session"
+        status=1
+    else
+        wait $APP || { echo "ui-test: FAIL - format session exited with an error"; status=1; }
+        APP=
+    fi
+fi
+
 # --- GTK warnings and criticals (the missing session bus is expected headless)
-grep -E 'WARNING|CRITICAL' "$OUT/app.log" | grep -v 'Unable to acquire session bus' > "$OUT/warnings.log"
+cat "$OUT/app.log" "$OUT/app_formats.log" 2>/dev/null | grep -E 'WARNING|CRITICAL' |
+    grep -v 'Unable to acquire session bus' > "$OUT/warnings.log"
 if [ -s "$OUT/warnings.log" ]; then
-    echo "ui-test: FAIL - GTK warnings/criticals (see $OUT/app.log):"
+    echo "ui-test: FAIL - GTK warnings/criticals (see $OUT/app.log, $OUT/app_formats.log):"
     sed 's/^/  /' "$OUT/warnings.log"
     status=1
 fi

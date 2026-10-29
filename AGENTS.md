@@ -73,6 +73,16 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.
+- `preview_doc` — `PreviewDoc`, a preview built in a worker thread: styled
+  text (spans of `PreviewStyle`, inline images) or HTML / Markdown source for
+  the existing renderers; summary card helpers (`preview_doc_title()`,
+  `preview_doc_field()`, `preview_doc_section()`) and text tables
+  (`PreviewTable`: aligned columns, numeric columns right-aligned, zebra rows).
+- `preview_formats` — registry of structured previews, one builder per
+  `FileKind` (`preview_format_build()` from a `PreviewInput`), the hex dump
+  (`preview_format_hex_dump()`), and `preview_format_build_file()` for tests
+  and tools. A new format = a parser module in this layer + one case in
+  `builder_for()` + fixtures (see TASK.md, "Definition of done").
 - `org_time` — Org timestamps (`<2026-10-29 Thu 10:00 +1w>`): parse, format,
   field arithmetic, repeaters, the date prompt (`org_timestamp_read()`).
 - `org_doc` — Org document commands on an array of lines + cursor (`OrgPos`):
@@ -161,6 +171,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   emptied notebook only then. Knows nothing of `EditorTab`; `editor` attaches
   it with `editor_notebook_enable_tab_drop()`.
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
+- `preview_doc_view` — shows a `PreviewDoc` in the preview text view (style
+  tags in the Dark+ palette, images, HTML / Markdown renderers).
 - `minimap` — scaled file overview; draws only the part around what is shown
   (`MinimapCache`), geometry from `minimap_geometry`.
 
@@ -175,7 +187,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
 - `viewer` — right-pane preview dispatch (`on_selection_changed()`,
   `load_file_content()`, `viewer_reload_preview()`), image/text/dir previews,
-  viewer keys.
+  viewer keys. Its worker detects the kind, reads text kinds, and runs the
+  `preview_formats` builder (falling back to plain text or the hex dump);
+  never add a format-specific branch to the viewer.
 - `dir_preview` — directory preview (`dir_preview_show()`): one level read
   in a worker thread after a short delay (never recursive), header and table.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.

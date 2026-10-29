@@ -152,18 +152,9 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
     if (g_strcmp0(type, "note") == 0 || g_strcmp0(type, "buffer") == 0) {
         return g_strdup("Note");
     }
-    switch (kind) {
-    case FILE_KIND_MARKDOWN: return g_strdup("Markdown");
-    case FILE_KIND_ORG:      return g_strdup("Org-mode");
-    case FILE_KIND_HTML:     return g_strdup("HTML");
-    case FILE_KIND_PDF:      return g_strdup("PDF");
-    case FILE_KIND_IMAGE:    return g_strdup("Image");
-    case FILE_KIND_VIDEO:    return g_strdup("Video");
-    case FILE_KIND_AUDIO:    return g_strdup("Audio");
-    case FILE_KIND_BINARY:   return g_strdup("Binary");
-    case FILE_KIND_EXECUTABLE: return g_strdup("ELF");
-    case FILE_KIND_DOCUMENT: return g_strdup("Word");
-    case FILE_KIND_TEXT:     break;
+    const gchar* label = file_kind_label(kind);
+    if (label != NULL) {
+        return g_strdup(label);
     }
 #ifdef HAVE_GSV
     /* The content type of the previewed text also finds scripts without extension (#!) */

@@ -33,10 +33,28 @@ typedef enum {
     FILE_KIND_AUDIO,
     FILE_KIND_BINARY,    /* binary content of an unknown format */
     FILE_KIND_EXECUTABLE,/* ELF: executable, shared library, object file, core dump */
-    FILE_KIND_DOCUMENT   /* word processor document (.docx); keep last (FILE_KIND_LAST) */
+    FILE_KIND_DOCUMENT,  /* word processor document (.docx, .odt) */
+    FILE_KIND_SPREADSHEET, /* .xlsx, .ods */
+    FILE_KIND_PRESENTATION,/* .pptx, .odp */
+    FILE_KIND_EBOOK,     /* .epub */
+    FILE_KIND_ARCHIVE,   /* zip, tar, gzip, bzip2, xz, zstd, 7z, rar, ar */
+    FILE_KIND_FONT,      /* TrueType, OpenType, WOFF */
+    FILE_KIND_DATABASE,  /* SQLite */
+    FILE_KIND_CERTIFICATE, /* PEM (text) or DER (binary) certificates and keys */
+    /* Text formats with a structured preview */
+    FILE_KIND_CSV,       /* comma / tab separated values */
+    FILE_KIND_JSON,      /* JSON, JSON Lines */
+    FILE_KIND_NOTEBOOK,  /* Jupyter notebook (.ipynb) */
+    FILE_KIND_DIFF,      /* unified diff, git patch */
+    FILE_KIND_LOG,       /* log file */
+    FILE_KIND_CALENDAR,  /* iCalendar (.ics) */
+    FILE_KIND_CONTACT,   /* vCard (.vcf) */
+    FILE_KIND_DESKTOP,   /* freedesktop .desktop entry */
+    FILE_KIND_MANPAGE,   /* roff manual page */
+    FILE_KIND_RTF        /* Rich Text Format; keep last (FILE_KIND_LAST) */
 } FileKind;
 
-#define FILE_KIND_LAST FILE_KIND_DOCUMENT
+#define FILE_KIND_LAST FILE_KIND_RTF
 
 /* Number of leading bytes file_kind_detect() needs */
 #define FILE_SNIFF_BYTES 4096
@@ -56,6 +74,13 @@ gboolean file_kind_is_media(FileKind kind);
 
 /* TRUE if the preview pane has a rich renderer for this kind */
 gboolean file_kind_is_renderable(FileKind kind);
+
+/* TRUE for kinds whose content is text (shown as text by the raw view) */
+gboolean file_kind_is_text(FileKind kind);
+
+/* Short name of a kind for the status bar ("CSV", "Archive"...); NULL for
+ * plain text (the syntax language names it) */
+const gchar* file_kind_label(FileKind kind);
 
 /* VS Code-like emoji icon for a tree entry */
 const gchar* file_icon(const gchar* name, gboolean is_dir);

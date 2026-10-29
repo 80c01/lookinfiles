@@ -20,12 +20,10 @@
 #include "orgmode.h"
 #include "diff_gutter.h"
 #include "dir_preview.h"
-#include "hex_dump.h"
-#include "elf_info.h"
-#include "docx.h"
+#include "preview_doc_view.h"
+#include "preview_formats.h"
 
 /* Text shown from a Word document before it is cut (images not counted) */
-#define DOCUMENT_PREVIEW_TEXT (256 * 1024)
 
 
 void viewer_scroll_lines(AppData* app, gint lines) {
@@ -432,11 +430,7 @@ typedef struct {
     gsize raw_len;
     gboolean preview;
     gchar* utf8_text;
-    gchar* hex_dump;       /* binary files: dump of the first PREVIEW_BYTES */
-    gsize hex_len;         /* bytes in hex_dump */
-    gchar* elf_summary;    /* ELF files: header details (elf_info_format()) */
-    gchar* elf_type;       /* "Shared library", "Relocatable object"... */
-    gchar* doc_error;      /* Word documents that could not be converted: why */
+    PreviewDoc* doc;       /* structured preview (preview_formats) or hex dump */
     gchar* error_msg;
 } TextPreviewTaskData;
 
@@ -449,16 +443,15 @@ static void text_preview_task_data_free(gpointer data) {
     g_free(td->full);
     g_free(td->content_type);
     g_free(td->utf8_text);
-    g_free(td->hex_dump);
-    g_free(td->elf_summary);
-    g_free(td->elf_type);
-    g_free(td->doc_error);
+    preview_doc_free(td->doc);
     g_free(td->error_msg);
     g_free(td);
 }
 
-/* Worker thread: read the first bytes, detect the file kind, then read the
- * text (up to PREVIEW_BYTES for large files) unless a media viewer takes it. */
+/* Worker thread: read the first bytes and detect the file kind. Media
+ * viewers read their files themselves; text kinds read the text (up to
+ * PREVIEW_BYTES for large files); kinds with a structured preview build it
+ * (preview_formats), and binary content without one gets a hex dump. */
 static void text_preview_thread_func(GTask* task, gpointer source_object,
                                      gpointer task_data, GCancellable* cancellable) {
     (void)source_object;
@@ -486,67 +479,68 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     gchar* contents = g_malloc(cap + 1);
     gsize len = fread(contents, 1, FILE_SNIFF_BYTES, fp);
     td->kind = file_kind_detect(td->name, (const guchar*)contents, len);
+    gboolean structured = !td->render_raw && preview_format_has_builder(td->kind);
+    PreviewInput input = {
+        .path = td->full, .name = td->name, .size = td->fsize, .kind = td->kind,
+        .head = (const guchar*)contents, .head_len = MIN(len, FILE_SNIFF_BYTES),
+    };
 
-    gboolean want_hex = (td->kind == FILE_KIND_BINARY);
-    if (td->kind == FILE_KIND_EXECUTABLE) {
-        /* Header details; the raw view (m) and damaged files get the hex dump */
-        if (!td->render_raw) {
-            ElfInfo* info = elf_info_read_file(td->full, NULL);
-            if (info != NULL) {
-                td->elf_summary = elf_info_format(info);
-                td->elf_type = g_strdup(elf_info_type_name(info));
-                elf_info_free(info);
-            }
-        }
-        want_hex = (td->elf_summary == NULL);
-    } else if (td->kind == FILE_KIND_DOCUMENT) {
-        /* Converted to HTML; the raw view (m) and unreadable files get the hex dump */
-        if (!td->render_raw) {
-            GError* err = NULL;
-            td->utf8_text = docx_file_to_html(td->full, DOCUMENT_PREVIEW_TEXT, &err);
-            if (td->utf8_text == NULL) {
-                td->doc_error = g_strdup(err->message);
-                g_error_free(err);
-            }
-        }
-        want_hex = (td->utf8_text == NULL);
+    if (file_kind_is_media(td->kind)) {
+        fclose(fp);
+        g_free(contents);
+        g_task_return_boolean(task, TRUE);
+        return;
     }
 
-    if (want_hex) {
-        /* Hex dump of the first PREVIEW_BYTES only, whatever the file size */
-        if (cap < PREVIEW_BYTES) {
-            contents = g_realloc(contents, PREVIEW_BYTES + 1);
+    if (!file_kind_is_text(td->kind)) {
+        /* Binary content: its structured preview, else a hex dump of the
+         * first PREVIEW_BYTES only, whatever the file size */
+        GError* err = NULL;
+        if (structured) {
+            td->doc = preview_format_build(&input, cancellable, &err);
         }
-        while (len < PREVIEW_BYTES && !g_cancellable_is_cancelled(cancellable)) {
-            gsize n = fread(contents + len, 1, PREVIEW_BYTES - len, fp);
-            if (n == 0) {
-                break;
+        if (td->doc == NULL) {
+            if (cap < PREVIEW_BYTES) {
+                contents = g_realloc(contents, PREVIEW_BYTES + 1);
             }
-            len += n;
-        }
-        td->hex_len = len;
-        td->hex_dump = hex_dump_format((const guchar*)contents, len, 0);
-    } else if (!file_kind_is_media(td->kind) && td->kind != FILE_KIND_EXECUTABLE &&
-               td->kind != FILE_KIND_DOCUMENT) {
-        /* Rest of the text: to the end (the file may have grown), capped for large files */
-        while (!g_cancellable_is_cancelled(cancellable)) {
-            if (len == cap) {
-                if (td->preview) {
+            while (len < PREVIEW_BYTES && !g_cancellable_is_cancelled(cancellable)) {
+                gsize n = fread(contents + len, 1, PREVIEW_BYTES - len, fp);
+                if (n == 0) {
                     break;
                 }
-                cap *= 2;
-                contents = g_realloc(contents, cap + 1);
+                len += n;
             }
-            gsize n = fread(contents + len, 1, cap - len, fp);
-            if (n == 0) {
+            td->doc = preview_format_hex_dump(td->name, td->kind, td->fsize, (const guchar*)contents,
+                                              len, err != NULL ? err->message : NULL);
+        }
+        g_clear_error(&err);
+        fclose(fp);
+        g_free(contents);
+        if (g_task_return_error_if_cancelled(task)) {
+            return;
+        }
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
+
+    /* Rest of the text: to the end (the file may have grown), capped for large files */
+    while (!g_cancellable_is_cancelled(cancellable)) {
+        if (len == cap) {
+            if (td->preview) {
                 break;
             }
-            len += n;
+            cap *= 2;
+            contents = g_realloc(contents, cap + 1);
         }
-        contents[len] = '\0';
-        td->content_type = g_content_type_guess(td->name, (const guchar*)contents,
-                                                MIN(len, FILE_SNIFF_BYTES), NULL);
+        gsize n = fread(contents + len, 1, cap - len, fp);
+        if (n == 0) {
+            break;
+        }
+        len += n;
     }
+    contents[len] = '\0';
+    td->content_type = g_content_type_guess(td->name, (const guchar*)contents,
+                                            MIN(len, FILE_SNIFF_BYTES), NULL);
     fclose(fp);
 
     if (g_task_return_error_if_cancelled(task)) {
@@ -554,19 +548,28 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
-    if (file_kind_is_media(td->kind) || td->kind == FILE_KIND_BINARY ||
-        td->kind == FILE_KIND_EXECUTABLE || td->kind == FILE_KIND_DOCUMENT) {
+    td->raw_len = len;
+    if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
+        td->utf8_text = g_utf8_make_valid(contents, (gssize)len);
         g_free(contents);
     } else {
-        td->raw_len = len;
-        if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
-            td->utf8_text = g_utf8_make_valid(contents, (gssize)len);
-            g_free(contents);
-        } else {
-            td->utf8_text = contents;
-        }
+        td->utf8_text = contents;
     }
 
+    if (structured) {
+        /* Shown as plain text when the structured preview fails (invalid JSON...) */
+        gsize text_len = strlen(td->utf8_text);
+        input.head = (const guchar*)td->utf8_text;
+        input.head_len = MIN(text_len, FILE_SNIFF_BYTES);
+        input.text = td->utf8_text;
+        input.text_len = text_len;
+        input.text_truncated = td->preview;
+        td->doc = preview_format_build(&input, cancellable, NULL);
+    }
+
+    if (g_task_return_error_if_cancelled(task)) {
+        return;
+    }
     g_task_return_boolean(task, TRUE);
 }
 
@@ -591,110 +594,6 @@ static void show_media_preview(AppData* app, FileKind kind, const gchar* name, c
         render_pdf_preview(app, name, full);
     } else {
         render_image_preview(app, name, full);
-    }
-}
-
-/* ELF file: name and type, then the header details with dimmed field labels
- * and bold section titles (main thread) */
-static void show_elf_summary(AppData* app, const TextPreviewTaskData* td) {
-    GtkTextBuffer* buffer = app->buffer;
-    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buffer);
-    if (gtk_text_tag_table_lookup(table, "elf_label") == NULL) {
-        gtk_text_buffer_create_tag(buffer, "elf_title", "weight", 700, "scale", 1.2, NULL);
-        gtk_text_buffer_create_tag(buffer, "elf_label", "foreground", "#8b8b8b", NULL);
-        gtk_text_buffer_create_tag(buffer, "elf_section", "weight", 700, NULL);
-    }
-
-    gchar* size_str = g_format_size((guint64)td->fsize);
-    gchar* title = g_strdup_printf("%s\n", td->name);
-    gchar* subtitle = g_strdup_printf("%s · %s\n\n", td->elf_type, size_str);
-    gtk_text_buffer_set_text(buffer, "", 0);
-    GtkTextIter end;
-    gtk_text_buffer_get_end_iter(buffer, &end);
-    gtk_text_buffer_insert_with_tags_by_name(buffer, &end, title, -1, "elf_title", NULL);
-    gtk_text_buffer_insert_with_tags_by_name(buffer, &end, subtitle, -1, "elf_label", NULL);
-    gint first_line = gtk_text_iter_get_line(&end);
-    gtk_text_buffer_insert(buffer, &end, td->elf_summary, -1);
-    g_free(subtitle);
-    g_free(title);
-    g_free(size_str);
-
-    /* Field lines: label padded to ELF_INFO_LABEL_WIDTH; list items start with
-     * two spaces; any other non-empty line is a section title */
-    gint n_lines = gtk_text_buffer_get_line_count(buffer);
-    for (gint line = first_line; line < n_lines; line++) {
-        GtkTextIter a, b;
-        gtk_text_buffer_get_iter_at_line(buffer, &a, line);
-        b = a;
-        if (!gtk_text_iter_ends_line(&b)) {
-            gtk_text_iter_forward_to_line_end(&b);
-        }
-        gchar* text = gtk_text_iter_get_text(&a, &b);
-        gsize len = strlen(text);
-        if (len > ELF_INFO_LABEL_WIDTH && text[0] != ' ' &&
-            text[ELF_INFO_LABEL_WIDTH - 1] == ' ' && text[ELF_INFO_LABEL_WIDTH] == ' ') {
-            gtk_text_buffer_get_iter_at_line_offset(buffer, &b, line, ELF_INFO_LABEL_WIDTH);
-            gtk_text_buffer_apply_tag_by_name(buffer, "elf_label", &a, &b);
-        } else if (len > 0 && text[0] != ' ') {
-            gtk_text_buffer_apply_tag_by_name(buffer, "elf_section", &a, &b);
-        }
-        g_free(text);
-    }
-}
-
-/* Binary file: header, then the hex dump with dimmed offsets and a coloured
- * ASCII column (main thread) */
-static void show_hex_dump(AppData* app, const TextPreviewTaskData* td) {
-    GtkTextBuffer* buffer = app->buffer;
-    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buffer);
-    if (gtk_text_tag_table_lookup(table, "hex_offset") == NULL) {
-        gtk_text_buffer_create_tag(buffer, "hex_offset", "foreground", "#6e7681", NULL);
-        gtk_text_buffer_create_tag(buffer, "hex_ascii", "foreground", "#ce9178", NULL);
-        gtk_text_buffer_create_tag(buffer, "hex_header", "foreground", "#8b8b8b", NULL);
-    }
-
-    gchar* size_str = g_format_size((guint64)td->fsize);
-    GString* header = g_string_new(NULL);
-    g_string_append_printf(header, "[ %s ] %s (%s)\n",
-                           td->kind == FILE_KIND_EXECUTABLE ? "ELF file"
-                           : td->kind == FILE_KIND_DOCUMENT ? "Word document" : "Binary file",
-                           td->name, size_str);
-    if (td->doc_error != NULL) {
-        g_string_append_printf(header, "Cannot show the document: %s.\n", td->doc_error);
-    }
-    if ((gint64)td->hex_len < td->fsize) {
-        gchar* shown = g_format_size((guint64)td->hex_len);
-        g_string_append_printf(header, "Showing the first %s.\n", shown);
-        g_free(shown);
-    }
-    g_string_append_c(header, '\n');
-    g_free(size_str);
-
-    gtk_text_buffer_set_text(buffer, header->str, (gint)header->len);
-    GtkTextIter start, end;
-    gtk_text_buffer_get_bounds(buffer, &start, &end);
-    gtk_text_buffer_apply_tag_by_name(buffer, "hex_header", &start, &end);
-    gint first_line = gtk_text_iter_get_line(&end);
-    g_string_free(header, TRUE);
-
-    if (td->hex_dump == NULL || td->hex_dump[0] == '\0') {
-        return;
-    }
-    gtk_text_buffer_insert(buffer, &end, td->hex_dump, -1);
-
-    /* Every dump line has the same layout (see hex_dump.h) */
-    gint n_lines = gtk_text_buffer_get_line_count(buffer);
-    for (gint line = first_line; line < n_lines; line++) {
-        GtkTextIter a, b;
-        if (!gtk_text_buffer_get_iter_at_line_offset(buffer, &a, line, 0) ||
-            gtk_text_iter_get_chars_in_line(&a) < HEX_DUMP_LINE_WIDTH) {
-            continue;
-        }
-        gtk_text_buffer_get_iter_at_line_offset(buffer, &b, line, HEX_DUMP_OFFSET_WIDTH);
-        gtk_text_buffer_apply_tag_by_name(buffer, "hex_offset", &a, &b);
-        gtk_text_buffer_get_iter_at_line_offset(buffer, &a, line, HEX_DUMP_ASCII_COLUMN);
-        gtk_text_buffer_get_iter_at_line_offset(buffer, &b, line, HEX_DUMP_LINE_WIDTH);
-        gtk_text_buffer_apply_tag_by_name(buffer, "hex_ascii", &a, &b);
     }
 }
 
@@ -741,20 +640,26 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
     }
 
+    app->viewer_match = -1;
+
+    if (td->error_msg != NULL) {
+        apply_viewer_language(app, NULL, NULL);
+        gtk_text_buffer_set_text(app->buffer, td->error_msg, -1);
+        return;
+    }
+
+    if (td->doc != NULL) {
+        apply_viewer_language(app, NULL, NULL);
+        preview_doc_show(GTK_TEXT_VIEW(app->text_view), td->doc, td->full, td->name, td->fsize);
+        return;
+    }
+
     gboolean is_md = (td->kind == FILE_KIND_MARKDOWN) && !td->render_raw;
-    gboolean is_html = ((td->kind == FILE_KIND_HTML) && !td->render_raw) ||
-                       (td->kind == FILE_KIND_DOCUMENT && td->utf8_text != NULL);
-    gboolean is_hex = (td->kind == FILE_KIND_BINARY || td->kind == FILE_KIND_EXECUTABLE ||
-                       td->hex_dump != NULL);
+    gboolean is_html = (td->kind == FILE_KIND_HTML) && !td->render_raw;
     gboolean is_org = (td->kind == FILE_KIND_ORG) && !td->render_raw;
     gboolean is_rendered = is_md || is_html || is_org;
     gboolean code = FALSE;
-    if (is_hex) {
-        apply_viewer_language(app, NULL, NULL);
-        set_view_monospace(app->text_view, TRUE);
-        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-        set_view_text_padding(app->text_view);
-    } else if (is_rendered) {
+    if (is_rendered) {
         apply_viewer_language(app, NULL, NULL);
         set_view_monospace(app->text_view, FALSE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
@@ -766,22 +671,6 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         set_view_monospace(app->text_view, code);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
         set_view_text_padding(app->text_view);
-    }
-
-    app->viewer_match = -1;
-
-    if (td->error_msg != NULL) {
-        gtk_text_buffer_set_text(app->buffer, td->error_msg, -1);
-        return;
-    }
-
-    if (td->elf_summary != NULL) {
-        show_elf_summary(app, td);
-        return;
-    }
-    if (is_hex) {
-        show_hex_dump(app, td);
-        return;
     }
 
     if (td->utf8_text != NULL) {

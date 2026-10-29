@@ -2,6 +2,7 @@
 #include "file_types.h"
 
 #include <glib/gstdio.h>
+#include <string.h>
 
 static void test_extension(void) {
     g_assert_cmpstr(file_extension("notes.md"), ==, "md");
@@ -125,8 +126,8 @@ static void test_detect_binary(void) {
     g_assert_cmpint(DETECT("report", "PK\x03\x04\x14\0\x06\0\x08\0\0\0[Content_Types].xml...PK\x03\x04word/_rels"),
                     ==, FILE_KIND_DOCUMENT);
     g_assert_cmpint(DETECT("report", "PK\x03\x04\x14\0\0\0\x08\0\0\0word/document.xml"), ==, FILE_KIND_DOCUMENT);
-    g_assert_cmpint(DETECT("archive.zip", "PK\x03\x04\x14\0\0\0\x08\0\0\0src/main.c"), ==, FILE_KIND_BINARY);
-    g_assert_cmpint(DETECT("notes.odt", "PK\x03\x04\x14\0\0\0\0\0mimetype"), ==, FILE_KIND_BINARY);
+    g_assert_cmpint(DETECT("archive.zip", "PK\x03\x04\x14\0\0\0\x08\0\0\0src/main.c"), ==, FILE_KIND_ARCHIVE);
+    g_assert_cmpint(DETECT("notes.odt", "PK\x03\x04\x14\0\0\0\0\0mimetype"), ==, FILE_KIND_DOCUMENT);
     /* A .docx that is not a ZIP is shown for what it is */
     g_assert_cmpint(DETECT("fake.docx", "just text"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("fake.docx", "\x01\x02\0\x03"), ==, FILE_KIND_BINARY);
@@ -134,6 +135,90 @@ static void test_detect_binary(void) {
     /* Empty files are text, whatever their name */
     g_assert_cmpint(file_kind_detect("empty.png", NULL, 0), ==, FILE_KIND_TEXT);
     g_assert_cmpint(file_kind_detect("empty.md", (const guchar*)"", 0), ==, FILE_KIND_MARKDOWN);
+}
+
+static void test_detect_containers(void) {
+    /* ZIP-based formats: by name, then by the parts named in the first entries */
+    g_assert_cmpint(DETECT("book", "PK\x03\x04\x0a\0\0\0mimetypeapplication/epub+zip"), ==, FILE_KIND_EBOOK);
+    g_assert_cmpint(DETECT("doc", "PK\x03\x04\0\0mimetypeapplication/vnd.oasis.opendocument.text"),
+                    ==, FILE_KIND_DOCUMENT);
+    g_assert_cmpint(DETECT("calc", "PK\x03\x04\0\0mimetypeapplication/vnd.oasis.opendocument.spreadsheet"),
+                    ==, FILE_KIND_SPREADSHEET);
+    g_assert_cmpint(DETECT("show", "PK\x03\x04\0\0mimetypeapplication/vnd.oasis.opendocument.presentation"),
+                    ==, FILE_KIND_PRESENTATION);
+    g_assert_cmpint(DETECT("sheet", "PK\x03\x04\0\0[Content_Types].xml..PK\x03\x04xl/workbook.xml"),
+                    ==, FILE_KIND_SPREADSHEET);
+    g_assert_cmpint(DETECT("deck", "PK\x03\x04\0\0[Content_Types].xml..PK\x03\x04ppt/slides"),
+                    ==, FILE_KIND_PRESENTATION);
+    g_assert_cmpint(DETECT("data.xlsx", "PK\x03\x04\0\0"), ==, FILE_KIND_SPREADSHEET);
+    g_assert_cmpint(DETECT("lib.jar", "PK\x03\x04\0\0META-INF/"), ==, FILE_KIND_ARCHIVE);
+    g_assert_cmpint(DETECT("empty.zip", "PK\x05\x06\0\0\0\0"), ==, FILE_KIND_ARCHIVE);
+    /* Other archives and compressed files */
+    g_assert_cmpint(DETECT("x", "\x1F\x8B\x08\0\0\0"), ==, FILE_KIND_ARCHIVE);
+    g_assert_cmpint(DETECT("ls.1.gz", "\x1F\x8B\x08\0\0\0"), ==, FILE_KIND_MANPAGE);
+    g_assert_cmpint(DETECT("x", "BZh91AY&SY"), ==, FILE_KIND_ARCHIVE);
+    g_assert_cmpint(DETECT("x", "\xFD" "7zXZ\0\0"), ==, FILE_KIND_ARCHIVE);
+    g_assert_cmpint(DETECT("x", "\x28\xB5\x2F\xFD\0"), ==, FILE_KIND_ARCHIVE);
+    g_assert_cmpint(DETECT("x", "7z\xBC\xAF\x27\x1C\0"), ==, FILE_KIND_ARCHIVE);
+    g_assert_cmpint(DETECT("x", "Rar!\x1A\x07\x01\0"), ==, FILE_KIND_ARCHIVE);
+    g_assert_cmpint(DETECT("libfoo.a", "!<arch>\nfoo.o/"), ==, FILE_KIND_ARCHIVE);
+    guchar tar[512] = "hello.txt";
+    memcpy(tar + 257, "ustar", 5);
+    g_assert_cmpint(file_kind_detect("t", tar, sizeof(tar)), ==, FILE_KIND_ARCHIVE);
+    /* Databases, fonts, certificates */
+    g_assert_cmpint(DETECT("app.db", "SQLite format 3\0\x10\0"), ==, FILE_KIND_DATABASE);
+    g_assert_cmpint(DETECT("cache.db", "\x01\x02\0\x03"), ==, FILE_KIND_BINARY);
+    g_assert_cmpint(DETECT("font", "OTTO\0\x0a"), ==, FILE_KIND_FONT);
+    g_assert_cmpint(DETECT("font", "wOF2\0\x01"), ==, FILE_KIND_FONT);
+    g_assert_cmpint(DETECT("Sans.ttf", "\0\x01\0\0\0\x10"), ==, FILE_KIND_FONT);
+    g_assert_cmpint(DETECT("blob", "\0\x01\0\0\0\x10"), ==, FILE_KIND_BINARY);
+    g_assert_cmpint(DETECT("ca.der", "\x30\x82\x03\x0a\x30\x82"), ==, FILE_KIND_CERTIFICATE);
+    g_assert_cmpint(DETECT("server", "-----BEGIN CERTIFICATE-----\nMIID"), ==, FILE_KIND_CERTIFICATE);
+}
+
+static void test_detect_text_formats(void) {
+    g_assert_cmpint(DETECT("data.csv", "a,b\n1,2\n"), ==, FILE_KIND_CSV);
+    g_assert_cmpint(DETECT("data.json", "{\"a\": 1}"), ==, FILE_KIND_JSON);
+    g_assert_cmpint(DETECT("config", "{\n  \"a\": 1}"), ==, FILE_KIND_JSON);
+    g_assert_cmpint(DETECT("list", "[{\"a\": 1}]"), ==, FILE_KIND_JSON);
+    g_assert_cmpint(DETECT("settings.ini", "[section]\nkey=1"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(DETECT("main.js", "{\"a\": 1}"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(DETECT("nb.ipynb", "{\n \"cells\": ["), ==, FILE_KIND_NOTEBOOK);
+    g_assert_cmpint(DETECT("fix.patch", "From: a\n"), ==, FILE_KIND_DIFF);
+    g_assert_cmpint(DETECT("changes", "diff --git a/x b/x\n"), ==, FILE_KIND_DIFF);
+    g_assert_cmpint(DETECT("changes.txt", "--- a/x\n+++ b/x\n@@ -1 +1 @@\n"), ==, FILE_KIND_DIFF);
+    g_assert_cmpint(DETECT("notes.txt", "--- a list\nitem\n"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(DETECT("0001-fix.txt",
+                           "From 0123456789abcdef0123456789abcdef01234567 Mon Sep 17 00:00:00 2001\n"),
+                    ==, FILE_KIND_DIFF);
+    g_assert_cmpint(DETECT("app.log", "2026-01-01 INFO start\n"), ==, FILE_KIND_LOG);
+    g_assert_cmpint(DETECT("app.log.1", "2026-01-01 INFO start\n"), ==, FILE_KIND_LOG);
+    g_assert_cmpint(DETECT("meeting", "BEGIN:VCALENDAR\r\nVERSION:2.0"), ==, FILE_KIND_CALENDAR);
+    g_assert_cmpint(DETECT("bob", "begin:vcard\r\n"), ==, FILE_KIND_CONTACT);
+    g_assert_cmpint(DETECT("app.desktop", "[Desktop Entry]\nName=App"), ==, FILE_KIND_DESKTOP);
+    g_assert_cmpint(DETECT("ls.1", ".TH LS 1\n"), ==, FILE_KIND_MANPAGE);
+    g_assert_cmpint(DETECT("ls.1", ".\\\" comment\n.TH LS 1\n"), ==, FILE_KIND_MANPAGE);
+    g_assert_cmpint(DETECT("page", ".TH X 1\n"), ==, FILE_KIND_MANPAGE);
+    g_assert_cmpint(DETECT("version.1", "1.2.3\n"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(DETECT("doc.rtf", "{\\rtf1\\ansi"), ==, FILE_KIND_RTF);
+    g_assert_cmpint(DETECT("key.pem", "-----BEGIN PRIVATE KEY-----\n"), ==, FILE_KIND_CERTIFICATE);
+    g_assert_cmpint(DETECT("key.pem", "not a pem\n"), ==, FILE_KIND_TEXT);
+    /* An empty file keeps a text kind from its name only */
+    g_assert_cmpint(file_kind_detect("e.csv", NULL, 0), ==, FILE_KIND_CSV);
+    g_assert_cmpint(file_kind_detect("e.zip", NULL, 0), ==, FILE_KIND_TEXT);
+}
+
+static void test_kind_labels(void) {
+    g_assert_null(file_kind_label(FILE_KIND_TEXT));
+    g_assert_cmpstr(file_kind_label(FILE_KIND_CSV), ==, "CSV");
+    g_assert_cmpstr(file_kind_label(FILE_KIND_ARCHIVE), ==, "Archive");
+    for (gint k = 1; k <= FILE_KIND_LAST; k++) {
+        g_assert_nonnull(file_kind_label((FileKind)k));
+    }
+    g_assert_true(file_kind_is_text(FILE_KIND_JSON));
+    g_assert_false(file_kind_is_text(FILE_KIND_ARCHIVE));
+    g_assert_true(file_kind_is_renderable(FILE_KIND_CSV));
+    g_assert_false(file_kind_is_renderable(FILE_KIND_BINARY));
 }
 
 static void test_kind_of_path(void) {
@@ -177,6 +262,9 @@ int main(int argc, char** argv) {
     g_test_add_func("/file_types/detect_magic", test_detect_magic);
     g_test_add_func("/file_types/detect_text", test_detect_text);
     g_test_add_func("/file_types/detect_binary", test_detect_binary);
+    g_test_add_func("/file_types/detect_containers", test_detect_containers);
+    g_test_add_func("/file_types/detect_text_formats", test_detect_text_formats);
+    g_test_add_func("/file_types/kind_labels", test_kind_labels);
     g_test_add_func("/file_types/kind_of_path", test_kind_of_path);
     g_test_add_func("/file_types/kind_predicates", test_kind_predicates);
     return g_test_run();

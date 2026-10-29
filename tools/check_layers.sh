@@ -23,6 +23,8 @@ hex_dump:
 elf_info:
 zip_reader:
 docx:zip_reader
+preview_doc:
+preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump
 org_time:
 org_doc:org_time
 org_table:org_doc
@@ -41,6 +43,7 @@ theme:
 markdown:app_types,image_utils
 html:app_types,image_utils
 minimap:app_types,diff_gutter,line_diff,minimap_geometry
+preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events
