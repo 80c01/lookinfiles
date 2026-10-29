@@ -23,6 +23,7 @@
 #include "pptx.h"
 #include "rtf.h"
 #include "spreadsheet.h"
+#include "sqlite_view.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
                                         GError** error);
@@ -511,6 +512,26 @@ static PreviewDoc* build_log(const PreviewInput* in, GCancellable* cancellable, 
     return doc;
 }
 
+/* --- SQLite databases --- */
+
+static PreviewDoc* build_database(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    if (!sqlite_view_append(body, in->path, in->head, in->head_len, error)) {
+        return NULL;
+    }
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* size = preview_format_size(in->size);
+    gchar* subtitle = g_strdup_printf("SQLite database · %s", size);
+    preview_doc_title(doc, in->name, subtitle);
+    g_free(subtitle);
+    g_free(size);
+    append_doc(doc, body);
+    return doc;
+}
+
 /* --- Fonts --- */
 
 static const gchar* const FONT_SAMPLE = "The quick brown fox jumps over the lazy dog";
@@ -913,6 +934,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_ebook;
     case FILE_KIND_RTF:
         return build_rtf;
+    case FILE_KIND_DATABASE:
+        return build_database;
     default:
         return NULL;
     }

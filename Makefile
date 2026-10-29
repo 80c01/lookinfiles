@@ -32,6 +32,20 @@ CFLAGS += -DHAVE_POPPLER `$(PKG_CONFIG) --cflags poppler-glib`
 LDFLAGS += `$(PKG_CONFIG) --libs poppler-glib`
 endif
 
+# Optional SQLite database preview: enabled automatically when sqlite3 is installed
+HAVE_SQLITE != $(PKG_CONFIG) --exists sqlite3 2>/dev/null && echo yes || echo no
+ifeq ($(HAVE_SQLITE),yes)
+CFLAGS += -DHAVE_SQLITE `$(PKG_CONFIG) --cflags sqlite3`
+LDFLAGS += `$(PKG_CONFIG) --libs sqlite3`
+endif
+
+# Optional archive formats (7z, RAR, xz, bzip2, zstd, ISO...): enabled automatically with libarchive
+HAVE_LIBARCHIVE != $(PKG_CONFIG) --exists libarchive 2>/dev/null && echo yes || echo no
+ifeq ($(HAVE_LIBARCHIVE),yes)
+CFLAGS += -DHAVE_LIBARCHIVE `$(PKG_CONFIG) --cflags libarchive`
+LDFLAGS += `$(PKG_CONFIG) --libs libarchive`
+endif
+
 TARGET = lookin
 BUILD_DIR = build
 
@@ -70,7 +84,7 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_epub test_rtf test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex
+TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_epub test_rtf test_sqlite_view test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o
@@ -103,9 +117,10 @@ TEST_DEPS_test_odf = $(BUILD_DIR)/odf.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_
 TEST_DEPS_test_pptx = $(BUILD_DIR)/pptx.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_reader.o
 TEST_DEPS_test_epub = $(BUILD_DIR)/epub.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_reader.o
 TEST_DEPS_test_rtf = $(BUILD_DIR)/rtf.o
+TEST_DEPS_test_sqlite_view = $(BUILD_DIR)/sqlite_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_csv = $(BUILD_DIR)/csv.o $(BUILD_DIR)/preview_doc.o
 # Modules of the structured previews (preview_formats and the parsers it calls)
-PREVIEW_MODULES = preview_formats preview_doc file_types hex_dump elf_info zip_reader docx csv json_view diff_view archive cert_view card_view log_view font_info man_view notebook zip_xml spreadsheet odf pptx epub rtf
+PREVIEW_MODULES = preview_formats preview_doc file_types hex_dump elf_info zip_reader docx csv json_view diff_view archive cert_view card_view log_view font_info man_view notebook zip_xml spreadsheet odf pptx epub rtf sqlite_view
 PREVIEW_FORMAT_OBJS = $(PREVIEW_MODULES:%=$(BUILD_DIR)/%.o)
 TEST_DEPS_test_preview_formats = $(PREVIEW_FORMAT_OBJS)
 TEST_DEPS_test_org_time = $(BUILD_DIR)/org_time.o

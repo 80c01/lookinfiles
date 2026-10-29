@@ -181,6 +181,11 @@ static void test_office(void) {
     g_assert_nonnull(strstr(odp->text->str, "<h3>Previews</h3>"));
 }
 
+static void test_database(void) {
+    g_autoptr(PreviewDoc) doc = build_fixture("library.sqlite", FILE_KIND_DATABASE);
+    g_assert_true(g_str_has_prefix(doc->text->str, "library.sqlite\nSQLite database · "));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -214,5 +219,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/notebook", test_notebook);
     g_test_add_func("/preview_formats/spreadsheets", test_spreadsheets);
     g_test_add_func("/preview_formats/office", test_office);
+    g_test_add_func("/preview_formats/database", test_database);
     return g_test_run();
 }
