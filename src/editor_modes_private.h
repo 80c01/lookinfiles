@@ -46,8 +46,21 @@ typedef enum {
     EMACS_MINI_QUERY_REPLACE_REP,
     EMACS_MINI_WRITE_FILE,
     EMACS_MINI_GOTO_LINE,
-    EMACS_MINI_MX
+    EMACS_MINI_MX,
+    EMACS_MINI_CALLBACK /* emacs_prompt(): the answer goes to a callback */
 } EmacsMiniMode;
+
+/* Org-mode prefix keys (editor_org.c) */
+typedef enum {
+    ORG_PREFIX_NONE = 0,
+    ORG_PREFIX_C_C,      /* C-c */
+    ORG_PREFIX_C_C_C_X,  /* C-c C-x */
+    ORG_PREFIX_SPARSE,   /* C-c / */
+    ORG_PREFIX_PRIORITY  /* C-c , */
+} OrgPrefix;
+
+/* Answer of emacs_prompt(): text typed, data given to emacs_prompt() */
+typedef void (*EmacsPromptFunc)(EditorTab* tab, const gchar* text, gchar* data);
 
 /* Mode-specific data for one EditorTab */
 typedef struct {
@@ -89,6 +102,12 @@ typedef struct {
     gchar* emacs_qr_rep;
     gint emacs_qr_count;
     GtkTextMark* emacs_search_start_mark;
+    EmacsPromptFunc emacs_prompt_cb; /* EMACS_MINI_CALLBACK */
+    gchar* emacs_prompt_data;        /* owned, given to the callback */
+
+    /* --- Org-mode (editor_org.c) --- */
+    OrgPrefix org_prefix;
+    gboolean org_revealing;          /* re-entrancy guard of the cursor reveal */
 
     /* --- Vim UI & State --- */
     GtkWidget* vim_box;
@@ -129,9 +148,19 @@ gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
                         guint keyval, GdkModifierType state);
 
 /* Org-mode editing (editor_org.c), active in tabs showing an Org file */
+gboolean orgmode_editor_is_org(EditorTab* tab);
+void orgmode_editor_init(EditorTab* tab);
 gboolean orgmode_editor_handle_key(AppData* app, EditorTab* tab, guint keyval, GdkModifierType state);
-gboolean orgmode_editor_toggle_heading_fold(EditorTab* tab);
-void orgmode_editor_cycle_global_fold(EditorTab* tab);
+/* TRUE when tab needs keyval although the window binds it (pending prefix,
+ * Alt+Left/Right on a heading, item or table) */
+gboolean orgmode_editor_claims_key(EditorTab* tab, guint keyval, GdkModifierType state);
+/* Run an Org command by its Emacs name ("org-todo", "org-cycle"...) */
+gboolean orgmode_editor_command(EditorTab* tab, const gchar* name);
+
+/* Ask a question in the Emacs minibuffer; cb gets the answer (data is
+ * owned by the prompt and freed after the callback or on cancel) */
+void emacs_prompt(EditorTab* tab, const gchar* prompt, const gchar* initial,
+                  EmacsPromptFunc cb, gchar* data);
 
 /* Mode state transitions used when switching modes */
 void emacs_close_minibuffer(EditorTab* tab);

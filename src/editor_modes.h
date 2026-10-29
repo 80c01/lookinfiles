@@ -18,6 +18,9 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode);
 gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
                                  guint keycode, GdkModifierType state);
 void editor_modes_update_status(EditorTab* tab);
+/* TRUE when the focused editor tab needs keyval although the window binds it
+ * (Org-mode prefix keys, Alt+Left/Right on Org structure) */
+gboolean editor_modes_claims_key(AppData* app, guint keyval, GdkModifierType state);
 gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path);
 
 /* Refresh the tab title: file icon, name, and a bullet when unsaved */

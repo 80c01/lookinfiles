@@ -73,6 +73,13 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.
+- `org_time` — Org timestamps (`<2026-10-29 Thu 10:00 +1w>`): parse, format,
+  field arithmetic, repeaters, the date prompt (`org_timestamp_read()`).
+- `org_doc` — Org document commands on an array of lines + cursor (`OrgPos`):
+  headings, subtrees, TODO keywords (`#+TODO`), priorities, tags, planning,
+  clock, lists, checkboxes, statistics cookies, links, `<s` templates. The
+  editor (`editor_org`) and the preview (`orgmode`) both edit through it.
+- `org_table` — Org tables: align, cell navigation, row / column editing.
 - `line_diff` — Myers line diff of a text against its previous version,
   reduced to per-line gutter marks (`LineDiffMark`: added, modified, deleted).
 - `pane_geometry` — `pane_find_neighbor()`: the pane next to another one in a
@@ -159,7 +166,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `editor_modes` — per-tab mode state, shared editing operations (align,
   format, case, indent, find/replace, goto line), tab label, status, key dispatch.
   Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim`, and
-  `editor_org` (Org editing keys in tabs). `editor_modes_private.h` (state
+  `editor_org` (Emacs Org-mode keys in tabs: maps keys to `org_doc` /
+  `org_table` commands, applies only the changed lines as one undo step,
+  folding with an invisible tag). `editor_modes_private.h` (state
   struct, mode enums) is internal to these 5 files.
   Mode bar labels whose text can grow (file names, messages) must use
   `editor_bar_label_shrinkable()`, and filler text `editor_bar_clip()`: a bar

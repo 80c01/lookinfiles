@@ -8,6 +8,7 @@
 #include "terminal.h"
 #include "notes.h"
 #include "editor.h"
+#include "editor_modes.h"
 
 
 static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, gpointer user_data) {
@@ -120,6 +121,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
             g_main_loop_quit(app->main_loop);
         }
         return TRUE;
+    }
+
+    /* Keys the focused editor tab needs (Org-mode C-c prefixes, Alt+arrows) */
+    if (editor_modes_claims_key(app, keyval, state)) {
+        return FALSE;
     }
 
     /* Alt+Left / Alt+Right: panel focus cycling */

@@ -218,8 +218,8 @@ The same list is available inside the application with `?`.
 | `m` | Rendered / raw view (Markdown, HTML, Org), fitted / 1:1 (images), pages / text (PDF), player / file details (video, audio), document / hex dump (Word) |
 | `Space` / `p` | Play / pause the video or audio |
 | `Tab` / `Shift+Tab` | Org-mode: fold the heading / cycle the global visibility |
-| `t` | Org-mode: cycle the TODO keyword (`TODO` → `NEXT` → `DONE` → none) |
-| `Space` / `Enter` | Org-mode: toggle the checkbox `[ ]` ↔ `[X]` |
+| `t` | Org-mode: cycle the TODO keyword (the file's `#+TODO:` keywords; `TODO` → `DONE` → none by default) |
+| `Space` / `Enter` | Org-mode: toggle the checkbox `[ ]` ↔ `[X]` (parents and `[n/m]` cookies follow) |
 | Click | Org-mode: fold a heading, cycle a TODO, toggle a checkbox, open a link |
 | `Esc` | Close the search bar |
 
@@ -236,16 +236,59 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 | `Ctrl+Alt+Arrows` / `Ctrl+Alt+H J K L` | Move / split the tab left, down, up or right |
 | `Ctrl+R` / `F2` | Rename the current text buffer |
 | `Ctrl+Alt+N` | Show or hide the line numbers of the tab (also `:set number` / `:set nonumber` in Vim mode, `M-x display-line-numbers-mode` in Emacs mode) |
-| `Tab` / `Shift+Tab` | Org-mode: fold the heading / cycle the global visibility |
-| `Shift+Right` / `Shift+Left` | Org-mode: cycle the TODO keyword |
-| `Alt+Enter` | Org-mode: new heading at the current level |
-| `Ctrl+Enter` / `Ctrl+Space` | Org-mode: toggle the checkbox and update the progress cookie |
 | Right click on the tab | Change the mode, show line numbers, move, split or close the tab |
 | Drag the tab | Onto a tab bar: move it there; near an editor edge: split that side |
 
 The editor mode is changed from the status bar button, the tab menu,
 `:set mode=vim|emacs|notepad` in Vim mode or `M-x vim-mode` / `emacs-mode` /
 `notepad-mode` in Emacs mode.
+
+#### Org-mode editing
+
+Tabs showing an `.org` file open in the **Org-mode** editor mode (Emacs keys)
+and get the Emacs Org-mode commands. Keys without `C-c` also work in the
+Notepad and Vim modes; commands that ask a question (dates, tags, links) use
+the Emacs minibuffer. `M-x org-…` runs the commands by their Emacs name
+(`org-todo`, `org-schedule`, `org-clock-in`, `org-show-todo-tree`…).
+`Alt` is Emacs' Meta (`M-`), `C-c C-t` means `Ctrl+C` then `Ctrl+T`.
+
+| Key | Action |
+|---|---|
+| `Tab` | On a heading: cycle folded → children → subtree; on a drawer or `#+begin_` block: fold it; in a table: next cell; after `<s`, `<e`, `<q`, `<c`, `<v`, `<x`, `<C`, `<l`, `<h`, `<a`: insert a block; on an empty list item: change its level |
+| `Shift+Tab` | Global visibility: overview → contents → show all; in a table: previous cell |
+| `Alt+Enter` / `Alt+Shift+Enter` | New heading (TODO heading), or new list item (with a checkbox) in a list |
+| `Ctrl+Enter` / `Ctrl+Shift+Enter` | New heading (TODO heading) after the current subtree |
+| `Alt+Left` / `Alt+Right` | Promote / demote the heading; outdent / indent the list item; move the table column |
+| `Alt+Shift+Left` / `Alt+Shift+Right` | Promote / demote the subtree; delete / insert a table column |
+| `Alt+Up` / `Alt+Down` | Move the subtree or list item past its sibling; move the table row |
+| `Alt+Shift+Up` / `Alt+Shift+Down` | Delete / insert a table row |
+| `Shift+Left` / `Shift+Right` | Cycle the TODO keyword; cycle the list bullet; on a timestamp: previous / next day |
+| `Shift+Up` / `Shift+Down` | Raise / lower the priority `[#A]`; on a timestamp: change the year, month, day, hour, minute or repeater under the cursor |
+| `Enter` | In a table: next row (added when needed) |
+| `Ctrl+Space` | On a checkbox item: toggle it |
+| `C-c C-c` | Toggle the checkbox, align the table, update the cookie, or set the heading's tags |
+| `C-c C-t` | Cycle the TODO keyword from anywhere in the entry |
+| `C-c ,` then `A`–`Z` / `Space` | Set / remove the priority |
+| `C-c q` | Set the heading's tags (aligned on column 77) |
+| `C-c C-s` / `C-c C-d` | Schedule / set a deadline (`today`, `+3`, `+2w`, `mon`, `2026-11-02 10:00`, `none`) |
+| `C-c .` / `C-c !` | Insert (or replace) an active `<…>` / inactive `[…]` timestamp |
+| `C-c C-x C-i` / `C-c C-x C-o` | Clock in (into a `:LOGBOOK:` drawer) / clock out |
+| `C-c C-l` / `C-c C-o` | Insert a link / open the link under the cursor (URL, `file:`, `*Heading`, `#custom-id`, `<<target>>`) |
+| `C-c C-n` / `C-c C-p` | Next / previous visible heading |
+| `C-c C-f` / `C-c C-b` / `C-c C-u` | Next / previous heading at the same level / parent heading |
+| `C-c -` | Turn the line into a list item, cycle the bullet, or add a table rule |
+| `C-c *` | Turn the line into a heading, or a heading into text |
+| `C-c #` | Update the `[n/m]` and `[n%]` statistics cookies |
+| `C-c / t` / `C-c / /` | Sparse tree: show only open TODO entries / lines matching a regexp |
+
+TODO keywords come from `#+TODO:` lines (`#+TODO: TODO NEXT | DONE CANCELLED`),
+`TODO` / `DONE` by default; `#+STARTUP: logdone` adds `CLOSED: [date]` when an
+entry is done, and a repeating date (`SCHEDULED: <2026-11-02 Mon +1w>`) moves
+on instead. Checking a box updates its parents (`[-]` when partly done) and
+the `[n/m]` / `[n%]` cookies, which also count the TODO children of a heading.
+Tables realign on `Tab`, `Enter` and `C-c C-c`; a line starting with `|-`
+becomes a rule. Folds survive edits, and moving the cursor into folded text
+(search, go to line) unfolds it.
 
 <details>
 <summary><strong>Notepad mode</strong> (default)</summary>

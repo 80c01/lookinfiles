@@ -16,6 +16,8 @@ void emacs_close_minibuffer(EditorTab* tab) {
     EditorModeState* st = (EditorModeState*)tab->mode_state;
     st->emacs_mini_mode = EMACS_MINI_NONE;
     st->emacs_prefix = EMACS_PREFIX_NONE;
+    st->emacs_prompt_cb = NULL;
+    g_clear_pointer(&st->emacs_prompt_data, g_free);
     gtk_widget_set_visible(st->emacs_mb_prompt, FALSE);
     gtk_widget_set_visible(st->emacs_mb_entry, FALSE);
     gtk_widget_set_visible(st->emacs_mb_echo, TRUE);
@@ -34,6 +36,16 @@ static void emacs_open_minibuffer(EditorTab* tab, EmacsMiniMode mode,
     gtk_widget_grab_focus(st->emacs_mb_entry);
 }
 
+void emacs_prompt(EditorTab* tab, const gchar* prompt, const gchar* initial,
+                  EmacsPromptFunc cb, gchar* data) {
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    g_free(st->emacs_prompt_data);
+    emacs_open_minibuffer(tab, EMACS_MINI_CALLBACK, prompt, initial);
+    st->emacs_prompt_cb = cb;
+    st->emacs_prompt_data = data;
+    gtk_editable_set_position(GTK_EDITABLE(st->emacs_mb_entry), -1);
+}
+
 static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
     (void)entry;
     EditorTab* tab = (EditorTab*)user_data;
@@ -41,6 +53,19 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
     const gchar* text = gtk_editable_get_text(GTK_EDITABLE(st->emacs_mb_entry));
 
     switch (st->emacs_mini_mode) {
+        case EMACS_MINI_CALLBACK: {
+            /* Take the callback before closing: it may open another prompt */
+            EmacsPromptFunc cb = st->emacs_prompt_cb;
+            gchar* data = st->emacs_prompt_data;
+            gchar* answer = g_strdup(text);
+            st->emacs_prompt_cb = NULL;
+            st->emacs_prompt_data = NULL;
+            emacs_close_minibuffer(tab);
+            if (cb != NULL) cb(tab, answer, data);
+            g_free(answer);
+            g_free(data);
+            break;
+        }
         case EMACS_MINI_ISEARCH_FWD:
         case EMACS_MINI_ISEARCH_BWD: {
             g_free(st->emacs_last_search);
@@ -110,12 +135,15 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
                 editor_mode_align_text(tab, GTK_JUSTIFY_FILL, 80);
                 emacs_echo(tab, "Full justified");
                 emacs_close_minibuffer(tab);
-            } else if (strstr(cmd, "org-cycle") || strstr(cmd, "fold")) {
-                orgmode_editor_toggle_heading_fold(tab);
+            } else if (g_str_has_prefix(cmd, "org-") && orgmode_editor_is_org(tab)) {
+                gchar* name = g_strstrip(g_strdup(cmd));
                 emacs_close_minibuffer(tab);
-            } else if (strstr(cmd, "org-global-cycle") || strstr(cmd, "global-fold")) {
-                orgmode_editor_cycle_global_fold(tab);
-                emacs_close_minibuffer(tab);
+                if (!orgmode_editor_command(tab, name)) {
+                    gchar* msg = g_strdup_printf("[Undefined command: %s]", name);
+                    emacs_echo(tab, msg);
+                    g_free(msg);
+                }
+                g_free(name);
             } else if (strstr(cmd, "line-numbers")) {
                 /* display-line-numbers-mode */
                 editor_toggle_line_numbers((AppData*)tab->app, tab);

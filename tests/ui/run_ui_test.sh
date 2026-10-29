@@ -158,6 +158,25 @@ key alt+Left;           shot explorer_focused
 key Return;             shot open_org_in_editor
 xdotool mousemove 600 79 click 1     # cursor on the first heading
 key shift+Right;        shot org_editor_todo_cycled
+# Org editing: heading folding, global visibility, structure editing, tables
+key Tab;                shot org_editor_folded
+key Tab;                shot org_editor_children
+key Tab;                shot org_editor_subtree
+key shift+Tab;          shot org_editor_overview
+key shift+Tab shift+Tab; shot org_editor_show_all
+key alt+Return
+xdotool type --delay 80 "Second"
+                        shot org_editor_new_heading
+key alt+Up;             shot org_editor_subtree_moved_up
+xdotool keydown ctrl key --delay 120 c t keyup ctrl
+                        shot org_editor_ctrl_c_ctrl_t
+key End Return
+xdotool type --delay 60 "|name|qty|"
+key Tab
+xdotool type --delay 60 "apple"
+key Tab
+xdotool type --delay 60 "12"
+key Tab;                shot org_editor_table_aligned
 # C-SPC sets the mark, then C-f / C-n extend the region; C-g drops it
 key alt+comma           # M-<: beginning of buffer
 xdotool keydown ctrl key --delay 120 space f f f f f n keyup ctrl

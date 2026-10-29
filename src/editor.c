@@ -1074,7 +1074,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     gtk_label_set_xalign(GTK_LABEL(stat_lbl), 0.0f);
     gtk_widget_set_hexpand(stat_lbl, TRUE);
     if (is_org_file(name) || tab->mode == EDITOR_MODE_ORGMODE) {
-        gtk_label_set_text(GTK_LABEL(stat_lbl), "Org-mode (Emacs style) | Tab/Shift+Tab: fold | C-RET/C-SPC: checkbox | M-RET: heading | S-<->: TODO");
+        gtk_label_set_text(GTK_LABEL(stat_lbl), "Org-mode (Emacs keys) | Tab/S-Tab: fold | M-RET: heading | M-arrows: structure | S-arrows: TODO | C-c C-c");
     } else if (tab->mode == EDITOR_MODE_VIM) {
         gtk_label_set_text(GTK_LABEL(stat_lbl), "VIM -- NORMAL --");
     } else if (tab->mode == EDITOR_MODE_EMACS) {

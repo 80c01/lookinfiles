@@ -32,10 +32,10 @@ gboolean orgmode_handle_viewer_key(AppData* app, guint keyval, GdkModifierType s
 /* Heading level of an Org line ("** Title" -> 2), 0 if not a heading */
 gint orgmode_heading_level(const gchar* line);
 
-/* Cycle the TODO keyword / toggle the checkbox on file_line of an Org file.
- * With editor_buffer, edit that buffer instead of the file on disk. */
-gboolean orgmode_cycle_todo_at_line(const gchar* file_path, gint file_line, GtkTextBuffer* editor_buffer);
-gboolean orgmode_toggle_checkbox_at_line(const gchar* file_path, gint file_line, GtkTextBuffer* editor_buffer);
+/* Cycle the TODO keyword / toggle the checkbox on file_line of an Org file
+ * on disk (same rules as the editor: #+TODO keywords, cookies, logdone) */
+gboolean orgmode_cycle_todo_at_line(const gchar* file_path, gint file_line);
+gboolean orgmode_toggle_checkbox_at_line(const gchar* file_path, gint file_line);
 
 /* Cycle global folding state (Show All -> Overview -> Contents -> Show All) */
 void orgmode_cycle_global_fold(AppData* app);

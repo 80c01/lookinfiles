@@ -22,6 +22,9 @@ hex_dump:
 elf_info:
 zip_reader:
 docx:zip_reader
+org_time:
+org_doc:org_time
+org_table:org_doc
 diff_gutter:git_utils,line_diff
 explorer_row:
 layout_store:app_paths

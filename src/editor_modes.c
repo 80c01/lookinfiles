@@ -770,6 +770,7 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     /* Connect text buffer changes for live status update */
     g_signal_connect(tab->buffer, "changed", G_CALLBACK(on_tab_buffer_changed), tab);
     g_signal_connect(tab->buffer, "notify::cursor-position", G_CALLBACK(on_tab_cursor_moved), tab);
+    orgmode_editor_init(tab);
 
     /* Apply initial mode */
     editor_modes_apply_mode(app, tab, tab->mode);
@@ -782,6 +783,7 @@ void editor_modes_free_tab(EditorTab* tab) {
     g_free(st->emacs_qr_find);
     g_free(st->emacs_qr_rep);
     g_free(st->vim_last_search);
+    g_free(st->emacs_prompt_data);
     g_free(st);
     tab->mode_state = NULL;
 }
@@ -831,7 +833,7 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
     if (tab == NULL || tab->mode_state == NULL) return FALSE;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
 
-    if (tab->mode == EDITOR_MODE_ORGMODE || (tab->name != NULL && is_org_file(tab->name))) {
+    if (orgmode_editor_is_org(tab)) {
         if (orgmode_editor_handle_key(app, tab, keyval, state)) {
             return TRUE;
         }
@@ -850,6 +852,15 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
     }
 
     return notepad_handle_key(tab, st, keyval, state);
+}
+
+gboolean editor_modes_claims_key(AppData* app, guint keyval, GdkModifierType state) {
+    if (app == NULL || app->window == NULL || app->last_focused_editor == NULL) return FALSE;
+    GtkWidget* focus = gtk_window_get_focus(GTK_WINDOW(app->window));
+    EditorTab* tab = app->last_focused_editor;
+    /* Only the tab whose view has the focus (the pointer may be stale otherwise) */
+    if (focus == NULL || focus != tab->view || tab->mode_state == NULL) return FALSE;
+    return orgmode_editor_claims_key(tab, keyval, state);
 }
 
 void editor_tab_label_update(EditorTab* tab) {

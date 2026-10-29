@@ -14,6 +14,20 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Org-mode editor rework, following Emacs Org-mode: three-state heading
+  folding (also drawers and blocks) that survives edits and unfolds where the
+  cursor goes; promote / demote and move headings and subtrees; new headings
+  and TODO headings; TODO keywords from `#+TODO:` with `logdone` and
+  repeating dates; priorities; aligned tags; `SCHEDULED` / `DEADLINE` with a
+  date prompt; timestamps changed field by field with `Shift+arrows`; clock
+  in / out; lists (new item, indent, move, bullet cycling, renumbering);
+  checkboxes with parent states and `[n/m]` / `[n%]` cookies; tables
+  (alignment, cell navigation, row and column moves, inserts, deletes,
+  rules); links (insert, open URLs, files and internal targets); `<s` block
+  templates; heading navigation; sparse trees; `M-x org-…` commands. Every
+  command is one undo step. Richer Org syntax colors in editor tabs. The
+  preview's TODO and checkbox clicks follow the same rules.
+
 - Word document preview (`.docx`, also detected from the content):
   headings, paragraphs, bold / italic / underline / strike, superscript,
   bulleted and numbered lists (with Word's numbering), tables, links,

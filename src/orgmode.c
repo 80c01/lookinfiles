@@ -1,4 +1,5 @@
 #include "orgmode.h"
+#include "org_doc.h"
 #include "image_utils.h"
 #include "app_events.h"
 #include "file_types.h"
@@ -34,78 +35,160 @@ static void org_line_info_free(gpointer data) {
 /* GtkSourceView 5 Syntax Definition for Orgmode                              */
 /* ------------------------------------------------------------------------- */
 
+static const gchar* ORG_LANG_XML =
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<language id=\"org\" name=\"Org\" version=\"2.0\" _section=\"Markup\">\n"
+    "  <metadata>\n"
+    "    <property name=\"mimetypes\">text/x-org;text/org</property>\n"
+    "    <property name=\"globs\">*.org;*.org_archive</property>\n"
+    "    <property name=\"line-comment-start\"># </property>\n"
+    "  </metadata>\n"
+    "  <styles>\n"
+    "    <style id=\"header1\" name=\"Heading 1\" map-to=\"def:type\"/>\n"
+    "    <style id=\"header2\" name=\"Heading 2\" map-to=\"def:function\"/>\n"
+    "    <style id=\"header3\" name=\"Heading 3\" map-to=\"def:type\"/>\n"
+    "    <style id=\"header4\" name=\"Heading 4+\" map-to=\"def:preprocessor\"/>\n"
+    "    <style id=\"todo\" name=\"TODO keyword\" map-to=\"def:error\"/>\n"
+    "    <style id=\"done\" name=\"DONE keyword\" map-to=\"def:comment\"/>\n"
+    "    <style id=\"priority\" name=\"Priority\" map-to=\"def:special-char\"/>\n"
+    "    <style id=\"tag\" name=\"Tag\" map-to=\"def:identifier\"/>\n"
+    "    <style id=\"cookie\" name=\"Statistics cookie\" map-to=\"def:decimal\"/>\n"
+    "    <style id=\"comment\" name=\"Comment\" map-to=\"def:comment\"/>\n"
+    "    <style id=\"keyword\" name=\"Keyword line\" map-to=\"def:preprocessor\"/>\n"
+    "    <style id=\"drawer\" name=\"Drawer\" map-to=\"def:comment\"/>\n"
+    "    <style id=\"planning\" name=\"Planning keyword\" map-to=\"def:keyword\"/>\n"
+    "    <style id=\"timestamp\" name=\"Timestamp\" map-to=\"def:special-char\"/>\n"
+    "    <style id=\"link\" name=\"Link\" map-to=\"def:underlined\"/>\n"
+    "    <style id=\"checkbox\" name=\"Checkbox\" map-to=\"def:keyword\"/>\n"
+    "    <style id=\"checkbox-done\" name=\"Checked checkbox\" map-to=\"def:comment\"/>\n"
+    "    <style id=\"bullet\" name=\"List bullet\" map-to=\"def:keyword\"/>\n"
+    "    <style id=\"table\" name=\"Table\" map-to=\"def:decimal\"/>\n"
+    "    <style id=\"bold\" name=\"Bold\" map-to=\"def:strong-emphasis\"/>\n"
+    "    <style id=\"italic\" name=\"Italic\" map-to=\"def:emphasis\"/>\n"
+    "    <style id=\"code\" name=\"Code\" map-to=\"def:string\"/>\n"
+    "    <style id=\"strike\" name=\"Strike-through\" map-to=\"def:comment\"/>\n"
+    "    <style id=\"underline\" name=\"Underline\" map-to=\"def:underlined\"/>\n"
+    "    <style id=\"block\" name=\"Block delimiter\" map-to=\"def:comment\"/>\n"
+    "    <style id=\"block-content\" name=\"Block content\" map-to=\"def:string\"/>\n"
+    "  </styles>\n"
+    "  <definitions>\n"
+    "    <context id=\"todo\" style-ref=\"todo\">\n"
+    "      <match>(?&lt;=\\s)(TODO|NEXT|WAITING|WAIT|HOLD|STARTED|BUG)(?=\\s|$)</match>\n"
+    "    </context>\n"
+    "    <context id=\"done\" style-ref=\"done\">\n"
+    "      <match>(?&lt;=\\s)(DONE|CANCELLED|CANCELED|FIXED)(?=\\s|$)</match>\n"
+    "    </context>\n"
+    "    <context id=\"priority\" style-ref=\"priority\">\n"
+    "      <match>\\[#[A-Z0-9]\\]</match>\n"
+    "    </context>\n"
+    "    <context id=\"tags\" style-ref=\"tag\">\n"
+    "      <match>(?&lt;=\\s):[A-Za-z0-9_@#%:]+:\\s*$</match>\n"
+    "    </context>\n"
+    "    <context id=\"cookie\" style-ref=\"cookie\">\n"
+    "      <match>\\[[0-9]*(/[0-9]*|%)\\]</match>\n"
+    "    </context>\n"
+    "    <context id=\"timestamp\" style-ref=\"timestamp\">\n"
+    "      <match>[&lt;\\[][0-9]{4}-[0-9]{2}-[0-9]{2}[^&gt;\\]\\n]*[&gt;\\]](--[&lt;\\[][0-9]{4}-[0-9]{2}-[0-9]{2}[^&gt;\\]\\n]*[&gt;\\]])?</match>\n"
+    "    </context>\n"
+    "    <context id=\"link\" style-ref=\"link\">\n"
+    "      <match>\\[\\[[^\\]\\n]+\\](\\[[^\\]\\n]+\\])?\\]|\\b(https?|file|mailto):[^\\s\\]&gt;)\"]+</match>\n"
+    "    </context>\n"
+    "    <context id=\"emphasis\">\n"
+    "      <include>\n"
+    "        <context id=\"bold\" style-ref=\"bold\">\n"
+    "          <match>(?&lt;![\\w*])\\*[^\\s*](?:[^*\\n]*[^\\s*])?\\*(?![\\w*])</match>\n"
+    "        </context>\n"
+    "        <context id=\"italic\" style-ref=\"italic\">\n"
+    "          <match>(?&lt;![\\w/:])/[^\\s/](?:[^/\\n]*[^\\s/])?/(?![\\w/])</match>\n"
+    "        </context>\n"
+    "        <context id=\"verbatim\" style-ref=\"code\">\n"
+    "          <match>(?&lt;![\\w=])=[^\\s=](?:[^=\\n]*[^\\s=])?=(?![\\w=])</match>\n"
+    "        </context>\n"
+    "        <context id=\"code\" style-ref=\"code\">\n"
+    "          <match>(?&lt;![\\w~])~[^\\s~](?:[^~\\n]*[^\\s~])?~(?![\\w~])</match>\n"
+    "        </context>\n"
+    "        <context id=\"strike\" style-ref=\"strike\">\n"
+    "          <match>(?&lt;![\\w+])\\+[^\\s+](?:[^+\\n]*[^\\s+])?\\+(?![\\w+])</match>\n"
+    "        </context>\n"
+    "        <context id=\"underline\" style-ref=\"underline\">\n"
+    "          <match>(?&lt;![\\w_])_[^\\s_](?:[^_\\n]*[^\\s_])?_(?![\\w_])</match>\n"
+    "        </context>\n"
+    "      </include>\n"
+    "    </context>\n"
+    "    <context id=\"inline\">\n"
+    "      <include>\n"
+    "        <context ref=\"timestamp\"/>\n"
+    "        <context ref=\"link\"/>\n"
+    "        <context ref=\"cookie\"/>\n"
+    "        <context ref=\"emphasis\"/>\n"
+    "      </include>\n"
+    "    </context>\n"
+    "    <context id=\"org\">\n"
+    "      <include>\n"
+    "        <context id=\"header1\" style-ref=\"header1\" end-at-line-end=\"true\">\n"
+    "          <start>^\\*(?=\\s)</start>\n"
+    "          <include><context ref=\"todo\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
+    "        </context>\n"
+    "        <context id=\"header2\" style-ref=\"header2\" end-at-line-end=\"true\">\n"
+    "          <start>^\\*{2}(?=\\s)</start>\n"
+    "          <include><context ref=\"todo\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
+    "        </context>\n"
+    "        <context id=\"header3\" style-ref=\"header3\" end-at-line-end=\"true\">\n"
+    "          <start>^\\*{3}(?=\\s)</start>\n"
+    "          <include><context ref=\"todo\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
+    "        </context>\n"
+    "        <context id=\"header4\" style-ref=\"header4\" end-at-line-end=\"true\">\n"
+    "          <start>^\\*{4,}(?=\\s)</start>\n"
+    "          <include><context ref=\"todo\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
+    "        </context>\n"
+    "        <context id=\"block\" style-inside=\"true\" style-ref=\"block-content\">\n"
+    "          <start>(?i)^\\s*#\\+begin_(\\w+).*$</start>\n"
+    "          <end>(?i)^\\s*#\\+end_\\%{1@start}\\s*$</end>\n"
+    "          <include>\n"
+    "            <context sub-pattern=\"0\" where=\"start\" style-ref=\"block\"/>\n"
+    "            <context sub-pattern=\"0\" where=\"end\" style-ref=\"block\"/>\n"
+    "          </include>\n"
+    "        </context>\n"
+    "        <context id=\"keyword-line\" style-ref=\"keyword\">\n"
+    "          <match>^\\s*#\\+\\w+:.*$</match>\n"
+    "        </context>\n"
+    "        <context id=\"comment\" style-ref=\"comment\">\n"
+    "          <match>^\\s*#(\\s.*)?$</match>\n"
+    "        </context>\n"
+    "        <context id=\"drawer\" style-ref=\"drawer\">\n"
+    "          <match>^\\s*:[A-Za-z0-9_-]+:(?=\\s|$)</match>\n"
+    "        </context>\n"
+    "        <context id=\"planning\" style-ref=\"planning\">\n"
+    "          <match>\\b(SCHEDULED|DEADLINE|CLOSED|CLOCK):</match>\n"
+    "        </context>\n"
+    "        <context id=\"table\" style-ref=\"table\">\n"
+    "          <match>^\\s*\\|.*$</match>\n"
+    "        </context>\n"
+    "        <context id=\"checkbox-done\" style-ref=\"checkbox-done\">\n"
+    "          <match>(?&lt;=\\s)\\[[Xx]\\](?=\\s|$)</match>\n"
+    "        </context>\n"
+    "        <context id=\"checkbox\" style-ref=\"checkbox\">\n"
+    "          <match>(?&lt;=\\s)\\[[ -]\\](?=\\s|$)</match>\n"
+    "        </context>\n"
+    "        <context id=\"bullet\" style-ref=\"bullet\">\n"
+    "          <match>^\\s*([-+]|[0-9]+[.)])(?=\\s|$)|^\\s+\\*(?=\\s)</match>\n"
+    "        </context>\n"
+    "        <context ref=\"inline\"/>\n"
+    "      </include>\n"
+    "    </context>\n"
+    "  </definitions>\n"
+    "</language>\n";
+
 void orgmode_install_gtksourceview_spec(void) {
-    const gchar* data_dir = g_get_user_data_dir();
-    gchar* spec_dir = g_build_filename(data_dir, "gtksourceview-5", "language-specs", NULL);
+    gchar* spec_dir = g_build_filename(g_get_user_data_dir(), "gtksourceview-5", "language-specs", NULL);
     g_mkdir_with_parents(spec_dir, 0755);
-
     gchar* lang_file = g_build_filename(spec_dir, "org.lang", NULL);
-    if (!g_file_test(lang_file, G_FILE_TEST_EXISTS)) {
-        const gchar* spec_xml =
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            "<language id=\"org\" name=\"Org Mode\" version=\"2.0\" _section=\"Markup\">\n"
-            "  <metadata>\n"
-            "    <property name=\"mimetypes\">text/x-org;text/org</property>\n"
-            "    <property name=\"globs\">*.org;*.org_archive</property>\n"
-            "    <property name=\"line-comment-start\"># </property>\n"
-            "  </metadata>\n"
-            "  <styles>\n"
-            "    <style id=\"header\" name=\"Header\" map-to=\"def:type\"/>\n"
-            "    <style id=\"todo\" name=\"TODO\" map-to=\"def:error\"/>\n"
-            "    <style id=\"done\" name=\"DONE\" map-to=\"def:comment\"/>\n"
-            "    <style id=\"next\" name=\"NEXT\" map-to=\"def:statement\"/>\n"
-            "    <style id=\"waiting\" name=\"WAITING\" map-to=\"def:warning\"/>\n"
-            "    <style id=\"comment\" name=\"Comment\" map-to=\"def:comment\"/>\n"
-            "    <style id=\"drawer\" name=\"Drawer\" map-to=\"def:preprocessor\"/>\n"
-            "    <style id=\"block\" name=\"Block\" map-to=\"def:string\"/>\n"
-            "    <style id=\"timestamp\" name=\"Timestamp\" map-to=\"def:special-char\"/>\n"
-            "    <style id=\"link\" name=\"Link\" map-to=\"def:underlined\"/>\n"
-            "    <style id=\"tag\" name=\"Tag\" map-to=\"def:identifier\"/>\n"
-            "    <style id=\"checkbox\" name=\"Checkbox\" map-to=\"def:keyword\"/>\n"
-            "  </styles>\n"
-            "  <definitions>\n"
-            "    <context id=\"org\">\n"
-            "      <include>\n"
-            "        <context id=\"comment\" style-ref=\"comment\">\n"
-            "          <match>^# .*$</match>\n"
-            "        </context>\n"
-            "        <context id=\"block-header\" style-ref=\"drawer\">\n"
-            "          <match>^#\\+[A-Za-z_]+:?.*$</match>\n"
-            "        </context>\n"
-            "        <context id=\"drawer\" style-ref=\"drawer\">\n"
-            "          <match>^[ \\t]*:[A-Za-z_]+:.*$</match>\n"
-            "        </context>\n"
-            "        <context id=\"todo-kw\" style-ref=\"todo\">\n"
-            "          <match>\\b(TODO)\\b</match>\n"
-            "        </context>\n"
-            "        <context id=\"done-kw\" style-ref=\"done\">\n"
-            "          <match>\\b(DONE|CANCELLED)\\b</match>\n"
-            "        </context>\n"
-            "        <context id=\"next-kw\" style-ref=\"next\">\n"
-            "          <match>\\b(NEXT)\\b</match>\n"
-            "        </context>\n"
-            "        <context id=\"waiting-kw\" style-ref=\"waiting\">\n"
-            "          <match>\\b(WAITING)\\b</match>\n"
-            "        </context>\n"
-            "        <context id=\"timestamp\" style-ref=\"timestamp\">\n"
-            "          <match>[&lt;\\[][0-9]{4}-[0-9]{2}-[0-9]{2}[^&gt;\\]]*[&gt;\\]]</match>\n"
-            "        </context>\n"
-            "        <context id=\"link\" style-ref=\"link\">\n"
-            "          <match>\\[\\[[^\\]]+\\]\\]</match>\n"
-            "        </context>\n"
-            "        <context id=\"checkbox\" style-ref=\"checkbox\">\n"
-            "          <match>\\[[ X\\-]\\]</match>\n"
-            "        </context>\n"
-            "        <context id=\"heading\" style-ref=\"header\">\n"
-            "          <match>^\\*+ .*$</match>\n"
-            "        </context>\n"
-            "      </include>\n"
-            "    </context>\n"
-            "  </definitions>\n"
-            "</language>\n";
-        g_file_set_contents(lang_file, spec_xml, -1, NULL);
+    /* Rewrite an older version of the spec */
+    gchar* current = NULL;
+    if (!g_file_get_contents(lang_file, &current, NULL, NULL) || g_strcmp0(current, ORG_LANG_XML) != 0) {
+        g_file_set_contents(lang_file, ORG_LANG_XML, -1, NULL);
     }
-
+    g_free(current);
     g_free(lang_file);
     g_free(spec_dir);
 }
@@ -333,15 +416,7 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
 /* ------------------------------------------------------------------------- */
 
 gint orgmode_heading_level(const gchar* line) {
-    if (line == NULL || line[0] != '*') return 0;
-    gint level = 0;
-    while (line[level] == '*') {
-        level++;
-    }
-    if (line[level] == ' ') {
-        return level;
-    }
-    return 0;
+    return org_heading_level(line);
 }
 
 static gboolean is_image_path(const gchar* path) {
@@ -1054,210 +1129,50 @@ void orgmode_cycle_global_fold(AppData* app) {
     }
 }
 
-gboolean orgmode_cycle_todo_at_line(const gchar* file_path, gint file_line, GtkTextBuffer* editor_buffer) {
+/* Run an org_doc command on line file_line of the Org file on disk and save it */
+typedef gboolean (*FileLineOp)(GPtrArray* lines, OrgPos* pos, OrgTodoConfig* cfg, GDateTime* now);
+
+static gboolean edit_file_line(const gchar* file_path, gint file_line, FileLineOp op) {
     gchar* contents = NULL;
-    gsize len = 0;
-
-    if (editor_buffer != NULL) {
-        GtkTextIter s, e;
-        gtk_text_buffer_get_bounds(editor_buffer, &s, &e);
-        contents = gtk_text_buffer_get_text(editor_buffer, &s, &e, TRUE);
-    } else if (file_path != NULL && g_file_get_contents(file_path, &contents, &len, NULL)) {
-        /* loaded from disk */
-    } else {
-        return FALSE;
-    }
-
-    gchar** lines = g_strsplit(contents, "\n", -1);
+    if (file_path == NULL || !g_file_get_contents(file_path, &contents, NULL, NULL)) return FALSE;
+    GPtrArray* lines = org_lines_new(contents);
     g_free(contents);
-    guint n_lines = g_strv_length(lines);
-    if ((guint)file_line >= n_lines) {
-        g_strfreev(lines);
-        return FALSE;
+    gboolean ok = FALSE;
+    if (file_line >= 0 && (guint)file_line < lines->len) {
+        OrgTodoConfig* cfg = org_todo_config_new(lines);
+        GDateTime* now = g_date_time_new_now_local();
+        OrgPos pos = {file_line, 0};
+        ok = op(lines, &pos, cfg, now);
+        if (ok) {
+            gchar* text = org_lines_join(lines);
+            ok = g_file_set_contents(file_path, text, -1, NULL);
+            g_free(text);
+        }
+        g_date_time_unref(now);
+        org_todo_config_free(cfg);
     }
+    g_ptr_array_unref(lines);
+    return ok;
+}
 
-    const gchar* line = lines[file_line];
-    gint hlevel = orgmode_heading_level(line);
-    if (hlevel <= 0) {
-        g_strfreev(lines);
-        return FALSE;
-    }
+static gboolean op_cycle_todo(GPtrArray* lines, OrgPos* pos, OrgTodoConfig* cfg, GDateTime* now) {
+    if (org_heading_level(org_line(lines, pos->line)) == 0) return FALSE;
+    return org_todo_cycle(lines, pos, pos->line, cfg, 1, now, NULL);
+}
 
-    const gchar* rest = line + hlevel + 1;
-    while (*rest == ' ') rest++;
-
-    /* Identify current TODO state */
-    const gchar* next_kw = NULL;
-    const gchar* after_kw = rest;
-
-    if (g_str_has_prefix(rest, "TODO ") || g_strcmp0(rest, "TODO") == 0) {
-        next_kw = "NEXT";
-        after_kw = rest + 4;
-    } else if (g_str_has_prefix(rest, "NEXT ") || g_strcmp0(rest, "NEXT") == 0) {
-        next_kw = "DONE";
-        after_kw = rest + 4;
-    } else if (g_str_has_prefix(rest, "DONE ") || g_strcmp0(rest, "DONE") == 0) {
-        next_kw = NULL; /* remove */
-        after_kw = rest + 4;
-    } else if (g_str_has_prefix(rest, "WAITING ") || g_strcmp0(rest, "WAITING") == 0) {
-        next_kw = "DONE";
-        after_kw = rest + 7;
-    } else if (g_str_has_prefix(rest, "CANCELLED ") || g_strcmp0(rest, "CANCELLED") == 0) {
-        next_kw = NULL; /* remove */
-        after_kw = rest + 9;
-    } else {
-        next_kw = "TODO";
-        after_kw = rest;
-    }
-
-    while (*after_kw == ' ') after_kw++;
-
-    /* Build stars */
-    GString* stars = g_string_new(NULL);
-    for (gint k = 0; k < hlevel; k++) {
-        g_string_append_c(stars, '*');
-    }
-
-    gchar* new_line = NULL;
-    if (next_kw != NULL) {
-        new_line = g_strdup_printf("%s %s %s", stars->str, next_kw, after_kw);
-    } else {
-        new_line = g_strdup_printf("%s %s", stars->str, after_kw);
-    }
-    g_string_free(stars, TRUE);
-
-    g_free(lines[file_line]);
-    lines[file_line] = new_line;
-
-    gchar* updated_text = g_strjoinv("\n", lines);
-    g_strfreev(lines);
-
-    if (editor_buffer != NULL) {
-        gtk_text_buffer_set_text(editor_buffer, updated_text, -1);
-    }
-    if (file_path != NULL) {
-        g_file_set_contents(file_path, updated_text, -1, NULL);
-    }
-    g_free(updated_text);
-
+static gboolean op_toggle_checkbox(GPtrArray* lines, OrgPos* pos, OrgTodoConfig* cfg, GDateTime* now) {
+    (void)now;
+    if (!org_toggle_checkbox(lines, pos, NULL)) return FALSE;
+    org_update_statistics(lines, cfg);
     return TRUE;
 }
 
-/* Update progress cookies [X/Y] and [X%] on parent heading / list item */
-static void update_parent_progress_cookie(gchar** lines, guint n_lines, gint file_line) {
-    if (lines == NULL || (guint)file_line >= n_lines) return;
-
-    /* Scan backwards to find the nearest parent heading or list item */
-    gint parent_line = -1;
-    for (gint p = file_line - 1; p >= 0; p--) {
-        if (orgmode_heading_level(lines[p]) > 0 || strstr(lines[p], "[/") != NULL || strstr(lines[p], "[%") != NULL) {
-            parent_line = p;
-            break;
-        }
-    }
-    if (parent_line < 0) return;
-
-    /* Check if parent line contains progress cookie: [X/Y] or [X%] */
-    const gchar* pstr = lines[parent_line];
-    const gchar* c_open = strstr(pstr, "[");
-    if (c_open == NULL) return;
-    const gchar* c_close = strstr(c_open, "]");
-    if (c_close == NULL) return;
-
-    gboolean has_slash = (strstr(c_open, "/") != NULL && strstr(c_open, "/") < c_close);
-    gboolean has_percent = (strstr(c_open, "%") != NULL && strstr(c_open, "%") < c_close);
-    if (!has_slash && !has_percent) return;
-
-    /* Count sibling checkboxes under parent_line */
-    gint total = 0;
-    gint checked = 0;
-    gint p_hlevel = orgmode_heading_level(pstr);
-
-    for (guint k = parent_line + 1; k < n_lines; k++) {
-        gint h = orgmode_heading_level(lines[k]);
-        if (p_hlevel > 0 && h > 0 && h <= p_hlevel) {
-            break; /* Next heading at same or higher level ends subtree */
-        }
-        const gchar* l = lines[k];
-        if (strstr(l, "[ ]") != NULL || strstr(l, "[X]") != NULL || strstr(l, "[x]") != NULL || strstr(l, "[-]") != NULL) {
-            total++;
-            if (strstr(l, "[X]") != NULL || strstr(l, "[x]") != NULL) {
-                checked++;
-            }
-        }
-    }
-    if (total == 0) return;
-
-    /* Replace cookie in parent_line */
-    gchar* before = g_strndup(pstr, c_open - pstr);
-    const gchar* after = c_close + 1;
-    gchar* new_cookie = has_slash ? g_strdup_printf("[%d/%d]", checked, total)
-                                  : g_strdup_printf("[%d%%]", (checked * 100) / total);
-    gchar* updated_parent = g_strconcat(before, new_cookie, after, NULL);
-    g_free(before);
-    g_free(new_cookie);
-    g_free(lines[parent_line]);
-    lines[parent_line] = updated_parent;
+gboolean orgmode_cycle_todo_at_line(const gchar* file_path, gint file_line) {
+    return edit_file_line(file_path, file_line, op_cycle_todo);
 }
 
-gboolean orgmode_toggle_checkbox_at_line(const gchar* file_path, gint file_line, GtkTextBuffer* editor_buffer) {
-    gchar* contents = NULL;
-    gsize len = 0;
-
-    if (editor_buffer != NULL) {
-        GtkTextIter s, e;
-        gtk_text_buffer_get_bounds(editor_buffer, &s, &e);
-        contents = gtk_text_buffer_get_text(editor_buffer, &s, &e, TRUE);
-    } else if (file_path != NULL && g_file_get_contents(file_path, &contents, &len, NULL)) {
-        /* loaded from disk */
-    } else {
-        return FALSE;
-    }
-
-    gchar** lines = g_strsplit(contents, "\n", -1);
-    g_free(contents);
-    guint n_lines = g_strv_length(lines);
-    if ((guint)file_line >= n_lines) {
-        g_strfreev(lines);
-        return FALSE;
-    }
-
-    gchar* line = lines[file_line];
-    gchar* box = strstr(line, "[ ]");
-    gboolean toggled = FALSE;
-    if (box != NULL) {
-        box[1] = 'X';
-        toggled = TRUE;
-    } else {
-        box = strstr(line, "[X]");
-        if (box == NULL) box = strstr(line, "[x]");
-        if (box == NULL) box = strstr(line, "[-]");
-        if (box != NULL) {
-            box[1] = ' ';
-            toggled = TRUE;
-        }
-    }
-
-    if (!toggled) {
-        g_strfreev(lines);
-        return FALSE;
-    }
-
-    /* Update parent progress cookie if present */
-    update_parent_progress_cookie(lines, n_lines, file_line);
-
-    gchar* updated_text = g_strjoinv("\n", lines);
-    g_strfreev(lines);
-
-    if (editor_buffer != NULL) {
-        gtk_text_buffer_set_text(editor_buffer, updated_text, -1);
-    }
-    if (file_path != NULL) {
-        g_file_set_contents(file_path, updated_text, -1, NULL);
-    }
-    g_free(updated_text);
-
-    return TRUE;
+gboolean orgmode_toggle_checkbox_at_line(const gchar* file_path, gint file_line) {
+    return edit_file_line(file_path, file_line, op_toggle_checkbox);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1298,7 +1213,7 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
     if (on_todo || info->heading_level > 0) {
         if (on_todo) {
             /* Cycle TODO state */
-            orgmode_cycle_todo_at_line(app->viewed_path, info->file_line, NULL);
+            orgmode_cycle_todo_at_line(app->viewed_path, info->file_line);
             app_emit(app, APP_EVENT_PREVIEW_STALE);
             return TRUE;
         } else {
@@ -1310,7 +1225,7 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
 
     /* 2. If line has checkbox, toggle it */
     if (info->is_checkbox) {
-        orgmode_toggle_checkbox_at_line(app->viewed_path, info->file_line, NULL);
+        orgmode_toggle_checkbox_at_line(app->viewed_path, info->file_line);
         app_emit(app, APP_EVENT_PREVIEW_STALE);
         return TRUE;
     }
@@ -1350,7 +1265,7 @@ gboolean orgmode_handle_viewer_key(AppData* app, guint keyval, GdkModifierType s
         gint buf_line = gtk_text_iter_get_line(&iter);
         OrgLineInfo* info = find_line_info(app->buffer, buf_line);
         if (info != NULL && info->heading_level > 0) {
-            orgmode_cycle_todo_at_line(app->viewed_path, info->file_line, NULL);
+            orgmode_cycle_todo_at_line(app->viewed_path, info->file_line);
             app_emit(app, APP_EVENT_PREVIEW_STALE);
             return TRUE;
         }
@@ -1363,7 +1278,7 @@ gboolean orgmode_handle_viewer_key(AppData* app, guint keyval, GdkModifierType s
         gint buf_line = gtk_text_iter_get_line(&iter);
         OrgLineInfo* info = find_line_info(app->buffer, buf_line);
         if (info != NULL && info->is_checkbox) {
-            orgmode_toggle_checkbox_at_line(app->viewed_path, info->file_line, NULL);
+            orgmode_toggle_checkbox_at_line(app->viewed_path, info->file_line);
             app_emit(app, APP_EVENT_PREVIEW_STALE);
             return TRUE;
         }
