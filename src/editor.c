@@ -664,26 +664,69 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
     editor_move_tab_to_notebook(app, tab, GTK_NOTEBOOK(new_nb), -1);
 }
 
-/* GTK scrolls the cursor line just into view, so on the last line the bottom
- * margin (TEXT_SCROLLBAR_CLEARANCE) stays hidden and the horizontal scrollbar
- * covers the text: scroll to the very end instead, once GTK has scrolled */
-static gboolean scroll_view_to_end(gpointer data) {
-    GtkWidget* view = GTK_WIDGET(data);
+/* GTK scrolls only until the cursor is visible: back at the start of a long
+ * line the left padding stays scrolled away, and the cursor rides under the
+ * overlay scrollbars at the right and bottom edges. After GTK has scrolled,
+ * keep the padding (plus TEXT_SCROLLBAR_CLEARANCE right and bottom) around
+ * the cursor, and show the line start with its padding when it fits. */
+static void clamp_adjustment(GtkAdjustment* adj, gdouble value) {
+    gdouble lower = gtk_adjustment_get_lower(adj);
+    gdouble max = MAX(lower, gtk_adjustment_get_upper(adj) - gtk_adjustment_get_page_size(adj));
+    value = CLAMP(value, lower, max);
+    if (value != gtk_adjustment_get_value(adj)) {
+        gtk_adjustment_set_value(adj, value);
+    }
+}
+
+static gboolean keep_cursor_clear(gpointer data) {
+    GtkTextView* view = GTK_TEXT_VIEW(data);
+    GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(view));
     GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
-    if (vadj != NULL) {
-        gtk_adjustment_set_value(vadj, gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj));
+    if (hadj == NULL || vadj == NULL || !gtk_widget_get_mapped(GTK_WIDGET(view))) {
+        return G_SOURCE_REMOVE;
+    }
+    GdkRectangle c; /* buffer coordinates, like the adjustments */
+    gtk_text_view_get_cursor_locations(view, NULL, &c, NULL);
+    const gint pad_left = PREVIEW_TEXT_PADDING_X;
+    const gint pad_right = PREVIEW_TEXT_PADDING_X + TEXT_SCROLLBAR_CLEARANCE;
+    const gint pad_top = PREVIEW_TEXT_PADDING_Y;
+    const gint pad_bottom = PREVIEW_TEXT_PADDING_Y + TEXT_SCROLLBAR_CLEARANCE;
+    gint cw = MAX(c.width, 2);
+
+    gdouble hv = gtk_adjustment_get_value(hadj);
+    gdouble hp = gtk_adjustment_get_page_size(hadj);
+    if (c.x + cw + pad_right <= hp) {
+        clamp_adjustment(hadj, gtk_adjustment_get_lower(hadj)); /* line start fits: show it */
+    } else if (c.x + cw + pad_right > hv + hp) {
+        clamp_adjustment(hadj, c.x + cw + pad_right - hp);
+    } else if (c.x - pad_left < hv) {
+        clamp_adjustment(hadj, c.x - pad_left);
+    }
+
+    gdouble vv = gtk_adjustment_get_value(vadj);
+    gdouble vp = gtk_adjustment_get_page_size(vadj);
+    if (c.y + c.height + pad_bottom > vv + vp) {
+        clamp_adjustment(vadj, c.y + c.height + pad_bottom - vp);
+    } else if (c.y - pad_top < vv) {
+        clamp_adjustment(vadj, c.y - pad_top);
     }
     return G_SOURCE_REMOVE;
 }
 
+/* Typing moves the cursor without "mark-set" */
+static void on_editor_text_changed(GtkTextBuffer* buffer, gpointer data) {
+    (void)buffer;
+    g_idle_add_full(G_PRIORITY_LOW, keep_cursor_clear, g_object_ref(data), g_object_unref);
+}
+
 static void on_editor_cursor_moved(GtkTextBuffer* buffer, const GtkTextIter* location,
                                    GtkTextMark* mark, gpointer data) {
-    if (mark != gtk_text_buffer_get_insert(buffer) ||
-        gtk_text_iter_get_line(location) < gtk_text_buffer_get_line_count(buffer) - 1) {
+    (void)location;
+    if (mark != gtk_text_buffer_get_insert(buffer)) {
         return;
     }
     /* Low priority: after the redraw in which GTK scrolls to the cursor */
-    g_idle_add_full(G_PRIORITY_LOW, scroll_view_to_end, g_object_ref(data), g_object_unref);
+    g_idle_add_full(G_PRIORITY_LOW, keep_cursor_clear, g_object_ref(data), g_object_unref);
 }
 
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
@@ -913,6 +956,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
 
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
     g_signal_connect(buffer, "mark-set", G_CALLBACK(on_editor_cursor_moved), view);
+    g_signal_connect_after(buffer, "changed", G_CALLBACK(on_editor_text_changed), view);
     g_signal_connect(buffer, "modified-changed",
                      G_CALLBACK(on_editor_modified_changed), tab);
 
