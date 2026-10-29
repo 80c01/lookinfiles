@@ -207,6 +207,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
             editor_move_tab_dedicated(app, NULL);
             return TRUE;
         }
+        /* Ctrl+Alt+N: line numbers of the current editor tab */
+        if (keyval == GDK_KEY_n || keyval == GDK_KEY_N) {
+            editor_toggle_line_numbers(app, NULL);
+            return TRUE;
+        }
     }
 
     /* Ctrl+E: move active editor tab to dedicated panel right of preview, or dock back */

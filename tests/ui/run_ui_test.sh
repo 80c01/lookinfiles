@@ -162,6 +162,8 @@ xdotool mousemove 700 300 click 1    # focus the editor text
 xdotool type --delay 80 "Edited "
                         shot editor_modified
 key ctrl+s;             shot editor_saved
+key ctrl+alt+n;         shot editor_line_numbers
+key ctrl+alt+n;         shot editor_line_numbers_hidden
 xdotool mousemove 1237 783 click 1
 xdotool mousemove 1218 721 click 1   # pick "Vim"
 key Escape g g l v l l l j; shot vim_visual

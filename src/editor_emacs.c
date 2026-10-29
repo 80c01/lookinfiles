@@ -116,6 +116,10 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
             } else if (strstr(cmd, "org-global-cycle") || strstr(cmd, "global-fold")) {
                 orgmode_editor_cycle_global_fold(tab);
                 emacs_close_minibuffer(tab);
+            } else if (strstr(cmd, "line-numbers")) {
+                /* display-line-numbers-mode */
+                editor_toggle_line_numbers((AppData*)tab->app, tab);
+                emacs_close_minibuffer(tab);
             } else if (strstr(cmd, "vim-mode")) {
                 editor_set_tab_mode((AppData*)tab->app, tab, EDITOR_MODE_VIM);
             } else if (strstr(cmd, "notepad-mode")) {

@@ -1,17 +1,22 @@
-/* Change bars in the left gutter of a text view: lines added, modified or
- * deleted since the last git commit, like the VS Code editor gutter. The HEAD
- * version is read by git in a worker thread; the line diff runs on the UI
- * thread (debounced while editing). */
+/* Left gutter of a text view: optional line numbers, then change bars for
+ * the lines added, modified or deleted since the last git commit, like the
+ * VS Code editor gutter. The HEAD version is read by git in a worker thread;
+ * the line diff runs on the UI thread (debounced while editing). */
 #include "diff_gutter.h"
 #include "git_utils.h"
 #include "line_diff.h"
 
+#include <pango/pangocairo.h>
 #include <string.h>
 
 #define DIFF_GUTTER_KEY "diff-gutter"
 #define DIFF_GUTTER_DEBOUNCE_MS 250
 /* Larger texts are not compared */
 #define DIFF_GUTTER_MAX_BYTES (4 * 1024 * 1024)
+/* Line number column: space before and after the digits, minimum digits */
+#define NUMBERS_PAD_LEFT 8
+#define NUMBERS_PAD_RIGHT 8
+#define NUMBERS_MIN_DIGITS 2
 
 typedef struct {
     GtkTextView* view;
@@ -19,6 +24,7 @@ typedef struct {
     GtkWidget* companion; /* weak pointer, redrawn with the gutter */
     GtkTextBuffer* buffer; /* ref held */
     gulong changed_id;
+    gulong mark_set_id;
     GtkAdjustment* vadj; /* ref held */
     gulong vadj_value_id;
     gulong vadj_changed_id;
@@ -31,6 +37,9 @@ typedef struct {
     guint generation; /* bumped when path changes: drops stale reads */
     guint debounce_id;
     GCancellable* cancellable;
+    gint numbers_from; /* buffer line numbered 1, -1 when numbers are hidden */
+    gint width;        /* current gutter width */
+    guint width_idle_id;
 } DiffGutter;
 
 typedef struct {
@@ -83,6 +92,41 @@ static void recompute(DiffGutter* g) {
     marks_changed(g);
 }
 
+/* Gutter width: change bar, plus the number column when shown */
+static gint wanted_width(DiffGutter* g) {
+    if (g->numbers_from < 0) {
+        return DIFF_GUTTER_WIDTH;
+    }
+    gint last = gtk_text_buffer_get_line_count(g->buffer) - g->numbers_from;
+    gint digits = 1;
+    for (gint n = MAX(last, 1); n >= 10; n /= 10) {
+        digits++;
+    }
+    digits = MAX(digits, NUMBERS_MIN_DIGITS);
+    PangoLayout* layout = gtk_widget_create_pango_layout(GTK_WIDGET(g->view), "0");
+    gint digit_w = 0;
+    pango_layout_get_pixel_size(layout, &digit_w, NULL);
+    g_object_unref(layout);
+    return NUMBERS_PAD_LEFT + digits * digit_w + NUMBERS_PAD_RIGHT + DIFF_GUTTER_WIDTH;
+}
+
+static void update_width(DiffGutter* g) {
+    gint w = wanted_width(g);
+    if (w != g->width) {
+        g->width = w;
+        gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(g->area), w);
+        gtk_widget_set_size_request(g->area, w, -1);
+    }
+    gtk_widget_queue_draw(g->area);
+}
+
+static gboolean on_width_idle(gpointer data) {
+    DiffGutter* g = data;
+    g->width_idle_id = 0;
+    update_width(g);
+    return G_SOURCE_REMOVE;
+}
+
 static gboolean on_debounce(gpointer data) {
     DiffGutter* g = data;
     g->debounce_id = 0;
@@ -93,6 +137,14 @@ static gboolean on_debounce(gpointer data) {
 static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
     DiffGutter* g = data;
+    if (g->numbers_from >= 0) {
+        if (g->live) {
+            update_width(g);
+        } else {
+            /* Preview replaced by other content: numbers no longer apply */
+            diff_gutter_set_line_numbers(GTK_WIDGET(g->view), -1);
+        }
+    }
     if (g->path == NULL) {
         return;
     }
@@ -175,6 +227,24 @@ void diff_gutter_set_file(GtkWidget* text_view, const gchar* path) {
     start_head_read(g);
 }
 
+void diff_gutter_set_line_numbers(GtkWidget* text_view, gint first_line) {
+    DiffGutter* g = g_object_get_data(G_OBJECT(text_view), DIFF_GUTTER_KEY);
+    if (g == NULL) {
+        return;
+    }
+    gint from = (first_line < 0) ? -1 : first_line;
+    if (from == g->numbers_from) {
+        return;
+    }
+    g->numbers_from = from;
+    update_width(g);
+}
+
+gboolean diff_gutter_get_line_numbers(GtkWidget* text_view) {
+    DiffGutter* g = g_object_get_data(G_OBJECT(text_view), DIFF_GUTTER_KEY);
+    return g != NULL && g->numbers_from >= 0;
+}
+
 const guint8* diff_gutter_get_marks(GtkWidget* text_view, guint* n_lines) {
     DiffGutter* g = g_object_get_data(G_OBJECT(text_view), DIFF_GUTTER_KEY);
     *n_lines = (g != NULL && g->marks != NULL) ? g->n_marks : 0;
@@ -204,28 +274,61 @@ void diff_gutter_refresh_all(void) {
     }
 }
 
-static void fill_bar(cairo_t* cr, double y, double h, double r, double gr, double b) {
+static void fill_bar(cairo_t* cr, double x, double y, double h, double r, double gr, double b) {
     cairo_set_source_rgb(cr, r, gr, b);
-    cairo_rectangle(cr, 0, y, DIFF_GUTTER_WIDTH - 1, h);
+    cairo_rectangle(cr, x, y, DIFF_GUTTER_WIDTH - 1, h);
     cairo_fill(cr);
 }
 
 /* Red triangle pointing into the text at y (between two lines) */
-static void fill_deleted(cairo_t* cr, double y) {
+static void fill_deleted(cairo_t* cr, double x, double y) {
     cairo_set_source_rgb(cr, 0xf8 / 255.0, 0x51 / 255.0, 0x49 / 255.0);
-    cairo_move_to(cr, 0, y - 4);
-    cairo_line_to(cr, DIFF_GUTTER_WIDTH, y);
-    cairo_line_to(cr, 0, y + 4);
+    cairo_move_to(cr, x, y - 4);
+    cairo_line_to(cr, x + DIFF_GUTTER_WIDTH, y);
+    cairo_line_to(cr, x, y + 4);
     cairo_close_path(cr);
     cairo_fill(cr);
 }
 
+/* Line number right-aligned before the change bar (Dark+ colours: the
+ * cursor line is brighter in editors) */
+static void draw_number(DiffGutter* g, cairo_t* cr, PangoLayout* layout, gint number,
+                        gboolean current, double y, double bar_x) {
+    gchar buf[16];
+    g_snprintf(buf, sizeof buf, "%d", number);
+    pango_layout_set_text(layout, buf, -1);
+    gint w = 0;
+    pango_layout_get_pixel_size(layout, &w, NULL);
+    if (current) {
+        cairo_set_source_rgb(cr, 0xc6 / 255.0, 0xc6 / 255.0, 0xc6 / 255.0);
+    } else {
+        cairo_set_source_rgb(cr, 0x85 / 255.0, 0x85 / 255.0, 0x85 / 255.0);
+    }
+    cairo_move_to(cr, bar_x - NUMBERS_PAD_RIGHT - w, y + gtk_text_view_get_pixels_above_lines(g->view));
+    pango_cairo_show_layout(cr, layout);
+}
+
 static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
     (void)area;
-    (void)width;
     DiffGutter* g = data;
-    if (g->marks == NULL || g->n_marks == 0) {
+    gboolean numbers = (g->numbers_from >= 0);
+    if (numbers && g->width_idle_id == 0 && wanted_width(g) != g->width) {
+        /* Font or line count changed: resize outside of drawing */
+        g->width_idle_id = g_idle_add(on_width_idle, g);
+    }
+    if (!numbers && (g->marks == NULL || g->n_marks == 0)) {
         return;
+    }
+    double bar_x = numbers ? width - DIFF_GUTTER_WIDTH : 0;
+    PangoLayout* layout = NULL;
+    gint cursor_line = -1;
+    if (numbers) {
+        layout = gtk_widget_create_pango_layout(GTK_WIDGET(g->view), NULL);
+        if (g->live) {
+            GtkTextIter cur;
+            gtk_text_buffer_get_iter_at_mark(g->buffer, &cur, gtk_text_buffer_get_insert(g->buffer));
+            cursor_line = gtk_text_iter_get_line(&cur);
+        }
     }
     GdkRectangle vis;
     gtk_text_view_get_visible_rect(g->view, &vis);
@@ -233,9 +336,6 @@ static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gp
     gtk_text_view_get_line_at_y(g->view, &it, vis.y, NULL);
     do {
         gint line = gtk_text_iter_get_line(&it);
-        if (line < 0 || (guint)line >= g->n_marks) {
-            break;
-        }
         gint by = 0;
         gint bh = 0;
         gtk_text_view_get_line_yrange(g->view, &it, &by, &bh);
@@ -244,19 +344,38 @@ static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gp
         if (wy > height) {
             break;
         }
+        if (numbers && line >= g->numbers_from) {
+            draw_number(g, cr, layout, line - g->numbers_from + 1, line == cursor_line, wy, bar_x);
+        }
+        if (g->marks == NULL || line < 0 || (guint)line >= g->n_marks) {
+            continue;
+        }
         guint8 m = g->marks[line];
         if (m & LINE_DIFF_ADDED) {
-            fill_bar(cr, wy, bh, 0x2e / 255.0, 0xa0 / 255.0, 0x43 / 255.0);
+            fill_bar(cr, bar_x, wy, bh, 0x2e / 255.0, 0xa0 / 255.0, 0x43 / 255.0);
         } else if (m & LINE_DIFF_MODIFIED) {
-            fill_bar(cr, wy, bh, 0x00 / 255.0, 0x78 / 255.0, 0xd4 / 255.0);
+            fill_bar(cr, bar_x, wy, bh, 0x00 / 255.0, 0x78 / 255.0, 0xd4 / 255.0);
         }
         if (m & LINE_DIFF_DELETED_ABOVE) {
-            fill_deleted(cr, wy);
+            fill_deleted(cr, bar_x, wy);
         }
         if (m & LINE_DIFF_DELETED_BELOW) {
-            fill_deleted(cr, wy + bh);
+            fill_deleted(cr, bar_x, wy + bh);
         }
     } while (gtk_text_iter_forward_line(&it));
+    if (layout != NULL) {
+        g_object_unref(layout);
+    }
+}
+
+/* The cursor line number is highlighted: follow the cursor */
+static void on_mark_set(GtkTextBuffer* buffer, const GtkTextIter* iter, GtkTextMark* mark,
+                        gpointer data) {
+    (void)iter;
+    DiffGutter* g = data;
+    if (g->live && g->numbers_from >= 0 && mark == gtk_text_buffer_get_insert(buffer)) {
+        gtk_widget_queue_draw(g->area);
+    }
 }
 
 static void on_scrolled(GtkAdjustment* adj, gpointer data) {
@@ -294,7 +413,11 @@ static void diff_gutter_free(gpointer data) {
     if (g->debounce_id != 0) {
         g_source_remove(g->debounce_id);
     }
+    if (g->width_idle_id != 0) {
+        g_source_remove(g->width_idle_id);
+    }
     g_signal_handler_disconnect(g->buffer, g->changed_id);
+    g_signal_handler_disconnect(g->buffer, g->mark_set_id);
     g_object_unref(g->buffer);
     if (g->vadj != NULL) {
         g_signal_handler_disconnect(g->vadj, g->vadj_value_id);
@@ -319,6 +442,9 @@ void diff_gutter_attach(GtkWidget* text_view, gboolean live) {
     g->live = live;
     g->buffer = g_object_ref(gtk_text_view_get_buffer(g->view));
     g->changed_id = g_signal_connect(g->buffer, "changed", G_CALLBACK(on_buffer_changed), g);
+    g->mark_set_id = g_signal_connect(g->buffer, "mark-set", G_CALLBACK(on_mark_set), g);
+    g->numbers_from = -1;
+    g->width = DIFF_GUTTER_WIDTH;
 
     g->area = gtk_drawing_area_new();
     gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(g->area), DIFF_GUTTER_WIDTH);

@@ -73,8 +73,9 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor tabs", "Shift+Right / Left", "In Org editor: cycle TODO keyword (TODO -> NEXT -> DONE -> none)"},
     {"Editor tabs", "Alt+Enter", "In Org editor: insert new heading at current level (M-RET)"},
     {"Editor tabs", "Ctrl+Enter / Space", "In Org editor: toggle checkbox [ ] <-> [X] and update progress statistics"},
-    {"Editor tabs", "Right-click tab header", "Context menu to change mode, move, split, or close the editor tab"},
+    {"Editor tabs", "Right-click tab header", "Context menu to change mode, show line numbers, move, split, or close the editor tab"},
     {"Editor tabs", "Ctrl+R / F2", "Rename current text buffer"},
+    {"Editor tabs", "Ctrl+Alt+N", "Show or hide line numbers in the current editor tab (:set number / M-x display-line-numbers-mode)"},
     /* Editor Modes */
     {"Editor: Mode switching", "Status bar / Tab menu", "Switch between Notepad, Emacs, and Vim editor modes"},
     {"Editor: Mode switching", ":set mode=vim/emacs/notepad", "In Vim command line: switch active editor mode"},

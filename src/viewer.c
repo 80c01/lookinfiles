@@ -584,6 +584,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
     gboolean is_html = (td->kind == FILE_KIND_HTML) && !td->render_raw;
     gboolean is_org = (td->kind == FILE_KIND_ORG) && !td->render_raw;
     gboolean is_rendered = is_md || is_html || is_org;
+    gboolean code = FALSE;
     if (is_rendered || td->kind == FILE_KIND_BINARY) {
         apply_viewer_language(app, NULL, NULL);
         set_view_monospace(app->text_view, FALSE);
@@ -591,7 +592,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         set_view_text_padding(app->text_view);
     } else {
         gboolean has_lang = apply_viewer_language(app, td->name, td->content_type);
-        gboolean code = has_lang || is_code_file(td->name) || td->render_raw ||
+        code = has_lang || is_code_file(td->name) || td->render_raw ||
                         (td->utf8_text != NULL && g_str_has_prefix(td->utf8_text, "#!"));
         set_view_monospace(app->text_view, code);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
@@ -637,9 +638,17 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
                         "Showing first %u bytes. Large file, display truncated.\n\n",
                         td->name, td->fsize, (guint)td->raw_len);
             }
+            /* Line numbers start after the truncation header */
+            gint first_line = 0;
+            for (const gchar* c = text->str; *c != '\0'; c++) {
+                first_line += (*c == '\n');
+            }
             g_string_append(text, td->utf8_text);
             gtk_text_buffer_set_text(app->buffer, text->str, (gint)text->len);
             g_string_free(text, TRUE);
+            if (code) {
+                diff_gutter_set_line_numbers(app->text_view, first_line);
+            }
             /* Git change bars, for whole files only (a truncated preview has a header) */
             if (!td->preview) {
                 diff_gutter_set_file(app->text_view, td->full);

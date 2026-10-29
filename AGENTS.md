@@ -108,7 +108,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   padded for a monospace font (unit-tested).
 - `fs_watch` — `GFileMonitor`s on expanded directories, the previewed file and
   `.git`, debounced `schedule_refresh()`; reports through events only.
-- `diff_gutter` — git change bars in the left gutter of a text view
+- `diff_gutter` — left gutter of a text view: line numbers
+  (`diff_gutter_set_line_numbers()`: code previews, editor toggle `Ctrl+Alt+N`)
+  and git change bars
   (`diff_gutter_attach()` on the preview and editor views,
   `diff_gutter_set_file()`, `diff_gutter_get_marks()` for the minimap,
   which is redrawn through `diff_gutter_add_companion()`); HEAD version read with `git_read_head_blob()`

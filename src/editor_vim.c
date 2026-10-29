@@ -1,6 +1,7 @@
 /* Vim editor mode (visual clone): statusline, command line, modal key handling. */
 #include "editor_modes_private.h"
 #include "editor.h"
+#include "diff_gutter.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -258,6 +259,14 @@ static void on_vim_cl_entry_activate(GtkEntry* entry, gpointer user_data) {
     } else if (g_strcmp0(cmd, "left") == 0) {
         editor_mode_align_text(tab, GTK_JUSTIFY_LEFT, 80);
         vim_echo(tab, "Left aligned lines");
+    } else if (g_strcmp0(cmd, "set number") == 0 || g_strcmp0(cmd, "set nu") == 0 ||
+               g_strcmp0(cmd, "set nonumber") == 0 || g_strcmp0(cmd, "set nonu") == 0 ||
+               g_strcmp0(cmd, "set number!") == 0 || g_strcmp0(cmd, "set nu!") == 0) {
+        gboolean shown = diff_gutter_get_line_numbers(tab->view);
+        gboolean want = g_str_has_suffix(cmd, "!") ? !shown : !g_str_has_prefix(cmd, "set no");
+        if (want != shown) {
+            editor_toggle_line_numbers((AppData*)tab->app, tab);
+        }
     } else if (g_str_has_prefix(cmd, "set mode=")) {
         const gchar* m = cmd + 9;
         if (g_ascii_strcasecmp(m, "vim") == 0) {

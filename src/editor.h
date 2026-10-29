@@ -22,10 +22,13 @@ enum {
     TAB_ACTION_CLOSE,
     TAB_ACTION_MODE_NOTEPAD,
     TAB_ACTION_MODE_EMACS,
-    TAB_ACTION_MODE_VIM
+    TAB_ACTION_MODE_VIM,
+    TAB_ACTION_LINE_NUMBERS
 };
 
 EditorTab* editor_current_tab(AppData* app);
+/* Show or hide the line numbers of tab (NULL: the current editor tab) */
+void editor_toggle_line_numbers(AppData* app, EditorTab* tab);
 GPtrArray* editor_get_all_notebooks(AppData* app);
 void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode);
 void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data);

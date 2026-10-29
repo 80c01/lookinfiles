@@ -6,7 +6,7 @@
 /* Width in pixels of the change bar column on the left of a text view */
 #define DIFF_GUTTER_WIDTH 4
 
-/* Add a change bar column (git changes since the last commit, as in VS Code:
+/* Add a gutter column with change bars (git changes since the last commit, as in VS Code:
  * green = added, blue = modified, red triangle = deleted) to the left of
  * text_view. live: the buffer is edited and the marks follow the edits;
  * otherwise (preview) any change of the buffer clears the marks until the
@@ -16,6 +16,15 @@ void diff_gutter_attach(GtkWidget* text_view, gboolean live);
 /* Compare the buffer of text_view with the HEAD version of path (read in a
  * worker thread). NULL clears the marks. No effect if not attached. */
 void diff_gutter_set_file(GtkWidget* text_view, const gchar* path);
+
+/* Show line numbers before the change bars: buffer line first_line is
+ * numbered 1 and the lines above it get no number (e.g. a header); -1 hides
+ * them. In a preview (not live) any change of the buffer hides them again,
+ * so set them after the text. The cursor line is highlighted when live. */
+void diff_gutter_set_line_numbers(GtkWidget* text_view, gint first_line);
+
+/* TRUE when text_view shows line numbers */
+gboolean diff_gutter_get_line_numbers(GtkWidget* text_view);
 
 /* Change marks of text_view (one LineDiffMark set per buffer line), NULL when
  * none; *n_lines receives their number. Owned by the gutter. */

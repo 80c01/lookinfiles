@@ -177,6 +177,18 @@ void on_notebook_page_reordered(GtkNotebook* notebook, GtkWidget* child,
     on_notebook_page_reordered_impl(notebook, child, page_num, data);
 }
 
+/* Show or hide the line numbers of tab (NULL: the current editor tab) */
+void editor_toggle_line_numbers(AppData* app, EditorTab* tab) {
+    if (tab == NULL) {
+        tab = editor_current_tab(app);
+    }
+    if (tab == NULL || tab->view == NULL) {
+        return;
+    }
+    gboolean shown = diff_gutter_get_line_numbers(tab->view);
+    diff_gutter_set_line_numbers(tab->view, shown ? -1 : 0);
+}
+
 EditorTab* editor_current_tab(AppData* app) {
     if (app == NULL || app->editors == NULL) {
         return NULL;
@@ -323,6 +335,9 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
     case TAB_ACTION_MOVE_DOWN:
         editor_move_tab_direction(app, tab, EDITOR_MOVE_DOWN);
         break;
+    case TAB_ACTION_LINE_NUMBERS:
+        editor_toggle_line_numbers(app, tab);
+        break;
     case TAB_ACTION_CLOSE:
         editor_close_tab(app, tab);
         break;
@@ -415,6 +430,15 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     gtk_widget_set_margin_top(sep3, 4);
     gtk_widget_set_margin_bottom(sep3, 4);
     gtk_box_append(GTK_BOX(box), sep3);
+
+    tab_menu_item(box, popover, app, tab,
+                  diff_gutter_get_line_numbers(tab->view) ? "Hide Line Numbers" : "Show Line Numbers",
+                  "Ctrl+Alt+N", TAB_ACTION_LINE_NUMBERS);
+
+    GtkWidget* sep4 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_margin_top(sep4, 4);
+    gtk_widget_set_margin_bottom(sep4, 4);
+    gtk_box_append(GTK_BOX(box), sep4);
 
     tab_menu_item(box, popover, app, tab, "Close Tab", "Ctrl+W", TAB_ACTION_CLOSE);
 

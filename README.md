@@ -35,7 +35,8 @@ workspaces, in a VS Code Dark+ look.
 
 **Preview panel** (right), for the selected entry:
 
-- Text and source code with syntax highlighting (GtkSourceView, Dark+ colours).
+- Text and source code with syntax highlighting (GtkSourceView, Dark+ colours),
+  and line numbers for source code.
 - Markdown rendered like VS Code's preview: headings, lists, task lists
   (including in-progress `[/]` / `[-]` tasks), tables, quotes, GitHub alerts,
   highlighted code blocks and images.
@@ -220,11 +221,12 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 | `Ctrl+E` | Move the tab to the dedicated editor panel, or dock it back |
 | `Ctrl+Alt+Arrows` / `Ctrl+Alt+H J K L` | Move / split the tab left, down, up or right |
 | `Ctrl+R` / `F2` | Rename the current text buffer |
+| `Ctrl+Alt+N` | Show or hide the line numbers of the tab (also `:set number` / `:set nonumber` in Vim mode, `M-x display-line-numbers-mode` in Emacs mode) |
 | `Tab` / `Shift+Tab` | Org-mode: fold the heading / cycle the global visibility |
 | `Shift+Right` / `Shift+Left` | Org-mode: cycle the TODO keyword |
 | `Alt+Enter` | Org-mode: new heading at the current level |
 | `Ctrl+Enter` / `Ctrl+Space` | Org-mode: toggle the checkbox and update the progress cookie |
-| Right click on the tab | Change the mode, move, split or close the tab |
+| Right click on the tab | Change the mode, show line numbers, move, split or close the tab |
 
 The editor mode is changed from the status bar button, the tab menu,
 `:set mode=vim|emacs|notepad` in Vim mode or `M-x vim-mode` / `emacs-mode` /
@@ -257,7 +259,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Format | `M-q` fill paragraph (72 columns), `M-u` / `M-l` / `M-c` case, `M-x set-justification-left` / `center` / `right` / `full` |
 | Undo and redo | `C-/`, `C-_`, `C-x u` / `C-Shift-_`, `M-_` |
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
-| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, mode switches) |
+| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, mode switches) |
 
 </details>
 
@@ -275,6 +277,7 @@ Vim status line with mode badge, ruler and command line (`:`, `/`, `?`).
 | Move | `h` `j` `k` `l`, `w` / `b` / `e`, `0` / `^` / `$`, `gg` / `G`, `[count]G`, `:<line>`, `Ctrl+F` / `Ctrl+B`, `Ctrl+D` / `Ctrl+U`, `zz` |
 | Find and replace | `/pattern`, `?pattern`, `n` / `N`, `*`, `:%s/old/new/g`, `:s/old/new/g` |
 | Format | `==`, `>>` / `<<`, `gq` (80 columns), `:center [width]`, `:right [width]`, `:left` |
+| Options | `:set number` / `:set nu`, `:set nonumber` / `:set nonu`, `:set number!` line numbers |
 | Undo and redo | `u`, `Ctrl+R` |
 | Save and quit | `:w`, `:w <file>`, `:saveas <file>`, `ZZ` / `:wq` / `:x`, `:q`, `:q!` |
 
