@@ -146,6 +146,11 @@ static void test_log(void) {
     g_free(dir);
 }
 
+static void test_manpage(void) {
+    g_autoptr(PreviewDoc) doc = build_fixture("lookin.1", FILE_KIND_MANPAGE);
+    g_assert_true(g_str_has_prefix(doc->text->str, "LOOKIN(1)"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -175,5 +180,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/certificates", test_certificates);
     g_test_add_func("/preview_formats/cards", test_cards);
     g_test_add_func("/preview_formats/log", test_log);
+    g_test_add_func("/preview_formats/manpage", test_manpage);
     return g_test_run();
 }

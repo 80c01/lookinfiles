@@ -1,0 +1,33 @@
+.\" Manual page of the Lookin test fixture
+.TH LOOKIN 1 "2026-10-29" "Lookin 1.4" "User Commands"
+.SH NAME
+lookin \- look in your files
+.SH SYNOPSIS
+.B lookin
+[\fB\-f\fR] [\fB\-s\fR \fIWxH\fR]
+.RI [ directory ]
+.SH DESCRIPTION
+.B Lookin
+is a file explorer that previews
+files in a blink.
+It shows \(lqmost\(rq formats \(em text, images, archives.
+.PP
+Second paragraph.
+.SH OPTIONS
+.TP
+.BR \-f ", " \-\-fullscreen
+Start in full screen.
+.TP
+\fB\-s\fR, \fB\-\-size\fR \fIWxH\fR
+Window size, e.g.
+.IR 1920x1080 .
+.SS Examples
+.nf
+lookin ~/projects
+lookin \-s 1280x800 .
+.fi
+.IP \(bu 2
+First item.
+.SH SEE ALSO
+.BR ls (1),
+.BR file (1)

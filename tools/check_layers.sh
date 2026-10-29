@@ -33,7 +33,8 @@ card_view:preview_doc
 log_view:preview_doc
 exif:
 font_info:
-preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive,cert_view,card_view,log_view,font_info
+man_view:preview_doc
+preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive,cert_view,card_view,log_view,font_info,man_view
 org_time:
 org_doc:org_time
 org_table:org_doc

@@ -40,6 +40,8 @@ static const gchar* const STYLE_TAGS[PREVIEW_STYLE_COUNT] = {
     [PREVIEW_STYLE_CODE] = "pd_code",
     [PREVIEW_STYLE_MONO] = "pd_mono",
     [PREVIEW_STYLE_INDENT] = "pd_indent",
+    [PREVIEW_STYLE_INDENT2] = "pd_indent2",
+    [PREVIEW_STYLE_INDENT3] = "pd_indent3",
 };
 
 /* VS Code Dark+ colours on the preview background (#121314) */
@@ -85,7 +87,10 @@ static void ensure_tags(GtkTextBuffer* buffer) {
     gtk_text_buffer_create_tag(buffer, "pd_code", "family", "Monospace",
                                "paragraph-background", "#1e1f21", NULL);
     gtk_text_buffer_create_tag(buffer, "pd_mono", "family", "Monospace", NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_indent", "left-margin", 34, NULL);
+    /* Indents in addition to the view's own left margin (text padding) */
+    gtk_text_buffer_create_tag(buffer, "pd_indent", "left-margin", PREVIEW_TEXT_PADDING_X + 56, NULL);
+    gtk_text_buffer_create_tag(buffer, "pd_indent2", "left-margin", PREVIEW_TEXT_PADDING_X + 112, NULL);
+    gtk_text_buffer_create_tag(buffer, "pd_indent3", "left-margin", PREVIEW_TEXT_PADDING_X + 168, NULL);
 }
 
 /* Tag of a font span: a Pango font description */

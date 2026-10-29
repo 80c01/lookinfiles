@@ -16,6 +16,7 @@
 #include "hex_dump.h"
 #include "json_view.h"
 #include "log_view.h"
+#include "man_view.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
                                         GError** error);
@@ -575,6 +576,65 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     return doc;
 }
 
+/* --- Manual pages --- */
+
+#define MAN_MAX_TEXT (2 * 1024 * 1024)
+
+/* Start of a gzipped file, decompressed (at most max bytes), valid UTF-8 */
+static gchar* gunzip_text(const gchar* path, gsize max, GError** error) {
+    GFile* file = g_file_new_for_path(path);
+    GFileInputStream* raw = g_file_read(file, NULL, error);
+    g_object_unref(file);
+    if (raw == NULL) {
+        return NULL;
+    }
+    GZlibDecompressor* dec = g_zlib_decompressor_new(G_ZLIB_COMPRESSOR_FORMAT_GZIP);
+    GInputStream* in = g_converter_input_stream_new(G_INPUT_STREAM(raw), G_CONVERTER(dec));
+    g_object_unref(dec);
+    g_object_unref(raw);
+    gchar* data = g_malloc(max + 1);
+    gsize len = 0;
+    gboolean ok = g_input_stream_read_all(in, data, max, &len, NULL, error);
+    g_object_unref(in);
+    if (!ok && len == 0) {
+        g_free(data);
+        return NULL;
+    }
+    g_clear_error(error);
+    gchar* text = g_utf8_make_valid(data, (gssize)len);
+    g_free(data);
+    return text;
+}
+
+static PreviewDoc* build_manpage(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    gchar* unzipped = NULL;
+    const gchar* text = in->text;
+    gsize len = in->text_len;
+    if (text == NULL) {
+        if (in->head_len < 2 || in->head[0] != 0x1F || in->head[1] != 0x8B) {
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "only gzip-compressed pages can be read");
+            return NULL;
+        }
+        unzipped = gunzip_text(in->path, MAN_MAX_TEXT, error);
+        if (unzipped == NULL) {
+            return NULL;
+        }
+        text = unzipped;
+        len = strlen(unzipped);
+    }
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    gboolean ok = man_view_append(doc, text, len);
+    g_free(unzipped);
+    if (!ok) {
+        preview_doc_free(doc);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a manual page");
+        return NULL;
+    }
+    return doc;
+}
+
 /* --- ELF executables, libraries, objects --- */
 
 static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -663,6 +723,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_log;
     case FILE_KIND_FONT:
         return build_font;
+    case FILE_KIND_MANPAGE:
+        return build_manpage;
     default:
         return NULL;
     }

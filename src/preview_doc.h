@@ -48,6 +48,8 @@ typedef enum {
     PREVIEW_STYLE_CODE,      /* code block: monospace, whole-line background */
     PREVIEW_STYLE_MONO,      /* monospace run in proportional text */
     PREVIEW_STYLE_INDENT,    /* paragraph indented by one level (wrapped lines too) */
+    PREVIEW_STYLE_INDENT2,   /* two levels */
+    PREVIEW_STYLE_INDENT3,   /* three levels */
     PREVIEW_STYLE_FONT,      /* text in a given font; arg = Pango font description */
     PREVIEW_STYLE_COUNT
 } PreviewStyle;
