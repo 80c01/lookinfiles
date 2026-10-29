@@ -123,6 +123,7 @@ static void test_read(void) {
     check_read("+3", "<2026-11-01 Sun>");
     check_read("+2w", "<2026-11-12 Thu>");
     check_read("-1m", "<2026-09-29 Tue>");
+    check_read("now", "<2026-10-29 Thu 09:30>");
     check_read("tomorrow", "<2026-10-30 Fri>");
     check_read("mon", "<2026-11-02 Mon>");
     check_read("thu", "<2026-11-05 Thu>");

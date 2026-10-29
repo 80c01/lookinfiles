@@ -358,6 +358,10 @@ gboolean org_timestamp_read(const gchar* input, GDateTime* now, OrgTimestamp* ts
     if (len == 0 || g_strcmp0(s, "today") == 0 || g_strcmp0(s, ".") == 0) {
         goto done;
     }
+    if (g_strcmp0(s, "now") == 0) {
+        org_timestamp_from_datetime(ts, now, active, TRUE);
+        goto done;
+    }
     if (g_strcmp0(s, "tomorrow") == 0) {
         add_days(ts, 1);
         goto done;

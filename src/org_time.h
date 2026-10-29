@@ -64,7 +64,8 @@ gboolean org_timestamp_apply_repeater(OrgTimestamp* ts, GDateTime* now);
 
 /* Read a date typed at a prompt into ts (keeps ts->active):
  * "" today, "+3" / "+2w" / "-1m" relative to today, "2026-11-02",
- * "11-02", "2026-11-02 14:30", "14:30" (today), "tomorrow", "mon".."sun"
+ * "11-02", "2026-11-02 14:30", "14:30" (today), "now" (today with the
+ * current time), "tomorrow", "mon".."sun"
  * (next such day). */
 gboolean org_timestamp_read(const gchar* input, GDateTime* now, OrgTimestamp* ts);
 

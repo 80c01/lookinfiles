@@ -291,6 +291,7 @@ the Emacs minibuffer (`Tab` completes tags and `*Heading` links). `M-x org-…` 
 | `C-c q` | Set the heading's tags (aligned on column 77) |
 | `C-c C-s` / `C-c C-d` | Schedule / set a deadline (`today`, `+3`, `+2w`, `mon`, `2026-11-02 10:00`, `none`) |
 | `C-c .` / `C-c !` | Insert (or replace) an active `<…>` / inactive `[…]` timestamp |
+| `C-u C-c .` / `C-u C-c !` | Same, with the time of day (the current time unless one is typed) |
 | `C-c C-x C-i` / `C-c C-x C-o` | Clock in (into a `:LOGBOOK:` drawer) / clock out |
 | `C-c C-l` / `C-c C-o` | Insert a link / open the link under the cursor (URL, `file:`, `*Heading`, `#custom-id`, `<<target>>`) |
 | `C-c C-n` / `C-c C-p` | Next / previous visible heading |

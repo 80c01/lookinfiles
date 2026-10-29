@@ -521,6 +521,9 @@ static gboolean can_prompt(EditorTab* tab) {
 
 /* data: "SCHEDULED", "DEADLINE", "<" (active timestamp) or "[" (inactive) */
 static void on_date_answer(EditorTab* tab, const gchar* text, gchar* data) {
+    /* A leading '@' asks for the time of day too (C-u C-c . / C-u C-c !) */
+    gboolean with_time = data[0] == '@';
+    if (with_time) data++;
     gboolean planning = data[0] != '<' && data[0] != '[';
     OrgArgs a = {0};
     if (planning && (g_ascii_strcasecmp(text, "none") == 0 || g_ascii_strcasecmp(text, "remove") == 0)) {
@@ -537,6 +540,11 @@ static void on_date_answer(EditorTab* tab, const gchar* text, gchar* data) {
     ts.active = data[0] != '[';
     GDateTime* now = g_date_time_new_now_local();
     gboolean ok = org_timestamp_read(text, now, &ts);
+    if (ok && with_time && !ts.has_time) {
+        ts.has_time = TRUE;
+        ts.hour = g_date_time_get_hour(now);
+        ts.minute = g_date_time_get_minute(now);
+    }
     g_date_time_unref(now);
     if (!ok) {
         gchar* m = g_strdup_printf("Cannot read the date \"%s\"", text);
@@ -564,15 +572,18 @@ static void on_date_answer(EditorTab* tab, const gchar* text, gchar* data) {
 static void prompt_date(EditorTab* tab, const gchar* what) {
     if (!can_prompt(tab)) return;
     gchar* prompt;
+    gboolean with_time = FALSE;
     if (what[0] == '<' || what[0] == '[') {
-        prompt = g_strdup("Date (today, +3, +2w, mon, 2026-11-02 10:00): ");
+        with_time = state_of(tab)->emacs_universal_arg;
+        prompt = g_strdup(with_time ? "Date and time (now, +3, +2w, mon, 2026-11-02 10:00): "
+                                    : "Date (today, +3, +2w, mon, 2026-11-02 10:00): ");
     } else {
         gchar* low = g_ascii_strdown(what, -1);
         low[0] = g_ascii_toupper(low[0]);
         prompt = g_strdup_printf("%s (today, +3, +2w, mon, 2026-11-02 10:00, none): ", low);
         g_free(low);
     }
-    emacs_prompt(tab, prompt, "", on_date_answer, g_strdup(what));
+    emacs_prompt(tab, prompt, "", on_date_answer, g_strconcat(with_time ? "@" : "", what, NULL));
     g_free(prompt);
 }
 

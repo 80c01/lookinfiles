@@ -851,11 +851,8 @@ static gboolean is_modifier_key(guint keyval) {
     }
 }
 
-gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
-                                 guint keycode, GdkModifierType state) {
-    (void)keycode;
-    if (tab == NULL || tab->mode_state == NULL) return FALSE;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+static gboolean dispatch_key(AppData* app, EditorTab* tab, EditorModeState* st,
+                             guint keyval, GdkModifierType state) {
 
     /* Any other command restarts the C-l cycle (modifier presses do not count) */
     if (!is_modifier_key(keyval) &&
@@ -866,6 +863,16 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
     if (!is_modifier_key(keyval) &&
         !((state & GDK_CONTROL_MASK) && (keyval == GDK_KEY_space || keyval == GDK_KEY_at))) {
         st->emacs_last_set_mark = FALSE;
+    }
+
+    /* C-u (universal-argument) in Emacs-like modes; vim keeps C-u for scrolling */
+    if ((tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) &&
+        st->emacs_prefix == EMACS_PREFIX_NONE && st->org_prefix == ORG_PREFIX_NONE &&
+        (state & GDK_CONTROL_MASK) && !(state & GDK_ALT_MASK) &&
+        (keyval == GDK_KEY_u || keyval == GDK_KEY_U)) {
+        st->emacs_universal_arg = TRUE;
+        emacs_echo(tab, "C-u-");
+        return TRUE;
     }
 
     if (orgmode_editor_is_org(tab)) {
@@ -887,6 +894,21 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
     }
 
     return notepad_handle_key(tab, st, keyval, state);
+}
+
+gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
+                                 guint keycode, GdkModifierType state) {
+    (void)keycode;
+    if (tab == NULL || tab->mode_state == NULL) return FALSE;
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    gboolean was_c_u = st->emacs_universal_arg;
+    gboolean handled = dispatch_key(app, tab, st, keyval, state);
+    /* The prefix argument lasts until a complete command (C-c . is two keys) */
+    if (was_c_u && !is_modifier_key(keyval) &&
+        st->emacs_prefix == EMACS_PREFIX_NONE && st->org_prefix == ORG_PREFIX_NONE) {
+        st->emacs_universal_arg = FALSE;
+    }
+    return handled;
 }
 
 gboolean editor_modes_claims_key(AppData* app, guint keyval, GdkModifierType state) {

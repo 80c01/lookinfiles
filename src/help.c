@@ -84,6 +84,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Org editor", "C-c C-c / C-c C-t / C-c ,", "Context action (checkbox, table, tags) / cycle TODO / set priority"},
     {"Org editor", "C-c C-s / C-c C-d", "Schedule / deadline (today, +3, +2w, mon, 2026-11-02 10:00, none)"},
     {"Org editor", "C-c . / C-c ! / C-c q", "Insert active / inactive timestamp, set tags"},
+    {"Org editor", "C-u C-c . / C-u C-c !", "Insert a timestamp with the time of day"},
     {"Org editor", "C-c C-x C-i / C-c C-x C-o", "Clock in / clock out (LOGBOOK drawer)"},
     {"Org editor", "C-c C-l / C-c C-o", "Insert link / open link (URL, file:, *Heading, #id)"},
     {"Org editor", "C-c C-n / p / f / b / u", "Next / previous visible heading, same level, parent"},

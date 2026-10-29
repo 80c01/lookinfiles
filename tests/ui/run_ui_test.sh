@@ -200,6 +200,15 @@ key alt+comma           # M-<: beginning of buffer
 xdotool keydown ctrl key --delay 120 space f f f f f n keyup ctrl
                         shot emacs_region
 key ctrl+g;             shot emacs_region_cleared
+# C-SPC C-SPC sets then deactivates the mark
+xdotool keydown ctrl key --delay 120 space space f keyup ctrl
+                        shot emacs_mark_deactivated
+# C-u C-c . inserts a timestamp with the current time (undone afterwards)
+key End
+xdotool keydown ctrl key --delay 120 u c keyup ctrl
+key period;             shot org_timestamp_time_prompt
+key Return;             shot org_timestamp_with_time
+key ctrl+slash
 # M-x text-mode: plain Emacs editing of the .org file (unfolded, modeline Text);
 # M-x org-mode: back to Org-mode, folded as at startup
 key alt+x; xdotool type --delay 60 "text-mode"; key Return
