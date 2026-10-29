@@ -35,6 +35,7 @@
     cp "$ROOT/tests/fixtures/preview/report.odt" 21-report.odt
     cp "$ROOT/tests/fixtures/preview/roadmap.pptx" 22-roadmap.pptx
     cp "$ROOT/tests/fixtures/preview/roadmap.odp" 23-roadmap.odp
+    cp "$ROOT/tests/fixtures/preview/story.epub" 24-story.epub
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -67,4 +68,5 @@ format_scenario() {
     key j;              shot fmt_odt
     key j;              shot fmt_pptx
     key j;              shot fmt_odp
+    key j;              shot fmt_epub
 }

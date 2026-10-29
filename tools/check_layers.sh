@@ -39,7 +39,8 @@ zip_xml:zip_reader
 spreadsheet:zip_reader,zip_xml
 odf:zip_reader,zip_xml
 pptx:zip_reader,zip_xml
-preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx
+epub:zip_reader,zip_xml
+preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub
 org_time:
 org_doc:org_time
 org_table:org_doc

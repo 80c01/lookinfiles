@@ -12,6 +12,7 @@
 #include "diff_view.h"
 #include "docx.h"
 #include "elf_info.h"
+#include "epub.h"
 #include "font_info.h"
 #include "hex_dump.h"
 #include "json_view.h"
@@ -593,6 +594,14 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     return doc;
 }
 
+/* --- E-books --- */
+
+static PreviewDoc* build_ebook(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    gchar* html = epub_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, NULL, error);
+    return html != NULL ? preview_doc_new_source(PREVIEW_DOC_HTML, html) : NULL;
+}
+
 /* --- Presentations --- */
 
 static PreviewDoc* build_presentation(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -880,6 +889,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_spreadsheet;
     case FILE_KIND_PRESENTATION:
         return build_presentation;
+    case FILE_KIND_EBOOK:
+        return build_ebook;
     default:
         return NULL;
     }

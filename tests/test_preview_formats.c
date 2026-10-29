@@ -173,6 +173,8 @@ static void test_office(void) {
     g_assert_nonnull(strstr(odt->text->str, "<h1>Quarterly report</h1>"));
     g_autoptr(PreviewDoc) pptx = build_fixture("roadmap.pptx", FILE_KIND_PRESENTATION);
     g_assert_nonnull(strstr(pptx->text->str, "Presentation · 2 slides"));
+    g_autoptr(PreviewDoc) epub = build_fixture("story.epub", FILE_KIND_EBOOK);
+    g_assert_nonnull(strstr(epub->text->str, "Chapter 2. Morning"));
     g_autoptr(PreviewDoc) odp = build_fixture("roadmap.odp", FILE_KIND_PRESENTATION);
     g_assert_nonnull(strstr(odp->text->str, "<h3>Previews</h3>"));
 }
