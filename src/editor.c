@@ -181,6 +181,21 @@ static void editor_update_panel_visibilities(AppData* app) {
     if (app->editor_box != NULL) {
         gtk_widget_set_visible(app->editor_box, dedicated);
     }
+    /* The dedicated panel was the only one shown (explorer hidden while
+     * editing): bring the explorer back rather than leave an empty window */
+    if (!dedicated && !app->switching_ws && app->left_vbox != NULL &&
+        !gtk_widget_get_visible(app->left_vbox) &&
+        (app->viewer_box == NULL || !gtk_widget_get_visible(app->viewer_box)) &&
+        (app->term_scroll == NULL || !gtk_widget_get_visible(app->term_scroll))) {
+        app->applying_layout = TRUE;
+        gtk_widget_set_visible(app->left_vbox, TRUE);
+        if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+            app->workspaces[app->current_ws].files_vis = TRUE;
+        }
+        if (app->tree_view != NULL) {
+            gtk_widget_grab_focus(app->tree_view);
+        }
+    }
     if (app->editor_paned != NULL) {
         gboolean preview_vis = (app->viewer_box != NULL && gtk_widget_get_visible(app->viewer_box));
         gtk_widget_set_visible(app->editor_paned, preview_vis || dedicated);

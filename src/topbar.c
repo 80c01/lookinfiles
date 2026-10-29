@@ -33,7 +33,8 @@ void on_files_pill_clicked(GtkButton* btn, gpointer data) {
     gboolean cur = gtk_widget_get_visible(app->left_vbox);
     gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
     gboolean term_vis = (app->term_scroll != NULL) && gtk_widget_get_visible(app->term_scroll);
-    if (cur && !preview_vis && !term_vis) {
+    gboolean editor_vis = app->editor_dedicated && (app->editor_box != NULL) && gtk_widget_get_visible(app->editor_box);
+    if (cur && !preview_vis && !term_vis && !editor_vis) {
         return; /* keep at least one panel visible */
     }
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
@@ -45,6 +46,11 @@ void on_files_pill_clicked(GtkButton* btn, gpointer data) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     } else if (preview_vis) {
         gtk_widget_grab_focus(app->text_view);
+    } else if (editor_vis) {
+        EditorTab* tab = editor_current_tab(app);
+        if (tab != NULL && tab->view != NULL) {
+            gtk_widget_grab_focus(tab->view);
+        }
     }
 }
 

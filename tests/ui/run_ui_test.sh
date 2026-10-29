@@ -278,6 +278,12 @@ drag 860 359 1100 50 tab_drag_tab_bar;        shot tab_dropped_back
 key ctrl+alt+Down;      shot ws1_editor_split
 key alt+plus;           shot ws3_added
 key G Return ctrl+alt+d; shot ws3_editor_dedicated
+# The explorer can be hidden while the dedicated editor is the only other panel
+xdotool mousemove 1042 17 click 1    # Preview pill: hide the preview
+xdotool mousemove 948 17 click 1;    shot ws3_editor_alone   # Explorer pill: hide it
+xdotool mousemove 948 17 click 1     # show the explorer again
+xdotool mousemove 1042 17 click 1    # and the preview
+xdotool mousemove 1000 400 click 1; key ctrl+Home; shot ws3_editor_panels_restored
 key alt+Left alt+Left k Return ctrl+alt+Down; shot ws3_editor_split
 key ctrl+alt+Up;        shot ws3_editor_unsplit
 key alt+1;              shot ws1_editor_split_kept
