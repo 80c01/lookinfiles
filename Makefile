@@ -7,7 +7,7 @@
 CC = gcc
 PKG_CONFIG ?= pkg-config
 
-CFLAGS = -Wall -Wextra -Wno-deprecated-declarations -Isrc `$(PKG_CONFIG) --cflags gtk4`
+CFLAGS = -Wall -Wextra -Isrc `$(PKG_CONFIG) --cflags gtk4`
 LDFLAGS = `$(PKG_CONFIG) --libs gtk4`
 DEPFLAGS = -MMD -MP
 

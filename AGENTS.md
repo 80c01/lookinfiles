@@ -4,7 +4,7 @@ Guidelines for AI coding agents working in this repository.
 
 ## Project overview
 
-`file explorer` written in C with GTK 4 (4.12 or newer). Modular architecture in `src/`,
+`file explorer` written in C with GTK 4 (4.12 or newer, no deprecated API). Modular architecture in `src/`,
 no external dependencies beyond GTK (with optional VTE for GTK 4, GtkSourceView 5, and poppler-glib).
 
 Layout: left = explorer panel (files, bookmarks, notes or remote view,
@@ -230,7 +230,8 @@ Check these before adding or changing an action, a tooltip or a dialog:
 2. **GTK API correctness**:
    - `GtkScrolledWindow` has one child only (`gtk_scrolled_window_set_child()`).
      Put extra widgets in a `GtkBox`/vbox, or above the pane.
-   - No deprecated GTK API. Lists are `GListStore` + `GtkListView` /
+   - No deprecated GTK API: the build does not hide deprecation warnings, so
+     `make check` fails on them. Lists are `GListStore` + `GtkListView` /
      `GtkColumnView` (never `GtkTreeView`, `GtkTreeStore`, `GtkListStore` or
      cell renderers), dialogs are `AppDialog` (`dialog.h`, never `GtkDialog`
      or `GtkMessageDialog`), URIs open with `GtkUriLauncher`, CSS providers go
