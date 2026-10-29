@@ -240,9 +240,11 @@ Install on Debian/Ubuntu:
 sudo apt install libgtk-4-dev build-essential
 ```
 
-Toolbar and tab icons come from the GTK icon theme (Adwaita symbolic icons,
-loaded through librsvg). Both are present on any GTK desktop; on a minimal
-system install them with `sudo apt install adwaita-icon-theme librsvg2-common`.
+Toolbar and tab icons are Adwaita symbolic icons bundled into the binary
+(`icons/`, licence in `icons/COPYING`), so they look the same with any icon
+theme. They are SVG files drawn through librsvg (present on any GTK desktop;
+`sudo apt install librsvg2-common` on a minimal system); without it, GTK's
+built-in icons are used instead.
 If some buttons have no icon, run `EXPLORATEUR_DEBUG_ICONS=1 ./explorateur_fichiers`:
 it prints the GTK version, the icon theme, whether SVG icons can be loaded, and
 which icon name and file each button uses.
@@ -325,6 +327,7 @@ src/
 ├── terminal.c/.h            # Embedded VTE terminal panel
 ├── search.c/.h              # Interactive search bar
 └── ui.c/.h                  # Focus, global keys, layout toggle
+icons/                       # Bundled toolbar icons (GResource, see icons/COPYING)
 tests/                       # GLib unit tests (make test)
 tests/ui/run_ui_test.sh      # Headless UI smoke test (make ui-test)
 tools/check_layers.sh        # Module layering rules (make check)

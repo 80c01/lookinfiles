@@ -1,9 +1,10 @@
 /* Icon buttons and labels from the GTK icon theme (see icons.h).
  *
- * Icon themes rename and drop icons between versions (Adwaita moved several
- * to "legacy", then removed them). Each icon used by the chrome therefore has
- * a fallback chain that ends with an icon built into libgtk itself, which is
- * available whatever theme is installed. GTK shows the first name it finds. */
+ * The icons are bundled in the binary (icons/, see icons/COPYING) so they look
+ * the same, and render, on every system: some icon themes (e.g. elementary-xfce)
+ * ship symbolic icons that GTK 4.22 draws invisible. If SVG icons cannot be
+ * loaded at all (old GTK without librsvg), each name falls back to the icon
+ * theme, then to an icon built into libgtk itself (pre-rendered PNG). */
 #include "icons.h"
 
 typedef struct {
@@ -18,18 +19,36 @@ typedef struct {
  * system-run. Icons used directly from that list need no entry here. */
 static const IconFallback FALLBACKS[] = {
     {"user-bookmarks", {"bookmark-new", NULL}},
-    {"accessories-text-editor", {"text-editor", "document-edit", "text-x-generic", NULL}},
     {"document-new", {"text-x-generic", NULL}},
     {"document-edit", {"edit", "text-editor", "text-x-generic", NULL}},
     {"view-sort-ascending", {"view-list", NULL}},
     {"document-send", {"go-next", NULL}},
     {"network-transmit-receive", {"network-workgroup", NULL}},
     {"utilities-terminal", {"terminal", "system-run", NULL}},
-    {"help-browser", {"help-about", "dialog-question", NULL}},
-    {"x-office-document", {"text-x-generic", NULL}},
+    {"document-print-preview", {"text-x-generic", NULL}},
     {"view-dual", {"view-grid", NULL}},
     {"view-paged", {"view-list", NULL}},
 };
+
+/* TRUE when gdk-pixbuf can load SVG (librsvg loader). Without it, the bundled
+ * SVG icons are still "found" in the resource path but render as missing
+ * images, so they must not be used. */
+static gboolean svg_supported(void) {
+    static gint cached = -1;
+    if (cached < 0) {
+        cached = 0;
+        GSList* formats = gdk_pixbuf_get_formats();
+        for (GSList* l = formats; l != NULL; l = l->next) {
+            gchar* fmt = gdk_pixbuf_format_get_name((GdkPixbufFormat*)l->data);
+            if (g_strcmp0(fmt, "svg") == 0) {
+                cached = 1;
+            }
+            g_free(fmt);
+        }
+        g_slist_free(formats);
+    }
+    return cached == 1;
+}
 
 /* EXPLORATEUR_DEBUG_ICONS=1: print how each icon is resolved (to diagnose
  * missing icons on a given system) */
@@ -38,14 +57,7 @@ static void debug_print_icon(GdkDisplay* display, const gchar* requested, GIcon*
     GtkIconTheme* theme = gtk_icon_theme_get_for_display(display);
     if (!header_done) {
         header_done = TRUE;
-        gboolean svg = FALSE;
-        GSList* formats = gdk_pixbuf_get_formats();
-        for (GSList* l = formats; l != NULL; l = l->next) {
-            gchar* fmt = gdk_pixbuf_format_get_name((GdkPixbufFormat*)l->data);
-            svg = svg || g_strcmp0(fmt, "svg") == 0;
-            g_free(fmt);
-        }
-        g_slist_free(formats);
+        gboolean svg = svg_supported();
         gchar* theme_name = gtk_icon_theme_get_theme_name(theme);
         g_printerr("[icons] GTK %u.%u.%u, icon theme \"%s\", SVG loader: %s\n",
                    gtk_get_major_version(), gtk_get_minor_version(), gtk_get_micro_version(),
@@ -62,7 +74,38 @@ static void debug_print_icon(GdkDisplay* display, const gchar* requested, GIcon*
     if (p) g_object_unref(p);
 }
 
+/* Make the icons bundled in the binary (icons/, prefix "explorateur-")
+ * visible to the icon theme of the display, once */
+static void register_bundled_icons(GdkDisplay* display) {
+    static GdkDisplay* registered = NULL;
+    if (display != NULL && display != registered) {
+        gtk_icon_theme_add_resource_path(gtk_icon_theme_get_for_display(display),
+                                         "/org/explorateur/icons");
+        registered = display;
+    }
+}
+
 static GIcon* themed_icon_with_fallbacks(const gchar* icon_name) {
+    GdkDisplay* display = gdk_display_get_default();
+    register_bundled_icons(display);
+
+    /* 1. Bundled copy, requested alone: GTK searches every installed theme for
+     *    all names of a GThemedIcon before the bundled resource path, so mixing
+     *    it with theme names would let the theme win. Its unique "explorateur-"
+     *    name cannot match any theme. Only when SVG can be loaded. */
+    gchar* bundled = g_strconcat("explorateur-", icon_name, "-symbolic", NULL);
+    if (display != NULL && svg_supported() &&
+        gtk_icon_theme_has_icon(gtk_icon_theme_get_for_display(display), bundled)) {
+        GIcon* icon = g_themed_icon_new(bundled);
+        g_free(bundled);
+        if (g_getenv("EXPLORATEUR_DEBUG_ICONS") != NULL) {
+            debug_print_icon(display, icon_name, icon);
+        }
+        return icon;
+    }
+    g_free(bundled);
+
+    /* 2. Same name in the icon theme, then fallbacks ending with a GTK built-in */
     GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(names, g_strconcat(icon_name, "-symbolic", NULL));
     for (gsize i = 0; i < G_N_ELEMENTS(FALLBACKS); i++) {
@@ -76,7 +119,6 @@ static GIcon* themed_icon_with_fallbacks(const gchar* icon_name) {
     GIcon* icon = g_themed_icon_new_from_names((gchar**)names->pdata, (gint)names->len);
 
     /* Report an icon that no name of the chain can provide (caught by make ui-test) */
-    GdkDisplay* display = gdk_display_get_default();
     if (display != NULL &&
         !gtk_icon_theme_has_gicon(gtk_icon_theme_get_for_display(display), icon)) {
         g_warning("icons: no icon available for \"%s\" in the current icon theme", icon_name);

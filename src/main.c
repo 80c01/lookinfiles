@@ -262,7 +262,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_tooltip_text(files_btn, "Show / Hide Explorer Panel");
 
     GtkWidget* preview_btn = gtk_button_new();
-    icon_button_set_content(preview_btn, "x-office-document", "Preview");
+    icon_button_set_content(preview_btn, "document-print-preview", "Preview");
     gtk_button_set_has_frame(GTK_BUTTON(preview_btn), FALSE);
     gtk_widget_set_focusable(preview_btn, FALSE);
     gtk_widget_add_css_class(preview_btn, "status-pill");
@@ -279,7 +279,7 @@ int main(int argc, char** argv) {
     gtk_widget_add_css_class(pill_div_label, "breadcrumb-sep");
 
     GtkWidget* help_btn = gtk_button_new();
-    icon_button_set_content(help_btn, "help-browser", "Help");
+    icon_button_set_content(help_btn, "dialog-question", "Help");
     gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);
     gtk_widget_set_focusable(help_btn, FALSE);
     gtk_widget_add_css_class(help_btn, "status-pill");
@@ -381,7 +381,7 @@ int main(int argc, char** argv) {
     gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), TRUE);
     gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "editor-tabs");
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
-                             icon_label_new("x-office-document", "Preview"));
+                             icon_label_new("document-print-preview", "Preview"));
     /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
     GtkWidget* split_btn = icon_button_new("view-dual", NULL);
     gtk_widget_set_name(split_btn, "tab-split-btn");

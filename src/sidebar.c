@@ -218,7 +218,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_btn, "clicked", G_CALLBACK(on_sidebar_bm_clicked), app);
     gtk_box_append(GTK_BOX(title_row), bm_btn);
 
-    GtkWidget* buf_btn = icon_button_new("accessories-text-editor", NULL);
+    GtkWidget* buf_btn = icon_button_new("text-x-generic", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(buf_btn), FALSE);
     gtk_widget_set_focusable(buf_btn, FALSE);
     gtk_widget_add_css_class(buf_btn, "sidebar-icon-btn");

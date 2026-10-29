@@ -197,10 +197,15 @@ Check these before adding or changing an action, a tooltip or a dialog:
   permanent delete and `user-trash` for a move to trash. Emoji are kept only
   for file-type icons in the tree and editor tabs. The CSS colours `label`
   and `image` nodes together (symbolic icons follow the text colour).
-  Icon names differ between Adwaita versions: any icon not built into libgtk
-  needs an entry in the `FALLBACKS` table of `icons.c` ending with a built-in
-  icon (list in that file). Check with `UI_ICON_THEME=hicolor make ui-test`,
-  which fails if a button ends up without an icon.
+  The icons are bundled in the binary (`icons/`, compiled as a GResource by
+  the Makefile, licence in `icons/COPYING`) so they render the same with any
+  icon theme. To add one: copy a *current* Adwaita symbolic SVG (no
+  `transform`, enforced by `make check`) as
+  `icons/scalable/actions/explorateur-<name>-symbolic.svg`, list it in
+  `icons/explorateur.gresource.xml`, and if `<name>` is not built into libgtk
+  add a `FALLBACKS` entry in `icons.c` ending with a built-in icon (used when
+  SVG cannot be loaded). Check with `make ui-test`, `UI_ICON_THEME=hicolor
+  make ui-test` and `EXPLORATEUR_DEBUG_ICONS=1 ./explorateur_fichiers`.
 - **Preview text views** all use `set_view_text_padding()` (10 px sides).
 - **Names**: `Org-mode`, `Rich Format`, `Plain Text`; view titles EXPLORER,
   BOOKMARKS, NOTES, REMOTE.

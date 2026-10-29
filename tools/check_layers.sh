@@ -83,5 +83,18 @@ for c in src/*.c; do
     done
 done
 
+# Bundled icons (icons/COPYING): single-colour symbolic SVGs without transforms,
+# each listed in the GResource manifest
+for f in icons/scalable/actions/*.svg; do
+    if grep -q 'transform' "$f"; then
+        echo "icons: $f uses a transform (not rendered by some GTK versions)"
+        status=1
+    fi
+    if ! grep -q "scalable/actions/$(basename "$f")" icons/explorateur.gresource.xml; then
+        echo "icons: $f is missing from icons/explorateur.gresource.xml"
+        status=1
+    fi
+done
+
 [ $status -eq 0 ] && echo "Layering OK."
 exit $status

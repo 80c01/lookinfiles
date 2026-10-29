@@ -40,7 +40,11 @@ BUILD_DIR = build
 # Every .c file in src/ is part of the application: adding a module only
 # requires creating src/<module>.c and src/<module>.h.
 SRCS = $(sort $(wildcard src/*.c))
-OBJS = $(SRCS:src/%.c=$(BUILD_DIR)/%.o)
+OBJS = $(SRCS:src/%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/icon_resources.o
+
+# Toolbar icons bundled into the binary (icons/, see icons/COPYING and src/icons.c)
+GLIB_COMPILE_RESOURCES != $(PKG_CONFIG) --variable=glib_compile_resources gio-2.0
+ICON_FILES = $(sort $(wildcard icons/scalable/actions/*.svg))
 DEPS = $(OBJS:.o=.d)
 
 all: $(TARGET)
@@ -52,6 +56,12 @@ $(TARGET): $(OBJS)
 
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(DEPFLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/icon_resources.c: icons/explorateur.gresource.xml $(ICON_FILES) | $(BUILD_DIR)
+	$(GLIB_COMPILE_RESOURCES) --sourcedir=icons --generate-source --target=$@ $<
+
+$(BUILD_DIR)/icon_resources.o: $(BUILD_DIR)/icon_resources.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR):
 	mkdir -p $@

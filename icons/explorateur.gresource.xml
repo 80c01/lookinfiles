@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/org/explorateur/icons">
+    <file>scalable/actions/explorateur-bookmark-new-symbolic.svg</file>
+    <file>scalable/actions/explorateur-dialog-question-symbolic.svg</file>
+    <file>scalable/actions/explorateur-document-edit-symbolic.svg</file>
+    <file>scalable/actions/explorateur-document-new-symbolic.svg</file>
+    <file>scalable/actions/explorateur-document-open-recent-symbolic.svg</file>
+    <file>scalable/actions/explorateur-document-print-preview-symbolic.svg</file>
+    <file>scalable/actions/explorateur-document-send-symbolic.svg</file>
+    <file>scalable/actions/explorateur-edit-clear-all-symbolic.svg</file>
+    <file>scalable/actions/explorateur-edit-delete-symbolic.svg</file>
+    <file>scalable/actions/explorateur-folder-new-symbolic.svg</file>
+    <file>scalable/actions/explorateur-folder-symbolic.svg</file>
+    <file>scalable/actions/explorateur-list-add-symbolic.svg</file>
+    <file>scalable/actions/explorateur-network-server-symbolic.svg</file>
+    <file>scalable/actions/explorateur-network-transmit-receive-symbolic.svg</file>
+    <file>scalable/actions/explorateur-pan-up-symbolic.svg</file>
+    <file>scalable/actions/explorateur-text-x-generic-symbolic.svg</file>
+    <file>scalable/actions/explorateur-user-bookmarks-symbolic.svg</file>
+    <file>scalable/actions/explorateur-user-trash-symbolic.svg</file>
+    <file>scalable/actions/explorateur-utilities-terminal-symbolic.svg</file>
+    <file>scalable/actions/explorateur-view-dual-symbolic.svg</file>
+    <file>scalable/actions/explorateur-view-paged-symbolic.svg</file>
+    <file>scalable/actions/explorateur-view-refresh-symbolic.svg</file>
+    <file>scalable/actions/explorateur-view-reveal-symbolic.svg</file>
+    <file>scalable/actions/explorateur-view-sort-ascending-symbolic.svg</file>
+    <file>scalable/actions/explorateur-window-close-symbolic.svg</file>
+  </gresource>
+</gresources>
