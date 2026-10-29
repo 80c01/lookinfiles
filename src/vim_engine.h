@@ -67,6 +67,7 @@ typedef struct {
     gboolean unnamedplus;   /* clipboard=unnamedplus: yanks also go to "+ */
     gint shiftwidth;
     gint tabstop;
+    gint softtabstop;       /* Tab / BS width in Insert mode (0: off, < 0: shiftwidth) */
     gint textwidth;         /* gq width (0: 79) */
 } VimOptions;
 

@@ -281,7 +281,7 @@ gchar* vim_engine_cmdline_history(VimEngine* e, gint dir, const gchar* prefix) {
 
 static const gchar* const OPTION_NAMES[] = {
     "autoindent", "clipboard", "expandtab", "hlsearch", "ignorecase", "incsearch", "nonumber",
-    "number", "shiftwidth", "smartcase", "tabstop", "textwidth", "wrap", "wrapscan", NULL,
+    "number", "shiftwidth", "smartcase", "softtabstop", "tabstop", "textwidth", "wrap", "wrapscan", NULL,
 };
 
 static gint compare_names(gconstpointer a, gconstpointer b) {
@@ -899,7 +899,7 @@ static const OptDef OPTIONS[] = {
     {"autoindent", "ai", OPT_BOOL, G_STRUCT_OFFSET(VimOptions, autoindent)},
     {"shiftwidth", "sw", OPT_INT, G_STRUCT_OFFSET(VimOptions, shiftwidth)},
     {"tabstop", "ts", OPT_INT, G_STRUCT_OFFSET(VimOptions, tabstop)},
-    {"softtabstop", "sts", OPT_INT, G_STRUCT_OFFSET(VimOptions, shiftwidth)},
+    {"softtabstop", "sts", OPT_INT, G_STRUCT_OFFSET(VimOptions, softtabstop)},
     {"textwidth", "tw", OPT_INT, G_STRUCT_OFFSET(VimOptions, textwidth)},
     {"clipboard", "cb", OPT_CLIPBOARD, G_STRUCT_OFFSET(VimOptions, unnamedplus)},
 };
@@ -924,7 +924,6 @@ static void ex_set(VimEngine* e, const gchar* args) {
     if (args == NULL || args[0] == '\0' || strcmp(args, "all") == 0) {
         GString* out = g_string_new(NULL);
         for (gsize i = 0; i < G_N_ELEMENTS(OPTIONS); i++) {
-            if (strcmp(OPTIONS[i].name, "softtabstop") == 0) continue;
             gchar* v = option_value(e, &OPTIONS[i]);
             g_string_append_printf(out, "%s%s", out->len > 0 ? "  " : "", v);
             g_free(v);
@@ -999,7 +998,8 @@ static void ex_set(VimEngine* e, const gchar* args) {
             else if (op == '-') *n -= v;
             else if (op == '^') *n *= v;
             else *n = v;
-            if (*n < 0) *n = 0;
+            if (*n < 0 && o->offset != G_STRUCT_OFFSET(VimOptions, softtabstop)) *n = 0;
+            if (*n < -1) *n = -1;
             if ((o->offset == G_STRUCT_OFFSET(VimOptions, tabstop)) && *n <= 0) *n = 8;
         } else {
             gboolean* b = field;

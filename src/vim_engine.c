@@ -519,6 +519,7 @@ VimEngine* vim_engine_new(GtkTextBuffer* buffer, const VimHost* host, gpointer h
     e->opt.unnamedplus = TRUE;
     e->opt.shiftwidth = 4;
     e->opt.tabstop = 8;
+    e->opt.softtabstop = -1;
     e->opt.textwidth = 79;
     e->pending = g_array_new(FALSE, FALSE, sizeof(gunichar));
     e->cl_text = g_string_new(NULL);
@@ -1706,6 +1707,88 @@ static void delete_before_cursor(VimEngine* e, gint chars) {
     vim_e_delete(e, &s, &cur);
 }
 
+/* Columns of a soft tab ('softtabstop', negative: 'shiftwidth'), 0 when off */
+static gint soft_tab_width(VimEngine* e) {
+    gint sts = e->opt.softtabstop;
+    if (sts < 0) sts = e->opt.shiftwidth > 0 ? e->opt.shiftwidth : e->opt.tabstop;
+    return sts;
+}
+
+/* Tab in Insert mode: blanks up to the next 'softtabstop' column (or
+ * 'tabstop' when off); with 'noexpandtab' the blanks before the cursor are
+ * rebuilt with as many tabs as possible */
+static void insert_soft_tab(VimEngine* e) {
+    gint ts = e->opt.tabstop > 0 ? e->opt.tabstop : 8;
+    gint width = soft_tab_width(e);
+    if (width <= 0 && !e->opt.expandtab) {
+        insert_at_cursor(e, "\t");
+        return;
+    }
+    if (width <= 0) width = ts;
+    GtkTextIter cur, s;
+    vim_e_cursor(e, &cur);
+    gint v = vim_iter_vcol(&cur, ts);
+    gint target = (v / width + 1) * width;
+    if (e->opt.expandtab) {
+        gchar* sp = g_strnfill(target - v, ' ');
+        insert_at_cursor(e, sp);
+        g_free(sp);
+        return;
+    }
+    s = cur;
+    while (!gtk_text_iter_starts_line(&s)) {
+        GtkTextIter p = s;
+        gtk_text_iter_backward_char(&p);
+        gunichar c = gtk_text_iter_get_char(&p);
+        if (c != ' ' && c != '\t') break;
+        s = p;
+    }
+    gint col = vim_iter_vcol(&s, ts);
+    GString* w = g_string_new(NULL);
+    while ((col / ts + 1) * ts <= target) {
+        g_string_append_c(w, '\t');
+        col = (col / ts + 1) * ts;
+    }
+    for (; col < target; col++) g_string_append_c(w, ' ');
+    vim_e_delete(e, &s, &cur);
+    vim_e_insert_text(e, &s, w->str);
+    gtk_text_buffer_place_cursor(e->buf, &s);
+    g_string_free(w, TRUE);
+}
+
+/* Backspace over blanks with 'softtabstop': delete back to the previous
+ * soft tab column (stopping at text), padding with spaces when a tab went
+ * too far. FALSE when it does not apply (plain backspace). */
+static gboolean delete_soft_tab(VimEngine* e) {
+    gint width = soft_tab_width(e);
+    gint ts = e->opt.tabstop > 0 ? e->opt.tabstop : 8;
+    if (width <= 0) return FALSE;
+    GtkTextIter cur, s;
+    vim_e_cursor(e, &cur);
+    if (gtk_text_iter_starts_line(&cur)) return FALSE;
+    GtkTextIter prev = cur;
+    gtk_text_iter_backward_char(&prev);
+    if (!is_blank_char(gtk_text_iter_get_char(&prev))) return FALSE;
+    gint v = vim_iter_vcol(&cur, ts);
+    gint target = (v - 1) / width * width;
+    s = cur;
+    while (!gtk_text_iter_starts_line(&s) && vim_iter_vcol(&s, ts) > target) {
+        GtkTextIter p = s;
+        gtk_text_iter_backward_char(&p);
+        if (!is_blank_char(gtk_text_iter_get_char(&p))) break;
+        s = p;
+    }
+    gint col = vim_iter_vcol(&s, ts);
+    vim_e_delete(e, &s, &cur);
+    if (col < target) {
+        gchar* sp = g_strnfill(target - col, ' ');
+        vim_e_insert_text(e, &s, sp);
+        g_free(sp);
+    }
+    gtk_text_buffer_place_cursor(e->buf, &s);
+    return TRUE;
+}
+
 static void insert_newline(VimEngine* e, gboolean indent) {
     GtkTextIter cur;
     vim_e_cursor(e, &cur);
@@ -1760,18 +1843,8 @@ static gboolean insert_key(VimEngine* e, gunichar k) {
             record_insert_key(e, replaying ? k : VIM_KEY_CR);
             return TRUE;
         case VIM_KEY_TAB:
-            if (e->opt.expandtab) {
-                gint ts = e->opt.shiftwidth > 0 ? e->opt.shiftwidth : e->opt.tabstop;
-                gint v = vim_iter_vcol(&cur, e->opt.tabstop);
-                gint n = ts - (v % ts);
-                gchar* sp = g_strnfill(n, ' ');
-                insert_at_cursor(e, sp);
-                g_free(sp);
-                record_insert_key(e, k);
-                return TRUE;
-            }
-            if (replaying) {
-                insert_at_cursor(e, "\t");
+            if (e->opt.expandtab || soft_tab_width(e) > 0 || replaying) {
+                insert_soft_tab(e);
                 record_insert_key(e, k);
                 return TRUE;
             }
@@ -1796,6 +1869,10 @@ static gboolean insert_key(VimEngine* e, gunichar k) {
                         gtk_text_buffer_place_cursor(e->buf, &cur);
                     }
                 }
+                record_insert_key(e, k);
+                return TRUE;
+            }
+            if (delete_soft_tab(e)) {
                 record_insert_key(e, k);
                 return TRUE;
             }

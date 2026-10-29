@@ -259,6 +259,18 @@ static void test_insert(void) {
     check("|", "ifoo foobar f<C-n><Esc>", "foo foobar fo|o");
     check("|", "ifoo foobar f<C-n><C-n><Esc>", "foo foobar fooba|r");
     check("|ab", "i<C-v><Tab><Esc>", "|\tab");
+    /* softtabstop: Tab to the next soft column, BS back over blanks */
+    check("|", ":set sts=2<CR>i<Tab><Tab>x<Esc>", "    |x");
+    check("|", ":set sts=0<CR>i<Tab>x<Esc>", "        |x");
+    check("|", "i<Tab><Tab><BS>x<Esc>", "    |x");
+    check("|", "iab<Tab><BS>x<Esc>", "ab|x");
+    check("|", "ia <BS>x<Esc>", "a|x");
+    check("|", ":set sts=0<CR>i  <BS>x<Esc>", " |x");
+    check("|", ":set noet sts=4<CR>i<Tab><Tab>x<Esc>", "\t|x");
+    check("|", ":set noet sts=4<CR>i<Tab><Tab><Tab><BS>x<Esc>", "\t|x");
+    check("|", ":set noet sts=4<CR>i<Tab><Tab><BS>x<Esc>", "    |x");
+    check("|", ":set noet sts=0<CR>i<Tab>x<Esc>", "\t|x");
+    check("|", ":set sts=3<CR>i<Tab>x<Esc>.", "      |xx");
     check("|abc", "ix<C-o>$y<Esc>", "xabc|y");
 }
 
