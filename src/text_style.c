@@ -233,3 +233,30 @@ void set_view_text_padding(GtkWidget* view) {
     gtk_text_view_set_top_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_Y);
     gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_Y + TEXT_SCROLLBAR_CLEARANCE);
 }
+
+void apply_buffer_language(GtkTextBuffer* buffer, const gchar* name, gboolean org) {
+#ifdef HAVE_GSV
+    if (buffer == NULL || !GTK_SOURCE_IS_BUFFER(buffer)) return;
+    GtkSourceLanguageManager* mgr = gtk_source_language_manager_get_default();
+    GtkSourceLanguage* lang = NULL;
+    if (org) {
+        lang = gtk_source_language_manager_get_language(mgr, "org");
+    } else if (name != NULL) {
+        gchar* ctype = g_content_type_guess(name, NULL, 0, NULL);
+        lang = gtk_source_language_manager_guess_language(mgr, name, ctype);
+        g_free(ctype);
+        if (lang != NULL && g_strcmp0(gtk_source_language_get_id(lang), "org") == 0) {
+            lang = NULL;
+        }
+    }
+    GtkSourceBuffer* sb = GTK_SOURCE_BUFFER(buffer);
+    if (gtk_source_buffer_get_language(sb) != lang) {
+        gtk_source_buffer_set_language(sb, lang);
+    }
+    gtk_source_buffer_set_highlight_syntax(sb, lang != NULL);
+#else
+    (void)buffer;
+    (void)name;
+    (void)org;
+#endif
+}

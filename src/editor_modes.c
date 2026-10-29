@@ -804,6 +804,10 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
     gtk_widget_set_visible(st->vim_box, FALSE);
 
     emacs_block_cursor_set(tab, mode == EDITOR_MODE_EMACS || mode == EDITOR_MODE_ORGMODE);
+    /* Org highlighting follows Org editing (M-x org-mode / text-mode) */
+    gchar* lang_name = (tab->path != NULL) ? g_path_get_basename(tab->path) : g_strdup(tab->name);
+    apply_buffer_language(tab->buffer, lang_name, orgmode_editor_is_org(tab));
+    g_free(lang_name);
     if (mode == EDITOR_MODE_EMACS || mode == EDITOR_MODE_ORGMODE) {
         gtk_widget_set_visible(st->emacs_box, TRUE);
         emacs_close_minibuffer(tab);

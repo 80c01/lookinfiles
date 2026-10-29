@@ -19,6 +19,11 @@ gboolean is_code_file(const gchar* name);
  * Returns TRUE if a language was found. */
 gboolean apply_viewer_language(AppData* app, const gchar* name, const gchar* content_type);
 
+/* Set the highlighting language of an editor buffer: the Org-mode language
+ * when org is TRUE, else the language guessed from the file name (never the
+ * Org-mode one: M-x text-mode on a .org file shows plain text) */
+void apply_buffer_language(GtkTextBuffer* buffer, const gchar* name, gboolean org);
+
 /* Preview panel background (#121314) and text padding */
 void apply_viewer_background(GtkWidget* view);
 

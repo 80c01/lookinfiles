@@ -18,8 +18,9 @@ All notable changes to this project are listed here. The format follows
   panel, with the explorer and the preview hidden, `-e` / `--editor emacs|vim|notepad` chooses the default
   mode of new editor tabs, `-n` / `--note` opens (or creates) a note by
   name (`Title` or `Notebook/Title`), and `-h` / `--help` lists the options.
-- Emacs editor tabs: `M-x org-mode` turns on Org-mode editing for any file,
-  `M-x text-mode` turns it off (also for a `.org` file, unfolding it).
+- Emacs editor tabs: `M-x org-mode` turns on Org-mode editing and
+  highlighting for any file, `M-x text-mode` turns them off (also for a
+  `.org` file, unfolding it).
 - Emacs and Org-mode editor tabs use a block cursor. Org files open folded
   to their top-level headings (`#+STARTUP: overview`), or as their
   `#+STARTUP:` line says (`content`, `showall`, `nofold`, `showeverything`).
