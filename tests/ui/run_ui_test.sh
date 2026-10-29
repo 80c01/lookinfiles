@@ -63,7 +63,7 @@ printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home
     printf '# Title\n\nSome *markdown* text.\n\n- item one\n- item two\n\n- [x] done task\n- [/] running task\n- [-] other running task\n- [ ] todo task\n' > README.md
     printf '#include <stdio.h>\nint main(void) {\n    printf("hi\\n");\n    return 0;\n}\n' > src/main.c
     printf '# Sources\n\nThe *entry point* is `main.c`.\n' > src/README.md   # folder preview README
-    seq -f 'plain line %g' 1 120 > notes.txt
+    seq -f 'plain line %g' 1 1500 > notes.txt
     printf 'R&D <draft>\n' > 'R&D.txt'
     printf '* TODO Task one\n** Sub heading\nbody\n' > docs/plan.org
     # No extension: the preview detects the type from the content
@@ -82,7 +82,7 @@ printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home
     echo changed >> README.md
     # Change bars since the last commit: modified, added, deleted lines
     # (long file: the minimap shows them too)
-    seq -f 'plain line %g' 1 120 | sed -e '1s/1/one/' -e '2a added line' -e '50,59d' \
+    seq -f 'plain line %g' 1 1500 | sed -e '1s/1/one/' -e '2a added line' -e '50,59d' \
         -e '90,95s/$/ (edited)/' -e '$a added at the end' > notes.txt
 ) || { echo "ui-test: fixture setup failed"; exit 1; }
 

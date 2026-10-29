@@ -86,6 +86,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   direction (same row or column only), used to move editor tabs between
   notebooks; `pane_drop_zone()` / `pane_zone_rect()`: the side of a pane a
   dragged tab is dropped on, and the area it would take.
+- `minimap_geometry` — minimap scale, scroll offset and slider (VS Code
+  style: fixed minimum scale, the minimap scrolls with the view over long
+  documents), slider drag and click-to-center mapping.
 - `dir_summary` — one directory level for the directory preview: entries
   (name, type, size, date), totals, sorting, relative dates, column padding.
 - `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex` — Vim pieces:
@@ -158,7 +161,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   emptied notebook only then. Knows nothing of `EditorTab`; `editor` attaches
   it with `editor_notebook_enable_tab_drop()`.
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
-- `minimap` — scaled file overview.
+- `minimap` — scaled file overview; draws only the part around what is shown
+  (`MinimapCache`), geometry from `minimap_geometry`.
 
 **3. Features:**
 - `file_list` — async directory scan (`GTask`), tree population, sorting

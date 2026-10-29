@@ -35,6 +35,16 @@ enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 /* Minimap width in pixels */
 #define MINIMAP_WIDTH 110
 
+/* Offscreen render of the part of the document around what the minimap
+ * shows (the minimap scrolls over long documents) */
+typedef struct {
+    cairo_surface_t* surface;
+    gint width;
+    gint height;
+    gdouble top;   /* minimap content y of the surface's first row */
+    gdouble scale; /* scale it was drawn at */
+} MinimapCache;
+
 /* Text viewer padding in pixels for text/code preview */
 #define PREVIEW_TEXT_PADDING_X 10
 #define PREVIEW_TEXT_PADDING_Y 6
@@ -84,10 +94,9 @@ typedef struct {
     GtkTextBuffer* buffer;
     GtkWidget* tab_label; /* tab title, with a bullet when unsaved */
     GtkWidget* minimap;   /* minimap drawing area */
-    cairo_surface_t* mm_cache;
-    gint mm_cache_w;
-    gint mm_cache_h;
+    MinimapCache mm_cache;
     gboolean mm_dragging;
+    gdouble mm_grab;      /* slider drag: pointer y minus slider top */
     guint mm_vis_source;
     GtkWidget* nb;        /* GtkNotebook containing this tab */
     gpointer app;         /* pointer to AppData */
@@ -257,10 +266,9 @@ typedef struct {
     /* Minimap: scaled file overview right of viewer */
     GtkWidget* minimap;
     GtkAdjustment* viewer_vadj;  /* vertical scroll adjustment */
-    cairo_surface_t* mm_cache;   /* offscreen render of mini file */
-    gint mm_cache_w;
-    gint mm_cache_h;
+    MinimapCache mm_cache;
     gboolean mm_dragging;
+    gdouble mm_grab;             /* slider drag: pointer y minus slider top */
     guint mm_vis_source;         /* idle source for safe visibility toggle */
 
     /* Layout of the viewer/terminal pair (Ctrl+Shift+L) */

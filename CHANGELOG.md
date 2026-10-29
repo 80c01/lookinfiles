@@ -14,6 +14,13 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- The minimap scrolls over long files, as in VS Code: below a readable scale
+  it stops shrinking the document and scrolls in proportion to the view (the
+  slider reaches its bottom with the end of the file). Dragging the slider
+  moves it with the pointer; a click elsewhere centers the clicked line. Only
+  the part of the document around what is shown is drawn, and lines too
+  small for glyphs are drawn as word blocks on whole pixel rows.
+
 - Vim editor mode rewritten on a Vim engine (`vim_engine`, unit-tested
   without a display): the `["x][count]operator[count]motion` grammar with
   every common motion and text object (`iw`, `ap`, `i(`, `a"`, `it`...),

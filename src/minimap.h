@@ -4,15 +4,18 @@
 #include "app_types.h"
 
 /* Scaled drawing of text_view as displayed (wrapped lines, sizes, backgrounds,
- * tables, images) with the visible range; cached in *cache */
+ * tables, images) with the visible range; scrolls over long documents, as in
+ * VS Code. The drawn part is cached in *cache. */
 void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
-                          GtkTextBuffer* buffer, GtkTextView* text_view,
-                          cairo_surface_t** cache, gint* cache_w, gint* cache_h);
-void minimap_goto_view(GtkWidget* minimap, GtkTextBuffer* buffer, GtkTextView* text_view, gdouble y);
+                          GtkTextBuffer* buffer, GtkTextView* text_view, MinimapCache* cache);
+void minimap_cache_clear(MinimapCache* cache);
+/* Press at y: drag the slider, or center the view on the line clicked;
+ * *grab is then passed to minimap_drag_view() on each pointer motion */
+void minimap_press_view(GtkWidget* minimap, GtkTextView* text_view, gdouble y, gdouble* grab);
+void minimap_drag_view(GtkWidget* minimap, GtkTextView* text_view, gdouble y, gdouble grab);
 
 void minimap_invalidate(AppData* app);
 void minimap_update_visibility(AppData* app);
-void minimap_goto(AppData* app, gdouble y);
 /* Mouse wheel over minimap scrolls text_view */
 void minimap_attach_wheel(GtkWidget* minimap, GtkWidget* text_view);
 

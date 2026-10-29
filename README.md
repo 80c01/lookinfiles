@@ -57,7 +57,8 @@ and virtual workspaces, in a VS Code Dark+ look.
   the editor updates them while typing. The minimap shows them along its
   left edge.
 - A minimap that mirrors the displayed layout and scrolls the view (click,
-  drag or mouse wheel).
+  drag or mouse wheel). As in VS Code, a long file keeps a readable scale and
+  the minimap scrolls along with the view.
 - File types are detected from the content (an image or a `#!` script without
   extension, TypeScript `.ts` that is not a video); unknown binary files show a
   hex dump (offsets, bytes and an ASCII column) of their first 64 KB.
@@ -413,7 +414,7 @@ The code lives in `src/`, one module per feature, in layers checked by
 
 | Layer | Modules |
 |---|---|
-| Foundation (no widgets, unit-tested) | `file_types`, `zip_reader`, `docx`, `git_utils`, `line_diff`, `pane_geometry`, `explorer_row`, `layout_store`, `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex`, `vim_engine` |
+| Foundation (no widgets, unit-tested) | `file_types`, `zip_reader`, `docx`, `git_utils`, `line_diff`, `pane_geometry`, `minimap_geometry`, `explorer_row`, `layout_store`, `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex`, `vim_engine` |
 | Shared helpers | `diff_gutter`, `tab_drop`, `app_events`, `panels`, `fs_watch`, `remote_store`, `preview_summary`, `text_style`, `theme`, `icons`, `dialog`, `image_utils`, `explorer_tree`, `tree_nav`, `markdown`, `html`, `minimap` |
 | Features | `file_list`, `file_actions`, `bookmarks`, `notes`, `remote`, `viewer`, `orgmode`, `pdf`, `video`, `audio`, `git_tab`, `editor`, `editor_modes` (+ `editor_notepad`, `editor_emacs`, `editor_vim`, `editor_org`), `terminal`, `search` |
 | Window | `topbar`, `status_bar`, `sidebar`, `help`, `workspace`, `layouts`, `ui`, `main` |

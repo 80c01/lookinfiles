@@ -17,6 +17,7 @@ file_types:
 git_utils:
 line_diff:
 pane_geometry:
+minimap_geometry:
 dir_summary:file_types
 hex_dump:
 elf_info:
@@ -39,7 +40,7 @@ text_style:app_types,file_types
 theme:
 markdown:app_types,image_utils
 html:app_types,image_utils
-minimap:app_types,diff_gutter,line_diff
+minimap:app_types,diff_gutter,line_diff,minimap_geometry
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events

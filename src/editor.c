@@ -1277,10 +1277,7 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
         g_source_remove(tab->mm_vis_source);
         tab->mm_vis_source = 0;
     }
-    if (tab->mm_cache != NULL) {
-        cairo_surface_destroy(tab->mm_cache);
-        tab->mm_cache = NULL;
-    }
+    minimap_cache_clear(&tab->mm_cache);
     g_object_unref(tab->container);
     g_object_unref(tab->tab_label);
     editor_modes_free_tab(tab);
@@ -1433,10 +1430,7 @@ void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
             g_source_remove(tab->mm_vis_source);
             tab->mm_vis_source = 0;
         }
-        if (tab->mm_cache != NULL) {
-            cairo_surface_destroy(tab->mm_cache);
-            tab->mm_cache = NULL;
-        }
+        minimap_cache_clear(&tab->mm_cache);
         if (tab->container != NULL) {
             g_object_unref(tab->container);
             tab->container = NULL;
