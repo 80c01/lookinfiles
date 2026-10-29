@@ -128,6 +128,25 @@ static void set_msg(gchar** msg, const gchar* text) {
     }
 }
 
+OrgStartupVisibility org_startup_visibility(GPtrArray* lines) {
+    OrgStartupVisibility vis = ORG_STARTUP_OVERVIEW;
+    for (gint i = 0; i < n_lines(lines); i++) {
+        const gchar* l = org_line(lines, i);
+        if (l[0] != '#' || !has_prefix_ci(l, "#+STARTUP:")) continue;
+        gchar** words = g_strsplit_set(l + 10, " \t", -1);
+        for (gint k = 0; words[k] != NULL; k++) {
+            gchar* w = g_ascii_strdown(words[k], -1);
+            if (strcmp(w, "overview") == 0 || strcmp(w, "fold") == 0) vis = ORG_STARTUP_OVERVIEW;
+            else if (strcmp(w, "content") == 0) vis = ORG_STARTUP_CONTENTS;
+            else if (strcmp(w, "showall") == 0 || strcmp(w, "nofold") == 0 ||
+                     strcmp(w, "showeverything") == 0) vis = ORG_STARTUP_SHOW_ALL;
+            g_free(w);
+        }
+        g_strfreev(words);
+    }
+    return vis;
+}
+
 /* ------------------------------------------------------------------------- */
 /* TODO configuration                                                        */
 /* ------------------------------------------------------------------------- */

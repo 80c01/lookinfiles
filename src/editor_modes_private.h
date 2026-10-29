@@ -112,6 +112,8 @@ typedef struct {
     gboolean emacs_is_wrapped;       /* searched again from the other end */
     gboolean emacs_is_forward;
     gboolean emacs_is_setting;       /* the entry text is being set by the search itself */
+    gboolean emacs_block_on;         /* block cursor drawn (Emacs and Org-mode modes) */
+    GtkWidget* emacs_block_eol;      /* block shown at a line end (text view overlay) */
     EmacsPromptFunc emacs_prompt_cb; /* EMACS_MINI_CALLBACK */
     gchar* emacs_prompt_data;        /* owned, given to the callback */
     GPtrArray* emacs_completions;    /* Tab completion candidates (gchar*), or NULL */
@@ -182,6 +184,8 @@ void emacs_prompt(EditorTab* tab, const gchar* prompt, const gchar* initial,
 
 /* Mode state transitions used when switching modes */
 void emacs_close_minibuffer(EditorTab* tab);
+/* Draw an Emacs block cursor in the tab (TRUE) or GTK's thin caret (FALSE) */
+void emacs_block_cursor_set(EditorTab* tab, gboolean on);
 /* End the incremental search: accept leaves the cursor at the match */
 void emacs_isearch_exit(EditorTab* tab, gboolean accept);
 void vim_enter_submode(EditorTab* tab, VimSubMode submode);

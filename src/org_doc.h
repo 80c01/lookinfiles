@@ -59,6 +59,14 @@ GPtrArray* org_lines_new(const gchar* text);
 gchar* org_lines_join(GPtrArray* lines);
 const gchar* org_line(GPtrArray* lines, gint i); /* "" when out of range */
 
+/* ---- Startup visibility ---- */
+typedef enum {
+    ORG_STARTUP_SHOW_ALL = 0, /* #+STARTUP: showall / nofold / showeverything */
+    ORG_STARTUP_OVERVIEW,     /* top-level headings only (default; overview / fold) */
+    ORG_STARTUP_CONTENTS      /* all headings, no body text (content) */
+} OrgStartupVisibility;
+OrgStartupVisibility org_startup_visibility(GPtrArray* lines);
+
 /* ---- TODO configuration ---- */
 OrgTodoConfig* org_todo_config_new(GPtrArray* lines);
 void org_todo_config_free(OrgTodoConfig* cfg);

@@ -800,6 +800,7 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
     gtk_widget_set_visible(st->emacs_box, FALSE);
     gtk_widget_set_visible(st->vim_box, FALSE);
 
+    emacs_block_cursor_set(tab, mode == EDITOR_MODE_EMACS || mode == EDITOR_MODE_ORGMODE);
     if (mode == EDITOR_MODE_EMACS || mode == EDITOR_MODE_ORGMODE) {
         gtk_widget_set_visible(st->emacs_box, TRUE);
         emacs_close_minibuffer(tab);

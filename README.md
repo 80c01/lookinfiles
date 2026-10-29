@@ -73,6 +73,8 @@ panel that can be split in every direction. Drag a tab with the mouse onto
 another tab bar to move it there, or near an edge of an editor to split it on
 that side (a blue area shows where it lands). Each tab has its own mode:
 **Notepad** (default), **Emacs** or **Vim**, with Org-mode editing keys.
+The Emacs and Org-mode modes use a block cursor, Vim a block cursor in normal
+mode.
 
 **Terminal**: embedded terminal panes (VTE), split beside or below each other;
 in a workspace connected to a remote machine they open an SSH shell.
@@ -246,7 +248,9 @@ The editor mode is changed from the status bar button, the tab menu,
 #### Org-mode editing
 
 Tabs showing an `.org` file open in the **Org-mode** editor mode (Emacs keys)
-and get the Emacs Org-mode commands. Keys without `C-c` also work in the
+and get the Emacs Org-mode commands. The file opens folded to its top-level
+headings, unless a `#+STARTUP:` line says `content` (all headings) or
+`showall` / `nofold` / `showeverything`. Keys without `C-c` also work in the
 Notepad and Vim modes; commands that ask a question (dates, tags, links) use
 the Emacs minibuffer (`Tab` completes tags and `*Heading` links). `M-x org-…` runs the commands by their Emacs name
 (`org-todo`, `org-schedule`, `org-clock-in`, `org-show-todo-tree`…).

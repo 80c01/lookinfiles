@@ -176,8 +176,15 @@ static void on_org_cursor_moved(GObject* obj, GParamSpec* pspec, gpointer data) 
     st->org_revealing = FALSE;
 }
 
+static void set_global_visibility(EditorTab* tab, GPtrArray* lines, gint state);
+
 void orgmode_editor_init(EditorTab* tab) {
     g_signal_connect(tab->buffer, "notify::cursor-position", G_CALLBACK(on_org_cursor_moved), tab);
+    if (!orgmode_editor_is_org(tab)) return;
+    /* Like Emacs: the file opens folded unless #+STARTUP says otherwise */
+    GPtrArray* lines = buffer_lines(tab);
+    set_global_visibility(tab, lines, (gint)org_startup_visibility(lines));
+    g_ptr_array_unref(lines);
 }
 
 /* TAB on a heading (FOLDED -> CHILDREN -> SUBTREE), a drawer or a block */
@@ -217,12 +224,9 @@ static gboolean cycle_at(EditorTab* tab, GPtrArray* lines, gint line) {
     return TRUE;
 }
 
-/* Shift+TAB: OVERVIEW -> CONTENTS -> SHOW ALL */
-static void global_cycle(EditorTab* tab) {
-    gint state = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(tab->buffer), GLOBAL_STATE_KEY));
-    state = (state + 1) % 3;
+/* Global visibility: 0 SHOW ALL, 1 OVERVIEW, 2 CONTENTS (OrgStartupVisibility) */
+static void set_global_visibility(EditorTab* tab, GPtrArray* lines, gint state) {
     g_object_set_data(G_OBJECT(tab->buffer), GLOBAL_STATE_KEY, GINT_TO_POINTER(state));
-    GPtrArray* lines = buffer_lines(tab);
     show_all(tab);
     for (gint i = 0; state != 0 && i < (gint)lines->len; i++) {
         gint level = org_heading_level(org_line(lines, i));
@@ -230,6 +234,14 @@ static void global_cycle(EditorTab* tab) {
         if (state == 1 && level == 1) set_lines_hidden(tab, i + 1, org_subtree_end(lines, i), TRUE);
         if (state == 2) set_lines_hidden(tab, i + 1, org_entry_end(lines, i), TRUE);
     }
+}
+
+/* Shift+TAB: OVERVIEW -> CONTENTS -> SHOW ALL */
+static void global_cycle(EditorTab* tab) {
+    gint state = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(tab->buffer), GLOBAL_STATE_KEY));
+    state = (state + 1) % 3;
+    GPtrArray* lines = buffer_lines(tab);
+    set_global_visibility(tab, lines, state);
     static const gchar* NAMES[] = {"SHOW ALL", "OVERVIEW", "CONTENTS"};
     org_echo(tab, NAMES[state]);
     fix_cursor(tab);

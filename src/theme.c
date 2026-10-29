@@ -628,6 +628,14 @@ void apply_panel_borders(void) {
         "}\n"
         ".code-font text, textview.code-font text, .code-font {\n"
         "  font-family: 'Consolas', 'DejaVu Sans Mono', 'Liberation Mono', 'Menlo', 'Courier New', monospace;\n"
+        "}\n"
+        /* Emacs block cursor (editor_emacs.c): the thin caret is hidden, the
+         * block is a tag on the character, or this box at a line end */
+        "textview.emacs-block-cursor text {\n"
+        "  caret-color: transparent;\n"
+        "}\n"
+        ".emacs-block-cursor-eol {\n"
+        "  background-color: #aeafad;\n"
         "}\n";
     gtk_css_provider_load_from_string(css, DATA);
     GdkDisplay* display = gdk_display_get_default();

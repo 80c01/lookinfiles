@@ -159,11 +159,12 @@ key Return;             shot open_org_in_editor
 xdotool mousemove 600 79 click 1     # cursor on the first heading
 key shift+Right;        shot org_editor_todo_cycled
 # Org editing: heading folding, global visibility, structure editing, tables
-key Tab;                shot org_editor_folded
-key Tab;                shot org_editor_children
+key Tab;                shot org_editor_children   # opened folded (#+STARTUP: overview)
 key Tab;                shot org_editor_subtree
-key shift+Tab;          shot org_editor_overview
-key shift+Tab shift+Tab; shot org_editor_show_all
+key Tab;                shot org_editor_folded
+key Tab
+key shift+Tab;          shot org_editor_contents   # global cycle from the startup overview
+key shift+Tab;          shot org_editor_show_all
 key alt+Return
 xdotool type --delay 80 "Second"
                         shot org_editor_new_heading

@@ -14,6 +14,10 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Emacs and Org-mode editor tabs use a block cursor. Org files open folded
+  to their top-level headings (`#+STARTUP: overview`), or as their
+  `#+STARTUP:` line says (`content`, `showall`, `nofold`, `showeverything`).
+
 - Emacs mode incremental search works like Emacs: the match grows in place
   as you type, `C-s` / `C-r` move to the next / previous match and wrap
   after a failing search, `DEL` undoes a step, `C-w` adds a word, `RET`

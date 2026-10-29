@@ -253,6 +253,24 @@ static void test_tags(void) {
     g_ptr_array_unref(l);
 }
 
+static void test_startup_visibility(void) {
+    static const struct {
+        const gchar* text;
+        OrgStartupVisibility vis;
+    } CASES[] = {
+        {"* A\n", ORG_STARTUP_OVERVIEW},
+        {"#+STARTUP: content\n* A\n", ORG_STARTUP_CONTENTS},
+        {"#+startup: logdone showall\n", ORG_STARTUP_SHOW_ALL},
+        {"#+STARTUP: nofold\n#+STARTUP: fold\n", ORG_STARTUP_OVERVIEW},
+        {"#+STARTUP: showeverything\n", ORG_STARTUP_SHOW_ALL},
+    };
+    for (guint i = 0; i < G_N_ELEMENTS(CASES); i++) {
+        GPtrArray* l = org_lines_new(CASES[i].text);
+        g_assert_cmpint(org_startup_visibility(l), ==, CASES[i].vis);
+        g_ptr_array_unref(l);
+    }
+}
+
 static void test_collect_tags(void) {
     GPtrArray* l = org_lines_new("#+TAGS: { home work(w) } urgent\n* A :work:x:\n* B :x:\ntext :not:\n");
     GPtrArray* tags = org_collect_tags(l, NULL);
@@ -402,6 +420,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/org_doc/todo_logdone_and_repeat", test_todo_logdone_and_repeat);
     g_test_add_func("/org_doc/priority", test_priority);
     g_test_add_func("/org_doc/tags", test_tags);
+    g_test_add_func("/org_doc/startup_visibility", test_startup_visibility);
     g_test_add_func("/org_doc/collect_tags", test_collect_tags);
     g_test_add_func("/org_doc/planning", test_planning);
     g_test_add_func("/org_doc/clock", test_clock);
