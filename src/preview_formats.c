@@ -18,6 +18,7 @@
 #include "log_view.h"
 #include "man_view.h"
 #include "notebook.h"
+#include "spreadsheet.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
                                         GError** error);
@@ -577,6 +578,75 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     return doc;
 }
 
+/* --- Spreadsheets --- */
+
+#define SHEETS_SHOWN 3
+#define SHEET_ROWS 300
+
+static PreviewDoc* build_spreadsheet(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    g_autoptr(Workbook) book = spreadsheet_read(in->path, SHEETS_SHOWN, SHEET_ROWS, error);
+    if (book == NULL) {
+        return NULL;
+    }
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* size = preview_format_size(in->size);
+    gchar* subtitle = g_strdup_printf("%s · %u %s · %s", book->format, book->sheets->len,
+                                      book->sheets->len == 1 ? "sheet" : "sheets", size);
+    preview_doc_title(doc, in->name, subtitle);
+    g_free(subtitle);
+    g_free(size);
+    if (book->sheets->len > 1) {
+        GString* names = g_string_new(NULL);
+        for (guint i = 0; i < book->sheets->len; i++) {
+            g_string_append_printf(names, "%s%s", i > 0 ? " · " : "", ((Sheet*)g_ptr_array_index(book->sheets, i))->name);
+        }
+        preview_doc_field(doc, "Sheets", names->str);
+        g_string_free(names, TRUE);
+    }
+    for (guint i = 0; i < book->sheets->len; i++) {
+        const Sheet* sheet = g_ptr_array_index(book->sheets, i);
+        if (!sheet->loaded) {
+            continue;
+        }
+        if (book->sheets->len > 1 || i > 0) {
+            preview_doc_section(doc, sheet->name);
+        } else {
+            preview_doc_append_len(doc, "\n", 1);
+        }
+        if (sheet->rows->len == 0 || sheet->n_cols == 0) {
+            preview_doc_note(doc, "(empty)");
+            continue;
+        }
+        g_autoptr(PreviewTable) table = preview_table_new(sheet->n_cols);
+        preview_table_set_row_numbers(table, TRUE);
+        gchar** letters = g_new0(gchar*, sheet->n_cols + 1);
+        for (guint c = 0; c < sheet->n_cols; c++) {
+            letters[c] = spreadsheet_column_name(c);
+        }
+        preview_table_set_header(table, (const gchar* const*)letters);
+        g_strfreev(letters);
+        for (guint r = 0; r < sheet->rows->len; r++) {
+            gchar** cells = g_ptr_array_index(sheet->rows, r);
+            preview_table_add_row(table, (const gchar* const*)cells, sheet->n_cols);
+        }
+        preview_doc_add_table(doc, table);
+        if (sheet->truncated) {
+            gchar* note = g_strdup_printf("Showing the first %u rows.", SHEET_ROWS);
+            preview_doc_note(doc, note);
+            g_free(note);
+        }
+    }
+    if (book->sheets->len > SHEETS_SHOWN) {
+        gchar* note = g_strdup_printf("\nThe first %u sheets are shown.", SHEETS_SHOWN);
+        preview_doc_note(doc, note);
+        g_free(note);
+    }
+    return doc;
+}
+
 /* --- Jupyter notebooks --- */
 
 static PreviewDoc* build_notebook(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -758,6 +828,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_manpage;
     case FILE_KIND_NOTEBOOK:
         return build_notebook;
+    case FILE_KIND_SPREADSHEET:
+        return build_spreadsheet;
     default:
         return NULL;
     }

@@ -374,12 +374,13 @@ static void append_table_line(PreviewDoc* doc, const PreviewTable* t, gchar** ce
     for (guint c = 0; c < t->n_cols; c++) {
         gchar* text = fit_cell(cells[c], t->max_cell);
         guint pad = widths[c] - preview_text_width(text);
-        gboolean right = (numeric[c] || t->right[c]) && !header;
+        gboolean number = !header && numeric[c] && preview_cell_is_number(cells[c]);
+        gboolean right = (number || t->right[c]) && !header;
         if (right) {
             append_spaces(doc, pad);
         }
         PreviewStyle style = header ? PREVIEW_STYLE_HEADER
-                             : (numeric[c] ? PREVIEW_STYLE_NUMBER : PREVIEW_STYLE_PLAIN);
+                             : (number ? PREVIEW_STYLE_NUMBER : PREVIEW_STYLE_PLAIN);
         preview_doc_append(doc, style, text);
         if (!right && c + 1 < t->n_cols) {
             append_spaces(doc, pad);
@@ -404,10 +405,12 @@ void preview_doc_add_table(PreviewDoc* doc, const PreviewTable* t) {
         if (t->header != NULL) {
             widths[c] = MIN(preview_text_width(t->header[c]), t->max_cell);
         }
+        /* Numeric column: every cell is a number, except maybe a title in
+         * the first row (spreadsheets without a header row) */
         for (guint r = 0; r < t->rows->len; r++) {
             const gchar* cell = ((gchar**)g_ptr_array_index(t->rows, r))[c];
             widths[c] = MAX(widths[c], MIN(preview_text_width(cell), t->max_cell));
-            if (cell[0] != '\0') {
+            if (cell[0] != '\0' && (r > 0 || preview_cell_is_number(cell))) {
                 filled++;
                 numbers += preview_cell_is_number(cell);
             }

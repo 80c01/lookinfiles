@@ -157,6 +157,16 @@ static void test_notebook(void) {
     g_assert_true(g_str_has_prefix(doc->text->str, "*Jupyter notebook · 5 cells (4 code) · Python 3*"));
 }
 
+static void test_spreadsheets(void) {
+    g_autoptr(PreviewDoc) xlsx = build_fixture("budget.xlsx", FILE_KIND_SPREADSHEET);
+    g_assert_true(g_str_has_prefix(xlsx->text->str, "budget.xlsx\nExcel workbook · 2 sheets · "));
+    g_assert_nonnull(strstr(xlsx->text->str, "Budget 2026"));
+    g_assert_nonnull(strstr(xlsx->text->str, "$12,500.00"));
+    g_autoptr(PreviewDoc) ods = build_fixture("stock.ods", FILE_KIND_SPREADSHEET);
+    g_assert_nonnull(strstr(ods->text->str, "Bolt M6"));
+    g_assert_nonnull(strstr(ods->text->str, "(empty)"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -188,5 +198,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/log", test_log);
     g_test_add_func("/preview_formats/manpage", test_manpage);
     g_test_add_func("/preview_formats/notebook", test_notebook);
+    g_test_add_func("/preview_formats/spreadsheets", test_spreadsheets);
     return g_test_run();
 }
