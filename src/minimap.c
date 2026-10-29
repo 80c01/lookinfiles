@@ -255,6 +255,22 @@ static gboolean minimap_is_useful(AppData* app) {
            gtk_adjustment_get_page_size(adj) + 1.5;
 }
 
+/* While the minimap is shown it is the vertical scrollbar (click / drag), as
+ * in VS Code: hide GTK's overlay scrollbar, which would be drawn over the
+ * end of long lines. Wheel and keyboard scrolling are unchanged. */
+static void sync_vertical_scrollbar(GtkWidget* view, gboolean minimap_shown) {
+    GtkWidget* sw = (view != NULL) ? gtk_widget_get_ancestor(view, GTK_TYPE_SCROLLED_WINDOW) : NULL;
+    if (sw == NULL) {
+        return;
+    }
+    GtkPolicyType h, v;
+    gtk_scrolled_window_get_policy(GTK_SCROLLED_WINDOW(sw), &h, &v);
+    GtkPolicyType want = minimap_shown ? GTK_POLICY_EXTERNAL : GTK_POLICY_AUTOMATIC;
+    if (v != want) {
+        gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sw), h, want);
+    }
+}
+
 static gboolean minimap_vis_idle(gpointer data) {
     AppData* app = (AppData*)data;
     app->mm_vis_source = 0;
@@ -268,6 +284,7 @@ static gboolean minimap_vis_idle(gpointer data) {
         }
         gtk_widget_set_visible(app->minimap, useful);
     }
+    sync_vertical_scrollbar(app->text_view, useful);
     return G_SOURCE_REMOVE;
 }
 
@@ -413,6 +430,7 @@ static gboolean editor_minimap_vis_idle(gpointer data) {
         }
         gtk_widget_set_visible(tab->minimap, useful);
     }
+    sync_vertical_scrollbar(tab->view, useful);
     return G_SOURCE_REMOVE;
 }
 
