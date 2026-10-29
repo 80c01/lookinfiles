@@ -1,3 +1,4 @@
+#include "app_paths.h"
 #include "topbar.h"
 #include "dialog.h"
 #include "layouts.h"
@@ -129,6 +130,11 @@ int main(int argc, char** argv) {
     argv[kept] = NULL;
     argc = kept;
 
+    /* Keep the data saved under the old application name */
+    app_paths_migrate_legacy();
+    g_set_prgname(APP_DIR_NAME);
+    g_set_application_name(APP_NAME);
+
     /* Force GTK 4 built-in Default dark theme to avoid GTK 3 system theme CSS errors */
     g_setenv("GTK_THEME", "Default:dark", TRUE);
 
@@ -153,7 +159,7 @@ int main(int argc, char** argv) {
 
     GtkWidget* window = gtk_window_new();
     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), loop);
-    gtk_window_set_title(GTK_WINDOW(window), "File Explorer");
+    gtk_window_set_title(GTK_WINDOW(window), APP_NAME);
     gtk_window_set_default_size(GTK_WINDOW(window), win_width, win_height);
 
     /* Get current directory */

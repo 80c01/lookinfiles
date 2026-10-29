@@ -1,6 +1,7 @@
 /* Remote machine data: RemoteMachine list in AppData, remotes.xml persistence,
  * ~/.ssh/config discovery and lookups. No widgets (unit-tested in tests/). */
 #include "remote_store.h"
+#include "app_paths.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,8 +25,7 @@ void remote_machine_free(RemoteMachine* rm) {
 }
 
 static gchar* remote_get_config_path(void) {
-    const gchar* cfg_dir = g_get_user_config_dir();
-    gchar* app_dir = g_build_filename(cfg_dir, "explorateur_fichiers", NULL);
+    gchar* app_dir = app_config_dir();
     g_mkdir_with_parents(app_dir, 0700);
     gchar* file = g_build_filename(app_dir, REMOTES_XML_FILE, NULL);
     g_free(app_dir);
@@ -33,8 +33,9 @@ static gchar* remote_get_config_path(void) {
 }
 
 gchar* remote_get_cache_dir(const gchar* machine_id) {
-    const gchar* cache_dir = g_get_user_cache_dir();
-    gchar* dir = g_build_filename(cache_dir, "explorateur_fichiers", "remotes", machine_id, NULL);
+    gchar* cache_dir = app_cache_dir();
+    gchar* dir = g_build_filename(cache_dir, "remotes", machine_id, NULL);
+    g_free(cache_dir);
     g_mkdir_with_parents(dir, 0700);
     return dir;
 }

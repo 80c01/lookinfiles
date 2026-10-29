@@ -50,7 +50,7 @@ static gboolean svg_supported(void) {
     return cached == 1;
 }
 
-/* EXPLORATEUR_DEBUG_ICONS=1: print how each icon is resolved (to diagnose
+/* LOOKIN_DEBUG_ICONS=1: print how each icon is resolved (to diagnose
  * missing icons on a given system) */
 static void debug_print_icon(GdkDisplay* display, const gchar* requested, GIcon* icon) {
     static gboolean header_done = FALSE;
@@ -73,13 +73,13 @@ static void debug_print_icon(GdkDisplay* display, const gchar* requested, GIcon*
     if (p) g_object_unref(p);
 }
 
-/* Make the icons bundled in the binary (icons/, prefix "explorateur-")
+/* Make the icons bundled in the binary (icons/, prefix "lookin-")
  * visible to the icon theme of the display, once */
 static void register_bundled_icons(GdkDisplay* display) {
     static GdkDisplay* registered = NULL;
     if (display != NULL && display != registered) {
         gtk_icon_theme_add_resource_path(gtk_icon_theme_get_for_display(display),
-                                         "/org/explorateur/icons");
+                                         "/org/lookin/icons");
         registered = display;
     }
 }
@@ -90,14 +90,14 @@ static GIcon* themed_icon_with_fallbacks(const gchar* icon_name) {
 
     /* 1. Bundled copy, requested alone: GTK searches every installed theme for
      *    all names of a GThemedIcon before the bundled resource path, so mixing
-     *    it with theme names would let the theme win. Its unique "explorateur-"
+     *    it with theme names would let the theme win. Its unique "lookin-"
      *    name cannot match any theme. Only when SVG can be loaded. */
-    gchar* bundled = g_strconcat("explorateur-", icon_name, "-symbolic", NULL);
+    gchar* bundled = g_strconcat("lookin-", icon_name, "-symbolic", NULL);
     if (display != NULL && svg_supported() &&
         gtk_icon_theme_has_icon(gtk_icon_theme_get_for_display(display), bundled)) {
         GIcon* icon = g_themed_icon_new(bundled);
         g_free(bundled);
-        if (g_getenv("EXPLORATEUR_DEBUG_ICONS") != NULL) {
+        if (g_getenv("LOOKIN_DEBUG_ICONS") != NULL) {
             debug_print_icon(display, icon_name, icon);
         }
         return icon;
@@ -122,7 +122,7 @@ static GIcon* themed_icon_with_fallbacks(const gchar* icon_name) {
         !gtk_icon_theme_has_gicon(gtk_icon_theme_get_for_display(display), icon)) {
         g_warning("icons: no icon available for \"%s\" in the current icon theme", icon_name);
     }
-    if (display != NULL && g_getenv("EXPLORATEUR_DEBUG_ICONS") != NULL) {
+    if (display != NULL && g_getenv("LOOKIN_DEBUG_ICONS") != NULL) {
         debug_print_icon(display, icon_name, icon);
     }
     g_ptr_array_free(names, TRUE);

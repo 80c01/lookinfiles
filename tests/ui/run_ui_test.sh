@@ -21,14 +21,14 @@
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-BIN=$(cd "$(dirname "${1:-$ROOT/explorateur_fichiers}")" && pwd)/$(basename "${1:-explorateur_fichiers}")
+BIN=$(cd "$(dirname "${1:-$ROOT/lookin}")" && pwd)/$(basename "${1:-lookin}")
 OUT=${UI_OUT:-$ROOT/build/ui}
 case "$OUT" in /*) ;; *) OUT=$ROOT/$OUT ;; esac
 TOLERANCE=${UI_TOLERANCE:-50}
 SHOTS=$OUT/shots
 # Fixed fixture path: the top bar shows it, so screenshots stay comparable
 # between runs from different checkouts or output directories.
-FIX=${TMPDIR:-/tmp}/explorateur_fichiers-ui
+FIX=${TMPDIR:-/tmp}/lookin-ui
 
 for tool in Xvfb xdotool import compare; do
     if ! command -v $tool >/dev/null 2>&1; then
@@ -46,7 +46,7 @@ printf '[Settings]\ngtk-cursor-blink=false\n' > "$FIX/home/.config/gtk-4.0/setti
 if [ -n "${UI_ICON_THEME:-}" ]; then
     printf 'gtk-icon-theme-name=%s\n' "$UI_ICON_THEME" >> "$FIX/home/.config/gtk-4.0/settings.ini"
 fi
-CFG="$FIX/home/.config/explorateur_fichiers"
+CFG="$FIX/home/.config/lookin"
 mkdir -p "$CFG/notes/General" "$CFG/notes/Projects and long notebook name"
 echo a > "$CFG/notes/General/short.txt"
 echo c > "$CFG/notes/Projects and long notebook name/plan.md"

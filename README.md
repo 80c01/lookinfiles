@@ -1,11 +1,11 @@
-# File Explorer
+# Lookin — look in your files
 
-A keyboard-driven file explorer for Linux, written in C with GTK 4: a file
-tree with live previews, a multi-mode text editor (Notepad, Emacs, Vim),
-notes, bookmarks, SSH remote machines, an embedded terminal and virtual
-workspaces, in a VS Code Dark+ look.
+Lookin is a keyboard-driven file explorer for Linux, written in C with
+GTK 4: a file tree with live previews, a multi-mode text editor (Notepad,
+Emacs, Vim), notes, bookmarks, SSH remote machines, an embedded terminal
+and virtual workspaces, in a VS Code Dark+ look.
 
-![File Explorer showing a Markdown preview](docs/screenshot.png)
+![Lookin showing a Markdown preview](docs/screenshot.png)
 
 ## Contents
 
@@ -102,16 +102,16 @@ sudo apt install libvte-2.91-gtk4-dev libgtksourceview-5-dev libpoppler-glib-dev
 make
 ```
 
-The binary `explorateur_fichiers` is created in the project directory (objects
+The binary `lookin` is created in the project directory (objects
 in `build/`). `make clean` removes both.
 
 ## Usage
 
 ```bash
-./explorateur_fichiers                     # current directory, 1000×600 window
-./explorateur_fichiers /path/to/directory  # start in another directory
-./explorateur_fichiers --size 1920x1080    # window size (also -s)
-./explorateur_fichiers --fullscreen        # start in fullscreen (also -f)
+./lookin                     # current directory, 1000×600 window
+./lookin /path/to/directory  # start in another directory
+./lookin --size 1920x1080    # window size (also -s)
+./lookin --fullscreen        # start in fullscreen (also -f)
 ```
 
 Press `?` at any time for the list of shortcuts, `Alt+Left` / `Alt+Right` to
@@ -292,8 +292,9 @@ Vim status line with mode badge, ruler and command line (`:`, `/`, `?`).
 
 ## Configuration
 
-Settings and data are kept in `~/.config/explorateur_fichiers/`
-(`$XDG_CONFIG_HOME` is honoured):
+Settings and data are kept in `~/.config/lookin/`
+(`$XDG_CONFIG_HOME` is honoured). A `~/.config/explorateur_fichiers/`
+directory from before the rename is moved there on first start:
 
 | Path | Content |
 |---|---|
@@ -302,10 +303,10 @@ Settings and data are kept in `~/.config/explorateur_fichiers/`
 | `remotes.xml` | Remote machines added by hand (`~/.ssh/config` hosts are read directly) |
 | `layouts.ini` | Saved workspace layouts and the default layout of new workspaces |
 
-Remote machines are mounted under `~/.cache/explorateur_fichiers/remotes/`.
+Remote machines are mounted under `~/.cache/lookin/remotes/`.
 
 Toolbar icons are bundled in the binary, so they look the same with any icon
-theme. If buttons show no icon, `EXPLORATEUR_DEBUG_ICONS=1 ./explorateur_fichiers`
+theme. If buttons show no icon, `LOOKIN_DEBUG_ICONS=1 ./lookin`
 prints which icon file each button uses.
 
 ## Development

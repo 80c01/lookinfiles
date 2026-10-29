@@ -4,7 +4,7 @@ Guidelines for AI coding agents working in this repository.
 
 ## Project overview
 
-`file explorer` written in C with GTK 4 (4.12 or newer, no deprecated API). Modular architecture in `src/`,
+`Lookin` ("look in your files"), a file explorer written in C with GTK 4 (4.12 or newer, no deprecated API). Modular architecture in `src/`,
 no external dependencies beyond GTK (with optional VTE for GTK 4, GtkSourceView 5, and poppler-glib).
 
 Layout: left = explorer panel (files, bookmarks, notes or remote view,
@@ -21,7 +21,7 @@ make test         # GLib unit tests (headless, no display needed)
 make check        # zero-warning build + unit tests + module layering rules
 make ui-test      # headless UI smoke test (needs xvfb xdotool imagemagick)
 make clean        # remove binary and build/
-./explorateur_fichiers   # run (requires a display; shows a warning without one)
+./lookin   # run (requires a display; shows a warning without one)
 ```
 
 - **Run `make check` before every commit.** It fails on any compiler warning,
@@ -45,7 +45,7 @@ make clean        # remove binary and build/
 - Text interpolated into Pango markup must be escaped: use
   `g_markup_printf_escaped()`, never `g_strdup_printf()`, with names, titles,
   hosts, key labels or any user-provided string.
-- The binary `explorateur_fichiers` and `build/` are generated — never edit them.
+- The binary `lookin` and `build/` are generated — never edit them.
 
 ## Architecture (keep it when editing)
 
@@ -53,6 +53,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 (a module may only depend on modules in its own layer or below):
 
 **1. Foundation — pure helpers, no `AppData`, no widgets, unit-tested in `tests/`:**
+- `app_paths` — application name (`APP_NAME`), config and cache directories
+  (`app_config_dir()`, `app_cache_dir()`: never hard-code the directory name),
+  and the move of the pre-rename `explorateur_fichiers` config directory.
 - `file_types` — file type detection: by name (`file_extension()`,
   `is_*_file()`, `file_kind_from_name()`) and by content (`FileKind`,
   `file_kind_detect()` on the first `FILE_SNIFF_BYTES`: magic numbers, text vs
@@ -265,11 +268,11 @@ Check these before adding or changing an action, a tooltip or a dialog:
   the Makefile, licence in `icons/COPYING`) so they render the same with any
   icon theme. To add one: copy a *current* Adwaita symbolic SVG (no
   `transform`, enforced by `make check`) as
-  `icons/scalable/actions/explorateur-<name>-symbolic.svg`, list it in
-  `icons/explorateur.gresource.xml`, and if `<name>` is not built into libgtk
+  `icons/scalable/actions/lookin-<name>-symbolic.svg`, list it in
+  `icons/lookin.gresource.xml`, and if `<name>` is not built into libgtk
   add a `FALLBACKS` entry in `icons.c` ending with a built-in icon (used when
   SVG cannot be loaded). Check with `make ui-test`, `UI_ICON_THEME=hicolor
-  make ui-test` and `EXPLORATEUR_DEBUG_ICONS=1 ./explorateur_fichiers`.
+  make ui-test` and `LOOKIN_DEBUG_ICONS=1 ./lookin`.
 - **Preview text views** all use `set_view_text_padding()` (10 px sides).
 - **Names**: `Org-mode`, `Rich Format`, `Plain Text`; view titles EXPLORER,
   BOOKMARKS, NOTES, REMOTE.

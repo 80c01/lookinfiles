@@ -1,13 +1,13 @@
-Icons bundled into explorateur_fichiers (icons/scalable/actions/)
+Icons bundled into Lookin (icons/scalable/actions/)
 
-All icons except explorateur-utilities-terminal-symbolic.svg are copied
-unchanged (renamed with the "explorateur-" prefix) from the Adwaita icon theme
+All icons except lookin-utilities-terminal-symbolic.svg are copied
+unchanged (renamed with the "lookin-" prefix) from the Adwaita icon theme
 by the GNOME Project, https://gitlab.gnome.org/GNOME/adwaita-icon-theme
 Copyright (c) GNOME Project and Adwaita icon theme contributors.
 License: CC-BY-SA-3.0 or LGPL-3, and CC-BY-SA-4.0 (as distributed by Debian
 in /usr/share/doc/adwaita-icon-theme/copyright).
 
-explorateur-utilities-terminal-symbolic.svg was drawn for this project in the
+lookin-utilities-terminal-symbolic.svg was drawn for this project in the
 Adwaita symbolic style and is released under the same terms.
 
 Rules: icons must be single-colour symbolic SVGs without any "transform"

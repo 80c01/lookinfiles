@@ -1,4 +1,5 @@
 #include "bookmarks.h"
+#include "app_paths.h"
 #include "dialog.h"
 #include "app_events.h"
 #include "tree_nav.h"
@@ -179,7 +180,7 @@ static gchar* bm_default_name(const gchar* target) {
 /* ------------------------------------------------------------------------- */
 
 static gchar* bm_config_file(const gchar* basename) {
-    gchar* dir = g_build_filename(g_get_user_config_dir(), "explorateur_fichiers", NULL);
+    gchar* dir = app_config_dir();
     g_mkdir_with_parents(dir, 0755);
     gchar* path = g_build_filename(dir, basename, NULL);
     g_free(dir);

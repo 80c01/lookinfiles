@@ -12,6 +12,7 @@ status=0
 
 # module:allowed-project-headers (comma separated)
 RULES="
+app_paths:
 file_types:
 git_utils:
 line_diff:
@@ -19,7 +20,7 @@ pane_geometry:
 dir_summary:file_types
 diff_gutter:git_utils,line_diff
 explorer_row:
-layout_store:
+layout_store:app_paths
 text_style:app_types,file_types
 theme:
 markdown:app_types,image_utils
@@ -33,7 +34,7 @@ image_utils:
 dialog:
 tab_drop:pane_geometry
 explorer_tree:explorer_row
-remote_store:app_types
+remote_store:app_types,app_paths
 preview_summary:app_types,remote_store,explorer_row
 fs_watch:app_types,app_events,git_utils,git_tab
 "
@@ -109,8 +110,8 @@ for f in icons/scalable/actions/*.svg; do
         echo "icons: $f uses a transform (not rendered by some GTK versions)"
         status=1
     fi
-    if ! grep -q "scalable/actions/$(basename "$f")" icons/explorateur.gresource.xml; then
-        echo "icons: $f is missing from icons/explorateur.gresource.xml"
+    if ! grep -q "scalable/actions/$(basename "$f")" icons/lookin.gresource.xml; then
+        echo "icons: $f is missing from icons/lookin.gresource.xml"
         status=1
     fi
 done

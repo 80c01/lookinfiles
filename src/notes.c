@@ -1,4 +1,5 @@
 #include "notes.h"
+#include "app_paths.h"
 #include "dialog.h"
 #include "app_events.h"
 #include "tree_nav.h"
@@ -189,8 +190,9 @@ static NotesManager* get_notes_mgr(AppData* app) {
 }
 
 gchar* notes_get_root_dir(void) {
-    const gchar* cfg_dir = g_get_user_config_dir();
-    gchar* dir = g_build_filename(cfg_dir, "explorateur_fichiers", "notes", NULL);
+    gchar* cfg_dir = app_config_dir();
+    gchar* dir = g_build_filename(cfg_dir, "notes", NULL);
+    g_free(cfg_dir);
     g_mkdir_with_parents(dir, 0755);
     return dir;
 }
@@ -352,8 +354,9 @@ static void notes_parse_end(GMarkupParseContext* ctx, const gchar* element,
 /* ------------------------------------------------------------------------- */
 
 static void notes_migrate_legacy_buffers(void) {
-    const gchar* cfg_dir = g_get_user_config_dir();
-    gchar* old_buf_dir = g_build_filename(cfg_dir, "explorateur_fichiers", "buffers", NULL);
+    gchar* cfg_dir = app_config_dir();
+    gchar* old_buf_dir = g_build_filename(cfg_dir, "buffers", NULL);
+    g_free(cfg_dir);
     if (!g_file_test(old_buf_dir, G_FILE_TEST_IS_DIR)) {
         g_free(old_buf_dir);
         return;

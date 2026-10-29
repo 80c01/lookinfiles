@@ -1,4 +1,4 @@
-# Makefile for the GTK 4 file explorer
+# Makefile for Lookin, a GTK 4 file explorer
 #
 # Each source file is compiled to its own object in build/ with automatic
 # header dependency tracking (-MMD -MP): editing a header rebuilds every
@@ -32,7 +32,7 @@ CFLAGS += -DHAVE_POPPLER `$(PKG_CONFIG) --cflags poppler-glib`
 LDFLAGS += `$(PKG_CONFIG) --libs poppler-glib`
 endif
 
-TARGET = explorateur_fichiers
+TARGET = lookin
 BUILD_DIR = build
 
 # Every .c file in src/ is part of the application: adding a module only
@@ -55,7 +55,7 @@ $(TARGET): $(OBJS)
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(DEPFLAGS) -c -o $@ $<
 
-$(BUILD_DIR)/icon_resources.c: icons/explorateur.gresource.xml $(ICON_FILES) | $(BUILD_DIR)
+$(BUILD_DIR)/icon_resources.c: icons/lookin.gresource.xml $(ICON_FILES) | $(BUILD_DIR)
 	$(GLIB_COMPILE_RESOURCES) --sourcedir=icons --generate-source --target=$@ $<
 
 $(BUILD_DIR)/icon_resources.o: $(BUILD_DIR)/icon_resources.c
@@ -70,14 +70,15 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_dir_summary
+TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_dir_summary
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
+TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o
 TEST_DEPS_test_git_utils = $(BUILD_DIR)/git_utils.o
-TEST_DEPS_test_remote_store = $(BUILD_DIR)/remote_store.o
+TEST_DEPS_test_remote_store = $(BUILD_DIR)/remote_store.o $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_preview_summary = $(BUILD_DIR)/preview_summary.o $(BUILD_DIR)/explorer_row.o
 TEST_DEPS_test_explorer_row = $(BUILD_DIR)/explorer_row.o
-TEST_DEPS_test_layout_store = $(BUILD_DIR)/layout_store.o
+TEST_DEPS_test_layout_store = $(BUILD_DIR)/layout_store.o $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_line_diff = $(BUILD_DIR)/line_diff.o
 TEST_DEPS_test_pane_geometry = $(BUILD_DIR)/pane_geometry.o
 TEST_DEPS_test_dir_summary = $(BUILD_DIR)/dir_summary.o $(BUILD_DIR)/file_types.o

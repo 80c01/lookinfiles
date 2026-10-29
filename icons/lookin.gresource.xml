@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/org/lookin/icons">
+    <file>scalable/actions/lookin-bookmark-new-symbolic.svg</file>
+    <file>scalable/actions/lookin-dialog-question-symbolic.svg</file>
+    <file>scalable/actions/lookin-document-edit-symbolic.svg</file>
+    <file>scalable/actions/lookin-document-new-symbolic.svg</file>
+    <file>scalable/actions/lookin-document-open-recent-symbolic.svg</file>
+    <file>scalable/actions/lookin-document-print-preview-symbolic.svg</file>
+    <file>scalable/actions/lookin-document-send-symbolic.svg</file>
+    <file>scalable/actions/lookin-edit-clear-all-symbolic.svg</file>
+    <file>scalable/actions/lookin-edit-delete-symbolic.svg</file>
+    <file>scalable/actions/lookin-folder-new-symbolic.svg</file>
+    <file>scalable/actions/lookin-folder-symbolic.svg</file>
+    <file>scalable/actions/lookin-list-add-symbolic.svg</file>
+    <file>scalable/actions/lookin-network-server-symbolic.svg</file>
+    <file>scalable/actions/lookin-network-transmit-receive-symbolic.svg</file>
+    <file>scalable/actions/lookin-pan-up-symbolic.svg</file>
+    <file>scalable/actions/lookin-text-x-generic-symbolic.svg</file>
+    <file>scalable/actions/lookin-user-bookmarks-symbolic.svg</file>
+    <file>scalable/actions/lookin-user-trash-symbolic.svg</file>
+    <file>scalable/actions/lookin-utilities-terminal-symbolic.svg</file>
+    <file>scalable/actions/lookin-view-dual-symbolic.svg</file>
+    <file>scalable/actions/lookin-view-grid-symbolic.svg</file>
+    <file>scalable/actions/lookin-view-paged-symbolic.svg</file>
+    <file>scalable/actions/lookin-view-refresh-symbolic.svg</file>
+    <file>scalable/actions/lookin-view-reveal-symbolic.svg</file>
+    <file>scalable/actions/lookin-view-sort-ascending-symbolic.svg</file>
+    <file>scalable/actions/lookin-window-close-symbolic.svg</file>
+  </gresource>
+</gresources>

@@ -1,5 +1,6 @@
 /* Saved workspace layouts (see layout_store.h) */
 #include "layout_store.h"
+#include "app_paths.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -64,7 +65,10 @@ gchar* saved_layout_summary(const SavedLayout* layout) {
 }
 
 gchar* layout_store_default_path(void) {
-    return g_build_filename(g_get_user_config_dir(), "explorateur_fichiers", "layouts.ini", NULL);
+    gchar* dir = app_config_dir();
+    gchar* path = g_build_filename(dir, "layouts.ini", NULL);
+    g_free(dir);
+    return path;
 }
 
 static gdouble read_frac(GKeyFile* kf, const gchar* group, const gchar* key, gdouble fallback) {
