@@ -78,6 +78,11 @@ gboolean file_kind_is_renderable(FileKind kind);
 /* TRUE for kinds whose content is text (shown as text by the raw view) */
 gboolean file_kind_is_text(FileKind kind);
 
+/* TRUE if the first bytes of a file look like text (no NUL byte, UTF-8 or
+ * few control characters). A kind can hold both: a PEM certificate is text,
+ * a DER one binary; a manual page can be gzipped. */
+gboolean file_content_is_text(const guchar* head, gsize len);
+
 /* Short name of a kind for the status bar ("CSV", "Archive"...); NULL for
  * plain text (the syntax language names it) */
 const gchar* file_kind_label(FileKind kind);

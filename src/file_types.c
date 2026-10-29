@@ -361,6 +361,10 @@ static gboolean looks_like_text(const guchar* head, gsize len) {
     return controls * 32 <= len;
 }
 
+gboolean file_content_is_text(const guchar* head, gsize len) {
+    return head == NULL || len == 0 || looks_like_text(head, len);
+}
+
 /* Offset of the first non-blank byte, skipping a UTF-8 byte order mark */
 static gsize skip_blank(const guchar* head, gsize len) {
     gsize i = HAS(0, "\xEF\xBB\xBF") ? 3 : 0;

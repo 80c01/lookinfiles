@@ -492,7 +492,9 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
-    if (!file_kind_is_text(td->kind)) {
+    /* Text kinds, and text content of other kinds (PEM certificates), are
+     * read as text; the rest (gzipped manual pages too) as binary */
+    if (!file_content_is_text((const guchar*)contents, len)) {
         /* Binary content: its structured preview, else a hex dump of the
          * first PREVIEW_BYTES only, whatever the file size */
         GError* err = NULL;

@@ -99,6 +99,18 @@ TEST_DEPS_test_vim_parse = $(BUILD_DIR)/vim_parse.o $(BUILD_DIR)/vim_keys.o
 TEST_DEPS_test_vim_regex = $(BUILD_DIR)/vim_regex.o $(BUILD_DIR)/vim_motion.o
 TEST_DEPS_test_vim_ex = $(BUILD_DIR)/vim_ex.o
 
+# Preview benchmark and coverage report (tools/preview_tool.c, TASK.md)
+$(BUILD_DIR)/preview_tool: tools/preview_tool.c $(PREVIEW_FORMAT_OBJS) | $(BUILD_DIR)
+	$(CC) $(TEST_CFLAGS) $(DEPFLAGS) -o $@ $< $(PREVIEW_FORMAT_OBJS) $(TEST_LDFLAGS)
+
+# Times every structured preview on the fixtures and large generated files
+bench-preview: $(BUILD_DIR)/preview_tool
+	@sh tools/bench_preview.sh $(BUILD_DIR)/preview_tool
+
+# Share of files that end at the hex dump: make preview-coverage DIR=~/
+preview-coverage: $(BUILD_DIR)/preview_tool
+	@$(BUILD_DIR)/preview_tool coverage $${DIR:-$$HOME}
+
 .SECONDEXPANSION:
 $(BUILD_DIR)/tests/%: tests/%.c $$(TEST_DEPS_%) | $(BUILD_DIR)
 	@mkdir -p $(BUILD_DIR)/tests
@@ -125,6 +137,6 @@ ui-test: $(TARGET)
 clean:
 	rm -rf $(TARGET) $(BUILD_DIR)
 
--include $(DEPS) $(TEST_BINS:=.d)
+-include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
 
-.PHONY: all clean test check ui-test
+.PHONY: all clean test check ui-test bench-preview preview-coverage

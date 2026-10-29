@@ -118,6 +118,7 @@ PreviewDoc* preview_format_build_file(const gchar* path, const gchar* name, gsiz
     gboolean ok = g_input_stream_read_all(G_INPUT_STREAM(stream), data, FILE_SNIFF_BYTES, &len,
                                           cancellable, error);
     PreviewInput in = { .path = path, .name = name, .size = size };
+    gboolean is_text = FALSE;
     if (ok) {
         in.kind = file_kind_detect(name, (const guchar*)data, len);
         in.head = (const guchar*)data;
@@ -125,7 +126,8 @@ PreviewDoc* preview_format_build_file(const gchar* path, const gchar* name, gsiz
         if (kind != NULL) {
             *kind = in.kind;
         }
-        if (file_kind_is_text(in.kind) && len == FILE_SNIFF_BYTES && cap > len) {
+        is_text = file_content_is_text((const guchar*)data, len);
+        if (is_text && len == FILE_SNIFF_BYTES && cap > len) {
             gsize more = 0;
             ok = g_input_stream_read_all(G_INPUT_STREAM(stream), data + len, cap - len, &more,
                                          cancellable, error);
@@ -139,7 +141,7 @@ PreviewDoc* preview_format_build_file(const gchar* path, const gchar* name, gsiz
     }
     data[len] = '\0';
     gchar* text = NULL;
-    if (file_kind_is_text(in.kind)) {
+    if (is_text) {
         text = g_utf8_make_valid(data, (gssize)len);
         in.text = text;
         in.text_len = strlen(text);
