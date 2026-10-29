@@ -25,9 +25,7 @@
 
 ### Preview
 
-- [ ] add jupyter notebook preview support
-- [ ] add office files preview (word, excel, libreoffice)
-- [ ] add support for certificate preview
+Planned in [TASK.md](TASK.md): rules, roadmap and definition of done for every preview format.
 
 ### Needs Further Investigation
 
