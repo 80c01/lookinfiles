@@ -27,6 +27,9 @@
 #include "remote.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 static void on_window_destroy(GtkWidget* widget, gpointer data) {
@@ -74,61 +77,126 @@ static void refresh_diff_gutters(AppData* app) {
     diff_gutter_refresh_all();
 }
 
+/* File given on the command line: edit it, with the explorer hidden */
+static void open_start_file(AppData* app, const gchar* path) {
+    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+        on_preview_pill_clicked(NULL, app);
+    }
+    if (app->left_vbox != NULL && gtk_widget_get_visible(app->left_vbox)) {
+        on_files_pill_clicked(NULL, app);
+    }
+    select_by_path(app, path);
+    gchar* name = g_path_get_basename(path);
+    editor_open_file(app, name, path);
+    g_free(name);
+}
+
+static void print_usage(FILE* out) {
+    fprintf(out,
+            "Usage: %s [options] [<file>|<folder>]\n"
+            "\n"
+            "Without argument, shows the current directory.\n"
+            "A folder is shown in the explorer; a file is opened in an editor tab,\n"
+            "with the explorer hidden.\n"
+            "\n"
+            "Options:\n"
+            "  -h, --help                       show this help and exit\n"
+            "  -e, --editor emacs|vim|notepad   default editor mode of new tabs\n"
+            "                                   (Org files always open in Org-mode)\n"
+            "  -f, --fullscreen                 start in fullscreen\n"
+            "  -s, --size WIDTHxHEIGHT          window size (e.g. 1920x1080)\n",
+            APP_DIR_NAME);
+}
+
+/* -e / --editor value: FALSE if it is not a known editor mode */
+static gboolean parse_editor_mode(const char* val, EditorMode* mode) {
+    if (g_ascii_strcasecmp(val, "notepad") == 0) {
+        *mode = EDITOR_MODE_NOTEPAD;
+    } else if (g_ascii_strcasecmp(val, "vim") == 0) {
+        *mode = EDITOR_MODE_VIM;
+    } else if (g_ascii_strcasecmp(val, "emacs") == 0) {
+        *mode = EDITOR_MODE_EMACS;
+    } else {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+/* -s / --size value: FALSE if it is not WIDTHxHEIGHT */
+static gboolean parse_size(const char* val, int* width, int* height) {
+    int w = 0, h = 0;
+    char sep = 0, tail = 0;
+    if (sscanf(val, "%d %c %d %c", &w, &sep, &h, &tail) == 3 &&
+        (sep == 'x' || sep == 'X') && w > 0 && h > 0) {
+        *width = w;
+        *height = h;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/* Value of an option written "-x VALUE", "--long VALUE" or "--long=VALUE";
+ * NULL when `arg` is not this option. Exits when the value is missing. */
+static const char* option_value(int argc, char** argv, int* i,
+                                const char* short_opt, const char* long_opt) {
+    const char* arg = argv[*i];
+    if (g_strcmp0(arg, short_opt) == 0 || g_strcmp0(arg, long_opt) == 0) {
+        if (*i + 1 >= argc) {
+            g_printerr("%s: option '%s' requires an argument\n", APP_DIR_NAME, arg);
+            print_usage(stderr);
+            exit(2);
+        }
+        (*i)++;
+        return argv[*i];
+    }
+    gsize len = strlen(long_opt);
+    if (strncmp(arg, long_opt, len) == 0 && arg[len] == '=') {
+        return arg + len + 1;
+    }
+    return NULL;
+}
+
 int main(int argc, char** argv) {
-    /* Strip custom options first:
-     * -f / --fullscreen: start in fullscreen mode.
-     * -s / --size WIDTHxHEIGHT: start with specific window size (e.g. 1920x1080). */
     gboolean start_fullscreen = FALSE;
     int win_width = 1000;
     int win_height = 600;
-    int kept = 0;
-    for (int i = 0; i < argc; i++) {
-        if (i > 0) {
-            if (g_strcmp0(argv[i], "-f") == 0 ||
-                g_strcmp0(argv[i], "--fullscreen") == 0) {
-                start_fullscreen = TRUE;
-                continue;
+    EditorMode default_editor_mode = EDITOR_MODE_NOTEPAD;
+    const char* target = NULL; /* <file> or <folder> argument */
+    gboolean options_done = FALSE;
+    for (int i = 1; i < argc; i++) {
+        const char* arg = argv[i];
+        const char* val = NULL;
+        if (options_done || arg[0] != '-' || arg[1] == '\0') {
+            if (target != NULL) {
+                g_printerr("%s: only one file or folder can be given\n", APP_DIR_NAME);
+                print_usage(stderr);
+                return 2;
             }
-            if (g_strcmp0(argv[i], "-s") == 0 ||
-                g_strcmp0(argv[i], "--size") == 0) {
-                if (i + 1 < argc) {
-                    i++;
-                    int w = 0, h = 0;
-                    char sep = 0, tail = 0;
-                    if (sscanf(argv[i], "%d %c %d %c", &w, &sep, &h, &tail) == 3 &&
-                        (sep == 'x' || sep == 'X') && w > 0 && h > 0) {
-                        win_width = w;
-                        win_height = h;
-                    } else {
-                        g_printerr("[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n",
-                                   argv[i]);
-                    }
-                } else {
-                    g_printerr("[ Option '%s' requires an argument (e.g. --size 1920x1080) ]\n",
-                               argv[i]);
-                }
-                continue;
+            target = arg;
+        } else if (g_strcmp0(arg, "--") == 0) {
+            options_done = TRUE;
+        } else if (g_strcmp0(arg, "-h") == 0 || g_strcmp0(arg, "--help") == 0) {
+            print_usage(stdout);
+            return 0;
+        } else if (g_strcmp0(arg, "-f") == 0 || g_strcmp0(arg, "--fullscreen") == 0) {
+            start_fullscreen = TRUE;
+        } else if ((val = option_value(argc, argv, &i, "-e", "--editor")) != NULL) {
+            if (!parse_editor_mode(val, &default_editor_mode)) {
+                g_printerr("%s: unknown editor '%s' (expected emacs, vim or notepad)\n",
+                           APP_DIR_NAME, val);
+                return 2;
             }
-            if (g_str_has_prefix(argv[i], "--size=") ||
-                g_str_has_prefix(argv[i], "-s=")) {
-                const char* val = strchr(argv[i], '=') + 1;
-                int w = 0, h = 0;
-                char sep = 0, tail = 0;
-                if (sscanf(val, "%d %c %d %c", &w, &sep, &h, &tail) == 3 &&
-                    (sep == 'x' || sep == 'X') && w > 0 && h > 0) {
-                    win_width = w;
-                    win_height = h;
-                } else {
-                    g_printerr("[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n",
-                               val);
-                }
-                continue;
+        } else if ((val = option_value(argc, argv, &i, "-s", "--size")) != NULL) {
+            if (!parse_size(val, &win_width, &win_height)) {
+                g_printerr("[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n",
+                           val);
             }
+        } else {
+            g_printerr("%s: unknown option '%s'\n", APP_DIR_NAME, arg);
+            print_usage(stderr);
+            return 2;
         }
-        argv[kept++] = argv[i];
     }
-    argv[kept] = NULL;
-    argc = kept;
 
     g_set_prgname(APP_DIR_NAME);
     g_set_application_name(APP_NAME);
@@ -164,14 +232,20 @@ int main(int argc, char** argv) {
     char cwd_buf[2048];
     const char* cwd = (getcwd(cwd_buf, sizeof(cwd_buf)) != NULL) ? cwd_buf : "/workspace";
 
-    /* Optional CLI argument: directory to display (default: cwd) */
+    /* Optional CLI argument: folder to display, or file to edit (default: cwd) */
     const char* start_dir = cwd;
-    if (argc > 1) {
-        if (g_file_test(argv[1], G_FILE_TEST_IS_DIR)) {
-            start_dir = argv[1];
+    gchar* target_dir = NULL;  /* parent directory of the file to edit */
+    gchar* start_file = NULL;  /* absolute path of the file to edit */
+    if (target != NULL) {
+        if (g_file_test(target, G_FILE_TEST_IS_DIR)) {
+            start_dir = target;
+        } else if (g_file_test(target, G_FILE_TEST_IS_REGULAR)) {
+            start_file = g_canonicalize_filename(target, cwd);
+            target_dir = g_path_get_dirname(start_file);
+            start_dir = target_dir;
         } else {
-            g_printerr("[ '%s' is not a directory: showing %s instead ]\n",
-                       argv[1], cwd);
+            g_printerr("[ '%s' is not a file or a directory: showing %s instead ]\n",
+                       target, cwd);
         }
     }
 
@@ -376,6 +450,7 @@ int main(int argc, char** argv) {
 #ifdef HAVE_GSV
     apply_vscode_scheme(app->buffer, text_view);
 #endif
+    app->default_editor_mode = default_editor_mode;
     app->base_dir = g_strdup(start_dir);
     app->start_dir = g_canonicalize_filename(start_dir, NULL);
     app->term_scroll = term_scroll;
@@ -594,6 +669,11 @@ int main(int argc, char** argv) {
     select_first_row(app);
     gtk_widget_grab_focus(tree_view);
     workspace_apply_default_layout(app); /* saved default layout (Alt+L), if any */
+    if (start_file != NULL) {
+        open_start_file(app, start_file);
+    }
+    g_free(start_file);
+    g_free(target_dir);
 
     g_main_loop_run(loop);
 

@@ -307,6 +307,7 @@ typedef struct {
     GtkWidget* status_encoding;   /* bottom bar: encoding */
     GtkWidget* status_mode;       /* bottom bar: editor mode label */
     GtkWidget* status_mode_btn;   /* bottom bar: editor mode button */
+    EditorMode default_editor_mode; /* mode of new non-Org editor tabs (-e / --editor) */
 } AppData;
 
 #endif /* APP_TYPES_H */

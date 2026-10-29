@@ -985,7 +985,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     if (is_org_file(name)) {
         tab->mode = EDITOR_MODE_ORGMODE;
     } else {
-        tab->mode = EDITOR_MODE_NOTEPAD;
+        tab->mode = app->default_editor_mode;
     }
 #ifdef HAVE_GSV
     GtkTextBuffer* buffer = GTK_TEXT_BUFFER(gtk_source_buffer_new(NULL));

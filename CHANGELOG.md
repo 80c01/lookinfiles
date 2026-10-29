@@ -14,6 +14,9 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Command line: `lookin <file>` opens the file in an editor tab with the
+  explorer hidden, `-e` / `--editor emacs|vim|notepad` chooses the default
+  mode of new editor tabs, and `-h` / `--help` lists the options.
 - Emacs and Org-mode editor tabs use a block cursor. Org files open folded
   to their top-level headings (`#+STARTUP: overview`), or as their
   `#+STARTUP:` line says (`content`, `showall`, `nofold`, `showeverything`).

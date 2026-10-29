@@ -120,9 +120,15 @@ in `build/`). `make clean` removes both.
 ```bash
 ./lookin                     # current directory, 1000×600 window
 ./lookin /path/to/directory  # start in another directory
+./lookin path/to/file.txt    # edit a file (explorer hidden)
+./lookin --editor vim        # default editor mode: emacs, vim or notepad (also -e)
 ./lookin --size 1920x1080    # window size (also -s)
 ./lookin --fullscreen        # start in fullscreen (also -f)
+./lookin --help              # list the options (also -h)
 ```
+
+`--editor` sets the mode of new editor tabs; Org files always open in
+Org-mode.
 
 Press `?` at any time for the list of shortcuts, `Alt+Left` / `Alt+Right` to
 move between panels, and `Ctrl+Q` to quit.
