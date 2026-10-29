@@ -850,6 +850,29 @@ static void emacs_deactivate_mark(EditorTab* tab, EditorModeState* st) {
     gtk_text_buffer_place_cursor(tab->buffer, &it);
 }
 
+/* C-l (recenter-top-bottom): put the cursor line in the middle of the
+ * window, then at the top, then at the bottom on repeated presses */
+static void emacs_recenter(EditorTab* tab, EditorModeState* st) {
+    GtkTextView* view = GTK_TEXT_VIEW(tab->view);
+    GtkAdjustment* adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(tab->scroll));
+    if (adj == NULL) return;
+    GtkTextIter it;
+    gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+    gint y = 0, h = 0;
+    gtk_text_view_get_line_yrange(view, &it, &y, &h);
+    GdkRectangle vis;
+    gtk_text_view_get_visible_rect(view, &vis);
+    gint top;
+    switch (st->emacs_recenter_step) {
+        case 1: top = y; break;
+        case 2: top = y + h - vis.height; break;
+        default: top = y + h / 2 - vis.height / 2; break;
+    }
+    /* The adjustment clamps at both ends of the buffer, like Emacs at its start */
+    gtk_adjustment_set_value(adj, gtk_adjustment_get_value(adj) + (top - vis.y));
+    st->emacs_recenter_step = (st->emacs_recenter_step + 1) % 3;
+}
+
 gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
                                  guint keyval, GdkModifierType state) {
     gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
@@ -1027,9 +1050,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         return TRUE;
     }
     if (ctrl && (keyval == GDK_KEY_l || keyval == GDK_KEY_L)) {
-        gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(tab->view),
-                                     gtk_text_buffer_get_insert(tab->buffer),
-                                     0.0, TRUE, 0.0, 0.5);
+        emacs_recenter(tab, st);
         return TRUE;
     }
 

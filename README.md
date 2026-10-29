@@ -316,7 +316,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Operation | Keys |
 |---|---|
 | Edit | `C-d` delete char, `M-d` / `M-DEL` kill word, `C-k` kill line, `C-SPC` / `C-@` set mark, `C-g` cancel, `C-w` kill region, `M-w` copy, `C-y` yank |
-| Move | `C-f` / `C-b`, `C-n` / `C-p`, `M-f` / `M-b`, `C-a` / `C-e`, `M-<` / `M->`, `C-v` / `M-v`, `C-l` recenter, `M-g g` go to line |
+| Move | `C-f` / `C-b`, `C-n` / `C-p`, `M-f` / `M-b`, `C-a` / `C-e`, `M-<` / `M->`, `C-v` / `M-v`, `C-l` recenter (middle, top, bottom), `M-g g` go to line |
 | Find and replace | `C-s` / `C-r` incremental search: the match grows as you type (case-insensitive unless the query has a capital), other matches highlighted with a `[n/total]` count; `C-s` / `C-r` again for the next / previous match (on an empty query: the last search), wraps after a failing search; `DEL` undoes a step, `C-w` adds the next word, `RET` stops at the match (the mark stays where the search started), `C-g` drops the failing part then goes back, other command keys stop and run. `M-%` query replace |
 | Format | `M-q` fill paragraph (72 columns), `M-u` / `M-l` / `M-c` case, `M-x set-justification-left` / `center` / `right` / `full` |
 | Undo and redo | `C-/`, `C-_`, `C-x u` / `C-Shift-_`, `M-_` |

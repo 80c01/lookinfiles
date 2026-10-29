@@ -118,6 +118,7 @@ typedef struct {
     gchar* emacs_prompt_data;        /* owned, given to the callback */
     GPtrArray* emacs_completions;    /* Tab completion candidates (gchar*), or NULL */
     gboolean emacs_complete_word;    /* complete the last word (after ':' or ' ') only */
+    gint emacs_recenter_step;        /* next C-l position: 0 middle, 1 top, 2 bottom */
 
     /* --- Org-mode (editor_org.c) --- */
     OrgPrefix org_prefix;

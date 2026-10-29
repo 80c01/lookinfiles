@@ -830,11 +830,31 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
 /* Key Handlers for Each Mode                                                */
 /* ------------------------------------------------------------------------- */
 
+static gboolean is_modifier_key(guint keyval) {
+    switch (keyval) {
+        case GDK_KEY_Control_L: case GDK_KEY_Control_R:
+        case GDK_KEY_Shift_L: case GDK_KEY_Shift_R:
+        case GDK_KEY_Alt_L: case GDK_KEY_Alt_R:
+        case GDK_KEY_Meta_L: case GDK_KEY_Meta_R:
+        case GDK_KEY_Super_L: case GDK_KEY_Super_R:
+        case GDK_KEY_ISO_Level3_Shift: case GDK_KEY_Caps_Lock:
+            return TRUE;
+        default:
+            return FALSE;
+    }
+}
+
 gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
                                  guint keycode, GdkModifierType state) {
     (void)keycode;
     if (tab == NULL || tab->mode_state == NULL) return FALSE;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
+
+    /* Any other command restarts the C-l cycle (modifier presses do not count) */
+    if (!is_modifier_key(keyval) &&
+        !((state & GDK_CONTROL_MASK) && (keyval == GDK_KEY_l || keyval == GDK_KEY_L))) {
+        st->emacs_recenter_step = 0;
+    }
 
     if (orgmode_editor_is_org(tab)) {
         if (orgmode_editor_handle_key(app, tab, keyval, state)) {
