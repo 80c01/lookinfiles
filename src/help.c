@@ -105,7 +105,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Emacs mode", "C-x C-s / C-x C-w", "Save buffer / Write file (Save As with chosen file name in minibuffer)"},
     {"Editor: Emacs mode", "C-w / M-w / C-y", "Kill region (cut), kill ring save (copy), yank (paste)"},
     {"Editor: Emacs mode", "C-d / M-d / C-k", "Delete char, kill word forward, kill line"},
-    {"Editor: Emacs mode", "C-SPC / C-@", "Set mark (select text region; C-g cancels)"},
+    {"Editor: Emacs mode", "C-SPC / C-@", "Set mark (select text region; twice or C-g cancels)"},
     {"Editor: Emacs mode", "C-s / C-r", "Incremental search: again for next / previous (wraps), DEL undo step, C-w add word, RET stop, C-g back"},
     {"Editor: Emacs mode", "M-%", "Query replace words or phrases in minibuffer"},
     {"Editor: Emacs mode", "M-q", "Fill paragraph (format and wrap text to 72 columns)"},

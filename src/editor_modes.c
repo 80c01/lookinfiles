@@ -862,6 +862,11 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
         !((state & GDK_CONTROL_MASK) && (keyval == GDK_KEY_l || keyval == GDK_KEY_L))) {
         st->emacs_recenter_step = 0;
     }
+    /* Likewise, C-SPC C-SPC only toggles the mark when pressed in a row */
+    if (!is_modifier_key(keyval) &&
+        !((state & GDK_CONTROL_MASK) && (keyval == GDK_KEY_space || keyval == GDK_KEY_at))) {
+        st->emacs_last_set_mark = FALSE;
+    }
 
     if (orgmode_editor_is_org(tab)) {
         if (orgmode_editor_handle_key(app, tab, keyval, state)) {

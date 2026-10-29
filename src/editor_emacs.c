@@ -1063,6 +1063,21 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
 
     /* 4. Edit & Selection: Mark, Cut, Copy, Paste, Delete */
     if (ctrl && (keyval == GDK_KEY_space || keyval == GDK_KEY_at)) {
+        /* C-SPC right after C-SPC toggles the mark without moving it */
+        if (st->emacs_last_set_mark && st->emacs_mark != NULL) {
+            if (st->emacs_mark_active) {
+                emacs_deactivate_mark(tab, st);
+                emacs_echo(tab, "Mark deactivated");
+            } else {
+                GtkTextIter it;
+                gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+                st->emacs_mark_active = TRUE;
+                emacs_move_point(tab, st, &it);
+                emacs_echo(tab, "Mark activated");
+            }
+            return TRUE;
+        }
+        st->emacs_last_set_mark = TRUE;
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
         if (st->emacs_mark == NULL) {
