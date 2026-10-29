@@ -1406,6 +1406,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
                     gtk_text_buffer_insert_paintable(ctx->buffer, &ctx->iter, GDK_PAINTABLE(tex));
                     g_object_unref(tex);
                     g_object_unref(pix);
+                    ctx->trailing_newlines = 0; /* the image is on the line: end it */
                     ensure_newlines(ctx, 1);
                 } else {
                     gchar* placeholder = g_strdup_printf("🖼 [%s]", (alt && alt[0]) ? alt : src);
