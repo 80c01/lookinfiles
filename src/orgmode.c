@@ -17,7 +17,7 @@ typedef struct {
     gint buffer_line;       /* line in GTK buffer (0-based) */
     gint file_line;         /* line in original .org file (0-based) */
     gint heading_level;     /* 1-6 if heading, 0 otherwise */
-    gchar* todo_state;      /* "TODO", "DONE", "NEXT", "WAITING", etc., or NULL */
+    gchar* todo_state;      /* "TODO", "DONE", "NEXT", "RUNNING", "WAITING", etc., or NULL */
     gboolean is_checkbox;   /* TRUE if line contains a checkbox */
     gboolean checkbox_done; /* TRUE if [X] */
     gchar* link_target;     /* URL or file path if line contains primary link */
@@ -49,6 +49,7 @@ static const gchar* ORG_LANG_XML =
     "    <style id=\"header3\" name=\"Heading 3\" map-to=\"def:type\"/>\n"
     "    <style id=\"header4\" name=\"Heading 4+\" map-to=\"def:preprocessor\"/>\n"
     "    <style id=\"todo\" name=\"TODO keyword\" map-to=\"def:error\"/>\n"
+    "    <style id=\"running\" name=\"RUNNING keyword\" map-to=\"def:special-char\"/>\n"
     "    <style id=\"done\" name=\"DONE keyword\" map-to=\"def:comment\"/>\n"
     "    <style id=\"priority\" name=\"Priority\" map-to=\"def:special-char\"/>\n"
     "    <style id=\"tag\" name=\"Tag\" map-to=\"def:identifier\"/>\n"
@@ -74,6 +75,9 @@ static const gchar* ORG_LANG_XML =
     "  <definitions>\n"
     "    <context id=\"todo\" style-ref=\"todo\">\n"
     "      <match>(?&lt;=\\s)(TODO|NEXT|WAITING|WAIT|HOLD|STARTED|BUG)(?=\\s|$)</match>\n"
+    "    </context>\n"
+    "    <context id=\"running\" style-ref=\"running\">\n"
+    "      <match>(?&lt;=\\s)RUNNING(?=\\s|$)</match>\n"
     "    </context>\n"
     "    <context id=\"done\" style-ref=\"done\">\n"
     "      <match>(?&lt;=\\s)(DONE|CANCELLED|CANCELED|FIXED)(?=\\s|$)</match>\n"
@@ -127,19 +131,19 @@ static const gchar* ORG_LANG_XML =
     "      <include>\n"
     "        <context id=\"header1\" style-ref=\"header1\" end-at-line-end=\"true\">\n"
     "          <start>^\\*(?=\\s)</start>\n"
-    "          <include><context ref=\"todo\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
+    "          <include><context ref=\"todo\"/><context ref=\"running\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
     "        </context>\n"
     "        <context id=\"header2\" style-ref=\"header2\" end-at-line-end=\"true\">\n"
     "          <start>^\\*{2}(?=\\s)</start>\n"
-    "          <include><context ref=\"todo\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
+    "          <include><context ref=\"todo\"/><context ref=\"running\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
     "        </context>\n"
     "        <context id=\"header3\" style-ref=\"header3\" end-at-line-end=\"true\">\n"
     "          <start>^\\*{3}(?=\\s)</start>\n"
-    "          <include><context ref=\"todo\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
+    "          <include><context ref=\"todo\"/><context ref=\"running\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
     "        </context>\n"
     "        <context id=\"header4\" style-ref=\"header4\" end-at-line-end=\"true\">\n"
     "          <start>^\\*{4,}(?=\\s)</start>\n"
-    "          <include><context ref=\"todo\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
+    "          <include><context ref=\"todo\"/><context ref=\"running\"/><context ref=\"done\"/><context ref=\"priority\"/><context ref=\"tags\"/><context ref=\"inline\"/></include>\n"
     "        </context>\n"
     "        <context id=\"block\" style-inside=\"true\" style-ref=\"block-content\">\n"
     "          <start>(?i)^\\s*#\\+begin_(\\w+).*$</start>\n"
@@ -280,6 +284,11 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
                "weight", PANGO_WEIGHT_BOLD,
                "foreground", "#ffffff",
                "background", "#0e639c");
+
+    CREATE_TAG("org_running",
+               "weight", PANGO_WEIGHT_BOLD,
+               "foreground", "#1e1e1e",
+               "background", "#e5c100");
 
     CREATE_TAG("org_waiting",
                "weight", PANGO_WEIGHT_BOLD,
@@ -746,6 +755,10 @@ void render_orgmode_to_buffer(GtkTextBuffer* buffer,
                 todo_kw = "NEXT";
                 todo_tag = "org_next";
                 rest += 4;
+            } else if (g_str_has_prefix(rest, "RUNNING ") || g_strcmp0(rest, "RUNNING") == 0) {
+                todo_kw = "RUNNING";
+                todo_tag = "org_running";
+                rest += 7;
             } else if (g_str_has_prefix(rest, "WAITING ") || g_strcmp0(rest, "WAITING") == 0) {
                 todo_kw = "WAITING";
                 todo_tag = "org_waiting";
@@ -1208,6 +1221,7 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
     gboolean on_todo = gtk_text_iter_has_tag(&iter, gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(app->buffer), "org_todo")) ||
                        gtk_text_iter_has_tag(&iter, gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(app->buffer), "org_done")) ||
                        gtk_text_iter_has_tag(&iter, gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(app->buffer), "org_next")) ||
+                       gtk_text_iter_has_tag(&iter, gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(app->buffer), "org_running")) ||
                        gtk_text_iter_has_tag(&iter, gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(app->buffer), "org_waiting"));
 
     if (on_todo || info->heading_level > 0) {

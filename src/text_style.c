@@ -64,6 +64,7 @@ static const gchar* VSCODE_SCHEME_XML =
     "  <style name=\"org:header3\" foreground=\"#4ec9b0\" bold=\"true\"/>\n"
     "  <style name=\"org:header4\" foreground=\"#c586c0\" bold=\"true\"/>\n"
     "  <style name=\"org:todo\" foreground=\"#f44747\" bold=\"true\"/>\n"
+    "  <style name=\"org:running\" foreground=\"#e5c100\" bold=\"true\"/>\n"
     "  <style name=\"org:done\" foreground=\"#6a9955\" bold=\"true\"/>\n"
     "  <style name=\"org:priority\" foreground=\"#d7ba7d\" bold=\"true\"/>\n"
     "  <style name=\"org:tag\" foreground=\"#9cdcfe\" italic=\"true\"/>\n"
