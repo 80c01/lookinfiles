@@ -361,6 +361,7 @@ int main(int argc, char** argv) {
     apply_vscode_scheme(app->buffer, text_view);
 #endif
     app->base_dir = g_strdup(start_dir);
+    app->start_dir = g_canonicalize_filename(start_dir, NULL);
     app->term_scroll = term_scroll;
 #ifdef HAVE_VTE
     app->term_stack = term_stack;

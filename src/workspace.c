@@ -66,6 +66,8 @@ static void ws_minimap_update_size(AppData* app) {
     gtk_widget_queue_draw(app->ws_minimap);
 }
 
+/* Default view of a workspace: files view of `dir` (hidden files off, sorted
+ * by name), explorer and preview shown, no terminal, no editor */
 static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     VirtualLayout* ws = &app->workspaces[idx];
     memset(ws, 0, sizeof(VirtualLayout));
@@ -78,10 +80,10 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->base_dir = g_strdup(dir != NULL ? dir : app->base_dir);
     ws->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     ws->selected_path = NULL;
-    ws->show_hidden = app->show_hidden;
-    ws->show_bookmarks = app->show_bookmarks;
-    ws->sidebar_view = app->sidebar_view;
-    ws->sort_mode = app->sort_mode;
+    ws->show_hidden = FALSE;
+    ws->show_bookmarks = FALSE;
+    ws->sidebar_view = SIDEBAR_VIEW_FILES;
+    ws->sort_mode = SORT_NAME;
     ws->notebook_page = 0;
     ws->editors = NULL;
     ws->editor_dedicated = FALSE;
@@ -474,30 +476,9 @@ void workspace_add(AppData* app) {
     /* Save the current workspace intact before creating the new one */
     workspace_save_current(app);
 
+    /* A new workspace starts from the default view, not a copy of the current one */
     gint new_idx = app->num_workspaces;
-    init_workspace_slot(app, new_idx, app->base_dir);
-    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
-        VirtualLayout* cur = &app->workspaces[app->current_ws];
-        VirtualLayout* nw = &app->workspaces[new_idx];
-        nw->files_vis = cur->files_vis;
-        nw->preview_vis = cur->preview_vis;
-        nw->editor_dedicated = cur->editor_dedicated;
-        nw->editor_frac = cur->editor_frac;
-        nw->right_orient = cur->right_orient;
-        nw->main_frac = cur->main_frac;
-        nw->right_frac = cur->right_frac;
-        nw->notebook_page = 0;
-        nw->editors = NULL;
-        nw->render_raw = cur->render_raw;
-        nw->show_bookmarks = cur->show_bookmarks;
-        nw->sidebar_view = cur->sidebar_view;
-        g_free(nw->selected_path);
-        nw->selected_path = g_strdup(cur->selected_path);
-        if (nw->expanded_paths != NULL) {
-            g_hash_table_destroy(nw->expanded_paths);
-        }
-        nw->expanded_paths = clone_ws_paths(cur->expanded_paths);
-    }
+    init_workspace_slot(app, new_idx, app->start_dir);
     app->num_workspaces++;
     ws_minimap_update_size(app);
     workspace_switch(app, new_idx);

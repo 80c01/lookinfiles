@@ -126,6 +126,7 @@ typedef struct {
 typedef struct {
     GtkTextBuffer* buffer;
     gchar* base_dir;
+    gchar* start_dir;       /* directory opened at launch: new workspaces start there */
     ExplorerTree* tree;     /* explorer rows, selection and expansion (explorer_tree.h) */
     GtkWidget* tree_view;   /* the explorer GtkListView (explorer_tree_get_widget(tree)) */
     GtkWidget* text_view; /* right pane viewer (Alt+Left/Right cycling) */
