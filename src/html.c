@@ -1,4 +1,5 @@
 #include "html.h"
+#include "image_utils.h"
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
@@ -1401,7 +1402,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
 
                 if (pix != NULL) {
                     ensure_newlines(ctx, 1);
-                    GdkTexture* tex = gdk_texture_new_for_pixbuf(pix);
+                    GdkTexture* tex = texture_new_for_pixbuf(pix);
                     gtk_text_buffer_insert_paintable(ctx->buffer, &ctx->iter, GDK_PAINTABLE(tex));
                     g_object_unref(tex);
                     g_object_unref(pix);

@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "image_utils.h"
 #include "preview_summary.h"
 #include "fs_watch.h"
 #include "panels.h"
@@ -296,7 +297,7 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
-    td->texture = gdk_texture_new_for_pixbuf(pix);
+    td->texture = texture_new_for_pixbuf(pix);
     g_object_unref(pix);
     g_task_return_boolean(task, TRUE);
 }

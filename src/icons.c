@@ -67,8 +67,7 @@ static void debug_print_icon(GdkDisplay* display, const gchar* requested, GIcon*
     GtkIconPaintable* p = gtk_icon_theme_lookup_by_gicon(theme, icon, 16, 1, GTK_TEXT_DIR_LTR, 0);
     GFile* file = p ? gtk_icon_paintable_get_file(p) : NULL;
     gchar* where = file ? g_file_get_uri(file) : g_strdup("(none)");
-    g_printerr("[icons] %-26s -> %-32s %s\n", requested,
-               p && gtk_icon_paintable_get_icon_name(p) ? gtk_icon_paintable_get_icon_name(p) : "?", where);
+    g_printerr("[icons] %-26s -> %s\n", requested, where);
     g_free(where);
     if (file) g_object_unref(file);
     if (p) g_object_unref(p);

@@ -247,7 +247,7 @@ theme. They are SVG files drawn through librsvg (present on any GTK desktop;
 built-in icons are used instead.
 If some buttons have no icon, run `EXPLORATEUR_DEBUG_ICONS=1 ./explorateur_fichiers`:
 it prints the GTK version, the icon theme, whether SVG icons can be loaded, and
-which icon name and file each button uses.
+which icon file each button uses.
 
 Optional (embedded terminal panel, recommended):
 ```bash

@@ -17,13 +17,14 @@ git_utils:
 explorer_row:
 text_style:app_types,file_types
 theme:
-markdown:app_types
-html:app_types
+markdown:app_types,image_utils
+html:app_types,image_utils
 minimap:app_types
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events
 icons:
+image_utils:
 dialog:
 explorer_tree:explorer_row
 remote_store:app_types
