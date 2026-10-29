@@ -9,47 +9,67 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
             gtk_text_buffer_create_tag(buffer, name, __VA_ARGS__, NULL); \
         }
 
+    /* VS Code Markdown preview look (Dark+): headings in the text colour with
+     * a rule under h1/h2, quiet lists, padded code panels, quotes with a bar.
+     * Tags created later win: base spacing first, highlighting tags last. */
+    CREATE_TAG("md_body",
+               "pixels-inside-wrap", 4);
+
+    CREATE_TAG("md_gap", /* blank line between blocks */
+               "size-points", 8.0);
+
     CREATE_TAG("md_h1",
-               "scale", 1.8,
-               "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#4fc1ff",
-               "pixels-above-lines", 14,
+               "scale", 2.0,
+               "weight", 600,
+               "foreground", "#e6e6e6",
+               "pixels-above-lines", 16,
                "pixels-below-lines", 6);
 
     CREATE_TAG("md_h2",
-               "scale", 1.45,
-               "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#4ec9b0",
-               "pixels-above-lines", 12,
-               "pixels-below-lines", 4);
+               "scale", 1.5,
+               "weight", 600,
+               "foreground", "#e6e6e6",
+               "pixels-above-lines", 16,
+               "pixels-below-lines", 6);
 
     CREATE_TAG("md_h3",
                "scale", 1.25,
-               "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#dcdcaa",
-               "pixels-above-lines", 10,
-               "pixels-below-lines", 3);
+               "weight", 600,
+               "foreground", "#e6e6e6",
+               "pixels-above-lines", 14,
+               "pixels-below-lines", 4);
 
     CREATE_TAG("md_h4",
-               "scale", 1.1,
-               "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#ce9178",
-               "pixels-above-lines", 8,
-               "pixels-below-lines", 2);
+               "scale", 1.0,
+               "weight", 600,
+               "foreground", "#e6e6e6",
+               "pixels-above-lines", 12,
+               "pixels-below-lines", 4);
 
     CREATE_TAG("md_h5",
-               "scale", 1.0,
-               "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#c586c0",
-               "pixels-above-lines", 6,
-               "pixels-below-lines", 2);
+               "scale", 0.875,
+               "weight", 600,
+               "foreground", "#e6e6e6",
+               "pixels-above-lines", 10,
+               "pixels-below-lines", 4);
 
     CREATE_TAG("md_h6",
-               "scale", 0.9,
-               "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#808080",
-               "pixels-above-lines", 6,
-               "pixels-below-lines", 2);
+               "scale", 0.85,
+               "weight", 600,
+               "foreground", "#a0a0a0",
+               "pixels-above-lines", 10,
+               "pixels-below-lines", 4);
+
+    /* Thin full-width line (under h1/h2, horizontal rule): a line holding a
+     * space in a tiny font, with a paragraph background (GtkTextView paints no
+     * background on a line without characters) */
+    CREATE_TAG("md_rule",
+               "size-points", 1.0,
+               "paragraph-background", "#3a3b3d");
+
+    CREATE_TAG("md_hr",
+               "size-points", 1.6,
+               "paragraph-background", "#3a3b3d");
 
     CREATE_TAG("md_bold",
                "weight", PANGO_WEIGHT_BOLD);
@@ -63,119 +83,93 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("md_strike",
                "strikethrough", TRUE,
-               "foreground", "#808080");
+               "foreground", "#909090");
 
     CREATE_TAG("md_inline_code",
                "family", "monospace",
-               "background", "#2d2d2d",
-               "foreground", "#ce9178");
+               "scale", 0.92,
+               "background", "#2a2b2d",
+               "foreground", "#d7ba7d");
 
+    /* Code block: padded panel (a small padding line above and below) */
     CREATE_TAG("md_code_block",
                "family", "monospace",
-               "background", "#252526",
+               "scale", 0.92,
                "foreground", "#d4d4d4",
-               "left-margin", 24,
-               "right-margin", 24,
+               "paragraph-background", "#1c1d1f",
+               "left-margin", 26,
+               "right-margin", 16,
                "wrap-mode", GTK_WRAP_NONE,
+               "pixels-inside-wrap", 0,
                "pixels-above-lines", 1,
                "pixels-below-lines", 1);
 
-    CREATE_TAG("md_code_header",
-               "family", "monospace",
-               "scale", 0.85,
-               "foreground", "#808080",
-               "background", "#121314",
-               "left-margin", 24,
-               "pixels-above-lines", 8,
-               "pixels-below-lines", 2);
+    /* The panel edge follows the padding lines: text margin 26 leaves 16 px inside */
+    CREATE_TAG("md_code_pad",
+               "size-points", 5.0,
+               "left-margin", 10,
+               "right-margin", 16,
+               "paragraph-background", "#1c1d1f");
 
     CREATE_TAG("md_quote",
-               "style", PANGO_STYLE_ITALIC,
-               "foreground", "#b0b0b0",
-               "left-margin", 24,
-               "pixels-above-lines", 2,
-               "pixels-below-lines", 2);
+               "foreground", "#b8b8b8",
+               "paragraph-background", "#1e1f21",
+               "left-margin", 10,
+               "pixels-above-lines", 0,
+               "pixels-below-lines", 0);
 
     CREATE_TAG("md_quote_bar",
-               "foreground", "#569cd6",
-               "weight", PANGO_WEIGHT_BOLD);
+               "foreground", "#1c6ea4");
 
     CREATE_TAG("md_list_bullet",
-               "foreground", "#569cd6",
-               "weight", PANGO_WEIGHT_BOLD);
+               "foreground", "#cccccc");
 
     CREATE_TAG("md_list_task_done",
-               "foreground", "#6a9955",
-               "weight", PANGO_WEIGHT_BOLD);
+               "foreground", "#cccccc");
 
     CREATE_TAG("md_list_task_todo",
-               "foreground", "#dcdcaa",
-               "weight", PANGO_WEIGHT_BOLD);
-
-    CREATE_TAG("md_hr",
-               "foreground", "#3e3e42",
-               "pixels-above-lines", 8,
-               "pixels-below-lines", 8);
+               "foreground", "#cccccc");
 
     CREATE_TAG("md_link",
-               "foreground", "#3794ff",
-               "underline", PANGO_UNDERLINE_SINGLE);
+               "foreground", "#3794ff");
 
     CREATE_TAG("md_table",
                "family", "monospace",
+               "scale", 0.92,
                "foreground", "#cccccc",
                "wrap-mode", GTK_WRAP_NONE,
-               "left-margin", 16,
+               "left-margin", 10,
+               "pixels-inside-wrap", 0,
                "pixels-above-lines", 1,
                "pixels-below-lines", 1);
 
     CREATE_TAG("md_table_header",
                "family", "monospace",
+               "scale", 0.92,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#4ec9b0",
-               "background", "#252526",
+               "foreground", "#e6e6e6",
                "wrap-mode", GTK_WRAP_NONE,
-               "left-margin", 16,
+               "left-margin", 10,
+               "pixels-inside-wrap", 0,
                "pixels-above-lines", 1,
                "pixels-below-lines", 1);
 
     CREATE_TAG("md_table_border",
                "family", "monospace",
-               "foreground", "#555555",
+               "scale", 0.92,
+               "foreground", "#45464a",
                "wrap-mode", GTK_WRAP_NONE,
-               "left-margin", 16,
+               "left-margin", 10,
+               "pixels-inside-wrap", 0,
                "pixels-above-lines", 1,
                "pixels-below-lines", 1);
 
-    CREATE_TAG("md_alert_note",
-               "foreground", "#4fc1ff",
-               "weight", PANGO_WEIGHT_BOLD,
-               "pixels-above-lines", 6,
-               "pixels-below-lines", 2);
-
-    CREATE_TAG("md_alert_tip",
-               "foreground", "#4ec9b0",
-               "weight", PANGO_WEIGHT_BOLD,
-               "pixels-above-lines", 6,
-               "pixels-below-lines", 2);
-
-    CREATE_TAG("md_alert_important",
-               "foreground", "#c586c0",
-               "weight", PANGO_WEIGHT_BOLD,
-               "pixels-above-lines", 6,
-               "pixels-below-lines", 2);
-
-    CREATE_TAG("md_alert_warning",
-               "foreground", "#dcdcaa",
-               "weight", PANGO_WEIGHT_BOLD,
-               "pixels-above-lines", 6,
-               "pixels-below-lines", 2);
-
-    CREATE_TAG("md_alert_caution",
-               "foreground", "#f44747",
-               "weight", PANGO_WEIGHT_BOLD,
-               "pixels-above-lines", 6,
-               "pixels-below-lines", 2);
+    /* GitHub alerts: coloured bar and title, body like a quote */
+    CREATE_TAG("md_alert_note", "foreground", "#4493f8", "weight", 600);
+    CREATE_TAG("md_alert_tip", "foreground", "#3fb950", "weight", 600);
+    CREATE_TAG("md_alert_important", "foreground", "#ab7df8", "weight", 600);
+    CREATE_TAG("md_alert_warning", "foreground", "#d29922", "weight", 600);
+    CREATE_TAG("md_alert_caution", "foreground", "#f85149", "weight", 600);
 
     CREATE_TAG("md_image",
                "foreground", "#9cdcfe",
@@ -591,6 +585,152 @@ static GPtrArray* split_table_row_cells(const gchar* row_str) {
     return cells;
 }
 
+/* Insert text with one tag */
+static void insert_tagged(GtkTextBuffer* buffer, GtkTextIter* iter, const gchar* text, const gchar* tag) {
+    GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
+    gtk_text_buffer_insert(buffer, iter, text, -1);
+    apply_tag_mark(buffer, tag, m, iter);
+    gtk_text_buffer_delete_mark(buffer, m);
+}
+
+/* Lines that continue a paragraph: not blank and not the start of another block */
+static gboolean is_paragraph_continuation(const gchar* line) {
+    const gchar* t = line;
+    while (*t == ' ') t++;
+    if (*t == '\0' || *t == '>' || *t == '|' || is_hr_line(line) ||
+        g_str_has_prefix(t, "```") || g_str_has_prefix(t, "~~~")) {
+        return FALSE;
+    }
+    if (*t == '#') {
+        gint n = 0;
+        while (t[n] == '#') n++;
+        if (n <= 6 && (t[n] == ' ' || t[n] == '\0')) return FALSE;
+    }
+    if ((*t == '-' || *t == '*' || *t == '+') && t[1] == ' ') return FALSE;
+    if (*t == '=' || *t == '-') {
+        const gchar* c = t;
+        while (*c == *t) c++;
+        while (*c == ' ') c++;
+        if (*c == '\0') return FALSE; /* setext underline */
+    }
+    if (isdigit((unsigned char)*t)) {
+        const gchar* d = t;
+        while (isdigit((unsigned char)*d)) d++;
+        if ((*d == '.' || *d == ')') && d[1] == ' ') return FALSE;
+    }
+    return TRUE;
+}
+
+#ifdef HAVE_GSV
+/* GtkSourceView language of a code fence info string ("c", "py", "bash"...) */
+static GtkSourceLanguage* code_language(const gchar* info) {
+    if (info == NULL || info[0] == '\0') {
+        return NULL;
+    }
+    static const struct { const gchar* alias; const gchar* id; } ALIASES[] = {
+        {"javascript", "js"}, {"node", "js"}, {"ts", "typescript"}, {"py", "python3"},
+        {"python", "python3"}, {"bash", "sh"}, {"shell", "sh"}, {"zsh", "sh"},
+        {"console", "sh"}, {"yml", "yaml"}, {"md", "markdown"}, {"c++", "cpp"},
+        {"cs", "c-sharp"}, {"csharp", "c-sharp"}, {"rs", "rust"}, {"golang", "go"},
+        {"rb", "ruby"}, {"kt", "kotlin"}, {"htm", "html"}, {"patch", "diff"},
+    };
+    gchar* word = g_strndup(info, strcspn(info, " \t{"));
+    gchar* id = g_ascii_strdown(word, -1);
+    g_free(word);
+    for (gsize i = 0; i < G_N_ELEMENTS(ALIASES); i++) {
+        if (g_strcmp0(id, ALIASES[i].alias) == 0) {
+            g_free(id);
+            id = g_strdup(ALIASES[i].id);
+            break;
+        }
+    }
+    GtkSourceLanguageManager* lm = gtk_source_language_manager_get_default();
+    GtkSourceLanguage* lang = gtk_source_language_manager_get_language(lm, id);
+    if (lang == NULL) {
+        gchar* file = g_strconcat("code.", id, NULL);
+        lang = gtk_source_language_manager_guess_language(lm, file, NULL);
+        g_free(file);
+    }
+    g_free(id);
+    return lang;
+}
+
+/* Colour a code block inserted at `start` (offset in buffer) like the editor:
+ * highlight a scratch GtkSourceBuffer with the Dark+ scheme and copy its
+ * colours as tags ("md_hl_RRGGBB[bi]") */
+static void highlight_code(GtkTextBuffer* buffer, gint start, const gchar* code, const gchar* info) {
+    GtkSourceLanguage* lang = code_language(info);
+    GtkSourceStyleScheme* scheme = gtk_source_style_scheme_manager_get_scheme(
+        gtk_source_style_scheme_manager_get_default(), "vscode-dark");
+    if (lang == NULL || scheme == NULL) {
+        return;
+    }
+    GtkSourceBuffer* sb = gtk_source_buffer_new_with_language(lang);
+    gtk_source_buffer_set_style_scheme(sb, scheme);
+    gtk_source_buffer_set_highlight_syntax(sb, TRUE);
+    gtk_text_buffer_set_text(GTK_TEXT_BUFFER(sb), code, -1);
+    GtkTextIter it, end;
+    gtk_text_buffer_get_bounds(GTK_TEXT_BUFFER(sb), &it, &end);
+    gtk_source_buffer_ensure_highlight(sb, &it, &end);
+
+    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buffer);
+    while (!gtk_text_iter_equal(&it, &end)) {
+        GtkTextIter next = it;
+        if (!gtk_text_iter_forward_to_tag_toggle(&next, NULL)) {
+            next = end;
+        }
+        GdkRGBA fg;
+        gboolean has_fg = FALSE, bold = FALSE, italic = FALSE;
+        GSList* tags = gtk_text_iter_get_tags(&it); /* ascending priority */
+        for (GSList* l = tags; l != NULL; l = l->next) {
+            gboolean fg_set = FALSE, weight_set = FALSE, style_set = FALSE;
+            GdkRGBA* rgba = NULL;
+            gint weight = 0;
+            PangoStyle style = PANGO_STYLE_NORMAL;
+            g_object_get(l->data, "foreground-set", &fg_set, "foreground-rgba", &rgba,
+                         "weight-set", &weight_set, "weight", &weight,
+                         "style-set", &style_set, "style", &style, NULL);
+            if (fg_set && rgba != NULL) {
+                fg = *rgba;
+                has_fg = TRUE;
+            }
+            if (weight_set) bold = (weight >= PANGO_WEIGHT_SEMIBOLD);
+            if (style_set) italic = (style == PANGO_STYLE_ITALIC);
+            if (rgba != NULL) gdk_rgba_free(rgba);
+        }
+        g_slist_free(tags);
+        if (has_fg) {
+            gchar name[32];
+            g_snprintf(name, sizeof name, "md_hl_%02x%02x%02x%s%s", (guint)(fg.red * 255 + 0.5),
+                       (guint)(fg.green * 255 + 0.5), (guint)(fg.blue * 255 + 0.5),
+                       bold ? "b" : "", italic ? "i" : "");
+            if (gtk_text_tag_table_lookup(table, name) == NULL) {
+                gtk_text_buffer_create_tag(buffer, name, "foreground-rgba", &fg,
+                                           "weight", bold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL,
+                                           "style", italic ? PANGO_STYLE_ITALIC : PANGO_STYLE_NORMAL,
+                                           NULL);
+            }
+            GtkTextIter a, b;
+            gtk_text_buffer_get_iter_at_offset(buffer, &a, start + gtk_text_iter_get_offset(&it));
+            gtk_text_buffer_get_iter_at_offset(buffer, &b, start + gtk_text_iter_get_offset(&next));
+            gtk_text_buffer_apply_tag_by_name(buffer, name, &a, &b);
+        }
+        it = next;
+    }
+    g_object_unref(sb);
+}
+#endif
+
+/* GitHub alert marker ("[!NOTE]"...) of a quote line: title, icon and tag; NULL if none */
+typedef struct { const gchar* marker; const gchar* title; const gchar* icon; const gchar* tag; } MdAlert;
+static const MdAlert MD_ALERTS[] = {
+    {"[!NOTE]", "Note", "ℹ️", "md_alert_note"},
+    {"[!TIP]", "Tip", "💡", "md_alert_tip"},
+    {"[!IMPORTANT]", "Important", "❗", "md_alert_important"},
+    {"[!WARNING]", "Warning", "⚠️", "md_alert_warning"},
+    {"[!CAUTION]", "Caution", "🛑", "md_alert_caution"},
+};
+
 void render_markdown_to_buffer(GtkTextBuffer* buffer,
                                const gchar* markdown_text,
                                const gchar* doc_path,
@@ -616,10 +756,8 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
     gchar** lines = g_strsplit(markdown_text, "\n", -1);
     gint num_lines = g_strv_length(lines);
 
-    gboolean in_code_block = FALSE;
-    gchar code_fence_char = '`';
-    gint code_fence_len = 0;
     gboolean prev_was_empty = FALSE;
+    const gchar* alert_tag = NULL; /* inside a GitHub alert: its colour tag */
     gboolean last_was_li = FALSE;
     gint last_li_level = 0;
     gboolean last_li_is_ordered = FALSE;
@@ -627,48 +765,42 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
     for (gint i = 0; i < num_lines; i++) {
         const gchar* line = lines[i];
 
-        /* Check for code block fence */
+        /* Fenced code block: a padded panel, highlighted like the editor */
         const gchar* trim = line;
         while (*trim == ' ') trim++;
-        if (!in_code_block && (g_str_has_prefix(trim, "```") || g_str_has_prefix(trim, "~~~"))) {
-            in_code_block = TRUE;
+        if (g_str_has_prefix(trim, "```") || g_str_has_prefix(trim, "~~~")) {
             last_was_li = FALSE;
-            code_fence_char = trim[0];
-            code_fence_len = 0;
-            while (trim[code_fence_len] == code_fence_char) code_fence_len++;
-            const gchar* lang = trim + code_fence_len;
-            while (*lang == ' ') lang++;
+            alert_tag = NULL;
+            gchar fence = trim[0];
+            gint fence_len = 0;
+            while (trim[fence_len] == fence) fence_len++;
+            const gchar* info = trim + fence_len;
+            while (*info == ' ') info++;
 
-            GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            if (*lang != '\0') {
-                gchar* header = g_strdup_printf("  [ %s ]\n", lang);
-                gtk_text_buffer_insert(buffer, &iter, header, -1);
-                g_free(header);
-            } else {
-                gtk_text_buffer_insert(buffer, &iter, "  [ Code ]\n", -1);
+            GString* code = g_string_new(NULL);
+            gint j = i + 1;
+            for (; j < num_lines; j++) {
+                const gchar* t = lines[j];
+                while (*t == ' ') t++;
+                gint count = 0;
+                while (t[count] == fence) count++;
+                if (count >= fence_len) {
+                    break;
+                }
+                g_string_append(code, lines[j]);
+                g_string_append_c(code, '\n');
             }
-            apply_tag_mark(buffer, "md_code_header", m, &iter);
-            gtk_text_buffer_delete_mark(buffer, m);
-            prev_was_empty = FALSE;
-            continue;
-        }
-
-        if (in_code_block) {
-            last_was_li = FALSE;
-            gint count = 0;
-            const gchar* c = trim;
-            while (*c == code_fence_char) { count++; c++; }
-            if (count >= code_fence_len) {
-                in_code_block = FALSE;
-                gtk_text_buffer_insert(buffer, &iter, "\n", 1);
-                prev_was_empty = TRUE;
-                continue;
-            }
-            GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            gtk_text_buffer_insert(buffer, &iter, line, -1);
-            gtk_text_buffer_insert(buffer, &iter, "\n", 1);
-            apply_tag_mark(buffer, "md_code_block", m, &iter);
-            gtk_text_buffer_delete_mark(buffer, m);
+            insert_tagged(buffer, &iter, " \n", "md_code_pad");
+            gint code_start = gtk_text_iter_get_offset(&iter);
+            insert_tagged(buffer, &iter, code->str, "md_code_block");
+#ifdef HAVE_GSV
+            highlight_code(buffer, code_start, code->str, info);
+#else
+            (void)code_start;
+#endif
+            insert_tagged(buffer, &iter, " \n", "md_code_pad");
+            g_string_free(code, TRUE);
+            i = j; /* closing fence (or end of text) */
             prev_was_empty = FALSE;
             continue;
         }
@@ -679,6 +811,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             while (trim[h_level] == '#') h_level++;
             if (h_level >= 1 && h_level <= 6 && (trim[h_level] == ' ' || trim[h_level] == '\0')) {
                 last_was_li = FALSE;
+                alert_tag = NULL;
                 const gchar* h_text = trim + h_level;
                 while (*h_text == ' ') h_text++;
                 gchar* h_clean = g_strdup(h_text);
@@ -696,16 +829,8 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 apply_tag_mark(buffer, tag_name, m, &iter);
                 gtk_text_buffer_delete_mark(buffer, m);
 
-                if (h_level == 1) {
-                    GtkTextMark* m2 = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                    gtk_text_buffer_insert(buffer, &iter, "────────────────────────────────────────────────────────────\n", -1);
-                    apply_tag_mark(buffer, "md_hr", m2, &iter);
-                    gtk_text_buffer_delete_mark(buffer, m2);
-                } else if (h_level == 2) {
-                    GtkTextMark* m2 = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                    gtk_text_buffer_insert(buffer, &iter, "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n", -1);
-                    apply_tag_mark(buffer, "md_hr", m2, &iter);
-                    gtk_text_buffer_delete_mark(buffer, m2);
+                if (h_level <= 2) {
+                    insert_tagged(buffer, &iter, " \n", "md_rule"); /* VS Code: border under h1/h2 */
                 }
 
                 g_free(h_clean);
@@ -717,70 +842,57 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
         /* Check for Horizontal Rule */
         if (is_hr_line(line)) {
             last_was_li = FALSE;
-            GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            gtk_text_buffer_insert(buffer, &iter, "────────────────────────────────────────────────────────────\n", -1);
-            apply_tag_mark(buffer, "md_hr", m, &iter);
-            gtk_text_buffer_delete_mark(buffer, m);
+            alert_tag = NULL;
+            insert_tagged(buffer, &iter, "\n", "md_gap");
+            insert_tagged(buffer, &iter, " \n", "md_hr");
+            insert_tagged(buffer, &iter, "\n", "md_gap");
             prev_was_empty = FALSE;
             continue;
         }
 
-        /* Check for Blockquote & GitHub Alerts */
+        /* Blockquote (tinted panel with a bar) and GitHub alerts (coloured bar and title) */
         if (trim[0] == '>') {
             last_was_li = FALSE;
             const gchar* q_text = trim + 1;
             while (*q_text == ' ') q_text++;
 
-            if (g_str_has_prefix(q_text, "[!NOTE]")) {
-                GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                gtk_text_buffer_insert(buffer, &iter, "  ℹ️  NOTE\n", -1);
-                apply_tag_mark(buffer, "md_alert_note", m, &iter);
-                gtk_text_buffer_delete_mark(buffer, m);
-                prev_was_empty = FALSE;
-                continue;
-            } else if (g_str_has_prefix(q_text, "[!TIP]")) {
-                GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                gtk_text_buffer_insert(buffer, &iter, "  💡  TIP\n", -1);
-                apply_tag_mark(buffer, "md_alert_tip", m, &iter);
-                gtk_text_buffer_delete_mark(buffer, m);
-                prev_was_empty = FALSE;
-                continue;
-            } else if (g_str_has_prefix(q_text, "[!IMPORTANT]")) {
-                GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                gtk_text_buffer_insert(buffer, &iter, "  ❗  IMPORTANT\n", -1);
-                apply_tag_mark(buffer, "md_alert_important", m, &iter);
-                gtk_text_buffer_delete_mark(buffer, m);
-                prev_was_empty = FALSE;
-                continue;
-            } else if (g_str_has_prefix(q_text, "[!WARNING]")) {
-                GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                gtk_text_buffer_insert(buffer, &iter, "  ⚠️  WARNING\n", -1);
-                apply_tag_mark(buffer, "md_alert_warning", m, &iter);
-                gtk_text_buffer_delete_mark(buffer, m);
-                prev_was_empty = FALSE;
-                continue;
-            } else if (g_str_has_prefix(q_text, "[!CAUTION]")) {
-                GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                gtk_text_buffer_insert(buffer, &iter, "  🛑  CAUTION\n", -1);
-                apply_tag_mark(buffer, "md_alert_caution", m, &iter);
-                gtk_text_buffer_delete_mark(buffer, m);
+            const MdAlert* alert = NULL;
+            for (gsize k = 0; k < G_N_ELEMENTS(MD_ALERTS); k++) {
+                if (g_str_has_prefix(q_text, MD_ALERTS[k].marker)) {
+                    alert = &MD_ALERTS[k];
+                }
+            }
+            if (alert != NULL) {
+                alert_tag = alert->tag;
+                GtkTextMark* qm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
+                insert_tagged(buffer, &iter, "▌ ", alert_tag);
+                gchar* title = g_strdup_printf("%s  %s\n", alert->icon, alert->title);
+                insert_tagged(buffer, &iter, title, alert_tag);
+                g_free(title);
+                apply_tag_mark(buffer, "md_quote", qm, &iter);
+                gtk_text_buffer_delete_mark(buffer, qm);
                 prev_was_empty = FALSE;
                 continue;
             }
 
-            GtkTextMark* bar_m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            gtk_text_buffer_insert(buffer, &iter, "  │ ", -1);
-            apply_tag_mark(buffer, "md_quote_bar", bar_m, &iter);
-            gtk_text_buffer_delete_mark(buffer, bar_m);
-
-            GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
+            GtkTextMark* qm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
+            insert_tagged(buffer, &iter, "▌ ", alert_tag != NULL ? alert_tag : "md_quote_bar");
+            GtkTextMark* tm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
             render_inline_text(buffer, &iter, q_text, doc_dir);
+            if (alert_tag != NULL) {
+                /* alert text keeps the normal colour, only the bar and title are coloured */
+                GtkTextIter ts;
+                gtk_text_buffer_get_iter_at_mark(buffer, &ts, tm);
+                gtk_text_buffer_remove_tag_by_name(buffer, alert_tag, &ts, &iter);
+            }
+            gtk_text_buffer_delete_mark(buffer, tm);
             gtk_text_buffer_insert(buffer, &iter, "\n", 1);
-            apply_tag_mark(buffer, "md_quote", m, &iter);
-            gtk_text_buffer_delete_mark(buffer, m);
+            apply_tag_mark(buffer, "md_quote", qm, &iter);
+            gtk_text_buffer_delete_mark(buffer, qm);
             prev_was_empty = FALSE;
             continue;
         }
+        alert_tag = NULL;
 
         /* Check for Tables: line starts with | or contains | with a following separator */
         if (trim[0] == '|' && i + 1 < num_lines && strchr(lines[i + 1], '|')) {
@@ -831,9 +943,9 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                         }
                     }
 
-                    GString* border_top = g_string_new("  ┌");
-                    GString* border_mid = g_string_new("  ├");
-                    GString* border_bot = g_string_new("  └");
+                    GString* border_top = g_string_new("┌");
+                    GString* border_mid = g_string_new("├");
+                    GString* border_bot = g_string_new("└");
                     for (guint c = 0; c < max_cols; c++) {
                         for (gint w = 0; w < col_widths[c] + 2; w++) {
                             g_string_append(border_top, "─");
@@ -858,7 +970,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
 
                     for (guint r = 0; r < num_rows; r++) {
                         GPtrArray* row_cells = g_ptr_array_index(parsed_rows, r);
-                        GString* row_str = g_string_new("  │");
+                        GString* row_str = g_string_new("│");
                         for (guint c = 0; c < max_cols; c++) {
                             const gchar* cell_text = (c < row_cells->len) ? g_ptr_array_index(row_cells, c) : "";
                             gint clen = (gint)g_utf8_strlen(cell_text, -1);
@@ -930,7 +1042,6 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
 
             GtkTextMark* im = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
             render_inline_text(buffer, &iter, task_text, doc_dir);
-            if (done) apply_tag_mark(buffer, "md_strike", im, &iter);
             gtk_text_buffer_delete_mark(buffer, im);
 
             GtkTextIter line_end = iter;
@@ -1040,10 +1151,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 apply_tag_mark(buffer, "md_h1", m, &iter);
                 gtk_text_buffer_delete_mark(buffer, m);
 
-                GtkTextMark* m2 = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                gtk_text_buffer_insert(buffer, &iter, "────────────────────────────────────────────────────────────\n", -1);
-                apply_tag_mark(buffer, "md_hr", m2, &iter);
-                gtk_text_buffer_delete_mark(buffer, m2);
+                insert_tagged(buffer, &iter, " \n", "md_rule");
 
                 i++;
                 prev_was_empty = FALSE;
@@ -1057,10 +1165,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 apply_tag_mark(buffer, "md_h2", m, &iter);
                 gtk_text_buffer_delete_mark(buffer, m);
 
-                GtkTextMark* m2 = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                gtk_text_buffer_insert(buffer, &iter, "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n", -1);
-                apply_tag_mark(buffer, "md_hr", m2, &iter);
-                gtk_text_buffer_delete_mark(buffer, m2);
+                insert_tagged(buffer, &iter, " \n", "md_rule");
 
                 i++;
                 prev_was_empty = FALSE;
@@ -1071,18 +1176,41 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
         /* Empty / blank line */
         if (trim[0] == '\0') {
             if (i > 0 && !prev_was_empty) {
-                gtk_text_buffer_insert(buffer, &iter, "\n", 1);
+                insert_tagged(buffer, &iter, "\n", "md_gap");
                 prev_was_empty = TRUE;
             }
             continue;
         }
 
-        /* Regular paragraph line */
+        /* Paragraph: consecutive source lines join into one wrapped paragraph
+         * (like VS Code); a line ending with two spaces or a backslash breaks */
         last_was_li = FALSE;
-        render_inline_text(buffer, &iter, line, doc_dir);
+        GString* para = g_string_new(NULL);
+        gint j = i;
+        while (TRUE) {
+            const gchar* ln = lines[j];
+            while (*ln == ' ') ln++;
+            gsize len = strlen(ln);
+            gboolean hard = (len >= 2 && ln[len - 1] == ' ' && ln[len - 2] == ' ') ||
+                            (len >= 1 && ln[len - 1] == '\\');
+            while (len > 0 && (ln[len - 1] == ' ' || (hard && ln[len - 1] == '\\'))) len--;
+            g_string_append_len(para, ln, (gssize)len);
+            if (j + 1 >= num_lines || !is_paragraph_continuation(lines[j + 1])) {
+                break;
+            }
+            g_string_append_c(para, hard ? '\n' : ' ');
+            j++;
+        }
+        render_inline_text(buffer, &iter, para->str, doc_dir);
         gtk_text_buffer_insert(buffer, &iter, "\n", 1);
+        g_string_free(para, TRUE);
+        i = j;
         prev_was_empty = FALSE;
     }
+
+    GtkTextIter doc_start, doc_end;
+    gtk_text_buffer_get_bounds(buffer, &doc_start, &doc_end);
+    gtk_text_buffer_apply_tag_by_name(buffer, "md_body", &doc_start, &doc_end);
 
     g_strfreev(lines);
     g_free(doc_dir);
