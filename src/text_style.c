@@ -62,13 +62,18 @@ static const gchar* VSCODE_SCHEME_XML =
 
 void apply_viewer_background(GtkWidget* view) {
     gtk_widget_set_name(view, "viewer");
-    GtkCssProvider* css = gtk_css_provider_new();
-    gtk_css_provider_load_from_string(
-        css, "#viewer text { background-color: #121314; }");
-    gtk_style_context_add_provider(gtk_widget_get_style_context(view),
-                                   GTK_STYLE_PROVIDER(css),
-                                   GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(css);
+    /* The rule targets #viewer only: one provider for the display is enough */
+    static GdkDisplay* styled_display = NULL;
+    GdkDisplay* display = gtk_widget_get_display(view);
+    if (display != styled_display) {
+        GtkCssProvider* css = gtk_css_provider_new();
+        gtk_css_provider_load_from_string(
+            css, "#viewer text { background-color: #121314; }");
+        gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(css),
+                                                   GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        g_object_unref(css);
+        styled_display = display;
+    }
 }
 
 void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view) {

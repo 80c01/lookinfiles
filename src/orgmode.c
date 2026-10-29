@@ -1278,7 +1278,9 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
     /* 1. If clicked on link, open it */
     if (info->link_target != NULL) {
         if (strstr(info->link_target, "://") != NULL) {
-            gtk_show_uri(app->window, info->link_target, GDK_CURRENT_TIME);
+            GtkUriLauncher* launcher = gtk_uri_launcher_new(info->link_target);
+            gtk_uri_launcher_launch(launcher, app->window, NULL, NULL, NULL);
+            g_object_unref(launcher);
             return TRUE;
         } else if (g_file_test(info->link_target, G_FILE_TEST_EXISTS)) {
             editor_open_file(app, info->link_target, info->link_target);
