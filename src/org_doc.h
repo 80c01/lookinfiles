@@ -23,11 +23,16 @@ typedef struct {
 } OrgSwap;
 
 /* TODO keywords: #+TODO / #+SEQ_TODO / #+TYP_TODO lines, default "TODO | DONE",
- * and #+STARTUP: logdone */
+ * and #+STARTUP: logdone / logdrawer. A keyword written "RUNNING(r!)" logs a
+ * state change line when an entry enters it, "WAIT(w@/!)" also when it leaves
+ * it ('@' is logged like '!': timestamp only, no note). */
 typedef struct {
-    GPtrArray* sequences; /* GPtrArray* of keyword sequences (GPtrArray of gchar*) */
-    GHashTable* done;     /* keywords meaning done */
-    gboolean log_done;    /* add CLOSED: [timestamp] when an entry is done */
+    GPtrArray* sequences;     /* GPtrArray* of keyword sequences (GPtrArray of gchar*) */
+    GHashTable* done;         /* keywords meaning done */
+    GHashTable* log_enter;    /* keywords logged when entered */
+    GHashTable* log_leave;    /* keywords logged when left */
+    gboolean log_done;        /* add CLOSED: [timestamp] when an entry is done */
+    gboolean log_into_drawer; /* state change lines go into a :LOGBOOK: drawer */
 } OrgTodoConfig;
 
 typedef struct {
@@ -106,7 +111,8 @@ gboolean org_insert_heading(GPtrArray* lines, OrgPos* pos, const OrgTodoConfig* 
 gboolean org_toggle_heading(GPtrArray* lines, OrgPos* pos);
 
 /* ---- TODO, priority, tags ---- */
-/* Cycle the keyword of heading line h (dir +1 / -1): logs CLOSED, applies
+/* Cycle the keyword of heading line h (dir +1 / -1): logs CLOSED and state
+ * changes (- State "NEW"    from "OLD"    [timestamp]), applies
  * repeaters, updates statistics cookies. */
 gboolean org_todo_cycle(GPtrArray* lines, OrgPos* pos, gint h, const OrgTodoConfig* cfg,
                         gint dir, GDateTime* now, gchar** msg);

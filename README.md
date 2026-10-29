@@ -303,7 +303,11 @@ the Emacs minibuffer (`Tab` completes tags and `*Heading` links). `M-x org-…` 
 TODO keywords come from `#+TODO:` lines (`#+TODO: TODO NEXT | DONE CANCELLED`),
 `TODO` / `DONE` by default; `#+STARTUP: logdone` adds `CLOSED: [date]` when an
 entry is done, and a repeating date (`SCHEDULED: <2026-11-02 Mon +1w>`) moves
-on instead. Checking a box updates its parents (`[-]` when partly done) and
+on instead. A keyword written `RUNNING(r!)` logs a line such as
+`- State "RUNNING"    from "TODO"       [2026-10-29 Thu 19:48]` under the
+heading when an entry enters it (`WAIT(w/!)`: when it leaves it);
+`#+STARTUP: logdrawer` puts these lines in a `:LOGBOOK:` drawer. `RUNNING`
+is shown in yellow. Checking a box updates its parents (`[-]` when partly done) and
 the `[n/m]` / `[n%]` cookies, which also count the TODO children of a heading.
 Tables realign on `Tab`, `Enter` and `C-c C-c`; a line starting with `|-`
 becomes a rule. Folds survive edits, and moving the cursor into folded text

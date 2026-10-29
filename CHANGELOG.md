@@ -14,6 +14,11 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Org-mode: a yellow `RUNNING` TODO keyword, and timestamped state changes
+  (`- State "RUNNING"    from "TODO"       [2026-10-29 Thu 19:48]`) for
+  keywords marked `!` in `#+TODO:` (`/!` when leaving), into a `:LOGBOOK:`
+  drawer with `#+STARTUP: logdrawer`.
+
 - Command line: `lookin <file>` opens the file in the dedicated editor
   panel, with the explorer and the preview hidden, `-e` / `--editor emacs|vim|notepad` chooses the default
   mode of new editor tabs, `-n` / `--note` opens (or creates) a note by

@@ -161,14 +161,23 @@ static void cfg_add_sequence(OrgTodoConfig* cfg, const gchar* spec) {
             bar = (gint)seq->len;
             continue;
         }
-        /* "TODO(t)" or "WAIT(w@/!)": keep the keyword */
+        /* "TODO(t)" or "WAIT(w@/!)": keep the keyword, note its log flags */
         gchar* kw = g_strdup(words[i]);
         gchar* paren = strchr(kw, '(');
-        if (paren != NULL) *paren = '\0';
+        gboolean enter = FALSE, leave = FALSE;
+        if (paren != NULL) {
+            *paren = '\0';
+            gchar* slash = strchr(paren + 1, '/');
+            if (slash != NULL) *slash = '\0';
+            enter = strpbrk(paren + 1, "!@") != NULL;
+            leave = slash != NULL && strpbrk(slash + 1, "!@") != NULL;
+        }
         if (kw[0] == '\0') {
             g_free(kw);
             continue;
         }
+        if (enter) g_hash_table_add(cfg->log_enter, g_strdup(kw));
+        if (leave) g_hash_table_add(cfg->log_leave, g_strdup(kw));
         g_ptr_array_add(seq, kw);
     }
     g_strfreev(words);
@@ -187,6 +196,8 @@ OrgTodoConfig* org_todo_config_new(GPtrArray* lines) {
     OrgTodoConfig* cfg = g_new0(OrgTodoConfig, 1);
     cfg->sequences = g_ptr_array_new_with_free_func((GDestroyNotify)g_ptr_array_unref);
     cfg->done = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    cfg->log_enter = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    cfg->log_leave = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     for (gint i = 0; lines != NULL && i < n_lines(lines); i++) {
         const gchar* l = org_line(lines, i);
         if (l[0] != '#' || l[1] != '+') continue;
@@ -200,6 +211,8 @@ OrgTodoConfig* org_todo_config_new(GPtrArray* lines) {
             gchar* low = g_ascii_strdown(l + 10, -1);
             if (strstr(low, "nologdone") != NULL) cfg->log_done = FALSE;
             else if (strstr(low, "logdone") != NULL || strstr(low, "lognotedone") != NULL) cfg->log_done = TRUE;
+            if (strstr(low, "nologdrawer") != NULL) cfg->log_into_drawer = FALSE;
+            else if (strstr(low, "logdrawer") != NULL) cfg->log_into_drawer = TRUE;
             g_free(low);
         }
     }
@@ -211,6 +224,8 @@ void org_todo_config_free(OrgTodoConfig* cfg) {
     if (cfg == NULL) return;
     g_ptr_array_unref(cfg->sequences);
     g_hash_table_destroy(cfg->done);
+    g_hash_table_destroy(cfg->log_enter);
+    g_hash_table_destroy(cfg->log_leave);
     g_free(cfg);
 }
 
@@ -727,6 +742,64 @@ static gchar* apply_repeaters(GPtrArray* lines, gint h, GDateTime* now) {
     return first;
 }
 
+/* Where log lines of heading h go: after its planning line and property
+ * drawer */
+static gint log_position(GPtrArray* lines, gint h) {
+    gint limit = doc_limit(lines);
+    gint at = h + 1;
+    if (at < limit && is_planning_line(org_line(lines, at))) at++;
+    if (at < limit && has_prefix_ci(org_line(lines, at) + indent_bytes(org_line(lines, at)), ":PROPERTIES:")) {
+        gint i = at + 1;
+        while (i < limit && !is_drawer_end(org_line(lines, i)) &&
+               org_heading_level(org_line(lines, i)) == 0) {
+            i++;
+        }
+        if (i < limit && is_drawer_end(org_line(lines, i))) at = i + 1;
+    }
+    return at;
+}
+
+/* Add text as the newest log line of heading h, in its :LOGBOOK: drawer
+ * (created if needed) when into_drawer */
+static void log_insert(GPtrArray* lines, OrgPos* pos, gint h, gchar* text, gboolean into_drawer) {
+    gint at = log_position(lines, h);
+    gint added = 1;
+    const gchar* l = at < doc_limit(lines) ? org_line(lines, at) : "";
+    if (into_drawer && has_prefix_ci(l + indent_bytes(l), ":LOGBOOK:")) {
+        insert_line(lines, at + 1, text);
+        at++;
+    } else if (into_drawer) {
+        insert_line(lines, at, g_strdup(":END:"));
+        insert_line(lines, at, text);
+        insert_line(lines, at, g_strdup(":LOGBOOK:"));
+        added = 3;
+    } else {
+        insert_line(lines, at, text);
+    }
+    if (pos->line >= at) pos->line += added;
+}
+
+/* "- State "RUNNING"    from "TODO"       [2026-10-29 Thu 19:48]" when the
+ * keywords ask for it */
+static void log_state_change(GPtrArray* lines, OrgPos* pos, gint h, const OrgTodoConfig* cfg,
+                             const gchar* from, const gchar* to, GDateTime* now) {
+    if (now == NULL || g_strcmp0(from, to) == 0) return;
+    if (!(to != NULL && g_hash_table_contains(cfg->log_enter, to)) &&
+        !(from != NULL && g_hash_table_contains(cfg->log_leave, from))) {
+        return;
+    }
+    OrgTimestamp ts;
+    org_timestamp_from_datetime(&ts, now, FALSE, TRUE);
+    gchar* t = org_timestamp_format(&ts);
+    gchar* qto = to != NULL ? g_strdup_printf("\"%s\"", to) : g_strdup("");
+    gchar* qfrom = from != NULL ? g_strdup_printf("\"%s\"", from) : g_strdup("");
+    log_insert(lines, pos, h, g_strdup_printf("- State %-12s from %-12s %s", qto, qfrom, t),
+               cfg->log_into_drawer);
+    g_free(qfrom);
+    g_free(qto);
+    g_free(t);
+}
+
 /* ------------------------------------------------------------------------- */
 /* TODO, priority, tags                                                      */
 /* ------------------------------------------------------------------------- */
@@ -772,6 +845,7 @@ gboolean org_todo_set(GPtrArray* lines, OrgPos* pos, gint h, const OrgTodoConfig
     heading_store(lines, pos, h, old_tc, &hd);
 
 done:
+    log_state_change(lines, pos, h, cfg, old, keyword, now);
     org_heading_clear(&hd);
     g_free(old);
     org_update_statistics(lines, cfg);
@@ -946,16 +1020,7 @@ gboolean org_clock_in(GPtrArray* lines, OrgPos* pos, gint h, GDateTime* now, gch
         org_clock_out(lines, pos, now, msg);
     }
     gint limit = doc_limit(lines);
-    gint at = h + 1;
-    if (at < limit && is_planning_line(org_line(lines, at))) at++;
-    if (at < limit && has_prefix_ci(org_line(lines, at) + indent_bytes(org_line(lines, at)), ":PROPERTIES:")) {
-        gint i = at + 1;
-        while (i < limit && !is_drawer_end(org_line(lines, i)) &&
-               org_heading_level(org_line(lines, i)) == 0) {
-            i++;
-        }
-        if (i < limit && is_drawer_end(org_line(lines, i))) at = i + 1;
-    }
+    gint at = log_position(lines, h);
     OrgTimestamp ts;
     org_timestamp_from_datetime(&ts, now, FALSE, TRUE);
     gchar* t = org_timestamp_format(&ts);

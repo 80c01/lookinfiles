@@ -234,6 +234,37 @@ static void test_todo_logdone_and_repeat(void) {
           TRUE, "* TODO Water plants‸\nSCHEDULED: <2026-11-03 Tue +1w>\n");
 }
 
+static void test_todo_log_state(void) {
+    /* '!' logs entering the state, newest line first, after planning */
+    check("#+TODO: TODO RUNNING(r!) | DONE\n* TODO Task‸\nSCHEDULED: <2026-10-30 Fri>\nbody\n",
+          op_todo, GINT_TO_POINTER(1), TRUE,
+          "#+TODO: TODO RUNNING(r!) | DONE\n* RUNNING Task‸\nSCHEDULED: <2026-10-30 Fri>\n"
+          "- State \"RUNNING\"    from \"TODO\"       [2026-10-29 Thu 09:30]\nbody\n");
+    /* "/!" logs leaving it; no keyword before gives an empty "from" */
+    check("#+TODO: TODO(t/!) | DONE\n* TODO Task‸\n", op_todo, GINT_TO_POINTER(1), TRUE,
+          "#+TODO: TODO(t/!) | DONE\n* DONE Task‸\n"
+          "- State \"DONE\"       from \"TODO\"       [2026-10-29 Thu 09:30]\n");
+    check("#+TODO: TODO(!) | DONE\n* Task‸\n", op_todo, GINT_TO_POINTER(1), TRUE,
+          "#+TODO: TODO(!) | DONE\n* TODO Task‸\n"
+          "- State \"TODO\"       from              [2026-10-29 Thu 09:30]\n");
+    /* Unflagged keywords log nothing */
+    check("#+TODO: TODO RUNNING(r!) | DONE\n* RUNNING Task‸\n", op_todo, GINT_TO_POINTER(1), TRUE,
+          "#+TODO: TODO RUNNING(r!) | DONE\n* DONE Task‸\n");
+    /* logdrawer: into a :LOGBOOK: drawer, after the property drawer */
+    check("#+STARTUP: logdrawer\n#+TODO: TODO RUNNING(!) | DONE(!)\n* TODO Task‸\n"
+          ":PROPERTIES:\n:ID: 1\n:END:\n",
+          op_todo, GINT_TO_POINTER(1), TRUE,
+          "#+STARTUP: logdrawer\n#+TODO: TODO RUNNING(!) | DONE(!)\n* RUNNING Task‸\n"
+          ":PROPERTIES:\n:ID: 1\n:END:\n:LOGBOOK:\n"
+          "- State \"RUNNING\"    from \"TODO\"       [2026-10-29 Thu 09:30]\n:END:\n");
+    check("#+STARTUP: logdrawer\n#+TODO: TODO RUNNING(!) | DONE(!)\n* RUNNING Task‸\n"
+          ":LOGBOOK:\n- State \"RUNNING\"    from \"TODO\"       [2026-10-28 Wed 08:00]\n:END:\n",
+          op_todo, GINT_TO_POINTER(1), TRUE,
+          "#+STARTUP: logdrawer\n#+TODO: TODO RUNNING(!) | DONE(!)\n* DONE Task‸\n:LOGBOOK:\n"
+          "- State \"DONE\"       from \"RUNNING\"    [2026-10-29 Thu 09:30]\n"
+          "- State \"RUNNING\"    from \"TODO\"       [2026-10-28 Wed 08:00]\n:END:\n");
+}
+
 static void test_priority(void) {
     check("* TODO Task‸\n", op_priority, GINT_TO_POINTER(1), TRUE, "* TODO [#A] Task‸\n");
     check("* [#A] Task‸\n", op_priority, GINT_TO_POINTER(1), TRUE, "* Task‸\n");
@@ -418,6 +449,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/org_doc/toggle_heading", test_toggle_heading);
     g_test_add_func("/org_doc/todo_cycle", test_todo_cycle);
     g_test_add_func("/org_doc/todo_logdone_and_repeat", test_todo_logdone_and_repeat);
+    g_test_add_func("/org_doc/todo_log_state", test_todo_log_state);
     g_test_add_func("/org_doc/priority", test_priority);
     g_test_add_func("/org_doc/tags", test_tags);
     g_test_add_func("/org_doc/startup_visibility", test_startup_visibility);
