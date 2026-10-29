@@ -18,6 +18,8 @@
 #include "log_view.h"
 #include "man_view.h"
 #include "notebook.h"
+#include "odf.h"
+#include "pptx.h"
 #include "spreadsheet.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
@@ -40,6 +42,19 @@ static gchar* format_count(guint64 n) {
     }
     g_free(digits);
     return g_string_free(out, FALSE);
+}
+
+/* TRUE if the first bytes are an OpenDocument package (mimetype entry
+ * first); the bytes hold NULs, so no string search */
+static gboolean is_opendocument(const PreviewInput* in) {
+    static const gchar NEEDLE[] = "application/vnd.oasis.opendocument";
+    gsize n = sizeof(NEEDLE) - 1;
+    for (gsize i = 0; in->head != NULL && i + n <= in->head_len; i++) {
+        if (memcmp(in->head + i, NEEDLE, n) == 0) {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 /* Dimmed note saying only the start of the file was read */
@@ -578,6 +593,38 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     return doc;
 }
 
+/* --- Presentations --- */
+
+static PreviewDoc* build_presentation(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    guint slides = 0;
+    gchar* html;
+    if (is_opendocument(in)) {
+        OdfInfo info = { 0 };
+        html = odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, &info, error);
+        slides = info.n_slides;
+    } else {
+        html = pptx_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, &slides, error);
+    }
+    if (html == NULL) {
+        return NULL;
+    }
+    /* Slide count in the metadata banner */
+    gchar* count = g_strdup_printf("<meta name=\"description\" content=\"Presentation · %u %s\"></head>", slides,
+                                   slides == 1 ? "slide" : "slides");
+    gchar* head_end = strstr(html, "</head>");
+    gchar* page;
+    if (head_end != NULL) {
+        *head_end = '\0';
+        page = g_strconcat(html, count, head_end + 7, NULL);
+    } else {
+        page = g_strdup(html);
+    }
+    g_free(count);
+    g_free(html);
+    return preview_doc_new_source(PREVIEW_DOC_HTML, page);
+}
+
 /* --- Spreadsheets --- */
 
 #define SHEETS_SHOWN 3
@@ -792,7 +839,8 @@ static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, 
 static PreviewDoc* build_document(const PreviewInput* in, GCancellable* cancellable,
                                   GError** error) {
     (void)cancellable;
-    gchar* html = docx_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, error);
+    gchar* html = is_opendocument(in) ? odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, NULL, error)
+                                      : docx_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, error);
     return html != NULL ? preview_doc_new_source(PREVIEW_DOC_HTML, html) : NULL;
 }
 
@@ -830,6 +878,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_notebook;
     case FILE_KIND_SPREADSHEET:
         return build_spreadsheet;
+    case FILE_KIND_PRESENTATION:
+        return build_presentation;
     default:
         return NULL;
     }

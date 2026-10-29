@@ -32,6 +32,9 @@
     cp "$ROOT/tests/fixtures/preview/analysis.ipynb" 18-analysis.ipynb
     cp "$ROOT/tests/fixtures/preview/budget.xlsx" 19-budget.xlsx
     cp "$ROOT/tests/fixtures/preview/stock.ods" 20-stock.ods
+    cp "$ROOT/tests/fixtures/preview/report.odt" 21-report.odt
+    cp "$ROOT/tests/fixtures/preview/roadmap.pptx" 22-roadmap.pptx
+    cp "$ROOT/tests/fixtures/preview/roadmap.odp" 23-roadmap.odp
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -61,4 +64,7 @@ format_scenario() {
     key j;              shot fmt_notebook
     key j;              shot fmt_xlsx
     key j;              shot fmt_ods
+    key j;              shot fmt_odt
+    key j;              shot fmt_pptx
+    key j;              shot fmt_odp
 }

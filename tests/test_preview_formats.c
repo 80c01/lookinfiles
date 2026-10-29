@@ -167,6 +167,16 @@ static void test_spreadsheets(void) {
     g_assert_nonnull(strstr(ods->text->str, "(empty)"));
 }
 
+static void test_office(void) {
+    g_autoptr(PreviewDoc) odt = build_fixture("report.odt", FILE_KIND_DOCUMENT);
+    g_assert_cmpint(odt->format, ==, PREVIEW_DOC_HTML);
+    g_assert_nonnull(strstr(odt->text->str, "<h1>Quarterly report</h1>"));
+    g_autoptr(PreviewDoc) pptx = build_fixture("roadmap.pptx", FILE_KIND_PRESENTATION);
+    g_assert_nonnull(strstr(pptx->text->str, "Presentation · 2 slides"));
+    g_autoptr(PreviewDoc) odp = build_fixture("roadmap.odp", FILE_KIND_PRESENTATION);
+    g_assert_nonnull(strstr(odp->text->str, "<h3>Previews</h3>"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -199,5 +209,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/manpage", test_manpage);
     g_test_add_func("/preview_formats/notebook", test_notebook);
     g_test_add_func("/preview_formats/spreadsheets", test_spreadsheets);
+    g_test_add_func("/preview_formats/office", test_office);
     return g_test_run();
 }
