@@ -42,13 +42,26 @@
 - [ ] enhance markdown rendering
 - [ ] zoom in preview for pdf and image
 - [ ] change files icon to match vscode (.c, .h, .md files)
-- [ ] don't raise external window to get input, every interaction must reside inside the application (strong convention for this project)
+- [x] don't raise external window to get input, every interaction must reside inside the application (add this convention for the project)
 - [ ] view which lines are modified regarding git diff in the preview and editor, like in vscode with the green vertical bar
 - [ ] provide appimage
-- [ ] implement a music player: configure the music library (a folder where user stores its music) then analyse the folder and list songs to play
+- [ ] implement a music player: configure the music library (a list of folders where user stores its music) then analyse the folders and list songs to play
+- [ ] implement a video player: configure the video library (a list of folders where user stores its videos) then analyse the folders and list video to play
 - [ ] add configuration panel
 - [ ] add a search engine in the left side panel
 - [ ] implement wrap line option in editors
+- [ ] mouse whell scroll in the minimap
+- [ ] search engine
+- [ ] add container explorer: list containers, connect and list files, open terminal
+- [x] rework the focus highlight, make it more subtile than just highlight the frame of the panel
+- [x] when creating a new workspace, use a default view in the new workspace instead of cloning the current one
+- [/] add the ability to save workspace layouts (panel szes and placement)
+- [ ] ability to change window size from the application, to default sizes: 1920x1080, 1600x1200, etc
+- [ ] add a systemd services explorer. List services, show status and logs in preview when selecting the service. Must work for remote machines
+- [ ] rewrite the README. What are the important features? The problems this application solve?
+- [ ] git status can be moved to a dedicated panel. User can checkout commits (Enter key) to browse files in the explorer file panel
+- [ ] add lines number for code files
+- [ ] what about -O3 and -Werror in CFLAGS?
 
 ### README
 
@@ -58,7 +71,7 @@
 
 - [x] DONE, TO BE CONFIRMED - git status in explorer panel for modified files is not up to date, or at least there is a huge delay
 - [x] files opened with editor are seen as modified while they're just opened untouched
-- [ ] cannot select text near the panel edge (it grabs the edge to resize it)
-- [ ] when clicking on the git commits tab, refresh the list
-- [ ] in the left side panel, in the explorer file tree sometime the git status indicators are troncating the file name while is a lot of space on the right to put the status. It's also the case on the notes panel to indicate how many notes in the notebooks, and also in the bookmark panel so maybe on all panels.
+- [x] I cannot select text near the panel edge (it grabs the edge to resize it)
+- [x] in the left side panel, in the explorer file tree sometime the git status indicators are troncating the file name while there is a lot of space on the right to put the status. It's also the case on the notes panel to indicate how many notes in the notebooks, and also in the bookmark panel so maybe on all panels. I see it happens when I cycle on the veiws file, bookmarks, notes, etc.
 - [ ] sliders in editor panel can overlap text
+- [x] git commits tab is not updated when a commit is performed
