@@ -17,6 +17,13 @@ void diff_gutter_attach(GtkWidget* text_view, gboolean live);
  * worker thread). NULL clears the marks. No effect if not attached. */
 void diff_gutter_set_file(GtkWidget* text_view, const gchar* path);
 
+/* Change marks of text_view (one LineDiffMark set per buffer line), NULL when
+ * none; *n_lines receives their number. Owned by the gutter. */
+const guint8* diff_gutter_get_marks(GtkWidget* text_view, guint* n_lines);
+
+/* Also redraw widget (e.g. the minimap of text_view) when the marks change */
+void diff_gutter_add_companion(GtkWidget* text_view, GtkWidget* widget);
+
 /* Read the HEAD version again for every text view showing a file (after a
  * commit, checkout...) */
 void diff_gutter_refresh_all(void);

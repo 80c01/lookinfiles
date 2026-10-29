@@ -16,6 +16,7 @@
 typedef struct {
     GtkTextView* view;
     GtkWidget* area;
+    GtkWidget* companion; /* weak pointer, redrawn with the gutter */
     GtkTextBuffer* buffer; /* ref held */
     gulong changed_id;
     GtkAdjustment* vadj; /* ref held */
@@ -48,10 +49,20 @@ static void head_read_data_free(gpointer data) {
     g_free(hd);
 }
 
+static void marks_changed(DiffGutter* g) {
+    gtk_widget_queue_draw(g->area);
+    if (g->companion != NULL) {
+        gtk_widget_queue_draw(g->companion);
+    }
+}
+
 static void clear_marks(DiffGutter* g) {
+    gboolean had = (g->marks != NULL);
     g_clear_pointer(&g->marks, g_free);
     g->n_marks = 0;
-    gtk_widget_queue_draw(g->area);
+    if (had) {
+        marks_changed(g);
+    }
 }
 
 static void recompute(DiffGutter* g) {
@@ -69,7 +80,7 @@ static void recompute(DiffGutter* g) {
     g_free(g->marks);
     g->marks = line_diff_marks(g->base, g->base_len, text, strlen(text), &g->n_marks);
     g_free(text);
-    gtk_widget_queue_draw(g->area);
+    marks_changed(g);
 }
 
 static gboolean on_debounce(gpointer data) {
@@ -162,6 +173,26 @@ void diff_gutter_set_file(GtkWidget* text_view, const gchar* path) {
         g->debounce_id = 0;
     }
     start_head_read(g);
+}
+
+const guint8* diff_gutter_get_marks(GtkWidget* text_view, guint* n_lines) {
+    DiffGutter* g = g_object_get_data(G_OBJECT(text_view), DIFF_GUTTER_KEY);
+    *n_lines = (g != NULL && g->marks != NULL) ? g->n_marks : 0;
+    return (*n_lines > 0) ? g->marks : NULL;
+}
+
+void diff_gutter_add_companion(GtkWidget* text_view, GtkWidget* widget) {
+    DiffGutter* g = g_object_get_data(G_OBJECT(text_view), DIFF_GUTTER_KEY);
+    if (g == NULL || g->companion == widget) {
+        return;
+    }
+    if (g->companion != NULL) {
+        g_object_remove_weak_pointer(G_OBJECT(g->companion), (gpointer*)&g->companion);
+    }
+    g->companion = widget;
+    if (widget != NULL) {
+        g_object_add_weak_pointer(G_OBJECT(widget), (gpointer*)&g->companion);
+    }
 }
 
 void diff_gutter_refresh_all(void) {
@@ -269,6 +300,9 @@ static void diff_gutter_free(gpointer data) {
         g_signal_handler_disconnect(g->vadj, g->vadj_value_id);
         g_signal_handler_disconnect(g->vadj, g->vadj_changed_id);
         g_object_unref(g->vadj);
+    }
+    if (g->companion != NULL) {
+        g_object_remove_weak_pointer(G_OBJECT(g->companion), (gpointer*)&g->companion);
     }
     g_free(g->path);
     g_free(g->base);

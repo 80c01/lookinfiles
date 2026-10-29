@@ -22,7 +22,7 @@ text_style:app_types,file_types
 theme:
 markdown:app_types,image_utils
 html:app_types,image_utils
-minimap:app_types
+minimap:app_types,diff_gutter,line_diff
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events

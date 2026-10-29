@@ -1,4 +1,6 @@
 #include "minimap.h"
+#include "diff_gutter.h"
+#include "line_diff.h"
 
 /* The minimap is a scaled drawing of the text view as laid out on screen:
  * wrapped lines, font sizes, line backgrounds (code panels, quotes), embedded
@@ -306,6 +308,60 @@ void on_minimap_adj_changed(GtkAdjustment* adjustment, gpointer data) {
     minimap_update_visibility((AppData*)data);
 }
 
+/* Git change marks (diff_gutter) as a bar along the left edge, like VS Code:
+ * runs of added / modified lines in one rectangle, deletions as a red tick */
+static void draw_change_marks(cairo_t* cr, GtkTextView* view, gdouble sy, int height) {
+    guint n = 0;
+    const guint8* marks = diff_gutter_get_marks(GTK_WIDGET(view), &n);
+    if (marks == NULL || sy <= 0.0) {
+        return;
+    }
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
+    n = MIN(n, (guint)gtk_text_buffer_get_line_count(buffer));
+    const gdouble x = 1.0;
+    const gdouble w = 3.0;
+    guint i = 0;
+    while (i < n) {
+        guint8 kind = marks[i] & (LINE_DIFF_ADDED | LINE_DIFF_MODIFIED);
+        GtkTextIter it;
+        gint ly = 0, lh = 0;
+        if (marks[i] & (LINE_DIFF_DELETED_ABOVE | LINE_DIFF_DELETED_BELOW)) {
+            gtk_text_buffer_get_iter_at_line(buffer, &it, (gint)i);
+            gtk_text_view_get_line_yrange(view, &it, &ly, &lh);
+            gdouble dy = ((marks[i] & LINE_DIFF_DELETED_ABOVE) ? ly : ly + lh) * sy;
+            cairo_set_source_rgb(cr, 0xf8 / 255.0, 0x51 / 255.0, 0x49 / 255.0);
+            cairo_rectangle(cr, x, MIN(dy - 1.0, height - 2.0), w, 2.0);
+            cairo_fill(cr);
+        }
+        if (kind == 0) {
+            i++;
+            continue;
+        }
+        /* Run of lines with the same mark */
+        guint j = i;
+        while (j + 1 < n && (marks[j + 1] & (LINE_DIFF_ADDED | LINE_DIFF_MODIFIED)) == kind &&
+               !(marks[j + 1] & (LINE_DIFF_DELETED_ABOVE | LINE_DIFF_DELETED_BELOW))) {
+            j++;
+        }
+        gtk_text_buffer_get_iter_at_line(buffer, &it, (gint)i);
+        gtk_text_view_get_line_yrange(view, &it, &ly, &lh);
+        gdouble y0 = ly * sy;
+        if (j != i) {
+            gtk_text_buffer_get_iter_at_line(buffer, &it, (gint)j);
+            gtk_text_view_get_line_yrange(view, &it, &ly, &lh);
+        }
+        gdouble y1 = (ly + lh) * sy;
+        if (kind & LINE_DIFF_ADDED) {
+            cairo_set_source_rgb(cr, 0x2e / 255.0, 0xa0 / 255.0, 0x43 / 255.0);
+        } else {
+            cairo_set_source_rgb(cr, 0x00 / 255.0, 0x78 / 255.0, 0xd4 / 255.0);
+        }
+        cairo_rectangle(cr, x, y0, w, MAX(2.0, y1 - y0));
+        cairo_fill(cr);
+        i = j + 1;
+    }
+}
+
 void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
                           GtkTextBuffer* buffer, GtkTextView* text_view,
                           cairo_surface_t** cache, gint* cache_w, gint* cache_h) {
@@ -332,6 +388,8 @@ void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
                         gtk_adjustment_get_page_size(vadj) * sy);
         cairo_fill(cr);
     }
+
+    draw_change_marks(cr, text_view, sy, height);
 
     /* Thin border on the viewer/editor side */
     cairo_set_source_rgb(cr, 40.0 / 255.0, 42.0 / 255.0, 44.0 / 255.0);
@@ -563,6 +621,8 @@ void editor_minimap_init(EditorTab* tab) {
         g_signal_connect(vadj, "value-changed", G_CALLBACK(on_editor_minimap_scroll), tab);
         g_signal_connect(vadj, "changed", G_CALLBACK(on_editor_minimap_adj_changed), tab);
     }
+
+    diff_gutter_add_companion(tab->view, minimap);
 
     tab->minimap = minimap;
     tab->mm_cache = NULL;

@@ -434,6 +434,7 @@ int main(int argc, char** argv) {
     app->viewer_vadj =
         gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(right_scroll));
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(minimap), on_minimap_draw, app, NULL);
+    diff_gutter_add_companion(text_view, minimap);
 
     GtkGesture* mm_click = gtk_gesture_click_new();
     g_signal_connect(mm_click, "pressed", G_CALLBACK(on_minimap_pressed), app);

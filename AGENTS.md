@@ -110,7 +110,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `.git`, debounced `schedule_refresh()`; reports through events only.
 - `diff_gutter` — git change bars in the left gutter of a text view
   (`diff_gutter_attach()` on the preview and editor views,
-  `diff_gutter_set_file()`); HEAD version read with `git_read_head_blob()`
+  `diff_gutter_set_file()`, `diff_gutter_get_marks()` for the minimap,
+  which is redrawn through `diff_gutter_add_companion()`); HEAD version read with `git_read_head_blob()`
   in a worker thread, refreshed on `APP_EVENT_GIT_STATUS_CHANGED` /
   `APP_EVENT_FILES_CHANGED`.
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.

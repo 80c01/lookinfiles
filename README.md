@@ -45,7 +45,8 @@ workspaces, in a VS Code Dark+ look.
 - A **Git Commits** tab listing the repository history with each commit's diff.
 - Git change bars in the text preview and the editor, as in VS Code: lines
   added (green), modified (blue) or deleted (red marker) since the last commit;
-  the editor updates them while typing.
+  the editor updates them while typing. The minimap shows them along its
+  left edge.
 - A minimap that mirrors the displayed layout and scrolls the view.
 - File types are detected from the content (an image or a `#!` script without
   extension, TypeScript `.ts` that is not a video); unknown binary files show a
