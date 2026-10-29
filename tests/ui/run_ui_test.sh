@@ -60,7 +60,7 @@ mkdir -p "$FIX/home/.ssh"
 printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home/.ssh/config"
 (
     cd "$FIX/work" || exit 1
-    printf '# Title\n\nSome *markdown* text.\n\n- item one\n- item two\n' > README.md
+    printf '# Title\n\nSome *markdown* text.\n\n- item one\n- item two\n\n- [x] done task\n- [/] running task\n- [-] other running task\n- [ ] todo task\n' > README.md
     printf '#include <stdio.h>\nint main(void) {\n    printf("hi\\n");\n    return 0;\n}\n' > src/main.c
     printf 'plain line 1\nplain line 2\n' > notes.txt
     printf 'R&D <draft>\n' > 'R&D.txt'
@@ -116,6 +116,7 @@ key() { xdotool key --delay 120 "$@"; }
 
 shot start
 key j j;                shot select_readme_md
+key j;                  shot preview_readme_md_tasks
 key g g;                shot gg_first_row
 key g g;                shot gg_reselect_same_row
 key space;              shot expand_docs

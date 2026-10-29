@@ -7,6 +7,8 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Markdown preview shows in-progress tasks (`- [/]` or `- [-]`) with a
+  half-filled amber box.
 - Workspace layouts (`Alt+L`): save the panel arrangement and terminal panes
   under a name, apply one from a list, and customize the default layout used
   by new workspaces and at startup.

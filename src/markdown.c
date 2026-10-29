@@ -143,6 +143,10 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
     CREATE_TAG("md_list_task_todo",
                "foreground", "#cccccc");
 
+    /* In-progress task ([/] or [-]): half-filled box, VS Code's warning amber */
+    CREATE_TAG("md_list_task_running",
+               "foreground", "#cca700");
+
     CREATE_TAG("md_link",
                "foreground", "#3794ff");
 
@@ -1158,12 +1162,17 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
         gint level = leading_spaces / 2;
         if (level > 7) level = 7;
 
-        /* Task list item: - [ ] or - [x] or * [ ] etc. */
+        /* Task list item: - [ ] todo, - [x] done, - [/] or - [-] running */
         if ((item_trim[0] == '-' || item_trim[0] == '*' || item_trim[0] == '+') &&
             item_trim[1] == ' ' && item_trim[2] == '[' &&
-            (item_trim[3] == ' ' || item_trim[3] == 'x' || item_trim[3] == 'X') &&
+            item_trim[3] != '\0' && strchr(" xX/-", item_trim[3]) &&
             item_trim[4] == ']' && item_trim[5] == ' ') {
             gboolean done = (item_trim[3] == 'x' || item_trim[3] == 'X');
+            gboolean running = (item_trim[3] == '/' || item_trim[3] == '-');
+            const gchar* box = done ? "☑\t" : running ? "◧\t" : "☐\t";
+            const gchar* box_tag = done ? "md_list_task_done"
+                                 : running ? "md_list_task_running"
+                                 : "md_list_task_todo";
             const gchar* task_text = item_trim + 6;
 
             gchar tag_name[32];
@@ -1172,8 +1181,8 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             GtkTextMark* lm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
 
             GtkTextMark* bm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            gtk_text_buffer_insert(buffer, &iter, done ? "☑\t" : "☐\t", -1);
-            apply_tag_mark(buffer, done ? "md_list_task_done" : "md_list_task_todo", bm, &iter);
+            gtk_text_buffer_insert(buffer, &iter, box, -1);
+            apply_tag_mark(buffer, box_tag, bm, &iter);
             gtk_text_buffer_delete_mark(buffer, bm);
 
             GtkTextMark* im = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);

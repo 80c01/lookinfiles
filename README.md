@@ -36,8 +36,9 @@ workspaces, in a VS Code Dark+ look.
 **Preview panel** (right), for the selected entry:
 
 - Text and source code with syntax highlighting (GtkSourceView, Dark+ colours).
-- Markdown rendered like VS Code's preview: headings, lists, task lists,
-  tables, quotes, GitHub alerts, highlighted code blocks and images.
+- Markdown rendered like VS Code's preview: headings, lists, task lists
+  (including in-progress `[/]` / `[-]` tasks), tables, quotes, GitHub alerts,
+  highlighted code blocks and images.
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
 - Images, PDF documents (poppler), video and audio with player controls.
 - Directory listings and summaries of notebooks, bookmark folders and machines.
