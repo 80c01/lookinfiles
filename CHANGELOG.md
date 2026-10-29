@@ -111,6 +111,8 @@ All notable changes to this project are listed here. The format follows
 
 ### Fixed
 
+- Saving an Emacs or Vim tab updated the modified flag of its mode line
+  (`-U:**-`, `[+]`) only after the next cursor move.
 - Moving an editor tab right / left / up / down picked a notebook in another
   row or column of the split editors.
 - Moving the last editor tab out of the preview panel showed the Git tab

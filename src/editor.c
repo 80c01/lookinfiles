@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "editor_modes.h"
 #include "dialog.h"
 #include "panels.h"
 #include "app_events.h"
@@ -341,6 +342,8 @@ void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data) {
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
     }
     editor_tab_label_update(tab);
+    /* Mode line flags (Emacs -U:**-, Vim [+]) follow saves right away */
+    editor_modes_update_status(tab);
 }
 
 void editor_apply_language(GtkTextBuffer* buffer, const gchar* name) {
