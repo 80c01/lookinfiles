@@ -197,8 +197,12 @@ static void get_cursor_position(EditorTab* tab, gint* out_line, gint* out_col, g
     if (tab == NULL || tab->buffer == NULL) return;
 
     GtkTextIter iter;
-    gtk_text_buffer_get_iter_at_mark(tab->buffer, &iter,
-                                     gtk_text_buffer_get_insert(tab->buffer));
+    if (tab->mode == EDITOR_MODE_VIM && tab->mode_state != NULL) {
+        vim_cursor_get(tab, &iter); /* not the selection end in visual mode */
+    } else {
+        gtk_text_buffer_get_iter_at_mark(tab->buffer, &iter,
+                                         gtk_text_buffer_get_insert(tab->buffer));
+    }
     gint line = gtk_text_iter_get_line(&iter) + 1;
     gint col = gtk_text_iter_get_line_offset(&iter) + 1;
     gint total_lines = gtk_text_buffer_get_line_count(tab->buffer);

@@ -126,6 +126,11 @@ key alt+Left;           shot explorer_focused
 key Return;             shot open_org_in_editor
 xdotool mousemove 600 79 click 1     # cursor on the first heading
 key shift+Right;        shot org_editor_todo_cycled
+# C-SPC sets the mark, then C-f / C-n extend the region; C-g drops it
+key alt+comma           # M-<: beginning of buffer
+xdotool keydown ctrl key --delay 120 space f f f f f n keyup ctrl
+                        shot emacs_region
+key ctrl+g;             shot emacs_region_cleared
 # Org files open in Emacs mode: C-x C-s with Ctrl held down
 xdotool keydown ctrl key --delay 120 x s keyup ctrl
                         shot org_editor_saved
@@ -143,6 +148,11 @@ xdotool mousemove 700 300 click 1    # focus the editor text
 xdotool type --delay 80 "Edited "
                         shot editor_modified
 key ctrl+s;             shot editor_saved
+xdotool mousemove 1237 783 click 1
+xdotool mousemove 1218 721 click 1   # pick "Vim"
+key Escape g g l v l l l j; shot vim_visual
+key V;                  shot vim_visual_line
+key Escape;             shot vim_visual_cancelled
 key ctrl+w;             shot editor_closed
 xdotool mousemove 150 600 click 1    # focus the explorer (empty area)
 key ctrl+w;             shot last_editor_closed   # must show Preview, not Git Commits

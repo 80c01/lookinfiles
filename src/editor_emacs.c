@@ -228,6 +228,27 @@ void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
     st->emacs_box = emacs_box;
 }
 
+/* Move point; while the mark is active the region between mark and point
+ * is the selection, so only the insert mark moves. */
+static void emacs_move_point(EditorTab* tab, EditorModeState* st, const GtkTextIter* it) {
+    if (st->emacs_mark_active && st->emacs_mark != NULL) {
+        GtkTextIter mark;
+        gtk_text_buffer_get_iter_at_mark(tab->buffer, &mark, st->emacs_mark);
+        gtk_text_buffer_select_range(tab->buffer, it, &mark);
+    } else {
+        gtk_text_buffer_place_cursor(tab->buffer, it);
+    }
+    gtk_text_view_scroll_mark_onscreen(GTK_TEXT_VIEW(tab->view), gtk_text_buffer_get_insert(tab->buffer));
+}
+
+/* Deactivate the mark and drop the visible region, keeping point. */
+static void emacs_deactivate_mark(EditorTab* tab, EditorModeState* st) {
+    st->emacs_mark_active = FALSE;
+    GtkTextIter it;
+    gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+    gtk_text_buffer_place_cursor(tab->buffer, &it);
+}
+
 gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
                                  guint keyval, GdkModifierType state) {
     gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
@@ -237,7 +258,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     /* Handle Emacs minibuffer cancel / quit */
     if (ctrl && (keyval == GDK_KEY_g || keyval == GDK_KEY_G)) {
         st->emacs_prefix = EMACS_PREFIX_NONE;
-        st->emacs_mark_active = FALSE;
+        if (st->emacs_mark_active) emacs_deactivate_mark(tab, st);
         emacs_echo(tab, "Quit");
         emacs_close_minibuffer(tab);
         return TRUE;
@@ -300,72 +321,92 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     }
 
     /* 3. Navigation */
+    /* Plain arrows/Home/End extend the region while the mark is active
+     * (GtkTextView would otherwise drop the selection). */
+    if (st->emacs_mark_active && !ctrl && !alt && !shift &&
+        (keyval == GDK_KEY_Left || keyval == GDK_KEY_Right || keyval == GDK_KEY_Up ||
+         keyval == GDK_KEY_Down || keyval == GDK_KEY_Home || keyval == GDK_KEY_End)) {
+        GtkTextIter it;
+        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        switch (keyval) {
+            case GDK_KEY_Left: gtk_text_iter_backward_cursor_position(&it); break;
+            case GDK_KEY_Right: gtk_text_iter_forward_cursor_position(&it); break;
+            case GDK_KEY_Up: gtk_text_iter_backward_line(&it); break;
+            case GDK_KEY_Down: gtk_text_iter_forward_line(&it); break;
+            case GDK_KEY_Home: gtk_text_iter_set_line_offset(&it, 0); break;
+            default:
+                if (!gtk_text_iter_ends_line(&it)) gtk_text_iter_forward_to_line_end(&it);
+                break;
+        }
+        emacs_move_point(tab, st, &it);
+        return TRUE;
+    }
     if (ctrl && (keyval == GDK_KEY_f || keyval == GDK_KEY_F)) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
         gtk_text_iter_forward_cursor_position(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (ctrl && (keyval == GDK_KEY_b || keyval == GDK_KEY_B)) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
         gtk_text_iter_backward_cursor_position(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (ctrl && (keyval == GDK_KEY_n || keyval == GDK_KEY_N)) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
         gtk_text_iter_forward_line(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (ctrl && (keyval == GDK_KEY_p || keyval == GDK_KEY_P)) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
         gtk_text_iter_backward_line(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (alt && (keyval == GDK_KEY_f || keyval == GDK_KEY_F)) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
         gtk_text_iter_forward_word_end(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (alt && (keyval == GDK_KEY_b || keyval == GDK_KEY_B)) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
         gtk_text_iter_backward_word_start(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (ctrl && (keyval == GDK_KEY_a || keyval == GDK_KEY_A)) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
         gtk_text_iter_set_line_offset(&it, 0);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (ctrl && (keyval == GDK_KEY_e || keyval == GDK_KEY_E)) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
-        gtk_text_iter_forward_to_line_end(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        if (!gtk_text_iter_ends_line(&it)) gtk_text_iter_forward_to_line_end(&it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (alt && (keyval == GDK_KEY_less || keyval == GDK_KEY_comma)) {
         GtkTextIter it;
         gtk_text_buffer_get_start_iter(tab->buffer, &it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (alt && (keyval == GDK_KEY_greater || keyval == GDK_KEY_period)) {
         GtkTextIter it;
         gtk_text_buffer_get_end_iter(tab->buffer, &it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        emacs_move_point(tab, st, &it);
         return TRUE;
     }
     if (ctrl && (keyval == GDK_KEY_v || keyval == GDK_KEY_V)) {
@@ -401,6 +442,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
             gtk_text_buffer_move_mark(tab->buffer, st->emacs_mark, &it);
         }
         st->emacs_mark_active = TRUE;
+        emacs_move_point(tab, st, &it);
         emacs_echo(tab, "Mark set");
         return TRUE;
     }
@@ -416,12 +458,13 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         /* Copy (Kill-ring-save) */
         GdkClipboard* clip = gtk_widget_get_clipboard(tab->view);
         gtk_text_buffer_copy_clipboard(tab->buffer, clip);
-        st->emacs_mark_active = FALSE;
+        emacs_deactivate_mark(tab, st);
         emacs_echo(tab, "Kill ring save");
         return TRUE;
     }
     if (ctrl && (keyval == GDK_KEY_y || keyval == GDK_KEY_Y)) {
-        /* Paste (Yank) */
+        /* Paste (Yank) at point, not over the region */
+        if (st->emacs_mark_active) emacs_deactivate_mark(tab, st);
         GdkClipboard* clip = gtk_widget_get_clipboard(tab->view);
         gtk_text_buffer_paste_clipboard(tab->buffer, clip, NULL, TRUE);
         emacs_echo(tab, "Yank");

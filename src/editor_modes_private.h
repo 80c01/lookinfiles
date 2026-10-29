@@ -106,7 +106,8 @@ typedef struct {
     gint vim_count;
     gchar* vim_last_search;
     gboolean vim_search_fwd;
-    GtkTextMark* vim_visual_start_mark;
+    GtkTextMark* vim_visual_start_mark;  /* visual mode anchor ('v' / 'V' position) */
+    GtkTextMark* vim_visual_cursor_mark; /* visual mode cursor (the selection covers it) */
 
 } EditorModeState;
 
@@ -135,5 +136,6 @@ void orgmode_editor_cycle_global_fold(EditorTab* tab);
 /* Mode state transitions used when switching modes */
 void emacs_close_minibuffer(EditorTab* tab);
 void vim_enter_submode(EditorTab* tab, VimSubMode submode);
+void vim_cursor_get(EditorTab* tab, GtkTextIter* it);
 
 #endif /* EDITOR_MODES_PRIVATE_H */

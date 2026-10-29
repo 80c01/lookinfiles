@@ -12,8 +12,74 @@ void vim_echo(EditorTab* tab, const gchar* msg) {
     }
 }
 
+static gboolean vim_is_visual(VimSubMode m) {
+    return m == VIM_SUB_VISUAL || m == VIM_SUB_VISUAL_LINE;
+}
+
+/* Cursor position for motions: in visual mode the insert mark is one end of
+ * the selection, so the cursor lives in its own mark. */
+void vim_cursor_get(EditorTab* tab, GtkTextIter* it) {
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    if (vim_is_visual(st->vim_submode) && st->vim_visual_cursor_mark != NULL) {
+        gtk_text_buffer_get_iter_at_mark(tab->buffer, it, st->vim_visual_cursor_mark);
+    } else {
+        gtk_text_buffer_get_iter_at_mark(tab->buffer, it, gtk_text_buffer_get_insert(tab->buffer));
+    }
+}
+
+/* Select from the anchor to the cursor, both included (whole lines in
+ * VISUAL LINE). The insert mark goes on the cursor side. */
+static void vim_visual_update_selection(EditorTab* tab) {
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    GtkTextIter anchor, cursor, start, end;
+    gtk_text_buffer_get_iter_at_mark(tab->buffer, &anchor, st->vim_visual_start_mark);
+    gtk_text_buffer_get_iter_at_mark(tab->buffer, &cursor, st->vim_visual_cursor_mark);
+    gboolean forward = gtk_text_iter_compare(&cursor, &anchor) >= 0;
+    start = forward ? anchor : cursor;
+    end = forward ? cursor : anchor;
+    if (st->vim_submode == VIM_SUB_VISUAL_LINE) {
+        gtk_text_iter_set_line_offset(&start, 0);
+        if (!gtk_text_iter_forward_line(&end)) gtk_text_buffer_get_end_iter(tab->buffer, &end);
+    } else if (!gtk_text_iter_ends_line(&end)) {
+        gtk_text_iter_forward_cursor_position(&end);
+    }
+    if (forward) {
+        gtk_text_buffer_select_range(tab->buffer, &end, &start);
+    } else {
+        gtk_text_buffer_select_range(tab->buffer, &start, &end);
+    }
+    gtk_text_view_scroll_mark_onscreen(GTK_TEXT_VIEW(tab->view), st->vim_visual_cursor_mark);
+}
+
+static void vim_cursor_set(EditorTab* tab, const GtkTextIter* it) {
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    if (vim_is_visual(st->vim_submode) && st->vim_visual_cursor_mark != NULL) {
+        gtk_text_buffer_move_mark(tab->buffer, st->vim_visual_cursor_mark, it);
+        vim_visual_update_selection(tab);
+    } else {
+        gtk_text_buffer_place_cursor(tab->buffer, it);
+    }
+}
+
+/* After a command that placed the insert mark itself (e.g. goto line). */
+static void vim_cursor_sync_from_insert(EditorTab* tab) {
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    if (!vim_is_visual(st->vim_submode)) return;
+    GtkTextIter it;
+    gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+    vim_cursor_set(tab, &it);
+}
+
 void vim_enter_submode(EditorTab* tab, VimSubMode submode) {
     EditorModeState* st = (EditorModeState*)tab->mode_state;
+    VimSubMode previous = st->vim_submode;
+    if (vim_is_visual(previous) && !vim_is_visual(submode)) {
+        /* Leaving visual: operators leave the cursor at the start of the text */
+        GtkTextIter start, end;
+        if (gtk_text_buffer_get_selection_bounds(tab->buffer, &start, &end)) {
+            gtk_text_buffer_place_cursor(tab->buffer, &start);
+        }
+    }
     st->vim_submode = submode;
     st->vim_pending_op = VIM_OP_NONE;
     st->vim_count = 0;
@@ -95,6 +161,21 @@ void vim_enter_submode(EditorTab* tab, VimSubMode submode) {
             gtk_widget_grab_focus(st->vim_cl_entry);
             break;
     }
+    if (vim_is_visual(submode)) {
+        GtkTextIter it;
+        if (!vim_is_visual(previous)) {
+            gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+            if (st->vim_visual_start_mark == NULL) {
+                st->vim_visual_start_mark = gtk_text_buffer_create_mark(tab->buffer, NULL, &it, TRUE);
+                st->vim_visual_cursor_mark = gtk_text_buffer_create_mark(tab->buffer, NULL, &it, TRUE);
+            } else {
+                gtk_text_buffer_move_mark(tab->buffer, st->vim_visual_start_mark, &it);
+                gtk_text_buffer_move_mark(tab->buffer, st->vim_visual_cursor_mark, &it);
+            }
+        }
+        vim_visual_update_selection(tab);
+    }
+
     editor_modes_update_status(tab);
 }
 
@@ -296,8 +377,18 @@ gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
 
     /* VISUAL / VISUAL LINE mode handling */
     if (st->vim_submode == VIM_SUB_VISUAL || st->vim_submode == VIM_SUB_VISUAL_LINE) {
+        /* v in VISUAL LINE (or V in VISUAL) switches the kind of selection */
+        if ((keyval == GDK_KEY_v && st->vim_submode == VIM_SUB_VISUAL_LINE) ||
+            (keyval == GDK_KEY_V && st->vim_submode == VIM_SUB_VISUAL)) {
+            vim_enter_submode(tab, keyval == GDK_KEY_v ? VIM_SUB_VISUAL : VIM_SUB_VISUAL_LINE);
+            return TRUE;
+        }
         if (keyval == GDK_KEY_Escape || (ctrl && keyval == GDK_KEY_bracketleft) ||
             keyval == GDK_KEY_v || keyval == GDK_KEY_V) {
+            /* Cancel: keep the cursor where it is, drop the selection */
+            GtkTextIter it;
+            vim_cursor_get(tab, &it);
+            gtk_text_buffer_place_cursor(tab->buffer, &it);
             vim_enter_submode(tab, VIM_SUB_NORMAL);
             return TRUE;
         }
@@ -387,6 +478,7 @@ gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
             } else {
                 editor_mode_goto_line(tab, 1);
             }
+            vim_cursor_sync_from_insert(tab);
             st->vim_count = 0;
             return TRUE;
         }
@@ -657,103 +749,104 @@ gboolean vim_handle_key(EditorTab* tab, EditorModeState* st,
     /* Basic Navigation: h, j, k, l */
     if (keyval == GDK_KEY_h) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gint count = st->vim_count > 0 ? st->vim_count : 1;
         for (gint i = 0; i < count; i++) {
             if (gtk_text_iter_starts_line(&it)) break;
             gtk_text_iter_backward_cursor_position(&it);
         }
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         st->vim_count = 0;
         return TRUE;
     }
     if (keyval == GDK_KEY_l) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gint count = st->vim_count > 0 ? st->vim_count : 1;
         for (gint i = 0; i < count; i++) {
             if (gtk_text_iter_ends_line(&it)) break;
             gtk_text_iter_forward_cursor_position(&it);
         }
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         st->vim_count = 0;
         return TRUE;
     }
     if (keyval == GDK_KEY_j) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gint count = st->vim_count > 0 ? st->vim_count : 1;
         for (gint i = 0; i < count; i++) {
             if (!gtk_text_iter_forward_line(&it)) break;
         }
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         st->vim_count = 0;
         return TRUE;
     }
     if (keyval == GDK_KEY_k) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gint count = st->vim_count > 0 ? st->vim_count : 1;
         for (gint i = 0; i < count; i++) {
             if (!gtk_text_iter_backward_line(&it)) break;
         }
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         st->vim_count = 0;
         return TRUE;
     }
     if (keyval == GDK_KEY_w) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gtk_text_iter_forward_word_end(&it);
         gtk_text_iter_forward_char(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         return TRUE;
     }
     if (keyval == GDK_KEY_b) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gtk_text_iter_backward_word_start(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         return TRUE;
     }
     if (keyval == GDK_KEY_e) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gtk_text_iter_forward_word_end(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         return TRUE;
     }
     if (keyval == GDK_KEY_0) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gtk_text_iter_set_line_offset(&it, 0);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         return TRUE;
     }
     if (keyval == GDK_KEY_asciicircum) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gtk_text_iter_set_line_offset(&it, 0);
         while (!gtk_text_iter_ends_line(&it) && g_unichar_isspace(gtk_text_iter_get_char(&it))) {
             gtk_text_iter_forward_char(&it);
         }
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         return TRUE;
     }
     if (keyval == GDK_KEY_dollar) {
         GtkTextIter it;
-        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        vim_cursor_get(tab, &it);
         gtk_text_iter_forward_to_line_end(&it);
-        gtk_text_buffer_place_cursor(tab->buffer, &it);
+        vim_cursor_set(tab, &it);
         return TRUE;
     }
     if (keyval == GDK_KEY_G) {
         if (st->vim_count > 0) {
             editor_mode_goto_line(tab, st->vim_count);
+            vim_cursor_sync_from_insert(tab);
         } else {
             GtkTextIter it;
             gtk_text_buffer_get_end_iter(tab->buffer, &it);
-            gtk_text_buffer_place_cursor(tab->buffer, &it);
+            vim_cursor_set(tab, &it);
         }
         st->vim_count = 0;
         return TRUE;
