@@ -14,6 +14,14 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Word document preview (`.docx`, also detected from the content):
+  headings, paragraphs, bold / italic / underline / strike, superscript,
+  bulleted and numbered lists (with Word's numbering), tables, links,
+  embedded images and equations as text, and the author. Read in the
+  background with no external tool; long documents stop after 256 KB of
+  text. `m` switches to the hex dump. The legacy binary `.doc` format is not
+  supported.
+
 - ELF preview for executables, shared libraries (`.so`) and object files
   (`.o`): architecture, type, interpreter, linked libraries, soname,
   RPATH/RUNPATH, build ID, stripped or not, and exported symbols. Only the

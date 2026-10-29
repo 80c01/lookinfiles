@@ -91,7 +91,8 @@ void dir_summary_sort(DirSummary* s, DirSummarySort sort) {
 
 gchar* dir_summary_kinds_line(const DirSummary* s) {
     guint docs = s->kinds[FILE_KIND_MARKDOWN] + s->kinds[FILE_KIND_HTML] +
-                 s->kinds[FILE_KIND_ORG] + s->kinds[FILE_KIND_PDF];
+                 s->kinds[FILE_KIND_ORG] + s->kinds[FILE_KIND_PDF] +
+                 s->kinds[FILE_KIND_DOCUMENT];
     guint other = s->kinds[FILE_KIND_TEXT] + s->kinds[FILE_KIND_BINARY] +
                   s->kinds[FILE_KIND_EXECUTABLE];
     const struct { guint n; const gchar* one; const gchar* many; } parts[] = {

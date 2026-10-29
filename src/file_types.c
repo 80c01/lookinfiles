@@ -87,6 +87,17 @@ gboolean is_pdf_file(const gchar* name) {
     return (g_ascii_strcasecmp(ext, "pdf") == 0);
 }
 
+gboolean is_word_document_file(const gchar* name) {
+    if (name == NULL) {
+        return FALSE;
+    }
+    const gchar* ext = file_extension(name);
+    return (g_ascii_strcasecmp(ext, "docx") == 0 ||
+            g_ascii_strcasecmp(ext, "docm") == 0 ||
+            g_ascii_strcasecmp(ext, "dotx") == 0 ||
+            g_ascii_strcasecmp(ext, "dotm") == 0);
+}
+
 /* Return TRUE if file name indicates a video file */
 gboolean is_video_file(const gchar* name) {
     if (name == NULL) {
@@ -138,7 +149,8 @@ gboolean is_audio_file(const gchar* name) {
 
 /* Return TRUE if file content can be rendered richly in preview pane */
 gboolean is_renderable_file(const gchar* name) {
-    return is_markdown_file(name) || is_html_file(name) || is_org_file(name) || is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name);
+    return is_markdown_file(name) || is_html_file(name) || is_org_file(name) || is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name) ||
+           is_word_document_file(name);
 }
 
 FileKind file_kind_from_name(const gchar* name) {
@@ -149,6 +161,7 @@ FileKind file_kind_from_name(const gchar* name) {
     if (is_pdf_file(name)) return FILE_KIND_PDF;
     if (is_video_file(name)) return FILE_KIND_VIDEO;
     if (is_audio_file(name)) return FILE_KIND_AUDIO;
+    if (is_word_document_file(name)) return FILE_KIND_DOCUMENT;
     return FILE_KIND_TEXT;
 }
 
@@ -159,7 +172,8 @@ gboolean file_kind_is_media(FileKind kind) {
 
 gboolean file_kind_is_renderable(FileKind kind) {
     return kind == FILE_KIND_MARKDOWN || kind == FILE_KIND_HTML ||
-           kind == FILE_KIND_ORG || kind == FILE_KIND_EXECUTABLE || file_kind_is_media(kind);
+           kind == FILE_KIND_ORG || kind == FILE_KIND_EXECUTABLE || kind == FILE_KIND_DOCUMENT ||
+           file_kind_is_media(kind);
 }
 
 /* TRUE if head starts with the given bytes at offset off */
@@ -232,6 +246,15 @@ static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_n
     }
     if (HAS(0, "%PDF-")) {
         return FILE_KIND_PDF;
+    }
+    /* ZIP: a Word document if the name says so, or if its first entries
+     * (local file names are not compressed) show the document parts */
+    if (HAS(0, "PK\x03\x04")) {
+        if (by_name == FILE_KIND_DOCUMENT || find_ci(head, len, "word/document.xml") != NULL ||
+            (find_ci(head, len, "word/") != NULL && find_ci(head, len, "[Content_Types].xml") != NULL)) {
+            return FILE_KIND_DOCUMENT;
+        }
+        return FILE_KIND_BINARY;
     }
     if (HAS(0, "fLaC") || HAS(0, "ID3") || HAS(0, "MThd") ||
         (HAS(0, "RIFF") && HAS(8, "WAVE")) ||
@@ -319,7 +342,7 @@ FileKind file_kind_detect(const gchar* name, const guchar* head, gsize len) {
     FileKind by_name = file_kind_from_name(name);
     if (head == NULL || len == 0) {
         /* Empty file: nothing to show but text */
-        return file_kind_is_media(by_name) ? FILE_KIND_TEXT : by_name;
+        return (file_kind_is_media(by_name) || by_name == FILE_KIND_DOCUMENT) ? FILE_KIND_TEXT : by_name;
     }
 
     FileKind magic = detect_binary_magic(head, len, by_name);
@@ -559,6 +582,10 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
     if (EXT_IS(".md") || EXT_IS(".markdown") || EXT_IS(".mdown") ||
         EXT_IS(".rst")) {
         return "📝";
+    }
+    /* Word documents */
+    if (is_word_document_file(name)) {
+        return "📘";
     }
     /* Emacs Org-mode */
     if (EXT_IS(".org") || EXT_IS(".org_archive")) {

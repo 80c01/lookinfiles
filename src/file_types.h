@@ -13,6 +13,8 @@ gboolean is_image_file(const gchar* name);
 gboolean is_pdf_file(const gchar* name);
 gboolean is_video_file(const gchar* name);
 gboolean is_audio_file(const gchar* name);
+/* Word document: .docx, .docm, .dotx, .dotm (not the legacy binary .doc) */
+gboolean is_word_document_file(const gchar* name);
 
 /* TRUE if the preview pane has a rich renderer for this file */
 gboolean is_renderable_file(const gchar* name);
@@ -30,8 +32,11 @@ typedef enum {
     FILE_KIND_VIDEO,
     FILE_KIND_AUDIO,
     FILE_KIND_BINARY,    /* binary content of an unknown format */
-    FILE_KIND_EXECUTABLE /* ELF: executable, shared library, object file, core dump */
+    FILE_KIND_EXECUTABLE,/* ELF: executable, shared library, object file, core dump */
+    FILE_KIND_DOCUMENT   /* word processor document (.docx); keep last (FILE_KIND_LAST) */
 } FileKind;
+
+#define FILE_KIND_LAST FILE_KIND_DOCUMENT
 
 /* Number of leading bytes file_kind_detect() needs */
 #define FILE_SNIFF_BYTES 4096

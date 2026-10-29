@@ -73,6 +73,8 @@ printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home
     cp /bin/true docs/true
     # Unknown binary format: hex dump preview (all 256 byte values, twice)
     for i in $(seq 0 511); do printf "\\$(printf %03o $((i % 256)))"; done > docs/unknown.bin
+    # Word document: headings, lists, table, image, link (tests/ui/fixtures)
+    cp "$ROOT/tests/ui/fixtures/report.docx" docs/word-report.docx
     git init -q -b master . 2>/dev/null || git init -q .
     git add README.md notes.txt
     GIT_AUTHOR_DATE="2000-01-01T00:00:00Z" GIT_COMMITTER_DATE="2000-01-01T00:00:00Z" \
@@ -171,7 +173,10 @@ key j;                  shot elf_summary
 key m;                  shot elf_raw_hex_dump
 key m
 key j;                  shot hex_dump_unknown_binary
-key k k k k             # back to plan.org
+key j;                  shot word_document
+key m;                  shot word_document_raw_hex_dump
+key m
+key k k k k k           # back to plan.org
 key question;           shot help_open
 key question;           shot help_closed
 key G;                  shot G_last_row

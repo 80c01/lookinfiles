@@ -120,6 +120,17 @@ static void test_detect_binary(void) {
     g_assert_cmpint(DETECT("data.bin", "\x01\x02\0\x03\x04"), ==, FILE_KIND_BINARY);
     /* Unknown binary signature: trust a media name (TGA has no magic number) */
     g_assert_cmpint(DETECT("pic.tga", "\0\0\x02\0\0\0\0\0"), ==, FILE_KIND_IMAGE);
+    /* ZIP archives: Word documents by name or by their first entries */
+    g_assert_cmpint(DETECT("report.docx", "PK\x03\x04\x14\0\x06\0"), ==, FILE_KIND_DOCUMENT);
+    g_assert_cmpint(DETECT("report", "PK\x03\x04\x14\0\x06\0\x08\0\0\0[Content_Types].xml...PK\x03\x04word/_rels"),
+                    ==, FILE_KIND_DOCUMENT);
+    g_assert_cmpint(DETECT("report", "PK\x03\x04\x14\0\0\0\x08\0\0\0word/document.xml"), ==, FILE_KIND_DOCUMENT);
+    g_assert_cmpint(DETECT("archive.zip", "PK\x03\x04\x14\0\0\0\x08\0\0\0src/main.c"), ==, FILE_KIND_BINARY);
+    g_assert_cmpint(DETECT("notes.odt", "PK\x03\x04\x14\0\0\0\0\0mimetype"), ==, FILE_KIND_BINARY);
+    /* A .docx that is not a ZIP is shown for what it is */
+    g_assert_cmpint(DETECT("fake.docx", "just text"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(DETECT("fake.docx", "\x01\x02\0\x03"), ==, FILE_KIND_BINARY);
+    g_assert_cmpint(file_kind_detect("empty.docx", NULL, 0), ==, FILE_KIND_TEXT);
     /* Empty files are text, whatever their name */
     g_assert_cmpint(file_kind_detect("empty.png", NULL, 0), ==, FILE_KIND_TEXT);
     g_assert_cmpint(file_kind_detect("empty.md", (const guchar*)"", 0), ==, FILE_KIND_MARKDOWN);
@@ -149,6 +160,10 @@ static void test_kind_predicates(void) {
     g_assert_false(file_kind_is_renderable(FILE_KIND_TEXT));
     g_assert_cmpint(file_kind_from_name("a.mp3"), ==, FILE_KIND_AUDIO);
     g_assert_cmpint(file_kind_from_name("a.c"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(file_kind_from_name("Report.DOCX"), ==, FILE_KIND_DOCUMENT);
+    g_assert_cmpint(file_kind_from_name("old.doc"), ==, FILE_KIND_TEXT);
+    g_assert_true(file_kind_is_renderable(FILE_KIND_DOCUMENT)); /* m: hex dump */
+    g_assert_false(file_kind_is_media(FILE_KIND_DOCUMENT));
 }
 
 int main(int argc, char** argv) {

@@ -20,6 +20,8 @@ pane_geometry:
 dir_summary:file_types
 hex_dump:
 elf_info:
+zip_reader:
+docx:zip_reader
 diff_gutter:git_utils,line_diff
 explorer_row:
 layout_store:app_paths

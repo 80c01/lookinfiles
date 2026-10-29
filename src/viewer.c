@@ -22,6 +22,10 @@
 #include "dir_preview.h"
 #include "hex_dump.h"
 #include "elf_info.h"
+#include "docx.h"
+
+/* Text shown from a Word document before it is cut (images not counted) */
+#define DOCUMENT_PREVIEW_TEXT (256 * 1024)
 
 
 void viewer_scroll_lines(AppData* app, gint lines) {
@@ -432,6 +436,7 @@ typedef struct {
     gsize hex_len;         /* bytes in hex_dump */
     gchar* elf_summary;    /* ELF files: header details (elf_info_format()) */
     gchar* elf_type;       /* "Shared library", "Relocatable object"... */
+    gchar* doc_error;      /* Word documents that could not be converted: why */
     gchar* error_msg;
 } TextPreviewTaskData;
 
@@ -447,6 +452,7 @@ static void text_preview_task_data_free(gpointer data) {
     g_free(td->hex_dump);
     g_free(td->elf_summary);
     g_free(td->elf_type);
+    g_free(td->doc_error);
     g_free(td->error_msg);
     g_free(td);
 }
@@ -493,6 +499,17 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
             }
         }
         want_hex = (td->elf_summary == NULL);
+    } else if (td->kind == FILE_KIND_DOCUMENT) {
+        /* Converted to HTML; the raw view (m) and unreadable files get the hex dump */
+        if (!td->render_raw) {
+            GError* err = NULL;
+            td->utf8_text = docx_file_to_html(td->full, DOCUMENT_PREVIEW_TEXT, &err);
+            if (td->utf8_text == NULL) {
+                td->doc_error = g_strdup(err->message);
+                g_error_free(err);
+            }
+        }
+        want_hex = (td->utf8_text == NULL);
     }
 
     if (want_hex) {
@@ -509,7 +526,8 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         }
         td->hex_len = len;
         td->hex_dump = hex_dump_format((const guchar*)contents, len, 0);
-    } else if (!file_kind_is_media(td->kind) && td->kind != FILE_KIND_EXECUTABLE) {
+    } else if (!file_kind_is_media(td->kind) && td->kind != FILE_KIND_EXECUTABLE &&
+               td->kind != FILE_KIND_DOCUMENT) {
         /* Rest of the text: to the end (the file may have grown), capped for large files */
         while (!g_cancellable_is_cancelled(cancellable)) {
             if (len == cap) {
@@ -537,7 +555,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     }
 
     if (file_kind_is_media(td->kind) || td->kind == FILE_KIND_BINARY ||
-        td->kind == FILE_KIND_EXECUTABLE) {
+        td->kind == FILE_KIND_EXECUTABLE || td->kind == FILE_KIND_DOCUMENT) {
         g_free(contents);
     } else {
         td->raw_len = len;
@@ -638,8 +656,12 @@ static void show_hex_dump(AppData* app, const TextPreviewTaskData* td) {
     gchar* size_str = g_format_size((guint64)td->fsize);
     GString* header = g_string_new(NULL);
     g_string_append_printf(header, "[ %s ] %s (%s)\n",
-                           td->kind == FILE_KIND_EXECUTABLE ? "ELF file" : "Binary file",
+                           td->kind == FILE_KIND_EXECUTABLE ? "ELF file"
+                           : td->kind == FILE_KIND_DOCUMENT ? "Word document" : "Binary file",
                            td->name, size_str);
+    if (td->doc_error != NULL) {
+        g_string_append_printf(header, "Cannot show the document: %s.\n", td->doc_error);
+    }
     if ((gint64)td->hex_len < td->fsize) {
         gchar* shown = g_format_size((guint64)td->hex_len);
         g_string_append_printf(header, "Showing the first %s.\n", shown);
@@ -720,11 +742,14 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
     }
 
     gboolean is_md = (td->kind == FILE_KIND_MARKDOWN) && !td->render_raw;
-    gboolean is_html = (td->kind == FILE_KIND_HTML) && !td->render_raw;
+    gboolean is_html = ((td->kind == FILE_KIND_HTML) && !td->render_raw) ||
+                       (td->kind == FILE_KIND_DOCUMENT && td->utf8_text != NULL);
+    gboolean is_hex = (td->kind == FILE_KIND_BINARY || td->kind == FILE_KIND_EXECUTABLE ||
+                       td->hex_dump != NULL);
     gboolean is_org = (td->kind == FILE_KIND_ORG) && !td->render_raw;
     gboolean is_rendered = is_md || is_html || is_org;
     gboolean code = FALSE;
-    if (td->kind == FILE_KIND_BINARY || td->kind == FILE_KIND_EXECUTABLE) {
+    if (is_hex) {
         apply_viewer_language(app, NULL, NULL);
         set_view_monospace(app->text_view, TRUE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
@@ -754,7 +779,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         show_elf_summary(app, td);
         return;
     }
-    if (td->kind == FILE_KIND_BINARY || td->kind == FILE_KIND_EXECUTABLE) {
+    if (is_hex) {
         show_hex_dump(app, td);
         return;
     }

@@ -42,6 +42,10 @@ and virtual workspaces, in a VS Code Dark+ look.
   highlighted code blocks and images.
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
 - Images, PDF documents (poppler), video and audio with player controls.
+- Word documents (`.docx`): headings, paragraphs, bold / italic / underline,
+  lists, tables, links, images and equations as text, read without any
+  external tool. Page layout, fonts, headers, footers, footnotes, comments and
+  text boxes are not shown; long documents stop after 256 KB of text.
 - Directory overview: totals, file types, branch and git changes, then each entry with
   its icon, size, date and git status, in the explorer's sort order, and the
   folder's README rendered below (one level read in the background, never
@@ -211,7 +215,7 @@ The same list is available inside the application with `?`.
 | `gg` / `G` | Start / end of the file |
 | `/`, then `n` / `N` | Search in the content, next / previous match |
 | `e` | Open the file in the editor (text files) |
-| `m` | Rendered / raw view (Markdown, HTML, Org), fitted / 1:1 (images), pages / text (PDF), player / file details (video, audio) |
+| `m` | Rendered / raw view (Markdown, HTML, Org), fitted / 1:1 (images), pages / text (PDF), player / file details (video, audio), document / hex dump (Word) |
 | `Space` / `p` | Play / pause the video or audio |
 | `Tab` / `Shift+Tab` | Org-mode: fold the heading / cycle the global visibility |
 | `t` | Org-mode: cycle the TODO keyword (`TODO` → `NEXT` → `DONE` → none) |
@@ -331,7 +335,7 @@ The code lives in `src/`, one module per feature, in layers checked by
 
 | Layer | Modules |
 |---|---|
-| Foundation (no widgets, unit-tested) | `file_types`, `git_utils`, `line_diff`, `pane_geometry`, `explorer_row`, `layout_store` |
+| Foundation (no widgets, unit-tested) | `file_types`, `zip_reader`, `docx`, `git_utils`, `line_diff`, `pane_geometry`, `explorer_row`, `layout_store` |
 | Shared helpers | `diff_gutter`, `tab_drop`, `app_events`, `panels`, `fs_watch`, `remote_store`, `preview_summary`, `text_style`, `theme`, `icons`, `dialog`, `image_utils`, `explorer_tree`, `tree_nav`, `markdown`, `html`, `minimap` |
 | Features | `file_list`, `file_actions`, `bookmarks`, `notes`, `remote`, `viewer`, `orgmode`, `pdf`, `video`, `audio`, `git_tab`, `editor`, `editor_modes` (+ `editor_notepad`, `editor_emacs`, `editor_vim`, `editor_org`), `terminal`, `search` |
 | Window | `topbar`, `status_bar`, `sidebar`, `help`, `workspace`, `layouts`, `ui`, `main` |

@@ -67,6 +67,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   split fractions, orientation, dedicated editor panel, terminal pane tree as
   text such as `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save, and the
   default layout of new workspaces (group `[Default]`, built-in if absent).
+- `zip_reader` — read-only ZIP archives (`zip_reader_open()`,
+  `zip_reader_read()` with a size limit; stored / deflated via GIO's raw
+  `GZlibDecompressor`, ZIP64, no encryption).
+- `docx` — Word document (`.docx`) to simple HTML for the preview
+  (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
+  text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.
 - `line_diff` — Myers line diff of a text against its previous version,
   reduced to per-line gutter marks (`LineDiffMark`: added, modified, deleted).
 - `pane_geometry` — `pane_find_neighbor()`: the pane next to another one in a

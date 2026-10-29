@@ -162,6 +162,7 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
     case FILE_KIND_AUDIO:    return g_strdup("Audio");
     case FILE_KIND_BINARY:   return g_strdup("Binary");
     case FILE_KIND_EXECUTABLE: return g_strdup("ELF");
+    case FILE_KIND_DOCUMENT: return g_strdup("Word");
     case FILE_KIND_TEXT:     break;
     }
 #ifdef HAVE_GSV

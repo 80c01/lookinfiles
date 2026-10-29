@@ -70,7 +70,7 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_dir_summary test_hex_dump test_elf_info
+TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o
@@ -84,6 +84,8 @@ TEST_DEPS_test_pane_geometry = $(BUILD_DIR)/pane_geometry.o
 TEST_DEPS_test_dir_summary = $(BUILD_DIR)/dir_summary.o $(BUILD_DIR)/file_types.o
 TEST_DEPS_test_hex_dump = $(BUILD_DIR)/hex_dump.o
 TEST_DEPS_test_elf_info = $(BUILD_DIR)/elf_info.o
+TEST_DEPS_test_zip_reader = $(BUILD_DIR)/zip_reader.o
+TEST_DEPS_test_docx = $(BUILD_DIR)/docx.o $(BUILD_DIR)/zip_reader.o
 
 .SECONDEXPANSION:
 $(BUILD_DIR)/tests/%: tests/%.c $$(TEST_DEPS_%) | $(BUILD_DIR)
