@@ -12,6 +12,7 @@
 #include "diff_view.h"
 #include "docx.h"
 #include "elf_info.h"
+#include "font_info.h"
 #include "hex_dump.h"
 #include "json_view.h"
 #include "log_view.h"
@@ -490,6 +491,90 @@ static PreviewDoc* build_log(const PreviewInput* in, GCancellable* cancellable, 
     return doc;
 }
 
+/* --- Fonts --- */
+
+static const gchar* const FONT_SAMPLE = "The quick brown fox jumps over the lazy dog";
+
+static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    g_autoptr(FontInfo) info = font_info_read_file(in->path, error);
+    if (info == NULL) {
+        return NULL;
+    }
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    gchar* size = preview_format_size(in->size);
+    const gchar* style = info->style != NULL ? info->style : font_info_weight_name(info->weight);
+    gchar* subtitle = g_strdup_printf("%s font%s%s · %s", info->format, style != NULL ? " · " : "",
+                                      style != NULL ? style : "", size);
+    preview_doc_title(doc, info->family != NULL ? info->family : in->name, subtitle);
+    g_free(subtitle);
+    g_free(size);
+    preview_doc_field(doc, "Full name", info->full_name);
+    preview_doc_field(doc, "Version", info->version);
+    preview_doc_field(doc, "Designer", info->designer);
+    preview_doc_field(doc, "Foundry", info->manufacturer);
+    if (info->n_glyphs > 0) {
+        gchar* glyphs = format_count(info->n_glyphs);
+        preview_doc_field(doc, "Glyphs", glyphs);
+        g_free(glyphs);
+    }
+    if (info->n_fonts > 1) {
+        gchar* fonts = g_strdup_printf("%u (the first one is shown)", info->n_fonts);
+        preview_doc_field(doc, "Fonts", fonts);
+        g_free(fonts);
+    }
+    preview_doc_field(doc, "Copyright", info->copyright);
+    preview_doc_field(doc, "License URL", info->license_url);
+
+    if (info->family == NULL) {
+        preview_doc_note(doc, "\nNo sample: the font names cannot be read (WOFF2 tables are compressed).");
+        return doc;
+    }
+    /* Samples in the font itself: family, weight and slant from the file */
+    preview_doc_add_font_file(doc, in->path);
+    GString* face = g_string_new(info->family);
+    const gchar* weight = font_info_weight_name(info->weight);
+    g_string_append_printf(face, ", %s", weight != NULL ? weight : "Regular");
+    if (style != NULL && (strstr(style, "Italic") != NULL || strstr(style, "Oblique") != NULL)) {
+        g_string_append(face, " Italic");
+    }
+    static const gint SIZES[] = { 12, 18, 24, 36, 48 };
+    const gchar* const LINES[] = { "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz",
+                                   "0123456789 .,;:!? &@#%$€ ()[]{} «»“”" };
+    preview_doc_section(doc, "Sample");
+    for (gsize i = 0; i < G_N_ELEMENTS(LINES); i++) {
+        gint start = preview_doc_offset(doc);
+        preview_doc_append(doc, PREVIEW_STYLE_PLAIN, LINES[i]);
+        gchar* desc = g_strdup_printf("%s 20", face->str);
+        preview_doc_add_font_span(doc, start, preview_doc_offset(doc), desc);
+        g_free(desc);
+        preview_doc_append_len(doc, "\n", 1);
+    }
+    preview_doc_append_len(doc, "\n", 1);
+    for (gsize i = 0; i < G_N_ELEMENTS(SIZES); i++) {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "%2d  ", SIZES[i]);
+        gint start = preview_doc_offset(doc);
+        preview_doc_append(doc, PREVIEW_STYLE_PLAIN, FONT_SAMPLE);
+        gchar* desc = g_strdup_printf("%s %d", face->str, SIZES[i]);
+        preview_doc_add_font_span(doc, start, preview_doc_offset(doc), desc);
+        g_free(desc);
+        preview_doc_append_len(doc, "\n", 1);
+    }
+    g_string_free(face, TRUE);
+    if (info->license != NULL) {
+        preview_doc_section(doc, "License");
+        gchar* license = g_utf8_substring(info->license, 0, 600);
+        preview_doc_append(doc, PREVIEW_STYLE_DIM, license);
+        if (g_utf8_strlen(info->license, -1) > 600) {
+            preview_doc_append(doc, PREVIEW_STYLE_DIM, "…");
+        }
+        preview_doc_append_len(doc, "\n", 1);
+        g_free(license);
+    }
+    return doc;
+}
+
 /* --- ELF executables, libraries, objects --- */
 
 static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -576,6 +661,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_desktop;
     case FILE_KIND_LOG:
         return build_log;
+    case FILE_KIND_FONT:
+        return build_font;
     default:
         return NULL;
     }

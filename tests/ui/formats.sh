@@ -23,6 +23,11 @@
     cp "$ROOT/tests/fixtures/preview/editor.desktop" 13-lookin.desktop
     cp "$ROOT/tests/fixtures/preview/app.log" 14-app.log
     cp "$ROOT/tests/fixtures/preview/photo.jpg" 15-photo.jpg
+    # Font: a system font (the step shows the hex dump of a stand-in without it)
+    for f in /usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf; do
+        [ -f "$f" ] && { cp "$f" 16-font.ttf; break; }
+    done
+    [ -f 16-font.ttf ] || printf 'not a font' > 16-font.ttf
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -47,4 +52,5 @@ format_scenario() {
     key j;              shot fmt_photo_exif
     key plus plus;      shot fmt_photo_zoomed
     key 0
+    key j;              shot fmt_font
 }

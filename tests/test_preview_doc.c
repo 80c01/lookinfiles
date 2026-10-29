@@ -86,10 +86,12 @@ static void test_image_placeholder(void) {
 static void test_font_span(void) {
     g_autoptr(PreviewDoc) doc = preview_doc_new();
     preview_doc_append(doc, PREVIEW_STYLE_PLAIN, "Sample");
-    preview_doc_add_font_span(doc, 0, 6, "DejaVu Sans", 24);
+    preview_doc_add_font_span(doc, 0, 6, "DejaVu Sans, Bold 24");
+    preview_doc_add_font_file(doc, "/tmp/font.ttf");
     const PreviewSpan* s = &g_array_index(doc->spans, PreviewSpan, 0);
     g_assert_cmpint(s->style, ==, PREVIEW_STYLE_FONT);
-    g_assert_cmpstr(s->arg, ==, "DejaVu Sans|24");
+    g_assert_cmpstr(s->arg, ==, "DejaVu Sans, Bold 24");
+    g_assert_cmpuint(doc->font_files->len, ==, 1);
 }
 
 static void test_text_width(void) {

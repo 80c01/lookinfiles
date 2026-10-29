@@ -88,23 +88,39 @@ static void ensure_tags(GtkTextBuffer* buffer) {
     gtk_text_buffer_create_tag(buffer, "pd_indent", "left-margin", 34, NULL);
 }
 
-/* Tag of a font span: "Family|size" */
-static GtkTextTag* font_tag(GtkTextBuffer* buffer, const gchar* arg) {
-    gchar* name = g_strdup_printf("pd_font:%s", arg);
+/* Tag of a font span: a Pango font description */
+static GtkTextTag* font_tag(GtkTextBuffer* buffer, const gchar* description) {
+    gchar* name = g_strdup_printf("pd_font:%s", description);
     GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buffer);
     GtkTextTag* tag = gtk_text_tag_table_lookup(table, name);
     if (tag == NULL) {
-        const gchar* bar = strrchr(arg, '|');
-        gchar* family = bar != NULL ? g_strndup(arg, (gsize)(bar - arg)) : g_strdup(arg);
-        gdouble size = bar != NULL ? g_ascii_strtod(bar + 1, NULL) : 0;
-        tag = gtk_text_buffer_create_tag(buffer, name, "family", family, NULL);
-        if (size > 0) {
-            g_object_set(tag, "size-points", size, NULL);
-        }
-        g_free(family);
+        tag = gtk_text_buffer_create_tag(buffer, name, "font", description, NULL);
     }
     g_free(name);
     return tag;
+}
+
+/* Make the fonts of font files usable by name (once per file) */
+static void load_font_files(GtkWidget* view, const GPtrArray* files) {
+    if (files == NULL) {
+        return;
+    }
+#if PANGO_VERSION_CHECK(1, 56, 0)
+    static GHashTable* loaded = NULL;
+    if (loaded == NULL) {
+        loaded = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    }
+    PangoFontMap* map = pango_context_get_font_map(gtk_widget_get_pango_context(view));
+    for (guint i = 0; i < files->len; i++) {
+        const gchar* path = g_ptr_array_index(files, i);
+        if (!g_hash_table_contains(loaded, path) && pango_font_map_add_font_file(map, path, NULL)) {
+            g_hash_table_add(loaded, g_strdup(path));
+        }
+    }
+#else
+    (void)view;
+    (void)files;
+#endif
 }
 
 /* Decode an image scaled down to max_width (NULL if it cannot be decoded) */
@@ -192,6 +208,7 @@ void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* pat
     }
     set_view_monospace(widget, doc->monospace);
     gtk_text_view_set_wrap_mode(view, doc->wrap ? GTK_WRAP_WORD_CHAR : GTK_WRAP_NONE);
+    load_font_files(widget, doc->font_files);
     gtk_text_buffer_set_text(buffer, "", 0);
     preview_doc_insert(buffer, doc);
     if (doc->scroll_to_end) {

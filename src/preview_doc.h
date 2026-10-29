@@ -48,7 +48,7 @@ typedef enum {
     PREVIEW_STYLE_CODE,      /* code block: monospace, whole-line background */
     PREVIEW_STYLE_MONO,      /* monospace run in proportional text */
     PREVIEW_STYLE_INDENT,    /* paragraph indented by one level (wrapped lines too) */
-    PREVIEW_STYLE_FONT,      /* text in a given font; arg = "Family|size in points" */
+    PREVIEW_STYLE_FONT,      /* text in a given font; arg = Pango font description */
     PREVIEW_STYLE_COUNT
 } PreviewStyle;
 
@@ -63,7 +63,7 @@ typedef struct {
     gint start;
     gint end;
     PreviewStyle style;
-    gchar* arg;           /* PREVIEW_STYLE_FONT only */
+    gchar* arg;           /* PREVIEW_STYLE_FONT only: "Family, Bold 24" */
 } PreviewSpan;
 
 /* An image at a character offset (its placeholder is one U+FFFC character) */
@@ -83,6 +83,7 @@ typedef struct {
     gboolean wrap;        /* wrap long lines (FALSE: scroll horizontally) */
     gint label_width;     /* card field labels are padded to this many columns */
     gboolean scroll_to_end; /* open scrolled to the end (logs: latest entries) */
+    GPtrArray* font_files;  /* font files the view loads before showing (font samples) */
 } PreviewDoc;
 
 /* Width of the labels of preview_doc_field() unless changed */
@@ -109,8 +110,10 @@ void preview_doc_appendf(PreviewDoc* doc, PreviewStyle style, const gchar* forma
 
 /* Style a range of characters (empty ranges and PLAIN are ignored) */
 void preview_doc_add_span(PreviewDoc* doc, gint start, gint end, PreviewStyle style);
-void preview_doc_add_font_span(PreviewDoc* doc, gint start, gint end, const gchar* family,
-                               gdouble size_pt);
+/* Text in a font: a Pango font description ("DejaVu Sans, Bold 24") */
+void preview_doc_add_font_span(PreviewDoc* doc, gint start, gint end, const gchar* description);
+/* Font file the view must load for the font spans (font previews) */
+void preview_doc_add_font_file(PreviewDoc* doc, const gchar* path);
 
 /* Inline image at the current position (keeps a reference to data) */
 void preview_doc_add_image(PreviewDoc* doc, GBytes* data, gint max_width);

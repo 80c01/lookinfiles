@@ -35,6 +35,9 @@ void preview_doc_free(PreviewDoc* doc) {
     }
     g_array_free(doc->spans, TRUE);
     g_array_free(doc->images, TRUE);
+    if (doc->font_files != NULL) {
+        g_ptr_array_free(doc->font_files, TRUE);
+    }
     g_string_free(doc->text, TRUE);
     g_free(doc);
 }
@@ -85,15 +88,19 @@ void preview_doc_add_span(PreviewDoc* doc, gint start, gint end, PreviewStyle st
     g_array_append_val(doc->spans, span);
 }
 
-void preview_doc_add_font_span(PreviewDoc* doc, gint start, gint end, const gchar* family,
-                               gdouble size_pt) {
-    if (end <= start || family == NULL) {
+void preview_doc_add_font_span(PreviewDoc* doc, gint start, gint end, const gchar* description) {
+    if (end <= start || description == NULL) {
         return;
     }
-    gchar num[G_ASCII_DTOSTR_BUF_SIZE];
-    g_ascii_dtostr(num, sizeof(num), size_pt);
-    PreviewSpan span = { start, end, PREVIEW_STYLE_FONT, g_strdup_printf("%s|%s", family, num) };
+    PreviewSpan span = { start, end, PREVIEW_STYLE_FONT, g_strdup(description) };
     g_array_append_val(doc->spans, span);
+}
+
+void preview_doc_add_font_file(PreviewDoc* doc, const gchar* path) {
+    if (doc->font_files == NULL) {
+        doc->font_files = g_ptr_array_new_with_free_func(g_free);
+    }
+    g_ptr_array_add(doc->font_files, g_strdup(path));
 }
 
 void preview_doc_add_image(PreviewDoc* doc, GBytes* data, gint max_width) {
