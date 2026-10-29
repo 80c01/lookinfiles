@@ -10,6 +10,7 @@
 #include "minimap.h"
 #include "terminal.h"
 #include "video.h"
+#include "layout_store.h"
 
 #define WS_CELL_W   32
 #define WS_ADD_W    22
@@ -486,12 +487,37 @@ void workspace_add(AppData* app) {
     /* Save the current workspace intact before creating the new one */
     workspace_save_current(app);
 
-    /* A new workspace starts from the default view, not a copy of the current one */
+    /* A new workspace starts from the default view (start directory, files
+     * view) with the panels of the default layout, never from a copy of the
+     * current workspace */
     gint new_idx = app->num_workspaces;
     init_workspace_slot(app, new_idx, app->start_dir);
+    gchar* path = layout_store_default_path();
+    SavedLayout* def = layout_store_load_default(path);
+    g_free(path);
+    VirtualLayout* ws = &app->workspaces[new_idx];
+    ws->files_vis = def->files_vis;
+    ws->preview_vis = def->preview_vis;
+    ws->term_vis = def->term_vis;
+    ws->right_orient = def->stacked ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
+    ws->main_frac = def->main_frac;
+    ws->right_frac = def->right_frac;
+    ws->editor_frac = def->editor_frac; /* no editor yet: the dedicated panel opens with them */
+    if (!ws->files_vis && !ws->preview_vis && !ws->term_vis) {
+        ws->preview_vis = TRUE;
+    }
     app->num_workspaces++;
     ws_minimap_update_size(app);
-    workspace_switch(app, new_idx);
+    workspace_switch(app, new_idx); /* opens one terminal if term_vis */
+#ifdef HAVE_VTE
+    TermLayoutNode* tree = def->term_vis ? term_layout_parse(def->terminals) : NULL;
+    if (term_layout_count(tree) > 1) {
+        term_layout_apply(app, def->terminals);
+        workspace_apply_positions(app);
+    }
+    term_layout_free(tree);
+#endif
+    saved_layout_free(def);
 }
 
 void workspace_remove(AppData* app, gint idx) {

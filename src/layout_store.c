@@ -87,41 +87,83 @@ static gboolean read_bool(GKeyFile* kf, const gchar* group, const gchar* key, gb
     return v;
 }
 
-GPtrArray* layout_store_load(const gchar* path) {
-    GPtrArray* layouts = g_ptr_array_new_with_free_func(saved_layout_free);
+static const gchar* DEFAULT_GROUP = "Default";
+
+static SavedLayout* read_layout(GKeyFile* kf, const gchar* group, const gchar* name) {
+    SavedLayout* l = saved_layout_new(name);
+    l->files_vis = read_bool(kf, group, "Explorer", TRUE);
+    l->preview_vis = read_bool(kf, group, "Preview", TRUE);
+    l->term_vis = read_bool(kf, group, "Terminal", FALSE);
+    l->editor_dedicated = read_bool(kf, group, "EditorPanel", FALSE);
+    l->stacked = read_bool(kf, group, "TerminalBelow", FALSE);
+    l->main_frac = read_frac(kf, group, "ExplorerWidth", l->main_frac);
+    l->right_frac = read_frac(kf, group, "PreviewShare", l->right_frac);
+    l->editor_frac = read_frac(kf, group, "EditorShare", l->editor_frac);
+    gchar* terms = g_key_file_get_string(kf, group, "TerminalPanes", NULL);
+    TermLayoutNode* tree = term_layout_parse(terms);
+    g_free(l->terminals);
+    l->terminals = (tree != NULL) ? term_layout_to_string(tree) : g_strdup("");
+    term_layout_free(tree);
+    g_free(terms);
+    return l;
+}
+
+static GKeyFile* open_store(const gchar* path) {
     GKeyFile* kf = g_key_file_new();
     if (path == NULL || !g_key_file_load_from_file(kf, path, G_KEY_FILE_NONE, NULL)) {
         g_key_file_free(kf);
+        return NULL;
+    }
+    return kf;
+}
+
+GPtrArray* layout_store_load(const gchar* path) {
+    GPtrArray* layouts = g_ptr_array_new_with_free_func(saved_layout_free);
+    GKeyFile* kf = open_store(path);
+    if (kf == NULL) {
         return layouts;
     }
     gchar** groups = g_key_file_get_groups(kf, NULL);
     for (gchar** g = groups; *g != NULL; g++) {
-        gchar* name = g_key_file_get_string(kf, *g, "Name", NULL);
-        if (name == NULL || name[0] == '\0' || layout_store_find(layouts, name) != NULL) {
-            g_free(name);
+        if (g_strcmp0(*g, DEFAULT_GROUP) == 0) {
             continue;
         }
-        SavedLayout* l = saved_layout_new(name);
+        gchar* name = g_key_file_get_string(kf, *g, "Name", NULL);
+        if (name != NULL && name[0] != '\0' && layout_store_find(layouts, name) == NULL) {
+            g_ptr_array_add(layouts, read_layout(kf, *g, name));
+        }
         g_free(name);
-        l->files_vis = read_bool(kf, *g, "Explorer", TRUE);
-        l->preview_vis = read_bool(kf, *g, "Preview", TRUE);
-        l->term_vis = read_bool(kf, *g, "Terminal", FALSE);
-        l->editor_dedicated = read_bool(kf, *g, "EditorPanel", FALSE);
-        l->stacked = read_bool(kf, *g, "TerminalBelow", FALSE);
-        l->main_frac = read_frac(kf, *g, "ExplorerWidth", l->main_frac);
-        l->right_frac = read_frac(kf, *g, "PreviewShare", l->right_frac);
-        l->editor_frac = read_frac(kf, *g, "EditorShare", l->editor_frac);
-        gchar* terms = g_key_file_get_string(kf, *g, "TerminalPanes", NULL);
-        TermLayoutNode* tree = term_layout_parse(terms);
-        g_free(l->terminals);
-        l->terminals = (tree != NULL) ? term_layout_to_string(tree) : g_strdup("");
-        term_layout_free(tree);
-        g_free(terms);
-        g_ptr_array_add(layouts, l);
     }
     g_strfreev(groups);
     g_key_file_free(kf);
     return layouts;
+}
+
+SavedLayout* layout_store_builtin_default(void) {
+    return saved_layout_new("Default");
+}
+
+gboolean layout_store_is_customized(const SavedLayout* l) {
+    SavedLayout* d = layout_store_builtin_default();
+    gboolean differs = l->files_vis != d->files_vis || l->preview_vis != d->preview_vis ||
+                       l->term_vis != d->term_vis || l->editor_dedicated != d->editor_dedicated ||
+                       l->stacked != d->stacked || ABS(l->main_frac - d->main_frac) > 0.0005 ||
+                       ABS(l->right_frac - d->right_frac) > 0.0005 ||
+                       ABS(l->editor_frac - d->editor_frac) > 0.0005 ||
+                       g_strcmp0(l->terminals, d->terminals) != 0;
+    saved_layout_free(d);
+    return differs;
+}
+
+SavedLayout* layout_store_load_default(const gchar* path) {
+    GKeyFile* kf = open_store(path);
+    SavedLayout* l = (kf != NULL && g_key_file_has_group(kf, DEFAULT_GROUP))
+                         ? read_layout(kf, DEFAULT_GROUP, "Default")
+                         : layout_store_builtin_default();
+    if (kf != NULL) {
+        g_key_file_free(kf);
+    }
+    return l;
 }
 
 /* Fractions with 3 decimals ("0.700", not "0.69999999999999996") */
@@ -131,21 +173,30 @@ static void set_frac(GKeyFile* kf, const gchar* group, const gchar* key, gdouble
     g_key_file_set_value(kf, group, key, text);
 }
 
-gboolean layout_store_save(const gchar* path, GPtrArray* layouts, GError** error) {
-    GKeyFile* kf = g_key_file_new();
-    for (guint i = 0; i < layouts->len; i++) {
-        const SavedLayout* l = g_ptr_array_index(layouts, i);
-        gchar* group = g_strdup_printf("Layout %u", i + 1);
+static void write_layout(GKeyFile* kf, const gchar* group, const SavedLayout* l, gboolean named) {
+    if (named) {
         g_key_file_set_string(kf, group, "Name", l->name);
-        g_key_file_set_boolean(kf, group, "Explorer", l->files_vis);
-        g_key_file_set_boolean(kf, group, "Preview", l->preview_vis);
-        g_key_file_set_boolean(kf, group, "Terminal", l->term_vis);
-        g_key_file_set_boolean(kf, group, "EditorPanel", l->editor_dedicated);
-        g_key_file_set_boolean(kf, group, "TerminalBelow", l->stacked);
-        set_frac(kf, group, "ExplorerWidth", l->main_frac);
-        set_frac(kf, group, "PreviewShare", l->right_frac);
-        set_frac(kf, group, "EditorShare", l->editor_frac);
-        g_key_file_set_string(kf, group, "TerminalPanes", l->terminals);
+    }
+    g_key_file_set_boolean(kf, group, "Explorer", l->files_vis);
+    g_key_file_set_boolean(kf, group, "Preview", l->preview_vis);
+    g_key_file_set_boolean(kf, group, "Terminal", l->term_vis);
+    g_key_file_set_boolean(kf, group, "EditorPanel", l->editor_dedicated);
+    g_key_file_set_boolean(kf, group, "TerminalBelow", l->stacked);
+    set_frac(kf, group, "ExplorerWidth", l->main_frac);
+    set_frac(kf, group, "PreviewShare", l->right_frac);
+    set_frac(kf, group, "EditorShare", l->editor_frac);
+    g_key_file_set_string(kf, group, "TerminalPanes", l->terminals);
+}
+
+gboolean layout_store_save(const gchar* path, GPtrArray* layouts, const SavedLayout* default_layout,
+                           GError** error) {
+    GKeyFile* kf = g_key_file_new();
+    if (default_layout != NULL && layout_store_is_customized(default_layout)) {
+        write_layout(kf, DEFAULT_GROUP, default_layout, FALSE);
+    }
+    for (guint i = 0; i < layouts->len; i++) {
+        gchar* group = g_strdup_printf("Layout %u", i + 1);
+        write_layout(kf, group, g_ptr_array_index(layouts, i), TRUE);
         g_free(group);
     }
     gchar* dir = g_path_get_dirname(path);

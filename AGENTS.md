@@ -59,7 +59,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `git_read_branch()`, `scan_git_statuses()` (spawns git: worker thread only).
 - `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility,
   split fractions, orientation, dedicated editor panel, terminal pane tree as
-  text such as `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save.
+  text such as `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save, and the
+  default layout of new workspaces (group `[Default]`, built-in if absent).
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can
@@ -138,10 +139,14 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `help` — cheat sheet (`?`); `KEY_HELP` must stay in sync with `README.md`.
 - `workspace` — virtual workspaces (Alt+1..8): save/apply layout snapshots,
   top-bar workspace minimap. A new workspace (Alt++) starts from the default
-  view, never from a copy of the current one or a saved layout.
+  view (start directory, files view) with the panels of the default layout
+  (`layout_store_load_default()`), never from a copy of the current one.
 - `layouts` — saved workspace layouts (Alt+L, top-bar grid button): capture
   the current workspace's panels, apply one from a list in an `AppDialog`
-  (running terminals are kept; closing extra ones asks first).
+  (running terminals are kept; closing extra ones asks first). The list starts
+  with the default layout of new workspaces, which can be replaced (save
+  under the name "Default") or reset. A click selects a row; double click,
+  Enter or Apply applies it.
 - `ui` — focus tracking and cycling, global key handler
   (`on_window_key_press()`, incl. `Ctrl+Q`), layout toggle.
 

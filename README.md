@@ -66,7 +66,7 @@ Simple graphical application to browse the file system.
 | `f` | Toggle fullscreen (works with either panel focused; `Ctrl+F` keeps its paging role) |
 | `Ctrl+Shift+L` | Stack the terminal pane below the viewer, or put it back beside it; the explorer panel stays fixed and the viewer/terminal split ratio is kept |
 | `Ctrl+T` | Terminal pane beside the viewer (needs `libvte-2.91-gtk4-dev`): `Ctrl+T` opens a pane right of the previous ones, `Ctrl+Shift+T` opens a new pane below them — each with a fresh shell in the current directory; exit the shell (`Ctrl+D` / `exit`) to close its pane |
-| `Alt+L` | Workspace layouts: save the current panel arrangement (panel sizes and placement, terminal panes) under a name, or apply a saved one from the list; new workspaces still open with the default view |
+| `Alt+L` | Workspace layouts: save the current panel arrangement (panel sizes and placement, terminal panes) under a name, or select one in the list and apply it (Apply, double click or `Enter`). The first entry is the default layout new workspaces open with: save under the name `Default` to customize it, or reset it to the built-in one |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels: explorer panel → viewer → terminal panel (cycles) |
 
 ### Explorer panel (when the list has focus)

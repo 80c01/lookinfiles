@@ -47,7 +47,7 @@ static void test_save_load(void) {
     b->files_vis = FALSE;
     b->editor_dedicated = TRUE;
     layout_store_put(layouts, b);
-    g_assert_true(layout_store_save(path, layouts, NULL)); /* creates the directory */
+    g_assert_true(layout_store_save(path, layouts, NULL, NULL)); /* creates the directory */
 
     gchar* text = NULL;
     g_assert_true(g_file_get_contents(path, &text, NULL, NULL));
@@ -92,6 +92,44 @@ static void test_save_load(void) {
     g_free(dir);
 }
 
+static void test_default(void) {
+    gchar* dir = g_dir_make_tmp("layouts-XXXXXX", NULL);
+    gchar* path = g_build_filename(dir, "layouts.ini", NULL);
+    GPtrArray* named = g_ptr_array_new_with_free_func(saved_layout_free);
+    layout_store_put(named, saved_layout_new("Work"));
+
+    /* No file: built-in default; a built-in default is not written */
+    SavedLayout* d = layout_store_load_default(path);
+    g_assert_false(layout_store_is_customized(d));
+    g_assert_true(layout_store_save(path, named, d, NULL));
+    gchar* text = NULL;
+    g_assert_true(g_file_get_contents(path, &text, NULL, NULL));
+    g_assert_null(strstr(text, "[Default]"));
+    g_free(text);
+
+    /* Customized default: saved apart, not listed among the named layouts */
+    d->term_vis = TRUE;
+    g_free(d->terminals);
+    d->terminals = g_strdup("V:0.500(T,T)");
+    g_assert_true(layout_store_is_customized(d));
+    g_assert_true(layout_store_save(path, named, d, NULL));
+    SavedLayout* back = layout_store_load_default(path);
+    g_assert_true(back->term_vis);
+    g_assert_cmpstr(back->terminals, ==, "V:0.500(T,T)");
+    GPtrArray* loaded = layout_store_load(path);
+    g_assert_cmpuint(loaded->len, ==, 1);
+    g_assert_cmpstr(((SavedLayout*)g_ptr_array_index(loaded, 0))->name, ==, "Work");
+
+    g_ptr_array_unref(loaded);
+    saved_layout_free(back);
+    saved_layout_free(d);
+    g_ptr_array_unref(named);
+    g_remove(path);
+    g_rmdir(dir);
+    g_free(path);
+    g_free(dir);
+}
+
 static void test_summary(void) {
     SavedLayout* l = saved_layout_new("x");
     gchar* s = saved_layout_summary(l);
@@ -110,6 +148,7 @@ int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/layout_store/term_tree", test_term_tree);
     g_test_add_func("/layout_store/save_load", test_save_load);
+    g_test_add_func("/layout_store/default", test_default);
     g_test_add_func("/layout_store/summary", test_summary);
     return g_test_run();
 }

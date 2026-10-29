@@ -5,7 +5,11 @@
  * from a list (layouts.c). A layout holds panel visibility, split sizes, the
  * preview/terminal orientation, the dedicated editor panel and the terminal
  * pane tree; not the folder, view or open files. Applying one never changes
- * the default view of new workspaces.
+ * the default view of new workspaces, except the default layout below.
+ *
+ * The default layout is the panel arrangement new workspaces open with. It is
+ * stored apart from the named layouts (group [Default]); without one, the
+ * built-in default applies (explorer and preview, no terminal).
  *
  * Pure data and file I/O (GKeyFile), no widgets: unit-tested in tests/. */
 #include <glib.h>
@@ -30,13 +34,22 @@ void saved_layout_free(gpointer layout);
 /* Short description for the list, e.g. "Explorer · Preview · Terminal (2 panes)". Caller frees. */
 gchar* saved_layout_summary(const SavedLayout* layout);
 
+/* Built-in default: explorer and preview side by side, no terminal */
+SavedLayout* layout_store_builtin_default(void);
+/* TRUE when the layout differs from the built-in default */
+gboolean layout_store_is_customized(const SavedLayout* layout);
+
 /* ~/.config/explorateur_fichiers/layouts.ini. Caller frees. */
 gchar* layout_store_default_path(void);
 
-/* Layouts in file order (GPtrArray of SavedLayout*, frees its items); empty
- * if the file is missing or unreadable */
+/* Named layouts in file order (GPtrArray of SavedLayout*, frees its items);
+ * empty if the file is missing or unreadable */
 GPtrArray* layout_store_load(const gchar* path);
-gboolean layout_store_save(const gchar* path, GPtrArray* layouts, GError** error);
+/* Default layout of new workspaces (the built-in one if none is saved). Caller frees. */
+SavedLayout* layout_store_load_default(const gchar* path);
+/* Write the named layouts and the default (not written when NULL or built-in) */
+gboolean layout_store_save(const gchar* path, GPtrArray* layouts, const SavedLayout* default_layout,
+                           GError** error);
 
 SavedLayout* layout_store_find(GPtrArray* layouts, const gchar* name);
 /* Add a layout (taking ownership), replacing one with the same name in place */
