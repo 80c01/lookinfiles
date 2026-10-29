@@ -878,6 +878,10 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     GtkTextBuffer* buffer = gtk_text_buffer_new(NULL);
 #endif
     gtk_text_buffer_set_text(buffer, contents, -1);
+    /* set_text leaves the cursor at the end: start editing at the top */
+    GtkTextIter start_iter;
+    gtk_text_buffer_get_start_iter(buffer, &start_iter);
+    gtk_text_buffer_place_cursor(buffer, &start_iter);
 #ifdef HAVE_GSV
     GtkWidget* view =
         gtk_source_view_new_with_buffer(GTK_SOURCE_BUFFER(buffer));
