@@ -14,7 +14,6 @@
 #include <string.h>
 
 #define FOLD_TAG "org_folded"
-#define FOLD_MARK_TAG "org_heading_folded"
 #define GLOBAL_STATE_KEY "org_editor_global_fold"
 
 /* ------------------------------------------------------------------------- */
@@ -101,17 +100,6 @@ static GtkTextTag* fold_tag(GtkTextBuffer* b) {
     return t;
 }
 
-static GtkTextTag* fold_mark_tag(GtkTextBuffer* b) {
-    GtkTextTag* t = gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(b), FOLD_MARK_TAG);
-    if (t == NULL) {
-        t = gtk_text_buffer_create_tag(b, FOLD_MARK_TAG, "paragraph-background", "#2a2d31",
-                                       "underline", PANGO_UNDERLINE_SINGLE,
-                                       "underline-rgba", &(GdkRGBA){0.31f, 0.76f, 1.0f, 0.45f},
-                                       NULL);
-    }
-    return t;
-}
-
 static void line_start_iter(GtkTextBuffer* b, gint line, GtkTextIter* it) {
     if (line >= gtk_text_buffer_get_line_count(b)) {
         gtk_text_buffer_get_end_iter(b, it);
@@ -143,31 +131,6 @@ static void show_all(EditorTab* tab) {
     gtk_text_buffer_remove_tag(tab->buffer, fold_tag(tab->buffer), &s, &e);
 }
 
-static gboolean is_fold_start(const gchar* l) {
-    if (org_heading_level(l) > 0) return TRUE;
-    while (*l == ' ' || *l == '\t') l++;
-    return *l == ':' || g_ascii_strncasecmp(l, "#+begin", 7) == 0;
-}
-
-/* Highlight the lines whose content is folded */
-static void refresh_fold_marks(EditorTab* tab, GPtrArray* lines) {
-    GtkTextBuffer* b = tab->buffer;
-    GtkTextIter s, e;
-    gtk_text_buffer_get_bounds(b, &s, &e);
-    gtk_text_buffer_remove_tag(b, fold_mark_tag(b), &s, &e);
-    gint count = MIN((gint)lines->len, gtk_text_buffer_get_line_count(b));
-    gboolean next_hidden = line_hidden(tab, 0);
-    for (gint i = 0; i + 1 < count; i++) {
-        gboolean hidden = next_hidden;
-        next_hidden = line_hidden(tab, i + 1);
-        if (!hidden && next_hidden && is_fold_start(org_line(lines, i))) {
-            line_start_iter(b, i, &s);
-            line_start_iter(b, i + 1, &e);
-            gtk_text_buffer_apply_tag(b, fold_mark_tag(b), &s, &e);
-        }
-    }
-}
-
 /* Folding hid the cursor: move it to the visible line above */
 static void fix_cursor(EditorTab* tab) {
     OrgPos pos = cursor_pos(tab);
@@ -194,7 +157,6 @@ static void reveal_cursor(EditorTab* tab) {
             set_lines_hidden(tab, p, p + 1, FALSE);
         }
     }
-    refresh_fold_marks(tab, lines);
     g_ptr_array_unref(lines);
 }
 
@@ -251,7 +213,6 @@ static gboolean cycle_at(EditorTab* tab, GPtrArray* lines, gint line) {
         set_lines_hidden(tab, line + 1, end, !any_hidden);
         org_echo(tab, any_hidden ? "SUBTREE" : "FOLDED");
     }
-    refresh_fold_marks(tab, lines);
     fix_cursor(tab);
     return TRUE;
 }
@@ -271,7 +232,6 @@ static void global_cycle(EditorTab* tab) {
     }
     static const gchar* NAMES[] = {"SHOW ALL", "OVERVIEW", "CONTENTS"};
     org_echo(tab, NAMES[state]);
-    refresh_fold_marks(tab, lines);
     fix_cursor(tab);
     g_ptr_array_unref(lines);
 }
@@ -384,7 +344,6 @@ static gboolean org_run(EditorTab* tab, OrgCmd cmd, OrgArgs* args, gboolean rema
         place_cursor(tab, pos.line, pos.col);
         st->org_revealing = FALSE;
         reveal_cursor(tab);
-        refresh_fold_marks(tab, lines);
         editor_tab_label_update(tab);
     }
     if (msg != NULL) org_echo(tab, msg);
@@ -809,7 +768,6 @@ static void sparse_tree(EditorTab* tab, GRegex* re) {
         if (!keep[i]) set_lines_hidden(tab, i, j, TRUE);
         i = j;
     }
-    refresh_fold_marks(tab, lines);
     fix_cursor(tab);
     gchar* m = re == NULL ? g_strdup_printf("%d TODO entries found", count)
                           : g_strdup_printf("%d match%s found", count, count == 1 ? "" : "es");
@@ -962,9 +920,6 @@ static gboolean do_action(EditorTab* tab, OrgAction act) {
         case ACT_SHOW_ALL: {
             show_all(tab);
             g_object_set_data(G_OBJECT(tab->buffer), GLOBAL_STATE_KEY, GINT_TO_POINTER(0));
-            GPtrArray* lines = buffer_lines(tab);
-            refresh_fold_marks(tab, lines);
-            g_ptr_array_unref(lines);
             org_echo(tab, "SHOW ALL");
             return TRUE;
         }
