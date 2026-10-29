@@ -185,6 +185,7 @@ The same list is available inside the application with `?`.
 | `o` | Cycle the sort: name, date, size, extension |
 | `Ctrl+D` | Bookmark the selected entry or the current directory |
 | `m` | Toggle the rendered / raw preview of the selected file |
+| `+` / `-` / `0` | Zoom the previewed image or PDF in / out / back to the fitted size |
 | Right click | Context menu (bookmarks, notes and remote views) |
 
 **Bookmarks view**
@@ -231,7 +232,8 @@ The same list is available inside the application with `?`.
 | `gg` / `G` | Start / end of the file |
 | `/`, then `n` / `N` | Search in the content, next / previous match |
 | `e` | Open the file in the editor (text files) |
-| `m` | Rendered / raw view (Markdown, HTML, Org), fitted / 1:1 (images), pages / text (PDF), player / file details (video, audio), document / hex dump (Word) |
+| `m` | Rendered / raw view: Markdown, HTML, Org, CSV, JSON, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
+| `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |
 | `Space` / `p` | Play / pause the video or audio |
 | `Tab` / `Shift+Tab` | Org-mode: fold the heading / cycle the global visibility |
 | `t` | Org-mode: cycle the TODO keyword (the file's `#+TODO:` keywords; `TODO` → `DONE` → none by default) |

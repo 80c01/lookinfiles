@@ -22,6 +22,7 @@
     cp "$ROOT/tests/fixtures/preview/contacts.vcf" 12-contacts.vcf
     cp "$ROOT/tests/fixtures/preview/editor.desktop" 13-lookin.desktop
     cp "$ROOT/tests/fixtures/preview/app.log" 14-app.log
+    cp "$ROOT/tests/fixtures/preview/photo.jpg" 15-photo.jpg
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -43,4 +44,7 @@ format_scenario() {
     key j;              shot fmt_contacts
     key j;              shot fmt_desktop_entry
     key j;              shot fmt_log
+    key j;              shot fmt_photo_exif
+    key plus plus;      shot fmt_photo_zoomed
+    key 0
 }

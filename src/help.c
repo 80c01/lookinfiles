@@ -53,6 +53,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Explorer panel", "d / Delete", "Move selected file or folder to the trash (asks first)"},
     {"Explorer panel", "i / I", "Toggle hidden files"},
     {"Explorer panel", "o", "Cycle sort: name, date, size, extension"},
+    {"Explorer panel", "+ / - / 0", "Zoom the previewed image or PDF in / out / to the fitted size"},
     {"Explorer panel", "?", "Show / hide this help panel"},
     /* Viewer panel */
     {"Right panel (viewer)", "j / k", "Scroll a line down / up"},
@@ -60,7 +61,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "gg / G", "Jump to the start / end of the file"},
     {"Right panel (viewer)", "/", "Search in the file (n / N: next / previous match)"},
     {"Right panel (viewer)", "e", "Open the current file in the editor (text files only)"},
-    {"Right panel (viewer)", "m", "Toggle rendered preview / raw text view (Markdown, HTML, Org, PDF, images, video, audio, Word)"},
+    {"Right panel (viewer)", "m", "Toggle rendered preview / raw view (documents, tables, JSON, diffs, logs, archives, certificates, images, PDF, video, audio)"},
+    {"Right panel (viewer)", "+ / - / 0", "Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)"},
     {"Right panel (viewer)", "Space / p", "Play / pause active video or audio preview"},
     {"Org-mode", "Tab / Shift+Tab", "In Org view: Fold/unfold heading or cycle global visibility (Overview -> Contents -> Show All)"},
     {"Org-mode", "t / Space / Return", "In Org view: Cycle TODO keyword (#+TODO, default TODO -> DONE) / toggle checkbox"},

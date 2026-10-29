@@ -337,7 +337,8 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
     td->name = g_strdup(name);
     td->full = g_strdup(full);
     td->render_raw = app->render_raw;
-    td->max_w = max_w;
+    /* Zoomed pages are at most 4096 px wide (memory: up to MAX_RENDER_PAGES textures) */
+    td->max_w = MIN((gint)(max_w * (app->preview_zoom > 0 ? app->preview_zoom : 1.0)), 4096);
 
     GTask* task = g_task_new(NULL, app->preview_cancellable, on_pdf_preview_ready, NULL);
     g_task_set_task_data(task, td, pdf_task_data_free);

@@ -1,4 +1,5 @@
 #include "file_list.h"
+#include "image_preview.h"
 #include "file_actions.h"
 #include "fs_watch.h"
 #include "panels.h"
@@ -831,6 +832,12 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
 
     if (key != GDK_KEY_z && key != GDK_KEY_t && key != GDK_KEY_b) {
         app->pending_z = FALSE;
+    }
+
+    /* Zoom of the previewed image or PDF (+ / - / 0) */
+    if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) == 0 && image_preview_zoom_key(app, keyval)) {
+        app->pending_g = FALSE;
+        return TRUE;
     }
 
     switch (key) {

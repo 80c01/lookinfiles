@@ -8,7 +8,7 @@ CC = gcc
 PKG_CONFIG ?= pkg-config
 
 CFLAGS = -Wall -Wextra -Isrc `$(PKG_CONFIG) --cflags gtk4`
-LDFLAGS = `$(PKG_CONFIG) --libs gtk4`
+LDFLAGS = `$(PKG_CONFIG) --libs gtk4` -lm
 DEPFLAGS = -MMD -MP
 
 # Optional embedded terminal: enabled automatically when vte-2.91-gtk4 is installed
@@ -70,7 +70,7 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive test_cert_view test_card_view test_log_view test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex
+TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive test_cert_view test_card_view test_log_view test_exif test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o
@@ -94,6 +94,7 @@ TEST_DEPS_test_archive = $(BUILD_DIR)/archive.o $(BUILD_DIR)/zip_reader.o
 TEST_DEPS_test_cert_view = $(BUILD_DIR)/cert_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_card_view = $(BUILD_DIR)/card_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_log_view = $(BUILD_DIR)/log_view.o $(BUILD_DIR)/preview_doc.o
+TEST_DEPS_test_exif = $(BUILD_DIR)/exif.o
 TEST_DEPS_test_csv = $(BUILD_DIR)/csv.o $(BUILD_DIR)/preview_doc.o
 # Modules of the structured previews (preview_formats and the parsers it calls)
 PREVIEW_MODULES = preview_formats preview_doc file_types hex_dump elf_info zip_reader docx csv json_view diff_view archive cert_view card_view log_view

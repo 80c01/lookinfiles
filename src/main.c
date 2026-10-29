@@ -15,6 +15,7 @@
 #include "help.h"
 #include "file_list.h"
 #include "viewer.h"
+#include "image_preview.h"
 #include "video.h"
 #include "audio.h"
 #include "minimap.h"
@@ -457,6 +458,7 @@ int main(int argc, char** argv) {
 
     /* Allocate and wire AppData */
     AppData* app = g_new0(AppData, 1);
+    app->preview_zoom = 1.0;
 
     /* Event subscriptions: before any code can emit (see app_events.h) */
     app_events_subscribe(app, APP_EVENT_CHROME_CHANGED, update_path_label);
@@ -592,6 +594,7 @@ int main(int argc, char** argv) {
     gtk_event_controller_set_propagation_phase(viewer_key_ctrl, GTK_PHASE_CAPTURE);
     g_signal_connect(viewer_key_ctrl, "key-pressed", G_CALLBACK(on_viewer_key_press), app);
     gtk_widget_add_controller(text_view, viewer_key_ctrl);
+    image_preview_attach_zoom(app, text_view);
 
     GtkGesture* viewer_click_ctrl = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(viewer_click_ctrl), GDK_BUTTON_PRIMARY);
