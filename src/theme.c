@@ -453,6 +453,18 @@ void apply_panel_borders(void) {
         "tooltip label {\n"
         "  color: #cccccc;\n"
         "}\n"
+        /* Where a tab dragged with the mouse would land */
+        /* GTK marks a whole notebook as drop target in green: the
+         * indicator below shows where the tab lands instead */
+        "notebook:drop(active) {\n"
+        "  border-color: #1b1b1b;\n"
+        "  box-shadow: none;\n"
+        "}\n"
+        ".tab-drop-indicator {\n"
+        "  background-color: rgba(0, 120, 212, 0.18);\n"
+        "  border: 2px solid rgba(0, 120, 212, 0.85);\n"
+        "  border-radius: 2px;\n"
+        "}\n"
         "#dim-window {\n"
         "  background-color: #202122;\n"
         "  border: 1px solid #0078d4;\n"

@@ -49,6 +49,9 @@ void editor_toggle_dedicated(AppData* app);
 void editor_set_dedicated(AppData* app, gboolean dedicated);
 void editor_move_tab_dedicated(AppData* app, EditorTab* tab);
 void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection dir);
+/* Accept editor tabs dragged with the mouse onto nb (an editor notebook or
+ * the preview notebook): on its tab bar, its page, or an edge to split it */
+void editor_notebook_enable_tab_drop(AppData* app, GtkWidget* nb);
 void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* target_widget);
 void on_notebook_page_reordered(GtkNotebook* notebook, GtkWidget* child,
                                 guint page_num, gpointer data);

@@ -57,7 +57,9 @@ workspaces, in a VS Code Dark+ look.
   previewed from their first 64 KB.
 
 **Editor**: files open in tabs, docked in the preview panel or in a dedicated
-panel that can be split in every direction. Each tab has its own mode:
+panel that can be split in every direction. Drag a tab with the mouse onto
+another tab bar to move it there, or near an edge of an editor to split it on
+that side (a blue area shows where it lands). Each tab has its own mode:
 **Notepad** (default), **Emacs** or **Vim**, with Org-mode editing keys.
 
 **Terminal**: embedded terminal panes (VTE), split beside or below each other;
@@ -227,6 +229,7 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 | `Alt+Enter` | Org-mode: new heading at the current level |
 | `Ctrl+Enter` / `Ctrl+Space` | Org-mode: toggle the checkbox and update the progress cookie |
 | Right click on the tab | Change the mode, show line numbers, move, split or close the tab |
+| Drag the tab | Onto a tab bar: move it there; near an editor edge: split that side |
 
 The editor mode is changed from the status bar button, the tab menu,
 `:set mode=vim|emacs|notepad` in Vim mode or `M-x vim-mode` / `emacs-mode` /
@@ -320,8 +323,8 @@ The code lives in `src/`, one module per feature, in layers checked by
 
 | Layer | Modules |
 |---|---|
-| Foundation (no widgets, unit-tested) | `file_types`, `git_utils`, `line_diff`, `explorer_row`, `layout_store` |
-| Shared helpers | `diff_gutter`, `app_events`, `panels`, `fs_watch`, `remote_store`, `preview_summary`, `text_style`, `theme`, `icons`, `dialog`, `image_utils`, `explorer_tree`, `tree_nav`, `markdown`, `html`, `minimap` |
+| Foundation (no widgets, unit-tested) | `file_types`, `git_utils`, `line_diff`, `pane_geometry`, `explorer_row`, `layout_store` |
+| Shared helpers | `diff_gutter`, `tab_drop`, `app_events`, `panels`, `fs_watch`, `remote_store`, `preview_summary`, `text_style`, `theme`, `icons`, `dialog`, `image_utils`, `explorer_tree`, `tree_nav`, `markdown`, `html`, `minimap` |
 | Features | `file_list`, `file_actions`, `bookmarks`, `notes`, `remote`, `viewer`, `orgmode`, `pdf`, `video`, `audio`, `git_tab`, `editor`, `editor_modes` (+ `editor_notepad`, `editor_emacs`, `editor_vim`, `editor_org`), `terminal`, `search` |
 | Window | `topbar`, `status_bar`, `sidebar`, `help`, `workspace`, `layouts`, `ui`, `main` |
 

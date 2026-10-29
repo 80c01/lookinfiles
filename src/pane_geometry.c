@@ -62,3 +62,53 @@ gint pane_find_neighbor(const PaneRect* cur, const PaneRect* cands, guint n_cand
     }
     return best;
 }
+
+PaneZone pane_drop_zone(const PaneRect* area, double x, double y) {
+    if (area == NULL || area->width <= 0.0 || area->height <= 0.0) {
+        return PANE_ZONE_CENTER;
+    }
+    double fx = (x - area->x) / area->width;
+    double fy = (y - area->y) / area->height;
+    PaneZone zone = PANE_ZONE_CENTER;
+    double nearest = PANE_ZONE_EDGE_FRACTION;
+    const struct {
+        PaneZone zone;
+        double dist;
+    } edges[] = {
+        {PANE_ZONE_LEFT, fx},
+        {PANE_ZONE_RIGHT, 1.0 - fx},
+        {PANE_ZONE_TOP, fy},
+        {PANE_ZONE_BOTTOM, 1.0 - fy},
+    };
+    for (guint i = 0; i < G_N_ELEMENTS(edges); i++) {
+        if (edges[i].dist < nearest) {
+            nearest = edges[i].dist;
+            zone = edges[i].zone;
+        }
+    }
+    return zone;
+}
+
+PaneRect pane_zone_rect(const PaneRect* area, PaneZone zone) {
+    PaneRect r = *area;
+    switch (zone) {
+    case PANE_ZONE_LEFT:
+        r.width = area->width / 2.0;
+        break;
+    case PANE_ZONE_RIGHT:
+        r.width = area->width / 2.0;
+        r.x = area->x + r.width;
+        break;
+    case PANE_ZONE_TOP:
+        r.height = area->height / 2.0;
+        break;
+    case PANE_ZONE_BOTTOM:
+        r.height = area->height / 2.0;
+        r.y = area->y + r.height;
+        break;
+    case PANE_ZONE_CENTER:
+    default:
+        break;
+    }
+    return r;
+}

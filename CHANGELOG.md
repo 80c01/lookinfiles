@@ -7,6 +7,9 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Editor tabs can be dragged with the mouse: onto a tab bar to move them
+  there, or near an edge of an editor to split it on that side; a blue area
+  shows where the tab lands.
 - Mouse wheel over the minimap scrolls the preview or editor view.
 - Git change bars in the gutter of the text preview and the editor, as in
   VS Code: added (green), modified (blue) and deleted (red marker) lines
@@ -45,6 +48,10 @@ All notable changes to this project are listed here. The format follows
 
 ### Fixed
 
+- Moving an editor tab right / left / up / down picked a notebook in another
+  row or column of the split editors.
+- Moving the last editor tab out of the preview panel showed the Git tab
+  instead of the preview.
 - The preview showed the previous workspace's file after switching workspaces.
 - Escape on a dialog logged a GTK critical (dialog destroyed twice).
 - Empty bookmark folders were summarised as holding one item.

@@ -69,7 +69,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   reduced to per-line gutter marks (`LineDiffMark`: added, modified, deleted).
 - `pane_geometry` — `pane_find_neighbor()`: the pane next to another one in a
   direction (same row or column only), used to move editor tabs between
-  notebooks.
+  notebooks; `pane_drop_zone()` / `pane_zone_rect()`: the side of a pane a
+  dragged tab is dropped on, and the area it would take.
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can
@@ -119,6 +120,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   which is redrawn through `diff_gutter_add_companion()`); HEAD version read with `git_read_head_blob()`
   in a worker thread, refreshed on `APP_EVENT_GIT_STATUS_CHANGED` /
   `APP_EVENT_FILES_CHANGED`.
+- `tab_drop` — editor tabs dragged with the mouse (GtkNotebook tab DnD):
+  drop target on a notebook (tab bar: insert; page: move in; edge: split),
+  translucent highlight on the window overlay, end-of-drag report
+  (`TabDragDoneFunc`) once GTK no longer uses the source notebook — remove an
+  emptied notebook only then. Knows nothing of `EditorTab`; `editor` attaches
+  it with `editor_notebook_enable_tab_drop()`.
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
 - `minimap` — scaled file overview.
 

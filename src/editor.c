@@ -7,6 +7,7 @@
 #include "minimap.h"
 #include "diff_gutter.h"
 #include "pane_geometry.h"
+#include "tab_drop.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;
@@ -32,6 +33,23 @@ GPtrArray* editor_get_all_notebooks(AppData* app) {
     return array;
 }
 
+static void on_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone zone,
+                           gint index, gpointer data);
+static void on_tab_drag_done(GtkNotebook* source, gpointer data);
+
+/* Editor tabs can be reordered and dragged to another notebook */
+static void editor_page_set_draggable(GtkNotebook* nb, GtkWidget* child) {
+    gtk_notebook_set_tab_reorderable(nb, child, TRUE);
+    gtk_notebook_set_tab_detachable(nb, child, TRUE);
+}
+
+void editor_notebook_enable_tab_drop(AppData* app, GtkWidget* nb) {
+    if (app == NULL || nb == NULL) return;
+    /* The preview notebook only takes tabs; editor notebooks also split */
+    tab_drop_attach(GTK_NOTEBOOK(nb), nb != app->notebook, on_tab_dropped,
+                    on_tab_drag_done, app);
+}
+
 static GtkWidget* create_editor_notebook(AppData* app) {
     GtkWidget* nb = gtk_notebook_new();
     gtk_widget_set_name(nb, "editor-notebook");
@@ -44,6 +62,7 @@ static GtkWidget* create_editor_notebook(AppData* app) {
                      G_CALLBACK(on_editor_switch_page_changed), app);
     g_signal_connect(nb, "page-reordered",
                      G_CALLBACK(on_notebook_page_reordered), app);
+    editor_notebook_enable_tab_drop(app, nb);
     return nb;
 }
 
@@ -81,12 +100,34 @@ static GtkNotebook* editor_tab_notebook(AppData* app, EditorTab* tab) {
     return editor_target_notebook(app);
 }
 
+static void editor_cleanup_notebook_tree(AppData* app, GtkWidget* nb_widget, GtkWidget* parent);
+
+/* Remove an empty editor notebook and the split that held it */
 static void editor_cleanup_notebook(AppData* app, GtkWidget* nb_widget) {
     if (app == NULL || nb_widget == NULL || nb_widget == app->notebook) return;
 
     GtkWidget* parent = gtk_widget_get_parent(nb_widget);
     if (parent == NULL) return;
 
+    /* A GtkPaned losing the child it last focused warns when the window focus
+     * is elsewhere (e.g. after a tab drag, which focuses the source notebook):
+     * clear the focus while the splits are rebuilt, then restore it */
+    GtkRoot* root = gtk_widget_get_root(nb_widget);
+    GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    if (focus != NULL) {
+        g_object_ref(focus);
+        gtk_root_set_focus(root, NULL);
+    }
+    editor_cleanup_notebook_tree(app, nb_widget, parent);
+    if (focus != NULL) {
+        if (gtk_widget_get_root(focus) == root) {
+            gtk_root_set_focus(root, focus);
+        }
+        g_object_unref(focus);
+    }
+}
+
+static void editor_cleanup_notebook_tree(AppData* app, GtkWidget* nb_widget, GtkWidget* parent) {
     if (GTK_IS_BOX(parent)) {
         gtk_box_remove(GTK_BOX(parent), nb_widget);
         if (app->editor_notebook == nb_widget) {
@@ -470,7 +511,21 @@ static void on_tab_label_left_click(GtkGestureClick* gesture, gint n_press,
     }
 }
 
-static void editor_move_tab_to_notebook(AppData* app, EditorTab* tab, GtkNotebook* new_nb, gint target_pos) {
+/* GTK selects the neighbour page when the current one is removed: when that
+ * lands on the Git tab of the preview notebook (no editor tab left beside
+ * it), show the preview instead */
+static void editor_after_current_removed(AppData* app, GtkNotebook* nb, gboolean was_current) {
+    if (was_current && GTK_WIDGET(nb) == app->notebook && app->git_tab_box != NULL &&
+        gtk_notebook_get_current_page(nb) == gtk_notebook_page_num(nb, app->git_tab_box)) {
+        gtk_notebook_set_current_page(nb, 0);
+    }
+}
+
+/* Move tab to new_nb at target_pos (-1: append). With cleanup, the notebook it
+ * leaves is removed when left empty; during a tab drag GTK still uses that
+ * notebook, so on_tab_drag_done() removes it later. */
+static void editor_move_tab_full(AppData* app, EditorTab* tab, GtkNotebook* new_nb,
+                                 gint target_pos, gboolean cleanup) {
     if (app == NULL || tab == NULL || new_nb == NULL) return;
     GtkNotebook* old_nb = editor_tab_notebook(app, tab);
     if (old_nb == new_nb) return;
@@ -485,7 +540,9 @@ static void editor_move_tab_to_notebook(AppData* app, EditorTab* tab, GtkNoteboo
     g_object_ref(tab->container);
     g_object_ref(tab->tab_label);
 
+    gboolean was_current = (gtk_notebook_get_current_page(old_nb) == old_page);
     gtk_notebook_remove_page(old_nb, old_page);
+    editor_after_current_removed(app, old_nb, was_current);
 
     gint new_page = -1;
     if (target_pos < 0) {
@@ -493,7 +550,7 @@ static void editor_move_tab_to_notebook(AppData* app, EditorTab* tab, GtkNoteboo
     } else {
         new_page = gtk_notebook_insert_page(new_nb, tab->container, tab->tab_label, target_pos);
     }
-    gtk_notebook_set_tab_reorderable(new_nb, tab->container, TRUE);
+    editor_page_set_draggable(new_nb, tab->container);
     gtk_notebook_set_current_page(new_nb, new_page);
 
     g_object_unref(tab->container);
@@ -502,7 +559,7 @@ static void editor_move_tab_to_notebook(AppData* app, EditorTab* tab, GtkNoteboo
     tab->nb = GTK_WIDGET(new_nb);
     app->last_focused_editor = tab;
 
-    if (GTK_WIDGET(old_nb) != app->notebook && gtk_notebook_get_n_pages(old_nb) == 0) {
+    if (cleanup && GTK_WIDGET(old_nb) != app->notebook && gtk_notebook_get_n_pages(old_nb) == 0) {
         editor_cleanup_notebook(app, GTK_WIDGET(old_nb));
     }
 
@@ -512,6 +569,11 @@ static void editor_move_tab_to_notebook(AppData* app, EditorTab* tab, GtkNoteboo
     }
     editor_minimap_update_visibility(tab);
     minimap_update_visibility(app);
+}
+
+static void editor_move_tab_to_notebook(AppData* app, EditorTab* tab, GtkNotebook* new_nb,
+                                        gint target_pos) {
+    editor_move_tab_full(app, tab, new_nb, target_pos, TRUE);
 }
 
 void editor_move_tab_dedicated(AppData* app, EditorTab* tab) {
@@ -548,6 +610,54 @@ void editor_move_tab_dedicated(AppData* app, EditorTab* tab) {
     } else {
         editor_move_tab_to_notebook(app, tab, GTK_NOTEBOOK(app->notebook), -1);
     }
+}
+
+/* Split editor notebook nb: a new empty notebook takes the `side` half of its
+ * place (PANE_ZONE_LEFT/RIGHT/TOP/BOTTOM). Returns it, or NULL. */
+static GtkWidget* editor_split_notebook(AppData* app, GtkNotebook* nb, PaneZone side) {
+    GtkWidget* parent = gtk_widget_get_parent(GTK_WIDGET(nb));
+    if (parent == NULL) return NULL;
+
+    GtkOrientation orient = (side == PANE_ZONE_RIGHT || side == PANE_ZONE_LEFT)
+        ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL;
+    GtkWidget* new_paned = gtk_paned_new(orient);
+    gtk_widget_set_hexpand(new_paned, TRUE);
+    gtk_widget_set_vexpand(new_paned, TRUE);
+    wire_paned_controllers(new_paned, app);
+
+    GtkWidget* new_nb = create_editor_notebook(app);
+    GtkWidget* cur_w = GTK_WIDGET(nb);
+    g_object_ref(cur_w);
+
+    if (GTK_IS_BOX(parent)) {
+        gtk_box_remove(GTK_BOX(parent), cur_w);
+        gtk_box_append(GTK_BOX(parent), new_paned);
+    } else if (GTK_IS_PANED(parent)) {
+        if (gtk_paned_get_start_child(GTK_PANED(parent)) == cur_w) {
+            gtk_paned_set_start_child(GTK_PANED(parent), new_paned);
+        } else {
+            gtk_paned_set_end_child(GTK_PANED(parent), new_paned);
+        }
+    }
+
+    if (side == PANE_ZONE_RIGHT || side == PANE_ZONE_BOTTOM) {
+        gtk_paned_set_start_child(GTK_PANED(new_paned), cur_w);
+        gtk_paned_set_resize_start_child(GTK_PANED(new_paned), TRUE);
+        gtk_paned_set_shrink_start_child(GTK_PANED(new_paned), TRUE);
+        gtk_paned_set_end_child(GTK_PANED(new_paned), new_nb);
+        gtk_paned_set_resize_end_child(GTK_PANED(new_paned), TRUE);
+        gtk_paned_set_shrink_end_child(GTK_PANED(new_paned), TRUE);
+    } else {
+        gtk_paned_set_start_child(GTK_PANED(new_paned), new_nb);
+        gtk_paned_set_resize_start_child(GTK_PANED(new_paned), TRUE);
+        gtk_paned_set_shrink_start_child(GTK_PANED(new_paned), TRUE);
+        gtk_paned_set_end_child(GTK_PANED(new_paned), cur_w);
+        gtk_paned_set_resize_end_child(GTK_PANED(new_paned), TRUE);
+        gtk_paned_set_shrink_end_child(GTK_PANED(new_paned), TRUE);
+    }
+    g_object_unref(cur_w);
+
+    return new_nb;
 }
 
 void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection dir) {
@@ -615,49 +725,56 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
         return;
     }
 
-    GtkWidget* parent = gtk_widget_get_parent(GTK_WIDGET(cur_nb));
-    if (parent == NULL) return;
+    PaneZone side = dir == EDITOR_MOVE_RIGHT ? PANE_ZONE_RIGHT
+                  : dir == EDITOR_MOVE_UP    ? PANE_ZONE_TOP
+                                             : PANE_ZONE_BOTTOM;
+    GtkWidget* new_nb = editor_split_notebook(app, cur_nb, side);
+    if (new_nb == NULL) return;
+    editor_move_tab_to_notebook(app, tab, GTK_NOTEBOOK(new_nb), -1);
+}
 
-    GtkOrientation orient = (dir == EDITOR_MOVE_RIGHT || dir == EDITOR_MOVE_LEFT)
-        ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL;
-    GtkWidget* new_paned = gtk_paned_new(orient);
-    gtk_widget_set_hexpand(new_paned, TRUE);
-    gtk_widget_set_vexpand(new_paned, TRUE);
-    wire_paned_controllers(new_paned, app);
-
-    GtkWidget* new_nb = create_editor_notebook(app);
-    GtkWidget* cur_w = GTK_WIDGET(cur_nb);
-    g_object_ref(cur_w);
-
-    if (GTK_IS_BOX(parent)) {
-        gtk_box_remove(GTK_BOX(parent), cur_w);
-        gtk_box_append(GTK_BOX(parent), new_paned);
-    } else if (GTK_IS_PANED(parent)) {
-        if (gtk_paned_get_start_child(GTK_PANED(parent)) == cur_w) {
-            gtk_paned_set_start_child(GTK_PANED(parent), new_paned);
-        } else {
-            gtk_paned_set_end_child(GTK_PANED(parent), new_paned);
+static EditorTab* editor_tab_of_page(AppData* app, GtkWidget* child) {
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* t = (EditorTab*)l->data;
+        if (t != NULL && t->container == child) {
+            return t;
         }
     }
+    return NULL;
+}
 
-    if (dir == EDITOR_MOVE_RIGHT || dir == EDITOR_MOVE_DOWN) {
-        gtk_paned_set_start_child(GTK_PANED(new_paned), cur_w);
-        gtk_paned_set_resize_start_child(GTK_PANED(new_paned), TRUE);
-        gtk_paned_set_shrink_start_child(GTK_PANED(new_paned), TRUE);
-        gtk_paned_set_end_child(GTK_PANED(new_paned), new_nb);
-        gtk_paned_set_resize_end_child(GTK_PANED(new_paned), TRUE);
-        gtk_paned_set_shrink_end_child(GTK_PANED(new_paned), TRUE);
-    } else {
-        gtk_paned_set_start_child(GTK_PANED(new_paned), new_nb);
-        gtk_paned_set_resize_start_child(GTK_PANED(new_paned), TRUE);
-        gtk_paned_set_shrink_start_child(GTK_PANED(new_paned), TRUE);
-        gtk_paned_set_end_child(GTK_PANED(new_paned), cur_w);
-        gtk_paned_set_resize_end_child(GTK_PANED(new_paned), TRUE);
-        gtk_paned_set_shrink_end_child(GTK_PANED(new_paned), TRUE);
+/* A tab dragged with the mouse was dropped on target (see tab_drop.h) */
+static void on_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone zone,
+                           gint index, gpointer data) {
+    AppData* app = (AppData*)data;
+    EditorTab* tab = editor_tab_of_page(app, child);
+    if (tab == NULL) return;
+    GtkNotebook* source = editor_tab_notebook(app, tab);
+
+    if (zone == PANE_ZONE_CENTER) {
+        if (source == target) {
+            gtk_notebook_reorder_child(target, child, index);
+            gtk_notebook_set_current_page(target, gtk_notebook_page_num(target, child));
+            return;
+        }
+        editor_move_tab_full(app, tab, target, index, FALSE);
+        return;
     }
-    g_object_unref(cur_w);
+    if (source == target && gtk_notebook_get_n_pages(target) <= 1) return;
+    GtkWidget* new_nb = editor_split_notebook(app, target, zone);
+    if (new_nb == NULL) return;
+    editor_move_tab_full(app, tab, GTK_NOTEBOOK(new_nb), -1, FALSE);
+}
 
-    editor_move_tab_to_notebook(app, tab, GTK_NOTEBOOK(new_nb), -1);
+/* The drag of a tab out of source has ended: remove source if left empty */
+static void on_tab_drag_done(GtkNotebook* source, gpointer data) {
+    AppData* app = (AppData*)data;
+    GtkWidget* w = GTK_WIDGET(source);
+    if (w != app->notebook && gtk_widget_get_parent(w) != NULL &&
+        gtk_notebook_get_n_pages(source) == 0) {
+        editor_cleanup_notebook(app, w);
+        editor_update_panel_visibilities(app);
+    }
 }
 
 /* GTK scrolls only until the cursor is visible: back at the start of a long
@@ -985,7 +1102,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     gtk_widget_add_controller(tab->tab_label, GTK_EVENT_CONTROLLER(tab_lclick));
 
     gint page = gtk_notebook_append_page(target_nb, container, tab->tab_label);
-    gtk_notebook_set_tab_reorderable(target_nb, container, TRUE);
+    editor_page_set_draggable(target_nb, container);
     g_object_ref(tab->container);
     g_object_ref(tab->tab_label);
     gtk_notebook_set_current_page(target_nb, page);
@@ -1116,12 +1233,7 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
         if (page_idx >= 0) {
             gboolean was_current = (gtk_notebook_get_current_page(nb) == page_idx);
             gtk_notebook_remove_page(nb, page_idx);
-            /* GTK selects the neighbour page: when closing the current tab lands on
-             * the Git tab (no editor tab left beside it), show the preview instead */
-            if (was_current && nb_widget == app->notebook && app->git_tab_box != NULL &&
-                gtk_notebook_get_current_page(nb) == gtk_notebook_page_num(nb, app->git_tab_box)) {
-                gtk_notebook_set_current_page(nb, 0);
-            }
+            editor_after_current_removed(app, nb, was_current);
         }
     }
 
@@ -1245,7 +1357,7 @@ void editor_attach_tabs(AppData* app, GList* editors) {
             GtkNotebook* nb = editor_tab_notebook(app, tab);
             if (nb != NULL) {
                 gtk_notebook_append_page(nb, tab->container, tab->tab_label);
-                gtk_notebook_set_tab_reorderable(nb, tab->container, TRUE);
+                editor_page_set_draggable(nb, tab->container);
                 editor_minimap_update_visibility(tab);
             }
         }

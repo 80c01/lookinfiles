@@ -429,6 +429,8 @@ int main(int argc, char** argv) {
                      G_CALLBACK(on_notebook_page_reordered), app);
     g_signal_connect(editor_notebook, "page-reordered",
                      G_CALLBACK(on_notebook_page_reordered), app);
+    editor_notebook_enable_tab_drop(app, notebook);
+    editor_notebook_enable_tab_drop(app, editor_notebook);
 
     app->minimap = minimap;
     app->viewer_vadj =

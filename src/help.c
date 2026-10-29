@@ -73,6 +73,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor tabs", "Shift+Right / Left", "In Org editor: cycle TODO keyword (TODO -> NEXT -> DONE -> none)"},
     {"Editor tabs", "Alt+Enter", "In Org editor: insert new heading at current level (M-RET)"},
     {"Editor tabs", "Ctrl+Enter / Space", "In Org editor: toggle checkbox [ ] <-> [X] and update progress statistics"},
+    {"Editor tabs", "Drag tab header", "Drop on a tab bar to move the tab there, near an editor edge to split that side"},
     {"Editor tabs", "Right-click tab header", "Context menu to change mode, show line numbers, move, split, or close the editor tab"},
     {"Editor tabs", "Ctrl+R / F2", "Rename current text buffer"},
     {"Editor tabs", "Ctrl+Alt+N", "Show or hide line numbers in the current editor tab (:set number / M-x display-line-numbers-mode)"},

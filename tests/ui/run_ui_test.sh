@@ -120,6 +120,21 @@ shot() {
     import -window root "$SHOTS/$(printf %02d $n)_$1.png"
 }
 key() { xdotool key --delay 120 "$@"; }
+# Drag with the left button from (x1, y1) to (x2, y2) in small steps; with a
+# name, shoot while the button is still held
+drag() {
+    xdotool mousemove "$1" "$2" mousedown 1
+    sleep 0.2
+    i=1
+    while [ $i -le 10 ]; do
+        xdotool mousemove $(($1 + ($3 - $1) * i / 10)) $(($2 + ($4 - $2) * i / 10))
+        sleep 0.05
+        i=$((i + 1))
+    done
+    xdotool mousemove $(($3 + 1)) "$4"
+    [ -n "${5:-}" ] && shot "$5"
+    xdotool mouseup 1
+}
 
 shot start
 key j j;                shot select_readme_md
@@ -199,6 +214,12 @@ xdotool mousemove 508 50 click 1     # Git Commits tab
 sleep 3;                shot git_tab_after_commit
 xdotool mousemove 420 120 click 1   # older commit: its diff replaces the newest one
                         shot git_older_commit
+# Editor tabs dragged with the mouse: an edge of an editor splits it, its tab
+# bar takes the tab (the emptied split closes)
+xdotool mousemove 347 50 click 1;   shot tab_docked   # plan.org to the editor panel
+xdotool mousemove 80 282 click 1; key Return;  shot second_editor_tab   # README.md, beside plan.org
+drag 900 50 1000 700 tab_drag_bottom_edge;     shot tab_dropped_split_down
+drag 860 359 1100 50 tab_drag_tab_bar;        shot tab_dropped_back
 key ctrl+t; sleep 1;    shot terminal
 key ctrl+q
 
