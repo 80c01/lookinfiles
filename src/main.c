@@ -25,6 +25,7 @@
 #include "notes.h"
 #include "remote.h"
 #include "orgmode.h"
+#include "diff_gutter.h"
 #include <unistd.h>
 
 static void on_window_destroy(GtkWidget* widget, gpointer data) {
@@ -64,6 +65,12 @@ static void on_viewer_click_pressed(GtkGestureClick* gesture, gint n_press,
     if (app != NULL) {
         orgmode_handle_click(app, x, y);
     }
+}
+
+/* HEAD or files changed: re-read the committed versions behind the change bars */
+static void refresh_diff_gutters(AppData* app) {
+    (void)app;
+    diff_gutter_refresh_all();
 }
 
 int main(int argc, char** argv) {
@@ -235,6 +242,8 @@ int main(int argc, char** argv) {
     gtk_text_view_set_top_margin(GTK_TEXT_VIEW(text_view), PREVIEW_TEXT_PADDING_Y);
     gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(text_view), PREVIEW_TEXT_PADDING_Y + TEXT_SCROLLBAR_CLEARANCE);
 
+    diff_gutter_attach(text_view, FALSE);
+
 #ifdef HAVE_GSV
     gtk_source_buffer_set_highlight_syntax(
         GTK_SOURCE_BUFFER(gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view))), TRUE);
@@ -355,6 +364,8 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_FILES_CHANGED, refresh_listing);
     app_events_subscribe(app, APP_EVENT_PREVIEW_STALE, viewer_reload_preview);
     app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, refresh_git_status_in_place);
+    app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, refresh_diff_gutters);
+    app_events_subscribe(app, APP_EVENT_FILES_CHANGED, refresh_diff_gutters);
     app->window = GTK_WINDOW(window);
     app->main_loop = loop;
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));

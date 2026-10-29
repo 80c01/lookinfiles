@@ -18,6 +18,7 @@
 #include "bookmarks.h"
 #include "remote.h"
 #include "orgmode.h"
+#include "diff_gutter.h"
 
 
 void viewer_scroll_lines(AppData* app, gint lines) {
@@ -639,6 +640,10 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
             g_string_append(text, td->utf8_text);
             gtk_text_buffer_set_text(app->buffer, text->str, (gint)text->len);
             g_string_free(text, TRUE);
+            /* Git change bars, for whole files only (a truncated preview has a header) */
+            if (!td->preview) {
+                diff_gutter_set_file(app->text_view, td->full);
+            }
         }
     }
 }

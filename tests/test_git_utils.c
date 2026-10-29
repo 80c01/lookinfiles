@@ -166,6 +166,46 @@ static void test_scan_statuses(Fixture* fx, gconstpointer data) {
     g_free(repo);
 }
 
+static void test_read_head_blob(Fixture* fx, gconstpointer data) {
+    (void)data;
+    gchar* git = g_find_program_in_path("git");
+    if (git == NULL) {
+        g_test_skip("git not installed");
+        return;
+    }
+    g_free(git);
+
+    gchar* repo = make_path(fx, "repo", NULL);
+    const gchar* init[] = {"init", "-q", NULL};
+    g_assert_true(run_git(repo, init));
+    gchar* file = make_path(fx, "repo/dir/a.txt", "one\n");
+    gsize len = 99;
+    g_assert_null(git_read_head_blob(file, &len)); /* no commit yet */
+    g_assert_cmpuint(len, ==, 0);
+
+    const gchar* add[] = {"add", "dir/a.txt", NULL};
+    const gchar* commit[] = {"-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "c", NULL};
+    g_assert_true(run_git(repo, add));
+    g_assert_true(run_git(repo, commit));
+    g_assert_true(g_file_set_contents(file, "two\n", -1, NULL));
+
+    gchar* blob = git_read_head_blob(file, &len);
+    g_assert_cmpstr(blob, ==, "one\n"); /* committed version, not the file on disk */
+    g_assert_cmpuint(len, ==, 4);
+    g_free(blob);
+
+    gchar* untracked = make_path(fx, "repo/dir/b.txt", "x\n");
+    g_assert_null(git_read_head_blob(untracked, &len));
+    g_free(untracked);
+
+    gchar* outside = make_path(fx, "c.txt", "x\n");
+    g_assert_null(git_read_head_blob(outside, &len));
+    g_free(outside);
+
+    g_free(file);
+    g_free(repo);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add("/git_utils/root_outside_repo", Fixture, NULL, fixture_setup, test_root_outside_repo, fixture_teardown);
@@ -173,5 +213,6 @@ int main(int argc, char** argv) {
     g_test_add("/git_utils/resolve_dir", Fixture, NULL, fixture_setup, test_resolve_dir, fixture_teardown);
     g_test_add("/git_utils/read_branch", Fixture, NULL, fixture_setup, test_read_branch, fixture_teardown);
     g_test_add("/git_utils/scan_statuses", Fixture, NULL, fixture_setup, test_scan_statuses, fixture_teardown);
+    g_test_add("/git_utils/read_head_blob", Fixture, NULL, fixture_setup, test_read_head_blob, fixture_teardown);
     return g_test_run();
 }

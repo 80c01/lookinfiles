@@ -2,6 +2,7 @@
 #include "app_events.h"
 #include "text_style.h"
 #include "file_types.h"
+#include "diff_gutter.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -259,6 +260,7 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
 
     tab->path = full_path;
     tab->name = g_path_get_basename(full_path);
+    diff_gutter_set_file(tab->view, tab->path);
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
 
     editor_tab_label_update(tab);

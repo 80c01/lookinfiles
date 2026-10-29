@@ -43,6 +43,9 @@ workspaces, in a VS Code Dark+ look.
 - Images, PDF documents (poppler), video and audio with player controls.
 - Directory listings and summaries of notebooks, bookmark folders and machines.
 - A **Git Commits** tab listing the repository history with each commit's diff.
+- Git change bars in the text preview and the editor, as in VS Code: lines
+  added (green), modified (blue) or deleted (red marker) since the last commit;
+  the editor updates them while typing.
 - A minimap that mirrors the displayed layout and scrolls the view.
 - File types are detected from the content (an image or a `#!` script without
   extension, TypeScript `.ts` that is not a video); unknown binary files show a
@@ -312,8 +315,8 @@ The code lives in `src/`, one module per feature, in layers checked by
 
 | Layer | Modules |
 |---|---|
-| Foundation (no widgets, unit-tested) | `file_types`, `git_utils`, `explorer_row`, `layout_store` |
-| Shared helpers | `app_events`, `panels`, `fs_watch`, `remote_store`, `preview_summary`, `text_style`, `theme`, `icons`, `dialog`, `image_utils`, `explorer_tree`, `tree_nav`, `markdown`, `html`, `minimap` |
+| Foundation (no widgets, unit-tested) | `file_types`, `git_utils`, `line_diff`, `explorer_row`, `layout_store` |
+| Shared helpers | `diff_gutter`, `app_events`, `panels`, `fs_watch`, `remote_store`, `preview_summary`, `text_style`, `theme`, `icons`, `dialog`, `image_utils`, `explorer_tree`, `tree_nav`, `markdown`, `html`, `minimap` |
 | Features | `file_list`, `file_actions`, `bookmarks`, `notes`, `remote`, `viewer`, `orgmode`, `pdf`, `video`, `audio`, `git_tab`, `editor`, `editor_modes` (+ `editor_notepad`, `editor_emacs`, `editor_vim`, `editor_org`), `terminal`, `search` |
 | Window | `topbar`, `status_bar`, `sidebar`, `help`, `workspace`, `layouts`, `ui`, `main` |
 

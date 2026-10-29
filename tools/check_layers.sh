@@ -14,6 +14,8 @@ status=0
 RULES="
 file_types:
 git_utils:
+line_diff:
+diff_gutter:git_utils,line_diff
 explorer_row:
 layout_store:
 text_style:app_types,file_types

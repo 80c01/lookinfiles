@@ -69,10 +69,12 @@ printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home
     convert -size 160x90 gradient:'#3a7bd5-#00d2ff' png:docs/screenshot
     printf '#!/bin/sh\n# Greet the user\necho "hello $USER"\n' > docs/tool
     git init -q -b master . 2>/dev/null || git init -q .
-    git add README.md
+    git add README.md notes.txt
     GIT_AUTHOR_DATE="2000-01-01T00:00:00Z" GIT_COMMITTER_DATE="2000-01-01T00:00:00Z" \
         git -c user.email=ui@test -c user.name=ui commit -qm init
     echo changed >> README.md
+    # Change bars since the last commit: modified, added, deleted lines
+    printf 'plain line one\nplain line 2\nadded line\n' > notes.txt
 ) || { echo "ui-test: fixture setup failed"; exit 1; }
 
 # --- Virtual display (free display number chosen by Xvfb)

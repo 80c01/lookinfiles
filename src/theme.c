@@ -239,7 +239,7 @@ void apply_panel_borders(void) {
         "  color: #ffffff;\n"
         "}\n"
         /* ---- Preview panel ---- */
-        "#viewer text, textview text, textview, #right-scroll, #right-scroll viewport,\n"
+        "#viewer text, textview text, textview, textview > border, #right-scroll, #right-scroll viewport,\n"
         "#video-scroll, #video-scroll viewport, #video-box {\n"
         "  background-color: #121314;\n"
         "  color: #d4d4d4;\n"

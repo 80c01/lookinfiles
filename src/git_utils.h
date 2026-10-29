@@ -19,4 +19,9 @@ gchar* git_read_branch(const gchar* dir);
  * from a worker thread. Caller destroys the table. */
 GHashTable* scan_git_statuses(const gchar* dir);
 
+/* Content of file path in the last commit (HEAD) of its repository, *len its
+ * size. NULL outside a repository or when HEAD has no such file (untracked,
+ * new). Spawns git: call from a worker thread. Caller frees. */
+gchar* git_read_head_blob(const gchar* path, gsize* len);
+
 #endif /* GIT_UTILS_H */

@@ -292,3 +292,40 @@ gchar* git_read_branch(const gchar* dir) {
     g_free(head_path);
     return branch;
 }
+
+gchar* git_read_head_blob(const gchar* path, gsize* len) {
+    *len = 0;
+    if (path == NULL) {
+        return NULL;
+    }
+    gchar* dir = g_path_get_dirname(path);
+    gchar* root = find_git_root(dir);
+    if (root == NULL) {
+        g_free(dir);
+        return NULL;
+    }
+    g_free(root);
+
+    /* "HEAD:./name" is resolved relative to the working directory */
+    gchar* base = g_path_get_basename(path);
+    gchar* spec = g_strconcat("HEAD:./", base, NULL);
+    gchar* argv[] = {"git", "--no-pager", "show", "--no-textconv", spec, NULL};
+    gchar* out = NULL;
+    gint exit_status = 0;
+    gsize out_len = 0;
+    GError* err = NULL;
+    gboolean ok = g_spawn_sync(dir, argv, NULL,
+                               G_SPAWN_SEARCH_PATH | G_SPAWN_STDERR_TO_DEV_NULL,
+                               NULL, NULL, &out, NULL, &exit_status, &err);
+    g_clear_error(&err);
+    g_free(spec);
+    g_free(base);
+    g_free(dir);
+    if (!ok || !g_spawn_check_wait_status(exit_status, NULL) || out == NULL) {
+        g_free(out);
+        return NULL;
+    }
+    out_len = strlen(out); /* binary blobs are cut at the first NUL: not shown as text anyway */
+    *len = out_len;
+    return out;
+}

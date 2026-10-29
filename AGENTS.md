@@ -60,11 +60,13 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   detects the kind in its worker thread (`app->viewed_kind`): decide on the
   displayed file with `viewed_kind`, not with its name.
 - `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
-  `git_read_branch()`, `scan_git_statuses()` (spawns git: worker thread only).
+  `git_read_branch()`, `scan_git_statuses()`, `git_read_head_blob()` (spawns git: worker thread only).
 - `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility,
   split fractions, orientation, dedicated editor panel, terminal pane tree as
   text such as `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save, and the
   default layout of new workspaces (group `[Default]`, built-in if absent).
+- `line_diff` — Myers line diff of a text against its previous version,
+  reduced to per-line gutter marks (`LineDiffMark`: added, modified, deleted).
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can
@@ -106,6 +108,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   padded for a monospace font (unit-tested).
 - `fs_watch` — `GFileMonitor`s on expanded directories, the previewed file and
   `.git`, debounced `schedule_refresh()`; reports through events only.
+- `diff_gutter` — git change bars in the left gutter of a text view
+  (`diff_gutter_attach()` on the preview and editor views,
+  `diff_gutter_set_file()`); HEAD version read with `git_read_head_blob()`
+  in a worker thread, refreshed on `APP_EVENT_GIT_STATUS_CHANGED` /
+  `APP_EVENT_FILES_CHANGED`.
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
 - `minimap` — scaled file overview.
 

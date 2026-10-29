@@ -5,6 +5,7 @@
 #include "text_style.h"
 #include "file_types.h"
 #include "minimap.h"
+#include "diff_gutter.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;
@@ -935,6 +936,9 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     gtk_event_controller_set_propagation_phase(pointer_ctrl, GTK_PHASE_CAPTURE);
     g_signal_connect(pointer_ctrl, "event", G_CALLBACK(on_editor_pointer_event), NULL);
     gtk_widget_add_controller(view, pointer_ctrl);
+
+    diff_gutter_attach(view, TRUE);
+    diff_gutter_set_file(view, tab->path);
 
     editor_minimap_init(tab);
 
