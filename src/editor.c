@@ -664,6 +664,28 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
     editor_move_tab_to_notebook(app, tab, GTK_NOTEBOOK(new_nb), -1);
 }
 
+/* GTK scrolls the cursor line just into view, so on the last line the bottom
+ * margin (TEXT_SCROLLBAR_CLEARANCE) stays hidden and the horizontal scrollbar
+ * covers the text: scroll to the very end instead, once GTK has scrolled */
+static gboolean scroll_view_to_end(gpointer data) {
+    GtkWidget* view = GTK_WIDGET(data);
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    if (vadj != NULL) {
+        gtk_adjustment_set_value(vadj, gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj));
+    }
+    return G_SOURCE_REMOVE;
+}
+
+static void on_editor_cursor_moved(GtkTextBuffer* buffer, const GtkTextIter* location,
+                                   GtkTextMark* mark, gpointer data) {
+    if (mark != gtk_text_buffer_get_insert(buffer) ||
+        gtk_text_iter_get_line(location) < gtk_text_buffer_get_line_count(buffer) - 1) {
+        return;
+    }
+    /* Low priority: after the redraw in which GTK scrolls to the cursor */
+    g_idle_add_full(G_PRIORITY_LOW, scroll_view_to_end, g_object_ref(data), g_object_unref);
+}
+
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     if (is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
         /* Images, PDFs, Videos, and Audio are previewed in the main viewer tab */
@@ -793,10 +815,10 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     gtk_text_view_set_editable(GTK_TEXT_VIEW(view), TRUE);
     gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(view), TRUE);
     gtk_text_view_set_left_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_X);
-    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_X);
+    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_X + TEXT_SCROLLBAR_CLEARANCE);
 #if GTK_CHECK_VERSION(3, 18, 0)
     gtk_text_view_set_top_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_Y);
-    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_Y);
+    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(view), PREVIEW_TEXT_PADDING_Y + TEXT_SCROLLBAR_CLEARANCE);
 #endif
     gchar* detect_name = g_path_get_basename(full);
     if (detect_name == NULL || detect_name[0] == '\0') {
@@ -890,6 +912,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     editor_minimap_update_visibility(tab);
 
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
+    g_signal_connect(buffer, "mark-set", G_CALLBACK(on_editor_cursor_moved), view);
     g_signal_connect(buffer, "modified-changed",
                      G_CALLBACK(on_editor_modified_changed), tab);
 

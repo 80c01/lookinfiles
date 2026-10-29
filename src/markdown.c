@@ -102,7 +102,7 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "paragraph-background", "#1c1d1f",
                "left-margin", 10,
                "indent", 16, /* every code line is a paragraph: 16 px inner padding */
-               "right-margin", 16,
+               "right-margin", 16 + TEXT_SCROLLBAR_CLEARANCE,
                "wrap-mode", GTK_WRAP_NONE,
                "pixels-inside-wrap", 0,
                "pixels-above-lines", 1,
@@ -114,7 +114,7 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
     CREATE_TAG("md_code_pad",
                "size-points", 10.0,
                "left-margin", 10,
-               "right-margin", 16,
+               "right-margin", 16 + TEXT_SCROLLBAR_CLEARANCE,
                "paragraph-background", "#1c1d1f");
 
     CREATE_TAG("md_quote",

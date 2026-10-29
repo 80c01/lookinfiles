@@ -37,6 +37,9 @@ enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 /* Text viewer padding in pixels for text/code preview */
 #define PREVIEW_TEXT_PADDING_X 10
 #define PREVIEW_TEXT_PADDING_Y 6
+/* Extra right / bottom margin so the overlay scrollbars (about 12 px wide when
+ * hovered) never cover the end of a line or the last line of the file */
+#define TEXT_SCROLLBAR_CLEARANCE 14
 
 /* Sidebar explorer view mode */
 enum {
