@@ -293,8 +293,7 @@ Vim status line with mode badge, ruler and command line (`:`, `/`, `?`).
 ## Configuration
 
 Settings and data are kept in `~/.config/lookin/`
-(`$XDG_CONFIG_HOME` is honoured). A `~/.config/explorateur_fichiers/`
-directory from before the rename is moved there on first start:
+(`$XDG_CONFIG_HOME` is honoured):
 
 | Path | Content |
 |---|---|

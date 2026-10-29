@@ -8,9 +8,8 @@ All notable changes to this project are listed here. The format follows
 ### Changed
 
 - The application is renamed **Lookin** ("look in your files"): the binary
-  is `lookin`, settings live in `~/.config/lookin/` (an existing
-  `~/.config/explorateur_fichiers/` is moved there on first start), remote
-  mounts in `~/.cache/lookin/remotes/`, and the icon diagnostic variable is
+  is `lookin`, settings live in `~/.config/lookin/`, remote mounts in
+  `~/.cache/lookin/remotes/`, and the icon diagnostic variable is
   `LOOKIN_DEBUG_ICONS`.
 
 ### Added

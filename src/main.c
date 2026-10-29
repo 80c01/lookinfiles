@@ -130,8 +130,6 @@ int main(int argc, char** argv) {
     argv[kept] = NULL;
     argc = kept;
 
-    /* Keep the data saved under the old application name */
-    app_paths_migrate_legacy();
     g_set_prgname(APP_DIR_NAME);
     g_set_application_name(APP_NAME);
 

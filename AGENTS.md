@@ -54,8 +54,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 
 **1. Foundation — pure helpers, no `AppData`, no widgets, unit-tested in `tests/`:**
 - `app_paths` — application name (`APP_NAME`), config and cache directories
-  (`app_config_dir()`, `app_cache_dir()`: never hard-code the directory name),
-  and the move of the pre-rename `explorateur_fichiers` config directory.
+  (`app_config_dir()`, `app_cache_dir()`: never hard-code the directory name).
 - `file_types` — file type detection: by name (`file_extension()`,
   `is_*_file()`, `file_kind_from_name()`) and by content (`FileKind`,
   `file_kind_detect()` on the first `FILE_SNIFF_BYTES`: magic numbers, text vs
