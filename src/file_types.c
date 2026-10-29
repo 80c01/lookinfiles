@@ -763,7 +763,10 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
         return "🐹";
     }
     /* Python */
-    if (EXT_IS(".py") || EXT_IS(".pyw") || EXT_IS(".pyx") || EXT_IS(".ipynb")) {
+    if (EXT_IS(".ipynb")) {
+        return "📓";
+    }
+    if (EXT_IS(".py") || EXT_IS(".pyw") || EXT_IS(".pyx")) {
         return "🐍";
     }
     /* Java */
@@ -880,6 +883,37 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
     if (is_video_file(name)) {
         return "🎬";
     }
+    /* Formats with a structured preview, by kind */
+    switch (file_kind_from_name(name)) {
+    case FILE_KIND_CSV:
+    case FILE_KIND_SPREADSHEET:
+        return "📊";
+    case FILE_KIND_PRESENTATION:
+        return "📽️";
+    case FILE_KIND_DOCUMENT:
+    case FILE_KIND_RTF:
+        return "📘";
+    case FILE_KIND_EBOOK:
+        return "📚";
+    case FILE_KIND_FONT:
+        return "🔤";
+    case FILE_KIND_CERTIFICATE:
+        return "🔏";
+    case FILE_KIND_CALENDAR:
+        return "📅";
+    case FILE_KIND_CONTACT:
+        return "👤";
+    case FILE_KIND_LOG:
+        return "📜";
+    case FILE_KIND_DIFF:
+        return "🩹";
+    case FILE_KIND_DESKTOP:
+        return "🚀";
+    case FILE_KIND_MANPAGE:
+        return "📖";
+    default:
+        break;
+    }
     /* Archives */
     if (EXT_IS(".tar") || EXT_IS(".gz") || EXT_IS(".tgz") || EXT_IS(".zip") ||
         EXT_IS(".rar") || EXT_IS(".7z") || EXT_IS(".xz") || EXT_IS(".bz2") ||
@@ -906,11 +940,6 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
     /* Build files */
     if (EXT_IS(".cmake") || EXT_IS(".mk")) {
         return "🛠️";
-    }
-    /* Text / Plain */
-    if (EXT_IS(".txt") || EXT_IS(".log") || EXT_IS(".csv") ||
-        EXT_IS(".tsv") || EXT_IS(".diff") || EXT_IS(".patch")) {
-        return "📄";
     }
     return "📄";
 #undef EXT_IS

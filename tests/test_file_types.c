@@ -65,6 +65,12 @@ static void test_icons(void) {
     g_assert_cmpstr(file_icon("main.rs", FALSE), ==, "🦀");
     g_assert_cmpstr(file_icon("script.py", FALSE), ==, "🐍");
     g_assert_cmpstr(file_icon("unknown.zzz", FALSE), ==, "📄");
+    g_assert_cmpstr(file_icon("data.csv", FALSE), ==, "📊");
+    g_assert_cmpstr(file_icon("analysis.ipynb", FALSE), ==, "📓");
+    g_assert_cmpstr(file_icon("deck.pptx", FALSE), ==, "📽️");
+    g_assert_cmpstr(file_icon("server.crt", FALSE), ==, "🔏");
+    g_assert_cmpstr(file_icon("ls.1.gz", FALSE), ==, "📖");
+    g_assert_cmpstr(file_icon("app.log", FALSE), ==, "📜");
 }
 
 #define DETECT(name, lit) file_kind_detect((name), (const guchar*)(lit), sizeof(lit) - 1)
