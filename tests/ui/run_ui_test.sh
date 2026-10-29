@@ -260,6 +260,9 @@ key ctrl+v j l;         shot vim_visual_block
 key Escape 2 d;         shot vim_operator_pending
 key Escape q a;         shot vim_recording
 key q
+key colon w Tab;        shot vim_wildmenu          # every match listed, first one inserted
+key Tab Tab;            shot vim_wildmenu_cycled
+key ctrl+u Escape
 key colon
 xdotool type --delay 60 "%s/Second/2nd/"
                         shot vim_cmdline

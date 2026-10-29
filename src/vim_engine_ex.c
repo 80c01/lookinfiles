@@ -284,60 +284,46 @@ static const gchar* const OPTION_NAMES[] = {
     "number", "shiftwidth", "smartcase", "tabstop", "textwidth", "wrap", "wrapscan", NULL,
 };
 
-static gchar* complete_from(const gchar* typed, const gchar* const* names) {
-    GPtrArray* m = g_ptr_array_new();
-    for (gint i = 0; names[i] != NULL; i++) {
-        if (g_str_has_prefix(names[i], typed)) g_ptr_array_add(m, (gpointer)names[i]);
-    }
-    gchar* result = NULL;
-    if (m->len == 1) {
-        result = g_strdup(g_ptr_array_index(m, 0));
-    } else if (m->len > 1) {
-        /* Longest common prefix, else the match after the typed one */
-        const gchar* first = g_ptr_array_index(m, 0);
-        gsize n = strlen(first);
-        for (guint i = 1; i < m->len; i++) {
-            const gchar* s = g_ptr_array_index(m, i);
-            gsize k = 0;
-            while (k < n && s[k] == first[k]) k++;
-            n = k;
-        }
-        if (n > strlen(typed)) {
-            result = g_strndup(first, n);
-        } else {
-            guint pick = 0;
-            for (guint i = 0; i < m->len; i++) {
-                if (strcmp(g_ptr_array_index(m, i), typed) == 0) pick = (i + 1) % m->len;
-            }
-            result = g_strdup(g_ptr_array_index(m, pick));
-        }
-    }
-    g_ptr_array_free(m, TRUE);
-    return result;
+static gint compare_names(gconstpointer a, gconstpointer b) {
+    return strcmp(*(const gchar* const*)a, *(const gchar* const*)b);
 }
 
-gchar* vim_engine_cmdline_complete(VimEngine* e, const gchar* text) {
+/* Names starting with typed, each with prefix in front (sorted later) */
+static void add_matches(GPtrArray* out, const gchar* prefix, const gchar* typed, const gchar* const* names) {
+    for (gint i = 0; names[i] != NULL; i++) {
+        if (prefix[0] != '\0' && g_str_has_prefix(names[i], prefix)) continue; /* no "nono..." */
+        if (g_str_has_prefix(names[i], typed)) g_ptr_array_add(out, g_strconcat(prefix, names[i], NULL));
+    }
+}
+
+gchar** vim_engine_cmdline_matches(VimEngine* e, const gchar* text, gsize* word_start) {
     (void)e;
+    if (word_start != NULL) *word_start = 0;
     if (text == NULL) return NULL;
     const gchar* space = strrchr(text, ' ');
+    const gchar* word;
+    GPtrArray* m = g_ptr_array_new();
     if (g_str_has_prefix(text, "set ") || g_str_has_prefix(text, "se ")) {
-        const gchar* word = space + 1;
-        gboolean no = g_str_has_prefix(word, "no");
-        gchar* c = complete_from(no ? word + 2 : word, OPTION_NAMES);
-        if (c == NULL) return NULL;
-        gchar* r = g_strdup_printf("%.*s%s%s", (gint)(word - text), text, no ? "no" : "", c);
-        g_free(c);
-        return r;
+        word = space + 1;
+        add_matches(m, "", word, OPTION_NAMES);
+        if (g_str_has_prefix(word, "no")) add_matches(m, "no", word + 2, OPTION_NAMES);
+    } else if (space == NULL) {
+        /* Command name after an optional range */
+        word = text;
+        while (*word != '\0' && !g_ascii_isalpha(*word)) word++;
+        add_matches(m, "", word, vim_ex_command_names());
+    } else {
+        g_ptr_array_free(m, TRUE);
+        return NULL;
     }
-    if (space != NULL) return NULL;
-    /* Command name after an optional range */
-    const gchar* p = text;
-    while (*p != '\0' && !g_ascii_isalpha(*p)) p++;
-    gchar* c = complete_from(p, vim_ex_command_names());
-    if (c == NULL) return NULL;
-    gchar* r = g_strdup_printf("%.*s%s", (gint)(p - text), text, c);
-    g_free(c);
-    return r;
+    if (m->len == 0) {
+        g_ptr_array_free(m, TRUE);
+        return NULL;
+    }
+    g_ptr_array_sort(m, compare_names);
+    g_ptr_array_add(m, NULL);
+    if (word_start != NULL) *word_start = (gsize)(word - text);
+    return (gchar**)g_ptr_array_free(m, FALSE);
 }
 
 /* ------------------------------------------------------------------------- */

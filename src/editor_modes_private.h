@@ -121,6 +121,12 @@ typedef struct {
     gboolean vim_cl_ctrl_r;          /* Ctrl-R typed in the command line: a register follows */
     gboolean vim_echo_sticky;        /* a multi-line listing is shown until the next key */
     gchar* vim_hist_prefix;          /* text typed before browsing the history */
+    GtkWidget* vim_wild_label;       /* wildmenu: Tab completions shown over the statusline */
+    gchar** vim_wild;                /* completions of the word being completed, or NULL */
+    gchar* vim_wild_orig;            /* command line text before the first Tab */
+    gsize vim_wild_at;               /* byte offset of the completed word in it */
+    gint vim_wild_index;             /* shown completion, -1 for the original text */
+    gint vim_wild_first;             /* first completion visible in the wildmenu */
     GCancellable* vim_clip_cancel;
     GdkClipboard* vim_clipboard;     /* watched for text copied elsewhere ("+ register) */
     gulong vim_clip_handler;

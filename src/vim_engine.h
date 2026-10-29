@@ -101,9 +101,10 @@ void vim_engine_cmdline_changed(VimEngine* engine, const gchar* text);
 /* History entry older (dir < 0) or newer (dir > 0) than the shown one,
  * starting with prefix; NULL when there is none */
 gchar* vim_engine_cmdline_history(VimEngine* engine, gint dir, const gchar* prefix);
-/* Complete the Ex command line text (command names, :set options);
- * NULL when nothing matches */
-gchar* vim_engine_cmdline_complete(VimEngine* engine, const gchar* text);
+/* Completions of the last word of the Ex command line text (command
+ * names, :set options), sorted; the word starts at *word_start. NULL when
+ * nothing matches, else free with g_strfreev() */
+gchar** vim_engine_cmdline_matches(VimEngine* engine, const gchar* text, gsize* word_start);
 
 /* Run one Ex command line (without the leading ':') */
 void vim_engine_ex(VimEngine* engine, const gchar* line);

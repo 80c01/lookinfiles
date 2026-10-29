@@ -68,7 +68,82 @@ static const gchar* badge_class(VimMode m) {
     }
 }
 
+/* ------------------------------------------------------------------------- */
+/* Wildmenu: Tab completion of the Ex command line                           */
+/* ------------------------------------------------------------------------- */
+
+static void wild_free(EditorModeState* st) {
+    g_clear_pointer(&st->vim_wild, g_strfreev);
+    g_clear_pointer(&st->vim_wild_orig, g_free);
+}
+
+/* Hide the completion list and show the statusline again */
+static void wild_clear(EditorModeState* st) {
+    if (st->vim_wild == NULL) return;
+    wild_free(st);
+    for (GtkWidget* c = gtk_widget_get_first_child(st->vim_statusline); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        gtk_widget_set_visible(c, c != st->vim_wild_label);
+    }
+}
+
+static gint text_width(GtkWidget* w, const gchar* text) {
+    PangoLayout* layout = gtk_widget_create_pango_layout(w, text);
+    gint width = 0;
+    pango_layout_get_pixel_size(layout, &width, NULL);
+    g_object_unref(layout);
+    return width;
+}
+
+/* The completions that fit in the statusline, around the current one
+ * ("<" / ">" mark more on either side), the current one highlighted */
+static void wild_render(EditorModeState* st) {
+    GtkWidget* label = st->vim_wild_label;
+    gint n = (gint)g_strv_length(st->vim_wild);
+    gint cur = MAX(st->vim_wild_index, 0);
+    gint* widths = g_new(gint, n);
+    for (gint i = 0; i < n; i++) widths[i] = text_width(label, st->vim_wild[i]);
+    gint sep = text_width(label, "  ");
+    gint arrow = text_width(label, "< ");
+    gint avail = gtk_widget_get_width(st->vim_statusline) - 24;
+    if (avail <= 0) avail = G_MAXINT / 2; /* not allocated yet: show everything */
+
+    if (cur < st->vim_wild_first) st->vim_wild_first = cur;
+    gint first = st->vim_wild_first;
+    for (;;) {
+        gint w = first > 0 ? arrow : 0;
+        for (gint i = first; i <= cur; i++) w += widths[i] + (i > first ? sep : 0);
+        if (cur < n - 1) w += arrow;
+        if (w <= avail || first == cur) break;
+        first++;
+    }
+    st->vim_wild_first = first;
+    gint used = first > 0 ? arrow : 0;
+    gint last = first;
+    for (gint i = first; i < n; i++) {
+        gint more = (i < n - 1) ? arrow : 0;
+        gint w = used + widths[i] + (i > first ? sep : 0);
+        if (i > cur && w + more > avail) break;
+        used = w;
+        last = i;
+    }
+    g_free(widths);
+
+    GString* markup = g_string_new(first > 0 ? "&lt; " : "");
+    for (gint i = first; i <= last; i++) {
+        if (i > first) g_string_append(markup, "  ");
+        gchar* item = i == st->vim_wild_index
+            ? g_markup_printf_escaped("<span background=\"#d7af00\" foreground=\"#000000\">%s</span>", st->vim_wild[i])
+            : g_markup_escape_text(st->vim_wild[i], -1);
+        g_string_append(markup, item);
+        g_free(item);
+    }
+    if (last < n - 1) g_string_append(markup, " &gt;");
+    gtk_label_set_markup(GTK_LABEL(label), markup->str);
+    g_string_free(markup, TRUE);
+}
+
 static void hide_cmdline(EditorModeState* st) {
+    wild_clear(st);
     gtk_widget_set_visible(st->vim_cl_prompt, FALSE);
     gtk_widget_set_visible(st->vim_cl_entry, FALSE);
     gtk_widget_set_visible(st->vim_cl_echo, TRUE);
@@ -126,6 +201,7 @@ static void on_cmdline_open(gpointer data, gunichar prompt, const gchar* text) {
     st->vim_cl_setting = FALSE;
     g_free(st->vim_hist_prefix);
     st->vim_hist_prefix = NULL;
+    wild_clear(st);
     gtk_widget_set_visible(st->vim_cl_echo, FALSE);
     gtk_widget_set_visible(st->vim_cl_prompt, TRUE);
     gtk_widget_set_visible(st->vim_cl_entry, TRUE);
@@ -437,6 +513,7 @@ static void on_cl_changed(GtkEditable* editable, gpointer data) {
     if (st->vim_cl_setting || st->vim == NULL) return;
     g_free(st->vim_hist_prefix);
     st->vim_hist_prefix = NULL;
+    wild_clear(st);
     vim_engine_cmdline_changed(st->vim, gtk_editable_get_text(editable));
 }
 
@@ -445,6 +522,41 @@ static void set_entry_text(EditorModeState* st, const gchar* text) {
     gtk_editable_set_text(GTK_EDITABLE(st->vim_cl_entry), text);
     gtk_editable_set_position(GTK_EDITABLE(st->vim_cl_entry), -1);
     st->vim_cl_setting = FALSE;
+}
+
+/* Tab: complete with the first match and list them all (Vim's wildmenu);
+ * the next Tabs / Shift+Tabs cycle through them, then back to the text typed */
+static void wild_complete(EditorModeState* st, const gchar* text, gboolean back) {
+    if (st->vim_wild == NULL) {
+        gsize at = 0;
+        gchar** matches = vim_engine_cmdline_matches(st->vim, text, &at);
+        if (matches == NULL) return;
+        if (matches[1] == NULL) {
+            gchar* line = g_strdup_printf("%.*s%s", (gint)at, text, matches[0]);
+            set_entry_text(st, line);
+            g_free(line);
+            g_strfreev(matches);
+            return;
+        }
+        st->vim_wild = matches;
+        st->vim_wild_orig = g_strdup(text);
+        st->vim_wild_at = at;
+        st->vim_wild_index = -1;
+        st->vim_wild_first = 0;
+        for (GtkWidget* c = gtk_widget_get_first_child(st->vim_statusline); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+            gtk_widget_set_visible(c, c == st->vim_wild_label);
+        }
+    }
+    gint n = (gint)g_strv_length(st->vim_wild);
+    gint i = st->vim_wild_index + (back ? -1 : 1);
+    if (i >= n) i = -1;
+    else if (i < -1) i = n - 1;
+    st->vim_wild_index = i;
+    gchar* line = i < 0 ? g_strdup(st->vim_wild_orig)
+                        : g_strdup_printf("%.*s%s", (gint)st->vim_wild_at, st->vim_wild_orig, st->vim_wild[i]);
+    set_entry_text(st, line);
+    g_free(line);
+    wild_render(st);
 }
 
 static gboolean on_cl_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
@@ -498,11 +610,13 @@ static gboolean on_cl_key(GtkEventControllerKey* ctrl, guint keyval, guint keyco
         return TRUE;
     }
     if (ctrl_down && keyval == GDK_KEY_u) {
+        wild_clear(st);
         set_entry_text(st, "");
         vim_engine_cmdline_changed(st->vim, "");
         return TRUE;
     }
     if (keyval == GDK_KEY_Up || keyval == GDK_KEY_Down || (ctrl_down && (keyval == GDK_KEY_p || keyval == GDK_KEY_n))) {
+        wild_clear(st);
         if (st->vim_hist_prefix == NULL) st->vim_hist_prefix = g_strdup(text);
         gboolean older = keyval == GDK_KEY_Up || keyval == GDK_KEY_p;
         gchar* h = vim_engine_cmdline_history(st->vim, older ? -1 : 1, st->vim_hist_prefix);
@@ -514,13 +628,7 @@ static gboolean on_cl_key(GtkEventControllerKey* ctrl, guint keyval, guint keyco
     }
     if (keyval == GDK_KEY_Tab || keyval == GDK_KEY_ISO_Left_Tab) {
         const gchar* prompt = gtk_label_get_text(GTK_LABEL(st->vim_cl_prompt));
-        if (strcmp(prompt, ":") == 0) {
-            gchar* c = vim_engine_cmdline_complete(st->vim, text);
-            if (c != NULL) {
-                set_entry_text(st, c);
-                g_free(c);
-            }
-        }
+        if (strcmp(prompt, ":") == 0) wild_complete(st, text, keyval == GDK_KEY_ISO_Left_Tab || (state & GDK_SHIFT_MASK));
         return TRUE;
     }
     return FALSE;
@@ -564,6 +672,12 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_file);
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_showcmd);
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_ruler);
+    st->vim_wild_label = gtk_label_new("");
+    editor_bar_label_shrinkable(st->vim_wild_label, PANGO_ELLIPSIZE_END);
+    gtk_label_set_xalign(GTK_LABEL(st->vim_wild_label), 0.0f);
+    gtk_widget_set_hexpand(st->vim_wild_label, TRUE);
+    gtk_widget_set_visible(st->vim_wild_label, FALSE);
+    gtk_box_append(GTK_BOX(statusline), st->vim_wild_label);
     st->vim_statusline = statusline;
 
     GtkWidget* commandline = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
@@ -656,6 +770,7 @@ void vim_free(EditorTab* tab) {
     EditorModeState* st = state_of(tab);
     if (st == NULL) return;
     if (st->vim != NULL) release_engine(st);
+    wild_free(st);
     g_free(st->vim_hist_prefix);
     st->vim_hist_prefix = NULL;
 }

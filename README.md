@@ -353,7 +353,8 @@ A Vim engine with the real grammar: `["x][count]operator[count]motion`,
 text objects, registers, marks, dot repeat, macros, Visual block and Ex
 commands on ranges. Status line with mode badge, pending keys, `recording
 @x` and ruler; command line (`:`, `/`, `?`) with history (`Up` / `Down`),
-`Tab` completion and `Ctrl+R` register insert.
+`Tab` / `Shift+Tab` completion of commands and `:set` options (all matches
+listed over the statusline, Vim's wildmenu) and `Ctrl+R` register insert.
 
 | Operation | Keys |
 |---|---|

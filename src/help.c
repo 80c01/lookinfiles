@@ -137,6 +137,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Vim mode", ":d :y :m :t :j :> :normal", "Line commands on ranges (%, 'a, '<,'>, /pat/, .+1, $)"},
     {"Editor: Vim mode", ":sort :retab :center :reg", "Sort lines (n i u !), retab, align, list registers / :marks"},
     {"Editor: Vim mode", ":set sw=2 et ic hls nu", "Options (shiftwidth, expandtab, ignorecase, hlsearch, number, wrap...)"},
+    {"Editor: Vim mode", ": Tab / Shift+Tab", "Complete a command or :set option, list the matches and cycle through them"},
     {"Editor: Vim mode", ":w / :wq / ZZ / :q!", "Save (:w file, :saveas), save and close, close discarding changes"},
     {"Editor: Vim mode", "zz zt zb Ctrl+E/Y/D/U/F/B", "Scroll the view (cursor line centered, top, bottom; lines, half pages, pages)"},
     /* Global */
