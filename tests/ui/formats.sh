@@ -38,6 +38,7 @@
     cp "$ROOT/tests/fixtures/preview/story.epub" 24-story.epub
     cp "$ROOT/tests/fixtures/preview/notes.rtf" 25-notes.rtf
     cp "$ROOT/tests/fixtures/preview/library.sqlite" 26-library.sqlite
+    cp "$ROOT/tests/fixtures/preview/fr.mo" 27-lookin-fr.mo
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -73,4 +74,5 @@ format_scenario() {
     key j;              shot fmt_epub
     key j;              shot fmt_rtf
     key j;              shot fmt_sqlite
+    key j;              shot fmt_translations
 }

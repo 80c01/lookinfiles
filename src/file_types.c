@@ -200,6 +200,8 @@ static const struct {
     { "vcf", FILE_KIND_CONTACT }, { "vcard", FILE_KIND_CONTACT },
     { "desktop", FILE_KIND_DESKTOP },
     { "rtf", FILE_KIND_RTF },
+    { "po", FILE_KIND_TRANSLATION }, { "pot", FILE_KIND_TRANSLATION }, { "mo", FILE_KIND_TRANSLATION },
+    { "gmo", FILE_KIND_TRANSLATION },
 };
 
 /* Manual page section suffix: "1".."9", optionally followed by letters ("3pm", "1ssl") */
@@ -283,6 +285,8 @@ gboolean file_kind_is_text(FileKind kind) {
     case FILE_KIND_MANPAGE:
     case FILE_KIND_RTF:
         return TRUE;
+    case FILE_KIND_TRANSLATION: /* .po text; .mo files are binary */
+        return TRUE;
     default:
         return FALSE;
     }
@@ -318,6 +322,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_DESKTOP:      return "Desktop Entry";
     case FILE_KIND_MANPAGE:      return "Man Page";
     case FILE_KIND_RTF:          return "Rich Text";
+    case FILE_KIND_TRANSLATION:  return "Translations";
     }
     return NULL;
 }
@@ -431,6 +436,9 @@ static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_n
     }
     if (HAS(0, "SQLite format 3")) {
         return FILE_KIND_DATABASE;
+    }
+    if (HAS(0, "\xDE\x12\x04\x95") || HAS(0, "\x95\x04\x12\xDE")) {
+        return FILE_KIND_TRANSLATION; /* gettext .mo */
     }
     if (HAS(0, "OTTO") || HAS(0, "ttcf") || HAS(0, "wOFF") || HAS(0, "wOF2") ||
         ((HAS(0, "\0\1\0\0") || HAS(0, "true")) && by_name == FILE_KIND_FONT)) {
@@ -643,6 +651,7 @@ FileKind file_kind_detect(const gchar* name, const guchar* head, gsize len) {
     case FILE_KIND_JSON:
     case FILE_KIND_DIFF:
     case FILE_KIND_LOG:
+    case FILE_KIND_TRANSLATION:
         return by_name;
     default:
         return FILE_KIND_TEXT;
@@ -915,6 +924,8 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
         return "🚀";
     case FILE_KIND_MANPAGE:
         return "📖";
+    case FILE_KIND_TRANSLATION:
+        return "🗣️";
     default:
         break;
     }

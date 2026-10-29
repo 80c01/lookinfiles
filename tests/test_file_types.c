@@ -173,6 +173,9 @@ static void test_detect_containers(void) {
     g_assert_cmpint(file_kind_detect("t", tar, sizeof(tar)), ==, FILE_KIND_ARCHIVE);
     /* Databases, fonts, certificates */
     g_assert_cmpint(DETECT("app.db", "SQLite format 3\0\x10\0"), ==, FILE_KIND_DATABASE);
+    g_assert_cmpint(DETECT("messages", "\xDE\x12\x04\x95\0\0\0\0"), ==, FILE_KIND_TRANSLATION);
+    g_assert_cmpint(DETECT("fr.po", "msgid \"\"\nmsgstr \"\"\n"), ==, FILE_KIND_TRANSLATION);
+    g_assert_cmpint(DETECT("disc.iso", "\0\0\0\0\x01\x02"), ==, FILE_KIND_ARCHIVE);
     g_assert_cmpint(DETECT("cache.db", "\x01\x02\0\x03"), ==, FILE_KIND_BINARY);
     g_assert_cmpint(DETECT("font", "OTTO\0\x0a"), ==, FILE_KIND_FONT);
     g_assert_cmpint(DETECT("font", "wOF2\0\x01"), ==, FILE_KIND_FONT);

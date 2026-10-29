@@ -14,6 +14,7 @@
 #include "elf_info.h"
 #include "epub.h"
 #include "font_info.h"
+#include "gettext_view.h"
 #include "hex_dump.h"
 #include "json_view.h"
 #include "log_view.h"
@@ -512,6 +513,42 @@ static PreviewDoc* build_log(const PreviewInput* in, GCancellable* cancellable, 
     return doc;
 }
 
+/* --- gettext catalogs --- */
+
+static PreviewDoc* build_translation(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    g_autoptr(GettextCatalog) catalog = NULL;
+    if (in->text != NULL) {
+        catalog = gettext_parse_po(in->text, in->text_len, error);
+    } else {
+        gchar* data = NULL;
+        gsize len = 0;
+        if (in->size > 64 * 1024 * 1024 || !g_file_get_contents(in->path, &data, &len, error)) {
+            if (error != NULL && *error == NULL) {
+                g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "catalog too large");
+            }
+            return NULL;
+        }
+        catalog = gettext_parse_mo((const guchar*)data, len, error);
+        g_free(data);
+    }
+    if (catalog == NULL) {
+        return NULL;
+    }
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* size = preview_format_size(in->size);
+    gchar* subtitle = g_strdup_printf("gettext %s · %s", in->text != NULL ? "translations (.po)" : "compiled translations (.mo)",
+                                      size);
+    preview_doc_title(doc, in->name, subtitle);
+    g_free(subtitle);
+    g_free(size);
+    note_truncated_text(doc, in);
+    gettext_view_append(doc, catalog);
+    return doc;
+}
+
 /* --- SQLite databases --- */
 
 static PreviewDoc* build_database(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -936,6 +973,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_rtf;
     case FILE_KIND_DATABASE:
         return build_database;
+    case FILE_KIND_TRANSLATION:
+        return build_translation;
     default:
         return NULL;
     }

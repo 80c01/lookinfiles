@@ -186,6 +186,13 @@ static void test_database(void) {
     g_assert_true(g_str_has_prefix(doc->text->str, "library.sqlite\nSQLite database · "));
 }
 
+static void test_translations(void) {
+    g_autoptr(PreviewDoc) po = build_fixture("fr.po", FILE_KIND_TRANSLATION);
+    g_assert_nonnull(strstr(po->text->str, "gettext translations (.po)"));
+    g_autoptr(PreviewDoc) mo = build_fixture("fr.mo", FILE_KIND_TRANSLATION);
+    g_assert_nonnull(strstr(mo->text->str, "Fichier"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -220,5 +227,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/spreadsheets", test_spreadsheets);
     g_test_add_func("/preview_formats/office", test_office);
     g_test_add_func("/preview_formats/database", test_database);
+    g_test_add_func("/preview_formats/translations", test_translations);
     return g_test_run();
 }

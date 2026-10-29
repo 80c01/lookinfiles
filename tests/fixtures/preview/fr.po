@@ -1,0 +1,33 @@
+# French translation of Lookin.
+msgid ""
+msgstr ""
+"Project-Id-Version: lookin 1.4\n"
+"Last-Translator: Ada Lovelace <ada@example.org>\n"
+"Language: fr\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/main.c:10
+msgid "Open"
+msgstr "Ouvrir"
+
+msgctxt "menu"
+msgid "File"
+msgstr "Fichier"
+
+#, fuzzy
+msgid "Preview"
+msgstr "Aperçu"
+
+msgid "%d file"
+msgid_plural "%d files"
+msgstr[0] "%d fichier"
+msgstr[1] "%d fichiers"
+
+msgid ""
+"A long message "
+"on two lines"
+msgstr ""
+
+#~ msgid "Old"
+#~ msgstr "Vieux"

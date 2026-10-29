@@ -51,10 +51,11 @@ typedef enum {
     FILE_KIND_CONTACT,   /* vCard (.vcf) */
     FILE_KIND_DESKTOP,   /* freedesktop .desktop entry */
     FILE_KIND_MANPAGE,   /* roff manual page */
-    FILE_KIND_RTF        /* Rich Text Format; keep last (FILE_KIND_LAST) */
+    FILE_KIND_RTF,       /* Rich Text Format */
+    FILE_KIND_TRANSLATION /* gettext catalogs (.po, .pot, .mo); keep last (FILE_KIND_LAST) */
 } FileKind;
 
-#define FILE_KIND_LAST FILE_KIND_RTF
+#define FILE_KIND_LAST FILE_KIND_TRANSLATION
 
 /* Number of leading bytes file_kind_detect() needs */
 #define FILE_SNIFF_BYTES 4096
