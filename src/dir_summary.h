@@ -34,7 +34,7 @@ typedef struct {
     gint64 newest_mtime;  /* most recent entry date, 0 if none */
     gboolean truncated;   /* stopped at DIR_SUMMARY_SCAN_LIMIT entries */
     gchar* readme;        /* best README file name of this level, NULL if none */
-    guint kinds[FILE_KIND_BINARY + 1]; /* files per FileKind, guessed from the name */
+    guint kinds[FILE_KIND_EXECUTABLE + 1]; /* files per FileKind, guessed from the name */
 } DirSummary;
 
 /* Changed files below a directory, by git status */

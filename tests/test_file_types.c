@@ -115,7 +115,8 @@ static void test_detect_text(void) {
 }
 
 static void test_detect_binary(void) {
-    g_assert_cmpint(DETECT("prog", "\x7F" "ELF\x02\x01\x01\0\0\0"), ==, FILE_KIND_BINARY);
+    g_assert_cmpint(DETECT("prog", "\x7F" "ELF\x02\x01\x01\0\0\0"), ==, FILE_KIND_EXECUTABLE);
+    g_assert_cmpint(DETECT("libz.so.1", "\x7F" "ELF\x01\x02\x01\0"), ==, FILE_KIND_EXECUTABLE);
     g_assert_cmpint(DETECT("data.bin", "\x01\x02\0\x03\x04"), ==, FILE_KIND_BINARY);
     /* Unknown binary signature: trust a media name (TGA has no magic number) */
     g_assert_cmpint(DETECT("pic.tga", "\0\0\x02\0\0\0\0\0"), ==, FILE_KIND_IMAGE);
@@ -144,6 +145,7 @@ static void test_kind_predicates(void) {
     g_assert_false(file_kind_is_media(FILE_KIND_HTML));
     g_assert_false(file_kind_is_media(FILE_KIND_BINARY));
     g_assert_true(file_kind_is_renderable(FILE_KIND_ORG));
+    g_assert_true(file_kind_is_renderable(FILE_KIND_EXECUTABLE)); /* m: summary / hex dump */
     g_assert_false(file_kind_is_renderable(FILE_KIND_TEXT));
     g_assert_cmpint(file_kind_from_name("a.mp3"), ==, FILE_KIND_AUDIO);
     g_assert_cmpint(file_kind_from_name("a.c"), ==, FILE_KIND_TEXT);

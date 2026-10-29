@@ -57,6 +57,10 @@ and virtual workspaces, in a VS Code Dark+ look.
 - File types are detected from the content (an image or a `#!` script without
   extension, TypeScript `.ts` that is not a video); unknown binary files show a
   hex dump (offsets, bytes and an ASCII column) of their first 64 KB.
+- Executables, shared libraries and object files (ELF) show their
+  architecture, type, interpreter, linked libraries, soname, build ID,
+  whether they are stripped, and their exported symbols; `m` shows the hex
+  dump instead. Only the headers are read, even for a large library.
 - `m` switches between the rendered and the raw view; files over 512 KB are
   previewed from their first 64 KB.
 

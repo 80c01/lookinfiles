@@ -14,6 +14,10 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- ELF preview for executables, shared libraries (`.so`) and object files
+  (`.o`): architecture, type, interpreter, linked libraries, soname,
+  RPATH/RUNPATH, build ID, stripped or not, and exported symbols. Only the
+  headers and tables needed are read. `m` switches to the hex dump.
 - Binary files of an unknown format are previewed as a hex dump of their
   first 64 KB: offsets, 16 bytes per line and an ASCII column.
 - Directory preview: header with the number of files and folders, their

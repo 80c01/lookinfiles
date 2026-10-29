@@ -21,6 +21,7 @@
 #include "diff_gutter.h"
 #include "dir_preview.h"
 #include "hex_dump.h"
+#include "elf_info.h"
 
 
 void viewer_scroll_lines(AppData* app, gint lines) {
@@ -429,6 +430,8 @@ typedef struct {
     gchar* utf8_text;
     gchar* hex_dump;       /* binary files: dump of the first PREVIEW_BYTES */
     gsize hex_len;         /* bytes in hex_dump */
+    gchar* elf_summary;    /* ELF files: header details (elf_info_format()) */
+    gchar* elf_type;       /* "Shared library", "Relocatable object"... */
     gchar* error_msg;
 } TextPreviewTaskData;
 
@@ -442,6 +445,8 @@ static void text_preview_task_data_free(gpointer data) {
     g_free(td->content_type);
     g_free(td->utf8_text);
     g_free(td->hex_dump);
+    g_free(td->elf_summary);
+    g_free(td->elf_type);
     g_free(td->error_msg);
     g_free(td);
 }
@@ -476,7 +481,21 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     gsize len = fread(contents, 1, FILE_SNIFF_BYTES, fp);
     td->kind = file_kind_detect(td->name, (const guchar*)contents, len);
 
-    if (td->kind == FILE_KIND_BINARY) {
+    gboolean want_hex = (td->kind == FILE_KIND_BINARY);
+    if (td->kind == FILE_KIND_EXECUTABLE) {
+        /* Header details; the raw view (m) and damaged files get the hex dump */
+        if (!td->render_raw) {
+            ElfInfo* info = elf_info_read_file(td->full, NULL);
+            if (info != NULL) {
+                td->elf_summary = elf_info_format(info);
+                td->elf_type = g_strdup(elf_info_type_name(info));
+                elf_info_free(info);
+            }
+        }
+        want_hex = (td->elf_summary == NULL);
+    }
+
+    if (want_hex) {
         /* Hex dump of the first PREVIEW_BYTES only, whatever the file size */
         if (cap < PREVIEW_BYTES) {
             contents = g_realloc(contents, PREVIEW_BYTES + 1);
@@ -490,7 +509,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         }
         td->hex_len = len;
         td->hex_dump = hex_dump_format((const guchar*)contents, len, 0);
-    } else if (!file_kind_is_media(td->kind) && td->kind != FILE_KIND_BINARY) {
+    } else if (!file_kind_is_media(td->kind) && td->kind != FILE_KIND_EXECUTABLE) {
         /* Rest of the text: to the end (the file may have grown), capped for large files */
         while (!g_cancellable_is_cancelled(cancellable)) {
             if (len == cap) {
@@ -517,7 +536,8 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
-    if (file_kind_is_media(td->kind) || td->kind == FILE_KIND_BINARY) {
+    if (file_kind_is_media(td->kind) || td->kind == FILE_KIND_BINARY ||
+        td->kind == FILE_KIND_EXECUTABLE) {
         g_free(contents);
     } else {
         td->raw_len = len;
@@ -556,6 +576,54 @@ static void show_media_preview(AppData* app, FileKind kind, const gchar* name, c
     }
 }
 
+/* ELF file: name and type, then the header details with dimmed field labels
+ * and bold section titles (main thread) */
+static void show_elf_summary(AppData* app, const TextPreviewTaskData* td) {
+    GtkTextBuffer* buffer = app->buffer;
+    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buffer);
+    if (gtk_text_tag_table_lookup(table, "elf_label") == NULL) {
+        gtk_text_buffer_create_tag(buffer, "elf_title", "weight", 700, "scale", 1.2, NULL);
+        gtk_text_buffer_create_tag(buffer, "elf_label", "foreground", "#8b8b8b", NULL);
+        gtk_text_buffer_create_tag(buffer, "elf_section", "weight", 700, NULL);
+    }
+
+    gchar* size_str = g_format_size((guint64)td->fsize);
+    gchar* title = g_strdup_printf("%s\n", td->name);
+    gchar* subtitle = g_strdup_printf("%s · %s\n\n", td->elf_type, size_str);
+    gtk_text_buffer_set_text(buffer, "", 0);
+    GtkTextIter end;
+    gtk_text_buffer_get_end_iter(buffer, &end);
+    gtk_text_buffer_insert_with_tags_by_name(buffer, &end, title, -1, "elf_title", NULL);
+    gtk_text_buffer_insert_with_tags_by_name(buffer, &end, subtitle, -1, "elf_label", NULL);
+    gint first_line = gtk_text_iter_get_line(&end);
+    gtk_text_buffer_insert(buffer, &end, td->elf_summary, -1);
+    g_free(subtitle);
+    g_free(title);
+    g_free(size_str);
+
+    /* Field lines: label padded to ELF_INFO_LABEL_WIDTH; list items start with
+     * two spaces; any other non-empty line is a section title */
+    gint n_lines = gtk_text_buffer_get_line_count(buffer);
+    for (gint line = first_line; line < n_lines; line++) {
+        GtkTextIter a, b;
+        gtk_text_buffer_get_iter_at_line(buffer, &a, line);
+        b = a;
+        if (!gtk_text_iter_ends_line(&b)) {
+            gtk_text_iter_forward_to_line_end(&b);
+        }
+        gchar* text = gtk_text_iter_get_text(&a, &b);
+        gsize len = strlen(text);
+        if (len > ELF_INFO_LABEL_WIDTH && text[0] != ' ' &&
+            text[ELF_INFO_LABEL_WIDTH - 1] == ' ' && text[ELF_INFO_LABEL_WIDTH] == ' ') {
+            gtk_text_buffer_get_iter_at_line_offset(buffer, &b, line, ELF_INFO_LABEL_WIDTH);
+            gtk_text_buffer_apply_tag_by_name(buffer, "elf_label", &a, &b);
+        } else if (len > 0 && text[0] != ' ') {
+            gtk_text_buffer_apply_tag_by_name(buffer, "elf_section", &a, &b);
+        }
+        g_free(text);
+    }
+}
+
 /* Binary file: header, then the hex dump with dimmed offsets and a coloured
  * ASCII column (main thread) */
 static void show_hex_dump(AppData* app, const TextPreviewTaskData* td) {
@@ -569,7 +637,9 @@ static void show_hex_dump(AppData* app, const TextPreviewTaskData* td) {
 
     gchar* size_str = g_format_size((guint64)td->fsize);
     GString* header = g_string_new(NULL);
-    g_string_append_printf(header, "[ Binary file ] %s (%s)\n", td->name, size_str);
+    g_string_append_printf(header, "[ %s ] %s (%s)\n",
+                           td->kind == FILE_KIND_EXECUTABLE ? "ELF file" : "Binary file",
+                           td->name, size_str);
     if ((gint64)td->hex_len < td->fsize) {
         gchar* shown = g_format_size((guint64)td->hex_len);
         g_string_append_printf(header, "Showing the first %s.\n", shown);
@@ -654,7 +724,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
     gboolean is_org = (td->kind == FILE_KIND_ORG) && !td->render_raw;
     gboolean is_rendered = is_md || is_html || is_org;
     gboolean code = FALSE;
-    if (td->kind == FILE_KIND_BINARY) {
+    if (td->kind == FILE_KIND_BINARY || td->kind == FILE_KIND_EXECUTABLE) {
         apply_viewer_language(app, NULL, NULL);
         set_view_monospace(app->text_view, TRUE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
@@ -680,7 +750,11 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         return;
     }
 
-    if (td->kind == FILE_KIND_BINARY) {
+    if (td->elf_summary != NULL) {
+        show_elf_summary(app, td);
+        return;
+    }
+    if (td->kind == FILE_KIND_BINARY || td->kind == FILE_KIND_EXECUTABLE) {
         show_hex_dump(app, td);
         return;
     }

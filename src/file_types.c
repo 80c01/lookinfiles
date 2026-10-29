@@ -159,7 +159,7 @@ gboolean file_kind_is_media(FileKind kind) {
 
 gboolean file_kind_is_renderable(FileKind kind) {
     return kind == FILE_KIND_MARKDOWN || kind == FILE_KIND_HTML ||
-           kind == FILE_KIND_ORG || file_kind_is_media(kind);
+           kind == FILE_KIND_ORG || kind == FILE_KIND_EXECUTABLE || file_kind_is_media(kind);
 }
 
 /* TRUE if head starts with the given bytes at offset off */
@@ -226,6 +226,9 @@ static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_n
         (HAS(4, "ftyp") && (HAS(8, "avif") || HAS(8, "avis") || HAS(8, "heic") || HAS(8, "mif1"))) ||
         HAS(0, "\xFF\x0A") || HAS(0, "\0\0\0\x0CJXL ")) {
         return FILE_KIND_IMAGE;
+    }
+    if (HAS(0, "\x7F" "ELF")) {
+        return FILE_KIND_EXECUTABLE;
     }
     if (HAS(0, "%PDF-")) {
         return FILE_KIND_PDF;

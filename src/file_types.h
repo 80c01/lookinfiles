@@ -29,7 +29,8 @@ typedef enum {
     FILE_KIND_PDF,
     FILE_KIND_VIDEO,
     FILE_KIND_AUDIO,
-    FILE_KIND_BINARY     /* binary content of an unknown format */
+    FILE_KIND_BINARY,    /* binary content of an unknown format */
+    FILE_KIND_EXECUTABLE /* ELF: executable, shared library, object file, core dump */
 } FileKind;
 
 /* Number of leading bytes file_kind_detect() needs */
