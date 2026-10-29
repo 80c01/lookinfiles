@@ -835,6 +835,21 @@ static void insert_table_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextI
     gtk_text_buffer_insert(buffer, iter, "\n", 1);
 }
 
+/* Text of a list item: its first line plus the following continuation lines
+ * (wrapped source lines, indented or lazy), joined with spaces like VS Code.
+ * Advances *i to the last line used. Caller frees. */
+static gchar* gather_item_text(gchar** lines, gint num_lines, gint* i, const gchar* first) {
+    GString* text = g_string_new(first);
+    while (*i + 1 < num_lines && is_paragraph_continuation(lines[*i + 1])) {
+        const gchar* next = lines[*i + 1];
+        while (*next == ' ' || *next == '\t') next++;
+        g_string_append_c(text, ' ');
+        g_string_append(text, next);
+        (*i)++;
+    }
+    return g_string_free(text, FALSE);
+}
+
 void render_markdown_to_buffer(GtkTextBuffer* buffer,
                                GtkTextView* view,
                                const gchar* markdown_text,
@@ -1162,7 +1177,9 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             gtk_text_buffer_delete_mark(buffer, bm);
 
             GtkTextMark* im = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            render_inline_text(buffer, &iter, task_text, doc_dir);
+            gchar* item_text = gather_item_text(lines, num_lines, &i, task_text);
+            render_inline_text(buffer, &iter, item_text, doc_dir);
+            g_free(item_text);
             gtk_text_buffer_delete_mark(buffer, im);
 
             GtkTextIter line_end = iter;
@@ -1193,7 +1210,9 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             gtk_text_buffer_delete_mark(buffer, bm);
             gtk_text_buffer_insert(buffer, &iter, "\t", -1);
 
-            render_inline_text(buffer, &iter, list_text, doc_dir);
+            gchar* item_text = gather_item_text(lines, num_lines, &i, list_text);
+            render_inline_text(buffer, &iter, item_text, doc_dir);
+            g_free(item_text);
 
             GtkTextIter line_end = iter;
             apply_tag_mark(buffer, tag_name, lm, &line_end);
@@ -1226,7 +1245,9 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 apply_tag_mark(buffer, "md_list_bullet", bm, &iter);
                 gtk_text_buffer_delete_mark(buffer, bm);
 
-                render_inline_text(buffer, &iter, list_text, doc_dir);
+                gchar* item_text = gather_item_text(lines, num_lines, &i, list_text);
+            render_inline_text(buffer, &iter, item_text, doc_dir);
+            g_free(item_text);
 
                 GtkTextIter line_end = iter;
                 apply_tag_mark(buffer, tag_name, lm, &line_end);
