@@ -107,6 +107,14 @@ static void test_archives(void) {
     g_assert_nonnull(strstr(gz->text->str, "INFO request 49 served"));
 }
 
+static void test_certificates(void) {
+    g_autoptr(PreviewDoc) pem = build_fixture("server.crt", FILE_KIND_CERTIFICATE);
+    g_assert_true(g_str_has_prefix(pem->text->str, "server.crt\nPEM · 782 bytes\n"));
+    g_autoptr(PreviewDoc) der = build_fixture("server.der", FILE_KIND_CERTIFICATE);
+    g_assert_true(g_str_has_prefix(der->text->str, "server.der\nDER · 537 bytes\n"));
+    g_assert_nonnull(strstr(der->text->str, "EC P-256"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -133,5 +141,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/json", test_json);
     g_test_add_func("/preview_formats/diff", test_diff);
     g_test_add_func("/preview_formats/archives", test_archives);
+    g_test_add_func("/preview_formats/certificates", test_certificates);
     return g_test_run();
 }

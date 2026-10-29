@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "archive.h"
+#include "cert_view.h"
 #include "csv.h"
 #include "diff_view.h"
 #include "docx.h"
@@ -340,6 +341,38 @@ static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellab
     return doc;
 }
 
+/* --- Certificates and keys --- */
+
+static PreviewDoc* build_certificate(const PreviewInput* in, GCancellable* cancellable,
+                                     GError** error) {
+    (void)cancellable;
+    gchar* data = NULL;
+    gsize len = 0;
+    if (in->text != NULL) {
+        data = g_strndup(in->text, in->text_len);
+        len = in->text_len;
+    } else if (!g_file_get_contents(in->path, &data, &len, error)) {
+        return NULL;
+    }
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    gboolean ok = cert_view_append(body, (const guchar*)data, len, g_get_real_time() / G_USEC_PER_SEC,
+                                   error);
+    g_free(data);
+    if (!ok) {
+        return NULL;
+    }
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* size = preview_format_size(in->size);
+    gchar* subtitle = g_strdup_printf("%s · %s", in->text != NULL ? "PEM" : "DER", size);
+    preview_doc_title(doc, in->name, subtitle);
+    g_free(subtitle);
+    g_free(size);
+    append_doc(doc, body);
+    return doc;
+}
+
 /* --- ELF executables, libraries, objects --- */
 
 static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -416,6 +449,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_diff;
     case FILE_KIND_ARCHIVE:
         return build_archive;
+    case FILE_KIND_CERTIFICATE:
+        return build_certificate;
     default:
         return NULL;
     }
