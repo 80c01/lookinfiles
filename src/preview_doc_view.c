@@ -130,27 +130,14 @@ static void load_font_files(GtkWidget* view, const GPtrArray* files) {
 
 /* Decode an image scaled down to max_width (NULL if it cannot be decoded) */
 static GdkTexture* decode_image(GBytes* data, gint max_width) {
-    GdkPixbufLoader* loader = gdk_pixbuf_loader_new();
     gsize len = 0;
     const guchar* bytes = g_bytes_get_data(data, &len);
-    GdkTexture* texture = NULL;
-    if (gdk_pixbuf_loader_write(loader, bytes, len, NULL) && gdk_pixbuf_loader_close(loader, NULL)) {
-        GdkPixbuf* pix = gdk_pixbuf_loader_get_pixbuf(loader);
-        if (pix != NULL) {
-            gint w = gdk_pixbuf_get_width(pix);
-            gint h = gdk_pixbuf_get_height(pix);
-            GdkPixbuf* scaled = NULL;
-            if (max_width > 0 && w > max_width) {
-                gint sh = MAX(1, (gint)((gdouble)h * max_width / w));
-                scaled = gdk_pixbuf_scale_simple(pix, max_width, sh, GDK_INTERP_BILINEAR);
-            }
-            texture = texture_new_for_pixbuf(scaled != NULL ? scaled : pix);
-            g_clear_object(&scaled);
-        }
-    } else {
-        gdk_pixbuf_loader_close(loader, NULL);
+    GdkPixbuf* pix = pixbuf_from_bytes(bytes, len, max_width);
+    if (pix == NULL) {
+        return NULL;
     }
-    g_object_unref(loader);
+    GdkTexture* texture = texture_new_for_pixbuf(pix);
+    g_object_unref(pix);
     return texture;
 }
 

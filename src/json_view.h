@@ -27,4 +27,37 @@ typedef struct {
 gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonViewInfo* info,
                           GError** error);
 
+/* --- Reading JSON values (notebooks...) --- */
+
+typedef struct JsonValue JsonValue;
+
+typedef enum {
+    JSON_VALUE_OBJECT,
+    JSON_VALUE_ARRAY,
+    JSON_VALUE_STRING,
+    JSON_VALUE_NUMBER,
+    JSON_VALUE_KEYWORD   /* true, false, null */
+} JsonValueType;
+
+/* Parse one JSON value (same tolerance as json_view_append()); NULL with
+ * error set if invalid. The tree points into text: keep text alive until
+ * json_value_free(). */
+JsonValue* json_value_parse(const gchar* text, gsize len, GError** error);
+void json_value_free(JsonValue* value);
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(JsonValue, json_value_free)
+
+JsonValueType json_value_get_type(const JsonValue* value);
+/* Member of an object (NULL if missing or value is not an object) */
+const JsonValue* json_value_get(const JsonValue* value, const gchar* key);
+/* Items of an array or members of an object */
+guint json_value_get_length(const JsonValue* value);
+const JsonValue* json_value_get_item(const JsonValue* value, guint index);
+/* String value unescaped, or the raw text of a number / keyword. Caller frees. */
+gchar* json_value_dup_string(const JsonValue* value);
+/* Text of a string, or the concatenation of an array of strings (Jupyter
+ * "source" fields), NULL otherwise. Caller frees. */
+gchar* json_value_dup_text(const JsonValue* value);
+/* Number value (0 if not a number) */
+gdouble json_value_get_number(const JsonValue* value);
+
 #endif /* JSON_VIEW_H */

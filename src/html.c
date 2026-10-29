@@ -661,52 +661,6 @@ static gchar* strip_tags_and_entities(const gchar* src) {
     return g_string_free(res, FALSE);
 }
 
-/* Base64 data URI image loader */
-static GdkPixbuf* load_pixbuf_from_base64(const gchar* data_uri, gint max_width) {
-    if (data_uri == NULL || !g_str_has_prefix(data_uri, "data:image/")) {
-        return NULL;
-    }
-    const gchar* comma = strchr(data_uri, ',');
-    if (comma == NULL) return NULL;
-
-    const gchar* meta = data_uri + 11;
-    if (strstr(meta, "base64") == NULL) {
-        return NULL;
-    }
-
-    gsize out_len = 0;
-    guchar* decoded = g_base64_decode(comma + 1, &out_len);
-    if (decoded == NULL || out_len == 0) {
-        g_free(decoded);
-        return NULL;
-    }
-
-    GdkPixbufLoader* loader = gdk_pixbuf_loader_new();
-    GError* err = NULL;
-    GdkPixbuf* pix = NULL;
-
-    if (gdk_pixbuf_loader_write(loader, decoded, out_len, &err) &&
-        gdk_pixbuf_loader_close(loader, &err)) {
-        GdkPixbuf* orig = gdk_pixbuf_loader_get_pixbuf(loader);
-        if (orig != NULL) {
-            gint w = gdk_pixbuf_get_width(orig);
-            gint h = gdk_pixbuf_get_height(orig);
-            if (max_width > 0 && w > max_width) {
-                gint new_h = (gint)((gdouble)h * max_width / w);
-                if (new_h < 1) new_h = 1;
-                pix = gdk_pixbuf_scale_simple(orig, max_width, new_h, GDK_INTERP_BILINEAR);
-            } else {
-                pix = g_object_ref(orig);
-            }
-        }
-    } else if (err != NULL) {
-        g_error_free(err);
-    }
-
-    g_object_unref(loader);
-    g_free(decoded);
-    return pix;
-}
 
 /* Extract language name from class="language-..." or class="lang-..." */
 static gchar* extract_code_lang(const gchar* tag_str) {
@@ -1386,7 +1340,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             if (src != NULL && src[0] != '\0') {
                 GdkPixbuf* pix = NULL;
                 if (g_str_has_prefix(src, "data:image/")) {
-                    pix = load_pixbuf_from_base64(src, 560);
+                    pix = pixbuf_from_data_uri(src, 560);
                 } else {
                     gchar* img_path = NULL;
                     if (g_path_is_absolute(src)) {

@@ -95,6 +95,28 @@ static void test_deep_and_long(void) {
     g_string_free(big, TRUE);
 }
 
+static void test_values(void) {
+    const gchar* text = "{\"cells\": [{\"source\": [\"a\\n\", \"b \\u00e9\\ud83d\\ude00\"]}], n: 2.5, 'q': true}";
+    GError* error = NULL;
+    g_autoptr(JsonValue) root = json_value_parse(text, strlen(text), &error);
+    g_assert_no_error(error);
+    g_assert_cmpint(json_value_get_type(root), ==, JSON_VALUE_OBJECT);
+    g_assert_cmpuint(json_value_get_length(root), ==, 3);
+    const JsonValue* cells = json_value_get(root, "cells");
+    g_assert_cmpint(json_value_get_type(cells), ==, JSON_VALUE_ARRAY);
+    const JsonValue* cell = json_value_get_item(cells, 0);
+    gchar* source = json_value_dup_text(json_value_get(cell, "source"));
+    g_assert_cmpstr(source, ==, "a\nb é😀");
+    g_free(source);
+    g_assert_cmpfloat(json_value_get_number(json_value_get(root, "n")), ==, 2.5);
+    gchar* q = json_value_dup_string(json_value_get(root, "q"));
+    g_assert_cmpstr(q, ==, "true");
+    g_free(q);
+    g_assert_null(json_value_get(root, "missing"));
+    g_assert_null(json_value_get_item(cells, 5));
+    g_assert_null(json_value_parse("[1,", 3, NULL));
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/json_view/pretty", test_pretty);
@@ -103,5 +125,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/json_view/lines", test_lines);
     g_test_add_func("/json_view/errors", test_errors);
     g_test_add_func("/json_view/deep_and_long", test_deep_and_long);
+    g_test_add_func("/json_view/values", test_values);
     return g_test_run();
 }

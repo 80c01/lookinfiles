@@ -29,6 +29,7 @@
     done
     [ -f 16-font.ttf ] || printf 'not a font' > 16-font.ttf
     gzip -c -n "$ROOT/tests/fixtures/preview/lookin.1" > 17-lookin.1.gz
+    cp "$ROOT/tests/fixtures/preview/analysis.ipynb" 18-analysis.ipynb
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -55,4 +56,5 @@ format_scenario() {
     key 0
     key j;              shot fmt_font
     key j;              shot fmt_manpage
+    key j;              shot fmt_notebook
 }

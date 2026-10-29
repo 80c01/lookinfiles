@@ -151,6 +151,12 @@ static void test_manpage(void) {
     g_assert_true(g_str_has_prefix(doc->text->str, "LOOKIN(1)"));
 }
 
+static void test_notebook(void) {
+    g_autoptr(PreviewDoc) doc = build_fixture("analysis.ipynb", FILE_KIND_NOTEBOOK);
+    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_MARKDOWN);
+    g_assert_true(g_str_has_prefix(doc->text->str, "*Jupyter notebook · 5 cells (4 code) · Python 3*"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -181,5 +187,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/cards", test_cards);
     g_test_add_func("/preview_formats/log", test_log);
     g_test_add_func("/preview_formats/manpage", test_manpage);
+    g_test_add_func("/preview_formats/notebook", test_notebook);
     return g_test_run();
 }

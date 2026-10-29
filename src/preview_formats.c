@@ -17,6 +17,7 @@
 #include "json_view.h"
 #include "log_view.h"
 #include "man_view.h"
+#include "notebook.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
                                         GError** error);
@@ -576,6 +577,36 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     return doc;
 }
 
+/* --- Jupyter notebooks --- */
+
+static PreviewDoc* build_notebook(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    /* A notebook with images is often larger than the text the viewer
+     * reads: read it whole (bounded) */
+    gchar* whole = NULL;
+    gsize len = in->text_len;
+    const gchar* text = in->text;
+    if (in->text_truncated && in->path != NULL && in->size <= 32 * 1024 * 1024) {
+        if (!g_file_get_contents(in->path, &whole, &len, error)) {
+            return NULL;
+        }
+        text = whole;
+    }
+    NotebookInfo info = { 0 };
+    gchar* md = notebook_to_markdown(text, len, &info, error);
+    g_free(whole);
+    if (md == NULL) {
+        return NULL;
+    }
+    GString* page = g_string_new(NULL);
+    g_string_append_printf(page, "*Jupyter notebook · %u cells (%u code)%s%s*\n\n", info.n_cells, info.n_code,
+                           info.kernel != NULL ? " · " : "", info.kernel != NULL ? info.kernel : "");
+    g_string_append(page, md);
+    g_free(md);
+    notebook_info_clear(&info);
+    return preview_doc_new_source(PREVIEW_DOC_MARKDOWN, g_string_free(page, FALSE));
+}
+
 /* --- Manual pages --- */
 
 #define MAN_MAX_TEXT (2 * 1024 * 1024)
@@ -725,6 +756,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_font;
     case FILE_KIND_MANPAGE:
         return build_manpage;
+    case FILE_KIND_NOTEBOOK:
+        return build_notebook;
     default:
         return NULL;
     }

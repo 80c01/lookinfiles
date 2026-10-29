@@ -6,8 +6,8 @@
 
 typedef enum { J_OBJECT, J_ARRAY, J_STRING, J_NUMBER, J_KEYWORD } JsonType;
 
-typedef struct JsonNode JsonNode;
-struct JsonNode {
+typedef struct JsonValue JsonNode;
+struct JsonValue {
     JsonType type;
     const gchar* text;     /* raw token (strings with their quotes) */
     gsize len;
@@ -368,4 +368,156 @@ gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonVie
     }
     g_ptr_array_free(values, TRUE);
     return TRUE;
+}
+
+/* --- Reading values --- */
+
+JsonValue* json_value_parse(const gchar* text, gsize len, GError** error) {
+    Parser p = { text, len, 0, error };
+    JsonNode* node = parse_value(&p, 0);
+    if (node == NULL) {
+        return NULL;
+    }
+    skip_space(&p, FALSE);
+    if (p.pos < p.len) {
+        fail(&p, "unexpected text after the value");
+        node_free(node);
+        return NULL;
+    }
+    return node;
+}
+
+void json_value_free(JsonValue* value) {
+    if (value != NULL) {
+        node_free(value);
+    }
+}
+
+JsonValueType json_value_get_type(const JsonValue* value) {
+    switch (value->type) {
+    case J_OBJECT: return JSON_VALUE_OBJECT;
+    case J_ARRAY: return JSON_VALUE_ARRAY;
+    case J_STRING: return JSON_VALUE_STRING;
+    case J_NUMBER: return JSON_VALUE_NUMBER;
+    default: return JSON_VALUE_KEYWORD;
+    }
+}
+
+/* Unescaped content of a quoted string token */
+static gchar* unescape_string(const gchar* text, gsize len) {
+    GString* out = g_string_sized_new(len);
+    gsize end = len > 0 ? len - 1 : 0; /* closing quote */
+    for (gsize i = 1; i < end; i++) {
+        gchar c = text[i];
+        if (c != '\\' || i + 1 >= end) {
+            g_string_append_c(out, c);
+            continue;
+        }
+        c = text[++i];
+        switch (c) {
+        case 'n': g_string_append_c(out, '\n'); break;
+        case 't': g_string_append_c(out, '\t'); break;
+        case 'r': g_string_append_c(out, '\r'); break;
+        case 'b': g_string_append_c(out, '\b'); break;
+        case 'f': g_string_append_c(out, '\f'); break;
+        case 'u': {
+            if (i + 4 >= end + 1 || i + 4 > len) {
+                break;
+            }
+            gchar hex[5] = { text[i + 1], text[i + 2], text[i + 3], text[i + 4], 0 };
+            gunichar cp = (gunichar)g_ascii_strtoull(hex, NULL, 16);
+            i += 4;
+            if (cp >= 0xD800 && cp <= 0xDBFF && i + 6 < len && text[i + 1] == '\\' && text[i + 2] == 'u') {
+                gchar lo_hex[5] = { text[i + 3], text[i + 4], text[i + 5], text[i + 6], 0 };
+                gunichar lo = (gunichar)g_ascii_strtoull(lo_hex, NULL, 16);
+                if (lo >= 0xDC00 && lo <= 0xDFFF) {
+                    cp = 0x10000 + ((cp - 0xD800) << 10) + (lo - 0xDC00);
+                    i += 6;
+                }
+            }
+            if (g_unichar_validate(cp) && cp != 0) {
+                g_string_append_unichar(out, cp);
+            }
+            break;
+        }
+        default: g_string_append_c(out, c); break;
+        }
+    }
+    return g_string_free(out, FALSE);
+}
+
+static gboolean key_equals(const JsonNode* node, const gchar* key) {
+    gsize klen = strlen(key);
+    if (node->key == NULL) {
+        return FALSE;
+    }
+    if (node->key[0] == '"' || node->key[0] == '\'') {
+        return node->key_len == klen + 2 && memcmp(node->key + 1, key, klen) == 0;
+    }
+    return node->key_len == klen && memcmp(node->key, key, klen) == 0;
+}
+
+const JsonValue* json_value_get(const JsonValue* value, const gchar* key) {
+    if (value == NULL || value->type != J_OBJECT) {
+        return NULL;
+    }
+    for (guint i = 0; i < value->children->len; i++) {
+        const JsonNode* child = g_ptr_array_index(value->children, i);
+        if (key_equals(child, key)) {
+            return child;
+        }
+    }
+    return NULL;
+}
+
+guint json_value_get_length(const JsonValue* value) {
+    return (value != NULL && value->children != NULL) ? value->children->len : 0;
+}
+
+const JsonValue* json_value_get_item(const JsonValue* value, guint index) {
+    if (value == NULL || value->children == NULL || index >= value->children->len) {
+        return NULL;
+    }
+    return g_ptr_array_index(value->children, index);
+}
+
+gchar* json_value_dup_string(const JsonValue* value) {
+    if (value == NULL || value->children != NULL) {
+        return NULL;
+    }
+    if (value->type == J_STRING) {
+        return unescape_string(value->text, value->len);
+    }
+    return g_strndup(value->text, value->len);
+}
+
+gchar* json_value_dup_text(const JsonValue* value) {
+    if (value == NULL) {
+        return NULL;
+    }
+    if (value->type == J_STRING) {
+        return json_value_dup_string(value);
+    }
+    if (value->type != J_ARRAY) {
+        return NULL;
+    }
+    GString* out = g_string_new(NULL);
+    for (guint i = 0; i < value->children->len; i++) {
+        gchar* part = json_value_dup_string(g_ptr_array_index(value->children, i));
+        if (part != NULL) {
+            g_string_append(out, part);
+            g_free(part);
+        }
+    }
+    return g_string_free(out, FALSE);
+}
+
+gdouble json_value_get_number(const JsonValue* value) {
+    if (value == NULL || value->type != J_NUMBER) {
+        return 0;
+    }
+    gchar* s = g_strndup(value->text, value->len);
+    gdouble v = g_ascii_strtod(s, NULL);
+    g_free(s);
+    return v;
 }
