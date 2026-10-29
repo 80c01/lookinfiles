@@ -161,6 +161,8 @@ key ctrl+shift+r;       shot files_view_back
 key a;                  shot new_file_dialog
 windows=$(xdotool search --onlyvisible --pid $APP 2>/dev/null | wc -l)
 key Escape;             shot new_file_dialog_closed
+key alt+l;              shot layouts_dialog       # saved workspace layouts (empty list)
+key Escape;             shot layouts_dialog_closed
 echo "external" > "$FIX/work/external.txt"   # created outside the app: the tree must update
 sleep 3;                shot external_file_created   # let the async rescan settle
 xdotool mousemove 508 50 click 1     # Git Commits tab

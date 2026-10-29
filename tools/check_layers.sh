@@ -15,6 +15,7 @@ RULES="
 file_types:
 git_utils:
 explorer_row:
+layout_store:
 text_style:app_types,file_types
 theme:
 markdown:app_types,image_utils

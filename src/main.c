@@ -1,5 +1,6 @@
 #include "topbar.h"
 #include "dialog.h"
+#include "layouts.h"
 #include "icons.h"
 #include "fs_watch.h"
 #include "panels.h"
@@ -368,6 +369,9 @@ int main(int argc, char** argv) {
 #endif
     workspaces_init(app);
     GtkWidget* ws_minimap = create_workspace_minimap(app);
+    GtkWidget* layouts_btn = icon_button_new("view-grid", "Workspace Layouts (Alt+L)");
+    gtk_widget_add_css_class(layouts_btn, "status-pill");
+    g_signal_connect_swapped(layouts_btn, "clicked", G_CALLBACK(layouts_show_dialog), app);
     GtkWidget* ws_div_label = gtk_label_new("|");
     gtk_widget_add_css_class(ws_div_label, "breadcrumb-sep");
     app->tree = explorer;
@@ -547,6 +551,7 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), breadcrumb_box);
     gtk_box_append(GTK_BOX(label_row), sep_label);
     gtk_box_append(GTK_BOX(label_row), ws_minimap);
+    gtk_box_append(GTK_BOX(label_row), layouts_btn);
     gtk_box_append(GTK_BOX(label_row), ws_div_label);
     gtk_box_append(GTK_BOX(label_row), files_btn);
     gtk_box_append(GTK_BOX(label_row), preview_btn);

@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "dialog.h"
+#include "layouts.h"
 #include "panels.h"
 #include "app_events.h"
 #include "workspace.h"
@@ -143,6 +144,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         }
         if (keyval == GDK_KEY_minus || keyval == GDK_KEY_KP_Subtract) {
             workspace_remove(app, app->current_ws);
+            return TRUE;
+        }
+        /* Alt+L: saved workspace layouts (Ctrl+Alt+L moves editor tabs) */
+        if ((keyval == GDK_KEY_l || keyval == GDK_KEY_L) && !(state & GDK_CONTROL_MASK)) {
+            layouts_show_dialog(app);
             return TRUE;
         }
     }

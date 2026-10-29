@@ -120,6 +120,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     /* Global */
     {"Global", "Alt+1 .. Alt+8", "Switch between virtual workspaces (or click/scroll top-bar minimap)"},
     {"Global", "Alt++ / Alt+-", "Add a virtual workspace with the default view (+) or close the current workspace (-)"},
+    {"Global", "Alt+L", "Workspace layouts: save the panel arrangement, or apply a saved one from the list"},
     {"Global", "Ctrl+T", "Open a terminal pane right of the running ones (exit the shell to close it)"},
     {"Global", "Ctrl+Shift+T", "Open a new terminal pane below the running ones"},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},

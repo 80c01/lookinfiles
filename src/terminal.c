@@ -2,6 +2,7 @@
 #include "panels.h"
 #include "app_events.h"
 #include "remote_store.h"
+#include "layout_store.h"
 
 #ifdef HAVE_VTE
 
@@ -149,7 +150,8 @@ static GtkWidget* get_target_pane(AppData* app) {
     return target;
 }
 
-void term_spawn_pane(AppData* app, gboolean new_row) {
+/* New terminal widget running a shell (not placed yet) */
+static GtkWidget* term_new_pane(AppData* app) {
     GtkWidget* vte = vte_terminal_new();
     gtk_widget_set_hexpand(vte, TRUE);
     gtk_widget_set_vexpand(vte, TRUE);
@@ -163,7 +165,11 @@ void term_spawn_pane(AppData* app, gboolean new_row) {
     gtk_widget_add_controller(vte, focus_ctrl);
 
     spawn_shell(app, VTE_TERMINAL(vte));
+    return vte;
+}
 
+void term_spawn_pane(AppData* app, gboolean new_row) {
+    GtkWidget* vte = term_new_pane(app);
     GtkWidget* target = get_target_pane(app);
     if (target == NULL) {
         /* First terminal: placed directly in term_box */
@@ -291,6 +297,123 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
         }
         g_ptr_array_unref(panes);
     }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Pane tree of saved layouts (layout_store.h)                               */
+/* ------------------------------------------------------------------------- */
+
+static const gchar* PANED_FRAC_KEY = "term-paned-frac"; /* also set by panels.c */
+
+static void describe_pane(GtkWidget* w, GString* out) {
+    if (VTE_IS_TERMINAL(w)) {
+        g_string_append_c(out, 'T');
+        return;
+    }
+    if (!GTK_IS_PANED(w)) {
+        return;
+    }
+    GtkWidget* a = gtk_paned_get_start_child(GTK_PANED(w));
+    GtkWidget* b = gtk_paned_get_end_child(GTK_PANED(w));
+    if (a == NULL || b == NULL) {
+        describe_pane(a != NULL ? a : b, out);
+        return;
+    }
+    GtkOrientation o = gtk_orientable_get_orientation(GTK_ORIENTABLE(w));
+    gdouble frac = 0.5;
+    gdouble* saved = g_object_get_data(G_OBJECT(w), PANED_FRAC_KEY);
+    gint len = (o == GTK_ORIENTATION_VERTICAL) ? gtk_widget_get_height(w) : gtk_widget_get_width(w);
+    if (len > 40) {
+        frac = (gdouble)gtk_paned_get_position(GTK_PANED(w)) / len;
+    } else if (saved != NULL) {
+        frac = *saved;
+    }
+    gchar num[G_ASCII_DTOSTR_BUF_SIZE];
+    g_ascii_formatd(num, sizeof num, "%.3f", CLAMP(frac, 0.05, 0.95));
+    g_string_append_printf(out, "%c:%s(", o == GTK_ORIENTATION_VERTICAL ? 'V' : 'H', num);
+    describe_pane(a, out);
+    g_string_append_c(out, ',');
+    describe_pane(b, out);
+    g_string_append_c(out, ')');
+}
+
+gchar* term_layout_capture(AppData* app) {
+    GString* out = g_string_new(NULL);
+    GtkWidget* root = (app->term_box != NULL) ? gtk_widget_get_first_child(app->term_box) : NULL;
+    if (root != NULL) {
+        describe_pane(root, out);
+    }
+    return g_string_free(out, FALSE);
+}
+
+guint term_pane_count(AppData* app) {
+    GPtrArray* panes = term_visible_panes(app);
+    guint n = panes->len;
+    g_ptr_array_unref(panes);
+    return n;
+}
+
+static GtkWidget* build_panes(AppData* app, const TermLayoutNode* node, GPtrArray* existing,
+                              guint* next) {
+    if (node->is_terminal) {
+        return (*next < existing->len) ? g_ptr_array_index(existing, (*next)++) : term_new_pane(app);
+    }
+    GtkWidget* paned = gtk_paned_new(node->vertical ? GTK_ORIENTATION_VERTICAL
+                                                    : GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_hexpand(paned, TRUE);
+    gtk_widget_set_vexpand(paned, TRUE);
+    wire_paned_controllers(paned, app);
+    gdouble* frac = g_new(gdouble, 1);
+    *frac = node->frac;
+    g_object_set_data_full(G_OBJECT(paned), PANED_FRAC_KEY, frac, g_free);
+    gtk_paned_set_start_child(GTK_PANED(paned), build_panes(app, node->first, existing, next));
+    gtk_paned_set_end_child(GTK_PANED(paned), build_panes(app, node->second, existing, next));
+    gtk_paned_set_resize_start_child(GTK_PANED(paned), TRUE);
+    gtk_paned_set_shrink_start_child(GTK_PANED(paned), TRUE);
+    gtk_paned_set_resize_end_child(GTK_PANED(paned), TRUE);
+    gtk_paned_set_shrink_end_child(GTK_PANED(paned), TRUE);
+    return paned;
+}
+
+void term_layout_apply(AppData* app, const gchar* text) {
+    TermLayoutNode* tree = term_layout_parse(text);
+    if (tree == NULL || app->term_box == NULL) {
+        term_layout_free(tree);
+        return;
+    }
+    /* Take the running terminals out of the old tree, in order */
+    GPtrArray* existing = term_visible_panes(app);
+    for (guint i = 0; i < existing->len; i++) {
+        GtkWidget* vte = g_ptr_array_index(existing, i);
+        GtkWidget* parent = gtk_widget_get_parent(vte);
+        g_object_ref(vte);
+        if (GTK_IS_PANED(parent)) {
+            if (gtk_paned_get_start_child(GTK_PANED(parent)) == vte) {
+                gtk_paned_set_start_child(GTK_PANED(parent), NULL);
+            } else {
+                gtk_paned_set_end_child(GTK_PANED(parent), NULL);
+            }
+        } else if (GTK_IS_BOX(parent)) {
+            gtk_box_remove(GTK_BOX(parent), vte);
+        }
+    }
+    for (GtkWidget* c = gtk_widget_get_first_child(app->term_box); c != NULL;
+         c = gtk_widget_get_first_child(app->term_box)) {
+        gtk_box_remove(GTK_BOX(app->term_box), c);
+    }
+
+    guint next = 0;
+    gtk_box_append(GTK_BOX(app->term_box), build_panes(app, tree, existing, &next));
+    /* Terminals left over (the caller confirmed it) close with their widget */
+    for (guint i = 0; i < existing->len; i++) {
+        GtkWidget* vte = g_ptr_array_index(existing, i);
+        if (i >= next && app->last_focused_vte == vte) {
+            app->last_focused_vte = NULL;
+        }
+        g_object_unref(vte);
+    }
+    g_ptr_array_unref(existing);
+    term_layout_free(tree);
 }
 
 void on_vte_realize(GtkWidget* term, gpointer data) {
