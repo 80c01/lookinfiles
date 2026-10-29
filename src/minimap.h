@@ -13,6 +13,8 @@ void minimap_goto_view(GtkWidget* minimap, GtkTextBuffer* buffer, GtkTextView* t
 void minimap_invalidate(AppData* app);
 void minimap_update_visibility(AppData* app);
 void minimap_goto(AppData* app, gdouble y);
+/* Mouse wheel over minimap scrolls text_view */
+void minimap_attach_wheel(GtkWidget* minimap, GtkWidget* text_view);
 
 /* Editor tab minimap support */
 void editor_minimap_init(EditorTab* tab);

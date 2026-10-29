@@ -152,6 +152,9 @@ key G;                  shot G_last_row
 key k;                  shot select_previous_row
 key j j;                shot select_next_rows
 key Return;             shot open_editor_notepad
+xdotool mousemove 1220 600 click --repeat 3 --delay 150 5   # wheel down over the minimap
+                        shot minimap_wheel_scrolled
+xdotool click --repeat 3 --delay 150 4                       # and back up
 xdotool mousemove 1237 783 click 1
                         shot mode_menu
 xdotool mousemove 1205 650 click 1   # pick "Notepad" (closes the menu)

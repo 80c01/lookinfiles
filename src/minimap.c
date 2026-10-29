@@ -441,6 +441,33 @@ void minimap_goto(AppData* app, gdouble y) {
     minimap_goto_view(app->minimap, app->buffer, GTK_TEXT_VIEW(app->text_view), y);
 }
 
+/* Mouse wheel over the minimap scrolls the text view: one notch moves a
+ * tenth of a page (at least 3 lines' worth), touchpads by pixels */
+static gboolean on_minimap_wheel(GtkEventControllerScroll* ctrl,
+                                 gdouble dx, gdouble dy, gpointer data) {
+    (void)dx;
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(data));
+    if (vadj == NULL || dy == 0.0) {
+        return FALSE;
+    }
+    gdouble page = gtk_adjustment_get_page_size(vadj);
+    gdouble step = dy;
+    if (gtk_event_controller_scroll_get_unit(ctrl) == GDK_SCROLL_UNIT_WHEEL) {
+        step = dy * MAX(page / 10.0, 48.0);
+    }
+    gdouble min_v = gtk_adjustment_get_lower(vadj);
+    gdouble max_v = MAX(min_v, gtk_adjustment_get_upper(vadj) - page);
+    gtk_adjustment_set_value(vadj, CLAMP(gtk_adjustment_get_value(vadj) + step, min_v, max_v));
+    return TRUE;
+}
+
+void minimap_attach_wheel(GtkWidget* minimap, GtkWidget* text_view) {
+    GtkEventController* scroll =
+        gtk_event_controller_scroll_new(GTK_EVENT_CONTROLLER_SCROLL_VERTICAL);
+    g_signal_connect(scroll, "scroll", G_CALLBACK(on_minimap_wheel), text_view);
+    gtk_widget_add_controller(minimap, scroll);
+}
+
 /* =========================================================================
  * Editor Tab Minimap Implementation
  * ========================================================================= */
@@ -611,6 +638,7 @@ void editor_minimap_init(EditorTab* tab) {
     GtkEventController* mm_motion = gtk_event_controller_motion_new();
     g_signal_connect(mm_motion, "motion", G_CALLBACK(on_editor_minimap_motion), tab);
     gtk_widget_add_controller(minimap, mm_motion);
+    minimap_attach_wheel(minimap, tab->view);
 
     g_signal_connect(minimap, "resize", G_CALLBACK(on_editor_minimap_resize), tab);
     g_signal_connect(minimap, "realize", G_CALLBACK(on_editor_minimap_realize), tab);

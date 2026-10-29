@@ -7,6 +7,7 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Mouse wheel over the minimap scrolls the preview or editor view.
 - Git change bars in the gutter of the text preview and the editor, as in
   VS Code: added (green), modified (blue) and deleted (red marker) lines
   since the last commit, updated while editing and after a commit; the

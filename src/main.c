@@ -444,6 +444,7 @@ int main(int argc, char** argv) {
     GtkEventController* mm_motion = gtk_event_controller_motion_new();
     g_signal_connect(mm_motion, "motion", G_CALLBACK(on_minimap_motion), app);
     gtk_widget_add_controller(minimap, mm_motion);
+    minimap_attach_wheel(minimap, text_view);
 
     g_signal_connect(minimap, "resize",
                      G_CALLBACK(on_minimap_resize), app);
