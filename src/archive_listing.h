@@ -1,5 +1,5 @@
-#ifndef ARCHIVE_H
-#define ARCHIVE_H
+#ifndef ARCHIVE_LISTING_H
+#define ARCHIVE_LISTING_H
 
 #include <gio/gio.h>
 
@@ -8,8 +8,9 @@
  *   - tar (ustar, GNU long names, pax paths), plain or gzip-compressed;
  *   - gzip of a single file: original name and size, start of the content;
  *   - ar (static libraries, .deb packages).
- * Other compressions (xz, bzip2, zstd, 7z, RAR, lzip) are only named
- * (archive_format_name()). Reading is bounded: at most max_entries entries
+ * With libarchive (HAVE_LIBARCHIVE), every format it reads: 7-Zip, RAR, ISO,
+ * cpio, RPM, CAB, and xz / bzip2 / zstd / lzip compression (of a tar or of a
+ * single file). Without it these are only named (archive_listing_format_name()). Reading is bounded: at most max_entries entries
  * are kept, and a compressed tar is read for a limited time and number of
  * bytes (the listing then says it is incomplete). Unit-tested. */
 
@@ -32,7 +33,7 @@ typedef struct {
 } ArchiveEntry;
 
 typedef struct {
-    const gchar* format;    /* "ZIP archive", "tar archive", "gzip-compressed tar archive"... */
+    const gchar* format;    /* "ZIP archive", "tar archive", "gzip-compressed tar archive"... (static) */
     GArray* entries;        /* ArchiveEntry: the first max_entries */
     guint n_entries;        /* entries seen (all of them unless incomplete) */
     guint n_files;
@@ -50,10 +51,10 @@ typedef struct {
 } ArchiveListing;
 
 /* Name of the archive or compression format of these first bytes, or NULL */
-const gchar* archive_format_name(const guchar* head, gsize len);
+const gchar* archive_listing_format_name(const guchar* head, gsize len);
 
 /* TRUE if the format of these bytes can be listed by archive_list() */
-gboolean archive_can_list(const guchar* head, gsize len);
+gboolean archive_listing_can_list(const guchar* head, gsize len);
 
 /* List an archive on disk. NULL with error set (G_IO_ERROR_NOT_SUPPORTED for
  * a format that cannot be listed) if it cannot be read. */
@@ -65,4 +66,4 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(ArchiveListing, archive_listing_free)
 /* Bytes of decompressed content kept in inner_head */
 #define ARCHIVE_INNER_HEAD (64 * 1024)
 
-#endif /* ARCHIVE_H */
+#endif /* ARCHIVE_LISTING_H */

@@ -1,5 +1,5 @@
-/* Unit tests for src/archive.c (ZIP, tar, gzip and ar listings). */
-#include "archive.h"
+/* Unit tests for src/archive_listing.c (ZIP, tar, gzip and ar listings). */
+#include "archive_listing.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -133,7 +133,7 @@ static void test_tar(void) {
     g_assert_cmpstr(l->format, ==, "tar archive");
     check_tar_listing(l);
     g_assert_false(l->incomplete);
-    g_assert_cmpstr(archive_format_name(tar->data, tar->len), ==, "tar archive");
+    g_assert_cmpstr(archive_listing_format_name(tar->data, tar->len), ==, "tar archive");
 
     GBytes* gz = gzip(tar->data, tar->len);
     gchar* gz_path = write_file("a.tgz", g_bytes_get_data(gz, NULL), g_bytes_get_size(gz));
@@ -189,17 +189,57 @@ static void test_ar(void) {
     g_free(path);
 }
 
-static void test_unsupported(void) {
+static void test_other_compressions(void) {
+#ifdef HAVE_LIBARCHIVE
+    gchar* xz = g_find_program_in_path("xz");
+    if (xz == NULL) {
+        g_test_skip("xz not installed");
+        return;
+    }
+    /* A single xz-compressed file shows its content; a .tar.xz lists its entries */
+    gchar* text = write_file("notes.txt", "hello xz\n", 9);
+    gchar* cmd = g_strdup_printf("xz -k -f %s", text);
+    g_assert_true(g_spawn_command_line_sync(cmd, NULL, NULL, NULL, NULL));
+    gchar* xz_path = g_strconcat(text, ".xz", NULL);
+    g_autoptr(ArchiveListing) single = archive_list(xz_path, 100, NULL, NULL);
+    g_assert_nonnull(single);
+    g_assert_true(single->single);
+    g_assert_cmpstr(single->format, ==, "xz-compressed file");
+    g_assert_cmpmem(g_bytes_get_data(single->inner_head, NULL), g_bytes_get_size(single->inner_head), "hello xz\n", 9);
+    GByteArray* tar = sample_tar();
+    gchar* tar_path = write_file("t.tar", tar->data, tar->len);
+    gchar* cmd2 = g_strdup_printf("xz -k -f %s", tar_path);
+    g_assert_true(g_spawn_command_line_sync(cmd2, NULL, NULL, NULL, NULL));
+    gchar* txz = g_strconcat(tar_path, ".xz", NULL);
+    g_autoptr(ArchiveListing) l = archive_list(txz, 100, NULL, NULL);
+    g_assert_nonnull(l);
+    g_assert_cmpstr(l->format, ==, "xz-compressed tar archive");
+    g_assert_cmpuint(l->n_entries, ==, 4);
+    g_assert_true(archive_listing_can_list((const guchar*)"\xFD" "7zXZ", 6));
+    g_remove(txz);
+    g_remove(tar_path);
+    g_remove(xz_path);
+    g_remove(text);
+    g_byte_array_unref(tar);
+    g_free(txz);
+    g_free(cmd2);
+    g_free(tar_path);
+    g_free(xz_path);
+    g_free(cmd);
+    g_free(text);
+    g_free(xz);
+#else
     gchar* path = write_file("a.xz", "\xFD" "7zXZ\0\0\0\0", 10);
     GError* error = NULL;
     g_assert_null(archive_list(path, 100, NULL, &error));
     g_assert_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
     g_assert_cmpstr(error->message, ==, "xz-compressed file");
     g_error_free(error);
-    g_assert_false(archive_can_list((const guchar*)"\xFD" "7zXZ", 6));
-    g_assert_true(archive_can_list((const guchar*)"\x1F\x8B\x08", 3));
+    g_assert_false(archive_listing_can_list((const guchar*)"\xFD" "7zXZ", 6));
     g_remove(path);
     g_free(path);
+#endif
+    g_assert_true(archive_listing_can_list((const guchar*)"\x1F\x8B\x08", 3));
 }
 
 int main(int argc, char** argv) {
@@ -209,7 +249,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/archive/tar", test_tar);
     g_test_add_func("/archive/gzip_single", test_gzip_single);
     g_test_add_func("/archive/ar", test_ar);
-    g_test_add_func("/archive/unsupported", test_unsupported);
+    g_test_add_func("/archive/other_compressions", test_other_compressions);
     int status = g_test_run();
     g_rmdir(tmp_dir);
     g_free(tmp_dir);

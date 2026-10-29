@@ -175,7 +175,10 @@ static const struct {
     { "xz", FILE_KIND_ARCHIVE }, { "txz", FILE_KIND_ARCHIVE }, { "lz", FILE_KIND_ARCHIVE },
     { "lzma", FILE_KIND_ARCHIVE }, { "zst", FILE_KIND_ARCHIVE }, { "tzst", FILE_KIND_ARCHIVE },
     { "7z", FILE_KIND_ARCHIVE }, { "rar", FILE_KIND_ARCHIVE }, { "cbr", FILE_KIND_ARCHIVE },
-    { "deb", FILE_KIND_ARCHIVE }, { "a", FILE_KIND_ARCHIVE },
+    { "deb", FILE_KIND_ARCHIVE }, { "a", FILE_KIND_ARCHIVE }, { "iso", FILE_KIND_ARCHIVE },
+    { "cpio", FILE_KIND_ARCHIVE }, { "rpm", FILE_KIND_ARCHIVE }, { "cab", FILE_KIND_ARCHIVE },
+    { "lzh", FILE_KIND_ARCHIVE }, { "lha", FILE_KIND_ARCHIVE }, { "xar", FILE_KIND_ARCHIVE },
+    { "lz4", FILE_KIND_ARCHIVE }, { "Z", FILE_KIND_ARCHIVE },
     { "ttf", FILE_KIND_FONT }, { "otf", FILE_KIND_FONT }, { "ttc", FILE_KIND_FONT },
     { "otc", FILE_KIND_FONT }, { "woff", FILE_KIND_FONT }, { "woff2", FILE_KIND_FONT },
     { "sqlite", FILE_KIND_DATABASE }, { "sqlite3", FILE_KIND_DATABASE },
@@ -439,7 +442,8 @@ static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_n
     }
     if (HAS(257, "ustar") || HAS(0, "\xFD" "7zXZ") || HAS(0, "\x28\xB5\x2F\xFD") ||
         HAS(0, "7z\xBC\xAF\x27\x1C") || HAS(0, "Rar!\x1A\x07") || HAS(0, "LZIP") ||
-        HAS(0, "!<arch>\n") || (HAS(0, "BZh") && len > 3 && head[3] >= '1' && head[3] <= '9')) {
+        HAS(0, "!<arch>\n") || HAS(0, "\xED\xAB\xEE\xDB") || HAS(0, "MSCF\0\0\0\0") ||
+        HAS(0, "\x04\x22\x4D\x18") || (HAS(0, "BZh") && len > 3 && head[3] >= '1' && head[3] <= '9')) {
         return FILE_KIND_ARCHIVE;
     }
     if (HAS(0, "fLaC") || HAS(0, "ID3") || HAS(0, "MThd") ||
@@ -609,8 +613,8 @@ FileKind file_kind_detect(const gchar* name, const guchar* head, gsize len) {
     }
     if (!looks_like_text(head, len)) {
         FileKind weak = detect_weak_magic(head, len, by_name);
-        if (weak == FILE_KIND_BINARY && file_kind_is_media(by_name)) {
-            return by_name; /* a format without a known signature (TGA, WMA...) */
+        if (weak == FILE_KIND_BINARY && (file_kind_is_media(by_name) || by_name == FILE_KIND_ARCHIVE)) {
+            return by_name; /* a format without a signature at its start (TGA, WMA, ISO...) */
         }
         return weak;
     }

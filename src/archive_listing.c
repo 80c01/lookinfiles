@@ -1,10 +1,15 @@
-/* Archive listings for the preview (see archive.h). */
-#include "archive.h"
+/* Archive listings for the preview (see archive_listing.h). */
+#include "archive_listing.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "zip_reader.h"
+
+#ifdef HAVE_LIBARCHIVE
+#include <archive.h>
+#include <archive_entry.h>
+#endif
 
 #define TAR_BLOCK 512
 /* A compressed tar is read for at most this long / this many bytes */
@@ -37,7 +42,7 @@ static gboolean is_tar(const guchar* head, gsize len) {
     return len >= TAR_BLOCK && (HAS(257, "ustar") || tar_checksum_ok(head));
 }
 
-const gchar* archive_format_name(const guchar* head, gsize len) {
+const gchar* archive_listing_format_name(const guchar* head, gsize len) {
     if (HAS(0, "PK\x03\x04") || HAS(0, "PK\x05\x06")) return "ZIP archive";
     if (HAS(0, "\x1F\x8B")) return "gzip-compressed file";
     if (HAS(0, "BZh")) return "bzip2-compressed file";
@@ -47,11 +52,18 @@ const gchar* archive_format_name(const guchar* head, gsize len) {
     if (HAS(0, "7z\xBC\xAF\x27\x1C")) return "7-Zip archive";
     if (HAS(0, "Rar!\x1A\x07")) return "RAR archive";
     if (HAS(0, "!<arch>\n")) return "ar archive";
+    if (HAS(0, "\xED\xAB\xEE\xDB")) return "RPM package";
+    if (HAS(0, "MSCF")) return "Cabinet archive";
     if (is_tar(head, len)) return "tar archive";
     return NULL;
 }
 
-gboolean archive_can_list(const guchar* head, gsize len) {
+gboolean archive_listing_can_list(const guchar* head, gsize len) {
+#ifdef HAVE_LIBARCHIVE
+    if (archive_listing_format_name(head, len) != NULL || HAS(0, "\xED\xAB\xEE\xDB") || HAS(0, "MSCF")) {
+        return TRUE;
+    }
+#endif
     return HAS(0, "PK\x03\x04") || HAS(0, "PK\x05\x06") || HAS(0, "\x1F\x8B") ||
            HAS(0, "!<arch>\n") || is_tar(head, len);
 }
@@ -496,6 +508,140 @@ static ArchiveListing* list_ar(GInputStream* in, guint max_entries, GCancellable
     return l;
 }
 
+#ifdef HAVE_LIBARCHIVE
+
+/* "xz", "bzip2"... of the outer compression, NULL if none */
+static const gchar* filter_label(struct archive* a) {
+    for (int i = 0; i < archive_filter_count(a); i++) {
+        switch (archive_filter_code(a, i)) {
+        case ARCHIVE_FILTER_GZIP: return "gzip";
+        case ARCHIVE_FILTER_BZIP2: return "bzip2";
+        case ARCHIVE_FILTER_XZ: return "xz";
+        case ARCHIVE_FILTER_LZMA: return "LZMA";
+        case ARCHIVE_FILTER_LZIP: return "lzip";
+        case ARCHIVE_FILTER_ZSTD: return "Zstandard";
+        case ARCHIVE_FILTER_LZ4: return "LZ4";
+        case ARCHIVE_FILTER_COMPRESS: return "compress";
+        default: break;
+        }
+    }
+    return NULL;
+}
+
+static const gchar* format_label(struct archive* a) {
+    switch (archive_format(a) & ARCHIVE_FORMAT_BASE_MASK) {
+    case ARCHIVE_FORMAT_TAR: return "tar archive";
+    case ARCHIVE_FORMAT_CPIO: return "cpio archive";
+    case ARCHIVE_FORMAT_ISO9660: return "ISO image";
+    case ARCHIVE_FORMAT_ZIP: return "ZIP archive";
+    case ARCHIVE_FORMAT_AR: return "ar archive";
+    case ARCHIVE_FORMAT_7ZIP: return "7-Zip archive";
+    case ARCHIVE_FORMAT_CAB: return "Cabinet archive";
+    case ARCHIVE_FORMAT_RAR: return "RAR archive";
+    case ARCHIVE_FORMAT_RAR_V5: return "RAR archive";
+    case ARCHIVE_FORMAT_LHA: return "LHA archive";
+    case ARCHIVE_FORMAT_XAR: return "xar archive";
+    case ARCHIVE_FORMAT_WARC: return "WARC archive";
+    default: return "archive";
+    }
+}
+
+/* Interned "xz-compressed tar archive" (the listing keeps a static string) */
+static const gchar* compose_format(const gchar* filter, const gchar* format) {
+    if (filter == NULL) {
+        return g_intern_string(format);
+    }
+    gchar* name = g_strdup_printf("%s-compressed %s", filter, format);
+    const gchar* interned = g_intern_string(name);
+    g_free(name);
+    return interned;
+}
+
+static struct archive* open_with(const gchar* path, gboolean raw) {
+    struct archive* a = archive_read_new();
+    archive_read_support_filter_all(a);
+    if (raw) {
+        archive_read_support_format_raw(a);
+    } else {
+        archive_read_support_format_all(a);
+    }
+    if (archive_read_open_filename(a, path, 64 * 1024) != ARCHIVE_OK) {
+        archive_read_free(a);
+        return NULL;
+    }
+    return a;
+}
+
+static ArchiveListing* list_libarchive(const gchar* path, guint max_entries, GCancellable* cancellable,
+                                       GError** error) {
+    struct archive* a = open_with(path, FALSE);
+    struct archive_entry* entry = NULL;
+    int rc = a != NULL ? archive_read_next_header(a, &entry) : ARCHIVE_FATAL;
+    if (rc != ARCHIVE_OK && rc != ARCHIVE_WARN) {
+        /* Not an archive format: maybe a single compressed file */
+        if (a != NULL) {
+            archive_read_free(a);
+        }
+        a = open_with(path, TRUE);
+        if (a == NULL || archive_read_next_header(a, &entry) != ARCHIVE_OK || filter_label(a) == NULL) {
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "%s",
+                        a != NULL && archive_error_string(a) != NULL ? archive_error_string(a)
+                                                                     : "unknown archive format");
+            if (a != NULL) {
+                archive_read_free(a);
+            }
+            return NULL;
+        }
+        ArchiveListing* l = listing_new(compose_format(filter_label(a), "file"));
+        l->single = TRUE;
+        guchar* data = g_malloc(ARCHIVE_INNER_HEAD);
+        gsize got = 0;
+        while (got < ARCHIVE_INNER_HEAD) {
+            la_ssize_t n = archive_read_data(a, data + got, ARCHIVE_INNER_HEAD - got);
+            if (n <= 0) {
+                break;
+            }
+            got += (gsize)n;
+        }
+        l->inner_head = g_bytes_new_take(data, got);
+        archive_read_free(a);
+        return l;
+    }
+
+    ArchiveListing* l = listing_new("archive");
+    gint64 start = g_get_monotonic_time();
+    while (rc == ARCHIVE_OK || rc == ARCHIVE_WARN) {
+        const gchar* name = archive_entry_pathname_utf8(entry);
+        if (name == NULL) {
+            name = archive_entry_pathname(entry);
+        }
+        mode_t type = archive_entry_filetype(entry);
+        ArchiveEntryType t = type == AE_IFDIR ? ARCHIVE_ENTRY_DIR
+                             : type == AE_IFLNK ? ARCHIVE_ENTRY_SYMLINK
+                             : type == AE_IFREG ? ARCHIVE_ENTRY_FILE : ARCHIVE_ENTRY_OTHER;
+        if (archive_entry_hardlink(entry) != NULL) {
+            t = ARCHIVE_ENTRY_HARDLINK;
+        }
+        const gchar* target = t == ARCHIVE_ENTRY_SYMLINK ? archive_entry_symlink(entry)
+                              : t == ARCHIVE_ENTRY_HARDLINK ? archive_entry_hardlink(entry) : NULL;
+        gchar* path_utf8 = g_utf8_make_valid(name != NULL ? name : "", -1);
+        add_entry(l, max_entries, path_utf8, t, t == ARCHIVE_ENTRY_FILE ? (guint64)archive_entry_size(entry) : 0,
+                  -1, archive_entry_mtime_is_set(entry) ? (gint64)archive_entry_mtime(entry) : -1,
+                  target != NULL ? g_utf8_make_valid(target, -1) : NULL, archive_entry_is_encrypted(entry));
+        if (g_get_monotonic_time() - start > GZIP_TAR_MAX_US || g_cancellable_is_cancelled(cancellable)) {
+            l->incomplete = TRUE;
+            break;
+        }
+        archive_read_data_skip(a);
+        rc = archive_read_next_header(a, &entry);
+    }
+    l->format = compose_format(filter_label(a), format_label(a));
+    archive_read_free(a);
+    return l;
+}
+
+#endif /* HAVE_LIBARCHIVE */
+
 ArchiveListing* archive_list(const gchar* path, guint max_entries, GCancellable* cancellable,
                              GError** error) {
     GFile* file = g_file_new_for_path(path);
@@ -525,7 +671,11 @@ ArchiveListing* archive_list(const gchar* path, guint max_entries, GCancellable*
         l = listing_new("tar archive");
         list_tar_stream(l, G_INPUT_STREAM(stream), max_entries, FALSE, cancellable);
     } else {
-        const gchar* format = archive_format_name(head, len);
+#ifdef HAVE_LIBARCHIVE
+        g_object_unref(stream);
+        return list_libarchive(path, max_entries, cancellable, error);
+#endif
+        const gchar* format = archive_listing_format_name(head, len);
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "%s",
                     format != NULL ? format : "unknown archive format");
     }

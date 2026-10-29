@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "archive.h"
+#include "archive_listing.h"
 #include "card_view.h"
 #include "cert_view.h"
 #include "csv.h"
@@ -258,7 +258,7 @@ static void append_inner_content(PreviewDoc* doc, GBytes* bytes, const gchar* in
 static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     GError* err = NULL;
     g_autoptr(ArchiveListing) l = archive_list(in->path, ARCHIVE_MAX_ENTRIES, cancellable, &err);
-    const gchar* format = l != NULL ? l->format : archive_format_name(in->head, in->head_len);
+    const gchar* format = l != NULL ? l->format : archive_listing_format_name(in->head, in->head_len);
     if (l == NULL && (format == NULL || !g_error_matches(err, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED))) {
         g_propagate_error(error, err);
         return NULL;
