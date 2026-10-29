@@ -4,6 +4,7 @@
 #include <glib/gstdio.h>
 #include <string.h>
 
+#include "csv.h"
 #include "docx.h"
 #include "elf_info.h"
 #include "hex_dump.h"
@@ -13,6 +14,87 @@ typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* ca
 
 gchar* preview_format_size(gint64 size) {
     return size < 0 ? g_strdup("") : g_format_size((guint64)size);
+}
+
+/* "12,345" */
+static gchar* format_count(guint64 n) {
+    gchar* digits = g_strdup_printf("%" G_GUINT64_FORMAT, n);
+    gsize len = strlen(digits);
+    GString* out = g_string_new(NULL);
+    for (gsize i = 0; i < len; i++) {
+        if (i > 0 && (len - i) % 3 == 0) {
+            g_string_append_c(out, ',');
+        }
+        g_string_append_c(out, digits[i]);
+    }
+    g_free(digits);
+    return g_string_free(out, FALSE);
+}
+
+/* Dimmed note saying only the start of the file was read */
+static void note_truncated_text(PreviewDoc* doc, const PreviewInput* in) {
+    if (in->text_truncated) {
+        gchar* shown = g_format_size(in->text_len);
+        gchar* total = preview_format_size(in->size);
+        gchar* note = g_strdup_printf("Only the first %s of %s were read.", shown, total);
+        preview_doc_note(doc, note);
+        g_free(note);
+        g_free(total);
+        g_free(shown);
+    }
+}
+
+/* --- CSV / TSV --- */
+
+#define TABLE_MAX_ROWS 1000
+#define TABLE_MAX_COLS 100
+
+static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    gchar sep = csv_sniff_separator(in->text, in->text_len, in->name);
+    g_autoptr(CsvData) data = csv_parse(in->text, in->text_len, sep, TABLE_MAX_ROWS + 1);
+    if (data->n_rows == 0) {
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "no rows");
+        return NULL;
+    }
+    gboolean header = csv_has_header(data);
+    guint n_cols = MIN(data->n_cols, TABLE_MAX_COLS);
+    guint body_rows = data->n_rows - (header ? 1 : 0);
+
+    PreviewDoc* doc = preview_doc_new();
+    gchar* rows = format_count(body_rows);
+    gchar* cols = format_count(data->n_cols);
+    preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "%s %s × %s %s · %s-separated%s\n", rows,
+                        body_rows == 1 ? "row" : "rows", cols, data->n_cols == 1 ? "column" : "columns",
+                        csv_separator_name(sep), in->text_truncated ? " (start of the file)" : "");
+    g_free(cols);
+    g_free(rows);
+    note_truncated_text(doc, in);
+    preview_doc_append_len(doc, "\n", 1);
+
+    g_autoptr(PreviewTable) table = preview_table_new(n_cols);
+    preview_table_set_row_numbers(table, TRUE);
+    guint first = 0;
+    if (header) {
+        preview_table_set_header(table, (const gchar* const*)g_ptr_array_index(data->rows, 0));
+        first = 1;
+    }
+    for (guint r = first; r < data->rows->len && r - first < TABLE_MAX_ROWS; r++) {
+        gchar** cells = g_ptr_array_index(data->rows, r);
+        preview_table_add_row(table, (const gchar* const*)cells, g_strv_length(cells));
+    }
+    preview_doc_add_table(doc, table);
+    if (body_rows > TABLE_MAX_ROWS) {
+        gchar* shown = format_count(TABLE_MAX_ROWS);
+        gchar* note = g_strdup_printf("\nShowing the first %s rows.", shown);
+        preview_doc_note(doc, note);
+        g_free(note);
+        g_free(shown);
+    }
+    if (data->n_cols > TABLE_MAX_COLS) {
+        preview_doc_note(doc, "Showing the first 100 columns.");
+    }
+    return doc;
 }
 
 /* --- ELF executables, libraries, objects --- */
@@ -83,6 +165,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_elf;
     case FILE_KIND_DOCUMENT:
         return build_document;
+    case FILE_KIND_CSV:
+        return build_csv;
     default:
         return NULL;
     }

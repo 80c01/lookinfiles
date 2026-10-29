@@ -24,7 +24,8 @@ elf_info:
 zip_reader:
 docx:zip_reader
 preview_doc:
-preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump
+csv:preview_doc
+preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump,csv
 org_time:
 org_doc:org_time
 org_table:org_doc

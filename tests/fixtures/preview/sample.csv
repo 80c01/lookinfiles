@@ -1,0 +1,9 @@
+id,product,category,unit_price,quantity,ordered_on,note
+1,Espresso beans,Coffee,12.50,3,2026-09-14,
+2,"Mug, ceramic",Kitchen,8.00,2,2026-09-15,"Gift wrap"
+3,Grinder,Appliances,89.90,1,2026-09-20,"Model ""Pro"""
+4,Filter papers,Coffee,3.20,10,2026-10-01,
+5,Kettle 1.7 L,Appliances,45.00,1,2026-10-03,Back order
+6,Oat milk,Groceries,2.10,12,2026-10-07,
+7,Tamper,Accessories,19.99,1,2026-10-12,
+8,"Café crème, 1 kg",Coffee,24.00,2,2026-10-20,Organic

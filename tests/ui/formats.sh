@@ -11,6 +11,7 @@
     for i in $(seq 0 511); do printf "\\$(printf %03o $((i % 256)))"; done > 02-unknown.bin
     # Word document: headings, lists, table, image, link
     cp "$ROOT/tests/ui/fixtures/report.docx" 03-report.docx
+    cp "$ROOT/tests/fixtures/preview/sample.csv" 04-orders.csv
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -19,4 +20,7 @@ format_scenario() {
     key m
     key j;              shot fmt_hex_dump
     key j;              shot fmt_word_document
+    key j;              shot fmt_csv_table
+    key m;              shot fmt_csv_raw
+    key m
 }

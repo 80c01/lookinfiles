@@ -60,6 +60,27 @@ static void test_word_document(void) {
     g_assert_nonnull(strstr(doc->text->str, "<h1"));
 }
 
+/* Built preview of a fixture of tests/fixtures/preview */
+static PreviewDoc* build_fixture(const gchar* name, FileKind expected) {
+    gchar* path = g_build_filename("tests", "fixtures", "preview", name, NULL);
+    FileKind kind = FILE_KIND_TEXT;
+    GError* error = NULL;
+    PreviewDoc* doc = preview_format_build_file(path, name, 512 * 1024, NULL, &kind, &error);
+    g_assert_no_error(error);
+    g_assert_cmpint(kind, ==, expected);
+    g_assert_nonnull(doc);
+    g_free(path);
+    return doc;
+}
+
+static void test_csv(void) {
+    g_autoptr(PreviewDoc) doc = build_fixture("sample.csv", FILE_KIND_CSV);
+    g_assert_true(g_str_has_prefix(doc->text->str, "8 rows × 7 columns · comma-separated\n"));
+    g_assert_nonnull(strstr(doc->text->str, "id │ product"));
+    g_assert_nonnull(strstr(doc->text->str, "Model \"Pro\""));
+    g_assert_true(doc->monospace);
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -82,5 +103,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/elf", test_elf);
     g_test_add_func("/preview_formats/word_document", test_word_document);
     g_test_add_func("/preview_formats/damaged_document", test_damaged_document);
+    g_test_add_func("/preview_formats/csv", test_csv);
     return g_test_run();
 }
