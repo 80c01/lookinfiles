@@ -232,7 +232,7 @@ make clean                     # remove binary and build/
 
 ## 📦 Prerequisites
 
-- GTK 4 Development: `libgtk-4-dev`
+- GTK 4.12 or newer, development files: `libgtk-4-dev`
 - GCC: `gcc`
 
 Install on Debian/Ubuntu:
@@ -287,6 +287,7 @@ src/
 │   Foundation (pure, unit-tested)
 ├── file_types.c/.h          # File type detection and emoji icons
 ├── git_utils.c/.h           # Git root/dir/branch discovery and status scan
+├── explorer_row.c/.h        # Explorer tree rows (type, name, path, badge, children)
 │   Shared UI helpers
 ├── app_events.c/.h          # Event bus: lower layers notify the window chrome
 ├── panels.c/.h              # Fullscreen, focused panel, split handle feedback
@@ -296,12 +297,14 @@ src/
 ├── text_style.c/.h          # Dark+ scheme, monospace, syntax language
 ├── theme.c/.h               # Global CSS theme
 ├── icons.c/.h               # Theme icon buttons and tab headers
+├── dialog.c/.h              # Modal dialog window with response buttons
+├── explorer_tree.c/.h       # Explorer list view: selection, expansion, row drawing
 ├── tree_nav.c/.h            # Explorer row navigation and selection
 ├── markdown.c/.h            # Markdown rendering engine
 ├── html.c/.h                # HTML rendering engine
 ├── minimap.c/.h             # Scaled file overview minimap
 │   Explorer panel
-├── file_list.c/.h           # Async directory scan, tree store, expand/collapse, keys
+├── file_list.c/.h           # Async directory scan, tree rows, expand/collapse, keys
 ├── file_actions.c/.h        # New file / new folder
 ├── sidebar.c/.h             # Explorer header and per-view toolbars
 ├── bookmarks.c/.h           # Hierarchical bookmark manager with XML persistence
@@ -357,4 +360,4 @@ AGENTS.md                    # AI coding agent guidelines
 - **v1.16**: Enhanced HTML preview rendering: base64 data URI image support (`data:image/...;base64`), code blocks with language extraction and banners, description lists (`<dl>`, `<dt>`, `<dd>`), `<details>`/`<summary>` disclosure, task list checkboxes (`☑`/`☐`), keyboard badges (`<kbd>`), `<abbr>` tooltips, table captions (`<caption>`) & numeric cell alignment, document metadata banner (author & description), smart links, and over 40 math, Greek, and arrow HTML entities
 - **v1.17**: Hanging indent and aligned paragraph wrapping for list items: automatic line wrapping in rendered HTML and Markdown previews with hanging indentation (`left-margin` and negative first-line `indent`) across unordered, ordered, and task lists at all nesting depths ($d=0..7$), ensuring wrapped continuation lines and multi-paragraph list items (`<p>` within `<li>` or indented continuation blocks) align under the item text
 - **v2.0**: Migrated to **GTK 4** (`gtk4`, `gtksourceview-5`, `vte-2.91-gtk4`) with GSK GPU-accelerated rendering, `GdkPaintable`/`GdkTexture` image & PDF rendering, GTK 4 event controllers (`GtkEventControllerKey`, `GtkGestureClick`, `GtkEventControllerMotion`, `GtkEventControllerFocus`), and non-blocking `GTask` + `GCancellable` background threads for directory scanning, file reading, image scaling, and PDF rasterization
-- Compatible with GTK 4.0+
+- Requires GTK 4.12+ (list views over `GListStore` / `GtkTreeListModel`, own dialog window)

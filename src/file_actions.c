@@ -112,52 +112,25 @@ static gboolean is_valid_name(const gchar* name) {
 /* Selected file or directory row of the files view (not the base directory);
  * returns its path, or NULL. */
 static gchar* selected_entry_path(AppData* app) {
-    if (app == NULL || app->selection == NULL || app->sidebar_view != SIDEBAR_VIEW_FILES ||
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_FILES ||
         app->show_bookmarks) {
         return NULL;
     }
-    GtkTreeIter it;
-    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-        return NULL;
-    }
-    gchar* type = NULL;
-    gchar* path = NULL;
-    gtk_tree_model_get(app->model, &it, COL_TYPE, &type, COL_PATH, &path, -1);
-    gboolean ok = (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "file") == 0) &&
-                  path != NULL && path[0] != '\0' && g_strcmp0(path, app->base_dir) != 0;
-    g_free(type);
-    if (!ok) {
-        g_free(path);
-        return NULL;
-    }
-    return path;
+    ExplorerRow* row = explorer_tree_get_selected(app->tree);
+    gboolean ok = (explorer_row_is(row, "dir") || explorer_row_is(row, "file")) &&
+                  row->path[0] != '\0' && g_strcmp0(row->path, app->base_dir) != 0;
+    return ok ? g_strdup(row->path) : NULL;
 }
 
 static gchar* get_target_files_dir(AppData* app) {
-    if (app == NULL || app->tree_view == NULL || app->selection == NULL) {
+    ExplorerRow* row = (app != NULL && app->tree != NULL) ? explorer_tree_get_selected(app->tree) : NULL;
+    if (row == NULL || row->path[0] == '\0') {
         return (app && app->base_dir) ? g_strdup(app->base_dir) : g_strdup(g_get_home_dir());
     }
-    GtkTreeIter it;
-    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-        return (app->base_dir) ? g_strdup(app->base_dir) : g_strdup(g_get_home_dir());
+    if (explorer_row_is(row, "dir") && g_file_test(row->path, G_FILE_TEST_IS_DIR)) {
+        return g_strdup(row->path);
     }
-    gchar* path = NULL;
-    gchar* type = NULL;
-    gtk_tree_model_get(app->model, &it, COL_PATH, &path, COL_TYPE, &type, -1);
-    if (path == NULL || path[0] == '\0') {
-        g_free(type);
-        g_free(path);
-        return (app->base_dir) ? g_strdup(app->base_dir) : g_strdup(g_get_home_dir());
-    }
-    gchar* target = NULL;
-    if (g_strcmp0(type, "dir") == 0 && g_file_test(path, G_FILE_TEST_IS_DIR)) {
-        target = g_strdup(path);
-    } else {
-        target = g_path_get_dirname(path);
-    }
-    g_free(type);
-    g_free(path);
-    return target;
+    return g_path_get_dirname(row->path);
 }
 
 gchar* file_action_new_file(AppData* app) {

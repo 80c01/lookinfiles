@@ -54,44 +54,19 @@ static gint compare_entries_with_data(gconstpointer a, gconstpointer b, gpointer
 }
 
 
-static void update_tree_git_statuses_recursive(GtkTreeModel* model, GtkTreeIter* parent,
-                                               GHashTable* statuses) {
-    GtkTreeIter iter;
-    if (!gtk_tree_model_iter_children(model, &iter, parent)) {
-        return;
-    }
-    do {
-        gchar* path = NULL;
-        gchar* old_badge = NULL;
-        gtk_tree_model_get(model, &iter,
-                           COL_PATH, &path,
-                           COL_GIT_STATUS, &old_badge,
-                           -1);
-
-        if (path != NULL && path[0] != '\0') {
-            const gchar* new_badge = "";
-            if (statuses != NULL) {
-                const gchar* b = (const gchar*)g_hash_table_lookup(statuses, path);
-                if (b != NULL) {
-                    new_badge = b;
-                }
-            }
-            if (g_strcmp0(old_badge, new_badge) != 0) {
-                gtk_tree_store_set(GTK_TREE_STORE(model), &iter,
-                                   COL_GIT_STATUS, new_badge,
-                                   -1);
-            }
+static void update_tree_git_statuses_recursive(ExplorerRow* parent, GHashTable* statuses) {
+    for (guint i = 0; i < explorer_row_n_children(parent); i++) {
+        ExplorerRow* row = explorer_row_child(parent, i);
+        if (row->path[0] != '\0') {
+            const gchar* badge = (statuses != NULL) ? g_hash_table_lookup(statuses, row->path) : NULL;
+            explorer_row_set_badge(row, badge != NULL ? badge : "");
         }
-        g_free(path);
-        g_free(old_badge);
-
-        /* Recurse into children */
-        update_tree_git_statuses_recursive(model, &iter, statuses);
-    } while (gtk_tree_model_iter_next(model, &iter));
+        update_tree_git_statuses_recursive(row, statuses);
+    }
 }
 
 void refresh_git_status_in_place(AppData* app) {
-    if (app == NULL || app->model == NULL) {
+    if (app == NULL || app->tree == NULL) {
         return;
     }
     if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
@@ -109,7 +84,7 @@ void refresh_git_status_in_place(AppData* app) {
     }
     app->git_statuses = new_statuses;
 
-    update_tree_git_statuses_recursive(app->model, NULL, app->git_statuses);
+    update_tree_git_statuses_recursive(explorer_tree_get_root(app->tree), app->git_statuses);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
@@ -265,31 +240,38 @@ void toggle_remote_view(AppData* app) {
 
 
 void toggle_collapse_expand_files(AppData* app) {
-    if (app == NULL || app->tree_view == NULL) {
+    if (app == NULL || app->tree == NULL) {
         return;
     }
     gboolean has_expanded = (app->expanded_paths != NULL &&
                              g_hash_table_size(app->expanded_paths) > 0);
     if (has_expanded) {
-        gtk_tree_view_collapse_all(app->tree_view);
+        explorer_tree_collapse_all(app->tree);
         if (app->expanded_paths != NULL) {
             g_hash_table_remove_all(app->expanded_paths);
         }
     } else {
-        gtk_tree_view_expand_all(app->tree_view);
+        explorer_tree_expand_all(app->tree);
     }
 }
 
-/* Apply a pre-scanned DirScanNode tree into GtkTreeStore on the main thread */
-static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIter* parent,
-                                    const DirScanNode* node) {
-    if (parent == NULL && app != NULL) {
+/* Placeholder child of an unread directory: keeps the expander visible until
+ * the row is expanded and its contents are read */
+static void append_placeholder(ExplorerRow* parent, const gchar* name, const gchar* label,
+                               const gchar* path) {
+    explorer_row_append(parent, "-", name, label, path);
+}
+
+/* Apply a pre-scanned DirScanNode tree under parent (the root for the top level), on the main thread */
+static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirScanNode* node) {
+    gboolean top = parent->is_root;
+    if (top && app != NULL) {
         if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
-            notes_append_to_store(store, app);
+            notes_append_rows(parent, app);
             return;
         }
         if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
-            bookmarks_append_to_store(store, app);
+            bookmarks_append_rows(parent, app);
             return;
         }
     }
@@ -299,31 +281,14 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
     }
 
     if (node->unreadable) {
-        GtkTreeIter iter;
-        gtk_tree_store_append(store, &iter, parent);
-        gtk_tree_store_set(store, &iter,
-                           COL_NAME, "(cannot read directory)",
-                           COL_TYPE, "-",
-                           COL_LABEL, (parent == NULL) ? "📄 (cannot read directory)"
-                                                       : "  (cannot read directory)",
-                           COL_PATH, node->dirname,
-                           COL_LOADED, TRUE,
-                           COL_GIT_STATUS, "",
-                           -1);
+        append_placeholder(parent, "(cannot read directory)",
+                           top ? "📄 (cannot read directory)" : "  (cannot read directory)",
+                           node->dirname);
         return;
     }
 
-    if (node->entries->len == 0 && parent != NULL) {
-        GtkTreeIter iter;
-        gtk_tree_store_append(store, &iter, parent);
-        gtk_tree_store_set(store, &iter,
-                           COL_NAME, "(empty)",
-                           COL_TYPE, "-",
-                           COL_LABEL, "  (empty)",
-                           COL_PATH, "",
-                           COL_LOADED, TRUE,
-                           COL_GIT_STATUS, "",
-                           -1);
+    if (node->entries->len == 0 && !top) {
+        append_placeholder(parent, "(empty)", "  (empty)", "");
         return;
     }
 
@@ -344,226 +309,124 @@ static void apply_dir_node_to_store(GtkTreeStore* store, AppData* app, GtkTreeIt
             }
         }
 
-        GtkTreeIter iter;
-        gtk_tree_store_append(store, &iter, parent);
-
         if (e->is_dir) {
             gboolean is_expanded = (child_node != NULL);
-            const gchar* icon = is_expanded ? "📂" : "📁";
-            gchar* label = g_strconcat(icon, " ", e->name, NULL);
-            gtk_tree_store_set(store, &iter,
-                               COL_NAME, e->name,
-                               COL_TYPE, "dir",
-                               COL_LABEL, label,
-                               COL_PATH, can_full,
-                               COL_LOADED, is_expanded,
-                               COL_GIT_STATUS, git_badge,
-                               -1);
+            gchar* label = g_strconcat(is_expanded ? "📂" : "📁", " ", e->name, NULL);
+            ExplorerRow* row = explorer_row_append_container(parent, "dir", e->name, label, can_full);
             g_free(label);
-
+            explorer_row_set_badge(row, git_badge);
+            explorer_row_set_loaded(row, is_expanded);
             if (is_expanded) {
-                apply_dir_node_to_store(store, app, &iter, child_node);
+                apply_dir_node_to_rows(row, app, child_node);
             } else {
-                /* Add dummy child so expander arrow is shown */
-                GtkTreeIter dummy;
-                gtk_tree_store_append(store, &dummy, &iter);
-                gtk_tree_store_set(store, &dummy,
-                                   COL_NAME, "",
-                                   COL_TYPE, "-",
-                                   COL_LABEL, "...",
-                                   COL_PATH, "",
-                                   COL_LOADED, TRUE,
-                                   COL_GIT_STATUS, "",
-                                   -1);
+                append_placeholder(row, "", "...", "");
             }
         } else {
             gboolean is_buf = (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES);
-            const gchar* type_name = is_buf ? "buffer" : "file";
             const gchar* icon_name = is_buf ? "📝" : file_icon(e->name, FALSE);
             gchar* label = g_strconcat(icon_name, " ", e->name, NULL);
-            gtk_tree_store_set(store, &iter,
-                               COL_NAME, e->name,
-                               COL_TYPE, type_name,
-                               COL_LABEL, label,
-                               COL_PATH, can_full,
-                               COL_LOADED, TRUE,
-                               COL_GIT_STATUS, git_badge,
-                               -1);
+            ExplorerRow* row = explorer_row_append(parent, is_buf ? "buffer" : "file", e->name, label, can_full);
             g_free(label);
+            explorer_row_set_badge(row, git_badge);
         }
         g_free(can_full);
     }
 }
 
-/* Populate one directory level under parent in the GtkTreeStore */
-static void populate_level(GtkTreeStore* store, AppData* app, GtkTreeIter* parent,
-                           const gchar* dirname, gboolean show_hidden, gint sort_mode) {
+/* Read one directory level into parent's children */
+static void populate_level(ExplorerRow* parent, AppData* app, const gchar* dirname,
+                           gboolean show_hidden, gint sort_mode) {
     GHashTable* exp = (app != NULL) ? app->expanded_paths : NULL;
     DirScanNode* node = scan_dir_node_recursive(dirname, show_hidden, sort_mode, exp, NULL);
-    apply_dir_node_to_store(store, app, parent, node);
+    apply_dir_node_to_rows(parent, app, node);
     dir_scan_node_free(node);
 }
 
-/* Populate the tree store with directory contents */
-void populate_store(GtkTreeStore* store, AppData* app, const gchar* dirname,
-                    gboolean show_hidden, gint sort_mode) {
-    if (app != NULL) {
-        if (app->git_statuses != NULL) {
-            g_hash_table_destroy(app->git_statuses);
-            app->git_statuses = NULL;
-        }
-        app->git_statuses = scan_git_statuses(dirname);
+/* Fill the tree with a directory listing, synchronously (start-up) */
+void populate_tree(AppData* app, const gchar* dirname, gboolean show_hidden, gint sort_mode) {
+    if (app->git_statuses != NULL) {
+        g_hash_table_destroy(app->git_statuses);
     }
-    gtk_tree_store_clear(store);
-    tree_nav_reset_column_widths(app);
-    populate_level(store, app, NULL, dirname, show_hidden, sort_mode);
+    app->git_statuses = scan_git_statuses(dirname);
+    explorer_tree_clear(app->tree);
+    populate_level(explorer_tree_get_root(app->tree), app, dirname, show_hidden, sort_mode);
 }
 
-/* Recursively expand paths that were previously expanded */
-void reexpand_paths_recursive(AppData* app, GtkTreeIter* parent) {
-    GtkTreeIter child;
-    if (!gtk_tree_model_iter_children(app->model, &child, parent)) {
-        return;
-    }
-    do {
-        gchar* type = NULL;
-        gchar* path_val = NULL;
-        gtk_tree_model_get(app->model, &child,
-                           COL_TYPE, &type,
-                           COL_PATH, &path_val, -1);
-        if (g_strcmp0(type, "dir") == 0 && path_val != NULL) {
-            if (g_hash_table_contains(app->expanded_paths, path_val)) {
-                GtkTreePath* tp = gtk_tree_model_get_path(app->model, &child);
-                gtk_tree_view_expand_row(app->tree_view, tp, FALSE);
-                gtk_tree_path_free(tp);
-                reexpand_paths_recursive(app, &child);
-            }
+/* Recursively expand directories that were previously expanded */
+void reexpand_paths_recursive(AppData* app, ExplorerRow* parent) {
+    for (guint i = 0; i < explorer_row_n_children(parent); i++) {
+        ExplorerRow* child = explorer_row_child(parent, i);
+        if (explorer_row_is(child, "dir") && g_hash_table_contains(app->expanded_paths, child->path)) {
+            explorer_tree_set_expanded(app->tree, child, TRUE);
+            reexpand_paths_recursive(app, child);
         }
-        g_free(type);
-        g_free(path_val);
-    } while (gtk_tree_model_iter_next(app->model, &child));
+    }
 }
 
-/* Lazy loading handler when a directory row is about to be expanded */
-gboolean on_tree_test_expand_row(GtkTreeView* tree_view, GtkTreeIter* iter,
-                                 GtkTreePath* path, gpointer user_data) {
-    (void)tree_view;
-    (void)path;
-    AppData* app = (AppData*)user_data;
-    GtkTreeStore* store = GTK_TREE_STORE(app->model);
-
-    gboolean loaded = FALSE;
-    gchar* full_path = NULL;
-    gtk_tree_model_get(app->model, iter,
-                       COL_LOADED, &loaded,
-                       COL_PATH, &full_path, -1);
-
-    if (!loaded && full_path != NULL) {
-        GtkTreeIter child;
-        if (gtk_tree_model_iter_children(app->model, &child, iter)) {
-            gtk_tree_store_remove(store, &child);
-        }
-        populate_level(store, app, iter, full_path, app->show_hidden, app->sort_mode);
-        gtk_tree_store_set(store, iter, COL_LOADED, TRUE, -1);
+/* Directory row expanded: read its contents (first time), record the path
+ * and switch to the open folder icon */
+static void on_dir_expanded(AppData* app, ExplorerRow* row) {
+    if (!row->loaded && row->path[0] != '\0') {
+        explorer_row_remove_children(row);
+        populate_level(row, app, row->path, app->show_hidden, app->sort_mode);
+        explorer_row_set_loaded(row, TRUE);
     }
-    g_free(full_path);
-    return FALSE; /* FALSE allows expansion */
-}
-
-/* Handle row expansion: record path and switch to open folder icon */
-void on_tree_row_expanded(GtkTreeView* tree_view, GtkTreeIter* iter,
-                          GtkTreePath* path, gpointer user_data) {
-    (void)tree_view;
-    (void)path;
-    AppData* app = (AppData*)user_data;
-    if (bookmarks_handle_row_toggled(app, iter, TRUE)) {
-        return;
-    }
-    if (notes_handle_row_toggled(app, iter, TRUE)) {
-        return;
-    }
-    gchar* name = NULL;
-    gchar* full_path = NULL;
-    gtk_tree_model_get(app->model, iter,
-                       COL_NAME, &name,
-                       COL_PATH, &full_path, -1);
-    if (full_path != NULL && app->expanded_paths != NULL) {
-        g_hash_table_add(app->expanded_paths, g_strdup(full_path));
+    if (app->expanded_paths != NULL) {
+        g_hash_table_add(app->expanded_paths, g_strdup(row->path));
         sync_directory_monitors(app);
     }
-    if (name != NULL) {
-        gchar* label = g_strconcat("📂 ", name, NULL);
-        gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LABEL, label, -1);
-        g_free(label);
-    }
-    if (!app->switching_ws && !app->dir_scan_pending) {
-        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-    }
-    g_free(name);
-    g_free(full_path);
+    gchar* label = g_strconcat("📂 ", row->name, NULL);
+    explorer_row_set_label(row, label);
+    g_free(label);
 }
 
-/* Handle row collapse: remove path and switch back to closed folder icon */
-void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
-                           GtkTreePath* path, gpointer user_data) {
-    (void)tree_view;
-    (void)path;
-    AppData* app = (AppData*)user_data;
-    if (bookmarks_handle_row_toggled(app, iter, FALSE)) {
-        return;
-    }
-    if (notes_handle_row_toggled(app, iter, FALSE)) {
-        return;
-    }
-    gchar* name = NULL;
-    gchar* full_path = NULL;
-    gtk_tree_model_get(app->model, iter,
-                       COL_NAME, &name,
-                       COL_PATH, &full_path, -1);
-    if (full_path != NULL && app->expanded_paths != NULL) {
-        gchar* prefix = g_strdup_printf("%s/", full_path);
+/* Directory row collapsed: forget it (and its subdirectories), switch back to
+ * the closed folder icon and drop the children so the next expansion reads
+ * the directory again */
+static void on_dir_collapsed(AppData* app, ExplorerRow* row) {
+    if (app->expanded_paths != NULL) {
+        gchar* prefix = g_strdup_printf("%s/", row->path);
         GHashTableIter hiter;
-        gpointer hkey, hval;
+        gpointer hkey;
         g_hash_table_iter_init(&hiter, app->expanded_paths);
-        while (g_hash_table_iter_next(&hiter, &hkey, &hval)) {
+        while (g_hash_table_iter_next(&hiter, &hkey, NULL)) {
             const gchar* p = (const gchar*)hkey;
-            if (g_strcmp0(p, full_path) == 0 || g_str_has_prefix(p, prefix)) {
+            if (g_strcmp0(p, row->path) == 0 || g_str_has_prefix(p, prefix)) {
                 g_hash_table_iter_remove(&hiter);
             }
         }
         g_free(prefix);
         sync_directory_monitors(app);
     }
-    if (name != NULL) {
-        gchar* label = g_strconcat("📁 ", name, NULL);
-        gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LABEL, label, -1);
-        g_free(label);
-    }
+    gchar* label = g_strconcat("📁 ", row->name, NULL);
+    explorer_row_set_label(row, label);
+    g_free(label);
 
-    /* Reset children to dummy row so future re-expansion reloads fresh from disk */
-    GtkTreeIter child;
-    while (gtk_tree_model_iter_children(app->model, &child, iter)) {
-        gtk_tree_store_remove(GTK_TREE_STORE(app->model), &child);
-    }
-    GtkTreeIter dummy;
-    gtk_tree_store_append(GTK_TREE_STORE(app->model), &dummy, iter);
-    gtk_tree_store_set(GTK_TREE_STORE(app->model), &dummy,
-                       COL_NAME, "",
-                       COL_TYPE, "-",
-                       COL_LABEL, "...",
-                       COL_PATH, "",
-                       COL_LOADED, TRUE,
-                       COL_GIT_STATUS, "",
-                       -1);
-    gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LOADED, FALSE, -1);
+    explorer_row_remove_children(row);
+    append_placeholder(row, "", "...", "");
+    explorer_row_set_loaded(row, FALSE);
+}
 
+/* A row was expanded or collapsed (explorer_tree "row-toggled") */
+void on_tree_row_toggled(ExplorerTree* tree, ExplorerRow* row, gboolean expanded, gpointer user_data) {
+    (void)tree;
+    AppData* app = (AppData*)user_data;
+    if (bookmarks_handle_row_toggled(app, row, expanded) ||
+        notes_handle_row_toggled(app, row, expanded)) {
+        return;
+    }
+    if (!explorer_row_is(row, "dir")) {
+        return;
+    }
+    if (expanded) {
+        on_dir_expanded(app, row);
+    } else {
+        on_dir_collapsed(app, row);
+    }
     if (!app->switching_ws && !app->dir_scan_pending) {
         app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
-    g_free(name);
-    g_free(full_path);
 }
-
 
 typedef struct {
     AppData* app;
@@ -653,8 +516,6 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
         return;
     }
 
-    GtkTreeStore* store = GTK_TREE_STORE(app->model);
-
     tree_nav_block_selection_handler(app);
 
     if (app->git_statuses != NULL) {
@@ -671,10 +532,9 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
         saved_page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
     }
 
-    gtk_tree_store_clear(store);
-    tree_nav_reset_column_widths(app);
-    apply_dir_node_to_store(store, app, NULL, td->root_node);
-    reexpand_paths_recursive(app, NULL);
+    explorer_tree_clear(app->tree);
+    apply_dir_node_to_rows(explorer_tree_get_root(app->tree), app, td->root_node);
+    reexpand_paths_recursive(app, explorer_tree_get_root(app->tree));
     bookmarks_reexpand(app);
     notes_reexpand(app);
     sync_directory_monitors(app);
@@ -829,12 +689,8 @@ void refresh_listing_with_path(AppData* app, const gchar* select_path) {
 }
 
 void refresh_listing(AppData* app) {
-    gchar* cur_path = NULL;
-    GtkTreeIter it;
-    if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-        gtk_tree_model_get(app->model, &it, COL_PATH, &cur_path, -1);
-    }
-
+    ExplorerRow* row = tree_nav_selected(app);
+    gchar* cur_path = (row != NULL) ? g_strdup(row->path) : NULL;
     refresh_listing_with_path(app, cur_path);
     g_free(cur_path);
 }
@@ -853,17 +709,11 @@ void cycle_sort_mode(AppData* app) {
 
 /* Enter / double-click on a list entry: toggle directory expand/collapse or open editor tab */
 void activate_selected_entry(AppData* app) {
-    GtkTreeIter it;
-    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
+    ExplorerRow* row = tree_nav_selected(app);
+    if (row == NULL) {
         return;
     }
-    gchar* name = NULL;
-    gchar* type = NULL;
-    gchar* full = NULL;
-    gtk_tree_model_get(app->model, &it,
-                       COL_NAME, &name,
-                       COL_TYPE, &type,
-                       COL_PATH, &full, -1);
+    const gchar* type = row->type;
 
     if (g_strcmp0(type, "note") == 0 || g_strcmp0(type, "notebook") == 0 ||
         g_strcmp0(type, "trash") == 0 || g_strcmp0(type, "trash_note") == 0 ||
@@ -874,15 +724,10 @@ void activate_selected_entry(AppData* app) {
     } else if (g_strcmp0(type, "remote") == 0 || app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
         remote_activate_selected(app);
     } else if (g_strcmp0(type, "dir") == 0) {
-        GtkTreePath* path = gtk_tree_model_get_path(app->model, &it);
-        if (gtk_tree_view_row_expanded(app->tree_view, path)) {
-            gtk_tree_view_collapse_row(app->tree_view, path);
-        } else {
-            gtk_tree_view_expand_row(app->tree_view, path, FALSE);
-        }
-        gtk_tree_path_free(path);
-    } else if (g_strcmp0(type, "file") == 0 && full != NULL) {
-        if (is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name)) {
+        explorer_tree_toggle_expanded(app->tree, row);
+    } else if (g_strcmp0(type, "file") == 0 && row->path[0] != '\0') {
+        if (is_image_file(row->name) || is_pdf_file(row->name) || is_video_file(row->name) ||
+            is_audio_file(row->name)) {
             if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
                 app_emit(app, APP_EVENT_LAYOUT_CHANGED);
                 app->applying_layout = TRUE;
@@ -894,21 +739,23 @@ void activate_selected_entry(AppData* app) {
                 gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
             }
         } else {
+            gchar* name = g_strdup(row->name); /* the row may go away while opening */
+            gchar* full = g_strdup(row->path);
             editor_open_file(app, name, full);
+            g_free(name);
+            g_free(full);
         }
     }
-    g_free(name);
-    g_free(type);
-    g_free(full);
 }
 
-/* Double click on a row: same action as Enter */
-void on_row_activated(GtkTreeView* view, GtkTreePath* path,
-                      GtkTreeViewColumn* column, gpointer data) {
-    (void)view;
-    (void)path;
-    (void)column;
-    activate_selected_entry((AppData*)data);
+/* Double click on a row (explorer_tree "row-activated"): same action as Enter */
+void on_row_activated(ExplorerTree* tree, ExplorerRow* row, gpointer data) {
+    (void)tree;
+    AppData* app = (AppData*)data;
+    if (tree_nav_selected(app) != row) {
+        select_row(app, row);
+    }
+    activate_selected_entry(app);
 }
 
 /* Treeview key press handler: j k gg G zz / n N BackSpace ? i o Ctrl+B Ctrl+F f m space l Right h Left */
@@ -935,6 +782,13 @@ void rename_selected_in_tree(AppData* app) {
 
 void trash_selected_in_tree(AppData* app) {
     run_file_action(app, file_action_trash_selected);
+}
+
+/* Rows with children the arrow keys and space expand: directories,
+ * bookmark folders, notebooks and the notes trash */
+static gboolean is_container_row(ExplorerRow* row) {
+    return explorer_row_is(row, "dir") || explorer_row_is(row, "bm_folder") ||
+           explorer_row_is(row, "notebook") || explorer_row_is(row, "trash");
 }
 
 /* Files view (not bookmarks / notes / remote) */
@@ -969,13 +823,33 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
     }
 
     switch (key) {
+    case GDK_KEY_Down:
+    case GDK_KEY_KP_Down:
     case GDK_KEY_j:
         app->pending_g = FALSE;
         select_next_row(app);
         return TRUE;
+    case GDK_KEY_Up:
+    case GDK_KEY_KP_Up:
     case GDK_KEY_k:
         app->pending_g = FALSE;
         select_prev_row(app);
+        return TRUE;
+    case GDK_KEY_Home:
+        app->pending_g = FALSE;
+        select_first_row(app);
+        return TRUE;
+    case GDK_KEY_End:
+        app->pending_g = FALSE;
+        select_last_row(app);
+        return TRUE;
+    case GDK_KEY_Page_Down:
+        app->pending_g = FALSE;
+        page_down_rows(app);
+        return TRUE;
+    case GDK_KEY_Page_Up:
+        app->pending_g = FALSE;
+        page_up_rows(app);
         return TRUE;
     case GDK_KEY_g:
         /* gg = jump to top */
@@ -1018,34 +892,16 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_Right:
         app->pending_g = FALSE;
         {
-            GtkTreeIter it;
-            if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-                gchar* type = NULL;
-                gchar* full = NULL;
-                gtk_tree_model_get(app->model, &it,
-                                   COL_TYPE, &type,
-                                   COL_PATH, &full, -1);
-                if (g_strcmp0(type, "bookmark") == 0) {
-                    bookmarks_activate_selected(app);
-                } else if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bm_folder") == 0 ||
-                           g_strcmp0(type, "notebook") == 0 || g_strcmp0(type, "trash") == 0) {
-                    GtkTreePath* p = gtk_tree_model_get_path(app->model, &it);
-                    if (!gtk_tree_view_row_expanded(app->tree_view, p)) {
-                        gtk_tree_view_expand_row(app->tree_view, p, FALSE);
-                    } else {
-                        /* Already expanded: step into first child */
-                        GtkTreePath* child = gtk_tree_path_copy(p);
-                        gtk_tree_path_down(child);
-                        GtkTreeIter ch_it;
-                        if (gtk_tree_model_get_iter(app->model, &ch_it, child)) {
-                            select_path(app, child);
-                        }
-                        gtk_tree_path_free(child);
-                    }
-                    gtk_tree_path_free(p);
+            ExplorerRow* row = tree_nav_selected(app);
+            if (explorer_row_is(row, "bookmark")) {
+                bookmarks_activate_selected(app);
+            } else if (is_container_row(row)) {
+                if (!explorer_tree_is_expanded(app->tree, row)) {
+                    explorer_tree_set_expanded(app->tree, row, TRUE);
+                } else if (explorer_row_n_children(row) > 0) {
+                    /* Already expanded: step into first child */
+                    select_row(app, explorer_row_child(row, 0));
                 }
-                g_free(type);
-                g_free(full);
             }
         }
         return TRUE;
@@ -1053,49 +909,27 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_Left:
         app->pending_g = FALSE;
         {
-            GtkTreeIter it;
-            if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-                gchar* type = NULL;
-                gtk_tree_model_get(app->model, &it, COL_TYPE, &type, -1);
-                GtkTreePath* p = gtk_tree_model_get_path(app->model, &it);
-                if ((g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bm_folder") == 0 ||
-                     g_strcmp0(type, "notebook") == 0 || g_strcmp0(type, "trash") == 0) &&
-                    gtk_tree_view_row_expanded(app->tree_view, p)) {
-                    gtk_tree_view_collapse_row(app->tree_view, p);
-                } else if (gtk_tree_path_get_depth(p) > 1) {
-                    /* Jump to parent directory row */
-                    gtk_tree_path_up(p);
-                    select_path(app, p);
-                }
-                gtk_tree_path_free(p);
-                g_free(type);
+            ExplorerRow* row = tree_nav_selected(app);
+            if (is_container_row(row) && explorer_tree_is_expanded(app->tree, row)) {
+                explorer_tree_set_expanded(app->tree, row, FALSE);
+            } else if (row != NULL && explorer_row_get_parent(row) != NULL) {
+                /* Jump to parent row */
+                select_row(app, explorer_row_get_parent(row));
             }
         }
         return TRUE;
     case GDK_KEY_space:
         app->pending_g = FALSE;
         {
-            GtkTreeIter it;
-            if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-                gchar* type = NULL;
-                gtk_tree_model_get(app->model, &it, COL_TYPE, &type, -1);
-                if (g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "bm_folder") == 0 ||
-                    g_strcmp0(type, "notebook") == 0 || g_strcmp0(type, "trash") == 0) {
-                    GtkTreePath* p = gtk_tree_model_get_path(app->model, &it);
-                    if (gtk_tree_view_row_expanded(app->tree_view, p)) {
-                        gtk_tree_view_collapse_row(app->tree_view, p);
-                    } else {
-                        gtk_tree_view_expand_row(app->tree_view, p, FALSE);
-                    }
-                    gtk_tree_path_free(p);
-                } else if (app->viewed_name != NULL && !app->render_raw) {
-                    if (is_video_file(app->viewed_name)) {
-                        video_preview_toggle_play(app);
-                    } else if (is_audio_file(app->viewed_name)) {
-                        audio_preview_toggle_play(app);
-                    }
+            ExplorerRow* row = tree_nav_selected(app);
+            if (is_container_row(row)) {
+                explorer_tree_toggle_expanded(app->tree, row);
+            } else if (row != NULL && app->viewed_name != NULL && !app->render_raw) {
+                if (is_video_file(app->viewed_name)) {
+                    video_preview_toggle_play(app);
+                } else if (is_audio_file(app->viewed_name)) {
+                    audio_preview_toggle_play(app);
                 }
-                g_free(type);
             }
         }
         return TRUE;
@@ -1130,17 +964,10 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         app->pending_g = FALSE;
         if ((state & GDK_CONTROL_MASK) != 0) {
             /* Ctrl+Enter: enter directory as root */
-            GtkTreeIter it;
-            if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-                gchar* type = NULL;
-                gchar* full = NULL;
-                gtk_tree_model_get(app->model, &it,
-                                   COL_TYPE, &type,
-                                   COL_PATH, &full, -1);
-                if (g_strcmp0(type, "dir") == 0 && full != NULL) {
-                    reload_directory(app, full);
-                }
-                g_free(type);
+            ExplorerRow* row = tree_nav_selected(app);
+            if (explorer_row_is(row, "dir")) {
+                gchar* full = g_strdup(row->path); /* the reload clears the tree */
+                reload_directory(app, full);
                 g_free(full);
             }
         } else {

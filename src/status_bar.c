@@ -207,13 +207,11 @@ void update_status_bar(AppData* app) {
     gchar* name = NULL;
     gchar* type = NULL;
     gchar* full = NULL;
-    GtkTreeIter it;
-    if (app->selection != NULL && app->model != NULL &&
-        gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-        gtk_tree_model_get(app->model, &it,
-                           COL_NAME, &name,
-                           COL_TYPE, &type,
-                           COL_PATH, &full, -1);
+    ExplorerRow* row = (app->tree != NULL) ? explorer_tree_get_selected(app->tree) : NULL;
+    if (row != NULL) {
+        name = g_strdup(row->name);
+        type = g_strdup(row->type);
+        full = g_strdup(row->path);
     }
 
     gboolean has_sel = (name != NULL && type != NULL && g_strcmp0(type, "-") != 0);

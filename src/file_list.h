@@ -5,16 +5,12 @@
 
 void refresh_git_status_in_place(AppData* app);
 
-void populate_store(GtkTreeStore* store, AppData* app, const gchar* dirname,
-                    gboolean show_hidden, gint sort_mode);
-void reexpand_paths_recursive(AppData* app, GtkTreeIter* parent);
+/* Fill the tree with a directory listing, synchronously (start-up) */
+void populate_tree(AppData* app, const gchar* dirname, gboolean show_hidden, gint sort_mode);
+void reexpand_paths_recursive(AppData* app, ExplorerRow* parent);
 
-gboolean on_tree_test_expand_row(GtkTreeView* tree_view, GtkTreeIter* iter,
-                                 GtkTreePath* path, gpointer user_data);
-void on_tree_row_expanded(GtkTreeView* tree_view, GtkTreeIter* iter,
-                          GtkTreePath* path, gpointer user_data);
-void on_tree_row_collapsed(GtkTreeView* tree_view, GtkTreeIter* iter,
-                           GtkTreePath* path, gpointer user_data);
+/* explorer_tree "row-toggled": lazy loading of directories, folder icons */
+void on_tree_row_toggled(ExplorerTree* tree, ExplorerRow* row, gboolean expanded, gpointer user_data);
 void reload_directory(AppData* app, const gchar* new_dir);
 void navigate_to_path(AppData* app, const gchar* path);
 void refresh_listing(AppData* app);
@@ -33,7 +29,8 @@ void rename_selected_in_tree(AppData* app);
 void trash_selected_in_tree(AppData* app);
 
 void activate_selected_entry(AppData* app);
-void on_row_activated(GtkTreeView* view, GtkTreePath* path, GtkTreeViewColumn* column, gpointer data);
+/* explorer_tree "row-activated" (double click) */
+void on_row_activated(ExplorerTree* tree, ExplorerRow* row, gpointer data);
 gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
 
 #endif /* FILE_LIST_H */

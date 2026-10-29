@@ -16,10 +16,10 @@ void notes_free(AppData* app);
 void notes_save(AppData* app);
 
 /* Explorer panel integration */
-void notes_append_to_store(GtkTreeStore* store, AppData* app);
+void notes_append_rows(ExplorerRow* root, AppData* app);
 void notes_reexpand(AppData* app);
 void notes_refresh(AppData* app);
-gboolean notes_handle_row_toggled(AppData* app, GtkTreeIter* iter, gboolean expanded);
+gboolean notes_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded);
 gboolean notes_handle_key(AppData* app, guint keyval, GdkModifierType state);
 void notes_attach_context_menu(AppData* app);
 

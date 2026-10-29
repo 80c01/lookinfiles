@@ -13,46 +13,19 @@
 
 
 RemoteMachine* remote_get_selected(AppData* app) {
-    if (app == NULL || app->selection == NULL || app->model == NULL) {
-        return NULL;
-    }
-    GtkTreeIter it;
-    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-        return NULL;
-    }
-    gchar* type = NULL;
-    gchar* id = NULL;
-    gtk_tree_model_get(app->model, &it,
-                       COL_TYPE, &type,
-                       COL_PATH, &id, -1);
-    RemoteMachine* rm = NULL;
-    if (g_strcmp0(type, "remote") == 0 && id != NULL) {
-        rm = remote_find_by_id(app, id);
-    }
-    g_free(type);
-    g_free(id);
-    return rm;
+    ExplorerRow* row = (app != NULL) ? tree_nav_selected(app) : NULL;
+    return explorer_row_is(row, "remote") ? remote_find_by_id(app, row->path) : NULL;
 }
 
 /* ------------------------------------------------------------------------- */
 
-void remote_append_to_store(GtkTreeStore* store, AppData* app) {
-    if (store == NULL || app == NULL) {
+void remote_append_rows(ExplorerRow* root, AppData* app) {
+    if (root == NULL || app == NULL) {
         return;
     }
 
     if (app->remotes == NULL) {
-        GtkTreeIter iter;
-        gtk_tree_store_append(store, &iter, NULL);
-        gtk_tree_store_set(store, &iter,
-                           COL_NAME, "",
-                           COL_TYPE, "-",
-                           COL_LABEL, "🌐 No remote machines yet — press a to add one",
-                           COL_PATH, "",
-                           COL_LOADED, TRUE,
-                           COL_GIT_STATUS, "",
-                           COL_BM_ID, 0,
-                           -1);
+        explorer_row_append(root, "-", "", "🌐 No remote machines yet — press a to add one", "");
         return;
     }
 
@@ -81,17 +54,9 @@ void remote_append_to_store(GtkTreeStore* store, AppData* app) {
                                             target, rm->port);
         }
 
-        GtkTreeIter iter;
-        gtk_tree_store_append(store, &iter, NULL);
-        gtk_tree_store_set(store, &iter,
-                           COL_NAME, rm->name ? rm->name : rm->host,
-                           COL_TYPE, "remote",
-                           COL_LABEL, label,
-                           COL_PATH, rm->id,
-                           COL_LOADED, TRUE,
-                           COL_GIT_STATUS, status_markup,
-                           COL_BM_ID, 0,
-                           -1);
+        /* The row path holds the machine id (see remote_get_selected()) */
+        ExplorerRow* row = explorer_row_append(root, "remote", rm->name ? rm->name : rm->host, label, rm->id);
+        explorer_row_set_badge(row, status_markup);
 
         g_free(label);
         g_free(target);
@@ -109,13 +74,11 @@ void remote_rescan(AppData* app) {
 }
 
 void remote_refresh(AppData* app) {
-    if (app == NULL || app->model == NULL || app->sidebar_view != SIDEBAR_VIEW_REMOTE) {
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_REMOTE) {
         return;
     }
-    GtkTreeStore* store = GTK_TREE_STORE(app->model);
-    gtk_tree_store_clear(store);
-    tree_nav_reset_column_widths(app);
-    remote_append_to_store(store, app);
+    explorer_tree_clear(app->tree);
+    remote_append_rows(explorer_tree_get_root(app->tree), app);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
@@ -685,10 +648,9 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
         return;
     }
 
-    GtkTreePath* path = NULL;
-    if (gtk_tree_view_get_path_at_pos(app->tree_view, (gint)x, (gint)y, &path, NULL, NULL, NULL) && path != NULL) {
-        gtk_tree_selection_select_path(app->selection, path);
-        gtk_tree_path_free(path);
+    ExplorerRow* row = explorer_tree_row_at(app->tree, x, y);
+    if (row != NULL) {
+        select_row(app, row);
     }
 
     RemoteMachine* rm = remote_get_selected(app);

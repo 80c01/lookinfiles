@@ -11,6 +11,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval, gu
 void load_file_content(AppData* app, const gchar* name, const gchar* full);
 void viewer_reload_preview(AppData* app);
 void render_image_preview(AppData* app, const gchar* name, const gchar* full);
-void on_selection_changed(GtkTreeSelection* selection, gpointer user_data);
+/* explorer_tree "selection-changed": preview the selected row */
+void on_selection_changed(ExplorerTree* tree, gpointer user_data);
 
 #endif /* VIEWER_H */

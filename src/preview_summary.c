@@ -115,63 +115,57 @@ static void summary_item_free(gpointer data) {
     g_free(item);
 }
 
-gchar* preview_summary_container(GtkTreeModel* model, GtkTreeIter* iter) {
-    if (model == NULL || iter == NULL) {
+/* Children of a row, placeholders (type "-") excluded */
+static guint count_items(ExplorerRow* row) {
+    guint n = 0;
+    for (guint i = 0; i < explorer_row_n_children(row); i++) {
+        if (!explorer_row_is(explorer_row_child(row, i), "-")) {
+            n++;
+        }
+    }
+    return n;
+}
+
+gchar* preview_summary_container(ExplorerRow* row) {
+    if (row == NULL) {
         return NULL;
     }
-    gchar* type = NULL;
-    gchar* name = NULL;
-    gchar* path = NULL;
-    gtk_tree_model_get(model, iter, COL_TYPE, &type, COL_NAME, &name, COL_PATH, &path, -1);
-
-    gboolean is_notebook = (g_strcmp0(type, "notebook") == 0);
-    gboolean is_bm_folder = (g_strcmp0(type, "bm_folder") == 0);
-    gboolean is_trash = (g_strcmp0(type, "trash") == 0);
+    const gchar* name = row->name;
+    const gchar* path = row->path;
+    gboolean is_notebook = explorer_row_is(row, "notebook");
+    gboolean is_bm_folder = explorer_row_is(row, "bm_folder");
+    gboolean is_trash = explorer_row_is(row, "trash");
     if (!is_notebook && !is_bm_folder && !is_trash) {
-        g_free(type);
-        g_free(name);
-        g_free(path);
         return NULL;
     }
 
     /* Collect the children, skipping placeholder rows (type "-") */
     GPtrArray* items = g_ptr_array_new_with_free_func(summary_item_free);
     glong name_width = 0;
-    GtkTreeIter child;
-    gboolean ok = gtk_tree_model_iter_children(model, &child, iter);
-    while (ok) {
-        gchar* c_type = NULL;
-        gchar* c_name = NULL;
-        gchar* c_path = NULL;
-        gchar* c_badge = NULL;
-        gtk_tree_model_get(model, &child, COL_TYPE, &c_type, COL_NAME, &c_name,
-                           COL_PATH, &c_path, COL_GIT_STATUS, &c_badge, -1);
-        if (g_strcmp0(c_type, "-") != 0 && c_name != NULL) {
-            SummaryItem* item = g_new0(SummaryItem, 1);
-            gchar* badge_text = markup_to_text(c_badge);
-            if (g_strcmp0(c_type, "bm_folder") == 0) {
-                item->name = g_strdup_printf("%s/", c_name);
-                gint n = gtk_tree_model_iter_n_children(model, &child);
-                item->detail = g_strdup_printf("folder, %d item%s", n, n == 1 ? "" : "s");
-            } else if (g_strcmp0(c_type, "bookmark") == 0) {
-                item->name = g_strdup(c_name);
-                item->detail = g_strdup(c_path ? c_path : "");
-            } else if (g_strcmp0(c_type, "note") == 0) {
-                item->name = g_strdup(c_name);
-                item->detail = g_strdup(note_format_name(badge_text));
-            } else {
-                item->name = g_strdup(c_name);
-                item->detail = g_strdup(badge_text); /* e.g. "from General" */
-            }
-            g_free(badge_text);
-            name_width = MAX(name_width, MIN(g_utf8_strlen(item->name, -1), ITEM_NAME_MAX));
-            g_ptr_array_add(items, item);
+    for (guint i = 0; i < explorer_row_n_children(row); i++) {
+        ExplorerRow* child = explorer_row_child(row, i);
+        if (explorer_row_is(child, "-")) {
+            continue;
         }
-        g_free(c_type);
-        g_free(c_name);
-        g_free(c_path);
-        g_free(c_badge);
-        ok = gtk_tree_model_iter_next(model, &child);
+        SummaryItem* item = g_new0(SummaryItem, 1);
+        gchar* badge_text = markup_to_text(child->badge);
+        if (explorer_row_is(child, "bm_folder")) {
+            item->name = g_strdup_printf("%s/", child->name);
+            guint n = count_items(child);
+            item->detail = g_strdup_printf("folder, %u item%s", n, n == 1 ? "" : "s");
+        } else if (explorer_row_is(child, "bookmark")) {
+            item->name = g_strdup(child->name);
+            item->detail = g_strdup(child->path);
+        } else if (explorer_row_is(child, "note")) {
+            item->name = g_strdup(child->name);
+            item->detail = g_strdup(note_format_name(badge_text));
+        } else {
+            item->name = g_strdup(child->name);
+            item->detail = g_strdup(badge_text); /* e.g. "from General" */
+        }
+        g_free(badge_text);
+        name_width = MAX(name_width, MIN(g_utf8_strlen(item->name, -1), ITEM_NAME_MAX));
+        g_ptr_array_add(items, item);
     }
 
     GString* s = g_string_new(NULL);
@@ -245,8 +239,5 @@ gchar* preview_summary_container(GtkTreeModel* model, GtkTreeIter* iter) {
     }
 
     g_ptr_array_free(items, TRUE);
-    g_free(type);
-    g_free(name);
-    g_free(path);
     return g_string_free(s, FALSE);
 }

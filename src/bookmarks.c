@@ -9,7 +9,7 @@
 
 /* One node of the bookmark tree (GNode data). The root node has NULL data. */
 typedef struct {
-    guint id;           /* session-unique id, stored in COL_BM_ID */
+    guint id;           /* session-unique id, stored in ExplorerRow.bm_id */
     gboolean is_folder; /* virtual organizational folder */
     gchar* name;        /* user-visible name */
     gchar* target;      /* links only: absolute path or URI */
@@ -360,59 +360,36 @@ static gchar* bm_link_icon_label(BookmarkItem* it) {
     return label;
 }
 
-static void bm_append_placeholder(GtkTreeStore* store, GtkTreeIter* parent, const gchar* label) {
-    GtkTreeIter iter;
-    gtk_tree_store_append(store, &iter, parent);
-    gtk_tree_store_set(store, &iter,
-                       COL_NAME, "",
-                       COL_TYPE, "-",
-                       COL_LABEL, label,
-                       COL_PATH, "",
-                       COL_LOADED, TRUE,
-                       COL_GIT_STATUS, "",
-                       COL_BM_ID, 0u,
-                       -1);
+static void bm_append_placeholder(ExplorerRow* parent, const gchar* label) {
+    explorer_row_append(parent, "-", "", label, "");
 }
 
-static void bm_append_children(GtkTreeStore* store, GNode* node, GtkTreeIter* parent) {
+static void bm_append_children(ExplorerRow* parent, GNode* node) {
     for (GNode* c = node->children; c != NULL; c = c->next) {
         BookmarkItem* it = bm_item(c);
-        GtkTreeIter iter;
-        gtk_tree_store_append(store, &iter, parent);
         if (it->is_folder) {
             gchar* label = g_strdup_printf("%s %s", it->expanded ? "📂" : "📁", it->name);
-            guint n = g_node_n_children(c);
-            gchar* badge = (n > 0) ? g_strdup_printf("<span foreground=\"#6e7681\">%u</span>", n)
-                                   : g_strdup("");
-            gtk_tree_store_set(store, &iter,
-                               COL_NAME, it->name,
-                               COL_TYPE, "bm_folder",
-                               COL_LABEL, label,
-                               COL_PATH, "",
-                               COL_LOADED, TRUE,
-                               COL_GIT_STATUS, badge,
-                               COL_BM_ID, it->id,
-                               -1);
-            g_free(badge);
+            ExplorerRow* row = explorer_row_append_container(parent, "bm_folder", it->name, label, "");
             g_free(label);
+            guint n = g_node_n_children(c);
+            if (n > 0) {
+                gchar* badge = g_strdup_printf("<span foreground=\"#6e7681\">%u</span>", n);
+                explorer_row_set_badge(row, badge);
+                g_free(badge);
+            }
+            explorer_row_set_bm_id(row, it->id);
             if (c->children != NULL) {
-                bm_append_children(store, c, &iter);
+                bm_append_children(row, c);
             } else {
-                bm_append_placeholder(store, &iter, "  (empty)");
+                bm_append_placeholder(row, "  (empty)");
             }
         } else {
             gchar* label = bm_link_icon_label(it);
             gchar* loc = bm_display_location(it->target);
             gchar* badge = g_markup_printf_escaped("<span foreground=\"#6e7681\" size=\"small\">%s</span>", loc);
-            gtk_tree_store_set(store, &iter,
-                               COL_NAME, it->name,
-                               COL_TYPE, "bookmark",
-                               COL_LABEL, label,
-                               COL_PATH, it->target,
-                               COL_LOADED, TRUE,
-                               COL_GIT_STATUS, badge,
-                               COL_BM_ID, it->id,
-                               -1);
+            ExplorerRow* row = explorer_row_append(parent, "bookmark", it->name, label, it->target);
+            explorer_row_set_badge(row, badge);
+            explorer_row_set_bm_id(row, it->id);
             g_free(badge);
             g_free(loc);
             g_free(label);
@@ -420,96 +397,67 @@ static void bm_append_children(GtkTreeStore* store, GNode* node, GtkTreeIter* pa
     }
 }
 
-void bookmarks_append_to_store(GtkTreeStore* store, AppData* app) {
-    if (store == NULL || app == NULL || app->bookmarks == NULL) {
+void bookmarks_append_rows(ExplorerRow* root, AppData* app) {
+    if (root == NULL || app == NULL || app->bookmarks == NULL) {
         return;
     }
     if (app->bookmarks->children == NULL) {
-        bm_append_placeholder(store, NULL, "🔖 No bookmarks yet — press a or Ctrl+D to add one");
+        bm_append_placeholder(root, "🔖 No bookmarks yet — press a or Ctrl+D to add one");
         return;
     }
-    bm_append_children(store, app->bookmarks, NULL);
+    bm_append_children(root, app->bookmarks);
 }
 
-static guint bm_iter_id(AppData* app, GtkTreeIter* iter) {
-    guint id = 0;
-    gtk_tree_model_get(app->model, iter, COL_BM_ID, &id, -1);
-    return id;
-}
-
-static void bm_reexpand_level(AppData* app, GtkTreeIter* parent) {
-    GtkTreeIter child;
-    if (!gtk_tree_model_iter_children(app->model, &child, parent)) {
-        return;
-    }
-    do {
-        GNode* node = bm_find_by_id(app->bookmarks, bm_iter_id(app, &child));
+static void bm_reexpand_level(AppData* app, ExplorerRow* parent) {
+    for (guint i = 0; i < explorer_row_n_children(parent); i++) {
+        ExplorerRow* child = explorer_row_child(parent, i);
+        GNode* node = bm_find_by_id(app->bookmarks, child->bm_id);
         if (bm_is_folder(node) && bm_item(node)->expanded) {
-            GtkTreePath* tp = gtk_tree_model_get_path(app->model, &child);
-            gtk_tree_view_expand_row(app->tree_view, tp, FALSE);
-            gtk_tree_path_free(tp);
-            bm_reexpand_level(app, &child);
+            explorer_tree_set_expanded(app->tree, child, TRUE);
+            bm_reexpand_level(app, child);
         }
-    } while (gtk_tree_model_iter_next(app->model, &child));
+    }
 }
 
 void bookmarks_reexpand(AppData* app) {
-    if (app == NULL || app->tree_view == NULL || app->sidebar_view != SIDEBAR_VIEW_BOOKMARKS) {
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_BOOKMARKS) {
         return;
     }
-    bm_reexpand_level(app, NULL);
+    bm_reexpand_level(app, explorer_tree_get_root(app->tree));
 }
 
-static gboolean bm_find_iter_by_id(GtkTreeModel* model, GtkTreeIter* parent, guint id, GtkTreeIter* out) {
-    GtkTreeIter child;
-    if (!gtk_tree_model_iter_children(model, &child, parent)) {
-        return FALSE;
+static gboolean bm_match_id(ExplorerRow* row, gpointer data) {
+    return row->bm_id == GPOINTER_TO_UINT(data);
+}
+
+static ExplorerRow* bm_find_row_by_id(AppData* app, guint id) {
+    if (id == 0) {
+        return NULL;
     }
-    do {
-        guint cid = 0;
-        gtk_tree_model_get(model, &child, COL_BM_ID, &cid, -1);
-        if (cid == id) {
-            *out = child;
-            return TRUE;
-        }
-        if (bm_find_iter_by_id(model, &child, id, out)) {
-            return TRUE;
-        }
-    } while (gtk_tree_model_iter_next(model, &child));
-    return FALSE;
+    return explorer_row_find(explorer_tree_get_root(app->tree), bm_match_id, GUINT_TO_POINTER(id));
 }
 
 static gboolean bm_select_id(AppData* app, guint id) {
-    GtkTreeIter it;
-    if (id == 0 || !bm_find_iter_by_id(app->model, NULL, id, &it)) {
+    ExplorerRow* row = bm_find_row_by_id(app, id);
+    if (row == NULL) {
         return FALSE;
     }
-    GtkTreePath* tp = gtk_tree_model_get_path(app->model, &it);
-    if (gtk_tree_path_get_depth(tp) > 1) {
-        GtkTreePath* parent = gtk_tree_path_copy(tp);
-        gtk_tree_path_up(parent);
-        gtk_tree_view_expand_to_path(app->tree_view, parent);
-        gtk_tree_path_free(parent);
-    }
-    select_path(app, tp);
-    gtk_tree_path_free(tp);
+    explorer_tree_expand_to(app->tree, row);
+    select_row(app, row);
     return TRUE;
 }
 
 static GNode* bm_selected_node(AppData* app) {
-    if (app == NULL || app->selection == NULL || app->sidebar_view != SIDEBAR_VIEW_BOOKMARKS) {
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_BOOKMARKS) {
         return NULL;
     }
-    GtkTreeIter it;
-    if (!gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-        return NULL;
-    }
-    return bm_find_by_id(app->bookmarks, bm_iter_id(app, &it));
+    ExplorerRow* row = tree_nav_selected(app);
+    return row != NULL ? bm_find_by_id(app->bookmarks, row->bm_id) : NULL;
 }
 
 /* Rebuild the bookmarks view synchronously and select the given item */
 static void bm_refresh_select(AppData* app, guint select_id) {
-    if (app == NULL || app->model == NULL || app->sidebar_view != SIDEBAR_VIEW_BOOKMARKS) {
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_BOOKMARKS) {
         if (app != NULL) {
             app_emit(app, APP_EVENT_CHROME_CHANGED);
         }
@@ -523,10 +471,9 @@ static void bm_refresh_select(AppData* app, guint select_id) {
     app->dir_scan_pending = FALSE;
 
     tree_nav_block_selection_handler(app);
-    gtk_tree_store_clear(GTK_TREE_STORE(app->model));
-    tree_nav_reset_column_widths(app);
-    bookmarks_append_to_store(GTK_TREE_STORE(app->model), app);
-    bm_reexpand_level(app, NULL);
+    explorer_tree_clear(app->tree);
+    bookmarks_append_rows(explorer_tree_get_root(app->tree), app);
+    bm_reexpand_level(app, explorer_tree_get_root(app->tree));
     tree_nav_unblock_selection_handler(app);
     if (!bm_select_id(app, select_id)) {
         select_first_row(app);
@@ -539,18 +486,11 @@ void bookmarks_refresh(AppData* app) {
     bm_refresh_select(app, sel != NULL ? bm_item(sel)->id : 0);
 }
 
-gboolean bookmarks_handle_row_toggled(AppData* app, GtkTreeIter* iter, gboolean expanded) {
-    if (app == NULL || iter == NULL) {
+gboolean bookmarks_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded) {
+    if (app == NULL || !explorer_row_is(row, "bm_folder")) {
         return FALSE;
     }
-    gchar* type = NULL;
-    gtk_tree_model_get(app->model, iter, COL_TYPE, &type, -1);
-    gboolean is_folder_row = (g_strcmp0(type, "bm_folder") == 0);
-    g_free(type);
-    if (!is_folder_row) {
-        return FALSE;
-    }
-    GNode* node = bm_find_by_id(app->bookmarks, bm_iter_id(app, iter));
+    GNode* node = bm_find_by_id(app->bookmarks, row->bm_id);
     if (bm_is_folder(node)) {
         BookmarkItem* it = bm_item(node);
         if (it->expanded != expanded) {
@@ -558,7 +498,7 @@ gboolean bookmarks_handle_row_toggled(AppData* app, GtkTreeIter* iter, gboolean 
             bookmarks_save(app);
         }
         gchar* label = g_strdup_printf("%s %s", expanded ? "📂" : "📁", it->name);
-        gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LABEL, label, -1);
+        explorer_row_set_label(row, label);
         g_free(label);
     }
     return TRUE;
@@ -931,19 +871,10 @@ void bookmarks_add_from_context(AppData* app) {
         return;
     }
     gchar* target = NULL;
-    if (app->sidebar_view == SIDEBAR_VIEW_FILES && app->selection != NULL) {
-        GtkTreeIter it;
-        if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-            gchar* type = NULL;
-            gchar* full = NULL;
-            gtk_tree_model_get(app->model, &it, COL_TYPE, &type, COL_PATH, &full, -1);
-            if ((g_strcmp0(type, "dir") == 0 || g_strcmp0(type, "file") == 0) &&
-                full != NULL && full[0] != '\0') {
-                target = full;
-                full = NULL;
-            }
-            g_free(type);
-            g_free(full);
+    if (app->sidebar_view == SIDEBAR_VIEW_FILES) {
+        ExplorerRow* row = tree_nav_selected(app);
+        if ((explorer_row_is(row, "dir") || explorer_row_is(row, "file")) && row->path[0] != '\0') {
+            target = g_strdup(row->path);
         }
     }
     if (target == NULL) {
@@ -1101,16 +1032,7 @@ void bookmarks_activate_selected(AppData* app) {
         return;
     }
     if (it->is_folder) {
-        GtkTreeIter iter;
-        if (bm_find_iter_by_id(app->model, NULL, it->id, &iter)) {
-            GtkTreePath* tp = gtk_tree_model_get_path(app->model, &iter);
-            if (gtk_tree_view_row_expanded(app->tree_view, tp)) {
-                gtk_tree_view_collapse_row(app->tree_view, tp);
-            } else {
-                gtk_tree_view_expand_row(app->tree_view, tp, FALSE);
-            }
-            gtk_tree_path_free(tp);
-        }
+        explorer_tree_toggle_expanded(app->tree, bm_find_row_by_id(app, it->id));
         return;
     }
 
@@ -1289,15 +1211,11 @@ static void bm_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x,
     }
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
 
-    gint bx = 0;
-    gint by = 0;
-    gtk_tree_view_convert_widget_to_bin_window_coords(app->tree_view, (gint)x, (gint)y, &bx, &by);
-    GtkTreePath* tp = NULL;
-    if (gtk_tree_view_get_path_at_pos(app->tree_view, bx, by, &tp, NULL, NULL, NULL) && tp != NULL) {
-        select_path(app, tp);
-        gtk_tree_path_free(tp);
+    ExplorerRow* row = explorer_tree_row_at(app->tree, x, y);
+    if (row != NULL) {
+        select_row(app, row);
     } else {
-        gtk_tree_selection_unselect_all(app->selection);
+        explorer_tree_unselect_all(app->tree);
     }
 
     GNode* node = bm_selected_node(app);

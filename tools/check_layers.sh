@@ -14,6 +14,7 @@ status=0
 RULES="
 file_types:
 git_utils:
+explorer_row:
 text_style:app_types,file_types
 theme:
 markdown:app_types
@@ -24,8 +25,9 @@ app_events:app_types
 panels:app_types,app_events
 icons:
 dialog:
+explorer_tree:explorer_row
 remote_store:app_types
-preview_summary:app_types,remote_store
+preview_summary:app_types,remote_store,explorer_row
 fs_watch:app_types,app_events,git_utils,git_tab
 "
 

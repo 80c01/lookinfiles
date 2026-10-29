@@ -5,7 +5,7 @@
 #include "remote_store.h"
 
 /* Explorer panel integration */
-void remote_append_to_store(GtkTreeStore* store, AppData* app);
+void remote_append_rows(ExplorerRow* root, AppData* app);
 void remote_refresh(AppData* app);
 /* Re-read ~/.ssh/config (F5 / refresh button) and redraw */
 void remote_rescan(AppData* app);

@@ -1059,14 +1059,11 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
         gchar* sel_path = NULL;
         gchar* sel_name = NULL;
 
-        if (app->selection != NULL && app->model != NULL) {
-            GtkTreeIter it;
-            if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-                gtk_tree_model_get(app->model, &it, COL_PATH, &sel_path, COL_NAME, &sel_name, -1);
-                if (g_strcmp0(sel_path, closed_path) == 0) {
-                    is_selected = TRUE;
-                }
-            }
+        ExplorerRow* sel_row = (app->tree != NULL) ? explorer_tree_get_selected(app->tree) : NULL;
+        if (sel_row != NULL) {
+            sel_path = g_strdup(sel_row->path);
+            sel_name = g_strdup(sel_row->name);
+            is_selected = (g_strcmp0(sel_path, closed_path) == 0);
         }
 
         if (is_viewed || is_selected) {

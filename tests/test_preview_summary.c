@@ -4,16 +4,15 @@
 
 #include <string.h>
 
-static GtkTreeStore* new_store(void) {
-    return gtk_tree_store_new(COL_COUNT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-                              G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_UINT);
-}
-
-static void add_row(GtkTreeStore* store, GtkTreeIter* out, GtkTreeIter* parent,
-                    const gchar* type, const gchar* name, const gchar* path, const gchar* badge) {
-    gtk_tree_store_append(store, out, parent);
-    gtk_tree_store_set(store, out, COL_TYPE, type, COL_NAME, name, COL_LABEL, name,
-                       COL_PATH, path, COL_GIT_STATUS, badge, -1);
+/* Append a row with a badge; containers can have children */
+static ExplorerRow* add_row(ExplorerRow* parent, const gchar* type, const gchar* name,
+                            const gchar* path, const gchar* badge) {
+    gboolean container = g_strcmp0(type, "notebook") == 0 || g_strcmp0(type, "bm_folder") == 0 ||
+                         g_strcmp0(type, "trash") == 0;
+    ExplorerRow* row = container ? explorer_row_append_container(parent, type, name, name, path)
+                                 : explorer_row_append(parent, type, name, name, path);
+    explorer_row_set_badge(row, badge);
+    return row;
 }
 
 /* Character column where needle starts on the line containing it (-1 if absent) */
@@ -58,13 +57,12 @@ static void test_remote(void) {
 }
 
 static void test_notebook(void) {
-    GtkTreeStore* store = new_store();
-    GtkTreeIter nb, n;
-    add_row(store, &nb, NULL, "notebook", "General", "/notes/General", "2");
-    add_row(store, &n, &nb, "note", "short", "/notes/General/short.txt", "");
-    add_row(store, &n, &nb, "note", "a much longer note title", "/notes/General/x.md",
+    ExplorerRow* root = explorer_row_new_root();
+    ExplorerRow* nb = add_row(root, "notebook", "General", "/notes/General", "2");
+    ExplorerRow* n = add_row(nb, "note", "short", "/notes/General/short.txt", "");
+    add_row(nb, "note", "a much longer note title", "/notes/General/x.md",
             "<span foreground=\"#4ec9b0\" size=\"small\">rich</span>");
-    gchar* s = preview_summary_container(GTK_TREE_MODEL(store), &nb);
+    gchar* s = preview_summary_container(nb);
     g_assert_nonnull(strstr(s, "Notebook: General\n"));
     g_assert_nonnull(strstr(s, "/notes/General"));
     g_assert_nonnull(strstr(s, "Plain Text"));
@@ -74,18 +72,18 @@ static void test_notebook(void) {
     g_free(s);
 
     /* Other row types have no summary */
-    g_assert_null(preview_summary_container(GTK_TREE_MODEL(store), &n));
-    g_object_unref(store);
+    g_assert_null(preview_summary_container(n));
+    g_assert_null(preview_summary_container(NULL));
+    g_object_unref(root);
 }
 
 static void test_bookmark_folder_and_trash(void) {
-    GtkTreeStore* store = new_store();
-    GtkTreeIter folder, b, sub, trash, t, empty;
-    add_row(store, &folder, NULL, "bm_folder", "Work", "", "2");
-    add_row(store, &b, &folder, "bookmark", "Sources", "/home/me/src", "");
-    add_row(store, &sub, &folder, "bm_folder", "Docs", "", "1");
-    add_row(store, &b, &sub, "bookmark", "Manual", "/home/me/doc", "");
-    gchar* s = preview_summary_container(GTK_TREE_MODEL(store), &folder);
+    ExplorerRow* root = explorer_row_new_root();
+    ExplorerRow* folder = add_row(root, "bm_folder", "Work", "", "2");
+    add_row(folder, "bookmark", "Sources", "/home/me/src", "");
+    ExplorerRow* sub = add_row(folder, "bm_folder", "Docs", "", "1");
+    add_row(sub, "bookmark", "Manual", "/home/me/doc", "");
+    gchar* s = preview_summary_container(folder);
     g_assert_nonnull(strstr(s, "Bookmark Folder: Work\n"));
     g_assert_nonnull(strstr(s, "/home/me/src"));
     g_assert_nonnull(strstr(s, "Docs/"));
@@ -93,19 +91,27 @@ static void test_bookmark_folder_and_trash(void) {
     g_assert_null(strstr(s, "Manual")); /* only direct children */
     g_free(s);
 
-    add_row(store, &empty, NULL, "bm_folder", "Empty", "", "");
-    s = preview_summary_container(GTK_TREE_MODEL(store), &empty);
+    /* Placeholder rows are not items */
+    ExplorerRow* empty = add_row(root, "bm_folder", "Empty", "", "");
+    add_row(empty, "-", "", "/", "");
+    ExplorerRow* outer = add_row(root, "bm_folder", "Outer", "", "");
+    ExplorerRow* inner = add_row(outer, "bm_folder", "Inner", "", "");
+    add_row(inner, "-", "", "", "");
+    s = preview_summary_container(empty);
     g_assert_nonnull(strstr(s, "\n(empty)\n"));
     g_free(s);
+    s = preview_summary_container(outer);
+    g_assert_nonnull(strstr(s, "folder, 0 items\n"));
+    g_free(s);
 
-    add_row(store, &trash, NULL, "trash", "Trash", "/notes/.trash", "");
-    add_row(store, &t, &trash, "trash_note", "old idea", "/notes/.trash/old.txt",
+    ExplorerRow* trash = add_row(root, "trash", "Trash", "/notes/.trash", "");
+    add_row(trash, "trash_note", "old idea", "/notes/.trash/old.txt",
             "<span foreground=\"#6e7681\" size=\"small\">from R&amp;D</span>");
-    s = preview_summary_container(GTK_TREE_MODEL(store), &trash);
+    s = preview_summary_container(trash);
     g_assert_nonnull(strstr(s, "Trash\n"));
     g_assert_nonnull(strstr(s, "old idea   from R&D")); /* markup decoded */
     g_free(s);
-    g_object_unref(store);
+    g_object_unref(root);
 }
 
 int main(int argc, char** argv) {

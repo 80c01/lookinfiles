@@ -4,11 +4,12 @@ Guidelines for AI coding agents working in this repository.
 
 ## Project overview
 
-`file explorer` written in C with GTK 4 (API 4.0+). Modular architecture in `src/`,
+`file explorer` written in C with GTK 4 (4.12 or newer). Modular architecture in `src/`,
 no external dependencies beyond GTK (with optional VTE for GTK 4, GtkSourceView 5, and poppler-glib).
 
 Layout: left = explorer panel (files, bookmarks, notes or remote view,
-`GtkTreeView` + `GtkTreeStore`, expandable directory tree with lazy-loading),
+`GtkListView` over a `GtkTreeListModel` of `ExplorerRow`, expandable directory
+tree with lazy-loading),
 right = preview notebook (viewer, editor tabs, Git tab) and terminal panes,
 all inside resizable `GtkPaned`s.
 
@@ -56,10 +57,23 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `is_renderable_file()`) and emoji icons (`file_icon()`).
 - `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
   `git_read_branch()`, `scan_git_statuses()` (spawns git: worker thread only).
+- `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
+  label, path, badge, children `GListStore`). Read fields directly, change them
+  with the setters (they emit `"changed"` so the row redraws). A row that can
+  expand must be added with `explorer_row_append_container()`: GTK decides
+  once, when the row is inserted, whether it shows an expander.
 
 **2. Shared types, events & leaf helpers — may use `AppData` and layer 1 only:**
 - `app_types.h` — `AppData`, `EditorTab`, `VirtualLayout`, `FileEntry`,
-  tree columns (`COL_*`), `SORT_*`, `SIDEBAR_VIEW_*`, `PREVIEW_*` constants.
+  `SORT_*`, `SIDEBAR_VIEW_*`, `PREVIEW_*` constants.
+- `explorer_tree` — the explorer widget (`app->tree`): root row, selection,
+  expansion, scrolling and row drawing (git colours, badges). Signals
+  `"selection-changed"`, `"row-toggled"` (expanded / collapsed, by the user or
+  `explorer_tree_set_expanded()`), `"row-activated"` (double click). Rows are
+  addressed by `ExplorerRow*`; positions count visible rows only.
+- `dialog` — `AppDialog`, the modal dialog window (GtkDialog-like API:
+  `app_dialog_new()`, `"response"`, `app_dialog_run()`). Escape answers
+  `APP_RESPONSE_DELETE_EVENT`; the caller destroys the dialog.
 - `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below.
 - `panels` — fullscreen, focused-panel highlight, workspace width, split-handle
   drag feedback and fractions (`wire_paned_controllers()`). Every new
@@ -69,12 +83,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `text_style` — Dark+ GtkSourceView scheme, monospace, panel background,
   syntax language (`is_code_file()`, `apply_viewer_language()`).
 - `theme` — global CSS provider (`apply_panel_borders()`).
-- `tree_nav` — explorer row traversal and selection (j/k, gg/G, Ctrl+F/B,
-  zz/zt/zb, `select_by_path()`), and suspending the preview handler while the
-  store is rebuilt (`tree_nav_block_selection_handler()`). After every
-  `gtk_tree_store_clear()` of the explorer store, call
-  `tree_nav_reset_column_widths()`: GTK otherwise keeps the widest cell widths
-  of the previous view and ellipsizes the names.
+- `tree_nav` — explorer row traversal and selection (j/k, arrows, gg/G,
+  Ctrl+F/B, zz/zt/zb, `tree_nav_selected()`, `select_row()`,
+  `select_by_path()`), and suspending the preview handler while the tree is
+  rebuilt (`tree_nav_block_selection_handler()`).
 - `remote_store` — `RemoteMachine` list, `remotes.xml`, `~/.ssh/config`
   discovery, lookups (unit-tested).
 - `preview_summary` — text summaries shown in the preview for rows without
@@ -86,7 +98,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `minimap` — scaled file overview.
 
 **3. Features:**
-- `file_list` — async directory scan (`GTask`), store population, sorting
+- `file_list` — async directory scan (`GTask`), tree population, sorting
   (`compare_entries_with_data()`), lazy expand/collapse, git badges in the tree,
   navigation (`reload_directory()`, `navigate_to_path()`, `refresh_listing()`,
   `activate_selected_entry()`), sidebar view toggles, tree key handler
@@ -156,8 +168,8 @@ upward notification = a new `AppEvent` + one `app_events_subscribe()` in `main.c
   transitive includes, and remove includes you no longer need.
 - Callbacks used in one file are `static`; never declare another module's
   function locally in a `.c` file — add it to that module's header.
-- To refresh the preview after changing the selection programmatically, emit
-  the selection `"changed"` signal; to re-render the current preview, emit
+- To select a row programmatically use `select_row()` (selecting the selected
+  row again still refreshes the preview); to re-render the current preview, emit
   `APP_EVENT_PREVIEW_STALE`.
 
 ### Known coupling (avoid making it worse)
@@ -218,14 +230,17 @@ Check these before adding or changing an action, a tooltip or a dialog:
 2. **GTK API correctness**:
    - `GtkScrolledWindow` has one child only (`gtk_scrolled_window_set_child()`).
      Put extra widgets in a `GtkBox`/vbox, or above the pane.
-   - `gtk_list_store_set(store, &iter, col, value, -1)`: the terminator is the
-     integer `-1`, never the string `"-1"`.
+   - No deprecated GTK API. Lists are `GListStore` + `GtkListView` /
+     `GtkColumnView` (never `GtkTreeView`, `GtkTreeStore`, `GtkListStore` or
+     cell renderers), dialogs are `AppDialog` (`dialog.h`, never `GtkDialog`
+     or `GtkMessageDialog`), URIs open with `GtkUriLauncher`, CSS providers go
+     on the display (`gtk_style_context_add_provider_for_display()`).
    - `GtkTextBuffer` accepts valid UTF-8 only. Validate content with
      `g_utf8_validate()` / sanitize with `g_utf8_make_valid()` before inserting
      file contents.
-   - Change list contents with `gtk_list_store_clear()` + repopulation; the
-     tree view holds its own reference to the model, so unref'ing `store` once
-     is enough.
+   - Rebuild the explorer with `explorer_tree_clear()` + repopulation from
+     `explorer_tree_get_root()`, between `tree_nav_block_selection_handler()`
+     and `tree_nav_unblock_selection_handler()`, then select a row.
 3. **Performance**: never load a whole huge file into the right pane; keep the
    preview path (`fread` of `PREVIEW_BYTES` only). Directory enumeration is
    O(n) with one `g_stat` per entry — fine for typical directories; do not add
@@ -256,5 +271,5 @@ Recent features are stable (v1.17 in README.md): modular architecture in `src/`,
 hanging indent and aligned paragraph wrapping for HTML & Markdown lists,
 enhanced HTML renderer (base64 images, code blocks, task lists, description lists, details/summary, table captions, math/arrow/Greek entities, metadata banner),
 custom panel backgrounds (#191A1B file panel, #121314 preview, #1f2021 terminal),
-VS Code Dark+ full theme & icon matching, text viewer padding for text/code files, PDF document preview in right panel, image preview in right panel, monospace font for code files, expandable directory tree (`GtkTreeStore`), rendered Markdown & HTML previews, resizable terminal panes (`GtkPaned`), resizable layout, vim bindings, navigation, hidden toggle,
+VS Code Dark+ full theme & icon matching, text viewer padding for text/code files, PDF document preview in right panel, image preview in right panel, monospace font for code files, expandable directory tree (`GtkTreeListModel`), rendered Markdown & HTML previews, resizable terminal panes (`GtkPaned`), resizable layout, vim bindings, navigation, hidden toggle,
 sort cycle, previews, dark theme. UI language is English end-to-end, including README.md.

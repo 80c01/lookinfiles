@@ -9,6 +9,8 @@
 #include <glib/gstdio.h>
 #include <ctype.h>
 
+#include "explorer_tree.h"
+
 #ifdef HAVE_VTE
 #include <vte/vte.h>
 #endif
@@ -21,18 +23,6 @@
 #pragma GCC diagnostic pop
 #include <gio/gio.h>
 #endif
-
-/* Tree model columns */
-enum {
-    COL_NAME,       /* raw file or directory name */
-    COL_TYPE,       /* "dir", "file", or "-" */
-    COL_LABEL,      /* display label with icon (emoji + space + name) */
-    COL_PATH,       /* full absolute path on disk */
-    COL_LOADED,     /* boolean: whether sub-items have been loaded */
-    COL_GIT_STATUS, /* markup for git status badge */
-    COL_BM_ID,      /* uint: bookmark item id (bookmarks view rows only, 0 otherwise) */
-    COL_COUNT
-};
 
 /* Sort modes cycled with 'o' */
 enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
@@ -136,11 +126,10 @@ typedef struct {
 typedef struct {
     GtkTextBuffer* buffer;
     gchar* base_dir;
-    GtkTreeModel* model;
-    GtkTreeView* tree_view;
+    ExplorerTree* tree;     /* explorer rows, selection and expansion (explorer_tree.h) */
+    GtkWidget* tree_view;   /* the explorer GtkListView (explorer_tree_get_widget(tree)) */
     GtkWidget* text_view; /* right pane viewer (Alt+Left/Right cycling) */
-    GtkTreeSelection* selection;
-    gulong selection_changed_id; /* preview handler on selection "changed" (main.c), 0 = not connected */
+    gulong selection_changed_id; /* preview handler on tree "selection-changed" (main.c), 0 = not connected */
     GtkWidget* search_entry;
     GtkWidget* path_label;
     GtkWidget* breadcrumb_box;

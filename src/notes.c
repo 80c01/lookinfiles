@@ -957,11 +957,11 @@ static void notes_notice(AppData* app, const gchar* title, const gchar* message)
 }
 
 /* ------------------------------------------------------------------------- */
-/* Tree Store Population & Integration                                       */
+/* Explorer Rows                                                             */
 /* ------------------------------------------------------------------------- */
 
-void notes_append_to_store(GtkTreeStore* store, AppData* app) {
-    if (store == NULL || app == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
+void notes_append_rows(ExplorerRow* root, AppData* app) {
+    if (root == NULL || app == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
         return;
     }
     NotesManager* mgr = get_notes_mgr(app);
@@ -972,105 +972,53 @@ void notes_append_to_store(GtkTreeStore* store, AppData* app) {
         NotebookItem* nb = (NotebookItem*)l->data;
         const gchar* icon = (nb->icon != NULL && nb->icon[0] != '\0') ? nb->icon : "📓";
         gchar* label = g_strdup_printf("%s %s", icon, nb->name);
-        guint n_notes = g_list_length(nb->notes);
-        gchar* badge = (n_notes > 0) ? g_strdup_printf("<span foreground=\"#6e7681\">%u</span>", n_notes)
-                                    : g_strdup("");
-
-        GtkTreeIter diter;
-        gtk_tree_store_append(store, &diter, NULL);
-        gtk_tree_store_set(store, &diter,
-                           COL_NAME, nb->name,
-                           COL_TYPE, "notebook",
-                           COL_LABEL, label,
-                           COL_PATH, nb->path,
-                           COL_LOADED, TRUE,
-                           COL_GIT_STATUS, badge,
-                           -1);
+        ExplorerRow* nb_row = explorer_row_append_container(root, "notebook", nb->name, label, nb->path);
         g_free(label);
-        g_free(badge);
+        guint n_notes = g_list_length(nb->notes);
+        if (n_notes > 0) {
+            gchar* badge = g_strdup_printf("<span foreground=\"#6e7681\">%u</span>", n_notes);
+            explorer_row_set_badge(nb_row, badge);
+            g_free(badge);
+        }
 
         if (nb->notes == NULL) {
-            GtkTreeIter dummy;
-            gtk_tree_store_append(store, &dummy, &diter);
-            gtk_tree_store_set(store, &dummy,
-                               COL_NAME, "",
-                               COL_TYPE, "-",
-                               COL_LABEL, "  (empty)",
-                               COL_PATH, "",
-                               COL_LOADED, TRUE,
-                               COL_GIT_STATUS, "",
-                               -1);
+            explorer_row_append(nb_row, "-", "", "  (empty)", "");
         } else {
             for (GList* nl = nb->notes; nl != NULL; nl = nl->next) {
                 NoteItem* note = (NoteItem*)nl->data;
-                const gchar* nicon = note_type_to_icon(note->type);
-                gchar* nlabel = g_strdup_printf("%s %s", nicon, note->title);
-                const gchar* tbadge = (note->type == NOTE_TYPE_ORG) ? "<span foreground=\"#c586c0\" size=\"small\">org</span>" :
-                                      ((note->type == NOTE_TYPE_RICH) ? "<span foreground=\"#4ec9b0\" size=\"small\">rich</span>" : "");
-                GtkTreeIter fiter;
-                gtk_tree_store_append(store, &fiter, &diter);
-                gtk_tree_store_set(store, &fiter,
-                                   COL_NAME, note->title,
-                                   COL_TYPE, "note",
-                                   COL_LABEL, nlabel,
-                                   COL_PATH, note->path,
-                                   COL_LOADED, TRUE,
-                                   COL_GIT_STATUS, tbadge,
-                                   -1);
+                gchar* nlabel = g_strdup_printf("%s %s", note_type_to_icon(note->type), note->title);
+                ExplorerRow* row = explorer_row_append(nb_row, "note", note->title, nlabel, note->path);
                 g_free(nlabel);
+                explorer_row_set_badge(row,
+                    (note->type == NOTE_TYPE_ORG) ? "<span foreground=\"#c586c0\" size=\"small\">org</span>" :
+                    (note->type == NOTE_TYPE_RICH) ? "<span foreground=\"#4ec9b0\" size=\"small\">rich</span>" : "");
             }
         }
     }
 
-    /* 2. Trash Bin (Corbeille) */
+    /* 2. Trash Bin */
     gchar* trash_dir = notes_get_trash_dir();
     guint n_trash = g_list_length(mgr->trash);
-    gchar* t_badge = (n_trash > 0) ? g_strdup_printf("<span foreground=\"#e06c75\">%u</span>", n_trash)
-                                   : g_strdup("");
     gchar* t_label = g_strdup_printf("🗑 Trash%s", n_trash == 0 ? " (empty)" : "");
-
-    GtkTreeIter titer;
-    gtk_tree_store_append(store, &titer, NULL);
-    gtk_tree_store_set(store, &titer,
-                       COL_NAME, "Trash",
-                       COL_TYPE, "trash",
-                       COL_LABEL, t_label,
-                       COL_PATH, trash_dir,
-                       COL_LOADED, TRUE,
-                       COL_GIT_STATUS, t_badge,
-                       -1);
+    ExplorerRow* trash_row = explorer_row_append_container(root, "trash", "Trash", t_label, trash_dir);
     g_free(trash_dir);
     g_free(t_label);
-    g_free(t_badge);
+    if (n_trash > 0) {
+        gchar* t_badge = g_strdup_printf("<span foreground=\"#e06c75\">%u</span>", n_trash);
+        explorer_row_set_badge(trash_row, t_badge);
+        g_free(t_badge);
+    }
 
     if (mgr->trash == NULL) {
-        GtkTreeIter dummy;
-        gtk_tree_store_append(store, &dummy, &titer);
-        gtk_tree_store_set(store, &dummy,
-                           COL_NAME, "",
-                           COL_TYPE, "-",
-                           COL_LABEL, "  (trash is empty)",
-                           COL_PATH, "",
-                           COL_LOADED, TRUE,
-                           COL_GIT_STATUS, "",
-                           -1);
+        explorer_row_append(trash_row, "-", "", "  (trash is empty)", "");
     } else {
         for (GList* tl = mgr->trash; tl != NULL; tl = tl->next) {
             TrashNoteItem* tnote = (TrashNoteItem*)tl->data;
-            const gchar* nicon = note_type_to_icon(tnote->type);
-            gchar* nlabel = g_strdup_printf("%s %s", nicon, tnote->title);
+            gchar* nlabel = g_strdup_printf("%s %s", note_type_to_icon(tnote->type), tnote->title);
             gchar* origin_badge = g_markup_printf_escaped("<span foreground=\"#6e7681\" size=\"small\">from %s</span>",
-                                                  tnote->original_nb ? tnote->original_nb : "General");
-            GtkTreeIter fiter;
-            gtk_tree_store_append(store, &fiter, &titer);
-            gtk_tree_store_set(store, &fiter,
-                               COL_NAME, tnote->title,
-                               COL_TYPE, "trash_note",
-                               COL_LABEL, nlabel,
-                               COL_PATH, tnote->path,
-                               COL_LOADED, TRUE,
-                               COL_GIT_STATUS, origin_badge,
-                               -1);
+                                                          tnote->original_nb ? tnote->original_nb : "General");
+            ExplorerRow* row = explorer_row_append(trash_row, "trash_note", tnote->title, nlabel, tnote->path);
+            explorer_row_set_badge(row, origin_badge);
             g_free(nlabel);
             g_free(origin_badge);
         }
@@ -1078,131 +1026,89 @@ void notes_append_to_store(GtkTreeStore* store, AppData* app) {
 }
 
 void notes_reexpand(AppData* app) {
-    if (app == NULL || app->tree_view == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
         return;
     }
     NotesManager* mgr = get_notes_mgr(app);
     if (mgr == NULL) return;
 
-    GtkTreeIter iter;
-    if (!gtk_tree_model_get_iter_first(app->model, &iter)) {
-        return;
-    }
-
-    do {
-        gchar* type = NULL;
-        gchar* name = NULL;
-        gtk_tree_model_get(app->model, &iter, COL_TYPE, &type, COL_NAME, &name, -1);
-        if (g_strcmp0(type, "notebook") == 0 && name != NULL) {
+    ExplorerRow* root = explorer_tree_get_root(app->tree);
+    for (guint i = 0; i < explorer_row_n_children(root); i++) {
+        ExplorerRow* row = explorer_row_child(root, i);
+        if (explorer_row_is(row, "notebook")) {
             for (GList* l = mgr->notebooks; l != NULL; l = l->next) {
                 NotebookItem* nb = (NotebookItem*)l->data;
-                if (g_strcmp0(nb->name, name) == 0 && nb->expanded) {
-                    GtkTreePath* tp = gtk_tree_model_get_path(app->model, &iter);
-                    gtk_tree_view_expand_row(app->tree_view, tp, FALSE);
-                    gtk_tree_path_free(tp);
+                if (g_strcmp0(nb->name, row->name) == 0 && nb->expanded) {
+                    explorer_tree_set_expanded(app->tree, row, TRUE);
                     break;
                 }
             }
-        } else if (g_strcmp0(type, "trash") == 0 && mgr->trash_expanded) {
-            GtkTreePath* tp = gtk_tree_model_get_path(app->model, &iter);
-            gtk_tree_view_expand_row(app->tree_view, tp, FALSE);
-            gtk_tree_path_free(tp);
+        } else if (explorer_row_is(row, "trash") && mgr->trash_expanded) {
+            explorer_tree_set_expanded(app->tree, row, TRUE);
         }
-        g_free(type);
-        g_free(name);
-    } while (gtk_tree_model_iter_next(app->model, &iter));
+    }
 }
 
-gboolean notes_handle_row_toggled(AppData* app, GtkTreeIter* iter, gboolean expanded) {
-    if (app == NULL || iter == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
+gboolean notes_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded) {
+    if (app == NULL || row == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
         return FALSE;
     }
     NotesManager* mgr = get_notes_mgr(app);
     if (mgr == NULL) return FALSE;
 
-    gchar* type = NULL;
-    gchar* name = NULL;
-    gtk_tree_model_get(app->model, iter, COL_TYPE, &type, COL_NAME, &name, -1);
-
-    if (g_strcmp0(type, "notebook") == 0 && name != NULL) {
+    if (explorer_row_is(row, "notebook")) {
         for (GList* l = mgr->notebooks; l != NULL; l = l->next) {
             NotebookItem* nb = (NotebookItem*)l->data;
-            if (g_strcmp0(nb->name, name) == 0) {
+            if (g_strcmp0(nb->name, row->name) == 0) {
                 nb->expanded = expanded;
                 notes_save(app);
                 const gchar* icon = (nb->icon != NULL && nb->icon[0] != '\0') ? nb->icon : "📓";
                 gchar* label = g_strdup_printf("%s %s", icon, nb->name);
-                gtk_tree_store_set(GTK_TREE_STORE(app->model), iter, COL_LABEL, label, -1);
+                explorer_row_set_label(row, label);
                 g_free(label);
                 break;
             }
         }
-        g_free(type);
-        g_free(name);
         return TRUE;
-    } else if (g_strcmp0(type, "trash") == 0) {
+    } else if (explorer_row_is(row, "trash")) {
         mgr->trash_expanded = expanded;
         notes_save(app);
-        g_free(type);
-        g_free(name);
         return TRUE;
     }
-
-    g_free(type);
-    g_free(name);
     return FALSE;
 }
 
-static gboolean find_note_iter_by_path(GtkTreeModel* model, GtkTreeIter* parent, const gchar* path, GtkTreeIter* out) {
-    GtkTreeIter child;
-    if (!gtk_tree_model_iter_children(model, &child, parent)) return FALSE;
-    do {
-        gchar* p = NULL;
-        gtk_tree_model_get(model, &child, COL_PATH, &p, -1);
-        if (g_strcmp0(p, path) == 0) {
-            g_free(p);
-            *out = child;
-            return TRUE;
-        }
-        g_free(p);
-        if (find_note_iter_by_path(model, &child, path, out)) return TRUE;
-    } while (gtk_tree_model_iter_next(model, &child));
-    return FALSE;
+/* Select the row of a note or notebook by path, showing it if needed */
+static void notes_select_path(AppData* app, const gchar* path) {
+    ExplorerRow* row = explorer_row_find_by_path(explorer_tree_get_root(app->tree), path);
+    if (row != NULL) {
+        explorer_tree_expand_to(app->tree, row);
+        select_row(app, row);
+    }
 }
 
 void notes_refresh(AppData* app) {
-    if (app == NULL || app->model == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
         return;
     }
 
-    gchar* sel_path = NULL;
-    GtkTreeIter sel_iter;
-    if (app->selection != NULL && gtk_tree_selection_get_selected(app->selection, NULL, &sel_iter)) {
-        gtk_tree_model_get(app->model, &sel_iter, COL_PATH, &sel_path, -1);
-    }
+    ExplorerRow* selected = tree_nav_selected(app);
+    gchar* sel_path = (selected != NULL && selected->path[0] != '\0') ? g_strdup(selected->path) : NULL;
 
     tree_nav_block_selection_handler(app);
-
-    gtk_tree_store_clear(GTK_TREE_STORE(app->model));
-    tree_nav_reset_column_widths(app);
-    notes_append_to_store(GTK_TREE_STORE(app->model), app);
+    explorer_tree_clear(app->tree);
+    notes_append_rows(explorer_tree_get_root(app->tree), app);
     notes_reexpand(app);
-
     tree_nav_unblock_selection_handler(app);
 
-    if (sel_path != NULL) {
-        GtkTreeIter found;
-        if (find_note_iter_by_path(app->model, NULL, sel_path, &found)) {
-            GtkTreePath* tp = gtk_tree_model_get_path(app->model, &found);
-            select_path(app, tp);
-            gtk_tree_path_free(tp);
-        } else {
-            select_first_row(app);
-        }
-        g_free(sel_path);
+    ExplorerRow* row = explorer_row_find_by_path(explorer_tree_get_root(app->tree), sel_path);
+    if (row != NULL) {
+        explorer_tree_expand_to(app->tree, row);
+        select_row(app, row);
     } else {
         select_first_row(app);
     }
+    g_free(sel_path);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
@@ -1222,18 +1128,17 @@ static NotesSelectionType get_selected_info(AppData* app, NotebookItem** out_nb,
     if (out_nb) *out_nb = NULL;
     if (out_note) *out_note = NULL;
     if (out_trash) *out_trash = NULL;
-    if (app == NULL || app->selection == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) return SEL_NONE;
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) return SEL_NONE;
 
-    GtkTreeIter iter;
-    if (!gtk_tree_selection_get_selected(app->selection, NULL, &iter)) return SEL_NONE;
+    ExplorerRow* row = tree_nav_selected(app);
+    if (row == NULL) return SEL_NONE;
 
     NotesManager* mgr = get_notes_mgr(app);
     if (mgr == NULL) return SEL_NONE;
 
-    gchar* type = NULL;
-    gchar* path = NULL;
-    gchar* name = NULL;
-    gtk_tree_model_get(app->model, &iter, COL_TYPE, &type, COL_PATH, &path, COL_NAME, &name, -1);
+    const gchar* type = row->type;
+    const gchar* path = row->path;
+    const gchar* name = row->name;
 
     NotesSelectionType res = SEL_NONE;
     if (g_strcmp0(type, "notebook") == 0) {
@@ -1271,10 +1176,6 @@ static NotesSelectionType get_selected_info(AppData* app, NotebookItem** out_nb,
             }
         }
     }
-
-    g_free(type);
-    g_free(path);
-    g_free(name);
     return res;
 }
 
@@ -1391,12 +1292,7 @@ void notes_new_note(AppData* app) {
 
     notes_refresh(app);
 
-    GtkTreeIter iter;
-    if (find_note_iter_by_path(app->model, NULL, file_path, &iter)) {
-        GtkTreePath* tp = gtk_tree_model_get_path(app->model, &iter);
-        select_path(app, tp);
-        gtk_tree_path_free(tp);
-    }
+    notes_select_path(app, file_path);
 
     g_free(title);
     g_free(filename);
@@ -1433,12 +1329,7 @@ void notes_new_notebook(AppData* app) {
     notes_save(app);
     notes_refresh(app);
 
-    GtkTreeIter iter;
-    if (find_note_iter_by_path(app->model, NULL, dir_path, &iter)) {
-        GtkTreePath* tp = gtk_tree_model_get_path(app->model, &iter);
-        select_path(app, tp);
-        gtk_tree_path_free(tp);
-    }
+    notes_select_path(app, dir_path);
 
     g_free(name);
     g_free(icon);
@@ -1863,12 +1754,7 @@ void notes_restore_selected(AppData* app) {
         notes_save(app);
         notes_refresh(app);
 
-        GtkTreeIter iter;
-        if (find_note_iter_by_path(app->model, NULL, target_path, &iter)) {
-            GtkTreePath* tp = gtk_tree_model_get_path(app->model, &iter);
-            select_path(app, tp);
-            gtk_tree_path_free(tp);
-        }
+        notes_select_path(app, target_path);
     }
 
     g_free(note_filename);
@@ -2032,18 +1918,7 @@ void notes_activate_selected(AppData* app) {
         g_free(msg);
     } else if (sel == SEL_NOTEBOOK || sel == SEL_TRASH) {
         /* Toggle expand / collapse */
-        if (app->selection != NULL) {
-            GtkTreeIter iter;
-            if (gtk_tree_selection_get_selected(app->selection, NULL, &iter)) {
-                GtkTreePath* tp = gtk_tree_model_get_path(app->model, &iter);
-                if (gtk_tree_view_row_expanded(app->tree_view, tp)) {
-                    gtk_tree_view_collapse_row(app->tree_view, tp);
-                } else {
-                    gtk_tree_view_expand_row(app->tree_view, tp, FALSE);
-                }
-                gtk_tree_path_free(tp);
-            }
-        }
+        explorer_tree_toggle_expanded(app->tree, tree_nav_selected(app));
     }
 }
 
@@ -2215,14 +2090,11 @@ static void notes_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble
 
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
 
-    gint bx = 0, by = 0;
-    gtk_tree_view_convert_widget_to_bin_window_coords(app->tree_view, (gint)x, (gint)y, &bx, &by);
-    GtkTreePath* tp = NULL;
-    if (gtk_tree_view_get_path_at_pos(app->tree_view, bx, by, &tp, NULL, NULL, NULL) && tp != NULL) {
-        select_path(app, tp);
-        gtk_tree_path_free(tp);
+    ExplorerRow* row = explorer_tree_row_at(app->tree, x, y);
+    if (row != NULL) {
+        select_row(app, row);
     } else {
-        gtk_tree_selection_unselect_all(app->selection);
+        explorer_tree_unselect_all(app->tree);
     }
 
     NotebookItem* nb = NULL;

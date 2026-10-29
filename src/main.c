@@ -42,89 +42,6 @@ static void on_window_active_changed(GObject* object, GParamSpec* pspec, gpointe
     }
 }
 
-static void file_name_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* cell,
-                                     GtkTreeModel* model, GtkTreeIter* iter,
-                                     gpointer data) {
-    (void)col;
-    (void)data;
-    gchar* label = NULL;
-    gchar* status = NULL;
-    gchar* type = NULL;
-    gtk_tree_model_get(model, iter,
-                       COL_LABEL, &label,
-                       COL_GIT_STATUS, &status,
-                       COL_TYPE, &type,
-                       -1);
-
-    /* Bookmarks and remote machines: show the target / address right after the
-     * name in the same cell, so the name keeps priority and the target uses all
-     * the remaining width (ellipsized at the end only when space runs out). */
-    gboolean inline_secondary = (g_strcmp0(type, "bookmark") == 0 || g_strcmp0(type, "remote") == 0);
-    if (inline_secondary && status != NULL && status[0] != '\0') {
-        gchar* name_esc = g_markup_escape_text(label ? label : "", -1);
-        gchar* markup = g_strdup_printf("%s  %s", name_esc, status); /* status is escaped markup */
-        g_object_set(cell, "markup", markup, "foreground-set", FALSE, NULL);
-        g_free(markup);
-        g_free(name_esc);
-        g_free(label);
-        g_free(status);
-        g_free(type);
-        return;
-    }
-    g_free(type);
-
-    const gchar* fg_color = NULL;
-    if (status != NULL && status[0] != '\0') {
-        if (strstr(status, ">M<") != NULL) {
-            fg_color = "#e2c08d"; /* Amber / Modified */
-        } else if (strstr(status, ">U<") != NULL) {
-            fg_color = "#73c991"; /* Green / Untracked */
-        } else if (strstr(status, ">A<") != NULL) {
-            fg_color = "#73c991"; /* Green / Added */
-        } else if (strstr(status, ">D<") != NULL) {
-            fg_color = "#c74e39"; /* Red / Deleted */
-        } else if (strstr(status, ">!<") != NULL) {
-            fg_color = "#e51400"; /* Bright Red / Conflict */
-        } else if (strstr(status, ">R<") != NULL) {
-            fg_color = "#4fc1ff"; /* Blue / Renamed */
-        }
-    }
-
-    if (fg_color != NULL) {
-        g_object_set(cell,
-                     "text", label ? label : "",
-                     "foreground", fg_color,
-                     NULL);
-    } else {
-        g_object_set(cell,
-                     "text", label ? label : "",
-                     "foreground-set", FALSE,
-                     NULL);
-    }
-
-    g_free(label);
-    g_free(status);
-}
-
-static void git_status_cell_data_func(GtkTreeViewColumn* col, GtkCellRenderer* cell,
-                                      GtkTreeModel* model, GtkTreeIter* iter,
-                                      gpointer data) {
-    (void)col;
-    (void)data;
-    gchar* status = NULL;
-    gchar* type = NULL;
-    gtk_tree_model_get(model, iter, COL_GIT_STATUS, &status, COL_TYPE, &type, -1);
-    /* Bookmark targets and remote addresses are drawn inline by file_name_cell_data_func */
-    gboolean has_status = (status != NULL && status[0] != '\0' &&
-                           g_strcmp0(type, "bookmark") != 0 && g_strcmp0(type, "remote") != 0);
-    g_free(type);
-    g_object_set(cell,
-                 "visible", has_status,
-                 "markup", has_status ? status : "",
-                 NULL);
-    g_free(status);
-}
-
 static void on_tree_click_pressed(GtkGestureClick* gesture, gint n_press,
                                   gdouble x, gdouble y, gpointer user_data) {
     (void)gesture;
@@ -290,43 +207,10 @@ int main(int argc, char** argv) {
     gtk_widget_set_halign(sep_label, GTK_ALIGN_START);
     gtk_widget_set_hexpand(sep_label, TRUE);
 
-    /* Left pane: file tree store */
-    GtkTreeStore* store =
-        gtk_tree_store_new(COL_COUNT,
-                           G_TYPE_STRING,   /* COL_NAME */
-                           G_TYPE_STRING,   /* COL_TYPE */
-                           G_TYPE_STRING,   /* COL_LABEL */
-                           G_TYPE_STRING,   /* COL_PATH */
-                           G_TYPE_BOOLEAN,  /* COL_LOADED */
-                           G_TYPE_STRING,   /* COL_GIT_STATUS */
-                           G_TYPE_UINT);    /* COL_BM_ID */
-
-    GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+    /* Left pane: explorer tree (files, bookmarks, notes, remote views) */
+    ExplorerTree* explorer = explorer_tree_new();
+    GtkWidget* tree_view = explorer_tree_get_widget(explorer);
     gtk_widget_set_name(tree_view, "file-tree");
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(tree_view), FALSE);
-    gtk_tree_view_set_enable_tree_lines(GTK_TREE_VIEW(tree_view), TRUE);
-    gtk_tree_view_set_show_expanders(GTK_TREE_VIEW(tree_view), TRUE);
-    gtk_tree_view_set_enable_search(GTK_TREE_VIEW(tree_view), FALSE);
-
-    GtkTreeViewColumn* col_name = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_expand(col_name, TRUE);
-    GtkCellRenderer* renderer_name = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(renderer_name, 6, 2);
-    g_object_set(renderer_name, "ellipsize", PANGO_ELLIPSIZE_END, NULL);
-    gtk_tree_view_column_pack_start(col_name, renderer_name, TRUE); /* name takes the free width */
-    gtk_tree_view_column_set_cell_data_func(col_name, renderer_name, file_name_cell_data_func, NULL, NULL);
-
-    GtkCellRenderer* renderer_git = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(renderer_git, 4, 2);
-    gtk_cell_renderer_set_alignment(renderer_git, 0.0f, 0.5f);
-    /* Short secondary text only (git badge, note/bookmark count, note type):
-     * capped and ellipsized so it never squeezes the name. Bookmark targets are
-     * drawn inline in the name cell instead. */
-    g_object_set(renderer_git, "ellipsize", PANGO_ELLIPSIZE_END, "max-width-chars", 8, NULL);
-    gtk_tree_view_column_pack_start(col_name, renderer_git, FALSE);
-    gtk_tree_view_column_set_cell_data_func(col_name, renderer_git, git_status_cell_data_func, NULL, NULL);
-
-    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_name);
 
     GtkWidget* left_scroll = gtk_scrolled_window_new();
     gtk_widget_set_name(left_scroll, "left-scroll");
@@ -484,8 +368,8 @@ int main(int argc, char** argv) {
     GtkWidget* ws_minimap = create_workspace_minimap(app);
     GtkWidget* ws_div_label = gtk_label_new("|");
     gtk_widget_add_css_class(ws_div_label, "breadcrumb-sep");
-    app->model = GTK_TREE_MODEL(store);
-    app->tree_view = GTK_TREE_VIEW(tree_view);
+    app->tree = explorer;
+    app->tree_view = tree_view;
     app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     g_signal_connect(window, "notify::is-active", G_CALLBACK(on_window_active_changed), app);
@@ -496,8 +380,7 @@ int main(int argc, char** argv) {
     remote_init(app);
     remote_attach_context_menu(app);
     orgmode_install_gtksourceview_spec();
-    populate_store(store, app, start_dir, FALSE, SORT_NAME);
-    g_object_unref(store);
+    populate_tree(app, start_dir, FALSE, SORT_NAME);
     app->text_view = text_view;
     app->search_entry = search_entry;
     app->path_label = path_label;
@@ -565,16 +448,10 @@ int main(int argc, char** argv) {
 
     monitor_directory(app);
 
-    GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
-    gtk_tree_selection_set_mode(selection, GTK_SELECTION_SINGLE);
-    app->selection = selection;
     app->selection_changed_id =
-        g_signal_connect(selection, "changed", G_CALLBACK(on_selection_changed), app);
-
-    g_signal_connect(tree_view, "test-expand-row", G_CALLBACK(on_tree_test_expand_row), app);
-    g_signal_connect(tree_view, "row-expanded", G_CALLBACK(on_tree_row_expanded), app);
-    g_signal_connect(tree_view, "row-collapsed", G_CALLBACK(on_tree_row_collapsed), app);
-    g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), app);
+        g_signal_connect(app->tree, "selection-changed", G_CALLBACK(on_selection_changed), app);
+    g_signal_connect(app->tree, "row-toggled", G_CALLBACK(on_tree_row_toggled), app);
+    g_signal_connect(app->tree, "row-activated", G_CALLBACK(on_row_activated), app);
 
     GtkEventController* tree_key_ctrl = gtk_event_controller_key_new();
     gtk_event_controller_set_propagation_phase(tree_key_ctrl, GTK_PHASE_CAPTURE);

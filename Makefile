@@ -8,8 +8,6 @@ CC = gcc
 PKG_CONFIG ?= pkg-config
 
 CFLAGS = -Wall -Wextra -Wno-deprecated-declarations -Isrc `$(PKG_CONFIG) --cflags gtk4`
-# Check deprecation:
-#FLAGS = -Wall -Wextra -Werror -Isrc `$(PKG_CONFIG) --cflags gtk4`
 LDFLAGS = `$(PKG_CONFIG) --libs gtk4`
 DEPFLAGS = -MMD -MP
 
@@ -72,12 +70,13 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_file_types test_git_utils test_remote_store test_preview_summary
+TESTS = test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o
 TEST_DEPS_test_git_utils = $(BUILD_DIR)/git_utils.o
 TEST_DEPS_test_remote_store = $(BUILD_DIR)/remote_store.o
-TEST_DEPS_test_preview_summary = $(BUILD_DIR)/preview_summary.o
+TEST_DEPS_test_preview_summary = $(BUILD_DIR)/preview_summary.o $(BUILD_DIR)/explorer_row.o
+TEST_DEPS_test_explorer_row = $(BUILD_DIR)/explorer_row.o
 
 .SECONDEXPANSION:
 $(BUILD_DIR)/tests/%: tests/%.c $$(TEST_DEPS_%) | $(BUILD_DIR)

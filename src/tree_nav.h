@@ -1,16 +1,15 @@
 #ifndef TREE_NAV_H
 #define TREE_NAV_H
 
-/* Explorer tree navigation and selection helpers */
+/* Explorer tree navigation and selection helpers (rows: explorer_row.h) */
 #include "app_types.h"
 
-gint list_count(AppData* app);
-gint count_visible_rows(AppData* app);
-GtkTreePath* get_first_visible_path(GtkTreeView* view);
-GtkTreePath* get_last_visible_path(GtkTreeView* view);
-GtkTreePath* get_next_visible_path(GtkTreeView* view, GtkTreePath* path);
-GtkTreePath* get_prev_visible_path(GtkTreeView* view, GtkTreePath* path);
-void select_path(AppData* app, GtkTreePath* path);
+/* Selected row, NULL if none (borrowed) */
+ExplorerRow* tree_nav_selected(AppData* app);
+
+/* Select a visible row and scroll it into view; re-selecting the selected
+ * row still refreshes the preview */
+void select_row(AppData* app, ExplorerRow* row);
 void select_first_row(AppData* app);
 void select_last_row(AppData* app);
 void select_next_row(AppData* app);
@@ -23,11 +22,8 @@ void bottom_selected_row(AppData* app);
 gboolean select_by_name(AppData* app, const gchar* name);
 gboolean select_by_path(AppData* app, const gchar* full_path);
 
-/* Suspend / resume the preview handler on selection "changed" */
+/* Suspend / resume the preview handler on "selection-changed" */
 void tree_nav_block_selection_handler(AppData* app);
 void tree_nav_unblock_selection_handler(AppData* app);
-
-/* Forget cached column widths (call when the store is cleared and refilled) */
-void tree_nav_reset_column_widths(AppData* app);
 
 #endif /* TREE_NAV_H */

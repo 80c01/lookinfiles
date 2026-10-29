@@ -159,13 +159,10 @@ void workspace_save_current(AppData* app) {
     }
     ws->expanded_paths = clone_ws_paths(app->expanded_paths);
 
-    if (app->selection != NULL && !app->dir_scan_pending) {
-        GtkTreeIter it;
+    if (app->tree != NULL && !app->dir_scan_pending) {
+        ExplorerRow* row = explorer_tree_get_selected(app->tree);
         g_free(ws->selected_path);
-        ws->selected_path = NULL;
-        if (gtk_tree_selection_get_selected(app->selection, NULL, &it)) {
-            gtk_tree_model_get(app->model, &it, COL_PATH, &ws->selected_path, -1);
-        }
+        ws->selected_path = (row != NULL) ? g_strdup(row->path) : NULL;
     }
 
 #ifdef HAVE_VTE

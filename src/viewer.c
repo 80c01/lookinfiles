@@ -735,28 +735,22 @@ static void on_dir_preview_ready(GObject* source_object, GAsyncResult* res,
     apply_viewer_language(app, NULL);
 }
 
-void on_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
+void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     AppData* app = (AppData*)user_data;
-    GtkTreeModel* model = NULL;
-    GtkTreeIter it;
-
-    if (!gtk_tree_selection_get_selected(selection, &model, &it)) {
+    ExplorerRow* row = explorer_tree_get_selected(tree);
+    if (row == NULL) {
         return;
     }
 
-    gchar* name = NULL;
-    gchar* type = NULL;
-    gchar* full = NULL;
-    gtk_tree_model_get(model, &it,
-                       COL_NAME, &name,
-                       COL_TYPE, &type,
-                       COL_PATH, &full, -1);
+    gchar* name = g_strdup(row->name);
+    gchar* type = g_strdup(row->type);
+    gchar* full = g_strdup(row->path);
 
     /* Rows without file content (remote machine, notebook, bookmark folder,
      * notes trash): show a text summary instead of keeping the previous preview */
     gboolean is_remote = (g_strcmp0(type, "remote") == 0);
     gchar* summary = is_remote ? preview_summary_remote(remote_find_by_id(app, full))
-                               : preview_summary_container(model, &it);
+                               : preview_summary_container(row);
     if (is_remote || summary != NULL) {
         if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);

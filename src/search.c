@@ -1,64 +1,38 @@
 #include "search.h"
 #include "tree_nav.h"
 
-static gboolean path_matches(AppData* app, GtkTreePath* path) {
-    GtkTreeIter it;
-    if (!gtk_tree_model_get_iter(app->model, &it, path)) {
+static gboolean row_matches(AppData* app, ExplorerRow* row) {
+    if (row == NULL || app->search_term == NULL) {
         return FALSE;
     }
-    gchar* name = NULL;
-    gtk_tree_model_get(app->model, &it, COL_NAME, &name, -1);
-    gboolean res = FALSE;
-    if (name != NULL && app->search_term != NULL) {
-        gchar* hay = g_utf8_casefold(name, -1);
-        gchar* needle = g_utf8_casefold(app->search_term, -1);
-        res = (hay != NULL && needle != NULL && strstr(hay, needle) != NULL);
-        g_free(hay);
-        g_free(needle);
-    }
-    g_free(name);
+    gchar* hay = g_utf8_casefold(row->name, -1);
+    gchar* needle = g_utf8_casefold(app->search_term, -1);
+    gboolean res = (strstr(hay, needle) != NULL);
+    g_free(hay);
+    g_free(needle);
     return res;
 }
 
+/* Select the next (direction > 0) or previous visible row whose name matches */
 void do_search(AppData* app, gint direction) {
     if (app->search_term == NULL || app->search_term[0] == '\0') {
         return;
     }
-    GPtrArray* paths = g_ptr_array_new_with_free_func((GDestroyNotify)gtk_tree_path_free);
-    GtkTreePath* p = get_first_visible_path(app->tree_view);
-    while (p != NULL) {
-        g_ptr_array_add(paths, p);
-        p = get_next_visible_path(app->tree_view, p);
-    }
-    if (paths->len == 0) {
-        g_ptr_array_unref(paths);
+    gint n = (gint)explorer_tree_n_visible(app->tree);
+    if (n == 0) {
         return;
     }
-
-    gint cur = -1;
-    GtkTreeIter sel_it;
-    if (gtk_tree_selection_get_selected(app->selection, NULL, &sel_it)) {
-        GtkTreePath* sel_path = gtk_tree_model_get_path(app->model, &sel_it);
-        for (guint i = 0; i < paths->len; i++) {
-            if (gtk_tree_path_compare((GtkTreePath*)g_ptr_array_index(paths, i), sel_path) == 0) {
-                cur = (gint)i;
-                break;
-            }
-        }
-        gtk_tree_path_free(sel_path);
-    }
-
-    gint n = (gint)paths->len;
+    ExplorerRow* selected = tree_nav_selected(app);
+    gint cur = (selected != NULL) ? explorer_tree_position(app->tree, selected) : -1;
     for (gint k = 1; k <= n; k++) {
         gint idx = (direction > 0) ? ((cur + k) % n + n) % n
                                    : ((cur - k) % n + n) % n;
-        GtkTreePath* target = (GtkTreePath*)g_ptr_array_index(paths, idx);
-        if (path_matches(app, target)) {
-            select_path(app, target);
+        ExplorerRow* row = explorer_tree_visible_row(app->tree, (guint)idx);
+        if (row_matches(app, row)) {
+            select_row(app, row);
             break;
         }
     }
-    g_ptr_array_unref(paths);
 }
 
 void show_search(AppData* app, gboolean from_viewer) {

@@ -13,10 +13,10 @@ void bookmarks_free(AppData* app);
 void bookmarks_save(AppData* app);
 
 /* Explorer panel integration */
-void bookmarks_append_to_store(GtkTreeStore* store, AppData* app);
+void bookmarks_append_rows(ExplorerRow* root, AppData* app);
 void bookmarks_reexpand(AppData* app);
 void bookmarks_refresh(AppData* app);
-gboolean bookmarks_handle_row_toggled(AppData* app, GtkTreeIter* iter, gboolean expanded);
+gboolean bookmarks_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded);
 gboolean bookmarks_handle_key(AppData* app, guint keyval, GdkModifierType state);
 void bookmarks_attach_context_menu(AppData* app);
 
