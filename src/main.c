@@ -77,18 +77,29 @@ static void refresh_diff_gutters(AppData* app) {
     diff_gutter_refresh_all();
 }
 
-/* File given on the command line: edit it, with the explorer hidden */
+/* File given on the command line: edit it in the dedicated editor panel,
+ * with the explorer and the preview hidden */
 static void open_start_file(AppData* app, const gchar* path) {
-    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-        on_preview_pill_clicked(NULL, app);
-    }
-    if (app->left_vbox != NULL && gtk_widget_get_visible(app->left_vbox)) {
-        on_files_pill_clicked(NULL, app);
-    }
     select_by_path(app, path);
     gchar* name = g_path_get_basename(path);
     editor_open_file(app, name, path);
     g_free(name);
+    EditorTab* tab = editor_current_tab(app);
+    if (tab == NULL || g_strcmp0(tab->path, path) != 0) {
+        return; /* not editable (media, too large...): keep the preview */
+    }
+    if (!app->editor_dedicated) {
+        editor_set_dedicated(app, TRUE);
+    }
+    if (app->left_vbox != NULL && gtk_widget_get_visible(app->left_vbox)) {
+        on_files_pill_clicked(NULL, app);
+    }
+    if (app->viewer_box != NULL && gtk_widget_get_visible(app->viewer_box)) {
+        on_preview_pill_clicked(NULL, app);
+    }
+    if (tab->view != NULL) {
+        gtk_widget_grab_focus(tab->view);
+    }
 }
 
 static void print_usage(FILE* out) {
@@ -96,8 +107,8 @@ static void print_usage(FILE* out) {
             "Usage: %s [options] [<file>|<folder>]\n"
             "\n"
             "Without argument, shows the current directory.\n"
-            "A folder is shown in the explorer; a file is opened in an editor tab,\n"
-            "with the explorer hidden.\n"
+            "A folder is shown in the explorer; a file is opened in the dedicated\n"
+            "editor panel, with the explorer and the preview hidden.\n"
             "\n"
             "Options:\n"
             "  -h, --help                       show this help and exit\n"
