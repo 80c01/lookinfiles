@@ -438,6 +438,7 @@ typedef struct {
     gchar* select_name;
     DirScanNode* root_node;
     GHashTable* git_statuses;
+    gboolean refresh_preview; /* started by a workspace switch: preview the restored selection */
 } DirScanTaskData;
 
 static void dir_scan_task_data_free(gpointer data) {
@@ -557,6 +558,13 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
         }
     }
 
+    /* The selection was restored with the preview handler blocked (a plain
+     * refresh keeps the preview as it is); after a workspace switch the
+     * preview must show this workspace's selection instead of the previous one */
+    if (td->refresh_preview) {
+        g_signal_emit_by_name(app->tree, "selection-changed");
+    }
+
     if (saved_page > 0 && app->notebook != NULL && !app->editor_dedicated) {
         gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), saved_page);
     }
@@ -582,6 +590,7 @@ static void start_async_dir_scan(AppData* app, const gchar* dirname,
     td->expanded_snapshot = clone_string_set(app->expanded_paths);
     td->select_path = (select_path != NULL) ? g_canonicalize_filename(select_path, NULL) : NULL;
     td->select_name = g_strdup(select_name);
+    td->refresh_preview = app->switching_ws;
 
     GTask* task = g_task_new(NULL, app->dir_cancellable, on_dir_scan_ready, NULL);
     g_task_set_task_data(task, td, dir_scan_task_data_free);

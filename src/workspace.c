@@ -441,6 +441,16 @@ void workspace_switch(AppData* app, gint idx) {
 
     if (need_rescan) {
         refresh_listing_with_path(app, target_path);
+        if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
+            /* Bookmarks, notes and remote views are rebuilt at once, keeping the
+             * row selected before the switch (or none): select this workspace's
+             * row instead, which also refreshes the preview */
+            gboolean found = (target_path != NULL && target_path[0] != '\0' &&
+                              select_by_path(app, target_path));
+            if (!found && tree_nav_selected(app) == NULL) {
+                select_first_row(app);
+            }
+        }
     } else if (target_path != NULL) {
         if (!select_by_path(app, target_path)) {
             select_first_row(app);
