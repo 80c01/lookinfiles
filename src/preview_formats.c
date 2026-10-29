@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "archive.h"
+#include "card_view.h"
 #include "cert_view.h"
 #include "csv.h"
 #include "diff_view.h"
@@ -373,6 +374,37 @@ static PreviewDoc* build_certificate(const PreviewInput* in, GCancellable* cance
     return doc;
 }
 
+/* --- Calendars, contacts, desktop entries --- */
+
+typedef gboolean (*CardAppendFunc)(PreviewDoc* doc, const gchar* text, gsize len);
+
+static PreviewDoc* build_cards(const PreviewInput* in, CardAppendFunc append, GError** error) {
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    note_truncated_text(doc, in);
+    if (!append(doc, in->text, in->text_len)) {
+        preview_doc_free(doc);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "nothing to show");
+        return NULL;
+    }
+    return doc;
+}
+
+static PreviewDoc* build_calendar(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    return build_cards(in, card_view_append_calendar, error);
+}
+
+static PreviewDoc* build_contacts(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    return build_cards(in, card_view_append_contacts, error);
+}
+
+static PreviewDoc* build_desktop(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    return build_cards(in, card_view_append_desktop, error);
+}
+
 /* --- ELF executables, libraries, objects --- */
 
 static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -451,6 +483,12 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_archive;
     case FILE_KIND_CERTIFICATE:
         return build_certificate;
+    case FILE_KIND_CALENDAR:
+        return build_calendar;
+    case FILE_KIND_CONTACT:
+        return build_contacts;
+    case FILE_KIND_DESKTOP:
+        return build_desktop;
     default:
         return NULL;
     }

@@ -115,6 +115,15 @@ static void test_certificates(void) {
     g_assert_nonnull(strstr(der->text->str, "EC P-256"));
 }
 
+static void test_cards(void) {
+    g_autoptr(PreviewDoc) ics = build_fixture("meetings.ics", FILE_KIND_CALENDAR);
+    g_assert_nonnull(strstr(ics->text->str, "Weekly sync"));
+    g_autoptr(PreviewDoc) vcf = build_fixture("contacts.vcf", FILE_KIND_CONTACT);
+    g_assert_nonnull(strstr(vcf->text->str, "Ada Lovelace"));
+    g_autoptr(PreviewDoc) desktop = build_fixture("editor.desktop", FILE_KIND_DESKTOP);
+    g_assert_nonnull(strstr(desktop->text->str, "lookin %F"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -142,5 +151,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/diff", test_diff);
     g_test_add_func("/preview_formats/archives", test_archives);
     g_test_add_func("/preview_formats/certificates", test_certificates);
+    g_test_add_func("/preview_formats/cards", test_cards);
     return g_test_run();
 }

@@ -350,7 +350,7 @@ FMT="$FIX/formats"
 mkdir -p "$FMT"
 . "$ROOT/tests/ui/formats.sh"
 cd "$FMT" || exit 1
-LOOKIN_DEBUG_PREVIEW=1 "$BIN" -s 1280x800 "$FMT" > "$OUT/app_formats.log" 2>&1 &
+TZ=UTC LOOKIN_DEBUG_PREVIEW=1 "$BIN" -s 1280x800 "$FMT" > "$OUT/app_formats.log" 2>&1 &
 APP=$!
 WIN=
 i=0

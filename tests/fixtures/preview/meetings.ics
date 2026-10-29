@@ -1,0 +1,31 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Lookin//Tests//EN
+X-WR-CALNAME:Team calendar
+BEGIN:VEVENT
+UID:2@example.org
+DTSTART:20261105T090000Z
+DTEND:20261105T093000Z
+SUMMARY:Weekly sync
+LOCATION:Room 4\, second floor
+RRULE:FREQ=WEEKLY;BYDAY=TH;COUNT=10
+ORGANIZER;CN=Ada Lovelace:mailto:ada@example.org
+ATTENDEE;CN=Linus:mailto:linus@example.org
+ATTENDEE:mailto:grace@example.org
+DESCRIPTION:Agenda:\n- status\n- blockers
+END:VEVENT
+BEGIN:VEVENT
+UID:1@example.org
+DTSTART;VALUE=DATE:20261102
+DTEND;VALUE=DATE:20261103
+SUMMARY:Release day
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VTODO
+UID:3@example.org
+DUE:20261110T170000Z
+SUMMARY:Write the release notes for the next version of the a
+ pplication
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR

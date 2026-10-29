@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Lookin
+GenericName=File Explorer
+Comment=Look in your files
+Exec=lookin %F
+Icon=system-file-manager
+Terminal=false
+Categories=Utility;FileManager;
+Keywords=files;preview;
+MimeType=inode/directory;text/plain;
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=lookin --new-window
