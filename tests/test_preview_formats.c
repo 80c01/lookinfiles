@@ -175,6 +175,8 @@ static void test_office(void) {
     g_assert_nonnull(strstr(pptx->text->str, "Presentation · 2 slides"));
     g_autoptr(PreviewDoc) epub = build_fixture("story.epub", FILE_KIND_EBOOK);
     g_assert_nonnull(strstr(epub->text->str, "Chapter 2. Morning"));
+    g_autoptr(PreviewDoc) rtf = build_fixture("notes.rtf", FILE_KIND_RTF);
+    g_assert_nonnull(strstr(rtf->text->str, "<b>Meeting notes</b>"));
     g_autoptr(PreviewDoc) odp = build_fixture("roadmap.odp", FILE_KIND_PRESENTATION);
     g_assert_nonnull(strstr(odp->text->str, "<h3>Previews</h3>"));
 }

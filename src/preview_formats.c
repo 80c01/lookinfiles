@@ -21,6 +21,7 @@
 #include "notebook.h"
 #include "odf.h"
 #include "pptx.h"
+#include "rtf.h"
 #include "spreadsheet.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
@@ -594,6 +595,25 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     return doc;
 }
 
+/* --- Rich Text Format --- */
+
+static PreviewDoc* build_rtf(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    /* Pictures make RTF files large: read the whole file (bounded) */
+    gchar* whole = NULL;
+    gsize len = in->text_len;
+    const gchar* text = in->text;
+    if (in->text_truncated && in->path != NULL && in->size <= 32 * 1024 * 1024) {
+        if (!g_file_get_contents(in->path, &whole, &len, error)) {
+            return NULL;
+        }
+        text = whole;
+    }
+    gchar* html = rtf_to_html(text, len, PREVIEW_FORMAT_MAX_TEXT, error);
+    g_free(whole);
+    return html != NULL ? preview_doc_new_source(PREVIEW_DOC_HTML, html) : NULL;
+}
+
 /* --- E-books --- */
 
 static PreviewDoc* build_ebook(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -891,6 +911,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_presentation;
     case FILE_KIND_EBOOK:
         return build_ebook;
+    case FILE_KIND_RTF:
+        return build_rtf;
     default:
         return NULL;
     }
