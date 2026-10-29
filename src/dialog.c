@@ -1,68 +1,155 @@
-/* Modal dialog window with response buttons (see dialog.h) */
+/* Modal dialog drawn inside the main window (see dialog.h) */
 #include "dialog.h"
 
 struct _AppDialog {
-    GtkWindow parent_instance;
+    GtkBox parent_instance;     /* the dimmed layer covering the window */
+    GtkWindow* window;          /* parent window (not referenced) */
+    GtkWidget* card;
+    GtkWidget* title;
     GtkWidget* content_area;
     GtkWidget* action_area;
+    GtkWidget* default_button;
+    GtkWidget* previous_focus;  /* weak pointer: focus to restore */
+    gboolean shown;
 };
 
-G_DEFINE_FINAL_TYPE(AppDialog, app_dialog, GTK_TYPE_WINDOW)
+G_DEFINE_FINAL_TYPE(AppDialog, app_dialog, GTK_TYPE_BOX)
 
 enum { SIGNAL_RESPONSE, N_SIGNALS };
 static guint signals[N_SIGNALS];
 
 static const gchar* RESPONSE_KEY = "app-dialog-response";
+static const gchar* STACK_KEY = "app-dialog-stack"; /* GList* of shown dialogs, on the overlay */
 
-static gboolean app_dialog_close_request(GtkWindow* window) {
-    /* The response handler (or the caller of app_dialog_run()) destroys the
-     * window: keep it alive here so it is never destroyed twice. */
-    app_dialog_response(APP_DIALOG(window), APP_RESPONSE_DELETE_EVENT);
-    return TRUE;
+/* ------------------------------------------------------------------------- */
+/* Window overlay and dialog stack                                           */
+/* ------------------------------------------------------------------------- */
+
+GtkWidget* app_dialog_window_overlay_new(GtkWidget* content) {
+    GtkWidget* overlay = gtk_overlay_new();
+    gtk_widget_set_name(overlay, "dialog-overlay");
+    gtk_overlay_set_child(GTK_OVERLAY(overlay), content);
+    return overlay;
+}
+
+static GtkOverlay* window_overlay(GtkWindow* window) {
+    GtkWidget* child = (window != NULL) ? gtk_window_get_child(window) : NULL;
+    return GTK_IS_OVERLAY(child) ? GTK_OVERLAY(child) : NULL;
+}
+
+static GList* dialog_stack(GtkOverlay* overlay) {
+    return overlay != NULL ? g_object_get_data(G_OBJECT(overlay), STACK_KEY) : NULL;
+}
+
+gboolean app_dialog_is_open(GtkWindow* window) {
+    return dialog_stack(window_overlay(window)) != NULL;
+}
+
+/* Only the topmost layer takes focus and clicks: the window content while no
+ * dialog is shown, otherwise the last dialog */
+static void update_interactive_layer(GtkOverlay* overlay) {
+    GList* stack = dialog_stack(overlay);
+    GtkWidget* content = gtk_overlay_get_child(overlay);
+    gboolean content_active = (stack == NULL);
+    if (content != NULL) {
+        gtk_widget_set_can_focus(content, content_active);
+        gtk_widget_set_can_target(content, content_active);
+    }
+    for (GList* l = stack; l != NULL; l = l->next) {
+        gboolean top = (l->next == NULL);
+        gtk_widget_set_can_focus(GTK_WIDGET(l->data), top);
+        gtk_widget_set_can_target(GTK_WIDGET(l->data), top);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Type                                                                      */
+/* ------------------------------------------------------------------------- */
+
+static gboolean on_key_pressed(GtkEventControllerKey* controller, guint keyval, guint keycode,
+                               GdkModifierType state, gpointer data) {
+    (void)controller;
+    (void)keycode;
+    (void)state;
+    if (keyval == GDK_KEY_Escape) {
+        app_dialog_response(APP_DIALOG(data), APP_RESPONSE_DELETE_EVENT);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static void app_dialog_dispose(GObject* object) {
+    AppDialog* self = APP_DIALOG(object);
+    if (self->previous_focus != NULL) {
+        g_object_remove_weak_pointer(G_OBJECT(self->previous_focus), (gpointer*)&self->previous_focus);
+        self->previous_focus = NULL;
+    }
+    G_OBJECT_CLASS(app_dialog_parent_class)->dispose(object);
 }
 
 static void app_dialog_class_init(AppDialogClass* klass) {
-    GTK_WINDOW_CLASS(klass)->close_request = app_dialog_close_request;
+    G_OBJECT_CLASS(klass)->dispose = app_dialog_dispose;
     signals[SIGNAL_RESPONSE] = g_signal_new("response", G_TYPE_FROM_CLASS(klass),
                                             G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL,
                                             G_TYPE_NONE, 1, G_TYPE_INT);
-    /* Escape closes the dialog, as with GtkDialog */
-    gtk_widget_class_add_binding_action(GTK_WIDGET_CLASS(klass), GDK_KEY_Escape, 0,
-                                        "window.close", NULL);
 }
 
 static void app_dialog_init(AppDialog* self) {
-    gtk_widget_add_css_class(GTK_WIDGET(self), "dialog");
-    gtk_window_set_modal(GTK_WINDOW(self), TRUE);
-    gtk_window_set_destroy_with_parent(GTK_WINDOW(self), TRUE);
-    gtk_window_set_resizable(GTK_WINDOW(self), FALSE);
+    /* Dimmed layer: fills the window and swallows clicks on the interface behind */
+    gtk_orientable_set_orientation(GTK_ORIENTABLE(self), GTK_ORIENTATION_VERTICAL);
+    gtk_widget_add_css_class(GTK_WIDGET(self), "dialog-scrim");
+    gtk_widget_set_hexpand(GTK_WIDGET(self), TRUE);
+    gtk_widget_set_vexpand(GTK_WIDGET(self), TRUE);
+    gtk_widget_set_halign(GTK_WIDGET(self), GTK_ALIGN_FILL);
+    gtk_widget_set_valign(GTK_WIDGET(self), GTK_ALIGN_FILL);
+    gtk_widget_add_controller(GTK_WIDGET(self), GTK_EVENT_CONTROLLER(gtk_gesture_click_new()));
 
-    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    self->card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_add_css_class(self->card, "dialog-card");
+    gtk_widget_set_halign(self->card, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(self->card, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(self->card, TRUE);
+    gtk_widget_set_vexpand(self->card, TRUE);
+    gtk_box_append(GTK_BOX(self), self->card);
+
+    self->title = gtk_label_new(NULL);
+    gtk_widget_add_css_class(self->title, "dialog-title");
+    gtk_label_set_xalign(GTK_LABEL(self->title), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(self->title), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_visible(self->title, FALSE);
+    gtk_box_append(GTK_BOX(self->card), self->title);
+
     self->content_area = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(self->content_area, TRUE);
-    gtk_box_append(GTK_BOX(vbox), self->content_area);
+    gtk_box_append(GTK_BOX(self->card), self->content_area);
 
+    /* Spacing and margins come from the theme (.dialog-action-area) */
     GtkWidget* action_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(action_box, "dialog-action-box");
-    /* Spacing and margins come from the theme (.dialog-action-area) */
     self->action_area = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(self->action_area, "dialog-action-area");
     gtk_widget_set_hexpand(self->action_area, TRUE);
     gtk_widget_set_halign(self->action_area, GTK_ALIGN_END);
     gtk_box_append(GTK_BOX(action_box), self->action_area);
-    gtk_box_append(GTK_BOX(vbox), action_box);
+    gtk_box_append(GTK_BOX(self->card), action_box);
 
-    gtk_window_set_child(GTK_WINDOW(self), vbox);
+    GtkEventController* keys = gtk_event_controller_key_new();
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_key_pressed), self);
+    gtk_widget_add_controller(GTK_WIDGET(self), keys);
 }
+
+/* ------------------------------------------------------------------------- */
+/* Public API                                                                */
+/* ------------------------------------------------------------------------- */
 
 GtkWidget* app_dialog_new(const gchar* title, GtkWindow* parent,
                           const gchar* first_button_label, ...) {
     AppDialog* self = g_object_new(APP_TYPE_DIALOG, NULL);
-    if (title != NULL) {
-        gtk_window_set_title(GTK_WINDOW(self), title);
-    }
-    if (parent != NULL) {
-        gtk_window_set_transient_for(GTK_WINDOW(self), parent);
+    g_object_ref_sink(self); /* owned by the caller until presented */
+    self->window = parent;
+    if (title != NULL && title[0] != '\0') {
+        gtk_label_set_text(GTK_LABEL(self->title), title);
+        gtk_widget_set_visible(self->title, TRUE);
     }
     va_list args;
     va_start(args, first_button_label);
@@ -106,15 +193,84 @@ GtkWidget* app_dialog_get_widget_for_response(AppDialog* dialog, gint response) 
 
 void app_dialog_set_default_response(AppDialog* dialog, gint response) {
     g_return_if_fail(APP_IS_DIALOG(dialog));
-    GtkWidget* button = app_dialog_get_widget_for_response(dialog, response);
-    if (button != NULL) {
-        gtk_window_set_default_widget(GTK_WINDOW(dialog), button);
+    dialog->default_button = app_dialog_get_widget_for_response(dialog, response);
+    if (dialog->shown && dialog->window != NULL) {
+        gtk_window_set_default_widget(dialog->window, dialog->default_button);
     }
+}
+
+void app_dialog_set_width(AppDialog* dialog, gint width) {
+    g_return_if_fail(APP_IS_DIALOG(dialog));
+    gtk_widget_set_size_request(dialog->card, width, -1);
 }
 
 void app_dialog_response(AppDialog* dialog, gint response) {
     g_return_if_fail(APP_IS_DIALOG(dialog));
     g_signal_emit(dialog, signals[SIGNAL_RESPONSE], 0, response);
+}
+
+/* First focusable widget of the card: an entry or the default button */
+static void focus_first(AppDialog* self) {
+    if (!gtk_widget_child_focus(self->card, GTK_DIR_TAB_FORWARD) && self->default_button != NULL) {
+        gtk_widget_grab_focus(self->default_button);
+    }
+}
+
+void app_dialog_present(AppDialog* dialog) {
+    g_return_if_fail(APP_IS_DIALOG(dialog));
+    GtkOverlay* overlay = window_overlay(dialog->window);
+    if (dialog->shown) {
+        return;
+    }
+    if (overlay == NULL) {
+        g_critical("app_dialog_present: the parent window has no dialog overlay "
+                   "(see app_dialog_window_overlay_new())");
+        return;
+    }
+    dialog->shown = TRUE;
+
+    GtkWidget* focus = gtk_window_get_focus(dialog->window);
+    if (focus != NULL) {
+        dialog->previous_focus = focus;
+        g_object_add_weak_pointer(G_OBJECT(focus), (gpointer*)&dialog->previous_focus);
+    }
+
+    gtk_overlay_add_overlay(overlay, GTK_WIDGET(dialog));
+    g_object_unref(dialog); /* now owned by the overlay */
+    GList* stack = g_list_append(dialog_stack(overlay), dialog);
+    g_object_set_data(G_OBJECT(overlay), STACK_KEY, stack);
+    update_interactive_layer(overlay);
+
+    gtk_window_set_default_widget(dialog->window, dialog->default_button);
+    focus_first(dialog);
+}
+
+void app_dialog_destroy(AppDialog* dialog) {
+    g_return_if_fail(APP_IS_DIALOG(dialog));
+    if (!dialog->shown) {
+        g_object_unref(dialog); /* never presented: drop the caller's reference */
+        return;
+    }
+    GtkOverlay* overlay = window_overlay(dialog->window);
+    GtkWindow* window = dialog->window;
+    GtkWidget* previous = dialog->previous_focus;
+    dialog->shown = FALSE;
+    if (overlay == NULL) {
+        return;
+    }
+    GList* stack = g_list_remove(dialog_stack(overlay), dialog);
+    g_object_set_data(G_OBJECT(overlay), STACK_KEY, stack);
+    update_interactive_layer(overlay);
+
+    /* The dialog below (if any) gets Enter and the focus back */
+    AppDialog* below = (stack != NULL) ? APP_DIALOG(g_list_last(stack)->data) : NULL;
+    gtk_window_set_default_widget(window, below != NULL ? below->default_button : NULL);
+    gtk_overlay_remove_overlay(overlay, GTK_WIDGET(dialog)); /* may finalize dialog */
+    if (previous != NULL && gtk_widget_get_root(previous) == GTK_ROOT(window)) {
+        gtk_widget_grab_focus(previous);
+    } else if (below != NULL) {
+        focus_first(below);
+    }
 }
 
 typedef struct {
@@ -136,7 +292,7 @@ gint app_dialog_run(AppDialog* dialog, GtkWidget* focus) {
     RunData run = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_NONE };
     g_object_ref(dialog);
     gulong id = g_signal_connect(dialog, "response", G_CALLBACK(on_run_response), &run);
-    gtk_window_present(GTK_WINDOW(dialog));
+    app_dialog_present(dialog);
     if (focus != NULL) {
         gtk_widget_grab_focus(focus);
     }

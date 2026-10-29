@@ -549,7 +549,7 @@ static gint bm_run_modal(GtkWidget* dlg, BmDialog* d, GtkWidget* focus) {
     d->loop = g_main_loop_new(NULL, FALSE);
     d->response = APP_RESPONSE_CANCEL;
     g_signal_connect(dlg, "response", G_CALLBACK(bm_on_dialog_response), d);
-    gtk_window_present(GTK_WINDOW(dlg));
+    app_dialog_present(APP_DIALOG(dlg));
     if (focus != NULL) {
         gtk_widget_grab_focus(focus);
     }
@@ -588,7 +588,7 @@ static gboolean bm_message(AppData* app, const gchar* title, const gchar* messag
 
     BmDialog d = { NULL, APP_RESPONSE_CANCEL, NULL, NULL };
     gint resp = bm_run_modal(dlg, &d, NULL);
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
     return resp == APP_RESPONSE_OK;
 }
 
@@ -650,7 +650,7 @@ static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok
     GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), ok_label, APP_RESPONSE_OK);
     gtk_widget_add_css_class(ok, "suggested-action");
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
-    gtk_window_set_default_size(GTK_WINDOW(dlg), 480, -1);
+    app_dialog_set_width(APP_DIALOG(dlg), 480);
 
     GtkWidget* box = bm_dialog_body(dlg);
 
@@ -731,7 +731,7 @@ static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok
 
     g_ptr_array_unref(nodes);
     g_ptr_array_unref(labels);
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
     return resp;
 }
 

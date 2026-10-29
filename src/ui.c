@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "dialog.h"
 #include "panels.h"
 #include "app_events.h"
 #include "workspace.h"
@@ -100,6 +101,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     (void)controller;
     (void)keycode;
     AppData* app = (AppData*)data;
+
+    /* A dialog is open: its keys only (window shortcuts would act behind it) */
+    if (app_dialog_is_open(app->window)) {
+        return FALSE;
+    }
 
     /* Ctrl+Q: quit */
     if ((state & GDK_CONTROL_MASK) &&

@@ -979,7 +979,7 @@ gboolean editor_confirm_discard(AppData* app, EditorTab* tab) {
 
     gint response = app_dialog_run(APP_DIALOG(dlg),
                                    app_dialog_get_widget_for_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL));
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
     return response == APP_RESPONSE_OK;
 }
 

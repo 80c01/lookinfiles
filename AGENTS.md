@@ -71,9 +71,13 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `"selection-changed"`, `"row-toggled"` (expanded / collapsed, by the user or
   `explorer_tree_set_expanded()`), `"row-activated"` (double click). Rows are
   addressed by `ExplorerRow*`; positions count visible rows only.
-- `dialog` — `AppDialog`, the modal dialog window (GtkDialog-like API:
-  `app_dialog_new()`, `"response"`, `app_dialog_run()`). Escape answers
-  `APP_RESPONSE_DELETE_EVENT`; the caller destroys the dialog.
+- `dialog` — `AppDialog`, the modal dialog drawn inside the main window: a
+  card over a dimmed layer (window-level `GtkOverlay` made in `main.c` with
+  `app_dialog_window_overlay_new()`). GtkDialog-like API: `app_dialog_new()`,
+  `"response"`, `app_dialog_run()`, `app_dialog_present()`. Escape answers
+  `APP_RESPONSE_DELETE_EVENT`; the caller removes it with
+  `app_dialog_destroy()`. While one is open, window shortcuts are off
+  (`app_dialog_is_open()`).
 - `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below.
 - `panels` — fullscreen, focused-panel highlight, workspace width, split-handle
   drag feedback and fractions (`wire_paned_controllers()`). Every new
@@ -197,6 +201,12 @@ Check these before adding or changing an action, a tooltip or a dialog:
   first: `Edit Selected (F2 / r / e)`, `Delete Selected (d / Delete)`.
 - **Context menus**: same labels as tooltips, `…` (single character) when a
   dialog follows, key hint written `Shift+A`, `Delete`, `F2`.
+- **No external windows**: every interaction stays inside the application
+  window. Prompts, confirmations and messages are `AppDialog`s (drawn over
+  the window); panels such as the help cheat sheet are overlays or panes;
+  menus are `GtkPopover`s anchored to a widget of the window. Never open a
+  top-level window (`gtk_window_new()`, `GtkAlertDialog`, `GtkFileDialog`,
+  file choosers...): `make check` rejects it outside `main.c`.
 - **Dialogs**: every button has a mnemonic (`_Cancel`, `_Save`); the confirm
   button is a verb (`_Create`, `_Rename`, `_Move to Trash`), never `OK`;
   information-only messages have a single `_Close` button; destructive

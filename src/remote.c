@@ -104,7 +104,7 @@ static gint remote_run_modal(GtkWidget* dlg, RemoteDialogHelper* d, GtkWidget* f
     d->loop = g_main_loop_new(NULL, FALSE);
     d->response = APP_RESPONSE_CANCEL;
     g_signal_connect(dlg, "response", G_CALLBACK(on_remote_dlg_response), d);
-    gtk_window_present(GTK_WINDOW(dlg));
+    app_dialog_present(APP_DIALOG(dlg));
     if (focus != NULL) {
         gtk_widget_grab_focus(focus);
     }
@@ -188,13 +188,13 @@ void remote_add_dialog(AppData* app) {
             remote_refresh(app);
 
             if (resp == APP_RESPONSE_APPLY) {
-                gtk_window_destroy(GTK_WINDOW(dlg));
+                app_dialog_destroy(APP_DIALOG(dlg));
                 remote_connect_machine(app, rm);
                 return;
             }
         }
     }
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
 }
 
 void remote_edit_dialog(AppData* app) {
@@ -249,7 +249,7 @@ void remote_edit_dialog(AppData* app) {
             remote_refresh(app);
         }
     }
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
 }
 
 void remote_delete_selected(AppData* app) {
@@ -274,7 +274,7 @@ void remote_delete_selected(AppData* app) {
 
     RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
     gint resp = remote_run_modal(dlg, &d, NULL);
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
 
     if (resp == APP_RESPONSE_OK) {
         if (rm->is_connected) {
@@ -313,7 +313,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         gtk_box_append(GTK_BOX(box), lbl);
         RemoteDialogHelper d = { NULL, APP_RESPONSE_OK };
         remote_run_modal(dlg, &d, NULL);
-        gtk_window_destroy(GTK_WINDOW(dlg));
+        app_dialog_destroy(APP_DIALOG(dlg));
         return FALSE;
     }
 
@@ -395,7 +395,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         g_free(stderr_buf);
         RemoteDialogHelper d = { NULL, APP_RESPONSE_OK };
         remote_run_modal(dlg, &d, NULL);
-        gtk_window_destroy(GTK_WINDOW(dlg));
+        app_dialog_destroy(APP_DIALOG(dlg));
         g_free(mount_dir);
         return FALSE;
     }

@@ -297,7 +297,7 @@ src/
 ├── text_style.c/.h          # Dark+ scheme, monospace, syntax language
 ├── theme.c/.h               # Global CSS theme
 ├── icons.c/.h               # Theme icon buttons and tab headers
-├── dialog.c/.h              # Modal dialog window with response buttons
+├── dialog.c/.h              # Modal dialogs drawn inside the main window
 ├── explorer_tree.c/.h       # Explorer list view: selection, expansion, row drawing
 ├── tree_nav.c/.h            # Explorer row navigation and selection
 ├── markdown.c/.h            # Markdown rendering engine

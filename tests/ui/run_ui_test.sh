@@ -15,8 +15,9 @@
 #                match it within UI_TOLERANCE differing pixels (default: 50,
 #                colors within 10% count as equal to absorb anti-aliasing noise)
 #
-# Fails when: the window does not open, GTK logs a warning or critical, Ctrl+Q
-# does not quit cleanly, or a screenshot differs from the baseline.
+# Fails when: the window does not open, a dialog opens a separate window, GTK
+# logs a warning or critical, Ctrl+Q does not quit cleanly, or a screenshot
+# differs from the baseline.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -156,6 +157,10 @@ key ctrl+u;             shot notes_view
 key ctrl+u;             shot files_after_notes
 key ctrl+shift+r;       shot remote_view
 key ctrl+shift+r;       shot files_view_back
+# Dialogs are drawn inside the main window, never in a window of their own
+key a;                  shot new_file_dialog
+windows=$(xdotool search --onlyvisible --pid $APP 2>/dev/null | wc -l)
+key Escape;             shot new_file_dialog_closed
 echo "external" > "$FIX/work/external.txt"   # created outside the app: the tree must update
 sleep 3;                shot external_file_created   # let the async rescan settle
 xdotool mousemove 508 50 click 1     # Git Commits tab
@@ -170,6 +175,10 @@ key ctrl+t; sleep 1;    shot terminal
 key ctrl+q
 
 status=0
+if [ "$windows" -ne 1 ]; then
+    echo "ui-test: FAIL - the New File dialog opened a separate window ($windows windows)"
+    status=1
+fi
 i=0
 while kill -0 $APP 2>/dev/null && [ $i -lt 30 ]; do sleep 0.1; i=$((i + 1)); done
 if kill -0 $APP 2>/dev/null; then

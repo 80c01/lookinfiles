@@ -1,4 +1,5 @@
 #include "topbar.h"
+#include "dialog.h"
 #include "icons.h"
 #include "fs_watch.h"
 #include "panels.h"
@@ -556,7 +557,8 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(outer_vbox), create_status_bar(app));
     app_emit(app, APP_EVENT_STATUS_CHANGED);
 
-    gtk_window_set_child(GTK_WINDOW(window), outer_vbox);
+    /* Dialogs are drawn over the window content, never in their own window */
+    gtk_window_set_child(GTK_WINDOW(window), app_dialog_window_overlay_new(outer_vbox));
     apply_panel_borders();
     gtk_window_present(GTK_WINDOW(window));
 

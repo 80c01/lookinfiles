@@ -66,7 +66,7 @@ static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* messa
 
     DialogRun run = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL, entry };
     g_signal_connect(dlg, "response", G_CALLBACK(on_dialog_response), &run);
-    gtk_window_present(GTK_WINDOW(dlg));
+    app_dialog_present(APP_DIALOG(dlg));
     if (entry != NULL) {
         gtk_widget_grab_focus(entry);
         /* Select the name without its extension, like file managers do */
@@ -79,7 +79,7 @@ static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* messa
     }
     g_main_loop_run(run.loop);
     g_main_loop_unref(run.loop);
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
 
     if (out_text != NULL) {
         *out_text = run.result;
@@ -99,8 +99,8 @@ static void show_error(GtkWindow* parent, const gchar* title, const gchar* messa
     gtk_widget_set_margin_start(label, 16);
     gtk_widget_set_margin_end(label, 16);
     gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), label);
-    g_signal_connect(dlg, "response", G_CALLBACK(gtk_window_destroy), NULL);
-    gtk_window_present(GTK_WINDOW(dlg));
+    g_signal_connect(dlg, "response", G_CALLBACK(app_dialog_destroy), NULL);
+    app_dialog_present(APP_DIALOG(dlg));
 }
 
 /* A plain name: no path separator, not "." or ".." */

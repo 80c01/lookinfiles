@@ -69,6 +69,15 @@ for pair in update_path_label:topbar update_status_bar:status_bar \
     done
 done
 
+# Every interaction stays inside the main window: no other top-level window
+# (dialogs are AppDialog overlays, menus are popovers anchored in the window).
+for f in $(grep -lE 'gtk_window_new|gtk_(alert|file|color|font)_dialog_new|gtk_file_chooser|gtk_message_dialog|gtk_dialog_new|gtk_app_chooser_dialog|GTK_TYPE_WINDOW|GTK_TYPE_DIALOG' src/*.c); do
+    case "$f" in
+        src/main.c) ;;
+        *) echo "layering: $f opens a separate window; use AppDialog (dialog.h) inside the main window"; status=1 ;;
+    esac
+done
+
 # No new include cycles: two modules must not include each other's header.
 # The remaining pairs are the explorer host and its sidebar views (the explorer
 # dispatches keys/rows to the view, the view asks the explorer to navigate).

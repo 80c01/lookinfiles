@@ -696,7 +696,7 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
     g_signal_connect(rb_text, "toggled", G_CALLBACK(on_note_dlg_field_changed), &d);
     g_signal_connect(dlg, "response", G_CALLBACK(on_note_dlg_response), &d);
 
-    gtk_window_present(GTK_WINDOW(dlg));
+    app_dialog_present(APP_DIALOG(dlg));
     gtk_widget_grab_focus(entry);
     if (init_title != NULL) {
         gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1);
@@ -726,7 +726,7 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
         }
     }
 
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
     return ok;
 }
 
@@ -872,7 +872,7 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
 
     update_notebook_preview(&d);
 
-    gtk_window_present(GTK_WINDOW(dlg));
+    app_dialog_present(APP_DIALOG(dlg));
     if (focus_icon) {
         gtk_widget_grab_focus(icon_entry);
         gtk_editable_select_region(GTK_EDITABLE(icon_entry), 0, -1);
@@ -908,7 +908,7 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
         }
     }
 
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
     return success;
 }
 
@@ -935,10 +935,10 @@ static gboolean notes_confirm(AppData* app, const gchar* title, const gchar* mes
     SimpleDialogData d = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL };
     g_signal_connect(dlg, "response", G_CALLBACK(on_simple_dlg_response), &d);
 
-    gtk_window_present(GTK_WINDOW(dlg));
+    app_dialog_present(APP_DIALOG(dlg));
     g_main_loop_run(d.loop);
     g_main_loop_unref(d.loop);
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
 
     return (d.response == APP_RESPONSE_OK);
 }
@@ -952,8 +952,8 @@ static void notes_notice(AppData* app, const gchar* title, const gchar* message)
     gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
     gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
     gtk_box_append(GTK_BOX(box), lbl);
-    g_signal_connect(dlg, "response", G_CALLBACK(gtk_window_destroy), NULL);
-    gtk_window_present(GTK_WINDOW(dlg));
+    g_signal_connect(dlg, "response", G_CALLBACK(app_dialog_destroy), NULL);
+    app_dialog_present(APP_DIALOG(dlg));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1589,7 +1589,7 @@ void notes_move_selected(AppData* app) {
     SimpleDialogData d = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL };
     g_signal_connect(dlg, "response", G_CALLBACK(on_simple_dlg_response), &d);
 
-    gtk_window_present(GTK_WINDOW(dlg));
+    app_dialog_present(APP_DIALOG(dlg));
     g_main_loop_run(d.loop);
     g_main_loop_unref(d.loop);
 
@@ -1618,7 +1618,7 @@ void notes_move_selected(AppData* app) {
 
     g_ptr_array_unref(target_notebooks);
     g_ptr_array_unref(labels);
-    gtk_window_destroy(GTK_WINDOW(dlg));
+    app_dialog_destroy(APP_DIALOG(dlg));
 }
 
 void notes_delete_selected(AppData* app) {
