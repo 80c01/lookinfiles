@@ -18,6 +18,7 @@ git_utils:
 line_diff:
 pane_geometry:
 dir_summary:file_types
+hex_dump:
 diff_gutter:git_utils,line_diff
 explorer_row:
 layout_store:app_paths

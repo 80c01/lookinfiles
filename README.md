@@ -56,7 +56,7 @@ and virtual workspaces, in a VS Code Dark+ look.
   drag or mouse wheel).
 - File types are detected from the content (an image or a `#!` script without
   extension, TypeScript `.ts` that is not a video); unknown binary files show a
-  short notice instead of garbled text.
+  hex dump (offsets, bytes and an ASCII column) of their first 64 KB.
 - `m` switches between the rendered and the raw view; files over 512 KB are
   previewed from their first 64 KB.
 

@@ -14,6 +14,8 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Binary files of an unknown format are previewed as a hex dump of their
+  first 64 KB: offsets, 16 bytes per line and an ASCII column.
 - Directory preview: header with the number of files and folders, their
   size and the last change, then a table of the entries (icon, name, size,
   relative date) in the explorer's sort order. Only the selected folder is

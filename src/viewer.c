@@ -20,6 +20,7 @@
 #include "orgmode.h"
 #include "diff_gutter.h"
 #include "dir_preview.h"
+#include "hex_dump.h"
 
 
 void viewer_scroll_lines(AppData* app, gint lines) {
@@ -426,6 +427,8 @@ typedef struct {
     gsize raw_len;
     gboolean preview;
     gchar* utf8_text;
+    gchar* hex_dump;       /* binary files: dump of the first PREVIEW_BYTES */
+    gsize hex_len;         /* bytes in hex_dump */
     gchar* error_msg;
 } TextPreviewTaskData;
 
@@ -438,6 +441,7 @@ static void text_preview_task_data_free(gpointer data) {
     g_free(td->full);
     g_free(td->content_type);
     g_free(td->utf8_text);
+    g_free(td->hex_dump);
     g_free(td->error_msg);
     g_free(td);
 }
@@ -472,7 +476,21 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     gsize len = fread(contents, 1, FILE_SNIFF_BYTES, fp);
     td->kind = file_kind_detect(td->name, (const guchar*)contents, len);
 
-    if (!file_kind_is_media(td->kind) && td->kind != FILE_KIND_BINARY) {
+    if (td->kind == FILE_KIND_BINARY) {
+        /* Hex dump of the first PREVIEW_BYTES only, whatever the file size */
+        if (cap < PREVIEW_BYTES) {
+            contents = g_realloc(contents, PREVIEW_BYTES + 1);
+        }
+        while (len < PREVIEW_BYTES && !g_cancellable_is_cancelled(cancellable)) {
+            gsize n = fread(contents + len, 1, PREVIEW_BYTES - len, fp);
+            if (n == 0) {
+                break;
+            }
+            len += n;
+        }
+        td->hex_len = len;
+        td->hex_dump = hex_dump_format((const guchar*)contents, len, 0);
+    } else if (!file_kind_is_media(td->kind) && td->kind != FILE_KIND_BINARY) {
         /* Rest of the text: to the end (the file may have grown), capped for large files */
         while (!g_cancellable_is_cancelled(cancellable)) {
             if (len == cap) {
@@ -538,6 +556,56 @@ static void show_media_preview(AppData* app, FileKind kind, const gchar* name, c
     }
 }
 
+/* Binary file: header, then the hex dump with dimmed offsets and a coloured
+ * ASCII column (main thread) */
+static void show_hex_dump(AppData* app, const TextPreviewTaskData* td) {
+    GtkTextBuffer* buffer = app->buffer;
+    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buffer);
+    if (gtk_text_tag_table_lookup(table, "hex_offset") == NULL) {
+        gtk_text_buffer_create_tag(buffer, "hex_offset", "foreground", "#6e7681", NULL);
+        gtk_text_buffer_create_tag(buffer, "hex_ascii", "foreground", "#ce9178", NULL);
+        gtk_text_buffer_create_tag(buffer, "hex_header", "foreground", "#8b8b8b", NULL);
+    }
+
+    gchar* size_str = g_format_size((guint64)td->fsize);
+    GString* header = g_string_new(NULL);
+    g_string_append_printf(header, "[ Binary file ] %s (%s)\n", td->name, size_str);
+    if ((gint64)td->hex_len < td->fsize) {
+        gchar* shown = g_format_size((guint64)td->hex_len);
+        g_string_append_printf(header, "Showing the first %s.\n", shown);
+        g_free(shown);
+    }
+    g_string_append_c(header, '\n');
+    g_free(size_str);
+
+    gtk_text_buffer_set_text(buffer, header->str, (gint)header->len);
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(buffer, &start, &end);
+    gtk_text_buffer_apply_tag_by_name(buffer, "hex_header", &start, &end);
+    gint first_line = gtk_text_iter_get_line(&end);
+    g_string_free(header, TRUE);
+
+    if (td->hex_dump == NULL || td->hex_dump[0] == '\0') {
+        return;
+    }
+    gtk_text_buffer_insert(buffer, &end, td->hex_dump, -1);
+
+    /* Every dump line has the same layout (see hex_dump.h) */
+    gint n_lines = gtk_text_buffer_get_line_count(buffer);
+    for (gint line = first_line; line < n_lines; line++) {
+        GtkTextIter a, b;
+        if (!gtk_text_buffer_get_iter_at_line_offset(buffer, &a, line, 0) ||
+            gtk_text_iter_get_chars_in_line(&a) < HEX_DUMP_LINE_WIDTH) {
+            continue;
+        }
+        gtk_text_buffer_get_iter_at_line_offset(buffer, &b, line, HEX_DUMP_OFFSET_WIDTH);
+        gtk_text_buffer_apply_tag_by_name(buffer, "hex_offset", &a, &b);
+        gtk_text_buffer_get_iter_at_line_offset(buffer, &a, line, HEX_DUMP_ASCII_COLUMN);
+        gtk_text_buffer_get_iter_at_line_offset(buffer, &b, line, HEX_DUMP_LINE_WIDTH);
+        gtk_text_buffer_apply_tag_by_name(buffer, "hex_ascii", &a, &b);
+    }
+}
+
 static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
                                   gpointer user_data) {
     (void)source_object;
@@ -586,7 +654,12 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
     gboolean is_org = (td->kind == FILE_KIND_ORG) && !td->render_raw;
     gboolean is_rendered = is_md || is_html || is_org;
     gboolean code = FALSE;
-    if (is_rendered || td->kind == FILE_KIND_BINARY) {
+    if (td->kind == FILE_KIND_BINARY) {
+        apply_viewer_language(app, NULL, NULL);
+        set_view_monospace(app->text_view, TRUE);
+        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
+        set_view_text_padding(app->text_view);
+    } else if (is_rendered) {
         apply_viewer_language(app, NULL, NULL);
         set_view_monospace(app->text_view, FALSE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
@@ -608,12 +681,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
     }
 
     if (td->kind == FILE_KIND_BINARY) {
-        gchar* size_str = g_format_size((guint64)td->fsize);
-        gchar* text = g_strdup_printf("[ Binary file ] %s (%s)\n\nNo preview for this file type.",
-                                      td->name, size_str);
-        gtk_text_buffer_set_text(app->buffer, text, -1);
-        g_free(text);
-        g_free(size_str);
+        show_hex_dump(app, td);
         return;
     }
 

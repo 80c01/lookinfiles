@@ -69,6 +69,8 @@ printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home
     # No extension: the preview detects the type from the content
     convert -size 160x90 gradient:'#3a7bd5-#00d2ff' png:docs/screenshot
     printf '#!/bin/sh\n# Greet the user\necho "hello $USER"\n' > docs/tool
+    # Unknown binary format: hex dump preview (all 256 byte values, twice)
+    for i in $(seq 0 511); do printf "\\$(printf %03o $((i % 256)))"; done > docs/unknown.bin
     git init -q -b master . 2>/dev/null || git init -q .
     git add README.md notes.txt
     GIT_AUTHOR_DATE="2000-01-01T00:00:00Z" GIT_COMMITTER_DATE="2000-01-01T00:00:00Z" \
@@ -163,7 +165,8 @@ xdotool keydown ctrl key --delay 120 x s keyup ctrl
 key alt+Left;           shot explorer_focused_again
 key j;                  shot detect_image_without_extension
 key j;                  shot detect_script_without_extension
-key k k                 # back to plan.org
+key j;                  shot hex_dump_unknown_binary
+key k k k               # back to plan.org
 key question;           shot help_open
 key question;           shot help_closed
 key G;                  shot G_last_row
