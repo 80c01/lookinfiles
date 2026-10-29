@@ -139,6 +139,18 @@ void video_preview_init(AppData* app) {
     gtk_video_set_loop(GTK_VIDEO(video_widget), FALSE);
     gtk_box_append(GTK_BOX(video_box), video_widget);
 
+    /* One media stream for the whole session: previews swap its file. A new
+     * stream per file (gtk_video_set_file()) is never freed by the GStreamer
+     * backend, so each previewed video leaked its pipeline's threads and file
+     * descriptors until the process ran out of them. Swapping the file shuts
+     * the previous pipeline down. */
+    GtkMediaStream* stream = gtk_media_file_new();
+    g_signal_connect(stream, "notify::duration", G_CALLBACK(on_video_duration_notify), app);
+    g_signal_connect(stream, "notify::prepared", G_CALLBACK(on_video_prepared_notify), app);
+    g_signal_connect(stream, "notify::error", G_CALLBACK(on_video_error_notify), app);
+    gtk_video_set_media_stream(GTK_VIDEO(video_widget), stream);
+    g_object_unref(stream);
+
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(video_scroll), video_box);
     gtk_stack_add_named(GTK_STACK(app->preview_stack), video_scroll, "video");
 
@@ -148,43 +160,24 @@ void video_preview_init(AppData* app) {
     app->video_title = video_title;
     app->video_meta = video_meta;
     app->video_status = video_status;
-    app->video_duration_sig = 0;
-    app->video_prepared_sig = 0;
-    app->video_error_sig = 0;
     app->video_current_path = NULL;
 }
 
 void video_preview_stop(AppData* app) {
-    if (app == NULL || app->video_widget == NULL) {
+    if (app == NULL || app->video_widget == NULL || app->video_current_path == NULL) {
         return;
     }
-    if (app->video_current_path == NULL &&
-        gtk_video_get_media_stream(GTK_VIDEO(app->video_widget)) == NULL) {
-        return;
-    }
+    /* Cleared first: the notifications emitted while closing see no file */
+    g_free(app->video_current_path);
+    app->video_current_path = NULL;
 
     GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
     if (stream != NULL) {
-        if (app->video_duration_sig != 0) {
-            g_signal_handler_disconnect(stream, app->video_duration_sig);
-            app->video_duration_sig = 0;
-        }
-        if (app->video_prepared_sig != 0) {
-            g_signal_handler_disconnect(stream, app->video_prepared_sig);
-            app->video_prepared_sig = 0;
-        }
-        if (app->video_error_sig != 0) {
-            g_signal_handler_disconnect(stream, app->video_error_sig);
-            app->video_error_sig = 0;
-        }
         if (gtk_media_stream_get_playing(stream)) {
             gtk_media_stream_pause(stream);
         }
+        gtk_media_file_clear(GTK_MEDIA_FILE(stream));
     }
-
-    gtk_video_set_file(GTK_VIDEO(app->video_widget), NULL);
-    g_free(app->video_current_path);
-    app->video_current_path = NULL;
 }
 
 void video_preview_pause(AppData* app) {
@@ -328,23 +321,15 @@ void render_video_preview(AppData* app, const gchar* name, const gchar* full) {
 
     update_video_metadata_label(app, NULL);
 
-    if (app->video_widget != NULL) {
-        gtk_video_set_autoplay(GTK_VIDEO(app->video_widget), FALSE);
+    GtkMediaStream* stream = (app->video_widget != NULL)
+                                 ? gtk_video_get_media_stream(GTK_VIDEO(app->video_widget))
+                                 : NULL;
+    if (stream != NULL) {
         GFile* file = g_file_new_for_path(full);
-        gtk_video_set_file(GTK_VIDEO(app->video_widget), file);
+        gtk_media_file_set_file(GTK_MEDIA_FILE(stream), file);
         g_object_unref(file);
-
-        GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
-        if (stream != NULL) {
-            app->video_duration_sig = g_signal_connect(stream, "notify::duration",
-                                                      G_CALLBACK(on_video_duration_notify), app);
-            app->video_prepared_sig = g_signal_connect(stream, "notify::prepared",
-                                                      G_CALLBACK(on_video_prepared_notify), app);
-            app->video_error_sig = g_signal_connect(stream, "notify::error",
-                                                   G_CALLBACK(on_video_error_notify), app);
-            if (gtk_media_stream_is_prepared(stream)) {
-                update_video_metadata_label(app, stream);
-            }
+        if (gtk_media_stream_is_prepared(stream)) {
+            update_video_metadata_label(app, stream);
         }
     }
 }

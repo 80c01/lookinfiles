@@ -205,9 +205,6 @@ typedef struct {
     GtkWidget* video_title;     /* Video title label */
     GtkWidget* video_meta;      /* Video metadata info label */
     GtkWidget* video_status;    /* Video warning/error status label */
-    gulong video_duration_sig;  /* Signal ID for notify::duration */
-    gulong video_prepared_sig;  /* Signal ID for notify::prepared */
-    gulong video_error_sig;     /* Signal ID for notify::error */
     gchar* video_current_path;  /* Canonical path of currently loaded video */
 
     /* Audio preview */
