@@ -82,6 +82,7 @@ typedef struct {
     gboolean monospace;   /* whole preview in a monospace font */
     gboolean wrap;        /* wrap long lines (FALSE: scroll horizontally) */
     gint label_width;     /* card field labels are padded to this many columns */
+    gboolean scroll_to_end; /* open scrolled to the end (logs: latest entries) */
 } PreviewDoc;
 
 /* Width of the labels of preview_doc_field() unless changed */

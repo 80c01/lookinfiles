@@ -2,6 +2,7 @@
 #include "preview_formats.h"
 
 #include <glib/gstdio.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "archive.h"
@@ -13,6 +14,7 @@
 #include "elf_info.h"
 #include "hex_dump.h"
 #include "json_view.h"
+#include "log_view.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
                                         GError** error);
@@ -405,6 +407,89 @@ static PreviewDoc* build_desktop(const PreviewInput* in, GCancellable* cancellab
     return build_cards(in, card_view_append_desktop, error);
 }
 
+/* --- Logs --- */
+
+/* Bytes read from the end of a log larger than what the viewer read */
+#define LOG_TAIL_BYTES (256 * 1024)
+
+/* Last bytes of a file, starting at a line start; NULL if it cannot be read */
+static gchar* read_tail(const gchar* path, gint64 size, gsize max, gsize* len) {
+    FILE* fp = g_fopen(path, "rb");
+    if (fp == NULL) {
+        return NULL;
+    }
+    gint64 from = size > (gint64)max ? size - (gint64)max : 0;
+    gchar* data = g_malloc(max + 1);
+    gsize n = 0;
+    if (fseeko(fp, (off_t)from, SEEK_SET) == 0) {
+        n = fread(data, 1, max, fp);
+    }
+    fclose(fp);
+    data[n] = '\0';
+    gsize skip = 0;
+    if (from > 0) {
+        const gchar* nl = memchr(data, '\n', n);
+        skip = nl != NULL ? (gsize)(nl - data) + 1 : 0;
+    }
+    memmove(data, data + skip, n - skip + 1);
+    *len = n - skip;
+    gchar* valid = g_utf8_make_valid(data, (gssize)*len);
+    g_free(data);
+    *len = strlen(valid);
+    return valid;
+}
+
+static PreviewDoc* build_log(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    (void)error;
+    gchar* tail = NULL;
+    gsize tail_len = 0;
+    if (in->text_truncated && in->path != NULL) {
+        tail = read_tail(in->path, in->size, LOG_TAIL_BYTES, &tail_len);
+    }
+    const gchar* text = tail != NULL ? tail : in->text;
+    gsize len = tail != NULL ? tail_len : in->text_len;
+
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    LogStats stats;
+    log_view_append(body, text, len, &stats);
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    doc->scroll_to_end = TRUE;
+    gchar* lines = format_count(stats.lines);
+    gint start = preview_doc_offset(doc);
+    preview_doc_appendf(doc, PREVIEW_STYLE_PLAIN, "%s%s %s", (tail != NULL || in->text_truncated) ? "last " : "",
+                        lines, stats.lines == 1 ? "line" : "lines");
+    preview_doc_add_span(doc, start, preview_doc_offset(doc), PREVIEW_STYLE_DIM);
+    if (stats.errors > 0) {
+        preview_doc_append(doc, PREVIEW_STYLE_DIM, " · ");
+        preview_doc_appendf(doc, PREVIEW_STYLE_ERROR, "%u %s", stats.errors, stats.errors == 1 ? "error" : "errors");
+    }
+    if (stats.warnings > 0) {
+        preview_doc_append(doc, PREVIEW_STYLE_DIM, " · ");
+        preview_doc_appendf(doc, PREVIEW_STYLE_WARNING, "%u %s", stats.warnings,
+                            stats.warnings == 1 ? "warning" : "warnings");
+    }
+    preview_doc_append_len(doc, "\n", 1);
+    g_free(lines);
+    if (tail != NULL) {
+        gchar* shown = g_format_size(tail_len);
+        gchar* total = preview_format_size(in->size);
+        gchar* note = g_strdup_printf("Showing the end of the file: the last %s of %s.", shown, total);
+        preview_doc_note(doc, note);
+        g_free(note);
+        g_free(total);
+        g_free(shown);
+    } else {
+        note_truncated_text(doc, in);
+    }
+    preview_doc_append_len(doc, "\n", 1);
+    append_doc(doc, body);
+    g_free(tail);
+    return doc;
+}
+
 /* --- ELF executables, libraries, objects --- */
 
 static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -489,6 +574,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_contacts;
     case FILE_KIND_DESKTOP:
         return build_desktop;
+    case FILE_KIND_LOG:
+        return build_log;
     default:
         return NULL;
     }

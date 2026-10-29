@@ -1,0 +1,9 @@
+2026-10-29 10:00:00.120 INFO  [main] Server starting on port 8080
+2026-10-29 10:00:00.480 DEBUG [db] Pool size 8
+2026-10-29 10:00:01.002 WARN  [db] Slow query (1.2 s): SELECT * FROM orders
+2026-10-29T10:00:02Z ERROR [api] Request failed: timeout after 30 s
+    at Handler.process (handler.js:42)
+Oct 29 10:00:03 host sshd[812]: Accepted publickey for ada
+[10:00:04.5] notice: cache warmed
+1761732005 fatal: out of memory
+2026-10-29 10:00:06 [info] Shutdown complete

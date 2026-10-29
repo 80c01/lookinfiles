@@ -30,7 +30,8 @@ diff_view:preview_doc
 archive:zip_reader
 cert_view:preview_doc
 card_view:preview_doc
-preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive,cert_view,card_view
+log_view:preview_doc
+preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive,cert_view,card_view,log_view
 org_time:
 org_doc:org_time
 org_table:org_doc

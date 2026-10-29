@@ -124,6 +124,28 @@ static void test_cards(void) {
     g_assert_nonnull(strstr(desktop->text->str, "lookin %F"));
 }
 
+static void test_log(void) {
+    g_autoptr(PreviewDoc) doc = build_fixture("app.log", FILE_KIND_LOG);
+    g_assert_true(g_str_has_prefix(doc->text->str, "9 lines · 2 errors · 1 warning\n\n2026-10-29"));
+    /* A log larger than what the viewer reads: its end is shown */
+    gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
+    gchar* path = g_build_filename(dir, "big.log", NULL);
+    GString* text = g_string_new(NULL);
+    for (guint i = 1; i <= 20000; i++) {
+        g_string_append_printf(text, "2026-10-29 10:00:00 INFO line %u\n", i);
+    }
+    g_assert_true(g_file_set_contents(path, text->str, (gssize)text->len, NULL));
+    g_autoptr(PreviewDoc) big = preview_format_build_file(path, "big.log", 64 * 1024, NULL, NULL, NULL);
+    g_assert_nonnull(big);
+    g_assert_true(g_str_has_prefix(big->text->str, "last 5,000 lines\nShowing the end of the file"));
+    g_assert_true(g_str_has_suffix(big->text->str, "INFO line 20000\n"));
+    g_string_free(text, TRUE);
+    g_remove(path);
+    g_rmdir(dir);
+    g_free(path);
+    g_free(dir);
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -152,5 +174,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/archives", test_archives);
     g_test_add_func("/preview_formats/certificates", test_certificates);
     g_test_add_func("/preview_formats/cards", test_cards);
+    g_test_add_func("/preview_formats/log", test_log);
     return g_test_run();
 }

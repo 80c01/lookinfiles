@@ -194,4 +194,11 @@ void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* pat
     gtk_text_view_set_wrap_mode(view, doc->wrap ? GTK_WRAP_WORD_CHAR : GTK_WRAP_NONE);
     gtk_text_buffer_set_text(buffer, "", 0);
     preview_doc_insert(buffer, doc);
+    if (doc->scroll_to_end) {
+        GtkTextIter end;
+        gtk_text_buffer_get_end_iter(buffer, &end);
+        gtk_text_buffer_place_cursor(buffer, &end);
+        GtkTextMark* mark = gtk_text_buffer_get_insert(buffer);
+        gtk_text_view_scroll_to_mark(view, mark, 0.0, TRUE, 0.0, 1.0);
+    }
 }
