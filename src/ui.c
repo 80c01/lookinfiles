@@ -177,6 +177,10 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
                              (focus_w == cur_tab->view ||
                               gtk_widget_is_ancestor(focus_w, cur_tab->container)));
 
+    /* Emacs and Org-mode tabs keep C-e (end of line) and C-r (search backward) */
+    gboolean is_emacs_tab = is_modal_tab && (cur_tab->mode == EDITOR_MODE_EMACS ||
+                                             cur_tab->mode == EDITOR_MODE_ORGMODE);
+
     if (!is_modal_tab) {
         /* Ctrl+S: save current editor tab; Ctrl+W: close current editor tab */
         if ((state & GDK_CONTROL_MASK) &&
@@ -221,7 +225,8 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     }
 
     /* Ctrl+E: move active editor tab to dedicated panel right of preview, or dock back */
-    if ((state & GDK_CONTROL_MASK) &&
+    if (!is_emacs_tab &&
+        (state & GDK_CONTROL_MASK) &&
         !(state & GDK_SHIFT_MASK) &&
         (keyval == GDK_KEY_e || keyval == GDK_KEY_E)) {
         editor_move_tab_dedicated(app, NULL);
@@ -237,7 +242,8 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     }
 
     /* Ctrl+R or F2: rename current note / notebook if notes view is active */
-    if (((state & GDK_CONTROL_MASK) && !(state & GDK_SHIFT_MASK) && (keyval == GDK_KEY_r || keyval == GDK_KEY_R)) ||
+    if ((!is_emacs_tab && (state & GDK_CONTROL_MASK) && !(state & GDK_SHIFT_MASK) &&
+         (keyval == GDK_KEY_r || keyval == GDK_KEY_R)) ||
         keyval == GDK_KEY_F2) {
         if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
             notes_edit_selected(app);
