@@ -19,6 +19,7 @@
 #include "remote.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
+#include "dir_preview.h"
 
 
 void viewer_scroll_lines(AppData* app, gint lines) {
@@ -693,114 +694,6 @@ void viewer_reload_preview(AppData* app) {
 }
 
 
-typedef struct {
-    AppData* app;
-    gchar* name;
-    gchar* full;
-    gboolean show_hidden;
-    GString* listing;
-} DirPreviewTaskData;
-
-static void dir_preview_task_data_free(gpointer data) {
-    DirPreviewTaskData* td = (DirPreviewTaskData*)data;
-    if (td == NULL) {
-        return;
-    }
-    g_free(td->name);
-    g_free(td->full);
-    if (td->listing != NULL) {
-        g_string_free(td->listing, TRUE);
-    }
-    g_free(td);
-}
-
-static gint cmp_str_ptr(gconstpointer a, gconstpointer b) {
-    const gchar* sa = *(const gchar* const*)a;
-    const gchar* sb = *(const gchar* const*)b;
-    return g_strcmp0(sa, sb);
-}
-
-static void dir_preview_thread_func(GTask* task, gpointer source_object,
-                                    gpointer task_data, GCancellable* cancellable) {
-    (void)source_object;
-    DirPreviewTaskData* td = (DirPreviewTaskData*)task_data;
-
-    if (g_task_return_error_if_cancelled(task)) {
-        return;
-    }
-
-    td->listing = g_string_new(NULL);
-    g_string_append_printf(td->listing, "[ Directory ] %s\n\n", td->name);
-
-    GDir* sub = g_dir_open(td->full, 0, NULL);
-    if (sub != NULL) {
-        GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
-        const gchar* sub_name;
-        while ((sub_name = g_dir_read_name(sub)) != NULL) {
-            if (g_cancellable_is_cancelled(cancellable)) {
-                g_dir_close(sub);
-                g_ptr_array_unref(names);
-                g_task_return_error_if_cancelled(task);
-                return;
-            }
-            if (!td->show_hidden && sub_name[0] == '.') {
-                continue;
-            }
-            g_ptr_array_add(names, g_strdup(sub_name));
-        }
-        g_dir_close(sub);
-        g_ptr_array_sort(names, cmp_str_ptr);
-
-        for (guint i = 0; i < names->len; i++) {
-            if (g_cancellable_is_cancelled(cancellable)) {
-                g_ptr_array_unref(names);
-                g_task_return_error_if_cancelled(task);
-                return;
-            }
-            const gchar* sub_entry = g_ptr_array_index(names, i);
-            gchar* sub_full = g_build_filename(td->full, sub_entry, NULL);
-            gboolean sub_is_dir = g_file_test(sub_full, G_FILE_TEST_IS_DIR);
-            g_free(sub_full);
-            g_string_append_printf(td->listing, "  %s%s\n",
-                                   sub_entry, sub_is_dir ? "/" : "");
-        }
-        if (names->len == 0) {
-            g_string_append(td->listing, "  (empty)\n");
-        }
-        g_ptr_array_unref(names);
-    } else {
-        g_string_append(td->listing, "  (cannot read directory)\n");
-    }
-
-    if (g_task_return_error_if_cancelled(task)) {
-        return;
-    }
-    g_task_return_boolean(task, TRUE);
-}
-
-static void on_dir_preview_ready(GObject* source_object, GAsyncResult* res,
-                                 gpointer user_data) {
-    (void)source_object;
-    (void)user_data;
-    GTask* task = G_TASK(res);
-    GCancellable* cancellable = g_task_get_cancellable(task);
-    DirPreviewTaskData* td = (DirPreviewTaskData*)g_task_get_task_data(task);
-
-    if (td == NULL || td->listing == NULL ||
-        g_cancellable_is_cancelled(cancellable) ||
-        cancellable != td->app->preview_cancellable) {
-        return;
-    }
-
-    AppData* app = td->app;
-    set_view_monospace(app->text_view, FALSE);
-    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
-    set_view_text_padding(app->text_view);
-    gtk_text_buffer_set_text(app->buffer, td->listing->str, (gint)td->listing->len);
-    app->viewer_match = -1;
-    apply_viewer_language(app, NULL, NULL);
-}
-
 void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     AppData* app = (AppData*)user_data;
     ExplorerRow* row = explorer_tree_get_selected(tree);
@@ -888,22 +781,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
         if (app->preview_stack != NULL) {
             gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
         }
-        if (app->preview_cancellable != NULL) {
-            g_cancellable_cancel(app->preview_cancellable);
-            g_clear_object(&app->preview_cancellable);
-        }
-        app->preview_cancellable = g_cancellable_new();
-
-        DirPreviewTaskData* td = g_new0(DirPreviewTaskData, 1);
-        td->app = app;
-        td->name = g_strdup(name);
-        td->full = g_strdup(full);
-        td->show_hidden = app->show_hidden;
-
-        GTask* task = g_task_new(NULL, app->preview_cancellable, on_dir_preview_ready, NULL);
-        g_task_set_task_data(task, td, dir_preview_task_data_free);
-        g_task_run_in_thread(task, dir_preview_thread_func);
-        g_object_unref(task);
+        dir_preview_show(app, name, full);
     } else {
         /* If there's an open editor tab for this file with modified/buffered content, flush it */
         for (GList* l = app->editors; l != NULL; l = l->next) {

@@ -42,7 +42,10 @@ workspaces, in a VS Code Dark+ look.
   highlighted code blocks and images.
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
 - Images, PDF documents (poppler), video and audio with player controls.
-- Directory listings and summaries of notebooks, bookmark folders and machines.
+- Directory overview: totals, then each entry with its icon, size and date,
+  in the explorer's sort order (one level read in the background, never
+  recursively).
+- Summaries of notebooks, bookmark folders and machines.
 - A **Git Commits** tab listing the repository history with each commit's diff.
 - Git change bars in the text preview and the editor, as in VS Code: lines
   added (green), modified (blue) or deleted (red marker) since the last commit;

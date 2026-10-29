@@ -7,6 +7,11 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Directory preview: header with the number of files and folders, their
+  size and the last change, then a table of the entries (icon, name, size,
+  relative date) in the explorer's sort order. Only the selected folder is
+  read, in the background after a short pause, so moving through the
+  explorer stays fast.
 - Editor tabs can be dragged with the mouse: onto a tab bar to move them
   there, or near an edge of an editor to split it on that side; a blue area
   shows where the tab lands.

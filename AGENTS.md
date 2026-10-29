@@ -71,6 +71,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   direction (same row or column only), used to move editor tabs between
   notebooks; `pane_drop_zone()` / `pane_zone_rect()`: the side of a pane a
   dragged tab is dropped on, and the area it would take.
+- `dir_summary` — one directory level for the directory preview: entries
+  (name, type, size, date), totals, sorting, relative dates, column padding.
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can
@@ -141,6 +143,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `viewer` — right-pane preview dispatch (`on_selection_changed()`,
   `load_file_content()`, `viewer_reload_preview()`), image/text/dir previews,
   viewer keys.
+- `dir_preview` — directory preview (`dir_preview_show()`): one level read
+  in a worker thread after a short delay (never recursive), header and table.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
 - `editor` — editor tabs in the notebook(s): open, save, close, move, dedicated panel.
