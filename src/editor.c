@@ -678,10 +678,39 @@ static void clamp_adjustment(GtkAdjustment* adj, gdouble value) {
     }
 }
 
+#define POINTER_DOWN_KEY "editor-pointer-down"
+
+/* Tracks whether a mouse button (or touch) is down in the view. Scrolling the
+ * text under a held button turns the click into a drag selection, which then
+ * moves the cursor and scrolls again: the view runs away and typing replaces
+ * the accidental selection. A click places the cursor in view anyway. */
+static gboolean on_editor_pointer_event(GtkEventControllerLegacy* ctrl, GdkEvent* event,
+                                        gpointer data) {
+    (void)data;
+    GtkWidget* view = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
+    switch (gdk_event_get_event_type(event)) {
+    case GDK_BUTTON_PRESS:
+    case GDK_TOUCH_BEGIN:
+        g_object_set_data(G_OBJECT(view), POINTER_DOWN_KEY, GINT_TO_POINTER(1));
+        break;
+    case GDK_BUTTON_RELEASE:
+    case GDK_TOUCH_END:
+    case GDK_TOUCH_CANCEL:
+        g_object_set_data(G_OBJECT(view), POINTER_DOWN_KEY, NULL);
+        break;
+    default:
+        break;
+    }
+    return FALSE; /* observe only */
+}
+
 static gboolean keep_cursor_clear(gpointer data) {
     GtkTextView* view = GTK_TEXT_VIEW(data);
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(view));
     GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    if (g_object_get_data(G_OBJECT(view), POINTER_DOWN_KEY) != NULL) {
+        return G_SOURCE_REMOVE; /* cursor placed with the mouse: leave the view */
+    }
     if (hadj == NULL || vadj == NULL || !gtk_widget_get_mapped(GTK_WIDGET(view))) {
         return G_SOURCE_REMOVE;
     }
@@ -895,6 +924,11 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     gtk_event_controller_set_propagation_phase(key_ctrl, GTK_PHASE_CAPTURE);
     g_signal_connect(key_ctrl, "key-pressed", G_CALLBACK(on_editor_view_key_press), tab);
     gtk_widget_add_controller(view, key_ctrl);
+
+    GtkEventController* pointer_ctrl = gtk_event_controller_legacy_new();
+    gtk_event_controller_set_propagation_phase(pointer_ctrl, GTK_PHASE_CAPTURE);
+    g_signal_connect(pointer_ctrl, "event", G_CALLBACK(on_editor_pointer_event), NULL);
+    gtk_widget_add_controller(view, pointer_ctrl);
 
     editor_minimap_init(tab);
 
