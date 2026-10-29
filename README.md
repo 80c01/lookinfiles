@@ -41,11 +41,26 @@ and virtual workspaces, in a VS Code Dark+ look.
   (including in-progress `[/]` / `[-]` tasks), tables, quotes, GitHub alerts,
   highlighted code blocks and images.
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
-- Images, PDF documents (poppler), video and audio with player controls.
-- Word documents (`.docx`): headings, paragraphs, bold / italic / underline,
-  lists, tables, links, images and equations as text, read without any
-  external tool. Page layout, fonts, headers, footers, footnotes, comments and
-  text boxes are not shown; long documents stop after 256 KB of text.
+- Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
+  `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), video and audio
+  with player controls.
+- Office documents, read without any external tool: Word (`.docx`) and
+  OpenDocument text (`.odt`) with headings, styles, lists, tables, links and
+  images; spreadsheets (`.xlsx`, `.ods`) as grids with column letters, number,
+  date and percent formats; presentations (`.pptx`, `.odp`) slide by slide;
+  RTF. Page layout, fonts, headers and footers are not shown; long documents
+  stop after 256 KB of text.
+- EPUB books (cover, metadata, contents, first chapters) and Jupyter
+  notebooks (Markdown cells, highlighted code, text and image outputs).
+- Data and text formats: CSV / TSV as aligned tables, JSON (also minified,
+  JSONC and JSON Lines) pretty-printed and coloured, diffs and patches with a
+  per-file summary, logs coloured by level and shown from their end, manual
+  pages formatted like `man` (gzipped ones too), calendars (`.ics`), contacts
+  (`.vcf`) and `.desktop` entries as cards.
+- Archives (`.zip`, `.jar`, `.tar`, `.tar.gz`, `.a`, `.deb`...) listed with sizes and
+  dates; a gzipped file shows its content. Certificates and keys (PEM, DER):
+  subject, issuer, validity, alternative names, key, fingerprints (private
+  keys are only named). Fonts: names, details and samples in the font.
 - Directory overview: totals, file types, branch and git changes, then each entry with
   its icon, size, date and git status, in the explorer's sort order, and the
   folder's README rendered below (one level read in the background, never
@@ -66,8 +81,11 @@ and virtual workspaces, in a VS Code Dark+ look.
   architecture, type, interpreter, linked libraries, soname, build ID,
   whether they are stripped, and their exported symbols; `m` shows the hex
   dump instead. Only the headers are read, even for a large library.
-- `m` switches between the rendered and the raw view; files over 512 KB are
-  previewed from their first 64 KB.
+- `m` switches between the rendered and the raw view (text, or the hex dump
+  of binary formats); files over 512 KB are previewed from their first 64 KB.
+- `make bench-preview` times every structured preview, and `make
+  preview-coverage DIR=~` reports how many files of a folder would only get a
+  hex dump.
 
 **Editor**: files open in tabs, docked in the preview panel or in a dedicated
 panel that can be split in every direction. Drag a tab with the mouse onto

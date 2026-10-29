@@ -14,6 +14,24 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Previews for many more formats, each built in the background and shown as
+  close as possible to its own application (see TASK.md):
+  CSV / TSV tables; pretty-printed JSON, JSONC and JSON Lines; diffs and
+  patches with a change summary; logs coloured by level, shown from their
+  end; archives (ZIP, JAR, tar, tar.gz, ar / .deb) and the content of gzipped
+  files; certificates, keys and certificate requests (PEM, DER); calendars,
+  contacts and `.desktop` entries; fonts with samples; manual pages; Jupyter
+  notebooks; Excel and OpenDocument spreadsheets; OpenDocument text;
+  PowerPoint and OpenDocument presentations; EPUB books; RTF documents.
+- File types are detected from the content for all of these (a `.txt` that is
+  a ZIP, a JSON file without extension, a gzipped manual page).
+- Images: photo details (camera, lens, exposure, date, GPS) under the image,
+  EXIF orientation applied, and zoom (`+` / `-` / `0`, `Ctrl+wheel`), also
+  for PDF pages.
+- `make bench-preview` (time of every structured preview against its budget),
+  `make preview-coverage DIR=...` (share of files that would only get a hex
+  dump), and `LOOKIN_DEBUG_PREVIEW=1` (time from selection to display).
+
 - The minimap scrolls over long files, as in VS Code: below a readable scale
   it stops shrinking the document and scrolls in proportion to the view (the
   slider reaches its bottom with the end of the file). Dragging the slider
