@@ -12,6 +12,9 @@ All notable changes to this project are listed here. The format follows
   relative date) in the explorer's sort order. Only the selected folder is
   read, in the background after a short pause, so moving through the
   explorer stays fast.
+- Directory preview shows the git branch and the changed files below the
+  folder, the git status of each entry, and renders the folder's README
+  (Markdown, Org-mode or plain text) under the table.
 - Editor tabs can be dragged with the mouse: onto a tab bar to move them
   there, or near an edge of an editor to split it on that side; a blue area
   shows where the tab lands.

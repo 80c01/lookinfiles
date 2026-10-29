@@ -62,6 +62,7 @@ printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home
     cd "$FIX/work" || exit 1
     printf '# Title\n\nSome *markdown* text.\n\n- item one\n- item two\n\n- [x] done task\n- [/] running task\n- [-] other running task\n- [ ] todo task\n' > README.md
     printf '#include <stdio.h>\nint main(void) {\n    printf("hi\\n");\n    return 0;\n}\n' > src/main.c
+    printf '# Sources\n\nThe *entry point* is `main.c`.\n' > src/README.md   # folder preview README
     seq -f 'plain line %g' 1 120 > notes.txt
     printf 'R&D <draft>\n' > 'R&D.txt'
     printf '* TODO Task one\n** Sub heading\nbody\n' > docs/plan.org
@@ -141,6 +142,8 @@ key j j;                shot select_readme_md
 key j;                  shot preview_readme_md_tasks
 key g g;                shot gg_first_row
 key g g;                shot gg_reselect_same_row
+key j;                  shot dir_preview_readme   # src: table, git line, rendered README.md
+key k
 key space;              shot expand_docs
 key j;                  shot select_plan_org
 xdotool mousemove 390 88 click 1

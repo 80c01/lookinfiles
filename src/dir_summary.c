@@ -16,6 +16,7 @@ void dir_summary_free(DirSummary* s) {
         g_free(g_array_index(s->entries, DirSummaryEntry, i).name);
     }
     g_array_unref(s->entries);
+    g_free(s->readme);
     g_free(s);
 }
 
@@ -32,6 +33,11 @@ gboolean dir_summary_add(DirSummary* s, const gchar* name, gboolean is_dir,
     } else {
         s->n_files++;
         s->total_size += size;
+        gint rank = dir_summary_readme_rank(name);
+        if (rank > 0 && rank > (s->readme != NULL ? dir_summary_readme_rank(s->readme) : 0)) {
+            g_free(s->readme);
+            s->readme = g_strdup(name);
+        }
     }
     if (mtime > s->newest_mtime) {
         s->newest_mtime = mtime;
@@ -80,6 +86,75 @@ static gint compare_entries(gconstpointer a, gconstpointer b, gpointer user_data
 
 void dir_summary_sort(DirSummary* s, DirSummarySort sort) {
     g_array_sort_with_data(s->entries, compare_entries, GINT_TO_POINTER((gint)sort));
+}
+
+gint dir_summary_readme_rank(const gchar* name) {
+    if (name == NULL) {
+        return 0;
+    }
+    if (g_ascii_strcasecmp(name, "README.md") == 0 || g_ascii_strcasecmp(name, "README.markdown") == 0) {
+        return 4;
+    }
+    if (g_ascii_strcasecmp(name, "README.org") == 0) {
+        return 3;
+    }
+    if (g_ascii_strcasecmp(name, "README") == 0) {
+        return 2;
+    }
+    if (g_ascii_strcasecmp(name, "README.txt") == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+gchar dir_summary_git_letter(const gchar* badge) {
+    if (badge == NULL) {
+        return 0;
+    }
+    const gchar* gt = strchr(badge, '>');
+    const gchar* p = (gt != NULL) ? gt + 1 : badge;
+    return (p[0] != '\0' && p[0] != '<') ? p[0] : 0;
+}
+
+void dir_summary_count_git(GHashTable* statuses, const gchar* dir, DirGitCounts* counts) {
+    memset(counts, 0, sizeof(*counts));
+    if (statuses == NULL || dir == NULL) {
+        return;
+    }
+    gchar* prefix = g_str_has_suffix(dir, "/") ? g_strdup(dir) : g_strconcat(dir, "/", NULL);
+
+    /* Paths below dir, and the set of their parents (rolled-up directories) */
+    GPtrArray* below = g_ptr_array_new();
+    GHashTable* parents = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    GHashTableIter iter;
+    gpointer key;
+    g_hash_table_iter_init(&iter, statuses);
+    while (g_hash_table_iter_next(&iter, &key, NULL)) {
+        const gchar* path = key;
+        if (g_str_has_prefix(path, prefix) && path[strlen(prefix)] != '\0') {
+            g_ptr_array_add(below, (gpointer)path);
+            g_hash_table_add(parents, g_path_get_dirname(path));
+        }
+    }
+
+    for (guint i = 0; i < below->len; i++) {
+        const gchar* path = g_ptr_array_index(below, i);
+        if (g_hash_table_contains(parents, path)) {
+            continue; /* a directory with changes below it */
+        }
+        switch (dir_summary_git_letter(g_hash_table_lookup(statuses, path))) {
+        case 'M': counts->modified++; break;
+        case 'A': counts->added++; break;
+        case 'U': counts->untracked++; break;
+        case 'D': counts->deleted++; break;
+        case 'R': counts->renamed++; break;
+        case '!': counts->conflicts++; break;
+        default: break;
+        }
+    }
+    g_hash_table_destroy(parents);
+    g_ptr_array_unref(below);
+    g_free(prefix);
 }
 
 gchar* dir_summary_format_age(gint64 mtime, gint64 now) {

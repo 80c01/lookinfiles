@@ -109,6 +109,61 @@ static void test_pad(void) {
     g_free(t);
 }
 
+static void test_readme(void) {
+    g_assert_cmpint(dir_summary_readme_rank("readme.MD"), ==, 4);
+    g_assert_cmpint(dir_summary_readme_rank("README.org"), ==, 3);
+    g_assert_cmpint(dir_summary_readme_rank("README.rst"), ==, 0);
+    g_assert_cmpint(dir_summary_readme_rank("notes.md"), ==, 0);
+
+    DirSummary* s = dir_summary_new();
+    dir_summary_add(s, "README.txt", FALSE, 1, 1);
+    g_assert_cmpstr(s->readme, ==, "README.txt");
+    dir_summary_add(s, "README.md", FALSE, 1, 1);
+    dir_summary_add(s, "README.org", FALSE, 1, 1);
+    dir_summary_add(s, "README", TRUE, 0, 1); /* a directory is not a README */
+    g_assert_cmpstr(s->readme, ==, "README.md");
+    dir_summary_free(s);
+
+    s = dir_summary_new();
+    dir_summary_add(s, "main.c", FALSE, 1, 1);
+    g_assert_null(s->readme);
+    dir_summary_free(s);
+}
+
+#define BADGE(c) "<span foreground=\"#e2c08d\" weight=\"bold\">" c "</span>"
+
+static void test_git(void) {
+    g_assert_cmpint(dir_summary_git_letter(BADGE("M")), ==, 'M');
+    g_assert_cmpint(dir_summary_git_letter(BADGE("!")), ==, '!');
+    g_assert_cmpint(dir_summary_git_letter(""), ==, 0);
+    g_assert_cmpint(dir_summary_git_letter(NULL), ==, 0);
+
+    GHashTable* st = g_hash_table_new(g_str_hash, g_str_equal);
+    g_hash_table_insert(st, "/r/docs", BADGE("M"));          /* rolled up */
+    g_hash_table_insert(st, "/r/docs/a.md", BADGE("M"));
+    g_hash_table_insert(st, "/r/docs/sub", BADGE("U"));      /* rolled up */
+    g_hash_table_insert(st, "/r/docs/sub/x", BADGE("U"));
+    g_hash_table_insert(st, "/r/docs/sub/y", BADGE("U"));
+    g_hash_table_insert(st, "/r/docs/old", BADGE("D"));
+    g_hash_table_insert(st, "/r/docs2/b", BADGE("M"));       /* sibling, not below */
+    g_hash_table_insert(st, "/r/src/c.c", BADGE("A"));
+
+    DirGitCounts c;
+    dir_summary_count_git(st, "/r/docs", &c);
+    g_assert_cmpuint(c.modified, ==, 1);
+    g_assert_cmpuint(c.untracked, ==, 2);
+    g_assert_cmpuint(c.deleted, ==, 1);
+    g_assert_cmpuint(c.added, ==, 0);
+
+    dir_summary_count_git(st, "/r/", &c);
+    g_assert_cmpuint(c.modified, ==, 2);
+    g_assert_cmpuint(c.added, ==, 1);
+
+    dir_summary_count_git(NULL, "/r", &c);
+    g_assert_cmpuint(c.modified, ==, 0);
+    g_hash_table_destroy(st);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/dir_summary/totals", test_totals);
@@ -116,5 +171,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/dir_summary/sort", test_sort);
     g_test_add_func("/dir_summary/age", test_age);
     g_test_add_func("/dir_summary/pad", test_pad);
+    g_test_add_func("/dir_summary/readme", test_readme);
+    g_test_add_func("/dir_summary/git", test_git);
     return g_test_run();
 }

@@ -2,6 +2,11 @@
 #include "dir_summary.h"
 #include "file_types.h"
 #include "text_style.h"
+#include "git_utils.h"
+#include "markdown.h"
+#include "orgmode.h"
+
+#include <stdio.h>
 
 /* Wait before reading: holding j/k through folders starts no work until the
  * selection stops on one. */
@@ -21,6 +26,10 @@ typedef struct {
     DirSummarySort sort;
     DirSummary* summary;   /* filled by the worker thread */
     gboolean unreadable;
+    gchar* branch;         /* git branch, NULL outside a repository */
+    gchar* readme_path;    /* README shown under the table, NULL if none */
+    gchar* readme_text;    /* its first PREVIEW_BYTES, valid UTF-8 */
+    gint64 readme_size;
 } DirPreviewJob;
 
 static void job_free(gpointer data) {
@@ -32,6 +41,9 @@ static void job_free(gpointer data) {
     g_free(job->name);
     g_free(job->full);
     dir_summary_free(job->summary);
+    g_free(job->branch);
+    g_free(job->readme_path);
+    g_free(job->readme_text);
     g_free(job);
 }
 
@@ -42,6 +54,25 @@ static DirSummarySort summary_sort(gint sort_mode) {
     case SORT_EXT:  return DIR_SUMMARY_SORT_EXT;
     default:        return DIR_SUMMARY_SORT_NAME;
     }
+}
+
+/* First PREVIEW_BYTES of the README (never the whole file), as valid UTF-8 */
+static void read_readme(DirPreviewJob* job) {
+    job->readme_path = g_build_filename(job->full, job->summary->readme, NULL);
+    FILE* f = fopen(job->readme_path, "rb");
+    if (f == NULL) {
+        g_clear_pointer(&job->readme_path, g_free);
+        return;
+    }
+    gchar* buf = g_malloc(PREVIEW_BYTES + 1);
+    gsize len = fread(buf, 1, PREVIEW_BYTES, f);
+    buf[len] = '\0';
+    if (fseek(f, 0, SEEK_END) == 0) {
+        job->readme_size = (gint64)ftell(f);
+    }
+    fclose(f);
+    job->readme_text = g_utf8_make_valid(buf, (gssize)len);
+    g_free(buf);
 }
 
 /* Worker thread: one enumeration of the directory (type, size and date come
@@ -82,6 +113,12 @@ static void job_thread(GTask* task, gpointer source_object, gpointer task_data,
         }
         g_object_unref(en);
         dir_summary_sort(job->summary, job->sort);
+        if (job->summary->readme != NULL && !g_cancellable_is_cancelled(cancellable)) {
+            read_readme(job);
+        }
+        if (!g_cancellable_is_cancelled(cancellable)) {
+            job->branch = git_read_branch(job->full); /* reads .git/HEAD, no subprocess */
+        }
     }
 
     if (g_task_return_error_if_cancelled(task)) {
@@ -102,6 +139,32 @@ static void ensure_tags(GtkTextBuffer* buffer) {
     gtk_text_buffer_create_tag(buffer, "dir_table",
                                "family", "monospace", "wrap-mode", GTK_WRAP_NONE, NULL);
     gtk_text_buffer_create_tag(buffer, "dir_folder", "weight", 600, NULL);
+    gtk_text_buffer_create_tag(buffer, "dir_section",
+                               "weight", 600, "foreground", "#e6e6e6",
+                               "paragraph-background", "#1f2021",
+                               "pixels-above-lines", 6, "pixels-below-lines", 6, NULL);
+    gtk_text_buffer_create_tag(buffer, "dir_plain", "family", "monospace", NULL);
+    /* Git status colours, as in the explorer tree */
+    static const struct { const gchar* name; const gchar* color; } git_tags[] = {
+        { "dir_git_M", "#e2c08d" }, { "dir_git_U", "#73c991" }, { "dir_git_A", "#73c991" },
+        { "dir_git_D", "#c74e39" }, { "dir_git_R", "#4fc1ff" }, { "dir_git_!", "#e51400" },
+    };
+    for (gsize i = 0; i < G_N_ELEMENTS(git_tags); i++) {
+        gtk_text_buffer_create_tag(buffer, git_tags[i].name, "foreground", git_tags[i].color, NULL);
+    }
+}
+
+/* Tag colouring a git status letter, NULL if none */
+static const gchar* git_tag(gchar letter) {
+    switch (letter) {
+    case 'M': return "dir_git_M";
+    case 'U': return "dir_git_U";
+    case 'A': return "dir_git_A";
+    case 'D': return "dir_git_D";
+    case 'R': return "dir_git_R";
+    case '!': return "dir_git_!";
+    default:  return NULL;
+    }
 }
 
 static void insert_tagged(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* text,
@@ -138,12 +201,36 @@ static gchar* totals_line(const DirSummary* s, gint64 now) {
     return g_string_free(out, FALSE);
 }
 
-static void insert_table(GtkTextBuffer* buffer, GtkTextIter* it, const DirSummary* s, gint64 now) {
+/* "⎇ main · 2 untracked · 1 modified" (changes known from the explorer's git scan) */
+static gchar* git_line(AppData* app, const DirPreviewJob* job) {
+    DirGitCounts c;
+    dir_summary_count_git(app->git_statuses, job->full, &c);
+    GString* out = g_string_new(NULL);
+    g_string_append_printf(out, "⎇ %s", job->branch);
+    const struct { guint n; const gchar* label; } parts[] = {
+        { c.conflicts, "conflicts" }, { c.modified, "modified" }, { c.added, "added" },
+        { c.untracked, "untracked" }, { c.deleted, "deleted" }, { c.renamed, "renamed" },
+    };
+    for (gsize i = 0; i < G_N_ELEMENTS(parts); i++) {
+        if (parts[i].n > 0) {
+            g_string_append_printf(out, " · %u %s", parts[i].n, parts[i].label);
+        }
+    }
+    return g_string_free(out, FALSE);
+}
+
+static void insert_table(GtkTextBuffer* buffer, GtkTextIter* it, AppData* app,
+                         const DirPreviewJob* job, gint64 now) {
+    const DirSummary* s = job->summary;
     guint shown = MIN(s->entries->len, (guint)DIR_PREVIEW_ROWS);
     glong name_width = DIR_PREVIEW_NAME_MIN;
+    glong age_width = 0;
     for (guint i = 0; i < shown; i++) {
         const DirSummaryEntry* e = &g_array_index(s->entries, DirSummaryEntry, i);
         name_width = MAX(name_width, g_utf8_strlen(e->name, -1) + (e->is_dir ? 1 : 0));
+        gchar* age = dir_summary_format_age(e->mtime, now);
+        age_width = MAX(age_width, g_utf8_strlen(age, -1));
+        g_free(age);
     }
     name_width = MIN(name_width, DIR_PREVIEW_NAME_MAX);
 
@@ -154,7 +241,7 @@ static void insert_table(GtkTextBuffer* buffer, GtkTextIter* it, const DirSummar
         gchar* size_text = e->is_dir ? g_strdup("") : g_format_size(e->size);
         gchar* size = dir_summary_pad(size_text, 10, TRUE);
         gchar* age_text = dir_summary_format_age(e->mtime, now);
-        gchar* age = dir_summary_pad(age_text, 12, FALSE);
+        gchar* age = dir_summary_pad(age_text, age_width, FALSE);
 
         gchar* icon = g_strdup_printf("  %s ", file_icon(e->name, e->is_dir));
         insert_tagged(buffer, it, icon, "dir_table", NULL);
@@ -162,6 +249,15 @@ static void insert_table(GtkTextBuffer* buffer, GtkTextIter* it, const DirSummar
         gchar* rest = g_strdup_printf("  %s  ", size);
         insert_tagged(buffer, it, rest, "dir_table", NULL);
         insert_tagged(buffer, it, age, "dir_table", "dir_dim");
+        if (app->git_statuses != NULL) {
+            gchar* path = g_build_filename(job->full, e->name, NULL);
+            const gchar* tag = git_tag(dir_summary_git_letter(g_hash_table_lookup(app->git_statuses, path)));
+            if (tag != NULL) {
+                gchar letter[] = { ' ', tag[8], '\0' }; /* "dir_git_X" -> " X" */
+                insert_tagged(buffer, it, letter, "dir_table", tag);
+            }
+            g_free(path);
+        }
         insert_tagged(buffer, it, "\n", "dir_table", NULL);
 
         g_free(rest);
@@ -177,6 +273,39 @@ static void insert_table(GtkTextBuffer* buffer, GtkTextIter* it, const DirSummar
         gchar* more = g_strdup_printf("  … and %u more (showing %u)\n", s->entries->len - shown, shown);
         insert_tagged(buffer, it, more, "dir_dim", NULL);
         g_free(more);
+    }
+}
+
+/* Fill the buffer with the README alone (Markdown and Org rendered, other
+ * names as plain text); the overview is inserted above it afterwards. */
+static void render_readme(AppData* app, const DirPreviewJob* job) {
+    GtkTextBuffer* buffer = app->buffer;
+    if (job->readme_text == NULL) {
+        gtk_text_buffer_set_text(buffer, "", 0);
+        return;
+    }
+    gboolean truncated = job->readme_size > PREVIEW_BYTES;
+    switch (file_kind_from_name(job->summary->readme)) {
+    case FILE_KIND_MARKDOWN:
+        ensure_markdown_tags(buffer);
+        render_markdown_to_buffer(buffer, GTK_TEXT_VIEW(app->text_view), job->readme_text,
+                                  job->readme_path, truncated, job->summary->readme, job->readme_size);
+        break;
+    case FILE_KIND_ORG:
+        ensure_orgmode_tags(buffer);
+        render_orgmode_to_buffer(buffer, job->readme_text, job->readme_path, truncated,
+                                 job->summary->readme, job->readme_size, NULL, ORG_GLOBAL_SHOW_ALL);
+        break;
+    default: {
+        gtk_text_buffer_set_text(buffer, "", 0);
+        GtkTextIter end;
+        gtk_text_buffer_get_end_iter(buffer, &end);
+        insert_tagged(buffer, &end, job->readme_text, "dir_plain", NULL);
+        if (truncated) {
+            insert_tagged(buffer, &end, "\n…\n", "dir_dim", NULL);
+        }
+        break;
+    }
     }
 }
 
@@ -198,7 +327,7 @@ static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_d
     set_view_text_padding(app->text_view);
     app->viewer_match = -1;
     ensure_tags(buffer);
-    gtk_text_buffer_set_text(buffer, "", 0);
+    render_readme(app, job);
 
     gint64 now = g_get_real_time() / G_USEC_PER_SEC;
     const DirSummary* s = job->summary;
@@ -220,6 +349,13 @@ static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_d
         g_free(line);
         g_free(totals);
     }
+    if (job->branch != NULL) {
+        gchar* git = git_line(app, job);
+        gchar* line = g_strconcat(git, "\n", NULL);
+        insert_tagged(buffer, &it, line, "dir_dim", NULL);
+        g_free(line);
+        g_free(git);
+    }
     gtk_text_buffer_insert(buffer, &it, "\n", 1);
 
     if (job->unreadable) {
@@ -227,7 +363,12 @@ static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_d
     } else if (s->entries->len == 0) {
         insert_tagged(buffer, &it, "  (empty)\n", "dir_dim", NULL);
     } else {
-        insert_table(buffer, &it, s, now);
+        insert_table(buffer, &it, app, job, now);
+    }
+    if (job->readme_text != NULL) {
+        gchar* heading = g_strdup_printf("\n📖 %s\n", s->readme);
+        insert_tagged(buffer, &it, heading, "dir_section", NULL);
+        g_free(heading);
     }
 
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
