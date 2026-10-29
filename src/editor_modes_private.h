@@ -6,29 +6,7 @@
  * use editor_modes.h instead. */
 #include "editor_modes.h"
 
-/* Sub-modes for Vim */
-typedef enum {
-    VIM_SUB_NORMAL = 0,
-    VIM_SUB_INSERT,
-    VIM_SUB_VISUAL,
-    VIM_SUB_VISUAL_LINE,
-    VIM_SUB_COMMAND,
-    VIM_SUB_SEARCH_FWD,
-    VIM_SUB_SEARCH_BWD
-} VimSubMode;
-
-/* Pending operators for Vim */
-typedef enum {
-    VIM_OP_NONE = 0,
-    VIM_OP_DELETE,
-    VIM_OP_YANK,
-    VIM_OP_CHANGE,
-    VIM_OP_G,
-    VIM_OP_Z,
-    VIM_OP_REPLACE_CHAR,
-    VIM_OP_INDENT,
-    VIM_OP_UNINDENT
-} VimPendingOp;
+typedef struct VimEngine VimEngine;
 
 /* Emacs key prefix state */
 typedef enum {
@@ -137,13 +115,15 @@ typedef struct {
     GtkWidget* vim_cl_entry;
     GtkWidget* vim_cl_echo;
 
-    VimSubMode vim_submode;
-    VimPendingOp vim_pending_op;
-    gint vim_count;
-    gchar* vim_last_search;
-    gboolean vim_search_fwd;
-    GtkTextMark* vim_visual_start_mark;  /* visual mode anchor ('v' / 'V' position) */
-    GtkTextMark* vim_visual_cursor_mark; /* visual mode cursor (the selection covers it) */
+    GtkWidget* vim_sl_showcmd;
+    VimEngine* vim;                  /* the editing engine (vim_engine.h), NULL outside Vim mode */
+    gboolean vim_cl_setting;         /* the entry text is set by us, not typed */
+    gboolean vim_cl_ctrl_r;          /* Ctrl-R typed in the command line: a register follows */
+    gboolean vim_echo_sticky;        /* a multi-line listing is shown until the next key */
+    gchar* vim_hist_prefix;          /* text typed before browsing the history */
+    GCancellable* vim_clip_cancel;
+    GdkClipboard* vim_clipboard;     /* watched for text copied elsewhere ("+ register) */
+    gulong vim_clip_handler;
 
 } EditorModeState;
 
@@ -193,7 +173,16 @@ void emacs_close_minibuffer(EditorTab* tab);
 void emacs_block_cursor_set(EditorTab* tab, gboolean on);
 /* End the incremental search: accept leaves the cursor at the match */
 void emacs_isearch_exit(EditorTab* tab, gboolean accept);
-void vim_enter_submode(EditorTab* tab, VimSubMode submode);
+/* Vim mode (editor_vim.c): create the engine when the tab enters Vim mode,
+ * free it when it leaves */
+void vim_activate(EditorTab* tab);
+void vim_deactivate(EditorTab* tab);
+void vim_free(EditorTab* tab);
+/* Cursor of the Vim engine (the moving end of a Visual selection) */
 void vim_cursor_get(EditorTab* tab, GtkTextIter* it);
+/* Insert or Replace mode: typed text goes into the buffer */
+gboolean vim_is_inserting(EditorTab* tab);
+/* Ctrl keys the window binds that Vim needs (Ctrl-E, Ctrl-R) */
+gboolean vim_claims_key(EditorTab* tab, guint keyval, GdkModifierType state);
 
 #endif /* EDITOR_MODES_PRIVATE_H */

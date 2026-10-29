@@ -1212,7 +1212,7 @@ gboolean orgmode_editor_handle_key(AppData* app, EditorTab* tab, guint keyval, G
     gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
     gboolean alt = (state & GDK_ALT_MASK) != 0;
     gboolean shift = (state & GDK_SHIFT_MASK) != 0;
-    gboolean can_insert = !(tab->mode == EDITOR_MODE_VIM && st->vim_submode != VIM_SUB_INSERT);
+    gboolean can_insert = !(tab->mode == EDITOR_MODE_VIM && !vim_is_inserting(tab));
 
     if (st->org_prefix != ORG_PREFIX_NONE) return handle_prefix(tab, st, keyval, state);
 

@@ -25,6 +25,13 @@ docx:zip_reader
 org_time:
 org_doc:org_time
 org_table:org_doc
+vim_keys:
+vim_regex:
+vim_motion:
+vim_parse:vim_keys
+vim_ex:
+vim_engine:vim_engine_private,vim_parse,vim_keys,vim_motion,vim_regex
+vim_engine_ex:vim_engine_private,vim_ex,vim_keys,vim_motion,vim_regex
 diff_gutter:git_utils,line_diff
 explorer_row:
 layout_store:app_paths

@@ -98,6 +98,17 @@ static void editor_modes_ensure_css(void) {
         "  background: #0087af;\n"
         "  color: #ffffff;\n"
         "}\n"
+        ".vim-mode-replace {\n"
+        "  background: #d70000;\n"
+        "  color: #ffffff;\n"
+        "}\n"
+        ".vim-showcmd {\n"
+        "  color: #a0a0a0;\n"
+        "  margin-right: 12px;\n"
+        "}\n"
+        ".vim-message-error {\n"
+        "  color: #f44747;\n"
+        "}\n"
         ".vim-commandline {\n"
         "  background: #181818;\n"
         "  color: #ffffff;\n"
@@ -782,7 +793,7 @@ void editor_modes_free_tab(EditorTab* tab) {
     g_free(st->emacs_last_search);
     g_free(st->emacs_qr_find);
     g_free(st->emacs_qr_rep);
-    g_free(st->vim_last_search);
+    vim_free(tab);
     g_free(st->emacs_prompt_data);
     if (st->emacs_completions != NULL) g_ptr_array_unref(st->emacs_completions);
     if (st->emacs_is_steps != NULL) g_array_unref(st->emacs_is_steps);
@@ -802,6 +813,7 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
     gtk_widget_set_visible(st->np_box, FALSE);
     gtk_widget_set_visible(st->emacs_box, FALSE);
     gtk_widget_set_visible(st->vim_box, FALSE);
+    if (mode != EDITOR_MODE_VIM) vim_deactivate(tab);
 
     emacs_block_cursor_set(tab, mode == EDITOR_MODE_EMACS || mode == EDITOR_MODE_ORGMODE);
     /* Org highlighting follows Org editing (M-x org-mode / text-mode) */
@@ -820,8 +832,8 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
         }
     } else if (mode == EDITOR_MODE_VIM) {
         gtk_widget_set_visible(st->vim_box, TRUE);
-        vim_enter_submode(tab, VIM_SUB_NORMAL);
         set_view_monospace(tab->view, TRUE);
+        vim_activate(tab);
     } else {
         gtk_widget_set_visible(st->np_box, TRUE);
         gtk_text_view_set_overwrite(GTK_TEXT_VIEW(tab->view), FALSE);
@@ -917,6 +929,7 @@ gboolean editor_modes_claims_key(AppData* app, guint keyval, GdkModifierType sta
     EditorTab* tab = app->last_focused_editor;
     /* Only the tab whose view has the focus (the pointer may be stale otherwise) */
     if (focus == NULL || focus != tab->view || tab->mode_state == NULL) return FALSE;
+    if (tab->mode == EDITOR_MODE_VIM && vim_claims_key(tab, keyval, state)) return TRUE;
     return orgmode_editor_claims_key(tab, keyval, state);
 }
 

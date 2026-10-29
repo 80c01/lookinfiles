@@ -254,6 +254,21 @@ xdotool mousemove 1218 721 click 1   # pick "Vim"
 key Escape g g l v l l l j; shot vim_visual
 key V;                  shot vim_visual_line
 key Escape;             shot vim_visual_cancelled
+# Vim engine: block selection, pending operator, recording, Ex substitute,
+# incremental search, then undo back to the saved text (no [+])
+key ctrl+v j l;         shot vim_visual_block
+key Escape 2 d;         shot vim_operator_pending
+key Escape q a;         shot vim_recording
+key q
+key colon
+xdotool type --delay 60 "%s/Second/2nd/"
+                        shot vim_cmdline
+key Return;             shot vim_substituted
+key slash
+xdotool type --delay 60 "Task"
+                        shot vim_incsearch
+key Return;             shot vim_search_highlight
+key u;                  shot vim_undone
 key ctrl+w;             shot editor_closed
 xdotool mousemove 150 600 click 1    # focus the explorer (empty area)
 key ctrl+w;             shot last_editor_closed   # must show Preview, not Git Commits

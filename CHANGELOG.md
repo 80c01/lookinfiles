@@ -14,6 +14,17 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Vim editor mode rewritten on a Vim engine (`vim_engine`, unit-tested
+  without a display): the `["x][count]operator[count]motion` grammar with
+  every common motion and text object (`iw`, `ap`, `i(`, `a"`, `it`...),
+  registers (named, numbered, `"-`, `"_`, `"+` clipboard), marks and the
+  jump list, dot repeat, macros, Visual block (with block `I` / `A` / `c`),
+  Replace mode, Insert-mode keys (`Ctrl+R`, `Ctrl+N`, `Ctrl+O`...), one undo
+  step per command, Vim regular expressions with incremental and
+  highlighted search, and Ex commands on ranges (`:s`, `:g`, `:v`, `:d`,
+  `:m`, `:t`, `:j`, `:normal`, `:sort`, `:retab`, `:set`, `:reg`), with
+  command-line history and completion.
+
 - Org-mode: a yellow `RUNNING` TODO keyword, and timestamped state changes
   (`- State "RUNNING"    from "TODO"       [2026-10-29 Thu 19:48]`) for
   keywords marked `!` in `#+TODO:` (`/!` when leaving), into a `:LOGBOOK:`

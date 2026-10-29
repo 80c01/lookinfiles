@@ -349,20 +349,29 @@ GNU Emacs mode line and minibuffer (echo area).
 <details>
 <summary><strong>Vim mode</strong></summary>
 
-Vim status line with mode badge, ruler and command line (`:`, `/`, `?`).
+A Vim engine with the real grammar: `["x][count]operator[count]motion`,
+text objects, registers, marks, dot repeat, macros, Visual block and Ex
+commands on ranges. Status line with mode badge, pending keys, `recording
+@x` and ruler; command line (`:`, `/`, `?`) with history (`Up` / `Down`),
+`Tab` completion and `Ctrl+R` register insert.
 
 | Operation | Keys |
 |---|---|
-| Insert | `i` / `I` / `a` / `A` / `o` / `O`, `s` / `S` / `cc`, `C` / `c$`, `cw`; back to Normal `Esc` / `Ctrl+[`; in Insert `Ctrl+W` / `Ctrl+U` |
-| Delete and change | `x` / `X`, `dd`, `dw`, `d$` / `D`, `d0`, `dG`, `r<char>`, `~` |
-| Visual | `v` / `V`, then `d` / `x` cut, `y` yank, `c` change, `>` / `<` indent, `u` / `U` case |
-| Yank and put | `yy` / `Y`, `yw`, `p` / `P` |
-| Move | `h` `j` `k` `l`, `w` / `b` / `e`, `0` / `^` / `$`, `gg` / `G`, `[count]G`, `:<line>`, `Ctrl+F` / `Ctrl+B`, `Ctrl+D` / `Ctrl+U`, `zz` |
-| Find and replace | `/pattern`, `?pattern`, `n` / `N`, `*`, `:%s/old/new/g`, `:s/old/new/g` |
-| Format | `==`, `>>` / `<<`, `gq` (80 columns), `:center [width]`, `:right [width]`, `:left` |
-| Options | `:set number` / `:set nu`, `:set nonumber` / `:set nonu`, `:set number!` line numbers |
-| Undo and redo | `u`, `Ctrl+R` |
-| Save and quit | `:w`, `:w <file>`, `:saveas <file>`, `ZZ` / `:wq` / `:x`, `:q`, `:q!` |
+| Operators | `d` `c` `y` `>` `<` `=` `g~` `gu` `gU` `g?` `gq` `gw` + any motion or text object; doubled for lines (`dd`, `cc`, `>>`, `gUU`); `v` / `V` / `Ctrl+V` after the operator force the kind |
+| Move | `h` `j` `k` `l`, `w` `b` `e` `ge` (and `W` `B` `E` `gE`), `0` `^` `$` `g_` `\|`, `f` `t` `F` `T` `;` `,`, `gg` `G` `[count]%`, `%`, `{` `}`, `(` `)`, `H` `M` `L`, `+` `-` `_`, `[(` `[{` `])` `]}`, `[[` `]]` |
+| Text objects | `iw` `aw` `iW` `aW`, `is` `as`, `ip` `ap`, `i(` `a(` (`b`), `i[` `i{` (`B`) `i<`, `i"` `i'` `` i` ``, `it` `at` (tags), with counts |
+| Insert | `i` `a` `I` `A` `o` `O` `gi` `gI`, `s` `S` `C`, `R` Replace; `[count]` repeats the text; in Insert `Ctrl+W` `Ctrl+U` word / line, `Ctrl+T` `Ctrl+D` indent, `Ctrl+R x` register, `Ctrl+A` last insert, `Ctrl+N` / `Ctrl+P` complete, `Ctrl+E` / `Ctrl+Y` copy from below / above, `Ctrl+V` literal, `Ctrl+O` one command |
+| Edit | `x` `X` `D` `J` `gJ`, `r<char>` (`r<CR>` splits), `~`, `Ctrl+A` / `Ctrl+X` (decimal, hex, negative), `.` repeat the last change (with a new count) |
+| Yank and put | `y` `Y`, `p` `P` `gp` `gP`; registers `"a`–`"z` (`"A` appends), `"0` yank, `"1`–`"9` deletes, `"-` small delete, `"_` black hole, `"+` / `"*` system clipboard (also the default), `".` `":` `"/` `"%` |
+| Visual | `v` `V` `Ctrl+V`, `o` / `O` other end / corner, `gv` reselect, text objects extend; then any operator, `r`, `J`, `p` (replace), `I` / `A` / `c` / `$A` on every line of a block, `:` for `'<,'>`, `Ctrl+A` / `g Ctrl+A` |
+| Undo and redo | `u` / `Ctrl+R`: one whole command per step (an Insert session is one), `:undo`, `:redo` |
+| Marks and jumps | `m{a-z}`, `` `a `` / `'a`, ``` `` ``` / `''`, `` `[ `` `` `] `` `` `< `` `` `. ``, `Ctrl+O` / `Tab` jump list, `:marks`, `:jumps` |
+| Macros | `qa` … `q` record, `@a` run (with a count; stops at the first failure), `@@` again, `@:` repeat the last Ex command |
+| Search | `/` `?` (Vim regex: `\<` `\>` `\(` `\)` `\\|` `\{n,m}` `\zs` `\ze` `\v` `\c`), incremental with all matches highlighted and a `[n/total]` count, `n` `N`, `*` `#` `g*` `g#`, `gd`; `:noh` |
+| Ex commands | Ranges `%` `.` `$` `N` `'a` `'<,'>` `/pat/` `?pat?` `+N` `-N` `;`; `:s/pat/rep/[gine]` (`&` `\1` `\u` `\U` `\r` `~`), `:&` `:&&` `&` `g&`, `:g/pat/cmd` `:v`, `:d [x] [N]`, `:y`, `:pu`, `:m`, `:t` / `:co`, `:j[!]`, `:>` `:<`, `:normal`, `:sort [n i u] [!]`, `:retab`, `:center` / `:right` / `:left [width]`, `:k`, `:reg`, `:[N]` |
+| Options | `:set` `ignorecase` `smartcase` `hlsearch` `incsearch` `wrapscan` `expandtab` `autoindent` `shiftwidth` `tabstop` `textwidth` `clipboard`, `number`, `wrap`, `mode=vim\|emacs\|notepad` (`no` / `inv` / `!` / `?` / `+=`) |
+| Scroll | `zz` `zt` `zb` (`z.` `z<CR>` `z-`), `Ctrl+E` / `Ctrl+Y` lines, `Ctrl+D` / `Ctrl+U` half pages, `Ctrl+F` / `Ctrl+B` pages |
+| Files and tabs | `:w [file]`, `:saveas`, `:up`, `:wq` / `:x` / `ZZ`, `:q` / `:q!` / `ZQ`, `:e[!] [file]`, `gt` / `gT` / `:tabn` / `:tabp`, `Ctrl+G` / `g Ctrl+G` file and word count, `ga` / `g8` character code |
 
 </details>
 
@@ -403,7 +412,7 @@ The code lives in `src/`, one module per feature, in layers checked by
 
 | Layer | Modules |
 |---|---|
-| Foundation (no widgets, unit-tested) | `file_types`, `zip_reader`, `docx`, `git_utils`, `line_diff`, `pane_geometry`, `explorer_row`, `layout_store` |
+| Foundation (no widgets, unit-tested) | `file_types`, `zip_reader`, `docx`, `git_utils`, `line_diff`, `pane_geometry`, `explorer_row`, `layout_store`, `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex`, `vim_engine` |
 | Shared helpers | `diff_gutter`, `tab_drop`, `app_events`, `panels`, `fs_watch`, `remote_store`, `preview_summary`, `text_style`, `theme`, `icons`, `dialog`, `image_utils`, `explorer_tree`, `tree_nav`, `markdown`, `html`, `minimap` |
 | Features | `file_list`, `file_actions`, `bookmarks`, `notes`, `remote`, `viewer`, `orgmode`, `pdf`, `video`, `audio`, `git_tab`, `editor`, `editor_modes` (+ `editor_notepad`, `editor_emacs`, `editor_vim`, `editor_org`), `terminal`, `search` |
 | Window | `topbar`, `status_bar`, `sidebar`, `help`, `workspace`, `layouts`, `ui`, `main` |

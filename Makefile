@@ -70,7 +70,7 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_org_time test_org_doc test_org_table
+TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o
@@ -89,6 +89,11 @@ TEST_DEPS_test_docx = $(BUILD_DIR)/docx.o $(BUILD_DIR)/zip_reader.o
 TEST_DEPS_test_org_time = $(BUILD_DIR)/org_time.o
 TEST_DEPS_test_org_doc = $(BUILD_DIR)/org_doc.o $(BUILD_DIR)/org_time.o
 TEST_DEPS_test_org_table = $(BUILD_DIR)/org_table.o $(BUILD_DIR)/org_doc.o $(BUILD_DIR)/org_time.o
+VIM_OBJS = $(BUILD_DIR)/vim_engine.o $(BUILD_DIR)/vim_engine_ex.o $(BUILD_DIR)/vim_parse.o $(BUILD_DIR)/vim_motion.o $(BUILD_DIR)/vim_regex.o $(BUILD_DIR)/vim_ex.o $(BUILD_DIR)/vim_keys.o
+TEST_DEPS_test_vim_engine = $(VIM_OBJS)
+TEST_DEPS_test_vim_parse = $(BUILD_DIR)/vim_parse.o $(BUILD_DIR)/vim_keys.o
+TEST_DEPS_test_vim_regex = $(BUILD_DIR)/vim_regex.o $(BUILD_DIR)/vim_motion.o
+TEST_DEPS_test_vim_ex = $(BUILD_DIR)/vim_ex.o
 
 .SECONDEXPANSION:
 $(BUILD_DIR)/tests/%: tests/%.c $$(TEST_DEPS_%) | $(BUILD_DIR)

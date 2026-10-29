@@ -88,6 +88,20 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   dragged tab is dropped on, and the area it would take.
 - `dir_summary` — one directory level for the directory preview: entries
   (name, type, size, date), totals, sorting, relative dates, column padding.
+- `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex` — Vim pieces:
+  key codes and `<notation>` (keys are Unicode code points, special keys in
+  the private use area), the `["x][count]op[count]motion` grammar
+  (`vim_parse()`), motions and text objects on `GtkTextIter`, Vim patterns
+  translated to GRegex plus `:s` replacements and buffer search, Ex command
+  line parsing (ranges, abbreviations).
+- `vim_engine` (+ `vim_engine_ex.c`, internal `vim_engine_private.h`) — the
+  Vim editor on a `GtkTextBuffer`: modes, operators, registers, marks, dot
+  repeat, macros, Visual block, its own undo list (one step per command,
+  GTK's history merges adjacent edits), search and Ex commands. No widgets:
+  the host (`editor_vim`) implements `VimHost` (messages, command line
+  entry, scroll, clipboard, `:w` / `:q`). In Insert mode text keys are left
+  to the text view and recorded from the buffer signals. Tested in
+  `tests/test_vim_engine.c` by typing keys on a headless buffer.
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can
@@ -165,7 +179,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `editor` — editor tabs in the notebook(s): open, save, close, move, dedicated panel.
 - `editor_modes` — per-tab mode state, shared editing operations (align,
   format, case, indent, find/replace, goto line), tab label, status, key dispatch.
-  Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim`, and
+  Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim` (the
+  host of `vim_engine`: status line, command line, `VimHost` callbacks), and
   `editor_org` (Emacs Org-mode keys in tabs: maps keys to `org_doc` /
   `org_table` commands, applies only the changed lines as one undo step,
   folding with an invisible tag). `editor_modes_private.h` (state
