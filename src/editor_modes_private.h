@@ -102,6 +102,16 @@ typedef struct {
     gchar* emacs_qr_rep;
     gint emacs_qr_count;
     GtkTextMark* emacs_search_start_mark;
+    /* Incremental search (C-s / C-r): buffer offsets, the buffer does not
+     * change while searching */
+    GArray* emacs_is_steps;          /* EmacsIsearchStep history, popped by DEL */
+    gint emacs_is_origin;            /* cursor when the search started */
+    gint emacs_is_ms, emacs_is_me;   /* current match */
+    gboolean emacs_is_has;           /* a match is shown */
+    gboolean emacs_is_failing;       /* the last search found nothing */
+    gboolean emacs_is_wrapped;       /* searched again from the other end */
+    gboolean emacs_is_forward;
+    gboolean emacs_is_setting;       /* the entry text is being set by the search itself */
     EmacsPromptFunc emacs_prompt_cb; /* EMACS_MINI_CALLBACK */
     gchar* emacs_prompt_data;        /* owned, given to the callback */
     GPtrArray* emacs_completions;    /* Tab completion candidates (gchar*), or NULL */
@@ -172,6 +182,8 @@ void emacs_prompt(EditorTab* tab, const gchar* prompt, const gchar* initial,
 
 /* Mode state transitions used when switching modes */
 void emacs_close_minibuffer(EditorTab* tab);
+/* End the incremental search: accept leaves the cursor at the match */
+void emacs_isearch_exit(EditorTab* tab, gboolean accept);
 void vim_enter_submode(EditorTab* tab, VimSubMode submode);
 void vim_cursor_get(EditorTab* tab, GtkTextIter* it);
 

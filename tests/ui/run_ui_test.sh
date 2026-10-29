@@ -182,6 +182,18 @@ key alt+x
 xdotool type --delay 60 "org-cl"
 key Tab;                shot minibuffer_tab_completion
 key Escape;             shot minibuffer_quit
+# Incremental search: extends in place, fails, wraps, DEL undoes, C-g goes back
+key ctrl+s
+xdotool type --delay 80 "ap"
+                        shot isearch_typed
+key ctrl+s;             shot isearch_failing
+key ctrl+s;             shot isearch_wrapped
+key BackSpace BackSpace; shot isearch_backspace
+key ctrl+g;             shot isearch_failing_part_dropped
+key ctrl+g;             shot isearch_cancelled   # back where the search started
+key ctrl+s
+xdotool type --delay 80 "task"
+key Return;             shot isearch_accepted
 # C-SPC sets the mark, then C-f / C-n extend the region; C-g drops it
 key alt+comma           # M-<: beginning of buffer
 xdotool keydown ctrl key --delay 120 space f f f f f n keyup ctrl

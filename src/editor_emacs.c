@@ -12,8 +12,271 @@ void emacs_echo(EditorTab* tab, const gchar* msg) {
     }
 }
 
+/* ------------------------------------------------------------------------- */
+/* Incremental search (C-s / C-r), as in Emacs                               */
+/* ------------------------------------------------------------------------- */
+
+#define ISEARCH_TAG "emacs_isearch"
+#define ISEARCH_LAZY_TAG "emacs_isearch_lazy"
+#define ISEARCH_MAX_LAZY 10000
+
+typedef struct {
+    gchar* query;
+    gint ms, me;
+    gboolean has, failing, wrapped, forward;
+} EmacsIsearchStep;
+
+static gboolean is_isearch(EditorModeState* st) {
+    return st->emacs_mini_mode == EMACS_MINI_ISEARCH_FWD || st->emacs_mini_mode == EMACS_MINI_ISEARCH_BWD;
+}
+
+static void isearch_step_clear(gpointer data) {
+    g_free(((EmacsIsearchStep*)data)->query);
+}
+
+/* Case-insensitive unless the query has an upper-case letter */
+static GtkTextSearchFlags isearch_flags(const gchar* q) {
+    for (const gchar* p = q; *p != '\0'; p = g_utf8_next_char(p)) {
+        if (g_unichar_isupper(g_utf8_get_char(p))) return GTK_TEXT_SEARCH_TEXT_ONLY;
+    }
+    return GTK_TEXT_SEARCH_TEXT_ONLY | GTK_TEXT_SEARCH_CASE_INSENSITIVE;
+}
+
+static const gchar* isearch_query(EditorModeState* st) {
+    return gtk_editable_get_text(GTK_EDITABLE(st->emacs_mb_entry));
+}
+
+/* Search q from offset from; forward finds a match starting at or after it,
+ * backward one ending at or before it */
+static gboolean isearch_find(EditorTab* tab, const gchar* q, gint from, gboolean forward,
+                             gint* ms, gint* me) {
+    GtkTextIter it, s, e;
+    gtk_text_buffer_get_iter_at_offset(tab->buffer, &it, from);
+    gboolean found = forward
+        ? gtk_text_iter_forward_search(&it, q, isearch_flags(q), &s, &e, NULL)
+        : gtk_text_iter_backward_search(&it, q, isearch_flags(q), &s, &e, NULL);
+    if (!found) return FALSE;
+    *ms = gtk_text_iter_get_offset(&s);
+    *me = gtk_text_iter_get_offset(&e);
+    return TRUE;
+}
+
+static GtkTextTag* isearch_tag(GtkTextBuffer* b, const gchar* name, const gchar* bg) {
+    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(b);
+    GtkTextTag* t = gtk_text_tag_table_lookup(table, name);
+    if (t == NULL) t = gtk_text_buffer_create_tag(b, name, "background", bg, NULL);
+    /* Above the syntax highlighting and the selection-like tags */
+    gtk_text_tag_set_priority(t, gtk_text_tag_table_get_size(table) - 1);
+    return t;
+}
+
+static void isearch_clear_highlight(EditorTab* tab) {
+    GtkTextIter s, e;
+    gtk_text_buffer_get_bounds(tab->buffer, &s, &e);
+    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(tab->buffer);
+    GtkTextTag* t = gtk_text_tag_table_lookup(table, ISEARCH_TAG);
+    if (t != NULL) gtk_text_buffer_remove_tag(tab->buffer, t, &s, &e);
+    t = gtk_text_tag_table_lookup(table, ISEARCH_LAZY_TAG);
+    if (t != NULL) gtk_text_buffer_remove_tag(tab->buffer, t, &s, &e);
+}
+
+/* Show the search state: prompt, highlighted matches, match count, cursor */
+static void isearch_update(EditorTab* tab, EditorModeState* st) {
+    const gchar* q = isearch_query(st);
+    /* "Failing wrapped I-search backward:" */
+    gboolean failing = st->emacs_is_failing && q[0] != '\0';
+    gchar* prompt = g_strdup_printf("%s%s%s%s:", failing ? "Failing " : "",
+                                    st->emacs_is_wrapped ? (failing ? "wrapped " : "Wrapped ") : "",
+                                    "I-search",
+                                    st->emacs_is_forward ? "" : " backward");
+    gtk_label_set_text(GTK_LABEL(st->emacs_mb_prompt), prompt);
+    g_free(prompt);
+    /* The query this state belongs to: a typed character pushes it (DEL) */
+    g_object_set_data_full(G_OBJECT(st->emacs_mb_entry), "isearch-query", g_strdup(q), g_free);
+
+    isearch_clear_highlight(tab);
+    gint total = 0, index = 0;
+    if (q[0] != '\0') {
+        GtkTextTag* lazy = isearch_tag(tab->buffer, ISEARCH_LAZY_TAG, "#4b3a24");
+        GtkTextIter it, s, e;
+        gtk_text_buffer_get_start_iter(tab->buffer, &it);
+        while (total < ISEARCH_MAX_LAZY &&
+               gtk_text_iter_forward_search(&it, q, isearch_flags(q), &s, &e, NULL)) {
+            total++;
+            if (st->emacs_is_has && gtk_text_iter_get_offset(&s) <= st->emacs_is_ms) index = total;
+            gtk_text_buffer_apply_tag(tab->buffer, lazy, &s, &e);
+            if (gtk_text_iter_equal(&s, &e) && !gtk_text_iter_forward_char(&e)) break;
+            it = e;
+        }
+    }
+    GtkTextIter cur;
+    if (st->emacs_is_has) {
+        GtkTextIter s, e;
+        gtk_text_buffer_get_iter_at_offset(tab->buffer, &s, st->emacs_is_ms);
+        gtk_text_buffer_get_iter_at_offset(tab->buffer, &e, st->emacs_is_me);
+        gtk_text_buffer_apply_tag(tab->buffer, isearch_tag(tab->buffer, ISEARCH_TAG, "#a35c00"), &s, &e);
+        cur = st->emacs_is_forward ? e : s;
+    } else {
+        gtk_text_buffer_get_iter_at_offset(tab->buffer, &cur, st->emacs_is_origin);
+    }
+    gtk_text_buffer_place_cursor(tab->buffer, &cur);
+    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(tab->view), &cur, 0.15, FALSE, 0.0, 0.0);
+
+    gchar* hint = q[0] == '\0' ? g_strdup("")
+                  : st->emacs_is_failing ? g_strdup_printf("[?/%d%s]", total, total >= ISEARCH_MAX_LAZY ? "+" : "")
+                  : g_strdup_printf("[%d/%d%s]", index, total, total >= ISEARCH_MAX_LAZY ? "+" : "");
+    gtk_label_set_text(GTK_LABEL(st->emacs_mb_echo), hint);
+    gtk_widget_set_visible(st->emacs_mb_echo, hint[0] != '\0');
+    g_free(hint);
+}
+
+/* Remember the current state, for DEL */
+static void isearch_push(EditorModeState* st) {
+    EmacsIsearchStep step = {g_strdup(isearch_query(st)), st->emacs_is_ms, st->emacs_is_me,
+                             st->emacs_is_has, st->emacs_is_failing, st->emacs_is_wrapped,
+                             st->emacs_is_forward};
+    g_array_append_val(st->emacs_is_steps, step);
+}
+
+static void isearch_set_query(EditorModeState* st, const gchar* q) {
+    st->emacs_is_setting = TRUE;
+    gtk_editable_set_text(GTK_EDITABLE(st->emacs_mb_entry), q);
+    gtk_editable_set_position(GTK_EDITABLE(st->emacs_mb_entry), -1);
+    st->emacs_is_setting = FALSE;
+}
+
+static void isearch_start(EditorTab* tab, EditorModeState* st, gboolean forward);
+
+/* The query changed (typing, C-w): extend the match in place, or fail */
+static void isearch_query_changed(EditorTab* tab, EditorModeState* st) {
+    const gchar* q = isearch_query(st);
+    if (q[0] == '\0') {
+        st->emacs_is_has = FALSE;
+        st->emacs_is_failing = FALSE;
+        st->emacs_is_wrapped = FALSE;
+    } else if (!st->emacs_is_failing) {
+        gint from;
+        if (st->emacs_is_forward) {
+            from = st->emacs_is_has ? st->emacs_is_ms : st->emacs_is_origin;
+        } else {
+            gint end = gtk_text_buffer_get_char_count(tab->buffer);
+            from = st->emacs_is_has ? MIN(st->emacs_is_ms + (gint)g_utf8_strlen(q, -1), end)
+                                    : st->emacs_is_origin;
+        }
+        gint ms, me;
+        if (isearch_find(tab, q, from, st->emacs_is_forward, &ms, &me)) {
+            st->emacs_is_ms = ms;
+            st->emacs_is_me = me;
+            st->emacs_is_has = TRUE;
+        } else {
+            st->emacs_is_failing = TRUE;
+        }
+    }
+    isearch_update(tab, st);
+}
+
+/* C-s / C-r while searching: next match, change direction, wrap, or reuse
+ * the last search when the query is empty */
+static void isearch_repeat(EditorTab* tab, EditorModeState* st, gboolean forward) {
+    const gchar* q = isearch_query(st);
+    isearch_push(st);
+    if (q[0] == '\0') {
+        if (st->emacs_last_search == NULL || st->emacs_last_search[0] == '\0') {
+            g_array_set_size(st->emacs_is_steps, st->emacs_is_steps->len - 1);
+            return;
+        }
+        st->emacs_is_forward = forward;
+        isearch_set_query(st, st->emacs_last_search);
+        isearch_query_changed(tab, st);
+        return;
+    }
+    if (forward != st->emacs_is_forward) {
+        /* Reversing keeps the match: the cursor goes to its other end */
+        st->emacs_is_forward = forward;
+        isearch_update(tab, st);
+        return;
+    }
+    gint from;
+    if (st->emacs_is_failing) {
+        from = forward ? 0 : gtk_text_buffer_get_char_count(tab->buffer);
+        st->emacs_is_wrapped = TRUE;
+    } else if (st->emacs_is_has) {
+        from = forward ? st->emacs_is_me : st->emacs_is_ms;
+        if (st->emacs_is_ms == st->emacs_is_me) from += forward ? 1 : -1;
+    } else {
+        from = st->emacs_is_origin;
+    }
+    gint ms, me;
+    if (isearch_find(tab, q, from, forward, &ms, &me)) {
+        st->emacs_is_ms = ms;
+        st->emacs_is_me = me;
+        st->emacs_is_has = TRUE;
+        st->emacs_is_failing = FALSE;
+    } else {
+        st->emacs_is_failing = TRUE;
+    }
+    isearch_update(tab, st);
+}
+
+/* DEL: undo the last search step (a typed character or a C-s / C-r) */
+static void isearch_backspace(EditorTab* tab, EditorModeState* st) {
+    if (st->emacs_is_steps->len == 0) return;
+    EmacsIsearchStep* step = &g_array_index(st->emacs_is_steps, EmacsIsearchStep, st->emacs_is_steps->len - 1);
+    isearch_set_query(st, step->query);
+    st->emacs_is_ms = step->ms;
+    st->emacs_is_me = step->me;
+    st->emacs_is_has = step->has;
+    st->emacs_is_failing = step->failing;
+    st->emacs_is_wrapped = step->wrapped;
+    st->emacs_is_forward = step->forward;
+    g_array_set_size(st->emacs_is_steps, st->emacs_is_steps->len - 1);
+    isearch_update(tab, st);
+}
+
+/* C-w: add the rest of the word after the cursor to the query */
+static void isearch_yank_word(EditorTab* tab, EditorModeState* st) {
+    gint from = st->emacs_is_has ? st->emacs_is_me : st->emacs_is_origin;
+    GtkTextIter s, e;
+    gtk_text_buffer_get_iter_at_offset(tab->buffer, &s, from);
+    e = s;
+    if (!gtk_text_iter_forward_word_end(&e)) gtk_text_buffer_get_end_iter(tab->buffer, &e);
+    gchar* word = gtk_text_buffer_get_text(tab->buffer, &s, &e, FALSE);
+    if (word[0] != '\0') {
+        isearch_push(st);
+        gchar* q = g_strconcat(isearch_query(st), word, NULL);
+        isearch_set_query(st, q);
+        g_free(q);
+        isearch_query_changed(tab, st);
+    }
+    g_free(word);
+}
+
+static void isearch_start(EditorTab* tab, EditorModeState* st, gboolean forward) {
+    GtkTextIter it;
+    gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+    gtk_text_buffer_place_cursor(tab->buffer, &it); /* drop the selection */
+    st->emacs_mark_active = FALSE;
+    st->emacs_is_origin = gtk_text_iter_get_offset(&it);
+    st->emacs_is_has = FALSE;
+    st->emacs_is_failing = FALSE;
+    st->emacs_is_wrapped = FALSE;
+    st->emacs_is_forward = forward;
+    if (st->emacs_is_steps == NULL) {
+        st->emacs_is_steps = g_array_new(FALSE, TRUE, sizeof(EmacsIsearchStep));
+        g_array_set_clear_func(st->emacs_is_steps, isearch_step_clear);
+    }
+    g_array_set_size(st->emacs_is_steps, 0);
+    isearch_update(tab, st);
+}
+
+static void isearch_end(EditorTab* tab, EditorModeState* st) {
+    isearch_clear_highlight(tab);
+    if (st->emacs_is_steps != NULL) g_array_set_size(st->emacs_is_steps, 0);
+}
+
 void emacs_close_minibuffer(EditorTab* tab) {
     EditorModeState* st = (EditorModeState*)tab->mode_state;
+    if (is_isearch(st)) isearch_end(tab, st);
     st->emacs_mini_mode = EMACS_MINI_NONE;
     st->emacs_prefix = EMACS_PREFIX_NONE;
     st->emacs_prompt_cb = NULL;
@@ -95,13 +358,9 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
             break;
         }
         case EMACS_MINI_ISEARCH_FWD:
-        case EMACS_MINI_ISEARCH_BWD: {
-            g_free(st->emacs_last_search);
-            st->emacs_last_search = g_strdup(text);
-            emacs_echo(tab, "Search finished");
-            emacs_close_minibuffer(tab);
+        case EMACS_MINI_ISEARCH_BWD:
+            emacs_isearch_exit(tab, TRUE);
             break;
-        }
         case EMACS_MINI_WRITE_FILE: {
             if (text && text[0] != '\0') {
                 editor_save_tab_as((AppData*)tab->app, tab, text);
@@ -206,15 +465,21 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
 static void on_emacs_mb_entry_changed(GtkEditable* editable, gpointer user_data) {
     EditorTab* tab = (EditorTab*)user_data;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
+    (void)editable;
+    if (is_isearch(st)) {
+        /* A typed character: one search step */
+        if (!st->emacs_is_setting && st->emacs_is_steps != NULL) {
+            const gchar* prev = g_object_get_data(G_OBJECT(st->emacs_mb_entry), "isearch-query");
+            EmacsIsearchStep step = {g_strdup(prev != NULL ? prev : ""), st->emacs_is_ms, st->emacs_is_me,
+                                     st->emacs_is_has, st->emacs_is_failing, st->emacs_is_wrapped,
+                                     st->emacs_is_forward};
+            g_array_append_val(st->emacs_is_steps, step);
+            isearch_query_changed(tab, st);
+        }
+        return;
+    }
     if (st->emacs_mini_mode != EMACS_MINI_NONE) {
         gtk_widget_set_visible(st->emacs_mb_echo, FALSE); /* typing hides the completion list */
-    }
-    if (st->emacs_mini_mode == EMACS_MINI_ISEARCH_FWD || st->emacs_mini_mode == EMACS_MINI_ISEARCH_BWD) {
-        const gchar* q = gtk_editable_get_text(editable);
-        if (q && q[0] != '\0') {
-            gboolean fwd = (st->emacs_mini_mode == EMACS_MINI_ISEARCH_FWD);
-            editor_mode_find_next(tab, q, fwd, TRUE);
-        }
     }
 }
 
@@ -284,6 +549,107 @@ static void emacs_complete(EditorModeState* st) {
     g_ptr_array_unref(matches);
 }
 
+void emacs_isearch_exit(EditorTab* tab, gboolean accept) {
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    if (!is_isearch(st)) return;
+    const gchar* q = isearch_query(st);
+    if (accept) {
+        if (q[0] != '\0') {
+            g_free(st->emacs_last_search);
+            st->emacs_last_search = g_strdup(q);
+        }
+        /* The mark stays where the search started (C-x C-x / C-u C-SPC) */
+        GtkTextIter origin, cur;
+        gtk_text_buffer_get_iter_at_offset(tab->buffer, &origin, st->emacs_is_origin);
+        gtk_text_buffer_get_iter_at_mark(tab->buffer, &cur, gtk_text_buffer_get_insert(tab->buffer));
+        gboolean moved = !gtk_text_iter_equal(&origin, &cur);
+        if (moved) {
+            if (st->emacs_mark == NULL) {
+                st->emacs_mark = gtk_text_buffer_create_mark(tab->buffer, "emacs_mark", &origin, TRUE);
+            } else {
+                gtk_text_buffer_move_mark(tab->buffer, st->emacs_mark, &origin);
+            }
+        }
+        emacs_close_minibuffer(tab);
+        emacs_echo(tab, moved ? "Mark saved where search started" : "");
+    } else {
+        GtkTextIter origin;
+        gtk_text_buffer_get_iter_at_offset(tab->buffer, &origin, st->emacs_is_origin);
+        gtk_text_buffer_place_cursor(tab->buffer, &origin);
+        emacs_close_minibuffer(tab);
+        gtk_text_view_scroll_mark_onscreen(GTK_TEXT_VIEW(tab->view), gtk_text_buffer_get_insert(tab->buffer));
+        emacs_echo(tab, "Quit");
+    }
+}
+
+/* Keys while searching. Editing keys of the entry stay; C-s / C-r repeat,
+ * DEL undoes a step, C-w adds a word, RET accepts, C-g cancels, and any
+ * other command key ends the search and runs. */
+static gboolean isearch_key(EditorTab* tab, EditorModeState* st, guint keyval, GdkModifierType state) {
+    gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
+    gboolean alt = (state & GDK_ALT_MASK) != 0;
+    guint k = gdk_keyval_to_lower(keyval);
+    if ((keyval >= GDK_KEY_Shift_L && keyval <= GDK_KEY_Hyper_R) || keyval == GDK_KEY_ISO_Level3_Shift) {
+        return FALSE;
+    }
+    if (ctrl && k == GDK_KEY_s) {
+        isearch_repeat(tab, st, TRUE);
+        return TRUE;
+    }
+    if (ctrl && k == GDK_KEY_r) {
+        isearch_repeat(tab, st, FALSE);
+        return TRUE;
+    }
+    if (ctrl && k == GDK_KEY_w) {
+        isearch_yank_word(tab, st);
+        return TRUE;
+    }
+    if ((ctrl && k == GDK_KEY_g) || keyval == GDK_KEY_Escape) {
+        /* C-g first drops the part that fails, then cancels */
+        if (st->emacs_is_failing && isearch_query(st)[0] != '\0') {
+            while (st->emacs_is_steps->len > 0 && st->emacs_is_failing) isearch_backspace(tab, st);
+            if (!st->emacs_is_failing) return TRUE;
+        }
+        emacs_isearch_exit(tab, FALSE);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_BackSpace && !ctrl && !alt) {
+        isearch_backspace(tab, st);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) {
+        emacs_isearch_exit(tab, TRUE);
+        return TRUE;
+    }
+    gboolean motion = keyval == GDK_KEY_Left || keyval == GDK_KEY_Right || keyval == GDK_KEY_Up ||
+                      keyval == GDK_KEY_Down || keyval == GDK_KEY_Home || keyval == GDK_KEY_End ||
+                      keyval == GDK_KEY_Page_Up || keyval == GDK_KEY_Page_Down ||
+                      keyval == GDK_KEY_Tab || keyval == GDK_KEY_ISO_Left_Tab;
+    if (ctrl || alt || motion) {
+        /* Leave the search at the match, then run the key in the buffer */
+        emacs_isearch_exit(tab, TRUE);
+        if (!emacs_handle_key(tab, st, keyval, state) && motion) {
+            static const struct { guint key; GtkMovementStep step; gint count; } MOVES[] = {
+                {GDK_KEY_Left, GTK_MOVEMENT_VISUAL_POSITIONS, -1},
+                {GDK_KEY_Right, GTK_MOVEMENT_VISUAL_POSITIONS, 1},
+                {GDK_KEY_Up, GTK_MOVEMENT_DISPLAY_LINES, -1},
+                {GDK_KEY_Down, GTK_MOVEMENT_DISPLAY_LINES, 1},
+                {GDK_KEY_Home, GTK_MOVEMENT_DISPLAY_LINE_ENDS, -1},
+                {GDK_KEY_End, GTK_MOVEMENT_DISPLAY_LINE_ENDS, 1},
+                {GDK_KEY_Page_Up, GTK_MOVEMENT_PAGES, -1},
+                {GDK_KEY_Page_Down, GTK_MOVEMENT_PAGES, 1},
+            };
+            for (guint i = 0; i < G_N_ELEMENTS(MOVES); i++) {
+                if (MOVES[i].key == keyval) {
+                    g_signal_emit_by_name(tab->view, "move-cursor", MOVES[i].step, MOVES[i].count, FALSE);
+                }
+            }
+        }
+        return TRUE;
+    }
+    return FALSE; /* a character: the entry inserts it (one search step) */
+}
+
 /* Keys of the minibuffer entry: Tab completes (GTK would move the focus
  * away), C-g / Escape quit */
 static gboolean on_emacs_mb_key_press(GtkEventControllerKey* controller, guint keyval,
@@ -293,6 +659,7 @@ static gboolean on_emacs_mb_key_press(GtkEventControllerKey* controller, guint k
     EditorTab* tab = data;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
     gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
+    if (is_isearch(st)) return isearch_key(tab, st, keyval, state);
     if (keyval == GDK_KEY_Escape || (ctrl && (keyval == GDK_KEY_g || keyval == GDK_KEY_G))) {
         emacs_close_minibuffer(tab);
         emacs_echo(tab, "Quit");
@@ -684,12 +1051,11 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     }
 
     /* 6. Find & Replace (I-search / Query Replace) */
-    if (ctrl && (keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
-        emacs_open_minibuffer(tab, EMACS_MINI_ISEARCH_FWD, "I-search: ", "");
-        return TRUE;
-    }
-    if (ctrl && (keyval == GDK_KEY_r || keyval == GDK_KEY_R)) {
-        emacs_open_minibuffer(tab, EMACS_MINI_ISEARCH_BWD, "I-search backward: ", "");
+    if (ctrl && (keyval == GDK_KEY_s || keyval == GDK_KEY_S || keyval == GDK_KEY_r || keyval == GDK_KEY_R)) {
+        gboolean fwd = keyval == GDK_KEY_s || keyval == GDK_KEY_S;
+        emacs_open_minibuffer(tab, fwd ? EMACS_MINI_ISEARCH_FWD : EMACS_MINI_ISEARCH_BWD,
+                              fwd ? "I-search:" : "I-search backward:", "");
+        isearch_start(tab, st, fwd);
         return TRUE;
     }
     if (alt && (keyval == GDK_KEY_percent || (shift && keyval == GDK_KEY_5))) {

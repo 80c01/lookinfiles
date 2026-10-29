@@ -14,6 +14,13 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Emacs mode incremental search works like Emacs: the match grows in place
+  as you type, `C-s` / `C-r` move to the next / previous match and wrap
+  after a failing search, `DEL` undoes a step, `C-w` adds a word, `RET`
+  leaves the cursor at the match with the mark at the start point, `C-g`
+  goes back. Case-insensitive for lower-case queries; all matches are
+  highlighted with a match count. `Tab` completes in the minibuffer.
+
 - Org-mode editor rework, following Emacs Org-mode: three-state heading
   folding (also drawers and blocks) that survives edits and unfolds where the
   cursor goes; promote / demote and move headings and subtrees; new headings
