@@ -124,6 +124,13 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
     CREATE_TAG("md_list_bullet",
                "foreground", "#cccccc");
 
+    /* Disc / circle / square list markers, sized like VS Code's (the plain
+     * bullet glyph is much smaller) */
+    CREATE_TAG("md_list_disc",
+               "foreground", "#cccccc",
+               "scale", 0.62,
+               "rise", 1 * PANGO_SCALE);
+
     CREATE_TAG("md_list_task_done",
                "foreground", "#cccccc");
 
@@ -185,57 +192,40 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
 
     #undef CREATE_TAG
 
+    /* List items: the marker sits at the start of the line and a tab stop
+     * puts the text at a fixed position, so the first line and the wrapped
+     * lines start at the same x whatever the marker width (VS Code: 2em per
+     * level). md_li_*: left-margin = marker x, negative indent = hanging lines. */
     for (gint d = 0; d < 8; d++) {
         gchar tname[32];
-        gint base_margin = 18 + d * 20;
-
-        /* Unordered list item: bullet at base_margin, text & wrapped lines at base_margin + 14 */
-        g_snprintf(tname, sizeof(tname), "md_li_ul_d%d", d);
-        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
-            gtk_text_buffer_create_tag(buffer, tname,
-                "left-margin", base_margin,
-                "indent", -14,
-                NULL);
+        gint text_x = 34 + d * 24;
+        static const struct { const gchar* kind; gint marker_w; } KINDS[] = {
+            {"ul", 16}, {"ol", 24}, {"task", 20},
+        };
+        for (gsize k = 0; k < G_N_ELEMENTS(KINDS); k++) {
+            g_snprintf(tname, sizeof(tname), "md_li_%s_d%d", KINDS[k].kind, d);
+            if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+                gint w = KINDS[k].marker_w;
+                PangoTabArray* tabs = pango_tab_array_new_with_positions(1, TRUE, PANGO_TAB_LEFT, w);
+                gtk_text_buffer_create_tag(buffer, tname,
+                    "left-margin", text_x - w,
+                    "indent", -w,
+                    "tabs", tabs,
+                    NULL);
+                pango_tab_array_free(tabs);
+            }
         }
-
-        /* Ordered list item: number at base_margin, text & wrapped lines at base_margin + 19 */
-        g_snprintf(tname, sizeof(tname), "md_li_ol_d%d", d);
-        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
-            gtk_text_buffer_create_tag(buffer, tname,
-                "left-margin", base_margin,
-                "indent", -19,
-                NULL);
-        }
-
-        /* Task list item: checkbox at base_margin, text & wrapped lines at base_margin + 17 */
-        g_snprintf(tname, sizeof(tname), "md_li_task_d%d", d);
-        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
-            gtk_text_buffer_create_tag(buffer, tname,
-                "left-margin", base_margin,
-                "indent", -17,
-                NULL);
-        }
-
-        /* Continuation paragraph in unordered list: aligns with text at base_margin + 14 */
-        g_snprintf(tname, sizeof(tname), "md_li_p_ul_d%d", d);
-        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
-            gtk_text_buffer_create_tag(buffer, tname,
-                "left-margin", base_margin + 14,
-                "indent", 0,
-                "pixels-above-lines", 6,
-                "pixels-below-lines", 4,
-                NULL);
-        }
-
-        /* Continuation paragraph in ordered / task list: aligns with text at base_margin + 19 */
-        g_snprintf(tname, sizeof(tname), "md_li_p_ol_d%d", d);
-        if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
-            gtk_text_buffer_create_tag(buffer, tname,
-                "left-margin", base_margin + 19,
-                "indent", 0,
-                "pixels-above-lines", 6,
-                "pixels-below-lines", 4,
-                NULL);
+        /* Continuation paragraph of a list item: aligned with the item text */
+        for (gsize k = 0; k < 2; k++) {
+            g_snprintf(tname, sizeof(tname), "md_li_p_%s_d%d", k == 0 ? "ul" : "ol", d);
+            if (gtk_text_tag_table_lookup(tt, tname) == NULL) {
+                gtk_text_buffer_create_tag(buffer, tname,
+                    "left-margin", text_x,
+                    "indent", 0,
+                    "pixels-above-lines", 6,
+                    "pixels-below-lines", 4,
+                    NULL);
+            }
         }
     }
 }
@@ -563,10 +553,7 @@ static GPtrArray* split_table_row_cells(const gchar* row_str) {
             if (*rest == '\0') {
                 break;
             }
-            gchar* raw = g_string_free(cur, FALSE);
-            gchar* cleaned = clean_table_cell_text(raw);
-            g_free(raw);
-            g_ptr_array_add(cells, g_strstrip(cleaned));
+            g_ptr_array_add(cells, g_strstrip(g_string_free(cur, FALSE)));
             cur = g_string_new(NULL);
             p++;
             continue;
@@ -575,10 +562,7 @@ static GPtrArray* split_table_row_cells(const gchar* row_str) {
         p++;
     }
     if (cur->len > 0) {
-        gchar* raw = g_string_free(cur, FALSE);
-        gchar* cleaned = clean_table_cell_text(raw);
-        g_free(raw);
-        g_ptr_array_add(cells, g_strstrip(cleaned));
+        g_ptr_array_add(cells, g_strstrip(g_string_free(cur, FALSE)));
     } else {
         g_string_free(cur, TRUE);
     }
@@ -731,7 +715,122 @@ static const MdAlert MD_ALERTS[] = {
     {"[!CAUTION]", "Caution", "🛑", "md_alert_caution"},
 };
 
+/* Pango markup of a table cell's inline Markdown (code, bold, italic,
+ * strikethrough, links), escaped */
+static void cell_markup_append(GString* out, const gchar* text, gsize len) {
+    gsize i = 0;
+    while (i < len) {
+        const gchar* p = text + i;
+        const gchar* rest_end = text + len;
+        if (*p == '`') {
+            const gchar* e = memchr(p + 1, '`', rest_end - p - 1);
+            if (e != NULL) {
+                gchar* esc = g_markup_escape_text(p + 1, e - p - 1);
+                g_string_append_printf(out, "<span font_family=\"monospace\" size=\"92%%\" "
+                                            "foreground=\"#d7ba7d\" background=\"#2a2b2d\">%s</span>", esc);
+                g_free(esc);
+                i = (gsize)(e - text) + 1;
+                continue;
+            }
+        }
+        if ((p[0] == '*' || p[0] == '_' || p[0] == '~') && i + 1 < len && p[1] == p[0]) {
+            gchar marker[3] = { p[0], p[0], 0 };
+            const gchar* e = g_strstr_len(p + 2, rest_end - p - 2, marker);
+            if (e != NULL) {
+                const gchar* tag = (p[0] == '~') ? "s" : "b";
+                g_string_append_printf(out, "<%s>", tag);
+                cell_markup_append(out, p + 2, e - p - 2);
+                g_string_append_printf(out, "</%s>", tag);
+                i = (gsize)(e - text) + 2;
+                continue;
+            }
+        }
+        if (p[0] == '*' || p[0] == '_') {
+            const gchar* e = memchr(p + 1, p[0], rest_end - p - 1);
+            if (e != NULL && e > p + 1) {
+                g_string_append(out, "<i>");
+                cell_markup_append(out, p + 1, e - p - 1);
+                g_string_append(out, "</i>");
+                i = (gsize)(e - text) + 1;
+                continue;
+            }
+        }
+        if (p[0] == '[') {
+            const gchar* close = memchr(p, ']', rest_end - p);
+            if (close != NULL && close + 1 < rest_end && close[1] == '(') {
+                const gchar* paren = memchr(close, ')', rest_end - close);
+                if (paren != NULL) {
+                    g_string_append(out, "<span foreground=\"#3794ff\">");
+                    cell_markup_append(out, p + 1, close - p - 1);
+                    g_string_append(out, "</span>");
+                    i = (gsize)(paren - text) + 1;
+                    continue;
+                }
+            }
+        }
+        gint n = g_utf8_skip[*(const guchar*)p];
+        gchar* esc = g_markup_escape_text(p, n);
+        g_string_append(out, esc);
+        g_free(esc);
+        i += (gsize)n;
+    }
+}
+
+static gchar* cell_markup(const gchar* text) {
+    GString* out = g_string_new(NULL);
+    cell_markup_append(out, text, strlen(text));
+    return g_string_free(out, FALSE);
+}
+
+/* Column alignment from the separator row: ":--" left, "--:" right, ":-:" center */
+static gfloat cell_align(const gchar* sep_cell) {
+    gsize n = strlen(sep_cell);
+    gboolean left = (n > 0 && sep_cell[0] == ':');
+    gboolean right = (n > 0 && sep_cell[n - 1] == ':');
+    return (left && right) ? 0.5f : right ? 1.0f : 0.0f;
+}
+
+/* Table as a grid widget in the text (VS Code: no vertical borders, a line
+ * under the header, faint lines between rows; CSS in theme.c) */
+static void insert_table_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextIter* iter,
+                              GPtrArray* rows, GPtrArray* aligns, guint cols) {
+    GtkWidget* grid = gtk_grid_new();
+    gtk_widget_add_css_class(grid, "md-table");
+    for (guint r = 0; r < rows->len; r++) {
+        GPtrArray* cells = g_ptr_array_index(rows, r);
+        for (guint c = 0; c < cols; c++) {
+            const gchar* text = (c < cells->len) ? g_ptr_array_index(cells, c) : "";
+            gchar* markup = cell_markup(text);
+            GtkWidget* label = gtk_label_new(NULL);
+            gtk_label_set_markup(GTK_LABEL(label), markup);
+            g_free(markup);
+            gfloat align = (c < aligns->len) ? cell_align(g_ptr_array_index(aligns, c)) : 0.0f;
+            gtk_label_set_xalign(GTK_LABEL(label), align);
+            gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+            gtk_label_set_wrap_mode(GTK_LABEL(label), PANGO_WRAP_WORD_CHAR);
+            /* The text view gives anchored widgets their minimum size: ask for
+             * the cell's length (up to 30 chars) so short cells never wrap */
+            gchar* visible = clean_table_cell_text(text);
+            gtk_label_set_width_chars(GTK_LABEL(label), MIN((gint)g_utf8_strlen(visible, -1) + 1, 30)); /* +1: bold header */
+            g_free(visible);
+            gtk_label_set_max_width_chars(GTK_LABEL(label), 48);
+            gtk_label_set_selectable(GTK_LABEL(label), TRUE);
+            gtk_widget_set_focusable(label, FALSE);
+            gtk_widget_set_valign(label, GTK_ALIGN_FILL);
+            gtk_widget_add_css_class(label, r == 0 ? "md-th" : "md-td");
+            if (r > 1) {
+                gtk_widget_add_css_class(label, "md-td-sep");
+            }
+            gtk_grid_attach(GTK_GRID(grid), label, (gint)c, (gint)r, 1, 1);
+        }
+    }
+    GtkTextChildAnchor* anchor = gtk_text_buffer_create_child_anchor(buffer, iter);
+    gtk_text_view_add_child_at_anchor(view, grid, anchor);
+    gtk_text_buffer_insert(buffer, iter, "\n", 1);
+}
+
 void render_markdown_to_buffer(GtkTextBuffer* buffer,
+                               GtkTextView* view,
                                const gchar* markdown_text,
                                const gchar* doc_path,
                                gboolean is_preview,
@@ -913,6 +1012,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 last_was_li = FALSE;
                 GPtrArray* parsed_rows = g_ptr_array_new();
                 g_ptr_array_add(parsed_rows, split_table_row_cells(lines[i])); /* header */
+                GPtrArray* aligns = split_table_row_cells(lines[i + 1]);
                 i += 2; /* skip header and separator row */
                 while (i < num_lines) {
                     const gchar* r = lines[i];
@@ -930,7 +1030,18 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                     if (rc->len > max_cols) max_cols = rc->len;
                 }
 
-                if (max_cols > 0) {
+                if (max_cols > 0 && view != NULL) {
+                    insert_table_grid(buffer, view, &iter, parsed_rows, aligns, max_cols);
+                } else if (max_cols > 0) {
+                    /* No view (no widgets): text table with box-drawing borders */
+                    for (guint r = 0; r < num_rows; r++) {
+                        GPtrArray* rc = g_ptr_array_index(parsed_rows, r);
+                        for (guint c = 0; c < rc->len; c++) {
+                            gchar* cleaned = clean_table_cell_text(g_ptr_array_index(rc, c));
+                            g_free(g_ptr_array_index(rc, c));
+                            g_ptr_array_index(rc, c) = cleaned;
+                        }
+                    }
                     gint* col_widths = g_new0(gint, max_cols);
                     for (guint c = 0; c < max_cols; c++) col_widths[c] = 3;
 
@@ -1010,6 +1121,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                     g_ptr_array_unref(g_ptr_array_index(parsed_rows, r));
                 }
                 g_ptr_array_unref(parsed_rows);
+                g_ptr_array_unref(aligns);
                 prev_was_empty = FALSE;
                 continue;
             }
@@ -1036,7 +1148,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             GtkTextMark* lm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
 
             GtkTextMark* bm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            gtk_text_buffer_insert(buffer, &iter, done ? "☑ " : "☐ ", -1);
+            gtk_text_buffer_insert(buffer, &iter, done ? "☑\t" : "☐\t", -1);
             apply_tag_mark(buffer, done ? "md_list_task_done" : "md_list_task_todo", bm, &iter);
             gtk_text_buffer_delete_mark(buffer, bm);
 
@@ -1059,7 +1171,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
         /* Unordered list item: - , * , + */
         if ((item_trim[0] == '-' || item_trim[0] == '*' || item_trim[0] == '+') && item_trim[1] == ' ') {
             const gchar* list_text = item_trim + 2;
-            const gchar* bullet = (level % 3 == 0) ? "• " : (level % 3 == 1) ? "◦ " : "▪ ";
+            const gchar* bullet = (level % 3 == 0) ? "●" : (level % 3 == 1) ? "○" : "■";
 
             gchar tag_name[32];
             g_snprintf(tag_name, sizeof(tag_name), "md_li_ul_d%d", level);
@@ -1068,8 +1180,9 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
 
             GtkTextMark* bm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
             gtk_text_buffer_insert(buffer, &iter, bullet, -1);
-            apply_tag_mark(buffer, "md_list_bullet", bm, &iter);
+            apply_tag_mark(buffer, "md_list_disc", bm, &iter);
             gtk_text_buffer_delete_mark(buffer, bm);
+            gtk_text_buffer_insert(buffer, &iter, "\t", -1);
 
             render_inline_text(buffer, &iter, list_text, doc_dir);
 
@@ -1090,7 +1203,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             const gchar* odot = item_trim;
             while (isdigit((unsigned char)*odot)) odot++;
             if ((*odot == '.' || *odot == ')') && odot[1] == ' ') {
-                gchar* num_str = g_strndup(item_trim, odot - item_trim + 2);
+                gchar* num_str = g_strdup_printf("%.*s\t", (gint)(odot - item_trim + 1), item_trim);
                 const gchar* list_text = odot + 2;
 
                 gchar tag_name[32];

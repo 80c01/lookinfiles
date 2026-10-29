@@ -542,7 +542,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
     if (td->utf8_text != NULL) {
         if (td->is_md) {
             ensure_markdown_tags(app->buffer);
-            render_markdown_to_buffer(app->buffer, td->utf8_text, td->full,
+            render_markdown_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,
                                       td->preview, td->name, td->fsize);
         } else if (td->is_html) {
             ensure_html_tags(app->buffer);
