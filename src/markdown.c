@@ -18,6 +18,9 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
     CREATE_TAG("md_gap", /* blank line between blocks */
                "size-points", 8.0);
 
+    CREATE_TAG("md_block_gap", /* extra space around code panels */
+               "size-points", 7.0);
+
     CREATE_TAG("md_h1",
                "scale", 2.0,
                "weight", 600,
@@ -892,6 +895,8 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 g_string_append(code, lines[j]);
                 g_string_append_c(code, '\n');
             }
+            /* Space between the text and the panel, above and below */
+            insert_tagged(buffer, &iter, "\n", "md_block_gap");
             insert_tagged(buffer, &iter, " \n", "md_code_pad");
             gint code_start = gtk_text_iter_get_offset(&iter);
             insert_tagged(buffer, &iter, code->str, "md_code_block");
@@ -901,9 +906,10 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             (void)code_start;
 #endif
             insert_tagged(buffer, &iter, " \n", "md_code_pad");
+            insert_tagged(buffer, &iter, "\n", "md_block_gap");
             g_string_free(code, TRUE);
             i = j; /* closing fence (or end of text) */
-            prev_was_empty = FALSE;
+            prev_was_empty = TRUE; /* the gap replaces the blank line that follows */
             continue;
         }
 

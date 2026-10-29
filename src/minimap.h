@@ -3,8 +3,8 @@
 
 #include "app_types.h"
 
-gdouble minimap_line_height(GtkWidget* widget, GtkTextBuffer* buffer);
-void minimap_viewport(GtkTextView* view, gint* first, gint* last);
+/* Scaled drawing of text_view as displayed (wrapped lines, sizes, backgrounds,
+ * tables, images) with the visible range; cached in *cache */
 void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
                           GtkTextBuffer* buffer, GtkTextView* text_view,
                           cairo_surface_t** cache, gint* cache_w, gint* cache_h);

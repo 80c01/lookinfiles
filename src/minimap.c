@@ -1,70 +1,130 @@
 #include "minimap.h"
 
-/* Pixels per buffer line: fitted into widget with a ceiling for short files */
-gdouble minimap_line_height(GtkWidget* widget, GtkTextBuffer* buffer) {
-    gint lines = gtk_text_buffer_get_line_count(buffer);
-    if (widget == NULL || lines <= 0) {
-        return 0.0;
-    }
-    gint height = gtk_widget_get_height(widget);
-    if (height <= 0) {
-        return 0.0;
-    }
-    return MIN(10.0, (gdouble)height / lines);
-}
+/* The minimap is a scaled drawing of the text view as laid out on screen:
+ * wrapped lines, font sizes, line backgrounds (code panels, quotes), embedded
+ * widgets (tables) and images, not the raw lines of the buffer. */
 
-/* First and last line currently visible in the viewer */
-void minimap_viewport(GtkTextView* view, gint* first, gint* last) {
+/* Vertical scale: the whole content height fitted into the minimap, at most
+ * 1/4 (short documents are not blown up) */
+static gdouble minimap_scale(GtkWidget* minimap, GtkTextView* view) {
     GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
-    GtkTextBuffer* buf = gtk_text_view_get_buffer(view);
-    gint lines = gtk_text_buffer_get_line_count(buf);
-    if (vadj == NULL || lines <= 0) {
-        *first = 0;
-        *last = 0;
-        return;
+    gdouble upper = (vadj != NULL) ? gtk_adjustment_get_upper(vadj) : 0.0;
+    gint height = gtk_widget_get_height(minimap);
+    if (upper <= 0.0 || height <= 0) {
+        return 0.0;
     }
-    gdouble upper = gtk_adjustment_get_upper(vadj);
-    gdouble val = gtk_adjustment_get_value(vadj);
-    gdouble page = gtk_adjustment_get_page_size(vadj);
-    if (upper <= 0.0) {
-        *first = 0;
-        *last = lines - 1;
-        return;
-    }
-    *first = CLAMP((gint)((val / upper) * lines), 0, MAX(0, lines - 1));
-    *last = CLAMP((gint)(((val + page) / upper) * lines), *first, MAX(0, lines - 1));
+    return MIN((gdouble)height / upper, 0.25);
 }
 
-/* Character count and leading whitespace of one line */
-static void minimap_line_metrics(GtkTextBuffer* buffer, gint i, gint* length,
-                                 gint* leading) {
-    GtkTextIter s, e, p;
-    gtk_text_buffer_get_iter_at_line(buffer, &s, i);
-    e = s;
-    gtk_text_iter_forward_to_line_end(&e);
-    *length = gtk_text_iter_get_offset(&e) - gtk_text_iter_get_offset(&s);
-    p = s;
-    while (!gtk_text_iter_equal(&p, &e)) {
-        gunichar c = gtk_text_iter_get_char(&p);
-        if (c != ' ' && c != '\t') {
-            break;
+/* Colours applied at an iterator: text foreground and paragraph background
+ * (highest-priority tag wins) */
+static void tag_colors(const GtkTextIter* it, GdkRGBA* fg, gboolean* has_fg,
+                       GdkRGBA* bg, gboolean* has_bg) {
+    *has_fg = FALSE;
+    *has_bg = FALSE;
+    GSList* tags = gtk_text_iter_get_tags(it); /* ascending priority */
+    for (GSList* l = tags; l != NULL; l = l->next) {
+        gboolean fg_set = FALSE, bg_set = FALSE;
+        g_object_get(l->data, "foreground-set", &fg_set, "paragraph-background-set", &bg_set, NULL);
+        if (fg_set) {
+            GdkRGBA* c = NULL;
+            g_object_get(l->data, "foreground-rgba", &c, NULL);
+            if (c != NULL) {
+                *fg = *c;
+                *has_fg = TRUE;
+                gdk_rgba_free(c);
+            }
         }
-        gtk_text_iter_forward_char(&p);
+        if (bg_set) {
+            GdkRGBA* c = NULL;
+            g_object_get(l->data, "paragraph-background-rgba", &c, NULL);
+            if (c != NULL) {
+                *bg = *c;
+                *has_bg = TRUE;
+                gdk_rgba_free(c);
+            }
+        }
     }
-    *leading = gtk_text_iter_get_offset(&p) - gtk_text_iter_get_offset(&s);
+    g_slist_free(tags);
 }
 
-/* Draw the entire file into an offscreen image surface (cached) */
-void minimap_build_cache_for_buffer(GtkWidget* widget, GtkTextBuffer* buffer,
-                                    cairo_surface_t** cache, gint width, gint height) {
+/* One run of text (same tags) of a display line */
+static void draw_run(cairo_t* cc, PangoLayout* layout, GtkTextView* view, GtkTextIter* rs,
+                     GtkTextIter* re, gdouble sx, gdouble sy, gdouble font_scale) {
+    GdkRectangle loc;
+    gtk_text_view_get_iter_location(view, rs, &loc);
+
+    GtkTextChildAnchor* anchor = gtk_text_iter_get_child_anchor(rs);
+    GdkPaintable* paintable = gtk_text_iter_get_paintable(rs);
+    if (anchor != NULL || paintable != NULL) {
+        gint w = loc.width, h = loc.height;
+        if (anchor != NULL) {
+            guint n = 0;
+            GtkWidget** widgets = gtk_text_child_anchor_get_widgets(anchor, &n);
+            if (n > 0) {
+                w = gtk_widget_get_width(widgets[0]);
+                h = gtk_widget_get_height(widgets[0]);
+            }
+            g_free(widgets);
+        }
+        cairo_set_source_rgb(cc, 0.20, 0.21, 0.22); /* table / image block */
+        cairo_rectangle(cc, 2.0 + loc.x * sx, loc.y * sy, MAX(1.0, w * sx), MAX(1.0, h * sy));
+        cairo_fill(cc);
+        return;
+    }
+
+    gchar* text = gtk_text_iter_get_text(rs, re);
+    g_strdelimit(text, "\n\t", ' ');
+    if (g_strstrip(text)[0] == '\0') {
+        g_free(text);
+        return;
+    }
+    GdkRGBA fg, bg;
+    gboolean has_fg, has_bg;
+    tag_colors(rs, &fg, &has_fg, &bg, &has_bg);
+    if (has_fg) {
+        cairo_set_source_rgba(cc, fg.red, fg.green, fg.blue, 0.9);
+    } else {
+        cairo_set_source_rgba(cc, 0.80, 0.80, 0.80, 0.75);
+    }
+    /* Skip the leading spaces that were stripped: start where the text starts */
+    GtkTextIter first = *rs;
+    while (gtk_text_iter_compare(&first, re) < 0 && g_unichar_isspace(gtk_text_iter_get_char(&first))) {
+        gtk_text_iter_forward_char(&first);
+    }
+    gtk_text_view_get_iter_location(view, &first, &loc);
+    gdouble px = loc.height * font_scale;
+    if (px >= 2.5) {
+        PangoFontDescription* fd = pango_font_description_from_string("Sans");
+        pango_font_description_set_absolute_size(fd, px * 0.8 * PANGO_SCALE);
+        pango_layout_set_font_description(layout, fd);
+        pango_font_description_free(fd);
+        pango_layout_set_text(layout, text, -1);
+        cairo_move_to(cc, 2.0 + loc.x * sx, loc.y * sy + (loc.height * sy - px) / 2.0);
+        pango_cairo_show_layout(cc, layout);
+    } else {
+        GdkRectangle end_loc;
+        gtk_text_view_get_iter_location(view, re, &end_loc);
+        gdouble x2 = (end_loc.y == loc.y && end_loc.x > loc.x) ? end_loc.x
+                     : loc.x + g_utf8_strlen(text, -1) * loc.height * 0.5;
+        gdouble h = MAX(1.0, loc.height * sy * 0.45);
+        cairo_rectangle(cc, 2.0 + loc.x * sx, loc.y * sy + (loc.height * sy - h) / 2.0,
+                        MAX(1.0, (x2 - loc.x) * sx), h);
+        cairo_fill(cc);
+    }
+    g_free(text);
+}
+
+/* Draw the whole document into an offscreen image surface (cached) */
+static void minimap_build_cache(GtkWidget* widget, GtkTextBuffer* buffer, GtkTextView* view,
+                                cairo_surface_t** cache, gint width, gint height) {
     if (*cache != NULL) {
         cairo_surface_destroy(*cache);
         *cache = NULL;
     }
-    if (width <= 0 || height <= 0 || buffer == NULL) {
+    if (width <= 0 || height <= 0 || buffer == NULL || view == NULL) {
         return;
     }
-
     *cache = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     cairo_t* cc = cairo_create(*cache);
 
@@ -72,64 +132,103 @@ void minimap_build_cache_for_buffer(GtkWidget* widget, GtkTextBuffer* buffer,
     cairo_set_source_rgb(cc, 18.0 / 255.0, 19.0 / 255.0, 20.0 / 255.0);
     cairo_paint(cc);
 
-    gint lines = gtk_text_buffer_get_line_count(buffer);
-    if (lines <= 0) {
+    gdouble sy = minimap_scale(widget, view);
+    gint view_w = gtk_widget_get_width(GTK_WIDGET(view));
+    if (sy <= 0.0 || view_w <= 0) {
         cairo_destroy(cc);
         return;
     }
+    gdouble sx = (gdouble)(width - 4) / view_w;
+    gdouble font_scale = MIN(sx, sy);
+    PangoLayout* layout = pango_cairo_create_layout(cc);
 
-    gdouble mm = minimap_line_height(widget, buffer);
-    PangoLayout* layout = NULL;
-    if (mm >= 4.0) {
-        PangoFontDescription* fd =
-            pango_font_description_from_string("Monospace");
-        pango_font_description_set_absolute_size(
-            fd, (gint)(mm * 0.75 * PANGO_SCALE));
-        layout = pango_cairo_create_layout(cc);
-        pango_layout_set_font_description(layout, fd);
-        pango_font_description_free(fd);
+    gint lines = gtk_text_buffer_get_line_count(buffer);
+    gboolean detailed = (lines <= 5000); /* very long files: one bar per line */
+#ifdef HAVE_GSV
+    /* GtkSourceView colours only what has been shown: colour the whole text */
+    if (detailed && GTK_SOURCE_IS_BUFFER(buffer)) {
+        GtkTextIter hs, he;
+        gtk_text_buffer_get_bounds(buffer, &hs, &he);
+        gtk_source_buffer_ensure_highlight(GTK_SOURCE_BUFFER(buffer), &hs, &he);
     }
-
-    cairo_set_source_rgb(cc, 0.45, 0.45, 0.45);
+#endif
     for (gint i = 0; i < lines; i++) {
-        gdouble py = i * mm;
-        if (py >= height) {
+        GtkTextIter ls;
+        gtk_text_buffer_get_iter_at_line(buffer, &ls, i);
+        gint ly = 0, lh = 0;
+        gtk_text_view_get_line_yrange(view, &ls, &ly, &lh);
+        if (ly * sy > height) {
             break;
         }
 
-        if (layout != NULL) {
-            GtkTextIter s, e;
-            gtk_text_buffer_get_iter_at_line(buffer, &s, i);
-            e = s;
-            gtk_text_iter_forward_to_line_end(&e);
-            gchar* line_text = gtk_text_buffer_get_text(buffer, &s, &e, FALSE);
-            if (line_text != NULL) {
-                pango_layout_set_text(layout, line_text, -1);
-                cairo_move_to(cc, 2.0, py);
-                pango_cairo_show_layout(cc, layout);
-                g_free(line_text);
-            }
-        } else {
-            gint length = 0;
-            gint leading = 0;
-            minimap_line_metrics(buffer, i, &length, &leading);
-            if (length <= 0 || leading >= length) {
-                continue;
-            }
-            cairo_rectangle(cc, 1.0 + leading * mm * 0.5, py,
-                            MIN((length - leading) * mm * 0.6,
-                                width - 1.0 - leading * mm * 0.5),
-                            1.0);
+        GdkRGBA fg, bg;
+        gboolean has_fg, has_bg;
+        tag_colors(&ls, &fg, &has_fg, &bg, &has_bg);
+        if (has_bg) {
+            cairo_set_source_rgba(cc, bg.red, bg.green, bg.blue, bg.alpha);
+            cairo_rectangle(cc, 0, ly * sy, width, MAX(1.0, lh * sy));
             cairo_fill(cc);
         }
-    }
 
-    if (layout != NULL) {
-        g_object_unref(layout);
+        GtkTextIter lend = ls;
+        if (!gtk_text_iter_ends_line(&lend)) {
+            gtk_text_iter_forward_to_line_end(&lend);
+        }
+        if (!detailed) {
+            gint len = gtk_text_iter_get_line_offset(&lend);
+            if (len > 0) {
+                cairo_set_source_rgba(cc, 0.80, 0.80, 0.80, 0.6);
+                cairo_rectangle(cc, 2.0, ly * sy, MIN(len * 7.0 * sx, width - 2.0), MAX(1.0, lh * sy * 0.5));
+                cairo_fill(cc);
+            }
+            continue;
+        }
+
+        /* Each display (wrapped) line, run by run */
+        GtkTextIter ds = ls;
+        while (TRUE) {
+            GtkTextIter de = ds;
+            gtk_text_view_forward_display_line_end(view, &de);
+            if (gtk_text_iter_compare(&de, &lend) > 0 || gtk_text_iter_get_line(&de) != i) {
+                de = lend;
+            }
+            GtkTextIter rs = ds;
+            while (gtk_text_iter_compare(&rs, &de) < 0) {
+                GtkTextIter re = rs;
+                if (gtk_text_iter_get_child_anchor(&rs) != NULL || gtk_text_iter_get_paintable(&rs) != NULL) {
+                    gtk_text_iter_forward_char(&re);
+                } else {
+                    gtk_text_iter_forward_to_tag_toggle(&re, NULL);
+                    /* stop before an embedded object so it is drawn as a block */
+                    GtkTextIter scan = rs;
+                    while (gtk_text_iter_compare(&scan, &re) < 0 && gtk_text_iter_compare(&scan, &de) < 0) {
+                        if (gtk_text_iter_get_char(&scan) == 0xFFFC && !gtk_text_iter_equal(&scan, &rs)) {
+                            re = scan;
+                            break;
+                        }
+                        gtk_text_iter_forward_char(&scan);
+                    }
+                }
+                if (gtk_text_iter_compare(&re, &de) > 0) {
+                    re = de;
+                }
+                if (gtk_text_iter_equal(&re, &rs)) {
+                    break;
+                }
+                draw_run(cc, layout, view, &rs, &re, sx, sy, font_scale);
+                rs = re;
+            }
+            GtkTextIter next = ds;
+            if (!gtk_text_view_forward_display_line(view, &next) || gtk_text_iter_get_line(&next) != i ||
+                gtk_text_iter_compare(&next, &ds) <= 0) {
+                break;
+            }
+            ds = next;
+        }
     }
+    g_object_unref(layout);
     cairo_destroy(cc);
 }
-
 
 void minimap_invalidate(AppData* app) {
     if (app->mm_cache != NULL) {
@@ -183,8 +282,10 @@ void minimap_update_visibility(AppData* app) {
     }
 }
 
+/* Content height changed (layout done, panel resized): redraw the minimap */
 void on_minimap_adj_changed(GtkAdjustment* adjustment, gpointer data) {
     (void)adjustment;
+    minimap_invalidate((AppData*)data);
     minimap_update_visibility((AppData*)data);
 }
 
@@ -195,7 +296,7 @@ void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
         return;
     }
     if (*cache == NULL || *cache_w != width || *cache_h != height) {
-        minimap_build_cache_for_buffer(widget, buffer, cache, width, height);
+        minimap_build_cache(widget, buffer, text_view, cache, width, height);
         *cache_w = width;
         *cache_h = height;
     }
@@ -205,14 +306,13 @@ void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
         cairo_paint(cr);
     }
 
-    /* Slider: the view's visible range */
-    gdouble mm = minimap_line_height(widget, buffer);
-    if (mm > 0.0) {
-        gint first = 0, last = 0;
-        minimap_viewport(text_view, &first, &last);
+    /* Slider: the view's visible range, on the same scale as the drawing */
+    gdouble sy = minimap_scale(widget, text_view);
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(text_view));
+    if (sy > 0.0 && vadj != NULL) {
         cairo_set_source_rgba(cr, 0.47, 0.47, 0.47, 0.35);
-        cairo_rectangle(cr, 0, first * mm, width,
-                        (last - first + 1) * mm);
+        cairo_rectangle(cr, 0, gtk_adjustment_get_value(vadj) * sy, width,
+                        gtk_adjustment_get_page_size(vadj) * sy);
         cairo_fill(cr);
     }
 
@@ -232,21 +332,14 @@ void on_minimap_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, g
                          &app->mm_cache, &app->mm_cache_w, &app->mm_cache_h);
 }
 
+/* Click / drag at y in the minimap: center the view on that point */
 void minimap_goto_view(GtkWidget* minimap, GtkTextBuffer* buffer, GtkTextView* text_view, gdouble y) {
     if (minimap == NULL || buffer == NULL || text_view == NULL) {
         return;
     }
-    gdouble mm = minimap_line_height(minimap, buffer);
-    if (mm <= 0.0) {
-        return;
-    }
-    gint lines = gtk_text_buffer_get_line_count(buffer);
-    if (lines <= 0) {
-        return;
-    }
-
+    gdouble sy = minimap_scale(minimap, text_view);
     GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(text_view));
-    if (vadj == NULL) {
+    if (sy <= 0.0 || vadj == NULL) {
         return;
     }
 
@@ -259,36 +352,10 @@ void minimap_goto_view(GtkWidget* minimap, GtkTextBuffer* buffer, GtkTextView* t
         }
     }
 
-    gint line = CLAMP((gint)(y / mm), 0, lines - 1);
     gdouble min_v = gtk_adjustment_get_lower(vadj);
-    gdouble max_v = gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj);
-    if (max_v < min_v) {
-        max_v = min_v;
-    }
-
-    if (line <= 0) {
-        gtk_adjustment_set_value(vadj, min_v);
-        gtk_widget_queue_draw(minimap);
-        return;
-    }
-    if (line >= lines - 1) {
-        gtk_adjustment_set_value(vadj, max_v);
-        gtk_widget_queue_draw(minimap);
-        return;
-    }
-
-    GtkTextIter it;
-    gtk_text_buffer_get_iter_at_line(buffer, &it, line);
-    GdkRectangle iter_loc;
-    gtk_text_view_get_iter_location(text_view, &it, &iter_loc);
-
-    GdkRectangle vis;
-    gtk_text_view_get_visible_rect(text_view, &vis);
-
-    gdouble target_v = (gdouble)iter_loc.y - (vis.height - iter_loc.height) / 2.0;
-    target_v = CLAMP(target_v, min_v, max_v);
-
-    gtk_adjustment_set_value(vadj, target_v);
+    gdouble page = gtk_adjustment_get_page_size(vadj);
+    gdouble max_v = MAX(min_v, gtk_adjustment_get_upper(vadj) - page);
+    gtk_adjustment_set_value(vadj, CLAMP(y / sy - page / 2.0, min_v, max_v));
     gtk_widget_queue_draw(minimap);
 }
 
@@ -423,6 +490,7 @@ static void on_editor_minimap_adj_changed(GtkAdjustment* adjustment, gpointer da
     (void)adjustment;
     EditorTab* tab = (EditorTab*)data;
     if (tab != NULL) {
+        editor_minimap_invalidate(tab); /* content height changed: redraw */
         editor_minimap_update_visibility(tab);
     }
 }
