@@ -350,7 +350,7 @@ FMT="$FIX/formats"
 mkdir -p "$FMT"
 . "$ROOT/tests/ui/formats.sh"
 cd "$FMT" || exit 1
-"$BIN" -s 1280x800 "$FMT" > "$OUT/app_formats.log" 2>&1 &
+LOOKIN_DEBUG_PREVIEW=1 "$BIN" -s 1280x800 "$FMT" > "$OUT/app_formats.log" 2>&1 &
 APP=$!
 WIN=
 i=0
@@ -377,6 +377,9 @@ else
         APP=
     fi
 fi
+
+# Time from the selection to the preview on screen, per format
+grep '^preview ' "$OUT/app_formats.log" | sed 's/^/  /'
 
 # --- GTK warnings and criticals (the missing session bus is expected headless)
 cat "$OUT/app.log" "$OUT/app_formats.log" 2>/dev/null | grep -E 'WARNING|CRITICAL' |

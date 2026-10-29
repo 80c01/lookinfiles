@@ -12,6 +12,7 @@
     # Word document: headings, lists, table, image, link
     cp "$ROOT/tests/ui/fixtures/report.docx" 03-report.docx
     cp "$ROOT/tests/fixtures/preview/sample.csv" 04-orders.csv
+    cp "$ROOT/tests/fixtures/preview/sample.json" 05-package.json
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -23,4 +24,5 @@ format_scenario() {
     key j;              shot fmt_csv_table
     key m;              shot fmt_csv_raw
     key m
+    key j;              shot fmt_json_pretty
 }

@@ -1,0 +1,1 @@
+{"name":"lookin-demo","version":"1.4.0","private":true,"description":"Sample package manifest, minified on one line","scripts":{"build":"make","test":"make check"},"keywords":["files","preview","gtk"],"engines":{"node":">=18"},"contributors":[{"name":"Ada","email":"ada@example.org"},{"name":"Linus","email":"linus@example.org"}],"size":12.5,"license":null}

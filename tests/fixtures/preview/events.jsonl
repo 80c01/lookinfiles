@@ -1,0 +1,3 @@
+{"time": "2026-10-29T10:00:00Z", "level": "info", "msg": "started"}
+{"time": "2026-10-29T10:00:02Z", "level": "warn", "msg": "slow disk", "ms": 1200}
+{"time": "2026-10-29T10:00:05Z", "level": "error", "msg": "failed", "code": 500}

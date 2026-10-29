@@ -432,6 +432,7 @@ typedef struct {
     gchar* utf8_text;
     PreviewDoc* doc;       /* structured preview (preview_formats) or hex dump */
     gchar* error_msg;
+    gint64 start_us;       /* selection time (LOOKIN_DEBUG_PREVIEW timings) */
 } TextPreviewTaskData;
 
 static void text_preview_task_data_free(gpointer data) {
@@ -599,6 +600,17 @@ static void show_media_preview(AppData* app, FileKind kind, const gchar* name, c
     }
 }
 
+static void show_text_preview(TextPreviewTaskData* td);
+
+/* LOOKIN_DEBUG_PREVIEW=1: time from the selection to the preview on screen */
+static gboolean debug_preview_timings(void) {
+    static gint enabled = -1;
+    if (enabled < 0) {
+        enabled = g_getenv("LOOKIN_DEBUG_PREVIEW") != NULL;
+    }
+    return enabled;
+}
+
 static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
                                   gpointer user_data) {
     (void)source_object;
@@ -611,7 +623,18 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         cancellable != td->app->preview_cancellable) {
         return;
     }
+    gint64 ready_us = g_get_monotonic_time();
+    show_text_preview(td);
+    if (debug_preview_timings()) {
+        gint64 end_us = g_get_monotonic_time();
+        g_printerr("preview %s [%s]: %.1f ms (worker %.1f ms, display %.1f ms)\n", td->name,
+                   file_kind_label(td->kind) != NULL ? file_kind_label(td->kind) : "Text",
+                   (end_us - td->start_us) / 1000.0, (ready_us - td->start_us) / 1000.0,
+                   (end_us - ready_us) / 1000.0);
+    }
+}
 
+static void show_text_preview(TextPreviewTaskData* td) {
     AppData* app = td->app;
 
     if (g_strcmp0(td->full, app->viewed_path) == 0 &&
@@ -730,6 +753,7 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     td->name = g_strdup(name);
     td->full = g_strdup(full);
     td->render_raw = app->render_raw;
+    td->start_us = g_get_monotonic_time();
     if (g_strcmp0(full, app->viewed_path) != 0) {
         /* Provisional kind until the content is read */
         app->viewed_kind = file_kind_from_name(name);

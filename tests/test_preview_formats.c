@@ -81,6 +81,13 @@ static void test_csv(void) {
     g_assert_true(doc->monospace);
 }
 
+static void test_json(void) {
+    g_autoptr(PreviewDoc) doc = build_fixture("sample.json", FILE_KIND_JSON);
+    g_assert_true(g_str_has_prefix(doc->text->str, "Object · 10 keys\n\n{\n  \"name\": \"lookin-demo\",\n"));
+    g_autoptr(PreviewDoc) lines = build_fixture("events.jsonl", FILE_KIND_JSON);
+    g_assert_true(g_str_has_prefix(lines->text->str, "JSON Lines · 3 records\n"));
+}
+
 static void test_damaged_document(void) {
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
@@ -104,5 +111,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_formats/word_document", test_word_document);
     g_test_add_func("/preview_formats/damaged_document", test_damaged_document);
     g_test_add_func("/preview_formats/csv", test_csv);
+    g_test_add_func("/preview_formats/json", test_json);
     return g_test_run();
 }

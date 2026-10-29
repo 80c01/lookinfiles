@@ -8,6 +8,7 @@
 #include "docx.h"
 #include "elf_info.h"
 #include "hex_dump.h"
+#include "json_view.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
                                         GError** error);
@@ -41,6 +42,19 @@ static void note_truncated_text(PreviewDoc* doc, const PreviewInput* in) {
         g_free(note);
         g_free(total);
         g_free(shown);
+    }
+}
+
+/* Append the text and spans of src to doc */
+static void append_doc(PreviewDoc* doc, const PreviewDoc* src) {
+    gint base = preview_doc_offset(doc);
+    preview_doc_append_len(doc, src->text->str, (gssize)src->text->len);
+    for (guint i = 0; i < src->spans->len; i++) {
+        const PreviewSpan* span = &g_array_index(src->spans, PreviewSpan, i);
+        if (span->style == PREVIEW_STYLE_FONT) {
+            continue;
+        }
+        preview_doc_add_span(doc, base + span->start, base + span->end, span->style);
     }
 }
 
@@ -94,6 +108,37 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     if (data->n_cols > TABLE_MAX_COLS) {
         preview_doc_note(doc, "Showing the first 100 columns.");
     }
+    return doc;
+}
+
+/* --- JSON --- */
+
+static PreviewDoc* build_json(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    JsonViewInfo info;
+    if (!json_view_append(body, in->text, in->text_len, &info, error)) {
+        return NULL;
+    }
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* count = format_count(info.lines ? info.n_values : info.n_root_items);
+    if (info.lines) {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "JSON Lines · %s records\n", count);
+    } else if (info.root == '{') {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "Object · %s %s\n", count,
+                            info.n_root_items == 1 ? "key" : "keys");
+    } else if (info.root == '[') {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "Array · %s %s\n", count,
+                            info.n_root_items == 1 ? "item" : "items");
+    }
+    g_free(count);
+    note_truncated_text(doc, in);
+    if (doc->text->len > 0) {
+        preview_doc_append_len(doc, "\n", 1);
+    }
+    append_doc(doc, body);
     return doc;
 }
 
@@ -167,6 +212,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_document;
     case FILE_KIND_CSV:
         return build_csv;
+    case FILE_KIND_JSON:
+        return build_json;
     default:
         return NULL;
     }
