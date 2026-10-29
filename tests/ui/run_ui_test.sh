@@ -164,6 +164,8 @@ xdotool mousemove 508 50 click 1     # Git Commits tab
   GIT_AUTHOR_DATE="2000-01-02T00:00:00Z" GIT_COMMITTER_DATE="2000-01-02T00:00:00Z" \
       git -c user.email=ui@test -c user.name=ui commit -qm "external commit" )
 sleep 3;                shot git_tab_after_commit
+xdotool mousemove 420 120 click 1   # older commit: its diff replaces the newest one
+                        shot git_older_commit
 key ctrl+t; sleep 1;    shot terminal
 key ctrl+q
 

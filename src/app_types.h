@@ -236,8 +236,9 @@ typedef struct {
     GtkWidget* git_tab_box;       /* Box widget container for the Git tab */
     GtkWidget* git_tab_label;     /* Label widget for Git tab header */
     GtkWidget* git_paned;         /* Paned separating commit list and commit details */
-    GtkListStore* git_store;      /* Tree model for commit list */
-    GtkWidget* git_tree_view;     /* Tree view displaying commits */
+    GListStore* git_store;        /* commit list (GitCommit items, see git_tab.c) */
+    GtkSingleSelection* git_selection; /* selection over git_store */
+    GtkWidget* git_list_view;     /* GtkColumnView displaying commits */
     GtkWidget* git_header_label;  /* Summary header of the selected commit */
     GtkWidget* git_detail_view;   /* Text view for git diff / commit details */
     GtkTextBuffer* git_detail_buf;/* Buffer for git diff / commit details */

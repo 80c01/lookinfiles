@@ -5,15 +5,6 @@
 #include "git_utils.h"
 #include <string.h>
 
-enum {
-    GIT_COL_HASH = 0,
-    GIT_COL_SHORT_HASH,
-    GIT_COL_SUBJECT,
-    GIT_COL_AUTHOR,
-    GIT_COL_DATE,
-    GIT_COL_COUNT
-};
-
 typedef struct {
     gchar* hash;
     gchar* short_hash;
@@ -31,6 +22,46 @@ static void git_commit_info_free(gpointer data) {
     g_free(c->author);
     g_free(c->date);
     g_free(c);
+}
+
+/* One row of the commit list (item of app->git_store) */
+#define GIT_TYPE_COMMIT (git_commit_get_type())
+G_DECLARE_FINAL_TYPE(GitCommit, git_commit, GIT, COMMIT, GObject)
+
+struct _GitCommit {
+    GObject parent_instance;
+    GitCommitInfo* info; /* owned */
+};
+
+G_DEFINE_FINAL_TYPE(GitCommit, git_commit, G_TYPE_OBJECT)
+
+static void git_commit_finalize(GObject* object) {
+    git_commit_info_free(GIT_COMMIT(object)->info);
+    G_OBJECT_CLASS(git_commit_parent_class)->finalize(object);
+}
+
+static void git_commit_class_init(GitCommitClass* klass) {
+    G_OBJECT_CLASS(klass)->finalize = git_commit_finalize;
+}
+
+static void git_commit_init(GitCommit* self) {
+    (void)self;
+}
+
+/* Takes ownership of info */
+static GitCommit* git_commit_new(GitCommitInfo* info) {
+    GitCommit* self = g_object_new(GIT_TYPE_COMMIT, NULL);
+    self->info = info;
+    return self;
+}
+
+/* Commit at position i of the list, NULL if out of range (borrowed) */
+static GitCommitInfo* git_commit_at(AppData* app, guint i) {
+    GitCommit* c = g_list_model_get_item(G_LIST_MODEL(app->git_store), i);
+    if (c == NULL) return NULL;
+    GitCommitInfo* info = c->info;
+    g_object_unref(c); /* the store keeps it alive */
+    return info;
 }
 
 typedef struct {
@@ -241,36 +272,20 @@ static void on_git_show_ready(GObject* source_object, GAsyncResult* res, gpointe
     }
 }
 
-static void on_git_selection_changed(GtkTreeSelection* selection, gpointer user_data) {
+static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* pspec, gpointer user_data) {
+    (void)pspec;
     AppData* app = (AppData*)user_data;
     if (app == NULL || app->git_store == NULL || app->git_current_root == NULL) return;
 
-    GtkTreeModel* model = NULL;
-    GtkTreeIter iter;
-    if (!gtk_tree_selection_get_selected(selection, &model, &iter)) {
+    GitCommit* item = gtk_single_selection_get_selected_item(selection);
+    if (item == NULL || item->info == NULL || item->info->hash == NULL) {
         return;
     }
-
-    gchar* hash = NULL;
-    gchar* short_hash = NULL;
-    gchar* subject = NULL;
-    gchar* author = NULL;
-    gchar* date = NULL;
-
-    gtk_tree_model_get(model, &iter,
-                       GIT_COL_HASH, &hash,
-                       GIT_COL_SHORT_HASH, &short_hash,
-                       GIT_COL_SUBJECT, &subject,
-                       GIT_COL_AUTHOR, &author,
-                       GIT_COL_DATE, &date, -1);
-
-    if (hash == NULL) {
-        g_free(short_hash);
-        g_free(subject);
-        g_free(author);
-        g_free(date);
-        return;
-    }
+    const gchar* hash = item->info->hash;
+    const gchar* short_hash = item->info->short_hash;
+    const gchar* subject = item->info->subject;
+    const gchar* author = item->info->author;
+    const gchar* date = item->info->date;
 
     g_free(app->git_selected_hash);
     app->git_selected_hash = g_strdup(hash);
@@ -294,12 +309,6 @@ static void on_git_selection_changed(GtkTreeSelection* selection, gpointer user_
     g_task_set_task_data(task, td, git_show_task_data_free);
     g_task_run_in_thread(task, git_show_thread_func);
     g_object_unref(task);
-
-    g_free(hash);
-    g_free(short_hash);
-    g_free(subject);
-    g_free(author);
-    g_free(date);
 }
 
 static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer user_data) {
@@ -311,63 +320,44 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
 
     AppData* app = td->app;
 
-    GtkTreeSelection* sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(app->git_tree_view));
-    if (sel != NULL) {
-        g_signal_handlers_block_by_func(sel, (gpointer)on_git_selection_changed, app);
-    }
+    GtkSingleSelection* sel = app->git_selection;
+    g_signal_handlers_block_by_func(sel, (gpointer)on_git_selection_changed, app);
 
     /* Follow the newest commit unless an older one was selected on purpose */
     gboolean follow_head = TRUE;
-    GtkTreeIter old_first;
-    if (app->git_selected_hash != NULL &&
-        gtk_tree_model_get_iter_first(GTK_TREE_MODEL(app->git_store), &old_first)) {
-        gchar* old_head = NULL;
-        gtk_tree_model_get(GTK_TREE_MODEL(app->git_store), &old_first, GIT_COL_HASH, &old_head, -1);
-        follow_head = (g_strcmp0(old_head, app->git_selected_hash) == 0);
-        g_free(old_head);
+    GitCommitInfo* old_first = git_commit_at(app, 0);
+    if (app->git_selected_hash != NULL && old_first != NULL) {
+        follow_head = (g_strcmp0(old_first->hash, app->git_selected_hash) == 0);
     }
 
-    gtk_list_store_clear(app->git_store);
-
+    g_list_store_remove_all(app->git_store);
     if (td->commits != NULL) {
+        /* The store takes the commits over */
+        g_ptr_array_set_free_func(td->commits, NULL);
         for (guint i = 0; i < td->commits->len; i++) {
-            GitCommitInfo* ci = (GitCommitInfo*)g_ptr_array_index(td->commits, i);
-            GtkTreeIter iter;
-            gtk_list_store_append(app->git_store, &iter);
-            gtk_list_store_set(app->git_store, &iter,
-                               GIT_COL_HASH, ci->hash,
-                               GIT_COL_SHORT_HASH, ci->short_hash,
-                               GIT_COL_SUBJECT, ci->subject,
-                               GIT_COL_AUTHOR, ci->author,
-                               GIT_COL_DATE, ci->date, -1);
+            GitCommit* item = git_commit_new(g_ptr_array_index(td->commits, i));
+            g_list_store_append(app->git_store, item);
+            g_object_unref(item);
         }
+        g_ptr_array_set_size(td->commits, 0);
     }
+    gtk_single_selection_set_selected(sel, GTK_INVALID_LIST_POSITION);
 
-    if (sel != NULL) {
-        g_signal_handlers_unblock_by_func(sel, (gpointer)on_git_selection_changed, app);
-    }
+    g_signal_handlers_unblock_by_func(sel, (gpointer)on_git_selection_changed, app);
 
     /* Select the newest commit, or keep an older commit the user selected */
-    GtkTreeIter first_iter;
-    if (gtk_tree_model_get_iter_first(GTK_TREE_MODEL(app->git_store), &first_iter)) {
-        GtkTreeIter target = first_iter;
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(app->git_store));
+    if (n > 0) {
+        guint target = 0;
         if (!follow_head && app->git_selected_hash != NULL) {
-            GtkTreeIter it = first_iter;
-            do {
-                gchar* hash = NULL;
-                gtk_tree_model_get(GTK_TREE_MODEL(app->git_store), &it, GIT_COL_HASH, &hash, -1);
-                gboolean match = (g_strcmp0(hash, app->git_selected_hash) == 0);
-                g_free(hash);
-                if (match) {
-                    target = it;
+            for (guint i = 0; i < n; i++) {
+                if (g_strcmp0(git_commit_at(app, i)->hash, app->git_selected_hash) == 0) {
+                    target = i;
                     break;
                 }
-            } while (gtk_tree_model_iter_next(GTK_TREE_MODEL(app->git_store), &it));
+            }
         }
-        if (sel != NULL) {
-            gtk_tree_selection_select_iter(sel, &target);
-            on_git_selection_changed(sel, app);
-        }
+        gtk_single_selection_set_selected(sel, target); /* shows its diff */
     } else {
         if (app->git_header_label != NULL) {
             gtk_label_set_text(GTK_LABEL(app->git_header_label), "No commits in this repository.");
@@ -433,63 +423,59 @@ void git_tab_update(AppData* app, const gchar* dir) {
     g_object_unref(task);
 }
 
+/* Column cells: a label showing one GitCommitInfo string field */
+static void on_git_cell_setup(GtkSignalListItemFactory* factory, GtkListItem* item, gpointer data) {
+    (void)factory;
+    GtkWidget* label = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_widget_add_css_class(label, (const gchar*)data);
+    if (g_strcmp0((const gchar*)data, "git-subject") == 0) {
+        gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+    }
+    gtk_list_item_set_child(item, label);
+}
+
+static void on_git_cell_bind(GtkSignalListItemFactory* factory, GtkListItem* item, gpointer data) {
+    (void)data;
+    GitCommit* commit = gtk_list_item_get_item(item);
+    gsize offset = GPOINTER_TO_SIZE(g_object_get_data(G_OBJECT(factory), "field-offset"));
+    const gchar* text = (commit != NULL && commit->info != NULL)
+                            ? G_STRUCT_MEMBER(const gchar*, commit->info, offset) : NULL;
+    gtk_label_set_text(GTK_LABEL(gtk_list_item_get_child(item)), text != NULL ? text : "");
+}
+
+static void git_add_column(GtkWidget* view, const gchar* title, gsize field_offset,
+                           const gchar* css_class, gboolean expand) {
+    GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
+    g_object_set_data(G_OBJECT(factory), "field-offset", GSIZE_TO_POINTER(field_offset));
+    g_signal_connect(factory, "setup", G_CALLBACK(on_git_cell_setup), (gpointer)css_class);
+    g_signal_connect(factory, "bind", G_CALLBACK(on_git_cell_bind), NULL);
+    GtkColumnViewColumn* column = gtk_column_view_column_new(title, factory);
+    gtk_column_view_column_set_resizable(column, TRUE);
+    gtk_column_view_column_set_expand(column, expand);
+    gtk_column_view_append_column(GTK_COLUMN_VIEW(view), column);
+    g_object_unref(column);
+}
+
 void git_tab_init(AppData* app) {
     if (app == NULL || app->notebook == NULL) return;
 
-    /* Create commit list model */
-    app->git_store = gtk_list_store_new(GIT_COL_COUNT,
-                                        G_TYPE_STRING, /* HASH */
-                                        G_TYPE_STRING, /* SHORT_HASH */
-                                        G_TYPE_STRING, /* SUBJECT */
-                                        G_TYPE_STRING, /* AUTHOR */
-                                        G_TYPE_STRING  /* DATE */
-    );
+    /* Commit list: newest first, one GitCommit per row */
+    app->git_store = g_list_store_new(GIT_TYPE_COMMIT);
+    app->git_selection = gtk_single_selection_new(G_LIST_MODEL(g_object_ref(app->git_store)));
+    gtk_single_selection_set_autoselect(app->git_selection, FALSE);
+    gtk_single_selection_set_selected(app->git_selection, GTK_INVALID_LIST_POSITION);
+    g_signal_connect(app->git_selection, "notify::selected-item",
+                     G_CALLBACK(on_git_selection_changed), app);
 
-    GtkWidget* tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(app->git_store));
-    app->git_tree_view = tree_view;
+    GtkWidget* tree_view = gtk_column_view_new(GTK_SELECTION_MODEL(app->git_selection));
+    app->git_list_view = tree_view;
     gtk_widget_set_name(tree_view, "git-tree");
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(tree_view), TRUE);
-    gtk_tree_view_set_enable_search(GTK_TREE_VIEW(tree_view), FALSE);
-
-    /* Column 1: Commit hash (short) */
-    GtkCellRenderer* r_hash = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(r_hash, 6, 2);
-    g_object_set(r_hash, "foreground", "#4fc1ff", "family", "monospace", NULL);
-    GtkTreeViewColumn* col_hash = gtk_tree_view_column_new_with_attributes(
-        "Commit", r_hash, "text", GIT_COL_SHORT_HASH, NULL);
-    gtk_tree_view_column_set_resizable(col_hash, TRUE);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_hash);
-
-    /* Column 2: Subject / message */
-    GtkCellRenderer* r_msg = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(r_msg, 6, 2);
-    g_object_set(r_msg, "ellipsize", PANGO_ELLIPSIZE_END, NULL);
-    GtkTreeViewColumn* col_msg = gtk_tree_view_column_new_with_attributes(
-        "Message", r_msg, "text", GIT_COL_SUBJECT, NULL);
-    gtk_tree_view_column_set_expand(col_msg, TRUE);
-    gtk_tree_view_column_set_resizable(col_msg, TRUE);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_msg);
-
-    /* Column 3: Author */
-    GtkCellRenderer* r_author = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(r_author, 6, 2);
-    g_object_set(r_author, "foreground", "#cccccc", NULL);
-    GtkTreeViewColumn* col_author = gtk_tree_view_column_new_with_attributes(
-        "Author", r_author, "text", GIT_COL_AUTHOR, NULL);
-    gtk_tree_view_column_set_resizable(col_author, TRUE);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_author);
-
-    /* Column 4: Date */
-    GtkCellRenderer* r_date = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_padding(r_date, 6, 2);
-    g_object_set(r_date, "foreground", "#9d9d9d", NULL);
-    GtkTreeViewColumn* col_date = gtk_tree_view_column_new_with_attributes(
-        "Date", r_date, "text", GIT_COL_DATE, NULL);
-    gtk_tree_view_column_set_resizable(col_date, TRUE);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), col_date);
-
-    GtkTreeSelection* sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
-    g_signal_connect(sel, "changed", G_CALLBACK(on_git_selection_changed), app);
+    gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(tree_view), FALSE);
+    git_add_column(tree_view, "Commit", G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);
+    git_add_column(tree_view, "Message", G_STRUCT_OFFSET(GitCommitInfo, subject), "git-subject", TRUE);
+    git_add_column(tree_view, "Author", G_STRUCT_OFFSET(GitCommitInfo, author), "git-author", FALSE);
+    git_add_column(tree_view, "Date", G_STRUCT_OFFSET(GitCommitInfo, date), "git-date", FALSE);
 
     GtkWidget* tree_scroll = gtk_scrolled_window_new();
     gtk_widget_set_hexpand(tree_scroll, TRUE);
