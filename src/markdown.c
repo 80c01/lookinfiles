@@ -91,22 +91,25 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "background", "#2a2b2d",
                "foreground", "#d7ba7d");
 
-    /* Code block: padded panel (a small padding line above and below) */
+    /* Code block: padded panel */
     CREATE_TAG("md_code_block",
                "family", "monospace",
                "scale", 0.92,
                "foreground", "#d4d4d4",
                "paragraph-background", "#1c1d1f",
-               "left-margin", 26,
+               "left-margin", 10,
+               "indent", 16, /* every code line is a paragraph: 16 px inner padding */
                "right-margin", 16,
                "wrap-mode", GTK_WRAP_NONE,
                "pixels-inside-wrap", 0,
                "pixels-above-lines", 1,
                "pixels-below-lines", 1);
 
-    /* The panel edge follows the padding lines: text margin 26 leaves 16 px inside */
+    /* Padding lines above and below the code (VS Code: 16 px). Code and
+     * padding lines share the same margins: a paragraph background starts at
+     * its line's left margin, so different margins would notch the panel. */
     CREATE_TAG("md_code_pad",
-               "size-points", 5.0,
+               "size-points", 10.0,
                "left-margin", 10,
                "right-margin", 16,
                "paragraph-background", "#1c1d1f");
