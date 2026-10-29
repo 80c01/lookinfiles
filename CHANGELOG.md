@@ -15,6 +15,8 @@ All notable changes to this project are listed here. The format follows
 - Directory preview shows the git branch and the changed files below the
   folder, the git status of each entry, and renders the folder's README
   (Markdown, Org-mode or plain text) under the table.
+- Directory preview counts the documents, images, video and audio files of
+  the folder (from their names).
 - Editor tabs can be dragged with the mouse: onto a tab bar to move them
   there, or near an edge of an editor to split it on that side; a blue area
   shows where the tab lands.

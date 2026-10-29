@@ -164,6 +164,22 @@ static void test_git(void) {
     g_hash_table_destroy(st);
 }
 
+static void test_kinds(void) {
+    DirSummary* s = dir_summary_new();
+    dir_summary_add(s, "main.c", FALSE, 1, 1);
+    dir_summary_add(s, "docs", TRUE, 0, 1);
+    g_assert_null(dir_summary_kinds_line(s)); /* only "other": no line */
+
+    dir_summary_add(s, "README.md", FALSE, 1, 1);
+    dir_summary_add(s, "guide.pdf", FALSE, 1, 1);
+    dir_summary_add(s, "logo.png", FALSE, 1, 1);
+    dir_summary_add(s, "song.mp3", FALSE, 1, 1);
+    gchar* line = dir_summary_kinds_line(s);
+    g_assert_cmpstr(line, ==, "2 documents · 1 image · 1 audio file · 1 other");
+    g_free(line);
+    dir_summary_free(s);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/dir_summary/totals", test_totals);
@@ -173,5 +189,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/dir_summary/pad", test_pad);
     g_test_add_func("/dir_summary/readme", test_readme);
     g_test_add_func("/dir_summary/git", test_git);
+    g_test_add_func("/dir_summary/kinds", test_kinds);
     return g_test_run();
 }

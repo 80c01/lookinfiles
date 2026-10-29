@@ -349,6 +349,13 @@ static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_d
         g_free(line);
         g_free(totals);
     }
+    gchar* kinds = job->unreadable ? NULL : dir_summary_kinds_line(s);
+    if (kinds != NULL) {
+        gchar* line = g_strconcat(kinds, "\n", NULL);
+        insert_tagged(buffer, &it, line, "dir_dim", NULL);
+        g_free(line);
+        g_free(kinds);
+    }
     if (job->branch != NULL) {
         gchar* git = git_line(app, job);
         gchar* line = g_strconcat(git, "\n", NULL);

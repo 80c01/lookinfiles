@@ -6,6 +6,8 @@
  * the directory (one level only, never recursively) and adds the entries. */
 #include <glib.h>
 
+#include "file_types.h"
+
 /* Entries kept at most: a larger directory is reported as truncated */
 #define DIR_SUMMARY_SCAN_LIMIT 5000
 
@@ -32,6 +34,7 @@ typedef struct {
     gint64 newest_mtime;  /* most recent entry date, 0 if none */
     gboolean truncated;   /* stopped at DIR_SUMMARY_SCAN_LIMIT entries */
     gchar* readme;        /* best README file name of this level, NULL if none */
+    guint kinds[FILE_KIND_BINARY + 1]; /* files per FileKind, guessed from the name */
 } DirSummary;
 
 /* Changed files below a directory, by git status */
@@ -53,6 +56,10 @@ gboolean dir_summary_add(DirSummary* s, const gchar* name, gboolean is_dir,
 
 /* Sort the entries: directories first, then by the given order (name as tie-breaker) */
 void dir_summary_sort(DirSummary* s, DirSummarySort sort);
+
+/* "2 documents · 1 image · 3 other" from the kinds of the files (from their
+ * names, no I/O). NULL when no file has a known kind (all "other"). */
+gchar* dir_summary_kinds_line(const DirSummary* s);
 
 /* README rank of a file name, case-insensitive: README.md / README.markdown 4,
  * README.org 3, README 2, README.txt 1, anything else 0 */

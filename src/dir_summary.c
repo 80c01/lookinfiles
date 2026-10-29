@@ -33,6 +33,7 @@ gboolean dir_summary_add(DirSummary* s, const gchar* name, gboolean is_dir,
     } else {
         s->n_files++;
         s->total_size += size;
+        s->kinds[file_kind_from_name(name)]++;
         gint rank = dir_summary_readme_rank(name);
         if (rank > 0 && rank > (s->readme != NULL ? dir_summary_readme_rank(s->readme) : 0)) {
             g_free(s->readme);
@@ -86,6 +87,33 @@ static gint compare_entries(gconstpointer a, gconstpointer b, gpointer user_data
 
 void dir_summary_sort(DirSummary* s, DirSummarySort sort) {
     g_array_sort_with_data(s->entries, compare_entries, GINT_TO_POINTER((gint)sort));
+}
+
+gchar* dir_summary_kinds_line(const DirSummary* s) {
+    guint docs = s->kinds[FILE_KIND_MARKDOWN] + s->kinds[FILE_KIND_HTML] +
+                 s->kinds[FILE_KIND_ORG] + s->kinds[FILE_KIND_PDF];
+    guint other = s->kinds[FILE_KIND_TEXT] + s->kinds[FILE_KIND_BINARY];
+    const struct { guint n; const gchar* one; const gchar* many; } parts[] = {
+        { docs, "document", "documents" },
+        { s->kinds[FILE_KIND_IMAGE], "image", "images" },
+        { s->kinds[FILE_KIND_VIDEO], "video", "videos" },
+        { s->kinds[FILE_KIND_AUDIO], "audio file", "audio files" },
+    };
+    GString* out = g_string_new(NULL);
+    for (gsize i = 0; i < G_N_ELEMENTS(parts); i++) {
+        if (parts[i].n > 0) {
+            g_string_append_printf(out, "%s%u %s", out->len > 0 ? " · " : "", parts[i].n,
+                                   parts[i].n == 1 ? parts[i].one : parts[i].many);
+        }
+    }
+    if (out->len == 0) {
+        g_string_free(out, TRUE);
+        return NULL;
+    }
+    if (other > 0) {
+        g_string_append_printf(out, " · %u other", other);
+    }
+    return g_string_free(out, FALSE);
 }
 
 gint dir_summary_readme_rank(const gchar* name) {

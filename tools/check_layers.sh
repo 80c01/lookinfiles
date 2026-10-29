@@ -16,7 +16,7 @@ file_types:
 git_utils:
 line_diff:
 pane_geometry:
-dir_summary:
+dir_summary:file_types
 diff_gutter:git_utils,line_diff
 explorer_row:
 layout_store:

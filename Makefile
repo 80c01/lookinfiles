@@ -80,7 +80,7 @@ TEST_DEPS_test_explorer_row = $(BUILD_DIR)/explorer_row.o
 TEST_DEPS_test_layout_store = $(BUILD_DIR)/layout_store.o
 TEST_DEPS_test_line_diff = $(BUILD_DIR)/line_diff.o
 TEST_DEPS_test_pane_geometry = $(BUILD_DIR)/pane_geometry.o
-TEST_DEPS_test_dir_summary = $(BUILD_DIR)/dir_summary.o
+TEST_DEPS_test_dir_summary = $(BUILD_DIR)/dir_summary.o $(BUILD_DIR)/file_types.o
 
 .SECONDEXPANSION:
 $(BUILD_DIR)/tests/%: tests/%.c $$(TEST_DEPS_%) | $(BUILD_DIR)
