@@ -67,6 +67,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   default layout of new workspaces (group `[Default]`, built-in if absent).
 - `line_diff` — Myers line diff of a text against its previous version,
   reduced to per-line gutter marks (`LineDiffMark`: added, modified, deleted).
+- `pane_geometry` — `pane_find_neighbor()`: the pane next to another one in a
+  direction (same row or column only), used to move editor tabs between
+  notebooks.
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can

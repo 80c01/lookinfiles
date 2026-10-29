@@ -6,6 +6,7 @@
 #include "file_types.h"
 #include "minimap.h"
 #include "diff_gutter.h"
+#include "pane_geometry.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;
@@ -569,63 +570,33 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
 
     GPtrArray* all_nbs = editor_get_all_notebooks(app);
     GtkWidget* best_target = NULL;
-    float best_dist = 1e9f;
 
     graphene_rect_t cur_bounds;
-    gboolean has_cur_bounds = gtk_widget_compute_bounds(GTK_WIDGET(cur_nb), app->editor_box, &cur_bounds);
-    float cur_cx = has_cur_bounds ? (cur_bounds.origin.x + cur_bounds.size.width / 2.0f) : 0.0f;
-    float cur_cy = has_cur_bounds ? (cur_bounds.origin.y + cur_bounds.size.height / 2.0f) : 0.0f;
-
-    if (has_cur_bounds) {
+    if (gtk_widget_compute_bounds(GTK_WIDGET(cur_nb), app->editor_box, &cur_bounds)) {
+        PaneRect cur = {cur_bounds.origin.x, cur_bounds.origin.y,
+                        cur_bounds.size.width, cur_bounds.size.height};
+        PaneRect* rects = g_new(PaneRect, MAX(all_nbs->len, 1));
+        GtkWidget** widgets = g_new(GtkWidget*, MAX(all_nbs->len, 1));
+        guint n = 0;
         for (guint i = 0; i < all_nbs->len; i++) {
             GtkWidget* candidate = GTK_WIDGET(g_ptr_array_index(all_nbs, i));
             if (candidate == GTK_WIDGET(cur_nb)) continue;
-
-            graphene_rect_t cand_bounds;
-            if (!gtk_widget_compute_bounds(candidate, app->editor_box, &cand_bounds)) continue;
-
-            float cand_cx = cand_bounds.origin.x + cand_bounds.size.width / 2.0f;
-            float cand_cy = cand_bounds.origin.y + cand_bounds.size.height / 2.0f;
-
-            switch (dir) {
-            case EDITOR_MOVE_RIGHT:
-                if (cand_cx > cur_cx) {
-                    float dist = cand_cx - cur_cx;
-                    if (dist < best_dist) {
-                        best_dist = dist;
-                        best_target = candidate;
-                    }
-                }
-                break;
-            case EDITOR_MOVE_LEFT:
-                if (cand_cx < cur_cx) {
-                    float dist = cur_cx - cand_cx;
-                    if (dist < best_dist) {
-                        best_dist = dist;
-                        best_target = candidate;
-                    }
-                }
-                break;
-            case EDITOR_MOVE_DOWN:
-                if (cand_cy > cur_cy) {
-                    float dist = cand_cy - cur_cy;
-                    if (dist < best_dist) {
-                        best_dist = dist;
-                        best_target = candidate;
-                    }
-                }
-                break;
-            case EDITOR_MOVE_UP:
-                if (cand_cy < cur_cy) {
-                    float dist = cur_cy - cand_cy;
-                    if (dist < best_dist) {
-                        best_dist = dist;
-                        best_target = candidate;
-                    }
-                }
-                break;
-            }
+            graphene_rect_t b;
+            if (!gtk_widget_compute_bounds(candidate, app->editor_box, &b)) continue;
+            rects[n] = (PaneRect){b.origin.x, b.origin.y, b.size.width, b.size.height};
+            widgets[n] = candidate;
+            n++;
         }
+        PaneDirection pdir = dir == EDITOR_MOVE_RIGHT ? PANE_DIR_RIGHT
+                           : dir == EDITOR_MOVE_LEFT  ? PANE_DIR_LEFT
+                           : dir == EDITOR_MOVE_UP    ? PANE_DIR_UP
+                                                      : PANE_DIR_DOWN;
+        gint idx = pane_find_neighbor(&cur, rects, n, pdir);
+        if (idx >= 0) {
+            best_target = widgets[idx];
+        }
+        g_free(rects);
+        g_free(widgets);
     }
     g_ptr_array_unref(all_nbs);
 
