@@ -55,10 +55,13 @@
     cp "$ROOT/tests/fixtures/mail/alternative.eml" 38-agenda.eml
     cp "$ROOT/tests/fixtures/mail/html-inline.eml" 39-news.eml
     cp "$ROOT/tests/fixtures/mail/Inbox" 40-Inbox     # Thunderbird mbox: no extension
+    # Maildir folder (a directory: listed first)
+    cp -r "$ROOT/tests/fixtures/mail/Maildir" 00-Maildir
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
-    key g g;            shot fmt_elf_summary
+    key g g; sleep 0.5; shot fmt_maildir_folder
+    key j;              shot fmt_elf_summary
     key m;              shot fmt_elf_raw_hex_dump
     key m
     key j;              shot fmt_hex_dump

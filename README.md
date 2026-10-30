@@ -59,7 +59,9 @@ and virtual workspaces, in a VS Code Dark+ look.
   messages and the attachments; encoded headers and charsets decoded.
   Mailboxes (Thunderbird `Inbox` and other mbox files, `.mbox`, `.mbx`) as a
   list of messages, opened one by one with `PgDn` / `PgUp`; only the
-  beginning and the end of very large ones are read.
+  beginning and the end of very large ones are read. Maildir and MH folders
+  show their newest messages (date, sender, subject, read / unread / replied)
+  instead of the `cur` / `new` / `tmp` listing.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
   notebooks (Markdown cells, highlighted code, text and image outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,

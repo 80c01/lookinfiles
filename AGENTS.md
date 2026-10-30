@@ -86,7 +86,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   attachments, forwarded messages), shared by every mail source.
   `mail_box` — mbox scan (bounded: both ends of large files). Paged
   previews: `PreviewDoc.pages` + `PreviewInput.page` (`app->preview_page`,
-  `PgDn` / `PgUp` in the viewer).
+  `PgDn` / `PgUp` in the viewer). `mail_dir` — Maildir / MH folders as a
+  message table, used by `dir_preview` instead of the listing.
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.

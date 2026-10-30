@@ -31,6 +31,9 @@ All notable changes to this project are listed here. The format follows
 - Mailboxes (mbox: Thunderbird `Inbox`, `.mbox`, `.mbx`; mboxrd and mboxcl)
   as a list of messages (date, sender, subject, size, attachments), each
   message opened with `PgDn` / `PgUp`; large ones are read at both ends.
+- Maildir (with Maildir++ subfolders) and MH folders: the directory preview
+  lists their newest messages with their read / unread / replied / flagged
+  status.
 - Code navigation in editor tabs, in the three modes: go to the definition or
   declaration of the identifier under the cursor and back (Notepad `F12` /
   `Ctrl+F12` / `Ctrl+Click`, `Ctrl+Alt+-` / `Ctrl+Shift+-`; Emacs `M-.` /

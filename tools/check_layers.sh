@@ -30,6 +30,7 @@ ppt_reader:ole_reader
 mail_message:
 mail_view:mail_message,preview_doc
 mail_box:mail_message
+mail_dir:mail_message,preview_doc
 office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader
 docx:zip_reader
 preview_doc:

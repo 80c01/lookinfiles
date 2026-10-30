@@ -3,6 +3,7 @@
  * fixtures of tests/fixtures/mail. */
 #include "file_types.h"
 #include "mail_box.h"
+#include "mail_dir.h"
 #include "mail_message.h"
 #include "mail_view.h"
 #include "preview_formats.h"
@@ -278,6 +279,43 @@ static void test_mbox_pages(void) {
     preview_doc_free(doc);
 }
 
+/* --- Maildir and MH --- */
+
+static void test_mail_dirs(void) {
+    g_assert_cmpint(mail_dir_kind("tests/fixtures/mail/Maildir"), ==, MAIL_DIR_MAILDIR);
+    g_assert_cmpint(mail_dir_kind("tests/fixtures/mail/mh"), ==, MAIL_DIR_MH);
+    g_assert_cmpint(mail_dir_kind("tests/fixtures"), ==, MAIL_DIR_NONE);
+    g_assert_null(mail_dir_preview("tests/fixtures", "fixtures", 10, NULL));
+    PreviewDoc* doc = mail_dir_preview("tests/fixtures/mail/Maildir", "Maildir", 10, NULL);
+    const gchar* t = doc->text->str;
+    g_assert_nonnull(strstr(t, "Maildir folder · 3 messages, 1 unread"));
+    g_assert_nonnull(strstr(t, "Sent"));
+    /* Oldest first, newest last */
+    const gchar* a = strstr(t, "Read and replied");
+    const gchar* b = strstr(t, "Flagged, seen");
+    const gchar* c = strstr(t, "New one");
+    g_assert_true(a != NULL && b != NULL && c != NULL && a < b && b < c);
+    g_assert_nonnull(strstr(t, "Renée"));
+    g_assert_nonnull(strstr(t, "read, flagged"));
+    g_assert_nonnull(strstr(t, "replied"));
+    g_assert_nonnull(strstr(t, "unread"));
+    preview_doc_free(doc);
+    /* Only the newest messages */
+    doc = mail_dir_preview("tests/fixtures/mail/Maildir", "Maildir", 1, NULL);
+    g_assert_nonnull(strstr(doc->text->str, "New one"));
+    g_assert_null(strstr(doc->text->str, "Read and replied"));
+    g_assert_nonnull(strstr(doc->text->str, "The newest 1 of 3 messages are shown."));
+    preview_doc_free(doc);
+    doc = mail_dir_preview("tests/fixtures/mail/mh", "mh", 10, NULL);
+    t = doc->text->str;
+    g_assert_nonnull(strstr(t, "MH folder · 2 messages, 1 unread"));
+    g_assert_true(strstr(t, "First") < strstr(t, "Second"));
+    preview_doc_free(doc);
+    /* Messages in cur/ have no extension: detected by content */
+    g_assert_cmpint(file_kind_of_path("tests/fixtures/mail/Maildir/new/1793200000.M3P1.host", "1793200000.M3P1.host"), ==,
+                    FILE_KIND_MAIL);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/mail/encoded_words", test_encoded_words);
@@ -289,5 +327,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/mail/mbox", test_mbox);
     g_test_add_func("/mail/mbox_large", test_mbox_large);
     g_test_add_func("/mail/mbox_pages", test_mbox_pages);
+    g_test_add_func("/mail/mail_dirs", test_mail_dirs);
     return g_test_run();
 }

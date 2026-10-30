@@ -3,6 +3,8 @@
 #include "file_types.h"
 #include "text_style.h"
 #include "git_utils.h"
+#include "mail_dir.h"
+#include "preview_doc_view.h"
 #include "markdown.h"
 #include "orgmode.h"
 
@@ -30,6 +32,7 @@ typedef struct {
     gchar* readme_path;    /* README shown under the table, NULL if none */
     gchar* readme_text;    /* its first PREVIEW_BYTES, valid UTF-8 */
     gint64 readme_size;
+    PreviewDoc* mail;      /* Maildir / MH folder: its message table instead */
 } DirPreviewJob;
 
 static void job_free(gpointer data) {
@@ -44,6 +47,7 @@ static void job_free(gpointer data) {
     g_free(job->branch);
     g_free(job->readme_path);
     g_free(job->readme_text);
+    preview_doc_free(job->mail);
     g_free(job);
 }
 
@@ -83,6 +87,13 @@ static void job_thread(GTask* task, gpointer source_object, gpointer task_data,
     DirPreviewJob* job = task_data;
 
     job->summary = dir_summary_new();
+    /* Mail folders: the messages, not the cur / new / tmp listing */
+    job->mail = mail_dir_preview(job->full, job->name, DIR_PREVIEW_ROWS, cancellable);
+    if (job->mail != NULL) {
+        if (g_task_return_error_if_cancelled(task)) return;
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
     GFile* dir = g_file_new_for_path(job->full);
     GFileEnumerator* en = g_file_enumerate_children(
         dir,
@@ -322,6 +333,11 @@ static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_d
 
     GtkTextBuffer* buffer = app->buffer;
     apply_viewer_language(app, NULL, NULL);
+    if (job->mail != NULL) {
+        app->viewer_match = -1;
+        preview_doc_show(GTK_TEXT_VIEW(app->text_view), job->mail, job->full, job->name, -1);
+        return;
+    }
     set_view_monospace(app->text_view, FALSE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
     set_view_text_padding(app->text_view);
