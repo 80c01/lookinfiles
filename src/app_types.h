@@ -175,6 +175,7 @@ typedef struct {
     gint viewer_match;    /* last viewer match (char offset), -1 = none */
     gboolean render_raw;   /* FALSE = rendered preview (default), TRUE = raw text */
     gdouble preview_zoom;  /* image and PDF zoom, relative to the fitted size (1.0) */
+    const gchar* viewed_encoding; /* text encoding of the previewed file (static string), NULL if not text */
     GHashTable* expanded_paths; /* set of full_path strings for expanded directories */
 
     /* File monitors & async I/O cancellation */

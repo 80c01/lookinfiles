@@ -24,6 +24,7 @@
 #include "pptx.h"
 #include "rtf.h"
 #include "spreadsheet.h"
+#include "text_encoding.h"
 #include "sqlite_view.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
@@ -1034,7 +1035,7 @@ PreviewDoc* preview_format_build_file(const gchar* path, const gchar* name, gsiz
     data[len] = '\0';
     gchar* text = NULL;
     if (is_text) {
-        text = g_utf8_make_valid(data, (gssize)len);
+        text = text_encoding_to_utf8(data, len, NULL);
         in.text = text;
         in.text_len = strlen(text);
         in.text_truncated = size > (gint64)len;

@@ -1,6 +1,7 @@
 /* File type detection (by name, and by content: magic numbers) and icons.
  * No AppData, no widgets; the only I/O is file_kind_of_path() (unit-tested in tests/). */
 #include "file_types.h"
+#include "text_encoding.h"
 
 #include <glib/gstdio.h>
 #include <stdio.h>
@@ -364,6 +365,9 @@ static const guchar* find_ci(const guchar* head, gsize len, const gchar* needle)
 static gboolean looks_like_text(const guchar* head, gsize len) {
     if (HAS(0, "\xFF\xFE") || HAS(0, "\xFE\xFF")) {
         return TRUE; /* UTF-16 byte order mark */
+    }
+    if (g_str_has_prefix(text_encoding_detect(head, len), "UTF-16")) {
+        return TRUE; /* UTF-16 without a mark */
     }
     if (memchr(head, '\0', len) != NULL) {
         return FALSE;

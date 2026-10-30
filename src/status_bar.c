@@ -214,6 +214,9 @@ void update_status_bar(AppData* app) {
                                               previewed ? app->viewed_content_type : NULL);
         gtk_label_set_text(GTK_LABEL(app->status_type), type_label);
         g_free(type_label);
+        /* Encoding of a previewed text file, as detected */
+        gtk_label_set_text(GTK_LABEL(app->status_encoding),
+                           previewed && app->viewed_encoding != NULL ? app->viewed_encoding : "UTF-8");
 
         gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0 &&
                             g_strcmp0(type, "bm_folder") != 0 && g_strcmp0(type, "notebook") != 0 &&

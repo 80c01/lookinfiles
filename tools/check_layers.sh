@@ -13,12 +13,12 @@ status=0
 # module:allowed-project-headers (comma separated)
 RULES="
 app_paths:
-file_types:
+file_types:text_encoding
 git_utils:
 line_diff:
 pane_geometry:
 minimap_geometry:
-dir_summary:file_types
+dir_summary:file_types,text_encoding
 hex_dump:
 elf_info:
 zip_reader:
@@ -44,7 +44,8 @@ rtf:
 sqlite_view:preview_doc
 gettext_view:preview_doc
 media_tags:
-preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view
+text_encoding:
+preview_formats:file_types,text_encoding,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view
 org_time:
 org_doc:org_time
 org_table:org_doc

@@ -187,6 +187,8 @@ static void test_detect_containers(void) {
 
 static void test_detect_text_formats(void) {
     g_assert_cmpint(DETECT("data.csv", "a,b\n1,2\n"), ==, FILE_KIND_CSV);
+    /* UTF-16 text without a byte order mark is text, not binary */
+    g_assert_cmpint(DETECT("notes", "h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d\0"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("data.json", "{\"a\": 1}"), ==, FILE_KIND_JSON);
     g_assert_cmpint(DETECT("config", "{\n  \"a\": 1}"), ==, FILE_KIND_JSON);
     g_assert_cmpint(DETECT("list", "[{\"a\": 1}]"), ==, FILE_KIND_JSON);

@@ -41,6 +41,9 @@
     cp "$ROOT/tests/fixtures/preview/fr.mo" 27-lookin-fr.mo
     cp "$ROOT/tests/fixtures/preview/song.mp3" 28-song.mp3
     cp "$ROOT/tests/fixtures/preview/photo.dng" 29-photo.dng
+    # Legacy encodings: UTF-16 without a mark, Windows-1252
+    printf 'Caf\351 cr\350me \200 5\n\223quoted\224\n' > 30-latin1.txt
+    printf 'h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d\0\n\0' > 31-utf16.txt
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -79,4 +82,6 @@ format_scenario() {
     key j;              shot fmt_translations
     key j;              shot fmt_audio_tags
     key j;              shot fmt_raw_photo
+    key j;              shot fmt_windows_1252
+    key j;              shot fmt_utf16
 }

@@ -22,6 +22,7 @@
 #include "dir_preview.h"
 #include "preview_doc_view.h"
 #include "preview_formats.h"
+#include "text_encoding.h"
 
 /* Text shown from a Word document before it is cut (images not counted) */
 
@@ -222,6 +223,7 @@ typedef struct {
     gboolean preview;
     gchar* utf8_text;
     PreviewDoc* doc;       /* structured preview (preview_formats) or hex dump */
+    const gchar* encoding; /* text encoding detected (static string) */
     gchar* error_msg;
     gint64 start_us;       /* selection time (LOOKIN_DEBUG_PREVIEW timings) */
 } TextPreviewTaskData;
@@ -343,9 +345,14 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     }
 
     td->raw_len = len;
+    td->encoding = "UTF-8";
     if (len > 0 && !g_utf8_validate(contents, (gssize)len, NULL)) {
-        td->utf8_text = g_utf8_make_valid(contents, (gssize)len);
+        /* UTF-16, legacy 8-bit text, or invalid bytes */
+        td->utf8_text = text_encoding_to_utf8(contents, len, &td->encoding);
         g_free(contents);
+    } else if (len >= 3 && memcmp(contents, "\xEF\xBB\xBF", 3) == 0) {
+        td->encoding = "UTF-8 BOM";
+        td->utf8_text = contents;
     } else {
         td->utf8_text = contents;
     }
@@ -431,8 +438,10 @@ static void show_text_preview(TextPreviewTaskData* td) {
     AppData* app = td->app;
 
     if (g_strcmp0(td->full, app->viewed_path) == 0 &&
-        (app->viewed_kind != td->kind || g_strcmp0(app->viewed_content_type, td->content_type) != 0)) {
+        (app->viewed_kind != td->kind || g_strcmp0(app->viewed_content_type, td->content_type) != 0 ||
+         app->viewed_encoding != td->encoding)) {
         app->viewed_kind = td->kind;
+        app->viewed_encoding = td->encoding;
         g_free(app->viewed_content_type);
         app->viewed_content_type = g_strdup(td->content_type);
         app_emit(app, APP_EVENT_STATUS_CHANGED);
