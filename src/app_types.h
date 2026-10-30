@@ -176,6 +176,7 @@ typedef struct {
     gboolean render_raw;   /* FALSE = rendered preview (default), TRUE = raw text */
     gdouble preview_zoom;  /* image and PDF zoom, relative to the fitted size (1.0) */
     const gchar* viewed_encoding; /* text encoding of the previewed file (static string), NULL if not text */
+    gpointer text_chunks;  /* large text loaded on scroll (text_chunks.c) */
     GHashTable* expanded_paths; /* set of full_path strings for expanded directories */
 
     /* File monitors & async I/O cancellation */

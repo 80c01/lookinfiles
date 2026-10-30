@@ -22,6 +22,7 @@
 #include "dir_preview.h"
 #include "preview_doc_view.h"
 #include "preview_formats.h"
+#include "text_chunks.h"
 #include "text_encoding.h"
 
 /* Text shown from a Word document before it is cut (images not counted) */
@@ -527,7 +528,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
             if (td->preview) {
                 g_string_append_printf(text,
                         "[ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)\n"
-                        "Showing first %u bytes. Large file, display truncated.\n\n",
+                        "Large file: %u bytes shown, the rest loads as you scroll down.\n\n",
                         td->name, td->fsize, (guint)td->raw_len);
             }
             /* Line numbers start after the truncation header */
@@ -544,6 +545,8 @@ static void show_text_preview(TextPreviewTaskData* td) {
             /* Git change bars, for whole files only (a truncated preview has a header) */
             if (!td->preview) {
                 diff_gutter_set_file(app->text_view, td->full);
+            } else {
+                text_chunks_start(app, td->full, (gint64)td->raw_len, td->fsize, first_line, code);
             }
         }
     }
@@ -552,6 +555,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
 /* Preview a file. Its kind is detected from its content in a worker thread
  * (one read serves detection and text), so the UI thread does no file I/O. */
 void load_file_content(AppData* app, const gchar* name, const gchar* full) {
+    text_chunks_stop(app);
     if (app->preview_cancellable != NULL) {
         g_cancellable_cancel(app->preview_cancellable);
         g_clear_object(&app->preview_cancellable);
@@ -591,6 +595,9 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     ExplorerRow* row = explorer_tree_get_selected(tree);
     if (row == NULL) {
         return;
+    }
+    if (g_strcmp0(row->path, app->viewed_path) != 0) {
+        text_chunks_stop(app); /* another entry: no more chunks of the previous file */
     }
 
     gchar* name = g_strdup(row->name);

@@ -82,7 +82,9 @@ and virtual workspaces, in a VS Code Dark+ look.
   whether they are stripped, and their exported symbols; `m` shows the hex
   dump instead. Only the headers are read, even for a large library.
 - `m` switches between the rendered and the raw view (text, or the hex dump
-  of binary formats); files over 512 KB are previewed from their first 64 KB.
+  of binary formats). Text files over 512 KB show their first 64 KB, and the
+  next parts load as you scroll down (up to 8 MB). The encoding is detected
+  (UTF-8, UTF-16, Windows-1252) and shown in the status bar.
 - `make bench-preview` times every structured preview, and `make
   preview-coverage DIR=~` reports how many files of a folder would only get a
   hex dump.

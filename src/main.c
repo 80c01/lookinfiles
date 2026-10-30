@@ -16,6 +16,7 @@
 #include "file_list.h"
 #include "viewer.h"
 #include "image_preview.h"
+#include "text_chunks.h"
 #include "video.h"
 #include "audio.h"
 #include "minimap.h"
@@ -595,6 +596,7 @@ int main(int argc, char** argv) {
     g_signal_connect(viewer_key_ctrl, "key-pressed", G_CALLBACK(on_viewer_key_press), app);
     gtk_widget_add_controller(text_view, viewer_key_ctrl);
     image_preview_attach_zoom(app, text_view);
+    text_chunks_attach(app);
 
     GtkGesture* viewer_click_ctrl = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(viewer_click_ctrl), GDK_BUTTON_PRIMARY);
