@@ -43,6 +43,7 @@ epub:zip_reader,zip_xml
 rtf:
 sqlite_view:preview_doc
 gettext_view:preview_doc
+media_tags:
 preview_formats:file_types,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view
 org_time:
 org_doc:org_time

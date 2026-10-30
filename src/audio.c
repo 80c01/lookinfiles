@@ -1,6 +1,9 @@
 #include "audio.h"
 #include "text_style.h"
 #include "file_types.h"
+#include "image_utils.h"
+#include "media_tags.h"
+#include <string.h>
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
@@ -16,10 +19,10 @@ static void update_audio_metadata_label(AppData* app, GtkMediaStream* stream) {
     const gchar* ext = file_extension(app->audio_current_path);
     gchar* ext_upper = g_ascii_strup(ext, -1);
 
-    GString* info = g_string_new(ext_upper);
+    GString* info = g_string_new(app->audio_details != NULL ? app->audio_details : ext_upper);
     g_string_append_printf(info, "  •  %s", size_str);
 
-    if (stream != NULL) {
+    if (stream != NULL && (app->audio_details == NULL || strchr(app->audio_details, ':') == NULL)) {
         gint64 dur_us = gtk_media_stream_get_duration(stream);
         if (dur_us > 0) {
             gint64 total_secs = dur_us / G_USEC_PER_SEC;
@@ -100,11 +103,16 @@ void audio_preview_init(AppData* app) {
     gtk_widget_set_valign(audio_card, GTK_ALIGN_CENTER);
     gtk_widget_set_size_request(audio_card, 400, -1);
 
-    /* Big musical note icon */
+    /* Big musical note icon, or the cover art when the file has one */
     GtkWidget* icon_label = gtk_label_new("🎵");
     gtk_widget_set_name(icon_label, "audio-icon");
     gtk_widget_set_halign(icon_label, GTK_ALIGN_CENTER);
     gtk_box_append(GTK_BOX(audio_card), icon_label);
+    GtkWidget* cover = gtk_image_new();
+    gtk_image_set_pixel_size(GTK_IMAGE(cover), 240);
+    gtk_widget_set_halign(cover, GTK_ALIGN_CENTER);
+    gtk_widget_set_visible(cover, FALSE);
+    gtk_box_append(GTK_BOX(audio_card), cover);
 
     /* Title label */
     GtkWidget* audio_title = gtk_label_new("🎵  Audio Preview");
@@ -113,6 +121,15 @@ void audio_preview_init(AppData* app) {
     gtk_label_set_ellipsize(GTK_LABEL(audio_title), PANGO_ELLIPSIZE_MIDDLE);
     gtk_label_set_xalign(GTK_LABEL(audio_title), 0.5f);
     gtk_box_append(GTK_BOX(audio_card), audio_title);
+
+    /* Album, year, track, genre (from the tags) */
+    GtkWidget* audio_tags = gtk_label_new("");
+    gtk_widget_set_name(audio_tags, "audio-tags");
+    gtk_label_set_selectable(GTK_LABEL(audio_tags), TRUE);
+    gtk_label_set_ellipsize(GTK_LABEL(audio_tags), PANGO_ELLIPSIZE_END);
+    gtk_label_set_xalign(GTK_LABEL(audio_tags), 0.5f);
+    gtk_widget_set_visible(audio_tags, FALSE);
+    gtk_box_append(GTK_BOX(audio_card), audio_tags);
 
     /* Metadata label */
     GtkWidget* audio_meta = gtk_label_new("");
@@ -145,6 +162,10 @@ void audio_preview_init(AppData* app) {
     app->audio_title = audio_title;
     app->audio_meta = audio_meta;
     app->audio_status = audio_status;
+    app->audio_icon = icon_label;
+    app->audio_cover = cover;
+    app->audio_tags = audio_tags;
+    app->audio_details = NULL;
     app->audio_stream = NULL;
     app->audio_duration_sig = 0;
     app->audio_prepared_sig = 0;
@@ -187,6 +208,7 @@ void audio_preview_stop(AppData* app) {
 
     g_free(app->audio_current_path);
     app->audio_current_path = NULL;
+    g_clear_pointer(&app->audio_details, g_free);
 }
 
 void audio_preview_pause(AppData* app) {
@@ -304,6 +326,98 @@ static void render_audio_raw(AppData* app, const gchar* name, const gchar* full)
     g_free(time_str);
 }
 
+/* --- Tags, read in a worker thread --- */
+
+typedef struct {
+    AppData* app;
+    gchar* path;
+    MediaTags* tags;
+    GdkTexture* cover;
+} AudioTagsTask;
+
+static void audio_tags_task_free(gpointer data) {
+    AudioTagsTask* t = data;
+    g_free(t->path);
+    media_tags_free(t->tags);
+    g_clear_object(&t->cover);
+    g_free(t);
+}
+
+static void audio_tags_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
+    (void)source;
+    (void)cancellable;
+    AudioTagsTask* t = data;
+    t->tags = media_tags_read_file(t->path);
+    if (t->tags != NULL && t->tags->cover != NULL) {
+        gsize len = 0;
+        const guchar* bytes = g_bytes_get_data(t->tags->cover, &len);
+        GdkPixbuf* pix = pixbuf_from_bytes(bytes, len, 480);
+        if (pix != NULL) {
+            t->cover = texture_new_for_pixbuf(pix);
+            g_object_unref(pix);
+        }
+    }
+    g_task_return_boolean(task, TRUE);
+}
+
+static void on_audio_tags_ready(GObject* source, GAsyncResult* res, gpointer user_data) {
+    (void)source;
+    (void)user_data;
+    GTask* task = G_TASK(res);
+    AudioTagsTask* t = g_task_get_task_data(task);
+    AppData* app = t->app;
+    if (g_cancellable_is_cancelled(g_task_get_cancellable(task)) ||
+        g_strcmp0(app->audio_current_path, t->path) != 0) {
+        return;
+    }
+    MediaTags* tags = t->tags;
+    if (tags == NULL) {
+        return;
+    }
+    if (tags->title != NULL && app->audio_title != NULL) {
+        gchar* title = tags->artist != NULL ? g_strdup_printf("%s — %s", tags->artist, tags->title)
+                                            : g_strdup(tags->title);
+        gtk_label_set_text(GTK_LABEL(app->audio_title), title);
+        g_free(title);
+    }
+    GString* line = g_string_new(tags->album != NULL ? tags->album : "");
+    if (tags->year != NULL) {
+        g_string_append_printf(line, "%s%.4s", line->len > 0 ? " · " : "", tags->year);
+    }
+    if (tags->track != NULL) {
+        g_string_append_printf(line, "%sTrack %s", line->len > 0 ? " · " : "", tags->track);
+    }
+    if (tags->genre != NULL) {
+        g_string_append_printf(line, "%s%s", line->len > 0 ? " · " : "", tags->genre);
+    }
+    gtk_label_set_text(GTK_LABEL(app->audio_tags), line->str);
+    gtk_widget_set_visible(app->audio_tags, line->len > 0);
+    g_string_free(line, TRUE);
+    if (t->cover != NULL) {
+        gtk_image_set_from_paintable(GTK_IMAGE(app->audio_cover), GDK_PAINTABLE(t->cover));
+        gtk_widget_set_visible(app->audio_cover, TRUE);
+        gtk_widget_set_visible(app->audio_icon, FALSE);
+    }
+    g_free(app->audio_details);
+    app->audio_details = media_tags_technical_line(tags);
+    update_audio_metadata_label(app, app->audio_stream);
+}
+
+static void read_audio_tags(AppData* app, const gchar* full) {
+    if (app->preview_cancellable != NULL) {
+        g_cancellable_cancel(app->preview_cancellable);
+        g_clear_object(&app->preview_cancellable);
+    }
+    app->preview_cancellable = g_cancellable_new();
+    AudioTagsTask* t = g_new0(AudioTagsTask, 1);
+    t->app = app;
+    t->path = g_strdup(full);
+    GTask* task = g_task_new(NULL, app->preview_cancellable, on_audio_tags_ready, NULL);
+    g_task_set_task_data(task, t, audio_tags_task_free);
+    g_task_run_in_thread(task, audio_tags_thread);
+    g_object_unref(task);
+}
+
 void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
     if (app == NULL || name == NULL || full == NULL) {
         return;
@@ -340,8 +454,15 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
         gtk_label_set_text(GTK_LABEL(app->audio_status), "");
         gtk_widget_set_visible(app->audio_status, FALSE);
     }
+    if (app->audio_cover != NULL) {
+        gtk_image_clear(GTK_IMAGE(app->audio_cover));
+        gtk_widget_set_visible(app->audio_cover, FALSE);
+        gtk_widget_set_visible(app->audio_icon, TRUE);
+        gtk_widget_set_visible(app->audio_tags, FALSE);
+    }
 
     update_audio_metadata_label(app, NULL);
+    read_audio_tags(app, full);
 
     GFile* file = g_file_new_for_path(full);
     if (file == NULL) {

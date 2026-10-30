@@ -230,6 +230,10 @@ typedef struct {
     GtkWidget* audio_title;     /* Audio title label */
     GtkWidget* audio_meta;      /* Audio metadata info label */
     GtkWidget* audio_status;    /* Audio warning/error status label */
+    GtkWidget* audio_icon;      /* Note icon, hidden when there is a cover */
+    GtkWidget* audio_cover;     /* GtkImage: embedded cover art */
+    GtkWidget* audio_tags;      /* Album / year / track / genre line */
+    gchar* audio_details;       /* Technical line from the tags (codec, rate...), or NULL */
     GtkMediaStream* audio_stream; /* Active audio GtkMediaStream */
     gulong audio_duration_sig;  /* Signal ID for notify::duration */
     gulong audio_prepared_sig;  /* Signal ID for notify::prepared */
