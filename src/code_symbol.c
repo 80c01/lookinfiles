@@ -24,6 +24,19 @@ static const ExtLang EXTENSIONS[] = {
     {"lua", CODE_LANG_LUA},
     {"rb", CODE_LANG_RUBY}, {"rake", CODE_LANG_RUBY}, {"gemspec", CODE_LANG_RUBY},
     {"mk", CODE_LANG_MAKE}, {"mak", CODE_LANG_MAKE},
+    {"m", CODE_LANG_OBJC}, {"mm", CODE_LANG_OBJC},
+    {"php", CODE_LANG_PHP}, {"phtml", CODE_LANG_PHP},
+    {"pl", CODE_LANG_PERL}, {"pm", CODE_LANG_PERL},
+    {"kt", CODE_LANG_KOTLIN}, {"kts", CODE_LANG_KOTLIN},
+    {"swift", CODE_LANG_SWIFT},
+    {"scala", CODE_LANG_SCALA}, {"sc", CODE_LANG_SCALA},
+    {"dart", CODE_LANG_DART},
+    {"hs", CODE_LANG_HASKELL},
+    {"ex", CODE_LANG_ELIXIR}, {"exs", CODE_LANG_ELIXIR},
+    {"erl", CODE_LANG_ERLANG}, {"hrl", CODE_LANG_ERLANG},
+    {"jl", CODE_LANG_JULIA},
+    {"r", CODE_LANG_R},
+    {"tcl", CODE_LANG_TCL},
 };
 
 static const ExtLang NAMES[] = {
@@ -88,6 +101,12 @@ CodeLang code_lang_detect(const gchar* name, const gchar* text, gssize len) {
             lang = CODE_LANG_RUBY;
         } else if (strcmp(interp, "make") == 0) {
             lang = CODE_LANG_MAKE;
+        } else if (strcmp(interp, "perl") == 0) {
+            lang = CODE_LANG_PERL;
+        } else if (strcmp(interp, "php") == 0) {
+            lang = CODE_LANG_PHP;
+        } else if (strcmp(interp, "tclsh") == 0 || strcmp(interp, "wish") == 0) {
+            lang = CODE_LANG_TCL;
         }
     }
     g_strfreev(words);
@@ -96,7 +115,7 @@ CodeLang code_lang_detect(const gchar* name, const gchar* text, gssize len) {
 }
 
 CodeLang code_lang_family(CodeLang lang) {
-    return lang == CODE_LANG_CPP ? CODE_LANG_C : lang;
+    return lang == CODE_LANG_CPP || lang == CODE_LANG_OBJC ? CODE_LANG_C : lang;
 }
 
 const gchar* code_lang_name(CodeLang lang) {
@@ -113,6 +132,19 @@ const gchar* code_lang_name(CodeLang lang) {
         case CODE_LANG_LUA: return "Lua";
         case CODE_LANG_RUBY: return "Ruby";
         case CODE_LANG_MAKE: return "Makefile";
+        case CODE_LANG_OBJC: return "Objective-C";
+        case CODE_LANG_PHP: return "PHP";
+        case CODE_LANG_PERL: return "Perl";
+        case CODE_LANG_KOTLIN: return "Kotlin";
+        case CODE_LANG_SWIFT: return "Swift";
+        case CODE_LANG_SCALA: return "Scala";
+        case CODE_LANG_DART: return "Dart";
+        case CODE_LANG_HASKELL: return "Haskell";
+        case CODE_LANG_ELIXIR: return "Elixir";
+        case CODE_LANG_ERLANG: return "Erlang";
+        case CODE_LANG_JULIA: return "Julia";
+        case CODE_LANG_R: return "R";
+        case CODE_LANG_TCL: return "Tcl";
         case CODE_LANG_NONE: break;
     }
     return "text";
@@ -173,7 +205,7 @@ gboolean code_word_at(const gchar* line, gssize len, gint index, CodeLang lang,
         e = g_utf8_next_char(e);
     }
     /* Ruby predicates and bang methods: empty? save! */
-    if (lang == CODE_LANG_RUBY && e < lim && (*e == '?' || *e == '!') &&
+    if ((lang == CODE_LANG_RUBY || lang == CODE_LANG_ELIXIR) && e < lim && (*e == '?' || *e == '!') &&
         (e + 1 >= lim || *(e + 1) != '=')) {
         e++;
     }
@@ -236,6 +268,7 @@ CodeSymbol* code_symbol_copy(const CodeSymbol* sym) {
     *c = *sym;
     c->name = g_strdup(sym->name);
     c->text = g_strdup(sym->text);
+    c->signature = g_strdup(sym->signature);
     return c;
 }
 
@@ -243,5 +276,6 @@ void code_symbol_free(CodeSymbol* sym) {
     if (sym == NULL) return;
     g_free(sym->name);
     g_free(sym->text);
+    g_free(sym->signature);
     g_free(sym);
 }

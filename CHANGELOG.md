@@ -20,7 +20,9 @@ All notable changes to this project are listed here. The format follows
   `C-u M-.` / `M-,` / `C-M-,`; Vim `gd` / `Ctrl+]` / `gD` / `:tag`, `Ctrl+O` /
   `Tab` across files). A built-in index reads the project in the background
   (C, C++, Java, C#, Python, Shell, JavaScript / TypeScript, Go, Rust, Lua,
-  Ruby, Makefiles); see TASK_CODE_NAV.md.
+  Ruby, Makefiles); see TASK_CODE_NAV.md. With Universal Ctags installed, its
+  index is used instead (cached, updated per changed file) and more languages
+  are covered.
 - Previews for many more formats, each built in the background and shown as
   close as possible to its own application (see TASK.md):
   CSV / TSV tables; pretty-printed JSON, JSONC and JSON Lines; diffs and

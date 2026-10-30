@@ -8,7 +8,7 @@
  * listed. Pure GLib, unit-tested; safe to call from worker threads. */
 #include "code_symbol.h"
 
-/* TRUE when lang has a scanner */
+/* TRUE when lang has a built-in scanner (the others need ctags or LSP) */
 gboolean code_scan_supported(CodeLang lang);
 
 /* Symbols of text (CodeSymbol*, freed with the array), in file order: all

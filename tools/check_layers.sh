@@ -61,7 +61,8 @@ explorer_row:
 code_symbol:
 code_scan_c:code_symbol
 code_scan:code_symbol,code_scan_c
-code_index:code_symbol,code_scan,git_utils
+code_tags:code_symbol,json_view
+code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
 layout_store:app_paths
 text_style:app_types,file_types

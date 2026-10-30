@@ -1,6 +1,8 @@
 /* Code navigation in editor tabs (see code_nav.h) */
 #include "code_nav.h"
+#include "app_paths.h"
 #include "code_index.h"
+#include "code_tags.h"
 #include "code_scan.h"
 #include "editor.h"
 #include "jump_list.h"
@@ -12,11 +14,14 @@ typedef struct {
     JumpList* jumps;
     GCancellable* cancellable;  /* lookup in progress */
     guint serial;               /* of the latest lookup: older answers are dropped */
+    GMutex tags_lock;           /* guards tags (workers create indexes) */
+    GHashTable* tags;           /* project root -> CodeTagsIndex* */
 } CodeNav;
 
 /* One lookup, from the request to the answer */
 typedef struct {
     AppData* app;
+    CodeNav* nav;
     guint serial;
     EditorTab* tab;          /* origin tab (checked again on the answer) */
     gchar* origin;           /* canonical path of the origin file */
@@ -40,6 +45,8 @@ static CodeNav* nav_of(AppData* app) {
     if (app->code_nav == NULL) {
         CodeNav* nav = g_new0(CodeNav, 1);
         nav->jumps = jump_list_new(CODE_NAV_HISTORY);
+        g_mutex_init(&nav->tags_lock);
+        nav->tags = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)code_tags_index_free);
         app->code_nav = nav;
     }
     return app->code_nav;
@@ -118,6 +125,29 @@ static EditorTab* jump(AppData* app, EditorTab* from, const gchar* path, gint li
     return dest;
 }
 
+/* The ctags index of a project (created on first use), or NULL without
+ * ctags. Called from workers. */
+static CodeTagsIndex* tags_for(CodeNav* nav, const gchar* root) {
+    const gchar* program = code_tags_program();
+    if (program == NULL || root == NULL) return NULL;
+    g_mutex_lock(&nav->tags_lock);
+    CodeTagsIndex* index = g_hash_table_lookup(nav->tags, root);
+    if (index == NULL) {
+        gchar* sum = g_compute_checksum_for_string(G_CHECKSUM_SHA1, root, -1);
+        gchar* name = g_strdup_printf("%s.tags", sum);
+        gchar* cache_dir = app_cache_dir();
+        gchar* cache = g_build_filename(cache_dir, "tags", name, NULL);
+        g_free(cache_dir);
+        index = code_tags_index_new(program, cache);
+        g_hash_table_insert(nav->tags, g_strdup(root), index);
+        g_free(cache);
+        g_free(name);
+        g_free(sum);
+    }
+    g_mutex_unlock(&nav->tags_lock);
+    return index;
+}
+
 static void lookup_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
     (void)source;
     Lookup* lk = data;
@@ -125,7 +155,7 @@ static void lookup_thread(GTask* task, gpointer source, gpointer data, GCancella
     gboolean files_truncated = FALSE, find_truncated = FALSE;
     GPtrArray* files = code_index_project_files(lk->root, code_lang_family(lk->lang), cancellable,
                                                 &files_truncated);
-    CodeQuery q = {lk->name, lk->lang, lk->declaration, lk->origin, lk->texts};
+    CodeQuery q = {lk->name, lk->lang, lk->declaration, lk->origin, lk->texts, tags_for(lk->nav, lk->root)};
     lk->matches = code_index_find(&q, files, cancellable, &find_truncated);
     lk->truncated = files_truncated || find_truncated;
     if (lk->at_cursor) {
@@ -214,6 +244,7 @@ static void start_lookup(AppData* app, EditorTab* tab, const gchar* name, gboole
 
     Lookup* lk = g_new0(Lookup, 1);
     lk->app = app;
+    lk->nav = nav;
     lk->serial = ++nav->serial;
     lk->tab = tab;
     lk->origin = g_canonicalize_filename(tab->path, NULL);

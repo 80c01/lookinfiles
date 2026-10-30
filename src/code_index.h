@@ -10,6 +10,7 @@
 #include <gio/gio.h>
 
 #include "code_symbol.h"
+#include "code_tags.h"
 
 #define CODE_INDEX_MAX_FILES 20000
 #define CODE_INDEX_MAX_BYTES (96 * 1024 * 1024)
@@ -40,12 +41,16 @@ typedef struct {
     gboolean declaration;     /* TRUE: declarations first (prototypes...), else definitions */
     const gchar* origin_path; /* file of the cursor: scanned first, ranked first */
     GHashTable* texts;        /* path -> text of open buffers (used instead of the file), or NULL */
+    CodeTagsIndex* tags;      /* ctags index of the project (updated first), or NULL: built-in scanners */
 } CodeQuery;
 
 /* Symbols named query->name in the origin file and in files (absolute
  * paths of the same family), best first: the kind wanted (definition or
  * declaration), then the origin file, its directory, then other files by
- * path and line. *truncated (may be NULL): the byte limit was hit. */
+ * path and line. With query->tags, the files come from the ctags index and
+ * only open buffers (query->texts) and files outside the list are scanned;
+ * when ctags fails, everything is scanned. *truncated (may be NULL): the
+ * byte limit was hit. */
 GPtrArray* code_index_find(const CodeQuery* query, GPtrArray* files, GCancellable* cancellable,
                            gboolean* truncated);
 

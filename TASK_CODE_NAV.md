@@ -96,9 +96,12 @@ Notes:
   forward, fallback to the first occurrence in the buffer.
 - Keys in the three modes, `Ctrl+Click`, `:tag`, help and README.
 
-### Phase 1 — ctags
+### Phase 1 — ctags — done
 - Use `ctags --output-format=json` when installed; index cached in
-  `app_cache_dir()`, refreshed on `APP_EVENT_FILES_CHANGED`.
+  `app_cache_dir()/tags/`. Instead of `APP_EVENT_FILES_CHANGED`, each lookup
+  compares the size and date of the files (cheap) and re-tags the changed
+  ones. Languages read by ctags only: Objective-C, PHP, Perl, Kotlin, Swift,
+  Scala, Dart, Haskell, Elixir, Erlang, Julia, R, Tcl.
 
 ### Phase 2 — LSP
 - `lsp_protocol` + `code_intel`: `lsp.ini` in `app_config_dir()` (language

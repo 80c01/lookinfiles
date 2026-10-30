@@ -145,7 +145,7 @@ static void test_find_ranking(void) {
     gchar* root = make_project();
     GPtrArray* files = code_index_project_files(root, CODE_LANG_C, NULL, NULL);
     gchar* origin = g_build_filename(root, "src", "main.c", NULL);
-    CodeQuery q = {"shop_total", CODE_LANG_C, FALSE, origin, NULL};
+    CodeQuery q = {"shop_total", CODE_LANG_C, FALSE, origin, NULL, NULL};
     GPtrArray* m = code_index_find(&q, files, NULL, NULL);
     gchar* got = matches_of(root, m);
     /* Definitions first: same directory, then elsewhere; then the prototype */
@@ -160,7 +160,7 @@ static void test_find_ranking(void) {
     g_free(got);
     g_ptr_array_unref(m);
     /* Fields and types */
-    CodeQuery q2 = {"count", CODE_LANG_C, FALSE, origin, NULL};
+    CodeQuery q2 = {"count", CODE_LANG_C, FALSE, origin, NULL, NULL};
     m = code_index_find(&q2, files, NULL, NULL);
     got = matches_of(root, m);
     g_assert_cmpstr(got, ==, "include/shop.h:4");
@@ -181,7 +181,7 @@ static void test_find_open_buffers(void) {
     GHashTable* texts = g_hash_table_new(g_str_hash, g_str_equal);
     g_hash_table_insert(texts, origin, "static int helper(void) { return 1; }\nint main(void) { return helper(); }\n");
     g_hash_table_insert(texts, shop, "/* moved */\n\n\nint shop_total(int n) { return n; }\n");
-    CodeQuery q = {"helper", CODE_LANG_C, FALSE, origin, texts};
+    CodeQuery q = {"helper", CODE_LANG_C, FALSE, origin, texts, NULL};
     GPtrArray* m = code_index_find(&q, files, NULL, NULL);
     gchar* got = matches_of(root, m);
     g_assert_cmpstr(got, ==, "src/main.c:1");
@@ -196,7 +196,7 @@ static void test_find_open_buffers(void) {
     /* An origin outside the list (new file) is scanned too */
     gchar* fresh = g_build_filename(root, "notes", "draft.c", NULL);
     g_hash_table_insert(texts, fresh, "int draft_value = 3;\n");
-    CodeQuery q3 = {"draft_value", CODE_LANG_C, FALSE, fresh, texts};
+    CodeQuery q3 = {"draft_value", CODE_LANG_C, FALSE, fresh, texts, NULL};
     m = code_index_find(&q3, files, NULL, NULL);
     g_assert_cmpuint(m->len, ==, 1);
     g_ptr_array_unref(m);
@@ -214,7 +214,7 @@ static void test_find_cancelled(void) {
     GPtrArray* files = code_index_project_files(root, CODE_LANG_C, NULL, NULL);
     GCancellable* c = g_cancellable_new();
     g_cancellable_cancel(c);
-    CodeQuery q = {"shop_total", CODE_LANG_C, FALSE, NULL, NULL};
+    CodeQuery q = {"shop_total", CODE_LANG_C, FALSE, NULL, NULL, NULL};
     GPtrArray* m = code_index_find(&q, files, c, NULL);
     g_assert_cmpuint(m->len, ==, 0);
     g_ptr_array_unref(m);

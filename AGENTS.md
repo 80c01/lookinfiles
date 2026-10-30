@@ -122,6 +122,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   languages; no parser, locals not listed), the project's files (`git
   ls-files`, else a bounded walk) and the ranked definition lookup
   (`code_index_find()`, blocking: worker thread only).
+- `code_tags` — ctags backend: finds Universal Ctags (`code_tags_program()`),
+  parses its JSON output, and keeps a per-project index (`CodeTagsIndex`,
+  with a lock) that re-tags only changed files and is cached in
+  `app_cache_dir()/tags/`; `code_index_find()` uses it through
+  `CodeQuery.tags`, open buffers are still scanned.
 - `jump_list` — back / forward history of navigation jumps across files.
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them

@@ -20,7 +20,21 @@ typedef enum {
     CODE_LANG_RUST,
     CODE_LANG_LUA,
     CODE_LANG_RUBY,
-    CODE_LANG_MAKE
+    CODE_LANG_MAKE,
+    /* Read by ctags or a language server only (no built-in scanner) */
+    CODE_LANG_OBJC,     /* Objective-C: shares the C family (headers) */
+    CODE_LANG_PHP,
+    CODE_LANG_PERL,
+    CODE_LANG_KOTLIN,
+    CODE_LANG_SWIFT,
+    CODE_LANG_SCALA,
+    CODE_LANG_DART,
+    CODE_LANG_HASKELL,
+    CODE_LANG_ELIXIR,
+    CODE_LANG_ERLANG,
+    CODE_LANG_JULIA,
+    CODE_LANG_R,
+    CODE_LANG_TCL
 } CodeLang;
 
 typedef enum {
@@ -43,6 +57,7 @@ typedef struct {
     gint line;            /* 0-based */
     gint column;          /* byte index of the name in its line */
     gchar* text;          /* the source line, trimmed, valid UTF-8 */
+    gchar* signature;     /* parameters / type when the backend knows them (ctags, LSP), or NULL */
 } CodeSymbol;
 
 /* Language of a file name or path (extension, well-known names such as

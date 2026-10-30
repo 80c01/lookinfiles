@@ -163,6 +163,22 @@ static gint compare_ranked(gconstpointer a, gconstpointer b) {
 
 /* Scan one file (or its open buffer) for the name; FALSE when the byte
  * budget is spent */
+static gint locality_of(const CodeQuery* q, const gchar* path, const gchar* origin_dir) {
+    if (q->origin_path != NULL && strcmp(path, q->origin_path) == 0) return 0;
+    gchar* dir = g_path_get_dirname(path);
+    gint locality = origin_dir != NULL && strcmp(dir, origin_dir) == 0 ? 1 : 2;
+    g_free(dir);
+    return locality;
+}
+
+static void add_ranked(const CodeQuery* q, GArray* ranked, const gchar* path, CodeSymbol* sym, gint locality) {
+    CodeMatch* m = g_new0(CodeMatch, 1);
+    m->path = g_strdup(path);
+    m->symbol = sym;
+    Ranked r = {m, sym->declaration == q->declaration ? 0 : 1, locality};
+    g_array_append_val(ranked, r);
+}
+
 static gboolean scan_file(const CodeQuery* q, const gchar* path, GArray* ranked, const gchar* origin_dir,
                           gsize* budget) {
     const gchar* text = q->texts != NULL ? g_hash_table_lookup(q->texts, path) : NULL;
@@ -183,18 +199,8 @@ static gboolean scan_file(const CodeQuery* q, const gchar* path, GArray* ranked,
     CodeLang lang = code_lang_from_name(path);
     if (lang == CODE_LANG_NONE) lang = q->lang;
     GPtrArray* syms = code_scan_text(text, len, lang, q->name);
-    gchar* dir = g_path_get_dirname(path);
-    gboolean same_file = q->origin_path != NULL && strcmp(path, q->origin_path) == 0;
-    gint locality = same_file ? 0 : (origin_dir != NULL && strcmp(dir, origin_dir) == 0) ? 1 : 2;
-    g_free(dir);
-    for (guint i = 0; i < syms->len; i++) {
-        CodeSymbol* sym = g_ptr_array_index(syms, i);
-        CodeMatch* m = g_new0(CodeMatch, 1);
-        m->path = g_strdup(path);
-        m->symbol = sym;
-        Ranked r = {m, sym->declaration == q->declaration ? 0 : 1, locality};
-        g_array_append_val(ranked, r);
-    }
+    gint locality = locality_of(q, path, origin_dir);
+    for (guint i = 0; i < syms->len; i++) add_ranked(q, ranked, path, g_ptr_array_index(syms, i), locality);
     /* The symbols now belong to the matches */
     g_ptr_array_set_free_func(syms, NULL);
     g_ptr_array_free(syms, TRUE);
@@ -210,7 +216,35 @@ GPtrArray* code_index_find(const CodeQuery* query, GPtrArray* files, GCancellabl
     GArray* ranked = g_array_new(FALSE, FALSE, sizeof(Ranked));
     gchar* origin_dir = query->origin_path != NULL ? g_path_get_dirname(query->origin_path) : NULL;
     gsize budget = CODE_INDEX_MAX_BYTES;
-    if (query->origin_path != NULL) scan_file(query, query->origin_path, ranked, origin_dir, &budget);
+    if (query->tags != NULL && files != NULL && code_tags_index_update(query->tags, files, cancellable)) {
+        /* ctags: indexed files from the index, open buffers and the rest scanned */
+        GHashTable* listed = g_hash_table_new(g_str_hash, g_str_equal);
+        for (guint i = 0; i < files->len; i++) g_hash_table_add(listed, g_ptr_array_index(files, i));
+        GPtrArray* hits = code_tags_index_lookup(query->tags, query->name);
+        for (guint i = 0; i < hits->len; i++) {
+            CodeTagsHit* h = g_ptr_array_index(hits, i);
+            if (query->texts != NULL && g_hash_table_contains(query->texts, h->path)) continue;
+            add_ranked(query, ranked, h->path, code_symbol_copy(h->symbol), locality_of(query, h->path, origin_dir));
+        }
+        g_ptr_array_unref(hits);
+        if (query->texts != NULL) {
+            GHashTableIter it;
+            gpointer key, value;
+            g_hash_table_iter_init(&it, query->texts);
+            while (g_hash_table_iter_next(&it, &key, &value)) {
+                gboolean origin = query->origin_path != NULL && strcmp(key, query->origin_path) == 0;
+                if (origin || g_hash_table_contains(listed, key)) scan_file(query, key, ranked, origin_dir, &budget);
+            }
+        }
+        if (query->origin_path != NULL && !g_hash_table_contains(listed, query->origin_path) &&
+            (query->texts == NULL || !g_hash_table_contains(query->texts, query->origin_path))) {
+            scan_file(query, query->origin_path, ranked, origin_dir, &budget);
+        }
+        g_hash_table_destroy(listed);
+        files = NULL; /* nothing more to scan */
+    } else if (query->origin_path != NULL) {
+        scan_file(query, query->origin_path, ranked, origin_dir, &budget);
+    }
     for (guint i = 0; files != NULL && i < files->len; i++) {
         if (g_cancellable_is_cancelled(cancellable)) break;
         const gchar* path = g_ptr_array_index(files, i);

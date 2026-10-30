@@ -110,7 +110,7 @@ static void compile_rules(void) {
 }
 
 gboolean code_scan_supported(CodeLang lang) {
-    return lang != CODE_LANG_NONE;
+    return lang != CODE_LANG_NONE && lang <= CODE_LANG_OBJC;
 }
 
 typedef struct {
@@ -309,7 +309,7 @@ static void scan_lines(const gchar* text, gsize len, CodeLang lang, Sink* sink) 
 
 GPtrArray* code_scan_text(const gchar* text, gsize len, CodeLang lang, const gchar* only_name) {
     GPtrArray* out = g_ptr_array_new_with_free_func((GDestroyNotify)code_symbol_free);
-    if (text == NULL || lang == CODE_LANG_NONE) return out;
+    if (text == NULL || !code_scan_supported(lang)) return out;
     if (only_name != NULL && !code_text_has_word(text, len, only_name, lang)) return out;
     switch (lang) {
         case CODE_LANG_C:
@@ -317,6 +317,9 @@ GPtrArray* code_scan_text(const gchar* text, gsize len, CodeLang lang, const gch
         case CODE_LANG_JAVA:
         case CODE_LANG_CSHARP:
             code_scan_c(text, len, lang, only_name, out);
+            break;
+        case CODE_LANG_OBJC:
+            code_scan_c(text, len, CODE_LANG_C, only_name, out);
             break;
         default: {
             Sink sink = {only_name, only_name != NULL ? strlen(only_name) : 0, out};
