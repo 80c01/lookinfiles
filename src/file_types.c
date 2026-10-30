@@ -216,7 +216,8 @@ static const struct {
     { "vcf", FILE_KIND_CONTACT }, { "vcard", FILE_KIND_CONTACT },
     { "desktop", FILE_KIND_DESKTOP },
     { "rtf", FILE_KIND_RTF },
-    { "eml", FILE_KIND_MAIL }, { "emlx", FILE_KIND_MAIL },
+    { "eml", FILE_KIND_MAIL }, { "emlx", FILE_KIND_MAIL }, { "mbox", FILE_KIND_MAIL },
+    { "mbx", FILE_KIND_MAIL }, { "msf", FILE_KIND_MAIL },
     { "doc", FILE_KIND_OLE }, { "dot", FILE_KIND_OLE }, { "xls", FILE_KIND_OLE }, { "xlt", FILE_KIND_OLE },
     { "ppt", FILE_KIND_OLE }, { "pps", FILE_KIND_OLE }, /* .pot is a gettext template by name; its content decides */
     { "po", FILE_KIND_TRANSLATION }, { "pot", FILE_KIND_TRANSLATION }, { "mo", FILE_KIND_TRANSLATION },
@@ -600,6 +601,12 @@ static gboolean looks_like_message(const guchar* head, gsize len, gsize start) {
     gsize digits = 0;
     while (p + digits < len && g_ascii_isdigit(head[p + digits])) digits++;
     if (digits > 0 && p + digits < len && head[p + digits] == '\n') p += digits + 1;
+    /* mbox: a "From " separator line first */
+    if (len - p > 5 && memcmp(head + p, "From ", 5) == 0) {
+        const guchar* nl = memchr(head + p, '\n', len - p);
+        if (nl == NULL) return FALSE;
+        p = (gsize)(nl - head) + 1;
+    }
     gint known = 0, lines = 0;
     while (p < len) {
         const guchar* nl = memchr(head + p, '\n', len - p);

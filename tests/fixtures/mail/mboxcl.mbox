@@ -1,0 +1,14 @@
+From x@example.org Mon Nov  2 08:00:00 2026
+From: x@example.org
+Subject: Content-Length
+Content-Length: 50
+
+Line one
+From here on, an unquoted line
+Last line
+
+From y@example.org Mon Nov  2 09:00:00 2026
+From: y@example.org
+Subject: Second
+
+Bye

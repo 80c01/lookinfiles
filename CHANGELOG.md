@@ -28,6 +28,9 @@ All notable changes to this project are listed here. The format follows
 - Mail messages (`.eml`, `.emlx`, files without extension starting with mail
   headers): header card, text or HTML body (inline images, no remote
   content), forwarded messages and attachments, any charset.
+- Mailboxes (mbox: Thunderbird `Inbox`, `.mbox`, `.mbx`; mboxrd and mboxcl)
+  as a list of messages (date, sender, subject, size, attachments), each
+  message opened with `PgDn` / `PgUp`; large ones are read at both ends.
 - Code navigation in editor tabs, in the three modes: go to the definition or
   declaration of the identifier under the cursor and back (Notepad `F12` /
   `Ctrl+F12` / `Ctrl+Click`, `Ctrl+Alt+-` / `Ctrl+Shift+-`; Emacs `M-.` /

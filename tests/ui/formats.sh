@@ -54,6 +54,7 @@
     # Mail: a text message with quotes and signature, an HTML one with an inline image
     cp "$ROOT/tests/fixtures/mail/alternative.eml" 38-agenda.eml
     cp "$ROOT/tests/fixtures/mail/html-inline.eml" 39-news.eml
+    cp "$ROOT/tests/fixtures/mail/Inbox" 40-Inbox     # Thunderbird mbox: no extension
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -102,7 +103,11 @@ format_scenario() {
     key j;              shot fmt_powerpoint97
     key j;              shot fmt_mail_text
     key j;              shot fmt_mail_html
-    key k k k k k k
+    key j;              shot fmt_mailbox_list
+    key alt+Right                               # focus the preview
+    key Page_Down Page_Down; shot fmt_mailbox_message_2
+    key alt+Left
+    key k k k k k k k
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
 }

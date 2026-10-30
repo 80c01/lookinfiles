@@ -27,6 +27,9 @@ typedef struct {
     const gchar* text;
     gsize text_len;
     gboolean text_truncated;
+    /* Page asked with PgDn / PgUp in documents that have pages after their
+     * first view (PreviewDoc.pages: messages of a mailbox), 0 otherwise */
+    guint page;
 } PreviewInput;
 
 /* Largest text a builder converts (documents, notebooks...) */

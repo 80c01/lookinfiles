@@ -57,6 +57,9 @@ and virtual workspaces, in a VS Code Dark+ look.
   the headers, the text with quotes and signature dimmed (or the HTML body
   with its inline images; remote content is never fetched), forwarded
   messages and the attachments; encoded headers and charsets decoded.
+  Mailboxes (Thunderbird `Inbox` and other mbox files, `.mbox`, `.mbx`) as a
+  list of messages, opened one by one with `PgDn` / `PgUp`; only the
+  beginning and the end of very large ones are read.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
   notebooks (Markdown cells, highlighted code, text and image outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,
@@ -263,7 +266,7 @@ The same list is available inside the application with `?`.
 | `e` | Open the file in the editor (text files) |
 | `m` | Rendered / raw view: Markdown, HTML, Org, CSV, JSON, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |
-| `PgDn` / `PgUp` | PDF: next / previous page |
+| `PgDn` / `PgUp` | PDF: next / previous page; mailbox: from the list into each message and back |
 | `Space` / `p` | Play / pause the video or audio |
 | `Tab` / `Shift+Tab` | Org-mode: fold the heading / cycle the global visibility |
 | `t` | Org-mode: cycle the TODO keyword (the file's `#+TODO:` keywords; `TODO` → `DONE` → none by default) |

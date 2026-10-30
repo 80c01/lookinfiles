@@ -2,10 +2,12 @@
  * previews of src/preview_formats.c): headers, MIME, charsets and the
  * fixtures of tests/fixtures/mail. */
 #include "file_types.h"
+#include "mail_box.h"
 #include "mail_message.h"
 #include "mail_view.h"
 #include "preview_formats.h"
 
+#include <glib/gstdio.h>
 #include <string.h>
 
 static MailMessage* parse(const gchar* text) {
@@ -173,6 +175,109 @@ static void test_detection(void) {
     g_assert_cmpstr(file_icon("a.eml", FALSE), ==, "📧");
 }
 
+/* --- mbox --- */
+
+static PreviewDoc* mailbox_page(const gchar* name, guint page) {
+    gchar* path = g_build_filename("tests", "fixtures", "mail", name, NULL);
+    GStatBuf st;
+    g_assert_cmpint(g_stat(path, &st), ==, 0);
+    PreviewInput in = {.path = path, .name = name, .size = st.st_size, .kind = FILE_KIND_MAIL, .page = page};
+    GError* err = NULL;
+    PreviewDoc* doc = preview_format_build(&in, NULL, &err);
+    g_assert_no_error(err);
+    g_free(path);
+    return doc;
+}
+
+static void test_mbox(void) {
+    gchar* data = NULL;
+    gsize len = 0;
+    g_assert_true(g_file_get_contents("tests/fixtures/mail/Inbox", &data, &len, NULL));
+    g_assert_true(mail_box_looks_like(data, len));
+    g_assert_cmpint(file_kind_detect("Inbox", (const guchar*)data, len), ==, FILE_KIND_MAIL);
+    MailBox* box = mail_box_scan(data, len);
+    g_assert_true(box->complete);
+    g_assert_cmpuint(box->entries->len, ==, 3);
+    MailBoxEntry* e = g_ptr_array_index(box->entries, 1);
+    g_assert_cmpstr(e->subject, ==, "Re: Lunch? ✓");
+    g_assert_true(e->attachments);
+    /* >From unquoted in the message */
+    MailMessage* m = mail_box_message(box, 0, data, len, 1 << 20);
+    gchar* body = mail_part_text(mail_message_body(m, FALSE));
+    g_assert_nonnull(strstr(body, "\nFrom the office, at noon."));
+    g_free(body);
+    mail_message_free(m);
+    mail_box_free(box);
+    g_free(data);
+
+    /* mboxcl: an unquoted From line inside a Content-Length body */
+    g_assert_true(g_file_get_contents("tests/fixtures/mail/mboxcl.mbox", &data, &len, NULL));
+    box = mail_box_scan(data, len);
+    g_assert_cmpuint(box->entries->len, ==, 2);
+    e = g_ptr_array_index(box->entries, 0);
+    g_assert_cmpint(e->date, ==, mail_parse_date("2 Nov 2026 08:00:00 +0000")); /* from the From line */
+    m = mail_box_message(box, 0, data, len, 1 << 20);
+    body = mail_part_text(mail_message_body(m, FALSE));
+    g_assert_nonnull(strstr(body, "From here on, an unquoted line"));
+    g_free(body);
+    mail_message_free(m);
+    mail_box_free(box);
+    g_free(data);
+
+    /* Truncated in a message: what is there is listed */
+    g_assert_true(g_file_get_contents("tests/fixtures/mail/truncated.mbox", &data, &len, NULL));
+    box = mail_box_scan(data, len);
+    g_assert_cmpuint(box->entries->len, ==, 2);
+    mail_box_free(box);
+    g_free(data);
+    g_assert_null(mail_box_scan("not a mailbox", 13));
+}
+
+static void test_mbox_large(void) {
+    /* Larger than MAIL_BOX_FULL_SCAN: the first and the last messages */
+    GString* s = g_string_new(NULL);
+    guint i = 0;
+    while (s->len < MAIL_BOX_FULL_SCAN + 1024 * 1024) {
+        g_string_append_printf(s, "From a@b Mon Nov  2 08:00:00 2026\nSubject: message %u\n\n", i++);
+        for (gint k = 0; k < 40; k++) g_string_append(s, "padding padding padding padding padding\n");
+        g_string_append_c(s, '\n');
+    }
+    MailBox* box = mail_box_scan(s->str, s->len);
+    g_assert_false(box->complete);
+    g_assert_cmpuint(box->head_count, >, 100);
+    MailBoxEntry* first = g_ptr_array_index(box->entries, 0);
+    MailBoxEntry* last = g_ptr_array_index(box->entries, box->entries->len - 1);
+    g_assert_cmpstr(first->subject, ==, "message 0");
+    gchar* want = g_strdup_printf("message %u", i - 1);
+    g_assert_cmpstr(last->subject, ==, want);
+    g_free(want);
+    for (guint k = 1; k < box->entries->len; k++) {
+        MailBoxEntry* a = g_ptr_array_index(box->entries, k - 1);
+        MailBoxEntry* b = g_ptr_array_index(box->entries, k);
+        g_assert_cmpuint(a->offset + a->length, <=, b->offset);
+    }
+    mail_box_free(box);
+    g_string_free(s, TRUE);
+}
+
+static void test_mbox_pages(void) {
+    PreviewDoc* doc = mailbox_page("Inbox", 0);
+    g_assert_cmpuint(doc->pages, ==, 3);
+    g_assert_nonnull(strstr(doc->text->str, "Mailbox · 3 messages"));
+    g_assert_nonnull(strstr(doc->text->str, "Re: Lunch? ✓"));
+    preview_doc_free(doc);
+    doc = mailbox_page("Inbox", 2);
+    g_assert_cmpuint(doc->pages, ==, 3);
+    g_assert_nonnull(strstr(doc->text->str, "Message 2 of 3"));
+    g_assert_nonnull(strstr(doc->text->str, "Yes! Menu attached."));
+    g_assert_nonnull(strstr(doc->text->str, "menu.txt · text/plain"));
+    preview_doc_free(doc);
+    /* Past the end: the list */
+    doc = mailbox_page("Inbox", 9);
+    g_assert_nonnull(strstr(doc->text->str, "Mailbox · 3 messages"));
+    preview_doc_free(doc);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/mail/encoded_words", test_encoded_words);
@@ -181,5 +286,8 @@ int main(int argc, char** argv) {
     g_test_add_func("/mail/charsets", test_charsets);
     g_test_add_func("/mail/fixtures", test_fixtures);
     g_test_add_func("/mail/detection", test_detection);
+    g_test_add_func("/mail/mbox", test_mbox);
+    g_test_add_func("/mail/mbox_large", test_mbox_large);
+    g_test_add_func("/mail/mbox_pages", test_mbox_pages);
     return g_test_run();
 }

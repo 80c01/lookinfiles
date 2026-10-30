@@ -86,6 +86,7 @@ typedef struct {
     gint label_width;     /* card field labels are padded to this many columns */
     gboolean scroll_to_end; /* open scrolled to the end (logs: latest entries) */
     GPtrArray* font_files;  /* font files the view loads before showing (font samples) */
+    guint pages;          /* pages after this view, reached with PgDn (mailbox messages), 0: none */
 } PreviewDoc;
 
 /* Width of the labels of preview_doc_field() unless changed */

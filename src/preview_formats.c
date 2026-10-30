@@ -21,6 +21,7 @@
 #include "man_view.h"
 #include "notebook.h"
 #include "odf.h"
+#include "mail_box.h"
 #include "mail_message.h"
 #include "mail_view.h"
 #include "office97.h"
@@ -894,6 +895,65 @@ static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, 
 
 #define MAIL_MAX_FILE (32 * 1024 * 1024)
 
+#define MAILBOX_ROWS_SHOWN 500
+
+static void mailbox_row(PreviewTable* table, const MailBoxEntry* e, guint number) {
+    gchar* num = g_strdup_printf("%u", number);
+    gchar* date = mail_view_format_date(e->date);
+    gchar* size = preview_format_size((gint64)e->length);
+    const gchar* row[] = {num, date != NULL ? date : "", e->from != NULL ? e->from : "",
+                          e->subject != NULL ? e->subject : "(no subject)", size, e->attachments ? "📎" : ""};
+    preview_table_add_row(table, row, 6);
+    g_free(size);
+    g_free(date);
+    g_free(num);
+}
+
+/* An mbox: the message list (page 0), then one message per page */
+static PreviewDoc* build_mailbox(const PreviewInput* in, const gchar* data, gsize len) {
+    g_autoptr(MailBox) box = mail_box_scan(data, len);
+    guint n = box != NULL ? box->entries->len : 0;
+    gchar* size = preview_format_size(in->size);
+    PreviewDoc* doc;
+    if (in->page > 0 && in->page <= n) {
+        g_autoptr(MailMessage) msg = mail_box_message(box, in->page - 1, data, len, MAIL_VIEW_MAX_PART);
+        gchar* subtitle = g_strdup_printf("Message %u of %u%s · %s · PgUp / PgDn", in->page, n,
+                                          box->complete ? "" : "+", in->name);
+        doc = mail_view_message(msg, subtitle);
+        g_free(subtitle);
+    } else {
+        doc = preview_doc_new();
+        doc->monospace = TRUE;
+        doc->wrap = FALSE;
+        gchar* subtitle = box != NULL && box->complete
+                              ? g_strdup_printf("Mailbox · %u %s · %s", n, n == 1 ? "message" : "messages", size)
+                              : g_strdup_printf("Mailbox · %s · the first %u and last %u messages shown", size,
+                                                box != NULL ? box->head_count : 0, n - (box != NULL ? box->head_count : 0));
+        preview_doc_title(doc, in->name, subtitle);
+        g_free(subtitle);
+        g_autoptr(PreviewTable) table = preview_table_new(6);
+        const gchar* header[] = {"#", "Date", "From", "Subject", "Size", ""};
+        preview_table_set_header(table, header);
+        preview_table_set_right_aligned(table, 4);
+        guint shown = 0;
+        for (guint i = 0; i < n; i++) {
+            /* Long mailboxes: the oldest and the newest messages */
+            if (n > 2 * MAILBOX_ROWS_SHOWN && i == MAILBOX_ROWS_SHOWN) {
+                const gchar* gap[] = {"…", "", "", "", "", ""};
+                preview_table_add_row(table, gap, 6);
+                i = n - MAILBOX_ROWS_SHOWN;
+            }
+            mailbox_row(table, g_ptr_array_index(box->entries, i), i + 1);
+            shown++;
+        }
+        preview_doc_add_table(doc, table);
+        if (n > 0) preview_doc_note(doc, "\nPgDn opens the messages one by one, PgUp comes back.");
+    }
+    doc->pages = n;
+    g_free(size);
+    return doc;
+}
+
 static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
     /* The raw bytes: the viewer's text is converted to UTF-8 already */
@@ -903,8 +963,28 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
     }
     GMappedFile* map = g_mapped_file_new(in->path, FALSE, error);
     if (map == NULL) return NULL;
-    gsize len = MIN(g_mapped_file_get_length(map), (gsize)MAIL_MAX_FILE);
+    gsize full_len = g_mapped_file_get_length(map);
     const gchar* data = g_mapped_file_get_contents(map);
+    if (data != NULL && mail_box_looks_like(data, full_len)) {
+        PreviewDoc* doc = build_mailbox(in, data, full_len);
+        g_mapped_file_unref(map);
+        return doc;
+    }
+    if (data != NULL && full_len >= 16 && memcmp(data, "// <!-- <mdb:mork", 17) == 0) {
+        /* Thunderbird index of a mailbox */
+        g_mapped_file_unref(map);
+        PreviewDoc* doc = preview_doc_new();
+        gchar* box = g_strndup(in->name, strlen(in->name) > 4 ? strlen(in->name) - 4 : strlen(in->name));
+        gchar* line = g_strdup_printf("Thunderbird index of %s", box);
+        gchar* size = preview_format_size(in->size);
+        preview_doc_title(doc, in->name, size);
+        preview_doc_note(doc, line);
+        g_free(size);
+        g_free(line);
+        g_free(box);
+        return doc;
+    }
+    gsize len = MIN(full_len, (gsize)MAIL_MAX_FILE);
     g_autoptr(MailMessage) msg = mail_message_parse(data != NULL ? data : "", data != NULL ? len : 0, MAIL_VIEW_MAX_PART);
     g_mapped_file_unref(map);
     gchar* size = preview_format_size(in->size);

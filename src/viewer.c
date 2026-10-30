@@ -79,6 +79,19 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         app->pending_g = FALSE;
         return TRUE;
     }
+    /* Paged previews (mailbox messages): PgDn / PgUp step through the pages */
+    if ((keyval == GDK_KEY_Page_Down || keyval == GDK_KEY_Page_Up) && app->preview_pages > 0 && !app->render_raw &&
+        (state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) == 0) {
+        guint page = app->preview_page;
+        if (keyval == GDK_KEY_Page_Down && page < app->preview_pages) page++;
+        else if (keyval == GDK_KEY_Page_Up && page > 0) page--;
+        app->pending_g = FALSE;
+        if (page != app->preview_page) {
+            app->preview_page = page;
+            viewer_reload_preview(app);
+        }
+        return TRUE;
+    }
 
     guint key = keyval;
 
@@ -221,6 +234,7 @@ typedef struct {
     gchar* name;
     gchar* full;
     gboolean render_raw;
+    guint page;            /* PreviewInput.page */
 
     /* Results populated by worker thread */
     FileKind kind;         /* detected from the first bytes */
@@ -283,7 +297,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     gboolean structured = !td->render_raw && preview_format_has_builder(td->kind);
     PreviewInput input = {
         .path = td->full, .name = td->name, .size = td->fsize, .kind = td->kind,
-        .head = (const guchar*)contents, .head_len = MIN(len, FILE_SNIFF_BYTES),
+        .head = (const guchar*)contents, .head_len = MIN(len, FILE_SNIFF_BYTES), .page = td->page,
     };
 
     if (file_kind_is_media(td->kind)) {
@@ -443,6 +457,8 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
 
 static void show_text_preview(TextPreviewTaskData* td) {
     AppData* app = td->app;
+    app->preview_pages = td->doc != NULL ? td->doc->pages : 0;
+    if (app->preview_page > app->preview_pages) app->preview_page = app->preview_pages;
 
     if (g_strcmp0(td->full, app->viewed_path) == 0 &&
         (app->viewed_kind != td->kind || g_strcmp0(app->viewed_content_type, td->content_type) != 0 ||
@@ -567,8 +583,11 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     td->name = g_strdup(name);
     td->full = g_strdup(full);
     td->render_raw = app->render_raw;
+    td->page = app->render_raw ? 0 : app->preview_page;
     td->start_us = g_get_monotonic_time();
     if (g_strcmp0(full, app->viewed_path) != 0) {
+        app->preview_page = 0;
+        app->preview_pages = 0;
         /* Provisional kind until the content is read */
         app->viewed_kind = file_kind_from_name(name);
         g_clear_pointer(&app->viewed_content_type, g_free);

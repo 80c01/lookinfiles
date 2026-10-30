@@ -63,7 +63,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Right panel (viewer)", "e", "Open the current file in the editor (text files only)"},
     {"Right panel (viewer)", "m", "Toggle rendered preview / raw view (documents, tables, JSON, diffs, logs, archives, certificates, images, PDF, video, audio)"},
     {"Right panel (viewer)", "+ / - / 0", "Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)"},
-    {"Right panel (viewer)", "PgDn / PgUp", "PDF: next / previous page"},
+    {"Right panel (viewer)", "PgDn / PgUp", "PDF: next / previous page; mailbox: next / previous message"},
     {"Right panel (viewer)", "Space / p", "Play / pause active video or audio preview"},
     {"Org-mode", "Tab / Shift+Tab", "In Org view: Fold/unfold heading or cycle global visibility (Overview -> Contents -> Show All)"},
     {"Org-mode", "t / Space / Return", "In Org view: Cycle TODO keyword (#+TODO, default TODO -> DONE) / toggle checkbox"},

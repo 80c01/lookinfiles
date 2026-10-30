@@ -84,6 +84,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   2231 decoding, MIME tree, base64 / quoted-printable, charsets with the
   Windows-1252 fallback; the preview (header card, text or HTML body,
   attachments, forwarded messages), shared by every mail source.
+  `mail_box` — mbox scan (bounded: both ends of large files). Paged
+  previews: `PreviewDoc.pages` + `PreviewInput.page` (`app->preview_page`,
+  `PgDn` / `PgUp` in the viewer).
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.
