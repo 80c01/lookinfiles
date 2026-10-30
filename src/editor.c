@@ -1035,7 +1035,8 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
         detect_name = g_strdup(name);
     }
     editor_apply_language(buffer, detect_name);
-    set_view_monospace(view, is_code_file(detect_name));
+    /* File contents in the code font, in every editor mode (as in the preview) */
+    set_view_monospace(view, TRUE);
 #ifdef HAVE_GSV
     apply_vscode_scheme(buffer, view);
 #endif

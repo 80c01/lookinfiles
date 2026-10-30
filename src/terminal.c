@@ -4,11 +4,12 @@
 #include "remote_store.h"
 #include "layout_store.h"
 #include "palette.h"
+#include "fonts.h"
 
 #ifdef HAVE_VTE
 
-/* Terminal colours from the palette: text, background, cursor, selection
- * and the 16 ANSI colours (normal row then bright row) */
+/* Terminal colours from the palette (text, background, cursor, selection
+ * and the 16 ANSI colours: normal row then bright row) and the code font */
 static void parse_role(GdkRGBA* rgba, PaletteRole role) {
     gdk_rgba_parse(rgba, palette_color(role));
 }
@@ -28,6 +29,13 @@ static void apply_terminal_theme(VteTerminal* term) {
     vte_terminal_set_color_cursor(term, &cursor);
     parse_role(&selection, PAL_EDITOR_SELECTION);
     vte_terminal_set_color_highlight(term, &selection);
+
+    /* The code font, like file contents in the preview and editors */
+    PangoFontDescription* font = pango_font_description_new();
+    pango_font_description_set_family(font, fonts_family(FONT_CODE));
+    pango_font_description_set_absolute_size(font, fonts_size(FONT_CODE) * PANGO_SCALE);
+    vte_terminal_set_font(term, font);
+    pango_font_description_free(font);
 }
 
 /* Async spawn callback: report failures, then hand child PID to terminal */

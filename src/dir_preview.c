@@ -1,4 +1,5 @@
 #include "dir_preview.h"
+#include "fonts.h"
 #include "palette.h"
 #include "dir_summary.h"
 #include "file_types.h"
@@ -145,17 +146,17 @@ static void ensure_tags(GtkTextBuffer* buffer) {
         return;
     }
     gtk_text_buffer_create_tag(buffer, "dir_title",
-                               "weight", 600, "scale", 1.3, "foreground", palette_color(PAL_FG_STRONG),
+                               "weight", 600, "scale", FONT_SCALE_TITLE, "foreground", palette_color(PAL_FG_STRONG),
                                "pixels-below-lines", 2, NULL);
     gtk_text_buffer_create_tag(buffer, "dir_dim", "foreground", palette_color(PAL_FG_SUBTLE), NULL);
     gtk_text_buffer_create_tag(buffer, "dir_table",
-                               "family", "monospace", "wrap-mode", GTK_WRAP_NONE, NULL);
+                               "family", fonts_family(FONT_CODE), "wrap-mode", GTK_WRAP_NONE, NULL);
     gtk_text_buffer_create_tag(buffer, "dir_folder", "weight", 600, NULL);
     gtk_text_buffer_create_tag(buffer, "dir_section",
                                "weight", 600, "foreground", palette_color(PAL_FG_STRONG),
                                "paragraph-background", palette_color(PAL_BG_BLOCK),
                                "pixels-above-lines", 6, "pixels-below-lines", 6, NULL);
-    gtk_text_buffer_create_tag(buffer, "dir_plain", "family", "monospace", NULL);
+    gtk_text_buffer_create_tag(buffer, "dir_plain", "family", fonts_family(FONT_CODE), NULL);
     /* Git status colours, as in the explorer tree */
     static const struct { const gchar* name; PaletteRole role; } git_tags[] = {
         { "dir_git_M", PAL_GIT_MODIFIED }, { "dir_git_U", PAL_GIT_ADDED }, { "dir_git_A", PAL_GIT_ADDED },

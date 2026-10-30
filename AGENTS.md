@@ -47,6 +47,11 @@ make clean        # remove binary and build/
   colour literal elsewhere (`make check` rejects `#rrggbb` outside
   `palette.c`); pick the role that matches the meaning (e.g. `fg_subtle`
   for metadata, `bg_block` for code blocks) or add a role.
+- **Fonts come from the font roles** (`fonts.h`): `@font_*` / `@size_*`
+  in CSS, `fonts_family(FONT_CODE)` and `FONT_SCALE_*` in text tags.
+  File contents (code and plain text, preview and every editor mode) and
+  the terminal use the code font; the interface and rendered documents the
+  UI font. `make check` rejects font families and pixel sizes elsewhere.
 - Text interpolated into Pango markup must be escaped: use
   `g_markup_printf_escaped()`, never `g_strdup_printf()`, with names, titles,
   hosts, key labels or any user-provided string.
@@ -165,6 +170,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `palette_rgb()` (cairo), `palette_set()` / `palette_reset()` (themes),
   each role a CSS named colour (`@bg_window`, `alpha(@accent, 0.25)`), and
   `palette_expand()` for `@role` tokens in text templates.
+- `fonts` — the interface and code fonts (family list + pixel size,
+  `fonts_set()` for themes); CSS tokens `@font_ui`, `@font_code`,
+  `@size_small` / `@size_bar` / `@size_normal` / `@size_title` (derived
+  from the UI size), `@size_code`; `fonts_family()` for text tags and
+  markup; `FONT_SCALE_*` for headings, titles, captions and code in
+  rendered documents.
 - `lsp_protocol`, `lsp_client`, `lsp_config` — Language Server Protocol:
   messages and results (positions: UTF-16 unless the server chose UTF-8,
   `lsp_column_to_byte()`), one server process spoken to asynchronously on the
@@ -203,7 +214,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   syntax language (`is_code_file()`, `apply_viewer_language()`).
 - `theme` — global stylesheet (`apply_panel_borders()`); every module's CSS
   goes through `theme_add_css()` (palette colours defined, reloaded by
-  `theme_reload()` after a palette change).
+  `theme_reload()` after a palette or font change).
 - `tree_nav` — explorer row traversal and selection (j/k, arrows, gg/G,
   Ctrl+F/B, zz/zt/zb, `tree_nav_selected()`, `select_row()`,
   `select_by_path()`), and suspending the preview handler while the tree is

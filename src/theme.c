@@ -1,7 +1,9 @@
 /* Application-wide CSS theme (VS Code Dark Modern inspired panels, toolbars,
- * tabs). Colours are the palette roles (palette.h) as CSS named colours. */
+ * tabs). Colours are the palette roles (palette.h) as CSS named colours,
+ * fonts and sizes the font roles (fonts.h: @font_ui, @size_normal...). */
 #include "theme.h"
 #include "palette.h"
+#include "fonts.h"
 
 #include <gtk/gtk.h>
 
@@ -16,7 +18,9 @@ static GPtrArray* sheets = NULL;
 
 static void sheet_load(ThemeSheet* sheet) {
     gchar* defines = palette_css_defines();
-    gchar* css = g_strconcat(defines, sheet->source, NULL);
+    gchar* source = fonts_expand(sheet->source);
+    gchar* css = g_strconcat(defines, source, NULL);
+    g_free(source);
     gtk_css_provider_load_from_string(sheet->provider, css);
     g_free(css);
     g_free(defines);
@@ -163,11 +167,11 @@ void apply_panel_borders(void) {
         "  background-color: @bg_hover;\n"
         "  color: @fg;\n"
         "}\n"
-        /* Application chrome uses the system UI font at VS Code's 13px */
-        "#statusbar, #bottom-statusbar, #sidebar-header, #file-tree,\n"
-        "notebook > header tab, #help-panel, tooltip {\n"
-        "  font-family: 'Segoe UI', 'Ubuntu', 'Cantarell', 'Noto Sans', sans-serif;\n"
-        "  font-size: 13px;\n"
+        /* One interface font for the whole window (dialogs, menus and
+         * rendered documents inherit it); file contents use the code font */
+        "window, tooltip, popover {\n"
+        "  font-family: @font_ui;\n"
+        "  font-size: @size_normal;\n"
         "}\n"
         /* ---- Top bar (title bar) ---- */
         "#statusbar {\n"
@@ -223,7 +227,7 @@ void apply_panel_borders(void) {
         "button.status-pill label,\n"
         "button.status-pill image {\n"
         "  color: @fg_muted;\n"
-        "  font-size: 12px;\n"
+        "  font-size: @size_bar;\n"
         "}\n"
         "button.status-pill:hover {\n"
         "  background-color: alpha(@hover_overlay, 0.31);\n"
@@ -283,7 +287,7 @@ void apply_panel_borders(void) {
         "}\n"
         "#sidebar-title {\n"
         "  color: @fg_subtle;\n"
-        "  font-size: 10px;\n"
+        "  font-size: @size_small;\n"
         "  font-weight: 600;\n"
         "  letter-spacing: 0.8px;\n"
         "}\n"
@@ -301,7 +305,7 @@ void apply_panel_borders(void) {
         "button.sidebar-icon-btn label,\n"
         "button.sidebar-icon-btn image {\n"
         "  color: @fg;\n"
-        "  font-size: 11px;\n"
+        "  font-size: @size_small;\n"
         "}\n"
         "button.sidebar-icon-btn:hover {\n"
         "  background-color: alpha(@hover_overlay, 0.35);\n"
@@ -331,7 +335,7 @@ void apply_panel_borders(void) {
         "#sidebar-section,\n"
         "label.sidebar-section-title {\n"
         "  color: @fg;\n"
-        "  font-size: 10px;\n"
+        "  font-size: @size_small;\n"
         "  font-weight: 600;\n"
         "  letter-spacing: 0.3px;\n"
         "}\n"
@@ -398,15 +402,15 @@ void apply_panel_borders(void) {
         "#video-title {\n"
         "  color: @fg_strong;\n"
         "  font-weight: 600;\n"
-        "  font-size: 1.15em;\n"
+        "  font-size: @size_title;\n"
         "}\n"
         "#video-meta {\n"
         "  color: @fg_subtle;\n"
-        "  font-size: 0.9em;\n"
+        "  font-size: @size_small;\n"
         "}\n"
         "#video-status {\n"
         "  color: @error;\n"
-        "  font-size: 0.85em;\n"
+        "  font-size: @size_small;\n"
         "}\n"
         "#video-player, video {\n"
         "  background-color: @shadow;\n"
@@ -430,15 +434,15 @@ void apply_panel_borders(void) {
         "#audio-title {\n"
         "  color: @fg_strong;\n"
         "  font-weight: 600;\n"
-        "  font-size: 1.15em;\n"
+        "  font-size: @size_title;\n"
         "}\n"
         "#audio-meta {\n"
         "  color: @fg_subtle;\n"
-        "  font-size: 0.9em;\n"
+        "  font-size: @size_small;\n"
         "}\n"
         "#audio-status {\n"
         "  color: @error;\n"
-        "  font-size: 0.85em;\n"
+        "  font-size: @size_small;\n"
         "}\n"
         "#audio-controls {\n"
         "  background-color: @bg_hover;\n"
@@ -473,7 +477,7 @@ void apply_panel_borders(void) {
         "notebook > header tab label,\n"
         "notebook > header tab image {\n"
         "  color: inherit;\n"
-        "  font-size: 12px;\n"
+        "  font-size: @size_bar;\n"
         "}\n"
         /* Current tab: grey top line, blue and white text in the focused panel */
         "notebook > header tab:checked {\n"
@@ -499,7 +503,7 @@ void apply_panel_borders(void) {
         "button.tab-action-btn label,\n"
         "button.tab-action-btn image {\n"
         "  color: @fg;\n"
-        "  font-size: 13px;\n"
+        "  font-size: @size_normal;\n"
         "}\n"
         "button.tab-action-btn:hover {\n"
         "  background-color: alpha(@hover_overlay, 0.35);\n"
@@ -532,7 +536,7 @@ void apply_panel_borders(void) {
         "}\n"
         "button#tab-context-btn label {\n"
         "  color: inherit;\n"
-        "  font-size: 12px;\n"
+        "  font-size: @size_bar;\n"
         "}\n"
         /* ---- Focused panel (VS Code style: no frame) ----
          * The panel owning the keyboard focus (panels.c adds .panel-focused)
@@ -653,7 +657,7 @@ void apply_panel_borders(void) {
         "}\n"
         "#bottom-statusbar label.status-item {\n"
         "  color: @fg;\n"
-        "  font-size: 12px;\n"
+        "  font-size: @size_bar;\n"
         "  padding: 2px 8px;\n"
         "}\n"
         "#bottom-statusbar label.status-item:hover {\n"
@@ -715,7 +719,7 @@ void apply_panel_borders(void) {
         "  font-weight: 600;\n"
         "}\n"
         "#layout-list .layout-summary {\n"
-        "  font-size: 11px;\n"
+        "  font-size: @size_small;\n"
         "}\n"
         /* Markdown tables (markdown.c): VS Code look */
         ".md-table {\n"
@@ -754,7 +758,7 @@ void apply_panel_borders(void) {
         "}\n"
         "#git-tree label.git-hash {\n"
         "  color: @accent_fg;\n"
-        "  font-family: monospace;\n"
+        "  font-family: @font_code;\n"
         "}\n"
         "#git-tree label.git-author {\n"
         "  color: @fg;\n"
@@ -774,10 +778,11 @@ void apply_panel_borders(void) {
         "#git-header-bar label {\n"
         "  color: @fg_strong;\n"
         "  font-weight: 600;\n"
-        "  font-size: 12px;\n"
+        "  font-size: @size_bar;\n"
         "}\n"
         ".code-font text, textview.code-font text, .code-font {\n"
-        "  font-family: 'Consolas', 'DejaVu Sans Mono', 'Liberation Mono', 'Menlo', 'Courier New', monospace;\n"
+        "  font-family: @font_code;\n"
+        "  font-size: @size_code;\n"
         "}\n"
         /* Emacs block cursor (editor_emacs.c): the thin caret is hidden, the
          * block is a tag on the character, or this box at a line end */

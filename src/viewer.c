@@ -520,7 +520,9 @@ static void show_text_preview(TextPreviewTaskData* td) {
         gboolean has_lang = apply_viewer_language(app, td->name, td->content_type);
         code = has_lang || is_code_file(td->name) || td->render_raw ||
                         (td->utf8_text != NULL && g_str_has_prefix(td->utf8_text, "#!"));
-        set_view_monospace(app->text_view, code);
+        /* File contents (code or plain text) in the code font, as in editors;
+         * rendered documents use the interface font */
+        set_view_monospace(app->text_view, TRUE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
         set_view_text_padding(app->text_view);
     }

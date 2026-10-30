@@ -1,5 +1,6 @@
 /* Display of PreviewDocs in the preview text view (see preview_doc_view.h). */
 #include "preview_doc_view.h"
+#include "fonts.h"
 #include "palette.h"
 
 #include <string.h>
@@ -51,7 +52,7 @@ static void ensure_tags(GtkTextBuffer* buffer) {
     if (gtk_text_tag_table_lookup(table, "pd_title") != NULL) {
         return;
     }
-    gtk_text_buffer_create_tag(buffer, "pd_title", "weight", 700, "scale", 1.2, NULL);
+    gtk_text_buffer_create_tag(buffer, "pd_title", "weight", 700, "scale", FONT_SCALE_TITLE, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_dim", "foreground", palette_color(PAL_FG_SUBTLE), NULL);
     gtk_text_buffer_create_tag(buffer, "pd_section", "weight", 700, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_bold", "weight", 700, NULL);
@@ -79,15 +80,15 @@ static void ensure_tags(GtkTextBuffer* buffer) {
     gtk_text_buffer_create_tag(buffer, "pd_success", "foreground", palette_color(PAL_SUCCESS), NULL);
     gtk_text_buffer_create_tag(buffer, "pd_link", "foreground", palette_color(PAL_LINK),
                                "underline", PANGO_UNDERLINE_SINGLE, NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_h1", "weight", 700, "scale", 1.6,
+    gtk_text_buffer_create_tag(buffer, "pd_h1", "weight", 700, "scale", FONT_SCALE_H1,
                                "pixels-above-lines", 8, "pixels-below-lines", 4, NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_h2", "weight", 700, "scale", 1.35,
+    gtk_text_buffer_create_tag(buffer, "pd_h2", "weight", 700, "scale", FONT_SCALE_H2,
                                "pixels-above-lines", 6, "pixels-below-lines", 3, NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_h3", "weight", 700, "scale", 1.15,
+    gtk_text_buffer_create_tag(buffer, "pd_h3", "weight", 700, "scale", FONT_SCALE_H3,
                                "pixels-above-lines", 4, "pixels-below-lines", 2, NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_code", "family", "Monospace",
+    gtk_text_buffer_create_tag(buffer, "pd_code", "family", fonts_family(FONT_CODE),
                                "paragraph-background", palette_color(PAL_BG_BLOCK), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_mono", "family", "Monospace", NULL);
+    gtk_text_buffer_create_tag(buffer, "pd_mono", "family", fonts_family(FONT_CODE), NULL);
     /* Indents in addition to the view's own left margin (text padding) */
     gtk_text_buffer_create_tag(buffer, "pd_indent", "left-margin", PREVIEW_TEXT_PADDING_X + 56, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_indent2", "left-margin", PREVIEW_TEXT_PADDING_X + 112, NULL);

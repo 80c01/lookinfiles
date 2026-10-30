@@ -79,16 +79,17 @@ code_tags:code_symbol,json_view
 code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
 palette:
+fonts:
 lsp_protocol:code_symbol,json_view
 lsp_client:lsp_protocol
 lsp_config:code_symbol
 layout_store:app_paths
 text_style:app_types,file_types,app_paths,palette,theme
-theme:palette
-markdown:app_types,image_utils,palette
-html:app_types,image_utils,palette
+theme:palette,fonts
+markdown:app_types,image_utils,palette,fonts
+html:app_types,image_utils,palette,fonts
 minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette
-preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette
+preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette,fonts
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events
@@ -173,6 +174,15 @@ for f in $(grep -lE '#[0-9a-fA-F]{6}\b' src/*.c src/*.h); do
     case "$f" in
         src/palette.c|src/palette.h) ;;
         *) echo "colours: $f has a colour literal; use a palette role (palette.h)"; status=1 ;;
+    esac
+done
+
+# Fonts come from the font roles (fonts.h: @font_ui / @size_... in CSS,
+# fonts_family() in C): no font family or pixel size written elsewhere
+for f in $(grep -lE "font-family: *[^@ ]|font-size: *[0-9.]+px|\"family\", *\"|font_family=\\\\\"[a-zA-Z]|<tt>" src/*.c); do
+    case "$f" in
+        src/fonts.c) ;;
+        *) echo "fonts: $f sets a font family or size; use the font roles (fonts.h)"; status=1 ;;
     esac
 done
 

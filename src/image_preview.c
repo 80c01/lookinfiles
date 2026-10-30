@@ -1,6 +1,7 @@
 /* Image preview: fitted / 1:1 / zoomed, EXIF orientation and photo details
  * (see image_preview.h). */
 #include "image_preview.h"
+#include "fonts.h"
 #include "palette.h"
 
 #include <glib/gstdio.h>
@@ -287,7 +288,7 @@ static void ensure_image_tags(GtkTextBuffer* buffer) {
         gtk_text_buffer_create_tag(buffer, "img_header",
                                    "justification", GTK_JUSTIFY_CENTER,
                                    "weight", PANGO_WEIGHT_BOLD,
-                                   "scale", 1.15,
+                                   "scale", FONT_SCALE_TITLE,
                                    "foreground", palette_color(PAL_FG_STRONG),
                                    NULL);
     }
@@ -295,7 +296,7 @@ static void ensure_image_tags(GtkTextBuffer* buffer) {
         gtk_text_buffer_create_tag(buffer, "img_sub",
                                    "justification", GTK_JUSTIFY_CENTER,
                                    "foreground", palette_color(PAL_FG_SUBTLE),
-                                   "scale", 0.9,
+                                   "scale", FONT_SCALE_SMALL,
                                    NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "img_details")) {

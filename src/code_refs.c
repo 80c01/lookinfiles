@@ -76,7 +76,7 @@ static void ensure_css(void) {
     theme_add_css(".code-refs { background-color: @bg_view; }"
                   ".code-refs listview { background-color: @bg_view; }"
                   ".code-refs .refs-header { padding: 6px 10px; color: @fg; }"
-                  ".code-refs label.ref-line { font-family: monospace; padding: 1px 10px 1px 28px; }"
+                  ".code-refs label.ref-line { font-family: @font_code; padding: 1px 10px 1px 28px; }"
                   ".code-refs label.ref-file { padding: 4px 10px 1px 10px; }");
 }
 

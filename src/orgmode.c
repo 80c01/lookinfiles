@@ -1,4 +1,5 @@
 #include "orgmode.h"
+#include "fonts.h"
 #include "palette.h"
 #include "org_doc.h"
 #include "image_utils.h"
@@ -218,13 +219,13 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
                "pixels-below-lines", 6);
 
     CREATE_TAG("org_meta",
-               "scale", 0.9,
+               "scale", FONT_SCALE_SMALL,
                "style", PANGO_STYLE_ITALIC,
                "foreground", palette_color(PAL_FG_SUBTLE),
                "pixels-below-lines", 4);
 
     CREATE_TAG("org_banner",
-               "scale", 0.9,
+               "scale", FONT_SCALE_SMALL,
                "foreground", palette_color(PAL_FG_SUBTLE),
                "pixels-above-lines", 2,
                "pixels-below-lines", 6);
@@ -319,7 +320,7 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
                "foreground", palette_color(PAL_ACCENT_FG));
 
     CREATE_TAG("org_tag",
-               "scale", 0.85,
+               "scale", FONT_SCALE_SMALL,
                "foreground", palette_color(PAL_SYN_VARIABLE),
                "background", palette_color(PAL_BG_CODE_INLINE));
 
@@ -342,21 +343,21 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
                "foreground", palette_color(PAL_FG_FAINT));
 
     CREATE_TAG("org_drawer",
-               "family", "monospace",
-               "scale", 0.85,
+               "family", fonts_family(FONT_CODE),
+               "scale", FONT_SCALE_SMALL,
                "foreground", palette_color(PAL_FG_FAINT),
                "background", palette_color(PAL_BG_BLOCK));
 
     CREATE_TAG("org_src_block",
-               "family", "monospace",
+               "family", fonts_family(FONT_CODE),
                "background", palette_color(PAL_BG_BLOCK),
                "foreground", palette_color(PAL_FG_TEXT),
                "left-margin", 24,
                "right-margin", 24);
 
     CREATE_TAG("org_src_header",
-               "family", "monospace",
-               "scale", 0.85,
+               "family", fonts_family(FONT_CODE),
+               "scale", FONT_SCALE_SMALL,
                "foreground", palette_color(PAL_FG_SUBTLE),
                "background", palette_color(PAL_BG_BLOCK),
                "left-margin", 24);
@@ -367,11 +368,11 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
                "left-margin", 24);
 
     CREATE_TAG("org_table",
-               "family", "monospace",
+               "family", fonts_family(FONT_CODE),
                "foreground", palette_color(PAL_FG_TEXT));
 
     CREATE_TAG("org_table_hdr",
-               "family", "monospace",
+               "family", fonts_family(FONT_CODE),
                "weight", PANGO_WEIGHT_BOLD,
                "foreground", palette_color(PAL_ACCENT_FG));
 
@@ -389,7 +390,7 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("org_cookie",
                "foreground", palette_color(PAL_ACCENT_FG),
-               "scale", 0.9,
+               "scale", FONT_SCALE_SMALL,
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_fold_cookie",
@@ -406,7 +407,7 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
                "underline", PANGO_UNDERLINE_SINGLE);
 
     CREATE_TAG("org_code",
-               "family", "monospace",
+               "family", fonts_family(FONT_CODE),
                "foreground", palette_color(PAL_SYN_STRING),
                "background", palette_color(PAL_BG_CODE_INLINE));
 

@@ -1,6 +1,7 @@
 /* Floating key-binding cheat sheet ('?' / top bar Help button). Keep KEY_HELP in sync with README.md. */
 #include "help.h"
 #include "palette.h"
+#include "fonts.h"
 #include "icons.h"
 #include "panels.h"
 #include "app_events.h"
@@ -276,8 +277,8 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
         }
         GtkWidget* key_label = gtk_label_new(NULL);
         gchar* key_markup =
-            g_markup_printf_escaped("<span foreground=\"%s\"><tt><b>%s</b></tt></span>",
-                            palette_color(PAL_SYN_FUNCTION), KEY_HELP[i].key);
+            g_markup_printf_escaped("<span foreground=\"%s\" font_family=\"%s\"><b>%s</b></span>",
+                            palette_color(PAL_SYN_FUNCTION), fonts_family(FONT_CODE), KEY_HELP[i].key);
         gtk_label_set_markup(GTK_LABEL(key_label), key_markup);
         g_free(key_markup);
         gtk_widget_set_halign(key_label, GTK_ALIGN_START);
