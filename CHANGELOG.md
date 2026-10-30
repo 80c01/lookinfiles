@@ -22,7 +22,11 @@ All notable changes to this project are listed here. The format follows
   (C, C++, Java, C#, Python, Shell, JavaScript / TypeScript, Go, Rust, Lua,
   Ruby, Makefiles); see TASK_CODE_NAV.md. With Universal Ctags installed, its
   index is used instead (cached, updated per changed file) and more languages
-  are covered.
+  are covered. Language servers (clangd, pylsp, gopls, rust-analyzer...) are
+  used first when installed (`lsp.ini` to choose them).
+- Help cards in editor tabs: what the identifier is (signature, documentation,
+  location) on `Ctrl+K Ctrl+I` / `C-h .` / `K` or when the mouse rests on it,
+  and the signature of the call being typed with the current parameter.
 - Previews for many more formats, each built in the background and shown as
   close as possible to its own application (see TASK.md):
   CSV / TSV tables; pretty-printed JSON, JSONC and JSON Lines; diffs and

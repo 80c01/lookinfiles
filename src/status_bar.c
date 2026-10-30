@@ -1,5 +1,7 @@
 /* VS Code-style bottom status bar: Git branch, selection, size, file type and editor mode menu. */
 #include "status_bar.h"
+#include "code_intel.h"
+#include "code_nav.h"
 #include "editor.h"
 #include "file_types.h"
 #include "git_utils.h"
@@ -77,6 +79,9 @@ GtkWidget* create_status_bar(AppData* app) {
     GtkWidget* status_type = status_item_new();
     gtk_box_append(GTK_BOX(bar), status_type);
 
+    GtkWidget* status_code = status_item_new();
+    gtk_box_append(GTK_BOX(bar), status_code);
+
     GtkWidget* status_encoding = status_item_new();
     gtk_label_set_text(GTK_LABEL(status_encoding), "UTF-8");
     gtk_widget_set_visible(status_encoding, TRUE);
@@ -99,6 +104,7 @@ GtkWidget* create_status_bar(AppData* app) {
         app->status_selection = status_selection;
         app->status_size = status_size;
         app->status_type = status_type;
+        app->status_code = status_code;
         app->status_encoding = status_encoding;
         app->status_mode = status_mode_label;
         app->status_mode_btn = status_mode_btn;
@@ -281,6 +287,22 @@ void update_status_bar(AppData* app) {
     gtk_widget_set_visible(app->status_selection, has_sel);
     gtk_widget_set_visible(app->status_type, has_sel);
     gtk_widget_set_visible(app->status_size, has_size);
+
+    /* Code navigation backend of the editor tab: language server, ctags or index */
+    if (app->status_code != NULL) {
+        EditorTab* cur = status_mode_tab(app);
+        gchar* server = code_intel_server_label(app, cur);
+        const gchar* backend = server != NULL ? server : code_nav_backend_label(cur);
+        if (backend != NULL) {
+            gtk_label_set_text(GTK_LABEL(app->status_code), backend);
+            gchar* tip = server != NULL ? g_strdup_printf("Code Navigation: language server %s", server)
+                                        : g_strdup_printf("Code Navigation: %s (no language server)", backend);
+            gtk_widget_set_tooltip_text(app->status_code, tip);
+            g_free(tip);
+        }
+        gtk_widget_set_visible(app->status_code, backend != NULL);
+        g_free(server);
+    }
 
     /* Update editor mode in status bar */
     if (app->status_mode != NULL) {

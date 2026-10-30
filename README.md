@@ -296,7 +296,8 @@ the cursor (functions, macros, types, fields, enum constants, global
 variables...) and come back. The lookup reads the files of the project (its
 git repository, else the file's folder) in the background, unsaved tabs as
 edited; when nothing is found, it goes to the first use of the name in the
-current function. When [Universal Ctags](https://ctags.io) is installed, its
+current function. A language server is used first when one is installed
+(see [Configuration](#configuration)). When [Universal Ctags](https://ctags.io) is installed, its
 index is used (kept in `~/.cache/lookin/tags/`, updated for the files that
 changed), which also brings Objective-C, PHP, Perl, Kotlin, Swift, Scala,
 Dart, Haskell, Elixir, Erlang, Julia, R and Tcl.
@@ -306,6 +307,8 @@ Dart, Haskell, Elixir, Erlang, Julia, R and Tcl.
 | Go to the definition | `F12`, `Ctrl+Click` | `M-.`, `Ctrl+Click` | `gd`, `Ctrl+]`, `Ctrl+Click`, `:tag name` |
 | Go to the declaration (prototype, `extern`) | `Ctrl+F12` | `C-u M-.` | `gD`, `:tag! name` |
 | Back / forward | `Ctrl+Alt+-` / `Ctrl+Shift+-` | `M-,` / `C-M-,` | `Ctrl+O` / `Tab` (in the file, then across files) |
+| Help card (signature, documentation, location) | `Ctrl+K Ctrl+I`, rest the mouse on a name | `C-h .`, mouse | `K`, mouse |
+| Signature of the call being typed | automatic after `(` and `,`, `Ctrl+Shift+Space` | automatic, in the echo area | automatic in Insert mode |
 
 Repeated on a definition, the lookup goes to the next candidate (other
 definitions, then the declarations). The message line tells which one is shown
@@ -376,7 +379,7 @@ becomes a rule. Folds survive edits, and moving the cursor into folded text
 | Format | Align left / center / right / justify `Ctrl+L` / `E` / `R` / `J`, indent `Tab`, unindent `Shift+Tab` |
 | Undo and redo | `Ctrl+Z`, `Ctrl+Y` / `Ctrl+Shift+Z` |
 | Save | `Ctrl+S`, Save As `Ctrl+Shift+S` |
-| Code | Definition `F12` / `Ctrl+Click`, declaration `Ctrl+F12`, back / forward `Ctrl+Alt+-` / `Ctrl+Shift+-` |
+| Code | Definition `F12` / `Ctrl+Click`, declaration `Ctrl+F12`, back / forward `Ctrl+Alt+-` / `Ctrl+Shift+-`, help `Ctrl+K Ctrl+I`, signature `Ctrl+Shift+Space` |
 
 </details>
 
@@ -393,7 +396,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Format | `M-q` fill paragraph (72 columns), `M-u` / `M-l` / `M-c` case, `M-x set-justification-left` / `center` / `right` / `full` |
 | Undo and redo | `C-/`, `C-_`, `C-x u` / `C-Shift-_`, `M-_` |
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
-| Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward |
+| Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward, `C-h .` help; signatures in the echo area |
 | Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `org-mode`, `text-mode`, mode switches) |
 | Minibuffer | `Tab` completes (`M-x` command names, Org tags, `*Heading` links) and lists the candidates; `C-g` / `Esc` quits |
 
@@ -422,7 +425,7 @@ listed over the statusline, Vim's wildmenu) and `Ctrl+R` register insert.
 | Marks and jumps | `m{a-z}`, `` `a `` / `'a`, ``` `` ``` / `''`, `` `[ `` `` `] `` `` `< `` `` `. ``, `Ctrl+O` / `Tab` jump list, `:marks`, `:jumps` |
 | Macros | `qa` … `q` record, `@a` run (with a count; stops at the first failure), `@@` again, `@:` repeat the last Ex command |
 | Search | `/` `?` (Vim regex: `\<` `\>` `\(` `\)` `\\|` `\{n,m}` `\zs` `\ze` `\v` `\c`), incremental with all matches highlighted and a `[n/total]` count, `n` `N`, `*` `#` `g*` `g#`, `gd` (first occurrence, when the file is not code); `:noh` |
-| Code | `gd` / `Ctrl+]` definition, `gD` declaration, `:tag[!] name`; `Ctrl+O` / `Tab` continue across files |
+| Code | `gd` / `Ctrl+]` definition, `gD` declaration, `:tag[!] name`, `K` help; `Ctrl+O` / `Tab` continue across files |
 | Ex commands | Ranges `%` `.` `$` `N` `'a` `'<,'>` `/pat/` `?pat?` `+N` `-N` `;`; `:s/pat/rep/[gine]` (`&` `\1` `\u` `\U` `\r` `~`), `:&` `:&&` `&` `g&`, `:g/pat/cmd` `:v`, `:d [x] [N]`, `:y`, `:pu`, `:m`, `:t` / `:co`, `:j[!]`, `:>` `:<`, `:normal`, `:sort [n i u] [!]`, `:retab`, `:center` / `:right` / `:left [width]`, `:k`, `:reg`, `:[N]` |
 | Options | `:set` `ignorecase` `smartcase` `hlsearch` `incsearch` `wrapscan` `expandtab` `autoindent` `shiftwidth` `tabstop` `softtabstop` (default `-1`: same as `shiftwidth`) `textwidth` `clipboard`, `number`, `wrap`, `mode=vim\|emacs\|notepad` (`no` / `inv` / `!` / `?` / `+=`) |
 | Scroll | `zz` `zt` `zb` (`z.` `z<CR>` `z-`), `Ctrl+E` / `Ctrl+Y` lines, `Ctrl+D` / `Ctrl+U` half pages, `Ctrl+F` / `Ctrl+B` pages |
@@ -441,8 +444,27 @@ Settings and data are kept in `~/.config/lookin/`
 | `notes/` | Notebooks (one directory each), notes, `notes.xml` and the `.trash/` |
 | `remotes.xml` | Remote machines added by hand (`~/.ssh/config` hosts are read directly) |
 | `layouts.ini` | Saved workspace layouts and the default layout of new workspaces |
+| `lsp.ini` | Language server commands for code navigation (optional, see below) |
 
 Remote machines are mounted under `~/.cache/lookin/remotes/`.
+
+Code navigation starts a language server when one is installed for the
+file's language: `clangd` (C, C++, Objective-C), `pylsp` /
+`pyright-langserver` / `jedi-language-server` (Python), `gopls`,
+`rust-analyzer`, `typescript-language-server`, `bash-language-server`,
+`lua-language-server`, `solargraph`, `jdtls`, `csharp-ls`, `intelephense`...
+`lsp.ini` replaces a command or turns a server off (keys are the language ids:
+`c`, `cpp`, `python`, `javascript`, `go`, `rust`...):
+
+```ini
+[servers]
+c=clangd --background-index
+python=pyright-langserver --stdio
+rust=none
+```
+
+The status bar shows what serves the current editor tab: the server name,
+`ctags` or `built-in index`.
 
 Toolbar icons are bundled in the binary, so they look the same with any icon
 theme. If buttons show no icon, `LOOKIN_DEBUG_ICONS=1 ./lookin`

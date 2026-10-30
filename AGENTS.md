@@ -128,6 +128,13 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `app_cache_dir()/tags/`; `code_index_find()` uses it through
   `CodeQuery.tags`, open buffers are still scanned.
 - `jump_list` — back / forward history of navigation jumps across files.
+- `lsp_protocol`, `lsp_client`, `lsp_config` — Language Server Protocol:
+  messages and results (positions: UTF-16 unless the server chose UTF-8,
+  `lsp_column_to_byte()`), one server process spoken to asynchronously on the
+  main context (`LspClient`: queued until initialized, server requests
+  answered, full-text document sync; never free it from its own callbacks),
+  and server commands (defaults + `lsp.ini`). `tests/fixtures/fake_lsp.py`
+  is a fake server for the client tests.
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can
@@ -225,6 +232,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   forward (`code_nav_back()`, `code_nav_forward()`); messages through
   `editor_mode_message()` passed by the caller. Vim reaches it through the
   `VimHost` callbacks `goto_definition` and `jump_history`.
+- `code_intel` — language servers for code navigation: one `LspClient` per
+  project and command, open tabs synchronized before each request, results
+  with byte columns; FALSE when no server serves the tab (callers then use
+  the index). `code_help` — help cards (`GtkPopover` parented to the tab
+  container, never the text view) and signature help, from `code_intel` or
+  `code_nav_find()`.
 - `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette; ssh into
   the active remote machine.
 - `search` — live search entry (`/`, `n`, `N`) for list and viewer.

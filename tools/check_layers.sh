@@ -64,6 +64,9 @@ code_scan:code_symbol,code_scan_c
 code_tags:code_symbol,json_view
 code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
+lsp_protocol:code_symbol,json_view
+lsp_client:lsp_protocol
+lsp_config:code_symbol
 layout_store:app_paths
 text_style:app_types,file_types
 theme:

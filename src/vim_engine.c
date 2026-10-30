@@ -3045,7 +3045,18 @@ static void exec_simple(VimEngine* e, const VimCmd* cmd) {
     }
 
     switch (k) {
-        case VIM_KEY_ESC: case VIM_KEY_CTRL('c'): case VIM_KEY_CTRL('l'): case 'K':
+        case 'K': {
+            GtkTextIter ws, we;
+            gboolean shown = FALSE;
+            if (e->host.keyword_help != NULL && vim_e_word_under_cursor(e, &ws, &we)) {
+                gchar* word = gtk_text_iter_get_slice(&ws, &we);
+                shown = e->host.keyword_help(e->hd, word);
+                g_free(word);
+            }
+            if (!shown) beep(e);
+            return;
+        }
+        case VIM_KEY_ESC: case VIM_KEY_CTRL('c'): case VIM_KEY_CTRL('l'):
             return;
         case 'x': case 'X': case 's': case 'S': case 'C': case 'D': case 'Y': {
             /* Shortcuts: x = dl, X = dh, s = cl, S = cc, C = c$, D = d$, Y = yy */

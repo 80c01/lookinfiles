@@ -2,6 +2,7 @@
 #include "editor_modes_private.h"
 #include "editor.h"
 #include "code_nav.h"
+#include "code_help.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -907,6 +908,23 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     if (alt && (keyval == GDK_KEY_g || keyval == GDK_KEY_G)) {
         st->emacs_prefix = EMACS_PREFIX_META_G;
         emacs_echo(tab, "M-g-");
+        return TRUE;
+    }
+
+    /* 2b. Emacs Prefix C-h (help) */
+    if (ctrl && !alt && (keyval == GDK_KEY_h || keyval == GDK_KEY_H) && st->emacs_prefix == EMACS_PREFIX_NONE) {
+        st->emacs_prefix = EMACS_PREFIX_CTRL_H;
+        emacs_echo(tab, "C-h-");
+        return TRUE;
+    }
+    if (st->emacs_prefix == EMACS_PREFIX_CTRL_H) {
+        st->emacs_prefix = EMACS_PREFIX_NONE;
+        if (keyval == GDK_KEY_period) {
+            /* display-local-help: what the identifier at point is */
+            code_help_show((AppData*)tab->app, tab);
+        } else {
+            emacs_echo(tab, "C-h: no help command for this key (C-h . describes the symbol at point)");
+        }
         return TRUE;
     }
 

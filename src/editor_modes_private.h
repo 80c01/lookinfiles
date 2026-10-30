@@ -12,7 +12,8 @@ typedef struct VimEngine VimEngine;
 typedef enum {
     EMACS_PREFIX_NONE = 0,
     EMACS_PREFIX_CTRL_X,
-    EMACS_PREFIX_META_G
+    EMACS_PREFIX_META_G,
+    EMACS_PREFIX_CTRL_H
 } EmacsPrefix;
 
 /* Emacs minibuffer mode */
@@ -57,6 +58,7 @@ typedef struct {
     GtkWidget* np_info_label;
     GtkWidget* np_save_bar;
     GtkWidget* np_save_entry;
+    gboolean np_chord_k;      /* Ctrl+K pressed: waiting for the second key (Ctrl+I) */
 
     /* --- Emacs UI & State --- */
     GtkWidget* emacs_box;

@@ -288,6 +288,79 @@ static void test_robustness(void) {
     g_free(got);
 }
 
+static gchar* doc(const gchar* text, CodeLang lang, gint line) {
+    return code_scan_doc_comment(text, strlen(text), lang, line);
+}
+
+static void test_doc_comment(void) {
+    const gchar* c = "#include <a.h>\n\n/* Adds two numbers.\n * Returns the sum. */\nint add(int a, int b);\n"
+                     "// Line one\n// line two\nint sub(int a);\n\nint none(void);\n";
+    gchar* d = doc(c, CODE_LANG_C, 4);
+    g_assert_cmpstr(d, ==, "Adds two numbers.\nReturns the sum.");
+    g_free(d);
+    d = doc(c, CODE_LANG_C, 7);
+    g_assert_cmpstr(d, ==, "Line one\nline two");
+    g_free(d);
+    g_assert_null(doc(c, CODE_LANG_C, 9));
+    const gchar* py = "# Module helper\ndef f(x):\n    \"\"\"Return x.\n\n    More text.\n    \"\"\"\n    return x\n"
+                      "@decorator\ndef g():\n    '''One line.'''\n";
+    d = doc(py, CODE_LANG_PYTHON, 1);
+    g_assert_cmpstr(d, ==, "Return x.\n\nMore text.");
+    g_free(d);
+    d = doc(py, CODE_LANG_PYTHON, 8);
+    g_assert_cmpstr(d, ==, "One line.");
+    g_free(d);
+    /* No docstring: the comment above */
+    d = doc("# Square it\ndef sq(x):\n    return x * x\n", CODE_LANG_PYTHON, 1);
+    g_assert_cmpstr(d, ==, "Square it");
+    g_free(d);
+    /* '#' is not a comment in C (preprocessor) */
+    g_assert_null(doc("#define A 1\nint x;\n", CODE_LANG_C, 1));
+    g_assert_null(doc("x", CODE_LANG_C, 5));
+}
+
+static void test_call_at(void) {
+    gint s = 0, e = 0, arg = -1;
+    const gchar* line = "    total = add(1, mul(2, 3), \"a, b\", x";
+    /* Inside add(), fourth argument (the string's comma does not count) */
+    g_assert_true(code_scan_call_at(line, -1, (gint)strlen(line), CODE_LANG_C, &s, &e, &arg));
+    g_assert_cmpint(s, ==, 12);
+    g_assert_cmpint(e, ==, 15);
+    g_assert_cmpint(arg, ==, 3);
+    /* Inside mul(), second argument */
+    g_assert_true(code_scan_call_at(line, -1, 26, CODE_LANG_C, &s, &e, &arg));
+    g_assert_cmpint(s, ==, 19);
+    g_assert_cmpint(arg, ==, 1);
+    /* Right after "add(" */
+    g_assert_true(code_scan_call_at(line, -1, 16, CODE_LANG_C, &s, &e, &arg));
+    g_assert_cmpint(arg, ==, 0);
+    /* Outside any call, in brackets, after a closed call */
+    g_assert_false(code_scan_call_at(line, -1, 5, CODE_LANG_C, &s, &e, &arg));
+    g_assert_false(code_scan_call_at("x = a[1, 2", -1, 10, CODE_LANG_C, &s, &e, &arg));
+    g_assert_false(code_scan_call_at("f(1) + 2", -1, 8, CODE_LANG_C, &s, &e, &arg));
+}
+
+static void test_parameter_range(void) {
+    const gchar* sig = "int add(int a, const char* b , gint (*cb)(int, int))";
+    gint s = 0, e = 0;
+    g_assert_true(code_scan_parameter_range(sig, 0, &s, &e));
+    g_assert_cmpint(s, ==, 8);
+    g_assert_cmpint(e, ==, 13);
+    g_assert_true(code_scan_parameter_range(sig, 1, &s, &e));
+    gchar* p = g_strndup(sig + s, (gsize)(e - s));
+    g_assert_cmpstr(p, ==, "const char* b");
+    g_free(p);
+    g_assert_true(code_scan_parameter_range(sig, 2, &s, &e));
+    p = g_strndup(sig + s, (gsize)(e - s));
+    g_assert_cmpstr(p, ==, "gint (*cb)(int, int)");
+    g_free(p);
+    g_assert_false(code_scan_parameter_range(sig, 3, &s, &e));
+    g_assert_false(code_scan_parameter_range("void f()", 0, &s, &e));
+    g_assert_false(code_scan_parameter_range("int answer(void)", 0, &s, &e));
+    g_assert_true(code_scan_parameter_range("int f(void* p)", 0, &s, &e));
+    g_assert_false(code_scan_parameter_range("no parens", 0, &s, &e));
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/code_scan/lang", test_lang);
@@ -310,5 +383,8 @@ int main(int argc, char** argv) {
     g_test_add_func("/code_scan/symbol_text", test_symbol_text);
     g_test_add_func("/code_scan/local_definition", test_local_definition);
     g_test_add_func("/code_scan/robustness", test_robustness);
+    g_test_add_func("/code_scan/doc_comment", test_doc_comment);
+    g_test_add_func("/code_scan/call_at", test_call_at);
+    g_test_add_func("/code_scan/parameter_range", test_parameter_range);
     return g_test_run();
 }

@@ -402,3 +402,232 @@ gboolean code_scan_local_definition(const gchar* text, gsize len, CodeLang lang,
     g_array_free(lens, TRUE);
     return ok;
 }
+
+/* ------------------------------------------------------------------------- */
+/* Help: documentation comments, calls, parameters                           */
+/* ------------------------------------------------------------------------- */
+
+/* Lines of text (pointers into it) */
+static GPtrArray* split_lines(const gchar* text, gsize len, GArray* lens) {
+    GPtrArray* lines = g_ptr_array_new();
+    const gchar* p = text;
+    const gchar* end = text + len;
+    while (p <= end) {
+        const gchar* nl = memchr(p, '\n', (gsize)(end - p));
+        gsize ll = nl != NULL ? (gsize)(nl - p) : (gsize)(end - p);
+        if (ll > 0 && p[ll - 1] == '\r') ll--;
+        g_ptr_array_add(lines, (gpointer)p);
+        g_array_append_val(lens, ll);
+        if (nl == NULL) break;
+        p = nl + 1;
+    }
+    return lines;
+}
+
+static gchar* trimmed(const gchar* s, gsize n) {
+    gchar* t = g_strndup(s, n);
+    return g_strstrip(t);
+}
+
+/* Remove comment markers of one line of a comment block */
+static gchar* strip_marker(gchar* line, CodeLang lang) {
+    const gchar* t = line;
+    static const gchar* const PREFIXES[] = {"///", "//!", "//", "/**", "/*!", "/*", "*/", "*", "#", "--", ";"};
+    for (gsize i = 0; i < G_N_ELEMENTS(PREFIXES); i++) {
+        if (g_str_has_prefix(t, PREFIXES[i])) {
+            /* '#' and '--' only in their languages */
+            if (strcmp(PREFIXES[i], "#") == 0 && !(lang == CODE_LANG_PYTHON || lang == CODE_LANG_SHELL ||
+                                                   lang == CODE_LANG_RUBY || lang == CODE_LANG_MAKE ||
+                                                   lang == CODE_LANG_PERL || lang == CODE_LANG_R ||
+                                                   lang == CODE_LANG_TCL || lang == CODE_LANG_ELIXIR ||
+                                                   lang == CODE_LANG_JULIA)) {
+                continue;
+            }
+            if (strcmp(PREFIXES[i], "--") == 0 && !(lang == CODE_LANG_LUA || lang == CODE_LANG_HASKELL)) continue;
+            if (strcmp(PREFIXES[i], ";") == 0) continue;
+            t += strlen(PREFIXES[i]);
+            break;
+        }
+    }
+    gchar* out = g_strdup(t);
+    gsize n = strlen(out);
+    if (n >= 2 && strcmp(out + n - 2, "*/") == 0) out[n - 2] = '\0';
+    g_free(line);
+    return g_strstrip(out);
+}
+
+static gboolean is_comment_line(const gchar* t, CodeLang lang) {
+    if (g_str_has_prefix(t, "//") || g_str_has_prefix(t, "/*") || g_str_has_prefix(t, "*") ||
+        g_str_has_suffix(t, "*/")) {
+        return lang != CODE_LANG_PYTHON && lang != CODE_LANG_SHELL && lang != CODE_LANG_MAKE;
+    }
+    if (g_str_has_prefix(t, "#") && !g_str_has_prefix(t, "#include") && !g_str_has_prefix(t, "#define") &&
+        !g_str_has_prefix(t, "#if") && !g_str_has_prefix(t, "#!")) {
+        return lang == CODE_LANG_PYTHON || lang == CODE_LANG_SHELL || lang == CODE_LANG_RUBY ||
+               lang == CODE_LANG_MAKE || lang == CODE_LANG_PERL || lang == CODE_LANG_R || lang == CODE_LANG_TCL ||
+               lang == CODE_LANG_ELIXIR || lang == CODE_LANG_JULIA;
+    }
+    if (g_str_has_prefix(t, "--")) return lang == CODE_LANG_LUA || lang == CODE_LANG_HASKELL;
+    return FALSE;
+}
+
+gchar* code_scan_doc_comment(const gchar* text, gsize len, CodeLang lang, gint line) {
+    if (text == NULL || line < 0) return NULL;
+    GArray* lens = g_array_new(FALSE, FALSE, sizeof(gsize));
+    GPtrArray* lines = split_lines(text, len, lens);
+    gchar* result = NULL;
+    if (line < (gint)lines->len) {
+        GPtrArray* parts = g_ptr_array_new_with_free_func(g_free);
+        if (lang == CODE_LANG_PYTHON) {
+            /* Docstring: first statement of the body, after the def / class line(s) */
+            gint l = line + 1;
+            while (l < (gint)lines->len) {
+                gchar* t = trimmed(g_ptr_array_index(lines, l), g_array_index(lens, gsize, l));
+                gboolean blank = t[0] == '\0';
+                g_free(t);
+                if (!blank) break;
+                l++;
+            }
+            gchar* first = l < (gint)lines->len ? trimmed(g_ptr_array_index(lines, l), g_array_index(lens, gsize, l))
+                                               : g_strdup("");
+            const gchar* quote = g_str_has_prefix(first, "\"\"\"") ? "\"\"\"" : g_str_has_prefix(first, "'''") ? "'''" : NULL;
+            if (quote != NULL) {
+                gchar* rest = g_strdup(first + 3);
+                for (;;) {
+                    gchar* close = strstr(rest, quote);
+                    if (close != NULL) *close = '\0';
+                    g_ptr_array_add(parts, g_strdup(g_strstrip(rest)));
+                    g_free(rest);
+                    if (close != NULL || ++l >= (gint)lines->len) break;
+                    rest = g_strndup(g_ptr_array_index(lines, l), g_array_index(lens, gsize, l));
+                }
+            }
+            g_free(first);
+        }
+        if (parts->len == 0) {
+            /* Comment block right above (attributes / decorators skipped) */
+            gint l = line - 1;
+            while (l >= 0) {
+                gchar* t = trimmed(g_ptr_array_index(lines, l), g_array_index(lens, gsize, l));
+                gboolean decorator = (t[0] == '@' || g_str_has_prefix(t, "#[")) && lang != CODE_LANG_SHELL;
+                g_free(t);
+                if (!decorator) break;
+                l--;
+            }
+            gint last = l;
+            while (l >= 0) {
+                gchar* t = trimmed(g_ptr_array_index(lines, l), g_array_index(lens, gsize, l));
+                gboolean comment = t[0] != '\0' && is_comment_line(t, lang);
+                g_free(t);
+                if (!comment) break;
+                l--;
+            }
+            for (gint i = l + 1; i <= last; i++) {
+                gchar* t = trimmed(g_ptr_array_index(lines, i), g_array_index(lens, gsize, i));
+                g_ptr_array_add(parts, strip_marker(t, lang));
+            }
+        }
+        /* Drop empty lines at both ends, join the rest */
+        while (parts->len > 0 && ((gchar*)g_ptr_array_index(parts, 0))[0] == '\0') g_ptr_array_remove_index(parts, 0);
+        while (parts->len > 0 && ((gchar*)g_ptr_array_index(parts, parts->len - 1))[0] == '\0') {
+            g_ptr_array_remove_index(parts, parts->len - 1);
+        }
+        if (parts->len > 0) {
+            g_ptr_array_add(parts, NULL);
+            result = g_strjoinv("\n", (gchar**)parts->pdata);
+            g_ptr_array_remove_index(parts, parts->len - 1);
+        }
+        g_ptr_array_unref(parts);
+    }
+    g_ptr_array_free(lines, TRUE);
+    g_array_free(lens, TRUE);
+    return result;
+}
+
+gboolean code_scan_call_at(const gchar* line, gssize len, gint index, CodeLang lang, gint* name_start,
+                           gint* name_end, gint* argument) {
+    if (line == NULL) return FALSE;
+    if (len < 0) len = (gssize)strlen(line);
+    if (index > len) index = (gint)len;
+    gboolean in_string = FALSE;
+    gchar quote = 0;
+    /* Strings before the cursor: scan forward to know which quotes are open */
+    GArray* opens = g_array_new(FALSE, FALSE, sizeof(gint));   /* positions of unclosed '(' */
+    GArray* comma_at = g_array_new(FALSE, FALSE, sizeof(gint)); /* commas per open level */
+    for (gint i = 0; i < index; i++) {
+        gchar c = line[i];
+        if (in_string) {
+            if (c == '\\') i++;
+            else if (c == quote) in_string = FALSE;
+            continue;
+        }
+        if (c == '"' || c == '\'' || c == '`') {
+            in_string = TRUE;
+            quote = c;
+        } else if (c == '(' || c == '[' || c == '{') {
+            g_array_append_val(opens, i);
+            gint zero = 0;
+            g_array_append_val(comma_at, zero);
+        } else if ((c == ')' || c == ']' || c == '}') && opens->len > 0) {
+            g_array_set_size(opens, opens->len - 1);
+            g_array_set_size(comma_at, comma_at->len - 1);
+        } else if (c == ',' && comma_at->len > 0) {
+            g_array_index(comma_at, gint, comma_at->len - 1)++;
+        }
+    }
+    gboolean ok = FALSE;
+    /* The innermost '(' (brackets and braces are not calls) */
+    for (gint k = (gint)opens->len - 1; k >= 0 && !ok; k--) {
+        gint open = g_array_index(opens, gint, k);
+        if (line[open] != '(') {
+            continue;
+        }
+        gint e = open;
+        while (e > 0 && (line[e - 1] == ' ' || line[e - 1] == '\t')) e--;
+        gint s = e;
+        while (s > 0 && ((guchar)line[s - 1] >= 0x80 || code_is_word_char(lang, (guchar)line[s - 1]))) s--;
+        if (s < e && !g_ascii_isdigit(line[s])) {
+            *name_start = s;
+            *name_end = e;
+            *argument = g_array_index(comma_at, gint, k);
+            ok = TRUE;
+        }
+        break;
+    }
+    g_array_free(opens, TRUE);
+    g_array_free(comma_at, TRUE);
+    return ok;
+}
+
+gboolean code_scan_parameter_range(const gchar* signature, gint arg, gint* start, gint* end) {
+    if (signature == NULL || arg < 0) return FALSE;
+    const gchar* open = strchr(signature, '(');
+    if (open == NULL) return FALSE;
+    gint depth = 0, current = 0;
+    gint s = (gint)(open - signature) + 1;
+    for (gint i = s; signature[i] != '\0'; i++) {
+        gchar c = signature[i];
+        if (c == '(' || c == '[' || c == '{' || c == '<') {
+            depth++;
+        } else if ((c == ')' || c == ']' || c == '}' || c == '>') && depth > 0) {
+            depth--;
+        } else if ((c == ',' || c == ')') && depth == 0) {
+            if (current == arg) {
+                gint a = s, b = i;
+                while (a < b && signature[a] == ' ') a++;
+                while (b > a && signature[b - 1] == ' ') b--;
+                /* "f()" and C's "f(void)" have no parameter */
+                if (a == b || (c == ')' && current == 0 && b - a == 4 && strncmp(signature + a, "void", 4) == 0)) {
+                    return FALSE;
+                }
+                *start = a;
+                *end = b;
+                return TRUE;
+            }
+            if (c == ')') return FALSE;
+            current++;
+            s = i + 1;
+        }
+    }
+    return FALSE;
+}

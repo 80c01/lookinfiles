@@ -61,6 +61,9 @@ typedef struct {
     /* Ctrl-O / Tab past the ends of the buffer's jump list: continue in the
      * host's history across files. TRUE when it moved. */
     gboolean (*jump_history)(gpointer data, gboolean older);
+    /* K: show what word (the identifier under the cursor) is. TRUE when
+     * the host shows something. */
+    gboolean (*keyword_help)(gpointer data, const gchar* word);
 } VimHost;
 
 typedef struct {

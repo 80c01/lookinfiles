@@ -214,6 +214,7 @@ typedef struct {
     GList* editors;             /* EditorTab*, order matching tab order */
     EditorTab* last_focused_editor; /* last focused editor tab */
     gpointer code_nav;              /* code navigation state (code_nav.c), created on first use */
+    gpointer code_intel;            /* language servers (code_intel.c), created on first use */
     guint status_idle_id;           /* pending status bar refresh after a page switch */
 
     /* Video preview */
@@ -323,6 +324,7 @@ typedef struct {
     GtkWidget* status_selection;  /* bottom bar: selected entry name */
     GtkWidget* status_size;       /* bottom bar: selected file size */
     GtkWidget* status_type;       /* bottom bar: selected file type / language */
+    GtkWidget* status_code;       /* bottom bar: code navigation backend of the editor tab */
     GtkWidget* status_encoding;   /* bottom bar: encoding */
     GtkWidget* status_mode;       /* bottom bar: editor mode label */
     GtkWidget* status_mode_btn;   /* bottom bar: editor mode button */

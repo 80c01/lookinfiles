@@ -103,15 +103,20 @@ Notes:
   ones. Languages read by ctags only: Objective-C, PHP, Perl, Kotlin, Swift,
   Scala, Dart, Haskell, Elixir, Erlang, Julia, R, Tcl.
 
-### Phase 2 — LSP
+### Phase 2 — LSP — done
 - `lsp_protocol` + `code_intel`: `lsp.ini` in `app_config_dir()` (language
   to command, built-in defaults: `clangd`, `pylsp`, `rust-analyzer`,
   `gopls`, `typescript-language-server --stdio`, `bash-language-server
   start`), `initialize`, `didOpen` / `didChange` (full text, debounced) /
   `didClose`, definition, declaration, references, hover, signature help,
   document symbols. A missing server falls back silently.
-- Help card (`GtkPopover`: signature highlighted with GtkSourceView,
-  documentation rendered by `markdown`, location), signature help.
+- Help card (`GtkPopover`: documentation rendered by `markdown`, location),
+  signature help (popover; Emacs: echo area), mouse rest (800 ms) or keys.
+  Without a server: the declaration line (or ctags signature) and the
+  comment above it (`code_scan_doc_comment()`).
+- Done differently: the server's signature is shown as Markdown (no
+  GtkSourceView highlighting in the card); diagnostics are received and
+  ignored (phase 3); a failed server is retried after a minute.
 
 ### Phase 3 — Results and polish
 - References tab in the preview notebook: grouped by file, context line,

@@ -3,6 +3,7 @@
 #include "icons.h"
 #include "editor.h"
 #include "code_nav.h"
+#include "code_help.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -222,12 +223,28 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     st->np_box = np_box;
 }
 
+static gboolean is_modifier_keyval(guint keyval) {
+    return keyval == GDK_KEY_Control_L || keyval == GDK_KEY_Control_R || keyval == GDK_KEY_Shift_L ||
+           keyval == GDK_KEY_Shift_R || keyval == GDK_KEY_Alt_L || keyval == GDK_KEY_Alt_R ||
+           keyval == GDK_KEY_Super_L || keyval == GDK_KEY_Super_R || keyval == GDK_KEY_ISO_Level3_Shift;
+}
+
 gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
                                    guint keyval, GdkModifierType state) {
-    (void)st;
     gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
     gboolean shift = (state & GDK_SHIFT_MASK) != 0;
 
+    if (st->np_chord_k && !is_modifier_keyval(keyval)) {
+        /* Ctrl+K Ctrl+I: help card */
+        st->np_chord_k = FALSE;
+        gtk_label_set_text(GTK_LABEL(st->np_status_label), "");
+        if (ctrl && (keyval == GDK_KEY_i || keyval == GDK_KEY_I)) {
+            code_help_show((AppData*)tab->app, tab);
+        } else {
+            gtk_label_set_text(GTK_LABEL(st->np_status_label), "Ctrl+K: no command for this key");
+        }
+        return TRUE;
+    }
     if (ctrl && !shift && (keyval == GDK_KEY_f || keyval == GDK_KEY_F)) {
         notepad_show_find(tab, FALSE);
         return TRUE;
@@ -287,6 +304,15 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     }
     /* Code navigation (VS Code keys) */
     gboolean alt = (state & GDK_ALT_MASK) != 0;
+    if (ctrl && !shift && !alt && (keyval == GDK_KEY_k || keyval == GDK_KEY_K)) {
+        st->np_chord_k = TRUE;
+        gtk_label_set_text(GTK_LABEL(st->np_status_label), "Ctrl+K was pressed: waiting for the second key");
+        return TRUE;
+    }
+    if (ctrl && shift && !alt && keyval == GDK_KEY_space) {
+        code_help_signature((AppData*)tab->app, tab);
+        return TRUE;
+    }
     if (keyval == GDK_KEY_F12 && !shift && !alt) {
         code_nav_goto_definition((AppData*)tab->app, tab, ctrl, editor_mode_message);
         return TRUE;

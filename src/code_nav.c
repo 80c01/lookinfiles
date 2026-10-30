@@ -2,6 +2,7 @@
 #include "code_nav.h"
 #include "app_paths.h"
 #include "code_index.h"
+#include "code_intel.h"
 #include "code_tags.h"
 #include "code_scan.h"
 #include "editor.h"
@@ -14,6 +15,8 @@ typedef struct {
     JumpList* jumps;
     GCancellable* cancellable;  /* lookup in progress */
     guint serial;               /* of the latest lookup: older answers are dropped */
+    GCancellable* find_cancellable; /* code_nav_find() in progress */
+    guint find_serial;
     GMutex tags_lock;           /* guards tags (workers create indexes) */
     GHashTable* tags;           /* project root -> CodeTagsIndex* */
 } CodeNav;
@@ -33,12 +36,15 @@ typedef struct {
     gchar* text;             /* origin buffer */
     GHashTable* texts;       /* path -> text of modified open buffers, origin included */
     CodeNavMessageFunc message;
+    CodeNavFoundFunc found;  /* code_nav_find(): report instead of jumping */
+    gpointer found_data;
     /* Answer */
     gchar* root;
     GPtrArray* matches;
     gboolean truncated;
     gboolean local_found;
     gint local_line, local_column;
+    gchar* doc;              /* code_nav_find(): documentation of the best match */
 } Lookup;
 
 static CodeNav* nav_of(AppData* app) {
@@ -59,6 +65,7 @@ static void lookup_free(gpointer p) {
     g_free(lk->text);
     if (lk->texts != NULL) g_hash_table_destroy(lk->texts);
     g_free(lk->root);
+    g_free(lk->doc);
     if (lk->matches != NULL) g_ptr_array_unref(lk->matches);
     g_free(lk);
 }
@@ -91,6 +98,11 @@ static CodeLang tab_lang(EditorTab* tab) {
     lang = code_lang_detect(name, first, -1);
     g_free(first);
     return lang;
+}
+
+const gchar* code_nav_backend_label(EditorTab* tab) {
+    if (!code_nav_is_code(tab)) return NULL;
+    return code_tags_program() != NULL ? "ctags" : "built-in index";
 }
 
 gboolean code_nav_is_code(EditorTab* tab) {
@@ -158,6 +170,20 @@ static void lookup_thread(GTask* task, gpointer source, gpointer data, GCancella
     CodeQuery q = {lk->name, lk->lang, lk->declaration, lk->origin, lk->texts, tags_for(lk->nav, lk->root)};
     lk->matches = code_index_find(&q, files, cancellable, &find_truncated);
     lk->truncated = files_truncated || find_truncated;
+    if (lk->found != NULL && lk->matches->len > 0) {
+        /* Documentation comment of the best match, from its buffer or file */
+        CodeMatch* best = g_ptr_array_index(lk->matches, 0);
+        const gchar* text = g_hash_table_lookup(lk->texts, best->path);
+        gchar* owned = NULL;
+        gsize len = 0;
+        if (text != NULL) len = strlen(text);
+        else if (g_file_get_contents(best->path, &owned, &len, NULL)) text = owned;
+        if (text != NULL) {
+            CodeLang lang = code_lang_from_name(best->path);
+            lk->doc = code_scan_doc_comment(text, len, lang != CODE_LANG_NONE ? lang : lk->lang, best->symbol->line);
+        }
+        g_free(owned);
+    }
     if (lk->at_cursor) {
         lk->local_found = code_scan_local_definition(lk->text, strlen(lk->text), lk->lang, lk->name, lk->line,
                                                      lk->column, &lk->local_line, &lk->local_column);
@@ -173,6 +199,13 @@ static void lookup_done(GObject* source, GAsyncResult* res, gpointer data) {
     Lookup* lk = g_task_get_task_data(task);
     AppData* app = lk->app;
     CodeNav* nav = nav_of(app);
+    if (lk->found != NULL) {
+        if (lk->serial != nav->find_serial || g_task_had_error(task) || !tab_alive(app, lk->tab)) return;
+        g_clear_object(&nav->find_cancellable);
+        lk->found(app, lk->tab, lk->matches->len > 0 ? g_ptr_array_index(lk->matches, 0) : NULL, lk->doc, lk->root,
+                  lk->found_data);
+        return;
+    }
     /* A newer lookup replaced this one, or the tab is gone */
     if (lk->serial != nav->serial || g_task_had_error(task) || !tab_alive(app, lk->tab)) return;
     g_clear_object(&nav->cancellable);
@@ -233,19 +266,23 @@ static void lookup_done(GObject* source, GAsyncResult* res, gpointer data) {
     g_free(msg);
 }
 
-static void start_lookup(AppData* app, EditorTab* tab, const gchar* name, gboolean declaration,
-                         gboolean at_cursor, gint line, gint column, CodeNavMessageFunc message) {
+static void run_lookup(AppData* app, EditorTab* tab, const gchar* name, gboolean declaration, gboolean at_cursor,
+                       gint line, gint column, CodeNavMessageFunc message, CodeNavFoundFunc found,
+                       gpointer found_data) {
     CodeNav* nav = nav_of(app);
-    if (nav->cancellable != NULL) {
-        g_cancellable_cancel(nav->cancellable);
-        g_clear_object(&nav->cancellable);
+    GCancellable** cancellable = found != NULL ? &nav->find_cancellable : &nav->cancellable;
+    if (*cancellable != NULL) {
+        g_cancellable_cancel(*cancellable);
+        g_clear_object(cancellable);
     }
-    nav->cancellable = g_cancellable_new();
+    *cancellable = g_cancellable_new();
 
     Lookup* lk = g_new0(Lookup, 1);
     lk->app = app;
     lk->nav = nav;
-    lk->serial = ++nav->serial;
+    lk->serial = found != NULL ? ++nav->find_serial : ++nav->serial;
+    lk->found = found;
+    lk->found_data = found_data;
     lk->tab = tab;
     lk->origin = g_canonicalize_filename(tab->path, NULL);
     lk->name = g_strdup(name);
@@ -265,10 +302,87 @@ static void start_lookup(AppData* app, EditorTab* tab, const gchar* name, gboole
         g_hash_table_insert(lk->texts, g_canonicalize_filename(t->path, NULL), buffer_text(t->buffer));
     }
 
-    GTask* task = g_task_new(NULL, nav->cancellable, lookup_done, NULL);
+    GTask* task = g_task_new(NULL, *cancellable, lookup_done, NULL);
     g_task_set_task_data(task, lk, lookup_free);
     g_task_run_in_thread(task, lookup_thread);
     g_object_unref(task);
+}
+
+static void start_lookup(AppData* app, EditorTab* tab, const gchar* name, gboolean declaration,
+                         gboolean at_cursor, gint line, gint column, CodeNavMessageFunc message) {
+    run_lookup(app, tab, name, declaration, at_cursor, line, column, message, NULL, NULL);
+}
+
+gboolean code_nav_find(AppData* app, EditorTab* tab, const gchar* name, CodeNavFoundFunc func, gpointer data) {
+    if (app == NULL || tab == NULL || tab->buffer == NULL || name == NULL || func == NULL ||
+        !code_nav_is_code(tab)) {
+        return FALSE;
+    }
+    gint line = 0, col = 0;
+    cursor_of(tab, &line, &col);
+    run_lookup(app, tab, name, FALSE, FALSE, line, col, NULL, func, data);
+    return TRUE;
+}
+
+/* A definition asked to the language server (the index answers when it
+ * cannot) */
+typedef struct {
+    guint serial;
+    gchar* name;
+    gboolean declaration;
+    gint line, start, end;   /* the word under the cursor */
+    gchar* origin;
+    CodeNavMessageFunc message;
+} ServerLookup;
+
+static void server_lookup_free(ServerLookup* sl) {
+    g_free(sl->name);
+    g_free(sl->origin);
+    g_free(sl);
+}
+
+static void on_server_definition(AppData* app, EditorTab* tab, GPtrArray* locations, gpointer data) {
+    ServerLookup* sl = data;
+    CodeNav* nav = nav_of(app);
+    if (sl->serial != nav->serial) {
+        server_lookup_free(sl);
+        return;
+    }
+    /* The word under the cursor is not a destination */
+    LspLocation* target = NULL;
+    guint count = 0;
+    for (guint i = 0; locations != NULL && i < locations->len; i++) {
+        LspLocation* loc = g_ptr_array_index(locations, i);
+        gchar* canon = g_canonicalize_filename(loc->path, NULL);
+        gboolean here = strcmp(canon, sl->origin) == 0 && loc->line == sl->line && loc->column >= sl->start &&
+                        loc->column <= sl->end;
+        g_free(canon);
+        if (here) continue;
+        if (target == NULL) target = loc;
+        count++;
+    }
+    if (target == NULL) {
+        /* Nothing (or only here): the index looks for other candidates */
+        start_lookup(app, tab, sl->name, sl->declaration, TRUE, sl->line, sl->start, sl->message);
+        server_lookup_free(sl);
+        return;
+    }
+    gchar* root = code_index_project_root(sl->origin);
+    gchar* server = code_intel_server_label(app, tab);
+    EditorTab* dest = jump(app, tab, target->path, target->line, target->column);
+    const gchar* what = sl->declaration ? "Declaration" : "Definition";
+    gchar* count_text = count > 1 ? g_strdup_printf(", 1 of %u", count) : g_strdup("");
+    gchar* msg = dest == NULL
+                     ? g_strdup_printf("%s of %s is in %s:%d, which cannot be opened in an editor tab", what, sl->name,
+                                       shown_path(target->path, root), target->line + 1)
+                     : g_strdup_printf("%s of %s: %s:%d%s (%s)", what, sl->name, shown_path(target->path, root),
+                                       target->line + 1, count_text, server != NULL ? server : "language server");
+    say(sl->message, dest != NULL ? dest : tab, msg);
+    g_free(msg);
+    g_free(count_text);
+    g_free(server);
+    g_free(root);
+    server_lookup_free(sl);
 }
 
 gboolean code_nav_goto_definition(AppData* app, EditorTab* tab, gboolean declaration,
@@ -293,7 +407,26 @@ gboolean code_nav_goto_definition(AppData* app, EditorTab* tab, gboolean declara
         return FALSE;
     }
     gchar* name = g_strndup(text + ws, (gsize)(we - ws));
-    start_lookup(app, tab, name, declaration, TRUE, gtk_text_iter_get_line(&it), ws, message);
+    gint line = gtk_text_iter_get_line(&it);
+    /* The language server first, when one serves this file */
+    CodeNav* nav = nav_of(app);
+    if (nav->cancellable != NULL) {
+        g_cancellable_cancel(nav->cancellable);
+        g_clear_object(&nav->cancellable);
+    }
+    ServerLookup* sl = g_new0(ServerLookup, 1);
+    sl->serial = ++nav->serial;
+    sl->name = g_strdup(name);
+    sl->declaration = declaration;
+    sl->line = line;
+    sl->start = ws;
+    sl->end = we;
+    sl->origin = g_canonicalize_filename(tab->path, NULL);
+    sl->message = message;
+    if (!code_intel_definition(app, tab, line, ws, declaration, on_server_definition, sl)) {
+        server_lookup_free(sl);
+        start_lookup(app, tab, name, declaration, TRUE, line, ws, message);
+    }
     g_free(name);
     g_free(text);
     return TRUE;

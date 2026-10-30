@@ -25,4 +25,21 @@ GPtrArray* code_scan_text(const gchar* text, gsize len, CodeLang lang, const gch
 gboolean code_scan_local_definition(const gchar* text, gsize len, CodeLang lang, const gchar* name,
                                     gint cursor_line, gint cursor_column, gint* line, gint* column);
 
+/* Documentation comment of the symbol at line (0-based): the comment
+ * block right above it (line or block comments, # and -- in their
+ * languages), or a Python docstring right
+ * below it, without the comment markers. NULL when there is none. */
+gchar* code_scan_doc_comment(const gchar* text, gsize len, CodeLang lang, gint line);
+
+/* The call the cursor (byte index in line) is in: the identifier before
+ * the innermost unclosed '(' (byte range *name_start, *name_end) and the
+ * index of the argument under the cursor (commas at depth 0). FALSE when
+ * the cursor is not inside a call's parentheses on this line. */
+gboolean code_scan_call_at(const gchar* line, gssize len, gint index, CodeLang lang, gint* name_start,
+                           gint* name_end, gint* argument);
+
+/* Byte range of parameter number arg in a signature "type name(a, b)":
+ * FALSE when it has no such parameter */
+gboolean code_scan_parameter_range(const gchar* signature, gint arg, gint* start, gint* end);
+
 #endif /* CODE_SCAN_H */

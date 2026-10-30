@@ -4,6 +4,7 @@
 #include "editor.h"
 #include "diff_gutter.h"
 #include "code_nav.h"
+#include "code_help.h"
 #include "vim_engine.h"
 #include "vim_keys.h"
 #include <string.h>
@@ -420,6 +421,15 @@ static gboolean on_goto_definition(gpointer data, const gchar* word, gboolean de
     return code_nav_goto_definition((AppData*)tab->app, tab, declaration, editor_mode_message);
 }
 
+/* K: the help card of the identifier under the cursor */
+static gboolean on_keyword_help(gpointer data, const gchar* word) {
+    (void)word;
+    EditorTab* tab = data;
+    if (!code_nav_is_code(tab)) return FALSE;
+    code_help_show((AppData*)tab->app, tab);
+    return TRUE;
+}
+
 /* Ctrl-O / Tab past the buffer's jump list: the history across files */
 static gboolean on_jump_history(gpointer data, gboolean older) {
     EditorTab* tab = data;
@@ -752,6 +762,7 @@ void vim_activate(EditorTab* tab) {
             .file_name = on_file_name,
             .goto_definition = on_goto_definition,
             .jump_history = on_jump_history,
+            .keyword_help = on_keyword_help,
         };
         st->vim = vim_engine_new(tab->buffer, &host, tab);
         st->vim_clip_cancel = g_cancellable_new();

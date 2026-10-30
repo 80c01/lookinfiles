@@ -334,10 +334,19 @@ key j space j j Return; shot code_nav_open_main_c
 xdotool mousemove 524 160 keydown ctrl click 1 keyup ctrl
 sleep 0.5;              shot code_nav_ctrl_click      # cursor on "static int answer", message
 key ctrl+alt+minus;     shot code_nav_back            # back to the call (Notepad)
+key ctrl+k ctrl+i; sleep 1; shot code_help_card       # what answer() is
+key Escape End Left Left Left
+key ctrl+shift+space; sleep 1; shot code_help_signature   # inside answer( )
+key Escape
 xdotool mousemove 1237 783 click 1
 xdotool mousemove 1218 721 click 1   # pick "Vim"
-key g d; sleep 0.5;     shot code_nav_vim_gd
+key b g d; sleep 0.5;   shot code_nav_vim_gd
 key ctrl+o;             shot code_nav_vim_ctrl_o
+key K; sleep 1;         shot code_help_vim_K
+key Escape
+xdotool mousemove 430 92; sleep 0.3; xdotool mousemove 438 96   # rest on "answer" (line 2)
+sleep 1.5;              shot code_help_mouse_hover
+xdotool mousemove 150 600            # away: the card closes
 key ctrl+w
 key ctrl+t; sleep 1;    shot terminal
 key ctrl+q

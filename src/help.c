@@ -107,6 +107,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Notepad mode", "Ctrl+G", "Go to line number in document"},
     {"Editor: Notepad mode", "F12 / Ctrl+F12 / Ctrl+Click", "Go to the definition / declaration of the identifier (code files)"},
     {"Editor: Notepad mode", "Ctrl+Alt+- / Ctrl+Shift+-", "Back / forward through the definition jumps"},
+    {"Editor: Notepad mode", "Ctrl+K Ctrl+I / Ctrl+Shift+Space", "Help card of the identifier / signature of the call (code files)"},
     /* Editor: Emacs Mode (Visual Clone) */
     {"Editor: Emacs mode", "C-x C-s / C-x C-w", "Save buffer / Write file (Save As with chosen file name in minibuffer)"},
     {"Editor: Emacs mode", "C-w / M-w / C-y", "Kill region (cut), kill ring save (copy), yank (paste)"},
@@ -121,6 +122,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Emacs mode", "M-f / M-b / C-a / C-e", "Move forward / backward word, line start / line end"},
     {"Editor: Emacs mode", "M-g g / M-g M-g", "Goto line prompt in minibuffer"},
     {"Editor: Emacs mode", "M-. / C-u M-. / M-, / C-M-,", "Go to the definition / declaration (code files), back, forward"},
+    {"Editor: Emacs mode", "C-h .", "Help card of the identifier at point (signatures go to the echo area)"},
     {"Editor: Emacs mode", "M-x", "Execute command (e.g. set-justification-center, goto-line, save-buffer)"},
     {"Editor: Emacs mode", "Tab / C-g (minibuffer)", "Complete the command, tag or *Heading link (lists candidates) / quit the prompt"},
     /* Editor: Vim Mode */
@@ -140,6 +142,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Vim mode", "ma / `a / 'a / Ctrl+O", "Set mark / jump to it (line) / back in the jump list (Tab: forward)"},
     {"Editor: Vim mode", "/ ? n N * # gd", "Search (Vim regex, incremental, highlighted; :noh hides), word under cursor"},
     {"Editor: Vim mode", "gd Ctrl+] / gD / :tag[!] x", "Code files: go to the definition / declaration; Ctrl+O / Tab go on across files"},
+    {"Editor: Vim mode", "K", "Code files: help card of the identifier under the cursor"},
     {"Editor: Vim mode", ":[range]s/pat/rep/gi", "Substitute (& \\1 \\u \\U \\r); :g/pat/cmd, :v, :&& , & repeat"},
     {"Editor: Vim mode", ":d :y :m :t :j :> :normal", "Line commands on ranges (%, 'a, '<,'>, /pat/, .+1, $)"},
     {"Editor: Vim mode", ":sort :retab :center :reg", "Sort lines (n i u !), retab, align, list registers / :marks"},

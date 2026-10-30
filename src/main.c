@@ -29,6 +29,7 @@
 #include "remote.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
+#include "code_intel.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -720,6 +721,7 @@ int main(int argc, char** argv) {
     audio_preview_stop(app);
     video_preview_stop(app);
     editor_save_all_buffers(app);
+    code_intel_shutdown(app);   /* language servers: shutdown, exit */
     stop_directory_monitors(app);
     git_tab_cleanup(app);
     if (app->git_statuses != NULL) {

@@ -11,8 +11,13 @@
  * changed meanwhile is dropped. Messages go through the caller's message
  * function (editor_mode_message()), to the tab of the result. */
 #include "app_types.h"
+#include "code_index.h"
 
 typedef void (*CodeNavMessageFunc)(EditorTab* tab, const gchar* message);
+/* Answer of code_nav_find(): the best symbol named so (NULL when none), its
+ * documentation comment (or NULL) and the project root */
+typedef void (*CodeNavFoundFunc)(AppData* app, EditorTab* tab, const CodeMatch* match, const gchar* doc,
+                                 const gchar* root, gpointer data);
 
 /* TRUE when the tab shows source code of a language the index knows */
 gboolean code_nav_is_code(EditorTab* tab);
@@ -27,6 +32,15 @@ gboolean code_nav_goto_definition(AppData* app, EditorTab* tab, gboolean declara
 /* Same for a name typed by the user (Vim :tag) */
 gboolean code_nav_goto_symbol(AppData* app, EditorTab* tab, const gchar* name, gboolean declaration,
                               CodeNavMessageFunc message);
+
+/* Look name up with the built-in index without jumping (help cards,
+ * signature help); a newer code_nav_find() replaces this one (func is then
+ * not called). FALSE when the tab is not code. */
+gboolean code_nav_find(AppData* app, EditorTab* tab, const gchar* name, CodeNavFoundFunc func, gpointer data);
+
+/* Backend used for the tab without a language server: "ctags" or
+ * "built-in index"; NULL when the tab is not code */
+const gchar* code_nav_backend_label(EditorTab* tab);
 
 /* Back to where the last jump started / forward again. tab: where the
  * cursor is now (NULL: none). FALSE (and a message) at the end of the

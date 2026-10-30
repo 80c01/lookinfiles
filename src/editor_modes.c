@@ -4,6 +4,7 @@
 #include "file_types.h"
 #include "diff_gutter.h"
 #include "code_nav.h"
+#include "code_help.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -809,6 +810,7 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(ctrl_click), GTK_PHASE_CAPTURE);
     g_signal_connect(ctrl_click, "pressed", G_CALLBACK(on_view_ctrl_click), tab);
     gtk_widget_add_controller(tab->view, GTK_EVENT_CONTROLLER(ctrl_click));
+    code_help_attach(app, tab, editor_mode_message);
 
     /* Apply initial mode */
     editor_modes_apply_mode(app, tab, tab->mode);
@@ -940,6 +942,7 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
     (void)keycode;
     if (tab == NULL || tab->mode_state == NULL) return FALSE;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
+    code_help_on_key(tab, keyval);
     gboolean was_c_u = st->emacs_universal_arg;
     gboolean handled = dispatch_key(app, tab, st, keyval, state);
     /* The prefix argument lasts until a complete command (C-c . is two keys) */
