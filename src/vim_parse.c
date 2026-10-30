@@ -147,7 +147,7 @@ static gsize parse_simple(const gunichar* keys, gsize pos, gsize n, gboolean vis
             *status = VIM_PARSE_INCOMPLETE;
             return 0;
         }
-        const gchar* set = k == 'g' ? (visual ? "Jv~uU?qwJ" : "JpPviI&tTa8")
+        const gchar* set = k == 'g' ? (visual ? "Jv~uU?qwJ" : "JpPviI&tTa8r")
                          : k == 'z' ? "ztb.-"
                                     : "ZQ";
         if (in_set(k1, set) || (k == 'z' && k1 == VIM_KEY_CR) ||

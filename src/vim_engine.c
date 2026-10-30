@@ -2984,6 +2984,10 @@ static void exec_simple(VimEngine* e, const VimCmd* cmd) {
 
     if (k == 'g') {
         switch (k1) {
+            case 'r':
+                /* gr: references of the word under the cursor (host) */
+                if (e->host.references == NULL || !e->host.references(e->hd)) beep(e);
+                return;
             case 'J': {
                 gint line = gtk_text_iter_get_line(&cur);
                 vim_e_join_lines(e, line, line + MAX(n, 2) - 1, FALSE);

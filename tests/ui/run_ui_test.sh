@@ -330,17 +330,27 @@ key alt+1;              shot ws1_editor_split_kept
 key alt+3;              shot ws3_editors_kept
 key alt+minus;          shot ws3_removed
 # Code navigation (TASK_CODE_NAV.md): src/main.c calls answer() on line 6
-key j space j j Return; shot code_nav_open_main_c
-xdotool mousemove 524 160 keydown ctrl click 1 keyup ctrl
-sleep 0.5;              shot code_nav_ctrl_click      # cursor on "static int answer", message
+key j space j j;        shot code_nav_preview_main_c
+xdotool mousemove 560 160 keydown ctrl click 1 keyup ctrl   # on "answer" (line numbers shift the text)
+sleep 1;                shot code_nav_preview_ctrl_click   # editor opened on "static int answer"
 key ctrl+alt+minus;     shot code_nav_back            # back to the call (Notepad)
+xdotool mousemove 524 160 keydown ctrl click 1 keyup ctrl
+sleep 0.5;              shot code_nav_ctrl_click      # Ctrl+Click in the editor
+key ctrl+alt+minus
 key ctrl+k ctrl+i; sleep 1; shot code_help_card       # what answer() is
 key Escape End Left Left Left
 key ctrl+shift+space; sleep 1; shot code_help_signature   # inside answer( )
-key Escape
+key Escape Left
+key shift+F12; sleep 1; shot code_refs_tab            # References tab after Git Commits
+key Return; sleep 0.5;  shot code_refs_opened         # first reference opened
+key ctrl+shift+o; sleep 0.5; shot code_symbols_dialog
+xdotool type --delay 80 "ma"
+                        shot code_symbols_filtered
+key Return; sleep 0.5;  shot code_symbols_jumped      # cursor on main()
 xdotool mousemove 1237 783 click 1
 xdotool mousemove 1218 721 click 1   # pick "Vim"
-key b g d; sleep 0.5;   shot code_nav_vim_gd
+key slash; xdotool type --delay 60 "answer"; key Return
+key g d; sleep 0.5;     shot code_nav_vim_gd
 key ctrl+o;             shot code_nav_vim_ctrl_o
 key K; sleep 1;         shot code_help_vim_K
 key Escape

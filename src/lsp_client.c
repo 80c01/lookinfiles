@@ -29,6 +29,8 @@ struct LspClient {
     gchar* program;
     LspStateFunc on_state;
     gpointer state_data;
+    LspNotifyFunc on_notify;
+    gpointer notify_data;
     gint64 next_id;
     GHashTable* pending;   /* id (gint64*) -> Pending* */
     GQueue* queued;        /* messages waiting for initialize (gchar*) */
@@ -162,7 +164,8 @@ static void handle(LspClient* c, LspMessage* msg) {
             send_now(c, lsp_reply(msg->id_json, result));
             g_free(result);
         }
-        return; /* notifications (diagnostics, logs, progress) are not used */
+        if (c->on_notify != NULL) c->on_notify(c, msg, c->notify_data);
+        return;
     }
     if (msg->id < 0) return;
     Pending* pd = NULL;
@@ -307,6 +310,12 @@ void lsp_client_free(LspClient* client) {
     g_free(c->root);
     g_free(c->program);
     g_free(c);
+}
+
+void lsp_client_set_notify_func(LspClient* client, LspNotifyFunc func, gpointer data) {
+    if (client == NULL) return;
+    client->on_notify = func;
+    client->notify_data = data;
 }
 
 LspClientState lsp_client_get_state(LspClient* client) {

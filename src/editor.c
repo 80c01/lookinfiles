@@ -288,9 +288,9 @@ EditorTab* editor_current_tab(AppData* app) {
     }
 
     if (app->notebook != NULL) {
+        /* Pages other than editor tabs (Preview, Git, References) match no tab */
         gint p = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
-        gint base_offset = (app->git_tab_box != NULL) ? 2 : 1;
-        if (p >= base_offset) {
+        if (p >= 0) {
             GtkWidget* child = gtk_notebook_get_nth_page(GTK_NOTEBOOK(app->notebook), p);
             for (GList* l = app->editors; l != NULL; l = l->next) {
                 EditorTab* t = (EditorTab*)l->data;
@@ -1415,11 +1415,17 @@ void editor_close_current(AppData* app) {
 GtkWidget* editor_detach_tabs(AppData* app) {
     if (app == NULL) return NULL;
     if (app->notebook != NULL) {
-        gint n = gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->notebook));
-        gint keep = (app->git_tab_box != NULL) ? 2 : 1;
-        while (n > keep) {
-            gtk_notebook_remove_page(GTK_NOTEBOOK(app->notebook), n - 1);
-            n--;
+        /* Only the editor tabs leave: Preview, Git and References stay */
+        GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+        for (gint p = gtk_notebook_get_n_pages(nb) - 1; p >= 0; p--) {
+            GtkWidget* child = gtk_notebook_get_nth_page(nb, p);
+            for (GList* l = app->editors; l != NULL; l = l->next) {
+                EditorTab* t = (EditorTab*)l->data;
+                if (t != NULL && t->container == child) {
+                    gtk_notebook_remove_page(nb, p);
+                    break;
+                }
+            }
         }
     }
     /* The dedicated panel keeps its notebooks, splits and tabs: the whole
@@ -1495,6 +1501,10 @@ void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
         EditorTab* tab = (EditorTab*)l->data;
         if (tab == NULL) {
             continue;
+        }
+        /* No pointer to a freed tab may stay behind */
+        if (app != NULL && app->last_focused_editor == tab) {
+            app->last_focused_editor = NULL;
         }
         g_signal_handlers_disconnect_by_func(tab->buffer,
                                              (gpointer)on_editor_modified_changed,

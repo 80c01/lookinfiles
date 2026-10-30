@@ -224,6 +224,27 @@ static void test_symbols(void) {
     lsp_message_free(m);
 }
 
+static void test_diagnostics(void) {
+    LspMessage* m = parse("{\"method\":\"textDocument/publishDiagnostics\",\"params\":{\"uri\":\"file:///p/a.c\","
+                          "\"diagnostics\":[{\"range\":{\"start\":{\"line\":2,\"character\":4},\"end\":{\"line\":2,"
+                          "\"character\":9}},\"severity\":2,\"message\":\"unused variable\",\"source\":\"clang\"},"
+                          "{\"range\":{\"start\":{\"line\":5,\"character\":0}},\"message\":\"x\"},{\"message\":\"no range\"}]}}");
+    gchar* path = NULL;
+    GPtrArray* d = lsp_parse_diagnostics(m->params, &path);
+    g_assert_cmpstr(path, ==, "/p/a.c");
+    g_assert_cmpuint(d->len, ==, 2);
+    LspDiagnostic* first = g_ptr_array_index(d, 0);
+    g_assert_cmpint(first->severity, ==, LSP_SEVERITY_WARNING);
+    g_assert_cmpint(first->end_column, ==, 9);
+    g_assert_cmpstr(first->source, ==, "clang");
+    LspDiagnostic* second = g_ptr_array_index(d, 1);
+    g_assert_cmpint(second->severity, ==, LSP_SEVERITY_ERROR);
+    g_assert_cmpint(second->end_line, ==, 5);
+    g_ptr_array_unref(d);
+    g_free(path);
+    lsp_message_free(m);
+}
+
 static void test_positions(void) {
     /* "aé𝄞b": a(1 byte, 1 unit) é(2 bytes, 1 unit) 𝄞(4 bytes, 2 units) b */
     const gchar* line = "a\xc3\xa9\xf0\x9d\x84\x9e" "b\n";
@@ -249,5 +270,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/lsp_protocol/signature", test_signature);
     g_test_add_func("/lsp_protocol/symbols", test_symbols);
     g_test_add_func("/lsp_protocol/positions", test_positions);
+    g_test_add_func("/lsp_protocol/diagnostics", test_diagnostics);
     return g_test_run();
 }

@@ -262,3 +262,122 @@ GPtrArray* code_index_find(const CodeQuery* query, GPtrArray* files, GCancellabl
     g_free(origin_dir);
     return out;
 }
+
+/* ------------------------------------------------------------------------- */
+/* References                                                                */
+/* ------------------------------------------------------------------------- */
+
+void code_reference_free(CodeReference* ref) {
+    if (ref == NULL) return;
+    g_free(ref->path);
+    g_free(ref->text);
+    g_free(ref);
+}
+
+static gboolean word_byte(CodeLang lang, guchar b) {
+    return b >= 0x80 || code_is_word_char(lang, b);
+}
+
+/* Occurrences of name in one text; FALSE when the limit is reached */
+static gboolean references_in(const gchar* path, const gchar* text, gsize len, const gchar* name, CodeLang lang,
+                              GPtrArray* out) {
+    gsize n = strlen(name);
+    gint line = 0;
+    const gchar* line_start = text;
+    const gchar* end = text + len;
+    const gchar* p = text;
+    while (p + n <= end) {
+        const gchar* hit = NULL;
+        for (const gchar* q = p; q + n <= end; q++) {
+            if (*q == '\n') {
+                line++;
+                line_start = q + 1;
+                continue;
+            }
+            if (*q == name[0] && memcmp(q, name, n) == 0 && (q == text || !word_byte(lang, (guchar)q[-1])) &&
+                (q + n == end || !word_byte(lang, (guchar)q[n]))) {
+                hit = q;
+                break;
+            }
+        }
+        if (hit == NULL) break;
+        if (out->len >= CODE_INDEX_MAX_REFERENCES) return FALSE;
+        const gchar* nl = memchr(line_start, '\n', (gsize)(end - line_start));
+        gsize ll = nl != NULL ? (gsize)(nl - line_start) : (gsize)(end - line_start);
+        CodeReference* ref = g_new0(CodeReference, 1);
+        ref->path = g_strdup(path);
+        ref->line = line;
+        ref->column = (gint)(hit - line_start);
+        /* Untrimmed text (columns must stay right): tabs and CR as spaces */
+        gchar* raw = g_strndup(line_start, ll);
+        for (gchar* c = raw; *c != '\0'; c++) {
+            if (*c == '\t' || *c == '\r') *c = ' ';
+        }
+        if (!g_utf8_validate(raw, -1, NULL)) {
+            gchar* valid = g_utf8_make_valid(raw, -1);
+            g_free(raw);
+            raw = valid;
+        }
+        ref->text = raw;
+        g_ptr_array_add(out, ref);
+        p = hit + n;
+    }
+    return TRUE;
+}
+
+static gint compare_refs(gconstpointer a, gconstpointer b, gpointer origin) {
+    const CodeReference* x = *(CodeReference* const*)a;
+    const CodeReference* y = *(CodeReference* const*)b;
+    gboolean xo = origin != NULL && strcmp(x->path, origin) == 0;
+    gboolean yo = origin != NULL && strcmp(y->path, origin) == 0;
+    if (xo != yo) return xo ? -1 : 1;
+    gint c = strcmp(x->path, y->path);
+    if (c != 0) return c;
+    if (x->line != y->line) return x->line - y->line;
+    return x->column - y->column;
+}
+
+GPtrArray* code_index_references(const gchar* name, CodeLang lang, const gchar* origin_path, GHashTable* texts,
+                                 GPtrArray* files, GCancellable* cancellable, gboolean* truncated) {
+    GPtrArray* out = g_ptr_array_new_with_free_func((GDestroyNotify)code_reference_free);
+    if (truncated != NULL) *truncated = FALSE;
+    if (name == NULL || name[0] == '\0') return out;
+    GPtrArray* all = g_ptr_array_new();
+    if (origin_path != NULL) g_ptr_array_add(all, (gpointer)origin_path);
+    for (guint i = 0; files != NULL && i < files->len; i++) {
+        const gchar* f = g_ptr_array_index(files, i);
+        if (origin_path == NULL || strcmp(f, origin_path) != 0) g_ptr_array_add(all, (gpointer)f);
+    }
+    gsize budget = CODE_INDEX_MAX_BYTES;
+    for (guint i = 0; i < all->len; i++) {
+        if (g_cancellable_is_cancelled(cancellable)) break;
+        const gchar* path = g_ptr_array_index(all, i);
+        const gchar* text = texts != NULL ? g_hash_table_lookup(texts, path) : NULL;
+        gchar* owned = NULL;
+        gsize len = 0;
+        if (text != NULL) {
+            len = strlen(text);
+        } else {
+            GStatBuf st;
+            if (g_stat(path, &st) != 0 || !S_ISREG(st.st_mode) || st.st_size > CODE_INDEX_MAX_FILE_BYTES) continue;
+            if ((gsize)st.st_size > budget) {
+                if (truncated != NULL) *truncated = TRUE;
+                break;
+            }
+            if (!g_file_get_contents(path, &owned, &len, NULL)) continue;
+            text = owned;
+        }
+        budget -= MIN(budget, len);
+        CodeLang file_lang = code_lang_from_name(path);
+        gboolean go_on = !code_text_has_word(text, len, name, file_lang != CODE_LANG_NONE ? file_lang : lang) ||
+                         references_in(path, text, len, name, file_lang != CODE_LANG_NONE ? file_lang : lang, out);
+        g_free(owned);
+        if (!go_on) {
+            if (truncated != NULL) *truncated = TRUE;
+            break;
+        }
+    }
+    g_ptr_array_free(all, TRUE);
+    g_ptr_array_sort_with_data(out, compare_refs, (gpointer)origin_path);
+    return out;
+}

@@ -1,0 +1,487 @@
+/* References of a symbol in the References tab (see code_refs.h) */
+#include "code_refs.h"
+#include "code_index.h"
+#include "code_intel.h"
+#include "editor.h"
+#include "file_types.h"
+#include "icons.h"
+#include <string.h>
+
+/* ------------------------------------------------------------------------- */
+/* One row: a file header or an occurrence                                   */
+/* ------------------------------------------------------------------------- */
+
+#define CODE_TYPE_REF_ITEM (code_ref_item_get_type())
+G_DECLARE_FINAL_TYPE(CodeRefItem, code_ref_item, CODE, REF_ITEM, GObject)
+
+struct _CodeRefItem {
+    GObject parent;
+    gboolean header;   /* file row */
+    gchar* path;
+    gchar* shown;      /* path shown (relative to the project) */
+    gint line;         /* occurrence: line and byte column of the name */
+    gint column;
+    gint length;       /* bytes of the name */
+    gchar* text;       /* occurrence: the line; header: NULL */
+    guint count;       /* header: occurrences in the file */
+};
+
+G_DEFINE_FINAL_TYPE(CodeRefItem, code_ref_item, G_TYPE_OBJECT)
+
+static void code_ref_item_finalize(GObject* obj) {
+    CodeRefItem* it = CODE_REF_ITEM(obj);
+    g_free(it->path);
+    g_free(it->shown);
+    g_free(it->text);
+    G_OBJECT_CLASS(code_ref_item_parent_class)->finalize(obj);
+}
+
+static void code_ref_item_class_init(CodeRefItemClass* klass) {
+    G_OBJECT_CLASS(klass)->finalize = code_ref_item_finalize;
+}
+
+static void code_ref_item_init(CodeRefItem* it) {
+    (void)it;
+}
+
+/* ------------------------------------------------------------------------- */
+/* The page                                                                  */
+/* ------------------------------------------------------------------------- */
+
+typedef struct {
+    AppData* app;
+    GtkWidget* page;
+    GtkWidget* header;
+    GtkWidget* list;
+    GListStore* store;
+    GtkSingleSelection* selection;
+} RefsPage;
+
+#define PAGE_KEY "code-refs-page"
+
+static RefsPage* page_state(AppData* app) {
+    return app->refs_page != NULL ? g_object_get_data(G_OBJECT(app->refs_page), PAGE_KEY) : NULL;
+}
+
+GtkWidget* code_refs_page(AppData* app) {
+    return app != NULL ? app->refs_page : NULL;
+}
+
+static void ensure_css(void) {
+    static gboolean done = FALSE;
+    GdkDisplay* display = gdk_display_get_default();
+    if (done || display == NULL) return;
+    done = TRUE;
+    GtkCssProvider* css = gtk_css_provider_new();
+    gtk_css_provider_load_from_string(css,
+                                      ".code-refs { background-color: #121314; }"
+                                      ".code-refs listview { background-color: #121314; }"
+                                      ".code-refs .refs-header { padding: 6px 10px; color: #cccccc; }"
+                                      ".code-refs label.ref-line { font-family: monospace; padding: 1px 10px 1px 28px; }"
+                                      ".code-refs label.ref-file { padding: 4px 10px 1px 10px; }");
+    gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(css), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(css);
+}
+
+static void on_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
+    (void)f;
+    (void)data;
+    GtkWidget* label = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
+    gtk_list_item_set_child(item, label);
+}
+
+static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
+    (void)f;
+    (void)data;
+    GtkWidget* label = gtk_list_item_get_child(item);
+    CodeRefItem* it = gtk_list_item_get_item(item);
+    gchar* markup;
+    gtk_widget_remove_css_class(label, it->header ? "ref-line" : "ref-file");
+    gtk_widget_add_css_class(label, it->header ? "ref-file" : "ref-line");
+    if (it->header) {
+        gchar* base = g_path_get_basename(it->path);
+        markup = g_markup_printf_escaped("%s <b>%s</b>  <span foreground=\"#858585\">%s · %u</span>",
+                                         file_icon(base, FALSE), base, it->shown, it->count);
+        g_free(base);
+    } else {
+        /* Leading spaces dropped, the name in bold on a highlight */
+        const gchar* t = it->text;
+        gint skip = 0;
+        while (t[skip] == ' ' && skip < it->column) skip++;
+        gint col = it->column - skip;
+        gint len = MIN(it->length, (gint)strlen(t + skip) - col);
+        gchar* before = g_strndup(t + skip, (gsize)MAX(col, 0));
+        gchar* name = g_strndup(t + skip + col, (gsize)MAX(len, 0));
+        const gchar* after = t + skip + col + MAX(len, 0);
+        markup = g_markup_printf_escaped("<span foreground=\"#858585\">%5d</span>  %s<span background=\"#613214\"><b>%s</b></span>%s",
+                                         it->line + 1, before, name, after);
+        g_free(name);
+        g_free(before);
+    }
+    gtk_label_set_markup(GTK_LABEL(label), markup);
+    g_free(markup);
+}
+
+static void open_item(RefsPage* rp, CodeRefItem* it) {
+    if (it == NULL) return;
+    if (it->header) {
+        /* The file's first occurrence */
+        guint n = g_list_model_get_n_items(G_LIST_MODEL(rp->store));
+        for (guint i = 0; i < n; i++) {
+            CodeRefItem* x = g_list_model_get_item(G_LIST_MODEL(rp->store), i);
+            gboolean found = x == it && i + 1 < n;
+            g_object_unref(x);
+            if (found) {
+                CodeRefItem* next = g_list_model_get_item(G_LIST_MODEL(rp->store), i + 1);
+                editor_open_at(rp->app, next->path, next->line, next->column);
+                g_object_unref(next);
+                return;
+            }
+        }
+        return;
+    }
+    editor_open_at(rp->app, it->path, it->line, it->column);
+}
+
+static void on_activate(GtkListView* view, guint position, gpointer data) {
+    (void)view;
+    RefsPage* rp = data;
+    CodeRefItem* it = g_list_model_get_item(G_LIST_MODEL(rp->store), position);
+    open_item(rp, it);
+    if (it != NULL) g_object_unref(it);
+}
+
+static void on_close_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    AppData* app = data;
+    if (app->refs_page == NULL || app->notebook == NULL) return;
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    gint page = gtk_notebook_page_num(nb, app->refs_page);
+    if (page >= 0) gtk_notebook_remove_page(nb, page);
+    app->refs_page = NULL;
+}
+
+static void page_free(gpointer p) {
+    RefsPage* rp = p;
+    g_object_unref(rp->store);
+    g_free(rp);
+}
+
+static RefsPage* ensure_page(AppData* app) {
+    RefsPage* rp = page_state(app);
+    if (rp != NULL) return rp;
+    if (app->notebook == NULL) return NULL;
+    ensure_css();
+    rp = g_new0(RefsPage, 1);
+    rp->app = app;
+    rp->store = g_list_store_new(CODE_TYPE_REF_ITEM);
+
+    GtkWidget* page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_add_css_class(page, "code-refs");
+    gtk_widget_set_hexpand(page, TRUE);
+    gtk_widget_set_vexpand(page, TRUE);
+
+    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_add_css_class(bar, "refs-header");
+    rp->header = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(rp->header), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(rp->header), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_hexpand(rp->header, TRUE);
+    gtk_box_append(GTK_BOX(bar), rp->header);
+    GtkWidget* close = icon_button_new("window-close", "Close References");
+    g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), app);
+    gtk_box_append(GTK_BOX(bar), close);
+    gtk_box_append(GTK_BOX(page), bar);
+
+    GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
+    g_signal_connect(factory, "setup", G_CALLBACK(on_setup), NULL);
+    g_signal_connect(factory, "bind", G_CALLBACK(on_bind), NULL);
+    rp->selection = gtk_single_selection_new(G_LIST_MODEL(g_object_ref(rp->store)));
+    rp->list = gtk_list_view_new(GTK_SELECTION_MODEL(rp->selection), factory);
+    g_signal_connect(rp->list, "activate", G_CALLBACK(on_activate), rp);
+    GtkWidget* scroll = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), rp->list);
+    gtk_box_append(GTK_BOX(page), scroll);
+
+    rp->page = page;
+    g_object_set_data_full(G_OBJECT(page), PAGE_KEY, rp, page_free);
+    app->refs_page = page;
+    /* Right after the Git tab (editor tabs follow) */
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
+    GtkWidget* label = icon_label_new("edit-find", "References");
+    gtk_notebook_insert_page(nb, page, label, after + 1);
+    return rp;
+}
+
+/* Show the references (CodeReference*) of name */
+static void show_references(AppData* app, EditorTab* tab, CodeNavMessageFunc message, const gchar* name,
+                            GPtrArray* refs, const gchar* root, const gchar* source, gboolean truncated) {
+    RefsPage* rp = ensure_page(app);
+    if (rp == NULL) return;
+    g_list_store_remove_all(rp->store);
+    guint files = 0;
+    gsize name_len = strlen(name);
+    const gchar* header_path = NULL;
+    for (guint i = 0; i < refs->len; i++) {
+        CodeReference* r = g_ptr_array_index(refs, i);
+        if (header_path == NULL || strcmp(header_path, r->path) != 0) {
+            /* Count first: rows are drawn as soon as they are added */
+            guint count = 0;
+            for (guint j = i; j < refs->len && strcmp(((CodeReference*)g_ptr_array_index(refs, j))->path, r->path) == 0; j++) {
+                count++;
+            }
+            CodeRefItem* header = g_object_new(CODE_TYPE_REF_ITEM, NULL);
+            header->header = TRUE;
+            header->path = g_strdup(r->path);
+            header->count = count;
+            gsize n = root != NULL ? strlen(root) : 0;
+            header->shown = g_strdup(n > 0 && strncmp(r->path, root, n) == 0 && r->path[n] == '/' ? r->path + n + 1
+                                                                                                : r->path);
+            g_list_store_append(rp->store, header);
+            g_object_unref(header);
+            header_path = r->path;
+            files++;
+        }
+        CodeRefItem* it = g_object_new(CODE_TYPE_REF_ITEM, NULL);
+        it->path = g_strdup(r->path);
+        it->line = r->line;
+        it->column = r->column;
+        it->length = (gint)name_len;
+        it->text = g_strdup(r->text);
+        g_list_store_append(rp->store, it);
+        g_object_unref(it);
+    }
+    gchar* markup = refs->len == 0
+                        ? g_markup_printf_escaped("No references to <b>%s</b> found <span foreground=\"#858585\">(%s)</span>",
+                                                  name, source)
+                        : g_markup_printf_escaped("References to <b>%s</b>: %u in %u file%s%s "
+                                                  "<span foreground=\"#858585\">(%s; Enter opens)</span>",
+                                                  name, refs->len, files, files > 1 ? "s" : "",
+                                                  truncated ? ", list cut" : "", source);
+    gtk_label_set_markup(GTK_LABEL(rp->header), markup);
+    g_free(markup);
+    /* Show the page with the first occurrence selected */
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+        gtk_widget_set_visible(app->viewer_box, TRUE);
+    }
+    gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, rp->page));
+    if (refs->len > 0) gtk_single_selection_set_selected(rp->selection, 1);
+    gtk_widget_grab_focus(rp->list);
+    if (message != NULL && tab != NULL && g_list_find(app->editors, tab) != NULL) {
+        gchar* msg = g_strdup_printf("%u reference%s to %s (References tab)", refs->len, refs->len == 1 ? "" : "s", name);
+        message(tab, msg);
+        g_free(msg);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Requests                                                                  */
+/* ------------------------------------------------------------------------- */
+
+typedef struct {
+    AppData* app;
+    EditorTab* tab;
+    guint serial;
+    gchar* name;
+    gchar* origin;
+    CodeLang lang;
+    GHashTable* texts;
+    gchar* root;
+    GPtrArray* refs;
+    gboolean truncated;
+    CodeNavMessageFunc message;
+} RefsLookup;
+
+static guint refs_serial = 0;
+
+static void lookup_free(gpointer p) {
+    RefsLookup* rl = p;
+    g_free(rl->name);
+    g_free(rl->origin);
+    if (rl->texts != NULL) g_hash_table_destroy(rl->texts);
+    g_free(rl->root);
+    if (rl->refs != NULL) g_ptr_array_unref(rl->refs);
+    g_free(rl);
+}
+
+static void refs_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
+    (void)source;
+    RefsLookup* rl = data;
+    rl->root = code_index_project_root(rl->origin);
+    gboolean t1 = FALSE, t2 = FALSE;
+    GPtrArray* files = code_index_project_files(rl->root, code_lang_family(rl->lang), cancellable, &t1);
+    rl->refs = code_index_references(rl->name, rl->lang, rl->origin, rl->texts, files, cancellable, &t2);
+    rl->truncated = t1 || t2;
+    g_ptr_array_unref(files);
+    g_task_return_boolean(task, TRUE);
+}
+
+static void refs_done(GObject* source, GAsyncResult* res, gpointer data) {
+    (void)source;
+    (void)data;
+    RefsLookup* rl = g_task_get_task_data(G_TASK(res));
+    if (rl->serial != refs_serial || g_task_had_error(G_TASK(res))) return;
+    show_references(rl->app, rl->tab, rl->message, rl->name, rl->refs, rl->root, "whole words in the project",
+                    rl->truncated);
+}
+
+static gchar* buffer_text(GtkTextBuffer* b) {
+    GtkTextIter s, e;
+    gtk_text_buffer_get_bounds(b, &s, &e);
+    return gtk_text_buffer_get_text(b, &s, &e, TRUE);
+}
+
+static void start_index_lookup(AppData* app, EditorTab* tab, const gchar* name, CodeNavMessageFunc message) {
+    RefsLookup* rl = g_new0(RefsLookup, 1);
+    rl->app = app;
+    rl->tab = tab;
+    rl->serial = ++refs_serial;
+    rl->name = g_strdup(name);
+    rl->origin = g_canonicalize_filename(tab->path, NULL);
+    rl->lang = code_lang_from_name(tab->path);
+    rl->message = message;
+    rl->texts = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* t = l->data;
+        if (t->path == NULL || t->buffer == NULL || (t != tab && !gtk_text_buffer_get_modified(t->buffer))) continue;
+        g_hash_table_insert(rl->texts, g_canonicalize_filename(t->path, NULL), buffer_text(t->buffer));
+    }
+    GTask* task = g_task_new(NULL, NULL, refs_done, NULL);
+    g_task_set_task_data(task, rl, lookup_free);
+    g_task_run_in_thread(task, refs_thread);
+    g_object_unref(task);
+}
+
+typedef struct {
+    guint serial;
+    gchar* name;
+    CodeNavMessageFunc message;
+} ServerRefs;
+
+/* Line of path (open tab first) */
+static gchar* read_line(AppData* app, const gchar* path, gint line) {
+    EditorTab* t = editor_find_tab(app, path);
+    if (t != NULL && t->buffer != NULL && line < gtk_text_buffer_get_line_count(t->buffer)) {
+        GtkTextIter s, e;
+        gtk_text_buffer_get_iter_at_line(t->buffer, &s, line);
+        e = s;
+        if (!gtk_text_iter_ends_line(&e)) gtk_text_iter_forward_to_line_end(&e);
+        return gtk_text_iter_get_slice(&s, &e);
+    }
+    return NULL;
+}
+
+static gint compare_refs(gconstpointer a, gconstpointer b, gpointer origin) {
+    const CodeReference* x = *(CodeReference* const*)a;
+    const CodeReference* y = *(CodeReference* const*)b;
+    gboolean xo = strcmp(x->path, origin) == 0, yo = strcmp(y->path, origin) == 0;
+    if (xo != yo) return xo ? -1 : 1;
+    gint c = strcmp(x->path, y->path);
+    if (c != 0) return c;
+    return x->line != y->line ? x->line - y->line : x->column - y->column;
+}
+
+static void on_server_refs(AppData* app, EditorTab* tab, GPtrArray* locations, gpointer data) {
+    ServerRefs* sr = data;
+    if (sr->serial != refs_serial) {
+        g_free(sr->name);
+        g_free(sr);
+        return;
+    }
+    if (locations == NULL) {
+        /* The server could not answer: the index searches */
+        start_index_lookup(app, tab, sr->name, sr->message);
+        g_free(sr->name);
+        g_free(sr);
+        return;
+    }
+    GPtrArray* refs = g_ptr_array_new_with_free_func((GDestroyNotify)code_reference_free);
+    GHashTable* file_lines = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)g_strfreev);
+    for (guint i = 0; i < locations->len; i++) {
+        LspLocation* loc = g_ptr_array_index(locations, i);
+        CodeReference* r = g_new0(CodeReference, 1);
+        r->path = g_canonicalize_filename(loc->path, NULL);
+        r->line = loc->line;
+        r->column = loc->column;
+        r->text = read_line(app, r->path, r->line);
+        if (r->text == NULL) {
+            gchar** lines = g_hash_table_lookup(file_lines, r->path);
+            if (lines == NULL) {
+                gchar* data_text = NULL;
+                g_file_get_contents(r->path, &data_text, NULL, NULL);
+                lines = g_strsplit(data_text != NULL ? data_text : "", "\n", -1);
+                g_free(data_text);
+                g_hash_table_insert(file_lines, g_strdup(r->path), lines);
+            }
+            r->text = r->line < (gint)g_strv_length(lines) ? g_strdup(lines[r->line]) : g_strdup("");
+        }
+        for (gchar* c = r->text; *c != '\0'; c++) {
+            if (*c == '\t' || *c == '\r') *c = ' ';
+        }
+        if (!g_utf8_validate(r->text, -1, NULL)) {
+            gchar* valid = g_utf8_make_valid(r->text, -1);
+            g_free(r->text);
+            r->text = valid;
+        }
+        g_ptr_array_add(refs, r);
+    }
+    g_hash_table_destroy(file_lines);
+    gchar* origin = g_canonicalize_filename(tab->path, NULL);
+    /* Same order as the index: this file first, then by path and line */
+    g_ptr_array_sort_with_data(refs, compare_refs, origin);
+    gchar* root = code_index_project_root(origin);
+    gchar* server = code_intel_server_label(app, tab);
+    show_references(app, tab, sr->message, sr->name, refs, root, server != NULL ? server : "language server", FALSE);
+    g_free(server);
+    g_free(root);
+    g_free(origin);
+    g_ptr_array_unref(refs);
+    g_free(sr->name);
+    g_free(sr);
+}
+
+gboolean code_refs_find(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
+    if (app == NULL || tab == NULL || tab->buffer == NULL) return FALSE;
+    if (!code_nav_is_code(tab)) {
+        if (message != NULL) message(tab, "No code navigation for this file type");
+        return FALSE;
+    }
+    GtkTextIter it, s, e;
+    gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+    s = it;
+    gtk_text_iter_set_line_offset(&s, 0);
+    e = s;
+    if (!gtk_text_iter_ends_line(&e)) gtk_text_iter_forward_to_line_end(&e);
+    gchar* line = gtk_text_iter_get_slice(&s, &e);
+    gint ws = 0, we = 0;
+    if (!code_word_at(line, -1, gtk_text_iter_get_line_index(&it), code_lang_from_name(tab->path), &ws, &we)) {
+        g_free(line);
+        if (message != NULL) message(tab, "No identifier under the cursor");
+        return FALSE;
+    }
+    gchar* name = g_strndup(line + ws, (gsize)(we - ws));
+    g_free(line);
+    if (message != NULL) {
+        gchar* msg = g_strdup_printf("Searching the references of %s...", name);
+        message(tab, msg);
+        g_free(msg);
+    }
+    ServerRefs* sr = g_new0(ServerRefs, 1);
+    sr->serial = ++refs_serial;
+    sr->name = g_strdup(name);
+    sr->message = message;
+    if (!code_intel_references(app, tab, gtk_text_iter_get_line(&it), ws, on_server_refs, sr)) {
+        g_free(sr->name);
+        g_free(sr);
+        start_index_lookup(app, tab, name, message);
+    }
+    g_free(name);
+    return TRUE;
+}

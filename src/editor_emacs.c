@@ -3,6 +3,8 @@
 #include "editor.h"
 #include "code_nav.h"
 #include "code_help.h"
+#include "code_refs.h"
+#include "code_symbols.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -967,6 +969,11 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
             emacs_open_minibuffer(tab, EMACS_MINI_GOTO_LINE, "Goto line: ", "");
             return TRUE;
         }
+        if (keyval == GDK_KEY_i || keyval == GDK_KEY_I) {
+            /* imenu: the symbols of the buffer */
+            code_symbols_show((AppData*)tab->app, tab, editor_mode_message);
+            return TRUE;
+        }
         return TRUE;
     }
 
@@ -1050,6 +1057,11 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     /* xref: M-. definition (C-u M-. declaration), M-, back, C-M-, forward */
     if (alt && keyval == GDK_KEY_period) {
         code_nav_goto_definition((AppData*)tab->app, tab, st->emacs_universal_arg, editor_mode_message);
+        return TRUE;
+    }
+    if (alt && keyval == GDK_KEY_question) {
+        /* xref-find-references */
+        code_refs_find((AppData*)tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (alt && keyval == GDK_KEY_comma) {

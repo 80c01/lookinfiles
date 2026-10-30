@@ -577,6 +577,46 @@ GPtrArray* lsp_parse_symbols(const JsonValue* result) {
     return out;
 }
 
+void lsp_diagnostic_free(LspDiagnostic* diag) {
+    if (diag == NULL) return;
+    g_free(diag->message);
+    g_free(diag->source);
+    g_free(diag);
+}
+
+GPtrArray* lsp_parse_diagnostics(const JsonValue* params, gchar** path) {
+    *path = NULL;
+    if (params == NULL) return NULL;
+    gchar* uri = dup_member(params, "uri");
+    *path = lsp_uri_to_path(uri);
+    g_free(uri);
+    if (*path == NULL) return NULL;
+    GPtrArray* out = g_ptr_array_new_with_free_func((GDestroyNotify)lsp_diagnostic_free);
+    const JsonValue* list = json_value_get(params, "diagnostics");
+    for (guint i = 0; list != NULL && json_value_get_type(list) == JSON_VALUE_ARRAY && i < json_value_get_length(list); i++) {
+        const JsonValue* d = json_value_get_item(list, i);
+        const JsonValue* range = json_value_get(d, "range");
+        LspDiagnostic* diag = g_new0(LspDiagnostic, 1);
+        if (!read_position(range, &diag->line, &diag->column)) {
+            lsp_diagnostic_free(diag);
+            continue;
+        }
+        const JsonValue* end = range != NULL ? json_value_get(range, "end") : NULL;
+        const JsonValue* el = end != NULL ? json_value_get(end, "line") : NULL;
+        const JsonValue* ec = end != NULL ? json_value_get(end, "character") : NULL;
+        diag->end_line = el != NULL ? (gint)json_value_get_number(el) : diag->line;
+        diag->end_column = ec != NULL ? (gint)json_value_get_number(ec) : diag->column;
+        const JsonValue* sev = json_value_get(d, "severity");
+        diag->severity = sev != NULL ? (LspSeverity)(gint)json_value_get_number(sev) : LSP_SEVERITY_ERROR;
+        if (diag->severity < LSP_SEVERITY_ERROR || diag->severity > LSP_SEVERITY_HINT) diag->severity = LSP_SEVERITY_ERROR;
+        diag->message = dup_member(d, "message");
+        if (diag->message == NULL) diag->message = g_strdup("");
+        diag->source = dup_member(d, "source");
+        g_ptr_array_add(out, diag);
+    }
+    return out;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Positions                                                                 */
 /* ------------------------------------------------------------------------- */

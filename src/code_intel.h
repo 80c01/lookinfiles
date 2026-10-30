@@ -34,6 +34,15 @@ gboolean code_intel_signature(AppData* app, EditorTab* tab, gint line, gint inde
                               gpointer data);
 gboolean code_intel_document_symbols(AppData* app, EditorTab* tab, CodeIntelSymbolsFunc func, gpointer data);
 
+/* Follow a new editor tab: its server starts and gets the text (so its
+ * diagnostics come), edits are sent after a short pause, and diagnostics
+ * are underlined (errors red, warnings yellow, others blue) */
+void code_intel_attach(AppData* app, EditorTab* tab);
+
+/* Diagnostics at the position (line, byte index) of tab as Markdown, or
+ * NULL when there is none */
+gchar* code_intel_diagnostics_at(AppData* app, EditorTab* tab, gint line, gint index);
+
 /* Characters that trigger signature help in tab ("(," by default) */
 const gchar* code_intel_signature_triggers(AppData* app, EditorTab* tab);
 

@@ -5,6 +5,7 @@
 #include "diff_gutter.h"
 #include "code_nav.h"
 #include "code_help.h"
+#include "code_intel.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -811,6 +812,7 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     g_signal_connect(ctrl_click, "pressed", G_CALLBACK(on_view_ctrl_click), tab);
     gtk_widget_add_controller(tab->view, GTK_EVENT_CONTROLLER(ctrl_click));
     code_help_attach(app, tab, editor_mode_message);
+    code_intel_attach(app, tab);
 
     /* Apply initial mode */
     editor_modes_apply_mode(app, tab, tab->mode);

@@ -309,10 +309,20 @@ Dart, Haskell, Elixir, Erlang, Julia, R and Tcl.
 | Back / forward | `Ctrl+Alt+-` / `Ctrl+Shift+-` | `M-,` / `C-M-,` | `Ctrl+O` / `Tab` (in the file, then across files) |
 | Help card (signature, documentation, location) | `Ctrl+K Ctrl+I`, rest the mouse on a name | `C-h .`, mouse | `K`, mouse |
 | Signature of the call being typed | automatic after `(` and `,`, `Ctrl+Shift+Space` | automatic, in the echo area | automatic in Insert mode |
+| References (References tab) | `Shift+F12` | `M-?` | `gr`, `:References` |
+| Symbols of the file (filtered list) | `Ctrl+Shift+O` | `M-g i` | `:Symbols` |
 
 Repeated on a definition, the lookup goes to the next candidate (other
 definitions, then the declarations). The message line tells which one is shown
 and how many there are.
+
+The references are listed in a **References** tab next to **Git Commits**
+(grouped by file, `Enter` or a double click opens one, the cross closes the
+tab). The other occurrences of the identifier under the cursor are
+highlighted. `Ctrl+Click` on a name in the preview of a source file opens it
+at its definition. With a language server, errors and warnings are underlined
+(red, yellow), counted in the status bar, and explained when the mouse rests
+on them.
 
 #### Org-mode editing
 
@@ -379,7 +389,7 @@ becomes a rule. Folds survive edits, and moving the cursor into folded text
 | Format | Align left / center / right / justify `Ctrl+L` / `E` / `R` / `J`, indent `Tab`, unindent `Shift+Tab` |
 | Undo and redo | `Ctrl+Z`, `Ctrl+Y` / `Ctrl+Shift+Z` |
 | Save | `Ctrl+S`, Save As `Ctrl+Shift+S` |
-| Code | Definition `F12` / `Ctrl+Click`, declaration `Ctrl+F12`, back / forward `Ctrl+Alt+-` / `Ctrl+Shift+-`, help `Ctrl+K Ctrl+I`, signature `Ctrl+Shift+Space` |
+| Code | Definition `F12` / `Ctrl+Click`, declaration `Ctrl+F12`, back / forward `Ctrl+Alt+-` / `Ctrl+Shift+-`, help `Ctrl+K Ctrl+I`, signature `Ctrl+Shift+Space`, references `Shift+F12`, symbols `Ctrl+Shift+O` |
 
 </details>
 
@@ -396,7 +406,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Format | `M-q` fill paragraph (72 columns), `M-u` / `M-l` / `M-c` case, `M-x set-justification-left` / `center` / `right` / `full` |
 | Undo and redo | `C-/`, `C-_`, `C-x u` / `C-Shift-_`, `M-_` |
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
-| Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward, `C-h .` help; signatures in the echo area |
+| Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward, `M-?` references, `M-g i` symbols, `C-h .` help; signatures in the echo area |
 | Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `org-mode`, `text-mode`, mode switches) |
 | Minibuffer | `Tab` completes (`M-x` command names, Org tags, `*Heading` links) and lists the candidates; `C-g` / `Esc` quits |
 
@@ -425,7 +435,7 @@ listed over the statusline, Vim's wildmenu) and `Ctrl+R` register insert.
 | Marks and jumps | `m{a-z}`, `` `a `` / `'a`, ``` `` ``` / `''`, `` `[ `` `` `] `` `` `< `` `` `. ``, `Ctrl+O` / `Tab` jump list, `:marks`, `:jumps` |
 | Macros | `qa` … `q` record, `@a` run (with a count; stops at the first failure), `@@` again, `@:` repeat the last Ex command |
 | Search | `/` `?` (Vim regex: `\<` `\>` `\(` `\)` `\\|` `\{n,m}` `\zs` `\ze` `\v` `\c`), incremental with all matches highlighted and a `[n/total]` count, `n` `N`, `*` `#` `g*` `g#`, `gd` (first occurrence, when the file is not code); `:noh` |
-| Code | `gd` / `Ctrl+]` definition, `gD` declaration, `:tag[!] name`, `K` help; `Ctrl+O` / `Tab` continue across files |
+| Code | `gd` / `Ctrl+]` definition, `gD` declaration, `:tag[!] name`, `K` help, `gr` / `:References`, `:Symbols`; `Ctrl+O` / `Tab` continue across files |
 | Ex commands | Ranges `%` `.` `$` `N` `'a` `'<,'>` `/pat/` `?pat?` `+N` `-N` `;`; `:s/pat/rep/[gine]` (`&` `\1` `\u` `\U` `\r` `~`), `:&` `:&&` `&` `g&`, `:g/pat/cmd` `:v`, `:d [x] [N]`, `:y`, `:pu`, `:m`, `:t` / `:co`, `:j[!]`, `:>` `:<`, `:normal`, `:sort [n i u] [!]`, `:retab`, `:center` / `:right` / `:left [width]`, `:k`, `:reg`, `:[N]` |
 | Options | `:set` `ignorecase` `smartcase` `hlsearch` `incsearch` `wrapscan` `expandtab` `autoindent` `shiftwidth` `tabstop` `softtabstop` (default `-1`: same as `shiftwidth`) `textwidth` `clipboard`, `number`, `wrap`, `mode=vim\|emacs\|notepad` (`no` / `inv` / `!` / `?` / `+=`) |
 | Scroll | `zz` `zt` `zb` (`z.` `z<CR>` `z-`), `Ctrl+E` / `Ctrl+Y` lines, `Ctrl+D` / `Ctrl+U` half pages, `Ctrl+F` / `Ctrl+B` pages |

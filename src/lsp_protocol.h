@@ -131,6 +131,26 @@ GPtrArray* lsp_parse_symbols(const JsonValue* result);
 /* CodeSymbolKind of an LSP SymbolKind number */
 CodeSymbolKind lsp_symbol_kind(gint kind);
 
+typedef enum {
+    LSP_SEVERITY_ERROR = 1,
+    LSP_SEVERITY_WARNING = 2,
+    LSP_SEVERITY_INFO = 3,
+    LSP_SEVERITY_HINT = 4
+} LspSeverity;
+
+typedef struct {
+    gint line, column;          /* start (server encoding) */
+    gint end_line, end_column;  /* end */
+    LspSeverity severity;
+    gchar* message;
+    gchar* source;              /* "clang", "pyflakes"... or NULL */
+} LspDiagnostic;
+
+void lsp_diagnostic_free(LspDiagnostic* diag);
+/* The params of textDocument/publishDiagnostics: the diagnostics
+ * (LspDiagnostic*) of *path (caller frees); NULL when not a file */
+GPtrArray* lsp_parse_diagnostics(const JsonValue* params, gchar** path);
+
 /* --- Positions --- */
 
 /* Byte index in line of an LSP column, and back (utf8: the server counts

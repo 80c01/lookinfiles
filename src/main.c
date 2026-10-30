@@ -30,6 +30,8 @@
 #include "orgmode.h"
 #include "diff_gutter.h"
 #include "code_intel.h"
+#include "code_nav.h"
+#include "editor_modes.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -506,6 +508,7 @@ int main(int argc, char** argv) {
     orgmode_install_gtksourceview_spec();
     populate_tree(app, start_dir, FALSE, SORT_NAME);
     app->text_view = text_view;
+    code_nav_attach_preview(app, editor_mode_message);   /* Ctrl+Click in source previews */
     app->search_entry = search_entry;
     app->path_label = path_label;
     app->breadcrumb_box = breadcrumb_box;

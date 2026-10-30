@@ -28,6 +28,7 @@ static const IconFallback FALLBACKS[] = {
     {"document-print-preview", {"text-x-generic", NULL}},
     {"view-dual", {"view-grid", NULL}},
     {"view-paged", {"view-list", NULL}},
+    {"edit-find", {"system-search", NULL}},
 };
 
 /* TRUE when gdk-pixbuf can load SVG (librsvg loader). Without it, the bundled

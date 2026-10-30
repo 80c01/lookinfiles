@@ -9,6 +9,8 @@
 #include <string.h>
 
 #define RESTART_DELAY_US (60 * G_USEC_PER_SEC)
+#define SYNC_DELAY_MS 600
+#define SYNC_TIMER_KEY "code-intel-sync"
 
 typedef struct {
     LspClient* client;
@@ -19,7 +21,10 @@ typedef struct {
 typedef struct {
     GHashTable* servers;   /* "root\ncommand" -> Server* */
     GHashTable* commands;  /* CodeLang (as pointer) -> gchar** argv, or a NULL value: none */
+    GHashTable* diagnostics; /* canonical path -> GPtrArray of LspDiagnostic (byte columns) */
 } CodeIntel;
+
+static void on_server_notify(LspClient* client, const LspMessage* msg, gpointer data);
 
 typedef enum {
     REQ_LOCATIONS,
@@ -49,6 +54,7 @@ static CodeIntel* intel_of(AppData* app) {
         CodeIntel* ci = g_new0(CodeIntel, 1);
         ci->servers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, server_free);
         ci->commands = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)g_strfreev);
+        ci->diagnostics = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)g_ptr_array_unref);
         app->code_intel = ci;
     }
     return app->code_intel;
@@ -122,6 +128,7 @@ static Server* server_for(AppData* app, EditorTab* tab, gboolean start) {
     }
     if (s == NULL && start) {
         LspClient* client = lsp_client_new(argv, root, on_server_state, app, NULL);
+        lsp_client_set_notify_func(client, on_server_notify, app);
         s = g_new0(Server, 1);
         s->client = client;
         s->name = g_path_get_basename(argv[0]);
@@ -338,12 +345,25 @@ const gchar* code_intel_signature_triggers(AppData* app, EditorTab* tab) {
     return "(,";
 }
 
+static void count_diagnostics(AppData* app, EditorTab* tab, guint* errors, guint* warnings);
+
 gchar* code_intel_server_label(AppData* app, EditorTab* tab) {
     if (app == NULL || app->code_intel == NULL) return NULL;
     Server* s = server_for(app, tab, FALSE);
     if (s == NULL) return NULL;
     switch (lsp_client_get_state(s->client)) {
-        case LSP_CLIENT_READY: return g_strdup(lsp_client_get_name(s->client));
+        case LSP_CLIENT_READY: {
+            guint errors = 0, warnings = 0;
+            count_diagnostics(app, tab, &errors, &warnings);
+            if (errors == 0 && warnings == 0) return g_strdup(lsp_client_get_name(s->client));
+            GString* label = g_string_new(lsp_client_get_name(s->client));
+            g_string_append(label, ":");
+            if (errors > 0) g_string_append_printf(label, " %u error%s", errors, errors > 1 ? "s" : "");
+            if (warnings > 0) {
+                g_string_append_printf(label, "%s %u warning%s", errors > 0 ? "," : "", warnings, warnings > 1 ? "s" : "");
+            }
+            return g_string_free(label, FALSE);
+        }
         case LSP_CLIENT_STARTING: return g_strdup_printf("%s (starting)", s->name);
         case LSP_CLIENT_FAILED: break;
     }
@@ -355,6 +375,169 @@ void code_intel_shutdown(AppData* app) {
     CodeIntel* ci = app->code_intel;
     g_hash_table_destroy(ci->servers);
     g_hash_table_destroy(ci->commands);
+    g_hash_table_destroy(ci->diagnostics);
     g_free(ci);
     app->code_intel = NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Diagnostics and document follow-up                                        */
+/* ------------------------------------------------------------------------- */
+
+static const gchar* const DIAG_TAGS[] = {NULL, "lsp-error", "lsp-warning", "lsp-info", "lsp-hint"};
+
+static void ensure_diag_tags(GtkTextBuffer* buf) {
+    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buf);
+    if (gtk_text_tag_table_lookup(table, "lsp-error") != NULL) return;
+    static const gchar* const COLORS[] = {NULL, "#f14c4c", "#cca700", "#3794ff", "#3794ff"};
+    for (gint i = 1; i <= 4; i++) {
+        GdkRGBA rgba;
+        gdk_rgba_parse(&rgba, COLORS[i]);
+        /* A plain line: the error (dotted) style is barely visible in GTK 4 */
+        gtk_text_buffer_create_tag(buf, DIAG_TAGS[i], "underline", PANGO_UNDERLINE_SINGLE, "underline-rgba", &rgba,
+                                   NULL);
+    }
+}
+
+static void iter_at(GtkTextBuffer* buf, GtkTextIter* it, gint line, gint index) {
+    gint lines = gtk_text_buffer_get_line_count(buf);
+    gtk_text_buffer_get_iter_at_line(buf, it, CLAMP(line, 0, lines - 1));
+    GtkTextIter eol = *it;
+    if (!gtk_text_iter_ends_line(&eol)) gtk_text_iter_forward_to_line_end(&eol);
+    gtk_text_iter_set_line_index(it, CLAMP(index, 0, gtk_text_iter_get_line_index(&eol)));
+}
+
+/* Underline the diagnostics of path in its open tab */
+static void apply_diagnostics(AppData* app, const gchar* path) {
+    EditorTab* tab = editor_find_tab(app, path);
+    if (tab == NULL || tab->buffer == NULL) return;
+    GtkTextBuffer* buf = tab->buffer;
+    ensure_diag_tags(buf);
+    GtkTextIter s, e;
+    gtk_text_buffer_get_bounds(buf, &s, &e);
+    for (gint i = 1; i <= 4; i++) gtk_text_buffer_remove_tag_by_name(buf, DIAG_TAGS[i], &s, &e);
+    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    for (guint i = 0; diags != NULL && i < diags->len; i++) {
+        LspDiagnostic* d = g_ptr_array_index(diags, i);
+        GtkTextIter a, b;
+        iter_at(buf, &a, d->line, d->column);
+        iter_at(buf, &b, d->end_line, d->end_column);
+        if (gtk_text_iter_equal(&a, &b)) {
+            /* Empty range: the word there, or one character */
+            if (gtk_text_iter_inside_word(&b) || gtk_text_iter_starts_word(&b)) gtk_text_iter_forward_word_end(&b);
+            else gtk_text_iter_forward_char(&b);
+        }
+        gtk_text_buffer_apply_tag_by_name(buf, DIAG_TAGS[d->severity], &a, &b);
+    }
+}
+
+static void on_server_notify(LspClient* client, const LspMessage* msg, gpointer data) {
+    AppData* app = data;
+    if (g_strcmp0(msg->method, "textDocument/publishDiagnostics") != 0) return;
+    gchar* path = NULL;
+    GPtrArray* diags = lsp_parse_diagnostics(msg->params, &path);
+    if (diags == NULL) {
+        g_free(path);
+        return;
+    }
+    gchar* canon = g_canonicalize_filename(path, NULL);
+    g_free(path);
+    gboolean utf8 = utf8_positions(client);
+    for (guint i = 0; i < diags->len; i++) {
+        LspDiagnostic* d = g_ptr_array_index(diags, i);
+        gchar* text = line_text(app, canon, d->line);
+        d->column = lsp_column_to_byte(text, -1, d->column, utf8);
+        g_free(text);
+        text = line_text(app, canon, d->end_line);
+        d->end_column = lsp_column_to_byte(text, -1, d->end_column, utf8);
+        g_free(text);
+    }
+    g_hash_table_replace(intel_of(app)->diagnostics, g_strdup(canon), diags);
+    apply_diagnostics(app, canon);
+    g_free(canon);
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
+}
+
+gchar* code_intel_diagnostics_at(AppData* app, EditorTab* tab, gint line, gint index) {
+    if (app == NULL || app->code_intel == NULL || tab == NULL || tab->path == NULL) return NULL;
+    gchar* path = g_canonicalize_filename(tab->path, NULL);
+    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    g_free(path);
+    GString* out = NULL;
+    static const gchar* const NAMES[] = {NULL, "error", "warning", "info", "hint"};
+    for (guint i = 0; diags != NULL && i < diags->len; i++) {
+        LspDiagnostic* d = g_ptr_array_index(diags, i);
+        gboolean after_start = line > d->line || (line == d->line && index >= d->column);
+        gboolean before_end = line < d->end_line || (line == d->end_line && index <= MAX(d->end_column, d->column + 1));
+        if (!after_start || !before_end) continue;
+        if (out == NULL) out = g_string_new(NULL);
+        else g_string_append(out, "\n\n");
+        g_string_append_printf(out, "**%s**%s%s%s: ", NAMES[d->severity], d->source != NULL ? " (" : "",
+                               d->source != NULL ? d->source : "", d->source != NULL ? ")" : "");
+        /* Plain text in Markdown: escape the special characters */
+        for (const gchar* p = d->message; *p != '\0'; p++) {
+            if (strchr("\\`*_[]<>#|", *p) != NULL) g_string_append_c(out, '\\');
+            g_string_append_c(out, *p);
+        }
+    }
+    return out != NULL ? g_string_free(out, FALSE) : NULL;
+}
+
+/* Error and warning counts of a file */
+static void count_diagnostics(AppData* app, EditorTab* tab, guint* errors, guint* warnings) {
+    *errors = *warnings = 0;
+    if (app->code_intel == NULL || tab == NULL || tab->path == NULL) return;
+    gchar* path = g_canonicalize_filename(tab->path, NULL);
+    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    g_free(path);
+    for (guint i = 0; diags != NULL && i < diags->len; i++) {
+        LspDiagnostic* d = g_ptr_array_index(diags, i);
+        if (d->severity == LSP_SEVERITY_ERROR) (*errors)++;
+        else if (d->severity == LSP_SEVERITY_WARNING) (*warnings)++;
+    }
+}
+
+typedef struct {
+    AppData* app;
+    EditorTab* tab;
+    guint timer;
+} SyncState;
+
+static gboolean on_sync_timer(gpointer data) {
+    SyncState* ss = data;
+    ss->timer = 0;
+    if (!tab_alive(ss->app, ss->tab)) return G_SOURCE_REMOVE;
+    Server* s = server_for(ss->app, ss->tab, TRUE);
+    if (s != NULL) sync_documents(ss->app, s, ss->tab);
+    return G_SOURCE_REMOVE;
+}
+
+static void schedule_sync(SyncState* ss, guint delay) {
+    if (ss->timer != 0) g_source_remove(ss->timer);
+    ss->timer = g_timeout_add(delay, on_sync_timer, ss);
+}
+
+static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
+    (void)buffer;
+    SyncState* ss = data;
+    /* Only once a server runs for the tab: edits never start one */
+    if (server_for(ss->app, ss->tab, FALSE) != NULL) schedule_sync(ss, SYNC_DELAY_MS);
+}
+
+static void sync_state_free(gpointer p) {
+    SyncState* ss = p;
+    if (ss->timer != 0) g_source_remove(ss->timer);
+    g_free(ss);
+}
+
+void code_intel_attach(AppData* app, EditorTab* tab) {
+    if (app == NULL || tab == NULL || tab->buffer == NULL || tab->path == NULL) return;
+    if (g_object_get_data(G_OBJECT(tab->buffer), SYNC_TIMER_KEY) != NULL) return;
+    SyncState* ss = g_new0(SyncState, 1);
+    ss->app = app;
+    ss->tab = tab;
+    g_object_set_data_full(G_OBJECT(tab->buffer), SYNC_TIMER_KEY, ss, sync_state_free);
+    g_signal_connect(tab->buffer, "changed", G_CALLBACK(on_buffer_changed), ss);
+    /* A source file with a server: start it now, its diagnostics follow */
+    if (tab_lang(tab) != CODE_LANG_NONE && command_of(intel_of(app), tab_lang(tab)) != NULL) schedule_sync(ss, 50);
 }

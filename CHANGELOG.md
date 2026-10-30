@@ -27,6 +27,10 @@ All notable changes to this project are listed here. The format follows
 - Help cards in editor tabs: what the identifier is (signature, documentation,
   location) on `Ctrl+K Ctrl+I` / `C-h .` / `K` or when the mouse rests on it,
   and the signature of the call being typed with the current parameter.
+- References in a References tab (`Shift+F12` / `M-?` / `gr`), symbols of the
+  file in a filtered list (`Ctrl+Shift+O` / `M-g i` / `:Symbols`), highlight
+  of the other occurrences of the identifier, `Ctrl+Click` in source previews,
+  and language server diagnostics (underlined, counted in the status bar).
 - Previews for many more formats, each built in the background and shown as
   close as possible to its own application (see TASK.md):
   CSV / TSV tables; pretty-printed JSON, JSONC and JSON Lines; diffs and

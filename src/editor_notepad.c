@@ -4,6 +4,8 @@
 #include "editor.h"
 #include "code_nav.h"
 #include "code_help.h"
+#include "code_refs.h"
+#include "code_symbols.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -309,8 +311,16 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
         gtk_label_set_text(GTK_LABEL(st->np_status_label), "Ctrl+K was pressed: waiting for the second key");
         return TRUE;
     }
+    if (ctrl && shift && !alt && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
+        code_symbols_show((AppData*)tab->app, tab, editor_mode_message);
+        return TRUE;
+    }
     if (ctrl && shift && !alt && keyval == GDK_KEY_space) {
         code_help_signature((AppData*)tab->app, tab);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_F12 && shift && !ctrl && !alt) {
+        code_refs_find((AppData*)tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (keyval == GDK_KEY_F12 && !shift && !alt) {

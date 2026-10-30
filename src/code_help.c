@@ -11,6 +11,9 @@
 #define CARD_MIN_WIDTH 160
 #define CARD_MAX_HEIGHT 320
 #define HELP_KEY "code-help"
+#define OCCURRENCE_DELAY_MS 250
+#define OCCURRENCE_MAX_BYTES (2 * 1024 * 1024)
+#define OCCURRENCE_TAG "code-occurrence"
 
 typedef enum {
     CARD_NONE = 0,
@@ -38,6 +41,9 @@ typedef struct {
     gdouble mouse_x, mouse_y;
     guint hover_timer;
     guint signature_timer;
+    guint occurrence_timer;
+    gchar* occurrence;     /* identifier highlighted, or NULL */
+    gchar* diagnostics;    /* diagnostics at the place of the help request (Markdown), or NULL */
 } CodeHelp;
 
 static CodeHelp* help_of(EditorTab* tab) {
@@ -155,6 +161,12 @@ static void show_card(CodeHelp* h, CardKind kind, const gchar* markdown_in) {
         return;
     }
     gchar* markdown = flatten_headings(markdown_in);
+    if ((kind == CARD_HELP || kind == CARD_MOUSE) && h->diagnostics != NULL && markdown_in != h->diagnostics) {
+        /* Problems first, like VS Code */
+        gchar* both = g_strdup_printf("%s\n\n---\n\n%s", h->diagnostics, markdown);
+        g_free(markdown);
+        markdown = both;
+    }
     ensure_popover(h);
     GtkTextBuffer* buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(h->text));
     ensure_markdown_tags(buf);
@@ -269,6 +281,10 @@ static void on_found(AppData* app, EditorTab* tab, const CodeMatch* match, const
         return;
     }
     CardKind kind = h->asked;
+    if (match == NULL && h->diagnostics != NULL) {
+        show_card(h, kind, h->diagnostics);
+        return;
+    }
     if (match == NULL) {
         if (kind == CARD_HELP && h->message != NULL) {
             gchar* msg = g_strdup_printf("No information found for %s", h->word);
@@ -322,12 +338,27 @@ static void request_help(CodeHelp* h, const GtkTextIter* it, CardKind kind) {
     gchar* line = gtk_text_iter_get_slice(&s, &e);
     gint ws = 0, we = 0;
     CodeLang lang = code_lang_from_name(h->tab->path);
+    gchar* diagnostics = code_intel_diagnostics_at(h->app, h->tab, gtk_text_iter_get_line(it),
+                                                   gtk_text_iter_get_line_index(it));
     if (!code_word_at(line, -1, gtk_text_iter_get_line_index(it), lang, &ws, &we)) {
         g_free(line);
+        if (diagnostics != NULL) {
+            /* Only a problem here (punctuation, end of line) */
+            code_help_hide(h->tab);
+            g_free(h->diagnostics);
+            h->diagnostics = diagnostics;
+            h->asked = kind;
+            h->anchor_line = gtk_text_iter_get_line(it);
+            h->anchor_index = gtk_text_iter_get_line_index(it);
+            show_card(h, kind, diagnostics);
+            return;
+        }
         if (kind == CARD_HELP && h->message != NULL) h->message(h->tab, "No identifier under the cursor");
         return;
     }
     code_help_hide(h->tab);
+    g_free(h->diagnostics);
+    h->diagnostics = diagnostics;
     h->asked = kind;
     g_free(h->word);
     h->word = g_strndup(line + ws, (gsize)(we - ws));
@@ -443,10 +474,21 @@ static void schedule_signature(CodeHelp* h) {
     h->signature_timer = g_timeout_add(SIGNATURE_DELAY_MS, on_signature_timer, h);
 }
 
+static void clear_occurrences(CodeHelp* h);
+static void schedule_occurrences(CodeHelp* h);
+
+/* The edit may have made or broken occurrences: highlight again */
+static void reset_occurrences(CodeHelp* h) {
+    if (h->occurrence == NULL) return;
+    clear_occurrences(h);
+    schedule_occurrences(h);
+}
+
 static void on_insert_text(GtkTextBuffer* buffer, GtkTextIter* at, gchar* text, gint len, gpointer data) {
     (void)buffer;
     (void)at;
     CodeHelp* h = data;
+    reset_occurrences(h);
     if (h->tab->view == NULL || !gtk_widget_has_focus(h->tab->view)) return;
     gboolean open_card = h->showing == CARD_SIGNATURE || h->asked == CARD_SIGNATURE;
     if (len == 1 && (strchr(code_intel_signature_triggers(h->app, h->tab), text[0]) != NULL || text[0] == ')')) {
@@ -461,13 +503,80 @@ static void on_delete_range(GtkTextBuffer* buffer, GtkTextIter* s, GtkTextIter* 
     (void)s;
     (void)e;
     CodeHelp* h = data;
+    reset_occurrences(h);
     if (h->showing == CARD_SIGNATURE) schedule_signature(h);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Other occurrences of the identifier at the cursor                         */
+/* ------------------------------------------------------------------------- */
+
+static void clear_occurrences(CodeHelp* h) {
+    if (h->occurrence == NULL) return;
+    GtkTextIter s, e;
+    gtk_text_buffer_get_bounds(h->tab->buffer, &s, &e);
+    gtk_text_buffer_remove_tag_by_name(h->tab->buffer, OCCURRENCE_TAG, &s, &e);
+    g_free(h->occurrence);
+    h->occurrence = NULL;
+}
+
+static gboolean on_occurrence_timer(gpointer data) {
+    CodeHelp* h = data;
+    h->occurrence_timer = 0;
+    GtkTextBuffer* buf = h->tab->buffer;
+    CodeLang lang = code_lang_from_name(h->tab->path);
+    GtkTextIter it, s, e;
+    gtk_text_buffer_get_iter_at_mark(buf, &it, gtk_text_buffer_get_insert(buf));
+    gchar* word = NULL;
+    if (!gtk_text_buffer_get_has_selection(buf) && gtk_text_buffer_get_char_count(buf) < OCCURRENCE_MAX_BYTES &&
+        code_nav_is_code(h->tab)) {
+        s = it;
+        gtk_text_iter_set_line_offset(&s, 0);
+        e = s;
+        if (!gtk_text_iter_ends_line(&e)) gtk_text_iter_forward_to_line_end(&e);
+        gchar* line = gtk_text_iter_get_slice(&s, &e);
+        gint ws = 0, we = 0;
+        if (code_word_at(line, -1, gtk_text_iter_get_line_index(&it), lang, &ws, &we)) {
+            word = g_strndup(line + ws, (gsize)(we - ws));
+        }
+        g_free(line);
+    }
+    if (g_strcmp0(word, h->occurrence) == 0) {
+        g_free(word);
+        return G_SOURCE_REMOVE;
+    }
+    clear_occurrences(h);
+    if (word == NULL) return G_SOURCE_REMOVE;
+    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buf);
+    if (gtk_text_tag_table_lookup(table, OCCURRENCE_TAG) == NULL) {
+        gtk_text_buffer_create_tag(buf, OCCURRENCE_TAG, "background", "#3a3d41", NULL);
+    }
+    /* Whole words only */
+    GtkTextIter from, ms, me;
+    gtk_text_buffer_get_start_iter(buf, &from);
+    while (gtk_text_iter_forward_search(&from, word, GTK_TEXT_SEARCH_TEXT_ONLY, &ms, &me, NULL)) {
+        GtkTextIter before = ms;
+        gboolean start_ok = !gtk_text_iter_backward_char(&before) || !code_is_word_char(lang, gtk_text_iter_get_char(&before));
+        gboolean end_ok = gtk_text_iter_is_end(&me) || !code_is_word_char(lang, gtk_text_iter_get_char(&me));
+        if (start_ok && end_ok) {
+            gtk_text_buffer_apply_tag_by_name(buf, OCCURRENCE_TAG, &ms, &me);
+        }
+        from = me;
+    }
+    h->occurrence = word;
+    return G_SOURCE_REMOVE;
+}
+
+static void schedule_occurrences(CodeHelp* h) {
+    if (h->occurrence_timer != 0) g_source_remove(h->occurrence_timer);
+    h->occurrence_timer = g_timeout_add(OCCURRENCE_DELAY_MS, on_occurrence_timer, h);
 }
 
 static void on_cursor_moved(GObject* buffer, GParamSpec* pspec, gpointer data) {
     (void)buffer;
     (void)pspec;
     CodeHelp* h = data;
+    schedule_occurrences(h);
     if (h->showing == CARD_SIGNATURE) {
         schedule_signature(h);
     } else if (h->showing == CARD_HELP) {
@@ -587,6 +696,8 @@ static void on_view_destroy(GtkWidget* view, gpointer data) {
     cancel_hover(h);
     if (h->signature_timer != 0) g_source_remove(h->signature_timer);
     h->signature_timer = 0;
+    if (h->occurrence_timer != 0) g_source_remove(h->occurrence_timer);
+    h->occurrence_timer = 0;
     if (h->popover != NULL) {
         gtk_widget_unparent(h->popover);
         h->popover = NULL;
@@ -598,6 +709,8 @@ static void help_free(gpointer p) {
     CodeHelp* h = p;
     g_free(h->word);
     g_free(h->call);
+    g_free(h->occurrence);
+    g_free(h->diagnostics);
     g_free(h);
 }
 

@@ -118,11 +118,15 @@ Notes:
   GtkSourceView highlighting in the card); diagnostics are received and
   ignored (phase 3); a failed server is retried after a minute.
 
-### Phase 3 — Results and polish
+### Phase 3 — Results and polish — done
 - References tab in the preview notebook: grouped by file, context line,
   `Enter` opens the location.
 - Symbol picker (`AppDialog` with filter), highlight of the other
-  occurrences, `Ctrl+Click` in the read-only preview, diagnostics.
+  occurrences, `Ctrl+Click` in the read-only preview, diagnostics
+  (underlined, counted in the status bar, explained in help cards; edits are
+  sent to the server after a 600 ms pause).
+- Known limits: references without a server are whole-word matches (comments
+  and strings included); workspace-wide symbol search is not offered.
 
 ### Known limits of the built-in index
 - Heuristic: no scopes or types, so `x->name` offers every `name` field of

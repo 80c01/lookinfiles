@@ -224,6 +224,43 @@ static void test_find_cancelled(void) {
     g_free(root);
 }
 
+static void test_references(void) {
+    gchar* root = make_project();
+    GPtrArray* files = code_index_project_files(root, CODE_LANG_C, NULL, NULL);
+    gchar* origin = g_build_filename(root, "src", "main.c", NULL);
+    gboolean truncated = TRUE;
+    GPtrArray* refs = code_index_references("shop_total", CODE_LANG_C, origin, NULL, files, NULL, &truncated);
+    g_assert_false(truncated);
+    GString* s = g_string_new(NULL);
+    for (guint i = 0; i < refs->len; i++) {
+        CodeReference* r = g_ptr_array_index(refs, i);
+        gchar* rel = rel_path(root, r->path);
+        g_string_append_printf(s, "%s:%d:%d ", rel, r->line + 1, r->column);
+        g_free(rel);
+    }
+    /* The origin first, then by path */
+    g_assert_cmpstr(s->str, ==, "src/main.c:4:11 include/shop.h:3:4 src/extra/other.c:1:11 src/shop.c:2:4 ");
+    CodeReference* first = g_ptr_array_index(refs, 0);
+    g_assert_cmpstr(first->text, ==, "    return shop_total(3);");
+    g_string_free(s, TRUE);
+    g_ptr_array_unref(refs);
+    /* Whole words only; open buffers instead of files */
+    GHashTable* texts = g_hash_table_new(g_str_hash, g_str_equal);
+    g_hash_table_insert(texts, origin, "int shop_total_x;\nshop_total();\tshop_total;\n");
+    refs = code_index_references("shop_total", CODE_LANG_C, origin, texts, NULL, NULL, NULL);
+    g_assert_cmpuint(refs->len, ==, 2);
+    first = g_ptr_array_index(refs, 1);
+    g_assert_cmpint(first->line, ==, 1);
+    g_assert_cmpint(first->column, ==, 14);
+    g_assert_cmpstr(first->text, ==, "shop_total(); shop_total;");
+    g_ptr_array_unref(refs);
+    g_hash_table_destroy(texts);
+    g_ptr_array_unref(files);
+    g_free(origin);
+    remove_tree(root);
+    g_free(root);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/code_index/project_root", test_project_root);
@@ -232,5 +269,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/code_index/find_ranking", test_find_ranking);
     g_test_add_func("/code_index/find_open_buffers", test_find_open_buffers);
     g_test_add_func("/code_index/find_cancelled", test_find_cancelled);
+    g_test_add_func("/code_index/references", test_references);
     return g_test_run();
 }

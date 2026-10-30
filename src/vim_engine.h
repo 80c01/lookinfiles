@@ -64,6 +64,9 @@ typedef struct {
     /* K: show what word (the identifier under the cursor) is. TRUE when
      * the host shows something. */
     gboolean (*keyword_help)(gpointer data, const gchar* word);
+    /* gr: list the references of the identifier under the cursor. TRUE when
+     * the host looks them up. */
+    gboolean (*references)(gpointer data);
 } VimHost;
 
 typedef struct {

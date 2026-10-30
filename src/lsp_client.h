@@ -29,6 +29,9 @@ typedef void (*LspResponseFunc)(LspClient* client, const LspMessage* msg, gpoint
 /* The client became ready or failed */
 typedef void (*LspStateFunc)(LspClient* client, LspClientState state, gpointer data);
 
+/* A notification from the server (diagnostics, logs...) */
+typedef void (*LspNotifyFunc)(LspClient* client, const LspMessage* msg, gpointer data);
+
 /* Start argv (argv[0] looked up in PATH) for the project at root. NULL
  * with error when the program cannot be started. */
 LspClient* lsp_client_new(gchar** argv, const gchar* root, LspStateFunc on_state, gpointer data,
@@ -36,6 +39,9 @@ LspClient* lsp_client_new(gchar** argv, const gchar* root, LspStateFunc on_state
 /* Shut the server down (shutdown, exit, then killed after a delay) and free
  * the client; pending answers are dropped without calling their functions */
 void lsp_client_free(LspClient* client);
+
+/* Receive the server's notifications */
+void lsp_client_set_notify_func(LspClient* client, LspNotifyFunc func, gpointer data);
 
 LspClientState lsp_client_get_state(LspClient* client);
 /* Capabilities of the server once ready, else NULL */

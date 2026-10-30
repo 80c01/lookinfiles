@@ -215,6 +215,7 @@ typedef struct {
     EditorTab* last_focused_editor; /* last focused editor tab */
     gpointer code_nav;              /* code navigation state (code_nav.c), created on first use */
     gpointer code_intel;            /* language servers (code_intel.c), created on first use */
+    GtkWidget* refs_page;           /* References page of the preview notebook (code_refs.c), or NULL */
     guint status_idle_id;           /* pending status bar refresh after a page switch */
 
     /* Video preview */

@@ -237,7 +237,13 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   with byte columns; FALSE when no server serves the tab (callers then use
   the index). `code_help` — help cards (`GtkPopover` parented to the tab
   container, never the text view) and signature help, from `code_intel` or
-  `code_nav_find()`.
+  `code_nav_find()`; also highlights the other occurrences of the word at
+  the cursor. Diagnostics (`publishDiagnostics`) are underlined by
+  `code_intel` (tags `lsp-error`...) and shown in help cards.
+- `code_refs` — the References page of the preview notebook (after the Git
+  tab; `editor_detach_tabs()` and `editor_current_tab()` only touch editor
+  pages, wherever they are), from the server or `code_index_references()`.
+- `code_symbols` — symbols of the file in an `AppDialog` with a filter.
 - `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette; ssh into
   the active remote machine.
 - `search` — live search entry (`/`, `n`, `N`) for list and viewer.

@@ -5,6 +5,8 @@
 #include "diff_gutter.h"
 #include "code_nav.h"
 #include "code_help.h"
+#include "code_refs.h"
+#include "code_symbols.h"
 #include "vim_engine.h"
 #include "vim_keys.h"
 #include <string.h>
@@ -341,6 +343,14 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
     EditorTab* tab = data;
     AppData* app = (AppData*)tab->app;
     if (strcmp(name, "set") == 0) return set_view_option(tab, args, error);
+    if (strcmp(name, "Symbols") == 0) {
+        code_symbols_show(app, tab, editor_mode_message);
+        return TRUE;
+    }
+    if (strcmp(name, "References") == 0) {
+        code_refs_find(app, tab, editor_mode_message);
+        return TRUE;
+    }
     if (strcmp(name, "tag") == 0) {
         /* :tag {name}: its definition; :tag! {name}: its declaration */
         code_nav_goto_symbol(app, tab, args, bang, editor_mode_message);
@@ -428,6 +438,12 @@ static gboolean on_keyword_help(gpointer data, const gchar* word) {
     if (!code_nav_is_code(tab)) return FALSE;
     code_help_show((AppData*)tab->app, tab);
     return TRUE;
+}
+
+/* gr: the References tab */
+static gboolean on_references(gpointer data) {
+    EditorTab* tab = data;
+    return code_refs_find((AppData*)tab->app, tab, editor_mode_message);
 }
 
 /* Ctrl-O / Tab past the buffer's jump list: the history across files */
@@ -763,6 +779,7 @@ void vim_activate(EditorTab* tab) {
             .goto_definition = on_goto_definition,
             .jump_history = on_jump_history,
             .keyword_help = on_keyword_help,
+            .references = on_references,
         };
         st->vim = vim_engine_new(tab->buffer, &host, tab);
         st->vim_clip_cancel = g_cancellable_new();

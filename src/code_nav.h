@@ -38,6 +38,15 @@ gboolean code_nav_goto_symbol(AppData* app, EditorTab* tab, const gchar* name, g
  * not called). FALSE when the tab is not code. */
 gboolean code_nav_find(AppData* app, EditorTab* tab, const gchar* name, CodeNavFoundFunc func, gpointer data);
 
+/* Jump from the cursor of tab (remembered in the history) to path:line
+ * (byte index); the tab of the destination, NULL when it cannot be opened */
+EditorTab* code_nav_jump(AppData* app, EditorTab* from, const gchar* path, gint line, gint index);
+
+/* Ctrl+Click in the read-only preview of a source file: open the file in
+ * an editor tab at the place clicked, then go to the definition there.
+ * Installed once on app->text_view (main.c). */
+void code_nav_attach_preview(AppData* app, CodeNavMessageFunc message);
+
 /* Backend used for the tab without a language server: "ctags" or
  * "built-in index"; NULL when the tab is not code */
 const gchar* code_nav_backend_label(EditorTab* tab);

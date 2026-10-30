@@ -54,4 +54,25 @@ typedef struct {
 GPtrArray* code_index_find(const CodeQuery* query, GPtrArray* files, GCancellable* cancellable,
                            gboolean* truncated);
 
+/* --- References (whole-word occurrences) --- */
+
+#define CODE_INDEX_MAX_REFERENCES 5000
+
+typedef struct {
+    gchar* path;
+    gint line;      /* 0-based */
+    gint column;    /* byte index of the name in the line */
+    gchar* text;    /* the line (tabs as spaces, no newline, valid UTF-8) */
+} CodeReference;
+
+void code_reference_free(CodeReference* ref);
+
+/* Every whole-word occurrence of name in the origin file and files (same
+ * family), as CodeReference*: the origin file first, then by path and line;
+ * open buffers (texts) are read instead of their files. At most
+ * CODE_INDEX_MAX_REFERENCES (*truncated then, or when the byte budget is
+ * spent). */
+GPtrArray* code_index_references(const gchar* name, CodeLang lang, const gchar* origin_path, GHashTable* texts,
+                                 GPtrArray* files, GCancellable* cancellable, gboolean* truncated);
+
 #endif /* CODE_INDEX_H */

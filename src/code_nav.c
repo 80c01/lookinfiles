@@ -6,6 +6,7 @@
 #include "code_tags.h"
 #include "code_scan.h"
 #include "editor.h"
+#include "file_types.h"
 #include "jump_list.h"
 #include <string.h>
 
@@ -158,6 +159,45 @@ static CodeTagsIndex* tags_for(CodeNav* nav, const gchar* root) {
     }
     g_mutex_unlock(&nav->tags_lock);
     return index;
+}
+
+static void on_preview_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    AppData* app = data;
+    GdkModifierType mods = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
+    if (n_press != 1 || (mods & GDK_CONTROL_MASK) == 0 || (mods & (GDK_SHIFT_MASK | GDK_ALT_MASK)) != 0) return;
+    /* Only a source file shown as text (not rendered, not a summary) */
+    if (app->viewed_path == NULL || app->viewed_kind != FILE_KIND_TEXT ||
+        code_lang_from_name(app->viewed_path) == CODE_LANG_NONE) {
+        return;
+    }
+    GtkTextView* view = GTK_TEXT_VIEW(app->text_view);
+    gint bx = 0, by = 0;
+    gtk_text_view_window_to_buffer_coords(view, GTK_TEXT_WINDOW_WIDGET, (gint)x, (gint)y, &bx, &by);
+    GtkTextIter it;
+    if (!gtk_text_view_get_iter_at_location(view, &it, bx, by)) return;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    gint line = gtk_text_iter_get_line(&it);
+    gint index = gtk_text_iter_get_line_index(&it);
+    gchar* path = g_strdup(app->viewed_path);
+    EditorTab* tab = editor_open_at(app, path, line, index);
+    g_free(path);
+    CodeNavMessageFunc message = g_object_get_data(G_OBJECT(gesture), "code-nav-message");
+    if (tab != NULL) code_nav_goto_definition(app, tab, FALSE, message);
+}
+
+void code_nav_attach_preview(AppData* app, CodeNavMessageFunc message) {
+    if (app == NULL || app->text_view == NULL) return;
+    GtkGesture* click = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), GDK_BUTTON_PRIMARY);
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(click), GTK_PHASE_CAPTURE);
+    g_object_set_data(G_OBJECT(click), "code-nav-message", (gpointer)message);
+    g_signal_connect(click, "pressed", G_CALLBACK(on_preview_click), app);
+    gtk_widget_add_controller(app->text_view, GTK_EVENT_CONTROLLER(click));
+}
+
+EditorTab* code_nav_jump(AppData* app, EditorTab* from, const gchar* path, gint line, gint index) {
+    if (app == NULL || path == NULL) return NULL;
+    return jump(app, from, path, line, index);
 }
 
 static void lookup_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
