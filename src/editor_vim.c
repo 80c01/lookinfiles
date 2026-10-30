@@ -3,6 +3,7 @@
 #include "editor_modes_private.h"
 #include "editor.h"
 #include "diff_gutter.h"
+#include "code_nav.h"
 #include "vim_engine.h"
 #include "vim_keys.h"
 #include <string.h>
@@ -339,6 +340,11 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
     EditorTab* tab = data;
     AppData* app = (AppData*)tab->app;
     if (strcmp(name, "set") == 0) return set_view_option(tab, args, error);
+    if (strcmp(name, "tag") == 0) {
+        /* :tag {name}: its definition; :tag! {name}: its declaration */
+        code_nav_goto_symbol(app, tab, args, bang, editor_mode_message);
+        return TRUE;
+    }
     if (strcmp(name, "write") == 0 || strcmp(name, "update") == 0 || strcmp(name, "wall") == 0) {
         if (name[0] == 'u' && !gtk_text_buffer_get_modified(tab->buffer)) return TRUE;
         save_tab(tab, args, error);
@@ -404,6 +410,21 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
         return TRUE;
     }
     return FALSE;
+}
+
+/* gd, gD, Ctrl-]: the code navigation lookup in code files */
+static gboolean on_goto_definition(gpointer data, const gchar* word, gboolean declaration) {
+    (void)word; /* code_nav reads the identifier at the cursor itself */
+    EditorTab* tab = data;
+    if (!code_nav_is_code(tab)) return FALSE;
+    return code_nav_goto_definition((AppData*)tab->app, tab, declaration, editor_mode_message);
+}
+
+/* Ctrl-O / Tab past the buffer's jump list: the history across files */
+static gboolean on_jump_history(gpointer data, gboolean older) {
+    EditorTab* tab = data;
+    AppData* app = (AppData*)tab->app;
+    return older ? code_nav_back(app, tab, editor_mode_message) : code_nav_forward(app, tab, editor_mode_message);
 }
 
 static gint line_height(EditorTab* tab) {
@@ -729,6 +750,8 @@ void vim_activate(EditorTab* tab) {
             .visible_lines = on_visible_lines,
             .clipboard_set = on_clipboard_set,
             .file_name = on_file_name,
+            .goto_definition = on_goto_definition,
+            .jump_history = on_jump_history,
         };
         st->vim = vim_engine_new(tab->buffer, &host, tab);
         st->vim_clip_cancel = g_cancellable_new();

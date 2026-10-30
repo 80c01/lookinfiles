@@ -30,7 +30,7 @@ static const ExName EX_NAMES[] = {
     {"k", 1, "mark"},
     {"tabnext", 4, NULL}, {"tabprevious", 4, NULL}, {"tabNext", 4, "tabprevious"},
     {"bnext", 2, "tabnext"}, {"bprevious", 2, "tabprevious"}, {"bNext", 2, "tabprevious"},
-    {"file", 1, NULL}, {"help", 1, NULL},
+    {"file", 1, NULL}, {"help", 1, NULL}, {"tag", 2, NULL},
 };
 
 static const gchar* const COMMAND_NAMES[] = {
@@ -38,7 +38,7 @@ static const gchar* const COMMAND_NAMES[] = {
     "quit", "qall", "edit", "enew", "update", "undo", "delete", "yank", "print", "put",
     "move", "mark", "marks", "copy", "center", "join", "jumps", "global", "vglobal",
     "normal", "nohlsearch", "registers", "redo", "retab", "right", "left", "tabnext",
-    "tabprevious", "file", "help", NULL,
+    "tabprevious", "file", "help", "tag", NULL,
 };
 
 const gchar* const* vim_ex_command_names(void) {

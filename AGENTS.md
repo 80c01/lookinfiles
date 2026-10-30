@@ -115,6 +115,14 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   entry, scroll, clipboard, `:w` / `:q`). In Insert mode text keys are left
   to the text view and recorded from the buffer signals. Tested in
   `tests/test_vim_engine.c` by typing keys on a headless buffer.
+- `code_symbol`, `code_scan_c`, `code_scan`, `code_index` — the built-in
+  code index of code navigation (TASK_CODE_NAV.md): languages and the
+  identifier under the cursor (`code_word_at()`), symbol scanners
+  (`code_scan_text()`: a C-family state machine, line regexes for the other
+  languages; no parser, locals not listed), the project's files (`git
+  ls-files`, else a bounded walk) and the ranked definition lookup
+  (`code_index_find()`, blocking: worker thread only).
+- `jump_list` — back / forward history of navigation jumps across files.
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can
@@ -206,6 +214,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   Mode bar labels whose text can grow (file names, messages) must use
   `editor_bar_label_shrinkable()`, and filler text `editor_bar_clip()`: a bar
   wider than the panel pushes the minimap out of the window.
+- `code_nav` — code navigation in editor tabs, shared by the three modes:
+  definition / declaration lookups in a worker (`code_nav_goto_definition()`,
+  `code_nav_goto_symbol()`), the jump with `editor_open_at()`, back /
+  forward (`code_nav_back()`, `code_nav_forward()`); messages through
+  `editor_mode_message()` passed by the caller. Vim reaches it through the
+  `VimHost` callbacks `goto_definition` and `jump_history`.
 - `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette; ssh into
   the active remote machine.
 - `search` — live search entry (`/`, `n`, `N`) for list and viewer.

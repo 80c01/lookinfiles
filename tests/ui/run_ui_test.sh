@@ -62,7 +62,7 @@ printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home
 (
     cd "$FIX/work" || exit 1
     printf '# Title\n\nSome *markdown* text.\n\n- item one\n- item two\n\n- [x] done task\n- [/] running task\n- [-] other running task\n- [ ] todo task\n' > README.md
-    printf '#include <stdio.h>\nint main(void) {\n    printf("hi\\n");\n    return 0;\n}\n' > src/main.c
+    printf '#include <stdio.h>\nstatic int answer(void) {\n    return 42;\n}\nint main(void) {\n    printf("hi %%d\\n", answer());\n    return 0;\n}\n' > src/main.c
     printf '# Sources\n\nThe *entry point* is `main.c`.\n' > src/README.md   # folder preview README
     seq -f 'plain line %g' 1 1500 > notes.txt
     printf 'R&D <draft>\n' > 'R&D.txt'
@@ -197,7 +197,7 @@ key ctrl+s
 xdotool type --delay 80 "task"
 key Return;             shot isearch_accepted
 # C-SPC sets the mark, then C-f / C-n extend the region; C-g drops it
-key alt+comma           # M-<: beginning of buffer
+key alt+less            # M-<: beginning of buffer
 xdotool keydown ctrl key --delay 120 space f f f f f n keyup ctrl
                         shot emacs_region
 key ctrl+g;             shot emacs_region_cleared
@@ -329,6 +329,16 @@ key ctrl+alt+Up;        shot ws3_editor_unsplit
 key alt+1;              shot ws1_editor_split_kept
 key alt+3;              shot ws3_editors_kept
 key alt+minus;          shot ws3_removed
+# Code navigation (TASK_CODE_NAV.md): src/main.c calls answer() on line 6
+key j space j j Return; shot code_nav_open_main_c
+xdotool mousemove 524 160 keydown ctrl click 1 keyup ctrl
+sleep 0.5;              shot code_nav_ctrl_click      # cursor on "static int answer", message
+key ctrl+alt+minus;     shot code_nav_back            # back to the call (Notepad)
+xdotool mousemove 1237 783 click 1
+xdotool mousemove 1218 721 click 1   # pick "Vim"
+key g d; sleep 0.5;     shot code_nav_vim_gd
+key ctrl+o;             shot code_nav_vim_ctrl_o
+key ctrl+w
 key ctrl+t; sleep 1;    shot terminal
 key ctrl+q
 

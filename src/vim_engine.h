@@ -54,6 +54,13 @@ typedef struct {
     void (*clipboard_set)(gpointer data, const gchar* text);
     /* Name of the file for "% and Ctrl-G */
     const gchar* (*file_name)(gpointer data);
+    /* gd, gD, Ctrl-]: go to the definition (declaration) of word, the
+     * identifier under the cursor. TRUE when the host looks it up (code
+     * files); FALSE: gd / gD search the buffer as Vim does. */
+    gboolean (*goto_definition)(gpointer data, const gchar* word, gboolean declaration);
+    /* Ctrl-O / Tab past the ends of the buffer's jump list: continue in the
+     * host's history across files. TRUE when it moved. */
+    gboolean (*jump_history)(gpointer data, gboolean older);
 } VimHost;
 
 typedef struct {

@@ -2,6 +2,7 @@
 #include "editor_modes_private.h"
 #include "icons.h"
 #include "editor.h"
+#include "code_nav.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -282,6 +283,20 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     }
     if (ctrl && !shift && (keyval == GDK_KEY_j || keyval == GDK_KEY_J)) {
         editor_mode_align_text(tab, GTK_JUSTIFY_FILL, 80);
+        return TRUE;
+    }
+    /* Code navigation (VS Code keys) */
+    gboolean alt = (state & GDK_ALT_MASK) != 0;
+    if (keyval == GDK_KEY_F12 && !shift && !alt) {
+        code_nav_goto_definition((AppData*)tab->app, tab, ctrl, editor_mode_message);
+        return TRUE;
+    }
+    if (ctrl && alt && !shift && (keyval == GDK_KEY_minus || keyval == GDK_KEY_KP_Subtract)) {
+        code_nav_back((AppData*)tab->app, tab, editor_mode_message);
+        return TRUE;
+    }
+    if (ctrl && shift && !alt && (keyval == GDK_KEY_underscore || keyval == GDK_KEY_minus)) {
+        code_nav_forward((AppData*)tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (keyval == GDK_KEY_Escape) {

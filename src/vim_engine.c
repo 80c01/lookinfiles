@@ -293,6 +293,8 @@ void vim_e_push_jump(VimEngine* e) {
     e->jump_pos = (gint)e->jumps->len;
 }
 
+static gboolean host_goto_definition(VimEngine* e, gboolean declaration);
+
 static void jump_older(VimEngine* e, gint count, gboolean older) {
     if (older && e->jump_pos == (gint)e->jumps->len) {
         /* Remember where we are so Tab can come back */
@@ -303,7 +305,8 @@ static void jump_older(VimEngine* e, gint count, gboolean older) {
     }
     gint target = e->jump_pos + (older ? -count : count);
     if (target < 0 || target >= (gint)e->jumps->len) {
-        beep(e);
+        /* Past the ends: the host's history across files */
+        if (e->host.jump_history == NULL || !e->host.jump_history(e->hd, older)) beep(e);
         return;
     }
     e->jump_pos = target;
@@ -3196,6 +3199,9 @@ static void exec_simple(VimEngine* e, const VimCmd* cmd) {
             scroll_page(e, k, count);
             return;
         case VIM_KEY_CTRL('o'): jump_older(e, n, TRUE); return;
+        case VIM_KEY_CTRL(']'):
+            if (!host_goto_definition(e, FALSE)) beep(e);
+            return;
         case VIM_KEY_TAB: jump_older(e, n, FALSE); return;
         case VIM_KEY_CTRL('g'): file_info(e); return;
         default:
@@ -3610,6 +3616,20 @@ static void after_command(VimEngine* e) {
     finish_key(e, TRUE);
 }
 
+/* Ask the host for the definition of the word under the cursor; the jump
+ * list remembers where it started. FALSE when the host does not look up. */
+static gboolean host_goto_definition(VimEngine* e, gboolean declaration) {
+    if (e->host.goto_definition == NULL) return FALSE;
+    GtkTextIter ws, we;
+    if (!vim_e_word_under_cursor(e, &ws, &we)) return FALSE;
+    gchar* word = gtk_text_iter_get_slice(&ws, &we);
+    /* The lookup is asynchronous: the cursor has not moved yet */
+    gboolean handled = e->host.goto_definition(e->hd, word, declaration);
+    if (handled) vim_e_push_jump(e);
+    g_free(word);
+    return handled;
+}
+
 static void exec_command(VimEngine* e, const VimCmd* cmd) {
     vim_e_begin_change(e);
     if (is_visual(e->mode)) {
@@ -3619,6 +3639,11 @@ static void exec_command(VimEngine* e, const VimCmd* cmd) {
             case VIM_CMD_MOTION: {
                 if (cmd->key[0] == '/' || cmd->key[0] == '?') {
                     open_cmdline_for(e, cmd->key[0], NULL);
+                    break;
+                }
+                /* gd / gD in a code file: the host's definition lookup */
+                if (cmd->key[0] == 'g' && (cmd->key[1] == 'd' || cmd->key[1] == 'D') &&
+                    host_goto_definition(e, cmd->key[1] == 'D')) {
                     break;
                 }
                 GtkTextIter cur;

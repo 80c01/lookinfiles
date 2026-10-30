@@ -90,7 +90,7 @@ Notes:
 
 ## 4. Phases
 
-### Phase 0 — Built-in index, definition, history (no dependency)
+### Phase 0 — Built-in index, definition, history (no dependency) — done
 - `code_scan`, `code_scan_c`, `code_index`, `jump_list` with tests.
 - `code_nav`: definition and declaration lookups in a worker, jump, back,
   forward, fallback to the first occurrence in the buffer.
@@ -115,6 +115,15 @@ Notes:
   `Enter` opens the location.
 - Symbol picker (`AppDialog` with filter), highlight of the other
   occurrences, `Ctrl+Click` in the read-only preview, diagnostics.
+
+### Known limits of the built-in index
+- Heuristic: no scopes or types, so `x->name` offers every `name` field of
+  the project (best first: same file, same directory). Local variables come
+  from the "first use in this scope" fallback.
+- C: only the first branch of `#if / #else` is read; macro-generated
+  symbols are not seen.
+- No cache: each lookup reads the project again (a few ms on this
+  repository, bounded on large ones; a partial search is reported).
 
 ## 5. Definition of done for a phase
 

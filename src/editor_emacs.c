@@ -1,6 +1,7 @@
 /* Emacs editor mode (visual clone): modeline, minibuffer, prefix keys and commands. */
 #include "editor_modes_private.h"
 #include "editor.h"
+#include "code_nav.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -1028,13 +1029,23 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         emacs_move_point(tab, st, &it);
         return TRUE;
     }
-    if (alt && (keyval == GDK_KEY_less || keyval == GDK_KEY_comma)) {
+    /* xref: M-. definition (C-u M-. declaration), M-, back, C-M-, forward */
+    if (alt && keyval == GDK_KEY_period) {
+        code_nav_goto_definition((AppData*)tab->app, tab, st->emacs_universal_arg, editor_mode_message);
+        return TRUE;
+    }
+    if (alt && keyval == GDK_KEY_comma) {
+        if (ctrl) code_nav_forward((AppData*)tab->app, tab, editor_mode_message);
+        else code_nav_back((AppData*)tab->app, tab, editor_mode_message);
+        return TRUE;
+    }
+    if (alt && keyval == GDK_KEY_less) {
         GtkTextIter it;
         gtk_text_buffer_get_start_iter(tab->buffer, &it);
         emacs_move_point(tab, st, &it);
         return TRUE;
     }
-    if (alt && (keyval == GDK_KEY_greater || keyval == GDK_KEY_period)) {
+    if (alt && keyval == GDK_KEY_greater) {
         GtkTextIter it;
         gtk_text_buffer_get_end_iter(tab->buffer, &it);
         emacs_move_point(tab, st, &it);

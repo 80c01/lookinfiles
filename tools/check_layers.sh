@@ -58,6 +58,11 @@ vim_engine:vim_engine_private,vim_parse,vim_keys,vim_motion,vim_regex
 vim_engine_ex:vim_engine_private,vim_ex,vim_keys,vim_motion,vim_regex
 diff_gutter:git_utils,line_diff
 explorer_row:
+code_symbol:
+code_scan_c:code_symbol
+code_scan:code_symbol,code_scan_c
+code_index:code_symbol,code_scan,git_utils
+jump_list:
 layout_store:app_paths
 text_style:app_types,file_types
 theme:

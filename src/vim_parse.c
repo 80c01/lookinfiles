@@ -162,6 +162,7 @@ static gsize parse_simple(const gunichar* keys, gsize pos, gsize n, gboolean vis
         VIM_KEY_CTRL('y'), VIM_KEY_CTRL('d'), VIM_KEY_CTRL('u'), VIM_KEY_CTRL('f'),
         VIM_KEY_CTRL('b'), VIM_KEY_CTRL('o'), VIM_KEY_TAB, VIM_KEY_CTRL('g'),
         VIM_KEY_CTRL('l'), VIM_KEY_CTRL('v'), VIM_KEY_CTRL('c'), VIM_KEY_ESC,
+        VIM_KEY_CTRL(']'),
     };
     for (gsize i = 0; i < G_N_ELEMENTS(CTRL_KEYS); i++) {
         if (k == CTRL_KEYS[i]) return simple_done(out, status, k, 0, 0, 1);

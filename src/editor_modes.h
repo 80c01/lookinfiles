@@ -23,6 +23,10 @@ void editor_modes_update_status(EditorTab* tab);
 gboolean editor_modes_claims_key(AppData* app, guint keyval, GdkModifierType state);
 gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path);
 
+/* One-line message where the tab's mode shows them: Notepad status label,
+ * Emacs echo area, Vim command line */
+void editor_mode_message(EditorTab* tab, const gchar* msg);
+
 /* Refresh the tab title: file icon, name, and a bullet when unsaved */
 void editor_tab_label_update(EditorTab* tab);
 

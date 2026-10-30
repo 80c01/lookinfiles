@@ -640,6 +640,75 @@ static void test_scrolling_keys(void) {
     fx_free(f);
 }
 
+/* Host definition lookup (gd, gD, Ctrl-]) and history across files */
+typedef struct {
+    GString* log;
+    gboolean code;  /* the host handles lookups (a code file) */
+} NavHost;
+
+static gboolean nav_definition(gpointer data, const gchar* word, gboolean declaration) {
+    NavHost* n = data;
+    g_string_append_printf(n->log, "def:%s%s;", word, declaration ? "!" : "");
+    return n->code;
+}
+
+static gboolean nav_history(gpointer data, gboolean older) {
+    NavHost* n = data;
+    g_string_append_printf(n->log, "%s;", older ? "back" : "forward");
+    return TRUE;
+}
+
+static void nav_message(gpointer data, const gchar* text, gboolean error) {
+    (void)data;
+    (void)text;
+    (void)error;
+}
+
+static gint cursor_offset(VimEngine* e) {
+    GtkTextIter it;
+    vim_engine_get_cursor(e, &it);
+    return gtk_text_iter_get_offset(&it);
+}
+
+static void test_host_navigation(void) {
+    GtkTextBuffer* buf = gtk_text_buffer_new(NULL);
+    gtk_text_buffer_set_text(buf, "int foo;\nfoo = 1;\nbar(foo);\n", -1);
+    GtkTextIter it;
+    gtk_text_buffer_get_iter_at_line_offset(buf, &it, 2, 5);
+    gtk_text_buffer_place_cursor(buf, &it);
+    NavHost nav = {g_string_new(NULL), TRUE};
+    VimHost h = {0};
+    h.message = nav_message;
+    h.goto_definition = nav_definition;
+    h.jump_history = nav_history;
+    VimEngine* e = vim_engine_new(buf, &h, &nav);
+    gint start = cursor_offset(e);
+    vim_engine_feed_keys(e, "gd");
+    vim_engine_feed_keys(e, "gD");
+    vim_engine_feed(e, VIM_KEY_CTRL(']'));
+    g_assert_cmpstr(nav.log->str, ==, "def:foo;def:foo!;def:foo;");
+    g_assert_cmpint(cursor_offset(e), ==, start); /* the host moves the cursor later */
+    /* Not a code file: gd searches the buffer as in Vim */
+    nav.code = FALSE;
+    g_string_truncate(nav.log, 0);
+    vim_engine_feed_keys(e, "gd");
+    g_assert_cmpint(cursor_offset(e), ==, 4);
+    /* Ctrl-O goes back in the buffer, then past its oldest jump to the host */
+    vim_engine_feed(e, VIM_KEY_CTRL('o'));
+    g_assert_cmpint(cursor_offset(e), ==, start);
+    g_string_truncate(nav.log, 0);
+    for (gint i = 0; i < 4; i++) vim_engine_feed(e, VIM_KEY_CTRL('o'));
+    g_assert_true(strstr(nav.log->str, "back;") != NULL);
+    g_string_truncate(nav.log, 0);
+    for (gint i = 0; i < 6; i++) vim_engine_feed(e, VIM_KEY_TAB);
+    g_assert_true(strstr(nav.log->str, "forward;") != NULL);
+    /* Ctrl-] without a host lookup only beeps */
+    vim_engine_feed(e, VIM_KEY_CTRL(']'));
+    vim_engine_free(e);
+    g_string_free(nav.log, TRUE);
+    g_object_unref(buf);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/vim_engine/motions", test_motions);
@@ -653,6 +722,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/vim_engine/undo", test_undo);
     g_test_add_func("/vim_engine/undo_outside_changes", test_undo_outside_changes);
     g_test_add_func("/vim_engine/marks_jumps", test_marks_jumps);
+    g_test_add_func("/vim_engine/host_navigation", test_host_navigation);
     g_test_add_func("/vim_engine/search", test_search);
     g_test_add_func("/vim_engine/macros", test_macros);
     g_test_add_func("/vim_engine/ex", test_ex);

@@ -1148,6 +1148,67 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     g_free(contents);
 }
 
+EditorTab* editor_find_tab(AppData* app, const gchar* path) {
+    if (app == NULL || path == NULL) return NULL;
+    gchar* want = g_canonicalize_filename(path, NULL);
+    EditorTab* found = NULL;
+    for (GList* l = app->editors; l != NULL && found == NULL; l = l->next) {
+        EditorTab* t = (EditorTab*)l->data;
+        if (t->path == NULL) continue;
+        gchar* have = g_canonicalize_filename(t->path, NULL);
+        if (g_strcmp0(have, want) == 0) found = t;
+        g_free(have);
+    }
+    g_free(want);
+    return found;
+}
+
+/* TRUE when the line of iter is (fully) inside the visible part of the view */
+static gboolean line_visible(GtkTextView* view, const GtkTextIter* iter) {
+    GdkRectangle visible;
+    gtk_text_view_get_visible_rect(view, &visible);
+    if (visible.height <= 0) return FALSE;
+    gint y = 0, h = 0;
+    gtk_text_view_get_line_yrange(view, iter, &y, &h);
+    return y >= visible.y && y + h <= visible.y + visible.height;
+}
+
+EditorTab* editor_open_at(AppData* app, const gchar* path, gint line, gint index) {
+    if (app == NULL || path == NULL) return NULL;
+    EditorTab* tab = editor_find_tab(app, path);
+    if (tab != NULL) {
+        editor_open_file(app, tab->name, tab->path);
+    } else {
+        if (!g_file_test(path, G_FILE_TEST_IS_REGULAR)) return NULL;
+        gchar* name = g_path_get_basename(path);
+        editor_open_file(app, name, path);
+        g_free(name);
+        tab = editor_find_tab(app, path);
+    }
+    if (tab == NULL || tab->buffer == NULL) return NULL;
+
+    gint lines = gtk_text_buffer_get_line_count(tab->buffer);
+    line = CLAMP(line, 0, lines - 1);
+    GtkTextIter it;
+    gtk_text_buffer_get_iter_at_line(tab->buffer, &it, line);
+    /* Clamp to the line content, newline excluded */
+    GtkTextIter end = it;
+    if (!gtk_text_iter_ends_line(&end)) gtk_text_iter_forward_to_line_end(&end);
+    gtk_text_iter_set_line_index(&it, CLAMP(index, 0, gtk_text_iter_get_line_index(&end)));
+    gtk_text_buffer_place_cursor(tab->buffer, &it);
+    if (tab->view != NULL) {
+        GtkTextView* view = GTK_TEXT_VIEW(tab->view);
+        if (!line_visible(view, &it)) {
+            /* scroll_to_mark waits for line validation: works for a tab just opened */
+            gtk_text_view_scroll_to_mark(view, gtk_text_buffer_get_insert(tab->buffer), 0.0, TRUE, 0.0, 0.3);
+        }
+        gtk_widget_grab_focus(tab->view);
+    }
+    app->last_focused_editor = tab;
+    editor_modes_update_status(tab);
+    return tab;
+}
+
 static gboolean emit_status_changed_idle(gpointer data) {
     AppData* app = (AppData*)data;
     app->status_idle_id = 0;

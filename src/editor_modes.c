@@ -3,6 +3,7 @@
 #include "text_style.h"
 #include "file_types.h"
 #include "diff_gutter.h"
+#include "code_nav.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -753,6 +754,26 @@ static void on_tab_cursor_moved(GObject* object, GParamSpec* pspec, gpointer use
 /* Tab Initialization & Mode Setup                                           */
 /* ------------------------------------------------------------------------- */
 
+/* Ctrl+Click: go to the definition of the identifier clicked (all modes) */
+static void on_view_ctrl_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    EditorTab* tab = data;
+    GdkModifierType mods = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
+    if (n_press != 1 || (mods & GDK_CONTROL_MASK) == 0 || (mods & (GDK_SHIFT_MASK | GDK_ALT_MASK)) != 0 ||
+        !code_nav_is_code(tab)) {
+        return;
+    }
+    GtkTextView* view = GTK_TEXT_VIEW(tab->view);
+    gint bx = 0, by = 0;
+    gtk_text_view_window_to_buffer_coords(view, GTK_TEXT_WINDOW_WIDGET, (gint)x, (gint)y, &bx, &by);
+    GtkTextIter it;
+    if (!gtk_text_view_get_iter_at_location(view, &it, bx, by)) return;
+    /* The text view must not start a selection */
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    gtk_text_buffer_place_cursor(tab->buffer, &it);
+    gtk_widget_grab_focus(tab->view);
+    code_nav_goto_definition((AppData*)tab->app, tab, FALSE, editor_mode_message);
+}
+
 void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     if (tab == NULL) return;
     editor_modes_ensure_css();
@@ -782,6 +803,12 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     g_signal_connect(tab->buffer, "changed", G_CALLBACK(on_tab_buffer_changed), tab);
     g_signal_connect(tab->buffer, "notify::cursor-position", G_CALLBACK(on_tab_cursor_moved), tab);
     orgmode_editor_init(tab);
+
+    GtkGesture* ctrl_click = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(ctrl_click), GDK_BUTTON_PRIMARY);
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(ctrl_click), GTK_PHASE_CAPTURE);
+    g_signal_connect(ctrl_click, "pressed", G_CALLBACK(on_view_ctrl_click), tab);
+    gtk_widget_add_controller(tab->view, GTK_EVENT_CONTROLLER(ctrl_click));
 
     /* Apply initial mode */
     editor_modes_apply_mode(app, tab, tab->mode);
@@ -931,6 +958,18 @@ gboolean editor_modes_claims_key(AppData* app, guint keyval, GdkModifierType sta
     if (focus == NULL || focus != tab->view || tab->mode_state == NULL) return FALSE;
     if (tab->mode == EDITOR_MODE_VIM && vim_claims_key(tab, keyval, state)) return TRUE;
     return orgmode_editor_claims_key(tab, keyval, state);
+}
+
+void editor_mode_message(EditorTab* tab, const gchar* msg) {
+    if (tab == NULL || tab->mode_state == NULL) return;
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    if (tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) {
+        emacs_echo(tab, msg);
+    } else if (tab->mode == EDITOR_MODE_VIM) {
+        vim_echo(tab, msg);
+    } else if (st->np_status_label != NULL) {
+        gtk_label_set_text(GTK_LABEL(st->np_status_label), msg != NULL ? msg : "");
+    }
 }
 
 void editor_tab_label_update(EditorTab* tab) {

@@ -140,8 +140,9 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
-    /* Alt+1 .. Alt+8: switch virtual workspace; Alt++ / Alt+-: add/remove workspace */
-    if ((state & GDK_ALT_MASK) != 0) {
+    /* Alt+1 .. Alt+8: switch virtual workspace; Alt++ / Alt+-: add/remove workspace
+     * (not with Ctrl: Ctrl+Alt+- goes back in the code navigation history) */
+    if ((state & GDK_ALT_MASK) != 0 && (state & GDK_CONTROL_MASK) == 0) {
         if (keyval >= GDK_KEY_1 && keyval <= GDK_KEY_8) {
             gint idx = (gint)(keyval - GDK_KEY_1);
             if (idx < app->num_workspaces) {

@@ -14,6 +14,13 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Code navigation in editor tabs, in the three modes: go to the definition or
+  declaration of the identifier under the cursor and back (Notepad `F12` /
+  `Ctrl+F12` / `Ctrl+Click`, `Ctrl+Alt+-` / `Ctrl+Shift+-`; Emacs `M-.` /
+  `C-u M-.` / `M-,` / `C-M-,`; Vim `gd` / `Ctrl+]` / `gD` / `:tag`, `Ctrl+O` /
+  `Tab` across files). A built-in index reads the project in the background
+  (C, C++, Java, C#, Python, Shell, JavaScript / TypeScript, Go, Rust, Lua,
+  Ruby, Makefiles); see TASK_CODE_NAV.md.
 - Previews for many more formats, each built in the background and shown as
   close as possible to its own application (see TASK.md):
   CSV / TSV tables; pretty-printed JSON, JSONC and JSON Lines; diffs and

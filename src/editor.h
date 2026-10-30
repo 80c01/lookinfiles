@@ -34,6 +34,12 @@ void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode);
 void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data);
 void editor_apply_language(GtkTextBuffer* buffer, const gchar* name);
 void editor_open_file(AppData* app, const gchar* name, const gchar* full);
+/* The open tab of path (paths compared canonicalized), or NULL */
+EditorTab* editor_find_tab(AppData* app, const gchar* path);
+/* Open path in an editor tab (or switch to its tab), put the cursor at line
+ * (0-based) and byte index (both clamped), scroll it into view when it is
+ * not visible and focus the view. NULL when the file cannot be edited. */
+EditorTab* editor_open_at(AppData* app, const gchar* path, gint line, gint index);
 void on_editor_switch_page_changed(GtkNotebook* notebook, GtkWidget* page, guint page_num, gpointer data);
 gboolean editor_confirm_discard(AppData* app, EditorTab* tab);
 void editor_close_tab(AppData* app, EditorTab* tab);
