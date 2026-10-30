@@ -234,6 +234,7 @@ typedef struct {
     GtkWidget* audio_cover;     /* GtkImage: embedded cover art */
     GtkWidget* audio_tags;      /* Album / year / track / genre line */
     gchar* audio_details;       /* Technical line from the tags (codec, rate...), or NULL */
+    gchar* video_details;       /* Technical line of the video (size, codecs, duration), or NULL */
     GtkMediaStream* audio_stream; /* Active audio GtkMediaStream */
     gulong audio_duration_sig;  /* Signal ID for notify::duration */
     gulong audio_prepared_sig;  /* Signal ID for notify::prepared */

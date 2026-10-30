@@ -1,6 +1,8 @@
 #include "video.h"
 #include "text_style.h"
 #include "file_types.h"
+#include "media_tags.h"
+#include <string.h>
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
@@ -16,12 +18,12 @@ static void update_video_metadata_label(AppData* app, GtkMediaStream* stream) {
     const gchar* ext = file_extension(app->video_current_path);
     gchar* ext_upper = g_ascii_strup(ext, -1);
 
-    GString* info = g_string_new(ext_upper);
+    GString* info = g_string_new(app->video_details != NULL ? app->video_details : ext_upper);
     g_string_append_printf(info, "  •  %s", size_str);
 
     if (stream != NULL) {
         gint64 dur_us = gtk_media_stream_get_duration(stream);
-        if (dur_us > 0) {
+        if (dur_us > 0 && (app->video_details == NULL || strchr(app->video_details, ':') == NULL)) {
             gint64 total_secs = dur_us / G_USEC_PER_SEC;
             gint hours = (gint)(total_secs / 3600);
             gint mins = (gint)((total_secs % 3600) / 60);
@@ -170,6 +172,7 @@ void video_preview_stop(AppData* app) {
     /* Cleared first: the notifications emitted while closing see no file */
     g_free(app->video_current_path);
     app->video_current_path = NULL;
+    g_clear_pointer(&app->video_details, g_free);
 
     GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
     if (stream != NULL) {
@@ -282,6 +285,65 @@ static void render_video_raw(AppData* app, const gchar* name, const gchar* full)
     g_free(time_str);
 }
 
+/* --- Container details (size, codecs, duration), read in a worker thread --- */
+
+typedef struct {
+    AppData* app;
+    gchar* path;
+    MediaTags* tags;
+} VideoTagsTask;
+
+static void video_tags_task_free(gpointer data) {
+    VideoTagsTask* t = data;
+    g_free(t->path);
+    media_tags_free(t->tags);
+    g_free(t);
+}
+
+static void video_tags_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
+    (void)source;
+    (void)cancellable;
+    VideoTagsTask* t = data;
+    t->tags = media_tags_read_file(t->path);
+    g_task_return_boolean(task, TRUE);
+}
+
+static void on_video_tags_ready(GObject* source, GAsyncResult* res, gpointer user_data) {
+    (void)source;
+    (void)user_data;
+    GTask* task = G_TASK(res);
+    VideoTagsTask* t = g_task_get_task_data(task);
+    AppData* app = t->app;
+    if (g_cancellable_is_cancelled(g_task_get_cancellable(task)) || t->tags == NULL ||
+        g_strcmp0(app->video_current_path, t->path) != 0) {
+        return;
+    }
+    if (t->tags->title != NULL && app->video_title != NULL) {
+        gchar* title = g_strdup_printf("🎬  %s", t->tags->title);
+        gtk_label_set_text(GTK_LABEL(app->video_title), title);
+        g_free(title);
+    }
+    g_free(app->video_details);
+    app->video_details = media_tags_technical_line(t->tags);
+    GtkMediaStream* stream = app->video_widget != NULL ? gtk_video_get_media_stream(GTK_VIDEO(app->video_widget)) : NULL;
+    update_video_metadata_label(app, stream);
+}
+
+static void read_video_tags(AppData* app, const gchar* full) {
+    if (app->preview_cancellable != NULL) {
+        g_cancellable_cancel(app->preview_cancellable);
+        g_clear_object(&app->preview_cancellable);
+    }
+    app->preview_cancellable = g_cancellable_new();
+    VideoTagsTask* t = g_new0(VideoTagsTask, 1);
+    t->app = app;
+    t->path = g_strdup(full);
+    GTask* task = g_task_new(NULL, app->preview_cancellable, on_video_tags_ready, NULL);
+    g_task_set_task_data(task, t, video_tags_task_free);
+    g_task_run_in_thread(task, video_tags_thread);
+    g_object_unref(task);
+}
+
 void render_video_preview(AppData* app, const gchar* name, const gchar* full) {
     if (app == NULL || name == NULL || full == NULL) {
         return;
@@ -320,6 +382,7 @@ void render_video_preview(AppData* app, const gchar* name, const gchar* full) {
     }
 
     update_video_metadata_label(app, NULL);
+    read_video_tags(app, full);
 
     GtkMediaStream* stream = (app->video_widget != NULL)
                                  ? gtk_video_get_media_stream(GTK_VIDEO(app->video_widget))

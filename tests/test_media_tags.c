@@ -56,6 +56,16 @@ static void test_m4a(void) {
     g_assert_nonnull(t->cover);
 }
 
+static void test_video(void) {
+    g_autoptr(MediaTags) t = read_fixture("clip.mp4");
+    g_assert_cmpuint(t->width, ==, 1920);
+    g_assert_cmpuint(t->height, ==, 1080);
+    g_assert_cmpstr(t->codec, ==, "H.264 / AAC");
+    gchar* line = media_tags_technical_line(t);
+    g_assert_cmpstr(line, ==, "H.264 / AAC · 1920 × 1080 · 48 kHz · stereo · 0:12");
+    g_free(line);
+}
+
 static void test_durations(void) {
     gchar* a = media_tags_format_duration(65.4);
     gchar* b = media_tags_format_duration(3723);
@@ -71,6 +81,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/media_tags/mp3", test_mp3);
     g_test_add_func("/media_tags/flac", test_flac);
     g_test_add_func("/media_tags/m4a", test_m4a);
+    g_test_add_func("/media_tags/video", test_video);
     g_test_add_func("/media_tags/durations", test_durations);
     return g_test_run();
 }
