@@ -67,6 +67,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   split fractions, orientation, dedicated editor panel, terminal pane tree as
   text such as `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save, and the
   default layout of new workspaces (group `[Default]`, built-in if absent).
+- `gif_decoder` — GIF frames composed on an RGBA canvas (LZW, interlacing,
+  transparency, disposal, delays, loop count), played by `animation`
+  (GdkPixbufAnimation is deprecated in gdk-pixbuf 2.44: never use it).
 - `zip_reader` — read-only ZIP archives (`zip_reader_open()`,
   `zip_reader_read()` with a size limit; stored / deflated via GIO's raw
   `GZlibDecompressor`, ZIP64, no encryption).

@@ -38,7 +38,7 @@ typedef struct {
     gboolean is_fitted;
     gchar** details;       /* photo details lines (EXIF), or NULL */
     GdkTexture* texture;
-    GdkPixbufAnimation* animation; /* animated GIF / WebP: played instead of texture */
+    AnimationFrames* animation; /* animated GIF: played instead of texture */
 } ImagePreviewTaskData;
 
 static void image_preview_task_data_free(gpointer data) {
@@ -55,7 +55,7 @@ static void image_preview_task_data_free(gpointer data) {
     if (td->texture != NULL) {
         g_object_unref(td->texture);
     }
-    g_clear_object(&td->animation);
+    animation_frames_free(td->animation);
     g_free(td);
 }
 
@@ -150,7 +150,6 @@ static gchar* missing_loader_message(const gchar* name, const gchar* path) {
 static void image_preview_thread_func(GTask* task, gpointer source_object,
                                       gpointer task_data, GCancellable* cancellable) {
     (void)source_object;
-    (void)cancellable;
     ImagePreviewTaskData* td = (ImagePreviewTaskData*)task_data;
 
     if (g_task_return_error_if_cancelled(task)) {
@@ -229,16 +228,17 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
     gint load_w = swap ? td->target_h : td->target_w;
     gint load_h = swap ? td->target_w : td->target_h;
 
-    /* Animated GIF / WebP: played by the view (frames scaled as they come) */
-    if (embedded == NULL && td->fmt_upper != NULL &&
-        (strcmp(td->fmt_upper, "GIF") == 0 || strcmp(td->fmt_upper, "WEBP") == 0)) {
-        GdkPixbufAnimation* anim = gdk_pixbuf_animation_new_from_file(td->full, NULL);
-        if (anim != NULL && !gdk_pixbuf_animation_is_static_image(anim)) {
-            td->animation = anim;
+    /* Animated GIF: frames decoded and scaled here, played by the view
+     * (other animated formats show their first frame) */
+    if (embedded == NULL && head_len >= 6 && memcmp(head, "GIF8", 4) == 0) {
+        td->animation = animation_frames_load_gif(td->full, td->target_w, td->target_h, cancellable);
+        if (g_task_return_error_if_cancelled(task)) {
+            return;
+        }
+        if (td->animation != NULL) {
             g_task_return_boolean(task, TRUE);
             return;
         }
-        g_clear_object(&anim);
     }
 
     GdkPixbuf* pix;
@@ -369,8 +369,11 @@ static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
     g_free(meta);
     g_free(mode_hint);
 
-    GdkPaintable* animation = td->animation != NULL
-                                  ? lookin_animation_new(td->animation, td->target_w, td->target_h) : NULL;
+    GdkPaintable* animation = NULL;
+    if (td->animation != NULL) {
+        animation = lookin_animation_new(td->animation); /* takes the frames */
+        td->animation = NULL;
+    }
     if (animation != NULL || td->texture != NULL) {
         gtk_text_buffer_insert_paintable(app->buffer, &iter,
                                          animation != NULL ? animation : GDK_PAINTABLE(td->texture));

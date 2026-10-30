@@ -22,6 +22,7 @@ dir_summary:file_types,text_encoding
 hex_dump:
 elf_info:
 zip_reader:
+gif_decoder:
 ole_reader:
 ole_props:ole_reader,preview_doc
 doc_reader:ole_reader
@@ -92,7 +93,7 @@ app_events:app_types
 panels:app_types,app_events
 icons:
 image_utils:
-animation:image_utils
+animation:gif_decoder,image_utils
 dialog:
 tab_drop:pane_geometry
 explorer_tree:explorer_row

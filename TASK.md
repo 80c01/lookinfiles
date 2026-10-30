@@ -60,7 +60,7 @@ every common format to L3 and never leave one below L1.
 | Markdown (Mermaid / math blocks labelled as source) | L3 | `markdown` |
 | HTML | L3 | `html` |
 | Org | L3 | `orgmode` |
-| Images: zoom, EXIF details and orientation, animated GIF / WebP, RAW embedded previews | L3 | `image_preview`, `exif`, `animation` |
+| Images: zoom, EXIF details and orientation, animated GIF, RAW embedded previews | L3 | `image_preview`, `exif`, `animation`, `gif_decoder` |
 | PDF (poppler, optional): progressive pages, PgDn / PgUp, zoom | L3 | `pdf` |
 | Video / audio: tags, cover art, codecs, duration | L3 | `video`, `audio`, `media_tags` |
 | CSV / TSV | L3 | `csv` |
@@ -198,7 +198,7 @@ dump (13.7 % before this work). Most of the rest are TeX font metrics
 ## 7. Phase 4 — Fidelity polish
 
 - [x] PDF: progressive rendering (3 pages first), `PgDn` / `PgUp`, zoom.
-- [x] Animated GIF / WebP.
+- [x] Animated GIF (built-in decoder; animated WebP shows its first frame).
 - [x] SVG rendered at the displayed size (the SVG loader rasterizes at the
       requested size: nothing to change).
 - [x] Large text: the next chunks load on scroll (up to 8 MB).

@@ -7,6 +7,10 @@ All notable changes to this project are listed here. The format follows
 
 ### Changed
 
+- Animated GIFs are decoded by a built-in decoder instead of
+  GdkPixbufAnimation, deprecated in gdk-pixbuf 2.44 (the build is free of
+  warnings again); animated WebP images now show their first frame.
+
 - The application is renamed **Lookin** ("look in your files"): the binary
   is `lookin`, settings live in `~/.config/lookin/`, remote mounts in
   `~/.cache/lookin/remotes/`, and the icon diagnostic variable is
