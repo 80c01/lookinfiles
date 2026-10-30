@@ -111,6 +111,12 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
     /* Padding lines above and below the code (VS Code: 16 px). Code and
      * padding lines share the same margins: a paragraph background starts at
      * its line's left margin, so different margins would notch the panel. */
+    CREATE_TAG("md_code_label",
+               "foreground", "#8b8b8b",
+               "style", PANGO_STYLE_ITALIC,
+               "scale", 0.9,
+               "left-margin", 10,
+               NULL);
     CREATE_TAG("md_code_pad",
                "size-points", 10.0,
                "left-margin", 10,
@@ -924,6 +930,23 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             }
             /* Space between the text and the panel, above and below */
             insert_tagged(buffer, &iter, "\n", "md_block_gap");
+            /* Diagrams and math need a renderer (JavaScript, TeX): their
+             * source is shown, with a label saying what it is */
+            static const struct { const gchar* lang; const gchar* label; } SOURCES[] = {
+                { "mermaid", "Mermaid diagram (source)" }, { "plantuml", "PlantUML diagram (source)" },
+                { "dot", "Graphviz diagram (source)" }, { "graphviz", "Graphviz diagram (source)" },
+                { "math", "Math (TeX source)" }, { "latex", "Math (TeX source)" },
+                { "tex", "TeX (source)" }, { "katex", "Math (TeX source)" },
+            };
+            for (gsize k = 0; k < G_N_ELEMENTS(SOURCES); k++) {
+                gsize n = strlen(SOURCES[k].lang);
+                if (g_ascii_strncasecmp(info, SOURCES[k].lang, n) == 0 && !g_ascii_isalnum(info[n])) {
+                    gchar* label = g_strdup_printf("%s\n", SOURCES[k].label);
+                    insert_tagged(buffer, &iter, label, "md_code_label");
+                    g_free(label);
+                    break;
+                }
+            }
             insert_tagged(buffer, &iter, " \n", "md_code_pad");
             gint code_start = gtk_text_iter_get_offset(&iter);
             insert_tagged(buffer, &iter, code->str, "md_code_block");
