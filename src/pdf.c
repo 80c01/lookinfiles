@@ -1,5 +1,6 @@
 #include "pdf.h"
 #include "text_style.h"
+#include "file_types.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
@@ -8,6 +9,8 @@
 #include <cairo.h>
 
 #define MAX_RENDER_PAGES 20
+/* Pages rendered before the preview is first shown; the others follow */
+#define FIRST_RENDER_PAGES 3
 
 typedef struct {
     AppData* app;
@@ -15,6 +18,8 @@ typedef struct {
     gchar* full;
     gboolean render_raw;
     gint max_w;
+    gint first_page;       /* first page rendered by this task */
+    gint page_count;       /* pages rendered by this task at most */
 
     /* Results populated by worker thread */
     gchar* error_msg;
@@ -87,6 +92,58 @@ static void ensure_pdf_tags(GtkTextBuffer* buffer) {
 }
 
 static void pdf_preview_thread_func(GTask* task, gpointer source_object,
+                                    gpointer task_data, GCancellable* cancellable);
+static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res, gpointer user_data);
+
+/* Append the rendered pages of a task at the end of the preview, then start
+ * the task of the next pages (or say how many pages are not shown) */
+static void append_pdf_pages(AppData* app, PdfTaskData* td) {
+    if (td->error_msg != NULL || td->page_textures == NULL) {
+        return;
+    }
+    GtkTextIter iter;
+    gtk_text_buffer_get_end_iter(app->buffer, &iter);
+    guint render_count = td->page_textures->len;
+    for (guint i = 0; i < render_count; i++) {
+        GdkTexture* tex = GDK_TEXTURE(g_ptr_array_index(td->page_textures, i));
+        gchar* page_badge = g_strdup_printf("─── Page %d of %d ───\n\n",
+                                            td->first_page + (gint)i + 1, td->total_pages);
+        gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, page_badge, -1, "pdf_page_badge", NULL);
+        g_free(page_badge);
+
+        gtk_text_buffer_insert_paintable(app->buffer, &iter, GDK_PAINTABLE(tex));
+        GtkTextIter start_img = iter;
+        gtk_text_iter_backward_char(&start_img);
+        gtk_text_buffer_apply_tag_by_name(app->buffer, "pdf_center", &start_img, &iter);
+        gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, "\n\n", -1, "pdf_center", NULL);
+    }
+    gint shown = td->first_page + (gint)render_count;
+    gint limit = MIN(td->total_pages, MAX_RENDER_PAGES);
+    if (shown < limit && render_count > 0) {
+        /* The next pages, in the background (same cancellable: a new selection drops them) */
+        PdfTaskData* next = g_new0(PdfTaskData, 1);
+        next->app = app;
+        next->name = g_strdup(td->name);
+        next->full = g_strdup(td->full);
+        next->render_raw = FALSE;
+        next->max_w = td->max_w;
+        next->first_page = shown;
+        next->page_count = MAX_RENDER_PAGES;
+        GTask* task = g_task_new(NULL, app->preview_cancellable, on_pdf_preview_ready, NULL);
+        g_task_set_task_data(task, next, pdf_task_data_free);
+        g_task_run_in_thread(task, pdf_preview_thread_func);
+        g_object_unref(task);
+        return;
+    }
+    if (td->total_pages > limit) {
+        gchar* notice = g_strdup_printf("[ Showing first %d of %d pages • press m to view all extracted text ]\n\n",
+                                        limit, td->total_pages);
+        gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, notice, -1, "pdf_meta", NULL);
+        g_free(notice);
+    }
+}
+
+static void pdf_preview_thread_func(GTask* task, gpointer source_object,
                                     gpointer task_data, GCancellable* cancellable) {
     (void)source_object;
     PdfTaskData* td = (PdfTaskData*)task_data;
@@ -131,8 +188,8 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
 
     if (!td->render_raw) {
         td->page_textures = g_ptr_array_new_with_free_func(g_object_unref);
-        gint render_count = MIN(td->total_pages, MAX_RENDER_PAGES);
-        for (gint i = 0; i < render_count; i++) {
+        gint render_end = MIN(MIN(td->total_pages, MAX_RENDER_PAGES), td->first_page + td->page_count);
+        for (gint i = td->first_page; i < render_end; i++) {
             if (g_cancellable_is_cancelled(cancellable)) {
                 break;
             }
@@ -217,6 +274,11 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
 
     AppData* app = td->app;
 
+    if (td->first_page > 0) {
+        append_pdf_pages(app, td);
+        return;
+    }
+
     apply_viewer_language(app, NULL, NULL);
     set_view_monospace(app->text_view, FALSE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
@@ -277,32 +339,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     g_free(meta_text);
 
     if (!td->render_raw && td->page_textures != NULL) {
-        guint render_count = td->page_textures->len;
-        for (guint i = 0; i < render_count; i++) {
-            GdkTexture* tex = GDK_TEXTURE(g_ptr_array_index(td->page_textures, i));
-            gchar* page_badge = g_strdup_printf("─── Page %u of %d ───\n\n",
-                                                i + 1, td->total_pages);
-            gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter,
-                                                     page_badge, -1,
-                                                     "pdf_page_badge", NULL);
-            g_free(page_badge);
-
-            gtk_text_buffer_insert_paintable(app->buffer, &iter, GDK_PAINTABLE(tex));
-
-            GtkTextIter start_img = iter;
-            gtk_text_iter_backward_char(&start_img);
-            gtk_text_buffer_apply_tag_by_name(app->buffer, "pdf_center", &start_img, &iter);
-
-            gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, "\n\n", -1, "pdf_center", NULL);
-        }
-
-        if (td->total_pages > (gint)render_count) {
-            gchar* notice = g_strdup_printf(
-                "[ Showing first %u of %d pages • press m to view all extracted text ]\n\n",
-                render_count, td->total_pages);
-            gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, notice, -1, "pdf_meta", NULL);
-            g_free(notice);
-        }
+        append_pdf_pages(app, td);
     } else if (td->render_raw && td->page_texts != NULL) {
         for (guint i = 0; i < td->page_texts->len; i++) {
             const gchar* text = (const gchar*)g_ptr_array_index(td->page_texts, i);
@@ -322,6 +359,38 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     }
 }
 
+gboolean pdf_preview_jump(AppData* app, gint direction) {
+    if (app->viewed_kind != FILE_KIND_PDF || app->render_raw) {
+        return FALSE;
+    }
+    /* The page badges, from the first: the next one below the scroll
+     * position, or the last one above it. Vertical scroll only (the badges
+     * are centered: scroll_to_iter would also scroll sideways). */
+    GtkTextView* view = GTK_TEXT_VIEW(app->text_view);
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    gdouble current = gtk_adjustment_get_value(vadj);
+    GtkTextIter from, match_start, match_end;
+    gtk_text_buffer_get_start_iter(app->buffer, &from);
+    gdouble target = direction > 0 ? -1 : 0;
+    while (gtk_text_iter_forward_search(&from, "─── Page ", GTK_TEXT_SEARCH_TEXT_ONLY, &match_start, &match_end,
+                                        NULL)) {
+        GdkRectangle rect;
+        gtk_text_view_get_iter_location(view, &match_start, &rect);
+        if (direction > 0 && rect.y > current + 2) {
+            target = rect.y;
+            break;
+        }
+        if (direction < 0 && rect.y < current - 2) {
+            target = rect.y;
+        }
+        from = match_end;
+    }
+    if (target >= 0) {
+        gtk_adjustment_set_value(vadj, target);
+    }
+    return TRUE;
+}
+
 void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
     if (app->preview_cancellable != NULL) {
         g_cancellable_cancel(app->preview_cancellable);
@@ -339,6 +408,8 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
     td->render_raw = app->render_raw;
     /* Zoomed pages are at most 4096 px wide (memory: up to MAX_RENDER_PAGES textures) */
     td->max_w = MIN((gint)(max_w * (app->preview_zoom > 0 ? app->preview_zoom : 1.0)), 4096);
+    td->first_page = 0;
+    td->page_count = FIRST_RENDER_PAGES;
 
     GTask* task = g_task_new(NULL, app->preview_cancellable, on_pdf_preview_ready, NULL);
     g_task_set_task_data(task, td, pdf_task_data_free);
@@ -347,6 +418,12 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
 }
 
 #else /* !HAVE_POPPLER */
+
+gboolean pdf_preview_jump(AppData* app, gint direction) {
+    (void)app;
+    (void)direction;
+    return FALSE;
+}
 
 void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
     (void)full;

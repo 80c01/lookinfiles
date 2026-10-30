@@ -45,6 +45,7 @@
     printf 'Caf\351 cr\350me \200 5\n\223quoted\224\n' > 30-latin1.txt
     printf 'h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d\0\n\0' > 31-utf16.txt
     cp "$ROOT/tests/fixtures/preview/blink.gif" 32-blink.gif
+    cp "$ROOT/tests/fixtures/preview/pages.pdf" 33-pages.pdf
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -86,4 +87,7 @@ format_scenario() {
     key j;              shot fmt_windows_1252
     key j;              shot fmt_utf16
     key j;              shot fmt_gif_animated   # frame varies: not compared with a baseline
+    key j;              shot fmt_pdf_pages      # 3 pages first, the others added after
+    key alt+Right                               # focus the preview
+    key Page_Down Page_Down; shot fmt_pdf_page_down
 }

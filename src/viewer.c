@@ -73,6 +73,12 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
+    if ((keyval == GDK_KEY_Page_Down || keyval == GDK_KEY_Page_Up) &&
+        pdf_preview_jump(app, keyval == GDK_KEY_Page_Down ? 1 : -1)) {
+        app->pending_g = FALSE;
+        return TRUE;
+    }
+
     guint key = keyval;
 
     switch (key) {
