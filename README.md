@@ -49,7 +49,7 @@ and virtual workspaces, in a VS Code Dark+ look.
   headings, styles, lists, tables, links and images (not in `.doc`);
   spreadsheets (`.xlsx`, `.ods`, `.xls` from Excel 97-2003 or 5.0 / 95) as
   grids with column letters, number, date and percent formats; presentations
-  (`.pptx`, `.odp`) slide by slide; RTF. Page layout, fonts, headers and
+  (`.pptx`, `.odp`, `.ppt` / `.pps`) slide by slide; RTF. Page layout, fonts, headers and
   footers are not shown; long documents stop after 256 KB of text. Other OLE2
   compound files (`.msi`, `.vsd`, Works...) show their properties (title,
   author, dates, counts) and streams.

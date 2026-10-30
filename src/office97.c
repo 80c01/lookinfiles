@@ -2,6 +2,7 @@
 #include "office97.h"
 #include "doc_reader.h"
 #include "ole_props.h"
+#include "ppt_reader.h"
 #include "spreadsheet.h"
 #include "xls_reader.h"
 #include <gio/gio.h>
@@ -145,6 +146,30 @@ PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, 
         }
         spreadsheet_append_sheets(doc, book, SHEETS_SHOWN, SHEET_ROWS);
         return doc;
+    }
+    if (format == OFFICE97_POWERPOINT) {
+        gboolean encrypted = FALSE;
+        guint slides = 0;
+        GError* err = NULL;
+        gchar* body = ppt_reader_to_html(ole, "<head></head>", max_text, &slides, &encrypted, &err);
+        if (body == NULL) {
+            gchar* reason = encrypted ? g_strdup("Encrypted: the content needs the password.")
+                                      : g_strdup_printf("The slides cannot be read: %s.", err->message);
+            g_clear_error(&err);
+            PreviewDoc* doc = office97_summary(ole, name, size, reason);
+            g_free(reason);
+            return doc;
+        }
+        /* The head, with the slide count found */
+        g_autoptr(OleProperties) props = ole_properties_read(ole);
+        if (props == NULL) props = ole_properties_new();
+        props->slides = (gint)slides;
+        gchar* head = ole_properties_html_head(props, office97_format_label(format));
+        gchar* at = strstr(body, "<head></head>");
+        gchar* html = g_strdup_printf("%.*s%s%s", (gint)(at - body), body, head, at + strlen("<head></head>"));
+        g_free(head);
+        g_free(body);
+        return preview_doc_new_source(PREVIEW_DOC_HTML, html);
     }
     return office97_summary(ole, name, size, NULL);
 }

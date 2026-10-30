@@ -574,6 +574,111 @@ static void test_excel_truncated(void) {
     g_free(path);
 }
 
+/* --- PowerPoint 97-2003 --- */
+
+static void ppt_rec(GByteArray* a, guint16 verinst, guint16 type, const void* data, gsize len) {
+    guint8 h[8];
+    ob_put16(h, verinst);
+    ob_put16(h + 2, type);
+    ob_put32(h + 4, (guint32)len);
+    g_byte_array_append(a, h, 8);
+    if (len > 0) g_byte_array_append(a, data, (guint)len);
+}
+
+static void ppt_text(GByteArray* a, guint32 text_type, const gchar* utf8, gboolean bytes) {
+    guint8 th[4];
+    ob_put32(th, text_type);
+    ppt_rec(a, 0, 0x0F9F, th, 4);
+    if (bytes) {
+        ppt_rec(a, 0, 0x0FA8, utf8, strlen(utf8)); /* 8-bit: already Windows-1252 */
+        return;
+    }
+    glong n = 0;
+    gunichar2* w = g_utf8_to_utf16(utf8, -1, NULL, &n, NULL);
+    GByteArray* t = g_byte_array_new();
+    for (glong i = 0; i < n; i++) {
+        guint8 c[2];
+        ob_put16(c, w[i]);
+        g_byte_array_append(t, c, 2);
+    }
+    ppt_rec(a, 0, 0x0FA0, t->data, t->len);
+    g_byte_array_free(t, TRUE);
+    g_free(w);
+}
+
+/* A PowerPoint-style stream: the text in the document's SlideListWithText */
+static GBytes* ppt_stream(gboolean encrypted) {
+    GByteArray* list = g_byte_array_new();
+    guint8 persist[20] = {0};
+    ppt_rec(list, 0, 0x03F3, persist, 20);
+    ppt_text(list, 0, "Budget 2027", FALSE);
+    ppt_text(list, 1, "Rent\rFood \x80 drinks", TRUE);
+    ppt_rec(list, 0, 0x03F3, persist, 20);
+    ppt_text(list, 6, "Questions?", FALSE);
+    GByteArray* doc = g_byte_array_new();
+    ppt_rec(doc, 0x000F, 0x0FF0, list->data, list->len); /* instance 0: slides */
+    if (encrypted) ppt_rec(doc, 0x000F, 0x2F14, "", 0);
+    GByteArray* s = g_byte_array_new();
+    ppt_rec(s, 0x000F, 0x03E8, doc->data, doc->len);
+    g_byte_array_free(list, TRUE);
+    g_byte_array_free(doc, TRUE);
+    return g_byte_array_free_to_bytes(s);
+}
+
+static PreviewDoc* presentation_preview(GBytes* stream) {
+    OleBuilder* ob = ole_builder_new();
+    ole_builder_add(ob, "PowerPoint Document", g_bytes_get_data(stream, NULL), g_bytes_get_size(stream));
+    GBytes* file = ole_builder_finish(ob);
+    PreviewDoc* doc = preview_of(file, "deck.ppt");
+    g_bytes_unref(file);
+    return doc;
+}
+
+static void test_ppt_synthetic(void) {
+    GBytes* st = ppt_stream(FALSE);
+    PreviewDoc* doc = presentation_preview(st);
+    const gchar* html = doc->text->str;
+    g_assert_nonnull(strstr(html, "PowerPoint 97-2003 presentation · 2 slides"));
+    g_assert_nonnull(strstr(html, "<h2>Slide 1</h2>\n<h3>Budget 2027</h3>\n<ul>\n<li>Rent</li>\n<li>Food € drinks</li>\n</ul>"));
+    g_assert_nonnull(strstr(html, "<h2>Slide 2</h2>\n<h3>Questions?</h3>"));
+    preview_doc_free(doc);
+    g_bytes_unref(st);
+    st = ppt_stream(TRUE);
+    doc = presentation_preview(st);
+    g_assert_nonnull(strstr(doc->text->str, "Encrypted"));
+    g_assert_null(strstr(doc->text->str, "Budget"));
+    preview_doc_free(doc);
+    g_bytes_unref(st);
+}
+
+static void test_ppt_fixture(void) {
+    PreviewDoc* doc = fixture("roadmap.ppt");
+    const gchar* html = doc->text->str;
+    g_assert_nonnull(strstr(html, "<title>Lookin roadmap</title>"));
+    g_assert_nonnull(strstr(html, "2 slides"));
+    g_assert_nonnull(strstr(html, "<h3>Lookin roadmap</h3>\n<p>Autumn 2026</p>\n<p><i>Notes: Welcome everyone.</i></p>"));
+    g_assert_nonnull(strstr(html, "<li>Spreadsheets – old and new</li>"));
+    g_assert_null(strstr(html, "Click to edit"));
+    preview_doc_free(doc);
+}
+
+static void test_ppt_truncated(void) {
+    gchar* path = g_build_filename("tests", "fixtures", "preview", "roadmap.ppt", NULL);
+    OleReader* ole = ole_reader_open(path, NULL);
+    GBytes* st = ole_reader_read(ole, "PowerPoint Document", 1 << 20, NULL);
+    ole_reader_free(ole);
+    gsize len = g_bytes_get_size(st);
+    for (gsize cut = 0; cut < len; cut += len / 29 + 1) {
+        GBytes* part = g_bytes_new_from_bytes(st, 0, cut);
+        PreviewDoc* doc = presentation_preview(part);
+        g_assert_nonnull(doc);
+        preview_doc_free(doc);
+        g_bytes_unref(part);
+    }
+    g_bytes_unref(st);
+    g_free(path);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/office97/properties", test_properties);
@@ -591,5 +696,8 @@ int main(int argc, char** argv) {
     g_test_add_func("/office97/excel5", test_excel5);
     g_test_add_func("/office97/excel_fixture", test_excel_fixture);
     g_test_add_func("/office97/excel_truncated", test_excel_truncated);
+    g_test_add_func("/office97/ppt_synthetic", test_ppt_synthetic);
+    g_test_add_func("/office97/ppt_fixture", test_ppt_fixture);
+    g_test_add_func("/office97/ppt_truncated", test_ppt_truncated);
     return g_test_run();
 }

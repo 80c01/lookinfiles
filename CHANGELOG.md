@@ -23,6 +23,8 @@ All notable changes to this project are listed here. The format follows
 - Excel 97-2003 and 5.0 / 95 workbooks (`.xls`) as grids like `.xlsx`:
   shared strings, numbers, booleans, errors and formula results with their
   number, percent and date formats (1904 date system included).
+- PowerPoint 97-2003 presentations (`.ppt`, `.pps`) slide by slide like
+  `.pptx`: titles, body text and speaker notes.
 - Code navigation in editor tabs, in the three modes: go to the definition or
   declaration of the identifier under the cursor and back (Notepad `F12` /
   `Ctrl+F12` / `Ctrl+Click`, `Ctrl+Alt+-` / `Ctrl+Shift+-`; Emacs `M-.` /

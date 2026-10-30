@@ -72,7 +72,10 @@ every common format to L3 and never leave one below L1.
 | SQLite (libsqlite3, optional) | L3 | `sqlite_view` |
 | Fonts | L3 | `font_info` |
 | Word `.docx`, OpenDocument `.odt`, RTF | L2 | `docx`, `odf`, `rtf` |
-| Presentations `.pptx` / `.odp` | L2 | `pptx`, `odf` |
+| Word 97-2003 `.doc` (Word 6 / 95: text) | L2 | `doc_reader` |
+| Excel 97-2003 / 5.0 `.xls` | L3 | `xls_reader`, `spreadsheet` |
+| Presentations `.pptx` / `.odp` / `.ppt` | L2 | `pptx`, `odf`, `ppt_reader` |
+| Other OLE2 compound files (properties, streams) | L1 | `ole_reader`, `ole_props`, `office97` |
 | EPUB | L2–L3 | `epub` |
 | Man pages (gzipped too) | L2 | `man_view` |
 | Archives (ZIP, tar, gzip, ar; 7z, RAR, xz, ISO... with libarchive) | L2 | `archive_listing` |
@@ -202,7 +205,7 @@ dump (13.7 % before this work). Most of the rest are TeX font metrics
 - [x] Remote machines: previews read through the SSHFS mount with the same
       bounded reads.
 
-## 8. Phase 5 — Old binary Office files (`.doc`, `.xls`, `.ppt`)
+## 8. Phase 5 — Old binary Office files (`.doc`, `.xls`, `.ppt`) — done
 
 Files written by Office 97–2003 (and Word 6 / Excel 5) are still common in
 old personal archives. They are OLE2 compound files (a small FAT file system
@@ -210,46 +213,51 @@ inside the file), so one container reader serves the three formats. Pure
 GLib, no new dependency; same output as their modern counterparts so they
 look alike in the preview.
 
-- [ ] **Compound file reader** `ole_reader` (layer 1, like `zip_reader`):
+- [x] **Compound file reader** `ole_reader` (layer 1, like `zip_reader`):
       header `D0 CF 11 E0 A1 B1 1A E1`, FAT and DIFAT, mini FAT and mini
       stream, directory tree; `ole_reader_open()`, stream list,
       `ole_reader_read()` with a size limit. Rejects loops and out-of-range
       sectors (corrupted files must fail cleanly). Tests build compound
       files in memory with a `tests/ole_builder.h` (like `zip_builder.h`).
-- [ ] **Detection**: one `FILE_KIND_OLE` from the magic number; the builder
+- [x] **Detection**: one `FILE_KIND_OLE` from the magic number; the builder
       picks the format from the stream names (`WordDocument`, `Workbook` /
       `Book`, `PowerPoint Document`), the extension only as a tie-break.
       Extensions `.doc`, `.dot`, `.xls`, `.xlt`, `.ppt`, `.pps`, `.pot`.
-- [ ] **Document properties** (shared): the `\005SummaryInformation` and
+- [x] **Document properties** (shared): the `\005SummaryInformation` and
       `\005DocumentSummaryInformation` property sets (title, subject,
       author, last saved by, created / modified dates, pages, words,
       application) shown as the summary card at the top of each preview.
-- [ ] **Word `.doc`** (`doc_reader`, target L2 like `.docx`): FIB in the
+- [x] **Word `.doc`** (`doc_reader`, target L2 like `.docx`): FIB in the
       `WordDocument` stream, piece table (CLX) from the `0Table` / `1Table`
       stream, 8-bit and UTF-16 pieces; paragraphs, tables (cell and row
       marks), headings from the paragraph styles when cheap, special
       characters (fields, footnote marks) skipped. Output as HTML through
       the same path as `docx`. Word 6 / 95 files: text from the single
       8-bit piece.
-- [ ] **Excel `.xls`** (`xls_reader`, target L3 like `.xlsx`): BIFF8
+- [x] **Excel `.xls`** (`xls_reader`, target L3 like `.xlsx`): BIFF8
       records in the `Workbook` stream (BIFF5 `Book` for Excel 5 / 95):
       `BOUNDSHEET`, `SST` with `CONTINUE`, `LABELSST`, `LABEL`, `NUMBER`,
       `RK`, `MULRK`, `BOOLERR`, cached `FORMULA` results, `FORMAT` / `XF`
       for dates, percents and currencies. The first 3 sheets as grids
       through the existing `spreadsheet` table code (same limits).
-- [ ] **PowerPoint `.ppt`** (`ppt_reader`, target L2 like `.pptx`): records
+- [x] **PowerPoint `.ppt`** (`ppt_reader`, target L2 like `.pptx`): records
       of the `PowerPoint Document` stream, `SlideListWithText` with
       `TextCharsAtom` (UTF-16) / `TextBytesAtom` (8-bit), title vs body
       from `TextHeaderAtom`; slide by slide, with notes when present.
-- [ ] **Fallbacks**: encrypted files (FIB `fEncrypted`, `FILEPASS` record,
+- [x] **Fallbacks**: encrypted files (FIB `fEncrypted`, `FILEPASS` record,
       `EncryptedSummary` stream) show the property card and "Encrypted";
       a parse failure shows the property card and the stream list (L1);
       other compound files (`.msg`, `.msi`, `.vsd`, Works...) show the
       property card and the stream list too.
-- [ ] **Fixtures**: small `.doc` / `.xls` / `.ppt` files (saved by
+- [x] **Fixtures**: small `.doc` / `.xls` / `.ppt` files (saved by
       LibreOffice in the 97–2003 formats, plus a Word 95 and an Excel 5
       file if available), a truncated one and an encrypted one; one `shot`
       each in `tests/ui/formats.sh`.
+
+Done differently: no Word 95 / Excel 5 fixture files (LibreOffice cannot
+write them): those paths are tested with files built in the tests; lists in
+`.doc` are shown as bullets (numbering formats are not read); the encrypted
+fixture is a copy of `report.doc` with the `fEncrypted` flag set.
 
 Out of scope: Word for DOS / Word 2, Excel 2–4 (BIFF2–4, not compound
 files), images and charts embedded in the files, exact page layout.

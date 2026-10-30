@@ -26,7 +26,8 @@ ole_reader:
 ole_props:ole_reader,preview_doc
 doc_reader:ole_reader
 xls_reader:ole_reader,spreadsheet
-office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet
+ppt_reader:ole_reader
+office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader
 docx:zip_reader
 preview_doc:
 csv:preview_doc

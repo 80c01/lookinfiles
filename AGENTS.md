@@ -78,7 +78,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   fallback. `doc_reader` — Word `.doc` to HTML (piece table, PAPX / CHPX
   FKPs, styles), like `docx`. `xls_reader` — BIFF8 / BIFF5 workbooks to
   the `Workbook` of `spreadsheet` (shown by `spreadsheet_append_sheets()`,
-  shared with `.xlsx`).
+  shared with `.xlsx`). `ppt_reader` — `.ppt` records to HTML slide by
+  slide (SlideListWithText, else the slide containers; masters skipped).
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.
