@@ -119,8 +119,8 @@ static GtkWidget* remote_dialog_body(GtkWidget* dlg) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_set_margin_top(box, 14);
     gtk_widget_set_margin_bottom(box, 14);
-    gtk_widget_set_margin_start(box, 18);
-    gtk_widget_set_margin_end(box, 18);
+    gtk_widget_set_margin_start(box, 16);
+    gtk_widget_set_margin_end(box, 16);
     gtk_box_append(GTK_BOX(content), box);
     return box;
 }

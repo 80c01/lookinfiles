@@ -292,8 +292,8 @@ void layouts_show_dialog(AppData* app) {
     app_dialog_set_width(d.dialog, 480);
 
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-    gtk_widget_set_margin_top(box, 10);
-    gtk_widget_set_margin_bottom(box, 10);
+    gtk_widget_set_margin_top(box, 14);
+    gtk_widget_set_margin_bottom(box, 14);
     gtk_widget_set_margin_start(box, 16);
     gtk_widget_set_margin_end(box, 16);
     GtkWidget* hint = gtk_label_new("Select a layout, then Apply it to this workspace (or "

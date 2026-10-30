@@ -176,7 +176,13 @@ static void show_picker(AppData* app, EditorTab* tab, GListStore* store, const g
     g_free(title);
     app_dialog_set_width(APP_DIALOG(p->dialog), 560);
     app_dialog_set_default_response(APP_DIALOG(p->dialog), RESPONSE_GO);
-    GtkWidget* area = app_dialog_get_content_area(APP_DIALOG(p->dialog));
+    /* Same margins as the other dialogs */
+    GtkWidget* area = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_margin_top(area, 14);
+    gtk_widget_set_margin_bottom(area, 14);
+    gtk_widget_set_margin_start(area, 16);
+    gtk_widget_set_margin_end(area, 16);
+    gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(p->dialog))), area);
 
     p->entry = gtk_search_entry_new();
     gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(p->entry), "Filter the symbols by name");
@@ -201,6 +207,7 @@ static void show_picker(AppData* app, EditorTab* tab, GListStore* store, const g
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_size_request(scroll, -1, 320);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), p->list);
+    gtk_widget_add_css_class(scroll, "dialog-list");
     gtk_widget_set_margin_top(scroll, 6);
     gtk_box_append(GTK_BOX(area), scroll);
 

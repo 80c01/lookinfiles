@@ -191,9 +191,27 @@ GtkWidget* app_dialog_get_widget_for_response(AppDialog* dialog, gint response) 
     return NULL;
 }
 
+/* The default button is the primary one (blue), unless it only dismisses
+ * the dialog (destructive confirmations default to Cancel) */
+static gboolean is_dismiss_response(gint response) {
+    return response == APP_RESPONSE_CANCEL || response == APP_RESPONSE_NO ||
+           response == APP_RESPONSE_REJECT || response == APP_RESPONSE_DELETE_EVENT;
+}
+
 void app_dialog_set_default_response(AppDialog* dialog, gint response) {
     g_return_if_fail(APP_IS_DIALOG(dialog));
+    if (dialog->default_button != NULL &&
+        g_object_get_data(G_OBJECT(dialog->default_button), "auto-suggested") != NULL) {
+        gtk_widget_remove_css_class(dialog->default_button, "suggested-action");
+        g_object_set_data(G_OBJECT(dialog->default_button), "auto-suggested", NULL);
+    }
     dialog->default_button = app_dialog_get_widget_for_response(dialog, response);
+    GtkWidget* b = dialog->default_button;
+    if (b != NULL && !is_dismiss_response(response) && !gtk_widget_has_css_class(b, "destructive-action") &&
+        !gtk_widget_has_css_class(b, "suggested-action")) {
+        gtk_widget_add_css_class(b, "suggested-action");
+        g_object_set_data(G_OBJECT(b), "auto-suggested", GINT_TO_POINTER(1));
+    }
     if (dialog->shown && dialog->window != NULL) {
         gtk_window_set_default_widget(dialog->window, dialog->default_button);
     }

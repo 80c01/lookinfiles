@@ -165,7 +165,7 @@ static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
         GtkWidget* b = gtk_button_new_with_label(modes[i].label);
         gtk_button_set_has_frame(GTK_BUTTON(b), FALSE);
         if (modes[i].mode == current) {
-            gtk_widget_add_css_class(b, "suggested-action");
+            gtk_widget_add_css_class(b, "menu-item-current");
         }
         g_object_set_data(G_OBJECT(b), "app", app);
         g_object_set_data(G_OBJECT(b), "tab", cur);
