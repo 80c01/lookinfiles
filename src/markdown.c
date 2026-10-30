@@ -1,15 +1,14 @@
 #include "markdown.h"
 #include "fonts.h"
 #include "palette.h"
+#include "text_tags.h"
 #include "image_utils.h"
 
 void ensure_markdown_tags(GtkTextBuffer* buffer) {
     GtkTextTagTable* tt = gtk_text_buffer_get_tag_table(buffer);
 
-    #define CREATE_TAG(name, ...) \
-        if (!gtk_text_tag_table_lookup(tt, name)) { \
-            gtk_text_buffer_create_tag(buffer, name, __VA_ARGS__, NULL); \
-        }
+    /* Colours and fonts as roles ("@accent"): they follow theme changes */
+    #define CREATE_TAG(name, ...) text_tag_ensure(buffer, name, __VA_ARGS__, NULL)
 
     /* VS Code Markdown preview look (Dark+): headings in the text colour with
      * a rule under h1/h2, quiet lists, padded code panels, quotes with a bar.
@@ -26,42 +25,42 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
     CREATE_TAG("md_h1",
                "scale", FONT_SCALE_H1,
                "weight", 600,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 16,
                "pixels-below-lines", 6);
 
     CREATE_TAG("md_h2",
                "scale", FONT_SCALE_H2,
                "weight", 600,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 16,
                "pixels-below-lines", 6);
 
     CREATE_TAG("md_h3",
                "scale", FONT_SCALE_H3,
                "weight", 600,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 14,
                "pixels-below-lines", 4);
 
     CREATE_TAG("md_h4",
                "scale", FONT_SCALE_H4,
                "weight", 600,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 12,
                "pixels-below-lines", 4);
 
     CREATE_TAG("md_h5",
                "scale", FONT_SCALE_H5,
                "weight", 600,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 10,
                "pixels-below-lines", 4);
 
     CREATE_TAG("md_h6",
                "scale", FONT_SCALE_H6,
                "weight", 600,
-               "foreground", palette_color(PAL_FG_MUTED),
+               "foreground", "@fg_muted",
                "pixels-above-lines", 10,
                "pixels-below-lines", 4);
 
@@ -70,11 +69,11 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
      * background on a line without characters) */
     CREATE_TAG("md_rule",
                "size-points", 1.0,
-               "paragraph-background", palette_color(PAL_RULE));
+               "paragraph-background", "@rule");
 
     CREATE_TAG("md_hr",
                "size-points", 1.6,
-               "paragraph-background", palette_color(PAL_RULE));
+               "paragraph-background", "@rule");
 
     CREATE_TAG("md_bold",
                "weight", PANGO_WEIGHT_BOLD);
@@ -88,20 +87,20 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("md_strike",
                "strikethrough", TRUE,
-               "foreground", palette_color(PAL_FG_SUBTLE));
+               "foreground", "@fg_subtle");
 
     CREATE_TAG("md_inline_code",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_CODE,
-               "background", palette_color(PAL_BG_CODE_INLINE),
-               "foreground", palette_color(PAL_SYN_ESCAPE));
+               "background", "@bg_code_inline",
+               "foreground", "@syn_escape");
 
     /* Code block: padded panel */
     CREATE_TAG("md_code_block",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_CODE,
-               "foreground", palette_color(PAL_FG_TEXT),
-               "paragraph-background", palette_color(PAL_BG_BLOCK),
+               "foreground", "@fg_text",
+               "paragraph-background", "@bg_block",
                "left-margin", 10,
                "indent", 16, /* every code line is a paragraph: 16 px inner padding */
                "right-margin", 16 + TEXT_SCROLLBAR_CLEARANCE,
@@ -114,7 +113,7 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
      * padding lines share the same margins: a paragraph background starts at
      * its line's left margin, so different margins would notch the panel. */
     CREATE_TAG("md_code_label",
-               "foreground", palette_color(PAL_FG_SUBTLE),
+               "foreground", "@fg_subtle",
                "style", PANGO_STYLE_ITALIC,
                "scale", FONT_SCALE_SMALL,
                "left-margin", 10,
@@ -123,45 +122,45 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "size-points", 10.0,
                "left-margin", 10,
                "right-margin", 16 + TEXT_SCROLLBAR_CLEARANCE,
-               "paragraph-background", palette_color(PAL_BG_BLOCK));
+               "paragraph-background", "@bg_block");
 
     CREATE_TAG("md_quote",
-               "foreground", palette_color(PAL_FG_MUTED),
-               "paragraph-background", palette_color(PAL_BG_BLOCK),
+               "foreground", "@fg_muted",
+               "paragraph-background", "@bg_block",
                "left-margin", 10,
                "pixels-above-lines", 0,
                "pixels-below-lines", 0);
 
     CREATE_TAG("md_quote_bar",
-               "foreground", palette_color(PAL_ACCENT));
+               "foreground", "@accent");
 
     CREATE_TAG("md_list_bullet",
-               "foreground", palette_color(PAL_FG));
+               "foreground", "@fg");
 
     /* Disc / circle / square list markers, sized like VS Code's (the plain
      * bullet glyph is much smaller) */
     CREATE_TAG("md_list_disc",
-               "foreground", palette_color(PAL_FG),
+               "foreground", "@fg",
                "scale", 0.62,
                "rise", 1 * PANGO_SCALE);
 
     CREATE_TAG("md_list_task_done",
-               "foreground", palette_color(PAL_FG));
+               "foreground", "@fg");
 
     CREATE_TAG("md_list_task_todo",
-               "foreground", palette_color(PAL_FG));
+               "foreground", "@fg");
 
     /* In-progress task ([/] or [-]): half-filled box, VS Code's warning amber */
     CREATE_TAG("md_list_task_running",
-               "foreground", palette_color(PAL_WARNING));
+               "foreground", "@warning");
 
     CREATE_TAG("md_link",
-               "foreground", palette_color(PAL_LINK));
+               "foreground", "@link");
 
     CREATE_TAG("md_table",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_CODE,
-               "foreground", palette_color(PAL_FG),
+               "foreground", "@fg",
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 10,
                "pixels-inside-wrap", 0,
@@ -169,10 +168,10 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "pixels-below-lines", 1);
 
     CREATE_TAG("md_table_header",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_CODE,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 10,
                "pixels-inside-wrap", 0,
@@ -180,9 +179,9 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "pixels-below-lines", 1);
 
     CREATE_TAG("md_table_border",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_CODE,
-               "foreground", palette_color(PAL_RULE),
+               "foreground", "@rule",
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 10,
                "pixels-inside-wrap", 0,
@@ -190,21 +189,21 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "pixels-below-lines", 1);
 
     /* GitHub alerts: coloured bar and title, body like a quote */
-    CREATE_TAG("md_alert_note", "foreground", palette_color(PAL_LINK), "weight", 600);
-    CREATE_TAG("md_alert_tip", "foreground", palette_color(PAL_SUCCESS), "weight", 600);
-    CREATE_TAG("md_alert_important", "foreground", palette_color(PAL_SYN_CONTROL), "weight", 600);
-    CREATE_TAG("md_alert_warning", "foreground", palette_color(PAL_WARNING), "weight", 600);
-    CREATE_TAG("md_alert_caution", "foreground", palette_color(PAL_ERROR), "weight", 600);
+    CREATE_TAG("md_alert_note", "foreground", "@link", "weight", 600);
+    CREATE_TAG("md_alert_tip", "foreground", "@success", "weight", 600);
+    CREATE_TAG("md_alert_important", "foreground", "@syn_control", "weight", 600);
+    CREATE_TAG("md_alert_warning", "foreground", "@warning", "weight", 600);
+    CREATE_TAG("md_alert_caution", "foreground", "@error", "weight", 600);
 
     CREATE_TAG("md_image",
-               "foreground", palette_color(PAL_SYN_VARIABLE),
+               "foreground", "@syn_variable",
                "style", PANGO_STYLE_ITALIC);
 
     CREATE_TAG("md_preview_banner",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_SYN_FUNCTION),
-               "background", palette_color(PAL_BG_CODE_INLINE),
+               "foreground", "@syn_function",
+               "background", "@bg_code_inline",
                "pixels-above-lines", 4,
                "pixels-below-lines", 8);
 

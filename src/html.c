@@ -1,6 +1,6 @@
 #include "html.h"
 #include "fonts.h"
-#include "palette.h"
+#include "text_tags.h"
 #include "image_utils.h"
 #include <ctype.h>
 #include <string.h>
@@ -9,57 +9,55 @@
 void ensure_html_tags(GtkTextBuffer* buffer) {
     GtkTextTagTable* tt = gtk_text_buffer_get_tag_table(buffer);
 
-    #define CREATE_TAG(name, ...) \
-        if (!gtk_text_tag_table_lookup(tt, name)) { \
-            gtk_text_buffer_create_tag(buffer, name, __VA_ARGS__, NULL); \
-        }
+    /* Colours and fonts as roles ("@accent"): they follow theme changes */
+    #define CREATE_TAG(name, ...) text_tag_ensure(buffer, name, __VA_ARGS__, NULL)
 
     CREATE_TAG("html_title",
                "scale", FONT_SCALE_H2,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 8,
                "pixels-below-lines", 4);
 
     CREATE_TAG("html_h1",
                "scale", FONT_SCALE_H1,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 14,
                "pixels-below-lines", 6);
 
     CREATE_TAG("html_h2",
                "scale", FONT_SCALE_H2,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 12,
                "pixels-below-lines", 4);
 
     CREATE_TAG("html_h3",
                "scale", FONT_SCALE_H3,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 10,
                "pixels-below-lines", 3);
 
     CREATE_TAG("html_h4",
                "scale", FONT_SCALE_H4,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 8,
                "pixels-below-lines", 2);
 
     CREATE_TAG("html_h5",
                "scale", FONT_SCALE_H5,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 6,
                "pixels-below-lines", 2);
 
     CREATE_TAG("html_h6",
                "scale", FONT_SCALE_H6,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_MUTED),
+               "foreground", "@fg_muted",
                "pixels-above-lines", 6,
                "pixels-below-lines", 2);
 
@@ -74,26 +72,26 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("html_strike",
                "strikethrough", TRUE,
-               "foreground", palette_color(PAL_FG_SUBTLE));
+               "foreground", "@fg_subtle");
 
     CREATE_TAG("html_code",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_CODE,
-               "background", palette_color(PAL_BG_CODE_INLINE),
-               "foreground", palette_color(PAL_SYN_ESCAPE));
+               "background", "@bg_code_inline",
+               "foreground", "@syn_escape");
 
     CREATE_TAG("html_kbd",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_CODE,
-               "background", palette_color(PAL_BG_CODE_INLINE),
-               "foreground", palette_color(PAL_SYN_FUNCTION),
+               "background", "@bg_code_inline",
+               "foreground", "@syn_function",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("html_pre",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_CODE,
-               "background", palette_color(PAL_BG_BLOCK),
-               "foreground", palette_color(PAL_FG_TEXT),
+               "background", "@bg_block",
+               "foreground", "@fg_text",
                "left-margin", 24,
                "right-margin", 24,
                "wrap-mode", GTK_WRAP_NONE,
@@ -101,32 +99,32 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
                "pixels-below-lines", 3);
 
     CREATE_TAG("html_code_header",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_FG_SUBTLE),
-               "background", palette_color(PAL_BG_VIEW),
+               "foreground", "@fg_subtle",
+               "background", "@bg_view",
                "left-margin", 24,
                "pixels-above-lines", 8,
                "pixels-below-lines", 2);
 
     CREATE_TAG("html_quote",
                "style", PANGO_STYLE_ITALIC,
-               "foreground", palette_color(PAL_FG_MUTED),
+               "foreground", "@fg_muted",
                "left-margin", 24,
                "pixels-above-lines", 2,
                "pixels-below-lines", 2);
 
     CREATE_TAG("html_quote_bar",
-               "foreground", palette_color(PAL_ACCENT),
+               "foreground", "@accent",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("html_link",
-               "foreground", palette_color(PAL_LINK),
+               "foreground", "@link",
                "underline", PANGO_UNDERLINE_SINGLE);
 
     CREATE_TAG("html_mark",
-               "background", palette_color(PAL_HIGHLIGHT),
-               "foreground", palette_color(PAL_BG_VIEW));
+               "background", "@highlight",
+               "foreground", "@bg_view");
 
     CREATE_TAG("html_small",
                "scale", FONT_SCALE_SMALL);
@@ -138,76 +136,76 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
                "scale", 0.8);
 
     CREATE_TAG("html_bullet",
-               "foreground", palette_color(PAL_FG),
+               "foreground", "@fg",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("html_num",
-               "foreground", palette_color(PAL_FG),
+               "foreground", "@fg",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("html_task_done",
-               "foreground", palette_color(PAL_SYN_COMMENT),
+               "foreground", "@syn_comment",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("html_task_todo",
-               "foreground", palette_color(PAL_SYN_FUNCTION),
+               "foreground", "@syn_function",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("html_hr",
-               "foreground", palette_color(PAL_RULE),
+               "foreground", "@rule",
                "pixels-above-lines", 8,
                "pixels-below-lines", 8);
 
     CREATE_TAG("html_table",
-               "family", fonts_family(FONT_CODE),
-               "foreground", palette_color(PAL_FG),
+               "family", "@font_code",
+               "foreground", "@fg",
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 16,
                "pixels-above-lines", 1,
                "pixels-below-lines", 1);
 
     CREATE_TAG("html_table_header",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_STRONG),
-               "background", palette_color(PAL_BG_CODE_INLINE),
+               "foreground", "@fg_strong",
+               "background", "@bg_code_inline",
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 16,
                "pixels-above-lines", 1,
                "pixels-below-lines", 1);
 
     CREATE_TAG("html_table_border",
-               "family", fonts_family(FONT_CODE),
-               "foreground", palette_color(PAL_RULE),
+               "family", "@font_code",
+               "foreground", "@rule",
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 16,
                "pixels-above-lines", 1,
                "pixels-below-lines", 1);
 
     CREATE_TAG("html_table_caption",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_SUBTLE),
+               "foreground", "@fg_subtle",
                "left-margin", 16,
                "pixels-above-lines", 4,
                "pixels-below-lines", 2);
 
     CREATE_TAG("html_tag",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_FG_SUBTLE));
+               "foreground", "@fg_subtle");
 
     CREATE_TAG("html_preview_header",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_FG_SUBTLE),
-               "background", palette_color(PAL_BG_VIEW),
+               "foreground", "@fg_subtle",
+               "background", "@bg_view",
                "left-margin", 16,
                "pixels-above-lines", 6,
                "pixels-below-lines", 4);
 
     CREATE_TAG("html_meta_sub",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_FG_SUBTLE),
+               "foreground", "@fg_subtle",
                "style", PANGO_STYLE_ITALIC,
                "left-margin", 16,
                "pixels-above-lines", 2,
@@ -215,24 +213,24 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("html_dt",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_STRONG),
+               "foreground", "@fg_strong",
                "pixels-above-lines", 6,
                "pixels-below-lines", 2);
 
     CREATE_TAG("html_dd",
                "left-margin", 28,
-               "foreground", palette_color(PAL_FG),
+               "foreground", "@fg",
                "pixels-below-lines", 3);
 
     CREATE_TAG("html_summary",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_ACCENT_FG),
+               "foreground", "@accent_fg",
                "pixels-above-lines", 6,
                "pixels-below-lines", 3);
 
     CREATE_TAG("html_figcaption",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_FG_SUBTLE),
+               "foreground", "@fg_subtle",
                "style", PANGO_STYLE_ITALIC,
                "left-margin", 24,
                "pixels-above-lines", 2,

@@ -103,32 +103,80 @@ void apply_viewer_background(GtkWidget* view) {
     }
 }
 
-void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view) {
-    GtkSourceStyleSchemeManager* mgr =
-        gtk_source_style_scheme_manager_get_default();
+/* The scheme, written from the palette to the cache folder; NULL until
+ * first used and after a theme change */
+static GtkSourceStyleScheme* scheme = NULL;
+static gboolean scheme_dark = TRUE;
+static gboolean search_path_added = FALSE;
+/* Buffers using it (weak references) */
+static GPtrArray* scheme_buffers = NULL;
+
+static GtkSourceStyleScheme* load_scheme(void) {
+    if (scheme != NULL) {
+        return scheme;
+    }
+    GtkSourceStyleSchemeManager* mgr = gtk_source_style_scheme_manager_get_default();
     gchar* cache_dir = app_cache_dir();
     gchar* dir = g_build_filename(cache_dir, "scheme", NULL);
     g_free(cache_dir);
     if (g_mkdir_with_parents(dir, 0755) != 0) {
         g_free(dir);
-        return;
+        return NULL;
     }
     gchar* path = g_build_filename(dir, "vscode-dark.xml", NULL);
     gchar* xml = palette_expand(VSCODE_SCHEME_XML);
+    if (!scheme_dark) {
+        /* Styles the scheme does not set come from GtkSourceView's light scheme */
+        gchar** parts = g_strsplit(xml, "parent-scheme=\"Adwaita-dark\"", 2);
+        g_free(xml);
+        xml = g_strjoinv("parent-scheme=\"Adwaita\"", parts);
+        g_strfreev(parts);
+    }
     g_file_set_contents(path, xml, -1, NULL);
     g_free(xml);
     g_free(path);
-    gtk_source_style_scheme_manager_append_search_path(mgr, dir);
+    if (!search_path_added) {
+        gtk_source_style_scheme_manager_append_search_path(mgr, dir);
+        search_path_added = TRUE;
+    }
     g_free(dir);
     gtk_source_style_scheme_manager_force_rescan(mgr);
-
-    GtkSourceStyleScheme* scheme =
-        gtk_source_style_scheme_manager_get_scheme(mgr, "vscode-dark");
-    if (scheme != NULL) {
-        gtk_source_buffer_set_style_scheme(GTK_SOURCE_BUFFER(buffer), scheme);
-        apply_viewer_background(view);
-    } else {
+    scheme = gtk_source_style_scheme_manager_get_scheme(mgr, "vscode-dark");
+    if (scheme == NULL) {
         g_printerr("[ VS Code scheme unavailable: keeping default syntax colors ]\n");
+    }
+    return scheme;
+}
+
+static void on_scheme_buffer_finalized(gpointer data, GObject* where) {
+    (void)data;
+    if (scheme_buffers != NULL) {
+        g_ptr_array_remove_fast(scheme_buffers, where);
+    }
+}
+
+void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view) {
+    GtkSourceStyleScheme* s = load_scheme();
+    if (s == NULL) {
+        return;
+    }
+    gtk_source_buffer_set_style_scheme(GTK_SOURCE_BUFFER(buffer), s);
+    apply_viewer_background(view);
+    if (scheme_buffers == NULL) {
+        scheme_buffers = g_ptr_array_new();
+    }
+    if (!g_ptr_array_find(scheme_buffers, buffer, NULL)) {
+        g_ptr_array_add(scheme_buffers, buffer);
+        g_object_weak_ref(G_OBJECT(buffer), on_scheme_buffer_finalized, NULL);
+    }
+}
+
+void text_style_refresh_scheme(gboolean dark) {
+    scheme_dark = dark;
+    scheme = NULL; /* owned by the manager */
+    GtkSourceStyleScheme* s = load_scheme();
+    for (guint i = 0; s != NULL && scheme_buffers != NULL && i < scheme_buffers->len; i++) {
+        gtk_source_buffer_set_style_scheme(GTK_SOURCE_BUFFER(g_ptr_array_index(scheme_buffers, i)), s);
     }
 }
 #endif

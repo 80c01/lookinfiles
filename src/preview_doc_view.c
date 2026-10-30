@@ -1,7 +1,7 @@
 /* Display of PreviewDocs in the preview text view (see preview_doc_view.h). */
 #include "preview_doc_view.h"
 #include "fonts.h"
-#include "palette.h"
+#include "text_tags.h"
 
 #include <string.h>
 
@@ -53,32 +53,32 @@ static void ensure_tags(GtkTextBuffer* buffer) {
         return;
     }
     gtk_text_buffer_create_tag(buffer, "pd_title", "weight", 700, "scale", FONT_SCALE_TITLE, NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_dim", "foreground", palette_color(PAL_FG_SUBTLE), NULL);
+    text_tag_create(buffer, "pd_dim", "foreground", "@fg_subtle", NULL);
     gtk_text_buffer_create_tag(buffer, "pd_section", "weight", 700, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_bold", "weight", 700, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_italic", "style", PANGO_STYLE_ITALIC, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_underline", "underline", PANGO_UNDERLINE_SINGLE, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_strike", "strikethrough", TRUE, NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_header", "weight", 700, "foreground", palette_color(PAL_FG_STRONG), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_row_alt", "paragraph-background", palette_color(PAL_BG_BLOCK), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_grid", "foreground", palette_color(PAL_RULE), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_key", "foreground", palette_color(PAL_SYN_VARIABLE), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_string", "foreground", palette_color(PAL_SYN_STRING), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_number", "foreground", palette_color(PAL_SYN_NUMBER), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_keyword", "foreground", palette_color(PAL_SYN_KEYWORD), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_comment", "foreground", palette_color(PAL_SYN_COMMENT), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_added", "foreground", palette_color(PAL_DIFF_ADDED_FG),
-                               "paragraph-background", palette_color(PAL_DIFF_ADDED_BG), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_removed", "foreground", palette_color(PAL_DIFF_REMOVED_FG),
-                               "paragraph-background", palette_color(PAL_DIFF_REMOVED_BG), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_hunk", "foreground", palette_color(PAL_DIFF_HUNK_FG),
-                               "paragraph-background", palette_color(PAL_DIFF_HUNK_BG), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_file", "foreground", palette_color(PAL_SYN_FUNCTION), "weight", 700, NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_error", "foreground", palette_color(PAL_ERROR), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_warning", "foreground", palette_color(PAL_WARNING), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_info", "foreground", palette_color(PAL_LINK), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_success", "foreground", palette_color(PAL_SUCCESS), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_link", "foreground", palette_color(PAL_LINK),
+    text_tag_create(buffer, "pd_header", "weight", 700, "foreground", "@fg_strong", NULL);
+    text_tag_create(buffer, "pd_row_alt", "paragraph-background", "@bg_block", NULL);
+    text_tag_create(buffer, "pd_grid", "foreground", "@rule", NULL);
+    text_tag_create(buffer, "pd_key", "foreground", "@syn_variable", NULL);
+    text_tag_create(buffer, "pd_string", "foreground", "@syn_string", NULL);
+    text_tag_create(buffer, "pd_number", "foreground", "@syn_number", NULL);
+    text_tag_create(buffer, "pd_keyword", "foreground", "@syn_keyword", NULL);
+    text_tag_create(buffer, "pd_comment", "foreground", "@syn_comment", NULL);
+    text_tag_create(buffer, "pd_added", "foreground", "@diff_added_fg",
+                               "paragraph-background", "@diff_added_bg", NULL);
+    text_tag_create(buffer, "pd_removed", "foreground", "@diff_removed_fg",
+                               "paragraph-background", "@diff_removed_bg", NULL);
+    text_tag_create(buffer, "pd_hunk", "foreground", "@diff_hunk_fg",
+                               "paragraph-background", "@diff_hunk_bg", NULL);
+    text_tag_create(buffer, "pd_file", "foreground", "@syn_function", "weight", 700, NULL);
+    text_tag_create(buffer, "pd_error", "foreground", "@error", NULL);
+    text_tag_create(buffer, "pd_warning", "foreground", "@warning", NULL);
+    text_tag_create(buffer, "pd_info", "foreground", "@link", NULL);
+    text_tag_create(buffer, "pd_success", "foreground", "@success", NULL);
+    text_tag_create(buffer, "pd_link", "foreground", "@link",
                                "underline", PANGO_UNDERLINE_SINGLE, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_h1", "weight", 700, "scale", FONT_SCALE_H1,
                                "pixels-above-lines", 8, "pixels-below-lines", 4, NULL);
@@ -86,9 +86,9 @@ static void ensure_tags(GtkTextBuffer* buffer) {
                                "pixels-above-lines", 6, "pixels-below-lines", 3, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_h3", "weight", 700, "scale", FONT_SCALE_H3,
                                "pixels-above-lines", 4, "pixels-below-lines", 2, NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_code", "family", fonts_family(FONT_CODE),
-                               "paragraph-background", palette_color(PAL_BG_BLOCK), NULL);
-    gtk_text_buffer_create_tag(buffer, "pd_mono", "family", fonts_family(FONT_CODE), NULL);
+    text_tag_create(buffer, "pd_code", "family", "@font_code",
+                               "paragraph-background", "@bg_block", NULL);
+    text_tag_create(buffer, "pd_mono", "family", "@font_code", NULL);
     /* Indents in addition to the view's own left margin (text padding) */
     gtk_text_buffer_create_tag(buffer, "pd_indent", "left-margin", PREVIEW_TEXT_PADDING_X + 56, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_indent2", "left-margin", PREVIEW_TEXT_PADDING_X + 112, NULL);

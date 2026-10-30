@@ -2,7 +2,7 @@
  * registers, marks, dot repeat and macros (Ex commands and search are in
  * vim_engine_ex.c) */
 #include "vim_engine_private.h"
-#include "palette.h"
+#include "text_tags.h"
 #include "vim_keys.h"
 #include "vim_motion.h"
 #include "vim_regex.h"
@@ -500,10 +500,8 @@ static void on_mark_set(GtkTextBuffer* buf, GtkTextIter* location, GtkTextMark* 
 
 static GtkTextTag* ensure_tag(GtkTextBuffer* buf, const gchar* name, const gchar* bg) {
     GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buf);
-    GtkTextTag* tag = gtk_text_tag_table_lookup(table, name);
-    if (tag == NULL) {
-        tag = gtk_text_buffer_create_tag(buf, name, "background", bg, NULL);
-    }
+    /* bg: a palette role ("@editor_selection"), followed on theme changes */
+    GtkTextTag* tag = text_tag_ensure(buf, name, "background", bg, NULL);
     gtk_text_tag_set_priority(tag, gtk_text_tag_table_get_size(table) - 1);
     return tag;
 }
@@ -536,9 +534,9 @@ VimEngine* vim_engine_new(GtkTextBuffer* buffer, const VimHost* host, gpointer h
     e->hist_search = g_ptr_array_new_with_free_func(g_free);
     e->last_fwd = TRUE;
     e->last_cursor_off = -1;
-    e->tag_visual = ensure_tag(buffer, "vim-visual", palette_color(PAL_EDITOR_SELECTION));
-    e->tag_search = ensure_tag(buffer, "vim-search", palette_color(PAL_EDITOR_MATCH));
-    e->tag_incsearch = ensure_tag(buffer, "vim-incsearch", palette_color(PAL_EDITOR_MATCH_CURRENT));
+    e->tag_visual = ensure_tag(buffer, "vim-visual", "@editor_selection");
+    e->tag_search = ensure_tag(buffer, "vim-search", "@editor_match");
+    e->tag_incsearch = ensure_tag(buffer, "vim-incsearch", "@editor_match_current");
     e->sig_insert = g_signal_connect(buffer, "insert-text", G_CALLBACK(on_insert_text), e);
     e->sig_delete = g_signal_connect(buffer, "delete-range", G_CALLBACK(on_delete_range), e);
     g_signal_connect(buffer, "mark-set", G_CALLBACK(on_mark_set), e);

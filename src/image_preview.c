@@ -2,7 +2,7 @@
  * (see image_preview.h). */
 #include "image_preview.h"
 #include "fonts.h"
-#include "palette.h"
+#include "text_tags.h"
 
 #include <glib/gstdio.h>
 #include <math.h>
@@ -285,24 +285,24 @@ static void ensure_image_tags(GtkTextBuffer* buffer) {
                                    NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "img_header")) {
-        gtk_text_buffer_create_tag(buffer, "img_header",
+        text_tag_create(buffer, "img_header",
                                    "justification", GTK_JUSTIFY_CENTER,
                                    "weight", PANGO_WEIGHT_BOLD,
                                    "scale", FONT_SCALE_TITLE,
-                                   "foreground", palette_color(PAL_FG_STRONG),
+                                   "foreground", "@fg_strong",
                                    NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "img_sub")) {
-        gtk_text_buffer_create_tag(buffer, "img_sub",
+        text_tag_create(buffer, "img_sub",
                                    "justification", GTK_JUSTIFY_CENTER,
-                                   "foreground", palette_color(PAL_FG_SUBTLE),
+                                   "foreground", "@fg_subtle",
                                    "scale", FONT_SCALE_SMALL,
                                    NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "img_details")) {
-        gtk_text_buffer_create_tag(buffer, "img_details",
+        text_tag_create(buffer, "img_details",
                                    "justification", GTK_JUSTIFY_CENTER,
-                                   "foreground", palette_color(PAL_FG_MUTED),
+                                   "foreground", "@fg_muted",
                                    "pixels-below-lines", 2,
                                    NULL);
     }

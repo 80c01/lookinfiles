@@ -1,6 +1,6 @@
 #include "orgmode.h"
 #include "fonts.h"
-#include "palette.h"
+#include "text_tags.h"
 #include "org_doc.h"
 #include "image_utils.h"
 #include "app_events.h"
@@ -204,197 +204,194 @@ void orgmode_install_gtksourceview_spec(void) {
 /* ------------------------------------------------------------------------- */
 
 void ensure_orgmode_tags(GtkTextBuffer* buffer) {
-    GtkTextTagTable* tt = gtk_text_buffer_get_tag_table(buffer);
 
-    #define CREATE_TAG(name, ...) \
-        if (!gtk_text_tag_table_lookup(tt, name)) { \
-            gtk_text_buffer_create_tag(buffer, name, __VA_ARGS__, NULL); \
-        }
+    /* Colours and fonts as roles ("@accent"): they follow theme changes */
+    #define CREATE_TAG(name, ...) text_tag_ensure(buffer, name, __VA_ARGS__, NULL)
 
     CREATE_TAG("org_title",
                "scale", 1.6,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_ACCENT_FG),
+               "foreground", "@accent_fg",
                "pixels-above-lines", 12,
                "pixels-below-lines", 6);
 
     CREATE_TAG("org_meta",
                "scale", FONT_SCALE_SMALL,
                "style", PANGO_STYLE_ITALIC,
-               "foreground", palette_color(PAL_FG_SUBTLE),
+               "foreground", "@fg_subtle",
                "pixels-below-lines", 4);
 
     CREATE_TAG("org_banner",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_FG_SUBTLE),
+               "foreground", "@fg_subtle",
                "pixels-above-lines", 2,
                "pixels-below-lines", 6);
 
     CREATE_TAG("org_h1",
                "scale", 1.35,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_SYN_CONSTANT),
+               "foreground", "@syn_constant",
                "pixels-above-lines", 12,
                "pixels-below-lines", 4);
 
     CREATE_TAG("org_h2",
                "scale", 1.25,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_SYN_FUNCTION),
+               "foreground", "@syn_function",
                "pixels-above-lines", 10,
                "pixels-below-lines", 3);
 
     CREATE_TAG("org_h3",
                "scale", 1.15,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_SYN_TYPE),
+               "foreground", "@syn_type",
                "pixels-above-lines", 8,
                "pixels-below-lines", 2);
 
     CREATE_TAG("org_h4",
                "scale", 1.05,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_SYN_CONTROL),
+               "foreground", "@syn_control",
                "pixels-above-lines", 6,
                "pixels-below-lines", 2);
 
     CREATE_TAG("org_h5",
                "scale", 1.0,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_SYN_STRING),
+               "foreground", "@syn_string",
                "pixels-above-lines", 4,
                "pixels-below-lines", 2);
 
     CREATE_TAG("org_h6",
                "scale", 0.95,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_SYN_VARIABLE),
+               "foreground", "@syn_variable",
                "pixels-above-lines", 4,
                "pixels-below-lines", 2);
 
     CREATE_TAG("org_todo",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_BADGE_FG),
-               "background", palette_color(PAL_BADGE_RED));
+               "foreground", "@badge_fg",
+               "background", "@badge_red");
 
     CREATE_TAG("org_done",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_BADGE_FG),
-               "background", palette_color(PAL_BADGE_GREEN));
+               "foreground", "@badge_fg",
+               "background", "@badge_green");
 
     CREATE_TAG("org_next",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_BADGE_FG),
-               "background", palette_color(PAL_BADGE_BLUE));
+               "foreground", "@badge_fg",
+               "background", "@badge_blue");
 
     CREATE_TAG("org_running",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_BG_VIEW),
-               "background", palette_color(PAL_HIGHLIGHT));
+               "foreground", "@bg_view",
+               "background", "@highlight");
 
     CREATE_TAG("org_waiting",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_BADGE_FG),
-               "background", palette_color(PAL_BADGE_ORANGE));
+               "foreground", "@badge_fg",
+               "background", "@badge_orange");
 
     CREATE_TAG("org_cancelled",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_FG_SUBTLE),
-               "background", palette_color(PAL_BG_CODE_INLINE),
+               "foreground", "@fg_subtle",
+               "background", "@bg_code_inline",
                "strikethrough", TRUE);
 
     CREATE_TAG("org_done_text",
                "strikethrough", TRUE,
-               "foreground", palette_color(PAL_FG_FAINT));
+               "foreground", "@fg_faint");
 
     CREATE_TAG("org_prio_a",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_ERROR));
+               "foreground", "@error");
 
     CREATE_TAG("org_prio_b",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_SYN_ESCAPE));
+               "foreground", "@syn_escape");
 
     CREATE_TAG("org_prio_c",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_ACCENT_FG));
+               "foreground", "@accent_fg");
 
     CREATE_TAG("org_tag",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_SYN_VARIABLE),
-               "background", palette_color(PAL_BG_CODE_INLINE));
+               "foreground", "@syn_variable",
+               "background", "@bg_code_inline");
 
     CREATE_TAG("org_deadline_label",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_ERROR));
+               "foreground", "@error");
 
     CREATE_TAG("org_scheduled_label",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_SYN_TYPE));
+               "foreground", "@syn_type");
 
     CREATE_TAG("org_closed_label",
-               "foreground", palette_color(PAL_FG_FAINT));
+               "foreground", "@fg_faint");
 
     CREATE_TAG("org_timestamp",
-               "foreground", palette_color(PAL_SYN_ESCAPE),
+               "foreground", "@syn_escape",
                "underline", PANGO_UNDERLINE_SINGLE);
 
     CREATE_TAG("org_inactive_ts",
-               "foreground", palette_color(PAL_FG_FAINT));
+               "foreground", "@fg_faint");
 
     CREATE_TAG("org_drawer",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_FG_FAINT),
-               "background", palette_color(PAL_BG_BLOCK));
+               "foreground", "@fg_faint",
+               "background", "@bg_block");
 
     CREATE_TAG("org_src_block",
-               "family", fonts_family(FONT_CODE),
-               "background", palette_color(PAL_BG_BLOCK),
-               "foreground", palette_color(PAL_FG_TEXT),
+               "family", "@font_code",
+               "background", "@bg_block",
+               "foreground", "@fg_text",
                "left-margin", 24,
                "right-margin", 24);
 
     CREATE_TAG("org_src_header",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "scale", FONT_SCALE_SMALL,
-               "foreground", palette_color(PAL_FG_SUBTLE),
-               "background", palette_color(PAL_BG_BLOCK),
+               "foreground", "@fg_subtle",
+               "background", "@bg_block",
                "left-margin", 24);
 
     CREATE_TAG("org_quote",
                "style", PANGO_STYLE_ITALIC,
-               "foreground", palette_color(PAL_FG_MUTED),
+               "foreground", "@fg_muted",
                "left-margin", 24);
 
     CREATE_TAG("org_table",
-               "family", fonts_family(FONT_CODE),
-               "foreground", palette_color(PAL_FG_TEXT));
+               "family", "@font_code",
+               "foreground", "@fg_text");
 
     CREATE_TAG("org_table_hdr",
-               "family", fonts_family(FONT_CODE),
+               "family", "@font_code",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", palette_color(PAL_ACCENT_FG));
+               "foreground", "@accent_fg");
 
     CREATE_TAG("org_checkbox_checked",
-               "foreground", palette_color(PAL_SUCCESS),
+               "foreground", "@success",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_checkbox_unchecked",
-               "foreground", palette_color(PAL_FG_TEXT),
+               "foreground", "@fg_text",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_checkbox_partial",
-               "foreground", palette_color(PAL_WARNING),
+               "foreground", "@warning",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_cookie",
-               "foreground", palette_color(PAL_ACCENT_FG),
+               "foreground", "@accent_fg",
                "scale", FONT_SCALE_SMALL,
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_fold_cookie",
-               "foreground", palette_color(PAL_FG_SUBTLE),
+               "foreground", "@fg_subtle",
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_bold",
@@ -407,16 +404,16 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
                "underline", PANGO_UNDERLINE_SINGLE);
 
     CREATE_TAG("org_code",
-               "family", fonts_family(FONT_CODE),
-               "foreground", palette_color(PAL_SYN_STRING),
-               "background", palette_color(PAL_BG_CODE_INLINE));
+               "family", "@font_code",
+               "foreground", "@syn_string",
+               "background", "@bg_code_inline");
 
     CREATE_TAG("org_strike",
                "strikethrough", TRUE,
-               "foreground", palette_color(PAL_FG_SUBTLE));
+               "foreground", "@fg_subtle");
 
     CREATE_TAG("org_link",
-               "foreground", palette_color(PAL_LINK),
+               "foreground", "@link",
                "underline", PANGO_UNDERLINE_SINGLE);
 
     #undef CREATE_TAG

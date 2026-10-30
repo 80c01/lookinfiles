@@ -38,6 +38,22 @@ static void apply_terminal_theme(VteTerminal* term) {
     pango_font_description_free(font);
 }
 
+/* Every terminal (weak references), recoloured on theme changes */
+static GPtrArray* all_terminals = NULL;
+
+static void on_terminal_finalized(gpointer data, GObject* where) {
+    (void)data;
+    if (all_terminals != NULL) {
+        g_ptr_array_remove_fast(all_terminals, where);
+    }
+}
+
+void terminal_refresh_theme(void) {
+    for (guint i = 0; all_terminals != NULL && i < all_terminals->len; i++) {
+        apply_terminal_theme(VTE_TERMINAL(g_ptr_array_index(all_terminals, i)));
+    }
+}
+
 /* Async spawn callback: report failures, then hand child PID to terminal */
 static void on_spawn_result(VteTerminal* term, GPid pid, GError* error,
                             gpointer data) {
@@ -152,6 +168,11 @@ static GtkWidget* term_new_pane(AppData* app) {
     gtk_widget_set_hexpand(vte, TRUE);
     gtk_widget_set_vexpand(vte, TRUE);
     apply_terminal_theme(VTE_TERMINAL(vte));
+    if (all_terminals == NULL) {
+        all_terminals = g_ptr_array_new();
+    }
+    g_ptr_array_add(all_terminals, vte);
+    g_object_weak_ref(G_OBJECT(vte), on_terminal_finalized, NULL);
     g_signal_connect(vte, "child-exited",
                      G_CALLBACK(on_term_child_exited), app);
     g_signal_connect(vte, "realize", G_CALLBACK(on_vte_realize), app);

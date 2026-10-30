@@ -1,6 +1,7 @@
 #include "dir_preview.h"
 #include "fonts.h"
 #include "palette.h"
+#include "text_tags.h"
 #include "dir_summary.h"
 #include "file_types.h"
 #include "text_style.h"
@@ -145,25 +146,27 @@ static void ensure_tags(GtkTextBuffer* buffer) {
     if (gtk_text_tag_table_lookup(tt, "dir_title") != NULL) {
         return;
     }
-    gtk_text_buffer_create_tag(buffer, "dir_title",
-                               "weight", 600, "scale", FONT_SCALE_TITLE, "foreground", palette_color(PAL_FG_STRONG),
+    text_tag_create(buffer, "dir_title",
+                               "weight", 600, "scale", FONT_SCALE_TITLE, "foreground", "@fg_strong",
                                "pixels-below-lines", 2, NULL);
-    gtk_text_buffer_create_tag(buffer, "dir_dim", "foreground", palette_color(PAL_FG_SUBTLE), NULL);
-    gtk_text_buffer_create_tag(buffer, "dir_table",
-                               "family", fonts_family(FONT_CODE), "wrap-mode", GTK_WRAP_NONE, NULL);
+    text_tag_create(buffer, "dir_dim", "foreground", "@fg_subtle", NULL);
+    text_tag_create(buffer, "dir_table",
+                               "family", "@font_code", "wrap-mode", GTK_WRAP_NONE, NULL);
     gtk_text_buffer_create_tag(buffer, "dir_folder", "weight", 600, NULL);
-    gtk_text_buffer_create_tag(buffer, "dir_section",
-                               "weight", 600, "foreground", palette_color(PAL_FG_STRONG),
-                               "paragraph-background", palette_color(PAL_BG_BLOCK),
+    text_tag_create(buffer, "dir_section",
+                               "weight", 600, "foreground", "@fg_strong",
+                               "paragraph-background", "@bg_block",
                                "pixels-above-lines", 6, "pixels-below-lines", 6, NULL);
-    gtk_text_buffer_create_tag(buffer, "dir_plain", "family", fonts_family(FONT_CODE), NULL);
+    text_tag_create(buffer, "dir_plain", "family", "@font_code", NULL);
     /* Git status colours, as in the explorer tree */
     static const struct { const gchar* name; PaletteRole role; } git_tags[] = {
         { "dir_git_M", PAL_GIT_MODIFIED }, { "dir_git_U", PAL_GIT_ADDED }, { "dir_git_A", PAL_GIT_ADDED },
         { "dir_git_D", PAL_GIT_DELETED }, { "dir_git_R", PAL_GIT_RENAMED }, { "dir_git_!", PAL_GIT_CONFLICT },
     };
     for (gsize i = 0; i < G_N_ELEMENTS(git_tags); i++) {
-        gtk_text_buffer_create_tag(buffer, git_tags[i].name, "foreground", palette_color(git_tags[i].role), NULL);
+        gchar* role = g_strdup_printf("@%s", palette_name(git_tags[i].role));
+        text_tag_create(buffer, git_tags[i].name, "foreground", role, NULL);
+        g_free(role);
     }
 }
 

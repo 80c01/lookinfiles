@@ -1,5 +1,5 @@
 #include "git_tab.h"
-#include "palette.h"
+#include "text_tags.h"
 #include "icons.h"
 #include "panels.h"
 #include "text_style.h"
@@ -210,24 +210,24 @@ static void format_git_diff_markup(GtkTextBuffer* buffer, const gchar* raw_diff)
     GtkTextTagTable* tags = gtk_text_buffer_get_tag_table(buffer);
     if (!gtk_text_tag_table_lookup(tags, "diff_add")) {
         /* Same look as the diff preview (preview_doc_view.c) */
-        gtk_text_buffer_create_tag(buffer, "diff_add", "foreground", palette_color(PAL_DIFF_ADDED_FG),
-                                   "paragraph-background", palette_color(PAL_DIFF_ADDED_BG), NULL);
+        text_tag_create(buffer, "diff_add", "foreground", "@diff_added_fg",
+                                   "paragraph-background", "@diff_added_bg", NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "diff_del")) {
         /* Same look as the diff preview (preview_doc_view.c) */
-        gtk_text_buffer_create_tag(buffer, "diff_del", "foreground", palette_color(PAL_DIFF_REMOVED_FG),
-                                   "paragraph-background", palette_color(PAL_DIFF_REMOVED_BG), NULL);
+        text_tag_create(buffer, "diff_del", "foreground", "@diff_removed_fg",
+                                   "paragraph-background", "@diff_removed_bg", NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "diff_hunk")) {
         /* Same look as the diff preview (preview_doc_view.c) */
-        gtk_text_buffer_create_tag(buffer, "diff_hunk", "foreground", palette_color(PAL_DIFF_HUNK_FG),
-                                   "paragraph-background", palette_color(PAL_DIFF_HUNK_BG), NULL);
+        text_tag_create(buffer, "diff_hunk", "foreground", "@diff_hunk_fg",
+                                   "paragraph-background", "@diff_hunk_bg", NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "diff_header")) {
-        gtk_text_buffer_create_tag(buffer, "diff_header", "foreground", palette_color(PAL_SYN_FUNCTION), "weight", PANGO_WEIGHT_BOLD, NULL);
+        text_tag_create(buffer, "diff_header", "foreground", "@syn_function", "weight", PANGO_WEIGHT_BOLD, NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "diff_dim")) {
-        gtk_text_buffer_create_tag(buffer, "diff_dim", "foreground", palette_color(PAL_FG_SUBTLE), NULL);
+        text_tag_create(buffer, "diff_dim", "foreground", "@fg_subtle", NULL);
     }
 
     gchar** lines = g_strsplit(raw_diff, "\n", -1);

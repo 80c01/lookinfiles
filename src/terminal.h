@@ -16,6 +16,8 @@ guint term_pane_count(AppData* app);
 /* Rebuild the panes as described: running terminals are kept, in order;
  * missing panes get a new shell; terminals beyond the tree are closed */
 void term_layout_apply(AppData* app, const gchar* text);
+/* Colours and font of every terminal again, after a theme change */
+void terminal_refresh_theme(void);
 #endif
 
 #endif /* TERMINAL_H */

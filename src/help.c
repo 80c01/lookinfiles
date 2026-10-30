@@ -1,7 +1,5 @@
 /* Floating key-binding cheat sheet ('?' / top bar Help button). Keep KEY_HELP in sync with README.md. */
 #include "help.h"
-#include "palette.h"
-#include "fonts.h"
 #include "icons.h"
 #include "panels.h"
 #include "app_events.h"
@@ -263,24 +261,17 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
         if (current_section == NULL ||
             g_strcmp0(current_section, KEY_HELP[i].section) != 0) {
             current_section = KEY_HELP[i].section;
-            gchar* header =
-                g_markup_printf_escaped("<span foreground=\"%s\" weight=\"bold\">%s</span>",
-                                palette_color(PAL_ACCENT_FG), current_section);
-            GtkWidget* section_label = gtk_label_new(NULL);
-            gtk_label_set_markup(GTK_LABEL(section_label), header);
+            /* Colours and fonts from the theme (.help-section, .help-key) */
+            GtkWidget* section_label = gtk_label_new(current_section);
+            gtk_widget_add_css_class(section_label, "help-section");
             gtk_widget_set_halign(section_label, GTK_ALIGN_START);
             if (row > 0) {
                 gtk_widget_set_margin_top(section_label, 10);
             }
-            g_free(header);
             gtk_grid_attach(grid, section_label, 0, row++, 2, 1);
         }
-        GtkWidget* key_label = gtk_label_new(NULL);
-        gchar* key_markup =
-            g_markup_printf_escaped("<span foreground=\"%s\" font_family=\"%s\"><b>%s</b></span>",
-                            palette_color(PAL_SYN_FUNCTION), fonts_family(FONT_CODE), KEY_HELP[i].key);
-        gtk_label_set_markup(GTK_LABEL(key_label), key_markup);
-        g_free(key_markup);
+        GtkWidget* key_label = gtk_label_new(KEY_HELP[i].key);
+        gtk_widget_add_css_class(key_label, "help-key");
         gtk_widget_set_halign(key_label, GTK_ALIGN_START);
         gtk_widget_set_valign(key_label, GTK_ALIGN_START);
 

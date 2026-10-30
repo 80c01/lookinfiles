@@ -30,6 +30,9 @@ void apply_viewer_background(GtkWidget* view);
 #ifdef HAVE_GSV
 /* Install the VS Code Dark+ style scheme on a source buffer */
 void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view);
+/* After a theme change: write the scheme from the palette again (on
+ * GtkSourceView's dark or light base) and set it on every buffer using it */
+void text_style_refresh_scheme(gboolean dark);
 #endif
 
 #endif /* TEXT_STYLE_H */

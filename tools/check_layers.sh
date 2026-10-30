@@ -68,7 +68,7 @@ vim_regex:
 vim_motion:
 vim_parse:vim_keys
 vim_ex:
-vim_engine:vim_engine_private,vim_parse,vim_keys,vim_motion,vim_regex,palette
+vim_engine:vim_engine_private,vim_parse,vim_keys,vim_motion,vim_regex,palette,text_tags
 vim_engine_ex:vim_engine_private,vim_ex,vim_keys,vim_motion,vim_regex
 diff_gutter:git_utils,line_diff,palette
 explorer_row:
@@ -81,16 +81,17 @@ jump_list:
 palette:
 fonts:
 theme_store:fonts,palette,app_paths
+text_tags:fonts,palette
 lsp_protocol:code_symbol,json_view
 lsp_client:lsp_protocol
 lsp_config:code_symbol
 layout_store:app_paths
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store
-markdown:app_types,image_utils,palette,fonts
-html:app_types,image_utils,palette,fonts
+markdown:app_types,image_utils,palette,fonts,text_tags
+html:app_types,image_utils,palette,fonts,text_tags
 minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette
-preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette,fonts
+preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette,fonts,text_tags
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events
@@ -181,7 +182,7 @@ done
 
 # Fonts come from the font roles (fonts.h: @font_ui / @size_... in CSS,
 # fonts_family() in C): no font family or pixel size written elsewhere
-for f in $(grep -lE "font-family: *[^@ ]|font-size: *[0-9.]+px|\"family\", *\"|font_family=\\\\\"[a-zA-Z]|<tt>" src/*.c); do
+for f in $(grep -lE "font-family: *[^@ ]|font-size: *[0-9.]+px|\"family\", *\"[^@]|font_family=\\\\\"[a-zA-Z]|<tt>" src/*.c); do
     case "$f" in
         src/fonts.c) ;;
         *) echo "fonts: $f sets a font family or size; use the font roles (fonts.h)"; status=1 ;;

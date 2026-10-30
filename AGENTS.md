@@ -47,6 +47,11 @@ make clean        # remove binary and build/
   colour literal elsewhere (`make check` rejects `#rrggbb` outside
   `palette.c`); pick the role that matches the meaning (e.g. `fg_subtle`
   for metadata, `bg_block` for code blocks) or add a role.
+- **Text tags with colours or fonts** are made with `text_tag_create()` /
+  `text_tag_ensure()` and role values (`"@fg_subtle"`), never with
+  `palette_color()`: otherwise they keep the old colours after a theme
+  change. Labels take colours from CSS classes rather than markup where
+  they live long (e.g. the help panel).
 - **Fonts come from the font roles** (`fonts.h`): `@font_*` / `@size_*`
   in CSS, `fonts_family(FONT_CODE)` and `FONT_SCALE_*` in text tags.
   File contents (code and plain text, preview and every editor mode) and
@@ -176,6 +181,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   key, inheritance (`theme_store_apply()` sets the palette and fonts), save
   of the current look, the chosen theme in `theme.ini`. `theme_apply_saved()`
   (`theme`) applies it at startup, before any widget.
+- `text_tags` — text tags that follow the theme: `text_tag_create()` /
+  `text_tag_ensure()` take roles as values (`"@accent"`, `"@font_code"`),
+  remembered per tag; `text_tags_refresh_all()` sets them again in every
+  buffer after a theme change.
 - `fonts` — the interface and code fonts (family list + pixel size,
   `fonts_set()` for themes); CSS tokens `@font_ui`, `@font_code`,
   `@size_small` / `@size_bar` / `@size_normal` / `@size_title` (derived
@@ -315,6 +324,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`layout_store_load_default()`), never from a copy of the current one. The
   first workspace gets the same panels at startup
   (`workspace_apply_default_layout()`, only when the default is customized).
+- `themes` — theme switching in the running application:
+  `themes_apply()` (a theme from `theme_store`, remembered or previewed),
+  `themes_refresh()` after a palette or font change (stylesheets, text
+  tags, syntax scheme, terminals, minimap caches, redraw, explorer and
+  preview rebuilt through events).
 - `layouts` — saved workspace layouts (Alt+L, top-bar grid button): capture
   the current workspace's panels, apply one from a list in an `AppDialog`
   (running terminals are kept; closing extra ones asks first). The list starts
