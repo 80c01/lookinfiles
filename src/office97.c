@@ -1,5 +1,6 @@
 /* Previews of OLE2 compound files (see office97.h) */
 #include "office97.h"
+#include "doc_reader.h"
 #include "ole_props.h"
 #include <gio/gio.h>
 #include <string.h>
@@ -84,12 +85,27 @@ PreviewDoc* office97_summary(OleReader* ole, const gchar* name, gint64 size, con
 }
 
 PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, gsize max_text, GError** error) {
-    (void)max_text;
     g_autoptr(OleReader) ole = ole_reader_open(path, error);
     if (ole == NULL) return NULL;
     /* Encrypted documents: only their properties can be read */
     if (ole_reader_has(ole, "EncryptedSummary") || ole_reader_has(ole, "EncryptionInfo")) {
         return office97_summary(ole, name, size, "Encrypted: the content needs the password.");
+    }
+    Office97Format format = office97_format(ole);
+    if (format == OFFICE97_WORD) {
+        g_autoptr(OleProperties) props = ole_properties_read(ole);
+        gchar* head = ole_properties_html_head(props, office97_format_label(format));
+        gboolean encrypted = FALSE;
+        GError* err = NULL;
+        gchar* html = doc_reader_to_html(ole, head, max_text, &encrypted, &err);
+        g_free(head);
+        if (html != NULL) return preview_doc_new_source(PREVIEW_DOC_HTML, html);
+        gchar* reason = encrypted ? g_strdup("Encrypted: the content needs the password.")
+                                  : g_strdup_printf("The text cannot be read: %s.", err->message);
+        g_clear_error(&err);
+        PreviewDoc* doc = office97_summary(ole, name, size, reason);
+        g_free(reason);
+        return doc;
     }
     return office97_summary(ole, name, size, NULL);
 }

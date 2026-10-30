@@ -24,7 +24,8 @@ elf_info:
 zip_reader:
 ole_reader:
 ole_props:ole_reader,preview_doc
-office97:ole_reader,ole_props,preview_doc
+doc_reader:ole_reader
+office97:ole_reader,ole_props,preview_doc,doc_reader
 docx:zip_reader
 preview_doc:
 csv:preview_doc

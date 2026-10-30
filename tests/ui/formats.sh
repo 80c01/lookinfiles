@@ -46,6 +46,9 @@
     printf 'h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d\0\n\0' > 31-utf16.txt
     cp "$ROOT/tests/fixtures/preview/blink.gif" 32-blink.gif
     cp "$ROOT/tests/fixtures/preview/pages.pdf" 33-pages.pdf
+    # Office 97-2003 (saved by LibreOffice); a copy marked as encrypted
+    cp "$ROOT/tests/fixtures/preview/report.doc" 34-report.doc
+    cp "$ROOT/tests/fixtures/preview/encrypted.doc" 35-encrypted.doc
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -88,6 +91,9 @@ format_scenario() {
     key j;              shot fmt_utf16
     key j;              shot fmt_gif_animated   # frame varies: not compared with a baseline
     key j;              shot fmt_pdf_pages      # 3 pages first, the others added after
+    key j;              shot fmt_word97
+    key j;              shot fmt_word97_encrypted
+    key k k
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
 }

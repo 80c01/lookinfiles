@@ -211,6 +211,149 @@ static void test_fixture_properties(void) {
     preview_doc_free(doc);
 }
 
+/* --- Word 97-2003 --- */
+
+/* A Word 97 WordDocument stream: FIB, then the text at 2048 as two pieces
+ * (8-bit, then UTF-16); the piece table goes in table (the 1Table stream) */
+static GBytes* word97_stream(const gchar* ansi, const gchar* utf8, guint16 flags, GByteArray* table) {
+    GByteArray* w = g_byte_array_new();
+    g_byte_array_set_size(w, 4096);
+    memset(w->data, 0, w->len);
+    guint8* f = w->data;
+    ob_put16(f, 0xA5EC);
+    ob_put16(f + 2, 0xC1);
+    ob_put16(f + 0x0A, flags | 0x0200); /* 1Table */
+    ob_put16(f + 32, 14);               /* csw */
+    ob_put16(f + 62, 22);               /* cslw */
+    glong n16 = 0;
+    gunichar2* w16 = g_utf8_to_utf16(utf8, -1, NULL, &n16, NULL);
+    guint32 n1 = (guint32)strlen(ansi);
+    ob_put32(f + 64 + 12, n1 + (guint32)n16); /* ccpText */
+    gsize fclcb = 64 + 22 * 4;
+    ob_put16(f + fclcb, 93);
+    gsize rg = fclcb + 2;
+    memcpy(f + 2048, ansi, n1);
+    for (glong i = 0; i < n16; i++) ob_put16(f + 3072 + i * 2, w16[i]);
+    g_free(w16);
+    /* Clx: one Pcdt with two pieces */
+    guint8 clx[64] = {0x02};
+    ob_put32(clx + 1, 4 * 3 + 8 * 2);
+    guint8* plc = clx + 5;
+    ob_put32(plc, 0);
+    ob_put32(plc + 4, n1);
+    ob_put32(plc + 8, n1 + (guint32)n16);
+    ob_put32(plc + 12 + 2, (2048 * 2) | 0x40000000u);
+    ob_put32(plc + 20 + 2, 3072);
+    gsize clx_len = 5 + 4 * 3 + 8 * 2;
+    ob_put32(f + rg + 66 * 4, table->len);
+    ob_put32(f + rg + 67 * 4, (guint32)clx_len);
+    g_byte_array_append(table, clx, (guint)clx_len);
+    return g_byte_array_free_to_bytes(w);
+}
+
+static PreviewDoc* preview_of(GBytes* file, const gchar* name) {
+    gchar* path = temp_file(file, name);
+    GError* err = NULL;
+    PreviewDoc* doc = office97_preview(path, name, (gint64)g_bytes_get_size(file), 65536, &err);
+    g_assert_no_error(err);
+    remove_temp(path);
+    return doc;
+}
+
+static void test_word97_synthetic(void) {
+    GByteArray* table = g_byte_array_new();
+    GBytes* word = word97_stream("Caf\xe9 \x93menu\x94\r", "Fields \x13 HYPERLINK \"https://x.org/a?b&c\" \x14link\x15 and \xc3\xa9t\xc3\xa9 \xf0\x9f\x98\x80\r<b>\r", 0, table);
+    OleBuilder* ob = ole_builder_new();
+    ole_builder_add(ob, "WordDocument", g_bytes_get_data(word, NULL), g_bytes_get_size(word));
+    ole_builder_add(ob, "1Table", table->data, table->len);
+    GBytes* file = ole_builder_finish(ob);
+    PreviewDoc* doc = preview_of(file, "menu.doc");
+    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_HTML);
+    const gchar* html = doc->text->str;
+    g_assert_nonnull(strstr(html, "<p>Café “menu”</p>"));
+    g_assert_nonnull(strstr(html, "<a href=\"https://x.org/a?b&amp;c\">link</a> and été 😀"));
+    g_assert_nonnull(strstr(html, "<p>&lt;b&gt;</p>"));
+    g_assert_null(strstr(html, "HYPERLINK"));
+    preview_doc_free(doc);
+    g_bytes_unref(file);
+    g_bytes_unref(word);
+    g_byte_array_free(table, TRUE);
+}
+
+static void test_word97_encrypted(void) {
+    GByteArray* table = g_byte_array_new();
+    GBytes* word = word97_stream("secret\r", "", 0x0100, table);
+    OleBuilder* ob = ole_builder_new();
+    ole_builder_add(ob, "WordDocument", g_bytes_get_data(word, NULL), g_bytes_get_size(word));
+    ole_builder_add(ob, "1Table", table->data, table->len);
+    GBytes* file = ole_builder_finish(ob);
+    PreviewDoc* doc = preview_of(file, "secret.doc");
+    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_TEXT);
+    g_assert_nonnull(strstr(doc->text->str, "Encrypted"));
+    g_assert_null(strstr(doc->text->str, "secret\n"));
+    preview_doc_free(doc);
+    g_bytes_unref(file);
+    g_bytes_unref(word);
+    g_byte_array_free(table, TRUE);
+}
+
+static void test_word6(void) {
+    /* Word 6 / 95: nFib 101, text from fcMin to fcMac (8-bit) */
+    guint8 w[1024] = {0};
+    ob_put16(w, 0xA5DC);
+    ob_put16(w + 2, 101);
+    const gchar* text = "Old document\rSecond \x96 paragraph\r";
+    ob_put32(w + 0x18, 512);
+    ob_put32(w + 0x1C, 512 + (guint32)strlen(text));
+    memcpy(w + 512, text, strlen(text));
+    OleBuilder* ob = ole_builder_new();
+    ole_builder_add(ob, "WordDocument", w, sizeof w);
+    GBytes* file = ole_builder_finish(ob);
+    PreviewDoc* doc = preview_of(file, "old.doc");
+    g_assert_nonnull(strstr(doc->text->str, "<p>Old document</p>\n<p>Second – paragraph</p>"));
+    preview_doc_free(doc);
+    g_bytes_unref(file);
+}
+
+static void test_word_fixture(void) {
+    PreviewDoc* doc = fixture("report.doc");
+    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_HTML);
+    const gchar* html = doc->text->str;
+    g_assert_nonnull(strstr(html, "<title>Quarterly Report</title>"));
+    g_assert_nonnull(strstr(html, "<meta name=\"author\" content=\"Lookin UI test\">"));
+    g_assert_nonnull(strstr(html, "<h1>Quarterly Report</h1>"));
+    g_assert_nonnull(strstr(html, "<b>bold</b>, <i>italic</i>, <u>underlined</u> or <s>struck</s>, with E = mc<sup>2</sup>"));
+    g_assert_nonnull(strstr(html, "<li>Word documents in the preview pane</li>\n<ul>\n<li>Headings, lists, tables and images</li>"));
+    g_assert_nonnull(strstr(html, "<h2>Next steps</h2>"));
+    g_assert_nonnull(strstr(html, "<a href=\"https://example.org/lookin\">Project page</a>"));
+    g_assert_nonnull(strstr(html, "<tr><td>Q1</td><td>1 204</td><td>3.2 GB</td></tr>"));
+    g_assert_nonnull(strstr(html, "<p>End of the report.</p>"));
+    preview_doc_free(doc);
+}
+
+/* Every truncation of the WordDocument stream fails cleanly */
+static void test_word_truncated(void) {
+    gchar* path = g_build_filename("tests", "fixtures", "preview", "report.doc", NULL);
+    OleReader* ole = ole_reader_open(path, NULL);
+    GBytes* word = ole_reader_read(ole, "WordDocument", 1 << 20, NULL);
+    GBytes* table = ole_reader_read(ole, "1Table", 1 << 20, NULL);
+    ole_reader_free(ole);
+    gsize wlen = g_bytes_get_size(word);
+    for (gsize cut = 0; cut < wlen; cut += wlen / 23 + 1) {
+        OleBuilder* ob = ole_builder_new();
+        ole_builder_add(ob, "WordDocument", g_bytes_get_data(word, NULL), cut);
+        ole_builder_add(ob, "1Table", g_bytes_get_data(table, NULL), g_bytes_get_size(table) / 2);
+        GBytes* file = ole_builder_finish(ob);
+        PreviewDoc* doc = preview_of(file, "cut.doc");
+        g_assert_nonnull(doc);
+        preview_doc_free(doc);
+        g_bytes_unref(file);
+    }
+    g_bytes_unref(word);
+    g_bytes_unref(table);
+    g_free(path);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/office97/properties", test_properties);
@@ -218,5 +361,10 @@ int main(int argc, char** argv) {
     g_test_add_func("/office97/encrypted", test_encrypted);
     g_test_add_func("/office97/not_compound", test_not_compound);
     g_test_add_func("/office97/fixture_properties", test_fixture_properties);
+    g_test_add_func("/office97/word97_synthetic", test_word97_synthetic);
+    g_test_add_func("/office97/word97_encrypted", test_word97_encrypted);
+    g_test_add_func("/office97/word6", test_word6);
+    g_test_add_func("/office97/word_fixture", test_word_fixture);
+    g_test_add_func("/office97/word_truncated", test_word_truncated);
     return g_test_run();
 }

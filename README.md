@@ -44,9 +44,9 @@ and virtual workspaces, in a VS Code Dark+ look.
 - Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
   `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), video and audio
   with player controls.
-- Office documents, read without any external tool: Word (`.docx`) and
-  OpenDocument text (`.odt`) with headings, styles, lists, tables, links and
-  images; spreadsheets (`.xlsx`, `.ods`) as grids with column letters, number,
+- Office documents, read without any external tool: Word (`.docx`, and
+  `.doc` from Word 97-2003 or 6 / 95) and OpenDocument text (`.odt`) with
+  headings, styles, lists, tables, links and images (not in `.doc`); spreadsheets (`.xlsx`, `.ods`) as grids with column letters, number,
   date and percent formats; presentations (`.pptx`, `.odp`) slide by slide;
   RTF. Page layout, fonts, headers and footers are not shown; long documents
   stop after 256 KB of text. Other OLE2 compound files (`.msi`, `.vsd`,
