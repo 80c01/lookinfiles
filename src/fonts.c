@@ -17,6 +17,9 @@ static const FontDefault DEFAULTS[FONT_COUNT] = {
 static gchar* families[FONT_COUNT];
 static gint sizes[FONT_COUNT];
 
+/* Code size of the theme, before the user's zoom (0: the default) */
+static gint base_code_size = 0;
+
 static gboolean valid_role(FontRole role) {
     return (gint)role >= 0 && role < FONT_COUNT;
 }
@@ -71,6 +74,15 @@ void fonts_reset(void) {
         g_clear_pointer(&families[i], g_free);
         sizes[i] = 0;
     }
+}
+
+void fonts_mark_base(void) {
+    base_code_size = fonts_size(FONT_CODE);
+}
+
+gint fonts_zoom_percent(void) {
+    gint base = base_code_size > 0 ? base_code_size : DEFAULTS[FONT_CODE].size;
+    return (fonts_size(FONT_CODE) * 100 + base / 2) / base;
 }
 
 static gboolean is_generic(const gchar* name) {

@@ -204,6 +204,40 @@ static void test_choice(void) {
     name = theme_store_load_choice(path);
     g_assert_cmpstr(name, ==, "Light Modern");
     g_free(name);
+
+    /* Fonts saved next to the choice, keeping it, and applied over a theme */
+    FontChoice fonts = {0};
+    fonts.family[FONT_CODE] = g_strdup("Hack, monospace");
+    fonts.size[FONT_UI] = 15;
+    g_assert_true(theme_store_save_fonts(path, &fonts, NULL));
+    font_choice_clear(&fonts);
+    name = theme_store_load_choice(path);
+    g_assert_cmpstr(name, ==, "Light Modern");
+    g_free(name);
+    theme_store_load_fonts(path, &fonts);
+    g_assert_cmpstr(fonts.family[FONT_CODE], ==, "Hack, monospace");
+    g_assert_null(fonts.family[FONT_UI]);
+    g_assert_cmpint(fonts.size[FONT_UI], ==, 15);
+    g_assert_cmpint(fonts.size[FONT_CODE], ==, 0);
+    /* Saving the choice keeps the fonts */
+    g_assert_true(theme_store_save_choice(path, "Dark Modern", NULL));
+    font_choice_clear(&fonts);
+    theme_store_load_fonts(path, &fonts);
+    g_assert_cmpint(fonts.size[FONT_UI], ==, 15);
+    fonts_reset();
+    theme_store_apply_fonts(&fonts);
+    g_assert_cmpstr(fonts_family(FONT_CODE), ==, "Hack, monospace");
+    g_assert_cmpint(fonts_size(FONT_UI), ==, 15);
+    g_assert_cmpint(fonts_size(FONT_CODE), ==, 13);
+    fonts_reset();
+    font_choice_clear(&fonts);
+
+    /* Invalid values are ignored */
+    g_assert_true(g_file_set_contents(path, "[Fonts]\nui=Bad'}\nui_size=500\ncode_size=x\n", -1, NULL));
+    theme_store_load_fonts(path, &fonts);
+    g_assert_null(fonts.family[FONT_UI]);
+    g_assert_cmpint(fonts.size[FONT_UI], ==, 0);
+    g_assert_cmpint(fonts.size[FONT_CODE], ==, 0);
     g_free(path);
     remove_dir(dir);
     g_free(dir);

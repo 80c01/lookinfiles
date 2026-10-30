@@ -1,6 +1,7 @@
 #include "ui.h"
 #include "dialog.h"
 #include "layouts.h"
+#include "themes.h"
 #include "panels.h"
 #include "app_events.h"
 #include "workspace.h"
@@ -133,6 +134,24 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     }
 
+    /* Ctrl+= / Ctrl+- / Ctrl+0: interface and code fonts larger, smaller,
+     * back to the theme's sizes (Ctrl+Shift+- is Notepad's forward) */
+    if ((state & GDK_CONTROL_MASK) && !(state & GDK_ALT_MASK)) {
+        gboolean shift = (state & GDK_SHIFT_MASK) != 0;
+        if (keyval == GDK_KEY_equal || keyval == GDK_KEY_plus || keyval == GDK_KEY_KP_Add) {
+            themes_zoom(app, 1);
+            return TRUE;
+        }
+        if (!shift && (keyval == GDK_KEY_minus || keyval == GDK_KEY_KP_Subtract)) {
+            themes_zoom(app, -1);
+            return TRUE;
+        }
+        if (!shift && (keyval == GDK_KEY_0 || keyval == GDK_KEY_KP_0)) {
+            themes_zoom(app, 0);
+            return TRUE;
+        }
+    }
+
     /* Alt+Left / Alt+Right: panel focus cycling */
     if ((state & GDK_ALT_MASK) != 0 &&
         (keyval == GDK_KEY_Left || keyval == GDK_KEY_Right)) {
@@ -156,6 +175,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         }
         if (keyval == GDK_KEY_minus || keyval == GDK_KEY_KP_Subtract) {
             workspace_remove(app, app->current_ws);
+            return TRUE;
+        }
+        /* Alt+T: themes and fonts */
+        if ((keyval == GDK_KEY_t || keyval == GDK_KEY_T) && !(state & GDK_CONTROL_MASK)) {
+            themes_show_dialog(app);
             return TRUE;
         }
         /* Alt+L: saved workspace layouts (Ctrl+Alt+L moves editor tabs) */

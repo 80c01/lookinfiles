@@ -66,6 +66,12 @@ gboolean theme_apply_saved(void) {
         g_clear_error(&error);
         theme_store_apply(themes, THEME_DEFAULT_NAME, &dark, NULL);
     }
+    /* The user's fonts over the theme's; zoom measured from the theme */
+    fonts_mark_base();
+    FontChoice fonts = {0};
+    theme_store_load_fonts(choice_path, &fonts);
+    theme_store_apply_fonts(&fonts);
+    font_choice_clear(&fonts);
     g_free(name);
     g_ptr_array_free(themes, TRUE);
     g_ptr_array_free(errors, TRUE);
@@ -169,6 +175,24 @@ void apply_panel_borders(void) {
         "  background-color: @bg_selected_inactive;\n"
         "  color: @fg_bright;\n"
         "  font-weight: 600;\n"
+        "}\n"
+        /* Text of lists and spin buttons from the theme, not from GTK's base
+         * theme (which keeps its dark or light variant) */
+        "list, listview, columnview, spinbutton text {\n"
+        "  color: @fg;\n"
+        "}\n"
+        "spinbutton text {\n"
+        "  background-color: transparent;\n"
+        "}\n"        "spinbutton > button {\n"
+        "  background-color: transparent;\n"
+        "  border: none;\n"
+        "  border-left: 1px solid @border_strong;\n"
+        "  border-radius: 0;\n"
+        "  min-height: 0;\n"
+        "  padding: 0 8px;\n"
+        "}\n"
+        "spinbutton > button:hover {\n"
+        "  background-color: alpha(@hover_overlay, 0.31);\n"
         "}\n"
         /* Lists and tables: the explorer's hover and selection colours */
         "listview > row:hover, list > row:hover {\n"
@@ -586,7 +610,7 @@ void apply_panel_borders(void) {
         "  background-color: @bg_terminal;\n"
         "}\n"
         /* ---- Inputs & buttons ---- */
-        "entry, searchentry {\n"
+        "entry, searchentry, spinbutton {\n"
         "  background-color: @bg_input;\n"
         "  color: @fg;\n"
         "  border: 1px solid @border_strong;\n"
@@ -594,7 +618,7 @@ void apply_panel_borders(void) {
         "  box-shadow: none;\n"
         "  min-height: 24px;\n"
         "}\n"
-        "entry:focus-within, searchentry:focus-within {\n"
+        "entry:focus-within, searchentry:focus-within, spinbutton:focus-within {\n"
         "  border-color: @accent;\n"
         "  outline: none;\n"
         "}\n"
@@ -732,6 +756,13 @@ void apply_panel_borders(void) {
         "  border-spacing: 6px;\n"
         "}\n"
         /* Saved layouts list (layouts.c) */
+        /* A section title inside a dialog, and an invalid value */
+        "label.dialog-section {\n"
+        "  font-weight: 600;\n"
+        "}\n"
+        "entry.error {\n"
+        "  border-color: @error;\n"
+        "}\n"
         /* Lists inside dialogs: framed, on the content background */
         ".dialog-list {\n"
         "  background-color: @bg_view;\n"
@@ -741,21 +772,21 @@ void apply_panel_borders(void) {
         ".dialog-list listview {\n"
         "  background-color: transparent;\n"
         "}\n"
-        "#layout-list {\n"
+        "#layout-list, #theme-list {\n"
         "  background-color: @bg_view;\n"
         "  border: 1px solid @border_strong;\n"
         "  border-radius: 4px;\n"
         "}\n"
-        "#layout-list > row {\n"
+        "#layout-list > row, #theme-list > row {\n"
         "  padding: 6px 10px;\n"
         "}\n"
-        "#layout-list > row:selected {\n"
+        "#layout-list > row:selected, #theme-list > row:selected {\n"
         "  background-color: @bg_selected;\n"
         "}\n"
-        "#layout-list .layout-name {\n"
+        "#layout-list .layout-name, #theme-list .layout-name {\n"
         "  font-weight: 600;\n"
         "}\n"
-        "#layout-list .layout-summary {\n"
+        "#layout-list .layout-summary, #theme-list .layout-summary {\n"
         "  font-size: @size_small;\n"
         "}\n"
         /* Markdown tables (markdown.c): VS Code look */

@@ -54,11 +54,24 @@ static void test_expand(void) {
     fonts_reset();
 }
 
+static void test_zoom(void) {
+    fonts_reset();
+    fonts_mark_base();
+    g_assert_cmpint(fonts_zoom_percent(), ==, 100);
+    fonts_set(FONT_CODE, NULL, 16);
+    g_assert_cmpint(fonts_zoom_percent(), ==, 123);
+    fonts_mark_base();
+    g_assert_cmpint(fonts_zoom_percent(), ==, 100);
+    fonts_reset();
+    fonts_mark_base();
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/fonts/defaults", test_defaults);
     g_test_add_func("/fonts/set_and_reset", test_set_and_reset);
     g_test_add_func("/fonts/css_family", test_css_family);
     g_test_add_func("/fonts/expand", test_expand);
+    g_test_add_func("/fonts/zoom", test_zoom);
     return g_test_run();
 }

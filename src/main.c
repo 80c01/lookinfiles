@@ -9,6 +9,7 @@
 #include "text_style.h"
 #include "tree_nav.h"
 #include "theme.h"
+#include "themes.h"
 #include "status_bar.h"
 #include "sidebar.h"
 #include "workspace.h"
@@ -476,6 +477,7 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, refresh_git_status_in_place);
     app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, refresh_diff_gutters);
     app_events_subscribe(app, APP_EVENT_FILES_CHANGED, refresh_diff_gutters);
+    app_events_subscribe(app, APP_EVENT_FILES_CHANGED, themes_on_files_changed);
     app->window = GTK_WINDOW(window);
     app->main_loop = loop;
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
@@ -494,6 +496,9 @@ int main(int argc, char** argv) {
     GtkWidget* layouts_btn = icon_button_new("view-grid", "Workspace Layouts (Alt+L)");
     gtk_widget_add_css_class(layouts_btn, "status-pill");
     g_signal_connect_swapped(layouts_btn, "clicked", G_CALLBACK(layouts_show_dialog), app);
+    GtkWidget* themes_btn = icon_button_new("color-select", "Themes and Fonts (Alt+T)");
+    gtk_widget_add_css_class(themes_btn, "status-pill");
+    g_signal_connect_swapped(themes_btn, "clicked", G_CALLBACK(themes_show_dialog), app);
     GtkWidget* ws_div_label = gtk_label_new("|");
     gtk_widget_add_css_class(ws_div_label, "breadcrumb-sep");
     app->tree = explorer;
@@ -681,6 +686,7 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), sep_label);
     gtk_box_append(GTK_BOX(label_row), ws_minimap);
     gtk_box_append(GTK_BOX(label_row), layouts_btn);
+    gtk_box_append(GTK_BOX(label_row), themes_btn);
     gtk_box_append(GTK_BOX(label_row), ws_div_label);
     gtk_box_append(GTK_BOX(label_row), files_btn);
     gtk_box_append(GTK_BOX(label_row), preview_btn);

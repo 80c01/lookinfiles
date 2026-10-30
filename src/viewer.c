@@ -603,6 +603,9 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
 
 /* Re-render the file currently shown in the preview (APP_EVENT_PREVIEW_STALE) */
 void viewer_reload_preview(AppData* app) {
+    if (app->viewed_path == NULL) {
+        return; /* no file shown (folder, summary row): nothing to read again */
+    }
     gchar* fallback = (app->viewed_name == NULL && app->viewed_path != NULL)
                           ? g_path_get_basename(app->viewed_path)
                           : NULL;

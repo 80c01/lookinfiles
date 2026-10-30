@@ -2,6 +2,7 @@
 <gresources>
   <gresource prefix="/org/lookin/icons">
     <file>scalable/actions/lookin-bookmark-new-symbolic.svg</file>
+    <file>scalable/actions/lookin-color-select-symbolic.svg</file>
     <file>scalable/actions/lookin-dialog-question-symbolic.svg</file>
     <file>scalable/actions/lookin-document-edit-symbolic.svg</file>
     <file>scalable/actions/lookin-document-new-symbolic.svg</file>

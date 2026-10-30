@@ -297,6 +297,15 @@ windows=$(xdotool search --onlyvisible --pid $APP 2>/dev/null | wc -l)
 key Escape;             shot new_file_dialog_closed
 key alt+l;              shot layouts_dialog       # saved workspace layouts (empty list)
 key Escape;             shot layouts_dialog_closed
+# Themes (Alt+T): selecting a row previews it, Escape goes back, Enter applies
+key alt+t;              shot themes_dialog
+key Down;               shot themes_light_preview
+key Escape;             shot themes_cancelled          # Dark Modern again
+key alt+t; key Down Down Return; shot themes_high_contrast_applied
+key alt+t; key Home Return;      shot themes_dark_again
+# Ctrl+= / Ctrl+0: larger fonts, then the theme's sizes
+key ctrl+equal ctrl+equal;       shot fonts_larger
+key ctrl+0;                      shot fonts_theme_sizes
 echo "external" > "$FIX/work/external.txt"   # created outside the app: the tree must update
 sleep 3;                shot external_file_created   # let the async rescan settle
 xdotool mousemove 508 50 click 1     # Git Commits tab

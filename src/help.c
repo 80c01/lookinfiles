@@ -157,6 +157,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Alt+1 .. Alt+8", "Switch between virtual workspaces (or click/scroll top-bar minimap)"},
     {"Global", "Alt++ / Alt+-", "Add a virtual workspace with the default layout (+) or close the current workspace (-)"},
     {"Global", "Alt+L", "Workspace layouts: apply one from the list, save the panels (\"Default\" for new workspaces)"},
+    {"Global", "Alt+T", "Themes and fonts: pick a theme (applied as you select it), set your fonts, save, edit or delete your themes"},
+    {"Global", "Ctrl+= / Ctrl+- / Ctrl+0", "Larger / smaller fonts (interface and code), or back to the theme's sizes"},
     {"Global", "Ctrl+T", "Open a terminal pane right of the running ones (exit the shell to close it)"},
     {"Global", "Ctrl+Shift+T", "Open a new terminal pane below the running ones"},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels"},

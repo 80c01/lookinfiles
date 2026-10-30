@@ -326,11 +326,16 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`layout_store_load_default()`), never from a copy of the current one. The
   first workspace gets the same panels at startup
   (`workspace_apply_default_layout()`, only when the default is customized).
-- `themes` — theme switching in the running application:
-  `themes_apply()` (a theme from `theme_store`, remembered or previewed),
-  `themes_refresh()` after a palette or font change (stylesheets, text
-  tags, syntax scheme, terminals, minimap caches, redraw, explorer and
-  preview rebuilt through events).
+- `themes` — themes in the running application: `themes_apply()` (a
+  theme from `theme_store` with the user's fonts of `theme.ini` over it,
+  remembered or previewed), `themes_refresh()` after a palette or font
+  change (stylesheets, text tags, syntax scheme, terminals, minimap caches,
+  redraw, explorer and preview rebuilt through events), zoom
+  (`Ctrl+=` / `Ctrl+-` / `Ctrl+0`: both font sizes, `fonts_zoom_percent()`
+  in the Notepad status bar), the Themes dialog (`Alt+T`, top-bar button:
+  live preview on selection, Cancel restores, fonts, Save As, Edit in a
+  tab, Delete), and re-applying the current theme file when it is saved
+  (`APP_EVENT_FILES_CHANGED`).
 - `layouts` — saved workspace layouts (Alt+L, top-bar grid button): capture
   the current workspace's panels, apply one from a list in an `AppDialog`
   (running terminals are kept; closing extra ones asks first). The list starts

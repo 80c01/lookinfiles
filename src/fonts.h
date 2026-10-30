@@ -53,6 +53,12 @@ gboolean fonts_set(FontRole role, const gchar* family, gint size_px);
 /* Back to the defaults */
 void fonts_reset(void);
 
+/* Zoom: the current sizes become the reference (call after applying a
+ * theme, before the user's sizes); fonts_zoom_percent() is the code size
+ * against it (100 when unchanged) */
+void fonts_mark_base(void);
+gint fonts_zoom_percent(void);
+
 /* The family list for CSS: "'Segoe UI', 'Ubuntu', ..., sans-serif" */
 gchar* fonts_css_family(FontRole role);
 /* Copy of css with the @font_... and @size_... tokens replaced; other

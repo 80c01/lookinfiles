@@ -67,11 +67,27 @@ gchar* theme_store_current_to_ini(const gchar* name, gboolean dark);
  * creating dir. Returns the path (caller frees), NULL on error. */
 gchar* theme_store_save_current(const gchar* dir, const gchar* name, gboolean dark, GError** error);
 
+/* The user's fonts, set over any theme's (theme.ini [Fonts], same keys
+ * as a theme file): NULL / 0 keeps the theme's value */
+typedef struct {
+    gchar* family[FONT_COUNT];
+    gint size[FONT_COUNT];
+} FontChoice;
+
+void font_choice_clear(FontChoice* fonts);
+/* Read them (invalid values are ignored); fonts is cleared first */
+void theme_store_load_fonts(const gchar* path, FontChoice* fonts);
+/* Write them, keeping the chosen theme */
+gboolean theme_store_save_fonts(const gchar* path, const FontChoice* fonts, GError** error);
+/* fonts_set() each value given */
+void theme_store_apply_fonts(const FontChoice* fonts);
+
 /* ~/.config/lookin/themes and ~/.config/lookin/theme.ini. Caller frees. */
 gchar* theme_store_user_dir(void);
 gchar* theme_store_choice_path(void);
 /* The remembered theme name (THEME_DEFAULT_NAME if none). Caller frees. */
 gchar* theme_store_load_choice(const gchar* path);
+/* Write the name, keeping the user's fonts */
 gboolean theme_store_save_choice(const gchar* path, const gchar* name, GError** error);
 
 #endif /* THEME_STORE_H */

@@ -7,6 +7,7 @@
 #include "code_help.h"
 #include "code_intel.h"
 #include "theme.h"
+#include "fonts.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -645,7 +646,8 @@ void editor_modes_update_status(EditorTab* tab) {
 
     /* 1. Notepad Status */
     if (st->np_info_label != NULL) {
-        gchar* info = g_strdup_printf("Ln %d, Col %d   |   100%%   |   Windows (CRLF)   |   UTF-8", line, col);
+        gchar* info = g_strdup_printf("Ln %d, Col %d   |   %d%%   |   Windows (CRLF)   |   UTF-8", line, col,
+                                      fonts_zoom_percent());
         gtk_label_set_text(GTK_LABEL(st->np_info_label), info);
         g_free(info);
     }

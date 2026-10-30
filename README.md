@@ -194,6 +194,8 @@ The same list is available inside the application with `?`.
 | `Alt+1` … `Alt+8` | Switch virtual workspace (or click the top-bar workspace map) |
 | `Alt++` / `Alt+-` | Add a workspace with the default layout / close the current one |
 | `Alt+L` | Workspace layouts: apply a saved layout, save the current panels under a name (`Default` for new workspaces), delete one or reset the default |
+| `Alt+T` | Themes and fonts: pick a theme (applied as you select it; Apply keeps it, Cancel goes back), set your interface and code fonts, save the current look as a theme, edit or delete your themes |
+| `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Larger / smaller fonts (interface and code together), or back to the theme's sizes |
 | `Ctrl+T` | Open a terminal pane beside the running ones (exit the shell to close it) |
 | `Ctrl+Shift+T` | Open a terminal pane below the running ones |
 | `Ctrl+Shift+L` | Stack the terminal under the viewer, or put it back beside it |

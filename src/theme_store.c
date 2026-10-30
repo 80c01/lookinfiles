@@ -469,8 +469,9 @@ gchar* theme_store_current_to_ini(const gchar* name, gboolean dark) {
     g_key_file_set_boolean(kf, "Theme", "dark", dark);
     for (gint i = 0; i < PAL_COUNT; i++) {
         g_key_file_set_string(kf, "Colors", palette_name((PaletteRole)i), palette_color((PaletteRole)i));
-        g_key_file_set_comment(kf, "Colors", palette_name((PaletteRole)i),
-                               palette_description((PaletteRole)i), NULL);
+        gchar* comment = g_strconcat(" ", palette_description((PaletteRole)i), NULL);
+        g_key_file_set_comment(kf, "Colors", palette_name((PaletteRole)i), comment, NULL);
+        g_free(comment);
     }
     for (gint r = 0; r < FONT_COUNT; r++) {
         g_key_file_set_string(kf, "Fonts", FONT_KEYS[r].family_key, fonts_family((FontRole)r));
@@ -557,13 +558,75 @@ gchar* theme_store_load_choice(const gchar* path) {
     return name;
 }
 
-gboolean theme_store_save_choice(const gchar* path, const gchar* name, GError** error) {
+/* theme.ini as it is (empty if missing) */
+static GKeyFile* open_choice_file(const gchar* path) {
+    GKeyFile* kf = g_key_file_new();
+    if (path != NULL) {
+        g_key_file_load_from_file(kf, path, G_KEY_FILE_KEEP_COMMENTS, NULL);
+    }
+    return kf;
+}
+
+static gboolean save_choice_file(GKeyFile* kf, const gchar* path, GError** error) {
     gchar* dir = g_path_get_dirname(path);
     g_mkdir_with_parents(dir, 0755);
     g_free(dir);
-    GKeyFile* kf = g_key_file_new();
+    return g_key_file_save_to_file(kf, path, error);
+}
+
+gboolean theme_store_save_choice(const gchar* path, const gchar* name, GError** error) {
+    GKeyFile* kf = open_choice_file(path);
     g_key_file_set_string(kf, "Theme", "current", name);
-    gboolean ok = g_key_file_save_to_file(kf, path, error);
+    gboolean ok = save_choice_file(kf, path, error);
     g_key_file_free(kf);
     return ok;
+}
+
+void font_choice_clear(FontChoice* fonts) {
+    for (gint r = 0; r < FONT_COUNT; r++) {
+        g_clear_pointer(&fonts->family[r], g_free);
+        fonts->size[r] = 0;
+    }
+}
+
+void theme_store_load_fonts(const gchar* path, FontChoice* fonts) {
+    font_choice_clear(fonts);
+    GKeyFile* kf = open_choice_file(path);
+    for (gint r = 0; r < FONT_COUNT; r++) {
+        gchar* family = g_key_file_get_string(kf, "Fonts", FONT_KEYS[r].family_key, NULL);
+        if (family != NULL && fonts_valid_family(g_strstrip(family))) {
+            fonts->family[r] = family;
+        } else {
+            g_free(family);
+        }
+        GError* error = NULL;
+        gint size = g_key_file_get_integer(kf, "Fonts", FONT_KEYS[r].size_key, &error);
+        if (error == NULL && size >= FONTS_MIN_SIZE && size <= FONTS_MAX_SIZE) {
+            fonts->size[r] = size;
+        }
+        g_clear_error(&error);
+    }
+    g_key_file_free(kf);
+}
+
+gboolean theme_store_save_fonts(const gchar* path, const FontChoice* fonts, GError** error) {
+    GKeyFile* kf = open_choice_file(path);
+    g_key_file_remove_group(kf, "Fonts", NULL);
+    for (gint r = 0; r < FONT_COUNT; r++) {
+        if (fonts->family[r] != NULL) {
+            g_key_file_set_string(kf, "Fonts", FONT_KEYS[r].family_key, fonts->family[r]);
+        }
+        if (fonts->size[r] > 0) {
+            g_key_file_set_integer(kf, "Fonts", FONT_KEYS[r].size_key, fonts->size[r]);
+        }
+    }
+    gboolean ok = save_choice_file(kf, path, error);
+    g_key_file_free(kf);
+    return ok;
+}
+
+void theme_store_apply_fonts(const FontChoice* fonts) {
+    for (gint r = 0; r < FONT_COUNT; r++) {
+        fonts_set((FontRole)r, fonts->family[r], fonts->size[r]);
+    }
 }
