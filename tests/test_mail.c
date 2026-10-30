@@ -6,6 +6,7 @@
 #include "mail_dir.h"
 #include "mail_message.h"
 #include "mail_msg.h"
+#include "mail_store.h"
 #include "mail_tnef.h"
 #include "mail_view.h"
 #include "preview_formats.h"
@@ -535,6 +536,63 @@ static void test_tnef(void) {
     preview_doc_free(doc);
 }
 
+/* --- Outlook and Outlook Express stores --- */
+
+static void put32(guint8* p, guint32 v) {
+    for (gint i = 0; i < 4; i++) p[i] = (guint8)(v >> (8 * i));
+}
+
+static void test_mail_stores(void) {
+    /* Fixtures: a Unicode PST, an Outlook Express folder */
+    PreviewDoc* doc = fixture("archive.pst");
+    const gchar* t = doc->text->str;
+    g_assert_nonnull(strstr(t, "Outlook data file (PST) · Unicode"));
+    g_assert_nonnull(strstr(t, "compressible (permutation)"));
+    g_assert_nonnull(strstr(t, "(8192 bytes)"));
+    g_assert_null(strstr(t, "truncated"));
+    preview_doc_free(doc);
+    doc = fixture("Inbox.dbx");
+    g_assert_nonnull(strstr(doc->text->str, "Outlook Express mail folder (DBX)"));
+    g_assert_nonnull(strstr(doc->text->str, "42"));
+    preview_doc_free(doc);
+
+    /* ANSI OST, truncated, no encryption */
+    guint8 h[MAIL_STORE_HEADER_BYTES] = {0};
+    memcpy(h, "!BDN", 4);
+    memcpy(h + 8, "SO", 2);
+    h[10] = 14;
+    put32(h + 168, 1000000);
+    doc = mail_store_preview(h, sizeof h, "old.ost", 5000);
+    t = doc->text->str;
+    g_assert_nonnull(strstr(t, "Outlook offline store (OST) · ANSI"));
+    g_assert_nonnull(strstr(t, "Encryption"));
+    g_assert_nonnull(strstr(t, "none"));
+    g_assert_nonnull(strstr(t, "truncated"));
+    preview_doc_free(doc);
+    /* Short headers: what can be read, no crash */
+    for (gsize n = 0; n < 600; n += 13) {
+        doc = mail_store_preview(h, n, "x.pst", -1);
+        if (n < 4) g_assert_null(doc);
+        if (doc != NULL) preview_doc_free(doc);
+    }
+    /* A DBX count that cannot be a message count is not shown */
+    guint8 d[0x100] = {0};
+    memcpy(d, "\xCF\xAD\x12\xFE", 4);
+    put32(d + 4, 0x6F74FDC5);
+    put32(d + 0xC4, 0x7FFFFFFF);
+    doc = mail_store_preview(d, sizeof d, "x.dbx", 4096);
+    g_assert_null(strstr(doc->text->str, "2147483647"));
+    preview_doc_free(doc);
+    g_assert_null(mail_store_preview((const guint8*)"From x", 6, "x", 6));
+
+    /* Detection by content, then by name */
+    g_assert_cmpint(file_kind_detect("backup", h, 64), ==, FILE_KIND_MAIL);
+    g_assert_cmpint(file_kind_detect("folder", d, 64), ==, FILE_KIND_MAIL);
+    g_assert_cmpint(file_kind_from_name("Outlook.PST"), ==, FILE_KIND_MAIL);
+    g_assert_cmpint(file_kind_from_name("Inbox.dbx"), ==, FILE_KIND_MAIL);
+    g_assert_cmpstr(file_icon("x.ost", FALSE), ==, "📧");
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/mail/encoded_words", test_encoded_words);
@@ -551,5 +609,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/mail/msg_rtf", test_msg_rtf);
     g_test_add_func("/mail/msg_damaged", test_msg_damaged);
     g_test_add_func("/mail/tnef", test_tnef);
+    g_test_add_func("/mail/stores", test_mail_stores);
     return g_test_run();
 }

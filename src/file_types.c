@@ -218,6 +218,7 @@ static const struct {
     { "rtf", FILE_KIND_RTF },
     { "eml", FILE_KIND_MAIL }, { "emlx", FILE_KIND_MAIL }, { "mbox", FILE_KIND_MAIL },
     { "mbx", FILE_KIND_MAIL }, { "msf", FILE_KIND_MAIL }, { "msg", FILE_KIND_OLE },
+    { "pst", FILE_KIND_MAIL }, { "ost", FILE_KIND_MAIL }, { "dbx", FILE_KIND_MAIL },
     { "doc", FILE_KIND_OLE }, { "dot", FILE_KIND_OLE }, { "xls", FILE_KIND_OLE }, { "xlt", FILE_KIND_OLE },
     { "ppt", FILE_KIND_OLE }, { "pps", FILE_KIND_OLE }, /* .pot is a gettext template by name; its content decides */
     { "po", FILE_KIND_TRANSLATION }, { "pot", FILE_KIND_TRANSLATION }, { "mo", FILE_KIND_TRANSLATION },
@@ -475,6 +476,9 @@ static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_n
     }
     if (HAS(0, "\x78\x9F\x3E\x22")) {
         return FILE_KIND_MAIL; /* TNEF winmail.dat */
+    }
+    if (HAS(0, "!BDN") || HAS(0, "\xCF\xAD\x12\xFE")) {
+        return FILE_KIND_MAIL; /* Outlook PST / OST, Outlook Express DBX */
     }
     if (HAS(0, "\xDE\x12\x04\x95") || HAS(0, "\x95\x04\x12\xDE")) {
         return FILE_KIND_TRANSLATION; /* gettext .mo */

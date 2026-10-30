@@ -23,6 +23,7 @@
 #include "odf.h"
 #include "mail_box.h"
 #include "mail_message.h"
+#include "mail_store.h"
 #include "mail_tnef.h"
 #include "mail_view.h"
 #include "office97.h"
@@ -966,6 +967,13 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
     if (map == NULL) return NULL;
     gsize full_len = g_mapped_file_get_length(map);
     const gchar* data = g_mapped_file_get_contents(map);
+    if (data != NULL && mail_store_looks_like((const guint8*)data, full_len)) {
+        /* Outlook stores can be gigabytes: their header only */
+        PreviewDoc* doc = mail_store_preview((const guint8*)data, MIN(full_len, (gsize)MAIL_STORE_HEADER_BYTES), in->name,
+                                             (gint64)full_len);
+        g_mapped_file_unref(map);
+        return doc;
+    }
     if (data != NULL && mail_box_looks_like(data, full_len)) {
         PreviewDoc* doc = build_mailbox(in, data, full_len);
         g_mapped_file_unref(map);

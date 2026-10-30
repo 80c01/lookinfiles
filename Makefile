@@ -123,7 +123,7 @@ TEST_DEPS_test_media_tags = $(BUILD_DIR)/media_tags.o
 TEST_DEPS_test_text_encoding = $(BUILD_DIR)/text_encoding.o
 TEST_DEPS_test_csv = $(BUILD_DIR)/csv.o $(BUILD_DIR)/preview_doc.o
 # Modules of the structured previews (preview_formats and the parsers it calls)
-PREVIEW_MODULES = preview_formats preview_doc file_types text_encoding hex_dump elf_info zip_reader docx csv json_view diff_view archive_listing cert_view card_view log_view font_info man_view notebook zip_xml spreadsheet odf pptx epub rtf sqlite_view gettext_view ole_reader ole_props office97 doc_reader xls_reader ppt_reader mail_message mail_view mail_box mail_dir mail_msg mail_tnef
+PREVIEW_MODULES = preview_formats preview_doc file_types text_encoding hex_dump elf_info zip_reader docx csv json_view diff_view archive_listing cert_view card_view log_view font_info man_view notebook zip_xml spreadsheet odf pptx epub rtf sqlite_view gettext_view ole_reader ole_props office97 doc_reader xls_reader ppt_reader mail_message mail_view mail_box mail_dir mail_msg mail_tnef mail_store
 PREVIEW_FORMAT_OBJS = $(PREVIEW_MODULES:%=$(BUILD_DIR)/%.o)
 TEST_DEPS_test_preview_formats = $(PREVIEW_FORMAT_OBJS)
 TEST_DEPS_test_org_time = $(BUILD_DIR)/org_time.o

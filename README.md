@@ -63,7 +63,9 @@ and virtual workspaces, in a VS Code Dark+ look.
   show their newest messages (date, sender, subject, read / unread / replied)
   instead of the `cur` / `new` / `tmp` listing. Outlook messages (`.msg`)
   are shown the same way (text, HTML or RTF body, attachments), and so are
-  the `winmail.dat` (TNEF) attachments Outlook adds to mails.
+  the `winmail.dat` (TNEF) attachments Outlook adds to mails. Outlook data
+  files (`.pst`, `.ost`) and Outlook Express folders (`.dbx`) show a card
+  with their format, size and encryption.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
   notebooks (Markdown cells, highlighted code, text and image outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,

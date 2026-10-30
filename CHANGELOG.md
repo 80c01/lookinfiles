@@ -38,6 +38,9 @@ All notable changes to this project are listed here. The format follows
   HTML or compressed RTF body and the attachments.
 - TNEF attachments of Outlook mails (`winmail.dat`, detected by content):
   the message body and the attachments with their real names and sizes.
+- Outlook data files (`.pst`, `.ost`) and Outlook Express folders (`.dbx`):
+  a card with the format, ANSI or Unicode, the size, the encryption and the
+  message count of a `.dbx` folder (their messages are not read).
 - Code navigation in editor tabs, in the three modes: go to the definition or
   declaration of the identifier under the cursor and back (Notepad `F12` /
   `Ctrl+F12` / `Ctrl+Click`, `Ctrl+Alt+-` / `Ctrl+Shift+-`; Emacs `M-.` /
