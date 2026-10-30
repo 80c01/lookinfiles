@@ -122,6 +122,7 @@ dump (13.7 % before this work). Most of the rest are TeX font metrics
   than ~100 ms (none measured over the budget so far).
 - Previews of TeX fonts (`.tfm`, `.pfb`) and Python bytecode (`.pyc`), the
   largest remaining L0 groups.
+- Old binary Office files `.doc`, `.xls`, `.ppt` (Phase 5).
 
 ---
 
@@ -200,15 +201,66 @@ dump (13.7 % before this work). Most of the rest are TeX font metrics
 - [x] Remote machines: previews read through the SSHFS mount with the same
       bounded reads.
 
-## 8. Not worth it
+## 8. Phase 5 — Old binary Office files (`.doc`, `.xls`, `.ppt`)
 
-Old binary Office files (`.doc`, `.xls`, `.ppt`), exact Office page layout,
-CAD files, Photoshop layers, 3D models, encrypted files. They fall to L1
-(name, size, detected type) or L0 (hex dump).
+Files written by Office 97–2003 (and Word 6 / Excel 5) are still common in
+old personal archives. They are OLE2 compound files (a small FAT file system
+inside the file), so one container reader serves the three formats. Pure
+GLib, no new dependency; same output as their modern counterparts so they
+look alike in the preview.
+
+- [ ] **Compound file reader** `ole_reader` (layer 1, like `zip_reader`):
+      header `D0 CF 11 E0 A1 B1 1A E1`, FAT and DIFAT, mini FAT and mini
+      stream, directory tree; `ole_reader_open()`, stream list,
+      `ole_reader_read()` with a size limit. Rejects loops and out-of-range
+      sectors (corrupted files must fail cleanly). Tests build compound
+      files in memory with a `tests/ole_builder.h` (like `zip_builder.h`).
+- [ ] **Detection**: one `FILE_KIND_OLE` from the magic number; the builder
+      picks the format from the stream names (`WordDocument`, `Workbook` /
+      `Book`, `PowerPoint Document`), the extension only as a tie-break.
+      Extensions `.doc`, `.dot`, `.xls`, `.xlt`, `.ppt`, `.pps`, `.pot`.
+- [ ] **Document properties** (shared): the `\005SummaryInformation` and
+      `\005DocumentSummaryInformation` property sets (title, subject,
+      author, last saved by, created / modified dates, pages, words,
+      application) shown as the summary card at the top of each preview.
+- [ ] **Word `.doc`** (`doc_reader`, target L2 like `.docx`): FIB in the
+      `WordDocument` stream, piece table (CLX) from the `0Table` / `1Table`
+      stream, 8-bit and UTF-16 pieces; paragraphs, tables (cell and row
+      marks), headings from the paragraph styles when cheap, special
+      characters (fields, footnote marks) skipped. Output as HTML through
+      the same path as `docx`. Word 6 / 95 files: text from the single
+      8-bit piece.
+- [ ] **Excel `.xls`** (`xls_reader`, target L3 like `.xlsx`): BIFF8
+      records in the `Workbook` stream (BIFF5 `Book` for Excel 5 / 95):
+      `BOUNDSHEET`, `SST` with `CONTINUE`, `LABELSST`, `LABEL`, `NUMBER`,
+      `RK`, `MULRK`, `BOOLERR`, cached `FORMULA` results, `FORMAT` / `XF`
+      for dates, percents and currencies. The first 3 sheets as grids
+      through the existing `spreadsheet` table code (same limits).
+- [ ] **PowerPoint `.ppt`** (`ppt_reader`, target L2 like `.pptx`): records
+      of the `PowerPoint Document` stream, `SlideListWithText` with
+      `TextCharsAtom` (UTF-16) / `TextBytesAtom` (8-bit), title vs body
+      from `TextHeaderAtom`; slide by slide, with notes when present.
+- [ ] **Fallbacks**: encrypted files (FIB `fEncrypted`, `FILEPASS` record,
+      `EncryptedSummary` stream) show the property card and "Encrypted";
+      a parse failure shows the property card and the stream list (L1);
+      other compound files (`.msg`, `.msi`, `.vsd`, Works...) show the
+      property card and the stream list too.
+- [ ] **Fixtures**: small `.doc` / `.xls` / `.ppt` files (saved by
+      LibreOffice in the 97–2003 formats, plus a Word 95 and an Excel 5
+      file if available), a truncated one and an encrypted one; one `shot`
+      each in `tests/ui/formats.sh`.
+
+Out of scope: Word for DOS / Word 2, Excel 2–4 (BIFF2–4, not compound
+files), images and charts embedded in the files, exact page layout.
+
+## 9. Not worth it
+
+Exact Office page layout, CAD files, Photoshop layers, 3D models, encrypted
+files. They fall to L1 (name, size, detected type) or L0 (hex dump).
 
 ---
 
-## 9. Definition of done for a format
+## 10. Definition of done for a format
 
 - [ ] Detected by content (magic number) and by extension; unit test in
       `tests/test_file_types.c`.
@@ -224,7 +276,7 @@ CAD files, Photoshop layers, 3D models, encrypted files. They fall to L1
 - [ ] README preview list and `CHANGELOG.md` updated; `make check` passes.
 - [ ] One commit per format.
 
-## 10. How progress is measured
+## 11. How progress is measured
 
 - **Coverage**: share of files in a real home directory that end at L0
   (coverage report from Phase 0). Target: under 2 %.
@@ -241,3 +293,5 @@ CAD files, Photoshop layers, 3D models, encrypted files. They fall to L1
 4. Spreadsheets, `.odt`, presentations, EPUB.
 5. SQLite and libarchive behind `HAVE_*`.
 6. Polish: zoom, PDF navigation, chunked large text, encodings.
+7. Old Office files: `ole_reader` and properties first, then `.xls`, `.doc`,
+   `.ppt`.
