@@ -48,12 +48,14 @@
     X(ACCENT, "accent", "#0078d4", "Accent: focus lines, primary buttons, branch")              \
     X(ACCENT_HOVER, "accent_hover", "#026ec1", "Accent under the mouse")                        \
     X(ACCENT_FG, "accent_fg", "#4fc1ff", "Accent text and active icons")                        \
+    X(ACCENT_TEXT, "accent_text", "#ffffff", "Text on accent fills: primary buttons, branch")    \
     X(FOCUS_RING, "focus_ring", "#2b79d1", "Keyboard focus outline")                            \
     X(LINK, "link", "#3794ff", "Links and information")                                         \
     X(ERROR, "error", "#f14c4c", "Errors")                                                      \
     X(WARNING, "warning", "#cca700", "Warnings")                                                \
     X(SUCCESS, "success", "#89d185", "Success")                                                 \
     X(HIGHLIGHT, "highlight", "#e5c100", "Highlighted (marked) text background")                \
+    X(HIGHLIGHT_FG, "highlight_fg", "#121314", "Text on highlighted (marked) backgrounds")      \
     /* Badges (Org keywords, Vim modes) */                                                      \
     X(BADGE_RED, "badge_red", "#c74e39", "Red badge: TODO, Replace mode")                       \
     X(BADGE_GREEN, "badge_green", "#388a34", "Green badge: DONE, Insert mode")                  \

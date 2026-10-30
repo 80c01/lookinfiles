@@ -138,7 +138,7 @@ static void wild_render(EditorModeState* st) {
         if (i > first) g_string_append(markup, "  ");
         gchar* item = i == st->vim_wild_index
             ? g_markup_printf_escaped("<span background=\"%s\" foreground=\"%s\">%s</span>",
-                                      palette_color(PAL_HIGHLIGHT), palette_color(PAL_BG_VIEW), st->vim_wild[i])
+                                      palette_color(PAL_HIGHLIGHT), palette_color(PAL_HIGHLIGHT_FG), st->vim_wild[i])
             : g_markup_escape_text(st->vim_wild[i], -1);
         g_string_append(markup, item);
         g_free(item);

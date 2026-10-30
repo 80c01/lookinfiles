@@ -5,6 +5,7 @@
 #include "fonts.h"
 
 #include <glib/gstdio.h>
+#include <math.h>
 #include <string.h>
 
 static gchar* make_dir(void) {
@@ -89,12 +90,15 @@ static void test_list(void) {
     write_file(dir, "dark.ini", "[Theme]\nname=Dark Modern\n[Colors]\naccent=#ff0000\n");
     GPtrArray* errors = g_ptr_array_new_with_free_func(g_free);
     GPtrArray* themes = theme_store_list(dir, errors);
-    g_assert_cmpuint(themes->len, ==, 3);
+    /* The 3 built-in themes, then the user's in file name order */
+    g_assert_cmpuint(themes->len, ==, 5);
     Theme* first = g_ptr_array_index(themes, 0);
     g_assert_cmpstr(first->name, ==, "Dark Modern");
     g_assert_nonnull(first->path); /* the user's version */
-    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 1))->name, ==, "Alpha");
-    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 2))->name, ==, "Beta");
+    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 1))->name, ==, "Light Modern");
+    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 2))->name, ==, "High Contrast Dark");
+    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 3))->name, ==, "Alpha");
+    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 4))->name, ==, "Beta");
     g_assert_null(theme_store_find(themes, "Ignored"));
     g_assert_cmpuint(errors->len, ==, 1);
     g_assert_nonnull(strstr(g_ptr_array_index(errors, 0), "broken.ini"));
@@ -205,6 +209,64 @@ static void test_choice(void) {
     g_free(dir);
 }
 
+/* WCAG relative luminance and contrast ratio of two palette roles */
+static double channel(double c) {
+    return c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4);
+}
+
+static double luminance(PaletteRole role) {
+    double r, g, b;
+    palette_rgb(role, &r, &g, &b);
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+static double contrast(PaletteRole a, PaletteRole b) {
+    double la = luminance(a), lb = luminance(b);
+    return (MAX(la, lb) + 0.05) / (MIN(la, lb) + 0.05);
+}
+
+/* Every built-in theme applies, and keeps its main text readable */
+static void test_builtin_contrast(void) {
+    static const struct {
+        PaletteRole text, background;
+        double min;
+    } PAIRS[] = {
+        {PAL_FG_TEXT, PAL_BG_VIEW, 4.5},      {PAL_FG, PAL_BG_WINDOW, 4.5},
+        {PAL_FG, PAL_BG_BAR, 4.5},            {PAL_FG, PAL_BG_RAISED, 4.5},
+        {PAL_FG, PAL_BG_INPUT, 4.5},          {PAL_FG_MUTED, PAL_BG_BAR, 4.5},
+        {PAL_FG_SUBTLE, PAL_BG_VIEW, 4.5},    {PAL_FG_BRIGHT, PAL_BG_SELECTED, 4.5},
+        {PAL_ACCENT_FG, PAL_BG_VIEW, 4.5},    {PAL_ACCENT_TEXT, PAL_ACCENT, 4.5},
+        {PAL_LINK, PAL_BG_VIEW, 4.5},         {PAL_ERROR, PAL_BG_VIEW, 4.5},
+        {PAL_WARNING, PAL_BG_VIEW, 4.5},      {PAL_SYN_COMMENT, PAL_BG_VIEW, 4.5},
+        {PAL_SYN_KEYWORD, PAL_BG_VIEW, 4.5},  {PAL_SYN_STRING, PAL_BG_VIEW, 4.5},
+        {PAL_SYN_FUNCTION, PAL_BG_VIEW, 4.5}, {PAL_TERM_FG, PAL_BG_TERMINAL, 4.5},
+        {PAL_DIFF_ADDED_FG, PAL_DIFF_ADDED_BG, 4.5}, {PAL_DIFF_REMOVED_FG, PAL_DIFF_REMOVED_BG, 4.5},
+        {PAL_HIGHLIGHT_FG, PAL_HIGHLIGHT, 4.5},
+        /* Bold badges: large-text level */
+        {PAL_BADGE_FG, PAL_BADGE_RED, 3.0},   {PAL_BADGE_FG, PAL_BADGE_GREEN, 3.0},
+        {PAL_BADGE_FG, PAL_BADGE_BLUE, 3.0},  {PAL_BADGE_FG, PAL_BADGE_ORANGE, 3.0},
+    };
+    GPtrArray* themes = theme_store_list(NULL, NULL);
+    g_assert_cmpuint(themes->len, ==, 3);
+    for (guint i = 0; i < themes->len; i++) {
+        const gchar* name = ((Theme*)g_ptr_array_index(themes, i))->name;
+        GError* error = NULL;
+        g_assert_true(theme_store_apply(themes, name, NULL, &error));
+        g_assert_no_error(error);
+        for (gsize p = 0; p < G_N_ELEMENTS(PAIRS); p++) {
+            double c = contrast(PAIRS[p].text, PAIRS[p].background);
+            if (c < PAIRS[p].min) {
+                g_printerr("%s: %s on %s is %.2f:1 (needs %.1f)\n", name, palette_name(PAIRS[p].text),
+                           palette_name(PAIRS[p].background), c, PAIRS[p].min);
+                g_assert_not_reached();
+            }
+        }
+    }
+    g_ptr_array_free(themes, TRUE);
+    palette_reset();
+    fonts_reset();
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/theme_store/parse", test_parse);
@@ -214,5 +276,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/theme_store/apply_errors", test_apply_errors);
     g_test_add_func("/theme_store/save_round_trip", test_save_round_trip);
     g_test_add_func("/theme_store/choice", test_choice);
+    g_test_add_func("/theme_store/builtin_contrast", test_builtin_contrast);
     return g_test_run();
 }

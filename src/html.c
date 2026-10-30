@@ -124,7 +124,7 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("html_mark",
                "background", "@highlight",
-               "foreground", "@bg_view");
+               "foreground", "@highlight_fg");
 
     CREATE_TAG("html_small",
                "scale", FONT_SCALE_SMALL);

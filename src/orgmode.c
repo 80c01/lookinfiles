@@ -286,7 +286,7 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("org_running",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "@bg_view",
+               "foreground", "@highlight_fg",
                "background", "@highlight");
 
     CREATE_TAG("org_waiting",

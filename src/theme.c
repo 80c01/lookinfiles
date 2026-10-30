@@ -116,7 +116,7 @@ void apply_panel_borders(void) {
         "button.suggested-action {\n"
         "  background-color: @accent;\n"
         "  border-color: @accent;\n"
-        "  color: @fg_bright;\n"
+        "  color: @accent_text;\n"
         "}\n"
         "button.suggested-action:hover {\n"
         "  background-color: @accent_hover;\n"
@@ -477,6 +477,9 @@ void apply_panel_borders(void) {
         /* ---- Tab strip (preview + editor notebooks) ---- */
         "notebook, notebook stack {\n"
         "  background-color: @bg_view;\n"
+        "}\n"        /* GTK's own notebook frame, in the theme's border colour */
+        "notebook.frame {\n"
+        "  border-color: @border;\n"
         "}\n"
         "notebook > header {\n"
         "  background-color: @bg_bar;\n"
@@ -702,7 +705,7 @@ void apply_panel_borders(void) {
         "}\n"
         "#bottom-statusbar label.status-branch {\n"
         "  background-color: @accent;\n"
-        "  color: @fg_bright;\n"
+        "  color: @accent_text;\n"
         "  padding: 2px 10px;\n"
         "}\n"
         "#bottom-statusbar label.status-branch:hover {\n"
