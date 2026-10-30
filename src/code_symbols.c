@@ -1,5 +1,6 @@
 /* Symbols of the current file in an AppDialog (see code_symbols.h) */
 #include "code_symbols.h"
+#include "palette.h"
 #include "code_intel.h"
 #include "code_scan.h"
 #include "dialog.h"
@@ -157,7 +158,8 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
     (void)f;
     (void)data;
     CodeSymbolItem* it = gtk_list_item_get_item(item);
-    gchar* markup = g_markup_printf_escaped("<b>%s</b>  <span foreground=\"#858585\">%s%s%s · %d</span>", it->name,
+    gchar* markup = g_markup_printf_escaped("<b>%s</b>  <span foreground=\"%s\">%s%s%s · %d</span>", it->name,
+                                            palette_color(PAL_FG_SUBTLE),
                                             code_symbol_kind_name(it->kind), it->detail != NULL ? " · " : "",
                                             it->detail != NULL ? it->detail : "", it->line + 1);
     gtk_label_set_markup(GTK_LABEL(gtk_list_item_get_child(item)), markup);

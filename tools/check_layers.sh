@@ -14,7 +14,7 @@ status=0
 RULES="
 app_paths:
 file_types:text_encoding
-git_utils:
+git_utils:palette
 line_diff:
 pane_geometry:
 minimap_geometry:
@@ -68,9 +68,9 @@ vim_regex:
 vim_motion:
 vim_parse:vim_keys
 vim_ex:
-vim_engine:vim_engine_private,vim_parse,vim_keys,vim_motion,vim_regex
+vim_engine:vim_engine_private,vim_parse,vim_keys,vim_motion,vim_regex,palette
 vim_engine_ex:vim_engine_private,vim_ex,vim_keys,vim_motion,vim_regex
-diff_gutter:git_utils,line_diff
+diff_gutter:git_utils,line_diff,palette
 explorer_row:
 code_symbol:
 code_scan_c:code_symbol
@@ -78,16 +78,17 @@ code_scan:code_symbol,code_scan_c
 code_tags:code_symbol,json_view
 code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
+palette:
 lsp_protocol:code_symbol,json_view
 lsp_client:lsp_protocol
 lsp_config:code_symbol
 layout_store:app_paths
-text_style:app_types,file_types
-theme:
-markdown:app_types,image_utils
-html:app_types,image_utils
-minimap:app_types,diff_gutter,line_diff,minimap_geometry
-preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types
+text_style:app_types,file_types,app_paths,palette,theme
+theme:palette
+markdown:app_types,image_utils,palette
+html:app_types,image_utils,palette
+minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette
+preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events
@@ -164,6 +165,15 @@ for c in src/*.c; do
             *) echo "layering: include cycle $a.c <-> $h.c (use app_events or move the shared code down a layer)"; status=1 ;;
         esac
     done
+done
+
+# Colours come from the palette (palette.h: palette_color(), @role in CSS),
+# so that a theme can change them all: no colour literal elsewhere
+for f in $(grep -lE '#[0-9a-fA-F]{6}\b' src/*.c src/*.h); do
+    case "$f" in
+        src/palette.c|src/palette.h) ;;
+        *) echo "colours: $f has a colour literal; use a palette role (palette.h)"; status=1 ;;
+    esac
 done
 
 # Bundled icons (icons/COPYING): single-colour symbolic SVGs without transforms,

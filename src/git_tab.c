@@ -1,4 +1,5 @@
 #include "git_tab.h"
+#include "palette.h"
 #include "icons.h"
 #include "panels.h"
 #include "text_style.h"
@@ -208,28 +209,38 @@ static void format_git_diff_markup(GtkTextBuffer* buffer, const gchar* raw_diff)
 
     GtkTextTagTable* tags = gtk_text_buffer_get_tag_table(buffer);
     if (!gtk_text_tag_table_lookup(tags, "diff_add")) {
-        gtk_text_buffer_create_tag(buffer, "diff_add", "foreground", "#89d185", NULL);
+        /* Same look as the diff preview (preview_doc_view.c) */
+        gtk_text_buffer_create_tag(buffer, "diff_add", "foreground", palette_color(PAL_DIFF_ADDED_FG),
+                                   "paragraph-background", palette_color(PAL_DIFF_ADDED_BG), NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "diff_del")) {
-        gtk_text_buffer_create_tag(buffer, "diff_del", "foreground", "#f44747", NULL);
+        /* Same look as the diff preview (preview_doc_view.c) */
+        gtk_text_buffer_create_tag(buffer, "diff_del", "foreground", palette_color(PAL_DIFF_REMOVED_FG),
+                                   "paragraph-background", palette_color(PAL_DIFF_REMOVED_BG), NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "diff_hunk")) {
-        gtk_text_buffer_create_tag(buffer, "diff_hunk", "foreground", "#4fc1ff", NULL);
+        /* Same look as the diff preview (preview_doc_view.c) */
+        gtk_text_buffer_create_tag(buffer, "diff_hunk", "foreground", palette_color(PAL_DIFF_HUNK_FG),
+                                   "paragraph-background", palette_color(PAL_DIFF_HUNK_BG), NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "diff_header")) {
-        gtk_text_buffer_create_tag(buffer, "diff_header", "foreground", "#dcdcaa", "weight", PANGO_WEIGHT_BOLD, NULL);
+        gtk_text_buffer_create_tag(buffer, "diff_header", "foreground", palette_color(PAL_SYN_FUNCTION), "weight", PANGO_WEIGHT_BOLD, NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "diff_dim")) {
-        gtk_text_buffer_create_tag(buffer, "diff_dim", "foreground", "#808080", NULL);
+        gtk_text_buffer_create_tag(buffer, "diff_dim", "foreground", palette_color(PAL_FG_SUBTLE), NULL);
     }
 
     gchar** lines = g_strsplit(raw_diff, "\n", -1);
     GtkTextIter iter;
     gtk_text_buffer_get_end_iter(buffer, &iter);
 
+    gboolean in_diff = FALSE; /* +/- lines before the first diff are the message and stat */
     for (gint i = 0; lines[i] != NULL; i++) {
         const gchar* line = lines[i];
         const gchar* tag_name = NULL;
+        if (g_str_has_prefix(line, "diff --git")) {
+            in_diff = TRUE;
+        }
 
         if (g_str_has_prefix(line, "commit ") ||
             g_str_has_prefix(line, "Author: ") ||
@@ -242,9 +253,9 @@ static void format_git_diff_markup(GtkTextBuffer* buffer, const gchar* raw_diff)
             tag_name = "diff_dim";
         } else if (g_str_has_prefix(line, "@@")) {
             tag_name = "diff_hunk";
-        } else if (line[0] == '+') {
+        } else if (in_diff && line[0] == '+') {
             tag_name = "diff_add";
-        } else if (line[0] == '-') {
+        } else if (in_diff && line[0] == '-') {
             tag_name = "diff_del";
         }
 

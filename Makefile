@@ -84,11 +84,11 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_epub test_rtf test_sqlite_view test_gettext_view test_media_tags test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder
+TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_epub test_rtf test_sqlite_view test_gettext_view test_media_tags test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o $(BUILD_DIR)/text_encoding.o
-TEST_DEPS_test_git_utils = $(BUILD_DIR)/git_utils.o
+TEST_DEPS_test_git_utils = $(BUILD_DIR)/git_utils.o $(BUILD_DIR)/palette.o
 TEST_DEPS_test_remote_store = $(BUILD_DIR)/remote_store.o $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_preview_summary = $(BUILD_DIR)/preview_summary.o $(BUILD_DIR)/explorer_row.o
 TEST_DEPS_test_explorer_row = $(BUILD_DIR)/explorer_row.o
@@ -130,16 +130,17 @@ TEST_DEPS_test_org_time = $(BUILD_DIR)/org_time.o
 TEST_DEPS_test_org_doc = $(BUILD_DIR)/org_doc.o $(BUILD_DIR)/org_time.o
 TEST_DEPS_test_org_table = $(BUILD_DIR)/org_table.o $(BUILD_DIR)/org_doc.o $(BUILD_DIR)/org_time.o
 VIM_OBJS = $(BUILD_DIR)/vim_engine.o $(BUILD_DIR)/vim_engine_ex.o $(BUILD_DIR)/vim_parse.o $(BUILD_DIR)/vim_motion.o $(BUILD_DIR)/vim_regex.o $(BUILD_DIR)/vim_ex.o $(BUILD_DIR)/vim_keys.o
-TEST_DEPS_test_vim_engine = $(VIM_OBJS)
+TEST_DEPS_test_vim_engine = $(VIM_OBJS) $(BUILD_DIR)/palette.o
 TEST_DEPS_test_vim_parse = $(BUILD_DIR)/vim_parse.o $(BUILD_DIR)/vim_keys.o
 TEST_DEPS_test_vim_regex = $(BUILD_DIR)/vim_regex.o $(BUILD_DIR)/vim_motion.o
 TEST_DEPS_test_vim_ex = $(BUILD_DIR)/vim_ex.o
 CODE_SCAN_OBJS = $(BUILD_DIR)/code_scan.o $(BUILD_DIR)/code_scan_c.o $(BUILD_DIR)/code_symbol.o
 TEST_DEPS_test_code_scan = $(CODE_SCAN_OBJS)
 CODE_TAGS_OBJS = $(BUILD_DIR)/code_tags.o $(BUILD_DIR)/json_view.o $(BUILD_DIR)/preview_doc.o
-TEST_DEPS_test_code_index = $(BUILD_DIR)/code_index.o $(CODE_SCAN_OBJS) $(CODE_TAGS_OBJS) $(BUILD_DIR)/git_utils.o
-TEST_DEPS_test_code_tags = $(BUILD_DIR)/code_index.o $(CODE_SCAN_OBJS) $(CODE_TAGS_OBJS) $(BUILD_DIR)/git_utils.o
+TEST_DEPS_test_code_index = $(BUILD_DIR)/code_index.o $(CODE_SCAN_OBJS) $(CODE_TAGS_OBJS) $(BUILD_DIR)/git_utils.o $(BUILD_DIR)/palette.o
+TEST_DEPS_test_code_tags = $(BUILD_DIR)/code_index.o $(CODE_SCAN_OBJS) $(CODE_TAGS_OBJS) $(BUILD_DIR)/git_utils.o $(BUILD_DIR)/palette.o
 TEST_DEPS_test_jump_list = $(BUILD_DIR)/jump_list.o
+TEST_DEPS_test_palette = $(BUILD_DIR)/palette.o
 LSP_PROTOCOL_OBJS = $(BUILD_DIR)/lsp_protocol.o $(BUILD_DIR)/code_symbol.o $(BUILD_DIR)/json_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_lsp_protocol = $(LSP_PROTOCOL_OBJS)
 TEST_DEPS_test_ole_reader = $(BUILD_DIR)/ole_reader.o

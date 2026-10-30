@@ -1,6 +1,7 @@
 /* Git repository helpers: root/dir discovery, branch, working tree status.
  * No AppData and no widgets; safe to call from worker threads. */
 #include "git_utils.h"
+#include "palette.h"
 
 #include <string.h>
 
@@ -34,6 +35,11 @@ gchar* find_git_root(const gchar* start_dir) {
 }
 
 /* Scan a single git repository root and populate full_path -> badge markup in statuses */
+/* Explorer badge: the status letter in bold, in the role's colour */
+static gchar* badge_markup(PaletteRole role, const gchar* letter) {
+    return g_strdup_printf("<span foreground=\"%s\" weight=\"bold\">%s</span>", palette_color(role), letter);
+}
+
 static void scan_git_repo_into(GHashTable* statuses, const gchar* raw_root) {
     if (statuses == NULL || raw_root == NULL) {
         return;
@@ -110,37 +116,41 @@ static void scan_git_repo_into(GHashTable* statuses, const gchar* raw_root) {
             }
         }
 
-        const gchar* badge = NULL;
+        PaletteRole role = PAL_GIT_MODIFIED;
+        const gchar* letter = "M";
         gboolean is_modified = FALSE;
         gboolean is_untracked = FALSE;
 
         if (x == '?' && y == '?') {
             /* Untracked */
-            badge = "<span foreground=\"#73c991\" weight=\"bold\">U</span>";
+            role = PAL_GIT_ADDED;
+            letter = "U";
             is_untracked = TRUE;
         } else if (x == 'U' || y == 'U' || (x == 'A' && y == 'A') || (x == 'D' && y == 'D')) {
             /* Conflict / Unmerged */
-            badge = "<span foreground=\"#e51400\" weight=\"bold\">!</span>";
+            role = PAL_GIT_CONFLICT;
+            letter = "!";
             is_modified = TRUE;
         } else if (x == 'A' && (y == ' ' || y == '\0')) {
             /* Added / Staged */
-            badge = "<span foreground=\"#73c991\" weight=\"bold\">A</span>";
+            role = PAL_GIT_ADDED;
+            letter = "A";
             is_modified = TRUE;
         } else if (x == 'D' || y == 'D') {
             /* Deleted */
-            badge = "<span foreground=\"#c74e39\" weight=\"bold\">D</span>";
+            role = PAL_GIT_DELETED;
+            letter = "D";
             is_modified = TRUE;
         } else if (x == 'R' || y == 'R') {
             /* Renamed */
-            badge = "<span foreground=\"#4fc1ff\" weight=\"bold\">R</span>";
+            role = PAL_GIT_RENAMED;
+            letter = "R";
             is_modified = TRUE;
         } else if (x == 'M' || y == 'M' || x == 'A' || x == 'T' || y == 'T') {
             /* Modified */
-            badge = "<span foreground=\"#e2c08d\" weight=\"bold\">M</span>";
             is_modified = TRUE;
         } else {
             /* Other working tree change */
-            badge = "<span foreground=\"#e2c08d\" weight=\"bold\">M</span>";
             is_modified = TRUE;
         }
 
@@ -152,7 +162,7 @@ static void scan_git_repo_into(GHashTable* statuses, const gchar* raw_root) {
         }
 
         /* Store file's status */
-        g_hash_table_replace(statuses, g_strdup(full_path), g_strdup(badge));
+        g_hash_table_replace(statuses, g_strdup(full_path), badge_markup(role, letter));
 
         /* Rollup to parent directories up to git_root */
         gchar* parent = g_path_get_dirname(full_path);
@@ -174,12 +184,12 @@ static void scan_git_repo_into(GHashTable* statuses, const gchar* raw_root) {
                 /* Modification takes precedence over untracked */
                 if (existing == NULL || strstr(existing, ">M<") == NULL) {
                     g_hash_table_replace(statuses, g_strdup(parent),
-                                         g_strdup("<span foreground=\"#e2c08d\" weight=\"bold\">M</span>"));
+                                         badge_markup(PAL_GIT_MODIFIED, "M"));
                 }
             } else if (is_untracked) {
                 if (existing == NULL) {
                     g_hash_table_replace(statuses, g_strdup(parent),
-                                         g_strdup("<span foreground=\"#73c991\" weight=\"bold\">U</span>"));
+                                         badge_markup(PAL_GIT_ADDED, "U"));
                 }
             }
 

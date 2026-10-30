@@ -1,4 +1,5 @@
 #include "notes.h"
+#include "palette.h"
 #include "app_paths.h"
 #include "dialog.h"
 #include "app_events.h"
@@ -593,8 +594,8 @@ static void update_note_dialog_preview(NoteDialogData* d) {
     const gchar* icon = note_type_to_icon(type);
     const gchar* ext = note_type_to_ext(type);
 
-    gchar* markup = g_markup_printf_escaped("File Preview: <span size=\"large\">%s</span> <b>%s%s</b>  <span foreground=\"#808080\">(%s)</span>",
-                                           icon, disp_title, ext, note_type_to_name(type));
+    gchar* markup = g_markup_printf_escaped("File Preview: <span size=\"large\">%s</span> <b>%s%s</b>  <span foreground=\"%s\">(%s)</span>",
+                                           icon, disp_title, ext, palette_color(PAL_FG_SUBTLE), note_type_to_name(type));
     gtk_label_set_markup(GTK_LABEL(d->preview_label), markup);
     g_free(markup);
     g_free(title);
@@ -979,7 +980,7 @@ void notes_append_rows(ExplorerRow* root, AppData* app) {
         g_free(label);
         guint n_notes = g_list_length(nb->notes);
         if (n_notes > 0) {
-            gchar* badge = g_strdup_printf("<span foreground=\"#6e7681\">%u</span>", n_notes);
+            gchar* badge = g_strdup_printf("<span foreground=\"%s\">%u</span>", palette_color(PAL_FG_FAINT), n_notes);
             explorer_row_set_badge(nb_row, badge);
             g_free(badge);
         }
@@ -992,9 +993,14 @@ void notes_append_rows(ExplorerRow* root, AppData* app) {
                 gchar* nlabel = g_strdup_printf("%s %s", note_type_to_icon(note->type), note->title);
                 ExplorerRow* row = explorer_row_append(nb_row, "note", note->title, nlabel, note->path);
                 g_free(nlabel);
-                explorer_row_set_badge(row,
-                    (note->type == NOTE_TYPE_ORG) ? "<span foreground=\"#c586c0\" size=\"small\">org</span>" :
-                    (note->type == NOTE_TYPE_RICH) ? "<span foreground=\"#4ec9b0\" size=\"small\">rich</span>" : "");
+                gchar* type_badge =
+                    (note->type == NOTE_TYPE_ORG)
+                        ? g_strdup_printf("<span foreground=\"%s\" size=\"small\">org</span>", palette_color(PAL_SYN_CONTROL))
+                    : (note->type == NOTE_TYPE_RICH)
+                        ? g_strdup_printf("<span foreground=\"%s\" size=\"small\">rich</span>", palette_color(PAL_SYN_TYPE))
+                        : g_strdup("");
+                explorer_row_set_badge(row, type_badge);
+                g_free(type_badge);
             }
         }
     }
@@ -1007,7 +1013,7 @@ void notes_append_rows(ExplorerRow* root, AppData* app) {
     g_free(trash_dir);
     g_free(t_label);
     if (n_trash > 0) {
-        gchar* t_badge = g_strdup_printf("<span foreground=\"#e06c75\">%u</span>", n_trash);
+        gchar* t_badge = g_strdup_printf("<span foreground=\"%s\">%u</span>", palette_color(PAL_FG_FAINT), n_trash);
         explorer_row_set_badge(trash_row, t_badge);
         g_free(t_badge);
     }
@@ -1018,7 +1024,8 @@ void notes_append_rows(ExplorerRow* root, AppData* app) {
         for (GList* tl = mgr->trash; tl != NULL; tl = tl->next) {
             TrashNoteItem* tnote = (TrashNoteItem*)tl->data;
             gchar* nlabel = g_strdup_printf("%s %s", note_type_to_icon(tnote->type), tnote->title);
-            gchar* origin_badge = g_markup_printf_escaped("<span foreground=\"#6e7681\" size=\"small\">from %s</span>",
+            gchar* origin_badge = g_markup_printf_escaped("<span foreground=\"%s\" size=\"small\">from %s</span>",
+                                                          palette_color(PAL_FG_FAINT),
                                                           tnote->original_nb ? tnote->original_nb : "General");
             ExplorerRow* row = explorer_row_append(trash_row, "trash_note", tnote->title, nlabel, tnote->path);
             explorer_row_set_badge(row, origin_badge);

@@ -2,6 +2,7 @@
  * registers, marks, dot repeat and macros (Ex commands and search are in
  * vim_engine_ex.c) */
 #include "vim_engine_private.h"
+#include "palette.h"
 #include "vim_keys.h"
 #include "vim_motion.h"
 #include "vim_regex.h"
@@ -535,9 +536,9 @@ VimEngine* vim_engine_new(GtkTextBuffer* buffer, const VimHost* host, gpointer h
     e->hist_search = g_ptr_array_new_with_free_func(g_free);
     e->last_fwd = TRUE;
     e->last_cursor_off = -1;
-    e->tag_visual = ensure_tag(buffer, "vim-visual", "#264f78");
-    e->tag_search = ensure_tag(buffer, "vim-search", "#613315");
-    e->tag_incsearch = ensure_tag(buffer, "vim-incsearch", "#9e6a03");
+    e->tag_visual = ensure_tag(buffer, "vim-visual", palette_color(PAL_EDITOR_SELECTION));
+    e->tag_search = ensure_tag(buffer, "vim-search", palette_color(PAL_EDITOR_MATCH));
+    e->tag_incsearch = ensure_tag(buffer, "vim-incsearch", palette_color(PAL_EDITOR_MATCH_CURRENT));
     e->sig_insert = g_signal_connect(buffer, "insert-text", G_CALLBACK(on_insert_text), e);
     e->sig_delete = g_signal_connect(buffer, "delete-range", G_CALLBACK(on_delete_range), e);
     g_signal_connect(buffer, "mark-set", G_CALLBACK(on_mark_set), e);

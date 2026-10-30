@@ -2,6 +2,7 @@
  * engine (vim_engine.h), which does the editing itself. */
 #include "editor_modes_private.h"
 #include "editor.h"
+#include "palette.h"
 #include "diff_gutter.h"
 #include "code_nav.h"
 #include "code_help.h"
@@ -136,7 +137,8 @@ static void wild_render(EditorModeState* st) {
     for (gint i = first; i <= last; i++) {
         if (i > first) g_string_append(markup, "  ");
         gchar* item = i == st->vim_wild_index
-            ? g_markup_printf_escaped("<span background=\"#d7af00\" foreground=\"#000000\">%s</span>", st->vim_wild[i])
+            ? g_markup_printf_escaped("<span background=\"%s\" foreground=\"%s\">%s</span>",
+                                      palette_color(PAL_HIGHLIGHT), palette_color(PAL_BG_VIEW), st->vim_wild[i])
             : g_markup_escape_text(st->vim_wild[i], -1);
         g_string_append(markup, item);
         g_free(item);

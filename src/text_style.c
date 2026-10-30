@@ -2,9 +2,13 @@
  * Dark+ GtkSourceView scheme, panel background, monospace and syntax language. */
 #include "text_style.h"
 #include "file_types.h"
+#include "app_paths.h"
+#include "palette.h"
+#include "theme.h"
 
 #ifdef HAVE_GSV
-/* VS Code Dark+ palette, as a GtkSourceView style scheme. */
+/* GtkSourceView style scheme; @role tokens are palette colours
+ * (palette_expand()). */
 static const gchar* VSCODE_SCHEME_XML =
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<!-- Inherits from a built-in dark scheme so languages whose style ids\n"
@@ -12,80 +16,80 @@ static const gchar* VSCODE_SCHEME_XML =
     "<style-scheme id=\"vscode-dark\" _name=\"VS Code Dark\" version=\"1.0\"\n"
     "               parent-scheme=\"Adwaita-dark\">\n"
     "  <_description>VS Code Dark+ palette for the file explorer viewer</_description>\n"
-    "  <style name=\"text\" background=\"#121314\" foreground=\"#d4d4d4\"/>\n"
-    "  <style name=\"def\" foreground=\"#d4d4d4\"/>\n"
-    "  <style name=\"selection\" background=\"#264f78\"/>\n"
-    "  <style name=\"current-line\" background=\"#1e2022\"/>\n"
-    "  <style name=\"current-line-search\" background=\"#314365\"/>\n"
-    "  <style name=\"bracket-match\" background=\"#515553\"/>\n"
-    "  <style name=\"comment\" foreground=\"#6a9955\"/>\n"
-    "  <style name=\"def:comment\" foreground=\"#6a9955\"/>\n"
-    "  <style name=\"shebang\" foreground=\"#6a9955\"/>\n"
-    "  <style name=\"def:shebang\" foreground=\"#6a9955\"/>\n"
-    "  <style name=\"constant\" foreground=\"#569cd6\"/>\n"
-    "  <style name=\"def:constant\" foreground=\"#569cd6\"/>\n"
-    "  <style name=\"boolean\" foreground=\"#569cd6\"/>\n"
-    "  <style name=\"def:boolean\" foreground=\"#569cd6\"/>\n"
-    "  <style name=\"special-constant\" foreground=\"#4fc1ff\"/>\n"
-    "  <style name=\"def:special-constant\" foreground=\"#4fc1ff\"/>\n"
-    "  <style name=\"string\" foreground=\"#ce9178\"/>\n"
-    "  <style name=\"def:string\" foreground=\"#ce9178\"/>\n"
-    "  <style name=\"character\" foreground=\"#ce9178\"/>\n"
-    "  <style name=\"def:character\" foreground=\"#ce9178\"/>\n"
-    "  <style name=\"escape\" foreground=\"#d7ba7d\"/>\n"
-    "  <style name=\"def:escape\" foreground=\"#d7ba7d\"/>\n"
-    "  <style name=\"special-char\" foreground=\"#d7ba7d\"/>\n"
-    "  <style name=\"def:special-char\" foreground=\"#d7ba7d\"/>\n"
-    "  <style name=\"number\" foreground=\"#b5cea8\"/>\n"
-    "  <style name=\"def:decimal\" foreground=\"#b5cea8\"/>\n"
-    "  <style name=\"def:floating-point\" foreground=\"#b5cea8\"/>\n"
-    "  <style name=\"keyword\" foreground=\"#569cd6\"/>\n"
-    "  <style name=\"def:keyword\" foreground=\"#569cd6\"/>\n"
-    "  <style name=\"keyword-modifier\" foreground=\"#569cd6\"/>\n"
-    "  <style name=\"preprocessor\" foreground=\"#c586c0\"/>\n"
-    "  <style name=\"def:preprocessor\" foreground=\"#c586c0\"/>\n"
-    "  <style name=\"type\" foreground=\"#4ec9b0\"/>\n"
-    "  <style name=\"def:type\" foreground=\"#4ec9b0\"/>\n"
-    "  <style name=\"function\" foreground=\"#dcdcaa\"/>\n"
-    "  <style name=\"def:function\" foreground=\"#dcdcaa\"/>\n"
-    "  <style name=\"builtin-function\" foreground=\"#dcdcaa\"/>\n"
-    "  <style name=\"variable\" foreground=\"#9cdcfe\"/>\n"
-    "  <style name=\"def:variable\" foreground=\"#9cdcfe\"/>\n"
-    "  <style name=\"operator\" foreground=\"#d4d4d4\"/>\n"
-    "  <style name=\"def:operator\" foreground=\"#d4d4d4\"/>\n"
-    "  <style name=\"error\" foreground=\"#f44747\"/>\n"
-    "  <style name=\"def:error\" foreground=\"#f44747\"/>\n"
-    "  <style name=\"included-file\" foreground=\"#ce9178\"/>\n"
-    "  <style name=\"include-statement\" foreground=\"#c586c0\"/>\n"
-    "  <style name=\"net-address-in-comment\" foreground=\"#6a9955\"/>\n"
+    "  <style name=\"text\" background=\"@bg_view\" foreground=\"@fg_text\"/>\n"
+    "  <style name=\"def\" foreground=\"@fg_text\"/>\n"
+    "  <style name=\"selection\" background=\"@editor_selection\"/>\n"
+    "  <style name=\"current-line\" background=\"@editor_current_line\"/>\n"
+    "  <style name=\"current-line-search\" background=\"@editor_selection\"/>\n"
+    "  <style name=\"bracket-match\" background=\"@editor_bracket\"/>\n"
+    "  <style name=\"comment\" foreground=\"@syn_comment\"/>\n"
+    "  <style name=\"def:comment\" foreground=\"@syn_comment\"/>\n"
+    "  <style name=\"shebang\" foreground=\"@syn_comment\"/>\n"
+    "  <style name=\"def:shebang\" foreground=\"@syn_comment\"/>\n"
+    "  <style name=\"constant\" foreground=\"@syn_keyword\"/>\n"
+    "  <style name=\"def:constant\" foreground=\"@syn_keyword\"/>\n"
+    "  <style name=\"boolean\" foreground=\"@syn_keyword\"/>\n"
+    "  <style name=\"def:boolean\" foreground=\"@syn_keyword\"/>\n"
+    "  <style name=\"special-constant\" foreground=\"@syn_constant\"/>\n"
+    "  <style name=\"def:special-constant\" foreground=\"@syn_constant\"/>\n"
+    "  <style name=\"string\" foreground=\"@syn_string\"/>\n"
+    "  <style name=\"def:string\" foreground=\"@syn_string\"/>\n"
+    "  <style name=\"character\" foreground=\"@syn_string\"/>\n"
+    "  <style name=\"def:character\" foreground=\"@syn_string\"/>\n"
+    "  <style name=\"escape\" foreground=\"@syn_escape\"/>\n"
+    "  <style name=\"def:escape\" foreground=\"@syn_escape\"/>\n"
+    "  <style name=\"special-char\" foreground=\"@syn_escape\"/>\n"
+    "  <style name=\"def:special-char\" foreground=\"@syn_escape\"/>\n"
+    "  <style name=\"number\" foreground=\"@syn_number\"/>\n"
+    "  <style name=\"def:decimal\" foreground=\"@syn_number\"/>\n"
+    "  <style name=\"def:floating-point\" foreground=\"@syn_number\"/>\n"
+    "  <style name=\"keyword\" foreground=\"@syn_keyword\"/>\n"
+    "  <style name=\"def:keyword\" foreground=\"@syn_keyword\"/>\n"
+    "  <style name=\"keyword-modifier\" foreground=\"@syn_keyword\"/>\n"
+    "  <style name=\"preprocessor\" foreground=\"@syn_control\"/>\n"
+    "  <style name=\"def:preprocessor\" foreground=\"@syn_control\"/>\n"
+    "  <style name=\"type\" foreground=\"@syn_type\"/>\n"
+    "  <style name=\"def:type\" foreground=\"@syn_type\"/>\n"
+    "  <style name=\"function\" foreground=\"@syn_function\"/>\n"
+    "  <style name=\"def:function\" foreground=\"@syn_function\"/>\n"
+    "  <style name=\"builtin-function\" foreground=\"@syn_function\"/>\n"
+    "  <style name=\"variable\" foreground=\"@syn_variable\"/>\n"
+    "  <style name=\"def:variable\" foreground=\"@syn_variable\"/>\n"
+    "  <style name=\"operator\" foreground=\"@fg_text\"/>\n"
+    "  <style name=\"def:operator\" foreground=\"@fg_text\"/>\n"
+    "  <style name=\"error\" foreground=\"@syn_error\"/>\n"
+    "  <style name=\"def:error\" foreground=\"@syn_error\"/>\n"
+    "  <style name=\"included-file\" foreground=\"@syn_string\"/>\n"
+    "  <style name=\"include-statement\" foreground=\"@syn_control\"/>\n"
+    "  <style name=\"net-address-in-comment\" foreground=\"@syn_comment\"/>\n"
     "  <!-- Org-mode (org.lang) -->\n"
-    "  <style name=\"org:header1\" foreground=\"#4fc1ff\" bold=\"true\"/>\n"
-    "  <style name=\"org:header2\" foreground=\"#dcdcaa\" bold=\"true\"/>\n"
-    "  <style name=\"org:header3\" foreground=\"#4ec9b0\" bold=\"true\"/>\n"
-    "  <style name=\"org:header4\" foreground=\"#c586c0\" bold=\"true\"/>\n"
-    "  <style name=\"org:todo\" foreground=\"#f44747\" bold=\"true\"/>\n"
-    "  <style name=\"org:running\" foreground=\"#e5c100\" bold=\"true\"/>\n"
-    "  <style name=\"org:done\" foreground=\"#6a9955\" bold=\"true\"/>\n"
-    "  <style name=\"org:priority\" foreground=\"#d7ba7d\" bold=\"true\"/>\n"
-    "  <style name=\"org:tag\" foreground=\"#9cdcfe\" italic=\"true\"/>\n"
-    "  <style name=\"org:cookie\" foreground=\"#b5cea8\"/>\n"
-    "  <style name=\"org:comment\" foreground=\"#6a9955\"/>\n"
-    "  <style name=\"org:keyword\" foreground=\"#c586c0\"/>\n"
-    "  <style name=\"org:drawer\" foreground=\"#808080\"/>\n"
-    "  <style name=\"org:planning\" foreground=\"#569cd6\" bold=\"true\"/>\n"
-    "  <style name=\"org:timestamp\" foreground=\"#d7ba7d\"/>\n"
-    "  <style name=\"org:link\" foreground=\"#4fc1ff\" underline=\"single\"/>\n"
-    "  <style name=\"org:checkbox\" foreground=\"#569cd6\" bold=\"true\"/>\n"
-    "  <style name=\"org:checkbox-done\" foreground=\"#6a9955\" bold=\"true\"/>\n"
-    "  <style name=\"org:bullet\" foreground=\"#569cd6\"/>\n"
-    "  <style name=\"org:table\" foreground=\"#b5cea8\"/>\n"
+    "  <style name=\"org:header1\" foreground=\"@syn_constant\" bold=\"true\"/>\n"
+    "  <style name=\"org:header2\" foreground=\"@syn_function\" bold=\"true\"/>\n"
+    "  <style name=\"org:header3\" foreground=\"@syn_type\" bold=\"true\"/>\n"
+    "  <style name=\"org:header4\" foreground=\"@syn_control\" bold=\"true\"/>\n"
+    "  <style name=\"org:todo\" foreground=\"@syn_error\" bold=\"true\"/>\n"
+    "  <style name=\"org:running\" foreground=\"@highlight\" bold=\"true\"/>\n"
+    "  <style name=\"org:done\" foreground=\"@syn_comment\" bold=\"true\"/>\n"
+    "  <style name=\"org:priority\" foreground=\"@syn_escape\" bold=\"true\"/>\n"
+    "  <style name=\"org:tag\" foreground=\"@syn_variable\" italic=\"true\"/>\n"
+    "  <style name=\"org:cookie\" foreground=\"@syn_number\"/>\n"
+    "  <style name=\"org:comment\" foreground=\"@syn_comment\"/>\n"
+    "  <style name=\"org:keyword\" foreground=\"@syn_control\"/>\n"
+    "  <style name=\"org:drawer\" foreground=\"@fg_subtle\"/>\n"
+    "  <style name=\"org:planning\" foreground=\"@syn_keyword\" bold=\"true\"/>\n"
+    "  <style name=\"org:timestamp\" foreground=\"@syn_escape\"/>\n"
+    "  <style name=\"org:link\" foreground=\"@syn_constant\" underline=\"single\"/>\n"
+    "  <style name=\"org:checkbox\" foreground=\"@syn_keyword\" bold=\"true\"/>\n"
+    "  <style name=\"org:checkbox-done\" foreground=\"@syn_comment\" bold=\"true\"/>\n"
+    "  <style name=\"org:bullet\" foreground=\"@syn_keyword\"/>\n"
+    "  <style name=\"org:table\" foreground=\"@syn_number\"/>\n"
     "  <style name=\"org:bold\" bold=\"true\"/>\n"
     "  <style name=\"org:italic\" italic=\"true\"/>\n"
-    "  <style name=\"org:code\" foreground=\"#ce9178\"/>\n"
-    "  <style name=\"org:strike\" foreground=\"#808080\" strikethrough=\"true\"/>\n"
+    "  <style name=\"org:code\" foreground=\"@syn_string\"/>\n"
+    "  <style name=\"org:strike\" foreground=\"@fg_subtle\" strikethrough=\"true\"/>\n"
     "  <style name=\"org:underline\" underline=\"single\"/>\n"
-    "  <style name=\"org:block\" foreground=\"#808080\"/>\n"
-    "  <style name=\"org:block-content\" foreground=\"#ce9178\"/>\n"
+    "  <style name=\"org:block\" foreground=\"@fg_subtle\"/>\n"
+    "  <style name=\"org:block-content\" foreground=\"@syn_string\"/>\n"
     "</style-scheme>\n";
 
 void apply_viewer_background(GtkWidget* view) {
@@ -94,12 +98,7 @@ void apply_viewer_background(GtkWidget* view) {
     static GdkDisplay* styled_display = NULL;
     GdkDisplay* display = gtk_widget_get_display(view);
     if (display != styled_display) {
-        GtkCssProvider* css = gtk_css_provider_new();
-        gtk_css_provider_load_from_string(
-            css, "#viewer text { background-color: #121314; }");
-        gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(css),
-                                                   GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-        g_object_unref(css);
+        theme_add_css("#viewer text { background-color: @bg_view; }");
         styled_display = display;
     }
 }
@@ -107,14 +106,17 @@ void apply_viewer_background(GtkWidget* view) {
 void apply_vscode_scheme(GtkTextBuffer* buffer, GtkWidget* view) {
     GtkSourceStyleSchemeManager* mgr =
         gtk_source_style_scheme_manager_get_default();
-    gchar* dir = g_build_filename(g_get_user_cache_dir(), "file-explorer",
-                                  "scheme", NULL);
+    gchar* cache_dir = app_cache_dir();
+    gchar* dir = g_build_filename(cache_dir, "scheme", NULL);
+    g_free(cache_dir);
     if (g_mkdir_with_parents(dir, 0755) != 0) {
         g_free(dir);
         return;
     }
     gchar* path = g_build_filename(dir, "vscode-dark.xml", NULL);
-    g_file_set_contents(path, VSCODE_SCHEME_XML, -1, NULL);
+    gchar* xml = palette_expand(VSCODE_SCHEME_XML);
+    g_file_set_contents(path, xml, -1, NULL);
+    g_free(xml);
     g_free(path);
     gtk_source_style_scheme_manager_append_search_path(mgr, dir);
     g_free(dir);

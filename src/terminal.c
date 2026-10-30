@@ -3,43 +3,31 @@
 #include "app_events.h"
 #include "remote_store.h"
 #include "layout_store.h"
+#include "palette.h"
 
 #ifdef HAVE_VTE
 
-/* VS Code Dark+ integrated-terminal palette: fg/bg like the editor, plus
- * the 16 ANSI colors it ships with (normal row then bright row). */
-static const gchar* VSCODE_TERM_FG = "#cccccc";
-static const gchar* VSCODE_TERM_BG = "#1f2021";
-static const gchar* VSCODE_TERM_CURSOR = "#ffffff";
-static const gchar* VSCODE_TERM_SELECTION = "#264f78";
-static const gchar* VSCODE_TERM_ANSI[16] = {
-    "#000000", "#cd3131", "#0dbc79", "#e5e510",
-    "#2472c8", "#bc3fbc", "#11a8cd", "#e5e5e5",
-    "#666666", "#f14c4c", "#23d18b", "#f5f543",
-    "#3b8eea", "#d670d6", "#29b8db", "#e5e5e5",
-};
+/* Terminal colours from the palette: text, background, cursor, selection
+ * and the 16 ANSI colours (normal row then bright row) */
+static void parse_role(GdkRGBA* rgba, PaletteRole role) {
+    gdk_rgba_parse(rgba, palette_color(role));
+}
 
 static void apply_terminal_theme(VteTerminal* term) {
     GdkRGBA fg, bg;
     GdkRGBA ansi[16];
-    gsize i;
-
-    if (!gdk_rgba_parse(&fg, VSCODE_TERM_FG) || !gdk_rgba_parse(&bg, VSCODE_TERM_BG)) {
-        return; /* invalid literal: keep VTE defaults */
-    }
-    for (i = 0; i < 16; i++) {
-        gdk_rgba_parse(&ansi[i], VSCODE_TERM_ANSI[i]);
+    parse_role(&fg, PAL_TERM_FG);
+    parse_role(&bg, PAL_BG_TERMINAL);
+    for (gint i = 0; i < 16; i++) {
+        parse_role(&ansi[i], (PaletteRole)(PAL_ANSI_BLACK + i));
     }
     vte_terminal_set_colors(term, &fg, &bg, ansi, 16);
 
-    GdkRGBA cursor;
-    if (gdk_rgba_parse(&cursor, VSCODE_TERM_CURSOR)) {
-        vte_terminal_set_color_cursor(term, &cursor);
-    }
-    GdkRGBA selection;
-    if (gdk_rgba_parse(&selection, VSCODE_TERM_SELECTION)) {
-        vte_terminal_set_color_highlight(term, &selection);
-    }
+    GdkRGBA cursor, selection;
+    parse_role(&cursor, PAL_TERM_CURSOR);
+    vte_terminal_set_color_cursor(term, &cursor);
+    parse_role(&selection, PAL_EDITOR_SELECTION);
+    vte_terminal_set_color_highlight(term, &selection);
 }
 
 /* Async spawn callback: report failures, then hand child PID to terminal */

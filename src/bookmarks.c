@@ -1,4 +1,5 @@
 #include "bookmarks.h"
+#include "palette.h"
 #include "app_paths.h"
 #include "dialog.h"
 #include "app_events.h"
@@ -374,7 +375,7 @@ static void bm_append_children(ExplorerRow* parent, GNode* node) {
             g_free(label);
             guint n = g_node_n_children(c);
             if (n > 0) {
-                gchar* badge = g_strdup_printf("<span foreground=\"#6e7681\">%u</span>", n);
+                gchar* badge = g_strdup_printf("<span foreground=\"%s\">%u</span>", palette_color(PAL_FG_FAINT), n);
                 explorer_row_set_badge(row, badge);
                 g_free(badge);
             }
@@ -387,7 +388,8 @@ static void bm_append_children(ExplorerRow* parent, GNode* node) {
         } else {
             gchar* label = bm_link_icon_label(it);
             gchar* loc = bm_display_location(it->target);
-            gchar* badge = g_markup_printf_escaped("<span foreground=\"#6e7681\" size=\"small\">%s</span>", loc);
+            gchar* badge = g_markup_printf_escaped("<span foreground=\"%s\" size=\"small\">%s</span>",
+                                                   palette_color(PAL_FG_FAINT), loc);
             ExplorerRow* row = explorer_row_append(parent, "bookmark", it->name, label, it->target);
             explorer_row_set_badge(row, badge);
             explorer_row_set_bm_id(row, it->id);

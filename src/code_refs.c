@@ -1,10 +1,12 @@
 /* References of a symbol in the References tab (see code_refs.h) */
 #include "code_refs.h"
+#include "palette.h"
 #include "code_index.h"
 #include "code_intel.h"
 #include "editor.h"
 #include "file_types.h"
 #include "icons.h"
+#include "theme.h"
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */
@@ -69,18 +71,13 @@ GtkWidget* code_refs_page(AppData* app) {
 
 static void ensure_css(void) {
     static gboolean done = FALSE;
-    GdkDisplay* display = gdk_display_get_default();
-    if (done || display == NULL) return;
+    if (done) return;
     done = TRUE;
-    GtkCssProvider* css = gtk_css_provider_new();
-    gtk_css_provider_load_from_string(css,
-                                      ".code-refs { background-color: #121314; }"
-                                      ".code-refs listview { background-color: #121314; }"
-                                      ".code-refs .refs-header { padding: 6px 10px; color: #cccccc; }"
-                                      ".code-refs label.ref-line { font-family: monospace; padding: 1px 10px 1px 28px; }"
-                                      ".code-refs label.ref-file { padding: 4px 10px 1px 10px; }");
-    gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(css), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(css);
+    theme_add_css(".code-refs { background-color: @bg_view; }"
+                  ".code-refs listview { background-color: @bg_view; }"
+                  ".code-refs .refs-header { padding: 6px 10px; color: @fg; }"
+                  ".code-refs label.ref-line { font-family: monospace; padding: 1px 10px 1px 28px; }"
+                  ".code-refs label.ref-file { padding: 4px 10px 1px 10px; }");
 }
 
 static void on_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
@@ -103,8 +100,8 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
     gtk_widget_add_css_class(label, it->header ? "ref-file" : "ref-line");
     if (it->header) {
         gchar* base = g_path_get_basename(it->path);
-        markup = g_markup_printf_escaped("%s <b>%s</b>  <span foreground=\"#858585\">%s · %u</span>",
-                                         file_icon(base, FALSE), base, it->shown, it->count);
+        markup = g_markup_printf_escaped("%s <b>%s</b>  <span foreground=\"%s\">%s · %u</span>",
+                                         file_icon(base, FALSE), base, palette_color(PAL_FG_SUBTLE), it->shown, it->count);
         g_free(base);
     } else {
         /* Leading spaces dropped, the name in bold on a highlight */
@@ -116,8 +113,8 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
         gchar* before = g_strndup(t + skip, (gsize)MAX(col, 0));
         gchar* name = g_strndup(t + skip + col, (gsize)MAX(len, 0));
         const gchar* after = t + skip + col + MAX(len, 0);
-        markup = g_markup_printf_escaped("<span foreground=\"#858585\">%5d</span>  %s<span background=\"#613214\"><b>%s</b></span>%s",
-                                         it->line + 1, before, name, after);
+        markup = g_markup_printf_escaped("<span foreground=\"%s\">%5d</span>  %s<span background=\"%s\"><b>%s</b></span>%s",
+                                         palette_color(PAL_FG_SUBTLE), it->line + 1, before, palette_color(PAL_EDITOR_MATCH), name, after);
         g_free(name);
         g_free(before);
     }
@@ -258,12 +255,12 @@ static void show_references(AppData* app, EditorTab* tab, CodeNavMessageFunc mes
         g_object_unref(it);
     }
     gchar* markup = refs->len == 0
-                        ? g_markup_printf_escaped("No references to <b>%s</b> found <span foreground=\"#858585\">(%s)</span>",
-                                                  name, source)
+                        ? g_markup_printf_escaped("No references to <b>%s</b> found <span foreground=\"%s\">(%s)</span>",
+                                                  name, palette_color(PAL_FG_SUBTLE), source)
                         : g_markup_printf_escaped("References to <b>%s</b>: %u in %u file%s%s "
-                                                  "<span foreground=\"#858585\">(%s; Enter opens)</span>",
+                                                  "<span foreground=\"%s\">(%s; Enter opens)</span>",
                                                   name, refs->len, files, files > 1 ? "s" : "",
-                                                  truncated ? ", list cut" : "", source);
+                                                  truncated ? ", list cut" : "", palette_color(PAL_FG_SUBTLE), source);
     gtk_label_set_markup(GTK_LABEL(rp->header), markup);
     g_free(markup);
     /* Show the page with the first occurrence selected */

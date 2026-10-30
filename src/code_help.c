@@ -1,8 +1,10 @@
 /* Help cards in editor tabs (see code_help.h) */
 #include "code_help.h"
+#include "palette.h"
 #include "code_intel.h"
 #include "code_scan.h"
 #include "markdown.h"
+#include "theme.h"
 #include <string.h>
 
 #define HOVER_DELAY_MS 800
@@ -52,18 +54,12 @@ static CodeHelp* help_of(EditorTab* tab) {
 
 static void ensure_css(void) {
     static gboolean done = FALSE;
-    GdkDisplay* display = gdk_display_get_default();
-    if (done || display == NULL) return;
+    if (done) return;
     done = TRUE;
-    GtkCssProvider* css = gtk_css_provider_new();
-    gtk_css_provider_load_from_string(css,
-                                      "popover.code-help > contents { background-color: #252526; padding: 0;"
-                                      " border: 1px solid #454545; border-radius: 4px; }"
-                                      "popover.code-help textview, popover.code-help textview text {"
-                                      " background-color: #252526; color: #cccccc; }");
-    gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(css),
-                                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
-    g_object_unref(css);
+    theme_add_css("popover.code-help > contents { background-color: @bg_raised; padding: 0;"
+                  " border: 1px solid @border_strong; border-radius: 4px; }"
+                  "popover.code-help textview, popover.code-help textview text {"
+                  " background-color: @bg_raised; color: @fg; }");
 }
 
 /* ------------------------------------------------------------------------- */
@@ -549,7 +545,7 @@ static gboolean on_occurrence_timer(gpointer data) {
     if (word == NULL) return G_SOURCE_REMOVE;
     GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buf);
     if (gtk_text_tag_table_lookup(table, OCCURRENCE_TAG) == NULL) {
-        gtk_text_buffer_create_tag(buf, OCCURRENCE_TAG, "background", "#3a3d41", NULL);
+        gtk_text_buffer_create_tag(buf, OCCURRENCE_TAG, "background", palette_color(PAL_EDITOR_OCCURRENCE), NULL);
     }
     /* Whole words only */
     GtkTextIter from, ms, me;

@@ -2,6 +2,7 @@
 #include "code_intel.h"
 #include "app_events.h"
 #include "app_paths.h"
+#include "palette.h"
 #include "code_index.h"
 #include "editor.h"
 #include "lsp_client.h"
@@ -389,10 +390,10 @@ static const gchar* const DIAG_TAGS[] = {NULL, "lsp-error", "lsp-warning", "lsp-
 static void ensure_diag_tags(GtkTextBuffer* buf) {
     GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buf);
     if (gtk_text_tag_table_lookup(table, "lsp-error") != NULL) return;
-    static const gchar* const COLORS[] = {NULL, "#f14c4c", "#cca700", "#3794ff", "#3794ff"};
+    static const PaletteRole COLORS[] = {PAL_ERROR, PAL_ERROR, PAL_WARNING, PAL_LINK, PAL_LINK};
     for (gint i = 1; i <= 4; i++) {
         GdkRGBA rgba;
-        gdk_rgba_parse(&rgba, COLORS[i]);
+        gdk_rgba_parse(&rgba, palette_color(COLORS[i]));
         /* A plain line: the error (dotted) style is barely visible in GTK 4 */
         gtk_text_buffer_create_tag(buf, DIAG_TAGS[i], "underline", PANGO_UNDERLINE_SINGLE, "underline-rgba", &rgba,
                                    NULL);

@@ -1,4 +1,5 @@
 #include "pdf.h"
+#include "palette.h"
 #include "text_style.h"
 #include "file_types.h"
 #include <sys/stat.h>
@@ -65,13 +66,13 @@ static void ensure_pdf_tags(GtkTextBuffer* buffer) {
                                    "justification", GTK_JUSTIFY_CENTER,
                                    "weight", PANGO_WEIGHT_BOLD,
                                    "scale", 1.2,
-                                   "foreground", "#4fc1ff",
+                                   "foreground", palette_color(PAL_FG_STRONG),
                                    NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "pdf_meta")) {
         gtk_text_buffer_create_tag(buffer, "pdf_meta",
                                    "justification", GTK_JUSTIFY_CENTER,
-                                   "foreground", "#888888",
+                                   "foreground", palette_color(PAL_FG_SUBTLE),
                                    "scale", 0.9,
                                    NULL);
     }
@@ -79,14 +80,14 @@ static void ensure_pdf_tags(GtkTextBuffer* buffer) {
         gtk_text_buffer_create_tag(buffer, "pdf_page_badge",
                                    "justification", GTK_JUSTIFY_CENTER,
                                    "weight", PANGO_WEIGHT_BOLD,
-                                   "foreground", "#ce9178",
+                                   "foreground", palette_color(PAL_FG_MUTED),
                                    "scale", 0.95,
                                    NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "pdf_text_header")) {
         gtk_text_buffer_create_tag(buffer, "pdf_text_header",
                                    "weight", PANGO_WEIGHT_BOLD,
-                                   "foreground", "#4ec9b0",
+                                   "foreground", palette_color(PAL_FG_STRONG),
                                    NULL);
     }
 }

@@ -24,7 +24,7 @@ gboolean apply_viewer_language(AppData* app, const gchar* name, const gchar* con
  * Org-mode one: M-x text-mode on a .org file shows plain text) */
 void apply_buffer_language(GtkTextBuffer* buffer, const gchar* name, gboolean org);
 
-/* Preview panel background (#121314) and text padding */
+/* Preview panel background (palette bg_view) and text padding */
 void apply_viewer_background(GtkWidget* view);
 
 #ifdef HAVE_GSV

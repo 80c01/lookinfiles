@@ -2,6 +2,13 @@
 #include "diff_gutter.h"
 #include "line_diff.h"
 #include "minimap_geometry.h"
+#include "palette.h"
+
+static void set_source_role(cairo_t* cr, PaletteRole role, double alpha) {
+    double r, g, b;
+    palette_rgb(role, &r, &g, &b);
+    cairo_set_source_rgba(cr, r, g, b, alpha);
+}
 
 /* The minimap is a scaled drawing of the text view as laid out on screen:
  * wrapped lines, font sizes, line backgrounds (code panels, quotes), embedded
@@ -78,7 +85,7 @@ static void draw_run(cairo_t* cc, PangoLayout* layout, GtkTextView* view, GtkTex
             }
             g_free(widgets);
         }
-        cairo_set_source_rgb(cc, 0.20, 0.21, 0.22); /* table / image block */
+        set_source_role(cc, PAL_RULE, 1.0); /* table / image block */
         cairo_rectangle(cc, 2.0 + loc.x * sx, loc.y * sy, MAX(1.0, w * sx), MAX(1.0, h * sy));
         cairo_fill(cc);
         return;
@@ -96,7 +103,7 @@ static void draw_run(cairo_t* cc, PangoLayout* layout, GtkTextView* view, GtkTex
     if (has_fg) {
         cairo_set_source_rgba(cc, fg.red, fg.green, fg.blue, 0.9);
     } else {
-        cairo_set_source_rgba(cc, 0.80, 0.80, 0.80, 0.75);
+        set_source_role(cc, PAL_FG, 0.75);
     }
     /* Skip the leading spaces that were stripped: start where the text starts */
     GtkTextIter first = *rs;
@@ -178,8 +185,8 @@ static void minimap_build_cache(GtkTextBuffer* buffer, GtkTextView* view, Minima
              : (gdouble)(gint)CLAMP(g->offset - (ch - height) / 2.0, 0.0, g->content - ch);
 
     cairo_t* cc = cairo_create(c->surface);
-    /* Background identical to the preview pane (#121314) */
-    cairo_set_source_rgb(cc, 18.0 / 255.0, 19.0 / 255.0, 20.0 / 255.0);
+    /* Background identical to the preview pane */
+    set_source_role(cc, PAL_BG_VIEW, 1.0);
     cairo_paint(cc);
     cairo_translate(cc, 0, -c->top);
 
@@ -233,7 +240,7 @@ static void minimap_build_cache(GtkTextBuffer* buffer, GtkTextView* view, Minima
         if (!detailed) {
             gint len = gtk_text_iter_get_line_offset(&lend);
             if (len > 0) {
-                cairo_set_source_rgba(cc, 0.80, 0.80, 0.80, 0.6);
+                set_source_role(cc, PAL_FG, 0.6);
                 cairo_rectangle(cc, 2.0, (gint)(ly * sy + 0.5), MIN(len * 7.0 * sx, width - 2.0),
                                 MAX(1, (gint)(lh * sy * 0.5)));
                 cairo_fill(cc);
@@ -382,7 +389,7 @@ static void draw_change_marks(cairo_t* cr, GtkTextView* view, const MinimapGeome
             gtk_text_view_get_line_yrange(view, &it, &ly, &lh);
             gdouble dy = ((marks[i] & LINE_DIFF_DELETED_ABOVE) ? ly : ly + lh) * sy;
             if (dy >= g->offset - 2.0 && dy <= shown_end + 2.0) {
-                cairo_set_source_rgb(cr, 0xf8 / 255.0, 0x51 / 255.0, 0x49 / 255.0);
+                set_source_role(cr, PAL_GUTTER_DELETED, 1.0);
                 cairo_rectangle(cr, x, MIN(dy - 1.0, g->content - 2.0), w, 2.0);
                 cairo_fill(cr);
             }
@@ -410,9 +417,9 @@ static void draw_change_marks(cairo_t* cr, GtkTextView* view, const MinimapGeome
             continue;
         }
         if (kind & LINE_DIFF_ADDED) {
-            cairo_set_source_rgb(cr, 0x2e / 255.0, 0xa0 / 255.0, 0x43 / 255.0);
+            set_source_role(cr, PAL_GUTTER_ADDED, 1.0);
         } else {
-            cairo_set_source_rgb(cr, 0x00 / 255.0, 0x78 / 255.0, 0xd4 / 255.0);
+            set_source_role(cr, PAL_GUTTER_MODIFIED, 1.0);
         }
         cairo_rectangle(cr, x, y0, w, MAX(2.0, y1 - y0));
         cairo_fill(cr);
@@ -439,7 +446,7 @@ void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
         }
 
         /* Slider: the view's visible range */
-        cairo_set_source_rgba(cr, 0.47, 0.47, 0.47, 0.35);
+        set_source_role(cr, PAL_SCROLLBAR, 0.35);
         cairo_rectangle(cr, 0, g.slider_top, width, g.slider_height);
         cairo_fill(cr);
 
@@ -450,7 +457,7 @@ void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
     }
 
     /* Thin border on the viewer/editor side */
-    cairo_set_source_rgb(cr, 40.0 / 255.0, 42.0 / 255.0, 44.0 / 255.0);
+    set_source_role(cr, PAL_BORDER, 1.0);
     cairo_rectangle(cr, 0, 0, 1, height);
     cairo_fill(cr);
 }

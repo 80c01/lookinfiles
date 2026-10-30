@@ -42,6 +42,11 @@ make clean        # remove binary and build/
   step is not compared (shell prompt timing varies).
 - When adding a feature with a shortcut, add a step to the scenario in
   `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).
+- **Colours come from the palette** (`palette.h`): `palette_color(PAL_...)`
+  in C, `@role` names in CSS added with `theme_add_css()`. Never write a
+  colour literal elsewhere (`make check` rejects `#rrggbb` outside
+  `palette.c`); pick the role that matches the meaning (e.g. `fg_subtle`
+  for metadata, `bg_block` for code blocks) or add a role.
 - Text interpolated into Pango markup must be escaped: use
   `g_markup_printf_escaped()`, never `g_strdup_printf()`, with names, titles,
   hosts, key labels or any user-provided string.
@@ -154,6 +159,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `app_cache_dir()/tags/`; `code_index_find()` uses it through
   `CodeQuery.tags`, open buffers are still scanned.
 - `jump_list` — back / forward history of navigation jumps across files.
+- `palette` — every colour of the application, by role (`PaletteRole`:
+  surfaces, text, accent, git, diff, syntax, editor, terminal ANSI...):
+  `palette_color()` ("#rrggbb" for text tags and Pango markup),
+  `palette_rgb()` (cairo), `palette_set()` / `palette_reset()` (themes),
+  each role a CSS named colour (`@bg_window`, `alpha(@accent, 0.25)`), and
+  `palette_expand()` for `@role` tokens in text templates.
 - `lsp_protocol`, `lsp_client`, `lsp_config` — Language Server Protocol:
   messages and results (positions: UTF-16 unless the server chose UTF-8,
   `lsp_column_to_byte()`), one server process spoken to asynchronously on the
@@ -190,7 +201,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   neighbouring panels and blocks text selection near the edge.
 - `text_style` — Dark+ GtkSourceView scheme, monospace, panel background,
   syntax language (`is_code_file()`, `apply_viewer_language()`).
-- `theme` — global CSS provider (`apply_panel_borders()`).
+- `theme` — global stylesheet (`apply_panel_borders()`); every module's CSS
+  goes through `theme_add_css()` (palette colours defined, reloaded by
+  `theme_reload()` after a palette change).
 - `tree_nav` — explorer row traversal and selection (j/k, arrows, gg/G,
   Ctrl+F/B, zz/zt/zb, `tree_nav_selected()`, `select_row()`,
   `select_by_path()`), and suspending the preview handler while the tree is

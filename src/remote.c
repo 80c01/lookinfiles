@@ -1,4 +1,5 @@
 #include "remote.h"
+#include "palette.h"
 #include "dialog.h"
 #include "tree_nav.h"
 #include "app_events.h"
@@ -47,11 +48,11 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
 
         gchar* status_markup = NULL;
         if (rm->is_connected) {
-            status_markup = g_markup_printf_escaped("<span foreground=\"#73c991\" weight=\"bold\">● Connected</span>  <span foreground=\"#888888\">(%s:%d)</span>",
-                                            target, rm->port);
+            status_markup = g_markup_printf_escaped("<span foreground=\"%s\" weight=\"bold\">● Connected</span>  <span foreground=\"%s\">(%s:%d)</span>",
+                                            palette_color(PAL_SUCCESS), palette_color(PAL_FG_SUBTLE), target, rm->port);
         } else {
-            status_markup = g_markup_printf_escaped("<span foreground=\"#888888\">%s:%d</span>",
-                                            target, rm->port);
+            status_markup = g_markup_printf_escaped("<span foreground=\"%s\">%s:%d</span>",
+                                            palette_color(PAL_FG_SUBTLE), target, rm->port);
         }
 
         /* The row path holds the machine id (see remote_get_selected()) */

@@ -1,4 +1,5 @@
 #include "markdown.h"
+#include "palette.h"
 #include "image_utils.h"
 
 void ensure_markdown_tags(GtkTextBuffer* buffer) {
@@ -24,42 +25,42 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
     CREATE_TAG("md_h1",
                "scale", 2.0,
                "weight", 600,
-               "foreground", "#e6e6e6",
+               "foreground", palette_color(PAL_FG_STRONG),
                "pixels-above-lines", 16,
                "pixels-below-lines", 6);
 
     CREATE_TAG("md_h2",
                "scale", 1.5,
                "weight", 600,
-               "foreground", "#e6e6e6",
+               "foreground", palette_color(PAL_FG_STRONG),
                "pixels-above-lines", 16,
                "pixels-below-lines", 6);
 
     CREATE_TAG("md_h3",
                "scale", 1.25,
                "weight", 600,
-               "foreground", "#e6e6e6",
+               "foreground", palette_color(PAL_FG_STRONG),
                "pixels-above-lines", 14,
                "pixels-below-lines", 4);
 
     CREATE_TAG("md_h4",
                "scale", 1.0,
                "weight", 600,
-               "foreground", "#e6e6e6",
+               "foreground", palette_color(PAL_FG_STRONG),
                "pixels-above-lines", 12,
                "pixels-below-lines", 4);
 
     CREATE_TAG("md_h5",
                "scale", 0.875,
                "weight", 600,
-               "foreground", "#e6e6e6",
+               "foreground", palette_color(PAL_FG_STRONG),
                "pixels-above-lines", 10,
                "pixels-below-lines", 4);
 
     CREATE_TAG("md_h6",
                "scale", 0.85,
                "weight", 600,
-               "foreground", "#a0a0a0",
+               "foreground", palette_color(PAL_FG_MUTED),
                "pixels-above-lines", 10,
                "pixels-below-lines", 4);
 
@@ -68,11 +69,11 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
      * background on a line without characters) */
     CREATE_TAG("md_rule",
                "size-points", 1.0,
-               "paragraph-background", "#3a3b3d");
+               "paragraph-background", palette_color(PAL_RULE));
 
     CREATE_TAG("md_hr",
                "size-points", 1.6,
-               "paragraph-background", "#3a3b3d");
+               "paragraph-background", palette_color(PAL_RULE));
 
     CREATE_TAG("md_bold",
                "weight", PANGO_WEIGHT_BOLD);
@@ -86,20 +87,20 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("md_strike",
                "strikethrough", TRUE,
-               "foreground", "#909090");
+               "foreground", palette_color(PAL_FG_SUBTLE));
 
     CREATE_TAG("md_inline_code",
                "family", "monospace",
                "scale", 0.92,
-               "background", "#2a2b2d",
-               "foreground", "#d7ba7d");
+               "background", palette_color(PAL_BG_CODE_INLINE),
+               "foreground", palette_color(PAL_SYN_ESCAPE));
 
     /* Code block: padded panel */
     CREATE_TAG("md_code_block",
                "family", "monospace",
                "scale", 0.92,
-               "foreground", "#d4d4d4",
-               "paragraph-background", "#1c1d1f",
+               "foreground", palette_color(PAL_FG_TEXT),
+               "paragraph-background", palette_color(PAL_BG_BLOCK),
                "left-margin", 10,
                "indent", 16, /* every code line is a paragraph: 16 px inner padding */
                "right-margin", 16 + TEXT_SCROLLBAR_CLEARANCE,
@@ -112,7 +113,7 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
      * padding lines share the same margins: a paragraph background starts at
      * its line's left margin, so different margins would notch the panel. */
     CREATE_TAG("md_code_label",
-               "foreground", "#8b8b8b",
+               "foreground", palette_color(PAL_FG_SUBTLE),
                "style", PANGO_STYLE_ITALIC,
                "scale", 0.9,
                "left-margin", 10,
@@ -121,45 +122,45 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "size-points", 10.0,
                "left-margin", 10,
                "right-margin", 16 + TEXT_SCROLLBAR_CLEARANCE,
-               "paragraph-background", "#1c1d1f");
+               "paragraph-background", palette_color(PAL_BG_BLOCK));
 
     CREATE_TAG("md_quote",
-               "foreground", "#b8b8b8",
-               "paragraph-background", "#1e1f21",
+               "foreground", palette_color(PAL_FG_MUTED),
+               "paragraph-background", palette_color(PAL_BG_BLOCK),
                "left-margin", 10,
                "pixels-above-lines", 0,
                "pixels-below-lines", 0);
 
     CREATE_TAG("md_quote_bar",
-               "foreground", "#1c6ea4");
+               "foreground", palette_color(PAL_ACCENT));
 
     CREATE_TAG("md_list_bullet",
-               "foreground", "#cccccc");
+               "foreground", palette_color(PAL_FG));
 
     /* Disc / circle / square list markers, sized like VS Code's (the plain
      * bullet glyph is much smaller) */
     CREATE_TAG("md_list_disc",
-               "foreground", "#cccccc",
+               "foreground", palette_color(PAL_FG),
                "scale", 0.62,
                "rise", 1 * PANGO_SCALE);
 
     CREATE_TAG("md_list_task_done",
-               "foreground", "#cccccc");
+               "foreground", palette_color(PAL_FG));
 
     CREATE_TAG("md_list_task_todo",
-               "foreground", "#cccccc");
+               "foreground", palette_color(PAL_FG));
 
     /* In-progress task ([/] or [-]): half-filled box, VS Code's warning amber */
     CREATE_TAG("md_list_task_running",
-               "foreground", "#cca700");
+               "foreground", palette_color(PAL_WARNING));
 
     CREATE_TAG("md_link",
-               "foreground", "#3794ff");
+               "foreground", palette_color(PAL_LINK));
 
     CREATE_TAG("md_table",
                "family", "monospace",
                "scale", 0.92,
-               "foreground", "#cccccc",
+               "foreground", palette_color(PAL_FG),
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 10,
                "pixels-inside-wrap", 0,
@@ -170,7 +171,7 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "family", "monospace",
                "scale", 0.92,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#e6e6e6",
+               "foreground", palette_color(PAL_FG_STRONG),
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 10,
                "pixels-inside-wrap", 0,
@@ -180,7 +181,7 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
     CREATE_TAG("md_table_border",
                "family", "monospace",
                "scale", 0.92,
-               "foreground", "#45464a",
+               "foreground", palette_color(PAL_RULE),
                "wrap-mode", GTK_WRAP_NONE,
                "left-margin", 10,
                "pixels-inside-wrap", 0,
@@ -188,21 +189,21 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
                "pixels-below-lines", 1);
 
     /* GitHub alerts: coloured bar and title, body like a quote */
-    CREATE_TAG("md_alert_note", "foreground", "#4493f8", "weight", 600);
-    CREATE_TAG("md_alert_tip", "foreground", "#3fb950", "weight", 600);
-    CREATE_TAG("md_alert_important", "foreground", "#ab7df8", "weight", 600);
-    CREATE_TAG("md_alert_warning", "foreground", "#d29922", "weight", 600);
-    CREATE_TAG("md_alert_caution", "foreground", "#f85149", "weight", 600);
+    CREATE_TAG("md_alert_note", "foreground", palette_color(PAL_LINK), "weight", 600);
+    CREATE_TAG("md_alert_tip", "foreground", palette_color(PAL_SUCCESS), "weight", 600);
+    CREATE_TAG("md_alert_important", "foreground", palette_color(PAL_SYN_CONTROL), "weight", 600);
+    CREATE_TAG("md_alert_warning", "foreground", palette_color(PAL_WARNING), "weight", 600);
+    CREATE_TAG("md_alert_caution", "foreground", palette_color(PAL_ERROR), "weight", 600);
 
     CREATE_TAG("md_image",
-               "foreground", "#9cdcfe",
+               "foreground", palette_color(PAL_SYN_VARIABLE),
                "style", PANGO_STYLE_ITALIC);
 
     CREATE_TAG("md_preview_banner",
                "family", "monospace",
                "scale", 0.9,
-               "foreground", "#dcdcaa",
-               "background", "#2d2d2d",
+               "foreground", palette_color(PAL_SYN_FUNCTION),
+               "background", palette_color(PAL_BG_CODE_INLINE),
                "pixels-above-lines", 4,
                "pixels-below-lines", 8);
 
@@ -751,7 +752,8 @@ static void cell_markup_append(GString* out, const gchar* text, gsize len) {
             if (e != NULL) {
                 gchar* esc = g_markup_escape_text(p + 1, e - p - 1);
                 g_string_append_printf(out, "<span font_family=\"monospace\" size=\"92%%\" "
-                                            "foreground=\"#d7ba7d\" background=\"#2a2b2d\">%s</span>", esc);
+                                            "foreground=\"%s\" background=\"%s\">%s</span>",
+                                       palette_color(PAL_SYN_ESCAPE), palette_color(PAL_BG_CODE_INLINE), esc);
                 g_free(esc);
                 i = (gsize)(e - text) + 1;
                 continue;
@@ -784,7 +786,7 @@ static void cell_markup_append(GString* out, const gchar* text, gsize len) {
             if (close != NULL && close + 1 < rest_end && close[1] == '(') {
                 const gchar* paren = memchr(close, ')', rest_end - close);
                 if (paren != NULL) {
-                    g_string_append(out, "<span foreground=\"#3794ff\">");
+                    g_string_append_printf(out, "<span foreground=\"%s\">", palette_color(PAL_LINK));
                     cell_markup_append(out, p + 1, close - p - 1);
                     g_string_append(out, "</span>");
                     i = (gsize)(paren - text) + 1;

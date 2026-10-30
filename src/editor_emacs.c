@@ -1,6 +1,7 @@
 /* Emacs editor mode (visual clone): modeline, minibuffer, prefix keys and commands. */
 #include "editor_modes_private.h"
 #include "editor.h"
+#include "palette.h"
 #include "code_nav.h"
 #include "code_help.h"
 #include "code_refs.h"
@@ -39,8 +40,8 @@ static void block_cursor_update(EditorTab* tab) {
         return;
     }
     if (tag == NULL) {
-        tag = gtk_text_buffer_create_tag(b, BLOCK_CURSOR_TAG, "background", "#aeafad",
-                                         "foreground", "#121314", NULL);
+        tag = gtk_text_buffer_create_tag(b, BLOCK_CURSOR_TAG, "background", palette_color(PAL_EDITOR_CURSOR),
+                                         "foreground", palette_color(PAL_BG_VIEW), NULL);
     }
     gtk_text_tag_set_priority(tag, gtk_text_tag_table_get_size(table) - 1);
     GtkTextIter it;
@@ -181,7 +182,7 @@ static void isearch_update(EditorTab* tab, EditorModeState* st) {
     isearch_clear_highlight(tab);
     gint total = 0, index = 0;
     if (q[0] != '\0') {
-        GtkTextTag* lazy = isearch_tag(tab->buffer, ISEARCH_LAZY_TAG, "#4b3a24");
+        GtkTextTag* lazy = isearch_tag(tab->buffer, ISEARCH_LAZY_TAG, palette_color(PAL_EDITOR_MATCH));
         GtkTextIter it, s, e;
         gtk_text_buffer_get_start_iter(tab->buffer, &it);
         while (total < ISEARCH_MAX_LAZY &&
@@ -198,7 +199,7 @@ static void isearch_update(EditorTab* tab, EditorModeState* st) {
         GtkTextIter s, e;
         gtk_text_buffer_get_iter_at_offset(tab->buffer, &s, st->emacs_is_ms);
         gtk_text_buffer_get_iter_at_offset(tab->buffer, &e, st->emacs_is_me);
-        gtk_text_buffer_apply_tag(tab->buffer, isearch_tag(tab->buffer, ISEARCH_TAG, "#a35c00"), &s, &e);
+        gtk_text_buffer_apply_tag(tab->buffer, isearch_tag(tab->buffer, ISEARCH_TAG, palette_color(PAL_EDITOR_MATCH_CURRENT)), &s, &e);
         cur = st->emacs_is_forward ? e : s;
     } else {
         gtk_text_buffer_get_iter_at_offset(tab->buffer, &cur, st->emacs_is_origin);

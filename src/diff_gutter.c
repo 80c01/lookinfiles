@@ -5,6 +5,7 @@
 #include "diff_gutter.h"
 #include "git_utils.h"
 #include "line_diff.h"
+#include "palette.h"
 
 #include <pango/pangocairo.h>
 #include <string.h>
@@ -274,15 +275,21 @@ void diff_gutter_refresh_all(void) {
     }
 }
 
-static void fill_bar(cairo_t* cr, double x, double y, double h, double r, double gr, double b) {
-    cairo_set_source_rgb(cr, r, gr, b);
+static void set_source_role(cairo_t* cr, PaletteRole role) {
+    double r, g, b;
+    palette_rgb(role, &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+}
+
+static void fill_bar(cairo_t* cr, double x, double y, double h, PaletteRole role) {
+    set_source_role(cr, role);
     cairo_rectangle(cr, x, y, DIFF_GUTTER_WIDTH - 1, h);
     cairo_fill(cr);
 }
 
 /* Red triangle pointing into the text at y (between two lines) */
 static void fill_deleted(cairo_t* cr, double x, double y) {
-    cairo_set_source_rgb(cr, 0xf8 / 255.0, 0x51 / 255.0, 0x49 / 255.0);
+    set_source_role(cr, PAL_GUTTER_DELETED);
     cairo_move_to(cr, x, y - 4);
     cairo_line_to(cr, x + DIFF_GUTTER_WIDTH, y);
     cairo_line_to(cr, x, y + 4);
@@ -290,8 +297,8 @@ static void fill_deleted(cairo_t* cr, double x, double y) {
     cairo_fill(cr);
 }
 
-/* Line number right-aligned before the change bar (Dark+ colours: the
- * cursor line is brighter in editors) */
+/* Line number right-aligned before the change bar (the cursor line
+ * is brighter in editors) */
 static void draw_number(DiffGutter* g, cairo_t* cr, PangoLayout* layout, gint number,
                         gboolean current, double y, double bar_x) {
     gchar buf[16];
@@ -300,9 +307,9 @@ static void draw_number(DiffGutter* g, cairo_t* cr, PangoLayout* layout, gint nu
     gint w = 0;
     pango_layout_get_pixel_size(layout, &w, NULL);
     if (current) {
-        cairo_set_source_rgb(cr, 0xc6 / 255.0, 0xc6 / 255.0, 0xc6 / 255.0);
+        set_source_role(cr, PAL_FG);
     } else {
-        cairo_set_source_rgb(cr, 0x85 / 255.0, 0x85 / 255.0, 0x85 / 255.0);
+        set_source_role(cr, PAL_FG_SUBTLE);
     }
     cairo_move_to(cr, bar_x - NUMBERS_PAD_RIGHT - w, y + gtk_text_view_get_pixels_above_lines(g->view));
     pango_cairo_show_layout(cr, layout);
@@ -352,9 +359,9 @@ static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gp
         }
         guint8 m = g->marks[line];
         if (m & LINE_DIFF_ADDED) {
-            fill_bar(cr, bar_x, wy, bh, 0x2e / 255.0, 0xa0 / 255.0, 0x43 / 255.0);
+            fill_bar(cr, bar_x, wy, bh, PAL_GUTTER_ADDED);
         } else if (m & LINE_DIFF_MODIFIED) {
-            fill_bar(cr, bar_x, wy, bh, 0x00 / 255.0, 0x78 / 255.0, 0xd4 / 255.0);
+            fill_bar(cr, bar_x, wy, bh, PAL_GUTTER_MODIFIED);
         }
         if (m & LINE_DIFF_DELETED_ABOVE) {
             fill_deleted(cr, bar_x, wy);

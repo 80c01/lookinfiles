@@ -1,4 +1,5 @@
 #include "orgmode.h"
+#include "palette.h"
 #include "org_doc.h"
 #include "image_utils.h"
 #include "app_events.h"
@@ -212,187 +213,187 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
     CREATE_TAG("org_title",
                "scale", 1.6,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#4fc1ff",
+               "foreground", palette_color(PAL_ACCENT_FG),
                "pixels-above-lines", 12,
                "pixels-below-lines", 6);
 
     CREATE_TAG("org_meta",
                "scale", 0.9,
                "style", PANGO_STYLE_ITALIC,
-               "foreground", "#858585",
+               "foreground", palette_color(PAL_FG_SUBTLE),
                "pixels-below-lines", 4);
 
     CREATE_TAG("org_banner",
                "scale", 0.9,
-               "foreground", "#808080",
+               "foreground", palette_color(PAL_FG_SUBTLE),
                "pixels-above-lines", 2,
                "pixels-below-lines", 6);
 
     CREATE_TAG("org_h1",
                "scale", 1.35,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#4fc1ff",
+               "foreground", palette_color(PAL_SYN_CONSTANT),
                "pixels-above-lines", 12,
                "pixels-below-lines", 4);
 
     CREATE_TAG("org_h2",
                "scale", 1.25,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#ce9178",
+               "foreground", palette_color(PAL_SYN_FUNCTION),
                "pixels-above-lines", 10,
                "pixels-below-lines", 3);
 
     CREATE_TAG("org_h3",
                "scale", 1.15,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#dcdcaa",
+               "foreground", palette_color(PAL_SYN_TYPE),
                "pixels-above-lines", 8,
                "pixels-below-lines", 2);
 
     CREATE_TAG("org_h4",
                "scale", 1.05,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#4ec9b0",
+               "foreground", palette_color(PAL_SYN_CONTROL),
                "pixels-above-lines", 6,
                "pixels-below-lines", 2);
 
     CREATE_TAG("org_h5",
                "scale", 1.0,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#c586c0",
+               "foreground", palette_color(PAL_SYN_STRING),
                "pixels-above-lines", 4,
                "pixels-below-lines", 2);
 
     CREATE_TAG("org_h6",
                "scale", 0.95,
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#9cdcfe",
+               "foreground", palette_color(PAL_SYN_VARIABLE),
                "pixels-above-lines", 4,
                "pixels-below-lines", 2);
 
     CREATE_TAG("org_todo",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#ffffff",
-               "background", "#c74e39");
+               "foreground", palette_color(PAL_BADGE_FG),
+               "background", palette_color(PAL_BADGE_RED));
 
     CREATE_TAG("org_done",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#ffffff",
-               "background", "#388a34");
+               "foreground", palette_color(PAL_BADGE_FG),
+               "background", palette_color(PAL_BADGE_GREEN));
 
     CREATE_TAG("org_next",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#ffffff",
-               "background", "#0e639c");
+               "foreground", palette_color(PAL_BADGE_FG),
+               "background", palette_color(PAL_BADGE_BLUE));
 
     CREATE_TAG("org_running",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#1e1e1e",
-               "background", "#e5c100");
+               "foreground", palette_color(PAL_BG_VIEW),
+               "background", palette_color(PAL_HIGHLIGHT));
 
     CREATE_TAG("org_waiting",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#ffffff",
-               "background", "#b8860b");
+               "foreground", palette_color(PAL_BADGE_FG),
+               "background", palette_color(PAL_BADGE_ORANGE));
 
     CREATE_TAG("org_cancelled",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#808080",
-               "background", "#2d2d2d",
+               "foreground", palette_color(PAL_FG_SUBTLE),
+               "background", palette_color(PAL_BG_CODE_INLINE),
                "strikethrough", TRUE);
 
     CREATE_TAG("org_done_text",
                "strikethrough", TRUE,
-               "foreground", "#707070");
+               "foreground", palette_color(PAL_FG_FAINT));
 
     CREATE_TAG("org_prio_a",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#f44747");
+               "foreground", palette_color(PAL_ERROR));
 
     CREATE_TAG("org_prio_b",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#e2c08d");
+               "foreground", palette_color(PAL_SYN_ESCAPE));
 
     CREATE_TAG("org_prio_c",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#4fc1ff");
+               "foreground", palette_color(PAL_ACCENT_FG));
 
     CREATE_TAG("org_tag",
                "scale", 0.85,
-               "foreground", "#9cdcfe",
-               "background", "#262626");
+               "foreground", palette_color(PAL_SYN_VARIABLE),
+               "background", palette_color(PAL_BG_CODE_INLINE));
 
     CREATE_TAG("org_deadline_label",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#f14c4c");
+               "foreground", palette_color(PAL_ERROR));
 
     CREATE_TAG("org_scheduled_label",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#4ec9b0");
+               "foreground", palette_color(PAL_SYN_TYPE));
 
     CREATE_TAG("org_closed_label",
-               "foreground", "#6e7681");
+               "foreground", palette_color(PAL_FG_FAINT));
 
     CREATE_TAG("org_timestamp",
-               "foreground", "#c586c0",
+               "foreground", palette_color(PAL_SYN_ESCAPE),
                "underline", PANGO_UNDERLINE_SINGLE);
 
     CREATE_TAG("org_inactive_ts",
-               "foreground", "#6e7681");
+               "foreground", palette_color(PAL_FG_FAINT));
 
     CREATE_TAG("org_drawer",
                "family", "monospace",
                "scale", 0.85,
-               "foreground", "#6e7681",
-               "background", "#181818");
+               "foreground", palette_color(PAL_FG_FAINT),
+               "background", palette_color(PAL_BG_BLOCK));
 
     CREATE_TAG("org_src_block",
                "family", "monospace",
-               "background", "#1e1e1e",
-               "foreground", "#d4d4d4",
+               "background", palette_color(PAL_BG_BLOCK),
+               "foreground", palette_color(PAL_FG_TEXT),
                "left-margin", 24,
                "right-margin", 24);
 
     CREATE_TAG("org_src_header",
                "family", "monospace",
                "scale", 0.85,
-               "foreground", "#808080",
-               "background", "#141414",
+               "foreground", palette_color(PAL_FG_SUBTLE),
+               "background", palette_color(PAL_BG_BLOCK),
                "left-margin", 24);
 
     CREATE_TAG("org_quote",
                "style", PANGO_STYLE_ITALIC,
-               "foreground", "#b0b0b0",
+               "foreground", palette_color(PAL_FG_MUTED),
                "left-margin", 24);
 
     CREATE_TAG("org_table",
                "family", "monospace",
-               "foreground", "#d4d4d4");
+               "foreground", palette_color(PAL_FG_TEXT));
 
     CREATE_TAG("org_table_hdr",
                "family", "monospace",
                "weight", PANGO_WEIGHT_BOLD,
-               "foreground", "#4fc1ff");
+               "foreground", palette_color(PAL_ACCENT_FG));
 
     CREATE_TAG("org_checkbox_checked",
-               "foreground", "#73c991",
+               "foreground", palette_color(PAL_SUCCESS),
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_checkbox_unchecked",
-               "foreground", "#d4d4d4",
+               "foreground", palette_color(PAL_FG_TEXT),
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_checkbox_partial",
-               "foreground", "#e2c08d",
+               "foreground", palette_color(PAL_WARNING),
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_cookie",
-               "foreground", "#4fc1ff",
+               "foreground", palette_color(PAL_ACCENT_FG),
                "scale", 0.9,
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_fold_cookie",
-               "foreground", "#808080",
+               "foreground", palette_color(PAL_FG_SUBTLE),
                "weight", PANGO_WEIGHT_BOLD);
 
     CREATE_TAG("org_bold",
@@ -406,15 +407,15 @@ void ensure_orgmode_tags(GtkTextBuffer* buffer) {
 
     CREATE_TAG("org_code",
                "family", "monospace",
-               "foreground", "#ce9178",
-               "background", "#2d2d2d");
+               "foreground", palette_color(PAL_SYN_STRING),
+               "background", palette_color(PAL_BG_CODE_INLINE));
 
     CREATE_TAG("org_strike",
                "strikethrough", TRUE,
-               "foreground", "#808080");
+               "foreground", palette_color(PAL_FG_SUBTLE));
 
     CREATE_TAG("org_link",
-               "foreground", "#3794ff",
+               "foreground", palette_color(PAL_LINK),
                "underline", PANGO_UNDERLINE_SINGLE);
 
     #undef CREATE_TAG

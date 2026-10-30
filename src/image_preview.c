@@ -1,6 +1,7 @@
 /* Image preview: fitted / 1:1 / zoomed, EXIF orientation and photo details
  * (see image_preview.h). */
 #include "image_preview.h"
+#include "palette.h"
 
 #include <glib/gstdio.h>
 #include <math.h>
@@ -287,20 +288,20 @@ static void ensure_image_tags(GtkTextBuffer* buffer) {
                                    "justification", GTK_JUSTIFY_CENTER,
                                    "weight", PANGO_WEIGHT_BOLD,
                                    "scale", 1.15,
-                                   "foreground", "#4fc1ff",
+                                   "foreground", palette_color(PAL_FG_STRONG),
                                    NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "img_sub")) {
         gtk_text_buffer_create_tag(buffer, "img_sub",
                                    "justification", GTK_JUSTIFY_CENTER,
-                                   "foreground", "#888888",
+                                   "foreground", palette_color(PAL_FG_SUBTLE),
                                    "scale", 0.9,
                                    NULL);
     }
     if (!gtk_text_tag_table_lookup(tags, "img_details")) {
         gtk_text_buffer_create_tag(buffer, "img_details",
                                    "justification", GTK_JUSTIFY_CENTER,
-                                   "foreground", "#b0b0b0",
+                                   "foreground", palette_color(PAL_FG_MUTED),
                                    "pixels-below-lines", 2,
                                    NULL);
     }

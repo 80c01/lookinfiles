@@ -1,4 +1,5 @@
 #include "dir_preview.h"
+#include "palette.h"
 #include "dir_summary.h"
 #include "file_types.h"
 #include "text_style.h"
@@ -144,24 +145,24 @@ static void ensure_tags(GtkTextBuffer* buffer) {
         return;
     }
     gtk_text_buffer_create_tag(buffer, "dir_title",
-                               "weight", 600, "scale", 1.3, "foreground", "#e6e6e6",
+                               "weight", 600, "scale", 1.3, "foreground", palette_color(PAL_FG_STRONG),
                                "pixels-below-lines", 2, NULL);
-    gtk_text_buffer_create_tag(buffer, "dir_dim", "foreground", "#8b8b8b", NULL);
+    gtk_text_buffer_create_tag(buffer, "dir_dim", "foreground", palette_color(PAL_FG_SUBTLE), NULL);
     gtk_text_buffer_create_tag(buffer, "dir_table",
                                "family", "monospace", "wrap-mode", GTK_WRAP_NONE, NULL);
     gtk_text_buffer_create_tag(buffer, "dir_folder", "weight", 600, NULL);
     gtk_text_buffer_create_tag(buffer, "dir_section",
-                               "weight", 600, "foreground", "#e6e6e6",
-                               "paragraph-background", "#1f2021",
+                               "weight", 600, "foreground", palette_color(PAL_FG_STRONG),
+                               "paragraph-background", palette_color(PAL_BG_BLOCK),
                                "pixels-above-lines", 6, "pixels-below-lines", 6, NULL);
     gtk_text_buffer_create_tag(buffer, "dir_plain", "family", "monospace", NULL);
     /* Git status colours, as in the explorer tree */
-    static const struct { const gchar* name; const gchar* color; } git_tags[] = {
-        { "dir_git_M", "#e2c08d" }, { "dir_git_U", "#73c991" }, { "dir_git_A", "#73c991" },
-        { "dir_git_D", "#c74e39" }, { "dir_git_R", "#4fc1ff" }, { "dir_git_!", "#e51400" },
+    static const struct { const gchar* name; PaletteRole role; } git_tags[] = {
+        { "dir_git_M", PAL_GIT_MODIFIED }, { "dir_git_U", PAL_GIT_ADDED }, { "dir_git_A", PAL_GIT_ADDED },
+        { "dir_git_D", PAL_GIT_DELETED }, { "dir_git_R", PAL_GIT_RENAMED }, { "dir_git_!", PAL_GIT_CONFLICT },
     };
     for (gsize i = 0; i < G_N_ELEMENTS(git_tags); i++) {
-        gtk_text_buffer_create_tag(buffer, git_tags[i].name, "foreground", git_tags[i].color, NULL);
+        gtk_text_buffer_create_tag(buffer, git_tags[i].name, "foreground", palette_color(git_tags[i].role), NULL);
     }
 }
 

@@ -11,6 +11,7 @@
 #include "terminal.h"
 #include "video.h"
 #include "layout_store.h"
+#include "palette.h"
 
 #define WS_CELL_W   32
 #define WS_ADD_W    22
@@ -605,6 +606,18 @@ void workspace_remove(AppData* app, gint idx) {
     workspace_switch(app, target);
 }
 
+/* Palette colour a, mixed with t of colour b, at alpha */
+static void set_source_mix(cairo_t* cr, PaletteRole a, PaletteRole b, gdouble t, gdouble alpha) {
+    double ar, ag, ab, br, bg, bb;
+    palette_rgb(a, &ar, &ag, &ab);
+    palette_rgb(b, &br, &bg, &bb);
+    cairo_set_source_rgba(cr, ar + (br - ar) * t, ag + (bg - ag) * t, ab + (bb - ab) * t, alpha);
+}
+
+static void set_source_role(cairo_t* cr, PaletteRole role, gdouble alpha) {
+    set_source_mix(cr, role, role, 0.0, alpha);
+}
+
 static void draw_rounded_rect(cairo_t* cr, gdouble x, gdouble y,
                               gdouble w, gdouble h, gdouble r) {
     if (w <= 0.0 || h <= 0.0) {
@@ -637,22 +650,22 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
         /* Outer desktop frame */
         draw_rounded_rect(cr, bx, by, WS_CELL_W, WS_CELL_H, 3.0);
         if (is_active) {
-            cairo_set_source_rgb(cr, 0.11, 0.16, 0.21);
+            set_source_mix(cr, PAL_BG_BAR, PAL_BG_SELECTED, 0.4, 1.0);
         } else if (is_hover) {
-            cairo_set_source_rgb(cr, 0.15, 0.17, 0.19);
+            set_source_role(cr, PAL_BG_HOVER, 1.0);
         } else {
-            cairo_set_source_rgb(cr, 0.08, 0.09, 0.10);
+            set_source_role(cr, PAL_BG_VIEW, 1.0);
         }
         cairo_fill_preserve(cr);
 
         if (is_active) {
-            cairo_set_source_rgb(cr, 0.0, 0.48, 0.80); /* #007acc */
+            set_source_role(cr, PAL_ACCENT, 1.0);
             cairo_set_line_width(cr, 1.5);
         } else if (is_hover) {
-            cairo_set_source_rgb(cr, 0.45, 0.50, 0.56);
+            set_source_role(cr, PAL_FG_SUBTLE, 1.0);
             cairo_set_line_width(cr, 1.0);
         } else {
-            cairo_set_source_rgb(cr, 0.22, 0.24, 0.27);
+            set_source_role(cr, PAL_BORDER_STRONG, 1.0);
             cairo_set_line_width(cr, 1.0);
         }
         cairo_stroke(cr);
@@ -673,7 +686,7 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
             gdouble fw = (center_vis || ws->term_vis)
                              ? (iw * CLAMP(ws->main_frac, 0.22, 0.72) - 0.8)
                              : iw;
-            cairo_set_source_rgba(cr, 0.31, 0.76, 1.0, alpha); /* Files: cyan-blue */
+            set_source_role(cr, PAL_ACCENT_FG, alpha); /* Files */
             cairo_rectangle(cr, ix, iy, fw, ih);
             cairo_fill(cr);
             rx = ix + fw + 1.5;
@@ -687,23 +700,23 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
                     /* Top: Center area */
                     if (ws->preview_vis && ws->editor_dedicated) {
                         gdouble ew = rw * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
-                        cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                        set_source_role(cr, PAL_FG, alpha); /* Preview */
                         cairo_rectangle(cr, rx, iy, ew, ph);
                         cairo_fill(cr);
-                        cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                        set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
                         cairo_rectangle(cr, rx + ew + 1.5, iy, rw - ew - 1.5, ph);
                         cairo_fill(cr);
                     } else if (ws->preview_vis) {
-                        cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                        set_source_role(cr, PAL_FG, alpha); /* Preview */
                         cairo_rectangle(cr, rx, iy, rw, ph);
                         cairo_fill(cr);
                     } else {
-                        cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                        set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
                         cairo_rectangle(cr, rx, iy, rw, ph);
                         cairo_fill(cr);
                     }
                     /* Bottom: Terminal */
-                    cairo_set_source_rgba(cr, 0.14, 0.82, 0.55, alpha);
+                    set_source_role(cr, PAL_ANSI_BRIGHT_GREEN, alpha); /* Terminal */
                     cairo_rectangle(cr, rx, iy + ph + 1.5, rw, ih - ph - 1.5);
                     cairo_fill(cr);
                 } else {
@@ -711,46 +724,46 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
                     /* Left: Center area */
                     if (ws->preview_vis && ws->editor_dedicated) {
                         gdouble ew = pw * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
-                        cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                        set_source_role(cr, PAL_FG, alpha); /* Preview */
                         cairo_rectangle(cr, rx, iy, ew, ih);
                         cairo_fill(cr);
-                        cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                        set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
                         cairo_rectangle(cr, rx + ew + 1.5, iy, pw - ew - 1.5, ih);
                         cairo_fill(cr);
                     } else if (ws->preview_vis) {
-                        cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                        set_source_role(cr, PAL_FG, alpha); /* Preview */
                         cairo_rectangle(cr, rx, iy, pw, ih);
                         cairo_fill(cr);
                     } else {
-                        cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                        set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
                         cairo_rectangle(cr, rx, iy, pw, ih);
                         cairo_fill(cr);
                     }
                     /* Right: Terminal */
-                    cairo_set_source_rgba(cr, 0.14, 0.82, 0.55, alpha);
+                    set_source_role(cr, PAL_ANSI_BRIGHT_GREEN, alpha); /* Terminal */
                     cairo_rectangle(cr, rx + pw + 1.5, iy, rw - pw - 1.5, ih);
                     cairo_fill(cr);
                 }
             } else if (center_vis) {
                 if (ws->preview_vis && ws->editor_dedicated) {
                     gdouble ew = rw * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
-                    cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                    set_source_role(cr, PAL_FG, alpha); /* Preview */
                     cairo_rectangle(cr, rx, iy, ew, ih);
                     cairo_fill(cr);
-                    cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                    set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
                     cairo_rectangle(cr, rx + ew + 1.5, iy, rw - ew - 1.5, ih);
                     cairo_fill(cr);
                 } else if (ws->preview_vis) {
-                    cairo_set_source_rgba(cr, 0.78, 0.82, 0.88, alpha);
+                    set_source_role(cr, PAL_FG, alpha); /* Preview */
                     cairo_rectangle(cr, rx, iy, rw, ih);
                     cairo_fill(cr);
                 } else {
-                    cairo_set_source_rgba(cr, 0.90, 0.65, 0.35, alpha);
+                    set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
                     cairo_rectangle(cr, rx, iy, rw, ih);
                     cairo_fill(cr);
                 }
             } else if (ws->term_vis) {
-                cairo_set_source_rgba(cr, 0.14, 0.82, 0.55, alpha);
+                set_source_role(cr, PAL_ANSI_BRIGHT_GREEN, alpha); /* Terminal */
                 cairo_rectangle(cr, rx, iy, rw, ih);
                 cairo_fill(cr);
             }
@@ -765,17 +778,17 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
 
         draw_rounded_rect(cr, ax, ay, WS_ADD_W, WS_CELL_H, 3.0);
         if (add_hover) {
-            cairo_set_source_rgb(cr, 0.16, 0.20, 0.25);
+            set_source_mix(cr, PAL_BG_BAR, PAL_BG_SELECTED, 0.4, 1.0);
         } else {
-            cairo_set_source_rgb(cr, 0.10, 0.11, 0.12);
+            set_source_role(cr, PAL_BG_WINDOW, 1.0);
         }
         cairo_fill_preserve(cr);
 
         if (add_hover) {
-            cairo_set_source_rgb(cr, 0.0, 0.48, 0.80);
+            set_source_role(cr, PAL_ACCENT, 1.0);
             cairo_set_line_width(cr, 1.3);
         } else {
-            cairo_set_source_rgb(cr, 0.25, 0.28, 0.31);
+            set_source_role(cr, PAL_BORDER_STRONG, 1.0);
             cairo_set_line_width(cr, 1.0);
         }
         cairo_stroke(cr);
@@ -785,9 +798,9 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
         gdouble cy = ay + WS_CELL_H * 0.5;
         gdouble arm = 4.0;
         if (add_hover) {
-            cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+            set_source_role(cr, PAL_FG_BRIGHT, 1.0);
         } else {
-            cairo_set_source_rgb(cr, 0.68, 0.72, 0.76);
+            set_source_role(cr, PAL_FG_MUTED, 1.0);
         }
         cairo_set_line_width(cr, 1.6);
         cairo_move_to(cr, cx - arm, cy);
