@@ -49,7 +49,8 @@ and virtual workspaces, in a VS Code Dark+ look.
   images; spreadsheets (`.xlsx`, `.ods`) as grids with column letters, number,
   date and percent formats; presentations (`.pptx`, `.odp`) slide by slide;
   RTF. Page layout, fonts, headers and footers are not shown; long documents
-  stop after 256 KB of text.
+  stop after 256 KB of text. Other OLE2 compound files (`.msi`, `.vsd`,
+  Works...) show their properties (title, author, dates, counts) and streams.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
   notebooks (Markdown cells, highlighted code, text and image outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,

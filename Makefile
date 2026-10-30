@@ -84,7 +84,7 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_epub test_rtf test_sqlite_view test_gettext_view test_media_tags test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config
+TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_epub test_rtf test_sqlite_view test_gettext_view test_media_tags test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o $(BUILD_DIR)/text_encoding.o
@@ -123,7 +123,7 @@ TEST_DEPS_test_media_tags = $(BUILD_DIR)/media_tags.o
 TEST_DEPS_test_text_encoding = $(BUILD_DIR)/text_encoding.o
 TEST_DEPS_test_csv = $(BUILD_DIR)/csv.o $(BUILD_DIR)/preview_doc.o
 # Modules of the structured previews (preview_formats and the parsers it calls)
-PREVIEW_MODULES = preview_formats preview_doc file_types text_encoding hex_dump elf_info zip_reader docx csv json_view diff_view archive_listing cert_view card_view log_view font_info man_view notebook zip_xml spreadsheet odf pptx epub rtf sqlite_view gettext_view
+PREVIEW_MODULES = preview_formats preview_doc file_types text_encoding hex_dump elf_info zip_reader docx csv json_view diff_view archive_listing cert_view card_view log_view font_info man_view notebook zip_xml spreadsheet odf pptx epub rtf sqlite_view gettext_view ole_reader ole_props office97
 PREVIEW_FORMAT_OBJS = $(PREVIEW_MODULES:%=$(BUILD_DIR)/%.o)
 TEST_DEPS_test_preview_formats = $(PREVIEW_FORMAT_OBJS)
 TEST_DEPS_test_org_time = $(BUILD_DIR)/org_time.o
@@ -142,6 +142,8 @@ TEST_DEPS_test_code_tags = $(BUILD_DIR)/code_index.o $(CODE_SCAN_OBJS) $(CODE_TA
 TEST_DEPS_test_jump_list = $(BUILD_DIR)/jump_list.o
 LSP_PROTOCOL_OBJS = $(BUILD_DIR)/lsp_protocol.o $(BUILD_DIR)/code_symbol.o $(BUILD_DIR)/json_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_lsp_protocol = $(LSP_PROTOCOL_OBJS)
+TEST_DEPS_test_ole_reader = $(BUILD_DIR)/ole_reader.o
+TEST_DEPS_test_office97 = $(PREVIEW_FORMAT_OBJS)
 TEST_DEPS_test_lsp_config = $(BUILD_DIR)/lsp_config.o $(BUILD_DIR)/code_symbol.o
 TEST_DEPS_test_lsp_client = $(BUILD_DIR)/lsp_client.o $(LSP_PROTOCOL_OBJS)
 

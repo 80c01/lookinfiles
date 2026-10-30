@@ -212,6 +212,17 @@ static void test_detect_text_formats(void) {
     g_assert_cmpint(DETECT("page", ".TH X 1\n"), ==, FILE_KIND_MANPAGE);
     g_assert_cmpint(DETECT("version.1", "1.2.3\n"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("doc.rtf", "{\\rtf1\\ansi"), ==, FILE_KIND_RTF);
+    /* OLE2 compound files: by content whatever the name (a .pot PowerPoint
+     * template is not a gettext template), by extension otherwise */
+    static const guchar ole[] = "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1\0\0";
+    g_assert_cmpint(file_kind_detect("report.doc", ole, sizeof ole), ==, FILE_KIND_OLE);
+    g_assert_cmpint(file_kind_detect("slides.pot", ole, sizeof ole), ==, FILE_KIND_OLE);
+    g_assert_cmpint(file_kind_detect("noext", ole, sizeof ole), ==, FILE_KIND_OLE);
+    g_assert_cmpint(file_kind_from_name("budget.XLS"), ==, FILE_KIND_OLE);
+    g_assert_cmpint(file_kind_from_name("show.pps"), ==, FILE_KIND_OLE);
+    g_assert_cmpint(file_kind_from_name("fr.pot"), ==, FILE_KIND_TRANSLATION);
+    g_assert_cmpstr(file_icon("budget.xls", FALSE), ==, file_icon("budget.xlsx", FALSE));
+    g_assert_cmpstr(file_icon("old.doc", FALSE), ==, file_icon("new.docx", FALSE));
     g_assert_cmpint(DETECT("key.pem", "-----BEGIN PRIVATE KEY-----\n"), ==, FILE_KIND_CERTIFICATE);
     g_assert_cmpint(DETECT("key.pem", "not a pem\n"), ==, FILE_KIND_TEXT);
     /* An empty file keeps a text kind from its name only */
@@ -257,7 +268,8 @@ static void test_kind_predicates(void) {
     g_assert_cmpint(file_kind_from_name("a.mp3"), ==, FILE_KIND_AUDIO);
     g_assert_cmpint(file_kind_from_name("a.c"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(file_kind_from_name("Report.DOCX"), ==, FILE_KIND_DOCUMENT);
-    g_assert_cmpint(file_kind_from_name("old.doc"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(file_kind_from_name("old.doc"), ==, FILE_KIND_OLE);
+    g_assert_true(file_kind_is_renderable(FILE_KIND_OLE)); /* m: hex dump */
     g_assert_true(file_kind_is_renderable(FILE_KIND_DOCUMENT)); /* m: hex dump */
     g_assert_false(file_kind_is_media(FILE_KIND_DOCUMENT));
 }

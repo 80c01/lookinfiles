@@ -70,6 +70,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `zip_reader` — read-only ZIP archives (`zip_reader_open()`,
   `zip_reader_read()` with a size limit; stored / deflated via GIO's raw
   `GZlibDecompressor`, ZIP64, no encryption).
+- `ole_reader`, `ole_props`, `office97` — OLE2 compound files (Office
+  97-2003, `.msg`...): sectors, FAT / mini FAT and directory read from a
+  mapped file with loop and range checks (`tests/ole_builder.h` builds them
+  in tests), the property sets (`OleProperties`: card and HTML head), and the
+  preview dispatch by stream names with the property card + stream list
+  fallback.
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.

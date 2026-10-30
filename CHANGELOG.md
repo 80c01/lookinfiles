@@ -14,6 +14,9 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- OLE2 compound files are detected by content and read without any external
+  tool: their document properties (title, author, dates, page and word
+  counts) and their streams are shown; encrypted ones say so.
 - Code navigation in editor tabs, in the three modes: go to the definition or
   declaration of the identifier under the cursor and back (Notepad `F12` /
   `Ctrl+F12` / `Ctrl+Click`, `Ctrl+Alt+-` / `Ctrl+Shift+-`; Emacs `M-.` /

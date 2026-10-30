@@ -22,6 +22,9 @@ dir_summary:file_types,text_encoding
 hex_dump:
 elf_info:
 zip_reader:
+ole_reader:
+ole_props:ole_reader,preview_doc
+office97:ole_reader,ole_props,preview_doc
 docx:zip_reader
 preview_doc:
 csv:preview_doc
@@ -45,7 +48,7 @@ sqlite_view:preview_doc
 gettext_view:preview_doc
 media_tags:
 text_encoding:
-preview_formats:file_types,text_encoding,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view
+preview_formats:office97,file_types,text_encoding,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view
 org_time:
 org_doc:org_time
 org_table:org_doc

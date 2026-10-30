@@ -21,6 +21,7 @@
 #include "man_view.h"
 #include "notebook.h"
 #include "odf.h"
+#include "office97.h"
 #include "pptx.h"
 #include "rtf.h"
 #include "spreadsheet.h"
@@ -924,6 +925,13 @@ static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, 
 
 /* --- Word documents --- */
 
+/* --- Office 97-2003 and other compound files --- */
+
+static PreviewDoc* build_ole(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    return office97_preview(in->path, in->name, in->size, PREVIEW_FORMAT_MAX_TEXT, error);
+}
+
 static PreviewDoc* build_document(const PreviewInput* in, GCancellable* cancellable,
                                   GError** error) {
     (void)cancellable;
@@ -972,6 +980,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_ebook;
     case FILE_KIND_RTF:
         return build_rtf;
+    case FILE_KIND_OLE:
+        return build_ole;
     case FILE_KIND_DATABASE:
         return build_database;
     case FILE_KIND_TRANSLATION:

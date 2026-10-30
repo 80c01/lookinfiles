@@ -216,6 +216,8 @@ static const struct {
     { "vcf", FILE_KIND_CONTACT }, { "vcard", FILE_KIND_CONTACT },
     { "desktop", FILE_KIND_DESKTOP },
     { "rtf", FILE_KIND_RTF },
+    { "doc", FILE_KIND_OLE }, { "dot", FILE_KIND_OLE }, { "xls", FILE_KIND_OLE }, { "xlt", FILE_KIND_OLE },
+    { "ppt", FILE_KIND_OLE }, { "pps", FILE_KIND_OLE }, /* .pot is a gettext template by name; its content decides */
     { "po", FILE_KIND_TRANSLATION }, { "pot", FILE_KIND_TRANSLATION }, { "mo", FILE_KIND_TRANSLATION },
     { "gmo", FILE_KIND_TRANSLATION },
 };
@@ -338,6 +340,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_DESKTOP:      return "Desktop Entry";
     case FILE_KIND_MANPAGE:      return "Man Page";
     case FILE_KIND_RTF:          return "Rich Text";
+    case FILE_KIND_OLE:          return "Office 97-2003";
     case FILE_KIND_TRANSLATION:  return "Translations";
     }
     return NULL;
@@ -458,6 +461,9 @@ static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_n
     }
     if (HAS(0, "SQLite format 3")) {
         return FILE_KIND_DATABASE;
+    }
+    if (HAS(0, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1")) {
+        return FILE_KIND_OLE; /* compound file: the preview reads its streams */
     }
     if (HAS(0, "\xDE\x12\x04\x95") || HAS(0, "\x95\x04\x12\xDE")) {
         return FILE_KIND_TRANSLATION; /* gettext .mo */
@@ -928,6 +934,11 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
         return "📽️";
     case FILE_KIND_DOCUMENT:
     case FILE_KIND_RTF:
+        return "📘";
+    case FILE_KIND_OLE:
+        /* Same icons as the modern formats */
+        if (EXT_IS(".xls") || EXT_IS(".xlt")) return "📊";
+        if (EXT_IS(".ppt") || EXT_IS(".pps")) return "📽️";
         return "📘";
     case FILE_KIND_EBOOK:
         return "📚";

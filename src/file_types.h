@@ -54,6 +54,7 @@ typedef enum {
     FILE_KIND_DESKTOP,   /* freedesktop .desktop entry */
     FILE_KIND_MANPAGE,   /* roff manual page */
     FILE_KIND_RTF,       /* Rich Text Format */
+    FILE_KIND_OLE,       /* OLE2 compound file: Office 97-2003 .doc / .xls / .ppt, .msg... */
     FILE_KIND_TRANSLATION /* gettext catalogs (.po, .pot, .mo); keep last (FILE_KIND_LAST) */
 } FileKind;
 
