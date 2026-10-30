@@ -76,6 +76,9 @@ every common format to L3 and never leave one below L1.
 | Excel 97-2003 / 5.0 `.xls` | L3 | `xls_reader`, `spreadsheet` |
 | Presentations `.pptx` / `.odp` / `.ppt` | L2 | `pptx`, `odf`, `ppt_reader` |
 | Other OLE2 compound files (properties, streams) | L1 | `ole_reader`, `ole_props`, `office97` |
+| Mail messages `.eml` / `.emlx`, Outlook `.msg`, TNEF `winmail.dat` | L3 | `mail_message`, `mail_view`, `mail_msg`, `mail_tnef` |
+| Mailboxes (mbox), Maildir and MH folders | L2 | `mail_box`, `mail_dir` |
+| Outlook stores `.pst` / `.ost`, Outlook Express `.dbx` | L1 | `mail_store` |
 | EPUB | L2–L3 | `epub` |
 | Man pages (gzipped too) | L2 | `man_view` |
 | Archives (ZIP, tar, gzip, ar; 7z, RAR, xz, ISO... with libarchive) | L2 | `archive_listing` |
@@ -125,8 +128,8 @@ dump (13.7 % before this work). Most of the rest are TeX font metrics
   than ~100 ms (none measured over the budget so far).
 - Previews of TeX fonts (`.tfm`, `.pfb`) and Python bytecode (`.pyc`), the
   largest remaining L0 groups.
-- Old binary Office files `.doc`, `.xls`, `.ppt` (Phase 5).
-- Mail files: messages, mailboxes, mail folders (Phase 6).
+- Folders and messages of Outlook stores (`.pst`, `.ost`, `.dbx`): would
+  need libpff (Phase 6).
 
 ---
 
@@ -262,7 +265,7 @@ fixture is a copy of `report.doc` with the `fEncrypted` flag set.
 Out of scope: Word for DOS / Word 2, Excel 2–4 (BIFF2–4, not compound
 files), images and charts embedded in the files, exact page layout.
 
-## 9. Phase 6 — Mail files
+## 9. Phase 6 — Mail files — done
 
 Old mail lives in many shapes: single messages, mailbox files holding
 thousands of messages (Thunderbird's `Inbox`, `Sent`... have no extension),
@@ -271,14 +274,14 @@ what a mail client shows: a message with its headers, body and attachments,
 or a mailbox as a list of messages. Pure GLib except the optional Outlook
 store library.
 
-- [ ] **Message parser** `mail_message` (layer 1): RFC 5322 headers
+- [x] **Message parser** `mail_message` (layer 1): RFC 5322 headers
       (folded lines, `From`, `To`, `Cc`, `Subject`, `Date`), RFC 2047
       encoded words (`=?UTF-8?B?...?=`, `=?ISO-8859-1?Q?...?=`), any charset
       converted with `g_convert()` (Windows-1252 when undeclared or wrong),
       MIME tree (multipart/mixed, alternative, related, nested
       message/rfc822), base64 and quoted-printable, RFC 2231 file names.
       Bounded: parts beyond a size limit are listed, not decoded.
-- [ ] **Message preview** (`.eml`, `.emlx`, a single message without
+- [x] **Message preview** (`.eml`, `.emlx`, a single message without
       extension): a header card (from, to, cc, date in local time, subject),
       then the body: `text/plain` as text (quoted `>` lines dimmed,
       signature after `-- ` dimmed), or `text/html` through the `html`
@@ -286,7 +289,7 @@ store library.
       `data:` URIs; attachments listed (name, type, size). `m` shows the raw
       source. Remote content is never fetched (no network from the
       preview).
-- [ ] **mbox files** (`mail_box`, layer 1): `.mbox`, `.mbx`, and files with
+- [x] **mbox files** (`mail_box`, layer 1): `.mbox`, `.mbx`, and files with
       no extension that start with a `From ` line followed by headers
       (Thunderbird / Mozilla `Inbox`, `Sent`, `Drafts`..., Unix
       `/var/mail/<user>`, Eudora `.mbx`). mboxo / mboxrd (`>From ` unquoted)
@@ -298,34 +301,42 @@ store library.
       `PgUp` step from the list into each message (same keys as PDF pages).
       Thunderbird's `.msf` index files next to them get a one-line card
       ("Thunderbird index of Inbox").
-- [ ] **Maildir and MH folders**: a directory holding `cur/`, `new/`,
+- [x] **Maildir and MH folders**: a directory holding `cur/`, `new/`,
       `tmp/` (Maildir, Maildir++ `.Folder` subdirectories) or numbered
       files with `.mh_sequences` (MH) gets the mailbox table instead of the
       plain directory listing (headers of the newest N messages, read in
       the directory preview worker; flags from the `:2,S` suffix shown as
       read / unread / replied). Files inside `cur/` and `new/` have no
       extension: detected as messages by content.
-- [ ] **Outlook `.msg`**: compound file read with `ole_reader` (Phase 5);
+- [x] **Outlook `.msg`**: compound file read with `ole_reader` (Phase 5);
       MAPI properties from `__substg1.0_*` streams (subject, sender,
       recipients, date, plain / HTML / RTF body; compressed RTF decoded,
       then shown through `rtf`), attachments listed from `__attach_*`
       storages. Same message preview as `.eml`.
-- [ ] **TNEF `winmail.dat`** (attachment of Outlook mails): attachments
+- [x] **TNEF `winmail.dat`** (attachment of Outlook mails): attachments
       listed with names and sizes, body shown when present.
-- [ ] **Outlook stores `.pst` / `.ost`** and Outlook Express `.dbx`:
+- [x] **Outlook stores `.pst` / `.ost`** and Outlook Express `.dbx`:
       header card (format, Unicode or ANSI, size, encryption); with the
       optional `libpff` (`HAVE_LIBPFF`), the folder tree with message
       counts and the newest messages of the Inbox. Without it, L1.
-- [ ] **Detection**: by content first (header lines such as `From:`,
+- [x] **Detection**: by content first (header lines such as `From:`,
       `Received:`, `Return-Path:`, `MIME-Version:` in the first bytes; the
       `From ` line of mbox; `!BDN` for PST; TNEF signature `78 9F 3E 22`),
       then extensions `.eml`, `.emlx`, `.mbox`, `.mbx`, `.msg`, `.pst`,
       `.ost`, `.dbx`, `.msf`. The mail icon in `file_icon()`.
-- [ ] **Fixtures**: messages in UTF-8, ISO-8859-1 and Windows-1252, with
+- [x] **Fixtures**: messages in UTF-8, ISO-8859-1 and Windows-1252, with
       encoded headers, HTML only, alternative, inline images, attachments,
       a forwarded message; an mbox of each variant (one with a `>From `
       line, one truncated in a message); a small Maildir; a `.msg` and a
       `winmail.dat` built in the tests; one `shot` each.
+
+Done differently: libpff is not available, so `HAVE_LIBPFF` is not
+implemented and `.pst` / `.ost` / `.dbx` stay at L1 (format, ANSI or
+Unicode, size from the header with a truncation check, encryption, message
+count of a `.dbx` folder); the card suggests exporting with `readpst` /
+`undbx`. Encrypted `.msg` files are recognized by their `IPM.Note.SMIME`
+class. TNEF dates (`attDateSent`) are taken as UTC when the MAPI submit
+time is missing.
 
 Out of scope: sending, replying, IMAP / POP access, decrypting S/MIME or
 PGP messages (shown as "Encrypted message" with the sender and subject),
