@@ -70,6 +70,7 @@ app_events:app_types
 panels:app_types,app_events
 icons:
 image_utils:
+animation:image_utils
 dialog:
 tab_drop:pane_geometry
 explorer_tree:explorer_row

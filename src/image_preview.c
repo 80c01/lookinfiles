@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "animation.h"
 #include "app_events.h"
 #include "exif.h"
 #include "file_types.h"
@@ -37,6 +38,7 @@ typedef struct {
     gboolean is_fitted;
     gchar** details;       /* photo details lines (EXIF), or NULL */
     GdkTexture* texture;
+    GdkPixbufAnimation* animation; /* animated GIF / WebP: played instead of texture */
 } ImagePreviewTaskData;
 
 static void image_preview_task_data_free(gpointer data) {
@@ -53,6 +55,7 @@ static void image_preview_task_data_free(gpointer data) {
     if (td->texture != NULL) {
         g_object_unref(td->texture);
     }
+    g_clear_object(&td->animation);
     g_free(td);
 }
 
@@ -226,6 +229,18 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
     gint load_w = swap ? td->target_h : td->target_w;
     gint load_h = swap ? td->target_w : td->target_h;
 
+    /* Animated GIF / WebP: played by the view (frames scaled as they come) */
+    if (embedded == NULL && td->fmt_upper != NULL &&
+        (strcmp(td->fmt_upper, "GIF") == 0 || strcmp(td->fmt_upper, "WEBP") == 0)) {
+        GdkPixbufAnimation* anim = gdk_pixbuf_animation_new_from_file(td->full, NULL);
+        if (anim != NULL && !gdk_pixbuf_animation_is_static_image(anim)) {
+            td->animation = anim;
+            g_task_return_boolean(task, TRUE);
+            return;
+        }
+        g_clear_object(&anim);
+    }
+
     GdkPixbuf* pix;
     if (embedded != NULL) {
         pix = gdk_pixbuf_scale_simple(embedded, load_w, load_h, GDK_INTERP_BILINEAR);
@@ -339,6 +354,7 @@ static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
     g_free(title);
 
     gboolean resized = td->orig_w != td->target_w || td->orig_h != td->target_h;
+    const gchar* animated = td->animation != NULL ? "  •  animated" : "";
     gchar* mode_hint;
     if (td->zoom != 1.0) {
         mode_hint = g_strdup_printf("  [%.0f %%, press 0 to fit]", 100.0 * td->target_w / td->orig_w);
@@ -347,14 +363,18 @@ static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
     } else {
         mode_hint = g_strdup(td->render_raw && resized ? "  [1:1 scale, press m to fit]" : "  [1:1 scale]");
     }
-    gchar* meta = g_strdup_printf("%s  •  %d × %d px  •  %s%s\n\n",
-                                  td->fmt_upper, td->orig_w, td->orig_h, td->size_str, mode_hint);
+    gchar* meta = g_strdup_printf("%s  •  %d × %d px  •  %s%s%s\n\n",
+                                  td->fmt_upper, td->orig_w, td->orig_h, td->size_str, animated, mode_hint);
     gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, meta, -1, "img_sub", NULL);
     g_free(meta);
     g_free(mode_hint);
 
-    if (td->texture != NULL) {
-        gtk_text_buffer_insert_paintable(app->buffer, &iter, GDK_PAINTABLE(td->texture));
+    GdkPaintable* animation = td->animation != NULL
+                                  ? lookin_animation_new(td->animation, td->target_w, td->target_h) : NULL;
+    if (animation != NULL || td->texture != NULL) {
+        gtk_text_buffer_insert_paintable(app->buffer, &iter,
+                                         animation != NULL ? animation : GDK_PAINTABLE(td->texture));
+        g_clear_object(&animation);
 
         GtkTextIter start_img = iter;
         gtk_text_iter_backward_char(&start_img);

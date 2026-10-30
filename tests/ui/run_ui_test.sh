@@ -11,7 +11,8 @@
 #                symbolic icons: checks that every icon falls back to one built
 #                into GTK; a missing icon logs a warning and fails the test)
 #   UI_BASELINE  optional directory of reference screenshots (e.g. the shots of a
-#                run on another branch); every step except the terminal one must
+#                run on another branch); every step except the terminal and
+#                animation ones must
 #                match it within UI_TOLERANCE differing pixels (default: 50,
 #                colors within 10% count as equal to absorb anti-aliasing noise)
 #
@@ -399,7 +400,7 @@ fi
 if [ -n "${UI_BASELINE:-}" ]; then
     for f in "$SHOTS"/*.png; do
         name=$(basename "$f")
-        case "$name" in *_terminal.png) continue ;; esac   # shell prompt timing varies
+        case "$name" in *_terminal.png|*_animated.png) continue ;; esac   # prompt timing, animation frame vary
         ref="$UI_BASELINE/$name"
         if [ ! -f "$ref" ]; then
             echo "ui-test: FAIL - no baseline for $name"
