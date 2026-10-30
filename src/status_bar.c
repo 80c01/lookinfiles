@@ -18,7 +18,8 @@ static EditorTab* status_mode_tab(AppData* app) {
     for (; w != NULL; w = gtk_widget_get_parent(w)) {
         for (GList* l = app->editors; l != NULL; l = l->next) {
             EditorTab* t = (EditorTab*)l->data;
-            if (t != NULL && t->container == w) {
+            /* Ignore a focus left in a tab that is no longer shown */
+            if (t != NULL && t->container == w && gtk_widget_get_mapped(w)) {
                 return t;
             }
         }

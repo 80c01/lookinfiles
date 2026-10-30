@@ -274,6 +274,9 @@ xdotool type --delay 60 "Task"
                         shot vim_incsearch
 key Return;             shot vim_search_highlight
 key u;                  shot vim_undone
+xdotool mousemove 415 50 click 1;   shot preview_default_mode   # bar: Notepad, not Vim
+xdotool mousemove 730 50 click 1     # back to the Vim tab (notes.txt)
+xdotool mousemove 700 300 click 1;  shot vim_tab_mode_again     # bar: Vim
 key ctrl+w;             shot editor_closed
 xdotool mousemove 150 600 click 1    # focus the explorer (empty area)
 key ctrl+w;             shot last_editor_closed   # must show Preview, not Git Commits

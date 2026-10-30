@@ -213,6 +213,7 @@ typedef struct {
     gdouble editor_frac;        /* split ratio between preview panel and editor panel */
     GList* editors;             /* EditorTab*, order matching tab order */
     EditorTab* last_focused_editor; /* last focused editor tab */
+    guint status_idle_id;           /* pending status bar refresh after a page switch */
 
     /* Video preview */
     GtkWidget* preview_stack;   /* GtkStack: "text" (text_view), "video" (video_player), or "audio" (audio_player) */
