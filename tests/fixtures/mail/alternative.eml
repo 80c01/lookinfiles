@@ -1,0 +1,31 @@
+Return-Path: <ann@example.org>
+Received: from mail.example.org by mx.example.net; Thu, 29 Oct 2026 18:02:11 +0100
+From: =?UTF-8?B?QW5uIE3DvGxsZXI=?= <ann@example.org>
+To: Bob <bob@example.net>, Carol <carol@example.net>
+Cc: team@example.org
+Subject: =?UTF-8?Q?R=C3=A9union_de_lundi?= =?UTF-8?Q?_=E2=80=94_agenda?=
+Date: Thu, 29 Oct 2026 18:02:00 +0100
+Message-ID: <agenda-1@example.org>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1"
+
+--b1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Bonjour à tous,
+
+Voici l'ordre du jour de lundi.
+
+> Can we also talk about the budget?
+> -- Bob
+
+Yes, at the end.
+
+-- 
+Ann Müller
+--b1
+Content-Type: text/html; charset=UTF-8
+
+<html><body><p>Bonjour &agrave; tous,</p></body></html>
+--b1--

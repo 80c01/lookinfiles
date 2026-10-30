@@ -80,6 +80,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   the `Workbook` of `spreadsheet` (shown by `spreadsheet_append_sheets()`,
   shared with `.xlsx`). `ppt_reader` — `.ppt` records to HTML slide by
   slide (SlideListWithText, else the slide containers; masters skipped).
+- `mail_message`, `mail_view` — mail messages: RFC 5322 headers, RFC 2047 /
+  2231 decoding, MIME tree, base64 / quoted-printable, charsets with the
+  Windows-1252 fallback; the preview (header card, text or HTML body,
+  attachments, forwarded messages), shared by every mail source.
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.

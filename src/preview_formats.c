@@ -21,6 +21,8 @@
 #include "man_view.h"
 #include "notebook.h"
 #include "odf.h"
+#include "mail_message.h"
+#include "mail_view.h"
 #include "office97.h"
 #include "pptx.h"
 #include "rtf.h"
@@ -888,6 +890,31 @@ static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, 
 
 /* --- Word documents --- */
 
+/* --- Mail --- */
+
+#define MAIL_MAX_FILE (32 * 1024 * 1024)
+
+static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    /* The raw bytes: the viewer's text is converted to UTF-8 already */
+    if (in->path == NULL) {
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "no file");
+        return NULL;
+    }
+    GMappedFile* map = g_mapped_file_new(in->path, FALSE, error);
+    if (map == NULL) return NULL;
+    gsize len = MIN(g_mapped_file_get_length(map), (gsize)MAIL_MAX_FILE);
+    const gchar* data = g_mapped_file_get_contents(map);
+    g_autoptr(MailMessage) msg = mail_message_parse(data != NULL ? data : "", data != NULL ? len : 0, MAIL_VIEW_MAX_PART);
+    g_mapped_file_unref(map);
+    gchar* size = preview_format_size(in->size);
+    gchar* subtitle = g_strdup_printf("Mail message · %s", size);
+    PreviewDoc* doc = mail_view_message(msg, subtitle);
+    g_free(subtitle);
+    g_free(size);
+    return doc;
+}
+
 /* --- Office 97-2003 and other compound files --- */
 
 static PreviewDoc* build_ole(const PreviewInput* in, GCancellable* cancellable, GError** error) {
@@ -945,6 +972,8 @@ static PreviewBuildFunc builder_for(FileKind kind) {
         return build_rtf;
     case FILE_KIND_OLE:
         return build_ole;
+    case FILE_KIND_MAIL:
+        return build_mail;
     case FILE_KIND_DATABASE:
         return build_database;
     case FILE_KIND_TRANSLATION:

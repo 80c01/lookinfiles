@@ -25,6 +25,9 @@ All notable changes to this project are listed here. The format follows
   number, percent and date formats (1904 date system included).
 - PowerPoint 97-2003 presentations (`.ppt`, `.pps`) slide by slide like
   `.pptx`: titles, body text and speaker notes.
+- Mail messages (`.eml`, `.emlx`, files without extension starting with mail
+  headers): header card, text or HTML body (inline images, no remote
+  content), forwarded messages and attachments, any charset.
 - Code navigation in editor tabs, in the three modes: go to the definition or
   declaration of the identifier under the cursor and back (Notepad `F12` /
   `Ctrl+F12` / `Ctrl+Click`, `Ctrl+Alt+-` / `Ctrl+Shift+-`; Emacs `M-.` /

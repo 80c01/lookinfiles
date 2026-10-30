@@ -51,6 +51,9 @@
     cp "$ROOT/tests/fixtures/preview/encrypted.doc" 35-encrypted.doc
     cp "$ROOT/tests/fixtures/preview/budget.xls" 36-budget.xls
     cp "$ROOT/tests/fixtures/preview/roadmap.ppt" 37-roadmap.ppt
+    # Mail: a text message with quotes and signature, an HTML one with an inline image
+    cp "$ROOT/tests/fixtures/mail/alternative.eml" 38-agenda.eml
+    cp "$ROOT/tests/fixtures/mail/html-inline.eml" 39-news.eml
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -97,7 +100,9 @@ format_scenario() {
     key j;              shot fmt_word97_encrypted
     key j;              shot fmt_excel97
     key j;              shot fmt_powerpoint97
-    key k k k k
+    key j;              shot fmt_mail_text
+    key j;              shot fmt_mail_html
+    key k k k k k k
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
 }

@@ -216,6 +216,7 @@ static const struct {
     { "vcf", FILE_KIND_CONTACT }, { "vcard", FILE_KIND_CONTACT },
     { "desktop", FILE_KIND_DESKTOP },
     { "rtf", FILE_KIND_RTF },
+    { "eml", FILE_KIND_MAIL }, { "emlx", FILE_KIND_MAIL },
     { "doc", FILE_KIND_OLE }, { "dot", FILE_KIND_OLE }, { "xls", FILE_KIND_OLE }, { "xlt", FILE_KIND_OLE },
     { "ppt", FILE_KIND_OLE }, { "pps", FILE_KIND_OLE }, /* .pot is a gettext template by name; its content decides */
     { "po", FILE_KIND_TRANSLATION }, { "pot", FILE_KIND_TRANSLATION }, { "mo", FILE_KIND_TRANSLATION },
@@ -302,6 +303,7 @@ gboolean file_kind_is_text(FileKind kind) {
     case FILE_KIND_DESKTOP:
     case FILE_KIND_MANPAGE:
     case FILE_KIND_RTF:
+    case FILE_KIND_MAIL:         /* messages and mailboxes; m shows their source */
         return TRUE;
     case FILE_KIND_TRANSLATION: /* .po text; .mo files are binary */
         return TRUE;
@@ -341,6 +343,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_MANPAGE:      return "Man Page";
     case FILE_KIND_RTF:          return "Rich Text";
     case FILE_KIND_OLE:          return "Office 97-2003";
+    case FILE_KIND_MAIL:         return "Mail";
     case FILE_KIND_TRANSLATION:  return "Translations";
     }
     return NULL;
@@ -588,6 +591,39 @@ static guchar next_non_blank(const guchar* head, gsize len, gsize i) {
 }
 
 /* Text formats recognized by their content (start is the first non-blank byte) */
+/* A mail message: header lines up to a blank line, with at least two
+ * headers mail clients write (an emlx file starts with a byte count line) */
+static gboolean looks_like_message(const guchar* head, gsize len, gsize start) {
+    static const gchar* const KNOWN[] = {"from:", "to:", "subject:", "date:", "received:", "return-path:",
+                                         "mime-version:", "message-id:", "delivered-to:", "x-mailer:", "reply-to:"};
+    gsize p = start;
+    gsize digits = 0;
+    while (p + digits < len && g_ascii_isdigit(head[p + digits])) digits++;
+    if (digits > 0 && p + digits < len && head[p + digits] == '\n') p += digits + 1;
+    gint known = 0, lines = 0;
+    while (p < len) {
+        const guchar* nl = memchr(head + p, '\n', len - p);
+        gsize ll = nl != NULL ? (gsize)(nl - head) - p : len - p;
+        if (ll > 0 && head[p + ll - 1] == '\r') ll--;
+        if (ll == 0) break; /* end of the headers */
+        if (head[p] != ' ' && head[p] != '\t') {
+            const guchar* colon = memchr(head + p, ':', ll);
+            if (colon == NULL || colon == head + p) return FALSE;
+            for (const guchar* c = head + p; c < colon; c++) {
+                if (*c <= ' ' || *c > '~') return FALSE;
+            }
+            gsize n = (gsize)(colon - head) - p + 1;
+            for (gsize k = 0; k < G_N_ELEMENTS(KNOWN); k++) {
+                if (n == strlen(KNOWN[k]) && g_ascii_strncasecmp((const gchar*)head + p, KNOWN[k], n) == 0) known++;
+            }
+            lines++;
+        }
+        if (nl == NULL) break;
+        p = (gsize)(nl - head) + 1;
+    }
+    return known >= 2 && lines >= 2;
+}
+
 static FileKind detect_text_format(const gchar* name, const guchar* head, gsize len, gsize start,
                                    FileKind by_name) {
     /* A name that already says which text format wins over content guesses */
@@ -624,6 +660,9 @@ static FileKind detect_text_format(const gchar* name, const guchar* head, gsize 
          (HAS(start, "--- ") && has_line_prefix(head, len, "+++ ")) ||
          (HAS(start, "Index: ") && has_line_prefix(head, len, "====")))) {
         return FILE_KIND_DIFF;
+    }
+    if (by_name == FILE_KIND_MAIL || looks_like_message(head, len, start)) {
+        return FILE_KIND_MAIL;
     }
     /* JSON without a JSON name: only for names without an extension */
     if (by_name == FILE_KIND_TEXT && file_extension(name)[0] == '\0') {
@@ -935,6 +974,8 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
     case FILE_KIND_DOCUMENT:
     case FILE_KIND_RTF:
         return "📘";
+    case FILE_KIND_MAIL:
+        return "📧";
     case FILE_KIND_OLE:
         /* Same icons as the modern formats */
         if (EXT_IS(".xls") || EXT_IS(".xlt")) return "📊";

@@ -53,6 +53,10 @@ and virtual workspaces, in a VS Code Dark+ look.
   footers are not shown; long documents stop after 256 KB of text. Other OLE2
   compound files (`.msi`, `.vsd`, Works...) show their properties (title,
   author, dates, counts) and streams.
+- Mail messages (`.eml`, `.emlx`, or any file starting with mail headers):
+  the headers, the text with quotes and signature dimmed (or the HTML body
+  with its inline images; remote content is never fetched), forwarded
+  messages and the attachments; encoded headers and charsets decoded.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
   notebooks (Markdown cells, highlighted code, text and image outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,
