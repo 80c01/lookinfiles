@@ -1188,11 +1188,12 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
                 app->last_focused_editor = t;
                 editor_minimap_update_visibility(t);
                 editor_modes_update_status(t);
-                app_emit(app, APP_EVENT_STATUS_CHANGED);
                 break;
             }
         }
     }
+    /* Also on the preview page: the bar then shows the default editor mode */
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
     minimap_update_visibility(app);
 }
 

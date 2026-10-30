@@ -6,6 +6,44 @@
 
 static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data);
 
+/* The editor tab whose mode the status bar shows and sets, or NULL when the
+ * preview (or the Git tab) is the active page: the bar then shows and sets the
+ * default mode of new editor tabs. */
+static EditorTab* status_mode_tab(AppData* app) {
+    if (app == NULL || app->editors == NULL) {
+        return NULL;
+    }
+    /* Keyboard focus inside an editor tab */
+    GtkWidget* w = (app->window != NULL) ? gtk_window_get_focus(app->window) : NULL;
+    for (; w != NULL; w = gtk_widget_get_parent(w)) {
+        for (GList* l = app->editors; l != NULL; l = l->next) {
+            EditorTab* t = (EditorTab*)l->data;
+            if (t != NULL && t->container == w) {
+                return t;
+            }
+        }
+    }
+    if (app->editor_box != NULL && app->active_panel == app->editor_box) {
+        return editor_current_tab(app);
+    }
+    /* Preview panel hidden: only editor tabs are left */
+    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+        return editor_current_tab(app);
+    }
+    /* Editor tab shown in the preview notebook */
+    if (app->notebook != NULL) {
+        gint p = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
+        GtkWidget* child = (p >= 0) ? gtk_notebook_get_nth_page(GTK_NOTEBOOK(app->notebook), p) : NULL;
+        for (GList* l = app->editors; child != NULL && l != NULL; l = l->next) {
+            EditorTab* t = (EditorTab*)l->data;
+            if (t != NULL && t->container == child) {
+                return t;
+            }
+        }
+    }
+    return NULL;
+}
+
 static GtkWidget* status_item_new(void) {
     GtkWidget* label = gtk_label_new("");
     gtk_widget_add_css_class(label, "status-item");
@@ -73,11 +111,15 @@ static void on_mode_item_clicked(GtkButton* b, gpointer data) {
     AppData* app = g_object_get_data(G_OBJECT(b), "app");
     EditorTab* tab = g_object_get_data(G_OBJECT(b), "tab");
     gint mode = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "mode"));
-    if (app != NULL && tab == NULL && app->editors != NULL) {
-        tab = app->last_focused_editor ? app->last_focused_editor : (EditorTab*)app->editors->data;
+    /* The tab may have been closed while the menu was open */
+    if (app != NULL && tab != NULL && g_list_find(app->editors, tab) == NULL) {
+        tab = NULL;
     }
     if (app != NULL && tab != NULL) {
         editor_set_tab_mode(app, tab, (EditorMode)mode);
+    } else if (app != NULL) {
+        app->default_editor_mode = (EditorMode)mode;
+        update_status_bar(app);
     }
     if (popover != NULL) {
         gtk_popover_popdown(GTK_POPOVER(popover));
@@ -98,10 +140,13 @@ static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
     gtk_widget_set_margin_top(box, 6);
     gtk_widget_set_margin_bottom(box, 6);
 
-    EditorTab* cur = app->last_focused_editor;
-    if (cur == NULL && app->editors != NULL) {
-        cur = (EditorTab*)app->editors->data;
-    }
+    EditorTab* cur = status_mode_tab(app);
+    EditorMode current = (cur != NULL) ? cur->mode : app->default_editor_mode;
+
+    GtkWidget* title = gtk_label_new(cur != NULL ? "Editor Mode" : "Default Editor Mode");
+    gtk_widget_add_css_class(title, "dim-label");
+    gtk_widget_set_margin_bottom(title, 2);
+    gtk_box_append(GTK_BOX(box), title);
 
     const struct { const gchar* label; EditorMode mode; } modes[] = {
         {"Notepad", EDITOR_MODE_NOTEPAD},
@@ -112,6 +157,9 @@ static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
     for (gsize i = 0; i < G_N_ELEMENTS(modes); i++) {
         GtkWidget* b = gtk_button_new_with_label(modes[i].label);
         gtk_button_set_has_frame(GTK_BUTTON(b), FALSE);
+        if (modes[i].mode == current) {
+            gtk_widget_add_css_class(b, "suggested-action");
+        }
         g_object_set_data(G_OBJECT(b), "app", app);
         g_object_set_data(G_OBJECT(b), "tab", cur);
         g_object_set_data(G_OBJECT(b), "mode", GINT_TO_POINTER(modes[i].mode));
@@ -235,32 +283,23 @@ void update_status_bar(AppData* app) {
 
     /* Update editor mode in status bar */
     if (app->status_mode != NULL) {
-        EditorTab* cur = NULL;
-        /* Try to find current editor tab */
-        if (app->editors != NULL) {
-            /* Prefer last focused */
-            if (app->last_focused_editor != NULL) {
-                cur = app->last_focused_editor;
-            } else {
-                cur = (EditorTab*)app->editors->data;
-            }
-        }
+        EditorTab* cur = status_mode_tab(app);
+        EditorMode mode = (cur != NULL) ? cur->mode : app->default_editor_mode;
         const gchar* mstr = "Notepad";
-        if (cur != NULL) {
-            if (cur->mode == EDITOR_MODE_ORGMODE ||
-                (!cur->text_mode && cur->name != NULL && is_org_file(cur->name))) {
-                mstr = "Org-mode";
-            } else if (cur->mode == EDITOR_MODE_VIM) {
-                mstr = "Vim";
-            } else if (cur->mode == EDITOR_MODE_EMACS) {
-                mstr = "Emacs";
-            } else {
-                mstr = "Notepad";
-            }
-        } else if (name != NULL && is_org_file(name)) {
+        if (cur != NULL && (cur->mode == EDITOR_MODE_ORGMODE ||
+                            (!cur->text_mode && cur->name != NULL && is_org_file(cur->name)))) {
             mstr = "Org-mode";
+        } else if (mode == EDITOR_MODE_VIM) {
+            mstr = "Vim";
+        } else if (mode == EDITOR_MODE_EMACS) {
+            mstr = "Emacs";
         }
         gtk_label_set_text(GTK_LABEL(app->status_mode), mstr);
+        if (app->status_mode_btn != NULL) {
+            gtk_widget_set_tooltip_text(app->status_mode_btn,
+                                        cur != NULL ? "Editor Mode of This Tab"
+                                                    : "Default Editor Mode of New Tabs");
+        }
         gtk_widget_set_visible(app->status_mode, TRUE);
     }
 

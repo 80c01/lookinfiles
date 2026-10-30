@@ -282,7 +282,9 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 
 The editor mode is changed from the status bar button, the tab menu,
 `:set mode=vim|emacs|notepad` in Vim mode or `M-x vim-mode` / `emacs-mode` /
-`notepad-mode` in Emacs mode. In Emacs mode, `M-x org-mode` turns on Org-mode
+`notepad-mode` in Emacs mode. While the preview is the active page, the
+status bar button shows and sets the default mode of new editor tabs
+(initially the `--editor` one). In Emacs mode, `M-x org-mode` turns on Org-mode
 editing and highlighting for any file, and `M-x text-mode` turns them off
 (even for a `.org` file, whose folded headings are then shown).
 

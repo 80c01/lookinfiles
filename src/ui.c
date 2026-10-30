@@ -16,7 +16,12 @@ static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, g
     (void)pspec;
     AppData* app = (AppData*)user_data;
     if (app != NULL) {
+        GtkWidget* before = app->active_panel;
         update_active_panel_highlight(app);
+        /* The editor mode shown in the status bar follows the focused panel */
+        if (app->active_panel != before) {
+            app_emit(app, APP_EVENT_STATUS_CHANGED);
+        }
     }
 }
 void wire_focus_tracking(AppData* app) {
