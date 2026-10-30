@@ -270,6 +270,10 @@ FileKind file_kind_from_name(const gchar* name) {
     if (name == NULL) return FILE_KIND_TEXT;
     if (is_rotated_log_name(name)) return FILE_KIND_LOG;
     if (is_manpage_name(name)) return FILE_KIND_MANPAGE;
+    gchar* base = g_path_get_basename(name);
+    gboolean tnef = g_ascii_strcasecmp(base, "winmail.dat") == 0;
+    g_free(base);
+    if (tnef) return FILE_KIND_MAIL; /* TNEF attachment of Outlook mails */
     const gchar* ext = file_extension(name);
     for (gsize i = 0; i < G_N_ELEMENTS(KIND_EXTENSIONS); i++) {
         if (g_ascii_strcasecmp(ext, KIND_EXTENSIONS[i].ext) == 0) {
@@ -468,6 +472,9 @@ static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_n
     }
     if (HAS(0, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1")) {
         return FILE_KIND_OLE; /* compound file: the preview reads its streams */
+    }
+    if (HAS(0, "\x78\x9F\x3E\x22")) {
+        return FILE_KIND_MAIL; /* TNEF winmail.dat */
     }
     if (HAS(0, "\xDE\x12\x04\x95") || HAS(0, "\x95\x04\x12\xDE")) {
         return FILE_KIND_TRANSLATION; /* gettext .mo */

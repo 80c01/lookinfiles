@@ -62,7 +62,8 @@ and virtual workspaces, in a VS Code Dark+ look.
   beginning and the end of very large ones are read. Maildir and MH folders
   show their newest messages (date, sender, subject, read / unread / replied)
   instead of the `cur` / `new` / `tmp` listing. Outlook messages (`.msg`)
-  are shown the same way (text, HTML or RTF body, attachments).
+  are shown the same way (text, HTML or RTF body, attachments), and so are
+  the `winmail.dat` (TNEF) attachments Outlook adds to mails.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
   notebooks (Markdown cells, highlighted code, text and image outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,

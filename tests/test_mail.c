@@ -6,6 +6,7 @@
 #include "mail_dir.h"
 #include "mail_message.h"
 #include "mail_msg.h"
+#include "mail_tnef.h"
 #include "mail_view.h"
 #include "preview_formats.h"
 
@@ -13,6 +14,7 @@
 #include <string.h>
 
 #include "msg_builder.h"
+#include "tnef_builder.h"
 
 static MailMessage* parse(const gchar* text) {
     return mail_message_parse(text, strlen(text), 1 << 20);
@@ -462,6 +464,77 @@ static void test_msg_damaged(void) {
     g_assert_cmpstr(file_icon("a.msg", FALSE), ==, "📧");
 }
 
+/* --- TNEF winmail.dat --- */
+
+static void test_tnef(void) {
+    GBytes* b = tnef_build();
+    gsize n = 0;
+    const guint8* d = g_bytes_get_data(b, &n);
+    g_assert_true(mail_tnef_looks_like(d, n));
+    GError* err = NULL;
+    MailMessage* m = mail_tnef_read(d, n, 1 << 20, &err);
+    g_assert_no_error(err);
+    g_assert_cmpstr(m->subject, ==, "Café menu");
+    g_assert_cmpstr(m->from, ==, "Chef Léon <leon@example.org>");
+    g_assert_cmpint(m->date, ==, 1793179800); /* 2026-10-28 09:30 */
+    GPtrArray* att = mail_message_attachments(m);
+    g_assert_cmpuint(att->len, ==, 2);
+    const MailPart* p0 = g_ptr_array_index(att, 0);
+    const MailPart* p1 = g_ptr_array_index(att, 1);
+    g_assert_cmpstr(p0->filename, ==, "menu de la semaine.txt");
+    g_assert_cmpstr(p0->content_type, ==, "text/plain");
+    g_assert_cmpuint(p0->size, ==, 19);
+    g_assert_cmpstr(p1->filename, ==, "photo.png");
+    g_assert_cmpstr(p1->content_type, ==, "image/png");
+    g_assert_cmpuint(p1->size, ==, 300);
+    g_ptr_array_unref(att);
+    PreviewDoc* doc = mail_view_message(m, "TNEF");
+    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_HTML);
+    g_assert_nonnull(strstr(doc->text->str, "soupe à l'oignon"));
+    g_assert_nonnull(strstr(doc->text->str, "menu de la semaine.txt"));
+    preview_doc_free(doc);
+    mail_message_free(m);
+
+    /* Attachments over the part limit: listed with their size */
+    m = mail_tnef_read(d, n, 100, NULL);
+    att = mail_message_attachments(m);
+    p1 = g_ptr_array_index(att, 1);
+    g_assert_null(p1->data);
+    g_assert_cmpuint(p1->size, ==, 300);
+    g_ptr_array_unref(att);
+    mail_message_free(m);
+
+    /* Truncated anywhere, bytes flipped: what was read, no crash */
+    for (gsize cut = 6; cut < n; cut += 7) {
+        m = mail_tnef_read(d, cut, 1 << 20, NULL);
+        g_assert_nonnull(m);
+        mail_message_free(m);
+    }
+    guint8* copy = g_memdup2(d, n);
+    for (gsize i = 6; i < n; i += 5) {
+        guint8 old = copy[i];
+        copy[i] ^= 0xFF;
+        m = mail_tnef_read(copy, n, 1 << 20, NULL);
+        g_assert_nonnull(m);
+        mail_message_free(m);
+        copy[i] = old;
+    }
+    g_free(copy);
+    g_assert_null(mail_tnef_read((const guint8*)"From: x\n\n", 9, 100, &err));
+    g_assert_nonnull(err);
+    g_clear_error(&err);
+
+    /* Detection: by content and by name; the fixture */
+    g_assert_cmpint(file_kind_detect("attachment.bin", d, MIN(n, 64)), ==, FILE_KIND_MAIL);
+    g_bytes_unref(b);
+    g_assert_cmpint(file_kind_from_name("WINMAIL.DAT"), ==, FILE_KIND_MAIL);
+    g_assert_cmpstr(file_icon("winmail.dat", FALSE), ==, "📧");
+    doc = fixture("winmail.dat");
+    g_assert_nonnull(strstr(doc->text->str, "Outlook TNEF"));
+    g_assert_nonnull(strstr(doc->text->str, "photo.png"));
+    preview_doc_free(doc);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/mail/encoded_words", test_encoded_words);
@@ -477,5 +550,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/mail/msg", test_msg);
     g_test_add_func("/mail/msg_rtf", test_msg_rtf);
     g_test_add_func("/mail/msg_damaged", test_msg_damaged);
+    g_test_add_func("/mail/tnef", test_tnef);
     return g_test_run();
 }

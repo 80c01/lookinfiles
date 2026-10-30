@@ -23,6 +23,7 @@
 #include "odf.h"
 #include "mail_box.h"
 #include "mail_message.h"
+#include "mail_tnef.h"
 #include "mail_view.h"
 #include "office97.h"
 #include "pptx.h"
@@ -985,10 +986,12 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
         return doc;
     }
     gsize len = MIN(full_len, (gsize)MAIL_MAX_FILE);
-    g_autoptr(MailMessage) msg = mail_message_parse(data != NULL ? data : "", data != NULL ? len : 0, MAIL_VIEW_MAX_PART);
+    gboolean tnef = mail_tnef_looks_like((const guint8*)data, len);
+    g_autoptr(MailMessage) msg = tnef ? mail_tnef_read((const guint8*)data, len, MAIL_VIEW_MAX_PART, NULL)
+                                      : mail_message_parse(data != NULL ? data : "", data != NULL ? len : 0, MAIL_VIEW_MAX_PART);
     g_mapped_file_unref(map);
     gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf("Mail message · %s", size);
+    gchar* subtitle = g_strdup_printf("%s · %s", tnef ? "Outlook TNEF (winmail.dat)" : "Mail message", size);
     PreviewDoc* doc = mail_view_message(msg, subtitle);
     g_free(subtitle);
     g_free(size);

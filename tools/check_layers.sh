@@ -32,6 +32,7 @@ mail_view:mail_message,preview_doc
 mail_box:mail_message
 mail_dir:mail_message,preview_doc
 mail_msg:mail_message,ole_reader,rtf
+mail_tnef:mail_message,mail_msg
 office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader,mail_msg,mail_view,mail_message
 docx:zip_reader
 preview_doc:
@@ -56,7 +57,7 @@ sqlite_view:preview_doc
 gettext_view:preview_doc
 media_tags:
 text_encoding:
-preview_formats:mail_box,mail_message,mail_view,office97,file_types,text_encoding,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view
+preview_formats:mail_box,mail_message,mail_tnef,mail_view,office97,file_types,text_encoding,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view
 org_time:
 org_doc:org_time
 org_table:org_doc

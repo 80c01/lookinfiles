@@ -132,7 +132,7 @@ static gint64 prop_time(OleReader* ole, const gchar* prefix, guint16 id, gsize h
     return t;
 }
 
-static MailPart* new_part(const gchar* type, const gchar* charset, GBytes* data) {
+MailPart* mail_msg_part_new(const gchar* type, const gchar* charset, GBytes* data) {
     MailPart* p = g_new0(MailPart, 1);
     p->content_type = g_strdup(type);
     p->charset = g_strdup(charset);
@@ -155,7 +155,26 @@ static void part_free_shallow(gpointer p) {
     g_free(part);
 }
 
-static gchar* guess_type(const gchar* name) {
+MailMessage* mail_msg_message_new(const gchar* headers) {
+    MailMessage* msg = mail_message_parse(headers != NULL ? headers : "", headers != NULL ? strlen(headers) : 0, 0);
+    /* The parsed header block has a text body: replaced by the caller's parts */
+    part_free_shallow(msg->root);
+    msg->root = mail_msg_part_new("multipart/mixed", NULL, NULL);
+    msg->root->children = g_ptr_array_new_with_free_func(part_free_shallow);
+    return msg;
+}
+
+MailPart* mail_msg_rtf_part(const guint8* data, gsize len) {
+    GBytes* raw = mail_msg_decompress_rtf(data, len);
+    if (raw == NULL) return NULL;
+    gsize rn = 0;
+    const gchar* r = g_bytes_get_data(raw, &rn);
+    gchar* h = rtf_to_html(r, rn, 256 * 1024, NULL);
+    g_bytes_unref(raw);
+    return h != NULL ? mail_msg_part_new("text/html", "utf-8", g_bytes_new_take(h, strlen(h))) : NULL;
+}
+
+gchar* mail_msg_guess_type(const gchar* name) {
     gboolean uncertain = FALSE;
     gchar* ct = g_content_type_guess(name, NULL, 0, &uncertain);
     gchar* mime = ct != NULL ? g_content_type_get_mime_type(ct) : NULL;
@@ -174,12 +193,8 @@ MailMessage* mail_msg_read(OleReader* ole, gsize max_part, GError** error) {
     }
     /* The transport headers, when the message came by SMTP: a whole header block */
     gchar* headers = prop_string(ole, "", 0x007D);
-    MailMessage* msg = headers != NULL ? mail_message_parse(headers, strlen(headers), 0) : mail_message_parse("", 0, 0);
+    MailMessage* msg = mail_msg_message_new(headers);
     g_free(headers);
-    /* The parsed header block has a text body: replaced below */
-    part_free_shallow(msg->root);
-    msg->root = new_part("multipart/mixed", NULL, NULL);
-    msg->root->children = g_ptr_array_new_with_free_func(part_free_shallow);
     if (subject != NULL) {
         g_free(msg->subject);
         msg->subject = subject;
@@ -225,9 +240,9 @@ MailMessage* mail_msg_read(OleReader* ole, gsize max_part, GError** error) {
             gchar* s = g_utf16_to_utf8(w, units, NULL, NULL, NULL);
             g_free(w);
             text = s != NULL ? g_bytes_new_take(s, strlen(s)) : g_bytes_new("", 0);
-            g_ptr_array_add(msg->root->children, new_part("text/plain", "utf-8", text));
+            g_ptr_array_add(msg->root->children, mail_msg_part_new("text/plain", "utf-8", text));
         } else {
-            g_ptr_array_add(msg->root->children, new_part("text/plain", "windows-1252", g_bytes_ref(body)));
+            g_ptr_array_add(msg->root->children, mail_msg_part_new("text/plain", "windows-1252", g_bytes_ref(body)));
         }
         g_bytes_unref(body);
     } else {
@@ -235,18 +250,12 @@ MailMessage* mail_msg_read(OleReader* ole, gsize max_part, GError** error) {
         if (html == NULL) html = prop(ole, "", 0x1013, PT_UNICODE);
         GBytes* rtf = html == NULL ? prop(ole, "", 0x1009, PT_BINARY) : NULL;
         if (html != NULL) {
-            g_ptr_array_add(msg->root->children, new_part("text/html", NULL, html));
+            g_ptr_array_add(msg->root->children, mail_msg_part_new("text/html", NULL, html));
         } else if (rtf != NULL) {
             gsize n = 0;
             const guint8* d = g_bytes_get_data(rtf, &n);
-            GBytes* raw = mail_msg_decompress_rtf(d, n);
-            if (raw != NULL) {
-                gsize rn = 0;
-                const gchar* r = g_bytes_get_data(raw, &rn);
-                gchar* h = rtf_to_html(r, rn, 256 * 1024, NULL);
-                if (h != NULL) g_ptr_array_add(msg->root->children, new_part("text/html", "utf-8", g_bytes_new_take(h, strlen(h))));
-                g_bytes_unref(raw);
-            }
+            MailPart* part = mail_msg_rtf_part(d, n);
+            if (part != NULL) g_ptr_array_add(msg->root->children, part);
             g_bytes_unref(rtf);
         }
     }
@@ -268,8 +277,8 @@ MailMessage* mail_msg_read(OleReader* ole, gsize max_part, GError** error) {
         OleEntryInfo di = {0};
         if (idx >= 0) ole_reader_get_info(ole, (guint)idx, &di);
         GBytes* data = idx >= 0 && di.size <= max_part ? ole_reader_read_entry(ole, (guint)idx, max_part, NULL) : NULL;
-        MailPart* part = new_part(mime != NULL ? mime : NULL, NULL, data);
-        if (part->content_type == NULL) part->content_type = guess_type(name != NULL ? name : "file");
+        MailPart* part = mail_msg_part_new(mime != NULL ? mime : NULL, NULL, data);
+        if (part->content_type == NULL) part->content_type = mail_msg_guess_type(name != NULL ? name : "file");
         part->filename = name != NULL ? name : g_strdup("(attachment)");
         part->attachment = TRUE;
         if (data == NULL) part->size = (gsize)di.size;

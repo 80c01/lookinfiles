@@ -16,6 +16,15 @@
 /* The message; NULL with error set when it has no message properties */
 MailMessage* mail_msg_read(OleReader* ole, gsize max_part, GError** error);
 
+/* Helpers shared with mail_tnef: a message with the given header block (or
+ * NULL) and an empty multipart/mixed root to add parts to; a part (takes
+ * data); the HTML part of a compressed RTF body, NULL when damaged */
+MailMessage* mail_msg_message_new(const gchar* headers);
+MailPart* mail_msg_part_new(const gchar* type, const gchar* charset, GBytes* data);
+MailPart* mail_msg_rtf_part(const guint8* data, gsize len);
+/* MIME type from a file name (application/octet-stream when unknown) */
+gchar* mail_msg_guess_type(const gchar* name);
+
 /* Compressed RTF ("LZFu", or "MELA" stored) to RTF; NULL when damaged */
 GBytes* mail_msg_decompress_rtf(const guint8* data, gsize len);
 

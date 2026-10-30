@@ -90,6 +90,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   message table, used by `dir_preview` instead of the listing.
   `mail_msg` — Outlook `.msg` (MAPI property streams of an OLE2 file) to a
   `MailMessage`, compressed RTF (LZFu) decoder; dispatched by `office97`.
+  `mail_tnef` — TNEF `winmail.dat` (attributes + MAPI property blocks) to a
+  `MailMessage`.
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.
