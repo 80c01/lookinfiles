@@ -55,6 +55,7 @@
     cp "$ROOT/tests/fixtures/mail/alternative.eml" 38-agenda.eml
     cp "$ROOT/tests/fixtures/mail/html-inline.eml" 39-news.eml
     cp "$ROOT/tests/fixtures/mail/Inbox" 40-Inbox     # Thunderbird mbox: no extension
+    cp "$ROOT/tests/fixtures/mail/sample.msg" 41-figures.msg   # Outlook
     # Maildir folder (a directory: listed first)
     cp -r "$ROOT/tests/fixtures/mail/Maildir" 00-Maildir
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
@@ -110,7 +111,8 @@ format_scenario() {
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_mailbox_message_2
     key alt+Left
-    key k k k k k k k
+    key j;              shot fmt_outlook_msg
+    key k k k k k k k k
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
 }

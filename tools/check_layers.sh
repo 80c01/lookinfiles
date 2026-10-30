@@ -31,7 +31,8 @@ mail_message:
 mail_view:mail_message,preview_doc
 mail_box:mail_message
 mail_dir:mail_message,preview_doc
-office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader
+mail_msg:mail_message,ole_reader,rtf
+office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader,mail_msg,mail_view,mail_message
 docx:zip_reader
 preview_doc:
 csv:preview_doc

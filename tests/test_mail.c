@@ -5,11 +5,14 @@
 #include "mail_box.h"
 #include "mail_dir.h"
 #include "mail_message.h"
+#include "mail_msg.h"
 #include "mail_view.h"
 #include "preview_formats.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
+
+#include "msg_builder.h"
 
 static MailMessage* parse(const gchar* text) {
     return mail_message_parse(text, strlen(text), 1 << 20);
@@ -316,6 +319,149 @@ static void test_mail_dirs(void) {
                     FILE_KIND_MAIL);
 }
 
+/* --- Outlook .msg --- */
+
+static PreviewDoc* msg_doc(GBytes* bytes) {
+    GError* err = NULL;
+    OleReader* ole = ole_reader_new_from_bytes(bytes, &err);
+    g_assert_no_error(err);
+    MailMessage* m = mail_msg_read(ole, 1 << 20, &err);
+    g_assert_no_error(err);
+    g_assert_nonnull(m);
+    PreviewDoc* doc = mail_view_message(m, "Outlook message");
+    mail_message_free(m);
+    ole_reader_free(ole);
+    return doc;
+}
+
+static void test_msg(void) {
+    GBytes* b = msg_build(TRUE, NULL);
+    GError* err = NULL;
+    OleReader* ole = ole_reader_new_from_bytes(b, &err);
+    g_assert_no_error(err);
+    MailMessage* m = mail_msg_read(ole, 1 << 20, &err);
+    g_assert_no_error(err);
+    g_assert_cmpstr(m->subject, ==, "Quarterly figures – Q3");
+    g_assert_cmpstr(m->from, ==, "Ann Müller <ann@example.org>");
+    g_assert_cmpstr(m->to, ==, "Bob; Carol");
+    g_assert_cmpstr(m->cc, ==, "Team");
+    g_assert_cmpint(m->date, ==, 1793293320);
+    g_assert_false(m->encrypted);
+    mail_message_free(m);
+    ole_reader_free(ole);
+
+    PreviewDoc* doc = msg_doc(b);
+    const gchar* t = doc->text->str;
+    g_assert_nonnull(strstr(t, "The figures are attached."));
+    g_assert_nonnull(strstr(t, "figures.csv"));
+    g_assert_null(strstr(t, "\r"));
+    preview_doc_free(doc);
+    g_bytes_unref(b);
+
+    /* No plain body: the RTF one, as HTML */
+    b = msg_build(FALSE, "{\\rtf1\\ansi\\pard Hello from {\\b RTF}\\par}");
+    doc = msg_doc(b);
+    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_HTML);
+    g_assert_nonnull(strstr(doc->text->str, "Hello from"));
+    preview_doc_free(doc);
+    g_bytes_unref(b);
+
+    /* Not a message: no properties */
+    OleBuilder* ob = ole_builder_new();
+    ole_builder_add(ob, "Other", "x", 1);
+    b = ole_builder_finish(ob);
+    ole = ole_reader_new_from_bytes(b, NULL);
+    g_assert_nonnull(ole);
+    g_assert_null(mail_msg_read(ole, 1 << 20, &err));
+    g_assert_nonnull(err);
+    g_clear_error(&err);
+    ole_reader_free(ole);
+    g_bytes_unref(b);
+
+    /* Encrypted S/MIME class */
+    ob = ole_builder_new();
+    msg_add_string(ob, "", 0x001A, "IPM.Note.SMIME");
+    msg_add_string(ob, "", 0x0037, "Secret");
+    b = ole_builder_finish(ob);
+    ole = ole_reader_new_from_bytes(b, NULL);
+    m = mail_msg_read(ole, 1 << 20, NULL);
+    g_assert_true(m->encrypted);
+    mail_message_free(m);
+    ole_reader_free(ole);
+    g_bytes_unref(b);
+}
+
+static void test_msg_rtf(void) {
+    /* The compressed example of MS-OXRTFCP */
+    static const guint8 lzfu[] = {0x2d, 0x00, 0x00, 0x00, 0x2b, 0x00, 0x00, 0x00, 0x4c, 0x5a, 0x46, 0x75, 0xf1, 0xc5,
+                                  0xc7, 0xa7, 0x03, 0x00, 0x0a, 0x00, 0x72, 0x63, 0x70, 0x67, 0x31, 0x32, 0x35, 0x42,
+                                  0x32, 0x0a, 0xf3, 0x20, 0x68, 0x65, 0x6c, 0x09, 0x00, 0x20, 0x62, 0x77, 0x05, 0xb0,
+                                  0x6c, 0x64, 0x7d, 0x0a, 0x80, 0x0f, 0xa0};
+    GBytes* r = mail_msg_decompress_rtf(lzfu, sizeof lzfu);
+    g_assert_nonnull(r);
+    gsize n = 0;
+    const gchar* d = g_bytes_get_data(r, &n);
+    g_assert_cmpmem(d, n, "{\\rtf1\\ansi\\ansicpg1252\\pard hello world}\r\n", 43);
+    g_bytes_unref(r);
+    /* Truncated: what was decoded, never past the input */
+    for (gsize cut = 0; cut < sizeof lzfu; cut++) {
+        r = mail_msg_decompress_rtf(lzfu, cut);
+        if (r != NULL) {
+            g_assert_cmpuint(g_bytes_get_size(r), <=, 43);
+            g_bytes_unref(r);
+        }
+    }
+    /* Unknown method */
+    guint8 bad[16] = {12, 0, 0, 0, 4, 0, 0, 0, 'X', 'X', 'X', 'X'};
+    g_assert_null(mail_msg_decompress_rtf(bad, sizeof bad));
+}
+
+static void test_msg_damaged(void) {
+    GBytes* b = msg_build(TRUE, NULL);
+    gsize n = 0;
+    const guint8* d = g_bytes_get_data(b, &n);
+    /* Truncations and flipped bytes: no crash */
+    for (gsize cut = 0; cut < n; cut += 97) {
+        GBytes* part = g_bytes_new(d, cut);
+        OleReader* ole = ole_reader_new_from_bytes(part, NULL);
+        if (ole != NULL) {
+            MailMessage* m = mail_msg_read(ole, 1 << 20, NULL);
+            if (m != NULL) mail_message_free(m);
+            ole_reader_free(ole);
+        }
+        g_bytes_unref(part);
+    }
+    guint8* copy = g_memdup2(d, n);
+    for (gsize i = 512; i < n; i += 61) {
+        guint8 old = copy[i];
+        copy[i] ^= 0xA5;
+        GBytes* part = g_bytes_new(copy, n);
+        OleReader* ole = ole_reader_new_from_bytes(part, NULL);
+        if (ole != NULL) {
+            MailMessage* m = mail_msg_read(ole, 1 << 20, NULL);
+            if (m != NULL) mail_message_free(m);
+            ole_reader_free(ole);
+        }
+        g_bytes_unref(part);
+        copy[i] = old;
+    }
+    g_free(copy);
+    g_bytes_unref(b);
+
+    /* The fixture, through the preview */
+    gchar* path = g_build_filename("tests", "fixtures", "mail", "sample.msg", NULL);
+    FileKind kind = FILE_KIND_TEXT;
+    GError* err = NULL;
+    PreviewDoc* doc = preview_format_build_file(path, "sample.msg", 1 << 20, NULL, &kind, &err);
+    g_assert_no_error(err);
+    g_assert_cmpint(kind, ==, FILE_KIND_OLE);
+    g_free(path);
+    g_assert_nonnull(strstr(doc->text->str, "Quarterly figures"));
+    g_assert_nonnull(strstr(doc->text->str, "Outlook message"));
+    preview_doc_free(doc);
+    g_assert_cmpstr(file_icon("a.msg", FALSE), ==, "📧");
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/mail/encoded_words", test_encoded_words);
@@ -328,5 +474,8 @@ int main(int argc, char** argv) {
     g_test_add_func("/mail/mbox_large", test_mbox_large);
     g_test_add_func("/mail/mbox_pages", test_mbox_pages);
     g_test_add_func("/mail/mail_dirs", test_mail_dirs);
+    g_test_add_func("/mail/msg", test_msg);
+    g_test_add_func("/mail/msg_rtf", test_msg_rtf);
+    g_test_add_func("/mail/msg_damaged", test_msg_damaged);
     return g_test_run();
 }

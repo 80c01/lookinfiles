@@ -217,7 +217,7 @@ static const struct {
     { "desktop", FILE_KIND_DESKTOP },
     { "rtf", FILE_KIND_RTF },
     { "eml", FILE_KIND_MAIL }, { "emlx", FILE_KIND_MAIL }, { "mbox", FILE_KIND_MAIL },
-    { "mbx", FILE_KIND_MAIL }, { "msf", FILE_KIND_MAIL },
+    { "mbx", FILE_KIND_MAIL }, { "msf", FILE_KIND_MAIL }, { "msg", FILE_KIND_OLE },
     { "doc", FILE_KIND_OLE }, { "dot", FILE_KIND_OLE }, { "xls", FILE_KIND_OLE }, { "xlt", FILE_KIND_OLE },
     { "ppt", FILE_KIND_OLE }, { "pps", FILE_KIND_OLE }, /* .pot is a gettext template by name; its content decides */
     { "po", FILE_KIND_TRANSLATION }, { "pot", FILE_KIND_TRANSLATION }, { "mo", FILE_KIND_TRANSLATION },
@@ -987,6 +987,7 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
         /* Same icons as the modern formats */
         if (EXT_IS(".xls") || EXT_IS(".xlt")) return "📊";
         if (EXT_IS(".ppt") || EXT_IS(".pps")) return "📽️";
+        if (EXT_IS(".msg")) return "📧";
         return "📘";
     case FILE_KIND_EBOOK:
         return "📚";

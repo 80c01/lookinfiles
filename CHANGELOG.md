@@ -34,6 +34,8 @@ All notable changes to this project are listed here. The format follows
 - Maildir (with Maildir++ subfolders) and MH folders: the directory preview
   lists their newest messages with their read / unread / replied / flagged
   status.
+- Outlook messages (`.msg`) like `.eml`: sender, recipients, date, the text,
+  HTML or compressed RTF body and the attachments.
 - Code navigation in editor tabs, in the three modes: go to the definition or
   declaration of the identifier under the cursor and back (Notepad `F12` /
   `Ctrl+F12` / `Ctrl+Click`, `Ctrl+Alt+-` / `Ctrl+Shift+-`; Emacs `M-.` /

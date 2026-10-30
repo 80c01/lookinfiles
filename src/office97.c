@@ -1,6 +1,8 @@
 /* Previews of OLE2 compound files (see office97.h) */
 #include "office97.h"
 #include "doc_reader.h"
+#include "mail_msg.h"
+#include "mail_view.h"
 #include "ole_props.h"
 #include "ppt_reader.h"
 #include "spreadsheet.h"
@@ -97,6 +99,23 @@ PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, 
         return office97_summary(ole, name, size, "Encrypted: the content needs the password.");
     }
     Office97Format format = office97_format(ole);
+    if (format == OFFICE97_OUTLOOK_MSG) {
+        GError* err = NULL;
+        g_autoptr(MailMessage) msg = mail_msg_read(ole, MAIL_VIEW_MAX_PART, &err);
+        if (msg == NULL) {
+            gchar* reason = g_strdup_printf("The message cannot be read: %s.", err->message);
+            g_clear_error(&err);
+            PreviewDoc* doc = office97_summary(ole, name, size, reason);
+            g_free(reason);
+            return doc;
+        }
+        gchar* size_text = size >= 0 ? g_format_size((guint64)size) : g_strdup("");
+        gchar* subtitle = g_strdup_printf("Outlook message · %s", size_text);
+        PreviewDoc* doc = mail_view_message(msg, subtitle);
+        g_free(subtitle);
+        g_free(size_text);
+        return doc;
+    }
     if (format == OFFICE97_WORD) {
         g_autoptr(OleProperties) props = ole_properties_read(ole);
         gchar* head = ole_properties_html_head(props, office97_format_label(format));
