@@ -80,12 +80,13 @@ code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
 palette:
 fonts:
+theme_store:fonts,palette,app_paths
 lsp_protocol:code_symbol,json_view
 lsp_client:lsp_protocol
 lsp_config:code_symbol
 layout_store:app_paths
 text_style:app_types,file_types,app_paths,palette,theme
-theme:palette,fonts
+theme:palette,fonts,theme_store
 markdown:app_types,image_utils,palette,fonts
 html:app_types,image_utils,palette,fonts
 minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette
@@ -168,11 +169,12 @@ for c in src/*.c; do
     done
 done
 
-# Colours come from the palette (palette.h: palette_color(), @role in CSS),
+# Colours come from the palette (palette.h: palette_color(), @role in CSS;
+# theme values in theme_store),
 # so that a theme can change them all: no colour literal elsewhere
 for f in $(grep -lE '#[0-9a-fA-F]{6}\b' src/*.c src/*.h); do
     case "$f" in
-        src/palette.c|src/palette.h) ;;
+        src/palette.c|src/palette.h|src/theme_store.c|src/theme_store.h) ;;
         *) echo "colours: $f has a colour literal; use a palette role (palette.h)"; status=1 ;;
     esac
 done

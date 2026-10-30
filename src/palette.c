@@ -62,8 +62,7 @@ gboolean palette_lookup(const gchar* name, PaletteRole* role) {
     return FALSE;
 }
 
-gboolean palette_set(PaletteRole role, const gchar* value) {
-    g_return_val_if_fail(valid_role(role), FALSE);
+gboolean palette_parse_color(const gchar* value, gchar out[8]) {
     if (value == NULL || value[0] != '#') {
         return FALSE;
     }
@@ -76,7 +75,6 @@ gboolean palette_set(PaletteRole role, const gchar* value) {
             return FALSE;
         }
     }
-    gchar* out = current[role];
     out[0] = '#';
     for (gsize i = 0; i < 6; i++) {
         /* #abc is #aabbcc */
@@ -85,6 +83,11 @@ gboolean palette_set(PaletteRole role, const gchar* value) {
     }
     out[7] = '\0';
     return TRUE;
+}
+
+gboolean palette_set(PaletteRole role, const gchar* value) {
+    g_return_val_if_fail(valid_role(role), FALSE);
+    return palette_parse_color(value, current[role]);
 }
 
 void palette_reset(void) {

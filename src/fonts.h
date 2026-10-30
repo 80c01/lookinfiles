@@ -41,6 +41,12 @@ const gchar* fonts_family(FontRole role);
 /* Size in pixels */
 gint fonts_size(FontRole role);
 
+/* A valid family list: names of letters, digits, spaces, '-' and '_',
+ * separated by commas */
+gboolean fonts_valid_family(const gchar* family);
+#define FONTS_MIN_SIZE 6
+#define FONTS_MAX_SIZE 72
+
 /* Change a role (for themes): family is a comma-separated list (NULL keeps
  * it), size_px in 6..72 (0 keeps it). FALSE (and no change) if invalid. */
 gboolean fonts_set(FontRole role, const gchar* family, gint size_px);

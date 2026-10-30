@@ -241,12 +241,14 @@ int main(int argc, char** argv) {
     gtk_source_init();
 #endif
 
-    /* Adwaita / Default dark theme */
+    /* The chosen theme sets the palette and fonts before any widget is
+     * made; GTK's own widgets follow its dark or light kind */
+    gboolean dark_theme = theme_apply_saved();
     GtkSettings* settings = gtk_settings_get_default();
     if (settings != NULL) {
         g_object_set(settings,
                      "gtk-theme-name", "Default",
-                     "gtk-application-prefer-dark-theme", TRUE,
+                     "gtk-application-prefer-dark-theme", dark_theme,
                      NULL);
     }
 

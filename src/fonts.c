@@ -31,9 +31,11 @@ gint fonts_size(FontRole role) {
     return sizes[role] > 0 ? sizes[role] : DEFAULTS[role].size;
 }
 
-/* A family list: names of letters, digits, spaces, '-' and '_', separated
- * by commas, none empty (nothing that could break CSS or markup) */
-static gboolean valid_family(const gchar* family) {
+/* None empty, nothing that could break CSS or markup */
+gboolean fonts_valid_family(const gchar* family) {
+    if (family == NULL) {
+        return FALSE;
+    }
     gchar** names = g_strsplit(family, ",", -1);
     gboolean ok = names[0] != NULL;
     for (gint i = 0; ok && names[i] != NULL; i++) {
@@ -50,7 +52,8 @@ static gboolean valid_family(const gchar* family) {
 
 gboolean fonts_set(FontRole role, const gchar* family, gint size_px) {
     g_return_val_if_fail(valid_role(role), FALSE);
-    if ((family != NULL && !valid_family(family)) || (size_px != 0 && (size_px < 6 || size_px > 72))) {
+    if ((family != NULL && !fonts_valid_family(family)) ||
+        (size_px != 0 && (size_px < FONTS_MIN_SIZE || size_px > FONTS_MAX_SIZE))) {
         return FALSE;
     }
     if (family != NULL) {

@@ -13,6 +13,11 @@ void apply_panel_borders(void);
  * theme_reload(). */
 void theme_add_css(const gchar* css);
 
+/* At startup, before any widget: set the palette and fonts to the theme
+ * remembered in theme.ini (the default theme if it is missing or invalid;
+ * problems are reported on stderr). Returns TRUE for a dark theme. */
+gboolean theme_apply_saved(void);
+
 /* Reload every stylesheet with the palette's current values (after
  * palette_set()) */
 void theme_reload(void);

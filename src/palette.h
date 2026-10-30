@@ -133,6 +133,10 @@ const gchar* palette_description(PaletteRole role);
 /* Role of a name; FALSE if unknown */
 gboolean palette_lookup(const gchar* name, PaletteRole* role);
 
+/* Normalize "#rgb" / "#rrggbb" (any case) to "#rrggbb" in out; FALSE if
+ * value is not a colour of that form */
+gboolean palette_parse_color(const gchar* value, gchar out[8]);
+
 /* Change a role (for themes): "#rgb" or "#rrggbb", any case. FALSE (and no
  * change) if the value is not a colour of that form. */
 gboolean palette_set(PaletteRole role, const gchar* value);

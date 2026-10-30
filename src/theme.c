@@ -4,6 +4,7 @@
 #include "theme.h"
 #include "palette.h"
 #include "fonts.h"
+#include "theme_store.h"
 
 #include <gtk/gtk.h>
 
@@ -47,6 +48,30 @@ void theme_reload(void) {
     for (guint i = 0; sheets != NULL && i < sheets->len; i++) {
         sheet_load(g_ptr_array_index(sheets, i));
     }
+}
+
+gboolean theme_apply_saved(void) {
+    gchar* dir = theme_store_user_dir();
+    gchar* choice_path = theme_store_choice_path();
+    GPtrArray* errors = g_ptr_array_new_with_free_func(g_free);
+    GPtrArray* themes = theme_store_list(dir, errors);
+    for (guint i = 0; i < errors->len; i++) {
+        g_printerr("[ Theme skipped: %s ]\n", (const gchar*)g_ptr_array_index(errors, i));
+    }
+    gchar* name = theme_store_load_choice(choice_path);
+    gboolean dark = TRUE;
+    GError* error = NULL;
+    if (!theme_store_apply(themes, name, &dark, &error)) {
+        g_printerr("[ Theme \"%s\" not applied: %s ]\n", name, error->message);
+        g_clear_error(&error);
+        theme_store_apply(themes, THEME_DEFAULT_NAME, &dark, NULL);
+    }
+    g_free(name);
+    g_ptr_array_free(themes, TRUE);
+    g_ptr_array_free(errors, TRUE);
+    g_free(choice_path);
+    g_free(dir);
+    return dark;
 }
 
 /* Panel boundaries and VS Code (Dark Modern) inspired theme styling */

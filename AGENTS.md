@@ -170,6 +170,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `palette_rgb()` (cairo), `palette_set()` / `palette_reset()` (themes),
   each role a CSS named colour (`@bg_window`, `alpha(@accent, 0.25)`), and
   `palette_expand()` for `@role` tokens in text templates.
+- `theme_store` — themes: built-in ones and user INI files in
+  `app_config_dir()/themes/` (`[Theme]` name / dark / inherits, `[Colors]`
+  palette roles, `[Fonts]`), strict parsing with errors naming group and
+  key, inheritance (`theme_store_apply()` sets the palette and fonts), save
+  of the current look, the chosen theme in `theme.ini`. `theme_apply_saved()`
+  (`theme`) applies it at startup, before any widget.
 - `fonts` — the interface and code fonts (family list + pixel size,
   `fonts_set()` for themes); CSS tokens `@font_ui`, `@font_code`,
   `@size_small` / `@size_bar` / `@size_normal` / `@size_title` (derived
