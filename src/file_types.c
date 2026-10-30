@@ -50,6 +50,18 @@ gboolean is_org_file(const gchar* name) {
             g_ascii_strcasecmp(ext, "org_archive") == 0);
 }
 
+gboolean is_raw_photo_file(const gchar* name) {
+    static const gchar* const RAW[] = { "cr2", "nef", "nrw", "arw", "srf", "sr2", "dng", "orf", "rw2",
+                                        "pef", "srw", "raf", "3fr", "erf", "kdc", "mos", "iiq" };
+    const gchar* ext = file_extension(name);
+    for (gsize i = 0; i < G_N_ELEMENTS(RAW); i++) {
+        if (g_ascii_strcasecmp(ext, RAW[i]) == 0) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 /* Return TRUE if file name indicates an image format */
 gboolean is_image_file(const gchar* name) {
     if (name == NULL) {
@@ -75,7 +87,10 @@ gboolean is_image_file(const gchar* name) {
             g_ascii_strcasecmp(ext, "xbm") == 0 ||
             g_ascii_strcasecmp(ext, "tga") == 0 ||
             g_ascii_strcasecmp(ext, "icns") == 0 ||
-            g_ascii_strcasecmp(ext, "cur") == 0);
+            g_ascii_strcasecmp(ext, "cur") == 0 ||
+            g_ascii_strcasecmp(ext, "heic") == 0 || g_ascii_strcasecmp(ext, "heif") == 0 ||
+            g_ascii_strcasecmp(ext, "avif") == 0 || g_ascii_strcasecmp(ext, "jxl") == 0 ||
+            is_raw_photo_file(name));
 }
 
 /* Return TRUE if file name indicates a PDF document */
@@ -395,6 +410,9 @@ static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_n
         (HAS(4, "ftyp") && (HAS(8, "avif") || HAS(8, "avis") || HAS(8, "heic") || HAS(8, "mif1"))) ||
         HAS(0, "\xFF\x0A") || HAS(0, "\0\0\0\x0CJXL ")) {
         return FILE_KIND_IMAGE;
+    }
+    if (HAS(0, "FUJIFILMCCD-RAW") || HAS(0, "IIRO") || (HAS(0, "IIU\0") && by_name == FILE_KIND_IMAGE)) {
+        return FILE_KIND_IMAGE; /* camera RAW photos */
     }
     if (HAS(0, "\x7F" "ELF")) {
         return FILE_KIND_EXECUTABLE;
@@ -885,7 +903,8 @@ const gchar* file_icon(const gchar* name, gboolean is_dir) {
     /* Images */
     if (EXT_IS(".png") || EXT_IS(".jpg") || EXT_IS(".jpeg") || EXT_IS(".gif") ||
         EXT_IS(".svg") || EXT_IS(".bmp") || EXT_IS(".ico") || EXT_IS(".webp") ||
-        EXT_IS(".tiff") || EXT_IS(".tif") || EXT_IS(".avif")) {
+        EXT_IS(".tiff") || EXT_IS(".tif") || EXT_IS(".avif") || EXT_IS(".heic") ||
+        EXT_IS(".heif") || EXT_IS(".jxl") || is_raw_photo_file(name)) {
         return "🖼️";
     }
     /* Audio */

@@ -4,6 +4,8 @@
 
 #include <glib/gstdio.h>
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 
 #include "app_events.h"
@@ -82,6 +84,66 @@ static GdkPixbuf* apply_orientation(GdkPixbuf* pix, gint orientation) {
     return a;
 }
 
+/* Largest RAW file read for its embedded preview */
+#define MAX_RAW_FILE (256u * 1024 * 1024)
+
+/* First bytes of a file */
+static gsize read_head(const gchar* path, guchar* buf, gsize len) {
+    FILE* fp = g_fopen(path, "rb");
+    if (fp == NULL) {
+        return 0;
+    }
+    gsize n = fread(buf, 1, len, fp);
+    fclose(fp);
+    return n;
+}
+
+/* Embedded JPEG preview of a camera RAW file, and its EXIF details */
+static GdkPixbuf* raw_preview(const gchar* path, ExifInfo** exif) {
+    gchar* data = NULL;
+    gsize len = 0;
+    GStatBuf st;
+    if (g_stat(path, &st) != 0 || (guint64)st.st_size > MAX_RAW_FILE ||
+        !g_file_get_contents(path, &data, &len, NULL)) {
+        return NULL;
+    }
+    *exif = exif_parse((const guchar*)data, len);
+    gsize off = 0, n = 0;
+    GdkPixbuf* pix = NULL;
+    if (exif_find_preview((const guchar*)data, len, &off, &n)) {
+        pix = pixbuf_from_bytes((const guchar*)data + off, n, 0);
+    }
+    g_free(data);
+    return pix;
+}
+
+/* Why an image cannot be decoded: the loader to install for its format */
+static gchar* missing_loader_message(const gchar* name, const gchar* path) {
+    guchar head[32];
+    gsize n = read_head(path, head, sizeof(head));
+    const gchar* format = NULL;
+    const gchar* package = NULL;
+    if (n >= 12 && memcmp(head + 4, "ftyp", 4) == 0) {
+        if (memcmp(head + 8, "avif", 4) == 0 || memcmp(head + 8, "avis", 4) == 0) {
+            format = "AVIF";
+            package = "libavif-gdk-pixbuf";
+        } else {
+            format = "HEIC";
+            package = "heif-gdk-pixbuf";
+        }
+    } else if ((n >= 2 && head[0] == 0xFF && head[1] == 0x0A) || (n >= 12 && memcmp(head + 4, "JXL ", 4) == 0)) {
+        format = "JPEG XL";
+        package = "libjxl-gdk-pixbuf";
+    } else if (n >= 12 && memcmp(head, "RIFF", 4) == 0 && memcmp(head + 8, "WEBP", 4) == 0) {
+        format = "WebP";
+        package = "webp-pixbuf-loader";
+    }
+    if (package != NULL) {
+        return g_strdup_printf("[ %s: no image loader for %s is installed (package %s) ]", name, format, package);
+    }
+    return g_strdup_printf("[ Cannot decode image: %s ]", name);
+}
+
 static void image_preview_thread_func(GTask* task, gpointer source_object,
                                       gpointer task_data, GCancellable* cancellable) {
     (void)source_object;
@@ -92,28 +154,47 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
+    /* Camera RAW: the JPEG preview the camera embedded (no RAW decoding) */
+    ExifInfo* exif = NULL;
+    GdkPixbuf* embedded = NULL;
     gint file_w = 0, file_h = 0;
-    GdkPixbufFormat* fmt = gdk_pixbuf_get_file_info(td->full, &file_w, &file_h);
-    if (fmt == NULL || file_w <= 0 || file_h <= 0) {
-        td->error_msg = g_strdup_printf("[ Cannot decode image: %s ]", td->name);
-        g_task_return_boolean(task, TRUE);
-        return;
+    guchar head[16];
+    gsize head_len = read_head(td->full, head, sizeof(head));
+    if (is_raw_photo_file(td->name) || (head_len >= 15 && memcmp(head, "FUJIFILMCCD-RAW", 15) == 0)) {
+        embedded = raw_preview(td->full, &exif);
+    }
+    if (embedded != NULL) {
+        file_w = gdk_pixbuf_get_width(embedded);
+        file_h = gdk_pixbuf_get_height(embedded);
+        gchar* ext = g_ascii_strup(file_extension(td->name), -1);
+        td->fmt_upper = g_strdup_printf("%s RAW (embedded preview)", ext);
+        g_free(ext);
+    } else {
+        exif_info_free(exif);
+        exif = NULL;
+        GdkPixbufFormat* fmt = gdk_pixbuf_get_file_info(td->full, &file_w, &file_h);
+        if (fmt == NULL || file_w <= 0 || file_h <= 0) {
+            td->error_msg = missing_loader_message(td->name, td->full);
+            g_task_return_boolean(task, TRUE);
+            return;
+        }
+        gchar* fmt_name = gdk_pixbuf_format_get_name(fmt);
+        td->fmt_upper = g_ascii_strup(fmt_name, -1);
+        g_free(fmt_name);
+        exif = exif_read_file(td->full);
     }
 
     if (g_task_return_error_if_cancelled(task)) {
+        exif_info_free(exif);
+        g_clear_object(&embedded);
         return;
     }
-
-    gchar* fmt_name = gdk_pixbuf_format_get_name(fmt);
-    td->fmt_upper = g_ascii_strup(fmt_name, -1);
-    g_free(fmt_name);
 
     struct stat st;
     gint64 fsize = (g_stat(td->full, &st) == 0) ? (gint64)st.st_size : 0;
     td->size_str = g_format_size((guint64)fsize);
 
     /* Photo details; orientations 5 to 8 swap width and height */
-    ExifInfo* exif = exif_read_file(td->full);
     gint orientation = exif != NULL ? exif->orientation : 0;
     if (exif != NULL) {
         td->details = exif_summary_lines(exif);
@@ -142,16 +223,28 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
     }
     td->target_w = MAX(1, (gint)(td->orig_w * scale + 0.5));
     td->target_h = MAX(1, (gint)(td->orig_h * scale + 0.5));
+    gint load_w = swap ? td->target_h : td->target_w;
+    gint load_h = swap ? td->target_w : td->target_h;
 
-    GError* err = NULL;
-    GdkPixbuf* pix = gdk_pixbuf_new_from_file_at_scale(
-        td->full, swap ? td->target_h : td->target_w, swap ? td->target_w : td->target_h, TRUE, &err);
-    if (pix == NULL) {
-        td->error_msg = g_strdup_printf("[ Error loading image: %s (%s) ]",
-                                        td->name, err ? err->message : "unknown error");
-        if (err != NULL) {
-            g_error_free(err);
+    GdkPixbuf* pix;
+    if (embedded != NULL) {
+        pix = gdk_pixbuf_scale_simple(embedded, load_w, load_h, GDK_INTERP_BILINEAR);
+        g_object_unref(embedded);
+    } else {
+        GError* err = NULL;
+        pix = gdk_pixbuf_new_from_file_at_scale(td->full, load_w, load_h, TRUE, &err);
+        if (pix == NULL) {
+            td->error_msg = g_strdup_printf("[ Error loading image: %s (%s) ]",
+                                            td->name, err ? err->message : "unknown error");
+            if (err != NULL) {
+                g_error_free(err);
+            }
+            g_task_return_boolean(task, TRUE);
+            return;
         }
+    }
+    if (pix == NULL) {
+        td->error_msg = g_strdup_printf("[ Cannot decode image: %s ]", td->name);
         g_task_return_boolean(task, TRUE);
         return;
     }

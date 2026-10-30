@@ -13,6 +13,8 @@ gboolean is_image_file(const gchar* name);
 gboolean is_pdf_file(const gchar* name);
 gboolean is_video_file(const gchar* name);
 gboolean is_audio_file(const gchar* name);
+/* Camera RAW photo (.cr2, .nef, .arw, .dng, .raf...) */
+gboolean is_raw_photo_file(const gchar* name);
 /* Word document: .docx, .docm, .dotx, .dotm (not the legacy binary .doc) */
 gboolean is_word_document_file(const gchar* name);
 

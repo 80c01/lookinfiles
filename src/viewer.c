@@ -379,11 +379,13 @@ static void show_media_preview(AppData* app, FileKind kind, const gchar* name, c
         render_video_preview(app, name, full);
         return;
     }
-    audio_preview_stop(app);
-    video_preview_stop(app);
+    /* Leave the player page before stopping it (its controls must not be
+     * redrawn unallocated) */
     if (app->preview_stack != NULL) {
         gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
     }
+    audio_preview_stop(app);
+    video_preview_stop(app);
     if (kind == FILE_KIND_PDF) {
         render_pdf_preview(app, name, full);
     } else {
@@ -441,11 +443,13 @@ static void show_text_preview(TextPreviewTaskData* td) {
         return;
     }
 
-    audio_preview_stop(app);
-    video_preview_stop(app);
+    /* Leave the player page before stopping it (its controls must not be
+     * redrawn unallocated) */
     if (app->preview_stack != NULL) {
         gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
     }
+    audio_preview_stop(app);
+    video_preview_stop(app);
 
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
     if (hadj != NULL) {
@@ -587,11 +591,13 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
         if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         }
-        audio_preview_stop(app);
-        video_preview_stop(app);
+        /* Leave the player page before stopping it (its controls must not be
+         * redrawn unallocated) */
         if (app->preview_stack != NULL) {
             gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
         }
+        audio_preview_stop(app);
+        video_preview_stop(app);
         if (app->preview_cancellable != NULL) {
             g_cancellable_cancel(app->preview_cancellable);
             g_clear_object(&app->preview_cancellable);
@@ -649,11 +655,13 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     }
 
     if (as_dir) {
-        audio_preview_stop(app);
-        video_preview_stop(app);
+        /* Leave the player page before stopping it (its controls must not be
+         * redrawn unallocated) */
         if (app->preview_stack != NULL) {
             gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
         }
+        audio_preview_stop(app);
+        video_preview_stop(app);
         dir_preview_show(app, name, full);
     } else {
         /* If there's an open editor tab for this file with modified/buffered content, flush it */

@@ -40,6 +40,7 @@
     cp "$ROOT/tests/fixtures/preview/library.sqlite" 26-library.sqlite
     cp "$ROOT/tests/fixtures/preview/fr.mo" 27-lookin-fr.mo
     cp "$ROOT/tests/fixtures/preview/song.mp3" 28-song.mp3
+    cp "$ROOT/tests/fixtures/preview/photo.dng" 29-photo.dng
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -77,4 +78,5 @@ format_scenario() {
     key j;              shot fmt_sqlite
     key j;              shot fmt_translations
     key j;              shot fmt_audio_tags
+    key j;              shot fmt_raw_photo
 }

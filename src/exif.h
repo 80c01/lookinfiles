@@ -42,6 +42,11 @@ ExifInfo* exif_parse(const guchar* data, gsize len);
 ExifInfo* exif_read_file(const gchar* path);
 
 void exif_info_free(ExifInfo* info);
+
+/* Largest JPEG preview embedded in a camera RAW file (TIFF-based: CR2, NEF,
+ * ARW, DNG, ORF, RW2, PEF...; or Fujifilm RAF): its offset and length in
+ * data. FALSE if there is none. */
+gboolean exif_find_preview(const guchar* data, gsize len, gsize* offset, gsize* length);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(ExifInfo, exif_info_free)
 
 /* Summary lines for the preview, NULL entries skipped:

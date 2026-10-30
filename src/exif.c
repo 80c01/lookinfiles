@@ -185,6 +185,8 @@ ExifInfo* exif_parse_tiff(const guchar* data, gsize len) {
         t.big_endian = FALSE;
     } else if (memcmp(data, "MM\0*", 4) == 0) {
         t.big_endian = TRUE;
+    } else if (memcmp(data, "IIRO", 4) == 0 || memcmp(data, "IIU\0", 4) == 0) {
+        t.big_endian = FALSE; /* Olympus ORF, Panasonic RW2 */
     } else {
         return NULL;
     }
@@ -279,6 +281,84 @@ ExifInfo* exif_read_file(const gchar* path) {
     ExifInfo* info = exif_parse(data, len);
     g_free(data);
     return info;
+}
+
+/* JPEG previews of an IFD and of the IFDs it points to (SubIFDs, next IFD) */
+static void find_previews(const Tiff* t, gsize off, guint depth, gsize* best_off, gsize* best_len) {
+    for (guint chain = 0; off >= 8 && off + 2 <= t->len && depth < 4 && chain < 8; chain++) {
+        guint n = rd16(t, off);
+        gsize jpeg_off = 0, jpeg_len = 0, strip_off = 0, strip_len = 0;
+        guint compression = 0;
+        for (guint i = 0; i < n && i < 512; i++) {
+            gsize e = off + 2 + (gsize)i * 12;
+            if (e + 12 > t->len) {
+                break;
+            }
+            guint tag = rd16(t, e);
+            switch (tag) {
+            case 0x0201: jpeg_off = (gsize)number_value(t, e, 0); break;
+            case 0x0202: jpeg_len = (gsize)number_value(t, e, 0); break;
+            case 0x0103: compression = (guint)number_value(t, e, 0); break;
+            case 0x0111: strip_off = (gsize)number_value(t, e, 0); break;
+            case 0x0117: strip_len = (gsize)number_value(t, e, 0); break;
+            case 0x014A: {
+                gsize voff;
+                guint type;
+                guint32 count;
+                if (value_offset(t, e, &voff, &type, &count)) {
+                    for (guint32 k = 0; k < count && k < 8; k++) {
+                        find_previews(t, (gsize)number_value(t, e, k), depth + 1, best_off, best_len);
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        if ((compression == 6 || compression == 7) && strip_len > 0 && jpeg_len == 0) {
+            jpeg_off = strip_off;
+            jpeg_len = strip_len;
+        }
+        if (jpeg_len > *best_len && jpeg_off + jpeg_len <= t->len && jpeg_off + 2 <= t->len &&
+            t->data[jpeg_off] == 0xFF && t->data[jpeg_off + 1] == 0xD8) {
+            *best_off = jpeg_off;
+            *best_len = jpeg_len;
+        }
+        gsize next_pos = off + 2 + (gsize)n * 12;
+        off = next_pos + 4 <= t->len ? rd32(t, next_pos) : 0;
+    }
+}
+
+gboolean exif_find_preview(const guchar* data, gsize len, gsize* offset, gsize* length) {
+    /* Fujifilm RAF: the JPEG offset and length are in the header */
+    if (len >= 92 && memcmp(data, "FUJIFILMCCD-RAW", 15) == 0) {
+        guint32 off = ((guint32)data[84] << 24) | ((guint32)data[85] << 16) | ((guint32)data[86] << 8) | data[87];
+        guint32 n = ((guint32)data[88] << 24) | ((guint32)data[89] << 16) | ((guint32)data[90] << 8) | data[91];
+        if ((guint64)off + n <= len && n > 2 && data[off] == 0xFF && data[off + 1] == 0xD8) {
+            *offset = off;
+            *length = n;
+            return TRUE;
+        }
+        return FALSE;
+    }
+    if (len < 8) {
+        return FALSE;
+    }
+    Tiff t = { data, len, FALSE };
+    if (memcmp(data, "MM\0*", 4) == 0 || memcmp(data, "MM\0\x2A", 4) == 0) {
+        t.big_endian = TRUE;
+    } else if (memcmp(data, "II*\0", 4) != 0 && memcmp(data, "IIRO", 4) != 0 && memcmp(data, "IIU\0", 4) != 0) {
+        return FALSE; /* TIFF, Olympus ORF, Panasonic RW2 headers */
+    }
+    gsize best_off = 0, best_len = 0;
+    find_previews(&t, rd32(&t, 4), 0, &best_off, &best_len);
+    if (best_len == 0) {
+        return FALSE;
+    }
+    *offset = best_off;
+    *length = best_len;
+    return TRUE;
 }
 
 void exif_info_free(ExifInfo* info) {

@@ -74,10 +74,32 @@ static void test_no_exif(void) {
     g_assert_cmpint(info->orientation, ==, 0);
 }
 
+static void test_raw_preview(void) {
+    gchar* data = NULL;
+    gsize len = 0;
+    g_assert_true(g_file_get_contents("tests/fixtures/preview/photo.dng", &data, &len, NULL));
+    gsize off = 0, n = 0;
+    g_assert_true(exif_find_preview((const guchar*)data, len, &off, &n));
+    gchar* jpeg = NULL;
+    gsize jpeg_len = 0;
+    g_assert_true(g_file_get_contents("tests/fixtures/preview/photo.jpg", &jpeg, &jpeg_len, NULL));
+    g_assert_cmpuint(n, ==, jpeg_len);
+    g_assert_cmpmem(data + off, n, jpeg, jpeg_len);
+    g_autoptr(ExifInfo) info = exif_parse((const guchar*)data, len);
+    g_assert_cmpstr(info->model, ==, "Z 9");
+    g_assert_cmpint(info->orientation, ==, 1);
+    /* No preview in a plain JPEG or a truncated file */
+    g_assert_false(exif_find_preview((const guchar*)jpeg, jpeg_len, &off, &n));
+    g_assert_false(exif_find_preview((const guchar*)data, 40, &off, &n));
+    g_free(jpeg);
+    g_free(data);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/exif/jpeg", test_jpeg);
     g_test_add_func("/exif/big_endian_tiff", test_big_endian_tiff);
     g_test_add_func("/exif/no_exif", test_no_exif);
+    g_test_add_func("/exif/raw_preview", test_raw_preview);
     return g_test_run();
 }
