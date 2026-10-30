@@ -76,7 +76,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   in tests), the property sets (`OleProperties`: card and HTML head), and the
   preview dispatch by stream names with the property card + stream list
   fallback. `doc_reader` — Word `.doc` to HTML (piece table, PAPX / CHPX
-  FKPs, styles), like `docx`.
+  FKPs, styles), like `docx`. `xls_reader` — BIFF8 / BIFF5 workbooks to
+  the `Workbook` of `spreadsheet` (shown by `spreadsheet_append_sheets()`,
+  shared with `.xlsx`).
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.

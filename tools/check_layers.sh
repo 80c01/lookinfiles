@@ -25,7 +25,8 @@ zip_reader:
 ole_reader:
 ole_props:ole_reader,preview_doc
 doc_reader:ole_reader
-office97:ole_reader,ole_props,preview_doc,doc_reader
+xls_reader:ole_reader,spreadsheet
+office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet
 docx:zip_reader
 preview_doc:
 csv:preview_doc
@@ -40,7 +41,7 @@ font_info:
 man_view:preview_doc
 notebook:json_view
 zip_xml:zip_reader
-spreadsheet:zip_reader,zip_xml
+spreadsheet:zip_reader,zip_xml,preview_doc
 odf:zip_reader,zip_xml
 pptx:zip_reader,zip_xml
 epub:zip_reader,zip_xml

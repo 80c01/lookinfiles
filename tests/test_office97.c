@@ -354,6 +354,226 @@ static void test_word_truncated(void) {
     g_free(path);
 }
 
+/* --- Excel 97-2003 --- */
+
+static void rec(GByteArray* a, guint16 type, const void* data, gsize len) {
+    guint8 h[4];
+    ob_put16(h, type);
+    ob_put16(h + 2, (guint)len);
+    g_byte_array_append(a, h, 4);
+    g_byte_array_append(a, data, (guint)len);
+}
+
+/* row, col, xf header of a cell record */
+static gsize cell_head(guint8* p, guint row, guint col, guint xf) {
+    ob_put16(p, row);
+    ob_put16(p + 2, col);
+    ob_put16(p + 4, xf);
+    return 6;
+}
+
+static void put_f64(guint8* p, gdouble v) {
+    guint64 bits;
+    memcpy(&bits, &v, 8);
+    ob_put32(p, (guint32)bits);
+    ob_put32(p + 4, (guint32)(bits >> 32));
+}
+
+/* A BIFF8 workbook: globals (formats, XFs, one sheet, SST split by a
+ * CONTINUE, optional FILEPASS / 1904 dates), then the sheet */
+static GBytes* biff8_workbook(gboolean encrypted, gboolean date1904) {
+    GByteArray* g = g_byte_array_new();
+    guint8 bof[16] = {0};
+    ob_put16(bof, 0x0600);
+    ob_put16(bof + 2, 0x0005);
+    rec(g, 0x0809, bof, 16);
+    if (encrypted) rec(g, 0x002F, "\x01\x00\x01\x00", 4);
+    if (date1904) rec(g, 0x0022, "\x01\x00", 2);
+    /* FORMAT 164 "0.0%"; XF 0: General, XF 1: builtin 14 (date), XF 2: 164 */
+    guint8 fmt[16];
+    ob_put16(fmt, 164);
+    ob_put16(fmt + 2, 4);
+    fmt[4] = 0;
+    memcpy(fmt + 5, "0.0%", 4);
+    rec(g, 0x041E, fmt, 9);
+    guint ifmts[3] = {0, 14, 164};
+    for (gint i = 0; i < 3; i++) {
+        guint8 xf[20] = {0};
+        ob_put16(xf + 2, ifmts[i]);
+        rec(g, 0x00E0, xf, 20);
+    }
+    /* BOUNDSHEET: position patched below */
+    guint8 bs[16] = {0};
+    bs[6] = 6;
+    bs[7] = 0;
+    memcpy(bs + 8, "Ventes", 6);
+    gsize bs_at = g->len + 4;
+    rec(g, 0x0085, bs, 14);
+    /* SST: "Hello", then "Wörld" whose characters continue in a CONTINUE
+     * record switching from 8-bit to UTF-16 */
+    guint8 sst[64];
+    gsize n = 0;
+    ob_put32(sst, 3);
+    ob_put32(sst + 4, 3);
+    n = 8;
+    ob_put16(sst + n, 5); sst[n + 2] = 0; memcpy(sst + n + 3, "Hello", 5); n += 8;
+    ob_put16(sst + n, 5); sst[n + 2] = 0; memcpy(sst + n + 3, "W", 1); n += 4;
+    rec(g, 0x00FC, sst, n);
+    guint8 cont[32];
+    gsize m = 0;
+    cont[m++] = 1; /* the rest is UTF-16 */
+    ob_put16(cont + m, 0x00F6); m += 2; /* ö */
+    ob_put16(cont + m, 'r'); m += 2;
+    ob_put16(cont + m, 'l'); m += 2;
+    ob_put16(cont + m, 'd'); m += 2;
+    ob_put16(cont + m, 3); cont[m + 2] = 0; memcpy(cont + m + 3, "end", 3); m += 6;
+    rec(g, 0x003C, cont, m);
+    rec(g, 0x000A, "", 0);
+    /* The sheet */
+    ob_put32(g->data + bs_at, g->len);
+    guint8 sbof[16] = {0};
+    ob_put16(sbof, 0x0600);
+    ob_put16(sbof + 2, 0x0010);
+    rec(g, 0x0809, sbof, 16);
+    guint8 c[32];
+    gsize k;
+    k = cell_head(c, 0, 0, 0); ob_put32(c + k, 0); rec(g, 0x00FD, c, k + 4);    /* A1 LABELSST Hello */
+    k = cell_head(c, 0, 1, 0); ob_put32(c + k, 1); rec(g, 0x00FD, c, k + 4);    /* B1 Wörld */
+    k = cell_head(c, 0, 2, 0); ob_put32(c + k, 2); rec(g, 0x00FD, c, k + 4);    /* C1 end */
+    k = cell_head(c, 1, 0, 0); ob_put32(c + k, (42u << 2) | 2); rec(g, 0x027E, c, k + 4);      /* A2 RK int 42 */
+    k = cell_head(c, 1, 1, 0); ob_put32(c + k, (1234u << 2) | 3); rec(g, 0x027E, c, k + 4);    /* B2 RK 12.34 */
+    k = cell_head(c, 1, 2, 2); put_f64(c + k, 0.125); rec(g, 0x0203, c, k + 8);                /* C2 12.5% */
+    k = cell_head(c, 2, 0, 1); put_f64(c + k, 46000); rec(g, 0x0203, c, k + 8);                /* A3 date */
+    /* MULRK D2:E2 */
+    guint8 mul[32];
+    ob_put16(mul, 1); ob_put16(mul + 2, 3);
+    ob_put16(mul + 4, 0); ob_put32(mul + 6, (7u << 2) | 2);
+    ob_put16(mul + 10, 0); ob_put32(mul + 12, (8u << 2) | 2);
+    ob_put16(mul + 16, 4);
+    rec(g, 0x00BD, mul, 18);
+    k = cell_head(c, 2, 1, 0); c[k] = 1; c[k + 1] = 0; rec(g, 0x0205, c, k + 2);            /* B3 TRUE */
+    k = cell_head(c, 2, 2, 0); c[k] = 0x07; c[k + 1] = 1; rec(g, 0x0205, c, k + 2);         /* C3 #DIV/0! */
+    /* D3: a formula with a string result, then its STRING record */
+    k = cell_head(c, 2, 3, 0);
+    memset(c + k, 0, 8); c[k] = 0; ob_put16(c + k + 6, 0xFFFF);
+    rec(g, 0x0006, c, k + 8 + 6);
+    guint8 str[16];
+    ob_put16(str, 4); str[2] = 0; memcpy(str + 3, "calc", 4);
+    rec(g, 0x0207, str, 7);
+    /* LABEL in row 500: beyond max_rows */
+    k = cell_head(c, 500, 0, 0); ob_put16(c + k, 3); c[k + 2] = 0; memcpy(c + k + 3, "far", 3); rec(g, 0x0204, c, k + 6);
+    rec(g, 0x000A, "", 0);
+    return g_byte_array_free_to_bytes(g);
+}
+
+static PreviewDoc* workbook_preview(GBytes* stream, const gchar* stream_name) {
+    OleBuilder* ob = ole_builder_new();
+    ole_builder_add(ob, stream_name, g_bytes_get_data(stream, NULL), g_bytes_get_size(stream));
+    GBytes* file = ole_builder_finish(ob);
+    PreviewDoc* doc = preview_of(file, "book.xls");
+    g_bytes_unref(file);
+    return doc;
+}
+
+static void test_excel_synthetic(void) {
+    GBytes* wb = biff8_workbook(FALSE, FALSE);
+    PreviewDoc* doc = workbook_preview(wb, "Workbook");
+    const gchar* t = doc->text->str;
+    g_assert_nonnull(strstr(t, "Excel 97-2003 workbook · 1 sheet"));
+    g_assert_nonnull(strstr(t, "Hello"));
+    g_assert_nonnull(strstr(t, "Wörld"));
+    g_assert_nonnull(strstr(t, "end"));
+    g_assert_nonnull(strstr(t, "42"));
+    g_assert_nonnull(strstr(t, "12.34"));
+    g_assert_nonnull(strstr(t, "12.5%"));
+    g_assert_nonnull(strstr(t, "2025-12-09")); /* serial 46000 */
+    g_assert_nonnull(strstr(t, "TRUE"));
+    g_assert_nonnull(strstr(t, "#DIV/0!"));
+    g_assert_nonnull(strstr(t, "calc"));
+    g_assert_null(strstr(t, "far"));
+    g_assert_nonnull(strstr(t, "Showing the first 300 rows."));
+    preview_doc_free(doc);
+    g_bytes_unref(wb);
+    /* The 1904 date system shifts dates only */
+    wb = biff8_workbook(FALSE, TRUE);
+    doc = workbook_preview(wb, "Workbook");
+    g_assert_nonnull(strstr(doc->text->str, "2029-12-10"));
+    g_assert_nonnull(strstr(doc->text->str, "12.34"));
+    preview_doc_free(doc);
+    g_bytes_unref(wb);
+}
+
+static void test_excel_encrypted(void) {
+    GBytes* wb = biff8_workbook(TRUE, FALSE);
+    PreviewDoc* doc = workbook_preview(wb, "Workbook");
+    g_assert_nonnull(strstr(doc->text->str, "Encrypted"));
+    g_assert_null(strstr(doc->text->str, "Hello"));
+    preview_doc_free(doc);
+    g_bytes_unref(wb);
+}
+
+static void test_excel5(void) {
+    /* BIFF5 "Book": 8-bit strings in the code page (Windows-1252) */
+    GByteArray* g = g_byte_array_new();
+    guint8 bof[8] = {0};
+    ob_put16(bof, 0x0500);
+    ob_put16(bof + 2, 0x0005);
+    rec(g, 0x0809, bof, 8);
+    rec(g, 0x0042, "\xe4\x04", 2); /* code page 1252 */
+    guint8 bs[16] = {0};
+    bs[6] = 4;
+    memcpy(bs + 7, "Feuil", 5); /* cch 4: "Feui" */
+    gsize bs_at = g->len + 4;
+    rec(g, 0x0085, bs, 11);
+    rec(g, 0x000A, "", 0);
+    ob_put32(g->data + bs_at, g->len);
+    rec(g, 0x0809, bof, 8);
+    guint8 c[32];
+    gsize k = cell_head(c, 0, 0, 0);
+    ob_put16(c + k, 6);
+    memcpy(c + k + 2, "Caf\xe9 \x80", 6);
+    rec(g, 0x0204, c, k + 8);
+    rec(g, 0x000A, "", 0);
+    GBytes* book = g_byte_array_free_to_bytes(g);
+    PreviewDoc* doc = workbook_preview(book, "Book");
+    g_assert_nonnull(strstr(doc->text->str, "Excel 5.0/95 workbook"));
+    g_assert_nonnull(strstr(doc->text->str, "Café €"));
+    preview_doc_free(doc);
+    g_bytes_unref(book);
+}
+
+static void test_excel_fixture(void) {
+    PreviewDoc* doc = fixture("budget.xls");
+    const gchar* t = doc->text->str;
+    g_assert_nonnull(strstr(t, "Excel 97-2003 workbook · 2 sheets"));
+    g_assert_nonnull(strstr(t, "Household budget"));
+    g_assert_nonnull(strstr(t, "Expenses · Income"));
+    g_assert_nonnull(strstr(t, "2026-09-01"));
+    g_assert_nonnull(strstr(t, "Groceries – café"));
+    g_assert_nonnull(strstr(t, "1,250.00"));
+    g_assert_nonnull(strstr(t, "62.5%"));
+    g_assert_nonnull(strstr(t, "1,697.30"));
+    g_assert_nonnull(strstr(t, "-3.25"));
+    preview_doc_free(doc);
+}
+
+static void test_excel_truncated(void) {
+    gchar* path = g_build_filename("tests", "fixtures", "preview", "budget.xls", NULL);
+    OleReader* ole = ole_reader_open(path, NULL);
+    GBytes* wb = ole_reader_read(ole, "Workbook", 1 << 20, NULL);
+    ole_reader_free(ole);
+    gsize len = g_bytes_get_size(wb);
+    for (gsize cut = 0; cut < len; cut += len / 31 + 1) {
+        GBytes* part = g_bytes_new_from_bytes(wb, 0, cut);
+        PreviewDoc* doc = workbook_preview(part, "Workbook");
+        g_assert_nonnull(doc);
+        preview_doc_free(doc);
+        g_bytes_unref(part);
+    }
+    g_bytes_unref(wb);
+    g_free(path);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/office97/properties", test_properties);
@@ -366,5 +586,10 @@ int main(int argc, char** argv) {
     g_test_add_func("/office97/word6", test_word6);
     g_test_add_func("/office97/word_fixture", test_word_fixture);
     g_test_add_func("/office97/word_truncated", test_word_truncated);
+    g_test_add_func("/office97/excel_synthetic", test_excel_synthetic);
+    g_test_add_func("/office97/excel_encrypted", test_excel_encrypted);
+    g_test_add_func("/office97/excel5", test_excel5);
+    g_test_add_func("/office97/excel_fixture", test_excel_fixture);
+    g_test_add_func("/office97/excel_truncated", test_excel_truncated);
     return g_test_run();
 }

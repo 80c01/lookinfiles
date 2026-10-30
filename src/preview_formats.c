@@ -742,44 +742,7 @@ static PreviewDoc* build_spreadsheet(const PreviewInput* in, GCancellable* cance
         preview_doc_field(doc, "Sheets", names->str);
         g_string_free(names, TRUE);
     }
-    for (guint i = 0; i < book->sheets->len; i++) {
-        const Sheet* sheet = g_ptr_array_index(book->sheets, i);
-        if (!sheet->loaded) {
-            continue;
-        }
-        if (book->sheets->len > 1 || i > 0) {
-            preview_doc_section(doc, sheet->name);
-        } else {
-            preview_doc_append_len(doc, "\n", 1);
-        }
-        if (sheet->rows->len == 0 || sheet->n_cols == 0) {
-            preview_doc_note(doc, "(empty)");
-            continue;
-        }
-        g_autoptr(PreviewTable) table = preview_table_new(sheet->n_cols);
-        preview_table_set_row_numbers(table, TRUE);
-        gchar** letters = g_new0(gchar*, sheet->n_cols + 1);
-        for (guint c = 0; c < sheet->n_cols; c++) {
-            letters[c] = spreadsheet_column_name(c);
-        }
-        preview_table_set_header(table, (const gchar* const*)letters);
-        g_strfreev(letters);
-        for (guint r = 0; r < sheet->rows->len; r++) {
-            gchar** cells = g_ptr_array_index(sheet->rows, r);
-            preview_table_add_row(table, (const gchar* const*)cells, sheet->n_cols);
-        }
-        preview_doc_add_table(doc, table);
-        if (sheet->truncated) {
-            gchar* note = g_strdup_printf("Showing the first %u rows.", SHEET_ROWS);
-            preview_doc_note(doc, note);
-            g_free(note);
-        }
-    }
-    if (book->sheets->len > SHEETS_SHOWN) {
-        gchar* note = g_strdup_printf("\nThe first %u sheets are shown.", SHEETS_SHOWN);
-        preview_doc_note(doc, note);
-        g_free(note);
-    }
+    spreadsheet_append_sheets(doc, book, SHEETS_SHOWN, SHEET_ROWS);
     return doc;
 }
 

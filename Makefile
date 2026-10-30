@@ -112,7 +112,7 @@ TEST_DEPS_test_exif = $(BUILD_DIR)/exif.o
 TEST_DEPS_test_font_info = $(BUILD_DIR)/font_info.o
 TEST_DEPS_test_man_view = $(BUILD_DIR)/man_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_notebook = $(BUILD_DIR)/notebook.o $(BUILD_DIR)/json_view.o $(BUILD_DIR)/preview_doc.o
-TEST_DEPS_test_spreadsheet = $(BUILD_DIR)/spreadsheet.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_reader.o
+TEST_DEPS_test_spreadsheet = $(BUILD_DIR)/spreadsheet.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_reader.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_odf = $(BUILD_DIR)/odf.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_reader.o
 TEST_DEPS_test_pptx = $(BUILD_DIR)/pptx.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_reader.o
 TEST_DEPS_test_epub = $(BUILD_DIR)/epub.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_reader.o
@@ -123,7 +123,7 @@ TEST_DEPS_test_media_tags = $(BUILD_DIR)/media_tags.o
 TEST_DEPS_test_text_encoding = $(BUILD_DIR)/text_encoding.o
 TEST_DEPS_test_csv = $(BUILD_DIR)/csv.o $(BUILD_DIR)/preview_doc.o
 # Modules of the structured previews (preview_formats and the parsers it calls)
-PREVIEW_MODULES = preview_formats preview_doc file_types text_encoding hex_dump elf_info zip_reader docx csv json_view diff_view archive_listing cert_view card_view log_view font_info man_view notebook zip_xml spreadsheet odf pptx epub rtf sqlite_view gettext_view ole_reader ole_props office97 doc_reader
+PREVIEW_MODULES = preview_formats preview_doc file_types text_encoding hex_dump elf_info zip_reader docx csv json_view diff_view archive_listing cert_view card_view log_view font_info man_view notebook zip_xml spreadsheet odf pptx epub rtf sqlite_view gettext_view ole_reader ole_props office97 doc_reader xls_reader
 PREVIEW_FORMAT_OBJS = $(PREVIEW_MODULES:%=$(BUILD_DIR)/%.o)
 TEST_DEPS_test_preview_formats = $(PREVIEW_FORMAT_OBJS)
 TEST_DEPS_test_org_time = $(BUILD_DIR)/org_time.o

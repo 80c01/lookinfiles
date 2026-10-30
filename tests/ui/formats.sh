@@ -49,6 +49,7 @@
     # Office 97-2003 (saved by LibreOffice); a copy marked as encrypted
     cp "$ROOT/tests/fixtures/preview/report.doc" 34-report.doc
     cp "$ROOT/tests/fixtures/preview/encrypted.doc" 35-encrypted.doc
+    cp "$ROOT/tests/fixtures/preview/budget.xls" 36-budget.xls
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
@@ -93,7 +94,8 @@ format_scenario() {
     key j;              shot fmt_pdf_pages      # 3 pages first, the others added after
     key j;              shot fmt_word97
     key j;              shot fmt_word97_encrypted
-    key k k
+    key j;              shot fmt_excel97
+    key k k k
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
 }

@@ -3,6 +3,8 @@
 
 #include <glib.h>
 
+#include "preview_doc.h"
+
 /* Spreadsheets for the preview: Excel (.xlsx, Office Open XML) and
  * OpenDocument (.ods). Every sheet's name, and the cells of the first rows
  * of the first sheets as the application shows them: shared and inline
@@ -31,6 +33,16 @@ void workbook_free(Workbook* book);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(Workbook, workbook_free)
 
 #define SPREADSHEET_MAX_COLS 100
+
+/* The loaded sheets as tables (column letters, row numbers), each under its
+ * name when there are several, with the truncation notes (max_rows: the
+ * rows read per sheet, shown: the sheets read) */
+void spreadsheet_append_sheets(PreviewDoc* doc, const Workbook* book, guint shown, guint max_rows);
+
+/* Empty workbook (format: a static string) and a new sheet in it, for the
+ * readers of other formats (xls_reader) */
+Workbook* spreadsheet_workbook_new(const gchar* format);
+Sheet* spreadsheet_sheet_add(Workbook* book, const gchar* name);
 
 /* Column letters: 0 -> "A", 25 -> "Z", 26 -> "AA". Caller frees. */
 gchar* spreadsheet_column_name(guint index);

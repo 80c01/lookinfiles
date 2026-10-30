@@ -2,10 +2,14 @@
 #include "office97.h"
 #include "doc_reader.h"
 #include "ole_props.h"
+#include "spreadsheet.h"
+#include "xls_reader.h"
 #include <gio/gio.h>
 #include <string.h>
 
 #define MAX_STREAMS_LISTED 200
+#define SHEETS_SHOWN 3
+#define SHEET_ROWS 300
 
 Office97Format office97_format(const OleReader* ole) {
     if (ole_reader_has(ole, "WordDocument")) return OFFICE97_WORD;
@@ -105,6 +109,41 @@ PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, 
         g_clear_error(&err);
         PreviewDoc* doc = office97_summary(ole, name, size, reason);
         g_free(reason);
+        return doc;
+    }
+    if (format == OFFICE97_EXCEL || format == OFFICE97_EXCEL5) {
+        gboolean encrypted = FALSE;
+        GError* err = NULL;
+        g_autoptr(Workbook) book = xls_reader_read(ole, SHEETS_SHOWN, SHEET_ROWS, &encrypted, &err);
+        if (book == NULL) {
+            gchar* reason = encrypted ? g_strdup("Encrypted: the content needs the password.")
+                                      : g_strdup_printf("The cells cannot be read: %s.", err->message);
+            g_clear_error(&err);
+            PreviewDoc* doc = office97_summary(ole, name, size, reason);
+            g_free(reason);
+            return doc;
+        }
+        /* Like .xlsx: title, properties, sheet names, then the grids */
+        PreviewDoc* doc = preview_doc_new();
+        doc->monospace = TRUE;
+        doc->wrap = FALSE;
+        gchar* size_text = size >= 0 ? g_format_size((guint64)size) : g_strdup("");
+        gchar* subtitle = g_strdup_printf("%s · %u %s · %s", book->format, book->sheets->len,
+                                          book->sheets->len == 1 ? "sheet" : "sheets", size_text);
+        preview_doc_title(doc, name, subtitle);
+        g_free(subtitle);
+        g_free(size_text);
+        g_autoptr(OleProperties) props = ole_properties_read(ole);
+        if (props != NULL) ole_properties_card(doc, props);
+        if (book->sheets->len > 1) {
+            GString* names = g_string_new(NULL);
+            for (guint i = 0; i < book->sheets->len; i++) {
+                g_string_append_printf(names, "%s%s", i > 0 ? " · " : "", ((Sheet*)g_ptr_array_index(book->sheets, i))->name);
+            }
+            preview_doc_field(doc, "Sheets", names->str);
+            g_string_free(names, TRUE);
+        }
+        spreadsheet_append_sheets(doc, book, SHEETS_SHOWN, SHEET_ROWS);
         return doc;
     }
     return office97_summary(ole, name, size, NULL);

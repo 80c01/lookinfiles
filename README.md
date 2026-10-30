@@ -46,11 +46,13 @@ and virtual workspaces, in a VS Code Dark+ look.
   with player controls.
 - Office documents, read without any external tool: Word (`.docx`, and
   `.doc` from Word 97-2003 or 6 / 95) and OpenDocument text (`.odt`) with
-  headings, styles, lists, tables, links and images (not in `.doc`); spreadsheets (`.xlsx`, `.ods`) as grids with column letters, number,
-  date and percent formats; presentations (`.pptx`, `.odp`) slide by slide;
-  RTF. Page layout, fonts, headers and footers are not shown; long documents
-  stop after 256 KB of text. Other OLE2 compound files (`.msi`, `.vsd`,
-  Works...) show their properties (title, author, dates, counts) and streams.
+  headings, styles, lists, tables, links and images (not in `.doc`);
+  spreadsheets (`.xlsx`, `.ods`, `.xls` from Excel 97-2003 or 5.0 / 95) as
+  grids with column letters, number, date and percent formats; presentations
+  (`.pptx`, `.odp`) slide by slide; RTF. Page layout, fonts, headers and
+  footers are not shown; long documents stop after 256 KB of text. Other OLE2
+  compound files (`.msi`, `.vsd`, Works...) show their properties (title,
+  author, dates, counts) and streams.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
   notebooks (Markdown cells, highlighted code, text and image outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,

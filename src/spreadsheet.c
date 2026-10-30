@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "preview_doc.h"
 #include "zip_reader.h"
 #include "zip_xml.h"
 
@@ -22,6 +23,19 @@ static Sheet* sheet_new(const gchar* name) {
     Sheet* s = g_new0(Sheet, 1);
     s->name = g_strdup(name != NULL ? name : "Sheet");
     s->rows = g_ptr_array_new_with_free_func((GDestroyNotify)g_strfreev);
+    return s;
+}
+
+Workbook* spreadsheet_workbook_new(const gchar* format) {
+    Workbook* book = g_new0(Workbook, 1);
+    book->format = format;
+    book->sheets = g_ptr_array_new_with_free_func(sheet_free);
+    return book;
+}
+
+Sheet* spreadsheet_sheet_add(Workbook* book, const gchar* name) {
+    Sheet* s = sheet_new(name);
+    g_ptr_array_add(book->sheets, s);
     return s;
 }
 
@@ -673,4 +687,45 @@ Workbook* spreadsheet_read(const gchar* path, guint max_sheets, guint max_rows, 
     }
     zip_reader_free(zip);
     return book;
+}
+
+void spreadsheet_append_sheets(PreviewDoc* doc, const Workbook* book, guint shown, guint max_rows) {
+    for (guint i = 0; i < book->sheets->len; i++) {
+        const Sheet* sheet = g_ptr_array_index(book->sheets, i);
+        if (!sheet->loaded) {
+            continue;
+        }
+        if (book->sheets->len > 1 || i > 0) {
+            preview_doc_section(doc, sheet->name);
+        } else {
+            preview_doc_append_len(doc, "\n", 1);
+        }
+        if (sheet->rows->len == 0 || sheet->n_cols == 0) {
+            preview_doc_note(doc, "(empty)");
+            continue;
+        }
+        g_autoptr(PreviewTable) table = preview_table_new(sheet->n_cols);
+        preview_table_set_row_numbers(table, TRUE);
+        gchar** letters = g_new0(gchar*, sheet->n_cols + 1);
+        for (guint c = 0; c < sheet->n_cols; c++) {
+            letters[c] = spreadsheet_column_name(c);
+        }
+        preview_table_set_header(table, (const gchar* const*)letters);
+        g_strfreev(letters);
+        for (guint r = 0; r < sheet->rows->len; r++) {
+            gchar** cells = g_ptr_array_index(sheet->rows, r);
+            preview_table_add_row(table, (const gchar* const*)cells, sheet->n_cols);
+        }
+        preview_doc_add_table(doc, table);
+        if (sheet->truncated) {
+            gchar* note = g_strdup_printf("Showing the first %u rows.", max_rows);
+            preview_doc_note(doc, note);
+            g_free(note);
+        }
+    }
+    if (book->sheets->len > shown) {
+        gchar* note = g_strdup_printf("\nThe first %u sheets are shown.", shown);
+        preview_doc_note(doc, note);
+        g_free(note);
+    }
 }
