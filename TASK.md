@@ -123,6 +123,7 @@ dump (13.7 % before this work). Most of the rest are TeX font metrics
 - Previews of TeX fonts (`.tfm`, `.pfb`) and Python bytecode (`.pyc`), the
   largest remaining L0 groups.
 - Old binary Office files `.doc`, `.xls`, `.ppt` (Phase 5).
+- Mail files: messages, mailboxes, mail folders (Phase 6).
 
 ---
 
@@ -253,14 +254,84 @@ look alike in the preview.
 Out of scope: Word for DOS / Word 2, Excel 2–4 (BIFF2–4, not compound
 files), images and charts embedded in the files, exact page layout.
 
-## 9. Not worth it
+## 9. Phase 6 — Mail files
+
+Old mail lives in many shapes: single messages, mailbox files holding
+thousands of messages (Thunderbird's `Inbox`, `Sent`... have no extension),
+folders of one file per message, and Outlook files. Each one should show
+what a mail client shows: a message with its headers, body and attachments,
+or a mailbox as a list of messages. Pure GLib except the optional Outlook
+store library.
+
+- [ ] **Message parser** `mail_message` (layer 1): RFC 5322 headers
+      (folded lines, `From`, `To`, `Cc`, `Subject`, `Date`), RFC 2047
+      encoded words (`=?UTF-8?B?...?=`, `=?ISO-8859-1?Q?...?=`), any charset
+      converted with `g_convert()` (Windows-1252 when undeclared or wrong),
+      MIME tree (multipart/mixed, alternative, related, nested
+      message/rfc822), base64 and quoted-printable, RFC 2231 file names.
+      Bounded: parts beyond a size limit are listed, not decoded.
+- [ ] **Message preview** (`.eml`, `.emlx`, a single message without
+      extension): a header card (from, to, cc, date in local time, subject),
+      then the body: `text/plain` as text (quoted `>` lines dimmed,
+      signature after `-- ` dimmed), or `text/html` through the `html`
+      renderer when there is no plain part; inline `cid:` images shown as
+      `data:` URIs; attachments listed (name, type, size). `m` shows the raw
+      source. Remote content is never fetched (no network from the
+      preview).
+- [ ] **mbox files** (`mail_box`, layer 1): `.mbox`, `.mbx`, and files with
+      no extension that start with a `From ` line followed by headers
+      (Thunderbird / Mozilla `Inbox`, `Sent`, `Drafts`..., Unix
+      `/var/mail/<user>`, Eudora `.mbx`). mboxo / mboxrd (`>From ` unquoted)
+      and mboxcl (`Content-Length`). Shown as a table, newest last like a
+      mail client: date, from, subject, size, attachment mark; the message
+      count when the whole file was scanned, else "first / last N
+      messages". Mailboxes can be gigabytes: only the beginning and the end
+      of the file are read (bounded scan for `From ` lines). `PgDn` /
+      `PgUp` step from the list into each message (same keys as PDF pages).
+      Thunderbird's `.msf` index files next to them get a one-line card
+      ("Thunderbird index of Inbox").
+- [ ] **Maildir and MH folders**: a directory holding `cur/`, `new/`,
+      `tmp/` (Maildir, Maildir++ `.Folder` subdirectories) or numbered
+      files with `.mh_sequences` (MH) gets the mailbox table instead of the
+      plain directory listing (headers of the newest N messages, read in
+      the directory preview worker; flags from the `:2,S` suffix shown as
+      read / unread / replied). Files inside `cur/` and `new/` have no
+      extension: detected as messages by content.
+- [ ] **Outlook `.msg`**: compound file read with `ole_reader` (Phase 5);
+      MAPI properties from `__substg1.0_*` streams (subject, sender,
+      recipients, date, plain / HTML / RTF body; compressed RTF decoded,
+      then shown through `rtf`), attachments listed from `__attach_*`
+      storages. Same message preview as `.eml`.
+- [ ] **TNEF `winmail.dat`** (attachment of Outlook mails): attachments
+      listed with names and sizes, body shown when present.
+- [ ] **Outlook stores `.pst` / `.ost`** and Outlook Express `.dbx`:
+      header card (format, Unicode or ANSI, size, encryption); with the
+      optional `libpff` (`HAVE_LIBPFF`), the folder tree with message
+      counts and the newest messages of the Inbox. Without it, L1.
+- [ ] **Detection**: by content first (header lines such as `From:`,
+      `Received:`, `Return-Path:`, `MIME-Version:` in the first bytes; the
+      `From ` line of mbox; `!BDN` for PST; TNEF signature `78 9F 3E 22`),
+      then extensions `.eml`, `.emlx`, `.mbox`, `.mbx`, `.msg`, `.pst`,
+      `.ost`, `.dbx`, `.msf`. The mail icon in `file_icon()`.
+- [ ] **Fixtures**: messages in UTF-8, ISO-8859-1 and Windows-1252, with
+      encoded headers, HTML only, alternative, inline images, attachments,
+      a forwarded message; an mbox of each variant (one with a `>From `
+      line, one truncated in a message); a small Maildir; a `.msg` and a
+      `winmail.dat` built in the tests; one `shot` each.
+
+Out of scope: sending, replying, IMAP / POP access, decrypting S/MIME or
+PGP messages (shown as "Encrypted message" with the sender and subject),
+mail client databases other than those above (Apple Mail's
+`Envelope Index`, Evolution's SQLite summaries are previewed as SQLite).
+
+## 10. Not worth it
 
 Exact Office page layout, CAD files, Photoshop layers, 3D models, encrypted
 files. They fall to L1 (name, size, detected type) or L0 (hex dump).
 
 ---
 
-## 10. Definition of done for a format
+## 11. Definition of done for a format
 
 - [ ] Detected by content (magic number) and by extension; unit test in
       `tests/test_file_types.c`.
@@ -276,7 +347,7 @@ files. They fall to L1 (name, size, detected type) or L0 (hex dump).
 - [ ] README preview list and `CHANGELOG.md` updated; `make check` passes.
 - [ ] One commit per format.
 
-## 11. How progress is measured
+## 12. How progress is measured
 
 - **Coverage**: share of files in a real home directory that end at L0
   (coverage report from Phase 0). Target: under 2 %.
@@ -295,3 +366,5 @@ files. They fall to L1 (name, size, detected type) or L0 (hex dump).
 6. Polish: zoom, PDF navigation, chunked large text, encodings.
 7. Old Office files: `ole_reader` and properties first, then `.xls`, `.doc`,
    `.ppt`.
+8. Mail: `mail_message` and the `.eml` preview first, then mbox, Maildir,
+   `.msg` / TNEF, and the Outlook stores last.
