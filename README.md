@@ -118,6 +118,8 @@ window.
 | VTE for GTK 4 | `libvte-2.91-gtk4-dev` | Embedded terminal (optional) |
 | GtkSourceView 5 | `libgtksourceview-5-dev` | Syntax highlighting (optional) |
 | poppler-glib | `libpoppler-glib-dev` | PDF preview (optional) |
+| SQLite | `libsqlite3-dev` | Database preview: tables and rows (optional) |
+| libarchive | `libarchive-dev` | 7z, RAR, xz, bzip2, zstd, ISO, RPM listings (optional) |
 | librsvg | `librsvg2-common` | Toolbar icons (present on any GTK desktop) |
 | Git | `git` | Status badges and the Git Commits tab (at run time) |
 | SSHFS | `sshfs` | Browsing remote machines (at run time) |

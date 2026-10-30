@@ -52,153 +52,153 @@ every common format to L3 and never leave one below L1.
 
 ---
 
-## 2. Current coverage (October 2026)
+## 2. Coverage (updated 2026-10-30)
 
 | Format | Level | Module |
 |--------|-------|--------|
-| Text and source code (syntax colours, line numbers, git bars) | L3 | `viewer`, `text_style`, `diff_gutter` |
-| Markdown | L3 | `markdown` |
+| Text and source code (syntax colours, line numbers, git bars; UTF-16 / Windows-1252 detected; large files load on scroll) | L3 | `viewer`, `text_style`, `text_encoding`, `text_chunks` |
+| Markdown (Mermaid / math blocks labelled as source) | L3 | `markdown` |
 | HTML | L3 | `html` |
 | Org | L3 | `orgmode` |
-| Images (gdk-pixbuf loaders) | L3 | `viewer`, `image_utils` |
-| PDF (poppler, optional) | L3 | `pdf` |
-| Video / audio (`GtkMediaStream`) | L3 | `video`, `audio` |
-| Word `.docx` | L2 | `docx`, `zip_reader`, `html` |
+| Images: zoom, EXIF details and orientation, animated GIF / WebP, RAW embedded previews | L3 | `image_preview`, `exif`, `animation` |
+| PDF (poppler, optional): progressive pages, PgDn / PgUp, zoom | L3 | `pdf` |
+| Video / audio: tags, cover art, codecs, duration | L3 | `video`, `audio`, `media_tags` |
+| CSV / TSV | L3 | `csv` |
+| JSON, JSONC, JSON Lines | L3 | `json_view` |
+| Diffs and patches | L3 | `diff_view` |
+| Logs | L3 | `log_view` |
+| Jupyter notebooks | L3 | `notebook` |
+| Spreadsheets `.xlsx` / `.ods` | L3 | `spreadsheet` |
+| SQLite (libsqlite3, optional) | L3 | `sqlite_view` |
+| Fonts | L3 | `font_info` |
+| Word `.docx`, OpenDocument `.odt`, RTF | L2 | `docx`, `odf`, `rtf` |
+| Presentations `.pptx` / `.odp` | L2 | `pptx`, `odf` |
+| EPUB | L2–L3 | `epub` |
+| Man pages (gzipped too) | L2 | `man_view` |
+| Archives (ZIP, tar, gzip, ar; 7z, RAR, xz, ISO... with libarchive) | L2 | `archive_listing` |
+| Certificates, keys, requests | L2 | `cert_view` |
+| Calendars, contacts, `.desktop` | L2 | `card_view` |
+| gettext catalogs `.po` / `.mo` | L2 | `gettext_view` |
 | ELF executables / libraries / objects | L1 | `elf_info` |
 | Directories | L2 | `dir_preview`, `dir_summary` |
 | Any other binary | L0 | `hex_dump` |
 
-Known gaps in detection: `.ipynb` is classed as Python, `.db` / `.sqlite`
-as SQL, `.jar` as Java, archives only get an icon.
+`make preview-coverage DIR=/usr/share`: 2.3 % of 91,731 files end at the hex
+dump (13.7 % before this work). Most of the rest are TeX font metrics
+(`.tfm`, `.vf`, `.pfb`, `.pfm`) and files without an extension.
+
+### Design decisions that differ from the plan below
+
+- **Text-based tables and cards instead of `GtkColumnView` / tree widgets.**
+  Every structured preview is a `PreviewDoc` (styled text, spans, images)
+  built in the worker thread and shown in the same text view as everything
+  else. Search (`/`, `n`), selection, copy and the minimap keep working in
+  every format, and the parsers are unit-tested on plain data. The JSON /
+  XML tree toggle is therefore not done (see Remaining).
+- **The registry is `preview_formats` (layer 1)** with the display in
+  `preview_doc_view` (layer 2), instead of a single layer-2
+  `preview_registry`.
+- **Certificates are decoded with an own DER / X.509 parser**, not
+  `GTlsCertificate`: it gives more details (key size, usages, fingerprints)
+  and needs no TLS backend at run time.
+- **Media details are read by `media_tags`** (ID3, FLAC, Ogg, MP4, WAV), not
+  the GStreamer discoverer: no new dependency.
+
+### Known issues
+
+- **GTK warning "Trying to snapshot GtkGizmo ... without a current
+  allocation"**: after a wide table preview followed by narrower ones, GTK
+  sometimes draws the trough of the preview's own scrollbar before
+  allocating it. Nothing is drawn wrong. It does not happen with plain text
+  previews; clearing the buffer first, overlay scrollbars off, a forced
+  resize and an `ALWAYS` scrollbar policy did not help. `make ui-test`
+  tolerates exactly this message for now; the cause is still to be found.
+
+### Remaining
+
+- JSON / XML / YAML / TOML tree view with folding.
+- Raise `docx` toward L3 (page width, fonts, headers).
+- A placeholder (name, size, kind) when a structured preview takes longer
+  than ~100 ms (none measured over the budget so far).
+- Previews of TeX fonts (`.tfm`, `.pfb`) and Python bytecode (`.pyc`), the
+  largest remaining L0 groups.
 
 ---
 
-## 3. Phase 0 — Infrastructure (do first)
+## 3. Phase 0 — Infrastructure (done)
 
-Adding formats one by one into `viewer.c` (already > 1000 lines) does not
-scale. Build the shared pieces once.
+- [x] **Preview format registry**: `preview_formats` (builders, one per
+      `FileKind`), `preview_doc` (the document format), `preview_doc_view`
+      (display). ELF, hex dump and docx moved onto it with no visible change.
+- [x] **Shared building blocks**: summary card (`preview_doc_title()`,
+      `preview_doc_field()`...), text tables (`PreviewTable`: aligned
+      columns, numbers right-aligned, zebra rows, row numbers).
+- [ ] Tree view (see Remaining).
+- [x] **Zoom** for images and PDF pages (`+` / `-` / `0`, `Ctrl+wheel`).
+- [x] **Fixture corpus**: `tests/fixtures/preview/` (most generated by small
+      scripts; archives, certificates, catalogs built by the unit tests).
+- [x] **Latency benchmark**: `make bench-preview`.
+- [x] **UI test**: a second session in `make ui-test` shoots one preview per
+      format (`tests/ui/formats.sh`).
+- [x] **Coverage report**: `make preview-coverage DIR=...`.
+- [x] **Detection** by content for every new kind (ZIP-based office formats
+      and e-books, tar, gzip, bzip2, xz, zstd, 7z, RAR, ar, RPM, CAB, SQLite,
+      fonts, PEM / DER, `.mo`, JSON without extension, diffs, `.TH` man
+      pages, vCard / iCalendar, `.desktop`, RTF, RAW photos, UTF-16 text).
+- [x] `LOOKIN_DEBUG_PREVIEW=1` prints the time from selection to display.
 
-- [ ] **Preview provider registry** (`preview_registry.c/.h`, layer 2).
-      One entry per format: `FileKind`, a worker function (bytes / path →
-      result struct, runs in the thread), a show function (result → widgets
-      in the preview), a free function, and its byte limit. `viewer.c` keeps
-      only the dispatch: detect, pick the provider, run the task, show,
-      fall back on failure. Move the existing ELF, hex dump and docx paths
-      into providers as the first users, with no visible change
-      (prove it with `UI_BASELINE`).
-- [ ] **Shared preview widgets**, so formats look consistent:
-  - [ ] *Summary card*: title, subtitle (type · size), aligned label/value
-        rows and sections. Generalize `show_elf_summary()`.
-  - [ ] *Table view*: `GtkColumnView` over a `GListStore` of rows, header
-        row, right-aligned numbers, row / column limit notice. Used by CSV,
-        spreadsheets, SQLite, archives.
-  - [ ] *Tree view*: collapsible `GtkTreeListModel` for JSON, XML, YAML,
-        archives with folders.
-  - [ ] *Zoom and pan* for images and PDF pages (`+` / `-` / `0` fit,
-        `1` actual size, Ctrl+wheel), already on the wish list.
-- [ ] **Fixture corpus**: `tests/fixtures/preview/`, one small file per
-      format (generated by tests where possible, as `tests/zip_builder.h`
-      does), plus truncated and corrupted variants to exercise fallbacks.
-- [ ] **Latency benchmark**: `make bench-preview` runs every provider's
-      worker on the corpus (and on a large generated file per format) and
-      prints the time per file; fail above the budget of rule 1.
-- [ ] **UI test**: one `shot` per format in `tests/ui/run_ui_test.sh`,
-      selecting each fixture in the explorer.
-- [ ] **Coverage report**: a small tool that walks a directory (e.g.
-      `$HOME`) and reports, by extension, the share of files that end at
-      L0. This tells which format to do next.
-- [ ] **Detection fixes**: give `file_kind_detect()` magic numbers for
-      ZIP-based formats (inspect `[Content_Types].xml` / `mimetype` to tell
-      docx / xlsx / pptx / odt / epub / jar apart), tar (`ustar` at 257),
-      gzip, SQLite (`SQLite format 3\0`), PEM (`-----BEGIN`), DER
-      certificates, fonts (`OTTO`, `\0\1\0\0`, `true`), `.ipynb` (JSON with
-      `"cells"`).
+## 4. Phase 1 — Quick wins, GLib only (done)
 
----
+- [x] **CSV / TSV**: separator sniffing, RFC 4180 quoting, header detection.
+- [x] **JSON**: pretty-printed and coloured, minified, JSONC / JSON5, JSON
+      Lines; invalid JSON falls back to plain text.
+- [x] **Diff / patch**: summary of changed files, coloured lines, hunk
+      counts followed.
+- [x] **Archives** `.zip`, `.jar`, `.tar`, `.tar.gz`, `.a`, `.deb`, gzip of a
+      single file (its content shown with its own preview).
+- [x] **Certificates** PEM / DER, chains, keys (named only), requests.
+- [x] **Calendar, contacts, `.desktop`**.
+- [x] **Logs**: levels and timestamps coloured, end of large logs, opened
+      scrolled to the end.
+- [x] **Image details**: EXIF summary and orientation.
+- [x] **Fonts**: names, details, samples in the font (Pango ≥ 1.56).
+- [x] **Man pages**, gzipped ones too.
 
-## 4. Phase 1 — Quick wins, GLib only
+## 5. Phase 2 — Documents (done but docx)
 
-High value, small code. Each item: a foundation parser + tests, a provider,
-a fixture, a UI shot.
+- [x] **Jupyter notebooks** (rendered as Markdown, images as data URIs).
+- [x] **Spreadsheets** `.xlsx` / `.ods`: the first 3 sheets as grids, number
+      / date / percent / currency formats.
+- [x] **OpenDocument text** `.odt`.
+- [x] **Presentations** `.pptx` / `.odp`.
+- [x] **EPUB**.
+- [x] **RTF**.
+- [ ] Raise `docx` toward L3 (see Remaining).
 
-- [ ] **CSV / TSV** → table view. Delimiter sniffing (`,` `;` tab `|`),
-      quoted fields with newlines, header detection, first N rows. L3.
-- [ ] **JSON** → pretty-printed and coloured text, with a tree toggle;
-      handles one-line minified JSON and JSON Lines. L3.
-- [ ] **Diff / patch** → green / red lines, file headers and hunk headers
-      highlighted, per-file `+n −m` summary at the top. L3.
-- [ ] **Archives: `.zip`, `.jar`, `.tar`, `.tar.gz`, `.tgz`** → table of
-      entries (path, size, compressed size, date), totals, entry limit.
-      `zip_reader` exists; tar headers are 512-byte blocks; gzip through
-      `GZlibDecompressor` (stream only the headers needed). L2.
-- [ ] **Certificates `.pem` / `.crt` / `.cer` / `.der`** → summary card:
-      subject, issuer, validity (expired / expires in N days, coloured),
-      SANs, fingerprint. `GTlsCertificate` (`get_subject_name`,
-      `get_issuer_name`, `get_not_valid_before/after`, `get_dns_names`);
-      every certificate of a chain. L1→L2.
-- [ ] **Calendar `.ics`, contacts `.vcf`, `.desktop` files** → summary
-      card (events with dates, contact fields, app name / icon / Exec). L2.
-- [ ] **Log files** → level colouring (ERROR / WARN / INFO), timestamps
-      dimmed; show the *end* of large logs (last `PREVIEW_BYTES`), since
-      that is what one looks for. L3.
-- [ ] **Image details** → dimensions, format, colour depth, and EXIF
-      (camera, date taken, exposure, GPS) under the image; apply the EXIF
-      orientation. L3.
-- [ ] **Fonts `.ttf` / `.otf` / `.woff2`** → family and style, then a
-      sample sentence, the alphabet and digits at several sizes
-      (`PangoFontMap` with an app-local font config). L3.
-- [ ] **Man pages** (`*.1`…`*.9`, `.gz`) → basic roff formatting: `.TH`,
-      `.SH`, `.B`, `.I`, `.TP`, `.IP`. L2.
+## 6. Phase 3 — Optional libraries (done)
 
-## 5. Phase 2 — Documents (ZIP + XML, GLib only)
-
-Reuse `zip_reader` and the `html` renderer, as `docx` does.
-
-- [ ] **Jupyter `.ipynb`** → Markdown cells rendered, code cells coloured
-      in a box with `In [n]`, text and image (`image/png` base64) outputs. L3.
-- [ ] **Spreadsheets `.xlsx` / `.ods`** → table view of the first sheet,
-      sheet tabs to switch, shared strings, number and date formats,
-      first N rows. L3.
-- [ ] **OpenDocument text `.odt`** → same HTML path as `docx`. L2.
-- [ ] **Presentations `.pptx` / `.odp`** → one block per slide: title,
-      bullet text, embedded images; slide count. L2.
-- [ ] **EPUB** → title / author / cover, table of contents, first chapter
-      through the HTML renderer. L2→L3.
-- [ ] **RTF** → text with bold / italic / headings. L2.
-- [ ] Raise `docx` toward L3: page width, fonts, images inline, headers.
-
-## 6. Phase 3 — Optional libraries (`HAVE_*`, graceful fallback)
-
-- [ ] **SQLite** (`sqlite3`, read-only, `immutable=1`) → list of tables
-      with row counts, schema, first rows of the selected table in the
-      table view. Without the library: summary card from the file header
-      (page size, version). L3.
-- [ ] **libarchive** → `.7z`, `.rar`, `.xz`, `.bz2`, `.zst`, `.iso`, `.deb`,
-      `.rpm` listings through the same archive provider. L2.
-- [ ] **Media metadata** (GStreamer discoverer, or tag parsing in a
-      foundation module): duration, codecs, resolution, bitrate; ID3 /
-      FLAC / Ogg tags and cover art for audio; a poster frame for video
-      before playback. L3.
-- [ ] **HEIC / AVIF / RAW photos**: nothing to code when the gdk-pixbuf
-      loaders are installed; detect the missing loader and say which
-      package to install instead of a hex dump.
-- [ ] **Markdown extras**: Mermaid diagrams and math are out of reach
-      without a JS engine; show them as highlighted code blocks with a
-      label.
+- [x] **SQLite** (`HAVE_SQLITE`): tables, row counts, columns, first rows;
+      without the library, the header details.
+- [x] **libarchive** (`HAVE_LIBARCHIVE`): 7z, RAR, xz, bzip2, zstd, lzip,
+      ISO, cpio, RPM, CAB.
+- [x] **Media metadata**: `media_tags` (no GStreamer dependency).
+- [x] **HEIC / AVIF / JPEG XL / WebP without a loader**: the message names
+      the package to install; RAW photos show their embedded JPEG.
+- [x] **Markdown extras**: Mermaid, Graphviz, PlantUML and math blocks
+      labelled as source.
 
 ## 7. Phase 4 — Fidelity polish
 
-- [ ] PDF: page navigation (`PgUp` / `PgDn`), page count, zoom, document
-      properties in a summary header, render the next page ahead.
-- [ ] Animated GIF / APNG / WebP play in the preview.
-- [ ] SVG rendered at the pane's resolution (not a scaled bitmap).
-- [ ] Text larger than `PREVIEW_BYTES`: load the next chunk on scroll
-      (bounded per chunk, worker thread), "end of file" with `G`.
-- [ ] Encoding detection for text (UTF-16 BOM, Latin-1 fallback) instead
-      of showing replacement characters.
-- [ ] XML / YAML / TOML: tree toggle (shared tree view), like JSON.
-- [ ] Remote machines: previews through the remote mount follow the same
-      budgets; read only the bytes a provider asks for.
+- [x] PDF: progressive rendering (3 pages first), `PgDn` / `PgUp`, zoom.
+- [x] Animated GIF / WebP.
+- [x] SVG rendered at the displayed size (the SVG loader rasterizes at the
+      requested size: nothing to change).
+- [x] Large text: the next chunks load on scroll (up to 8 MB).
+- [x] Encoding detection (UTF-8 BOM, UTF-16 with or without BOM, UTF-32,
+      Windows-1252), shown in the status bar.
+- [ ] XML / YAML / TOML tree (see Remaining).
+- [x] Remote machines: previews read through the SSHFS mount with the same
+      bounded reads.
 
 ## 8. Not worth it
 
