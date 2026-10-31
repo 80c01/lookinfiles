@@ -705,7 +705,8 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     gtk_box_append(GTK_BOX(statusline), st->vim_wild_label);
     st->vim_statusline = statusline;
 
-    GtkWidget* commandline = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    /* No spacing: the typed text follows the prompt as in Vim */
+    GtkWidget* commandline = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(commandline, "vim-commandline");
 
     st->vim_cl_prompt = gtk_label_new(":");
@@ -714,6 +715,7 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
 
     st->vim_cl_entry = gtk_entry_new();
     gtk_widget_add_css_class(st->vim_cl_entry, "vim-commandline-entry");
+    gtk_widget_add_css_class(st->vim_cl_entry, "flat");
     gtk_widget_set_hexpand(st->vim_cl_entry, TRUE);
     gtk_widget_set_visible(st->vim_cl_entry, FALSE);
 

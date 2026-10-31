@@ -97,9 +97,9 @@ static void set_echo(AppSearchBar* sb, const gchar* text, const gchar* css_class
     gtk_widget_set_visible(sb->echo, text != NULL && text[0] != '\0');
 }
 
-/* Emacs prompt: "I-search:", "Failing wrapped I-search backward:"... */
+/* Emacs prompt: "I-search: ", "Failing wrapped I-search backward: "... */
 static void set_emacs_prompt(AppData* app, AppSearchBar* sb, gboolean failing, gboolean wrapped) {
-    gchar* prompt = g_strdup_printf("%s%sI-search%s:", failing ? "Failing " : "",
+    gchar* prompt = g_strdup_printf("%s%sI-search%s: ", failing ? "Failing " : "",
                                     wrapped ? (failing ? "wrapped " : "Wrapped ") : "",
                                     app->search_backward ? " backward" : "");
     gtk_label_set_text(GTK_LABEL(sb->prompt), prompt);
@@ -132,6 +132,13 @@ static void style_bar(AppData* app, AppSearchBar* sb) {
     remove_classes(sb->prompt, PROMPT_CLASSES, G_N_ELEMENTS(PROMPT_CLASSES));
     remove_classes(sb->entry, ENTRY_CLASSES, G_N_ELEMENTS(ENTRY_CLASSES));
     gtk_widget_set_visible(sb->buttons, style == NAV_STYLE_NOTEPAD);
+    /* Emacs and Vim: the typed text follows the prompt, with no field frame */
+    gtk_widget_set_margin_end(sb->prompt, style == NAV_STYLE_NOTEPAD ? 6 : 0);
+    if (style == NAV_STYLE_NOTEPAD) {
+        gtk_widget_remove_css_class(sb->entry, "flat");
+    } else {
+        gtk_widget_add_css_class(sb->entry, "flat");
+    }
     set_echo(sb, NULL, NULL);
     switch (style) {
     case NAV_STYLE_EMACS:
@@ -558,7 +565,8 @@ GtkWidget* search_bar_new(AppData* app, AppSearchBar* sb) {
 
     sb->bar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_widget_set_visible(sb->bar, FALSE);
-    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    /* The prompt's margin (style_bar()) sets the gap before the entry */
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     g_object_set_data(G_OBJECT(sb->bar), "search-row", row);
     gtk_box_append(GTK_BOX(sb->bar), row);
 
@@ -566,6 +574,7 @@ GtkWidget* search_bar_new(AppData* app, AppSearchBar* sb) {
     sb->entry = gtk_entry_new();
     gtk_editable_set_width_chars(GTK_EDITABLE(sb->entry), 5);
     gtk_widget_set_hexpand(sb->entry, TRUE);
+    gtk_widget_set_margin_end(sb->entry, 6);
 
     sb->echo = gtk_label_new("");
     gtk_label_set_ellipsize(GTK_LABEL(sb->echo), PANGO_ELLIPSIZE_END);

@@ -610,7 +610,7 @@ void apply_panel_borders(void) {
         "  background-color: @bg_terminal;\n"
         "}\n"
         /* ---- Inputs & buttons ---- */
-        "entry, searchentry, spinbutton {\n"
+        "entry:not(.flat), searchentry, spinbutton {\n"
         "  background-color: @bg_input;\n"
         "  color: @fg;\n"
         "  border: 1px solid @border_strong;\n"
@@ -618,9 +618,21 @@ void apply_panel_borders(void) {
         "  box-shadow: none;\n"
         "  min-height: 24px;\n"
         "}\n"
-        "entry:focus-within, searchentry:focus-within, spinbutton:focus-within {\n"
+        "entry:not(.flat):focus-within, searchentry:focus-within, spinbutton:focus-within {\n"
         "  border-color: @accent;\n"
         "  outline: none;\n"
+        "}\n"
+        /* Flat entries read as plain text after their prompt (Emacs
+         * minibuffer, Vim command line) */
+        "entry.flat, entry.flat:focus-within {\n"
+        "  background: transparent;\n"
+        "  border: none;\n"
+        "  border-radius: 0;\n"
+        "  box-shadow: none;\n"
+        "  outline: none;\n"
+        "  min-height: 0;\n"
+        "  padding: 0;\n"
+        "  margin: 0;\n"
         "}\n"
         /* ---- Scrollbars: square sliders like VS Code ---- */
         "scrollbar, scrollbar trough {\n"

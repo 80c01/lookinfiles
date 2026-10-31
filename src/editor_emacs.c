@@ -171,9 +171,9 @@ static void isearch_clear_highlight(EditorTab* tab) {
 /* Show the search state: prompt, highlighted matches, match count, cursor */
 static void isearch_update(EditorTab* tab, EditorModeState* st) {
     const gchar* q = isearch_query(st);
-    /* "Failing wrapped I-search backward:" */
+    /* "Failing wrapped I-search backward: " */
     gboolean failing = st->emacs_is_failing && q[0] != '\0';
-    gchar* prompt = g_strdup_printf("%s%s%s%s:", failing ? "Failing " : "",
+    gchar* prompt = g_strdup_printf("%s%s%s%s: ", failing ? "Failing " : "",
                                     st->emacs_is_wrapped ? (failing ? "wrapped " : "Wrapped ") : "",
                                     "I-search",
                                     st->emacs_is_forward ? "" : " backward");
@@ -805,7 +805,8 @@ void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
     st->emacs_modeline = modeline;
 
     /* Minibuffer */
-    GtkWidget* minibuffer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    /* No spacing: the typed text follows the prompt as in Emacs */
+    GtkWidget* minibuffer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(minibuffer, "emacs-minibuffer");
 
     st->emacs_mb_prompt = gtk_label_new("");
@@ -814,6 +815,8 @@ void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
 
     st->emacs_mb_entry = gtk_entry_new();
     gtk_widget_add_css_class(st->emacs_mb_entry, "emacs-minibuffer-entry");
+    gtk_widget_add_css_class(st->emacs_mb_entry, "flat");
+    gtk_widget_set_margin_end(st->emacs_mb_entry, 8); /* before the match count or completions */
     gtk_widget_set_hexpand(st->emacs_mb_entry, TRUE);
     gtk_widget_set_visible(st->emacs_mb_entry, FALSE);
 
@@ -1241,7 +1244,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     if (ctrl && (keyval == GDK_KEY_s || keyval == GDK_KEY_S || keyval == GDK_KEY_r || keyval == GDK_KEY_R)) {
         gboolean fwd = keyval == GDK_KEY_s || keyval == GDK_KEY_S;
         emacs_open_minibuffer(tab, fwd ? EMACS_MINI_ISEARCH_FWD : EMACS_MINI_ISEARCH_BWD,
-                              fwd ? "I-search:" : "I-search backward:", "");
+                              fwd ? "I-search: " : "I-search backward: ", "");
         isearch_start(tab, st, fwd);
         return TRUE;
     }
