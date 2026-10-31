@@ -612,11 +612,11 @@ static void show_text_preview(TextPreviewTaskData* td) {
                                       td->preview, td->name, td->fsize);
         } else if (is_html) {
             ensure_html_tags(app->buffer);
-            render_html_to_buffer(app->buffer, td->utf8_text, td->full,
+            render_html_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,
                                   td->preview, td->name, td->fsize);
         } else if (is_org) {
             ensure_orgmode_tags(app->buffer);
-            render_orgmode_to_buffer(app->buffer, td->utf8_text, td->full,
+            render_orgmode_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,
                                      td->preview, td->name, td->fsize,
                                      app->org_folded_lines, app->org_global_fold);
         } else {

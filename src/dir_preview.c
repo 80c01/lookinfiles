@@ -311,7 +311,7 @@ static void render_readme(AppData* app, const DirPreviewJob* job) {
         break;
     case FILE_KIND_ORG:
         ensure_orgmode_tags(buffer);
-        render_orgmode_to_buffer(buffer, job->readme_text, job->readme_path, truncated,
+        render_orgmode_to_buffer(buffer, GTK_TEXT_VIEW(app->text_view), job->readme_text, job->readme_path, truncated,
                                  job->summary->readme, job->readme_size, NULL, ORG_GLOBAL_SHOW_ALL);
         break;
     default: {

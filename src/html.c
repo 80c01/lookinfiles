@@ -297,6 +297,7 @@ void ensure_html_tags(GtkTextBuffer* buffer) {
 typedef struct {
     GtkTextBuffer* buffer;
     GtkTextIter iter;
+    GtkTextView* view;
     const gchar* doc_dir;
     const gchar* p_cur;
 
@@ -1341,9 +1342,21 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             gchar* src = html_get_attr(full_tag, "src");
             gchar* alt = html_get_attr(full_tag, "alt");
             if (src != NULL && src[0] != '\0') {
+                /* Natural size or width="N" pixels, shrunk to the view
+                 * width (CSS "max-width: 100%", as in VS Code) */
+                gint max_width = FIT_IMAGE_MAX_WIDTH;
+                gchar* width_attr = html_get_attr(full_tag, "width");
+                if (width_attr != NULL) {
+                    gchar* end = NULL;
+                    gint64 w = g_ascii_strtoll(width_attr, &end, 10);
+                    if (w > 0 && end != width_attr && *end != '%') {
+                        max_width = (gint)MIN(w, FIT_IMAGE_MAX_WIDTH);
+                    }
+                    g_free(width_attr);
+                }
                 GdkPixbuf* pix = NULL;
                 if (g_str_has_prefix(src, "data:image/")) {
-                    pix = pixbuf_from_data_uri(src, 560);
+                    pix = pixbuf_from_data_uri(src, max_width);
                 } else {
                     gchar* img_path = NULL;
                     if (g_path_is_absolute(src)) {
@@ -1352,7 +1365,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
                         img_path = g_build_filename(ctx->doc_dir, src, NULL);
                     }
                     if (img_path != NULL && g_file_test(img_path, G_FILE_TEST_EXISTS)) {
-                        pix = gdk_pixbuf_new_from_file_at_scale(img_path, 560, -1, TRUE, NULL);
+                        pix = pixbuf_from_file(img_path, max_width);
                     }
                     g_free(img_path);
                 }
@@ -1360,7 +1373,9 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
                 if (pix != NULL) {
                     ensure_newlines(ctx, 1);
                     GdkTexture* tex = texture_new_for_pixbuf(pix);
-                    gtk_text_buffer_insert_paintable(ctx->buffer, &ctx->iter, GDK_PAINTABLE(tex));
+                    GdkPaintable* fit = fit_image_new(tex, ctx->view);
+                    gtk_text_buffer_insert_paintable(ctx->buffer, &ctx->iter, fit);
+                    g_object_unref(fit);
                     g_object_unref(tex);
                     g_object_unref(pix);
                     ctx->trailing_newlines = 0; /* the image is on the line: end it */
@@ -1383,6 +1398,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
 }
 
 void render_html_to_buffer(GtkTextBuffer* buffer,
+                           GtkTextView* view,
                            const gchar* html_text,
                            const gchar* doc_path,
                            gboolean is_preview,
@@ -1393,6 +1409,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
     HtmlRenderContext ctx;
     memset(&ctx, 0, sizeof(ctx));
     ctx.buffer = buffer;
+    ctx.view = view;
     gtk_text_buffer_get_start_iter(buffer, &ctx.iter);
     ctx.active_tags = g_ptr_array_new();
     ctx.trailing_newlines = 2;

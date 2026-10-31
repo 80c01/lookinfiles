@@ -278,7 +278,7 @@ void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* pat
         set_view_monospace(widget, FALSE);
         gtk_text_view_set_wrap_mode(view, GTK_WRAP_WORD_CHAR);
         ensure_html_tags(buffer);
-        render_html_to_buffer(buffer, doc->text->str, path, FALSE, name, size);
+        render_html_to_buffer(buffer, view, doc->text->str, path, FALSE, name, size);
         return;
     }
     if (doc->format == PREVIEW_DOC_MARKDOWN) {

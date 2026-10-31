@@ -23,6 +23,10 @@ GdkPixbuf* pixbuf_from_file(const gchar* path, gint max_width);
 /* Paintable for a text view: the texture at its natural size, scaled down
  * to fit the width of view (NULL view: natural size), following resizes
  * like CSS "max-width: 100%". Main thread. */
+/* Images shown with fit_image_new() are decoded at most this wide (memory
+ * bound), then drawn at the width of the view */
+#define FIT_IMAGE_MAX_WIDTH 2560
+
 #define LOOKIN_TYPE_FIT_IMAGE (lookin_fit_image_get_type())
 G_DECLARE_FINAL_TYPE(LookinFitImage, lookin_fit_image, LOOKIN, FIT_IMAGE, GObject)
 GdkPaintable* fit_image_new(GdkTexture* texture, GtkTextView* view);

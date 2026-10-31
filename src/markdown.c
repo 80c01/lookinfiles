@@ -256,10 +256,6 @@ static void apply_tag_mark(GtkTextBuffer* buffer, const gchar* tag_name,
 }
 
 /* Parse inline formatting and insert into buffer */
-/* Images are decoded at most this wide (memory bound), then drawn at the
- * width of the view */
-#define MD_IMAGE_MAX_WIDTH 2560
-
 static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
                                const gchar* text, const gchar* doc_dir,
                                GtkTextView* view) {
@@ -289,10 +285,10 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
                     }
                     gboolean loaded = FALSE;
                     /* Natural size, shrunk to the view width (VS Code) */
-                    GdkPixbuf* pix = pixbuf_from_data_uri(url, MD_IMAGE_MAX_WIDTH);
+                    GdkPixbuf* pix = pixbuf_from_data_uri(url, FIT_IMAGE_MAX_WIDTH);
                     if (pix == NULL && img_path != NULL && !g_str_has_prefix(url, "data:") &&
                         g_file_test(img_path, G_FILE_TEST_EXISTS)) {
-                        pix = pixbuf_from_file(img_path, MD_IMAGE_MAX_WIDTH);
+                        pix = pixbuf_from_file(img_path, FIT_IMAGE_MAX_WIDTH);
                     }
                     if (pix != NULL) {
                         GdkTexture* tex = texture_new_for_pixbuf(pix);

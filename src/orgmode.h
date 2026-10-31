@@ -14,7 +14,9 @@ enum {
 void ensure_orgmode_tags(GtkTextBuffer* buffer);
 
 /* Render Orgmode document to GtkTextBuffer with interactive headings, TODOs, checkboxes, tables, code, and images */
+/* view: where images fit their width (NULL: natural size) */
 void render_orgmode_to_buffer(GtkTextBuffer* buffer,
+                              GtkTextView* view,
                               const gchar* org_text,
                               const gchar* doc_path,
                               gboolean is_preview,

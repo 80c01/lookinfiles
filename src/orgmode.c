@@ -442,7 +442,8 @@ static gboolean is_image_path(const gchar* path) {
 /* Inline markup renderer for Org format: *bold*, /italic/, _underline_, =verbatim=, ~code~, +strike+, [[link][desc]] */
 static void render_inline_markup(GtkTextBuffer* buffer, GtkTextIter* iter,
                                  const gchar* text, const gchar* doc_dir,
-                                 gboolean dim_done, OrgLineInfo* cur_line_info) {
+                                 gboolean dim_done, OrgLineInfo* cur_line_info,
+                                 GtkTextView* view) {
     if (text == NULL || *text == '\0') return;
 
     const gchar* p = text;
@@ -479,10 +480,13 @@ static void render_inline_markup(GtkTextBuffer* buffer, GtkTextIter* iter,
                     }
                     gboolean loaded = FALSE;
                     if (img_path != NULL && g_file_test(img_path, G_FILE_TEST_EXISTS)) {
-                        GdkPixbuf* pix = gdk_pixbuf_new_from_file_at_scale(img_path, 480, -1, TRUE, NULL);
+                        /* Natural size, shrunk to the view width */
+                        GdkPixbuf* pix = pixbuf_from_file(img_path, FIT_IMAGE_MAX_WIDTH);
                         if (pix != NULL) {
                             GdkTexture* tex = texture_new_for_pixbuf(pix);
-                            gtk_text_buffer_insert_paintable(buffer, iter, GDK_PAINTABLE(tex));
+                            GdkPaintable* fit = fit_image_new(tex, view);
+                            gtk_text_buffer_insert_paintable(buffer, iter, fit);
+                            g_object_unref(fit);
                             g_object_unref(tex);
                             g_object_unref(pix);
                             loaded = TRUE;
@@ -605,6 +609,7 @@ static void render_inline_markup(GtkTextBuffer* buffer, GtkTextIter* iter,
 /* ------------------------------------------------------------------------- */
 
 void render_orgmode_to_buffer(GtkTextBuffer* buffer,
+                              GtkTextView* view,
                               const gchar* org_text,
                               const gchar* doc_path,
                               gboolean is_preview,
@@ -817,7 +822,7 @@ void render_orgmode_to_buffer(GtkTextBuffer* buffer,
 
             /* Render heading text */
             gboolean dim_done = (g_strcmp0(todo_kw, "DONE") == 0 || g_strcmp0(todo_kw, "CANCELLED") == 0);
-            render_inline_markup(buffer, &iter, title_part, doc_dir, dim_done, linfo);
+            render_inline_markup(buffer, &iter, title_part, doc_dir, dim_done, linfo, view);
             g_free(title_part);
 
             /* Render tags badge if present */
@@ -1048,7 +1053,7 @@ void render_orgmode_to_buffer(GtkTextBuffer* buffer,
 
             g_ptr_array_add(line_maps, linfo);
 
-            render_inline_markup(buffer, &iter, lead, doc_dir, linfo->checkbox_done, linfo);
+            render_inline_markup(buffer, &iter, lead, doc_dir, linfo->checkbox_done, linfo, view);
             gtk_text_buffer_insert(buffer, &iter, "\n", 1);
             g_free(trimmed);
             continue;
@@ -1080,7 +1085,7 @@ void render_orgmode_to_buffer(GtkTextBuffer* buffer,
         g_ptr_array_add(line_maps, linfo);
 
         gtk_text_buffer_insert(buffer, &iter, "  ", 2);
-        render_inline_markup(buffer, &iter, raw_line, doc_dir, FALSE, linfo);
+        render_inline_markup(buffer, &iter, raw_line, doc_dir, FALSE, linfo, view);
         gtk_text_buffer_insert(buffer, &iter, "\n", 1);
         g_free(trimmed);
     }
