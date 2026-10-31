@@ -323,11 +323,11 @@ void update_path_label(AppData* app) {
         if (app->editor_dedicated) {
             gtk_widget_add_css_class(app->split_btn, "tab-action-active");
             icon_button_set_content(app->split_btn, "view-paged", NULL);
-            gtk_widget_set_tooltip_text(app->split_btn, "Dock Editor Tabs into Preview Panel (Ctrl+E)");
+            gtk_widget_set_tooltip_text(app->split_btn, "Dock Editor Tabs into Preview Panel");
         } else {
             gtk_widget_remove_css_class(app->split_btn, "tab-action-active");
             icon_button_set_content(app->split_btn, "view-dual", NULL);
-            gtk_widget_set_tooltip_text(app->split_btn, "Move Editor Tabs to a Dedicated Panel (Ctrl+E)");
+            gtk_widget_set_tooltip_text(app->split_btn, "Move Editor Tabs to a Dedicated Panel");
         }
     }
     if (app->term_btn != NULL) {

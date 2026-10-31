@@ -191,7 +191,7 @@ void vim_free(EditorTab* tab);
 void vim_cursor_get(EditorTab* tab, GtkTextIter* it);
 /* Insert or Replace mode: typed text goes into the buffer */
 gboolean vim_is_inserting(EditorTab* tab);
-/* Ctrl keys the window binds that Vim needs (Ctrl-E, Ctrl-R) */
+/* Ctrl keys the window binds that Vim needs (Ctrl-R) */
 gboolean vim_claims_key(EditorTab* tab, guint keyval, GdkModifierType state);
 /* Drop a half-typed command (Ctrl+W, 2d, g...); TRUE if there was one */
 gboolean vim_cancel_pending(EditorTab* tab);

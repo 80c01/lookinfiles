@@ -305,7 +305,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         }
     }
 
-    /* Ctrl+Alt+Arrow / Ctrl+Alt+VIM / Ctrl+Alt+D: move editor tab */
+    /* Ctrl+Alt+Arrow / Ctrl+Alt+HJKL: move editor tab */
     if ((state & GDK_CONTROL_MASK) && (state & GDK_ALT_MASK)) {
         if (keyval == GDK_KEY_Right || keyval == GDK_KEY_l || keyval == GDK_KEY_L) {
             editor_move_tab_direction(app, NULL, EDITOR_MOVE_RIGHT);
@@ -323,24 +323,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
             editor_move_tab_direction(app, NULL, EDITOR_MOVE_UP);
             return TRUE;
         }
-        if (keyval == GDK_KEY_d || keyval == GDK_KEY_D) {
-            editor_move_tab_dedicated(app, NULL);
-            return TRUE;
-        }
         /* Ctrl+Alt+N: line numbers of the current editor tab */
         if (keyval == GDK_KEY_n || keyval == GDK_KEY_N) {
             editor_toggle_line_numbers(app, NULL);
             return TRUE;
         }
-    }
-
-    /* Ctrl+E: move active editor tab to dedicated panel right of preview, or dock back */
-    if (!is_emacs_tab &&
-        (state & GDK_CONTROL_MASK) &&
-        !(state & GDK_SHIFT_MASK) &&
-        (keyval == GDK_KEY_e || keyval == GDK_KEY_E)) {
-        editor_move_tab_dedicated(app, NULL);
-        return TRUE;
     }
 
     /* Ctrl+Shift+R: toggle Remote (SSH) view */

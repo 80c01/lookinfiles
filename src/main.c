@@ -405,7 +405,7 @@ int main(int argc, char** argv) {
     gtk_button_set_has_frame(GTK_BUTTON(split_btn), FALSE);
     gtk_widget_set_focusable(split_btn, FALSE);
     gtk_widget_add_css_class(split_btn, "tab-action-btn");
-    gtk_widget_set_tooltip_text(split_btn, "Move Editor Tabs to a Dedicated Panel (Ctrl+E)");
+    gtk_widget_set_tooltip_text(split_btn, "Move Editor Tabs to a Dedicated Panel");
     gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), split_btn, GTK_PACK_START);
 
     /* Preview panel: notebook and minimap, its search bar below them */

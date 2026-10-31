@@ -383,9 +383,6 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
         gtk_popover_popdown(GTK_POPOVER(popover));
     }
     switch (action) {
-    case TAB_ACTION_DEDICATED:
-        editor_move_tab_dedicated(app, tab);
-        break;
     case TAB_ACTION_MOVE_RIGHT:
         editor_move_tab_direction(app, tab, EDITOR_MOVE_RIGHT);
         break;
@@ -481,18 +478,6 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     gtk_widget_set_margin_end(box, 4);
     gtk_widget_set_margin_top(box, 4);
     gtk_widget_set_margin_bottom(box, 4);
-
-    gboolean is_docked = (tab->nb == app->notebook);
-    if (is_docked) {
-        tab_menu_item(box, popover, app, tab, "Move to Dedicated Panel", "Ctrl+E", TAB_ACTION_DEDICATED);
-    } else {
-        tab_menu_item(box, popover, app, tab, "Dock to Main Panel", "Ctrl+E", TAB_ACTION_DEDICATED);
-    }
-
-    GtkWidget* sep1 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_widget_set_margin_top(sep1, 4);
-    gtk_widget_set_margin_bottom(sep1, 4);
-    gtk_box_append(GTK_BOX(box), sep1);
 
     tab_menu_item(box, popover, app, tab, "Move Right", "Ctrl+Alt+Right", TAB_ACTION_MOVE_RIGHT);
     tab_menu_item(box, popover, app, tab, "Move Left", "Ctrl+Alt+Left", TAB_ACTION_MOVE_LEFT);

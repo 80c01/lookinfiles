@@ -14,7 +14,6 @@ typedef enum {
 } EditorMoveDirection;
 
 enum {
-    TAB_ACTION_DEDICATED,
     TAB_ACTION_MOVE_RIGHT,
     TAB_ACTION_MOVE_LEFT,
     TAB_ACTION_MOVE_UP,
