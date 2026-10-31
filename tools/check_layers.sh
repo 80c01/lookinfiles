@@ -88,6 +88,7 @@ code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
 trash_restore:
 note_types:
+canvas_doc:
 fuzzy_match:
 text_search:code_index
 session_store:app_paths

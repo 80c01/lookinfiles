@@ -156,6 +156,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `note_types` — note types of the notes view (`NoteType`: Plain Text,
   Markdown, Org-mode): extension, display name, icon, row badge and the
   name stored in `notes.xml` (the former `rich` reads as Markdown).
+- `canvas_doc` — Canvas notes (`<title>.canvas/`: `page.xml` and
+  `media/`): text boxes with styled runs and pictures placed freely, read and
+  written as XML, new picture names, unused pictures pruned, Markdown export.
 - `palette` — every colour of the application, by role (`PaletteRole`:
   surfaces, text, accent, git, diff, syntax, editor, terminal ANSI...):
   `palette_color()` ("#rrggbb" for text tags and Pango markup),
