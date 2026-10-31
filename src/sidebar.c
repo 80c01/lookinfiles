@@ -107,11 +107,6 @@ static void on_sidebar_files_hidden_clicked(GtkButton* btn, gpointer data) {
     toggle_hidden_files((AppData*)data);
 }
 
-static void on_sidebar_files_sort_clicked(GtkButton* btn, gpointer data) {
-    (void)btn;
-    cycle_sort_mode((AppData*)data);
-}
-
 static void on_sidebar_files_collapse_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     toggle_collapse_expand_files((AppData*)data);
@@ -135,11 +130,6 @@ static void on_sidebar_bm_edit_clicked(GtkButton* btn, gpointer data) {
 static void on_sidebar_bm_delete_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     bookmarks_delete_selected((AppData*)data);
-}
-
-static void on_sidebar_bm_sort_clicked(GtkButton* btn, gpointer data) {
-    (void)btn;
-    bookmarks_toggle_sort((AppData*)data);
 }
 
 static void on_sidebar_bm_collapse_clicked(GtkButton* btn, gpointer data) {
@@ -170,11 +160,6 @@ static void on_sidebar_notes_move_clicked(GtkButton* btn, gpointer data) {
 static void on_sidebar_notes_delete_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     notes_delete_selected((AppData*)data);
-}
-
-static void on_sidebar_notes_sort_clicked(GtkButton* btn, gpointer data) {
-    (void)btn;
-    notes_toggle_sort((AppData*)data);
 }
 
 static void on_sidebar_notes_collapse_clicked(GtkButton* btn, gpointer data) {
@@ -285,14 +270,6 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_hidden_btn, "clicked", G_CALLBACK(on_sidebar_files_hidden_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_hidden_btn);
 
-    GtkWidget* files_sort_btn = icon_button_new("view-sort-ascending", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(files_sort_btn), FALSE);
-    gtk_widget_set_focusable(files_sort_btn, FALSE);
-    gtk_widget_add_css_class(files_sort_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(files_sort_btn, "Cycle Sort: Name / Date / Size / Ext (o)");
-    g_signal_connect(files_sort_btn, "clicked", G_CALLBACK(on_sidebar_files_sort_clicked), app);
-    gtk_box_append(GTK_BOX(files_toolbar), files_sort_btn);
-
     GtkWidget* files_collapse_btn = icon_button_new("pan-up", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(files_collapse_btn), FALSE);
     gtk_widget_set_focusable(files_collapse_btn, FALSE);
@@ -347,14 +324,6 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_tooltip_text(bm_delete_btn, "Delete Selected (d / Delete)");
     g_signal_connect(bm_delete_btn, "clicked", G_CALLBACK(on_sidebar_bm_delete_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_delete_btn);
-
-    GtkWidget* bm_sort_btn = icon_button_new("view-sort-ascending", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(bm_sort_btn), FALSE);
-    gtk_widget_set_focusable(bm_sort_btn, FALSE);
-    gtk_widget_add_css_class(bm_sort_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(bm_sort_btn, "Cycle Sort: A-Z / Z-A (o)");
-    g_signal_connect(bm_sort_btn, "clicked", G_CALLBACK(on_sidebar_bm_sort_clicked), app);
-    gtk_box_append(GTK_BOX(bm_toolbar), bm_sort_btn);
 
     GtkWidget* bm_collapse_btn = icon_button_new("pan-up", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(bm_collapse_btn), FALSE);
@@ -418,14 +387,6 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_tooltip_text(del_note_btn, "Move to Trash / Delete (d / Delete)");
     g_signal_connect(del_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_delete_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), del_note_btn);
-
-    GtkWidget* sort_note_btn = icon_button_new("view-sort-ascending", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(sort_note_btn), FALSE);
-    gtk_widget_set_focusable(sort_note_btn, FALSE);
-    gtk_widget_add_css_class(sort_note_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(sort_note_btn, "Cycle Sort: Manual / A-Z / Z-A (o)");
-    g_signal_connect(sort_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_sort_clicked), app);
-    gtk_box_append(GTK_BOX(buf_toolbar), sort_note_btn);
 
     GtkWidget* collapse_note_btn = icon_button_new("pan-up", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(collapse_note_btn), FALSE);

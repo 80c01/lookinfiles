@@ -27,7 +27,6 @@
     <file>scalable/actions/lookin-view-paged-symbolic.svg</file>
     <file>scalable/actions/lookin-view-refresh-symbolic.svg</file>
     <file>scalable/actions/lookin-view-reveal-symbolic.svg</file>
-    <file>scalable/actions/lookin-view-sort-ascending-symbolic.svg</file>
     <file>scalable/actions/lookin-window-close-symbolic.svg</file>
   </gresource>
 </gresources>
