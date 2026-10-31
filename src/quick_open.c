@@ -305,7 +305,8 @@ static void move_selection(Picker* p, gint delta) {
 }
 
 /* Keys of the entry: Up / Down (also Ctrl+N / Ctrl+P, Ctrl+J / Ctrl+K),
- * Page Up / Down move in the list; Enter shows, Ctrl+Enter edits */
+ * Page Up / Down move in the list; Enter shows, Ctrl+Enter edits; Escape
+ * cancels (the search entry would otherwise swallow it) */
 static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
                              gpointer data) {
     (void)ctrl;
@@ -319,6 +320,9 @@ static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint ke
     case GDK_KEY_Page_Up: case GDK_KEY_KP_Page_Up: move_selection(p, -10); return TRUE;
     case GDK_KEY_Return: case GDK_KEY_KP_Enter: case GDK_KEY_ISO_Enter:
         choose(p, ctrl_down);
+        return TRUE;
+    case GDK_KEY_Escape:
+        app_dialog_response(APP_DIALOG(p->dialog), APP_RESPONSE_CANCEL);
         return TRUE;
     default: break;
     }
