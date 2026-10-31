@@ -13,14 +13,15 @@ make clean        # remove binary and build/
 ./lookin   # run (requires a display; shows a warning without one)
 ```
 
-- **Run `make check` before every commit.** It fails on any compiler warning,
-  failing test, or layering violation (`tools/check_layers.sh`).
+- **Agents only run `make` after a change**; the test targets below run when
+  the user asks. `make check` fails on any compiler warning, failing test, or
+  layering violation (`tools/check_layers.sh`).
 - The build compiles every `src/*.c` automatically (no file list to maintain)
   and tracks header dependencies, so editing a header rebuilds its users.
 - There is no real display in the sandbox (`Gtk-WARNING: cannot open display`
   is expected when running the binary directly). Logic that can be tested
   without widgets belongs in a foundation module with unit tests.
-- **After any UI change, run `make ui-test`** (`tests/ui/run_ui_test.sh`). It
+- `make ui-test` (`tests/ui/run_ui_test.sh`) checks UI changes. It
   runs the app under Xvfb, drives a keyboard/mouse scenario with xdotool and
   saves one screenshot per step in `build/ui/shots/` — open the relevant ones
   to check the result. It fails on a missing window, any GTK warning or

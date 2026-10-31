@@ -27,8 +27,10 @@ make ui-test    # headless UI smoke test under Xvfb, screenshots in build/ui/sho
 ./lookin        # needs a display ("cannot open display" is expected in the sandbox)
 ```
 
-- **Run `make check` after every modification** and before every commit.
-- **After any UI change, run `make ui-test`** and open the relevant screenshots.
+- **After a modification, only run `make`** and fix every warning and error.
+- **Run `make test`, `make check` or `make ui-test` only when the user asks.**
+  Not after an edit, not before a commit. The "`make check` passes" and
+  `make ui-test` items in the TASK checklists also wait for the user.
 - A new shortcut gets a step in `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).
 - `lookin` and `build/` are generated: never edit them.
 
@@ -87,6 +89,8 @@ layer or below (`tools/check_layers.sh` enforces it):
 
 ## Git
 
+- **Always commit**: once a change builds with `make`, commit it right away,
+  without waiting to be asked.
 - One accepted change = one commit; short imperative subject, no body
   (e.g. `Add Ctrl-F / Ctrl-B paging in left panel`).
 - `git add` only files you changed on purpose. Amend only your own
