@@ -278,7 +278,8 @@ xdotool mousemove 730 50 click 1     # back to the Vim tab (notes.txt)
 xdotool mousemove 700 300 click 1;  shot vim_tab_mode_again     # bar: still Notepad
 xdotool mousemove 730 50 click 3;   shot tab_mode_menu_vim      # Vim marked
 key Escape
-key ctrl+w;             shot editor_closed
+xdotool mousemove 700 300 click 1    # focus the Vim tab text
+key ctrl+w c;           shot editor_closed   # Vim window command closes the tab
 xdotool mousemove 150 600 click 1    # focus the explorer (empty area)
 key ctrl+w;             shot last_editor_closed   # must show Preview, not Git Commits
 key alt+plus;           shot workspace_added

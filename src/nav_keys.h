@@ -5,6 +5,7 @@
  * (Notepad, Vim, Emacs), strictly those of the mode. Arrows, Home / End and
  * Page Up / Down work in every mode; the rest follows the mode:
  *   Vim:     j k h l, gg G, zz zt zb, / n N, Ctrl+F / Ctrl+B, Ctrl+W w / W,
+ *            Ctrl+W c (close the tab),
  *            t (open in the dedicated editor panel, like netrw's new tab),
  *            gt / gT and Ctrl+PgDn / Ctrl+PgUp (next / previous tab)
  *   Emacs:   C-n C-p C-f C-b, C-v / M-v, M-< / M->, C-l, C-s / C-r, C-x o,
@@ -54,7 +55,8 @@ typedef enum {
     NAV_OPEN_DEDICATED,   /* edit the file in the dedicated editor panel (Vim t) */
     NAV_DISPLAY_DEDICATED, /* same, the focus stays in the panel (Emacs C-o) */
     NAV_TAB_NEXT,     /* next / previous tab of the notebook (gt, C-x <right>, Ctrl+Tab) */
-    NAV_TAB_PREV
+    NAV_TAB_PREV,
+    NAV_TAB_CLOSE     /* close the focused tab, or the current one on screen (Vim Ctrl+W c) */
 } NavAction;
 
 /* Action of keyval with state in style, after the pending prefix.

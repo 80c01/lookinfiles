@@ -357,6 +357,9 @@ static gboolean on_list_key(GtkEventControllerKey* controller, guint keyval, gui
     case NAV_PANEL_PREV:
         app_emit(app, APP_EVENT_FOCUS_PREV_PANEL);
         return TRUE;
+    case NAV_TAB_CLOSE:
+        app_emit(app, APP_EVENT_CLOSE_TAB);
+        return TRUE;
     case NAV_TAB_NEXT:
     case NAV_TAB_PREV: {
         GtkWidget* nb = gtk_widget_get_ancestor(list, GTK_TYPE_NOTEBOOK);

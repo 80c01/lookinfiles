@@ -132,6 +132,15 @@ void focus_prev_panel(AppData* app) {
     focus_adjacent_panel(-1, app);
 }
 
+void close_shown_tab(AppData* app) {
+    FocusInfo info;
+    focus_route_get(app, &info);
+    EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);
+    if (t != NULL && t->container != NULL && gtk_widget_get_mapped(t->container)) {
+        editor_close_tab(app, t);
+    }
+}
+
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
                              guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
@@ -258,12 +267,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         }
         if ((state & GDK_CONTROL_MASK) &&
             (keyval == GDK_KEY_w || keyval == GDK_KEY_W)) {
-            /* The focused tab, else the current one if it is on screen
-             * (never a tab hidden behind Git Commits or References) */
-            EditorTab* t = cur_tab != NULL ? cur_tab : editor_current_tab(app);
-            if (t != NULL && t->container != NULL && gtk_widget_get_mapped(t->container)) {
-                editor_close_tab(app, t);
-            }
+            close_shown_tab(app);
             return TRUE;
         }
     }

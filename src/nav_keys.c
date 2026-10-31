@@ -9,7 +9,7 @@ static gboolean is_modifier_key(guint keyval) {
 }
 
 /* Second key of Vim Ctrl+W: w / Ctrl+W / l / j / Right / Down go to the next
- * panel, W / h / k / p / Left / Up to the previous one */
+ * panel, W / h / k / p / Left / Up to the previous one, c closes the tab */
 static NavAction vim_window_key(guint keyval) {
     switch (keyval) {
     case GDK_KEY_w: case GDK_KEY_l: case GDK_KEY_j: case GDK_KEY_Right: case GDK_KEY_Down:
@@ -17,6 +17,8 @@ static NavAction vim_window_key(guint keyval) {
     case GDK_KEY_W: case GDK_KEY_h: case GDK_KEY_k: case GDK_KEY_p:
     case GDK_KEY_Left: case GDK_KEY_Up:
         return NAV_PANEL_PREV;
+    case GDK_KEY_c:
+        return NAV_TAB_CLOSE;
     default:
         return NAV_CANCEL;
     }

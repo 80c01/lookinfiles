@@ -813,7 +813,8 @@ gboolean vim_claims_key(EditorTab* tab, guint keyval, GdkModifierType state) {
     return k == GDK_KEY_e || k == GDK_KEY_r;
 }
 
-/* Ctrl+W w / W / h / l...: focus another panel (nav_keys.h) */
+/* Ctrl+W w / W / h / l...: focus another panel; Ctrl+W c: close the tab,
+ * asking first when it has unsaved changes (nav_keys.h) */
 static gboolean handle_window_command(EditorTab* tab, EditorModeState* st, guint keyval,
                                       GdkModifierType state) {
     NavPrefix next = NAV_PREFIX_NONE;
@@ -825,6 +826,8 @@ static gboolean handle_window_command(EditorTab* tab, EditorModeState* st, guint
         app_emit((AppData*)tab->app, APP_EVENT_FOCUS_NEXT_PANEL);
     } else if (action == NAV_PANEL_PREV) {
         app_emit((AppData*)tab->app, APP_EVENT_FOCUS_PREV_PANEL);
+    } else if (action == NAV_TAB_CLOSE) {
+        defer_close(tab);
     }
     return TRUE;
 }

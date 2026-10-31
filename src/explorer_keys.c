@@ -91,6 +91,7 @@ static void run_nav(AppData* app, NavAction action) {
     case NAV_SEARCH_PREV: do_search(app, -1); break;
     case NAV_PANEL_NEXT: app_emit(app, APP_EVENT_FOCUS_NEXT_PANEL); break;
     case NAV_PANEL_PREV: app_emit(app, APP_EVENT_FOCUS_PREV_PANEL); break;
+    case NAV_TAB_CLOSE: app_emit(app, APP_EVENT_CLOSE_TAB); break;
     case NAV_OPEN_DEDICATED: open_selected_dedicated(app, TRUE); break;
     case NAV_DISPLAY_DEDICATED: open_selected_dedicated(app, FALSE); break;
     /* The tabs of the preview notebook; the explorer keeps the focus */

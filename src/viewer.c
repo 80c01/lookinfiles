@@ -79,6 +79,7 @@ static void run_viewer_nav(AppData* app, NavAction action) {
     case NAV_SEARCH_PREV: do_viewer_search(app, -1); break;
     case NAV_PANEL_NEXT: app_emit(app, APP_EVENT_FOCUS_NEXT_PANEL); break;
     case NAV_PANEL_PREV: app_emit(app, APP_EVENT_FOCUS_PREV_PANEL); break;
+    case NAV_TAB_CLOSE: app_emit(app, APP_EVENT_CLOSE_TAB); break;
     case NAV_OPEN_DEDICATED:
     case NAV_DISPLAY_DEDICATED:
         /* The previewed file, in the dedicated editor panel */

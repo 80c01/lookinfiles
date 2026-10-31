@@ -17,6 +17,7 @@
  *   APP_EVENT_PREVIEW_STALE   -> viewer_reload_preview()      (viewer.c)
  *   APP_EVENT_GIT_STATUS_CHANGED -> refresh_git_status_in_place() (file_list.c)
  *   APP_EVENT_FOCUS_NEXT_PANEL / _PREV_PANEL -> focus_next_panel() / focus_prev_panel() (ui.c)
+ *   APP_EVENT_CLOSE_TAB       -> close_shown_tab()            (ui.c)
  */
 #include "app_types.h"
 
@@ -40,6 +41,9 @@ typedef enum {
      * (Emacs C-x o, Vim Ctrl+W w / W, Notepad F6 / Shift+F6) */
     APP_EVENT_FOCUS_NEXT_PANEL,
     APP_EVENT_FOCUS_PREV_PANEL,
+    /* A panel asked to close the focused editor tab, else the current one if
+     * it is on screen (Vim Ctrl+W c from the explorer, viewer or a list page) */
+    APP_EVENT_CLOSE_TAB,
     APP_EVENT_COUNT
 } AppEvent;
 

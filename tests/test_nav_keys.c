@@ -63,6 +63,7 @@ static void test_vim(void) {
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, next, GDK_KEY_w, GDK_CONTROL_MASK, NULL), ==, NAV_PANEL_NEXT);
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, next, GDK_KEY_W, GDK_SHIFT_MASK, NULL), ==, NAV_PANEL_PREV);
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, next, GDK_KEY_h, 0, NULL), ==, NAV_PANEL_PREV);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, next, GDK_KEY_c, 0, NULL), ==, NAV_TAB_CLOSE);
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, next, GDK_KEY_x, 0, NULL), ==, NAV_CANCEL);
     /* Other modes' chords do nothing */
     g_assert_cmpint(look(NAV_STYLE_VIM, GDK_KEY_n, GDK_CONTROL_MASK), ==, NAV_NONE);

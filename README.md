@@ -211,6 +211,7 @@ actions (`a`, `d`, `r`, `o`, `i`, `m`, `?`...):
 | Edit the file in the dedicated editor panel | | `t` (focus in the editor) | `C-o` (focus stays) |
 | Next / previous panel | `F6` / `Shift+F6` | `Ctrl+W w` / `Ctrl+W W` (also `h` / `l`) | `C-x o` |
 | Next / previous tab | `Ctrl+Tab` / `Ctrl+Shift+Tab`, `Ctrl+PgDn` / `Ctrl+PgUp` | `gt` / `gT`, `Ctrl+PgDn` / `Ctrl+PgUp` | `C-x <right>` / `C-x <left>` |
+| Close the tab | `Ctrl+W` | `Ctrl+W c` | |
 
 The panel and tab keys also work from editor tabs of the same mode (Vim:
 also `:tabnext` / `:tabprevious`, `:bnext` / `:bprevious`); `Alt+Left` /
@@ -231,6 +232,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `f` | Toggle fullscreen |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels |
 | `Ctrl+W w` / `Ctrl+W W` (Vim), `C-x o` (Emacs), `F6` / `Shift+F6` (Notepad) | Focus the next / previous panel (global mode, or the mode of the focused editor tab) |
+| `Ctrl+W c` (Vim), `Ctrl+W` (Notepad) | Close the focused editor tab, or the current one if it is on screen (global mode, or the mode of the focused editor tab; asks first when there are unsaved changes) |
 | `gt` / `gT` (Vim), `C-x <right>` / `C-x <left>` (Emacs), `Ctrl+Tab` / `Ctrl+Shift+Tab` (Notepad), `Ctrl+PgDn` / `Ctrl+PgUp` (Vim, Notepad) | Next / previous tab of the focused notebook (from the explorer: of the preview notebook) |
 | `Alt+1` … `Alt+8` | Switch virtual workspace (or click the top-bar workspace map) |
 | `Alt++` / `Alt+-` | Add a workspace with the default layout / close the current one |
@@ -337,7 +339,7 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 | Key | Action |
 |---|---|
 | `Ctrl+S` | Save the file |
-| `Ctrl+W` | Close the focused tab, or the current one if it is on screen (asks first when there are unsaved changes; not in Vim, Emacs and Org-mode tabs) |
+| `Ctrl+W` | Close the focused tab, or the current one if it is on screen (asks first when there are unsaved changes; not in Vim, Emacs and Org-mode tabs: Vim uses `Ctrl+W c`) |
 | `Ctrl+E` | Move the tab to the dedicated editor panel, or dock it back (not in Emacs and Org-mode tabs: `C-e` is end of line) |
 | `Ctrl+Alt+Arrows` / `Ctrl+Alt+H J K L` | Move / split the tab left, down, up or right |
 | `Ctrl+R` / `F2` | Rename the current text buffer (only `F2` in Emacs and Org-mode tabs: `C-r` searches backward) |
