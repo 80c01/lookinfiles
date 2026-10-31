@@ -85,7 +85,8 @@ Modern, High Contrast Dark, or your own).
   folder's README rendered below (one level read in the background, never
   recursively).
 - Summaries of notebooks, bookmark folders and machines.
-- A **Git Commits** tab listing the repository history with each commit's diff.
+- A **Git Commits** tab listing the repository history with each commit's diff,
+  and a **Search** tab with the results of a search in files (`Ctrl+Shift+F`).
 - Git change bars in the text preview and the editor, as in VS Code: lines
   added (green), modified (blue) or deleted (red marker) since the last commit;
   the editor updates them while typing. The minimap shows them along its
@@ -220,8 +221,8 @@ also `:tabnext` / `:tabprevious`, `:bnext` / `:bprevious`); `Alt+Left` /
 `Alt+Right` work everywhere. The tab keys switch the tabs of the notebook
 that has the focus and put the focus in the new tab; from the explorer they
 switch the tabs of the preview notebook and the explorer keeps the focus.
-Clicking a tab also puts the focus in it. In the **Git Commits** and
-**References** tabs, the navigation keys of the global mode move in the list
+Clicking a tab also puts the focus in it. In the **Git Commits**,
+**References** and **Search** tabs, the navigation keys of the global mode move in the list
 (`Enter` opens). A key sequence left unfinished (`g`, `C-x`, `Ctrl+W`, a
 count) is dropped when the focus moves to another panel or tab.
 
@@ -242,6 +243,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Alt+T` | Themes and fonts: pick a theme (applied as you select it; Apply keeps it, Cancel goes back), set your interface and code fonts, save the current look as a theme, edit or delete your themes |
 | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Larger / smaller fonts (interface and code together), or back to the theme's sizes |
 | `Ctrl+P` (Notepad, Vim), `C-x C-f` (Emacs) | Go to a file of the project (its git repository, else the current folder): type part of its name or path, the best matches first; `Enter` shows it in the explorer, `Ctrl+Enter` opens it in an editor tab (Vim editor tabs keep `Ctrl+P`) |
+| `Ctrl+Shift+F` | Search in files: a text in every file of the project (any case unless it has a capital letter; the editor selection is filled in), searched in the background; the results are listed by file in a **Search** tab (`Enter` or a double click opens one, the cross closes the tab). Unsaved changes are not searched |
 | `Ctrl+T` | Open a terminal pane beside the running ones (exit the shell to close it) |
 | `Ctrl+Shift+T` | Open a terminal pane below the running ones |
 | `Ctrl+Shift+L` | Stack the terminal under the viewer, or put it back beside it |

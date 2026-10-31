@@ -12,6 +12,7 @@
 #include "editor_modes.h"
 #include "focus_route.h"
 #include "quick_open.h"
+#include "project_search.h"
 
 
 static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, gpointer user_data) {
@@ -175,6 +176,14 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     /* Where the focus is decides what the keys below do */
     FocusInfo info;
     focus_route_get(app, &info);
+
+    /* Ctrl+Shift+F: search the files of the project (Search tab); before
+     * the navigation keys: Vim's Ctrl+F pages down whatever Shift */
+    if ((state & GDK_CONTROL_MASK) && (state & GDK_SHIFT_MASK) && !(state & GDK_ALT_MASK) &&
+        (keyval == GDK_KEY_f || keyval == GDK_KEY_F)) {
+        project_search_show(app);
+        return TRUE;
+    }
 
     /* Quick open: Emacs C-x C-f in the explorer, the viewer and the list pages */
     if (info.nav_keys &&

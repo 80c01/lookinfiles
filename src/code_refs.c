@@ -53,6 +53,7 @@ static void code_ref_item_init(CodeRefItem* it) {
 
 typedef struct {
     AppData* app;
+    GtkWidget** slot;  /* &app->refs_page or &app->search_page */
     GtkWidget* page;
     GtkWidget* header;
     GtkWidget* list;
@@ -62,12 +63,16 @@ typedef struct {
 
 #define PAGE_KEY "code-refs-page"
 
-static RefsPage* page_state(AppData* app) {
-    return app->refs_page != NULL ? g_object_get_data(G_OBJECT(app->refs_page), PAGE_KEY) : NULL;
+static RefsPage* page_state(GtkWidget* page) {
+    return page != NULL ? g_object_get_data(G_OBJECT(page), PAGE_KEY) : NULL;
 }
 
 GtkWidget* code_refs_page(AppData* app) {
     return app != NULL ? app->refs_page : NULL;
+}
+
+GtkWidget* code_refs_search_page(AppData* app) {
+    return app != NULL ? app->search_page : NULL;
 }
 
 static void ensure_css(void) {
@@ -154,15 +159,17 @@ static void on_activate(GtkListView* view, guint position, gpointer data) {
 
 static void on_close_clicked(GtkButton* button, gpointer data) {
     (void)button;
-    AppData* app = data;
-    if (app->refs_page == NULL || app->notebook == NULL) return;
+    RefsPage* rp = data;
+    AppData* app = rp->app;
+    GtkWidget** slot = rp->slot;
+    if (*slot == NULL || app->notebook == NULL) return;
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    GtkWidget* closed = app->refs_page;
+    GtkWidget* closed = *slot;
     GtkWidget* focus_back = focus_route_return_target(app, closed);
     g_object_ref(closed);
     gint page = gtk_notebook_page_num(nb, closed);
-    if (page >= 0) gtk_notebook_remove_page(nb, page);
-    app->refs_page = NULL;
+    if (page >= 0) gtk_notebook_remove_page(nb, page); /* frees rp */
+    *slot = NULL;
     focus_route_return(app, focus_back, closed);
     g_object_unref(closed);
 }
@@ -173,13 +180,16 @@ static void page_free(gpointer p) {
     g_free(rp);
 }
 
-static RefsPage* ensure_page(AppData* app) {
-    RefsPage* rp = page_state(app);
+/* The References or Search page (slot), made when missing: right after
+ * the Git tab, or after the other result page */
+static RefsPage* ensure_page(AppData* app, GtkWidget** slot, const gchar* title) {
+    RefsPage* rp = page_state(*slot);
     if (rp != NULL) return rp;
     if (app->notebook == NULL) return NULL;
     ensure_css();
     rp = g_new0(RefsPage, 1);
     rp->app = app;
+    rp->slot = slot;
     rp->store = g_list_store_new(CODE_TYPE_REF_ITEM);
 
     GtkWidget* page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -194,8 +204,10 @@ static RefsPage* ensure_page(AppData* app) {
     gtk_label_set_ellipsize(GTK_LABEL(rp->header), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(rp->header, TRUE);
     gtk_box_append(GTK_BOX(bar), rp->header);
-    GtkWidget* close = icon_button_new("window-close", "Close References");
-    g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), app);
+    gchar* tip = g_strdup_printf("Close %s", title);
+    GtkWidget* close = icon_button_new("window-close", tip);
+    g_free(tip);
+    g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), rp);
     gtk_box_append(GTK_BOX(bar), close);
     gtk_box_append(GTK_BOX(page), bar);
 
@@ -214,23 +226,22 @@ static RefsPage* ensure_page(AppData* app) {
 
     rp->page = page;
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, rp, page_free);
-    app->refs_page = page;
-    /* Right after the Git tab (editor tabs follow) */
+    *slot = page;
+    /* Right after the Git tab and the other result page (editor tabs follow) */
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
-    GtkWidget* label = icon_label_new("edit-find", "References");
+    GtkWidget* other = slot == &app->refs_page ? app->search_page : app->refs_page;
+    if (other != NULL) after = MAX(after, gtk_notebook_page_num(nb, other));
+    GtkWidget* label = icon_label_new("edit-find", title);
     gtk_notebook_insert_page(nb, page, label, after + 1);
     return rp;
 }
 
-/* Show the references (CodeReference*) of name */
-static void show_references(AppData* app, EditorTab* tab, CodeNavMessageFunc message, const gchar* name,
-                            GPtrArray* refs, const gchar* root, const gchar* source, gboolean truncated) {
-    RefsPage* rp = ensure_page(app);
-    if (rp == NULL) return;
+/* Fill the page: a header row per file then the occurrences (CodeReference*,
+ * grouped by file), the matched length bytes highlighted. Returns the files. */
+static guint fill_page(RefsPage* rp, GPtrArray* refs, const gchar* root, gsize length) {
     g_list_store_remove_all(rp->store);
     guint files = 0;
-    gsize name_len = strlen(name);
     const gchar* header_path = NULL;
     for (guint i = 0; i < refs->len; i++) {
         CodeReference* r = g_ptr_array_index(refs, i);
@@ -256,11 +267,31 @@ static void show_references(AppData* app, EditorTab* tab, CodeNavMessageFunc mes
         it->path = g_strdup(r->path);
         it->line = r->line;
         it->column = r->column;
-        it->length = (gint)name_len;
+        it->length = (gint)length;
         it->text = g_strdup(r->text);
         g_list_store_append(rp->store, it);
         g_object_unref(it);
     }
+    return files;
+}
+
+/* Show the page with its first occurrence selected and the focus in it */
+static void present_page(AppData* app, RefsPage* rp, gboolean any) {
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+        gtk_widget_set_visible(app->viewer_box, TRUE);
+    }
+    gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, rp->page));
+    if (any) gtk_single_selection_set_selected(rp->selection, 1);
+    gtk_widget_grab_focus(rp->list);
+}
+
+/* Show the references (CodeReference*) of name */
+static void show_references(AppData* app, EditorTab* tab, CodeNavMessageFunc message, const gchar* name,
+                            GPtrArray* refs, const gchar* root, const gchar* source, gboolean truncated) {
+    RefsPage* rp = ensure_page(app, &app->refs_page, "References");
+    if (rp == NULL) return;
+    guint files = fill_page(rp, refs, root, strlen(name));
     gchar* markup = refs->len == 0
                         ? g_markup_printf_escaped("No references to <b>%s</b> found <span foreground=\"%s\">(%s)</span>",
                                                   name, palette_color(PAL_FG_SUBTLE), source)
@@ -270,19 +301,43 @@ static void show_references(AppData* app, EditorTab* tab, CodeNavMessageFunc mes
                                                   truncated ? ", list cut" : "", palette_color(PAL_FG_SUBTLE), source);
     gtk_label_set_markup(GTK_LABEL(rp->header), markup);
     g_free(markup);
-    /* Show the page with the first occurrence selected */
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-        gtk_widget_set_visible(app->viewer_box, TRUE);
-    }
-    gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, rp->page));
-    if (refs->len > 0) gtk_single_selection_set_selected(rp->selection, 1);
-    gtk_widget_grab_focus(rp->list);
+    present_page(app, rp, refs->len > 0);
     if (message != NULL && tab != NULL && g_list_find(app->editors, tab) != NULL) {
         gchar* msg = g_strdup_printf("%u reference%s to %s (References tab)", refs->len, refs->len == 1 ? "" : "s", name);
         message(tab, msg);
         g_free(msg);
     }
+}
+
+void code_refs_show_searching(AppData* app, const gchar* query, const gchar* root) {
+    RefsPage* rp = ensure_page(app, &app->search_page, "Search");
+    if (rp == NULL) return;
+    g_list_store_remove_all(rp->store);
+    gchar* base = g_path_get_basename(root);
+    gchar* markup = g_markup_printf_escaped("Searching for <b>%s</b> in %s…", query, base);
+    gtk_label_set_markup(GTK_LABEL(rp->header), markup);
+    g_free(markup);
+    g_free(base);
+    present_page(app, rp, FALSE);
+}
+
+void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
+                           gboolean exact_case, gboolean truncated) {
+    RefsPage* rp = ensure_page(app, &app->search_page, "Search");
+    if (rp == NULL) return;
+    guint files = fill_page(rp, refs, root, strlen(query));
+    const gchar* how = exact_case ? "case sensitive" : "any case";
+    gchar* markup = refs->len == 0
+                        ? g_markup_printf_escaped("No results for <b>%s</b> <span foreground=\"%s\">(%s)</span>",
+                                                  query, palette_color(PAL_FG_SUBTLE), how)
+                        : g_markup_printf_escaped("<b>%s</b>: %u result%s in %u file%s%s "
+                                                  "<span foreground=\"%s\">(%s; Enter opens)</span>",
+                                                  query, refs->len, refs->len == 1 ? "" : "s", files,
+                                                  files > 1 ? "s" : "", truncated ? ", list cut" : "",
+                                                  palette_color(PAL_FG_SUBTLE), how);
+    gtk_label_set_markup(GTK_LABEL(rp->header), markup);
+    g_free(markup);
+    present_page(app, rp, refs->len > 0);
 }
 
 /* ------------------------------------------------------------------------- */

@@ -18,4 +18,13 @@ gboolean code_refs_find(AppData* app, EditorTab* tab, CodeNavMessageFunc message
 /* The References page, or NULL when it is not open */
 GtkWidget* code_refs_page(AppData* app);
 
+/* The Search page (text search results, Ctrl+Shift+F) works the same way,
+ * in its own tab next to References. */
+GtkWidget* code_refs_search_page(AppData* app);
+/* Show the Search page, emptied, while query is searched for under root */
+void code_refs_show_searching(AppData* app, const gchar* query, const gchar* root);
+/* Show the occurrences of query (CodeReference*, grouped by file) */
+void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
+                           gboolean exact_case, gboolean truncated);
+
 #endif /* CODE_REFS_H */

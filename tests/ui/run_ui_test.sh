@@ -307,6 +307,9 @@ key Escape;             shot files_context_menu_closed
 key ctrl+p; xdotool type --delay 60 "plan"
                         shot quick_open_filtered
 key Escape;             shot quick_open_closed
+key ctrl+shift+f; xdotool type --delay 60 "TODO"; key Return
+sleep 2;                shot search_in_files_results
+key alt+Left;           shot explorer_after_search
 key alt+l;              shot layouts_dialog       # saved workspace layouts (empty list)
 key Escape;             shot layouts_dialog_closed
 # Themes (Alt+T): selecting a row previews it, Escape goes back, Enter applies

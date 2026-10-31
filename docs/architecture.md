@@ -123,6 +123,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `CodeQuery.tags`, open buffers are still scanned.
 - `fuzzy_match` — fuzzy scoring of paths for quick open (file name, word
   starts and consecutive characters first) and the matched positions.
+- `text_search` — literal search of a text in a project's files (smart
+  case, binary and large files skipped, bounded), as `CodeReference`s.
 - `jump_list` — back / forward history of navigation jumps across files.
 - `trash_restore` — puts back a file moved to the trash: finds its newest
   `.trashinfo` (home trash, then the mount's `.Trash-$uid` / `.Trash/$uid`)
@@ -294,7 +296,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `code_intel` (tags `lsp-error`...) and shown in help cards.
 - `code_refs` — the References page of the preview notebook (after the Git
   tab; `editor_detach_tabs()` and `editor_current_tab()` only touch editor
-  pages, wherever they are), from the server or `code_index_references()`.
+  pages, wherever they are), from the server or `code_index_references()`;
+  also the Search page (`app->search_page`) of `project_search`, next to it.
+- `project_search` — Ctrl+Shift+F: asks for the text, runs `text_search`
+  over `code_index_all_files()` in a worker (a new search cancels the
+  previous one) and lists the results in the Search page of `code_refs`
+  (`code_refs_show_search()`, same rows and keys as References).
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
 - `quick_open` — Ctrl+P / Emacs `C-x C-f`: the project's files
   (`code_index_all_files()` in a worker) in an `AppDialog`, ranked by

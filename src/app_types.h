@@ -237,6 +237,7 @@ typedef struct {
     guint preview_page;             /* page of a paged preview (mailbox message), 0: its first view */
     guint preview_pages;            /* pages of the shown preview after its first view */
     GtkWidget* refs_page;           /* References page of the preview notebook (code_refs.c), or NULL */
+    GtkWidget* search_page;         /* Search page (text search results, code_refs.c), or NULL */
     guint status_idle_id;           /* pending status bar refresh after a page switch */
 
     /* Video preview */
