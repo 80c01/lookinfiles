@@ -25,8 +25,11 @@ format. Open work is in
   readable on the theme; Word 6 / 95: the text); OpenDocument text (`.odt`)
   with headings, styles, lists, tables, links and images;
   spreadsheets (`.xlsx`, `.ods`, `.xls` from Excel 97-2003 or 5.0 / 95) as
-  grids with column letters, number, date and percent formats; presentations
-  (`.pptx`, `.odp`, `.ppt` / `.pps`) slide by slide; RTF. The exact page
+  grids with column letters, number, date and percent formats; presentations:
+  `.pptx` drawn slide by slide like PowerPoint (shapes, fills, pictures,
+  tables, text styles from the layout, master and theme; speaker notes
+  below; the first 20 slides drawn), `.odp` and `.ppt` / `.pps` slide by
+  slide; RTF. The exact page
   layout (page size, columns, floating positions) is not reproduced; long
   documents stop after 256 KB of text. Other OLE2
   compound files (`.msi`, `.vsd`, Works...) show their properties (title,
@@ -166,7 +169,8 @@ every common format to L3 and never leave one below L1.
 | OpenDocument `.odt`, RTF | L2 | `odf`, `rtf` |
 | Word 97-2003 `.doc`: same as `.docx` but pictures (Word 6 / 95: text, L2) | L3 | `doc_reader`, `doc_writer` |
 | Excel 97-2003 / 5.0 `.xls` | L3 | `xls_reader`, `spreadsheet` |
-| Presentations `.pptx` / `.odp` / `.ppt` | L2 | `pptx`, `odf`, `ppt_reader` |
+| PowerPoint `.pptx`: slides drawn with their layout, master and theme | L3 | `pptx`, `pptx_shapes`, `slide_render` |
+| Presentations `.odp` / `.ppt` | L2 | `odf`, `ppt_reader` |
 | Other OLE2 compound files (properties, streams) | L1 | `ole_reader`, `ole_props`, `office97` |
 | Mail messages `.eml` / `.emlx`, Outlook `.msg`, TNEF `winmail.dat` | L3 | `mail_message`, `mail_view`, `mail_msg`, `mail_tnef` |
 | Mailboxes (mbox), Maildir and MH folders | L2 | `mail_box`, `mail_dir` |
@@ -188,8 +192,7 @@ dump (13.7 % before the preview work). Most of the rest are TeX font metrics
 ### Targets
 
 - **Coverage**: under 2 % of the files of a real home directory at L0.
-- **Fidelity**: L3 for every common format except archives and
-  presentations (L2).
+- **Fidelity**: L3 for every common format except archives (L2).
 - **Speed**: p95 time to first paint per format within the budgets of
   rule 1.
 

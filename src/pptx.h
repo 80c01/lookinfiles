@@ -3,15 +3,25 @@
 
 #include <glib.h>
 
-/* PowerPoint presentations (.pptx, Office Open XML) converted to simple HTML
- * for the HTML renderer: one section per slide in presentation order, with
- * the title, subtitle, bullet points (nested by level), text boxes, tables
- * and pictures (as data: URIs). Speaker notes and layouts are not shown.
- * Pure GLib, unit-tested. */
+#include "preview_doc.h"
+#include "slide_render.h"
 
-/* HTML of a presentation, about max_text bytes of text at most; *n_slides
+/* PowerPoint presentations (.pptx, Office Open XML) drawn like PowerPoint
+ * (slide_render): each slide from its shapes, its layout and master
+ * (pptx_shapes), in presentation order, with its speaker notes. Pure GLib
+ * (and cairo / Pango for the pictures), unit-tested. */
+
+/* Slides drawn as pictures at most (the others are listed) */
+#define PPTX_MAX_DRAWN 20
+
+/* The slides of a presentation; NULL with error set if it is not one */
+SlideDeck* pptx_read_deck(const gchar* path, GError** error);
+
+/* The preview: title (the file name), subtitle ("PowerPoint presentation ·
+ * N slides · size_text"; size_text may be NULL), the slides. *n_slides
  * (may be NULL) receives the number of slides. NULL with error set if it is
  * not a readable presentation. */
-gchar* pptx_file_to_html(const gchar* path, gsize max_text, guint* n_slides, GError** error);
+PreviewDoc* pptx_file_preview(const gchar* path, const gchar* name, const gchar* size_text, guint* n_slides,
+                              GError** error);
 
 #endif /* PPTX_H */

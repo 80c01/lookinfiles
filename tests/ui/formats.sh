@@ -58,6 +58,7 @@
     cp "$ROOT/tests/fixtures/mail/sample.msg" 41-figures.msg   # Outlook
     cp "$ROOT/tests/fixtures/mail/winmail.dat" 42-winmail.dat  # TNEF
     cp "$ROOT/tests/fixtures/mail/archive.pst" 43-archive.pst  # header only
+    cp "$ROOT/tests/fixtures/preview/deck.pptx" 44-deck.pptx   # theme, master, layouts
     # Maildir folder (a directory: listed first)
     cp -r "$ROOT/tests/fixtures/mail/Maildir" 00-Maildir
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
@@ -116,7 +117,8 @@ format_scenario() {
     key Down;           shot fmt_outlook_msg
     key Down;           shot fmt_tnef
     key Down;           shot fmt_outlook_pst
-    key Up Up Up Up Up Up Up Up Up Up
+    key Down;           shot fmt_pptx_theme
+    key Up Up Up Up Up Up Up Up Up Up Up
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
 }

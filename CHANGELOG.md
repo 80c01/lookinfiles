@@ -13,6 +13,12 @@ All notable changes to this project are listed here. The format follows
   (`1.`, `a.`, `III.2.`, bullets from symbol fonts); tables as grids with
   wrapped cells; pictures at their size; page breaks; the page header and
   footer. Text colours are adjusted to stay readable on the theme.
+- PowerPoint presentations (`.pptx`) are drawn slide by slide like
+  PowerPoint shows them: positions, rotation, shapes and freeforms, fills
+  (gradients included), outlines, pictures, groups and tables (with the
+  banded table style), text with its fonts, sizes, colours, bullets and
+  numbering, inherited from the slide layout, master and theme; the speaker
+  notes under each slide. The first 20 slides are drawn, the others listed.
 - Word 97-2003 documents (`.doc`) are shown the same way: the formatting of
   their styles (with base styles) and runs (fonts from the font table,
   sizes, colours, highlights, capitals), paragraph alignment, indents and

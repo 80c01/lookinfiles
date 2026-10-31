@@ -56,7 +56,10 @@ notebook:json_view
 zip_xml:zip_reader
 spreadsheet:zip_reader,zip_xml,preview_doc
 odf:zip_reader,zip_xml
-pptx:zip_reader,zip_xml
+pptx:zip_reader,zip_xml,preview_doc,pptx_shapes,slide_render
+pptx_shapes:pptx_shapes_private,zip_reader,zip_xml,preview_doc,slide_render
+pptx_build:pptx_shapes,pptx_shapes_private,preview_doc,slide_render
+slide_render:preview_doc
 epub:zip_reader,zip_xml
 rtf:
 sqlite_view:preview_doc
@@ -135,6 +138,14 @@ for f in $(grep -l '#include "editor_modes_private.h"' src/*.c src/*.h); do
     case "$f" in
         src/editor_modes.c|src/editor_notepad.c|src/editor_emacs.c|src/editor_vim.c|src/editor_org.c) ;;
         *) echo "layering: $f includes editor_modes_private.h (internal to editor mode files)"; status=1 ;;
+    esac
+done
+
+# pptx_shapes_private.h is internal to the .pptx shape files
+for f in $(grep -l '#include "pptx_shapes_private.h"' src/*.c src/*.h); do
+    case "$f" in
+        src/pptx_shapes.c|src/pptx_build.c) ;;
+        *) echo "layering: $f includes pptx_shapes_private.h (internal to pptx_shapes.c, pptx_build.c)"; status=1 ;;
     esac
 done
 

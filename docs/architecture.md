@@ -57,6 +57,16 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   properties, styles with basedOn chains and document defaults, theme fonts,
   numbering labels, tables, images, the first header and footer, text
   limit. Tests build archives with `tests/zip_builder.h`.
+- `slide_render` — slides as a model (`SlideDeck`: shapes with position,
+  rotation, geometry, fill, outline, picture, text, tables) drawn with cairo
+  and Pango into a PNG per slide (`slide_render_png()`), and the deck preview
+  (`slide_deck_preview()`: one picture per slide, notes below). Shared by
+  `pptx` and `ppt_reader`.
+- `pptx`, `pptx_shapes`, `pptx_build` (internal `pptx_shapes_private.h`) — PowerPoint `.pptx` read into a `SlideDeck`
+  (`pptx_read_deck()`): theme colours and fonts, colour modifiers, slide
+  masters, layouts and placeholders (inheritance of positions, body and list
+  styles), groups, freeforms, tables with the banded style, pictures,
+  backgrounds, speaker notes.
 - `doc_writer` — Word processing documents written as a `PreviewDoc` that
   looks like the document (`DocWriter`: runs with fonts, sizes relative to
   the default size, colours, highlights; paragraph alignment, indents,

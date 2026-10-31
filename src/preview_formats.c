@@ -691,19 +691,19 @@ static PreviewDoc* build_ebook(const PreviewInput* in, GCancellable* cancellable
 
 static PreviewDoc* build_presentation(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
-    guint slides = 0;
-    gchar* html;
-    if (is_opendocument(in)) {
-        OdfInfo info = { 0 };
-        html = odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, &info, error);
-        slides = info.n_slides;
-    } else {
-        html = pptx_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, &slides, error);
+    if (!is_opendocument(in)) {
+        gchar* size = preview_format_size(in->size);
+        PreviewDoc* doc = pptx_file_preview(in->path, in->name, size, NULL, error);
+        g_free(size);
+        return doc;
     }
+    OdfInfo info = { 0 };
+    gchar* html = odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, &info, error);
     if (html == NULL) {
         return NULL;
     }
     /* Slide count in the metadata banner */
+    guint slides = info.n_slides;
     gchar* count = g_strdup_printf("<meta name=\"description\" content=\"Presentation · %u %s\"></head>", slides,
                                    slides == 1 ? "slide" : "slides");
     gchar* head_end = strstr(html, "</head>");
