@@ -234,6 +234,24 @@ static void test_colors(void) {
     g_assert_cmpfloat(preview_color_contrast(yellow, light_bg), >=, 4.5);
 }
 
+static void test_symbol_text(void) {
+    gchar* t = preview_symbol_text("\xEF\x82\xA7", NULL); /* U+F0A7: Wingdings square */
+    g_assert_cmpstr(t, ==, "▪");
+    g_free(t);
+    t = preview_symbol_text("\xC2\xB7", "Symbol");
+    g_assert_cmpstr(t, ==, "•");
+    g_free(t);
+    t = preview_symbol_text("o", "Courier New");
+    g_assert_cmpstr(t, ==, "◦");
+    g_free(t);
+    t = preview_symbol_text("–", "Calibri");
+    g_assert_cmpstr(t, ==, "–");
+    g_free(t);
+    t = preview_symbol_text(NULL, NULL);
+    g_assert_cmpstr(t, ==, "•");
+    g_free(t);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/preview_doc/append_offsets", test_append_offsets);
@@ -248,5 +266,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_doc/paragraph_span", test_paragraph_span);
     g_test_add_func("/preview_doc/append_doc", test_append_doc);
     g_test_add_func("/preview_doc/colors", test_colors);
+    g_test_add_func("/preview_doc/symbol_text", test_symbol_text);
     return g_test_run();
 }

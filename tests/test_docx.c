@@ -1,6 +1,5 @@
 /* Unit tests for src/docx.c and src/docx_styles.c: Word documents as styled previews. */
 #include "docx.h"
-#include "docx_styles.h"
 #include "zip_builder.h"
 
 #include <string.h>
@@ -467,21 +466,6 @@ static void test_malformed_xml(void) {
     g_bytes_unref(bytes);
 }
 
-static void test_bullet_text(void) {
-    gchar* t = docx_bullet_text("\xEF\x82\xA7", NULL); /* U+F0A7: Wingdings square */
-    g_assert_cmpstr(t, ==, "▪");
-    g_free(t);
-    t = docx_bullet_text("\xC2\xB7", "Symbol");
-    g_assert_cmpstr(t, ==, "•");
-    g_free(t);
-    t = docx_bullet_text("–", "Calibri");
-    g_assert_cmpstr(t, ==, "–");
-    g_free(t);
-    t = docx_bullet_text(NULL, NULL);
-    g_assert_cmpstr(t, ==, "•");
-    g_free(t);
-}
-
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/docx/paragraphs_and_escaping", test_paragraphs_and_escaping);
@@ -501,6 +485,5 @@ int main(int argc, char** argv) {
     g_test_add_func("/docx/truncation", test_truncation);
     g_test_add_func("/docx/not_a_document", test_not_a_document);
     g_test_add_func("/docx/malformed_xml", test_malformed_xml);
-    g_test_add_func("/docx/bullet_text", test_bullet_text);
     return g_test_run();
 }

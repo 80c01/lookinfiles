@@ -143,6 +143,38 @@ void preview_doc_append_doc(PreviewDoc* doc, const PreviewDoc* other) {
     }
 }
 
+gchar* preview_symbol_text(const gchar* text, const gchar* font) {
+    if (text == NULL || text[0] == '\0') {
+        return g_strdup("•");
+    }
+    gunichar c = g_utf8_get_char_validated(text, -1);
+    if (c == (gunichar)-1 || c == (gunichar)-2) {
+        return g_strdup("•");
+    }
+    gboolean symbol = font != NULL && (g_ascii_strncasecmp(font, "Symbol", 6) == 0 ||
+                                       g_ascii_strncasecmp(font, "Wingdings", 9) == 0);
+    if (c >= 0xF000 && c <= 0xF0FF) {
+        c -= 0xF000;
+        symbol = TRUE;
+    }
+    if (symbol) {
+        static const struct { gunichar code; const gchar* text; } SYMBOLS[] = {
+            { 0xB7, "•" }, { 0xA7, "▪" }, { 0x6E, "■" }, { 0x71, "❑" }, { 0x76, "❖" },
+            { 0xD8, "➢" }, { 0xFC, "✓" }, { 0xA8, "◆" }, { 0x6C, "●" }, { 0x77, "◆" },
+        };
+        for (gsize i = 0; i < G_N_ELEMENTS(SYMBOLS); i++) {
+            if (c == SYMBOLS[i].code) {
+                return g_strdup(SYMBOLS[i].text);
+            }
+        }
+        return g_strdup("•");
+    }
+    if (c == 'o' && font != NULL && g_ascii_strncasecmp(font, "Courier", 7) == 0) {
+        return g_strdup("◦");
+    }
+    return g_strdup(text);
+}
+
 /* --- Document colours --- */
 
 gchar* preview_color_format(guint32 rgb) {

@@ -151,6 +151,11 @@ gboolean preview_paragraph_parse(const gchar* arg, PreviewParagraph* para);
 /* Append another document: its text, spans and images (fonts files too) */
 void preview_doc_append_doc(PreviewDoc* doc, const PreviewDoc* other);
 
+/* A character of a symbol font (Symbol, Wingdings: "\xF0B7", or "\xB7"
+ * with that font) as Unicode ("•"); other text is kept. NULL or invalid
+ * text gives a bullet. Caller frees. */
+gchar* preview_symbol_text(const gchar* text, const gchar* font);
+
 /* --- Document colours (0xRRGGBB) --- */
 
 /* "#rrggbb" (caller frees) */

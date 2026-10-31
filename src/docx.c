@@ -483,7 +483,7 @@ static void doc_start(GMarkupParseContext* ctx, const gchar* name, const gchar**
         if (code != NULL) {
             gchar utf8[8] = { 0 };
             g_unichar_to_utf8((gunichar)g_ascii_strtoull(code, NULL, 16), utf8);
-            gchar* text = docx_bullet_text(utf8, attr(names, values, "w:font"));
+            gchar* text = preview_symbol_text(utf8, attr(names, values, "w:font"));
             write_text(d, text, -1, FALSE, error);
             g_free(text);
         }

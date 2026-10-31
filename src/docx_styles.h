@@ -96,7 +96,4 @@ void docx_numbering_free(DocxNumbering* num);
 gchar* docx_numbering_label(DocxNumbering* num, gint num_id, gint ilvl, DocxParaProps* para,
                             DocxRunProps* label_run);
 
-/* Text of a bullet in a symbol font as Unicode ("\xF0B7" in Symbol -> "•") */
-gchar* docx_bullet_text(const gchar* text, const gchar* font);
-
 #endif /* DOCX_STYLES_H */
