@@ -478,22 +478,19 @@ static void tab_menu_item(GtkWidget* box, GtkWidget* popover, AppData* app, Edit
     gtk_box_append(GTK_BOX(box), btn);
 }
 
-static const gchar* editor_mode_name(EditorMode mode) {
-    switch (mode) {
-    case EDITOR_MODE_VIM: return "Vim";
-    case EDITOR_MODE_EMACS: return "Emacs";
-    case EDITOR_MODE_ORGMODE: return "Org-mode";
-    default: return "Notepad";
-    }
-}
-
-/* A mode entry of the tab menu, highlighted when it is the tab's mode (like
- * the global mode menu of the status bar) */
+/* A mode entry of the tab menu: a leading dot marks the tab's mode (the dot
+ * of the other entries is transparent so the names stay aligned) */
 static void tab_menu_mode_item(GtkWidget* box, GtkWidget* popover, AppData* app, EditorTab* tab,
                                const gchar* name, gboolean current, gint action) {
-    tab_menu_item(box, popover, app, tab, name, current ? "Current" : NULL, action);
+    tab_menu_item(box, popover, app, tab, name, NULL, action);
+    GtkWidget* btn = gtk_widget_get_last_child(box);
+    GtkWidget* row = gtk_button_get_child(GTK_BUTTON(btn));
+    GtkWidget* dot = gtk_label_new("\u25CF");
+    gtk_widget_set_opacity(dot, current ? 1.0 : 0.0);
+    gtk_box_prepend(GTK_BOX(row), dot);
+    gtk_box_set_spacing(GTK_BOX(row), 6);
     if (current) {
-        gtk_widget_add_css_class(gtk_widget_get_last_child(box), "menu-item-current");
+        gtk_widget_add_css_class(btn, "menu-item-current");
     }
 }
 
@@ -523,9 +520,7 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
 
     /* The only place where a tab's mode changes: the current one is marked */
     gboolean org = (tab->mode == EDITOR_MODE_ORGMODE);
-    gchar* mode_title = g_strdup_printf("Editor Mode: %s", editor_mode_name(tab->mode));
-    GtkWidget* mode_lbl = gtk_label_new(mode_title);
-    g_free(mode_title);
+    GtkWidget* mode_lbl = gtk_label_new("Tab Mode");
     gtk_widget_add_css_class(mode_lbl, "dim-label");
     gtk_label_set_xalign(GTK_LABEL(mode_lbl), 0.0f);
     gtk_widget_set_margin_start(mode_lbl, 8);
