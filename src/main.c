@@ -397,12 +397,17 @@ int main(int argc, char** argv) {
     gtk_widget_set_tooltip_text(split_btn, "Move Editor Tabs to a Dedicated Panel (Ctrl+E)");
     gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), split_btn, GTK_PACK_START);
 
-    GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    /* Preview panel: notebook and minimap, its search bar below them */
+    GtkWidget* viewer_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(viewer_row, TRUE);
+    gtk_widget_set_vexpand(viewer_row, TRUE);
+    gtk_box_append(GTK_BOX(viewer_row), notebook);
+    gtk_box_append(GTK_BOX(viewer_row), minimap);
+    GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(viewer_box, "viewer-box");
     gtk_widget_set_hexpand(viewer_box, TRUE);
     gtk_widget_set_vexpand(viewer_box, TRUE);
-    gtk_box_append(GTK_BOX(viewer_box), notebook);
-    gtk_box_append(GTK_BOX(viewer_box), minimap);
+    gtk_box_append(GTK_BOX(viewer_box), viewer_row);
 
     /* Dedicated editor panel (when tabs moved right of preview) */
     GtkWidget* editor_notebook = gtk_notebook_new();
@@ -431,11 +436,6 @@ int main(int argc, char** argv) {
     gtk_paned_set_resize_end_child(GTK_PANED(editor_paned), TRUE);
     gtk_paned_set_shrink_end_child(GTK_PANED(editor_paned), TRUE);
     gtk_widget_set_size_request(viewer_box, 150, -1);
-
-    /* Search bar */
-    GtkWidget* search_entry = gtk_search_entry_new();
-    gtk_widget_set_visible(search_entry, FALSE);
-    gtk_editable_set_width_chars(GTK_EDITABLE(search_entry), 5);
 
     /* Terminal panel container */
     GtkWidget* term_scroll = gtk_scrolled_window_new();
@@ -519,7 +519,6 @@ int main(int argc, char** argv) {
     populate_tree(app, start_dir, FALSE, SORT_NAME);
     app->text_view = text_view;
     code_nav_attach_preview(app, editor_mode_message);   /* Ctrl+Click in source previews */
-    app->search_entry = search_entry;
     app->path_label = path_label;
     app->breadcrumb_box = breadcrumb_box;
     app->files_btn = files_btn;
@@ -617,21 +616,16 @@ int main(int argc, char** argv) {
     g_signal_connect(viewer_click_ctrl, "pressed", G_CALLBACK(on_viewer_click_pressed), app);
     gtk_widget_add_controller(text_view, GTK_EVENT_CONTROLLER(viewer_click_ctrl));
 
-    g_signal_connect(search_entry, "search-changed", G_CALLBACK(on_search_changed), app);
-    g_signal_connect(search_entry, "activate", G_CALLBACK(on_search_activate), app);
-
-    GtkEventController* search_key_ctrl = gtk_event_controller_key_new();
-    gtk_event_controller_set_propagation_phase(search_key_ctrl, GTK_PHASE_CAPTURE);
-    g_signal_connect(search_key_ctrl, "key-pressed", G_CALLBACK(on_search_key_press), app);
-    gtk_widget_add_controller(search_entry, search_key_ctrl);
+    /* Search bars at the bottom of the explorer and of the preview */
+    gtk_box_append(GTK_BOX(viewer_box), search_bar_new(app, &app->viewer_search));
 
     GtkWidget* left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(left_vbox, "left-sidebar");
     gtk_widget_set_hexpand(left_vbox, TRUE);
     gtk_widget_set_vexpand(left_vbox, TRUE);
     gtk_box_append(GTK_BOX(left_vbox), create_sidebar_header(app));
-    gtk_box_append(GTK_BOX(left_vbox), search_entry);
     gtk_box_append(GTK_BOX(left_vbox), left_scroll);
+    gtk_box_append(GTK_BOX(left_vbox), search_bar_new(app, &app->explorer_search));
 
     GtkWidget* main_paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_hexpand(main_paned, TRUE);

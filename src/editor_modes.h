@@ -12,6 +12,9 @@ enum {
 };
 
 /* Public API for editor modes */
+/* Stylesheet of the mode bars (status lines, Notepad bars, Emacs minibuffer,
+ * Vim command line), also used by the explorer and preview search bars */
+void editor_modes_load_css(void);
 void editor_modes_init_tab(AppData* app, EditorTab* tab);
 void editor_modes_free_tab(EditorTab* tab);
 void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode);

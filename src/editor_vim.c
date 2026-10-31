@@ -243,32 +243,27 @@ static gboolean save_tab(EditorTab* tab, const gchar* path, gchar** error) {
     return TRUE;
 }
 
-/* Closing the tab or switching its mode frees the engine, which is still
- * running the command: both wait for the main loop */
+/* Closing the tab frees the engine, which is still running the command: it
+ * waits for the main loop */
 typedef struct {
     AppData* app;
     EditorTab* tab;
-    gboolean close;
-    EditorMode mode;
-} DeferredAction;
+} DeferredClose;
 
-static gboolean run_deferred(gpointer data) {
-    DeferredAction* d = data;
+static gboolean run_deferred_close(gpointer data) {
+    DeferredClose* d = data;
     if (g_list_find(d->app->editors, d->tab) != NULL) {
-        if (d->close) editor_close_tab(d->app, d->tab);
-        else editor_set_tab_mode(d->app, d->tab, d->mode);
+        editor_close_tab(d->app, d->tab);
     }
     g_free(d);
     return G_SOURCE_REMOVE;
 }
 
-static void defer(EditorTab* tab, gboolean close, EditorMode mode) {
-    DeferredAction* d = g_new0(DeferredAction, 1);
+static void defer_close(EditorTab* tab) {
+    DeferredClose* d = g_new0(DeferredClose, 1);
     d->app = (AppData*)tab->app;
     d->tab = tab;
-    d->close = close;
-    d->mode = mode;
-    g_idle_add(run_deferred, d);
+    g_idle_add(run_deferred_close, d);
 }
 
 static gboolean close_tab(EditorTab* tab, gboolean force, gchar** error) {
@@ -277,7 +272,7 @@ static gboolean close_tab(EditorTab* tab, gboolean force, gchar** error) {
         return FALSE;
     }
     if (force) gtk_text_buffer_set_modified(tab->buffer, FALSE);
-    defer(tab, TRUE, EDITOR_MODE_VIM);
+    defer_close(tab);
     return TRUE;
 }
 
@@ -292,21 +287,8 @@ static void switch_page(EditorTab* tab, gboolean next) {
     gtk_notebook_set_current_page(nb, (cur + (next ? 1 : -1) + n) % n);
 }
 
-static gboolean set_view_option(EditorTab* tab, const gchar* arg, gchar** error) {
+static gboolean set_view_option(EditorTab* tab, const gchar* arg) {
     AppData* app = (AppData*)tab->app;
-    if (g_str_has_prefix(arg, "mode=")) {
-        const gchar* m = arg + 5;
-        EditorMode mode;
-        if (g_ascii_strcasecmp(m, "vim") == 0) mode = EDITOR_MODE_VIM;
-        else if (g_ascii_strcasecmp(m, "emacs") == 0) mode = EDITOR_MODE_EMACS;
-        else if (g_ascii_strcasecmp(m, "notepad") == 0) mode = EDITOR_MODE_NOTEPAD;
-        else {
-            if (error) *error = g_strdup_printf("E474: Invalid argument: %s", arg);
-            return TRUE;
-        }
-        if (mode != EDITOR_MODE_VIM) defer(tab, FALSE, mode);
-        return TRUE;
-    }
     gboolean shown = diff_gutter_get_line_numbers(tab->view);
     if (strcmp(arg, "number") == 0 || strcmp(arg, "nu") == 0) {
         if (!shown) editor_toggle_line_numbers(app, tab);
@@ -347,7 +329,7 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
                               gchar** error) {
     EditorTab* tab = data;
     AppData* app = (AppData*)tab->app;
-    if (strcmp(name, "set") == 0) return set_view_option(tab, args, error);
+    if (strcmp(name, "set") == 0) return set_view_option(tab, args);
     if (strcmp(name, "Symbols") == 0) {
         code_symbols_show(app, tab, editor_mode_message);
         return TRUE;

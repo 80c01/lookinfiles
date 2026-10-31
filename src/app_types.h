@@ -140,6 +140,17 @@ typedef struct {
 #endif
 } VirtualLayout;
 
+/* Search bar of the explorer or the preview (search.c), drawn like the search
+ * of an editor tab in the global mode: Notepad find bar, Emacs I-search
+ * minibuffer, Vim "/" command line */
+typedef struct {
+    GtkWidget* bar;
+    GtkWidget* prompt;  /* "Find:", "I-search:", "/" */
+    GtkWidget* entry;
+    GtkWidget* echo;    /* match count, wrap or failure message */
+    GtkWidget* buttons; /* Notepad: Find Next, Find Prev, close */
+} AppSearchBar;
+
 /* Shared application state */
 typedef struct {
     GtkTextBuffer* buffer;
@@ -149,7 +160,8 @@ typedef struct {
     GtkWidget* tree_view;   /* the explorer GtkListView (explorer_tree_get_widget(tree)) */
     GtkWidget* text_view; /* right pane viewer (Alt+Left/Right cycling) */
     gulong selection_changed_id; /* preview handler on tree "selection-changed" (main.c), 0 = not connected */
-    GtkWidget* search_entry;
+    AppSearchBar explorer_search; /* search bar at the bottom of the explorer (search.c) */
+    AppSearchBar viewer_search;   /* search bar at the bottom of the preview */
     GtkWidget* path_label;
     GtkWidget* breadcrumb_box;
     GtkWidget* files_btn;

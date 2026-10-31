@@ -78,6 +78,18 @@ static void run_viewer_nav(AppData* app, NavAction action) {
     case NAV_SEARCH_PREV: do_viewer_search(app, -1); break;
     case NAV_PANEL_NEXT: app_emit(app, APP_EVENT_FOCUS_NEXT_PANEL); break;
     case NAV_PANEL_PREV: app_emit(app, APP_EVENT_FOCUS_PREV_PANEL); break;
+    case NAV_OPEN_DEDICATED:
+    case NAV_DISPLAY_DEDICATED:
+        /* The previewed file, in the dedicated editor panel */
+        if (app->viewed_path != NULL && app->viewed_name != NULL) {
+            gchar* name = g_strdup(app->viewed_name);
+            gchar* full = g_strdup(app->viewed_path);
+            editor_open_dedicated(app, name, full,
+                                  action == NAV_DISPLAY_DEDICATED ? app->text_view : NULL);
+            g_free(name);
+            g_free(full);
+        }
+        break;
     default: break; /* prefixes, cancel, row scrolling (explorer only) */
     }
 }

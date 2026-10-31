@@ -34,6 +34,11 @@ void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode);
 void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data);
 void editor_apply_language(GtkTextBuffer* buffer, const gchar* name);
 void editor_open_file(AppData* app, const gchar* name, const gchar* full);
+/* Open full in the dedicated editor panel (moving its tab there when it is
+ * open in the preview notebook). keep_focus: widget given the focus back
+ * (Emacs C-o), NULL to focus the editor (Vim t). NULL when not editable. */
+EditorTab* editor_open_dedicated(AppData* app, const gchar* name, const gchar* full,
+                                 GtkWidget* keep_focus);
 /* The open tab of path (paths compared canonicalized), or NULL */
 EditorTab* editor_find_tab(AppData* app, const gchar* path);
 /* Open path in an editor tab (or switch to its tab), put the cursor at line

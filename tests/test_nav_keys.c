@@ -42,7 +42,9 @@ static void test_prefixes(void) {
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, next, GDK_KEY_g, 0, &next), ==, NAV_FIRST);
     g_assert_cmpint(next, ==, NAV_PREFIX_NONE);
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, NAV_PREFIX_Z, GDK_KEY_t, 0, &next), ==, NAV_TOP);
-    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, NAV_PREFIX_NONE, GDK_KEY_t, 0, &next), ==, NAV_NONE);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, NAV_PREFIX_NONE, GDK_KEY_t, 0, &next), ==, NAV_OPEN_DEDICATED);
+    g_assert_cmpint(look(NAV_STYLE_NOTEPAD, GDK_KEY_t, 0), ==, NAV_NONE);
+    g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_t, 0), ==, NAV_NONE);
     /* A modifier pressed alone keeps the prefix */
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_EMACS, NAV_PREFIX_CTRL_X, GDK_KEY_Control_L,
                                     GDK_CONTROL_MASK, &next), ==, NAV_PENDING);
@@ -78,6 +80,9 @@ static void test_emacs(void) {
     g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_less, GDK_ALT_MASK | GDK_SHIFT_MASK), ==, NAV_FIRST);
     g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_greater, GDK_ALT_MASK | GDK_SHIFT_MASK), ==, NAV_LAST);
     g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_l, GDK_CONTROL_MASK), ==, NAV_RECENTER);
+    g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_o, GDK_CONTROL_MASK), ==, NAV_DISPLAY_DEDICATED);
+    g_assert_cmpint(look(NAV_STYLE_VIM, GDK_KEY_o, GDK_CONTROL_MASK), ==, NAV_NONE);
+    g_assert_cmpint(look(NAV_STYLE_NOTEPAD, GDK_KEY_o, GDK_CONTROL_MASK), ==, NAV_NONE);
     g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_s, GDK_CONTROL_MASK), ==, NAV_SEARCH);
     g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_r, GDK_CONTROL_MASK), ==, NAV_SEARCH_BACKWARD);
     g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_g, GDK_CONTROL_MASK), ==, NAV_CANCEL);

@@ -242,17 +242,16 @@ key Return;             shot open_editor_notepad
 xdotool mousemove 1220 600 click --repeat 3 --delay 150 5   # wheel down over the minimap
                         shot minimap_wheel_scrolled
 xdotool click --repeat 3 --delay 150 4                       # and back up
-xdotool mousemove 1237 783 click 1
-                        shot mode_menu
-xdotool mousemove 1205 650 click 1   # pick "Notepad" (closes the menu)
+xdotool mousemove 730 50 click 3;  shot tab_mode_menu   # the tab's mode is marked
+key Escape
 xdotool mousemove 700 300 click 1    # focus the editor text
 xdotool type --delay 80 "Edited "
                         shot editor_modified
 key ctrl+s;             shot editor_saved
 key ctrl+alt+n;         shot editor_line_numbers
 key ctrl+alt+n;         shot editor_line_numbers_hidden
-xdotool mousemove 1237 783 click 1
-xdotool mousemove 1218 721 click 1   # pick "Vim"
+xdotool mousemove 730 50 click 3     # tab menu: the only way to change a tab's mode
+xdotool mousemove 730 374 click 1    # pick "Vim"
 key Escape g g l v l l l j; shot vim_visual
 key V;                  shot vim_visual_line
 key Escape;             shot vim_visual_cancelled
@@ -274,9 +273,11 @@ xdotool type --delay 60 "Task"
                         shot vim_incsearch
 key Return;             shot vim_search_highlight
 key u;                  shot vim_undone
-xdotool mousemove 415 50 click 1;   shot preview_default_mode   # bar: Notepad, not Vim
+xdotool mousemove 415 50 click 1;   shot preview_default_mode   # bar: global mode Notepad
 xdotool mousemove 730 50 click 1     # back to the Vim tab (notes.txt)
-xdotool mousemove 700 300 click 1;  shot vim_tab_mode_again     # bar: Vim
+xdotool mousemove 700 300 click 1;  shot vim_tab_mode_again     # bar: still Notepad
+xdotool mousemove 730 50 click 3;   shot tab_mode_menu_vim      # Vim marked
+key Escape
 key ctrl+w;             shot editor_closed
 xdotool mousemove 150 600 click 1    # focus the explorer (empty area)
 key ctrl+w;             shot last_editor_closed   # must show Preview, not Git Commits
@@ -357,8 +358,8 @@ key ctrl+shift+o; sleep 0.5; shot code_symbols_dialog
 xdotool type --delay 80 "ma"
                         shot code_symbols_filtered
 key Return; sleep 0.5;  shot code_symbols_jumped      # cursor on main()
-xdotool mousemove 1237 783 click 1
-xdotool mousemove 1218 721 click 1   # pick "Vim"
+xdotool mousemove 747 50 click 3
+xdotool mousemove 747 374 click 1    # pick "Vim" in the tab menu
 key slash; xdotool type --delay 60 "answer"; key Return
 key g d; sleep 0.5;     shot code_nav_vim_gd
 key ctrl+o;             shot code_nav_vim_ctrl_o
@@ -368,14 +369,17 @@ xdotool mousemove 430 92; sleep 0.3; xdotool mousemove 438 96   # rest on "answe
 sleep 1.5;              shot code_help_mouse_hover
 xdotool mousemove 150 600            # away: the card closes
 key ctrl+w
-# Global mode (status bar mode, no editor tab focused): the explorer, viewer
-# and search bar keys follow it
+# Global mode (status bar mode, whatever has the focus): the explorer, viewer
+# and search bar keys follow it; each panel has its own search bar, drawn like
+# the editor search of the mode
 xdotool mousemove 150 600 click 1    # focus the explorer
 key ctrl+f; xdotool type --delay 60 "read"
                         shot notepad_find_typed
 key F3;                 shot notepad_find_next      # the bar stays open
 key Escape F6;          shot notepad_f6_viewer_focused
-key shift+F6
+key ctrl+f; xdotool type --delay 60 "line 4"
+                        shot notepad_preview_find   # find bar at the bottom of the preview
+key Escape shift+F6
 xdotool mousemove 1237 783 click 1;  shot global_mode_menu
 xdotool mousemove 1210 685 click 1   # pick "Emacs"
 xdotool mousemove 150 600 click 1
@@ -385,7 +389,11 @@ key j g G;              shot emacs_strict_no_vim_keys   # strict: Vim letters do
 key ctrl+s; xdotool type --delay 60 "notes"
                         shot emacs_explorer_isearch
 key ctrl+g;             shot emacs_explorer_isearch_cancelled   # back on the first row
+key End ctrl+o; sleep 0.5; shot emacs_ctrl_o_dedicated   # editor panel opened, explorer keeps the focus
 key ctrl+x o;           shot emacs_other_window
+key ctrl+s; xdotool type --delay 60 "line 9"
+                        shot emacs_preview_isearch  # I-search minibuffer in the preview
+key ctrl+g
 key question;           shot help_emacs_mode
 key question
 xdotool mousemove 1237 783 click 1
@@ -393,6 +401,11 @@ xdotool mousemove 1218 721 click 1   # pick "Vim"
 xdotool mousemove 150 600 click 1
 key ctrl+w w;           shot vim_ctrl_w_next_panel
 key ctrl+w W;           shot vim_ctrl_w_prev_panel
+key ctrl+w w slash; xdotool type --delay 60 "line 7"
+                        shot vim_preview_search     # "/" command line in the preview
+key Return ctrl+w W G k k t; sleep 0.5
+                        shot vim_t_dedicated        # README.md in the dedicated panel, focused
+xdotool mousemove 150 600 click 1
 xdotool mousemove 1237 783 click 1
 xdotool mousemove 1205 650 click 1   # back to "Notepad"
 key ctrl+t; sleep 1;    shot terminal

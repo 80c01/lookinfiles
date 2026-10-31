@@ -54,7 +54,7 @@ static NavAction vim_plain_key(NavPrefix prefix, guint keyval, NavPrefix* next) 
         *next = NAV_PREFIX_Z;
         return NAV_PENDING;
     case GDK_KEY_t:
-        return prefix == NAV_PREFIX_Z ? NAV_TOP : NAV_NONE;
+        return prefix == NAV_PREFIX_Z ? NAV_TOP : NAV_OPEN_DEDICATED;
     case GDK_KEY_b:
         return prefix == NAV_PREFIX_Z ? NAV_BOTTOM : NAV_NONE;
     case GDK_KEY_slash: return NAV_SEARCH;
@@ -94,6 +94,7 @@ static NavAction emacs_key(guint keyval, GdkModifierType state, NavPrefix* next)
     case GDK_KEY_b: return NAV_BACKWARD;
     case GDK_KEY_v: return NAV_PAGE_DOWN;
     case GDK_KEY_l: return NAV_RECENTER;
+    case GDK_KEY_o: return NAV_DISPLAY_DEDICATED;
     case GDK_KEY_s: return NAV_SEARCH;
     case GDK_KEY_r: return NAV_SEARCH_BACKWARD;
     case GDK_KEY_g: return NAV_CANCEL;

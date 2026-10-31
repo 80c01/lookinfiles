@@ -1,4 +1,4 @@
-/* VS Code-style bottom status bar: Git branch, selection, size, file type and editor mode menu. */
+/* VS Code-style bottom status bar: Git branch, selection, size, file type and global mode menu. */
 #include "status_bar.h"
 #include "code_intel.h"
 #include "code_nav.h"
@@ -8,9 +8,8 @@
 
 static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data);
 
-/* The editor tab whose mode the status bar shows and sets, or NULL when the
- * preview (or the Git tab) is the active page: the bar then shows and sets the
- * default mode of new editor tabs. */
+/* The editor tab whose code navigation backend the status bar shows, or NULL
+ * when the preview (or the Git tab) is the active page */
 static EditorTab* status_mode_tab(AppData* app) {
     if (app == NULL || app->editors == NULL) {
         return NULL;
@@ -113,18 +112,12 @@ GtkWidget* create_status_bar(AppData* app) {
     return bar;
 }
 
+/* The global mode only: an editor tab's own mode is set from its tab menu */
 static void on_mode_item_clicked(GtkButton* b, gpointer data) {
     GtkWidget* popover = GTK_WIDGET(data);
     AppData* app = g_object_get_data(G_OBJECT(b), "app");
-    EditorTab* tab = g_object_get_data(G_OBJECT(b), "tab");
     gint mode = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "mode"));
-    /* The tab may have been closed while the menu was open */
-    if (app != NULL && tab != NULL && g_list_find(app->editors, tab) == NULL) {
-        tab = NULL;
-    }
-    if (app != NULL && tab != NULL) {
-        editor_set_tab_mode(app, tab, (EditorMode)mode);
-    } else if (app != NULL) {
+    if (app != NULL) {
         app->default_editor_mode = (EditorMode)mode;
         update_status_bar(app);
     }
@@ -147,10 +140,7 @@ static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
     gtk_widget_set_margin_top(box, 6);
     gtk_widget_set_margin_bottom(box, 6);
 
-    EditorTab* cur = status_mode_tab(app);
-    EditorMode current = (cur != NULL) ? cur->mode : app->default_editor_mode;
-
-    GtkWidget* title = gtk_label_new(cur != NULL ? "Editor Mode" : "Default Editor Mode");
+    GtkWidget* title = gtk_label_new("Global Mode");
     gtk_widget_add_css_class(title, "dim-label");
     gtk_widget_set_margin_bottom(title, 2);
     gtk_box_append(GTK_BOX(box), title);
@@ -164,11 +154,10 @@ static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data) {
     for (gsize i = 0; i < G_N_ELEMENTS(modes); i++) {
         GtkWidget* b = gtk_button_new_with_label(modes[i].label);
         gtk_button_set_has_frame(GTK_BUTTON(b), FALSE);
-        if (modes[i].mode == current) {
+        if (modes[i].mode == app->default_editor_mode) {
             gtk_widget_add_css_class(b, "menu-item-current");
         }
         g_object_set_data(G_OBJECT(b), "app", app);
-        g_object_set_data(G_OBJECT(b), "tab", cur);
         g_object_set_data(G_OBJECT(b), "mode", GINT_TO_POINTER(modes[i].mode));
         g_signal_connect(b, "clicked", G_CALLBACK(on_mode_item_clicked), popover);
         gtk_box_append(GTK_BOX(box), b);
@@ -304,24 +293,18 @@ void update_status_bar(AppData* app) {
         g_free(server);
     }
 
-    /* Update editor mode in status bar */
+    /* The global mode (never an editor tab's own mode) */
     if (app->status_mode != NULL) {
-        EditorTab* cur = status_mode_tab(app);
-        EditorMode mode = (cur != NULL) ? cur->mode : app->default_editor_mode;
         const gchar* mstr = "Notepad";
-        if (cur != NULL && (cur->mode == EDITOR_MODE_ORGMODE ||
-                            (!cur->text_mode && cur->name != NULL && is_org_file(cur->name)))) {
-            mstr = "Org-mode";
-        } else if (mode == EDITOR_MODE_VIM) {
+        if (app->default_editor_mode == EDITOR_MODE_VIM) {
             mstr = "Vim";
-        } else if (mode == EDITOR_MODE_EMACS) {
+        } else if (app->default_editor_mode == EDITOR_MODE_EMACS) {
             mstr = "Emacs";
         }
         gtk_label_set_text(GTK_LABEL(app->status_mode), mstr);
         if (app->status_mode_btn != NULL) {
             gtk_widget_set_tooltip_text(app->status_mode_btn,
-                                        cur != NULL ? "Editor Mode of This Tab"
-                                                    : "Default Editor Mode of New Tabs");
+                                        "Global Mode: Keys of the Explorer and Preview, Mode of New Editor Tabs");
         }
         gtk_widget_set_visible(app->status_mode, TRUE);
     }

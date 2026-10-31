@@ -1,4 +1,5 @@
 #include "file_list.h"
+#include "search.h"
 #include "file_actions.h"
 #include "fs_watch.h"
 #include "app_events.h"
@@ -755,9 +756,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     }
 
     /* Clear prior search term */
-    g_free(app->search_term);
-    app->search_term = NULL;
-    gtk_editable_set_text(GTK_EDITABLE(app->search_entry), "");
+    search_clear_explorer(app);
 
     /* Reset expanded paths when changing root directory */
     if (app->expanded_paths != NULL) {

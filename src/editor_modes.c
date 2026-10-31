@@ -14,7 +14,7 @@
 #include "editor_modes_private.h"
 
 /* CSS for visual clones */
-static void editor_modes_ensure_css(void) {
+void editor_modes_load_css(void) {
     static gboolean css_loaded = FALSE;
     if (css_loaded) return;
     css_loaded = TRUE;
@@ -730,7 +730,7 @@ static void on_view_ctrl_click(GtkGestureClick* gesture, gint n_press, gdouble x
 
 void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     if (tab == NULL) return;
-    editor_modes_ensure_css();
+    editor_modes_load_css();
 
     EditorModeState* st = g_new0(EditorModeState, 1);
     st->tab = tab;

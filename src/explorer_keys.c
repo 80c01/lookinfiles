@@ -13,6 +13,7 @@
 #include "bookmarks.h"
 #include "notes.h"
 #include "remote.h"
+#include "editor.h"
 
 /* Rows with children the arrow keys and space expand: directories,
  * bookmark folders, notebooks and the notes trash */
@@ -50,6 +51,19 @@ static void step_backward(AppData* app) {
     }
 }
 
+/* Vim t / Emacs C-o: edit the selected file in the dedicated editor panel */
+static void open_selected_dedicated(AppData* app, gboolean focus_editor) {
+    ExplorerRow* row = tree_nav_selected(app);
+    if (!explorer_row_is(row, "file") || row->path == NULL || row->path[0] == '\0') {
+        return;
+    }
+    gchar* name = g_strdup(row->name); /* the row may go away while opening */
+    gchar* full = g_strdup(row->path);
+    editor_open_dedicated(app, name, full, focus_editor ? NULL : app->tree_view);
+    g_free(name);
+    g_free(full);
+}
+
 static void run_nav(AppData* app, NavAction action) {
     switch (action) {
     case NAV_DOWN: select_next_row(app); break;
@@ -76,6 +90,8 @@ static void run_nav(AppData* app, NavAction action) {
     case NAV_SEARCH_PREV: do_search(app, -1); break;
     case NAV_PANEL_NEXT: app_emit(app, APP_EVENT_FOCUS_NEXT_PANEL); break;
     case NAV_PANEL_PREV: app_emit(app, APP_EVENT_FOCUS_PREV_PANEL); break;
+    case NAV_OPEN_DEDICATED: open_selected_dedicated(app, TRUE); break;
+    case NAV_DISPLAY_DEDICATED: open_selected_dedicated(app, FALSE); break;
     default: break; /* NAV_PENDING, NAV_CANCEL */
     }
     if (action != NAV_RECENTER) {

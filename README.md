@@ -186,9 +186,15 @@ move between panels, and `Ctrl+Q` to quit.
 The same list is available inside the application with `?` (it shows the keys
 of the current global mode).
 
-**Global mode.** The mode picked in the status bar while no editor tab has the
-focus (or with `-e` / `--editor`) is the mode of new editor tabs and of the
-navigation keys of the explorer, the viewer and their search bar. The
+**Global mode.** The mode shown and picked in the status bar (or set with
+`-e` / `--editor`) is the mode of new editor tabs and of the navigation keys
+of the explorer, the viewer and their search bars. The status bar always
+shows the global mode, never the mode of an editor tab. The explorer and the
+preview each have their own search bar, at the bottom of the panel, drawn like
+the search of an editor tab in the global mode: a Notepad find bar (`Find:`,
+Find Next / Find Prev, "Cannot find" message), an Emacs I-search minibuffer
+(`I-search:`, `Failing` / `Wrapped` prompts, `[n/total]` match count), or a
+Vim `/` command line (`E486: Pattern not found`, `search hit BOTTOM`). The
 bindings are strict: only the keys of the mode navigate (the Vim letters `j`
 / `k`, `gg` / `G`, `/`, `n` / `N`... only in Vim mode). The arrows, `Home` /
 `End` and `Page Up` / `Page Down` work in every mode, and so do the view
@@ -202,6 +208,7 @@ actions (`a`, `d`, `r`, `o`, `i`, `m`, `?`...):
 | Page down / up | `Page Down` / `Page Up` | `Ctrl+F` / `Ctrl+B` | `C-v` / `M-v` |
 | Scroll the selection to center / top / bottom | | `zz` / `zt` / `zb` | `C-l` (in turn) |
 | Search | `Ctrl+F` (`Enter` / `F3`: next, `Shift+Enter` / `Shift+F3`: previous, `Esc`: close) | `/` (`n` / `N`: next / previous) | `C-s` / `C-r` (again: next / previous, `RET`: stop, `C-g`: back to the start) |
+| Edit the file in the dedicated editor panel | | `t` (focus in the editor) | `C-o` (focus stays) |
 | Next / previous panel | `F6` / `Shift+F6` | `Ctrl+W w` / `Ctrl+W W` (also `h` / `l`) | `C-x o` |
 
 The panel keys also work from editor tabs of the same mode; `Alt+Left` /
@@ -245,6 +252,7 @@ The panel keys also work from editor tabs of the same mode; `Alt+Left` /
 | `/`, then `n` / `N` (Vim) | Search entries by name, next / previous match |
 | `Ctrl+F`, `F3` / `Shift+F3` (Notepad) | Search entries by name, next / previous match |
 | `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
+| `t` (Vim), `C-o` (Emacs) | Open the selected file in the dedicated editor panel (Vim: the editor gets the focus, like netrw's `t`; Emacs: the explorer keeps it, like dired's `C-o`) |
 | `a` / `Shift+A` | New file / new folder in the selected directory |
 | `F2` / `r` / `e` | Rename the selected file or folder |
 | `d` / `Delete` | Move the selected file or folder to the trash (asks first) |
@@ -300,6 +308,7 @@ The panel keys also work from editor tabs of the same mode; `Alt+Left` /
 | `/`, then `n` / `N` (Vim) | Search in the content, next / previous match |
 | `Ctrl+F`, `F3` / `Shift+F3` (Notepad) | Search in the content, next / previous match |
 | `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
+| `t` (Vim), `C-o` (Emacs) | Open the previewed file in the dedicated editor panel (in an Org-mode preview, `t` cycles the TODO keyword) |
 | `e` | Open the file in the editor (text files) |
 | `m` | Rendered / raw view: Markdown, HTML, Org, CSV, JSON, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |
@@ -309,7 +318,7 @@ The panel keys also work from editor tabs of the same mode; `Alt+Left` /
 | `t` | Org-mode: cycle the TODO keyword (the file's `#+TODO:` keywords; `TODO` → `DONE` → none by default) |
 | `Space` / `Enter` | Org-mode: toggle the checkbox `[ ]` ↔ `[X]` (parents and `[n/m]` cookies follow) |
 | Click | Org-mode: fold a heading, cycle a TODO, toggle a checkbox, open a link |
-| `Esc` | Close the search bar |
+| `Esc` | Close the search bar (at the bottom of the preview) |
 
 ### Editor tabs
 
@@ -324,14 +333,12 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 | `Ctrl+Alt+Arrows` / `Ctrl+Alt+H J K L` | Move / split the tab left, down, up or right |
 | `Ctrl+R` / `F2` | Rename the current text buffer (only `F2` in Emacs and Org-mode tabs: `C-r` searches backward) |
 | `Ctrl+Alt+N` | Show or hide the line numbers of the tab (also `:set number` / `:set nonumber` in Vim mode, `M-x display-line-numbers-mode` in Emacs mode) |
-| Right click on the tab | Change the mode, show line numbers, move, split or close the tab |
+| Right click on the tab | Change the mode (the current one is marked), show line numbers, move, split or close the tab |
 | Drag the tab | Onto a tab bar: move it there; near an editor edge: split that side |
 
-The editor mode is changed from the status bar button, the tab menu,
-`:set mode=vim|emacs|notepad` in Vim mode or `M-x vim-mode` / `emacs-mode` /
-`notepad-mode` in Emacs mode. While the preview is the active page, the
-status bar button shows and sets the default mode of new editor tabs
-(initially the `--editor` one). In Emacs mode, `M-x org-mode` turns on Org-mode
+A tab opens in the global mode (status bar, initially the `--editor` one).
+Its own mode is changed only from its menu (right click on the tab), which
+shows the current one. In Emacs mode, `M-x org-mode` turns on Org-mode
 editing and highlighting for any file, and `M-x text-mode` turns them off
 (even for a `.org` file, whose folded headings are then shown).
 
@@ -484,7 +491,7 @@ listed over the statusline, Vim's wildmenu) and `Ctrl+R` register insert.
 | Search | `/` `?` (Vim regex: `\<` `\>` `\(` `\)` `\\|` `\{n,m}` `\zs` `\ze` `\v` `\c`), incremental with all matches highlighted and a `[n/total]` count, `n` `N`, `*` `#` `g*` `g#`, `gd` (first occurrence, when the file is not code); `:noh` |
 | Code | `gd` / `Ctrl+]` definition, `gD` declaration, `:tag[!] name`, `K` help, `gr` / `:References`, `:Symbols`; `Ctrl+O` / `Tab` continue across files |
 | Ex commands | Ranges `%` `.` `$` `N` `'a` `'<,'>` `/pat/` `?pat?` `+N` `-N` `;`; `:s/pat/rep/[gine]` (`&` `\1` `\u` `\U` `\r` `~`), `:&` `:&&` `&` `g&`, `:g/pat/cmd` `:v`, `:d [x] [N]`, `:y`, `:pu`, `:m`, `:t` / `:co`, `:j[!]`, `:>` `:<`, `:normal`, `:sort [n i u] [!]`, `:retab`, `:center` / `:right` / `:left [width]`, `:k`, `:reg`, `:[N]` |
-| Options | `:set` `ignorecase` `smartcase` `hlsearch` `incsearch` `wrapscan` `expandtab` `autoindent` `shiftwidth` `tabstop` `softtabstop` (default `-1`: same as `shiftwidth`) `textwidth` `clipboard`, `number`, `wrap`, `mode=vim\|emacs\|notepad` (`no` / `inv` / `!` / `?` / `+=`) |
+| Options | `:set` `ignorecase` `smartcase` `hlsearch` `incsearch` `wrapscan` `expandtab` `autoindent` `shiftwidth` `tabstop` `softtabstop` (default `-1`: same as `shiftwidth`) `textwidth` `clipboard`, `number`, `wrap` (`no` / `inv` / `!` / `?` / `+=`) |
 | Scroll | `zz` `zt` `zb` (`z.` `z<CR>` `z-`), `Ctrl+E` / `Ctrl+Y` lines, `Ctrl+D` / `Ctrl+U` half pages, `Ctrl+F` / `Ctrl+B` pages |
 | Files and tabs | `:w [file]`, `:saveas`, `:up`, `:wq` / `:x` / `ZZ`, `:q` / `:q!` / `ZQ`, `:e[!] [file]`, `gt` / `gT` / `:tabn` / `:tabp`, `Ctrl+G` / `g Ctrl+G` file and word count, `ga` / `g8` character code |
 

@@ -447,6 +447,25 @@ static void tab_menu_item(GtkWidget* box, GtkWidget* popover, AppData* app, Edit
     gtk_box_append(GTK_BOX(box), btn);
 }
 
+static const gchar* editor_mode_name(EditorMode mode) {
+    switch (mode) {
+    case EDITOR_MODE_VIM: return "Vim";
+    case EDITOR_MODE_EMACS: return "Emacs";
+    case EDITOR_MODE_ORGMODE: return "Org-mode";
+    default: return "Notepad";
+    }
+}
+
+/* A mode entry of the tab menu, highlighted when it is the tab's mode (like
+ * the global mode menu of the status bar) */
+static void tab_menu_mode_item(GtkWidget* box, GtkWidget* popover, AppData* app, EditorTab* tab,
+                               const gchar* name, gboolean current, gint action) {
+    tab_menu_item(box, popover, app, tab, name, current ? "Current" : NULL, action);
+    if (current) {
+        gtk_widget_add_css_class(gtk_widget_get_last_child(box), "menu-item-current");
+    }
+}
+
 void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* target_widget) {
     if (app == NULL || tab == NULL || target_widget == NULL) return;
 
@@ -483,9 +502,21 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     gtk_widget_set_margin_bottom(sep2, 4);
     gtk_box_append(GTK_BOX(box), sep2);
 
-    tab_menu_item(box, popover, app, tab, "Mode: Notepad", NULL, TAB_ACTION_MODE_NOTEPAD);
-    tab_menu_item(box, popover, app, tab, "Mode: Emacs", NULL, TAB_ACTION_MODE_EMACS);
-    tab_menu_item(box, popover, app, tab, "Mode: Vim", NULL, TAB_ACTION_MODE_VIM);
+    /* The only place where a tab's mode changes: the current one is marked */
+    gboolean org = (tab->mode == EDITOR_MODE_ORGMODE);
+    gchar* mode_title = g_strdup_printf("Editor Mode: %s", editor_mode_name(tab->mode));
+    GtkWidget* mode_lbl = gtk_label_new(mode_title);
+    g_free(mode_title);
+    gtk_widget_add_css_class(mode_lbl, "dim-label");
+    gtk_label_set_xalign(GTK_LABEL(mode_lbl), 0.0f);
+    gtk_widget_set_margin_start(mode_lbl, 8);
+    gtk_widget_set_margin_bottom(mode_lbl, 2);
+    gtk_box_append(GTK_BOX(box), mode_lbl);
+    tab_menu_mode_item(box, popover, app, tab, "Notepad", tab->mode == EDITOR_MODE_NOTEPAD,
+                       TAB_ACTION_MODE_NOTEPAD);
+    tab_menu_mode_item(box, popover, app, tab, org ? "Emacs (Org-mode)" : "Emacs",
+                       tab->mode == EDITOR_MODE_EMACS || org, TAB_ACTION_MODE_EMACS);
+    tab_menu_mode_item(box, popover, app, tab, "Vim", tab->mode == EDITOR_MODE_VIM, TAB_ACTION_MODE_VIM);
 
     GtkWidget* sep3 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_margin_top(sep3, 4);
@@ -888,6 +919,24 @@ static void on_editor_cursor_moved(GtkTextBuffer* buffer, const GtkTextIter* loc
     }
     /* Low priority: after the redraw in which GTK scrolls to the cursor */
     g_idle_add_full(G_PRIORITY_LOW, keep_cursor_clear, g_object_ref(data), g_object_unref);
+}
+
+EditorTab* editor_open_dedicated(AppData* app, const gchar* name, const gchar* full,
+                                 GtkWidget* keep_focus) {
+    if (app == NULL || full == NULL) return NULL;
+    editor_open_file(app, name, full);
+    EditorTab* tab = editor_find_tab(app, full);
+    if (tab == NULL) return NULL; /* media, too large, unreadable: previewed only */
+    if (editor_tab_notebook(app, tab) == GTK_NOTEBOOK(app->notebook)) {
+        editor_move_tab_dedicated(app, tab);
+    }
+    if (keep_focus != NULL) {
+        gtk_widget_grab_focus(keep_focus);
+    } else if (tab->view != NULL) {
+        gtk_widget_grab_focus(tab->view);
+        app->last_focused_editor = tab;
+    }
+    return tab;
 }
 
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {

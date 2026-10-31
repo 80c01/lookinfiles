@@ -4,8 +4,10 @@
 /* Navigation keys of the explorer and viewer panels in each global mode
  * (Notepad, Vim, Emacs), strictly those of the mode. Arrows, Home / End and
  * Page Up / Down work in every mode; the rest follows the mode:
- *   Vim:     j k h l, gg G, zz zt zb, / n N, Ctrl+F / Ctrl+B, Ctrl+W w / W
- *   Emacs:   C-n C-p C-f C-b, C-v / M-v, M-< / M->, C-l, C-s / C-r, C-x o
+ *   Vim:     j k h l, gg G, zz zt zb, / n N, Ctrl+F / Ctrl+B, Ctrl+W w / W,
+ *            t (open in the dedicated editor panel, like netrw's new tab)
+ *   Emacs:   C-n C-p C-f C-b, C-v / M-v, M-< / M->, C-l, C-s / C-r, C-x o,
+ *            C-o (show in the dedicated editor panel, like dired)
  *   Notepad: Ctrl+F find, F3 / Shift+F3, Ctrl+Home / Ctrl+End, F6 / Shift+F6 */
 #include <gtk/gtk.h>
 
@@ -45,7 +47,9 @@ typedef enum {
     NAV_SEARCH_NEXT,
     NAV_SEARCH_PREV,
     NAV_PANEL_NEXT,   /* focus the next / previous panel */
-    NAV_PANEL_PREV
+    NAV_PANEL_PREV,
+    NAV_OPEN_DEDICATED,   /* edit the file in the dedicated editor panel (Vim t) */
+    NAV_DISPLAY_DEDICATED /* same, the focus stays in the panel (Emacs C-o) */
 } NavAction;
 
 /* Action of keyval with state in style, after the pending prefix.

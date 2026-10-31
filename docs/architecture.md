@@ -89,7 +89,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   mount never blocks the UI.
 - `nav_keys` — navigation keys of the explorer and viewer in each global mode, strictly
   (Notepad, Vim, Emacs): `nav_keys_lookup()` maps a key and the pending
-  prefix (`gg`, `zz`, `C-x o`, `Ctrl+W w`) to a `NavAction`,
+  prefix (`gg`, `zz`, `C-x o`, `Ctrl+W w`) to a `NavAction` (also Vim `t` /
+  Emacs `C-o`: the file in the dedicated editor panel, `editor_open_dedicated()`),
   `nav_keys_search_lookup()` the keys of the search bar. Pure, tested in
   `tests/test_nav_keys.c`.
 - `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex` — Vim pieces:
@@ -273,12 +274,17 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
 - `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette; ssh into
   the active remote machine.
-- `search` — live search entry for list and viewer, opened and driven by the
-  keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s` `C-r` `C-g`).
+- `search` — the search bars of the explorer and of the preview, one at the
+  bottom of each panel (`AppSearchBar`, `search_bar_new()`), opened and
+  driven by the keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s`
+  `C-r` `C-g`) and drawn like an editor tab's search in that mode (Notepad
+  find bar, Emacs I-search minibuffer, Vim `/` command line: the mode bar
+  stylesheet of `editor_modes_load_css()`).
 
 **4. Window chrome — may call features:**
 - `topbar` — breadcrumbs and toggle pills; `update_path_label()`.
-- `status_bar` — bottom bar (branch, selection, size, type, editor mode menu).
+- `status_bar` — bottom bar (branch, selection, size, type, global mode menu:
+  it shows and sets the global mode only; a tab's mode is set from its tab menu).
 - `sidebar` — explorer header: view switcher and per-view action toolbars.
 - `help` — cheat sheet (`?`); `KEY_HELP` must stay in sync with `README.md`.
 - `workspace` — virtual workspaces (Alt+1..8): save/apply layout snapshots,
