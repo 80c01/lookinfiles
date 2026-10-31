@@ -522,6 +522,7 @@ typedef struct {
     gchar* select_name;
     DirScanNode* root_node;
     gboolean refresh_preview; /* started by a workspace switch: preview the restored selection */
+    gboolean keep_view;       /* check of rows already shown: keep their selection and preview */
 } DirScanTaskData;
 
 static void dir_scan_task_data_free(gpointer data) {
@@ -571,6 +572,74 @@ static void dir_scan_thread_func(GTask* task, gpointer source_object,
     g_task_return_boolean(task, TRUE);
 }
 
+/* The rows under parent already show node: same entries in the same order,
+ * same expanded folders (any doubt counts as a difference) */
+static gboolean rows_match_node(AppData* app, ExplorerRow* parent, const DirScanNode* node) {
+    if (parent->is_root &&
+        (app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks)) {
+        return FALSE;
+    }
+    if (node == NULL || node->unreadable || node->entries == NULL) {
+        return FALSE;
+    }
+    guint n = node->entries->len;
+    if (n == 0 && !parent->is_root) {
+        ExplorerRow* only = (explorer_row_n_children(parent) == 1) ? explorer_row_child(parent, 0) : NULL;
+        return only != NULL && explorer_row_is(only, "-") && g_strcmp0(only->name, "(empty)") == 0;
+    }
+    if (explorer_row_n_children(parent) != n) {
+        return FALSE;
+    }
+    for (guint i = 0; i < n; i++) {
+        const FileEntry* e = &g_array_index(node->entries, FileEntry, i);
+        ExplorerRow* row = explorer_row_child(parent, i);
+        if (!explorer_row_is(row, e->is_dir ? "dir" : "file") || g_strcmp0(row->name, e->name) != 0) {
+            return FALSE;
+        }
+        gchar* full = g_build_filename(node->dirname, e->name, NULL);
+        gchar* can_full = g_canonicalize_filename(full, NULL);
+        gboolean same_path = (g_strcmp0(row->path, can_full) == 0);
+        g_free(can_full);
+        g_free(full);
+        if (!same_path) {
+            return FALSE;
+        }
+        if (e->is_dir) {
+            const DirScanNode* child_node = (node->children != NULL && i < node->children->len)
+                                                ? g_ptr_array_index(node->children, i)
+                                                : NULL;
+            gboolean expanded = (child_node != NULL);
+            if (row->loaded != expanded || explorer_tree_is_expanded(app->tree, row) != expanded) {
+                return FALSE;
+            }
+            if (expanded && !rows_match_node(app, row, child_node)) {
+                return FALSE;
+            }
+        }
+    }
+    return TRUE;
+}
+
+/* Select the row asked for when the scan started (the preview handler is
+ * blocked while a path is restored: a plain refresh keeps the preview as it is) */
+static void restore_selection(AppData* app, const DirScanTaskData* td) {
+    if (td->select_path != NULL) {
+        tree_nav_block_selection_handler(app);
+        gboolean found = select_by_path(app, td->select_path);
+        tree_nav_unblock_selection_handler(app);
+        if (!found) {
+            select_first_row(app);
+        }
+    } else if (td->select_name == NULL || !select_by_name(app, td->select_name)) {
+        select_first_row(app);
+    }
+    /* After a workspace switch the preview must show this workspace's
+     * selection instead of the previous one */
+    if (td->refresh_preview) {
+        g_signal_emit_by_name(app->tree, "selection-changed");
+    }
+}
+
 static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
                               gpointer user_data) {
     (void)source_object;
@@ -591,6 +660,28 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
         return;
     }
 
+    if (rows_match_node(app, explorer_tree_get_root(app->tree), td->root_node)) {
+        /* Nothing changed: the rows, their expansion and the scroll position stay */
+        if (td->keep_view && tree_nav_selected(app) != NULL) {
+            start_async_git_scan(app);
+            return;
+        }
+        restore_selection(app, td);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
+        start_async_git_scan(app);
+        return;
+    }
+
+    if (td->keep_view) {
+        /* The rows shown are rebuilt: keep the row selected now, not the one
+         * selected when the scan started */
+        ExplorerRow* sel = tree_nav_selected(app);
+        if (sel != NULL && sel->path[0] != '\0') {
+            g_free(td->select_path);
+            td->select_path = g_strdup(sel->path);
+        }
+    }
+
     tree_nav_block_selection_handler(app);
 
     gint saved_page = -1;
@@ -604,31 +695,8 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     bookmarks_reexpand(app);
     notes_reexpand(app);
     sync_directory_monitors(app);
-
-    if (td->select_path != NULL) {
-        if (!select_by_path(app, td->select_path)) {
-            tree_nav_unblock_selection_handler(app);
-            select_first_row(app);
-        } else {
-            tree_nav_unblock_selection_handler(app);
-        }
-    } else {
-        tree_nav_unblock_selection_handler(app);
-        if (td->select_name != NULL) {
-            if (!select_by_name(app, td->select_name)) {
-                select_first_row(app);
-            }
-        } else {
-            select_first_row(app);
-        }
-    }
-
-    /* The selection was restored with the preview handler blocked (a plain
-     * refresh keeps the preview as it is); after a workspace switch the
-     * preview must show this workspace's selection instead of the previous one */
-    if (td->refresh_preview) {
-        g_signal_emit_by_name(app->tree, "selection-changed");
-    }
+    tree_nav_unblock_selection_handler(app);
+    restore_selection(app, td);
 
     if (saved_page > 0 && app->notebook != NULL && !app->editor_dedicated) {
         gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), saved_page);
@@ -642,13 +710,16 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
 }
 
 static void start_async_dir_scan(AppData* app, const gchar* dirname,
-                                 const gchar* select_path, const gchar* select_name) {
+                                 const gchar* select_path, const gchar* select_name,
+                                 gboolean keep_view) {
     if (app->dir_cancellable != NULL) {
         g_cancellable_cancel(app->dir_cancellable);
         g_clear_object(&app->dir_cancellable);
     }
     app->dir_cancellable = g_cancellable_new();
-    app->dir_scan_pending = TRUE;
+    if (!keep_view) {
+        app->dir_scan_pending = TRUE; /* the rows shown are not this listing's yet */
+    }
     cancel_git_scan(app);
 
     DirScanTaskData* td = g_new0(DirScanTaskData, 1);
@@ -659,7 +730,8 @@ static void start_async_dir_scan(AppData* app, const gchar* dirname,
     td->expanded_snapshot = clone_string_set(app->expanded_paths);
     td->select_path = (select_path != NULL) ? g_canonicalize_filename(select_path, NULL) : NULL;
     td->select_name = g_strdup(select_name);
-    td->refresh_preview = app->switching_ws;
+    td->refresh_preview = app->switching_ws && !keep_view;
+    td->keep_view = keep_view;
 
     GTask* task = g_task_new(NULL, app->dir_cancellable, on_dir_scan_ready, NULL);
     g_task_set_task_data(task, td, dir_scan_task_data_free);
@@ -721,7 +793,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     monitor_directory(app);
 
     /* Scan directory asynchronously off the UI thread */
-    start_async_dir_scan(app, new_dir, NULL, select_name);
+    start_async_dir_scan(app, new_dir, NULL, select_name, FALSE);
 }
 
 /* Navigate to a new directory (Enter / Backspace) */
@@ -762,8 +834,24 @@ void refresh_listing_with_path(AppData* app, const gchar* select_path) {
         remote_refresh(app);
         return;
     }
-    start_async_dir_scan(app, app->base_dir, select_path, NULL);
+    start_async_dir_scan(app, app->base_dir, select_path, NULL, FALSE);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
+}
+
+void cancel_listing_scans(AppData* app) {
+    if (app->dir_cancellable != NULL) {
+        g_cancellable_cancel(app->dir_cancellable);
+        g_clear_object(&app->dir_cancellable);
+    }
+    app->dir_scan_pending = FALSE;
+    cancel_git_scan(app);
+}
+
+void check_listing(AppData* app) {
+    if (app == NULL || app->sidebar_view != SIDEBAR_VIEW_FILES || app->base_dir == NULL) {
+        return;
+    }
+    start_async_dir_scan(app, app->base_dir, NULL, NULL, TRUE);
 }
 
 void refresh_listing(AppData* app) {

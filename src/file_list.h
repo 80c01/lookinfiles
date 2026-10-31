@@ -15,6 +15,11 @@ void on_tree_row_toggled(ExplorerTree* tree, ExplorerRow* row, gboolean expanded
 void reload_directory(AppData* app, const gchar* new_dir);
 void navigate_to_path(AppData* app, const gchar* path);
 void refresh_listing(AppData* app);
+/* Re-read the files view in a worker thread and rebuild the rows only if the
+ * directory changed, keeping the selection (rows restored by a workspace switch) */
+void check_listing(AppData* app);
+/* Drop the directory and git scans in progress (their rows are being put aside) */
+void cancel_listing_scans(AppData* app);
 void refresh_listing_with_path(AppData* app, const gchar* select_path);
 void toggle_hidden_files(AppData* app);
 void toggle_bookmarks_view(AppData* app);

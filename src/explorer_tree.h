@@ -24,6 +24,16 @@ ExplorerTree* explorer_tree_new(void);
 /* The GtkListView, to pack in a scrolled window */
 GtkWidget* explorer_tree_get_widget(ExplorerTree* tree);
 
+/* Rows, expansion, selection and scroll position of the tree, kept aside
+ * (one per workspace) */
+typedef struct _ExplorerTreeState ExplorerTreeState;
+
+/* Show state's content in the tree (a new empty one if state is NULL; takes
+ * ownership of state) and return the content shown until now. The selection
+ * moves with the content without emitting "selection-changed". */
+ExplorerTreeState* explorer_tree_swap_state(ExplorerTree* tree, ExplorerTreeState* state);
+void explorer_tree_state_free(ExplorerTreeState* state);
+
 /* Invisible root row: append top-level rows to it */
 ExplorerRow* explorer_tree_get_root(ExplorerTree* tree);
 

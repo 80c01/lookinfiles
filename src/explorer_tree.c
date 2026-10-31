@@ -7,10 +7,13 @@ struct _ExplorerTree {
     GObject parent_instance;
     ExplorerRow* root;
     GtkTreeListModel* model;      /* owned by selection */
-    GtkSingleSelection* selection; /* owned by view */
+    GtkSingleSelection* selection; /* referenced (the view has its own reference) */
     GtkWidget* view;              /* GtkListView, referenced */
     ExplorerRow* last_selected;   /* referenced: restores the selection on collapse */
     ExplorerRow* toggling;        /* row expanded/collapsed by explorer_tree_set_expanded() */
+    GdkFrameClock* scroll_clock;  /* referenced while a swapped-in scroll position waits for layout */
+    gulong scroll_handler;
+    gdouble pending_scroll;
 };
 
 G_DEFINE_FINAL_TYPE(ExplorerTree, explorer_tree, G_TYPE_OBJECT)
@@ -220,10 +223,36 @@ static void after_toggle(ExplorerTree* tree, ExplorerRow* row, gboolean expanded
     g_signal_emit(tree, signals[SIGNAL_ROW_TOGGLED], 0, row, expanded);
 }
 
+static void cancel_scroll_restore(ExplorerTree* tree) {
+    if (tree->scroll_clock != NULL) {
+        g_signal_handler_disconnect(tree->scroll_clock, tree->scroll_handler);
+        tree->scroll_handler = 0;
+        g_clear_object(&tree->scroll_clock);
+    }
+}
+
+/* First layout after a swap: the rows of the new model are measured, so the
+ * saved scroll offset now maps to the same rows; setting it queues another
+ * layout pass, which GDK runs before painting this frame */
+static void on_layout_restore_scroll(GdkFrameClock* clock, gpointer data) {
+    (void)clock;
+    ExplorerTree* tree = EXPLORER_TREE(data);
+    cancel_scroll_restore(tree);
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(tree->view));
+    if (vadj != NULL) {
+        gtk_adjustment_set_value(vadj, tree->pending_scroll);
+    }
+}
+
 static void explorer_tree_dispose(GObject* object) {
     ExplorerTree* tree = EXPLORER_TREE(object);
+    cancel_scroll_restore(tree);
     g_clear_object(&tree->last_selected);
     g_clear_object(&tree->view);
+    if (tree->selection != NULL) {
+        g_signal_handlers_disconnect_by_func(tree->selection, on_selected_item_changed, tree);
+        g_clear_object(&tree->selection);
+    }
     g_clear_object(&tree->root);
     G_OBJECT_CLASS(explorer_tree_parent_class)->dispose(object);
 }
@@ -241,7 +270,8 @@ static void explorer_tree_class_init(ExplorerTreeClass* klass) {
                      0, NULL, NULL, NULL, G_TYPE_NONE, 1, EXPLORER_TYPE_ROW);
 }
 
-static void explorer_tree_init(ExplorerTree* tree) {
+/* Empty rows, model and selection (the content a state holds) */
+static void content_init(ExplorerTree* tree) {
     tree->root = explorer_row_new_root();
     tree->model = gtk_tree_list_model_new(G_LIST_MODEL(g_object_ref(tree->root->children)),
                                           FALSE, FALSE, create_children, NULL, NULL);
@@ -249,6 +279,11 @@ static void explorer_tree_init(ExplorerTree* tree) {
     gtk_single_selection_set_autoselect(tree->selection, FALSE);
     gtk_single_selection_set_can_unselect(tree->selection, TRUE);
     gtk_single_selection_set_selected(tree->selection, GTK_INVALID_LIST_POSITION);
+    tree->last_selected = NULL;
+}
+
+static void explorer_tree_init(ExplorerTree* tree) {
+    content_init(tree);
     g_signal_connect(tree->selection, "notify::selected-item",
                      G_CALLBACK(on_selected_item_changed), tree);
 
@@ -257,7 +292,8 @@ static void explorer_tree_init(ExplorerTree* tree) {
     g_signal_connect(factory, "bind", G_CALLBACK(on_factory_bind), tree);
     g_signal_connect(factory, "unbind", G_CALLBACK(on_factory_unbind), tree);
 
-    tree->view = g_object_ref_sink(gtk_list_view_new(GTK_SELECTION_MODEL(tree->selection), factory));
+    tree->view = g_object_ref_sink(gtk_list_view_new(
+        GTK_SELECTION_MODEL(g_object_ref(tree->selection)), factory));
     g_signal_connect(tree->view, "activate", G_CALLBACK(on_activate), tree);
 }
 
@@ -272,6 +308,64 @@ ExplorerTree* explorer_tree_new(void) {
 GtkWidget* explorer_tree_get_widget(ExplorerTree* tree) {
     g_return_val_if_fail(EXPLORER_IS_TREE(tree), NULL);
     return tree->view;
+}
+
+struct _ExplorerTreeState {
+    ExplorerRow* root;
+    GtkTreeListModel* model;
+    GtkSingleSelection* selection;
+    ExplorerRow* last_selected;
+    gdouble scroll;
+};
+
+ExplorerTreeState* explorer_tree_swap_state(ExplorerTree* tree, ExplorerTreeState* state) {
+    g_return_val_if_fail(EXPLORER_IS_TREE(tree), NULL);
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(tree->view));
+
+    ExplorerTreeState* out = g_new0(ExplorerTreeState, 1);
+    out->root = tree->root;
+    out->model = tree->model;
+    out->selection = tree->selection;
+    out->last_selected = tree->last_selected;
+    out->scroll = (vadj != NULL) ? gtk_adjustment_get_value(vadj) : 0.0;
+    g_signal_handlers_disconnect_by_func(tree->selection, on_selected_item_changed, tree);
+
+    if (state != NULL) {
+        tree->root = state->root;
+        tree->model = state->model;
+        tree->selection = state->selection;
+        tree->last_selected = state->last_selected;
+    } else {
+        content_init(tree);
+    }
+    g_signal_connect(tree->selection, "notify::selected-item",
+                     G_CALLBACK(on_selected_item_changed), tree);
+    gtk_list_view_set_model(GTK_LIST_VIEW(tree->view), GTK_SELECTION_MODEL(tree->selection));
+
+    cancel_scroll_restore(tree);
+    tree->pending_scroll = (state != NULL) ? state->scroll : 0.0;
+    GdkFrameClock* clock = gtk_widget_get_frame_clock(tree->view);
+    if (clock != NULL) {
+        /* Connected after the window's own layout handler: runs once the
+         * rows are allocated */
+        tree->scroll_clock = g_object_ref(clock);
+        tree->scroll_handler = g_signal_connect(clock, "layout",
+                                                G_CALLBACK(on_layout_restore_scroll), tree);
+    } else if (vadj != NULL) {
+        gtk_adjustment_set_value(vadj, tree->pending_scroll);
+    }
+    g_free(state);
+    return out;
+}
+
+void explorer_tree_state_free(ExplorerTreeState* state) {
+    if (state == NULL) {
+        return;
+    }
+    g_clear_object(&state->last_selected);
+    g_clear_object(&state->selection); /* owns the model */
+    g_clear_object(&state->root);
+    g_free(state);
 }
 
 ExplorerRow* explorer_tree_get_root(ExplorerTree* tree) {

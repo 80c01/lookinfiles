@@ -348,11 +348,42 @@ void workspace_apply_positions(AppData* app) {
     }
 }
 
+/* Put the explorer rows (and git badges) of the current workspace aside and
+ * show those of workspace idx. FALSE when idx had none: the tree is left empty. */
+static gboolean swap_explorer_rows(AppData* app, gint idx) {
+    VirtualLayout* to = &app->workspaces[idx];
+    VirtualLayout* from = (app->current_ws >= 0 && app->current_ws < app->num_workspaces)
+                              ? &app->workspaces[app->current_ws]
+                              : NULL;
+    /* Rows still waiting for their listing are not worth keeping */
+    gboolean keep = (from != NULL && !app->dir_scan_pending);
+    cancel_listing_scans(app);
+
+    gboolean had_rows = (to->tree_state != NULL);
+    ExplorerTreeState* old = explorer_tree_swap_state(app->tree, to->tree_state);
+    to->tree_state = NULL;
+    GHashTable* old_git = app->git_statuses;
+    app->git_statuses = to->git_statuses;
+    to->git_statuses = NULL;
+
+    if (keep) {
+        from->tree_state = old;
+        from->git_statuses = old_git;
+    } else {
+        explorer_tree_state_free(old);
+        if (old_git != NULL) {
+            g_hash_table_destroy(old_git);
+        }
+    }
+    return had_rows;
+}
+
 void workspace_switch(AppData* app, gint idx) {
     if (app == NULL || idx < 0 || idx >= app->num_workspaces) {
         return;
     }
     gboolean ws_changed = (idx != app->current_ws);
+    gboolean restored_rows = FALSE;
     if (ws_changed && app->current_ws >= 0) {
         workspace_save_current(app);
     }
@@ -368,6 +399,7 @@ void workspace_switch(AppData* app, gint idx) {
         } else if (panel != NULL) {
             g_object_unref(panel);
         }
+        restored_rows = swap_explorer_rows(app, idx);
     }
 
     app->current_ws = idx;
@@ -462,7 +494,25 @@ void workspace_switch(AppData* app, gint idx) {
 
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 
-    if (need_rescan) {
+    gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
+    if (restored_rows && files_view) {
+        /* The rows are this workspace's own, as it was left: preview its
+         * selection now, then check the directory quietly in the background */
+        gint page = (app->notebook != NULL && !app->editor_dedicated)
+                        ? gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook))
+                        : -1;
+        if (tree_nav_selected(app) != NULL) {
+            g_signal_emit_by_name(app->tree, "selection-changed");
+        } else if (target_path == NULL || !select_by_path(app, target_path)) {
+            select_first_row(app);
+        }
+        /* The preview update goes back to the Preview tab: keep the
+         * workspace's editor tab in front */
+        if (page > 0) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), page);
+        }
+        check_listing(app);
+    } else if (need_rescan || ws_changed) {
         refresh_listing_with_path(app, target_path);
         if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
             /* Bookmarks, notes and remote views are rebuilt at once, keeping the
@@ -597,6 +647,10 @@ void workspace_remove(AppData* app, gint idx) {
         g_hash_table_destroy(rm->expanded_paths);
     }
     g_free(rm->selected_path);
+    explorer_tree_state_free(rm->tree_state);
+    if (rm->git_statuses != NULL) {
+        g_hash_table_destroy(rm->git_statuses);
+    }
 #ifdef HAVE_VTE
     if (app->term_stack != NULL && rm->term_box != NULL) {
         gtk_stack_remove(GTK_STACK(app->term_stack), rm->term_box);

@@ -154,6 +154,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `"selection-changed"`, `"row-toggled"` (expanded / collapsed, by the user or
   `explorer_tree_set_expanded()`), `"row-activated"` (double click). Rows are
   addressed by `ExplorerRow*`; positions count visible rows only.
+  `explorer_tree_swap_state()` puts the content aside and shows another one.
 - `dialog` — `AppDialog`, the modal dialog drawn inside the main window: a
   card over a dimmed layer (window-level `GtkOverlay` made in `main.c` with
   `app_dialog_window_overlay_new()`). GtkDialog-like API: `app_dialog_new()`,
@@ -266,6 +267,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`layout_store_load_default()`), never from a copy of the current one. The
   first workspace gets the same panels at startup
   (`workspace_apply_default_layout()`, only when the default is customized).
+  Each workspace keeps its own explorer rows (`ExplorerTreeState`: rows,
+  expansion, selection, scroll) and git badges, swapped in on switch;
+  `check_listing()` then re-reads the directory in the background and
+  rebuilds the rows only if it changed.
 - `themes` — themes in the running application: `themes_apply()` (a
   theme from `theme_store` with the user's fonts of `theme.ini` over it,
   remembered or previewed), `themes_refresh()` after a palette or font
