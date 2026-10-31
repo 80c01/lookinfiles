@@ -1,6 +1,7 @@
 #include "file_list.h"
 #include "search.h"
 #include "file_actions.h"
+#include "file_moves.h"
 #include "fs_watch.h"
 #include "app_events.h"
 #include "text_style.h"
@@ -945,6 +946,10 @@ void rename_selected_in_tree(AppData* app) {
 
 void trash_selected_in_tree(AppData* app) {
     run_file_action(app, file_action_trash_selected);
+}
+
+void undo_last_file_move(AppData* app) {
+    run_file_action(app, file_moves_undo);
 }
 
 /* Backspace: parent directory, or back to the files view from the other views */

@@ -210,10 +210,14 @@ static gboolean handle_action_key(AppData* app, guint keyval, GdkModifierType st
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_u: /* Ctrl+U: toggle notes view in explorer panel */
+    case GDK_KEY_u: /* Ctrl+U: toggle notes view in explorer panel; u: undo trash / rename */
     case GDK_KEY_U:
         if (ctrl) {
             toggle_notes_view(app);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_u && is_files_view(app)) {
+            undo_last_file_move(app);
             return TRUE;
         }
         return FALSE;

@@ -350,7 +350,13 @@ typedef struct {
     GtkWidget* status_encoding;   /* bottom bar: encoding */
     GtkWidget* status_mode;       /* bottom bar: editor mode label */
     GtkWidget* status_mode_btn;   /* bottom bar: editor mode button */
+    GtkWidget* status_notice_label; /* bottom bar: app_notice() message */
+    GtkWidget* status_undo_btn;   /* bottom bar: Undo after the message */
     EditorMode default_editor_mode; /* mode of new non-Org editor tabs (-e / --editor) */
+    gchar* status_notice;         /* bottom bar message (app_notice()), NULL if none */
+    gboolean status_notice_undo;  /* the message offers Undo */
+    guint status_notice_serial;   /* bumped by each app_notice() (restarts its timeout) */
+    gpointer file_undo;           /* last trash or move, for undo (file_moves.c) */
 } AppData;
 
 #endif /* APP_TYPES_H */

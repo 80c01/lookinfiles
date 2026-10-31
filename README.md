@@ -28,7 +28,8 @@ Modern, High Contrast Dark, or your own).
 - **Files**: expandable directory tree with lazy loading, VS Code file-type
   icons, Git status badges (`M`, `U`, `A`, `D`, `R`, `!`) that update on disk
   changes, hidden-files toggle, four sort orders, live search, and new file,
-  new folder, rename and move-to-trash actions.
+  new folder, rename and move-to-trash actions; the last trash or rename can
+  be undone (`u`, or Undo in the status bar).
 - **Bookmarks**: directories, files and web URLs organised in folders.
 - **Notes**: notebooks of plain-text, Markdown and Org-mode notes, with
   manual ordering, format conversion and a trash with restore.
@@ -267,6 +268,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `a` / `Shift+A` | New file / new folder in the selected directory |
 | `F2` / `r` / `e` | Rename the selected file or folder |
 | `d` / `Delete` | Move the selected file or folder to the trash (asks first) |
+| `u` | Undo the last move to the trash or rename (also the Undo button of the status bar message) |
 | `i` / `I` | Toggle hidden files |
 | `o` | Cycle the sort: name, date, size, extension |
 | `Ctrl+D` | Bookmark the selected entry or the current directory |

@@ -33,6 +33,8 @@ void create_new_file_in_tree(AppData* app);
 void create_new_folder_in_tree(AppData* app);
 void rename_selected_in_tree(AppData* app);
 void trash_selected_in_tree(AppData* app);
+/* u / Undo in the status bar: undo the last trash or rename */
+void undo_last_file_move(AppData* app);
 
 void activate_selected_entry(AppData* app);
 /* explorer_tree "row-activated" (double click) */

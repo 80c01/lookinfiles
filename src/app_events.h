@@ -55,4 +55,8 @@ void app_events_subscribe(AppData* app, AppEvent event, AppEventHandler handler)
 /* Run the handlers of event. No-op when app is NULL or nothing is subscribed. */
 void app_emit(AppData* app, AppEvent event);
 
+/* Show a short message in the status bar for a few seconds (NULL clears it);
+ * with undo, an Undo button follows it (the last trash or move, key u) */
+void app_notice(AppData* app, const gchar* text, gboolean undo);
+
 #endif /* APP_EVENTS_H */

@@ -1,7 +1,9 @@
 /* VS Code-style bottom status bar: Git branch, selection, size, file type and global mode menu. */
 #include "status_bar.h"
+#include "app_events.h"
 #include "code_intel.h"
 #include "code_nav.h"
+#include "file_list.h"
 #include "editor.h"
 #include "file_types.h"
 #include "git_utils.h"
@@ -9,6 +11,44 @@
 #include "search.h"
 
 static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data);
+
+/* How long an app_notice() message stays */
+#define NOTICE_SECONDS 8
+
+static guint notice_timeout_id;
+static guint notice_shown_serial;
+
+static gboolean on_notice_timeout(gpointer data) {
+    notice_timeout_id = 0;
+    app_notice((AppData*)data, NULL, FALSE);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_undo_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    undo_last_file_move((AppData*)data);
+}
+
+/* The app_notice() message and its Undo button; a new message restarts the timeout */
+static void update_notice(AppData* app) {
+    if (app->status_notice_label == NULL) {
+        return;
+    }
+    gboolean shown = (app->status_notice != NULL);
+    gtk_label_set_text(GTK_LABEL(app->status_notice_label), shown ? app->status_notice : "");
+    gtk_widget_set_visible(app->status_notice_label, shown);
+    gtk_widget_set_visible(app->status_undo_btn, shown && app->status_notice_undo);
+    if (notice_shown_serial != app->status_notice_serial) {
+        notice_shown_serial = app->status_notice_serial;
+        if (notice_timeout_id != 0) {
+            g_source_remove(notice_timeout_id);
+            notice_timeout_id = 0;
+        }
+        if (shown) {
+            notice_timeout_id = g_timeout_add_seconds(NOTICE_SECONDS, on_notice_timeout, app);
+        }
+    }
+}
 
 /* The editor tab whose code navigation backend the status bar shows, or NULL
  * when the preview (or the Git tab) is the active page */
@@ -70,6 +110,20 @@ GtkWidget* create_status_bar(AppData* app) {
     gtk_widget_add_css_class(status_selection, "status-dim");
     gtk_box_append(GTK_BOX(bar), status_selection);
 
+    GtkWidget* status_notice = status_item_new();
+    gtk_box_append(GTK_BOX(bar), status_notice);
+
+    GtkWidget* status_undo = gtk_button_new_with_mnemonic("_Undo");
+    gtk_button_set_has_frame(GTK_BUTTON(status_undo), FALSE);
+    gtk_widget_set_focusable(status_undo, FALSE);
+    gtk_widget_add_css_class(status_undo, "status-item");
+    gtk_widget_set_tooltip_text(status_undo, "Undo the Last Trash or Rename (u)");
+    gtk_widget_set_visible(status_undo, FALSE);
+    if (app != NULL) {
+        g_signal_connect(status_undo, "clicked", G_CALLBACK(on_undo_clicked), app);
+    }
+    gtk_box_append(GTK_BOX(bar), status_undo);
+
     GtkWidget* spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(spacer, TRUE);
     gtk_box_append(GTK_BOX(bar), spacer);
@@ -109,6 +163,8 @@ GtkWidget* create_status_bar(AppData* app) {
         app->status_encoding = status_encoding;
         app->status_mode = status_mode_label;
         app->status_mode_btn = status_mode_btn;
+        app->status_notice_label = status_notice;
+        app->status_undo_btn = status_undo;
     }
 
     return bar;
@@ -313,6 +369,8 @@ void update_status_bar(AppData* app) {
         }
         gtk_widget_set_visible(app->status_mode, TRUE);
     }
+
+    update_notice(app);
 
     g_free(name);
     g_free(type);

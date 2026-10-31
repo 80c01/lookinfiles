@@ -122,6 +122,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `app_cache_dir()/tags/`; `code_index_find()` uses it through
   `CodeQuery.tags`, open buffers are still scanned.
 - `jump_list` — back / forward history of navigation jumps across files.
+- `trash_restore` — puts back a file moved to the trash: finds its newest
+  `.trashinfo` (home trash, then the mount's `.Trash-$uid` / `.Trash/$uid`)
+  and moves it back.
 - `palette` — every colour of the application, by role (`PaletteRole`:
   surfaces, text, accent, git, diff, syntax, editor, terminal ANSI...):
   `palette_color()` ("#rrggbb" for text tags and Pango markup),
@@ -175,7 +178,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `APP_RESPONSE_DELETE_EVENT`; the caller removes it with
   `app_dialog_destroy()`. While one is open, window shortcuts are off
   (`app_dialog_is_open()`).
-- `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below.
+- `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below;
+  `app_notice()` shows a short status bar message (with Undo when asked).
 - `panels` — fullscreen, focused-panel highlight, workspace width, split-handle
   drag feedback and fractions (`wire_paned_controllers()`). Every new
   `GtkPaned` must go through `wire_paned_controllers()` or at least
@@ -235,7 +239,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `explorer_keys` — explorer key handler (`on_tree_key_press()`): the
   navigation keys of the global mode (`nav_keys`, `app_nav_style()`), then
   the view actions, the same in every mode.
-- `file_actions` — new file / new folder prompts.
+- `file_actions` — new file / new folder, rename and trash prompts.
+- `file_moves` — renames and moves to the trash with editor tabs and
+  expansion following, remembered for one undo step (`u`, status bar Undo
+  after the `app_notice()` message).
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
 - `bookmark_icons` — bookmark link icons from the target's kind

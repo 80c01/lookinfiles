@@ -298,6 +298,10 @@ key ctrl+shift+r;       shot files_view_back
 key a;                  shot new_file_dialog
 windows=$(xdotool search --onlyvisible --pid $APP 2>/dev/null | wc -l)
 key Escape;             shot new_file_dialog_closed
+# Rename, then u: the status bar offers Undo, and u renames it back
+key r; xdotool type --delay 60 "renamed-entry"; key Return
+                        shot rename_notice_undo
+key u;                  shot rename_undone
 key alt+l;              shot layouts_dialog       # saved workspace layouts (empty list)
 key Escape;             shot layouts_dialog_closed
 # Themes (Alt+T): selecting a row previews it, Escape goes back, Enter applies

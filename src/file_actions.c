@@ -3,8 +3,8 @@
 #include "file_actions.h"
 #include "dialog.h"
 #include "editor.h"
+#include "file_moves.h"
 
-#include <errno.h>
 #include <glib/gstdio.h>
 #include <string.h>
 
@@ -332,28 +332,6 @@ gchar* file_action_new_folder(AppData* app) {
     return new_path;
 }
 
-/* old_path became new_path: retarget editor tabs on it (or inside it) */
-static void retarget_editor_tabs(AppData* app, const gchar* old_path, const gchar* new_path) {
-    gsize old_len = strlen(old_path);
-    for (GList* l = app->editors; l != NULL; l = l->next) {
-        EditorTab* tab = (EditorTab*)l->data;
-        if (tab == NULL || tab->path == NULL) {
-            continue;
-        }
-        gboolean same = (g_strcmp0(tab->path, old_path) == 0);
-        gboolean inside = g_str_has_prefix(tab->path, old_path) && tab->path[old_len] == '/';
-        if (!same && !inside) {
-            continue;
-        }
-        gchar* moved = g_strconcat(new_path, tab->path + old_len, NULL);
-        g_free(tab->path);
-        tab->path = moved;
-        g_free(tab->name);
-        tab->name = g_path_get_basename(moved);
-        editor_tab_label_update(tab);
-    }
-}
-
 gchar* file_action_rename_selected(AppData* app) {
     gchar* path = selected_entry_path(app);
     if (path == NULL) {
@@ -377,17 +355,17 @@ gchar* file_action_rename_selected(AppData* app) {
             gchar* msg = g_strdup_printf("“%s” already exists in this folder.", new_name);
             show_error(app->window, "Cannot Rename", msg);
             g_free(msg);
-        } else if (g_rename(path, new_path) != 0) {
-            gchar* msg = g_strdup_printf("Could not rename “%s”: %s", old_name, g_strerror(errno));
-            show_error(app->window, "Cannot Rename", msg);
-            g_free(msg);
         } else {
-            retarget_editor_tabs(app, path, new_path);
-            if (is_dir && app->expanded_paths != NULL &&
-                g_hash_table_contains(app->expanded_paths, path)) {
-                g_hash_table_add(app->expanded_paths, g_strdup(new_path));
+            GError* err = NULL;
+            if (file_moves_rename(app, path, new_path, &err)) {
+                select_path = g_strdup(new_path);
+            } else {
+                gchar* msg = g_strdup_printf("Could not rename “%s”: %s", old_name,
+                                             err != NULL ? err->message : "unknown error");
+                show_error(app->window, "Cannot Rename", msg);
+                g_free(msg);
+                g_clear_error(&err);
             }
-            select_path = g_strdup(new_path);
         }
         g_free(new_path);
         g_free(dir);
@@ -412,9 +390,8 @@ gchar* file_action_trash_selected(AppData* app) {
     g_free(message);
 
     if (response == APP_RESPONSE_OK) {
-        GFile* file = g_file_new_for_path(path);
         GError* err = NULL;
-        if (!g_file_trash(file, NULL, &err)) {
+        if (!file_moves_trash(app, path, &err)) {
             gchar* msg = g_strdup_printf("Could not move “%s” to the trash: %s", name,
                                          err != NULL ? err->message : "unknown error");
             show_error(app->window, "Cannot Delete", msg);
@@ -423,7 +400,6 @@ gchar* file_action_trash_selected(AppData* app) {
         } else {
             select_path = g_path_get_dirname(path);
         }
-        g_object_unref(file);
     }
     g_free(name);
     g_free(path);

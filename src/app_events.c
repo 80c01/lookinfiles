@@ -28,3 +28,14 @@ void app_emit(AppData* app, AppEvent event) {
         ev->handlers[event][i](app);
     }
 }
+
+void app_notice(AppData* app, const gchar* text, gboolean undo) {
+    if (app == NULL) {
+        return;
+    }
+    g_free(app->status_notice);
+    app->status_notice = g_strdup(text);
+    app->status_notice_undo = (text != NULL && undo);
+    app->status_notice_serial++;
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
+}
