@@ -83,6 +83,7 @@ GPtrArray* text_search_files(const gchar* query, GPtrArray* files, GCancellable*
     gboolean exact = text_search_exact_case(query);
     /* Files in path order: the results come out sorted */
     GPtrArray* sorted = g_ptr_array_copy(files, NULL, NULL);
+    g_ptr_array_set_free_func(sorted, NULL); /* the copy inherits it: the paths stay owned by files */
     g_ptr_array_sort(sorted, compare_paths);
     gsize budget = CODE_INDEX_MAX_BYTES;
     for (guint i = 0; i < sorted->len; i++) {
