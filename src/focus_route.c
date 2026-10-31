@@ -149,6 +149,7 @@ static gboolean redirect_idle(gpointer data) {
 
 #define HISTORY_LEN 8
 #define HISTORY_KEY "lookin-focus-history"
+#define HOLD_KEY "lookin-focus-hold"
 
 typedef struct {
     GWeakRef refs[HISTORY_LEN];
@@ -263,6 +264,18 @@ void focus_route_return(AppData* app, GtkWidget* target, GtkWidget* closed) {
     g_object_unref(target);
 }
 
+void focus_route_hold_history(AppData* app, gboolean hold) {
+    if (app == NULL || app->window == NULL) return;
+    gint n = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(app->window), HOLD_KEY));
+    n = hold ? n + 1 : MAX(n - 1, 0);
+    g_object_set_data(G_OBJECT(app->window), HOLD_KEY, GINT_TO_POINTER(n));
+}
+
+static gboolean history_held(AppData* app) {
+    return app->window != NULL &&
+           GPOINTER_TO_INT(g_object_get_data(G_OBJECT(app->window), HOLD_KEY)) > 0;
+}
+
 /* The focused widget went away (its tab closed...): back to the last pane */
 static gboolean lost_focus_idle(gpointer data) {
     AppData* app = (AppData*)data;
@@ -282,7 +295,7 @@ void focus_route_focus_changed(AppData* app) {
         g_idle_add(lost_focus_idle, app);
     } else if (is_tab_notebook(app, focus)) {
         g_idle_add(redirect_idle, app);
-    } else {
+    } else if (!history_held(app)) {
         history_push(app, pane_of(app, focus));
     }
 }

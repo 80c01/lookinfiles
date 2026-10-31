@@ -591,6 +591,8 @@ static void editor_move_tab_full(AppData* app, EditorTab* tab, GtkNotebook* new_
     g_object_ref(tab->container);
     g_object_ref(tab->tab_label);
 
+    /* The focus may pass through the old notebook's next page meanwhile */
+    focus_route_hold_history(app, TRUE);
     gboolean was_current = (gtk_notebook_get_current_page(old_nb) == old_page);
     gtk_notebook_remove_page(old_nb, old_page);
     editor_after_current_removed(app, old_nb, was_current);
@@ -615,6 +617,7 @@ static void editor_move_tab_full(AppData* app, EditorTab* tab, GtkNotebook* new_
     }
 
     editor_update_panel_visibilities(app);
+    focus_route_hold_history(app, FALSE);
     if (tab->view != NULL) {
         gtk_widget_grab_focus(tab->view);
     }

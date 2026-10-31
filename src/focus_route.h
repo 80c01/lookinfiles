@@ -56,6 +56,10 @@ GtkWidget* focus_route_return_target(AppData* app, GtkWidget* page);
  * recent pane still shown. A NULL target does nothing. */
 void focus_route_return(AppData* app, GtkWidget* target, GtkWidget* closed);
 
+/* While held (calls nest), focus changes are not recorded as panes to return
+ * to: a tab moving between notebooks passes the focus through other pages */
+void focus_route_hold_history(AppData* app, gboolean hold);
+
 /* Navigation keys of the global mode in a list page: next / previous row,
  * first / last, page down / up, panel and tab keys */
 void focus_route_attach_list(AppData* app, GtkWidget* list, GtkSingleSelection* selection);
