@@ -1,7 +1,9 @@
 /* Unit tests for src/preview_summary.c: summaries of remote machines, notebooks,
  * bookmark folders and the notes trash, and their column alignment. */
 #include "preview_summary.h"
+#include "canvas_doc.h"
 
+#include <glib/gstdio.h>
 #include <string.h>
 
 /* Append a row with a badge; containers can have children */
@@ -77,6 +79,32 @@ static void test_notebook(void) {
     g_object_unref(root);
 }
 
+static void test_canvas(void) {
+    g_autofree gchar* tmp = g_dir_make_tmp("summary-XXXXXX", NULL);
+    g_autofree gchar* dir = g_build_filename(tmp, "Board.canvas", NULL);
+    g_assert_true(canvas_doc_create(dir, "Board", NULL));
+    ExplorerRow* root = explorer_row_new_root();
+    ExplorerRow* nb = add_row(root, "notebook", "General", tmp, "");
+    ExplorerRow* note = add_row(nb, "note", "Board", dir, "canvas");
+    gchar* s = preview_summary_container(note);
+    g_assert_nonnull(s);
+    g_assert_nonnull(strstr(s, "Canvas: Board\n"));
+    g_assert_nonnull(strstr(s, "Text boxes:"));
+    g_assert_nonnull(strstr(s, "## Board\n"));
+    g_free(s);
+    /* Its notebook lists it as a Canvas */
+    s = preview_summary_container(nb);
+    g_assert_nonnull(strstr(s, "Canvas"));
+    g_free(s);
+    /* Not a Canvas directory */
+    g_assert_null(preview_summary_canvas("x", tmp));
+    g_object_unref(root);
+    g_autofree gchar* page = g_build_filename(dir, CANVAS_PAGE_FILE, NULL);
+    g_remove(page);
+    g_rmdir(dir);
+    g_rmdir(tmp);
+}
+
 static void test_bookmark_folder_and_trash(void) {
     ExplorerRow* root = explorer_row_new_root();
     ExplorerRow* folder = add_row(root, "bm_folder", "Work", "", "2");
@@ -119,5 +147,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_summary/remote", test_remote);
     g_test_add_func("/preview_summary/notebook", test_notebook);
     g_test_add_func("/preview_summary/bookmark_folder_and_trash", test_bookmark_folder_and_trash);
+    g_test_add_func("/preview_summary/canvas", test_canvas);
     return g_test_run();
 }

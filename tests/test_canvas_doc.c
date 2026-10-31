@@ -138,6 +138,33 @@ static void test_files(void) {
     g_rmdir(tmp);
 }
 
+static void test_create_delete(void) {
+    g_autofree gchar* tmp = g_dir_make_tmp("canvas-XXXXXX", NULL);
+    g_autofree gchar* dir = g_build_filename(tmp, "Plan.canvas", NULL);
+    g_assert_true(canvas_doc_create(dir, "Plan", NULL));
+    g_autoptr(CanvasDoc) doc = canvas_doc_load(dir, NULL);
+    g_assert_cmpuint(doc->blocks->len, ==, 1);
+    CanvasBlock* b = g_ptr_array_index(doc->blocks, 0);
+    g_assert_cmpstr(b->text, ==, "Plan");
+    g_assert_cmpuint(run_at(b, 0)->styles, ==, CANVAS_STYLE_HEADING);
+
+    g_autofree gchar* media = g_build_filename(dir, CANVAS_MEDIA_DIR, NULL);
+    g_assert_cmpint(g_mkdir_with_parents(media, 0755), ==, 0);
+    write_file(media, "0001.png");
+    g_assert_true(canvas_doc_delete(dir));
+    g_assert_false(g_file_test(dir, G_FILE_TEST_EXISTS));
+
+    /* A file it does not know is kept, with the directory */
+    g_assert_true(canvas_doc_create(dir, NULL, NULL));
+    write_file(dir, "other.txt");
+    g_assert_false(canvas_doc_delete(dir));
+    g_autofree gchar* other = g_build_filename(dir, "other.txt", NULL);
+    g_assert_true(g_file_test(other, G_FILE_TEST_EXISTS));
+    g_remove(other);
+    g_rmdir(dir);
+    g_rmdir(tmp);
+}
+
 static void test_markdown(void) {
     g_autoptr(CanvasDoc) doc = canvas_doc_new();
     canvas_doc_add_image(doc, 0, 200, 10, 10, "media/0001.png");
@@ -164,6 +191,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_doc/parse_errors", test_parse_errors);
     g_test_add_func("/canvas_doc/raise_remove", test_raise_remove);
     g_test_add_func("/canvas_doc/files", test_files);
+    g_test_add_func("/canvas_doc/create_delete", test_create_delete);
     g_test_add_func("/canvas_doc/markdown", test_markdown);
     return g_test_run();
 }

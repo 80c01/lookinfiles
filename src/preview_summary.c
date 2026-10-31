@@ -1,6 +1,7 @@
 /* Text summaries for explorer rows without file content (see preview_summary.h). */
 #include "preview_summary.h"
 #include "note_types.h"
+#include "canvas_doc.h"
 
 #include <string.h>
 
@@ -121,12 +122,71 @@ static guint count_items(ExplorerRow* row) {
     return n;
 }
 
+gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
+    if (path == NULL || note_type_from_filename(path) != NOTE_TYPE_CANVAS ||
+        !g_file_test(path, G_FILE_TEST_IS_DIR)) {
+        return NULL;
+    }
+    static const SummaryShortcut keys[] = {
+        {"Enter", "Edit the canvas (Canvas tab)"},
+        {"F2 / r / e", "Rename the note"},
+        {"m", "Move the note to another notebook"},
+        {"d / Delete", "Move the note to the trash"},
+    };
+    GString* s = g_string_new(NULL);
+    gchar* title = g_strdup_printf("🎨 Canvas: %s", name != NULL ? name : "");
+    append_title(s, title);
+    g_free(title);
+
+    /* Bounded read: a larger page is only opened in the Canvas tab */
+    gchar* page = g_build_filename(path, CANVAS_PAGE_FILE, NULL);
+    GStatBuf st;
+    CanvasDoc* doc = NULL;
+    gboolean too_large = g_stat(page, &st) == 0 && st.st_size > PREVIEW_BYTES;
+    if (!too_large) {
+        doc = canvas_doc_load(path, NULL);
+    }
+    g_free(page);
+    if (doc != NULL) {
+        guint texts = 0, pictures = 0;
+        for (guint i = 0; i < doc->blocks->len; i++) {
+            const CanvasBlock* b = g_ptr_array_index(doc->blocks, i);
+            if (b->kind == CANVAS_BLOCK_TEXT) {
+                texts++;
+            } else {
+                pictures++;
+            }
+        }
+        gchar* n = g_strdup_printf("%u", texts);
+        append_field(s, "Text boxes", n);
+        g_free(n);
+        n = g_strdup_printf("%u", pictures);
+        append_field(s, "Pictures", n);
+        g_free(n);
+    }
+    append_field(s, "Location", path);
+    if (doc != NULL) {
+        gchar* md = canvas_doc_to_markdown(doc, NULL);
+        g_string_append_printf(s, "\n%s", md[0] != '\0' ? md : "(empty)\n");
+        g_free(md);
+        canvas_doc_free(doc);
+    } else {
+        g_string_append(s, too_large ? "\n(too large to preview: Enter opens it)\n" : "\n(unreadable page)\n");
+    }
+    append_shortcuts(s, keys, G_N_ELEMENTS(keys));
+    return g_string_free(s, FALSE);
+}
+
 gchar* preview_summary_container(ExplorerRow* row) {
     if (row == NULL) {
         return NULL;
     }
     const gchar* name = row->name;
     const gchar* path = row->path;
+    gchar* canvas = preview_summary_canvas(name, path);
+    if (canvas != NULL) {
+        return canvas;
+    }
     gboolean is_notebook = explorer_row_is(row, "notebook");
     gboolean is_bm_folder = explorer_row_is(row, "bm_folder");
     gboolean is_trash = explorer_row_is(row, "trash");

@@ -8,6 +8,7 @@ static void test_from_filename(void) {
     g_assert_cmpint(note_type_from_filename("a.MD"), ==, NOTE_TYPE_MARKDOWN);
     g_assert_cmpint(note_type_from_filename("a.markdown"), ==, NOTE_TYPE_MARKDOWN);
     g_assert_cmpint(note_type_from_filename("a.txt"), ==, NOTE_TYPE_TEXT);
+    g_assert_cmpint(note_type_from_filename("/n/Work/Plan.canvas"), ==, NOTE_TYPE_CANVAS);
     g_assert_cmpint(note_type_from_filename("dir.md/a"), ==, NOTE_TYPE_TEXT);
     g_assert_cmpint(note_type_from_filename(".md"), ==, NOTE_TYPE_TEXT);
     g_assert_cmpint(note_type_from_filename(NULL), ==, NOTE_TYPE_TEXT);
@@ -17,6 +18,7 @@ static void test_has_note_ext(void) {
     g_assert_true(note_type_has_note_ext("a.txt"));
     g_assert_true(note_type_has_note_ext("a.mkd"));
     g_assert_true(note_type_has_note_ext("a.org"));
+    g_assert_true(note_type_has_note_ext("a.canvas"));
     g_assert_false(note_type_has_note_ext("a.c"));
     g_assert_false(note_type_has_note_ext("Notes"));
     g_assert_false(note_type_has_note_ext(NULL));
@@ -40,6 +42,8 @@ static void test_names(void) {
     g_assert_cmpstr(note_type_ext(NOTE_TYPE_MARKDOWN), ==, ".md");
     g_assert_cmpstr(note_type_ext(NOTE_TYPE_ORG), ==, ".org");
     g_assert_cmpstr(note_type_ext(NOTE_TYPE_TEXT), ==, ".txt");
+    g_assert_cmpstr(note_type_ext(NOTE_TYPE_CANVAS), ==, ".canvas");
+    g_assert_cmpstr(note_type_name(NOTE_TYPE_CANVAS), ==, "Canvas");
     g_assert_cmpstr(note_type_name(NOTE_TYPE_MARKDOWN), ==, "Markdown");
     g_assert_cmpstr(note_type_name(NOTE_TYPE_COUNT), ==, "Plain Text");
     g_assert_cmpstr(note_type_badge(NOTE_TYPE_TEXT), ==, "");

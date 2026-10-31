@@ -117,7 +117,7 @@ dialog:
 tab_drop:pane_geometry
 explorer_tree:explorer_row
 remote_store:app_types,app_paths
-preview_summary:app_types,remote_store,explorer_row,note_types
+preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc
 fs_watch:app_types,app_events,git_utils,git_tab
 "
 

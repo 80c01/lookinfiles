@@ -325,6 +325,40 @@ gboolean canvas_doc_save(const CanvasDoc* doc, const gchar* dir, GError** error)
     return ok;
 }
 
+#define STARTER_X 40
+#define STARTER_Y 32
+#define STARTER_WIDTH 480
+
+gboolean canvas_doc_create(const gchar* dir, const gchar* title, GError** error) {
+    g_autoptr(CanvasDoc) doc = canvas_doc_new();
+    if (title != NULL && title[0] != '\0') {
+        CanvasBlock* b = canvas_doc_add_text(doc, STARTER_X, STARTER_Y, STARTER_WIDTH, title);
+        canvas_block_add_run(b, 0, (gint)g_utf8_strlen(b->text, -1), CANVAS_STYLE_HEADING);
+    }
+    return canvas_doc_save(doc, dir, error);
+}
+
+gboolean canvas_doc_delete(const gchar* dir) {
+    gchar* media = g_build_filename(dir, CANVAS_MEDIA_DIR, NULL);
+    GDir* d = g_dir_open(media, 0, NULL);
+    if (d != NULL) {
+        const gchar* name;
+        while ((name = g_dir_read_name(d)) != NULL) {
+            gchar* full = g_build_filename(media, name, NULL);
+            if (g_file_test(full, G_FILE_TEST_IS_REGULAR)) g_remove(full);
+            g_free(full);
+        }
+        g_dir_close(d);
+    }
+    g_rmdir(media);
+    g_free(media);
+    gchar* page = g_build_filename(dir, CANVAS_PAGE_FILE, NULL);
+    g_remove(page);
+    g_free(page);
+    g_rmdir(dir);
+    return !g_file_test(dir, G_FILE_TEST_EXISTS);
+}
+
 /* ------------------------------------------------------------------------- */
 /* Media                                                                     */
 /* ------------------------------------------------------------------------- */

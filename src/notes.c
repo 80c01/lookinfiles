@@ -1,5 +1,7 @@
 #include "notes.h"
 #include "note_types.h"
+#include "canvas_doc.h"
+#include "canvas_view.h"
 #include "palette.h"
 #include "app_paths.h"
 #include "dialog.h"
@@ -371,7 +373,9 @@ static void notes_reconcile_with_disk(NotesManager* mgr) {
                 while ((fname = g_dir_read_name(nd)) != NULL) {
                     if (fname[0] == '.') continue;
                     gchar* fpath = g_build_filename(full_dir, fname, NULL);
-                    if (!g_file_test(fpath, G_FILE_TEST_IS_DIR)) {
+                    /* Notes are files, and Canvas directories */
+                    if (!g_file_test(fpath, G_FILE_TEST_IS_DIR) ||
+                        note_type_from_filename(fname) == NOTE_TYPE_CANVAS) {
                         gboolean found = FALSE;
                         for (GList* nl = target_nb->notes; nl != NULL; nl = nl->next) {
                             NoteItem* note = (NoteItem*)nl->data;
@@ -416,7 +420,8 @@ static void notes_reconcile_with_disk(NotesManager* mgr) {
         const gchar* welcome_text =
             "# Welcome to Notes!\n\n"
             "This notebook manager lets you organize and order your notes:\n"
-            "- 3 Note Types: Plain Text (📄), Markdown (✨ with tables and images), and Org-mode (🦄)\n"
+            "- 4 Note Types: Plain Text (📄), Markdown (✨ with tables and images), Org-mode (🦄),\n"
+            "  and Canvas (🎨 text boxes and pasted pictures placed freely)\n"
             "- Create notebooks (carnets) with custom icons (📓, 💼, 💡, 📚, etc.)\n"
             "- Move notes between notebooks easily\n"
             "- Reorder notes and notebooks using Shift+J / Shift+K\n"
@@ -512,11 +517,27 @@ typedef struct {
     GMainLoop* loop;
     gint response;
     GtkWidget* entry;
-    GtkWidget* rb_markdown;
-    GtkWidget* rb_org;
-    GtkWidget* rb_text;
+    GtkWidget* rb[NOTE_TYPE_COUNT]; /* format radio buttons, by type */
     GtkWidget* preview_label;
 } NoteDialogData;
+
+/* Format choices of the note dialog, in display order */
+static const struct {
+    NoteType type;
+    const gchar* label;
+} NOTE_FORMATS[] = {
+    {NOTE_TYPE_MARKDOWN, "✨ Markdown (.md - headings, lists, tables, images)"},
+    {NOTE_TYPE_ORG, "🦄 Org-mode (.org - Emacs tasks, TODOs, checkboxes, folding)"},
+    {NOTE_TYPE_TEXT, "📄 Plain Text (.txt - unformatted plain text)"},
+    {NOTE_TYPE_CANVAS, "🎨 Canvas (text boxes and pasted pictures placed freely)"},
+};
+
+static NoteType note_dialog_type(NoteDialogData* d) {
+    for (gint t = 0; t < NOTE_TYPE_COUNT; t++) {
+        if (d->rb[t] != NULL && gtk_check_button_get_active(GTK_CHECK_BUTTON(d->rb[t]))) return (NoteType)t;
+    }
+    return NOTE_TYPE_MARKDOWN;
+}
 
 static void update_note_dialog_preview(NoteDialogData* d) {
     if (d->preview_label == NULL || d->entry == NULL) return;
@@ -524,13 +545,7 @@ static void update_note_dialog_preview(NoteDialogData* d) {
     gchar* title = (text != NULL) ? g_strstrip(g_strdup(text)) : NULL;
     const gchar* disp_title = (title != NULL && title[0] != '\0') ? title : "Untitled";
 
-    NoteType type = NOTE_TYPE_MARKDOWN;
-    if (d->rb_org && gtk_check_button_get_active(GTK_CHECK_BUTTON(d->rb_org))) {
-        type = NOTE_TYPE_ORG;
-    } else if (d->rb_text && gtk_check_button_get_active(GTK_CHECK_BUTTON(d->rb_text))) {
-        type = NOTE_TYPE_TEXT;
-    }
-
+    NoteType type = note_dialog_type(d);
     const gchar* icon = note_type_icon(type);
     const gchar* ext = note_type_ext(type);
 
@@ -557,7 +572,7 @@ static void on_note_dlg_response(AppDialog* dlg, gint response_id, gpointer user
 
 static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
                                    const gchar* ok_btn_text,
-                                   const gchar* init_title, NoteType init_type,
+                                   const gchar* init_title, NoteType init_type, gboolean existing,
                                    gchar** out_title, NoteType* out_type) {
     *out_title = NULL;
     *out_type = init_type;
@@ -593,24 +608,22 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
     GtkWidget* type_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_widget_set_margin_start(type_vbox, 8);
 
-    GtkWidget* rb_markdown = gtk_check_button_new_with_label("✨ Markdown (.md - headings, lists, tables, images)");
-    GtkWidget* rb_org = gtk_check_button_new_with_label("🦄 Org-mode (.org - Emacs tasks, TODOs, checkboxes, folding)");
-    GtkWidget* rb_text = gtk_check_button_new_with_label("📄 Plain Text (.txt - unformatted plain text)");
-
-    gtk_check_button_set_group(GTK_CHECK_BUTTON(rb_org), GTK_CHECK_BUTTON(rb_markdown));
-    gtk_check_button_set_group(GTK_CHECK_BUTTON(rb_text), GTK_CHECK_BUTTON(rb_markdown));
-
-    if (init_type == NOTE_TYPE_ORG) {
-        gtk_check_button_set_active(GTK_CHECK_BUTTON(rb_org), TRUE);
-    } else if (init_type == NOTE_TYPE_TEXT) {
-        gtk_check_button_set_active(GTK_CHECK_BUTTON(rb_text), TRUE);
-    } else {
-        gtk_check_button_set_active(GTK_CHECK_BUTTON(rb_markdown), TRUE);
+    GtkWidget* rb[NOTE_TYPE_COUNT] = {NULL};
+    GtkWidget* group = NULL;
+    for (gsize i = 0; i < G_N_ELEMENTS(NOTE_FORMATS); i++) {
+        NoteType t = NOTE_FORMATS[i].type;
+        rb[t] = gtk_check_button_new_with_label(NOTE_FORMATS[i].label);
+        if (group != NULL) gtk_check_button_set_group(GTK_CHECK_BUTTON(rb[t]), GTK_CHECK_BUTTON(group));
+        group = rb[t];
+        /* An existing note keeps the Canvas format, or never takes it: the
+         * contents differ (a Canvas exports to Markdown from its menu) */
+        if (existing && (t == NOTE_TYPE_CANVAS) != (init_type == NOTE_TYPE_CANVAS)) {
+            gtk_widget_set_sensitive(rb[t], FALSE);
+        }
+        gtk_box_append(GTK_BOX(type_vbox), rb[t]);
     }
-
-    gtk_box_append(GTK_BOX(type_vbox), rb_markdown);
-    gtk_box_append(GTK_BOX(type_vbox), rb_org);
-    gtk_box_append(GTK_BOX(type_vbox), rb_text);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(rb[init_type < NOTE_TYPE_COUNT ? init_type : NOTE_TYPE_MARKDOWN]),
+                                TRUE);
     gtk_box_append(GTK_BOX(box), type_vbox);
 
     GtkWidget* sep2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
@@ -622,22 +635,16 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
     gtk_widget_set_halign(preview_label, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(box), preview_label);
 
-    NoteDialogData d = {
-        g_main_loop_new(NULL, FALSE),
-        APP_RESPONSE_CANCEL,
-        entry,
-        rb_markdown,
-        rb_org,
-        rb_text,
-        preview_label
-    };
+    NoteDialogData d = {.loop = g_main_loop_new(NULL, FALSE), .response = APP_RESPONSE_CANCEL, .entry = entry,
+                        .preview_label = preview_label};
+    memcpy(d.rb, rb, sizeof(rb));
 
     update_note_dialog_preview(&d);
 
     g_signal_connect(entry, "changed", G_CALLBACK(on_note_dlg_field_changed), &d);
-    g_signal_connect(rb_markdown, "toggled", G_CALLBACK(on_note_dlg_field_changed), &d);
-    g_signal_connect(rb_org, "toggled", G_CALLBACK(on_note_dlg_field_changed), &d);
-    g_signal_connect(rb_text, "toggled", G_CALLBACK(on_note_dlg_field_changed), &d);
+    for (gint t = 0; t < NOTE_TYPE_COUNT; t++) {
+        g_signal_connect(rb[t], "toggled", G_CALLBACK(on_note_dlg_field_changed), &d);
+    }
     g_signal_connect(dlg, "response", G_CALLBACK(on_note_dlg_response), &d);
 
     app_dialog_present(APP_DIALOG(dlg));
@@ -656,13 +663,7 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
             gchar* trimmed = g_strstrip(g_strdup(raw));
             if (trimmed[0] != '\0' && strchr(trimmed, '/') == NULL && strchr(trimmed, '\\') == NULL) {
                 *out_title = trimmed;
-                if (gtk_check_button_get_active(GTK_CHECK_BUTTON(rb_org))) {
-                    *out_type = NOTE_TYPE_ORG;
-                } else if (gtk_check_button_get_active(GTK_CHECK_BUTTON(rb_text))) {
-                    *out_type = NOTE_TYPE_TEXT;
-                } else {
-                    *out_type = NOTE_TYPE_MARKDOWN;
-                }
+                *out_type = note_dialog_type(&d);
                 ok = TRUE;
             } else {
                 g_free(trimmed);
@@ -934,7 +935,9 @@ void notes_append_rows(ExplorerRow* root, AppData* app) {
                 ExplorerRow* row = explorer_row_append(nb_row, "note", note->title, nlabel, note->path);
                 g_free(nlabel);
                 const gchar* badge = note_type_badge(note->type);
-                PaletteRole badge_role = (note->type == NOTE_TYPE_ORG) ? PAL_SYN_CONTROL : PAL_SYN_TYPE;
+                PaletteRole badge_role = (note->type == NOTE_TYPE_ORG)      ? PAL_SYN_CONTROL
+                                         : (note->type == NOTE_TYPE_CANVAS) ? PAL_SYN_FUNCTION
+                                                                            : PAL_SYN_TYPE;
                 gchar* type_badge = (badge[0] != '\0')
                     ? g_markup_printf_escaped("<span foreground=\"%s\" size=\"small\">%s</span>",
                                               palette_color(badge_role), badge)
@@ -1155,6 +1158,7 @@ static void update_open_editors(AppData* app, const gchar* old_path, const gchar
             }
         }
     }
+    canvas_view_path_moved(app, old_path, new_path, new_name);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1194,6 +1198,36 @@ static gchar* note_starter(NoteType type, const gchar* title) {
     return starter;
 }
 
+/* Write a new note: a file, or the directory of a Canvas */
+static gboolean note_create_on_disk(NoteType type, const gchar* path, const gchar* title) {
+    if (type == NOTE_TYPE_CANVAS) {
+        return canvas_doc_create(path, title, NULL);
+    }
+    gchar* starter = note_starter(type, title);
+    gboolean ok = g_file_set_contents(path, starter, -1, NULL);
+    g_free(starter);
+    return ok;
+}
+
+/* Delete a note for good (from the trash) */
+static void note_delete_on_disk(AppData* app, NoteType type, const gchar* path) {
+    if (type == NOTE_TYPE_CANVAS) {
+        canvas_view_close_path(app, path);
+        canvas_doc_delete(path);
+    } else {
+        g_unlink(path);
+    }
+}
+
+/* Edit a note: an editor tab, or the Canvas page */
+static void open_note(AppData* app, NoteType type, const gchar* name, const gchar* title, const gchar* path) {
+    if (type == NOTE_TYPE_CANVAS) {
+        canvas_view_open(app, path, title);
+    } else {
+        editor_open_file(app, name, path);
+    }
+}
+
 void notes_new_note(AppData* app) {
     NotesManager* mgr = get_notes_mgr(app);
     if (mgr == NULL) return;
@@ -1210,7 +1244,7 @@ void notes_new_note(AppData* app) {
     gchar* default_title = g_strdup_printf("Untitled-%d", mgr->next_note_id++);
     gchar* title = NULL;
     NoteType type = NOTE_TYPE_MARKDOWN;
-    if (!prompt_note_dialog(app->window, "New Note", "_Create", default_title, NOTE_TYPE_MARKDOWN, &title, &type)) {
+    if (!prompt_note_dialog(app->window, "New Note", "_Create", default_title, NOTE_TYPE_MARKDOWN, FALSE, &title, &type)) {
         g_free(default_title);
         return;
     }
@@ -1232,9 +1266,7 @@ void notes_new_note(AppData* app) {
         } while (g_file_test(file_path, G_FILE_TEST_EXISTS));
     }
 
-    gchar* starter = note_starter(type, title);
-    g_file_set_contents(file_path, starter, -1, NULL);
-    g_free(starter);
+    note_create_on_disk(type, file_path, title);
 
     NoteItem* note = note_item_new(filename, title, file_path, type);
     target_nb->notes = g_list_append(target_nb->notes, note);
@@ -1242,8 +1274,8 @@ void notes_new_note(AppData* app) {
 
     notes_save(app);
 
-    /* Open new note in editor tab */
-    editor_open_file(app, title, file_path);
+    /* Open the new note to edit it */
+    open_note(app, type, title, title, file_path);
 
     notes_refresh(app);
 
@@ -1328,15 +1360,12 @@ gchar* notes_find_or_create(AppData* app, const gchar* spec) {
     }
     gchar* file_path = g_build_filename(nb->path, filename, NULL);
     if (!g_file_test(file_path, G_FILE_TEST_EXISTS)) {
-        gchar* starter = note_starter(type, title);
-        if (!g_file_set_contents(file_path, starter, -1, NULL)) {
-            g_free(starter);
+        if (!note_create_on_disk(type, file_path, title)) {
             g_free(title);
             g_free(filename);
             g_free(file_path);
             return NULL;
         }
-        g_free(starter);
     }
     nb->notes = g_list_append(nb->notes, note_item_new(filename, title, file_path, type));
     nb->expanded = TRUE;
@@ -1389,6 +1418,8 @@ void notes_convert_selected_type(AppData* app, NoteType target_type) {
     NotesSelectionType sel = get_selected_info(app, &nb, &note, NULL);
     if (sel != SEL_NOTE || note == NULL || nb == NULL) return;
     if (note->type == target_type) return;
+    /* A Canvas has its own contents: exported to Markdown, never renamed to it */
+    if (note->type == NOTE_TYPE_CANVAS || target_type == NOTE_TYPE_CANVAS) return;
 
     const gchar* ext = note_type_ext(target_type);
     gchar* new_filename = g_strdup_printf("%s%s", note->title, ext);
@@ -1430,7 +1461,7 @@ void notes_edit_selected(AppData* app) {
     if (sel == SEL_NOTE && note != NULL && nb != NULL) {
         gchar* new_title = NULL;
         NoteType new_type = note->type;
-        if (!prompt_note_dialog(app->window, "Edit Note", "_Save", note->title, note->type, &new_title, &new_type)) {
+        if (!prompt_note_dialog(app->window, "Edit Note", "_Save", note->title, note->type, TRUE, &new_title, &new_type)) {
             return;
         }
 
@@ -1684,6 +1715,7 @@ void notes_delete_selected(AppData* app) {
         gchar* trash_path = g_build_filename(trash_dir, trash_filename, NULL);
         g_free(trash_dir);
 
+        canvas_view_close_path(app, note->path);
         if (g_rename(note->path, trash_path) == 0) {
             TrashNoteItem* item = trash_item_new(trash_filename, note->title, trash_path, nb->name, (gint64)time(NULL), note->type);
             mgr->trash = g_list_append(mgr->trash, item);
@@ -1705,6 +1737,7 @@ void notes_delete_selected(AppData* app) {
         }
         g_free(msg);
 
+        canvas_view_close_path(app, nb->path);
         gchar* trash_dir = notes_get_trash_dir();
         for (GList* nl = nb->notes; nl != NULL; nl = nl->next) {
             NoteItem* n = (NoteItem*)nl->data;
@@ -1729,7 +1762,7 @@ void notes_delete_selected(AppData* app) {
         /* Permanently delete from trash */
         gchar* msg = g_strdup_printf("Permanently delete '%s'? This action cannot be undone.", tnote->title);
         if (notes_confirm(app, "Delete Permanently", msg, "_Delete", TRUE)) {
-            g_unlink(tnote->path);
+            note_delete_on_disk(app, tnote->type, tnote->path);
             mgr->trash = g_list_remove(mgr->trash, tnote);
             trash_item_free(tnote);
 
@@ -1828,7 +1861,7 @@ void notes_empty_trash(AppData* app) {
 
     for (GList* l = mgr->trash; l != NULL; l = l->next) {
         TrashNoteItem* t = (TrashNoteItem*)l->data;
-        g_unlink(t->path);
+        note_delete_on_disk(app, t->type, t->path);
     }
     g_list_free_full(mgr->trash, (GDestroyNotify)trash_item_free);
     mgr->trash = NULL;
@@ -1956,7 +1989,7 @@ void notes_activate_selected(AppData* app) {
     NotesSelectionType sel = get_selected_info(app, &nb, &note, &tnote);
 
     if (sel == SEL_NOTE && note != NULL) {
-        editor_open_file(app, note->filename ? note->filename : note->title, note->path);
+        open_note(app, note->type, note->filename ? note->filename : note->title, note->title, note->path);
     } else if (sel == SEL_TRASH_NOTE && tnote != NULL) {
         gchar* msg = g_strdup_printf("Note '%s' is in the Trash bin.\nDo you want to restore it so you can edit it?", tnote->title);
         if (notes_confirm(app, "Restore Note", msg, "_Restore", FALSE)) {
@@ -2163,13 +2196,14 @@ static void notes_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble
         note_menu_item(box, popover, app, "Edit / Rename Note…", "F2", NOTE_ACTION_RENAME, TRUE);
         note_menu_item(box, popover, app, "Move to Notebook…", "m", NOTE_ACTION_MOVE, TRUE);
         note_menu_separator(box);
-        if (note != NULL && note->type != NOTE_TYPE_TEXT) {
+        gboolean convertible = note != NULL && note->type != NOTE_TYPE_CANVAS;
+        if (convertible && note->type != NOTE_TYPE_TEXT) {
             note_menu_item(box, popover, app, "Convert to Plain Text (📄 .txt)", NULL, NOTE_ACTION_CONVERT_TEXT, TRUE);
         }
-        if (note != NULL && note->type != NOTE_TYPE_MARKDOWN) {
+        if (convertible && note->type != NOTE_TYPE_MARKDOWN) {
             note_menu_item(box, popover, app, "Convert to Markdown (✨ .md)", NULL, NOTE_ACTION_CONVERT_MARKDOWN, TRUE);
         }
-        if (note != NULL && note->type != NOTE_TYPE_ORG) {
+        if (convertible && note->type != NOTE_TYPE_ORG) {
             note_menu_item(box, popover, app, "Convert to Org-mode (🦄 .org)", NULL, NOTE_ACTION_CONVERT_ORG, TRUE);
         }
         note_menu_separator(box);

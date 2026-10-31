@@ -1068,6 +1068,17 @@ gboolean canvas_view_close_path(AppData* app, const gchar* path) {
     return TRUE;
 }
 
+void canvas_view_path_moved(AppData* app, const gchar* old_path, const gchar* new_path, const gchar* title) {
+    CanvasPage* p = app != NULL ? page_of(app) : NULL;
+    if (p == NULL || p->dir == NULL || old_path == NULL || new_path == NULL) return;
+    gsize n = strlen(old_path);
+    if (strncmp(p->dir, old_path, n) != 0 || (p->dir[n] != '\0' && p->dir[n] != '/')) return;
+    gchar* dir = g_strconcat(new_path, p->dir + n, NULL);
+    g_free(p->dir);
+    p->dir = dir;
+    if (title != NULL && p->dir[strlen(new_path)] == '\0') gtk_label_set_text(GTK_LABEL(p->title), title);
+}
+
 gboolean canvas_view_close_shown(AppData* app) {
     CanvasPage* p = app != NULL ? page_of(app) : NULL;
     if (p == NULL || app->notebook == NULL || !gtk_widget_get_mapped(p->root)) return FALSE;

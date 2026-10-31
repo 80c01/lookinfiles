@@ -67,7 +67,7 @@ Check these before adding or changing an action, a tooltip or a dialog:
   SVG cannot be loaded). Check with `make ui-test`, `UI_ICON_THEME=hicolor
   make ui-test` and `LOOKIN_DEBUG_ICONS=1 ./lookin`.
 - **Preview text views** all use `set_view_text_padding()` (10 px sides).
-- **Names**: `Org-mode`, `Markdown`, `Plain Text`; view titles EXPLORER,
+- **Names**: `Org-mode`, `Markdown`, `Plain Text`, `Canvas`; view titles EXPLORER,
   BOOKMARKS, NOTES, REMOTE.
 - Keep `help.c` (`KEY_HELP`) and `docs/keyboard.md` in sync.
 

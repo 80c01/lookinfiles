@@ -113,7 +113,8 @@ count) is dropped when the focus moves to another panel or tab.
 
 | Key | Action |
 |---|---|
-| `a` / `Shift+A` | New note (Plain Text, Markdown or Org-mode) / new notebook |
+| `a` / `Shift+A` | New note (Markdown, Org-mode, Plain Text or Canvas) / new notebook |
+| `Enter` | Edit the note: an editor tab, or the **Canvas** tab for a Canvas note |
 | `F2` / `r` / `e` | Edit the note (title and format) or notebook (name and icon) |
 | `i` | Change the notebook icon |
 | `m` | Move the note to another notebook |
@@ -121,6 +122,23 @@ count) is dropped when the focus moves to another panel or tab.
 | `Shift+R` | Restore the note from the trash to its notebook |
 | `Shift+K` / `Shift+J` | Move the selected note or notebook up / down |
 | `o` | Cycle the sort: manual / A–Z / Z–A |
+
+**Canvas tab** (a Canvas note: text boxes and pictures placed freely, saved
+automatically; one canvas at a time)
+
+| Key | Action |
+|---|---|
+| Double click on the page, `Ctrl+Enter` | New text box (at the click, or below the selected block) |
+| `Ctrl+V` | Paste a picture as a new block (at the pointer); text pasted outside a text box makes a text box |
+| Drop image files | Copy them into the note as pictures |
+| Drag the bar above a block (a picture: anywhere on it) / its corner | Move / resize it (pictures keep their proportions) |
+| `Ctrl+B` / `Ctrl+I` / `Ctrl+U` / `Ctrl+Shift+S` / `Ctrl+E` / `Ctrl+Alt+1` | Bold, italic, underline, strikethrough, code, heading (the selection, or the text typed next) |
+| `Esc` | In a text box: select the block; on a block: deselect |
+| `Tab` / `Shift+Tab` | Next / previous block |
+| Arrows (`Shift`: further) | Move the selected block |
+| `Enter` | Edit the selected text box |
+| `Delete` / `Backspace` | Delete the selected block (an empty text box goes away when left) |
+| `Ctrl+W`, middle click on the tab | Close the Canvas tab (saved first) |
 
 **Remote view**
 

@@ -34,6 +34,7 @@
 #include "orgmode.h"
 #include "diff_gutter.h"
 #include "canvas_view.h"
+#include "note_types.h"
 #include "code_intel.h"
 #include "code_nav.h"
 #include "editor_modes.h"
@@ -734,7 +735,15 @@ int main(int argc, char** argv) {
             if (app->sidebar_view != SIDEBAR_VIEW_NOTES) {
                 toggle_notes_view(app);
             }
-            open_start_file(app, note_path);
+            if (note_type_from_filename(note_path) == NOTE_TYPE_CANVAS) {
+                select_by_path(app, note_path);
+                gchar* title = g_path_get_basename(note_path);
+                *strrchr(title, '.') = '\0'; /* ".canvas" */
+                canvas_view_open(app, note_path, title);
+                g_free(title);
+            } else {
+                open_start_file(app, note_path);
+            }
             g_free(note_path);
         } else {
             g_printerr("[ Invalid note name '%s': expected Title or Notebook/Title ]\n", target);

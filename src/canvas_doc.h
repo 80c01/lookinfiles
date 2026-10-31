@@ -70,11 +70,18 @@ CanvasDoc* canvas_doc_load(const gchar* dir, GError** error);
 /* Write "<dir>/page.xml" (directory created if missing) */
 gboolean canvas_doc_save(const CanvasDoc* doc, const gchar* dir, GError** error);
 
+/* New Canvas note in dir (created): a heading text box with the title */
+gboolean canvas_doc_create(const gchar* dir, const gchar* title, GError** error);
+
+/* Delete a Canvas note: page.xml, media/ and the directory. Other files are
+ * left (and the directory with them); FALSE if anything is left. */
+gboolean canvas_doc_delete(const gchar* dir);
+
 /* Delete the files of "<dir>/media" no block refers to; returns how many */
 guint canvas_doc_prune_media(const CanvasDoc* doc, const gchar* dir);
 
-/* Relative path of a new picture: "media/0001.png", the first number free in
- * "<dir>/media" (free it) */
+/* Relative path of a new picture: "media/0001.png", the number after the
+ * highest one in "<dir>/media" (free it) */
 gchar* canvas_doc_new_media_path(const gchar* dir, const gchar* ext);
 
 /* New blocks, appended on top (owned by the document) */

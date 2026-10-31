@@ -14,6 +14,7 @@ static const NoteTypeInfo TYPES[NOTE_TYPE_COUNT] = {
     [NOTE_TYPE_TEXT] = {"text", ".txt", "📄", "Plain Text", ""},
     [NOTE_TYPE_MARKDOWN] = {"markdown", ".md", "✨", "Markdown", "md"},
     [NOTE_TYPE_ORG] = {"org", ".org", "🦄", "Org-mode", "org"},
+    [NOTE_TYPE_CANVAS] = {"canvas", ".canvas", "🎨", "Canvas", "canvas"},
 };
 
 static const NoteTypeInfo* info(NoteType type) {
@@ -46,12 +47,14 @@ NoteType note_type_from_filename(const gchar* filename) {
     const gchar* ext = extension(filename);
     if (ext_is(ext, ORG_EXTS)) return NOTE_TYPE_ORG;
     if (ext_is(ext, MARKDOWN_EXTS)) return NOTE_TYPE_MARKDOWN;
+    if (g_ascii_strcasecmp(ext, "canvas") == 0) return NOTE_TYPE_CANVAS;
     return NOTE_TYPE_TEXT;
 }
 
 gboolean note_type_has_note_ext(const gchar* filename) {
     const gchar* ext = extension(filename);
-    return g_ascii_strcasecmp(ext, "txt") == 0 || ext_is(ext, ORG_EXTS) || ext_is(ext, MARKDOWN_EXTS);
+    return g_ascii_strcasecmp(ext, "txt") == 0 || g_ascii_strcasecmp(ext, "canvas") == 0 || ext_is(ext, ORG_EXTS) ||
+           ext_is(ext, MARKDOWN_EXTS);
 }
 
 const gchar* note_type_to_str(NoteType type) {

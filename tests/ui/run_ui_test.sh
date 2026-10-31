@@ -51,6 +51,13 @@ CFG="$FIX/home/.config/lookin"
 mkdir -p "$CFG/notes/General" "$CFG/notes/Projects and long notebook name"
 echo a > "$CFG/notes/General/short.txt"
 echo c > "$CFG/notes/Projects and long notebook name/plan.md"
+mkdir -p "$CFG/notes/General/Board.canvas"
+{
+    printf '<canvas version="1">\n'
+    printf '  <text x="40" y="32" w="480"><span s="h">Board</span></text>\n'
+    printf '  <text x="60" y="110" w="300">First <span s="b">idea</span>\nsecond line</text>\n'
+    printf '</canvas>\n'
+} > "$CFG/notes/General/Board.canvas/page.xml"
 {
     printf '<?xml version="1.0" encoding="UTF-8"?>\n<bookmarks version="2">\n'
     printf '<folder name="Work folders" expanded="true">\n'
@@ -299,6 +306,17 @@ key ctrl+a;             shot bookmarks_view
 key Down;               shot bookmark_dir_preview   # folder preview once its kind is read
 key ctrl+a;             shot files_after_bookmarks
 key ctrl+u;             shot notes_view
+# Canvas note: Enter opens the Canvas tab; Ctrl+Enter adds a text box, Esc
+# selects it, the arrows move it, Delete removes it, Ctrl+W closes the tab
+key ctrl+f; xdotool type --delay 60 "Board"; key Escape
+                        shot canvas_preview_summary
+key Return;             shot canvas_open
+key ctrl+Return; xdotool type --delay 60 "Hello canvas"
+key ctrl+a ctrl+b;      shot canvas_text_bold
+key Escape;             shot canvas_block_selected
+key Right Right shift+Down;  shot canvas_block_moved
+key Delete;             shot canvas_block_deleted
+key ctrl+w;             shot canvas_closed
 key ctrl+u;             shot files_after_notes
 key ctrl+shift+r;       shot remote_view
 key ctrl+shift+r;       shot files_view_back

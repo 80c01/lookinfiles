@@ -23,9 +23,14 @@ void canvas_view_open(AppData* app, const gchar* dir, const gchar* title);
 /* Save the open canvas now, if it has changes */
 void canvas_view_save(AppData* app);
 
-/* Save and close the page if it shows the note at path (before the note is
- * renamed, moved or deleted). Returns TRUE if it was open. */
+/* Save and close the page if it shows the note at path, or a note under the
+ * directory path (before they go to the trash or are deleted). Returns TRUE
+ * if it was open. */
 gboolean canvas_view_close_path(AppData* app, const gchar* path);
+
+/* The note at old_path (or a directory holding it) was renamed or moved to
+ * new_path: keep editing it there (title: its new title, or NULL) */
+void canvas_view_path_moved(AppData* app, const gchar* old_path, const gchar* new_path, const gchar* title);
 
 /* Close the Canvas page if it is the current page of the preview notebook
  * (Ctrl+W). Returns TRUE if it was closed. */
