@@ -5,6 +5,7 @@
 #include "dialog.h"
 #include "editor.h"
 #include "file_list.h"
+#include "focus_route.h"
 #include "fuzzy_match.h"
 #include "nav_history.h"
 #include "palette.h"
@@ -242,6 +243,20 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
 /* Choosing                                                                  */
 /* ------------------------------------------------------------------------- */
 
+/* Show the preview panel if hidden, switch to its Preview tab and focus it */
+static void focus_preview_tab(AppData* app) {
+    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+        app->applying_layout = TRUE;
+        gtk_widget_set_visible(app->viewer_box, TRUE);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+    }
+    if (app->notebook == NULL) return;
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+    focus_route_focus_page(app, gtk_notebook_get_nth_page(GTK_NOTEBOOK(app->notebook), 0));
+}
+
 static void choose(Picker* p, gboolean edit) {
     GtkStringObject* obj = gtk_single_selection_get_selected_item(p->selection);
     if (obj == NULL) return;
@@ -272,8 +287,8 @@ static void choose(Picker* p, gboolean edit) {
         gchar* name = g_path_get_basename(path);
         editor_open_file(app, name, path);
         g_free(name);
-    } else if (app->tree_view != NULL) {
-        gtk_widget_grab_focus(app->tree_view);
+    } else {
+        focus_preview_tab(app);
     }
     g_free(path);
 }
