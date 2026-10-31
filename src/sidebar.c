@@ -102,6 +102,11 @@ static void on_sidebar_files_new_folder_clicked(GtkButton* btn, gpointer data) {
     create_new_folder_in_tree((AppData*)data);
 }
 
+static void on_sidebar_files_trash_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    trash_selected_in_tree((AppData*)data);
+}
+
 static void on_sidebar_files_hidden_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     toggle_hidden_files((AppData*)data);
@@ -258,6 +263,14 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_tooltip_text(files_new_folder_btn, "New Folder (Shift+A)");
     g_signal_connect(files_new_folder_btn, "clicked", G_CALLBACK(on_sidebar_files_new_folder_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_new_folder_btn);
+
+    GtkWidget* files_trash_btn = icon_button_new("user-trash", NULL);
+    gtk_button_set_has_frame(GTK_BUTTON(files_trash_btn), FALSE);
+    gtk_widget_set_focusable(files_trash_btn, FALSE);
+    gtk_widget_add_css_class(files_trash_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(files_trash_btn, "Move to Trash (d / Delete)");
+    g_signal_connect(files_trash_btn, "clicked", G_CALLBACK(on_sidebar_files_trash_clicked), app);
+    gtk_box_append(GTK_BOX(files_toolbar), files_trash_btn);
 
     GtkWidget* files_hidden_btn = icon_button_new("view-reveal", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(files_hidden_btn), FALSE);
