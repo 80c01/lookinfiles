@@ -305,7 +305,9 @@ static gboolean minimap_is_useful(AppData* app) {
     if (app->minimap == NULL || app->viewer_vadj == NULL) {
         return FALSE;
     }
-    if (!app->editor_dedicated && app->notebook != NULL &&
+    /* Only on the Preview page: Git, References or an editor tab may share
+     * the notebook, even while editors live in the dedicated panel */
+    if (app->notebook != NULL &&
         gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook)) != 0) {
         return FALSE;
     }
