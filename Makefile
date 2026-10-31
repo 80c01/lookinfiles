@@ -84,7 +84,7 @@ $(BUILD_DIR):
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
-TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_epub test_rtf test_sqlite_view test_gettext_view test_media_tags test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind
+TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_epub test_rtf test_sqlite_view test_gettext_view test_media_tags test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o $(BUILD_DIR)/text_encoding.o
@@ -96,6 +96,7 @@ TEST_DEPS_test_layout_store = $(BUILD_DIR)/layout_store.o $(BUILD_DIR)/app_paths
 TEST_DEPS_test_line_diff = $(BUILD_DIR)/line_diff.o
 TEST_DEPS_test_preview_cache = $(BUILD_DIR)/preview_cache.o
 TEST_DEPS_test_path_kind = $(BUILD_DIR)/path_kind.o
+TEST_DEPS_test_nav_keys = $(BUILD_DIR)/nav_keys.o
 TEST_DEPS_test_pane_geometry = $(BUILD_DIR)/pane_geometry.o
 TEST_DEPS_test_minimap_geometry = $(BUILD_DIR)/minimap_geometry.o
 TEST_DEPS_test_dir_summary = $(BUILD_DIR)/dir_summary.o $(BUILD_DIR)/file_types.o $(BUILD_DIR)/text_encoding.o

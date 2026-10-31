@@ -3,6 +3,16 @@
 #include "panels.h"
 #include "app_events.h"
 
+NavStyle app_nav_style(AppData* app) {
+    if (app == NULL) return NAV_STYLE_NOTEPAD;
+    switch (app->default_editor_mode) {
+    case EDITOR_MODE_VIM: return NAV_STYLE_VIM;
+    case EDITOR_MODE_EMACS:
+    case EDITOR_MODE_ORGMODE: return NAV_STYLE_EMACS;
+    default: return NAV_STYLE_NOTEPAD;
+    }
+}
+
 gboolean window_is_fullscreen(GtkWindow* win) {
     return gtk_window_is_fullscreen(win);
 }

@@ -6,6 +6,7 @@
 #include "code_help.h"
 #include "code_refs.h"
 #include "code_symbols.h"
+#include "app_events.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -957,6 +958,11 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         }
         if (ctrl && (keyval == GDK_KEY_c || keyval == GDK_KEY_C)) {
             editor_close_tab((AppData*)tab->app, tab);
+            return TRUE;
+        }
+        if (!ctrl && !alt && keyval == GDK_KEY_o) {
+            /* other-window: the next panel */
+            app_emit((AppData*)tab->app, APP_EVENT_FOCUS_NEXT_PANEL);
             return TRUE;
         }
         emacs_echo(tab, "[C-x command complete]");

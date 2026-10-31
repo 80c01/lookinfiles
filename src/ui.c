@@ -43,12 +43,18 @@ void focus_adjacent_panel(gint step, AppData* app) {
         g_ptr_array_add(panels, GTK_WIDGET(app->tree_view));
     }
     if (app->viewer_box == NULL || gtk_widget_get_visible(app->viewer_box)) {
-        EditorTab* cur_tab = editor_current_tab(app);
-        if (cur_tab != NULL && cur_tab->nb == app->notebook && cur_tab->view != NULL) {
-            g_ptr_array_add(panels, cur_tab->view);
-        } else {
-            g_ptr_array_add(panels, app->text_view);
+        /* The page shown in the preview notebook: an editor tab or the preview */
+        GtkWidget* view = app->text_view;
+        gint page_nr = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
+        GtkWidget* page = page_nr >= 0 ? gtk_notebook_get_nth_page(GTK_NOTEBOOK(app->notebook), page_nr) : NULL;
+        for (GList* l = app->editors; l != NULL && page != NULL; l = l->next) {
+            EditorTab* t = (EditorTab*)l->data;
+            if (t != NULL && t->container == page && t->view != NULL) {
+                view = t->view;
+                break;
+            }
         }
+        g_ptr_array_add(panels, view);
     }
     if (app->editor_box != NULL && gtk_widget_get_visible(app->editor_box)) {
         GPtrArray* arr = editor_get_all_notebooks(app);
@@ -104,6 +110,24 @@ void focus_adjacent_panel(gint step, AppData* app) {
     g_ptr_array_unref(panels);
 }
 
+void focus_next_panel(AppData* app) {
+    focus_adjacent_panel(1, app);
+}
+
+void focus_prev_panel(AppData* app) {
+    focus_adjacent_panel(-1, app);
+}
+
+/* Focus in the explorer list or the viewer text: the panels whose
+ * navigation keys follow the global mode */
+static gboolean focus_in_nav_panel(AppData* app) {
+    GtkWidget* focus_w = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
+    if (focus_w == NULL) return FALSE;
+    return focus_w == app->text_view ||
+           (app->tree_view != NULL && (focus_w == GTK_WIDGET(app->tree_view) ||
+                                       gtk_widget_is_ancestor(focus_w, GTK_WIDGET(app->tree_view))));
+}
+
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
                              guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
@@ -131,6 +155,13 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
 
     /* Keys the focused editor tab needs (Org-mode C-c prefixes, Alt+arrows) */
     if (editor_modes_claims_key(app, keyval, state)) {
+        return FALSE;
+    }
+
+    /* Navigation keys of the global mode go to the explorer / viewer
+     * (Emacs C-s / C-r search there, Vim Ctrl+W starts a window command) */
+    if (focus_in_nav_panel(app) &&
+        nav_keys_lookup(app_nav_style(app), (NavPrefix)app->nav_prefix, keyval, state, NULL) != NAV_NONE) {
         return FALSE;
     }
 

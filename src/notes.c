@@ -2104,8 +2104,7 @@ gboolean notes_handle_key(AppData* app, guint keyval, GdkModifierType state) {
         return FALSE;
     }
 
-    app->pending_g = FALSE;
-    app->pending_z = FALSE;
+    app->nav_prefix = 0; /* NAV_PREFIX_NONE */
     return TRUE;
 }
 

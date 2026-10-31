@@ -368,6 +368,32 @@ xdotool mousemove 430 92; sleep 0.3; xdotool mousemove 438 96   # rest on "answe
 sleep 1.5;              shot code_help_mouse_hover
 xdotool mousemove 150 600            # away: the card closes
 key ctrl+w
+# Global mode (status bar mode, no editor tab focused): the explorer, viewer
+# and search bar keys follow it
+xdotool mousemove 150 600 click 1    # focus the explorer
+key ctrl+f; xdotool type --delay 60 "read"
+                        shot notepad_find_typed
+key F3;                 shot notepad_find_next      # the bar stays open
+key Escape F6;          shot notepad_f6_viewer_focused
+key shift+F6
+xdotool mousemove 1237 783 click 1;  shot global_mode_menu
+xdotool mousemove 1210 685 click 1   # pick "Emacs"
+xdotool mousemove 150 600 click 1
+key ctrl+n ctrl+n;      shot emacs_explorer_ctrl_n
+key alt+less;           shot emacs_explorer_first
+key ctrl+s; xdotool type --delay 60 "notes"
+                        shot emacs_explorer_isearch
+key ctrl+g;             shot emacs_explorer_isearch_cancelled   # back on the first row
+key ctrl+x o;           shot emacs_other_window
+key question;           shot help_emacs_mode
+key question
+xdotool mousemove 1237 783 click 1
+xdotool mousemove 1218 721 click 1   # pick "Vim"
+xdotool mousemove 150 600 click 1
+key ctrl+w w;           shot vim_ctrl_w_next_panel
+key ctrl+w W;           shot vim_ctrl_w_prev_panel
+xdotool mousemove 1237 783 click 1
+xdotool mousemove 1205 650 click 1   # back to "Notepad"
 key ctrl+t; sleep 1;    shot terminal
 key ctrl+q
 

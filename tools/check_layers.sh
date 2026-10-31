@@ -66,6 +66,7 @@ org_time:
 org_doc:org_time
 org_table:org_doc
 vim_keys:
+nav_keys:
 vim_regex:
 vim_motion:
 vim_parse:vim_keys
@@ -96,7 +97,7 @@ minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette
 preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette,fonts,text_tags
 tree_nav:app_types
 app_events:app_types
-panels:app_types,app_events
+panels:app_types,app_events,nav_keys
 icons:
 image_utils:
 animation:gif_decoder,image_utils

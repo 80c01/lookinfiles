@@ -87,6 +87,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `path_kind` — whether a path is a folder, a file or missing, read in a
   worker thread (one check per path at a time) and kept, so a slow or hung
   mount never blocks the UI.
+- `nav_keys` — navigation keys of the explorer and viewer in each global mode
+  (Notepad, Vim, Emacs): `nav_keys_lookup()` maps a key and the pending
+  prefix (`gg`, `zz`, `C-x o`, `Ctrl+W w`) to a `NavAction`,
+  `nav_keys_search_lookup()` the keys of the search bar. Pure, tested in
+  `tests/test_nav_keys.c`.
 - `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex` — Vim pieces:
   key codes and `<notation>` (keys are Unicode code points, special keys in
   the private use area), the `["x][count]op[count]motion` grammar
@@ -213,8 +218,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `file_list` — async directory scan (`GTask`), tree population, sorting
   (`compare_entries_with_data()`), lazy expand/collapse, git badges in the tree
   (a second `GTask`, run once the listing is shown), navigation (`reload_directory()`, `navigate_to_path()`, `refresh_listing()`,
-  `activate_selected_entry()`), sidebar view toggles, tree key handler
-  (`on_tree_key_press()`).
+  `activate_selected_entry()`, `go_to_parent_directory()`), sidebar view toggles.
+- `explorer_keys` — explorer key handler (`on_tree_key_press()`): the
+  navigation keys of the global mode (`nav_keys`, `app_nav_style()`), then
+  the view actions, the same in every mode.
 - `file_actions` — new file / new folder prompts.
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
@@ -266,7 +273,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
 - `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette; ssh into
   the active remote machine.
-- `search` — live search entry (`/`, `n`, `N`) for list and viewer.
+- `search` — live search entry for list and viewer, opened and driven by the
+  keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s` `C-r` `C-g`).
 
 **4. Window chrome — may call features:**
 - `topbar` — breadcrumbs and toggle pills; `update_path_label()`.
@@ -319,6 +327,7 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | `APP_EVENT_FILES_CHANGED`        | files created/renamed/saved                  | `refresh_listing()`            |
 | `APP_EVENT_PREVIEW_STALE`        | previewed file changed                       | `viewer_reload_preview()`      |
 | `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`|
+| `APP_EVENT_FOCUS_NEXT_PANEL` / `_PREV_PANEL` | `C-x o`, `Ctrl+W w` / `W`, `F6` / `Shift+F6` | `focus_next_panel()` / `focus_prev_panel()` |
 
 Handlers run synchronously inside `app_emit()`. `make check` rejects direct
 calls to the first five subscribers outside their module and `main.c`. A new

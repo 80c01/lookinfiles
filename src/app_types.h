@@ -172,9 +172,12 @@ typedef struct {
     gpointer notes_mgr;      /* NotesManager* instance (see notes.c) */
     gpointer events;         /* AppEvents* subscription table (see app_events.c) */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
-    gboolean pending_g;   /* for the 'gg' key sequence */
-    gboolean pending_z;   /* for the 'zz', 'zt', 'zb' key sequence */
+    gint nav_prefix;      /* NavPrefix (nav_keys.h): explorer / viewer prefix key waiting (gg, zz, C-x o) */
+    gint nav_recenter_step; /* next Emacs C-l position: 0 center, 1 top, 2 bottom */
     gboolean search_in_viewer; /* '/' opened from viewer, not list */
+    gboolean search_backward;  /* search bar opened backward (Emacs C-r) */
+    gint search_origin_row;    /* explorer row position when the bar opened (C-g goes back) */
+    gdouble search_origin_scroll; /* viewer scroll when the bar opened */
     gint viewer_match;    /* last viewer match (char offset), -1 = none */
     gboolean render_raw;   /* FALSE = rendered preview (default), TRUE = raw text */
     gdouble preview_zoom;  /* image and PDF zoom, relative to the fitted size (1.0) */

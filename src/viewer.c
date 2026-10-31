@@ -63,24 +63,50 @@ void viewer_goto(AppData* app, gboolean top) {
     gtk_text_view_scroll_to_iter(view, &it, 0.0, FALSE, 0.0, top ? 0.0 : 1.0);
 }
 
+/* Navigation keys of the global mode (nav_keys.h) in the viewer */
+static void run_viewer_nav(AppData* app, NavAction action) {
+    switch (action) {
+    case NAV_DOWN: viewer_scroll_lines(app, +1); break;
+    case NAV_UP: viewer_scroll_lines(app, -1); break;
+    case NAV_FIRST: viewer_goto(app, TRUE); break;
+    case NAV_LAST: viewer_goto(app, FALSE); break;
+    case NAV_PAGE_DOWN: viewer_scroll_page(app, +1); break;
+    case NAV_PAGE_UP: viewer_scroll_page(app, -1); break;
+    case NAV_SEARCH: show_search(app, TRUE, FALSE); break;
+    case NAV_SEARCH_BACKWARD: show_search(app, TRUE, TRUE); break;
+    case NAV_SEARCH_NEXT: do_viewer_search(app, +1); break;
+    case NAV_SEARCH_PREV: do_viewer_search(app, -1); break;
+    case NAV_PANEL_NEXT: app_emit(app, APP_EVENT_FOCUS_NEXT_PANEL); break;
+    case NAV_PANEL_PREV: app_emit(app, APP_EVENT_FOCUS_PREV_PANEL); break;
+    default: break; /* prefixes, cancel, row scrolling (explorer only) */
+    }
+}
+
 gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
                              guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
     (void)keycode;
     AppData* app = (AppData*)data;
 
+    /* The key after C-x / Ctrl+W belongs to the prefix, whatever it is */
+    if (app->nav_prefix == NAV_PREFIX_CTRL_X || app->nav_prefix == NAV_PREFIX_CTRL_W) {
+        NavPrefix next = NAV_PREFIX_NONE;
+        NavAction action = nav_keys_lookup(app_nav_style(app), (NavPrefix)app->nav_prefix, keyval, state, &next);
+        app->nav_prefix = next;
+        run_viewer_nav(app, action);
+        return TRUE;
+    }
+
     if (orgmode_handle_viewer_key(app, keyval, state)) {
         return TRUE;
     }
 
     if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) == 0 && image_preview_zoom_key(app, keyval)) {
-        app->pending_g = FALSE;
         return TRUE;
     }
 
     if ((keyval == GDK_KEY_Page_Down || keyval == GDK_KEY_Page_Up) &&
         pdf_preview_jump(app, keyval == GDK_KEY_Page_Down ? 1 : -1)) {
-        app->pending_g = FALSE;
         return TRUE;
     }
     /* Paged previews (mailbox messages): PgDn / PgUp step through the pages */
@@ -89,7 +115,6 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         guint page = app->preview_page;
         if (keyval == GDK_KEY_Page_Down && page < app->preview_pages) page++;
         else if (keyval == GDK_KEY_Page_Up && page > 0) page--;
-        app->pending_g = FALSE;
         if (page != app->preview_page) {
             app->preview_page = page;
             viewer_reload_preview(app);
@@ -97,51 +122,24 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
-    guint key = keyval;
+    NavPrefix prefix = (NavPrefix)app->nav_prefix;
+    NavPrefix next = NAV_PREFIX_NONE;
+    NavAction action = nav_keys_lookup(app_nav_style(app), prefix, keyval, state, &next);
+    app->nav_prefix = next;
+    switch (action) {
+    case NAV_NONE:
+        break;
+    case NAV_FORWARD:
+    case NAV_BACKWARD:
+        return FALSE; /* the text view's own Left / Right */
+    default:
+        run_viewer_nav(app, action);
+        return TRUE;
+    }
 
-    switch (key) {
-    case GDK_KEY_j:
-        app->pending_g = FALSE;
-        viewer_scroll_lines(app, +1);
-        return TRUE;
-    case GDK_KEY_k:
-        app->pending_g = FALSE;
-        viewer_scroll_lines(app, -1);
-        return TRUE;
-    case GDK_KEY_g:
-        if (app->pending_g) {
-            app->pending_g = FALSE;
-            viewer_goto(app, TRUE);
-        } else {
-            app->pending_g = TRUE;
-        }
-        return TRUE;
-    case GDK_KEY_G:
-        app->pending_g = FALSE;
-        viewer_goto(app, FALSE);
-        return TRUE;
-    case GDK_KEY_slash:
-        app->pending_g = FALSE;
-        show_search(app, TRUE);
-        return TRUE;
-    case GDK_KEY_n:
-        app->pending_g = FALSE;
-        do_viewer_search(app, +1);
-        return TRUE;
-    case GDK_KEY_N:
-        app->pending_g = FALSE;
-        do_viewer_search(app, -1);
-        return TRUE;
-    case GDK_KEY_b:
-        app->pending_g = FALSE;
-        if (state & GDK_CONTROL_MASK) {
-            viewer_scroll_page(app, -1);
-            return TRUE;
-        }
-        return FALSE;
+    switch (keyval) {
     case GDK_KEY_d:
     case GDK_KEY_D:
-        app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
             bookmarks_add_from_context(app);
             return TRUE;
@@ -149,7 +147,6 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     case GDK_KEY_a:
     case GDK_KEY_A:
-        app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
             toggle_bookmarks_view(app);
             return TRUE;
@@ -157,24 +154,20 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     case GDK_KEY_u:
     case GDK_KEY_U:
-        app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
             toggle_notes_view(app);
             return TRUE;
         }
         return FALSE;
     case GDK_KEY_f:
-        app->pending_g = FALSE;
         if (state & GDK_CONTROL_MASK) {
-            viewer_scroll_page(app, +1);
-            return TRUE;
+            return FALSE;
         }
         toggle_fullscreen(app->window);
         return TRUE;
     case GDK_KEY_p:
     case GDK_KEY_P:
     case GDK_KEY_space:
-        app->pending_g = FALSE;
         if (app->viewed_name != NULL && !app->render_raw) {
             if (app->viewed_kind == FILE_KIND_VIDEO) {
                 video_preview_toggle_play(app);
@@ -187,7 +180,6 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     case GDK_KEY_m:
     case GDK_KEY_M:
-        app->pending_g = FALSE;
         if (app->viewed_name != NULL && file_kind_is_renderable(app->viewed_kind)) {
             app->render_raw = !app->render_raw;
             app_emit(app, APP_EVENT_LAYOUT_CHANGED);
@@ -199,7 +191,6 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     case GDK_KEY_e:
     case GDK_KEY_E:
-        app->pending_g = FALSE;
         if (app->viewed_path != NULL && app->viewed_name != NULL) {
             if (g_file_test(app->viewed_path, G_FILE_TEST_IS_DIR)) {
                 return FALSE;
@@ -213,21 +204,17 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     case GDK_KEY_question:
         if ((state & GDK_CONTROL_MASK) == 0) {
-            app->pending_g = FALSE;
-            toggle_help_panel(app);
+                toggle_help_panel(app);
             return TRUE;
         }
-        app->pending_g = FALSE;
         return FALSE;
     case GDK_KEY_Escape:
-        app->pending_g = FALSE;
         if (app->help_window != NULL && gtk_widget_get_visible(app->help_window)) {
             toggle_help_panel(app);
             return TRUE;
         }
         return FALSE;
     default:
-        app->pending_g = FALSE;
         return FALSE;
     }
 }

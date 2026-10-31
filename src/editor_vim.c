@@ -10,6 +10,8 @@
 #include "code_symbols.h"
 #include "vim_engine.h"
 #include "vim_keys.h"
+#include "nav_keys.h"
+#include "app_events.h"
 #include "text_encoding.h"
 #include <string.h>
 
@@ -840,10 +842,41 @@ gboolean vim_claims_key(EditorTab* tab, guint keyval, GdkModifierType state) {
     return k == GDK_KEY_e || k == GDK_KEY_r;
 }
 
+/* Ctrl+W w / W / h / l...: focus another panel (nav_keys.h) */
+static gboolean handle_window_command(EditorTab* tab, EditorModeState* st, guint keyval,
+                                      GdkModifierType state) {
+    NavPrefix next = NAV_PREFIX_NONE;
+    NavAction action = nav_keys_lookup(NAV_STYLE_VIM, NAV_PREFIX_CTRL_W, keyval, state, &next);
+    if (action == NAV_PENDING) return TRUE; /* a modifier pressed alone */
+    st->vim_ctrl_w = FALSE;
+    set_echo(tab, "", FALSE);
+    if (action == NAV_PANEL_NEXT) {
+        app_emit((AppData*)tab->app, APP_EVENT_FOCUS_NEXT_PANEL);
+    } else if (action == NAV_PANEL_PREV) {
+        app_emit((AppData*)tab->app, APP_EVENT_FOCUS_PREV_PANEL);
+    }
+    return TRUE;
+}
+
+/* Normal mode, no command being typed */
+static gboolean engine_idle(VimEngine* engine) {
+    if (vim_engine_mode(engine) != VIM_MODE_NORMAL) return FALSE;
+    gchar* pending = vim_engine_pending_keys(engine);
+    gboolean idle = pending == NULL || pending[0] == '\0';
+    g_free(pending);
+    return idle;
+}
+
 gboolean vim_handle_key(EditorTab* tab, EditorModeState* st, guint keyval, GdkModifierType state) {
     if (st->vim == NULL) return FALSE;
+    if (st->vim_ctrl_w) return handle_window_command(tab, st, keyval, state);
     gunichar k = vim_key_from_gdk(keyval, state);
     if (k == 0) return FALSE;
+    if (k == VIM_KEY_CTRL('w') && engine_idle(st->vim)) {
+        st->vim_ctrl_w = TRUE;
+        set_echo(tab, "^W", FALSE);
+        return TRUE;
+    }
     if (st->vim_echo_sticky) set_echo(tab, "", FALSE); /* a listing (:reg) goes away */
     return vim_engine_feed(st->vim, k);
 }

@@ -122,6 +122,7 @@ typedef struct {
     gboolean vim_cl_setting;         /* the entry text is set by us, not typed */
     gboolean vim_cl_ctrl_r;          /* Ctrl-R typed in the command line: a register follows */
     gboolean vim_echo_sticky;        /* a multi-line listing is shown until the next key */
+    gboolean vim_ctrl_w;             /* Normal-mode Ctrl+W typed: window command waiting */
     gchar* vim_hist_prefix;          /* text typed before browsing the history */
     GtkWidget* vim_wild_label;       /* wildmenu: Tab completions shown over the statusline */
     gchar** vim_wild;                /* completions of the word being completed, or NULL */

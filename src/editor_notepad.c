@@ -6,6 +6,7 @@
 #include "code_help.h"
 #include "code_refs.h"
 #include "code_symbols.h"
+#include "app_events.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -253,6 +254,11 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     }
     if (ctrl && !shift && (keyval == GDK_KEY_h || keyval == GDK_KEY_H)) {
         notepad_show_find(tab, TRUE);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_F6 && !ctrl) {
+        /* F6 / Shift+F6: next / previous panel */
+        app_emit((AppData*)tab->app, shift ? APP_EVENT_FOCUS_PREV_PANEL : APP_EVENT_FOCUS_NEXT_PANEL);
         return TRUE;
     }
     if (keyval == GDK_KEY_F3) {

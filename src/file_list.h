@@ -37,6 +37,7 @@ void trash_selected_in_tree(AppData* app);
 void activate_selected_entry(AppData* app);
 /* explorer_tree "row-activated" (double click) */
 void on_row_activated(ExplorerTree* tree, ExplorerRow* row, gpointer data);
-gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
+/* Backspace: parent directory, or back to the files view from the other views */
+void go_to_parent_directory(AppData* app);
 
 #endif /* FILE_LIST_H */

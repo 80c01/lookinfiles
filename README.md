@@ -183,7 +183,27 @@ move between panels, and `Ctrl+Q` to quit.
 
 ## Keyboard shortcuts
 
-The same list is available inside the application with `?`.
+The same list is available inside the application with `?` (it shows the keys
+of the current global mode).
+
+**Global mode.** The mode picked in the status bar while no editor tab has the
+focus (or with `-e` / `--editor`) is the mode of new editor tabs and of the
+navigation keys of the explorer, the viewer and their search bar. Plain keys
+(arrows, `j` / `k`, `gg` / `G`, `/`, `n` / `N`, `a`, `d`...) work in every
+mode; the Ctrl / Alt keys follow the mode:
+
+| Action | Notepad | Vim | Emacs |
+|---|---|---|---|
+| Next / previous entry, line | `Down` / `Up` | `j` / `k` | `C-n` / `C-p` |
+| Expand / collapse (explorer) | `Right` / `Left` | `l` / `h` | `C-f` / `C-b` |
+| First / last | `Ctrl+Home` / `Ctrl+End` | `gg` / `G` | `M-<` / `M->` |
+| Page down / up | `Page Down` / `Page Up` | `Ctrl+F` / `Ctrl+B` | `C-v` / `M-v` |
+| Scroll the selection to center / top / bottom | | `zz` / `zt` / `zb` | `C-l` (in turn) |
+| Search | `Ctrl+F` (`Enter` / `F3`: next, `Shift+Enter` / `Shift+F3`: previous, `Esc`: close) | `/` (`n` / `N`: next / previous) | `C-s` / `C-r` (again: next / previous, `RET`: stop, `C-g`: back to the start) |
+| Next / previous panel | `F6` / `Shift+F6` | `Ctrl+W w` / `Ctrl+W W` (also `h` / `l`) | `C-x o` |
+
+The panel keys also work from editor tabs of the same mode; `Alt+Left` /
+`Alt+Right` work everywhere.
 
 ### Global
 
@@ -191,8 +211,9 @@ The same list is available inside the application with `?`.
 |---|---|
 | `Ctrl+Q` | Quit |
 | `?` | Show / hide the shortcut cheat sheet |
-| `f` | Toggle fullscreen (`Ctrl+F` keeps its paging role) |
+| `f` | Toggle fullscreen |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels |
+| `Ctrl+W w` / `Ctrl+W W` (Vim), `C-x o` (Emacs), `F6` / `Shift+F6` (Notepad) | Focus the next / previous panel (global mode, or the mode of the focused editor tab) |
 | `Alt+1` … `Alt+8` | Switch virtual workspace (or click the top-bar workspace map) |
 | `Alt++` / `Alt+-` | Add a workspace with the default layout / close the current one |
 | `Alt+L` | Workspace layouts: apply a saved layout, save the current panels under a name (`Default` for new workspaces), delete one or reset the default |
@@ -209,17 +230,19 @@ The same list is available inside the application with `?`.
 
 | Key | Action |
 |---|---|
-| `j` / `k`, `Down` / `Up` | Next / previous visible entry |
-| `gg` / `G`, `Home` / `End` | First / last entry |
-| `Ctrl+F` / `Ctrl+B`, `Page Down` / `Page Up` | One page down / up |
-| `zz` / `zt` / `zb` | Scroll the selected entry to the center / top / bottom |
+| `j` / `k`, `Down` / `Up` (Emacs: also `C-n` / `C-p`) | Next / previous visible entry |
+| `gg` / `G`, `Home` / `End` (Notepad: also `Ctrl+Home` / `Ctrl+End`; Emacs: `M-<` / `M->`) | First / last entry |
+| `Page Down` / `Page Up` (Vim: also `Ctrl+F` / `Ctrl+B`; Emacs: `C-v` / `M-v`) | One page down / up |
+| `zz` / `zt` / `zb` (Emacs: also `C-l`, in turn) | Scroll the selected entry to the center / top / bottom |
 | `Space` | Expand / collapse the selected directory |
-| `l` / `Right` | Expand the selected directory, or step into its first child |
-| `h` / `Left` | Collapse the selected directory, or jump to its parent |
+| `l` / `Right` (Emacs: also `C-f`) | Expand the selected directory, or step into its first child |
+| `h` / `Left` (Emacs: also `C-b`) | Collapse the selected directory, or jump to its parent |
 | `Enter` / double click | Expand a directory, open a file in the editor, open a bookmark |
 | `Ctrl+Enter` | Enter the selected directory as the new root |
 | `Backspace` | Parent directory (or back to the files view) |
 | `/`, then `n` / `N` | Search entries by name, next / previous match |
+| `Ctrl+F`, `F3` / `Shift+F3` (Notepad) | Search entries by name, next / previous match |
+| `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
 | `a` / `Shift+A` | New file / new folder in the selected directory |
 | `F2` / `r` / `e` | Rename the selected file or folder |
 | `d` / `Delete` | Move the selected file or folder to the trash (asks first) |
@@ -269,10 +292,12 @@ The same list is available inside the application with `?`.
 
 | Key | Action |
 |---|---|
-| `j` / `k` | Scroll one line down / up |
-| `Ctrl+F` / `Ctrl+B` | Scroll one page down / up |
-| `gg` / `G` | Start / end of the file |
+| `j` / `k`, `Down` / `Up` (Emacs: also `C-n` / `C-p`) | Scroll one line down / up |
+| `Ctrl+F` / `Ctrl+B` (Vim), `C-v` / `M-v` (Emacs) | Scroll one page down / up |
+| `gg` / `G`, `Home` / `End` (Notepad: also `Ctrl+Home` / `Ctrl+End`; Emacs: `M-<` / `M->`) | Start / end of the file |
 | `/`, then `n` / `N` | Search in the content, next / previous match |
+| `Ctrl+F`, `F3` / `Shift+F3` (Notepad) | Search in the content, next / previous match |
+| `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
 | `e` | Open the file in the editor (text files) |
 | `m` | Rendered / raw view: Markdown, HTML, Org, CSV, JSON, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |

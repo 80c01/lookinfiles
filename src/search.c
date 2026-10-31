@@ -1,5 +1,6 @@
 #include "search.h"
 #include "tree_nav.h"
+#include "panels.h"
 
 static gboolean row_matches(AppData* app, ExplorerRow* row) {
     if (row == NULL || app->search_term == NULL) {
@@ -35,10 +36,18 @@ void do_search(AppData* app, gint direction) {
     }
 }
 
-void show_search(AppData* app, gboolean from_viewer) {
+void show_search(AppData* app, gboolean from_viewer, gboolean backward) {
     app->search_in_viewer = from_viewer;
+    app->search_backward = backward;
+    /* Where C-g (Emacs) goes back to */
+    ExplorerRow* selected = tree_nav_selected(app);
+    app->search_origin_row = selected != NULL ? (gint)explorer_tree_position(app->tree, selected) : -1;
+    app->search_origin_scroll = app->viewer_vadj != NULL ? gtk_adjustment_get_value(app->viewer_vadj) : 0.0;
     gtk_widget_set_visible(app->search_entry, TRUE);
     gtk_widget_grab_focus(app->search_entry);
+    /* The last text stays selected: typing starts a new search, Emacs C-s /
+     * Notepad F3 search it again */
+    gtk_editable_select_region(GTK_EDITABLE(app->search_entry), 0, -1);
 }
 
 void hide_search(AppData* app) {
@@ -48,15 +57,43 @@ void hide_search(AppData* app) {
                                                 : GTK_WIDGET(app->tree_view));
 }
 
+/* Next / previous match from the bar or the panel that opened it */
+void search_again(AppData* app, gint direction) {
+    if (app->search_in_viewer) {
+        do_viewer_search(app, direction);
+    } else {
+        do_search(app, direction);
+    }
+}
+
+/* Close the bar and go back where the search started */
+static void cancel_search(AppData* app) {
+    if (app->search_in_viewer) {
+        GtkTextIter it;
+        gtk_text_buffer_get_iter_at_mark(app->buffer, &it, gtk_text_buffer_get_insert(app->buffer));
+        gtk_text_buffer_select_range(app->buffer, &it, &it);
+        if (app->viewer_vadj != NULL) {
+            gtk_adjustment_set_value(app->viewer_vadj, app->search_origin_scroll);
+        }
+        app->viewer_match = -1;
+    } else if (app->search_origin_row >= 0 &&
+               (guint)app->search_origin_row < explorer_tree_n_visible(app->tree)) {
+        select_row(app, explorer_tree_visible_row(app->tree, (guint)app->search_origin_row));
+    }
+    hide_search(app);
+}
+
 void on_search_changed(GtkSearchEntry* entry, gpointer data) {
     AppData* app = (AppData*)data;
     const gchar* text = gtk_editable_get_text(GTK_EDITABLE(entry));
     g_free(app->search_term);
     app->search_term = g_strdup(text);
+    gint direction = app->search_backward ? -1 : +1;
     if (app->search_in_viewer) {
-        do_viewer_search(app, +1);
-    } else {
-        do_search(app, +1);
+        do_viewer_search(app, direction);
+    } else if (!row_matches(app, tree_nav_selected(app))) {
+        /* The selected row stays while it still matches the longer text */
+        do_search(app, direction);
     }
 }
 
@@ -65,16 +102,29 @@ void on_search_activate(GtkSearchEntry* entry, gpointer data) {
     hide_search((AppData*)data);
 }
 
+/* Keys of the global mode (nav_keys.h): Emacs C-s / C-r / C-g, Notepad
+ * Enter / F3 / Shift+F3; Escape closes the bar in every mode */
 gboolean on_search_key_press(GtkEventControllerKey* controller, guint keyval,
                              guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
     (void)keycode;
-    (void)state;
-    if (keyval == GDK_KEY_Escape) {
-        hide_search((AppData*)data);
+    AppData* app = (AppData*)data;
+    switch (nav_keys_search_lookup(app_nav_style(app), keyval, state)) {
+    case NAV_SEARCH_KEY_NEXT:
+        search_again(app, +1);
         return TRUE;
+    case NAV_SEARCH_KEY_PREV:
+        search_again(app, -1);
+        return TRUE;
+    case NAV_SEARCH_KEY_ACCEPT:
+        hide_search(app);
+        return TRUE;
+    case NAV_SEARCH_KEY_CANCEL:
+        cancel_search(app);
+        return TRUE;
+    default:
+        return FALSE;
     }
-    return FALSE;
 }
 
 /* Case-insensitive search (char-wise folding) from a char-offset anchor */

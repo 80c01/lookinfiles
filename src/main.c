@@ -15,6 +15,7 @@
 #include "workspace.h"
 #include "help.h"
 #include "file_list.h"
+#include "explorer_keys.h"
 #include "viewer.h"
 #include "image_preview.h"
 #include "text_chunks.h"
@@ -478,6 +479,8 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, refresh_diff_gutters);
     app_events_subscribe(app, APP_EVENT_FILES_CHANGED, refresh_diff_gutters);
     app_events_subscribe(app, APP_EVENT_FILES_CHANGED, themes_on_files_changed);
+    app_events_subscribe(app, APP_EVENT_FOCUS_NEXT_PANEL, focus_next_panel);
+    app_events_subscribe(app, APP_EVENT_FOCUS_PREV_PANEL, focus_prev_panel);
     app->window = GTK_WINDOW(window);
     app->main_loop = loop;
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
