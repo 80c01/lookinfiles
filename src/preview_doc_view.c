@@ -8,6 +8,7 @@
 #include "html.h"
 #include "image_utils.h"
 #include "markdown.h"
+#include "palette.h"
 #include "text_style.h"
 
 /* Tag name of a style */
@@ -44,6 +45,9 @@ static const gchar* const STYLE_TAGS[PREVIEW_STYLE_COUNT] = {
     [PREVIEW_STYLE_INDENT] = "pd_indent",
     [PREVIEW_STYLE_INDENT2] = "pd_indent2",
     [PREVIEW_STYLE_INDENT3] = "pd_indent3",
+    [PREVIEW_STYLE_SUPERSCRIPT] = "pd_sup",
+    [PREVIEW_STYLE_SUBSCRIPT] = "pd_sub",
+    [PREVIEW_STYLE_TABLE] = "pd_table",
 };
 
 /* Palette colours on the preview background */
@@ -93,15 +97,89 @@ static void ensure_tags(GtkTextBuffer* buffer) {
     gtk_text_buffer_create_tag(buffer, "pd_indent", "left-margin", PREVIEW_TEXT_PADDING_X + 56, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_indent2", "left-margin", PREVIEW_TEXT_PADDING_X + 112, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_indent3", "left-margin", PREVIEW_TEXT_PADDING_X + 168, NULL);
+    gtk_text_buffer_create_tag(buffer, "pd_sup", "rise", 4 * PANGO_SCALE, "scale", 0.75, NULL);
+    gtk_text_buffer_create_tag(buffer, "pd_sub", "rise", -2 * PANGO_SCALE, "scale", 0.75, NULL);
+    text_tag_create(buffer, "pd_table", "family", "@font_code", NULL);
+    g_object_set(gtk_text_tag_table_lookup(table, "pd_table"), "wrap-mode", GTK_WRAP_NONE, NULL);
 }
 
-/* Tag of a font span: a Pango font description */
-static GtkTextTag* font_tag(GtkTextBuffer* buffer, const gchar* description) {
-    gchar* name = g_strdup_printf("pd_font:%s", description);
+static guint32 palette_value(PaletteRole role) {
+    guint32 rgb = 0;
+    preview_color_parse(palette_color(role), &rgb);
+    return rgb;
+}
+
+/* Tag of a span with an argument (fonts, document colours, paragraph layout),
+ * NULL when the argument is malformed. Colours depend on the theme: the
+ * view's background is part of their tag name. */
+static GtkTextTag* arg_tag(GtkTextBuffer* buffer, PreviewStyle style, const gchar* arg) {
+    static const gchar* const PREFIX[PREVIEW_STYLE_COUNT] = {
+        [PREVIEW_STYLE_FONT] = "pd_font", [PREVIEW_STYLE_FAMILY] = "pd_family",
+        [PREVIEW_STYLE_SCALE] = "pd_scale", [PREVIEW_STYLE_COLOR] = "pd_color",
+        [PREVIEW_STYLE_HIGHLIGHT] = "pd_highlight", [PREVIEW_STYLE_PARAGRAPH] = "pd_para",
+    };
+    if (PREFIX[style] == NULL || arg == NULL) {
+        return NULL;
+    }
+    const gchar* bg = palette_color(PAL_BG_VIEW);
+    gchar* name = g_strdup_printf("%s:%s:%s", PREFIX[style], arg, bg);
     GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buffer);
     GtkTextTag* tag = gtk_text_tag_table_lookup(table, name);
-    if (tag == NULL) {
-        tag = gtk_text_buffer_create_tag(buffer, name, "font", description, NULL);
+    if (tag != NULL) {
+        g_free(name);
+        return tag;
+    }
+    guint32 rgb = 0;
+    PreviewParagraph para;
+    switch (style) {
+    case PREVIEW_STYLE_FONT:
+        tag = gtk_text_buffer_create_tag(buffer, name, "font", arg, NULL);
+        break;
+    case PREVIEW_STYLE_FAMILY:
+        tag = gtk_text_buffer_create_tag(buffer, name, NULL);
+        g_object_set(tag, "family", arg, NULL);
+        break;
+    case PREVIEW_STYLE_SCALE: {
+        gdouble scale = g_ascii_strtod(arg, NULL);
+        if (scale > 0.2 && scale < 10.0) {
+            tag = gtk_text_buffer_create_tag(buffer, name, "scale", scale, NULL);
+        }
+        break;
+    }
+    case PREVIEW_STYLE_COLOR:
+        if (preview_color_parse(arg, &rgb)) {
+            guint32 shown = preview_color_readable(rgb, palette_value(PAL_BG_VIEW), palette_value(PAL_FG_TEXT));
+            gchar* color = preview_color_format(shown);
+            tag = gtk_text_buffer_create_tag(buffer, name, "foreground", color, NULL);
+            g_free(color);
+        }
+        break;
+    case PREVIEW_STYLE_HIGHLIGHT:
+        if (preview_color_parse(arg, &rgb)) {
+            /* The theme's text or background colour, whichever stands out */
+            guint32 fg = palette_value(PAL_FG_TEXT), bgv = palette_value(PAL_BG_VIEW);
+            gchar* back = preview_color_format(rgb);
+            gchar* fore = preview_color_format(preview_color_contrast(rgb, fg) >= preview_color_contrast(rgb, bgv)
+                                                   ? fg : bgv);
+            tag = gtk_text_buffer_create_tag(buffer, name, "background", back, "foreground", fore, NULL);
+            g_free(back);
+            g_free(fore);
+        }
+        break;
+    case PREVIEW_STYLE_PARAGRAPH:
+        if (preview_paragraph_parse(arg, &para)) {
+            static const GtkJustification JUSTIFY[] = { GTK_JUSTIFY_LEFT, GTK_JUSTIFY_CENTER, GTK_JUSTIFY_RIGHT,
+                                                        GTK_JUSTIFY_FILL };
+            tag = gtk_text_buffer_create_tag(buffer, name, "justification", JUSTIFY[para.align],
+                                             "left-margin", PREVIEW_TEXT_PADDING_X + MAX(para.left, 0),
+                                             "right-margin",
+                                             PREVIEW_TEXT_PADDING_X + TEXT_SCROLLBAR_CLEARANCE + MAX(para.right, 0),
+                                             "indent", para.indent, "pixels-above-lines", MAX(para.above, 0),
+                                             "pixels-below-lines", MAX(para.below, 0), NULL);
+        }
+        break;
+    default:
+        break;
     }
     g_free(name);
     return tag;
@@ -143,7 +221,8 @@ static GdkTexture* decode_image(GBytes* data, gint max_width) {
     return texture;
 }
 
-void preview_doc_insert(GtkTextBuffer* buffer, const PreviewDoc* doc) {
+/* Insert the document; images are never wider than max_image_width (0: no limit) */
+static void insert_doc(GtkTextBuffer* buffer, const PreviewDoc* doc, gint max_image_width) {
     ensure_tags(buffer);
     GtkTextIter end;
     gtk_text_buffer_get_end_iter(buffer, &end);
@@ -155,9 +234,10 @@ void preview_doc_insert(GtkTextBuffer* buffer, const PreviewDoc* doc) {
         GtkTextIter a, b;
         gtk_text_buffer_get_iter_at_offset(buffer, &a, base + span->start);
         gtk_text_buffer_get_iter_at_offset(buffer, &b, base + span->end);
-        if (span->style == PREVIEW_STYLE_FONT) {
-            if (span->arg != NULL) {
-                gtk_text_buffer_apply_tag(buffer, font_tag(buffer, span->arg), &a, &b);
+        if (span->arg != NULL) {
+            GtkTextTag* tag = arg_tag(buffer, span->style, span->arg);
+            if (tag != NULL) {
+                gtk_text_buffer_apply_tag(buffer, tag, &a, &b);
             }
         } else if (STYLE_TAGS[span->style] != NULL) {
             gtk_text_buffer_apply_tag_by_name(buffer, STYLE_TAGS[span->style], &a, &b);
@@ -167,7 +247,11 @@ void preview_doc_insert(GtkTextBuffer* buffer, const PreviewDoc* doc) {
     /* Images replace their one-character placeholder: offsets do not move */
     for (guint i = 0; i < doc->images->len; i++) {
         const PreviewImage* image = &g_array_index(doc->images, PreviewImage, i);
-        GdkTexture* texture = decode_image(image->data, image->max_width);
+        gint width = image->max_width;
+        if (max_image_width > 0 && (width <= 0 || width > max_image_width)) {
+            width = max_image_width;
+        }
+        GdkTexture* texture = decode_image(image->data, width);
         if (texture == NULL) {
             continue;
         }
@@ -179,6 +263,10 @@ void preview_doc_insert(GtkTextBuffer* buffer, const PreviewDoc* doc) {
         gtk_text_buffer_insert_paintable(buffer, &a, GDK_PAINTABLE(texture));
         g_object_unref(texture);
     }
+}
+
+void preview_doc_insert(GtkTextBuffer* buffer, const PreviewDoc* doc) {
+    insert_doc(buffer, doc, 0);
 }
 
 void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* path,
@@ -204,7 +292,9 @@ void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* pat
     gtk_text_view_set_wrap_mode(view, doc->wrap ? GTK_WRAP_WORD_CHAR : GTK_WRAP_NONE);
     load_font_files(widget, doc->font_files);
     gtk_text_buffer_set_text(buffer, "", 0);
-    preview_doc_insert(buffer, doc);
+    /* Images fit in the view as it is now (slides, document pictures) */
+    gint avail = gtk_widget_get_width(widget) - 2 * PREVIEW_TEXT_PADDING_X - TEXT_SCROLLBAR_CLEARANCE;
+    insert_doc(buffer, doc, avail >= 160 ? avail : 0);
     if (doc->scroll_to_end) {
         GtkTextIter end;
         gtk_text_buffer_get_end_iter(buffer, &end);

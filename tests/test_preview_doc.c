@@ -165,6 +165,75 @@ static void test_source_doc(void) {
     g_assert_cmpint(doc->n_chars, ==, 8);
 }
 
+static void test_paragraph_span(void) {
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    preview_doc_append(doc, PREVIEW_STYLE_PLAIN, "Centred\n");
+    PreviewParagraph p = { PREVIEW_ALIGN_CENTER, 24, 0, -12, 6, 8 };
+    preview_doc_add_paragraph_span(doc, 0, 8, &p);
+    const PreviewSpan* span = &g_array_index(doc->spans, PreviewSpan, 0);
+    g_assert_cmpint(span->style, ==, PREVIEW_STYLE_PARAGRAPH);
+    PreviewParagraph back;
+    g_assert_true(preview_paragraph_parse(span->arg, &back));
+    g_assert_cmpint(back.align, ==, PREVIEW_ALIGN_CENTER);
+    g_assert_cmpint(back.left, ==, 24);
+    g_assert_cmpint(back.indent, ==, -12);
+    g_assert_cmpint(back.below, ==, 8);
+    g_assert_false(preview_paragraph_parse("1 2 3", &back));
+    g_assert_false(preview_paragraph_parse("9 0 0 0 0 0", &back));
+    g_assert_false(preview_paragraph_parse(NULL, &back));
+}
+
+static void test_append_doc(void) {
+    g_autoptr(PreviewDoc) a = preview_doc_new();
+    preview_doc_append(a, PREVIEW_STYLE_BOLD, "héad ");
+    g_autoptr(PreviewDoc) b = preview_doc_new();
+    preview_doc_append(b, PREVIEW_STYLE_ITALIC, "bödy");
+    preview_doc_add_arg_span(b, 0, 4, PREVIEW_STYLE_COLOR, "#c00000");
+    GBytes* png = g_bytes_new_static("png", 3);
+    preview_doc_add_image(b, png, 100);
+    g_bytes_unref(png);
+    preview_doc_append_doc(a, b);
+    g_assert_cmpstr(a->text->str, ==, "héad bödy" PREVIEW_DOC_IMAGE_CHAR);
+    g_assert_cmpint(preview_doc_offset(a), ==, 10);
+    g_autofree gchar* italic = styled(a, PREVIEW_STYLE_ITALIC);
+    g_assert_cmpstr(italic, ==, "bödy");
+    const PreviewSpan* color = &g_array_index(a->spans, PreviewSpan, 2);
+    g_assert_cmpint(color->style, ==, PREVIEW_STYLE_COLOR);
+    g_assert_cmpstr(color->arg, ==, "#c00000");
+    g_assert_cmpint(color->start, ==, 5);
+    g_assert_cmpint(g_array_index(a->images, PreviewImage, 0).offset, ==, 9);
+}
+
+static void test_colors(void) {
+    guint32 rgb = 0;
+    g_assert_true(preview_color_parse("#1F3864", &rgb));
+    g_assert_cmphex(rgb, ==, 0x1F3864);
+    g_assert_true(preview_color_parse("c00000", &rgb));
+    g_assert_cmphex(rgb, ==, 0xC00000);
+    g_assert_false(preview_color_parse("#12345", &rgb));
+    g_assert_false(preview_color_parse("#1234567", &rgb));
+    g_assert_false(preview_color_parse("auto", &rgb));
+    g_autofree gchar* text = preview_color_format(0x0a0B0c);
+    g_assert_cmpstr(text, ==, "#0a0b0c");
+    g_assert_cmpfloat_with_epsilon(preview_color_contrast(0x000000, 0xFFFFFF), 21.0, 0.01);
+    g_assert_cmpfloat_with_epsilon(preview_color_contrast(0x777777, 0x777777), 1.0, 0.01);
+
+    const guint32 dark_bg = 0x121314, dark_fg = 0xD4D4D4, light_bg = 0xFFFFFF, light_fg = 0x1E1E1E;
+    /* Readable colours are kept */
+    g_assert_cmphex(preview_color_readable(0xFFC000, dark_bg, dark_fg), ==, 0xFFC000);
+    g_assert_cmphex(preview_color_readable(0x1F3864, light_bg, light_fg), ==, 0x1F3864);
+    /* Black text on a dark theme is the theme's text */
+    g_assert_cmphex(preview_color_readable(0x000000, dark_bg, dark_fg), ==, dark_fg);
+    g_assert_cmphex(preview_color_readable(0xFFFFFF, light_bg, light_fg), ==, light_fg);
+    /* A dark blue heading is lightened, and stays blue */
+    guint32 blue = preview_color_readable(0x1F3864, dark_bg, dark_fg);
+    g_assert_cmpfloat(preview_color_contrast(blue, dark_bg), >=, 4.5);
+    g_assert_cmpuint(blue & 0xFF, >, (blue >> 16) & 0xFF);
+    /* A yellow on white is darkened */
+    guint32 yellow = preview_color_readable(0xFFFF00, light_bg, light_fg);
+    g_assert_cmpfloat(preview_color_contrast(yellow, light_bg), >=, 4.5);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/preview_doc/append_offsets", test_append_offsets);
@@ -176,5 +245,8 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_doc/table", test_table);
     g_test_add_func("/preview_doc/table_row_numbers_and_cut", test_table_row_numbers_and_cut);
     g_test_add_func("/preview_doc/source_doc", test_source_doc);
+    g_test_add_func("/preview_doc/paragraph_span", test_paragraph_span);
+    g_test_add_func("/preview_doc/append_doc", test_append_doc);
+    g_test_add_func("/preview_doc/colors", test_colors);
     return g_test_run();
 }

@@ -1,6 +1,8 @@
 /* Styled preview documents built in worker threads (see preview_doc.h). */
 #include "preview_doc.h"
 
+#include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 PreviewDoc* preview_doc_new(void) {
@@ -88,12 +90,132 @@ void preview_doc_add_span(PreviewDoc* doc, gint start, gint end, PreviewStyle st
     g_array_append_val(doc->spans, span);
 }
 
-void preview_doc_add_font_span(PreviewDoc* doc, gint start, gint end, const gchar* description) {
-    if (end <= start || description == NULL) {
+void preview_doc_add_arg_span(PreviewDoc* doc, gint start, gint end, PreviewStyle style, const gchar* arg) {
+    if (end <= start || arg == NULL || style == PREVIEW_STYLE_PLAIN || style >= PREVIEW_STYLE_COUNT) {
         return;
     }
-    PreviewSpan span = { start, end, PREVIEW_STYLE_FONT, g_strdup(description) };
+    PreviewSpan span = { start, end, style, g_strdup(arg) };
     g_array_append_val(doc->spans, span);
+}
+
+void preview_doc_add_font_span(PreviewDoc* doc, gint start, gint end, const gchar* description) {
+    preview_doc_add_arg_span(doc, start, end, PREVIEW_STYLE_FONT, description);
+}
+
+void preview_doc_add_paragraph_span(PreviewDoc* doc, gint start, gint end, const PreviewParagraph* para) {
+    gchar* arg = g_strdup_printf("%d %d %d %d %d %d", (gint)para->align, para->left, para->right, para->indent,
+                                 para->above, para->below);
+    preview_doc_add_arg_span(doc, start, end, PREVIEW_STYLE_PARAGRAPH, arg);
+    g_free(arg);
+}
+
+gboolean preview_paragraph_parse(const gchar* arg, PreviewParagraph* para) {
+    gint align = 0;
+    memset(para, 0, sizeof *para);
+    if (arg == NULL || sscanf(arg, "%d %d %d %d %d %d", &align, &para->left, &para->right, &para->indent,
+                              &para->above, &para->below) != 6 ||
+        align < PREVIEW_ALIGN_LEFT || align > PREVIEW_ALIGN_JUSTIFY) {
+        return FALSE;
+    }
+    para->align = (PreviewAlign)align;
+    return TRUE;
+}
+
+void preview_doc_append_doc(PreviewDoc* doc, const PreviewDoc* other) {
+    gint base = doc->n_chars;
+    g_string_append_len(doc->text, other->text->str, (gssize)other->text->len);
+    doc->n_chars += other->n_chars;
+    for (guint i = 0; i < other->spans->len; i++) {
+        PreviewSpan span = g_array_index(other->spans, PreviewSpan, i);
+        span.start += base;
+        span.end += base;
+        span.arg = g_strdup(span.arg);
+        g_array_append_val(doc->spans, span);
+    }
+    for (guint i = 0; i < other->images->len; i++) {
+        PreviewImage image = g_array_index(other->images, PreviewImage, i);
+        image.offset += base;
+        g_bytes_ref(image.data);
+        g_array_append_val(doc->images, image);
+    }
+    for (guint i = 0; other->font_files != NULL && i < other->font_files->len; i++) {
+        preview_doc_add_font_file(doc, g_ptr_array_index(other->font_files, i));
+    }
+}
+
+/* --- Document colours --- */
+
+gchar* preview_color_format(guint32 rgb) {
+    return g_strdup_printf("#%02x%02x%02x", (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+}
+
+gboolean preview_color_parse(const gchar* text, guint32* rgb) {
+    if (text == NULL) {
+        return FALSE;
+    }
+    if (text[0] == '#') {
+        text++;
+    }
+    guint32 v = 0;
+    for (gint i = 0; i < 6; i++) {
+        gint d = g_ascii_xdigit_value(text[i]);
+        if (d < 0) {
+            return FALSE;
+        }
+        v = (v << 4) | (guint32)d;
+    }
+    if (text[6] != '\0') {
+        return FALSE;
+    }
+    *rgb = v;
+    return TRUE;
+}
+
+static gdouble channel_linear(guint32 c) {
+    gdouble v = (gdouble)(c & 0xFF) / 255.0;
+    return v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4);
+}
+
+static gdouble luminance(guint32 rgb) {
+    return 0.2126 * channel_linear(rgb >> 16) + 0.7152 * channel_linear(rgb >> 8) + 0.0722 * channel_linear(rgb);
+}
+
+gdouble preview_color_contrast(guint32 a, guint32 b) {
+    gdouble la = luminance(a), lb = luminance(b);
+    return (MAX(la, lb) + 0.05) / (MIN(la, lb) + 0.05);
+}
+
+/* Mix of a and b: t = 0 gives a, t = 1 gives b */
+static guint32 mix(guint32 a, guint32 b, gdouble t) {
+    guint32 out = 0;
+    for (gint shift = 16; shift >= 0; shift -= 8) {
+        gdouble ca = (gdouble)((a >> shift) & 0xFF), cb = (gdouble)((b >> shift) & 0xFF);
+        guint32 c = (guint32)CLAMP(ca + (cb - ca) * t + 0.5, 0.0, 255.0);
+        out |= c << shift;
+    }
+    return out;
+}
+
+#define READABLE_CONTRAST 4.5
+
+guint32 preview_color_readable(guint32 color, guint32 background, guint32 text) {
+    if (preview_color_contrast(color, background) >= READABLE_CONTRAST) {
+        return color;
+    }
+    guint32 r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF;
+    guint32 hi = MAX(r, MAX(g, b)), lo = MIN(r, MIN(g, b));
+    if (hi - lo < 40) {
+        return text; /* black on a dark theme, white on a light one */
+    }
+    /* Towards white on a dark background, towards black on a light one */
+    guint32 target = luminance(background) < 0.4 ? 0xFFFFFFu : 0x000000u;
+    for (gint step = 1; step <= 10; step++) {
+        guint32 c = mix(color, target, step / 10.0);
+        if (preview_color_contrast(c, background) >= READABLE_CONTRAST) {
+            return c;
+        }
+    }
+    return text;
 }
 
 void preview_doc_add_font_file(PreviewDoc* doc, const gchar* path) {

@@ -51,6 +51,14 @@ typedef enum {
     PREVIEW_STYLE_INDENT2,   /* two levels */
     PREVIEW_STYLE_INDENT3,   /* three levels */
     PREVIEW_STYLE_FONT,      /* text in a given font; arg = Pango font description */
+    PREVIEW_STYLE_SUPERSCRIPT,
+    PREVIEW_STYLE_SUBSCRIPT,
+    PREVIEW_STYLE_TABLE,     /* monospace lines that never wrap (grids in wrapped text) */
+    PREVIEW_STYLE_FAMILY,    /* arg = font family of a document ("Liberation Serif") */
+    PREVIEW_STYLE_SCALE,     /* arg = font scale ("1.500"), 1 = the view's font size */
+    PREVIEW_STYLE_COLOR,     /* arg = text colour of a document ("#rrggbb"), made readable on the view */
+    PREVIEW_STYLE_HIGHLIGHT, /* arg = background colour of a run ("#rrggbb"), text colour chosen to contrast */
+    PREVIEW_STYLE_PARAGRAPH, /* arg = paragraph layout, see preview_doc_add_paragraph_span() */
     PREVIEW_STYLE_COUNT
 } PreviewStyle;
 
@@ -65,7 +73,7 @@ typedef struct {
     gint start;
     gint end;
     PreviewStyle style;
-    gchar* arg;           /* PREVIEW_STYLE_FONT only: "Family, Bold 24" */
+    gchar* arg;           /* FONT ("Family, Bold 24"), FAMILY, SCALE, COLOR, HIGHLIGHT, PARAGRAPH */
 } PreviewSpan;
 
 /* An image at a character offset (its placeholder is one U+FFFC character) */
@@ -115,6 +123,47 @@ void preview_doc_appendf(PreviewDoc* doc, PreviewStyle style, const gchar* forma
 void preview_doc_add_span(PreviewDoc* doc, gint start, gint end, PreviewStyle style);
 /* Text in a font: a Pango font description ("DejaVu Sans, Bold 24") */
 void preview_doc_add_font_span(PreviewDoc* doc, gint start, gint end, const gchar* description);
+/* Span of a style that takes an argument (FONT, FAMILY, SCALE...) */
+void preview_doc_add_arg_span(PreviewDoc* doc, gint start, gint end, PreviewStyle style, const gchar* arg);
+
+/* Layout of whole paragraphs, in pixels added to the view's own margins */
+typedef enum {
+    PREVIEW_ALIGN_LEFT,
+    PREVIEW_ALIGN_CENTER,
+    PREVIEW_ALIGN_RIGHT,
+    PREVIEW_ALIGN_JUSTIFY
+} PreviewAlign;
+
+typedef struct {
+    PreviewAlign align;
+    gint left;            /* left indent */
+    gint right;           /* right indent */
+    gint indent;          /* first line, relative to left (negative: hanging) */
+    gint above;           /* space above the paragraph */
+    gint below;           /* space below */
+} PreviewParagraph;
+
+/* Lay out the paragraphs of [start, end) (the argument is the struct as text) */
+void preview_doc_add_paragraph_span(PreviewDoc* doc, gint start, gint end, const PreviewParagraph* para);
+/* Read back the argument of a PARAGRAPH span; FALSE if it is malformed */
+gboolean preview_paragraph_parse(const gchar* arg, PreviewParagraph* para);
+
+/* Append another document: its text, spans and images (fonts files too) */
+void preview_doc_append_doc(PreviewDoc* doc, const PreviewDoc* other);
+
+/* --- Document colours (0xRRGGBB) --- */
+
+/* "#rrggbb" (caller frees) */
+gchar* preview_color_format(guint32 rgb);
+/* "#rrggbb" or "rrggbb" to 0xRRGGBB; FALSE if it is not one */
+gboolean preview_color_parse(const gchar* text, guint32* rgb);
+/* WCAG contrast ratio of two colours, 1 to 21 */
+gdouble preview_color_contrast(guint32 a, guint32 b);
+/* A document colour readable on background: kept when it contrasts enough,
+ * greys become text (the theme's text colour), other colours are lightened
+ * or darkened keeping their hue */
+guint32 preview_color_readable(guint32 color, guint32 background, guint32 text);
+
 /* Font file the view must load for the font spans (font previews) */
 void preview_doc_add_font_file(PreviewDoc* doc, const gchar* path);
 
