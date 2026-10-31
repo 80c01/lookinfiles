@@ -5,10 +5,13 @@
  * (Notepad, Vim, Emacs), strictly those of the mode. Arrows, Home / End and
  * Page Up / Down work in every mode; the rest follows the mode:
  *   Vim:     j k h l, gg G, zz zt zb, / n N, Ctrl+F / Ctrl+B, Ctrl+W w / W,
- *            t (open in the dedicated editor panel, like netrw's new tab)
+ *            t (open in the dedicated editor panel, like netrw's new tab),
+ *            gt / gT and Ctrl+PgDn / Ctrl+PgUp (next / previous tab)
  *   Emacs:   C-n C-p C-f C-b, C-v / M-v, M-< / M->, C-l, C-s / C-r, C-x o,
- *            C-o (show in the dedicated editor panel, like dired)
- *   Notepad: Ctrl+F find, F3 / Shift+F3, Ctrl+Home / Ctrl+End, F6 / Shift+F6 */
+ *            C-o (show in the dedicated editor panel, like dired),
+ *            C-x <right> / C-x <left> (next-buffer / previous-buffer)
+ *   Notepad: Ctrl+F find, F3 / Shift+F3, Ctrl+Home / Ctrl+End, F6 / Shift+F6,
+ *            Ctrl+Tab / Ctrl+Shift+Tab and Ctrl+PgDn / Ctrl+PgUp (tabs) */
 #include <gtk/gtk.h>
 
 typedef enum {
@@ -49,7 +52,9 @@ typedef enum {
     NAV_PANEL_NEXT,   /* focus the next / previous panel */
     NAV_PANEL_PREV,
     NAV_OPEN_DEDICATED,   /* edit the file in the dedicated editor panel (Vim t) */
-    NAV_DISPLAY_DEDICATED /* same, the focus stays in the panel (Emacs C-o) */
+    NAV_DISPLAY_DEDICATED, /* same, the focus stays in the panel (Emacs C-o) */
+    NAV_TAB_NEXT,     /* next / previous tab of the notebook (gt, C-x <right>, Ctrl+Tab) */
+    NAV_TAB_PREV
 } NavAction;
 
 /* Action of keyval with state in style, after the pending prefix.
@@ -57,6 +62,11 @@ typedef enum {
  * may look a key up without consuming it. */
 NavAction nav_keys_lookup(NavStyle style, NavPrefix prefix, guint keyval,
                           GdkModifierType state, NavPrefix* next_prefix);
+
+/* Key typed after Emacs C-x: o (other-window), <right> / <left> (next-buffer /
+ * previous-buffer, also with Ctrl), anything else NAV_CANCEL. Modifier keys
+ * pressed alone are the caller's business (nav_keys_lookup() keeps the prefix). */
+NavAction nav_keys_ctrl_x(guint keyval, GdkModifierType state);
 
 /* Keys typed in the search bar of the explorer / viewer */
 typedef enum {

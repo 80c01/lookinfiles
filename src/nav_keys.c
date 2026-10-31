@@ -37,6 +37,16 @@ static NavAction universal_key(guint keyval) {
     }
 }
 
+/* Ctrl+PgDn / Ctrl+PgUp: next / previous tab (Vim and Notepad) */
+static NavAction ctrl_page_key(guint keyval, GdkModifierType state) {
+    if ((state & (CTRL_ALT | GDK_SHIFT_MASK)) != GDK_CONTROL_MASK) return NAV_NONE;
+    switch (keyval) {
+    case GDK_KEY_Page_Down: case GDK_KEY_KP_Page_Down: return NAV_TAB_NEXT;
+    case GDK_KEY_Page_Up: case GDK_KEY_KP_Page_Up: return NAV_TAB_PREV;
+    default: return NAV_NONE;
+    }
+}
+
 /* Vim letter keys without Ctrl / Alt (Vim mode only) */
 static NavAction vim_plain_key(NavPrefix prefix, guint keyval, NavPrefix* next) {
     switch (keyval) {
@@ -54,7 +64,10 @@ static NavAction vim_plain_key(NavPrefix prefix, guint keyval, NavPrefix* next) 
         *next = NAV_PREFIX_Z;
         return NAV_PENDING;
     case GDK_KEY_t:
+        if (prefix == NAV_PREFIX_G) return NAV_TAB_NEXT;
         return prefix == NAV_PREFIX_Z ? NAV_TOP : NAV_OPEN_DEDICATED;
+    case GDK_KEY_T:
+        return prefix == NAV_PREFIX_G ? NAV_TAB_PREV : NAV_NONE;
     case GDK_KEY_b:
         return prefix == NAV_PREFIX_Z ? NAV_BOTTOM : NAV_NONE;
     case GDK_KEY_slash: return NAV_SEARCH;
@@ -66,6 +79,8 @@ static NavAction vim_plain_key(NavPrefix prefix, guint keyval, NavPrefix* next) 
 
 static NavAction vim_key(guint keyval, GdkModifierType state, NavPrefix* next) {
     if ((state & CTRL_ALT) != GDK_CONTROL_MASK) return NAV_NONE;
+    NavAction tab = ctrl_page_key(keyval, state);
+    if (tab != NAV_NONE) return tab;
     switch (gdk_keyval_to_lower(keyval)) {
     case GDK_KEY_f: return NAV_PAGE_DOWN;
     case GDK_KEY_b: return NAV_PAGE_UP;
@@ -110,12 +125,29 @@ static NavAction notepad_key(guint keyval, GdkModifierType state) {
     gboolean shift = (state & GDK_SHIFT_MASK) != 0;
     if (mods == 0 && keyval == GDK_KEY_F3) return shift ? NAV_SEARCH_PREV : NAV_SEARCH_NEXT;
     if (mods == 0 && keyval == GDK_KEY_F6) return shift ? NAV_PANEL_PREV : NAV_PANEL_NEXT;
+    if (mods == GDK_CONTROL_MASK &&
+        (keyval == GDK_KEY_Tab || keyval == GDK_KEY_KP_Tab || keyval == GDK_KEY_ISO_Left_Tab)) {
+        return shift || keyval == GDK_KEY_ISO_Left_Tab ? NAV_TAB_PREV : NAV_TAB_NEXT;
+    }
+    NavAction tab = ctrl_page_key(keyval, state);
+    if (tab != NAV_NONE) return tab;
     if (mods != GDK_CONTROL_MASK || shift) return NAV_NONE;
     switch (keyval) {
     case GDK_KEY_f: case GDK_KEY_F: return NAV_SEARCH;
     case GDK_KEY_Home: case GDK_KEY_KP_Home: return NAV_FIRST;
     case GDK_KEY_End: case GDK_KEY_KP_End: return NAV_LAST;
     default: return NAV_NONE;
+    }
+}
+
+NavAction nav_keys_ctrl_x(guint keyval, GdkModifierType state) {
+    if ((state & GDK_ALT_MASK) != 0) return NAV_CANCEL;
+    switch (keyval) {
+    case GDK_KEY_o: return (state & GDK_CONTROL_MASK) == 0 ? NAV_PANEL_NEXT : NAV_CANCEL;
+    /* next-buffer / previous-buffer, Ctrl held or not (C-x C-<right>) */
+    case GDK_KEY_Right: case GDK_KEY_KP_Right: return NAV_TAB_NEXT;
+    case GDK_KEY_Left: case GDK_KEY_KP_Left: return NAV_TAB_PREV;
+    default: return NAV_CANCEL;
     }
 }
 
@@ -130,10 +162,9 @@ NavAction nav_keys_lookup(NavStyle style, NavPrefix prefix, guint keyval,
         return prefix != NAV_PREFIX_NONE ? NAV_PENDING : NAV_NONE;
     }
 
-    /* Second key of a mode prefix: C-x o, Ctrl+W w */
+    /* Second key of a mode prefix: C-x o, C-x <right> / <left>, Ctrl+W w */
     if (prefix == NAV_PREFIX_CTRL_X) {
-        if ((state & CTRL_ALT) == 0 && keyval == GDK_KEY_o) return NAV_PANEL_NEXT;
-        return NAV_CANCEL;
+        return nav_keys_ctrl_x(keyval, state);
     }
     if (prefix == NAV_PREFIX_CTRL_W) {
         if ((state & GDK_ALT_MASK) != 0) return NAV_CANCEL;

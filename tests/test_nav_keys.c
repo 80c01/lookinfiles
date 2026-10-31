@@ -108,6 +108,30 @@ static void test_notepad(void) {
     g_assert_cmpint(look(NAV_STYLE_NOTEPAD, GDK_KEY_w, GDK_CONTROL_MASK), ==, NAV_NONE);
 }
 
+/* Next / previous tab: gt gT (Vim), C-x <right> <left> (Emacs), Ctrl+Tab
+ * (Notepad), Ctrl+PgDn / Ctrl+PgUp (Vim and Notepad) */
+static void test_tab_keys(void) {
+    NavPrefix next;
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, NAV_PREFIX_G, GDK_KEY_t, 0, &next), ==, NAV_TAB_NEXT);
+    g_assert_cmpint(next, ==, NAV_PREFIX_NONE);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, NAV_PREFIX_G, GDK_KEY_T, GDK_SHIFT_MASK, NULL), ==, NAV_TAB_PREV);
+    g_assert_cmpint(look(NAV_STYLE_VIM, GDK_KEY_T, GDK_SHIFT_MASK), ==, NAV_NONE);
+    g_assert_cmpint(look(NAV_STYLE_VIM, GDK_KEY_Page_Down, GDK_CONTROL_MASK), ==, NAV_TAB_NEXT);
+    g_assert_cmpint(look(NAV_STYLE_VIM, GDK_KEY_Page_Up, GDK_CONTROL_MASK), ==, NAV_TAB_PREV);
+    g_assert_cmpint(look(NAV_STYLE_NOTEPAD, GDK_KEY_Page_Down, GDK_CONTROL_MASK), ==, NAV_TAB_NEXT);
+    g_assert_cmpint(look(NAV_STYLE_NOTEPAD, GDK_KEY_Tab, GDK_CONTROL_MASK), ==, NAV_TAB_NEXT);
+    g_assert_cmpint(look(NAV_STYLE_NOTEPAD, GDK_KEY_ISO_Left_Tab, GDK_CONTROL_MASK | GDK_SHIFT_MASK), ==,
+                    NAV_TAB_PREV);
+    g_assert_cmpint(look(NAV_STYLE_NOTEPAD, GDK_KEY_Tab, 0), ==, NAV_NONE);
+    /* Strict: not in Emacs, Ctrl+Tab not in Vim */
+    g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_Page_Down, GDK_CONTROL_MASK), ==, NAV_NONE);
+    g_assert_cmpint(look(NAV_STYLE_VIM, GDK_KEY_Tab, GDK_CONTROL_MASK), ==, NAV_NONE);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_EMACS, NAV_PREFIX_CTRL_X, GDK_KEY_Right, 0, NULL), ==, NAV_TAB_NEXT);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_EMACS, NAV_PREFIX_CTRL_X, GDK_KEY_Left, GDK_CONTROL_MASK, NULL),
+                    ==, NAV_TAB_PREV);
+    g_assert_cmpint(nav_keys_ctrl_x(GDK_KEY_o, GDK_CONTROL_MASK), ==, NAV_CANCEL);
+}
+
 static void test_search_keys(void) {
     g_assert_cmpint(nav_keys_search_lookup(NAV_STYLE_VIM, GDK_KEY_Return, 0), ==, NAV_SEARCH_KEY_ACCEPT);
     g_assert_cmpint(nav_keys_search_lookup(NAV_STYLE_VIM, GDK_KEY_Escape, 0), ==, NAV_SEARCH_KEY_ACCEPT);
@@ -130,6 +154,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/nav_keys/vim", test_vim);
     g_test_add_func("/nav_keys/emacs", test_emacs);
     g_test_add_func("/nav_keys/notepad", test_notepad);
+    g_test_add_func("/nav_keys/tabs", test_tab_keys);
     g_test_add_func("/nav_keys/search", test_search_keys);
     return g_test_run();
 }
