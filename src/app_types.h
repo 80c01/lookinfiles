@@ -134,6 +134,7 @@ typedef struct {
     gchar* remote_id;    /* ID of remote machine if workspace is connected to remote */
     ExplorerTreeState* tree_state; /* explorer rows while another workspace is shown (owned) */
     GHashTable* git_statuses;      /* git badges while another workspace is shown (owned) */
+    gpointer dir_history;          /* folders shown, for back / forward (JumpList*, nav_history.c) */
 #ifdef HAVE_VTE
     GtkWidget* term_box;
     GtkWidget* last_focused_vte;

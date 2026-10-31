@@ -125,7 +125,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   starts and consecutive characters first) and the matched positions.
 - `text_search` — literal search of a text in a project's files (smart
   case, binary and large files skipped, bounded), as `CodeReference`s.
-- `jump_list` — back / forward history of navigation jumps across files.
+- `jump_list` — back / forward history of navigation jumps across files
+  (also the explorer's folder history, `nav_history`).
+- `session_store` — `session.ini` (workspaces at quit) and `recent.ini`
+  (recent folders and files, most recent first, `RECENT_MAX`).
 - `trash_restore` — puts back a file moved to the trash: finds its newest
   `.trashinfo` (home trash, then the mount's `.Trash-$uid` / `.Trash/$uid`)
   and moves it back.
@@ -303,7 +306,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   previous one) and lists the results in the Search page of `code_refs`
   (`code_refs_show_search()`, same rows and keys as References).
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
-- `quick_open` — Ctrl+P / Emacs `C-x C-f`: the project's files
+- `nav_history` — per-workspace folder history (`VirtualLayout.dir_history`,
+  fed by `reload_directory()`; `go_back_directory()` / `go_forward_directory()`
+  in `file_list` walk it) and the recent folders and files (editor tabs
+  opened, quick open choices).
+- `quick_open` — Ctrl+P / Emacs `C-x C-f`; Alt+R lists the recent places
+  in the same dialog (`quick_open_show_recent()`). Ctrl+P: the project's files
   (`code_index_all_files()` in a worker) in an `AppDialog`, ranked by
   `fuzzy_match`; shows the file with `reveal_path_in_tree()` or edits it.
 - `terminal` — embedded VTE panes (`Ctrl+T`, `terminal_open()` with a

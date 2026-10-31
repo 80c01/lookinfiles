@@ -249,6 +249,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
             themes_show_dialog(app);
             return TRUE;
         }
+        /* Alt+R: recent folders and files */
+        if (keyval == GDK_KEY_r || keyval == GDK_KEY_R) {
+            quick_open_show_recent(app);
+            return TRUE;
+        }
         /* Alt+L: saved workspace layouts (Ctrl+Alt+L moves editor tabs) */
         if ((keyval == GDK_KEY_l || keyval == GDK_KEY_L) && !(state & GDK_CONTROL_MASK)) {
             layouts_show_dialog(app);

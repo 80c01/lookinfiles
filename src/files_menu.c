@@ -222,6 +222,25 @@ static void on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gd
     gtk_popover_popup(GTK_POPOVER(popover));
 }
 
+/* The mouse's back / forward buttons: the folder shown before / after */
+static void on_side_button(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)n_press;
+    (void)x;
+    (void)y;
+    AppData* app = (AppData*)data;
+    guint button = gtk_gesture_single_get_current_button(GTK_GESTURE_SINGLE(gesture));
+    if (button != 8 && button != 9) {
+        gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_DENIED); /* left to the others */
+        return;
+    }
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    if (button == 8) {
+        go_back_directory(app);
+    } else {
+        go_forward_directory(app);
+    }
+}
+
 void files_menu_attach(AppData* app) {
     if (app == NULL || app->tree_view == NULL) {
         return;
@@ -230,4 +249,9 @@ void files_menu_attach(AppData* app) {
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), GDK_BUTTON_SECONDARY);
     g_signal_connect(click, "pressed", G_CALLBACK(on_right_click), app);
     gtk_widget_add_controller(GTK_WIDGET(app->tree_view), GTK_EVENT_CONTROLLER(click));
+
+    GtkGesture* side = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(side), 0); /* any button: 8 and 9 kept */
+    g_signal_connect(side, "pressed", G_CALLBACK(on_side_button), app);
+    gtk_widget_add_controller(GTK_WIDGET(app->tree_view), GTK_EVENT_CONTROLLER(side));
 }

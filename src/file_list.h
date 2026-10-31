@@ -42,7 +42,11 @@ void undo_last_file_move(AppData* app);
 void activate_selected_entry(AppData* app);
 /* explorer_tree "row-activated" (double click) */
 void on_row_activated(ExplorerTree* tree, ExplorerRow* row, gpointer data);
-/* Backspace: parent directory, or back to the files view from the other views */
+/* Backspace / Alt+Up: parent directory, or back to the files view from the other views */
 void go_to_parent_directory(AppData* app);
+/* Shift+H / Shift+L (mouse back / forward): the folder shown before / after
+ * in this workspace (nav_history.h) */
+void go_back_directory(AppData* app);
+void go_forward_directory(AppData* app);
 
 #endif /* FILE_LIST_H */

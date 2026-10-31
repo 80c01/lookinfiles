@@ -2,6 +2,7 @@
 #include "search.h"
 #include "file_actions.h"
 #include "file_moves.h"
+#include "nav_history.h"
 #include "fs_watch.h"
 #include "app_events.h"
 #include "text_style.h"
@@ -748,8 +749,12 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
         g_clear_object(&app->preview_cancellable);
     }
 
-    g_free(app->base_dir);
+    gchar* old_dir = app->base_dir;
     app->base_dir = g_canonicalize_filename(new_dir, NULL);
+    if (!app->switching_ws) {
+        nav_history_folder_changed(app, old_dir, app->base_dir);
+    }
+    g_free(old_dir);
     app->dir_scan_pending = TRUE;
     if (!app->switching_ws && app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
         g_free(app->workspaces[app->current_ws].selected_path);
@@ -975,6 +980,37 @@ void rename_selected_in_tree(AppData* app) {
 
 void trash_selected_in_tree(AppData* app) {
     run_file_action(app, file_action_trash_selected);
+}
+
+/* Shift+H / Shift+L, mouse back / forward: the folder shown before / after */
+static void walk_history(AppData* app, gboolean back) {
+    if (app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
+        app->sidebar_view = SIDEBAR_VIEW_FILES;
+        app->show_bookmarks = FALSE;
+    }
+    gchar* dir = back ? nav_history_back(app) : nav_history_forward(app);
+    if (dir == NULL) {
+        app_notice(app, back ? "No earlier folder" : "No later folder", FALSE);
+        return;
+    }
+    /* Coming back to a folder from one of its subfolders selects it */
+    gchar* came_from = NULL;
+    gchar* parent = g_path_get_dirname(app->base_dir);
+    if (g_strcmp0(parent, dir) == 0) {
+        came_from = g_path_get_basename(app->base_dir);
+    }
+    reload_directory_with_selection(app, dir, came_from);
+    g_free(came_from);
+    g_free(parent);
+    g_free(dir);
+}
+
+void go_back_directory(AppData* app) {
+    walk_history(app, TRUE);
+}
+
+void go_forward_directory(AppData* app) {
+    walk_history(app, FALSE);
 }
 
 void undo_last_file_move(AppData* app) {

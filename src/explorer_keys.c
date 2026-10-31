@@ -152,6 +152,24 @@ static gboolean handle_action_key(AppData* app, guint keyval, GdkModifierType st
     case GDK_KEY_BackSpace:
         go_to_parent_directory(app);
         return TRUE;
+    case GDK_KEY_Up: /* Alt+Up: parent directory (plain Up is a navigation key) */
+    case GDK_KEY_KP_Up:
+        if ((state & GDK_ALT_MASK) != 0 && !ctrl) {
+            go_to_parent_directory(app);
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_H: /* Shift+H / Shift+L: folder shown before / after (files view) */
+    case GDK_KEY_L:
+        if (is_files_view(app) && !ctrl && (state & GDK_ALT_MASK) == 0) {
+            if (keyval == GDK_KEY_H) {
+                go_back_directory(app);
+            } else {
+                go_forward_directory(app);
+            }
+            return TRUE;
+        }
+        return FALSE;
     case GDK_KEY_question: /* ?: toggle internal keybindings help panel */
         if (ctrl) return FALSE;
         toggle_help_panel(app);

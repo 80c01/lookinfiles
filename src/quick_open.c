@@ -1,10 +1,12 @@
 /* Quick open of a project file (see quick_open.h) */
 #include "quick_open.h"
+#include "app_events.h"
 #include "code_index.h"
 #include "dialog.h"
 #include "editor.h"
 #include "file_list.h"
 #include "fuzzy_match.h"
+#include "nav_history.h"
 #include "palette.h"
 
 #include <string.h>
@@ -23,15 +25,20 @@ typedef struct {
     GtkSingleSelection* selection;
     GCancellable* cancellable;
     gchar* root;
-    GPtrArray* files;         /* relative paths, NULL while loading */
+    GPtrArray* files;         /* relative paths (recent: absolute), NULL while loading */
     gboolean truncated;
     gchar* query;
+    gboolean recent_mode;     /* Alt+R: recent folders and files */
+    GHashTable* folders;      /* recent mode: the entries that are folders */
+    GHashTable* recent_rank;  /* project mode: relative path -> 1 + rank in the recent files */
 } Picker;
 
 static void picker_free(Picker* p) {
     g_cancellable_cancel(p->cancellable);
     g_object_unref(p->cancellable);
     if (p->files != NULL) g_ptr_array_unref(p->files);
+    if (p->folders != NULL) g_hash_table_destroy(p->folders);
+    if (p->recent_rank != NULL) g_hash_table_destroy(p->recent_rank);
     g_free(p->root);
     g_free(p->query);
     g_free(p);
@@ -53,6 +60,9 @@ static void update_note(Picker* p, guint matches) {
     gchar* text;
     if (p->files == NULL) {
         text = g_strdup("Listing the project files…");
+    } else if (p->recent_mode) {
+        text = g_strdup_printf("%u of %u recent places · Enter opens a folder or shows a file, "
+                               "Ctrl+Enter edits a file", matches, p->files->len);
     } else {
         text = g_strdup_printf("%u of %u files%s · Enter shows it, Ctrl+Enter edits it", matches, p->files->len,
                                p->truncated ? " (list cut)" : "");
@@ -67,13 +77,21 @@ static void refilter(Picker* p) {
         update_note(p, 0);
         return;
     }
+    gboolean empty = p->query == NULL || p->query[0] == '\0';
     GArray* scored = g_array_new(FALSE, FALSE, sizeof(Scored));
     for (guint i = 0; i < p->files->len; i++) {
-        gint score = fuzzy_match_score(p->query, g_ptr_array_index(p->files, i));
-        if (score >= 0) {
-            Scored s = { score, i };
-            g_array_append_val(scored, s);
+        const gchar* path = g_ptr_array_index(p->files, i);
+        gint score = fuzzy_match_score(p->query, path);
+        if (score < 0) continue;
+        if (empty && p->recent_mode) {
+            score = 0; /* most recent first: the list order */
+        } else if (empty && p->recent_rank != NULL) {
+            /* Nothing typed: the recently opened files first */
+            gint rank = GPOINTER_TO_INT(g_hash_table_lookup(p->recent_rank, path));
+            if (rank > 0) score = G_MAXINT / 2 - rank;
         }
+        Scored s = { score, i };
+        g_array_append_val(scored, s);
     }
     g_array_sort(scored, compare_scored);
     guint n = MIN(scored->len, MAX_SHOWN);
@@ -143,6 +161,16 @@ static void listing_done(GObject* source, GAsyncResult* res, gpointer data) {
     p->files = l->files;
     p->truncated = l->truncated;
     l->files = NULL;
+    /* Recent files of this project, by rank */
+    p->recent_rank = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    const RecentList* recent = nav_history_recent(p->app);
+    gsize n = strlen(p->root);
+    for (guint i = 0; i < recent->files->len; i++) {
+        const gchar* path = g_ptr_array_index(recent->files, i);
+        if (strncmp(path, p->root, n) == 0 && path[n] == '/') {
+            g_hash_table_insert(p->recent_rank, g_strdup(path + n + 1), GINT_TO_POINTER((gint)i + 1));
+        }
+    }
     refilter(p);
 }
 
@@ -195,7 +223,8 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
     gsize len = strlen(rel);
 
     GString* markup = g_string_new(NULL);
-    gchar* icon = g_markup_escape_text(file_icon(rel + base, FALSE), -1);
+    gboolean is_folder = p->folders != NULL && g_hash_table_contains(p->folders, rel);
+    gchar* icon = g_markup_escape_text(file_icon(rel + base, is_folder), -1);
     g_string_append_printf(markup, "%s ", icon);
     g_free(icon);
     append_highlighted(markup, rel, base, len, pos);
@@ -217,9 +246,27 @@ static void choose(Picker* p, gboolean edit) {
     GtkStringObject* obj = gtk_single_selection_get_selected_item(p->selection);
     if (obj == NULL) return;
     const gchar* rel = gtk_string_object_get_string(obj);
-    gchar* path = g_path_is_absolute(rel) ? g_strdup(rel) : g_build_filename(p->root, rel, NULL);
+    gchar* path = g_path_is_absolute(rel) || p->root == NULL ? g_strdup(rel) : g_build_filename(p->root, rel, NULL);
     AppData* app = p->app;
-    app_dialog_destroy(APP_DIALOG(p->dialog)); /* frees p */
+    gboolean is_folder = p->folders != NULL && g_hash_table_contains(p->folders, rel);
+    app_dialog_destroy(APP_DIALOG(p->dialog)); /* frees p, and rel */
+    if (!g_file_test(path, G_FILE_TEST_EXISTS)) {
+        gchar* msg = g_strdup_printf("“%s” no longer exists", path);
+        app_notice(app, msg, FALSE);
+        g_free(msg);
+        g_free(path);
+        return;
+    }
+    if (is_folder) {
+        /* A recent folder becomes the explorer's folder */
+        app->sidebar_view = SIDEBAR_VIEW_FILES;
+        app->show_bookmarks = FALSE;
+        reload_directory(app, path);
+        if (app->tree_view != NULL) gtk_widget_grab_focus(app->tree_view);
+        g_free(path);
+        return;
+    }
+    nav_history_file_opened(app, path);
     reveal_path_in_tree(app, path);
     if (edit) {
         gchar* name = g_path_get_basename(path);
@@ -285,22 +332,14 @@ static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint ke
     return FALSE;
 }
 
-void quick_open_show(AppData* app) {
-    if (app == NULL || app->window == NULL || app->base_dir == NULL || app_dialog_is_open(app->window)) {
-        return;
-    }
+/* The dialog, its list empty */
+static Picker* picker_new(AppData* app, const gchar* title, const gchar* placeholder) {
     Picker* p = g_new0(Picker, 1);
     p->app = app;
     p->cancellable = g_cancellable_new();
-    p->root = code_index_project_root(app->base_dir);
     p->query = g_strdup("");
-
-    gchar* root_name = g_path_get_basename(p->root);
-    gchar* title = g_strdup_printf("Go to File in %s", root_name);
-    g_free(root_name);
     p->dialog = app_dialog_new(title, app->window, "_Cancel", APP_RESPONSE_CANCEL, "_Edit", RESPONSE_EDIT,
-                               "_Show", RESPONSE_SHOW, NULL);
-    g_free(title);
+                               "_Open", RESPONSE_SHOW, NULL);
     app_dialog_set_width(APP_DIALOG(p->dialog), 640);
     app_dialog_set_default_response(APP_DIALOG(p->dialog), RESPONSE_SHOW);
     GtkWidget* area = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -311,7 +350,7 @@ void quick_open_show(AppData* app) {
     gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(p->dialog))), area);
 
     p->entry = gtk_search_entry_new();
-    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(p->entry), "Type part of a file name or path");
+    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(p->entry), placeholder);
     gtk_search_entry_set_search_delay(GTK_SEARCH_ENTRY(p->entry), 60);
     g_signal_connect(p->entry, "search-changed", G_CALLBACK(on_search_changed), p);
     GtkEventController* keys = gtk_event_controller_key_new();
@@ -346,6 +385,20 @@ void quick_open_show(AppData* app) {
     g_object_set_data_full(G_OBJECT(p->dialog), "picker", p, (GDestroyNotify)picker_free);
     app_dialog_present(APP_DIALOG(p->dialog));
     gtk_widget_grab_focus(p->entry);
+    return p;
+}
+
+void quick_open_show(AppData* app) {
+    if (app == NULL || app->window == NULL || app->base_dir == NULL || app_dialog_is_open(app->window)) {
+        return;
+    }
+    gchar* root = code_index_project_root(app->base_dir);
+    gchar* root_name = g_path_get_basename(root);
+    gchar* title = g_strdup_printf("Go to File in %s", root_name);
+    Picker* p = picker_new(app, title, "Type part of a file name or path");
+    p->root = root;
+    g_free(title);
+    g_free(root_name);
 
     Listing* l = g_new0(Listing, 1);
     l->picker = p;
@@ -355,4 +408,25 @@ void quick_open_show(AppData* app) {
     g_task_set_task_data(task, l, listing_free);
     g_task_run_in_thread(task, listing_thread);
     g_object_unref(task);
+}
+
+void quick_open_show_recent(AppData* app) {
+    if (app == NULL || app->window == NULL || app_dialog_is_open(app->window)) {
+        return;
+    }
+    Picker* p = picker_new(app, "Recent Folders and Files", "Type part of a folder or file name");
+    p->recent_mode = TRUE;
+    p->folders = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    p->files = g_ptr_array_new_with_free_func(g_free);
+    const RecentList* recent = nav_history_recent(app);
+    for (guint i = 0; i < recent->folders->len; i++) {
+        const gchar* dir = g_ptr_array_index(recent->folders, i);
+        if (g_strcmp0(dir, app->base_dir) == 0) continue; /* the folder shown */
+        g_ptr_array_add(p->files, g_strdup(dir));
+        g_hash_table_add(p->folders, g_strdup(dir));
+    }
+    for (guint i = 0; i < recent->files->len; i++) {
+        g_ptr_array_add(p->files, g_strdup(g_ptr_array_index(recent->files, i)));
+    }
+    refilter(p);
 }

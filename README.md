@@ -239,10 +239,11 @@ count) is dropped when the focus moves to another panel or tab.
 | `gt` / `gT` (Vim), `C-x <right>` / `C-x <left>` (Emacs), `Ctrl+Tab` / `Ctrl+Shift+Tab` (Notepad), `Ctrl+PgDn` / `Ctrl+PgUp` (Vim, Notepad) | Next / previous tab of the focused notebook (from the explorer: of the preview notebook) |
 | `Alt+1` … `Alt+8` | Switch virtual workspace (or click the top-bar workspace map) |
 | `Alt++` / `Alt+-` | Add a workspace with the default layout / close the current one |
+| `Alt+R` | Recent folders and files, most recent first, filtered as you type: `Enter` on a folder makes it the explorer's folder, on a file shows it (`Ctrl+Enter` edits it) |
 | `Alt+L` | Workspace layouts: apply a saved layout, save the current panels under a name (`Default` for new workspaces), delete one or reset the default |
 | `Alt+T` | Themes and fonts: pick a theme (applied as you select it; Apply keeps it, Cancel goes back), set your interface and code fonts, save the current look as a theme, edit or delete your themes |
 | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Larger / smaller fonts (interface and code together), or back to the theme's sizes |
-| `Ctrl+P` (Notepad, Vim), `C-x C-f` (Emacs) | Go to a file of the project (its git repository, else the current folder): type part of its name or path, the best matches first; `Enter` shows it in the explorer, `Ctrl+Enter` opens it in an editor tab (Vim editor tabs keep `Ctrl+P`) |
+| `Ctrl+P` (Notepad, Vim), `C-x C-f` (Emacs) | Go to a file of the project (its git repository, else the current folder): type part of its name or path, the best matches first; with nothing typed, the recently opened files come first; `Enter` shows it in the explorer, `Ctrl+Enter` opens it in an editor tab (Vim editor tabs keep `Ctrl+P`) |
 | `Ctrl+Shift+F` | Search in files: a text in every file of the project (any case unless it has a capital letter; the editor selection is filled in), searched in the background; the results are listed by file in a **Search** tab (`Enter` or a double click opens one, the cross closes the tab). Unsaved changes are not searched |
 | `Ctrl+T` | Open a terminal pane beside the running ones (exit the shell to close it) |
 | `Ctrl+Shift+T` | Open a terminal pane below the running ones |
@@ -264,7 +265,8 @@ count) is dropped when the focus moves to another panel or tab.
 | `Left` (Vim: also `h`; Emacs: `C-b`) | Collapse the selected directory, or jump to its parent |
 | `Enter` / double click | Expand a directory, open a file in the editor, open a bookmark |
 | `Ctrl+Enter` | Enter the selected directory as the new root |
-| `Backspace` | Parent directory (or back to the files view) |
+| `Backspace` / `Alt+Up` | Parent directory (or back to the files view) |
+| `Shift+H` / `Shift+L`, mouse back / forward buttons | Back / forward in the folders this workspace showed |
 | `/`, then `n` / `N` (Vim) | Search entries by name, next / previous match |
 | `Ctrl+F`, `F3` / `Shift+F3` (Notepad) | Search entries by name, next / previous match |
 | `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
@@ -525,6 +527,7 @@ Settings and data are kept in `~/.config/lookin/`
 | `notes/` | Notebooks (one directory each), notes, `notes.xml` and the `.trash/` |
 | `remotes.xml` | Remote machines added by hand (`~/.ssh/config` hosts are read directly) |
 | `layouts.ini` | Saved workspace layouts and the default layout of new workspaces |
+| `recent.ini` | Recent folders and files (`Alt+R`, and first in `Ctrl+P` when nothing is typed) |
 | `lsp.ini` | Language server commands for code navigation (optional, see below) |
 | `theme.ini` | The chosen theme and your fonts (written by the Themes dialog, `Alt+T`) |
 | `themes/` | Your themes, one `.ini` file each (see [Themes](#themes)) |

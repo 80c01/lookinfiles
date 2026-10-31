@@ -1,5 +1,6 @@
 /* Virtual workspaces (Alt+1..8): per-workspace layout snapshots and the top-bar workspace minimap. */
 #include "workspace.h"
+#include "nav_history.h"
 #include "fs_watch.h"
 #include "panels.h"
 #include "app_events.h"
@@ -651,6 +652,7 @@ void workspace_remove(AppData* app, gint idx) {
     if (rm->git_statuses != NULL) {
         g_hash_table_destroy(rm->git_statuses);
     }
+    nav_history_workspace_removed(rm);
 #ifdef HAVE_VTE
     if (app->term_stack != NULL && rm->term_box != NULL) {
         gtk_stack_remove(GTK_STACK(app->term_stack), rm->term_box);

@@ -11,6 +11,7 @@
 #include "pane_geometry.h"
 #include "tab_drop.h"
 #include "focus_route.h"
+#include "nav_history.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;
@@ -965,6 +966,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     if (target_nb == NULL) {
         return;
     }
+    nav_history_file_opened(app, full);
 
     /* Already open: switch to its existing tab */
     for (GList* l = app->editors; l != NULL; l = l->next) {

@@ -84,6 +84,7 @@ jump_list:
 trash_restore:
 fuzzy_match:
 text_search:code_index
+session_store:app_paths
 palette:
 fonts:
 theme_store:fonts,palette,app_paths
