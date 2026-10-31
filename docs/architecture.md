@@ -87,7 +87,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `path_kind` — whether a path is a folder, a file or missing, read in a
   worker thread (one check per path at a time) and kept, so a slow or hung
   mount never blocks the UI.
-- `nav_keys` — navigation keys of the explorer and viewer in each global mode
+- `nav_keys` — navigation keys of the explorer and viewer in each global mode, strictly
   (Notepad, Vim, Emacs): `nav_keys_lookup()` maps a key and the pending
   prefix (`gg`, `zz`, `C-x o`, `Ctrl+W w`) to a `NavAction`,
   `nav_keys_search_lookup()` the keys of the search bar. Pure, tested in

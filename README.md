@@ -188,9 +188,11 @@ of the current global mode).
 
 **Global mode.** The mode picked in the status bar while no editor tab has the
 focus (or with `-e` / `--editor`) is the mode of new editor tabs and of the
-navigation keys of the explorer, the viewer and their search bar. Plain keys
-(arrows, `j` / `k`, `gg` / `G`, `/`, `n` / `N`, `a`, `d`...) work in every
-mode; the Ctrl / Alt keys follow the mode:
+navigation keys of the explorer, the viewer and their search bar. The
+bindings are strict: only the keys of the mode navigate (the Vim letters `j`
+/ `k`, `gg` / `G`, `/`, `n` / `N`... only in Vim mode). The arrows, `Home` /
+`End` and `Page Up` / `Page Down` work in every mode, and so do the view
+actions (`a`, `d`, `r`, `o`, `i`, `m`, `?`...):
 
 | Action | Notepad | Vim | Emacs |
 |---|---|---|---|
@@ -230,17 +232,17 @@ The panel keys also work from editor tabs of the same mode; `Alt+Left` /
 
 | Key | Action |
 |---|---|
-| `j` / `k`, `Down` / `Up` (Emacs: also `C-n` / `C-p`) | Next / previous visible entry |
-| `gg` / `G`, `Home` / `End` (Notepad: also `Ctrl+Home` / `Ctrl+End`; Emacs: `M-<` / `M->`) | First / last entry |
+| `Down` / `Up` (Vim: also `j` / `k`; Emacs: `C-n` / `C-p`) | Next / previous visible entry |
+| `Home` / `End` (Notepad: also `Ctrl+Home` / `Ctrl+End`; Vim: `gg` / `G`; Emacs: `M-<` / `M->`) | First / last entry |
 | `Page Down` / `Page Up` (Vim: also `Ctrl+F` / `Ctrl+B`; Emacs: `C-v` / `M-v`) | One page down / up |
-| `zz` / `zt` / `zb` (Emacs: also `C-l`, in turn) | Scroll the selected entry to the center / top / bottom |
+| `zz` / `zt` / `zb` (Vim), `C-l` (Emacs, in turn) | Scroll the selected entry to the center / top / bottom |
 | `Space` | Expand / collapse the selected directory |
-| `l` / `Right` (Emacs: also `C-f`) | Expand the selected directory, or step into its first child |
-| `h` / `Left` (Emacs: also `C-b`) | Collapse the selected directory, or jump to its parent |
+| `Right` (Vim: also `l`; Emacs: `C-f`) | Expand the selected directory, or step into its first child |
+| `Left` (Vim: also `h`; Emacs: `C-b`) | Collapse the selected directory, or jump to its parent |
 | `Enter` / double click | Expand a directory, open a file in the editor, open a bookmark |
 | `Ctrl+Enter` | Enter the selected directory as the new root |
 | `Backspace` | Parent directory (or back to the files view) |
-| `/`, then `n` / `N` | Search entries by name, next / previous match |
+| `/`, then `n` / `N` (Vim) | Search entries by name, next / previous match |
 | `Ctrl+F`, `F3` / `Shift+F3` (Notepad) | Search entries by name, next / previous match |
 | `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
 | `a` / `Shift+A` | New file / new folder in the selected directory |
@@ -257,7 +259,7 @@ The panel keys also work from editor tabs of the same mode; `Alt+Left` /
 
 | Key | Action |
 |---|---|
-| `Enter` / `l` | Open the bookmark (directory, file or URL) / expand the folder |
+| `Enter` / `Right` (Vim: also `l`; Emacs: `C-f`) | Open the bookmark (directory, file or URL) / expand the folder |
 | `a` / `Shift+A` | Add a bookmark / a folder (inside the selected folder) |
 | `F2` / `r` / `e` | Edit name, location and folder |
 | `d` / `Delete` | Delete the selected bookmark or folder |
@@ -292,10 +294,10 @@ The panel keys also work from editor tabs of the same mode; `Alt+Left` /
 
 | Key | Action |
 |---|---|
-| `j` / `k`, `Down` / `Up` (Emacs: also `C-n` / `C-p`) | Scroll one line down / up |
+| `Down` / `Up` (Vim: also `j` / `k`; Emacs: `C-n` / `C-p`) | Scroll one line down / up |
 | `Ctrl+F` / `Ctrl+B` (Vim), `C-v` / `M-v` (Emacs) | Scroll one page down / up |
-| `gg` / `G`, `Home` / `End` (Notepad: also `Ctrl+Home` / `Ctrl+End`; Emacs: `M-<` / `M->`) | Start / end of the file |
-| `/`, then `n` / `N` | Search in the content, next / previous match |
+| `Home` / `End` (Notepad: also `Ctrl+Home` / `Ctrl+End`; Vim: `gg` / `G`; Emacs: `M-<` / `M->`) | Start / end of the file |
+| `/`, then `n` / `N` (Vim) | Search in the content, next / previous match |
 | `Ctrl+F`, `F3` / `Shift+F3` (Notepad) | Search in the content, next / previous match |
 | `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
 | `e` | Open the file in the editor (text files) |

@@ -2,9 +2,9 @@
 #define NAV_KEYS_H
 
 /* Navigation keys of the explorer and viewer panels in each global mode
- * (Notepad, Vim, Emacs). Plain keys (arrows, j / k, gg / G, /, n / N...)
- * work in every mode; Ctrl / Alt chords and prefixes follow the mode:
- *   Vim:     Ctrl+F / Ctrl+B pages, Ctrl+W w / W / h / l other panel
+ * (Notepad, Vim, Emacs), strictly those of the mode. Arrows, Home / End and
+ * Page Up / Down work in every mode; the rest follows the mode:
+ *   Vim:     j k h l, gg G, zz zt zb, / n N, Ctrl+F / Ctrl+B, Ctrl+W w / W
  *   Emacs:   C-n C-p C-f C-b, C-v / M-v, M-< / M->, C-l, C-s / C-r, C-x o
  *   Notepad: Ctrl+F find, F3 / Shift+F3, Ctrl+Home / Ctrl+End, F6 / Shift+F6 */
 #include <gtk/gtk.h>

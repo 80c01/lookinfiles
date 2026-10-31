@@ -145,14 +145,14 @@ drag() {
 }
 
 shot start
-key j j;                shot select_readme_md
-key j;                  shot preview_readme_md_tasks
-key g g;                shot gg_first_row
-key g g;                shot gg_reselect_same_row
-key j;                  shot dir_preview_readme   # src: table, git line, rendered README.md
-key k
+key Down Down;          shot select_readme_md
+key Down;               shot preview_readme_md_tasks
+key Home;               shot gg_first_row
+key Home;               shot gg_reselect_same_row
+key Down;               shot dir_preview_readme   # src: table, git line, rendered README.md
+key Up
 key space;              shot expand_docs
-key j;                  shot select_plan_org
+key Down;               shot select_plan_org
 xdotool mousemove 390 88 click 1
                         shot org_todo_clicked
 key alt+Left;           shot explorer_focused
@@ -223,21 +223,21 @@ xdotool keydown ctrl key --delay 120 x s keyup ctrl
                         shot org_editor_saved
 xdotool mousemove 90 122 click 1     # plan.org row: focus the explorer (M-Left is an Emacs key)
                         shot explorer_focused_again
-key j;                  shot detect_image_without_extension
-key j;                  shot detect_script_without_extension
-key j;                  shot elf_summary
+key Down;               shot detect_image_without_extension
+key Down;               shot detect_script_without_extension
+key Down;               shot elf_summary
 key m;                  shot elf_raw_hex_dump
 key m
-key j;                  shot hex_dump_unknown_binary
-key j;                  shot word_document
+key Down;               shot hex_dump_unknown_binary
+key Down;               shot word_document
 key m;                  shot word_document_raw_hex_dump
 key m
-key k k k k k           # back to plan.org
+key Up Up Up Up Up      # back to plan.org
 key question;           shot help_open
 key question;           shot help_closed
-key G;                  shot G_last_row
-key k;                  shot select_previous_row
-key j j;                shot select_next_rows
+key End;                shot G_last_row
+key Up;                 shot select_previous_row
+key Down Down;          shot select_next_rows
 key Return;             shot open_editor_notepad
 xdotool mousemove 1220 600 click --repeat 3 --delay 150 5   # wheel down over the minimap
                         shot minimap_wheel_scrolled
@@ -286,7 +286,7 @@ key i;                  shot hidden_toggle
 key o;                  shot sort_cycle
 # Cycling views must not leave names ellipsized (cached cell widths)
 key ctrl+a;             shot bookmarks_view
-key j;                  shot bookmark_dir_preview   # folder preview once its kind is read
+key Down;               shot bookmark_dir_preview   # folder preview once its kind is read
 key ctrl+a;             shot files_after_bookmarks
 key ctrl+u;             shot notes_view
 key ctrl+u;             shot files_after_notes
@@ -327,20 +327,20 @@ drag 860 359 1100 50 tab_drag_tab_bar;        shot tab_dropped_back
 # notebooks without touching (or closing) the splits of workspace 1
 key ctrl+alt+Down;      shot ws1_editor_split
 key alt+plus;           shot ws3_added
-key G Return ctrl+alt+d; shot ws3_editor_dedicated
+key End Return ctrl+alt+d; shot ws3_editor_dedicated
 # The explorer can be hidden while the dedicated editor is the only other panel
 xdotool mousemove 1042 17 click 1    # Preview pill: hide the preview
 xdotool mousemove 948 17 click 1;    shot ws3_editor_alone   # Explorer pill: hide it
 xdotool mousemove 948 17 click 1     # show the explorer again
 xdotool mousemove 1042 17 click 1    # and the preview
 xdotool mousemove 1000 400 click 1; key ctrl+Home; shot ws3_editor_panels_restored
-key alt+Left alt+Left k Return ctrl+alt+Down; shot ws3_editor_split
+key alt+Left alt+Left Up Return ctrl+alt+Down; shot ws3_editor_split
 key ctrl+alt+Up;        shot ws3_editor_unsplit
 key alt+1;              shot ws1_editor_split_kept
 key alt+3;              shot ws3_editors_kept
 key alt+minus;          shot ws3_removed
 # Code navigation (TASK_CODE_NAV.md): src/main.c calls answer() on line 6
-key j space j j;        shot code_nav_preview_main_c
+key Down space Down Down; shot code_nav_preview_main_c
 xdotool mousemove 560 160 keydown ctrl click 1 keyup ctrl   # on "answer" (line numbers shift the text)
 sleep 1;                shot code_nav_preview_ctrl_click   # editor opened on "static int answer"
 key ctrl+alt+minus;     shot code_nav_back            # back to the call (Notepad)
@@ -381,6 +381,7 @@ xdotool mousemove 1210 685 click 1   # pick "Emacs"
 xdotool mousemove 150 600 click 1
 key ctrl+n ctrl+n;      shot emacs_explorer_ctrl_n
 key alt+less;           shot emacs_explorer_first
+key j g G;              shot emacs_strict_no_vim_keys   # strict: Vim letters do nothing
 key ctrl+s; xdotool type --delay 60 "notes"
                         shot emacs_explorer_isearch
 key ctrl+g;             shot emacs_explorer_isearch_cancelled   # back on the first row

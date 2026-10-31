@@ -63,60 +63,60 @@
 ) || { echo "ui-test: format fixtures failed"; exit 1; }
 
 format_scenario() {
-    key g g; sleep 0.5; shot fmt_maildir_folder
-    key j;              shot fmt_elf_summary
+    key Home; sleep 0.5; shot fmt_maildir_folder
+    key Down;           shot fmt_elf_summary
     key m;              shot fmt_elf_raw_hex_dump
     key m
-    key j;              shot fmt_hex_dump
-    key j;              shot fmt_word_document
-    key j;              shot fmt_csv_table
+    key Down;           shot fmt_hex_dump
+    key Down;           shot fmt_word_document
+    key Down;           shot fmt_csv_table
     key m;              shot fmt_csv_raw
     key m
-    key j;              shot fmt_json_pretty
-    key j;              shot fmt_diff
-    key j;              shot fmt_zip
-    key j;              shot fmt_tar_gz
-    key j;              shot fmt_gzip_single
-    key j;              shot fmt_certificate
-    key j;              shot fmt_calendar
-    key j;              shot fmt_contacts
-    key j;              shot fmt_desktop_entry
-    key j;              shot fmt_log
-    key j;              shot fmt_photo_exif
+    key Down;           shot fmt_json_pretty
+    key Down;           shot fmt_diff
+    key Down;           shot fmt_zip
+    key Down;           shot fmt_tar_gz
+    key Down;           shot fmt_gzip_single
+    key Down;           shot fmt_certificate
+    key Down;           shot fmt_calendar
+    key Down;           shot fmt_contacts
+    key Down;           shot fmt_desktop_entry
+    key Down;           shot fmt_log
+    key Down;           shot fmt_photo_exif
     key plus plus;      shot fmt_photo_zoomed
     key 0
-    key j;              shot fmt_font
-    key j;              shot fmt_manpage
-    key j;              shot fmt_notebook
-    key j;              shot fmt_xlsx
-    key j;              shot fmt_ods
-    key j;              shot fmt_odt
-    key j;              shot fmt_pptx
-    key j;              shot fmt_odp
-    key j;              shot fmt_epub
-    key j;              shot fmt_rtf
-    key j;              shot fmt_sqlite
-    key j;              shot fmt_translations
-    key j;              shot fmt_audio_tags
-    key j;              shot fmt_raw_photo
-    key j;              shot fmt_windows_1252
-    key j;              shot fmt_utf16
-    key j;              shot fmt_gif_animated   # frame varies: not compared with a baseline
-    key j;              shot fmt_pdf_pages      # 3 pages first, the others added after
-    key j;              shot fmt_word97
-    key j;              shot fmt_word97_encrypted
-    key j;              shot fmt_excel97
-    key j;              shot fmt_powerpoint97
-    key j;              shot fmt_mail_text
-    key j;              shot fmt_mail_html
-    key j;              shot fmt_mailbox_list
+    key Down;           shot fmt_font
+    key Down;           shot fmt_manpage
+    key Down;           shot fmt_notebook
+    key Down;           shot fmt_xlsx
+    key Down;           shot fmt_ods
+    key Down;           shot fmt_odt
+    key Down;           shot fmt_pptx
+    key Down;           shot fmt_odp
+    key Down;           shot fmt_epub
+    key Down;           shot fmt_rtf
+    key Down;           shot fmt_sqlite
+    key Down;           shot fmt_translations
+    key Down;           shot fmt_audio_tags
+    key Down;           shot fmt_raw_photo
+    key Down;           shot fmt_windows_1252
+    key Down;           shot fmt_utf16
+    key Down;           shot fmt_gif_animated   # frame varies: not compared with a baseline
+    key Down;           shot fmt_pdf_pages      # 3 pages first, the others added after
+    key Down;           shot fmt_word97
+    key Down;           shot fmt_word97_encrypted
+    key Down;           shot fmt_excel97
+    key Down;           shot fmt_powerpoint97
+    key Down;           shot fmt_mail_text
+    key Down;           shot fmt_mail_html
+    key Down;           shot fmt_mailbox_list
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_mailbox_message_2
     key alt+Left
-    key j;              shot fmt_outlook_msg
-    key j;              shot fmt_tnef
-    key j;              shot fmt_outlook_pst
-    key k k k k k k k k k k
+    key Down;           shot fmt_outlook_msg
+    key Down;           shot fmt_tnef
+    key Down;           shot fmt_outlook_pst
+    key Up Up Up Up Up Up Up Up Up Up
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
 }

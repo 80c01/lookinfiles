@@ -22,25 +22,29 @@ static NavAction vim_window_key(guint keyval) {
     }
 }
 
-/* Keys without Ctrl / Alt, the same in every mode */
-static NavAction plain_key(NavPrefix prefix, guint keyval, NavPrefix* next) {
+/* Arrows, Home / End, Page Up / Down: the same in every mode */
+static NavAction universal_key(guint keyval) {
     switch (keyval) {
-    case GDK_KEY_Down: case GDK_KEY_KP_Down: case GDK_KEY_j:
-        return NAV_DOWN;
-    case GDK_KEY_Up: case GDK_KEY_KP_Up: case GDK_KEY_k:
-        return NAV_UP;
-    case GDK_KEY_Right: case GDK_KEY_KP_Right: case GDK_KEY_l:
-        return NAV_FORWARD;
-    case GDK_KEY_Left: case GDK_KEY_KP_Left: case GDK_KEY_h:
-        return NAV_BACKWARD;
-    case GDK_KEY_Home: case GDK_KEY_KP_Home:
-        return NAV_FIRST;
-    case GDK_KEY_End: case GDK_KEY_KP_End: case GDK_KEY_G:
-        return NAV_LAST;
-    case GDK_KEY_Page_Down: case GDK_KEY_KP_Page_Down:
-        return NAV_PAGE_DOWN;
-    case GDK_KEY_Page_Up: case GDK_KEY_KP_Page_Up:
-        return NAV_PAGE_UP;
+    case GDK_KEY_Down: case GDK_KEY_KP_Down: return NAV_DOWN;
+    case GDK_KEY_Up: case GDK_KEY_KP_Up: return NAV_UP;
+    case GDK_KEY_Right: case GDK_KEY_KP_Right: return NAV_FORWARD;
+    case GDK_KEY_Left: case GDK_KEY_KP_Left: return NAV_BACKWARD;
+    case GDK_KEY_Home: case GDK_KEY_KP_Home: return NAV_FIRST;
+    case GDK_KEY_End: case GDK_KEY_KP_End: return NAV_LAST;
+    case GDK_KEY_Page_Down: case GDK_KEY_KP_Page_Down: return NAV_PAGE_DOWN;
+    case GDK_KEY_Page_Up: case GDK_KEY_KP_Page_Up: return NAV_PAGE_UP;
+    default: return NAV_NONE;
+    }
+}
+
+/* Vim letter keys without Ctrl / Alt (Vim mode only) */
+static NavAction vim_plain_key(NavPrefix prefix, guint keyval, NavPrefix* next) {
+    switch (keyval) {
+    case GDK_KEY_j: return NAV_DOWN;
+    case GDK_KEY_k: return NAV_UP;
+    case GDK_KEY_l: return NAV_FORWARD;
+    case GDK_KEY_h: return NAV_BACKWARD;
+    case GDK_KEY_G: return NAV_LAST;
     case GDK_KEY_g:
         if (prefix == NAV_PREFIX_G) return NAV_FIRST;
         *next = NAV_PREFIX_G;
@@ -53,14 +57,10 @@ static NavAction plain_key(NavPrefix prefix, guint keyval, NavPrefix* next) {
         return prefix == NAV_PREFIX_Z ? NAV_TOP : NAV_NONE;
     case GDK_KEY_b:
         return prefix == NAV_PREFIX_Z ? NAV_BOTTOM : NAV_NONE;
-    case GDK_KEY_slash:
-        return NAV_SEARCH;
-    case GDK_KEY_n:
-        return NAV_SEARCH_NEXT;
-    case GDK_KEY_N:
-        return NAV_SEARCH_PREV;
-    default:
-        return NAV_NONE;
+    case GDK_KEY_slash: return NAV_SEARCH;
+    case GDK_KEY_n: return NAV_SEARCH_NEXT;
+    case GDK_KEY_N: return NAV_SEARCH_PREV;
+    default: return NAV_NONE;
     }
 }
 
@@ -143,9 +143,11 @@ NavAction nav_keys_lookup(NavStyle style, NavPrefix prefix, guint keyval,
     }
 
     if ((state & CTRL_ALT) == 0) {
-        NavAction a = notepad_key(keyval, state);
-        if (style == NAV_STYLE_NOTEPAD && a != NAV_NONE) return a;
-        return plain_key(prefix, keyval, next);
+        NavAction a = universal_key(keyval);
+        if (a != NAV_NONE) return a;
+        if (style == NAV_STYLE_VIM) return vim_plain_key(prefix, keyval, next);
+        if (style == NAV_STYLE_NOTEPAD) return notepad_key(keyval, state);
+        return NAV_NONE;
     }
 
     switch (style) {

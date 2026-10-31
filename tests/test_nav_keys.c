@@ -5,19 +5,34 @@ static NavAction look(NavStyle style, guint keyval, GdkModifierType state) {
     return nav_keys_lookup(style, NAV_PREFIX_NONE, keyval, state, NULL);
 }
 
-/* Plain keys work in every mode */
-static void test_plain_keys(void) {
+/* Arrows, Home / End and Page Up / Down work in every mode */
+static void test_universal_keys(void) {
     for (gint s = NAV_STYLE_NOTEPAD; s <= NAV_STYLE_EMACS; s++) {
-        g_assert_cmpint(look(s, GDK_KEY_j, 0), ==, NAV_DOWN);
+        g_assert_cmpint(look(s, GDK_KEY_Down, 0), ==, NAV_DOWN);
         g_assert_cmpint(look(s, GDK_KEY_Up, 0), ==, NAV_UP);
         g_assert_cmpint(look(s, GDK_KEY_Right, 0), ==, NAV_FORWARD);
-        g_assert_cmpint(look(s, GDK_KEY_G, GDK_SHIFT_MASK), ==, NAV_LAST);
+        g_assert_cmpint(look(s, GDK_KEY_Left, 0), ==, NAV_BACKWARD);
+        g_assert_cmpint(look(s, GDK_KEY_Home, 0), ==, NAV_FIRST);
+        g_assert_cmpint(look(s, GDK_KEY_End, 0), ==, NAV_LAST);
         g_assert_cmpint(look(s, GDK_KEY_Page_Down, 0), ==, NAV_PAGE_DOWN);
-        g_assert_cmpint(look(s, GDK_KEY_slash, 0), ==, NAV_SEARCH);
         g_assert_cmpint(look(s, GDK_KEY_a, 0), ==, NAV_NONE);
         /* Alt+Left cycles the panels at the window level */
         g_assert_cmpint(look(s, GDK_KEY_Left, GDK_ALT_MASK), ==, NAV_NONE);
     }
+}
+
+/* Vim letter keys only in Vim mode (strict bindings) */
+static void test_vim_letters_strict(void) {
+    const guint letters[] = {GDK_KEY_j, GDK_KEY_k, GDK_KEY_h, GDK_KEY_l, GDK_KEY_g,
+                             GDK_KEY_z, GDK_KEY_slash, GDK_KEY_n, GDK_KEY_N};
+    for (gsize i = 0; i < G_N_ELEMENTS(letters); i++) {
+        g_assert_cmpint(look(NAV_STYLE_VIM, letters[i], 0), !=, NAV_NONE);
+        g_assert_cmpint(look(NAV_STYLE_NOTEPAD, letters[i], 0), ==, NAV_NONE);
+        g_assert_cmpint(look(NAV_STYLE_EMACS, letters[i], 0), ==, NAV_NONE);
+    }
+    g_assert_cmpint(look(NAV_STYLE_VIM, GDK_KEY_G, GDK_SHIFT_MASK), ==, NAV_LAST);
+    g_assert_cmpint(look(NAV_STYLE_EMACS, GDK_KEY_G, GDK_SHIFT_MASK), ==, NAV_NONE);
+    g_assert_cmpint(look(NAV_STYLE_VIM, GDK_KEY_slash, 0), ==, NAV_SEARCH);
 }
 
 static void test_prefixes(void) {
@@ -26,8 +41,8 @@ static void test_prefixes(void) {
     g_assert_cmpint(next, ==, NAV_PREFIX_G);
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, next, GDK_KEY_g, 0, &next), ==, NAV_FIRST);
     g_assert_cmpint(next, ==, NAV_PREFIX_NONE);
-    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_NOTEPAD, NAV_PREFIX_Z, GDK_KEY_t, 0, &next), ==, NAV_TOP);
-    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_NOTEPAD, NAV_PREFIX_NONE, GDK_KEY_t, 0, &next), ==, NAV_NONE);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, NAV_PREFIX_Z, GDK_KEY_t, 0, &next), ==, NAV_TOP);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_VIM, NAV_PREFIX_NONE, GDK_KEY_t, 0, &next), ==, NAV_NONE);
     /* A modifier pressed alone keeps the prefix */
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_EMACS, NAV_PREFIX_CTRL_X, GDK_KEY_Control_L,
                                     GDK_CONTROL_MASK, &next), ==, NAV_PENDING);
@@ -104,7 +119,8 @@ static void test_search_keys(void) {
 
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
-    g_test_add_func("/nav_keys/plain", test_plain_keys);
+    g_test_add_func("/nav_keys/universal", test_universal_keys);
+    g_test_add_func("/nav_keys/vim_letters_strict", test_vim_letters_strict);
     g_test_add_func("/nav_keys/prefixes", test_prefixes);
     g_test_add_func("/nav_keys/vim", test_vim);
     g_test_add_func("/nav_keys/emacs", test_emacs);
