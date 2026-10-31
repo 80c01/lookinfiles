@@ -26,6 +26,10 @@ void editor_modes_update_status(EditorTab* tab);
 gboolean editor_modes_claims_key(AppData* app, guint keyval, GdkModifierType state);
 gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path);
 
+/* Drop a half-typed key sequence of the tab (Emacs C-x / C-c / C-u, Vim
+ * Ctrl+W or count / operator) and its echo: the focus left the tab */
+void editor_modes_cancel_pending(EditorTab* tab);
+
 /* One-line message where the tab's mode shows them: Notepad status label,
  * Emacs echo area, Vim command line */
 void editor_mode_message(EditorTab* tab, const gchar* msg);

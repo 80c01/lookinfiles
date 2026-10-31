@@ -104,6 +104,10 @@ gunichar vim_engine_recording(VimEngine* engine);
 /* The cursor (in Visual mode, the moving end of the selection) */
 void vim_engine_get_cursor(VimEngine* engine, GtkTextIter* iter);
 
+/* Drop the keys of a command being typed (count, operator, g, z...), keep
+ * the mode; TRUE if there were some */
+gboolean vim_engine_cancel_pending(VimEngine* engine);
+
 /* Leave any mode for Normal (mode switch, tab focus changes) */
 void vim_engine_reset(VimEngine* engine);
 

@@ -7,6 +7,7 @@
 #include "code_refs.h"
 #include "code_symbols.h"
 #include "app_events.h"
+#include "nav_keys.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -888,6 +889,13 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     gboolean alt = (state & GDK_ALT_MASK) != 0;
     gboolean shift = (state & GDK_SHIFT_MASK) != 0;
 
+    /* Ctrl / Alt / Shift pressed alone: a prefix (C-x, M-g) waits for the
+     * real key (C-x, release Ctrl, then C-s) */
+    if ((keyval >= GDK_KEY_Shift_L && keyval <= GDK_KEY_Hyper_R) ||
+        keyval == GDK_KEY_ISO_Level3_Shift) {
+        return FALSE;
+    }
+
     /* Handle Emacs minibuffer cancel / quit */
     if (ctrl && (keyval == GDK_KEY_g || keyval == GDK_KEY_G)) {
         st->emacs_prefix = EMACS_PREFIX_NONE;
@@ -956,10 +964,18 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
             editor_close_tab((AppData*)tab->app, tab);
             return TRUE;
         }
-        if (!ctrl && !alt && keyval == GDK_KEY_o) {
-            /* other-window: the next panel */
+        NavAction action = nav_keys_ctrl_x(keyval, state);
+        switch (action) {
+        case NAV_PANEL_NEXT: /* other-window: the next panel */
             app_emit((AppData*)tab->app, APP_EVENT_FOCUS_NEXT_PANEL);
             return TRUE;
+        case NAV_TAB_NEXT: /* next-buffer / previous-buffer: the tabs of the notebook */
+        case NAV_TAB_PREV:
+            emacs_echo(tab, "");
+            editor_modes_step_tab(tab, action == NAV_TAB_NEXT ? 1 : -1);
+            return TRUE;
+        default:
+            break;
         }
         emacs_echo(tab, "[C-x command complete]");
         return TRUE;

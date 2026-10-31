@@ -8,6 +8,8 @@
 #include "code_intel.h"
 #include "theme.h"
 #include "fonts.h"
+#include "focus_route.h"
+#include "nav_keys.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -870,6 +872,18 @@ static gboolean dispatch_key(AppData* app, EditorTab* tab, EditorModeState* st,
         return TRUE;
     }
 
+    /* Next / previous tab keys of the tab's mode that take no prefix (Vim and
+     * Notepad Ctrl+PgDn / Ctrl+PgUp, Notepad Ctrl+Tab); gt and C-x <right>
+     * go through the Vim engine and the Emacs C-x prefix */
+    if (tab->mode == EDITOR_MODE_VIM || tab->mode == EDITOR_MODE_NOTEPAD) {
+        NavStyle style = tab->mode == EDITOR_MODE_VIM ? NAV_STYLE_VIM : NAV_STYLE_NOTEPAD;
+        NavAction action = nav_keys_lookup(style, NAV_PREFIX_NONE, keyval, state, NULL);
+        if (action == NAV_TAB_NEXT || action == NAV_TAB_PREV) {
+            editor_modes_step_tab(tab, action == NAV_TAB_NEXT ? 1 : -1);
+            return TRUE;
+        }
+    }
+
     if (orgmode_editor_is_org(tab)) {
         if (orgmode_editor_handle_key(app, tab, keyval, state)) {
             return TRUE;
@@ -915,6 +929,28 @@ gboolean editor_modes_claims_key(AppData* app, guint keyval, GdkModifierType sta
     if (focus == NULL || focus != tab->view || tab->mode_state == NULL) return FALSE;
     if (tab->mode == EDITOR_MODE_VIM && vim_claims_key(tab, keyval, state)) return TRUE;
     return orgmode_editor_claims_key(tab, keyval, state);
+}
+
+void editor_modes_step_tab(EditorTab* tab, gint step) {
+    if (tab == NULL || tab->container == NULL) return;
+    /* The notebook holding the page now (a dragged tab changed notebook) */
+    GtkWidget* nb = gtk_widget_get_ancestor(tab->container, GTK_TYPE_NOTEBOOK);
+    if (nb == NULL) nb = tab->nb;
+    if (nb != NULL) focus_route_step_tab((AppData*)tab->app, GTK_NOTEBOOK(nb), step, TRUE);
+}
+
+void editor_modes_cancel_pending(EditorTab* tab) {
+    if (tab == NULL || tab->mode_state == NULL) return;
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    gboolean had = st->emacs_prefix != EMACS_PREFIX_NONE || st->org_prefix != ORG_PREFIX_NONE ||
+                   st->emacs_universal_arg;
+    st->emacs_prefix = EMACS_PREFIX_NONE;
+    st->org_prefix = ORG_PREFIX_NONE;
+    st->emacs_universal_arg = FALSE;
+    if (tab->mode == EDITOR_MODE_VIM) {
+        if (vim_cancel_pending(tab)) had = FALSE; /* the Vim command line is cleared */
+    }
+    if (had) editor_mode_message(tab, ""); /* "C-x-", "C-c-", "C-u-" go away */
 }
 
 void editor_mode_message(EditorTab* tab, const gchar* msg) {

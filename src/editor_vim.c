@@ -276,17 +276,6 @@ static gboolean close_tab(EditorTab* tab, gboolean force, gchar** error) {
     return TRUE;
 }
 
-static void switch_page(EditorTab* tab, gboolean next) {
-    GtkWidget* w = tab->container;
-    while (w != NULL && !GTK_IS_NOTEBOOK(w)) w = gtk_widget_get_parent(w);
-    if (w == NULL) return;
-    GtkNotebook* nb = GTK_NOTEBOOK(w);
-    gint n = gtk_notebook_get_n_pages(nb);
-    if (n <= 1) return;
-    gint cur = gtk_notebook_get_current_page(nb);
-    gtk_notebook_set_current_page(nb, (cur + (next ? 1 : -1) + n) % n);
-}
-
 static gboolean set_view_option(EditorTab* tab, const gchar* arg) {
     AppData* app = (AppData*)tab->app;
     gboolean shown = diff_gutter_get_line_numbers(tab->view);
@@ -406,7 +395,7 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
         return TRUE;
     }
     if (strcmp(name, "tabnext") == 0 || strcmp(name, "tabprevious") == 0) {
-        switch_page(tab, name[3] == 'n');
+        editor_modes_step_tab(tab, name[3] == 'n' ? 1 : -1);
         return TRUE;
     }
     return FALSE;
@@ -838,6 +827,16 @@ static gboolean handle_window_command(EditorTab* tab, EditorModeState* st, guint
         app_emit((AppData*)tab->app, APP_EVENT_FOCUS_PREV_PANEL);
     }
     return TRUE;
+}
+
+gboolean vim_cancel_pending(EditorTab* tab) {
+    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    if (st == NULL) return FALSE;
+    gboolean had = st->vim_ctrl_w;
+    st->vim_ctrl_w = FALSE;
+    if (st->vim != NULL && vim_engine_cancel_pending(st->vim)) had = TRUE;
+    if (had) set_echo(tab, "", FALSE);
+    return had;
 }
 
 /* Normal mode, no command being typed */

@@ -14,6 +14,7 @@
 #include "notes.h"
 #include "remote.h"
 #include "editor.h"
+#include "focus_route.h"
 
 /* Rows with children the arrow keys and space expand: directories,
  * bookmark folders, notebooks and the notes trash */
@@ -92,6 +93,9 @@ static void run_nav(AppData* app, NavAction action) {
     case NAV_PANEL_PREV: app_emit(app, APP_EVENT_FOCUS_PREV_PANEL); break;
     case NAV_OPEN_DEDICATED: open_selected_dedicated(app, TRUE); break;
     case NAV_DISPLAY_DEDICATED: open_selected_dedicated(app, FALSE); break;
+    /* The tabs of the preview notebook; the explorer keeps the focus */
+    case NAV_TAB_NEXT: focus_route_step_tab(app, GTK_NOTEBOOK(app->notebook), 1, FALSE); break;
+    case NAV_TAB_PREV: focus_route_step_tab(app, GTK_NOTEBOOK(app->notebook), -1, FALSE); break;
     default: break; /* NAV_PENDING, NAV_CANCEL */
     }
     if (action != NAV_RECENTER) {

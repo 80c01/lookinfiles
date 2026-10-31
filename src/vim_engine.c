@@ -3803,6 +3803,13 @@ void vim_engine_feed_keys(VimEngine* e, const gchar* keys) {
     vim_e_feed_internal(e, keys);
 }
 
+gboolean vim_engine_cancel_pending(VimEngine* e) {
+    if (e == NULL || e->pending->len == 0) return FALSE;
+    g_array_set_size(e->pending, 0);
+    vim_e_state_changed(e);
+    return TRUE;
+}
+
 void vim_engine_reset(VimEngine* e) {
     g_array_set_size(e->pending, 0);
     if (e->mode == VIM_MODE_CMDLINE) vim_engine_cmdline_cancel(e);

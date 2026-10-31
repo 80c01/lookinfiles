@@ -7,6 +7,7 @@
 #include "file_types.h"
 #include "icons.h"
 #include "theme.h"
+#include "focus_route.h"
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */
@@ -199,6 +200,7 @@ static RefsPage* ensure_page(AppData* app) {
     rp->selection = gtk_single_selection_new(G_LIST_MODEL(g_object_ref(rp->store)));
     rp->list = gtk_list_view_new(GTK_SELECTION_MODEL(rp->selection), factory);
     g_signal_connect(rp->list, "activate", G_CALLBACK(on_activate), rp);
+    focus_route_attach_list(app, rp->list, rp->selection);
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_vexpand(scroll, TRUE);

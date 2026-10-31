@@ -5,6 +5,8 @@
 #include "editor.h"
 #include "file_types.h"
 #include "git_utils.h"
+#include "nav_keys.h"
+#include "search.h"
 
 static void on_status_mode_clicked_cb(GtkButton* btn, gpointer user_data);
 
@@ -119,6 +121,9 @@ static void on_mode_item_clicked(GtkButton* b, gpointer data) {
     gint mode = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "mode"));
     if (app != NULL) {
         app->default_editor_mode = (EditorMode)mode;
+        app->nav_prefix = NAV_PREFIX_NONE; /* a prefix of the old mode (g, C-x) */
+        app->nav_recenter_step = 0;
+        search_mode_changed(app);
         update_status_bar(app);
     }
     if (popover != NULL) {

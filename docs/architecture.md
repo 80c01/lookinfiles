@@ -90,8 +90,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `nav_keys` — navigation keys of the explorer and viewer in each global mode, strictly
   (Notepad, Vim, Emacs): `nav_keys_lookup()` maps a key and the pending
   prefix (`gg`, `zz`, `C-x o`, `Ctrl+W w`) to a `NavAction` (also Vim `t` /
-  Emacs `C-o`: the file in the dedicated editor panel, `editor_open_dedicated()`),
-  `nav_keys_search_lookup()` the keys of the search bar. Pure, tested in
+  Emacs `C-o`: the file in the dedicated editor panel, `editor_open_dedicated()`;
+  next / previous tab: `gt` / `gT`, `C-x <right>` / `<left>` with
+  `nav_keys_ctrl_x()`, `Ctrl+Tab`, `Ctrl+PgDn` / `Ctrl+PgUp`, also used by
+  the editor modes), `nav_keys_search_lookup()` the keys of the search bar. Pure, tested in
   `tests/test_nav_keys.c`.
 - `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex` — Vim pieces:
   key codes and `<notation>` (keys are Unicode code points, special keys in
@@ -179,6 +181,16 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `GtkPaned` must go through `wire_paned_controllers()` or at least
   `paned_use_thin_handle()`: a default handle grabs the mouse ~15 px into the
   neighbouring panels and blocks text selection near the edge.
+- `focus_route` — where the keyboard focus is (`focus_route_get()`:
+  explorer, preview, list page, editor tab; a focused tab bar counts as its
+  current page), so the window key handler routes keys like the panels do.
+  Tab switching for every mode (`focus_route_step_tab()`: skips hidden pages,
+  puts the focus in the new page with `focus_route_focus_page()`); a click on
+  a tab moves the focus from the notebook into the page
+  (`focus_route_focus_changed()`, which also drops the explorer / viewer
+  prefix key). Widgets taking the global mode keys are marked with
+  `focus_route_mark_nav()`; `focus_route_attach_list()` gives a list page
+  (Git Commits, References) those keys.
 - `text_style` — Dark+ GtkSourceView scheme, monospace, panel background,
   syntax language (`is_code_file()`, `apply_viewer_language()`).
 - `theme` — global stylesheet (`apply_panel_borders()`); every module's CSS

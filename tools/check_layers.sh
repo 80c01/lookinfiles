@@ -98,6 +98,7 @@ preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,pale
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events,nav_keys
+focus_route:app_types,app_events,nav_keys,panels
 icons:
 image_utils:
 animation:gif_decoder,image_utils

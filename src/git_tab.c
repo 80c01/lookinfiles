@@ -4,6 +4,7 @@
 #include "panels.h"
 #include "text_style.h"
 #include "git_utils.h"
+#include "focus_route.h"
 #include <string.h>
 
 typedef struct {
@@ -481,6 +482,7 @@ void git_tab_init(AppData* app) {
 
     GtkWidget* tree_view = gtk_column_view_new(GTK_SELECTION_MODEL(app->git_selection));
     app->git_list_view = tree_view;
+    focus_route_attach_list(app, tree_view, app->git_selection);
     gtk_widget_set_name(tree_view, "git-tree");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(tree_view), FALSE);
     git_add_column(tree_view, "Commit", G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);

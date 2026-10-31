@@ -36,6 +36,7 @@
 #include "editor_modes.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "focus_route.h"
 #include <string.h>
 #include <unistd.h>
 
@@ -597,6 +598,7 @@ int main(int argc, char** argv) {
     gtk_event_controller_set_propagation_phase(tree_key_ctrl, GTK_PHASE_CAPTURE);
     g_signal_connect(tree_key_ctrl, "key-pressed", G_CALLBACK(on_tree_key_press), app);
     gtk_widget_add_controller(tree_view, tree_key_ctrl);
+    focus_route_mark_nav(tree_view);
 
     GtkGesture* tree_click_ctrl = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(tree_click_ctrl), GDK_BUTTON_PRIMARY);
@@ -608,6 +610,7 @@ int main(int argc, char** argv) {
     gtk_event_controller_set_propagation_phase(viewer_key_ctrl, GTK_PHASE_CAPTURE);
     g_signal_connect(viewer_key_ctrl, "key-pressed", G_CALLBACK(on_viewer_key_press), app);
     gtk_widget_add_controller(text_view, viewer_key_ctrl);
+    focus_route_mark_nav(text_view);
     image_preview_attach_zoom(app, text_view);
     text_chunks_attach(app);
 

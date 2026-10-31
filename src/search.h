@@ -10,6 +10,9 @@ GtkWidget* search_bar_new(AppData* app, AppSearchBar* sb);
  * searches upward as you type */
 void show_search(AppData* app, gboolean from_viewer, gboolean backward);
 void hide_search(AppData* app);
+/* The global mode changed: close an open bar (its keys and look are those of
+ * the mode it was opened in) */
+void search_mode_changed(AppData* app);
 /* Forget the explorer search (the listing changed) */
 void search_clear_explorer(AppData* app);
 /* Next (+1) / previous (-1) match of the open or last search */

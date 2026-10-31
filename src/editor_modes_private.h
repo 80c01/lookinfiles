@@ -193,5 +193,9 @@ void vim_cursor_get(EditorTab* tab, GtkTextIter* it);
 gboolean vim_is_inserting(EditorTab* tab);
 /* Ctrl keys the window binds that Vim needs (Ctrl-E, Ctrl-R) */
 gboolean vim_claims_key(EditorTab* tab, guint keyval, GdkModifierType state);
+/* Drop a half-typed command (Ctrl+W, 2d, g...); TRUE if there was one */
+gboolean vim_cancel_pending(EditorTab* tab);
+/* Next (1) / previous (-1) tab of the tab's notebook, focus in the new page */
+void editor_modes_step_tab(EditorTab* tab, gint step);
 
 #endif /* EDITOR_MODES_PRIVATE_H */

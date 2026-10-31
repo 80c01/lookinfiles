@@ -379,7 +379,9 @@ key F3;                 shot notepad_find_next      # the bar stays open
 key Escape F6;          shot notepad_f6_viewer_focused
 key ctrl+f; xdotool type --delay 60 "line 4"
                         shot notepad_preview_find   # find bar at the bottom of the preview
-key Escape shift+F6
+key Escape ctrl+Tab;    shot notepad_ctrl_tab_next_tab   # focus in the new tab
+key ctrl+shift+Tab;     shot notepad_ctrl_shift_tab_back
+key shift+F6
 xdotool mousemove 1237 783 click 1;  shot global_mode_menu
 xdotool mousemove 1210 685 click 1   # pick "Emacs"
 xdotool mousemove 150 600 click 1
@@ -394,6 +396,9 @@ key ctrl+x o;           shot emacs_other_window
 key ctrl+s; xdotool type --delay 60 "line 9"
                         shot emacs_preview_isearch  # I-search minibuffer in the preview
 key ctrl+g
+key ctrl+x Right;       shot emacs_cx_right_next_tab    # next-buffer: the next tab, focused
+key ctrl+n;             shot emacs_tab_list_ctrl_n      # global mode keys in the Git list
+key ctrl+x Left;        shot emacs_cx_left_back_to_preview
 key question;           shot help_emacs_mode
 key question
 xdotool mousemove 1237 783 click 1
@@ -406,6 +411,15 @@ key ctrl+w w slash; xdotool type --delay 60 "line 7"
 key Return ctrl+w W G k k t; sleep 0.5
                         shot vim_t_dedicated        # README.md in the dedicated panel, focused
 xdotool mousemove 150 600 click 1
+key g t;                shot vim_gt_explorer        # preview notebook: next tab, the explorer keeps the focus
+key g T;                shot vim_gT_explorer
+key ctrl+w w g t;       shot vim_gt_preview         # from the preview: the focus goes into the new tab
+key j;                  shot vim_tab_list_j         # global mode keys in the Git list
+key g T ctrl+w W g;     shot vim_prefix_pending
+xdotool mousemove 700 300 click 1    # another panel: the pending g is dropped
+xdotool mousemove 150 600 click 1
+key g;                  shot vim_prefix_not_carried # g alone: not gg
+key Escape
 xdotool mousemove 1237 783 click 1
 xdotool mousemove 1205 650 click 1   # back to "Notepad"
 key ctrl+t; sleep 1;    shot terminal

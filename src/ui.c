@@ -10,6 +10,7 @@
 #include "notes.h"
 #include "editor.h"
 #include "editor_modes.h"
+#include "focus_route.h"
 
 
 static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, gpointer user_data) {
@@ -18,6 +19,16 @@ static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, g
     AppData* app = (AppData*)user_data;
     if (app != NULL) {
         GtkWidget* before = app->active_panel;
+        /* A key sequence started elsewhere does not carry over (g, C-x, Ctrl+W) */
+        focus_route_focus_changed(app);
+        GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
+        for (GList* l = app->editors; l != NULL; l = l->next) {
+            EditorTab* t = (EditorTab*)l->data;
+            if (t != NULL && t->container != NULL &&
+                (focus == NULL || !gtk_widget_is_ancestor(focus, t->container))) {
+                editor_modes_cancel_pending(t);
+            }
+        }
         update_active_panel_highlight(app);
         /* The editor mode shown in the status bar follows the focused panel */
         if (app->active_panel != before) {
@@ -34,46 +45,38 @@ void wire_focus_tracking(AppData* app) {
     update_active_panel_highlight(app);
 }
 
+/* Panels in focus order: the explorer list, the page shown in each notebook
+ * (preview notebook first), the terminal panes. Pages get the focus with
+ * focus_route_focus_page() (editor view, preview text, list of a list page). */
 void focus_adjacent_panel(gint step, AppData* app) {
     GPtrArray* panels = g_ptr_array_new();
-    gint count;
+    GPtrArray* pages = g_ptr_array_new(); /* the panels that are notebook pages */
     gint current = -1;
 
     if (app->left_vbox == NULL || gtk_widget_get_visible(app->left_vbox)) {
         g_ptr_array_add(panels, GTK_WIDGET(app->tree_view));
     }
+    GPtrArray* nbs = g_ptr_array_new();
     if (app->viewer_box == NULL || gtk_widget_get_visible(app->viewer_box)) {
-        /* The page shown in the preview notebook: an editor tab or the preview */
-        GtkWidget* view = app->text_view;
-        gint page_nr = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
-        GtkWidget* page = page_nr >= 0 ? gtk_notebook_get_nth_page(GTK_NOTEBOOK(app->notebook), page_nr) : NULL;
-        for (GList* l = app->editors; l != NULL && page != NULL; l = l->next) {
-            EditorTab* t = (EditorTab*)l->data;
-            if (t != NULL && t->container == page && t->view != NULL) {
-                view = t->view;
-                break;
-            }
-        }
-        g_ptr_array_add(panels, view);
+        g_ptr_array_add(nbs, app->notebook);
     }
     if (app->editor_box != NULL && gtk_widget_get_visible(app->editor_box)) {
         GPtrArray* arr = editor_get_all_notebooks(app);
         for (guint i = 0; i < arr->len; i++) {
-            GtkNotebook* nb = GTK_NOTEBOOK(g_ptr_array_index(arr, i));
-            gint cur_p = gtk_notebook_get_current_page(nb);
-            if (cur_p >= 0) {
-                GtkWidget* child = gtk_notebook_get_nth_page(nb, cur_p);
-                for (GList* l = app->editors; l != NULL; l = l->next) {
-                    EditorTab* t = (EditorTab*)l->data;
-                    if (t != NULL && t->container == child && t->view != NULL) {
-                        g_ptr_array_add(panels, t->view);
-                        break;
-                    }
-                }
-            }
+            g_ptr_array_add(nbs, g_ptr_array_index(arr, i));
         }
         g_ptr_array_unref(arr);
     }
+    for (guint i = 0; i < nbs->len; i++) {
+        GtkNotebook* nb = GTK_NOTEBOOK(g_ptr_array_index(nbs, i));
+        gint p = gtk_notebook_get_current_page(nb);
+        GtkWidget* page = p >= 0 ? gtk_notebook_get_nth_page(nb, p) : NULL;
+        if (page != NULL) {
+            g_ptr_array_add(panels, page);
+            g_ptr_array_add(pages, page);
+        }
+    }
+    g_ptr_array_unref(nbs);
 #ifdef HAVE_VTE
     if (gtk_widget_get_visible(app->term_scroll)) {
         GPtrArray* panes = term_visible_panes(app);
@@ -83,17 +86,19 @@ void focus_adjacent_panel(gint step, AppData* app) {
         g_ptr_array_unref(panes);
     }
 #endif
-    count = (gint)panels->len;
+    gint count = (gint)panels->len;
     if (count == 0) {
         g_ptr_array_unref(panels);
+        g_ptr_array_unref(pages);
         return;
     }
 
-    /* Which panel owns the focus? Walk the focused widget's ancestors */
-    GtkWidget* w = gtk_window_get_focus(app->window);
+    /* Which panel owns the focus? A focused tab bar counts as its page */
+    FocusInfo info;
+    focus_route_get(app, &info);
+    GtkWidget* w = info.page != NULL ? info.page : info.focus;
     while (w != NULL && current < 0) {
-        guint i;
-        for (i = 0; i < panels->len; i++) {
+        for (guint i = 0; i < panels->len; i++) {
             if (g_ptr_array_index(panels, i) == w) {
                 current = (gint)i;
                 break;
@@ -105,9 +110,18 @@ void focus_adjacent_panel(gint step, AppData* app) {
         current = 0; /* unknown focus: count as first panel */
     }
 
-    gtk_widget_grab_focus(GTK_WIDGET(g_ptr_array_index(
-        panels, (current + step + count) % count)));
+    GtkWidget* target = GTK_WIDGET(g_ptr_array_index(panels, (current + step + count) % count));
+    gboolean is_page = FALSE;
+    for (guint i = 0; i < pages->len; i++) {
+        if (g_ptr_array_index(pages, i) == target) is_page = TRUE;
+    }
+    if (is_page) {
+        focus_route_focus_page(app, target);
+    } else {
+        gtk_widget_grab_focus(target);
+    }
     g_ptr_array_unref(panels);
+    g_ptr_array_unref(pages);
 }
 
 void focus_next_panel(AppData* app) {
@@ -116,16 +130,6 @@ void focus_next_panel(AppData* app) {
 
 void focus_prev_panel(AppData* app) {
     focus_adjacent_panel(-1, app);
-}
-
-/* Focus in the explorer list or the viewer text: the panels whose
- * navigation keys follow the global mode */
-static gboolean focus_in_nav_panel(AppData* app) {
-    GtkWidget* focus_w = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
-    if (focus_w == NULL) return FALSE;
-    return focus_w == app->text_view ||
-           (app->tree_view != NULL && (focus_w == GTK_WIDGET(app->tree_view) ||
-                                       gtk_widget_is_ancestor(focus_w, GTK_WIDGET(app->tree_view))));
 }
 
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
@@ -158,9 +162,14 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     }
 
-    /* Navigation keys of the global mode go to the explorer / viewer
-     * (Emacs C-s / C-r search there, Vim Ctrl+W starts a window command) */
-    if (focus_in_nav_panel(app) &&
+    /* Where the focus is decides what the keys below do */
+    FocusInfo info;
+    focus_route_get(app, &info);
+
+    /* Navigation keys of the global mode go to the explorer, the viewer and
+     * the list pages (Emacs C-s / C-r search there, Vim Ctrl+W starts a
+     * window command) */
+    if (info.nav_keys &&
         nav_keys_lookup(app_nav_style(app), (NavPrefix)app->nav_prefix, keyval, state, NULL) != NAV_NONE) {
         return FALSE;
     }
@@ -229,14 +238,12 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
-    GtkWidget* focus_w = (app->window != NULL) ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
-    EditorTab* cur_tab = app->last_focused_editor;
-    gboolean is_modal_tab = (cur_tab != NULL && focus_w != NULL &&
+    /* The focus in an editor tab (or on its tab) of a mode with its own keys */
+    EditorTab* cur_tab = info.area == FOCUS_AREA_EDITOR ? info.tab : NULL;
+    gboolean is_modal_tab = (cur_tab != NULL &&
                              (cur_tab->mode == EDITOR_MODE_EMACS ||
                               cur_tab->mode == EDITOR_MODE_ORGMODE ||
-                              cur_tab->mode == EDITOR_MODE_VIM) &&
-                             (focus_w == cur_tab->view ||
-                              gtk_widget_is_ancestor(focus_w, cur_tab->container)));
+                              cur_tab->mode == EDITOR_MODE_VIM));
 
     /* Emacs and Org-mode tabs keep C-e (end of line) and C-r (search backward) */
     gboolean is_emacs_tab = is_modal_tab && (cur_tab->mode == EDITOR_MODE_EMACS ||
@@ -251,7 +258,12 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         }
         if ((state & GDK_CONTROL_MASK) &&
             (keyval == GDK_KEY_w || keyval == GDK_KEY_W)) {
-            editor_close_current(app);
+            /* The focused tab, else the current one if it is on screen
+             * (never a tab hidden behind Git Commits or References) */
+            EditorTab* t = cur_tab != NULL ? cur_tab : editor_current_tab(app);
+            if (t != NULL && t->container != NULL && gtk_widget_get_mapped(t->container)) {
+                editor_close_tab(app, t);
+            }
             return TRUE;
         }
     }

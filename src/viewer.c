@@ -28,6 +28,7 @@
 #include "text_encoding.h"
 #include "preview_cache.h"
 #include "tree_nav.h"
+#include "focus_route.h"
 
 /* Text shown from a Word document before it is cut (images not counted) */
 
@@ -90,6 +91,8 @@ static void run_viewer_nav(AppData* app, NavAction action) {
             g_free(full);
         }
         break;
+    case NAV_TAB_NEXT: focus_route_step_tab(app, GTK_NOTEBOOK(app->notebook), 1, TRUE); break;
+    case NAV_TAB_PREV: focus_route_step_tab(app, GTK_NOTEBOOK(app->notebook), -1, TRUE); break;
     default: break; /* prefixes, cancel, row scrolling (explorer only) */
     }
 }
@@ -117,7 +120,9 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
+    /* PgDn / PgUp step through PDF pages (Ctrl+PgDn / Ctrl+PgUp switch tabs) */
     if ((keyval == GDK_KEY_Page_Down || keyval == GDK_KEY_Page_Up) &&
+        (state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) == 0 &&
         pdf_preview_jump(app, keyval == GDK_KEY_Page_Down ? 1 : -1)) {
         return TRUE;
     }

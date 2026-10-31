@@ -378,6 +378,12 @@ void search_again(AppData* app, gint direction) {
     }
 }
 
+void search_mode_changed(AppData* app) {
+    if (bar_open(app)) {
+        hide_search(app);
+    }
+}
+
 void search_clear_explorer(AppData* app) {
     g_free(app->search_term);
     app->search_term = NULL;
