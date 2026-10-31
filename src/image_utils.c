@@ -74,6 +74,8 @@ struct _LookinFitImage {
     GObject parent_instance;
     GdkTexture* texture;
     GWeakRef view;
+    gint width;       /* drawn width, updated outside of layout passes */
+    guint resize_id;  /* idle source updating width */
 };
 
 static void fit_image_paintable_init(GdkPaintableInterface* iface);
@@ -81,7 +83,8 @@ static void fit_image_paintable_init(GdkPaintableInterface* iface);
 G_DEFINE_FINAL_TYPE_WITH_CODE(LookinFitImage, lookin_fit_image, G_TYPE_OBJECT,
                               G_IMPLEMENT_INTERFACE(GDK_TYPE_PAINTABLE, fit_image_paintable_init))
 
-static gint fit_image_width(LookinFitImage* self) {
+/* Width that fits the view now */
+static gint fit_image_fit_width(LookinFitImage* self) {
     gint natural = gdk_texture_get_width(self->texture);
     GtkTextView* view = g_weak_ref_get(&self->view);
     if (view == NULL) {
@@ -96,14 +99,14 @@ static gint fit_image_width(LookinFitImage* self) {
 }
 
 static gint fit_image_get_intrinsic_width(GdkPaintable* paintable) {
-    return fit_image_width(LOOKIN_FIT_IMAGE(paintable));
+    return LOOKIN_FIT_IMAGE(paintable)->width;
 }
 
 static gint fit_image_get_intrinsic_height(GdkPaintable* paintable) {
     LookinFitImage* self = LOOKIN_FIT_IMAGE(paintable);
     gint w = gdk_texture_get_width(self->texture);
     gint h = gdk_texture_get_height(self->texture);
-    return MAX(1, (gint)((gdouble)h * fit_image_width(self) / MAX(1, w) + 0.5));
+    return MAX(1, (gint)((gdouble)h * self->width / MAX(1, w) + 0.5));
 }
 
 static gdouble fit_image_get_intrinsic_aspect_ratio(GdkPaintable* paintable) {
@@ -136,6 +139,7 @@ static void fit_image_paintable_init(GdkPaintableInterface* iface) {
 
 static void fit_image_finalize(GObject* object) {
     LookinFitImage* self = LOOKIN_FIT_IMAGE(object);
+    g_clear_handle_id(&self->resize_id, g_source_remove);
     g_clear_object(&self->texture);
     g_weak_ref_clear(&self->view);
     G_OBJECT_CLASS(lookin_fit_image_parent_class)->finalize(object);
@@ -149,11 +153,27 @@ static void lookin_fit_image_init(LookinFitImage* self) {
     g_weak_ref_init(&self->view, NULL);
 }
 
-/* The text view was resized: its horizontal page size is its width */
+static gboolean fit_image_resize(gpointer user_data) {
+    LookinFitImage* self = LOOKIN_FIT_IMAGE(user_data);
+    self->resize_id = 0;
+    gint width = fit_image_fit_width(self);
+    if (width != self->width) {
+        self->width = width;
+        gdk_paintable_invalidate_size(GDK_PAINTABLE(self));
+    }
+    return G_SOURCE_REMOVE;
+}
+
+/* The text view was resized (its horizontal page size is its width). This
+ * runs inside its size allocation: resizing the image there would
+ * invalidate the layout being validated (GTK aborts), so wait for idle. */
 static void on_view_page_size(GObject* adjustment, GParamSpec* pspec, gpointer user_data) {
     (void)adjustment;
     (void)pspec;
-    gdk_paintable_invalidate_size(GDK_PAINTABLE(user_data));
+    LookinFitImage* self = LOOKIN_FIT_IMAGE(user_data);
+    if (self->resize_id == 0) {
+        self->resize_id = g_idle_add(fit_image_resize, self);
+    }
 }
 
 GdkPaintable* fit_image_new(GdkTexture* texture, GtkTextView* view) {
@@ -162,6 +182,9 @@ GdkPaintable* fit_image_new(GdkTexture* texture, GtkTextView* view) {
     self->texture = g_object_ref(texture);
     if (view != NULL) {
         g_weak_ref_set(&self->view, view);
+    }
+    self->width = fit_image_fit_width(self);
+    if (view != NULL) {
         GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(view));
         if (hadj != NULL) {
             g_signal_connect_object(hadj, "notify::page-size", G_CALLBACK(on_view_page_size),
