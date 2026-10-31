@@ -10,7 +10,7 @@ make test         # GLib unit tests (headless, no display needed)
 make check        # zero-warning build + unit tests + module layering rules
 make ui-test      # headless UI smoke test (needs xvfb xdotool imagemagick)
 make clean        # remove binary and build/
-./lookin   # run (requires a display; shows a warning without one)
+./lookinfiles   # run (requires a display; shows a warning without one)
 ```
 
 - **Agents only run `make` after a change**; the test targets below run when

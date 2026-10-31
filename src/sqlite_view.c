@@ -270,7 +270,7 @@ gboolean sqlite_view_append(PreviewDoc* doc, const gchar* path, const guchar* he
     return append_database(doc, path, error);
 #else
     (void)path;
-    preview_doc_note(doc, "\nTables are listed when Lookin is built with SQLite (libsqlite3-dev).");
+    preview_doc_note(doc, "\nTables are listed when LookinFiles is built with SQLite (libsqlite3-dev).");
     return TRUE;
 #endif
 }

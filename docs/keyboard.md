@@ -1,6 +1,6 @@
 # Keyboard reference
 
-Every shortcut of Lookin, by panel and editor mode. The same list is
+Every shortcut of LookinFiles, by panel and editor mode. The same list is
 available inside the application with `?` (it shows the keys of the current
 global mode).
 
@@ -204,7 +204,7 @@ git repository, else the file's folder) in the background, unsaved tabs as
 edited; when nothing is found, it goes to the first use of the name in the
 current function. A language server is used first when one is installed
 (see [Configuration](configuration.md#language-servers)). When [Universal Ctags](https://ctags.io) is installed, its
-index is used (kept in `~/.cache/lookin/tags/`, updated for the files that
+index is used (kept in `~/.cache/lookinfiles/tags/`, updated for the files that
 changed), which also brings Objective-C, PHP, Perl, Kotlin, Swift, Scala,
 Dart, Haskell, Elixir, Erlang, Julia, R and Tcl.
 

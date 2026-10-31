@@ -7,8 +7,8 @@ static void test_dirs_use_app_name(void) {
     gchar* cache = app_cache_dir();
     gchar* cfg_base = g_path_get_basename(cfg);
     gchar* cache_base = g_path_get_basename(cache);
-    g_assert_cmpstr(cfg_base, ==, "lookin");
-    g_assert_cmpstr(cache_base, ==, "lookin");
+    g_assert_cmpstr(cfg_base, ==, "lookinfiles");
+    g_assert_cmpstr(cache_base, ==, "lookinfiles");
     g_free(cfg_base);
     g_free(cache_base);
     g_free(cfg);

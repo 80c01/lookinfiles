@@ -3,7 +3,7 @@
 
 /* Themes: named sets of palette colours and fonts (palette.h, fonts.h),
  * built in or written by the user as INI files in
- * ~/.config/lookin/themes/:
+ * ~/.config/lookinfiles/themes/:
  *
  *   [Theme]
  *   name=Light Modern
@@ -21,7 +21,7 @@
  *   code_size=14
  *
  * A theme without "inherits" starts from the default values (Dark Modern).
- * The chosen theme is remembered in ~/.config/lookin/theme.ini.
+ * The chosen theme is remembered in ~/.config/lookinfiles/theme.ini.
  *
  * Pure data and file I/O (GKeyFile), no widgets: unit-tested in tests/. */
 #include <glib.h>
@@ -82,7 +82,7 @@ gboolean theme_store_save_fonts(const gchar* path, const FontChoice* fonts, GErr
 /* fonts_set() each value given */
 void theme_store_apply_fonts(const FontChoice* fonts);
 
-/* ~/.config/lookin/themes and ~/.config/lookin/theme.ini. Caller frees. */
+/* ~/.config/lookinfiles/themes and ~/.config/lookinfiles/theme.ini. Caller frees. */
 gchar* theme_store_user_dir(void);
 gchar* theme_store_choice_path(void);
 /* The remembered theme name (THEME_DEFAULT_NAME if none). Caller frees. */

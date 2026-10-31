@@ -168,7 +168,7 @@ static void append_uri(GString* s, const gchar* path) {
 
 gchar* lsp_params_initialize(gint pid, const gchar* root_path) {
     GString* s = g_string_new(NULL);
-    g_string_append_printf(s, "{\"processId\":%d,\"clientInfo\":{\"name\":\"Lookin\"},\"rootPath\":", pid);
+    g_string_append_printf(s, "{\"processId\":%d,\"clientInfo\":{\"name\":\"LookinFiles\"},\"rootPath\":", pid);
     lsp_json_append_string(s, root_path);
     g_string_append(s, ",\"rootUri\":");
     append_uri(s, root_path);

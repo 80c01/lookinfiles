@@ -1,7 +1,7 @@
 #ifndef SESSION_STORE_H
 #define SESSION_STORE_H
 
-/* What Lookin remembers between launches, in app_config_dir():
+/* What LookinFiles remembers between launches, in app_config_dir():
  *  - session.ini: the workspaces at quit (folder, expanded folders, selected
  *    entry, hidden files, sort, open files) and the current one;
  *  - recent.ini: recent folders and files, most recent first.

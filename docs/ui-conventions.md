@@ -22,7 +22,7 @@ Details behind the UI rules of [AGENTS.md](../AGENTS.md).
 - Text interpolated into Pango markup must be escaped: use
   `g_markup_printf_escaped()`, never `g_strdup_printf()`, with names, titles,
   hosts, key labels or any user-provided string.
-- The binary `lookin` and `build/` are generated — never edit them.
+- The binary `lookinfiles` and `build/` are generated — never edit them.
 
 
 ## UI conventions (keep views consistent)

@@ -5,7 +5,7 @@
 
 /* Bookmark manager: named links to directories, files or URLs, organized
  * in user-defined virtual folders. Persisted as XML in
- * ~/.config/lookin/bookmarks.xml (the legacy flat
+ * ~/.config/lookinfiles/bookmarks.xml (the legacy flat
  * "bookmarks" file is migrated automatically on first start). */
 
 void bookmarks_init(AppData* app);

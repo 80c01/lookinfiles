@@ -8,7 +8,7 @@
 static gchar* tmp_home;
 
 static gchar* config_dir(void) {
-    return g_build_filename(tmp_home, "config", "lookin", NULL);
+    return g_build_filename(tmp_home, "config", "lookinfiles", NULL);
 }
 
 static void write_file(const gchar* path, const gchar* contents) {

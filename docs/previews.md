@@ -1,6 +1,6 @@
 # Previews
 
-Lookin's value is the preview panel: select a file and see its content at
+LookinFiles's value is the preview panel: select a file and see its content at
 once, looking as close as possible to what the application made for that
 format would show. This page lists what is previewed, then gives the rules
 every preview follows, the coverage today, and the checklist for adding a

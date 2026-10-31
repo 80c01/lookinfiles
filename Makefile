@@ -1,4 +1,4 @@
-# Makefile for Lookin, a GTK 4 file explorer
+# Makefile for LookinFiles, a GTK 4 file explorer
 #
 # Each source file is compiled to its own object in build/ with automatic
 # header dependency tracking (-MMD -MP): editing a header rebuilds every
@@ -46,7 +46,7 @@ CFLAGS += -DHAVE_LIBARCHIVE `$(PKG_CONFIG) --cflags libarchive`
 LDFLAGS += `$(PKG_CONFIG) --libs libarchive`
 endif
 
-TARGET = lookin
+TARGET = lookinfiles
 BUILD_DIR = build
 
 # Every .c file in src/ is part of the application: adding a module only

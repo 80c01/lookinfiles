@@ -2,7 +2,7 @@
 
 Guidelines for AI coding agents working in this repository.
 
-`Lookin` ("look in your files") is a file explorer in C with GTK 4 (4.12+,
+`LookinFiles` ("look in your files") is a file explorer in C with GTK 4 (4.12+,
 no deprecated API). Optional deps: VTE for GTK 4, GtkSourceView 5,
 poppler-glib. Left = explorer panel (`GtkListView` over a `GtkTreeListModel`
 of `ExplorerRow`); right = preview notebook and terminal panes; all inside
@@ -29,7 +29,7 @@ make            # build into build/
 make test       # GLib unit tests (headless)
 make check      # zero warnings + unit tests + layering rules
 make ui-test    # headless UI smoke test under Xvfb, screenshots in build/ui/shots/
-./lookin        # needs a display ("cannot open display" is expected in the sandbox)
+./lookinfiles   # needs a display ("cannot open display" is expected in the sandbox)
 ```
 
 - **After a modification, only run `make`** and fix every warning and error.
@@ -37,7 +37,7 @@ make ui-test    # headless UI smoke test under Xvfb, screenshots in build/ui/sho
   Not after an edit, not before a commit. The "`make check` passes" and
   `make ui-test` items in the docs checklists also wait for the user.
 - A new shortcut gets a step in `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).
-- `lookin` and `build/` are generated: never edit them.
+- `lookinfiles` and `build/` are generated: never edit them.
 
 ## Architecture
 

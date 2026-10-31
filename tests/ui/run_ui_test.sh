@@ -22,7 +22,7 @@
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-BIN=$(cd "$(dirname "${1:-$ROOT/lookin}")" && pwd)/$(basename "${1:-lookin}")
+BIN=$(cd "$(dirname "${1:-$ROOT/lookinfiles}")" && pwd)/$(basename "${1:-lookinfiles}")
 OUT=${UI_OUT:-$ROOT/build/ui}
 case "$OUT" in /*) ;; *) OUT=$ROOT/$OUT ;; esac
 TOLERANCE=${UI_TOLERANCE:-50}
@@ -47,7 +47,7 @@ printf '[Settings]\ngtk-cursor-blink=false\n' > "$FIX/home/.config/gtk-4.0/setti
 if [ -n "${UI_ICON_THEME:-}" ]; then
     printf 'gtk-icon-theme-name=%s\n' "$UI_ICON_THEME" >> "$FIX/home/.config/gtk-4.0/settings.ini"
 fi
-CFG="$FIX/home/.config/lookin"
+CFG="$FIX/home/.config/lookinfiles"
 mkdir -p "$CFG/notes/General" "$CFG/notes/Projects and long notebook name"
 echo a > "$CFG/notes/General/short.txt"
 echo c > "$CFG/notes/Projects and long notebook name/plan.md"

@@ -39,7 +39,7 @@ SavedLayout* layout_store_builtin_default(void);
 /* TRUE when the layout differs from the built-in default */
 gboolean layout_store_is_customized(const SavedLayout* layout);
 
-/* ~/.config/lookin/layouts.ini. Caller frees. */
+/* ~/.config/lookinfiles/layouts.ini. Caller frees. */
 gchar* layout_store_default_path(void);
 
 /* Named layouts in file order (GPtrArray of SavedLayout*, frees its items);

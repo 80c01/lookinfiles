@@ -1,6 +1,6 @@
 # Configuration
 
-Settings and data are kept in `~/.config/lookin/`
+Settings and data are kept in `~/.config/lookinfiles/`
 (`$XDG_CONFIG_HOME` is honoured):
 
 | Path | Content |
@@ -15,7 +15,7 @@ Settings and data are kept in `~/.config/lookin/`
 | `theme.ini` | The chosen theme and your fonts (written by the Themes dialog, `Alt+T`) |
 | `themes/` | Your themes, one `.ini` file each (see [Themes](#themes)) |
 
-Remote machines are mounted under `~/.cache/lookin/remotes/`.
+Remote machines are mounted under `~/.cache/lookinfiles/remotes/`.
 
 ## Language servers
 
@@ -53,7 +53,7 @@ terminals), each a list of font names separated by commas and a size in
 pixels. `Ctrl+=` / `Ctrl+-` make both larger or smaller, `Ctrl+0` returns to
 the theme's sizes; the Notepad status bar shows the zoom.
 
-A theme is an INI file in `~/.config/lookin/themes/`. **Save As…** writes the
+A theme is an INI file in `~/.config/lookinfiles/themes/`. **Save As…** writes the
 current look as a complete file (every colour, with its description as a
 comment), and **Edit** opens one of your themes in an editor tab: saving the
 file applies it again, or shows what is wrong with it. A theme can inherit
@@ -83,7 +83,7 @@ roles of the palette (`src/palette.h`): surfaces (`bg_window`, `bg_view`,
 `bg_bar`...), text (`fg`, `fg_text`, `fg_subtle`...), accent, Git, diff,
 syntax (`syn_comment`, `syn_keyword`, `syn_string`...), editor highlights
 and the 16 terminal colours; a file saved with **Save As…** lists them all.
-A theme that cannot be read is skipped and reported on the terminal Lookin
+A theme that cannot be read is skipped and reported on the terminal LookinFiles
 was started from.
 
 Toolbar icons are bundled in the binary, so they look the same with any icon

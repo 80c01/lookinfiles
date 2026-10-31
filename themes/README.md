@@ -1,6 +1,6 @@
 # Reference themes: one per decade
 
-These themes are **not built into Lookin**. They are complete theme files
+These themes are **not built into LookinFiles**. They are complete theme files
 (every colour and both fonts, no `inherits`) that show the look of each era
 of computing, and serve as examples for writing your own theme.
 
@@ -16,8 +16,8 @@ of computing, and serve as examples for writing your own theme.
 To use one, copy it to your themes folder and pick it with `Alt+T`:
 
 ```bash
-mkdir -p ~/.config/lookin/themes
-cp themes/1980s-text-mode.ini ~/.config/lookin/themes/
+mkdir -p ~/.config/lookinfiles/themes
+cp themes/1980s-text-mode.ini ~/.config/lookinfiles/themes/
 ```
 
 The fonts list period fonts first (VT323, Px437 IBM VGA 8x16, MS Sans

@@ -1,10 +1,10 @@
-# Lookin — look in your files
+# LookinFiles — look in your files
 
 A keyboard-driven file explorer for Linux, written in C and GTK 4: a file
 tree with live previews of almost any file, a tabbed editor with Notepad,
 Emacs and Vim modes, and an embedded terminal, in a VS Code look.
 
-![Lookin showing a Markdown preview](docs/screenshot.png)
+![LookinFiles showing a Markdown preview](docs/screenshot.png)
 
 ## Highlights
 
@@ -31,7 +31,7 @@ Emacs and Vim modes, and an embedded terminal, in a VS Code look.
 ```bash
 sudo apt install build-essential pkg-config libgtk-4-dev
 make
-./lookin .
+./lookinfiles .
 ```
 
 Press `?` for the shortcuts, `Alt+Left` / `Alt+Right` to move between
@@ -66,24 +66,24 @@ sudo apt install libvte-2.91-gtk4-dev libgtksourceview-5-dev \
 ### Build
 
 ```bash
-make         # creates ./lookin (objects in build/)
+make         # creates ./lookinfiles (objects in build/)
 make clean   # removes both
 ```
 
 ## Usage
 
 ```bash
-./lookin                     # reopen the last session (else the current directory)
-./lookin /path/to/directory  # start in a directory
-./lookin path/to/file.txt    # edit a file
-./lookin --editor vim        # mode of new editor tabs: notepad, emacs or vim (-e)
-./lookin --note Work/Ideas   # open or create a note (-n)
-./lookin --size 1920x1080    # window size (-s)
-./lookin --fullscreen        # (-f)
-./lookin --help              # (-h)
+./lookinfiles                     # reopen the last session (else the current directory)
+./lookinfiles /path/to/directory  # start in a directory
+./lookinfiles path/to/file.txt    # edit a file
+./lookinfiles --editor vim        # mode of new editor tabs: notepad, emacs or vim (-e)
+./lookinfiles --note Work/Ideas   # open or create a note (-n)
+./lookinfiles --size 1920x1080    # window size (-s)
+./lookinfiles --fullscreen        # (-f)
+./lookinfiles --help              # (-h)
 ```
 
-The session (workspaces, folders, open files) is saved when Lookin quits.
+The session (workspaces, folders, open files) is saved when LookinFiles quits.
 
 ### Essential shortcuts
 
@@ -110,11 +110,11 @@ Org-mode), is in [docs/keyboard.md](docs/keyboard.md).
 | [Keyboard reference](docs/keyboard.md) | Every shortcut, by panel and editor mode |
 | [Previews](docs/previews.md) | Supported formats and their limits |
 | [Code navigation](docs/code-nav.md) | Definitions, references, language servers |
-| [Configuration and themes](docs/configuration.md) | `~/.config/lookin/`, `lsp.ini`, writing a theme |
+| [Configuration and themes](docs/configuration.md) | `~/.config/lookinfiles/`, `lsp.ini`, writing a theme |
 
 ## Configuration
 
-Settings live in `~/.config/lookin/` (`$XDG_CONFIG_HOME` is honoured).
+Settings live in `~/.config/lookinfiles/` (`$XDG_CONFIG_HOME` is honoured).
 Most of them are written by the application itself; the two files you may
 edit by hand are:
 

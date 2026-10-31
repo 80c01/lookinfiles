@@ -7,6 +7,10 @@ All notable changes to this project are listed here. The format follows
 
 ### Changed
 
+- The application is renamed **LookinFiles**: the binary is `lookinfiles`,
+  settings live in `~/.config/lookinfiles/` and the cache in
+  `~/.cache/lookinfiles/`.
+
 - Word documents (`.docx`) look like they do in Word: fonts, sizes,
   colours and highlights from the styles, theme and direct formatting;
   paragraph alignment, indents and spacing; list labels as Word numbers them

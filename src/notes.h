@@ -7,8 +7,8 @@
  * Manages hierarchical notebooks (carnets de notes), notes, and a trash bin (corbeille).
  * Supports reordering (manual order), sorting, moving notes between notebooks,
  * renaming, trashing, and restoring. Persists metadata to
- * ~/.config/lookin/notes/notes.xml and note files in
- * ~/.config/lookin/notes/<notebook_name>/.
+ * ~/.config/lookinfiles/notes/notes.xml and note files in
+ * ~/.config/lookinfiles/notes/<notebook_name>/.
  */
 
 void notes_init(AppData* app);

@@ -1,6 +1,6 @@
 # Architecture
 
-Module reference for Lookin. The short rules are in [AGENTS.md](../AGENTS.md).
+Module reference for LookinFiles. The short rules are in [AGENTS.md](../AGENTS.md).
 
 ## Architecture (keep it when editing)
 

@@ -5,14 +5,14 @@
 
 /* Application name and the per-user directories it keeps its data in. */
 
-#define APP_NAME     "Lookin"
+#define APP_NAME     "LookinFiles"
 #define APP_TAGLINE  "look in your files"
-#define APP_DIR_NAME "lookin"
+#define APP_DIR_NAME "lookinfiles"
 
-/* ~/.config/lookin ($XDG_CONFIG_HOME honoured). Not created. Caller frees. */
+/* ~/.config/lookinfiles ($XDG_CONFIG_HOME honoured). Not created. Caller frees. */
 gchar* app_config_dir(void);
 
-/* ~/.cache/lookin ($XDG_CACHE_HOME honoured). Not created. Caller frees. */
+/* ~/.cache/lookinfiles ($XDG_CACHE_HOME honoured). Not created. Caller frees. */
 gchar* app_cache_dir(void);
 
 #endif
