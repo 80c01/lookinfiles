@@ -18,12 +18,12 @@ format. Open work is in
 - Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
   `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), video and audio
   with player controls.
-- Office documents, read without any external tool: Word `.docx` as Word
-  shows it (fonts, sizes, colours, highlights, alignment, indents, spacing,
-  list labels, tables as grids, pictures, page breaks, header and footer;
-  colours adjusted to stay readable on the theme); Word `.doc` (97-2003 or
-  6 / 95) and OpenDocument text (`.odt`) with headings, styles, lists,
-  tables, links and images (not in `.doc`);
+- Office documents, read without any external tool: Word `.docx` and
+  `.doc` (97-2003) as Word shows them (fonts, sizes, colours, highlights,
+  alignment, indents, spacing, list labels, tables as grids, pictures (not
+  in `.doc`), page breaks, header and footer; colours adjusted to stay
+  readable on the theme; Word 6 / 95: the text); OpenDocument text (`.odt`)
+  with headings, styles, lists, tables, links and images;
   spreadsheets (`.xlsx`, `.ods`, `.xls` from Excel 97-2003 or 5.0 / 95) as
   grids with column letters, number, date and percent formats; presentations
   (`.pptx`, `.odp`, `.ppt` / `.pps`) slide by slide; RTF. The exact page
@@ -164,7 +164,7 @@ every common format to L3 and never leave one below L1.
 | Fonts | L3 | `font_info` |
 | Word `.docx`: fonts, colours, paragraph layout, lists, tables, header / footer | L3 | `docx`, `docx_styles`, `doc_writer` |
 | OpenDocument `.odt`, RTF | L2 | `odf`, `rtf` |
-| Word 97-2003 `.doc` (Word 6 / 95: text) | L2 | `doc_reader` |
+| Word 97-2003 `.doc`: same as `.docx` but pictures (Word 6 / 95: text, L2) | L3 | `doc_reader`, `doc_writer` |
 | Excel 97-2003 / 5.0 `.xls` | L3 | `xls_reader`, `spreadsheet` |
 | Presentations `.pptx` / `.odp` / `.ppt` | L2 | `pptx`, `odf`, `ppt_reader` |
 | Other OLE2 compound files (properties, streams) | L1 | `ole_reader`, `ole_props`, `office97` |
@@ -202,8 +202,10 @@ dump (13.7 % before the preview work). Most of the rest are TeX font metrics
   extension only breaks ties. The property sets (`ole_props`) give the
   summary card. Encrypted files show the card and "Encrypted"; a parse
   failure or another compound file (`.msi`, `.vsd`...) shows the card and
-  the stream list. `.doc` lists are shown as bullets (numbering formats are
-  not read). LibreOffice cannot write Word 95 / Excel 5, so those paths are
+  the stream list. `.doc` formatting comes from the style sheet (STSH, base
+  styles and their UPXs), the font table and the CHPX / PAPX FKPs; the
+  header and footer from the header stories (PlcfHdd). Lists are shown as
+  bullets (numbering formats are not read). LibreOffice cannot write Word 95 / Excel 5, so those paths are
   tested with files built in the tests (`tests/ole_builder.h`).
 - **Mail**: `mail_message` parses RFC 5322 / MIME (encoded words, any
   charset, base64 / quoted-printable, RFC 2231 names; large parts listed,

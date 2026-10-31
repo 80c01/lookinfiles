@@ -275,3 +275,20 @@ gchar* ole_properties_html_head(const OleProperties* p, const gchar* kind) {
     g_string_append(head, "</head>");
     return g_string_free(head, FALSE);
 }
+
+gchar* ole_properties_subtitle(const OleProperties* p, const gchar* kind) {
+    GString* desc = g_string_new(kind != NULL ? kind : "");
+    if (p != NULL) {
+        if (p->author != NULL) g_string_append_printf(desc, " · %s", p->author);
+        if (p->pages > 0) g_string_append_printf(desc, " · %d page%s", p->pages, p->pages == 1 ? "" : "s");
+        if (p->words > 0) g_string_append_printf(desc, " · %d words", p->words);
+        if (p->slides > 0) g_string_append_printf(desc, " · %d slide%s", p->slides, p->slides == 1 ? "" : "s");
+        gchar* t = p->modified >= 0 ? format_time(p->modified) : NULL;
+        if (t != NULL) {
+            t[10] = '\0'; /* the date is enough */
+            g_string_append_printf(desc, " · modified %s", t);
+        }
+        g_free(t);
+    }
+    return g_string_free(desc, FALSE);
+}

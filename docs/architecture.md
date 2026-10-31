@@ -33,8 +33,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   mapped file with loop and range checks (`tests/ole_builder.h` builds them
   in tests), the property sets (`OleProperties`: card and HTML head), and the
   preview dispatch by stream names with the property card + stream list
-  fallback. `doc_reader` — Word `.doc` to HTML (piece table, PAPX / CHPX
-  FKPs, styles), like `docx`. `xls_reader` — BIFF8 / BIFF5 workbooks to
+  fallback. `doc_reader` — Word `.doc` written by `doc_writer`
+  like `docx` (piece table, PAPX / CHPX FKPs, style sheet, font table,
+  header stories). `xls_reader` — BIFF8 / BIFF5 workbooks to
   the `Workbook` of `spreadsheet` (shown by `spreadsheet_append_sheets()`,
   shared with `.xlsx`). `ppt_reader` — `.ppt` records to HTML slide by
   slide (SlideListWithText, else the slide containers; masters skipped).

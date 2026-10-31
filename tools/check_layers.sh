@@ -27,7 +27,7 @@ zip_reader:
 gif_decoder:
 ole_reader:
 ole_props:ole_reader,preview_doc
-doc_reader:ole_reader
+doc_reader:ole_reader,preview_doc,doc_writer
 xls_reader:ole_reader,spreadsheet
 ppt_reader:ole_reader
 mail_message:

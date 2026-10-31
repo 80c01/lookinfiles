@@ -98,10 +98,9 @@ static void test_properties(void) {
     g_assert_cmpint(props->pages, ==, 3);
     g_assert_cmpint(props->words, ==, 512);
     g_assert_cmpint(props->created, ==, -1);
-    gchar* head = ole_properties_html_head(props, "Word 97-2003 document");
-    g_assert_true(g_str_has_prefix(head, "<head><title>Café budget</title><meta name=\"author\" content=\"Ann Smith\">"));
-    g_assert_nonnull(strstr(head, "Word 97-2003 document · 3 pages · 512 words · modified 2026-10-30"));
-    g_free(head);
+    gchar* subtitle = ole_properties_subtitle(props, "Word 97-2003 document");
+    g_assert_cmpstr(subtitle, ==, "Word 97-2003 document · Ann Smith · 3 pages · 512 words · modified 2026-10-30");
+    g_free(subtitle);
     PreviewDoc* doc = preview_doc_new();
     ole_properties_card(doc, props);
     g_assert_nonnull(strstr(doc->text->str, "Café budget"));
@@ -260,6 +259,21 @@ static PreviewDoc* preview_of(GBytes* file, const gchar* name) {
     return doc;
 }
 
+/* First span of a style covering the text "what" (NULL if none) */
+static const PreviewSpan* span_on(const PreviewDoc* doc, PreviewStyle style, const gchar* what) {
+    const gchar* at = strstr(doc->text->str, what);
+    g_assert_nonnull(at);
+    gint start = (gint)g_utf8_pointer_to_offset(doc->text->str, at);
+    gint end = start + (gint)g_utf8_strlen(what, -1);
+    for (guint i = 0; i < doc->spans->len; i++) {
+        const PreviewSpan* sp = &g_array_index(doc->spans, PreviewSpan, i);
+        if (sp->style == style && sp->start <= start && sp->end >= end) {
+            return sp;
+        }
+    }
+    return NULL;
+}
+
 static void test_word97_synthetic(void) {
     GByteArray* table = g_byte_array_new();
     GBytes* word = word97_stream("Caf\xe9 \x93menu\x94\r", "Fields \x13 HYPERLINK \"https://x.org/a?b&c\" \x14link\x15 and \xc3\xa9t\xc3\xa9 \xf0\x9f\x98\x80\r<b>\r", 0, table);
@@ -268,16 +282,181 @@ static void test_word97_synthetic(void) {
     ole_builder_add(ob, "1Table", table->data, table->len);
     GBytes* file = ole_builder_finish(ob);
     PreviewDoc* doc = preview_of(file, "menu.doc");
-    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_HTML);
-    const gchar* html = doc->text->str;
-    g_assert_nonnull(strstr(html, "<p>Café “menu”</p>"));
-    g_assert_nonnull(strstr(html, "<a href=\"https://x.org/a?b&amp;c\">link</a> and été 😀"));
-    g_assert_nonnull(strstr(html, "<p>&lt;b&gt;</p>"));
-    g_assert_null(strstr(html, "HYPERLINK"));
+    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_TEXT);
+    const gchar* t = doc->text->str;
+    g_assert_true(g_str_has_prefix(t, "menu.doc\nWord 97-2003 document · "));
+    g_assert_nonnull(strstr(t, "\n\nCafé “menu”\nFields link and été 😀\n<b>\n"));
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_LINK, "link"));
+    g_assert_null(span_on(doc, PREVIEW_STYLE_LINK, " and"));
+    g_assert_null(strstr(t, "HYPERLINK"));
     preview_doc_free(doc);
     g_bytes_unref(file);
     g_bytes_unref(word);
     g_byte_array_free(table, TRUE);
+}
+
+/* Word 97 file with formatting: a style sheet (Normal: 12 pt in the second
+ * font; Heading 1: bold 16 pt, centred), a font table, character runs
+ * (colour, highlight, capitals) and paragraph runs (direct alignment and
+ * indent) in FKPs, and a header and footer story */
+static GBytes* word97_formatted(void) {
+    const gchar* text = "Title\rRed marked loud\r";        /* main text */
+    const gchar* stories = "Header line\rFooter line\r\r";  /* header document */
+    guint32 n_text = (guint32)strlen(text), n_hdd = (guint32)strlen(stories);
+    GByteArray* wa = g_byte_array_new();
+    g_byte_array_set_size(wa, 4096);
+    memset(wa->data, 0, wa->len);
+    guint8* f = wa->data;
+    ob_put16(f, 0xA5EC);
+    ob_put16(f + 2, 0xC1);
+    ob_put16(f + 0x0A, 0x0200);
+    ob_put16(f + 32, 14);
+    ob_put16(f + 62, 22);
+    ob_put32(f + 64 + 12, n_text); /* ccpText */
+    ob_put32(f + 64 + 20, n_hdd);  /* ccpHdd */
+    gsize rg = 64 + 22 * 4 + 2;
+    ob_put16(f + rg - 2, 93);
+    memcpy(f + 2048, text, n_text);
+    memcpy(f + 2048 + n_text, stories, n_hdd);
+    guint32 fc0 = 2048;
+
+    /* CHPX FKP at page 6: "Title\r" plain, "Red" red, " marked" yellow, " loud\r" capitals */
+    guint8* page = f + 6 * 512;
+    guint32 cuts[] = { fc0, fc0 + 6, fc0 + 9, fc0 + 16, fc0 + n_text, fc0 + n_text + n_hdd };
+    page[511] = 5;
+    for (gint i = 0; i < 6; i++) ob_put32(page + 4 * i, cuts[i]);
+    guint8 red[] = { 7, 0x70, 0x68, 0xFF, 0x00, 0x00, 0x00, 0x00 };    /* sprmCCv */
+    guint8 yellow[] = { 3, 0x0C, 0x2A, 7 };                             /* sprmCHighlight */
+    guint8 caps[] = { 3, 0x3B, 0x08, 1 };                               /* sprmCFCaps */
+    memcpy(page + 200, red, sizeof red);
+    memcpy(page + 220, yellow, sizeof yellow);
+    memcpy(page + 240, caps, sizeof caps);
+    guint8* rgb = page + 4 * 6;
+    rgb[0] = 0;
+    rgb[1] = 100;
+    rgb[2] = 110;
+    rgb[3] = 120;
+    rgb[4] = 0;
+
+    /* PAPX FKP at page 7: "Title\r" style 1, the rest style 0 right-aligned, indented */
+    page = f + 7 * 512;
+    page[511] = 2;
+    ob_put32(page, fc0);
+    ob_put32(page + 4, fc0 + 6);
+    ob_put32(page + 8, fc0 + n_text + n_hdd);
+    guint8* bx = page + 12;
+    bx[0] = 150;
+    bx[13] = 170;
+    guint8 papx1[] = { 2, 0x01, 0x00 };                                         /* istd 1 */
+    guint8 papx2[] = { 5, 0x00, 0x00, 0x61, 0x24, 2, 0x5E, 0x84, 0xD0, 0x02 };   /* istd 0, jc right, left 720 */
+    memcpy(page + 300, papx1, sizeof papx1);
+    memcpy(page + 340, papx2, sizeof papx2);
+
+    GByteArray* t = g_byte_array_new();
+    guint8 zero[4] = { 0 };
+    g_byte_array_append(t, zero, 4);
+    /* Clx: one 8-bit piece over the main text and the stories */
+    guint8 clx[5 + 8 + 8] = { 0x02 };
+    ob_put32(clx + 1, 16);
+    ob_put32(clx + 5, 0);
+    ob_put32(clx + 9, n_text + n_hdd);
+    ob_put32(clx + 13 + 2, (fc0 * 2) | 0x40000000u);
+    ob_put32(f + rg + 66 * 4, t->len);
+    ob_put32(f + rg + 67 * 4, sizeof clx);
+    g_byte_array_append(t, clx, sizeof clx);
+    /* Bin tables: one FKP each */
+    guint8 bte[12];
+    ob_put32(bte, fc0);
+    ob_put32(bte + 4, fc0 + n_text + n_hdd);
+    ob_put32(bte + 8, 6);
+    ob_put32(f + rg + 24 * 4, t->len);
+    ob_put32(f + rg + 25 * 4, 12);
+    g_byte_array_append(t, bte, 12);
+    ob_put32(bte + 8, 7);
+    ob_put32(f + rg + 26 * 4, t->len);
+    ob_put32(f + rg + 27 * 4, 12);
+    g_byte_array_append(t, bte, 12);
+    /* Style sheet */
+    GByteArray* st = g_byte_array_new();
+    guint8 stshi[2 + 18] = { 18, 0, 2, 0, 10, 0 };
+    ob_put16(stshi + 2 + 12, 0); /* ftcAsci: the first font */
+    g_byte_array_append(st, stshi, sizeof stshi);
+    guint8 normal[] = { 0, 0, 0x01, 0xFF, 0x02, 0x00, 0, 0, 0, 0,          /* sti 0, para, no base, 2 UPX */
+                        1, 0, 'N', 0, 0, 0,                               /* name "N" */
+                        2, 0, 0, 0,                                       /* UPX papx: istd 0 */
+                        8, 0, 0x43, 0x4A, 24, 0, 0x4F, 0x4A, 1, 0 };      /* UPX chpx: 12 pt, font 1 */
+    guint8 heading[] = { 1, 0, 0x01, 0x00, 0x02, 0x00, 0, 0, 0, 0,         /* sti 1, base Normal */
+                         1, 0, 'H', 0, 0, 0,
+                         5, 0, 1, 0, 0x61, 0x24, 1, 0,                    /* papx: istd 1, centred */
+                         7, 0, 0x35, 0x08, 1, 0x43, 0x4A, 32, 0 };        /* chpx: bold, 16 pt */
+    guint8 cb[2];
+    ob_put16(cb, sizeof normal);
+    g_byte_array_append(st, cb, 2);
+    g_byte_array_append(st, normal, sizeof normal);
+    ob_put16(cb, sizeof heading);
+    g_byte_array_append(st, cb, 2);
+    g_byte_array_append(st, heading, sizeof heading);
+    ob_put32(f + rg + 2 * 4, t->len);
+    ob_put32(f + rg + 3 * 4, st->len);
+    g_byte_array_append(t, st->data, st->len);
+    g_byte_array_free(st, TRUE);
+    /* Font table: two FFN records */
+    GByteArray* ft = g_byte_array_new();
+    guint8 count[4] = { 2, 0, 0, 0 };
+    g_byte_array_append(ft, count, 4);
+    const gchar* names[] = { "Arial", "Liberation Serif" };
+    for (gint i = 0; i < 2; i++) {
+        guint8 ffn[80] = { 0 };
+        gsize n = strlen(names[i]);
+        for (gsize k = 0; k < n; k++) ob_put16(ffn + 40 + 2 * k, (guchar)names[i][k]);
+        gsize size = 40 + 2 * (n + 1);
+        ffn[0] = (guint8)(size - 1);
+        g_byte_array_append(ft, ffn, (guint)size);
+    }
+    ob_put32(f + rg + 30 * 4, t->len);
+    ob_put32(f + rg + 31 * 4, ft->len);
+    g_byte_array_append(t, ft->data, ft->len);
+    g_byte_array_free(ft, TRUE);
+    /* Header stories: 6 separators, even / odd header, even / odd footer, first header / footer */
+    guint32 hdd[13] = { 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 24, 24, 24 };
+    guint8 plc[13 * 4];
+    for (gint i = 0; i < 13; i++) ob_put32(plc + 4 * i, hdd[i]);
+    ob_put32(f + rg + 22 * 4, t->len);
+    ob_put32(f + rg + 23 * 4, sizeof plc);
+    g_byte_array_append(t, plc, sizeof plc);
+
+    OleBuilder* ob = ole_builder_new();
+    ole_builder_add(ob, "WordDocument", wa->data, wa->len);
+    ole_builder_add(ob, "1Table", t->data, t->len);
+    g_byte_array_free(wa, TRUE);
+    g_byte_array_free(t, TRUE);
+    return ole_builder_finish(ob);
+}
+
+static void test_word97_formatting(void) {
+    GBytes* file = word97_formatted();
+    PreviewDoc* doc = preview_of(file, "styled.doc");
+    const gchar* t = doc->text->str;
+    g_assert_nonnull(strstr(t, "\n\nHeader line\n────────────────────────\nTitle\nRed marked LOUD\n"
+                               "────────────────────────\nFooter line\n"));
+    /* Style: bold, 16 pt over Normal's 12 pt, centred; Normal's font */
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_BOLD, "Title"));
+    g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_SCALE, "Title")->arg, ==, "1.333");
+    g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_FAMILY, "Title")->arg, ==, "Liberation Serif");
+    PreviewParagraph layout;
+    g_assert_true(preview_paragraph_parse(span_on(doc, PREVIEW_STYLE_PARAGRAPH, "Title")->arg, &layout));
+    g_assert_cmpint(layout.align, ==, PREVIEW_ALIGN_CENTER);
+    /* Direct formatting */
+    g_assert_null(span_on(doc, PREVIEW_STYLE_BOLD, "Red"));
+    g_assert_null(span_on(doc, PREVIEW_STYLE_SCALE, "Red"));
+    g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_COLOR, "Red")->arg, ==, "#ff0000");
+    g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_HIGHLIGHT, " marked")->arg, ==, "#ffff00");
+    g_assert_true(preview_paragraph_parse(span_on(doc, PREVIEW_STYLE_PARAGRAPH, "Red marked")->arg, &layout));
+    g_assert_cmpint(layout.align, ==, PREVIEW_ALIGN_RIGHT);
+    g_assert_cmpint(layout.left, ==, 48);
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_DIM, "Header line"));
+    preview_doc_free(doc);
+    g_bytes_unref(file);
 }
 
 static void test_word97_encrypted(void) {
@@ -310,24 +489,32 @@ static void test_word6(void) {
     ole_builder_add(ob, "WordDocument", w, sizeof w);
     GBytes* file = ole_builder_finish(ob);
     PreviewDoc* doc = preview_of(file, "old.doc");
-    g_assert_nonnull(strstr(doc->text->str, "<p>Old document</p>\n<p>Second – paragraph</p>"));
+    g_assert_nonnull(strstr(doc->text->str, "\n\nOld document\nSecond – paragraph\n"));
     preview_doc_free(doc);
     g_bytes_unref(file);
 }
 
 static void test_word_fixture(void) {
     PreviewDoc* doc = fixture("report.doc");
-    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_HTML);
-    const gchar* html = doc->text->str;
-    g_assert_nonnull(strstr(html, "<title>Quarterly Report</title>"));
-    g_assert_nonnull(strstr(html, "<meta name=\"author\" content=\"Lookin UI test\">"));
-    g_assert_nonnull(strstr(html, "<h1>Quarterly Report</h1>"));
-    g_assert_nonnull(strstr(html, "<b>bold</b>, <i>italic</i>, <u>underlined</u> or <s>struck</s>, with E = mc<sup>2</sup>"));
-    g_assert_nonnull(strstr(html, "<li>Word documents in the preview pane</li>\n<ul>\n<li>Headings, lists, tables and images</li>"));
-    g_assert_nonnull(strstr(html, "<h2>Next steps</h2>"));
-    g_assert_nonnull(strstr(html, "<a href=\"https://example.org/lookin\">Project page</a>"));
-    g_assert_nonnull(strstr(html, "<tr><td>Q1</td><td>1 204</td><td>3.2 GB</td></tr>"));
-    g_assert_nonnull(strstr(html, "<p>End of the report.</p>"));
+    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_TEXT);
+    const gchar* t = doc->text->str;
+    g_assert_true(g_str_has_prefix(t, "Quarterly Report\nWord 97-2003 document · Lookin UI test · "));
+    g_assert_nonnull(strstr(t, "Text can be bold, italic, underlined or struck, with E = mc2."));
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_BOLD, "bold"));
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_ITALIC, "italic"));
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_UNDERLINE, "underlined"));
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_STRIKE, "struck"));
+    g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_FAMILY, "Prepared for")->arg, ==, "Calibri");
+    /* Headings: the style's font and size (14 pt over 11 pt) */
+    g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_SCALE, "Next steps")->arg, ==, "1.273");
+    /* Nested list item indented further */
+    PreviewParagraph outer, inner;
+    g_assert_true(preview_paragraph_parse(span_on(doc, PREVIEW_STYLE_PARAGRAPH, "Faster previews")->arg, &outer));
+    g_assert_true(preview_paragraph_parse(span_on(doc, PREVIEW_STYLE_PARAGRAPH, "Headings, lists")->arg, &inner));
+    g_assert_cmpint(inner.left, >, outer.left);
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_LINK, "Project page"));
+    g_assert_nonnull(strstr(t, "│ Q1      │ 1 204 │ 3.2 GB │"));
+    g_assert_nonnull(strstr(t, "End of the report.\n"));
     preview_doc_free(doc);
 }
 
@@ -687,6 +874,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/office97/not_compound", test_not_compound);
     g_test_add_func("/office97/fixture_properties", test_fixture_properties);
     g_test_add_func("/office97/word97_synthetic", test_word97_synthetic);
+    g_test_add_func("/office97/word97_formatting", test_word97_formatting);
     g_test_add_func("/office97/word97_encrypted", test_word97_encrypted);
     g_test_add_func("/office97/word6", test_word6);
     g_test_add_func("/office97/word_fixture", test_word_fixture);

@@ -118,12 +118,20 @@ PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, 
     }
     if (format == OFFICE97_WORD) {
         g_autoptr(OleProperties) props = ole_properties_read(ole);
-        gchar* head = ole_properties_html_head(props, office97_format_label(format));
+        gchar* subtitle = ole_properties_subtitle(props, office97_format_label(format));
+        gchar* size_text = size >= 0 ? g_format_size((guint64)size) : NULL;
+        if (size_text != NULL) {
+            gchar* with_size = g_strdup_printf("%s · %s", subtitle, size_text);
+            g_free(subtitle);
+            subtitle = with_size;
+        }
+        g_free(size_text);
         gboolean encrypted = FALSE;
         GError* err = NULL;
-        gchar* html = doc_reader_to_html(ole, head, max_text, &encrypted, &err);
-        g_free(head);
-        if (html != NULL) return preview_doc_new_source(PREVIEW_DOC_HTML, html);
+        PreviewDoc* text = doc_reader_preview(ole, props != NULL && props->title != NULL ? props->title : name,
+                                              subtitle, max_text, &encrypted, &err);
+        g_free(subtitle);
+        if (text != NULL) return text;
         gchar* reason = encrypted ? g_strdup("Encrypted: the content needs the password.")
                                   : g_strdup_printf("The text cannot be read: %s.", err->message);
         g_clear_error(&err);
