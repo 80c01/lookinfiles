@@ -4,8 +4,8 @@
 #include "dialog.h"
 #include "app_events.h"
 #include "tree_nav.h"
-#include "file_types.h"
 #include "file_list.h"
+#include "bookmark_icons.h"
 
 #include <string.h>
 
@@ -105,16 +105,12 @@ static GNode* bm_find_link_by_target(GNode* node, const gchar* target) {
     return NULL;
 }
 
-static gboolean bm_is_uri(const gchar* target) {
-    return target != NULL && strstr(target, "://") != NULL && g_uri_peek_scheme(target) != NULL;
-}
-
 /* "~/..." for paths under the home directory, unchanged otherwise */
 static gchar* bm_display_location(const gchar* target) {
     if (target == NULL) {
         return g_strdup("");
     }
-    if (bm_is_uri(target)) {
+    if (bookmark_target_is_uri(target)) {
         return g_strdup(target);
     }
     const gchar* home = g_get_home_dir();
@@ -133,7 +129,7 @@ static gchar* bm_normalize_target(const gchar* text, const gchar* base_dir) {
         g_free(t);
         return NULL;
     }
-    if (bm_is_uri(t)) {
+    if (bookmark_target_is_uri(t)) {
         if (g_ascii_strcasecmp(g_uri_peek_scheme(t), "file") != 0) {
             return t;
         }
@@ -161,7 +157,7 @@ static gchar* bm_default_name(const gchar* target) {
     if (target == NULL || target[0] == '\0') {
         return g_strdup("");
     }
-    if (bm_is_uri(target)) {
+    if (bookmark_target_is_uri(target)) {
         GUri* uri = g_uri_parse(target, G_URI_FLAGS_NONE, NULL);
         gchar* name = NULL;
         if (uri != NULL) {
@@ -346,27 +342,11 @@ void bookmarks_free(AppData* app) {
 /* Explorer panel rendering                                                  */
 /* ------------------------------------------------------------------------- */
 
-static gchar* bm_link_icon_label(BookmarkItem* it) {
-    const gchar* icon = "🔖";
-    gchar* base = NULL;
-    if (bm_is_uri(it->target)) {
-        icon = "🌐";
-    } else if (!g_file_test(it->target, G_FILE_TEST_EXISTS)) {
-        icon = "⚠";
-    } else if (!g_file_test(it->target, G_FILE_TEST_IS_DIR)) {
-        base = g_path_get_basename(it->target);
-        icon = file_icon(base, FALSE);
-    }
-    gchar* label = g_strdup_printf("%s %s", icon, it->name);
-    g_free(base);
-    return label;
-}
-
 static void bm_append_placeholder(ExplorerRow* parent, const gchar* label) {
     explorer_row_append(parent, "-", "", label, "");
 }
 
-static void bm_append_children(ExplorerRow* parent, GNode* node) {
+static void bm_append_children(AppData* app, ExplorerRow* parent, GNode* node) {
     for (GNode* c = node->children; c != NULL; c = c->next) {
         BookmarkItem* it = bm_item(c);
         if (it->is_folder) {
@@ -381,12 +361,13 @@ static void bm_append_children(ExplorerRow* parent, GNode* node) {
             }
             explorer_row_set_bm_id(row, it->id);
             if (c->children != NULL) {
-                bm_append_children(row, c);
+                bm_append_children(app, row, c);
             } else {
                 bm_append_placeholder(row, "  (empty)");
             }
         } else {
-            gchar* label = bm_link_icon_label(it);
+            gchar* label = bookmark_icon_label(it->name, it->target);
+            bookmark_icon_check(app, it->target);
             gchar* loc = bm_display_location(it->target);
             gchar* badge = g_markup_printf_escaped("<span foreground=\"%s\" size=\"small\">%s</span>",
                                                    palette_color(PAL_FG_FAINT), loc);
@@ -408,7 +389,7 @@ void bookmarks_append_rows(ExplorerRow* root, AppData* app) {
         bm_append_placeholder(root, "🔖 No bookmarks yet — press a or Ctrl+D to add one");
         return;
     }
-    bm_append_children(root, app->bookmarks);
+    bm_append_children(app, root, app->bookmarks);
 }
 
 static void bm_reexpand_level(AppData* app, ExplorerRow* parent) {
@@ -1039,7 +1020,7 @@ void bookmarks_activate_selected(AppData* app) {
         return;
     }
 
-    if (bm_is_uri(it->target)) {
+    if (bookmark_target_is_uri(it->target)) {
         GError* err = NULL;
         if (!g_app_info_launch_default_for_uri(it->target, NULL, &err)) {
             gchar* msg = g_strdup_printf("Could not open “%s”:\n%s", it->target,

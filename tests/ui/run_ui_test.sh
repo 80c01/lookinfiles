@@ -286,6 +286,7 @@ key i;                  shot hidden_toggle
 key o;                  shot sort_cycle
 # Cycling views must not leave names ellipsized (cached cell widths)
 key ctrl+a;             shot bookmarks_view
+key j;                  shot bookmark_dir_preview   # folder preview once its kind is read
 key ctrl+a;             shot files_after_bookmarks
 key ctrl+u;             shot notes_view
 key ctrl+u;             shot files_after_notes

@@ -84,6 +84,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (name, type, size, date), totals, sorting, relative dates, column padding.
 - `preview_cache` — bounded most-recently-used cache of previews built,
   keyed by file and settings, with the file's stamp (size, mtime, inode).
+- `path_kind` — whether a path is a folder, a file or missing, read in a
+  worker thread (one check per path at a time) and kept, so a slow or hung
+  mount never blocks the UI.
 - `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex` — Vim pieces:
   key codes and `<notation>` (keys are Unicode code points, special keys in
   the private use area), the `["x][count]op[count]motion` grammar
@@ -215,6 +218,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `file_actions` — new file / new folder prompts.
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
+- `bookmark_icons` — bookmark link icons from the target's kind
+  (`path_kind`, never read on the UI thread); relabels the rows and previews
+  the selected link again once the kind is known.
 - `viewer` — right-pane preview dispatch (`on_selection_changed()`,
   `load_file_content()`, `viewer_reload_preview()`), image/text/dir previews,
   viewer keys. Its worker detects the kind, reads text kinds, and runs the

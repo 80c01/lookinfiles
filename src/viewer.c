@@ -16,6 +16,8 @@
 #include "audio.h"
 #include "search.h"
 #include "bookmarks.h"
+#include "bookmark_icons.h"
+#include "path_kind.h"
 #include "remote.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
@@ -733,6 +735,14 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     gboolean is_remote = (g_strcmp0(type, "remote") == 0);
     gchar* summary = is_remote ? preview_summary_remote(remote_find_by_id(app, full))
                                : preview_summary_container(row);
+    /* A bookmark's target is never read here (a slow mount would freeze the
+     * window): its kind comes from bookmark_icon_check(), which selects the
+     * row again once known */
+    gboolean is_bookmark = (g_strcmp0(type, "bookmark") == 0);
+    PathKind bm_kind = is_bookmark ? path_kind_lookup(full) : PATH_KIND_UNKNOWN;
+    if (is_bookmark && bm_kind == PATH_KIND_UNKNOWN && !bookmark_target_is_uri(full)) {
+        summary = g_strdup_printf("🔖 %s\n%s\n\n(waiting for the file system…)\n", name, full);
+    }
     if (is_remote || summary != NULL) {
         if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
@@ -770,10 +780,9 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     }
 
     /* Placeholders, URL bookmarks and bookmarks to missing locations have no preview */
-    gboolean is_bookmark = (g_strcmp0(type, "bookmark") == 0);
     if (name == NULL || type == NULL || g_strcmp0(type, "-") == 0 ||
         g_strcmp0(type, "buffer_create") == 0 ||
-        full == NULL || (is_bookmark && !g_file_test(full, G_FILE_TEST_EXISTS))) {
+        full == NULL || (is_bookmark && bm_kind != PATH_KIND_DIR && bm_kind != PATH_KIND_FILE)) {
         g_free(name);
         g_free(type);
         g_free(full);
@@ -781,7 +790,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
         return;
     }
     gboolean as_dir = (g_strcmp0(type, "dir") == 0) ||
-                      (is_bookmark && g_file_test(full, G_FILE_TEST_IS_DIR));
+                      (is_bookmark && bm_kind == PATH_KIND_DIR);
     if ((is_bookmark || g_strcmp0(type, "note") == 0 || g_strcmp0(type, "trash_note") == 0) && !as_dir) {
         /* Detect the file type from its real name */
         g_free(name);

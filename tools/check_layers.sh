@@ -17,6 +17,7 @@ file_types:text_encoding
 git_utils:palette
 line_diff:
 preview_cache:
+path_kind:
 pane_geometry:
 minimap_geometry:
 dir_summary:file_types,text_encoding
