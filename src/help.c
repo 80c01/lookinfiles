@@ -137,7 +137,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Mode switching", "M-x org-mode / text-mode", "In Emacs minibuffer: turn Org-mode editing on / off (also for .org files)", 0},
     /* Editor: Notepad Mode */
     {"Editor: Notepad mode", "Ctrl+X / Ctrl+C / Ctrl+V", "Cut, copy, and paste text to system clipboard", 0},
-    {"Editor: Notepad mode", "Ctrl+F / Ctrl+H", "Find / Replace words or phrases (F3 / Shift+F3: repeat find)", 0},
+    {"Editor: Notepad mode", "Ctrl+F / Ctrl+H", "Find / Replace, case ignored (Enter / F3: next, Shift+Enter / Shift+F3: previous, Esc: close)", 0},
     {"Editor: Notepad mode", "Ctrl+L / E / R / J", "Align paragraph: Left, Center, Right, Justify", 0},
     {"Editor: Notepad mode", "Ctrl+Z / Ctrl+Y", "Undo / Redo text changes (also Ctrl+Shift+Z)", 0},
     {"Editor: Notepad mode", "Ctrl+S / Ctrl+Shift+S", "Save file / Save As with chosen file name prompt", 0},

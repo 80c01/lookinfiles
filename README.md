@@ -464,7 +464,7 @@ becomes a rule. Folds survive edits, and moving the cursor into folded text
 |---|---|
 | Edit | Typing, `Ctrl+X` / `Ctrl+C` / `Ctrl+V`, `Ctrl+A` |
 | Move | Arrows, `Ctrl+Left` / `Ctrl+Right`, `Home` / `End`, `Ctrl+Home` / `Ctrl+End`, `Page Up` / `Page Down`, go to line `Ctrl+G` |
-| Find and replace | `Ctrl+F`, `Ctrl+H`, `F3` / `Shift+F3` |
+| Find and replace | `Ctrl+F`, `Ctrl+H` (`Enter` / `F3`: next, `Shift+Enter` / `Shift+F3`: previous, `Esc`: close; every match highlighted, case ignored) |
 | Format | Align left / center / right / justify `Ctrl+L` / `E` / `R` / `J`, indent `Tab`, unindent `Shift+Tab` |
 | Undo and redo | `Ctrl+Z`, `Ctrl+Y` / `Ctrl+Shift+Z` |
 | Save | `Ctrl+S`, Save As `Ctrl+Shift+S` |

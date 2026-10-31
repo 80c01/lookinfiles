@@ -795,6 +795,7 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
     }
 
     /* Hide all mode boxes initially */
+    notepad_reset(tab);
     gtk_widget_set_visible(st->np_box, FALSE);
     gtk_widget_set_visible(st->emacs_box, FALSE);
     gtk_widget_set_visible(st->vim_box, FALSE);

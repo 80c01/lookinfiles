@@ -58,7 +58,16 @@ typedef struct {
     GtkWidget* np_info_label;
     GtkWidget* np_save_bar;
     GtkWidget* np_save_entry;
+    GtkWidget* np_goto_bar;
+    GtkWidget* np_goto_entry;
     gboolean np_chord_k;      /* Ctrl+K pressed: waiting for the second key (Ctrl+I) */
+    /* Find bar: current match (char offsets, -1 for none), shown with a tag
+     * while the bar is open; the cursor when the bar opened (typing searches
+     * from there) */
+    gint np_ms, np_me;
+    gint np_origin;
+    gboolean np_setting;      /* the find entry text is set by the program */
+    gboolean np_replacing;    /* the buffer is changed by Replace */
 
     /* --- Emacs UI & State --- */
     GtkWidget* emacs_box;
@@ -175,6 +184,9 @@ void orgmode_editor_add_command_names(EditorTab* tab, GPtrArray* names);
  * owned by the prompt and freed after the callback or on cancel) */
 void emacs_prompt(EditorTab* tab, const gchar* prompt, const gchar* initial,
                   EmacsPromptFunc cb, gchar* data);
+
+/* Close the Notepad bars and drop the match highlight (leaving Notepad mode) */
+void notepad_reset(EditorTab* tab);
 
 /* Mode state transitions used when switching modes */
 void emacs_close_minibuffer(EditorTab* tab);

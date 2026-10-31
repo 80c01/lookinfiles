@@ -250,6 +250,14 @@ xdotool type --delay 80 "Edited "
 key ctrl+s;             shot editor_saved
 key ctrl+alt+n;         shot editor_line_numbers
 key ctrl+alt+n;         shot editor_line_numbers_hidden
+key ctrl+f; xdotool type --delay 60 "e"
+                        shot editor_notepad_find_typed   # every match highlighted
+key F3;                 shot editor_notepad_find_next
+key shift+F3;           shot editor_notepad_find_prev
+key Escape;             shot editor_notepad_find_closed  # the match stays selected
+key ctrl+g; xdotool type --delay 60 "2"
+                        shot editor_notepad_goto_bar
+key Return;             shot editor_notepad_goto_line
 xdotool mousemove 730 50 click 3     # tab menu: the only way to change a tab's mode
 xdotool mousemove 730 374 click 1    # pick "Vim"
 key Escape g g l v l l l j; shot vim_visual
