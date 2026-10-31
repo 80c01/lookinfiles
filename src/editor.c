@@ -1585,6 +1585,8 @@ void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode) {
 void editor_set_dedicated(AppData* app, gboolean dedicated) {
     if (app == NULL) return;
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+    /* Each move makes the moved tab current: keep the current one instead */
+    EditorTab* keep = editor_current_tab(app);
 
     if (dedicated) {
         GList* to_move = NULL;
@@ -1612,6 +1614,13 @@ void editor_set_dedicated(AppData* app, gboolean dedicated) {
         g_list_free(to_move);
     }
 
+    if (keep != NULL && keep->nb != NULL) {
+        GtkNotebook* nb = GTK_NOTEBOOK(keep->nb);
+        gint page = gtk_notebook_page_num(nb, keep->container);
+        if (page >= 0) gtk_notebook_set_current_page(nb, page);
+        app->last_focused_editor = keep;
+    }
+
     editor_update_panel_visibilities(app);
     app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     minimap_update_visibility(app);
@@ -1625,12 +1634,7 @@ void editor_set_dedicated(AppData* app, gboolean dedicated) {
 
 void editor_toggle_dedicated(AppData* app) {
     if (app == NULL) return;
-    EditorTab* cur = editor_current_tab(app);
-    if (cur != NULL) {
-        editor_move_tab_dedicated(app, cur);
-    } else {
-        editor_set_dedicated(app, !app->editor_dedicated);
-    }
+    editor_set_dedicated(app, !app->editor_dedicated);
 }
 
 void editor_save_all_buffers(AppData* app) {
