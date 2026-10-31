@@ -54,6 +54,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `docx` — Word document (`.docx`) to simple HTML for the preview
   (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
   text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.
+- `doc_writer` — Word processing documents written as a `PreviewDoc` that
+  looks like the document (`DocWriter`: runs with fonts, sizes relative to
+  the default size, colours, highlights; paragraph alignment, indents,
+  spacing, list labels; tables as grids with wrapped cells; pictures, page
+  breaks; header and footer around the body), shared by `docx` and
+  `doc_reader`.
 - `preview_doc` — `PreviewDoc`, a preview built in a worker thread: styled
   text (spans of `PreviewStyle`, inline images) or HTML / Markdown source for
   the existing renderers; summary card helpers (`preview_doc_title()`,

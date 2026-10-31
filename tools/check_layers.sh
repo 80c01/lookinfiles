@@ -40,6 +40,7 @@ mail_store:preview_doc
 office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader,mail_msg,mail_view,mail_message
 docx:zip_reader
 preview_doc:
+doc_writer:preview_doc
 csv:preview_doc
 json_view:preview_doc
 diff_view:preview_doc
