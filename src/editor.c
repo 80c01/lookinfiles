@@ -10,6 +10,7 @@
 #include "diff_gutter.h"
 #include "pane_geometry.h"
 #include "tab_drop.h"
+#include "focus_route.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;
@@ -1369,6 +1370,9 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
                                          (gpointer)on_editor_modified_changed,
                                          tab);
 
+    /* The focus goes back to the pane used before this tab */
+    GtkWidget* focus_back = focus_route_return_target(app, tab->container);
+
     GtkWidget* nb_widget = tab->nb ? tab->nb : GTK_WIDGET(editor_target_notebook(app));
     GtkNotebook* nb = (nb_widget != NULL) ? GTK_NOTEBOOK(nb_widget) : NULL;
     if (nb != NULL) {
@@ -1390,6 +1394,7 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
     }
 
     editor_update_panel_visibilities(app);
+    focus_route_return(app, focus_back, tab->container);
 
     if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
         app->workspaces[app->current_ws].editors = app->editors;

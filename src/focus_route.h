@@ -47,6 +47,15 @@ void focus_route_mark_nav(GtkWidget* widget);
  * key, and move the focus from a notebook's tab bar into its current page */
 void focus_route_focus_changed(AppData* app);
 
+/* Before closing page (an editor tab, a list page) that holds the focus: the
+ * pane focused before it (new reference), else NULL */
+GtkWidget* focus_route_return_target(AppData* app, GtkWidget* page);
+
+/* After closing the page closed: focus target (from
+ * focus_route_return_target(), released here), or when it is gone the most
+ * recent pane still shown. A NULL target does nothing. */
+void focus_route_return(AppData* app, GtkWidget* target, GtkWidget* closed);
+
 /* Navigation keys of the global mode in a list page: next / previous row,
  * first / last, page down / up, panel and tab keys */
 void focus_route_attach_list(AppData* app, GtkWidget* list, GtkSingleSelection* selection);

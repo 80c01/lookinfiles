@@ -145,13 +145,145 @@ static gboolean redirect_idle(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
+/* --- Focus history: the panes focused last, newest first */
+
+#define HISTORY_LEN 8
+#define HISTORY_KEY "lookin-focus-history"
+
+typedef struct {
+    GWeakRef refs[HISTORY_LEN];
+} FocusHistory;
+
+static void history_free(gpointer data) {
+    FocusHistory* h = data;
+    for (gint i = 0; i < HISTORY_LEN; i++) g_weak_ref_clear(&h->refs[i]);
+    g_free(h);
+}
+
+static FocusHistory* history(AppData* app) {
+    if (app->window == NULL) return NULL;
+    FocusHistory* h = g_object_get_data(G_OBJECT(app->window), HISTORY_KEY);
+    if (h == NULL) {
+        h = g_new0(FocusHistory, 1);
+        for (gint i = 0; i < HISTORY_LEN; i++) g_weak_ref_init(&h->refs[i], NULL);
+        g_object_set_data_full(G_OBJECT(app->window), HISTORY_KEY, h, history_free);
+    }
+    return h;
+}
+
+/* The pane a focused widget stands for: the explorer list, a notebook page
+ * (its tab bar too), else the widget itself (terminal pane...) */
+static GtkWidget* pane_of(AppData* app, GtkWidget* focus) {
+    for (GtkWidget* w = focus; w != NULL; w = gtk_widget_get_parent(w)) {
+        if (app->tree_view != NULL && w == GTK_WIDGET(app->tree_view)) return w;
+        if (GTK_IS_NOTEBOOK(w)) return current_page(GTK_NOTEBOOK(w));
+        if (notebook_of_page(w) != NULL) return w;
+    }
+    return focus;
+}
+
+static void history_push(AppData* app, GtkWidget* pane) {
+    FocusHistory* h = history(app);
+    if (h == NULL || pane == NULL) return;
+    GtkWidget* old[HISTORY_LEN];
+    for (gint i = 0; i < HISTORY_LEN; i++) old[i] = g_weak_ref_get(&h->refs[i]);
+    gint n = 0;
+    g_weak_ref_set(&h->refs[n++], pane);
+    for (gint i = 0; i < HISTORY_LEN; i++) {
+        if (old[i] != NULL && old[i] != pane && n < HISTORY_LEN) {
+            g_weak_ref_set(&h->refs[n++], old[i]);
+        }
+    }
+    while (n < HISTORY_LEN) g_weak_ref_set(&h->refs[n++], NULL);
+    for (gint i = 0; i < HISTORY_LEN; i++) {
+        if (old[i] != NULL) g_object_unref(old[i]);
+    }
+}
+
+/* The pane is still in the window and shown (a page: its notebook is) */
+static gboolean pane_usable(AppData* app, GtkWidget* pane) {
+    if (pane == NULL || gtk_widget_get_root(pane) != GTK_ROOT(app->window)) return FALSE;
+    GtkNotebook* nb = notebook_of_page(pane);
+    if (nb != NULL) {
+        return gtk_widget_get_visible(pane) && gtk_widget_get_mapped(GTK_WIDGET(nb));
+    }
+    return gtk_widget_get_mapped(pane);
+}
+
+static gboolean focus_pane(AppData* app, GtkWidget* pane) {
+    if (!pane_usable(app, pane)) return FALSE;
+    GtkNotebook* nb = notebook_of_page(pane);
+    if (nb != NULL) {
+        gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, pane));
+        focus_route_focus_page(app, pane);
+        return TRUE;
+    }
+    return gtk_widget_grab_focus(pane);
+}
+
+/* Focus the most recent pane still shown that is not leaving (nor inside it) */
+static gboolean focus_recent(AppData* app, GtkWidget* leaving) {
+    FocusHistory* h = history(app);
+    if (h == NULL) return FALSE;
+    gboolean done = FALSE;
+    for (gint i = 0; i < HISTORY_LEN && !done; i++) {
+        GtkWidget* pane = g_weak_ref_get(&h->refs[i]);
+        if (pane == NULL) continue;
+        if (leaving == NULL || (pane != leaving && !gtk_widget_is_ancestor(pane, leaving))) {
+            done = focus_pane(app, pane);
+        }
+        g_object_unref(pane);
+    }
+    return done;
+}
+
+GtkWidget* focus_route_return_target(AppData* app, GtkWidget* page) {
+    if (app == NULL || app->window == NULL || page == NULL) return NULL;
+    FocusInfo info;
+    focus_route_get(app, &info);
+    gboolean inside = info.page == page ||
+                      (info.focus != NULL && gtk_widget_is_ancestor(info.focus, page));
+    if (!inside) return NULL;
+    FocusHistory* h = history(app);
+    if (h == NULL) return NULL;
+    for (gint i = 0; i < HISTORY_LEN; i++) {
+        GtkWidget* pane = g_weak_ref_get(&h->refs[i]);
+        if (pane == NULL) continue;
+        if (pane != page && !gtk_widget_is_ancestor(pane, page)) return pane;
+        g_object_unref(pane);
+    }
+    return g_object_ref(page); /* no earlier pane: any pane still shown */
+}
+
+void focus_route_return(AppData* app, GtkWidget* target, GtkWidget* closed) {
+    if (target == NULL) return;
+    if (app != NULL && app->window != NULL && (target == closed || !focus_pane(app, target))) {
+        focus_recent(app, closed);
+    }
+    g_object_unref(target);
+}
+
+/* The focused widget went away (its tab closed...): back to the last pane */
+static gboolean lost_focus_idle(gpointer data) {
+    AppData* app = (AppData*)data;
+    if (app->window != NULL && gtk_window_get_focus(GTK_WINDOW(app->window)) == NULL &&
+        !app->switching_ws && !app->applying_layout) {
+        focus_recent(app, NULL);
+    }
+    return G_SOURCE_REMOVE;
+}
+
 void focus_route_focus_changed(AppData* app) {
     if (app == NULL) return;
     app->nav_prefix = NAV_PREFIX_NONE;
     app->nav_recenter_step = 0;
     GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
-    if (is_tab_notebook(app, focus)) {
+    if (focus == NULL) {
+        g_idle_add(lost_focus_idle, app);
+    } else if (is_tab_notebook(app, focus)) {
         g_idle_add(redirect_idle, app);
+    } else {
+        history_push(app, pane_of(app, focus));
     }
 }
 

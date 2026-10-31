@@ -157,9 +157,14 @@ static void on_close_clicked(GtkButton* button, gpointer data) {
     AppData* app = data;
     if (app->refs_page == NULL || app->notebook == NULL) return;
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint page = gtk_notebook_page_num(nb, app->refs_page);
+    GtkWidget* closed = app->refs_page;
+    GtkWidget* focus_back = focus_route_return_target(app, closed);
+    g_object_ref(closed);
+    gint page = gtk_notebook_page_num(nb, closed);
     if (page >= 0) gtk_notebook_remove_page(nb, page);
     app->refs_page = NULL;
+    focus_route_return(app, focus_back, closed);
+    g_object_unref(closed);
 }
 
 static void page_free(gpointer p) {
