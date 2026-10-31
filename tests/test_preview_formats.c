@@ -56,8 +56,10 @@ static void test_word_document(void) {
     g_autoptr(PreviewDoc) doc = preview_format_build_file(path, "report.docx", 0, NULL, &kind, &error);
     g_assert_no_error(error);
     g_assert_cmpint(kind, ==, FILE_KIND_DOCUMENT);
-    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_HTML);
-    g_assert_nonnull(strstr(doc->text->str, "<h1"));
+    g_assert_cmpint(doc->format, ==, PREVIEW_DOC_TEXT);
+    g_assert_true(g_str_has_prefix(doc->text->str, "Quarterly Report\nWord document · Lookin UI test · "));
+    g_assert_nonnull(strstr(doc->text->str, "│ Q1      │ 1 204 │ 3.2 GB │"));
+    g_assert_cmpuint(doc->images->len, ==, 1);
 }
 
 /* Built preview of a fixture of tests/fixtures/preview */

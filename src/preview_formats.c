@@ -1016,8 +1016,13 @@ static PreviewDoc* build_ole(const PreviewInput* in, GCancellable* cancellable, 
 static PreviewDoc* build_document(const PreviewInput* in, GCancellable* cancellable,
                                   GError** error) {
     (void)cancellable;
-    gchar* html = is_opendocument(in) ? odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, NULL, error)
-                                      : docx_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, error);
+    if (!is_opendocument(in)) {
+        gchar* size = preview_format_size(in->size);
+        PreviewDoc* doc = docx_file_preview(in->path, in->name, size, PREVIEW_FORMAT_MAX_TEXT, error);
+        g_free(size);
+        return doc;
+    }
+    gchar* html = odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, NULL, error);
     return html != NULL ? preview_doc_new_source(PREVIEW_DOC_HTML, html) : NULL;
 }
 

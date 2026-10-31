@@ -38,7 +38,7 @@
 Rules, coverage and the checklist for a new format: [docs/previews.md](docs/previews.md).
 
 - [ ] JSON / XML / YAML / TOML tree view with folding
-- [ ] raise `docx` toward L3 (page width, fonts, headers)
+- [ ] lay `.docx` text out at the page width (fonts, colours and headers are shown)
 - [ ] a placeholder (name, size, kind) when a structured preview takes longer than ~100 ms (none measured over the budget so far)
 - [ ] previews of TeX fonts (`.tfm`, `.pfb`) and Python bytecode (`.pyc`), the largest remaining L0 groups
 - [ ] folders and messages of Outlook stores (`.pst`, `.ost`, `.dbx`): would need libpff

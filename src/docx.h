@@ -3,14 +3,17 @@
 
 #include <glib.h>
 
+#include "preview_doc.h"
 #include "zip_reader.h"
 
-/* Word documents (.docx, Office Open XML) converted to simple HTML for the
- * preview: headings, paragraphs, bold / italic / underline / strike,
- * superscript, links, bulleted and numbered lists, tables, images (as
- * data: URIs) and the author. Not kept: page layout, fonts, colours, headers
- * and footers, footnotes, comments, text boxes, deleted tracked changes.
- * Pure GLib: usable in a worker thread. */
+/* Word documents (.docx, Office Open XML) shown like Word shows them
+ * (doc_writer): fonts, sizes, colours, highlights, alignment, indents and
+ * spacing from the styles (basedOn chains, document defaults, theme fonts)
+ * and the direct formatting; numbered and bulleted lists with Word's labels;
+ * tables, pictures, links, page breaks; the first header and footer. Not
+ * kept: exact page layout, columns, floating positions, text boxes,
+ * footnotes, comments, deleted tracked changes. Pure GLib: usable in a
+ * worker thread. */
 
 /* Largest document.xml read (uncompressed) */
 #define DOCX_MAX_XML (64u * 1024 * 1024)
@@ -18,12 +21,15 @@
 /* TRUE if the archive is a Word document (has a main document part) */
 gboolean docx_is_document(ZipReader* zip);
 
-/* HTML of a Word document. Stops after about max_text bytes of text and then
- * ends with a note saying the document was truncated. NULL with error set if
+/* The preview: title (the document's title, else name), subtitle ("Word
+ * document · author · size_text"; size_text may be NULL), the document.
+ * Stops after about max_text characters with a note. NULL with error set if
  * the archive is not a readable Word document. */
-gchar* docx_to_html(ZipReader* zip, gsize max_text, GError** error);
+PreviewDoc* docx_to_preview(ZipReader* zip, const gchar* name, const gchar* size_text, gsize max_text,
+                            GError** error);
 
 /* Same, for a file on disk */
-gchar* docx_file_to_html(const gchar* path, gsize max_text, GError** error);
+PreviewDoc* docx_file_preview(const gchar* path, const gchar* name, const gchar* size_text, gsize max_text,
+                              GError** error);
 
 #endif /* DOCX_H */

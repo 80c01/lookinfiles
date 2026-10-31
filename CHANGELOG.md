@@ -7,6 +7,13 @@ All notable changes to this project are listed here. The format follows
 
 ### Changed
 
+- Word documents (`.docx`) look like they do in Word: fonts, sizes,
+  colours and highlights from the styles, theme and direct formatting;
+  paragraph alignment, indents and spacing; list labels as Word numbers them
+  (`1.`, `a.`, `III.2.`, bullets from symbol fonts); tables as grids with
+  wrapped cells; pictures at their size; page breaks; the page header and
+  footer. Text colours are adjusted to stay readable on the theme.
+
 - Animated GIFs are decoded by a built-in decoder instead of
   GdkPixbufAnimation, deprecated in gdk-pixbuf 2.44 (the build is free of
   warnings again); animated WebP images now show their first frame.

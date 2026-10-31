@@ -51,9 +51,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `mail_tnef` — TNEF `winmail.dat` (attributes + MAPI property blocks) to a
   `MailMessage`. `mail_store` — header card of PST / OST / DBX stores
   (header bytes only; no libpff).
-- `docx` — Word document (`.docx`) to simple HTML for the preview
-  (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
-  text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.
+- `docx`, `docx_styles` — Word document (`.docx`) shown like Word
+  (`docx_file_preview()`, written by `doc_writer`): run and paragraph
+  properties, styles with basedOn chains and document defaults, theme fonts,
+  numbering labels, tables, images, the first header and footer, text
+  limit. Tests build archives with `tests/zip_builder.h`.
 - `doc_writer` — Word processing documents written as a `PreviewDoc` that
   looks like the document (`DocWriter`: runs with fonts, sizes relative to
   the default size, colours, highlights; paragraph alignment, indents,

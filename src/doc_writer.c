@@ -310,7 +310,10 @@ void doc_writer_end_paragraph(DocWriter* w, const DocPara* para, const gchar* la
     PreviewParagraph layout = { pp->align, left, px(pp->right, 0, MAX_INDENT_PX),
                                 px(pp->first, -left, MAX_INDENT_PX), px(pp->before, 0, MAX_SPACE_PX),
                                 px(pp->after, 0, MAX_SPACE_PX) };
-    preview_doc_add_paragraph_span(w->doc, start, preview_doc_offset(w->doc), &layout);
+    if (layout.align != PREVIEW_ALIGN_LEFT || layout.left != 0 || layout.right != 0 || layout.indent != 0 ||
+        layout.above != 0 || layout.below != 0) {
+        preview_doc_add_paragraph_span(w->doc, start, preview_doc_offset(w->doc), &layout);
+    }
     para_free(p);
 }
 
@@ -569,7 +572,7 @@ static void emit_cell_line(DocWriter* w, const CellLine* cl, gint width, gboolea
             preview_doc_append_len(doc, text->str, (gssize)text->len);
             const Seg* s = g_ptr_array_index(cl->para->segs, seg);
             add_run_spans(w, start, preview_doc_offset(doc), &s->run, TRUE);
-            if (header) {
+            if (header && !s->run.bold) {
                 preview_doc_add_span(doc, start, preview_doc_offset(doc), PREVIEW_STYLE_BOLD);
             }
             g_string_free(text, TRUE);

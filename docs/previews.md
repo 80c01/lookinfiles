@@ -18,13 +18,17 @@ format. Open work is in
 - Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
   `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), video and audio
   with player controls.
-- Office documents, read without any external tool: Word (`.docx`, and
-  `.doc` from Word 97-2003 or 6 / 95) and OpenDocument text (`.odt`) with
-  headings, styles, lists, tables, links and images (not in `.doc`);
+- Office documents, read without any external tool: Word `.docx` as Word
+  shows it (fonts, sizes, colours, highlights, alignment, indents, spacing,
+  list labels, tables as grids, pictures, page breaks, header and footer;
+  colours adjusted to stay readable on the theme); Word `.doc` (97-2003 or
+  6 / 95) and OpenDocument text (`.odt`) with headings, styles, lists,
+  tables, links and images (not in `.doc`);
   spreadsheets (`.xlsx`, `.ods`, `.xls` from Excel 97-2003 or 5.0 / 95) as
   grids with column letters, number, date and percent formats; presentations
-  (`.pptx`, `.odp`, `.ppt` / `.pps`) slide by slide; RTF. Page layout, fonts, headers and
-  footers are not shown; long documents stop after 256 KB of text. Other OLE2
+  (`.pptx`, `.odp`, `.ppt` / `.pps`) slide by slide; RTF. The exact page
+  layout (page size, columns, floating positions) is not reproduced; long
+  documents stop after 256 KB of text. Other OLE2
   compound files (`.msi`, `.vsd`, Works...) show their properties (title,
   author, dates, counts) and streams.
 - Mail messages (`.eml`, `.emlx`, or any file starting with mail headers):
@@ -158,7 +162,8 @@ every common format to L3 and never leave one below L1.
 | Spreadsheets `.xlsx` / `.ods` | L3 | `spreadsheet` |
 | SQLite (libsqlite3, optional) | L3 | `sqlite_view` |
 | Fonts | L3 | `font_info` |
-| Word `.docx`, OpenDocument `.odt`, RTF | L2 | `docx`, `odf`, `rtf` |
+| Word `.docx`: fonts, colours, paragraph layout, lists, tables, header / footer | L3 | `docx`, `docx_styles`, `doc_writer` |
+| OpenDocument `.odt`, RTF | L2 | `odf`, `rtf` |
 | Word 97-2003 `.doc` (Word 6 / 95: text) | L2 | `doc_reader` |
 | Excel 97-2003 / 5.0 `.xls` | L3 | `xls_reader`, `spreadsheet` |
 | Presentations `.pptx` / `.odp` / `.ppt` | L2 | `pptx`, `odf`, `ppt_reader` |

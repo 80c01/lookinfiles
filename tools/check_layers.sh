@@ -38,7 +38,8 @@ mail_msg:mail_message,ole_reader,rtf
 mail_tnef:mail_message,mail_msg
 mail_store:preview_doc
 office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader,mail_msg,mail_view,mail_message
-docx:zip_reader
+docx:zip_reader,zip_xml,preview_doc,doc_writer,docx_styles
+docx_styles:zip_reader,zip_xml,preview_doc,doc_writer
 preview_doc:
 doc_writer:preview_doc
 csv:preview_doc
