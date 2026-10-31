@@ -55,3 +55,118 @@ GdkPixbuf* pixbuf_from_data_uri(const gchar* uri, gint max_width) {
     g_free(decoded);
     return pix;
 }
+
+GdkPixbuf* pixbuf_from_file(const gchar* path, gint max_width) {
+    gint w = 0;
+    gint h = 0;
+    if (path == NULL || gdk_pixbuf_get_file_info(path, &w, &h) == NULL || w <= 0) {
+        return NULL;
+    }
+    if (max_width > 0 && w > max_width) {
+        return gdk_pixbuf_new_from_file_at_scale(path, max_width, -1, TRUE, NULL);
+    }
+    return gdk_pixbuf_new_from_file(path, NULL);
+}
+
+/* Paintable showing a texture at its natural size, scaled down to the
+ * width of a text view (CSS "max-width: 100%") */
+struct _LookinFitImage {
+    GObject parent_instance;
+    GdkTexture* texture;
+    GWeakRef view;
+};
+
+static void fit_image_paintable_init(GdkPaintableInterface* iface);
+
+G_DEFINE_FINAL_TYPE_WITH_CODE(LookinFitImage, lookin_fit_image, G_TYPE_OBJECT,
+                              G_IMPLEMENT_INTERFACE(GDK_TYPE_PAINTABLE, fit_image_paintable_init))
+
+static gint fit_image_width(LookinFitImage* self) {
+    gint natural = gdk_texture_get_width(self->texture);
+    GtkTextView* view = g_weak_ref_get(&self->view);
+    if (view == NULL) {
+        return natural;
+    }
+    /* Room for the text, less a pixel of slack so the line does not wrap
+     * the image after itself */
+    gint avail = gtk_widget_get_width(GTK_WIDGET(view)) - gtk_text_view_get_left_margin(view) -
+                 gtk_text_view_get_right_margin(view) - 2;
+    g_object_unref(view);
+    return avail > 0 ? MIN(natural, avail) : natural;
+}
+
+static gint fit_image_get_intrinsic_width(GdkPaintable* paintable) {
+    return fit_image_width(LOOKIN_FIT_IMAGE(paintable));
+}
+
+static gint fit_image_get_intrinsic_height(GdkPaintable* paintable) {
+    LookinFitImage* self = LOOKIN_FIT_IMAGE(paintable);
+    gint w = gdk_texture_get_width(self->texture);
+    gint h = gdk_texture_get_height(self->texture);
+    return MAX(1, (gint)((gdouble)h * fit_image_width(self) / MAX(1, w) + 0.5));
+}
+
+static gdouble fit_image_get_intrinsic_aspect_ratio(GdkPaintable* paintable) {
+    LookinFitImage* self = LOOKIN_FIT_IMAGE(paintable);
+    return (gdouble)gdk_texture_get_width(self->texture) /
+           MAX(1, gdk_texture_get_height(self->texture));
+}
+
+static void fit_image_snapshot(GdkPaintable* paintable, GdkSnapshot* snapshot, gdouble width,
+                               gdouble height) {
+    LookinFitImage* self = LOOKIN_FIT_IMAGE(paintable);
+    graphene_rect_t bounds = GRAPHENE_RECT_INIT(0, 0, (float)width, (float)height);
+    /* Trilinear: smooth when a large screenshot is shrunk */
+    gtk_snapshot_append_scaled_texture(GTK_SNAPSHOT(snapshot), self->texture,
+                                       GSK_SCALING_FILTER_TRILINEAR, &bounds);
+}
+
+static GdkPaintableFlags fit_image_get_flags(GdkPaintable* paintable) {
+    (void)paintable;
+    return GDK_PAINTABLE_STATIC_CONTENTS;
+}
+
+static void fit_image_paintable_init(GdkPaintableInterface* iface) {
+    iface->get_intrinsic_width = fit_image_get_intrinsic_width;
+    iface->get_intrinsic_height = fit_image_get_intrinsic_height;
+    iface->get_intrinsic_aspect_ratio = fit_image_get_intrinsic_aspect_ratio;
+    iface->snapshot = fit_image_snapshot;
+    iface->get_flags = fit_image_get_flags;
+}
+
+static void fit_image_finalize(GObject* object) {
+    LookinFitImage* self = LOOKIN_FIT_IMAGE(object);
+    g_clear_object(&self->texture);
+    g_weak_ref_clear(&self->view);
+    G_OBJECT_CLASS(lookin_fit_image_parent_class)->finalize(object);
+}
+
+static void lookin_fit_image_class_init(LookinFitImageClass* klass) {
+    G_OBJECT_CLASS(klass)->finalize = fit_image_finalize;
+}
+
+static void lookin_fit_image_init(LookinFitImage* self) {
+    g_weak_ref_init(&self->view, NULL);
+}
+
+/* The text view was resized: its horizontal page size is its width */
+static void on_view_page_size(GObject* adjustment, GParamSpec* pspec, gpointer user_data) {
+    (void)adjustment;
+    (void)pspec;
+    gdk_paintable_invalidate_size(GDK_PAINTABLE(user_data));
+}
+
+GdkPaintable* fit_image_new(GdkTexture* texture, GtkTextView* view) {
+    g_return_val_if_fail(GDK_IS_TEXTURE(texture), NULL);
+    LookinFitImage* self = g_object_new(LOOKIN_TYPE_FIT_IMAGE, NULL);
+    self->texture = g_object_ref(texture);
+    if (view != NULL) {
+        g_weak_ref_set(&self->view, view);
+        GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(view));
+        if (hadj != NULL) {
+            g_signal_connect_object(hadj, "notify::page-size", G_CALLBACK(on_view_page_size),
+                                    self, 0);
+        }
+    }
+    return GDK_PAINTABLE(self);
+}

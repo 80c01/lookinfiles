@@ -256,8 +256,13 @@ static void apply_tag_mark(GtkTextBuffer* buffer, const gchar* tag_name,
 }
 
 /* Parse inline formatting and insert into buffer */
+/* Images are decoded at most this wide (memory bound), then drawn at the
+ * width of the view */
+#define MD_IMAGE_MAX_WIDTH 2560
+
 static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
-                               const gchar* text, const gchar* doc_dir) {
+                               const gchar* text, const gchar* doc_dir,
+                               GtkTextView* view) {
     const gchar* p = text;
     while (*p != '\0') {
         /* Backslash escape */
@@ -283,23 +288,20 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
                         img_path = g_build_filename(doc_dir, url, NULL);
                     }
                     gboolean loaded = FALSE;
-                    GdkPixbuf* embedded = pixbuf_from_data_uri(url, 640);
-                    if (embedded != NULL) {
-                        GdkTexture* tex = texture_new_for_pixbuf(embedded);
-                        gtk_text_buffer_insert_paintable(buffer, iter, GDK_PAINTABLE(tex));
+                    /* Natural size, shrunk to the view width (VS Code) */
+                    GdkPixbuf* pix = pixbuf_from_data_uri(url, MD_IMAGE_MAX_WIDTH);
+                    if (pix == NULL && img_path != NULL && !g_str_has_prefix(url, "data:") &&
+                        g_file_test(img_path, G_FILE_TEST_EXISTS)) {
+                        pix = pixbuf_from_file(img_path, MD_IMAGE_MAX_WIDTH);
+                    }
+                    if (pix != NULL) {
+                        GdkTexture* tex = texture_new_for_pixbuf(pix);
+                        GdkPaintable* fit = fit_image_new(tex, view);
+                        gtk_text_buffer_insert_paintable(buffer, iter, fit);
+                        g_object_unref(fit);
                         g_object_unref(tex);
-                        g_object_unref(embedded);
+                        g_object_unref(pix);
                         loaded = TRUE;
-                    } else if (img_path != NULL && !g_str_has_prefix(url, "data:") &&
-                               g_file_test(img_path, G_FILE_TEST_EXISTS)) {
-                        GdkPixbuf* pix = gdk_pixbuf_new_from_file_at_scale(img_path, 480, -1, TRUE, NULL);
-                        if (pix != NULL) {
-                            GdkTexture* tex = texture_new_for_pixbuf(pix);
-                            gtk_text_buffer_insert_paintable(buffer, iter, GDK_PAINTABLE(tex));
-                            g_object_unref(tex);
-                            g_object_unref(pix);
-                            loaded = TRUE;
-                        }
                     }
                     g_free(img_path);
                     if (!loaded) {
@@ -363,7 +365,7 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
             if (strike_end) {
                 gchar* inner = g_strndup(p + 2, strike_end - (p + 2));
                 GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-                render_inline_text(buffer, iter, inner, doc_dir);
+                render_inline_text(buffer, iter, inner, doc_dir, view);
                 apply_tag_mark(buffer, "md_strike", m, iter);
                 gtk_text_buffer_delete_mark(buffer, m);
                 g_free(inner);
@@ -379,7 +381,7 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
             if (bi_end) {
                 gchar* inner = g_strndup(p + 3, bi_end - (p + 3));
                 GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-                render_inline_text(buffer, iter, inner, doc_dir);
+                render_inline_text(buffer, iter, inner, doc_dir, view);
                 apply_tag_mark(buffer, "md_bold_italic", m, iter);
                 gtk_text_buffer_delete_mark(buffer, m);
                 g_free(inner);
@@ -395,7 +397,7 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
             if (b_end) {
                 gchar* inner = g_strndup(p + 2, b_end - (p + 2));
                 GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-                render_inline_text(buffer, iter, inner, doc_dir);
+                render_inline_text(buffer, iter, inner, doc_dir, view);
                 apply_tag_mark(buffer, "md_bold", m, iter);
                 gtk_text_buffer_delete_mark(buffer, m);
                 g_free(inner);
@@ -418,7 +420,7 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
                     if (delim != '_' || !isalnum((unsigned char)it_end[1])) {
                         gchar* inner = g_strndup(p + 1, it_end - (p + 1));
                         GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-                        render_inline_text(buffer, iter, inner, doc_dir);
+                        render_inline_text(buffer, iter, inner, doc_dir, view);
                         apply_tag_mark(buffer, "md_italic", m, iter);
                         gtk_text_buffer_delete_mark(buffer, m);
                         g_free(inner);
@@ -987,7 +989,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 snprintf(tag_name, sizeof(tag_name), "md_h%d", h_level);
 
                 GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                render_inline_text(buffer, &iter, h_clean, doc_dir);
+                render_inline_text(buffer, &iter, h_clean, doc_dir, view);
                 gtk_text_buffer_insert(buffer, &iter, "\n", 1);
                 apply_tag_mark(buffer, tag_name, m, &iter);
                 gtk_text_buffer_delete_mark(buffer, m);
@@ -1041,7 +1043,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             GtkTextMark* qm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
             insert_tagged(buffer, &iter, "▌ ", alert_tag != NULL ? alert_tag : "md_quote_bar");
             GtkTextMark* tm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            render_inline_text(buffer, &iter, q_text, doc_dir);
+            render_inline_text(buffer, &iter, q_text, doc_dir, view);
             if (alert_tag != NULL) {
                 /* alert text keeps the normal colour, only the bar and title are coloured */
                 GtkTextIter ts;
@@ -1223,7 +1225,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
 
             GtkTextMark* im = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
             gchar* item_text = gather_item_text(lines, num_lines, &i, task_text);
-            render_inline_text(buffer, &iter, item_text, doc_dir);
+            render_inline_text(buffer, &iter, item_text, doc_dir, view);
             g_free(item_text);
             gtk_text_buffer_delete_mark(buffer, im);
 
@@ -1256,7 +1258,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             gtk_text_buffer_insert(buffer, &iter, "\t", -1);
 
             gchar* item_text = gather_item_text(lines, num_lines, &i, list_text);
-            render_inline_text(buffer, &iter, item_text, doc_dir);
+            render_inline_text(buffer, &iter, item_text, doc_dir, view);
             g_free(item_text);
 
             GtkTextIter line_end = iter;
@@ -1291,7 +1293,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 gtk_text_buffer_delete_mark(buffer, bm);
 
                 gchar* item_text = gather_item_text(lines, num_lines, &i, list_text);
-            render_inline_text(buffer, &iter, item_text, doc_dir);
+            render_inline_text(buffer, &iter, item_text, doc_dir, view);
             g_free(item_text);
 
                 GtkTextIter line_end = iter;
@@ -1317,7 +1319,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             }
 
             GtkTextMark* lm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-            render_inline_text(buffer, &iter, item_trim, doc_dir);
+            render_inline_text(buffer, &iter, item_trim, doc_dir, view);
             GtkTextIter line_end = iter;
             apply_tag_mark(buffer, tag_name, lm, &line_end);
             gtk_text_buffer_delete_mark(buffer, lm);
@@ -1334,7 +1336,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             if (next_trim[0] == '=' && next_trim[1] == '=') {
                 last_was_li = FALSE;
                 GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                render_inline_text(buffer, &iter, trim, doc_dir);
+                render_inline_text(buffer, &iter, trim, doc_dir, view);
                 gtk_text_buffer_insert(buffer, &iter, "\n", 1);
                 apply_tag_mark(buffer, "md_h1", m, &iter);
                 gtk_text_buffer_delete_mark(buffer, m);
@@ -1348,7 +1350,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             if (next_trim[0] == '-' && next_trim[1] == '-' && !is_hr_line(next_trim)) {
                 last_was_li = FALSE;
                 GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-                render_inline_text(buffer, &iter, trim, doc_dir);
+                render_inline_text(buffer, &iter, trim, doc_dir, view);
                 gtk_text_buffer_insert(buffer, &iter, "\n", 1);
                 apply_tag_mark(buffer, "md_h2", m, &iter);
                 gtk_text_buffer_delete_mark(buffer, m);
@@ -1389,7 +1391,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             g_string_append_c(para, hard ? '\n' : ' ');
             j++;
         }
-        render_inline_text(buffer, &iter, para->str, doc_dir);
+        render_inline_text(buffer, &iter, para->str, doc_dir, view);
         gtk_text_buffer_insert(buffer, &iter, "\n", 1);
         g_string_free(para, TRUE);
         i = j;

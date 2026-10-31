@@ -16,4 +16,15 @@ GdkPixbuf* pixbuf_from_bytes(const guchar* data, gsize len, gint max_width);
  * URI is not a base64 image */
 GdkPixbuf* pixbuf_from_data_uri(const gchar* uri, gint max_width);
 
+/* Image file scaled down to max_width pixels (0: full size), never scaled
+ * up; NULL if it cannot be read */
+GdkPixbuf* pixbuf_from_file(const gchar* path, gint max_width);
+
+/* Paintable for a text view: the texture at its natural size, scaled down
+ * to fit the width of view (NULL view: natural size), following resizes
+ * like CSS "max-width: 100%". Main thread. */
+#define LOOKIN_TYPE_FIT_IMAGE (lookin_fit_image_get_type())
+G_DECLARE_FINAL_TYPE(LookinFitImage, lookin_fit_image, LOOKIN, FIT_IMAGE, GObject)
+GdkPaintable* fit_image_new(GdkTexture* texture, GtkTextView* view);
+
 #endif /* IMAGE_UTILS_H */
