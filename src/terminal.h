@@ -20,4 +20,9 @@ void term_layout_apply(AppData* app, const gchar* text);
 void terminal_refresh_theme(void);
 #endif
 
+/* Show the terminal panel with a new pane beside (or, new_row, below) the
+ * running ones, its shell in cwd (NULL: the explorer's directory). Without
+ * VTE, toggles the panel's notice. */
+void terminal_open(AppData* app, gboolean new_row, const gchar* cwd);
+
 #endif /* TERMINAL_H */

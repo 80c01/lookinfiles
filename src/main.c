@@ -29,6 +29,7 @@
 #include "bookmarks.h"
 #include "notes.h"
 #include "remote.h"
+#include "files_menu.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
 #include "code_intel.h"
@@ -517,6 +518,7 @@ int main(int argc, char** argv) {
     notes_attach_context_menu(app);
     remote_init(app);
     remote_attach_context_menu(app);
+    files_menu_attach(app);
     orgmode_install_gtksourceview_spec();
     populate_tree(app, start_dir, FALSE, SORT_NAME);
     app->text_view = text_view;

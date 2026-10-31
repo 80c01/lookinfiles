@@ -335,34 +335,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     }
 
-#ifdef HAVE_VTE
-    /* Each pane gets its own shell in the current directory */
-    gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
-    if (!was_term_vis) {
-        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-        app->applying_layout = TRUE;
-    }
-    if (app->right_paned != NULL) {
-        gtk_widget_set_visible(app->right_paned, TRUE);
-    }
-    if (!was_term_vis) {
-        gtk_widget_set_visible(app->term_scroll, TRUE);
-    }
-    term_spawn_pane(app, keyval == GDK_KEY_T /* new row below? */);
-    app_emit(app, APP_EVENT_CHROME_CHANGED);
-    if (!was_term_vis) {
-        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
-    }
-#else
-    /* No VTE installed: the panel is a notice instead of a terminal */
-    gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
-    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-    app->applying_layout = TRUE;
-    gtk_widget_set_visible(app->term_scroll, !was_term_vis);
-    app_emit(app, APP_EVENT_CHROME_CHANGED);
-    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
-    gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
-#endif
+    terminal_open(app, keyval == GDK_KEY_T /* new row below? */, NULL);
     return TRUE;
 }
 

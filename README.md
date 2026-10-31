@@ -274,7 +274,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Ctrl+D` | Bookmark the selected entry or the current directory |
 | `m` | Toggle the rendered / raw preview of the selected file |
 | `+` / `-` / `0` | Zoom the previewed image or PDF in / out / back to the fitted size |
-| Right click | Context menu (bookmarks, notes and remote views) |
+| Right click | Context menu. Files view: open, open in the side panel (text files) or with the default application (other files), open a terminal in a folder, rename, move to the trash, copy the path, bookmark, undo; on an empty area: new file, new folder, terminal |
 
 **Bookmarks view**
 

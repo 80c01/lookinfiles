@@ -66,7 +66,8 @@ static void on_spawn_result(VteTerminal* term, GPid pid, GError* error,
     vte_terminal_watch_child(term, pid);
 }
 
-static void spawn_shell(AppData* app, VteTerminal* term) {
+/* Shell in cwd (NULL: the explorer's directory), or ssh to the active remote */
+static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
     RemoteMachine* rm = remote_get_active_machine(app);
     if (rm != NULL && rm->host != NULL && rm->host[0] != '\0') {
         GPtrArray* args = g_ptr_array_new_with_free_func(g_free);
@@ -107,7 +108,7 @@ static void spawn_shell(AppData* app, VteTerminal* term) {
         shell = "/bin/bash";
     }
     gchar* argv[2] = { (gchar*)shell, NULL };
-    vte_terminal_spawn_async(term, VTE_PTY_DEFAULT, app->base_dir, argv, NULL,
+    vte_terminal_spawn_async(term, VTE_PTY_DEFAULT, cwd != NULL ? cwd : app->base_dir, argv, NULL,
                              G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, -1, NULL,
                              on_spawn_result, app);
 }
@@ -163,7 +164,7 @@ static GtkWidget* get_target_pane(AppData* app) {
 }
 
 /* New terminal widget running a shell (not placed yet) */
-static GtkWidget* term_new_pane(AppData* app) {
+static GtkWidget* term_new_pane(AppData* app, const gchar* cwd) {
     GtkWidget* vte = vte_terminal_new();
     gtk_widget_set_hexpand(vte, TRUE);
     gtk_widget_set_vexpand(vte, TRUE);
@@ -181,12 +182,12 @@ static GtkWidget* term_new_pane(AppData* app) {
     g_signal_connect(focus_ctrl, "enter", G_CALLBACK(on_vte_focus_enter), app);
     gtk_widget_add_controller(vte, focus_ctrl);
 
-    spawn_shell(app, VTE_TERMINAL(vte));
+    spawn_shell(app, VTE_TERMINAL(vte), cwd);
     return vte;
 }
 
-void term_spawn_pane(AppData* app, gboolean new_row) {
-    GtkWidget* vte = term_new_pane(app);
+static void term_spawn_pane_in(AppData* app, gboolean new_row, const gchar* cwd) {
+    GtkWidget* vte = term_new_pane(app, cwd);
     GtkWidget* target = get_target_pane(app);
     if (target == NULL) {
         /* First terminal: placed directly in term_box */
@@ -232,6 +233,10 @@ void term_spawn_pane(AppData* app, gboolean new_row) {
     }
 
     app->last_focused_vte = vte;
+}
+
+void term_spawn_pane(AppData* app, gboolean new_row) {
+    term_spawn_pane_in(app, new_row, NULL);
 }
 
 void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
@@ -373,7 +378,7 @@ guint term_pane_count(AppData* app) {
 static GtkWidget* build_panes(AppData* app, const TermLayoutNode* node, GPtrArray* existing,
                               guint* next) {
     if (node->is_terminal) {
-        return (*next < existing->len) ? g_ptr_array_index(existing, (*next)++) : term_new_pane(app);
+        return (*next < existing->len) ? g_ptr_array_index(existing, (*next)++) : term_new_pane(app, NULL);
     }
     GtkWidget* paned = gtk_paned_new(node->vertical ? GTK_ORIENTATION_VERTICAL
                                                     : GTK_ORIENTATION_HORIZONTAL);
@@ -439,3 +444,37 @@ void on_vte_realize(GtkWidget* term, gpointer data) {
 }
 
 #endif /* HAVE_VTE */
+
+
+void terminal_open(AppData* app, gboolean new_row, const gchar* cwd) {
+#ifdef HAVE_VTE
+    /* Each pane gets its own shell */
+    gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
+    if (!was_term_vis) {
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+        app->applying_layout = TRUE;
+    }
+    if (app->right_paned != NULL) {
+        gtk_widget_set_visible(app->right_paned, TRUE);
+    }
+    if (!was_term_vis) {
+        gtk_widget_set_visible(app->term_scroll, TRUE);
+    }
+    term_spawn_pane_in(app, new_row, cwd);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
+    if (!was_term_vis) {
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+    }
+#else
+    (void)new_row;
+    (void)cwd;
+    /* No VTE installed: the panel is a notice instead of a terminal */
+    gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+    app->applying_layout = TRUE;
+    gtk_widget_set_visible(app->term_scroll, !was_term_vis);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
+    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+    gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+#endif
+}

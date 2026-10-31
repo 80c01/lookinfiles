@@ -240,6 +240,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   navigation keys of the global mode (`nav_keys`, `app_nav_style()`), then
   the view actions, the same in every mode.
 - `file_actions` — new file / new folder, rename and trash prompts.
+- `files_menu` — right-click menu of the files view (the key actions,
+  plus Copy Path, Open With Default App through `GtkFileLauncher`, and
+  Open Terminal Here through `terminal_open()`).
 - `file_moves` — renames and moves to the trash with editor tabs and
   expansion following, remembered for one undo step (`u`, status bar Undo
   after the `app_notice()` message).
@@ -291,8 +294,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   tab; `editor_detach_tabs()` and `editor_current_tab()` only touch editor
   pages, wherever they are), from the server or `code_index_references()`.
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
-- `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette; ssh into
-  the active remote machine.
+- `terminal` — embedded VTE panes (`Ctrl+T`, `terminal_open()` with a
+  working directory), Dark+ ANSI palette; ssh into the active remote machine.
 - `search` — the search bars of the explorer and of the preview, one at the
   bottom of each panel (`AppSearchBar`, `search_bar_new()`), opened and
   driven by the keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s`
