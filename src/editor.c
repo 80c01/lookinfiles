@@ -1188,6 +1188,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
         app->workspaces[app->current_ws].notebook_page = page;
     }
     minimap_update_visibility(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED); /* the split button shows with a tab */
     g_free(contents);
 }
 
