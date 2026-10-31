@@ -53,6 +53,8 @@ static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* messa
     GtkWidget* label = gtk_label_new(message);
     gtk_widget_set_halign(label, GTK_ALIGN_START);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+    /* Long paths have no spaces: allow breaks inside words */
+    gtk_label_set_wrap_mode(GTK_LABEL(label), PANGO_WRAP_WORD_CHAR);
     gtk_box_append(GTK_BOX(box), label);
 
     GtkWidget* entry = NULL;
@@ -137,13 +139,16 @@ gchar* file_action_new_file(AppData* app) {
     if (app == NULL) {
         return NULL;
     }
+    gchar* target_dir = get_target_files_dir(app);
+    gchar* message = g_strdup_printf("Create a file in:\n%s\n\nEnter file name:", target_dir);
     gchar* filename = NULL;
-    if (run_dialog(app->window, "New File", "Enter file name:", "", FALSE, "_Create", &filename) !=
-            APP_RESPONSE_OK || !is_valid_name(filename)) {
+    gint response = run_dialog(app->window, "New File", message, "", FALSE, "_Create", &filename);
+    g_free(message);
+    if (response != APP_RESPONSE_OK || !is_valid_name(filename)) {
         g_free(filename);
+        g_free(target_dir);
         return NULL;
     }
-    gchar* target_dir = get_target_files_dir(app);
     gchar* full_path = g_build_filename(target_dir, filename, NULL);
     if (!g_file_test(full_path, G_FILE_TEST_EXISTS)) {
         g_file_set_contents(full_path, "", 0, NULL);
@@ -164,13 +169,17 @@ gchar* file_action_new_folder(AppData* app) {
     if (app == NULL) {
         return NULL;
     }
+    gchar* target_dir = get_target_files_dir(app);
+    gchar* message = g_strdup_printf("Create a folder in:\n%s\n\nEnter folder name:", target_dir);
     gchar* folder_name = NULL;
-    if (run_dialog(app->window, "New Folder", "Enter folder name:", "folder", FALSE, "_Create",
-                   &folder_name) != APP_RESPONSE_OK || !is_valid_name(folder_name)) {
+    gint response = run_dialog(app->window, "New Folder", message, "folder", FALSE, "_Create",
+                               &folder_name);
+    g_free(message);
+    if (response != APP_RESPONSE_OK || !is_valid_name(folder_name)) {
         g_free(folder_name);
+        g_free(target_dir);
         return NULL;
     }
-    gchar* target_dir = get_target_files_dir(app);
     gchar* new_path = g_build_filename(target_dir, folder_name, NULL);
     g_mkdir_with_parents(new_path, 0755);
 
