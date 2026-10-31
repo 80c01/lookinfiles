@@ -33,6 +33,7 @@
 #include "session.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
+#include "canvas_view.h"
 #include "code_intel.h"
 #include "code_nav.h"
 #include "editor_modes.h"
@@ -45,6 +46,7 @@
 /* The window is closed: remember the workspaces for the next launch */
 static gboolean on_window_close_request(GtkWindow* window, gpointer data) {
     (void)window;
+    canvas_view_save((AppData*)data);
     session_save_now((AppData*)data);
     return FALSE;
 }

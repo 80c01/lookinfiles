@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "canvas_view.h"
 #include "dialog.h"
 #include "layouts.h"
 #include "themes.h"
@@ -138,6 +139,9 @@ void focus_prev_panel(AppData* app) {
 void close_shown_tab(AppData* app) {
     FocusInfo info;
     focus_route_get(app, &info);
+    if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL) && canvas_view_close_shown(app)) {
+        return;
+    }
     EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);
     if (t != NULL && t->container != NULL && gtk_widget_get_mapped(t->container)) {
         editor_close_tab(app, t);
@@ -163,6 +167,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
                 return TRUE;
             }
         }
+        canvas_view_save(app);
         session_save_now(app);
         if (app->main_loop != NULL && g_main_loop_is_running(app->main_loop)) {
             g_main_loop_quit(app->main_loop);

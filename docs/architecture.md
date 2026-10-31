@@ -282,6 +282,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   after the `app_notice()` message).
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
+- `canvas_view` — the **Canvas** page of the preview notebook (`app->canvas_page`):
+  edits one Canvas note at a time (`canvas_doc`), text boxes and pictures on a
+  `GtkFixed`; move / resize by dragging, pictures pasted (`Ctrl+V`) or dropped
+  into `media/`; saved automatically, on close and at quit (never while the page
+  is being destroyed). Not an editor tab: `app->editors` stays text only.
 - `bookmark_icons` — bookmark link icons from the target's kind
   (`path_kind`, never read on the UI thread); relabels the rows and previews
   the selected link again once the kind is known.
