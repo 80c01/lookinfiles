@@ -228,7 +228,8 @@ also `:tabnext` / `:tabprevious`, `:bnext` / `:bprevious`); `Alt+Left` /
 `Alt+Right` work everywhere. The tab keys switch the tabs of the notebook
 that has the focus and put the focus in the new tab; from the explorer they
 switch the tabs of the preview panel and the explorer keeps the focus.
-Clicking a tab also puts the focus in it. In the **Git Commits**,
+Clicking a tab also puts the focus in it; a middle click on an editor,
+**References** or **Search** tab closes it. In the **Git Commits**,
 **References** and **Search** tabs, the navigation keys of the global mode move in the list
 (`Enter` opens). A key sequence left unfinished (`g`, `C-x`, `Ctrl+W`, a
 count) is dropped when the focus moves to another panel or tab.

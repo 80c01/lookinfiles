@@ -580,6 +580,16 @@ static void on_tab_label_left_click(GtkGestureClick* gesture, gint n_press,
     }
 }
 
+static void on_tab_label_middle_click(GtkGestureClick* gesture, gint n_press,
+                                      gdouble x, gdouble y, gpointer user_data) {
+    (void)n_press; (void)x; (void)y;
+    EditorTab* tab = (EditorTab*)user_data;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    if (tab != NULL && tab->app != NULL) {
+        editor_close_tab((AppData*)tab->app, tab);
+    }
+}
+
 /* GTK selects the neighbour page when the current one is removed: when that
  * lands on the Git tab of the preview notebook (no editor tab left beside
  * it), show the preview instead */
@@ -1192,6 +1202,11 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(tab_lclick), GDK_BUTTON_PRIMARY);
     g_signal_connect(tab_lclick, "pressed", G_CALLBACK(on_tab_label_left_click), tab);
     gtk_widget_add_controller(tab->tab_label, GTK_EVENT_CONTROLLER(tab_lclick));
+
+    GtkGesture* tab_mclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(tab_mclick), GDK_BUTTON_MIDDLE);
+    g_signal_connect(tab_mclick, "released", G_CALLBACK(on_tab_label_middle_click), tab);
+    gtk_widget_add_controller(tab->tab_label, GTK_EVENT_CONTROLLER(tab_mclick));
 
     gint page = gtk_notebook_append_page(target_nb, container, tab->tab_label);
     editor_page_set_draggable(target_nb, container);

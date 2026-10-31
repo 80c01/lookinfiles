@@ -113,6 +113,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor tabs", "Ctrl+Alt+Arrows / HJKL", "Move active editor tab right / left / down / up (Right from the main panel: dedicated panel; Left from it: dock back)", 0},
     {"Editor tabs", "Drag tab header", "Drop on a tab bar to move the tab there, near an editor edge to split that side", 0},
     {"Editor tabs", "Right-click tab header", "Context menu to change mode, show line numbers, move, split, or close the editor tab", 0},
+    {"Editor tabs", "Middle-click tab header", "Close the tab (editor, References and Search tabs; asks first when there are unsaved changes)", 0},
     {"Editor tabs", "Ctrl+R / F2", "Rename current text buffer (F2 only in Emacs / Org-mode tabs)", 0},
     {"Editor tabs", "Ctrl+Alt+N", "Show or hide line numbers in the current editor tab (:set number / M-x display-line-numbers-mode)", 0},
     {"Org editor", "Tab / Shift+Tab", "Cycle heading / drawer / block folding, next table cell, <s block; global visibility", 0},

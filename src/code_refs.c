@@ -174,6 +174,13 @@ static void on_close_clicked(GtkButton* button, gpointer data) {
     g_object_unref(closed);
 }
 
+static void on_label_middle_click(GtkGestureClick* gesture, gint n_press,
+                                  gdouble x, gdouble y, gpointer data) {
+    (void)n_press; (void)x; (void)y;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    on_close_clicked(NULL, data);
+}
+
 static void page_free(gpointer p) {
     RefsPage* rp = p;
     g_object_unref(rp->store);
@@ -233,6 +240,10 @@ static RefsPage* ensure_page(AppData* app, GtkWidget** slot, const gchar* title)
     GtkWidget* other = slot == &app->refs_page ? app->search_page : app->refs_page;
     if (other != NULL) after = MAX(after, gtk_notebook_page_num(nb, other));
     GtkWidget* label = icon_label_new("edit-find", title);
+    GtkGesture* mclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
+    g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), rp);
+    gtk_widget_add_controller(label, GTK_EVENT_CONTROLLER(mclick));
     gtk_notebook_insert_page(nb, page, label, after + 1);
     return rp;
 }
