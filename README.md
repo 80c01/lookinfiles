@@ -227,7 +227,7 @@ The panel and tab keys also work from editor tabs of the same mode (Vim:
 also `:tabnext` / `:tabprevious`, `:bnext` / `:bprevious`); `Alt+Left` /
 `Alt+Right` work everywhere. The tab keys switch the tabs of the notebook
 that has the focus and put the focus in the new tab; from the explorer they
-switch the tabs of the preview notebook and the explorer keeps the focus.
+switch the tabs of the preview panel and the explorer keeps the focus.
 Clicking a tab also puts the focus in it. In the **Git Commits**,
 **References** and **Search** tabs, the navigation keys of the global mode move in the list
 (`Enter` opens). A key sequence left unfinished (`g`, `C-x`, `Ctrl+W`, a
@@ -243,7 +243,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels |
 | `Ctrl+W w` / `Ctrl+W W` (Vim), `C-x o` (Emacs), `F6` / `Shift+F6` (Notepad) | Focus the next / previous panel (global mode, or the mode of the focused editor tab) |
 | `Ctrl+W c` (Vim), `Ctrl+W` (Notepad) | Close the focused editor tab, or the current one if it is on screen (global mode, or the mode of the focused editor tab; asks first when there are unsaved changes) |
-| `gt` / `gT` (Vim), `C-x <right>` / `C-x <left>` (Emacs), `Ctrl+Tab` / `Ctrl+Shift+Tab` (Notepad), `Ctrl+PgDn` / `Ctrl+PgUp` (Vim, Notepad) | Next / previous tab of the focused notebook (from the explorer: of the preview notebook) |
+| `gt` / `gT` (Vim), `C-x <right>` / `C-x <left>` (Emacs), `Ctrl+Tab` / `Ctrl+Shift+Tab` (Notepad), `Ctrl+PgDn` / `Ctrl+PgUp` (Vim, Notepad) | Next / previous tab of the focused notebook (from the explorer: of the preview panel) |
 | `Alt+1` … `Alt+8` | Switch virtual workspace (or click the top-bar workspace map) |
 | `Alt++` / `Alt+-` | Add a workspace with the default layout / close the current one |
 | `Alt+R` | Recent folders and files, most recent first, filtered as you type: `Enter` on a folder makes it the explorer's folder, on a file shows it (`Ctrl+Enter` edits it) |
