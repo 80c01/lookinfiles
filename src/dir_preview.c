@@ -10,6 +10,7 @@
 #include "preview_doc_view.h"
 #include "markdown.h"
 #include "orgmode.h"
+#include "preview_cache.h"
 
 #include <stdio.h>
 
@@ -36,6 +37,7 @@ typedef struct {
     gchar* readme_text;    /* its first PREVIEW_BYTES, valid UTF-8 */
     gint64 readme_size;
     PreviewDoc* mail;      /* Maildir / MH folder: its message table instead */
+    gboolean cached_shown; /* the cached overview was shown at the selection */
 } DirPreviewJob;
 
 static void job_free(gpointer data) {
@@ -325,6 +327,49 @@ static void render_readme(AppData* app, const DirPreviewJob* job) {
     }
 }
 
+/* Overviews already read, shown again at once (then checked in the background) */
+#define DIR_CACHE_ENTRIES 16
+#define DIR_CACHE_BYTES   (4 * 1024 * 1024)
+
+static PreviewCache* dir_cache(void) {
+    static PreviewCache* cache = NULL;
+    if (cache == NULL) {
+        cache = preview_cache_new(DIR_CACHE_ENTRIES, DIR_CACHE_BYTES, job_free);
+    }
+    return cache;
+}
+
+static gchar* dir_cache_key(const DirPreviewJob* job) {
+    return g_strdup_printf("%d:%d:%s", job->show_hidden ? 1 : 0, (gint)job->sort, job->full);
+}
+
+/* Same overview read twice (mail folders are never cached) */
+static gboolean jobs_equal(const DirPreviewJob* a, const DirPreviewJob* b) {
+    return a->unreadable == b->unreadable && dir_summary_equal(a->summary, b->summary) &&
+           g_strcmp0(a->branch, b->branch) == 0 && g_strcmp0(a->readme_text, b->readme_text) == 0;
+}
+
+/* Keep a finished job's results (moved out of job) */
+static void cache_job(DirPreviewJob* job) {
+    DirPreviewJob* kept = g_memdup2(job, sizeof(DirPreviewJob));
+    kept->cancellable = NULL;
+    kept->cached_shown = FALSE;
+    job->name = NULL;
+    job->full = NULL;
+    job->summary = NULL;
+    job->branch = NULL;
+    job->readme_path = NULL;
+    job->readme_text = NULL;
+    gsize bytes = sizeof(DirPreviewJob) + kept->summary->entries->len * (sizeof(DirSummaryEntry) + 24) +
+                  (kept->readme_text != NULL ? strlen(kept->readme_text) : 0);
+    gchar* key = dir_cache_key(kept);
+    FileStamp none = { 0, 0, 0 };
+    preview_cache_insert(dir_cache(), key, &none, kept, bytes);
+    g_free(key);
+}
+
+static void render_job(AppData* app, const DirPreviewJob* job);
+
 static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_data) {
     (void)source_object;
     (void)user_data;
@@ -335,7 +380,21 @@ static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_d
         job->cancellable != app->preview_cancellable || job->summary == NULL) {
         return;
     }
+    if (job->mail != NULL) {
+        render_job(app, job);
+        return;
+    }
+    gchar* key = dir_cache_key(job);
+    DirPreviewJob* cached = preview_cache_lookup(dir_cache(), key, NULL);
+    g_free(key);
+    /* Nothing changed since the cached overview shown: leave it (and its scroll) */
+    if (!(job->cached_shown && cached != NULL && jobs_equal(cached, job))) {
+        render_job(app, job);
+    }
+    cache_job(job);
+}
 
+static void render_job(AppData* app, const DirPreviewJob* job) {
     GtkTextBuffer* buffer = app->buffer;
     apply_viewer_language(app, NULL, NULL);
     if (job->mail != NULL) {
@@ -437,5 +496,14 @@ void dir_preview_show(AppData* app, const gchar* name, const gchar* full) {
     job->full = g_strdup(full);
     job->show_hidden = app->show_hidden;
     job->sort = summary_sort(app->sort_mode);
+
+    gchar* key = dir_cache_key(job);
+    DirPreviewJob* cached = preview_cache_lookup(dir_cache(), key, NULL);
+    g_free(key);
+    if (cached != NULL) {
+        cached->app = app;
+        render_job(app, cached);
+        job->cached_shown = TRUE;
+    }
     g_timeout_add(DIR_PREVIEW_DELAY_MS, job_start, job);
 }

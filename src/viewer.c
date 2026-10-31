@@ -24,6 +24,8 @@
 #include "preview_formats.h"
 #include "text_chunks.h"
 #include "text_encoding.h"
+#include "preview_cache.h"
+#include "tree_nav.h"
 
 /* Text shown from a Word document before it is cut (images not counted) */
 
@@ -247,6 +249,11 @@ typedef struct {
     const gchar* encoding; /* text encoding detected (static string) */
     gchar* error_msg;
     gint64 start_us;       /* selection time (LOOKIN_DEBUG_PREVIEW timings) */
+    FileStamp stamp;       /* file version read (valid if has_stamp) */
+    gboolean has_stamp;
+    FileStamp cached_stamp; /* version of the cached preview already shown (if has_cached) */
+    gboolean has_cached;
+    gboolean unchanged;    /* the file is still the cached version: nothing was read */
 } TextPreviewTaskData;
 
 static void text_preview_task_data_free(gpointer data) {
@@ -277,8 +284,13 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     }
 
     td->kind = file_kind_from_name(td->name);
-    struct stat st;
-    td->fsize = (g_stat(td->full, &st) == 0) ? (gint64)st.st_size : -1;
+    td->has_stamp = file_stamp_read(td->full, &td->stamp);
+    td->fsize = td->has_stamp ? td->stamp.size : -1;
+    if (td->has_stamp && td->has_cached && file_stamp_equal(&td->stamp, &td->cached_stamp)) {
+        td->unchanged = TRUE;
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
     FILE* fp = (td->fsize >= 0) ? g_fopen(td->full, "rb") : NULL;
     if (fp == NULL) {
         td->error_msg = g_strdup_printf("[ Cannot read: %s ]", td->name);
@@ -423,6 +435,61 @@ static void show_media_preview(AppData* app, FileKind kind, const gchar* name, c
 
 static void show_text_preview(TextPreviewTaskData* td);
 
+/* Previews already built (the worker's results), shown again at once when a
+ * file is selected again or a workspace comes back to it */
+#define PREVIEW_CACHE_ENTRIES 24
+#define PREVIEW_CACHE_BYTES   (16 * 1024 * 1024)
+
+static PreviewCache* preview_cache(void) {
+    static PreviewCache* cache = NULL;
+    if (cache == NULL) {
+        cache = preview_cache_new(PREVIEW_CACHE_ENTRIES, PREVIEW_CACHE_BYTES,
+                                  text_preview_task_data_free);
+    }
+    return cache;
+}
+
+/* Cache key: the file and the settings the worker built the preview with */
+static gchar* preview_cache_key(const gchar* full, gboolean render_raw, guint page) {
+    return g_strdup_printf("%d:%u:%s", render_raw ? 1 : 0, page, full);
+}
+
+static gsize preview_doc_bytes(const PreviewDoc* doc) {
+    if (doc == NULL) {
+        return 0;
+    }
+    gsize bytes = sizeof(PreviewDoc) + (doc->text != NULL ? doc->text->len : 0);
+    if (doc->spans != NULL) {
+        bytes += doc->spans->len * sizeof(PreviewSpan);
+    }
+    if (doc->images != NULL) {
+        for (guint i = 0; i < doc->images->len; i++) {
+            GBytes* data = g_array_index(doc->images, PreviewImage, i).data;
+            bytes += (data != NULL) ? g_bytes_get_size(data) : 0;
+        }
+    }
+    return bytes;
+}
+
+/* Keep the results of a finished worker (moved out of td) */
+static void cache_text_preview(TextPreviewTaskData* td) {
+    if (!td->has_stamp || td->error_msg != NULL) {
+        return;
+    }
+    TextPreviewTaskData* kept = g_memdup2(td, sizeof(TextPreviewTaskData));
+    td->name = NULL;
+    td->full = NULL;
+    td->content_type = NULL;
+    td->utf8_text = NULL;
+    td->doc = NULL;
+    gsize bytes = sizeof(TextPreviewTaskData) +
+                  (kept->utf8_text != NULL ? strlen(kept->utf8_text) : 0) +
+                  preview_doc_bytes(kept->doc);
+    gchar* key = preview_cache_key(kept->full, kept->render_raw, kept->page);
+    preview_cache_insert(preview_cache(), key, &kept->stamp, kept, bytes);
+    g_free(key);
+}
+
 /* LOOKIN_DEBUG_PREVIEW=1: time from the selection to the preview on screen */
 static gboolean debug_preview_timings(void) {
     static gint enabled = -1;
@@ -444,6 +511,9 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
         cancellable != td->app->preview_cancellable) {
         return;
     }
+    if (td->unchanged) {
+        return; /* the cached preview shown at the selection is current */
+    }
     gint64 ready_us = g_get_monotonic_time();
     show_text_preview(td);
     if (debug_preview_timings()) {
@@ -453,6 +523,7 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
                    (end_us - td->start_us) / 1000.0, (ready_us - td->start_us) / 1000.0,
                    (end_us - ready_us) / 1000.0);
     }
+    cache_text_preview(td);
 }
 
 static void show_text_preview(TextPreviewTaskData* td) {
@@ -595,6 +666,29 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         g_clear_pointer(&app->viewed_content_type, g_free);
     }
 
+    /* Built before: show it now; the worker only checks the file is unchanged.
+     * Not for the file already shown (reloaded because it changed): it would
+     * only draw the old content again before the new one. */
+    TextPreviewTaskData* cached = NULL;
+    if (g_strcmp0(full, app->viewed_path) != 0) {
+        gchar* key = preview_cache_key(full, td->render_raw, td->page);
+        cached = preview_cache_lookup(preview_cache(), key, &td->cached_stamp);
+        g_free(key);
+    }
+    if (cached != NULL) {
+        td->has_cached = TRUE;
+        cached->app = app;
+        show_text_preview(cached);
+        app->viewed_kind = cached->kind;
+        app->viewed_encoding = cached->encoding;
+        g_free(app->viewed_content_type);
+        app->viewed_content_type = g_strdup(cached->content_type);
+        if (debug_preview_timings()) {
+            g_printerr("preview %s [cached]: %.1f ms\n", name,
+                       (g_get_monotonic_time() - td->start_us) / 1000.0);
+        }
+    }
+
     GTask* task = g_task_new(NULL, app->preview_cancellable, on_text_preview_ready, NULL);
     g_task_set_task_data(task, td, text_preview_task_data_free);
     g_task_run_in_thread(task, text_preview_thread_func);
@@ -604,7 +698,13 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
 /* Re-render the file currently shown in the preview (APP_EVENT_PREVIEW_STALE) */
 void viewer_reload_preview(AppData* app) {
     if (app->viewed_path == NULL) {
-        return; /* no file shown (folder, summary row): nothing to read again */
+        /* A folder: its overview again (git counts, theme); other rows
+         * without a file (summaries) have nothing to read again */
+        ExplorerRow* row = tree_nav_selected(app);
+        if (row != NULL && explorer_row_is(row, "dir") && row->path[0] != '\0') {
+            dir_preview_show(app, row->name, row->path);
+        }
+        return;
     }
     gchar* fallback = (app->viewed_name == NULL && app->viewed_path != NULL)
                           ? g_path_get_basename(app->viewed_path)

@@ -20,6 +20,25 @@ void dir_summary_free(DirSummary* s) {
     g_free(s);
 }
 
+gboolean dir_summary_equal(const DirSummary* a, const DirSummary* b) {
+    if (a == NULL || b == NULL) {
+        return a == b;
+    }
+    if (a->entries->len != b->entries->len || a->truncated != b->truncated ||
+        g_strcmp0(a->readme, b->readme) != 0) {
+        return FALSE;
+    }
+    for (guint i = 0; i < a->entries->len; i++) {
+        const DirSummaryEntry* ea = &g_array_index(a->entries, DirSummaryEntry, i);
+        const DirSummaryEntry* eb = &g_array_index(b->entries, DirSummaryEntry, i);
+        if (ea->is_dir != eb->is_dir || ea->size != eb->size || ea->mtime != eb->mtime ||
+            g_strcmp0(ea->name, eb->name) != 0) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
 gboolean dir_summary_add(DirSummary* s, const gchar* name, gboolean is_dir,
                          guint64 size, gint64 mtime) {
     if (s->entries->len >= DIR_SUMMARY_SCAN_LIMIT) {

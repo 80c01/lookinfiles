@@ -82,6 +82,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   documents), slider drag and click-to-center mapping.
 - `dir_summary` — one directory level for the directory preview: entries
   (name, type, size, date), totals, sorting, relative dates, column padding.
+- `preview_cache` — bounded most-recently-used cache of previews built,
+  keyed by file and settings, with the file's stamp (size, mtime, inode).
 - `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex` — Vim pieces:
   key codes and `<notation>` (keys are Unicode code points, special keys in
   the private use area), the `["x][count]op[count]motion` grammar
@@ -217,9 +219,13 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `load_file_content()`, `viewer_reload_preview()`), image/text/dir previews,
   viewer keys. Its worker detects the kind, reads text kinds, and runs the
   `preview_formats` builder (falling back to plain text or the hex dump);
-  never add a format-specific branch to the viewer.
+  never add a format-specific branch to the viewer. Its results are kept in a
+  `preview_cache`: a file selected again is shown at once, and the worker
+  only checks the file's stamp (it reads and shows the file again if changed).
 - `dir_preview` — directory preview (`dir_preview_show()`): one level read
   in a worker thread after a short delay (never recursive), header and table.
+  A folder seen before is shown at once from a `preview_cache`, and drawn
+  again only if the worker reads something different.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
 - `editor` — editor tabs in the notebook(s): open, save, close, move, dedicated panel.

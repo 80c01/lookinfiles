@@ -180,6 +180,25 @@ static void test_kinds(void) {
     dir_summary_free(s);
 }
 
+/* Equal summaries list the same entries in the same order */
+static void test_equal(void) {
+    DirSummary* a = dir_summary_new();
+    DirSummary* b = dir_summary_new();
+    g_assert_true(dir_summary_equal(a, b));
+    dir_summary_add(a, "x.txt", FALSE, 10, 100);
+    g_assert_false(dir_summary_equal(a, b));
+    dir_summary_add(b, "x.txt", FALSE, 10, 100);
+    g_assert_true(dir_summary_equal(a, b));
+    DirSummary* c = dir_summary_new();
+    dir_summary_add(c, "x.txt", FALSE, 11, 100); /* grew */
+    g_assert_false(dir_summary_equal(a, c));
+    g_assert_false(dir_summary_equal(a, NULL));
+    g_assert_true(dir_summary_equal(NULL, NULL));
+    dir_summary_free(a);
+    dir_summary_free(b);
+    dir_summary_free(c);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/dir_summary/totals", test_totals);
@@ -190,5 +209,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/dir_summary/readme", test_readme);
     g_test_add_func("/dir_summary/git", test_git);
     g_test_add_func("/dir_summary/kinds", test_kinds);
+    g_test_add_func("/dir_summary/equal", test_equal);
     return g_test_run();
 }

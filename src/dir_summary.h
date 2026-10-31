@@ -50,6 +50,9 @@ typedef struct {
 DirSummary* dir_summary_new(void);
 void dir_summary_free(DirSummary* s);
 
+/* Same entries (names, sizes, dates, in the same order) and README */
+gboolean dir_summary_equal(const DirSummary* a, const DirSummary* b);
+
 /* Add one entry. Returns FALSE (and sets truncated) once the limit is reached. */
 gboolean dir_summary_add(DirSummary* s, const gchar* name, gboolean is_dir,
                          guint64 size, gint64 mtime);
