@@ -10,6 +10,7 @@
 #include "code_symbols.h"
 #include "vim_engine.h"
 #include "vim_keys.h"
+#include "text_encoding.h"
 #include <string.h>
 
 static EditorModeState* state_of(EditorTab* tab) {
@@ -389,7 +390,9 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
                 return TRUE;
             }
             gchar* text = NULL;
-            if (tab->path != NULL && g_file_get_contents(tab->path, &text, NULL, NULL)) {
+            gsize len = 0;
+            if (tab->path != NULL && g_file_get_contents(tab->path, &text, &len, NULL)) {
+                tab->line_ending = text_line_ending_detect(text, len);
                 if (!g_utf8_validate(text, -1, NULL)) {
                     gchar* valid = g_utf8_make_valid(text, -1);
                     g_free(text);

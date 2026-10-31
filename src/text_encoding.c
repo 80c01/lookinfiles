@@ -80,3 +80,22 @@ gchar* text_encoding_to_utf8(const gchar* data, gsize len, const gchar** encodin
     }
     return out != NULL ? out : g_utf8_make_valid(data, (gssize)len);
 }
+
+const gchar* text_line_ending_detect(const gchar* data, gsize len) {
+    gsize lf = 0, crlf = 0, cr = 0;
+    for (gsize i = 0; data != NULL && i < len; i++) {
+        if (data[i] == '\n') {
+            lf++;
+        } else if (data[i] == '\r') {
+            if (i + 1 < len && data[i + 1] == '\n') {
+                crlf++;
+                i++;
+            } else {
+                cr++;
+            }
+        }
+    }
+    if (crlf > lf && crlf >= cr) return "Windows (CRLF)";
+    if (cr > lf && cr > crlf) return "Mac (CR)";
+    return "Unix (LF)";
+}

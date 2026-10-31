@@ -105,6 +105,7 @@ typedef struct {
     GtkWidget* status_bar; /* status line for this editor tab */
     gchar* status_text;   /* status message */
     gpointer mode_state;  /* mode-specific state (EditorModeState*) */
+    const gchar* line_ending; /* "Unix (LF)"... detected at load (static) */
 } EditorTab;
 
 /* Virtual workspace layout state (dynamic workspaces like Ubuntu) */

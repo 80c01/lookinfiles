@@ -55,10 +55,25 @@ static void test_legacy(void) {
     g_free(s);
 }
 
+static void test_line_ending(void) {
+    g_assert_cmpstr(text_line_ending_detect("a\nb\n", 4), ==, "Unix (LF)");
+    g_assert_cmpstr(text_line_ending_detect("a\r\nb\r\n", 6), ==, "Windows (CRLF)");
+    g_assert_cmpstr(text_line_ending_detect("a\rb\r", 4), ==, "Mac (CR)");
+    g_assert_cmpstr(text_line_ending_detect("no break", 8), ==, "Unix (LF)");
+    g_assert_cmpstr(text_line_ending_detect("", 0), ==, "Unix (LF)");
+    g_assert_cmpstr(text_line_ending_detect(NULL, 0), ==, "Unix (LF)");
+    /* Mixed: the most frequent wins, ties go to LF */
+    g_assert_cmpstr(text_line_ending_detect("a\r\nb\r\nc\n", 9), ==, "Windows (CRLF)");
+    g_assert_cmpstr(text_line_ending_detect("a\r\nb\n", 5), ==, "Unix (LF)");
+    /* A CR LF pair cut by the end of the data counts as CR */
+    g_assert_cmpstr(text_line_ending_detect("a\r\n", 2), ==, "Mac (CR)");
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/text_encoding/utf8", test_utf8);
     g_test_add_func("/text_encoding/utf16", test_utf16);
     g_test_add_func("/text_encoding/legacy", test_legacy);
+    g_test_add_func("/text_encoding/line_ending", test_line_ending);
     return g_test_run();
 }

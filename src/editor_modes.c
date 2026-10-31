@@ -646,8 +646,9 @@ void editor_modes_update_status(EditorTab* tab) {
 
     /* 1. Notepad Status */
     if (st->np_info_label != NULL) {
-        gchar* info = g_strdup_printf("Ln %d, Col %d   |   %d%%   |   Windows (CRLF)   |   UTF-8", line, col,
-                                      fonts_zoom_percent());
+        gchar* info = g_strdup_printf("Ln %d, Col %d   |   %d%%   |   %s   |   UTF-8", line, col,
+                                      fonts_zoom_percent(),
+                                      tab->line_ending != NULL ? tab->line_ending : "Unix (LF)");
         gtk_label_set_text(GTK_LABEL(st->np_info_label), info);
         g_free(info);
     }

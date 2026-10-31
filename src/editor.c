@@ -5,6 +5,7 @@
 #include "app_events.h"
 #include "text_style.h"
 #include "file_types.h"
+#include "text_encoding.h"
 #include "minimap.h"
 #include "diff_gutter.h"
 #include "pane_geometry.h"
@@ -998,6 +999,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     tab->name = g_strdup(name);
     tab->app = app;
     tab->nb = GTK_WIDGET(target_nb);
+    tab->line_ending = text_line_ending_detect(contents, len);
     const gchar* cfg = g_get_user_config_dir();
     tab->is_buffer = (cfg != NULL && g_str_has_prefix(full, cfg));
     if (is_org_file(name)) {

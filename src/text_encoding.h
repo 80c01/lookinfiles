@@ -17,4 +17,9 @@ const gchar* text_encoding_detect(const guchar* data, gsize len);
  * detected encoding. Caller frees. */
 gchar* text_encoding_to_utf8(const gchar* data, gsize len, const gchar** encoding);
 
+/* Line ending used by the text, for the status bar: "Windows (CRLF)",
+ * "Mac (CR)" or "Unix (LF)" (static strings). The most frequent kind wins
+ * (ties go to LF, then CRLF); text without a line break is "Unix (LF)". */
+const gchar* text_line_ending_detect(const gchar* data, gsize len);
+
 #endif /* TEXT_ENCODING_H */
