@@ -63,7 +63,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `FileKind` (`preview_format_build()` from a `PreviewInput`), the hex dump
   (`preview_format_hex_dump()`), and `preview_format_build_file()` for tests
   and tools. A new format = a parser module in this layer + one case in
-  `builder_for()` + fixtures (see TASK.md, "Definition of done").
+  `builder_for()` + fixtures (see previews.md, "Adding a format").
 - `org_time` — Org timestamps (`<2026-10-29 Thu 10:00 +1w>`): parse, format,
   field arithmetic, repeaters, the date prompt (`org_timestamp_read()`).
 - `org_doc` — Org document commands on an array of lines + cursor (`OrgPos`):
@@ -110,7 +110,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   to the text view and recorded from the buffer signals. Tested in
   `tests/test_vim_engine.c` by typing keys on a headless buffer.
 - `code_symbol`, `code_scan_c`, `code_scan`, `code_index` — the built-in
-  code index of code navigation (TASK_CODE_NAV.md): languages and the
+  code index of code navigation (code-nav.md): languages and the
   identifier under the cursor (`code_word_at()`), symbol scanners
   (`code_scan_text()`: a C-family state machine, line regexes for the other
   languages; no parser, locals not listed), the project's files (`git

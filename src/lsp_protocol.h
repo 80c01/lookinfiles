@@ -1,7 +1,7 @@
 #ifndef LSP_PROTOCOL_H
 #define LSP_PROTOCOL_H
 
-/* Language Server Protocol messages (TASK_CODE_NAV.md, phase 2): JSON-RPC
+/* Language Server Protocol messages (docs/code-nav.md): JSON-RPC
  * framing, request parameters, and the results code navigation uses
  * (locations, hover, signature help, symbols, server capabilities).
  * Positions: LSP columns count UTF-16 code units unless the server chose

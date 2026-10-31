@@ -1,7 +1,7 @@
 #ifndef CODE_INDEX_H
 #define CODE_INDEX_H
 
-/* Built-in code index (TASK_CODE_NAV.md, phase 0): the project of a file,
+/* Built-in code index (docs/code-nav.md): the project of a file,
  * its source files, and the definition lookup over them with the scanners
  * of code_scan. Nothing is cached: each lookup reads the files of the same
  * language family that contain the name, within CODE_INDEX_MAX_FILES and

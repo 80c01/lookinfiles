@@ -1,7 +1,7 @@
 #ifndef CODE_SYMBOL_H
 #define CODE_SYMBOL_H
 
-/* Source code symbols for code navigation (TASK_CODE_NAV.md): languages
+/* Source code symbols for code navigation (docs/code-nav.md): languages
  * and their families, the identifier under the cursor, and CodeSymbol,
  * one definition or declaration found by a scanner (code_scan). Pure GLib,
  * unit-tested. */

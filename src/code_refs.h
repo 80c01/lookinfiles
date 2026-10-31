@@ -1,7 +1,7 @@
 #ifndef CODE_REFS_H
 #define CODE_REFS_H
 
-/* References of a symbol (TASK_CODE_NAV.md, phase 3): the language server's
+/* References of a symbol (docs/code-nav.md): the language server's
  * references when one serves the file, else every whole-word occurrence in
  * the project (code_index_references(), in a worker). They are listed in a
  * "References" tab of the preview notebook, after the Git tab: one row per

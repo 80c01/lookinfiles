@@ -1,7 +1,7 @@
 #ifndef MAIL_TNEF_H
 #define MAIL_TNEF_H
 
-/* TNEF (Transport Neutral Encapsulation Format, TASK.md phase 6): the
+/* TNEF (Transport Neutral Encapsulation Format, docs/previews.md): the
  * "winmail.dat" attachment Outlook adds to mails. Signature 78 9F 3E 22,
  * then attributes (level, id, length, data, checksum): message attributes
  * (subject, sender, date, body) and attachments, each opened by

@@ -51,7 +51,7 @@ All notable changes to this project are listed here. The format follows
   `C-u M-.` / `M-,` / `C-M-,`; Vim `gd` / `Ctrl+]` / `gD` / `:tag`, `Ctrl+O` /
   `Tab` across files). A built-in index reads the project in the background
   (C, C++, Java, C#, Python, Shell, JavaScript / TypeScript, Go, Rust, Lua,
-  Ruby, Makefiles); see TASK_CODE_NAV.md. With Universal Ctags installed, its
+  Ruby, Makefiles); see docs/code-nav.md. With Universal Ctags installed, its
   index is used instead (cached, updated per changed file) and more languages
   are covered. Language servers (clangd, pylsp, gopls, rust-analyzer...) are
   used first when installed (`lsp.ini` to choose them).
@@ -63,7 +63,7 @@ All notable changes to this project are listed here. The format follows
   of the other occurrences of the identifier, `Ctrl+Click` in source previews,
   and language server diagnostics (underlined, counted in the status bar).
 - Previews for many more formats, each built in the background and shown as
-  close as possible to its own application (see TASK.md):
+  close as possible to its own application (see docs/previews.md):
   CSV / TSV tables; pretty-printed JSON, JSONC and JSON Lines; diffs and
   patches with a change summary; logs coloured by level, shown from their
   end; archives (ZIP, JAR, tar, tar.gz, ar / .deb) and the content of gzipped

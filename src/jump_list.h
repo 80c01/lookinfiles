@@ -1,7 +1,7 @@
 #ifndef JUMP_LIST_H
 #define JUMP_LIST_H
 
-/* Back / forward history of code navigation jumps (TASK_CODE_NAV.md),
+/* Back / forward history of code navigation jumps (docs/code-nav.md),
  * across files, like the navigation history of VS Code or Emacs' xref
  * marker stack. Locations are kept as line and byte column: they do not
  * follow later edits. Pure GLib, unit-tested. */

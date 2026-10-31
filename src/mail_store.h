@@ -1,7 +1,7 @@
 #ifndef MAIL_STORE_H
 #define MAIL_STORE_H
 
-/* Mail stores (TASK.md phase 6): Outlook data files (.pst) and offline
+/* Mail stores (docs/previews.md): Outlook data files (.pst) and offline
  * stores (.ost), magic "!BDN", and Outlook Express folders (.dbx), magic
  * CF AD 12 FE. Only their header is read: a card with the format, ANSI or
  * Unicode, the size recorded in the header (a shorter file is truncated),

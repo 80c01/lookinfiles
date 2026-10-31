@@ -1,7 +1,7 @@
 #!/bin/sh
 # Preview benchmark (make bench-preview): times every structured preview on
 # the fixture corpus (tests/fixtures/preview) plus large generated files, and
-# fails if one exceeds its budget (TASK.md, rule 1).
+# fails if one exceeds its budget (docs/previews.md, rule 1).
 #
 # usage: tools/bench_preview.sh build/preview_tool [extra dirs...]
 set -eu

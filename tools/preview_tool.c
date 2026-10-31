@@ -2,7 +2,7 @@
  *
  *   preview_tool bench DIR...     time the structured preview of every file
  *                                 (the viewer's worker-thread part) and fail
- *                                 when one exceeds its budget (TASK.md rule 1)
+ *                                 when one exceeds its budget (docs/previews.md rule 1)
  *   preview_tool coverage DIR...  how many files end at each fidelity level,
  *                                 and which extensions still end at the hex
  *                                 dump (L0)
@@ -18,7 +18,7 @@
 /* Same text limit as the viewer reads for files up to PREVIEW_THRESHOLD */
 #define TEXT_LIMIT (512 * 1024)
 
-/* Budgets in milliseconds (TASK.md): text formats, binary / rendered formats */
+/* Budgets in milliseconds (docs/previews.md): text formats, binary / rendered formats */
 #define BUDGET_TEXT_MS 50.0
 #define BUDGET_BINARY_MS 150.0
 
@@ -108,7 +108,7 @@ static int run_bench(GPtrArray* files) {
     return status;
 }
 
-/* Fidelity level a kind reaches today (see TASK.md, "Fidelity ladder") */
+/* Fidelity level a kind reaches today (see docs/previews.md, "Fidelity ladder") */
 static gint kind_level(FileKind kind, gboolean text) {
     if (kind == FILE_KIND_BINARY) {
         return 0;

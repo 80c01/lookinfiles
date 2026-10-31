@@ -1,7 +1,7 @@
 #ifndef MAIL_MSG_H
 #define MAIL_MSG_H
 
-/* Outlook messages (.msg, TASK.md phase 6): OLE2 compound files whose MAPI
+/* Outlook messages (.msg, docs/previews.md): OLE2 compound files whose MAPI
  * properties are streams "__substg1.0_<id><type>" (subject, sender,
  * recipients, plain / HTML / compressed RTF body, transport headers) and
  * the "__properties_version1.0" table (dates); attachments are the

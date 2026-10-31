@@ -359,7 +359,7 @@ key ctrl+alt+Up;        shot ws3_editor_unsplit
 key alt+1;              shot ws1_editor_split_kept
 key alt+3;              shot ws3_editors_kept
 key alt+minus;          shot ws3_removed
-# Code navigation (TASK_CODE_NAV.md): src/main.c calls answer() on line 6
+# Code navigation (docs/code-nav.md): src/main.c calls answer() on line 6
 key Down space Down Down; shot code_nav_preview_main_c
 xdotool mousemove 560 160 keydown ctrl click 1 keyup ctrl   # on "answer" (line numbers shift the text)
 sleep 1;                shot code_nav_preview_ctrl_click   # editor opened on "static int answer"
@@ -498,7 +498,7 @@ fi
 grep '^preview ' "$OUT/app_formats.log" | sed 's/^/  /'
 
 # --- GTK warnings and criticals (the missing session bus is expected headless)
-# Known, not yet understood (TASK.md, "Known issues"): after a wide table
+# Known, not yet understood (docs/previews.md, "Known issues"): after a wide table
 # preview then narrower ones, GTK sometimes snapshots the trough of the
 # preview's own scrollbar before allocating it. Nothing is drawn wrong. Only
 # that exact message is tolerated.

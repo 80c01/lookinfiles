@@ -1,7 +1,7 @@
 #ifndef CODE_INTEL_H
 #define CODE_INTEL_H
 
-/* Language servers for code navigation (TASK_CODE_NAV.md, phase 2): one
+/* Language servers for code navigation (docs/code-nav.md): one
  * LspClient per project and server command, started on the first request
  * from a tab of its language (lsp_config), fed the text of the open tabs
  * before each request (full text), and closed documents dropped. Results

@@ -1,7 +1,7 @@
 #ifndef CODE_NAV_H
 #define CODE_NAV_H
 
-/* Code navigation in editor tabs (TASK_CODE_NAV.md): go to the definition
+/* Code navigation in editor tabs (docs/code-nav.md): go to the definition
  * or declaration of the identifier under the cursor, or of a name, and walk
  * back / forward through the jumps across files. The same functions serve
  * the three editor modes; each maps its own keys to them.

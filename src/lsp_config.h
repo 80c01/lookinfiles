@@ -1,7 +1,7 @@
 #ifndef LSP_CONFIG_H
 #define LSP_CONFIG_H
 
-/* Language server commands (TASK_CODE_NAV.md, phase 2): built-in defaults
+/* Language server commands (docs/code-nav.md): built-in defaults
  * per language (clangd, pylsp, gopls...), overridden by the [servers]
  * group of lsp.ini in the configuration directory:
  *

@@ -1,7 +1,7 @@
 #ifndef MAIL_VIEW_H
 #define MAIL_VIEW_H
 
-/* Previews of mail messages (TASK.md, phase 6), whatever their source
+/* Previews of mail messages (docs/previews.md), whatever their source
  * (.eml, mbox entry, Maildir file, Outlook .msg): a header card (from, to,
  * cc, date in local time, subject), then the body: text/plain with quoted
  * lines and the signature dimmed, or text/html through the HTML renderer

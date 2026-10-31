@@ -1,7 +1,7 @@
 #ifndef CODE_SCAN_H
 #define CODE_SCAN_H
 
-/* Symbol scanners of the built-in code index (TASK_CODE_NAV.md): the C
+/* Symbol scanners of the built-in code index (docs/code-nav.md): the C
  * family through code_scan_c, the other languages with line-based regular
  * expressions (Python, Shell, JavaScript / TypeScript, Go, Rust, Lua, Ruby,
  * Makefile). Heuristic: no parser, no scopes, local variables are not

@@ -1,7 +1,7 @@
 #ifndef MAIL_DIR_H
 #define MAIL_DIR_H
 
-/* Maildir and MH mail folders in the directory preview (TASK.md, phase 6):
+/* Maildir and MH mail folders in the directory preview (docs/previews.md):
  * a folder holding cur/ and new/ (Maildir, with Maildir++ ".Folder"
  * subfolders) or numbered files with .mh_sequences (MH) is shown as a
  * table of its newest messages (date, from, subject, status from the

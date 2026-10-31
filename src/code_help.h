@@ -1,7 +1,7 @@
 #ifndef CODE_HELP_H
 #define CODE_HELP_H
 
-/* Help cards in editor tabs (TASK_CODE_NAV.md, phase 2): what the
+/* Help cards in editor tabs (docs/code-nav.md): what the
  * identifier at the cursor (or under the mouse, after a short rest) is —
  * signature, documentation, location — and the signature of the call being
  * typed, with the current parameter in bold. A language server answers when

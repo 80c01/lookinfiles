@@ -1,7 +1,7 @@
 #ifndef LSP_CLIENT_H
 #define LSP_CLIENT_H
 
-/* One language server process (TASK_CODE_NAV.md, phase 2): started with
+/* One language server process (docs/code-nav.md): started with
  * GSubprocess, spoken to over stdin / stdout with lsp_protocol messages,
  * asynchronously on the thread-default main context (the UI thread). The
  * client sends "initialize" at once and queues everything else until the

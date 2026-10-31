@@ -35,7 +35,14 @@
 
 ### Preview
 
-Planned in [TASK.md](TASK.md): rules, roadmap and definition of done for every preview format.
+Rules, coverage and the checklist for a new format: [docs/previews.md](docs/previews.md).
+
+- [ ] JSON / XML / YAML / TOML tree view with folding
+- [ ] raise `docx` toward L3 (page width, fonts, headers)
+- [ ] a placeholder (name, size, kind) when a structured preview takes longer than ~100 ms (none measured over the budget so far)
+- [ ] previews of TeX fonts (`.tfm`, `.pfb`) and Python bytecode (`.pyc`), the largest remaining L0 groups
+- [ ] folders and messages of Outlook stores (`.pst`, `.ost`, `.dbx`): would need libpff
+- [ ] find the cause of the GTK warning "Trying to snapshot GtkGizmo" after wide table previews (see docs/previews.md, "Known issues")
 
 ### Wish list
 

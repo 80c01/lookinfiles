@@ -1,7 +1,7 @@
 #ifndef OFFICE97_H
 #define OFFICE97_H
 
-/* Previews of OLE2 compound files (TASK.md, phase 5): the format comes from
+/* Previews of OLE2 compound files (docs/previews.md): the format comes from
  * the stream names (WordDocument, Workbook / Book, PowerPoint Document...),
  * then its reader builds the preview like the modern counterpart's (HTML
  * for documents and presentations, a grid for workbooks). Encrypted files

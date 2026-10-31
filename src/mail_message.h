@@ -1,7 +1,7 @@
 #ifndef MAIL_MESSAGE_H
 #define MAIL_MESSAGE_H
 
-/* Mail messages (RFC 5322 / MIME) for the preview (TASK.md, phase 6):
+/* Mail messages (RFC 5322 / MIME) for the preview (docs/previews.md):
  * headers (folded lines, RFC 2047 encoded words in any charset), the MIME
  * tree (multipart/mixed, alternative, related, nested message/rfc822),
  * base64 and quoted-printable bodies, RFC 2231 parameters (file names),

@@ -1,7 +1,7 @@
 #ifndef MAIL_BOX_H
 #define MAIL_BOX_H
 
-/* mbox mailboxes (TASK.md, phase 6): Thunderbird / Mozilla Inbox, Sent...
+/* mbox mailboxes (docs/previews.md): Thunderbird / Mozilla Inbox, Sent...
  * (no extension), .mbox, .mbx, /var/mail/<user>. Messages start at "From "
  * lines after a blank line; mboxo / mboxrd ">From " lines are unquoted,
  * mboxcl Content-Length headers are honoured. Mailboxes can be gigabytes:

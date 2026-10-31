@@ -14,8 +14,9 @@ More detail, read when the task touches it:
 - [docs/ui-conventions.md](docs/ui-conventions.md): keys, tooltips, menus,
   dialogs, empty states, icons (and how to add one), colours, fonts.
 - [docs/testing.md](docs/testing.md): UI test scenario, screenshot baselines.
-- [TASK.md](TASK.md): adding a preview format. [TASK_CODE_NAV.md](TASK_CODE_NAV.md):
-  code navigation.
+- [docs/previews.md](docs/previews.md): preview rules, coverage, adding a
+  format.
+- [docs/code-nav.md](docs/code-nav.md): code navigation (backends, keys).
 
 ## Build and test
 
@@ -30,7 +31,7 @@ make ui-test    # headless UI smoke test under Xvfb, screenshots in build/ui/sho
 - **After a modification, only run `make`** and fix every warning and error.
 - **Run `make test`, `make check` or `make ui-test` only when the user asks.**
   Not after an edit, not before a commit. The "`make check` passes" and
-  `make ui-test` items in the TASK checklists also wait for the user.
+  `make ui-test` items in the docs checklists also wait for the user.
 - A new shortcut gets a step in `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).
 - `lookin` and `build/` are generated: never edit them.
 
@@ -58,7 +59,7 @@ layer or below (`tools/check_layers.sh` enforces it):
   locally.
 - No new include cycles (`make check` fails on them).
 - Never add a format-specific branch to the viewer: formats go through
-  `preview_formats` (see TASK.md).
+  `preview_formats` (see docs/previews.md).
 
 ## Hard rules
 

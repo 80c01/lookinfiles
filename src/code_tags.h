@@ -1,7 +1,7 @@
 #ifndef CODE_TAGS_H
 #define CODE_TAGS_H
 
-/* ctags backend of code navigation (TASK_CODE_NAV.md, phase 1): finds
+/* ctags backend of code navigation (docs/code-nav.md): finds
  * Universal Ctags (JSON output), reads its tags, and keeps an index per
  * project that re-tags only the files whose size or date changed, saved to a
  * cache file between sessions. Blocking (runs ctags, reads files): worker

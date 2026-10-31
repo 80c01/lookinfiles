@@ -1,7 +1,7 @@
 #ifndef CODE_SYMBOLS_H
 #define CODE_SYMBOLS_H
 
-/* Symbols of the current file (TASK_CODE_NAV.md, phase 3): an AppDialog
+/* Symbols of the current file (docs/code-nav.md): an AppDialog
  * listing the functions, types, fields... of the editor tab (the language
  * server's document symbols, else the built-in scanner on the buffer), with
  * a filter entry. Enter, a double click or "Go To" jumps there (remembered

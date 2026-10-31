@@ -160,7 +160,7 @@ TEST_DEPS_test_mail = $(PREVIEW_FORMAT_OBJS)
 TEST_DEPS_test_lsp_config = $(BUILD_DIR)/lsp_config.o $(BUILD_DIR)/code_symbol.o
 TEST_DEPS_test_lsp_client = $(BUILD_DIR)/lsp_client.o $(LSP_PROTOCOL_OBJS)
 
-# Preview benchmark and coverage report (tools/preview_tool.c, TASK.md)
+# Preview benchmark and coverage report (tools/preview_tool.c, docs/previews.md)
 $(BUILD_DIR)/preview_tool: tools/preview_tool.c $(PREVIEW_FORMAT_OBJS) | $(BUILD_DIR)
 	$(CC) $(TEST_CFLAGS) $(DEPFLAGS) -o $@ $< $(PREVIEW_FORMAT_OBJS) $(TEST_LDFLAGS)
 
