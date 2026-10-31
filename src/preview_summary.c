@@ -1,5 +1,6 @@
 /* Text summaries for explorer rows without file content (see preview_summary.h). */
 #include "preview_summary.h"
+#include "note_types.h"
 
 #include <string.h>
 
@@ -92,15 +93,9 @@ gchar* preview_summary_remote(const RemoteMachine* rm) {
     return g_string_free(s, FALSE);
 }
 
-/* Human-readable note format from the note row badge ("rich", "org" or empty) */
+/* Human-readable note format from the note row badge ("md", "org" or empty) */
 static const gchar* note_format_name(const gchar* badge_text) {
-    if (g_strcmp0(badge_text, "rich") == 0) {
-        return "Rich Format";
-    }
-    if (g_strcmp0(badge_text, "org") == 0) {
-        return "Org-mode";
-    }
-    return "Plain Text";
+    return note_type_name(note_type_from_badge(badge_text));
 }
 
 typedef struct {

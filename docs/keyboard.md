@@ -113,7 +113,7 @@ count) is dropped when the focus moves to another panel or tab.
 
 | Key | Action |
 |---|---|
-| `a` / `Shift+A` | New note (Plain Text, Rich Format or Org-mode) / new notebook |
+| `a` / `Shift+A` | New note (Plain Text, Markdown or Org-mode) / new notebook |
 | `F2` / `r` / `e` | Edit the note (title and format) or notebook (name and icon) |
 | `i` | Change the notebook icon |
 | `m` | Move the note to another notebook |

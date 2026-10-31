@@ -87,6 +87,7 @@ code_tags:code_symbol,json_view
 code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
 trash_restore:
+note_types:
 fuzzy_match:
 text_search:code_index
 session_store:app_paths
@@ -115,7 +116,7 @@ dialog:
 tab_drop:pane_geometry
 explorer_tree:explorer_row
 remote_store:app_types,app_paths
-preview_summary:app_types,remote_store,explorer_row
+preview_summary:app_types,remote_store,explorer_row,note_types
 fs_watch:app_types,app_events,git_utils,git_tab
 "
 

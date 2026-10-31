@@ -11,6 +11,7 @@
 
 #include "explorer_tree.h"
 #include "file_types.h"
+#include "note_types.h"
 
 #ifdef HAVE_VTE
 #include <vte/vte.h>
@@ -59,13 +60,6 @@ enum {
     SIDEBAR_VIEW_NOTES,
     SIDEBAR_VIEW_REMOTE
 };
-
-/* Note types */
-typedef enum {
-    NOTE_TYPE_TEXT = 0,    /* Plain text note (.txt) */
-    NOTE_TYPE_RICH = 1,    /* Rich format note (.md - headings, formatting, tables, images) */
-    NOTE_TYPE_ORG  = 2     /* Emacs Org-mode note (.org - tasks, TODOs, checkboxes, folding) */
-} NoteType;
 
 /* Editor modes */
 typedef enum {

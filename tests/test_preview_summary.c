@@ -61,14 +61,14 @@ static void test_notebook(void) {
     ExplorerRow* nb = add_row(root, "notebook", "General", "/notes/General", "2");
     ExplorerRow* n = add_row(nb, "note", "short", "/notes/General/short.txt", "");
     add_row(nb, "note", "a much longer note title", "/notes/General/x.md",
-            "<span foreground=\"#4ec9b0\" size=\"small\">rich</span>");
+            "<span foreground=\"#4ec9b0\" size=\"small\">md</span>");
     gchar* s = preview_summary_container(nb);
     g_assert_nonnull(strstr(s, "Notebook: General\n"));
     g_assert_nonnull(strstr(s, "/notes/General"));
     g_assert_nonnull(strstr(s, "Plain Text"));
-    g_assert_nonnull(strstr(s, "Rich Format"));
+    g_assert_nonnull(strstr(s, "Markdown"));
     g_assert_cmpint(column_of(s, "• short", "Plain Text"), ==,
-                    column_of(s, "• a much longer", "Rich Format"));
+                    column_of(s, "• a much longer", "Markdown"));
     g_free(s);
 
     /* Other row types have no summary */
