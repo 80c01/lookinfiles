@@ -259,8 +259,8 @@ static double contrast(PaletteRole a, PaletteRole b) {
     return (MAX(la, lb) + 0.05) / (MIN(la, lb) + 0.05);
 }
 
-/* Every built-in theme applies, and keeps its main text readable */
-static void test_builtin_contrast(void) {
+/* Apply a theme and check that its main text is readable */
+static void assert_readable(GPtrArray* themes, const gchar* name) {
     static const struct {
         PaletteRole text, background;
         double min;
@@ -280,23 +280,60 @@ static void test_builtin_contrast(void) {
         {PAL_BADGE_FG, PAL_BADGE_RED, 3.0},   {PAL_BADGE_FG, PAL_BADGE_GREEN, 3.0},
         {PAL_BADGE_FG, PAL_BADGE_BLUE, 3.0},  {PAL_BADGE_FG, PAL_BADGE_ORANGE, 3.0},
     };
+    GError* error = NULL;
+    g_assert_true(theme_store_apply(themes, name, NULL, &error));
+    g_assert_no_error(error);
+    for (gsize p = 0; p < G_N_ELEMENTS(PAIRS); p++) {
+        double c = contrast(PAIRS[p].text, PAIRS[p].background);
+        if (c < PAIRS[p].min) {
+            g_printerr("%s: %s on %s is %.2f:1 (needs %.1f)\n", name, palette_name(PAIRS[p].text),
+                       palette_name(PAIRS[p].background), c, PAIRS[p].min);
+            g_assert_not_reached();
+        }
+    }
+}
+
+/* Every built-in theme applies, and keeps its main text readable */
+static void test_builtin_contrast(void) {
     GPtrArray* themes = theme_store_list(NULL, NULL);
     g_assert_cmpuint(themes->len, ==, 3);
     for (guint i = 0; i < themes->len; i++) {
-        const gchar* name = ((Theme*)g_ptr_array_index(themes, i))->name;
-        GError* error = NULL;
-        g_assert_true(theme_store_apply(themes, name, NULL, &error));
-        g_assert_no_error(error);
-        for (gsize p = 0; p < G_N_ELEMENTS(PAIRS); p++) {
-            double c = contrast(PAIRS[p].text, PAIRS[p].background);
-            if (c < PAIRS[p].min) {
-                g_printerr("%s: %s on %s is %.2f:1 (needs %.1f)\n", name, palette_name(PAIRS[p].text),
-                           palette_name(PAIRS[p].background), c, PAIRS[p].min);
-                g_assert_not_reached();
-            }
-        }
+        assert_readable(themes, ((Theme*)g_ptr_array_index(themes, i))->name);
     }
     g_ptr_array_free(themes, TRUE);
+    palette_reset();
+    fonts_reset();
+}
+
+/* The reference themes of themes/ (one per decade, not built in) parse,
+ * are complete (every colour and font), and keep their text readable.
+ * make test runs from the top directory. */
+static void test_reference_themes(void) {
+    GPtrArray* errors = g_ptr_array_new_with_free_func(g_free);
+    GPtrArray* themes = theme_store_list("themes", errors);
+    for (guint i = 0; i < errors->len; i++) {
+        g_printerr("%s\n", (const gchar*)g_ptr_array_index(errors, i));
+    }
+    g_assert_cmpuint(errors->len, ==, 0);
+    guint count = 0;
+    for (guint i = 0; i < themes->len; i++) {
+        Theme* t = g_ptr_array_index(themes, i);
+        if (t->path == NULL) {
+            continue;
+        }
+        count++;
+        g_assert_null(t->inherits);
+        g_assert_true(t->has_dark);
+        g_assert_cmpuint(g_hash_table_size(t->colors), ==, PAL_COUNT);
+        for (gint r = 0; r < FONT_COUNT; r++) {
+            g_assert_nonnull(t->font_family[r]);
+            g_assert_cmpint(t->font_size[r], >, 0);
+        }
+        assert_readable(themes, t->name);
+    }
+    g_assert_cmpuint(count, ==, 6);
+    g_ptr_array_free(themes, TRUE);
+    g_ptr_array_free(errors, TRUE);
     palette_reset();
     fonts_reset();
 }
@@ -311,5 +348,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/theme_store/save_round_trip", test_save_round_trip);
     g_test_add_func("/theme_store/choice", test_choice);
     g_test_add_func("/theme_store/builtin_contrast", test_builtin_contrast);
+    g_test_add_func("/theme_store/reference_themes", test_reference_themes);
     return g_test_run();
 }
