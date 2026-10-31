@@ -580,8 +580,9 @@ rules in detail. Release history is in [CHANGELOG.md](CHANGELOG.md).
 
 Contributions are welcome. Before opening a pull request:
 
-1. Read [AGENTS.md](AGENTS.md): module layers, UI conventions (same key for
-   the same action in every view, no separate windows, no deprecated GTK API).
+1. Read [AGENTS.md](AGENTS.md) (module layers, hard rules) and
+   [docs/ui-conventions.md](docs/ui-conventions.md) (same key for the same
+   action in every view, no separate windows, dialogs, icons).
 2. Run `make check` and, for interface changes, `make ui-test`.
 3. Keep commits focused, with a short imperative subject
    (e.g. `Add Ctrl+F paging in the explorer`).

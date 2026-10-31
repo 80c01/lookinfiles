@@ -2,492 +2,92 @@
 
 Guidelines for AI coding agents working in this repository.
 
-## Project overview
+`Lookin` ("look in your files") is a file explorer in C with GTK 4 (4.12+,
+no deprecated API). Optional deps: VTE for GTK 4, GtkSourceView 5,
+poppler-glib. Left = explorer panel (`GtkListView` over a `GtkTreeListModel`
+of `ExplorerRow`); right = preview notebook and terminal panes; all inside
+resizable `GtkPaned`s.
 
-`Lookin` ("look in your files"), a file explorer written in C with GTK 4 (4.12 or newer, no deprecated API). Modular architecture in `src/`,
-no external dependencies beyond GTK (with optional VTE for GTK 4, GtkSourceView 5, and poppler-glib).
+More detail, read when the task touches it:
+- [docs/architecture.md](docs/architecture.md): every module by layer, the
+  event bus, accepted include cycles.
+- [docs/ui-conventions.md](docs/ui-conventions.md): keys, tooltips, menus,
+  dialogs, empty states, icons (and how to add one), colours, fonts.
+- [docs/testing.md](docs/testing.md): UI test scenario, screenshot baselines.
+- [TASK.md](TASK.md): adding a preview format. [TASK_CODE_NAV.md](TASK_CODE_NAV.md):
+  code navigation.
 
-Layout: left = explorer panel (files, bookmarks, notes or remote view,
-`GtkListView` over a `GtkTreeListModel` of `ExplorerRow`, expandable directory
-tree with lazy-loading),
-right = preview notebook (viewer, editor tabs, Git tab) and terminal panes,
-all inside resizable `GtkPaned`s.
-
-## Build, test & run
+## Build and test
 
 ```bash
-make              # incremental build into build/ (gcc -Wall -Wextra, pkg-config gtk4)
-make test         # GLib unit tests (headless, no display needed)
-make check        # zero-warning build + unit tests + module layering rules
-make ui-test      # headless UI smoke test (needs xvfb xdotool imagemagick)
-make clean        # remove binary and build/
-./lookin   # run (requires a display; shows a warning without one)
+make            # build into build/
+make test       # GLib unit tests (headless)
+make check      # zero warnings + unit tests + layering rules
+make ui-test    # headless UI smoke test under Xvfb, screenshots in build/ui/shots/
+./lookin        # needs a display ("cannot open display" is expected in the sandbox)
 ```
 
-- **Run `make check` before every commit.** It fails on any compiler warning,
-  failing test, or layering violation (`tools/check_layers.sh`).
-- The build compiles every `src/*.c` automatically (no file list to maintain)
-  and tracks header dependencies, so editing a header rebuilds its users.
-- There is no real display in the sandbox (`Gtk-WARNING: cannot open display`
-  is expected when running the binary directly). Logic that can be tested
-  without widgets belongs in a foundation module with unit tests.
-- **After any UI change, run `make ui-test`** (`tests/ui/run_ui_test.sh`). It
-  runs the app under Xvfb, drives a keyboard/mouse scenario with xdotool and
-  saves one screenshot per step in `build/ui/shots/` — open the relevant ones
-  to check the result. It fails on a missing window, any GTK warning or
-  critical in the log (e.g. invalid Pango markup), or a dirty `Ctrl+Q` exit.
-- To prove a refactoring changes nothing visible: run `make ui-test` on the
-  reference commit (e.g. in a `git worktree`), copy `build/ui/shots` aside,
-  then run `UI_BASELINE=<that copy> make ui-test` on your branch. The terminal
-  step is not compared (shell prompt timing varies).
-- When adding a feature with a shortcut, add a step to the scenario in
-  `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).
-- **Colours come from the palette** (`palette.h`): `palette_color(PAL_...)`
-  in C, `@role` names in CSS added with `theme_add_css()`. Never write a
-  colour literal elsewhere (`make check` rejects `#rrggbb` outside
-  `palette.c`); pick the role that matches the meaning (e.g. `fg_subtle`
-  for metadata, `bg_block` for code blocks) or add a role.
-- **Text tags with colours or fonts** are made with `text_tag_create()` /
-  `text_tag_ensure()` and role values (`"@fg_subtle"`), never with
-  `palette_color()`: otherwise they keep the old colours after a theme
-  change. Labels take colours from CSS classes rather than markup where
-  they live long (e.g. the help panel).
-- **Fonts come from the font roles** (`fonts.h`): `@font_*` / `@size_*`
-  in CSS, `fonts_family(FONT_CODE)` and `FONT_SCALE_*` in text tags.
-  File contents (code and plain text, preview and every editor mode) and
-  the terminal use the code font; the interface and rendered documents the
-  UI font. `make check` rejects font families and pixel sizes elsewhere.
-- Text interpolated into Pango markup must be escaped: use
-  `g_markup_printf_escaped()`, never `g_strdup_printf()`, with names, titles,
-  hosts, key labels or any user-provided string.
-- The binary `lookin` and `build/` are generated — never edit them.
+- **Run `make check` after every modification** and before every commit.
+- **After any UI change, run `make ui-test`** and open the relevant screenshots.
+- A new shortcut gets a step in `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).
+- `lookin` and `build/` are generated: never edit them.
 
-## Architecture (keep it when editing)
+## Architecture
 
-Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
-(a module may only depend on modules in its own layer or below):
+Modules are `src/<module>.c` + `.h`. A module may depend only on its own
+layer or below (`tools/check_layers.sh` enforces it):
 
-**1. Foundation — pure helpers, no `AppData`, no widgets, unit-tested in `tests/`:**
-- `app_paths` — application name (`APP_NAME`), config and cache directories
-  (`app_config_dir()`, `app_cache_dir()`: never hard-code the directory name).
-- `file_types` — file type detection: by name (`file_extension()`,
-  `is_*_file()`, `file_kind_from_name()`) and by content (`FileKind`,
-  `file_kind_detect()` on the first `FILE_SNIFF_BYTES`: magic numbers, text vs
-  binary; `file_kind_of_path()`), and emoji icons (`file_icon()`). The preview
-  detects the kind in its worker thread (`app->viewed_kind`): decide on the
-  displayed file with `viewed_kind`, not with its name.
-- `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
-  `git_read_branch()`, `scan_git_statuses()`, `git_read_head_blob()` (spawns git: worker thread only).
-- `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility,
-  split fractions, orientation, dedicated editor panel, terminal pane tree as
-  text such as `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save, and the
-  default layout of new workspaces (group `[Default]`, built-in if absent).
-- `gif_decoder` — GIF frames composed on an RGBA canvas (LZW, interlacing,
-  transparency, disposal, delays, loop count), played by `animation`
-  (GdkPixbufAnimation is deprecated in gdk-pixbuf 2.44: never use it).
-- `zip_reader` — read-only ZIP archives (`zip_reader_open()`,
-  `zip_reader_read()` with a size limit; stored / deflated via GIO's raw
-  `GZlibDecompressor`, ZIP64, no encryption).
-- `ole_reader`, `ole_props`, `office97` — OLE2 compound files (Office
-  97-2003, `.msg`...): sectors, FAT / mini FAT and directory read from a
-  mapped file with loop and range checks (`tests/ole_builder.h` builds them
-  in tests), the property sets (`OleProperties`: card and HTML head), and the
-  preview dispatch by stream names with the property card + stream list
-  fallback. `doc_reader` — Word `.doc` to HTML (piece table, PAPX / CHPX
-  FKPs, styles), like `docx`. `xls_reader` — BIFF8 / BIFF5 workbooks to
-  the `Workbook` of `spreadsheet` (shown by `spreadsheet_append_sheets()`,
-  shared with `.xlsx`). `ppt_reader` — `.ppt` records to HTML slide by
-  slide (SlideListWithText, else the slide containers; masters skipped).
-- `mail_message`, `mail_view` — mail messages: RFC 5322 headers, RFC 2047 /
-  2231 decoding, MIME tree, base64 / quoted-printable, charsets with the
-  Windows-1252 fallback; the preview (header card, text or HTML body,
-  attachments, forwarded messages), shared by every mail source.
-  `mail_box` — mbox scan (bounded: both ends of large files). Paged
-  previews: `PreviewDoc.pages` + `PreviewInput.page` (`app->preview_page`,
-  `PgDn` / `PgUp` in the viewer). `mail_dir` — Maildir / MH folders as a
-  message table, used by `dir_preview` instead of the listing.
-  `mail_msg` — Outlook `.msg` (MAPI property streams of an OLE2 file) to a
-  `MailMessage`, compressed RTF (LZFu) decoder; dispatched by `office97`.
-  `mail_tnef` — TNEF `winmail.dat` (attributes + MAPI property blocks) to a
-  `MailMessage`. `mail_store` — header card of PST / OST / DBX stores
-  (header bytes only; no libpff).
-- `docx` — Word document (`.docx`) to simple HTML for the preview
-  (`docx_file_to_html()`): styles, numbering, tables, images as `data:` URIs,
-  text limit. Rendered by `html`; tests build archives with `tests/zip_builder.h`.
-- `preview_doc` — `PreviewDoc`, a preview built in a worker thread: styled
-  text (spans of `PreviewStyle`, inline images) or HTML / Markdown source for
-  the existing renderers; summary card helpers (`preview_doc_title()`,
-  `preview_doc_field()`, `preview_doc_section()`) and text tables
-  (`PreviewTable`: aligned columns, numeric columns right-aligned, zebra rows).
-- `preview_formats` — registry of structured previews, one builder per
-  `FileKind` (`preview_format_build()` from a `PreviewInput`), the hex dump
-  (`preview_format_hex_dump()`), and `preview_format_build_file()` for tests
-  and tools. A new format = a parser module in this layer + one case in
-  `builder_for()` + fixtures (see TASK.md, "Definition of done").
-- `org_time` — Org timestamps (`<2026-10-29 Thu 10:00 +1w>`): parse, format,
-  field arithmetic, repeaters, the date prompt (`org_timestamp_read()`).
-- `org_doc` — Org document commands on an array of lines + cursor (`OrgPos`):
-  headings, subtrees, TODO keywords (`#+TODO`), priorities, tags, planning,
-  clock, lists, checkboxes, statistics cookies, links, `<s` templates. The
-  editor (`editor_org`) and the preview (`orgmode`) both edit through it.
-- `org_table` — Org tables: align, cell navigation, row / column editing.
-- `line_diff` — Myers line diff of a text against its previous version,
-  reduced to per-line gutter marks (`LineDiffMark`: added, modified, deleted).
-- `pane_geometry` — `pane_find_neighbor()`: the pane next to another one in a
-  direction (same row or column only), used to move editor tabs between
-  notebooks; `pane_drop_zone()` / `pane_zone_rect()`: the side of a pane a
-  dragged tab is dropped on, and the area it would take.
-- `minimap_geometry` — minimap scale, scroll offset and slider (VS Code
-  style: fixed minimum scale, the minimap scrolls with the view over long
-  documents), slider drag and click-to-center mapping.
-- `dir_summary` — one directory level for the directory preview: entries
-  (name, type, size, date), totals, sorting, relative dates, column padding.
-- `vim_keys`, `vim_parse`, `vim_motion`, `vim_regex`, `vim_ex` — Vim pieces:
-  key codes and `<notation>` (keys are Unicode code points, special keys in
-  the private use area), the `["x][count]op[count]motion` grammar
-  (`vim_parse()`), motions and text objects on `GtkTextIter`, Vim patterns
-  translated to GRegex plus `:s` replacements and buffer search, Ex command
-  line parsing (ranges, abbreviations).
-- `vim_engine` (+ `vim_engine_ex.c`, internal `vim_engine_private.h`) — the
-  Vim editor on a `GtkTextBuffer`: modes, operators, registers, marks, dot
-  repeat, macros, Visual block, its own undo list (one step per command,
-  GTK's history merges adjacent edits), search and Ex commands. No widgets:
-  the host (`editor_vim`) implements `VimHost` (messages, command line
-  entry, scroll, clipboard, `:w` / `:q`). In Insert mode text keys are left
-  to the text view and recorded from the buffer signals. Tested in
-  `tests/test_vim_engine.c` by typing keys on a headless buffer.
-- `code_symbol`, `code_scan_c`, `code_scan`, `code_index` — the built-in
-  code index of code navigation (TASK_CODE_NAV.md): languages and the
-  identifier under the cursor (`code_word_at()`), symbol scanners
-  (`code_scan_text()`: a C-family state machine, line regexes for the other
-  languages; no parser, locals not listed), the project's files (`git
-  ls-files`, else a bounded walk) and the ranked definition lookup
-  (`code_index_find()`, blocking: worker thread only).
-- `code_tags` — ctags backend: finds Universal Ctags (`code_tags_program()`),
-  parses its JSON output, and keeps a per-project index (`CodeTagsIndex`,
-  with a lock) that re-tags only changed files and is cached in
-  `app_cache_dir()/tags/`; `code_index_find()` uses it through
-  `CodeQuery.tags`, open buffers are still scanned.
-- `jump_list` — back / forward history of navigation jumps across files.
-- `palette` — every colour of the application, by role (`PaletteRole`:
-  surfaces, text, accent, git, diff, syntax, editor, terminal ANSI...):
-  `palette_color()` ("#rrggbb" for text tags and Pango markup),
-  `palette_rgb()` (cairo), `palette_set()` / `palette_reset()` (themes),
-  each role a CSS named colour (`@bg_window`, `alpha(@accent, 0.25)`), and
-  `palette_expand()` for `@role` tokens in text templates.
-- `theme_store` — themes: built-in ones (Dark Modern = the defaults,
-  Light Modern, High Contrast Dark; a test keeps their main text pairs at a
-  readable contrast) and user INI files in
-  `app_config_dir()/themes/` (`[Theme]` name / dark / inherits, `[Colors]`
-  palette roles, `[Fonts]`), strict parsing with errors naming group and
-  key, inheritance (`theme_store_apply()` sets the palette and fonts), save
-  of the current look, the chosen theme in `theme.ini`. `theme_apply_saved()`
-  (`theme`) applies it at startup, before any widget.
-- `text_tags` — text tags that follow the theme: `text_tag_create()` /
-  `text_tag_ensure()` take roles as values (`"@accent"`, `"@font_code"`),
-  remembered per tag; `text_tags_refresh_all()` sets them again in every
-  buffer after a theme change.
-- `fonts` — the interface and code fonts (family list + pixel size,
-  `fonts_set()` for themes); CSS tokens `@font_ui`, `@font_code`,
-  `@size_small` / `@size_bar` / `@size_normal` / `@size_title` (derived
-  from the UI size), `@size_code`; `fonts_family()` for text tags and
-  markup; `FONT_SCALE_*` for headings, titles, captions and code in
-  rendered documents.
-- `lsp_protocol`, `lsp_client`, `lsp_config` — Language Server Protocol:
-  messages and results (positions: UTF-16 unless the server chose UTF-8,
-  `lsp_column_to_byte()`), one server process spoken to asynchronously on the
-  main context (`LspClient`: queued until initialized, server requests
-  answered, full-text document sync; never free it from its own callbacks),
-  and server commands (defaults + `lsp.ini`). `tests/fixtures/fake_lsp.py`
-  is a fake server for the client tests.
-- `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
-  label, path, badge, children `GListStore`). Read fields directly, change them
-  with the setters (they emit `"changed"` so the row redraws). A row that can
-  expand must be added with `explorer_row_append_container()`: GTK decides
-  once, when the row is inserted, whether it shows an expander.
+1. **Foundation**: pure helpers, no `AppData`, no widgets, unit-tested.
+2. **Shared types and helpers**: `app_types.h`, events, leaf widgets; layer 1 only.
+3. **Features**: explorer views, viewer, editor, terminal, search...
+4. **Window chrome**: top bar, status bar, sidebar, help, workspaces, themes, `ui`.
+5. **Entry point**: `main.c`.
 
-**2. Shared types, events & leaf helpers — may use `AppData` and layer 1 only:**
-- `app_types.h` — `AppData`, `EditorTab`, `VirtualLayout`, `FileEntry`,
-  `SORT_*`, `SIDEBAR_VIEW_*`, `PREVIEW_*` constants.
-- `explorer_tree` — the explorer widget (`app->tree`): root row, selection,
-  expansion, scrolling and row drawing (git colours, badges). Signals
-  `"selection-changed"`, `"row-toggled"` (expanded / collapsed, by the user or
-  `explorer_tree_set_expanded()`), `"row-activated"` (double click). Rows are
-  addressed by `ExplorerRow*`; positions count visible rows only.
-- `dialog` — `AppDialog`, the modal dialog drawn inside the main window: a
-  card over a dimmed layer (window-level `GtkOverlay` made in `main.c` with
-  `app_dialog_window_overlay_new()`). GtkDialog-like API: `app_dialog_new()`,
-  `"response"`, `app_dialog_run()`, `app_dialog_present()`. Escape answers
-  `APP_RESPONSE_DELETE_EVENT`; the caller removes it with
-  `app_dialog_destroy()`. While one is open, window shortcuts are off
-  (`app_dialog_is_open()`).
-- `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below.
-- `panels` — fullscreen, focused-panel highlight, workspace width, split-handle
-  drag feedback and fractions (`wire_paned_controllers()`). Every new
-  `GtkPaned` must go through `wire_paned_controllers()` or at least
-  `paned_use_thin_handle()`: a default handle grabs the mouse ~15 px into the
-  neighbouring panels and blocks text selection near the edge.
-- `text_style` — Dark+ GtkSourceView scheme, monospace, panel background,
-  syntax language (`is_code_file()`, `apply_viewer_language()`).
-- `theme` — global stylesheet (`apply_panel_borders()`); every module's CSS
-  goes through `theme_add_css()` (palette colours defined, reloaded by
-  `theme_reload()` after a palette or font change).
-- `tree_nav` — explorer row traversal and selection (j/k, arrows, gg/G,
-  Ctrl+F/B, zz/zt/zb, `tree_nav_selected()`, `select_row()`,
-  `select_by_path()`), and suspending the preview handler while the tree is
-  rebuilt (`tree_nav_block_selection_handler()`).
-- `remote_store` — `RemoteMachine` list, `remotes.xml`, `~/.ssh/config`
-  discovery, lookups (unit-tested).
-- `preview_summary` — text summaries shown in the preview for rows without
-  file content (remote machine, notebook, bookmark folder, trash); columns
-  padded for a monospace font (unit-tested).
-- `fs_watch` — `GFileMonitor`s on expanded directories, the previewed file and
-  `.git`, debounced `schedule_refresh()`; reports through events only.
-- `diff_gutter` — left gutter of a text view: line numbers
-  (`diff_gutter_set_line_numbers()`: code previews, editor toggle `Ctrl+Alt+N`)
-  and git change bars
-  (`diff_gutter_attach()` on the preview and editor views,
-  `diff_gutter_set_file()`, `diff_gutter_get_marks()` for the minimap,
-  which is redrawn through `diff_gutter_add_companion()`); HEAD version read with `git_read_head_blob()`
-  in a worker thread, refreshed on `APP_EVENT_GIT_STATUS_CHANGED` /
-  `APP_EVENT_FILES_CHANGED`.
-- `tab_drop` — editor tabs dragged with the mouse (GtkNotebook tab DnD):
-  drop target on a notebook (tab bar: insert; page: move in; edge: split),
-  translucent highlight on the window overlay, end-of-drag report
-  (`TabDragDoneFunc`) once GTK no longer uses the source notebook — remove an
-  emptied notebook only then. Knows nothing of `EditorTab`; `editor` attaches
-  it with `editor_notebook_enable_tab_drop()`.
-- `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
-- `preview_doc_view` — shows a `PreviewDoc` in the preview text view (style
-  tags in the Dark+ palette, images, HTML / Markdown renderers).
-- `minimap` — scaled file overview; draws only the part around what is shown
-  (`MinimapCache`), geometry from `minimap_geometry`.
+- Lower layers never call the chrome: they `app_emit()` an `AppEvent`
+  (subscribers wired in `main.c`). To re-render the preview, emit
+  `APP_EVENT_PREVIEW_STALE`; to select a row, use `select_row()`.
+- Logic without widgets goes in a layer 1–2 module with
+  `tests/test_<module>.c` (register it in the Makefile `TESTS` / `TEST_DEPS_*`
+  and in `tools/check_layers.sh`).
+- A new feature gets its own module; do not grow files over 1200 lines
+  (`notes.c`, `html.c`, `orgmode.c`, `viewer.c`).
+- Include the header of every module you call; drop unused includes.
+  One-file callbacks are `static`; never declare another module's function
+  locally.
+- No new include cycles (`make check` fails on them).
+- Never add a format-specific branch to the viewer: formats go through
+  `preview_formats` (see TASK.md).
 
-**3. Features:**
-- `file_list` — async directory scan (`GTask`), tree population, sorting
-  (`compare_entries_with_data()`), lazy expand/collapse, git badges in the tree,
-  navigation (`reload_directory()`, `navigate_to_path()`, `refresh_listing()`,
-  `activate_selected_entry()`), sidebar view toggles, tree key handler
-  (`on_tree_key_press()`).
-- `file_actions` — new file / new folder prompts.
-- `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
-  (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
-- `viewer` — right-pane preview dispatch (`on_selection_changed()`,
-  `load_file_content()`, `viewer_reload_preview()`), image/text/dir previews,
-  viewer keys. Its worker detects the kind, reads text kinds, and runs the
-  `preview_formats` builder (falling back to plain text or the hex dump);
-  never add a format-specific branch to the viewer.
-- `dir_preview` — directory preview (`dir_preview_show()`): one level read
-  in a worker thread after a short delay (never recursive), header and table.
-- `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
-  `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
-- `editor` — editor tabs in the notebook(s): open, save, close, move, dedicated panel.
-- `editor_modes` — per-tab mode state, shared editing operations (align,
-  format, case, indent, find/replace, goto line), tab label, status, key dispatch.
-  Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim` (the
-  host of `vim_engine`: status line, command line, `VimHost` callbacks), and
-  `editor_org` (Emacs Org-mode keys in tabs: maps keys to `org_doc` /
-  `org_table` commands, applies only the changed lines as one undo step,
-  folding with an invisible tag). `editor_modes_private.h` (state
-  struct, mode enums) is internal to these 5 files.
-  Mode bar labels whose text can grow (file names, messages) must use
-  `editor_bar_label_shrinkable()`, and filler text `editor_bar_clip()`: a bar
-  wider than the panel pushes the minimap out of the window.
-- `code_nav` — code navigation in editor tabs, shared by the three modes:
-  definition / declaration lookups in a worker (`code_nav_goto_definition()`,
-  `code_nav_goto_symbol()`), the jump with `editor_open_at()`, back /
-  forward (`code_nav_back()`, `code_nav_forward()`); messages through
-  `editor_mode_message()` passed by the caller. Vim reaches it through the
-  `VimHost` callbacks `goto_definition` and `jump_history`.
-- `code_intel` — language servers for code navigation: one `LspClient` per
-  project and command, open tabs synchronized before each request, results
-  with byte columns; FALSE when no server serves the tab (callers then use
-  the index). `code_help` — help cards (`GtkPopover` parented to the tab
-  container, never the text view) and signature help, from `code_intel` or
-  `code_nav_find()`; also highlights the other occurrences of the word at
-  the cursor. Diagnostics (`publishDiagnostics`) are underlined by
-  `code_intel` (tags `lsp-error`...) and shown in help cards.
-- `code_refs` — the References page of the preview notebook (after the Git
-  tab; `editor_detach_tabs()` and `editor_current_tab()` only touch editor
-  pages, wherever they are), from the server or `code_index_references()`.
-- `code_symbols` — symbols of the file in an `AppDialog` with a filter.
-- `terminal` — embedded VTE panes (`Ctrl+T`), Dark+ ANSI palette; ssh into
-  the active remote machine.
-- `search` — live search entry (`/`, `n`, `N`) for list and viewer.
+## Hard rules
 
-**4. Window chrome — may call features:**
-- `topbar` — breadcrumbs and toggle pills; `update_path_label()`.
-- `status_bar` — bottom bar (branch, selection, size, type, editor mode menu).
-- `sidebar` — explorer header: view switcher and per-view action toolbars.
-- `help` — cheat sheet (`?`); `KEY_HELP` must stay in sync with `README.md`.
-- `workspace` — virtual workspaces (Alt+1..8): save/apply layout snapshots,
-  top-bar workspace minimap. A new workspace (Alt++) starts from the default
-  view (start directory, files view) with the panels of the default layout
-  (`layout_store_load_default()`), never from a copy of the current one. The
-  first workspace gets the same panels at startup
-  (`workspace_apply_default_layout()`, only when the default is customized).
-- `themes` — themes in the running application: `themes_apply()` (a
-  theme from `theme_store` with the user's fonts of `theme.ini` over it,
-  remembered or previewed), `themes_refresh()` after a palette or font
-  change (stylesheets, text tags, syntax scheme, terminals, minimap caches,
-  redraw, explorer and preview rebuilt through events), zoom
-  (`Ctrl+=` / `Ctrl+-` / `Ctrl+0`: both font sizes, `fonts_zoom_percent()`
-  in the Notepad status bar), the Themes dialog (`Alt+T`, top-bar button:
-  live preview on selection, Cancel restores, fonts, Save As, Edit in a
-  tab, Delete), and re-applying the current theme file when it is saved
-  (`APP_EVENT_FILES_CHANGED`).
-- `layouts` — saved workspace layouts (Alt+L, top-bar grid button): capture
-  the current workspace's panels, apply one from a list in an `AppDialog`
-  (running terminals are kept; closing extra ones asks first). The list starts
-  with the default layout of new workspaces, which can be replaced (save
-  under the name "Default") or reset. A click selects a row; double click,
-  Enter or Apply applies it.
-- `ui` — focus tracking and cycling, global key handler
-  (`on_window_key_press()`, incl. `Ctrl+Q`), layout toggle.
-
-**5. Entry point:** `main.c` — CLI (`-f`/`--fullscreen`, `-s`/`--size WxH`,
-start directory), widget creation and assembly, signal wiring, event
-subscriptions, `GMainLoop`.
-
-### Notifying the chrome (app_events)
-
-Lower layers never call the chrome or the workspace directly. They emit:
-
-| Emit (`app_emit(app, ...)`)      | When                                         | Subscriber (main.c)            |
-|----------------------------------|----------------------------------------------|--------------------------------|
-| `APP_EVENT_CHROME_CHANGED`       | dir, sort, hidden, panels, view, remote changed | `update_path_label()`       |
-| `APP_EVENT_STATUS_CHANGED`       | selection / file info / editor mode changed  | `update_status_bar()`          |
-| `APP_EVENT_LAYOUT_CHANGED`       | panel visibility or split fractions changed  | `workspace_save_current()`     |
-| `APP_EVENT_LAYOUT_REBUILT`       | panes shown, hidden or rebuilt               | `workspace_apply_positions()`  |
-| `APP_EVENT_FILES_CHANGED`        | files created/renamed/saved                  | `refresh_listing()`            |
-| `APP_EVENT_PREVIEW_STALE`        | previewed file changed                       | `viewer_reload_preview()`      |
-| `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`|
-
-Handlers run synchronously inside `app_emit()`. `make check` rejects direct
-calls to the first five subscribers outside their module and `main.c`. A new
-upward notification = a new `AppEvent` + one `app_events_subscribe()` in `main.c`.
-
-### Where to put new code
-
-- Logic that does not need widgets (parsing, classification, persistence, path
-  or git handling): a layer 1–2 module + a test in `tests/test_<module>.c`
-  (register it in `TESTS` / `TEST_DEPS_*` in the Makefile, and its allowed
-  includes in `tools/check_layers.sh`).
-- A new feature: its own `src/<feature>.c/.h`, not appended to an already
-  large file (`notes.c`, `html.c`, `orgmode.c`, `viewer.c` are > 1200 lines).
-- Include the header of every module you call, directly. Do not rely on
-  transitive includes, and remove includes you no longer need.
-- Callbacks used in one file are `static`; never declare another module's
-  function locally in a `.c` file — add it to that module's header.
-- To select a row programmatically use `select_row()` (selecting the selected
-  row again still refreshes the preview); to re-render the current preview, emit
-  `APP_EVENT_PREVIEW_STALE`.
-
-### Known coupling (avoid making it worse)
-
-`make check` fails on any include cycle (two `.c` files including each other's
-header), except the two accepted ones: `file_list` ↔ `bookmarks` and
-`file_list` ↔ `remote`. The explorer dispatches keys and rows to these sidebar
-views, and the views ask the explorer to navigate (`navigate_to_path()`,
-`reload_directory()`). Breaking a new cycle: emit an event, or move the shared
-code down a layer (as done for `panels`, `fs_watch`, `remote_store`, `editor_org`).
-
-Shortcut list to keep in sync with `README.md` and `help.c` when you change behavior.
-
-## UI conventions (keep views consistent)
-
-The explorer views (files, bookmarks, notes, remote) share one vocabulary.
-Check these before adding or changing an action, a tooltip or a dialog:
-
-- **Same action, same key, in every view**: `a` add, `Shift+A` new folder /
-  notebook, `F2 / r / e` edit or rename, `d / Delete` delete (with
-  confirmation, or move to a trash), `Shift+K / Shift+J` move up / down,
-  `o` cycle the sort of the current view, `Enter` open. A key that has no
-  meaning in a view does nothing there (never acts on another view).
-- **Tooltips**: Title Case action, then the keys in parentheses, primary key
-  first: `Edit Selected (F2 / r / e)`, `Delete Selected (d / Delete)`.
-- **Context menus**: same labels as tooltips, `…` (single character) when a
-  dialog follows, key hint written `Shift+A`, `Delete`, `F2`.
-- **No external windows**: every interaction stays inside the application
-  window. Prompts, confirmations and messages are `AppDialog`s (drawn over
-  the window); panels such as the help cheat sheet are overlays or panes;
-  menus are `GtkPopover`s anchored to a widget of the window. Never open a
-  top-level window (`gtk_window_new()`, `GtkAlertDialog`, `GtkFileDialog`,
-  file choosers...): `make check` rejects it outside `main.c`.
-- **Dialogs**: every button has a mnemonic (`_Cancel`, `_Save`); the confirm
-  button is a verb (`_Create`, `_Rename`, `_Move to Trash`), never `OK`;
-  information-only messages have a single `_Close` button; destructive
-  confirmations default to Cancel.
-- **Empty states**: an empty container shows `(empty)`; an empty view shows
-  `No <items> yet — press a to add one`.
-- **Icons**: buttons and fixed tab headers use GTK theme icons through
-  `icons.c` (`icon_button_new()`, `icon_button_set_content()`,
-  `icon_label_new()`), never emoji or text symbols; use `edit-delete` for a
-  permanent delete and `user-trash` for a move to trash. Emoji are kept only
-  for file-type icons in the tree and editor tabs. The CSS colours `label`
-  and `image` nodes together (symbolic icons follow the text colour).
-  The icons are bundled in the binary (`icons/`, compiled as a GResource by
-  the Makefile, licence in `icons/COPYING`) so they render the same with any
-  icon theme. To add one: copy a *current* Adwaita symbolic SVG (no
-  `transform`, enforced by `make check`) as
-  `icons/scalable/actions/lookin-<name>-symbolic.svg`, list it in
-  `icons/lookin.gresource.xml`, and if `<name>` is not built into libgtk
-  add a `FALLBACKS` entry in `icons.c` ending with a built-in icon (used when
-  SVG cannot be loaded). Check with `make ui-test`, `UI_ICON_THEME=hicolor
-  make ui-test` and `LOOKIN_DEBUG_ICONS=1 ./lookin`.
-- **Preview text views** all use `set_view_text_padding()` (10 px sides).
-- **Names**: `Org-mode`, `Rich Format`, `Plain Text`; view titles EXPLORER,
-  BOOKMARKS, NOTES, REMOTE.
-- Keep `help.c` (`KEY_HELP`) and the README shortcut tables in sync.
-
-## Conventions and hard rules
-
-1. **English only** — every user-visible string, code comment, commit message,
-   and documentation file must be in English. No French anywhere.
-2. **GTK API correctness**:
-   - `GtkScrolledWindow` has one child only (`gtk_scrolled_window_set_child()`).
-     Put extra widgets in a `GtkBox`/vbox, or above the pane.
-   - No deprecated GTK API: the build does not hide deprecation warnings, so
-     `make check` fails on them. Lists are `GListStore` + `GtkListView` /
-     `GtkColumnView` (never `GtkTreeView`, `GtkTreeStore`, `GtkListStore` or
-     cell renderers), dialogs are `AppDialog` (`dialog.h`, never `GtkDialog`
-     or `GtkMessageDialog`), URIs open with `GtkUriLauncher`, CSS providers go
-     on the display (`gtk_style_context_add_provider_for_display()`).
-   - `GtkTextBuffer` accepts valid UTF-8 only. Validate content with
-     `g_utf8_validate()` / sanitize with `g_utf8_make_valid()` before inserting
-     file contents.
-   - Rebuild the explorer with `explorer_tree_clear()` + repopulation from
-     `explorer_tree_get_root()`, between `tree_nav_block_selection_handler()`
-     and `tree_nav_unblock_selection_handler()`, then select a row.
-3. **Performance**: never load a whole huge file into the right pane; keep the
-   preview path (`fread` of `PREVIEW_BYTES` only). Directory enumeration is
-   O(n) with one `g_stat` per entry — fine for typical directories; do not add
-   recursive scans on the UI thread.
-4. **Top bar is single source of truth** for directory/sort/hidden state via
-   `update_path_label()` (`topbar.c`); do not duplicate that state elsewhere.
-5. `Ctrl+Q` quits from `on_window_key_press()` (`ui.c`, quits the `GMainLoop`);
-   keep it working when adding key handlers (do not swallow it).
-6. **Keep the current layout** (GtkPaned + GtkSearchEntry + outer_vbox). Do not
-   switch to GtkGrid fixed cells or plain GtkBox: resizability is a user
-   requirement.
-7. Language: C99-ish; `-Wall -Wextra` must stay clean (zero warnings).
-8. **Always validate after modification**: run `make check` after every
-   modification (zero warnings, tests passing, layering OK) before completing
-   a task or committing.
+1. **English only**: strings, comments, commits, docs.
+2. **No deprecated GTK API**: lists are `GListStore` + `GtkListView` /
+   `GtkColumnView`; dialogs are `AppDialog` (`dialog.h`); URIs open with
+   `GtkUriLauncher`; CSS providers go on the display.
+3. **No external windows**: prompts are `AppDialog`s, menus `GtkPopover`s
+   (`make check` rejects top-level windows outside `main.c`).
+4. `GtkScrolledWindow` has one child. `GtkTextBuffer` takes valid UTF-8 only
+   (`g_utf8_validate()` / `g_utf8_make_valid()`).
+5. Escape text put into Pango markup with `g_markup_printf_escaped()`.
+6. **Colours from the palette** (`palette_color(PAL_...)`, `@role` in CSS),
+   **fonts from the font roles** (`fonts.h`, `@font_*` / `@size_*`); text tags
+   via `text_tag_create()` / `text_tag_ensure()` with role values. `make check`
+   rejects colour literals, font families and pixel sizes elsewhere.
+7. Every new `GtkPaned` goes through `wire_paned_controllers()` or
+   `paned_use_thin_handle()`. Keep the `GtkPaned` layout (resizability is
+   required).
+8. **Performance**: preview reads only `PREVIEW_BYTES`; no recursive scans
+   or blocking git calls on the UI thread.
+9. The top bar (`update_path_label()`) is the single source of truth for
+   directory, sort and hidden state.
+10. `Ctrl+Q` must keep quitting: never swallow it in a key handler.
+11. Shortcut changes: keep `README.md` and `help.c` (`KEY_HELP`) in sync, and
+    use the same key for the same action in every explorer view.
+12. C99, `-Wall -Wextra` clean.
 
 ## Git
 
-- The user expects a commit after each accepted change (one change = one commit).
-- Commit messages: short imperative summary, change-focused (subject only,
-  no body needed). Example: `Add Ctrl-F / Ctrl-B paging in left panel`.
-- `git add` only files you deliberately changed. Amend only your own
-  immediately-prior commit (e.g. forgotten fix), never user work.
-
-## Known status
-
-Recent features are stable (release history in CHANGELOG.md): modular architecture in `src/`,
-hanging indent and aligned paragraph wrapping for HTML & Markdown lists,
-enhanced HTML renderer (base64 images, code blocks, task lists, description lists, details/summary, table captions, math/arrow/Greek entities, metadata banner),
-custom panel backgrounds (#191A1B file panel, #121314 preview, #1f2021 terminal),
-VS Code Dark+ full theme & icon matching, text viewer padding for text/code files, PDF document preview in right panel, image preview in right panel, monospace font for code files, expandable directory tree (`GtkTreeListModel`), rendered Markdown & HTML previews, resizable terminal panes (`GtkPaned`), resizable layout, vim bindings, navigation, hidden toggle,
-sort cycle, previews, dark theme. UI language is English end-to-end, including README.md.
+- One accepted change = one commit; short imperative subject, no body
+  (e.g. `Add Ctrl-F / Ctrl-B paging in left panel`).
+- `git add` only files you changed on purpose. Amend only your own
+  immediately-prior commit.
