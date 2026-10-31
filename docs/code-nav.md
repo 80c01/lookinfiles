@@ -102,4 +102,4 @@ Notes:
 - `make check` clean, new modules registered in the Makefile tests and in
   `tools/check_layers.sh`.
 - A step in `tests/ui/run_ui_test.sh` for each new key, screenshots checked.
-- `help.c` (`KEY_HELP`) and the README shortcut tables updated.
+- `help.c` (`KEY_HELP`) and `docs/keyboard.md` updated.

@@ -328,7 +328,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `status_bar` — bottom bar (branch, selection, size, type, global mode menu:
   it shows and sets the global mode only; a tab's mode is set from its tab menu).
 - `sidebar` — explorer header: view switcher and per-view action toolbars.
-- `help` — cheat sheet (`?`); `KEY_HELP` must stay in sync with `README.md`.
+- `help` — cheat sheet (`?`); `KEY_HELP` must stay in sync with `docs/keyboard.md`.
 - `workspace` — virtual workspaces (Alt+1..8): save/apply layout snapshots,
   top-bar workspace minimap. A new workspace (Alt++) starts from the default
   view (start directory, files view) with the panels of the default layout
@@ -394,5 +394,5 @@ views, and the views ask the explorer to navigate (`navigate_to_path()`,
 `reload_directory()`). Breaking a new cycle: emit an event, or move the shared
 code down a layer (as done for `panels`, `fs_watch`, `remote_store`, `editor_org`).
 
-Shortcut list to keep in sync with `README.md` and `help.c` when you change behavior.
+Shortcut list to keep in sync with `docs/keyboard.md` and `help.c` when you change behavior.
 

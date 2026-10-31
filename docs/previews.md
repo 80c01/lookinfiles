@@ -2,9 +2,80 @@
 
 Lookin's value is the preview panel: select a file and see its content at
 once, looking as close as possible to what the application made for that
-format would show. This page gives the rules every preview follows, the
-coverage today, and the checklist for adding a format. Open work is in
+format would show. This page lists what is previewed, then gives the rules
+every preview follows, the coverage today, and the checklist for adding a
+format. Open work is in
 [TODO.md](../TODO.md) ("Preview").
+
+## What the preview panel shows
+
+- Text and source code with syntax highlighting (GtkSourceView, Dark+ colours),
+  and line numbers for source code.
+- Markdown rendered like VS Code's preview: headings, lists, task lists
+  (including in-progress `[/]` / `[-]` tasks), tables, quotes, GitHub alerts,
+  highlighted code blocks and images.
+- HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
+- Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
+  `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), video and audio
+  with player controls.
+- Office documents, read without any external tool: Word (`.docx`, and
+  `.doc` from Word 97-2003 or 6 / 95) and OpenDocument text (`.odt`) with
+  headings, styles, lists, tables, links and images (not in `.doc`);
+  spreadsheets (`.xlsx`, `.ods`, `.xls` from Excel 97-2003 or 5.0 / 95) as
+  grids with column letters, number, date and percent formats; presentations
+  (`.pptx`, `.odp`, `.ppt` / `.pps`) slide by slide; RTF. Page layout, fonts, headers and
+  footers are not shown; long documents stop after 256 KB of text. Other OLE2
+  compound files (`.msi`, `.vsd`, Works...) show their properties (title,
+  author, dates, counts) and streams.
+- Mail messages (`.eml`, `.emlx`, or any file starting with mail headers):
+  the headers, the text with quotes and signature dimmed (or the HTML body
+  with its inline images; remote content is never fetched), forwarded
+  messages and the attachments; encoded headers and charsets decoded.
+  Mailboxes (Thunderbird `Inbox` and other mbox files, `.mbox`, `.mbx`) as a
+  list of messages, opened one by one with `PgDn` / `PgUp`; only the
+  beginning and the end of very large ones are read. Maildir and MH folders
+  show their newest messages (date, sender, subject, read / unread / replied)
+  instead of the `cur` / `new` / `tmp` listing. Outlook messages (`.msg`)
+  are shown the same way (text, HTML or RTF body, attachments), and so are
+  the `winmail.dat` (TNEF) attachments Outlook adds to mails. Outlook data
+  files (`.pst`, `.ost`) and Outlook Express folders (`.dbx`) show a card
+  with their format, size and encryption.
+- EPUB books (cover, metadata, contents, first chapters) and Jupyter
+  notebooks (Markdown cells, highlighted code, text and image outputs).
+- Data and text formats: CSV / TSV as aligned tables, JSON (also minified,
+  JSONC and JSON Lines) pretty-printed and coloured, diffs and patches with a
+  per-file summary, logs coloured by level and shown from their end, manual
+  pages formatted like `man` (gzipped ones too), calendars (`.ics`), contacts
+  (`.vcf`) and `.desktop` entries as cards.
+- Archives (`.zip`, `.jar`, `.tar`, `.tar.gz`, `.a`, `.deb`...) listed with sizes and
+  dates; a gzipped file shows its content. Certificates and keys (PEM, DER):
+  subject, issuer, validity, alternative names, key, fingerprints (private
+  keys are only named). Fonts: names, details and samples in the font.
+- Directory overview: totals, file types, branch and git changes, then each entry with
+  its icon, size, date and git status, in the explorer's sort order, and the
+  folder's README rendered below (one level read in the background, never
+  recursively).
+- Summaries of notebooks, bookmark folders and machines.
+- A **Git Commits** tab listing the repository history with each commit's diff,
+  and a **Search** tab with the results of a search in files (`Ctrl+Shift+F`).
+- Git change bars in the text preview and the editor, as in VS Code: lines
+  added (green), modified (blue) or deleted (red marker) since the last commit;
+  the editor updates them while typing. The minimap shows them along its
+  left edge.
+- A minimap that mirrors the displayed layout and scrolls the view (click,
+  drag or mouse wheel). As in VS Code, a long file keeps a readable scale and
+  the minimap scrolls along with the view.
+- File types are detected from the content (an image or a `#!` script without
+  extension, TypeScript `.ts` that is not a video); unknown binary files show a
+  hex dump (offsets, bytes and an ASCII column) of their first 64 KB.
+- Executables, shared libraries and object files (ELF) show their
+  architecture, type, interpreter, linked libraries, soname, build ID,
+  whether they are stripped, and their exported symbols; `m` shows the hex
+  dump instead. Only the headers are read, even for a large library.
+- `m` switches between the rendered and the raw view (text, or the hex dump
+  of binary formats). Text files over 512 KB show their first 64 KB, and the
+  next parts load as you scroll down (up to 8 MB). The encoding is detected
+  (UTF-8, UTF-16, Windows-1252) and shown in the status bar.
 
 ## Rules every preview follows
 
@@ -175,6 +246,6 @@ the sender and subject), mail client databases (previewed as SQLite).
 - [ ] Within the latency budget in `make bench-preview`.
 - [ ] Fixture + `shot` in `tests/ui/formats.sh`; screenshot checked.
 - [ ] File-type icon in `file_icon()` if new.
-- [ ] Coverage table above, README preview list and `CHANGELOG.md` updated;
+- [ ] Coverage table and preview list above, `CHANGELOG.md` updated;
       `make check` passes.
 - [ ] One commit per format.

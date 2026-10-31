@@ -69,5 +69,5 @@ Check these before adding or changing an action, a tooltip or a dialog:
 - **Preview text views** all use `set_view_text_padding()` (10 px sides).
 - **Names**: `Org-mode`, `Rich Format`, `Plain Text`; view titles EXPLORER,
   BOOKMARKS, NOTES, REMOTE.
-- Keep `help.c` (`KEY_HELP`) and the README shortcut tables in sync.
+- Keep `help.c` (`KEY_HELP`) and `docs/keyboard.md` in sync.
 

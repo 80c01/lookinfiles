@@ -17,6 +17,10 @@ More detail, read when the task touches it:
 - [docs/previews.md](docs/previews.md): preview rules, coverage, adding a
   format.
 - [docs/code-nav.md](docs/code-nav.md): code navigation (backends, keys).
+- [docs/keyboard.md](docs/keyboard.md): every shortcut (kept in sync with
+  `help.c`).
+- [docs/configuration.md](docs/configuration.md): config files, language
+  servers, theme format.
 
 ## Build and test
 
@@ -84,7 +88,7 @@ layer or below (`tools/check_layers.sh` enforces it):
 9. The top bar (`update_path_label()`) is the single source of truth for
    directory, sort and hidden state.
 10. `Ctrl+Q` must keep quitting: never swallow it in a key handler.
-11. Shortcut changes: keep `README.md` and `help.c` (`KEY_HELP`) in sync, and
+11. Shortcut changes: keep `docs/keyboard.md` and `help.c` (`KEY_HELP`) in sync, and
     use the same key for the same action in every explorer view.
 12. C99, `-Wall -Wextra` clean.
 
