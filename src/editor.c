@@ -319,10 +319,42 @@ static void on_editor_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) 
     }
 }
 
+#define DRAG_GESTURES_KEY "editor-drag-gestures"
+#define POINTER_DOWN_KEY "editor-pointer-down"
+#define BUTTONS_MASK (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK)
+
+/* The drag gestures of the text view (its selection drag among them), found
+ * once: observing the controllers of a widget is slow */
+static void remember_drag_gestures(GtkWidget* view) {
+    GPtrArray* drags = g_ptr_array_new();
+    GListModel* ctrls = gtk_widget_observe_controllers(view);
+    for (guint i = 0; i < g_list_model_get_n_items(ctrls); i++) {
+        GObject* c = g_list_model_get_item(ctrls, i);
+        if (GTK_IS_GESTURE_DRAG(c)) g_ptr_array_add(drags, c); /* owned by the view */
+        g_object_unref(c);
+    }
+    g_object_unref(ctrls);
+    g_object_set_data_full(G_OBJECT(view), DRAG_GESTURES_KEY, drags, (GDestroyNotify)g_ptr_array_unref);
+}
+
+/* A button release that never reached the view (taken by a popup, a focus
+ * change...) leaves its selection drag running: GtkTextView then ignores the
+ * cursor keys until the mouse moves the cursor. A key pressed with no button
+ * down ends such a drag. */
+static void end_stuck_drag(GtkWidget* view, GdkModifierType state) {
+    if ((state & BUTTONS_MASK) != 0) return;
+    g_object_set_data(G_OBJECT(view), POINTER_DOWN_KEY, NULL);
+    GPtrArray* drags = g_object_get_data(G_OBJECT(view), DRAG_GESTURES_KEY);
+    for (guint i = 0; drags != NULL && i < drags->len; i++) {
+        GtkGesture* g = g_ptr_array_index(drags, i);
+        if (gtk_gesture_is_active(g)) gtk_event_controller_reset(GTK_EVENT_CONTROLLER(g));
+    }
+}
+
 static gboolean on_editor_view_key_press(GtkEventControllerKey* controller, guint keyval,
                                          guint keycode, GdkModifierType state, gpointer data) {
-    (void)controller;
     EditorTab* tab = (EditorTab*)data;
+    end_stuck_drag(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(controller)), state);
     if (tab != NULL && tab->app != NULL) {
         if (editor_modes_handle_key((AppData*)tab->app, tab, keyval, keycode, state)) {
             return TRUE;
@@ -831,8 +863,6 @@ static void clamp_adjustment(GtkAdjustment* adj, gdouble value) {
     }
 }
 
-#define POINTER_DOWN_KEY "editor-pointer-down"
-
 /* Tracks whether a mouse button (or touch) is down in the view. Scrolling the
  * text under a held button turns the click into a drag selection, which then
  * moves the cursor and scrolls again: the view runs away and typing replaces
@@ -1100,6 +1130,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     g_signal_connect(focus_ctrl, "enter", G_CALLBACK(on_editor_focus_enter), tab);
     gtk_widget_add_controller(view, focus_ctrl);
 
+    remember_drag_gestures(view);
     GtkEventController* key_ctrl = gtk_event_controller_key_new();
     gtk_event_controller_set_propagation_phase(key_ctrl, GTK_PHASE_CAPTURE);
     g_signal_connect(key_ctrl, "key-pressed", G_CALLBACK(on_editor_view_key_press), tab);
