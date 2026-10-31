@@ -7,6 +7,7 @@
 #include "panels.h"
 #include "icons.h"
 #include "editor_modes.h"
+#include "text_tags.h"
 
 #define SEARCH_MAX_COUNT 1000 /* matches counted for the Emacs [n/total] */
 
@@ -275,6 +276,55 @@ static gint count_matches(const gunichar* hcv, gint hlen, const gunichar* ncv, g
     return total;
 }
 
+/* Viewer matches are tagged (palette roles editor_match and
+ * editor_match_current) rather than selected while the bar is open: the
+ * unfocused selection is too faint to see. The bar closing selects the
+ * current match. */
+#define VIEWER_MATCH_TAG "viewer-search-match"
+#define VIEWER_CURRENT_TAG "viewer-search-current"
+#define VIEWER_MAX_TAGGED 20000
+
+static gint viewer_match_len = 0;
+
+static GtkTextTag* viewer_tag(GtkTextBuffer* buf, const gchar* name, const gchar* bg) {
+    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buf);
+    GtkTextTag* tag = text_tag_ensure(buf, name, "background", bg, NULL);
+    /* Above the syntax highlighting */
+    gtk_text_tag_set_priority(tag, gtk_text_tag_table_get_size(table) - 1);
+    return tag;
+}
+
+static void viewer_clear_tags(AppData* app) {
+    GtkTextTagTable* table = gtk_text_buffer_get_tag_table(app->buffer);
+    GtkTextIter s, e;
+    gtk_text_buffer_get_bounds(app->buffer, &s, &e);
+    const gchar* names[] = {VIEWER_MATCH_TAG, VIEWER_CURRENT_TAG};
+    for (gsize i = 0; i < G_N_ELEMENTS(names); i++) {
+        GtkTextTag* tag = gtk_text_tag_table_lookup(table, names[i]);
+        if (tag != NULL) gtk_text_buffer_remove_tag(app->buffer, tag, &s, &e);
+    }
+}
+
+static void viewer_tag_range(AppData* app, GtkTextTag* tag, gint offset, gint len) {
+    GtkTextIter s, e;
+    gtk_text_buffer_get_iter_at_offset(app->buffer, &s, offset);
+    gtk_text_buffer_get_iter_at_offset(app->buffer, &e, offset + len);
+    gtk_text_buffer_apply_tag(app->buffer, tag, &s, &e);
+}
+
+static void viewer_tag_matches(AppData* app, const gunichar* hcv, gint hlen, const gunichar* ncv, gint nlen,
+                               gint match) {
+    GtkTextTag* all = viewer_tag(app->buffer, VIEWER_MATCH_TAG, "@editor_match");
+    GtkTextTag* current = viewer_tag(app->buffer, VIEWER_CURRENT_TAG, "@editor_match_current");
+    gint count = 0;
+    for (gint m = folded_find_from(hcv, hlen, ncv, nlen, 0); m >= 0 && count < VIEWER_MAX_TAGGED;
+         m = folded_find_from(hcv, hlen, ncv, nlen, m + nlen)) {
+        viewer_tag_range(app, all, m, nlen);
+        count++;
+    }
+    if (match >= 0) viewer_tag_range(app, current, match, nlen);
+}
+
 void do_viewer_search(AppData* app, gint direction) {
     if (app->search_term == NULL || app->search_term[0] == '\0') {
         return;
@@ -318,11 +368,15 @@ void do_viewer_search(AppData* app, gint direction) {
     }
 
     gint index = 0, total = 0;
+    gboolean tagged = app->search_in_viewer && bar_open(app);
+    viewer_clear_tags(app);
+    if (tagged) viewer_tag_matches(app, hcv, hlen, ncv, nlen, match);
     if (match >= 0) {
         GtkTextIter ms, me;
         gtk_text_buffer_get_iter_at_offset(app->buffer, &ms, match);
         gtk_text_buffer_get_iter_at_offset(app->buffer, &me, match + nlen);
-        gtk_text_buffer_select_range(app->buffer, &ms, &me);
+        gtk_text_buffer_select_range(app->buffer, &ms, tagged ? &ms : &me);
+        viewer_match_len = nlen;
         gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(app->text_view), &ms, 0.0, TRUE, 0.0, 0.5);
         app->viewer_match = match;
     }
@@ -364,6 +418,17 @@ void show_search(AppData* app, gboolean from_viewer, gboolean backward) {
 
 void hide_search(AppData* app) {
     gtk_widget_set_visible(active_bar(app)->bar, FALSE);
+    if (app->search_in_viewer && app->buffer != NULL) {
+        viewer_clear_tags(app);
+        /* Select the match the bar left (cancel_search resets it) */
+        GtkTextIter s, e;
+        gtk_text_buffer_get_end_iter(app->buffer, &e);
+        if (app->viewer_match >= 0 && app->viewer_match + viewer_match_len <= gtk_text_iter_get_offset(&e)) {
+            gtk_text_buffer_get_iter_at_offset(app->buffer, &s, app->viewer_match);
+            gtk_text_buffer_get_iter_at_offset(app->buffer, &e, app->viewer_match + viewer_match_len);
+            gtk_text_buffer_select_range(app->buffer, &s, &e);
+        }
+    }
     /* Return to the panel that opened the bar */
     gtk_widget_grab_focus(app->search_in_viewer ? app->text_view
                                                 : GTK_WIDGET(app->tree_view));
