@@ -27,6 +27,8 @@ gchar* code_index_project_root(const gchar* path);
  * limit was hit. */
 GPtrArray* code_index_project_files(const gchar* root, CodeLang family, GCancellable* cancellable,
                                     gboolean* truncated);
+/* Same, every file whatever its language (quick open, text search) */
+GPtrArray* code_index_all_files(const gchar* root, GCancellable* cancellable, gboolean* truncated);
 
 typedef struct {
     gchar* path;          /* absolute path */

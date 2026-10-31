@@ -105,6 +105,12 @@ static void test_walk_files(void) {
     g_assert_cmpstr(got, ==, "tools/gen.py");
     g_free(got);
     g_ptr_array_unref(files);
+    /* Every language (quick open, text search), still without hidden and build directories */
+    files = code_index_all_files(root, NULL, NULL);
+    got = list_of(root, files);
+    g_assert_cmpstr(got, ==, "include/shop.h src/extra/other.c src/main.c src/shop.c tools/gen.py");
+    g_free(got);
+    g_ptr_array_unref(files);
     remove_tree(root);
     g_free(root);
 }

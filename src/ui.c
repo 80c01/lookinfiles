@@ -11,6 +11,7 @@
 #include "editor.h"
 #include "editor_modes.h"
 #include "focus_route.h"
+#include "quick_open.h"
 
 
 static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, gpointer user_data) {
@@ -175,6 +176,14 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     FocusInfo info;
     focus_route_get(app, &info);
 
+    /* Quick open: Emacs C-x C-f in the explorer, the viewer and the list pages */
+    if (info.nav_keys &&
+        nav_keys_lookup(app_nav_style(app), (NavPrefix)app->nav_prefix, keyval, state, NULL) == NAV_QUICK_OPEN) {
+        app->nav_prefix = NAV_PREFIX_NONE;
+        quick_open_show(app);
+        return TRUE;
+    }
+
     /* Navigation keys of the global mode go to the explorer, the viewer and
      * the list pages (Emacs C-s / C-r search there, Vim Ctrl+W starts a
      * window command) */
@@ -257,6 +266,14 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     /* Emacs and Org-mode tabs keep C-e (end of line) and C-r (search backward) */
     gboolean is_emacs_tab = is_modal_tab && (cur_tab->mode == EDITOR_MODE_EMACS ||
                                              cur_tab->mode == EDITOR_MODE_ORGMODE);
+
+    /* Ctrl+P: quick open (Vim and Emacs tabs keep Ctrl+P; Emacs C-p in the
+     * explorer is a navigation key, handled above) */
+    if (!is_modal_tab && (state & GDK_CONTROL_MASK) && !(state & (GDK_SHIFT_MASK | GDK_ALT_MASK)) &&
+        (keyval == GDK_KEY_p || keyval == GDK_KEY_P)) {
+        quick_open_show(app);
+        return TRUE;
+    }
 
     if (!is_modal_tab) {
         /* Ctrl+S: save current editor tab; Ctrl+W: close current editor tab */

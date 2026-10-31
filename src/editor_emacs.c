@@ -8,6 +8,7 @@
 #include "code_symbols.h"
 #include "app_events.h"
 #include "nav_keys.h"
+#include "quick_open.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -973,6 +974,9 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         case NAV_TAB_PREV:
             emacs_echo(tab, "");
             editor_modes_step_tab(tab, action == NAV_TAB_NEXT ? 1 : -1);
+            return TRUE;
+        case NAV_QUICK_OPEN: /* find-file: a file of the project */
+            quick_open_show((AppData*)tab->app);
             return TRUE;
         default:
             break;

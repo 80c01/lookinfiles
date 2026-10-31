@@ -19,7 +19,9 @@ gchar* code_index_project_root(const gchar* path) {
     return dir;
 }
 
+/* CODE_LANG_NONE: every file (code_index_all_files()) */
 static gboolean in_family(const gchar* path, CodeLang family) {
+    if (family == CODE_LANG_NONE) return TRUE;
     CodeLang lang = code_lang_from_name(path);
     return lang != CODE_LANG_NONE && code_lang_family(lang) == family;
 }
@@ -123,11 +125,11 @@ static gboolean walk(const gchar* dir, gint depth, CodeLang family, GPtrArray* o
     return go_on;
 }
 
-GPtrArray* code_index_project_files(const gchar* root, CodeLang family, GCancellable* cancellable,
-                                    gboolean* truncated) {
+/* Files of family (CODE_LANG_NONE: all) under root */
+static GPtrArray* list_files(const gchar* root, CodeLang family, GCancellable* cancellable, gboolean* truncated) {
     GPtrArray* out = g_ptr_array_new_with_free_func(g_free);
     if (truncated != NULL) *truncated = FALSE;
-    if (root == NULL || family == CODE_LANG_NONE) return out;
+    if (root == NULL) return out;
     gchar* git_root = find_git_root(root);
     gboolean in_git = git_root != NULL && strcmp(git_root, root) == 0;
     g_free(git_root);
@@ -136,6 +138,19 @@ GPtrArray* code_index_project_files(const gchar* root, CodeLang family, GCancell
         walk(root, 0, family, out, cancellable, truncated);
     }
     return out;
+}
+
+GPtrArray* code_index_project_files(const gchar* root, CodeLang family, GCancellable* cancellable,
+                                    gboolean* truncated) {
+    if (family == CODE_LANG_NONE) {
+        if (truncated != NULL) *truncated = FALSE;
+        return g_ptr_array_new_with_free_func(g_free);
+    }
+    return list_files(root, family, cancellable, truncated);
+}
+
+GPtrArray* code_index_all_files(const gchar* root, GCancellable* cancellable, gboolean* truncated) {
+    return list_files(root, CODE_LANG_NONE, cancellable, truncated);
 }
 
 void code_match_free(CodeMatch* match) {

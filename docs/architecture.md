@@ -121,6 +121,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   with a lock) that re-tags only changed files and is cached in
   `app_cache_dir()/tags/`; `code_index_find()` uses it through
   `CodeQuery.tags`, open buffers are still scanned.
+- `fuzzy_match` — fuzzy scoring of paths for quick open (file name, word
+  starts and consecutive characters first) and the matched positions.
 - `jump_list` — back / forward history of navigation jumps across files.
 - `trash_restore` — puts back a file moved to the trash: finds its newest
   `.trashinfo` (home trash, then the mount's `.Trash-$uid` / `.Trash/$uid`)
@@ -294,6 +296,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   tab; `editor_detach_tabs()` and `editor_current_tab()` only touch editor
   pages, wherever they are), from the server or `code_index_references()`.
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
+- `quick_open` — Ctrl+P / Emacs `C-x C-f`: the project's files
+  (`code_index_all_files()` in a worker) in an `AppDialog`, ranked by
+  `fuzzy_match`; shows the file with `reveal_path_in_tree()` or edits it.
 - `terminal` — embedded VTE panes (`Ctrl+T`, `terminal_open()` with a
   working directory), Dark+ ANSI palette; ssh into the active remote machine.
 - `search` — the search bars of the explorer and of the preview, one at the

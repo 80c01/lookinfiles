@@ -146,6 +146,7 @@ NavAction nav_keys_ctrl_x(guint keyval, GdkModifierType state) {
     if ((state & GDK_ALT_MASK) != 0) return NAV_CANCEL;
     switch (keyval) {
     case GDK_KEY_o: return (state & GDK_CONTROL_MASK) == 0 ? NAV_PANEL_NEXT : NAV_CANCEL;
+    case GDK_KEY_f: return (state & GDK_CONTROL_MASK) != 0 ? NAV_QUICK_OPEN : NAV_CANCEL;
     /* next-buffer / previous-buffer, Ctrl held or not (C-x C-<right>) */
     case GDK_KEY_Right: case GDK_KEY_KP_Right: return NAV_TAB_NEXT;
     case GDK_KEY_Left: case GDK_KEY_KP_Left: return NAV_TAB_PREV;

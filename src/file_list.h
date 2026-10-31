@@ -21,6 +21,9 @@ void check_listing(AppData* app);
 /* Drop the directory and git scans in progress (their rows are being put aside) */
 void cancel_listing_scans(AppData* app);
 void refresh_listing_with_path(AppData* app, const gchar* select_path);
+/* Show path in the files view and select it: its folders are expanded when
+ * it is under the current directory, else its folder becomes the root */
+void reveal_path_in_tree(AppData* app, const gchar* path);
 void toggle_hidden_files(AppData* app);
 void toggle_bookmarks_view(AppData* app);
 void toggle_notes_view(AppData* app);

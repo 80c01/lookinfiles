@@ -124,7 +124,8 @@ panels, editors and terminals. Panel arrangements can be saved as named
 layouts and applied from a list, including the default layout new workspaces
 open with.
 
-**Keyboard first**: Vim-style navigation everywhere, one shortcut per action
+**Keyboard first**: quick open of any project file (`Ctrl+P`) with fuzzy
+matching, Vim-style navigation everywhere, one shortcut per action
 in every view, a built-in cheat sheet (`?`), and dialogs drawn inside the
 window.
 
@@ -240,6 +241,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Alt+L` | Workspace layouts: apply a saved layout, save the current panels under a name (`Default` for new workspaces), delete one or reset the default |
 | `Alt+T` | Themes and fonts: pick a theme (applied as you select it; Apply keeps it, Cancel goes back), set your interface and code fonts, save the current look as a theme, edit or delete your themes |
 | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Larger / smaller fonts (interface and code together), or back to the theme's sizes |
+| `Ctrl+P` (Notepad, Vim), `C-x C-f` (Emacs) | Go to a file of the project (its git repository, else the current folder): type part of its name or path, the best matches first; `Enter` shows it in the explorer, `Ctrl+Enter` opens it in an editor tab (Vim editor tabs keep `Ctrl+P`) |
 | `Ctrl+T` | Open a terminal pane beside the running ones (exit the shell to close it) |
 | `Ctrl+Shift+T` | Open a terminal pane below the running ones |
 | `Ctrl+Shift+L` | Stack the terminal under the viewer, or put it back beside it |

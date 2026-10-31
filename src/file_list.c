@@ -834,6 +834,35 @@ void refresh_listing_with_path(AppData* app, const gchar* select_path) {
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
+void reveal_path_in_tree(AppData* app, const gchar* path) {
+    if (app == NULL || path == NULL || app->base_dir == NULL) {
+        return;
+    }
+    if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
+        gtk_widget_set_visible(app->left_vbox, TRUE);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+    }
+    app->sidebar_view = SIDEBAR_VIEW_FILES;
+    app->show_bookmarks = FALSE;
+    gsize n = strlen(app->base_dir);
+    gboolean inside = g_str_has_prefix(path, app->base_dir) && n > 0 &&
+                      (path[n] == '/' || app->base_dir[n - 1] == '/');
+    if (!inside) {
+        navigate_to_path(app, path);
+        return;
+    }
+    /* Expand every folder between the root and the entry */
+    gchar* dir = g_path_get_dirname(path);
+    while (app->expanded_paths != NULL && strlen(dir) > n && g_str_has_prefix(dir, app->base_dir)) {
+        g_hash_table_add(app->expanded_paths, g_strdup(dir));
+        gchar* up = g_path_get_dirname(dir);
+        g_free(dir);
+        dir = up;
+    }
+    g_free(dir);
+    refresh_listing_with_path(app, path);
+}
+
 void cancel_listing_scans(AppData* app) {
     if (app->dir_cancellable != NULL) {
         g_cancellable_cancel(app->dir_cancellable);

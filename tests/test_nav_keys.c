@@ -131,6 +131,9 @@ static void test_tab_keys(void) {
     g_assert_cmpint(nav_keys_lookup(NAV_STYLE_EMACS, NAV_PREFIX_CTRL_X, GDK_KEY_Left, GDK_CONTROL_MASK, NULL),
                     ==, NAV_TAB_PREV);
     g_assert_cmpint(nav_keys_ctrl_x(GDK_KEY_o, GDK_CONTROL_MASK), ==, NAV_CANCEL);
+    /* C-x C-f: find-file (quick open); C-x f is not */
+    g_assert_cmpint(nav_keys_ctrl_x(GDK_KEY_f, GDK_CONTROL_MASK), ==, NAV_QUICK_OPEN);
+    g_assert_cmpint(nav_keys_ctrl_x(GDK_KEY_f, 0), ==, NAV_CANCEL);
 }
 
 static void test_search_keys(void) {

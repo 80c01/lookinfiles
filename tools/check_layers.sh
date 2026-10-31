@@ -82,6 +82,7 @@ code_tags:code_symbol,json_view
 code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
 trash_restore:
+fuzzy_match:
 palette:
 fonts:
 theme_store:fonts,palette,app_paths
