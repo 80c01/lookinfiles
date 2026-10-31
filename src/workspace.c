@@ -209,6 +209,22 @@ static void apply_term_paned_positions_recursive(GtkWidget* widget) {
 }
 #endif
 
+/* Width of a paned's separator along its orientation (set by the theme CSS);
+ * measured, so it is right even before the paned is allocated */
+static gint paned_handle_size(GtkWidget* paned) {
+    GtkOrientation o = gtk_orientable_get_orientation(GTK_ORIENTABLE(paned));
+    for (GtkWidget* child = gtk_widget_get_first_child(paned);
+         child != NULL;
+         child = gtk_widget_get_next_sibling(child)) {
+        if (g_strcmp0(gtk_widget_get_css_name(child), "separator") == 0) {
+            gint min = 0;
+            gtk_widget_measure(child, o, -1, &min, NULL, NULL, NULL);
+            return min;
+        }
+    }
+    return 0;
+}
+
 static gboolean apply_ws_positions_now(AppData* app) {
     if (app == NULL || app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
         return TRUE;
@@ -225,6 +241,13 @@ static gboolean apply_ws_positions_now(AppData* app) {
     gint target_file_w = (gint)(ws->main_frac * total_w + 0.5);
     if (target_file_w > mw - 40 && mw > 80) {
         target_file_w = mw - 40;
+    }
+    /* Width the right side gets next to the explorer: computed rather than
+     * read, since its allocation is the previous workspace's until the next
+     * layout (a wrong guess makes the split jump on the second frame) */
+    gint right_w = mw;
+    if (ws->files_vis && mw > 60 && app->main_paned != NULL) {
+        right_w = mw - target_file_w - paned_handle_size(app->main_paned);
     }
 
     if (app->main_paned != NULL && ws->files_vis && (ws->preview_vis || ws->editor_dedicated || ws->term_vis)) {
@@ -243,10 +266,8 @@ static gboolean apply_ws_positions_now(AppData* app) {
                 if (r_pos > 40) {
                     ew = r_pos;
                 }
-            } else if (ws->files_vis && mw > 60) {
-                ew = mw - target_file_w;
             } else if (mw > 40) {
-                ew = mw;
+                ew = right_w;
             }
         }
         if (ew > 40) {
@@ -265,11 +286,8 @@ static gboolean apply_ws_positions_now(AppData* app) {
                        ? gtk_widget_get_height(app->right_paned)
                        : gtk_widget_get_width(app->right_paned);
         if (ws->right_orient == GTK_ORIENTATION_HORIZONTAL) {
-            gint target_rw = (ws->files_vis && mw > 60)
-                                 ? (mw - target_file_w)
-                                 : mw;
             if (app->layout_apply_frames <= 1 || len <= 40) {
-                len = target_rw;
+                len = right_w;
             }
         } else if (len <= 40 && mh > 40) {
             len = mh;
