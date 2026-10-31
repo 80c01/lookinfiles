@@ -158,7 +158,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   name stored in `notes.xml` (the former `rich` reads as Markdown).
 - `canvas_doc` — Canvas notes (`<title>.canvas/`: `page.xml` and
   `media/`): text boxes with styled runs and pictures placed freely, read and
-  written as XML, new picture names, unused pictures pruned, Markdown export.
+  written as XML, new picture names, unused pictures pruned, Markdown export
+  (`canvas_doc_export_markdown()`: a `.md` note next to it, pictures linked
+  inside the Canvas).
 - `palette` — every colour of the application, by role (`PaletteRole`:
   surfaces, text, accent, git, diff, syntax, editor, terminal ANSI...):
   `palette_color()` ("#rrggbb" for text tags and Pango markup),

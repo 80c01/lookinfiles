@@ -165,6 +165,30 @@ static void test_create_delete(void) {
     g_rmdir(tmp);
 }
 
+static void test_export_markdown(void) {
+    g_autofree gchar* tmp = g_dir_make_tmp("canvas-XXXXXX", NULL);
+    g_autofree gchar* dir = g_build_filename(tmp, "My Plan.canvas", NULL);
+    g_assert_true(canvas_doc_create(dir, "Plan", NULL));
+    g_autoptr(CanvasDoc) doc = canvas_doc_load(dir, NULL);
+    canvas_doc_add_image(doc, 0, 300, 10, 10, "media/0001.png");
+    g_assert_true(canvas_doc_save(doc, dir, NULL));
+
+    g_autofree gchar* first = canvas_doc_export_markdown(dir, NULL);
+    g_autofree gchar* expected = g_build_filename(tmp, "My Plan.md", NULL);
+    g_assert_cmpstr(first, ==, expected);
+    g_autofree gchar* md = NULL;
+    g_assert_true(g_file_get_contents(first, &md, NULL, NULL));
+    g_assert_cmpstr(md, ==, "## Plan\n\n![](<My Plan.canvas/media/0001.png>)\n");
+    /* The name is taken: a numbered one */
+    g_autofree gchar* second = canvas_doc_export_markdown(dir, NULL);
+    g_assert_true(g_str_has_suffix(second, "/My Plan (2).md"));
+
+    g_remove(first);
+    g_remove(second);
+    g_assert_true(canvas_doc_delete(dir));
+    g_rmdir(tmp);
+}
+
 static void test_markdown(void) {
     g_autoptr(CanvasDoc) doc = canvas_doc_new();
     canvas_doc_add_image(doc, 0, 200, 10, 10, "media/0001.png");
@@ -193,5 +217,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_doc/files", test_files);
     g_test_add_func("/canvas_doc/create_delete", test_create_delete);
     g_test_add_func("/canvas_doc/markdown", test_markdown);
+    g_test_add_func("/canvas_doc/export_markdown", test_export_markdown);
     return g_test_run();
 }

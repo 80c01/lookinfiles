@@ -470,6 +470,30 @@ static void append_md_text(GString* out, const CanvasBlock* b) {
     }
 }
 
+gchar* canvas_doc_export_markdown(const gchar* dir, GError** error) {
+    g_autoptr(CanvasDoc) doc = canvas_doc_load(dir, error);
+    if (doc == NULL) return NULL;
+    gchar* base = g_path_get_basename(dir);
+    gchar* parent = g_path_get_dirname(dir);
+    gchar* prefix = g_strconcat(base, "/", NULL);
+    if (g_str_has_suffix(base, CANVAS_EXT)) base[strlen(base) - strlen(CANVAS_EXT)] = '\0';
+
+    gchar* path = NULL;
+    for (gint n = 1; path == NULL || g_file_test(path, G_FILE_TEST_EXISTS); n++) {
+        g_free(path);
+        gchar* name = (n == 1) ? g_strconcat(base, ".md", NULL) : g_strdup_printf("%s (%d).md", base, n);
+        path = g_build_filename(parent, name, NULL);
+        g_free(name);
+    }
+    gchar* md = canvas_doc_to_markdown(doc, prefix);
+    if (!g_file_set_contents(path, md, -1, error)) g_clear_pointer(&path, g_free);
+    g_free(md);
+    g_free(prefix);
+    g_free(parent);
+    g_free(base);
+    return path;
+}
+
 gchar* canvas_doc_to_markdown(const CanvasDoc* doc, const gchar* media_prefix) {
     GPtrArray* sorted = g_ptr_array_new();
     for (guint i = 0; i < doc->blocks->len; i++) g_ptr_array_add(sorted, g_ptr_array_index(doc->blocks, i));

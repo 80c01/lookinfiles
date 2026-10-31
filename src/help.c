@@ -67,7 +67,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Notes view", "Shift+R", "Restore note from Trash to original notebook", 0},
     {"Notes view", "Shift+K / Shift+J", "Move selected note or notebook up / down", 0},
     {"Notes view", "o", "Cycle sort: manual / A-Z / Z-A", 0},
-    {"Notes view", "Right-click", "Context menu: 1-click format conversion (Text, Markdown, Org), rename, move", 0},
+    {"Notes view", "Right-click", "Context menu: 1-click format conversion (Text, Markdown, Org), Canvas export to Markdown, rename, move", 0},
     {"Canvas tab", "Double-click / Ctrl+Enter", "New text box (at the click, or below the selected block)", 0},
     {"Canvas tab", "Ctrl+V", "Paste a picture as a new block (text outside a text box: new text box)", 0},
     {"Canvas tab", "Drag bar / corner", "Move / resize a block (a picture moves from anywhere on it)", 0},

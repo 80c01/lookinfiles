@@ -66,7 +66,8 @@ enum {
     NOTE_ACTION_COLLAPSE,
     NOTE_ACTION_CONVERT_TEXT,
     NOTE_ACTION_CONVERT_MARKDOWN,
-    NOTE_ACTION_CONVERT_ORG
+    NOTE_ACTION_CONVERT_ORG,
+    NOTE_ACTION_EXPORT_MARKDOWN
 };
 
 /* ------------------------------------------------------------------------- */
@@ -1452,6 +1453,31 @@ void notes_convert_selected_type(AppData* app, NoteType target_type) {
     }
 }
 
+void notes_export_selected_markdown(AppData* app) {
+    NotebookItem* nb = NULL;
+    NoteItem* note = NULL;
+    if (get_selected_info(app, &nb, &note, NULL) != SEL_NOTE || note == NULL || note->type != NOTE_TYPE_CANVAS) {
+        return;
+    }
+    canvas_view_save(app); /* the last changes too */
+    g_autoptr(GError) error = NULL;
+    gchar* path = canvas_doc_export_markdown(note->path, &error);
+    if (path == NULL) {
+        notes_notice(app, "Export Failed", error != NULL ? error->message : "The canvas cannot be read.");
+        return;
+    }
+    gchar* filename = g_path_get_basename(path);
+    gchar* title = g_strndup(filename, strlen(filename) - strlen(".md"));
+    NoteItem* md = note_item_new(filename, title, path, NOTE_TYPE_MARKDOWN);
+    nb->notes = g_list_insert(nb->notes, md, g_list_index(nb->notes, note) + 1);
+    notes_save(app);
+    notes_refresh(app);
+    notes_select_path(app, path);
+    g_free(title);
+    g_free(filename);
+    g_free(path);
+}
+
 void notes_edit_selected(AppData* app) {
     NotebookItem* nb = NULL;
     NoteItem* note = NULL;
@@ -2107,6 +2133,7 @@ static gboolean notes_run_menu_action(gpointer data) {
     case NOTE_ACTION_CONVERT_TEXT:   notes_convert_selected_type(app, NOTE_TYPE_TEXT); break;
     case NOTE_ACTION_CONVERT_MARKDOWN: notes_convert_selected_type(app, NOTE_TYPE_MARKDOWN); break;
     case NOTE_ACTION_CONVERT_ORG:    notes_convert_selected_type(app, NOTE_TYPE_ORG); break;
+    case NOTE_ACTION_EXPORT_MARKDOWN: notes_export_selected_markdown(app); break;
     default: break;
     }
     g_free(a);
@@ -2202,6 +2229,9 @@ static void notes_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble
         }
         if (convertible && note->type != NOTE_TYPE_MARKDOWN) {
             note_menu_item(box, popover, app, "Convert to Markdown (✨ .md)", NULL, NOTE_ACTION_CONVERT_MARKDOWN, TRUE);
+        }
+        if (note != NULL && note->type == NOTE_TYPE_CANVAS) {
+            note_menu_item(box, popover, app, "Export to Markdown (✨ .md)", NULL, NOTE_ACTION_EXPORT_MARKDOWN, TRUE);
         }
         if (convertible && note->type != NOTE_TYPE_ORG) {
             note_menu_item(box, popover, app, "Convert to Org-mode (🦄 .org)", NULL, NOTE_ACTION_CONVERT_ORG, TRUE);
