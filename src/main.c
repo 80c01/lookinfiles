@@ -757,6 +757,10 @@ int main(int argc, char** argv) {
         g_cancellable_cancel(app->dir_cancellable);
         g_clear_object(&app->dir_cancellable);
     }
+    if (app->git_status_cancellable != NULL) {
+        g_cancellable_cancel(app->git_status_cancellable);
+        g_clear_object(&app->git_status_cancellable);
+    }
     if (app->preview_cancellable != NULL) {
         g_cancellable_cancel(app->preview_cancellable);
         g_clear_object(&app->preview_cancellable);

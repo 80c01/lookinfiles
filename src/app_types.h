@@ -187,6 +187,7 @@ typedef struct {
     GFileMonitor* git_monitor;         /* .git monitor for git status & commits updates */
     gchar* git_monitored_path;         /* path to current monitored .git dir */
     GCancellable* dir_cancellable;     /* active left-pane directory scan GTask */
+    GCancellable* git_status_cancellable; /* active git status badge scan GTask */
     GCancellable* preview_cancellable; /* active right-pane preview GTask */
     gchar* viewed_path;          /* path of displayed file, NULL otherwise */
     gchar* viewed_name;          /* name of displayed file */

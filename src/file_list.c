@@ -66,27 +66,112 @@ static void update_tree_git_statuses_recursive(ExplorerRow* parent, GHashTable* 
     }
 }
 
-void refresh_git_status_in_place(AppData* app) {
-    if (app == NULL || app->tree == NULL) {
-        return;
+/* Same keys and values (git status maps: path -> badge markup) */
+static gboolean string_maps_equal(GHashTable* a, GHashTable* b) {
+    guint na = (a != NULL) ? g_hash_table_size(a) : 0;
+    guint nb = (b != NULL) ? g_hash_table_size(b) : 0;
+    if (na != nb) {
+        return FALSE;
     }
-    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
-        return;
+    if (na == 0) {
+        return TRUE;
     }
-    if (app->base_dir == NULL) {
-        return;
+    GHashTableIter iter;
+    gpointer key, value;
+    g_hash_table_iter_init(&iter, a);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        if (g_strcmp0(value, g_hash_table_lookup(b, key)) != 0) {
+            return FALSE;
+        }
     }
+    return TRUE;
+}
 
-    GHashTable* new_statuses = scan_git_statuses(app->base_dir);
+typedef struct {
+    AppData* app;
+    gchar* base_dir;     /* app->base_dir when the scan started */
+    GHashTable* statuses;
+} GitScanTaskData;
 
+static void git_scan_task_data_free(gpointer data) {
+    GitScanTaskData* td = (GitScanTaskData*)data;
+    g_free(td->base_dir);
+    if (td->statuses != NULL) {
+        g_hash_table_destroy(td->statuses);
+    }
+    g_free(td);
+}
+
+static void git_scan_thread_func(GTask* task, gpointer source_object,
+                                 gpointer task_data, GCancellable* cancellable) {
+    (void)source_object;
+    (void)cancellable;
+    GitScanTaskData* td = (GitScanTaskData*)task_data;
+    gchar* dir = g_canonicalize_filename(td->base_dir, NULL);
+    td->statuses = scan_git_statuses(dir);
+    g_free(dir);
+    g_task_return_boolean(task, TRUE);
+}
+
+/* Git badges arrive after the listing: update the rows (and a directory
+ * preview, which shows git counts) only when something changed */
+static void on_git_scan_ready(GObject* source_object, GAsyncResult* res,
+                              gpointer user_data) {
+    (void)source_object;
+    (void)user_data;
+    GTask* task = G_TASK(res);
+    GCancellable* cancellable = g_task_get_cancellable(task);
+    GitScanTaskData* td = (GitScanTaskData*)g_task_get_task_data(task);
+    AppData* app = td->app;
+    if (g_cancellable_is_cancelled(cancellable) ||
+        cancellable != app->git_status_cancellable ||
+        app->sidebar_view != SIDEBAR_VIEW_FILES ||
+        g_strcmp0(td->base_dir, app->base_dir) != 0 ||
+        string_maps_equal(app->git_statuses, td->statuses)) {
+        return;
+    }
     if (app->git_statuses != NULL) {
         g_hash_table_destroy(app->git_statuses);
-        app->git_statuses = NULL;
     }
-    app->git_statuses = new_statuses;
+    app->git_statuses = td->statuses;
+    td->statuses = NULL;
 
     update_tree_git_statuses_recursive(explorer_tree_get_root(app->tree), app->git_statuses);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
+    ExplorerRow* sel = tree_nav_selected(app);
+    if (sel != NULL && explorer_row_is(sel, "dir")) {
+        app_emit(app, APP_EVENT_PREVIEW_STALE);
+    }
+}
+
+static void cancel_git_scan(AppData* app) {
+    if (app->git_status_cancellable != NULL) {
+        g_cancellable_cancel(app->git_status_cancellable);
+        g_clear_object(&app->git_status_cancellable);
+    }
+}
+
+/* Read the git status badges of app->base_dir off the UI thread */
+static void start_async_git_scan(AppData* app) {
+    cancel_git_scan(app);
+    if (app->tree == NULL || app->base_dir == NULL ||
+        app->sidebar_view != SIDEBAR_VIEW_FILES) {
+        return;
+    }
+    app->git_status_cancellable = g_cancellable_new();
+    GitScanTaskData* td = g_new0(GitScanTaskData, 1);
+    td->app = app;
+    td->base_dir = g_strdup(app->base_dir);
+    GTask* task = g_task_new(NULL, app->git_status_cancellable, on_git_scan_ready, NULL);
+    g_task_set_task_data(task, td, git_scan_task_data_free);
+    g_task_run_in_thread(task, git_scan_thread_func);
+    g_object_unref(task);
+}
+
+void refresh_git_status_in_place(AppData* app) {
+    if (app != NULL) {
+        start_async_git_scan(app);
+    }
 }
 
 /* Off-thread directory scan snapshot node */
@@ -343,14 +428,12 @@ static void populate_level(ExplorerRow* parent, AppData* app, const gchar* dirna
     dir_scan_node_free(node);
 }
 
-/* Fill the tree with a directory listing, synchronously (start-up) */
+/* Fill the tree with a directory listing, synchronously (start-up); the git
+ * badges follow from a worker thread */
 void populate_tree(AppData* app, const gchar* dirname, gboolean show_hidden, gint sort_mode) {
-    if (app->git_statuses != NULL) {
-        g_hash_table_destroy(app->git_statuses);
-    }
-    app->git_statuses = scan_git_statuses(dirname);
     explorer_tree_clear(app->tree);
     populate_level(explorer_tree_get_root(app->tree), app, dirname, show_hidden, sort_mode);
+    start_async_git_scan(app);
 }
 
 /* Recursively expand directories that were previously expanded */
@@ -438,7 +521,6 @@ typedef struct {
     gchar* select_path;
     gchar* select_name;
     DirScanNode* root_node;
-    GHashTable* git_statuses;
     gboolean refresh_preview; /* started by a workspace switch: preview the restored selection */
 } DirScanTaskData;
 
@@ -450,9 +532,6 @@ static void dir_scan_task_data_free(gpointer data) {
     g_free(td->dirname);
     if (td->expanded_snapshot != NULL) {
         g_hash_table_destroy(td->expanded_snapshot);
-    }
-    if (td->git_statuses != NULL) {
-        g_hash_table_destroy(td->git_statuses);
     }
     g_free(td->select_path);
     g_free(td->select_name);
@@ -489,12 +568,6 @@ static void dir_scan_thread_func(GTask* task, gpointer source_object,
     if (g_task_return_error_if_cancelled(task)) {
         return;
     }
-
-    td->git_statuses = scan_git_statuses(td->dirname);
-
-    if (g_task_return_error_if_cancelled(task)) {
-        return;
-    }
     g_task_return_boolean(task, TRUE);
 }
 
@@ -519,15 +592,6 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
     }
 
     tree_nav_block_selection_handler(app);
-
-    if (app->git_statuses != NULL) {
-        g_hash_table_destroy(app->git_statuses);
-        app->git_statuses = NULL;
-    }
-    if (td->git_statuses != NULL) {
-        app->git_statuses = td->git_statuses;
-        td->git_statuses = NULL;
-    }
 
     gint saved_page = -1;
     if (app->notebook != NULL && !app->editor_dedicated) {
@@ -572,6 +636,9 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
 
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     git_tab_update(app, app->base_dir);
+    /* Rows got the badges known so far (kept from the previous scan: they are
+     * keyed by full path, so another repository's never match); git runs now */
+    start_async_git_scan(app);
 }
 
 static void start_async_dir_scan(AppData* app, const gchar* dirname,
@@ -582,6 +649,7 @@ static void start_async_dir_scan(AppData* app, const gchar* dirname,
     }
     app->dir_cancellable = g_cancellable_new();
     app->dir_scan_pending = TRUE;
+    cancel_git_scan(app);
 
     DirScanTaskData* td = g_new0(DirScanTaskData, 1);
     td->app = app;

@@ -3,9 +3,10 @@
 
 #include "app_types.h"
 
+/* Re-read the git status badges in a worker thread, then update the rows */
 void refresh_git_status_in_place(AppData* app);
 
-/* Fill the tree with a directory listing, synchronously (start-up) */
+/* Fill the tree with a directory listing, synchronously (start-up); git badges follow */
 void populate_tree(AppData* app, const gchar* dirname, gboolean show_hidden, gint sort_mode);
 void reexpand_paths_recursive(AppData* app, ExplorerRow* parent);
 

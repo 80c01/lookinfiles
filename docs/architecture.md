@@ -205,8 +205,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 
 **3. Features:**
 - `file_list` — async directory scan (`GTask`), tree population, sorting
-  (`compare_entries_with_data()`), lazy expand/collapse, git badges in the tree,
-  navigation (`reload_directory()`, `navigate_to_path()`, `refresh_listing()`,
+  (`compare_entries_with_data()`), lazy expand/collapse, git badges in the tree
+  (a second `GTask`, run once the listing is shown), navigation (`reload_directory()`, `navigate_to_path()`, `refresh_listing()`,
   `activate_selected_entry()`), sidebar view toggles, tree key handler
   (`on_tree_key_press()`).
 - `file_actions` — new file / new folder prompts.
