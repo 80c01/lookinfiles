@@ -53,8 +53,6 @@ static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* messa
     GtkWidget* label = gtk_label_new(message);
     gtk_widget_set_halign(label, GTK_ALIGN_START);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
-    /* Long paths have no spaces: allow breaks inside words */
-    gtk_label_set_wrap_mode(GTK_LABEL(label), PANGO_WRAP_WORD_CHAR);
     gtk_box_append(GTK_BOX(box), label);
 
     GtkWidget* entry = NULL;
@@ -135,18 +133,160 @@ static gchar* get_target_files_dir(AppData* app) {
     return g_path_get_dirname(row->path);
 }
 
+/* "~/..." for paths under the home directory, unchanged otherwise */
+static gchar* display_dir(const gchar* path) {
+    const gchar* home = g_get_home_dir();
+    gsize home_len = (home != NULL) ? strlen(home) : 0;
+    if (home_len > 1 && g_str_has_prefix(path, home) &&
+        (path[home_len] == '\0' || path[home_len] == '/')) {
+        return g_strdup_printf("~%s", path + home_len);
+    }
+    return g_strdup(path);
+}
+
+/* Parent folder entry text to an absolute canonical path ("~" expanded,
+ * relative paths against base_dir), or NULL when blank */
+static gchar* parse_dir(const gchar* text, const gchar* base_dir) {
+    gchar* t = g_strstrip(g_strdup(text != NULL ? text : ""));
+    if (t[0] == '\0') {
+        g_free(t);
+        return NULL;
+    }
+    gchar* abs = (t[0] == '~' && (t[1] == '\0' || t[1] == '/'))
+                     ? g_build_filename(g_get_home_dir(), t + 1, NULL)
+                     : g_strdup(t);
+    const gchar* rel = (base_dir != NULL && g_path_is_absolute(base_dir)) ? base_dir : NULL;
+    gchar* canon = g_canonicalize_filename(abs, rel);
+    g_free(abs);
+    g_free(t);
+    return canon;
+}
+
+typedef struct {
+    GMainLoop* loop;
+    gint response;
+    GtkWidget* name_entry;
+    GtkWidget* dir_entry;
+    const gchar* base_dir;
+    gchar* name;   /* trimmed name on OK */
+    gchar* dir;    /* canonical parent folder on OK */
+} CreateRun;
+
+static void mark_invalid(GtkWidget* entry) {
+    gtk_widget_add_css_class(entry, "error");
+    gtk_widget_grab_focus(entry);
+}
+
+static void on_create_response(AppDialog* dlg, gint response_id, gpointer user_data) {
+    (void)dlg;
+    CreateRun* run = (CreateRun*)user_data;
+    if (response_id == APP_RESPONSE_OK) {
+        gchar* name = g_strstrip(g_strdup(gtk_editable_get_text(GTK_EDITABLE(run->name_entry))));
+        gchar* dir = parse_dir(gtk_editable_get_text(GTK_EDITABLE(run->dir_entry)), run->base_dir);
+        if (!is_valid_name(name)) {
+            mark_invalid(run->name_entry);
+        } else if (dir == NULL || !g_file_test(dir, G_FILE_TEST_IS_DIR)) {
+            mark_invalid(run->dir_entry);
+        } else {
+            run->name = name;
+            run->dir = dir;
+            name = NULL;
+            dir = NULL;
+        }
+        g_free(name);
+        g_free(dir);
+        if (run->name == NULL) {
+            return; /* keep the dialog open */
+        }
+    }
+    run->response = response_id;
+    if (g_main_loop_is_running(run->loop)) {
+        g_main_loop_quit(run->loop);
+    }
+}
+
+static void on_create_entry_changed(GtkEditable* editable, gpointer data) {
+    (void)data;
+    gtk_widget_remove_css_class(GTK_WIDGET(editable), "error");
+}
+
+static GtkWidget* field_label(const gchar* text) {
+    GtkWidget* label = gtk_label_new(text);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_widget_add_css_class(label, "dim-label");
+    return label;
+}
+
+static GtkWidget* field_entry(const gchar* text, const gchar* placeholder, CreateRun* run) {
+    GtkWidget* entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entry), placeholder);
+    gtk_editable_set_text(GTK_EDITABLE(entry), text);
+    gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
+    g_signal_connect(entry, "changed", G_CALLBACK(on_create_entry_changed), run);
+    return entry;
+}
+
+/* New file / folder dialog: name and parent folder (both editable, like the
+ * new bookmark folder dialog). Returns TRUE with *out_name and *out_dir set. */
+static gboolean run_create_dialog(AppData* app, gboolean is_folder, const gchar* init_dir,
+                                  gchar** out_name, gchar** out_dir) {
+    GtkWidget* dlg = app_dialog_new(is_folder ? "New Folder" : "New File", app->window,
+                                    NULL, NULL);
+    app_dialog_add_button(APP_DIALOG(dlg), "_Cancel", APP_RESPONSE_CANCEL);
+    GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), "_Create", APP_RESPONSE_OK);
+    gtk_widget_add_css_class(ok, "suggested-action");
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
+    app_dialog_set_width(APP_DIALOG(dlg), 480);
+
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_set_margin_top(box, 14);
+    gtk_widget_set_margin_bottom(box, 14);
+    gtk_widget_set_margin_start(box, 16);
+    gtk_widget_set_margin_end(box, 16);
+    gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), box);
+
+    CreateRun run = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL, NULL,
+                      app->base_dir, NULL, NULL };
+
+    gtk_box_append(GTK_BOX(box), field_label("Name"));
+    run.name_entry = field_entry(is_folder ? "folder" : "",
+                                 is_folder ? "Folder name" : "File name", &run);
+    gtk_box_append(GTK_BOX(box), run.name_entry);
+
+    gtk_box_append(GTK_BOX(box), field_label("Parent folder"));
+    gchar* shown = display_dir(init_dir);
+    run.dir_entry = field_entry(shown, "~/projects or /tmp", &run);
+    g_free(shown);
+    gtk_box_append(GTK_BOX(box), run.dir_entry);
+
+    g_signal_connect(dlg, "response", G_CALLBACK(on_create_response), &run);
+    app_dialog_present(APP_DIALOG(dlg));
+    gtk_widget_grab_focus(run.name_entry);
+    gtk_editable_select_region(GTK_EDITABLE(run.name_entry), 0, -1);
+    g_main_loop_run(run.loop);
+    g_main_loop_unref(run.loop);
+    app_dialog_destroy(APP_DIALOG(dlg));
+
+    if (run.response != APP_RESPONSE_OK) {
+        g_free(run.name);
+        g_free(run.dir);
+        return FALSE;
+    }
+    *out_name = run.name;
+    *out_dir = run.dir;
+    return TRUE;
+}
+
 gchar* file_action_new_file(AppData* app) {
     if (app == NULL) {
         return NULL;
     }
-    gchar* target_dir = get_target_files_dir(app);
-    gchar* message = g_strdup_printf("Create a file in:\n%s\n\nEnter file name:", target_dir);
+    gchar* init_dir = get_target_files_dir(app);
     gchar* filename = NULL;
-    gint response = run_dialog(app->window, "New File", message, "", FALSE, "_Create", &filename);
-    g_free(message);
-    if (response != APP_RESPONSE_OK || !is_valid_name(filename)) {
-        g_free(filename);
-        g_free(target_dir);
+    gchar* target_dir = NULL;
+    gboolean ok = run_create_dialog(app, FALSE, init_dir, &filename, &target_dir);
+    g_free(init_dir);
+    if (!ok) {
         return NULL;
     }
     gchar* full_path = g_build_filename(target_dir, filename, NULL);
@@ -169,15 +309,12 @@ gchar* file_action_new_folder(AppData* app) {
     if (app == NULL) {
         return NULL;
     }
-    gchar* target_dir = get_target_files_dir(app);
-    gchar* message = g_strdup_printf("Create a folder in:\n%s\n\nEnter folder name:", target_dir);
+    gchar* init_dir = get_target_files_dir(app);
     gchar* folder_name = NULL;
-    gint response = run_dialog(app->window, "New Folder", message, "folder", FALSE, "_Create",
-                               &folder_name);
-    g_free(message);
-    if (response != APP_RESPONSE_OK || !is_valid_name(folder_name)) {
-        g_free(folder_name);
-        g_free(target_dir);
+    gchar* target_dir = NULL;
+    gboolean ok = run_create_dialog(app, TRUE, init_dir, &folder_name, &target_dir);
+    g_free(init_dir);
+    if (!ok) {
         return NULL;
     }
     gchar* new_path = g_build_filename(target_dir, folder_name, NULL);
