@@ -520,7 +520,7 @@ typedef struct {
     gchar* select_path;
     gchar* select_name;
     DirScanNode* root_node;
-    gboolean refresh_preview; /* started by a workspace switch: preview the restored selection */
+    gboolean refresh_preview; /* workspace switch or reveal: preview the restored selection */
     gboolean keep_view;       /* check of rows already shown: keep their selection and preview */
 } DirScanTaskData;
 
@@ -710,7 +710,7 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
 
 static void start_async_dir_scan(AppData* app, const gchar* dirname,
                                  const gchar* select_path, const gchar* select_name,
-                                 gboolean keep_view) {
+                                 gboolean keep_view, gboolean preview) {
     if (app->dir_cancellable != NULL) {
         g_cancellable_cancel(app->dir_cancellable);
         g_clear_object(&app->dir_cancellable);
@@ -729,7 +729,7 @@ static void start_async_dir_scan(AppData* app, const gchar* dirname,
     td->expanded_snapshot = clone_string_set(app->expanded_paths);
     td->select_path = (select_path != NULL) ? g_canonicalize_filename(select_path, NULL) : NULL;
     td->select_name = g_strdup(select_name);
-    td->refresh_preview = app->switching_ws && !keep_view;
+    td->refresh_preview = preview || (app->switching_ws && !keep_view);
     td->keep_view = keep_view;
 
     GTask* task = g_task_new(NULL, app->dir_cancellable, on_dir_scan_ready, NULL);
@@ -794,7 +794,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     monitor_directory(app);
 
     /* Scan directory asynchronously off the UI thread */
-    start_async_dir_scan(app, new_dir, NULL, select_name, FALSE);
+    start_async_dir_scan(app, new_dir, NULL, select_name, FALSE, FALSE);
 }
 
 /* Navigate to a new directory (Enter / Backspace) */
@@ -835,7 +835,7 @@ void refresh_listing_with_path(AppData* app, const gchar* select_path) {
         remote_refresh(app);
         return;
     }
-    start_async_dir_scan(app, app->base_dir, select_path, NULL, FALSE);
+    start_async_dir_scan(app, app->base_dir, select_path, NULL, FALSE, FALSE);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
@@ -865,7 +865,9 @@ void reveal_path_in_tree(AppData* app, const gchar* path) {
         dir = up;
     }
     g_free(dir);
-    refresh_listing_with_path(app, path);
+    /* Unlike a plain refresh, the revealed entry is previewed */
+    start_async_dir_scan(app, app->base_dir, path, NULL, FALSE, TRUE);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
 void cancel_listing_scans(AppData* app) {
@@ -881,7 +883,7 @@ void check_listing(AppData* app) {
     if (app == NULL || app->sidebar_view != SIDEBAR_VIEW_FILES || app->base_dir == NULL) {
         return;
     }
-    start_async_dir_scan(app, app->base_dir, NULL, NULL, TRUE);
+    start_async_dir_scan(app, app->base_dir, NULL, NULL, TRUE, FALSE);
 }
 
 void refresh_listing(AppData* app) {
