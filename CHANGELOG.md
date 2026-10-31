@@ -19,6 +19,10 @@ All notable changes to this project are listed here. The format follows
   banded table style), text with its fonts, sizes, colours, bullets and
   numbering, inherited from the slide layout, master and theme; the speaker
   notes under each slide. The first 20 slides are drawn, the others listed.
+- PowerPoint 97-2003 presentations (`.ppt`, `.pps`) are drawn the same way
+  from their drawings: shape positions, groups, geometry, fills, outlines,
+  rotation, pictures, backgrounds and the master's shapes, with the text
+  styled by its runs over the master's text styles and colour scheme.
 - Word 97-2003 documents (`.doc`) are shown the same way: the formatting of
   their styles (with base styles) and runs (fonts from the font table,
   sizes, colours, highlights, capitals), paragraph alignment, indents and

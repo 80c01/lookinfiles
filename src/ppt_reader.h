@@ -1,21 +1,23 @@
 #ifndef PPT_READER_H
 #define PPT_READER_H
 
-/* PowerPoint 97-2003 presentations (.ppt, .pps) to HTML for the preview,
- * like pptx: slide by slide, the title then the body text, with the
- * speaker notes. Text comes from the SlideListWithText of the document
- * (PowerPoint) or else from the drawings of the slide containers
- * (LibreOffice); TextCharsAtom (UTF-16) and TextBytesAtom (8-bit), title
- * vs body from TextHeaderAtom. Masters are skipped. Pure GLib,
- * unit-tested. */
+/* PowerPoint 97-2003 presentations (.ppt, .pps) read into slides
+ * (slide_render), like pptx: the shapes of each slide's drawing (OfficeArt:
+ * anchors, groups, geometry, fill, outline, rotation, pictures from the
+ * Pictures stream, placeholders) drawn over its background, with the
+ * master's shapes; text from the drawing's text boxes or the slide list
+ * (SlideListWithText, OutlineTextRefAtom), styled by the StyleTextPropAtom
+ * runs over the master's text styles (TxMasterStyleAtom); colours from the
+ * colour schemes, fonts from the font collection; the speaker notes.
+ * Slides without a drawing get their text in the default title and body
+ * boxes. Pure GLib (and the slide model), unit-tested. */
 #include <glib.h>
 
 #include "ole_reader.h"
+#include "slide_render.h"
 
-/* The presentation as an HTML page with head (may be NULL); *slides (may
- * be NULL) receives the slide count. NULL with error set when it cannot be
- * read; *encrypted (may be NULL) tells when it is password-protected. */
-gchar* ppt_reader_to_html(OleReader* ole, const gchar* head, gsize max_text, guint* slides, gboolean* encrypted,
-                          GError** error);
+/* The slides; NULL with error set when they cannot be read; *encrypted
+ * (may be NULL) tells when the presentation is password-protected */
+SlideDeck* ppt_reader_read(OleReader* ole, gboolean* encrypted, GError** error);
 
 #endif /* PPT_READER_H */

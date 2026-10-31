@@ -242,40 +242,6 @@ void ole_properties_card(PreviewDoc* doc, const OleProperties* p) {
     if (p->password) preview_doc_field(doc, "Security", "Password protected");
 }
 
-gchar* ole_properties_html_head(const OleProperties* p, const gchar* kind) {
-    GString* head = g_string_new("<head>");
-    if (p != NULL && p->title != NULL) {
-        gchar* t = g_markup_escape_text(p->title, -1);
-        g_string_append_printf(head, "<title>%s</title>", t);
-        g_free(t);
-    }
-    if (p != NULL && p->author != NULL) {
-        gchar* a = g_markup_escape_text(p->author, -1);
-        g_string_append_printf(head, "<meta name=\"author\" content=\"%s\">", a);
-        g_free(a);
-    }
-    GString* desc = g_string_new(kind != NULL ? kind : "");
-    if (p != NULL) {
-        if (p->pages > 0) g_string_append_printf(desc, " · %d page%s", p->pages, p->pages == 1 ? "" : "s");
-        if (p->words > 0) g_string_append_printf(desc, " · %d words", p->words);
-        if (p->slides > 0) g_string_append_printf(desc, " · %d slide%s", p->slides, p->slides == 1 ? "" : "s");
-        gchar* t = p->modified >= 0 ? format_time(p->modified) : NULL;
-        if (t != NULL) {
-            t[10] = '\0'; /* the date is enough */
-            g_string_append_printf(desc, " · modified %s", t);
-        }
-        g_free(t);
-    }
-    if (desc->len > 0) {
-        gchar* d = g_markup_escape_text(desc->str, -1);
-        g_string_append_printf(head, "<meta name=\"description\" content=\"%s\">", d);
-        g_free(d);
-    }
-    g_string_free(desc, TRUE);
-    g_string_append(head, "</head>");
-    return g_string_free(head, FALSE);
-}
-
 gchar* ole_properties_subtitle(const OleProperties* p, const gchar* kind) {
     GString* desc = g_string_new(kind != NULL ? kind : "");
     if (p != NULL) {

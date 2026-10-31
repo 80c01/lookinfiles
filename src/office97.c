@@ -5,6 +5,7 @@
 #include "mail_view.h"
 #include "ole_props.h"
 #include "ppt_reader.h"
+#include "slide_render.h"
 #include "spreadsheet.h"
 #include "xls_reader.h"
 #include <gio/gio.h>
@@ -13,6 +14,7 @@
 #define MAX_STREAMS_LISTED 200
 #define SHEETS_SHOWN 3
 #define SHEET_ROWS 300
+#define OFFICE97_MAX_DRAWN 20  /* slides drawn as pictures, like pptx */
 
 Office97Format office97_format(const OleReader* ole) {
     if (ole_reader_has(ole, "WordDocument")) return OFFICE97_WORD;
@@ -176,10 +178,9 @@ PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, 
     }
     if (format == OFFICE97_POWERPOINT) {
         gboolean encrypted = FALSE;
-        guint slides = 0;
         GError* err = NULL;
-        gchar* body = ppt_reader_to_html(ole, "<head></head>", max_text, &slides, &encrypted, &err);
-        if (body == NULL) {
+        g_autoptr(SlideDeck) deck = ppt_reader_read(ole, &encrypted, &err);
+        if (deck == NULL) {
             gchar* reason = encrypted ? g_strdup("Encrypted: the content needs the password.")
                                       : g_strdup_printf("The slides cannot be read: %s.", err->message);
             g_clear_error(&err);
@@ -187,16 +188,22 @@ PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, 
             g_free(reason);
             return doc;
         }
-        /* The head, with the slide count found */
+        /* Title and subtitle with the slide count found */
         g_autoptr(OleProperties) props = ole_properties_read(ole);
         if (props == NULL) props = ole_properties_new();
-        props->slides = (gint)slides;
-        gchar* head = ole_properties_html_head(props, office97_format_label(format));
-        gchar* at = strstr(body, "<head></head>");
-        gchar* html = g_strdup_printf("%.*s%s%s", (gint)(at - body), body, head, at + strlen("<head></head>"));
-        g_free(head);
-        g_free(body);
-        return preview_doc_new_source(PREVIEW_DOC_HTML, html);
+        props->slides = (gint)deck->slides->len;
+        gchar* subtitle = ole_properties_subtitle(props, office97_format_label(format));
+        if (size >= 0) {
+            gchar* size_text = g_format_size((guint64)size);
+            gchar* with_size = g_strdup_printf("%s · %s", subtitle, size_text);
+            g_free(subtitle);
+            g_free(size_text);
+            subtitle = with_size;
+        }
+        PreviewDoc* doc = slide_deck_preview(deck, props->title != NULL ? props->title : name, subtitle,
+                                             OFFICE97_MAX_DRAWN);
+        g_free(subtitle);
+        return doc;
     }
     return office97_summary(ole, name, size, NULL);
 }

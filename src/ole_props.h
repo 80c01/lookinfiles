@@ -47,11 +47,6 @@ OleProperties* ole_properties_new(void);
 /* "Title / Author / Created / Modified / Pages..." fields of the card */
 void ole_properties_card(PreviewDoc* doc, const OleProperties* props);
 
-/* "<head><title>…</title><meta name="author"…><meta name="description"…>
- * </head>" for the HTML previews: kind ("Word 97-2003 document") then the
- * counts and dates in the description. props may be NULL. */
-gchar* ole_properties_html_head(const OleProperties* props, const gchar* kind);
-
 /* Subtitle of the old Office previews: kind ("Word 97-2003 document"),
  * then the author, the counts and the date modified. props may be NULL. */
 gchar* ole_properties_subtitle(const OleProperties* props, const gchar* kind);

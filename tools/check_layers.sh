@@ -29,7 +29,7 @@ ole_reader:
 ole_props:ole_reader,preview_doc
 doc_reader:ole_reader,preview_doc,doc_writer
 xls_reader:ole_reader,spreadsheet
-ppt_reader:ole_reader
+ppt_reader:ole_reader,preview_doc,slide_render
 mail_message:
 mail_view:mail_message,preview_doc
 mail_box:mail_message
@@ -37,7 +37,7 @@ mail_dir:mail_message,preview_doc
 mail_msg:mail_message,ole_reader,rtf
 mail_tnef:mail_message,mail_msg
 mail_store:preview_doc
-office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader,mail_msg,mail_view,mail_message
+office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader,slide_render,mail_msg,mail_view,mail_message
 docx:zip_reader,zip_xml,preview_doc,doc_writer,docx_styles
 docx_styles:zip_reader,zip_xml,preview_doc,doc_writer
 preview_doc:

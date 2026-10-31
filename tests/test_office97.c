@@ -3,6 +3,7 @@
  * and the LibreOffice fixtures of tests/fixtures/preview. */
 #include "ole_builder.h"
 #include "office97.h"
+#include "ppt_reader.h"
 #include "ole_props.h"
 #include "preview_formats.h"
 
@@ -821,14 +822,53 @@ static PreviewDoc* presentation_preview(GBytes* stream) {
     return doc;
 }
 
+/* The slides of a PowerPoint Document stream */
+static SlideDeck* ppt_deck(GBytes* stream) {
+    OleBuilder* ob = ole_builder_new();
+    ole_builder_add(ob, "PowerPoint Document", g_bytes_get_data(stream, NULL), g_bytes_get_size(stream));
+    GBytes* file = ole_builder_finish(ob);
+    gchar* path = temp_file(file, "deck.ppt");
+    GError* err = NULL;
+    OleReader* ole = ole_reader_open(path, &err);
+    g_assert_no_error(err);
+    SlideDeck* deck = ppt_reader_read(ole, NULL, &err);
+    g_assert_no_error(err);
+    ole_reader_free(ole);
+    remove_temp(path);
+    g_bytes_unref(file);
+    return deck;
+}
+
+static const SlideParagraph* para_of(const SlideShape* s, guint i) {
+    return g_ptr_array_index(s->paragraphs, i);
+}
+
+static const SlideRun* run_of(const SlideShape* s, guint para, guint run) {
+    return g_ptr_array_index(para_of(s, para)->runs, run);
+}
+
 static void test_ppt_synthetic(void) {
+    /* Text only in the slide list: the default title and body boxes */
     GBytes* st = ppt_stream(FALSE);
     PreviewDoc* doc = presentation_preview(st);
-    const gchar* html = doc->text->str;
-    g_assert_nonnull(strstr(html, "PowerPoint 97-2003 presentation · 2 slides"));
-    g_assert_nonnull(strstr(html, "<h2>Slide 1</h2>\n<h3>Budget 2027</h3>\n<ul>\n<li>Rent</li>\n<li>Food € drinks</li>\n</ul>"));
-    g_assert_nonnull(strstr(html, "<h2>Slide 2</h2>\n<h3>Questions?</h3>"));
+    const gchar* t = doc->text->str;
+    g_assert_nonnull(strstr(t, "PowerPoint 97-2003 presentation · 2 slides"));
+    g_assert_nonnull(strstr(t, "Slide 1 · Budget 2027\n" PREVIEW_DOC_IMAGE_CHAR));
+    g_assert_nonnull(strstr(t, "Slide 2 · Questions?\n"));
+    g_assert_cmpuint(doc->images->len, ==, 2);
     preview_doc_free(doc);
+    SlideDeck* deck = ppt_deck(st);
+    const Slide* s1 = g_ptr_array_index(deck->slides, 0);
+    g_assert_cmpuint(s1->shapes->len, ==, 2);
+    const SlideShape* title = g_ptr_array_index(s1->shapes, 0);
+    g_assert_cmpfloat(run_of(title, 0, 0)->size, ==, 44);
+    const SlideShape* body = g_ptr_array_index(s1->shapes, 1);
+    g_assert_cmpuint(body->paragraphs->len, ==, 2);
+    g_assert_cmpstr(para_of(body, 0)->bullet, ==, "•");
+    g_assert_cmpstr(run_of(body, 1, 0)->text, ==, "Food € drinks");
+    const Slide* s2 = g_ptr_array_index(deck->slides, 1);
+    g_assert_cmpint(para_of(g_ptr_array_index(s2->shapes, 0), 0)->align, ==, SLIDE_ALIGN_CENTER);
+    slide_deck_free(deck);
     g_bytes_unref(st);
     st = ppt_stream(TRUE);
     doc = presentation_preview(st);
@@ -838,15 +878,175 @@ static void test_ppt_synthetic(void) {
     g_bytes_unref(st);
 }
 
+/* An OfficeArt shape: FSP, OPT (id, value pairs), anchor, then extra records */
+static void art_shape(GByteArray* a, guint type, guint32 flags, const guint32* props, guint n_props,
+                      guint16 anchor_type, const void* anchor, gsize anchor_len, GByteArray* extra) {
+    GByteArray* sp = g_byte_array_new();
+    guint8 fsp[8];
+    ob_put32(fsp, 1024);
+    ob_put32(fsp + 4, flags);
+    ppt_rec(sp, (guint16)(0x0002 | (type << 4)), 0xF00A, fsp, 8);
+    GByteArray* opt = g_byte_array_new();
+    for (guint i = 0; i < n_props; i++) {
+        guint8 e[6];
+        ob_put16(e, props[2 * i]);
+        ob_put32(e + 2, props[2 * i + 1]);
+        g_byte_array_append(opt, e, 6);
+    }
+    ppt_rec(sp, (guint16)(0x0003 | (n_props << 4)), 0xF00B, opt->data, opt->len);
+    g_byte_array_free(opt, TRUE);
+    if (anchor != NULL) ppt_rec(sp, 0, anchor_type, anchor, anchor_len);
+    if (extra != NULL) g_byte_array_append(sp, extra->data, extra->len);
+    ppt_rec(a, 0x000F, 0xF004, sp->data, sp->len);
+    g_byte_array_free(sp, TRUE);
+}
+
+/* A presentation with drawings: a filled rectangle with styled text, a
+ * group with a child shape, the background, a colour scheme */
+static GBytes* ppt_drawn(void) {
+    GByteArray* tree = g_byte_array_new();
+    guint8 fspgr[16] = { 0 };
+    GByteArray* patriarch = g_byte_array_new();
+    ppt_rec(patriarch, 0x0001, 0xF009, fspgr, 16);
+    art_shape(tree, 0, 0x05, NULL, 0, 0, NULL, 0, patriarch);
+    g_byte_array_free(patriarch, TRUE);
+    /* Rectangle: fill scheme colour 5 (accent), no line; text "Hello" bold 40 pt in RGB green */
+    guint32 rect_props[] = { 0x0181, 0x08000005, 0x01FF, 0x00080000, 0x0087, 1 };
+    gint16 rect_anchor[4] = { 576, 576, 2880, 1728 }; /* top, left, right, bottom */
+    guint8 ra[8];
+    for (gint i = 0; i < 4; i++) ob_put16(ra + 2 * i, (guint16)rect_anchor[i]);
+    GByteArray* box = g_byte_array_new();
+    GByteArray* tb = g_byte_array_new();
+    ppt_text(tb, 0, "Hello", FALSE);
+    guint8 style[] = { 6, 0, 0, 0, 0, 0, 0x00, 0x08, 0x00, 0x00, 1, 0,           /* para: 6 chars, centred */
+                       6, 0, 0, 0, 0x01, 0x00, 0x06, 0x00, 0x01, 0x00, 40, 0, 0x00, 0x80, 0x00, 0xFE };
+    ppt_rec(tb, 0, 0x0FA1, style, sizeof style);
+    ppt_rec(box, 0x000F, 0xF00D, tb->data, tb->len);
+    g_byte_array_free(tb, TRUE);
+    art_shape(tree, 1, 0x0A00, rect_props, 3, 0xF010, ra, 8, box);
+    g_byte_array_free(box, TRUE);
+    /* Group: box 1152..2304 x 2304..3456 over child space 0..100 */
+    GByteArray* group = g_byte_array_new();
+    GByteArray* gfirst = g_byte_array_new();
+    guint8 child_space[16];
+    ob_put32(child_space, 0);
+    ob_put32(child_space + 4, 0);
+    ob_put32(child_space + 8, 100);
+    ob_put32(child_space + 12, 100);
+    ppt_rec(gfirst, 0x0001, 0xF009, child_space, 16);
+    guint8 ga[8];
+    gint16 group_anchor[4] = { 2304, 1152, 2304, 3456 };
+    for (gint i = 0; i < 4; i++) ob_put16(ga + 2 * i, (guint16)group_anchor[i]);
+    ppt_rec(gfirst, 0, 0xF010, ga, 8);
+    art_shape(group, 0, 0x0201, NULL, 0, 0, NULL, 0, gfirst);
+    g_byte_array_free(gfirst, TRUE);
+    guint32 ell_props[] = { 0x0181, 0x000000FF, 0x01C0, 0x00FF0000 };
+    guint8 ca[16];
+    ob_put32(ca, 50);
+    ob_put32(ca + 4, 0);
+    ob_put32(ca + 8, 100);
+    ob_put32(ca + 12, 50);
+    art_shape(group, 3, 0x0A82, ell_props, 2, 0xF00F, ca, 16, NULL);
+    ppt_rec(tree, 0x000F, 0xF003, group->data, group->len);
+    g_byte_array_free(group, TRUE);
+    GByteArray* dg = g_byte_array_new();
+    ppt_rec(dg, 0x000F, 0xF003, tree->data, tree->len);
+    g_byte_array_free(tree, TRUE);
+    /* Background: dark blue */
+    guint32 bg_props[] = { 0x0181, 0x00402010 };
+    art_shape(dg, 1, 0x0C00, bg_props, 1, 0, NULL, 0, NULL);
+    GByteArray* drawing = g_byte_array_new();
+    ppt_rec(drawing, 0x000F, 0xF002, dg->data, dg->len);
+    g_byte_array_free(dg, TRUE);
+    GByteArray* slide = g_byte_array_new();
+    guint8 atom[24] = { 0 };
+    ppt_rec(slide, 0x0002, 0x03EF, atom, 24);
+    guint8 scheme[32] = { 0 };
+    scheme[5 * 4 + 1] = 0xA0; /* accent: 00A000 */
+    ppt_rec(slide, 0x0010, 0x07F0, scheme, 32);
+    ppt_rec(slide, 0x000F, 0x040C, drawing->data, drawing->len);
+    g_byte_array_free(drawing, TRUE);
+    GByteArray* doc = g_byte_array_new();
+    guint8 size[8];
+    ob_put32(size, 5760);  /* 720 pt */
+    ob_put32(size + 4, 3240);
+    ppt_rec(doc, 0x0001, 0x03E9, size, 8);
+    GByteArray* s = g_byte_array_new();
+    ppt_rec(s, 0x000F, 0x03E8, doc->data, doc->len);
+    ppt_rec(s, 0x000F, 0x03EE, slide->data, slide->len);
+    g_byte_array_free(doc, TRUE);
+    g_byte_array_free(slide, TRUE);
+    return g_byte_array_free_to_bytes(s);
+}
+
+static void test_ppt_drawing(void) {
+    GBytes* st = ppt_drawn();
+    SlideDeck* deck = ppt_deck(st);
+    g_assert_cmpfloat(deck->width, ==, 720);
+    g_assert_cmpfloat(deck->height, ==, 405);
+    g_assert_cmpuint(deck->slides->len, ==, 1);
+    const Slide* slide = g_ptr_array_index(deck->slides, 0);
+    g_assert_cmphex(slide->background, ==, 0x102040);
+    g_assert_cmpstr(slide->title, ==, "Hello");
+    g_assert_cmpuint(slide->shapes->len, ==, 2);
+    const SlideShape* rect = g_ptr_array_index(slide->shapes, 0);
+    g_assert_cmpfloat(rect->x, ==, 72);
+    g_assert_cmpfloat(rect->y, ==, 72);
+    g_assert_cmpfloat(rect->w, ==, 288);
+    g_assert_cmpfloat(rect->h, ==, 144);
+    g_assert_cmphex(rect->fill, ==, 0x00A000);
+    g_assert_cmphex(rect->line, ==, SLIDE_NO_COLOR);
+    g_assert_cmpint(rect->anchor, ==, SLIDE_ANCHOR_MIDDLE);
+    g_assert_cmpint(para_of(rect, 0)->align, ==, SLIDE_ALIGN_CENTER);
+    const SlideRun* r = run_of(rect, 0, 0);
+    g_assert_cmpstr(r->text, ==, "Hello");
+    g_assert_true(r->bold);
+    g_assert_cmpfloat(r->size, ==, 40);
+    g_assert_cmphex(r->color, ==, 0x008000);
+    /* The group child, mapped from its child space; flipped */
+    const SlideShape* ell = g_ptr_array_index(slide->shapes, 1);
+    g_assert_cmpint(ell->geometry, ==, SLIDE_GEOM_ELLIPSE);
+    g_assert_cmpfloat(ell->x, ==, 144 + 72);
+    g_assert_cmpfloat(ell->y, ==, 288);
+    g_assert_cmpfloat(ell->w, ==, 72);
+    g_assert_true(ell->flip_v);
+    g_assert_cmphex(ell->fill, ==, 0xFF0000);
+    g_assert_cmphex(ell->line, ==, 0x0000FF);
+    slide_deck_free(deck);
+    g_bytes_unref(st);
+}
+
 static void test_ppt_fixture(void) {
     PreviewDoc* doc = fixture("roadmap.ppt");
-    const gchar* html = doc->text->str;
-    g_assert_nonnull(strstr(html, "<title>Lookin roadmap</title>"));
-    g_assert_nonnull(strstr(html, "2 slides"));
-    g_assert_nonnull(strstr(html, "<h3>Lookin roadmap</h3>\n<p>Autumn 2026</p>\n<p><i>Notes: Welcome everyone.</i></p>"));
-    g_assert_nonnull(strstr(html, "<li>Spreadsheets – old and new</li>"));
-    g_assert_null(strstr(html, "Click to edit"));
+    const gchar* t = doc->text->str;
+    g_assert_true(g_str_has_prefix(t, "Lookin roadmap\nPowerPoint 97-2003 presentation · "));
+    g_assert_nonnull(strstr(t, "2 slides"));
+    g_assert_nonnull(strstr(t, "Slide 1 · Lookin roadmap\n" PREVIEW_DOC_IMAGE_CHAR "\nWelcome everyone.\n"));
+    g_assert_nonnull(strstr(t, "Slide 2 · Previews\n"));
+    g_assert_cmpuint(doc->images->len, ==, 2);
     preview_doc_free(doc);
+
+    gchar* path = g_build_filename("tests", "fixtures", "preview", "roadmap.ppt", NULL);
+    OleReader* ole = ole_reader_open(path, NULL);
+    SlideDeck* deck = ppt_reader_read(ole, NULL, NULL);
+    const Slide* s2 = g_ptr_array_index(deck->slides, 1);
+    gboolean bullets = FALSE;
+    for (guint i = 0; i < s2->shapes->len; i++) {
+        const SlideShape* s = g_ptr_array_index(s2->shapes, i);
+        gchar* text = slide_shape_text(s);
+        g_assert_null(strstr(text, "Click to edit"));
+        if (g_str_has_prefix(text, "Archives")) {
+            g_assert_cmpstr(text, ==, "Archives\nSpreadsheets – old and new\nMail files");
+            g_assert_cmpstr(para_of(s, 0)->bullet, ==, "•");
+            g_assert_cmphex(s->fill, ==, SLIDE_NO_COLOR); /* LibreOffice's style, not drawn */
+            bullets = TRUE;
+        }
+        g_free(text);
+    }
+    g_assert_true(bullets);
+    slide_deck_free(deck);
+    ole_reader_free(ole);
+    g_free(path);
 }
 
 static void test_ppt_truncated(void) {
@@ -885,6 +1085,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/office97/excel_fixture", test_excel_fixture);
     g_test_add_func("/office97/excel_truncated", test_excel_truncated);
     g_test_add_func("/office97/ppt_synthetic", test_ppt_synthetic);
+    g_test_add_func("/office97/ppt_drawing", test_ppt_drawing);
     g_test_add_func("/office97/ppt_fixture", test_ppt_fixture);
     g_test_add_func("/office97/ppt_truncated", test_ppt_truncated);
     return g_test_run();

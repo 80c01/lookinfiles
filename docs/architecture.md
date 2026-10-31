@@ -37,8 +37,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   like `docx` (piece table, PAPX / CHPX FKPs, style sheet, font table,
   header stories). `xls_reader` — BIFF8 / BIFF5 workbooks to
   the `Workbook` of `spreadsheet` (shown by `spreadsheet_append_sheets()`,
-  shared with `.xlsx`). `ppt_reader` — `.ppt` records to HTML slide by
-  slide (SlideListWithText, else the slide containers; masters skipped).
+  shared with `.xlsx`). `ppt_reader` — `.ppt` records to a `SlideDeck`
+  (`slide_render`): persist directory, drawings (OfficeArt shapes, groups,
+  properties, Pictures stream), master text styles, colour schemes, the
+  slide list's text, notes.
 - `mail_message`, `mail_view` — mail messages: RFC 5322 headers, RFC 2047 /
   2231 decoding, MIME tree, base64 / quoted-printable, charsets with the
   Windows-1252 fallback; the preview (header card, text or HTML body,
