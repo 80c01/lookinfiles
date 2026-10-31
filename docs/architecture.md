@@ -349,6 +349,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   live preview on selection, Cancel restores, fonts, Save As, Edit in a
   tab, Delete), and re-applying the current theme file when it is saved
   (`APP_EVENT_FILES_CHANGED`).
+- `session` — saves the workspaces at quit (`session_save_now()`: Ctrl+Q
+  in `ui`, window close in `main.c`) and restores them at a launch without
+  argument (`session_restore()`: `workspace_add()` +
+  `workspace_restore_state()` per workspace, then its editor tabs).
 - `layouts` — saved workspace layouts (Alt+L, top-bar grid button): capture
   the current workspace's panels, apply one from a list in an `AppDialog`
   (running terminals are kept; closing extra ones asks first). The list starts

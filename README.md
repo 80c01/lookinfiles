@@ -121,7 +121,7 @@ mode.
 in a workspace connected to a remote machine they open an SSH shell.
 
 **Workspaces**: up to eight virtual workspaces, each with its own folder, view,
-panels, editors and terminals. Panel arrangements can be saved as named
+panels, editors and terminals, reopened at the next launch. Panel arrangements can be saved as named
 layouts and applied from a list, including the default layout new workspaces
 open with.
 
@@ -162,7 +162,8 @@ in `build/`). `make clean` removes both.
 ## Usage
 
 ```bash
-./lookin                     # current directory, 1000×600 window
+./lookin                     # the last session again (else the current directory), 1000×600 window
+./lookin .                   # the current directory
 ./lookin /path/to/directory  # start in another directory
 ./lookin path/to/file.txt    # edit a file in the dedicated editor panel only
 ./lookin --editor vim        # default editor mode: emacs, vim or notepad (also -e)
@@ -171,6 +172,12 @@ in `build/`). `make clean` removes both.
 ./lookin --fullscreen        # start in fullscreen (also -f)
 ./lookin --help              # list the options (also -h)
 ```
+
+Without a file or folder argument, Lookin reopens the last session: each
+workspace's folder, expanded folders, selected entry, hidden files, sort
+and open files, saved when it quits (`Ctrl+Q` or closing the window).
+Folders and files that no longer exist are skipped; with none left, it
+starts in the current directory.
 
 `--editor` sets the mode of new editor tabs; Org files always open in
 Org-mode.
@@ -527,6 +534,7 @@ Settings and data are kept in `~/.config/lookin/`
 | `notes/` | Notebooks (one directory each), notes, `notes.xml` and the `.trash/` |
 | `remotes.xml` | Remote machines added by hand (`~/.ssh/config` hosts are read directly) |
 | `layouts.ini` | Saved workspace layouts and the default layout of new workspaces |
+| `session.ini` | The workspaces of the last session (folders, expanded folders, selection, sort, open files), reopened by a launch without argument |
 | `recent.ini` | Recent folders and files (`Alt+R`, and first in `Ctrl+P` when nothing is typed) |
 | `lsp.ini` | Language server commands for code navigation (optional, see below) |
 | `theme.ini` | The chosen theme and your fonts (written by the Themes dialog, `Alt+T`) |

@@ -30,6 +30,7 @@
 #include "notes.h"
 #include "remote.h"
 #include "files_menu.h"
+#include "session.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
 #include "code_intel.h"
@@ -40,6 +41,13 @@
 #include "focus_route.h"
 #include <string.h>
 #include <unistd.h>
+
+/* The window is closed: remember the workspaces for the next launch */
+static gboolean on_window_close_request(GtkWindow* window, gpointer data) {
+    (void)window;
+    session_save_now((AppData*)data);
+    return FALSE;
+}
 
 static void on_window_destroy(GtkWidget* widget, gpointer data) {
     (void)widget;
@@ -116,7 +124,8 @@ static void print_usage(FILE* out) {
             "Usage: %s [options] [<file>|<folder>]\n"
             "       %s [options] -n <note>\n"
             "\n"
-            "Without argument, shows the current directory.\n"
+            "Without argument, reopens the workspaces of the last session (else\n"
+            "shows the current directory; \".\" always shows it).\n"
             "A folder is shown in the explorer; a file is opened in the dedicated\n"
             "editor panel, with the explorer and the preview hidden.\n"
             "With -n, the argument is a note: \"Title\" or \"Notebook/Title\"; a\n"
@@ -713,6 +722,10 @@ int main(int argc, char** argv) {
     select_first_row(app);
     gtk_widget_grab_focus(tree_view);
     workspace_apply_default_layout(app); /* saved default layout (Alt+L), if any */
+    g_signal_connect(window, "close-request", G_CALLBACK(on_window_close_request), app);
+    if (target == NULL) {
+        session_restore(app); /* the workspaces of the last session, if any */
+    }
     if (target_is_note) {
         gchar* note_path = notes_find_or_create(app, target);
         if (note_path != NULL) {

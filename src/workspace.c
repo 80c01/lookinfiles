@@ -611,6 +611,32 @@ void workspace_add(AppData* app) {
     saved_layout_free(def);
 }
 
+void workspace_restore_state(AppData* app, gint idx, const gchar* dir, const gchar* const* expanded,
+                             const gchar* selected, gboolean show_hidden, gint sort_mode) {
+    if (app == NULL || idx < 0 || idx >= app->num_workspaces || dir == NULL) {
+        return;
+    }
+    if (idx == app->current_ws) {
+        workspace_save_current(app); /* keep its panels */
+    }
+    VirtualLayout* ws = &app->workspaces[idx];
+    g_free(ws->base_dir);
+    ws->base_dir = g_strdup(dir);
+    g_hash_table_remove_all(ws->expanded_paths);
+    for (const gchar* const* p = expanded; p != NULL && *p != NULL; p++) {
+        if (g_str_has_prefix(*p, dir)) {
+            g_hash_table_add(ws->expanded_paths, g_strdup(*p));
+        }
+    }
+    g_free(ws->selected_path);
+    ws->selected_path = g_strdup(selected);
+    ws->show_hidden = show_hidden;
+    ws->sort_mode = (sort_mode >= 0 && sort_mode < SORT_COUNT) ? sort_mode : SORT_NAME;
+    ws->sidebar_view = SIDEBAR_VIEW_FILES;
+    ws->show_bookmarks = FALSE;
+    workspace_switch(app, idx); /* lists the folder with that state */
+}
+
 void workspace_apply_default_layout(AppData* app) {
     if (app == NULL || app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
         return;

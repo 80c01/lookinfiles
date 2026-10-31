@@ -13,6 +13,7 @@
 #include "focus_route.h"
 #include "quick_open.h"
 #include "project_search.h"
+#include "session.h"
 
 
 static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, gpointer user_data) {
@@ -162,6 +163,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
                 return TRUE;
             }
         }
+        session_save_now(app);
         if (app->main_loop != NULL && g_main_loop_is_running(app->main_loop)) {
             g_main_loop_quit(app->main_loop);
         }
