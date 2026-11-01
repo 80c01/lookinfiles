@@ -19,6 +19,18 @@ static void test_term_tree(void) {
     g_assert_cmpuint(term_layout_count(t), ==, 1);
     term_layout_free(t);
 
+    /* "T<n>": a pane with n terminal tabs */
+    t = term_layout_parse("V:0.5(T3,T)");
+    g_assert_nonnull(t);
+    g_assert_cmpuint(t->first->tabs, ==, 3);
+    g_assert_cmpuint(term_layout_count(t), ==, 4);
+    s = term_layout_to_string(t);
+    g_assert_cmpstr(s, ==, "V:0.500(T3,T)");
+    g_free(s);
+    term_layout_free(t);
+    g_assert_null(term_layout_parse("T0"));
+    g_assert_null(term_layout_parse("T99"));
+
     /* Fractions are clamped; invalid or empty text gives NULL */
     t = term_layout_parse("V:2(T,T)");
     g_assert_cmpfloat(t->frac, ==, 0.95);
@@ -139,7 +151,7 @@ static void test_summary(void) {
     g_free(l->terminals);
     l->terminals = g_strdup("V:0.500(T,T)");
     s = saved_layout_summary(l);
-    g_assert_cmpstr(s, ==, "Explorer · Preview · Terminal (2 panes, beside)");
+    g_assert_cmpstr(s, ==, "Explorer · Preview · Terminal (2 terminals, beside)");
     g_free(s);
     saved_layout_free(l);
 }

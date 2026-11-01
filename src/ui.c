@@ -193,6 +193,15 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
+#ifdef HAVE_VTE
+    /* Ctrl+PgDn / Ctrl+PgUp in a terminal: its pane's next / previous tab */
+    if ((state & (GDK_CONTROL_MASK | GDK_SHIFT_MASK | GDK_ALT_MASK)) == GDK_CONTROL_MASK &&
+        (keyval == GDK_KEY_Page_Down || keyval == GDK_KEY_Page_Up) &&
+        terminal_step_tab(app, keyval == GDK_KEY_Page_Down ? 1 : -1)) {
+        return TRUE;
+    }
+#endif
+
     /* Ctrl+Shift+F: search the files of the project (Search tab); before
      * the navigation keys: Vim's Ctrl+F pages down whatever Shift */
     if ((state & GDK_CONTROL_MASK) && (state & GDK_SHIFT_MASK) && !(state & GDK_ALT_MASK) &&
@@ -367,8 +376,8 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         }
     }
 
-    /* Ctrl+T: terminal pane beside last running one;
-     * Ctrl+Shift+T: new terminal row below running ones */
+    /* Ctrl+T: new terminal tab; Ctrl+Shift+T: new terminal pane below the
+     * focused one */
     if ((state & GDK_CONTROL_MASK) == 0 ||
         (keyval != GDK_KEY_t && keyval != GDK_KEY_T)) {
         return FALSE;

@@ -31,7 +31,7 @@ SavedLayout* saved_layout_new(const gchar* name);
 SavedLayout* saved_layout_copy(const SavedLayout* layout);
 void saved_layout_free(gpointer layout);
 
-/* Short description for the list, e.g. "Explorer · Preview · Terminal (2 panes)". Caller frees. */
+/* Short description for the list, e.g. "Explorer · Preview · Terminal (2 terminals, beside)". Caller frees. */
 gchar* saved_layout_summary(const SavedLayout* layout);
 
 /* Built-in default: explorer and preview side by side, no terminal */
@@ -56,11 +56,15 @@ SavedLayout* layout_store_find(GPtrArray* layouts, const gchar* name);
 void layout_store_put(GPtrArray* layouts, SavedLayout* layout);
 gboolean layout_store_remove(GPtrArray* layouts, const gchar* name);
 
-/* Terminal pane tree: "T" is one terminal; "H:<frac>(<a>,<b>)" splits side by
- * side and "V:<frac>(<a>,<b>)" one above the other, <frac> being the share of
- * the first child, e.g. "H:0.500(T,V:0.400(T,T))". */
+/* Terminal pane tree: "T" is a pane with one terminal tab, "T<n>" one with n
+ * tabs; "H:<frac>(<a>,<b>)" splits side by side and "V:<frac>(<a>,<b>)" one
+ * above the other, <frac> being the share of the first child, e.g.
+ * "H:0.500(T3,V:0.400(T,T))". */
+#define TERM_LAYOUT_MAX_TABS 32
+
 typedef struct TermLayoutNode {
     gboolean is_terminal;
+    guint tabs; /* terminal tabs of a pane (1 or more) */
     gboolean vertical;
     gdouble frac;
     struct TermLayoutNode* first;
@@ -70,6 +74,7 @@ typedef struct TermLayoutNode {
 /* NULL if text is empty or invalid */
 TermLayoutNode* term_layout_parse(const gchar* text);
 gchar* term_layout_to_string(const TermLayoutNode* node);
+/* Number of terminals (the tabs of every pane) */
 guint term_layout_count(const TermLayoutNode* node);
 void term_layout_free(TermLayoutNode* node);
 

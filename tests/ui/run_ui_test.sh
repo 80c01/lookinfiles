@@ -502,6 +502,9 @@ key Escape
 xdotool mousemove 1237 783 click 1
 xdotool mousemove 1205 650 click 1   # back to "Notepad"
 key ctrl+t; sleep 1;    shot terminal
+key ctrl+t; sleep 1;    shot terminal_tabs      # a second terminal: the tabs show
+key ctrl+Page_Up;       shot terminal_prev_tab
+key ctrl+shift+t; sleep 1; shot terminal_split  # a new pane below
 key ctrl+q
 
 status=0
@@ -575,7 +578,7 @@ fi
 if [ -n "${UI_BASELINE:-}" ]; then
     for f in "$SHOTS"/*.png; do
         name=$(basename "$f")
-        case "$name" in *_terminal.png|*_animated.png) continue ;; esac   # prompt timing, animation frame vary
+        case "$name" in *_terminal.png|*_terminal_*.png|*_animated.png) continue ;; esac   # prompt timing, animation frame vary
         ref="$UI_BASELINE/$name"
         if [ ! -f "$ref" ]; then
             echo "ui-test: FAIL - no baseline for $name"

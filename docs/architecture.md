@@ -406,8 +406,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   in the same dialog (`quick_open_show_recent()`). Ctrl+P: the project's files
   (`code_index_all_files()` in a worker) in an `AppDialog`, ranked by
   `fuzzy_match`; shows the file with `reveal_path_in_tree()` or edits it.
-- `terminal` — embedded VTE panes (`Ctrl+T`, `terminal_open()` with a
-  working directory), Dark+ ANSI palette; ssh into the active remote machine.
+- `terminal` — embedded VTE terminals as tabs of terminal notebooks (group
+  `TERM_TABS_GROUP`) split by `GtkPaned`s; tabs are dragged between them or
+  to a pane edge through `tab_drop` (`Ctrl+T` new tab, `Ctrl+Shift+T` new
+  pane below, `terminal_open()` with a working directory); ssh into the
+  active remote machine.
 - `search` — the search bars of the explorer and of the preview, one at the
   bottom of each panel (`AppSearchBar`, `search_bar_new()`), opened and
   driven by the keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s`

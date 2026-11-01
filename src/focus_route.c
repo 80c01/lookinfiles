@@ -8,6 +8,12 @@
 
 #define NAV_MARK "lookin-nav-keys"
 #define EDITOR_TABS_GROUP "editor-tabs"
+#define TERM_TABS_GROUP "term-tabs" /* terminal.h */
+
+static gboolean is_terminal_notebook(GtkWidget* w) {
+    return w != NULL && GTK_IS_NOTEBOOK(w) &&
+           g_strcmp0(gtk_notebook_get_group_name(GTK_NOTEBOOK(w)), TERM_TABS_GROUP) == 0;
+}
 
 void focus_route_mark_nav(GtkWidget* widget) {
     if (widget != NULL) {
@@ -66,6 +72,10 @@ void focus_route_get(AppData* app, FocusInfo* info) {
             info->area = FOCUS_AREA_EXPLORER;
             return;
         }
+        if (is_terminal_notebook(w)) {
+            info->nav_keys = FALSE; /* a terminal pane: not one of the areas above */
+            return;
+        }
         if (GTK_IS_NOTEBOOK(w)) {
             /* Tab bar (the notebook itself or a tab label): its current page */
             classify_page(app, info, GTK_NOTEBOOK(w), current_page(GTK_NOTEBOOK(w)));
@@ -73,6 +83,10 @@ void focus_route_get(AppData* app, FocusInfo* info) {
             return;
         }
         GtkNotebook* nb = notebook_of_page(w);
+        if (nb != NULL && is_terminal_notebook(GTK_WIDGET(nb))) {
+            info->nav_keys = FALSE;
+            return;
+        }
         if (nb != NULL) {
             classify_page(app, info, nb, w);
             return;

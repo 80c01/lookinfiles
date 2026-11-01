@@ -50,7 +50,7 @@ gchar* saved_layout_summary(const SavedLayout* layout) {
         TermLayoutNode* tree = term_layout_parse(layout->terminals);
         guint n = MAX(1, term_layout_count(tree));
         term_layout_free(tree);
-        g_ptr_array_add(parts, n > 1 ? g_strdup_printf("Terminal (%u panes, %s)", n,
+        g_ptr_array_add(parts, n > 1 ? g_strdup_printf("Terminal (%u terminals, %s)", n,
                                                       layout->stacked ? "below" : "beside")
                                      : g_strdup_printf("Terminal (%s)",
                                                       layout->stacked ? "below" : "beside"));
@@ -248,8 +248,19 @@ static TermLayoutNode* parse_node(const gchar** p, gint depth) {
     }
     if (**p == 'T') {
         (*p)++;
+        guint tabs = 1;
+        if (g_ascii_isdigit(**p)) {
+            gchar* end = NULL;
+            guint64 v = g_ascii_strtoull(*p, &end, 10);
+            if (v < 1 || v > TERM_LAYOUT_MAX_TABS) {
+                return NULL;
+            }
+            tabs = (guint)v;
+            *p = end;
+        }
         TermLayoutNode* n = g_new0(TermLayoutNode, 1);
         n->is_terminal = TRUE;
+        n->tabs = tabs;
         return n;
     }
     if ((**p != 'H' && **p != 'V') || (*p)[1] != ':') {
@@ -300,6 +311,9 @@ TermLayoutNode* term_layout_parse(const gchar* text) {
 static void append_node(GString* s, const TermLayoutNode* n) {
     if (n->is_terminal) {
         g_string_append_c(s, 'T');
+        if (n->tabs > 1) {
+            g_string_append_printf(s, "%u", n->tabs);
+        }
         return;
     }
     gchar frac[G_ASCII_DTOSTR_BUF_SIZE];
@@ -323,7 +337,7 @@ guint term_layout_count(const TermLayoutNode* node) {
     if (node == NULL) {
         return 0;
     }
-    return node->is_terminal ? 1 : term_layout_count(node->first) + term_layout_count(node->second);
+    return node->is_terminal ? MAX(node->tabs, 1) : term_layout_count(node->first) + term_layout_count(node->second);
 }
 
 void term_layout_free(TermLayoutNode* node) {
