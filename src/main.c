@@ -343,7 +343,7 @@ int main(int argc, char** argv) {
     gtk_button_set_has_frame(GTK_BUTTON(term_btn), FALSE);
     gtk_widget_set_focusable(term_btn, FALSE);
     gtk_widget_add_css_class(term_btn, "status-pill");
-    gtk_widget_set_tooltip_text(term_btn, "Show / Hide Terminal Panel (Ctrl+T)");
+    gtk_widget_set_tooltip_text(term_btn, "Show / Hide Terminal Panel");
 
     GtkWidget* pill_div_label = gtk_label_new("|");
     gtk_widget_add_css_class(pill_div_label, "breadcrumb-sep");
