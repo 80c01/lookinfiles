@@ -288,6 +288,7 @@ GtkWidget* topbar_history_buttons_new(AppData* app) {
 typedef struct {
     gchar* label;
     gchar* full_path;
+    const gchar* glyph; /* icon before the label (icons.h), NULL for none */
 } BreadcrumbSeg;
 
 /* Top bar: clickable path breadcrumbs + right-aligned sort/hidden/help pills */
@@ -330,18 +331,18 @@ void update_path_label(AppData* app) {
             const gchar* rest = NULL;
             if (is_remote_mount) {
                 gsize mount_len = strlen(act_rm->mount_point);
-                gchar* root_title = g_strdup_printf("🌐 %s", act_rm->name ? act_rm->name : act_rm->host);
-                BreadcrumbSeg root_seg = { root_title, g_strdup(act_rm->mount_point) };
+                gchar* root_title = g_strdup(act_rm->name ? act_rm->name : act_rm->host);
+                BreadcrumbSeg root_seg = { root_title, g_strdup(act_rm->mount_point), "remote-connected" };
                 g_array_append_val(segs, root_seg);
                 accum = g_strdup(act_rm->mount_point);
                 rest = app->base_dir + mount_len;
             } else if (under_home) {
-                BreadcrumbSeg root_seg = { g_strdup("🏠 ~"), g_strdup(home) };
+                BreadcrumbSeg root_seg = { g_strdup("~"), g_strdup(home), "home" };
                 g_array_append_val(segs, root_seg);
                 accum = g_strdup(home);
                 rest = app->base_dir + home_len;
             } else {
-                BreadcrumbSeg root_seg = { g_strdup("📁 /"), g_strdup("/") };
+                BreadcrumbSeg root_seg = { g_strdup("/"), g_strdup("/"), "root" };
                 g_array_append_val(segs, root_seg);
                 accum = g_strdup("/");
                 rest = app->base_dir;
@@ -356,7 +357,7 @@ void update_path_label(AppData* app) {
                 g_free(accum);
                 accum = next_accum;
 
-                BreadcrumbSeg seg = { g_strdup(parts[i]), g_strdup(accum) };
+                BreadcrumbSeg seg = { g_strdup(parts[i]), g_strdup(accum), NULL };
                 g_array_append_val(segs, seg);
             }
             g_strfreev(parts);
@@ -385,11 +386,13 @@ void update_path_label(AppData* app) {
 
                 BreadcrumbSeg* s = &g_array_index(segs, BreadcrumbSeg, i);
                 gboolean is_last = (i == total - 1);
-                gchar* btn_text = (is_last && i > 0)
-                                      ? g_strdup_printf("📂 %s", s->label)
-                                      : g_strdup(s->label);
-                GtkWidget* btn = gtk_button_new_with_label(btn_text);
-                g_free(btn_text);
+                const gchar* glyph = (is_last && i > 0) ? "folder" : s->glyph;
+                GtkWidget* btn = gtk_button_new();
+                if (glyph != NULL) {
+                    gtk_button_set_child(GTK_BUTTON(btn), glyph_label_new(glyph, s->label));
+                } else {
+                    gtk_button_set_label(GTK_BUTTON(btn), s->label);
+                }
                 gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
                 gtk_widget_set_focusable(btn, FALSE);
                 gtk_widget_add_css_class(btn, is_last ? "breadcrumb-current"
@@ -425,9 +428,13 @@ void update_path_label(AppData* app) {
     }
 
     if (app->hidden_btn != NULL) {
-        gtk_button_set_label(GTK_BUTTON(app->hidden_btn),
-                             app->show_hidden ? "👁 Hidden: On"
-                                              : "👁 Hidden: Off");
+        /* Rebuilt only when the state changes (1 = off, 2 = on) */
+        gint state = app->show_hidden ? 2 : 1;
+        if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(app->hidden_btn), "hidden-state")) != state) {
+            icon_button_set_content(app->hidden_btn, "view-reveal",
+                                    app->show_hidden ? "Hidden: On" : "Hidden: Off");
+            g_object_set_data(G_OBJECT(app->hidden_btn), "hidden-state", GINT_TO_POINTER(state));
+        }
         if (app->show_hidden) {
             gtk_widget_add_css_class(app->hidden_btn, "pill-active");
         } else {

@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-/* Note types of the notes view: file extension, names, icons and the strings
+/* Note types of the notes view: file extension, names and the strings
  * stored in notes.xml. Pure helpers, no widgets. */
 typedef enum {
     NOTE_TYPE_TEXT = 0,     /* Plain text note (.txt) */
@@ -29,9 +29,6 @@ NoteType note_type_from_str(const gchar* str, const gchar* filename);
 
 /* Extension of a new note, dot included: ".txt", ".md", ".org", ".canvas" */
 const gchar* note_type_ext(NoteType type);
-
-/* Emoji shown before the note title */
-const gchar* note_type_icon(NoteType type);
 
 /* Display name: "Plain Text", "Markdown", "Org-mode", "Canvas" */
 const gchar* note_type_name(NoteType type);

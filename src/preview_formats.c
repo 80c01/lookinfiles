@@ -904,7 +904,7 @@ static void mailbox_row(PreviewTable* table, const MailBoxEntry* e, guint number
     gchar* date = mail_view_format_date(e->date);
     gchar* size = preview_format_size((gint64)e->length);
     const gchar* row[] = {num, date != NULL ? date : "", e->from != NULL ? e->from : "",
-                          e->subject != NULL ? e->subject : "(no subject)", size, e->attachments ? "📎" : ""};
+                          e->subject != NULL ? e->subject : "(no subject)", size, e->attachments ? "yes" : ""};
     preview_table_add_row(table, row, 6);
     g_free(size);
     g_free(date);
@@ -934,7 +934,7 @@ static PreviewDoc* build_mailbox(const PreviewInput* in, const gchar* data, gsiz
         preview_doc_title(doc, in->name, subtitle);
         g_free(subtitle);
         g_autoptr(PreviewTable) table = preview_table_new(6);
-        const gchar* header[] = {"#", "Date", "From", "Subject", "Size", ""};
+        const gchar* header[] = {"#", "Date", "From", "Subject", "Size", "Attachments"};
         preview_table_set_header(table, header);
         preview_table_set_right_aligned(table, 4);
         guint shown = 0;

@@ -9,6 +9,8 @@
 #include "file_type_icons.h"
 #include "palette.h"
 
+#include <string.h>
+
 typedef struct {
     const gchar* name;          /* name used by callers */
     const gchar* fallbacks[4];  /* tried in order; the last one is built into GTK */
@@ -33,6 +35,7 @@ static const IconFallback FALLBACKS[] = {
     {"applications-system", {"emblem-system", "system-run", NULL}},
     {"go-previous", {"pan-start", "pan-up", NULL}},
     {"go-home", {"user-home", "folder", NULL}},
+    {"input-keyboard", {"preferences-desktop-keyboard", "text-x-generic", NULL}},
 };
 
 /* TRUE when gdk-pixbuf can load SVG (librsvg loader). Without it, the bundled
@@ -249,18 +252,69 @@ static const RowGlyph ROW_GLYPHS[] = {
     {"remote-connected", "network-server", "green", "network-server"},
     {"link", "ft-html", "blue", "text-x-generic"},
     {"missing", "dialog-warning", "yellow", "dialog-question"},
+    {"home", "go-home", "grey_light", "folder"},
+    {"root", "drive-harddisk", "grey_light", "folder"},
+    {"canvas", "applications-graphics", "purple", "text-x-generic"},
+    {"image", "ft-image", "purple", "text-x-generic"},
+    {"note", "dialog-information", "blue", "dialog-question"},
+    {"tip", "dialog-information", "green", "dialog-question"},
+    {"important", "starred", "purple", "dialog-question"},
+    {"warning", "dialog-warning", "yellow", "dialog-question"},
+    {"caution", "dialog-error", "red", "dialog-question"},
+    {"author", "avatar-default", "grey_light", "text-x-generic"},
+    {"description", "document-edit", "grey_light", "text-x-generic"},
+    {"attachment", "mail-attachment", "grey_light", "text-x-generic"},
     {"unknown", "ft-default", "white", "text-x-generic"},
 };
 
-void glyph_image_set(GtkWidget* image, const gchar* glyph) {
-    const RowGlyph* g = &ROW_GLYPHS[G_N_ELEMENTS(ROW_GLYPHS) - 1];
+/* Bundled icon and colour of a glyph: one of ROW_GLYPHS, else a bundled
+ * Adwaita icon by its name (notebook icons) in grey, else "unknown" */
+static GIcon* glyph_gicon(const gchar* glyph, const gchar** color) {
     for (gsize i = 0; i < G_N_ELEMENTS(ROW_GLYPHS); i++) {
         if (g_strcmp0(ROW_GLYPHS[i].glyph, glyph) == 0) {
-            g = &ROW_GLYPHS[i];
-            break;
+            *color = ROW_GLYPHS[i].color;
+            return bundled_gicon(ROW_GLYPHS[i].bundled, ROW_GLYPHS[i].fallback);
         }
     }
-    set_coloured_image(image, bundled_gicon(g->bundled, g->fallback), g->color);
+    if (glyph != NULL && glyph_exists(glyph)) {
+        *color = "grey_light";
+        return bundled_gicon(glyph, "text-x-generic");
+    }
+    const RowGlyph* g = &ROW_GLYPHS[G_N_ELEMENTS(ROW_GLYPHS) - 1];
+    *color = g->color;
+    return bundled_gicon(g->bundled, g->fallback);
+}
+
+gboolean glyph_exists(const gchar* glyph) {
+    for (gsize i = 0; i < G_N_ELEMENTS(ROW_GLYPHS); i++) {
+        if (g_strcmp0(ROW_GLYPHS[i].glyph, glyph) == 0) return TRUE;
+    }
+    if (glyph == NULL || glyph[0] == '\0' || strchr(glyph, '/') != NULL) return FALSE;
+    gchar* path = g_strdup_printf("/org/lookin/icons/scalable/actions/lookin-%s-symbolic.svg", glyph);
+    gboolean found = g_resources_get_info(path, G_RESOURCE_LOOKUP_FLAGS_NONE, NULL, NULL, NULL);
+    g_free(path);
+    return found;
+}
+
+void glyph_image_set(GtkWidget* image, const gchar* glyph) {
+    const gchar* color = NULL;
+    GIcon* gicon = glyph_gicon(glyph, &color);
+    set_coloured_image(image, gicon, color);
+}
+
+GtkWidget* glyph_image_new(const gchar* glyph) {
+    GtkWidget* image = file_type_image_new();
+    glyph_image_set(image, glyph);
+    return image;
+}
+
+GtkWidget* glyph_label_new(const gchar* glyph, const gchar* text) {
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_box_append(GTK_BOX(box), glyph_image_new(glyph));
+    if (text != NULL) {
+        gtk_box_append(GTK_BOX(box), gtk_label_new(text));
+    }
+    return box;
 }
 
 GtkWidget* file_type_label_new(const gchar* name, const gchar* text) {
@@ -327,18 +381,17 @@ static void file_type_paintable_obj_init(FileTypePaintable* self) {
     (void)self;
 }
 
-GdkPaintable* file_type_paintable(const gchar* name, gboolean is_dir) {
-    FileTypeIcon ft = file_type_icon(name, is_dir);
+/* gicon drawn in the palette's current icon_<color> */
+static GdkPaintable* coloured_paintable(GIcon* gicon, const gchar* color) {
     FileTypePaintable* self = g_object_new(file_type_paintable_obj_get_type(), NULL);
     GdkDisplay* display = gdk_display_get_default();
     if (display != NULL) {
         /* Scale 2: sharp on HiDPI screens, scaled down elsewhere */
         self->icon = gtk_icon_theme_lookup_by_gicon(gtk_icon_theme_get_for_display(display),
-                                                    file_type_gicon(ft.icon, is_dir),
-                                                    FILE_TYPE_PAINTABLE_SIZE, 2,
+                                                    gicon, FILE_TYPE_PAINTABLE_SIZE, 2,
                                                     GTK_TEXT_DIR_NONE, 0);
     }
-    gchar* role_name = g_strconcat("icon_", ft.color, NULL);
+    gchar* role_name = g_strconcat("icon_", color, NULL);
     PaletteRole role = PAL_FG;
     palette_lookup(role_name, &role);
     g_free(role_name);
@@ -346,4 +399,40 @@ GdkPaintable* file_type_paintable(const gchar* name, gboolean is_dir) {
         self->color = (GdkRGBA){0.5f, 0.5f, 0.5f, 1.0f};
     }
     return GDK_PAINTABLE(self);
+}
+
+GdkPaintable* file_type_paintable(const gchar* name, gboolean is_dir) {
+    FileTypeIcon ft = file_type_icon(name, is_dir);
+    return coloured_paintable(file_type_gicon(ft.icon, is_dir), ft.color);
+}
+
+GdkPaintable* glyph_paintable(const gchar* glyph) {
+    const gchar* color = NULL;
+    GIcon* gicon = glyph_gicon(glyph, &color);
+    return coloured_paintable(gicon, color);
+}
+
+/* paintable at it, then a space, all with tag (NULL for none): a tag that
+ * sets paragraph properties must cover the paragraph's first character */
+static void insert_paintable(GtkTextBuffer* buffer, GtkTextIter* it, GdkPaintable* paintable,
+                             const gchar* tag) {
+    GtkTextMark* start = gtk_text_buffer_create_mark(buffer, NULL, it, TRUE);
+    gtk_text_buffer_insert_paintable(buffer, it, paintable);
+    gtk_text_buffer_insert(buffer, it, " ", -1);
+    if (tag != NULL) {
+        GtkTextIter from;
+        gtk_text_buffer_get_iter_at_mark(buffer, &from, start);
+        gtk_text_buffer_apply_tag_by_name(buffer, tag, &from, it);
+    }
+    gtk_text_buffer_delete_mark(buffer, start);
+    g_object_unref(paintable);
+}
+
+void text_insert_glyph(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* glyph, const gchar* tag) {
+    insert_paintable(buffer, it, glyph_paintable(glyph), tag);
+}
+
+void text_insert_file_icon(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* name,
+                           gboolean is_dir, const gchar* tag) {
+    insert_paintable(buffer, it, file_type_paintable(name, is_dir), tag);
 }

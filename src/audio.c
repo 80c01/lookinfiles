@@ -3,6 +3,7 @@
 #include "file_types.h"
 #include "image_utils.h"
 #include "media_tags.h"
+#include "icons.h"
 #include <string.h>
 #include <sys/stat.h>
 #include <glib/gstdio.h>
@@ -69,7 +70,7 @@ static void on_audio_error_notify(GtkMediaStream* stream, GParamSpec* pspec, gpo
         const gchar* err_msg = (err->message != NULL && err->message[0] != '\0')
                                    ? err->message
                                    : "Audio playback error";
-        gchar* msg = g_strdup_printf("⚠ Media playback warning: %s (press 'm' to inspect raw file details)",
+        gchar* msg = g_strdup_printf("Media playback warning: %s (press 'm' to inspect raw file details)",
                                      err_msg);
         gtk_label_set_text(GTK_LABEL(app->audio_status), msg);
         gtk_widget_set_visible(app->audio_status, TRUE);
@@ -103,8 +104,10 @@ void audio_preview_init(AppData* app) {
     gtk_widget_set_valign(audio_card, GTK_ALIGN_CENTER);
     gtk_widget_set_size_request(audio_card, 400, -1);
 
-    /* Big musical note icon, or the cover art when the file has one */
-    GtkWidget* icon_label = gtk_label_new("🎵");
+    /* Big audio file icon, or the cover art when the file has one */
+    GtkWidget* icon_label = file_type_image_new();
+    file_type_image_set(icon_label, "audio.mp3", FALSE);
+    gtk_image_set_pixel_size(GTK_IMAGE(icon_label), 64);
     gtk_widget_set_name(icon_label, "audio-icon");
     gtk_widget_set_halign(icon_label, GTK_ALIGN_CENTER);
     gtk_box_append(GTK_BOX(audio_card), icon_label);
@@ -115,7 +118,7 @@ void audio_preview_init(AppData* app) {
     gtk_box_append(GTK_BOX(audio_card), cover);
 
     /* Title label */
-    GtkWidget* audio_title = gtk_label_new("🎵  Audio Preview");
+    GtkWidget* audio_title = gtk_label_new("Audio Preview");
     gtk_widget_set_name(audio_title, "audio-title");
     gtk_label_set_selectable(GTK_LABEL(audio_title), TRUE);
     gtk_label_set_ellipsize(GTK_LABEL(audio_title), PANGO_ELLIPSIZE_MIDDLE);
@@ -257,7 +260,7 @@ static void render_audio_raw(AppData* app, const gchar* name, const gchar* full)
     gchar* ext_upper = g_ascii_strup(ext, -1);
 
     GString* out = g_string_new(NULL);
-    g_string_append_printf(out, "🎵  %s\n", name);
+    g_string_append_printf(out, "%s\n", name);
     g_string_append_printf(out, "═══════════════════════════════════════════════════════════════\n");
     g_string_append_printf(out, "File:         %s\n", name);
     g_string_append_printf(out, "Path:         %s\n", full);
@@ -445,7 +448,7 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
     app->audio_current_path = g_strdup(full);
 
     if (app->audio_title != NULL) {
-        gchar* title_text = g_strdup_printf("🎵  %s", name);
+        gchar* title_text = g_strdup(name);
         gtk_label_set_text(GTK_LABEL(app->audio_title), title_text);
         g_free(title_text);
     }
@@ -474,7 +477,7 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
     if (stream == NULL) {
         if (app->audio_status != NULL) {
             gtk_label_set_text(GTK_LABEL(app->audio_status),
-                               "⚠ Could not create media stream for file (press 'm' for details)");
+                               "Could not create media stream for file (press 'm' for details)");
             gtk_widget_set_visible(app->audio_status, TRUE);
         }
         return;

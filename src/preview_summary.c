@@ -71,11 +71,11 @@ gchar* preview_summary_remote(const RemoteMachine* rm) {
         {"F5", "Re-scan ~/.ssh/config"},
     };
     GString* s = g_string_new(NULL);
-    gchar* title = g_strdup_printf("🌐 Remote Machine: %s", rm->name ? rm->name : "Unknown");
+    gchar* title = g_strdup_printf("Remote Machine: %s", rm->name ? rm->name : "Unknown");
     append_title(s, title);
     g_free(title);
 
-    append_field(s, "Status", rm->is_connected ? "🟢 Connected (Mounted via SSHFS)" : "⚪ Disconnected");
+    append_field(s, "Status", rm->is_connected ? "Connected (Mounted via SSHFS)" : "Disconnected");
     append_field(s, "Host", rm->host ? rm->host : "(none)");
     append_field(s, "User", (rm->user && *rm->user) ? rm->user : "(default)");
     gchar* port = g_strdup_printf("%d", rm->port);
@@ -134,7 +134,7 @@ gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
         {"d / Delete", "Move the note to the trash"},
     };
     GString* s = g_string_new(NULL);
-    gchar* title = g_strdup_printf("🎨 Canvas: %s", name != NULL ? name : "");
+    gchar* title = g_strdup_printf("Canvas: %s", name != NULL ? name : "");
     append_title(s, title);
     g_free(title);
 
@@ -227,7 +227,7 @@ gchar* preview_summary_container(ExplorerRow* row) {
     gchar* count = g_strdup_printf("%u", items->len);
     const gchar* list_title = NULL;
     if (is_notebook) {
-        gchar* title = g_strdup_printf("📓 Notebook: %s", name ? name : "");
+        gchar* title = g_strdup_printf("Notebook: %s", name ? name : "");
         append_title(s, title);
         g_free(title);
         append_field(s, "Notes", count);
@@ -236,13 +236,13 @@ gchar* preview_summary_container(ExplorerRow* row) {
         }
         list_title = "Notes";
     } else if (is_bm_folder) {
-        gchar* title = g_strdup_printf("🔖 Bookmark Folder: %s", name ? name : "");
+        gchar* title = g_strdup_printf("Bookmark Folder: %s", name ? name : "");
         append_title(s, title);
         g_free(title);
         append_field(s, "Items", count);
         list_title = "Contents";
     } else {
-        append_title(s, "🗑 Trash");
+        append_title(s, "Trash");
         append_field(s, "Notes", count);
         if (path != NULL && path[0] != '\0') {
             append_field(s, "Location", path);

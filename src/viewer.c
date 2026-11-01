@@ -748,7 +748,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     gboolean is_bookmark = (g_strcmp0(type, "bookmark") == 0);
     PathKind bm_kind = is_bookmark ? path_kind_lookup(full) : PATH_KIND_UNKNOWN;
     if (is_bookmark && bm_kind == PATH_KIND_UNKNOWN && !bookmark_target_is_uri(full)) {
-        summary = g_strdup_printf("🔖 %s\n%s\n\n(waiting for the file system…)\n", name, full);
+        summary = g_strdup_printf("%s\n%s\n\n(waiting for the file system…)\n", name, full);
     }
     if (is_remote || summary != NULL) {
         if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {

@@ -250,7 +250,7 @@ static void fill_help_panel(AppData* app, GtkWidget* panel) {
     GtkWidget* scroll = g_object_get_data(G_OBJECT(panel), "help-scroll");
     GtkWidget* title_label = g_object_get_data(G_OBJECT(panel), "help-title");
     NavStyle style = app_nav_style(app);
-    gchar* title = g_markup_printf_escaped("<b>⌨  Keyboard Shortcuts</b> (%s mode)", nav_style_name(style));
+    gchar* title = g_markup_printf_escaped("<b>Keyboard Shortcuts</b> (%s mode)", nav_style_name(style));
     gtk_label_set_markup(GTK_LABEL(title_label), title);
     g_free(title);
 
@@ -372,6 +372,9 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
     g_signal_connect(close_btn, "clicked",
                      G_CALLBACK(on_help_close_clicked), app);
 
+    GtkWidget* title_icon = icon_label_new("input-keyboard", NULL);
+    gtk_widget_set_margin_end(title_icon, 6);
+    gtk_box_append(GTK_BOX(header_box), title_icon);
     gtk_box_append(GTK_BOX(header_box), title_label);
     gtk_box_append(GTK_BOX(header_box), close_btn);
     gtk_box_append(GTK_BOX(panel), header_box);

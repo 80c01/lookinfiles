@@ -78,7 +78,7 @@ static void on_video_error_notify(GtkMediaStream* stream, GParamSpec* pspec, gpo
         const gchar* err_msg = (err->message != NULL && err->message[0] != '\0')
                                    ? err->message
                                    : "Video playback error";
-        gchar* msg = g_strdup_printf("⚠ Media playback warning: %s (press 'm' to inspect raw file details)",
+        gchar* msg = g_strdup_printf("Media playback warning: %s (press 'm' to inspect raw file details)",
                                      err_msg);
         gtk_label_set_text(GTK_LABEL(app->video_status), msg);
         gtk_widget_set_visible(app->video_status, TRUE);
@@ -111,7 +111,7 @@ void video_preview_init(AppData* app) {
     GtkWidget* header_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_widget_set_hexpand(header_box, TRUE);
 
-    GtkWidget* video_title = gtk_label_new("🎬  Video Preview");
+    GtkWidget* video_title = gtk_label_new("Video Preview");
     gtk_widget_set_name(video_title, "video-title");
     gtk_label_set_selectable(GTK_LABEL(video_title), TRUE);
     gtk_label_set_xalign(GTK_LABEL(video_title), 0.5f);
@@ -233,7 +233,7 @@ static void render_video_raw(AppData* app, const gchar* name, const gchar* full)
     gchar* ext_upper = g_ascii_strup(ext, -1);
 
     GString* out = g_string_new(NULL);
-    g_string_append_printf(out, "🎬  %s\n", name);
+    g_string_append_printf(out, "%s\n", name);
     g_string_append_printf(out, "═══════════════════════════════════════════════════════════════\n");
     g_string_append_printf(out, "File:         %s\n", name);
     g_string_append_printf(out, "Path:         %s\n", full);
@@ -319,7 +319,7 @@ static void on_video_tags_ready(GObject* source, GAsyncResult* res, gpointer use
         return;
     }
     if (t->tags->title != NULL && app->video_title != NULL) {
-        gchar* title = g_strdup_printf("🎬  %s", t->tags->title);
+        gchar* title = g_strdup(t->tags->title);
         gtk_label_set_text(GTK_LABEL(app->video_title), title);
         g_free(title);
     }
@@ -371,7 +371,7 @@ void render_video_preview(AppData* app, const gchar* name, const gchar* full) {
     app->video_current_path = g_strdup(full);
 
     if (app->video_title != NULL) {
-        gchar* title_text = g_strdup_printf("🎬  %s", name);
+        gchar* title_text = g_strdup(name);
         gtk_label_set_text(GTK_LABEL(app->video_title), title_text);
         g_free(title_text);
     }

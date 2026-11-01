@@ -3,6 +3,7 @@
 #include "text_tags.h"
 #include "org_doc.h"
 #include "image_utils.h"
+#include "icons.h"
 #include "app_events.h"
 #include "file_types.h"
 #include "editor.h"
@@ -494,8 +495,9 @@ static void render_inline_markup(GtkTextBuffer* buffer, GtkTextIter* iter,
                     }
                     g_free(img_path);
                     if (!loaded) {
-                        gchar* ph = g_strdup_printf("🖼 [%s]", label ? label : target);
+                        gchar* ph = g_strdup_printf("[%s]", label ? label : target);
                         GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
+                        text_insert_glyph(buffer, iter, "image", NULL);
                         gtk_text_buffer_insert(buffer, iter, ph, -1);
                         GtkTextIter start;
                         gtk_text_buffer_get_iter_at_mark(buffer, &start, m);
@@ -504,8 +506,8 @@ static void render_inline_markup(GtkTextBuffer* buffer, GtkTextIter* iter,
                         g_free(ph);
                     }
                 } else {
-                    /* Regular link */
-                    gchar* link_text = g_strdup_printf("🔗 %s", (label != NULL && label[0] != '\0') ? label : target);
+                    /* Regular link: styled text, as in Markdown */
+                    gchar* link_text = g_strdup((label != NULL && label[0] != '\0') ? label : target);
                     GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
                     gtk_text_buffer_insert(buffer, iter, link_text, -1);
                     GtkTextIter start;
@@ -654,7 +656,7 @@ void render_orgmode_to_buffer(GtkTextBuffer* buffer,
     /* Render preview header banner if large file or metadata exists */
     if (is_preview && file_name != NULL) {
         GtkTextMark* bm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
-        gchar* banner = g_strdup_printf("🦄 [ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)  •  Org-mode\n\n",
+        gchar* banner = g_strdup_printf("  [ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)  •  Org-mode\n\n",
                                         file_name, total_size);
         gtk_text_buffer_insert(buffer, &iter, banner, -1);
         GtkTextIter bs;

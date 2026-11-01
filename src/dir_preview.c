@@ -193,15 +193,7 @@ static void insert_tagged(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* t
 /* "  <file-type icon> " in the table (folders get the folder glyph) */
 static void insert_icon(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* name, gboolean is_dir) {
     insert_tagged(buffer, it, "  ", "dir_table", NULL);
-    GtkTextMark* start = gtk_text_buffer_create_mark(buffer, NULL, it, TRUE);
-    GdkPaintable* icon = file_type_paintable(name, is_dir);
-    gtk_text_buffer_insert_paintable(buffer, it, icon);
-    g_object_unref(icon);
-    GtkTextIter from;
-    gtk_text_buffer_get_iter_at_mark(buffer, &from, start);
-    gtk_text_buffer_apply_tag_by_name(buffer, "dir_table", &from, it);
-    gtk_text_buffer_delete_mark(buffer, start);
-    insert_tagged(buffer, it, " ", "dir_table", NULL);
+    text_insert_file_icon(buffer, it, name, is_dir, "dir_table");
 }
 
 /* "3 files · 1 folder · 48.2 kB · last change 2 h ago" */
@@ -426,7 +418,8 @@ static void render_job(AppData* app, const DirPreviewJob* job) {
     GtkTextIter it;
     gtk_text_buffer_get_start_iter(buffer, &it);
 
-    gchar* title = g_strdup_printf("📂 %s\n", job->name);
+    text_insert_glyph(buffer, &it, "folder", "dir_title");
+    gchar* title = g_strdup_printf("%s\n", job->name);
     insert_tagged(buffer, &it, title, "dir_title", NULL);
     g_free(title);
     gchar* path = g_filename_display_name(job->full);
@@ -465,7 +458,9 @@ static void render_job(AppData* app, const DirPreviewJob* job) {
         insert_table(buffer, &it, app, job, now);
     }
     if (job->readme_text != NULL) {
-        gchar* heading = g_strdup_printf("\n📖 %s\n", s->readme);
+        insert_tagged(buffer, &it, "\n", "dir_section", NULL);
+        text_insert_file_icon(buffer, &it, s->readme, FALSE, "dir_section");
+        gchar* heading = g_strdup_printf("%s\n", s->readme);
         insert_tagged(buffer, &it, heading, "dir_section", NULL);
         g_free(heading);
     }

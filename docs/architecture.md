@@ -16,6 +16,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   binary; `file_kind_of_path()`). The preview
   detects the kind in its worker thread (`app->viewed_kind`): decide on the
   displayed file with `viewed_kind`, not with its name.
+- `notebook_icons` — the icons offered for notebooks (theme glyph names)
+  and the mapping of the emoji stored by older versions.
 - `file_type_icons` — VS Code (Seti) file-type icons: `file_type_icon()`
   gives the glyph and colour of a file name, from the table
   `file_type_icons_table.h` generated with the glyphs by

@@ -7,6 +7,12 @@ All notable changes to this project are listed here. The format follows
 
 ### Changed
 
+- Icons follow VS Code: files show the VS Code (Seti) file-type icons
+  everywhere they are listed (explorer, tabs, bookmarks, Quick Open,
+  references, folder previews), and every other icon is a theme icon in the
+  same style. Emoji are gone from the interface; notebooks pick their icon
+  from a set of theme icons (icons chosen as emoji before are converted).
+
 - The application is renamed **LookinFiles**: the binary is `lookinfiles`,
   settings live in `~/.config/lookinfiles/` and the cache in
   `~/.cache/lookinfiles/`.

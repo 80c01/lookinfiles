@@ -367,7 +367,7 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
 
     if (node->unreadable) {
         append_placeholder(parent, "(cannot read directory)",
-                           top ? "📄 (cannot read directory)" : "  (cannot read directory)",
+                           top ? "(cannot read directory)" : "  (cannot read directory)",
                            node->dirname);
         return;
     }

@@ -478,7 +478,6 @@ void apply_panel_borders(void) {
         "  box-shadow: 0 4px 16px alpha(@shadow, 0.35);\n"
         "}\n"
         "#audio-icon {\n"
-        "  font-size: 2.8em;\n"
         "  margin-bottom: 4px;\n"
         "}\n"
         "#audio-title {\n"

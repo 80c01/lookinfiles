@@ -2,6 +2,7 @@
 #include "fonts.h"
 #include "text_tags.h"
 #include "image_utils.h"
+#include "icons.h"
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
@@ -401,6 +402,12 @@ static void insert_tag_text(HtmlRenderContext* ctx, const gchar* text, const gch
     }
 }
 
+/* Theme glyph (icons.h) at the insertion point, then a space */
+static void insert_glyph(HtmlRenderContext* ctx, const gchar* glyph, const gchar* tag_name) {
+    text_insert_glyph(ctx->buffer, &ctx->iter, glyph, tag_name);
+    ctx->trailing_newlines = 0;
+}
+
 static void insert_styled_text(HtmlRenderContext* ctx, const gchar* text, gssize len) {
     if (text == NULL || len == 0 || *text == '\0') return;
     if (len < 0) len = strlen(text);
@@ -742,7 +749,7 @@ static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
                 g_free(raw_cap);
                 if (clean_cap != NULL && clean_cap[0] != '\0') {
                     ensure_newlines(ctx, 2);
-                    gchar* cap_str = g_strdup_printf("  📋 %s\n", clean_cap);
+                    gchar* cap_str = g_strdup_printf("  %s\n", clean_cap);
                     insert_tag_text(ctx, cap_str, "html_table_caption");
                     g_free(cap_str);
                 }
@@ -1381,7 +1388,8 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
                     ctx->trailing_newlines = 0; /* the image is on the line: end it */
                     ensure_newlines(ctx, 1);
                 } else {
-                    gchar* placeholder = g_strdup_printf("🖼 [%s]", (alt && alt[0]) ? alt : src);
+                    insert_glyph(ctx, "image", "html_tag");
+                    gchar* placeholder = g_strdup_printf("[%s]", (alt && alt[0]) ? alt : src);
                     insert_tag_text(ctx, placeholder, "html_tag");
                     g_free(placeholder);
                 }
@@ -1440,7 +1448,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
                 gchar* clean_title = strip_tags_and_entities(raw_title);
                 g_free(raw_title);
                 if (clean_title != NULL && clean_title[0] != '\0') {
-                    insert_tag_text(&ctx, "🌐 ", "html_title");
+                    insert_glyph(&ctx, "link", "html_title");
                     insert_tag_text(&ctx, clean_title, "html_title");
                     ensure_newlines(&ctx, 1);
                     title_rendered = TRUE;
@@ -1467,17 +1475,18 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
     }
 
     if ((clean_author && clean_author[0] != '\0') || (clean_desc && clean_desc[0] != '\0')) {
-        GString* sub = g_string_new("  ");
-        if (clean_author && clean_author[0] != '\0') {
-            g_string_append_printf(sub, "👤 %s", clean_author);
+        gboolean author = clean_author && clean_author[0] != '\0';
+        insert_tag_text(&ctx, "  ", "html_meta_sub");
+        if (author) {
+            insert_glyph(&ctx, "author", "html_meta_sub");
+            insert_tag_text(&ctx, clean_author, "html_meta_sub");
         }
         if (clean_desc && clean_desc[0] != '\0') {
-            if (sub->len > 2) g_string_append(sub, "  •  ");
-            g_string_append_printf(sub, "📝 %s", clean_desc);
+            if (author) insert_tag_text(&ctx, "  •  ", "html_meta_sub");
+            insert_glyph(&ctx, "description", "html_meta_sub");
+            insert_tag_text(&ctx, clean_desc, "html_meta_sub");
         }
-        g_string_append_c(sub, '\n');
-        insert_tag_text(&ctx, sub->str, "html_meta_sub");
-        g_string_free(sub, TRUE);
+        insert_tag_text(&ctx, "\n", "html_meta_sub");
         title_rendered = TRUE;
     }
     g_free(clean_author);

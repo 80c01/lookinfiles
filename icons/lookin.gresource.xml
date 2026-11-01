@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/org/lookin/icons">
+    <file>scalable/actions/lookin-applications-engineering-symbolic.svg</file>
+    <file>scalable/actions/lookin-applications-games-symbolic.svg</file>
+    <file>scalable/actions/lookin-applications-graphics-symbolic.svg</file>
+    <file>scalable/actions/lookin-applications-science-symbolic.svg</file>
     <file>scalable/actions/lookin-applications-system-symbolic.svg</file>
+    <file>scalable/actions/lookin-avatar-default-symbolic.svg</file>
     <file>scalable/actions/lookin-bookmark-new-symbolic.svg</file>
+    <file>scalable/actions/lookin-dialog-error-symbolic.svg</file>
+    <file>scalable/actions/lookin-dialog-information-symbolic.svg</file>
     <file>scalable/actions/lookin-dialog-question-symbolic.svg</file>
     <file>scalable/actions/lookin-dialog-warning-symbolic.svg</file>
     <file>scalable/actions/lookin-document-edit-symbolic.svg</file>
@@ -10,18 +17,34 @@
     <file>scalable/actions/lookin-document-open-recent-symbolic.svg</file>
     <file>scalable/actions/lookin-document-print-preview-symbolic.svg</file>
     <file>scalable/actions/lookin-document-send-symbolic.svg</file>
+    <file>scalable/actions/lookin-drive-harddisk-symbolic.svg</file>
     <file>scalable/actions/lookin-edit-clear-all-symbolic.svg</file>
     <file>scalable/actions/lookin-edit-delete-symbolic.svg</file>
     <file>scalable/actions/lookin-edit-find-symbolic.svg</file>
+    <file>scalable/actions/lookin-emoji-activities-symbolic.svg</file>
+    <file>scalable/actions/lookin-emoji-flags-symbolic.svg</file>
+    <file>scalable/actions/lookin-emoji-food-symbolic.svg</file>
+    <file>scalable/actions/lookin-emoji-nature-symbolic.svg</file>
+    <file>scalable/actions/lookin-emoji-objects-symbolic.svg</file>
+    <file>scalable/actions/lookin-emoji-people-symbolic.svg</file>
+    <file>scalable/actions/lookin-emoji-symbols-symbolic.svg</file>
+    <file>scalable/actions/lookin-emoji-travel-symbolic.svg</file>
+    <file>scalable/actions/lookin-folder-documents-symbolic.svg</file>
+    <file>scalable/actions/lookin-folder-music-symbolic.svg</file>
     <file>scalable/actions/lookin-folder-new-symbolic.svg</file>
+    <file>scalable/actions/lookin-folder-pictures-symbolic.svg</file>
     <file>scalable/actions/lookin-folder-symbolic.svg</file>
     <file>scalable/actions/lookin-go-home-symbolic.svg</file>
     <file>scalable/actions/lookin-go-next-symbolic.svg</file>
     <file>scalable/actions/lookin-go-previous-symbolic.svg</file>
+    <file>scalable/actions/lookin-input-keyboard-symbolic.svg</file>
     <file>scalable/actions/lookin-list-add-symbolic.svg</file>
+    <file>scalable/actions/lookin-mail-attachment-symbolic.svg</file>
     <file>scalable/actions/lookin-network-server-symbolic.svg</file>
     <file>scalable/actions/lookin-network-transmit-receive-symbolic.svg</file>
     <file>scalable/actions/lookin-pan-up-symbolic.svg</file>
+    <file>scalable/actions/lookin-starred-symbolic.svg</file>
+    <file>scalable/actions/lookin-system-lock-screen-symbolic.svg</file>
     <file>scalable/actions/lookin-text-x-generic-symbolic.svg</file>
     <file>scalable/actions/lookin-user-bookmarks-symbolic.svg</file>
     <file>scalable/actions/lookin-user-trash-symbolic.svg</file>
@@ -31,7 +54,9 @@
     <file>scalable/actions/lookin-view-paged-symbolic.svg</file>
     <file>scalable/actions/lookin-view-refresh-symbolic.svg</file>
     <file>scalable/actions/lookin-view-reveal-symbolic.svg</file>
+    <file>scalable/actions/lookin-weather-clear-symbolic.svg</file>
     <file>scalable/actions/lookin-window-close-symbolic.svg</file>
+    <file>scalable/actions/lookin-x-office-calendar-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-argdown-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-asm-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-audio-symbolic.svg</file>

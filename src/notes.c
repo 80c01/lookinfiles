@@ -1,5 +1,7 @@
 #include "notes.h"
 #include "note_types.h"
+#include "notebook_icons.h"
+#include "icons.h"
 #include "canvas_doc.h"
 #include "canvas_view.h"
 #include "palette.h"
@@ -27,7 +29,7 @@ typedef struct {
 
 typedef struct {
     gchar* name;         /* e.g. "General", "Work" */
-    gchar* icon;         /* e.g. "📓", "💼" */
+    gchar* icon;         /* glyph name from NOTEBOOK_ICONS (notebook_icons.h) */
     gchar* path;         /* full directory path on disk */
     gboolean expanded;
     GList* notes;        /* list of NoteItem* in custom user order */
@@ -94,7 +96,7 @@ static void note_item_free(NoteItem* item) {
 static NotebookItem* notebook_item_new(const gchar* name, const gchar* icon, const gchar* path) {
     NotebookItem* nb = g_new0(NotebookItem, 1);
     nb->name = g_strdup(name);
-    nb->icon = g_strdup(icon != NULL && icon[0] != '\0' ? icon : "📓");
+    nb->icon = g_strdup(notebook_icon_normalize(icon));
     nb->path = g_strdup(path);
     nb->expanded = TRUE;
     nb->notes = NULL;
@@ -363,7 +365,7 @@ static void notes_reconcile_with_disk(NotesManager* mgr) {
                 }
             }
             if (target_nb == NULL) {
-                target_nb = notebook_item_new(name, "📓", full_dir);
+                target_nb = notebook_item_new(name, NOTEBOOK_ICON_DEFAULT, full_dir);
                 mgr->notebooks = g_list_append(mgr->notebooks, target_nb);
             }
 
@@ -414,16 +416,16 @@ static void notes_reconcile_with_disk(NotesManager* mgr) {
         gchar* gen_path = g_build_filename(root_dir, "General", NULL);
         g_mkdir_with_parents(gen_path, 0755);
 
-        NotebookItem* gen = notebook_item_new("General", "📓", gen_path);
+        NotebookItem* gen = notebook_item_new("General", NOTEBOOK_ICON_DEFAULT, gen_path);
         mgr->notebooks = g_list_append(mgr->notebooks, gen);
 
         gchar* note_path = g_build_filename(gen_path, "Welcome Note.txt", NULL);
         const gchar* welcome_text =
             "# Welcome to Notes!\n\n"
             "This notebook manager lets you organize and order your notes:\n"
-            "- 4 Note Types: Plain Text (📄), Markdown (✨ with tables and images), Org-mode (🦄),\n"
-            "  and Canvas (🎨 text boxes and pasted pictures placed freely)\n"
-            "- Create notebooks (carnets) with custom icons (📓, 💼, 💡, 📚, etc.)\n"
+            "- 4 Note Types: Plain Text, Markdown (with tables and images), Org-mode,\n"
+            "  and Canvas (text boxes and pasted pictures placed freely)\n"
+            "- Create notebooks (carnets) and give each one an icon\n"
             "- Move notes between notebooks easily\n"
             "- Reorder notes and notebooks using Shift+J / Shift+K\n"
             "- Delete notes to the Trash bin (corbeille) and restore them anytime\n"
@@ -527,10 +529,10 @@ static const struct {
     NoteType type;
     const gchar* label;
 } NOTE_FORMATS[] = {
-    {NOTE_TYPE_MARKDOWN, "✨ Markdown (.md - headings, lists, tables, images)"},
-    {NOTE_TYPE_ORG, "🦄 Org-mode (.org - Emacs tasks, TODOs, checkboxes, folding)"},
-    {NOTE_TYPE_TEXT, "📄 Plain Text (.txt - unformatted plain text)"},
-    {NOTE_TYPE_CANVAS, "🎨 Canvas (text boxes and pasted pictures placed freely)"},
+    {NOTE_TYPE_MARKDOWN, "Markdown (.md - headings, lists, tables, images)"},
+    {NOTE_TYPE_ORG, "Org-mode (.org - Emacs tasks, TODOs, checkboxes, folding)"},
+    {NOTE_TYPE_TEXT, "Plain Text (.txt - unformatted plain text)"},
+    {NOTE_TYPE_CANVAS, "Canvas (text boxes and pasted pictures placed freely)"},
 };
 
 static NoteType note_dialog_type(NoteDialogData* d) {
@@ -547,11 +549,10 @@ static void update_note_dialog_preview(NoteDialogData* d) {
     const gchar* disp_title = (title != NULL && title[0] != '\0') ? title : "Untitled";
 
     NoteType type = note_dialog_type(d);
-    const gchar* icon = note_type_icon(type);
     const gchar* ext = note_type_ext(type);
 
-    gchar* markup = g_markup_printf_escaped("File Preview: <span size=\"large\">%s</span> <b>%s%s</b>  <span foreground=\"%s\">(%s)</span>",
-                                           icon, disp_title, ext, palette_color(PAL_FG_SUBTLE), note_type_name(type));
+    gchar* markup = g_markup_printf_escaped("File Preview: <b>%s%s</b>  <span foreground=\"%s\">(%s)</span>",
+                                           disp_title, ext, palette_color(PAL_FG_SUBTLE), note_type_name(type));
     gtk_label_set_markup(GTK_LABEL(d->preview_label), markup);
     g_free(markup);
     g_free(title);
@@ -680,24 +681,20 @@ typedef struct {
     GMainLoop* loop;
     gint response;
     GtkWidget* name_entry;
-    GtkWidget* icon_entry;
+    const gchar* icon;         /* selected NOTEBOOK_ICONS entry */
+    GtkWidget* preview_icon;
     GtkWidget* preview_label;
 } NotebookDialogData;
 
 static void update_notebook_preview(NotebookDialogData* d) {
-    if (d->preview_label == NULL || d->name_entry == NULL || d->icon_entry == NULL) return;
-    const gchar* icon_text = gtk_editable_get_text(GTK_EDITABLE(d->icon_entry));
+    if (d->preview_label == NULL || d->name_entry == NULL) return;
     const gchar* name_text = gtk_editable_get_text(GTK_EDITABLE(d->name_entry));
-    gchar* icon_trimmed = (icon_text != NULL) ? g_strstrip(g_strdup(icon_text)) : NULL;
     gchar* name_trimmed = (name_text != NULL) ? g_strstrip(g_strdup(name_text)) : NULL;
-
-    const gchar* display_icon = (icon_trimmed != NULL && icon_trimmed[0] != '\0') ? icon_trimmed : "📓";
     const gchar* display_name = (name_trimmed != NULL && name_trimmed[0] != '\0') ? name_trimmed : "Notebook";
-
-    gchar* markup = g_markup_printf_escaped("Preview: <span size=\"large\">%s</span>  <b>%s</b>", display_icon, display_name);
+    glyph_image_set(d->preview_icon, d->icon);
+    gchar* markup = g_markup_printf_escaped("<b>%s</b>", display_name);
     gtk_label_set_markup(GTK_LABEL(d->preview_label), markup);
     g_free(markup);
-    g_free(icon_trimmed);
     g_free(name_trimmed);
 }
 
@@ -706,11 +703,10 @@ static void on_notebook_field_changed(GtkEditable* editable, gpointer user_data)
     update_notebook_preview((NotebookDialogData*)user_data);
 }
 
-static void on_preset_icon_clicked(GtkButton* btn, gpointer user_data) {
+static void on_preset_icon_toggled(GtkToggleButton* btn, gpointer user_data) {
     NotebookDialogData* d = (NotebookDialogData*)user_data;
-    const gchar* icon = gtk_button_get_label(btn);
-    if (icon != NULL && d->icon_entry != NULL) {
-        gtk_editable_set_text(GTK_EDITABLE(d->icon_entry), icon);
+    if (gtk_toggle_button_get_active(btn)) {
+        d->icon = g_object_get_data(G_OBJECT(btn), "notebook-icon");
         update_notebook_preview(d);
     }
 }
@@ -757,55 +753,40 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
     gtk_box_append(GTK_BOX(box), name_entry);
     d.name_entry = name_entry;
 
-    /* 2. Choose or Enter Icon */
-    GtkWidget* icon_lbl = gtk_label_new("Notebook Icon (preset or custom emoji):");
+    /* 2. Icon: one toggle button per theme icon, 11 per row */
+    GtkWidget* icon_lbl = gtk_label_new("Notebook Icon:");
     gtk_widget_set_halign(icon_lbl, GTK_ALIGN_START);
     gtk_widget_set_margin_top(icon_lbl, 6);
     gtk_box_append(GTK_BOX(box), icon_lbl);
 
-    static const gchar* const PRESET_ICONS_ROW1[] = {
-        "📓", "💼", "💡", "📚", "🔬", "🎯", "🛠", "🎨", "⭐"
-    };
-    static const gchar* const PRESET_ICONS_ROW2[] = {
-        "🚀", "📝", "📁", "🏷️", "☕", "🔒", "🌍", "❤️", "📅"
-    };
-
-    GtkWidget* pbox1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
-    for (guint i = 0; i < G_N_ELEMENTS(PRESET_ICONS_ROW1); i++) {
-        GtkWidget* b = gtk_button_new_with_label(PRESET_ICONS_ROW1[i]);
-        gtk_widget_set_focusable(b, FALSE);
-        g_signal_connect(b, "clicked", G_CALLBACK(on_preset_icon_clicked), &d);
-        gtk_box_append(GTK_BOX(pbox1), b);
+    d.icon = notebook_icon_normalize(init_icon);
+    GtkWidget* grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 4);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 4);
+    GtkWidget* group = NULL;
+    GtkWidget* selected_btn = NULL;
+    for (gint i = 0; NOTEBOOK_ICONS[i] != NULL; i++) {
+        GtkWidget* b = gtk_toggle_button_new();
+        gtk_button_set_child(GTK_BUTTON(b), glyph_image_new(NOTEBOOK_ICONS[i]));
+        g_object_set_data(G_OBJECT(b), "notebook-icon", (gpointer)NOTEBOOK_ICONS[i]);
+        if (group != NULL) gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(b), GTK_TOGGLE_BUTTON(group));
+        else group = b;
+        if (g_strcmp0(NOTEBOOK_ICONS[i], d.icon) == 0) {
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(b), TRUE);
+            selected_btn = b;
+        }
+        g_signal_connect(b, "toggled", G_CALLBACK(on_preset_icon_toggled), &d);
+        gtk_grid_attach(GTK_GRID(grid), b, i % 11, i / 11, 1, 1);
     }
-    gtk_box_append(GTK_BOX(box), pbox1);
+    gtk_box_append(GTK_BOX(box), grid);
 
-    GtkWidget* pbox2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
-    for (guint i = 0; i < G_N_ELEMENTS(PRESET_ICONS_ROW2); i++) {
-        GtkWidget* b = gtk_button_new_with_label(PRESET_ICONS_ROW2[i]);
-        gtk_widget_set_focusable(b, FALSE);
-        g_signal_connect(b, "clicked", G_CALLBACK(on_preset_icon_clicked), &d);
-        gtk_box_append(GTK_BOX(pbox2), b);
-    }
-    gtk_box_append(GTK_BOX(box), pbox2);
-
-    /* Custom icon entry */
-    GtkWidget* icon_entry_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_widget_set_margin_top(icon_entry_row, 4);
-    GtkWidget* custom_lbl = gtk_label_new("Icon / Emoji:");
-    gtk_box_append(GTK_BOX(icon_entry_row), custom_lbl);
-
-    GtkWidget* icon_entry = gtk_entry_new();
-    gtk_editable_set_text(GTK_EDITABLE(icon_entry), (init_icon != NULL && init_icon[0] != '\0') ? init_icon : "📓");
-    gtk_entry_set_activates_default(GTK_ENTRY(icon_entry), TRUE);
-    gtk_widget_set_hexpand(icon_entry, TRUE);
-    gtk_box_append(GTK_BOX(icon_entry_row), icon_entry);
-    gtk_box_append(GTK_BOX(box), icon_entry_row);
-    d.icon_entry = icon_entry;
-
-    /* Live Preview */
-    GtkWidget* prev_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    /* Live Preview: the row as the explorer will show it */
+    GtkWidget* prev_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_set_margin_top(prev_box, 8);
     gtk_widget_set_margin_bottom(prev_box, 4);
+    gtk_box_append(GTK_BOX(prev_box), gtk_label_new("Preview:"));
+    d.preview_icon = glyph_image_new(d.icon);
+    gtk_box_append(GTK_BOX(prev_box), d.preview_icon);
     GtkWidget* prev_lbl = gtk_label_new("");
     gtk_widget_set_halign(prev_lbl, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(prev_box), prev_lbl);
@@ -813,15 +794,13 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
     d.preview_label = prev_lbl;
 
     g_signal_connect(name_entry, "changed", G_CALLBACK(on_notebook_field_changed), &d);
-    g_signal_connect(icon_entry, "changed", G_CALLBACK(on_notebook_field_changed), &d);
     g_signal_connect(dlg, "response", G_CALLBACK(on_notebook_dlg_response), &d);
 
     update_notebook_preview(&d);
 
     app_dialog_present(APP_DIALOG(dlg));
-    if (focus_icon) {
-        gtk_widget_grab_focus(icon_entry);
-        gtk_editable_select_region(GTK_EDITABLE(icon_entry), 0, -1);
+    if (focus_icon && selected_btn != NULL) {
+        gtk_widget_grab_focus(selected_btn);
     } else {
         gtk_widget_grab_focus(name_entry);
         if (init_name != NULL) {
@@ -835,22 +814,16 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
     gboolean success = FALSE;
     if (d.response == APP_RESPONSE_OK) {
         const gchar* raw_name = gtk_editable_get_text(GTK_EDITABLE(name_entry));
-        const gchar* raw_icon = gtk_editable_get_text(GTK_EDITABLE(icon_entry));
         gchar* trimmed_name = (raw_name != NULL) ? g_strstrip(g_strdup(raw_name)) : NULL;
-        gchar* trimmed_icon = (raw_icon != NULL) ? g_strstrip(g_strdup(raw_icon)) : NULL;
 
         if (trimmed_name != NULL && trimmed_name[0] != '\0' &&
             strchr(trimmed_name, '/') == NULL && strchr(trimmed_name, '\\') == NULL &&
             g_strcmp0(trimmed_name, ".") != 0 && g_strcmp0(trimmed_name, "..") != 0) {
             *out_name = trimmed_name;
-            *out_icon = (trimmed_icon != NULL && trimmed_icon[0] != '\0') ? trimmed_icon : g_strdup("📓");
-            if (trimmed_icon == NULL || trimmed_icon[0] == '\0') {
-                g_free(trimmed_icon);
-            }
+            *out_icon = g_strdup(d.icon);
             success = TRUE;
         } else {
             g_free(trimmed_name);
-            g_free(trimmed_icon);
         }
     }
 
@@ -906,14 +879,10 @@ static void notes_notice(AppData* app, const gchar* title, const gchar* message)
 /* Explorer Rows                                                             */
 /* ------------------------------------------------------------------------- */
 
-/* A notebook row shows the emoji its user chose, else the notebook glyph
- * ("📓" is the default icon, not a choice) */
+/* A notebook row shows the icon its user chose */
 static void apply_notebook_icon(ExplorerRow* row, const NotebookItem* nb) {
-    gboolean custom = nb->icon != NULL && nb->icon[0] != '\0' && g_strcmp0(nb->icon, "📓") != 0;
-    gchar* label = custom ? g_strdup_printf("%s %s", nb->icon, nb->name) : g_strdup(nb->name);
-    explorer_row_set_glyph(row, custom ? NULL : "notebook");
-    explorer_row_set_label(row, label);
-    g_free(label);
+    explorer_row_set_glyph(row, nb->icon);
+    explorer_row_set_label(row, nb->name);
 }
 
 /* A note shows the VS Code icon of its type's extension (.md, .org...) */
@@ -1308,7 +1277,7 @@ static NotebookItem* notes_ensure_notebook(NotesManager* mgr, const gchar* name)
     gchar* dir_path = g_build_filename(root, name, NULL);
     g_free(root);
     g_mkdir_with_parents(dir_path, 0755);
-    NotebookItem* nb = notebook_item_new(name, "📓", dir_path);
+    NotebookItem* nb = notebook_item_new(name, NOTEBOOK_ICON_DEFAULT, dir_path);
     mgr->notebooks = g_list_append(mgr->notebooks, nb);
     g_free(dir_path);
     return nb;
@@ -1393,7 +1362,7 @@ void notes_new_notebook(AppData* app) {
 
     gchar* name = NULL;
     gchar* icon = NULL;
-    if (!prompt_notebook_dialog(app->window, "New Notebook", "_Create", "Notebook", "📓", FALSE, &name, &icon)) {
+    if (!prompt_notebook_dialog(app->window, "New Notebook", "_Create", "Notebook", NOTEBOOK_ICON_DEFAULT, FALSE, &name, &icon)) {
         return;
     }
 
@@ -1692,7 +1661,7 @@ void notes_move_selected(AppData* app) {
         NotebookItem* nb = (NotebookItem*)l->data;
         if (nb != src_nb) {
             g_ptr_array_add(target_notebooks, nb);
-            g_ptr_array_add(labels, g_strdup_printf("%s %s", nb->icon ? nb->icon : "📓", nb->name));
+            g_ptr_array_add(labels, g_strdup(nb->name));
         }
     }
     g_ptr_array_add(labels, NULL);
@@ -1841,7 +1810,7 @@ void notes_restore_selected(AppData* app) {
         gchar* nb_path = g_build_filename(root, nb_name, NULL);
         g_free(root);
         g_mkdir_with_parents(nb_path, 0755);
-        dest_nb = notebook_item_new(nb_name, "📓", nb_path);
+        dest_nb = notebook_item_new(nb_name, NOTEBOOK_ICON_DEFAULT, nb_path);
         mgr->notebooks = g_list_append(mgr->notebooks, dest_nb);
         g_free(nb_path);
     }
@@ -2236,16 +2205,16 @@ static void notes_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble
         note_menu_separator(box);
         gboolean convertible = note != NULL && note->type != NOTE_TYPE_CANVAS;
         if (convertible && note->type != NOTE_TYPE_TEXT) {
-            note_menu_item(box, popover, app, "Convert to Plain Text (📄 .txt)", NULL, NOTE_ACTION_CONVERT_TEXT, TRUE);
+            note_menu_item(box, popover, app, "Convert to Plain Text (.txt)", NULL, NOTE_ACTION_CONVERT_TEXT, TRUE);
         }
         if (convertible && note->type != NOTE_TYPE_MARKDOWN) {
-            note_menu_item(box, popover, app, "Convert to Markdown (✨ .md)", NULL, NOTE_ACTION_CONVERT_MARKDOWN, TRUE);
+            note_menu_item(box, popover, app, "Convert to Markdown (.md)", NULL, NOTE_ACTION_CONVERT_MARKDOWN, TRUE);
         }
         if (note != NULL && note->type == NOTE_TYPE_CANVAS) {
-            note_menu_item(box, popover, app, "Export to Markdown (✨ .md)", NULL, NOTE_ACTION_EXPORT_MARKDOWN, TRUE);
+            note_menu_item(box, popover, app, "Export to Markdown (.md)", NULL, NOTE_ACTION_EXPORT_MARKDOWN, TRUE);
         }
         if (convertible && note->type != NOTE_TYPE_ORG) {
-            note_menu_item(box, popover, app, "Convert to Org-mode (🦄 .org)", NULL, NOTE_ACTION_CONVERT_ORG, TRUE);
+            note_menu_item(box, popover, app, "Convert to Org-mode (.org)", NULL, NOTE_ACTION_CONVERT_ORG, TRUE);
         }
         note_menu_separator(box);
         note_menu_item(box, popover, app, "Move Up", "Shift+K", NOTE_ACTION_MOVE_UP, TRUE);

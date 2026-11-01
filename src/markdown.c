@@ -5,6 +5,7 @@
 #include "palette.h"
 #include "text_tags.h"
 #include "image_utils.h"
+#include "icons.h"
 
 void ensure_markdown_tags(GtkTextBuffer* buffer) {
     GtkTextTagTable* tt = gtk_text_buffer_get_tag_table(buffer);
@@ -315,7 +316,8 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
                     g_free(img_path);
                     if (!loaded) {
                         GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-                        gchar* placeholder = g_strdup_printf("🖼 [%s]", alt);
+                        text_insert_glyph(buffer, iter, "image", NULL);
+                        gchar* placeholder = g_strdup_printf("[%s]", alt);
                         gtk_text_buffer_insert(buffer, iter, placeholder, -1);
                         g_free(placeholder);
                         apply_tag_mark(buffer, "md_image", m, iter);
@@ -669,14 +671,14 @@ static void highlight_code(GtkTextBuffer* buffer, gint start, const gchar* code,
 }
 #endif
 
-/* GitHub alert marker ("[!NOTE]"...) of a quote line: title, icon and tag; NULL if none */
-typedef struct { const gchar* marker; const gchar* title; const gchar* icon; const gchar* tag; } MdAlert;
+/* GitHub alert marker ("[!NOTE]"...) of a quote line: title, glyph (icons.h) and tag */
+typedef struct { const gchar* marker; const gchar* title; const gchar* glyph; const gchar* tag; } MdAlert;
 static const MdAlert MD_ALERTS[] = {
-    {"[!NOTE]", "Note", "ℹ️", "md_alert_note"},
-    {"[!TIP]", "Tip", "💡", "md_alert_tip"},
-    {"[!IMPORTANT]", "Important", "❗", "md_alert_important"},
-    {"[!WARNING]", "Warning", "⚠️", "md_alert_warning"},
-    {"[!CAUTION]", "Caution", "🛑", "md_alert_caution"},
+    {"[!NOTE]", "Note", "note", "md_alert_note"},
+    {"[!TIP]", "Tip", "tip", "md_alert_tip"},
+    {"[!IMPORTANT]", "Important", "important", "md_alert_important"},
+    {"[!WARNING]", "Warning", "warning", "md_alert_warning"},
+    {"[!CAUTION]", "Caution", "caution", "md_alert_caution"},
 };
 
 /* Text of a list item: its first line plus the following continuation lines
@@ -851,7 +853,8 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
                 alert_tag = alert->tag;
                 GtkTextMark* qm = gtk_text_buffer_create_mark(buffer, NULL, &iter, TRUE);
                 insert_tagged(buffer, &iter, "▌ ", alert_tag);
-                gchar* title = g_strdup_printf("%s  %s\n", alert->icon, alert->title);
+                text_insert_glyph(buffer, &iter, alert->glyph, alert_tag);
+                gchar* title = g_strdup_printf("%s\n", alert->title);
                 insert_tagged(buffer, &iter, title, alert_tag);
                 g_free(title);
                 apply_tag_mark(buffer, "md_quote", qm, &iter);

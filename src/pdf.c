@@ -1,6 +1,7 @@
 #include "pdf.h"
 #include "fonts.h"
 #include "text_tags.h"
+#include "icons.h"
 #include "text_style.h"
 #include "file_types.h"
 #include <sys/stat.h>
@@ -314,10 +315,11 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     /* Header title (document title or file name) */
     gchar* header_text;
     if (td->doc_title != NULL && td->doc_title[0] != '\0') {
-        header_text = g_strdup_printf("📕  %s (%s)\n", td->doc_title, td->name);
+        header_text = g_strdup_printf("%s (%s)\n", td->doc_title, td->name);
     } else {
-        header_text = g_strdup_printf("📕  %s\n", td->name);
+        header_text = g_strdup_printf("%s\n", td->name);
     }
+    text_insert_file_icon(app->buffer, &iter, td->name, FALSE, "pdf_header");
     gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, header_text, -1, "pdf_header", NULL);
     g_free(header_text);
 

@@ -46,7 +46,7 @@ hidden.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ ~ › projects › 📂 site   [1][2][+]  Layouts Themes │ Explorer Preview │
+│ ~ › projects › site      [1][2][+]  Layouts Themes │ Explorer Preview │
 │                                                    │ Terminal  Help   │  ← top bar
 ├───────────────┬──────────────────────────────────────────────────────┤
 │ Explorer      │ Preview │ main.c ● │ Git Commits                     │

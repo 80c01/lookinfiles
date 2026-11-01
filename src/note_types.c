@@ -5,16 +5,15 @@
 typedef struct {
     const gchar* str;
     const gchar* ext;
-    const gchar* icon;
     const gchar* name;
     const gchar* badge;
 } NoteTypeInfo;
 
 static const NoteTypeInfo TYPES[NOTE_TYPE_COUNT] = {
-    [NOTE_TYPE_TEXT] = {"text", ".txt", "📄", "Plain Text", ""},
-    [NOTE_TYPE_MARKDOWN] = {"markdown", ".md", "✨", "Markdown", "md"},
-    [NOTE_TYPE_ORG] = {"org", ".org", "🦄", "Org-mode", "org"},
-    [NOTE_TYPE_CANVAS] = {"canvas", ".canvas", "🎨", "Canvas", "canvas"},
+    [NOTE_TYPE_TEXT] = {"text", ".txt", "Plain Text", ""},
+    [NOTE_TYPE_MARKDOWN] = {"markdown", ".md", "Markdown", "md"},
+    [NOTE_TYPE_ORG] = {"org", ".org", "Org-mode", "org"},
+    [NOTE_TYPE_CANVAS] = {"canvas", ".canvas", "Canvas", "canvas"},
 };
 
 static const NoteTypeInfo* info(NoteType type) {
@@ -73,10 +72,6 @@ NoteType note_type_from_str(const gchar* str, const gchar* filename) {
 
 const gchar* note_type_ext(NoteType type) {
     return info(type)->ext;
-}
-
-const gchar* note_type_icon(NoteType type) {
-    return info(type)->icon;
 }
 
 const gchar* note_type_name(NoteType type) {

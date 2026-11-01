@@ -3,6 +3,7 @@
 #include "image_preview.h"
 #include "fonts.h"
 #include "text_tags.h"
+#include "icons.h"
 
 #include <glib/gstdio.h>
 #include <math.h>
@@ -351,7 +352,8 @@ static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
 
     gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, "\n", -1, "img_center", NULL);
 
-    gchar* title = g_strdup_printf("🖼️  %s\n", td->name);
+    text_insert_file_icon(app->buffer, &iter, td->name, FALSE, "img_header");
+    gchar* title = g_strdup_printf("%s\n", td->name);
     gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, title, -1, "img_header", NULL);
     g_free(title);
 

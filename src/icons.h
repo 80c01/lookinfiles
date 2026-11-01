@@ -20,10 +20,18 @@ GtkWidget* icon_label_new(const gchar* icon_name, const gchar* text);
 GtkWidget* file_type_image_new(void);
 void file_type_image_set(GtkWidget* image, const gchar* name, gboolean is_dir);
 
-/* Fixed glyph in the same style, for explorer rows that are not files:
+/* Fixed glyph in the same style, for what is not a file:
  * "folder", "notebook", "trash", "remote", "remote-connected", "link" (URL),
- * "missing" (target not found), "unknown" (target not checked yet) */
+ * "missing" (target not found), "unknown" (not checked yet), "home", "root",
+ * "canvas", "image", "note", "tip", "important", "warning", "caution", "author",
+ * "description", "attachment"; or the name of a bundled Adwaita icon
+ * ("starred", "emoji-food"...: notebook icons), drawn grey */
 void glyph_image_set(GtkWidget* image, const gchar* glyph);
+GtkWidget* glyph_image_new(const gchar* glyph);
+/* Glyph + text widget (tab headers, titles) */
+GtkWidget* glyph_label_new(const gchar* glyph, const gchar* text);
+/* TRUE when glyph is a name glyph_image_set() knows */
+gboolean glyph_exists(const gchar* glyph);
 
 /* Same icon in an icon + text widget for notebook tab headers; the label is
  * the box's last child */
@@ -32,5 +40,12 @@ GtkWidget* file_type_label_new(const gchar* name, const gchar* text);
 /* Same icon as a 16 px paintable in the palette's current colour, for icons
  * inside text (gtk_text_buffer_insert_paintable()). New reference. */
 GdkPaintable* file_type_paintable(const gchar* name, gboolean is_dir);
+GdkPaintable* glyph_paintable(const gchar* glyph);
+
+/* Insert the glyph / file-type icon of name at it, then a space, both with
+ * the text tag tag (NULL for none): icons in preview titles */
+void text_insert_glyph(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* glyph, const gchar* tag);
+void text_insert_file_icon(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* name,
+                           gboolean is_dir, const gchar* tag);
 
 #endif /* ICONS_H */

@@ -59,11 +59,14 @@ Check these before adding or changing an action, a tooltip or a dialog:
   in other editors. Files show the VS Code (Seti)
   file-type icons wherever they are listed (`file_type_image_set()`, or
   `file_type_paintable()` inside text), coloured by the `icon_*` palette
-  roles. Every explorer view looks the same: the other rows get a glyph in
-  the same style (`glyph_image_set()`: folder, notebook, trash, server, URL
-  link, missing target), set with `explorer_row_set_glyph()`; files and
-  notes set `explorer_row_set_icon_name()`. Labels hold the bare name. The
-  only emoji left in the tree is the icon a user chose for a notebook. The CSS colours `label`
+  roles. What is not a file gets a glyph in the same style
+  (`glyph_image_set()`, `glyph_label_new()`, `text_insert_glyph()` inside
+  text: folder, notebook, trash, server, link, alerts...); explorer rows set
+  `explorer_row_set_glyph()` or `explorer_row_set_icon_name()` and keep the
+  bare name as label; notebook icons are glyph names (`notebook_icons.h`).
+  **No emoji anywhere**: where an icon adds nothing (summaries, menus,
+  messages), the text stands alone. Only typographic symbols of rendered
+  content stay text (checkboxes ☑ ☐, bullets, the branch sign ⎇). The CSS colours `label`
   and `image` nodes together (symbolic icons follow the text colour).
   The icons are bundled in the binary (`icons/`, compiled as a GResource by
   the Makefile, licence in `icons/COPYING`) so they render the same with any

@@ -34,8 +34,8 @@ by default). **Save & Connect** connects right away.
 | `d` or `Delete` | Delete it from the list |
 | `F5` | Read `~/.ssh/config` again |
 
-While you browse a connected machine, the breadcrumbs start with 🌐 and the
-machine's name, and the **Terminal** button of the top bar opens an SSH
+While you browse a connected machine, the breadcrumbs start with a server icon and
+the machine's name, and the **Terminal** button of the top bar opens an SSH
 terminal to it instead of a local shell.
 
 Machines are mounted under `~/.cache/lookinfiles/remotes/`. Machines added

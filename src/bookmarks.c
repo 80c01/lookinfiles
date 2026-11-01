@@ -384,7 +384,7 @@ void bookmarks_append_rows(ExplorerRow* root, AppData* app) {
         return;
     }
     if (app->bookmarks->children == NULL) {
-        bm_append_placeholder(root, "🔖 No bookmarks yet — press a or Ctrl+D to add one");
+        bm_append_placeholder(root, "No bookmarks yet — press a or Ctrl+D to add one");
         return;
     }
     bm_append_children(app, root, app->bookmarks);
@@ -582,7 +582,7 @@ static void bm_collect_folders(GNode* node, gint depth, GNode* exclude,
         for (gint i = 0; i < depth; i++) {
             g_string_append(s, "    ");
         }
-        g_string_append_printf(s, "📁 %s", bm_item(c)->name);
+        g_string_append(s, bm_item(c)->name);
         g_ptr_array_add(labels, g_string_free(s, FALSE));
         g_ptr_array_add(nodes, c);
         bm_collect_folders(c, depth + 1, exclude, nodes, labels);
@@ -675,7 +675,7 @@ static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok
     GPtrArray* nodes = g_ptr_array_new();
     GPtrArray* labels = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(nodes, app->bookmarks);
-    g_ptr_array_add(labels, g_strdup("🔖 Bookmarks (top level)"));
+    g_ptr_array_add(labels, g_strdup("Bookmarks (top level)"));
     bm_collect_folders(app->bookmarks, 1, exclude, nodes, labels);
     guint selected = 0;
     for (guint i = 0; i < nodes->len; i++) {
