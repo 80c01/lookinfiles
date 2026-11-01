@@ -1,6 +1,7 @@
 /* The Help tab: the user guide in a page of the preview notebook (see help_guide.h) */
 #include "help_guide.h"
 #include "app_events.h"
+#include "browser.h"
 #include "focus_route.h"
 #include "help.h"
 #include "icons.h"
@@ -185,12 +186,9 @@ static void on_link(GtkTextView* view, const gchar* url, gpointer data) {
     case USER_GUIDE_LINK_PAGE:
         go_to(hg, page, anchor, 0, TRUE);
         break;
-    case USER_GUIDE_LINK_WEB: {
-        GtkUriLauncher* launcher = gtk_uri_launcher_new(url);
-        gtk_uri_launcher_launch(launcher, GTK_WINDOW(hg->app->window), NULL, NULL, NULL);
-        g_object_unref(launcher);
+    case USER_GUIDE_LINK_WEB:
+        browser_open(hg->app, url); /* a browser tab, or the default browser */
         break;
-    }
     default: {
         gchar* msg = g_strdup_printf("Not in the built-in guide: %s", page != NULL ? page : url);
         app_notice(hg->app, msg, FALSE);

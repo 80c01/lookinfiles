@@ -248,6 +248,8 @@ key Return;             shot help_guide_link_followed  # the first link of the c
 key shift+h;            shot help_guide_back
 key Page_Down;          shot help_guide_scrolled
 key ctrl+w;             shot help_guide_closed
+key ctrl+shift+b; sleep 1; shot browser_tab_empty    # address bar focused (or a notice without WebKit)
+key ctrl+w;             shot browser_tab_closed
 key End;                shot G_last_row
 key Up;                 shot select_previous_row
 key Down Down;          shot select_next_rows

@@ -15,6 +15,7 @@
 #include "palette.h"
 #include "project_search.h"
 #include "help_guide.h"
+#include "browser.h"
 
 #define WS_CELL_W   32
 #define WS_ADD_W    22
@@ -434,6 +435,7 @@ void workspace_switch(AppData* app, gint idx) {
             app->workspaces[app->current_ws].editor_panel = panel;
             project_search_workspace_hidden(app, &app->workspaces[app->current_ws]);
             help_guide_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            browser_workspace_hidden(app, &app->workspaces[app->current_ws]);
 #ifdef HAVE_VTE
             terminal_workspace_hidden(app, &app->workspaces[app->current_ws]);
 #endif
@@ -457,6 +459,7 @@ void workspace_switch(AppData* app, gint idx) {
         editor_attach_tabs(app, ws->editors, panel);
         project_search_workspace_shown(app, ws);
         help_guide_workspace_shown(app, ws);
+        browser_workspace_shown(app, ws);
 #ifdef HAVE_VTE
         terminal_workspace_shown(app, ws);
 #endif
@@ -717,6 +720,7 @@ void workspace_remove(AppData* app, gint idx) {
     nav_history_workspace_removed(rm);
     project_search_workspace_removed(app, rm);
     help_guide_workspace_removed(app, rm);
+    browser_workspace_removed(app, rm);
 #ifdef HAVE_VTE
     terminal_workspace_removed(app, rm);
     if (app->term_stack != NULL && rm->term_box != NULL) {

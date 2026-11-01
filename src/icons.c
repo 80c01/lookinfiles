@@ -34,6 +34,7 @@ static const IconFallback FALLBACKS[] = {
     {"applications-system", {"emblem-system", "system-run", NULL}},
     {"go-previous", {"pan-start", "pan-up", NULL}},
     {"go-home", {"user-home", "folder", NULL}},
+    {"process-stop", {"window-close", NULL}},
     {"input-keyboard", {"preferences-desktop-keyboard", "text-x-generic", NULL}},
 };
 

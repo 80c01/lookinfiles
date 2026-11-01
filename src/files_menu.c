@@ -3,6 +3,7 @@
 #include "files_menu.h"
 #include "app_events.h"
 #include "bookmarks.h"
+#include "browser.h"
 #include "editor.h"
 #include "file_list.h"
 #include "file_moves.h"
@@ -16,6 +17,7 @@ typedef enum {
     FM_OPEN,
     FM_OPEN_SIDE,
     FM_OPEN_DEFAULT_APP,
+    FM_OPEN_BROWSER,
     FM_RENAME,
     FM_TRASH,
     FM_COPY_PATH,
@@ -67,6 +69,12 @@ static void open_side(AppData* app, const gchar* path) {
     g_free(name);
 }
 
+static void open_browser(AppData* app, const gchar* path) {
+    gchar* uri = g_filename_to_uri(path, NULL, NULL);
+    if (uri != NULL) browser_open(app, uri);
+    g_free(uri);
+}
+
 static gboolean run_action(gpointer data) {
     FilesMenuRun* r = (FilesMenuRun*)data;
     AppData* app = r->app;
@@ -74,6 +82,7 @@ static gboolean run_action(gpointer data) {
     case FM_OPEN:             activate_selected_entry(app); break;
     case FM_OPEN_SIDE:        open_side(app, r->path); break;
     case FM_OPEN_DEFAULT_APP: open_default_app(app, r->path); break;
+    case FM_OPEN_BROWSER:     open_browser(app, r->path); break;
     case FM_RENAME:           rename_selected_in_tree(app); break;
     case FM_TRASH:            trash_selected_in_tree(app); break;
     case FM_COPY_PATH:        copy_path(app, r->path); break;
@@ -158,6 +167,9 @@ static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, Ex
             menu_item(box, popover, app, "Open in Side Panel", side_panel_key(app), FM_OPEN_SIDE);
         } else {
             menu_item(box, popover, app, "Open With Default App", NULL, FM_OPEN_DEFAULT_APP);
+        }
+        if (browser_available() && is_html_file(row->name)) {
+            menu_item(box, popover, app, "Open in Browser Tab", NULL, FM_OPEN_BROWSER);
         }
     } else {
         menu_item(box, popover, app, "Open Terminal Here", NULL, FM_TERMINAL);

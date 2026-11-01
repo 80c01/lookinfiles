@@ -31,6 +31,7 @@ check gtksourceview-5 -    "Syntax highlighting"    libgtksourceview-5-dev  opti
 check poppler-glib    -    "PDF preview"            libpoppler-glib-dev     optional
 check sqlite3         -    "Database preview"       libsqlite3-dev          optional
 check libarchive      -    "7z, RAR, xz, zstd, ISO" libarchive-dev          optional
+check webkitgtk-6.0   -    "Browser tabs"           libwebkitgtk-6.0-dev    optional
 echo "Run time (not needed to build):"
 for tool in git sshfs; do
     if command -v "$tool" >/dev/null 2>&1; then

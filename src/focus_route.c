@@ -7,6 +7,7 @@
 #include <string.h>
 
 #define NAV_MARK "lookin-nav-keys"
+#define FOCUS_MARK "lookin-focus-target"
 #define EDITOR_TABS_GROUP "editor-tabs"
 #define TERM_TABS_GROUP "term-tabs" /* terminal.h */
 
@@ -28,6 +29,12 @@ static gboolean is_terminal_notebook(GtkWidget* w) {
 void focus_route_mark_nav(GtkWidget* widget) {
     if (widget != NULL) {
         g_object_set_data(G_OBJECT(widget), NAV_MARK, GINT_TO_POINTER(1));
+    }
+}
+
+void focus_route_mark_focus(GtkWidget* widget) {
+    if (widget != NULL) {
+        g_object_set_data(G_OBJECT(widget), FOCUS_MARK, GINT_TO_POINTER(1));
     }
 }
 
@@ -105,9 +112,11 @@ void focus_route_get(AppData* app, FocusInfo* info) {
     info->nav_keys = FALSE; /* a marked widget outside the panels above */
 }
 
-/* First widget marked with focus_route_mark_nav() under w */
+/* First widget marked with focus_route_mark_nav() or focus_route_mark_focus() under w */
 static GtkWidget* find_marked(GtkWidget* w) {
-    if (g_object_get_data(G_OBJECT(w), NAV_MARK) != NULL) return w;
+    if (g_object_get_data(G_OBJECT(w), NAV_MARK) != NULL || g_object_get_data(G_OBJECT(w), FOCUS_MARK) != NULL) {
+        return w;
+    }
     if (GTK_IS_LIST_VIEW(w) || GTK_IS_COLUMN_VIEW(w) || GTK_IS_TEXT_VIEW(w)) return NULL;
     for (GtkWidget* c = gtk_widget_get_first_child(w); c != NULL; c = gtk_widget_get_next_sibling(c)) {
         GtkWidget* found = find_marked(c);

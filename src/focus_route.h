@@ -43,6 +43,10 @@ gboolean focus_route_step_tab(AppData* app, GtkNotebook* nb, gint step, gboolean
 /* The widget takes the navigation keys of the global mode (FocusInfo.nav_keys) */
 void focus_route_mark_nav(GtkWidget* widget);
 
+/* The widget gets the focus when its page is focused, without taking the
+ * navigation keys (a web page) */
+void focus_route_mark_focus(GtkWidget* widget);
+
 /* The focus moved (notify::focus-widget): drop the explorer / viewer prefix
  * key, and move the focus from a notebook's tab bar into its current page */
 void focus_route_focus_changed(AppData* app);

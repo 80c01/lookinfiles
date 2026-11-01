@@ -136,6 +136,7 @@ typedef struct {
     gpointer dir_history;          /* folders shown, for back / forward (private to nav_history.c) */
     gpointer search_state;         /* last search in files and its Search tab (project_search.c) */
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
+    GPtrArray* browser_pages;      /* its browser tabs while another workspace is shown (owned refs, browser.c) */
 #ifdef HAVE_VTE
     GtkWidget* term_box;
     GtkWidget* last_focused_vte;

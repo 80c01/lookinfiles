@@ -161,6 +161,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   with a lock) that re-tags only changed files and is cached in
   `app_cache_dir()/tags/`; `code_index_find()` uses it through
   `CodeQuery.tags`, open buffers are still scanned.
+- `web_address` — what is typed in the address bar of a browser tab turned
+  into a URI (`web_address_to_uri()`: URIs as is, paths as file URIs, hosts
+  with https, or http for localhost, other words searched), and
+  `web_address_is_web()` (http / https: the bookmarks a browser tab opens).
 - `fuzzy_match` — fuzzy scoring of paths for quick open (file name, word
   starts and consecutive characters first) and the matched positions.
 - `path_globs` — comma-separated path patterns matched like `.gitignore`
@@ -265,7 +269,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   a tab moves the focus from the notebook into the page
   (`focus_route_focus_changed()`, which also drops the explorer / viewer
   prefix key). Widgets taking the global mode keys are marked with
-  `focus_route_mark_nav()`; `focus_route_attach_list()` gives a list page
+  `focus_route_mark_nav()`, the one focused in a page without them (a web
+  page) with `focus_route_mark_focus()`; `focus_route_attach_list()` gives a list page
   (Git Commits, References) those keys.
 - `text_style` — Dark+ GtkSourceView scheme, monospace, panel background,
   syntax language (`is_code_file()`, `apply_viewer_language()`).
@@ -326,8 +331,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   the view actions, the same in every mode.
 - `file_actions` — new file / new folder, rename and trash prompts.
 - `files_menu` — right-click menu of the files view (the key actions,
-  plus Copy Path, Open With Default App through `GtkFileLauncher`, and
-  Open Terminal Here through `terminal_open()`).
+  plus Copy Path, Open With Default App through `GtkFileLauncher`, Open in
+  Browser Tab for HTML files through `browser_open()`, and Open Terminal
+  Here through `terminal_open()`).
 - `file_moves` — renames and moves to the trash with editor tabs and
   expansion following, remembered for one undo step (`u`, explorer bar Undo
   after the `app_notice()` message).
@@ -446,6 +452,17 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `term_snapshot_take()` / `_restore()` put back the exact panes of the
   panel after a layout preview; `terminal_detach_tab()` /
   `terminal_attach_tab()` keep a terminal running out of any notebook.
+- `browser` — browser tabs in the preview notebook (WebKitGTK 6.0, optional:
+  `HAVE_WEBKIT`; without it `browser_open()` hands the URI to the default
+  browser): back / forward / reload, address bar (`web_address`), the
+  `WebKitWebView`. Opened by `Ctrl+Shift+B` (`ui`), the Help tab's web links,
+  web bookmarks and the files menu (HTML files). Everything stays in the
+  window: a new window (`create`) is a new tab after its opener, `close`
+  closes the tab; print, file chooser and fullscreen are refused,
+  permissions denied; links to other schemes and files the page cannot show
+  go to the default application (`GtkUriLauncher`). Per workspace
+  (`VirtualLayout.browser_pages`): taken out of the notebook on a switch
+  (`browser_workspace_hidden()` / `_shown()`). Not saved in the session.
 - `search` — the search bars of the explorer and of the preview, one at the
   bottom of each panel (`AppSearchBar`, `search_bar_new()`), opened and
   driven by the keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s`
@@ -470,7 +487,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   the Git, result and Canvas pages): a `user_guide` page rendered by `markdown`,
   scrolled with the navigation keys of the global mode; links followed through
   `markdown_link` (`user_guide_resolve_link()`: guide pages and anchors, web pages
-  with `GtkUriLauncher`), Tab / Enter, back / forward history (Shift+H / Shift+L,
+  in a browser tab, `browser_open()`), Tab / Enter, back / forward history (Shift+H / Shift+L,
   mouse buttons), a minimap (`minimap_new_for_view()`). F1 (`ui`) and a click on the Help button (`topbar`) open it,
   its close button, a middle click or Ctrl+W close it.
   Per workspace (`VirtualLayout.help_page`): the page, with its history and

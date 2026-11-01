@@ -1,6 +1,7 @@
 #include "ui.h"
 #include "canvas_view.h"
 #include "help_guide.h"
+#include "browser.h"
 #include "dialog.h"
 #include "layout_switcher.h"
 #include "preferences.h"
@@ -142,7 +143,7 @@ void close_shown_tab(AppData* app) {
     FocusInfo info;
     focus_route_get(app, &info);
     if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL) &&
-        (canvas_view_close_shown(app) || help_guide_close_shown(app))) {
+        (canvas_view_close_shown(app) || help_guide_close_shown(app) || browser_close_shown(app))) {
         return;
     }
     EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);
@@ -321,6 +322,14 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     /* Emacs and Org-mode tabs keep C-e (end of line) and C-r (search backward) */
     gboolean is_emacs_tab = is_modal_tab && (cur_tab->mode == EDITOR_MODE_EMACS ||
                                              cur_tab->mode == EDITOR_MODE_ORGMODE);
+
+    /* Ctrl+Shift+B: a new browser tab (Emacs tabs keep it: C-S-b selects
+     * backward) */
+    if (!is_emacs_tab && (state & GDK_CONTROL_MASK) && (state & GDK_SHIFT_MASK) && !(state & GDK_ALT_MASK) &&
+        (keyval == GDK_KEY_b || keyval == GDK_KEY_B)) {
+        browser_open(app, NULL);
+        return TRUE;
+    }
 
     /* Ctrl+P: quick open (Vim and Emacs tabs keep Ctrl+P; Emacs C-p in the
      * explorer is a navigation key, handled above) */

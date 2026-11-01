@@ -67,6 +67,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Ctrl+Shift+T` | Open a terminal in a new pane below the focused one |
 | `Ctrl+PgDn` / `Ctrl+PgUp` | In a terminal: next / previous tab of its pane (in the editor area, editor tabs included) |
 | `Ctrl+Shift+L` | Stack the terminal under the viewer, or put it back beside it |
+| `Ctrl+Shift+B` | Open an empty browser tab in the preview panel, the focus in its address bar (needs WebKitGTK 6.0; Emacs editor tabs keep `C-S-b`); see [Browser tabs](#browser-tabs) |
 | `Ctrl+A` | Switch between the files and bookmarks views |
 | `Ctrl+U` | Switch between the files and notes views |
 | `Ctrl+Shift+R` | Switch between the files and remote machines views |
@@ -99,13 +100,13 @@ count) is dropped when the focus moves to another panel or tab.
 | `Ctrl+D` | Bookmark the selected entry or the current directory |
 | `m` | Toggle the rendered / raw preview of the selected file |
 | `+` / `-` / `0` | Zoom the previewed image or PDF in / out / back to the fitted size |
-| Right click | Context menu. Files view: open, open in the side panel (text files) or with the default application (other files), open a terminal in a folder, rename, move to the trash, copy the path, bookmark, undo; on an empty area: new file, new folder, terminal |
+| Right click | Context menu. Files view: open, open in the side panel (text files) or with the default application (other files), in a browser tab (HTML files), open a terminal in a folder, rename, move to the trash, copy the path, bookmark, undo; on an empty area: new file, new folder, terminal |
 
 **Bookmarks view**
 
 | Key | Action |
 |---|---|
-| `Enter` / `Right` (Vim: also `l`; Emacs: `C-f`) | Open the bookmark (directory, file or URL) / expand the folder |
+| `Enter` / `Right` (Vim: also `l`; Emacs: `C-f`) | Open the bookmark (directory, file or URL: web pages in a browser tab when built with WebKitGTK) / expand the folder |
 | `a` / `Shift+A` | Add a bookmark / a folder (inside the selected folder) |
 | `F2` / `r` / `e` | Edit name, location and folder (a folder: name, icon and parent) |
 | `d` / `Delete` | Delete the selected bookmark or folder |
@@ -185,6 +186,25 @@ automatically; one canvas at a time)
 | `Space` / `Enter` | Org-mode: toggle the checkbox `[ ]` ↔ `[X]` (parents and `[n/m]` cookies follow) |
 | Click | Org-mode: fold a heading, cycle a TODO, toggle a checkbox, open a link |
 | `Esc` | Close the search bar (at the bottom of the preview) |
+
+### Browser tabs
+
+Web pages shown in tabs of the preview panel (built with WebKitGTK 6.0).
+`Ctrl+Shift+B` opens an empty one; links of the **Help** tab, web bookmarks
+and **Open in Browser Tab** (right click on an HTML file) open one with the
+page. A link or popup opened in a new window becomes a new tab next to it;
+links the tab cannot show (`mailto:`, downloads) go to the default
+application. The page keeps every other key.
+
+| Key | Action |
+|---|---|
+| `Ctrl+L` | Go to the address bar: type an address (`example.org`), a file path (`~/site/index.html`) or words to search, then `Enter` |
+| `Esc` | In the address bar: back to the page's address and into the page; in the page: stop loading |
+| `F5` | Reload the page (also the reload button, which stops a page loading) |
+| Mouse back / forward buttons | Back / forward in the pages visited (also the arrows of the tab) |
+| `Ctrl+Tab` / `Ctrl+Shift+Tab`, `Ctrl+PgDn` / `Ctrl+PgUp` | Next / previous tab of the preview panel |
+| `F6` / `Shift+F6` | Focus the next / previous panel |
+| `Ctrl+W` | Close the tab (also its cross, or a middle click on the tab) |
 
 ## Editor tabs
 

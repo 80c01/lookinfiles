@@ -8,6 +8,8 @@
 #include "bookmark_icons.h"
 #include "notebook_icons.h"
 #include "bookmark_dialog.h"
+#include "browser.h"
+#include "web_address.h"
 
 /* One node of the bookmark tree (GNode data). The root node has NULL data. */
 typedef struct {
@@ -791,6 +793,11 @@ void bookmarks_activate_selected(AppData* app) {
         return;
     }
 
+    /* Web pages in a browser tab when there are browser tabs */
+    if (browser_available() && web_address_is_web(it->target)) {
+        browser_open(app, it->target);
+        return;
+    }
     if (bookmark_target_is_uri(it->target)) {
         GError* err = NULL;
         if (!g_app_info_launch_default_for_uri(it->target, NULL, &err)) {

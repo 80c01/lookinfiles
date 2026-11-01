@@ -94,6 +94,7 @@ notebook_icons:
 canvas_doc:
 user_guide:
 fuzzy_match:
+web_address:
 path_globs:
 text_search:code_index
 session_store:app_paths,layout_store
