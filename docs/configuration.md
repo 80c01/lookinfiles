@@ -39,7 +39,7 @@ options `-e` and `--size` win over them:
 mode=vim
 line-numbers=true
 wrap=false
-color-column=81    # 0: no line
+color-column=81    # default; 0: no line
 
 [Window]
 width=1600

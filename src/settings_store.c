@@ -14,7 +14,7 @@ void settings_defaults(Settings* s) {
     s->editor = SETTINGS_EDITOR_NOTEPAD;
     s->line_numbers = FALSE;
     s->wrap = FALSE;
-    s->color_column = 0;
+    s->color_column = 81;
     s->width = 1000;
     s->height = 600;
 }

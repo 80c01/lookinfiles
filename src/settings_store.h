@@ -8,7 +8,7 @@
  *   mode=vim             # notepad, vim or emacs: mode of new editor tabs
  *   line-numbers=true    # new editor tabs show line numbers
  *   wrap=false           # new editor tabs wrap long lines
- *   color-column=0       # vertical line at this column in editors (0: none)
+ *   color-column=81      # vertical line at this column in editors (0: none)
  *   [Window]
  *   width=1000           # window size at startup
  *   height=600
