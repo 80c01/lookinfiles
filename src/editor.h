@@ -23,7 +23,9 @@ enum {
     TAB_ACTION_MODE_EMACS,
     TAB_ACTION_MODE_VIM,
     TAB_ACTION_LINE_NUMBERS,
-    TAB_ACTION_WRAP
+    TAB_ACTION_WRAP,
+    TAB_ACTION_SPLIT_RIGHT,
+    TAB_ACTION_SPLIT_DOWN
 };
 
 EditorTab* editor_current_tab(AppData* app);
@@ -64,6 +66,10 @@ void editor_toggle_dedicated(AppData* app);
 void editor_set_dedicated(AppData* app, gboolean dedicated);
 void editor_move_tab_dedicated(AppData* app, EditorTab* tab);
 void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection dir);
+/* Show tab's file in a second view on the dir side of its notebook (moved to
+ * the dedicated panel first when in the preview notebook). The views share
+ * the buffer: text, cursor, undo. tab NULL: the current editor tab. */
+void editor_split_tab(AppData* app, EditorTab* tab, EditorMoveDirection dir);
 /* Accept editor tabs dragged with the mouse onto nb (an editor notebook or
  * the preview notebook): on its tab bar, its page, or an edge to split it */
 void editor_notebook_enable_tab_drop(AppData* app, GtkWidget* nb);

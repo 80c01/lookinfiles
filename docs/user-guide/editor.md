@@ -52,6 +52,12 @@ back.
 You can also drag a tab: drop it on another tab bar to move it there, or
 near the edge of an editor to split that side.
 
+To see two places of one file at once, right-click its tab title and pick
+**Split Right** or **Split Down**: a second tab shows the same file beside
+or below. Both show the same text, as you type, and share the cursor and
+the undo history; closing one keeps the other open, and the unsaved
+changes with it.
+
 ## Choosing the mode of a tab
 
 A new tab takes the **global mode** shown in the status bar. To change the

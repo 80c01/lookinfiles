@@ -701,6 +701,13 @@ static void on_view_destroy(GtkWidget* view, gpointer data) {
     g_signal_handlers_disconnect_by_data(h->tab->buffer, h);
 }
 
+void code_help_detach(EditorTab* tab) {
+    CodeHelp* h = help_of(tab);
+    if (h == NULL) return;
+    g_signal_handlers_disconnect_by_func(tab->view, (gpointer)on_view_destroy, h);
+    on_view_destroy(tab->view, h);
+}
+
 static void help_free(gpointer p) {
     CodeHelp* h = p;
     g_free(h->word);

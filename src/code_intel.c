@@ -495,18 +495,29 @@ static void count_diagnostics(AppData* app, EditorTab* tab, guint* errors, guint
     }
 }
 
+/* Kept on the buffer, which the views of a split file share: the tab is
+ * looked up, any view of the buffer will do */
 typedef struct {
     AppData* app;
-    EditorTab* tab;
+    GtkTextBuffer* buffer;
     guint timer;
 } SyncState;
+
+static EditorTab* sync_tab(SyncState* ss) {
+    for (GList* l = ss->app->editors; l != NULL; l = l->next) {
+        EditorTab* t = l->data;
+        if (t != NULL && t->buffer == ss->buffer) return t;
+    }
+    return NULL;
+}
 
 static gboolean on_sync_timer(gpointer data) {
     SyncState* ss = data;
     ss->timer = 0;
-    if (!tab_alive(ss->app, ss->tab)) return G_SOURCE_REMOVE;
-    Server* s = server_for(ss->app, ss->tab, TRUE);
-    if (s != NULL) sync_documents(ss->app, s, ss->tab);
+    EditorTab* tab = sync_tab(ss);
+    if (tab == NULL) return G_SOURCE_REMOVE;
+    Server* s = server_for(ss->app, tab, TRUE);
+    if (s != NULL) sync_documents(ss->app, s, tab);
     return G_SOURCE_REMOVE;
 }
 
@@ -519,7 +530,8 @@ static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
     SyncState* ss = data;
     /* Only once a server runs for the tab: edits never start one */
-    if (server_for(ss->app, ss->tab, FALSE) != NULL) schedule_sync(ss, SYNC_DELAY_MS);
+    EditorTab* tab = sync_tab(ss);
+    if (tab != NULL && server_for(ss->app, tab, FALSE) != NULL) schedule_sync(ss, SYNC_DELAY_MS);
 }
 
 static void sync_state_free(gpointer p) {
@@ -533,7 +545,7 @@ void code_intel_attach(AppData* app, EditorTab* tab) {
     if (g_object_get_data(G_OBJECT(tab->buffer), SYNC_TIMER_KEY) != NULL) return;
     SyncState* ss = g_new0(SyncState, 1);
     ss->app = app;
-    ss->tab = tab;
+    ss->buffer = tab->buffer;
     g_object_set_data_full(G_OBJECT(tab->buffer), SYNC_TIMER_KEY, ss, sync_state_free);
     g_signal_connect(tab->buffer, "changed", G_CALLBACK(on_buffer_changed), ss);
     /* A source file with a server: start it now, its diagnostics follow */

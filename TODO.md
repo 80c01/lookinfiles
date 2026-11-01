@@ -4,7 +4,7 @@
 
 ### Must do
 
-- [ ] split view: show the same file in two views side by side or stacked, sharing one buffer (today a tab can only be moved to another panel, or another file opened there)
+- [ ] split view: a cursor and selection of its own in each view of a split file (today both views share the buffer's cursor), and the Vim engine of the focused view only reacting to edits
 - [ ] emacs: `C-x 0` / `C-x 1` / `C-x 2` / `C-x 3` to close the view, keep only it, or split it below / to the right (needs the split view)
 - [ ] OS support: Windows/macOS, maybe using the meson build system (VTE has no Windows port: the terminal would become optional)
 

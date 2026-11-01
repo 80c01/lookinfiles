@@ -10,7 +10,11 @@ static gchar** tab_paths(GList* editors) {
     GPtrArray* out = g_ptr_array_new();
     for (GList* l = editors; l != NULL; l = l->next) {
         EditorTab* tab = l->data;
-        if (tab != NULL && !tab->is_buffer && tab->path != NULL && g_path_is_absolute(tab->path)) {
+        gboolean listed = FALSE; /* the views of a split file: once */
+        for (guint i = 0; tab != NULL && i < out->len && !listed; i++) {
+            listed = g_strcmp0(g_ptr_array_index(out, i), tab->path) == 0;
+        }
+        if (tab != NULL && !listed && !tab->is_buffer && tab->path != NULL && g_path_is_absolute(tab->path)) {
             g_ptr_array_add(out, g_strdup(tab->path));
         }
     }

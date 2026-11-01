@@ -326,7 +326,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   again only if the worker reads something different.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
-- `editor` — editor tabs in the notebook(s): open, save, close, move, dedicated panel.
+- `editor` — editor tabs in the notebook(s): open, save, close, move, split
+  view (`editor_split_tab()`: a second tab on the same buffer), dedicated panel.
+- `editor_view` — the widgets of an editor tab around its buffer (view,
+  scroll, minimap, mode lines, view controllers); `editor_view_release()`
+  disconnects a closing tab from a buffer that another view still shows.
 - `editor_modes` — per-tab mode state, shared editing operations (align,
   format, case, indent, find/replace, goto line), tab label, status, key dispatch.
   Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim` (the

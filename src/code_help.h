@@ -29,5 +29,7 @@ void code_help_signature(AppData* app, EditorTab* tab);
 void code_help_on_key(EditorTab* tab, guint keyval);
 /* Close any card of the tab */
 void code_help_hide(EditorTab* tab);
+/* Stop following tab's buffer (shared by a split view): the tab is closing */
+void code_help_detach(EditorTab* tab);
 
 #endif /* CODE_HELP_H */
