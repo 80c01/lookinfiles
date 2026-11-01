@@ -335,7 +335,7 @@ void vim_e_reg_set(VimEngine* e, gunichar name, const gchar* text, RegType type,
     if (text == NULL) text = "";
     gboolean explicit_reg = name != 0 && name != '"';
     if (name >= 'A' && name <= 'Z') {
-        gunichar lower = g_unichar_tolower(name);
+        gunichar lower = name - 'A' + 'a';  /* ASCII: name is A..Z */
         VimRegister* r = &e->regs[lower];
         if (r->text != NULL) {
             gchar* joined;
