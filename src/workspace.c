@@ -14,6 +14,7 @@
 #include "layout_store.h"
 #include "palette.h"
 #include "project_search.h"
+#include "help_guide.h"
 
 #define WS_CELL_W   32
 #define WS_ADD_W    22
@@ -399,6 +400,7 @@ void workspace_switch(AppData* app, gint idx) {
         if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
             app->workspaces[app->current_ws].editor_panel = panel;
             project_search_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            help_guide_workspace_hidden(app, &app->workspaces[app->current_ws]);
         } else if (panel != NULL) {
             g_object_unref(panel);
         }
@@ -418,6 +420,7 @@ void workspace_switch(AppData* app, gint idx) {
         ws->editor_panel = NULL;
         editor_attach_tabs(app, ws->editors, panel);
         project_search_workspace_shown(app, ws);
+        help_guide_workspace_shown(app, ws);
     }
 
 #ifdef HAVE_VTE
@@ -683,6 +686,7 @@ void workspace_remove(AppData* app, gint idx) {
     }
     nav_history_workspace_removed(rm);
     project_search_workspace_removed(app, rm);
+    help_guide_workspace_removed(app, rm);
 #ifdef HAVE_VTE
     if (app->term_stack != NULL && rm->term_box != NULL) {
         gtk_stack_remove(GTK_STACK(app->term_stack), rm->term_box);

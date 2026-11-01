@@ -18,7 +18,8 @@ the size while you drag. `f` toggles fullscreen.
 ## Workspaces
 
 A workspace is a complete set of panels: its own folder, expanded folders,
-selection, sort, hidden files, panel sizes, editor tabs and terminals.
+selection, sort, hidden files, panel sizes, editor tabs, terminals,
+Search tab and Help tab.
 There can be up to eight, like virtual desktops.
 
 | Key | Action |

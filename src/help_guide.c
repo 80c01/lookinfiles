@@ -32,6 +32,7 @@ typedef struct {
     GPtrArray* back;    /* HelpPlace*, most recent last */
     GPtrArray* forward;
     gint link;          /* link selected with Tab (markdown_link index), -1: none */
+    GtkWidget* label;   /* tab label (owned ref: kept while the page is detached) */
 } HelpGuide;
 
 static void ensure_css(void) {
@@ -387,6 +388,7 @@ static void guide_free(gpointer data) {
     g_ptr_array_unref(hg->back);
     g_ptr_array_unref(hg->forward);
     g_free(hg->current);
+    g_clear_object(&hg->label);
     g_free(hg);
 }
 
@@ -395,6 +397,35 @@ static GtkWidget* header_button(GtkWidget* bar, const gchar* icon, const gchar* 
     g_signal_connect(btn, "clicked", cb, hg);
     gtk_box_append(GTK_BOX(bar), btn);
     return btn;
+}
+
+/* Put the page in the notebook: after the Git tab, the result pages and the
+ * Canvas page, before the editor tabs */
+static void insert_page(AppData* app, HelpGuide* hg) {
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
+    if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
+    if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
+    if (app->canvas_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->canvas_page));
+    gtk_notebook_insert_page(nb, hg->page, hg->label, after + 1);
+    app->help_page = hg->page;
+    app_emit(app, APP_EVENT_CHROME_CHANGED); /* the Help button */
+}
+
+/* Take the page out of the notebook with its tab: an owned ref, or NULL */
+static GtkWidget* detach_page(AppData* app) {
+    GtkWidget* page = app->help_page;
+    if (page == NULL || app->notebook == NULL) return NULL;
+    GtkRoot* root = gtk_widget_get_root(page);
+    GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    if (focus != NULL && gtk_widget_is_ancestor(focus, page)) gtk_root_set_focus(root, NULL);
+    g_object_ref(page);
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    gint n = gtk_notebook_page_num(nb, page);
+    app->help_page = NULL;
+    if (n >= 0) gtk_notebook_remove_page(nb, n);
+    app_emit(app, APP_EVENT_CHROME_CHANGED); /* the Help button */
+    return page;
 }
 
 /* The Help page, made when missing: after the Git tab, the result pages and
@@ -458,21 +489,14 @@ static HelpGuide* ensure_page(AppData* app) {
 
     hg->page = page;
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, hg, guide_free);
-    app->help_page = page;
     update_buttons(hg);
 
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
-    if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
-    if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
-    if (app->canvas_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->canvas_page));
-    GtkWidget* label = icon_label_new("dialog-question", "Help");
+    hg->label = g_object_ref(icon_label_new("dialog-question", "Help"));
     GtkGesture* mclick = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), hg);
-    gtk_widget_add_controller(label, GTK_EVENT_CONTROLLER(mclick));
-    gtk_notebook_insert_page(nb, page, label, after + 1);
-    app_emit(app, APP_EVENT_CHROME_CHANGED); /* the Help button */
+    gtk_widget_add_controller(hg->label, GTK_EVENT_CONTROLLER(mclick));
+    insert_page(app, hg);
     return hg;
 }
 
@@ -510,4 +534,30 @@ gboolean help_guide_close_shown(AppData* app) {
     if (!gtk_widget_get_mapped(app->help_page)) return FALSE;
     close_page(app);
     return TRUE;
+}
+
+void help_guide_workspace_hidden(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    GtkWidget* page = detach_page(app);
+    if (page == NULL) return;
+    if (ws->help_page != NULL) g_object_unref(ws->help_page);
+    ws->help_page = page;
+}
+
+void help_guide_workspace_shown(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL || ws->help_page == NULL) return;
+    GtkWidget* page = ws->help_page;
+    ws->help_page = NULL;
+    HelpGuide* hg = g_object_get_data(G_OBJECT(page), PAGE_KEY);
+    if (hg != NULL && app->notebook != NULL && app->help_page == NULL) insert_page(app, hg);
+    g_object_unref(page);
+}
+
+void help_guide_workspace_removed(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces && ws == &app->workspaces[app->current_ws]) {
+        GtkWidget* page = detach_page(app);
+        if (page != NULL) g_object_unref(page);
+    }
+    g_clear_object(&ws->help_page);
 }

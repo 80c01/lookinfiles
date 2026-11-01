@@ -393,6 +393,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   with `GtkUriLauncher`), Tab / Enter, back / forward history (Shift+H / Shift+L,
   mouse buttons), a minimap (`minimap_new_for_view()`). F1 (`ui`) and a click on the Help button (`topbar`) open it,
   its close button, a middle click or Ctrl+W close it.
+  Per workspace (`VirtualLayout.help_page`): the page, with its history and
+  scroll position, is taken out of the notebook on a switch and put back
+  when its workspace returns (`help_guide_workspace_hidden()` / `_shown()`).
 - `workspace` — virtual workspaces (Alt+1..8): save/apply layout snapshots,
   top-bar workspace minimap. A new workspace (Alt++) starts from the default
   view (start directory, files view) with the panels of the default layout

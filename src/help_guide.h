@@ -7,7 +7,8 @@
  * while the tab is shown closes it); the keyboard cheat sheet
  * (help.h) stays on ? and the button's right click. The navigation keys of
  * the global mode and its minimap scroll it; its close button, a middle click on the tab,
- * Ctrl+W (Vim Ctrl+W c) close it. */
+ * Ctrl+W (Vim Ctrl+W c) close it. Each workspace has its own Help tab
+ * (page shown, history, scroll position). */
 #include "app_types.h"
 
 /* Show the guide at page (a user_guide page name, NULL: the table of
@@ -20,5 +21,12 @@ gboolean help_guide_is_open(AppData* app);
 /* Close the Help tab if it is the current page of the preview notebook
  * (Ctrl+W, the Help button). Returns TRUE if it was closed. */
 gboolean help_guide_close_shown(AppData* app);
+
+/* Workspace switch (workspace.c): the Help tab of the workspace left is put
+ * aside, that of the workspace shown comes back */
+void help_guide_workspace_hidden(AppData* app, VirtualLayout* ws);
+void help_guide_workspace_shown(AppData* app, VirtualLayout* ws);
+/* A workspace is removed: its Help tab goes */
+void help_guide_workspace_removed(AppData* app, VirtualLayout* ws);
 
 #endif /* HELP_GUIDE_H */
