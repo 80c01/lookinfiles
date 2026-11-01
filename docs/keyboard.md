@@ -52,7 +52,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `f` | Toggle fullscreen |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels |
 | `Ctrl+W w` / `Ctrl+W W` (Vim), `C-x o` (Emacs), `F6` / `Shift+F6` (Notepad) | Focus the next / previous panel (global mode, or the mode of the focused editor tab) |
-| `Ctrl+W c` (Vim), `Ctrl+W` (Notepad) | Close the focused editor tab, or the current one if it is on screen (global mode, or the mode of the focused editor tab; asks first when there are unsaved changes) |
+| `Ctrl+W c` (Vim), `Ctrl+W` (Notepad) | Close the focused editor tab, or the current one if it is on screen (global mode, or the mode of the focused editor tab; asks first when there are unsaved changes); in a terminal, `Ctrl+W` goes to the shell |
 | `gt` / `gT` (Vim), `C-x <right>` / `C-x <left>` (Emacs), `Ctrl+Tab` / `Ctrl+Shift+Tab` (Notepad), `Ctrl+PgDn` / `Ctrl+PgUp` (Vim, Notepad) | Next / previous tab of the focused notebook (from the explorer: of the preview panel) |
 | `Alt+1` … `Alt+8` | Switch virtual workspace (or click the top-bar workspace map) |
 | `Alt++` / `Alt+-` | Add a workspace with the default layout / close the current one |

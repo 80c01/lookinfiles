@@ -151,6 +151,17 @@ void close_shown_tab(AppData* app) {
     }
 }
 
+/* The keyboard focus is in a terminal (its pane or a tab of the editor area) */
+static gboolean focus_in_terminal(AppData* app) {
+#ifdef HAVE_VTE
+    GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
+    return focus != NULL && gtk_widget_get_ancestor(focus, VTE_TYPE_TERMINAL) != NULL;
+#else
+    (void)app;
+    return FALSE;
+#endif
+}
+
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
                              guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
@@ -326,8 +337,9 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
             (keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
             return editor_save_current(app);
         }
+        /* A terminal keeps Ctrl+W (the shell erases the word before) */
         if ((state & GDK_CONTROL_MASK) &&
-            (keyval == GDK_KEY_w || keyval == GDK_KEY_W)) {
+            (keyval == GDK_KEY_w || keyval == GDK_KEY_W) && !focus_in_terminal(app)) {
             close_shown_tab(app);
             return TRUE;
         }
