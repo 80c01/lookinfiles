@@ -16,9 +16,19 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name);
 /* Apply a layout to the current workspace, asking before closing terminals.
  * FALSE if the user cancelled. */
 gboolean layouts_apply(AppData* app, const SavedLayout* layout);
-/* Show only the panels of a layout (visibility, orientation, split sizes):
- * terminals and editor tabs stay as they are */
-void layouts_preview(AppData* app, const SavedLayout* layout);
+
+/* Previews: layouts shown in full, then the start put back exactly (the
+ * same tabs in the same panes and places, the same terminals) or one of
+ * them applied. Nothing closes meanwhile: terminals a layout has no room
+ * for are set aside, the shells started for it end with the preview. */
+typedef struct LayoutsPreview LayoutsPreview;
+/* Take the current workspace's arrangement as the start */
+LayoutsPreview* layouts_preview_begin(AppData* app);
+/* Show layout in full (NULL: the start) */
+void layouts_preview_show(LayoutsPreview* preview, const SavedLayout* layout);
+/* End the preview: apply layout (asking before closing terminals running at
+ * the start), or with NULL put the start back. Frees preview; TRUE if applied. */
+gboolean layouts_preview_end(LayoutsPreview* preview, const SavedLayout* layout);
 
 /* A list row: the title above the layout's summary */
 GtkWidget* layouts_row_new(const gchar* title, const SavedLayout* layout);

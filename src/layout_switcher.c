@@ -12,8 +12,10 @@ typedef struct {
     GtkWidget* popover;
     GtkListBox* list;
     GPtrArray* layouts; /* one per row: the current panels, the default, the saved ones */
+    LayoutsPreview* preview; /* the arrangement at the start, put back unless one is applied */
+    GtkWidget* focus;   /* the window's focus at the start (referenced) */
     guint preview_id;   /* pending preview timeout, 0 = none */
-    gint previewed;     /* row whose panels are shown (0 = the current ones) */
+    gint previewed;     /* row shown (0 = the arrangement at the start) */
     gint chosen;        /* row applied with Enter or a click, -1 = none */
     gboolean edit;      /* open the Edit Layouts dialog once closed */
 } Switcher;
@@ -29,9 +31,9 @@ static void show_row(Switcher* s, gint index) {
     if (index < 0 || (guint)index >= s->layouts->len || index == s->previewed) {
         return;
     }
-    layouts_preview(s->app, g_ptr_array_index(s->layouts, (guint)index));
+    layouts_preview_show(s->preview, (index == 0) ? NULL : g_ptr_array_index(s->layouts, (guint)index));
     s->previewed = index;
-    /* A terminal started for the preview takes the focus: keep it in the list */
+    /* Moved editor tabs and terminals take the focus: keep it in the list */
     GtkListBoxRow* row = gtk_list_box_get_selected_row(s->list);
     if (row != NULL) {
         gtk_widget_grab_focus(GTK_WIDGET(row));
@@ -100,15 +102,13 @@ static void on_edit_clicked(GtkButton* button, gpointer data) {
 static gboolean finish_idle(gpointer data) {
     Switcher* s = data;
     AppData* app = s->app;
-    const SavedLayout* current = g_ptr_array_index(s->layouts, 0);
     gtk_widget_unparent(s->popover);
-    if (s->chosen > 0) {
-        if (!layouts_apply(app, g_ptr_array_index(s->layouts, (guint)s->chosen))) {
-            layouts_preview(app, current); /* terminals kept: back to the panels at open */
-        }
-    } else if (s->previewed != 0) {
-        layouts_preview(app, current);
+    const SavedLayout* chosen = (s->chosen > 0) ? g_ptr_array_index(s->layouts, (guint)s->chosen) : NULL;
+    if (!layouts_preview_end(s->preview, chosen) && s->focus != NULL &&
+        gtk_widget_get_root(s->focus) == GTK_ROOT(app->window)) {
+        gtk_widget_grab_focus(s->focus);
     }
+    g_clear_object(&s->focus);
     gboolean edit = s->edit;
     g_ptr_array_unref(s->layouts);
     g_free(s);
@@ -146,8 +146,11 @@ void layout_switcher_show(AppData* app) {
     Switcher* s = g_new0(Switcher, 1);
     s->app = app;
     s->chosen = -1;
+    GtkWidget* focus = gtk_window_get_focus(app->window);
+    s->focus = (focus != NULL) ? g_object_ref(focus) : NULL;
+    s->preview = layouts_preview_begin(app);
     s->layouts = g_ptr_array_new_with_free_func(saved_layout_free);
-    g_ptr_array_add(s->layouts, layouts_capture(app, "Current Panels"));
+    g_ptr_array_add(s->layouts, layouts_capture(app, "Current Layout"));
     gchar* path = layout_store_default_path();
     SavedLayout* def = layout_store_load_default(path);
     GPtrArray* named = layout_store_load(path);
@@ -165,7 +168,7 @@ void layout_switcher_show(AppData* app) {
     gtk_list_box_set_selection_mode(s->list, GTK_SELECTION_SINGLE);
     for (guint i = 0; i < s->layouts->len; i++) {
         const SavedLayout* l = g_ptr_array_index(s->layouts, i);
-        gchar* title = (i == 0) ? g_strdup("Current Panels")
+        gchar* title = (i == 0) ? g_strdup("Current Layout")
                      : (i == 1) ? layouts_default_title(l)
                                 : g_strdup(l->name);
         gtk_list_box_append(s->list, layouts_row_new(title, l));

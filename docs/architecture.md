@@ -370,7 +370,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `editor_layout_capture()` (splits, sizes, panes of files, terminal tabs),
   `editor_layout_apply()` rebuilds the splits and places the open file tabs
   and running terminals in them (`terminal_move_tab()`; missing shells
-  started, extra ones closed after the caller's confirmation).
+  started, extra ones closed after the caller's confirmation, or kept in a
+  spare list for previews); `editor_layout_snapshot()` / `_restore()` put
+  back the exact tabs of the panel and the preview notebook.
 - `editor_view` — the widgets of an editor tab around its buffer (view,
   scroll, minimap, mode lines, view controllers); `editor_view_release()`
   disconnects a closing tab from a buffer that another view still shows.
@@ -435,6 +437,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   notebooks (`tab_drop_set_accept()` on both sides); `editor_remove_page()`
   takes them out when the shell exits, and the preview notebook's ones stay
   with their workspace (`terminal_workspace_hidden()` / `_shown()`).
+  `term_snapshot_take()` / `_restore()` put back the exact panes of the
+  panel after a layout preview; `terminal_detach_tab()` /
+  `terminal_attach_tab()` keep a terminal running out of any notebook.
 - `search` — the search bars of the explorer and of the preview, one at the
   bottom of each panel (`AppSearchBar`, `search_bar_new()`), opened and
   driven by the keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s`
@@ -493,12 +498,18 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   restores the theme. Reads `settings.ini` at startup for `main.c`
   (`preferences_editor_mode()`, `preferences_apply_startup()`).
 - `layout_switcher` — the Alt+L layout list (top-bar grid button): a
-  `GtkPopover` listing the current panels, the default and the saved layouts;
-  the selected row's panels are previewed after a short delay
-  (`layouts_preview()`: visibility, orientation and sizes only, through
-  `workspace_show_panels()`), Enter or a click applies it with
-  `layouts_apply()`, Escape restores the panels; **Edit Layouts…** opens the
-  `layouts` dialog.
+  `GtkPopover` listing the current arrangement, the default and the saved
+  layouts; the selected row is shown in full after a short delay, Enter or a
+  click applies it, Escape restores the start; **Edit Layouts…** opens the
+  `layouts` dialog. The previews are `layouts_preview_begin()` / `_show()` /
+  `_end()` (in `layouts`): the start is an `EditorSnapshot`
+  (`editor_layout`) and a `TermSnapshot` (`terminal`) holding the very tabs
+  and terminals with their panes, places and current pages; each preview
+  restores the start, then arranges the layout with spares
+  (`editor_layout_apply_spare()`, `term_layout_apply_spare()`): extra
+  terminals are set aside instead of closed, two views of a file may share a
+  pane, and the shells started for previews end with them. Applying asks
+  over the preview, restores the start, then runs the normal apply.
 - `layouts` — saved workspace layouts (Edit Layouts dialog): capture
   the current workspace's panels and editor splits (`editor_layout`), apply
   one from a list in an `AppDialog` (running terminals are kept; closing extra

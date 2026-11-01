@@ -207,7 +207,7 @@ static guint* assign_files(GPtrArray* files, GArray* ranks, guint n_panes, GPtrA
 /* Gather every tab of the panel in root, split it as tree describes and
  * place the tabs (see editor_layout_apply()) */
 static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GPtrArray* files, GArray* ranks,
-                    GPtrArray* terms, GPtrArray* currents, EditorTab* focused) {
+                    GPtrArray* terms, GPtrArray* currents, EditorTab* focused, GPtrArray* spare) {
 #ifdef HAVE_VTE
     guint wanted = tab_tree_terminal_count(tree);
 #else
@@ -255,8 +255,9 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
     g_free(target);
     g_array_unref(file_panes);
 
-    /* Two views of a file brought into one pane: the first stays */
-    for (guint k = 0; k < files->len; k++) {
+    /* Two views of a file brought into one pane: the first stays (both in
+     * a preview, which closes nothing) */
+    for (guint k = 0; k < files->len && spare == NULL; k++) {
         EditorTab* tab = g_ptr_array_index(files, k);
         for (guint q = 0; q < k && tab != NULL; q++) {
             EditorTab* other = g_ptr_array_index(files, q);
@@ -284,6 +285,10 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
             }
             if (next < terms->len) {
                 terminal_move_tab(g_ptr_array_index(terms, next++), nb);
+            } else if (spare != NULL && spare->len > 0) {
+                GtkWidget* vte = g_ptr_array_steal_index(spare, 0);
+                terminal_attach_tab(vte, nb);
+                g_object_unref(vte);
             } else {
                 terminal_add_tab(app, nb);
             }
@@ -310,13 +315,21 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
     }
 
 #ifdef HAVE_VTE
-    /* Terminals beyond the layout's close with their tab (the caller confirmed it) */
+    /* Terminals beyond the layout's close with their tab (the caller
+     * confirmed it), or go to spare */
     for (; wanted > 0 && next < terms->len; next++) {
         GtkWidget* vte = g_ptr_array_index(terms, next);
         if (app->last_focused_vte == vte) {
             app->last_focused_vte = NULL;
         }
-        editor_remove_page(app, vte);
+        if (spare != NULL) {
+            GtkWidget* kept = terminal_detach_tab(vte);
+            if (kept != NULL) {
+                g_ptr_array_add(spare, kept);
+            }
+        } else {
+            editor_remove_page(app, vte);
+        }
     }
 #endif
     editor_remove_empty_notebooks(app);
@@ -325,6 +338,10 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
 }
 
 void editor_layout_apply(AppData* app, const gchar* text) {
+    editor_layout_apply_spare(app, text, NULL);
+}
+
+void editor_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare) {
     TabTreeNode* tree = tab_tree_parse(text);
     if (tree == NULL || app == NULL || app->editor_box == NULL) {
         tab_tree_free(tree);
@@ -364,11 +381,241 @@ void editor_layout_apply(AppData* app, const gchar* text) {
     guint wanted = tab_tree_terminal_count(tree);
     GtkNotebook* root = (files->len > 0 || terms->len > 0 || wanted > 0) ? panel_root(app) : NULL;
     if (root != NULL) {
-        rebuild(app, tree, root, files, ranks, terms, currents, focused);
+        rebuild(app, tree, root, files, ranks, terms, currents, focused, spare);
     }
     g_ptr_array_unref(files);
     g_array_unref(ranks);
     g_ptr_array_unref(terms);
     g_ptr_array_unref(currents);
     tab_tree_free(tree);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Exact arrangement, put back after a layout preview                        */
+/* ------------------------------------------------------------------------- */
+
+struct EditorSnapshot {
+    GPtrArray* pages;      /* editor tabs (containers) and terminals, referenced:
+                            * the panel's first, then the preview notebook's */
+    guint panel_count;     /* pages of the panel */
+    TabTreeNode* panel;    /* the panel's splits, tabs being indices in pages; NULL if empty */
+    GArray* preview;       /* indices in pages of the preview notebook's tabs, in order */
+    GtkWidget* preview_current; /* current page of the preview notebook */
+    GtkWidget* focused;    /* container of the editor view focused last */
+};
+
+#ifdef HAVE_VTE
+/* The notebook holding page, or NULL */
+static GtkNotebook* notebook_of(GtkWidget* page) {
+    GtkWidget* parent = gtk_widget_get_parent(page);
+    GtkWidget* nb = (parent != NULL) ? gtk_widget_get_ancestor(parent, GTK_TYPE_NOTEBOOK) : NULL;
+    return (nb != NULL && gtk_notebook_page_num(GTK_NOTEBOOK(nb), page) >= 0) ? GTK_NOTEBOOK(nb) : NULL;
+}
+#endif
+
+static gboolean is_placeable(AppData* app, GtkWidget* page) {
+    return is_terminal(page) || tab_of_page(app, page) != NULL;
+}
+
+static TabTreeNode* snapshot_widget(AppData* app, GtkWidget* w, GPtrArray* pages) {
+    if (w == NULL) {
+        return NULL;
+    }
+    if (GTK_IS_NOTEBOOK(w)) {
+        GtkNotebook* nb = GTK_NOTEBOOK(w);
+        TabTreeNode* node = tab_tree_notebook_new();
+        gint current = gtk_notebook_get_current_page(nb);
+        for (gint p = 0; p < gtk_notebook_get_n_pages(nb); p++) {
+            GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
+            if (!is_placeable(app, page)) {
+                continue;
+            }
+            guint pos = tab_tree_notebook_add(node, pages->len);
+            if (p == current) {
+                node->current = (gint)pos;
+            }
+            g_ptr_array_add(pages, g_object_ref(page));
+        }
+        if (node->tabs->len == 0) {
+            tab_tree_free(node);
+            return NULL;
+        }
+        return node;
+    }
+    if (!GTK_IS_PANED(w)) {
+        return NULL;
+    }
+    TabTreeNode* first = snapshot_widget(app, gtk_paned_get_start_child(GTK_PANED(w)), pages);
+    TabTreeNode* second = snapshot_widget(app, gtk_paned_get_end_child(GTK_PANED(w)), pages);
+    gboolean vertical = gtk_orientable_get_orientation(GTK_ORIENTABLE(w)) == GTK_ORIENTATION_VERTICAL;
+    return tab_tree_split_new(vertical, paned_frac(w), first, second);
+}
+
+EditorSnapshot* editor_layout_snapshot(AppData* app) {
+    EditorSnapshot* snap = g_new0(EditorSnapshot, 1);
+    snap->pages = g_ptr_array_new_with_free_func(g_object_unref);
+    snap->preview = g_array_new(FALSE, FALSE, sizeof(guint));
+    if (app->editor_box != NULL) {
+        snap->panel = snapshot_widget(app, gtk_widget_get_first_child(app->editor_box), snap->pages);
+    }
+    snap->panel_count = snap->pages->len;
+    if (app->notebook != NULL) {
+        GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+        for (gint p = 0; p < gtk_notebook_get_n_pages(nb); p++) {
+            GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
+            guint index = snap->pages->len;
+            g_array_append_val(snap->preview, index);
+            g_ptr_array_add(snap->pages, g_object_ref(page));
+        }
+        gint current = gtk_notebook_get_current_page(nb);
+        snap->preview_current = (current >= 0) ? g_object_ref(gtk_notebook_get_nth_page(nb, current)) : NULL;
+    }
+    EditorTab* focused = g_list_find(app->editors, app->last_focused_editor) ? app->last_focused_editor : NULL;
+    snap->focused = (focused != NULL && focused->container != NULL) ? g_object_ref(focused->container) : NULL;
+    return snap;
+}
+
+void editor_snapshot_free(EditorSnapshot* snap) {
+    if (snap == NULL) {
+        return;
+    }
+    g_ptr_array_unref(snap->pages);
+    tab_tree_free(snap->panel);
+    g_array_unref(snap->preview);
+    g_clear_object(&snap->preview_current);
+    g_clear_object(&snap->focused);
+    g_free(snap);
+}
+
+/* Take a terminal out of its notebook into spare (closed without spare) */
+static void set_aside(GtkWidget* page, GPtrArray* spare) {
+#ifdef HAVE_VTE
+    GtkWidget* vte = terminal_detach_tab(page);
+    if (vte != NULL && spare != NULL) {
+        g_ptr_array_add(spare, vte);
+    } else if (vte != NULL) {
+        g_object_unref(vte);
+    }
+#else
+    (void)page;
+    (void)spare;
+#endif
+}
+
+/* Put page (an editor tab or a terminal, in a notebook or in spare) into nb */
+static void place_page(AppData* app, GtkWidget* page, GtkNotebook* nb, GPtrArray* spare) {
+    EditorTab* tab = tab_of_page(app, page);
+    if (tab != NULL) {
+        if (tab->nb != GTK_WIDGET(nb)) {
+            editor_move_tab_to(app, tab, nb, -1, FALSE);
+        }
+        return;
+    }
+#ifdef HAVE_VTE
+    if (!is_terminal(page)) {
+        return;
+    }
+    GtkNotebook* from = notebook_of(page);
+    guint i = 0;
+    if (from != NULL) {
+        if (from != nb) {
+            terminal_move_tab(page, nb);
+        }
+    } else if (spare != NULL && g_ptr_array_find(spare, page, &i)) {
+        GtkWidget* vte = g_ptr_array_steal_index(spare, i);
+        terminal_attach_tab(vte, nb);
+        g_object_unref(vte);
+    }
+#else
+    (void)spare;
+#endif
+}
+
+/* Give nb's pages the order of indices (positions in pages) and its current page */
+static void order_pages(GtkNotebook* nb, const EditorSnapshot* snap, GArray* indices, GtkWidget* current) {
+    gint pos = 0;
+    for (guint i = 0; i < indices->len; i++) {
+        GtkWidget* page = g_ptr_array_index(snap->pages, g_array_index(indices, guint, i));
+        if (gtk_notebook_page_num(nb, page) >= 0) {
+            gtk_notebook_reorder_child(nb, page, pos++);
+        }
+    }
+    gint num = (current != NULL) ? gtk_notebook_page_num(nb, current) : -1;
+    if (num >= 0) {
+        gtk_notebook_set_current_page(nb, num);
+    }
+}
+
+void editor_layout_restore(AppData* app, const EditorSnapshot* snap, GPtrArray* spare) {
+    if (app == NULL || snap == NULL || app->editor_box == NULL) {
+        return;
+    }
+    /* Every page of the panel into its first notebook, the editor tabs of
+     * the preview notebook back there */
+    GtkNotebook* root = (snap->panel != NULL) ? panel_root(app) : NULL;
+    for (guint i = 0; i < snap->panel_count && root != NULL; i++) {
+        place_page(app, g_ptr_array_index(snap->pages, i), root, spare);
+    }
+    for (guint i = 0; i < snap->preview->len && app->notebook != NULL; i++) {
+        GtkWidget* page = g_ptr_array_index(snap->pages, g_array_index(snap->preview, guint, i));
+        if (tab_of_page(app, page) != NULL) {
+            place_page(app, page, GTK_NOTEBOOK(app->notebook), spare);
+        }
+    }
+    /* What the panel holds besides: terminals go to spare, editor tabs to
+     * the first notebook (or the preview notebook) */
+    GPtrArray* nbs = editor_get_all_notebooks(app);
+    for (guint n = 0; n < nbs->len; n++) {
+        GtkNotebook* nb = g_ptr_array_index(nbs, n);
+        for (gint p = gtk_notebook_get_n_pages(nb) - 1; p >= 0; p--) {
+            GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
+            if (nb == root || g_ptr_array_find(snap->pages, page, NULL)) {
+                continue;
+            }
+            if (is_terminal(page)) {
+                set_aside(page, spare);
+            } else if (tab_of_page(app, page) != NULL) {
+                GtkWidget* to = (root != NULL) ? GTK_WIDGET(root) : app->notebook;
+                editor_move_tab_to(app, tab_of_page(app, page), GTK_NOTEBOOK(to), -1, FALSE);
+            }
+        }
+    }
+    g_ptr_array_unref(nbs);
+    if (root != NULL) {
+        for (gint p = gtk_notebook_get_n_pages(root) - 1; p >= 0; p--) {
+            GtkWidget* page = gtk_notebook_get_nth_page(root, p);
+            if (is_terminal(page) && !g_ptr_array_find(snap->pages, page, NULL)) {
+                set_aside(page, spare);
+            }
+        }
+    }
+
+    /* The splits as they were, each page in its notebook and place */
+    if (root != NULL && gtk_notebook_get_n_pages(root) > 0) {
+        editor_remove_empty_notebooks(app);
+        GPtrArray* leaves = g_ptr_array_new();
+        GPtrArray* nodes = g_ptr_array_new();
+        build(app, snap->panel, root, leaves, nodes);
+        for (guint i = 0; i < leaves->len; i++) {
+            GtkNotebook* nb = g_ptr_array_index(leaves, i);
+            const TabTreeNode* node = g_ptr_array_index(nodes, i);
+            for (guint t = 0; t < node->tabs->len; t++) {
+                place_page(app, g_ptr_array_index(snap->pages, g_array_index(node->tabs, guint, t)), nb, spare);
+            }
+            GtkWidget* current = (node->current >= 0)
+                                     ? g_ptr_array_index(snap->pages, g_array_index(node->tabs, guint, node->current))
+                                     : NULL;
+            order_pages(nb, snap, node->tabs, current);
+        }
+        g_ptr_array_unref(leaves);
+        g_ptr_array_unref(nodes);
+    }
+    editor_remove_empty_notebooks(app);
+    if (app->notebook != NULL) {
+        order_pages(GTK_NOTEBOOK(app->notebook), snap, snap->preview, snap->preview_current);
+    }
+    EditorTab* focused = (snap->focused != NULL) ? tab_of_page(app, snap->focused) : NULL;
+    if (focused != NULL) {
+        app->last_focused_editor = focused;
+    }
 }

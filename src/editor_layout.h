@@ -22,5 +22,19 @@ guint editor_layout_wanted_terminals(const gchar* text);
  * text, the running ones stay in the first pane. Panes left without a tab
  * are removed. */
 void editor_layout_apply(AppData* app, const gchar* text);
+/* The same, nothing closed (layout previews): two views of a file may share
+ * a pane, terminals of spare (out of any notebook, referenced) fill the
+ * terminal tabs after the running ones, before new shells, and terminals
+ * beyond the shape go to spare */
+void editor_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare);
+
+/* Exact arrangement of the editor tabs: the panel's splits, which tab is in
+ * which notebook and where, the current pages, the preview notebook's tabs */
+typedef struct EditorSnapshot EditorSnapshot;
+EditorSnapshot* editor_layout_snapshot(AppData* app);
+/* Put the tabs back as taken (terminals out of any notebook come from
+ * spare); terminals of the panel not in the snapshot go to spare */
+void editor_layout_restore(AppData* app, const EditorSnapshot* snap, GPtrArray* spare);
+void editor_snapshot_free(EditorSnapshot* snap);
 
 #endif /* EDITOR_LAYOUT_H */

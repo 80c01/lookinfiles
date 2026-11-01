@@ -64,58 +64,158 @@ static void set_panels(AppData* app, const SavedLayout* l) {
     ws->main_frac = l->main_frac;
     ws->right_frac = l->right_frac;
     ws->editor_frac = l->editor_frac;
+    ws->editor_dedicated = app->editor_dedicated;
     if (!ws->files_vis && !ws->preview_vis && !ws->term_vis && !ws->editor_dedicated) {
         ws->preview_vis = TRUE; /* never leave the window empty */
     }
 }
 
-gboolean layouts_apply(AppData* app, const SavedLayout* l) {
-    /* The editor panel's shape, when the layout saved one */
-    gboolean splits = l->editor_dedicated && l->editor_splits != NULL && l->editor_splits[0] != '\0';
+/* Running terminals (term_running in the terminal panel, editor_running in
+ * the editor panel) that applying l closes: those beyond its terminals (a
+ * layout without terminals keeps them) */
+static guint closing_terminals(const SavedLayout* l, guint term_running, guint editor_running) {
+    guint closing = 0;
 #ifdef HAVE_VTE
-    /* Terminals the layout has fewer of than are running close (a layout
-     * without terminals keeps them) */
     TermLayoutNode* tree = l->term_vis ? term_layout_parse(l->terminals) : NULL;
     guint wanted = term_layout_count(tree);
     term_layout_free(tree);
-    guint running = term_pane_count(app);
-    guint closing = (wanted > 0 && running > wanted) ? running - wanted : 0;
+    closing += (wanted > 0 && term_running > wanted) ? term_running - wanted : 0;
+    gboolean splits = l->editor_dedicated && l->editor_splits != NULL && l->editor_splits[0] != '\0';
     guint editor_wanted = splits ? editor_layout_wanted_terminals(l->editor_splits) : 0;
-    guint editor_running = editor_layout_terminal_count(app);
     closing += (editor_wanted > 0 && editor_running > editor_wanted) ? editor_running - editor_wanted : 0;
-    if (closing > 0) {
-        gchar* msg = g_strdup_printf("The layout “%s” has fewer terminals than are running; %u "
-                                     "running terminal%s will be closed.", l->name, closing,
-                                     closing == 1 ? "" : "s");
-        gboolean ok = confirm(app, "Close Terminals", msg, "_Apply Layout");
-        g_free(msg);
-        if (!ok) {
-            return FALSE;
-        }
-    }
+#else
+    (void)l;
+    (void)term_running;
+    (void)editor_running;
 #endif
+    return closing;
+}
+
+static gboolean confirm_closing(AppData* app, const SavedLayout* l, guint closing) {
+    if (closing == 0) {
+        return TRUE;
+    }
+    gchar* msg = g_strdup_printf("The layout “%s” has fewer terminals than are running; %u "
+                                 "running terminal%s will be closed.", l->name, closing,
+                                 closing == 1 ? "" : "s");
+    gboolean ok = confirm(app, "Close Terminals", msg, "_Apply Layout");
+    g_free(msg);
+    return ok;
+}
+
+/* Arrange the editor tabs, terminals and panels of l (shown by the caller).
+ * With spares, nothing closes: extra terminals go there, missing ones come
+ * from there first. */
+static void arrange(AppData* app, const SavedLayout* l, GPtrArray* term_spare, GPtrArray* editor_spare) {
+    /* The editor panel's shape, when the layout saved one */
+    gboolean splits = l->editor_dedicated && l->editor_splits != NULL && l->editor_splits[0] != '\0';
     if (l->editor_dedicated != app->editor_dedicated) {
         editor_set_dedicated(app, l->editor_dedicated); /* moves the open tabs */
     }
     if (splits) {
-        editor_layout_apply(app, l->editor_splits);
+        editor_layout_apply_spare(app, l->editor_splits, editor_spare);
     }
 #ifdef HAVE_VTE
-    if (wanted > 0) {
-        term_layout_apply(app, l->terminals);
+    TermLayoutNode* tree = l->term_vis ? term_layout_parse(l->terminals) : NULL;
+    if (term_layout_count(tree) > 0) {
+        term_layout_apply_spare(app, l->terminals, term_spare);
     }
+    term_layout_free(tree);
+#else
+    (void)term_spare;
 #endif
     set_panels(app, l);
+}
+
+static guint running_terminals(AppData* app) {
+#ifdef HAVE_VTE
+    return term_pane_count(app);
+#else
+    (void)app;
+    return 0;
+#endif
+}
+
+gboolean layouts_apply(AppData* app, const SavedLayout* l) {
+    if (!confirm_closing(app, l, closing_terminals(l, running_terminals(app), editor_layout_terminal_count(app)))) {
+        return FALSE;
+    }
+    arrange(app, l, NULL, NULL);
     workspace_switch(app, app->current_ws); /* re-applies the current workspace */
     return TRUE;
 }
 
-void layouts_preview(AppData* app, const SavedLayout* l) {
-    if (app == NULL || l == NULL || app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
-        return;
+/* ------------------------------------------------------------------------- */
+/* Previews                                                                  */
+/* ------------------------------------------------------------------------- */
+
+struct LayoutsPreview {
+    AppData* app;
+    SavedLayout* panels;      /* the panels at the start */
+    EditorSnapshot* editor;   /* the editor tabs at the start */
+#ifdef HAVE_VTE
+    TermSnapshot* terms;      /* the terminal panel at the start */
+#endif
+    GPtrArray* term_spare;    /* terminals out of the panels meanwhile (referenced) */
+    GPtrArray* editor_spare;
+    guint term_running;       /* terminals at the start */
+    guint editor_running;
+};
+
+LayoutsPreview* layouts_preview_begin(AppData* app) {
+    LayoutsPreview* p = g_new0(LayoutsPreview, 1);
+    p->app = app;
+    p->panels = layouts_capture(app, "");
+    p->editor = editor_layout_snapshot(app);
+#ifdef HAVE_VTE
+    p->terms = term_snapshot_take(app);
+#endif
+    p->term_spare = g_ptr_array_new_with_free_func(g_object_unref);
+    p->editor_spare = g_ptr_array_new_with_free_func(g_object_unref);
+    p->term_running = running_terminals(app);
+    p->editor_running = editor_layout_terminal_count(app);
+    return p;
+}
+
+/* Everything back as at the start: terminals started meanwhile go to the spares */
+static void restore_start(LayoutsPreview* p) {
+    editor_layout_restore(p->app, p->editor, p->editor_spare);
+#ifdef HAVE_VTE
+    term_snapshot_restore(p->app, p->terms, p->term_spare);
+#endif
+    set_panels(p->app, p->panels);
+}
+
+void layouts_preview_show(LayoutsPreview* p, const SavedLayout* l) {
+    restore_start(p);
+    if (l != NULL) {
+        arrange(p->app, l, p->term_spare, p->editor_spare);
     }
-    set_panels(app, l);
-    workspace_show_panels(app);
+    workspace_show_panels(p->app);
+}
+
+gboolean layouts_preview_end(LayoutsPreview* p, const SavedLayout* l) {
+    AppData* app = p->app;
+    /* Asked while the layout is shown: the terminals it closes are those
+     * running at the start */
+    gboolean apply = (l != NULL) && confirm_closing(app, l, closing_terminals(l, p->term_running, p->editor_running));
+    restore_start(p);
+    /* The shells started for the previews end here */
+    g_ptr_array_unref(p->term_spare);
+    g_ptr_array_unref(p->editor_spare);
+    if (apply) {
+        arrange(app, l, NULL, NULL);
+        workspace_switch(app, app->current_ws); /* re-applies the current workspace */
+    } else {
+        workspace_show_panels(app);
+    }
+    editor_snapshot_free(p->editor);
+#ifdef HAVE_VTE
+    term_snapshot_free(p->terms);
+#endif
+    saved_layout_free(p->panels);
+    g_free(p);
+    return apply;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -57,7 +57,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Alt+1` … `Alt+8` | Switch virtual workspace (or click the top-bar workspace map) |
 | `Alt++` / `Alt+-` | Add a workspace with the default layout / close the current one |
 | `Alt+R` | Recent folders and files, most recent first, filtered as you type: `Enter` on a folder makes it the explorer's folder, on a file shows it (`Ctrl+Enter` edits it) |
-| `Alt+L` | Workspace layouts: a list that previews each layout's panels as you move through it (`Alt+L` again: the next one); `Enter` applies it, `Escape` puts the panels back; **Edit Layouts…** saves the current panels under a name (`Default` for new workspaces), deletes one or resets the default |
+| `Alt+L` | Workspace layouts: a list that shows each layout in full as you move through it (`Alt+L` again: the next one); `Enter` applies it, `Escape` puts everything back as it was; **Edit Layouts…** saves the current panels under a name (`Default` for new workspaces), deletes one or resets the default |
 | `Ctrl+,` | Preferences (also the top bar's gear button), on the section shown last: Appearance (themes and fonts), Editor (mode, line numbers and wrap of new editor tabs, a vertical line at a column in every editor tab and in code previews), Window (size at startup), Code navigation (edit `lsp.ini`); Apply keeps every change, Cancel restores them all |
 | `Alt+T` | Preferences on Appearance: pick a theme (applied as you select it), set your interface and code fonts, save the current look as a theme, edit or delete your themes |
 | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Larger / smaller fonts (interface and code together), or back to the theme's sizes |

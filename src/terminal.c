@@ -741,39 +741,204 @@ static GtkWidget* build_panes(AppData* app, const TermLayoutNode* node, GPtrArra
     return paned;
 }
 
-void term_layout_apply(AppData* app, const gchar* text) {
+/* Take every terminal of the panel out of its notebook (referenced, in
+ * order) and empty the panel */
+static GPtrArray* take_all_out(AppData* app) {
+    GPtrArray* taken = g_ptr_array_new_with_free_func(g_object_unref);
+    GPtrArray* panes = term_all_panes(app);
+    for (guint i = 0; i < panes->len; i++) {
+        GtkWidget* vte = terminal_detach_tab(g_ptr_array_index(panes, i));
+        if (vte != NULL) {
+            g_ptr_array_add(taken, vte);
+        }
+    }
+    g_ptr_array_unref(panes);
+    for (GtkWidget* c = gtk_widget_get_first_child(app->term_box); c != NULL;
+         c = gtk_widget_get_first_child(app->term_box)) {
+        gtk_box_remove(GTK_BOX(app->term_box), c);
+    }
+    return taken;
+}
+
+/* Terminals not placed again: kept in spare, else closed with their widget */
+static void set_aside(AppData* app, GPtrArray* left, GPtrArray* spare) {
+    for (guint i = 0; i < left->len; i++) {
+        GtkWidget* vte = g_ptr_array_index(left, i);
+        if (app->last_focused_vte == vte) {
+            app->last_focused_vte = NULL;
+        }
+        if (spare != NULL) {
+            g_ptr_array_add(spare, g_object_ref(vte));
+        }
+    }
+}
+
+void term_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare) {
     TermLayoutNode* tree = term_layout_parse(text);
     if (tree == NULL || app->term_box == NULL) {
         term_layout_free(tree);
         return;
     }
-    /* Take the running terminals out of their notebooks, in order */
-    GPtrArray* existing = term_all_panes(app);
-    for (guint i = 0; i < existing->len; i++) {
-        GtkWidget* vte = g_ptr_array_index(existing, i);
-        GtkNotebook* nb = term_notebook_of(vte);
-        g_object_ref(vte);
-        if (nb != NULL) {
-            gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, vte));
-        }
+    /* The running terminals in order, then those set aside before */
+    GPtrArray* existing = take_all_out(app);
+    while (spare != NULL && spare->len > 0) {
+        g_ptr_array_add(existing, g_ptr_array_steal_index(spare, 0));
     }
-    for (GtkWidget* c = gtk_widget_get_first_child(app->term_box); c != NULL;
-         c = gtk_widget_get_first_child(app->term_box)) {
-        gtk_box_remove(GTK_BOX(app->term_box), c);
-    }
-
     guint next = 0;
     gtk_box_append(GTK_BOX(app->term_box), build_panes(app, tree, existing, &next));
-    /* Terminals left over (the caller confirmed it) close with their widget */
-    for (guint i = 0; i < existing->len; i++) {
-        GtkWidget* vte = g_ptr_array_index(existing, i);
-        if (i >= next && app->last_focused_vte == vte) {
-            app->last_focused_vte = NULL;
-        }
-        g_object_unref(vte);
-    }
+    g_ptr_array_remove_range(existing, 0, next);
+    set_aside(app, existing, spare);
     g_ptr_array_unref(existing);
     term_layout_free(tree);
+}
+
+void term_layout_apply(AppData* app, const gchar* text) {
+    term_layout_apply_spare(app, text, NULL);
+}
+
+GtkWidget* terminal_detach_tab(GtkWidget* vte) {
+    GtkNotebook* nb = (vte != NULL) ? term_notebook_of(vte) : NULL;
+    if (nb == NULL) {
+        return NULL;
+    }
+    g_object_ref(vte);
+    gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, vte));
+    return vte;
+}
+
+void terminal_attach_tab(GtkWidget* vte, GtkNotebook* nb) {
+    term_notebook_add(nb, vte, NULL, -1);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Exact arrangement of the panel, put back after a layout preview           */
+/* ------------------------------------------------------------------------- */
+
+struct TermSnapshot {
+    gboolean is_pane;
+    GPtrArray* terms; /* pane: its terminals in tab order (referenced) */
+    gint current;     /* pane: current tab */
+    gboolean vertical;
+    gdouble frac;
+    TermSnapshot* first;
+    TermSnapshot* second;
+};
+
+static TermSnapshot* snapshot_of(GtkWidget* w) {
+    if (GTK_IS_NOTEBOOK(w)) {
+        GtkNotebook* nb = GTK_NOTEBOOK(w);
+        gint n = gtk_notebook_get_n_pages(nb);
+        if (n == 0) {
+            return NULL;
+        }
+        TermSnapshot* snap = g_new0(TermSnapshot, 1);
+        snap->is_pane = TRUE;
+        snap->terms = g_ptr_array_new_with_free_func(g_object_unref);
+        for (gint p = 0; p < n; p++) {
+            g_ptr_array_add(snap->terms, g_object_ref(gtk_notebook_get_nth_page(nb, p)));
+        }
+        snap->current = gtk_notebook_get_current_page(nb);
+        return snap;
+    }
+    if (!GTK_IS_PANED(w)) {
+        return NULL;
+    }
+    TermSnapshot* a = snapshot_of(gtk_paned_get_start_child(GTK_PANED(w)));
+    TermSnapshot* b = snapshot_of(gtk_paned_get_end_child(GTK_PANED(w)));
+    if (a == NULL || b == NULL) {
+        return a != NULL ? a : b;
+    }
+    TermSnapshot* snap = g_new0(TermSnapshot, 1);
+    snap->vertical = gtk_orientable_get_orientation(GTK_ORIENTABLE(w)) == GTK_ORIENTATION_VERTICAL;
+    gint len = snap->vertical ? gtk_widget_get_height(w) : gtk_widget_get_width(w);
+    gdouble* saved = g_object_get_data(G_OBJECT(w), PANED_FRAC_KEY);
+    snap->frac = (len > 40) ? (gdouble)gtk_paned_get_position(GTK_PANED(w)) / len
+               : (saved != NULL) ? *saved : 0.5;
+    snap->first = a;
+    snap->second = b;
+    return snap;
+}
+
+TermSnapshot* term_snapshot_take(AppData* app) {
+    GtkWidget* root = (app->term_box != NULL) ? gtk_widget_get_first_child(app->term_box) : NULL;
+    return (root != NULL) ? snapshot_of(root) : NULL;
+}
+
+void term_snapshot_free(TermSnapshot* snap) {
+    if (snap == NULL) {
+        return;
+    }
+    if (snap->terms != NULL) {
+        g_ptr_array_unref(snap->terms);
+    }
+    term_snapshot_free(snap->first);
+    term_snapshot_free(snap->second);
+    g_free(snap);
+}
+
+/* Take vte from pool (the terminals out of their notebooks); FALSE if absent */
+static gboolean take_from(GPtrArray* pool, GtkWidget* vte) {
+    guint i = 0;
+    if (pool == NULL || !g_ptr_array_find(pool, vte, &i)) {
+        return FALSE;
+    }
+    g_object_unref(g_ptr_array_steal_index(pool, i)); /* the notebook holds it now */
+    return TRUE;
+}
+
+static GtkWidget* rebuild_snapshot(AppData* app, const TermSnapshot* snap, GPtrArray* taken,
+                                   GPtrArray* spare) {
+    if (snap->is_pane) {
+        GtkWidget* nb = term_notebook_new(app);
+        for (guint i = 0; i < snap->terms->len; i++) {
+            GtkWidget* vte = g_ptr_array_index(snap->terms, i);
+            g_object_ref(vte);
+            if (take_from(taken, vte) || take_from(spare, vte)) {
+                term_notebook_add(GTK_NOTEBOOK(nb), vte, NULL, -1);
+            }
+            g_object_unref(vte);
+        }
+        gint n = gtk_notebook_get_n_pages(GTK_NOTEBOOK(nb));
+        if (n == 0) {
+            g_object_ref_sink(nb);
+            g_object_unref(nb);
+            return NULL; /* its shells exited meanwhile */
+        }
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), MIN(snap->current, n - 1));
+        return nb;
+    }
+    GtkWidget* a = rebuild_snapshot(app, snap->first, taken, spare);
+    GtkWidget* b = rebuild_snapshot(app, snap->second, taken, spare);
+    if (a == NULL || b == NULL) {
+        return a != NULL ? a : b;
+    }
+    GtkWidget* paned = gtk_paned_new(snap->vertical ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_hexpand(paned, TRUE);
+    gtk_widget_set_vexpand(paned, TRUE);
+    wire_paned_controllers(paned, app);
+    gdouble* frac = g_new(gdouble, 1);
+    *frac = snap->frac;
+    g_object_set_data_full(G_OBJECT(paned), PANED_FRAC_KEY, frac, g_free);
+    gtk_paned_set_start_child(GTK_PANED(paned), a);
+    gtk_paned_set_end_child(GTK_PANED(paned), b);
+    gtk_paned_set_resize_start_child(GTK_PANED(paned), TRUE);
+    gtk_paned_set_shrink_start_child(GTK_PANED(paned), TRUE);
+    gtk_paned_set_resize_end_child(GTK_PANED(paned), TRUE);
+    gtk_paned_set_shrink_end_child(GTK_PANED(paned), TRUE);
+    return paned;
+}
+
+void term_snapshot_restore(AppData* app, const TermSnapshot* snap, GPtrArray* spare) {
+    if (app->term_box == NULL) {
+        return;
+    }
+    GPtrArray* taken = take_all_out(app);
+    GtkWidget* root = (snap != NULL) ? rebuild_snapshot(app, snap, taken, spare) : NULL;
+    if (root != NULL) {
+        gtk_box_append(GTK_BOX(app->term_box), root);
+    }
+    set_aside(app, taken, spare);
+    g_ptr_array_unref(taken);
 }
 
 /* ------------------------------------------------------------------------- */

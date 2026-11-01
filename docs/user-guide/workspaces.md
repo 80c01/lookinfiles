@@ -41,11 +41,14 @@ applying it moves the open files into the editor panes that held files (an
 empty one takes a file from the fullest), reuses the running terminals and
 starts the missing shells.
 `Alt+L` (or the grid button of the top bar) opens the layout list under
-the button: the current panels, the default layout, then the saved ones.
-Moving through the list (arrows, or `Alt+L` again for the next one) shows
-each layout's panels at once; the terminals and the editor tabs stay as
-they are until you choose. `Enter` or a click applies the layout in full,
-`Escape` puts the panels back as they were.
+the button: the current arrangement, the default layout, then the saved
+ones. Moving through the list (arrows, or `Alt+L` again for the next one)
+shows each layout exactly as it would be applied: panels, editor splits
+and tabs, terminal panes. Nothing closes meanwhile: terminals a layout has
+no room for are only set aside, and the shells started for a preview end
+with it. `Enter` or a click applies the layout (asking first when it
+closes running terminals); `Escape` puts everything back as it was, the
+same tabs in the same places and the same terminals.
 
 **Edit Layouts…** at the bottom of the list opens the layouts dialog:
 
