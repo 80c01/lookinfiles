@@ -34,6 +34,7 @@ lookinfiles -n Work/Ideas       # open (or create) a note
 | `-f`, `--fullscreen` | Start in fullscreen |
 | `-s`, `--size WIDTHxHEIGHT` | Window size, for example `1920x1080` |
 | `-h`, `--help` | Show the options and exit |
+| `-V`, `--version` | Show the version and exit |
 
 Without an argument, LookinFiles reopens the workspaces you had when you
 last quit: their folders, expanded folders, selection, sort and open files.

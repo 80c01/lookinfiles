@@ -136,6 +136,7 @@ static void print_usage(FILE* out) {
             "\n"
             "Options:\n"
             "  -h, --help                       show this help and exit\n"
+            "  -V, --version                    show the version and exit\n"
             "  -e, --editor emacs|vim|notepad   default editor mode of new tabs\n"
             "                                   (Org files always open in Org-mode)\n"
             "  -n, --note                       the argument is a note, not a file\n"
@@ -214,6 +215,9 @@ int main(int argc, char** argv) {
             options_done = TRUE;
         } else if (g_strcmp0(arg, "-h") == 0 || g_strcmp0(arg, "--help") == 0) {
             print_usage(stdout);
+            return 0;
+        } else if (g_strcmp0(arg, "-V") == 0 || g_strcmp0(arg, "--version") == 0) {
+            printf("%s %s\n", APP_NAME, APP_VERSION);
             return 0;
         } else if (g_strcmp0(arg, "-n") == 0 || g_strcmp0(arg, "--note") == 0) {
             target_is_note = TRUE;

@@ -81,6 +81,7 @@ make clean   # removes both
 ./lookinfiles --size 1920x1080    # window size (-s)
 ./lookinfiles --fullscreen        # (-f)
 ./lookinfiles --help              # (-h)
+./lookinfiles --version           # (-V)
 ```
 
 The session (workspaces, folders, open files) is saved when LookinFiles quits.

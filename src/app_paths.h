@@ -9,6 +9,9 @@
 #define APP_TAGLINE  "look in your files"
 #define APP_DIR_NAME "lookinfiles"
 
+/* Release version (Semantic Versioning); the Makefile reads it from here */
+#define APP_VERSION  "0.1.0"
+
 /* ~/.config/lookinfiles ($XDG_CONFIG_HOME honoured). Not created. Caller frees. */
 gchar* app_config_dir(void);
 

@@ -46,6 +46,9 @@ CFLAGS += -DHAVE_LIBARCHIVE `$(PKG_CONFIG) --cflags libarchive`
 LDFLAGS += `$(PKG_CONFIG) --libs libarchive`
 endif
 
+# Release version, defined once in src/app_paths.h (APP_VERSION)
+VERSION != sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h
+
 TARGET = lookinfiles
 BUILD_DIR = build
 

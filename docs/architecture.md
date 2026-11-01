@@ -430,7 +430,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`on_window_key_press()`, incl. `Ctrl+Q`), layout toggle.
 
 **5. Entry point:** `main.c` — CLI (`-f`/`--fullscreen`, `-s`/`--size WxH`,
-start directory), widget creation and assembly, signal wiring, event
+`-V`/`--version`, start directory), widget creation and assembly, signal wiring, event
 subscriptions, `GMainLoop`.
 
 ### Notifying the chrome (app_events)
