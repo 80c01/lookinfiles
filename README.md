@@ -107,6 +107,7 @@ Org-mode), is in [docs/keyboard.md](docs/keyboard.md).
 
 | Guide | Content |
 |---|---|
+| [User guide](docs/user-guide/README.md) | How to use every feature, one topic per page |
 | [Keyboard reference](docs/keyboard.md) | Every shortcut, by panel and editor mode |
 | [Previews](docs/previews.md) | Supported formats and their limits |
 | [Code navigation](docs/code-nav.md) | Definitions, references, language servers |
