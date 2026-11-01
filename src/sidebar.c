@@ -172,11 +172,6 @@ static void on_sidebar_notes_collapse_clicked(GtkButton* btn, gpointer data) {
     notes_toggle_collapse_expand((AppData*)data);
 }
 
-static void on_sidebar_notes_empty_trash_clicked(GtkButton* btn, gpointer data) {
-    (void)btn;
-    notes_empty_trash((AppData*)data);
-}
-
 /* VS Code-style explorer panel header: "EXPLORER" title + mini view icons + action bars */
 GtkWidget* create_sidebar_header(AppData* app) {
     GtkWidget* header = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -392,14 +387,6 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_tooltip_text(collapse_note_btn, "Toggle Collapse / Expand Notebooks");
     g_signal_connect(collapse_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_collapse_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), collapse_note_btn);
-
-    GtkWidget* empty_trash_btn = icon_button_new("edit-clear-all", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(empty_trash_btn), FALSE);
-    gtk_widget_set_focusable(empty_trash_btn, FALSE);
-    gtk_widget_add_css_class(empty_trash_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(empty_trash_btn, "Empty Trash");
-    g_signal_connect(empty_trash_btn, "clicked", G_CALLBACK(on_sidebar_notes_empty_trash_clicked), app);
-    gtk_box_append(GTK_BOX(buf_toolbar), empty_trash_btn);
 
     gtk_widget_set_visible(buf_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES));
     gtk_box_append(GTK_BOX(header), buf_toolbar);

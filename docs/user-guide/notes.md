@@ -35,7 +35,7 @@ Canvas note to a Markdown note.
 
 Selecting a note shows it in the preview; selecting a notebook shows a
 summary. The **Trash** at the bottom of the tree keeps deleted notes until
-you empty it (toolbar button or right-click **Empty Trash…**).
+you empty it (right-click the Trash, **Empty Trash…**).
 
 ## Opening a note from the command line
 
