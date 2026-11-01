@@ -25,7 +25,7 @@ Canvas note to a Markdown note.
 | `a` | New note in the selected notebook (asks for a title and a format) |
 | `Shift+A` | New notebook |
 | `Enter` | Edit the note |
-| `F2`, `r` or `e` | Edit the note's title and format, or the notebook's name and icon |
+| `F2`, `r` or `e` | Edit the note's title, format and notebook, or the notebook's name and icon |
 | `i` | Change the notebook's icon |
 | `m` | Move the note to another notebook |
 | `d` or `Delete` | Move the note to the trash, or delete the notebook |

@@ -157,11 +157,6 @@ static void on_sidebar_notes_edit_clicked(GtkButton* btn, gpointer data) {
     notes_edit_selected((AppData*)data);
 }
 
-static void on_sidebar_notes_move_clicked(GtkButton* btn, gpointer data) {
-    (void)btn;
-    notes_move_selected((AppData*)data);
-}
-
 static void on_sidebar_notes_delete_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     notes_delete_selected((AppData*)data);
@@ -381,14 +376,6 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_tooltip_text(edit_note_btn, "Edit Selected (F2 / r / e)");
     g_signal_connect(edit_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_edit_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), edit_note_btn);
-
-    GtkWidget* move_note_btn = icon_button_new("document-send", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(move_note_btn), FALSE);
-    gtk_widget_set_focusable(move_note_btn, FALSE);
-    gtk_widget_add_css_class(move_note_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(move_note_btn, "Move Note to Notebook (m)");
-    g_signal_connect(move_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_move_clicked), app);
-    gtk_box_append(GTK_BOX(buf_toolbar), move_note_btn);
 
     GtkWidget* del_note_btn = icon_button_new("user-trash", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(del_note_btn), FALSE);
