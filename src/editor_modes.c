@@ -1,7 +1,6 @@
 #include "editor_modes.h"
 #include "app_events.h"
 #include "text_style.h"
-#include "file_types.h"
 #include "diff_gutter.h"
 #include "code_nav.h"
 #include "code_help.h"
@@ -10,6 +9,7 @@
 #include "fonts.h"
 #include "focus_route.h"
 #include "nav_keys.h"
+#include "icons.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -977,12 +977,19 @@ void editor_mode_message(EditorTab* tab, const gchar* msg) {
     }
 }
 
+/* The tab title is file_type_label_new(): the file-type icon, then the name
+ * (Notes buffers keep their emoji instead of the icon) */
 void editor_tab_label_update(EditorTab* tab) {
-    const gchar* icon = tab->is_buffer ? "📝" : file_icon(tab->name, FALSE);
-    gchar* title =
-        (!tab->is_buffer && gtk_text_buffer_get_modified(tab->buffer))
-            ? g_strdup_printf("%s %s  \xe2\x80\xa2", icon, tab->name)
-            : g_strdup_printf("%s %s", icon, tab->name);
-    gtk_label_set_text(GTK_LABEL(tab->tab_label), title);
+    GtkWidget* image = gtk_widget_get_first_child(tab->tab_label);
+    GtkWidget* label = gtk_widget_get_last_child(tab->tab_label);
+    gtk_widget_set_visible(image, !tab->is_buffer);
+    if (!tab->is_buffer) {
+        file_type_image_set(image, tab->name, FALSE);
+    }
+    gchar* title = tab->is_buffer ? g_strdup_printf("📝 %s", tab->name)
+                   : gtk_text_buffer_get_modified(tab->buffer)
+                       ? g_strdup_printf("%s  \xe2\x80\xa2", tab->name)
+                       : g_strdup(tab->name);
+    gtk_label_set_text(GTK_LABEL(label), title);
     g_free(title);
 }

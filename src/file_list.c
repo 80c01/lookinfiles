@@ -395,10 +395,10 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
         }
 
         if (e->is_dir) {
+            /* Bare names: no folder icon, files get theirs from the tree
+             * (explorer_tree.c), as in VS Code */
             gboolean is_expanded = (child_node != NULL);
-            gchar* label = g_strconcat(is_expanded ? "📂" : "📁", " ", e->name, NULL);
-            ExplorerRow* row = explorer_row_append_container(parent, "dir", e->name, label, can_full);
-            g_free(label);
+            ExplorerRow* row = explorer_row_append_container(parent, "dir", e->name, e->name, can_full);
             explorer_row_set_badge(row, git_badge);
             explorer_row_set_loaded(row, is_expanded);
             if (is_expanded) {
@@ -408,8 +408,7 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
             }
         } else {
             gboolean is_buf = (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES);
-            const gchar* icon_name = is_buf ? "📝" : file_icon(e->name, FALSE);
-            gchar* label = g_strconcat(icon_name, " ", e->name, NULL);
+            gchar* label = is_buf ? g_strconcat("📝 ", e->name, NULL) : g_strdup(e->name);
             ExplorerRow* row = explorer_row_append(parent, is_buf ? "buffer" : "file", e->name, label, can_full);
             g_free(label);
             explorer_row_set_badge(row, git_badge);
@@ -446,8 +445,7 @@ void reexpand_paths_recursive(AppData* app, ExplorerRow* parent) {
     }
 }
 
-/* Directory row expanded: read its contents (first time), record the path
- * and switch to the open folder icon */
+/* Directory row expanded: read its contents (first time) and record the path */
 static void on_dir_expanded(AppData* app, ExplorerRow* row) {
     if (!row->loaded && row->path[0] != '\0') {
         explorer_row_remove_children(row);
@@ -458,14 +456,10 @@ static void on_dir_expanded(AppData* app, ExplorerRow* row) {
         g_hash_table_add(app->expanded_paths, g_strdup(row->path));
         sync_directory_monitors(app);
     }
-    gchar* label = g_strconcat("📂 ", row->name, NULL);
-    explorer_row_set_label(row, label);
-    g_free(label);
 }
 
-/* Directory row collapsed: forget it (and its subdirectories), switch back to
- * the closed folder icon and drop the children so the next expansion reads
- * the directory again */
+/* Directory row collapsed: forget it (and its subdirectories) and drop the
+ * children so the next expansion reads the directory again */
 static void on_dir_collapsed(AppData* app, ExplorerRow* row) {
     if (app->expanded_paths != NULL) {
         gchar* prefix = g_strdup_printf("%s/", row->path);
@@ -481,10 +475,6 @@ static void on_dir_collapsed(AppData* app, ExplorerRow* row) {
         g_free(prefix);
         sync_directory_monitors(app);
     }
-    gchar* label = g_strconcat("📁 ", row->name, NULL);
-    explorer_row_set_label(row, label);
-    g_free(label);
-
     explorer_row_remove_children(row);
     append_placeholder(row, "", "...", "");
     explorer_row_set_loaded(row, FALSE);

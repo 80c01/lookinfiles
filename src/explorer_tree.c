@@ -1,5 +1,6 @@
 /* Explorer tree view (see explorer_tree.h) */
 #include "explorer_tree.h"
+#include "icons.h"
 
 #include <string.h>
 
@@ -49,10 +50,19 @@ static const gchar* git_status_class(const gchar* badge) {
  * keeps priority and the target uses all the remaining width; other badges
  * (git status, counts, note type) are short and drawn at the right. */
 static void render_row(GtkWidget* expander, ExplorerRow* row) {
+    GtkWidget* icon = g_object_get_data(G_OBJECT(expander), "type-icon");
     GtkWidget* name = g_object_get_data(G_OBJECT(expander), "name-label");
     GtkWidget* badge = g_object_get_data(G_OBJECT(expander), "badge-label");
     gboolean has_badge = row->badge[0] != '\0';
     gboolean inline_badge = explorer_row_is(row, "bookmark") || explorer_row_is(row, "remote");
+
+    /* Files show their VS Code file-type icon (their label is the bare
+     * name); folders have none, as in VS Code; other rows have an emoji */
+    gboolean is_file = explorer_row_is(row, "file");
+    gtk_widget_set_visible(icon, is_file);
+    if (is_file) {
+        file_type_image_set(icon, row->name, FALSE);
+    }
 
     gchar* name_esc = g_markup_escape_text(row->label, -1);
     if (inline_badge && has_badge) {
@@ -91,6 +101,9 @@ static void on_factory_setup(GtkSignalListItemFactory* factory, GtkListItem* ite
     gtk_tree_expander_set_indent_for_icon(GTK_TREE_EXPANDER(expander), TRUE);
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 
+    GtkWidget* icon = file_type_image_new();
+    gtk_box_append(GTK_BOX(box), icon);
+
     GtkWidget* name = gtk_label_new(NULL);
     gtk_widget_add_css_class(name, "row-name");
     gtk_label_set_xalign(GTK_LABEL(name), 0.0f);
@@ -108,6 +121,7 @@ static void on_factory_setup(GtkSignalListItemFactory* factory, GtkListItem* ite
     gtk_box_append(GTK_BOX(box), badge);
 
     gtk_tree_expander_set_child(GTK_TREE_EXPANDER(expander), box);
+    g_object_set_data(G_OBJECT(expander), "type-icon", icon);
     g_object_set_data(G_OBJECT(expander), "name-label", name);
     g_object_set_data(G_OBJECT(expander), "badge-label", badge);
     gtk_list_item_set_child(item, expander);

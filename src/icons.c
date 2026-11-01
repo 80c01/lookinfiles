@@ -6,6 +6,7 @@
  * loaded at all (old GTK without librsvg), each name falls back to the icon
  * theme, then to an icon built into libgtk itself (pre-rendered PNG). */
 #include "icons.h"
+#include "file_type_icons.h"
 
 typedef struct {
     const gchar* name;          /* name used by callers */
@@ -165,4 +166,63 @@ GtkWidget* icon_button_new(const gchar* icon_name, const gchar* tooltip) {
         gtk_widget_set_tooltip_text(button, tooltip);
     }
     return button;
+}
+
+/* Bundled glyph of a file-type icon, cached by icon name. Without SVG
+ * support, the generic file or folder icon built into GTK. */
+static GIcon* file_type_gicon(const gchar* icon, gboolean is_dir) {
+    static GHashTable* cache = NULL;
+    if (cache == NULL) {
+        cache = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+    }
+    GIcon* gicon = g_hash_table_lookup(cache, icon);
+    if (gicon != NULL) {
+        return gicon;
+    }
+    GdkDisplay* display = gdk_display_get_default();
+    register_bundled_icons(display);
+    gchar* bundled = g_strconcat("lookin-ft-", icon, "-symbolic", NULL);
+    if (display != NULL && svg_supported() &&
+        gtk_icon_theme_has_icon(gtk_icon_theme_get_for_display(display), bundled)) {
+        gicon = g_themed_icon_new(bundled);
+    } else {
+        gicon = g_themed_icon_new(is_dir ? "folder-symbolic" : "text-x-generic-symbolic");
+    }
+    g_free(bundled);
+    g_hash_table_insert(cache, g_strdup(icon), gicon);
+    return gicon;
+}
+
+GtkWidget* file_type_image_new(void) {
+    GtkWidget* image = gtk_image_new();
+    gtk_widget_add_css_class(image, "file-type-icon");
+    return image;
+}
+
+void file_type_image_set(GtkWidget* image, const gchar* name, gboolean is_dir) {
+    FileTypeIcon ft = file_type_icon(name, is_dir);
+    GIcon* gicon = file_type_gicon(ft.icon, is_dir);
+    if (gtk_image_get_gicon(GTK_IMAGE(image)) != gicon) {
+        gtk_image_set_from_gicon(GTK_IMAGE(image), gicon);
+    }
+    gchar* cls = g_strconcat("ft-", ft.color, NULL);
+    const gchar* old = g_object_get_data(G_OBJECT(image), "ft-class");
+    if (g_strcmp0(old, cls) == 0) {
+        g_free(cls);
+        return;
+    }
+    if (old != NULL) {
+        gtk_widget_remove_css_class(image, old);
+    }
+    gtk_widget_add_css_class(image, cls);
+    g_object_set_data_full(G_OBJECT(image), "ft-class", cls, g_free);
+}
+
+GtkWidget* file_type_label_new(const gchar* name, const gchar* text) {
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget* image = file_type_image_new();
+    file_type_image_set(image, name, FALSE);
+    gtk_box_append(GTK_BOX(box), image);
+    gtk_box_append(GTK_BOX(box), gtk_label_new(text));
+    return box;
 }

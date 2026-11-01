@@ -110,7 +110,8 @@ code_size=14
 
 Comments are lines starting with `#` (not allowed after a value). The colour names are the
 roles of the palette (`src/palette.h`): surfaces (`bg_window`, `bg_view`,
-`bg_bar`...), text (`fg`, `fg_text`, `fg_subtle`...), accent, Git, diff,
+`bg_bar`...), text (`fg`, `fg_text`, `fg_subtle`...), accent, Git, file-type
+icons (`icon_blue`, `icon_purple`...), diff,
 syntax (`syn_comment`, `syn_keyword`, `syn_string`...), editor highlights
 and the 16 terminal colours; a file saved with **Save As…** lists them all.
 A theme that cannot be read is skipped and reported on the terminal LookinFiles

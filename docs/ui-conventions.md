@@ -56,8 +56,11 @@ Check these before adding or changing an action, a tooltip or a dialog:
   `icon_label_new()`), never emoji or text symbols; use `edit-delete` for a
   permanent delete and `user-trash` for a move to trash. Exception: the
   option toggles of Search in Files show text (`Aa`, `ab`, `.*`, `a…z`), as
-  in other editors. Emoji are kept only
-  for file-type icons in the tree and editor tabs. The CSS colours `label`
+  in other editors. Files in the explorer tree and
+  editor tabs show the VS Code (Seti) file-type icons (`file_type_image_set()`,
+  coloured by the `icon_*` palette roles; folders have none, as in VS Code);
+  emoji are kept only for the other rows and for file icons inside text
+  (`file_icon()`: directory previews, Quick Open, bookmarks). The CSS colours `label`
   and `image` nodes together (symbolic icons follow the text colour).
   The icons are bundled in the binary (`icons/`, compiled as a GResource by
   the Makefile, licence in `icons/COPYING`) so they render the same with any
@@ -66,7 +69,9 @@ Check these before adding or changing an action, a tooltip or a dialog:
   `icons/scalable/actions/lookin-<name>-symbolic.svg`, list it in
   `icons/lookin.gresource.xml`, and if `<name>` is not built into libgtk
   add a `FALLBACKS` entry in `icons.c` ending with a built-in icon (used when
-  SVG cannot be loaded). Check with `make ui-test`, `UI_ICON_THEME=hicolor
+  SVG cannot be loaded). The file-type icons `lookin-ft-*` are generated:
+  run `tools/gen_file_icons.py` on the VS Code Seti theme files (see its
+  header) instead of editing them. Check with `make ui-test`, `UI_ICON_THEME=hicolor
   make ui-test` and `LOOKIN_DEBUG_ICONS=1 ./lookin`.
 - **Preview text views** all use `set_view_text_padding()` (10 px sides).
 - **Names**: `Org-mode`, `Markdown`, `Plain Text`, `Canvas`; view titles EXPLORER,

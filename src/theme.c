@@ -5,6 +5,7 @@
 #include "palette.h"
 #include "fonts.h"
 #include "theme_store.h"
+#include "file_type_icons.h"
 
 #include <gtk/gtk.h>
 
@@ -873,4 +874,17 @@ void apply_panel_borders(void) {
         "  background-color: @editor_cursor;\n"
         "}\n";
     theme_add_css(DATA);
+
+    /* File-type icons (icons.c): image.ft-<colour> takes the role
+     * icon_<colour>, on selected rows too, as in VS Code. Kept for reloads. */
+    static gchar* file_icons = NULL;
+    if (file_icons == NULL) {
+        GString* css = g_string_new(NULL);
+        for (gsize i = 0; FILE_TYPE_ICON_COLORS[i] != NULL; i++) {
+            g_string_append_printf(css, "image.file-type-icon.ft-%s { color: @icon_%s; }\n",
+                                   FILE_TYPE_ICON_COLORS[i], FILE_TYPE_ICON_COLORS[i]);
+        }
+        file_icons = g_string_free(css, FALSE);
+    }
+    theme_add_css(file_icons);
 }

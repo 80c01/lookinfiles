@@ -1,6 +1,7 @@
 Icons bundled into LookinFiles (icons/scalable/actions/)
 
-All icons except lookin-utilities-terminal-symbolic.svg are copied
+All icons except lookin-utilities-terminal-symbolic.svg and the
+lookin-ft-*-symbolic.svg file-type icons are copied
 unchanged (renamed with the "lookin-" prefix) from the Adwaita icon theme
 by the GNOME Project, https://gitlab.gnome.org/GNOME/adwaita-icon-theme
 Copyright (c) GNOME Project and Adwaita icon theme contributors.
@@ -9,6 +10,33 @@ in /usr/share/doc/adwaita-icon-theme/copyright).
 
 lookin-utilities-terminal-symbolic.svg was drawn for this project in the
 Adwaita symbolic style and is released under the same terms.
+
+The file-type icons lookin-ft-*-symbolic.svg are the glyphs of the Seti
+icon font of VS Code (extensions/theme-seti/icons/seti.woff in
+https://github.com/microsoft/vscode), converted to SVG paths by
+tools/gen_file_icons.py. They come from Seti UI,
+https://github.com/jesseweed/seti-ui, under the MIT license:
+
+  Copyright (c) 2014 Jesse Weed
+
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Rules: icons must be single-colour symbolic SVGs without any "transform"
 attribute: icon themes whose symbolic icons use transforms (Adwaita "legacy"

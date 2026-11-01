@@ -14,6 +14,7 @@ status=0
 RULES="
 app_paths:
 file_types:text_encoding
+file_type_icons:file_type_icons_table
 git_utils:palette
 line_diff:
 preview_cache:
@@ -105,7 +106,7 @@ lsp_client:lsp_protocol
 lsp_config:code_symbol
 layout_store:app_paths
 text_style:app_types,file_types,app_paths,palette,theme
-theme:palette,fonts,theme_store
+theme:palette,fonts,theme_store,file_type_icons
 markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link
 markdown_link:
 markdown_table:fonts,palette,markdown_link
@@ -116,12 +117,12 @@ tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events,nav_keys
 focus_route:app_types,app_events,nav_keys,panels
-icons:
+icons:file_type_icons
 image_utils:
 animation:gif_decoder,image_utils
 dialog:
 tab_drop:pane_geometry
-explorer_tree:explorer_row
+explorer_tree:explorer_row,icons
 remote_store:app_types,app_paths
 preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc
 fs_watch:app_types,app_events,git_utils,git_tab

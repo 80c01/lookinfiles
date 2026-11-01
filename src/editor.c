@@ -12,6 +12,7 @@
 #include "focus_route.h"
 #include "nav_history.h"
 #include "editor_view.h"
+#include "icons.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;
@@ -843,7 +844,7 @@ EditorTab* editor_open_dedicated(AppData* app, const gchar* name, const gchar* f
 /* Give tab (its view built) a page with a title in target_nb, make it current
  * and focus it */
 static void editor_tab_add_page(AppData* app, EditorTab* tab, GtkNotebook* target_nb) {
-    tab->tab_label = gtk_label_new("");
+    tab->tab_label = file_type_label_new(tab->name, "");
     editor_tab_label_update(tab);
 
     GtkGesture* tab_rclick = gtk_gesture_click_new();

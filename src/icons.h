@@ -15,4 +15,13 @@ void icon_button_set_content(GtkWidget* button, const gchar* icon_name, const gc
 /* Icon + text widget for notebook tab headers */
 GtkWidget* icon_label_new(const gchar* icon_name, const gchar* text);
 
+/* VS Code file-type icon (file_type_icons.h): an image showing the glyph of
+ * a file or directory name in its colour (CSS class ft-<colour>, theme.c) */
+GtkWidget* file_type_image_new(void);
+void file_type_image_set(GtkWidget* image, const gchar* name, gboolean is_dir);
+
+/* Same icon in an icon + text widget for notebook tab headers; the label is
+ * the box's last child */
+GtkWidget* file_type_label_new(const gchar* name, const gchar* text);
+
 #endif /* ICONS_H */

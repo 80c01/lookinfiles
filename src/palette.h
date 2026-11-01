@@ -68,6 +68,18 @@
     X(GIT_DELETED, "git_deleted", "#c74e39", "Deleted file")                                    \
     X(GIT_CONFLICT, "git_conflict", "#e51400", "File with conflicts")                           \
     X(GIT_RENAMED, "git_renamed", "#4fc1ff", "Renamed file")                                    \
+    /* File-type icons (VS Code Seti colours, file_type_icons.h) */                             \
+    X(ICON_BLUE, "icon_blue", "#519aba", "C, Markdown, Python, TypeScript...")                  \
+    X(ICON_GREY, "icon_grey", "#4d5a5e", "Dark grey file icons")                                \
+    X(ICON_GREY_LIGHT, "icon_grey_light", "#6d8086", "Folders, archives, configuration files")  \
+    X(ICON_GREEN, "icon_green", "#8dc149", "Shell scripts, Vue...")                             \
+    X(ICON_ORANGE, "icon_orange", "#e37933", "Makefiles, HTML, test files...")                  \
+    X(ICON_PINK, "icon_pink", "#f55385", "Pink file icons (Sass...)")                           \
+    X(ICON_PURPLE, "icon_purple", "#a074c4", "C and C++ headers, PHP...")                       \
+    X(ICON_RED, "icon_red", "#cc3e44", "Ruby, Java, PDF...")                                    \
+    X(ICON_WHITE, "icon_white", "#d4d7d6", "Files without a known type")                        \
+    X(ICON_YELLOW, "icon_yellow", "#cbcb41", "JavaScript, JSON, licences...")                   \
+    X(ICON_IGNORE, "icon_ignore", "#41535b", "Ignored files (.gitignore, .DS_Store)")           \
     X(GUTTER_ADDED, "gutter_added", "#2ea043", "Change bar of added lines")                     \
     X(GUTTER_MODIFIED, "gutter_modified", "#0078d4", "Change bar of modified lines")            \
     X(GUTTER_DELETED, "gutter_deleted", "#f85149", "Mark of deleted lines")                     \

@@ -92,7 +92,8 @@ gboolean file_content_is_text(const guchar* head, gsize len);
  * plain text (the syntax language names it) */
 const gchar* file_kind_label(FileKind kind);
 
-/* VS Code-like emoji icon for a tree entry */
+/* Emoji icon of a file, for icons inside text (the tree and editor tabs
+ * show the VS Code icons of file_type_icons.h) */
 const gchar* file_icon(const gchar* name, gboolean is_dir);
 
 #endif /* FILE_TYPES_H */
