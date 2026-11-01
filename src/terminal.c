@@ -357,21 +357,64 @@ static void term_remove_leaf(GtkWidget* w) {
 
 /* The last terminal of the shown workspace is gone: hide the panel */
 static void term_panel_closed(AppData* app) {
+    /* The focus moves only if it was in the panel (not on a terminal that
+     * went to the editor area) */
+    GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
+    gboolean move_focus = (focus == NULL || gtk_widget_is_ancestor(focus, app->term_scroll));
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     app->applying_layout = TRUE;
     gtk_widget_set_visible(app->term_scroll, FALSE);
     gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
     gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
-    if (!files_vis && !preview_vis && app->viewer_box != NULL) {
+    gboolean editor_vis = app->editor_dedicated && (app->editor_box != NULL) &&
+                          gtk_widget_get_visible(app->editor_box);
+    if (!files_vis && !preview_vis && !editor_vis && app->viewer_box != NULL) {
         gtk_widget_set_visible(app->viewer_box, TRUE);
         preview_vis = TRUE;
     }
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+    if (!move_focus) {
+        return;
+    }
     if (files_vis) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
     } else if (preview_vis) {
         gtk_widget_grab_focus(app->text_view);
+    }
+}
+
+/* Close the panel if the shown workspace has no terminal left (they all
+ * went to the editor area) */
+static void term_close_panel_if_empty(AppData* app) {
+    if (app->term_box == NULL || app->term_scroll == NULL ||
+        !gtk_widget_get_visible(app->term_scroll)) {
+        return;
+    }
+    GPtrArray* panes = panes_in(app->term_box);
+    gboolean empty = (panes->len == 0);
+    g_ptr_array_unref(panes);
+    if (empty) {
+        term_panel_closed(app);
+    }
+}
+
+static guint close_if_empty_id = 0;
+
+static gboolean term_close_if_empty_idle(gpointer data) {
+    close_if_empty_id = 0;
+    term_close_panel_if_empty((AppData*)data);
+    return G_SOURCE_REMOVE;
+}
+
+/* A terminal notebook left without tabs: its last terminal may have gone to
+ * the editor area. The panel closes now, not when the tab drag ends: GTK may
+ * report that late or not at all. */
+static void on_term_page_removed(GtkNotebook* nb, GtkWidget* child, guint num, gpointer data) {
+    (void)child;
+    (void)num;
+    if (gtk_notebook_get_n_pages(nb) == 0 && close_if_empty_id == 0) {
+        close_if_empty_id = g_idle_add(term_close_if_empty_idle, data);
     }
 }
 
@@ -436,6 +479,7 @@ static GtkWidget* term_notebook_new(AppData* app) {
     gtk_notebook_set_show_border(GTK_NOTEBOOK(nb), FALSE);
     gtk_notebook_set_group_name(GTK_NOTEBOOK(nb), TERM_TABS_GROUP);
     g_signal_connect_after(nb, "switch-page", G_CALLBACK(on_term_switch_page), app);
+    g_signal_connect(nb, "page-removed", G_CALLBACK(on_term_page_removed), app);
     tab_drop_attach(GTK_NOTEBOOK(nb), TRUE, on_term_tab_dropped, on_term_tab_drag_done, app);
     tab_drop_set_accept(GTK_NOTEBOOK(nb), term_accepts_tab);
     return nb;
@@ -475,13 +519,8 @@ static void on_term_tab_drag_done(GtkNotebook* source, gpointer data) {
     if (gtk_widget_get_parent(w) == NULL || gtk_notebook_get_n_pages(source) > 0) {
         return;
     }
-    GtkWidget* box = term_root_box(app, w);
     term_remove_leaf(w);
-    /* Its last terminal went to the editor area: the panel closes */
-    if (box != NULL && box == app->term_box && gtk_widget_get_first_child(box) == NULL &&
-        gtk_widget_get_visible(app->term_scroll)) {
-        term_panel_closed(app);
-    }
+    term_close_panel_if_empty(app);
 }
 
 /* Notebook new terminals go to: the one of the terminal focused last, else
@@ -536,6 +575,11 @@ static void term_spawn_pane_in(AppData* app, gboolean new_row, const gchar* cwd)
     if (target == NULL || new_row) {
         GtkWidget* nb = term_notebook_new(app);
         if (target == NULL) {
+            /* No terminal left: drop the empty notebooks a tab drag left */
+            for (GtkWidget* c = gtk_widget_get_first_child(app->term_box); c != NULL;
+                 c = gtk_widget_get_first_child(app->term_box)) {
+                gtk_box_remove(GTK_BOX(app->term_box), c);
+            }
             gtk_box_append(GTK_BOX(app->term_box), nb);
         } else {
             term_split_beside(app, GTK_WIDGET(target), nb, PANE_ZONE_BOTTOM);
