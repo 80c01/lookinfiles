@@ -45,7 +45,6 @@ static void test_null_safety(void) {
     g_assert_false(is_video_file(NULL));
     g_assert_false(is_audio_file(NULL));
     g_assert_false(is_renderable_file(NULL));
-    g_assert_nonnull(file_icon(NULL, FALSE));
 }
 
 static void test_renderable(void) {
@@ -58,20 +57,6 @@ static void test_renderable(void) {
     g_assert_false(is_renderable_file("Makefile"));
 }
 
-static void test_icons(void) {
-    g_assert_cmpstr(file_icon("anything", TRUE), ==, "📁");
-    g_assert_cmpstr(file_icon("", FALSE), ==, "📄");
-    g_assert_cmpstr(file_icon("Makefile", FALSE), ==, "🛠️");
-    g_assert_cmpstr(file_icon("main.rs", FALSE), ==, "🦀");
-    g_assert_cmpstr(file_icon("script.py", FALSE), ==, "🐍");
-    g_assert_cmpstr(file_icon("unknown.zzz", FALSE), ==, "📄");
-    g_assert_cmpstr(file_icon("data.csv", FALSE), ==, "📊");
-    g_assert_cmpstr(file_icon("analysis.ipynb", FALSE), ==, "📓");
-    g_assert_cmpstr(file_icon("deck.pptx", FALSE), ==, "📽️");
-    g_assert_cmpstr(file_icon("server.crt", FALSE), ==, "🔏");
-    g_assert_cmpstr(file_icon("ls.1.gz", FALSE), ==, "📖");
-    g_assert_cmpstr(file_icon("app.log", FALSE), ==, "📜");
-}
 
 #define DETECT(name, lit) file_kind_detect((name), (const guchar*)(lit), sizeof(lit) - 1)
 
@@ -221,8 +206,6 @@ static void test_detect_text_formats(void) {
     g_assert_cmpint(file_kind_from_name("budget.XLS"), ==, FILE_KIND_OLE);
     g_assert_cmpint(file_kind_from_name("show.pps"), ==, FILE_KIND_OLE);
     g_assert_cmpint(file_kind_from_name("fr.pot"), ==, FILE_KIND_TRANSLATION);
-    g_assert_cmpstr(file_icon("budget.xls", FALSE), ==, file_icon("budget.xlsx", FALSE));
-    g_assert_cmpstr(file_icon("old.doc", FALSE), ==, file_icon("new.docx", FALSE));
     g_assert_cmpint(DETECT("key.pem", "-----BEGIN PRIVATE KEY-----\n"), ==, FILE_KIND_CERTIFICATE);
     g_assert_cmpint(DETECT("key.pem", "not a pem\n"), ==, FILE_KIND_TEXT);
     /* An empty file keeps a text kind from its name only */
@@ -281,7 +264,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/file_types/media", test_media_types);
     g_test_add_func("/file_types/null_safety", test_null_safety);
     g_test_add_func("/file_types/renderable", test_renderable);
-    g_test_add_func("/file_types/icons", test_icons);
     g_test_add_func("/file_types/detect_magic", test_detect_magic);
     g_test_add_func("/file_types/detect_text", test_detect_text);
     g_test_add_func("/file_types/detect_binary", test_detect_binary);

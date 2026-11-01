@@ -7,6 +7,7 @@
  * theme, then to an icon built into libgtk itself (pre-rendered PNG). */
 #include "icons.h"
 #include "file_type_icons.h"
+#include "palette.h"
 
 typedef struct {
     const gchar* name;          /* name used by callers */
@@ -225,4 +226,80 @@ GtkWidget* file_type_label_new(const gchar* name, const gchar* text) {
     gtk_box_append(GTK_BOX(box), image);
     gtk_box_append(GTK_BOX(box), gtk_label_new(text));
     return box;
+}
+
+/* GtkIconPaintable drawn with one colour: a text view draws paintables
+ * without CSS, so the symbolic glyph gets its colour here */
+#define FILE_TYPE_PAINTABLE_SIZE 16
+
+typedef struct {
+    GObject parent_instance;
+    GtkIconPaintable* icon;
+    GdkRGBA color;
+} FileTypePaintable;
+
+typedef GObjectClass FileTypePaintableClass;
+
+static void file_type_paintable_iface_init(GdkPaintableInterface* iface);
+
+G_DEFINE_TYPE_WITH_CODE(FileTypePaintable, file_type_paintable_obj, G_TYPE_OBJECT,
+                        G_IMPLEMENT_INTERFACE(GDK_TYPE_PAINTABLE, file_type_paintable_iface_init))
+
+static void file_type_paintable_snapshot(GdkPaintable* paintable, GdkSnapshot* snapshot,
+                                         double width, double height) {
+    FileTypePaintable* self = (FileTypePaintable*)paintable;
+    if (self->icon == NULL) return;
+    gtk_symbolic_paintable_snapshot_symbolic(GTK_SYMBOLIC_PAINTABLE(self->icon), snapshot,
+                                             width, height, &self->color, 1);
+}
+
+static int file_type_paintable_size(GdkPaintable* paintable) {
+    (void)paintable;
+    return FILE_TYPE_PAINTABLE_SIZE;
+}
+
+static GdkPaintableFlags file_type_paintable_flags(GdkPaintable* paintable) {
+    (void)paintable;
+    return GDK_PAINTABLE_STATIC_SIZE | GDK_PAINTABLE_STATIC_CONTENTS;
+}
+
+static void file_type_paintable_iface_init(GdkPaintableInterface* iface) {
+    iface->snapshot = file_type_paintable_snapshot;
+    iface->get_intrinsic_width = file_type_paintable_size;
+    iface->get_intrinsic_height = file_type_paintable_size;
+    iface->get_flags = file_type_paintable_flags;
+}
+
+static void file_type_paintable_obj_finalize(GObject* object) {
+    g_clear_object(&((FileTypePaintable*)object)->icon);
+    G_OBJECT_CLASS(file_type_paintable_obj_parent_class)->finalize(object);
+}
+
+static void file_type_paintable_obj_class_init(FileTypePaintableClass* klass) {
+    klass->finalize = file_type_paintable_obj_finalize;
+}
+
+static void file_type_paintable_obj_init(FileTypePaintable* self) {
+    (void)self;
+}
+
+GdkPaintable* file_type_paintable(const gchar* name, gboolean is_dir) {
+    FileTypeIcon ft = file_type_icon(name, is_dir);
+    FileTypePaintable* self = g_object_new(file_type_paintable_obj_get_type(), NULL);
+    GdkDisplay* display = gdk_display_get_default();
+    if (display != NULL) {
+        /* Scale 2: sharp on HiDPI screens, scaled down elsewhere */
+        self->icon = gtk_icon_theme_lookup_by_gicon(gtk_icon_theme_get_for_display(display),
+                                                    file_type_gicon(ft.icon, is_dir),
+                                                    FILE_TYPE_PAINTABLE_SIZE, 2,
+                                                    GTK_TEXT_DIR_NONE, 0);
+    }
+    gchar* role_name = g_strconcat("icon_", ft.color, NULL);
+    PaletteRole role = PAL_FG;
+    palette_lookup(role_name, &role);
+    g_free(role_name);
+    if (!gdk_rgba_parse(&self->color, palette_color(role))) {
+        self->color = (GdkRGBA){0.5f, 0.5f, 0.5f, 1.0f};
+    }
+    return GDK_PAINTABLE(self);
 }

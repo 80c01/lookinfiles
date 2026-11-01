@@ -117,7 +117,7 @@ tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events,nav_keys
 focus_route:app_types,app_events,nav_keys,panels
-icons:file_type_icons
+icons:file_type_icons,palette
 image_utils:
 animation:gif_decoder,image_utils
 dialog:

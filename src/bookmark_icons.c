@@ -1,5 +1,4 @@
 #include "bookmark_icons.h"
-#include "file_types.h"
 #include "path_kind.h"
 #include "tree_nav.h"
 
@@ -9,24 +8,26 @@ gboolean bookmark_target_is_uri(const gchar* target) {
     return target != NULL && strstr(target, "://") != NULL && g_uri_peek_scheme(target) != NULL;
 }
 
-gchar* bookmark_icon_label(const gchar* name, const gchar* target) {
-    PathKind kind = path_kind_lookup(target);
+void bookmark_icon_apply(ExplorerRow* row) {
+    const gchar* target = row->path;
+    gboolean is_uri = bookmark_target_is_uri(target);
+    PathKind kind = is_uri ? PATH_KIND_UNKNOWN : path_kind_lookup(target);
     gchar* base = (kind == PATH_KIND_FILE) ? g_path_get_basename(target) : NULL;
-    const gchar* icon = bookmark_target_is_uri(target) ? "🌐"
-                        : kind == PATH_KIND_MISSING    ? "⚠"
-                        : base != NULL                 ? file_icon(base, FALSE)
-                                                       : "🔖";
-    gchar* label = g_strdup_printf("%s %s", icon, name);
+    gchar* label = base != NULL ? g_strdup(row->name)
+                   : g_strdup_printf("%s %s", is_uri                     ? "🌐"
+                                              : kind == PATH_KIND_MISSING ? "⚠"
+                                                                          : "🔖",
+                                     row->name);
+    explorer_row_set_icon_name(row, base);
+    explorer_row_set_label(row, label);
+    g_free(label);
     g_free(base);
-    return label;
 }
 
 /* Relabel a link row to path (returns FALSE: every row is visited) */
 static gboolean relabel(ExplorerRow* row, gpointer path) {
     if (explorer_row_is(row, "bookmark") && g_strcmp0(row->path, path) == 0) {
-        gchar* label = bookmark_icon_label(row->name, row->path);
-        explorer_row_set_label(row, label);
-        g_free(label);
+        bookmark_icon_apply(row);
     }
     return FALSE;
 }

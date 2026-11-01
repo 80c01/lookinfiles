@@ -7,6 +7,7 @@
 #include "file_list.h"
 #include "focus_route.h"
 #include "fuzzy_match.h"
+#include "icons.h"
 #include "nav_history.h"
 #include "palette.h"
 
@@ -205,15 +206,20 @@ static void append_highlighted(GString* out, const gchar* text, gsize from, gsiz
 static void on_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
     (void)f;
     (void)data;
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_set_margin_start(box, 6);
+    gtk_widget_set_margin_end(box, 6);
+    gtk_box_append(GTK_BOX(box), file_type_image_new());
     GtkWidget* label = gtk_label_new(NULL);
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_START);
-    gtk_widget_set_margin_start(label, 6);
-    gtk_widget_set_margin_end(label, 6);
-    gtk_list_item_set_child(item, label);
+    gtk_widget_set_hexpand(label, TRUE);
+    gtk_box_append(GTK_BOX(box), label);
+    gtk_list_item_set_child(item, box);
 }
 
-/* "icon name  folder", the matched characters highlighted */
+/* File-type icon, then "name  folder", the matched characters highlighted.
+ * Folders get the folder glyph: in this flat list they need one. */
 static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
     (void)f;
     Picker* p = data;
@@ -223,18 +229,17 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
     gsize base = slash != NULL ? (gsize)(slash - rel) + 1 : 0;
     gsize len = strlen(rel);
 
-    GString* markup = g_string_new(NULL);
+    GtkWidget* row = gtk_list_item_get_child(item);
     gboolean is_folder = p->folders != NULL && g_hash_table_contains(p->folders, rel);
-    gchar* icon = g_markup_escape_text(file_icon(rel + base, is_folder), -1);
-    g_string_append_printf(markup, "%s ", icon);
-    g_free(icon);
+    file_type_image_set(gtk_widget_get_first_child(row), rel + base, is_folder);
+    GString* markup = g_string_new(NULL);
     append_highlighted(markup, rel, base, len, pos);
     if (base > 0) {
         g_string_append_printf(markup, "  <span foreground=\"%s\">", palette_color(PAL_FG_SUBTLE));
         append_highlighted(markup, rel, 0, base - 1, pos);
         g_string_append(markup, "</span>");
     }
-    gtk_label_set_markup(GTK_LABEL(gtk_list_item_get_child(item)), markup->str);
+    gtk_label_set_markup(GTK_LABEL(gtk_widget_get_last_child(row)), markup->str);
     g_string_free(markup, TRUE);
     g_free(pos);
 }

@@ -10,8 +10,9 @@
 /* TRUE for a URL target ("https://..."), FALSE for a path */
 gboolean bookmark_target_is_uri(const gchar* target);
 
-/* "<icon> <name>" from the target's last known kind (no file access) */
-gchar* bookmark_icon_label(const gchar* name, const gchar* target);
+/* Label and icon of a link row from its target's last known kind (no file
+ * access): a file gets its VS Code file-type icon, other targets an emoji */
+void bookmark_icon_apply(ExplorerRow* row);
 
 /* Read the target's kind in the background; when it changes, relabel its rows
  * and preview the selected link to it again (its preview waits for the kind) */

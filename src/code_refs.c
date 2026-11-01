@@ -4,7 +4,6 @@
 #include "code_index.h"
 #include "code_intel.h"
 #include "editor.h"
-#include "file_types.h"
 #include "icons.h"
 #include "theme.h"
 #include "focus_route.h"
@@ -83,32 +82,41 @@ static void ensure_css(void) {
     theme_add_css(".code-refs { background-color: @bg_view; }"
                   ".code-refs listview { background-color: @bg_view; }"
                   ".code-refs .refs-header { padding: 6px 10px; color: @fg; }"
-                  ".code-refs label.ref-line { font-family: @font_code; padding: 1px 10px 1px 28px; }"
-                  ".code-refs label.ref-file { padding: 4px 10px 1px 10px; }");
+                  ".code-refs .ref-line { font-family: @font_code; padding: 1px 10px 1px 28px; }"
+                  ".code-refs .ref-file { padding: 4px 10px 1px 10px; }");
 }
 
 static void on_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
     (void)f;
     (void)data;
+    /* File-type icon (file headers only), then the text */
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_box_append(GTK_BOX(box), file_type_image_new());
     GtkWidget* label = gtk_label_new(NULL);
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
     gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
-    gtk_list_item_set_child(item, label);
+    gtk_widget_set_hexpand(label, TRUE);
+    gtk_box_append(GTK_BOX(box), label);
+    gtk_list_item_set_child(item, box);
 }
 
 static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
     (void)f;
     (void)data;
-    GtkWidget* label = gtk_list_item_get_child(item);
+    GtkWidget* box = gtk_list_item_get_child(item);
+    GtkWidget* icon = gtk_widget_get_first_child(box);
+    GtkWidget* label = gtk_widget_get_last_child(box);
     CodeRefItem* it = gtk_list_item_get_item(item);
     gchar* markup;
-    gtk_widget_remove_css_class(label, it->header ? "ref-line" : "ref-file");
-    gtk_widget_add_css_class(label, it->header ? "ref-file" : "ref-line");
+    gtk_widget_remove_css_class(box, it->header ? "ref-line" : "ref-file");
+    gtk_widget_add_css_class(box, it->header ? "ref-file" : "ref-line");
+    gtk_widget_set_visible(icon, it->header);
     if (it->header) {
         gchar* base = g_path_get_basename(it->path);
-        markup = g_markup_printf_escaped("%s <b>%s</b>  <span foreground=\"%s\">%s · %u</span>",
-                                         file_icon(base, FALSE), base, palette_color(PAL_FG_SUBTLE), it->shown, it->count);
+        file_type_image_set(icon, base, FALSE);
+        markup = g_markup_printf_escaped("<b>%s</b>  <span foreground=\"%s\">%s · %u</span>",
+                                         base, palette_color(PAL_FG_SUBTLE), it->shown, it->count);
         g_free(base);
     } else {
         /* Leading spaces dropped, the name in bold on a highlight */

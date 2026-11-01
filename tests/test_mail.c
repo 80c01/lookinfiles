@@ -179,7 +179,6 @@ static void test_detection(void) {
     g_assert_cmpint(file_kind_detect("conf", (const guchar*)yaml, strlen(yaml)), !=, FILE_KIND_MAIL);
     const gchar* patch = "From 1234567 Mon Sep 17 00:00:00 2001\nFrom: a\nSubject: [PATCH] x\n\n";
     g_assert_cmpint(file_kind_detect("0001.patch", (const guchar*)patch, strlen(patch)), ==, FILE_KIND_DIFF);
-    g_assert_cmpstr(file_icon("a.eml", FALSE), ==, "📧");
 }
 
 /* --- mbox --- */
@@ -462,7 +461,6 @@ static void test_msg_damaged(void) {
     g_assert_nonnull(strstr(doc->text->str, "Quarterly figures"));
     g_assert_nonnull(strstr(doc->text->str, "Outlook message"));
     preview_doc_free(doc);
-    g_assert_cmpstr(file_icon("a.msg", FALSE), ==, "📧");
 }
 
 /* --- TNEF winmail.dat --- */
@@ -529,7 +527,6 @@ static void test_tnef(void) {
     g_assert_cmpint(file_kind_detect("attachment.bin", d, MIN(n, 64)), ==, FILE_KIND_MAIL);
     g_bytes_unref(b);
     g_assert_cmpint(file_kind_from_name("WINMAIL.DAT"), ==, FILE_KIND_MAIL);
-    g_assert_cmpstr(file_icon("winmail.dat", FALSE), ==, "📧");
     doc = fixture("winmail.dat");
     g_assert_nonnull(strstr(doc->text->str, "Outlook TNEF"));
     g_assert_nonnull(strstr(doc->text->str, "photo.png"));
@@ -590,7 +587,6 @@ static void test_mail_stores(void) {
     g_assert_cmpint(file_kind_detect("folder", d, 64), ==, FILE_KIND_MAIL);
     g_assert_cmpint(file_kind_from_name("Outlook.PST"), ==, FILE_KIND_MAIL);
     g_assert_cmpint(file_kind_from_name("Inbox.dbx"), ==, FILE_KIND_MAIL);
-    g_assert_cmpstr(file_icon("x.ost", FALSE), ==, "📧");
 }
 
 int main(int argc, char** argv) {

@@ -411,6 +411,9 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
             gchar* label = is_buf ? g_strconcat("📝 ", e->name, NULL) : g_strdup(e->name);
             ExplorerRow* row = explorer_row_append(parent, is_buf ? "buffer" : "file", e->name, label, can_full);
             g_free(label);
+            if (!is_buf) {
+                explorer_row_set_icon_name(row, e->name);
+            }
             explorer_row_set_badge(row, git_badge);
         }
         g_free(can_full);

@@ -264,7 +264,9 @@ the sender and subject), mail client databases (previewed as SQLite).
 - [ ] `m` toggles rendered / raw.
 - [ ] Within the latency budget in `make bench-preview`.
 - [ ] Fixture + `shot` in `tests/ui/formats.sh`; screenshot checked.
-- [ ] File-type icon in `file_icon()` if new.
+- [ ] File-type icon: VS Code already maps most extensions
+      (`file_type_icons`); a missing one goes into `LANGUAGES` in
+      `tools/gen_file_icons.py`, then regenerate.
 - [ ] Coverage table and preview list above, `CHANGELOG.md` updated;
       `make check` passes.
 - [ ] One commit per format.

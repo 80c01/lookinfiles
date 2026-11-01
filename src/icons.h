@@ -24,4 +24,8 @@ void file_type_image_set(GtkWidget* image, const gchar* name, gboolean is_dir);
  * the box's last child */
 GtkWidget* file_type_label_new(const gchar* name, const gchar* text);
 
+/* Same icon as a 16 px paintable in the palette's current colour, for icons
+ * inside text (gtk_text_buffer_insert_paintable()). New reference. */
+GdkPaintable* file_type_paintable(const gchar* name, gboolean is_dir);
+
 #endif /* ICONS_H */

@@ -56,11 +56,12 @@ Check these before adding or changing an action, a tooltip or a dialog:
   `icon_label_new()`), never emoji or text symbols; use `edit-delete` for a
   permanent delete and `user-trash` for a move to trash. Exception: the
   option toggles of Search in Files show text (`Aa`, `ab`, `.*`, `a…z`), as
-  in other editors. Files in the explorer tree and
-  editor tabs show the VS Code (Seti) file-type icons (`file_type_image_set()`,
-  coloured by the `icon_*` palette roles; folders have none, as in VS Code);
-  emoji are kept only for the other rows and for file icons inside text
-  (`file_icon()`: directory previews, Quick Open, bookmarks). The CSS colours `label`
+  in other editors. Files show the VS Code (Seti)
+  file-type icons wherever they are listed (`file_type_image_set()`, or
+  `file_type_paintable()` inside text), coloured by the `icon_*` palette
+  roles; folders have none in the tree, as in VS Code, and the folder glyph
+  in flat lists (Quick Open, directory preview). Emoji are kept only for
+  the other rows (notes, bookmark folders, links to URLs...). The CSS colours `label`
   and `image` nodes together (symbolic icons follow the text colour).
   The icons are bundled in the binary (`icons/`, compiled as a GResource by
   the Makefile, licence in `icons/COPYING`) so they render the same with any

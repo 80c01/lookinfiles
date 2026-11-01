@@ -89,12 +89,19 @@ static void test_changed_signal(void) {
     explorer_row_set_badge(row, NULL);    /* NULL = "" */
     g_assert_cmpint(count, ==, 3);
     g_assert_cmpstr(row->badge, ==, "");
+    g_assert_cmpstr(row->icon_name, ==, "");
+    explorer_row_set_icon_name(row, "f.c");
+    explorer_row_set_icon_name(row, "f.c"); /* unchanged */
+    g_assert_cmpint(count, ==, 4);
+    explorer_row_set_icon_name(row, NULL);
+    g_assert_cmpstr(row->icon_name, ==, "");
+    g_assert_cmpint(count, ==, 5);
 
     explorer_row_set_loaded(row, FALSE);
     explorer_row_set_bm_id(row, 7);
     g_assert_false(row->loaded);
     g_assert_cmpuint(row->bm_id, ==, 7);
-    g_assert_cmpint(count, ==, 3);
+    g_assert_cmpint(count, ==, 5);
     g_assert_true(explorer_row_is(row, "file"));
     g_assert_false(explorer_row_is(NULL, "file"));
     g_object_unref(root);

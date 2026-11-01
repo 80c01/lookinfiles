@@ -13,15 +13,16 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `file_types` — file type detection: by name (`file_extension()`,
   `is_*_file()`, `file_kind_from_name()`) and by content (`FileKind`,
   `file_kind_detect()` on the first `FILE_SNIFF_BYTES`: magic numbers, text vs
-  binary; `file_kind_of_path()`), and emoji icons (`file_icon()`, for icons
-  inside text: directory previews, Quick Open, bookmarks). The preview
+  binary; `file_kind_of_path()`). The preview
   detects the kind in its worker thread (`app->viewed_kind`): decide on the
   displayed file with `viewed_kind`, not with its name.
 - `file_type_icons` — VS Code (Seti) file-type icons: `file_type_icon()`
   gives the glyph and colour of a file name, from the table
   `file_type_icons_table.h` generated with the glyphs by
   `tools/gen_file_icons.py`. Shown by `file_type_image_new()` /
-  `file_type_image_set()` (`icons.c`) in the explorer tree and editor tabs.
+  `file_type_image_set()` (`icons.c`) wherever a file is listed (explorer
+  tree, editor tabs, bookmarks, Quick Open, references), and by
+  `file_type_paintable()` inside text (directory preview).
 - `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
   `git_read_branch()`, `scan_git_statuses()`, `git_read_head_blob()` (spawns git: worker thread only).
 - `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility,

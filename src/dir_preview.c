@@ -3,7 +3,6 @@
 #include "palette.h"
 #include "text_tags.h"
 #include "dir_summary.h"
-#include "file_types.h"
 #include "text_style.h"
 #include "git_utils.h"
 #include "mail_dir.h"
@@ -11,6 +10,7 @@
 #include "markdown.h"
 #include "orgmode.h"
 #include "preview_cache.h"
+#include "icons.h"
 
 #include <stdio.h>
 
@@ -190,6 +190,20 @@ static void insert_tagged(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* t
     gtk_text_buffer_insert_with_tags_by_name(buffer, it, text, -1, tag1, tag2, NULL);
 }
 
+/* "  <file-type icon> " in the table (folders get the folder glyph) */
+static void insert_icon(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* name, gboolean is_dir) {
+    insert_tagged(buffer, it, "  ", "dir_table", NULL);
+    GtkTextMark* start = gtk_text_buffer_create_mark(buffer, NULL, it, TRUE);
+    GdkPaintable* icon = file_type_paintable(name, is_dir);
+    gtk_text_buffer_insert_paintable(buffer, it, icon);
+    g_object_unref(icon);
+    GtkTextIter from;
+    gtk_text_buffer_get_iter_at_mark(buffer, &from, start);
+    gtk_text_buffer_apply_tag_by_name(buffer, "dir_table", &from, it);
+    gtk_text_buffer_delete_mark(buffer, start);
+    insert_tagged(buffer, it, " ", "dir_table", NULL);
+}
+
 /* "3 files · 1 folder · 48.2 kB · last change 2 h ago" */
 static gchar* totals_line(const DirSummary* s, gint64 now) {
     GString* out = g_string_new(NULL);
@@ -261,8 +275,7 @@ static void insert_table(GtkTextBuffer* buffer, GtkTextIter* it, AppData* app,
         gchar* age_text = dir_summary_format_age(e->mtime, now);
         gchar* age = dir_summary_pad(age_text, age_width, FALSE);
 
-        gchar* icon = g_strdup_printf("  %s ", file_icon(e->name, e->is_dir));
-        insert_tagged(buffer, it, icon, "dir_table", NULL);
+        insert_icon(buffer, it, e->name, e->is_dir);
         insert_tagged(buffer, it, name, "dir_table", e->is_dir ? "dir_folder" : NULL);
         gchar* rest = g_strdup_printf("  %s  ", size);
         insert_tagged(buffer, it, rest, "dir_table", NULL);
@@ -279,7 +292,6 @@ static void insert_table(GtkTextBuffer* buffer, GtkTextIter* it, AppData* app,
         insert_tagged(buffer, it, "\n", "dir_table", NULL);
 
         g_free(rest);
-        g_free(icon);
         g_free(age);
         g_free(age_text);
         g_free(size);

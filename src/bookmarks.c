@@ -366,17 +366,16 @@ static void bm_append_children(AppData* app, ExplorerRow* parent, GNode* node) {
                 bm_append_placeholder(row, "  (empty)");
             }
         } else {
-            gchar* label = bookmark_icon_label(it->name, it->target);
             bookmark_icon_check(app, it->target);
             gchar* loc = bm_display_location(it->target);
             gchar* badge = g_markup_printf_escaped("<span foreground=\"%s\" size=\"small\">%s</span>",
                                                    palette_color(PAL_FG_FAINT), loc);
-            ExplorerRow* row = explorer_row_append(parent, "bookmark", it->name, label, it->target);
+            ExplorerRow* row = explorer_row_append(parent, "bookmark", it->name, it->name, it->target);
+            bookmark_icon_apply(row);
             explorer_row_set_badge(row, badge);
             explorer_row_set_bm_id(row, it->id);
             g_free(badge);
             g_free(loc);
-            g_free(label);
         }
     }
 }
