@@ -498,6 +498,7 @@ static BrowserTab* tab_new(AppData* app, WebKitWebView* related) {
     bt->label = g_object_ref(icon_label_new("network-transmit-receive", "New Tab"));
     bt->title = g_object_ref(gtk_widget_get_last_child(bt->label));
     gtk_label_set_ellipsize(GTK_LABEL(bt->title), PANGO_ELLIPSIZE_END);
+    gtk_label_set_width_chars(GTK_LABEL(bt->title), 12); /* minimum width when tabs are crowded */
     gtk_label_set_max_width_chars(GTK_LABEL(bt->title), 24);
     GtkGesture* mclick = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);

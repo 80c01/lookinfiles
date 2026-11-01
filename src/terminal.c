@@ -242,6 +242,7 @@ static void on_term_title_changed(VteTerminal* term, const char* prop, gpointer 
 static GtkWidget* term_tab_label_new(void) {
     GtkWidget* label = gtk_label_new("Terminal");
     gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_width_chars(GTK_LABEL(label), 12); /* minimum width when tabs are crowded */
     gtk_label_set_max_width_chars(GTK_LABEL(label), 24);
     return label;
 }
