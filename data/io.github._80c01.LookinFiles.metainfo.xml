@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github._80c01.LookinFiles</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>LookinFiles</name>
+  <summary>Explore, preview and edit your files</summary>
+  <developer id="io.github._80c01">
+    <name>80c01</name>
+  </developer>
+  <description>
+    <p>
+      LookinFiles ("look in your files") is a keyboard-driven file explorer
+      with a preview panel, editors and an embedded terminal side by side.
+    </p>
+    <ul>
+      <li>Previews of text, code, images, PDF, office documents, archives, databases, mail and many more formats</li>
+      <li>Editor tabs in Notepad, Emacs or Vim mode, with Org-mode and code navigation</li>
+      <li>Embedded terminal panes</li>
+      <li>Search in files, Git status, notes and workspaces</li>
+      <li>Themes and font settings</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github._80c01.LookinFiles.desktop</launchable>
+  <provides>
+    <binary>lookinfiles</binary>
+  </provides>
+  <url type="homepage">https://github.com/80c01/lookinfiles</url>
+  <url type="bugtracker">https://github.com/80c01/lookinfiles/issues</url>
+  <url type="vcs-browser">https://github.com/80c01/lookinfiles</url>
+  <categories>
+    <category>System</category>
+    <category>FileTools</category>
+  </categories>
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </supports>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-11-01"/>
+  </releases>
+</component>

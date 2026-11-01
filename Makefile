@@ -226,6 +226,23 @@ ui-test: $(TARGET)
 clean:
 	rm -rf $(TARGET) $(BUILD_DIR)
 
+# Installation (make install PREFIX=/usr DESTDIR=pkgroot for packages):
+# the binary, its desktop entry, AppStream metainfo and icon (data/)
+APP_ID = io.github._80c01.LookinFiles
+PREFIX ?= /usr/local
+BINDIR = $(PREFIX)/bin
+DATADIR = $(PREFIX)/share
+INSTALLED_DATA = applications/$(APP_ID).desktop metainfo/$(APP_ID).metainfo.xml icons/hicolor/scalable/apps/$(APP_ID).svg
+
+install: $(TARGET)
+	install -Dm755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
+	install -Dm644 data/$(APP_ID).desktop $(DESTDIR)$(DATADIR)/applications/$(APP_ID).desktop
+	install -Dm644 data/$(APP_ID).metainfo.xml $(DESTDIR)$(DATADIR)/metainfo/$(APP_ID).metainfo.xml
+	install -Dm644 data/icons/hicolor/scalable/apps/$(APP_ID).svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/$(APP_ID).svg
+
+uninstall:
+	rm -f $(DESTDIR)$(BINDIR)/$(TARGET) $(INSTALLED_DATA:%=$(DESTDIR)$(DATADIR)/%)
+
 -include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
 
-.PHONY: all clean test check ui-test bench-preview preview-coverage
+.PHONY: all clean install uninstall test check ui-test bench-preview preview-coverage

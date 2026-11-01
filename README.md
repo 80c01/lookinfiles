@@ -70,6 +70,14 @@ make         # creates ./lookinfiles (objects in build/)
 make clean   # removes both
 ```
 
+### Install
+
+```bash
+sudo make install     # into /usr/local (binary, menu entry, icon)
+sudo make uninstall
+make install PREFIX=/usr DESTDIR=pkgroot   # staging directory for packages
+```
+
 ## Usage
 
 ```bash

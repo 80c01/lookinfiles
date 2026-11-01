@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=LookinFiles
+GenericName=File Explorer
+Comment=Explore, preview and edit your files
+Exec=lookinfiles %f
+Icon=io.github._80c01.LookinFiles
+Terminal=false
+Categories=System;FileTools;Utility;GTK;
+Keywords=files;folders;explorer;preview;editor;terminal;notes;
+StartupNotify=true
+StartupWMClass=lookinfiles
