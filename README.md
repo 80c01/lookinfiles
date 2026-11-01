@@ -76,6 +76,7 @@ make clean   # removes both
 sudo make install     # into /usr/local (binary, menu entry, icon)
 sudo make uninstall
 make install PREFIX=/usr DESTDIR=pkgroot   # staging directory for packages
+make dist             # lookinfiles-<version>.tar.gz of the last commit
 ```
 
 ## Usage
