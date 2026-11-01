@@ -9,8 +9,11 @@
 #include "app_types.h"
 #include "session_store.h"
 
-/* The explorer's folder changed (file_list.c): history and recent folders */
-void nav_history_folder_changed(AppData* app, const gchar* old_dir, const gchar* new_dir);
+/* The explorer's folder changed (file_list.c): history and recent folders.
+ * selected: the row selected in old_dir (or NULL), shown again when the
+ * history comes back to old_dir. */
+void nav_history_folder_changed(AppData* app, const gchar* old_dir, const gchar* new_dir,
+                                const gchar* selected);
 /* A file was opened in an editor tab or chosen in quick open */
 void nav_history_file_opened(AppData* app, const gchar* path);
 
@@ -19,6 +22,18 @@ void nav_history_file_opened(AppData* app, const gchar* path);
  * itself. Caller frees. */
 gchar* nav_history_back(AppData* app);
 gchar* nav_history_forward(AppData* app);
+/* Several folders back / forward at once (steps >= 1, the history menu of
+ * the top bar buttons): the folder to show, or NULL if it is gone. Caller
+ * frees. */
+gchar* nav_history_go(AppData* app, gboolean back, guint steps);
+/* Whether there is a folder before / after the current one */
+gboolean nav_history_can_go(AppData* app, gboolean back);
+/* The folders before / after the current one, nearest first (gchar*,
+ * deleted ones included): entry i is nav_history_go(app, back, i + 1).
+ * Free with g_ptr_array_unref(). */
+GPtrArray* nav_history_folders(AppData* app, gboolean back);
+/* Name of the entry of dir selected when the explorer left it, or NULL */
+const gchar* nav_history_selection(AppData* app, const gchar* dir);
 
 /* Recent folders and files, most recent first (loaded on first use) */
 const RecentList* nav_history_recent(AppData* app);

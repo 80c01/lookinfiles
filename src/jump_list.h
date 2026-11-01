@@ -31,6 +31,13 @@ const JumpLocation* jump_list_back(JumpList* list, const gchar* path, gint line,
 /* Go forward after going back: the location to show, or NULL */
 const JumpLocation* jump_list_forward(JumpList* list);
 
+/* Go straight to location index (0 = oldest) from the current location
+ * (path, line, column), remembered as back does: the location to show, or
+ * NULL when index is out of range or already the current one. */
+const JumpLocation* jump_list_go_to(JumpList* list, guint index, const gchar* path, gint line, gint column);
+
+/* Location index (0 = oldest), or NULL */
+const JumpLocation* jump_list_nth(JumpList* list, guint index);
 guint jump_list_length(JumpList* list);
 /* Index of the current location: length when not walking the history */
 guint jump_list_position(JumpList* list);

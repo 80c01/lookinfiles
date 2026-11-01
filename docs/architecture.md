@@ -377,8 +377,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
 - `nav_history` — per-workspace folder history (`VirtualLayout.dir_history`,
   fed by `reload_directory()`; `go_back_directory()` / `go_forward_directory()`
-  in `file_list` walk it) and the recent folders and files (editor tabs
-  opened, quick open choices).
+  / `go_history_directory()` in `file_list` walk it), with the entry
+  selected in each folder left (selected again on the way back), and the
+  recent folders and files (editor tabs opened, quick open choices).
 - `quick_open` — Ctrl+P / Emacs `C-x C-f`; Alt+R lists the recent places
   in the same dialog (`quick_open_show_recent()`). Ctrl+P: the project's files
   (`code_index_all_files()` in a worker) in an `AppDialog`, ranked by
@@ -393,7 +394,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   stylesheet of `editor_modes_load_css()`).
 
 **4. Window chrome — may call features:**
-- `topbar` — breadcrumbs and toggle pills; `update_path_label()`.
+- `topbar` — back / forward arrows (folder history, right click: the list),
+  breadcrumbs and toggle pills; `update_path_label()`.
 - `status_bar` — bottom bar (branch, selection, size, type, global mode menu:
   it shows and sets the global mode only; a tab's mode is set from its tab menu).
 - `sidebar` — explorer header: view switcher and per-view action toolbars.

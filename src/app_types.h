@@ -133,7 +133,7 @@ typedef struct {
     gchar* remote_id;    /* ID of remote machine if workspace is connected to remote */
     ExplorerTreeState* tree_state; /* explorer rows while another workspace is shown (owned) */
     GHashTable* git_statuses;      /* git badges while another workspace is shown (owned) */
-    gpointer dir_history;          /* folders shown, for back / forward (JumpList*, nav_history.c) */
+    gpointer dir_history;          /* folders shown, for back / forward (private to nav_history.c) */
     gpointer search_state;         /* last search in files and its Search tab (project_search.c) */
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
 #ifdef HAVE_VTE
@@ -166,6 +166,8 @@ typedef struct {
     AppSearchBar viewer_search;   /* search bar at the bottom of the preview */
     GtkWidget* path_label;
     GtkWidget* breadcrumb_box;
+    GtkWidget* history_back_btn;  /* top bar arrows: folder history (topbar.c) */
+    GtkWidget* history_fwd_btn;
     GtkWidget* files_btn;
     GtkWidget* preview_btn;
     GtkWidget* split_btn;         /* tab action button to split/dock editor panel */

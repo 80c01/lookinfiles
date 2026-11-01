@@ -94,7 +94,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Explorer panel", "a / Shift+A", "New file / new folder in the selected directory", 0},
     {"Explorer panel", "F2 / r / e", "Rename selected file or folder", 0},
     {"Explorer panel", "d / Delete", "Move selected file or folder to the trash (asks first)", 0},
-    {"Explorer panel", "Shift+H / Shift+L", "Back / forward in the folders shown in this workspace (also the mouse's back / forward buttons)", 0},
+    {"Explorer panel", "Shift+H / Shift+L", "Back / forward in the folders shown in this workspace (also the mouse's back / forward buttons and the top bar arrows; right-click an arrow: the list)", 0},
     {"Explorer panel", "Right-click", "Context menu: open, side panel, default app, terminal here, rename, trash, copy path, bookmark", 0},
     {"Explorer panel", "u", "Undo the last move to the trash or rename (also Undo in the status bar)", 0},
     {"Explorer panel", "i / I", "Toggle hidden files", 0},

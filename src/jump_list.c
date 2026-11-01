@@ -54,15 +54,24 @@ void jump_list_push(JumpList* list, const gchar* path, gint line, gint column) {
     list->pos = list->items->len;
 }
 
-const JumpLocation* jump_list_back(JumpList* list, const gchar* path, gint line, gint column) {
-    if (list == NULL || list->items->len == 0) return NULL;
+/* Leaving the live position: remember it for forward. Returns how many of
+ * the oldest locations were dropped to make room. */
+static guint leave_live(JumpList* list, const gchar* path, gint line, gint column) {
+    guint dropped = 0;
     if (list->pos >= list->items->len) {
-        /* Leaving the live position: remember it for forward */
         if (path != NULL && !same_place(at(list, list->items->len - 1), path, line)) {
+            guint before = list->items->len;
             append(list, path, line, column);
+            dropped = before + 1 - list->items->len;
         }
         list->pos = list->items->len - 1;
     }
+    return dropped;
+}
+
+const JumpLocation* jump_list_back(JumpList* list, const gchar* path, gint line, gint column) {
+    if (list == NULL || list->items->len == 0) return NULL;
+    leave_live(list, path, line, column);
     if (list->pos == 0) return NULL;
     list->pos--;
     return at(list, list->pos);
@@ -72,6 +81,20 @@ const JumpLocation* jump_list_forward(JumpList* list) {
     if (list == NULL || list->pos + 1 >= list->items->len) return NULL;
     list->pos++;
     return at(list, list->pos);
+}
+
+const JumpLocation* jump_list_go_to(JumpList* list, guint index, const gchar* path, gint line, gint column) {
+    if (list == NULL || index >= list->items->len) return NULL;
+    guint dropped = leave_live(list, path, line, column);
+    if (index < dropped) return NULL;
+    index -= dropped;
+    if (index == list->pos) return NULL;
+    list->pos = index;
+    return at(list, index);
+}
+
+const JumpLocation* jump_list_nth(JumpList* list, guint index) {
+    return (list != NULL && index < list->items->len) ? at(list, index) : NULL;
 }
 
 guint jump_list_length(JumpList* list) {

@@ -8,6 +8,7 @@
 #include "help.h"
 #include "help_guide.h"
 #include "minimap.h"
+#include "nav_history.h"
 #include "remote.h"
 #include "terminal.h"
 
@@ -159,6 +160,131 @@ void on_help_pill_right_clicked(GtkGestureClick* gesture, gint n_press, gdouble 
     toggle_help_panel((AppData*)data);
 }
 
+#define HISTORY_MENU_MAX 15
+
+static void on_history_clicked(GtkButton* btn, gpointer data) {
+    AppData* app = (AppData*)data;
+    if (GTK_WIDGET(btn) == app->history_back_btn) {
+        go_back_directory(app);
+    } else {
+        go_forward_directory(app);
+    }
+}
+
+static gboolean unparent_idle(gpointer data) {
+    gtk_widget_unparent(GTK_WIDGET(data));
+    g_object_unref(data);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_history_menu_closed(GtkPopover* popover, gpointer data) {
+    (void)data;
+    g_idle_add(unparent_idle, g_object_ref(popover));
+}
+
+static void on_history_item_clicked(GtkButton* btn, gpointer data) {
+    GtkWidget* popover = GTK_WIDGET(data);
+    AppData* app = (AppData*)g_object_get_data(G_OBJECT(popover), "app");
+    gboolean back = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(popover), "back"));
+    guint steps = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(btn), "steps"));
+    gtk_popover_popdown(GTK_POPOVER(popover));
+    go_history_directory(app, back, steps);
+}
+
+/* The folder as shown in the menu: its name, then where it is (~ for home) */
+static GtkWidget* history_item_new(const gchar* path) {
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 24);
+    gchar* name = g_path_get_basename(path);
+    GtkWidget* label = gtk_label_new(name);
+    g_free(name);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_widget_set_hexpand(label, TRUE);
+    gtk_box_append(GTK_BOX(row), label);
+
+    gchar* parent = g_path_get_dirname(path);
+    const gchar* home = g_get_home_dir();
+    gsize home_len = home != NULL ? strlen(home) : 0;
+    gchar* where = (home_len > 1 && g_str_has_prefix(parent, home) &&
+                    (parent[home_len] == '\0' || parent[home_len] == '/'))
+                       ? g_strconcat("~", parent + home_len, NULL)
+                       : g_strdup(parent);
+    GtkWidget* dir = gtk_label_new(where);
+    gtk_widget_add_css_class(dir, "dim-label");
+    gtk_label_set_ellipsize(GTK_LABEL(dir), PANGO_ELLIPSIZE_START);
+    gtk_label_set_max_width_chars(GTK_LABEL(dir), 48);
+    gtk_box_append(GTK_BOX(row), dir);
+    g_free(where);
+    g_free(parent);
+
+    GtkWidget* btn = gtk_button_new();
+    gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+    gtk_button_set_child(GTK_BUTTON(btn), row);
+    gtk_widget_set_tooltip_text(btn, path);
+    return btn;
+}
+
+static void on_history_right_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)n_press;
+    (void)x;
+    (void)y;
+    AppData* app = (AppData*)data;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    GtkWidget* button = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+    gboolean back = button == app->history_back_btn;
+    GPtrArray* folders = nav_history_folders(app, back);
+    if (folders->len == 0) {
+        g_ptr_array_unref(folders);
+        return;
+    }
+
+    GtkWidget* popover = gtk_popover_new();
+    gtk_widget_set_parent(popover, button);
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
+    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
+    gtk_widget_set_halign(popover, GTK_ALIGN_START);
+    g_object_set_data(G_OBJECT(popover), "app", app);
+    g_object_set_data(G_OBJECT(popover), "back", GINT_TO_POINTER(back));
+
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    for (guint i = 0; i < folders->len && i < HISTORY_MENU_MAX; i++) {
+        const gchar* path = g_ptr_array_index(folders, i);
+        GtkWidget* item = history_item_new(path);
+        /* A deleted folder is listed but cannot be picked */
+        gtk_widget_set_sensitive(item, g_file_test(path, G_FILE_TEST_IS_DIR));
+        g_object_set_data(G_OBJECT(item), "steps", GUINT_TO_POINTER(i + 1));
+        g_signal_connect(item, "clicked", G_CALLBACK(on_history_item_clicked), popover);
+        gtk_box_append(GTK_BOX(box), item);
+    }
+    g_ptr_array_unref(folders);
+
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
+    g_signal_connect(popover, "closed", G_CALLBACK(on_history_menu_closed), NULL);
+    gtk_popover_popup(GTK_POPOVER(popover));
+}
+
+static GtkWidget* history_button_new(AppData* app, const gchar* icon, const gchar* tooltip) {
+    GtkWidget* btn = icon_button_new(icon, tooltip);
+    gtk_widget_add_css_class(btn, "breadcrumb-item");
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_history_clicked), app);
+    GtkGesture* right = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(right), GDK_BUTTON_SECONDARY);
+    g_signal_connect(right, "pressed", G_CALLBACK(on_history_right_clicked), app);
+    gtk_widget_add_controller(btn, GTK_EVENT_CONTROLLER(right));
+    return btn;
+}
+
+GtkWidget* topbar_history_buttons_new(AppData* app) {
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
+    app->history_back_btn = history_button_new(app, "go-previous",
+                                               "Back (Shift+H) — Right-Click: Folders Before");
+    app->history_fwd_btn = history_button_new(app, "go-next",
+                                              "Forward (Shift+L) — Right-Click: Folders After");
+    gtk_box_append(GTK_BOX(box), app->history_back_btn);
+    gtk_box_append(GTK_BOX(box), app->history_fwd_btn);
+    return box;
+}
+
 typedef struct {
     gchar* label;
     gchar* full_path;
@@ -286,6 +412,11 @@ void update_path_label(AppData* app) {
             g_object_set_data_full(G_OBJECT(app->breadcrumb_box), "built-dir",
                                    g_strdup(app->base_dir), g_free);
         }
+    }
+
+    if (app->history_back_btn != NULL) {
+        gtk_widget_set_sensitive(app->history_back_btn, nav_history_can_go(app, TRUE));
+        gtk_widget_set_sensitive(app->history_fwd_btn, nav_history_can_go(app, FALSE));
     }
 
     if (app->sort_btn != NULL) {

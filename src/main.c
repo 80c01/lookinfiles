@@ -720,6 +720,7 @@ int main(int argc, char** argv) {
     GtkWidget* label_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_set_name(label_row, "statusbar");
     gtk_box_append(GTK_BOX(label_row), path_label);
+    gtk_box_append(GTK_BOX(label_row), topbar_history_buttons_new(app));
     gtk_box_append(GTK_BOX(label_row), breadcrumb_box);
     gtk_box_append(GTK_BOX(label_row), sep_label);
     gtk_box_append(GTK_BOX(label_row), ws_minimap);

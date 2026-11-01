@@ -48,5 +48,7 @@ void go_to_parent_directory(AppData* app);
  * in this workspace (nav_history.h) */
 void go_back_directory(AppData* app);
 void go_forward_directory(AppData* app);
+/* Several folders back / forward at once (the top bar history menu) */
+void go_history_directory(AppData* app, gboolean back, guint steps);
 
 #endif /* FILE_LIST_H */

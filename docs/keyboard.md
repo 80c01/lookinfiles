@@ -84,7 +84,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Enter` / double click | Expand a directory, open a file in the editor, open a bookmark |
 | `Ctrl+Enter` | Enter the selected directory as the new root |
 | `Backspace` / `Alt+Up` | Parent directory (or back to the files view) |
-| `Shift+H` / `Shift+L`, mouse back / forward buttons | Back / forward in the folders this workspace showed |
+| `Shift+H` / `Shift+L`, mouse back / forward buttons | Back / forward in the folders this workspace showed, the entry selected when it was left selected again (also the arrows of the top bar; a right click on one lists the folders before / after) |
 | `/`, then `n` / `N` (Vim) | Search entries by name, next / previous match |
 | `Ctrl+F`, `F3` / `Shift+F3` (Notepad) | Search entries by name, next / previous match |
 | `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |

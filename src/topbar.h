@@ -7,6 +7,11 @@
 /* Rebuild the top bar from AppData: single source of truth for directory/sort/hidden state */
 void update_path_label(AppData* app);
 
+/* Back / forward arrows before the breadcrumbs: a click goes one folder
+ * back / forward in this workspace's history, a right click lists the
+ * folders to pick one. Sets app->history_back_btn / history_fwd_btn. */
+GtkWidget* topbar_history_buttons_new(AppData* app);
+
 void on_files_pill_clicked(GtkButton* btn, gpointer data);
 void on_preview_pill_clicked(GtkButton* btn, gpointer data);
 void on_split_btn_clicked(GtkButton* btn, gpointer data);

@@ -75,6 +75,45 @@ static void test_forget_file(void) {
     jump_list_free(j);
 }
 
+static void test_go_to(void) {
+    JumpList* j = jump_list_new(100);
+    /* a -> b -> c -> d (current) */
+    jump_list_push(j, "a", 0, 0);
+    jump_list_push(j, "b", 0, 0);
+    jump_list_push(j, "c", 0, 0);
+    g_assert_null(jump_list_go_to(j, 3, "d", 0, 0));
+    ASSERT_LOC(jump_list_go_to(j, 0, "d", 0, 0), "a", 0);
+    g_assert_cmpuint(jump_list_length(j), ==, 4);
+    g_assert_cmpuint(jump_list_position(j), ==, 0);
+    ASSERT_LOC(jump_list_nth(j, 3), "d", 0);
+    /* Already there */
+    g_assert_null(jump_list_go_to(j, 0, "a", 0, 0));
+    ASSERT_LOC(jump_list_go_to(j, 3, "a", 0, 0), "d", 0);
+    g_assert_null(jump_list_forward(j));
+    ASSERT_LOC(jump_list_back(j, "d", 0, 0), "c", 0);
+    g_assert_null(jump_list_nth(j, 4));
+    jump_list_free(j);
+}
+
+static void test_go_to_full(void) {
+    /* Remembering the current location drops the oldest one: indexes shift */
+    JumpList* j = jump_list_new(3);
+    jump_list_push(j, "a", 0, 0);
+    jump_list_push(j, "b", 0, 0);
+    jump_list_push(j, "c", 0, 0);
+    ASSERT_LOC(jump_list_go_to(j, 1, "d", 0, 0), "b", 0);
+    ASSERT_LOC(jump_list_nth(j, 0), "b", 0);
+    g_assert_cmpuint(jump_list_position(j), ==, 0);
+    jump_list_free(j);
+    /* The oldest location itself was dropped */
+    j = jump_list_new(3);
+    jump_list_push(j, "a", 0, 0);
+    jump_list_push(j, "b", 0, 0);
+    jump_list_push(j, "c", 0, 0);
+    g_assert_null(jump_list_go_to(j, 0, "d", 0, 0));
+    jump_list_free(j);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/jump_list/back_forward", test_back_forward);
@@ -82,5 +121,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/jump_list/same_line_replaced", test_same_line_replaced);
     g_test_add_func("/jump_list/max", test_max);
     g_test_add_func("/jump_list/forget_file", test_forget_file);
+    g_test_add_func("/jump_list/go_to", test_go_to);
+    g_test_add_func("/jump_list/go_to_full", test_go_to_full);
     return g_test_run();
 }
