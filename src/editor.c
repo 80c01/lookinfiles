@@ -474,6 +474,9 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     if (app == NULL || tab == NULL || target_widget == NULL) return;
 
     GtkWidget* popover = gtk_popover_new();
+    /* The expanding menu rows must not make the tab expand to the strip width */
+    gtk_widget_set_hexpand(popover, FALSE);
+    gtk_widget_set_vexpand(popover, FALSE);
     gtk_widget_set_parent(popover, target_widget);
     gtk_popover_set_has_arrow(GTK_POPOVER(popover), TRUE);
     gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
