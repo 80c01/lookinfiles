@@ -383,6 +383,37 @@ static gboolean swap_explorer_rows(AppData* app, gint idx) {
     return had_rows;
 }
 
+/* Show the panels of workspace ws as it records them: visibility and the
+ * preview/terminal orientation (a shown terminal panel gets a terminal) */
+static void show_ws_panels(AppData* app, const VirtualLayout* ws) {
+    if (app->left_vbox != NULL) {
+        gtk_widget_set_visible(app->left_vbox, ws->files_vis);
+    }
+    if (app->viewer_box != NULL) {
+        gtk_widget_set_visible(app->viewer_box, ws->preview_vis);
+    }
+    if (app->editor_box != NULL) {
+        gtk_widget_set_visible(app->editor_box, ws->editor_dedicated);
+    }
+    if (app->right_paned != NULL) {
+        gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), ws->right_orient);
+        gtk_widget_set_visible(app->right_paned, ws->preview_vis || ws->editor_dedicated || ws->term_vis);
+    }
+    if (app->term_scroll != NULL) {
+        gtk_widget_set_visible(app->term_scroll, ws->term_vis);
+    }
+
+#ifdef HAVE_VTE
+    if (ws->term_vis && ws->term_box != NULL) {
+        GPtrArray* panes = term_visible_panes(app);
+        if (panes->len == 0) {
+            term_spawn_pane(app, FALSE);
+        }
+        g_ptr_array_unref(panes);
+    }
+#endif
+}
+
 void workspace_switch(AppData* app, gint idx) {
     if (app == NULL || idx < 0 || idx >= app->num_workspaces) {
         return;
@@ -439,32 +470,7 @@ void workspace_switch(AppData* app, gint idx) {
     }
 #endif
 
-    if (app->left_vbox != NULL) {
-        gtk_widget_set_visible(app->left_vbox, ws->files_vis);
-    }
-    if (app->viewer_box != NULL) {
-        gtk_widget_set_visible(app->viewer_box, ws->preview_vis);
-    }
-    if (app->editor_box != NULL) {
-        gtk_widget_set_visible(app->editor_box, ws->editor_dedicated);
-    }
-    if (app->right_paned != NULL) {
-        gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), ws->right_orient);
-        gtk_widget_set_visible(app->right_paned, ws->preview_vis || ws->editor_dedicated || ws->term_vis);
-    }
-    if (app->term_scroll != NULL) {
-        gtk_widget_set_visible(app->term_scroll, ws->term_vis);
-    }
-
-#ifdef HAVE_VTE
-    if (ws->term_vis && ws->term_box != NULL) {
-        GPtrArray* panes = term_visible_panes(app);
-        if (panes->len == 0) {
-            term_spawn_pane(app, FALSE);
-        }
-        g_ptr_array_unref(panes);
-    }
-#endif
+    show_ws_panels(app, ws);
 
     gboolean need_rescan = app->dir_scan_pending ||
                            (g_strcmp0(app->base_dir, ws->base_dir) != 0) ||
@@ -565,6 +571,22 @@ void workspace_switch(AppData* app, gint idx) {
     } else if (ws->preview_vis && app->text_view != NULL) {
         gtk_widget_grab_focus(app->text_view);
     }
+}
+
+void workspace_show_panels(AppData* app) {
+    if (app == NULL || app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
+        return;
+    }
+    VirtualLayout* ws = &app->workspaces[app->current_ws];
+    app->right_frac = ws->right_frac;
+    app->editor_frac = ws->editor_frac;
+    app->switching_ws = TRUE;
+    show_ws_panels(app, ws);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
+    minimap_update_visibility(app);
+    workspace_apply_positions(app);
+    app->switching_ws = FALSE;
+    workspace_save_current(app);
 }
 
 /* Default layout of new workspaces (layouts.ini, built-in if none). Caller frees. */

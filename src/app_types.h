@@ -332,6 +332,7 @@ typedef struct {
     gint layout_apply_frames;
     gint layout_retry_count;
     GtkWidget* ws_minimap;
+    GtkWidget* layouts_btn;       /* top-bar button: anchor of the Alt+L layout switcher */
 
     /* VS Code-style chrome: explorer panel header and bottom status bar */
     GtkWidget* sidebar_title;     /* "EXPLORER" / "BOOKMARKS" header label */

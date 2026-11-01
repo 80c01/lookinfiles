@@ -14,7 +14,7 @@ enum { RESPONSE_SAVE = 1, RESPONSE_DELETE = 2 };
 /* Capture and apply                                                         */
 /* ------------------------------------------------------------------------- */
 
-static SavedLayout* capture_layout(AppData* app, const gchar* name) {
+SavedLayout* layouts_capture(AppData* app, const gchar* name) {
     app_emit(app, APP_EVENT_LAYOUT_CHANGED); /* store the live state in the workspace */
     const VirtualLayout* ws = &app->workspaces[app->current_ws];
     SavedLayout* l = saved_layout_new(name);
@@ -54,8 +54,22 @@ static gboolean confirm(AppData* app, const gchar* title, const gchar* message, 
     return resp == APP_RESPONSE_OK;
 }
 
-/* Apply a layout to the current workspace. FALSE if the user cancelled. */
-static gboolean apply_layout(AppData* app, const SavedLayout* l) {
+/* Record the panels of a layout in the current workspace (shown by the caller) */
+static void set_panels(AppData* app, const SavedLayout* l) {
+    VirtualLayout* ws = &app->workspaces[app->current_ws];
+    ws->files_vis = l->files_vis;
+    ws->preview_vis = l->preview_vis;
+    ws->term_vis = l->term_vis;
+    ws->right_orient = l->stacked ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
+    ws->main_frac = l->main_frac;
+    ws->right_frac = l->right_frac;
+    ws->editor_frac = l->editor_frac;
+    if (!ws->files_vis && !ws->preview_vis && !ws->term_vis && !ws->editor_dedicated) {
+        ws->preview_vis = TRUE; /* never leave the window empty */
+    }
+}
+
+gboolean layouts_apply(AppData* app, const SavedLayout* l) {
     /* The editor panel's shape, when the layout saved one */
     gboolean splits = l->editor_dedicated && l->editor_splits != NULL && l->editor_splits[0] != '\0';
 #ifdef HAVE_VTE
@@ -91,19 +105,17 @@ static gboolean apply_layout(AppData* app, const SavedLayout* l) {
         term_layout_apply(app, l->terminals);
     }
 #endif
-    VirtualLayout* ws = &app->workspaces[app->current_ws];
-    ws->files_vis = l->files_vis;
-    ws->preview_vis = l->preview_vis;
-    ws->term_vis = l->term_vis;
-    ws->right_orient = l->stacked ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
-    ws->main_frac = l->main_frac;
-    ws->right_frac = l->right_frac;
-    ws->editor_frac = l->editor_frac;
-    if (!ws->files_vis && !ws->preview_vis && !ws->term_vis && !ws->editor_dedicated) {
-        ws->preview_vis = TRUE; /* never leave the window empty */
-    }
+    set_panels(app, l);
     workspace_switch(app, app->current_ws); /* re-applies the current workspace */
     return TRUE;
+}
+
+void layouts_preview(AppData* app, const SavedLayout* l) {
+    if (app == NULL || l == NULL || app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
+        return;
+    }
+    set_panels(app, l);
+    workspace_show_panels(app);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -201,9 +213,9 @@ static gint save_current(LayoutsDialog* d, const gchar* suggestion) {
     gint index = 0;
     if (g_ascii_strcasecmp(name, DEFAULT_NAME) == 0) {
         saved_layout_free(d->def);
-        d->def = capture_layout(app, DEFAULT_NAME);
+        d->def = layouts_capture(app, DEFAULT_NAME);
     } else {
-        layout_store_put(d->layouts, capture_layout(app, name));
+        layout_store_put(d->layouts, layouts_capture(app, name));
         for (guint i = 0; i < d->layouts->len; i++) {
             if (g_strcmp0(((SavedLayout*)g_ptr_array_index(d->layouts, i))->name, name) == 0) {
                 index = (gint)i + 1;
@@ -215,14 +227,10 @@ static gint save_current(LayoutsDialog* d, const gchar* suggestion) {
     return index;
 }
 
-static GtkWidget* layout_row(const SavedLayout* l, gboolean is_default, gboolean customized) {
+GtkWidget* layouts_row_new(const gchar* title, const SavedLayout* l) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_widget_add_css_class(box, "layout-row");
-    gchar* title = is_default ? g_strdup_printf("Default — new workspaces%s",
-                                                customized ? "" : " (built-in)")
-                              : g_strdup(l->name);
     GtkWidget* name = gtk_label_new(title);
-    g_free(title);
     gtk_widget_add_css_class(name, "layout-name");
     gtk_label_set_xalign(GTK_LABEL(name), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(name), PANGO_ELLIPSIZE_END);
@@ -238,15 +246,22 @@ static GtkWidget* layout_row(const SavedLayout* l, gboolean is_default, gboolean
     return box;
 }
 
+gchar* layouts_default_title(const SavedLayout* def) {
+    return g_strdup_printf("Default — new workspaces%s", layout_store_is_customized(def) ? "" : " (built-in)");
+}
+
 static void fill_list(LayoutsDialog* d, gint select_index) {
     /* Remove the rows only: gtk_list_box_remove_all() also drops the placeholder */
     for (GtkListBoxRow* row = gtk_list_box_get_row_at_index(d->list, 0); row != NULL;
          row = gtk_list_box_get_row_at_index(d->list, 0)) {
         gtk_list_box_remove(d->list, GTK_WIDGET(row));
     }
-    gtk_list_box_append(d->list, layout_row(d->def, TRUE, layout_store_is_customized(d->def)));
+    gchar* title = layouts_default_title(d->def);
+    gtk_list_box_append(d->list, layouts_row_new(title, d->def));
+    g_free(title);
     for (guint i = 0; i < d->layouts->len; i++) {
-        gtk_list_box_append(d->list, layout_row(g_ptr_array_index(d->layouts, i), FALSE, FALSE));
+        const SavedLayout* l = g_ptr_array_index(d->layouts, i);
+        gtk_list_box_append(d->list, layouts_row_new(l->name, l));
     }
     gint n = (gint)d->layouts->len + 1;
     gtk_list_box_select_row(d->list, gtk_list_box_get_row_at_index(d->list, CLAMP(select_index, 0, n - 1)));
@@ -382,7 +397,7 @@ void layouts_show_dialog(AppData* app) {
     g_ptr_array_unref(d.layouts);
     saved_layout_free(d.def);
     if (to_apply != NULL) {
-        apply_layout(app, to_apply);
+        layouts_apply(app, to_apply);
         saved_layout_free(to_apply);
     }
 }

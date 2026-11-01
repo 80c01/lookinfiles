@@ -215,7 +215,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Alt+1 .. Alt+8", "Switch between virtual workspaces (or click/scroll top-bar minimap)", 0},
     {"Global", "Alt++ / Alt+-", "Add a virtual workspace with the default layout (+) or close the current workspace (-)", 0},
     {"Global", "Alt+R", "Recent folders and files: Enter opens a folder or shows a file (Ctrl+Enter edits it)", 0},
-    {"Global", "Alt+L", "Workspace layouts: apply one from the list, save the panels (\"Default\" for new workspaces)", 0},
+    {"Global", "Alt+L", "Workspace layouts: preview while moving (Alt+L: next), Enter applies, Escape restores; Edit Layouts… saves", 0},
     {"Global", "Ctrl+,", "Preferences: appearance, editor (mode, line numbers, wrap of new tabs, column line), window size, language servers", 0},
     {"Global", "Alt+T", "Preferences on Appearance: pick a theme (applied as you select it), set your fonts, save, edit or delete your themes", 0},
     {"Global", "Ctrl+= / Ctrl+- / Ctrl+0", "Larger / smaller fonts (interface and code), or back to the theme's sizes", 0},

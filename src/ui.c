@@ -2,7 +2,7 @@
 #include "canvas_view.h"
 #include "help_guide.h"
 #include "dialog.h"
-#include "layouts.h"
+#include "layout_switcher.h"
 #include "preferences.h"
 #include "themes.h"
 #include "panels.h"
@@ -295,9 +295,9 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
             quick_open_show_recent(app);
             return TRUE;
         }
-        /* Alt+L: saved workspace layouts (Ctrl+Alt+L moves editor tabs) */
+        /* Alt+L: workspace layout switcher (Ctrl+Alt+L moves editor tabs) */
         if ((keyval == GDK_KEY_l || keyval == GDK_KEY_L) && !(state & GDK_CONTROL_MASK)) {
-            layouts_show_dialog(app);
+            layout_switcher_show(app);
             return TRUE;
         }
     }

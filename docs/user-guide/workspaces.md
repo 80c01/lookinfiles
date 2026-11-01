@@ -40,7 +40,14 @@ the splits of the editor panel with their terminal tabs. It keeps no files:
 applying it moves the open files into the editor panes that held files (an
 empty one takes a file from the fullest), reuses the running terminals and
 starts the missing shells.
-`Alt+L` (or the grid button of the top bar) opens the layouts dialog:
+`Alt+L` (or the grid button of the top bar) opens the layout list under
+the button: the current panels, the default layout, then the saved ones.
+Moving through the list (arrows, or `Alt+L` again for the next one) shows
+each layout's panels at once; the terminals and the editor tabs stay as
+they are until you choose. `Enter` or a click applies the layout in full,
+`Escape` puts the panels back as they were.
+
+**Edit Layouts…** at the bottom of the list opens the layouts dialog:
 
 - **apply** a saved layout to the current workspace;
 - **save** the current panels under a name;

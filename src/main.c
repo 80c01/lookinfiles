@@ -1,7 +1,7 @@
 #include "app_paths.h"
 #include "topbar.h"
 #include "dialog.h"
-#include "layouts.h"
+#include "layout_switcher.h"
 #include "icons.h"
 #include "fs_watch.h"
 #include "panels.h"
@@ -535,7 +535,8 @@ int main(int argc, char** argv) {
     GtkWidget* ws_minimap = create_workspace_minimap(app);
     GtkWidget* layouts_btn = icon_button_new("view-grid", "Workspace Layouts (Alt+L)");
     gtk_widget_add_css_class(layouts_btn, "status-pill");
-    g_signal_connect_swapped(layouts_btn, "clicked", G_CALLBACK(layouts_show_dialog), app);
+    g_signal_connect_swapped(layouts_btn, "clicked", G_CALLBACK(layout_switcher_show), app);
+    app->layouts_btn = layouts_btn;
     GtkWidget* prefs_btn = icon_button_new("applications-system", "Preferences (Ctrl+,)");
     gtk_widget_add_css_class(prefs_btn, "status-pill");
     g_signal_connect(prefs_btn, "clicked", G_CALLBACK(on_preferences_clicked), app);

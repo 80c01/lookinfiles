@@ -492,7 +492,14 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   Apply saves `settings.ini` and applies the editor mode at once, Cancel
   restores the theme. Reads `settings.ini` at startup for `main.c`
   (`preferences_editor_mode()`, `preferences_apply_startup()`).
-- `layouts` — saved workspace layouts (Alt+L, top-bar grid button): capture
+- `layout_switcher` — the Alt+L layout list (top-bar grid button): a
+  `GtkPopover` listing the current panels, the default and the saved layouts;
+  the selected row's panels are previewed after a short delay
+  (`layouts_preview()`: visibility, orientation and sizes only, through
+  `workspace_show_panels()`), Enter or a click applies it with
+  `layouts_apply()`, Escape restores the panels; **Edit Layouts…** opens the
+  `layouts` dialog.
+- `layouts` — saved workspace layouts (Edit Layouts dialog): capture
   the current workspace's panels and editor splits (`editor_layout`), apply
   one from a list in an `AppDialog` (running terminals are kept; closing extra
   ones, in the terminal panel or the editor panel, asks first). The list starts

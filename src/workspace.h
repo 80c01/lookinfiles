@@ -8,6 +8,9 @@ void workspaces_init(AppData* app);
 void workspace_save_current(AppData* app);
 void workspace_apply_positions(AppData* app);
 void workspace_switch(AppData* app, gint idx);
+/* Show the panels the current workspace records (visibility, orientation,
+ * split sizes) without switching it: no rescan, no focus change */
+void workspace_show_panels(AppData* app);
 void workspace_add(AppData* app);
 /* Startup: give the current workspace the panels of the default layout
  * (layouts.ini) when it has been customized */
