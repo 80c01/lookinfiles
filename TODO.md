@@ -21,18 +21,7 @@ Rules, coverage and the checklist for a new format: [docs/previews.md](docs/prev
 
 ### Wish list
 
-- [ ] line wrap in the Notepad and Emacs editors (Vim has `:set wrap`), and in the tab's right-click menu
-- [ ] mvp for a modern look
 - [ ] change file icons to match VS Code (`.c`, `.h`, `.md` files)
-- [ ] provide an AppImage
-- [ ] add a configuration panel
-- [ ] implement a music player: configure the music library (a list of folders where the user stores their music), then analyse the folders and list songs to play
-- [ ] implement a video player: configure the video library (a list of folders where the user stores their videos), then analyse the folders and list videos to play
-
-### Needs Further Investigation
-
-- [ ] a search view in the left side panel, alongside `Ctrl+P` (go to file) and `Ctrl+Shift+F` (search in files, results in a Search tab)
-- [ ] git status can be moved to a dedicated panel. User can checkout commits (Enter key) to browse files in the explorer panel
 
 ### Won't implement
 
