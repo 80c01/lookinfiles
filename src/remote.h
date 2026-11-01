@@ -9,6 +9,8 @@ void remote_append_rows(ExplorerRow* root, AppData* app);
 void remote_refresh(AppData* app);
 /* Expand / collapse of a folder row (remembered); FALSE for other rows */
 gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded);
+/* Collapse every folder if one is expanded, else expand them all */
+void remote_toggle_collapse_expand(AppData* app);
 /* Re-read ~/.ssh/config (F5 / refresh button) and redraw */
 void remote_rescan(AppData* app);
 gboolean remote_handle_key(AppData* app, guint keyval, GdkModifierType state);

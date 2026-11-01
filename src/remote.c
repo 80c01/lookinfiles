@@ -187,6 +187,33 @@ gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expa
     return TRUE;
 }
 
+/* Collapse every folder if one is expanded, else expand them all */
+void remote_toggle_collapse_expand(AppData* app) {
+    if (app == NULL || app->remote_folders == NULL) {
+        return;
+    }
+    gboolean expand = TRUE;
+    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
+        if (((RemoteFolder*)l->data)->expanded) {
+            expand = FALSE;
+            break;
+        }
+    }
+    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
+        ((RemoteFolder*)l->data)->expanded = expand;
+    }
+    remote_save(app);
+
+    /* Keep a visible row selected when collapsing */
+    RemoteMachine* rm = remote_get_selected(app);
+    RemoteFolder* parent = remote_machine_folder(app, rm);
+    if (!expand && parent != NULL) {
+        remote_refresh_select(app, "remote_folder", parent->id);
+    } else {
+        remote_refresh(app);
+    }
+}
+
 /* ------------------------------------------------------------------------- */
 /* Modal Dialogs                                                             */
 /* ------------------------------------------------------------------------- */
@@ -887,6 +914,7 @@ static void on_remote_ctx_action(GtkButton* btn, gpointer user_data) {
     case 7: remote_rescan(app); break;
     case 8: remote_new_folder_dialog(app); break;
     case 9: remote_activate_selected(app); break;
+    case 10: remote_toggle_collapse_expand(app); break;
     default: break;
     }
 }
@@ -969,6 +997,9 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
     add_menu_item(box, popover, app, folder != NULL ? "Add Machine Here…" : "Add Remote Machine…", "a", 6);
     add_menu_item(box, popover, app, "New Folder…", "Shift+A", 8);
     add_menu_item(box, popover, app, "Re-scan ~/.ssh/config", "F5", 7);
+    if (app->remote_folders != NULL) {
+        add_menu_item(box, popover, app, "Collapse / Expand All", NULL, 10);
+    }
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     gtk_popover_popup(GTK_POPOVER(popover));

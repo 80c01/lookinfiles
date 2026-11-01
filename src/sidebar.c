@@ -167,6 +167,11 @@ static void on_sidebar_notes_delete_clicked(GtkButton* btn, gpointer data) {
     notes_delete_selected((AppData*)data);
 }
 
+static void on_sidebar_remote_collapse_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    remote_toggle_collapse_expand((AppData*)data);
+}
+
 static void on_sidebar_notes_collapse_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     notes_toggle_collapse_expand((AppData*)data);
@@ -479,6 +484,14 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_tooltip_text(remote_ref_btn, "Re-scan ~/.ssh/config (F5)");
     g_signal_connect(remote_ref_btn, "clicked", G_CALLBACK(on_sidebar_remote_refresh_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_ref_btn);
+
+    GtkWidget* remote_collapse_btn = icon_button_new("pan-up", NULL);
+    gtk_button_set_has_frame(GTK_BUTTON(remote_collapse_btn), FALSE);
+    gtk_widget_set_focusable(remote_collapse_btn, FALSE);
+    gtk_widget_add_css_class(remote_collapse_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_collapse_btn, "Toggle Collapse / Expand Folders");
+    g_signal_connect(remote_collapse_btn, "clicked", G_CALLBACK(on_sidebar_remote_collapse_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_collapse_btn);
 
     gtk_widget_set_visible(remote_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_REMOTE));
     gtk_box_append(GTK_BOX(header), remote_toolbar);
