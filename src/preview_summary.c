@@ -190,7 +190,8 @@ gchar* preview_summary_container(ExplorerRow* row) {
     gboolean is_notebook = explorer_row_is(row, "notebook");
     gboolean is_bm_folder = explorer_row_is(row, "bm_folder");
     gboolean is_trash = explorer_row_is(row, "trash");
-    if (!is_notebook && !is_bm_folder && !is_trash) {
+    gboolean is_remote_folder = explorer_row_is(row, "remote_folder");
+    if (!is_notebook && !is_bm_folder && !is_trash && !is_remote_folder) {
         return NULL;
     }
 
@@ -241,6 +242,12 @@ gchar* preview_summary_container(ExplorerRow* row) {
         g_free(title);
         append_field(s, "Items", count);
         list_title = "Contents";
+    } else if (is_remote_folder) {
+        gchar* title = g_strdup_printf("Remote Folder: %s", name ? name : "");
+        append_title(s, title);
+        g_free(title);
+        append_field(s, "Machines", count);
+        list_title = "Machines";
     } else {
         append_title(s, "Trash");
         append_field(s, "Notes", count);
@@ -281,6 +288,14 @@ gchar* preview_summary_container(ExplorerRow* row) {
             {"F2 / r / e", "Edit folder (name and icon)"},
             {"d / Delete", "Delete folder"},
             {"Shift+K / Shift+J", "Move folder up / down"},
+        };
+        append_shortcuts(s, keys, G_N_ELEMENTS(keys));
+    } else if (is_remote_folder) {
+        static const SummaryShortcut keys[] = {
+            {"Enter / l", "Expand / collapse folder"},
+            {"a / Shift+A", "Add machine here / new folder"},
+            {"F2 / r / e", "Edit folder (name and icon)"},
+            {"d / Delete", "Delete folder (its machines move to the top level)"},
         };
         append_shortcuts(s, keys, G_N_ELEMENTS(keys));
     } else {

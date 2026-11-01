@@ -67,6 +67,11 @@ static void on_sidebar_remote_add_clicked(GtkButton* btn, gpointer data) {
     remote_add_dialog((AppData*)data);
 }
 
+static void on_sidebar_remote_new_folder_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    remote_new_folder_dialog((AppData*)data);
+}
+
 static void on_sidebar_remote_connect_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     remote_toggle_connect_selected((AppData*)data);
@@ -442,6 +447,14 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_tooltip_text(remote_add_btn, "Add Remote Machine (a)");
     g_signal_connect(remote_add_btn, "clicked", G_CALLBACK(on_sidebar_remote_add_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_add_btn);
+
+    GtkWidget* remote_folder_btn = icon_button_new("folder-new", NULL);
+    gtk_button_set_has_frame(GTK_BUTTON(remote_folder_btn), FALSE);
+    gtk_widget_set_focusable(remote_folder_btn, FALSE);
+    gtk_widget_add_css_class(remote_folder_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_folder_btn, "New Remote Folder (Shift+A)");
+    g_signal_connect(remote_folder_btn, "clicked", G_CALLBACK(on_sidebar_remote_new_folder_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_folder_btn);
 
     GtkWidget* remote_edit_btn = icon_button_new("document-edit", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_edit_btn), FALSE);

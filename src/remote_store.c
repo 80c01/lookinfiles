@@ -2,6 +2,7 @@
  * ~/.ssh/config discovery and lookups. No widgets (unit-tested in tests/). */
 #include "remote_store.h"
 #include "app_paths.h"
+#include "notebook_icons.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +22,17 @@ void remote_machine_free(RemoteMachine* rm) {
     g_free(rm->remote_path);
     g_free(rm->identity_file);
     g_free(rm->mount_point);
+    g_free(rm->folder_id);
     g_free(rm);
+}
+
+static void remote_folder_free(RemoteFolder* folder) {
+    if (folder == NULL) {
+        return;
+    }
+    g_free(folder->id);
+    g_free(folder->name);
+    g_free(folder);
 }
 
 static gchar* remote_get_config_path(void) {
@@ -53,6 +64,75 @@ RemoteMachine* remote_find_by_id(AppData* app, const gchar* id) {
     return NULL;
 }
 
+RemoteFolder* remote_folder_find(AppData* app, const gchar* id) {
+    if (app == NULL || id == NULL) {
+        return NULL;
+    }
+    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
+        RemoteFolder* folder = (RemoteFolder*)l->data;
+        if (folder != NULL && g_strcmp0(folder->id, id) == 0) {
+            return folder;
+        }
+    }
+    return NULL;
+}
+
+RemoteFolder* remote_machine_folder(AppData* app, const RemoteMachine* rm) {
+    return (rm != NULL) ? remote_folder_find(app, rm->folder_id) : NULL;
+}
+
+RemoteFolder* remote_folder_add(AppData* app, const gchar* name, const gchar* icon) {
+    if (app == NULL) {
+        return NULL;
+    }
+    RemoteFolder* folder = g_new0(RemoteFolder, 1);
+    do {
+        g_free(folder->id);
+        folder->id = g_strdup_printf("rfold_%u", (guint)g_random_int());
+    } while (remote_folder_find(app, folder->id) != NULL);
+    folder->name = g_strdup((name != NULL && name[0] != '\0') ? name : "Folder");
+    folder->icon = bookmark_folder_icon_normalize(icon);
+    folder->expanded = TRUE;
+    app->remote_folders = g_list_append(app->remote_folders, folder);
+    return folder;
+}
+
+void remote_folder_remove(AppData* app, RemoteFolder* folder) {
+    if (app == NULL || folder == NULL) {
+        return;
+    }
+    for (GList* l = app->remotes; l != NULL; l = l->next) {
+        RemoteMachine* rm = (RemoteMachine*)l->data;
+        if (rm != NULL && g_strcmp0(rm->folder_id, folder->id) == 0) {
+            remote_machine_set_folder(rm, NULL);
+        }
+    }
+    app->remote_folders = g_list_remove(app->remote_folders, folder);
+    remote_folder_free(folder);
+}
+
+guint remote_folder_count(AppData* app, const RemoteFolder* folder) {
+    guint n = 0;
+    if (app == NULL || folder == NULL) {
+        return 0;
+    }
+    for (GList* l = app->remotes; l != NULL; l = l->next) {
+        RemoteMachine* rm = (RemoteMachine*)l->data;
+        if (rm != NULL && g_strcmp0(rm->folder_id, folder->id) == 0) {
+            n++;
+        }
+    }
+    return n;
+}
+
+void remote_machine_set_folder(RemoteMachine* rm, const RemoteFolder* folder) {
+    if (rm == NULL) {
+        return;
+    }
+    g_free(rm->folder_id);
+    rm->folder_id = (folder != NULL) ? g_strdup(folder->id) : NULL;
+}
+
 RemoteMachine* remote_get_active_machine(AppData* app) {
     if (app == NULL || app->current_remote_id == NULL) {
         return NULL;
@@ -64,16 +144,43 @@ RemoteMachine* remote_get_active_machine(AppData* app) {
 /* XML and SSH Config Persistence                                            */
 /* ------------------------------------------------------------------------- */
 
-/* <machine id="" name="" host="" user="" port="" path="" key=""/> in remotes.xml */
+/* <folder id="" name="" icon="" expanded=""/> in remotes.xml */
+static void parse_folder_element(AppData* app, const gchar** names, const gchar** values) {
+    const gchar* id = NULL;
+    const gchar* name = NULL;
+    const gchar* icon = NULL;
+    const gchar* expanded = NULL;
+    for (gint i = 0; names[i] != NULL; i++) {
+        if (g_strcmp0(names[i], "id") == 0) id = values[i];
+        else if (g_strcmp0(names[i], "name") == 0) name = values[i];
+        else if (g_strcmp0(names[i], "icon") == 0) icon = values[i];
+        else if (g_strcmp0(names[i], "expanded") == 0) expanded = values[i];
+    }
+    if (id == NULL || id[0] == '\0' || remote_folder_find(app, id) != NULL) {
+        return;
+    }
+    RemoteFolder* folder = g_new0(RemoteFolder, 1);
+    folder->id = g_strdup(id);
+    folder->name = g_strdup((name != NULL && name[0] != '\0') ? name : "Folder");
+    folder->icon = bookmark_folder_icon_normalize(icon);
+    folder->expanded = g_strcmp0(expanded, "false") != 0;
+    app->remote_folders = g_list_append(app->remote_folders, folder);
+}
+
+/* <machine id="" name="" host="" user="" port="" path="" key="" folder=""/> in remotes.xml */
 static void on_remotes_xml_start(GMarkupParseContext* ctx, const gchar* element,
                                  const gchar** names, const gchar** values,
                                  gpointer user_data, GError** error) {
     (void)ctx;
     (void)error;
+    AppData* app = (AppData*)user_data;
+    if (g_strcmp0(element, "folder") == 0) {
+        parse_folder_element(app, names, values);
+        return;
+    }
     if (g_strcmp0(element, "machine") != 0) {
         return;
     }
-    AppData* app = (AppData*)user_data;
     const gchar* id = NULL;
     const gchar* name = NULL;
     const gchar* host = NULL;
@@ -81,6 +188,7 @@ static void on_remotes_xml_start(GMarkupParseContext* ctx, const gchar* element,
     const gchar* port_str = NULL;
     const gchar* remote_path = NULL;
     const gchar* key = NULL;
+    const gchar* folder_id = NULL;
     for (gint i = 0; names[i] != NULL; i++) {
         if (g_strcmp0(names[i], "id") == 0) id = values[i];
         else if (g_strcmp0(names[i], "name") == 0) name = values[i];
@@ -89,6 +197,7 @@ static void on_remotes_xml_start(GMarkupParseContext* ctx, const gchar* element,
         else if (g_strcmp0(names[i], "port") == 0) port_str = values[i];
         else if (g_strcmp0(names[i], "path") == 0) remote_path = values[i];
         else if (g_strcmp0(names[i], "key") == 0) key = values[i];
+        else if (g_strcmp0(names[i], "folder") == 0) folder_id = values[i];
     }
     if (host == NULL || host[0] == '\0') {
         return;
@@ -104,6 +213,7 @@ static void on_remotes_xml_start(GMarkupParseContext* ctx, const gchar* element,
     rm->from_ssh_config = FALSE;
     rm->is_connected = FALSE;
     rm->mount_point = NULL;
+    rm->folder_id = (folder_id != NULL && folder_id[0] != '\0') ? g_strdup(folder_id) : NULL;
     app->remotes = g_list_append(app->remotes, rm);
 }
 
@@ -272,6 +382,7 @@ void remote_init(AppData* app) {
         return;
     }
     app->remotes = NULL;
+    app->remote_folders = NULL;
     app->current_remote_id = NULL;
 
     gchar* cfg = remote_get_config_path();
@@ -301,6 +412,8 @@ void remote_free(AppData* app) {
     }
     g_list_free(app->remotes);
     app->remotes = NULL;
+    g_list_free_full(app->remote_folders, (GDestroyNotify)remote_folder_free);
+    app->remote_folders = NULL;
     g_free(app->current_remote_id);
     app->current_remote_id = NULL;
 }
@@ -312,6 +425,18 @@ void remote_save(AppData* app) {
     gchar* path = remote_get_config_path();
     GString* xml = g_string_new("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<remotes>\n");
 
+    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
+        RemoteFolder* folder = (RemoteFolder*)l->data;
+        if (folder == NULL) {
+            continue;
+        }
+        gchar* line = g_markup_printf_escaped("  <folder id=\"%s\" name=\"%s\" icon=\"%s\" expanded=\"%s\"/>\n",
+                                              folder->id, folder->name, folder->icon,
+                                              folder->expanded ? "true" : "false");
+        g_string_append(xml, line);
+        g_free(line);
+    }
+
     for (GList* l = app->remotes; l != NULL; l = l->next) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm == NULL || rm->from_ssh_config) {
@@ -322,11 +447,14 @@ void remote_save(AppData* app) {
         gchar* esc_user = g_markup_escape_text(rm->user ? rm->user : "", -1);
         gchar* esc_path = g_markup_escape_text(rm->remote_path ? rm->remote_path : "", -1);
         gchar* esc_key  = g_markup_escape_text(rm->identity_file ? rm->identity_file : "", -1);
+        RemoteFolder* folder = remote_machine_folder(app, rm);
+        gchar* esc_folder = g_markup_escape_text(folder != NULL ? folder->id : "", -1);
 
-        g_string_append_printf(xml, "  <machine id=\"%s\" name=\"%s\" host=\"%s\" user=\"%s\" port=\"%d\" path=\"%s\" key=\"%s\"/>\n",
+        g_string_append_printf(xml, "  <machine id=\"%s\" name=\"%s\" host=\"%s\" user=\"%s\" port=\"%d\" path=\"%s\" key=\"%s\" folder=\"%s\"/>\n",
                                rm->id ? rm->id : "",
                                esc_name, esc_host, esc_user,
-                               rm->port, esc_path, esc_key);
+                               rm->port, esc_path, esc_key, esc_folder);
+        g_free(esc_folder);
         g_free(esc_name);
         g_free(esc_host);
         g_free(esc_user);

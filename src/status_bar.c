@@ -248,6 +248,9 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
     if (g_strcmp0(type, "remote") == 0) {
         return g_strdup("Remote Machine");
     }
+    if (g_strcmp0(type, "remote_folder") == 0) {
+        return g_strdup("Remote Folder");
+    }
     if (g_strcmp0(type, "trash") == 0) {
         return g_strdup("Trash");
     }
@@ -325,7 +328,7 @@ void update_status_bar(AppData* app) {
 
         gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0 &&
                             g_strcmp0(type, "bm_folder") != 0 && g_strcmp0(type, "notebook") != 0 &&
-                            g_strcmp0(type, "trash") != 0);
+                            g_strcmp0(type, "trash") != 0 && g_strcmp0(type, "remote_folder") != 0);
         struct stat st;
         if (is_file && full != NULL && g_stat(full, &st) == 0) {
             gchar* size_str = g_format_size((guint64)st.st_size);

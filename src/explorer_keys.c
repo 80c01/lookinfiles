@@ -17,10 +17,11 @@
 #include "focus_route.h"
 
 /* Rows with children the arrow keys and space expand: directories,
- * bookmark folders, notebooks and the notes trash */
+ * bookmark folders, notebooks, the notes trash and remote folders */
 static gboolean is_container_row(ExplorerRow* row) {
     return explorer_row_is(row, "dir") || explorer_row_is(row, "bm_folder") ||
-           explorer_row_is(row, "notebook") || explorer_row_is(row, "trash");
+           explorer_row_is(row, "notebook") || explorer_row_is(row, "trash") ||
+           explorer_row_is(row, "remote_folder");
 }
 
 /* Files view (not bookmarks / notes / remote) */

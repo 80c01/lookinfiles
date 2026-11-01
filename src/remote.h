@@ -7,6 +7,8 @@
 /* Explorer panel integration */
 void remote_append_rows(ExplorerRow* root, AppData* app);
 void remote_refresh(AppData* app);
+/* Expand / collapse of a folder row (remembered); FALSE for other rows */
+gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded);
 /* Re-read ~/.ssh/config (F5 / refresh button) and redraw */
 void remote_rescan(AppData* app);
 gboolean remote_handle_key(AppData* app, guint keyval, GdkModifierType state);
@@ -21,6 +23,10 @@ void remote_disconnect_selected(AppData* app);
 void remote_toggle_connect_selected(AppData* app);
 void remote_open_terminal_selected(AppData* app);
 void remote_activate_selected(AppData* app);
+/* Folders grouping the machines (Shift+A, F2, Delete on a folder) */
+void remote_new_folder_dialog(AppData* app);
+void remote_edit_folder_dialog(AppData* app);
+void remote_delete_folder_selected(AppData* app);
 
 /* Remote connection helpers */
 RemoteMachine* remote_get_selected(AppData* app);

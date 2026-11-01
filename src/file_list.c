@@ -484,7 +484,8 @@ void on_tree_row_toggled(ExplorerTree* tree, ExplorerRow* row, gboolean expanded
     (void)tree;
     AppData* app = (AppData*)user_data;
     if (bookmarks_handle_row_toggled(app, row, expanded) ||
-        notes_handle_row_toggled(app, row, expanded)) {
+        notes_handle_row_toggled(app, row, expanded) ||
+        remote_handle_row_toggled(app, row, expanded)) {
         return;
     }
     if (!explorer_row_is(row, "dir")) {

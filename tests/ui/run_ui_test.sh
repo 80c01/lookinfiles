@@ -325,6 +325,8 @@ key Delete;             shot canvas_block_deleted
 key ctrl+w;             shot canvas_closed
 key ctrl+u;             shot files_after_notes
 key ctrl+shift+r;       shot remote_view
+key shift+a;            shot remote_new_folder_dialog
+key Escape;             shot remote_new_folder_closed
 key ctrl+shift+r;       shot files_view_back
 # Dialogs are drawn inside the main window, never in a window of their own
 key a;                  shot new_file_dialog

@@ -5,6 +5,9 @@
 #include "app_events.h"
 #include "file_list.h"
 #include "terminal.h"
+#include "explorer_tree.h"
+#include "icon_picker.h"
+#include "notebook_icons.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,49 +21,86 @@ RemoteMachine* remote_get_selected(AppData* app) {
     return explorer_row_is(row, "remote") ? remote_find_by_id(app, row->path) : NULL;
 }
 
+/* Folder row selected in the remote view, NULL otherwise */
+static RemoteFolder* remote_get_selected_folder(AppData* app) {
+    ExplorerRow* row = (app != NULL) ? tree_nav_selected(app) : NULL;
+    return explorer_row_is(row, "remote_folder") ? remote_folder_find(app, row->path) : NULL;
+}
+
+/* Folder where a new machine goes: the selected folder, or the selected machine's */
+static RemoteFolder* remote_context_folder(AppData* app) {
+    RemoteFolder* folder = remote_get_selected_folder(app);
+    return (folder != NULL) ? folder : remote_machine_folder(app, remote_get_selected(app));
+}
+
 /* ------------------------------------------------------------------------- */
 
+static void remote_append_machine_row(ExplorerRow* parent, RemoteMachine* rm) {
+    gchar* target = NULL;
+    if (rm->user != NULL && rm->user[0] != '\0') {
+        target = g_strdup_printf("%s@%s", rm->user, rm->host);
+    } else {
+        target = g_strdup(rm->host);
+    }
+
+    gchar* status_markup = NULL;
+    if (rm->is_connected) {
+        status_markup = g_markup_printf_escaped("<span foreground=\"%s\" weight=\"bold\">● Connected</span>  <span foreground=\"%s\">(%s:%d)</span>",
+                                        palette_color(PAL_SUCCESS), palette_color(PAL_FG_SUBTLE), target, rm->port);
+    } else {
+        status_markup = g_markup_printf_escaped("<span foreground=\"%s\">%s:%d</span>",
+                                        palette_color(PAL_FG_SUBTLE), target, rm->port);
+    }
+
+    /* The row path holds the machine id (see remote_get_selected()) */
+    const gchar* name = rm->name ? rm->name : rm->host;
+    ExplorerRow* row = explorer_row_append(parent, "remote", name, name, rm->id);
+    explorer_row_set_glyph(row, rm->is_connected ? "remote-connected" : "remote");
+    explorer_row_set_badge(row, status_markup);
+
+    g_free(target);
+    g_free(status_markup);
+}
+
+/* Folders first (their machines inside), then the machines of the top level */
 void remote_append_rows(ExplorerRow* root, AppData* app) {
     if (root == NULL || app == NULL) {
         return;
     }
 
-    if (app->remotes == NULL) {
+    if (app->remotes == NULL && app->remote_folders == NULL) {
         explorer_row_append(root, "-", "", "No remote machines yet — press a to add one", "");
         return;
     }
 
+    for (GList* f = app->remote_folders; f != NULL; f = f->next) {
+        RemoteFolder* folder = (RemoteFolder*)f->data;
+        /* The row path holds the folder id (see remote_get_selected_folder()) */
+        ExplorerRow* row = explorer_row_append_container(root, "remote_folder", folder->name,
+                                                         folder->name, folder->id);
+        explorer_row_set_glyph(row, folder->icon);
+        guint n = remote_folder_count(app, folder);
+        if (n > 0) {
+            gchar* badge = g_strdup_printf("<span foreground=\"%s\">%u</span>", palette_color(PAL_FG_FAINT), n);
+            explorer_row_set_badge(row, badge);
+            g_free(badge);
+        }
+        for (GList* l = app->remotes; l != NULL; l = l->next) {
+            RemoteMachine* rm = (RemoteMachine*)l->data;
+            if (rm != NULL && remote_machine_folder(app, rm) == folder) {
+                remote_append_machine_row(row, rm);
+            }
+        }
+        if (n == 0) {
+            explorer_row_append(row, "-", "", "  (empty)", "");
+        }
+    }
+
     for (GList* l = app->remotes; l != NULL; l = l->next) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
-        if (rm == NULL) {
-            continue;
+        if (rm != NULL && remote_machine_folder(app, rm) == NULL) {
+            remote_append_machine_row(root, rm);
         }
-
-
-        gchar* target = NULL;
-        if (rm->user != NULL && rm->user[0] != '\0') {
-            target = g_strdup_printf("%s@%s", rm->user, rm->host);
-        } else {
-            target = g_strdup(rm->host);
-        }
-
-        gchar* status_markup = NULL;
-        if (rm->is_connected) {
-            status_markup = g_markup_printf_escaped("<span foreground=\"%s\" weight=\"bold\">● Connected</span>  <span foreground=\"%s\">(%s:%d)</span>",
-                                            palette_color(PAL_SUCCESS), palette_color(PAL_FG_SUBTLE), target, rm->port);
-        } else {
-            status_markup = g_markup_printf_escaped("<span foreground=\"%s\">%s:%d</span>",
-                                            palette_color(PAL_FG_SUBTLE), target, rm->port);
-        }
-
-        /* The row path holds the machine id (see remote_get_selected()) */
-        const gchar* name = rm->name ? rm->name : rm->host;
-        ExplorerRow* row = explorer_row_append(root, "remote", name, name, rm->id);
-        explorer_row_set_glyph(row, rm->is_connected ? "remote-connected" : "remote");
-        explorer_row_set_badge(row, status_markup);
-
-        g_free(target);
-        g_free(status_markup);
     }
 }
 
@@ -73,13 +113,78 @@ void remote_rescan(AppData* app) {
     remote_refresh(app);
 }
 
+typedef struct {
+    const gchar* type;
+    const gchar* path;
+} RemoteRowKey;
+
+static gboolean remote_match_row(ExplorerRow* row, gpointer data) {
+    RemoteRowKey* key = (RemoteRowKey*)data;
+    return explorer_row_is(row, key->type) && g_strcmp0(row->path, key->path) == 0;
+}
+
+/* Rebuild the list, expand the folders left expanded and select the row of
+ * the given type ("remote" or "remote_folder") and id, else the first row */
+static void remote_refresh_select(AppData* app, const gchar* type, const gchar* id) {
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_REMOTE) {
+        return;
+    }
+    /* A pending directory scan would overwrite the remote listing */
+    if (app->dir_cancellable != NULL) {
+        g_cancellable_cancel(app->dir_cancellable);
+        g_clear_object(&app->dir_cancellable);
+    }
+    app->dir_scan_pending = FALSE;
+
+    tree_nav_block_selection_handler(app);
+    explorer_tree_clear(app->tree);
+    ExplorerRow* root = explorer_tree_get_root(app->tree);
+    remote_append_rows(root, app);
+    for (guint i = 0; i < explorer_row_n_children(root); i++) {
+        ExplorerRow* child = explorer_row_child(root, i);
+        RemoteFolder* folder = explorer_row_is(child, "remote_folder") ? remote_folder_find(app, child->path) : NULL;
+        if (folder != NULL && folder->expanded) {
+            explorer_tree_set_expanded(app->tree, child, TRUE);
+        }
+    }
+    tree_nav_unblock_selection_handler(app);
+
+    ExplorerRow* row = NULL;
+    if (type != NULL && id != NULL) {
+        RemoteRowKey key = { type, id };
+        row = explorer_row_find(root, remote_match_row, &key);
+    }
+    if (row != NULL) {
+        explorer_tree_expand_to(app->tree, row);
+        select_row(app, row);
+    } else {
+        select_first_row(app);
+    }
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
+}
+
 void remote_refresh(AppData* app) {
     if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_REMOTE) {
         return;
     }
-    explorer_tree_clear(app->tree);
-    remote_append_rows(explorer_tree_get_root(app->tree), app);
-    app_emit(app, APP_EVENT_CHROME_CHANGED);
+    ExplorerRow* sel = tree_nav_selected(app);
+    gchar* type = (sel != NULL) ? g_strdup(sel->type) : NULL;
+    gchar* id = (sel != NULL) ? g_strdup(sel->path) : NULL;
+    remote_refresh_select(app, type, id);
+    g_free(type);
+    g_free(id);
+}
+
+gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded) {
+    if (app == NULL || !explorer_row_is(row, "remote_folder")) {
+        return FALSE;
+    }
+    RemoteFolder* folder = remote_folder_find(app, row->path);
+    if (folder != NULL && folder->expanded != expanded) {
+        folder->expanded = expanded;
+        remote_save(app);
+    }
+    return TRUE;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -142,6 +247,41 @@ static GtkWidget* create_labeled_entry(GtkWidget* box, const gchar* label_text, 
     return entry;
 }
 
+/* "Folder" drop-down of the machine dialogs: the top level, then every folder */
+static GtkWidget* create_folder_dropdown(GtkWidget* box, AppData* app, RemoteFolder* current) {
+    GPtrArray* labels = g_ptr_array_new();
+    g_ptr_array_add(labels, (gpointer)"Remote machines (top level)");
+    guint selected = 0;
+    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
+        RemoteFolder* folder = (RemoteFolder*)l->data;
+        if (folder == current) {
+            selected = labels->len;
+        }
+        g_ptr_array_add(labels, folder->name);
+    }
+    g_ptr_array_add(labels, NULL);
+
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    GtkWidget* lbl = gtk_label_new("Folder:");
+    gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
+    gtk_widget_add_css_class(lbl, "field-label");
+    GtkWidget* dd = gtk_drop_down_new_from_strings((const gchar* const*)labels->pdata);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(dd), selected);
+    gtk_box_append(GTK_BOX(row), lbl);
+    gtk_box_append(GTK_BOX(row), dd);
+    gtk_box_append(GTK_BOX(box), row);
+    g_ptr_array_unref(labels);
+    return dd;
+}
+
+static RemoteFolder* folder_from_dropdown(AppData* app, GtkWidget* dd) {
+    guint idx = gtk_drop_down_get_selected(GTK_DROP_DOWN(dd));
+    if (idx == 0 || idx == GTK_INVALID_LIST_POSITION) {
+        return NULL;
+    }
+    return (RemoteFolder*)g_list_nth_data(app->remote_folders, idx - 1);
+}
+
 void remote_add_dialog(AppData* app) {
     if (app == NULL) {
         return;
@@ -160,6 +300,7 @@ void remote_add_dialog(AppData* app) {
     GtkWidget* port_ent = create_labeled_entry(box, "Port:", "22", "default: 22");
     GtkWidget* path_ent = create_labeled_entry(box, "Remote Directory:", "~", "default: ~ or /var/www");
     GtkWidget* key_ent  = create_labeled_entry(box, "Identity Key Path (optional):", "", "e.g. ~/.ssh/id_ed25519");
+    GtkWidget* folder_dd = create_folder_dropdown(box, app, remote_context_folder(app));
 
     RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
     gint resp = remote_run_modal(dlg, &d, host_ent);
@@ -183,9 +324,14 @@ void remote_add_dialog(AppData* app) {
             rm->identity_file = (key_txt && key_txt[0]) ? g_strdup(key_txt) : g_strdup("");
             rm->from_ssh_config = FALSE;
             rm->is_connected = FALSE;
+            RemoteFolder* folder = folder_from_dropdown(app, folder_dd);
+            remote_machine_set_folder(rm, folder);
+            if (folder != NULL) {
+                folder->expanded = TRUE;
+            }
             app->remotes = g_list_append(app->remotes, rm);
             remote_save(app);
-            remote_refresh(app);
+            remote_refresh_select(app, "remote", rm->id);
 
             if (resp == APP_RESPONSE_APPLY) {
                 app_dialog_destroy(APP_DIALOG(dlg));
@@ -198,6 +344,10 @@ void remote_add_dialog(AppData* app) {
 }
 
 void remote_edit_dialog(AppData* app) {
+    if (remote_get_selected_folder(app) != NULL) {
+        remote_edit_folder_dialog(app);
+        return;
+    }
     RemoteMachine* rm = remote_get_selected(app);
     if (rm == NULL) {
         return;
@@ -219,6 +369,7 @@ void remote_edit_dialog(AppData* app) {
     GtkWidget* port_ent = create_labeled_entry(box, "Port:", port_buf, "");
     GtkWidget* path_ent = create_labeled_entry(box, "Remote Directory:", rm->remote_path, "");
     GtkWidget* key_ent  = create_labeled_entry(box, "Identity Key Path (optional):", rm->identity_file, "");
+    GtkWidget* folder_dd = create_folder_dropdown(box, app, remote_machine_folder(app, rm));
 
     RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
     gint resp = remote_run_modal(dlg, &d, name_ent);
@@ -245,14 +396,23 @@ void remote_edit_dialog(AppData* app) {
             rm->remote_path = (path_txt && path_txt[0]) ? g_strdup(path_txt) : g_strdup("~");
             rm->identity_file = (key_txt && key_txt[0]) ? g_strdup(key_txt) : g_strdup("");
             rm->from_ssh_config = FALSE; /* User explicitly saved this machine */
+            RemoteFolder* folder = folder_from_dropdown(app, folder_dd);
+            remote_machine_set_folder(rm, folder);
+            if (folder != NULL) {
+                folder->expanded = TRUE;
+            }
             remote_save(app);
-            remote_refresh(app);
+            remote_refresh_select(app, "remote", rm->id);
         }
     }
     app_dialog_destroy(APP_DIALOG(dlg));
 }
 
 void remote_delete_selected(AppData* app) {
+    if (remote_get_selected_folder(app) != NULL) {
+        remote_delete_folder_selected(app);
+        return;
+    }
     RemoteMachine* rm = remote_get_selected(app);
     if (rm == NULL) {
         return;
@@ -284,6 +444,109 @@ void remote_delete_selected(AppData* app) {
         remote_machine_free(rm);
         remote_save(app);
         remote_refresh(app);
+    }
+}
+
+/* Name and icon of a folder; TRUE on OK with *out_name (non-empty) and *out_icon set */
+static gboolean remote_folder_dialog(AppData* app, const gchar* title, const gchar* ok_label,
+                                     const gchar* init_name, const gchar* init_icon,
+                                     gchar** out_name, const gchar** out_icon) {
+    GtkWidget* dlg = app_dialog_new(title, app->window,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    ok_label, APP_RESPONSE_OK,
+                                    NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
+    GtkWidget* box = remote_dialog_body(dlg);
+    GtkWidget* name_ent = create_labeled_entry(box, "Name:", init_name, "e.g. Production");
+    gtk_entry_set_activates_default(GTK_ENTRY(name_ent), TRUE);
+
+    GtkWidget* lbl = gtk_label_new("Icon:");
+    gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
+    gtk_widget_add_css_class(lbl, "field-label");
+    gtk_box_append(GTK_BOX(box), lbl);
+    GtkWidget* picker = icon_picker_new(NOTEBOOK_ICONS, init_icon, NULL, NULL);
+    gtk_box_append(GTK_BOX(box), picker);
+
+    RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
+    gint resp = remote_run_modal(dlg, &d, name_ent);
+    gboolean ok = FALSE;
+    if (resp == APP_RESPONSE_OK) {
+        gchar* name = g_strstrip(g_strdup(gtk_editable_get_text(GTK_EDITABLE(name_ent))));
+        if (name[0] != '\0') {
+            const gchar* icon = icon_picker_get_icon(picker);
+            *out_name = name;
+            *out_icon = (icon != NULL) ? icon : init_icon;
+            ok = TRUE;
+        } else {
+            g_free(name);
+        }
+    }
+    app_dialog_destroy(APP_DIALOG(dlg));
+    return ok;
+}
+
+void remote_new_folder_dialog(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    gchar* name = NULL;
+    const gchar* icon = BOOKMARK_FOLDER_ICON_DEFAULT;
+    if (remote_folder_dialog(app, "New Remote Folder", "_Create", NULL, icon, &name, &icon)) {
+        RemoteFolder* folder = remote_folder_add(app, name, icon);
+        remote_save(app);
+        remote_refresh_select(app, "remote_folder", folder->id);
+    }
+    g_free(name);
+}
+
+void remote_edit_folder_dialog(AppData* app) {
+    RemoteFolder* folder = remote_get_selected_folder(app);
+    if (folder == NULL) {
+        return;
+    }
+    gchar* name = NULL;
+    const gchar* icon = folder->icon;
+    if (remote_folder_dialog(app, "Edit Remote Folder", "_Save", folder->name, folder->icon, &name, &icon)) {
+        g_free(folder->name);
+        folder->name = name;
+        name = NULL;
+        folder->icon = icon;
+        remote_save(app);
+        remote_refresh_select(app, "remote_folder", folder->id);
+    }
+    g_free(name);
+}
+
+void remote_delete_folder_selected(AppData* app) {
+    RemoteFolder* folder = remote_get_selected_folder(app);
+    if (folder == NULL) {
+        return;
+    }
+    guint n = remote_folder_count(app, folder);
+    gchar* msg = (n > 0)
+        ? g_strdup_printf("Delete the folder “%s”? Its %u machine%s move%s to the top level.",
+                          folder->name, n, n == 1 ? "" : "s", n == 1 ? "s" : "")
+        : g_strdup_printf("Delete the empty folder “%s”?", folder->name);
+    GtkWidget* dlg = app_dialog_new("Delete Remote Folder", app->window,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    "_Delete", APP_RESPONSE_OK,
+                                    NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL);
+    GtkWidget* box = remote_dialog_body(dlg);
+    GtkWidget* lbl = gtk_label_new(msg);
+    gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
+    gtk_box_append(GTK_BOX(box), lbl);
+    g_free(msg);
+
+    RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
+    gint resp = remote_run_modal(dlg, &d, NULL);
+    app_dialog_destroy(APP_DIALOG(dlg));
+
+    if (resp == APP_RESPONSE_OK) {
+        remote_folder_remove(app, folder);
+        remote_save(app);
+        remote_refresh_select(app, NULL, NULL);
     }
 }
 
@@ -488,6 +751,10 @@ void remote_toggle_connect_selected(AppData* app) {
 }
 
 void remote_activate_selected(AppData* app) {
+    if (remote_get_selected_folder(app) != NULL) {
+        explorer_tree_toggle_expanded(app->tree, tree_nav_selected(app));
+        return;
+    }
     RemoteMachine* rm = remote_get_selected(app);
     if (rm == NULL) {
         remote_add_dialog(app);
@@ -557,6 +824,12 @@ gboolean remote_handle_key(AppData* app, guint keyval, GdkModifierType state) {
             return TRUE;
         }
         break;
+    case GDK_KEY_A:
+        if (!ctrl) {
+            remote_new_folder_dialog(app);
+            return TRUE;
+        }
+        break;
     case GDK_KEY_e:
     case GDK_KEY_r:
     case GDK_KEY_F2:
@@ -612,6 +885,8 @@ static void on_remote_ctx_action(GtkButton* btn, gpointer user_data) {
     case 5: remote_delete_selected(app); break;
     case 6: remote_add_dialog(app); break;
     case 7: remote_rescan(app); break;
+    case 8: remote_new_folder_dialog(app); break;
+    case 9: remote_activate_selected(app); break;
     default: break;
     }
 }
@@ -654,6 +929,7 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
     }
 
     RemoteMachine* rm = remote_get_selected(app);
+    RemoteFolder* folder = remote_get_selected_folder(app);
 
     GtkWidget* popover = gtk_popover_new();
     gtk_widget_set_parent(popover, GTK_WIDGET(app->tree_view));
@@ -681,7 +957,17 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
         gtk_box_append(GTK_BOX(box), sep);
     }
 
-    add_menu_item(box, popover, app, "Add Remote Machine…", "a", 6);
+    if (folder != NULL) {
+        add_menu_item(box, popover, app, "Expand / Collapse", "Enter", 9);
+        add_menu_item(box, popover, app, "Edit Folder…", "F2", 4);
+        add_menu_item(box, popover, app, "Delete Folder", "Delete", 5);
+
+        GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_box_append(GTK_BOX(box), sep);
+    }
+
+    add_menu_item(box, popover, app, folder != NULL ? "Add Machine Here…" : "Add Remote Machine…", "a", 6);
+    add_menu_item(box, popover, app, "New Folder…", "Shift+A", 8);
     add_menu_item(box, popover, app, "Re-scan ~/.ssh/config", "F5", 7);
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);

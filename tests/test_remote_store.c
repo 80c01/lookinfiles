@@ -194,6 +194,51 @@ static void remove_tree(const gchar* path) {
     g_remove(path);
 }
 
+static void test_folders(void) {
+    reset_files();
+    write_ssh_config("Host fromssh\n");
+    AppData* app = new_app();
+    RemoteFolder* prod = remote_folder_add(app, "Prod & <test>", "starred");
+    RemoteFolder* empty = remote_folder_add(app, "", "not-an-icon");
+    g_assert_cmpstr(empty->name, ==, "Folder");
+    g_assert_cmpstr(empty->icon, ==, "folder");
+    gchar* prod_id = g_strdup(prod->id);
+
+    RemoteMachine* rm = g_new0(RemoteMachine, 1);
+    rm->id = g_strdup("rem_f");
+    rm->name = g_strdup("box");
+    rm->host = g_strdup("box.example.com");
+    rm->user = g_strdup("");
+    rm->port = 22;
+    rm->remote_path = g_strdup("~");
+    rm->identity_file = g_strdup("");
+    remote_machine_set_folder(rm, prod);
+    app->remotes = g_list_append(app->remotes, rm);
+    prod->expanded = FALSE;
+    g_assert_cmpuint(remote_folder_count(app, prod), ==, 1);
+    g_assert_true(remote_machine_folder(app, remote_find_by_id(app, "ssh_fromssh")) == NULL);
+    remote_save(app);
+    free_app(app);
+
+    app = new_app();
+    g_assert_cmpuint(g_list_length(app->remote_folders), ==, 2);
+    RemoteFolder* back = remote_folder_find(app, prod_id);
+    g_assert_nonnull(back);
+    g_assert_cmpstr(back->name, ==, "Prod & <test>");
+    g_assert_cmpstr(back->icon, ==, "starred");
+    g_assert_false(back->expanded);
+    RemoteMachine* box = remote_find_by_id(app, "rem_f");
+    g_assert_true(remote_machine_folder(app, box) == back);
+
+    /* Removing a folder moves its machines to the top level */
+    remote_folder_remove(app, back);
+    g_assert_null(remote_folder_find(app, prod_id));
+    g_assert_null(box->folder_id);
+    g_assert_cmpuint(g_list_length(app->remote_folders), ==, 1);
+    g_free(prod_id);
+    free_app(app);
+}
+
 int main(int argc, char** argv) {
     /* Must happen before any GLib call caches the user directories */
     tmp_home = g_dir_make_tmp("remote_store_test_XXXXXX", NULL);
@@ -212,6 +257,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/remote_store/ssh_host_already_saved", test_ssh_host_already_saved);
     g_test_add_func("/remote_store/active_machine", test_active_machine);
     g_test_add_func("/remote_store/reload_ssh_config", test_reload_ssh_config);
+    g_test_add_func("/remote_store/folders", test_folders);
     gint rc = g_test_run();
 
     remove_tree(tmp_home);

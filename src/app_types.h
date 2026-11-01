@@ -345,6 +345,7 @@ typedef struct {
     GtkWidget* sidebar_remote_toolbar; /* mini action bar for remote machines */
     GtkWidget* sidebar_files_hidden_btn; /* toggle hidden button in files action bar */
     GList* remotes;                   /* list of RemoteMachine* */
+    GList* remote_folders;            /* list of RemoteFolder* (remote view folders) */
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */
     gboolean bookmarks_sort_desc;        /* sort order for bookmarks view */
     GHashTable* org_folded_lines;     /* set of line numbers folded in currently viewed org file */

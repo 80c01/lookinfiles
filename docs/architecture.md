@@ -269,7 +269,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   Ctrl+F/B, zz/zt/zb, `tree_nav_selected()`, `select_row()`,
   `select_by_path()`), and suspending the preview handler while the tree is
   rebuilt (`tree_nav_block_selection_handler()`).
-- `remote_store` — `RemoteMachine` list, `remotes.xml`, `~/.ssh/config`
+- `remote_store` — `RemoteMachine` list and `RemoteFolder`s, `remotes.xml`, `~/.ssh/config`
   discovery, lookups (unit-tested).
 - `preview_summary` — text summaries shown in the preview for rows without
   file content (remote machine, notebook, bookmark folder, trash); columns

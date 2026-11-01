@@ -7,7 +7,7 @@ Settings and data are kept in `~/.config/lookinfiles/`
 |---|---|
 | `bookmarks.xml` | Bookmarks and bookmark folders |
 | `notes/` | Notebooks (one directory each), notes (Canvas notes are `<title>.canvas/` directories: `page.xml` and `media/`), `notes.xml` and the `.trash/` |
-| `remotes.xml` | Remote machines added by hand (`~/.ssh/config` hosts are read directly) |
+| `remotes.xml` | Remote machines added by hand and remote view folders (`~/.ssh/config` hosts are read directly; one moved into a folder is saved here) |
 | `layouts.ini` | Saved workspace layouts and the default layout of new workspaces |
 | `session.ini` | The workspaces of the last session (folders, expanded folders, selection, sort, open files), reopened by a launch without argument |
 | `recent.ini` | Recent folders and files (`Alt+R`, and first in `Ctrl+P` when nothing is typed) |

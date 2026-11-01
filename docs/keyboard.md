@@ -156,11 +156,11 @@ automatically; one canvas at a time)
 
 | Key | Action |
 |---|---|
-| `Enter` / `c` | Connect the machine (SSHFS) and browse it in the explorer |
+| `Enter` / `c` | Connect the machine (SSHFS) and browse it in the explorer / expand the folder |
 | `t` | Open an SSH terminal to the machine |
-| `a` | Add a machine |
-| `F2` / `r` / `e` | Edit the selected machine |
-| `d` / `Delete` | Delete the selected machine |
+| `a` / `Shift+A` | Add a machine (inside the selected folder) / a folder |
+| `F2` / `r` / `e` | Edit the selected machine (also its folder) or folder (name and icon) |
+| `d` / `Delete` | Delete the selected machine, or folder (its machines move to the top level) |
 | `F5` | Re-scan `~/.ssh/config` |
 
 ## Preview panel
