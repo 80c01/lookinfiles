@@ -57,7 +57,6 @@ enum {
     NOTE_ACTION_NEW_NOTE,
     NOTE_ACTION_NEW_NOTEBOOK,
     NOTE_ACTION_RENAME,
-    NOTE_ACTION_CHANGE_ICON,
     NOTE_ACTION_MOVE,
     NOTE_ACTION_DELETE,
     NOTE_ACTION_RESTORE,
@@ -723,7 +722,6 @@ static void on_notebook_dlg_response(AppDialog* dlg, gint response_id, gpointer 
 static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title,
                                        const gchar* ok_btn_text,
                                        const gchar* init_name, const gchar* init_icon,
-                                       gboolean focus_icon,
                                        gchar** out_name, gchar** out_icon) {
     *out_name = NULL;
     *out_icon = NULL;
@@ -764,7 +762,6 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
     gtk_grid_set_row_spacing(GTK_GRID(grid), 4);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 4);
     GtkWidget* group = NULL;
-    GtkWidget* selected_btn = NULL;
     for (gint i = 0; NOTEBOOK_ICONS[i] != NULL; i++) {
         GtkWidget* b = gtk_toggle_button_new();
         gtk_button_set_child(GTK_BUTTON(b), glyph_image_new(NOTEBOOK_ICONS[i]));
@@ -773,7 +770,6 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
         else group = b;
         if (g_strcmp0(NOTEBOOK_ICONS[i], d.icon) == 0) {
             gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(b), TRUE);
-            selected_btn = b;
         }
         g_signal_connect(b, "toggled", G_CALLBACK(on_preset_icon_toggled), &d);
         gtk_grid_attach(GTK_GRID(grid), b, i % 11, i / 11, 1, 1);
@@ -799,13 +795,9 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
     update_notebook_preview(&d);
 
     app_dialog_present(APP_DIALOG(dlg));
-    if (focus_icon && selected_btn != NULL) {
-        gtk_widget_grab_focus(selected_btn);
-    } else {
-        gtk_widget_grab_focus(name_entry);
-        if (init_name != NULL) {
-            gtk_editable_select_region(GTK_EDITABLE(name_entry), 0, -1);
-        }
+    gtk_widget_grab_focus(name_entry);
+    if (init_name != NULL) {
+        gtk_editable_select_region(GTK_EDITABLE(name_entry), 0, -1);
     }
 
     g_main_loop_run(d.loop);
@@ -1362,7 +1354,7 @@ void notes_new_notebook(AppData* app) {
 
     gchar* name = NULL;
     gchar* icon = NULL;
-    if (!prompt_notebook_dialog(app->window, "New Notebook", "_Create", "Notebook", NOTEBOOK_ICON_DEFAULT, FALSE, &name, &icon)) {
+    if (!prompt_notebook_dialog(app->window, "New Notebook", "_Create", "Notebook", NOTEBOOK_ICON_DEFAULT, &name, &icon)) {
         return;
     }
 
@@ -1515,7 +1507,7 @@ void notes_edit_selected(AppData* app) {
     } else if (sel == SEL_NOTEBOOK && nb != NULL) {
         gchar* new_name = NULL;
         gchar* new_icon = NULL;
-        if (!prompt_notebook_dialog(app->window, "Edit Notebook", "_Save", nb->name, nb->icon, FALSE, &new_name, &new_icon)) {
+        if (!prompt_notebook_dialog(app->window, "Edit Notebook", "_Save", nb->name, nb->icon, &new_name, &new_icon)) {
             return;
         }
 
@@ -1571,57 +1563,6 @@ void notes_edit_selected(AppData* app) {
             g_free(new_icon);
         }
 
-        notes_save(app);
-        notes_refresh(app);
-    }
-}
-
-void notes_change_notebook_icon(AppData* app) {
-    NotebookItem* nb = NULL;
-    NotesSelectionType sel = get_selected_info(app, &nb, NULL, NULL);
-    if (sel != SEL_NOTEBOOK || nb == NULL) return;
-
-    gchar* new_name = NULL;
-    gchar* new_icon = NULL;
-    if (!prompt_notebook_dialog(app->window, "Change Notebook Icon", "_Save", nb->name, nb->icon, TRUE, &new_name, &new_icon)) {
-        return;
-    }
-
-    gboolean icon_changed = (g_strcmp0(new_icon, nb->icon) != 0);
-    gboolean name_changed = (g_strcmp0(new_name, nb->name) != 0);
-
-    if (icon_changed) {
-        g_free(nb->icon);
-        nb->icon = new_icon;
-    } else {
-        g_free(new_icon);
-    }
-
-    if (name_changed) {
-        gchar* root = notes_get_root_dir();
-        gchar* new_dir = g_build_filename(root, new_name, NULL);
-        g_free(root);
-
-        if (!g_file_test(new_dir, G_FILE_TEST_EXISTS) && g_rename(nb->path, new_dir) == 0) {
-            update_open_editors(app, nb->path, new_dir, NULL);
-            g_free(nb->name);
-            g_free(nb->path);
-            nb->name = new_name;
-            nb->path = new_dir;
-            for (GList* nl = nb->notes; nl != NULL; nl = nl->next) {
-                NoteItem* n = (NoteItem*)nl->data;
-                g_free(n->path);
-                n->path = g_build_filename(nb->path, n->filename, NULL);
-            }
-        } else {
-            g_free(new_name);
-            g_free(new_dir);
-        }
-    } else {
-        g_free(new_name);
-    }
-
-    if (icon_changed || name_changed) {
         notes_save(app);
         notes_refresh(app);
     }
@@ -2044,18 +1985,6 @@ gboolean notes_handle_key(AppData* app, guint keyval, GdkModifierType state) {
     case GDK_KEY_e:
         notes_edit_selected(app);
         break;
-    case GDK_KEY_i:
-    case GDK_KEY_I:
-        if (ctrl) return FALSE;
-        {
-            NotebookItem* nb = NULL;
-            NotesSelectionType st = get_selected_info(app, &nb, NULL, NULL);
-            if (st == SEL_NOTEBOOK && nb != NULL) {
-                notes_change_notebook_icon(app);
-                break;
-            }
-        }
-        return FALSE;
     case GDK_KEY_m:
         notes_move_selected(app);
         break;
@@ -2101,7 +2030,6 @@ static gboolean notes_run_menu_action(gpointer data) {
     case NOTE_ACTION_NEW_NOTE:       notes_new_note(app); break;
     case NOTE_ACTION_NEW_NOTEBOOK:   notes_new_notebook(app); break;
     case NOTE_ACTION_RENAME:         notes_edit_selected(app); break;
-    case NOTE_ACTION_CHANGE_ICON:    notes_change_notebook_icon(app); break;
     case NOTE_ACTION_MOVE:           notes_move_selected(app); break;
     case NOTE_ACTION_DELETE:         notes_delete_selected(app); break;
     case NOTE_ACTION_RESTORE:        notes_restore_selected(app); break;
@@ -2227,7 +2155,6 @@ static void notes_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble
     } else if (sel == SEL_NOTEBOOK) {
         note_menu_item(box, popover, app, "New Note Here", "a", NOTE_ACTION_NEW_NOTE, TRUE);
         note_menu_item(box, popover, app, "Edit Notebook…", "F2", NOTE_ACTION_RENAME, TRUE);
-        note_menu_item(box, popover, app, "Change Icon…", "i", NOTE_ACTION_CHANGE_ICON, TRUE);
         note_menu_separator(box);
         note_menu_item(box, popover, app, "Move Up", "Shift+K", NOTE_ACTION_MOVE_UP, TRUE);
         note_menu_item(box, popover, app, "Move Down", "Shift+J", NOTE_ACTION_MOVE_DOWN, TRUE);

@@ -30,7 +30,6 @@ void notes_edit_selected(AppData* app);
 void notes_convert_selected_type(AppData* app, NoteType target_type);
 /* Selected Canvas note: write its Markdown as a new note next to it */
 void notes_export_selected_markdown(AppData* app);
-void notes_change_notebook_icon(AppData* app);
 void notes_move_selected(AppData* app);
 void notes_delete_selected(AppData* app);
 void notes_restore_selected(AppData* app);

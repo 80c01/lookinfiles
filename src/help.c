@@ -61,7 +61,6 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Notes view", "a / Shift+A", "Create new note (Markdown, Org-mode, Plain Text, Canvas) / new notebook", 0},
     {"Notes view", "Enter", "Edit the note (editor tab, or the Canvas tab for a Canvas note)", 0},
     {"Notes view", "F2 / r / e", "Edit note (title and format) or notebook (name and icon)", 0},
-    {"Notes view", "i", "Change notebook icon", 0},
     {"Notes view", "m", "Move note to another notebook", 0},
     {"Notes view", "d / Delete", "Delete note (to Trash) or notebook", 0},
     {"Notes view", "Shift+R", "Restore note from Trash to original notebook", 0},

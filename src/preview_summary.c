@@ -270,7 +270,6 @@ gchar* preview_summary_container(ExplorerRow* row) {
         static const SummaryShortcut keys[] = {
             {"a / Shift+A", "New note / new notebook"},
             {"F2 / r / e", "Edit notebook (name and icon)"},
-            {"i", "Change notebook icon"},
             {"d / Delete", "Delete notebook"},
             {"Shift+K / Shift+J", "Move notebook up / down"},
         };
