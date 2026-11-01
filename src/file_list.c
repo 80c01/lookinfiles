@@ -329,6 +329,11 @@ gboolean files_any_expanded(AppData* app) {
            g_hash_table_size(app->expanded_paths) > 0;
 }
 
+static void start_async_dir_scan(AppData* app, const gchar* dirname,
+                                 const gchar* select_path, const gchar* select_name,
+                                 gboolean keep_view, gboolean preview, gboolean expand_all);
+
+/* Expand all reads the folders on a worker thread (start_async_dir_scan) */
 void toggle_collapse_expand_files(AppData* app) {
     if (app == NULL || app->tree == NULL) {
         return;
@@ -338,10 +343,14 @@ void toggle_collapse_expand_files(AppData* app) {
         if (app->expanded_paths != NULL) {
             g_hash_table_remove_all(app->expanded_paths);
         }
-    } else {
-        explorer_tree_expand_all(app->tree);
+    } else if (app->base_dir != NULL) {
+        start_async_dir_scan(app, app->base_dir, NULL, NULL, TRUE, FALSE, TRUE);
     }
 }
+
+/* Set while a scan result re-expands its folders: the monitors and the
+ * workspace are synced once at the end, not once per folder */
+static gboolean batch_expanding = FALSE;
 
 /* Placeholder child of an unread directory: keeps the expander visible until
  * the row is expanded and its contents are read */
@@ -456,7 +465,9 @@ static void on_dir_expanded(AppData* app, ExplorerRow* row) {
     }
     if (app->expanded_paths != NULL) {
         g_hash_table_add(app->expanded_paths, g_strdup(row->path));
-        sync_directory_monitors(app);
+        if (!batch_expanding) {
+            sync_directory_monitors(app);
+        }
     }
 }
 
@@ -499,7 +510,7 @@ void on_tree_row_toggled(ExplorerTree* tree, ExplorerRow* row, gboolean expanded
     } else {
         on_dir_collapsed(app, row);
     }
-    if (!app->switching_ws && !app->dir_scan_pending) {
+    if (!app->switching_ws && !app->dir_scan_pending && !batch_expanding) {
         app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
 }
@@ -515,6 +526,7 @@ typedef struct {
     DirScanNode* root_node;
     gboolean refresh_preview; /* workspace switch or reveal: preview the restored selection */
     gboolean keep_view;       /* check of rows already shown: keep their selection and preview */
+    gboolean expand_all;      /* also expand every folder (up to EXPAND_ALL_MAX_ROWS rows) */
 } DirScanTaskData;
 
 static void dir_scan_task_data_free(gpointer data) {
@@ -545,6 +557,46 @@ static GHashTable* clone_string_set(GHashTable* src) {
     return copy;
 }
 
+/* Expand all stops opening folders past this many rows: they are built on the UI thread */
+#define EXPAND_ALL_MAX_ROWS 10000
+
+/* Add to out the folders expand all opens: breadth first, so the top levels
+ * open before the row budget runs out; symbolic links to folders stay closed
+ * (no loops). Runs on the worker thread. */
+static void collect_expand_all(const gchar* base, gboolean show_hidden, GHashTable* out,
+                               GCancellable* cancellable) {
+    GQueue queue = G_QUEUE_INIT;
+    g_queue_push_tail(&queue, g_strdup(base));
+    guint rows = 0;
+    gchar* dirname;
+    while ((dirname = g_queue_pop_head(&queue)) != NULL) {
+        GDir* dir = (rows < EXPAND_ALL_MAX_ROWS && !g_cancellable_is_cancelled(cancellable))
+                        ? g_dir_open(dirname, 0, NULL)
+                        : NULL;
+        if (dir != NULL) {
+            if (rows > 0) {
+                g_hash_table_add(out, g_strdup(dirname)); /* not the base folder */
+            }
+            const gchar* name;
+            while ((name = g_dir_read_name(dir)) != NULL) {
+                if (!show_hidden && name[0] == '.') {
+                    continue;
+                }
+                rows++;
+                gchar* full = g_build_filename(dirname, name, NULL);
+                struct stat st;
+                if (g_lstat(full, &st) == 0 && S_ISDIR(st.st_mode)) {
+                    g_queue_push_tail(&queue, full);
+                } else {
+                    g_free(full);
+                }
+            }
+            g_dir_close(dir);
+        }
+        g_free(dirname);
+    }
+}
+
 static void dir_scan_thread_func(GTask* task, gpointer source_object,
                                  gpointer task_data, GCancellable* cancellable) {
     (void)source_object;
@@ -554,6 +606,9 @@ static void dir_scan_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
+    if (td->expand_all) {
+        collect_expand_all(td->dirname, td->show_hidden, td->expanded_snapshot, cancellable);
+    }
     td->root_node = scan_dir_node_recursive(td->dirname, td->show_hidden,
                                             td->sort_mode, td->expanded_snapshot,
                                             cancellable);
@@ -652,6 +707,15 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
         return;
     }
 
+    if (td->expand_all && app->expanded_paths != NULL) {
+        GHashTableIter iter;
+        gpointer key;
+        g_hash_table_iter_init(&iter, td->expanded_snapshot);
+        while (g_hash_table_iter_next(&iter, &key, NULL)) {
+            g_hash_table_add(app->expanded_paths, g_strdup((const gchar*)key));
+        }
+    }
+
     if (rows_match_node(app, explorer_tree_get_root(app->tree), td->root_node)) {
         /* Nothing changed: the rows, their expansion and the scroll position stay */
         if (td->keep_view && tree_nav_selected(app) != NULL) {
@@ -683,10 +747,15 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
 
     explorer_tree_clear(app->tree);
     apply_dir_node_to_rows(explorer_tree_get_root(app->tree), app, td->root_node);
+    batch_expanding = TRUE;
     reexpand_paths_recursive(app, explorer_tree_get_root(app->tree));
     bookmarks_reexpand(app);
     notes_reexpand(app);
+    batch_expanding = FALSE;
     sync_directory_monitors(app);
+    if (td->expand_all && !app->switching_ws) {
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED); /* the workspace keeps the expansion */
+    }
     tree_nav_unblock_selection_handler(app);
     restore_selection(app, td);
 
@@ -703,7 +772,7 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
 
 static void start_async_dir_scan(AppData* app, const gchar* dirname,
                                  const gchar* select_path, const gchar* select_name,
-                                 gboolean keep_view, gboolean preview) {
+                                 gboolean keep_view, gboolean preview, gboolean expand_all) {
     if (app->dir_cancellable != NULL) {
         g_cancellable_cancel(app->dir_cancellable);
         g_clear_object(&app->dir_cancellable);
@@ -724,6 +793,7 @@ static void start_async_dir_scan(AppData* app, const gchar* dirname,
     td->select_name = g_strdup(select_name);
     td->refresh_preview = preview || (app->switching_ws && !keep_view);
     td->keep_view = keep_view;
+    td->expand_all = expand_all;
 
     GTask* task = g_task_new(NULL, app->dir_cancellable, on_dir_scan_ready, NULL);
     g_task_set_task_data(task, td, dir_scan_task_data_free);
@@ -788,7 +858,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     monitor_directory(app);
 
     /* Scan directory asynchronously off the UI thread */
-    start_async_dir_scan(app, new_dir, NULL, select_name, FALSE, FALSE);
+    start_async_dir_scan(app, new_dir, NULL, select_name, FALSE, FALSE, FALSE);
 }
 
 /* Navigate to a new directory (Enter / Backspace) */
@@ -829,7 +899,7 @@ void refresh_listing_with_path(AppData* app, const gchar* select_path) {
         remote_refresh(app);
         return;
     }
-    start_async_dir_scan(app, app->base_dir, select_path, NULL, FALSE, FALSE);
+    start_async_dir_scan(app, app->base_dir, select_path, NULL, FALSE, FALSE, FALSE);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
@@ -860,7 +930,7 @@ void reveal_path_in_tree(AppData* app, const gchar* path) {
     }
     g_free(dir);
     /* Unlike a plain refresh, the revealed entry is previewed */
-    start_async_dir_scan(app, app->base_dir, path, NULL, FALSE, TRUE);
+    start_async_dir_scan(app, app->base_dir, path, NULL, FALSE, TRUE, FALSE);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
@@ -877,7 +947,7 @@ void check_listing(AppData* app) {
     if (app == NULL || app->sidebar_view != SIDEBAR_VIEW_FILES || app->base_dir == NULL) {
         return;
     }
-    start_async_dir_scan(app, app->base_dir, NULL, NULL, TRUE, FALSE);
+    start_async_dir_scan(app, app->base_dir, NULL, NULL, TRUE, FALSE, FALSE);
 }
 
 void refresh_listing(AppData* app) {

@@ -52,7 +52,6 @@ void explorer_tree_set_expanded(ExplorerTree* tree, ExplorerRow* row, gboolean e
 void explorer_tree_toggle_expanded(ExplorerTree* tree, ExplorerRow* row);
 /* Expand every ancestor of row so it becomes visible */
 void explorer_tree_expand_to(ExplorerTree* tree, ExplorerRow* row);
-void explorer_tree_expand_all(ExplorerTree* tree);
 void explorer_tree_collapse_all(ExplorerTree* tree);
 
 guint explorer_tree_n_visible(ExplorerTree* tree);

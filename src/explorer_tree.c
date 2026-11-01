@@ -472,21 +472,6 @@ void explorer_tree_expand_to(ExplorerTree* tree, ExplorerRow* row) {
     }
 }
 
-static void expand_all_below(ExplorerTree* tree, ExplorerRow* parent) {
-    for (guint i = 0; i < explorer_row_n_children(parent); i++) {
-        ExplorerRow* child = explorer_row_child(parent, i);
-        if (child->children != NULL) {
-            explorer_tree_set_expanded(tree, child, TRUE);
-            expand_all_below(tree, child);
-        }
-    }
-}
-
-void explorer_tree_expand_all(ExplorerTree* tree) {
-    g_return_if_fail(EXPLORER_IS_TREE(tree));
-    expand_all_below(tree, tree->root);
-}
-
 void explorer_tree_collapse_all(ExplorerTree* tree) {
     g_return_if_fail(EXPLORER_IS_TREE(tree));
     for (guint i = 0; i < explorer_row_n_children(tree->root); i++) {
