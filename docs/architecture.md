@@ -171,8 +171,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`TextSearchStats`).
 - `jump_list` — back / forward history of navigation jumps across files
   (also the explorer's folder history, `nav_history`).
-- `session_store` — `session.ini` (workspaces at quit) and `recent.ini`
-  (recent folders and files, most recent first, `RECENT_MAX`).
+- `session_store` — `session.ini` (workspaces at quit, with their panels
+  as a `SavedLayout` and their editor tabs as `tab_tree` text) and
+  `recent.ini` (recent folders and files, most recent first, `RECENT_MAX`).
+- `tab_tree` — the editor tabs of a workspace as text (`TabTreeNode`): file
+  indices per notebook, current page, view last focused, and the splits with
+  their share, e.g. `H:0.500([0*,2],V:0.400([1!],[0]))`.
 - `settings_store` — `settings.ini` (`Settings`: editor mode, line numbers
   and wrap of new editor tabs, column line of the editors, window size at
   startup), defaults for
@@ -352,6 +356,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
 - `editor` — editor tabs in the notebook(s): open, save, close, move, split
   view (`editor_split_tab()`: a second tab on the same buffer), dedicated panel.
+- `editor_session` — the editor tabs of a workspace for the session:
+  `editor_session_capture()` describes the preview notebook and the
+  dedicated panel (notebooks, splits, sizes, current pages, view last
+  focused) as `tab_tree` text, `editor_session_restore()` reopens the files
+  at the same place (`editor_notebook_split()`, `editor_move_tab_to()`,
+  `editor_add_view()` for split views).
 - `editor_view` — the widgets of an editor tab around its buffer (view,
   scroll, minimap, mode lines, view controllers); `editor_view_release()`
   disconnects a closing tab from a buffer that another view still shows.
@@ -464,7 +474,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `session` — saves the workspaces at quit (`session_save_now()`: Ctrl+Q
   in `ui`, window close in `main.c`) and restores them at a launch without
   argument (`session_restore()`: `workspace_add()` +
-  `workspace_restore_state()` per workspace, then its editor tabs).
+  `workspace_restore_state()` per workspace, then its editor tabs at their
+  place (`editor_session`), then its panels, split sizes and terminal panes,
+  with new shells).
 - `preferences` — the Preferences dialog (`Ctrl+,`, top-bar gear button;
   `Alt+T` opens Appearance): a `GtkStack` with a `GtkStackSidebar` in an
   `AppDialog` (Appearance = `ThemesPage`, Editor, Window, Code navigation),

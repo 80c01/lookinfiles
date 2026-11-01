@@ -51,6 +51,11 @@ SavedLayout* layout_store_load_default(const gchar* path);
 gboolean layout_store_save(const gchar* path, GPtrArray* layouts, const SavedLayout* default_layout,
                            GError** error);
 
+/* One layout in a group of a key file (also used by session.ini); the
+ * name is written only when named */
+SavedLayout* saved_layout_read(GKeyFile* kf, const gchar* group, const gchar* name);
+void saved_layout_write(GKeyFile* kf, const gchar* group, const SavedLayout* layout, gboolean named);
+
 SavedLayout* layout_store_find(GPtrArray* layouts, const gchar* name);
 /* Add a layout (taking ownership), replacing one with the same name in place */
 void layout_store_put(GPtrArray* layouts, SavedLayout* layout);

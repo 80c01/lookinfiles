@@ -11,6 +11,9 @@ static void workspace_free(gpointer data) {
     g_strfreev(ws->expanded);
     g_free(ws->selected);
     g_strfreev(ws->tabs);
+    g_free(ws->preview_tabs);
+    g_free(ws->editor_tabs);
+    saved_layout_free(ws->panels);
     g_free(ws);
 }
 
@@ -71,10 +74,15 @@ Session* session_load(const gchar* path) {
             gchar** expanded = get_list(kf, group, "expanded");
             gchar** tabs = get_list(kf, group, "tabs");
             gchar* selected = g_key_file_get_string(kf, group, "selected", NULL);
-            session_add_workspace(s, dir, (const gchar* const*)expanded, selected,
-                                  g_key_file_get_boolean(kf, group, "hidden", NULL),
-                                  g_key_file_get_integer(kf, group, "sort", NULL),
-                                  (const gchar* const*)tabs);
+            SessionWorkspace* ws = session_add_workspace(s, dir, (const gchar* const*)expanded, selected,
+                                                         g_key_file_get_boolean(kf, group, "hidden", NULL),
+                                                         g_key_file_get_integer(kf, group, "sort", NULL),
+                                                         (const gchar* const*)tabs);
+            ws->preview_tabs = g_key_file_get_string(kf, group, "preview_tabs", NULL);
+            ws->editor_tabs = g_key_file_get_string(kf, group, "editor_tabs", NULL);
+            if (g_key_file_has_key(kf, group, "Explorer", NULL)) {
+                ws->panels = saved_layout_read(kf, group, "Session");
+            }
             g_strfreev(expanded);
             g_strfreev(tabs);
             g_free(selected);
@@ -113,6 +121,9 @@ gboolean session_save(const Session* session, const gchar* path, GError** error)
         g_key_file_set_boolean(kf, group, "hidden", ws->show_hidden);
         g_key_file_set_integer(kf, group, "sort", ws->sort_mode);
         g_key_file_set_string_list(kf, group, "tabs", (const gchar* const*)ws->tabs, g_strv_length(ws->tabs));
+        if (ws->preview_tabs != NULL) g_key_file_set_string(kf, group, "preview_tabs", ws->preview_tabs);
+        if (ws->editor_tabs != NULL) g_key_file_set_string(kf, group, "editor_tabs", ws->editor_tabs);
+        if (ws->panels != NULL) saved_layout_write(kf, group, ws->panels, FALSE);
         g_free(group);
     }
     gboolean ok = save_keyfile(kf, path, error);

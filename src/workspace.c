@@ -186,8 +186,8 @@ void workspace_save_current(AppData* app) {
     }
 }
 
-#ifdef HAVE_VTE
-static void apply_term_paned_positions_recursive(GtkWidget* widget) {
+/* The splits of the terminal panes and of the editor panel keep their share */
+static void apply_paned_fractions_recursive(GtkWidget* widget) {
     if (widget == NULL || !gtk_widget_get_visible(widget)) {
         return;
     }
@@ -207,10 +207,9 @@ static void apply_term_paned_positions_recursive(GtkWidget* widget) {
     for (GtkWidget* child = gtk_widget_get_first_child(widget);
          child != NULL;
          child = gtk_widget_get_next_sibling(child)) {
-        apply_term_paned_positions_recursive(child);
+        apply_paned_fractions_recursive(child);
     }
 }
-#endif
 
 /* Width of a paned's separator along its orientation (set by the theme CSS);
  * measured, so it is right even before the paned is allocated */
@@ -306,9 +305,12 @@ static gboolean apply_ws_positions_now(AppData* app) {
 
 #ifdef HAVE_VTE
     if (ws->term_vis && ws->term_box != NULL) {
-        apply_term_paned_positions_recursive(ws->term_box);
+        apply_paned_fractions_recursive(ws->term_box);
     }
 #endif
+    if (ws->editor_dedicated && app->editor_box != NULL) {
+        apply_paned_fractions_recursive(app->editor_box);
+    }
     return ready;
 }
 

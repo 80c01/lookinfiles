@@ -48,9 +48,11 @@ Layouts are saved in `~/.config/lookinfiles/layouts.ini`.
 ## The session
 
 When you quit (`Ctrl+Q` or closing the window), LookinFiles saves every
-workspace: its folder, expanded folders, selection, hidden files, sort and
-open files. Launching it without an argument restores them. Folders and
-files that no longer exist are skipped.
+workspace: its folder, expanded folders, selection, hidden files, sort,
+open files and where they were (preview or editor panel, split views,
+current tab of each group), the panels shown, their sizes and the terminal
+panes. Launching it without an argument restores them; the terminals start
+new shells. Folders and files that no longer exist are skipped.
 
 Launching it with a folder or a file starts with that instead
 (`lookinfiles .` always shows the current folder).

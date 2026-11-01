@@ -93,7 +93,7 @@ static gboolean read_bool(GKeyFile* kf, const gchar* group, const gchar* key, gb
 
 static const gchar* DEFAULT_GROUP = "Default";
 
-static SavedLayout* read_layout(GKeyFile* kf, const gchar* group, const gchar* name) {
+SavedLayout* saved_layout_read(GKeyFile* kf, const gchar* group, const gchar* name) {
     SavedLayout* l = saved_layout_new(name);
     l->files_vis = read_bool(kf, group, "Explorer", TRUE);
     l->preview_vis = read_bool(kf, group, "Preview", TRUE);
@@ -134,7 +134,7 @@ GPtrArray* layout_store_load(const gchar* path) {
         }
         gchar* name = g_key_file_get_string(kf, *g, "Name", NULL);
         if (name != NULL && name[0] != '\0' && layout_store_find(layouts, name) == NULL) {
-            g_ptr_array_add(layouts, read_layout(kf, *g, name));
+            g_ptr_array_add(layouts, saved_layout_read(kf, *g, name));
         }
         g_free(name);
     }
@@ -162,7 +162,7 @@ gboolean layout_store_is_customized(const SavedLayout* l) {
 SavedLayout* layout_store_load_default(const gchar* path) {
     GKeyFile* kf = open_store(path);
     SavedLayout* l = (kf != NULL && g_key_file_has_group(kf, DEFAULT_GROUP))
-                         ? read_layout(kf, DEFAULT_GROUP, "Default")
+                         ? saved_layout_read(kf, DEFAULT_GROUP, "Default")
                          : layout_store_builtin_default();
     if (kf != NULL) {
         g_key_file_free(kf);
@@ -177,7 +177,7 @@ static void set_frac(GKeyFile* kf, const gchar* group, const gchar* key, gdouble
     g_key_file_set_value(kf, group, key, text);
 }
 
-static void write_layout(GKeyFile* kf, const gchar* group, const SavedLayout* l, gboolean named) {
+void saved_layout_write(GKeyFile* kf, const gchar* group, const SavedLayout* l, gboolean named) {
     if (named) {
         g_key_file_set_string(kf, group, "Name", l->name);
     }
@@ -196,11 +196,11 @@ gboolean layout_store_save(const gchar* path, GPtrArray* layouts, const SavedLay
                            GError** error) {
     GKeyFile* kf = g_key_file_new();
     if (default_layout != NULL && layout_store_is_customized(default_layout)) {
-        write_layout(kf, DEFAULT_GROUP, default_layout, FALSE);
+        saved_layout_write(kf, DEFAULT_GROUP, default_layout, FALSE);
     }
     for (guint i = 0; i < layouts->len; i++) {
         gchar* group = g_strdup_printf("Layout %u", i + 1);
-        write_layout(kf, group, g_ptr_array_index(layouts, i), TRUE);
+        saved_layout_write(kf, group, g_ptr_array_index(layouts, i), TRUE);
         g_free(group);
     }
     gchar* dir = g_path_get_dirname(path);

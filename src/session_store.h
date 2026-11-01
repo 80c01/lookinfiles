@@ -3,10 +3,12 @@
 
 /* What LookinFiles remembers between launches, in app_config_dir():
  *  - session.ini: the workspaces at quit (folder, expanded folders, selected
- *    entry, hidden files, sort, open files) and the current one;
+ *    entry, hidden files, sort, open files and their place, panels) and the
+ *    current one;
  *  - recent.ini: recent folders and files, most recent first.
  * Pure data and file I/O (GKeyFile), no widgets: unit-tested in tests/. */
 #include <glib.h>
+#include "layout_store.h"
 
 #define RECENT_MAX 30
 
@@ -16,7 +18,12 @@ typedef struct {
     gchar* selected;     /* selected entry, or NULL */
     gboolean show_hidden;
     gint sort_mode;
-    gchar** tabs;        /* files open in editor tabs, in order */
+    gchar** tabs;        /* files open in editor tabs, in order, each once */
+    /* Where the tabs are (tab_tree.h, indices into tabs), NULL when not
+     * saved (older session files: every tab in one notebook) */
+    gchar* preview_tabs; /* the editor tabs of the preview notebook: one notebook */
+    gchar* editor_tabs;  /* the dedicated editor panel: notebooks and splits */
+    SavedLayout* panels; /* panels, split sizes and terminal panes, or NULL */
 } SessionWorkspace;
 
 typedef struct {
@@ -26,7 +33,8 @@ typedef struct {
 
 Session* session_new(void);
 void session_free(Session* session);
-/* Add a workspace (strings copied; expanded and tabs may be NULL) */
+/* Add a workspace (strings copied; expanded and tabs may be NULL; the
+ * caller then sets preview_tabs, editor_tabs and panels, owned by it) */
 SessionWorkspace* session_add_workspace(Session* session, const gchar* dir, const gchar* const* expanded,
                                         const gchar* selected, gboolean show_hidden, gint sort_mode,
                                         const gchar* const* tabs);

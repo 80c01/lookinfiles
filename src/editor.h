@@ -70,6 +70,21 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
  * the dedicated panel first when in the preview notebook). The views share
  * the buffer: text, cursor, undo. tab NULL: the current editor tab. */
 void editor_split_tab(AppData* app, EditorTab* tab, EditorMoveDirection dir);
+/* A second view of tab's file (sharing its buffer) as a new page of nb, an
+ * editor notebook; it becomes current and has the focus */
+EditorTab* editor_add_view(AppData* app, EditorTab* tab, GtkNotebook* nb);
+/* A new empty editor notebook, not yet in the window */
+GtkWidget* editor_notebook_new(AppData* app);
+/* Split editor notebook nb: a new empty notebook, returned, takes its right
+ * half (its bottom half when vertical) */
+GtkWidget* editor_notebook_split(AppData* app, GtkNotebook* nb, gboolean vertical);
+/* Move tab to new_nb at target_pos (-1: append) and make it current; with
+ * cleanup, the notebook it leaves is removed when left empty */
+void editor_move_tab_to(AppData* app, EditorTab* tab, GtkNotebook* new_nb, gint target_pos,
+                        gboolean cleanup);
+/* Remove the editor notebooks left without a page (and their splits); the
+ * editor panel hides without tabs */
+void editor_remove_empty_notebooks(AppData* app);
 /* Close the other views of tab's file (Emacs C-x 1, Vim :only), focus tab.
  * Returns how many were closed. */
 gint editor_close_other_views(AppData* app, EditorTab* tab);

@@ -105,7 +105,7 @@ make dist             # lookinfiles-<version>.tar.gz of the last commit
 ./lookinfiles --version           # (-V)
 ```
 
-The session (workspaces, folders, open files) is saved when LookinFiles quits.
+The session (workspaces, folders, open files and where they were, panels, split sizes, terminal panes) is saved when LookinFiles quits.
 
 ### Essential shortcuts
 

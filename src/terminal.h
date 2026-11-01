@@ -20,6 +20,8 @@ void on_vte_realize(GtkWidget* term, gpointer data);
 /* Pane tree of the current workspace's terminals, as text (layout_store.h);
  * "" without terminals. Caller frees. */
 gchar* term_layout_capture(AppData* app);
+/* The same for a workspace's terminal box (VirtualLayout term_box) */
+gchar* term_layout_capture_box(GtkWidget* term_box);
 /* Terminals of the current workspace (every tab of every pane) */
 guint term_pane_count(AppData* app);
 /* Rebuild the panes as described: running terminals are kept, in order;

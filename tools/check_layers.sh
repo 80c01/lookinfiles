@@ -96,7 +96,8 @@ user_guide:
 fuzzy_match:
 path_globs:
 text_search:code_index
-session_store:app_paths
+session_store:app_paths,layout_store
+tab_tree:
 settings_store:app_paths
 palette:
 fonts:

@@ -680,8 +680,12 @@ static void describe_pane(GtkWidget* w, GString* out) {
 }
 
 gchar* term_layout_capture(AppData* app) {
+    return term_layout_capture_box(app->term_box);
+}
+
+gchar* term_layout_capture_box(GtkWidget* term_box) {
     GString* out = g_string_new(NULL);
-    GtkWidget* root = (app->term_box != NULL) ? gtk_widget_get_first_child(app->term_box) : NULL;
+    GtkWidget* root = (term_box != NULL) ? gtk_widget_get_first_child(term_box) : NULL;
     if (root != NULL) {
         describe_pane(root, out);
     }
