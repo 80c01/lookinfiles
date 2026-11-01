@@ -267,6 +267,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   emptied notebook only then. Knows nothing of `EditorTab`; `editor` attaches
   it with `editor_notebook_enable_tab_drop()`.
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
+  `markdown_table` — Markdown tables for `markdown`: rows split into cells, a
+  grid widget anchored in the view, or a box-drawn text table without a view.
 - `preview_doc_view` — shows a `PreviewDoc` in the preview text view (style
   tags in the Dark+ palette, images, HTML / Markdown renderers).
 - `minimap` — scaled file overview; draws only the part around what is shown
