@@ -2,6 +2,7 @@
  * engine (vim_engine.h), which does the editing itself. */
 #include "editor_modes_private.h"
 #include "editor.h"
+#include "editor_view.h"
 #include "palette.h"
 #include "diff_gutter.h"
 #include "code_nav.h"
@@ -267,13 +268,47 @@ static void defer_close(EditorTab* tab) {
 }
 
 static gboolean close_tab(EditorTab* tab, gboolean force, gchar** error) {
-    if (!force && gtk_text_buffer_get_modified(tab->buffer) && !tab->is_buffer) {
+    /* A view of a split file closes: the other views keep the changes */
+    gboolean twin = editor_view_twin((AppData*)tab->app, tab) != NULL;
+    if (!twin && !force && gtk_text_buffer_get_modified(tab->buffer) && !tab->is_buffer) {
         if (error) *error = g_strdup("E37: No write since last change (add ! to override)");
         return FALSE;
     }
-    if (force) gtk_text_buffer_set_modified(tab->buffer, FALSE);
+    if (force && !twin) gtk_text_buffer_set_modified(tab->buffer, FALSE);
     defer_close(tab);
     return TRUE;
+}
+
+/* Splitting builds a view whose engine is this one, still running the
+ * command: it waits for the main loop too */
+typedef struct {
+    AppData* app;
+    EditorTab* tab;
+    EditorMoveDirection dir;
+} DeferredSplit;
+
+static gboolean run_deferred_split(gpointer data) {
+    DeferredSplit* d = data;
+    if (g_list_find(d->app->editors, d->tab) != NULL) {
+        editor_split_tab(d->app, d->tab, d->dir);
+    }
+    g_free(d);
+    return G_SOURCE_REMOVE;
+}
+
+static void defer_split(EditorTab* tab, EditorMoveDirection dir) {
+    DeferredSplit* d = g_new0(DeferredSplit, 1);
+    d->app = (AppData*)tab->app;
+    d->tab = tab;
+    d->dir = dir;
+    g_idle_add(run_deferred_split, d);
+}
+
+/* :only, Ctrl+W o: the other views of the file close */
+static void only_view(EditorTab* tab) {
+    if (editor_close_other_views((AppData*)tab->app, tab) == 0) {
+        set_echo(tab, "Already only one window", FALSE);
+    }
 }
 
 static gboolean set_view_option(EditorTab* tab, const gchar* arg) {
@@ -352,7 +387,19 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
         close_tab(tab, TRUE, error);
         return TRUE;
     }
-    if (strcmp(name, "quit") == 0 || strcmp(name, "qall") == 0) {
+    if (strcmp(name, "split") == 0 || strcmp(name, "vsplit") == 0) {
+        if (args[0] != '\0') {
+            if (error) *error = g_strdup("E488: Trailing characters (the split view shows this file)");
+            return TRUE;
+        }
+        defer_split(tab, name[0] == 'v' ? EDITOR_MOVE_RIGHT : EDITOR_MOVE_DOWN);
+        return TRUE;
+    }
+    if (strcmp(name, "only") == 0) {
+        only_view(tab);
+        return TRUE;
+    }
+    if (strcmp(name, "quit") == 0 || strcmp(name, "qall") == 0 || strcmp(name, "close") == 0) {
         close_tab(tab, bang, error);
         return TRUE;
     }
@@ -671,8 +718,14 @@ static void on_cl_focus_leave(GtkEventControllerFocus* ctrl, gpointer data) {
 /* Mode lifecycle                                                            */
 /* ------------------------------------------------------------------------- */
 
+static void on_view_focus_enter(GtkEventControllerFocus* ctrl, gpointer data);
+
 void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     GtkWidget* vim_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    /* The focused view of a split file hosts the shared engine */
+    GtkEventController* view_focus = gtk_event_controller_focus_new();
+    g_signal_connect(view_focus, "enter", G_CALLBACK(on_view_focus_enter), tab);
+    gtk_widget_add_controller(tab->view, view_focus);
 
     GtkWidget* statusline = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(statusline, "vim-statusline");
@@ -744,8 +797,37 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     st->vim_box = vim_box;
 }
 
+/* The views of a split file share one engine (one undo history, registers,
+ * mode, like Vim's windows on a buffer): kept on the buffer with its users,
+ * the focused view hosts it */
+#define SHARED_ENGINE_KEY "vim-shared-engine"
+
+typedef struct {
+    VimEngine* engine;
+    GList* tabs; /* the tabs using it */
+} SharedEngine;
+
+static SharedEngine* shared_of(EditorTab* tab) {
+    return g_object_get_data(G_OBJECT(tab->buffer), SHARED_ENGINE_KEY);
+}
+
+static void on_view_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
+    (void)ctrl;
+    EditorTab* tab = data;
+    EditorModeState* st = state_of(tab);
+    if (st == NULL || st->vim == NULL || vim_engine_get_host_data(st->vim) == tab) return;
+    vim_engine_set_host_data(st->vim, tab);
+    on_state_changed(tab);
+}
+
 void vim_activate(EditorTab* tab) {
     EditorModeState* st = state_of(tab);
+    SharedEngine* shared = st->vim == NULL ? shared_of(tab) : NULL;
+    if (shared != NULL) {
+        st->vim = shared->engine;
+        shared->tabs = g_list_prepend(shared->tabs, tab);
+        vim_engine_set_host_data(st->vim, tab);
+    }
     if (st->vim == NULL) {
         VimHost host = {
             .message = on_message,
@@ -762,6 +844,12 @@ void vim_activate(EditorTab* tab) {
             .references = on_references,
         };
         st->vim = vim_engine_new(tab->buffer, &host, tab);
+        shared = g_new0(SharedEngine, 1);
+        shared->engine = st->vim;
+        shared->tabs = g_list_prepend(NULL, tab);
+        g_object_set_data(G_OBJECT(tab->buffer), SHARED_ENGINE_KEY, shared);
+    }
+    if (st->vim_clipboard == NULL) {
         st->vim_clip_cancel = g_cancellable_new();
         st->vim_clipboard = g_object_ref(gtk_widget_get_clipboard(tab->view));
         st->vim_clip_handler = g_signal_connect(st->vim_clipboard, "changed", G_CALLBACK(on_clipboard_changed), tab);
@@ -783,6 +871,20 @@ static void release_engine(EditorModeState* st) {
         g_signal_handler_disconnect(st->vim_clipboard, st->vim_clip_handler);
         g_clear_object(&st->vim_clipboard);
         st->vim_clip_handler = 0;
+    }
+    SharedEngine* shared = shared_of(st->tab);
+    if (shared != NULL && shared->engine == st->vim) {
+        shared->tabs = g_list_remove(shared->tabs, st->tab);
+        if (shared->tabs != NULL) {
+            /* Another view keeps the engine: it hosts it from now on */
+            if (vim_engine_get_host_data(st->vim) == st->tab) {
+                vim_engine_set_host_data(st->vim, shared->tabs->data);
+            }
+            st->vim = NULL;
+            return;
+        }
+        g_object_set_data(G_OBJECT(st->tab->buffer), SHARED_ENGINE_KEY, NULL);
+        g_free(shared);
     }
     vim_engine_free(st->vim);
     st->vim = NULL;
@@ -818,6 +920,25 @@ gboolean vim_claims_key(EditorTab* tab, guint keyval, GdkModifierType state) {
  * asking first when it has unsaved changes (nav_keys.h) */
 static gboolean handle_window_command(EditorTab* tab, EditorModeState* st, guint keyval,
                                       GdkModifierType state) {
+    /* Split view keys (Ctrl held or not): s / S split below, v to the right,
+     * o keeps only this view, q quits it (like :q) */
+    if ((state & GDK_ALT_MASK) == 0) {
+        guint k = gdk_keyval_to_lower(keyval);
+        if (k == GDK_KEY_s || k == GDK_KEY_v || k == GDK_KEY_o || k == GDK_KEY_q) {
+            st->vim_ctrl_w = FALSE;
+            set_echo(tab, "", FALSE);
+            if (k == GDK_KEY_o) {
+                only_view(tab);
+            } else if (k == GDK_KEY_q) {
+                gchar* err = NULL;
+                if (!close_tab(tab, FALSE, &err)) set_echo(tab, err, TRUE);
+                g_free(err);
+            } else {
+                defer_split(tab, k == GDK_KEY_v ? EDITOR_MOVE_RIGHT : EDITOR_MOVE_DOWN);
+            }
+            return TRUE;
+        }
+    }
     NavPrefix next = NAV_PREFIX_NONE;
     NavAction action = nav_keys_lookup(NAV_STYLE_VIM, NAV_PREFIX_CTRL_W, keyval, state, &next);
     if (action == NAV_PENDING) return TRUE; /* a modifier pressed alone */

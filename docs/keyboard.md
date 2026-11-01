@@ -325,6 +325,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Format | `M-q` fill paragraph (72 columns), `M-u` / `M-l` / `M-c` case, `M-x set-justification-left` / `center` / `right` / `full` |
 | Undo and redo | `C-/`, `C-_`, `C-x u` / `C-Shift-_`, `M-_` |
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
+| Windows (split view) | `C-x 2` / `C-x 3` the file in a second window below / to the right (its own point; text and undo shared), `C-x 0` delete this window, `C-x 1` delete the other windows of the file (the changes stay in the window kept) |
 | Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward, `M-?` references, `M-g i` symbols, `C-h .` help; signatures in the echo area |
 | Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `visual-line-mode` / `toggle-truncate-lines` (wrap long lines), `org-mode`, `text-mode`, mode switches) |
 | Minibuffer | `Tab` completes (`M-x` command names, Org tags, `*Heading` links) and lists the candidates; `C-g` / `Esc` quits |
@@ -359,5 +360,6 @@ listed over the statusline, Vim's wildmenu) and `Ctrl+R` register insert.
 | Options | `:set` `ignorecase` `smartcase` `hlsearch` `incsearch` `wrapscan` `expandtab` `autoindent` `shiftwidth` `tabstop` `softtabstop` (default `-1`: same as `shiftwidth`) `textwidth` `clipboard`, `number`, `wrap` (`no` / `inv` / `!` / `?` / `+=`) |
 | Scroll | `zz` `zt` `zb` (`z.` `z<CR>` `z-`), `Ctrl+E` / `Ctrl+Y` lines, `Ctrl+D` / `Ctrl+U` half pages, `Ctrl+F` / `Ctrl+B` pages |
 | Files and tabs | `:w [file]`, `:saveas`, `:up`, `:wq` / `:x` / `ZZ`, `:q` / `:q!` / `ZQ`, `:e[!] [file]`, `gt` / `gT` / `:tabn` / `:tabp`, `Ctrl+G` / `g Ctrl+G` file and word count, `ga` / `g8` character code |
+| Windows (split view) | `Ctrl+W s` / `:sp` and `Ctrl+W v` / `:vs` the file in a second window below / to the right (its own cursor; text, undo, registers and mode shared), `Ctrl+W o` / `:only` close the other windows of the file, `Ctrl+W q` / `:clo` close this one (no question while another window shows the file) |
 
 </details>

@@ -86,6 +86,10 @@ typedef struct {
 
 VimEngine* vim_engine_new(GtkTextBuffer* buffer, const VimHost* host, gpointer host_data);
 void vim_engine_free(VimEngine* engine);
+/* The data passed to the host callbacks: the views of a split file share one
+ * engine (one undo history), the focused view hosts it */
+void vim_engine_set_host_data(VimEngine* engine, gpointer host_data);
+gpointer vim_engine_get_host_data(VimEngine* engine);
 
 /* Feed one key (vim_keys.h). FALSE: the host's text view should handle
  * the key (text typed in Insert mode, or keys Vim does not use). */

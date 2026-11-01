@@ -457,6 +457,13 @@ key ctrl+s; xdotool type --delay 60 "notes"
                         shot emacs_explorer_isearch
 key ctrl+g;             shot emacs_explorer_isearch_cancelled   # back on the first row
 key End ctrl+o; sleep 0.5; shot emacs_ctrl_o_dedicated   # editor panel opened, explorer keeps the focus
+# Split view in the dedicated panel: C-x 3 / C-x 2 a second view, C-x 0 / C-x 1 back to one
+xdotool mousemove 1050 400 click 1   # focus the editor text (dedicated panel)
+key ctrl+x 3;           shot emacs_split_right      # the file in a second view, focused
+key ctrl+x 2;           shot emacs_split_below      # a third view under it
+key ctrl+x 0;           shot emacs_split_deleted    # this view closes, the others stay
+key ctrl+x 1;           shot emacs_split_only       # one view left
+xdotool mousemove 150 600 click 1    # back to the explorer
 key ctrl+x o;           shot emacs_other_window
 key ctrl+s; xdotool type --delay 60 "line 9"
                         shot emacs_preview_isearch  # I-search minibuffer in the preview
@@ -475,6 +482,11 @@ key ctrl+w w slash; xdotool type --delay 60 "line 7"
                         shot vim_preview_search     # "/" command line in the preview
 key Return ctrl+w W G k k t; sleep 0.5
                         shot vim_t_dedicated        # README.md in the dedicated panel, focused
+key ctrl+w v;           shot vim_split_right        # Ctrl+W v: a second view of README.md, its own cursor
+key g g colon; xdotool type --delay 60 "sp"; key Return
+                        shot vim_split_below        # :sp: a third view under it (top of the file)
+key colon; xdotool type --delay 60 "only"; key Return
+                        shot vim_split_only         # :only: the other views close
 xdotool mousemove 150 600 click 1
 key g t;                shot vim_gt_explorer        # preview notebook: next tab, the explorer keeps the focus
 key g T;                shot vim_gT_explorer

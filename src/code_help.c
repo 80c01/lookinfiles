@@ -572,6 +572,7 @@ static void on_cursor_moved(GObject* buffer, GParamSpec* pspec, gpointer data) {
     (void)buffer;
     (void)pspec;
     CodeHelp* h = data;
+    if (h->tab->view_passive) return; /* another view of the split file moved it */
     schedule_occurrences(h);
     if (h->showing == CARD_SIGNATURE) {
         schedule_signature(h);

@@ -331,6 +331,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `editor_view` — the widgets of an editor tab around its buffer (view,
   scroll, minimap, mode lines, view controllers); `editor_view_release()`
   disconnects a closing tab from a buffer that another view still shows.
+  The buffer has one cursor: the view in use has it (`editor_view_activate()`
+  on focus or click), the others keep theirs in `view_insert` / `view_bound`
+  (`view_passive`); `editor_find_tab()` returns the view in use. In Vim mode
+  the views share one `VimEngine` (kept on the buffer by `editor_vim`),
+  hosted by the focused view.
 - `editor_modes` — per-tab mode state, shared editing operations (align,
   format, case, indent, find/replace, goto line), tab label, status, key dispatch.
   Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim` (the

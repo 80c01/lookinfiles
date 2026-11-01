@@ -32,6 +32,8 @@ void emacs_echo(EditorTab* tab, const gchar* msg) {
 static void block_cursor_update(EditorTab* tab) {
     EditorModeState* st = (EditorModeState*)tab->mode_state;
     if (st == NULL || tab->view == NULL) return;
+    /* The tag is the buffer's: drawn by the view of a split file that has the cursor */
+    if (tab->view_passive) return;
     GtkTextBuffer* b = tab->buffer;
     GtkTextTagTable* table = gtk_text_buffer_get_tag_table(b);
     GtkTextTag* tag = gtk_text_tag_table_lookup(table, BLOCK_CURSOR_TAG);
@@ -89,8 +91,9 @@ static void on_block_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
 void emacs_block_cursor_set(EditorTab* tab, gboolean on) {
     EditorModeState* st = (EditorModeState*)tab->mode_state;
     if (st == NULL || tab->view == NULL) return;
-    if (g_object_get_data(G_OBJECT(tab->buffer), "emacs-block-cursor-wired") == NULL) {
-        g_object_set_data(G_OBJECT(tab->buffer), "emacs-block-cursor-wired", GINT_TO_POINTER(1));
+    /* Once per view: the views of a split file share the buffer */
+    if (g_object_get_data(G_OBJECT(tab->view), "emacs-block-cursor-wired") == NULL) {
+        g_object_set_data(G_OBJECT(tab->view), "emacs-block-cursor-wired", GINT_TO_POINTER(1));
         g_signal_connect(tab->buffer, "notify::cursor-position", G_CALLBACK(on_block_cursor_moved), tab);
         g_signal_connect_after(tab->buffer, "changed", G_CALLBACK(on_block_buffer_changed), tab);
     }
@@ -970,6 +973,22 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         }
         if (ctrl && (keyval == GDK_KEY_c || keyval == GDK_KEY_C)) {
             editor_close_tab((AppData*)tab->app, tab);
+            return TRUE;
+        }
+        /* Windows: split below / to the right (a second view of the file),
+         * delete this one, keep only this one (the other views of the file) */
+        if (!ctrl && !alt && (keyval == GDK_KEY_2 || keyval == GDK_KEY_3)) {
+            emacs_echo(tab, "");
+            editor_split_tab((AppData*)tab->app, tab, keyval == GDK_KEY_3 ? EDITOR_MOVE_RIGHT : EDITOR_MOVE_DOWN);
+            return TRUE;
+        }
+        if (!ctrl && !alt && keyval == GDK_KEY_0) {
+            editor_close_tab((AppData*)tab->app, tab);
+            return TRUE;
+        }
+        if (!ctrl && !alt && keyval == GDK_KEY_1) {
+            emacs_echo(tab, "");
+            editor_close_other_views((AppData*)tab->app, tab);
             return TRUE;
         }
         NavAction action = nav_keys_ctrl_x(keyval, state);

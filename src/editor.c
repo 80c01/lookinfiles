@@ -465,8 +465,6 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     tab_menu_item(box, popover, app, tab, "Move Left", "Ctrl+Alt+Left", TAB_ACTION_MOVE_LEFT);
     tab_menu_item(box, popover, app, tab, "Move Down", "Ctrl+Alt+Down", TAB_ACTION_MOVE_DOWN);
     tab_menu_item(box, popover, app, tab, "Move Up", "Ctrl+Alt+Up", TAB_ACTION_MOVE_UP);
-    tab_menu_item(box, popover, app, tab, "Split Right", NULL, TAB_ACTION_SPLIT_RIGHT);
-    tab_menu_item(box, popover, app, tab, "Split Down", NULL, TAB_ACTION_SPLIT_DOWN);
 
     GtkWidget* sep2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_margin_top(sep2, 4);
@@ -497,6 +495,18 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
                   "Ctrl+Alt+N", TAB_ACTION_LINE_NUMBERS);
     tab_menu_item(box, popover, app, tab, editor_mode_get_wrap(tab) ? "Don't Wrap Lines" : "Wrap Lines",
                   NULL, TAB_ACTION_WRAP);
+
+    GtkWidget* sep_split = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_margin_top(sep_split, 4);
+    gtk_widget_set_margin_bottom(sep_split, 4);
+    gtk_box_append(GTK_BOX(box), sep_split);
+    /* The keys of the tab's mode (Notepad has none) */
+    gboolean vim = (tab->mode == EDITOR_MODE_VIM);
+    gboolean emacs = (tab->mode == EDITOR_MODE_EMACS || org);
+    tab_menu_item(box, popover, app, tab, "Split Right", vim ? "Ctrl+W v" : emacs ? "C-x 3" : NULL,
+                  TAB_ACTION_SPLIT_RIGHT);
+    tab_menu_item(box, popover, app, tab, "Split Down", vim ? "Ctrl+W s" : emacs ? "C-x 2" : NULL,
+                  TAB_ACTION_SPLIT_DOWN);
 
     GtkWidget* sep4 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_margin_top(sep4, 4);
@@ -905,6 +915,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     for (GList* l = app->editors; l != NULL; l = l->next) {
         EditorTab* t = (EditorTab*)l->data;
         if (g_strcmp0(t->path, full) == 0) {
+            t = editor_view_active(t); /* split: the view in use */
             GtkNotebook* t_nb = editor_tab_notebook(app, t);
             if (GTK_WIDGET(t_nb) != app->notebook) {
                 if (app->editor_box != NULL && !gtk_widget_get_visible(app->editor_box)) {
@@ -1059,6 +1070,20 @@ void editor_split_tab(AppData* app, EditorTab* tab, EditorMoveDirection dir) {
     editor_modes_update_status(twin);
 }
 
+gint editor_close_other_views(AppData* app, EditorTab* tab) {
+    if (app == NULL || tab == NULL) return 0;
+    gint closed = 0;
+    for (EditorTab* t = editor_view_twin(app, tab); t != NULL; t = editor_view_twin(app, tab)) {
+        editor_close_tab(app, t); /* no question: tab keeps the changes */
+        closed++;
+    }
+    if (closed > 0 && tab->view != NULL) {
+        app->last_focused_editor = tab;
+        gtk_widget_grab_focus(tab->view);
+    }
+    return closed;
+}
+
 EditorTab* editor_find_tab(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL) return NULL;
     gchar* want = g_canonicalize_filename(path, NULL);
@@ -1067,7 +1092,7 @@ EditorTab* editor_find_tab(AppData* app, const gchar* path) {
         EditorTab* t = (EditorTab*)l->data;
         if (t->path == NULL) continue;
         gchar* have = g_canonicalize_filename(t->path, NULL);
-        if (g_strcmp0(have, want) == 0) found = t;
+        if (g_strcmp0(have, want) == 0) found = editor_view_active(t); /* split: the view in use */
         g_free(have);
     }
     g_free(want);

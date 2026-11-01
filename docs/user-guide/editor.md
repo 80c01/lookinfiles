@@ -53,10 +53,13 @@ You can also drag a tab: drop it on another tab bar to move it there, or
 near the edge of an editor to split that side.
 
 To see two places of one file at once, right-click its tab title and pick
-**Split Right** or **Split Down**: a second tab shows the same file beside
-or below. Both show the same text, as you type, and share the cursor and
-the undo history; closing one keeps the other open, and the unsaved
-changes with it.
+**Split Right** or **Split Down** (Emacs `C-x 3` / `C-x 2`, Vim `Ctrl+W v` /
+`Ctrl+W s`, `:vs` / `:sp`): a second tab shows the same file beside or
+below. Both show the same text as you type and share the undo history; each
+keeps its own cursor and selection. Closing one (Emacs `C-x 0`, Vim
+`Ctrl+W q` / `:clo`) keeps the other open, and the unsaved changes with it;
+Emacs `C-x 1`, Vim `Ctrl+W o` / `:only` close the other views of the file.
+In Vim mode the views share one Vim: mode, registers and undo history.
 
 ## Choosing the mode of a tab
 

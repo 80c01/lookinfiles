@@ -9,11 +9,63 @@
 #include "code_help.h"
 #include "file_types.h"
 
+/* The tab whose view has the buffer's cursor (the views of a split file share
+ * the buffer, which has one cursor; the others keep theirs in view_insert /
+ * view_bound) */
+#define ACTIVE_VIEW_KEY "editor-active-view"
+
+static EditorTab* active_of(GtkTextBuffer* buffer) {
+    return g_object_get_data(G_OBJECT(buffer), ACTIVE_VIEW_KEY);
+}
+
+EditorTab* editor_view_active(EditorTab* tab) {
+    if (tab == NULL || tab->buffer == NULL) return tab;
+    EditorTab* active = active_of(tab->buffer);
+    return active != NULL ? active : tab;
+}
+
+static void save_cursor(EditorTab* tab) {
+    GtkTextBuffer* buf = tab->buffer;
+    GtkTextIter ins, bound;
+    gtk_text_buffer_get_iter_at_mark(buf, &ins, gtk_text_buffer_get_insert(buf));
+    gtk_text_buffer_get_iter_at_mark(buf, &bound, gtk_text_buffer_get_selection_bound(buf));
+    gtk_text_buffer_move_mark(buf, tab->view_insert, &ins);
+    gtk_text_buffer_move_mark(buf, tab->view_bound, &bound);
+}
+
+static void restore_cursor(EditorTab* tab) {
+    GtkTextBuffer* buf = tab->buffer;
+    GtkTextIter ins, bound;
+    gtk_text_buffer_get_iter_at_mark(buf, &ins, tab->view_insert);
+    gtk_text_buffer_get_iter_at_mark(buf, &bound, tab->view_bound);
+    gtk_text_buffer_select_range(buf, &ins, &bound);
+}
+
+void editor_view_activate(EditorTab* tab) {
+    if (tab == NULL || tab->buffer == NULL || tab->view_insert == NULL) return;
+    EditorTab* active = active_of(tab->buffer);
+    if (active == tab) return;
+    if (active != NULL) {
+        save_cursor(active);
+        active->view_passive = TRUE;
+    }
+    tab->view_passive = FALSE;
+    g_object_set_data(G_OBJECT(tab->buffer), ACTIVE_VIEW_KEY, tab);
+    if (active != NULL) restore_cursor(tab);
+}
+
+/* Another view of the buffer moved the cursor: this view stays where it is */
+static gboolean view_is_passive(GtkTextBuffer* buffer, GtkWidget* view) {
+    EditorTab* active = active_of(buffer);
+    return active != NULL && active->view != view;
+}
+
 static void on_editor_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
     (void)ctrl;
     EditorTab* tab = (EditorTab*)data;
     if (tab != NULL && tab->app != NULL) {
         AppData* app = (AppData*)tab->app;
+        editor_view_activate(tab);
         app->last_focused_editor = tab;
         update_active_panel_highlight(app);
         app_emit(app, APP_EVENT_STATUS_CHANGED);
@@ -86,11 +138,12 @@ static void clamp_adjustment(GtkAdjustment* adj, gdouble value) {
  * the accidental selection. A click places the cursor in view anyway. */
 static gboolean on_editor_pointer_event(GtkEventControllerLegacy* ctrl, GdkEvent* event,
                                         gpointer data) {
-    (void)data;
     GtkWidget* view = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
     switch (gdk_event_get_event_type(event)) {
     case GDK_BUTTON_PRESS:
     case GDK_TOUCH_BEGIN:
+        /* Before the view places the cursor (and takes the focus) */
+        editor_view_activate((EditorTab*)data);
         g_object_set_data(G_OBJECT(view), POINTER_DOWN_KEY, GINT_TO_POINTER(1));
         break;
     case GDK_BUTTON_RELEASE:
@@ -144,14 +197,14 @@ static gboolean keep_cursor_clear(gpointer data) {
 
 /* Typing moves the cursor without "mark-set" */
 static void on_editor_text_changed(GtkTextBuffer* buffer, gpointer data) {
-    (void)buffer;
+    if (view_is_passive(buffer, data)) return;
     g_idle_add_full(G_PRIORITY_LOW, keep_cursor_clear, g_object_ref(data), g_object_unref);
 }
 
 static void on_editor_cursor_moved(GtkTextBuffer* buffer, const GtkTextIter* location,
                                    GtkTextMark* mark, gpointer data) {
     (void)location;
-    if (mark != gtk_text_buffer_get_insert(buffer)) {
+    if (mark != gtk_text_buffer_get_insert(buffer) || view_is_passive(buffer, data)) {
         return;
     }
     /* Low priority: after the redraw in which GTK scrolls to the cursor */
@@ -188,6 +241,16 @@ void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
     tab->buffer = buffer;
     tab->scroll = scroll;
     tab->view = view;
+    GtkTextIter ins, bound;
+    gtk_text_buffer_get_iter_at_mark(buffer, &ins, gtk_text_buffer_get_insert(buffer));
+    gtk_text_buffer_get_iter_at_mark(buffer, &bound, gtk_text_buffer_get_selection_bound(buffer));
+    tab->view_insert = gtk_text_buffer_create_mark(buffer, NULL, &ins, FALSE);
+    tab->view_bound = gtk_text_buffer_create_mark(buffer, NULL, &bound, FALSE);
+    if (active_of(buffer) == NULL) {
+        g_object_set_data(G_OBJECT(buffer), ACTIVE_VIEW_KEY, tab);
+    } else {
+        tab->view_passive = TRUE; /* a split view: until it is focused */
+    }
 
     GtkEventController* focus_ctrl = gtk_event_controller_focus_new();
     g_signal_connect(focus_ctrl, "enter", G_CALLBACK(on_editor_focus_enter), tab);
@@ -201,7 +264,7 @@ void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
 
     GtkEventController* pointer_ctrl = gtk_event_controller_legacy_new();
     gtk_event_controller_set_propagation_phase(pointer_ctrl, GTK_PHASE_CAPTURE);
-    g_signal_connect(pointer_ctrl, "event", G_CALLBACK(on_editor_pointer_event), NULL);
+    g_signal_connect(pointer_ctrl, "event", G_CALLBACK(on_editor_pointer_event), tab);
     gtk_widget_add_controller(view, pointer_ctrl);
 
     diff_gutter_attach(view, TRUE);
@@ -263,6 +326,20 @@ void editor_view_release(EditorTab* tab) {
     g_signal_handlers_disconnect_by_data(tab->buffer, tab);
     if (tab->view != NULL) {
         g_signal_handlers_disconnect_by_data(tab->buffer, tab->view);
+    }
+    if (active_of(tab->buffer) == tab) {
+        /* The view left takes its own cursor back */
+        EditorTab* twin = editor_view_twin((AppData*)tab->app, tab);
+        g_object_set_data(G_OBJECT(tab->buffer), ACTIVE_VIEW_KEY, twin);
+        if (twin != NULL) {
+            twin->view_passive = FALSE;
+            restore_cursor(twin);
+        }
+    }
+    if (tab->view_insert != NULL) {
+        gtk_text_buffer_delete_mark(tab->buffer, tab->view_insert);
+        gtk_text_buffer_delete_mark(tab->buffer, tab->view_bound);
+        tab->view_insert = tab->view_bound = NULL;
     }
 }
 

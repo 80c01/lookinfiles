@@ -166,6 +166,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Notepad mode", "Shift+F12 / Ctrl+Shift+O", "References (References tab) / symbols of the file", 0},
     /* Editor: Emacs Mode (Visual Clone) */
     {"Editor: Emacs mode", "C-x C-s / C-x C-w", "Save buffer / Write file (Save As with chosen file name in minibuffer)", 0},
+    {"Editor: Emacs mode", "C-x 2 / C-x 3", "Split view: the file in a second window below / to the right (own point, shared text and undo)", 0},
+    {"Editor: Emacs mode", "C-x 0 / C-x 1", "Delete this window / delete the other windows of the file (the other windows keep the changes)", 0},
     {"Editor: Emacs mode", "C-w / M-w / C-y", "Kill region (cut), kill ring save (copy), yank (paste)", 0},
     {"Editor: Emacs mode", "C-d / M-d / C-k", "Delete char, kill word forward, kill line", 0},
     {"Editor: Emacs mode", "C-SPC / C-@", "Set mark (select text region; twice or C-g cancels)", 0},
@@ -207,6 +209,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Vim mode", ":set sw=2 sts=2 et ic hls nu", "Options (shiftwidth, softtabstop, expandtab, ignorecase, hlsearch, number, wrap...)", 0},
     {"Editor: Vim mode", ": Tab / Shift+Tab", "Complete a command or :set option, list the matches and cycle through them", 0},
     {"Editor: Vim mode", ":w / :wq / ZZ / :q!", "Save (:w file, :saveas), save and close, close discarding changes", 0},
+    {"Editor: Vim mode", "Ctrl+W s / Ctrl+W v / :sp / :vs", "Split view: the file in a second view below / to the right (own cursor, shared text and undo)", 0},
+    {"Editor: Vim mode", "Ctrl+W o / :only / Ctrl+W q / :clo", "Close the other views of the file / close this view (the other views keep the changes)", 0},
     {"Editor: Vim mode", "zz zt zb Ctrl+E/Y/D/U/F/B", "Scroll the view (cursor line centered, top, bottom; lines, half pages, pages)", 0},
     /* Global */
     {"Global", "Alt+1 .. Alt+8", "Switch between virtual workspaces (or click/scroll top-bar minimap)", 0},

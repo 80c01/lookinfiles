@@ -160,7 +160,10 @@ static void get_cursor_position(EditorTab* tab, gint* out_line, gint* out_col, g
     if (tab == NULL || tab->buffer == NULL) return;
 
     GtkTextIter iter;
-    if (tab->mode == EDITOR_MODE_VIM && tab->mode_state != NULL) {
+    if (tab->view_passive && tab->view_insert != NULL) {
+        /* Another view of the split file has the buffer's cursor */
+        gtk_text_buffer_get_iter_at_mark(tab->buffer, &iter, tab->view_insert);
+    } else if (tab->mode == EDITOR_MODE_VIM && tab->mode_state != NULL) {
         vim_cursor_get(tab, &iter); /* not the selection end in visual mode */
     } else {
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &iter,

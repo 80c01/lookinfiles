@@ -552,6 +552,14 @@ VimEngine* vim_engine_new(GtkTextBuffer* buffer, const VimHost* host, gpointer h
     return e;
 }
 
+void vim_engine_set_host_data(VimEngine* e, gpointer host_data) {
+    if (e != NULL) e->hd = host_data;
+}
+
+gpointer vim_engine_get_host_data(VimEngine* e) {
+    return e != NULL ? e->hd : NULL;
+}
+
 void vim_engine_free(VimEngine* e) {
     if (e == NULL) return;
     vim_e_end_change(e);

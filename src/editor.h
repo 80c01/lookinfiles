@@ -70,6 +70,9 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
  * the dedicated panel first when in the preview notebook). The views share
  * the buffer: text, cursor, undo. tab NULL: the current editor tab. */
 void editor_split_tab(AppData* app, EditorTab* tab, EditorMoveDirection dir);
+/* Close the other views of tab's file (Emacs C-x 1, Vim :only), focus tab.
+ * Returns how many were closed. */
+gint editor_close_other_views(AppData* app, EditorTab* tab);
 /* Accept editor tabs dragged with the mouse onto nb (an editor notebook or
  * the preview notebook): on its tab bar, its page, or an edge to split it */
 void editor_notebook_enable_tab_drop(AppData* app, GtkWidget* nb);

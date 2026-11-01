@@ -100,6 +100,11 @@ typedef struct {
     gchar* status_text;   /* status message */
     gpointer mode_state;  /* mode-specific state (EditorModeState*) */
     const gchar* line_ending; /* "Unix (LF)"... detected at load (static) */
+    /* Cursor and selection of the view while another view of its buffer (a
+     * split view) has them: the buffer has one cursor, given to the view in use */
+    GtkTextMark* view_insert;
+    GtkTextMark* view_bound;
+    gboolean view_passive; /* another view of the buffer has its cursor */
 } EditorTab;
 
 /* Virtual workspace layout state (dynamic workspaces like Ubuntu) */

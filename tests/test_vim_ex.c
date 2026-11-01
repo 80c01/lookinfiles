@@ -27,6 +27,7 @@ static void test_names(void) {
         {"ce 40", "center"}, {"ri", "right"}, {"le", "left"}, {"ret", "retab"}, {"&&", "&&"},
         {">", ">"}, {"<<", "<"}, {"sg", "substitute"}, {"tabn", "tabnext"}, {"bp", "tabprevious"},
         {"sav x", "saveas"}, {"e!", "edit"}, {"", ""}, {"12", ""},
+        {"sp", "split"}, {"vs", "vsplit"}, {"vsplit", "vsplit"}, {"on", "only"}, {"clo", "close"},
     };
     for (gsize i = 0; i < G_N_ELEMENTS(cases); i++) {
         VimExCmd c = parse_ok(cases[i].line);
