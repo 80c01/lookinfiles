@@ -16,4 +16,8 @@ GtkWidget* color_column_wrap(GtkWidget* scroll, GtkWidget* view);
 void color_column_set(GtkWidget* view, gint column);
 gint color_column_get(GtkWidget* view);
 
+/* For a preview: any change of the buffer hides the line again (the text
+ * may no longer be code), so set it after the text */
+void color_column_hide_on_change(GtkWidget* view);
+
 #endif /* COLOR_COLUMN_H */

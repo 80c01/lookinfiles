@@ -3,6 +3,7 @@
 #include "app_events.h"
 #include "app_paths.h"
 #include "color_column.h"
+#include "diff_gutter.h"
 #include "dialog.h"
 #include "editor.h"
 #include "nav_keys.h"
@@ -133,7 +134,7 @@ static GtkWidget* editor_page(Preferences* p) {
     p->ruler = gtk_check_button_new_with_mnemonic("Show a vertical line at _column");
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->ruler), p->app->editor_color_column > 0);
     gtk_widget_set_tooltip_text(p->ruler, "A line before this column in every editor tab, the tabs already "
-                                          "open too (Vim: :set colorcolumn=81)");
+                                          "open too, and in code previews (Vim: :set colorcolumn=81)");
     gtk_widget_set_hexpand(p->ruler, TRUE);
     p->ruler_column = gtk_spin_button_new_with_range(1, SETTINGS_MAX_COLUMN, 1);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(p->ruler_column),
@@ -146,8 +147,12 @@ static GtkWidget* editor_page(Preferences* p) {
     return box;
 }
 
-/* The column line of every editor tab, in every workspace */
+/* The column line of the code preview and of every editor tab, in every
+ * workspace (the preview shows line numbers for code only) */
 static void apply_color_column(AppData* app) {
+    if (app->text_view != NULL && diff_gutter_get_line_numbers(app->text_view)) {
+        color_column_set(app->text_view, app->editor_color_column);
+    }
     for (GList* l = app->editors; l != NULL; l = l->next) {
         EditorTab* tab = l->data;
         color_column_set(tab->view, app->editor_color_column);

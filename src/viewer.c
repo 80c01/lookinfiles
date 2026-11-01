@@ -21,6 +21,7 @@
 #include "remote.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
+#include "color_column.h"
 #include "dir_preview.h"
 #include "preview_doc_view.h"
 #include "preview_formats.h"
@@ -637,6 +638,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
             g_string_free(text, TRUE);
             if (code) {
                 diff_gutter_set_line_numbers(app->text_view, first_line);
+                color_column_set(app->text_view, app->editor_color_column);
             }
             /* Git change bars, for whole files only (a truncated preview has a header) */
             if (!td->preview) {

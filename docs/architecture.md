@@ -273,8 +273,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `APP_EVENT_FILES_CHANGED`.
 - `color_column` — vertical line at a column of a text view (Vim's
   `colorcolumn`), drawn over the view in an overlay (`color_column_wrap()`
-  around the editor's scrolled window, `color_column_set()`: Preferences,
-  `:set colorcolumn`), colour `editor_ruler`.
+  around the editor's and the preview's scrolled windows, `color_column_set()`:
+  Preferences, `:set colorcolumn`; in the preview for code only, hidden by
+  any buffer change: `color_column_hide_on_change()`), colour `editor_ruler`.
 - `tab_drop` — editor tabs dragged with the mouse (GtkNotebook tab DnD):
   drop target on a notebook (tab bar: insert; page: move in; edge: split),
   translucent highlight on the window overlay, end-of-drag report

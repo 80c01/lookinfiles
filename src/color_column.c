@@ -103,3 +103,14 @@ gint color_column_get(GtkWidget* view) {
     ColorColumn* c = of_view(view);
     return c != NULL ? c->column : 0;
 }
+
+static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
+    (void)buffer;
+    color_column_set(data, 0);
+}
+
+void color_column_hide_on_change(GtkWidget* view) {
+    if (of_view(view) == NULL) return;
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+    g_signal_connect_object(buffer, "changed", G_CALLBACK(on_buffer_changed), view, 0);
+}

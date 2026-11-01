@@ -10,7 +10,7 @@ format. Open work is in
 ## What the preview panel shows
 
 - Text and source code with syntax highlighting (GtkSourceView, Dark+ colours),
-  and line numbers for source code.
+  line numbers and the column line (Preferences) for source code.
 - Markdown rendered like VS Code's preview: headings, lists, task lists
   (including in-progress `[/]` / `[-]` tasks), tables, quotes, GitHub alerts,
   highlighted code blocks and images.
@@ -150,7 +150,7 @@ every common format to L3 and never leave one below L1.
 
 | Format | Level | Module |
 |--------|-------|--------|
-| Text and source code (syntax colours, line numbers, git bars; UTF-16 / Windows-1252 detected; large files load on scroll) | L3 | `viewer`, `text_style`, `text_encoding`, `text_chunks` |
+| Text and source code (syntax colours, line numbers, git bars, column line; UTF-16 / Windows-1252 detected; large files load on scroll) | L3 | `viewer`, `text_style`, `text_encoding`, `text_chunks` |
 | Markdown (Mermaid / math blocks labelled as source) | L3 | `markdown` |
 | HTML | L3 | `html` |
 | Org | L3 | `orgmode` |

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "diff_gutter.h"
+#include "color_column.h"
 #include "text_encoding.h"
 
 typedef struct {
@@ -117,6 +118,10 @@ static void on_chunk_ready(GObject* source, GAsyncResult* res, gpointer user_dat
         }
         g_free(shown);
         c->active = FALSE;
+    }
+    /* Inserting text hid the column line */
+    if (c->line_numbers) {
+        color_column_set(app->text_view, app->editor_color_column);
     }
 }
 

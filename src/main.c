@@ -35,6 +35,7 @@
 #include "session.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
+#include "color_column.h"
 #include "canvas_view.h"
 #include "note_types.h"
 #include "code_intel.h"
@@ -411,7 +412,9 @@ int main(int argc, char** argv) {
     gtk_widget_set_name(preview_stack, "preview-stack");
     gtk_widget_set_hexpand(preview_stack, TRUE);
     gtk_widget_set_vexpand(preview_stack, TRUE);
-    gtk_stack_add_named(GTK_STACK(preview_stack), right_scroll, "text");
+    /* Column line over code previews, as in editors */
+    gtk_stack_add_named(GTK_STACK(preview_stack), color_column_wrap(right_scroll, text_view), "text");
+    color_column_hide_on_change(text_view);
 
     GtkWidget* notebook = gtk_notebook_new();
     gtk_widget_set_hexpand(notebook, TRUE);
