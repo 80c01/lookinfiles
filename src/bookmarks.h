@@ -29,6 +29,8 @@ void bookmarks_delete_selected(AppData* app);
 void bookmarks_move_selected(AppData* app, gint delta);
 void bookmarks_activate_selected(AppData* app);
 void bookmarks_toggle_sort(AppData* app);
+/* TRUE when a folder is expanded: the collapse / expand toggle collapses */
+gboolean bookmarks_any_expanded(AppData* app);
 void bookmarks_toggle_collapse_expand(AppData* app);
 
 #endif /* BOOKMARKS_H */

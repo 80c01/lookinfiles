@@ -188,17 +188,20 @@ gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expa
 }
 
 /* Collapse every folder if one is expanded, else expand them all */
+gboolean remote_any_expanded(AppData* app) {
+    for (GList* l = app != NULL ? app->remote_folders : NULL; l != NULL; l = l->next) {
+        if (((RemoteFolder*)l->data)->expanded) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 void remote_toggle_collapse_expand(AppData* app) {
     if (app == NULL || app->remote_folders == NULL) {
         return;
     }
-    gboolean expand = TRUE;
-    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
-        if (((RemoteFolder*)l->data)->expanded) {
-            expand = FALSE;
-            break;
-        }
-    }
+    gboolean expand = !remote_any_expanded(app);
     for (GList* l = app->remote_folders; l != NULL; l = l->next) {
         ((RemoteFolder*)l->data)->expanded = expand;
     }

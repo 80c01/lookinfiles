@@ -762,6 +762,10 @@ static void bm_set_expanded_all(GNode* node, gboolean expanded) {
     }
 }
 
+gboolean bookmarks_any_expanded(AppData* app) {
+    return app != NULL && app->bookmarks != NULL && bm_any_expanded(app->bookmarks);
+}
+
 void bookmarks_toggle_collapse_expand(AppData* app) {
     if (app == NULL || app->bookmarks == NULL) {
         return;

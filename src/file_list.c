@@ -324,13 +324,16 @@ void toggle_remote_view(AppData* app) {
 }
 
 
+gboolean files_any_expanded(AppData* app) {
+    return app != NULL && app->expanded_paths != NULL &&
+           g_hash_table_size(app->expanded_paths) > 0;
+}
+
 void toggle_collapse_expand_files(AppData* app) {
     if (app == NULL || app->tree == NULL) {
         return;
     }
-    gboolean has_expanded = (app->expanded_paths != NULL &&
-                             g_hash_table_size(app->expanded_paths) > 0);
-    if (has_expanded) {
+    if (files_any_expanded(app)) {
         explorer_tree_collapse_all(app->tree);
         if (app->expanded_paths != NULL) {
             g_hash_table_remove_all(app->expanded_paths);

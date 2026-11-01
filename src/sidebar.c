@@ -172,10 +172,114 @@ static void on_sidebar_notes_collapse_clicked(GtkButton* btn, gpointer data) {
     notes_toggle_collapse_expand((AppData*)data);
 }
 
+/* Collapse / expand toggles of the four toolbars. Each shows what a click
+ * does: pan-up "Collapse All" while something is expanded, else pan-down
+ * "Expand All". Refreshed (once per idle) whenever the explorer rows change. */
+enum { CB_FILES, CB_BOOKMARKS, CB_NOTES, CB_REMOTE, CB_COUNT };
+
+typedef struct {
+    AppData* app;
+    GtkWidget* btn[CB_COUNT];
+    gboolean collapse[CB_COUNT]; /* state shown, valid once shown is TRUE */
+    gboolean shown;
+    GListModel* model;           /* watched list view model (ref) */
+    gulong items_handler;
+    guint idle_id;
+} CollapseButtons;
+
+static const gchar* const CB_NOUNS[CB_COUNT] = {
+    "Folders", "Bookmark Folders", "Notebooks", "Folders"
+};
+
+static gboolean cb_any_expanded(AppData* app, gint which) {
+    switch (which) {
+    case CB_FILES:     return files_any_expanded(app);
+    case CB_BOOKMARKS: return bookmarks_any_expanded(app);
+    case CB_NOTES:     return notes_any_expanded(app);
+    default:           return remote_any_expanded(app);
+    }
+}
+
+static void cb_update(CollapseButtons* cb) {
+    for (gint i = 0; i < CB_COUNT; i++) {
+        gboolean collapse = cb_any_expanded(cb->app, i);
+        if (cb->shown && cb->collapse[i] == collapse) {
+            continue;
+        }
+        cb->collapse[i] = collapse;
+        icon_button_set_content(cb->btn[i], collapse ? "pan-up" : "pan-down", NULL);
+        gchar* tip = g_strdup_printf("%s All %s", collapse ? "Collapse" : "Expand", CB_NOUNS[i]);
+        gtk_widget_set_tooltip_text(cb->btn[i], tip);
+        g_free(tip);
+    }
+    cb->shown = TRUE;
+}
+
+static gboolean cb_update_idle(gpointer data) {
+    CollapseButtons* cb = (CollapseButtons*)data;
+    cb->idle_id = 0;
+    cb_update(cb);
+    return G_SOURCE_REMOVE;
+}
+
+static void cb_on_items_changed(GListModel* model, guint pos, guint removed, guint added, gpointer data) {
+    (void)model; (void)pos; (void)removed; (void)added;
+    CollapseButtons* cb = (CollapseButtons*)data;
+    if (cb->idle_id == 0) {
+        cb->idle_id = g_idle_add(cb_update_idle, cb);
+    }
+}
+
+static void cb_unwatch_model(CollapseButtons* cb) {
+    if (cb->model != NULL) {
+        g_signal_handler_disconnect(cb->model, cb->items_handler);
+        g_clear_object(&cb->model);
+        cb->items_handler = 0;
+    }
+}
+
+/* The list view gets a new model when the workspace changes (data: the header) */
+static void cb_on_model_changed(GObject* view, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    CollapseButtons* cb = g_object_get_data(G_OBJECT(data), "collapse-buttons");
+    if (cb == NULL) {
+        return;
+    }
+    cb_unwatch_model(cb);
+    GtkSelectionModel* model = gtk_list_view_get_model(GTK_LIST_VIEW(view));
+    if (model != NULL) { /* NULL while the view is destroyed */
+        cb->model = G_LIST_MODEL(g_object_ref(model));
+        cb->items_handler = g_signal_connect(cb->model, "items-changed",
+                                             G_CALLBACK(cb_on_items_changed), cb);
+        cb_on_items_changed(NULL, 0, 0, 0, cb);
+    }
+}
+
+static void cb_free(gpointer data) {
+    CollapseButtons* cb = (CollapseButtons*)data;
+    cb_unwatch_model(cb);
+    if (cb->idle_id != 0) {
+        g_source_remove(cb->idle_id);
+    }
+    g_free(cb);
+}
+
+static GtkWidget* collapse_button_new(CollapseButtons* cb, gint which, GCallback on_clicked) {
+    GtkWidget* btn = icon_button_new("pan-up", NULL);
+    gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+    gtk_widget_set_focusable(btn, FALSE);
+    gtk_widget_add_css_class(btn, "sidebar-icon-btn");
+    g_signal_connect(btn, "clicked", on_clicked, cb->app);
+    cb->btn[which] = btn;
+    return btn;
+}
+
 /* VS Code-style explorer panel header: "EXPLORER" title + mini view icons + action bars */
 GtkWidget* create_sidebar_header(AppData* app) {
     GtkWidget* header = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(header, "sidebar-header");
+    CollapseButtons* cb = g_new0(CollapseButtons, 1);
+    cb->app = app;
 
     GtkWidget* title_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_set_name(title_row, "sidebar-title-row");
@@ -270,12 +374,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(files_hidden_btn, "clicked", G_CALLBACK(on_sidebar_files_hidden_clicked), app);
     gtk_box_append(GTK_BOX(files_toolbar), files_hidden_btn);
 
-    GtkWidget* files_collapse_btn = icon_button_new("pan-up", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(files_collapse_btn), FALSE);
-    gtk_widget_set_focusable(files_collapse_btn, FALSE);
-    gtk_widget_add_css_class(files_collapse_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(files_collapse_btn, "Toggle Collapse / Expand Folders");
-    g_signal_connect(files_collapse_btn, "clicked", G_CALLBACK(on_sidebar_files_collapse_clicked), app);
+    GtkWidget* files_collapse_btn = collapse_button_new(cb, CB_FILES, G_CALLBACK(on_sidebar_files_collapse_clicked));
     gtk_box_append(GTK_BOX(files_toolbar), files_collapse_btn);
 
     gtk_widget_set_visible(files_toolbar, (app == NULL || (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks)));
@@ -325,12 +424,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_delete_btn, "clicked", G_CALLBACK(on_sidebar_bm_delete_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_delete_btn);
 
-    GtkWidget* bm_collapse_btn = icon_button_new("pan-up", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(bm_collapse_btn), FALSE);
-    gtk_widget_set_focusable(bm_collapse_btn, FALSE);
-    gtk_widget_add_css_class(bm_collapse_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(bm_collapse_btn, "Toggle Collapse / Expand Bookmarks");
-    g_signal_connect(bm_collapse_btn, "clicked", G_CALLBACK(on_sidebar_bm_collapse_clicked), app);
+    GtkWidget* bm_collapse_btn = collapse_button_new(cb, CB_BOOKMARKS, G_CALLBACK(on_sidebar_bm_collapse_clicked));
     gtk_box_append(GTK_BOX(bm_toolbar), bm_collapse_btn);
 
     gtk_widget_set_visible(bm_toolbar, (app != NULL && (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks)));
@@ -380,12 +474,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(del_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_delete_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), del_note_btn);
 
-    GtkWidget* collapse_note_btn = icon_button_new("pan-up", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(collapse_note_btn), FALSE);
-    gtk_widget_set_focusable(collapse_note_btn, FALSE);
-    gtk_widget_add_css_class(collapse_note_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(collapse_note_btn, "Toggle Collapse / Expand Notebooks");
-    g_signal_connect(collapse_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_collapse_clicked), app);
+    GtkWidget* collapse_note_btn = collapse_button_new(cb, CB_NOTES, G_CALLBACK(on_sidebar_notes_collapse_clicked));
     gtk_box_append(GTK_BOX(buf_toolbar), collapse_note_btn);
 
     gtk_widget_set_visible(buf_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES));
@@ -459,12 +548,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(remote_ref_btn, "clicked", G_CALLBACK(on_sidebar_remote_refresh_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_ref_btn);
 
-    GtkWidget* remote_collapse_btn = icon_button_new("pan-up", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(remote_collapse_btn), FALSE);
-    gtk_widget_set_focusable(remote_collapse_btn, FALSE);
-    gtk_widget_add_css_class(remote_collapse_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_collapse_btn, "Toggle Collapse / Expand Folders");
-    g_signal_connect(remote_collapse_btn, "clicked", G_CALLBACK(on_sidebar_remote_collapse_clicked), app);
+    GtkWidget* remote_collapse_btn = collapse_button_new(cb, CB_REMOTE, G_CALLBACK(on_sidebar_remote_collapse_clicked));
     gtk_box_append(GTK_BOX(remote_toolbar), remote_collapse_btn);
 
     gtk_widget_set_visible(remote_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_REMOTE));
@@ -483,5 +567,13 @@ GtkWidget* create_sidebar_header(AppData* app) {
         app->sidebar_remote_toolbar = remote_toolbar;
         app->sidebar_files_hidden_btn = files_hidden_btn;
     }
+    g_object_set_data_full(G_OBJECT(header), "collapse-buttons", cb, cb_free);
+    if (app != NULL && app->tree_view != NULL) {
+        /* Disconnected when the header goes (it owns cb) */
+        g_signal_connect_object(app->tree_view, "notify::model", G_CALLBACK(cb_on_model_changed),
+                                header, 0);
+        cb_on_model_changed(G_OBJECT(app->tree_view), NULL, header);
+    }
+    cb_update(cb);
     return header;
 }

@@ -18,7 +18,7 @@ typedef struct {
 
 /* Built into libgtk 4 (always available): folder, folder-new, bookmark-new,
  * edit-delete, user-trash, edit-clear-all, list-add, view-refresh, view-reveal,
- * pan-up, network-server, network-workgroup, window-close, go-next,
+ * pan-up, pan-down, network-server, network-workgroup, window-close, go-next,
  * document-open-recent, text-x-generic, dialog-question, view-list, view-grid,
  * system-run. Icons used directly from that list need no entry here. */
 static const IconFallback FALLBACKS[] = {

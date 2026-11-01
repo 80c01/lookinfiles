@@ -36,6 +36,8 @@ void notes_restore_selected(AppData* app);
 void notes_empty_trash(AppData* app);
 void notes_move_reorder(AppData* app, gint delta);
 void notes_toggle_sort(AppData* app);
+/* TRUE when a notebook is expanded: the collapse / expand toggle collapses */
+gboolean notes_any_expanded(AppData* app);
 void notes_toggle_collapse_expand(AppData* app);
 void notes_activate_selected(AppData* app);
 

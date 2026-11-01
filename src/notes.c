@@ -1890,20 +1890,21 @@ void notes_toggle_sort(AppData* app) {
     notes_refresh(app);
 }
 
+gboolean notes_any_expanded(AppData* app) {
+    NotesManager* mgr = get_notes_mgr(app);
+    for (GList* l = mgr != NULL ? mgr->notebooks : NULL; l != NULL; l = l->next) {
+        if (((NotebookItem*)l->data)->expanded) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 void notes_toggle_collapse_expand(AppData* app) {
     NotesManager* mgr = get_notes_mgr(app);
     if (mgr == NULL) return;
 
-    gboolean any_expanded = FALSE;
-    for (GList* l = mgr->notebooks; l != NULL; l = l->next) {
-        NotebookItem* nb = (NotebookItem*)l->data;
-        if (nb->expanded) {
-            any_expanded = TRUE;
-            break;
-        }
-    }
-
-    gboolean target = !any_expanded;
+    gboolean target = !notes_any_expanded(app);
     for (GList* l = mgr->notebooks; l != NULL; l = l->next) {
         NotebookItem* nb = (NotebookItem*)l->data;
         nb->expanded = target;
