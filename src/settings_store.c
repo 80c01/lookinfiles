@@ -14,6 +14,7 @@ void settings_defaults(Settings* s) {
     s->editor = SETTINGS_EDITOR_NOTEPAD;
     s->line_numbers = FALSE;
     s->wrap = FALSE;
+    s->color_column = 0;
     s->width = 1000;
     s->height = 600;
 }
@@ -53,15 +54,20 @@ static gboolean read_bool(GKeyFile* kf, const gchar* group, const gchar* key, gb
     return value;
 }
 
-/* A size key within [min, SETTINGS_MAX_SIZE], or its default */
-static gint read_size(GKeyFile* kf, const gchar* key, gint min, gint def) {
+/* An integer key within [min, max], or its default */
+static gint read_int(GKeyFile* kf, const gchar* group, const gchar* key, gint min, gint max, gint def) {
     GError* error = NULL;
-    gint value = g_key_file_get_integer(kf, "Window", key, &error);
+    gint value = g_key_file_get_integer(kf, group, key, &error);
     if (error != NULL) {
         g_error_free(error);
         return def;
     }
-    return (value >= min && value <= SETTINGS_MAX_SIZE) ? value : def;
+    return (value >= min && value <= max) ? value : def;
+}
+
+/* A size key within [min, SETTINGS_MAX_SIZE], or its default */
+static gint read_size(GKeyFile* kf, const gchar* key, gint min, gint def) {
+    return read_int(kf, "Window", key, min, SETTINGS_MAX_SIZE, def);
 }
 
 gboolean settings_store_load(const gchar* path, Settings* s) {
@@ -76,6 +82,7 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     g_free(mode);
     s->line_numbers = read_bool(kf, "Editor", "line-numbers", s->line_numbers);
     s->wrap = read_bool(kf, "Editor", "wrap", s->wrap);
+    s->color_column = read_int(kf, "Editor", "color-column", 0, SETTINGS_MAX_COLUMN, s->color_column);
     s->width = read_size(kf, "width", SETTINGS_MIN_WIDTH, s->width);
     s->height = read_size(kf, "height", SETTINGS_MIN_HEIGHT, s->height);
     g_key_file_free(kf);
@@ -88,6 +95,7 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
     g_key_file_set_string(kf, "Editor", "mode", settings_editor_name(s->editor));
     g_key_file_set_boolean(kf, "Editor", "line-numbers", s->line_numbers);
     g_key_file_set_boolean(kf, "Editor", "wrap", s->wrap);
+    g_key_file_set_integer(kf, "Editor", "color-column", s->color_column);
     g_key_file_set_integer(kf, "Window", "width", s->width);
     g_key_file_set_integer(kf, "Window", "height", s->height);
     gchar* dir = g_path_get_dirname(path);

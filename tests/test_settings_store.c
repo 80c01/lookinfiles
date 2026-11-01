@@ -23,6 +23,7 @@ static void test_missing_file(void) {
     g_assert_cmpint(s.editor, ==, SETTINGS_EDITOR_NOTEPAD);
     g_assert_false(s.line_numbers);
     g_assert_false(s.wrap);
+    g_assert_cmpint(s.color_column, ==, 0);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
 }
@@ -40,6 +41,7 @@ static void test_save_load(void) {
     s.editor = SETTINGS_EDITOR_VIM;
     s.line_numbers = TRUE;
     s.wrap = TRUE;
+    s.color_column = 81;
     s.width = 1920;
     s.height = 1080;
     g_assert_true(settings_store_save(path, &s, NULL));
@@ -49,6 +51,7 @@ static void test_save_load(void) {
     g_assert_cmpint(r.editor, ==, SETTINGS_EDITOR_VIM);
     g_assert_true(r.line_numbers);
     g_assert_true(r.wrap);
+    g_assert_cmpint(r.color_column, ==, 81);
     g_assert_cmpint(r.width, ==, 1920);
     g_assert_cmpint(r.height, ==, 1080);
 
@@ -69,7 +72,7 @@ static void test_invalid_values(void) {
     gchar* dir = g_dir_make_tmp("settings-XXXXXX", NULL);
     gchar* path = g_build_filename(dir, "settings.ini", NULL);
     g_assert_true(g_file_set_contents(path,
-                                      "[Editor]\nmode=nano\nline-numbers=maybe\nwrap=true\n"
+                                      "[Editor]\nmode=nano\nline-numbers=maybe\nwrap=true\ncolor-column=-3\n"
                                       "[Window]\nwidth=10\nheight=abc\n",
                                       -1, NULL));
     Settings s;
@@ -77,6 +80,7 @@ static void test_invalid_values(void) {
     g_assert_cmpint(s.editor, ==, SETTINGS_EDITOR_NOTEPAD);
     g_assert_false(s.line_numbers);
     g_assert_true(s.wrap);
+    g_assert_cmpint(s.color_column, ==, 0);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
     g_remove(path);

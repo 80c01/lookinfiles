@@ -79,6 +79,7 @@ vim_ex:
 vim_engine:vim_engine_private,vim_parse,vim_keys,vim_motion,vim_regex,palette,text_tags
 vim_engine_ex:vim_engine_private,vim_ex,vim_keys,vim_motion,vim_regex
 diff_gutter:git_utils,line_diff,palette
+color_column:palette
 explorer_row:
 code_symbol:
 code_scan_c:code_symbol

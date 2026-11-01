@@ -97,6 +97,7 @@
     X(EDITOR_OCCURRENCE, "editor_occurrence", "#3a3d41", "Other occurrences of the word")       \
     X(EDITOR_MATCH, "editor_match", "#613214", "Search matches")                                \
     X(EDITOR_MATCH_CURRENT, "editor_match_current", "#9e6a03", "Current search match")         \
+    X(EDITOR_RULER, "editor_ruler", "#f14c4c", "Vertical line at a column (Preferences)")      \
     /* Terminal */                                                                              \
     X(TERM_FG, "term_fg", "#cccccc", "Terminal text")                                           \
     X(TERM_CURSOR, "term_cursor", "#ffffff", "Terminal cursor")                                 \

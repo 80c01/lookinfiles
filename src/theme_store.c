@@ -84,6 +84,7 @@ static const gchar* const BUILTIN_THEMES[] = {
     "editor_occurrence=#e0e0e0\n"
     "editor_match=#f8d5b0\n"
     "editor_match_current=#f0b46c\n"
+    "editor_ruler=#e51400\n"
     "term_fg=#3b3b3b\n"
     "term_cursor=#000000\n"
     "ansi_black=#000000\n"

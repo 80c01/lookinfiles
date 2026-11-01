@@ -4,6 +4,7 @@
 #include "editor.h"
 #include "editor_view.h"
 #include "palette.h"
+#include "color_column.h"
 #include "diff_gutter.h"
 #include "code_nav.h"
 #include "code_help.h"
@@ -329,6 +330,27 @@ static gboolean set_view_option(EditorTab* tab, const gchar* arg) {
     }
     if (strcmp(arg, "number?") == 0 || strcmp(arg, "nu?") == 0) {
         vim_echo(tab, shown ? "  number" : "  nonumber");
+        return TRUE;
+    }
+    /* colorcolumn / cc: the column line of this view (one column) */
+    const gchar* eq = strchr(arg, '=');
+    gsize name_len = eq != NULL ? (gsize)(eq - arg) : strlen(arg);
+    if (name_len > 0 && arg[name_len - 1] == '?') name_len--;
+    if ((name_len == 11 && strncmp(arg, "colorcolumn", 11) == 0) || (name_len == 2 && strncmp(arg, "cc", 2) == 0)) {
+        if (eq == NULL) {
+            gint col = color_column_get(tab->view);
+            gchar* shown = col > 0 ? g_strdup_printf("  colorcolumn=%d", col) : g_strdup("  colorcolumn=");
+            vim_echo(tab, shown);
+            g_free(shown);
+            return TRUE;
+        }
+        gchar* end = NULL;
+        gint64 col = g_ascii_strtoll(eq + 1, &end, 10);
+        if (eq[1] != '\0' && (end == NULL || *end != '\0' || col <= 0 || col > 1000)) {
+            set_echo(tab, "E474: Invalid argument: colorcolumn (one column, 1 to 1000)", TRUE);
+            return TRUE;
+        }
+        color_column_set(tab->view, eq[1] == '\0' ? 0 : (gint)col);
         return TRUE;
     }
     GtkTextView* v = GTK_TEXT_VIEW(tab->view);

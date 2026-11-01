@@ -5,6 +5,7 @@
 #include "panels.h"
 #include "text_style.h"
 #include "minimap.h"
+#include "color_column.h"
 #include "diff_gutter.h"
 #include "code_help.h"
 #include "file_types.h"
@@ -286,7 +287,8 @@ void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
     GtkWidget* hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(hbox, TRUE);
     gtk_widget_set_vexpand(hbox, TRUE);
-    gtk_box_append(GTK_BOX(hbox), scroll);
+    gtk_box_append(GTK_BOX(hbox), color_column_wrap(scroll, view));
+    color_column_set(view, app->editor_color_column);
     if (tab->minimap != NULL) {
         gtk_box_append(GTK_BOX(hbox), tab->minimap);
     }

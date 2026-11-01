@@ -2,6 +2,7 @@
 #include "preferences.h"
 #include "app_events.h"
 #include "app_paths.h"
+#include "color_column.h"
 #include "dialog.h"
 #include "editor.h"
 #include "nav_keys.h"
@@ -24,6 +25,8 @@ typedef struct {
     GtkWidget* mode;          /* GtkDropDown: Notepad, Vim, Emacs */
     GtkWidget* line_numbers;  /* GtkCheckButton */
     GtkWidget* wrap;          /* GtkCheckButton */
+    GtkWidget* ruler;         /* GtkCheckButton: vertical line at a column */
+    GtkWidget* ruler_column;  /* GtkSpinButton */
     GtkWidget* width;         /* GtkSpinButton */
     GtkWidget* height;
 } Preferences;
@@ -51,6 +54,7 @@ static SettingsEditor settings_editor_of(EditorMode mode) {
 void preferences_apply_startup(AppData* app, const Settings* settings) {
     app->editor_line_numbers = settings->line_numbers;
     app->editor_wrap = settings->wrap;
+    app->editor_color_column = settings->color_column;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -92,7 +96,8 @@ static GtkWidget* response_button(Preferences* p, const gchar* label, gint respo
 static GtkWidget* editor_page(Preferences* p) {
     GtkWidget* box = page_box();
     gtk_box_append(GTK_BOX(box), hint_label("For editor tabs opened from now on; the tabs already open keep "
-                                            "theirs. Org files always open in Org-mode."));
+                                            "theirs, except for the column line. Org files always open "
+                                            "in Org-mode."));
 
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget* label = gtk_label_new_with_mnemonic("_Mode");
@@ -122,7 +127,38 @@ static GtkWidget* editor_page(Preferences* p) {
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->wrap), p->app->editor_wrap);
     gtk_widget_set_tooltip_text(p->wrap, "Long lines continue on the next line instead of scrolling sideways");
     gtk_box_append(GTK_BOX(box), p->wrap);
+
+    /* Vim's colorcolumn: the line at the left edge of that column */
+    GtkWidget* ruler_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    p->ruler = gtk_check_button_new_with_mnemonic("Show a vertical line at _column");
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->ruler), p->app->editor_color_column > 0);
+    gtk_widget_set_tooltip_text(p->ruler, "A line before this column in every editor tab, the tabs already "
+                                          "open too (Vim: :set colorcolumn=81)");
+    gtk_widget_set_hexpand(p->ruler, TRUE);
+    p->ruler_column = gtk_spin_button_new_with_range(1, SETTINGS_MAX_COLUMN, 1);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(p->ruler_column),
+                              p->app->editor_color_column > 0 ? p->app->editor_color_column : 81);
+    gtk_widget_set_tooltip_text(p->ruler_column, "81: the line follows the 80th character");
+    g_object_bind_property(p->ruler, "active", p->ruler_column, "sensitive", G_BINDING_SYNC_CREATE);
+    gtk_box_append(GTK_BOX(ruler_row), p->ruler);
+    gtk_box_append(GTK_BOX(ruler_row), p->ruler_column);
+    gtk_box_append(GTK_BOX(box), ruler_row);
     return box;
+}
+
+/* The column line of every editor tab, in every workspace */
+static void apply_color_column(AppData* app) {
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* tab = l->data;
+        color_column_set(tab->view, app->editor_color_column);
+    }
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        if (i == app->current_ws) continue;
+        for (GList* l = app->workspaces[i].editors; l != NULL; l = l->next) {
+            EditorTab* tab = l->data;
+            color_column_set(tab->view, app->editor_color_column);
+        }
+    }
 }
 
 static GtkWidget* size_spin(gint min, gint value) {
@@ -215,6 +251,9 @@ static void save_settings(Preferences* p) {
     s.editor = MODES[selected < G_N_ELEMENTS(MODES) ? selected : 0];
     s.line_numbers = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->line_numbers));
     s.wrap = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->wrap));
+    s.color_column = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->ruler))
+                         ? gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->ruler_column))
+                         : 0;
     s.width = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->width));
     s.height = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->height));
     GError* error = NULL;
@@ -227,6 +266,10 @@ static void save_settings(Preferences* p) {
     AppData* app = p->app;
     app->editor_line_numbers = s.line_numbers;
     app->editor_wrap = s.wrap;
+    if (s.color_column != app->editor_color_column) {
+        app->editor_color_column = s.color_column;
+        apply_color_column(app);
+    }
     EditorMode mode = preferences_editor_mode(s.editor);
     if (mode != app->default_editor_mode) {
         /* Same as picking the global mode in the status bar */

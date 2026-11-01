@@ -362,6 +362,7 @@ typedef struct {
     EditorMode default_editor_mode; /* mode of new non-Org editor tabs (-e / --editor) */
     gboolean editor_line_numbers; /* new editor tabs show line numbers (Preferences) */
     gboolean editor_wrap;         /* new editor tabs wrap long lines (Preferences) */
+    gint editor_color_column;     /* vertical line in editors at this column, 0: none (Preferences) */
     gchar* status_notice;         /* bottom bar message (app_notice()), NULL if none */
     gboolean status_notice_undo;  /* the message offers Undo */
     guint status_notice_serial;   /* bumped by each app_notice() (restarts its timeout) */

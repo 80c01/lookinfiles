@@ -8,6 +8,7 @@
  *   mode=vim             # notepad, vim or emacs: mode of new editor tabs
  *   line-numbers=true    # new editor tabs show line numbers
  *   wrap=false           # new editor tabs wrap long lines
+ *   color-column=0       # vertical line at this column in editors (0: none)
  *   [Window]
  *   width=1000           # window size at startup
  *   height=600
@@ -26,16 +27,18 @@ typedef enum {
 #define SETTINGS_MIN_WIDTH  400
 #define SETTINGS_MIN_HEIGHT 300
 #define SETTINGS_MAX_SIZE   16384
+#define SETTINGS_MAX_COLUMN 1000
 
 typedef struct {
     SettingsEditor editor; /* mode of new editor tabs (Org files: Org-mode) */
     gboolean line_numbers; /* new editor tabs show line numbers */
     gboolean wrap;         /* new editor tabs wrap long lines */
+    gint color_column;     /* vertical line in editors at this column, 0: none */
     gint width;            /* window size at startup */
     gint height;
 } Settings;
 
-/* Notepad, no line numbers, no wrap, 1000 x 600 */
+/* Notepad, no line numbers, no wrap, no column line, 1000 x 600 */
 void settings_defaults(Settings* s);
 
 /* "notepad", "vim", "emacs" (any case): FALSE if name is none of them */

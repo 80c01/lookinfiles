@@ -163,7 +163,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `session_store` — `session.ini` (workspaces at quit) and `recent.ini`
   (recent folders and files, most recent first, `RECENT_MAX`).
 - `settings_store` — `settings.ini` (`Settings`: editor mode, line numbers
-  and wrap of new editor tabs, window size at startup), defaults for
+  and wrap of new editor tabs, column line of the editors, window size at
+  startup), defaults for
   missing or invalid values, other keys kept on save.
 - `trash_restore` — puts back a file moved to the trash: finds its newest
   `.trashinfo` (home trash, then the mount's `.Trash-$uid` / `.Trash/$uid`)
@@ -270,6 +271,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   which is redrawn through `diff_gutter_add_companion()`); HEAD version read with `git_read_head_blob()`
   in a worker thread, refreshed on `APP_EVENT_GIT_STATUS_CHANGED` /
   `APP_EVENT_FILES_CHANGED`.
+- `color_column` — vertical line at a column of a text view (Vim's
+  `colorcolumn`), drawn over the view in an overlay (`color_column_wrap()`
+  around the editor's scrolled window, `color_column_set()`: Preferences,
+  `:set colorcolumn`), colour `editor_ruler`.
 - `tab_drop` — editor tabs dragged with the mouse (GtkNotebook tab DnD):
   drop target on a notebook (tab bar: insert; page: move in; edge: split),
   translucent highlight on the window overlay, end-of-drag report
