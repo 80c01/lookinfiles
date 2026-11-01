@@ -324,17 +324,19 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
 
     /* Ctrl+P: quick open (Vim and Emacs tabs keep Ctrl+P; Emacs C-p in the
      * explorer is a navigation key, handled above) */
+    /* A terminal keeps Ctrl+P (the shell's previous command) */
     if (!is_modal_tab && (state & GDK_CONTROL_MASK) && !(state & (GDK_SHIFT_MASK | GDK_ALT_MASK)) &&
-        (keyval == GDK_KEY_p || keyval == GDK_KEY_P)) {
+        (keyval == GDK_KEY_p || keyval == GDK_KEY_P) && !focus_in_terminal(app)) {
         quick_open_show(app);
         return TRUE;
     }
 
     if (!is_modal_tab) {
         /* Ctrl+S: save current editor tab; Ctrl+W: close current editor tab */
+        /* A terminal keeps Ctrl+S (the shell's forward history search) */
         if ((state & GDK_CONTROL_MASK) &&
             !(state & GDK_SHIFT_MASK) &&
-            (keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
+            (keyval == GDK_KEY_s || keyval == GDK_KEY_S) && !focus_in_terminal(app)) {
             return editor_save_current(app);
         }
         /* A terminal keeps Ctrl+W (the shell erases the word before) */
