@@ -424,22 +424,6 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(remote_section, FALSE);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_section);
 
-    GtkWidget* remote_conn_btn = icon_button_new("network-transmit-receive", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(remote_conn_btn), FALSE);
-    gtk_widget_set_focusable(remote_conn_btn, FALSE);
-    gtk_widget_add_css_class(remote_conn_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_conn_btn, "Connect / Disconnect Selected (Enter / c)");
-    g_signal_connect(remote_conn_btn, "clicked", G_CALLBACK(on_sidebar_remote_connect_clicked), app);
-    gtk_box_append(GTK_BOX(remote_toolbar), remote_conn_btn);
-
-    GtkWidget* remote_term_btn = icon_button_new("utilities-terminal", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(remote_term_btn), FALSE);
-    gtk_widget_set_focusable(remote_term_btn, FALSE);
-    gtk_widget_add_css_class(remote_term_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_term_btn, "Open Remote SSH Terminal (t)");
-    g_signal_connect(remote_term_btn, "clicked", G_CALLBACK(on_sidebar_remote_term_clicked), app);
-    gtk_box_append(GTK_BOX(remote_toolbar), remote_term_btn);
-
     GtkWidget* remote_add_btn = icon_button_new("list-add", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_add_btn), FALSE);
     gtk_widget_set_focusable(remote_add_btn, FALSE);
@@ -471,6 +455,22 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_tooltip_text(remote_del_btn, "Delete Remote Machine (d / Delete)");
     g_signal_connect(remote_del_btn, "clicked", G_CALLBACK(on_sidebar_remote_delete_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_del_btn);
+
+    GtkWidget* remote_conn_btn = icon_button_new("network-transmit-receive", NULL);
+    gtk_button_set_has_frame(GTK_BUTTON(remote_conn_btn), FALSE);
+    gtk_widget_set_focusable(remote_conn_btn, FALSE);
+    gtk_widget_add_css_class(remote_conn_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_conn_btn, "Connect / Disconnect Selected (Enter / c)");
+    g_signal_connect(remote_conn_btn, "clicked", G_CALLBACK(on_sidebar_remote_connect_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_conn_btn);
+
+    GtkWidget* remote_term_btn = icon_button_new("utilities-terminal", NULL);
+    gtk_button_set_has_frame(GTK_BUTTON(remote_term_btn), FALSE);
+    gtk_widget_set_focusable(remote_term_btn, FALSE);
+    gtk_widget_add_css_class(remote_term_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(remote_term_btn, "Open Remote SSH Terminal (t)");
+    g_signal_connect(remote_term_btn, "clicked", G_CALLBACK(on_sidebar_remote_term_clicked), app);
+    gtk_box_append(GTK_BOX(remote_toolbar), remote_term_btn);
 
     GtkWidget* remote_ref_btn = icon_button_new("view-refresh", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_ref_btn), FALSE);
