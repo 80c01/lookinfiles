@@ -663,6 +663,7 @@ int main(int argc, char** argv) {
 
     /* Search bars at the bottom of the explorer and of the preview */
     gtk_box_append(GTK_BOX(viewer_box), search_bar_new(app, &app->viewer_search));
+    gtk_box_append(GTK_BOX(viewer_box), create_preview_bar(app));
 
     GtkWidget* left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(left_vbox, "left-sidebar");

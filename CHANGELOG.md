@@ -12,6 +12,8 @@ All notable changes to this project are listed here. The format follows
 - The git branch and the short messages (with Undo) move to a bar at the
   bottom of the explorer; while the explorer is hidden, messages show in
   the top bar.
+- A bar at the bottom of the preview page shows the name, size, type and
+  text encoding of the previewed entry.
 - Icons follow VS Code: files show the VS Code (Seti) file-type icons
   everywhere they are listed (explorer, tabs, bookmarks, Quick Open,
   references, folder previews), and every other icon is a theme icon in the

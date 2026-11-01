@@ -454,8 +454,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   pills; `update_path_label()`.
 - `status_bar` — explorer bar (`create_explorer_bar()`: branch of the files
   view, `app_notice()` message with Undo; the message moves to the top bar,
-  `create_topbar_notice()`, while the explorer is hidden) and bottom bar
-  (selection, size, type).
+  `create_topbar_notice()`, while the explorer is hidden), preview bar
+  (`create_preview_bar()`, under the preview page only: name, size, type,
+  encoding) and bottom bar (code navigation backend).
 - `sidebar` — explorer header: view switcher and per-view action toolbars.
 - `help` — cheat sheet (`?`, right click on the Help button); `KEY_HELP` must stay in sync with `docs/keyboard.md`.
 - `help_guide` — the **Help** page of the preview notebook (`app->help_page`, after

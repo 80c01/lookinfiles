@@ -354,11 +354,12 @@ typedef struct {
     GHashTable* org_folded_lines;     /* set of line numbers folded in currently viewed org file */
     gint org_global_fold;             /* 0 = all expanded, 1 = overview, 2 = contents */
     GtkWidget* status_branch;     /* explorer bar: Git branch of base_dir */
-    GtkWidget* status_selection;  /* bottom bar: selected entry name */
-    GtkWidget* status_size;       /* bottom bar: selected file size */
-    GtkWidget* status_type;       /* bottom bar: selected file type / language */
+    GtkWidget* preview_bar;       /* preview bar (status_bar.c), shown under the preview page */
+    GtkWidget* status_selection;  /* preview bar: previewed entry name */
+    GtkWidget* status_size;       /* preview bar: file size */
+    GtkWidget* status_type;       /* preview bar: file type / language */
+    GtkWidget* status_encoding;   /* preview bar: text encoding, hidden if not text */
     GtkWidget* status_code;       /* bottom bar: code navigation backend of the editor tab */
-    GtkWidget* status_encoding;   /* bottom bar: encoding */
     GtkWidget* status_notice_label; /* explorer bar: app_notice() message */
     GtkWidget* status_undo_btn;   /* explorer bar: Undo after the message */
     GtkWidget* topbar_notice;     /* top bar: the app_notice() message while the explorer is hidden */

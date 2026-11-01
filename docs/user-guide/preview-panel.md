@@ -34,8 +34,8 @@ panel.
 
 The type comes from the content of the file, not only from its name: a
 script without an extension or a `.txt` that is really a ZIP gets the right
-preview. The status bar shows the type, the size and the detected text
-encoding.
+preview. The bar at the bottom of the preview shows the name, the type, the
+size and the detected text encoding.
 
 ## Rendered and raw views
 

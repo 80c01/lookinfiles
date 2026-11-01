@@ -1,6 +1,7 @@
 /* Status bars: the explorer bar (Git branch, app_notice() messages, shown in
- * the top bar while the explorer is hidden) and the bottom bar (selection,
- * size, file type). */
+ * the top bar while the explorer is hidden), the preview bar (name, size,
+ * type and encoding of the previewed entry) and the bottom bar (code
+ * navigation backend of the editor tab). */
 #include "status_bar.h"
 #include "app_events.h"
 #include "code_intel.h"
@@ -162,10 +163,9 @@ GtkWidget* create_topbar_notice(AppData* app) {
     return box;
 }
 
-/* Bottom status bar: selection on the left; size, type, code navigation and encoding on the right */
-GtkWidget* create_status_bar(AppData* app) {
+/* Preview bar: name of the previewed entry on the left; size, type and encoding on the right */
+GtkWidget* create_preview_bar(AppData* app) {
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_name(bar, "bottom-statusbar");
     gtk_widget_add_css_class(bar, "panel-statusbar");
 
     GtkWidget* status_selection = status_item_new();
@@ -182,22 +182,31 @@ GtkWidget* create_status_bar(AppData* app) {
     GtkWidget* status_type = status_item_new();
     gtk_box_append(GTK_BOX(bar), status_type);
 
+    GtkWidget* status_encoding = status_item_new();
+    gtk_box_append(GTK_BOX(bar), status_encoding);
+
+    app->preview_bar = bar;
+    app->status_selection = status_selection;
+    app->status_size = status_size;
+    app->status_type = status_type;
+    app->status_encoding = status_encoding;
+    return bar;
+}
+
+/* Bottom status bar: code navigation backend of the editor tab */
+GtkWidget* create_status_bar(AppData* app) {
+    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_name(bar, "bottom-statusbar");
+    gtk_widget_add_css_class(bar, "panel-statusbar");
+
+    GtkWidget* spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(spacer, TRUE);
+    gtk_box_append(GTK_BOX(bar), spacer);
+
     GtkWidget* status_code = status_item_new();
     gtk_box_append(GTK_BOX(bar), status_code);
 
-    GtkWidget* status_encoding = status_item_new();
-    gtk_label_set_text(GTK_LABEL(status_encoding), "UTF-8");
-    gtk_widget_set_visible(status_encoding, TRUE);
-    gtk_box_append(GTK_BOX(bar), status_encoding);
-
-    if (app != NULL) {
-        app->status_selection = status_selection;
-        app->status_size = status_size;
-        app->status_type = status_type;
-        app->status_code = status_code;
-        app->status_encoding = status_encoding;
-    }
-
+    app->status_code = status_code;
     return bar;
 }
 
@@ -281,6 +290,7 @@ void update_status_bar(AppData* app) {
 
     gboolean has_sel = (name != NULL && type != NULL && g_strcmp0(type, "-") != 0);
     gboolean has_size = FALSE;
+    gboolean has_encoding = FALSE;
     if (has_sel) {
         gtk_label_set_text(GTK_LABEL(app->status_selection), name);
         gtk_widget_set_tooltip_text(app->status_selection, full);
@@ -293,8 +303,10 @@ void update_status_bar(AppData* app) {
         gtk_label_set_text(GTK_LABEL(app->status_type), type_label);
         g_free(type_label);
         /* Encoding of a previewed text file, as detected */
-        gtk_label_set_text(GTK_LABEL(app->status_encoding),
-                           previewed && app->viewed_encoding != NULL ? app->viewed_encoding : "UTF-8");
+        has_encoding = (previewed && app->viewed_encoding != NULL);
+        if (has_encoding) {
+            gtk_label_set_text(GTK_LABEL(app->status_encoding), app->viewed_encoding);
+        }
 
         gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0 &&
                             g_strcmp0(type, "bm_folder") != 0 && g_strcmp0(type, "notebook") != 0 &&
@@ -310,6 +322,12 @@ void update_status_bar(AppData* app) {
     gtk_widget_set_visible(app->status_selection, has_sel);
     gtk_widget_set_visible(app->status_type, has_sel);
     gtk_widget_set_visible(app->status_size, has_size);
+    gtk_widget_set_visible(app->status_encoding, has_encoding);
+    /* Only under the preview page: editor, Git and Help tabs have their own bars */
+    if (app->preview_bar != NULL && app->notebook != NULL) {
+        gtk_widget_set_visible(app->preview_bar,
+                               gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook)) == 0);
+    }
 
     /* Code navigation backend of the editor tab: language server, ctags or index */
     if (app->status_code != NULL) {

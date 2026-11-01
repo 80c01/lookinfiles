@@ -77,9 +77,10 @@ hidden.
 - **Explorer bar** (bottom of the explorer). The git branch and short
   messages (with an **Undo** button after a move to the trash or a rename;
   in the top bar while the explorer is hidden).
-- **Status bar** (bottom). On the left, the name of the selected entry. On
-  the right, the size and type of the selection, the code navigation
-  backend of the current editor tab and the text encoding.
+- **Preview bar** (bottom of the preview page). The name, size, type and
+  text encoding of the previewed entry.
+- **Status bar** (bottom). The code navigation backend of the current
+  editor tab.
 
 Every border between panels can be dragged. The panel that has the
 keyboard focus is outlined; `Alt+Left` and `Alt+Right` move the focus from
