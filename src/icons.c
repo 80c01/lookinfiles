@@ -28,7 +28,7 @@ static const IconFallback FALLBACKS[] = {
     {"view-dual", {"view-grid", NULL}},
     {"view-paged", {"view-list", NULL}},
     {"edit-find", {"system-search", NULL}},
-    {"color-select", {"view-grid", NULL}},
+    {"applications-system", {"emblem-system", "system-run", NULL}},
     {"go-previous", {"pan-start", "pan-up", NULL}},
     {"go-home", {"user-home", "folder", NULL}},
 };

@@ -59,6 +59,10 @@ mode of one tab, right-click its title and pick **Notepad**, **Emacs** or
 **Vim**; the current mode is marked. The status bar keeps showing the
 global mode.
 
+The **Editor** section of the Preferences (`Ctrl+,`) sets the global mode
+kept for the next launches, and whether new tabs show line numbers and wrap
+long lines (`-e` on the command line wins for one launch).
+
 In Emacs mode, `M-x org-mode` turns on Org-mode editing for any file, and
 `M-x text-mode` turns it off.
 

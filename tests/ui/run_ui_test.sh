@@ -361,12 +361,15 @@ key alt+r;              shot recent_places
 key Escape;             shot recent_places_closed
 key alt+l;              shot layouts_dialog       # saved workspace layouts (empty list)
 key Escape;             shot layouts_dialog_closed
-# Themes (Alt+T): selecting a row previews it, Escape goes back, Enter applies
+# Themes (Alt+T, Preferences on Appearance): selecting a row previews it, Escape goes back, Enter applies
 key alt+t;              shot themes_dialog
 key Down;               shot themes_light_preview
 key Escape;             shot themes_cancelled          # Dark Modern again
 key alt+t; key Down Down Return; shot themes_high_contrast_applied
 key alt+t; key Home Return;      shot themes_dark_again
+# Preferences (Ctrl+,): the section shown last (Appearance), Escape cancels
+key ctrl+comma;                  shot preferences_dialog
+key Escape;                      shot preferences_closed
 # Ctrl+= / Ctrl+0: larger fonts, then the theme's sizes
 key ctrl+equal ctrl+equal;       shot fonts_larger
 key ctrl+0;                      shot fonts_theme_sizes

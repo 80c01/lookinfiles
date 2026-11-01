@@ -162,6 +162,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (also the explorer's folder history, `nav_history`).
 - `session_store` — `session.ini` (workspaces at quit) and `recent.ini`
   (recent folders and files, most recent first, `RECENT_MAX`).
+- `settings_store` — `settings.ini` (`Settings`: editor mode, line numbers
+  and wrap of new editor tabs, window size at startup), defaults for
+  missing or invalid values, other keys kept on save.
 - `trash_restore` — puts back a file moved to the trash: finds its newest
   `.trashinfo` (home trash, then the mount's `.Trash-$uid` / `.Trash/$uid`)
   and moves it back.
@@ -412,14 +415,21 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   change (stylesheets, text tags, syntax scheme, terminals, minimap caches,
   redraw, explorer and preview rebuilt through events), zoom
   (`Ctrl+=` / `Ctrl+-` / `Ctrl+0`: both font sizes, `fonts_zoom_percent()`
-  in the Notepad status bar), the Themes dialog (`Alt+T`, top-bar button:
-  live preview on selection, Cancel restores, fonts, Save As, Edit in a
-  tab, Delete), and re-applying the current theme file when it is saved
+  in the Notepad status bar), the Appearance page of the Preferences
+  (`ThemesPage`: live preview on selection, Cancel restores, fonts,
+  Save As, Edit in a tab, Delete; its buttons report dialog responses
+  handled by `themes_page_handle()`), and re-applying the current theme file when it is saved
   (`APP_EVENT_FILES_CHANGED`).
 - `session` — saves the workspaces at quit (`session_save_now()`: Ctrl+Q
   in `ui`, window close in `main.c`) and restores them at a launch without
   argument (`session_restore()`: `workspace_add()` +
   `workspace_restore_state()` per workspace, then its editor tabs).
+- `preferences` — the Preferences dialog (`Ctrl+,`, top-bar gear button;
+  `Alt+T` opens Appearance): a `GtkStack` with a `GtkStackSidebar` in an
+  `AppDialog` (Appearance = `ThemesPage`, Editor, Window, Code navigation),
+  Apply saves `settings.ini` and applies the editor mode at once, Cancel
+  restores the theme. Reads `settings.ini` at startup for `main.c`
+  (`preferences_editor_mode()`, `preferences_apply_startup()`).
 - `layouts` — saved workspace layouts (Alt+L, top-bar grid button): capture
   the current workspace's panels, apply one from a list in an `AppDialog`
   (running terminals are kept; closing extra ones asks first). The list starts

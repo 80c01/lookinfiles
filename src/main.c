@@ -10,6 +10,8 @@
 #include "tree_nav.h"
 #include "theme.h"
 #include "themes.h"
+#include "preferences.h"
+#include "settings_store.h"
 #include "status_bar.h"
 #include "sidebar.h"
 #include "workspace.h"
@@ -193,11 +195,22 @@ static const char* option_value(int argc, char** argv, int* i,
     return NULL;
 }
 
+/* Top-bar gear button */
+static void on_preferences_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    preferences_show(data, NULL);
+}
+
 int main(int argc, char** argv) {
     gboolean start_fullscreen = FALSE;
-    int win_width = 1000;
-    int win_height = 600;
-    EditorMode default_editor_mode = EDITOR_MODE_NOTEPAD;
+    /* Preferences (settings.ini), then the command line over them */
+    Settings prefs;
+    gchar* settings_path = settings_store_path();
+    settings_store_load(settings_path, &prefs);
+    g_free(settings_path);
+    int win_width = prefs.width;
+    int win_height = prefs.height;
+    EditorMode default_editor_mode = preferences_editor_mode(prefs.editor);
     const char* target = NULL; /* <file> or <folder> argument */
     gboolean options_done = FALSE;
     gboolean target_is_note = FALSE;
@@ -508,6 +521,7 @@ int main(int argc, char** argv) {
     apply_vscode_scheme(app->buffer, text_view);
 #endif
     app->default_editor_mode = default_editor_mode;
+    preferences_apply_startup(app, &prefs);
     app->base_dir = g_strdup(start_dir);
     app->start_dir = g_canonicalize_filename(start_dir, NULL);
     app->term_scroll = term_scroll;
@@ -519,9 +533,9 @@ int main(int argc, char** argv) {
     GtkWidget* layouts_btn = icon_button_new("view-grid", "Workspace Layouts (Alt+L)");
     gtk_widget_add_css_class(layouts_btn, "status-pill");
     g_signal_connect_swapped(layouts_btn, "clicked", G_CALLBACK(layouts_show_dialog), app);
-    GtkWidget* themes_btn = icon_button_new("color-select", "Themes and Fonts (Alt+T)");
-    gtk_widget_add_css_class(themes_btn, "status-pill");
-    g_signal_connect_swapped(themes_btn, "clicked", G_CALLBACK(themes_show_dialog), app);
+    GtkWidget* prefs_btn = icon_button_new("applications-system", "Preferences (Ctrl+,)");
+    gtk_widget_add_css_class(prefs_btn, "status-pill");
+    g_signal_connect(prefs_btn, "clicked", G_CALLBACK(on_preferences_clicked), app);
     GtkWidget* ws_div_label = gtk_label_new("|");
     gtk_widget_add_css_class(ws_div_label, "breadcrumb-sep");
     app->tree = explorer;
@@ -710,7 +724,7 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), sep_label);
     gtk_box_append(GTK_BOX(label_row), ws_minimap);
     gtk_box_append(GTK_BOX(label_row), layouts_btn);
-    gtk_box_append(GTK_BOX(label_row), themes_btn);
+    gtk_box_append(GTK_BOX(label_row), prefs_btn);
     gtk_box_append(GTK_BOX(label_row), ws_div_label);
     gtk_box_append(GTK_BOX(label_row), files_btn);
     gtk_box_append(GTK_BOX(label_row), preview_btn);

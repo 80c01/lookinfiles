@@ -353,6 +353,8 @@ typedef struct {
     GtkWidget* status_notice_label; /* bottom bar: app_notice() message */
     GtkWidget* status_undo_btn;   /* bottom bar: Undo after the message */
     EditorMode default_editor_mode; /* mode of new non-Org editor tabs (-e / --editor) */
+    gboolean editor_line_numbers; /* new editor tabs show line numbers (Preferences) */
+    gboolean editor_wrap;         /* new editor tabs wrap long lines (Preferences) */
     gchar* status_notice;         /* bottom bar message (app_notice()), NULL if none */
     gboolean status_notice_undo;  /* the message offers Undo */
     guint status_notice_serial;   /* bumped by each app_notice() (restarts its timeout) */

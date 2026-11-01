@@ -2,7 +2,8 @@
 
 ## Choosing a theme: `Alt+T`
 
-`Alt+T` (or the colour button of the top bar) opens the **Themes** dialog.
+`Alt+T` opens the **Preferences** dialog on its **Appearance** section (also
+`Ctrl+,` or the gear button of the top bar).
 Selecting a theme applies it at once to the whole window: panels, editors,
 previews and terminals. **Apply** keeps it, **Cancel** goes back to the
 previous one.
@@ -19,7 +20,7 @@ per decade from the 1970s to the 2020s. Copy them into
 
 ## Fonts
 
-The Themes dialog also sets two fonts, used over any theme:
+The Appearance section also sets two fonts, used over any theme:
 
 - the **interface font**: menus, panels and rendered documents;
 - the **code font**: file contents, code and terminals.
@@ -35,7 +36,7 @@ is used) and a size.
 
 ## Making your own theme
 
-1. Open the Themes dialog and pick the theme closest to what you want.
+1. Press `Alt+T` and pick the theme closest to what you want.
 2. Click **Save As…** and give it a name. LookinFiles writes a complete
    theme file, with a comment describing each colour.
 3. Click **Edit**: the file opens in an editor tab.

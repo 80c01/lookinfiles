@@ -1148,6 +1148,13 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
 
     diff_gutter_attach(view, TRUE);
     diff_gutter_set_file(view, tab->path);
+    /* Preferences of new tabs */
+    if (app->editor_line_numbers) {
+        diff_gutter_set_line_numbers(view, 0);
+    }
+    if (app->editor_wrap) {
+        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD_CHAR);
+    }
 
     editor_minimap_init(tab);
 

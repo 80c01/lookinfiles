@@ -1,5 +1,5 @@
-/* Themes in the running application: switching, zoom and the Themes
- * dialog (see themes.h). */
+/* Themes in the running application: switching, zoom and the Appearance
+ * page of the Preferences dialog (see themes.h). */
 #include "themes.h"
 #include "app_events.h"
 #include "dialog.h"
@@ -289,19 +289,20 @@ void themes_on_files_changed(AppData* app) {
 }
 
 /* ------------------------------------------------------------------------- */
-/* The Themes dialog                                                         */
+/* The Appearance page of the Preferences dialog                             */
 /* ------------------------------------------------------------------------- */
-
-enum { RESPONSE_SAVE_AS = 1, RESPONSE_EDIT = 2, RESPONSE_DELETE = 3 };
 
 /* Colours shown for each theme in the list */
 static const PaletteRole SWATCHES[] = {PAL_BG_VIEW,     PAL_FG_TEXT,    PAL_ACCENT,
                                        PAL_SYN_KEYWORD, PAL_SYN_STRING, PAL_SYN_FUNCTION};
 
-typedef struct {
+struct ThemesPage {
     AppData* app;
     AppDialog* dialog;
+    GtkWidget* widget;
     GtkListBox* list;
+    GtkWidget* edit_btn;
+    GtkWidget* delete_btn;
     GPtrArray* themes;
     gchar* original_name;     /* restored by Cancel */
     FontChoice original_fonts;
@@ -310,7 +311,8 @@ typedef struct {
     GtkWidget* size[FONT_COUNT];
     gboolean updating;        /* filling widgets: no live preview */
     guint family_timer;
-} ThemesDialog;
+    gchar* to_edit;           /* theme file opened in a tab once the dialog is gone */
+};
 
 static void draw_swatch(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
     (void)area;
@@ -375,20 +377,20 @@ static const gchar* row_name(GtkListBoxRow* row) {
     return (child != NULL) ? g_object_get_data(G_OBJECT(child), "theme-name") : NULL;
 }
 
-static const Theme* selected_theme(ThemesDialog* d) {
+static const Theme* selected_theme(ThemesPage* d) {
     return theme_store_find(d->themes, row_name(gtk_list_box_get_selected_row(d->list)));
 }
 
 /* Edit and Delete act on the user's theme files only */
-static void update_buttons(ThemesDialog* d) {
+static void update_buttons(ThemesPage* d) {
     const Theme* t = selected_theme(d);
     gboolean user = (t != NULL && t->path != NULL);
-    gtk_widget_set_sensitive(app_dialog_get_widget_for_response(d->dialog, RESPONSE_EDIT), user);
-    gtk_widget_set_sensitive(app_dialog_get_widget_for_response(d->dialog, RESPONSE_DELETE), user);
+    gtk_widget_set_sensitive(d->edit_btn, user);
+    gtk_widget_set_sensitive(d->delete_btn, user);
 }
 
 /* Font fields: the user's family (the theme's as placeholder) and the size */
-static void update_font_fields(ThemesDialog* d) {
+static void update_font_fields(ThemesPage* d) {
     d->updating = TRUE;
     for (gint r = 0; r < FONT_COUNT; r++) {
         gtk_editable_set_text(GTK_EDITABLE(d->family[r]), d->fonts.family[r] != NULL ? d->fonts.family[r] : "");
@@ -400,7 +402,7 @@ static void update_font_fields(ThemesDialog* d) {
 }
 
 /* Reload the theme list and select name (the first theme if missing) */
-static void fill_list(ThemesDialog* d, const gchar* select) {
+static void fill_list(ThemesPage* d, const gchar* select) {
     if (d->themes != NULL) {
         g_ptr_array_free(d->themes, TRUE);
     }
@@ -428,7 +430,7 @@ static void fill_list(ThemesDialog* d, const gchar* select) {
 /* Live preview: selecting a theme applies it */
 static void on_row_selected(GtkListBox* list, GtkListBoxRow* row, gpointer data) {
     (void)list;
-    ThemesDialog* d = data;
+    ThemesPage* d = data;
     if (d->updating || row == NULL) {
         return;
     }
@@ -446,14 +448,14 @@ static void on_row_activated(GtkListBox* list, GtkListBoxRow* row, gpointer data
     app_dialog_response(APP_DIALOG(data), APP_RESPONSE_OK);
 }
 
-static void apply_fonts_live(ThemesDialog* d) {
+static void apply_fonts_live(ThemesPage* d) {
     if (set_theme(current_name, &d->fonts, NULL)) {
         themes_refresh(d->app, current_dark);
     }
 }
 
 static void on_size_changed(GtkSpinButton* spin, gpointer data) {
-    ThemesDialog* d = data;
+    ThemesPage* d = data;
     if (d->updating) {
         return;
     }
@@ -468,7 +470,7 @@ static void on_size_changed(GtkSpinButton* spin, gpointer data) {
 
 /* Families are applied once the typing pauses */
 static gboolean apply_families(gpointer data) {
-    ThemesDialog* d = data;
+    ThemesPage* d = data;
     d->family_timer = 0;
     gboolean valid = TRUE;
     for (gint r = 0; r < FONT_COUNT; r++) {
@@ -492,9 +494,17 @@ static gboolean apply_families(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
+/* A family being typed is applied before any button acts */
+static void flush_families(ThemesPage* d) {
+    if (d->family_timer != 0) {
+        g_source_remove(d->family_timer);
+        apply_families(d);
+    }
+}
+
 static void on_family_changed(GtkEditable* editable, gpointer data) {
     (void)editable;
-    ThemesDialog* d = data;
+    ThemesPage* d = data;
     if (d->updating) {
         return;
     }
@@ -504,7 +514,7 @@ static void on_family_changed(GtkEditable* editable, gpointer data) {
     d->family_timer = g_timeout_add(500, apply_families, d);
 }
 
-static GtkWidget* fonts_grid(ThemesDialog* d) {
+static GtkWidget* fonts_grid(ThemesPage* d) {
     static const gchar* const LABELS[FONT_COUNT] = {[FONT_UI] = "Interface", [FONT_CODE] = "Code"};
     static const gchar* const TIPS[FONT_COUNT] = {
         [FONT_UI] = "Interface and documents: font names separated by commas (empty: the theme's)",
@@ -538,34 +548,35 @@ static void copy_fonts(FontChoice* to, const FontChoice* from) {
     }
 }
 
-void themes_show_dialog(AppData* app) {
-    if (app == NULL || app_dialog_is_open(app->window)) {
-        return;
-    }
-    ThemesDialog d = {0};
-    d.app = app;
-    d.original_name = g_strdup(themes_current_name());
-    load_user_fonts(&d.original_fonts);
-    copy_fonts(&d.fonts, &d.original_fonts);
+/* The page buttons report their response on the dialog, handled by
+ * themes_page_handle() once app_dialog_run() returns */
+static void on_page_button_clicked(GtkButton* button, gpointer data) {
+    gint response = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "response"));
+    app_dialog_response(APP_DIALOG(data), response);
+}
+
+static GtkWidget* page_button(ThemesPage* d, GtkWidget* row, const gchar* label, gint response,
+                              const gchar* tooltip) {
+    GtkWidget* button = gtk_button_new_with_mnemonic(label);
+    gtk_widget_set_tooltip_text(button, tooltip);
+    g_object_set_data(G_OBJECT(button), "response", GINT_TO_POINTER(response));
+    g_signal_connect(button, "clicked", G_CALLBACK(on_page_button_clicked), d->dialog);
+    gtk_box_append(GTK_BOX(row), button);
+    return button;
+}
+
+ThemesPage* themes_page_new(AppData* app, AppDialog* dialog) {
+    ThemesPage* d = g_new0(ThemesPage, 1);
+    d->app = app;
+    d->dialog = dialog;
+    d->original_name = g_strdup(themes_current_name());
+    load_user_fonts(&d->original_fonts);
+    copy_fonts(&d->fonts, &d->original_fonts);
     /* What is shown is the current theme with the user's fonts */
-    set_theme(d.original_name, &d.fonts, NULL);
+    set_theme(d->original_name, &d->fonts, NULL);
 
-    GtkWidget* dlg = app_dialog_new("Themes", app->window, "_Delete", RESPONSE_DELETE, "_Edit", RESPONSE_EDIT,
-                                    "_Save As…", RESPONSE_SAVE_AS, "_Cancel", APP_RESPONSE_CANCEL, "_Apply",
-                                    APP_RESPONSE_OK, NULL);
-    d.dialog = APP_DIALOG(dlg);
-    GtkWidget* del = app_dialog_get_widget_for_response(d.dialog, RESPONSE_DELETE);
-    gtk_widget_add_css_class(del, "destructive-action");
-    gtk_widget_set_tooltip_text(del, "Delete the selected theme file (your themes only)");
-    gtk_widget_set_tooltip_text(app_dialog_get_widget_for_response(d.dialog, RESPONSE_EDIT),
-                                "Open the selected theme file in an editor tab: saving it applies it "
-                                "(your themes only)");
-    gtk_widget_set_tooltip_text(app_dialog_get_widget_for_response(d.dialog, RESPONSE_SAVE_AS),
-                                "Save the current colours and fonts as a theme of yours");
-    app_dialog_set_default_response(d.dialog, APP_RESPONSE_OK);
-    app_dialog_set_width(d.dialog, 520);
-
-    GtkWidget* box = padded_box(8);
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    d->widget = box;
     gchar* dir = theme_store_user_dir();
     gchar* hint_text = g_strdup_printf("Selecting a theme applies it at once; Apply keeps it, Cancel goes "
                                        "back. Your themes are INI files in %s.", dir);
@@ -576,10 +587,10 @@ void themes_show_dialog(AppData* app) {
     gtk_box_append(GTK_BOX(box), hint);
 
     GtkWidget* list = gtk_list_box_new();
-    d.list = GTK_LIST_BOX(list);
+    d->list = GTK_LIST_BOX(list);
     gtk_widget_set_name(list, "theme-list");
-    gtk_list_box_set_selection_mode(d.list, GTK_SELECTION_SINGLE);
-    gtk_list_box_set_activate_on_single_click(d.list, FALSE);
+    gtk_list_box_set_selection_mode(d->list, GTK_SELECTION_SINGLE);
+    gtk_list_box_set_activate_on_single_click(d->list, FALSE);
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroll), 150);
@@ -588,90 +599,130 @@ void themes_show_dialog(AppData* app) {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), list);
     gtk_box_append(GTK_BOX(box), scroll);
 
+    GtkWidget* buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    page_button(d, buttons, "_Save As…", THEMES_RESPONSE_SAVE_AS,
+                "Save the current colours and fonts as a theme of yours");
+    d->edit_btn = page_button(d, buttons, "_Edit", THEMES_RESPONSE_EDIT,
+                              "Open the selected theme file in an editor tab: saving it applies it "
+                              "(your themes only)");
+    d->delete_btn = page_button(d, buttons, "_Delete", THEMES_RESPONSE_DELETE,
+                                "Delete the selected theme file (your themes only)");
+    gtk_widget_add_css_class(d->delete_btn, "destructive-action");
+    gtk_box_append(GTK_BOX(box), buttons);
+
     GtkWidget* fonts_title = gtk_label_new("Your fonts, over any theme");
     gtk_widget_add_css_class(fonts_title, "dialog-section");
     gtk_label_set_xalign(GTK_LABEL(fonts_title), 0.0f);
     gtk_widget_set_margin_top(fonts_title, 6);
     gtk_box_append(GTK_BOX(box), fonts_title);
-    gtk_box_append(GTK_BOX(box), fonts_grid(&d));
-    gtk_box_append(GTK_BOX(app_dialog_get_content_area(d.dialog)), box);
+    gtk_box_append(GTK_BOX(box), fonts_grid(d));
 
-    g_signal_connect(list, "row-selected", G_CALLBACK(on_row_selected), &d);
-    g_signal_connect(list, "row-activated", G_CALLBACK(on_row_activated), dlg);
-    fill_list(&d, d.original_name);
-    update_font_fields(&d);
+    g_signal_connect(list, "row-selected", G_CALLBACK(on_row_selected), d);
+    g_signal_connect(list, "row-activated", G_CALLBACK(on_row_activated), dialog);
+    fill_list(d, d->original_name);
+    update_font_fields(d);
+    return d;
+}
 
-    gchar* to_edit = NULL;
-    while (TRUE) {
-        GtkListBoxRow* sel = gtk_list_box_get_selected_row(d.list);
-        gint resp = app_dialog_run(d.dialog, sel != NULL ? GTK_WIDGET(sel) : list);
-        if (d.family_timer != 0) {
-            g_source_remove(d.family_timer);
-            apply_families(&d);
+GtkWidget* themes_page_widget(ThemesPage* page) {
+    return page->widget;
+}
+
+GtkWidget* themes_page_focus(ThemesPage* page) {
+    GtkListBoxRow* sel = gtk_list_box_get_selected_row(page->list);
+    return sel != NULL ? GTK_WIDGET(sel) : GTK_WIDGET(page->list);
+}
+
+static void save_as(ThemesPage* d) {
+    AppData* app = d->app;
+    gchar* suggestion = g_strdup_printf("%s (mine)", current_name);
+    gchar* name = prompt_name(app, suggestion);
+    g_free(suggestion);
+    const Theme* existing = theme_store_find(d->themes, name);
+    if (name != NULL && existing != NULL && existing->path == NULL) {
+        notice(app, "Theme Not Saved", "A built-in theme has this name: choose another one.");
+    } else if (name != NULL) {
+        gchar* udir = theme_store_user_dir();
+        GError* error = NULL;
+        gchar* path = theme_store_save_current(udir, name, current_dark, &error);
+        g_free(udir);
+        if (path == NULL) {
+            gchar* msg = g_strdup_printf("The theme could not be saved: %s", error->message);
+            notice(app, "Theme Not Saved", msg);
+            g_free(msg);
+            g_clear_error(&error);
+        } else {
+            /* The new theme holds the fonts: no override needed */
+            font_choice_clear(&d->fonts);
+            fill_list(d, name);
+            set_theme(name, &d->fonts, NULL);
+            update_font_fields(d);
         }
-        const Theme* t = selected_theme(&d);
-        if (resp == RESPONSE_SAVE_AS) {
-            gchar* suggestion = g_strdup_printf("%s (mine)", current_name);
-            gchar* name = prompt_name(app, suggestion);
-            g_free(suggestion);
-            const Theme* existing = theme_store_find(d.themes, name);
-            if (name != NULL && existing != NULL && existing->path == NULL) {
-                notice(app, "Theme Not Saved", "A built-in theme has this name: choose another one.");
-            } else if (name != NULL) {
-                gchar* udir = theme_store_user_dir();
-                GError* error = NULL;
-                gchar* path = theme_store_save_current(udir, name, current_dark, &error);
-                g_free(udir);
-                if (path == NULL) {
-                    gchar* msg = g_strdup_printf("The theme could not be saved: %s", error->message);
-                    notice(app, "Theme Not Saved", msg);
-                    g_free(msg);
-                    g_clear_error(&error);
-                } else {
-                    /* The new theme holds the fonts: no override needed */
-                    font_choice_clear(&d.fonts);
-                    fill_list(&d, name);
-                    set_theme(name, &d.fonts, NULL);
-                    update_font_fields(&d);
-                }
-                g_free(path);
-            }
-            g_free(name);
-        } else if (resp == RESPONSE_DELETE && t != NULL && t->path != NULL) {
+        g_free(path);
+    }
+    g_free(name);
+}
+
+gboolean themes_page_handle(ThemesPage* page, gint response, gboolean* close) {
+    ThemesPage* d = page;
+    *close = FALSE;
+    flush_families(d);
+    const Theme* t = selected_theme(d);
+    switch (response) {
+    case THEMES_RESPONSE_SAVE_AS:
+        save_as(d);
+        return TRUE;
+    case THEMES_RESPONSE_DELETE:
+        if (t != NULL && t->path != NULL) {
             gchar* msg = g_strdup_printf("Delete the theme “%s” and its file %s?", t->name, t->path);
-            if (confirm(app, "Delete Theme", msg, "_Delete")) {
+            if (confirm(d->app, "Delete Theme", msg, "_Delete")) {
                 g_remove(t->path);
-                fill_list(&d, THEME_DEFAULT_NAME);
-                on_row_selected(d.list, gtk_list_box_get_selected_row(d.list), &d);
+                fill_list(d, THEME_DEFAULT_NAME);
+                on_row_selected(d->list, gtk_list_box_get_selected_row(d->list), d);
             }
             g_free(msg);
-        } else if (resp == RESPONSE_EDIT && t != NULL && t->path != NULL) {
-            to_edit = g_strdup(t->path);
-            save_choice(t->name);
-            save_fonts(&d.fonts);
-            break;
-        } else if (resp == APP_RESPONSE_OK) {
-            save_choice(current_name);
-            save_fonts(&d.fonts);
-            break;
-        } else if (resp != RESPONSE_EDIT && resp != RESPONSE_DELETE) {
-            /* Cancel, Escape: back to what was shown before */
-            if (set_theme(d.original_name, &d.original_fonts, NULL)) {
-                themes_refresh(app, current_dark);
-            }
-            break;
         }
+        return TRUE;
+    case THEMES_RESPONSE_EDIT:
+        if (t != NULL && t->path != NULL) {
+            g_free(d->to_edit);
+            d->to_edit = g_strdup(t->path);
+            *close = TRUE;
+        }
+        return TRUE;
+    default:
+        return FALSE;
     }
-    g_signal_handlers_disconnect_by_func(list, on_row_selected, &d);
-    app_dialog_destroy(d.dialog);
-    g_ptr_array_free(d.themes, TRUE);
-    font_choice_clear(&d.fonts);
-    font_choice_clear(&d.original_fonts);
-    g_free(d.original_name);
-    if (to_edit != NULL) {
-        gchar* base = g_path_get_basename(to_edit);
-        editor_open_file(app, base, to_edit);
+}
+
+void themes_page_finish(ThemesPage* page, gboolean keep) {
+    flush_families(page);
+    if (keep) {
+        save_choice(current_name);
+        save_fonts(&page->fonts);
+    } else if (set_theme(page->original_name, &page->original_fonts, NULL)) {
+        /* Back to what was shown before */
+        themes_refresh(page->app, current_dark);
+    }
+    g_signal_handlers_disconnect_by_func(page->list, on_row_selected, page);
+}
+
+void themes_page_free(ThemesPage* page) {
+    if (page == NULL) {
+        return;
+    }
+    if (page->family_timer != 0) {
+        g_source_remove(page->family_timer);
+    }
+    g_ptr_array_free(page->themes, TRUE);
+    font_choice_clear(&page->fonts);
+    font_choice_clear(&page->original_fonts);
+    g_free(page->original_name);
+    if (page->to_edit != NULL) {
+        gchar* base = g_path_get_basename(page->to_edit);
+        editor_open_file(page->app, base, page->to_edit);
         g_free(base);
-        g_free(to_edit);
+        g_free(page->to_edit);
     }
+    g_free(page);
 }

@@ -3,6 +3,7 @@
 #include "help_guide.h"
 #include "dialog.h"
 #include "layouts.h"
+#include "preferences.h"
 #include "themes.h"
 #include "panels.h"
 #include "app_events.h"
@@ -232,6 +233,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
             themes_zoom(app, 0);
             return TRUE;
         }
+        /* Ctrl+,: Preferences, on the last section shown */
+        if (!shift && keyval == GDK_KEY_comma) {
+            preferences_show(app, NULL);
+            return TRUE;
+        }
     }
 
     /* Alt+Left / Alt+Right: panel focus cycling */
@@ -259,9 +265,9 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
             workspace_remove(app, app->current_ws);
             return TRUE;
         }
-        /* Alt+T: themes and fonts */
+        /* Alt+T: Preferences on Appearance (themes and fonts) */
         if ((keyval == GDK_KEY_t || keyval == GDK_KEY_T) && !(state & GDK_CONTROL_MASK)) {
-            themes_show_dialog(app);
+            preferences_show(app, PREFERENCES_APPEARANCE);
             return TRUE;
         }
         /* Alt+R: recent folders and files */

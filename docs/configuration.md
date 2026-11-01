@@ -12,10 +12,38 @@ Settings and data are kept in `~/.config/lookinfiles/`
 | `session.ini` | The workspaces of the last session (folders, expanded folders, selection, sort, open files), reopened by a launch without argument |
 | `recent.ini` | Recent folders and files (`Alt+R`, and first in `Ctrl+P` when nothing is typed) |
 | `lsp.ini` | Language server commands for code navigation (optional, see below) |
-| `theme.ini` | The chosen theme and your fonts (written by the Themes dialog, `Alt+T`) |
+| `settings.ini` | Your preferences (written by the Preferences dialog, `Ctrl+,`, see [Preferences](#preferences)) |
+| `theme.ini` | The chosen theme and your fonts (written by Preferences → Appearance, `Alt+T`) |
 | `themes/` | Your themes, one `.ini` file each (see [Themes](#themes)) |
 
 Remote machines are mounted under `~/.cache/lookinfiles/remotes/`.
+
+## Preferences
+
+`Ctrl+,` (or the gear button of the top bar) opens the Preferences dialog,
+on the section shown last; `Alt+T` opens it on **Appearance**. **Apply**
+keeps every change, **Cancel** restores them all.
+
+| Section | Content |
+|---|---|
+| Appearance | Theme and fonts (see [Themes](#themes)) |
+| Editor | Mode of new editor tabs (Notepad, Vim, Emacs; also the global mode of the status bar), line numbers and line wrap of new tabs |
+| Window | Window size at startup (**Use the current size** fills it in) |
+| Code navigation | **Edit lsp.ini** opens `lsp.ini` in an editor tab, created with a commented example if missing (see [Language servers](#language-servers)) |
+
+The Editor and Window values are kept in `settings.ini`; the command-line
+options `-e` and `--size` win over them:
+
+```ini
+[Editor]
+mode=vim
+line-numbers=true
+wrap=false
+
+[Window]
+width=1600
+height=900
+```
 
 ## Language servers
 
@@ -39,7 +67,8 @@ The status bar shows what serves the current editor tab: the server name,
 
 ## Themes
 
-`Alt+T` (or the eyedropper button in the top bar) opens the Themes dialog.
+`Alt+T` opens the Preferences dialog on **Appearance** (also `Ctrl+,` or
+the gear button of the top bar, then **Appearance**).
 Selecting a theme applies it at once to the whole window, including open
 editors, previews and terminals; **Apply** keeps it and **Cancel** goes back.
 Three themes are built in: **Dark Modern** (the default), **Light Modern**

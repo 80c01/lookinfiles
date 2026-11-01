@@ -64,7 +64,7 @@ which icon file each button uses, start LookinFiles with
 
 A theme file that cannot be read is skipped, and the reason is printed on
 the terminal LookinFiles was started from. When you edit a theme in an
-editor tab (Themes dialog → **Edit**), saving it shows the problem in the
+editor tab (`Alt+T` → **Edit**), saving it shows the problem in the
 window. See [themes](themes.md).
 
 ## Starting fresh

@@ -120,6 +120,7 @@ The session (workspaces, folders, open files) is saved when LookinFiles quits.
 | `a` / `F2` / `d` / `u` | New file / rename / trash / undo |
 | `Ctrl+T` | Terminal pane |
 | `Alt+1` … `Alt+8` | Switch workspace |
+| `Ctrl+,` | Preferences |
 | `Alt+T` | Themes and fonts |
 | `Ctrl+Q` | Quit |
 
@@ -139,12 +140,13 @@ Org-mode), is in [docs/keyboard.md](docs/keyboard.md).
 ## Configuration
 
 Settings live in `~/.config/lookinfiles/` (`$XDG_CONFIG_HOME` is honoured).
-Most of them are written by the application itself; the two files you may
-edit by hand are:
+Most of them are written by the application itself (`Ctrl+,` opens the
+Preferences); the two files you may edit by hand are:
 
 - `themes/*.ini`: your themes (`Alt+T` → **Save As…** writes a complete one
   to start from; [`themes/`](themes/) in the source tree has six more).
-- `lsp.ini`: which language server to start per language.
+- `lsp.ini`: which language server to start per language (Preferences →
+  Code navigation → **Edit lsp.ini** opens it).
 
 See [docs/configuration.md](docs/configuration.md) for every file and the
 theme format.
