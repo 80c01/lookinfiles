@@ -79,8 +79,9 @@ hidden.
   in the top bar while the explorer is hidden).
 - **Preview bar** (bottom of the preview page). The name, size, type and
   text encoding of the previewed entry.
-- **Status bar** (bottom). The code navigation backend of the current
-  editor tab.
+- Each **editor tab** has its own bar, in the style of its mode: the file's
+  git branch and path, unsaved mark, language, line ending, code navigation
+  source and diagnostics (see [Editor](editor.md)).
 
 Every border between panels can be dragged. The panel that has the
 keyboard focus is outlined; `Alt+Left` and `Alt+Right` move the focus from

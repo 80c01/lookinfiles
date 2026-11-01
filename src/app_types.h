@@ -359,7 +359,6 @@ typedef struct {
     GtkWidget* status_size;       /* preview bar: file size */
     GtkWidget* status_type;       /* preview bar: file type / language */
     GtkWidget* status_encoding;   /* preview bar: text encoding, hidden if not text */
-    GtkWidget* status_code;       /* bottom bar: code navigation backend of the editor tab */
     GtkWidget* status_notice_label; /* explorer bar: app_notice() message */
     GtkWidget* status_undo_btn;   /* explorer bar: Undo after the message */
     GtkWidget* topbar_notice;     /* top bar: the app_notice() message while the explorer is hidden */

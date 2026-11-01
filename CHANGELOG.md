@@ -18,6 +18,7 @@ All notable changes to this project are listed here. The format follows
   the path from the repository root, the unsaved mark, the language, the
   line ending, the code navigation source and the language server's error
   and warning counts.
+- The window-wide status bar at the bottom is gone: each panel has its own.
 - Icons follow VS Code: files show the VS Code (Seti) file-type icons
   everywhere they are listed (explorer, tabs, bookmarks, Quick Open,
   references, folder previews), and every other icon is a theme icon in the

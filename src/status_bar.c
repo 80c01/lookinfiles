@@ -1,13 +1,10 @@
-/* Status bars: the explorer bar (Git branch, app_notice() messages, shown in
- * the top bar while the explorer is hidden), the preview bar (name, size,
- * type and encoding of the previewed entry) and the bottom bar (code
- * navigation backend of the editor tab). */
+/* Panel status bars: the explorer bar (Git branch, app_notice() messages,
+ * shown in the top bar while the explorer is hidden) and the preview bar
+ * (name, size, type and encoding of the previewed entry). Editor tabs have
+ * their own bar (editor_modes). */
 #include "status_bar.h"
 #include "app_events.h"
-#include "code_intel.h"
-#include "code_nav.h"
 #include "file_list.h"
-#include "editor.h"
 #include "file_types.h"
 #include "git_utils.h"
 
@@ -69,44 +66,6 @@ static GtkWidget* undo_button_new(AppData* app) {
     gtk_widget_set_visible(undo, FALSE);
     g_signal_connect(undo, "clicked", G_CALLBACK(on_undo_clicked), app);
     return undo;
-}
-
-/* The editor tab whose code navigation backend the status bar shows, or NULL
- * when the preview (or the Git tab) is the active page */
-static EditorTab* status_mode_tab(AppData* app) {
-    if (app == NULL || app->editors == NULL) {
-        return NULL;
-    }
-    /* Keyboard focus inside an editor tab */
-    GtkWidget* w = (app->window != NULL) ? gtk_window_get_focus(app->window) : NULL;
-    for (; w != NULL; w = gtk_widget_get_parent(w)) {
-        for (GList* l = app->editors; l != NULL; l = l->next) {
-            EditorTab* t = (EditorTab*)l->data;
-            /* Ignore a focus left in a tab that is no longer shown */
-            if (t != NULL && t->container == w && gtk_widget_get_mapped(w)) {
-                return t;
-            }
-        }
-    }
-    if (app->editor_box != NULL && app->active_panel == app->editor_box) {
-        return editor_current_tab(app);
-    }
-    /* Preview panel hidden: only editor tabs are left */
-    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-        return editor_current_tab(app);
-    }
-    /* Editor tab shown in the preview notebook */
-    if (app->notebook != NULL) {
-        gint p = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
-        GtkWidget* child = (p >= 0) ? gtk_notebook_get_nth_page(GTK_NOTEBOOK(app->notebook), p) : NULL;
-        for (GList* l = app->editors; child != NULL && l != NULL; l = l->next) {
-            EditorTab* t = (EditorTab*)l->data;
-            if (t != NULL && t->container == child) {
-                return t;
-            }
-        }
-    }
-    return NULL;
 }
 
 static GtkWidget* status_item_new(void) {
@@ -193,23 +152,6 @@ GtkWidget* create_preview_bar(AppData* app) {
     return bar;
 }
 
-/* Bottom status bar: code navigation backend of the editor tab */
-GtkWidget* create_status_bar(AppData* app) {
-    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_name(bar, "bottom-statusbar");
-    gtk_widget_add_css_class(bar, "panel-statusbar");
-
-    GtkWidget* spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_hexpand(spacer, TRUE);
-    gtk_box_append(GTK_BOX(bar), spacer);
-
-    GtkWidget* status_code = status_item_new();
-    gtk_box_append(GTK_BOX(bar), status_code);
-
-    app->status_code = status_code;
-    return bar;
-}
-
 /* Human-readable type / language of an explorer entry, like VS Code's language mode */
 static gchar* status_type_label(const gchar* name, const gchar* type, FileKind kind,
                                 const gchar* content_type) {
@@ -261,7 +203,7 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
     return g_strdup("Plain Text");
 }
 
-/* Refresh the bottom status bar from the current directory and explorer selection */
+/* Refresh the explorer bar (branch, message) and the preview bar (selected entry) */
 void update_status_bar(AppData* app) {
     if (app == NULL || app->status_selection == NULL) {
         return;
@@ -327,22 +269,6 @@ void update_status_bar(AppData* app) {
     if (app->preview_bar != NULL && app->notebook != NULL) {
         gtk_widget_set_visible(app->preview_bar,
                                gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook)) == 0);
-    }
-
-    /* Code navigation backend of the editor tab: language server, ctags or index */
-    if (app->status_code != NULL) {
-        EditorTab* cur = status_mode_tab(app);
-        gchar* server = code_intel_server_label(app, cur);
-        const gchar* backend = server != NULL ? server : code_nav_backend_label(cur);
-        if (backend != NULL) {
-            gtk_label_set_text(GTK_LABEL(app->status_code), backend);
-            gchar* tip = server != NULL ? g_strdup_printf("Code Navigation: language server %s", server)
-                                        : g_strdup_printf("Code Navigation: %s (no language server)", backend);
-            gtk_widget_set_tooltip_text(app->status_code, tip);
-            g_free(tip);
-        }
-        gtk_widget_set_visible(app->status_code, backend != NULL);
-        g_free(server);
     }
 
     update_notice(app);

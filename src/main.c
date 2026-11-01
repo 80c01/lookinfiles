@@ -744,7 +744,6 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), help_btn);
     gtk_box_append(GTK_BOX(outer_vbox), label_row);
     gtk_box_append(GTK_BOX(outer_vbox), workspace_hbox);
-    gtk_box_append(GTK_BOX(outer_vbox), create_status_bar(app));
     app_emit(app, APP_EVENT_STATUS_CHANGED);
 
     /* Dialogs are drawn over the window content, never in their own window */
