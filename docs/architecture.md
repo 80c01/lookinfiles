@@ -289,12 +289,14 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   around the editor's and the preview's scrolled windows, `color_column_set()`:
   Preferences, `:set colorcolumn`; in the preview for code only, hidden by
   any buffer change: `color_column_hide_on_change()`), colour `editor_ruler`.
-- `tab_drop` — editor tabs dragged with the mouse (GtkNotebook tab DnD):
-  drop target on a notebook (tab bar: insert; page: move in; edge: split),
-  translucent highlight on the window overlay, end-of-drag report
-  (`TabDragDoneFunc`) once GTK no longer uses the source notebook — remove an
-  emptied notebook only then. Knows nothing of `EditorTab`; `editor` attaches
-  it with `editor_notebook_enable_tab_drop()`.
+- `tab_drop` — editor and terminal tabs dragged with the mouse (GtkNotebook
+  tab DnD): drop target on a notebook (tab bar: insert; page: move in; edge:
+  split), translucent highlight on the window overlay, end-of-drag report
+  (`TabDragDoneFunc`, the source notebook's own) once GTK no longer uses the
+  source notebook — remove an emptied notebook only then. Same group by
+  default, `tab_drop_set_accept()` to take other tabs. Knows nothing of
+  `EditorTab`; `editor` attaches it with `editor_notebook_enable_tab_drop()`,
+  `terminal` to its own notebooks.
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
   `markdown_table` — Markdown tables for `markdown`: rows split into cells, a
   grid widget anchored in the view, or a box-drawn text table without a view.
@@ -410,7 +412,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `TERM_TABS_GROUP`) split by `GtkPaned`s; tabs are dragged between them or
   to a pane edge through `tab_drop` (`Ctrl+T` new tab, `Ctrl+Shift+T` new
   pane below, `terminal_open()` with a working directory); ssh into the
-  active remote machine.
+  active remote machine. Terminal tabs also go into the editor and preview
+  notebooks (`tab_drop_set_accept()` on both sides); `editor_remove_page()`
+  takes them out when the shell exits, and the preview notebook's ones stay
+  with their workspace (`terminal_workspace_hidden()` / `_shown()`).
 - `search` — the search bars of the explorer and of the preview, one at the
   bottom of each panel (`AppSearchBar`, `search_bar_new()`), opened and
   driven by the keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s`

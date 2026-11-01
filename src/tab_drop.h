@@ -21,9 +21,17 @@ typedef void (*TabDropFunc)(GtkNotebook* target, GtkWidget* child, PaneZone zone
  * source, which may now be removed if it was left empty. */
 typedef void (*TabDragDoneFunc)(GtkNotebook* source, gpointer data);
 
+/* Whether target takes child, a tab dragged from source */
+typedef gboolean (*TabAcceptFunc)(GtkNotebook* target, GtkNotebook* source, GtkWidget* child,
+                                  gpointer data);
+
 /* Accept tab drops on nb. Without can_split every drop moves the tab into nb.
- * Leading pages that are not detachable (fixed tabs) stay first. */
+ * Leading pages that are not detachable (fixed tabs) stay first. on_done is
+ * called for the notebooks tabs are dragged out of. */
 void tab_drop_attach(GtkNotebook* nb, gboolean can_split, TabDropFunc on_drop,
                      TabDragDoneFunc on_done, gpointer data);
+/* Let accept decide which tabs nb takes (by default: those of notebooks of
+ * its group), tabs of other groups included; call after tab_drop_attach() */
+void tab_drop_set_accept(GtkNotebook* nb, TabAcceptFunc accept);
 
 #endif /* TAB_DROP_H */

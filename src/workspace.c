@@ -401,6 +401,9 @@ void workspace_switch(AppData* app, gint idx) {
             app->workspaces[app->current_ws].editor_panel = panel;
             project_search_workspace_hidden(app, &app->workspaces[app->current_ws]);
             help_guide_workspace_hidden(app, &app->workspaces[app->current_ws]);
+#ifdef HAVE_VTE
+            terminal_workspace_hidden(app, &app->workspaces[app->current_ws]);
+#endif
         } else if (panel != NULL) {
             g_object_unref(panel);
         }
@@ -421,6 +424,9 @@ void workspace_switch(AppData* app, gint idx) {
         editor_attach_tabs(app, ws->editors, panel);
         project_search_workspace_shown(app, ws);
         help_guide_workspace_shown(app, ws);
+#ifdef HAVE_VTE
+        terminal_workspace_shown(app, ws);
+#endif
     }
 
 #ifdef HAVE_VTE
@@ -688,6 +694,7 @@ void workspace_remove(AppData* app, gint idx) {
     project_search_workspace_removed(app, rm);
     help_guide_workspace_removed(app, rm);
 #ifdef HAVE_VTE
+    terminal_workspace_removed(app, rm);
     if (app->term_stack != NULL && rm->term_box != NULL) {
         gtk_stack_remove(GTK_STACK(app->term_stack), rm->term_box);
     }

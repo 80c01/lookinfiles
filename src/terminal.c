@@ -6,6 +6,8 @@
 #include "palette.h"
 #include "fonts.h"
 #include "tab_drop.h"
+#include "editor.h"
+#include "focus_route.h"
 
 #ifdef HAVE_VTE
 
@@ -43,9 +45,18 @@ static void apply_terminal_theme(VteTerminal* term) {
 static GPtrArray* all_terminals = NULL;
 
 static void on_terminal_finalized(gpointer data, GObject* where) {
-    (void)data;
+    AppData* app = (AppData*)data;
     if (all_terminals != NULL) {
         g_ptr_array_remove_fast(all_terminals, where);
+    }
+    /* No pointer to a closed terminal may stay behind */
+    if (app->last_focused_vte == (GtkWidget*)where) {
+        app->last_focused_vte = NULL;
+    }
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        if (app->workspaces[i].last_focused_vte == (GtkWidget*)where) {
+            app->workspaces[i].last_focused_vte = NULL;
+        }
     }
 }
 
@@ -200,22 +211,6 @@ static GtkWidget* term_root_box(AppData* app, GtkWidget* w) {
         }
     }
     return NULL;
-}
-
-/* Tabs are shown once a workspace has two terminals or more */
-static void term_update_tabs(GtkWidget* box) {
-    if (box == NULL) {
-        return;
-    }
-    GPtrArray* panes = panes_in(box);
-    gboolean show = panes->len > 1;
-    g_ptr_array_unref(panes);
-    GPtrArray* nbs = g_ptr_array_new();
-    collect_notebooks(box, nbs);
-    for (guint i = 0; i < nbs->len; i++) {
-        gtk_notebook_set_show_tabs(GTK_NOTEBOOK(g_ptr_array_index(nbs, i)), show);
-    }
-    g_ptr_array_unref(nbs);
 }
 
 /* Tab label: the title the shell sets (xterm title), else "Terminal" */
@@ -419,6 +414,19 @@ static void on_term_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone 
                                 gint index, gpointer data);
 static void on_term_tab_drag_done(GtkNotebook* source, gpointer data);
 
+/* Terminal notebooks take terminal tabs, from the editor notebooks too */
+static gboolean term_accepts_tab(GtkNotebook* target, GtkNotebook* source, GtkWidget* child,
+                                 gpointer data) {
+    (void)target;
+    (void)source;
+    (void)data;
+    return VTE_IS_TERMINAL(child);
+}
+
+static gboolean is_term_notebook(GtkNotebook* nb) {
+    return g_strcmp0(gtk_notebook_get_group_name(nb), TERM_TABS_GROUP) == 0;
+}
+
 static GtkWidget* term_notebook_new(AppData* app) {
     GtkWidget* nb = gtk_notebook_new();
     gtk_widget_set_name(nb, "term-notebook");
@@ -429,6 +437,7 @@ static GtkWidget* term_notebook_new(AppData* app) {
     gtk_notebook_set_group_name(GTK_NOTEBOOK(nb), TERM_TABS_GROUP);
     g_signal_connect_after(nb, "switch-page", G_CALLBACK(on_term_switch_page), app);
     tab_drop_attach(GTK_NOTEBOOK(nb), TRUE, on_term_tab_dropped, on_term_tab_drag_done, app);
+    tab_drop_set_accept(GTK_NOTEBOOK(nb), term_accepts_tab);
     return nb;
 }
 
@@ -454,7 +463,6 @@ static void on_term_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone 
         GtkWidget* nb = term_notebook_new(app);
         term_split_beside(app, GTK_WIDGET(target), nb, zone);
         term_move_page(source, GTK_NOTEBOOK(nb), child, -1);
-        term_update_tabs(term_root_box(app, nb));
     }
     app->last_focused_vte = child;
     gtk_widget_grab_focus(child);
@@ -462,10 +470,17 @@ static void on_term_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone 
 
 /* The drag of a tab out of source has ended: remove source if left empty */
 static void on_term_tab_drag_done(GtkNotebook* source, gpointer data) {
-    (void)data;
+    AppData* app = (AppData*)data;
     GtkWidget* w = GTK_WIDGET(source);
-    if (gtk_widget_get_parent(w) != NULL && gtk_notebook_get_n_pages(source) == 0) {
-        term_remove_leaf(w);
+    if (gtk_widget_get_parent(w) == NULL || gtk_notebook_get_n_pages(source) > 0) {
+        return;
+    }
+    GtkWidget* box = term_root_box(app, w);
+    term_remove_leaf(w);
+    /* Its last terminal went to the editor area: the panel closes */
+    if (box != NULL && box == app->term_box && gtk_widget_get_first_child(box) == NULL &&
+        gtk_widget_get_visible(app->term_scroll)) {
+        term_panel_closed(app);
     }
 }
 
@@ -496,7 +511,7 @@ static GtkWidget* term_new_pane(AppData* app, const gchar* cwd) {
         all_terminals = g_ptr_array_new();
     }
     g_ptr_array_add(all_terminals, vte);
-    g_object_weak_ref(G_OBJECT(vte), on_terminal_finalized, NULL);
+    g_object_weak_ref(G_OBJECT(vte), on_terminal_finalized, app);
     g_signal_connect(vte, "child-exited",
                      G_CALLBACK(on_term_child_exited), app);
     g_signal_connect(vte, "realize", G_CALLBACK(on_vte_realize), app);
@@ -528,7 +543,6 @@ static void term_spawn_pane_in(AppData* app, gboolean new_row, const gchar* cwd)
         target = GTK_NOTEBOOK(nb);
     }
     term_notebook_add(target, vte, NULL, -1);
-    term_update_tabs(app->term_box);
     app->last_focused_vte = vte;
 }
 
@@ -538,19 +552,10 @@ void term_spawn_pane(AppData* app, gboolean new_row) {
 
 gboolean terminal_step_tab(AppData* app, gint step) {
     GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
-    GtkWidget* nb = focus != NULL ? gtk_widget_get_ancestor(focus, GTK_TYPE_NOTEBOOK) : NULL;
-    if (nb == NULL || g_strcmp0(gtk_notebook_get_group_name(GTK_NOTEBOOK(nb)), TERM_TABS_GROUP) != 0) {
-        return FALSE;
-    }
-    gint n = gtk_notebook_get_n_pages(GTK_NOTEBOOK(nb));
-    gint cur = gtk_notebook_get_current_page(GTK_NOTEBOOK(nb));
-    if (n <= 1 || cur < 0) {
-        return FALSE;
-    }
-    gint next = ((cur + step) % n + n) % n;
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), next);
-    gtk_widget_grab_focus(gtk_notebook_get_nth_page(GTK_NOTEBOOK(nb), next));
-    return TRUE;
+    GtkWidget* vte = focus != NULL ? gtk_widget_get_ancestor(focus, VTE_TYPE_TERMINAL) : NULL;
+    GtkNotebook* nb = vte != NULL ? term_notebook_of(vte) : NULL;
+    /* In the editor area too: the next tab may be an editor tab */
+    return nb != NULL && focus_route_step_tab(app, nb, step, TRUE);
 }
 
 void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
@@ -564,13 +569,16 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
     if (nb == NULL) {
         return;
     }
+    if (!is_term_notebook(nb)) {
+        editor_remove_page(app, term_w); /* a terminal moved to the editor area */
+        return;
+    }
     GtkWidget* box = term_root_box(app, GTK_WIDGET(nb));
     gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, term_w));
     gboolean nb_left = gtk_notebook_get_n_pages(nb) > 0;
     if (!nb_left) {
         term_remove_leaf(GTK_WIDGET(nb));
     }
-    term_update_tabs(box);
     if (box == NULL || box != app->term_box) {
         return;
     }
@@ -695,7 +703,6 @@ void term_layout_apply(AppData* app, const gchar* text) {
 
     guint next = 0;
     gtk_box_append(GTK_BOX(app->term_box), build_panes(app, tree, existing, &next));
-    term_update_tabs(app->term_box);
     /* Terminals left over (the caller confirmed it) close with their widget */
     for (guint i = 0; i < existing->len; i++) {
         GtkWidget* vte = g_ptr_array_index(existing, i);
@@ -706,6 +713,57 @@ void term_layout_apply(AppData* app, const gchar* text) {
     }
     g_ptr_array_unref(existing);
     term_layout_free(tree);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Terminal tabs of the preview notebook, kept by their workspace            */
+/* ------------------------------------------------------------------------- */
+
+#define TAB_LABEL_KEY "term-tab-label"
+
+void terminal_workspace_hidden(AppData* app, VirtualLayout* ws) {
+    if (app->notebook == NULL) {
+        return;
+    }
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    for (gint p = gtk_notebook_get_n_pages(nb) - 1; p >= 0; p--) {
+        GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
+        if (!VTE_IS_TERMINAL(page)) {
+            continue;
+        }
+        if (ws->preview_terms == NULL) {
+            ws->preview_terms = g_ptr_array_new_with_free_func(g_object_unref);
+        }
+        g_object_set_data_full(G_OBJECT(page), TAB_LABEL_KEY,
+                               g_object_ref(gtk_notebook_get_tab_label(nb, page)), g_object_unref);
+        g_ptr_array_insert(ws->preview_terms, 0, g_object_ref(page));
+        gtk_notebook_remove_page(nb, p);
+    }
+}
+
+void terminal_workspace_shown(AppData* app, VirtualLayout* ws) {
+    if (ws->preview_terms == NULL || app->notebook == NULL) {
+        return;
+    }
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    for (guint i = 0; i < ws->preview_terms->len; i++) {
+        GtkWidget* vte = g_ptr_array_index(ws->preview_terms, i);
+        GtkWidget* label = g_object_get_data(G_OBJECT(vte), TAB_LABEL_KEY);
+        gtk_notebook_append_page(nb, vte, label);
+        gtk_notebook_set_tab_reorderable(nb, vte, TRUE);
+        gtk_notebook_set_tab_detachable(nb, vte, TRUE);
+        g_object_set_data(G_OBJECT(vte), TAB_LABEL_KEY, NULL);
+    }
+    g_clear_pointer(&ws->preview_terms, g_ptr_array_unref);
+}
+
+void terminal_workspace_removed(AppData* app, VirtualLayout* ws) {
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces &&
+        ws == &app->workspaces[app->current_ws]) {
+        terminal_workspace_hidden(app, ws);
+    }
+    /* Their shells end with the widgets */
+    g_clear_pointer(&ws->preview_terms, g_ptr_array_unref);
 }
 
 void on_vte_realize(GtkWidget* term, gpointer data) {

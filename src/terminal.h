@@ -25,6 +25,12 @@ guint term_pane_count(AppData* app);
 /* Rebuild the panes as described: running terminals are kept, in order;
  * missing panes get a new shell; terminals beyond the tree are closed */
 void term_layout_apply(AppData* app, const gchar* text);
+/* Terminal tabs dragged into the preview notebook belong to the workspace:
+ * they leave it with the workspace (hidden), come back with it (shown), or
+ * close with it (removed) */
+void terminal_workspace_hidden(AppData* app, VirtualLayout* ws);
+void terminal_workspace_shown(AppData* app, VirtualLayout* ws);
+void terminal_workspace_removed(AppData* app, VirtualLayout* ws);
 /* Colours and font of every terminal again, after a theme change */
 void terminal_refresh_theme(void);
 #endif

@@ -63,9 +63,9 @@ count) is dropped when the focus moves to another panel or tab.
 | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Larger / smaller fonts (interface and code together), or back to the theme's sizes |
 | `Ctrl+P` (Notepad, Vim), `C-x C-f` (Emacs) | Go to a file of the project (its git repository, else the current folder): type part of its name or path, the best matches first; with nothing typed, the recently opened files come first; `Enter` shows it in the explorer, `Ctrl+Enter` opens it in an editor tab (Vim editor tabs keep `Ctrl+P`) |
 | `Ctrl+Shift+F` | Search in files: a text in every file of the project (any case; the editor selection is filled in), searched in the background; in the dialog `Alt+M` matches the case, `Alt+W` whole words, `Alt+R` a regular expression, `Alt+L` the letters in order, not next to each other; `Alt+N` / `Alt+X` go to the files to include / exclude (patterns such as `*.c, src/`), `Alt+I` includes the files git ignores (all kept for the next search); the results are listed by file in a **Search** tab (`Enter` or a double click opens one, the cross closes the tab). Unsaved changes are not searched |
-| `Ctrl+T` | Open a terminal in a new tab of the focused terminal pane (exit the shell to close it); drag a tab to reorder it, onto another pane to move it there, or near a pane edge to split that side |
+| `Ctrl+T` | Open a terminal in a new tab of the focused terminal pane (exit the shell to close it); drag a tab to reorder it, onto another pane to move it there (the preview and editor panels too, beside the files), or near a pane edge to split that side |
 | `Ctrl+Shift+T` | Open a terminal in a new pane below the focused one |
-| `Ctrl+PgDn` / `Ctrl+PgUp` | In a terminal: next / previous tab of its pane |
+| `Ctrl+PgDn` / `Ctrl+PgUp` | In a terminal: next / previous tab of its pane (in the editor area, editor tabs included) |
 | `Ctrl+Shift+L` | Stack the terminal under the viewer, or put it back beside it |
 | `Ctrl+A` | Switch between the files and bookmarks views |
 | `Ctrl+U` | Switch between the files and notes views |

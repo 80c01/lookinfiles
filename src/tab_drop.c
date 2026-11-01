@@ -12,6 +12,7 @@ typedef struct {
     gboolean can_split;
     TabDropFunc on_drop;
     TabDragDoneFunc on_done;
+    TabAcceptFunc accept;
     gpointer data;
     gboolean pages_untargetable; /* while a tab drag is over nb */
 } TabDrop;
@@ -177,15 +178,21 @@ static gboolean find_target(TabDrop* td, GtkNotebook* source, double x, double y
     if (source == NULL) {
         return FALSE;
     }
-    const gchar* g1 = gtk_notebook_get_group_name(nb);
-    const gchar* g2 = gtk_notebook_get_group_name(source);
-    if (g1 == NULL || g2 == NULL || g_strcmp0(g1, g2) != 0) {
-        return FALSE;
-    }
     gint cur_page = gtk_notebook_get_current_page(source);
     GtkWidget* child = cur_page >= 0 ? gtk_notebook_get_nth_page(source, cur_page) : NULL;
     if (child == NULL) {
         return FALSE;
+    }
+    if (td->accept != NULL) {
+        if (!td->accept(nb, source, child, td->data)) {
+            return FALSE;
+        }
+    } else {
+        const gchar* g1 = gtk_notebook_get_group_name(nb);
+        const gchar* g2 = gtk_notebook_get_group_name(source);
+        if (g1 == NULL || g2 == NULL || g_strcmp0(g1, g2) != 0) {
+            return FALSE;
+        }
     }
 
     PaneRect page_area;
@@ -263,10 +270,15 @@ static void watch_drag(GtkDropTarget* dest, GtkNotebook* source, TabDrop* td) {
     if (drag == NULL || g_object_get_data(G_OBJECT(drag), PENDING_KEY) != NULL) {
         return;
     }
+    /* The source notebook's own handler: it may belong to another group */
+    TabDrop* src_td = g_object_get_data(G_OBJECT(source), "tab-drop");
+    if (src_td == NULL) {
+        src_td = td;
+    }
     PendingDrag* pd = g_new0(PendingDrag, 1);
     pd->source = g_object_ref(source);
-    pd->on_done = td->on_done;
-    pd->data = td->data;
+    pd->on_done = src_td->on_done;
+    pd->data = src_td->data;
     g_object_set_data_full(G_OBJECT(drag), PENDING_KEY, pd, pending_free);
     g_signal_connect(drag, "dnd-finished", G_CALLBACK(on_drag_ended), NULL);
     g_signal_connect(drag, "cancel", G_CALLBACK(on_drag_cancelled), NULL);
@@ -354,4 +366,10 @@ void tab_drop_attach(GtkNotebook* nb, gboolean can_split, TabDropFunc on_drop_fu
     g_signal_connect(dest, "leave", G_CALLBACK(on_drop_leave), td);
     g_signal_connect(dest, "drop", G_CALLBACK(on_drop), td);
     gtk_widget_add_controller(GTK_WIDGET(nb), GTK_EVENT_CONTROLLER(dest));
+}
+
+void tab_drop_set_accept(GtkNotebook* nb, TabAcceptFunc accept) {
+    TabDrop* td = g_object_get_data(G_OBJECT(nb), "tab-drop");
+    g_return_if_fail(td != NULL);
+    td->accept = accept;
 }

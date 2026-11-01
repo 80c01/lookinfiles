@@ -139,6 +139,7 @@ typedef struct {
 #ifdef HAVE_VTE
     GtkWidget* term_box;
     GtkWidget* last_focused_vte;
+    GPtrArray* preview_terms; /* its terminal tabs of the preview notebook while another workspace is shown (terminal.c) */
 #endif
 } VirtualLayout;
 

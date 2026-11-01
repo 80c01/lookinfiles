@@ -76,6 +76,10 @@ gint editor_close_other_views(AppData* app, EditorTab* tab);
 /* Accept editor tabs dragged with the mouse onto nb (an editor notebook or
  * the preview notebook): on its tab bar, its page, or an edge to split it */
 void editor_notebook_enable_tab_drop(AppData* app, GtkWidget* nb);
+/* Take child, a page that is not an editor tab (a terminal whose shell
+ * exited), out of its editor or preview notebook; an editor notebook left
+ * empty goes, the editor panel hides without tabs */
+void editor_remove_page(AppData* app, GtkWidget* child);
 void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* target_widget);
 void on_notebook_page_reordered(GtkNotebook* notebook, GtkWidget* child,
                                 guint page_num, gpointer data);

@@ -10,6 +10,16 @@
 #define EDITOR_TABS_GROUP "editor-tabs"
 #define TERM_TABS_GROUP "term-tabs" /* terminal.h */
 
+/* A terminal, also when dragged into an editor notebook */
+static gboolean is_terminal(GtkWidget* w) {
+#ifdef HAVE_VTE
+    return VTE_IS_TERMINAL(w);
+#else
+    (void)w;
+    return FALSE;
+#endif
+}
+
 static gboolean is_terminal_notebook(GtkWidget* w) {
     return w != NULL && GTK_IS_NOTEBOOK(w) &&
            g_strcmp0(gtk_notebook_get_group_name(GTK_NOTEBOOK(w)), TERM_TABS_GROUP) == 0;
@@ -83,7 +93,7 @@ void focus_route_get(AppData* app, FocusInfo* info) {
             return;
         }
         GtkNotebook* nb = notebook_of_page(w);
-        if (nb != NULL && is_terminal_notebook(GTK_WIDGET(nb))) {
+        if (nb != NULL && (is_terminal_notebook(GTK_WIDGET(nb)) || is_terminal(w))) {
             info->nav_keys = FALSE;
             return;
         }

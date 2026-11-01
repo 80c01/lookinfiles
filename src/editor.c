@@ -48,11 +48,27 @@ static void editor_page_set_draggable(GtkNotebook* nb, GtkWidget* child) {
     gtk_notebook_set_tab_detachable(nb, child, TRUE);
 }
 
+/* Editor notebooks take the tabs of their group, and terminal tabs */
+static gboolean editor_accepts_tab(GtkNotebook* target, GtkNotebook* source, GtkWidget* child,
+                                   gpointer data) {
+    (void)data;
+    if (g_strcmp0(gtk_notebook_get_group_name(target), gtk_notebook_get_group_name(source)) == 0) {
+        return TRUE;
+    }
+#ifdef HAVE_VTE
+    return VTE_IS_TERMINAL(child);
+#else
+    (void)child;
+    return FALSE;
+#endif
+}
+
 void editor_notebook_enable_tab_drop(AppData* app, GtkWidget* nb) {
     if (app == NULL || nb == NULL) return;
     /* The preview notebook only takes tabs; editor notebooks also split */
     tab_drop_attach(GTK_NOTEBOOK(nb), nb != app->notebook, on_tab_dropped,
                     on_tab_drag_done, app);
+    tab_drop_set_accept(GTK_NOTEBOOK(nb), editor_accepts_tab);
 }
 
 static GtkWidget* create_editor_notebook(AppData* app) {
@@ -178,6 +194,12 @@ static void editor_update_panel_visibilities(AppData* app) {
             dedicated_count++;
         }
     }
+    /* Other tabs (terminals) keep the panel too */
+    GPtrArray* nbs = editor_get_all_notebooks(app);
+    for (guint i = 0; i < nbs->len && dedicated_count == 0; i++) {
+        dedicated_count += gtk_notebook_get_n_pages(GTK_NOTEBOOK(g_ptr_array_index(nbs, i)));
+    }
+    g_ptr_array_unref(nbs);
     gboolean dedicated = (dedicated_count > 0);
     app->editor_dedicated = dedicated;
     if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
@@ -788,12 +810,90 @@ static EditorTab* editor_tab_of_page(AppData* app, GtkWidget* child) {
     return NULL;
 }
 
+/* The notebook holding child as a page, or NULL */
+static GtkNotebook* notebook_of_page(GtkWidget* child) {
+    GtkWidget* parent = gtk_widget_get_parent(child);
+    GtkWidget* nb = parent != NULL ? gtk_widget_get_ancestor(parent, GTK_TYPE_NOTEBOOK) : NULL;
+    if (nb != NULL && gtk_notebook_page_num(GTK_NOTEBOOK(nb), child) >= 0) {
+        return GTK_NOTEBOOK(nb);
+    }
+    return NULL;
+}
+
+#ifdef HAVE_VTE
+/* Move child, a page that is not an editor tab (a terminal), into to at
+ * index (-1: append), with its tab label */
+static void editor_move_page(AppData* app, GtkNotebook* from, GtkNotebook* to, GtkWidget* child,
+                             gint index) {
+    GtkWidget* label = gtk_notebook_get_tab_label(from, child);
+    g_object_ref(child);
+    g_object_ref(label);
+    focus_route_hold_history(app, TRUE);
+    gint page = gtk_notebook_page_num(from, child);
+    gboolean was_current = (gtk_notebook_get_current_page(from) == page);
+    gtk_notebook_remove_page(from, page);
+    editor_after_current_removed(app, from, was_current);
+    page = (index < 0) ? gtk_notebook_append_page(to, child, label)
+                       : gtk_notebook_insert_page(to, child, label, index);
+    editor_page_set_draggable(to, child);
+    gtk_notebook_set_current_page(to, page);
+    focus_route_hold_history(app, FALSE);
+    g_object_unref(label);
+    g_object_unref(child);
+}
+
+/* A tab other than an editor tab (a terminal) dropped on target */
+static void editor_page_dropped(AppData* app, GtkNotebook* target, GtkWidget* child,
+                                PaneZone zone, gint index) {
+    GtkNotebook* source = notebook_of_page(child);
+    if (source == NULL) return;
+    if (zone == PANE_ZONE_CENTER) {
+        if (source == target) {
+            gtk_notebook_reorder_child(target, child, index);
+            gtk_notebook_set_current_page(target, gtk_notebook_page_num(target, child));
+        } else {
+            editor_move_page(app, source, target, child, index);
+        }
+    } else {
+        if (source == target && gtk_notebook_get_n_pages(target) <= 1) return;
+        GtkWidget* new_nb = editor_split_notebook(app, target, zone);
+        if (new_nb == NULL) return;
+        editor_move_page(app, source, GTK_NOTEBOOK(new_nb), child, -1);
+    }
+    editor_update_panel_visibilities(app);
+    gtk_widget_grab_focus(child);
+    minimap_update_visibility(app);
+}
+#endif
+
+void editor_remove_page(AppData* app, GtkWidget* child) {
+    GtkNotebook* nb = (app != NULL && child != NULL) ? notebook_of_page(child) : NULL;
+    if (nb == NULL) return;
+    gint page = gtk_notebook_page_num(nb, child);
+    gboolean was_current = (gtk_notebook_get_current_page(nb) == page);
+    gtk_notebook_remove_page(nb, page);
+    editor_after_current_removed(app, nb, was_current);
+    if (GTK_WIDGET(nb) != app->notebook && gtk_notebook_get_n_pages(nb) == 0) {
+        editor_cleanup_notebook(app, GTK_WIDGET(nb));
+    }
+    editor_update_panel_visibilities(app);
+    minimap_update_visibility(app);
+}
+
 /* A tab dragged with the mouse was dropped on target (see tab_drop.h) */
 static void on_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone zone,
                            gint index, gpointer data) {
     AppData* app = (AppData*)data;
     EditorTab* tab = editor_tab_of_page(app, child);
-    if (tab == NULL) return;
+    if (tab == NULL) {
+#ifdef HAVE_VTE
+        /* Terminal tabs move like editor tabs; other pages stay */
+        if (VTE_IS_TERMINAL(child)) {
+            editor_page_dropped(app, target, child, zone, index);
+        }
+#endif
+        return;
+    }
     GtkNotebook* source = editor_tab_notebook(app, tab);
 
     if (zone == PANE_ZONE_CENTER) {
