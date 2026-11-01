@@ -339,6 +339,13 @@ key Escape;             shot files_context_menu_closed
 key ctrl+p; xdotool type --delay 60 "plan"
                         shot quick_open_filtered
 key Escape;             shot quick_open_closed
+# Search in files options: an invalid regex disables Search; letters in
+# order greys out whole word; cancelled, the options are left as they were
+key ctrl+shift+f; xdotool type --delay 60 "TOD("; key alt+r
+                        shot search_in_files_regex_error
+key alt+m alt+w alt+l;  shot search_in_files_options
+key alt+l alt+w alt+m Escape
+                        shot search_in_files_cancelled
 key ctrl+shift+f; xdotool type --delay 60 "TODO"; key Return
 sleep 2;                shot search_in_files_results
 key alt+Left;           shot explorer_after_search

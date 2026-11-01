@@ -219,6 +219,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "C-x C-f", "Go to a file of the project: type part of its name (Enter shows it, Ctrl+Enter edits it)", EM},
     {"Global", "Ctrl+P", "Go to a file of the project: type part of its name (Enter shows it, Ctrl+Enter edits it)", NP},
     {"Global", "Ctrl+Shift+F", "Search the text in every file of the project (results in the Search tab, Enter opens)", 0},
+    {"Global", "Alt+M / Alt+W / Alt+R / Alt+L", "In Search in Files: match case / whole word / regular expression / letters in order", 0},
     {"Global", "Ctrl+T", "Open a terminal pane right of the running ones (exit the shell to close it)", 0},
     {"Global", "Ctrl+Shift+T", "Open a new terminal pane below the running ones", 0},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels", 0},

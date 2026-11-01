@@ -150,8 +150,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `CodeQuery.tags`, open buffers are still scanned.
 - `fuzzy_match` — fuzzy scoring of paths for quick open (file name, word
   starts and consecutive characters first) and the matched positions.
-- `text_search` — literal search of a text in a project's files (smart
-  case, binary and large files skipped, bounded), as `CodeReference`s.
+- `text_search` — search of a text in a project's files (literal, match
+  case, whole word, regex through `GRegex`, or letters in order; binary and
+  large files skipped, bounded), as `CodeReference`s with their length.
 - `jump_list` — back / forward history of navigation jumps across files
   (also the explorer's folder history, `nav_history`).
 - `session_store` — `session.ini` (workspaces at quit) and `recent.ini`

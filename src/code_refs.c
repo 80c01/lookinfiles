@@ -249,7 +249,8 @@ static RefsPage* ensure_page(AppData* app, GtkWidget** slot, const gchar* title)
 }
 
 /* Fill the page: a header row per file then the occurrences (CodeReference*,
- * grouped by file), the matched length bytes highlighted. Returns the files. */
+ * grouped by file), their length (else length) bytes highlighted. Returns the
+ * files. */
 static guint fill_page(RefsPage* rp, GPtrArray* refs, const gchar* root, gsize length) {
     g_list_store_remove_all(rp->store);
     guint files = 0;
@@ -278,7 +279,7 @@ static guint fill_page(RefsPage* rp, GPtrArray* refs, const gchar* root, gsize l
         it->path = g_strdup(r->path);
         it->line = r->line;
         it->column = r->column;
-        it->length = (gint)length;
+        it->length = r->length > 0 ? r->length : (gint)length;
         it->text = g_strdup(r->text);
         g_list_store_append(rp->store, it);
         g_object_unref(it);
@@ -333,11 +334,10 @@ void code_refs_show_searching(AppData* app, const gchar* query, const gchar* roo
 }
 
 void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
-                           gboolean exact_case, gboolean truncated) {
+                           const gchar* how, gboolean truncated) {
     RefsPage* rp = ensure_page(app, &app->search_page, "Search");
     if (rp == NULL) return;
     guint files = fill_page(rp, refs, root, strlen(query));
-    const gchar* how = exact_case ? "case sensitive" : "any case";
     gchar* markup = refs->len == 0
                         ? g_markup_printf_escaped("No results for <b>%s</b> <span foreground=\"%s\">(%s)</span>",
                                                   query, palette_color(PAL_FG_SUBTLE), how)

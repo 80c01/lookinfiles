@@ -64,6 +64,7 @@ typedef struct {
     gchar* path;
     gint line;      /* 0-based */
     gint column;    /* byte index of the name in the line */
+    gint length;    /* bytes matched (0: the length of the name looked for) */
     gchar* text;    /* the line (tabs as spaces, no newline, valid UTF-8) */
 } CodeReference;
 

@@ -23,8 +23,9 @@ GtkWidget* code_refs_page(AppData* app);
 GtkWidget* code_refs_search_page(AppData* app);
 /* Show the Search page, emptied, while query is searched for under root */
 void code_refs_show_searching(AppData* app, const gchar* query, const gchar* root);
-/* Show the occurrences of query (CodeReference*, grouped by file) */
+/* Show the occurrences of query (CodeReference*, grouped by file); how
+ * describes the search options ("any case"...) */
 void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
-                           gboolean exact_case, gboolean truncated);
+                           const gchar* how, gboolean truncated);
 
 #endif /* CODE_REFS_H */
