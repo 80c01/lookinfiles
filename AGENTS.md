@@ -25,7 +25,8 @@ More detail, read when the task touches it:
 ## Build and test
 
 ```bash
-make            # build into build/
+make            # build into build/ (then lists the libraries found)
+make deps       # list required / optional libraries and what to install
 make test       # GLib unit tests (headless)
 make check      # zero warnings + unit tests + layering rules
 make ui-test    # headless UI smoke test under Xvfb, screenshots in build/ui/shots/

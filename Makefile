@@ -68,6 +68,11 @@ $(TARGET): $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 	@echo "Build succeeded!"
 	@ls -lh $(TARGET)
+	@PKG_CONFIG=$(PKG_CONFIG) sh tools/check_deps.sh || true
+
+# Lists the required and optional libraries found (tools/check_deps.sh)
+deps:
+	@PKG_CONFIG=$(PKG_CONFIG) sh tools/check_deps.sh
 
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(DEPFLAGS) -c -o $@ $<
@@ -251,4 +256,4 @@ uninstall:
 
 -include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
 
-.PHONY: all clean dist install uninstall test check ui-test bench-preview preview-coverage
+.PHONY: all deps clean dist install uninstall test check ui-test bench-preview preview-coverage

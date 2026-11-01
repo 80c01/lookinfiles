@@ -54,7 +54,9 @@ panels, `Ctrl+Q` to quit.
 | SSHFS | `sshfs` | Remote machines (run time) |
 
 Everything below the first two rows is optional: the Makefile detects what
-is installed, and a missing feature shows a notice instead.
+is installed, and a missing feature shows a notice instead. `make deps`
+lists what was found and the package to install for each missing library;
+the same list is printed after each build.
 
 To install every optional library at once:
 
