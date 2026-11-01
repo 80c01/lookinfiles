@@ -14,8 +14,8 @@ make
 The other libraries are optional: the terminal (VTE), syntax highlighting
 (GtkSourceView), PDF pages (poppler), SQLite databases and extra archive
 formats (libarchive). `make` uses whatever is installed; a feature whose
-library is missing shows a notice instead. The full list is in the
-[README](../../README.md#requirements).
+library is missing shows a notice instead; see
+[Troubleshooting](troubleshooting.md#a-feature-is-missing) for the packages.
 
 ## Launching
 

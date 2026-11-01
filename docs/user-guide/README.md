@@ -52,6 +52,22 @@ of the current mode. The complete list of keys is in the
 
 - [Troubleshooting](troubleshooting.md): missing features, common problems.
 
+## Reading this guide in LookinFiles
+
+Press `F1`, or click the **Help** button of the top bar, to open this guide
+in a **Help** tab of the preview panel.
+
+| Key | Action |
+|---|---|
+| Arrows, `Page Down` / `Page Up` (and the keys of your mode) | Scroll |
+| `Tab` / `Shift+Tab` | Select the next / previous link |
+| `Enter`, or a click | Follow the link |
+| `Shift+H` / `Shift+L`, mouse back / forward buttons | Back / forward |
+| `Ctrl+W` (Vim: `Ctrl+W c`), middle click on the tab | Close the tab |
+
+The buttons above the page go back, forward and to these contents, show
+the keyboard cheat sheet and close the tab.
+
 ## Reference pages
 
 - [Keyboard reference](../keyboard.md): every shortcut, by panel and mode.

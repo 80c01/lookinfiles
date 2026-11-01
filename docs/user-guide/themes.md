@@ -13,7 +13,7 @@ Three themes are built in:
 - **Light Modern**;
 - **High Contrast Dark**.
 
-The [`themes/`](../../themes/) folder of the source tree has six more, one
+The `themes/` folder of the source tree has six more, one
 per decade from the 1970s to the 2020s. Copy them into
 `~/.config/lookinfiles/themes/` to use them.
 

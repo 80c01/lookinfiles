@@ -103,8 +103,9 @@ lsp_config:code_symbol
 layout_store:app_paths
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store
-markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table
-markdown_table:fonts,palette
+markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link
+markdown_link:
+markdown_table:fonts,palette,markdown_link
 html:app_types,image_utils,palette,fonts,text_tags
 minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette
 preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette,fonts,text_tags

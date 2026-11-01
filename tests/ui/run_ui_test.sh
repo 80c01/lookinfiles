@@ -243,6 +243,9 @@ key Up Up Up Up Up      # back to plan.org
 key question;           shot help_open
 key question;           shot help_closed
 key F1;                 shot help_guide_tab        # user guide in the Help tab
+key Tab;                shot help_guide_link_selected
+key Return;             shot help_guide_link_followed  # the first link of the contents
+key shift+h;            shot help_guide_back
 key Page_Down;          shot help_guide_scrolled
 key ctrl+w;             shot help_guide_closed
 key End;                shot G_last_row

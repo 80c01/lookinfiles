@@ -1,4 +1,5 @@
 #include "markdown.h"
+#include "markdown_link.h"
 #include "markdown_table.h"
 #include "fonts.h"
 #include "palette.h"
@@ -256,6 +257,17 @@ static void apply_tag_mark(GtkTextBuffer* buffer, const gchar* tag_name,
     gtk_text_buffer_apply_tag_by_name(buffer, tag_name, &start_iter, end_iter);
 }
 
+/* Insert a link's text (recorded with its url when links are followed) */
+static void insert_link(GtkTextBuffer* buffer, GtkTextIter* iter, const gchar* text, const gchar* url) {
+    GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
+    gtk_text_buffer_insert(buffer, iter, text, -1);
+    apply_tag_mark(buffer, "md_link", m, iter);
+    GtkTextIter start;
+    gtk_text_buffer_get_iter_at_mark(buffer, &start, m);
+    markdown_link_add(buffer, &start, iter, url);
+    gtk_text_buffer_delete_mark(buffer, m);
+}
+
 /* Parse inline formatting and insert into buffer */
 static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
                                const gchar* text, const gchar* doc_dir,
@@ -325,11 +337,7 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
                 if (url_end) {
                     gchar* label = g_strndup(p + 1, label_end - (p + 1));
                     gchar* url = g_strndup(label_end + 2, url_end - (label_end + 2));
-                    const gchar* display = (label[0] != '\0') ? label : url;
-                    GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-                    gtk_text_buffer_insert(buffer, iter, display, -1);
-                    apply_tag_mark(buffer, "md_link", m, iter);
-                    gtk_text_buffer_delete_mark(buffer, m);
+                    insert_link(buffer, iter, (label[0] != '\0') ? label : url, url);
                     g_free(label);
                     g_free(url);
                     p = url_end + 1;
@@ -436,10 +444,7 @@ static void render_inline_text(GtkTextBuffer* buffer, GtkTextIter* iter,
                     g_str_has_prefix(p + 1, "https://") ||
                     g_str_has_prefix(p + 1, "mailto:")) {
                     gchar* url = g_strndup(p + 1, closing - (p + 1));
-                    GtkTextMark* m = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-                    gtk_text_buffer_insert(buffer, iter, url, -1);
-                    apply_tag_mark(buffer, "md_link", m, iter);
-                    gtk_text_buffer_delete_mark(buffer, m);
+                    insert_link(buffer, iter, url, url);
                     g_free(url);
                     p = closing + 1;
                     continue;
@@ -699,6 +704,7 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
     gchar* doc_dir = doc_path ? g_path_get_dirname(doc_path) : NULL;
     GtkTextIter iter;
     gtk_text_buffer_set_text(buffer, "", 0);
+    markdown_link_clear(buffer);
     gtk_text_buffer_get_start_iter(buffer, &iter);
 
     if (is_preview) {

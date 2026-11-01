@@ -89,7 +89,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   and the reference pages it links to, compiled as a GResource by the Makefile
   (generated list, prefix `/org/lookin/guide/`); `user_guide_read()` by page name
   (`"user-guide/editor.md"`, `"keyboard.md"`), `user_guide_title()`,
-  `user_guide_pages()`.
+  `user_guide_pages()`, `user_guide_resolve_link()` (page, anchor, web or outside),
+  `user_guide_anchor()` (GitHub heading ids). Its test checks every link of the guide.
 - `org_time` — Org timestamps (`<2026-10-29 Thu 10:00 +1w>`): parse, format,
   field arithmetic, repeaters, the date prompt (`org_timestamp_read()`).
 - `org_doc` — Org document commands on an array of lines + cursor (`OrgPos`):
@@ -269,6 +270,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
   `markdown_table` — Markdown tables for `markdown`: rows split into cells, a
   grid widget anchored in the view, or a box-drawn text table without a view.
+  `markdown_link` — links that can be followed, off by default (previews keep
+  them as text): `markdown_link_attach()` on a view makes the renderer record the
+  links of its buffer and calls a handler on click (table cells: `<a href>` labels).
 - `preview_doc_view` — shows a `PreviewDoc` in the preview text view (style
   tags in the Dark+ palette, images, HTML / Markdown renderers).
 - `minimap` — scaled file overview; draws only the part around what is shown
@@ -372,8 +376,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `help` — cheat sheet (`?`, right click on the Help button); `KEY_HELP` must stay in sync with `docs/keyboard.md`.
 - `help_guide` — the **Help** page of the preview notebook (`app->help_page`, after
   the Git, result and Canvas pages): a `user_guide` page rendered by `markdown`,
-  scrolled with the navigation keys of the global mode; F1 (`ui`) and a click on the
-  Help button (`topbar`) open it, its close button, a middle click or Ctrl+W close it.
+  scrolled with the navigation keys of the global mode; links followed through
+  `markdown_link` (`user_guide_resolve_link()`: guide pages and anchors, web pages
+  with `GtkUriLauncher`), Tab / Enter, back / forward history (Shift+H / Shift+L,
+  mouse buttons). F1 (`ui`) and a click on the Help button (`topbar`) open it,
+  its close button, a middle click or Ctrl+W close it.
 - `workspace` — virtual workspaces (Alt+1..8): save/apply layout snapshots,
   top-bar workspace minimap. A new workspace (Alt++) starts from the default
   view (start directory, files view) with the panels of the default layout

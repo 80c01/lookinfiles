@@ -3,6 +3,8 @@
  * Headless. */
 #include "user_guide.h"
 
+#include <string.h>
+
 static void test_home(void) {
     gchar* text = user_guide_read(USER_GUIDE_HOME);
     g_assert_nonnull(text);
@@ -58,11 +60,122 @@ static void test_title(void) {
     g_assert_null(user_guide_title(NULL));
 }
 
+static void check_link(const gchar* from, const gchar* href, UserGuideLink kind, const gchar* page,
+                       const gchar* anchor) {
+    gchar* p = NULL;
+    gchar* a = NULL;
+    g_assert_cmpint(user_guide_resolve_link(from, href, &p, &a), ==, kind);
+    g_assert_cmpstr(p, ==, page);
+    g_assert_cmpstr(a, ==, anchor);
+    g_free(p);
+    g_free(a);
+}
+
+static void test_resolve_link(void) {
+    const gchar* from = "user-guide/editor.md";
+    check_link(from, "vim.md", USER_GUIDE_LINK_PAGE, "user-guide/vim.md", NULL);
+    check_link(from, "./vim.md#options", USER_GUIDE_LINK_PAGE, "user-guide/vim.md", "options");
+    check_link(from, "../keyboard.md#editor-tabs", USER_GUIDE_LINK_PAGE, "keyboard.md", "editor-tabs");
+    check_link(from, "#splitting", USER_GUIDE_LINK_PAGE, from, "splitting");
+    check_link(from, "README.md", USER_GUIDE_LINK_PAGE, USER_GUIDE_HOME, NULL);
+    check_link("keyboard.md", "user-guide/README.md", USER_GUIDE_LINK_PAGE, USER_GUIDE_HOME, NULL);
+    check_link("keyboard.md", "configuration.md#language-servers", USER_GUIDE_LINK_PAGE, "configuration.md",
+               "language-servers");
+    /* Outside the guide: named for a message */
+    check_link(from, "../../README.md#requirements", USER_GUIDE_LINK_NONE, "README.md", NULL);
+    check_link("keyboard.md", "architecture.md", USER_GUIDE_LINK_NONE, "architecture.md", NULL);
+    check_link(from, "nope.md", USER_GUIDE_LINK_NONE, "user-guide/nope.md", NULL);
+    check_link(from, "/etc/passwd", USER_GUIDE_LINK_NONE, NULL, NULL);
+    check_link(from, "file:///etc/passwd", USER_GUIDE_LINK_NONE, NULL, NULL);
+    check_link(from, "", USER_GUIDE_LINK_NONE, NULL, NULL);
+    check_link(from, NULL, USER_GUIDE_LINK_NONE, NULL, NULL);
+    /* Web */
+    check_link(from, "https://ctags.io", USER_GUIDE_LINK_WEB, NULL, NULL);
+    check_link(from, "mailto:a@b.c", USER_GUIDE_LINK_WEB, NULL, NULL);
+}
+
+static void test_anchor(void) {
+    const struct { const gchar* heading; const gchar* anchor; } cases[] = {
+        {"The global mode: Notepad, Emacs or Vim", "the-global-mode-notepad-emacs-or-vim"},
+        {"Go to a file: `Ctrl+P`", "go-to-a-file-ctrlp"},
+        {"Saved layouts: `Alt+L`", "saved-layouts-altl"},
+        {"Org-mode editing", "org-mode-editing"},
+        {"snake_case and Été", "snake_case-and-été"},
+        {"", ""},
+    };
+    for (gsize i = 0; i < G_N_ELEMENTS(cases); i++) {
+        gchar* a = user_guide_anchor(cases[i].heading);
+        g_assert_cmpstr(a, ==, cases[i].anchor);
+        g_free(a);
+    }
+}
+
+/* TRUE when markdown has a heading whose anchor is anchor */
+static gboolean has_anchor(const gchar* markdown, const gchar* anchor) {
+    gboolean found = FALSE, in_code = FALSE;
+    gchar** lines = g_strsplit(markdown, "\n", -1);
+    for (gint i = 0; lines[i] != NULL && !found; i++) {
+        if (g_str_has_prefix(lines[i], "```")) in_code = !in_code;
+        if (in_code || lines[i][0] != '#') continue;
+        const gchar* t = lines[i];
+        while (*t == '#') t++;
+        if (*t != ' ') continue;
+        gchar* a = user_guide_anchor(t + 1);
+        found = strcmp(a, anchor) == 0;
+        g_free(a);
+    }
+    g_strfreev(lines);
+    return found;
+}
+
+/* Every link of the guide's own pages leads to a page of the guide (and
+ * its anchor) or to the web: none is broken in the Help tab */
+static void test_guide_links(void) {
+    gchar** pages = user_guide_pages();
+    GRegex* re = g_regex_new("\\]\\(([^)\\s]+)\\)", 0, 0, NULL);
+    guint checked = 0;
+    for (gint i = 0; pages[i] != NULL; i++) {
+        if (!g_str_has_prefix(pages[i], "user-guide/")) continue;
+        gchar* text = user_guide_read(pages[i]);
+        GMatchInfo* m = NULL;
+        g_regex_match(re, text, 0, &m);
+        while (g_match_info_matches(m)) {
+            gchar* href = g_match_info_fetch(m, 1);
+            gchar* page = NULL;
+            gchar* anchor = NULL;
+            UserGuideLink kind = user_guide_resolve_link(pages[i], href, &page, &anchor);
+            if (kind == USER_GUIDE_LINK_NONE) {
+                g_error("%s: link %s leads outside the guide", pages[i], href);
+            }
+            if (kind == USER_GUIDE_LINK_PAGE && anchor != NULL) {
+                gchar* target = user_guide_read(page);
+                if (!has_anchor(target, anchor)) {
+                    g_error("%s: link %s: no heading with that anchor", pages[i], href);
+                }
+                g_free(target);
+            }
+            checked++;
+            g_free(page);
+            g_free(anchor);
+            g_free(href);
+            g_match_info_next(m, NULL);
+        }
+        g_match_info_free(m);
+        g_free(text);
+    }
+    g_assert_cmpuint(checked, >, 50);
+    g_regex_unref(re);
+    g_strfreev(pages);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/user_guide/home", test_home);
     g_test_add_func("/user_guide/pages", test_pages);
     g_test_add_func("/user_guide/missing", test_missing);
     g_test_add_func("/user_guide/title", test_title);
+    g_test_add_func("/user_guide/resolve_link", test_resolve_link);
+    g_test_add_func("/user_guide/anchor", test_anchor);
+    g_test_add_func("/user_guide/guide_links", test_guide_links);
     return g_test_run();
 }

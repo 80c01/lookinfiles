@@ -1,5 +1,6 @@
 /* Markdown tables (see markdown_table.h) */
 #include "markdown_table.h"
+#include "markdown_link.h"
 #include "fonts.h"
 #include "palette.h"
 
@@ -80,7 +81,7 @@ GPtrArray* markdown_table_split_row(const gchar* row_str) {
 
 /* Pango markup of a table cell's inline Markdown (code, bold, italic,
  * strikethrough, links), escaped */
-static void cell_markup_append(GString* out, const gchar* text, gsize len) {
+static void cell_markup_append(GString* out, const gchar* text, gsize len, gboolean links) {
     gsize i = 0;
     while (i < len) {
         const gchar* p = text + i;
@@ -106,7 +107,7 @@ static void cell_markup_append(GString* out, const gchar* text, gsize len) {
             if (e != NULL) {
                 const gchar* tag = (p[0] == '~') ? "s" : "b";
                 g_string_append_printf(out, "<%s>", tag);
-                cell_markup_append(out, p + 2, e - p - 2);
+                cell_markup_append(out, p + 2, e - p - 2, links);
                 g_string_append_printf(out, "</%s>", tag);
                 i = (gsize)(e - text) + 2;
                 continue;
@@ -116,7 +117,7 @@ static void cell_markup_append(GString* out, const gchar* text, gsize len) {
             const gchar* e = memchr(p + 1, p[0], rest_end - p - 1);
             if (e != NULL && e > p + 1) {
                 g_string_append(out, "<i>");
-                cell_markup_append(out, p + 1, e - p - 1);
+                cell_markup_append(out, p + 1, e - p - 1, links);
                 g_string_append(out, "</i>");
                 i = (gsize)(e - text) + 1;
                 continue;
@@ -127,9 +128,16 @@ static void cell_markup_append(GString* out, const gchar* text, gsize len) {
             if (close != NULL && close + 1 < rest_end && close[1] == '(') {
                 const gchar* paren = memchr(close, ')', rest_end - close);
                 if (paren != NULL) {
+                    if (links) { /* followed: GtkLabel link (markdown_link_connect_label()) */
+                        gchar* url = g_strndup(close + 2, paren - close - 2);
+                        gchar* a = g_markup_printf_escaped("<a href=\"%s\">", url);
+                        g_string_append(out, a);
+                        g_free(a);
+                        g_free(url);
+                    }
                     g_string_append_printf(out, "<span foreground=\"%s\">", palette_color(PAL_LINK));
-                    cell_markup_append(out, p + 1, close - p - 1);
-                    g_string_append(out, "</span>");
+                    cell_markup_append(out, p + 1, close - p - 1, links);
+                    g_string_append(out, links ? "</span></a>" : "</span>");
                     i = (gsize)(paren - text) + 1;
                     continue;
                 }
@@ -143,9 +151,9 @@ static void cell_markup_append(GString* out, const gchar* text, gsize len) {
     }
 }
 
-static gchar* cell_markup(const gchar* text) {
+static gchar* cell_markup(const gchar* text, gboolean links) {
     GString* out = g_string_new(NULL);
-    cell_markup_append(out, text, strlen(text));
+    cell_markup_append(out, text, strlen(text), links);
     return g_string_free(out, FALSE);
 }
 
@@ -167,10 +175,14 @@ static void insert_table_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextI
         GPtrArray* cells = g_ptr_array_index(rows, r);
         for (guint c = 0; c < cols; c++) {
             const gchar* text = (c < cells->len) ? g_ptr_array_index(cells, c) : "";
-            gchar* markup = cell_markup(text);
+            gboolean links = markdown_link_enabled(buffer);
+            gchar* markup = cell_markup(text, links);
             GtkWidget* label = gtk_label_new(NULL);
             gtk_label_set_markup(GTK_LABEL(label), markup);
             g_free(markup);
+            if (links) {
+                markdown_link_connect_label(label, view);
+            }
             gfloat align = (c < aligns->len) ? cell_align(g_ptr_array_index(aligns, c)) : 0.0f;
             gtk_label_set_xalign(GTK_LABEL(label), align);
             gtk_label_set_wrap(GTK_LABEL(label), TRUE);

@@ -141,6 +141,17 @@ automatically; one canvas at a time)
 | `Delete` / `Backspace` | Delete the selected block (an empty text box goes away when left) |
 | `Ctrl+W`, middle click on the tab | Close the Canvas tab (saved first) |
 
+**Help tab** (the user guide, opened with `F1` or a click on the top bar's
+**Help** button; the navigation keys of the global mode scroll it)
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Select the next / previous link |
+| `Enter`, click | Follow the selected / clicked link (another page of the guide, or a web page in your browser) |
+| `Shift+H` / `Shift+L`, mouse back / forward buttons | Back / forward in the pages visited |
+| `?` | Show / hide the shortcut cheat sheet |
+| `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Help tab |
+
 **Remote view**
 
 | Key | Action |
