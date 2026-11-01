@@ -1,4 +1,4 @@
-/* Notebook icons (see notebook_icons.h) */
+/* Notebook and bookmark folder icons (see notebook_icons.h) */
 #include "notebook_icons.h"
 
 const gchar* const NOTEBOOK_ICONS[] = {
@@ -25,13 +25,24 @@ static const struct {
     {"❤️", "emoji-people"},       {"📅", "x-office-calendar"},
 };
 
-const gchar* notebook_icon_normalize(const gchar* stored) {
-    if (stored == NULL) return NOTEBOOK_ICON_DEFAULT;
-    for (gsize i = 0; NOTEBOOK_ICONS[i] != NULL; i++) {
+/* stored as one of NOTEBOOK_ICONS, or NULL */
+static const gchar* preset(const gchar* stored) {
+    for (gsize i = 0; stored != NULL && NOTEBOOK_ICONS[i] != NULL; i++) {
         if (g_strcmp0(stored, NOTEBOOK_ICONS[i]) == 0) return NOTEBOOK_ICONS[i];
     }
+    return NULL;
+}
+
+const gchar* notebook_icon_normalize(const gchar* stored) {
+    if (stored == NULL) return NOTEBOOK_ICON_DEFAULT;
+    if (preset(stored) != NULL) return preset(stored);
     for (gsize i = 0; i < G_N_ELEMENTS(LEGACY); i++) {
         if (g_strcmp0(stored, LEGACY[i].emoji) == 0) return LEGACY[i].icon;
     }
     return NOTEBOOK_ICON_DEFAULT;
+}
+
+const gchar* bookmark_folder_icon_normalize(const gchar* stored) {
+    const gchar* icon = preset(stored);
+    return icon != NULL ? icon : BOOKMARK_FOLDER_ICON_DEFAULT;
 }

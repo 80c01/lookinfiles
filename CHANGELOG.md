@@ -49,6 +49,8 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Bookmark folders have an icon of their own, chosen in the New / Edit
+  Folder dialog from the same set as notebooks.
 - OLE2 compound files are detected by content and read without any external
   tool: their document properties (title, author, dates, page and word
   counts) and their streams are shown; encrypted ones say so.

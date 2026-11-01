@@ -2,6 +2,7 @@
 #include "note_types.h"
 #include "notebook_icons.h"
 #include "icons.h"
+#include "icon_picker.h"
 #include "canvas_doc.h"
 #include "canvas_view.h"
 #include "palette.h"
@@ -702,12 +703,10 @@ static void on_notebook_field_changed(GtkEditable* editable, gpointer user_data)
     update_notebook_preview((NotebookDialogData*)user_data);
 }
 
-static void on_preset_icon_toggled(GtkToggleButton* btn, gpointer user_data) {
+static void on_notebook_icon_changed(const gchar* icon, gpointer user_data) {
     NotebookDialogData* d = (NotebookDialogData*)user_data;
-    if (gtk_toggle_button_get_active(btn)) {
-        d->icon = g_object_get_data(G_OBJECT(btn), "notebook-icon");
-        update_notebook_preview(d);
-    }
+    d->icon = icon;
+    update_notebook_preview(d);
 }
 
 static void on_notebook_dlg_response(AppDialog* dlg, gint response_id, gpointer user_data) {
@@ -758,22 +757,7 @@ static gboolean prompt_notebook_dialog(GtkWindow* parent_win, const gchar* title
     gtk_box_append(GTK_BOX(box), icon_lbl);
 
     d.icon = notebook_icon_normalize(init_icon);
-    GtkWidget* grid = gtk_grid_new();
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 4);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 4);
-    GtkWidget* group = NULL;
-    for (gint i = 0; NOTEBOOK_ICONS[i] != NULL; i++) {
-        GtkWidget* b = gtk_toggle_button_new();
-        gtk_button_set_child(GTK_BUTTON(b), glyph_image_new(NOTEBOOK_ICONS[i]));
-        g_object_set_data(G_OBJECT(b), "notebook-icon", (gpointer)NOTEBOOK_ICONS[i]);
-        if (group != NULL) gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(b), GTK_TOGGLE_BUTTON(group));
-        else group = b;
-        if (g_strcmp0(NOTEBOOK_ICONS[i], d.icon) == 0) {
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(b), TRUE);
-        }
-        g_signal_connect(b, "toggled", G_CALLBACK(on_preset_icon_toggled), &d);
-        gtk_grid_attach(GTK_GRID(grid), b, i % 11, i / 11, 1, 1);
-    }
+    GtkWidget* grid = icon_picker_new(NOTEBOOK_ICONS, d.icon, on_notebook_icon_changed, &d);
     gtk_box_append(GTK_BOX(box), grid);
 
     /* Live Preview: the row as the explorer will show it */

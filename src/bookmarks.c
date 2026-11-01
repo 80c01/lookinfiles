@@ -6,8 +6,8 @@
 #include "tree_nav.h"
 #include "file_list.h"
 #include "bookmark_icons.h"
-
-#include <string.h>
+#include "notebook_icons.h"
+#include "bookmark_dialog.h"
 
 /* One node of the bookmark tree (GNode data). The root node has NULL data. */
 typedef struct {
@@ -16,6 +16,7 @@ typedef struct {
     gchar* name;        /* user-visible name */
     gchar* target;      /* links only: absolute path or URI */
     gboolean expanded;  /* folders only: expanded in the explorer panel */
+    const gchar* icon;  /* folders only: glyph from NOTEBOOK_ICONS (static) */
 } BookmarkItem;
 
 enum {
@@ -49,6 +50,7 @@ static GNode* bm_new_node(AppData* app, gboolean is_folder, const gchar* name, c
     it->is_folder = is_folder;
     it->name = g_strdup(name != NULL ? name : "");
     it->target = is_folder ? NULL : g_strdup(target != NULL ? target : "");
+    it->icon = BOOKMARK_FOLDER_ICON_DEFAULT;
     return g_node_new(it);
 }
 
@@ -105,73 +107,6 @@ static GNode* bm_find_link_by_target(GNode* node, const gchar* target) {
     return NULL;
 }
 
-/* "~/..." for paths under the home directory, unchanged otherwise */
-static gchar* bm_display_location(const gchar* target) {
-    if (target == NULL) {
-        return g_strdup("");
-    }
-    if (bookmark_target_is_uri(target)) {
-        return g_strdup(target);
-    }
-    const gchar* home = g_get_home_dir();
-    gsize home_len = (home != NULL) ? strlen(home) : 0;
-    if (home_len > 1 && g_str_has_prefix(target, home) &&
-        (target[home_len] == '\0' || target[home_len] == '/')) {
-        return g_strdup_printf("~%s", target + home_len);
-    }
-    return g_strdup(target);
-}
-
-/* Turn user input into a canonical absolute path, or keep it as a URI */
-static gchar* bm_normalize_target(const gchar* text, const gchar* base_dir) {
-    gchar* t = g_strstrip(g_strdup(text != NULL ? text : ""));
-    if (t[0] == '\0') {
-        g_free(t);
-        return NULL;
-    }
-    if (bookmark_target_is_uri(t)) {
-        if (g_ascii_strcasecmp(g_uri_peek_scheme(t), "file") != 0) {
-            return t;
-        }
-        gchar* local = g_filename_from_uri(t, NULL, NULL);
-        if (local == NULL) {
-            return t;
-        }
-        g_free(t);
-        t = local;
-    }
-    gchar* abs = NULL;
-    if (t[0] == '~' && (t[1] == '\0' || t[1] == '/')) {
-        abs = g_build_filename(g_get_home_dir(), t + 1, NULL);
-    } else {
-        abs = g_strdup(t);
-    }
-    const gchar* rel = (base_dir != NULL && g_path_is_absolute(base_dir)) ? base_dir : NULL;
-    gchar* canon = g_canonicalize_filename(abs, rel);
-    g_free(abs);
-    g_free(t);
-    return canon;
-}
-
-static gchar* bm_default_name(const gchar* target) {
-    if (target == NULL || target[0] == '\0') {
-        return g_strdup("");
-    }
-    if (bookmark_target_is_uri(target)) {
-        GUri* uri = g_uri_parse(target, G_URI_FLAGS_NONE, NULL);
-        gchar* name = NULL;
-        if (uri != NULL) {
-            const gchar* host = g_uri_get_host(uri);
-            if (host != NULL && host[0] != '\0') {
-                name = g_strdup(host);
-            }
-            g_uri_unref(uri);
-        }
-        return (name != NULL) ? name : g_strdup(target);
-    }
-    return g_path_get_basename(target);
-}
-
 /* ------------------------------------------------------------------------- */
 /* Persistence (XML)                                                         */
 /* ------------------------------------------------------------------------- */
@@ -192,8 +127,8 @@ static void bm_write_children(GString* out, GNode* node, gint depth) {
         }
         gchar* line = NULL;
         if (it->is_folder) {
-            line = g_markup_printf_escaped("<folder name=\"%s\" expanded=\"%s\"%s>\n",
-                                           it->name, it->expanded ? "true" : "false",
+            line = g_markup_printf_escaped("<folder name=\"%s\" icon=\"%s\" expanded=\"%s\"%s>\n",
+                                           it->name, it->icon, it->expanded ? "true" : "false",
                                            c->children != NULL ? "" : "/");
             g_string_append(out, line);
             if (c->children != NULL) {
@@ -239,6 +174,7 @@ static void bm_parse_start(GMarkupParseContext* ctx, const gchar* element,
     const gchar* name = NULL;
     const gchar* target = NULL;
     const gchar* expanded = NULL;
+    const gchar* icon = NULL;
     for (gint i = 0; attr_names[i] != NULL; i++) {
         if (g_strcmp0(attr_names[i], "name") == 0) {
             name = attr_values[i];
@@ -246,15 +182,18 @@ static void bm_parse_start(GMarkupParseContext* ctx, const gchar* element,
             target = attr_values[i];
         } else if (g_strcmp0(attr_names[i], "expanded") == 0) {
             expanded = attr_values[i];
+        } else if (g_strcmp0(attr_names[i], "icon") == 0) {
+            icon = attr_values[i];
         }
     }
     if (g_strcmp0(element, "folder") == 0) {
         GNode* node = bm_new_node(st->app, TRUE, (name != NULL && name[0] != '\0') ? name : "Folder", NULL);
         bm_item(node)->expanded = (g_strcmp0(expanded, "true") == 0);
+        bm_item(node)->icon = bookmark_folder_icon_normalize(icon);
         g_node_append(st->current, node);
         st->current = node;
     } else if (g_strcmp0(element, "bookmark") == 0 && target != NULL && target[0] != '\0') {
-        gchar* fallback = bm_default_name(target);
+        gchar* fallback = bookmark_default_name(target);
         GNode* node = bm_new_node(st->app, FALSE, (name != NULL && name[0] != '\0') ? name : fallback, target);
         g_free(fallback);
         g_node_append(st->current, node);
@@ -287,7 +226,7 @@ static gboolean bm_import_legacy(AppData* app) {
             if (g_str_has_prefix(line, "BM::")) {
                 node = bm_new_node(app, TRUE, line + 4, NULL);
             } else if (bm_find_link_by_target(app->bookmarks, line) == NULL) {
-                gchar* name = bm_default_name(line);
+                gchar* name = bookmark_default_name(line);
                 node = bm_new_node(app, FALSE, name, line);
                 g_free(name);
             }
@@ -351,7 +290,7 @@ static void bm_append_children(AppData* app, ExplorerRow* parent, GNode* node) {
         BookmarkItem* it = bm_item(c);
         if (it->is_folder) {
             ExplorerRow* row = explorer_row_append_container(parent, "bm_folder", it->name, it->name, "");
-            explorer_row_set_glyph(row, "folder");
+            explorer_row_set_glyph(row, it->icon);
             guint n = g_node_n_children(c);
             if (n > 0) {
                 gchar* badge = g_strdup_printf("<span foreground=\"%s\">%u</span>", palette_color(PAL_FG_FAINT), n);
@@ -366,7 +305,7 @@ static void bm_append_children(AppData* app, ExplorerRow* parent, GNode* node) {
             }
         } else {
             bookmark_icon_check(app, it->target);
-            gchar* loc = bm_display_location(it->target);
+            gchar* loc = bookmark_display_location(it->target);
             gchar* badge = g_markup_printf_escaped("<span foreground=\"%s\" size=\"small\">%s</span>",
                                                    palette_color(PAL_FG_FAINT), loc);
             ExplorerRow* row = explorer_row_append(parent, "bookmark", it->name, it->name, it->target);
@@ -487,90 +426,6 @@ gboolean bookmarks_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean e
 /* Dialogs                                                                   */
 /* ------------------------------------------------------------------------- */
 
-typedef struct {
-    GMainLoop* loop;
-    gint response;
-    GtkWidget* name_entry;   /* required when validating a folder */
-    GtkWidget* target_entry; /* required when validating a link */
-} BmDialog;
-
-static gboolean bm_entry_is_blank(GtkWidget* entry) {
-    const gchar* text = gtk_editable_get_text(GTK_EDITABLE(entry));
-    if (text == NULL) {
-        return TRUE;
-    }
-    for (const gchar* p = text; *p != '\0'; p++) {
-        if (!g_ascii_isspace(*p)) {
-            return FALSE;
-        }
-    }
-    return TRUE;
-}
-
-static void bm_on_dialog_response(AppDialog* dlg, gint response_id, gpointer user_data) {
-    (void)dlg;
-    BmDialog* d = (BmDialog*)user_data;
-    if (response_id == APP_RESPONSE_OK) {
-        GtkWidget* required = (d->target_entry != NULL) ? d->target_entry : d->name_entry;
-        if (required != NULL && bm_entry_is_blank(required)) {
-            gtk_widget_add_css_class(required, "error");
-            gtk_widget_grab_focus(required);
-            return; /* keep the dialog open */
-        }
-    }
-    d->response = response_id;
-    if (g_main_loop_is_running(d->loop)) {
-        g_main_loop_quit(d->loop);
-    }
-}
-
-static gint bm_run_modal(GtkWidget* dlg, BmDialog* d, GtkWidget* focus) {
-    d->loop = g_main_loop_new(NULL, FALSE);
-    d->response = APP_RESPONSE_CANCEL;
-    g_signal_connect(dlg, "response", G_CALLBACK(bm_on_dialog_response), d);
-    app_dialog_present(APP_DIALOG(dlg));
-    if (focus != NULL) {
-        gtk_widget_grab_focus(focus);
-    }
-    g_main_loop_run(d->loop);
-    g_main_loop_unref(d->loop);
-    return d->response;
-}
-
-static GtkWidget* bm_dialog_body(GtkWidget* dlg) {
-    GtkWidget* content = app_dialog_get_content_area(APP_DIALOG(dlg));
-    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-    gtk_widget_set_margin_top(box, 14);
-    gtk_widget_set_margin_bottom(box, 14);
-    gtk_widget_set_margin_start(box, 16);
-    gtk_widget_set_margin_end(box, 16);
-    gtk_box_append(GTK_BOX(content), box);
-    return box;
-}
-
-/* Simple message / confirmation dialog; returns TRUE when ok_label was chosen */
-static gboolean bm_message(AppData* app, const gchar* title, const gchar* message,
-                           const gchar* ok_label, const gchar* cancel_label) {
-    GtkWidget* dlg = app_dialog_new(title, app->window,
-                                    NULL, NULL);
-    if (cancel_label != NULL) {
-        app_dialog_add_button(APP_DIALOG(dlg), cancel_label, APP_RESPONSE_CANCEL);
-    }
-    app_dialog_add_button(APP_DIALOG(dlg), ok_label, APP_RESPONSE_OK);
-    app_dialog_set_default_response(APP_DIALOG(dlg), cancel_label != NULL ? APP_RESPONSE_CANCEL : APP_RESPONSE_OK);
-    GtkWidget* box = bm_dialog_body(dlg);
-    GtkWidget* label = gtk_label_new(message);
-    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
-    gtk_label_set_max_width_chars(GTK_LABEL(label), 60);
-    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
-    gtk_box_append(GTK_BOX(box), label);
-
-    BmDialog d = { NULL, APP_RESPONSE_CANCEL, NULL, NULL };
-    gint resp = bm_run_modal(dlg, &d, NULL);
-    app_dialog_destroy(APP_DIALOG(dlg));
-    return resp == APP_RESPONSE_OK;
-}
-
 /* Folder chooser entries: "Top level" + every folder except `exclude` and its subtree */
 static void bm_collect_folders(GNode* node, gint depth, GNode* exclude,
                                GPtrArray* nodes, GPtrArray* labels) {
@@ -589,89 +444,13 @@ static void bm_collect_folders(GNode* node, gint depth, GNode* exclude,
     }
 }
 
-static void bm_on_use_current_dir(GtkButton* btn, gpointer data) {
-    GtkWidget* entry = GTK_WIDGET(data);
-    const gchar* dir = (const gchar*)g_object_get_data(G_OBJECT(btn), "base-dir");
-    if (dir != NULL) {
-        gchar* shown = bm_display_location(dir);
-        gtk_editable_set_text(GTK_EDITABLE(entry), shown);
-        g_free(shown);
-    }
-}
-
-static void bm_on_entry_changed(GtkEditable* editable, gpointer data) {
-    (void)data;
-    gtk_widget_remove_css_class(GTK_WIDGET(editable), "error");
-}
-
-static GtkWidget* bm_field_label(const gchar* text) {
-    GtkWidget* label = gtk_label_new(text);
-    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
-    gtk_widget_add_css_class(label, "dim-label");
-    return label;
-}
-
-/* Add / edit dialog for a bookmark (is_folder FALSE) or a folder (is_folder TRUE).
- * Returns APP_RESPONSE_OK (outputs filled), APP_RESPONSE_REJECT (remove requested)
- * or another response for cancel. */
+/* bookmark_item_dialog() with the parent folder chosen among the folders
+ * outside `exclude`; *inout_icon is the folder icon */
 static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok_label,
                                gboolean is_folder, gboolean allow_remove,
                                const gchar* init_name, const gchar* init_target,
-                               GNode* init_parent, GNode* exclude,
+                               GNode* init_parent, GNode* exclude, const gchar** inout_icon,
                                gchar** out_name, gchar** out_target, GNode** out_parent) {
-    GtkWidget* dlg = app_dialog_new(title, app->window,
-                                    NULL, NULL);
-    if (allow_remove) {
-        GtkWidget* rm = app_dialog_add_button(APP_DIALOG(dlg), "_Remove Bookmark", APP_RESPONSE_REJECT);
-        gtk_widget_add_css_class(rm, "destructive-action");
-    }
-    app_dialog_add_button(APP_DIALOG(dlg), "_Cancel", APP_RESPONSE_CANCEL);
-    GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), ok_label, APP_RESPONSE_OK);
-    gtk_widget_add_css_class(ok, "suggested-action");
-    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
-    app_dialog_set_width(APP_DIALOG(dlg), 480);
-
-    GtkWidget* box = bm_dialog_body(dlg);
-
-    /* Name */
-    gtk_box_append(GTK_BOX(box), bm_field_label("Name"));
-    GtkWidget* name_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(name_entry),
-                                   is_folder ? "Folder name" : "Defaults to the location's name");
-    if (init_name != NULL) {
-        gtk_editable_set_text(GTK_EDITABLE(name_entry), init_name);
-    }
-    gtk_entry_set_activates_default(GTK_ENTRY(name_entry), TRUE);
-    g_signal_connect(name_entry, "changed", G_CALLBACK(bm_on_entry_changed), NULL);
-    gtk_box_append(GTK_BOX(box), name_entry);
-
-    /* Location (links only) */
-    GtkWidget* target_entry = NULL;
-    if (!is_folder) {
-        gtk_box_append(GTK_BOX(box), bm_field_label("Location"));
-        GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-        target_entry = gtk_entry_new();
-        gtk_widget_set_hexpand(target_entry, TRUE);
-        gtk_entry_set_placeholder_text(GTK_ENTRY(target_entry), "~/projects, /etc/hosts or https://…");
-        if (init_target != NULL) {
-            gchar* shown = bm_display_location(init_target);
-            gtk_editable_set_text(GTK_EDITABLE(target_entry), shown);
-            g_free(shown);
-        }
-        gtk_entry_set_activates_default(GTK_ENTRY(target_entry), TRUE);
-        g_signal_connect(target_entry, "changed", G_CALLBACK(bm_on_entry_changed), NULL);
-        gtk_box_append(GTK_BOX(row), target_entry);
-
-        GtkWidget* cur_btn = gtk_button_new_with_label("Current Directory");
-        gtk_widget_set_tooltip_text(cur_btn, app->base_dir);
-        g_object_set_data_full(G_OBJECT(cur_btn), "base-dir", g_strdup(app->base_dir), g_free);
-        g_signal_connect(cur_btn, "clicked", G_CALLBACK(bm_on_use_current_dir), target_entry);
-        gtk_box_append(GTK_BOX(row), cur_btn);
-        gtk_box_append(GTK_BOX(box), row);
-    }
-
-    /* Parent folder */
-    gtk_box_append(GTK_BOX(box), bm_field_label(is_folder ? "Parent folder" : "Folder"));
     GPtrArray* nodes = g_ptr_array_new();
     GPtrArray* labels = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(nodes, app->bookmarks);
@@ -685,32 +464,21 @@ static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok
         }
     }
     g_ptr_array_add(labels, NULL);
-    GtkWidget* folder_dd = gtk_drop_down_new_from_strings((const char* const*)labels->pdata);
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(folder_dd), selected);
-    gtk_box_append(GTK_BOX(box), folder_dd);
-
-    BmDialog d = { NULL, APP_RESPONSE_CANCEL, is_folder ? name_entry : NULL, target_entry };
-    GtkWidget* focus = (!is_folder && init_target == NULL) ? target_entry : name_entry;
-    gint resp = bm_run_modal(dlg, &d, focus);
-
+    BookmarkDialogSpec spec = {
+        title, ok_label, is_folder, allow_remove, init_name, init_target,
+        inout_icon != NULL ? *inout_icon : NULL, (const gchar* const*)labels->pdata, selected,
+    };
+    const gchar* icon = NULL;
+    guint idx = 0;
+    gint resp = bookmark_item_dialog(app, &spec, out_name, out_target, &icon, &idx);
     if (resp == APP_RESPONSE_OK) {
-        guint idx = gtk_drop_down_get_selected(GTK_DROP_DOWN(folder_dd));
         *out_parent = (idx < nodes->len) ? (GNode*)g_ptr_array_index(nodes, idx) : app->bookmarks;
-        *out_target = (target_entry != NULL)
-                          ? bm_normalize_target(gtk_editable_get_text(GTK_EDITABLE(target_entry)),
-                                                app->base_dir)
-                          : NULL;
-        gchar* name = g_strstrip(g_strdup(gtk_editable_get_text(GTK_EDITABLE(name_entry))));
-        if (name[0] == '\0') {
-            g_free(name);
-            name = bm_default_name(*out_target);
+        if (inout_icon != NULL && icon != NULL) {
+            *inout_icon = icon;
         }
-        *out_name = name;
     }
-
     g_ptr_array_unref(nodes);
     g_ptr_array_unref(labels);
-    app_dialog_destroy(APP_DIALOG(dlg));
     return resp;
 }
 
@@ -737,12 +505,12 @@ static void bm_after_change(AppData* app, guint select_id) {
 }
 
 static void bm_add_dialog(AppData* app, const gchar* init_target, GNode* parent) {
-    gchar* init_name = (init_target != NULL) ? bm_default_name(init_target) : NULL;
+    gchar* init_name = (init_target != NULL) ? bookmark_default_name(init_target) : NULL;
     gchar* name = NULL;
     gchar* target = NULL;
     GNode* out_parent = NULL;
     gint resp = bm_run_item_dialog(app, "Add Bookmark", "_Add", FALSE, FALSE,
-                                   init_name, init_target, parent, NULL,
+                                   init_name, init_target, parent, NULL, NULL,
                                    &name, &target, &out_parent);
     if (resp == APP_RESPONSE_OK && target != NULL && out_parent != NULL) {
         GNode* node = bm_new_node(app, FALSE, name, target);
@@ -775,7 +543,7 @@ static void bm_delete_node(AppData* app, GNode* node, gboolean confirm) {
         } else {
             msg = g_strdup_printf("Delete the bookmark “%s”?", it->name);
         }
-        gboolean ok = bm_message(app, it->is_folder ? "Delete Folder" : "Delete Bookmark", msg,
+        gboolean ok = bookmark_message(app, it->is_folder ? "Delete Folder" : "Delete Bookmark", msg,
                                  "_Delete", "_Cancel");
         g_free(msg);
         if (!ok) {
@@ -803,9 +571,10 @@ static void bm_edit_node(AppData* app, GNode* node, gboolean allow_remove) {
     gchar* name = NULL;
     gchar* target = NULL;
     GNode* out_parent = NULL;
+    const gchar* icon = it->icon;
     gint resp = bm_run_item_dialog(app, it->is_folder ? "Edit Folder" : "Edit Bookmark", "_Save",
                                    it->is_folder, allow_remove, it->name, it->target,
-                                   node->parent, it->is_folder ? node : NULL,
+                                   node->parent, it->is_folder ? node : NULL, &icon,
                                    &name, &target, &out_parent);
     if (resp == APP_RESPONSE_REJECT) {
         bm_delete_node(app, node, FALSE);
@@ -813,6 +582,7 @@ static void bm_edit_node(AppData* app, GNode* node, gboolean allow_remove) {
         g_free(it->name);
         it->name = name;
         name = NULL;
+        it->icon = icon;
         if (!it->is_folder && target != NULL) {
             g_free(it->target);
             it->target = target;
@@ -879,12 +649,14 @@ void bookmarks_new_folder(AppData* app) {
     gchar* name = NULL;
     gchar* target = NULL;
     GNode* out_parent = NULL;
+    const gchar* icon = BOOKMARK_FOLDER_ICON_DEFAULT;
     gint resp = bm_run_item_dialog(app, "New Bookmark Folder", "_Create", TRUE, FALSE,
-                                   NULL, NULL, bm_context_folder(app), NULL,
+                                   NULL, NULL, bm_context_folder(app), NULL, &icon,
                                    &name, &target, &out_parent);
     if (resp == APP_RESPONSE_OK && name != NULL && name[0] != '\0' && out_parent != NULL) {
         GNode* node = bm_new_node(app, TRUE, name, NULL);
         bm_item(node)->expanded = TRUE;
+        bm_item(node)->icon = icon;
         g_node_append(out_parent, node);
         if (bm_is_folder(out_parent)) {
             bm_item(out_parent)->expanded = TRUE;
@@ -1020,7 +792,7 @@ void bookmarks_activate_selected(AppData* app) {
         if (!g_app_info_launch_default_for_uri(it->target, NULL, &err)) {
             gchar* msg = g_strdup_printf("Could not open “%s”:\n%s", it->target,
                                          err != NULL ? err->message : "unknown error");
-            bm_message(app, "Open Bookmark", msg, "_Close", NULL);
+            bookmark_message(app, "Open Bookmark", msg, "_Close", NULL);
             g_free(msg);
         }
         g_clear_error(&err);
@@ -1030,7 +802,7 @@ void bookmarks_activate_selected(AppData* app) {
     if (!g_file_test(it->target, G_FILE_TEST_EXISTS)) {
         gchar* msg = g_strdup_printf("The location of “%s” no longer exists:\n%s\n\nRemove this bookmark?",
                                      it->name, it->target);
-        if (bm_message(app, "Missing Location", msg, "_Remove", "_Keep")) {
+        if (bookmark_message(app, "Missing Location", msg, "_Remove", "_Keep")) {
             bm_delete_node(app, node, FALSE);
         }
         g_free(msg);

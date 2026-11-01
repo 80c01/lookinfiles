@@ -278,7 +278,7 @@ gchar* preview_summary_container(ExplorerRow* row) {
         static const SummaryShortcut keys[] = {
             {"Enter / l", "Expand / collapse folder"},
             {"a / Shift+A", "Add bookmark / new folder here"},
-            {"F2 / r / e", "Edit folder"},
+            {"F2 / r / e", "Edit folder (name and icon)"},
             {"d / Delete", "Delete folder"},
             {"Shift+K / Shift+J", "Move folder up / down"},
         };

@@ -106,7 +106,7 @@ count) is dropped when the focus moves to another panel or tab.
 |---|---|
 | `Enter` / `Right` (Vim: also `l`; Emacs: `C-f`) | Open the bookmark (directory, file or URL) / expand the folder |
 | `a` / `Shift+A` | Add a bookmark / a folder (inside the selected folder) |
-| `F2` / `r` / `e` | Edit name, location and folder |
+| `F2` / `r` / `e` | Edit name, location and folder (a folder: name, icon and parent) |
 | `d` / `Delete` | Delete the selected bookmark or folder |
 | `Shift+K` / `Shift+J` | Move the selected item up / down |
 | `o` | Cycle the sort: A–Z / Z–A |

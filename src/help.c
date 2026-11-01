@@ -53,7 +53,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Bookmarks view", "l", "Open bookmark / expand folder", VI},
     {"Bookmarks view", "C-f", "Open bookmark / expand folder", EM},
     {"Bookmarks view", "a / Shift+A", "Add bookmark / new folder (in selected folder)", 0},
-    {"Bookmarks view", "F2 / r / e", "Edit selected: name, location and folder", 0},
+    {"Bookmarks view", "F2 / r / e", "Edit selected: name, location and folder (folder: name, icon and parent)", 0},
     {"Bookmarks view", "d / Delete", "Delete selected bookmark or folder", 0},
     {"Bookmarks view", "Shift+K / Shift+J", "Move selected item up / down", 0},
     {"Bookmarks view", "o", "Cycle sort: A-Z / Z-A", 0},

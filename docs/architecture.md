@@ -16,7 +16,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   binary; `file_kind_of_path()`). The preview
   detects the kind in its worker thread (`app->viewed_kind`): decide on the
   displayed file with `viewed_kind`, not with its name.
-- `notebook_icons` — the icons offered for notebooks (theme glyph names)
+- `notebook_icons` — the icons offered for notebooks and bookmark folders
+  (theme glyph names)
   and the mapping of the emoji stored by older versions.
 - `file_type_icons` — VS Code (Seti) file-type icons: `file_type_icon()`
   gives the glyph and colour of a file name, from the table
@@ -233,6 +234,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `explorer_tree_set_expanded()`), `"row-activated"` (double click). Rows are
   addressed by `ExplorerRow*`; positions count visible rows only.
   `explorer_tree_swap_state()` puts the content aside and shows another one.
+- `icon_picker` — a grid of toggle buttons to choose one theme glyph
+  (notebook and bookmark folder dialogs).
 - `dialog` — `AppDialog`, the modal dialog drawn inside the main window: a
   card over a dimmed layer (window-level `GtkOverlay` made in `main.c` with
   `app_dialog_window_overlay_new()`). GtkDialog-like API: `app_dialog_new()`,
@@ -326,6 +329,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `GtkFixed`; move / resize by dragging, pictures pasted (`Ctrl+V`) or dropped
   into `media/`; saved automatically, on close and at quit (never while the page
   is being destroyed). Not an editor tab: `app->editors` stays text only.
+- `bookmark_dialog` — the add / edit dialogs of the bookmarks view (name,
+  location or folder icon, parent folder) and the target helpers they share
+  with `bookmarks` (`bookmark_display_location()`, `bookmark_default_name()`).
 - `bookmark_icons` — bookmark link icons from the target's kind
   (`path_kind`, never read on the UI thread); relabels the rows and previews
   the selected link again once the kind is known.
