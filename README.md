@@ -143,7 +143,7 @@ together. Release history is in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-No license has been chosen yet; until one is added, the code may not be
-reused without the authors' permission. The bundled toolbar icons come from
+LookinFiles is released under the MIT License (see [LICENSE](LICENSE)).
+The bundled toolbar icons come from
 the GNOME Adwaita icon theme and keep their own license (CC-BY-SA 3.0 or
 LGPL 3, and CC-BY-SA 4.0; see [icons/COPYING](icons/COPYING)).
