@@ -21,7 +21,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `file_type_icons_table.h` generated with the glyphs by
   `tools/gen_file_icons.py`. Shown by `file_type_image_new()` /
   `file_type_image_set()` (`icons.c`) wherever a file is listed (explorer
-  tree, editor tabs, bookmarks, Quick Open, references), and by
+  tree, editor tabs, bookmarks, Quick Open, references; the other explorer
+  rows get a matching glyph from `glyph_image_set()`), and by
   `file_type_paintable()` inside text (directory preview).
 - `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
   `git_read_branch()`, `scan_git_statuses()`, `git_read_head_blob()` (spawns git: worker thread only).

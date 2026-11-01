@@ -20,6 +20,11 @@ GtkWidget* icon_label_new(const gchar* icon_name, const gchar* text);
 GtkWidget* file_type_image_new(void);
 void file_type_image_set(GtkWidget* image, const gchar* name, gboolean is_dir);
 
+/* Fixed glyph in the same style, for explorer rows that are not files:
+ * "folder", "notebook", "trash", "remote", "remote-connected", "link" (URL),
+ * "missing" (target not found), "unknown" (target not checked yet) */
+void glyph_image_set(GtkWidget* image, const gchar* glyph);
+
 /* Same icon in an icon + text widget for notebook tab headers; the label is
  * the box's last child */
 GtkWidget* file_type_label_new(const gchar* name, const gchar* text);

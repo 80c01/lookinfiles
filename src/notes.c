@@ -906,6 +906,23 @@ static void notes_notice(AppData* app, const gchar* title, const gchar* message)
 /* Explorer Rows                                                             */
 /* ------------------------------------------------------------------------- */
 
+/* A notebook row shows the emoji its user chose, else the notebook glyph
+ * ("📓" is the default icon, not a choice) */
+static void apply_notebook_icon(ExplorerRow* row, const NotebookItem* nb) {
+    gboolean custom = nb->icon != NULL && nb->icon[0] != '\0' && g_strcmp0(nb->icon, "📓") != 0;
+    gchar* label = custom ? g_strdup_printf("%s %s", nb->icon, nb->name) : g_strdup(nb->name);
+    explorer_row_set_glyph(row, custom ? NULL : "notebook");
+    explorer_row_set_label(row, label);
+    g_free(label);
+}
+
+/* A note shows the VS Code icon of its type's extension (.md, .org...) */
+static void apply_note_icon(ExplorerRow* row, NoteType type) {
+    gchar* name = g_strconcat("note", note_type_ext(type), NULL);
+    explorer_row_set_icon_name(row, name);
+    g_free(name);
+}
+
 void notes_append_rows(ExplorerRow* root, AppData* app) {
     if (root == NULL || app == NULL || app->sidebar_view != SIDEBAR_VIEW_NOTES) {
         return;
@@ -916,10 +933,8 @@ void notes_append_rows(ExplorerRow* root, AppData* app) {
     /* 1. Notebooks */
     for (GList* l = mgr->notebooks; l != NULL; l = l->next) {
         NotebookItem* nb = (NotebookItem*)l->data;
-        const gchar* icon = (nb->icon != NULL && nb->icon[0] != '\0') ? nb->icon : "📓";
-        gchar* label = g_strdup_printf("%s %s", icon, nb->name);
-        ExplorerRow* nb_row = explorer_row_append_container(root, "notebook", nb->name, label, nb->path);
-        g_free(label);
+        ExplorerRow* nb_row = explorer_row_append_container(root, "notebook", nb->name, nb->name, nb->path);
+        apply_notebook_icon(nb_row, nb);
         guint n_notes = g_list_length(nb->notes);
         if (n_notes > 0) {
             gchar* badge = g_strdup_printf("<span foreground=\"%s\">%u</span>", palette_color(PAL_FG_FAINT), n_notes);
@@ -932,9 +947,8 @@ void notes_append_rows(ExplorerRow* root, AppData* app) {
         } else {
             for (GList* nl = nb->notes; nl != NULL; nl = nl->next) {
                 NoteItem* note = (NoteItem*)nl->data;
-                gchar* nlabel = g_strdup_printf("%s %s", note_type_icon(note->type), note->title);
-                ExplorerRow* row = explorer_row_append(nb_row, "note", note->title, nlabel, note->path);
-                g_free(nlabel);
+                ExplorerRow* row = explorer_row_append(nb_row, "note", note->title, note->title, note->path);
+                apply_note_icon(row, note->type);
                 const gchar* badge = note_type_badge(note->type);
                 PaletteRole badge_role = (note->type == NOTE_TYPE_ORG)      ? PAL_SYN_CONTROL
                                          : (note->type == NOTE_TYPE_CANVAS) ? PAL_SYN_FUNCTION
@@ -952,8 +966,9 @@ void notes_append_rows(ExplorerRow* root, AppData* app) {
     /* 2. Trash Bin */
     gchar* trash_dir = notes_get_trash_dir();
     guint n_trash = g_list_length(mgr->trash);
-    gchar* t_label = g_strdup_printf("🗑 Trash%s", n_trash == 0 ? " (empty)" : "");
+    gchar* t_label = g_strdup_printf("Trash%s", n_trash == 0 ? " (empty)" : "");
     ExplorerRow* trash_row = explorer_row_append_container(root, "trash", "Trash", t_label, trash_dir);
+    explorer_row_set_glyph(trash_row, "trash");
     g_free(trash_dir);
     g_free(t_label);
     if (n_trash > 0) {
@@ -967,13 +982,12 @@ void notes_append_rows(ExplorerRow* root, AppData* app) {
     } else {
         for (GList* tl = mgr->trash; tl != NULL; tl = tl->next) {
             TrashNoteItem* tnote = (TrashNoteItem*)tl->data;
-            gchar* nlabel = g_strdup_printf("%s %s", note_type_icon(tnote->type), tnote->title);
             gchar* origin_badge = g_markup_printf_escaped("<span foreground=\"%s\" size=\"small\">from %s</span>",
                                                           palette_color(PAL_FG_FAINT),
                                                           tnote->original_nb ? tnote->original_nb : "General");
-            ExplorerRow* row = explorer_row_append(trash_row, "trash_note", tnote->title, nlabel, tnote->path);
+            ExplorerRow* row = explorer_row_append(trash_row, "trash_note", tnote->title, tnote->title, tnote->path);
+            apply_note_icon(row, tnote->type);
             explorer_row_set_badge(row, origin_badge);
-            g_free(nlabel);
             g_free(origin_badge);
         }
     }
@@ -1016,10 +1030,7 @@ gboolean notes_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expan
             if (g_strcmp0(nb->name, row->name) == 0) {
                 nb->expanded = expanded;
                 notes_save(app);
-                const gchar* icon = (nb->icon != NULL && nb->icon[0] != '\0') ? nb->icon : "📓";
-                gchar* label = g_strdup_printf("%s %s", icon, nb->name);
-                explorer_row_set_label(row, label);
-                g_free(label);
+                apply_notebook_icon(row, nb);
                 break;
             }
         }

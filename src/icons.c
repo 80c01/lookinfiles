@@ -169,44 +169,47 @@ GtkWidget* icon_button_new(const gchar* icon_name, const gchar* tooltip) {
     return button;
 }
 
-/* Bundled glyph of a file-type icon, cached by icon name. Without SVG
- * support, the generic file or folder icon built into GTK. */
-static GIcon* file_type_gicon(const gchar* icon, gboolean is_dir) {
+/* Bundled icon lookin-<bundled>-symbolic, cached by name. Without SVG
+ * support, fallback-symbolic (an icon built into GTK). */
+static GIcon* bundled_gicon(const gchar* bundled, const gchar* fallback) {
     static GHashTable* cache = NULL;
     if (cache == NULL) {
         cache = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     }
-    GIcon* gicon = g_hash_table_lookup(cache, icon);
+    GIcon* gicon = g_hash_table_lookup(cache, bundled);
     if (gicon != NULL) {
         return gicon;
     }
     GdkDisplay* display = gdk_display_get_default();
     register_bundled_icons(display);
-    gchar* bundled = g_strconcat("lookin-ft-", icon, "-symbolic", NULL);
+    gchar* name = g_strconcat("lookin-", bundled, "-symbolic", NULL);
     if (display != NULL && svg_supported() &&
-        gtk_icon_theme_has_icon(gtk_icon_theme_get_for_display(display), bundled)) {
-        gicon = g_themed_icon_new(bundled);
+        gtk_icon_theme_has_icon(gtk_icon_theme_get_for_display(display), name)) {
+        gicon = g_themed_icon_new(name);
     } else {
-        gicon = g_themed_icon_new(is_dir ? "folder-symbolic" : "text-x-generic-symbolic");
+        gchar* fb = g_strconcat(fallback, "-symbolic", NULL);
+        gicon = g_themed_icon_new(fb);
+        g_free(fb);
     }
-    g_free(bundled);
-    g_hash_table_insert(cache, g_strdup(icon), gicon);
+    g_free(name);
+    g_hash_table_insert(cache, g_strdup(bundled), gicon);
     return gicon;
 }
 
-GtkWidget* file_type_image_new(void) {
-    GtkWidget* image = gtk_image_new();
-    gtk_widget_add_css_class(image, "file-type-icon");
-    return image;
+/* Glyph of a file-type icon (lookin-ft-<icon>) */
+static GIcon* file_type_gicon(const gchar* icon, gboolean is_dir) {
+    gchar* bundled = g_strconcat("ft-", icon, NULL);
+    GIcon* gicon = bundled_gicon(bundled, is_dir ? "folder" : "text-x-generic");
+    g_free(bundled);
+    return gicon;
 }
 
-void file_type_image_set(GtkWidget* image, const gchar* name, gboolean is_dir) {
-    FileTypeIcon ft = file_type_icon(name, is_dir);
-    GIcon* gicon = file_type_gicon(ft.icon, is_dir);
+/* Show gicon in image, coloured by the CSS class ft-<color> (theme.c) */
+static void set_coloured_image(GtkWidget* image, GIcon* gicon, const gchar* color) {
     if (gtk_image_get_gicon(GTK_IMAGE(image)) != gicon) {
         gtk_image_set_from_gicon(GTK_IMAGE(image), gicon);
     }
-    gchar* cls = g_strconcat("ft-", ft.color, NULL);
+    gchar* cls = g_strconcat("ft-", color, NULL);
     const gchar* old = g_object_get_data(G_OBJECT(image), "ft-class");
     if (g_strcmp0(old, cls) == 0) {
         g_free(cls);
@@ -217,6 +220,47 @@ void file_type_image_set(GtkWidget* image, const gchar* name, gboolean is_dir) {
     }
     gtk_widget_add_css_class(image, cls);
     g_object_set_data_full(G_OBJECT(image), "ft-class", cls, g_free);
+}
+
+GtkWidget* file_type_image_new(void) {
+    GtkWidget* image = gtk_image_new();
+    gtk_widget_add_css_class(image, "file-type-icon");
+    return image;
+}
+
+void file_type_image_set(GtkWidget* image, const gchar* name, gboolean is_dir) {
+    FileTypeIcon ft = file_type_icon(name, is_dir);
+    set_coloured_image(image, file_type_gicon(ft.icon, is_dir), ft.color);
+}
+
+typedef struct {
+    const gchar* glyph;
+    const gchar* bundled;  /* lookin-<bundled>-symbolic */
+    const gchar* color;    /* file-type icon colour (palette role icon_<color>) */
+    const gchar* fallback; /* built into GTK */
+} RowGlyph;
+
+/* Seti glyphs where Seti has one, current Adwaita symbolic icons otherwise */
+static const RowGlyph ROW_GLYPHS[] = {
+    {"folder", "ft-folder", "grey_light", "folder"},
+    {"notebook", "ft-notebook", "grey_light", "folder"},
+    {"trash", "user-trash", "grey_light", "user-trash"},
+    {"remote", "network-server", "grey_light", "network-server"},
+    {"remote-connected", "network-server", "green", "network-server"},
+    {"link", "ft-html", "blue", "text-x-generic"},
+    {"missing", "dialog-warning", "yellow", "dialog-question"},
+    {"unknown", "ft-default", "white", "text-x-generic"},
+};
+
+void glyph_image_set(GtkWidget* image, const gchar* glyph) {
+    const RowGlyph* g = &ROW_GLYPHS[G_N_ELEMENTS(ROW_GLYPHS) - 1];
+    for (gsize i = 0; i < G_N_ELEMENTS(ROW_GLYPHS); i++) {
+        if (g_strcmp0(ROW_GLYPHS[i].glyph, glyph) == 0) {
+            g = &ROW_GLYPHS[i];
+            break;
+        }
+    }
+    set_coloured_image(image, bundled_gicon(g->bundled, g->fallback), g->color);
 }
 
 GtkWidget* file_type_label_new(const gchar* name, const gchar* text) {

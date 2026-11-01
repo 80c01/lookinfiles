@@ -27,6 +27,7 @@ static void explorer_row_finalize(GObject* object) {
     g_free(row->name);
     g_free(row->label);
     g_free(row->icon_name);
+    g_free(row->glyph);
     g_free(row->path);
     g_free(row->badge);
     G_OBJECT_CLASS(explorer_row_parent_class)->finalize(object);
@@ -44,6 +45,7 @@ static void explorer_row_init(ExplorerRow* row) {
     row->name = g_strdup("");
     row->label = g_strdup("");
     row->icon_name = g_strdup("");
+    row->glyph = g_strdup("");
     row->path = g_strdup("");
     row->badge = g_strdup("");
     row->loaded = TRUE;
@@ -186,6 +188,14 @@ void explorer_row_set_icon_name(ExplorerRow* row, const gchar* icon_name) {
     g_return_if_fail(EXPLORER_IS_ROW(row));
     if (g_strcmp0(row->icon_name, icon_name != NULL ? icon_name : "") != 0) {
         set_string(&row->icon_name, icon_name);
+        g_signal_emit(row, signals[SIGNAL_CHANGED], 0);
+    }
+}
+
+void explorer_row_set_glyph(ExplorerRow* row, const gchar* glyph) {
+    g_return_if_fail(EXPLORER_IS_ROW(row));
+    if (g_strcmp0(row->glyph, glyph != NULL ? glyph : "") != 0) {
+        set_string(&row->glyph, glyph);
         g_signal_emit(row, signals[SIGNAL_CHANGED], 0);
     }
 }

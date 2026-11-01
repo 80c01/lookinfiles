@@ -56,12 +56,14 @@ static void render_row(GtkWidget* expander, ExplorerRow* row) {
     gboolean has_badge = row->badge[0] != '\0';
     gboolean inline_badge = explorer_row_is(row, "bookmark") || explorer_row_is(row, "remote");
 
-    /* Files and links to files show their VS Code file-type icon; folders
-     * have none, as in VS Code; other rows have an emoji in their label */
-    gboolean has_icon = row->icon_name[0] != '\0';
+    /* Files, notes and links to files show their VS Code file-type icon,
+     * other rows a glyph in the same style (folder, trash, server...) */
+    gboolean has_icon = row->icon_name[0] != '\0' || row->glyph[0] != '\0';
     gtk_widget_set_visible(icon, has_icon);
-    if (has_icon) {
+    if (row->icon_name[0] != '\0') {
         file_type_image_set(icon, row->icon_name, FALSE);
+    } else if (has_icon) {
+        glyph_image_set(icon, row->glyph);
     }
 
     gchar* name_esc = g_markup_escape_text(row->label, -1);

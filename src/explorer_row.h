@@ -23,9 +23,11 @@ struct _ExplorerRow {
     gchar* type;          /* "dir", "file", "bookmark", "bm_folder", "notebook", "note",
                            * "trash", "trash_note", "buffer", "remote", "-" (placeholder) */
     gchar* name;          /* raw file, bookmark, note... name */
-    gchar* label;         /* display label: the name, after an emoji unless icon_name is set */
+    gchar* label;         /* display label: the name (after an emoji when the row has
+                           * neither icon_name nor glyph, e.g. a custom notebook icon) */
     gchar* icon_name;     /* file name whose VS Code file-type icon the view draws before
-                           * the label (files, links to files), "" for none */
+                           * the label (files, notes, links to files), "" for none */
+    gchar* glyph;         /* otherwise a fixed glyph (icons.h: "folder", "trash"...), "" for none */
     gchar* path;          /* absolute path (or bookmark target), "" if none */
     gchar* badge;         /* Pango markup after the name: git status, count, target */
     gboolean loaded;      /* directory rows: children read from disk */
@@ -79,6 +81,7 @@ gboolean explorer_row_is(ExplorerRow* row, const gchar* type);
 void explorer_row_set_label(ExplorerRow* row, const gchar* label);
 void explorer_row_set_badge(ExplorerRow* row, const gchar* badge);
 void explorer_row_set_icon_name(ExplorerRow* row, const gchar* icon_name);
+void explorer_row_set_glyph(ExplorerRow* row, const gchar* glyph);
 void explorer_row_set_loaded(ExplorerRow* row, gboolean loaded);
 void explorer_row_set_bm_id(ExplorerRow* row, guint id);
 

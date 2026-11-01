@@ -59,9 +59,11 @@ Check these before adding or changing an action, a tooltip or a dialog:
   in other editors. Files show the VS Code (Seti)
   file-type icons wherever they are listed (`file_type_image_set()`, or
   `file_type_paintable()` inside text), coloured by the `icon_*` palette
-  roles; folders have none in the tree, as in VS Code, and the folder glyph
-  in flat lists (Quick Open, directory preview). Emoji are kept only for
-  the other rows (notes, bookmark folders, links to URLs...). The CSS colours `label`
+  roles. Every explorer view looks the same: the other rows get a glyph in
+  the same style (`glyph_image_set()`: folder, notebook, trash, server, URL
+  link, missing target), set with `explorer_row_set_glyph()`; files and
+  notes set `explorer_row_set_icon_name()`. Labels hold the bare name. The
+  only emoji left in the tree is the icon a user chose for a notebook. The CSS colours `label`
   and `image` nodes together (symbolic icons follow the text colour).
   The icons are bundled in the binary (`icons/`, compiled as a GResource by
   the Makefile, licence in `icons/COPYING`) so they render the same with any

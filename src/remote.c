@@ -26,7 +26,7 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
     }
 
     if (app->remotes == NULL) {
-        explorer_row_append(root, "-", "", "🌐 No remote machines yet — press a to add one", "");
+        explorer_row_append(root, "-", "", "No remote machines yet — press a to add one", "");
         return;
     }
 
@@ -36,8 +36,6 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
             continue;
         }
 
-        const gchar* icon = rm->is_connected ? "🟢 🌐" : "🌐";
-        gchar* label = g_strdup_printf("%s %s", icon, rm->name ? rm->name : rm->host);
 
         gchar* target = NULL;
         if (rm->user != NULL && rm->user[0] != '\0') {
@@ -56,10 +54,11 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
         }
 
         /* The row path holds the machine id (see remote_get_selected()) */
-        ExplorerRow* row = explorer_row_append(root, "remote", rm->name ? rm->name : rm->host, label, rm->id);
+        const gchar* name = rm->name ? rm->name : rm->host;
+        ExplorerRow* row = explorer_row_append(root, "remote", name, name, rm->id);
+        explorer_row_set_glyph(row, rm->is_connected ? "remote-connected" : "remote");
         explorer_row_set_badge(row, status_markup);
 
-        g_free(label);
         g_free(target);
         g_free(status_markup);
     }

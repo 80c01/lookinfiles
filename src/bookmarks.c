@@ -350,9 +350,8 @@ static void bm_append_children(AppData* app, ExplorerRow* parent, GNode* node) {
     for (GNode* c = node->children; c != NULL; c = c->next) {
         BookmarkItem* it = bm_item(c);
         if (it->is_folder) {
-            gchar* label = g_strdup_printf("%s %s", it->expanded ? "📂" : "📁", it->name);
-            ExplorerRow* row = explorer_row_append_container(parent, "bm_folder", it->name, label, "");
-            g_free(label);
+            ExplorerRow* row = explorer_row_append_container(parent, "bm_folder", it->name, it->name, "");
+            explorer_row_set_glyph(row, "folder");
             guint n = g_node_n_children(c);
             if (n > 0) {
                 gchar* badge = g_strdup_printf("<span foreground=\"%s\">%u</span>", palette_color(PAL_FG_FAINT), n);
@@ -480,9 +479,6 @@ gboolean bookmarks_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean e
             it->expanded = expanded;
             bookmarks_save(app);
         }
-        gchar* label = g_strdup_printf("%s %s", expanded ? "📂" : "📁", it->name);
-        explorer_row_set_label(row, label);
-        g_free(label);
     }
     return TRUE;
 }
