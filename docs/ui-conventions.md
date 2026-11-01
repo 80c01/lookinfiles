@@ -54,7 +54,9 @@ Check these before adding or changing an action, a tooltip or a dialog:
 - **Icons**: buttons and fixed tab headers use GTK theme icons through
   `icons.c` (`icon_button_new()`, `icon_button_set_content()`,
   `icon_label_new()`), never emoji or text symbols; use `edit-delete` for a
-  permanent delete and `user-trash` for a move to trash. Emoji are kept only
+  permanent delete and `user-trash` for a move to trash. Exception: the
+  option toggles of Search in Files show text (`Aa`, `ab`, `.*`, `a…z`), as
+  in other editors. Emoji are kept only
   for file-type icons in the tree and editor tabs. The CSS colours `label`
   and `image` nodes together (symbolic icons follow the text colour).
   The icons are bundled in the binary (`icons/`, compiled as a GResource by

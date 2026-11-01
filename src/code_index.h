@@ -30,6 +30,14 @@ GPtrArray* code_index_project_files(const gchar* root, CodeLang family, GCancell
 /* Same, every file whatever its language (quick open, text search) */
 GPtrArray* code_index_all_files(const gchar* root, GCancellable* cancellable, gboolean* truncated);
 
+/* rel (relative to the root) is listed */
+typedef gboolean (*CodeIndexKeepFunc)(const gchar* rel, gpointer data);
+
+/* Every file for which keep (NULL: all) returns TRUE; with ignored, also the
+ * files git ignores (outside git: hidden and build folders) */
+GPtrArray* code_index_some_files(const gchar* root, gboolean ignored, CodeIndexKeepFunc keep, gpointer keep_data,
+                                 GCancellable* cancellable, gboolean* truncated);
+
 typedef struct {
     gchar* path;          /* absolute path */
     CodeSymbol* symbol;

@@ -150,6 +150,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `CodeQuery.tags`, open buffers are still scanned.
 - `fuzzy_match` — fuzzy scoring of paths for quick open (file name, word
   starts and consecutive characters first) and the matched positions.
+- `path_globs` — comma-separated path patterns matched like `.gitignore`
+  (name at any depth, anchored, folders only), for the files to include /
+  exclude of a search in files.
 - `text_search` — search of a text in a project's files (literal, match
   case, whole word, regex through `GRegex`, or letters in order; binary and
   large files skipped, bounded), as `CodeReference`s with their length.
@@ -348,8 +351,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   tab; `editor_detach_tabs()` and `editor_current_tab()` only touch editor
   pages, wherever they are), from the server or `code_index_references()`;
   also the Search page (`app->search_page`) of `project_search`, next to it.
-- `project_search` — Ctrl+Shift+F: asks for the text, runs `text_search`
-  over `code_index_all_files()` in a worker (a new search cancels the
+- `project_search` — Ctrl+Shift+F: asks for the text, its options and the
+  files to include / exclude (`path_globs`), runs `text_search` over
+  `code_index_some_files()` in a worker (a new search cancels the
   previous one) and lists the results in the Search page of `code_refs`
   (`code_refs_show_search()`, same rows and keys as References).
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.

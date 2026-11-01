@@ -91,6 +91,7 @@ note_types:
 canvas_doc:
 user_guide:
 fuzzy_match:
+path_globs:
 text_search:code_index
 session_store:app_paths
 palette:

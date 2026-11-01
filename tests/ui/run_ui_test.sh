@@ -340,10 +340,14 @@ key ctrl+p; xdotool type --delay 60 "plan"
                         shot quick_open_filtered
 key Escape;             shot quick_open_closed
 # Search in files options: an invalid regex disables Search; letters in
-# order greys out whole word; cancelled, the options are left as they were
+# order greys out whole word; files to include / exclude, ignored files;
+# cancelled, the options are left as they were
 key ctrl+shift+f; xdotool type --delay 60 "TOD("; key alt+r
                         shot search_in_files_regex_error
 key alt+m alt+w alt+l;  shot search_in_files_options
+key alt+n; xdotool type --delay 60 "*.md, src/"
+key alt+x; xdotool type --delay 60 "tests/"; key alt+i
+                        shot search_in_files_filters
 key alt+l alt+w alt+m Escape
                         shot search_in_files_cancelled
 key ctrl+shift+f; xdotool type --delay 60 "TODO"; key Return

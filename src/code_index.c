@@ -26,11 +26,23 @@ static gboolean in_family(const gchar* path, CodeLang family) {
     return lang != CODE_LANG_NONE && code_lang_family(lang) == family;
 }
 
-/* Add root/rel when it belongs to family; FALSE when the file limit is hit */
+/* Which files are listed */
+typedef struct {
+    CodeLang family;
+    gboolean ignored; /* also the files git ignores, hidden and build folders */
+    CodeIndexKeepFunc keep;
+    gpointer keep_data;
+} Listing;
+
+static gboolean kept(const Listing* l, const gchar* rel) {
+    return in_family(rel, l->family) && (l->keep == NULL || l->keep(rel, l->keep_data));
+}
+
+/* Add root/rel when it is kept; FALSE when the file limit is hit */
 static gboolean add_file(GPtrArray* out, const gchar* root, const gchar* rel, gsize rel_len,
-                         CodeLang family, gboolean* truncated) {
+                         const Listing* l, gboolean* truncated) {
     gchar* name = g_strndup(rel, rel_len);
-    if (in_family(name, family)) {
+    if (kept(l, name)) {
         if (out->len >= CODE_INDEX_MAX_FILES) {
             if (truncated != NULL) *truncated = TRUE;
             g_free(name);
@@ -43,14 +55,15 @@ static gboolean add_file(GPtrArray* out, const gchar* root, const gchar* rel, gs
 }
 
 /* `git ls-files`: FALSE when root is not a work tree or git is missing */
-static gboolean git_files(const gchar* root, CodeLang family, GPtrArray* out, GCancellable* cancellable,
+static gboolean git_files(const gchar* root, const Listing* l, GPtrArray* out, GCancellable* cancellable,
                           gboolean* truncated) {
     GSubprocessLauncher* launcher =
         g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_SILENCE);
     g_subprocess_launcher_set_cwd(launcher, root);
     GError* err = NULL;
-    GSubprocess* proc = g_subprocess_launcher_spawn(launcher, &err, "git", "ls-files", "-z", "--cached",
-                                                    "--others", "--exclude-standard", NULL);
+    /* Without --exclude-standard, --others lists the ignored files too */
+    GSubprocess* proc = g_subprocess_launcher_spawn(launcher, &err, "git", "ls-files", "-z", "--cached", "--others",
+                                                    l->ignored ? NULL : "--exclude-standard", NULL);
     g_object_unref(launcher);
     if (proc == NULL) {
         g_clear_error(&err);
@@ -75,7 +88,7 @@ static gboolean git_files(const gchar* root, CodeLang family, GPtrArray* out, GC
             /* --cached and --others can list a file twice (merge conflicts) */
             gchar* rel = g_strndup(data + start, i - start);
             if (g_hash_table_add(seen, rel) &&
-                !add_file(out, root, data + start, i - start, family, truncated)) {
+                !add_file(out, root, data + start, i - start, l, truncated)) {
                 break;
             }
         }
@@ -86,10 +99,12 @@ static gboolean git_files(const gchar* root, CodeLang family, GPtrArray* out, GC
     return TRUE;
 }
 
-static gboolean skipped_dir(const gchar* name) {
+static gboolean skipped_dir(const gchar* name, gboolean ignored) {
     static const gchar* const SKIP[] = {
         "node_modules", "build", "target", "dist", "out", "__pycache__", "venv", "vendor", "_build",
     };
+    if (strcmp(name, ".git") == 0) return TRUE;
+    if (ignored) return FALSE;
     if (name[0] == '.') return TRUE;
     for (gsize i = 0; i < G_N_ELEMENTS(SKIP); i++) {
         if (strcmp(name, SKIP[i]) == 0) return TRUE;
@@ -97,8 +112,15 @@ static gboolean skipped_dir(const gchar* name) {
     return FALSE;
 }
 
-/* Directory walk; FALSE when the file limit is hit */
-static gboolean walk(const gchar* dir, gint depth, CodeLang family, GPtrArray* out,
+/* full relative to root (a directory above it) */
+static const gchar* relative_to(const gchar* root, const gchar* full) {
+    const gchar* rel = full + strlen(root);
+    while (*rel == '/') rel++;
+    return rel;
+}
+
+/* Directory walk under root; FALSE when the file limit is hit */
+static gboolean walk(const gchar* root, const gchar* dir, gint depth, const Listing* l, GPtrArray* out,
                      GCancellable* cancellable, gboolean* truncated) {
     if (depth > 12 || g_cancellable_is_cancelled(cancellable)) return TRUE;
     GDir* d = g_dir_open(dir, 0, NULL);
@@ -110,8 +132,8 @@ static gboolean walk(const gchar* dir, gint depth, CodeLang family, GPtrArray* o
         if (g_file_test(full, G_FILE_TEST_IS_SYMLINK)) {
             /* Symbolic links are not followed (loops) */
         } else if (g_file_test(full, G_FILE_TEST_IS_DIR)) {
-            if (!skipped_dir(name)) go_on = walk(full, depth + 1, family, out, cancellable, truncated);
-        } else if (in_family(name, family)) {
+            if (!skipped_dir(name, l->ignored)) go_on = walk(root, full, depth + 1, l, out, cancellable, truncated);
+        } else if (kept(l, relative_to(root, full))) {
             if (out->len >= CODE_INDEX_MAX_FILES) {
                 if (truncated != NULL) *truncated = TRUE;
                 go_on = FALSE;
@@ -125,17 +147,17 @@ static gboolean walk(const gchar* dir, gint depth, CodeLang family, GPtrArray* o
     return go_on;
 }
 
-/* Files of family (CODE_LANG_NONE: all) under root */
-static GPtrArray* list_files(const gchar* root, CodeLang family, GCancellable* cancellable, gboolean* truncated) {
+/* Files of l->family (CODE_LANG_NONE: all) under root */
+static GPtrArray* list_files(const gchar* root, const Listing* l, GCancellable* cancellable, gboolean* truncated) {
     GPtrArray* out = g_ptr_array_new_with_free_func(g_free);
     if (truncated != NULL) *truncated = FALSE;
     if (root == NULL) return out;
     gchar* git_root = find_git_root(root);
     gboolean in_git = git_root != NULL && strcmp(git_root, root) == 0;
     g_free(git_root);
-    if (!in_git || !git_files(root, family, out, cancellable, truncated)) {
+    if (!in_git || !git_files(root, l, out, cancellable, truncated)) {
         g_ptr_array_set_size(out, 0);
-        walk(root, 0, family, out, cancellable, truncated);
+        walk(root, root, 0, l, out, cancellable, truncated);
     }
     return out;
 }
@@ -146,11 +168,18 @@ GPtrArray* code_index_project_files(const gchar* root, CodeLang family, GCancell
         if (truncated != NULL) *truncated = FALSE;
         return g_ptr_array_new_with_free_func(g_free);
     }
-    return list_files(root, family, cancellable, truncated);
+    Listing l = {family, FALSE, NULL, NULL};
+    return list_files(root, &l, cancellable, truncated);
 }
 
 GPtrArray* code_index_all_files(const gchar* root, GCancellable* cancellable, gboolean* truncated) {
-    return list_files(root, CODE_LANG_NONE, cancellable, truncated);
+    return code_index_some_files(root, FALSE, NULL, NULL, cancellable, truncated);
+}
+
+GPtrArray* code_index_some_files(const gchar* root, gboolean ignored, CodeIndexKeepFunc keep, gpointer keep_data,
+                                 GCancellable* cancellable, gboolean* truncated) {
+    Listing l = {CODE_LANG_NONE, ignored, keep, keep_data};
+    return list_files(root, &l, cancellable, truncated);
 }
 
 void code_match_free(CodeMatch* match) {

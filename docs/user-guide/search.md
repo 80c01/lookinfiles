@@ -35,18 +35,26 @@ recent first, from every session. Type to filter.
 project, in the background. The selection of the current editor tab (or
 your last search) is filled in.
 
-- The search ignores the case. Options under the text change how it
-  matches; they are kept for the next search:
+- The search ignores the case. The buttons right of the text change how
+  it matches:
 
-  | Option | Key | Effect |
+  | Button | Key | Effect |
   |---|---|---|
-  | Match case | `Alt+M` | `Total` no longer finds `total` |
-  | Whole word | `Alt+W` | `foo` no longer finds `foobar` |
-  | Regular expression | `Alt+R` | PCRE syntax (`get_\w+`, `^#include`), one line at a time; an invalid expression is shown under the text |
-  | Letters in order | `Alt+L` | the letters do not need to be next to each other (`edvim` finds `editor_vim`); spaces are ignored, the shortest part of each line is shown |
+  | `Aa` Match case | `Alt+M` | `Total` no longer finds `total` |
+  | `ab` Whole word | `Alt+W` | `foo` no longer finds `foobar` |
+  | `.*` Regular expression | `Alt+R` | PCRE syntax (`get_\w+`, `^#include`), one line at a time; an invalid expression is shown under the text |
+  | `a…z` Letters in order | `Alt+L` | the letters do not need to be next to each other (`edvim` finds `editor_vim`); spaces are ignored, the shortest part of each line is shown |
 
   Regular expression and letters in order exclude each other; whole word
   does not apply to letters in order.
+- **Files to include** (`Alt+N`) and **Files to exclude** (`Alt+X`) take
+  patterns separated by commas, as in `.gitignore`: `*.c` or `tests` match
+  a name at any depth, `src/ui` or `/build` match from the project root,
+  `build/` matches folders only; `*` also crosses folders. Empty: every
+  file.
+- **Include ignored files** (`Alt+I`) also searches the files git ignores
+  (outside git: hidden and build folders).
+- The options and the patterns are kept for the next search.
 - The results go to a **Search** tab, grouped by file, with the matching
   lines. `Enter` or a double click opens one at its line; the cross closes
   the tab.
