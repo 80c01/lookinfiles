@@ -3,8 +3,9 @@
 
 /* Saved workspace layouts: named panel arrangements the user saves and picks
  * from a list (layouts.c). A layout holds panel visibility, split sizes, the
- * preview/terminal orientation, the dedicated editor panel and the terminal
- * pane tree; not the folder, view or open files. Applying one never changes
+ * preview/terminal orientation, the dedicated editor panel with its splits
+ * and terminal tabs, and the terminal pane tree; not the folder, view or
+ * open files. Applying one never changes
  * the default view of new workspaces, except the default layout below.
  *
  * The default layout is the panel arrangement new workspaces open with. It is
@@ -13,6 +14,9 @@
  *
  * Pure data and file I/O (GKeyFile), no widgets: unit-tested in tests/. */
 #include <glib.h>
+
+/* In editor_splits, the tab entry that marks a pane holding files */
+#define LAYOUT_EDITOR_FILES 0u
 
 typedef struct {
     gchar* name;
@@ -25,6 +29,10 @@ typedef struct {
     gdouble right_frac;        /* preview share of the preview/terminal pair */
     gdouble editor_frac;       /* preview share of the preview/editor pair */
     gchar* terminals;          /* terminal pane tree (see below), "" if none */
+    gchar* editor_splits;      /* splits of the dedicated editor panel as tab_tree.h
+                                * text: a notebook lists LAYOUT_EDITOR_FILES ("0")
+                                * when it held files, then "t" per terminal tab,
+                                * e.g. "H:0.500([0],[t,t])"; "" if none */
 } SavedLayout;
 
 SavedLayout* saved_layout_new(const gchar* name);

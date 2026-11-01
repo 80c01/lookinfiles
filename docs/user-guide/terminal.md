@@ -37,8 +37,8 @@ remote view, `t` opens an SSH terminal to the selected machine.
 ## Workspaces
 
 Each [workspace](workspaces.md) has its own terminal panes. A saved layout
-remembers how many panes there are and how they are arranged; applying it
-starts the missing shells.
+remembers how many panes there are and how they are arranged, and the
+terminal tabs of the editor panel; applying it starts the missing shells.
 
 The terminal follows the theme's colours and the code font (see
 [themes](themes.md)).

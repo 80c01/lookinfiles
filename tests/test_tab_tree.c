@@ -82,11 +82,22 @@ static void test_invalid(void) {
     g_assert_null(tab_tree_parse(NULL));
 }
 
+static void test_counts(void) {
+    g_assert_cmpuint(tab_tree_notebook_count(NULL), ==, 0);
+    g_assert_cmpuint(tab_tree_terminal_count(NULL), ==, 0);
+    TabTreeNode* n = tab_tree_parse("H:0.500([0,t],V:0.400([t,t*],[1]))");
+    g_assert_nonnull(n);
+    g_assert_cmpuint(tab_tree_notebook_count(n), ==, 3);
+    g_assert_cmpuint(tab_tree_terminal_count(n), ==, 3);
+    tab_tree_free(n);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/tab_tree/round_trip", test_round_trip);
     g_test_add_func("/tab_tree/fields", test_fields);
     g_test_add_func("/tab_tree/build", test_build);
     g_test_add_func("/tab_tree/invalid", test_invalid);
+    g_test_add_func("/tab_tree/counts", test_counts);
     return g_test_run();
 }

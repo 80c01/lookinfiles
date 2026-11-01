@@ -39,6 +39,27 @@ void tab_tree_free(TabTreeNode* node) {
     g_free(node);
 }
 
+guint tab_tree_notebook_count(const TabTreeNode* node) {
+    if (node == NULL) {
+        return 0;
+    }
+    return node->is_notebook ? 1 : tab_tree_notebook_count(node->first) + tab_tree_notebook_count(node->second);
+}
+
+guint tab_tree_terminal_count(const TabTreeNode* node) {
+    if (node == NULL) {
+        return 0;
+    }
+    if (!node->is_notebook) {
+        return tab_tree_terminal_count(node->first) + tab_tree_terminal_count(node->second);
+    }
+    guint n = 0;
+    for (guint i = 0; i < node->tabs->len; i++) {
+        n += (g_array_index(node->tabs, guint, i) == TAB_TREE_TERMINAL) ? 1 : 0;
+    }
+    return n;
+}
+
 static TabTreeNode* parse_notebook(const gchar** p) {
     (*p)++; /* '[' */
     TabTreeNode* n = tab_tree_notebook_new();

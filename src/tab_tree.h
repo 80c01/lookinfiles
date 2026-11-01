@@ -42,5 +42,9 @@ TabTreeNode* tab_tree_parse(const gchar* text);
 /* "" for NULL */
 gchar* tab_tree_to_string(const TabTreeNode* node);
 void tab_tree_free(TabTreeNode* node);
+/* Notebooks of the tree (0 for NULL) */
+guint tab_tree_notebook_count(const TabTreeNode* node);
+/* Terminal tabs of the tree (0 for NULL) */
+guint tab_tree_terminal_count(const TabTreeNode* node);
 
 #endif /* TAB_TREE_H */

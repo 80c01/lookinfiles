@@ -600,6 +600,13 @@ GtkWidget* terminal_add_tab(AppData* app, GtkNotebook* nb) {
     return vte;
 }
 
+void terminal_move_tab(GtkWidget* vte, GtkNotebook* nb) {
+    GtkNotebook* from = (vte != NULL) ? term_notebook_of(vte) : NULL;
+    if (from != NULL && nb != NULL) {
+        term_move_page(from, nb, vte, -1);
+    }
+}
+
 gboolean terminal_step_tab(AppData* app, gint step) {
     GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
     GtkWidget* vte = focus != NULL ? gtk_widget_get_ancestor(focus, VTE_TYPE_TERMINAL) : NULL;

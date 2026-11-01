@@ -30,8 +30,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
   `git_read_branch()`, `scan_git_statuses()`, `git_read_head_blob()` (spawns git: worker thread only).
 - `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility,
-  split fractions, orientation, dedicated editor panel, terminal pane tree as
-  text such as `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save, and the
+  split fractions, orientation, dedicated editor panel and its splits as
+  `tab_tree` text without files (`0` marks a pane of files, `t` a terminal
+  tab, e.g. `H:0.500([0],[t,t])`), terminal pane tree as text such as
+  `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save, and the
   default layout of new workspaces (group `[Default]`, built-in if absent).
 - `gif_decoder` — GIF frames composed on an RGBA canvas (LZW, interlacing,
   transparency, disposal, delays, loop count), played by `animation`
@@ -364,6 +366,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   at the same place (`editor_notebook_split()`, `editor_move_tab_to()`,
   `editor_add_view()` for split views) and starts a new shell for each
   terminal tab there (`terminal_add_tab()`).
+- `editor_layout` — the shape of the dedicated panel for saved layouts:
+  `editor_layout_capture()` (splits, sizes, panes of files, terminal tabs),
+  `editor_layout_apply()` rebuilds the splits and places the open file tabs
+  and running terminals in them (`terminal_move_tab()`; missing shells
+  started, extra ones closed after the caller's confirmation).
 - `editor_view` — the widgets of an editor tab around its buffer (view,
   scroll, minimap, mode lines, view controllers); `editor_view_release()`
   disconnects a closing tab from a buffer that another view still shows.
@@ -486,8 +493,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   restores the theme. Reads `settings.ini` at startup for `main.c`
   (`preferences_editor_mode()`, `preferences_apply_startup()`).
 - `layouts` — saved workspace layouts (Alt+L, top-bar grid button): capture
-  the current workspace's panels, apply one from a list in an `AppDialog`
-  (running terminals are kept; closing extra ones asks first). The list starts
+  the current workspace's panels and editor splits (`editor_layout`), apply
+  one from a list in an `AppDialog` (running terminals are kept; closing extra
+  ones, in the terminal panel or the editor panel, asks first). The list starts
   with the default layout of new workspaces, which can be replaced (save
   under the name "Default") or reset. A click selects a row; double click,
   Enter or Apply applies it.

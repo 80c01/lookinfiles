@@ -1,6 +1,7 @@
 /* Saved workspace layouts (see layout_store.h) */
 #include "layout_store.h"
 #include "app_paths.h"
+#include "tab_tree.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,7 @@ SavedLayout* saved_layout_new(const gchar* name) {
     l->right_frac = 0.70;
     l->editor_frac = 0.50;
     l->terminals = g_strdup("");
+    l->editor_splits = g_strdup("");
     return l;
 }
 
@@ -22,6 +24,7 @@ SavedLayout* saved_layout_copy(const SavedLayout* layout) {
     *l = *layout;
     l->name = g_strdup(layout->name);
     l->terminals = g_strdup(layout->terminals);
+    l->editor_splits = g_strdup(layout->editor_splits);
     return l;
 }
 
@@ -32,6 +35,7 @@ void saved_layout_free(gpointer layout) {
     }
     g_free(l->name);
     g_free(l->terminals);
+    g_free(l->editor_splits);
     g_free(l);
 }
 
@@ -44,7 +48,22 @@ gchar* saved_layout_summary(const SavedLayout* layout) {
         g_ptr_array_add(parts, g_strdup("Preview"));
     }
     if (layout->editor_dedicated) {
-        g_ptr_array_add(parts, g_strdup("Editor Panel"));
+        TabTreeNode* tree = tab_tree_parse(layout->editor_splits);
+        guint panes = tab_tree_notebook_count(tree);
+        guint terms = tab_tree_terminal_count(tree);
+        tab_tree_free(tree);
+        GString* text = g_string_new("Editor Panel");
+        if (panes > 1 || terms > 0) {
+            g_string_append(text, " (");
+            if (panes > 1) {
+                g_string_append_printf(text, "%u panes%s", panes, terms > 0 ? ", " : "");
+            }
+            if (terms > 0) {
+                g_string_append_printf(text, "%u terminal%s", terms, terms == 1 ? "" : "s");
+            }
+            g_string_append_c(text, ')');
+        }
+        g_ptr_array_add(parts, g_string_free(text, FALSE));
     }
     if (layout->term_vis) {
         TermLayoutNode* tree = term_layout_parse(layout->terminals);
@@ -109,6 +128,12 @@ SavedLayout* saved_layout_read(GKeyFile* kf, const gchar* group, const gchar* na
     l->terminals = (tree != NULL) ? term_layout_to_string(tree) : g_strdup("");
     term_layout_free(tree);
     g_free(terms);
+    gchar* splits = g_key_file_get_string(kf, group, "EditorSplits", NULL);
+    TabTreeNode* editor = tab_tree_parse(splits);
+    g_free(l->editor_splits);
+    l->editor_splits = (editor != NULL) ? tab_tree_to_string(editor) : g_strdup("");
+    tab_tree_free(editor);
+    g_free(splits);
     return l;
 }
 
@@ -154,7 +179,8 @@ gboolean layout_store_is_customized(const SavedLayout* l) {
                        l->stacked != d->stacked || ABS(l->main_frac - d->main_frac) > 0.0005 ||
                        ABS(l->right_frac - d->right_frac) > 0.0005 ||
                        ABS(l->editor_frac - d->editor_frac) > 0.0005 ||
-                       g_strcmp0(l->terminals, d->terminals) != 0;
+                       g_strcmp0(l->terminals, d->terminals) != 0 ||
+                       g_strcmp0(l->editor_splits, d->editor_splits) != 0;
     saved_layout_free(d);
     return differs;
 }
@@ -190,6 +216,9 @@ void saved_layout_write(GKeyFile* kf, const gchar* group, const SavedLayout* l, 
     set_frac(kf, group, "PreviewShare", l->right_frac);
     set_frac(kf, group, "EditorShare", l->editor_frac);
     g_key_file_set_string(kf, group, "TerminalPanes", l->terminals);
+    if (l->editor_splits != NULL && l->editor_splits[0] != '\0') {
+        g_key_file_set_string(kf, group, "EditorSplits", l->editor_splits);
+    }
 }
 
 gboolean layout_store_save(const gchar* path, GPtrArray* layouts, const SavedLayout* default_layout,

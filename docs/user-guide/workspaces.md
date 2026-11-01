@@ -35,7 +35,11 @@ or middle-click a box to close it.
 ## Saved layouts: `Alt+L`
 
 A layout is an arrangement of panels: which ones are visible, their sizes,
-whether the terminal is beside or under the viewer, and the terminal panes.
+whether the terminal is beside or under the viewer, the terminal panes, and
+the splits of the editor panel with their terminal tabs. It keeps no files:
+applying it moves the open files into the editor panes that held files (an
+empty one takes a file from the fullest), reuses the running terminals and
+starts the missing shells.
 `Alt+L` (or the grid button of the top bar) opens the layouts dialog:
 
 - **apply** a saved layout to the current workspace;

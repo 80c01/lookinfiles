@@ -106,7 +106,7 @@ text_tags:fonts,palette
 lsp_protocol:code_symbol,json_view
 lsp_client:lsp_protocol
 lsp_config:code_symbol
-layout_store:app_paths
+layout_store:app_paths,tab_tree
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store,file_type_icons
 markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link,icons

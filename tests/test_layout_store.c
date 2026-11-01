@@ -153,7 +153,46 @@ static void test_summary(void) {
     s = saved_layout_summary(l);
     g_assert_cmpstr(s, ==, "Explorer · Preview · Terminal (2 terminals, beside)");
     g_free(s);
+    l->editor_dedicated = TRUE;
+    s = saved_layout_summary(l);
+    g_assert_cmpstr(s, ==, "Explorer · Preview · Editor Panel · Terminal (2 terminals, beside)");
+    g_free(s);
+    g_free(l->editor_splits);
+    l->editor_splits = g_strdup("H:0.500([0],[t,t])");
+    s = saved_layout_summary(l);
+    g_assert_cmpstr(s, ==, "Explorer · Preview · Editor Panel (2 panes, 2 terminals) · Terminal (2 terminals, beside)");
+    g_free(s);
     saved_layout_free(l);
+}
+
+/* The splits of the editor panel are saved, read back and validated */
+static void test_editor_splits(void) {
+    GKeyFile* kf = g_key_file_new();
+    SavedLayout* l = saved_layout_new("Split");
+    l->editor_dedicated = TRUE;
+    g_free(l->editor_splits);
+    l->editor_splits = g_strdup("V:0.300([0,t],[0])");
+    g_assert_true(layout_store_is_customized(l));
+    saved_layout_write(kf, "G", l, TRUE);
+    SavedLayout* back = saved_layout_read(kf, "G", "Split");
+    g_assert_cmpstr(back->editor_splits, ==, "V:0.300([0,t],[0])");
+    SavedLayout* copy = saved_layout_copy(back);
+    g_assert_cmpstr(copy->editor_splits, ==, "V:0.300([0,t],[0])");
+    saved_layout_free(copy);
+    saved_layout_free(back);
+
+    /* Invalid or missing: no splits (and no key written for none) */
+    g_key_file_set_string(kf, "G", "EditorSplits", "H:([0]");
+    back = saved_layout_read(kf, "G", "Split");
+    g_assert_cmpstr(back->editor_splits, ==, "");
+    saved_layout_free(back);
+    g_free(l->editor_splits);
+    l->editor_splits = g_strdup("");
+    saved_layout_write(kf, "H", l, TRUE);
+    g_assert_false(g_key_file_has_key(kf, "H", "EditorSplits", NULL));
+
+    saved_layout_free(l);
+    g_key_file_free(kf);
 }
 
 int main(int argc, char** argv) {
@@ -162,5 +201,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/layout_store/save_load", test_save_load);
     g_test_add_func("/layout_store/default", test_default);
     g_test_add_func("/layout_store/summary", test_summary);
+    g_test_add_func("/layout_store/editor_splits", test_editor_splits);
     return g_test_run();
 }

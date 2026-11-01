@@ -3,6 +3,7 @@
 #include "app_events.h"
 #include "dialog.h"
 #include "editor.h"
+#include "editor_layout.h"
 #include "layout_store.h"
 #include "terminal.h"
 #include "workspace.h"
@@ -29,6 +30,8 @@ static SavedLayout* capture_layout(AppData* app, const gchar* name) {
     g_free(l->terminals);
     l->terminals = term_layout_capture(app);
 #endif
+    g_free(l->editor_splits);
+    l->editor_splits = editor_layout_capture(app);
     return l;
 }
 
@@ -53,15 +56,23 @@ static gboolean confirm(AppData* app, const gchar* title, const gchar* message, 
 
 /* Apply a layout to the current workspace. FALSE if the user cancelled. */
 static gboolean apply_layout(AppData* app, const SavedLayout* l) {
+    /* The editor panel's shape, when the layout saved one */
+    gboolean splits = l->editor_dedicated && l->editor_splits != NULL && l->editor_splits[0] != '\0';
 #ifdef HAVE_VTE
+    /* Terminals the layout has fewer of than are running close (a layout
+     * without terminals keeps them) */
     TermLayoutNode* tree = l->term_vis ? term_layout_parse(l->terminals) : NULL;
     guint wanted = term_layout_count(tree);
     term_layout_free(tree);
     guint running = term_pane_count(app);
-    if (wanted > 0 && running > wanted) {
-        gchar* msg = g_strdup_printf("The layout “%s” has %u terminal pane%s; %u running terminal%s "
-                                     "will be closed.", l->name, wanted, wanted == 1 ? "" : "s",
-                                     running - wanted, running - wanted == 1 ? "" : "s");
+    guint closing = (wanted > 0 && running > wanted) ? running - wanted : 0;
+    guint editor_wanted = splits ? editor_layout_wanted_terminals(l->editor_splits) : 0;
+    guint editor_running = editor_layout_terminal_count(app);
+    closing += (editor_wanted > 0 && editor_running > editor_wanted) ? editor_running - editor_wanted : 0;
+    if (closing > 0) {
+        gchar* msg = g_strdup_printf("The layout “%s” has fewer terminals than are running; %u "
+                                     "running terminal%s will be closed.", l->name, closing,
+                                     closing == 1 ? "" : "s");
         gboolean ok = confirm(app, "Close Terminals", msg, "_Apply Layout");
         g_free(msg);
         if (!ok) {
@@ -71,6 +82,9 @@ static gboolean apply_layout(AppData* app, const SavedLayout* l) {
 #endif
     if (l->editor_dedicated != app->editor_dedicated) {
         editor_set_dedicated(app, l->editor_dedicated); /* moves the open tabs */
+    }
+    if (splits) {
+        editor_layout_apply(app, l->editor_splits);
     }
 #ifdef HAVE_VTE
     if (wanted > 0) {
