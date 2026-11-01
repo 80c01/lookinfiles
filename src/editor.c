@@ -590,7 +590,7 @@ static void editor_after_current_removed(AppData* app, GtkNotebook* nb, gboolean
 
 /* Move tab to new_nb at target_pos (-1: append). With cleanup, the notebook it
  * leaves is removed when left empty; during a tab drag GTK still uses that
- * notebook, so on_tab_drag_done() removes it later. */
+ * notebook, so editor_cleanup_after_drop() removes it later. */
 static void editor_move_tab_full(AppData* app, EditorTab* tab, GtkNotebook* new_nb,
                                  gint target_pos, gboolean cleanup) {
     if (app == NULL || tab == NULL || new_nb == NULL) return;
@@ -823,6 +823,31 @@ static GtkNotebook* notebook_of_page(GtkWidget* child) {
     return NULL;
 }
 
+static gboolean editor_cleanup_dropped_idle(gpointer data) {
+    GtkWidget* nb = GTK_WIDGET(data);
+    AppData* app = g_object_get_data(G_OBJECT(nb), "app");
+    if (app != NULL && app->editor_box != NULL && gtk_widget_is_ancestor(nb, app->editor_box) &&
+        gtk_notebook_get_n_pages(GTK_NOTEBOOK(nb)) == 0) {
+        editor_cleanup_notebook(app, nb);
+        editor_update_panel_visibilities(app);
+    }
+    g_object_unref(nb);
+    return G_SOURCE_REMOVE;
+}
+
+/* source, an editor notebook, lost its last tab to a drop: remove it once the
+ * drop is over, not when the tab drag ends (GTK may report that late or not
+ * at all) */
+static void editor_cleanup_after_drop(AppData* app, GtkNotebook* source) {
+    if (GTK_WIDGET(source) == app->notebook || app->editor_box == NULL ||
+        !gtk_widget_is_ancestor(GTK_WIDGET(source), app->editor_box) ||
+        gtk_notebook_get_n_pages(source) > 0) {
+        return;
+    }
+    g_object_set_data(G_OBJECT(source), "app", app);
+    g_idle_add(editor_cleanup_dropped_idle, g_object_ref(source));
+}
+
 #ifdef HAVE_VTE
 /* Move child, a page that is not an editor tab (a terminal), into to at
  * index (-1: append), with its tab label */
@@ -843,31 +868,6 @@ static void editor_move_page(AppData* app, GtkNotebook* from, GtkNotebook* to, G
     focus_route_hold_history(app, FALSE);
     g_object_unref(label);
     g_object_unref(child);
-}
-
-static gboolean editor_cleanup_dropped_idle(gpointer data) {
-    GtkWidget* nb = GTK_WIDGET(data);
-    AppData* app = g_object_get_data(G_OBJECT(nb), "app");
-    if (app != NULL && app->editor_box != NULL && gtk_widget_is_ancestor(nb, app->editor_box) &&
-        gtk_notebook_get_n_pages(GTK_NOTEBOOK(nb)) == 0) {
-        editor_cleanup_notebook(app, nb);
-        editor_update_panel_visibilities(app);
-    }
-    g_object_unref(nb);
-    return G_SOURCE_REMOVE;
-}
-
-/* source, an editor notebook, lost its last tab to a drop: remove it once the
- * drop is over, not when the tab drag ends (GTK may report that late or not
- * at all for terminal tabs) */
-static void editor_cleanup_after_drop(AppData* app, GtkNotebook* source) {
-    if (GTK_WIDGET(source) == app->notebook || app->editor_box == NULL ||
-        !gtk_widget_is_ancestor(GTK_WIDGET(source), app->editor_box) ||
-        gtk_notebook_get_n_pages(source) > 0) {
-        return;
-    }
-    g_object_set_data(G_OBJECT(source), "app", app);
-    g_idle_add(editor_cleanup_dropped_idle, g_object_ref(source));
 }
 
 /* A tab other than an editor tab (a terminal) dropped on target */
@@ -932,12 +932,14 @@ static void on_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone zone,
             return;
         }
         editor_move_tab_full(app, tab, target, index, FALSE);
+        editor_cleanup_after_drop(app, source);
         return;
     }
     if (source == target && gtk_notebook_get_n_pages(target) <= 1) return;
     GtkWidget* new_nb = editor_split_notebook(app, target, zone);
     if (new_nb == NULL) return;
     editor_move_tab_full(app, tab, GTK_NOTEBOOK(new_nb), -1, FALSE);
+    editor_cleanup_after_drop(app, source);
 }
 
 /* The drag of a tab out of source has ended: remove source if left empty */
