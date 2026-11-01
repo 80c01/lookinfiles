@@ -4,7 +4,8 @@
 
 ### Must do
 
-- [ ] emacs: `C-x 0` / `C-x 1` / `C-x 2` / `C-x 3` to close, keep, or split the panel below / to the right (splits already exist: `Ctrl+Alt+Arrows`, drag a tab to an edge)
+- [ ] split view: show the same file in two views side by side or stacked, sharing one buffer (today a tab can only be moved to another panel, or another file opened there)
+- [ ] emacs: `C-x 0` / `C-x 1` / `C-x 2` / `C-x 3` to close the view, keep only it, or split it below / to the right (needs the split view)
 - [ ] OS support: Windows/macOS, maybe using the meson build system (VTE has no Windows port: the terminal would become optional)
 
 ### Preview
