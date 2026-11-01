@@ -33,11 +33,11 @@ repository of the file, else its folder), and falls back to the next one:
 | Universal Ctags | Good definitions, signatures | `ctags` installed |
 | Built-in index | Good guesses for C, C++, Java, C#, Python, Shell, JavaScript / TypeScript, Go, Rust, Lua, Ruby, Makefiles | Nothing |
 
-The status bar shows the source used by the current tab: the server's name,
+The bar at the bottom of an editor tab shows the source it uses: the server's name,
 `ctags` or the built-in index.
 
 With a language server, errors are underlined in red and warnings in
-yellow, counted in the status bar, and explained when the mouse rests on
+yellow, counted in the bar of the editor tab, and explained when the mouse rests on
 them.
 
 Without a server, references are whole-word matches (comments and strings

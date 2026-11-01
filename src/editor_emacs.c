@@ -797,6 +797,11 @@ void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
     st->emacs_ml_linecol = gtk_label_new("L1 C1");
     gtk_widget_add_css_class(st->emacs_ml_linecol, "emacs-modeline-pos");
 
+    st->emacs_ml_vc = gtk_label_new("");
+    gtk_widget_add_css_class(st->emacs_ml_vc, "emacs-modeline-pos");
+    editor_bar_label_shrinkable(st->emacs_ml_vc, PANGO_ELLIPSIZE_END);
+    editor_bar_label_shrinkable(st->emacs_ml_modes, PANGO_ELLIPSIZE_END);
+
     GtkWidget* ml_dash = gtk_label_new("--------------------------------------------------------------------------------");
     gtk_widget_set_hexpand(ml_dash, TRUE);
     gtk_label_set_xalign(GTK_LABEL(ml_dash), 0.0f);
@@ -805,9 +810,10 @@ void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
     editor_bar_label_shrinkable(st->emacs_ml_bufname, PANGO_ELLIPSIZE_MIDDLE);
     gtk_box_append(GTK_BOX(modeline), st->emacs_ml_status);
     gtk_box_append(GTK_BOX(modeline), st->emacs_ml_bufname);
-    gtk_box_append(GTK_BOX(modeline), st->emacs_ml_modes);
     gtk_box_append(GTK_BOX(modeline), st->emacs_ml_pos);
     gtk_box_append(GTK_BOX(modeline), st->emacs_ml_linecol);
+    gtk_box_append(GTK_BOX(modeline), st->emacs_ml_vc);
+    gtk_box_append(GTK_BOX(modeline), st->emacs_ml_modes);
     gtk_box_append(GTK_BOX(modeline), editor_bar_clip(ml_dash));
     st->emacs_modeline = modeline;
 

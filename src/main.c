@@ -506,6 +506,8 @@ int main(int argc, char** argv) {
     /* Event subscriptions: before any code can emit (see app_events.h) */
     app_events_subscribe(app, APP_EVENT_CHROME_CHANGED, update_path_label);
     app_events_subscribe(app, APP_EVENT_STATUS_CHANGED, update_status_bar);
+    app_events_subscribe(app, APP_EVENT_STATUS_CHANGED, editor_modes_refresh_bars);
+    app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, editor_modes_refresh_git);
     app_events_subscribe(app, APP_EVENT_LAYOUT_CHANGED, workspace_save_current);
     app_events_subscribe(app, APP_EVENT_LAYOUT_REBUILT, workspace_apply_positions);
     app_events_subscribe(app, APP_EVENT_FILES_CHANGED, refresh_listing);

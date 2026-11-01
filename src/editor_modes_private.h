@@ -54,6 +54,7 @@ typedef struct {
     GtkWidget* np_find_entry;
     GtkWidget* np_replace_entry;
     GtkWidget* np_replace_box;
+    GtkWidget* np_file_label;   /* branch, relative path, modified mark */
     GtkWidget* np_status_label;
     GtkWidget* np_info_label;
     GtkWidget* np_save_bar;
@@ -77,6 +78,7 @@ typedef struct {
     GtkWidget* emacs_ml_modes;
     GtkWidget* emacs_ml_pos;
     GtkWidget* emacs_ml_linecol;
+    GtkWidget* emacs_ml_vc;     /* "Git-main", as Emacs VC */
     GtkWidget* emacs_minibuffer;
     GtkWidget* emacs_mb_prompt;
     GtkWidget* emacs_mb_entry;
@@ -121,6 +123,7 @@ typedef struct {
     GtkWidget* vim_sl_mode;
     GtkWidget* vim_sl_file;
     GtkWidget* vim_sl_ruler;
+    GtkWidget* vim_sl_info;     /* diagnostics, filetype, server, encoding and format */
     GtkWidget* vim_commandline;
     GtkWidget* vim_cl_prompt;
     GtkWidget* vim_cl_entry;

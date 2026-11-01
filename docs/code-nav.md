@@ -22,7 +22,7 @@ Emacs, Vim). The modules are described in
    | ctags | good | whole-word search | signature only | `ctags` in `PATH` |
    | Built-in index | heuristic | whole-word search | declaration line | nothing |
 
-   The status bar names the backend in use (`clangd`, `ctags`, `basic`).
+   The bar of the editor tab names the backend in use (`clangd`, `ctags`, `basic`).
 3. **No new dependency.** LSP servers and ctags are external programs run
    with `GSubprocess` when installed; nothing is linked.
 4. **Never block the UI thread.** Scans, file reads and server requests run
@@ -57,7 +57,7 @@ Emacs, Vim). The modules are described in
   `typescript-language-server --stdio`, `bash-language-server start`.
   Full-text sync (edits sent after a 600 ms pause), definition,
   declaration, references, hover, signature help, document symbols,
-  diagnostics (underlined, counted in the status bar, explained in help
+  diagnostics (underlined, counted in the bar of the editor tab, explained in help
   cards). A missing server falls back silently; a failed one is retried
   after a minute. The server's signature is shown as Markdown.
 - **Help without a server**: the declaration line (or ctags signature) and

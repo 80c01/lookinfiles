@@ -348,27 +348,33 @@ const gchar* code_intel_signature_triggers(AppData* app, EditorTab* tab) {
 
 static void count_diagnostics(AppData* app, EditorTab* tab, guint* errors, guint* warnings);
 
-gchar* code_intel_server_label(AppData* app, EditorTab* tab) {
+gchar* code_intel_server_status(AppData* app, EditorTab* tab, guint* errors, guint* warnings) {
+    *errors = *warnings = 0;
     if (app == NULL || app->code_intel == NULL) return NULL;
     Server* s = server_for(app, tab, FALSE);
     if (s == NULL) return NULL;
     switch (lsp_client_get_state(s->client)) {
-        case LSP_CLIENT_READY: {
-            guint errors = 0, warnings = 0;
-            count_diagnostics(app, tab, &errors, &warnings);
-            if (errors == 0 && warnings == 0) return g_strdup(lsp_client_get_name(s->client));
-            GString* label = g_string_new(lsp_client_get_name(s->client));
-            g_string_append(label, ":");
-            if (errors > 0) g_string_append_printf(label, " %u error%s", errors, errors > 1 ? "s" : "");
-            if (warnings > 0) {
-                g_string_append_printf(label, "%s %u warning%s", errors > 0 ? "," : "", warnings, warnings > 1 ? "s" : "");
-            }
-            return g_string_free(label, FALSE);
-        }
+        case LSP_CLIENT_READY:
+            count_diagnostics(app, tab, errors, warnings);
+            return g_strdup(lsp_client_get_name(s->client));
         case LSP_CLIENT_STARTING: return g_strdup_printf("%s (starting)", s->name);
         case LSP_CLIENT_FAILED: break;
     }
     return NULL;
+}
+
+gchar* code_intel_server_label(AppData* app, EditorTab* tab) {
+    guint errors = 0, warnings = 0;
+    gchar* name = code_intel_server_status(app, tab, &errors, &warnings);
+    if (name == NULL || (errors == 0 && warnings == 0)) return name;
+    GString* label = g_string_new(name);
+    g_free(name);
+    g_string_append(label, ":");
+    if (errors > 0) g_string_append_printf(label, " %u error%s", errors, errors > 1 ? "s" : "");
+    if (warnings > 0) {
+        g_string_append_printf(label, "%s %u warning%s", errors > 0 ? "," : "", warnings, warnings > 1 ? "s" : "");
+    }
+    return g_string_free(label, FALSE);
 }
 
 void code_intel_shutdown(AppData* app) {

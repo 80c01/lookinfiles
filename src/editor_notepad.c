@@ -560,6 +560,9 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     /* Notepad Status Bar */
     GtkWidget* np_status = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_add_css_class(np_status, "notepad-statusbar");
+    st->np_file_label = gtk_label_new("");
+    editor_bar_label_shrinkable(st->np_file_label, PANGO_ELLIPSIZE_START);
+    gtk_label_set_xalign(GTK_LABEL(st->np_file_label), 0.0f);
     st->np_status_label = gtk_label_new("Ready");
     editor_bar_label_shrinkable(st->np_status_label, PANGO_ELLIPSIZE_END);
     gtk_label_set_xalign(GTK_LABEL(st->np_status_label), 0.0f);
@@ -569,6 +572,7 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     editor_bar_label_shrinkable(st->np_info_label, PANGO_ELLIPSIZE_END);
     gtk_label_set_xalign(GTK_LABEL(st->np_info_label), 1.0f);
 
+    gtk_box_append(GTK_BOX(np_status), st->np_file_label);
     gtk_box_append(GTK_BOX(np_status), st->np_status_label);
     gtk_box_append(GTK_BOX(np_status), st->np_info_label);
 

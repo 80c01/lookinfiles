@@ -14,6 +14,10 @@ All notable changes to this project are listed here. The format follows
   the top bar.
 - A bar at the bottom of the preview page shows the name, size, type and
   text encoding of the previewed entry.
+- The bar of an editor tab shows, in the style of its mode, the git branch,
+  the path from the repository root, the unsaved mark, the language, the
+  line ending, the code navigation source and the language server's error
+  and warning counts.
 - Icons follow VS Code: files show the VS Code (Seti) file-type icons
   everywhere they are listed (explorer, tabs, bookmarks, Quick Open,
   references, folder previews), and every other icon is a theme icon in the

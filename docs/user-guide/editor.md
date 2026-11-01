@@ -75,6 +75,18 @@ long lines (`-e` on the command line wins for one launch).
 In Emacs mode, `M-x org-mode` turns on Org-mode editing for any file, and
 `M-x text-mode` turns it off.
 
+The bar at the bottom of a tab tells about its file in the style of its
+mode: the git branch, the path from the repository root (or the current
+folder), a mark when there are unsaved changes, the language, the line
+ending and encoding, the code navigation source and, with a language
+server, the number of errors and warnings.
+
+- Notepad: `⎇ main   src/main.c •` on the left, then
+  `Ln 3, Col 7 | 100% | C | Unix (LF) | UTF-8 | clangd: 1 error, 0 warnings`.
+- Emacs: `-U:**-  src/main.c  Top (0%)  L3 C7  Git-main  (C clangd Flymake[1 0])`.
+- Vim: `src/main.c [+] [Git(main)]`, then `E:1 W:0  [c] [clangd]  utf-8[unix]`
+  before the ruler.
+
 ## Notepad mode
 
 The keys of a usual desktop editor:

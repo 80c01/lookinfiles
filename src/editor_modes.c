@@ -5,6 +5,7 @@
 #include "code_nav.h"
 #include "code_help.h"
 #include "code_intel.h"
+#include "editor_info.h"
 #include "theme.h"
 #include "fonts.h"
 #include "focus_route.h"
@@ -649,6 +650,120 @@ gboolean editor_mode_toggle_wrap(EditorTab* tab) {
 /* Notepad Mode UI & Signals                                                 */
 /* ------------------------------------------------------------------------- */
 
+/* Line ending in each mode's words: Notepad's, Emacs' mnemonic, Vim's 'fileformat' */
+typedef enum { EOL_NOTEPAD, EOL_EMACS, EOL_VIM } EolStyle;
+
+static const gchar* eol_label(EditorTab* tab, EolStyle style) {
+    static const gchar* const names[3][3] = {
+        {"Unix (LF)", "Windows (CRLF)", "Mac (CR)"},
+        {":", "\\", "/"},
+        {"unix", "dos", "mac"},
+    };
+    gint kind = 0;
+    if (g_strcmp0(tab->line_ending, "Windows (CRLF)") == 0) {
+        kind = 1;
+    } else if (g_strcmp0(tab->line_ending, "Mac (CR)") == 0) {
+        kind = 2;
+    }
+    return names[style][kind];
+}
+
+/* Notepad: "⎇ main   src/main.c •" on the left, "Ln 3, Col 7 | 100% | C | Unix (LF) | UTF-8 | clangd: 1 error" on the right */
+static void notepad_update_status(EditorTab* tab, EditorModeState* st, const EditorInfo* info,
+                                  gint line, gint col, gboolean modified) {
+    GString* file = g_string_new(NULL);
+    if (info->branch != NULL) {
+        g_string_append_printf(file, "⎇ %s   ", info->branch);
+    }
+    g_string_append(file, info->relpath != NULL ? info->relpath : "");
+    if (modified) {
+        g_string_append(file, " •");
+    }
+    gtk_label_set_text(GTK_LABEL(st->np_file_label), file->str);
+    g_string_free(file, TRUE);
+
+    GString* text = g_string_new(NULL);
+    g_string_append_printf(text, "Ln %d, Col %d   |   %d%%   |   %s   |   %s   |   UTF-8", line, col,
+                           fonts_zoom_percent(), info->language, eol_label(tab, EOL_NOTEPAD));
+    if (info->backend != NULL) {
+        g_string_append_printf(text, "   |   %s", info->backend);
+        if (info->errors > 0 || info->warnings > 0) {
+            g_string_append_printf(text, ": %u error%s, %u warning%s", info->errors,
+                                   info->errors == 1 ? "" : "s", info->warnings, info->warnings == 1 ? "" : "s");
+        }
+    }
+    gtk_label_set_text(GTK_LABEL(st->np_info_label), text->str);
+    g_string_free(text, TRUE);
+}
+
+/* Emacs: "-U:**-  src/main.c   Top (0%)  L3 C7  Git-main  (C clangd Flymake[1 0])" */
+static void emacs_update_status(EditorTab* tab, EditorModeState* st, const EditorInfo* info,
+                                gint line, gint col, gint percent, gboolean modified) {
+    gchar* flag = g_strdup_printf("-U%s%s- ", eol_label(tab, EOL_EMACS), modified ? "**" : "--");
+    gtk_label_set_text(GTK_LABEL(st->emacs_ml_status), flag);
+    g_free(flag);
+
+    gtk_label_set_text(GTK_LABEL(st->emacs_ml_bufname),
+                       info->relpath != NULL ? info->relpath : (tab->name ? tab->name : "*scratch*"));
+
+    const gchar* pos_str = (percent <= 0) ? "Top" : ((percent >= 100) ? "Bot" : "All");
+    gchar* pos_label = g_strdup_printf("%s (%d%%)", pos_str, percent);
+    gtk_label_set_text(GTK_LABEL(st->emacs_ml_pos), pos_label);
+    g_free(pos_label);
+
+    gchar* lc = g_strdup_printf("L%d C%d", line, col);
+    gtk_label_set_text(GTK_LABEL(st->emacs_ml_linecol), lc);
+    g_free(lc);
+
+    gchar* vc = info->branch != NULL ? g_strdup_printf("Git-%s", info->branch) : g_strdup("");
+    gtk_label_set_text(GTK_LABEL(st->emacs_ml_vc), vc);
+    gtk_widget_set_visible(st->emacs_ml_vc, info->branch != NULL);
+    g_free(vc);
+
+    GString* modes = g_string_new("  (");
+    g_string_append(modes, info->language);
+    if (info->backend != NULL) {
+        g_string_append_printf(modes, " %s", info->backend);
+    }
+    if (info->server) {
+        g_string_append_printf(modes, " Flymake[%u %u]", info->errors, info->warnings);
+    }
+    g_string_append(modes, ")  ");
+    gtk_label_set_text(GTK_LABEL(st->emacs_ml_modes), modes->str);
+    g_string_free(modes, TRUE);
+}
+
+/* Vim: "src/main.c [+] [Git(main)]" on the left, "E:1 W:0  [c] [clangd]  utf-8[unix]  3,7  Top" on the right */
+static void vim_update_status(EditorTab* tab, EditorModeState* st, const EditorInfo* info,
+                              gint line, gint col, gint percent, gboolean modified) {
+    GString* file = g_string_new(info->relpath != NULL ? info->relpath : (tab->name ? tab->name : "[No Name]"));
+    if (modified) {
+        g_string_append(file, " [+]");
+    }
+    if (info->branch != NULL) {
+        g_string_append_printf(file, " [Git(%s)]", info->branch);
+    }
+    gtk_label_set_text(GTK_LABEL(st->vim_sl_file), file->str);
+    g_string_free(file, TRUE);
+
+    GString* text = g_string_new(NULL);
+    if (info->errors > 0 || info->warnings > 0) {
+        g_string_append_printf(text, "E:%u W:%u   ", info->errors, info->warnings);
+    }
+    g_string_append_printf(text, "[%s]", info->language_id);
+    if (info->backend != NULL) {
+        g_string_append_printf(text, " [%s]", info->backend);
+    }
+    g_string_append_printf(text, "   utf-8[%s]", eol_label(tab, EOL_VIM));
+    gtk_label_set_text(GTK_LABEL(st->vim_sl_info), text->str);
+    g_string_free(text, TRUE);
+
+    const gchar* pos_str = (percent <= 0) ? "Top" : ((percent >= 100) ? "Bot" : "All");
+    gchar* ruler = g_strdup_printf("%d,%d   %s", line, col, pos_str);
+    gtk_label_set_text(GTK_LABEL(st->vim_sl_ruler), ruler);
+    g_free(ruler);
+}
+
 void editor_modes_update_status(EditorTab* tab) {
     if (tab == NULL || tab->mode_state == NULL) return;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
@@ -656,52 +771,32 @@ void editor_modes_update_status(EditorTab* tab) {
     gint line = 1, col = 1, percent = 0;
     get_cursor_position(tab, &line, &col, &percent);
     gboolean modified = gtk_text_buffer_get_modified(tab->buffer);
+    EditorInfo info;
+    editor_info_get(st->app, tab, &info);
 
-    /* 1. Notepad Status */
     if (st->np_info_label != NULL) {
-        gchar* info = g_strdup_printf("Ln %d, Col %d   |   %d%%   |   %s   |   UTF-8", line, col,
-                                      fonts_zoom_percent(),
-                                      tab->line_ending != NULL ? tab->line_ending : "Unix (LF)");
-        gtk_label_set_text(GTK_LABEL(st->np_info_label), info);
-        g_free(info);
+        notepad_update_status(tab, st, &info, line, col, modified);
     }
-
-    /* 2. Emacs Mode-line Visual Clone */
     if (st->emacs_modeline != NULL) {
-        /* Flags: -U:--- or -U:**- */
-        const gchar* flag = modified ? "-U:**- " : "-U:--- ";
-        gtk_label_set_text(GTK_LABEL(st->emacs_ml_status), flag);
-
-        /* Buffer name */
-        gtk_label_set_text(GTK_LABEL(st->emacs_ml_bufname), tab->name ? tab->name : "*scratch*");
-
-        /* Pos */
-        const gchar* pos_str = (percent <= 0) ? "Top" : ((percent >= 100) ? "Bot" : "All");
-        gchar* pos_label = g_strdup_printf("%s (%d%%)", pos_str, percent);
-        gtk_label_set_text(GTK_LABEL(st->emacs_ml_pos), pos_label);
-        g_free(pos_label);
-
-        /* Line and Column */
-        gchar* lc = g_strdup_printf("L%d C%d", line, col);
-        gtk_label_set_text(GTK_LABEL(st->emacs_ml_linecol), lc);
-        g_free(lc);
+        emacs_update_status(tab, st, &info, line, col, percent, modified);
     }
-
-    /* 3. Vim Statusline Visual Clone */
     if (st->vim_statusline != NULL) {
-        /* File name with flags */
-        gchar* file_info = g_strdup_printf("\"%s\" %s [utf-8]",
-                                          tab->name ? tab->name : "[No Name]",
-                                          modified ? "[+]" : "");
-        gtk_label_set_text(GTK_LABEL(st->vim_sl_file), file_info);
-        g_free(file_info);
-
-        /* Ruler */
-        const gchar* pos_str = (percent <= 0) ? "Top" : ((percent >= 100) ? "Bot" : "All");
-        gchar* ruler = g_strdup_printf("%d,%d   %s", line, col, pos_str);
-        gtk_label_set_text(GTK_LABEL(st->vim_sl_ruler), ruler);
-        g_free(ruler);
+        vim_update_status(tab, st, &info, line, col, percent, modified);
     }
+    editor_info_clear(&info);
+}
+
+void editor_modes_refresh_bars(AppData* app) {
+    for (GList* l = app != NULL ? app->editors : NULL; l != NULL; l = l->next) {
+        editor_modes_update_status((EditorTab*)l->data);
+    }
+}
+
+void editor_modes_refresh_git(AppData* app) {
+    for (GList* l = app != NULL ? app->editors : NULL; l != NULL; l = l->next) {
+        editor_info_forget((EditorTab*)l->data);
+    }
+    editor_modes_refresh_bars(app);
 }
 
 static void on_tab_buffer_changed(GtkTextBuffer* buffer, gpointer user_data) {
@@ -769,6 +864,7 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     /* Connect text buffer changes for live status update */
     g_signal_connect(tab->buffer, "changed", G_CALLBACK(on_tab_buffer_changed), tab);
     g_signal_connect(tab->buffer, "notify::cursor-position", G_CALLBACK(on_tab_cursor_moved), tab);
+    g_signal_connect(tab->buffer, "modified-changed", G_CALLBACK(on_tab_buffer_changed), tab);
     orgmode_editor_init(tab);
 
     GtkGesture* ctrl_click = gtk_gesture_click_new();
@@ -822,11 +918,6 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
         emacs_close_minibuffer(tab);
         set_view_monospace(tab->view, TRUE);
         gtk_text_view_set_overwrite(GTK_TEXT_VIEW(tab->view), FALSE);
-        if (orgmode_editor_is_org(tab)) {
-            gtk_label_set_text(GTK_LABEL(st->emacs_ml_modes), "  (Org)  ");
-        } else {
-            gtk_label_set_text(GTK_LABEL(st->emacs_ml_modes), "  (Text Fill)  ");
-        }
     } else if (mode == EDITOR_MODE_VIM) {
         gtk_widget_set_visible(st->vim_box, TRUE);
         set_view_monospace(tab->view, TRUE);

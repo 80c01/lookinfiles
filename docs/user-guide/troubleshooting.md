@@ -37,7 +37,7 @@ Wayland). Over SSH, use `ssh -X` or run it on the machine's own screen.
 
 ## Go to definition finds nothing, or the wrong thing
 
-- Look at the status bar: it names the source used (a language server,
+- Look at the bar of the editor tab: it names the source used (a language server,
   `ctags` or the built-in index). The built-in index only guesses.
 - Install a language server for the language (`clangd`, `pylsp`,
   `gopls`...) or Universal Ctags; see

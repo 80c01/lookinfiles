@@ -381,8 +381,14 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`view_passive`); `editor_find_tab()` returns the view in use. In Vim mode
   the views share one `VimEngine` (kept on the buffer by `editor_vim`),
   hosted by the focused view.
+- `editor_info` — what the bar of an editor tab tells about its file
+  (`EditorInfo`: git branch and relative path, read once per file until
+  `editor_info_forget()`, language, code navigation backend, diagnostics).
 - `editor_modes` — per-tab mode state, shared editing operations (align,
-  format, case, indent, find/replace, goto line), tab label, status, key dispatch.
+  format, case, indent, find/replace, goto line), tab label, status (the
+  `editor_info` of the tab in each mode's style; `editor_modes_refresh_bars()`
+  on `APP_EVENT_STATUS_CHANGED`, `editor_modes_refresh_git()` on
+  `APP_EVENT_GIT_STATUS_CHANGED`), key dispatch.
   Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim` (the
   host of `vim_engine`: status line, command line, `VimHost` callbacks), and
   `editor_org` (Emacs Org-mode keys in tabs: maps keys to `org_doc` /
@@ -536,12 +542,12 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | Emit (`app_emit(app, ...)`)      | When                                         | Subscriber (main.c)            |
 |----------------------------------|----------------------------------------------|--------------------------------|
 | `APP_EVENT_CHROME_CHANGED`       | dir, sort, hidden, panels, view, remote changed | `update_path_label()`       |
-| `APP_EVENT_STATUS_CHANGED`       | selection / file info / editor mode changed  | `update_status_bar()`          |
+| `APP_EVENT_STATUS_CHANGED`       | selection / file info / editor mode changed  | `update_status_bar()`, `editor_modes_refresh_bars()` |
 | `APP_EVENT_LAYOUT_CHANGED`       | panel visibility or split fractions changed  | `workspace_save_current()`     |
 | `APP_EVENT_LAYOUT_REBUILT`       | panes shown, hidden or rebuilt               | `workspace_apply_positions()`  |
 | `APP_EVENT_FILES_CHANGED`        | files created/renamed/saved                  | `refresh_listing()`            |
 | `APP_EVENT_PREVIEW_STALE`        | previewed file changed                       | `viewer_reload_preview()`      |
-| `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`|
+| `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`, `refresh_diff_gutters()`, `editor_modes_refresh_git()` |
 | `APP_EVENT_FOCUS_NEXT_PANEL` / `_PREV_PANEL` | `C-x o`, `Ctrl+W w` / `W`, `F6` / `Shift+F6` | `focus_next_panel()` / `focus_prev_panel()` |
 
 Handlers run synchronously inside `app_emit()`. `make check` rejects direct

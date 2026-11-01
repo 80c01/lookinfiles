@@ -20,7 +20,16 @@ void editor_modes_free_tab(EditorTab* tab);
 void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode);
 gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
                                  guint keycode, GdkModifierType state);
+/* Refresh the bar of tab in its mode's style: position, file (git branch,
+ * relative path, modified mark), language, line ending, encoding, code
+ * navigation backend and diagnostics (editor_info) */
 void editor_modes_update_status(EditorTab* tab);
+/* Refresh the bars of every editor tab (APP_EVENT_STATUS_CHANGED: server
+ * state, diagnostics) */
+void editor_modes_refresh_bars(AppData* app);
+/* The repository changed: read the branches again, then refresh the bars
+ * (APP_EVENT_GIT_STATUS_CHANGED) */
+void editor_modes_refresh_git(AppData* app);
 /* TRUE when the focused editor tab needs keyval although the window binds it
  * (Org-mode prefix keys, Alt+Left/Right on Org structure) */
 gboolean editor_modes_claims_key(AppData* app, guint keyval, GdkModifierType state);

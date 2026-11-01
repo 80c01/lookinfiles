@@ -240,7 +240,7 @@ The references are listed in a **References** tab next to **Git Commits**
 tab). The other occurrences of the identifier under the cursor are
 highlighted. `Ctrl+Click` on a name in the preview of a source file opens it
 at its definition. With a language server, errors and warnings are underlined
-(red, yellow), counted in the status bar, and explained when the mouse rests
+(red, yellow), counted in the bar of the editor tab, and explained when the mouse rests
 on them.
 
 ### Org-mode editing

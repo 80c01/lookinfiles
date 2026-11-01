@@ -50,6 +50,11 @@ const gchar* code_intel_signature_triggers(AppData* app, EditorTab* tab);
  * when none; starts nothing */
 gchar* code_intel_server_label(AppData* app, EditorTab* tab);
 
+/* Name of the server serving tab ("clangd" or "clangd (starting)") with,
+ * once it is ready, the errors and warnings it reports for tab; NULL (and
+ * no diagnostics) when none; starts nothing */
+gchar* code_intel_server_status(AppData* app, EditorTab* tab, guint* errors, guint* warnings);
+
 /* Stop every server (application exit) */
 void code_intel_shutdown(AppData* app);
 

@@ -11,11 +11,13 @@
  *
  *   APP_EVENT_CHROME_CHANGED  -> update_path_label()          (topbar.c)
  *   APP_EVENT_STATUS_CHANGED  -> update_status_bar()          (status_bar.c)
+ *                                editor_modes_refresh_bars()  (editor_modes.c)
  *   APP_EVENT_LAYOUT_CHANGED  -> workspace_save_current()     (workspace.c)
  *   APP_EVENT_LAYOUT_REBUILT  -> workspace_apply_positions()  (workspace.c)
  *   APP_EVENT_FILES_CHANGED   -> refresh_listing()            (file_list.c)
  *   APP_EVENT_PREVIEW_STALE   -> viewer_reload_preview()      (viewer.c)
- *   APP_EVENT_GIT_STATUS_CHANGED -> refresh_git_status_in_place() (file_list.c)
+ *   APP_EVENT_GIT_STATUS_CHANGED -> refresh_git_status_in_place() (file_list.c),
+ *                                refresh_diff_gutters(), editor_modes_refresh_git() (editor_modes.c)
  *   APP_EVENT_FOCUS_NEXT_PANEL / _PREV_PANEL -> focus_next_panel() / focus_prev_panel() (ui.c)
  *   APP_EVENT_CLOSE_TAB       -> close_shown_tab()            (ui.c)
  */

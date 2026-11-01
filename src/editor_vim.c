@@ -765,12 +765,16 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     editor_bar_label_shrinkable(st->vim_sl_showcmd, PANGO_ELLIPSIZE_START);
     gtk_widget_add_css_class(st->vim_sl_showcmd, "vim-showcmd");
 
+    st->vim_sl_info = gtk_label_new("");
+    editor_bar_label_shrinkable(st->vim_sl_info, PANGO_ELLIPSIZE_START);
+
     st->vim_sl_ruler = gtk_label_new("1,1   All");
     gtk_label_set_xalign(GTK_LABEL(st->vim_sl_ruler), 1.0f);
 
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_mode);
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_file);
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_showcmd);
+    gtk_box_append(GTK_BOX(statusline), st->vim_sl_info);
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_ruler);
     st->vim_wild_label = gtk_label_new("");
     editor_bar_label_shrinkable(st->vim_wild_label, PANGO_ELLIPSIZE_END);
