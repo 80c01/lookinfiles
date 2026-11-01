@@ -66,7 +66,8 @@ in a **Help** tab of the preview panel; click the button again to close it.
 | `Ctrl+W` (Vim: `Ctrl+W c`), middle click on the tab | Close the tab |
 
 The buttons above the page go back, forward and to these contents, show
-the keyboard cheat sheet and close the tab.
+the keyboard cheat sheet and close the tab. On a long page, the minimap on
+the right shows the whole page in small: click or drag it to move.
 
 ## Reference pages
 

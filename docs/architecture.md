@@ -276,7 +276,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `preview_doc_view` — shows a `PreviewDoc` in the preview text view (style
   tags in the Dark+ palette, images, HTML / Markdown renderers).
 - `minimap` — scaled file overview; draws only the part around what is shown
-  (`MinimapCache`), geometry from `minimap_geometry`.
+  (`MinimapCache`), geometry from `minimap_geometry`. `minimap_new_for_view()`
+  makes a standalone one for any text view (the Help tab).
 
 **3. Features:**
 - `file_list` — async directory scan (`GTask`), tree population, sorting
@@ -379,7 +380,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   scrolled with the navigation keys of the global mode; links followed through
   `markdown_link` (`user_guide_resolve_link()`: guide pages and anchors, web pages
   with `GtkUriLauncher`), Tab / Enter, back / forward history (Shift+H / Shift+L,
-  mouse buttons). F1 (`ui`) and a click on the Help button (`topbar`) open it,
+  mouse buttons), a minimap (`minimap_new_for_view()`). F1 (`ui`) and a click on the Help button (`topbar`) open it,
   its close button, a middle click or Ctrl+W close it.
 - `workspace` — virtual workspaces (Alt+1..8): save/apply layout snapshots,
   top-bar workspace minimap. A new workspace (Alt++) starts from the default

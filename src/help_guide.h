@@ -6,7 +6,7 @@
  * left click on the top bar's Help button open it (a click on the button
  * while the tab is shown closes it); the keyboard cheat sheet
  * (help.h) stays on ? and the button's right click. The navigation keys of
- * the global mode scroll it; its close button, a middle click on the tab,
+ * the global mode and its minimap scroll it; its close button, a middle click on the tab,
  * Ctrl+W (Vim Ctrl+W c) close it. */
 #include "app_types.h"
 

@@ -6,6 +6,7 @@
 #include "icons.h"
 #include "markdown.h"
 #include "markdown_link.h"
+#include "minimap.h"
 #include "nav_keys.h"
 #include "panels.h"
 #include "text_style.h"
@@ -448,8 +449,12 @@ static HelpGuide* ensure_page(AppData* app) {
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_widget_set_hexpand(scroll, TRUE);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), hg->view);
-    gtk_box_append(GTK_BOX(page), scroll);
+    GtkWidget* body = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_append(GTK_BOX(body), scroll);
+    gtk_box_append(GTK_BOX(body), minimap_new_for_view(hg->view));
+    gtk_box_append(GTK_BOX(page), body);
 
     hg->page = page;
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, hg, guide_free);

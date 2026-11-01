@@ -19,6 +19,10 @@ void minimap_update_visibility(AppData* app);
 /* Mouse wheel over minimap scrolls text_view */
 void minimap_attach_wheel(GtkWidget* minimap, GtkWidget* text_view);
 
+/* A minimap beside text_view (already in its GtkScrolledWindow), shown while
+ * the text is taller than the view; it frees its state with the widget */
+GtkWidget* minimap_new_for_view(GtkWidget* text_view);
+
 /* Editor tab minimap support */
 void editor_minimap_init(EditorTab* tab);
 void editor_minimap_invalidate(EditorTab* tab);
