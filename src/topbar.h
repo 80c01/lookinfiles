@@ -12,6 +12,11 @@ void update_path_label(AppData* app);
  * folders to pick one. Sets app->history_back_btn / history_fwd_btn. */
 GtkWidget* topbar_history_buttons_new(AppData* app);
 
+/* Global mode pill (Notepad / Emacs / Vim): the keys of the explorer and
+ * preview, and the mode of new editor tabs; a click opens a menu to change
+ * it. Sets app->mode_btn. */
+GtkWidget* topbar_mode_button_new(AppData* app);
+
 void on_files_pill_clicked(GtkButton* btn, gpointer data);
 void on_preview_pill_clicked(GtkButton* btn, gpointer data);
 void on_split_btn_clicked(GtkButton* btn, gpointer data);

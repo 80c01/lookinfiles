@@ -95,7 +95,7 @@ the right end of the status bar, decides:
   minibuffer or a Vim `/` command line);
 - the mode of new editor tabs.
 
-Click the mode in the status bar to change it, or start with `-e vim` /
+Click the mode in the top bar to change it, or start with `-e vim` /
 `-e emacs`. An editor tab can then be switched to another mode on its own
 (right click on its title). The keys that act on a selection (`a`, `d`,
 `r`, `m`, `o`, `i`, `?`...) are the same in every mode.

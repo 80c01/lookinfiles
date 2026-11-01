@@ -4,9 +4,9 @@ Every shortcut of LookinFiles, by panel and editor mode. The same list is
 available inside the application with `?` (it shows the keys of the current
 global mode); `F1` opens the [user guide](user-guide/README.md).
 
-**Global mode.** The mode shown and picked in the status bar (or set with
+**Global mode.** The mode shown and picked in the top bar (or set with
 `-e` / `--editor`) is the mode of new editor tabs and of the navigation keys
-of the explorer, the viewer and their search bars. The status bar always
+of the explorer, the viewer and their search bars. The top bar always
 shows the global mode, never the mode of an editor tab. The explorer and the
 preview each have their own search bar, at the bottom of the panel, drawn like
 the search of an editor tab in the global mode: a Notepad find bar (`Find:`,
@@ -201,7 +201,7 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 | Right click on the tab | Change the mode (the current one is marked), show line numbers, wrap long lines (also `:set wrap` in Vim mode, `M-x visual-line-mode` or `toggle-truncate-lines` in Emacs mode), move, split or close the tab |
 | Drag the tab | Onto a tab bar: move it there; near an editor edge: split that side |
 
-A tab opens in the global mode (status bar, initially the `--editor` one).
+A tab opens in the global mode (top bar, initially the `--editor` one).
 Its own mode is changed only from its menu (right click on the tab), which
 shows the current one. In Emacs mode, `M-x org-mode` turns on Org-mode
 editing and highlighting for any file, and `M-x text-mode` turns them off

@@ -168,6 +168,7 @@ typedef struct {
     GtkWidget* path_label;
     GtkWidget* breadcrumb_box;
     GtkWidget* history_back_btn;  /* top bar arrows: folder history (topbar.c) */
+    GtkWidget* mode_btn;          /* top bar: global mode pill (topbar.c) */
     GtkWidget* history_fwd_btn;
     GtkWidget* files_btn;
     GtkWidget* preview_btn;
@@ -358,8 +359,6 @@ typedef struct {
     GtkWidget* status_type;       /* bottom bar: selected file type / language */
     GtkWidget* status_code;       /* bottom bar: code navigation backend of the editor tab */
     GtkWidget* status_encoding;   /* bottom bar: encoding */
-    GtkWidget* status_mode;       /* bottom bar: editor mode label */
-    GtkWidget* status_mode_btn;   /* bottom bar: editor mode button */
     GtkWidget* status_notice_label; /* bottom bar: app_notice() message */
     GtkWidget* status_undo_btn;   /* bottom bar: Undo after the message */
     EditorMode default_editor_mode; /* mode of new non-Org editor tabs (-e / --editor) */

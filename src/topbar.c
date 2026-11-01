@@ -1,4 +1,4 @@
-/* Top bar: clickable path breadcrumbs and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
+/* Top bar: clickable path breadcrumbs, the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
 #include "topbar.h"
 #include "icons.h"
 #include "app_events.h"
@@ -9,7 +9,9 @@
 #include "help_guide.h"
 #include "minimap.h"
 #include "nav_history.h"
+#include "nav_keys.h"
 #include "remote.h"
+#include "search.h"
 #include "terminal.h"
 
 static void on_breadcrumb_clicked(GtkButton* btn, gpointer data) {
@@ -285,6 +287,81 @@ GtkWidget* topbar_history_buttons_new(AppData* app) {
     return box;
 }
 
+static const gchar* mode_name(EditorMode mode) {
+    switch (mode) {
+    case EDITOR_MODE_VIM:
+        return "Vim";
+    case EDITOR_MODE_EMACS:
+        return "Emacs";
+    default:
+        return "Notepad";
+    }
+}
+
+/* The global mode only: an editor tab's own mode is set from its tab menu */
+static void on_mode_item_clicked(GtkButton* b, gpointer data) {
+    GtkWidget* popover = GTK_WIDGET(data);
+    AppData* app = g_object_get_data(G_OBJECT(b), "app");
+    EditorMode mode = (EditorMode)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "mode"));
+    gtk_popover_popdown(GTK_POPOVER(popover));
+    if (app != NULL && mode != app->default_editor_mode) {
+        app->default_editor_mode = mode;
+        app->nav_prefix = NAV_PREFIX_NONE; /* a prefix of the old mode (g, C-x) */
+        app->nav_recenter_step = 0;
+        search_mode_changed(app);
+        update_path_label(app);
+    }
+}
+
+static void on_mode_pill_clicked(GtkButton* btn, gpointer data) {
+    AppData* app = (AppData*)data;
+    GtkWidget* popover = gtk_popover_new();
+    gtk_widget_set_parent(popover, GTK_WIDGET(btn));
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
+    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
+
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    gtk_widget_set_margin_start(box, 6);
+    gtk_widget_set_margin_end(box, 6);
+    gtk_widget_set_margin_top(box, 6);
+    gtk_widget_set_margin_bottom(box, 6);
+
+    GtkWidget* title = gtk_label_new("Global Mode");
+    gtk_widget_add_css_class(title, "dim-label");
+    gtk_widget_set_margin_bottom(title, 2);
+    gtk_box_append(GTK_BOX(box), title);
+
+    static const EditorMode modes[] = {EDITOR_MODE_NOTEPAD, EDITOR_MODE_EMACS, EDITOR_MODE_VIM};
+    for (gsize i = 0; i < G_N_ELEMENTS(modes); i++) {
+        GtkWidget* b = gtk_button_new_with_label(mode_name(modes[i]));
+        gtk_button_set_has_frame(GTK_BUTTON(b), FALSE);
+        if (modes[i] == app->default_editor_mode) {
+            gtk_widget_add_css_class(b, "menu-item-current");
+        }
+        g_object_set_data(G_OBJECT(b), "app", app);
+        g_object_set_data(G_OBJECT(b), "mode", GINT_TO_POINTER(modes[i]));
+        g_signal_connect(b, "clicked", G_CALLBACK(on_mode_item_clicked), popover);
+        gtk_box_append(GTK_BOX(box), b);
+    }
+
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
+    g_signal_connect(popover, "closed", G_CALLBACK(on_history_menu_closed), NULL);
+    gtk_popover_popup(GTK_POPOVER(popover));
+}
+
+GtkWidget* topbar_mode_button_new(AppData* app) {
+    GtkWidget* btn = gtk_button_new();
+    gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+    gtk_widget_set_focusable(btn, FALSE);
+    gtk_widget_add_css_class(btn, "status-pill");
+    gtk_widget_set_tooltip_text(btn, "Global Mode: Keys of the Explorer and Preview, Mode of New Editor Tabs");
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_mode_pill_clicked), app);
+    icon_button_set_content(btn, "input-keyboard", mode_name(app->default_editor_mode));
+    g_object_set_data(G_OBJECT(btn), "mode-state", GINT_TO_POINTER((gint)app->default_editor_mode + 1));
+    app->mode_btn = btn;
+    return btn;
+}
+
 typedef struct {
     gchar* label;
     gchar* full_path;
@@ -420,6 +497,15 @@ void update_path_label(AppData* app) {
     if (app->history_back_btn != NULL) {
         gtk_widget_set_sensitive(app->history_back_btn, nav_history_can_go(app, TRUE));
         gtk_widget_set_sensitive(app->history_fwd_btn, nav_history_can_go(app, FALSE));
+    }
+
+    if (app->mode_btn != NULL) {
+        /* Rebuilt only when the mode changes (stored as mode + 1) */
+        gint state = (gint)app->default_editor_mode + 1;
+        if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(app->mode_btn), "mode-state")) != state) {
+            icon_button_set_content(app->mode_btn, "input-keyboard", mode_name(app->default_editor_mode));
+            g_object_set_data(G_OBJECT(app->mode_btn), "mode-state", GINT_TO_POINTER(state));
+        }
     }
 
     if (app->sort_btn != NULL) {

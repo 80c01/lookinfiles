@@ -277,12 +277,12 @@ static void save_settings(Preferences* p) {
     }
     EditorMode mode = preferences_editor_mode(s.editor);
     if (mode != app->default_editor_mode) {
-        /* Same as picking the global mode in the status bar */
+        /* Same as picking the global mode in the top bar */
         app->default_editor_mode = mode;
         app->nav_prefix = NAV_PREFIX_NONE;
         app->nav_recenter_step = 0;
         search_mode_changed(app);
-        app_emit(app, APP_EVENT_STATUS_CHANGED);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
     }
 }
 

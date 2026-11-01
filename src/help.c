@@ -237,7 +237,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "C-x <right> / C-x <left>", "Next / previous tab of the focused notebook (from the explorer: the preview panel, the focus stays)", EM},
     {"Global", "Ctrl+Tab / Ctrl+Shift+Tab, Ctrl+PgDn / Ctrl+PgUp", "Next / previous tab of the focused notebook (from the explorer: the preview panel, the focus stays)", NP},
     {"Global", "Git Commits / References / Search", "The navigation keys of the global mode move in the list (Enter opens)", 0},
-    {"Global", "Status bar mode", "Global mode: only the Notepad, Vim or Emacs navigation keys in the explorer, viewer and their search bars (arrows, Home / End, PgUp / PgDn in all); mode of new editor tabs", 0},
+    {"Global", "Top bar mode", "Global mode: only the Notepad, Vim or Emacs navigation keys in the explorer, viewer and their search bars (arrows, Home / End, PgUp / PgDn in all); mode of new editor tabs", 0},
     {"Global", "f", "Toggle fullscreen", 0},
     {"Global", "Ctrl+Shift+L", "Stack the terminal pane under the viewer, or put it back beside it (the explorer panel stays fixed)", 0},
     {"Global", "Ctrl+Shift+R", "Toggle Remote (SSH) machines view in sidebar", 0},

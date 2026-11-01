@@ -727,6 +727,7 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), topbar_history_buttons_new(app));
     gtk_box_append(GTK_BOX(label_row), breadcrumb_box);
     gtk_box_append(GTK_BOX(label_row), sep_label);
+    gtk_box_append(GTK_BOX(label_row), topbar_mode_button_new(app));
     gtk_box_append(GTK_BOX(label_row), ws_minimap);
     gtk_box_append(GTK_BOX(label_row), layouts_btn);
     gtk_box_append(GTK_BOX(label_row), prefs_btn);

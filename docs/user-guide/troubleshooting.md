@@ -47,7 +47,7 @@ Wayland). Over SSH, use `ssh -X` or run it on the machine's own screen.
 
 ## A key does not do what I expect
 
-- Look at the global mode in the status bar: navigation keys depend on it
+- Look at the global mode in the top bar: navigation keys depend on it
   (`j` / `k` only work in Vim mode).
 - An editor tab can have its own mode: right-click its title to see it.
 - Press `?` to see the keys of the current mode.

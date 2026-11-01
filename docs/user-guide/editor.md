@@ -63,9 +63,9 @@ In Vim mode the views share one Vim: mode, registers and undo history.
 
 ## Choosing the mode of a tab
 
-A new tab takes the **global mode** shown in the status bar. To change the
+A new tab takes the **global mode** shown in the top bar. To change the
 mode of one tab, right-click its title and pick **Notepad**, **Emacs** or
-**Vim**; the current mode is marked. The status bar keeps showing the
+**Vim**; the current mode is marked. The top bar keeps showing the
 global mode.
 
 The **Editor** section of the Preferences (`Ctrl+,`) sets the global mode

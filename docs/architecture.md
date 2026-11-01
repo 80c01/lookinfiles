@@ -449,9 +449,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 
 **4. Window chrome — may call features:**
 - `topbar` — back / forward arrows (folder history, right click: the list),
-  breadcrumbs and toggle pills; `update_path_label()`.
-- `status_bar` — bottom bar (branch, selection, size, type, global mode menu:
-  it shows and sets the global mode only; a tab's mode is set from its tab menu).
+  breadcrumbs, global mode pill (`topbar_mode_button_new()`: it shows and sets
+  the global mode only; a tab's mode is set from its tab menu) and toggle
+  pills; `update_path_label()`.
+- `status_bar` — bottom bar (branch, selection, size, type).
 - `sidebar` — explorer header: view switcher and per-view action toolbars.
 - `help` — cheat sheet (`?`, right click on the Help button); `KEY_HELP` must stay in sync with `docs/keyboard.md`.
 - `help_guide` — the **Help** page of the preview notebook (`app->help_page`, after
