@@ -54,11 +54,14 @@ static void test_search(void) {
     g_ptr_array_add(files, write_file(root, "bin.dat", "total\0\1\2", 8));
 
     /* Any case by default, even with a capital; files in path order, binary skipped */
-    gboolean truncated = TRUE;
-    GPtrArray* refs = text_search_files("total", &ANY, files, NULL, &truncated);
+    TextSearchStats stats = {TEXT_SEARCH_MAX_BYTES_HIT, 99, 99, 99};
+    GPtrArray* refs = text_search_files("total", &ANY, files, NULL, &stats);
     gchar* got = list_of(root, refs);
     g_assert_cmpstr(got, ==, "a/x.c:1:4 a/x.c:1:14 b.txt:1:4 b.txt:2:1");
-    g_assert_false(truncated);
+    g_assert_cmpint(stats.stop, ==, TEXT_SEARCH_DONE);
+    g_assert_cmpuint(stats.searched, ==, 2); /* not the binary file */
+    g_assert_cmpuint(stats.skipped_large, ==, 0);
+    g_assert_cmpuint(stats.too_complex, ==, 0);
     /* The line as shown: the tab became a space, the column still points at the match */
     CodeReference* last = g_ptr_array_index(refs, 3);
     g_assert_cmpstr(last->text, ==, " total two");
@@ -78,6 +81,35 @@ static void test_search(void) {
     ASSERT_SEARCH("aa", &ANY, "aaa.txt:1:0+2 aaa.txt:1:2+2");
     ASSERT_SEARCH("", &ANY, "");
 
+    /* A file over TEXT_SEARCH_MAX_FILE_BYTES is skipped and counted */
+    gsize big_len = TEXT_SEARCH_MAX_FILE_BYTES + 1;
+    gchar* big = g_malloc(big_len);
+    memset(big, 'a', big_len);
+    g_ptr_array_add(files, write_file(root, "big.txt", big, (gssize)big_len));
+    g_free(big);
+    refs = text_search_files("aa", &ANY, files, NULL, &stats);
+    g_assert_cmpuint(refs->len, ==, 2);
+    g_assert_cmpuint(stats.searched, ==, 1);
+    g_assert_cmpuint(stats.skipped_large, ==, 1);
+    g_ptr_array_unref(refs);
+
+    g_ptr_array_unref(files);
+    g_free(root);
+}
+
+static void test_max_results(void) {
+    gchar* root = g_dir_make_tmp("text_search_XXXXXX", NULL);
+    GPtrArray* files = g_ptr_array_new_with_free_func(g_free);
+    GString* many = g_string_new(NULL);
+    for (guint i = 0; i < TEXT_SEARCH_MAX_RESULTS + 10; i++) g_string_append(many, "x\n");
+    g_ptr_array_add(files, write_file(root, "a.txt", many->str, (gssize)many->len));
+    g_ptr_array_add(files, write_file(root, "b.txt", "x\n", -1));
+    g_string_free(many, TRUE);
+    TextSearchStats stats;
+    GPtrArray* refs = text_search_files("x", &ANY, files, NULL, &stats);
+    g_assert_cmpuint(refs->len, ==, TEXT_SEARCH_MAX_RESULTS);
+    g_assert_cmpint(stats.stop, ==, TEXT_SEARCH_MAX_RESULTS_HIT);
+    g_ptr_array_unref(refs);
     g_ptr_array_unref(files);
     g_free(root);
 }
@@ -155,6 +187,7 @@ int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/text_search/search", test_search);
     g_test_add_func("/text_search/options", test_options);
+    g_test_add_func("/text_search/max_results", test_max_results);
     g_test_add_func("/text_search/fuzzy", test_fuzzy);
     return g_test_run();
 }

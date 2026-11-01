@@ -55,6 +55,10 @@ your last search) is filled in.
 - **Include ignored files** (`Alt+I`) also searches the files git ignores
   (outside git: hidden and build folders).
 - The options and the patterns are kept for the next search.
+- Limits: 100 000 files, 512 MB read in all, 5 000 results; files over
+  4 MB and binary files are skipped. When a limit stops the search, or
+  files are skipped, the header of the Search tab says so (in the warning
+  colour); narrow the files to include to search the rest.
 - The results go to a **Search** tab, grouped by file, with the matching
   lines. `Enter` or a double click opens one at its line; the cross closes
   the tab.

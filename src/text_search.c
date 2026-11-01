@@ -20,6 +20,7 @@ typedef struct {
     GArray* fuzzy;    /* gunichar: the letters to find, case folded */
     GArray* chars;    /* fuzzy: the current line (gunichar) */
     GArray* offsets;  /* fuzzy: byte offset of each char of the line, then its length */
+    gboolean failed;  /* the regular expression gave up on the current text */
 } Matcher;
 
 static gboolean is_ascii(const gchar* s) {
@@ -112,7 +113,7 @@ static void cursor_move(Cursor* c, const gchar* to) {
  * when the limit is reached */
 static gboolean add_ref(GPtrArray* out, const gchar* path, const Cursor* c, const gchar* hit, gsize len,
                         const gchar* end) {
-    if (out->len >= CODE_INDEX_MAX_REFERENCES) return FALSE;
+    if (out->len >= TEXT_SEARCH_MAX_RESULTS) return FALSE;
     const gchar* nl = memchr(hit, '\n', MIN(len, (gsize)(end - hit)));
     if (nl != NULL) len = (gsize)(nl - hit);
     CodeReference* ref = g_new0(CodeReference, 1);
@@ -153,8 +154,9 @@ static gboolean search_regex(Matcher* m, const gchar* path, const gchar* text, g
     gboolean go_on = TRUE;
     Cursor c = {text, text, 0};
     GMatchInfo* info = NULL;
-    g_regex_match_full(re, text, (gssize)len, 0, 0, &info, NULL);
-    while (g_match_info_matches(info)) {
+    GError* err = NULL;
+    g_regex_match_full(re, text, (gssize)len, 0, 0, &info, &err);
+    while (err == NULL && g_match_info_matches(info)) {
         gint s = 0, e = 0;
         if (g_match_info_fetch_pos(info, 0, &s, &e) && e > s) {
             cursor_move(&c, text + s);
@@ -163,7 +165,11 @@ static gboolean search_regex(Matcher* m, const gchar* path, const gchar* text, g
                 break;
             }
         }
-        if (!g_match_info_next(info, NULL)) break;
+        if (!g_match_info_next(info, &err)) break;
+    }
+    if (err != NULL) {
+        m->failed = TRUE; /* the matches after this point are lost */
+        g_error_free(err);
     }
     g_match_info_free(info);
     return go_on;
@@ -289,9 +295,11 @@ static gint compare_paths(gconstpointer a, gconstpointer b) {
 }
 
 GPtrArray* text_search_files(const gchar* query, const TextSearchOptions* opts, GPtrArray* files,
-                             GCancellable* cancellable, gboolean* truncated) {
+                             GCancellable* cancellable, TextSearchStats* stats) {
     GPtrArray* out = g_ptr_array_new_with_free_func((GDestroyNotify)code_reference_free);
-    if (truncated != NULL) *truncated = FALSE;
+    TextSearchStats unused;
+    if (stats == NULL) stats = &unused;
+    memset(stats, 0, sizeof(*stats));
     if (query == NULL || query[0] == '\0' || opts == NULL || files == NULL) return out;
     Matcher m;
     if (!matcher_init(&m, query, opts)) {
@@ -302,14 +310,18 @@ GPtrArray* text_search_files(const gchar* query, const TextSearchOptions* opts, 
     GPtrArray* sorted = g_ptr_array_copy(files, NULL, NULL);
     g_ptr_array_set_free_func(sorted, NULL); /* the copy inherits it: the paths stay owned by files */
     g_ptr_array_sort(sorted, compare_paths);
-    gsize budget = CODE_INDEX_MAX_BYTES;
+    gsize budget = TEXT_SEARCH_MAX_BYTES;
     for (guint i = 0; i < sorted->len; i++) {
         if (g_cancellable_is_cancelled(cancellable)) break;
         const gchar* path = g_ptr_array_index(sorted, i);
         GStatBuf st;
-        if (g_stat(path, &st) != 0 || !S_ISREG(st.st_mode) || st.st_size > CODE_INDEX_MAX_FILE_BYTES) continue;
+        if (g_stat(path, &st) != 0 || !S_ISREG(st.st_mode)) continue;
+        if (st.st_size > TEXT_SEARCH_MAX_FILE_BYTES) {
+            stats->skipped_large++;
+            continue;
+        }
         if ((gsize)st.st_size > budget) {
-            if (truncated != NULL) *truncated = TRUE;
+            stats->stop = TEXT_SEARCH_MAX_BYTES_HIT;
             break;
         }
         gchar* text = NULL;
@@ -318,11 +330,14 @@ GPtrArray* text_search_files(const gchar* query, const TextSearchOptions* opts, 
         budget -= len;
         gboolean go_on = TRUE;
         if (!is_binary(text, len)) {
+            m.failed = FALSE;
             go_on = search_text(&m, path, text, len, out);
+            stats->searched++;
+            if (m.failed) stats->too_complex++;
         }
         g_free(text);
         if (!go_on) {
-            if (truncated != NULL) *truncated = TRUE;
+            stats->stop = TEXT_SEARCH_MAX_RESULTS_HIT;
             break;
         }
     }

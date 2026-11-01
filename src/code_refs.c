@@ -328,26 +328,34 @@ void code_refs_show_searching(AppData* app, const gchar* query, const gchar* roo
     gchar* base = g_path_get_basename(root);
     gchar* markup = g_markup_printf_escaped("Searching for <b>%s</b> in %s…", query, base);
     gtk_label_set_markup(GTK_LABEL(rp->header), markup);
+    gtk_widget_set_tooltip_text(rp->header, NULL);
     g_free(markup);
     g_free(base);
     present_page(app, rp, FALSE);
 }
 
 void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
-                           const gchar* how, gboolean truncated) {
+                           const gchar* how, const gchar* note) {
     RefsPage* rp = ensure_page(app, &app->search_page, "Search");
     if (rp == NULL) return;
     guint files = fill_page(rp, refs, root, strlen(query));
+    /* Why the search stopped early first: the header is ellipsized */
+    gchar* warn = note != NULL ? g_markup_printf_escaped(" <span foreground=\"%s\">· %s</span>",
+                                                         palette_color(PAL_WARNING), note)
+                               : g_strdup("");
     gchar* markup = refs->len == 0
-                        ? g_markup_printf_escaped("No results for <b>%s</b> <span foreground=\"%s\">(%s)</span>",
-                                                  query, palette_color(PAL_FG_SUBTLE), how)
-                        : g_markup_printf_escaped("<b>%s</b>: %u result%s in %u file%s%s "
-                                                  "<span foreground=\"%s\">(%s; Enter opens)</span>",
-                                                  query, refs->len, refs->len == 1 ? "" : "s", files,
-                                                  files > 1 ? "s" : "", truncated ? ", list cut" : "",
-                                                  palette_color(PAL_FG_SUBTLE), how);
-    gtk_label_set_markup(GTK_LABEL(rp->header), markup);
+                        ? g_markup_printf_escaped("No results for <b>%s</b>", query)
+                        : g_markup_printf_escaped("<b>%s</b>: %u result%s in %u file%s", query, refs->len,
+                                                  refs->len == 1 ? "" : "s", files, files > 1 ? "s" : "");
+    gchar* tail = g_markup_printf_escaped(" <span foreground=\"%s\">(%s%s)</span>", palette_color(PAL_FG_SUBTLE), how,
+                                          refs->len > 0 ? "; Enter opens" : "");
+    gchar* all = g_strconcat(markup, warn, tail, NULL);
+    gtk_label_set_markup(GTK_LABEL(rp->header), all);
+    gtk_widget_set_tooltip_markup(rp->header, all);
+    g_free(all);
+    g_free(tail);
     g_free(markup);
+    g_free(warn);
     present_page(app, rp, refs->len > 0);
 }
 

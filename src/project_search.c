@@ -43,7 +43,8 @@ typedef struct {
     Scope scope;
     gchar* root;
     GPtrArray* refs;
-    gboolean truncated;
+    gboolean cut_files; /* TEXT_SEARCH_MAX_FILES listed */
+    TextSearchStats stats;
 } Search;
 
 static void search_free(gpointer data) {
@@ -72,13 +73,51 @@ static void search_thread(GTask* task, gpointer source, gpointer data, GCancella
     (void)source;
     Search* s = data;
     Filter f = {path_globs_new(s->scope.include), path_globs_new(s->scope.exclude)};
-    gboolean cut_files = FALSE;
-    GPtrArray* files = code_index_some_files(s->root, s->scope.ignored, keep_file, &f, cancellable, &cut_files);
+    GPtrArray* files = code_index_some_files(s->root, s->scope.ignored, keep_file, &f, TEXT_SEARCH_MAX_FILES,
+                                             cancellable, &s->cut_files);
     path_globs_free(f.include);
     path_globs_free(f.exclude);
-    s->refs = text_search_files(s->query, &s->opts, files, cancellable, &s->truncated);
-    s->truncated = s->truncated || cut_files;
+    s->refs = text_search_files(s->query, &s->opts, files, cancellable, &s->stats);
     g_ptr_array_unref(files);
+}
+
+static void add_note(GString* s, const gchar* note) {
+    if (s->len > 0) g_string_append(s, ", ");
+    g_string_append(s, note);
+}
+
+/* Why the search stopped early and what it skipped, or NULL */
+static gchar* stop_note(const Search* s) {
+    GString* n = g_string_new(NULL);
+    gchar* t = NULL;
+    if (s->cut_files) {
+        add_note(n, t = g_strdup_printf("only the first %u files listed", (guint)TEXT_SEARCH_MAX_FILES));
+        g_free(t);
+    }
+    if (s->stats.stop == TEXT_SEARCH_MAX_RESULTS_HIT) {
+        add_note(n, t = g_strdup_printf("stopped at %u results", (guint)TEXT_SEARCH_MAX_RESULTS));
+        g_free(t);
+    } else if (s->stats.stop == TEXT_SEARCH_MAX_BYTES_HIT) {
+        add_note(n, t = g_strdup_printf("stopped after %u MB read, %u files searched",
+                                        (guint)(TEXT_SEARCH_MAX_BYTES / (1024 * 1024)), s->stats.searched));
+        g_free(t);
+    }
+    if (s->stats.skipped_large > 0) {
+        add_note(n, t = g_strdup_printf("%u file%s over %u MB skipped", s->stats.skipped_large,
+                                        s->stats.skipped_large == 1 ? "" : "s",
+                                        (guint)(TEXT_SEARCH_MAX_FILE_BYTES / (1024 * 1024))));
+        g_free(t);
+    }
+    if (s->stats.too_complex > 0) {
+        add_note(n, t = g_strdup_printf("expression too complex in %u file%s, matches may be missing",
+                                        s->stats.too_complex, s->stats.too_complex == 1 ? "" : "s"));
+        g_free(t);
+    }
+    if (n->len == 0) {
+        g_string_free(n, TRUE);
+        return NULL;
+    }
+    return g_string_free(n, FALSE);
 }
 
 /* The options and the files searched, for the header of the Search tab */
@@ -99,7 +138,9 @@ static void search_done(GObject* source, GAsyncResult* res, gpointer data) {
     if (g_cancellable_is_cancelled(s->cancellable)) return; /* a newer search replaced it */
     if (running == s->cancellable) g_clear_object(&running);
     gchar* how = describe(&s->opts, &s->scope);
-    code_refs_show_search(s->app, s->query, s->refs, s->root, how, s->truncated);
+    gchar* note = stop_note(s);
+    code_refs_show_search(s->app, s->query, s->refs, s->root, how, note);
+    g_free(note);
     g_free(how);
 }
 

@@ -32,6 +32,7 @@ typedef struct {
     gboolean ignored; /* also the files git ignores, hidden and build folders */
     CodeIndexKeepFunc keep;
     gpointer keep_data;
+    guint max_files;
 } Listing;
 
 static gboolean kept(const Listing* l, const gchar* rel) {
@@ -43,7 +44,7 @@ static gboolean add_file(GPtrArray* out, const gchar* root, const gchar* rel, gs
                          const Listing* l, gboolean* truncated) {
     gchar* name = g_strndup(rel, rel_len);
     if (kept(l, name)) {
-        if (out->len >= CODE_INDEX_MAX_FILES) {
+        if (out->len >= l->max_files) {
             if (truncated != NULL) *truncated = TRUE;
             g_free(name);
             return FALSE;
@@ -134,7 +135,7 @@ static gboolean walk(const gchar* root, const gchar* dir, gint depth, const List
         } else if (g_file_test(full, G_FILE_TEST_IS_DIR)) {
             if (!skipped_dir(name, l->ignored)) go_on = walk(root, full, depth + 1, l, out, cancellable, truncated);
         } else if (kept(l, relative_to(root, full))) {
-            if (out->len >= CODE_INDEX_MAX_FILES) {
+            if (out->len >= l->max_files) {
                 if (truncated != NULL) *truncated = TRUE;
                 go_on = FALSE;
             } else {
@@ -168,17 +169,17 @@ GPtrArray* code_index_project_files(const gchar* root, CodeLang family, GCancell
         if (truncated != NULL) *truncated = FALSE;
         return g_ptr_array_new_with_free_func(g_free);
     }
-    Listing l = {family, FALSE, NULL, NULL};
+    Listing l = {family, FALSE, NULL, NULL, CODE_INDEX_MAX_FILES};
     return list_files(root, &l, cancellable, truncated);
 }
 
 GPtrArray* code_index_all_files(const gchar* root, GCancellable* cancellable, gboolean* truncated) {
-    return code_index_some_files(root, FALSE, NULL, NULL, cancellable, truncated);
+    return code_index_some_files(root, FALSE, NULL, NULL, CODE_INDEX_MAX_FILES, cancellable, truncated);
 }
 
 GPtrArray* code_index_some_files(const gchar* root, gboolean ignored, CodeIndexKeepFunc keep, gpointer keep_data,
-                                 GCancellable* cancellable, gboolean* truncated) {
-    Listing l = {CODE_LANG_NONE, ignored, keep, keep_data};
+                                 guint max_files, GCancellable* cancellable, gboolean* truncated) {
+    Listing l = {CODE_LANG_NONE, ignored, keep, keep_data, max_files};
     return list_files(root, &l, cancellable, truncated);
 }
 

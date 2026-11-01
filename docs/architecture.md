@@ -155,7 +155,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   exclude of a search in files.
 - `text_search` — search of a text in a project's files (literal, match
   case, whole word, regex through `GRegex`, or letters in order; binary and
-  large files skipped, bounded), as `CodeReference`s with their length.
+  large files skipped, its own higher limits `TEXT_SEARCH_MAX_*`), as
+  `CodeReference`s with their length, and why it stopped
+  (`TextSearchStats`).
 - `jump_list` — back / forward history of navigation jumps across files
   (also the explorer's folder history, `nav_history`).
 - `session_store` — `session.ini` (workspaces at quit) and `recent.ini`

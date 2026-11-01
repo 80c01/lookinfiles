@@ -24,8 +24,9 @@ GtkWidget* code_refs_search_page(AppData* app);
 /* Show the Search page, emptied, while query is searched for under root */
 void code_refs_show_searching(AppData* app, const gchar* query, const gchar* root);
 /* Show the occurrences of query (CodeReference*, grouped by file); how
- * describes the search options ("any case"...) */
+ * describes the search options ("any case"...), note (may be NULL) why it
+ * stopped early or what it skipped */
 void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
-                           const gchar* how, gboolean truncated);
+                           const gchar* how, const gchar* note);
 
 #endif /* CODE_REFS_H */
