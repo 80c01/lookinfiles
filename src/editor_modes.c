@@ -630,6 +630,18 @@ void editor_mode_goto_line(EditorTab* tab, gint line) {
     editor_modes_update_status(tab);
 }
 
+gboolean editor_mode_get_wrap(EditorTab* tab) {
+    if (tab == NULL || tab->view == NULL) return FALSE;
+    return gtk_text_view_get_wrap_mode(GTK_TEXT_VIEW(tab->view)) != GTK_WRAP_NONE;
+}
+
+gboolean editor_mode_toggle_wrap(EditorTab* tab) {
+    if (tab == NULL || tab->view == NULL) return FALSE;
+    gboolean wrap = !editor_mode_get_wrap(tab);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(tab->view), wrap ? GTK_WRAP_WORD_CHAR : GTK_WRAP_NONE);
+    return wrap;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Notepad Mode UI & Signals                                                 */
 /* ------------------------------------------------------------------------- */

@@ -22,7 +22,8 @@ enum {
     TAB_ACTION_MODE_NOTEPAD,
     TAB_ACTION_MODE_EMACS,
     TAB_ACTION_MODE_VIM,
-    TAB_ACTION_LINE_NUMBERS
+    TAB_ACTION_LINE_NUMBERS,
+    TAB_ACTION_WRAP
 };
 
 EditorTab* editor_current_tab(AppData* app);

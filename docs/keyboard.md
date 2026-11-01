@@ -198,7 +198,7 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 | `Ctrl+Alt+Arrows` / `Ctrl+Alt+H J K L` | Move / split the tab left, down, up or right (right from the main panel opens the dedicated editor panel, left from it docks the tab back) |
 | `Ctrl+R` / `F2` | Rename the current text buffer (only `F2` in Emacs and Org-mode tabs: `C-r` searches backward) |
 | `Ctrl+Alt+N` | Show or hide the line numbers of the tab (also `:set number` / `:set nonumber` in Vim mode, `M-x display-line-numbers-mode` in Emacs mode) |
-| Right click on the tab | Change the mode (the current one is marked), show line numbers, move, split or close the tab |
+| Right click on the tab | Change the mode (the current one is marked), show line numbers, wrap long lines (also `:set wrap` in Vim mode, `M-x visual-line-mode` or `toggle-truncate-lines` in Emacs mode), move, split or close the tab |
 | Drag the tab | Onto a tab bar: move it there; near an editor edge: split that side |
 
 A tab opens in the global mode (status bar, initially the `--editor` one).
@@ -326,7 +326,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Undo and redo | `C-/`, `C-_`, `C-x u` / `C-Shift-_`, `M-_` |
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
 | Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward, `M-?` references, `M-g i` symbols, `C-h .` help; signatures in the echo area |
-| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `org-mode`, `text-mode`, mode switches) |
+| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `visual-line-mode` / `toggle-truncate-lines` (wrap long lines), `org-mode`, `text-mode`, mode switches) |
 | Minibuffer | `Tab` completes (`M-x` command names, Org tags, `*Heading` links) and lists the candidates; `C-g` / `Esc` quits |
 
 </details>

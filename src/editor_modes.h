@@ -47,6 +47,10 @@ gboolean editor_mode_find_next(EditorTab* tab, const gchar* query,
 gint editor_mode_replace(EditorTab* tab, const gchar* query,
                          const gchar* replacement, gboolean replace_all);
 void editor_mode_goto_line(EditorTab* tab, gint line);
+/* Wrap long lines of the tab or stop wrapping them; TRUE when they now wrap */
+gboolean editor_mode_toggle_wrap(EditorTab* tab);
+/* TRUE when the tab wraps its long lines */
+gboolean editor_mode_get_wrap(EditorTab* tab);
 
 /* Notepad specific triggers */
 void notepad_show_find(EditorTab* tab, gboolean is_replace);

@@ -381,7 +381,7 @@ static const gchar* MX_COMMANDS[] = {
     "display-line-numbers-mode", "fill-paragraph", "goto-line", "notepad-mode",
     "org-mode", "query-replace", "redo", "save-buffer", "set-justification-center",
     "set-justification-full", "set-justification-left", "set-justification-right",
-    "text-mode", "undo", "vim-mode", "write-file",
+    "text-mode", "toggle-truncate-lines", "undo", "vim-mode", "visual-line-mode", "write-file",
 };
 
 static gint compare_names(gconstpointer a, gconstpointer b) {
@@ -526,6 +526,10 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
                     g_free(msg);
                 }
                 g_free(name);
+            } else if (strstr(cmd, "visual-line-mode") || strstr(cmd, "toggle-truncate-lines")) {
+                gboolean wrap = editor_mode_toggle_wrap(tab);
+                emacs_echo(tab, wrap ? "Visual-Line mode enabled" : "Visual-Line mode disabled");
+                emacs_close_minibuffer(tab);
             } else if (strstr(cmd, "line-numbers")) {
                 /* display-line-numbers-mode */
                 editor_toggle_line_numbers((AppData*)tab->app, tab);

@@ -430,6 +430,9 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
     case TAB_ACTION_LINE_NUMBERS:
         editor_toggle_line_numbers(app, tab);
         break;
+    case TAB_ACTION_WRAP:
+        editor_mode_toggle_wrap(tab);
+        break;
     case TAB_ACTION_CLOSE:
         editor_close_tab(app, tab);
         break;
@@ -540,6 +543,8 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     tab_menu_item(box, popover, app, tab,
                   diff_gutter_get_line_numbers(tab->view) ? "Hide Line Numbers" : "Show Line Numbers",
                   "Ctrl+Alt+N", TAB_ACTION_LINE_NUMBERS);
+    tab_menu_item(box, popover, app, tab, editor_mode_get_wrap(tab) ? "Don't Wrap Lines" : "Wrap Lines",
+                  NULL, TAB_ACTION_WRAP);
 
     GtkWidget* sep4 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_margin_top(sep4, 4);
