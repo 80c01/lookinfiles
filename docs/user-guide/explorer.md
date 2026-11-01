@@ -78,7 +78,8 @@ To find a file anywhere in the project, use `Ctrl+P` instead (see
 | `d` or `Delete` | Move it to the trash (asks first) |
 | `u` | Undo the last move to the trash or rename |
 
-After a rename or a move to the trash, the status bar shows a message with
+After a rename or a move to the trash, the bar at the bottom of the
+explorer (the top bar while the explorer is hidden) shows a message with
 an **Undo** button for a few seconds; `u` does the same at any time, for
 the last change only. Editor tabs follow a renamed file.
 

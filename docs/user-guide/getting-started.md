@@ -74,11 +74,12 @@ hidden.
   **References** and **Help** tabs.
 - **Terminal** (below or beside the preview). Shell panes, opened with
   `Ctrl+T`.
-- **Status bar** (bottom). On the left, the git branch, the name of the
-  selected entry and short messages (with an **Undo** button after a move
-  to the trash or a rename). On the right, the size and type of the
-  selection, the code navigation backend of the current editor tab, the
-  text encoding and the global mode.
+- **Explorer bar** (bottom of the explorer). The git branch and short
+  messages (with an **Undo** button after a move to the trash or a rename;
+  in the top bar while the explorer is hidden).
+- **Status bar** (bottom). On the left, the name of the selected entry. On
+  the right, the size and type of the selection, the code navigation
+  backend of the current editor tab and the text encoding.
 
 Every border between panels can be dragged. The panel that has the
 keyboard focus is outlined; `Alt+Left` and `Alt+Right` move the focus from
@@ -86,8 +87,8 @@ panel to panel.
 
 ## The global mode: Notepad, Emacs or Vim
 
-LookinFiles speaks three keyboard dialects. The **global mode**, shown at
-the right end of the status bar, decides:
+LookinFiles speaks three keyboard dialects. The **global mode**, shown in
+the top bar, decides:
 
 - the navigation keys of the explorer and the preview (`j` / `k` in Vim,
   `C-n` / `C-p` in Emacs, the arrows everywhere);

@@ -1,4 +1,6 @@
-/* VS Code-style bottom status bar: Git branch, selection, size and file type. */
+/* Status bars: the explorer bar (Git branch, app_notice() messages, shown in
+ * the top bar while the explorer is hidden) and the bottom bar (selection,
+ * size, file type). */
 #include "status_bar.h"
 #include "app_events.h"
 #include "code_intel.h"
@@ -25,15 +27,27 @@ static void on_undo_clicked(GtkButton* btn, gpointer data) {
     undo_last_file_move((AppData*)data);
 }
 
-/* The app_notice() message and its Undo button; a new message restarts the timeout */
-static void update_notice(AppData* app) {
-    if (app->status_notice_label == NULL) {
+static void set_notice(GtkWidget* label, GtkWidget* undo, const gchar* text, gboolean with_undo) {
+    if (label == NULL) {
         return;
     }
+    gtk_label_set_text(GTK_LABEL(label), text != NULL ? text : "");
+    gtk_widget_set_visible(label, text != NULL);
+    gtk_widget_set_visible(undo, text != NULL && with_undo);
+}
+
+/* The app_notice() message and its Undo button, in the explorer bar or, while
+ * the explorer is hidden, in the top bar; a new message restarts the timeout */
+static void update_notice(AppData* app) {
     gboolean shown = (app->status_notice != NULL);
-    gtk_label_set_text(GTK_LABEL(app->status_notice_label), shown ? app->status_notice : "");
-    gtk_widget_set_visible(app->status_notice_label, shown);
-    gtk_widget_set_visible(app->status_undo_btn, shown && app->status_notice_undo);
+    gboolean in_explorer = (app->left_vbox == NULL) || gtk_widget_get_visible(app->left_vbox);
+    set_notice(app->status_notice_label, app->status_undo_btn,
+               in_explorer ? app->status_notice : NULL, app->status_notice_undo);
+    set_notice(app->topbar_notice_label, app->topbar_undo_btn,
+               in_explorer ? NULL : app->status_notice, app->status_notice_undo);
+    if (app->topbar_notice != NULL) {
+        gtk_widget_set_visible(app->topbar_notice, shown && !in_explorer);
+    }
     if (notice_shown_serial != app->status_notice_serial) {
         notice_shown_serial = app->status_notice_serial;
         if (notice_timeout_id != 0) {
@@ -44,6 +58,16 @@ static void update_notice(AppData* app) {
             notice_timeout_id = g_timeout_add_seconds(NOTICE_SECONDS, on_notice_timeout, app);
         }
     }
+}
+
+static GtkWidget* undo_button_new(AppData* app) {
+    GtkWidget* undo = gtk_button_new_with_mnemonic("_Undo");
+    gtk_button_set_has_frame(GTK_BUTTON(undo), FALSE);
+    gtk_widget_set_focusable(undo, FALSE);
+    gtk_widget_set_tooltip_text(undo, "Undo the Last Trash or Rename (u)");
+    gtk_widget_set_visible(undo, FALSE);
+    g_signal_connect(undo, "clicked", G_CALLBACK(on_undo_clicked), app);
+    return undo;
 }
 
 /* The editor tab whose code navigation backend the status bar shows, or NULL
@@ -93,32 +117,60 @@ static GtkWidget* status_item_new(void) {
     return label;
 }
 
-/* VS Code-style bottom status bar: Git branch + selection on the left, size + type on the right */
-GtkWidget* create_status_bar(AppData* app) {
+GtkWidget* create_explorer_bar(AppData* app) {
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_name(bar, "bottom-statusbar");
+    gtk_widget_add_css_class(bar, "panel-statusbar");
 
     GtkWidget* status_branch = status_item_new();
     gtk_widget_add_css_class(status_branch, "status-branch");
+    gtk_widget_set_tooltip_text(status_branch, "Git Branch of the Current Directory");
     gtk_box_append(GTK_BOX(bar), status_branch);
+
+    GtkWidget* status_notice = status_item_new();
+    gtk_widget_set_hexpand(status_notice, TRUE);
+    gtk_widget_set_halign(status_notice, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(bar), status_notice);
+
+    GtkWidget* status_undo = undo_button_new(app);
+    gtk_widget_add_css_class(status_undo, "status-item");
+    gtk_box_append(GTK_BOX(bar), status_undo);
+
+    app->status_branch = status_branch;
+    app->status_notice_label = status_notice;
+    app->status_undo_btn = status_undo;
+    return bar;
+}
+
+GtkWidget* create_topbar_notice(AppData* app) {
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
+    gtk_widget_set_visible(box, FALSE);
+
+    GtkWidget* label = gtk_label_new("");
+    gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
+    gtk_widget_add_css_class(label, "topbar-notice");
+    gtk_box_append(GTK_BOX(box), label);
+
+    GtkWidget* undo = undo_button_new(app);
+    gtk_widget_add_css_class(undo, "status-pill");
+    gtk_box_append(GTK_BOX(box), undo);
+
+    app->topbar_notice = box;
+    app->topbar_notice_label = label;
+    app->topbar_undo_btn = undo;
+    return box;
+}
+
+/* Bottom status bar: selection on the left; size, type, code navigation and encoding on the right */
+GtkWidget* create_status_bar(AppData* app) {
+    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_name(bar, "bottom-statusbar");
+    gtk_widget_add_css_class(bar, "panel-statusbar");
 
     GtkWidget* status_selection = status_item_new();
     gtk_widget_add_css_class(status_selection, "status-dim");
     gtk_box_append(GTK_BOX(bar), status_selection);
-
-    GtkWidget* status_notice = status_item_new();
-    gtk_box_append(GTK_BOX(bar), status_notice);
-
-    GtkWidget* status_undo = gtk_button_new_with_mnemonic("_Undo");
-    gtk_button_set_has_frame(GTK_BUTTON(status_undo), FALSE);
-    gtk_widget_set_focusable(status_undo, FALSE);
-    gtk_widget_add_css_class(status_undo, "status-item");
-    gtk_widget_set_tooltip_text(status_undo, "Undo the Last Trash or Rename (u)");
-    gtk_widget_set_visible(status_undo, FALSE);
-    if (app != NULL) {
-        g_signal_connect(status_undo, "clicked", G_CALLBACK(on_undo_clicked), app);
-    }
-    gtk_box_append(GTK_BOX(bar), status_undo);
 
     GtkWidget* spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(spacer, TRUE);
@@ -139,14 +191,11 @@ GtkWidget* create_status_bar(AppData* app) {
     gtk_box_append(GTK_BOX(bar), status_encoding);
 
     if (app != NULL) {
-        app->status_branch = status_branch;
         app->status_selection = status_selection;
         app->status_size = status_size;
         app->status_type = status_type;
         app->status_code = status_code;
         app->status_encoding = status_encoding;
-        app->status_notice_label = status_notice;
-        app->status_undo_btn = status_undo;
     }
 
     return bar;
@@ -205,7 +254,7 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
 
 /* Refresh the bottom status bar from the current directory and explorer selection */
 void update_status_bar(AppData* app) {
-    if (app == NULL || app->status_branch == NULL) {
+    if (app == NULL || app->status_selection == NULL) {
         return;
     }
 
@@ -215,7 +264,6 @@ void update_status_bar(AppData* app) {
     if (branch != NULL) {
         gchar* text = g_strdup_printf("⎇ %s", branch);
         gtk_label_set_text(GTK_LABEL(app->status_branch), text);
-        gtk_widget_set_tooltip_text(app->status_branch, "Git Branch of the Current Directory");
         g_free(text);
     }
     gtk_widget_set_visible(app->status_branch, branch != NULL);

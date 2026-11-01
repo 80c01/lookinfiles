@@ -93,7 +93,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `a` / `Shift+A` | New file / new folder in the selected directory |
 | `F2` / `r` / `e` | Rename the selected file or folder |
 | `d` / `Delete` | Move the selected file or folder to the trash (asks first) |
-| `u` | Undo the last move to the trash or rename (also the Undo button of the status bar message) |
+| `u` | Undo the last move to the trash or rename (also the Undo button of the explorer bar message) |
 | `i` / `I` | Toggle hidden files |
 | `o` | Cycle the sort: name, date, size, extension |
 | `Ctrl+D` | Bookmark the selected entry or the current directory |

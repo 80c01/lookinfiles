@@ -671,6 +671,7 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(left_vbox), create_sidebar_header(app));
     gtk_box_append(GTK_BOX(left_vbox), left_scroll);
     gtk_box_append(GTK_BOX(left_vbox), search_bar_new(app, &app->explorer_search));
+    gtk_box_append(GTK_BOX(left_vbox), create_explorer_bar(app));
 
     GtkWidget* main_paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_hexpand(main_paned, TRUE);
@@ -727,6 +728,7 @@ int main(int argc, char** argv) {
     gtk_box_append(GTK_BOX(label_row), topbar_history_buttons_new(app));
     gtk_box_append(GTK_BOX(label_row), breadcrumb_box);
     gtk_box_append(GTK_BOX(label_row), sep_label);
+    gtk_box_append(GTK_BOX(label_row), create_topbar_notice(app));
     gtk_box_append(GTK_BOX(label_row), topbar_mode_button_new(app));
     gtk_box_append(GTK_BOX(label_row), ws_minimap);
     gtk_box_append(GTK_BOX(label_row), layouts_btn);

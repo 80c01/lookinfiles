@@ -353,14 +353,17 @@ typedef struct {
     gboolean bookmarks_sort_desc;        /* sort order for bookmarks view */
     GHashTable* org_folded_lines;     /* set of line numbers folded in currently viewed org file */
     gint org_global_fold;             /* 0 = all expanded, 1 = overview, 2 = contents */
-    GtkWidget* status_branch;     /* bottom bar: Git branch of base_dir */
+    GtkWidget* status_branch;     /* explorer bar: Git branch of base_dir */
     GtkWidget* status_selection;  /* bottom bar: selected entry name */
     GtkWidget* status_size;       /* bottom bar: selected file size */
     GtkWidget* status_type;       /* bottom bar: selected file type / language */
     GtkWidget* status_code;       /* bottom bar: code navigation backend of the editor tab */
     GtkWidget* status_encoding;   /* bottom bar: encoding */
-    GtkWidget* status_notice_label; /* bottom bar: app_notice() message */
-    GtkWidget* status_undo_btn;   /* bottom bar: Undo after the message */
+    GtkWidget* status_notice_label; /* explorer bar: app_notice() message */
+    GtkWidget* status_undo_btn;   /* explorer bar: Undo after the message */
+    GtkWidget* topbar_notice;     /* top bar: the app_notice() message while the explorer is hidden */
+    GtkWidget* topbar_notice_label;
+    GtkWidget* topbar_undo_btn;
     EditorMode default_editor_mode; /* mode of new non-Org editor tabs (-e / --editor) */
     gboolean editor_line_numbers; /* new editor tabs show line numbers (Preferences) */
     gboolean editor_wrap;         /* new editor tabs wrap long lines (Preferences) */

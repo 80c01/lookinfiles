@@ -95,7 +95,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Explorer panel", "d / Delete", "Move selected file or folder to the trash (asks first)", 0},
     {"Explorer panel", "Shift+H / Shift+L", "Back / forward in the folders shown in this workspace (also the mouse's back / forward buttons and the top bar arrows; right-click an arrow: the list)", 0},
     {"Explorer panel", "Right-click", "Context menu: open, side panel, default app, terminal here, rename, trash, copy path, bookmark", 0},
-    {"Explorer panel", "u", "Undo the last move to the trash or rename (also Undo in the status bar)", 0},
+    {"Explorer panel", "u", "Undo the last move to the trash or rename (also Undo in the explorer bar)", 0},
     {"Explorer panel", "i / I", "Toggle hidden files", 0},
     {"Explorer panel", "o", "Cycle sort: name, date, size, extension", 0},
     {"Explorer panel", "+ / - / 0", "Zoom the previewed image or PDF in / out / to the fitted size", 0},

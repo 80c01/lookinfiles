@@ -9,6 +9,9 @@ All notable changes to this project are listed here. The format follows
 
 - The global mode (Notepad, Emacs, Vim) is shown and picked from a pill in
   the top bar instead of the bottom status bar.
+- The git branch and the short messages (with Undo) move to a bar at the
+  bottom of the explorer; while the explorer is hidden, messages show in
+  the top bar.
 - Icons follow VS Code: files show the VS Code (Seti) file-type icons
   everywhere they are listed (explorer, tabs, bookmarks, Quick Open,
   references, folder previews), and every other icon is a theme icon in the

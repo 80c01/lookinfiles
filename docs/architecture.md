@@ -251,7 +251,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `app_dialog_destroy()`. While one is open, window shortcuts are off
   (`app_dialog_is_open()`).
 - `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below;
-  `app_notice()` shows a short status bar message (with Undo when asked).
+  `app_notice()` shows a short message in the explorer bar (with Undo when asked).
 - `panels` — fullscreen, focused-panel highlight, workspace width, split-handle
   drag feedback and fractions (`wire_paned_controllers()`). Every new
   `GtkPaned` must go through `wire_paned_controllers()` or at least
@@ -329,7 +329,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   plus Copy Path, Open With Default App through `GtkFileLauncher`, and
   Open Terminal Here through `terminal_open()`).
 - `file_moves` — renames and moves to the trash with editor tabs and
-  expansion following, remembered for one undo step (`u`, status bar Undo
+  expansion following, remembered for one undo step (`u`, explorer bar Undo
   after the `app_notice()` message).
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
@@ -452,7 +452,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   breadcrumbs, global mode pill (`topbar_mode_button_new()`: it shows and sets
   the global mode only; a tab's mode is set from its tab menu) and toggle
   pills; `update_path_label()`.
-- `status_bar` — bottom bar (branch, selection, size, type).
+- `status_bar` — explorer bar (`create_explorer_bar()`: branch of the files
+  view, `app_notice()` message with Undo; the message moves to the top bar,
+  `create_topbar_notice()`, while the explorer is hidden) and bottom bar
+  (selection, size, type).
 - `sidebar` — explorer header: view switcher and per-view action toolbars.
 - `help` — cheat sheet (`?`, right click on the Help button); `KEY_HELP` must stay in sync with `docs/keyboard.md`.
 - `help_guide` — the **Help** page of the preview notebook (`app->help_page`, after
