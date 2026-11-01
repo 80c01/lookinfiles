@@ -4,9 +4,11 @@ LookinFiles ("look in your files") is a keyboard-driven file explorer: a
 file tree on the left, a live preview of the selected file on the right, a
 tabbed editor and an embedded terminal, all in one window.
 
-This guide explains how to use it, one topic per page. For the complete
-list of keys, see the [keyboard reference](../keyboard.md); inside the
-application, `?` shows the keys of the current mode.
+This guide explains how to use it, one topic per page. Inside the
+application, `F1` (or a click on the **Help** button of the top bar) shows
+it in a **Help** tab; `?` (or a right click on that button) shows the keys
+of the current mode. The complete list of keys is in the
+[keyboard reference](../keyboard.md).
 
 ## Contents
 

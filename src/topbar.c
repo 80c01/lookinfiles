@@ -1,4 +1,4 @@
-/* Top bar: clickable path breadcrumbs and the layout/sort/hidden/help toggle pills. */
+/* Top bar: clickable path breadcrumbs and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
 #include "topbar.h"
 #include "icons.h"
 #include "app_events.h"
@@ -6,6 +6,7 @@
 #include "editor.h"
 #include "git_tab.h"
 #include "help.h"
+#include "help_guide.h"
 #include "minimap.h"
 #include "remote.h"
 #include "terminal.h"
@@ -145,6 +146,14 @@ void on_hidden_pill_clicked(GtkButton* btn, gpointer data) {
 
 void on_help_pill_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
+    help_guide_show((AppData*)data, NULL);
+}
+
+void on_help_pill_right_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)n_press;
+    (void)x;
+    (void)y;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
     toggle_help_panel((AppData*)data);
 }
 
@@ -353,7 +362,9 @@ void update_path_label(AppData* app) {
         }
     }
     if (app->help_btn != NULL) {
-        gboolean help_vis = (app->help_window != NULL) && gtk_widget_get_visible(app->help_window);
+        /* Lit while the cheat sheet or the Help tab is open */
+        gboolean help_vis = ((app->help_window != NULL) && gtk_widget_get_visible(app->help_window)) ||
+                            help_guide_is_open(app);
         if (help_vis) {
             gtk_widget_add_css_class(app->help_btn, "pill-active");
         } else {

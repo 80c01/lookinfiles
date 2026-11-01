@@ -34,7 +34,7 @@ make
 ./lookinfiles .
 ```
 
-Press `?` for the shortcuts, `Alt+Left` / `Alt+Right` to move between
+Press `F1` for the user guide, `?` for the shortcuts, `Alt+Left` / `Alt+Right` to move between
 panels, `Ctrl+Q` to quit.
 
 ## Installation
@@ -89,6 +89,7 @@ The session (workspaces, folders, open files) is saved when LookinFiles quits.
 
 | Key | Action |
 |---|---|
+| `F1` | User guide (Help tab) |
 | `?` | Cheat sheet with every shortcut of the current mode |
 | `Ctrl+P` | Go to a file of the project |
 | `Ctrl+Shift+F` | Search in files |

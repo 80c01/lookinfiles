@@ -242,6 +242,9 @@ key m
 key Up Up Up Up Up      # back to plan.org
 key question;           shot help_open
 key question;           shot help_closed
+key F1;                 shot help_guide_tab        # user guide in the Help tab
+key Page_Down;          shot help_guide_scrolled
+key ctrl+w;             shot help_guide_closed
 key End;                shot G_last_row
 key Up;                 shot select_previous_row
 key Down Down;          shot select_next_rows

@@ -334,7 +334,7 @@ int main(int argc, char** argv) {
     gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);
     gtk_widget_set_focusable(help_btn, FALSE);
     gtk_widget_add_css_class(help_btn, "status-pill");
-    gtk_widget_set_tooltip_text(help_btn, "Show Keyboard Shortcuts (?)");
+    gtk_widget_set_tooltip_text(help_btn, "User Guide (F1) — Right-Click: Keyboard Shortcuts (?)");
 
     /* Spacer label for top bar */
     GtkWidget* sep_label = gtk_label_new(" ");
@@ -549,6 +549,10 @@ int main(int argc, char** argv) {
     g_signal_connect(split_btn, "clicked", G_CALLBACK(on_split_btn_clicked), app);
     g_signal_connect(term_btn, "clicked", G_CALLBACK(on_term_pill_clicked), app);
     g_signal_connect(help_btn, "clicked", G_CALLBACK(on_help_pill_clicked), app);
+    GtkGesture* help_right = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(help_right), GDK_BUTTON_SECONDARY);
+    g_signal_connect(help_right, "pressed", G_CALLBACK(on_help_pill_right_clicked), app);
+    gtk_widget_add_controller(help_btn, GTK_EVENT_CONTROLLER(help_right));
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 
     app->notebook = notebook;

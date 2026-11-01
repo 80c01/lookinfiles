@@ -234,6 +234,7 @@ typedef struct {
     GtkWidget* refs_page;           /* References page of the preview notebook (code_refs.c), or NULL */
     GtkWidget* search_page;         /* Search page (text search results, code_refs.c), or NULL */
     GtkWidget* canvas_page;         /* Canvas page (Canvas note being edited, canvas_view.c), or NULL */
+    GtkWidget* help_page;           /* Help page (the user guide, help_guide.c), or NULL */
     guint status_idle_id;           /* pending status bar refresh after a page switch */
 
     /* Video preview */

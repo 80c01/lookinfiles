@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "canvas_view.h"
+#include "help_guide.h"
 #include "dialog.h"
 #include "layouts.h"
 #include "themes.h"
@@ -139,7 +140,8 @@ void focus_prev_panel(AppData* app) {
 void close_shown_tab(AppData* app) {
     FocusInfo info;
     focus_route_get(app, &info);
-    if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL) && canvas_view_close_shown(app)) {
+    if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL) &&
+        (canvas_view_close_shown(app) || help_guide_close_shown(app))) {
         return;
     }
     EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);
@@ -183,6 +185,12 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     /* Where the focus is decides what the keys below do */
     FocusInfo info;
     focus_route_get(app, &info);
+
+    /* F1: the user guide (Help tab), from anywhere */
+    if (keyval == GDK_KEY_F1 && (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) == 0) {
+        help_guide_show(app, NULL);
+        return TRUE;
+    }
 
     /* Ctrl+Shift+F: search the files of the project (Search tab); before
      * the navigation keys: Vim's Ctrl+F pages down whatever Shift */

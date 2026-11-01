@@ -89,6 +89,7 @@ jump_list:
 trash_restore:
 note_types:
 canvas_doc:
+user_guide:
 fuzzy_match:
 text_search:code_index
 session_store:app_paths

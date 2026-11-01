@@ -228,6 +228,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "f", "Toggle fullscreen", 0},
     {"Global", "Ctrl+Shift+L", "Stack the terminal pane under the viewer, or put it back beside it (the explorer panel stays fixed)", 0},
     {"Global", "Ctrl+Shift+R", "Toggle Remote (SSH) machines view in sidebar", 0},
+    {"Global", "F1", "User guide in a Help tab (also a click on the top bar's Help button; right click: this cheat sheet)", 0},
     {"Global", "Ctrl+Q", "Quit", 0},
 };
 

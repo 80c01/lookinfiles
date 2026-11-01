@@ -2,7 +2,7 @@
 
 Every shortcut of LookinFiles, by panel and editor mode. The same list is
 available inside the application with `?` (it shows the keys of the current
-global mode).
+global mode); `F1` opens the [user guide](user-guide/README.md).
 
 **Global mode.** The mode shown and picked in the status bar (or set with
 `-e` / `--editor`) is the mode of new editor tabs and of the navigation keys
@@ -47,6 +47,7 @@ count) is dropped when the focus moves to another panel or tab.
 | Key | Action |
 |---|---|
 | `Ctrl+Q` | Quit |
+| `F1` | User guide, in a **Help** tab of the preview panel (also a click on the top bar's **Help** button; a right click on it shows the cheat sheet) |
 | `?` | Show / hide the shortcut cheat sheet |
 | `f` | Toggle fullscreen |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels |

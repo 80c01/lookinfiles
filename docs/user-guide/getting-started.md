@@ -63,13 +63,14 @@ hidden.
 - **Top bar.** The current folder as breadcrumbs (click a part to go
   there), the workspace map, the **Layouts** and **Themes** buttons, then
   buttons that show or hide the **Explorer**, **Preview** and **Terminal**
-  panels, and **Help**.
+  panels, and **Help**: a click opens this guide, a right click the
+  keyboard cheat sheet.
 - **Explorer panel** (left). Four views, picked with the buttons at its
   top: files, bookmarks, notes and remote machines. Below them, a small
   toolbar with the actions of the view.
 - **Preview panel** (right). The **Preview** tab shows the selected file.
-  Editor tabs open next to it, and so do the **Git Commits**, **Search**
-  and **References** tabs.
+  Editor tabs open next to it, and so do the **Git Commits**, **Search**,
+  **References** and **Help** tabs.
 - **Terminal** (below or beside the preview). Shell panes, opened with
   `Ctrl+T`.
 - **Status bar** (bottom). On the left, the git branch, the name of the
@@ -109,4 +110,5 @@ Click the mode in the status bar to change it, or start with `-e vim` /
    source.
 5. Press `Ctrl+P` and type part of a file name to jump to it.
 6. Press `Ctrl+T` for a terminal.
-7. Press `?` for the cheat sheet of the current mode, `Ctrl+Q` to quit.
+7. Press `?` for the cheat sheet of the current mode, `F1` for this guide,
+   `Ctrl+Q` to quit.
