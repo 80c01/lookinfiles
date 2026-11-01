@@ -55,6 +55,7 @@ typedef struct {
     AppData* app;
     GtkWidget** slot;  /* &app->refs_page or &app->search_page */
     GtkWidget* page;
+    GtkWidget* label;  /* tab label (owned ref: kept while the page is detached) */
     GtkWidget* header;
     GtkWidget* list;
     GListStore* store;
@@ -184,7 +185,19 @@ static void on_label_middle_click(GtkGestureClick* gesture, gint n_press,
 static void page_free(gpointer p) {
     RefsPage* rp = p;
     g_object_unref(rp->store);
+    g_clear_object(&rp->label);
     g_free(rp);
+}
+
+/* Put the page in the notebook, right after the Git tab and the other result
+ * page (editor tabs follow) */
+static void insert_page(AppData* app, RefsPage* rp) {
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
+    GtkWidget* other = rp->slot == &app->refs_page ? app->search_page : app->refs_page;
+    if (other != NULL) after = MAX(after, gtk_notebook_page_num(nb, other));
+    gtk_notebook_insert_page(nb, rp->page, rp->label, after + 1);
+    *rp->slot = rp->page;
 }
 
 /* The References or Search page (slot), made when missing: right after
@@ -233,18 +246,12 @@ static RefsPage* ensure_page(AppData* app, GtkWidget** slot, const gchar* title)
 
     rp->page = page;
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, rp, page_free);
-    *slot = page;
-    /* Right after the Git tab and the other result page (editor tabs follow) */
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
-    GtkWidget* other = slot == &app->refs_page ? app->search_page : app->refs_page;
-    if (other != NULL) after = MAX(after, gtk_notebook_page_num(nb, other));
-    GtkWidget* label = icon_label_new("edit-find", title);
+    rp->label = g_object_ref(icon_label_new("edit-find", title));
     GtkGesture* mclick = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), rp);
-    gtk_widget_add_controller(label, GTK_EVENT_CONTROLLER(mclick));
-    gtk_notebook_insert_page(nb, page, label, after + 1);
+    gtk_widget_add_controller(rp->label, GTK_EVENT_CONTROLLER(mclick));
+    insert_page(app, rp);
     return rp;
 }
 
@@ -334,10 +341,9 @@ void code_refs_show_searching(AppData* app, const gchar* query, const gchar* roo
     present_page(app, rp, FALSE);
 }
 
-void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
-                           const gchar* how, const gchar* note) {
-    RefsPage* rp = ensure_page(app, &app->search_page, "Search");
-    if (rp == NULL) return;
+/* Fill the Search page with the results, without showing it */
+static void set_search(RefsPage* rp, const gchar* query, GPtrArray* refs, const gchar* root, const gchar* how,
+                       const gchar* note) {
     guint files = fill_page(rp, refs, root, strlen(query));
     /* Why the search stopped early first: the header is ellipsized */
     gchar* warn = note != NULL ? g_markup_printf_escaped(" <span foreground=\"%s\">· %s</span>",
@@ -356,7 +362,42 @@ void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, co
     g_free(tail);
     g_free(markup);
     g_free(warn);
+}
+
+void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
+                           const gchar* how, const gchar* note) {
+    RefsPage* rp = ensure_page(app, &app->search_page, "Search");
+    if (rp == NULL) return;
+    set_search(rp, query, refs, root, how, note);
     present_page(app, rp, refs->len > 0);
+}
+
+void code_refs_set_search(GtkWidget* page, const gchar* query, GPtrArray* refs, const gchar* root,
+                          const gchar* how, const gchar* note) {
+    RefsPage* rp = page_state(page);
+    if (rp != NULL) set_search(rp, query, refs, root, how, note);
+}
+
+GtkWidget* code_refs_detach_search(AppData* app) {
+    GtkWidget* page = app != NULL ? app->search_page : NULL;
+    if (page_state(page) == NULL || app->notebook == NULL) return NULL;
+    GtkRoot* root = gtk_widget_get_root(page);
+    GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    if (focus != NULL && gtk_widget_is_ancestor(focus, page)) gtk_root_set_focus(root, NULL);
+    g_object_ref(page);
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    gint n = gtk_notebook_page_num(nb, page);
+    if (n >= 0) gtk_notebook_remove_page(nb, n);
+    app->search_page = NULL;
+    return page;
+}
+
+void code_refs_attach_search(AppData* app, GtkWidget* page) {
+    RefsPage* rp = page_state(page);
+    if (rp != NULL && app != NULL && app->notebook != NULL && app->search_page == NULL) {
+        insert_page(app, rp);
+    }
+    if (page != NULL) g_object_unref(page);
 }
 
 /* ------------------------------------------------------------------------- */

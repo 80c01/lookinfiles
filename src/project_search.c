@@ -29,14 +29,28 @@ static void scope_copy(Scope* to, const Scope* from) {
     to->ignored = from->ignored;
 }
 
-/* Kept for the next search: any case, every file by default */
-static gchar* last_query;
-static TextSearchOptions last_opts;
-static Scope last_scope;
-static GCancellable* running; /* the search in progress, if any */
+/* A workspace's search (VirtualLayout.search_state), kept for its next
+ * search: any case, every file by default */
+typedef struct {
+    gchar* query;
+    TextSearchOptions opts;
+    Scope scope;
+    GCancellable* running; /* the search in progress, if any */
+    GtkWidget* page;       /* its Search page while the workspace is hidden (owned ref) */
+} WsSearch;
+
+static WsSearch* ws_search(VirtualLayout* ws) {
+    if (ws->search_state == NULL) ws->search_state = g_new0(WsSearch, 1);
+    return ws->search_state;
+}
+
+static VirtualLayout* current_ws(AppData* app) {
+    return app->current_ws >= 0 && app->current_ws < app->num_workspaces ? &app->workspaces[app->current_ws] : NULL;
+}
 
 typedef struct {
     AppData* app;
+    WsSearch* ws; /* the workspace that started it (valid while not cancelled) */
     GCancellable* cancellable;
     gchar* query;
     TextSearchOptions opts;
@@ -135,34 +149,45 @@ static void search_done(GObject* source, GAsyncResult* res, gpointer data) {
     (void)source;
     (void)data;
     Search* s = g_task_get_task_data(G_TASK(res));
-    if (g_cancellable_is_cancelled(s->cancellable)) return; /* a newer search replaced it */
-    if (running == s->cancellable) g_clear_object(&running);
+    /* Cancelled: a newer search replaced it, or its workspace was removed */
+    if (g_cancellable_is_cancelled(s->cancellable)) return;
+    WsSearch* st = s->ws;
+    if (st->running == s->cancellable) g_clear_object(&st->running);
     gchar* how = describe(&s->opts, &s->scope);
     gchar* note = stop_note(s);
-    code_refs_show_search(s->app, s->query, s->refs, s->root, how, note);
+    VirtualLayout* cur = current_ws(s->app);
+    if (cur != NULL && cur->search_state == st) {
+        code_refs_show_search(s->app, s->query, s->refs, s->root, how, note);
+    } else if (st->page != NULL) {
+        code_refs_set_search(st->page, s->query, s->refs, s->root, how, note); /* seen on return */
+    }
     g_free(note);
     g_free(how);
 }
 
 static void start_search(AppData* app, const gchar* query, const TextSearchOptions* opts, const Scope* scope) {
-    if (running != NULL) {
-        g_cancellable_cancel(running);
-        g_clear_object(&running);
+    VirtualLayout* ws = current_ws(app);
+    if (ws == NULL) return;
+    WsSearch* st = ws_search(ws);
+    if (st->running != NULL) {
+        g_cancellable_cancel(st->running);
+        g_clear_object(&st->running);
     }
-    g_free(last_query);
-    last_query = g_strdup(query);
-    last_opts = *opts;
-    scope_clear(&last_scope);
-    scope_copy(&last_scope, scope);
+    g_free(st->query);
+    st->query = g_strdup(query);
+    st->opts = *opts;
+    scope_clear(&st->scope);
+    scope_copy(&st->scope, scope);
 
     Search* s = g_new0(Search, 1);
     s->app = app;
+    s->ws = st;
     s->cancellable = g_cancellable_new();
     s->query = g_strdup(query);
     s->opts = *opts;
     scope_copy(&s->scope, scope);
     s->root = code_index_project_root(app->base_dir);
-    running = g_object_ref(s->cancellable);
+    st->running = g_object_ref(s->cancellable);
     code_refs_show_searching(app, s->query, s->root);
 
     GTask* task = g_task_new(NULL, s->cancellable, search_done, NULL);
@@ -320,9 +345,11 @@ static GtkWidget* filter_row(GtkGrid* grid, gint row, const gchar* label, const 
     "only)"
 
 void project_search_show(AppData* app) {
-    if (app == NULL || app->window == NULL || app->base_dir == NULL || app_dialog_is_open(app->window)) {
+    if (app == NULL || app->window == NULL || app->base_dir == NULL || app_dialog_is_open(app->window) ||
+        current_ws(app) == NULL) {
         return;
     }
+    const WsSearch* last = ws_search(current_ws(app));
     gchar* root = code_index_project_root(app->base_dir);
     Prompt* p = g_new0(Prompt, 1);
     p->app = app;
@@ -346,18 +373,18 @@ void project_search_show(AppData* app) {
     gtk_entry_set_placeholder_text(GTK_ENTRY(p->entry), "Text to find");
     gtk_entry_set_activates_default(GTK_ENTRY(p->entry), TRUE);
     gchar* initial = selected_text(app);
-    gtk_editable_set_text(GTK_EDITABLE(p->entry), initial != NULL ? initial : last_query != NULL ? last_query : "");
+    gtk_editable_set_text(GTK_EDITABLE(p->entry), initial != NULL ? initial : last->query != NULL ? last->query : "");
     g_free(initial);
     gtk_box_append(GTK_BOX(row), p->entry);
     GtkWidget* toggles = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(toggles, "linked");
-    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_CASE, "Aa", "Match Case (Alt+M)", last_opts.match_case));
-    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_WORD, "ab", "Whole Word (Alt+W)", last_opts.whole_word));
+    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_CASE, "Aa", "Match Case (Alt+M)", last->opts.match_case));
+    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_WORD, "ab", "Whole Word (Alt+W)", last->opts.whole_word));
     gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_REGEX, ".*", "Regular Expression, PCRE Syntax (Alt+R)",
-                                                last_opts.regex));
+                                                last->opts.regex));
     gtk_box_append(GTK_BOX(toggles),
                    option_new(p, OPT_FUZZY, "a…z", "Letters in Order, Not Next to Each Other: edvim Finds editor_vim (Alt+L)",
-                              last_opts.fuzzy));
+                              last->opts.fuzzy));
     gtk_box_append(GTK_BOX(row), toggles);
     gtk_box_append(GTK_BOX(box), row);
 
@@ -374,13 +401,13 @@ void project_search_show(AppData* app) {
     gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
     gtk_widget_set_margin_top(grid, 4);
     p->include = filter_row(GTK_GRID(grid), 0, "Files to i_nclude", "*.c, src/ (empty: every file)", GLOBS_TOOLTIP,
-                            last_scope.include);
+                            last->scope.include);
     p->exclude = filter_row(GTK_GRID(grid), 1, "Files to e_xclude", "tests/, *.min.js", GLOBS_TOOLTIP,
-                            last_scope.exclude);
+                            last->scope.exclude);
     gtk_box_append(GTK_BOX(box), grid);
     p->ignored = gtk_check_button_new_with_mnemonic("Include _ignored files");
     gtk_widget_set_tooltip_text(p->ignored, "Also the files git ignores (.gitignore); outside git, hidden and build folders");
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->ignored), last_scope.ignored);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->ignored), last->scope.ignored);
     gtk_box_append(GTK_BOX(box), p->ignored);
 
     gchar* where = g_strdup_printf("In the files of %s", root);
@@ -404,4 +431,37 @@ void project_search_show(AppData* app) {
     app_dialog_present(APP_DIALOG(dlg));
     gtk_widget_grab_focus(p->entry);
     gtk_editable_select_region(GTK_EDITABLE(p->entry), 0, -1);
+}
+
+void project_search_workspace_hidden(AppData* app, VirtualLayout* ws) {
+    GtkWidget* page = code_refs_detach_search(app);
+    if (page == NULL) return;
+    WsSearch* st = ws_search(ws);
+    if (st->page != NULL) g_object_unref(st->page);
+    st->page = page;
+}
+
+void project_search_workspace_shown(AppData* app, VirtualLayout* ws) {
+    WsSearch* st = ws->search_state;
+    if (st == NULL || st->page == NULL) return;
+    code_refs_attach_search(app, st->page);
+    st->page = NULL;
+}
+
+void project_search_workspace_removed(AppData* app, VirtualLayout* ws) {
+    if (ws == current_ws(app)) {
+        GtkWidget* page = code_refs_detach_search(app);
+        if (page != NULL) g_object_unref(page);
+    }
+    WsSearch* st = ws->search_state;
+    if (st == NULL) return;
+    if (st->running != NULL) {
+        g_cancellable_cancel(st->running); /* its end finds it cancelled */
+        g_object_unref(st->running);
+    }
+    if (st->page != NULL) g_object_unref(st->page);
+    g_free(st->query);
+    scope_clear(&st->scope);
+    g_free(st);
+    ws->search_state = NULL;
 }

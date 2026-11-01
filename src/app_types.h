@@ -129,6 +129,7 @@ typedef struct {
     ExplorerTreeState* tree_state; /* explorer rows while another workspace is shown (owned) */
     GHashTable* git_statuses;      /* git badges while another workspace is shown (owned) */
     gpointer dir_history;          /* folders shown, for back / forward (JumpList*, nav_history.c) */
+    gpointer search_state;         /* last search in files and its Search tab (project_search.c) */
 #ifdef HAVE_VTE
     GtkWidget* term_box;
     GtkWidget* last_focused_vte;

@@ -54,7 +54,10 @@ your last search) is filled in.
   file.
 - **Include ignored files** (`Alt+I`) also searches the files git ignores
   (outside git: hidden and build folders).
-- The options and the patterns are kept for the next search.
+- The text, the options and the patterns are kept for the next search
+  of the workspace: each workspace has its own last search and its own
+  Search tab. A search keeps running when you switch workspace; its
+  results wait in the Search tab of the workspace that started it.
 - Limits: 100 000 files, 512 MB read in all, 5 000 results; files over
   4 MB and binary files are skipped. When a limit stops the search, or
   files are skipped, the header of the Search tab says so (in the warning

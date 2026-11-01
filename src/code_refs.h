@@ -28,5 +28,14 @@ void code_refs_show_searching(AppData* app, const gchar* query, const gchar* roo
  * stopped early or what it skipped */
 void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
                            const gchar* how, const gchar* note);
+/* The same results put in a Search page that is not shown (a hidden
+ * workspace's, see code_refs_detach_search()) */
+void code_refs_set_search(GtkWidget* page, const gchar* query, GPtrArray* refs, const gchar* root,
+                          const gchar* how, const gchar* note);
+
+/* Each workspace has its own Search page: take it out of the notebook with
+ * its tab (an owned ref, or NULL when it is not open) and put it back */
+GtkWidget* code_refs_detach_search(AppData* app);
+void code_refs_attach_search(AppData* app, GtkWidget* page); /* takes the ref */
 
 #endif /* CODE_REFS_H */
