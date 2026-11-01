@@ -55,7 +55,7 @@ of the current mode. The complete list of keys is in the
 ## Reading this guide in LookinFiles
 
 Press `F1`, or click the **Help** button of the top bar, to open this guide
-in a **Help** tab of the preview panel.
+in a **Help** tab of the preview panel; click the button again to close it.
 
 | Key | Action |
 |---|---|

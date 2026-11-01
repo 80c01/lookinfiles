@@ -47,7 +47,7 @@ count) is dropped when the focus moves to another panel or tab.
 | Key | Action |
 |---|---|
 | `Ctrl+Q` | Quit |
-| `F1` | User guide, in a **Help** tab of the preview panel (also a click on the top bar's **Help** button; a right click on it shows the cheat sheet) |
+| `F1` | User guide, in a **Help** tab of the preview panel (also a click on the top bar's **Help** button, which closes the tab when shown; a right click on it shows the cheat sheet) |
 | `?` | Show / hide the shortcut cheat sheet |
 | `f` | Toggle fullscreen |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels |

@@ -146,7 +146,9 @@ void on_hidden_pill_clicked(GtkButton* btn, gpointer data) {
 
 void on_help_pill_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
-    help_guide_show((AppData*)data, NULL);
+    /* Toggle: a click on the shown Help tab closes it */
+    AppData* app = (AppData*)data;
+    if (!help_guide_close_shown(app)) help_guide_show(app, NULL);
 }
 
 void on_help_pill_right_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
