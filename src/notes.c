@@ -572,9 +572,13 @@ static void on_note_dlg_response(AppDialog* dlg, gint response_id, gpointer user
     }
 }
 
+/* notebooks: when non-NULL, a "Notebook" drop-down lists them, starts on
+ * *io_nb and returns the choice there (moving the note); focus_notebook
+ * gives it the focus instead of the title */
 static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
                                    const gchar* ok_btn_text,
                                    const gchar* init_title, NoteType init_type, gboolean existing,
+                                   GList* notebooks, NotebookItem** io_nb, gboolean focus_notebook,
                                    gchar** out_title, NoteType* out_type) {
     *out_title = NULL;
     *out_type = init_type;
@@ -596,6 +600,32 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
     }
     gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
     gtk_box_append(GTK_BOX(box), entry);
+
+    GtkWidget* nb_dd = NULL;
+    GPtrArray* nb_items = NULL;
+    if (notebooks != NULL && io_nb != NULL) {
+        GtkWidget* nb_lbl = gtk_label_new("Notebook:");
+        gtk_widget_set_halign(nb_lbl, GTK_ALIGN_START);
+        gtk_widget_set_margin_top(nb_lbl, 6);
+        gtk_box_append(GTK_BOX(box), nb_lbl);
+
+        nb_items = g_ptr_array_new();
+        GPtrArray* labels = g_ptr_array_new();
+        guint init_idx = 0;
+        for (GList* l = notebooks; l != NULL; l = l->next) {
+            NotebookItem* nb = (NotebookItem*)l->data;
+            if (nb == *io_nb) init_idx = nb_items->len;
+            g_ptr_array_add(nb_items, nb);
+            g_ptr_array_add(labels, nb->name);
+        }
+        g_ptr_array_add(labels, NULL);
+        nb_dd = gtk_drop_down_new_from_strings((const char* const*)labels->pdata);
+        g_ptr_array_unref(labels);
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(nb_dd), init_idx);
+        gtk_widget_set_tooltip_text(nb_dd, "Notebook the note belongs to: pick another one to move the note");
+        gtk_widget_set_sensitive(nb_dd, nb_items->len > 1);
+        gtk_box_append(GTK_BOX(box), nb_dd);
+    }
 
     GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_margin_top(sep, 6);
@@ -650,9 +680,13 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
     g_signal_connect(dlg, "response", G_CALLBACK(on_note_dlg_response), &d);
 
     app_dialog_present(APP_DIALOG(dlg));
-    gtk_widget_grab_focus(entry);
-    if (init_title != NULL) {
-        gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1);
+    if (focus_notebook && nb_dd != NULL && gtk_widget_get_sensitive(nb_dd)) {
+        gtk_widget_grab_focus(nb_dd);
+    } else {
+        gtk_widget_grab_focus(entry);
+        if (init_title != NULL) {
+            gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1);
+        }
     }
 
     g_main_loop_run(d.loop);
@@ -666,6 +700,10 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
             if (trimmed[0] != '\0' && strchr(trimmed, '/') == NULL && strchr(trimmed, '\\') == NULL) {
                 *out_title = trimmed;
                 *out_type = note_dialog_type(&d);
+                if (nb_dd != NULL) {
+                    guint idx = gtk_drop_down_get_selected(GTK_DROP_DOWN(nb_dd));
+                    if (idx < nb_items->len) *io_nb = (NotebookItem*)g_ptr_array_index(nb_items, idx);
+                }
                 ok = TRUE;
             } else {
                 g_free(trimmed);
@@ -673,6 +711,7 @@ static gboolean prompt_note_dialog(GtkWindow* parent_win, const gchar* title,
         }
     }
 
+    if (nb_items != NULL) g_ptr_array_unref(nb_items);
     app_dialog_destroy(APP_DIALOG(dlg));
     return ok;
 }
@@ -1201,7 +1240,8 @@ void notes_new_note(AppData* app) {
     gchar* default_title = g_strdup_printf("Untitled-%d", mgr->next_note_id++);
     gchar* title = NULL;
     NoteType type = NOTE_TYPE_MARKDOWN;
-    if (!prompt_note_dialog(app->window, "New Note", "_Create", default_title, NOTE_TYPE_MARKDOWN, FALSE, &title, &type)) {
+    if (!prompt_note_dialog(app->window, "New Note", "_Create", default_title, NOTE_TYPE_MARKDOWN, FALSE,
+                            NULL, NULL, FALSE, &title, &type)) {
         g_free(default_title);
         return;
     }
@@ -1434,6 +1474,73 @@ void notes_export_selected_markdown(AppData* app) {
     g_free(path);
 }
 
+/* Edit dialog of a note: title, format and notebook (a new notebook moves it) */
+static void notes_edit_note(AppData* app, NotebookItem* nb, NoteItem* note, gboolean focus_notebook) {
+    NotesManager* mgr = get_notes_mgr(app);
+    if (mgr == NULL) return;
+
+    gchar* new_title = NULL;
+    NoteType new_type = note->type;
+    NotebookItem* dest_nb = nb;
+    if (!prompt_note_dialog(app->window, "Edit Note", "_Save", note->title, note->type, TRUE,
+                            mgr->notebooks, &dest_nb, focus_notebook, &new_title, &new_type)) {
+        return;
+    }
+
+    gboolean title_changed = (g_strcmp0(new_title, note->title) != 0);
+    gboolean type_changed = (new_type != note->type);
+    gboolean nb_changed = (dest_nb != nb);
+
+    if (!title_changed && !type_changed && !nb_changed) {
+        g_free(new_title);
+        return;
+    }
+
+    const gchar* ext = note_type_ext(new_type);
+    gchar* new_filename = g_strdup_printf("%s%s", new_title, ext);
+    gchar* new_path = g_build_filename(dest_nb->path, new_filename, NULL);
+
+    if (g_file_test(new_path, G_FILE_TEST_EXISTS) && g_strcmp0(new_path, note->path) != 0) {
+        notes_notice(app, "Note Exists", nb_changed
+                     ? "A note with that title and format already exists in the target notebook."
+                     : "A note with that title and format already exists in this notebook.");
+        g_free(new_title);
+        g_free(new_filename);
+        g_free(new_path);
+        return;
+    }
+
+    if (g_rename(note->path, new_path) != 0) {
+        g_free(new_title);
+        g_free(new_filename);
+        g_free(new_path);
+        return;
+    }
+
+    update_open_editors(app, note->path, new_path, new_title);
+    g_free(note->filename);
+    g_free(note->title);
+    g_free(note->path);
+    note->filename = new_filename;
+    note->title = new_title;
+    note->path = new_path;
+    note->type = new_type;
+
+    if (nb_changed) {
+        nb->notes = g_list_remove(nb->notes, note);
+        dest_nb->notes = g_list_append(dest_nb->notes, note);
+        dest_nb->expanded = TRUE;
+    }
+
+    notes_save(app);
+    notes_refresh(app);
+    if (nb_changed) notes_select_path(app, note->path);
+
+    if (app->viewed_path != NULL) {
+        load_file_content(app, note->filename, note->path);
+    }
+}
+
 void notes_edit_selected(AppData* app) {
     NotebookItem* nb = NULL;
     NoteItem* note = NULL;
@@ -1441,53 +1548,7 @@ void notes_edit_selected(AppData* app) {
     NotesSelectionType sel = get_selected_info(app, &nb, &note, &tnote);
 
     if (sel == SEL_NOTE && note != NULL && nb != NULL) {
-        gchar* new_title = NULL;
-        NoteType new_type = note->type;
-        if (!prompt_note_dialog(app->window, "Edit Note", "_Save", note->title, note->type, TRUE, &new_title, &new_type)) {
-            return;
-        }
-
-        gboolean title_changed = (g_strcmp0(new_title, note->title) != 0);
-        gboolean type_changed = (new_type != note->type);
-
-        if (!title_changed && !type_changed) {
-            g_free(new_title);
-            return;
-        }
-
-        const gchar* ext = note_type_ext(new_type);
-        gchar* new_filename = g_strdup_printf("%s%s", new_title, ext);
-        gchar* new_path = g_build_filename(nb->path, new_filename, NULL);
-
-        if (g_file_test(new_path, G_FILE_TEST_EXISTS) && g_strcmp0(new_path, note->path) != 0) {
-            notes_notice(app, "Note Exists", "A note with that title and format already exists in this notebook.");
-            g_free(new_title);
-            g_free(new_filename);
-            g_free(new_path);
-            return;
-        }
-
-        if (g_rename(note->path, new_path) == 0) {
-            update_open_editors(app, note->path, new_path, new_title);
-            g_free(note->filename);
-            g_free(note->title);
-            g_free(note->path);
-            note->filename = new_filename;
-            note->title = new_title;
-            note->path = new_path;
-            note->type = new_type;
-
-            notes_save(app);
-            notes_refresh(app);
-
-            if (app->viewed_path != NULL) {
-                load_file_content(app, note->filename, note->path);
-            }
-        } else {
-            g_free(new_title);
-            g_free(new_filename);
-            g_free(new_path);
-        }
+        notes_edit_note(app, nb, note, FALSE);
     } else if (sel == SEL_NOTEBOOK && nb != NULL) {
         gchar* new_name = NULL;
         gchar* new_icon = NULL;
@@ -1566,68 +1627,8 @@ void notes_move_selected(AppData* app) {
         return;
     }
 
-    /* Build dialog with dropdown of target notebooks */
-    GtkWidget* dlg = app_dialog_new("Move Note to Notebook", app->window,
-                                    "_Cancel", APP_RESPONSE_CANCEL,
-                                    "_Move", APP_RESPONSE_OK,
-                                    NULL);
-    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
-    GtkWidget* box = notes_dialog_body(dlg);
-
-    gchar* prompt = g_strdup_printf("Move note '%s' to notebook:", note->title);
-    GtkWidget* lbl = gtk_label_new(prompt);
-    g_free(prompt);
-    gtk_widget_set_halign(lbl, GTK_ALIGN_START);
-    gtk_box_append(GTK_BOX(box), lbl);
-
-    GPtrArray* target_notebooks = g_ptr_array_new();
-    GPtrArray* labels = g_ptr_array_new_with_free_func(g_free);
-    for (GList* l = mgr->notebooks; l != NULL; l = l->next) {
-        NotebookItem* nb = (NotebookItem*)l->data;
-        if (nb != src_nb) {
-            g_ptr_array_add(target_notebooks, nb);
-            g_ptr_array_add(labels, g_strdup(nb->name));
-        }
-    }
-    g_ptr_array_add(labels, NULL);
-
-    GtkWidget* dd = gtk_drop_down_new_from_strings((const char* const*)labels->pdata);
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(dd), 0);
-    gtk_box_append(GTK_BOX(box), dd);
-
-    SimpleDialogData d = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL };
-    g_signal_connect(dlg, "response", G_CALLBACK(on_simple_dlg_response), &d);
-
-    app_dialog_present(APP_DIALOG(dlg));
-    g_main_loop_run(d.loop);
-    g_main_loop_unref(d.loop);
-
-    if (d.response == APP_RESPONSE_OK) {
-        guint idx = gtk_drop_down_get_selected(GTK_DROP_DOWN(dd));
-        if (idx < target_notebooks->len) {
-            NotebookItem* dest_nb = (NotebookItem*)g_ptr_array_index(target_notebooks, idx);
-            gchar* new_path = g_build_filename(dest_nb->path, note->filename, NULL);
-
-            if (g_rename(note->path, new_path) == 0) {
-                update_open_editors(app, note->path, new_path, note->title);
-                g_free(note->path);
-                note->path = new_path;
-
-                src_nb->notes = g_list_remove(src_nb->notes, note);
-                dest_nb->notes = g_list_append(dest_nb->notes, note);
-                dest_nb->expanded = TRUE;
-
-                notes_save(app);
-                notes_refresh(app);
-            } else {
-                g_free(new_path);
-            }
-        }
-    }
-
-    g_ptr_array_unref(target_notebooks);
-    g_ptr_array_unref(labels);
-    app_dialog_destroy(APP_DIALOG(dlg));
+    /* Moving is part of the edit dialog: open it on the notebook choice */
+    notes_edit_note(app, src_nb, note, TRUE);
 }
 
 void notes_delete_selected(AppData* app) {

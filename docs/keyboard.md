@@ -117,8 +117,8 @@ count) is dropped when the focus moves to another panel or tab.
 |---|---|
 | `a` / `Shift+A` | New note (Markdown, Org-mode, Plain Text or Canvas) / new notebook |
 | `Enter` | Edit the note: an editor tab, or the **Canvas** tab for a Canvas note |
-| `F2` / `r` / `e` | Edit the note (title and format) or notebook (name and icon) |
-| `m` | Move the note to another notebook |
+| `F2` / `r` / `e` | Edit the note (title, format and notebook) or notebook (name and icon) |
+| `m` | Move the note to another notebook (the edit dialog, on its notebook) |
 | `d` / `Delete` | Move the note to the trash, or delete the notebook |
 | `Shift+R` | Restore the note from the trash to its notebook |
 | `Shift+K` / `Shift+J` | Move the selected note or notebook up / down |
