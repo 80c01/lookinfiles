@@ -50,18 +50,24 @@ static TabTreeNode* parse_notebook(const gchar** p) {
             }
             (*p)++;
         }
-        if (!g_ascii_isdigit(**p) || n->tabs->len >= TAB_TREE_MAX_TABS) {
+        if ((!g_ascii_isdigit(**p) && **p != 't') || n->tabs->len >= TAB_TREE_MAX_TABS) {
             tab_tree_free(n);
             return NULL;
         }
-        gchar* end = NULL;
-        guint64 v = g_ascii_strtoull(*p, &end, 10);
-        if (v > G_MAXINT) {
-            tab_tree_free(n);
-            return NULL;
+        guint tab = TAB_TREE_TERMINAL;
+        if (**p == 't') {
+            (*p)++;
+        } else {
+            gchar* end = NULL;
+            guint64 v = g_ascii_strtoull(*p, &end, 10);
+            if (v > G_MAXINT) {
+                tab_tree_free(n);
+                return NULL;
+            }
+            *p = end;
+            tab = (guint)v;
         }
-        *p = end;
-        gint pos = (gint)tab_tree_notebook_add(n, (guint)v);
+        gint pos = (gint)tab_tree_notebook_add(n, tab);
         for (; **p == '*' || **p == '!'; (*p)++) {
             if (**p == '*') {
                 n->current = pos;
@@ -129,8 +135,16 @@ static void append_node(GString* s, const TabTreeNode* n) {
     if (n->is_notebook) {
         g_string_append_c(s, '[');
         for (guint i = 0; i < n->tabs->len; i++) {
-            g_string_append_printf(s, "%s%u%s%s", i > 0 ? "," : "", g_array_index(n->tabs, guint, i),
-                                   (gint)i == n->current ? "*" : "", (gint)i == n->focused ? "!" : "");
+            guint tab = g_array_index(n->tabs, guint, i);
+            if (i > 0) {
+                g_string_append_c(s, ',');
+            }
+            if (tab == TAB_TREE_TERMINAL) {
+                g_string_append_c(s, 't');
+            } else {
+                g_string_append_printf(s, "%u", tab);
+            }
+            g_string_append_printf(s, "%s%s", (gint)i == n->current ? "*" : "", (gint)i == n->focused ? "!" : "");
         }
         g_string_append_c(s, ']');
         return;

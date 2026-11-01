@@ -2,6 +2,7 @@
 #include "editor_session.h"
 #include "editor.h"
 #include "tab_tree.h"
+#include "terminal.h"
 
 /* Share of a split's first child, kept on the GtkPaned by panels.c and
  * applied by workspace.c (also used by the terminal panes) */
@@ -56,7 +57,16 @@ static void add_tab(Capture* c, TabTreeNode* node, EditorTab* tab, gboolean curr
     }
 }
 
-/* NULL when it holds no saved editor tab */
+#ifdef HAVE_VTE
+static void add_terminal(TabTreeNode* node, gboolean current) {
+    gint pos = (gint)tab_tree_notebook_add(node, TAB_TREE_TERMINAL);
+    if (current) {
+        node->current = pos;
+    }
+}
+#endif
+
+/* NULL when it holds no saved tab */
 static TabTreeNode* finish_notebook(TabTreeNode* node) {
     if (node->tabs->len == 0) {
         tab_tree_free(node);
@@ -69,7 +79,14 @@ static TabTreeNode* capture_notebook(Capture* c, GtkNotebook* nb) {
     TabTreeNode* node = tab_tree_notebook_new();
     gint current = gtk_notebook_get_current_page(nb);
     for (gint p = 0; p < gtk_notebook_get_n_pages(nb); p++) {
-        add_tab(c, node, tab_of_page(c->editors, gtk_notebook_get_nth_page(nb, p)), p == current);
+        GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
+#ifdef HAVE_VTE
+        if (VTE_IS_TERMINAL(page)) {
+            add_terminal(node, p == current);
+            continue;
+        }
+#endif
+        add_tab(c, node, tab_of_page(c->editors, page), p == current);
     }
     return finish_notebook(node);
 }
@@ -130,6 +147,12 @@ void editor_session_capture(AppData* app, gint ws, GPtrArray* files, gchar** pre
                 add_tab(&c, preview, t, FALSE);
             }
         }
+#ifdef HAVE_VTE
+        GPtrArray* terms = app->workspaces[ws].preview_terms; /* set aside with the workspace */
+        for (guint i = 0; terms != NULL && i < terms->len; i++) {
+            add_terminal(preview, FALSE);
+        }
+#endif
         preview = finish_notebook(preview);
     }
     *preview_tabs = tree_text(preview);
@@ -148,7 +171,7 @@ typedef struct {
     const gchar* const* files;
     gboolean* usable; /* per file: a regular file now */
     guint n_files;
-    GPtrArray* currents; /* EditorTab*: the current page of each notebook */
+    GPtrArray* currents; /* GtkWidget*: the current page of each notebook */
     EditorTab* focused;
 } Restore;
 
@@ -178,15 +201,24 @@ static EditorTab* place_view(AppData* app, const gchar* path, GtkNotebook* nb) {
 }
 
 static void restore_notebook(Restore* r, const TabTreeNode* node, GtkNotebook* nb) {
-    EditorTab* current = NULL;
+    GtkWidget* current = NULL;
     for (guint i = 0; i < node->tabs->len; i++) {
         guint index = g_array_index(node->tabs, guint, i);
+        if (index == TAB_TREE_TERMINAL) {
+#ifdef HAVE_VTE
+            GtkWidget* vte = terminal_add_tab(r->app, nb);
+            if ((gint)i == node->current) {
+                current = vte;
+            }
+#endif
+            continue;
+        }
         if (index >= r->n_files || !r->usable[index]) {
             continue;
         }
         EditorTab* tab = place_view(r->app, r->files[index], nb);
         if (tab != NULL && (gint)i == node->current) {
-            current = tab;
+            current = tab->container;
         }
         if (tab != NULL && (gint)i == node->focused) {
             r->focused = tab;
@@ -265,9 +297,11 @@ void editor_session_restore(AppData* app, const gchar* const* files, const gchar
         }
     }
     for (guint i = 0; i < r.currents->len; i++) {
-        EditorTab* tab = g_ptr_array_index(r.currents, i);
-        GtkNotebook* nb = GTK_NOTEBOOK(tab->nb);
-        gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, tab->container));
+        GtkWidget* page = g_ptr_array_index(r.currents, i);
+        GtkWidget* nb = gtk_widget_get_ancestor(gtk_widget_get_parent(page), GTK_TYPE_NOTEBOOK);
+        if (nb != NULL) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), gtk_notebook_page_num(GTK_NOTEBOOK(nb), page));
+        }
     }
     if (r.focused != NULL) {
         app->last_focused_editor = r.focused; /* new files open beside it */

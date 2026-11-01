@@ -594,6 +594,12 @@ void term_spawn_pane(AppData* app, gboolean new_row) {
     term_spawn_pane_in(app, new_row, NULL);
 }
 
+GtkWidget* terminal_add_tab(AppData* app, GtkNotebook* nb) {
+    GtkWidget* vte = term_new_pane(app, NULL);
+    term_notebook_add(nb, vte, NULL, -1);
+    return vte;
+}
+
 gboolean terminal_step_tab(AppData* app, gint step) {
     GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
     GtkWidget* vte = focus != NULL ? gtk_widget_get_ancestor(focus, VTE_TYPE_TERMINAL) : NULL;

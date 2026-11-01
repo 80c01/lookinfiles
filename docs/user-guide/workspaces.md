@@ -49,8 +49,8 @@ Layouts are saved in `~/.config/lookinfiles/layouts.ini`.
 
 When you quit (`Ctrl+Q` or closing the window), LookinFiles saves every
 workspace: its folder, expanded folders, selection, hidden files, sort,
-open files and where they were (preview or editor panel, split views,
-current tab of each group), the panels shown, their sizes and the terminal
+open files and terminal tabs and where they were (preview or editor
+panel, split views, current tab of each group), the panels shown, their sizes and the terminal
 panes. Launching it without an argument restores them; the terminals start
 new shells. Folders and files that no longer exist are skipped.
 

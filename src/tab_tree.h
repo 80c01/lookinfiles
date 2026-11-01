@@ -6,8 +6,8 @@
  * each notebook and the view last focused.
  *
  * A notebook is "[<tab>,<tab>...]", each tab the index of its file in the
- * session's file list, followed by "*" for the current page and "!" for the
- * view last focused; "H:<frac>(<a>,<b>)" splits side by side and
+ * session's file list or "t" for a terminal tab (a new shell when restored),
+ * followed by "*" for the current page and "!" for the view last focused; "H:<frac>(<a>,<b>)" splits side by side and
  * "V:<frac>(<a>,<b>)" one above the other, <frac> being the share of the
  * first child, e.g. "H:0.500([0*,2],V:0.400([1!],[0]))". A file may be in
  * several notebooks (split views of one file).
@@ -16,10 +16,12 @@
 #include <glib.h>
 
 #define TAB_TREE_MAX_TABS 256
+/* The tab entry of a terminal ("t") */
+#define TAB_TREE_TERMINAL G_MAXUINT
 
 typedef struct TabTreeNode {
     gboolean is_notebook;
-    GArray* tabs;    /* notebook: guint file indices, in page order */
+    GArray* tabs;    /* notebook: guint file indices (or TAB_TREE_TERMINAL), in page order */
     gint current;    /* notebook: position in tabs of the current page, -1 if none */
     gint focused;    /* notebook: position in tabs of the view last focused, -1 if none */
     gboolean vertical;
@@ -30,7 +32,7 @@ typedef struct TabTreeNode {
 
 /* An empty notebook */
 TabTreeNode* tab_tree_notebook_new(void);
-/* Add a tab (file index) to a notebook; returns its position */
+/* Add a tab (file index or TAB_TREE_TERMINAL) to a notebook; returns its position */
 guint tab_tree_notebook_add(TabTreeNode* notebook, guint file);
 /* A split of first and second (taking ownership); one of them NULL gives the other */
 TabTreeNode* tab_tree_split_new(gboolean vertical, gdouble frac, TabTreeNode* first, TabTreeNode* second);

@@ -33,6 +33,9 @@ void term_layout_apply(AppData* app, const gchar* text);
 void terminal_workspace_hidden(AppData* app, VirtualLayout* ws);
 void terminal_workspace_shown(AppData* app, VirtualLayout* ws);
 void terminal_workspace_removed(AppData* app, VirtualLayout* ws);
+/* New shell as the last tab of nb, an editor notebook or the preview
+ * notebook (a terminal tab saved there with the session); returns it */
+GtkWidget* terminal_add_tab(AppData* app, GtkNotebook* nb);
 /* Colours and font of every terminal again, after a theme change */
 void terminal_refresh_theme(void);
 #endif

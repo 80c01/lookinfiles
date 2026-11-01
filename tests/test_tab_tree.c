@@ -6,6 +6,7 @@ static void test_round_trip(void) {
         "[0]",
         "[0*,2,5!]",
         "H:0.500([0*,2],V:0.400([1!],[0]))",
+        "H:0.500([0,t*],[t])",
         "V:0.300(H:0.700([3],[4*!]),[1])",
     };
     for (guint i = 0; i < G_N_ELEMENTS(texts); i++) {
@@ -31,6 +32,12 @@ static void test_fields(void) {
     g_assert_cmpint(n->first->focused, ==, -1);
     g_assert_cmpint(n->second->current, ==, -1);
     g_assert_cmpint(n->second->focused, ==, 0);
+    tab_tree_free(n);
+
+    /* A terminal tab */
+    n = tab_tree_parse("[0,t*]");
+    g_assert_cmpuint(g_array_index(n->tabs, guint, 1), ==, TAB_TREE_TERMINAL);
+    g_assert_cmpint(n->current, ==, 1);
     tab_tree_free(n);
 
     /* The fraction is clamped */
@@ -67,7 +74,7 @@ static void test_build(void) {
 static void test_invalid(void) {
     const gchar* bad[] = {
         "", "[]", "[", "[0,]", "[,0]", "[a]", "[0]x", "H:0.5([0])", "H:([0],[1])",
-        "X:0.5([0],[1])", "H:0.5([0],[1]", "[99999999999]", "T",
+        "X:0.5([0],[1])", "H:0.5([0],[1]", "[99999999999]", "T", "[tt]", "[t1]",
     };
     for (guint i = 0; i < G_N_ELEMENTS(bad); i++) {
         g_assert_null(tab_tree_parse(bad[i]));

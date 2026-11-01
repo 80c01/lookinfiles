@@ -175,8 +175,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   as a `SavedLayout` and their editor tabs as `tab_tree` text) and
   `recent.ini` (recent folders and files, most recent first, `RECENT_MAX`).
 - `tab_tree` — the editor tabs of a workspace as text (`TabTreeNode`): file
-  indices per notebook, current page, view last focused, and the splits with
-  their share, e.g. `H:0.500([0*,2],V:0.400([1!],[0]))`.
+  indices per notebook (`t` for a terminal tab), current page, view last
+  focused, and the splits with their share, e.g.
+  `H:0.500([0*,2],V:0.400([1!],[0,t]))`.
 - `settings_store` — `settings.ini` (`Settings`: editor mode, line numbers
   and wrap of new editor tabs, column line of the editors, window size at
   startup), defaults for
@@ -361,7 +362,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   dedicated panel (notebooks, splits, sizes, current pages, view last
   focused) as `tab_tree` text, `editor_session_restore()` reopens the files
   at the same place (`editor_notebook_split()`, `editor_move_tab_to()`,
-  `editor_add_view()` for split views).
+  `editor_add_view()` for split views) and starts a new shell for each
+  terminal tab there (`terminal_add_tab()`).
 - `editor_view` — the widgets of an editor tab around its buffer (view,
   scroll, minimap, mode lines, view controllers); `editor_view_release()`
   disconnects a closing tab from a buffer that another view still shows.
