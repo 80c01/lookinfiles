@@ -7,43 +7,50 @@
 CC = gcc
 PKG_CONFIG ?= pkg-config
 
-CFLAGS = -Wall -Wextra -Isrc `$(PKG_CONFIG) --cflags gtk4`
-LDFLAGS = `$(PKG_CONFIG) --libs gtk4` -lm
+# CFLAGS and LDFLAGS are left to the user and to packagers (make CFLAGS=-O0,
+# or the environment); CFLAGS_EXTRA adds to them (make CFLAGS_EXTRA=-Werror).
+# The flags the build needs are in APP_CFLAGS and LIBS, always added.
+CFLAGS ?= -O2 -g
+LDFLAGS ?=
+CFLAGS_EXTRA ?=
+
+APP_CFLAGS = -Wall -Wextra -Isrc `$(PKG_CONFIG) --cflags gtk4`
+LIBS = `$(PKG_CONFIG) --libs gtk4` -lm
 DEPFLAGS = -MMD -MP
 
 # Optional embedded terminal: enabled automatically when vte-2.91-gtk4 is installed
 HAVE_VTE != $(PKG_CONFIG) --exists vte-2.91-gtk4 2>/dev/null && echo yes || echo no
 ifeq ($(HAVE_VTE),yes)
-CFLAGS += -DHAVE_VTE `$(PKG_CONFIG) --cflags vte-2.91-gtk4`
-LDFLAGS += `$(PKG_CONFIG) --libs vte-2.91-gtk4`
+APP_CFLAGS += -DHAVE_VTE `$(PKG_CONFIG) --cflags vte-2.91-gtk4`
+LIBS += `$(PKG_CONFIG) --libs vte-2.91-gtk4`
 endif
 
 # Optional syntax highlighting: enabled automatically when gtksourceview-5 is installed
 HAVE_GSV != $(PKG_CONFIG) --exists gtksourceview-5 2>/dev/null && echo yes || echo no
 ifeq ($(HAVE_GSV),yes)
-CFLAGS += -DHAVE_GSV `$(PKG_CONFIG) --cflags gtksourceview-5`
-LDFLAGS += `$(PKG_CONFIG) --libs gtksourceview-5`
+APP_CFLAGS += -DHAVE_GSV `$(PKG_CONFIG) --cflags gtksourceview-5`
+LIBS += `$(PKG_CONFIG) --libs gtksourceview-5`
 endif
 
 # Optional PDF rendering: enabled automatically when poppler-glib is installed
 HAVE_POPPLER != $(PKG_CONFIG) --exists poppler-glib 2>/dev/null && echo yes || echo no
 ifeq ($(HAVE_POPPLER),yes)
-CFLAGS += -DHAVE_POPPLER `$(PKG_CONFIG) --cflags poppler-glib`
-LDFLAGS += `$(PKG_CONFIG) --libs poppler-glib`
+APP_CFLAGS += -DHAVE_POPPLER `$(PKG_CONFIG) --cflags poppler-glib`
+LIBS += `$(PKG_CONFIG) --libs poppler-glib`
 endif
 
 # Optional SQLite database preview: enabled automatically when sqlite3 is installed
 HAVE_SQLITE != $(PKG_CONFIG) --exists sqlite3 2>/dev/null && echo yes || echo no
 ifeq ($(HAVE_SQLITE),yes)
-CFLAGS += -DHAVE_SQLITE `$(PKG_CONFIG) --cflags sqlite3`
-LDFLAGS += `$(PKG_CONFIG) --libs sqlite3`
+APP_CFLAGS += -DHAVE_SQLITE `$(PKG_CONFIG) --cflags sqlite3`
+LIBS += `$(PKG_CONFIG) --libs sqlite3`
 endif
 
 # Optional archive formats (7z, RAR, xz, bzip2, zstd, ISO...): enabled automatically with libarchive
 HAVE_LIBARCHIVE != $(PKG_CONFIG) --exists libarchive 2>/dev/null && echo yes || echo no
 ifeq ($(HAVE_LIBARCHIVE),yes)
-CFLAGS += -DHAVE_LIBARCHIVE `$(PKG_CONFIG) --cflags libarchive`
-LDFLAGS += `$(PKG_CONFIG) --libs libarchive`
+APP_CFLAGS += -DHAVE_LIBARCHIVE `$(PKG_CONFIG) --cflags libarchive`
+LIBS += `$(PKG_CONFIG) --libs libarchive`
 endif
 
 # Release version, defined once in src/app_paths.h (APP_VERSION)
@@ -51,6 +58,15 @@ VERSION != sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h
 
 TARGET = lookinfiles
 BUILD_DIR = build
+
+ALL_CFLAGS = $(APP_CFLAGS) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_EXTRA)
+ALL_LDFLAGS = $(CFLAGS) $(CFLAGS_EXTRA) $(LDFLAGS)
+
+# Everything is rebuilt when the compiler flags change: the stamp file is
+# rewritten (and gets newer than the objects) only when they differ.
+FLAGS_STAMP = $(BUILD_DIR)/flags
+FLAGS_NOW = $(CC) $(ALL_CFLAGS) | $(ALL_LDFLAGS) $(LIBS)
+$(shell mkdir -p $(BUILD_DIR); printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' | cmp -s - $(FLAGS_STAMP) || printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' > $(FLAGS_STAMP))
 
 # Every .c file in src/ is part of the application: adding a module only
 # requires creating src/<module>.c and src/<module>.h.
@@ -64,8 +80,8 @@ DEPS = $(OBJS:.o=.d)
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+$(TARGET): $(OBJS) $(FLAGS_STAMP)
+	$(CC) $(ALL_LDFLAGS) -o $@ $(OBJS) $(LIBS)
 	@echo "Build succeeded!"
 	@ls -lh $(TARGET)
 	@PKG_CONFIG=$(PKG_CONFIG) sh tools/check_deps.sh || true
@@ -74,14 +90,14 @@ $(TARGET): $(OBJS)
 deps:
 	@PKG_CONFIG=$(PKG_CONFIG) sh tools/check_deps.sh
 
-$(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(DEPFLAGS) -c -o $@ $<
+$(BUILD_DIR)/%.o: src/%.c $(FLAGS_STAMP) | $(BUILD_DIR)
+	$(CC) $(ALL_CFLAGS) $(DEPFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/icon_resources.c: icons/lookin.gresource.xml $(ICON_FILES) | $(BUILD_DIR)
 	$(GLIB_COMPILE_RESOURCES) --sourcedir=icons --generate-source --target=$@ $<
 
-$(BUILD_DIR)/icon_resources.o: $(BUILD_DIR)/icon_resources.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+$(BUILD_DIR)/icon_resources.o: $(BUILD_DIR)/icon_resources.c $(FLAGS_STAMP)
+	$(CC) $(ALL_CFLAGS) -c -o $@ $<
 
 # User guide bundled into the binary (src/user_guide.c, the Help tab): every
 # page of docs/user-guide/ and the reference pages it links to. The resource
@@ -99,8 +115,8 @@ $(BUILD_DIR)/guide.gresource.xml: $(GUIDE_FILES) Makefile | $(BUILD_DIR)
 $(BUILD_DIR)/guide_resources.c: $(BUILD_DIR)/guide.gresource.xml $(GUIDE_FILES)
 	$(GLIB_COMPILE_RESOURCES) --sourcedir=docs --c-name guide --generate-source --target=$@ $<
 
-$(BUILD_DIR)/guide_resources.o: $(BUILD_DIR)/guide_resources.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+$(BUILD_DIR)/guide_resources.o: $(BUILD_DIR)/guide_resources.c $(FLAGS_STAMP)
+	$(CC) $(ALL_CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR):
 	mkdir -p $@
@@ -109,8 +125,8 @@ $(BUILD_DIR):
 # against the listed objects only. Modules under test must not create widgets.
 # Tests use the application CFLAGS so that AppData has the same layout as in
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
-TEST_CFLAGS = $(CFLAGS)
-TEST_LDFLAGS = $(LDFLAGS)
+TEST_CFLAGS = $(ALL_CFLAGS)
+TEST_LDFLAGS = $(ALL_LDFLAGS) $(LIBS)
 TESTS = test_app_paths test_file_types test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_slide_render test_epub test_rtf test_sqlite_view test_gettext_view test_media_tags test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_note_types test_canvas_doc test_user_guide
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
@@ -194,7 +210,7 @@ TEST_DEPS_test_lsp_config = $(BUILD_DIR)/lsp_config.o $(BUILD_DIR)/code_symbol.o
 TEST_DEPS_test_lsp_client = $(BUILD_DIR)/lsp_client.o $(LSP_PROTOCOL_OBJS)
 
 # Preview benchmark and coverage report (tools/preview_tool.c, docs/previews.md)
-$(BUILD_DIR)/preview_tool: tools/preview_tool.c $(PREVIEW_FORMAT_OBJS) | $(BUILD_DIR)
+$(BUILD_DIR)/preview_tool: tools/preview_tool.c $(PREVIEW_FORMAT_OBJS) $(FLAGS_STAMP) | $(BUILD_DIR)
 	$(CC) $(TEST_CFLAGS) $(DEPFLAGS) -o $@ $< $(PREVIEW_FORMAT_OBJS) $(TEST_LDFLAGS)
 
 # Times every structured preview on the fixtures and large generated files
@@ -206,7 +222,7 @@ preview-coverage: $(BUILD_DIR)/preview_tool
 	@$(BUILD_DIR)/preview_tool coverage $${DIR:-$$HOME}
 
 .SECONDEXPANSION:
-$(BUILD_DIR)/tests/%: tests/%.c $$(TEST_DEPS_%) | $(BUILD_DIR)
+$(BUILD_DIR)/tests/%: tests/%.c $$(TEST_DEPS_%) $(FLAGS_STAMP) | $(BUILD_DIR)
 	@mkdir -p $(BUILD_DIR)/tests
 	$(CC) $(TEST_CFLAGS) $(DEPFLAGS) -o $@ $< $(TEST_DEPS_$*) $(TEST_LDFLAGS)
 

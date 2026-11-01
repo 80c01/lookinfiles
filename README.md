@@ -72,6 +72,16 @@ make         # creates ./lookinfiles (objects in build/)
 make clean   # removes both
 ```
 
+The default flags are `-O2 -g`. `CFLAGS` and `LDFLAGS`, given on the
+command line or in the environment, replace them; `CFLAGS_EXTRA` adds to
+them. Changing flags rebuilds everything.
+
+```bash
+make CFLAGS="-O0 -g"                   # debug build
+make CFLAGS_EXTRA=-Werror              # fail on any warning
+make CFLAGS_EXTRA=-fsanitize=address   # AddressSanitizer
+```
+
 ### Install
 
 ```bash
