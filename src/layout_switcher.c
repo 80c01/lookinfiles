@@ -31,6 +31,11 @@ static void show_row(Switcher* s, gint index) {
     }
     layouts_preview(s->app, g_ptr_array_index(s->layouts, (guint)index));
     s->previewed = index;
+    /* A terminal started for the preview takes the focus: keep it in the list */
+    GtkListBoxRow* row = gtk_list_box_get_selected_row(s->list);
+    if (row != NULL) {
+        gtk_widget_grab_focus(GTK_WIDGET(row));
+    }
 }
 
 static gboolean on_preview_timeout(gpointer data) {
@@ -48,6 +53,33 @@ static void on_row_selected(GtkListBox* list, GtkListBoxRow* row, gpointer data)
         g_source_remove(s->preview_id);
     }
     s->preview_id = g_timeout_add(PREVIEW_DELAY_MS, on_preview_timeout, s);
+}
+
+/* The next layout, back to the first after the last */
+static void select_next(Switcher* s) {
+    gint next = (selected_index(s) + 1) % (gint)s->layouts->len;
+    GtkListBoxRow* row = gtk_list_box_get_row_at_index(s->list, next);
+    gtk_list_box_select_row(s->list, row);
+    gtk_widget_grab_focus(GTK_WIDGET(row));
+}
+
+/* Keys pressed in the popover do not reach the window: Alt+L selects the
+ * next layout, Ctrl+Q goes on to the window (quit) */
+static gboolean on_key_pressed(GtkEventControllerKey* controller, guint keyval, guint keycode,
+                               GdkModifierType state, gpointer data) {
+    (void)keycode;
+    Switcher* s = data;
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
+    if (mods == GDK_ALT_MASK && (keyval == GDK_KEY_l || keyval == GDK_KEY_L)) {
+        select_next(s);
+        return TRUE;
+    }
+    if ((mods & GDK_CONTROL_MASK) && (keyval == GDK_KEY_q || keyval == GDK_KEY_Q)) {
+        GtkWidget* window = GTK_WIDGET(s->app->window);
+        gtk_popover_popdown(GTK_POPOVER(s->popover));
+        return gtk_event_controller_key_forward(controller, window);
+    }
+    return FALSE;
 }
 
 static void on_row_activated(GtkListBox* list, GtkListBoxRow* row, gpointer data) {
@@ -103,12 +135,7 @@ void layout_switcher_show(AppData* app) {
         return;
     }
     if (open_switcher != NULL) {
-        /* Alt+L again: the next layout, back to the first after the last */
-        Switcher* s = open_switcher;
-        gint next = (selected_index(s) + 1) % (gint)s->layouts->len;
-        GtkListBoxRow* row = gtk_list_box_get_row_at_index(s->list, next);
-        gtk_list_box_select_row(s->list, row);
-        gtk_widget_grab_focus(GTK_WIDGET(row));
+        select_next(open_switcher); /* Alt+L again (from the top-bar button) */
         return;
     }
     if (app->layouts_btn == NULL || !gtk_widget_get_mapped(app->layouts_btn)) {
@@ -172,6 +199,10 @@ void layout_switcher_show(AppData* app) {
     g_signal_connect(list, "row-activated", G_CALLBACK(on_row_activated), s);
     g_signal_connect(edit, "clicked", G_CALLBACK(on_edit_clicked), s);
     g_signal_connect(popover, "closed", G_CALLBACK(on_closed), s);
+    GtkEventController* keys = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_key_pressed), s);
+    gtk_widget_add_controller(popover, keys);
     open_switcher = s;
     gtk_popover_popup(GTK_POPOVER(popover));
     gtk_widget_grab_focus(GTK_WIDGET(first));
