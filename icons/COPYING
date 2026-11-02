@@ -43,3 +43,8 @@ attribute: icon themes whose symbolic icons use transforms (Adwaita "legacy"
 icons, elementary-xfce) were reported invisible with GTK 4.22, while the
 current Adwaita icons, which never use transforms, are what GTK is tested
 with. `make check` enforces it.
+
+
+The icons of icons/sets/ (icon sets, see docs/configuration.md) were drawn for
+this project by tools/gen_desktop_icons.py and are covered by the project
+licence.

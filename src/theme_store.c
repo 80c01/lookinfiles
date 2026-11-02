@@ -182,6 +182,7 @@ void theme_free(gpointer data) {
     }
     g_free(t->name);
     g_free(t->inherits);
+    g_free(t->icon_set);
     g_free(t->path);
     if (t->colors != NULL) {
         g_hash_table_unref(t->colors);
@@ -206,6 +207,18 @@ static gboolean fail(GError** error, const gchar* format, ...) {
     g_set_error_literal(error, THEME_ERROR, 0, message);
     g_free(message);
     return FALSE;
+}
+
+gboolean theme_store_icon_set_valid(const gchar* name) {
+    if (name == NULL || name[0] == '\0' || strlen(name) > 64) {
+        return FALSE;
+    }
+    for (const gchar* p = name; *p != '\0'; p++) {
+        if (!g_ascii_isalnum(*p) && *p != '-' && *p != '_') {
+            return FALSE;
+        }
+    }
+    return TRUE;
 }
 
 static gboolean parse_theme_group(GKeyFile* kf, Theme* t, GError** error) {
@@ -234,8 +247,15 @@ static gboolean parse_theme_group(GKeyFile* kf, Theme* t, GError** error) {
                 ok = fail(error, "[Theme] dark: \"%s\" is not true or false", v);
             }
             t->has_dark = TRUE;
+        } else if (strcmp(key, "icons") == 0) {
+            if (!theme_store_icon_set_valid(v)) {
+                ok = fail(error, "[Theme] icons: \"%s\" is not an icon set name (letters, digits, - and _)", v);
+            } else {
+                g_free(t->icon_set);
+                t->icon_set = g_strdup(v);
+            }
         } else {
-            ok = fail(error, "[Theme] %s: unknown key (name, dark, inherits)", key);
+            ok = fail(error, "[Theme] %s: unknown key (name, dark, inherits, icons)", key);
         }
         g_free(v);
     }
@@ -420,6 +440,12 @@ GPtrArray* theme_store_list(const gchar* dir, GPtrArray* errors) {
 /* Apply                                                                     */
 /* ------------------------------------------------------------------------- */
 
+static gchar* current_icon_set = NULL;
+
+const gchar* theme_store_icon_set(void) {
+    return current_icon_set;
+}
+
 gboolean theme_store_apply(GPtrArray* themes, const gchar* name, gboolean* dark, GError** error) {
     /* The inheritance chain, from the theme to its root */
     GPtrArray* chain = g_ptr_array_new();
@@ -446,10 +472,15 @@ gboolean theme_store_apply(GPtrArray* themes, const gchar* name, gboolean* dark,
     palette_reset();
     fonts_reset();
     gboolean is_dark = TRUE;
+    g_clear_pointer(&current_icon_set, g_free);
     for (gint i = (gint)chain->len - 1; i >= 0; i--) {
         Theme* t = g_ptr_array_index(chain, i);
         if (t->has_dark) {
             is_dark = t->dark;
+        }
+        if (t->icon_set != NULL) {
+            g_free(current_icon_set);
+            current_icon_set = (strcmp(t->icon_set, "default") == 0) ? NULL : g_strdup(t->icon_set);
         }
         GHashTableIter it;
         gpointer key, value;
@@ -479,6 +510,9 @@ gchar* theme_store_current_to_ini(const gchar* name, gboolean dark) {
     GKeyFile* kf = g_key_file_new();
     g_key_file_set_string(kf, "Theme", "name", name);
     g_key_file_set_boolean(kf, "Theme", "dark", dark);
+    if (current_icon_set != NULL) {
+        g_key_file_set_string(kf, "Theme", "icons", current_icon_set);
+    }
     for (gint i = 0; i < PAL_COUNT; i++) {
         g_key_file_set_string(kf, "Colors", palette_name((PaletteRole)i), palette_color((PaletteRole)i));
         gchar* comment = g_strconcat(" ", palette_description((PaletteRole)i), NULL);

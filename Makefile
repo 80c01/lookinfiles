@@ -82,7 +82,7 @@ OBJS = $(SRCS:src/%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/icon_resources.o $(BUILD_DI
 
 # Toolbar icons bundled into the binary (icons/, see icons/COPYING and src/icons.c)
 GLIB_COMPILE_RESOURCES != $(PKG_CONFIG) --variable=glib_compile_resources gio-2.0
-ICON_FILES = $(sort $(wildcard icons/scalable/actions/*.svg))
+ICON_FILES = $(sort $(wildcard icons/scalable/actions/*.svg icons/sets/*/*.svg))
 DEPS = $(OBJS:.o=.d)
 
 all: $(TARGET)

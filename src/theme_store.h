@@ -9,7 +9,9 @@
  *   name=Light Modern
  *   dark=false
  *   inherits=Dark Modern
+ *   icons=desktop
  *   # values a theme leaves out come from the theme it inherits
+ *   # icons: name of an icon set (icon_sets.h), "default" for none
  *
  *   [Colors]
  *   bg_window=#f8f8f8      (palette role names, palette.h)
@@ -36,6 +38,7 @@ typedef struct {
     gchar* inherits;     /* NULL: starts from the defaults */
     gboolean dark;       /* dark interface (GTK widgets, syntax scheme base) */
     gboolean has_dark;   /* "dark" given in the file (else inherited) */
+    gchar* icon_set;     /* "icons" key: set name or "default"; NULL: inherited */
     gchar* path;         /* file of a user theme, NULL for a built-in one */
     GHashTable* colors;  /* role name -> "#rrggbb", the file's own values */
     gchar* font_family[FONT_COUNT]; /* NULL: inherited */
@@ -60,6 +63,12 @@ Theme* theme_store_find(GPtrArray* themes, const gchar* name);
  * (may be NULL). FALSE (and nothing changed) on an unknown theme or
  * parent, or an inheritance loop. */
 gboolean theme_store_apply(GPtrArray* themes, const gchar* name, gboolean* dark, GError** error);
+
+/* Icon set of the theme applied last: NULL for the default icons. Owned by
+ * the store. */
+const gchar* theme_store_icon_set(void);
+/* TRUE for a usable icon set name: letters, digits, '-' and '_' */
+gboolean theme_store_icon_set_valid(const gchar* name);
 
 /* The current palette and fonts as a self-contained theme file */
 gchar* theme_store_current_to_ini(const gchar* name, gboolean dark);

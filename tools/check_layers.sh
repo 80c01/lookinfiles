@@ -109,7 +109,7 @@ lsp_client:lsp_protocol
 lsp_config:code_symbol
 layout_store:app_paths,tab_tree
 text_style:app_types,file_types,app_paths,palette,theme
-theme:palette,fonts,theme_store,file_type_icons
+theme:palette,fonts,theme_store,file_type_icons,icon_sets
 markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link,icons
 markdown_link:
 markdown_table:fonts,palette,markdown_link
@@ -121,6 +121,7 @@ app_events:app_types
 panels:app_types,app_events,nav_keys
 focus_route:app_types,app_events,nav_keys,panels
 icons:file_type_icons,palette
+icon_sets:app_paths,theme_store
 icon_picker:icons
 image_utils:
 animation:gif_decoder,image_utils
@@ -231,6 +232,23 @@ for f in icons/scalable/actions/*.svg; do
         status=1
     fi
     if ! grep -q "scalable/actions/$(basename "$f")" icons/lookin.gresource.xml; then
+        echo "icons: $f is missing from icons/lookin.gresource.xml"
+        status=1
+    fi
+done
+
+# Icon sets (icons/sets/<set>/): files named lookin-set-<icon>[-symbolic].svg,
+# without transforms, each listed in the GResource manifest
+for f in icons/sets/*/*.svg; do
+    case "$(basename "$f")" in
+        lookin-set-*.svg) ;;
+        *) echo "icons: $f must be named lookin-set-<icon>.svg"; status=1 ;;
+    esac
+    if grep -q 'transform' "$f"; then
+        echo "icons: $f uses a transform (not rendered by some GTK versions)"
+        status=1
+    fi
+    if ! grep -q "sets/$(basename "$(dirname "$f")")/$(basename "$f")<" icons/lookin.gresource.xml; then
         echo "icons: $f is missing from icons/lookin.gresource.xml"
         status=1
     fi

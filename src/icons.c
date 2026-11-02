@@ -81,6 +81,24 @@ static void debug_print_icon(GdkDisplay* display, const gchar* requested, GIcon*
     if (p) g_object_unref(p);
 }
 
+/* GThemedIcon for the bundled icon lookin-<name>-symbolic: the icon of the
+ * icon set in use first (lookin-set-<name>-symbolic, drawn in the text
+ * colour, or lookin-set-<name>, drawn as is, see icon_sets.h), then the
+ * bundled one. Names the set does not provide are skipped by GTK, so a change
+ * of set only needs the icon theme to notify its images. The symbolic name
+ * must come first: GTK prefers a later symbolic name to an earlier plain one
+ * the theme lacks. */
+static GIcon* bundled_themed_icon(const gchar* name) {
+    gchar* names[4] = {g_strconcat("lookin-set-", name, "-symbolic", NULL),
+                       g_strconcat("lookin-set-", name, NULL),
+                       g_strconcat("lookin-", name, "-symbolic", NULL), NULL};
+    GIcon* icon = g_themed_icon_new_from_names(names, 3);
+    for (gint i = 0; i < 3; i++) {
+        g_free(names[i]);
+    }
+    return icon;
+}
+
 /* Make the icons bundled in the binary (icons/, prefix "lookin-")
  * visible to the icon theme of the display, once */
 static void register_bundled_icons(GdkDisplay* display) {
@@ -103,7 +121,7 @@ static GIcon* themed_icon_with_fallbacks(const gchar* icon_name) {
     gchar* bundled = g_strconcat("lookin-", icon_name, "-symbolic", NULL);
     if (display != NULL && svg_supported() &&
         gtk_icon_theme_has_icon(gtk_icon_theme_get_for_display(display), bundled)) {
-        GIcon* icon = g_themed_icon_new(bundled);
+        GIcon* icon = bundled_themed_icon(icon_name);
         g_free(bundled);
         if (g_getenv("LOOKIN_DEBUG_ICONS") != NULL) {
             debug_print_icon(display, icon_name, icon);
@@ -188,7 +206,7 @@ static GIcon* bundled_gicon(const gchar* bundled, const gchar* fallback) {
     gchar* name = g_strconcat("lookin-", bundled, "-symbolic", NULL);
     if (display != NULL && svg_supported() &&
         gtk_icon_theme_has_icon(gtk_icon_theme_get_for_display(display), name)) {
-        gicon = g_themed_icon_new(name);
+        gicon = bundled_themed_icon(bundled);
     } else {
         gchar* fb = g_strconcat(fallback, "-symbolic", NULL);
         gicon = g_themed_icon_new(fb);

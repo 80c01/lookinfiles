@@ -75,7 +75,12 @@ Check these before adding or changing an action, a tooltip or a dialog:
   `icons/scalable/actions/lookin-<name>-symbolic.svg`, list it in
   `icons/lookin.gresource.xml`, and if `<name>` is not built into libgtk
   add a `FALLBACKS` entry in `icons.c` ending with a built-in icon (used when
-  SVG cannot be loaded). The file-type icons `lookin-ft-*` are generated:
+  SVG cannot be loaded). A theme can replace the icons with an **icon set**
+  (`icon_sets.c`, `icons/sets/<set>/` and `~/.config/lookinfiles/icons/<set>/`,
+  see docs/configuration.md): `icons.c` lists `lookin-set-<name>[-symbolic]`
+  before `lookin-<name>-symbolic` for every icon it shows, so a new icon needs
+  no change for sets to restyle it; build GIcons only through `icons.c`.
+  The file-type icons `lookin-ft-*` are generated:
   run `tools/gen_file_icons.py` on the VS Code Seti theme files (see its
   header) instead of editing them. Check with `make ui-test`, `UI_ICON_THEME=hicolor
   make ui-test` and `LOOKIN_DEBUG_ICONS=1 ./lookin`.

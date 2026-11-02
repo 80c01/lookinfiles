@@ -52,6 +52,40 @@ static void test_parse(void) {
     theme_free(t);
 }
 
+static void expect_error(const gchar* text, const gchar* fragment);
+
+static void test_icon_set(void) {
+    g_assert_true(theme_store_icon_set_valid("desktop"));
+    g_assert_true(theme_store_icon_set_valid("my_set-2"));
+    g_assert_false(theme_store_icon_set_valid(""));
+    g_assert_false(theme_store_icon_set_valid("../x"));
+    g_assert_false(theme_store_icon_set_valid("a b"));
+
+    GError* error = NULL;
+    GPtrArray* themes = g_ptr_array_new_with_free_func(theme_free);
+    g_ptr_array_add(themes, theme_parse("[Theme]\nname=Retro\nicons=desktop\n", NULL, &error));
+    g_assert_no_error(error);
+    g_ptr_array_add(themes, theme_parse("[Theme]\nname=Kid\ninherits=Retro\n", NULL, &error));
+    g_ptr_array_add(themes, theme_parse("[Theme]\nname=Plain\ninherits=Retro\nicons=default\n", NULL, &error));
+    g_ptr_array_add(themes, theme_parse("[Theme]\nname=Other\ninherits=Retro\nicons=flat\n", NULL, &error));
+    g_assert_no_error(error);
+    g_assert_true(theme_store_apply(themes, "Retro", NULL, NULL));
+    g_assert_cmpstr(theme_store_icon_set(), ==, "desktop");
+    g_assert_true(theme_store_apply(themes, "Kid", NULL, NULL));
+    g_assert_cmpstr(theme_store_icon_set(), ==, "desktop");  /* inherited */
+    g_assert_true(theme_store_apply(themes, "Other", NULL, NULL));
+    g_assert_cmpstr(theme_store_icon_set(), ==, "flat");
+    g_assert_true(theme_store_apply(themes, "Plain", NULL, NULL));
+    g_assert_null(theme_store_icon_set());  /* "default" */
+    g_assert_true(theme_store_apply(themes, "Retro", NULL, NULL));
+    gchar* ini = theme_store_current_to_ini("Copy", FALSE);
+    g_assert_nonnull(strstr(ini, "icons=desktop"));
+    g_free(ini);
+    g_ptr_array_free(themes, TRUE);
+
+    expect_error("[Theme]\nname=A\nicons=../etc\n", "[Theme] icons:");
+}
+
 static void expect_error(const gchar* text, const gchar* fragment) {
     GError* error = NULL;
     Theme* t = theme_parse(text, NULL, &error);
@@ -345,6 +379,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/theme_store/list", test_list);
     g_test_add_func("/theme_store/apply_inheritance", test_apply_inheritance);
     g_test_add_func("/theme_store/apply_errors", test_apply_errors);
+    g_test_add_func("/theme_store/icon_set", test_icon_set);
     g_test_add_func("/theme_store/save_round_trip", test_save_round_trip);
     g_test_add_func("/theme_store/choice", test_choice);
     g_test_add_func("/theme_store/builtin_contrast", test_builtin_contrast);

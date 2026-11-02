@@ -2,6 +2,7 @@
  * tabs). Colours are the palette roles (palette.h) as CSS named colours,
  * fonts and sizes the font roles (fonts.h: @font_ui, @size_normal...). */
 #include "theme.h"
+#include "icon_sets.h"
 #include "palette.h"
 #include "fonts.h"
 #include "theme_store.h"
@@ -73,6 +74,7 @@ gboolean theme_apply_saved(void) {
     theme_store_load_fonts(choice_path, &fonts);
     theme_store_apply_fonts(&fonts);
     font_choice_clear(&fonts);
+    icon_sets_use(theme_store_icon_set());
     g_free(name);
     g_ptr_array_free(themes, TRUE);
     g_ptr_array_free(errors, TRUE);

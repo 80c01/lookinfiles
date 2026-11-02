@@ -6,6 +6,7 @@
 #include "editor.h"
 #include "editor_modes.h"
 #include "fonts.h"
+#include "icon_sets.h"
 #include "minimap.h"
 #include "palette.h"
 #include "terminal.h"
@@ -106,6 +107,7 @@ static void refresh_editor_tabs(AppData* app) {
 }
 
 void themes_refresh(AppData* app, gboolean dark) {
+    icon_sets_use(theme_store_icon_set());
     GtkSettings* settings = gtk_settings_get_default();
     if (settings != NULL) {
         g_object_set(settings, "gtk-application-prefer-dark-theme", dark, NULL);
