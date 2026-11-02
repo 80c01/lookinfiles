@@ -755,6 +755,9 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     st->vim_sl_mode = gtk_label_new("NORMAL");
     gtk_widget_add_css_class(st->vim_sl_mode, "vim-mode-badge");
     gtk_widget_add_css_class(st->vim_sl_mode, "vim-mode-normal");
+    /* Wide enough for the longest badge ("O-PENDING") so switching modes
+     * (NORMAL -> COMMAND) never changes the statusline's requested width */
+    gtk_label_set_width_chars(GTK_LABEL(st->vim_sl_mode), 9);
 
     st->vim_sl_file = gtk_label_new(tab->name ? tab->name : "[No Name]");
     editor_bar_label_shrinkable(st->vim_sl_file, PANGO_ELLIPSIZE_MIDDLE);
