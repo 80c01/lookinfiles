@@ -67,6 +67,13 @@ static void test_detect_magic(void) {
     g_assert_cmpint(DETECT("anim", "GIF89a\x01\0"), ==, FILE_KIND_IMAGE);
     g_assert_cmpint(DETECT("x", "RIFF\0\0\0\0WEBPVP8 "), ==, FILE_KIND_IMAGE);
     g_assert_cmpint(DETECT("doc", "%PDF-1.7\n%\xE2\xE3"), ==, FILE_KIND_PDF);
+    g_assert_cmpint(DETECT("figure", "%!PS-Adobe-3.0\n%%Pages: 2\n"), ==, FILE_KIND_PDF);
+    g_assert_cmpint(DETECT("figure.eps", "%!PS-Adobe-3.0 EPSF-3.0\n"), ==, FILE_KIND_PDF);
+    g_assert_cmpint(DETECT("paper.dvi", "\xF7\x02\x01\x83\x92\xC0\x1C"), ==, FILE_KIND_PDF);
+    g_assert_cmpint(DETECT("data.bin", "\xF7\x02\x01\x83\x92\xC0\x1C"), !=, FILE_KIND_PDF);
+    g_assert_cmpint(DETECT("script.sh", "%!shell\necho\n"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(file_kind_from_name("a.ps"), ==, FILE_KIND_PDF);
+    g_assert_cmpint(file_kind_from_name("a.DVI"), ==, FILE_KIND_PDF);
     g_assert_cmpint(DETECT("song", "ID3\x04\0\0\0\0"), ==, FILE_KIND_AUDIO);
     g_assert_cmpint(DETECT("song", "fLaC\0\0\0\x22"), ==, FILE_KIND_AUDIO);
     g_assert_cmpint(DETECT("sound", "RIFF\0\0\0\0WAVEfmt "), ==, FILE_KIND_AUDIO);

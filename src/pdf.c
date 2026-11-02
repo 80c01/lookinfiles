@@ -4,6 +4,7 @@
 #include "icons.h"
 #include "text_style.h"
 #include "file_types.h"
+#include "ps_convert.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
@@ -23,6 +24,8 @@ typedef struct {
     gint max_w;
     gint first_page;       /* first page rendered by this task */
     gint page_count;       /* pages rendered by this task at most */
+    gboolean converted;    /* PostScript or DVI shown through a PDF conversion */
+    gboolean is_dvi;
 
     /* Results populated by worker thread */
     gchar* error_msg;
@@ -94,6 +97,46 @@ static void ensure_pdf_tags(GtkTextBuffer* buffer) {
     }
 }
 
+/* PostScript or DVI (from the content, then the name): FALSE for a real PDF */
+static gboolean sniff_ps_source(const gchar* full, const gchar* name, PsSource* source) {
+    guchar head[16] = {0};
+    gsize len = 0;
+    FILE* fp = g_fopen(full, "rb");
+    if (fp != NULL) {
+        len = fread(head, 1, sizeof(head), fp);
+        fclose(fp);
+    }
+    if (len >= 5 && memcmp(head, "%PDF-", 5) == 0) {
+        return FALSE;
+    }
+    if (head_is_dvi(name, head, len) || (len == 0 && is_dvi_file(name))) {
+        *source = PS_SOURCE_DVI;
+        return TRUE;
+    }
+    if (head_is_postscript(head, len) || (len == 0 && is_postscript_file(name))) {
+        *source = PS_SOURCE_POSTSCRIPT;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/* Text mode of a PostScript file: its source */
+static gchar* read_source_head(const gchar* full) {
+    gchar* contents = NULL;
+    gsize len = 0;
+    FILE* fp = g_fopen(full, "rb");
+    if (fp == NULL) {
+        return NULL;
+    }
+    contents = g_malloc(PREVIEW_BYTES + 1);
+    len = fread(contents, 1, PREVIEW_BYTES, fp);
+    fclose(fp);
+    contents[len] = '\0';
+    gchar* valid = g_utf8_make_valid(contents, (gssize)len);
+    g_free(contents);
+    return valid;
+}
+
 static void pdf_preview_thread_func(GTask* task, gpointer source_object,
                                     gpointer task_data, GCancellable* cancellable);
 static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res, gpointer user_data);
@@ -132,6 +175,8 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
         next->max_w = td->max_w;
         next->first_page = shown;
         next->page_count = MAX_RENDER_PAGES;
+        next->converted = td->converted;
+        next->is_dvi = td->is_dvi;
         GTask* task = g_task_new(NULL, app->preview_cancellable, on_pdf_preview_ready, NULL);
         g_task_set_task_data(task, next, pdf_task_data_free);
         g_task_run_in_thread(task, pdf_preview_thread_func);
@@ -159,10 +204,38 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
     gint64 fsize = (g_stat(td->full, &st) == 0) ? (gint64)st.st_size : 0;
     td->size_str = g_format_size((guint64)fsize);
 
-    GFile* f = g_file_new_for_path(td->full);
     GError* err = NULL;
+    gchar* open_path = NULL;
+    PsSource ps_source;
+    if (sniff_ps_source(td->full, td->name, &ps_source)) {
+        td->converted = TRUE;
+        td->is_dvi = ps_source == PS_SOURCE_DVI;
+        if (td->render_raw && ps_source == PS_SOURCE_POSTSCRIPT) {
+            /* Text mode: the PostScript source itself */
+            gchar* src = read_source_head(td->full);
+            td->page_texts = g_ptr_array_new_with_free_func(g_free);
+            g_ptr_array_add(td->page_texts, src != NULL ? src : g_strdup(""));
+            td->total_pages = 1;
+            g_task_return_boolean(task, TRUE);
+            return;
+        }
+        open_path = ps_convert_to_pdf(td->full, ps_source, MAX_RENDER_PAGES, cancellable, &err);
+        if (open_path == NULL) {
+            if (g_task_return_error_if_cancelled(task)) {
+                g_clear_error(&err);
+                return;
+            }
+            td->error_msg = g_strdup_printf("[ Cannot preview %s: %s ]", td->name,
+                                            err ? err->message : "conversion failed");
+            g_clear_error(&err);
+            g_task_return_boolean(task, TRUE);
+            return;
+        }
+    }
+    GFile* f = g_file_new_for_path(open_path != NULL ? open_path : td->full);
     PopplerDocument* doc = poppler_document_new_from_gfile(f, NULL, cancellable, &err);
     g_object_unref(f);
+    g_free(open_path);
 
     if (g_task_return_error_if_cancelled(task)) {
         if (doc != NULL) {
@@ -326,19 +399,22 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     /* Metadata subtitle: pages, version, size, mode toggle hint */
     const gchar* mode_hint = td->render_raw ? "  [text mode, press m for rendered pages]"
                                             : "  [rendered pages, press m for text]";
+    gchar* type_text = td->converted
+        ? g_strdup(td->is_dvi ? "DVI" : "PostScript")
+        : g_strdup_printf("PDF %s", td->doc_ver ? td->doc_ver : "1.x");
+    gchar* pages_text = (td->converted && td->total_pages >= MAX_RENDER_PAGES)
+        ? g_strdup_printf("first %d pages", MAX_RENDER_PAGES)
+        : g_strdup_printf("%d page%s", td->total_pages, (td->total_pages == 1) ? "" : "s");
     gchar* meta_text;
     if (td->doc_author != NULL && td->doc_author[0] != '\0') {
-        meta_text = g_strdup_printf("By %s  •  PDF %s  •  %d page%s  •  %s%s\n\n",
-                                    td->doc_author,
-                                    td->doc_ver ? td->doc_ver : "1.x",
-                                    td->total_pages, (td->total_pages == 1) ? "" : "s",
-                                    td->size_str, mode_hint);
+        meta_text = g_strdup_printf("By %s  •  %s  •  %s  •  %s%s\n\n",
+                                    td->doc_author, type_text, pages_text, td->size_str, mode_hint);
     } else {
-        meta_text = g_strdup_printf("PDF %s  •  %d page%s  •  %s%s\n\n",
-                                    td->doc_ver ? td->doc_ver : "1.x",
-                                    td->total_pages, (td->total_pages == 1) ? "" : "s",
-                                    td->size_str, mode_hint);
+        meta_text = g_strdup_printf("%s  •  %s  •  %s%s\n\n",
+                                    type_text, pages_text, td->size_str, mode_hint);
     }
+    g_free(type_text);
+    g_free(pages_text);
     gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, meta_text, -1, "pdf_meta", NULL);
     g_free(meta_text);
 

@@ -11,6 +11,12 @@ gboolean is_html_file(const gchar* name);
 gboolean is_org_file(const gchar* name);
 gboolean is_image_file(const gchar* name);
 gboolean is_pdf_file(const gchar* name);
+/* PostScript (.ps, .eps...) and TeX DVI: previewed as PDF (see ps_convert.h) */
+gboolean is_postscript_file(const gchar* name);
+gboolean is_dvi_file(const gchar* name);
+/* Content check: PostScript ("%!PS", DOS EPS header) / DVI (preamble, and a .dvi name) */
+gboolean head_is_postscript(const guchar* head, gsize len);
+gboolean head_is_dvi(const gchar* name, const guchar* head, gsize len);
 gboolean is_video_file(const gchar* name);
 gboolean is_audio_file(const gchar* name);
 /* Camera RAW photo (.cr2, .nef, .arw, .dng, .raf...) */

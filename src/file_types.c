@@ -103,6 +103,19 @@ gboolean is_pdf_file(const gchar* name) {
     return (g_ascii_strcasecmp(ext, "pdf") == 0);
 }
 
+gboolean is_postscript_file(const gchar* name) {
+    if (name == NULL) {
+        return FALSE;
+    }
+    const gchar* ext = file_extension(name);
+    return g_ascii_strcasecmp(ext, "ps") == 0 || g_ascii_strcasecmp(ext, "eps") == 0 ||
+           g_ascii_strcasecmp(ext, "epsf") == 0 || g_ascii_strcasecmp(ext, "epsi") == 0;
+}
+
+gboolean is_dvi_file(const gchar* name) {
+    return name != NULL && g_ascii_strcasecmp(file_extension(name), "dvi") == 0;
+}
+
 gboolean is_word_document_file(const gchar* name) {
     if (name == NULL) {
         return FALSE;
@@ -165,8 +178,8 @@ gboolean is_audio_file(const gchar* name) {
 
 /* Return TRUE if file content can be rendered richly in preview pane */
 gboolean is_renderable_file(const gchar* name) {
-    return is_markdown_file(name) || is_html_file(name) || is_org_file(name) || is_image_file(name) || is_pdf_file(name) || is_video_file(name) || is_audio_file(name) ||
-           is_word_document_file(name);
+    return is_markdown_file(name) || is_html_file(name) || is_org_file(name) || is_image_file(name) || is_pdf_file(name) || is_postscript_file(name) || is_dvi_file(name) ||
+           is_video_file(name) || is_audio_file(name) || is_word_document_file(name);
 }
 
 /* Extensions of the kinds that have no is_*_file() helper */
@@ -237,6 +250,15 @@ static gboolean is_man_section(const gchar* ext) {
     return ext[n] == '\0' && n <= 4;
 }
 
+gboolean head_is_postscript(const guchar* head, gsize len) {
+    return head != NULL && len >= 4 &&
+           (memcmp(head, "%!PS", 4) == 0 || memcmp(head, "\xC5\xD0\xD3\xC6", 4) == 0);
+}
+
+gboolean head_is_dvi(const gchar* name, const guchar* head, gsize len) {
+    return head != NULL && len >= 2 && head[0] == 0xF7 && head[1] == 0x02 && is_dvi_file(name);
+}
+
 /* Kind of the name without a compression suffix: "ls.1.gz" -> manual page */
 static gboolean is_manpage_name(const gchar* name) {
     const gchar* ext = file_extension(name);
@@ -264,7 +286,7 @@ FileKind file_kind_from_name(const gchar* name) {
     if (is_html_file(name)) return FILE_KIND_HTML;
     if (is_org_file(name)) return FILE_KIND_ORG;
     if (is_image_file(name)) return FILE_KIND_IMAGE;
-    if (is_pdf_file(name)) return FILE_KIND_PDF;
+    if (is_pdf_file(name) || is_postscript_file(name) || is_dvi_file(name)) return FILE_KIND_PDF;
     if (is_video_file(name)) return FILE_KIND_VIDEO;
     if (is_audio_file(name)) return FILE_KIND_AUDIO;
     if (is_word_document_file(name)) return FILE_KIND_DOCUMENT;
@@ -414,7 +436,7 @@ static gsize skip_blank(const guchar* head, gsize len) {
 }
 
 /* Magic numbers that cannot be mistaken for text */
-static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_name) {
+static FileKind detect_binary_magic(const gchar* name, const guchar* head, gsize len, FileKind by_name) {
     gboolean name_media_av = (by_name == FILE_KIND_AUDIO || by_name == FILE_KIND_VIDEO);
 
     if (HAS(0, "\x89PNG\r\n\x1a\n") || HAS(0, "\xFF\xD8\xFF") ||
@@ -433,8 +455,8 @@ static FileKind detect_binary_magic(const guchar* head, gsize len, FileKind by_n
     if (HAS(0, "\x7F" "ELF")) {
         return FILE_KIND_EXECUTABLE;
     }
-    if (HAS(0, "%PDF-")) {
-        return FILE_KIND_PDF;
+    if (HAS(0, "%PDF-") || head_is_postscript(head, len) || head_is_dvi(name, head, len)) {
+        return FILE_KIND_PDF; /* PostScript and DVI are converted to PDF */
     }
     /* ZIP: an office document or e-book if the name says so, or if its
      * first entries (local file names are not compressed) show the parts */
@@ -700,7 +722,7 @@ FileKind file_kind_detect(const gchar* name, const guchar* head, gsize len) {
         return file_kind_is_text(by_name) ? by_name : FILE_KIND_TEXT;
     }
 
-    FileKind magic = detect_binary_magic(head, len, by_name);
+    FileKind magic = detect_binary_magic(name, head, len, by_name);
     if (magic != FILE_KIND_TEXT) {
         return magic;
     }

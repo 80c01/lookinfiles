@@ -16,7 +16,7 @@ format. Open work is in
   highlighted code blocks and images.
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
 - Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
-  `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), video and audio
+  `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), PostScript and TeX DVI (converted to PDF), video and audio
   with player controls.
 - Office documents, read without any external tool: Word `.docx` and
   `.doc` (97-2003) as Word shows them (fonts, sizes, colours, highlights,
@@ -156,6 +156,7 @@ every common format to L3 and never leave one below L1.
 | Org | L3 | `orgmode` |
 | Images: zoom, EXIF details and orientation, animated GIF, RAW embedded previews | L3 | `image_preview`, `exif`, `animation`, `gif_decoder` |
 | PDF (poppler, optional): progressive pages, PgDn / PgUp, zoom | L3 | `pdf` |
+| PostScript `.ps` / `.eps`, TeX `.dvi`: first 20 pages converted to PDF by Ghostscript (and `dvips`) into the user cache, then shown as a PDF; `m` shows the PostScript source. Without the tools: a message | L3 | `pdf`, `ps_convert` |
 | Video / audio: tags, cover art, codecs, duration | L3 | `video`, `audio`, `media_tags` |
 | CSV / TSV | L3 | `csv` |
 | JSON, JSONC, JSON Lines | L3 | `json_view` |

@@ -23,6 +23,7 @@ pane_geometry:
 minimap_geometry:
 dir_summary:file_types,text_encoding
 hex_dump:
+ps_convert:
 elf_info:
 zip_reader:
 gif_decoder:
