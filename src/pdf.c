@@ -482,6 +482,11 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
      * scrolled window when the previous file had long unwrapped lines. */
     GtkWidget* scroller = gtk_widget_get_ancestor(app->text_view, GTK_TYPE_SCROLLED_WINDOW);
     gint alloc_w = gtk_widget_get_width(scroller != NULL ? scroller : app->text_view);
+    /* The minimap appears once the tall content is loaded and then takes its
+     * width from the viewport: reserve it up front. */
+    if (app->minimap != NULL && !gtk_widget_get_visible(app->minimap)) {
+        alloc_w -= MINIMAP_WIDTH;
+    }
     gint max_w = (alloc_w > 120) ? (alloc_w - 60) : 700;
 
     PdfTaskData* td = g_new0(PdfTaskData, 1);
