@@ -66,6 +66,40 @@ static void tag_colors(const GtkTextIter* it, GdkRGBA* fg, gboolean* has_fg,
     g_slist_free(tags);
 }
 
+/* A texture (PDF page) painted at the minimap scale. The downscaled copy is
+ * kept on the texture so that redraws do not download it again. */
+static gboolean draw_texture(cairo_t* cc, GdkTexture* tex, gdouble x, gdouble y, gdouble w, gdouble h) {
+    gint tw = gdk_texture_get_width(tex), th = gdk_texture_get_height(tex);
+    if (tw <= 0 || th <= 0 || w < 1.0 || h < 1.0) {
+        return FALSE;
+    }
+    gint dw = MAX(1, (gint)(w + 0.5)), dh = MAX(1, (gint)(h + 0.5));
+    cairo_surface_t* small = g_object_get_data(G_OBJECT(tex), "minimap-thumb");
+    if (small == NULL || cairo_image_surface_get_width(small) != dw ||
+        cairo_image_surface_get_height(small) != dh) {
+        cairo_surface_t* full = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, tw, th);
+        gdk_texture_download(tex, cairo_image_surface_get_data(full),
+                             cairo_image_surface_get_stride(full));
+        cairo_surface_mark_dirty(full);
+        small = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, dw, dh);
+        cairo_t* sc = cairo_create(small);
+        cairo_scale(sc, (gdouble)dw / tw, (gdouble)dh / th);
+        cairo_set_source_surface(sc, full, 0, 0);
+        cairo_pattern_set_filter(cairo_get_source(sc), CAIRO_FILTER_BEST);
+        cairo_paint(sc);
+        cairo_destroy(sc);
+        cairo_surface_destroy(full);
+        g_object_set_data_full(G_OBJECT(tex), "minimap-thumb", small,
+                               (GDestroyNotify)cairo_surface_destroy);
+    }
+    cairo_save(cc);
+    cairo_set_source_surface(cc, small, x, y);
+    cairo_rectangle(cc, x, y, dw, dh);
+    cairo_fill(cc);
+    cairo_restore(cc);
+    return TRUE;
+}
+
 /* One run of text (same tags) of a display line */
 static void draw_run(cairo_t* cc, PangoLayout* layout, GtkTextView* view, GtkTextIter* rs,
                      GtkTextIter* re, gdouble sx, gdouble sy, gdouble font_scale) {
@@ -84,6 +118,11 @@ static void draw_run(cairo_t* cc, PangoLayout* layout, GtkTextView* view, GtkTex
                 h = gtk_widget_get_height(widgets[0]);
             }
             g_free(widgets);
+        }
+        if (paintable != NULL && GDK_IS_TEXTURE(paintable) &&
+            draw_texture(cc, GDK_TEXTURE(paintable), 2.0 + loc.x * sx, loc.y * sy,
+                         w * sx, h * sy)) {
+            return;
         }
         set_source_role(cc, PAL_RULE, 1.0); /* table / image block */
         cairo_rectangle(cc, 2.0 + loc.x * sx, loc.y * sy, MAX(1.0, w * sx), MAX(1.0, h * sy));
