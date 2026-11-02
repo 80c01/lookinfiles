@@ -83,17 +83,46 @@ static void prune_cache(const gchar* dir) {
     g_ptr_array_unref(files);
 }
 
+/* First useful line of a tool's error output */
+static gchar* first_error_line(const gchar* text) {
+    if (text == NULL) {
+        return NULL;
+    }
+    gchar** lines = g_strsplit(text, "\n", -1);
+    gchar* found = NULL;
+    for (gchar** l = lines; *l != NULL && found == NULL; l++) {
+        gchar* t = g_strstrip(*l);
+        if (t[0] != '\0') {
+            found = g_utf8_make_valid(t, -1);
+        }
+    }
+    g_strfreev(lines);
+    return found;
+}
+
 static gboolean run_tool(gchar** argv, GCancellable* cancellable, GError** error) {
     GSubprocess* proc = g_subprocess_newv((const gchar* const*)argv,
-                                          G_SUBPROCESS_FLAGS_STDOUT_SILENCE |
-                                          G_SUBPROCESS_FLAGS_STDERR_SILENCE, error);
+                                          G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                                          G_SUBPROCESS_FLAGS_STDERR_PIPE, error);
     if (proc == NULL) {
         return FALSE;
     }
-    gboolean ok = g_subprocess_wait_check(proc, cancellable, error);
+    gchar* out = NULL;
+    gchar* err = NULL;
+    gboolean ok = g_subprocess_communicate_utf8(proc, NULL, cancellable, &out, &err, error);
     if (!ok) {
         g_subprocess_force_exit(proc);
+    } else if (!g_subprocess_get_successful(proc)) {
+        /* gs reports its errors on stdout, dvips on stderr */
+        gchar* detail = first_error_line(err != NULL && err[0] != '\0' ? err : out);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "%s exited with code %d%s%s",
+                    argv[0], g_subprocess_get_exit_status(proc),
+                    detail != NULL ? ": " : "", detail != NULL ? detail : "");
+        g_free(detail);
+        ok = FALSE;
     }
+    g_free(out);
+    g_free(err);
     g_object_unref(proc);
     return ok;
 }
