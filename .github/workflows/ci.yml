@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-4-dev \
+            libvte-2.91-gtk4-dev libgtksourceview-5-dev libpoppler-glib-dev \
+            libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev git sshfs
+
+      - name: Build, unit tests and layering rules
+        run: make check
