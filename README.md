@@ -1,10 +1,10 @@
 # LookinFiles — look in your files
 
-A file explorer that shows what is inside your files. Select a file and see
-it rendered right away: code, Markdown, PDF, images, documents, archives,
-databases and many more. Then edit it and run commands next to it, without
-leaving the window. Written in C and GTK 4 for Linux, with a VS Code look and
-a keyboard-first design.
+A file explorer that shows what is inside your files. Select a file and see it
+rendered right away: code, Markdown, PDF, images, office documents (Word,
+Excel, PowerPoint), archives, databases and many more. Also play videos. Edit
+text files and run commands next to it, without leaving the window. Written in
+C and GTK 4 for Linux, with a VS Code look and a keyboard-first design.
 
 ![LookinFiles showing a Markdown preview](docs/screenshot.png)
 
