@@ -100,6 +100,19 @@ static gchar* first_error_line(const gchar* text) {
     return found;
 }
 
+/* The "Error: ..." line of a ghostscript output, NULL without one */
+static gchar* gs_error_line(const gchar* text) {
+    const gchar* start = text != NULL ? strstr(text, "Error: ") : NULL;
+    if (start == NULL) {
+        return NULL;
+    }
+    const gchar* end = strchr(start, '\n');
+    gchar* line = g_strndup(start, end != NULL ? (gsize)(end - start) : strlen(start));
+    gchar* valid = g_utf8_make_valid(g_strstrip(line), -1);
+    g_free(line);
+    return valid;
+}
+
 /* Runs in `cwd` (figures a document includes are relative to its folder).
  * With `output` set, a tool that exits with an error but wrote that file
  * counts as successful: dvips exits with 1 on a missing figure although it
@@ -121,8 +134,12 @@ static gboolean run_tool(gchar** argv, const gchar* cwd, const gchar* output,
         g_subprocess_force_exit(proc);
     } else if (!g_subprocess_get_successful(proc) &&
                !(output != NULL && g_file_test(output, G_FILE_TEST_IS_REGULAR))) {
-        /* gs reports its errors on stdout, dvips on stderr */
-        gchar* detail = first_error_line(err != NULL && err[0] != '\0' ? err : out);
+        /* gs prints the reason ("Error: /undefinedfilename in ...") on stdout
+         * and only "Unrecoverable error" on stderr; dvips uses stderr */
+        gchar* detail = gs_error_line(out);
+        if (detail == NULL) {
+            detail = first_error_line(err != NULL && err[0] != '\0' ? err : out);
+        }
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "%s exited with code %d%s%s",
                     argv[0], g_subprocess_get_exit_status(proc),
                     detail != NULL ? ": " : "", detail != NULL ? detail : "");
