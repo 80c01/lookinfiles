@@ -230,8 +230,16 @@ static void start_listing(AppData* app, ExplorerRow* row) {
     }
     g_object_set_data(G_OBJECT(row), "arc-loading", GINT_TO_POINTER(1));
     g_object_set_data(G_OBJECT(row), "arc-app", app);
-    explorer_row_remove_children(row);
-    append_note(row, "  (reading...)");
+    /* Reuse the placeholder: a row emptied while expanded collapses */
+    ExplorerRow* first = explorer_row_n_children(row) == 1 ? explorer_row_child(row, 0) : NULL;
+    if (first != NULL && explorer_row_is(first, "-")) {
+        explorer_row_set_label(first, "  (reading...)");
+    } else {
+        append_note(row, "  (reading...)");
+        while (explorer_row_n_children(row) > 1) {
+            explorer_row_remove(explorer_row_child(row, 0));
+        }
+    }
     ListData* d = g_new0(ListData, 1);
     d->archive = g_strdup(row->path);
     GTask* task = g_task_new(NULL, NULL, on_listed, g_object_ref(row));
