@@ -175,6 +175,29 @@ typedef struct {
     EditorTab* focused;
 } Restore;
 
+/* A view moved between notebooks while it has no real size can end up with a
+ * stale vertical adjustment (only the last line number is drawn and the view no
+ * longer follows the cursor). Once the view is mapped with a real height, put
+ * it back on its cursor. */
+static gboolean resync_view_tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
+    (void)clock;
+    (void)data;
+    if (!gtk_widget_get_mapped(widget)) {
+        return G_SOURCE_CONTINUE; /* a background tab: wait until it is shown */
+    }
+    if (gtk_widget_get_height(widget) <= 1) {
+        return G_SOURCE_CONTINUE;
+    }
+    GtkTextView* view = GTK_TEXT_VIEW(widget);
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    if (vadj != NULL) {
+        gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
+    }
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
+    gtk_text_view_scroll_to_mark(view, gtk_text_buffer_get_insert(buffer), 0.0, TRUE, 0.0, 0.3);
+    return G_SOURCE_REMOVE;
+}
+
 /* A view of path in nb (an editor notebook or the preview notebook): the
  * file opened and its tab moved there, or a second view of it when it is
  * already open in another editor notebook. NULL when it cannot be edited. */
@@ -187,6 +210,9 @@ static EditorTab* place_view(AppData* app, const gchar* path, GtkNotebook* nb) {
         EditorTab* tab = editor_find_tab(app, path);
         if (tab != NULL && tab->nb != GTK_WIDGET(nb)) {
             editor_move_tab_to(app, tab, nb, -1, FALSE); /* the notebooks still empty stay */
+        }
+        if (tab != NULL && tab->view != NULL) {
+            gtk_widget_add_tick_callback(tab->view, resync_view_tick, NULL, NULL);
         }
         return tab;
     }
