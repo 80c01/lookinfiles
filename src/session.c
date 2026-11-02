@@ -65,6 +65,50 @@ static void restore_panels(AppData* app, const SavedLayout* l) {
 #endif
 }
 
+/* Add workspace i to s with everything the session keeps of it; NULL when
+ * it has no folder */
+static SessionWorkspace* capture_workspace(AppData* app, Session* s, gint i) {
+    VirtualLayout* ws = &app->workspaces[i];
+    if (ws->base_dir == NULL) {
+        return NULL;
+    }
+    gchar** expanded = set_to_strv(ws->expanded_paths);
+    GPtrArray* tabs = g_ptr_array_new_with_free_func(g_free);
+    gchar* preview_tabs = NULL;
+    gchar* editor_tabs = NULL;
+    editor_session_capture(app, i, tabs, &preview_tabs, &editor_tabs);
+    g_ptr_array_add(tabs, NULL);
+    /* The bookmarks, notes and remote views keep no file selection */
+    const gchar* selected = (ws->sidebar_view == SIDEBAR_VIEW_FILES && !ws->show_bookmarks)
+                                ? ws->selected_path : NULL;
+    SessionWorkspace* sw = session_add_workspace(s, ws->base_dir, (const gchar* const*)expanded, selected,
+                                                 ws->show_hidden, ws->sort_mode,
+                                                 (const gchar* const*)tabs->pdata);
+    sw->preview_tabs = preview_tabs;
+    sw->editor_tabs = editor_tabs;
+    sw->panels = capture_panels(ws);
+    g_strfreev(expanded);
+    g_ptr_array_unref(tabs);
+    return sw;
+}
+
+/* Give the current workspace what sw describes; FALSE when its folder is
+ * gone, or a remote machine no longer mounted (nothing is changed) */
+static gboolean apply_workspace(AppData* app, const SessionWorkspace* sw) {
+    if (!g_file_test(sw->dir, G_FILE_TEST_IS_DIR)) {
+        return FALSE;
+    }
+    const gchar* selected = (sw->selected != NULL && g_file_test(sw->selected, G_FILE_TEST_EXISTS))
+                                ? sw->selected : NULL;
+    workspace_restore_state(app, app->current_ws, sw->dir, (const gchar* const*)sw->expanded, selected,
+                            sw->show_hidden, sw->sort_mode);
+    editor_session_restore(app, (const gchar* const*)sw->tabs, sw->preview_tabs, sw->editor_tabs);
+    if (sw->panels != NULL) {
+        restore_panels(app, sw->panels);
+    }
+    return TRUE;
+}
+
 void session_save_now(AppData* app) {
     if (app == NULL || app->num_workspaces <= 0) {
         return;
@@ -72,30 +116,9 @@ void session_save_now(AppData* app) {
     app_emit(app, APP_EVENT_LAYOUT_CHANGED); /* snapshot the current workspace */
     Session* s = session_new();
     for (gint i = 0; i < app->num_workspaces; i++) {
-        VirtualLayout* ws = &app->workspaces[i];
-        if (ws->base_dir == NULL) {
-            continue;
-        }
-        gchar** expanded = set_to_strv(ws->expanded_paths);
-        GPtrArray* tabs = g_ptr_array_new_with_free_func(g_free);
-        gchar* preview_tabs = NULL;
-        gchar* editor_tabs = NULL;
-        editor_session_capture(app, i, tabs, &preview_tabs, &editor_tabs);
-        g_ptr_array_add(tabs, NULL);
-        /* The bookmarks, notes and remote views keep no file selection */
-        const gchar* selected = (ws->sidebar_view == SIDEBAR_VIEW_FILES && !ws->show_bookmarks)
-                                    ? ws->selected_path : NULL;
-        SessionWorkspace* sw = session_add_workspace(s, ws->base_dir, (const gchar* const*)expanded, selected,
-                                                     ws->show_hidden, ws->sort_mode,
-                                                     (const gchar* const*)tabs->pdata);
-        sw->preview_tabs = preview_tabs;
-        sw->editor_tabs = editor_tabs;
-        sw->panels = capture_panels(ws);
-        if (i == app->current_ws) {
+        if (capture_workspace(app, s, i) != NULL && i == app->current_ws) {
             s->current = (gint)s->workspaces->len - 1;
         }
-        g_strfreev(expanded);
-        g_ptr_array_unref(tabs);
     }
     gchar* path = session_default_path();
     GError* err = NULL;
@@ -105,6 +128,45 @@ void session_save_now(AppData* app) {
     g_clear_error(&err);
     g_free(path);
     session_free(s);
+}
+
+gboolean session_save_workspace(AppData* app, gint idx, const gchar* path, GError** error) {
+    if (app == NULL || idx < 0 || idx >= app->num_workspaces || path == NULL) {
+        return FALSE;
+    }
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED); /* snapshot the current workspace */
+    Session* s = session_new();
+    gboolean ok = FALSE;
+    if (capture_workspace(app, s, idx) != NULL) {
+        ok = session_save(s, path, error);
+    } else {
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "This workspace has no folder");
+    }
+    session_free(s);
+    return ok;
+}
+
+gboolean session_open_workspace(AppData* app, const gchar* path, GError** error) {
+    if (app == NULL || path == NULL) {
+        return FALSE;
+    }
+    Session* s = session_load(path);
+    if (s == NULL) {
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "The saved workspace is missing or unreadable");
+        return FALSE;
+    }
+    const SessionWorkspace* sw = g_ptr_array_index(s->workspaces, 0); /* session_load() never returns an empty one */
+    gboolean ok = FALSE;
+    if (!g_file_test(sw->dir, G_FILE_TEST_IS_DIR)) {
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "Folder not found: %s", sw->dir);
+    } else if (app->num_workspaces >= MAX_VIRTUAL_LAYOUTS) {
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "All %d workspaces are in use", MAX_VIRTUAL_LAYOUTS);
+    } else {
+        workspace_add(app);
+        ok = apply_workspace(app, sw);
+    }
+    session_free(s);
+    return ok;
 }
 
 gboolean session_restore(AppData* app) {
@@ -131,14 +193,7 @@ gboolean session_restore(AppData* app) {
         if ((gint)i == s->current) {
             current = app->current_ws;
         }
-        const gchar* selected = (sw->selected != NULL && g_file_test(sw->selected, G_FILE_TEST_EXISTS))
-                                    ? sw->selected : NULL;
-        workspace_restore_state(app, app->current_ws, sw->dir, (const gchar* const*)sw->expanded, selected,
-                                sw->show_hidden, sw->sort_mode);
-        editor_session_restore(app, (const gchar* const*)sw->tabs, sw->preview_tabs, sw->editor_tabs);
-        if (sw->panels != NULL) {
-            restore_panels(app, sw->panels);
-        }
+        apply_workspace(app, sw);
     }
     session_free(s);
     if (shown < 0) {

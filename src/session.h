@@ -14,4 +14,12 @@ void session_save_now(AppData* app);
 /* Restore the saved workspaces; FALSE when there is nothing to restore */
 gboolean session_restore(AppData* app);
 
+/* One workspace on its own, in a file of the session format (a workspace
+ * bookmark, see session_bookmark.h). Save workspace idx to path. */
+gboolean session_save_workspace(AppData* app, gint idx, const gchar* path, GError** error);
+/* Open the workspace saved in path in a new workspace, which is shown. FALSE
+ * (error set, nothing opened) when the file is unreadable, its folder is
+ * gone or all workspaces are in use; missing tabs are skipped. */
+gboolean session_open_workspace(AppData* app, const gchar* path, GError** error);
+
 #endif /* SESSION_H */
