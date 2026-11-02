@@ -3,6 +3,7 @@
 #include "app_events.h"
 #include "editor_session.h"
 #include "layout_store.h"
+#include "remote.h"
 #include "session_store.h"
 #include "terminal.h"
 #include "workspace.h"
@@ -84,6 +85,9 @@ static SessionWorkspace* capture_workspace(AppData* app, Session* s, gint i) {
     SessionWorkspace* sw = session_add_workspace(s, ws->base_dir, (const gchar* const*)expanded, selected,
                                                  ws->show_hidden, ws->sort_mode,
                                                  (const gchar* const*)tabs->pdata);
+    if (ws->remote_id != NULL && remote_find_by_id(app, ws->remote_id) != NULL) {
+        sw->remote_id = g_strdup(ws->remote_id);
+    }
     sw->preview_tabs = preview_tabs;
     sw->editor_tabs = editor_tabs;
     sw->panels = capture_panels(ws);
@@ -95,6 +99,13 @@ static SessionWorkspace* capture_workspace(AppData* app, Session* s, gint i) {
 /* Give the current workspace what sw describes; FALSE when its folder is
  * gone, or a remote machine no longer mounted (nothing is changed) */
 static gboolean apply_workspace(AppData* app, const SessionWorkspace* sw) {
+    if (sw->remote_id != NULL) {
+        /* An unmounted sshfs folder is an empty directory: mount it again first */
+        RemoteMachine* rm = remote_find_by_id(app, sw->remote_id);
+        if (rm == NULL || !remote_connect_machine(app, rm)) {
+            return FALSE;
+        }
+    }
     if (!g_file_test(sw->dir, G_FILE_TEST_IS_DIR)) {
         return FALSE;
     }
@@ -102,6 +113,11 @@ static gboolean apply_workspace(AppData* app, const SessionWorkspace* sw) {
                                 ? sw->selected : NULL;
     workspace_restore_state(app, app->current_ws, sw->dir, (const gchar* const*)sw->expanded, selected,
                             sw->show_hidden, sw->sort_mode);
+    if (sw->remote_id != NULL) {
+        VirtualLayout* cur = &app->workspaces[app->current_ws];
+        g_free(cur->remote_id);
+        cur->remote_id = g_strdup(sw->remote_id);
+    }
     editor_session_restore(app, (const gchar* const*)sw->tabs, sw->preview_tabs, sw->editor_tabs);
     if (sw->panels != NULL) {
         restore_panels(app, sw->panels);
@@ -157,7 +173,7 @@ gboolean session_open_workspace(AppData* app, const gchar* path, GError** error)
     }
     const SessionWorkspace* sw = g_ptr_array_index(s->workspaces, 0); /* session_load() never returns an empty one */
     gboolean ok = FALSE;
-    if (!g_file_test(sw->dir, G_FILE_TEST_IS_DIR)) {
+    if (sw->remote_id == NULL && !g_file_test(sw->dir, G_FILE_TEST_IS_DIR)) {
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "Folder not found: %s", sw->dir);
     } else if (app->num_workspaces >= MAX_VIRTUAL_LAYOUTS) {
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "All %d workspaces are in use", MAX_VIRTUAL_LAYOUTS);
@@ -183,8 +199,8 @@ gboolean session_restore(AppData* app) {
     gint current = 0;
     for (guint i = 0; i < s->workspaces->len && (gint)i < MAX_VIRTUAL_LAYOUTS; i++) {
         SessionWorkspace* sw = g_ptr_array_index(s->workspaces, i);
-        if (!g_file_test(sw->dir, G_FILE_TEST_IS_DIR)) {
-            continue; /* folder gone, or a remote machine no longer mounted */
+        if (sw->remote_id == NULL && !g_file_test(sw->dir, G_FILE_TEST_IS_DIR)) {
+            continue; /* folder gone */
         }
         if (shown >= 0) {
             workspace_add(app);
@@ -193,7 +209,7 @@ gboolean session_restore(AppData* app) {
         if ((gint)i == s->current) {
             current = app->current_ws;
         }
-        apply_workspace(app, sw);
+        apply_workspace(app, sw); /* a remote machine that fails to mount leaves a plain workspace */
     }
     session_free(s);
     if (shown < 0) {

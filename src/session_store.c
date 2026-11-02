@@ -8,6 +8,7 @@
 static void workspace_free(gpointer data) {
     SessionWorkspace* ws = data;
     g_free(ws->dir);
+    g_free(ws->remote_id);
     g_strfreev(ws->expanded);
     g_free(ws->selected);
     g_strfreev(ws->tabs);
@@ -78,6 +79,7 @@ Session* session_load(const gchar* path) {
                                                          g_key_file_get_boolean(kf, group, "hidden", NULL),
                                                          g_key_file_get_integer(kf, group, "sort", NULL),
                                                          (const gchar* const*)tabs);
+            ws->remote_id = g_key_file_get_string(kf, group, "remote", NULL);
             ws->preview_tabs = g_key_file_get_string(kf, group, "preview_tabs", NULL);
             ws->editor_tabs = g_key_file_get_string(kf, group, "editor_tabs", NULL);
             if (g_key_file_has_key(kf, group, "Explorer", NULL)) {
@@ -121,6 +123,7 @@ gboolean session_save(const Session* session, const gchar* path, GError** error)
         g_key_file_set_boolean(kf, group, "hidden", ws->show_hidden);
         g_key_file_set_integer(kf, group, "sort", ws->sort_mode);
         g_key_file_set_string_list(kf, group, "tabs", (const gchar* const*)ws->tabs, g_strv_length(ws->tabs));
+        if (ws->remote_id != NULL) g_key_file_set_string(kf, group, "remote", ws->remote_id);
         if (ws->preview_tabs != NULL) g_key_file_set_string(kf, group, "preview_tabs", ws->preview_tabs);
         if (ws->editor_tabs != NULL) g_key_file_set_string(kf, group, "editor_tabs", ws->editor_tabs);
         if (ws->panels != NULL) saved_layout_write(kf, group, ws->panels, FALSE);

@@ -21,6 +21,7 @@ typedef struct {
     gchar** tabs;        /* files open in editor tabs, in order, each once */
     /* Where the tabs are (tab_tree.h, indices into tabs), NULL when not
      * saved (older session files: every tab in one notebook) */
+    gchar* remote_id;    /* remote machine the folder is mounted from, or NULL */
     gchar* preview_tabs; /* the editor tabs of the preview notebook: one notebook */
     gchar* editor_tabs;  /* the dedicated editor panel: notebooks and splits */
     SavedLayout* panels; /* panels, split sizes and terminal panes, or NULL */
