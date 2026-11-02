@@ -339,23 +339,16 @@ static void test_builtin_contrast(void) {
     fonts_reset();
 }
 
-/* The reference themes of themes/ (one per decade, not built in) parse,
- * are complete (every colour and font), and keep their text readable.
- * make test runs from the top directory. */
-static void test_reference_themes(void) {
-    GPtrArray* errors = g_ptr_array_new_with_free_func(g_free);
-    GPtrArray* themes = theme_store_list("themes", errors);
-    for (guint i = 0; i < errors->len; i++) {
-        g_printerr("%s\n", (const gchar*)g_ptr_array_index(errors, i));
-    }
-    g_assert_cmpuint(errors->len, ==, 0);
-    guint count = 0;
-    for (guint i = 0; i < themes->len; i++) {
-        Theme* t = g_ptr_array_index(themes, i);
-        if (t->path == NULL) {
-            continue;
-        }
-        count++;
+/* The themes of themes/ (one per decade) are built in: they parse, are
+ * complete (every colour and font), and keep their text readable. */
+static void test_bundled_themes(void) {
+    static const gchar* const NAMES[] = {"1970s Phosphor", "1980s Text Mode", "1990s Desktop",
+                                         "2000s Glossy",   "2010s Flat Dark", "2020s Pastel"};
+    GPtrArray* themes = theme_store_list(NULL, NULL);
+    for (gsize n = 0; n < G_N_ELEMENTS(NAMES); n++) {
+        Theme* t = theme_store_find(themes, NAMES[n]);
+        g_assert_nonnull(t);
+        g_assert_null(t->path);
         g_assert_null(t->inherits);
         g_assert_true(t->has_dark);
         g_assert_cmpuint(g_hash_table_size(t->colors), ==, PAL_COUNT);
@@ -365,9 +358,7 @@ static void test_reference_themes(void) {
         }
         assert_readable(themes, t->name);
     }
-    g_assert_cmpuint(count, ==, 6);
     g_ptr_array_free(themes, TRUE);
-    g_ptr_array_free(errors, TRUE);
     palette_reset();
     fonts_reset();
 }
@@ -383,6 +374,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/theme_store/save_round_trip", test_save_round_trip);
     g_test_add_func("/theme_store/choice", test_choice);
     g_test_add_func("/theme_store/builtin_contrast", test_builtin_contrast);
-    g_test_add_func("/theme_store/reference_themes", test_reference_themes);
+    g_test_add_func("/theme_store/bundled_themes", test_bundled_themes);
     return g_test_run();
 }

@@ -78,7 +78,7 @@ $(shell mkdir -p $(BUILD_DIR); printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' | cm
 # Every .c file in src/ is part of the application: adding a module only
 # requires creating src/<module>.c and src/<module>.h.
 SRCS = $(sort $(wildcard src/*.c))
-OBJS = $(SRCS:src/%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/icon_resources.o $(BUILD_DIR)/guide_resources.o
+OBJS = $(SRCS:src/%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/icon_resources.o $(BUILD_DIR)/guide_resources.o $(BUILD_DIR)/theme_resources.o
 
 # Toolbar icons bundled into the binary (icons/, see icons/COPYING and src/icons.c)
 GLIB_COMPILE_RESOURCES != $(PKG_CONFIG) --variable=glib_compile_resources gio-2.0
@@ -123,6 +123,24 @@ $(BUILD_DIR)/guide_resources.c: $(BUILD_DIR)/guide.gresource.xml $(GUIDE_FILES)
 	$(GLIB_COMPILE_RESOURCES) --sourcedir=docs --c-name guide --generate-source --target=$@ $<
 
 $(BUILD_DIR)/guide_resources.o: $(BUILD_DIR)/guide_resources.c $(FLAGS_STAMP)
+	$(CC) $(ALL_CFLAGS) -c -o $@ $<
+
+# Themes of themes/ bundled into the binary (theme_store.c): one resource
+# per .ini file, the list generated like the guide's.
+THEME_FILES = $(sort $(wildcard themes/*.ini))
+
+$(BUILD_DIR)/theme.gresource.xml: $(THEME_FILES) Makefile | $(BUILD_DIR)
+	@{ echo '<?xml version="1.0" encoding="UTF-8"?>'; \
+	  echo '<gresources>'; \
+	  echo '  <gresource prefix="/org/lookin/themes">'; \
+	  for f in $(THEME_FILES:themes/%=%); do echo "    <file>$$f</file>"; done; \
+	  echo '  </gresource>'; \
+	  echo '</gresources>'; } > $@
+
+$(BUILD_DIR)/theme_resources.c: $(BUILD_DIR)/theme.gresource.xml $(THEME_FILES)
+	$(GLIB_COMPILE_RESOURCES) --sourcedir=themes --c-name themes --generate-source --target=$@ $<
+
+$(BUILD_DIR)/theme_resources.o: $(BUILD_DIR)/theme_resources.c $(FLAGS_STAMP)
 	$(CC) $(ALL_CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR):
@@ -210,7 +228,7 @@ TEST_DEPS_test_settings_store = $(BUILD_DIR)/settings_store.o $(BUILD_DIR)/app_p
 TEST_DEPS_test_text_search = $(BUILD_DIR)/text_search.o $(BUILD_DIR)/code_index.o $(CODE_SCAN_OBJS) $(CODE_TAGS_OBJS) $(BUILD_DIR)/git_utils.o $(BUILD_DIR)/palette.o
 TEST_DEPS_test_palette = $(BUILD_DIR)/palette.o
 TEST_DEPS_test_fonts = $(BUILD_DIR)/fonts.o
-TEST_DEPS_test_theme_store = $(BUILD_DIR)/theme_store.o $(BUILD_DIR)/palette.o $(BUILD_DIR)/fonts.o $(BUILD_DIR)/app_paths.o
+TEST_DEPS_test_theme_store = $(BUILD_DIR)/theme_store.o $(BUILD_DIR)/theme_resources.o $(BUILD_DIR)/palette.o $(BUILD_DIR)/fonts.o $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_text_tags = $(BUILD_DIR)/text_tags.o $(BUILD_DIR)/palette.o $(BUILD_DIR)/fonts.o
 LSP_PROTOCOL_OBJS = $(BUILD_DIR)/lsp_protocol.o $(BUILD_DIR)/code_symbol.o $(BUILD_DIR)/json_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_lsp_protocol = $(LSP_PROTOCOL_OBJS)

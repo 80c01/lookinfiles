@@ -1,6 +1,6 @@
 # Reference themes: one per decade
 
-These themes are **not built into LookinFiles**. They are complete theme files
+These themes are **built into LookinFiles** (bundled from this folder at build time). They are complete theme files
 (every colour and both fonts, no `inherits`) that show the look of each era
 of computing, and serve as examples for writing your own theme.
 
@@ -13,7 +13,7 @@ of computing, and serve as examples for writing your own theme.
 | `2010s-flat-dark.ini` | 2010s Flat Dark | Flat design and the dark editor: charcoal, vivid accents, Monokai syntax colours |
 | `2020s-pastel.ini` | 2020s Pastel | Soft pastel dark themes: cool purple surfaces, pastel accents, a code font with ligatures |
 
-To use one, copy it to your themes folder and pick it with `Alt+T`:
+Pick one with `Alt+T`. To start your own from one, copy it to your themes folder:
 
 ```bash
 mkdir -p ~/.config/lookinfiles/themes

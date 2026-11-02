@@ -206,7 +206,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   each role a CSS named colour (`@bg_window`, `alpha(@accent, 0.25)`), and
   `palette_expand()` for `@role` tokens in text templates.
 - `theme_store` — themes: built-in ones (Dark Modern = the defaults,
-  Light Modern, High Contrast Dark; a test keeps their main text pairs at a
+  Light Modern, High Contrast Dark, then the `themes/*.ini` files bundled as
+  GResources by the Makefile; a test keeps their main text pairs at a
   readable contrast) and user INI files in
   `app_config_dir()/themes/` (`[Theme]` name / dark / inherits, `[Colors]`
   palette roles, `[Fonts]`), strict parsing with errors naming group and

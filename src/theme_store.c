@@ -3,8 +3,13 @@
 #include "app_paths.h"
 #include "palette.h"
 
+#include <gio/gio.h>
 #include <glib/gstdio.h>
 #include <string.h>
+
+/* Resource path of the bundled .ini files of themes/ (theme.gresource.xml,
+ * made by the Makefile) */
+#define THEME_RESOURCE_DIR "/org/lookin/themes/"
 
 /* Built-in themes, in list order. Dark Modern is the palette and font
  * defaults. */
@@ -394,6 +399,39 @@ static gint compare_names(gconstpointer a, gconstpointer b) {
     return g_strcmp0(*(const gchar* const*)a, *(const gchar* const*)b);
 }
 
+/* Add the themes bundled from themes/ (sorted by file name) */
+static void add_bundled_themes(GPtrArray* themes) {
+    gchar** children = g_resources_enumerate_children(THEME_RESOURCE_DIR, G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
+    if (children == NULL) {
+        return;
+    }
+    GPtrArray* names = g_ptr_array_new();
+    for (gchar** c = children; *c != NULL; c++) {
+        if (g_str_has_suffix(*c, ".ini")) {
+            g_ptr_array_add(names, *c);
+        }
+    }
+    g_ptr_array_sort(names, compare_names);
+    for (guint i = 0; i < names->len; i++) {
+        gchar* path = g_strconcat(THEME_RESOURCE_DIR, g_ptr_array_index(names, i), NULL);
+        GBytes* bytes = g_resources_lookup_data(path, G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
+        g_free(path);
+        if (bytes == NULL) {
+            continue;
+        }
+        gsize size = 0;
+        const gchar* data = g_bytes_get_data(bytes, &size);
+        gchar* text = g_strndup(data, size);
+        Theme* t = theme_parse(text, NULL, NULL);
+        g_assert(t != NULL);
+        put_theme(themes, t);
+        g_free(text);
+        g_bytes_unref(bytes);
+    }
+    g_ptr_array_free(names, TRUE);
+    g_strfreev(children);
+}
+
 GPtrArray* theme_store_list(const gchar* dir, GPtrArray* errors) {
     GPtrArray* themes = g_ptr_array_new_with_free_func(theme_free);
     for (gsize i = 0; i < G_N_ELEMENTS(BUILTIN_THEMES); i++) {
@@ -401,6 +439,7 @@ GPtrArray* theme_store_list(const gchar* dir, GPtrArray* errors) {
         g_assert(t != NULL);
         g_ptr_array_add(themes, t);
     }
+    add_bundled_themes(themes);
     GDir* d = (dir != NULL) ? g_dir_open(dir, 0, NULL) : NULL;
     if (d == NULL) {
         return themes;
