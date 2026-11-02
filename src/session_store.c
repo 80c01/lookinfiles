@@ -132,6 +132,50 @@ gboolean session_save(const Session* session, const gchar* path, GError** error)
 }
 
 /* ------------------------------------------------------------------------- */
+/* Saved workspaces                                                          */
+/* ------------------------------------------------------------------------- */
+
+#define SNAPSHOT_ID_MAX 32
+
+static gboolean snapshot_id_valid(const gchar* id) {
+    if (id == NULL || id[0] == '\0' || strlen(id) > SNAPSHOT_ID_MAX) return FALSE;
+    for (const gchar* p = id; *p != '\0'; p++) {
+        if (!g_ascii_isxdigit(*p) || g_ascii_isupper(*p)) return FALSE;
+    }
+    return TRUE;
+}
+
+gchar* session_target_make(const gchar* id) {
+    return snapshot_id_valid(id) ? g_strconcat(SESSION_TARGET_PREFIX, id, NULL) : NULL;
+}
+
+const gchar* session_target_id(const gchar* target) {
+    if (target == NULL || !g_str_has_prefix(target, SESSION_TARGET_PREFIX)) return NULL;
+    const gchar* id = target + strlen(SESSION_TARGET_PREFIX);
+    return snapshot_id_valid(id) ? id : NULL;
+}
+
+gchar* session_snapshot_new_id(void) {
+    return g_strdup_printf("%08x%08x", g_random_int(), g_random_int());
+}
+
+gchar* session_snapshot_path(const gchar* id) {
+    if (!snapshot_id_valid(id)) return NULL;
+    gchar* dir = app_config_dir();
+    gchar* name = g_strconcat(id, ".ini", NULL);
+    gchar* path = g_build_filename(dir, "sessions", name, NULL);
+    g_free(name);
+    g_free(dir);
+    return path;
+}
+
+void session_snapshot_remove(const gchar* id) {
+    gchar* path = session_snapshot_path(id);
+    if (path != NULL) g_unlink(path);
+    g_free(path);
+}
+
+/* ------------------------------------------------------------------------- */
 /* Recent folders and files                                                  */
 /* ------------------------------------------------------------------------- */
 

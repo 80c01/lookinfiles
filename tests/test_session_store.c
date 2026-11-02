@@ -2,6 +2,7 @@
 #include "session_store.h"
 
 #include <glib/gstdio.h>
+#include <string.h>
 
 static void test_session_round_trip(void) {
     gchar* dir = g_dir_make_tmp("session_XXXXXX", NULL);
@@ -95,6 +96,36 @@ static void test_session_layout(void) {
     g_free(dir);
 }
 
+static void test_snapshot_target(void) {
+    gchar* t = session_target_make("0123abcd");
+    g_assert_cmpstr(t, ==, "lookinfiles-session://0123abcd");
+    g_assert_cmpstr(session_target_id(t), ==, "0123abcd");
+    g_free(t);
+    g_assert_null(session_target_make("../etc"));
+    g_assert_null(session_target_make("ABCD"));
+    g_assert_null(session_target_make(""));
+    g_assert_null(session_target_id(NULL));
+    g_assert_null(session_target_id("https://example.org"));
+    g_assert_null(session_target_id("lookinfiles-session://"));
+    g_assert_null(session_target_id("lookinfiles-session://../../x"));
+    g_assert_null(session_target_id("lookinfiles-session://ab/cd"));
+
+    gchar* id = session_snapshot_new_id();
+    gchar* made = session_target_make(id); /* a generated id is always valid */
+    g_assert_nonnull(made);
+    g_assert_cmpstr(session_target_id(made), ==, id);
+    g_free(made);
+    gchar* path = session_snapshot_path(id);
+    g_assert_nonnull(path);
+    g_assert_true(g_str_has_suffix(path, ".ini"));
+    g_assert_nonnull(strstr(path, "/sessions/"));
+    g_assert_null(session_snapshot_path("a/b"));
+    session_snapshot_remove("a/b"); /* ignored */
+    session_snapshot_remove(id);    /* missing file is fine */
+    g_free(path);
+    g_free(id);
+}
+
 static void test_recent(void) {
     RecentList* r = recent_list_new();
     recent_list_add(r->folders, "/a");
@@ -135,6 +166,7 @@ int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/session_store/session_round_trip", test_session_round_trip);
     g_test_add_func("/session_store/session_layout", test_session_layout);
+    g_test_add_func("/session_store/snapshot_target", test_snapshot_target);
     g_test_add_func("/session_store/recent", test_recent);
     return g_test_run();
 }

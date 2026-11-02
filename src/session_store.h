@@ -45,6 +45,24 @@ gchar* session_default_path(void);
 Session* session_load(const gchar* path);
 gboolean session_save(const Session* session, const gchar* path, GError** error);
 
+/* Saved workspaces (workspace bookmarks): one workspace per file
+ * app_config_dir()/sessions/<id>.ini, in the session.ini format. A bookmark
+ * points to it with the target "lookinfiles-session://<id>"; an id is
+ * lowercase hex only, so no target can name a file outside that folder. */
+#define SESSION_TARGET_PREFIX "lookinfiles-session://"
+
+/* The bookmark target of a saved workspace (caller frees) */
+gchar* session_target_make(const gchar* id);
+/* The id inside a target, or NULL when target is not a valid saved
+ * workspace target. Points into target. */
+const gchar* session_target_id(const gchar* target);
+/* A new unique id (caller frees) */
+gchar* session_snapshot_new_id(void);
+/* The file of a saved workspace, NULL for an invalid id (caller frees) */
+gchar* session_snapshot_path(const gchar* id);
+/* Delete the file of a saved workspace; missing is fine */
+void session_snapshot_remove(const gchar* id);
+
 /* Recent folders and files */
 typedef struct {
     GPtrArray* folders; /* gchar*, most recent first */
