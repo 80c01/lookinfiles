@@ -70,6 +70,18 @@ gint vim_e_last_line(VimEngine* e) {
     return gtk_text_buffer_get_line_count(e->buf) - 1;
 }
 
+/* Last line a Normal-mode cursor can reach: Vim does not count the empty
+ * line GtkTextBuffer shows after the final newline. */
+static gint last_text_line(VimEngine* e) {
+    gint last = vim_e_last_line(e);
+    if (last > 0) {
+        GtkTextIter it;
+        gtk_text_buffer_get_iter_at_line(e->buf, &it, last);
+        if (gtk_text_iter_starts_line(&it) && gtk_text_iter_is_end(&it)) last--;
+    }
+    return last;
+}
+
 void vim_e_set_cursor(VimEngine* e, const GtkTextIter* it) {
     gtk_text_buffer_place_cursor(e->buf, it);
     if (is_visual(e->mode)) vim_e_update_visual(e);
@@ -84,7 +96,8 @@ static void remember_column(VimEngine* e) {
 
 void vim_e_set_cursor_line(VimEngine* e, gint line, gboolean first_nonblank) {
     if (line < 0) line = 0;
-    if (line > vim_e_last_line(e)) line = vim_e_last_line(e);
+    gint max_line = is_insert(e->mode) ? vim_e_last_line(e) : last_text_line(e);
+    if (line > max_line) line = max_line;
     GtkTextIter it;
     iter_line(e, &it, line);
     if (first_nonblank) vim_iter_first_nonblank(&it);
@@ -863,7 +876,7 @@ typedef struct {
 
 static gboolean motion_lines(VimEngine* e, const GtkTextIter* from, gint delta, Motion* m) {
     gint line = gtk_text_iter_get_line(from) + delta;
-    gint last = vim_e_last_line(e);
+    gint last = is_insert(e->mode) ? vim_e_last_line(e) : last_text_line(e);
     if (line < 0) line = 0;
     if (line > last) line = last;
     if (line == gtk_text_iter_get_line(from)) return FALSE;
@@ -989,8 +1002,8 @@ static gboolean do_motion(VimEngine* e, const VimCmd* cmd, gboolean for_op, cons
                 return TRUE;
             case 'G':
                 m->jump = TRUE;
-                return motion_line_nonblank(e, cmd->count > 0 ? MIN(cmd->count - 1, vim_e_last_line(e))
-                                                              : vim_e_last_line(e), m);
+                return motion_line_nonblank(e, cmd->count > 0 ? MIN(cmd->count - 1, last_text_line(e))
+                                                              : last_text_line(e), m);
             case '+': return motion_line_nonblank(e, gtk_text_iter_get_line(&p) + n, m);
             case '-': return motion_line_nonblank(e, gtk_text_iter_get_line(&p) - n, m);
             case '_': return motion_line_nonblank(e, gtk_text_iter_get_line(&p) + n - 1, m);
