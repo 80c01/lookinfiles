@@ -9,4 +9,7 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full);
  * if the preview does not show rendered PDF pages. */
 gboolean pdf_preview_jump(AppData* app, gint direction);
 
+/* Re-render the shown PDF if the viewport width changed since it was fitted. */
+void pdf_preview_refit(AppData* app);
+
 #endif /* PDF_H */

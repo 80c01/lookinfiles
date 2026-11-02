@@ -1,5 +1,6 @@
 /* Virtual workspaces (Alt+1..8): per-workspace layout snapshots and the top-bar workspace minimap. */
 #include "workspace.h"
+#include "pdf.h"
 #include "workspace_menu.h"
 #include "nav_history.h"
 #include "fs_watch.h"
@@ -335,6 +336,7 @@ static gboolean workspace_apply_positions_tick(GtkWidget* widget,
 
     app->applying_layout = FALSE;
     app->layout_tick_id = 0;
+    pdf_preview_refit(app); /* the pane sizes are final now */
     if (app->ws_minimap != NULL) {
         gtk_widget_queue_draw(app->ws_minimap);
     }

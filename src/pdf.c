@@ -1,4 +1,5 @@
 #include "pdf.h"
+#include "app_events.h"
 #include "fonts.h"
 #include "text_tags.h"
 #include "icons.h"
@@ -471,15 +472,10 @@ gboolean pdf_preview_jump(AppData* app, gint direction) {
     return TRUE;
 }
 
-void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
-    if (app->preview_cancellable != NULL) {
-        g_cancellable_cancel(app->preview_cancellable);
-        g_clear_object(&app->preview_cancellable);
-    }
-    app->preview_cancellable = g_cancellable_new();
-
-    /* Measure the viewport, not the text view: the view can be wider than the
-     * scrolled window when the previous file had long unwrapped lines. */
+/* Width the pages are fitted to. Measure the viewport, not the text view: the
+ * view can be wider than the scrolled window when the previous file had long
+ * unwrapped lines. */
+static gint pdf_fit_width(AppData* app) {
     GtkWidget* scroller = gtk_widget_get_ancestor(app->text_view, GTK_TYPE_SCROLLED_WINDOW);
     gint alloc_w = gtk_widget_get_width(scroller != NULL ? scroller : app->text_view);
     /* The minimap appears once the tall content is loaded and then takes its
@@ -487,7 +483,30 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
     if (app->minimap != NULL && !gtk_widget_get_visible(app->minimap)) {
         alloc_w -= MINIMAP_WIDTH;
     }
-    gint max_w = (alloc_w > 120) ? (alloc_w - 60) : 700;
+    return (alloc_w > 120) ? (alloc_w - 60) : 700;
+}
+
+static gint last_fit_w = 0; /* width of the last PDF render */
+
+void pdf_preview_refit(AppData* app) {
+    if (app->viewed_kind != FILE_KIND_PDF || app->render_raw || app->text_view == NULL) {
+        return;
+    }
+    gint w = pdf_fit_width(app);
+    if (w != last_fit_w && w > 700) {
+        app_emit(app, APP_EVENT_PREVIEW_STALE);
+    }
+}
+
+void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
+    if (app->preview_cancellable != NULL) {
+        g_cancellable_cancel(app->preview_cancellable);
+        g_clear_object(&app->preview_cancellable);
+    }
+    app->preview_cancellable = g_cancellable_new();
+
+    gint max_w = pdf_fit_width(app);
+    last_fit_w = max_w;
 
     PdfTaskData* td = g_new0(PdfTaskData, 1);
     td->app = app;
@@ -506,6 +525,10 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
 }
 
 #else /* !HAVE_POPPLER */
+
+void pdf_preview_refit(AppData* app) {
+    (void)app;
+}
 
 gboolean pdf_preview_jump(AppData* app, gint direction) {
     (void)app;
