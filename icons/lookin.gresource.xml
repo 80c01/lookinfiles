@@ -291,4 +291,45 @@
     <file alias="scalable/actions/lookin-set-view-reveal-symbolic.svg">sets/textmode/lookin-set-view-reveal-symbolic.svg</file>
     <file alias="scalable/actions/lookin-set-window-close-symbolic.svg">sets/textmode/lookin-set-window-close-symbolic.svg</file>
   </gresource>
+  <gresource prefix="/org/lookin/iconsets/phosphor">
+    <file alias="scalable/actions/lookin-set-applications-system-symbolic.svg">sets/phosphor/lookin-set-applications-system-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-bookmark-new-symbolic.svg">sets/phosphor/lookin-set-bookmark-new-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-dialog-error.svg">sets/phosphor/lookin-set-dialog-error.svg</file>
+    <file alias="scalable/actions/lookin-set-dialog-information.svg">sets/phosphor/lookin-set-dialog-information.svg</file>
+    <file alias="scalable/actions/lookin-set-dialog-question.svg">sets/phosphor/lookin-set-dialog-question.svg</file>
+    <file alias="scalable/actions/lookin-set-dialog-warning.svg">sets/phosphor/lookin-set-dialog-warning.svg</file>
+    <file alias="scalable/actions/lookin-set-document-edit-symbolic.svg">sets/phosphor/lookin-set-document-edit-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-document-new-symbolic.svg">sets/phosphor/lookin-set-document-new-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-document-open-recent-symbolic.svg">sets/phosphor/lookin-set-document-open-recent-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-document-print-preview-symbolic.svg">sets/phosphor/lookin-set-document-print-preview-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-drive-harddisk.svg">sets/phosphor/lookin-set-drive-harddisk.svg</file>
+    <file alias="scalable/actions/lookin-set-edit-delete-symbolic.svg">sets/phosphor/lookin-set-edit-delete-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-edit-find-symbolic.svg">sets/phosphor/lookin-set-edit-find-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-folder.svg">sets/phosphor/lookin-set-folder.svg</file>
+    <file alias="scalable/actions/lookin-set-folder-new-symbolic.svg">sets/phosphor/lookin-set-folder-new-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-ft-default.svg">sets/phosphor/lookin-set-ft-default.svg</file>
+    <file alias="scalable/actions/lookin-set-ft-folder.svg">sets/phosphor/lookin-set-ft-folder.svg</file>
+    <file alias="scalable/actions/lookin-set-ft-image.svg">sets/phosphor/lookin-set-ft-image.svg</file>
+    <file alias="scalable/actions/lookin-set-ft-notebook.svg">sets/phosphor/lookin-set-ft-notebook.svg</file>
+    <file alias="scalable/actions/lookin-set-go-home-symbolic.svg">sets/phosphor/lookin-set-go-home-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-go-next-symbolic.svg">sets/phosphor/lookin-set-go-next-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-go-previous-symbolic.svg">sets/phosphor/lookin-set-go-previous-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-input-keyboard-symbolic.svg">sets/phosphor/lookin-set-input-keyboard-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-list-add-symbolic.svg">sets/phosphor/lookin-set-list-add-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-network-server.svg">sets/phosphor/lookin-set-network-server.svg</file>
+    <file alias="scalable/actions/lookin-set-network-transmit-receive-symbolic.svg">sets/phosphor/lookin-set-network-transmit-receive-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-pan-down-symbolic.svg">sets/phosphor/lookin-set-pan-down-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-pan-up-symbolic.svg">sets/phosphor/lookin-set-pan-up-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-process-stop-symbolic.svg">sets/phosphor/lookin-set-process-stop-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-text-x-generic.svg">sets/phosphor/lookin-set-text-x-generic.svg</file>
+    <file alias="scalable/actions/lookin-set-user-bookmarks-symbolic.svg">sets/phosphor/lookin-set-user-bookmarks-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-user-trash.svg">sets/phosphor/lookin-set-user-trash.svg</file>
+    <file alias="scalable/actions/lookin-set-utilities-terminal-symbolic.svg">sets/phosphor/lookin-set-utilities-terminal-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-dual-symbolic.svg">sets/phosphor/lookin-set-view-dual-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-grid-symbolic.svg">sets/phosphor/lookin-set-view-grid-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-paged-symbolic.svg">sets/phosphor/lookin-set-view-paged-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-refresh-symbolic.svg">sets/phosphor/lookin-set-view-refresh-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-reveal-symbolic.svg">sets/phosphor/lookin-set-view-reveal-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-window-close-symbolic.svg">sets/phosphor/lookin-set-window-close-symbolic.svg</file>
+  </gresource>
 </gresources>

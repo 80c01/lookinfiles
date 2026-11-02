@@ -64,7 +64,8 @@ All notable changes to this project are listed here. The format follows
 - Themes can pick an icon set with `icons=<set>` in `[Theme]`. Sets are built
   in (**desktop**, pixel icons of a 1990s grey desktop, used by the 1990s
   reference theme; **textmode**, code page 437 style icons in the CGA colours,
-  used by the 1980s reference theme) or folders of SVG files in `~/.config/lookinfiles/icons/<set>/`.
+  used by the 1980s reference theme; **phosphor**, the same icons in green
+  phosphor intensities, used by the 1970s reference theme) or folders of SVG files in `~/.config/lookinfiles/icons/<set>/`.
 - Bookmark folders have an icon of their own, chosen in the New / Edit
   Folder dialog from the same set as notebooks.
 - OLE2 compound files are detected by content and read without any external
