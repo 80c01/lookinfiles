@@ -289,6 +289,37 @@ static GtkNotebook* panel_notebook(AppData* app) {
     return nb;
 }
 
+/* Diagnostic (LOOKIN_DEBUG_VIEWS=1): state of every editor view some time after a restore */
+static gboolean dump_views(gpointer data) {
+    AppData* app = (AppData*)data;
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* t = l->data;
+        if (t->view == NULL) continue;
+        GtkTextView* v = GTK_TEXT_VIEW(t->view);
+        GtkAdjustment* a = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(v));
+        GdkRectangle vis;
+        gtk_text_view_get_visible_rect(v, &vis);
+        GtkTextIter ins;
+        gtk_text_buffer_get_iter_at_mark(t->buffer, &ins, gtk_text_buffer_get_insert(t->buffer));
+        gint y = 0, h = 0;
+        gtk_text_view_get_line_yrange(v, &ins, &y, &h);
+        g_printerr("view %s: mapped=%d view=%dx%d scroll=%dx%d wrap=%d lines=%d cursor_line=%d "
+                   "cursor_y=%d+%d vadj(v=%.0f lo=%.0f up=%.0f page=%.0f) visible(y=%d h=%d) vadj_same_as_scroll=%d\n",
+                   t->path != NULL ? t->path : "?", gtk_widget_get_mapped(t->view),
+                   gtk_widget_get_width(t->view), gtk_widget_get_height(t->view),
+                   t->scroll != NULL ? gtk_widget_get_width(t->scroll) : -1,
+                   t->scroll != NULL ? gtk_widget_get_height(t->scroll) : -1,
+                   (gint)gtk_text_view_get_wrap_mode(v), gtk_text_buffer_get_line_count(t->buffer),
+                   gtk_text_iter_get_line(&ins), y, h,
+                   gtk_adjustment_get_value(a), gtk_adjustment_get_lower(a), gtk_adjustment_get_upper(a),
+                   gtk_adjustment_get_page_size(a), vis.y, vis.height,
+                   t->scroll != NULL &&
+                       a == gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(t->scroll)));
+    }
+    g_printerr("--\n");
+    return G_SOURCE_REMOVE;
+}
+
 void editor_session_restore(AppData* app, const gchar* const* files, const gchar* preview_tabs,
                             const gchar* editor_tabs) {
     if (app == NULL || files == NULL) {
@@ -331,6 +362,10 @@ void editor_session_restore(AppData* app, const gchar* const* files, const gchar
     }
     if (r.focused != NULL) {
         app->last_focused_editor = r.focused; /* new files open beside it */
+    }
+    if (g_getenv("LOOKIN_DEBUG_VIEWS") != NULL) {
+        g_timeout_add(1500, dump_views, app);
+        g_timeout_add(5000, dump_views, app);
     }
     tab_tree_free(preview);
     tab_tree_free(panel);
