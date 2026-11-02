@@ -1,15 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <!-- Folder back -->
-  <path d="M12 26 h34 l10 10 h60 a4 4 0 0 1 4 4 v62 a6 6 0 0 1 -6 6 h-96 a6 6 0 0 1 -6 -6 v-70 a6 6 0 0 1 6 -6 z" fill="#3d6fb4"/>
-  <!-- Sheet -->
-  <rect x="22" y="40" width="84" height="40" rx="3" fill="#f6f5f4"/>
-  <rect x="30" y="49" width="44" height="4" rx="2" fill="#c0bfbc"/>
-  <rect x="30" y="58" width="56" height="4" rx="2" fill="#c0bfbc"/>
-  <!-- Folder front -->
-  <path d="M8 58 a6 6 0 0 1 6 -6 h100 a6 6 0 0 1 6 6 v44 a6 6 0 0 1 -6 6 h-100 a6 6 0 0 1 -6 -6 z" fill="#62a0ea"/>
-  <path d="M8 98 h112 v4 a6 6 0 0 1 -6 6 h-100 a6 6 0 0 1 -6 -6 z" fill="#3584e4"/>
+  <!-- Tile -->
+  <rect x="6" y="6" width="116" height="116" rx="26" fill="#252b3b"/>
+  <!-- Explorer tree (left) -->
+  <rect x="18" y="22" width="30" height="5" rx="2.5" fill="#f2c14e"/>
+  <rect x="26" y="36" width="22" height="5" rx="2.5" fill="#8d97ad"/>
+  <rect x="26" y="49" width="18" height="5" rx="2.5" fill="#8d97ad"/>
+  <rect x="18" y="62" width="26" height="5" rx="2.5" fill="#f2c14e"/>
+  <rect x="26" y="75" width="20" height="5" rx="2.5" fill="#8d97ad"/>
+  <!-- Divider -->
+  <rect x="54" y="18" width="2" height="92" rx="1" fill="#3b4358"/>
+  <!-- Preview sheet (right) -->
+  <rect x="62" y="20" width="48" height="60" rx="6" fill="#f6f5f4"/>
+  <rect x="68" y="28" width="22" height="4" rx="2" fill="#3584e4"/>
+  <rect x="68" y="38" width="34" height="4" rx="2" fill="#c0bfbc"/>
+  <rect x="68" y="47" width="30" height="4" rx="2" fill="#c0bfbc"/>
+  <rect x="68" y="56" width="34" height="4" rx="2" fill="#c0bfbc"/>
+  <rect x="68" y="65" width="20" height="4" rx="2" fill="#c0bfbc"/>
   <!-- Magnifier -->
-  <path d="M96.5 89.5 L115 108 a5 5 0 0 1 -7 7 L89.5 96.5 z" fill="#3d3846"/>
-  <circle cx="78" cy="78" r="20" fill="#f6f5f4" fill-opacity="0.85" stroke="#3d3846" stroke-width="7"/>
-  <circle cx="72" cy="72" r="6" fill="#ffffff"/>
+  <line x1="82" y1="92" x2="104" y2="114" stroke="#f6f5f4" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="68" cy="78" r="21" fill="#1b202c" fill-opacity="0.35"/>
+  <circle cx="68" cy="78" r="19" fill="#ffffff" fill-opacity="0.12" stroke="#4a9af0" stroke-width="8"/>
+  <path d="M58 70 a13 13 0 0 1 8 -5" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.8"/>
 </svg>
