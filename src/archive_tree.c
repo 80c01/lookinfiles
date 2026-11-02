@@ -200,18 +200,23 @@ static void on_listed(GObject* source, GAsyncResult* result, gpointer user_data)
     AppData* app = g_object_get_data(G_OBJECT(row), "arc-app");
     if (row->parent != NULL && app != NULL &&
         explorer_tree_is_expanded(app->tree, row)) {
-        explorer_row_remove_children(row);
+        /* Never leave the row without children: that collapses it */
+        ExplorerRow* note = explorer_row_n_children(row) > 0 ? explorer_row_child(row, 0) : NULL;
         if (!ok) {
             gchar* label = g_strdup_printf("  (%s)", d->error != NULL ? d->error : "cannot read the archive");
-            append_note(row, label);
+            explorer_row_set_label(note, label);
             g_free(label);
         } else {
             apply_node(row, row->path, d->root);
-            if (d->root->kids->len == 0) {
-                append_note(row, "  (empty)");
-            }
+            gboolean more = d->root->kids->len > 0;
             if (d->incomplete) {
                 append_note(row, "  (more entries not shown)");
+                more = TRUE;
+            }
+            if (more) {
+                explorer_row_remove(note);
+            } else {
+                explorer_row_set_label(note, "  (empty)");
             }
             explorer_row_set_loaded(row, TRUE);
         }
