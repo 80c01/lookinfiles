@@ -169,7 +169,9 @@ gchar* ps_convert_to_pdf(const gchar* path, PsSource source, gint last_page,
         result = out;
         out = NULL;
     } else {
-        gchar* part = g_strconcat(out, ".part", NULL);
+        /* Keep the .pdf extension: the AppArmor profile of gs (Ubuntu) only
+         * lets it create files with known extensions in the home folder */
+        gchar* part = g_strdup_printf("%.*s.part.pdf", (int)(strlen(out) - strlen(".pdf")), out);
         gchar* ps_path = NULL;
         gchar* abs = g_canonicalize_filename(path, NULL);
         gchar* dir_of_input = g_path_get_dirname(abs);
