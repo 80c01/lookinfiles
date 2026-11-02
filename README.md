@@ -1,30 +1,36 @@
 # LookinFiles — look in your files
 
-A keyboard-driven file explorer for Linux, written in C and GTK 4: a file
-tree with live previews of almost any file, a tabbed editor with Notepad,
-Emacs and Vim modes, and an embedded terminal, in a VS Code look.
+A file explorer that shows what is inside your files. Select a file and see
+it rendered right away: code, Markdown, PDF, images, documents, archives,
+databases and many more. Then edit it and run commands next to it, without
+leaving the window. Written in C and GTK 4 for Linux, with a VS Code look and
+a keyboard-first design.
 
 ![LookinFiles showing a Markdown preview](docs/screenshot.png)
 
-## Highlights
+## Features
 
-- **Previews for almost any file**, without external tools: source code,
-  Markdown, Org-mode, PDF, images, video, Office documents, mail and
-  mailboxes, archives, certificates, ELF binaries, and a hex dump for the rest.
-- **A real editor**: tabs you can split in every direction, each in
-  Notepad, Emacs or Vim mode (with a full Vim grammar), Org-mode editing,
-  go to definition and references (built-in index, ctags or a language server).
-- **Git built in**: status badges in the tree, change bars in the gutter,
+- **Preview almost any file**, with no external tool: source code with syntax
+  highlighting, Markdown, Org-mode, PDF, images, video, Office documents,
+  mail and mailboxes, archives, databases, certificates, ELF binaries, and a
+  hex dump for the rest.
+- **Edit in place**: tabs you can split in every direction, each in Notepad,
+  Emacs or Vim mode (with a full Vim grammar), Org-mode editing, and go to
+  definition and references (built-in index, ctags or a language server).
+- **Terminal built in** (needs VTE): shell panes next to the preview and the
+  editors.
+- **Find fast**: fuzzy file finder (`Ctrl+P`) and search in files
+  (`Ctrl+Shift+F`).
+- **Git at a glance**: status badges in the tree, change bars in the gutter,
   a commit history tab.
 - **Four explorer views**: files, bookmarks, notes (plain text, Markdown,
   Org) and SSH machines browsed over SSHFS.
-- **Workspaces**: up to eight, each with its own folder, panels, editors
-  and terminals, restored at the next launch.
-- **Keyboard first**: fuzzy file finder (`Ctrl+P`), search in files
-  (`Ctrl+Shift+F`), the same key for the same action everywhere, and a
+- **Workspaces**: up to eight, each with its own folder, panels, editors and
+  terminals, restored at the next launch.
+- **Keyboard first**: the same key for the same action in every view, and a
   cheat sheet on `?`.
-- **Themes**: Dark Modern, Light Modern, High Contrast Dark, or your own INI
-  file.
+- **Themes and fonts**: Dark Modern, Light Modern, High Contrast Dark, six
+  decade themes, or your own INI file.
 
 ## Quick start
 
