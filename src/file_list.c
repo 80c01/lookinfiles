@@ -16,6 +16,8 @@
 #include "bookmarks.h"
 #include "notes.h"
 #include "remote.h"
+#include "archive_tree.h"
+#include "archive_extract.h"
 
 /* Sort: directories first, then according to active sort mode (thread-safe) */
 static gint compare_entries_with_data(gconstpointer a, gconstpointer b, gpointer user_data) {
@@ -420,8 +422,14 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
             }
         } else {
             gboolean is_buf = (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES);
-            ExplorerRow* row = explorer_row_append(parent, is_buf ? "buffer" : "file", e->name, e->name, can_full);
+            gboolean as_archive = !is_buf && archive_extract_can_browse(e->name);
+            ExplorerRow* row = as_archive
+                                   ? explorer_row_append_container(parent, "file", e->name, e->name, can_full)
+                                   : explorer_row_append(parent, is_buf ? "buffer" : "file", e->name, e->name, can_full);
             explorer_row_set_icon_name(row, e->name);
+            if (as_archive) {
+                append_placeholder(row, "", "...", "");
+            }
             explorer_row_set_badge(row, git_badge);
         }
         g_free(can_full);
@@ -499,7 +507,8 @@ void on_tree_row_toggled(ExplorerTree* tree, ExplorerRow* row, gboolean expanded
     AppData* app = (AppData*)user_data;
     if (bookmarks_handle_row_toggled(app, row, expanded) ||
         notes_handle_row_toggled(app, row, expanded) ||
-        remote_handle_row_toggled(app, row, expanded)) {
+        remote_handle_row_toggled(app, row, expanded) ||
+        archive_tree_handle_row_toggled(app, row, expanded)) {
         return;
     }
     if (!explorer_row_is(row, "dir")) {
@@ -985,8 +994,17 @@ void activate_selected_entry(AppData* app) {
         bookmarks_activate_selected(app);
     } else if (g_strcmp0(type, "remote") == 0 || app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
         remote_activate_selected(app);
-    } else if (g_strcmp0(type, "dir") == 0) {
+    } else if (g_strcmp0(type, "dir") == 0 || archive_tree_row_is_archive(row) ||
+               g_strcmp0(type, "arc_dir") == 0) {
         explorer_tree_toggle_expanded(app->tree, row);
+    } else if (g_strcmp0(type, "arc_file") == 0) {
+        gchar* cached = archive_tree_resolve(app, row);
+        if (cached != NULL) {
+            gchar* name = g_strdup(row->name);
+            editor_open_file(app, name, cached);
+            g_free(name);
+            g_free(cached);
+        }
     } else if (g_strcmp0(type, "file") == 0 && row->path[0] != '\0') {
         FileKind kind = (g_strcmp0(row->path, app->viewed_path) == 0)
                             ? app->viewed_kind

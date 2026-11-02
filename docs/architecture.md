@@ -41,6 +41,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `zip_reader` — read-only ZIP archives (`zip_reader_open()`,
   `zip_reader_read()` with a size limit; stored / deflated via GIO's raw
   `GZlibDecompressor`, ZIP64, no encryption).
+- `archive_extract` — one entry of an archive written to a cache file
+  (`archive_extract_entry()`: ZIP with `zip_reader`, other formats with
+  libarchive), safe entry paths (`archive_extract_clean_path()`), cache path
+  per archive version, names the explorer opens as folders
+  (`archive_extract_can_browse()`). Used by `archive_tree`.
 - `ole_reader`, `ole_props`, `office97` — OLE2 compound files (Office
   97-2003, `.msg`...): sectors, FAT / mini FAT and directory read from a
   mapped file with loop and range checks (`tests/ole_builder.h` builds them
@@ -330,6 +335,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`compare_entries_with_data()`), lazy expand/collapse, git badges in the tree
   (a second `GTask`, run once the listing is shown), navigation (`reload_directory()`, `navigate_to_path()`, `refresh_listing()`,
   `activate_selected_entry()`, `go_to_parent_directory()`), sidebar view toggles.
+- `archive_tree` — archives as folders in the explorer: a file row of a
+  browsable archive has children; Right / Enter list it in a worker thread
+  into `arc_dir` / `arc_file` rows (path `<archive>!/<entry>`); selecting an
+  `arc_file` extracts it to the cache (`archive_extract`) and previews that
+  copy. Read-only.
 - `explorer_keys` — explorer key handler (`on_tree_key_press()`): the
   navigation keys of the global mode (`nav_keys`, `app_nav_style()`), then
   the view actions, the same in every mode.

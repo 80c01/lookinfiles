@@ -34,7 +34,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Explorer panel", "zt / zb", "Scroll selected entry to top / bottom of the panel", VI},
     {"Explorer panel", "C-l", "Scroll selected entry to the center, top, bottom in turn", EM},
     {"Explorer panel", "Space", "Expand / collapse directory", 0},
-    {"Explorer panel", "Right", "Expand directory (or step into first child)", 0},
+    {"Explorer panel", "Right", "Expand directory or archive (or step into first child)", 0},
     {"Explorer panel", "l", "Expand directory (or step into first child)", VI},
     {"Explorer panel", "Left", "Collapse directory or jump to parent", 0},
     {"Explorer panel", "h", "Collapse directory or jump to parent", VI},

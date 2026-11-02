@@ -13,6 +13,7 @@
 #include "bookmarks.h"
 #include "notes.h"
 #include "remote.h"
+#include "archive_tree.h"
 #include "editor.h"
 #include "focus_route.h"
 
@@ -21,7 +22,8 @@
 static gboolean is_container_row(ExplorerRow* row) {
     return explorer_row_is(row, "dir") || explorer_row_is(row, "bm_folder") ||
            explorer_row_is(row, "notebook") || explorer_row_is(row, "trash") ||
-           explorer_row_is(row, "remote_folder");
+           explorer_row_is(row, "remote_folder") || archive_tree_row_is_archive(row) ||
+           explorer_row_is(row, "arc_dir");
 }
 
 /* Files view (not bookmarks / notes / remote) */

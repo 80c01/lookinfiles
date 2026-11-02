@@ -47,6 +47,7 @@ csv:preview_doc
 json_view:preview_doc
 diff_view:preview_doc
 archive_listing:zip_reader
+archive_extract:app_paths,zip_reader
 cert_view:preview_doc
 card_view:preview_doc
 log_view:preview_doc

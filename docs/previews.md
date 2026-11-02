@@ -178,7 +178,7 @@ every common format to L3 and never leave one below L1.
 | Outlook stores `.pst` / `.ost`, Outlook Express `.dbx` | L1 | `mail_store` |
 | EPUB | L2–L3 | `epub` |
 | Man pages (gzipped too) | L2 | `man_view` |
-| Archives (ZIP, tar, gzip, ar; 7z, RAR, xz, ISO... with libarchive) | L2 | `archive_listing` |
+| Archives (ZIP, tar, gzip, ar; 7z, RAR, xz, ISO... with libarchive) | L2 | `archive_listing` (also opened as folders in the explorer: `archive_tree`) |
 | Certificates, keys, requests | L2 | `cert_view` |
 | Calendars, contacts, `.desktop` | L2 | `card_view` |
 | gettext catalogs `.po` / `.mo` | L2 | `gettext_view` |

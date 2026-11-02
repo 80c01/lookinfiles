@@ -19,6 +19,7 @@
 #include "bookmark_icons.h"
 #include "path_kind.h"
 #include "remote.h"
+#include "archive_tree.h"
 #include "orgmode.h"
 #include "diff_gutter.h"
 #include "color_column.h"
@@ -736,6 +737,21 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     gchar* name = g_strdup(row->name);
     gchar* type = g_strdup(row->type);
     gchar* full = g_strdup(row->path);
+
+    /* Inside an archive: folders have no preview, files are previewed from
+     * their extracted copy (extracted in the background on first selection) */
+    if (archive_tree_is_entry(row)) {
+        gchar* cached = explorer_row_is(row, "arc_file") ? archive_tree_resolve(app, row) : NULL;
+        if (cached == NULL) {
+            g_free(name);
+            g_free(type);
+            g_free(full);
+            app_emit(app, APP_EVENT_STATUS_CHANGED);
+            return;
+        }
+        g_free(full);
+        full = cached;
+    }
 
     /* Rows without file content (remote machine, notebook, bookmark folder,
      * notes trash): show a text summary instead of keeping the previous preview */

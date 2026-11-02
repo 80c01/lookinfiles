@@ -81,7 +81,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Page Down` / `Page Up` (Vim: also `Ctrl+F` / `Ctrl+B`; Emacs: `C-v` / `M-v`) | One page down / up |
 | `zz` / `zt` / `zb` (Vim), `C-l` (Emacs, in turn) | Scroll the selected entry to the center / top / bottom |
 | `Space` | Expand / collapse the selected directory |
-| `Right` (Vim: also `l`; Emacs: `C-f`) | Expand the selected directory, or step into its first child |
+| `Right` (Vim: also `l`; Emacs: `C-f`) | Expand the selected directory or archive, or step into its first child |
 | `Left` (Vim: also `h`; Emacs: `C-b`) | Collapse the selected directory, or jump to its parent |
 | `Enter` / double click | Expand a directory, open a file in the editor, open a bookmark |
 | `Ctrl+Enter` | Enter the selected directory as the new root |
