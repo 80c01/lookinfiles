@@ -84,8 +84,9 @@ server, the number of errors and warnings.
 - Notepad: `⎇ main   src/main.c •` on the left, then
   `Ln 3, Col 7 | 100% | C | Unix (LF) | UTF-8 | clangd: 1 error, 0 warnings`.
 - Emacs: `-U:**-  src/main.c  Top (0%)  L3 C7  Git-main  (C clangd Flymake[1 0])`.
-- Vim: `src/main.c [+] [Git(main)]`, then `E:1 W:0  [c] [clangd]  utf-8[unix]`
-  before the ruler.
+- Vim (airline style): `NORMAL  ᚠ main  src/main.c [+]` on the left, then
+  `word  c  utf-8[unix]    42% ☰   42/100 ㏑ :  7` on the right (the word under
+  the cursor, filetype, encoding and format, percent, line/total, column).
 
 ## Notepad mode
 

@@ -154,12 +154,8 @@ static void init_buffer_tags(EditorTab* tab) {
 /* Status Reporting & Helpers                                                */
 /* ------------------------------------------------------------------------- */
 
-static void get_cursor_position(EditorTab* tab, gint* out_line, gint* out_col, gint* out_percent) {
-    if (out_line) *out_line = 1;
-    if (out_col) *out_col = 1;
-    if (out_percent) *out_percent = 0;
-    if (tab == NULL || tab->buffer == NULL) return;
-
+/* The cursor of tab (the passive view's, the Vim cursor, else the insert mark) */
+static void cursor_iter(EditorTab* tab, GtkTextIter* iter_out) {
     GtkTextIter iter;
     if (tab->view_passive && tab->view_insert != NULL) {
         /* Another view of the split file has the buffer's cursor */
@@ -170,6 +166,19 @@ static void get_cursor_position(EditorTab* tab, gint* out_line, gint* out_col, g
         gtk_text_buffer_get_iter_at_mark(tab->buffer, &iter,
                                          gtk_text_buffer_get_insert(tab->buffer));
     }
+    *iter_out = iter;
+}
+
+static void get_cursor_position(EditorTab* tab, gint* out_line, gint* out_col, gint* out_percent,
+                                gint* out_total) {
+    if (out_line) *out_line = 1;
+    if (out_col) *out_col = 1;
+    if (out_percent) *out_percent = 0;
+    if (out_total) *out_total = 1;
+    if (tab == NULL || tab->buffer == NULL) return;
+
+    GtkTextIter iter;
+    cursor_iter(tab, &iter);
     gint line = gtk_text_iter_get_line(&iter) + 1;
     gint col = gtk_text_iter_get_line_offset(&iter) + 1;
     gint total_lines = gtk_text_buffer_get_line_count(tab->buffer);
@@ -181,6 +190,29 @@ static void get_cursor_position(EditorTab* tab, gint* out_line, gint* out_col, g
     if (out_line) *out_line = line;
     if (out_col) *out_col = col;
     if (out_percent) *out_percent = percent;
+    if (out_total) *out_total = total_lines;
+}
+
+/* The identifier under the cursor, or NULL (free with g_free) */
+static gchar* cursor_word(EditorTab* tab) {
+    if (tab == NULL || tab->buffer == NULL) return NULL;
+    GtkTextIter start, end;
+    cursor_iter(tab, &start);
+    end = start;
+    while (!gtk_text_iter_starts_line(&start)) {
+        GtkTextIter prev = start;
+        gtk_text_iter_backward_char(&prev);
+        gunichar c = gtk_text_iter_get_char(&prev);
+        if (!g_unichar_isalnum(c) && c != '_') break;
+        start = prev;
+    }
+    while (!gtk_text_iter_ends_line(&end)) {
+        gunichar c = gtk_text_iter_get_char(&end);
+        if (!g_unichar_isalnum(c) && c != '_') break;
+        gtk_text_iter_forward_char(&end);
+    }
+    if (gtk_text_iter_equal(&start, &end)) return NULL;
+    return gtk_text_buffer_get_text(tab->buffer, &start, &end, FALSE);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -733,33 +765,36 @@ static void emacs_update_status(EditorTab* tab, EditorModeState* st, const Edito
     g_string_free(modes, TRUE);
 }
 
-/* Vim: "src/main.c [+] [Git(main)]" on the left, "E:1 W:0  [c] [clangd]  utf-8[unix]  3,7  Top" on the right */
+/* Vim, as an airline statusline: "NORMAL  ᚠ main  src/main.c [+]" on the left,
+ * "word  c  utf-8[unix]    42% ☰   42/100 ㏑ :  7" on the right */
 static void vim_update_status(EditorTab* tab, EditorModeState* st, const EditorInfo* info,
-                              gint line, gint col, gint percent, gboolean modified) {
-    GString* file = g_string_new(info->relpath != NULL ? info->relpath : (tab->name ? tab->name : "[No Name]"));
+                              gint line, gint col, gint percent, gint total, gboolean modified) {
+    GString* file = g_string_new(NULL);
+    if (info->branch != NULL) {
+        g_string_append_printf(file, " ᚠ %s  ", info->branch);
+    }
+    g_string_append(file, info->relpath != NULL ? info->relpath : (tab->name ? tab->name : "[No Name]"));
     if (modified) {
         g_string_append(file, " [+]");
-    }
-    if (info->branch != NULL) {
-        g_string_append_printf(file, " [Git(%s)]", info->branch);
     }
     gtk_label_set_text(GTK_LABEL(st->vim_sl_file), file->str);
     g_string_free(file, TRUE);
 
     GString* text = g_string_new(NULL);
     if (info->errors > 0 || info->warnings > 0) {
-        g_string_append_printf(text, "E:%u W:%u   ", info->errors, info->warnings);
+        g_string_append_printf(text, "E:%u W:%u  ", info->errors, info->warnings);
     }
-    g_string_append_printf(text, "[%s]", info->language_id);
-    if (info->backend != NULL) {
-        g_string_append_printf(text, " [%s]", info->backend);
+    gchar* word = cursor_word(tab);
+    if (word != NULL) {
+        g_string_append_printf(text, "%s  ", word);
+        g_free(word);
     }
-    g_string_append_printf(text, "   utf-8[%s]", eol_label(tab, EOL_VIM));
+    const gchar* ft = g_strcmp0(info->language_id, "python3") == 0 ? "python" : info->language_id;
+    g_string_append_printf(text, "%s  utf-8[%s]", ft, eol_label(tab, EOL_VIM));
     gtk_label_set_text(GTK_LABEL(st->vim_sl_info), text->str);
     g_string_free(text, TRUE);
 
-    const gchar* pos_str = (percent <= 0) ? "Top" : ((percent >= 100) ? "Bot" : "All");
-    gchar* ruler = g_strdup_printf("%d,%d   %s", line, col, pos_str);
+    gchar* ruler = g_strdup_printf("%3d%% ☰ %4d/%d ㏑ :%3d", percent, line, total, col);
     gtk_label_set_text(GTK_LABEL(st->vim_sl_ruler), ruler);
     g_free(ruler);
 }
@@ -768,8 +803,8 @@ void editor_modes_update_status(EditorTab* tab) {
     if (tab == NULL || tab->mode_state == NULL) return;
     EditorModeState* st = (EditorModeState*)tab->mode_state;
 
-    gint line = 1, col = 1, percent = 0;
-    get_cursor_position(tab, &line, &col, &percent);
+    gint line = 1, col = 1, percent = 0, total = 1;
+    get_cursor_position(tab, &line, &col, &percent, &total);
     gboolean modified = gtk_text_buffer_get_modified(tab->buffer);
     EditorInfo info;
     editor_info_get(st->app, tab, &info);
@@ -781,7 +816,7 @@ void editor_modes_update_status(EditorTab* tab) {
         emacs_update_status(tab, st, &info, line, col, percent, modified);
     }
     if (st->vim_statusline != NULL) {
-        vim_update_status(tab, st, &info, line, col, percent, modified);
+        vim_update_status(tab, st, &info, line, col, percent, total, modified);
     }
     editor_info_clear(&info);
 }

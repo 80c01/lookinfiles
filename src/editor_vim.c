@@ -775,13 +775,13 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     st->vim_sl_info = gtk_label_new("");
     editor_bar_label_shrinkable(st->vim_sl_info, PANGO_ELLIPSIZE_START);
 
-    st->vim_sl_ruler = gtk_label_new("1,1   All");
+    st->vim_sl_ruler = gtk_label_new("  0% ☰    1/1 ㏑ :  1");
     gtk_label_set_xalign(GTK_LABEL(st->vim_sl_ruler), 1.0f);
     /* Fixed width: the line/column text changes on every focus or cursor
      * move and must not change the statusline's requested width */
     editor_bar_label_shrinkable(st->vim_sl_ruler, PANGO_ELLIPSIZE_START);
-    gtk_label_set_width_chars(GTK_LABEL(st->vim_sl_ruler), 16);
-    gtk_label_set_max_width_chars(GTK_LABEL(st->vim_sl_ruler), 16);
+    gtk_label_set_width_chars(GTK_LABEL(st->vim_sl_ruler), 28);
+    gtk_label_set_max_width_chars(GTK_LABEL(st->vim_sl_ruler), 28);
 
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_mode);
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_file);
