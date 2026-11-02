@@ -100,10 +100,17 @@ static gchar* first_error_line(const gchar* text) {
     return found;
 }
 
-static gboolean run_tool(gchar** argv, GCancellable* cancellable, GError** error) {
-    GSubprocess* proc = g_subprocess_newv((const gchar* const*)argv,
-                                          G_SUBPROCESS_FLAGS_STDOUT_PIPE |
-                                          G_SUBPROCESS_FLAGS_STDERR_PIPE, error);
+/* Runs in `cwd` (figures a document includes are relative to its folder).
+ * With `output` set, a tool that exits with an error but wrote that file
+ * counts as successful: dvips exits with 1 on a missing figure although it
+ * "continues" and produces the document. */
+static gboolean run_tool(gchar** argv, const gchar* cwd, const gchar* output,
+                         GCancellable* cancellable, GError** error) {
+    GSubprocessLauncher* launcher = g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                                                              G_SUBPROCESS_FLAGS_STDERR_PIPE);
+    g_subprocess_launcher_set_cwd(launcher, cwd);
+    GSubprocess* proc = g_subprocess_launcher_spawnv(launcher, (const gchar* const*)argv, error);
+    g_object_unref(launcher);
     if (proc == NULL) {
         return FALSE;
     }
@@ -112,7 +119,8 @@ static gboolean run_tool(gchar** argv, GCancellable* cancellable, GError** error
     gboolean ok = g_subprocess_communicate_utf8(proc, NULL, cancellable, &out, &err, error);
     if (!ok) {
         g_subprocess_force_exit(proc);
-    } else if (!g_subprocess_get_successful(proc)) {
+    } else if (!g_subprocess_get_successful(proc) &&
+               !(output != NULL && g_file_test(output, G_FILE_TEST_IS_REGULAR))) {
         /* gs reports its errors on stdout, dvips on stderr */
         gchar* detail = first_error_line(err != NULL && err[0] != '\0' ? err : out);
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "%s exited with code %d%s%s",
@@ -164,12 +172,14 @@ gchar* ps_convert_to_pdf(const gchar* path, PsSource source, gint last_page,
         gchar* part = g_strconcat(out, ".part", NULL);
         gchar* ps_path = NULL;
         gchar* abs = g_canonicalize_filename(path, NULL);
+        gchar* dir_of_input = g_path_get_dirname(abs);
         gboolean ok = TRUE;
         const gchar* gs_input = abs;
         if (source == PS_SOURCE_DVI) {
             ps_path = g_strconcat(out, ".ps", NULL);
+            g_remove(ps_path); /* a leftover must not pass for this run's output */
             gchar** argv = ps_dvips_argv(dvips, abs, ps_path, last_page);
-            ok = run_tool(argv, cancellable, error);
+            ok = run_tool(argv, dir_of_input, ps_path, cancellable, error);
             g_strfreev(argv);
             gs_input = ps_path;
         }
@@ -179,7 +189,7 @@ gchar* ps_convert_to_pdf(const gchar* path, PsSource source, gint last_page,
                            g_str_has_suffix(lower, ".epsi");
             g_free(lower);
             gchar** argv = ps_gs_argv(gs, gs_input, part, eps, source == PS_SOURCE_DVI ? 0 : last_page);
-            ok = run_tool(argv, cancellable, error);
+            ok = run_tool(argv, dir_of_input, NULL, cancellable, error);
             g_strfreev(argv);
         }
         if (ps_path != NULL) {
@@ -198,6 +208,7 @@ gchar* ps_convert_to_pdf(const gchar* path, PsSource source, gint last_page,
         g_free(part);
         g_free(ps_path);
         g_free(abs);
+        g_free(dir_of_input);
     }
     g_free(out);
     g_free(dir);
