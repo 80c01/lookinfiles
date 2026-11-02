@@ -488,6 +488,36 @@ static gint pdf_fit_width(AppData* app) {
 
 static gint last_fit_w = 0; /* width of the last PDF render */
 
+static guint refit_timeout_id = 0;
+
+static gboolean refit_timeout_cb(gpointer data) {
+    refit_timeout_id = 0;
+    pdf_preview_refit((AppData*)data);
+    return G_SOURCE_REMOVE;
+}
+
+/* The viewport was resized (editor pane opened, pane dragged...): refit once
+ * the size has settled. */
+static void on_viewport_resized(GObject* obj, GParamSpec* pspec, gpointer data) {
+    (void)obj;
+    (void)pspec;
+    if (refit_timeout_id != 0) {
+        g_source_remove(refit_timeout_id);
+    }
+    refit_timeout_id = g_timeout_add(150, refit_timeout_cb, data);
+}
+
+static void watch_viewport(AppData* app) {
+    static gboolean watched = FALSE;
+    GtkWidget* scroller = gtk_widget_get_ancestor(app->text_view, GTK_TYPE_SCROLLED_WINDOW);
+    if (watched || scroller == NULL) {
+        return;
+    }
+    watched = TRUE;
+    GtkAdjustment* hadj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(scroller));
+    g_signal_connect(hadj, "notify::page-size", G_CALLBACK(on_viewport_resized), app);
+}
+
 void pdf_preview_refit(AppData* app) {
     if (app->viewed_kind != FILE_KIND_PDF || app->render_raw || app->text_view == NULL) {
         return;
@@ -505,6 +535,7 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
     }
     app->preview_cancellable = g_cancellable_new();
 
+    watch_viewport(app);
     gint max_w = pdf_fit_width(app);
     last_fit_w = max_w;
 
