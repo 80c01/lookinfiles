@@ -48,9 +48,9 @@ typedef enum {
     /* A panel asked to close the focused editor tab, else the current one if
      * it is on screen (Vim Ctrl+W c from the explorer, viewer or a list page) */
     APP_EVENT_CLOSE_TAB,
-    /* The bookmarks view asked to save the current workspace as a bookmark /
-     * to open the saved workspace in app->session_open_target (taken by the
-     * handler) */
+    /* The bookmarks view or the workspace map asked to save workspace
+     * app->session_save_ws as a bookmark / the bookmarks view to open the
+     * saved workspace in app->session_open_target (taken by the handler) */
     APP_EVENT_SAVE_WORKSPACE_BOOKMARK,
     APP_EVENT_OPEN_WORKSPACE_BOOKMARK,
     APP_EVENT_COUNT

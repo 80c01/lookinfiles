@@ -186,6 +186,7 @@ typedef struct {
     GNode* bookmarks;        /* bookmark tree root (see bookmarks.c): named folders and links */
     guint bm_next_id;        /* last assigned bookmark item id */
     guint bm_last_folder_id; /* folder last used when adding a bookmark (0 = top level) */
+    gint session_save_ws;       /* workspace to save on APP_EVENT_SAVE_WORKSPACE_BOOKMARK */
     gchar* session_open_target; /* saved-workspace target to open on APP_EVENT_OPEN_WORKSPACE_BOOKMARK */
     GPtrArray* buffers;      /* temporary/custom buffer names or paths */
     gint next_buffer_id;     /* incremental counter for Untitled buffers */

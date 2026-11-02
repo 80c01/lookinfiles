@@ -30,7 +30,8 @@ There can be up to eight, like virtual desktops.
 
 The workspace map in the top bar shows one small box per workspace, drawn
 like its panels. Click a box to switch, click **+** to add one, right-click
-or middle-click a box to close it.
+a box for its menu (**Save as Bookmark…**, **Close Workspace**) or
+middle-click it to close it.
 
 ## Saved layouts: `Alt+L`
 

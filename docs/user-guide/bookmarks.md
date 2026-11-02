@@ -18,7 +18,9 @@ back to the files) or the bookmark button at the top of the explorer.
 ## Saving a workspace
 
 Right-click in the bookmarks view and choose **Save Workspace as
-Bookmark…** to keep the current workspace under a name: its folder,
+Bookmark…** to keep the current workspace under a name, or right-click a
+box of the workspace map in the top bar and choose **Save as Bookmark…** to
+keep that workspace: its folder,
 expanded folders, selection, hidden files, sort, open editor tabs and where
 they were, the panels, their sizes and the terminal panes. The bookmark goes
 in the selected folder and shows a workspace icon.

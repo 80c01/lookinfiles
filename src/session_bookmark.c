@@ -54,11 +54,14 @@ void session_bookmark_save(AppData* app) {
     if (app == NULL || app->bookmarks == NULL) {
         return;
     }
-    if (app->base_dir == NULL || app->base_dir[0] == '\0') {
+    gint ws = CLAMP(app->session_save_ws, 0, MAX(app->num_workspaces - 1, 0));
+    /* The current workspace keeps its folder in app->base_dir until it is left */
+    const gchar* dir = (ws == app->current_ws) ? app->base_dir : app->workspaces[ws].base_dir;
+    if (dir == NULL || dir[0] == '\0') {
         bookmark_message(app, "Save Workspace", "This workspace has no folder to save.", "_Close", NULL);
         return;
     }
-    gchar* initial = g_path_get_basename(app->base_dir);
+    gchar* initial = g_path_get_basename(dir);
     gchar* name = ask_name(app, initial);
     g_free(initial);
     if (name == NULL) {
@@ -69,7 +72,7 @@ void session_bookmark_save(AppData* app) {
     gchar* path = session_snapshot_path(id);
     gchar* target = session_target_make(id);
     GError* err = NULL;
-    if (path != NULL && target != NULL && session_save_workspace(app, app->current_ws, path, &err)) {
+    if (path != NULL && target != NULL && session_save_workspace(app, ws, path, &err)) {
         bookmarks_add_session(app, name, target);
     } else {
         gchar* msg = g_strdup_printf("Could not save the workspace:\n%s", err != NULL ? err->message : "unknown error");

@@ -954,7 +954,7 @@ static gboolean bm_run_menu_action(gpointer data) {
     case BM_ACTION_MOVE_DOWN:  bookmarks_move_selected(app, +1); break;
     case BM_ACTION_SORT:       bookmarks_toggle_sort(app); break;
     case BM_ACTION_COLLAPSE:   bookmarks_toggle_collapse_expand(app); break;
-    case BM_ACTION_SAVE_WORKSPACE: app_emit(app, APP_EVENT_SAVE_WORKSPACE_BOOKMARK); break;
+    case BM_ACTION_SAVE_WORKSPACE: app->session_save_ws = app->current_ws; app_emit(app, APP_EVENT_SAVE_WORKSPACE_BOOKMARK); break;
     default: break;
     }
     g_free(a);

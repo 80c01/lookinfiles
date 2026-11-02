@@ -525,9 +525,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   place (`editor_session`), then its panels, split sizes and terminal panes,
   with new shells). `session_save_workspace()` / `session_open_workspace()`
   do the same for one workspace in a file (workspace bookmarks).
-- `session_bookmark` — workspace bookmarks: the bookmarks view emits
-  `APP_EVENT_SAVE_WORKSPACE_BOOKMARK` (asks a name, saves the current
-  workspace with `session_save_workspace()`, adds the link with
+- `workspace_menu` — the right-click menu of a box of the workspace map
+  (Save as Bookmark…, Close Workspace); `workspace` passes `workspace_remove()`
+  to it, so the two modules do not include each other.
+- `session_bookmark` — workspace bookmarks: the bookmarks view and the
+  workspace map emit `APP_EVENT_SAVE_WORKSPACE_BOOKMARK` for workspace
+  `app->session_save_ws` (asks a name, saves it with `session_save_workspace()`, adds the link with
   `bookmarks_add_session()`) and, on a link whose target is a saved workspace,
   `APP_EVENT_OPEN_WORKSPACE_BOOKMARK` with `app->session_open_target`
   (`session_open_workspace()` into a new workspace, or a message saying why not).

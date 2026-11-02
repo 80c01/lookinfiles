@@ -1,5 +1,6 @@
 /* Virtual workspaces (Alt+1..8): per-workspace layout snapshots and the top-bar workspace minimap. */
 #include "workspace.h"
+#include "workspace_menu.h"
 #include "nav_history.h"
 #include "fs_watch.h"
 #include "panels.h"
@@ -974,7 +975,6 @@ static gint ws_index_at_x(AppData* app, gdouble x) {
 static void on_ws_minimap_pressed(GtkGestureClick* gesture, gint n_press,
                                   gdouble x, gdouble y, gpointer data) {
     (void)n_press;
-    (void)y;
     AppData* app = (AppData*)data;
     guint button = gtk_gesture_single_get_current_button(GTK_GESTURE_SINGLE(gesture));
     gint idx = ws_index_at_x(app, x);
@@ -987,7 +987,9 @@ static void on_ws_minimap_pressed(GtkGestureClick* gesture, gint n_press,
         }
         return;
     }
-    if (button == GDK_BUTTON_MIDDLE || button == GDK_BUTTON_SECONDARY) {
+    if (button == GDK_BUTTON_SECONDARY) {
+        workspace_menu_popup(app, app->ws_minimap, x, y, idx, workspace_remove);
+    } else if (button == GDK_BUTTON_MIDDLE) {
         workspace_remove(app, idx);
     } else if (button == GDK_BUTTON_PRIMARY) {
         workspace_switch(app, idx);
@@ -1036,7 +1038,7 @@ GtkWidget* create_workspace_minimap(AppData* app) {
     gtk_widget_set_valign(area, GTK_ALIGN_CENTER);
     gtk_widget_set_tooltip_text(
         area,
-        "Workspaces: left-click to switch, click '+' to add new workspace (Alt++), right/middle-click to close (Alt+-)");
+        "Workspaces: left-click to switch, click '+' to add new workspace (Alt++), right-click for the menu, middle-click to close (Alt+-)");
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area),
                                    on_ws_minimap_draw, app, NULL);
 
