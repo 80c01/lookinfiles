@@ -7,6 +7,10 @@ by the GNOME Project, https://gitlab.gnome.org/GNOME/adwaita-icon-theme
 Copyright (c) GNOME Project and Adwaita icon theme contributors.
 License: CC-BY-SA-3.0 or LGPL-3, and CC-BY-SA-4.0 (as distributed by Debian
 in /usr/share/doc/adwaita-icon-theme/copyright).
+License texts:
+  CC-BY-SA-3.0  https://creativecommons.org/licenses/by-sa/3.0/
+  CC-BY-SA-4.0  https://creativecommons.org/licenses/by-sa/4.0/
+  LGPL-3        https://www.gnu.org/licenses/lgpl-3.0.html
 
 lookin-utilities-terminal-symbolic.svg was drawn for this project in the
 Adwaita symbolic style and is released under the same terms.

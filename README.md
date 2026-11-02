@@ -183,4 +183,13 @@ together. Release history is in [CHANGELOG.md](CHANGELOG.md).
 LookinFiles is released under the MIT License (see [LICENSE](LICENSE)).
 The bundled toolbar icons come from
 the GNOME Adwaita icon theme and keep their own license (CC-BY-SA 3.0 or
-LGPL 3, and CC-BY-SA 4.0; see [icons/COPYING](icons/COPYING)).
+LGPL 3, and CC-BY-SA 4.0), and the file-type icons come from Seti UI (MIT);
+see [icons/COPYING](icons/COPYING).
+
+The PDF preview uses poppler-glib, which is GPL: a binary built with it and
+distributed must follow the GPL terms. The other libraries (GTK, VTE,
+GtkSourceView, WebKitGTK) are LGPL.
+
+LookinFiles is an independent project, not affiliated with or endorsed by
+Microsoft. "VS Code" and "Visual Studio Code" are Microsoft trademarks, used
+here only to describe the look.
