@@ -54,6 +54,19 @@ gboolean ps_convert_available(PsSource source) {
     return ok;
 }
 
+/* Absolute folder of the conversions: the tools run in the document's folder,
+ * so a relative cache dir (XDG_CACHE_HOME="~/.cache" is not expanded by
+ * GLib) would point somewhere else for them */
+static gchar* convert_cache_dir(void) {
+    const gchar* cache = g_get_user_cache_dir();
+    gchar* base = (cache[0] == '~' && (cache[1] == '\0' || cache[1] == G_DIR_SEPARATOR))
+                      ? g_build_filename(g_get_home_dir(), cache + 1, NULL)
+                      : g_canonicalize_filename(cache, NULL);
+    gchar* dir = g_build_filename(base, "lookinfiles", "convert", NULL);
+    g_free(base);
+    return dir;
+}
+
 /* Remove the oldest conversions beyond CACHE_KEEP */
 static void prune_cache(const gchar* dir) {
     GDir* d = g_dir_open(dir, 0, NULL);
@@ -152,7 +165,7 @@ gchar* ps_convert_to_pdf(const gchar* path, PsSource source, gint last_page,
         return NULL;
     }
 
-    gchar* dir = g_build_filename(g_get_user_cache_dir(), "lookinfiles", "convert", NULL);
+    gchar* dir = convert_cache_dir();
     g_mkdir_with_parents(dir, 0700);
     gchar* key = g_strdup_printf("%s|%lld|%lld|%d", path, (long long)st.st_size,
                                  (long long)st.st_mtime, last_page);
