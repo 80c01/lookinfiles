@@ -198,7 +198,7 @@ static void on_listed(GObject* source, GAsyncResult* result, gpointer user_data)
     gboolean ok = g_task_propagate_boolean(task, NULL);
     g_object_set_data(G_OBJECT(row), "arc-loading", NULL);
     AppData* app = g_object_get_data(G_OBJECT(row), "arc-app");
-    if (explorer_row_get_parent(row) != NULL && app != NULL &&
+    if (row->parent != NULL && app != NULL &&
         explorer_tree_is_expanded(app->tree, row)) {
         explorer_row_remove_children(row);
         if (!ok) {
