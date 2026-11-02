@@ -17,16 +17,21 @@ a keyboard-first design.
 - **Edit in place**: tabs you can split in every direction, each in Notepad,
   Emacs or Vim mode (with a full Vim grammar), Org-mode editing, and go to
   definition and references (built-in index, ctags or a language server).
+- **Browser tabs for web development** (needs WebKitGTK): open a page, a local
+  HTML file or a dev server in a tab of the preview panel, beside your editor
+  and terminal. Press `F5` to reload after saving.
 - **Terminal built in** (needs VTE): shell panes next to the preview and the
   editors.
 - **Find fast**: fuzzy file finder (`Ctrl+P`) and search in files
   (`Ctrl+Shift+F`).
 - **Git at a glance**: status badges in the tree, change bars in the gutter,
   a commit history tab.
-- **Four explorer views**: files, bookmarks, notes (plain text, Markdown,
-  Org) and SSH machines browsed over SSHFS.
+- **Four explorer views**: files, bookmarks (folders, files, web pages and
+  saved workspaces), notes (plain text, Markdown, Org) and SSH machines
+  browsed over SSHFS.
 - **Workspaces**: up to eight, each with its own folder, panels, editors and
-  terminals, restored at the next launch.
+  terminals, restored at the next launch. Save one as a **bookmark** to
+  reopen that whole session later, in a new workspace.
 - **Keyboard first**: the same key for the same action in every view, and a
   cheat sheet on `?`.
 - **Themes and fonts**: Dark Modern, Light Modern, High Contrast Dark, six
