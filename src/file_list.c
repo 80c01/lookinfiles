@@ -428,6 +428,8 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
                                    : explorer_row_append(parent, is_buf ? "buffer" : "file", e->name, e->name, can_full);
             explorer_row_set_icon_name(row, e->name);
             if (as_archive) {
+                /* Rows start loaded: the first expansion must list the archive */
+                explorer_row_set_loaded(row, FALSE);
                 append_placeholder(row, "", "...", "");
             }
             explorer_row_set_badge(row, git_badge);
