@@ -764,6 +764,10 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     st->vim_sl_showcmd = gtk_label_new("");
     editor_bar_label_shrinkable(st->vim_sl_showcmd, PANGO_ELLIPSIZE_START);
     gtk_widget_add_css_class(st->vim_sl_showcmd, "vim-showcmd");
+    /* Fixed width (like Vim's showcmd column) so typing a pending key such
+     * as "g" never changes the statusline's requested width */
+    gtk_label_set_width_chars(GTK_LABEL(st->vim_sl_showcmd), 10);
+    gtk_label_set_max_width_chars(GTK_LABEL(st->vim_sl_showcmd), 10);
 
     st->vim_sl_info = gtk_label_new("");
     editor_bar_label_shrinkable(st->vim_sl_info, PANGO_ELLIPSIZE_START);
