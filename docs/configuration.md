@@ -132,7 +132,8 @@ standard icons). The set **desktop** is built in (pixel icons of a 1990s grey
 desktop; `themes/1990s-desktop.ini` uses it).
 
 Your own sets are folders in `~/.config/lookinfiles/icons/<set>/` (a set there
-replaces a built-in one of the same name). Each file is an SVG named after the
+replaces a built-in one of the same name, unless it has no `lookin-set-*.svg`
+file). Each file is an SVG named after the
 icon it replaces, with the prefix `lookin-set-`:
 
 | File | Drawn |

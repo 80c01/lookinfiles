@@ -46,6 +46,20 @@ static gchar** replace_path(const gchar* const* paths, const gchar* remove, cons
     return (gchar**)g_ptr_array_free(out, FALSE);
 }
 
+/* TRUE when dir holds at least one icon file of a set (lookin-set-*.svg) */
+static gboolean has_set_files(const gchar* dir) {
+    GDir* d = g_dir_open(dir, 0, NULL);
+    gboolean found = FALSE;
+    const gchar* entry;
+    while (!found && d != NULL && (entry = g_dir_read_name(d)) != NULL) {
+        found = g_str_has_prefix(entry, "lookin-set-") && g_str_has_suffix(entry, ".svg");
+    }
+    if (d != NULL) {
+        g_dir_close(d);
+    }
+    return found;
+}
+
 static gboolean builtin_exists(const gchar* id) {
     gchar* path = g_strdup_printf("%s/%s", BUILTIN_PREFIX, id);
     gchar** children = g_resources_enumerate_children(path, G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
@@ -74,14 +88,17 @@ void icon_sets_use(const gchar* id) {
         gchar* user = icon_sets_user_dir();
         gchar* dir = g_build_filename(user, id, NULL);
         g_free(user);
-        if (g_file_test(dir, G_FILE_TEST_IS_DIR)) {
+        if (g_file_test(dir, G_FILE_TEST_IS_DIR) && has_set_files(dir)) {
             search_dir = dir;
         } else {
+            if (g_file_test(dir, G_FILE_TEST_IS_DIR)) {
+                g_warning("icon set \"%s\": %s has no lookin-set-<icon>.svg file, ignored", id, dir);
+            }
             g_free(dir);
             if (builtin_exists(id)) {
                 resource_path = g_strdup_printf("%s/%s", BUILTIN_PREFIX, id);
             } else {
-                g_warning("icon set \"%s\" not found (built in, or in %s)", id, "~/.config/lookinfiles/icons");
+                g_warning("icon set \"%s\" not found (built in, or in ~/.config/lookinfiles/icons)", id);
                 id = NULL;
             }
         }
