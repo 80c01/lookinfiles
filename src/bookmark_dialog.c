@@ -4,6 +4,7 @@
 #include "dialog.h"
 #include "icon_picker.h"
 #include "notebook_icons.h"
+#include "session_store.h"
 
 #include <string.h>
 
@@ -11,6 +12,9 @@
 gchar* bookmark_display_location(const gchar* target) {
     if (target == NULL) {
         return g_strdup("");
+    }
+    if (session_target_id(target) != NULL) {
+        return g_strdup("Saved workspace");
     }
     if (bookmark_target_is_uri(target)) {
         return g_strdup(target);
@@ -213,6 +217,8 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
     /* Icon (folders) or location (links) */
     GtkWidget* target_entry = NULL;
     GtkWidget* picker = NULL;
+    /* A saved workspace keeps its target: only its name and folder change */
+    gboolean fixed_target = !is_folder && session_target_id(spec->target) != NULL;
     if (is_folder) {
         gtk_box_append(GTK_BOX(box), bm_field_label("Icon"));
         picker = icon_picker_new(NOTEBOOK_ICONS, spec->icon, NULL, NULL);
@@ -232,11 +238,15 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
         g_signal_connect(target_entry, "changed", G_CALLBACK(bm_on_entry_changed), NULL);
         gtk_box_append(GTK_BOX(row), target_entry);
 
-        GtkWidget* cur_btn = gtk_button_new_with_label("Current Directory");
-        gtk_widget_set_tooltip_text(cur_btn, app->base_dir);
-        g_object_set_data_full(G_OBJECT(cur_btn), "base-dir", g_strdup(app->base_dir), g_free);
-        g_signal_connect(cur_btn, "clicked", G_CALLBACK(bm_on_use_current_dir), target_entry);
-        gtk_box_append(GTK_BOX(row), cur_btn);
+        if (fixed_target) {
+            gtk_editable_set_editable(GTK_EDITABLE(target_entry), FALSE);
+        } else {
+            GtkWidget* cur_btn = gtk_button_new_with_label("Current Directory");
+            gtk_widget_set_tooltip_text(cur_btn, app->base_dir);
+            g_object_set_data_full(G_OBJECT(cur_btn), "base-dir", g_strdup(app->base_dir), g_free);
+            g_signal_connect(cur_btn, "clicked", G_CALLBACK(bm_on_use_current_dir), target_entry);
+            gtk_box_append(GTK_BOX(row), cur_btn);
+        }
         gtk_box_append(GTK_BOX(box), row);
     }
 
@@ -252,7 +262,8 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
 
     if (resp == APP_RESPONSE_OK) {
         *out_folder = gtk_drop_down_get_selected(GTK_DROP_DOWN(folder_dd));
-        *out_target = (target_entry != NULL)
+        *out_target = fixed_target ? g_strdup(spec->target)
+                      : (target_entry != NULL)
                           ? bookmark_normalize_target(gtk_editable_get_text(GTK_EDITABLE(target_entry)),
                                                       app->base_dir)
                           : NULL;

@@ -24,6 +24,9 @@ void bookmarks_attach_context_menu(AppData* app);
 void bookmarks_add_from_context(AppData* app);  /* Ctrl+D from any view */
 void bookmarks_add(AppData* app);               /* add bookmark in selected folder */
 void bookmarks_new_folder(AppData* app);
+/* Add a link to a saved workspace (target from session_target_make()) in the
+ * folder of the selection, and select it */
+void bookmarks_add_session(AppData* app, const gchar* name, const gchar* target);
 void bookmarks_edit_selected(AppData* app);
 void bookmarks_delete_selected(AppData* app);
 void bookmarks_move_selected(AppData* app, gint delta);

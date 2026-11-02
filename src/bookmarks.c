@@ -10,6 +10,7 @@
 #include "bookmark_dialog.h"
 #include "browser.h"
 #include "web_address.h"
+#include "session_store.h"
 
 /* One node of the bookmark tree (GNode data). The root node has NULL data. */
 typedef struct {
@@ -30,7 +31,8 @@ enum {
     BM_ACTION_MOVE_UP,
     BM_ACTION_MOVE_DOWN,
     BM_ACTION_SORT,
-    BM_ACTION_COLLAPSE
+    BM_ACTION_COLLAPSE,
+    BM_ACTION_SAVE_WORKSPACE
 };
 
 /* ------------------------------------------------------------------------- */
@@ -528,6 +530,19 @@ static void bm_add_dialog(AppData* app, const gchar* init_target, GNode* parent)
     g_free(target);
 }
 
+/* Delete the saved workspace files of the links under node (node included) */
+static gboolean bm_remove_snapshot(GNode* node, gpointer data) {
+    (void)data;
+    BookmarkItem* it = bm_item(node);
+    if (it != NULL && !it->is_folder) {
+        const gchar* id = session_target_id(it->target);
+        if (id != NULL) {
+            session_snapshot_remove(id);
+        }
+    }
+    return FALSE;
+}
+
 static void bm_delete_node(AppData* app, GNode* node, gboolean confirm) {
     if (node == NULL || node == app->bookmarks) {
         return;
@@ -561,6 +576,7 @@ static void bm_delete_node(AppData* app, GNode* node, gboolean confirm) {
         app->bm_last_folder_id = 0;
     }
     g_node_unlink(node);
+    g_node_traverse(node, G_IN_ORDER, G_TRAVERSE_ALL, -1, bm_remove_snapshot, NULL);
     bm_destroy_subtree(node);
     bm_after_change(app, select_id);
 }
@@ -613,6 +629,28 @@ void bookmarks_add(AppData* app) {
 /* Ctrl+D: in the files view, bookmark the selected entry (or the current
  * directory); an existing bookmark for it opens in the edit dialog instead,
  * where it can also be removed. In the bookmarks view, add a new bookmark. */
+void bookmarks_add_session(AppData* app, const gchar* name, const gchar* target) {
+    if (app == NULL || app->bookmarks == NULL || target == NULL) {
+        return;
+    }
+    GNode* parent = NULL;
+    if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
+        parent = bm_context_folder(app);
+    } else {
+        parent = bm_find_by_id(app->bookmarks, app->bm_last_folder_id);
+    }
+    if (parent == NULL) {
+        parent = app->bookmarks;
+    }
+    GNode* node = bm_new_node(app, FALSE, name, target);
+    g_node_append(parent, node);
+    if (bm_is_folder(parent)) {
+        bm_item(parent)->expanded = TRUE;
+    }
+    app->bm_last_folder_id = bm_folder_id(parent);
+    bm_after_change(app, bm_item(node)->id);
+}
+
 void bookmarks_add_from_context(AppData* app) {
     if (app == NULL || app->bookmarks == NULL) {
         return;
@@ -793,6 +831,14 @@ void bookmarks_activate_selected(AppData* app) {
         return;
     }
 
+    /* A saved workspace opens in a new workspace (session_bookmark.c) */
+    if (session_target_id(it->target) != NULL) {
+        g_free(app->session_open_target);
+        app->session_open_target = g_strdup(it->target);
+        app_emit(app, APP_EVENT_OPEN_WORKSPACE_BOOKMARK);
+        return;
+    }
+
     /* Web pages in a browser tab when there are browser tabs */
     if (browser_available() && web_address_is_web(it->target)) {
         browser_open(app, it->target);
@@ -908,6 +954,7 @@ static gboolean bm_run_menu_action(gpointer data) {
     case BM_ACTION_MOVE_DOWN:  bookmarks_move_selected(app, +1); break;
     case BM_ACTION_SORT:       bookmarks_toggle_sort(app); break;
     case BM_ACTION_COLLAPSE:   bookmarks_toggle_collapse_expand(app); break;
+    case BM_ACTION_SAVE_WORKSPACE: app_emit(app, APP_EVENT_SAVE_WORKSPACE_BOOKMARK); break;
     default: break;
     }
     g_free(a);
@@ -1015,6 +1062,7 @@ static void bm_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x,
         bm_menu_item(box, popover, app, "New Folder…", "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
     }
     bm_menu_separator(box);
+    bm_menu_item(box, popover, app, "Save Workspace as Bookmark…", NULL, BM_ACTION_SAVE_WORKSPACE, TRUE);
     bm_menu_item(box, popover, app, "Sort A–Z / Z–A", "o", BM_ACTION_SORT, app->bookmarks->children != NULL);
     bm_menu_item(box, popover, app, "Collapse / Expand All", NULL, BM_ACTION_COLLAPSE, app->bookmarks->children != NULL);
 

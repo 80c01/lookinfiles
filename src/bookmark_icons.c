@@ -1,5 +1,6 @@
 #include "bookmark_icons.h"
 #include "path_kind.h"
+#include "session_store.h"
 #include "tree_nav.h"
 
 #include <string.h>
@@ -14,7 +15,8 @@ void bookmark_icon_apply(ExplorerRow* row) {
     PathKind kind = is_uri ? PATH_KIND_UNKNOWN : path_kind_lookup(target);
     gchar* base = (kind == PATH_KIND_FILE) ? g_path_get_basename(target) : NULL;
     explorer_row_set_icon_name(row, base);
-    explorer_row_set_glyph(row, is_uri                     ? "link"
+    explorer_row_set_glyph(row, session_target_id(target) != NULL ? "view-dual"
+                                : is_uri                   ? "link"
                                 : kind == PATH_KIND_MISSING ? "missing"
                                 : kind == PATH_KIND_DIR     ? "folder"
                                                             : "unknown");

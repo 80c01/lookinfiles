@@ -20,6 +20,8 @@
  *                                refresh_diff_gutters(), editor_modes_refresh_git() (editor_modes.c)
  *   APP_EVENT_FOCUS_NEXT_PANEL / _PREV_PANEL -> focus_next_panel() / focus_prev_panel() (ui.c)
  *   APP_EVENT_CLOSE_TAB       -> close_shown_tab()            (ui.c)
+ *   APP_EVENT_SAVE_WORKSPACE_BOOKMARK -> session_bookmark_save() (session_bookmark.c)
+ *   APP_EVENT_OPEN_WORKSPACE_BOOKMARK -> session_bookmark_open() (session_bookmark.c)
  */
 #include "app_types.h"
 
@@ -46,6 +48,11 @@ typedef enum {
     /* A panel asked to close the focused editor tab, else the current one if
      * it is on screen (Vim Ctrl+W c from the explorer, viewer or a list page) */
     APP_EVENT_CLOSE_TAB,
+    /* The bookmarks view asked to save the current workspace as a bookmark /
+     * to open the saved workspace in app->session_open_target (taken by the
+     * handler) */
+    APP_EVENT_SAVE_WORKSPACE_BOOKMARK,
+    APP_EVENT_OPEN_WORKSPACE_BOOKMARK,
     APP_EVENT_COUNT
 } AppEvent;
 
