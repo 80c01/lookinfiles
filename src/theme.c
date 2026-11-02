@@ -596,11 +596,11 @@ void apply_panel_borders(void) {
         "}\n"
         /* ---- Focused panel (VS Code style: no frame) ----
          * The panel owning the keyboard focus (panels.c adds .panel-focused)
-         * shows its current tab with a blue top line and white text, its
+         * shows its current tab with a blue top line and strong text, its
          * title in white, and its selected explorer row in blue; elsewhere
          * the same elements stay grey. */
         ".panel-focused notebook > header tab:checked {\n"
-        "  color: @fg_bright;\n"
+        "  color: @fg_strong;\n"
         "  box-shadow: inset 0 2px @accent;\n"
         "}\n"
         "#left-sidebar.panel-focused #sidebar-title {\n"
