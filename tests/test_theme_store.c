@@ -124,15 +124,15 @@ static void test_list(void) {
     write_file(dir, "dark.ini", "[Theme]\nname=Dark Modern\n[Colors]\naccent=#ff0000\n");
     GPtrArray* errors = g_ptr_array_new_with_free_func(g_free);
     GPtrArray* themes = theme_store_list(dir, errors);
-    /* The 3 built-in themes, then the user's in file name order */
-    g_assert_cmpuint(themes->len, ==, 5);
+    /* The 3 built-in themes, the bundled ones, then the user's in file name order */
+    g_assert_cmpuint(themes->len, >=, 5);
     Theme* first = g_ptr_array_index(themes, 0);
     g_assert_cmpstr(first->name, ==, "Dark Modern");
     g_assert_nonnull(first->path); /* the user's version */
     g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 1))->name, ==, "Light Modern");
     g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 2))->name, ==, "High Contrast Dark");
-    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 3))->name, ==, "Alpha");
-    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, 4))->name, ==, "Beta");
+    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, themes->len - 2))->name, ==, "Alpha");
+    g_assert_cmpstr(((Theme*)g_ptr_array_index(themes, themes->len - 1))->name, ==, "Beta");
     g_assert_null(theme_store_find(themes, "Ignored"));
     g_assert_cmpuint(errors->len, ==, 1);
     g_assert_nonnull(strstr(g_ptr_array_index(errors, 0), "broken.ini"));
@@ -327,10 +327,10 @@ static void assert_readable(GPtrArray* themes, const gchar* name) {
     }
 }
 
-/* Every built-in theme applies, and keeps its main text readable */
+/* Every built-in and bundled theme applies, and keeps its main text readable */
 static void test_builtin_contrast(void) {
     GPtrArray* themes = theme_store_list(NULL, NULL);
-    g_assert_cmpuint(themes->len, ==, 3);
+    g_assert_cmpuint(themes->len, >=, 3);
     for (guint i = 0; i < themes->len; i++) {
         assert_readable(themes, ((Theme*)g_ptr_array_index(themes, i))->name);
     }
