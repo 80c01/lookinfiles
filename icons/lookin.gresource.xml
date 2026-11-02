@@ -250,4 +250,45 @@
     <file alias="scalable/actions/lookin-set-view-reveal-symbolic.svg">sets/desktop/lookin-set-view-reveal-symbolic.svg</file>
     <file alias="scalable/actions/lookin-set-window-close-symbolic.svg">sets/desktop/lookin-set-window-close-symbolic.svg</file>
   </gresource>
+  <gresource prefix="/org/lookin/iconsets/textmode">
+    <file alias="scalable/actions/lookin-set-applications-system-symbolic.svg">sets/textmode/lookin-set-applications-system-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-bookmark-new-symbolic.svg">sets/textmode/lookin-set-bookmark-new-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-dialog-error.svg">sets/textmode/lookin-set-dialog-error.svg</file>
+    <file alias="scalable/actions/lookin-set-dialog-information.svg">sets/textmode/lookin-set-dialog-information.svg</file>
+    <file alias="scalable/actions/lookin-set-dialog-question.svg">sets/textmode/lookin-set-dialog-question.svg</file>
+    <file alias="scalable/actions/lookin-set-dialog-warning.svg">sets/textmode/lookin-set-dialog-warning.svg</file>
+    <file alias="scalable/actions/lookin-set-document-edit-symbolic.svg">sets/textmode/lookin-set-document-edit-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-document-new-symbolic.svg">sets/textmode/lookin-set-document-new-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-document-open-recent-symbolic.svg">sets/textmode/lookin-set-document-open-recent-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-document-print-preview-symbolic.svg">sets/textmode/lookin-set-document-print-preview-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-drive-harddisk.svg">sets/textmode/lookin-set-drive-harddisk.svg</file>
+    <file alias="scalable/actions/lookin-set-edit-delete-symbolic.svg">sets/textmode/lookin-set-edit-delete-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-edit-find-symbolic.svg">sets/textmode/lookin-set-edit-find-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-folder.svg">sets/textmode/lookin-set-folder.svg</file>
+    <file alias="scalable/actions/lookin-set-folder-new-symbolic.svg">sets/textmode/lookin-set-folder-new-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-ft-default.svg">sets/textmode/lookin-set-ft-default.svg</file>
+    <file alias="scalable/actions/lookin-set-ft-folder.svg">sets/textmode/lookin-set-ft-folder.svg</file>
+    <file alias="scalable/actions/lookin-set-ft-image.svg">sets/textmode/lookin-set-ft-image.svg</file>
+    <file alias="scalable/actions/lookin-set-ft-notebook.svg">sets/textmode/lookin-set-ft-notebook.svg</file>
+    <file alias="scalable/actions/lookin-set-go-home-symbolic.svg">sets/textmode/lookin-set-go-home-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-go-next-symbolic.svg">sets/textmode/lookin-set-go-next-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-go-previous-symbolic.svg">sets/textmode/lookin-set-go-previous-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-input-keyboard-symbolic.svg">sets/textmode/lookin-set-input-keyboard-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-list-add-symbolic.svg">sets/textmode/lookin-set-list-add-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-network-server.svg">sets/textmode/lookin-set-network-server.svg</file>
+    <file alias="scalable/actions/lookin-set-network-transmit-receive-symbolic.svg">sets/textmode/lookin-set-network-transmit-receive-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-pan-down-symbolic.svg">sets/textmode/lookin-set-pan-down-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-pan-up-symbolic.svg">sets/textmode/lookin-set-pan-up-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-process-stop-symbolic.svg">sets/textmode/lookin-set-process-stop-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-text-x-generic.svg">sets/textmode/lookin-set-text-x-generic.svg</file>
+    <file alias="scalable/actions/lookin-set-user-bookmarks-symbolic.svg">sets/textmode/lookin-set-user-bookmarks-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-user-trash.svg">sets/textmode/lookin-set-user-trash.svg</file>
+    <file alias="scalable/actions/lookin-set-utilities-terminal-symbolic.svg">sets/textmode/lookin-set-utilities-terminal-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-dual-symbolic.svg">sets/textmode/lookin-set-view-dual-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-grid-symbolic.svg">sets/textmode/lookin-set-view-grid-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-paged-symbolic.svg">sets/textmode/lookin-set-view-paged-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-refresh-symbolic.svg">sets/textmode/lookin-set-view-refresh-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-view-reveal-symbolic.svg">sets/textmode/lookin-set-view-reveal-symbolic.svg</file>
+    <file alias="scalable/actions/lookin-set-window-close-symbolic.svg">sets/textmode/lookin-set-window-close-symbolic.svg</file>
+  </gresource>
 </gresources>
