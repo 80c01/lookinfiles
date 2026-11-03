@@ -41,6 +41,8 @@ GPtrArray* editor_get_all_notebooks(AppData* app) {
 static void on_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone zone,
                            gint index, gpointer data);
 static void on_tab_drag_done(GtkNotebook* source, gpointer data);
+static EditorTab* editor_tab_of_page(AppData* app, GtkWidget* child);
+static GtkNotebook* editor_tab_notebook(AppData* app, EditorTab* tab);
 
 /* Editor tabs can be reordered and dragged to another notebook */
 static void editor_page_set_draggable(GtkNotebook* nb, GtkWidget* child) {
@@ -63,12 +65,36 @@ static gboolean editor_accepts_tab(GtkNotebook* target, GtkNotebook* source, Gtk
 #endif
 }
 
+/* Ctrl+drop: the dragged editor tab and the one shown in target exchange
+ * notebooks, each taking the other's position */
+static gboolean editor_swap_tabs(GtkNotebook* target, GtkWidget* child, gboolean do_it,
+                                 gpointer data) {
+    AppData* app = (AppData*)data;
+    EditorTab* a = editor_tab_of_page(app, child);
+    gint cur = gtk_notebook_get_current_page(target);
+    GtkWidget* other = cur >= 0 ? gtk_notebook_get_nth_page(target, cur) : NULL;
+    EditorTab* b = other != NULL ? editor_tab_of_page(app, other) : NULL;
+    if (a == NULL || b == NULL || a == b) return FALSE;
+    GtkNotebook* source = editor_tab_notebook(app, a);
+    if (source == NULL || source == target) return FALSE;
+    if (!do_it) return TRUE;
+
+    gint pos_a = gtk_notebook_page_num(source, a->container);
+    gint pos_b = gtk_notebook_page_num(target, b->container);
+    editor_move_tab_to(app, a, target, pos_b, FALSE);
+    editor_move_tab_to(app, b, source, pos_a, FALSE);
+    app->last_focused_editor = a;
+    if (a->view != NULL) gtk_widget_grab_focus(a->view);
+    return TRUE;
+}
+
 void editor_notebook_enable_tab_drop(AppData* app, GtkWidget* nb) {
     if (app == NULL || nb == NULL) return;
     /* The preview notebook only takes tabs; editor notebooks also split */
     tab_drop_attach(GTK_NOTEBOOK(nb), nb != app->notebook, on_tab_dropped,
                     on_tab_drag_done, app);
     tab_drop_set_accept(GTK_NOTEBOOK(nb), editor_accepts_tab);
+    tab_drop_set_swap(GTK_NOTEBOOK(nb), editor_swap_tabs);
 }
 
 GtkWidget* editor_notebook_new(AppData* app) {

@@ -220,6 +220,7 @@ Opening a file (`Enter` or double click in the explorer) adds a tab next to the
 | `Ctrl+Alt+N` | Show or hide the line numbers of the tab (also `:set number` / `:set nonumber` in Vim mode, `M-x display-line-numbers-mode` in Emacs mode) |
 | Right click on the tab | Change the mode (the current one is marked), show line numbers, wrap long lines (also `:set wrap` in Vim mode, `M-x visual-line-mode` or `toggle-truncate-lines` in Emacs mode), move, split or close the tab |
 | Drag the tab | Onto a tab bar: move it there; near an editor edge: split that side |
+| `Ctrl`+drag the tab onto another editor | Swap places with the tab shown there |
 
 A tab opens in the global mode (top bar, initially the `--editor` one).
 Its own mode is changed only from its menu (right click on the tab), which

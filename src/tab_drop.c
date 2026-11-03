@@ -13,6 +13,7 @@ typedef struct {
     TabDropFunc on_drop;
     TabDragDoneFunc on_done;
     TabAcceptFunc accept;
+    TabSwapFunc swap;
     gpointer data;
     gboolean pages_untargetable; /* while a tab drag is over nb */
 } TabDrop;
@@ -21,6 +22,7 @@ typedef struct {
 typedef struct {
     PaneZone zone;
     gint index;     /* insertion index on the tab bar, -1 to append */
+    gboolean swap;  /* Ctrl: exchange places with the shown page */
     PaneRect shown; /* highlight, in notebook coordinates */
 } DropTarget;
 
@@ -164,6 +166,13 @@ static gint tab_bar_index(GtkNotebook* nb, GtkWidget* child, double x, PaneRect*
     return index;
 }
 
+static gboolean ctrl_held(void) {
+    GdkDisplay* display = gdk_display_get_default();
+    GdkSeat* seat = display != NULL ? gdk_display_get_default_seat(display) : NULL;
+    GdkDevice* keyboard = seat != NULL ? gdk_seat_get_keyboard(seat) : NULL;
+    return keyboard != NULL && (gdk_device_get_modifier_state(keyboard) & GDK_CONTROL_MASK) != 0;
+}
+
 static GtkNotebook* drag_source(GtkDropTarget* dest) {
     GdkDrop* drop = gtk_drop_target_get_current_drop(dest);
     GdkDrag* drag = drop != NULL ? gdk_drop_get_drag(drop) : NULL;
@@ -201,6 +210,16 @@ static gboolean find_target(TabDrop* td, GtkNotebook* source, double x, double y
     if (!bounds_in(shown_child, GTK_WIDGET(nb), &page_area)) {
         page_area = (PaneRect){0, 0, gtk_widget_get_width(GTK_WIDGET(nb)),
                                gtk_widget_get_height(GTK_WIDGET(nb))};
+    }
+
+    out->swap = FALSE;
+    if (td->swap != NULL && source != nb && ctrl_held() &&
+        td->swap(nb, child, FALSE, td->data)) {
+        out->zone = PANE_ZONE_CENTER;
+        out->index = -1;
+        out->swap = TRUE;
+        out->shown = page_area;
+        return TRUE;
     }
 
     if (y < page_area.y) {
@@ -342,6 +361,9 @@ static gboolean on_drop(GtkDropTarget* dest, const GValue* value, double x, doub
     }
 
     watch_drag(dest, source, td);
+    if (t.swap && td->swap(td->nb, child, TRUE, td->data)) {
+        return TRUE;
+    }
     td->on_drop(td->nb, child, t.zone, t.index, td->data);
     return TRUE;
 }
@@ -372,4 +394,10 @@ void tab_drop_set_accept(GtkNotebook* nb, TabAcceptFunc accept) {
     TabDrop* td = g_object_get_data(G_OBJECT(nb), "tab-drop");
     g_return_if_fail(td != NULL);
     td->accept = accept;
+}
+
+void tab_drop_set_swap(GtkNotebook* nb, TabSwapFunc swap) {
+    TabDrop* td = g_object_get_data(G_OBJECT(nb), "tab-drop");
+    g_return_if_fail(td != NULL);
+    td->swap = swap;
 }
