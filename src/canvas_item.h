@@ -1,0 +1,48 @@
+#ifndef CANVAS_ITEM_H
+#define CANVAS_ITEM_H
+
+#include "canvas_doc.h"
+#include <gtk/gtk.h>
+
+#define ITEM_KEY "canvas-item"
+#define MIN_TEXT_WIDTH 80
+#define MIN_IMAGE_SIZE 24
+
+typedef struct CanvasPage CanvasPage;
+
+typedef struct {
+    CanvasPage* page;
+    CanvasBlockKind kind;
+    GtkWidget* frame;   /* child of the surface */
+    GtkWidget* content; /* text view, picture, shape or table */
+    GtkTextBuffer* buffer;
+    gchar* src;         /* picture, relative to note directory */
+    gdouble crop_x, crop_y, crop_w, crop_h;
+    /* Shape */
+    CanvasShapeType shape_type;
+    gchar* stroke_color;
+    CanvasFillStyle fill_style;
+    gint stroke_width;
+    gboolean rough;
+    GArray* points;
+    /* Table */
+    CanvasBlock* table_block;
+    gint x, y, w, h;
+    gdouble aspect;     /* width / height */
+    guint pending;
+    guint insert_styles;
+} CanvasItem;
+
+typedef void (*CanvasItemNotify)(CanvasPage* p);
+
+CanvasItem* canvas_item_of(GtkWidget* w);
+void canvas_item_select(CanvasItem* it);
+void canvas_item_edit(CanvasItem* it);
+void canvas_item_place(CanvasItem* it);
+void canvas_item_raise(CanvasItem* it);
+
+CanvasItem* canvas_item_add(CanvasPage* p, GtkWidget* surface, const gchar* dir,
+                            const CanvasBlock* b, CanvasItemNotify on_change,
+                            gboolean loading);
+
+#endif /* CANVAS_ITEM_H */

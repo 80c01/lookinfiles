@@ -148,13 +148,17 @@ gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
     }
     g_free(page);
     if (doc != NULL) {
-        guint texts = 0, pictures = 0;
+        guint texts = 0, pictures = 0, shapes = 0, tables = 0;
         for (guint i = 0; i < doc->blocks->len; i++) {
             const CanvasBlock* b = g_ptr_array_index(doc->blocks, i);
             if (b->kind == CANVAS_BLOCK_TEXT) {
                 texts++;
-            } else {
+            } else if (b->kind == CANVAS_BLOCK_IMAGE) {
                 pictures++;
+            } else if (b->kind == CANVAS_BLOCK_SHAPE) {
+                shapes++;
+            } else if (b->kind == CANVAS_BLOCK_TABLE) {
+                tables++;
             }
         }
         gchar* n = g_strdup_printf("%u", texts);
@@ -163,6 +167,16 @@ gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
         n = g_strdup_printf("%u", pictures);
         append_field(s, "Pictures", n);
         g_free(n);
+        if (shapes > 0) {
+            n = g_strdup_printf("%u", shapes);
+            append_field(s, "Shapes", n);
+            g_free(n);
+        }
+        if (tables > 0) {
+            n = g_strdup_printf("%u", tables);
+            append_field(s, "Tables", n);
+            g_free(n);
+        }
     }
     append_field(s, "Location", path);
     if (doc != NULL) {

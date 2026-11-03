@@ -72,6 +72,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Canvas tab", "Drag bar / corner", "Move / resize a block (a picture moves from anywhere on it)", 0},
     {"Canvas tab", "Ctrl+B / Ctrl+I / Ctrl+U", "Bold / italic / underline (selection, or the text typed next)", 0},
     {"Canvas tab", "Ctrl+Shift+S / Ctrl+E / Ctrl+Alt+1", "Strikethrough / code / heading", 0},
+    {"Canvas tab", "Ctrl+Space", "Toggle checkbox under cursor (- [ ] / - [X])", 0},
     {"Canvas tab", "Esc", "In a text box: select the block; on a block: deselect", 0},
     {"Canvas tab", "Tab / Shift+Tab", "Next / previous block", 0},
     {"Canvas tab", "Arrows / Shift+Arrows", "Move the selected block", 0},

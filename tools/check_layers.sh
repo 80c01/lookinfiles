@@ -94,6 +94,9 @@ trash_restore:
 note_types:
 notebook_icons:
 canvas_doc:
+canvas_geometry:
+canvas_rough_draw:canvas_doc,palette
+canvas_text:canvas_doc,fonts,palette,text_tags
 user_guide:
 fuzzy_match:
 web_address:

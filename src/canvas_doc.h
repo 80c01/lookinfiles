@@ -21,7 +21,9 @@
 
 typedef enum {
     CANVAS_BLOCK_TEXT,
-    CANVAS_BLOCK_IMAGE
+    CANVAS_BLOCK_IMAGE,
+    CANVAS_BLOCK_SHAPE,
+    CANVAS_BLOCK_TABLE
 } CanvasBlockKind;
 
 /* Text styles, combined in a run */
@@ -31,8 +33,42 @@ typedef enum {
     CANVAS_STYLE_UNDERLINE = 1 << 2,
     CANVAS_STYLE_STRIKE = 1 << 3,
     CANVAS_STYLE_CODE = 1 << 4,
-    CANVAS_STYLE_HEADING = 1 << 5
+    CANVAS_STYLE_HEADING = 1 << 5,
+    CANVAS_STYLE_SUBHEADING = 1 << 6,
+    CANVAS_STYLE_HIGHLIGHT = 1 << 7,
+    CANVAS_STYLE_SERIF = 1 << 8,
+    CANVAS_STYLE_MONO = 1 << 9,
+    CANVAS_STYLE_SMALL = 1 << 10,
+    CANVAS_STYLE_LARGE = 1 << 11,
+    CANVAS_STYLE_MUTED = 1 << 12,
+    CANVAS_STYLE_ACCENT = 1 << 13,
+    CANVAS_STYLE_DANGER = 1 << 14,
+    CANVAS_STYLE_SUCCESS = 1 << 15,
+    CANVAS_STYLE_WARNING = 1 << 16
 } CanvasStyle;
+
+/* Shape geometry */
+typedef enum {
+    CANVAS_SHAPE_RECT,
+    CANVAS_SHAPE_ROUND_RECT,
+    CANVAS_SHAPE_ELLIPSE,
+    CANVAS_SHAPE_DIAMOND,
+    CANVAS_SHAPE_LINE,
+    CANVAS_SHAPE_ARROW,
+    CANVAS_SHAPE_FREEHAND
+} CanvasShapeType;
+
+/* Shape fill style */
+typedef enum {
+    CANVAS_FILL_NONE,
+    CANVAS_FILL_SOLID,
+    CANVAS_FILL_SKETCH
+} CanvasFillStyle;
+
+typedef struct {
+    gdouble x;
+    gdouble y;
+} CanvasPoint;
 
 /* Styled run of a text block, in characters (not bytes): [start, end) */
 typedef struct {
@@ -45,9 +81,24 @@ typedef struct {
     CanvasBlockKind kind;
     gint x, y;       /* top-left corner on the page */
     gint w, h;       /* size; h = 0 for a text box: as tall as its text */
-    gchar* text;     /* TEXT: UTF-8 content */
-    GArray* runs;    /* TEXT: CanvasRun, sorted, not overlapping, styles != 0 */
-    gchar* src;      /* IMAGE: path relative to the note directory */
+    /* TEXT */
+    gchar* text;     /* UTF-8 content */
+    GArray* runs;    /* CanvasRun, sorted, not overlapping, styles != 0 */
+    /* IMAGE */
+    gchar* src;      /* path relative to the note directory */
+    gdouble crop_x, crop_y, crop_w, crop_h; /* crop rectangle in 0..1 (crop_w=1,crop_h=1: full) */
+    /* SHAPE */
+    CanvasShapeType shape_type;
+    gchar* stroke_color; /* color name or palette role: fg, accent, muted, danger, success, warning */
+    CanvasFillStyle fill_style;
+    gint stroke_width;
+    gboolean rough;   /* TRUE for hand-drawn / excalidraw sketch style */
+    GArray* points;   /* CanvasPoint for freehand strokes */
+    /* TABLE */
+    gint table_rows;
+    gint table_cols;
+    GPtrArray* cells; /* gchar* array of length table_rows * table_cols */
+    GArray* col_widths; /* gint array of column widths in pixels */
 } CanvasBlock;
 
 typedef struct {
@@ -87,6 +138,18 @@ gchar* canvas_doc_new_media_path(const gchar* dir, const gchar* ext);
 /* New blocks, appended on top (owned by the document) */
 CanvasBlock* canvas_doc_add_text(CanvasDoc* doc, gint x, gint y, gint w, const gchar* text);
 CanvasBlock* canvas_doc_add_image(CanvasDoc* doc, gint x, gint y, gint w, gint h, const gchar* src);
+CanvasBlock* canvas_doc_add_shape(CanvasDoc* doc, gint x, gint y, gint w, gint h, CanvasShapeType shape_type);
+CanvasBlock* canvas_doc_add_table(CanvasDoc* doc, gint x, gint y, gint rows, gint cols);
+
+/* Table block operations */
+const gchar* canvas_table_get_cell(const CanvasBlock* b, gint row, gint col);
+void canvas_table_set_cell(CanvasBlock* b, gint row, gint col, const gchar* text);
+gint canvas_table_get_col_width(const CanvasBlock* b, gint col);
+void canvas_table_set_col_width(CanvasBlock* b, gint col, gint width);
+void canvas_table_insert_row(CanvasBlock* b, gint at_row);
+void canvas_table_insert_col(CanvasBlock* b, gint at_col);
+void canvas_table_delete_row(CanvasBlock* b, gint row);
+void canvas_table_delete_col(CanvasBlock* b, gint col);
 
 /* Remove (and free) a block; FALSE if it is not in the document */
 gboolean canvas_doc_remove(CanvasDoc* doc, CanvasBlock* block);

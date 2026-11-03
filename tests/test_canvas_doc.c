@@ -74,9 +74,101 @@ static void test_parse_errors(void) {
     g_assert_nonnull(error);
     g_clear_error(&error);
     /* Unknown elements and images without a source are skipped */
-    g_autoptr(CanvasDoc) doc = canvas_doc_parse("<canvas><shape/><image x=\"1\"/><text>a</text></canvas>", -1, &error);
+    g_autoptr(CanvasDoc) doc = canvas_doc_parse("<canvas><unknown/><image x=\"1\"/><text>a</text></canvas>", -1, &error);
     g_assert_no_error(error);
     g_assert_cmpuint(doc->blocks->len, ==, 1);
+}
+
+static void test_shape_round_trip(void) {
+    g_autoptr(CanvasDoc) doc = canvas_doc_new();
+    CanvasBlock* s = canvas_doc_add_shape(doc, 50, 60, 120, 80, CANVAS_SHAPE_DIAMOND);
+    s->shape_fill = CANVAS_FILL_SKETCH;
+    s->shape_stroke_color = 2;
+    s->shape_fill_color = 1;
+    s->shape_stroke_width = 3;
+    s->shape_seed = 12345;
+
+    g_autofree gchar* xml = canvas_doc_to_xml(doc);
+    g_assert_nonnull(strstr(xml, "type=\"diamond\""));
+    g_assert_nonnull(strstr(xml, "fill=\"sketch\""));
+
+    g_autoptr(GError) error = NULL;
+    g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
+    g_assert_no_error(error);
+    g_assert_cmpuint(back->blocks->len, ==, 1);
+    CanvasBlock* bs = g_ptr_array_index(back->blocks, 0);
+    g_assert_cmpint(bs->kind, ==, CANVAS_BLOCK_SHAPE);
+    g_assert_cmpint(bs->shape_type, ==, CANVAS_SHAPE_DIAMOND);
+    g_assert_cmpint(bs->shape_fill, ==, CANVAS_FILL_SKETCH);
+    g_assert_cmpint(bs->shape_stroke_color, ==, 2);
+    g_assert_cmpint(bs->shape_fill_color, ==, 1);
+    g_assert_cmpint(bs->shape_stroke_width, ==, 3);
+    g_assert_cmpuint(bs->shape_seed, ==, 12345);
+
+    g_autofree gchar* xml2 = canvas_doc_to_xml(back);
+    g_assert_cmpstr(xml, ==, xml2);
+}
+
+static void test_table_round_trip(void) {
+    g_autoptr(CanvasDoc) doc = canvas_doc_new();
+    CanvasBlock* t = canvas_doc_add_table(doc, 10, 20, 300, 150, 2, 2);
+    canvas_table_set_cell(t, 0, 0, "Header A");
+    canvas_table_set_cell(t, 0, 1, "Header B");
+    canvas_table_set_cell(t, 1, 0, "Cell 1");
+    canvas_table_set_cell(t, 1, 1, "Cell 2");
+
+    g_assert_cmpstr(canvas_table_get_cell(t, 0, 0), ==, "Header A");
+    g_assert_cmpstr(canvas_table_get_cell(t, 1, 1), ==, "Cell 2");
+
+    g_autofree gchar* xml = canvas_doc_to_xml(doc);
+    g_assert_nonnull(strstr(xml, "<cell r=\"0\" c=\"0\">Header A</cell>"));
+
+    g_autoptr(GError) error = NULL;
+    g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
+    g_assert_no_error(error);
+    g_assert_cmpuint(back->blocks->len, ==, 1);
+    CanvasBlock* bt = g_ptr_array_index(back->blocks, 0);
+    g_assert_cmpint(bt->kind, ==, CANVAS_BLOCK_TABLE);
+    g_assert_cmpint(bt->table_rows, ==, 2);
+    g_assert_cmpint(bt->table_cols, ==, 2);
+    g_assert_cmpstr(canvas_table_get_cell(bt, 0, 0), ==, "Header A");
+    g_assert_cmpstr(canvas_table_get_cell(bt, 1, 1), ==, "Cell 2");
+
+    /* Test table manipulation */
+    canvas_table_insert_row(bt, 1);
+    g_assert_cmpint(bt->table_rows, ==, 3);
+    g_assert_cmpstr(canvas_table_get_cell(bt, 2, 1), ==, "Cell 2");
+    canvas_table_delete_row(bt, 1);
+    g_assert_cmpint(bt->table_rows, ==, 2);
+    g_assert_cmpstr(canvas_table_get_cell(bt, 1, 1), ==, "Cell 2");
+
+    canvas_table_insert_col(bt, 1);
+    g_assert_cmpint(bt->table_cols, ==, 3);
+    g_assert_cmpstr(canvas_table_get_cell(bt, 1, 2), ==, "Cell 2");
+    canvas_table_delete_col(bt, 1);
+    g_assert_cmpint(bt->table_cols, ==, 2);
+    g_assert_cmpstr(canvas_table_get_cell(bt, 1, 1), ==, "Cell 2");
+}
+
+static void test_image_crop_round_trip(void) {
+    g_autoptr(CanvasDoc) doc = canvas_doc_new();
+    CanvasBlock* img = canvas_doc_add_image(doc, 0, 0, 100, 100, "media/0001.png");
+    img->crop_x = 10;
+    img->crop_y = 20;
+    img->crop_w = 50;
+    img->crop_h = 40;
+
+    g_autofree gchar* xml = canvas_doc_to_xml(doc);
+    g_assert_nonnull(strstr(xml, "crop=\"10,20,50,40\""));
+
+    g_autoptr(GError) error = NULL;
+    g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
+    g_assert_no_error(error);
+    CanvasBlock* b = g_ptr_array_index(back->blocks, 0);
+    g_assert_cmpint(b->crop_x, ==, 10);
+    g_assert_cmpint(b->crop_y, ==, 20);
+    g_assert_cmpint(b->crop_w, ==, 50);
+    g_assert_cmpint(b->crop_h, ==, 40);
 }
 
 static void test_raise_remove(void) {
@@ -213,6 +305,9 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_doc/runs_merge", test_runs_merge);
     g_test_add_func("/canvas_doc/xml_round_trip", test_xml_round_trip);
     g_test_add_func("/canvas_doc/parse_errors", test_parse_errors);
+    g_test_add_func("/canvas_doc/shape_round_trip", test_shape_round_trip);
+    g_test_add_func("/canvas_doc/table_round_trip", test_table_round_trip);
+    g_test_add_func("/canvas_doc/image_crop_round_trip", test_image_crop_round_trip);
     g_test_add_func("/canvas_doc/raise_remove", test_raise_remove);
     g_test_add_func("/canvas_doc/files", test_files);
     g_test_add_func("/canvas_doc/create_delete", test_create_delete);

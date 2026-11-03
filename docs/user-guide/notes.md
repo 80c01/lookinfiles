@@ -49,23 +49,38 @@ A note that does not exist is created, with its notebook. The extension
 
 ## Canvas notes
 
-A Canvas note is a free page of text boxes and pictures, placed where you
-want them. It opens in the **Canvas** tab of the preview panel (one canvas
-at a time) and is saved automatically.
+A Canvas note is a freeform workspace of text boxes, hand-drawn shapes,
+tables and pictures, placed where you want them. It opens in the **Canvas**
+tab of the preview panel (one canvas at a time) and is saved automatically.
+
+### Blocks and elements
+
+| Block type | How to create / edit |
+|---|---|
+| Text box | Double-click on the page, `Ctrl+Enter`, or the **+ Text** button |
+| Shapes (Excalidraw style) | **+ Shape** menu: rectangle, rounded rectangle, ellipse, diamond, line, arrow, or freehand pencil sketch; stroke and fill styles (solid, rough sketch) |
+| Tables | **+ Table** button: interactive grid of editable cells with `+ Row`, `- Row`, `+ Col`, `- Col` controls |
+| Pictures | `Ctrl+V` with an image copied, or drop image files onto the page |
+| Image crop | Select an image and click **Crop** to adjust visible borders |
+
+### Canvas actions and shortcuts
 
 | Action | How |
 |---|---|
-| New text box | Double click on the page, or `Ctrl+Enter` |
-| New picture | `Ctrl+V` with a picture copied, or drop image files on the page |
-| Move a block | Drag the bar above it (a picture: drag it anywhere) |
-| Resize a block | Drag its corner (pictures keep their proportions) |
-| Bold, italic, underline, strikethrough, code, heading | `Ctrl+B`, `Ctrl+I`, `Ctrl+U`, `Ctrl+Shift+S`, `Ctrl+E`, `Ctrl+Alt+1` |
-| Select the block you are typing in | `Esc` |
+| Move a block | Drag the handle bar above it (or drag an image directly) |
+| Resize a block | Drag its bottom-right corner (pictures keep proportions) |
+| Snap & Smart Guides | Magnetic snapping to nearby block edges and grid (toggle **Snap**) |
+| Align blocks | **Align** menu: left, center, right, top, middle, bottom, distribute |
+| Predefined styles | **Preset** menu: Title (H1), Subtitle (H2), Body text, Quote callout |
+| Text styling | `Ctrl+B` (bold), `Ctrl+I` (italic), `Ctrl+U` (underline), `Ctrl+Shift+S` (strikethrough), highlight, monospace, font family, text color |
+| Lists & Indents | Bullet list, numbered list, indent more / indent less buttons; Enter auto-continues lists |
+| Interactive Checkboxes | Checkbox button or type `- [ ] `; click `[ ]` / `[X]` or press `Ctrl+Space` to toggle |
+| Select block / stop editing | `Esc` |
 | Next / previous block | `Tab` / `Shift+Tab` |
-| Move the selected block | Arrows (`Shift`: further) |
-| Edit the selected text box | `Enter` |
-| Delete the selected block | `Delete` or `Backspace` |
-| Close the Canvas tab | `Ctrl+W`, or middle click on the tab |
+| Move selected block | Arrow keys (`Shift` for 10px steps) |
+| Edit selected text box | `Enter` |
+| Delete selected block | `Delete` or `Backspace` |
+| Close Canvas tab | `Ctrl+W`, or middle click on the tab |
 
 ## Where notes are kept
 

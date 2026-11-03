@@ -7,7 +7,21 @@
 #define DEFAULT_TEXT_WIDTH 300
 
 /* Style names of the "s" attribute of <span>, in CanvasStyle bit order */
-static const gchar* const STYLE_NAMES[] = {"b", "i", "u", "s", "code", "h"};
+static const gchar* const STYLE_NAMES[] = {
+    "b", "i", "u", "s", "code", "h",
+    "h2", "mark",
+    "serif", "mono",
+    "sm", "lg",
+    "c-muted", "c-accent", "c-danger", "c-success", "c-warning"
+};
+
+static const gchar* const SHAPE_NAMES[] = {
+    "rect", "round_rect", "ellipse", "diamond", "line", "arrow", "freehand"
+};
+
+static const gchar* const FILL_NAMES[] = {
+    "none", "solid", "sketch"
+};
 
 /* ------------------------------------------------------------------------- */
 /* Blocks                                                                    */
@@ -23,6 +37,17 @@ static CanvasBlock* block_new(CanvasBlockKind kind, gint x, gint y, gint w, gint
     if (kind == CANVAS_BLOCK_TEXT) {
         b->text = g_strdup("");
         b->runs = g_array_new(FALSE, FALSE, sizeof(CanvasRun));
+    } else if (kind == CANVAS_BLOCK_IMAGE) {
+        b->crop_w = 1.0;
+        b->crop_h = 1.0;
+    } else if (kind == CANVAS_BLOCK_SHAPE) {
+        b->stroke_color = g_strdup("fg");
+        b->stroke_width = 2;
+        b->rough = TRUE;
+        b->points = g_array_new(FALSE, FALSE, sizeof(CanvasPoint));
+    } else if (kind == CANVAS_BLOCK_TABLE) {
+        b->cells = g_ptr_array_new_with_free_func(g_free);
+        b->col_widths = g_array_new(FALSE, TRUE, sizeof(gint));
     }
     return b;
 }
@@ -33,6 +58,10 @@ static void block_free(gpointer data) {
     g_free(b->text);
     if (b->runs != NULL) g_array_unref(b->runs);
     g_free(b->src);
+    g_free(b->stroke_color);
+    if (b->points != NULL) g_array_unref(b->points);
+    if (b->cells != NULL) g_ptr_array_unref(b->cells);
+    if (b->col_widths != NULL) g_array_unref(b->col_widths);
     g_free(b);
 }
 
@@ -63,6 +92,111 @@ CanvasBlock* canvas_doc_add_image(CanvasDoc* doc, gint x, gint y, gint w, gint h
     b->src = g_strdup(src != NULL ? src : "");
     g_ptr_array_add(doc->blocks, b);
     return b;
+}
+
+CanvasBlock* canvas_doc_add_shape(CanvasDoc* doc, gint x, gint y, gint w, gint h, CanvasShapeType shape_type) {
+    CanvasBlock* b = block_new(CANVAS_BLOCK_SHAPE, x, y, MAX(w, 20), MAX(h, 20));
+    b->shape_type = shape_type;
+    g_ptr_array_add(doc->blocks, b);
+    return b;
+}
+
+CanvasBlock* canvas_doc_add_table(CanvasDoc* doc, gint x, gint y, gint rows, gint cols) {
+    rows = CLAMP(rows, 1, 50);
+    cols = CLAMP(cols, 1, 20);
+    CanvasBlock* b = block_new(CANVAS_BLOCK_TABLE, x, y, cols * 120, rows * 32);
+    b->table_rows = rows;
+    b->table_cols = cols;
+    for (gint i = 0; i < rows * cols; i++) {
+        g_ptr_array_add(b->cells, g_strdup(""));
+    }
+    for (gint c = 0; c < cols; c++) {
+        gint width = 120;
+        g_array_append_val(b->col_widths, width);
+    }
+    g_ptr_array_add(doc->blocks, b);
+    return b;
+}
+
+const gchar* canvas_table_get_cell(const CanvasBlock* b, gint row, gint col) {
+    if (b == NULL || b->kind != CANVAS_BLOCK_TABLE || b->cells == NULL) return "";
+    if (row < 0 || row >= b->table_rows || col < 0 || col >= b->table_cols) return "";
+    guint idx = (guint)(row * b->table_cols + col);
+    if (idx >= b->cells->len) return "";
+    const gchar* txt = g_ptr_array_index(b->cells, idx);
+    return txt != NULL ? txt : "";
+}
+
+void canvas_table_set_cell(CanvasBlock* b, gint row, gint col, const gchar* text) {
+    if (b == NULL || b->kind != CANVAS_BLOCK_TABLE || b->cells == NULL) return;
+    if (row < 0 || row >= b->table_rows || col < 0 || col >= b->table_cols) return;
+    guint idx = (guint)(row * b->table_cols + col);
+    if (idx >= b->cells->len) return;
+    gchar* valid = g_utf8_make_valid(text != NULL ? text : "", -1);
+    g_ptr_array_index(b->cells, idx) = valid;
+}
+
+gint canvas_table_get_col_width(const CanvasBlock* b, gint col) {
+    if (b == NULL || b->kind != CANVAS_BLOCK_TABLE || b->col_widths == NULL) return 120;
+    if (col < 0 || (guint)col >= b->col_widths->len) return 120;
+    return g_array_index(b->col_widths, gint, col);
+}
+
+void canvas_table_set_col_width(CanvasBlock* b, gint col, gint width) {
+    if (b == NULL || b->kind != CANVAS_BLOCK_TABLE || b->col_widths == NULL) return;
+    if (col < 0 || (guint)col >= b->col_widths->len) return;
+    g_array_index(b->col_widths, gint, col) = MAX(width, 40);
+    gint total = 0;
+    for (guint c = 0; c < b->col_widths->len; c++) total += g_array_index(b->col_widths, gint, c);
+    b->w = total;
+}
+
+void canvas_table_insert_row(CanvasBlock* b, gint at_row) {
+    if (b == NULL || b->kind != CANVAS_BLOCK_TABLE || b->cells == NULL) return;
+    at_row = CLAMP(at_row, 0, b->table_rows);
+    gint insert_idx = at_row * b->table_cols;
+    for (gint c = 0; c < b->table_cols; c++) {
+        g_ptr_array_insert(b->cells, insert_idx + c, g_strdup(""));
+    }
+    b->table_rows++;
+    b->h = b->table_rows * 32;
+}
+
+void canvas_table_insert_col(CanvasBlock* b, gint at_col) {
+    if (b == NULL || b->kind != CANVAS_BLOCK_TABLE || b->cells == NULL) return;
+    at_col = CLAMP(at_col, 0, b->table_cols);
+    for (gint r = b->table_rows - 1; r >= 0; r--) {
+        gint insert_idx = r * b->table_cols + at_col;
+        g_ptr_array_insert(b->cells, insert_idx, g_strdup(""));
+    }
+    b->table_cols++;
+    gint default_w = 120;
+    g_array_insert_val(b->col_widths, at_col, default_w);
+    b->w += default_w;
+}
+
+void canvas_table_delete_row(CanvasBlock* b, gint row) {
+    if (b == NULL || b->kind != CANVAS_BLOCK_TABLE || b->table_rows <= 1) return;
+    if (row < 0 || row >= b->table_rows) return;
+    gint start_idx = row * b->table_cols;
+    for (gint c = 0; c < b->table_cols; c++) {
+        g_ptr_array_remove_index(b->cells, start_idx);
+    }
+    b->table_rows--;
+    b->h = b->table_rows * 32;
+}
+
+void canvas_table_delete_col(CanvasBlock* b, gint col) {
+    if (b == NULL || b->kind != CANVAS_BLOCK_TABLE || b->table_cols <= 1) return;
+    if (col < 0 || col >= b->table_cols) return;
+    for (gint r = b->table_rows - 1; r >= 0; r--) {
+        gint remove_idx = r * b->table_cols + col;
+        g_ptr_array_remove_index(b->cells, remove_idx);
+    }
+    gint w = g_array_index(b->col_widths, gint, col);
+    g_array_remove_index(b->col_widths, col);
+    b->table_cols--;
+    b->w = MAX(b->w - w, 40);
 }
 
 gboolean canvas_doc_remove(CanvasDoc* doc, CanvasBlock* block) {
@@ -111,7 +245,10 @@ void canvas_block_add_run(CanvasBlock* block, gint start, gint end, guint styles
 typedef struct {
     CanvasDoc* doc;
     gboolean in_canvas;
-    CanvasBlock* text_block; /* <text> being read */
+    CanvasBlock* text_block;  /* <text> being read */
+    CanvasBlock* table_block; /* <table> being read */
+    gint cell_row;
+    gint cell_col;
     GString* text;
     gint n_chars;
     GArray* spans; /* open <span>s: CanvasRun with end unused */
@@ -154,6 +291,14 @@ static void on_start(GMarkupParseContext* ctx, const gchar* element, const gchar
         st->in_canvas = TRUE;
         return;
     }
+    if (st->table_block != NULL) {
+        if (strcmp(element, "cell") == 0) {
+            st->cell_row = attr_int(names, values, "row");
+            st->cell_col = attr_int(names, values, "col");
+            g_string_truncate(st->text, 0);
+        }
+        return;
+    }
     if (st->text_block != NULL) {
         if (strcmp(element, "span") == 0) {
             CanvasRun r = {st->n_chars, 0, parse_styles(attr(names, values, "s"))};
@@ -173,7 +318,72 @@ static void on_start(GMarkupParseContext* ctx, const gchar* element, const gchar
     } else if (strcmp(element, "image") == 0) {
         const gchar* src = attr(names, values, "src");
         if (src != NULL && src[0] != '\0') {
-            canvas_doc_add_image(st->doc, x, y, w, h, src);
+            CanvasBlock* b = canvas_doc_add_image(st->doc, x, y, w, h, src);
+            const gchar* crop = attr(names, values, "crop");
+            if (crop != NULL) {
+                gchar** parts = g_strsplit(crop, ",", 4);
+                if (parts[0] && parts[1] && parts[2] && parts[3]) {
+                    b->crop_x = g_ascii_strtod(parts[0], NULL);
+                    b->crop_y = g_ascii_strtod(parts[1], NULL);
+                    b->crop_w = g_ascii_strtod(parts[2], NULL);
+                    b->crop_h = g_ascii_strtod(parts[3], NULL);
+                }
+                g_strfreev(parts);
+            }
+        }
+    } else if (strcmp(element, "shape") == 0) {
+        const gchar* type_str = attr(names, values, "type");
+        CanvasShapeType stype = CANVAS_SHAPE_RECT;
+        for (guint k = 0; k < G_N_ELEMENTS(SHAPE_NAMES); k++) {
+            if (g_strcmp0(type_str, SHAPE_NAMES[k]) == 0) {
+                stype = (CanvasShapeType)k;
+                break;
+            }
+        }
+        CanvasBlock* b = canvas_doc_add_shape(st->doc, x, y, w, h, stype);
+        const gchar* stroke = attr(names, values, "stroke");
+        if (stroke != NULL) {
+            g_free(b->stroke_color);
+            b->stroke_color = g_strdup(stroke);
+        }
+        const gchar* fill = attr(names, values, "fill");
+        if (fill != NULL) {
+            for (guint k = 0; k < G_N_ELEMENTS(FILL_NAMES); k++) {
+                if (strcmp(fill, FILL_NAMES[k]) == 0) {
+                    b->fill_style = (CanvasFillStyle)k;
+                    break;
+                }
+            }
+        }
+        b->stroke_width = MAX(attr_int(names, values, "stroke_width"), 1);
+        b->rough = (attr_int(names, values, "rough") != 0);
+        const gchar* pts = attr(names, values, "points");
+        if (pts != NULL && pts[0] != '\0') {
+            gchar** pairs = g_strsplit(pts, " ", -1);
+            for (gint i = 0; pairs[i] != NULL; i++) {
+                gchar* comma = strchr(pairs[i], ',');
+                if (comma != NULL) {
+                    *comma = '\0';
+                    CanvasPoint pt = {g_ascii_strtod(pairs[i], NULL), g_ascii_strtod(comma + 1, NULL)};
+                    g_array_append_val(b->points, pt);
+                }
+            }
+            g_strfreev(pairs);
+        }
+    } else if (strcmp(element, "table") == 0) {
+        gint rows = MAX(attr_int(names, values, "rows"), 1);
+        gint cols = MAX(attr_int(names, values, "cols"), 1);
+        st->table_block = canvas_doc_add_table(st->doc, x, y, rows, cols);
+        if (w > 0) st->table_block->w = w;
+        if (h > 0) st->table_block->h = h;
+        const gchar* cw = attr(names, values, "col_widths");
+        if (cw != NULL) {
+            gchar** widths = g_strsplit(cw, ",", -1);
+            for (gint i = 0; widths[i] != NULL && i < cols; i++) {
+                gint colw = (gint)g_ascii_strtoll(widths[i], NULL, 10);
+                if (colw > 0) canvas_table_set_col_width(st->table_block, i, colw);
+            }
+            g_strfreev(widths);
         }
     }
 }
@@ -182,6 +392,14 @@ static void on_end(GMarkupParseContext* ctx, const gchar* element, gpointer data
     (void)ctx;
     (void)error;
     ParseState* st = data;
+    if (st->table_block != NULL) {
+        if (strcmp(element, "cell") == 0) {
+            canvas_table_set_cell(st->table_block, st->cell_row, st->cell_col, st->text->str);
+        } else if (strcmp(element, "table") == 0) {
+            st->table_block = NULL;
+        }
+        return;
+    }
     if (st->text_block == NULL) return;
     if (strcmp(element, "span") == 0 && st->spans->len > 0) {
         CanvasRun r = g_array_index(st->spans, CanvasRun, st->spans->len - 1);
@@ -202,7 +420,7 @@ static void on_text(GMarkupParseContext* ctx, const gchar* text, gsize len, gpoi
     (void)ctx;
     (void)error;
     ParseState* st = data;
-    if (st->text_block == NULL) return;
+    if (st->text_block == NULL && st->table_block == NULL) return;
     gchar* valid = g_utf8_make_valid(text, (gssize)len);
     g_string_append(st->text, valid);
     st->n_chars += (gint)g_utf8_strlen(valid, -1);
@@ -282,11 +500,57 @@ gchar* canvas_doc_to_xml(const CanvasDoc* doc) {
         const CanvasBlock* b = g_ptr_array_index(doc->blocks, i);
         if (b->kind == CANVAS_BLOCK_TEXT) {
             append_text_block(out, b);
-        } else {
-            gchar* line = g_markup_printf_escaped("  <image x=\"%d\" y=\"%d\" w=\"%d\" h=\"%d\" src=\"%s\"/>\n",
-                                                  b->x, b->y, b->w, b->h, b->src);
+        } else if (b->kind == CANVAS_BLOCK_IMAGE) {
+            if (b->crop_w > 0 && b->crop_h > 0 &&
+                (b->crop_x > 0.001 || b->crop_y > 0.001 || b->crop_w < 0.999 || b->crop_h < 0.999)) {
+                gchar* line = g_markup_printf_escaped(
+                    "  <image x=\"%d\" y=\"%d\" w=\"%d\" h=\"%d\" src=\"%s\" crop=\"%.4f,%.4f,%.4f,%.4f\"/>\n",
+                    b->x, b->y, b->w, b->h, b->src, b->crop_x, b->crop_y, b->crop_w, b->crop_h);
+                g_string_append(out, line);
+                g_free(line);
+            } else {
+                gchar* line = g_markup_printf_escaped("  <image x=\"%d\" y=\"%d\" w=\"%d\" h=\"%d\" src=\"%s\"/>\n",
+                                                      b->x, b->y, b->w, b->h, b->src);
+                g_string_append(out, line);
+                g_free(line);
+            }
+        } else if (b->kind == CANVAS_BLOCK_SHAPE) {
+            GString* pts_str = g_string_new(NULL);
+            if (b->points != NULL) {
+                for (guint p = 0; p < b->points->len; p++) {
+                    const CanvasPoint* pt = &g_array_index(b->points, CanvasPoint, p);
+                    if (p > 0) g_string_append_c(pts_str, ' ');
+                    g_string_append_printf(pts_str, "%.1f,%.1f", pt->x, pt->y);
+                }
+            }
+            gchar* line = g_markup_printf_escaped(
+                "  <shape type=\"%s\" x=\"%d\" y=\"%d\" w=\"%d\" h=\"%d\" stroke=\"%s\" fill=\"%s\" stroke_width=\"%d\" rough=\"%d\" points=\"%s\"/>\n",
+                SHAPE_NAMES[b->shape_type], b->x, b->y, b->w, b->h,
+                b->stroke_color != NULL ? b->stroke_color : "fg",
+                FILL_NAMES[b->fill_style], b->stroke_width, b->rough ? 1 : 0, pts_str->str);
             g_string_append(out, line);
             g_free(line);
+            g_string_free(pts_str, TRUE);
+        } else if (b->kind == CANVAS_BLOCK_TABLE) {
+            GString* cw_str = g_string_new(NULL);
+            if (b->col_widths != NULL) {
+                for (guint c = 0; c < b->col_widths->len; c++) {
+                    if (c > 0) g_string_append_c(cw_str, ',');
+                    g_string_append_printf(cw_str, "%d", g_array_index(b->col_widths, gint, c));
+                }
+            }
+            g_string_append_printf(out, "  <table x=\"%d\" y=\"%d\" w=\"%d\" h=\"%d\" rows=\"%d\" cols=\"%d\" col_widths=\"%s\">\n",
+                                   b->x, b->y, b->w, b->h, b->table_rows, b->table_cols, cw_str->str);
+            g_string_free(cw_str, TRUE);
+            for (gint r = 0; r < b->table_rows; r++) {
+                for (gint c = 0; c < b->table_cols; c++) {
+                    const gchar* cell_text = canvas_table_get_cell(b, r, c);
+                    gchar* esc = g_markup_escape_text(cell_text, -1);
+                    g_string_append_printf(out, "    <cell row=\"%d\" col=\"%d\">%s</cell>\n", r, c, esc);
+                    g_free(esc);
+                }
+            }
+            g_string_append(out, "  </table>\n");
         }
     }
     g_string_append(out, "</canvas>\n");
@@ -424,13 +688,17 @@ static gint compare_position(gconstpointer a, gconstpointer b) {
 /* One line of a styled segment, wrapped in the Markdown markers of its styles */
 static void append_md_line(GString* out, const gchar* start, const gchar* end, guint styles, gboolean line_start) {
     if (start == end) return;
-    if ((styles & CANVAS_STYLE_HEADING) && line_start) g_string_append(out, "## ");
+    if (line_start) {
+        if (styles & CANVAS_STYLE_HEADING) g_string_append(out, "# ");
+        else if (styles & CANVAS_STYLE_SUBHEADING) g_string_append(out, "## ");
+    }
     const gchar* open = (styles & CANVAS_STYLE_CODE) ? "`" : "";
     GString* marks = g_string_new(NULL);
     if (!(styles & CANVAS_STYLE_CODE)) {
         if (styles & CANVAS_STYLE_BOLD) g_string_append(marks, "**");
         if (styles & CANVAS_STYLE_ITALIC) g_string_append(marks, "*");
         if (styles & CANVAS_STYLE_STRIKE) g_string_append(marks, "~~");
+        if (styles & CANVAS_STYLE_HIGHLIGHT) g_string_append(marks, "==");
     }
     g_string_append(out, open);
     g_string_append(out, marks->str);
@@ -506,7 +774,22 @@ gchar* canvas_doc_to_markdown(const CanvasDoc* doc, const gchar* media_prefix) {
         if (out->len > 0) g_string_append(out, "\n\n");
         if (b->kind == CANVAS_BLOCK_TEXT) {
             append_md_text(out, b);
-        } else {
+        } else if (b->kind == CANVAS_BLOCK_TABLE) {
+            for (gint r = 0; r < b->table_rows; r++) {
+                g_string_append(out, "|");
+                for (gint c = 0; c < b->table_cols; c++) {
+                    g_string_append_printf(out, " %s |", canvas_table_get_cell(b, r, c));
+                }
+                g_string_append_c(out, '\n');
+                if (r == 0) {
+                    g_string_append(out, "|");
+                    for (gint c = 0; c < b->table_cols; c++) {
+                        g_string_append(out, " --- |");
+                    }
+                    g_string_append_c(out, '\n');
+                }
+            }
+        } else if (b->kind == CANVAS_BLOCK_IMAGE) {
             gchar* link = g_strconcat(media_prefix != NULL ? media_prefix : "", b->src, NULL);
             /* A link with spaces goes between angle brackets */
             g_string_append_printf(out, strchr(link, ' ') != NULL ? "![](<%s>)" : "![](%s)", link);
