@@ -300,9 +300,16 @@ dist:
 	git archive --format=tar.gz --prefix=$(DIST)/ -o $(DIST).tar.gz HEAD
 	@echo "Created $(DIST).tar.gz"
 
+# Package shortcuts (packaging/): builds a .deb or AppImage in build/
+deb:
+	@sh packaging/debian/build_deb.sh build
+
+appimage:
+	@sh packaging/appimage/build_appimage.sh build
+
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET) $(INSTALLED_DATA:%=$(DESTDIR)$(DATADIR)/%)
 
 -include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
 
-.PHONY: all deps clean dist install uninstall test check ui-test bench-preview preview-coverage
+.PHONY: all deps clean dist install uninstall test check ui-test bench-preview preview-coverage deb appimage

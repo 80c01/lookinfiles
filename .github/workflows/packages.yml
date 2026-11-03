@@ -1,0 +1,141 @@
+name: Packages
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    paths:
+      - 'packaging/**'
+      - '.github/workflows/packages.yml'
+      - 'Makefile'
+      - 'src/**'
+      - 'data/**'
+  workflow_dispatch:
+
+jobs:
+  debian:
+    name: Debian / Ubuntu (.deb)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-4-dev \
+            libvte-2.91-gtk4-dev libgtksourceview-5-dev libpoppler-glib-dev \
+            libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev
+
+      - name: Build .deb
+        run: ./packaging/debian/build_deb.sh artifacts/
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: artifacts/*.deb
+
+  arch:
+    name: Arch Linux (.pkg.tar.zst)
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install build tools & dependencies
+        run: |
+          pacman -Syu --noconfirm --needed base-devel git gtk4 vte4 gtksourceview5 poppler-glib sqlite webkitgtk-6.0 libarchive
+
+      - uses: actions/checkout@v4
+
+      - name: Prepare unprivileged build user
+        run: |
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R builder:builder .
+
+      - name: Build package with makepkg
+        run: |
+          su builder -c "
+            cd packaging/arch
+            makepkg -s --noconfirm --nocheck
+          "
+          mkdir -p artifacts
+          cp packaging/arch/*.pkg.tar.zst artifacts/
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: artifacts/*.pkg.tar.zst
+
+  fedora:
+    name: Fedora RPM (.rpm)
+    runs-on: ubuntu-latest
+    container: fedora:41
+    steps:
+      - name: Install build tools & dependencies
+        run: |
+          dnf install -y gcc make pkgconfig desktop-file-utils libappstream-glib rpmdevtools \
+            gtk4-devel vte291-gtk4-devel gtksourceview5-devel poppler-glib-devel sqlite-devel \
+            webkitgtk6.0-devel libarchive-devel git
+
+      - uses: actions/checkout@v4
+
+      - name: Build source tarball and RPM
+        run: |
+          rpmdev-setuptree
+          make dist
+          VERSION=$(sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h)
+          cp lookinfiles-${VERSION}.tar.gz ~/rpmbuild/SOURCES/
+          cp packaging/fedora/lookinfiles.spec ~/rpmbuild/SPECS/
+          rpmbuild -ba ~/rpmbuild/SPECS/lookinfiles.spec
+          mkdir -p artifacts
+          cp ~/rpmbuild/RPMS/*/*.rpm ~/rpmbuild/SRPMS/*.rpm artifacts/
+
+      - name: Upload Fedora packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora-packages
+          path: artifacts/*.rpm
+
+  appimage:
+    name: AppImage
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-4-dev \
+            libvte-2.91-gtk4-dev libgtksourceview-5-dev libpoppler-glib-dev \
+            libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev curl file
+
+      - name: Build AppImage
+        run: ./packaging/appimage/build_appimage.sh artifacts/
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: artifacts/*.AppImage
+
+  release:
+    name: Create GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [debian, arch, fedora, appimage]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+          merge-multiple: true
+
+      - name: Publish Release with assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: all-artifacts/*
+          generate_release_notes: true

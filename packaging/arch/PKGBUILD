@@ -1,0 +1,43 @@
+# Maintainer: 80c01 <noreply@github.com>
+pkgname=lookinfiles
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Fast, keyboard-driven GTK 4 file explorer with preview panel, editors and terminal"
+arch=('x86_64' 'aarch64')
+url="https://github.com/80c01/lookinfiles"
+license=('MIT')
+depends=(
+    'gtk4'
+    'vte4'
+    'gtksourceview5'
+    'poppler-glib'
+    'sqlite'
+    'webkitgtk-6.0'
+    'libarchive'
+)
+optdepends=(
+    'git: git status and diff integration'
+    'sshfs: remote folders over SSH'
+)
+makedepends=(
+    'git'
+    'pkgconf'
+)
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    make
+}
+
+check() {
+    cd "$pkgname-$pkgver"
+    make test
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    make install DESTDIR="$pkgdir" PREFIX=/usr
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

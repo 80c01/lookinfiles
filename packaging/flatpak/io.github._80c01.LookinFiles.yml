@@ -1,0 +1,49 @@
+app-id: io.github._80c01.LookinFiles
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.gnome.Sdk
+command: lookinfiles
+
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --filesystem=host
+  - --filesystem=home
+  - --share=network
+  - --device=dri
+  - --talk-name=ca.desrt.dconf
+  - --env=DCONF_USER_CONFIG_DIR=.config/dconf
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/pkgconfig
+  - /share/aclocal
+  - /man
+  - /share/man
+  - '*.la'
+  - '*.a'
+
+modules:
+  - name: vte
+    buildsystem: meson
+    config-opts:
+      - -Ddocs=false
+      - -Dgir=false
+      - -Dvapi=false
+      - -Dgtk3=false
+      - -Dgtk4=true
+    sources:
+      - type: archive
+        url: https://gitlab.gnome.org/GNOME/vte/-/archive/0.78.0/vte-0.78.0.tar.bz2
+        sha256: 058866164d1f230ba278dfb696f01df22e2ce2d7ca8cb655822262d1c6df811c
+
+  - name: lookinfiles
+    buildsystem: simple
+    build-commands:
+      - make -j$FLATPAK_BUILDER_N_JOBS
+      - make install PREFIX=/app
+    sources:
+      - type: dir
+        path: ../../

@@ -1,0 +1,31 @@
+Source: lookinfiles
+Section: utils
+Priority: optional
+Maintainer: 80c01 <noreply@github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ pkg-config,
+ libgtk-4-dev (>= 4.12),
+ libvte-2.91-gtk4-dev,
+ libgtksourceview-5-dev,
+ libpoppler-glib-dev,
+ libsqlite3-dev,
+ libarchive-dev,
+ libwebkitgtk-6.0-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/80c01/lookinfiles
+Vcs-Git: https://github.com/80c01/lookinfiles.git
+Vcs-Browser: https://github.com/80c01/lookinfiles
+
+Package: lookinfiles
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends}
+Recommends:
+ git,
+ sshfs
+Description: Fast, keyboard-driven GTK 4 file explorer
+ LookinFiles ("look in your files") is a keyboard-driven file explorer in C with
+ GTK 4, featuring a rich preview panel, text editors in Notepad, Emacs or Vim mode,
+ embedded terminal panes, search in files, Git status, and workspaces.
