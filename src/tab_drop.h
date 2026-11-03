@@ -25,7 +25,7 @@ typedef void (*TabDragDoneFunc)(GtkNotebook* source, gpointer data);
 typedef gboolean (*TabAcceptFunc)(GtkNotebook* target, GtkNotebook* source, GtkWidget* child,
                                   gpointer data);
 
-/* Ctrl held while dropping a tab from another notebook on nb: the dragged
+/* Shift held while dropping a tab from another notebook on nb: the dragged
  * page and the page shown in nb exchange places. With do_it FALSE, only
  * tells whether that swap is possible. */
 typedef gboolean (*TabSwapFunc)(GtkNotebook* target, GtkWidget* child, gboolean do_it,
@@ -40,7 +40,7 @@ void tab_drop_attach(GtkNotebook* nb, gboolean can_split, TabDropFunc on_drop,
  * its group), tabs of other groups included; call after tab_drop_attach() */
 void tab_drop_set_accept(GtkNotebook* nb, TabAcceptFunc accept);
 
-/* Enable the Ctrl swap on nb; call after tab_drop_attach() */
+/* Enable the Shift swap on nb; call after tab_drop_attach() */
 void tab_drop_set_swap(GtkNotebook* nb, TabSwapFunc swap);
 
 #endif /* TAB_DROP_H */

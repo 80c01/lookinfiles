@@ -65,7 +65,7 @@ static gboolean editor_accepts_tab(GtkNotebook* target, GtkNotebook* source, Gtk
 #endif
 }
 
-/* Ctrl+drop: the dragged editor tab and the one shown in target exchange
+/* Shift+drop: the dragged editor tab and the one shown in target exchange
  * notebooks, each taking the other's position */
 static gboolean editor_swap_tabs(GtkNotebook* target, GtkWidget* child, gboolean do_it,
                                  gpointer data) {

@@ -16,13 +16,17 @@ typedef struct {
     TabSwapFunc swap;
     gpointer data;
     gboolean pages_untargetable; /* while a tab drag is over nb */
+    GtkDropTarget* dest;         /* while a tab drag is over nb */
+    double x, y;                 /* last pointer position over nb */
+    guint poll;                  /* refreshes the highlight when Shift changes */
+    gboolean shift;              /* Shift state at the last refresh */
 } TabDrop;
 
 /* Where a drop at the pointer would land */
 typedef struct {
     PaneZone zone;
     gint index;     /* insertion index on the tab bar, -1 to append */
-    gboolean swap;  /* Ctrl: exchange places with the shown page */
+    gboolean swap;  /* Shift: exchange places with the shown page */
     PaneRect shown; /* highlight, in notebook coordinates */
 } DropTarget;
 
@@ -181,11 +185,11 @@ static gint tab_bar_index(GtkNotebook* nb, GtkWidget* child, double x, PaneRect*
     return index;
 }
 
-static gboolean ctrl_held(void) {
+static gboolean shift_held(void) {
     GdkDisplay* display = gdk_display_get_default();
     GdkSeat* seat = display != NULL ? gdk_display_get_default_seat(display) : NULL;
     GdkDevice* keyboard = seat != NULL ? gdk_seat_get_keyboard(seat) : NULL;
-    return keyboard != NULL && (gdk_device_get_modifier_state(keyboard) & GDK_CONTROL_MASK) != 0;
+    return keyboard != NULL && (gdk_device_get_modifier_state(keyboard) & GDK_SHIFT_MASK) != 0;
 }
 
 static GtkNotebook* drag_source(GtkDropTarget* dest) {
@@ -228,7 +232,7 @@ static gboolean find_target(TabDrop* td, GtkNotebook* source, double x, double y
     }
 
     out->swap = FALSE;
-    if (td->swap != NULL && source != nb && ctrl_held() &&
+    if (td->swap != NULL && source != nb && shift_held() &&
         td->swap(nb, child, FALSE, td->data)) {
         out->zone = PANE_ZONE_CENTER;
         out->index = -1;
@@ -333,6 +337,9 @@ static void set_pages_targetable(TabDrop* td, gboolean targetable) {
 
 static GdkDragAction on_drop_motion(GtkDropTarget* dest, double x, double y, gpointer data) {
     TabDrop* td = data;
+    td->x = x;
+    td->y = y;
+    td->shift = shift_held();
     DropTarget t;
     if (!find_target(td, drag_source(dest), x, y, &t)) {
         indicator_hide(GTK_WIDGET(td->nb));
@@ -342,11 +349,38 @@ static GdkDragAction on_drop_motion(GtkDropTarget* dest, double x, double y, gpo
     return GDK_ACTION_MOVE;
 }
 
+/* GDK sends no motion when only a modifier changes: follow Shift while the
+ * tab is over nb so the highlight shows move or swap at once */
+static gboolean on_shift_poll(gpointer data) {
+    TabDrop* td = data;
+    if (td->dest == NULL) {
+        td->poll = 0;
+        return G_SOURCE_REMOVE;
+    }
+    if (shift_held() != td->shift) {
+        on_drop_motion(td->dest, td->x, td->y, td);
+    }
+    return G_SOURCE_CONTINUE;
+}
+
+static void poll_stop(TabDrop* td) {
+    td->dest = NULL;
+    if (td->poll != 0) {
+        g_source_remove(td->poll);
+        td->poll = 0;
+    }
+}
+
 static GdkDragAction on_drop_enter(GtkDropTarget* dest, double x, double y, gpointer data) {
     GtkNotebook* source = drag_source(dest);
     if (source != NULL) {
         watch_drag(dest, source, (TabDrop*)data);
         set_pages_targetable((TabDrop*)data, FALSE);
+        TabDrop* td = data;
+        td->dest = dest;
+        if (td->swap != NULL && td->poll == 0) {
+            td->poll = g_timeout_add(50, on_shift_poll, td);
+        }
     }
     return on_drop_motion(dest, x, y, data);
 }
@@ -354,6 +388,7 @@ static GdkDragAction on_drop_enter(GtkDropTarget* dest, double x, double y, gpoi
 static void on_drop_leave(GtkDropTarget* dest, gpointer data) {
     (void)dest;
     TabDrop* td = data;
+    poll_stop(td);
     set_pages_targetable(td, TRUE);
     indicator_hide(GTK_WIDGET(td->nb));
 }
@@ -361,6 +396,7 @@ static void on_drop_leave(GtkDropTarget* dest, gpointer data) {
 static gboolean on_drop(GtkDropTarget* dest, const GValue* value, double x, double y,
                         gpointer data) {
     TabDrop* td = data;
+    poll_stop(td);
     set_pages_targetable(td, TRUE);
     indicator_hide(GTK_WIDGET(td->nb));
 
