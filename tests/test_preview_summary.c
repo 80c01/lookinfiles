@@ -92,6 +92,14 @@ static void test_canvas(void) {
     g_assert_nonnull(strstr(s, "Text boxes:"));
     g_assert_nonnull(strstr(s, "## Board\n"));
     g_free(s);
+    CanvasDoc* doc = canvas_doc_load(dir, NULL);
+    canvas_doc_add_image(doc, 10, 10, 100, 100, "media/0001.png");
+    canvas_doc_save(doc, dir, NULL);
+    canvas_doc_free(doc);
+    s = preview_summary_container(note);
+    g_assert_nonnull(strstr(s, "Pictures: 1"));
+    g_assert_nonnull(strstr(s, "![](media/0001.png)"));
+    g_free(s);
     /* Its notebook lists it as a Canvas */
     s = preview_summary_container(nb);
     g_assert_nonnull(strstr(s, "Canvas"));

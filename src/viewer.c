@@ -31,6 +31,8 @@
 #include "preview_cache.h"
 #include "tree_nav.h"
 #include "focus_route.h"
+#include "image_utils.h"
+#include "note_types.h"
 
 /* Text shown from a Word document before it is cut (images not counted) */
 
@@ -708,11 +710,15 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
 /* Re-render the file currently shown in the preview (APP_EVENT_PREVIEW_STALE) */
 void viewer_reload_preview(AppData* app) {
     if (app->viewed_path == NULL) {
-        /* A folder: its overview again (git counts, theme); other rows
+        /* A folder or canvas note: its overview again (git counts, theme); other rows
          * without a file (summaries) have nothing to read again */
         ExplorerRow* row = tree_nav_selected(app);
-        if (row != NULL && explorer_row_is(row, "dir") && row->path[0] != '\0') {
-            dir_preview_show(app, row->name, row->path);
+        if (row != NULL && row->path[0] != '\0') {
+            if (note_type_from_filename(row->path) == NOTE_TYPE_CANVAS) {
+                on_selection_changed(app->tree, app);
+            } else if (explorer_row_is(row, "dir")) {
+                dir_preview_show(app, row->name, row->path);
+            }
         }
         return;
     }
@@ -721,6 +727,78 @@ void viewer_reload_preview(AppData* app) {
                           : NULL;
     load_file_content(app, app->viewed_name != NULL ? app->viewed_name : fallback, app->viewed_path);
     g_free(fallback);
+}
+
+static void render_canvas_summary(AppData* app, const gchar* summary, const gchar* canvas_dir) {
+    gtk_text_buffer_set_text(app->buffer, "", 0);
+    if (summary == NULL || summary[0] == '\0') {
+        return;
+    }
+    GtkTextIter iter;
+    gtk_text_buffer_get_start_iter(app->buffer, &iter);
+
+    const gchar* p = summary;
+    while (*p != '\0') {
+        const gchar* img = strstr(p, "![");
+        if (img == NULL) {
+            gtk_text_buffer_insert(app->buffer, &iter, p, -1);
+            break;
+        }
+
+        if (img > p) {
+            gtk_text_buffer_insert(app->buffer, &iter, p, (gint)(img - p));
+        }
+
+        const gchar* alt_end = strchr(img + 2, ']');
+        if (alt_end != NULL && alt_end[1] == '(') {
+            const gchar* url_end = strchr(alt_end + 2, ')');
+            if (url_end != NULL) {
+                gchar* raw_url = g_strndup(alt_end + 2, url_end - (alt_end + 2));
+                gchar* url = g_strstrip(raw_url);
+                if (url[0] == '<') {
+                    url++;
+                    gchar* closing = strchr(url, '>');
+                    if (closing != NULL) {
+                        *closing = '\0';
+                    }
+                }
+
+                gchar* img_path = NULL;
+                if (g_path_is_absolute(url)) {
+                    img_path = g_strdup(url);
+                } else if (canvas_dir != NULL) {
+                    img_path = g_build_filename(canvas_dir, url, NULL);
+                }
+
+                GdkPixbuf* pix = NULL;
+                if (img_path != NULL && !g_str_has_prefix(url, "data:") &&
+                    g_file_test(img_path, G_FILE_TEST_EXISTS)) {
+                    pix = pixbuf_from_file(img_path, FIT_IMAGE_MAX_WIDTH);
+                } else if (g_str_has_prefix(url, "data:")) {
+                    pix = pixbuf_from_data_uri(url, FIT_IMAGE_MAX_WIDTH);
+                }
+
+                if (pix != NULL) {
+                    GdkTexture* tex = texture_new_for_pixbuf(pix);
+                    GdkPaintable* fit = fit_image_new(tex, GTK_TEXT_VIEW(app->text_view));
+                    gtk_text_buffer_insert_paintable(app->buffer, &iter, fit);
+                    g_object_unref(fit);
+                    g_object_unref(tex);
+                    g_object_unref(pix);
+                } else {
+                    gtk_text_buffer_insert(app->buffer, &iter, img, (gint)((url_end + 1) - img));
+                }
+
+                g_free(img_path);
+                g_free(raw_url);
+                p = url_end + 1;
+                continue;
+            }
+        }
+
+        gtk_text_buffer_insert(app->buffer, &iter, img, 2);
+        p = img + 2;
+    }
 }
 
 
@@ -786,7 +864,11 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
             gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
             set_view_text_padding(app->text_view);
             set_view_monospace(app->text_view, TRUE); /* summary columns are space-aligned */
-            gtk_text_buffer_set_text(app->buffer, summary, -1);
+            if (full != NULL && note_type_from_filename(full) == NOTE_TYPE_CANVAS) {
+                render_canvas_summary(app, summary, full);
+            } else {
+                gtk_text_buffer_set_text(app->buffer, summary, -1);
+            }
         }
         g_free(summary);
         g_free(app->viewed_path);
