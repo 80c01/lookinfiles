@@ -286,13 +286,14 @@ APP_ID = io.github._80c01.LookinFiles
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
 DATADIR = $(PREFIX)/share
-INSTALLED_DATA = applications/$(APP_ID).desktop metainfo/$(APP_ID).metainfo.xml icons/hicolor/scalable/apps/$(APP_ID).svg
+INSTALLED_DATA = applications/$(APP_ID).desktop metainfo/$(APP_ID).metainfo.xml icons/hicolor/scalable/apps/$(APP_ID).svg icons/hicolor/256x256/apps/$(APP_ID).png
 
 install: $(TARGET)
 	install -Dm755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
 	install -Dm644 data/$(APP_ID).desktop $(DESTDIR)$(DATADIR)/applications/$(APP_ID).desktop
 	install -Dm644 data/$(APP_ID).metainfo.xml $(DESTDIR)$(DATADIR)/metainfo/$(APP_ID).metainfo.xml
 	install -Dm644 data/icons/hicolor/scalable/apps/$(APP_ID).svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/$(APP_ID).svg
+	install -Dm644 data/icons/hicolor/256x256/apps/$(APP_ID).png $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps/$(APP_ID).png
 
 # Source archive of the last commit (uncommitted changes are left out)
 DIST = $(TARGET)-$(VERSION)

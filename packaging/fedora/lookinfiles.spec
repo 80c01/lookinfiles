@@ -49,6 +49,7 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/io.github
 %{_datadir}/applications/io.github._80c01.LookinFiles.desktop
 %{_datadir}/metainfo/io.github._80c01.LookinFiles.metainfo.xml
 %{_datadir}/icons/hicolor/scalable/apps/io.github._80c01.LookinFiles.svg
+%{_datadir}/icons/hicolor/256x256/apps/io.github._80c01.LookinFiles.png
 
 %changelog
 * Mon Nov 03 2026 80c01 <noreply@github.com> - 0.1.0-1
