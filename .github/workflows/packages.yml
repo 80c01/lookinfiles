@@ -83,6 +83,7 @@ jobs:
 
       - name: Build source tarball and RPM
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           rpmdev-setuptree
           make dist
           VERSION=$(sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h)
