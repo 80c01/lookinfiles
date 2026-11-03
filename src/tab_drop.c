@@ -64,6 +64,15 @@ static GtkWidget* indicator_for(GtkWidget* nb, GtkWidget** overlay_out) {
     if (ind == NULL) {
         ind = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
         gtk_widget_add_css_class(ind, "tab-drop-indicator");
+        gtk_widget_set_halign(ind, GTK_ALIGN_FILL);
+        GtkWidget* label = gtk_label_new("\u21C4  Swap places");
+        gtk_widget_add_css_class(label, "tab-drop-swap-label");
+        gtk_widget_set_hexpand(label, TRUE);
+        gtk_widget_set_halign(label, GTK_ALIGN_CENTER);
+        gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
+        gtk_widget_set_visible(label, FALSE);
+        gtk_box_append(GTK_BOX(ind), label);
+        g_object_set_data(G_OBJECT(ind), "swap-label", label);
         gtk_widget_set_can_target(ind, FALSE);
         gtk_widget_set_can_focus(ind, FALSE);
         gtk_widget_set_visible(ind, FALSE);
@@ -84,7 +93,7 @@ static void indicator_hide(GtkWidget* nb) {
     }
 }
 
-static void indicator_show(GtkWidget* nb, const PaneRect* r) {
+static void indicator_show(GtkWidget* nb, const PaneRect* r, gboolean swap) {
     GtkWidget* overlay = NULL;
     GtkWidget* ind = indicator_for(nb, &overlay);
     if (ind == NULL) {
@@ -95,6 +104,12 @@ static void indicator_show(GtkWidget* nb, const PaneRect* r) {
         gtk_widget_set_visible(ind, FALSE);
         return;
     }
+    if (swap) {
+        gtk_widget_add_css_class(ind, "swap");
+    } else {
+        gtk_widget_remove_css_class(ind, "swap");
+    }
+    gtk_widget_set_visible(g_object_get_data(G_OBJECT(ind), "swap-label"), swap);
     PaneRect* stored = g_object_get_data(G_OBJECT(ind), "rect");
     *stored = (PaneRect){p.x, p.y, r->width, r->height};
     gtk_widget_set_visible(ind, TRUE);
@@ -323,7 +338,7 @@ static GdkDragAction on_drop_motion(GtkDropTarget* dest, double x, double y, gpo
         indicator_hide(GTK_WIDGET(td->nb));
         return 0;
     }
-    indicator_show(GTK_WIDGET(td->nb), &t.shown);
+    indicator_show(GTK_WIDGET(td->nb), &t.shown, t.swap);
     return GDK_ACTION_MOVE;
 }
 
