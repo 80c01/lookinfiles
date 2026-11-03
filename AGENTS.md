@@ -98,6 +98,7 @@ layer or below (`tools/check_layers.sh` enforces it):
 - **Always commit**: once a change builds with `make`, commit it right away,
   without waiting to be asked.
 - One accepted change = one commit; short imperative subject, no body
-  (e.g. `Add Ctrl-F / Ctrl-B paging in left panel`).
+  other than a `Co-Authored-By:` trailer identifying the AI assistant model
+  (e.g. `Co-Authored-By: Gemini 3.8 Flash <noreply@google.com>`).
 - `git add` only files you changed on purpose. Amend only your own
   immediately-prior commit.
