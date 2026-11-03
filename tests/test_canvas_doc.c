@@ -82,15 +82,17 @@ static void test_parse_errors(void) {
 static void test_shape_round_trip(void) {
     g_autoptr(CanvasDoc) doc = canvas_doc_new();
     CanvasBlock* s = canvas_doc_add_shape(doc, 50, 60, 120, 80, CANVAS_SHAPE_DIAMOND);
-    s->shape_fill = CANVAS_FILL_SKETCH;
-    s->shape_stroke_color = 2;
-    s->shape_fill_color = 1;
-    s->shape_stroke_width = 3;
-    s->shape_seed = 12345;
+    s->fill_style = CANVAS_FILL_SKETCH;
+    g_free(s->stroke_color);
+    s->stroke_color = g_strdup("accent");
+    s->stroke_width = 3;
+    s->rough = TRUE;
 
     g_autofree gchar* xml = canvas_doc_to_xml(doc);
     g_assert_nonnull(strstr(xml, "type=\"diamond\""));
     g_assert_nonnull(strstr(xml, "fill=\"sketch\""));
+    g_assert_nonnull(strstr(xml, "stroke=\"accent\""));
+    g_assert_nonnull(strstr(xml, "stroke_width=\"3\""));
 
     g_autoptr(GError) error = NULL;
     g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
@@ -99,11 +101,10 @@ static void test_shape_round_trip(void) {
     CanvasBlock* bs = g_ptr_array_index(back->blocks, 0);
     g_assert_cmpint(bs->kind, ==, CANVAS_BLOCK_SHAPE);
     g_assert_cmpint(bs->shape_type, ==, CANVAS_SHAPE_DIAMOND);
-    g_assert_cmpint(bs->shape_fill, ==, CANVAS_FILL_SKETCH);
-    g_assert_cmpint(bs->shape_stroke_color, ==, 2);
-    g_assert_cmpint(bs->shape_fill_color, ==, 1);
-    g_assert_cmpint(bs->shape_stroke_width, ==, 3);
-    g_assert_cmpuint(bs->shape_seed, ==, 12345);
+    g_assert_cmpint(bs->fill_style, ==, CANVAS_FILL_SKETCH);
+    g_assert_cmpstr(bs->stroke_color, ==, "accent");
+    g_assert_cmpint(bs->stroke_width, ==, 3);
+    g_assert_true(bs->rough);
 
     g_autofree gchar* xml2 = canvas_doc_to_xml(back);
     g_assert_cmpstr(xml, ==, xml2);
@@ -111,7 +112,7 @@ static void test_shape_round_trip(void) {
 
 static void test_table_round_trip(void) {
     g_autoptr(CanvasDoc) doc = canvas_doc_new();
-    CanvasBlock* t = canvas_doc_add_table(doc, 10, 20, 300, 150, 2, 2);
+    CanvasBlock* t = canvas_doc_add_table(doc, 10, 20, 2, 2);
     canvas_table_set_cell(t, 0, 0, "Header A");
     canvas_table_set_cell(t, 0, 1, "Header B");
     canvas_table_set_cell(t, 1, 0, "Cell 1");
@@ -121,7 +122,7 @@ static void test_table_round_trip(void) {
     g_assert_cmpstr(canvas_table_get_cell(t, 1, 1), ==, "Cell 2");
 
     g_autofree gchar* xml = canvas_doc_to_xml(doc);
-    g_assert_nonnull(strstr(xml, "<cell r=\"0\" c=\"0\">Header A</cell>"));
+    g_assert_nonnull(strstr(xml, "<cell row=\"0\" col=\"0\">Header A</cell>"));
 
     g_autoptr(GError) error = NULL;
     g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
@@ -153,22 +154,22 @@ static void test_table_round_trip(void) {
 static void test_image_crop_round_trip(void) {
     g_autoptr(CanvasDoc) doc = canvas_doc_new();
     CanvasBlock* img = canvas_doc_add_image(doc, 0, 0, 100, 100, "media/0001.png");
-    img->crop_x = 10;
-    img->crop_y = 20;
-    img->crop_w = 50;
-    img->crop_h = 40;
+    img->crop_x = 0.1;
+    img->crop_y = 0.2;
+    img->crop_w = 0.5;
+    img->crop_h = 0.4;
 
     g_autofree gchar* xml = canvas_doc_to_xml(doc);
-    g_assert_nonnull(strstr(xml, "crop=\"10,20,50,40\""));
+    g_assert_nonnull(strstr(xml, "crop=\"0.1000,0.2000,0.5000,0.4000\""));
 
     g_autoptr(GError) error = NULL;
     g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
     g_assert_no_error(error);
     CanvasBlock* b = g_ptr_array_index(back->blocks, 0);
-    g_assert_cmpint(b->crop_x, ==, 10);
-    g_assert_cmpint(b->crop_y, ==, 20);
-    g_assert_cmpint(b->crop_w, ==, 50);
-    g_assert_cmpint(b->crop_h, ==, 40);
+    g_assert_cmpfloat_with_epsilon(b->crop_x, 0.1, 0.001);
+    g_assert_cmpfloat_with_epsilon(b->crop_y, 0.2, 0.001);
+    g_assert_cmpfloat_with_epsilon(b->crop_w, 0.5, 0.001);
+    g_assert_cmpfloat_with_epsilon(b->crop_h, 0.4, 0.001);
 }
 
 static void test_raise_remove(void) {
@@ -270,7 +271,7 @@ static void test_export_markdown(void) {
     g_assert_cmpstr(first, ==, expected);
     g_autofree gchar* md = NULL;
     g_assert_true(g_file_get_contents(first, &md, NULL, NULL));
-    g_assert_cmpstr(md, ==, "## Plan\n\n![](<My Plan.canvas/media/0001.png>)\n");
+    g_assert_cmpstr(md, ==, "# Plan\n\n![](<My Plan.canvas/media/0001.png>)\n");
     /* The name is taken: a numbered one */
     g_autofree gchar* second = canvas_doc_export_markdown(dir, NULL);
     g_assert_true(g_str_has_suffix(second, "/My Plan (2).md"));
@@ -294,7 +295,7 @@ static void test_markdown(void) {
     g_autofree gchar* md = canvas_doc_to_markdown(doc, "My Note.canvas/");
     g_assert_cmpstr(md, ==,
                     "left\n\n"
-                    "## Title\nsome ***bold*** and `code`\n\n"
+                    "# Title\nsome ***bold*** and `code`\n\n"
                     "![](<My Note.canvas/media/0001.png>)\n");
     g_autofree gchar* plain = canvas_doc_to_markdown(doc, NULL);
     g_assert_nonnull(strstr(plain, "![](media/0001.png)"));

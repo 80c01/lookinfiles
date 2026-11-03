@@ -14,28 +14,29 @@ static void test_snap_coord(void) {
 }
 
 static void test_snap_box(void) {
-    CanvasBox targets[] = {
+    CanvasRect targets[] = {
         {100, 100, 50, 50},
         {300, 200, 100, 100},
     };
-    gint out_x = 0, out_y = 0;
-    gboolean guide_x = FALSE, guide_y = FALSE;
+    gint x = 102, y = 10;
+    CanvasGuides guides;
 
     /* Near target 0's left edge (100) */
-    canvas_snap_box(102, 10, 50, 50, targets, 2, 0, &out_x, &out_y, &guide_x, &guide_y);
-    g_assert_cmpint(out_x, ==, 100);
-    g_assert_true(guide_x);
+    canvas_snap_box(&x, &y, 50, 50, targets, 2, FALSE, 0, &guides);
+    g_assert_cmpint(x, ==, 100);
+    g_assert_true(guides.active_x);
 
     /* Grid snap fallback when no guide */
-    canvas_snap_box(17, 33, 50, 50, targets, 2, 16, &out_x, &out_y, &guide_x, &guide_y);
-    g_assert_cmpint(out_x, ==, 16);
-    g_assert_cmpint(out_y, ==, 32);
-    g_assert_false(guide_x);
-    g_assert_false(guide_y);
+    x = 17; y = 33;
+    canvas_snap_box(&x, &y, 50, 50, targets, 2, TRUE, 16, &guides);
+    g_assert_cmpint(x, ==, 16);
+    g_assert_cmpint(y, ==, 32);
+    g_assert_false(guides.active_x);
+    g_assert_false(guides.active_y);
 }
 
 static void test_align_boxes(void) {
-    CanvasBox boxes[] = {
+    CanvasRect boxes[] = {
         {10, 20, 100, 50},
         {60, 80, 80, 40},
         {30, 150, 50, 30},
@@ -61,10 +62,10 @@ static void test_align_boxes(void) {
      * Total span = 120 - 0 = 120. Total width = 60. Remaining space = 60.
      * Between 3 boxes, 2 gaps of 30.
      * Box 0 at 0, box 2 at 50, box 1 at 100. */
-    canvas_align_boxes(boxes, 3, CANVAS_ALIGN_DISTRIBUTE_H);
+    canvas_align_boxes(boxes, 3, CANVAS_DISTRIBUTE_H);
     g_assert_cmpint(boxes[0].x, ==, 0);
-    g_assert_cmpint(boxes[2].x, ==, 50);
-    g_assert_cmpint(boxes[1].x, ==, 100);
+    g_assert_cmpint(boxes[1].x, ==, 50);
+    g_assert_cmpint(boxes[2].x, ==, 100);
 }
 
 int main(int argc, char** argv) {

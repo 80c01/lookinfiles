@@ -37,6 +37,7 @@ const gchar* text_tags_resolve(const gchar* s) {
     }
     if (strcmp(s, "@font_code") == 0) return fonts_family(FONT_CODE);
     if (strcmp(s, "@font_ui") == 0) return fonts_family(FONT_UI);
+    if (strcmp(s, "@font_serif") == 0) return "serif";
     PaletteRole role;
     if (palette_lookup(s + 1, &role)) {
         return palette_color(role);
