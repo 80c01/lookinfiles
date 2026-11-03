@@ -5,7 +5,7 @@ Summary:        Fast, keyboard-driven GTK 4 file explorer with preview panel, ed
 
 License:        MIT
 URL:            https://github.com/80c01/lookinfiles
-Source0:        %{url}/archive/refs/tags/v%{version}.tar.gz
+Source0:        %{url}/archive/refs/tags/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:  gcc
 BuildRequires:  make
@@ -52,5 +52,5 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/io.github
 %{_datadir}/icons/hicolor/256x256/apps/io.github._80c01.LookinFiles.png
 
 %changelog
-* Mon Nov 03 2026 80c01 <noreply@github.com> - 0.1.0-1
+* Tue Nov 03 2026 80c01 <noreply@github.com> - 0.1.0-1
 - Initial package release
