@@ -67,10 +67,11 @@ typedef enum {
     FILE_KIND_WASM,      /* WebAssembly binary (.wasm) */
     FILE_KIND_TORRENT,   /* BitTorrent metainfo (.torrent) */
     FILE_KIND_PYC,       /* Python bytecode (.pyc, .pyo) */
-    FILE_KIND_TFM        /* TeX font metrics (.tfm, .vf, .pfb); keep last (FILE_KIND_LAST) */
+    FILE_KIND_TFM,       /* TeX font metrics (.tfm, .vf, .pfb) */
+    FILE_KIND_PCAP       /* Network packet capture (.pcap, .pcapng, .cap); keep last (FILE_KIND_LAST) */
 } FileKind;
 
-#define FILE_KIND_LAST FILE_KIND_TFM
+#define FILE_KIND_LAST FILE_KIND_PCAP
 
 /* Number of leading bytes file_kind_detect() needs */
 #define FILE_SNIFF_BYTES 4096

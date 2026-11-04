@@ -188,6 +188,7 @@ every common format to L3 and never leave one below L1.
 | BitTorrent `.torrent`: name, total size, piece size, files table, trackers | L2 | `torrent_info` |
 | Python bytecode `.pyc` / `.pyo`: version, PEP 552 flags, functions, symbols | L2 | `pyc_info` |
 | TeX font metrics `.tfm`, `.vf`, `.pfb`: family, scheme, design size, parameters | L2 | `tfm_info` |
+| Packet captures `.pcap` / `.pcapng`: link type, snaplen, packet timeline, protocols | L2 | `pcap_info` |
 | ELF executables / libraries / objects | L1 | `elf_info` |
 | Directories | L2 | `dir_preview`, `dir_summary` |
 | Any other binary | L0 | `hex_dump` |

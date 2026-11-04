@@ -135,6 +135,11 @@ static void test_detect_binary(void) {
     g_assert_cmpint(DETECT("cmr10.tfm", "\0\x25\0\x12\0\x41\0\x42\0\x02\0\x01\0\x01\0\0\0\0\0\0\0\0\0\x07"), ==, FILE_KIND_TFM);
     g_assert_cmpint(DETECT("virtual", "\xF7\xCA\0\0\0\0\0\0\0\0\0"), ==, FILE_KIND_TFM);
     g_assert_cmpint(DETECT("postscript", "\x80\x01\x10\0\0\0"), ==, FILE_KIND_TFM);
+    g_assert_cmpint(file_kind_from_name("traffic.pcap"), ==, FILE_KIND_PCAP);
+    g_assert_cmpint(file_kind_from_name("capture.pcapng"), ==, FILE_KIND_PCAP);
+    g_assert_cmpint(DETECT("traffic.pcap", "\xA1\xB2\xC3\xD4\0\x02\0\x04\0\0\0\0"), ==, FILE_KIND_PCAP);
+    g_assert_cmpint(DETECT("dump", "\xD4\xC3\xB2\xA1\0\x02\0\x04\0\0\0\0"), ==, FILE_KIND_PCAP);
+    g_assert_cmpint(DETECT("nextgen", "\x0A\x0D\x0D\x0A\0\0\0\x1C\x1A\x2B\x3C\x4D"), ==, FILE_KIND_PCAP);
     /* Unknown binary signature: trust a media name (TGA has no magic number) */
     g_assert_cmpint(DETECT("pic.tga", "\0\0\x02\0\0\0\0\0"), ==, FILE_KIND_IMAGE);
     /* ZIP archives: Word documents by name or by their first entries */

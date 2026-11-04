@@ -33,6 +33,7 @@
 #include "spreadsheet.h"
 #include "text_encoding.h"
 #include "sqlite_view.h"
+#include "pcap_info.h"
 #include "pyc_info.h"
 #include "tfm_info.h"
 #include "torrent_info.h"
@@ -118,8 +119,7 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "%s %s × %s %s · %s-separated%s\n", rows,
                         body_rows == 1 ? "row" : "rows", cols, data->n_cols == 1 ? "column" : "columns",
                         csv_separator_name(sep), in->text_truncated ? " (start of the file)" : "");
-    g_free(cols);
-    g_free(rows);
+    g_free(cols); g_free(rows);
     note_truncated_text(doc, in);
     preview_doc_append_len(doc, "\n", 1);
 
@@ -645,14 +645,11 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
 
 static PreviewDoc* build_rtf(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
-    /* Pictures make RTF files large: read the whole file (bounded) */
     gchar* whole = NULL;
     gsize len = in->text_len;
     const gchar* text = in->text;
     if (in->text_truncated && in->path != NULL && in->size <= 32 * 1024 * 1024) {
-        if (!g_file_get_contents(in->path, &whole, &len, error)) {
-            return NULL;
-        }
+        if (!g_file_get_contents(in->path, &whole, &len, error)) return NULL;
         text = whole;
     }
     gchar* html = rtf_to_html(text, len, PREVIEW_FORMAT_MAX_TEXT, error);
@@ -1020,8 +1017,7 @@ static PreviewDoc* build_binary_doc(const PreviewInput* in, const gchar* label, 
     gchar* size = preview_format_size(in->size);
     gchar* subtitle = g_strdup_printf("%s · %s", label, size);
     preview_doc_title(doc, in->name, subtitle);
-    g_free(subtitle);
-    g_free(size);
+    g_free(subtitle); g_free(size);
     append_doc(doc, body);
     return doc;
 }
@@ -1040,6 +1036,9 @@ static PreviewDoc* build_pyc(const PreviewInput* in, GCancellable* c, GError** e
 }
 static PreviewDoc* build_tfm(const PreviewInput* in, GCancellable* c, GError** e) {
     (void)c; return build_binary_doc(in, "TeX font metric", 16 * 1024 * 1024, tfm_info_append, e);
+}
+static PreviewDoc* build_pcap(const PreviewInput* in, GCancellable* c, GError** e) {
+    (void)c; return build_binary_doc(in, "Packet capture", 32 * 1024 * 1024, pcap_info_append, e);
 }
 
 /* --- Registry --- */
@@ -1073,6 +1072,7 @@ static PreviewBuildFunc builder_for(FileKind kind) {
     case FILE_KIND_TORRENT:      return build_torrent;
     case FILE_KIND_PYC:          return build_pyc;
     case FILE_KIND_TFM:          return build_tfm;
+    case FILE_KIND_PCAP:         return build_pcap;
     default:                     return NULL;
     }
 }

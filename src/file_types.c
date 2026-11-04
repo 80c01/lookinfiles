@@ -245,6 +245,9 @@ static const struct {
     { "vf", FILE_KIND_TFM },
     { "ofm", FILE_KIND_TFM },
     { "pfb", FILE_KIND_TFM },
+    { "pcap", FILE_KIND_PCAP },
+    { "pcapng", FILE_KIND_PCAP },
+    { "cap", FILE_KIND_PCAP },
 };
 
 /* Manual page section suffix: "1".."9", optionally followed by letters ("3pm", "1ssl") */
@@ -387,6 +390,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_TORRENT:      return "BitTorrent";
     case FILE_KIND_PYC:          return "Python Bytecode";
     case FILE_KIND_TFM:          return "TeX Font Metric";
+    case FILE_KIND_PCAP:         return "Packet Capture";
     }
     return NULL;
 }
@@ -548,6 +552,13 @@ static FileKind detect_binary_magic(const gchar* name, const guchar* head, gsize
         if (lf >= 6 + lh && ec + 1 >= bc) {
             return FILE_KIND_TFM; /* TeX font metric (.tfm) */
         }
+    }
+    if (HAS(0, "\xA1\xB2\xC3\xD4") || HAS(0, "\xD4\xC3\xB2\xA1") ||
+        HAS(0, "\xA1\xB2\x3C\x4D") || HAS(0, "\x4D\x3C\xB2\xA1")) {
+        return FILE_KIND_PCAP; /* libpcap capture */
+    }
+    if (HAS(0, "\x0A\x0D\x0D\x0A") && (by_name == FILE_KIND_PCAP || len >= 12)) {
+        return FILE_KIND_PCAP; /* pcapng capture */
     }
     if (HAS(0, "OTTO") || HAS(0, "ttcf") || HAS(0, "wOFF") || HAS(0, "wOF2") ||
         ((HAS(0, "\0\1\0\0") || HAS(0, "true")) && by_name == FILE_KIND_FONT)) {
