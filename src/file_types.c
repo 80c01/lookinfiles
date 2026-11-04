@@ -239,6 +239,8 @@ static const struct {
     { "class", FILE_KIND_CLASS },
     { "wasm", FILE_KIND_WASM },
     { "torrent", FILE_KIND_TORRENT },
+    { "pyc", FILE_KIND_PYC },
+    { "pyo", FILE_KIND_PYC },
 };
 
 /* Manual page section suffix: "1".."9", optionally followed by letters ("3pm", "1ssl") */
@@ -379,6 +381,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_CLASS:        return "Java Class";
     case FILE_KIND_WASM:         return "WebAssembly";
     case FILE_KIND_TORRENT:      return "BitTorrent";
+    case FILE_KIND_PYC:          return "Python Bytecode";
     }
     return NULL;
 }
@@ -519,6 +522,12 @@ static FileKind detect_binary_magic(const gchar* name, const guchar* head, gsize
     }
     if (HAS(0, "d") && (by_name == FILE_KIND_TORRENT || (find_ci(head, len, "8:announce") != NULL || find_ci(head, len, "4:info") != NULL))) {
         return FILE_KIND_TORRENT; /* BitTorrent metainfo */
+    }
+    if (len >= 4 && head[2] == '\r' && head[3] == '\n') {
+        guint16 pym = (guint16)(head[0] | (head[1] << 8));
+        if (by_name == FILE_KIND_PYC || (pym >= 3000 && pym <= 4000) || pym == 62211) {
+            return FILE_KIND_PYC; /* Python bytecode */
+        }
     }
     if (HAS(0, "OTTO") || HAS(0, "ttcf") || HAS(0, "wOFF") || HAS(0, "wOF2") ||
         ((HAS(0, "\0\1\0\0") || HAS(0, "true")) && by_name == FILE_KIND_FONT)) {

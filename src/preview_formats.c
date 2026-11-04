@@ -33,6 +33,7 @@
 #include "spreadsheet.h"
 #include "text_encoding.h"
 #include "sqlite_view.h"
+#include "pyc_info.h"
 #include "torrent_info.h"
 #include "wasm_info.h"
 
@@ -384,17 +385,14 @@ static PreviewDoc* build_certificate(const PreviewInput* in, GCancellable* cance
     gboolean ok = cert_view_append(body, (const guchar*)data, len, g_get_real_time() / G_USEC_PER_SEC,
                                    error);
     g_free(data);
-    if (!ok) {
-        return NULL;
-    }
+    if (!ok) return NULL;
     PreviewDoc* doc = preview_doc_new();
     doc->monospace = TRUE;
     doc->wrap = FALSE;
     gchar* size = preview_format_size(in->size);
     gchar* subtitle = g_strdup_printf("%s · %s", in->text != NULL ? "PEM" : "DER", size);
     preview_doc_title(doc, in->name, subtitle);
-    g_free(subtitle);
-    g_free(size);
+    g_free(subtitle); g_free(size);
     append_doc(doc, body);
     return doc;
 }
@@ -956,7 +954,6 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
         return doc;
     }
     if (data != NULL && full_len >= 16 && memcmp(data, "// <!-- <mdb:mork", 17) == 0) {
-        /* Thunderbird index of a mailbox */
         g_mapped_file_unref(map);
         PreviewDoc* doc = preview_doc_new();
         gchar* box = g_strndup(in->name, strlen(in->name) > 4 ? strlen(in->name) - 4 : strlen(in->name));
@@ -964,9 +961,7 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
         gchar* size = preview_format_size(in->size);
         preview_doc_title(doc, in->name, size);
         preview_doc_note(doc, line);
-        g_free(size);
-        g_free(line);
-        g_free(box);
+        g_free(size); g_free(line); g_free(box);
         return doc;
     }
     gsize len = MIN(full_len, (gsize)MAIL_MAX_FILE);
@@ -1035,13 +1030,14 @@ static PreviewDoc* build_binary_doc(const PreviewInput* in, const gchar* label, 
 static PreviewDoc* build_class(const PreviewInput* in, GCancellable* c, GError** e) {
     (void)c; return build_binary_doc(in, "Java class file", 16 * 1024 * 1024, class_info_append, e);
 }
-
 static PreviewDoc* build_wasm(const PreviewInput* in, GCancellable* c, GError** e) {
     (void)c; return build_binary_doc(in, "WebAssembly binary", 32 * 1024 * 1024, wasm_info_append, e);
 }
-
 static PreviewDoc* build_torrent(const PreviewInput* in, GCancellable* c, GError** e) {
     (void)c; return build_binary_doc(in, "BitTorrent metainfo", 16 * 1024 * 1024, torrent_info_append, e);
+}
+static PreviewDoc* build_pyc(const PreviewInput* in, GCancellable* c, GError** e) {
+    (void)c; return build_binary_doc(in, "Python bytecode", 16 * 1024 * 1024, pyc_info_append, e);
 }
 
 /* --- Registry --- */
@@ -1073,6 +1069,7 @@ static PreviewBuildFunc builder_for(FileKind kind) {
     case FILE_KIND_CLASS:        return build_class;
     case FILE_KIND_WASM:         return build_wasm;
     case FILE_KIND_TORRENT:      return build_torrent;
+    case FILE_KIND_PYC:          return build_pyc;
     default:                     return NULL;
     }
 }
