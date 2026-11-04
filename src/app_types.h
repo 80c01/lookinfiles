@@ -354,6 +354,7 @@ typedef struct {
     GtkWidget* sidebar_games_toolbar; /* mini action bar for games */
     GtkWidget* sidebar_files_hidden_btn; /* toggle hidden button in files action bar */
     gboolean game_mode_unlocked;      /* unlocked via secret sequence in help panel */
+    gboolean game_mode_just_unlocked; /* TRUE right after unlocking until next key, consumes trailing Enter */
     GList* remotes;                   /* list of RemoteMachine* */
     GList* remote_folders;            /* list of RemoteFolder* (remote view folders) */
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */

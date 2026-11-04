@@ -293,6 +293,16 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
     (void)controller;
     (void)keycode;
     AppData* app = (AppData*)data;
+
+    /* Consume trailing Return/Space immediately following secret unlock */
+    if (app->game_mode_just_unlocked) {
+        app->game_mode_just_unlocked = FALSE;
+        if (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter ||
+            keyval == GDK_KEY_ISO_Enter || keyval == GDK_KEY_space) {
+            return TRUE;
+        }
+    }
+
     NavPrefix prefix = (NavPrefix)app->nav_prefix;
     NavPrefix next = NAV_PREFIX_NONE;
     NavAction action = nav_keys_lookup(app_nav_style(app), prefix, keyval, state, &next);

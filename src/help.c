@@ -339,6 +339,8 @@ void toggle_help_panel(AppData* app) {
         } else if (app->viewer_box != NULL && gtk_widget_get_visible(app->viewer_box)) {
             gtk_widget_grab_focus(app->text_view);
         }
+    } else {
+        gtk_widget_grab_focus(app->help_window);
     }
 }
 
@@ -352,14 +354,12 @@ gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval,
                            guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
     (void)keycode;
-    (void)state;
     AppData* app = (AppData*)data;
     if (keyval == GDK_KEY_question || keyval == GDK_KEY_Escape) {
         toggle_help_panel(app);
         return TRUE;
     }
-    if (games_check_help_key(app, keyval)) {
-        toggle_help_panel(app);
+    if (games_check_help_key(app, keyval, state)) {
         return TRUE;
     }
     return FALSE;
@@ -370,6 +370,7 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
     (void)parent;
     GtkWidget* panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(panel, "help-panel");
+    gtk_widget_set_focusable(panel, TRUE);
     gtk_widget_set_vexpand(panel, TRUE);
     gtk_widget_set_hexpand(panel, FALSE);
     gtk_widget_set_size_request(panel, 400, -1);
@@ -408,6 +409,7 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
     gtk_box_append(GTK_BOX(panel), scroll);
 
     GtkEventController* key_ctrl = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(key_ctrl, GTK_PHASE_CAPTURE);
     g_signal_connect(key_ctrl, "key-pressed",
                      G_CALLBACK(on_help_key_press), app);
     gtk_widget_add_controller(panel, key_ctrl);

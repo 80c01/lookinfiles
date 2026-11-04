@@ -3,6 +3,7 @@
 #include "app_events.h"
 #include "browser.h"
 #include "focus_route.h"
+#include "games.h"
 #include "help.h"
 #include "icons.h"
 #include "markdown.h"
@@ -268,6 +269,9 @@ static gboolean on_key(GtkEventControllerKey* controller, guint keyval, guint ke
     (void)keycode;
     HelpGuide* hg = data;
     AppData* app = hg->app;
+    if (games_check_help_key(app, keyval, state)) {
+        return TRUE;
+    }
     NavPrefix next = NAV_PREFIX_NONE;
     NavAction action = nav_keys_lookup(app_nav_style(app), (NavPrefix)app->nav_prefix, keyval, state, &next);
     app->nav_prefix = next;

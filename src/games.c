@@ -22,32 +22,50 @@ static gint s_history_len = 0;
 void games_init(AppData* app) {
     if (app == NULL) return;
     app->game_mode_unlocked = FALSE;
+    app->game_mode_just_unlocked = FALSE;
 }
 
-/* Check keyval in help panel for the Konami / easter egg sequence:
- * Up Up Down Down Left Right Left Right A B Return (or B A Return) */
-gboolean games_check_help_key(AppData* app, guint keyval) {
+/* Check keyval in help panel or user guide for the Konami / easter egg sequence:
+ * Up Up Down Down Left Right Left Right A B Return (or B A Return, or without Return) */
+gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state) {
     if (app == NULL) return FALSE;
 
+    /* Ignore when Ctrl, Alt or Super are held */
+    if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SUPER_MASK)) != 0) {
+        s_history_len = 0;
+        s_history[0] = '\0';
+        return FALSE;
+    }
+
+    /* Standalone modifier presses should not reset history */
+    if (keyval == GDK_KEY_Shift_L || keyval == GDK_KEY_Shift_R ||
+        keyval == GDK_KEY_Control_L || keyval == GDK_KEY_Control_R ||
+        keyval == GDK_KEY_Alt_L || keyval == GDK_KEY_Alt_R ||
+        keyval == GDK_KEY_Super_L || keyval == GDK_KEY_Super_R ||
+        keyval == GDK_KEY_Caps_Lock || keyval == GDK_KEY_Num_Lock) {
+        return FALSE;
+    }
+
     gchar token = 'X';
-    if (keyval == GDK_KEY_Up || keyval == GDK_KEY_KP_Up) {
+    if (keyval == GDK_KEY_Up || keyval == GDK_KEY_KP_Up || keyval == GDK_KEY_k || keyval == GDK_KEY_K) {
         token = 'U';
-    } else if (keyval == GDK_KEY_Down || keyval == GDK_KEY_KP_Down) {
+    } else if (keyval == GDK_KEY_Down || keyval == GDK_KEY_KP_Down || keyval == GDK_KEY_j || keyval == GDK_KEY_J) {
         token = 'D';
-    } else if (keyval == GDK_KEY_Left || keyval == GDK_KEY_KP_Left) {
+    } else if (keyval == GDK_KEY_Left || keyval == GDK_KEY_KP_Left || keyval == GDK_KEY_h || keyval == GDK_KEY_H) {
         token = 'L';
-    } else if (keyval == GDK_KEY_Right || keyval == GDK_KEY_KP_Right) {
+    } else if (keyval == GDK_KEY_Right || keyval == GDK_KEY_KP_Right || keyval == GDK_KEY_l || keyval == GDK_KEY_L) {
         token = 'R';
     } else if (keyval == GDK_KEY_a || keyval == GDK_KEY_A) {
         token = 'A';
     } else if (keyval == GDK_KEY_b || keyval == GDK_KEY_B) {
         token = 'B';
-    } else if (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter || keyval == GDK_KEY_ISO_Enter) {
+    } else if (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter || keyval == GDK_KEY_ISO_Enter || keyval == GDK_KEY_space) {
         token = 'E';
     }
 
     if (token == 'X') {
         s_history_len = 0;
+        s_history[0] = '\0';
         return FALSE;
     }
 
@@ -59,29 +77,37 @@ gboolean games_check_help_key(AppData* app, guint keyval) {
     s_history[s_history_len] = '\0';
 
     gboolean matched = FALSE;
-    if (s_history_len >= 11) {
-        const gchar* tail = s_history + (s_history_len - 11);
-        /* User request: "up up bottom bottom left right left right a b return" */
-        if (strcmp(tail, "UUDDLRLRABE") == 0) {
-            matched = TRUE;
-        }
-        /* Also accept classic Konami code: B A Return */
-        else if (strcmp(tail, "UUDDLRLRBAE") == 0) {
-            matched = TRUE;
-        }
+    if (g_str_has_suffix(s_history, "UUDDLRLRABE") ||
+        g_str_has_suffix(s_history, "UUDDLRLRBAE") ||
+        g_str_has_suffix(s_history, "UUDDLRLRAB") ||
+        g_str_has_suffix(s_history, "UUDDLRLRBA")) {
+        matched = TRUE;
     }
 
     if (matched) {
         s_history_len = 0;
+        s_history[0] = '\0';
         app->game_mode_unlocked = TRUE;
+        app->game_mode_just_unlocked = TRUE;
 
-        /* Ensure explorer is visible */
+        /* Close keyboard shortcuts cheat sheet if open */
+        if (app->help_window != NULL && gtk_widget_get_visible(app->help_window)) {
+            gtk_widget_set_visible(app->help_window, FALSE);
+            app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+        }
+
+        /* Ensure explorer panel is visible */
         if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
             gtk_widget_set_visible(app->left_vbox, TRUE);
             app_emit(app, APP_EVENT_LAYOUT_REBUILT);
         }
 
-        /* Switch to game view */
+        /* Switch notebook away from user guide back to page 0 (Preview) to show game details */
+        if (app->notebook != NULL) {
+            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+        }
+
+        /* Switch sidebar to Games view */
         app->sidebar_view = SIDEBAR_VIEW_GAMES;
         app->show_bookmarks = FALSE;
         app_emit(app, APP_EVENT_CHROME_CHANGED);
@@ -95,8 +121,7 @@ gboolean games_check_help_key(AppData* app, guint keyval) {
         return TRUE;
     }
 
-    /* Consume recognized code sequence keys in help window so they don't scroll */
-    return TRUE;
+    return FALSE;
 }
 
 /* Append all available games to the explorer root */
