@@ -236,6 +236,7 @@ static const struct {
     { "ppt", FILE_KIND_OLE }, { "pps", FILE_KIND_OLE }, /* .pot is a gettext template by name; its content decides */
     { "po", FILE_KIND_TRANSLATION }, { "pot", FILE_KIND_TRANSLATION }, { "mo", FILE_KIND_TRANSLATION },
     { "gmo", FILE_KIND_TRANSLATION },
+    { "class", FILE_KIND_CLASS },
 };
 
 /* Manual page section suffix: "1".."9", optionally followed by letters ("3pm", "1ssl") */
@@ -373,6 +374,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_OLE:          return "Office 97-2003";
     case FILE_KIND_MAIL:         return "Mail";
     case FILE_KIND_TRANSLATION:  return "Translations";
+    case FILE_KIND_CLASS:        return "Java Class";
     }
     return NULL;
 }
@@ -504,6 +506,9 @@ static FileKind detect_binary_magic(const gchar* name, const guchar* head, gsize
     }
     if (HAS(0, "\xDE\x12\x04\x95") || HAS(0, "\x95\x04\x12\xDE")) {
         return FILE_KIND_TRANSLATION; /* gettext .mo */
+    }
+    if (HAS(0, "\xCA\xFE\xBA\xBE") && (by_name == FILE_KIND_CLASS || (len >= 8 && head[4] == 0 && head[6] == 0 && head[7] >= 45))) {
+        return FILE_KIND_CLASS; /* Java bytecode */
     }
     if (HAS(0, "OTTO") || HAS(0, "ttcf") || HAS(0, "wOFF") || HAS(0, "wOF2") ||
         ((HAS(0, "\0\1\0\0") || HAS(0, "true")) && by_name == FILE_KIND_FONT)) {

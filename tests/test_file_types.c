@@ -117,6 +117,9 @@ static void test_detect_binary(void) {
     g_assert_cmpint(DETECT("prog", "\x7F" "ELF\x02\x01\x01\0\0\0"), ==, FILE_KIND_EXECUTABLE);
     g_assert_cmpint(DETECT("libz.so.1", "\x7F" "ELF\x01\x02\x01\0"), ==, FILE_KIND_EXECUTABLE);
     g_assert_cmpint(DETECT("data.bin", "\x01\x02\0\x03\x04"), ==, FILE_KIND_BINARY);
+    g_assert_cmpint(DETECT("Main.class", "\xCA\xFE\xBA\xBE\0\0\0\x3D"), ==, FILE_KIND_CLASS);
+    g_assert_cmpint(DETECT("unknown", "\xCA\xFE\xBA\xBE\0\0\0\x3D"), ==, FILE_KIND_CLASS);
+    g_assert_cmpint(file_kind_from_name("App.class"), ==, FILE_KIND_CLASS);
     /* Unknown binary signature: trust a media name (TGA has no magic number) */
     g_assert_cmpint(DETECT("pic.tga", "\0\0\x02\0\0\0\0\0"), ==, FILE_KIND_IMAGE);
     /* ZIP archives: Word documents by name or by their first entries */

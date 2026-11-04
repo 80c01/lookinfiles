@@ -8,6 +8,7 @@
 #include "archive_listing.h"
 #include "card_view.h"
 #include "cert_view.h"
+#include "class_info.h"
 #include "csv.h"
 #include "diff_view.h"
 #include "docx.h"
@@ -200,22 +201,16 @@ static PreviewDoc* build_diff(const PreviewInput* in, GCancellable* cancellable,
 
 /* "2026-10-29 10:00" (utc: the time is already local, as in ZIP files) */
 static gchar* format_time(gint64 t, gboolean utc) {
-    if (t < 0) {
-        return g_strdup("");
-    }
+    if (t < 0) return g_strdup("");
     GDateTime* dt = utc ? g_date_time_new_from_unix_utc(t) : g_date_time_new_from_unix_local(t);
-    if (dt == NULL) {
-        return g_strdup("");
-    }
+    if (dt == NULL) return g_strdup("");
     gchar* s = g_date_time_format(dt, "%Y-%m-%d %H:%M");
     g_date_time_unref(dt);
     return s;
 }
 
 static gchar* format_percent_saved(guint64 packed, guint64 size) {
-    if (size == 0 || packed > size) {
-        return NULL;
-    }
+    if (size == 0 || packed > size) return NULL;
     return g_strdup_printf("%.0f %% saved", 100.0 * (gdouble)(size - packed) / (gdouble)size);
 }
 
@@ -422,19 +417,16 @@ static PreviewDoc* build_cards(const PreviewInput* in, CardAppendFunc append, GE
     return doc;
 }
 
-static PreviewDoc* build_calendar(const PreviewInput* in, GCancellable* cancellable, GError** error) {
-    (void)cancellable;
-    return build_cards(in, card_view_append_calendar, error);
+static PreviewDoc* build_calendar(const PreviewInput* in, GCancellable* c, GError** e) {
+    (void)c; return build_cards(in, card_view_append_calendar, e);
 }
 
-static PreviewDoc* build_contacts(const PreviewInput* in, GCancellable* cancellable, GError** error) {
-    (void)cancellable;
-    return build_cards(in, card_view_append_contacts, error);
+static PreviewDoc* build_contacts(const PreviewInput* in, GCancellable* c, GError** e) {
+    (void)c; return build_cards(in, card_view_append_contacts, e);
 }
 
-static PreviewDoc* build_desktop(const PreviewInput* in, GCancellable* cancellable, GError** error) {
-    (void)cancellable;
-    return build_cards(in, card_view_append_desktop, error);
+static PreviewDoc* build_desktop(const PreviewInput* in, GCancellable* c, GError** e) {
+    (void)c; return build_cards(in, card_view_append_desktop, e);
 }
 
 /* --- Logs --- */
@@ -790,9 +782,7 @@ static gchar* gunzip_text(const gchar* path, gsize max, GError** error) {
     GFile* file = g_file_new_for_path(path);
     GFileInputStream* raw = g_file_read(file, NULL, error);
     g_object_unref(file);
-    if (raw == NULL) {
-        return NULL;
-    }
+    if (raw == NULL) return NULL;
     GZlibDecompressor* dec = g_zlib_decompressor_new(G_ZLIB_COMPRESSOR_FORMAT_GZIP);
     GInputStream* in = g_converter_input_stream_new(G_INPUT_STREAM(raw), G_CONVERTER(dec));
     g_object_unref(dec);
@@ -1026,56 +1016,64 @@ static PreviewDoc* build_document(const PreviewInput* in, GCancellable* cancella
     return html != NULL ? preview_doc_new_source(PREVIEW_DOC_HTML, html) : NULL;
 }
 
+/* --- Java class files --- */
+
+static PreviewDoc* build_class(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    gchar* data = NULL;
+    gsize len = 0;
+    if (in->size > 16 * 1024 * 1024 || !g_file_get_contents(in->path, &data, &len, error)) {
+        if (error != NULL && *error == NULL) {
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "class file too large");
+        }
+        return NULL;
+    }
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    gboolean ok = class_info_append(body, (const guchar*)data, len, error);
+    g_free(data);
+    if (!ok) {
+        return NULL;
+    }
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* size = preview_format_size(in->size);
+    gchar* subtitle = g_strdup_printf("Java class file · %s", size);
+    preview_doc_title(doc, in->name, subtitle);
+    g_free(subtitle);
+    g_free(size);
+    append_doc(doc, body);
+    return doc;
+}
+
 /* --- Registry --- */
 
 static PreviewBuildFunc builder_for(FileKind kind) {
     switch (kind) {
-    case FILE_KIND_EXECUTABLE:
-        return build_elf;
-    case FILE_KIND_DOCUMENT:
-        return build_document;
-    case FILE_KIND_CSV:
-        return build_csv;
-    case FILE_KIND_JSON:
-        return build_json;
-    case FILE_KIND_DIFF:
-        return build_diff;
-    case FILE_KIND_ARCHIVE:
-        return build_archive;
-    case FILE_KIND_CERTIFICATE:
-        return build_certificate;
-    case FILE_KIND_CALENDAR:
-        return build_calendar;
-    case FILE_KIND_CONTACT:
-        return build_contacts;
-    case FILE_KIND_DESKTOP:
-        return build_desktop;
-    case FILE_KIND_LOG:
-        return build_log;
-    case FILE_KIND_FONT:
-        return build_font;
-    case FILE_KIND_MANPAGE:
-        return build_manpage;
-    case FILE_KIND_NOTEBOOK:
-        return build_notebook;
-    case FILE_KIND_SPREADSHEET:
-        return build_spreadsheet;
-    case FILE_KIND_PRESENTATION:
-        return build_presentation;
-    case FILE_KIND_EBOOK:
-        return build_ebook;
-    case FILE_KIND_RTF:
-        return build_rtf;
-    case FILE_KIND_OLE:
-        return build_ole;
-    case FILE_KIND_MAIL:
-        return build_mail;
-    case FILE_KIND_DATABASE:
-        return build_database;
-    case FILE_KIND_TRANSLATION:
-        return build_translation;
-    default:
-        return NULL;
+    case FILE_KIND_EXECUTABLE:   return build_elf;
+    case FILE_KIND_DOCUMENT:     return build_document;
+    case FILE_KIND_CSV:          return build_csv;
+    case FILE_KIND_JSON:         return build_json;
+    case FILE_KIND_DIFF:         return build_diff;
+    case FILE_KIND_ARCHIVE:      return build_archive;
+    case FILE_KIND_CERTIFICATE:  return build_certificate;
+    case FILE_KIND_CALENDAR:     return build_calendar;
+    case FILE_KIND_CONTACT:      return build_contacts;
+    case FILE_KIND_DESKTOP:      return build_desktop;
+    case FILE_KIND_LOG:          return build_log;
+    case FILE_KIND_FONT:         return build_font;
+    case FILE_KIND_MANPAGE:      return build_manpage;
+    case FILE_KIND_NOTEBOOK:     return build_notebook;
+    case FILE_KIND_SPREADSHEET:  return build_spreadsheet;
+    case FILE_KIND_PRESENTATION: return build_presentation;
+    case FILE_KIND_EBOOK:        return build_ebook;
+    case FILE_KIND_RTF:          return build_rtf;
+    case FILE_KIND_OLE:          return build_ole;
+    case FILE_KIND_MAIL:         return build_mail;
+    case FILE_KIND_DATABASE:     return build_database;
+    case FILE_KIND_TRANSLATION:  return build_translation;
+    case FILE_KIND_CLASS:        return build_class;
+    default:                     return NULL;
     }
 }
 
