@@ -123,6 +123,8 @@ static void test_detect_binary(void) {
     g_assert_cmpint(DETECT("module.wasm", "\0asm\x01\0\0\0"), ==, FILE_KIND_WASM);
     g_assert_cmpint(DETECT("binary", "\0asm\x01\0\0\0"), ==, FILE_KIND_WASM);
     g_assert_cmpint(file_kind_from_name("module.wasm"), ==, FILE_KIND_WASM);
+    g_assert_cmpint(DETECT("sample.torrent", "d8:announce25:http://tracker.example.come"), ==, FILE_KIND_TORRENT);
+    g_assert_cmpint(file_kind_from_name("sample.torrent"), ==, FILE_KIND_TORRENT);
     /* Unknown binary signature: trust a media name (TGA has no magic number) */
     g_assert_cmpint(DETECT("pic.tga", "\0\0\x02\0\0\0\0\0"), ==, FILE_KIND_IMAGE);
     /* ZIP archives: Word documents by name or by their first entries */

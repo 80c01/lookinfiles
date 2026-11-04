@@ -33,6 +33,7 @@
 #include "spreadsheet.h"
 #include "text_encoding.h"
 #include "sqlite_view.h"
+#include "torrent_info.h"
 #include "wasm_info.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
@@ -738,26 +739,20 @@ static PreviewDoc* build_spreadsheet(const PreviewInput* in, GCancellable* cance
 
 static PreviewDoc* build_notebook(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
-    /* A notebook with images is often larger than the text the viewer
-     * reads: read it whole (bounded) */
     gchar* whole = NULL;
     gsize len = in->text_len;
     const gchar* text = in->text;
     if (in->text_truncated && in->path != NULL && in->size <= 32 * 1024 * 1024) {
-        if (!g_file_get_contents(in->path, &whole, &len, error)) {
-            return NULL;
-        }
+        if (!g_file_get_contents(in->path, &whole, &len, error)) return NULL;
         text = whole;
     }
     NotebookInfo info = { 0 };
     gchar* md = notebook_to_markdown(text, len, &info, error);
     g_free(whole);
-    if (md == NULL) {
-        return NULL;
-    }
+    if (md == NULL) return NULL;
     GString* page = g_string_new(NULL);
     g_string_append_printf(page, "*Jupyter notebook · %u cells (%u code)%s%s*\n\n", info.n_cells, info.n_code,
-                           info.kernel != NULL ? " · " : "", info.kernel != NULL ? info.kernel : "");
+                           info.kernel ? " · " : "", info.kernel ? info.kernel : "");
     g_string_append(page, md);
     g_free(md);
     notebook_info_clear(&info);
@@ -1045,6 +1040,10 @@ static PreviewDoc* build_wasm(const PreviewInput* in, GCancellable* c, GError** 
     (void)c; return build_binary_doc(in, "WebAssembly binary", 32 * 1024 * 1024, wasm_info_append, e);
 }
 
+static PreviewDoc* build_torrent(const PreviewInput* in, GCancellable* c, GError** e) {
+    (void)c; return build_binary_doc(in, "BitTorrent metainfo", 16 * 1024 * 1024, torrent_info_append, e);
+}
+
 /* --- Registry --- */
 
 static PreviewBuildFunc builder_for(FileKind kind) {
@@ -1073,6 +1072,7 @@ static PreviewBuildFunc builder_for(FileKind kind) {
     case FILE_KIND_TRANSLATION:  return build_translation;
     case FILE_KIND_CLASS:        return build_class;
     case FILE_KIND_WASM:         return build_wasm;
+    case FILE_KIND_TORRENT:      return build_torrent;
     default:                     return NULL;
     }
 }

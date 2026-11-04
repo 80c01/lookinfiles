@@ -64,10 +64,11 @@ typedef enum {
     FILE_KIND_MAIL,      /* mail message (.eml), mailbox (mbox), mail store */
     FILE_KIND_TRANSLATION, /* gettext catalogs (.po, .pot, .mo) */
     FILE_KIND_CLASS,     /* Java bytecode (.class) */
-    FILE_KIND_WASM       /* WebAssembly binary (.wasm); keep last (FILE_KIND_LAST) */
+    FILE_KIND_WASM,      /* WebAssembly binary (.wasm) */
+    FILE_KIND_TORRENT    /* BitTorrent metainfo (.torrent); keep last (FILE_KIND_LAST) */
 } FileKind;
 
-#define FILE_KIND_LAST FILE_KIND_WASM
+#define FILE_KIND_LAST FILE_KIND_TORRENT
 
 /* Number of leading bytes file_kind_detect() needs */
 #define FILE_SNIFF_BYTES 4096
