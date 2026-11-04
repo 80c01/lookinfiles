@@ -671,6 +671,7 @@ GBytes* slide_render_png(const SlideDeck* deck, const Slide* slide, gint width) 
 
 PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const gchar* subtitle, guint max_drawn) {
     PreviewDoc* doc = preview_doc_new();
+    doc->paged = TRUE;
     preview_doc_title(doc, title, subtitle);
     guint n = deck->slides->len;
     for (guint i = 0; i < n; i++) {

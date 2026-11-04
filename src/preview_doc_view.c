@@ -272,6 +272,8 @@ void preview_doc_insert(GtkTextBuffer* buffer, const PreviewDoc* doc) {
 void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* path,
                       const gchar* name, gint64 size) {
     GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
+    g_object_set_data(G_OBJECT(buffer), "minimap_paged",
+                      (doc != NULL && doc->paged) ? GINT_TO_POINTER(1) : NULL);
     GtkWidget* widget = GTK_WIDGET(view);
     set_view_text_padding(widget);
     if (doc->format == PREVIEW_DOC_HTML) {

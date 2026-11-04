@@ -4,13 +4,13 @@ static gdouble max_value(gdouble upper, gdouble page) {
     return MAX(0.0, upper - page);
 }
 
-gboolean minimap_geometry_compute(gdouble upper, gdouble page, gdouble value,
-                                  gdouble height, MinimapGeometry* g) {
+gboolean minimap_geometry_compute_fixed(gdouble upper, gdouble page, gdouble value,
+                                        gdouble height, gdouble scale, MinimapGeometry* g) {
     *g = (MinimapGeometry){0};
-    if (upper <= 0.0 || height <= 0.0) {
+    if (upper <= 0.0 || height <= 0.0 || scale <= 0.0) {
         return FALSE;
     }
-    g->scale = CLAMP(height / upper, MINIMAP_MIN_SCALE, MINIMAP_MAX_SCALE);
+    g->scale = scale;
     g->content = upper * g->scale;
     g->slider_height = MIN(page * g->scale, height);
 
@@ -20,6 +20,16 @@ gboolean minimap_geometry_compute(gdouble upper, gdouble page, gdouble value,
     g->offset = (g->content > height) ? ratio * (g->content - height) : 0.0;
     g->slider_top = CLAMP(value, 0.0, range) * g->scale - g->offset;
     return TRUE;
+}
+
+gboolean minimap_geometry_compute(gdouble upper, gdouble page, gdouble value,
+                                  gdouble height, MinimapGeometry* g) {
+    if (upper <= 0.0 || height <= 0.0) {
+        *g = (MinimapGeometry){0};
+        return FALSE;
+    }
+    gdouble scale = CLAMP(height / upper, MINIMAP_MIN_SCALE, MINIMAP_MAX_SCALE);
+    return minimap_geometry_compute_fixed(upper, page, value, height, scale, g);
 }
 
 gdouble minimap_geometry_value_for_slider(const MinimapGeometry* g, gdouble upper,

@@ -576,6 +576,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
     }
 
     app->viewer_match = -1;
+    g_object_set_data(G_OBJECT(app->buffer), "minimap_paged", NULL);
 
     if (td->error_msg != NULL) {
         apply_viewer_language(app, NULL, NULL);

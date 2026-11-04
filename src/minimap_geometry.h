@@ -29,6 +29,10 @@ typedef struct {
 gboolean minimap_geometry_compute(gdouble upper, gdouble page, gdouble value,
                                   gdouble height, MinimapGeometry* g);
 
+/* Compute geometry with an explicit scale (used for paged documents like PDF/PPT) */
+gboolean minimap_geometry_compute_fixed(gdouble upper, gdouble page, gdouble value,
+                                        gdouble height, gdouble scale, MinimapGeometry* g);
+
 /* Scroll value that puts the slider top at `slider_top` (slider drag) */
 gdouble minimap_geometry_value_for_slider(const MinimapGeometry* g, gdouble upper,
                                           gdouble page, gdouble height, gdouble slider_top);

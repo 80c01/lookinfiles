@@ -420,8 +420,12 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     g_free(meta_text);
 
     if (!td->render_raw && td->page_textures != NULL) {
+        g_object_set_data(G_OBJECT(app->buffer), "minimap_paged", GINT_TO_POINTER(1));
         append_pdf_pages(app, td);
-    } else if (td->render_raw && td->page_texts != NULL) {
+    } else {
+        g_object_set_data(G_OBJECT(app->buffer), "minimap_paged", NULL);
+    }
+    if (td->render_raw && td->page_texts != NULL) {
         for (guint i = 0; i < td->page_texts->len; i++) {
             const gchar* text = (const gchar*)g_ptr_array_index(td->page_texts, i);
             gchar* page_hdr = g_strdup_printf("--- Page %u of %d ---\n\n",

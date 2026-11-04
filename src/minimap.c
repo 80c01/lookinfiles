@@ -21,6 +21,28 @@ static void set_source_role(cairo_t* cr, PaletteRole role, double alpha) {
 #define MINIMAP_CACHE_SCREENS 3
 
 /* Scale, minimap scroll and slider for the view's current position */
+static gboolean is_paged_view(GtkTextView* view) {
+    if (view == NULL) {
+        return FALSE;
+    }
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
+    if (buffer != NULL && g_object_get_data(G_OBJECT(buffer), "minimap_paged") != NULL) {
+        return TRUE;
+    }
+    if (buffer != NULL) {
+        GtkTextTagTable* tags = gtk_text_buffer_get_tag_table(buffer);
+        if (tags != NULL && gtk_text_tag_table_lookup(tags, "pdf_page_badge") != NULL) {
+            return TRUE;
+        }
+    }
+    AppData* app = g_object_get_data(G_OBJECT(view), "app");
+    if (app != NULL && !app->render_raw &&
+        (app->viewed_kind == FILE_KIND_PDF || app->viewed_kind == FILE_KIND_PRESENTATION)) {
+        return TRUE;
+    }
+    return FALSE;
+}
+
 static gboolean minimap_geometry(GtkWidget* minimap, GtkTextView* view, MinimapGeometry* g) {
     GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
     if (vadj == NULL) {
@@ -28,10 +50,26 @@ static gboolean minimap_geometry(GtkWidget* minimap, GtkTextView* view, MinimapG
         return FALSE;
     }
     gdouble lower = gtk_adjustment_get_lower(vadj);
-    return minimap_geometry_compute(gtk_adjustment_get_upper(vadj) - lower,
-                                    gtk_adjustment_get_page_size(vadj),
-                                    gtk_adjustment_get_value(vadj) - lower,
-                                    gtk_widget_get_height(minimap), g);
+    gdouble upper = gtk_adjustment_get_upper(vadj) - lower;
+    gdouble page = gtk_adjustment_get_page_size(vadj);
+    gdouble value = gtk_adjustment_get_value(vadj) - lower;
+    gdouble height = gtk_widget_get_height(minimap);
+
+    if (is_paged_view(view)) {
+        gint view_w = gtk_widget_get_width(GTK_WIDGET(view));
+        gint mm_w = gtk_widget_get_width(minimap);
+        if (mm_w <= 0) {
+            mm_w = MINIMAP_WIDTH;
+        }
+        if (view_w > 0) {
+            gdouble sx = (gdouble)(mm_w - 4) / view_w;
+            sx = MIN(sx, MINIMAP_MAX_SCALE);
+            if (sx > 0.0) {
+                return minimap_geometry_compute_fixed(upper, page, value, height, sx, g);
+            }
+        }
+    }
+    return minimap_geometry_compute(upper, page, value, height, g);
 }
 
 /* Colours applied at an iterator: text foreground and paragraph background
@@ -69,11 +107,14 @@ static void tag_colors(const GtkTextIter* it, GdkRGBA* fg, gboolean* has_fg,
 /* A texture (PDF page) painted at the minimap scale. The downscaled copy is
  * kept on the texture so that redraws do not download it again. */
 static gboolean draw_texture(cairo_t* cc, GdkTexture* tex, gdouble x, gdouble y, gdouble w, gdouble h) {
+    (void)h;
     gint tw = gdk_texture_get_width(tex), th = gdk_texture_get_height(tex);
-    if (tw <= 0 || th <= 0 || w < 1.0 || h < 1.0) {
+    if (tw <= 0 || th <= 0 || w < 1.0) {
         return FALSE;
     }
-    gint dw = MAX(1, (gint)(w + 0.5)), dh = MAX(1, (gint)(h + 0.5));
+    gint dw = MAX(1, (gint)(w + 0.5));
+    gdouble scale = (gdouble)dw / tw;
+    gint dh = MAX(1, (gint)(th * scale + 0.5));
     cairo_surface_t* small = g_object_get_data(G_OBJECT(tex), "minimap-thumb");
     if (small == NULL || cairo_image_surface_get_width(small) != dw ||
         cairo_image_surface_get_height(small) != dh) {
@@ -83,7 +124,7 @@ static gboolean draw_texture(cairo_t* cc, GdkTexture* tex, gdouble x, gdouble y,
         cairo_surface_mark_dirty(full);
         small = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, dw, dh);
         cairo_t* sc = cairo_create(small);
-        cairo_scale(sc, (gdouble)dw / tw, (gdouble)dh / th);
+        cairo_scale(sc, scale, scale);
         cairo_set_source_surface(sc, full, 0, 0);
         cairo_pattern_set_filter(cairo_get_source(sc), CAIRO_FILTER_BEST);
         cairo_paint(sc);
@@ -119,10 +160,22 @@ static void draw_run(cairo_t* cc, PangoLayout* layout, GtkTextView* view, GtkTex
             }
             g_free(widgets);
         }
-        if (paintable != NULL && GDK_IS_TEXTURE(paintable) &&
-            draw_texture(cc, GDK_TEXTURE(paintable), 2.0 + loc.x * sx, loc.y * sy,
-                         w * sx, h * sy)) {
-            return;
+        if (paintable != NULL && GDK_IS_TEXTURE(paintable)) {
+            GdkTexture* tex = GDK_TEXTURE(paintable);
+            gint tw = gdk_texture_get_width(tex), th = gdk_texture_get_height(tex);
+            if (w <= 0) {
+                w = tw;
+            }
+            if (h <= 0) {
+                h = th;
+            }
+            gint mm_width = cairo_image_surface_get_width(cairo_get_target(cc));
+            gdouble max_w = (mm_width > 4) ? (gdouble)(mm_width - 4) : w * sx;
+            gdouble tex_w = MIN(w * sx, max_w);
+            gdouble tex_x = CLAMP(2.0 + loc.x * sx, 2.0, (gdouble)(mm_width - 2) - tex_w);
+            if (draw_texture(cc, tex, tex_x, loc.y * sy, tex_w, h * sy)) {
+                return;
+            }
         }
         set_source_role(cc, PAL_RULE, 1.0); /* table / image block */
         cairo_rectangle(cc, 2.0 + loc.x * sx, loc.y * sy, MAX(1.0, w * sx), MAX(1.0, h * sy));

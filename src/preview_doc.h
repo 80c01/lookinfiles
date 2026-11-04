@@ -95,6 +95,7 @@ typedef struct {
     gboolean scroll_to_end; /* open scrolled to the end (logs: latest entries) */
     GPtrArray* font_files;  /* font files the view loads before showing (font samples) */
     guint pages;          /* pages after this view, reached with PgDn (mailbox messages), 0: none */
+    gboolean paged;       /* slides or pages drawn to scale in the minimap */
 } PreviewDoc;
 
 /* Width of the labels of preview_doc_field() unless changed */

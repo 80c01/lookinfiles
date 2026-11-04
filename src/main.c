@@ -566,6 +566,7 @@ int main(int argc, char** argv) {
     orgmode_install_gtksourceview_spec();
     populate_tree(app, start_dir, FALSE, SORT_NAME);
     app->text_view = text_view;
+    g_object_set_data(G_OBJECT(text_view), "app", app);
     code_nav_attach_preview(app, editor_mode_message);   /* Ctrl+Click in source previews */
     app->path_label = path_label;
     app->breadcrumb_box = breadcrumb_box;

@@ -66,6 +66,21 @@ static void test_click_centers_line(void) {
     g_assert_cmpfloat_with_epsilon(minimap_geometry_value_centered(&g, 100000, 1000, 10), 0, EPS);
 }
 
+static void test_fixed_scale_paged(void) {
+    MinimapGeometry g;
+    /* 10-page document (10000 px) with fixed scale 0.1 */
+    g_assert_true(minimap_geometry_compute_fixed(10000, 800, 0, 600, 0.1, &g));
+    g_assert_cmpfloat_with_epsilon(g.scale, 0.1, EPS);
+    g_assert_cmpfloat_with_epsilon(g.content, 1000, EPS);
+    g_assert_cmpfloat_with_epsilon(g.slider_height, 80, EPS);
+    g_assert_cmpfloat_with_epsilon(g.offset, 0, EPS);
+
+    /* Scrolled to the end */
+    g_assert_true(minimap_geometry_compute_fixed(10000, 800, 9200, 600, 0.1, &g));
+    g_assert_cmpfloat_with_epsilon(g.offset, 400, EPS); /* 1000 - 600 */
+    g_assert_cmpfloat_with_epsilon(g.slider_top + g.slider_height, 600, EPS);
+}
+
 static void test_nothing_to_show(void) {
     MinimapGeometry g;
     g_assert_false(minimap_geometry_compute(0, 800, 0, 600, &g));
@@ -80,6 +95,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/minimap_geometry/long_scrolls", test_long_document_scrolls);
     g_test_add_func("/minimap_geometry/slider_drag", test_slider_drag_round_trip);
     g_test_add_func("/minimap_geometry/click_centers", test_click_centers_line);
+    g_test_add_func("/minimap_geometry/fixed_scale", test_fixed_scale_paged);
     g_test_add_func("/minimap_geometry/nothing", test_nothing_to_show);
     return g_test_run();
 }
