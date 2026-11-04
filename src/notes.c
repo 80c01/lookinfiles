@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 /* Data structures for notes manager */
 typedef struct {

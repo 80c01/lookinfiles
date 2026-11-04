@@ -116,7 +116,7 @@ static gboolean skipped_dir(const gchar* name, gboolean ignored) {
 /* full relative to root (a directory above it) */
 static const gchar* relative_to(const gchar* root, const gchar* full) {
     const gchar* rel = full + strlen(root);
-    while (*rel == '/') rel++;
+    while (*rel == '/' || *rel == '\\') rel++;
     return rel;
 }
 

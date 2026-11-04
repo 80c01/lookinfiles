@@ -63,7 +63,17 @@ endif
 # Release version, defined once in src/app_paths.h (APP_VERSION)
 VERSION != sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h
 
-TARGET = lookinfiles
+# Windows platform detection
+ifeq ($(OS),Windows_NT)
+EXE = .exe
+# -mwindows suppresses the background cmd terminal window in release builds
+WINDOWS_SUBSYSTEM ?= -mwindows
+ALL_LDFLAGS += $(WINDOWS_SUBSYSTEM)
+else
+EXE =
+endif
+
+TARGET = lookinfiles$(EXE)
 BUILD_DIR = build
 
 ALL_CFLAGS = $(APP_CFLAGS) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_EXTRA)
@@ -278,7 +288,7 @@ ui-test: $(TARGET)
 	@sh tests/ui/run_ui_test.sh ./$(TARGET)
 
 clean:
-	rm -rf $(TARGET) $(BUILD_DIR)
+	rm -rf $(TARGET) lookinfiles lookinfiles.exe $(BUILD_DIR)
 
 # Installation (make install PREFIX=/usr DESTDIR=pkgroot for packages):
 # the binary, its desktop entry, AppStream metainfo and icon (data/)
@@ -308,9 +318,12 @@ deb:
 appimage:
 	@sh packaging/appimage/build_appimage.sh build
 
+windows-zip:
+	@sh packaging/windows/build_windows_zip.sh build
+
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET) $(INSTALLED_DATA:%=$(DESTDIR)$(DATADIR)/%)
 
 -include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
 
-.PHONY: all deps clean dist install uninstall test check ui-test bench-preview preview-coverage deb appimage
+.PHONY: all deps clean dist install uninstall test check ui-test bench-preview preview-coverage deb appimage windows-zip

@@ -951,7 +951,8 @@ void reveal_path_in_tree(AppData* app, const gchar* path) {
     app->show_bookmarks = FALSE;
     gsize n = strlen(app->base_dir);
     gboolean inside = g_str_has_prefix(path, app->base_dir) && n > 0 &&
-                      (path[n] == '/' || app->base_dir[n - 1] == '/');
+                      (path[n] == '/' || path[n] == '\\' ||
+                       app->base_dir[n - 1] == '/' || app->base_dir[n - 1] == '\\');
     if (!inside) {
         navigate_to_path(app, path);
         return;

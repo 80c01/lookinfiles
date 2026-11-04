@@ -173,7 +173,7 @@ static void scan_git_repo_into(GHashTable* statuses, const gchar* raw_root) {
             gboolean under_root = (g_strcmp0(parent, git_root) == 0) ||
                                   (parent_len > root_len &&
                                    g_str_has_prefix(parent, git_root) &&
-                                   parent[root_len] == '/');
+                                   (parent[root_len] == '/' || parent[root_len] == '\\'));
             if (!under_root) {
                 g_free(parent);
                 break;

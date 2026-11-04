@@ -4,7 +4,7 @@ A file explorer that shows what is inside your files. Select a file and see it
 rendered right away: code, Markdown, PDF, images, office documents (Word,
 Excel, PowerPoint), archives, databases and many more. Also play videos. Edit
 text files and run commands next to it, without leaving the window. Written in
-C and GTK 4 for Linux, with a VS Code look and a keyboard-first design.
+C and GTK 4 for Linux and Windows, with a VS Code look and a keyboard-first design.
 
 ![LookinFiles showing a Markdown preview](docs/screenshot.png)
 
@@ -103,6 +103,17 @@ sudo make uninstall
 make install PREFIX=/usr DESTDIR=pkgroot   # staging directory for packages
 make dist             # lookinfiles-<version>.tar.gz of the last commit
 ```
+
+### Windows Build
+
+LookinFiles builds natively on Windows using MSYS2 UCRT64:
+
+```bash
+make             # creates lookinfiles.exe
+make windows-zip # packages build/lookinfiles-<version>-windows-x86_64.zip
+```
+
+See [packaging/windows/README.md](packaging/windows/README.md) for prerequisites and setup details.
 
 ## Usage
 

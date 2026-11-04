@@ -5,7 +5,9 @@
 #include <gio/gio.h>
 #include <glib/gstdio.h>
 #include <string.h>
+#if !defined(G_OS_WIN32) && !defined(_WIN32)
 #include <unistd.h>
+#endif
 
 gboolean trash_info_parse(const gchar* contents, const gchar* topdir,
                           gchar** out_path, gchar** out_date) {
@@ -90,6 +92,13 @@ gchar* trash_find_item(const gchar* trash_dir, const gchar* topdir,
     return item;
 }
 
+#if defined(G_OS_WIN32) || defined(_WIN32)
+static gchar* find_in_trashes(const gchar* orig_path, gchar** out_info) {
+    (void)orig_path;
+    *out_info = NULL;
+    return NULL;
+}
+#else
 /* Mount point holding path: the top directory whose parent is on another device */
 static gchar* mount_point_of(const gchar* path) {
     gchar* dir = g_strdup(path);
@@ -141,6 +150,7 @@ static gchar* find_in_trashes(const gchar* orig_path, gchar** out_info) {
     g_free(top);
     return item;
 }
+#endif
 
 gboolean trash_restore(const gchar* orig_path, GError** error) {
     if (g_file_test(orig_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_SYMLINK)) {

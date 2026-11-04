@@ -14,10 +14,22 @@
 #include "search.h"
 #include "terminal.h"
 
+#if defined(G_OS_WIN32) || defined(_WIN32)
+static void show_drive_switcher(GtkWidget* parent, AppData* app);
+#endif
+
 static void on_breadcrumb_clicked(GtkButton* btn, gpointer data) {
     AppData* app = (AppData*)data;
     const gchar* target = (const gchar*)g_object_get_data(G_OBJECT(btn), "target-path");
     if (target != NULL) {
+#if defined(G_OS_WIN32) || defined(_WIN32)
+        if (g_strcmp0(target, app->base_dir) == 0 &&
+            g_ascii_isalpha(target[0]) && target[1] == ':' &&
+            (target[2] == '\0' || ((target[2] == '\\' || target[2] == '/') && target[3] == '\0'))) {
+            show_drive_switcher(GTK_WIDGET(btn), app);
+            return;
+        }
+#endif
         if (app->show_bookmarks || g_strcmp0(target, app->base_dir) != 0) {
             app->show_bookmarks = FALSE;
             if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
@@ -184,6 +196,56 @@ static void on_history_menu_closed(GtkPopover* popover, gpointer data) {
     g_idle_add(unparent_idle, g_object_ref(popover));
 }
 
+#if defined(G_OS_WIN32) || defined(_WIN32)
+#include <windows.h>
+
+static void on_drive_btn_clicked(GtkButton* b, gpointer data) {
+    GtkWidget* popover = GTK_WIDGET(data);
+    AppData* app = (AppData*)g_object_get_data(G_OBJECT(popover), "app");
+    const gchar* drive_path = (const gchar*)g_object_get_data(G_OBJECT(b), "drive-path");
+    gtk_popover_popdown(GTK_POPOVER(popover));
+    if (app != NULL && drive_path != NULL) {
+        reload_directory(app, drive_path);
+    }
+}
+
+static void show_drive_switcher(GtkWidget* parent, AppData* app) {
+    DWORD drives = GetLogicalDrives();
+    if (drives == 0) return;
+
+    GtkWidget* popover = gtk_popover_new();
+    gtk_widget_set_parent(popover, parent);
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
+    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
+    g_object_set_data(G_OBJECT(popover), "app", app);
+
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    gtk_widget_set_margin_start(box, 6);
+    gtk_widget_set_margin_end(box, 6);
+    gtk_widget_set_margin_top(box, 6);
+    gtk_widget_set_margin_bottom(box, 6);
+
+    for (int i = 0; i < 26; i++) {
+        if (drives & (1 << i)) {
+            gchar letter = 'A' + i;
+            gchar path[4] = { letter, ':', '\\', '\0' };
+            gchar label[8];
+            g_snprintf(label, sizeof(label), "%c:", letter);
+            GtkWidget* b = gtk_button_new();
+            gtk_button_set_child(GTK_BUTTON(b), glyph_label_new("root", label));
+            gtk_button_set_has_frame(GTK_BUTTON(b), FALSE);
+            g_object_set_data_full(G_OBJECT(b), "drive-path", g_strdup(path), g_free);
+            g_signal_connect(b, "clicked", G_CALLBACK(on_drive_btn_clicked), popover);
+            gtk_box_append(GTK_BOX(box), b);
+        }
+    }
+
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
+    g_signal_connect(popover, "closed", G_CALLBACK(on_history_menu_closed), NULL);
+    gtk_popover_popup(GTK_POPOVER(popover));
+}
+#endif
+
 static void on_history_item_clicked(GtkButton* btn, gpointer data) {
     GtkWidget* popover = GTK_WIDGET(data);
     AppData* app = (AppData*)g_object_get_data(G_OBJECT(popover), "app");
@@ -207,7 +269,7 @@ static GtkWidget* history_item_new(const gchar* path) {
     const gchar* home = g_get_home_dir();
     gsize home_len = home != NULL ? strlen(home) : 0;
     gchar* where = (home_len > 1 && g_str_has_prefix(parent, home) &&
-                    (parent[home_len] == '\0' || parent[home_len] == '/'))
+                    (parent[home_len] == '\0' || parent[home_len] == '/' || parent[home_len] == '\\'))
                        ? g_strconcat("~", parent + home_len, NULL)
                        : g_strdup(parent);
     GtkWidget* dir = gtk_label_new(where);
@@ -398,7 +460,8 @@ void update_path_label(AppData* app) {
             gboolean under_home = (home_len > 1 &&
                                    g_str_has_prefix(app->base_dir, home) &&
                                    (app->base_dir[home_len] == '\0' ||
-                                    app->base_dir[home_len] == '/'));
+                                    app->base_dir[home_len] == '/' ||
+                                    app->base_dir[home_len] == '\\'));
 
             RemoteMachine* act_rm = remote_get_active_machine(app);
             gboolean is_remote_mount = (act_rm != NULL && act_rm->mount_point != NULL &&
@@ -418,6 +481,15 @@ void update_path_label(AppData* app) {
                 g_array_append_val(segs, root_seg);
                 accum = g_strdup(home);
                 rest = app->base_dir + home_len;
+            } else if (g_ascii_isalpha(app->base_dir[0]) && app->base_dir[1] == ':') {
+                gchar drive_letter = g_ascii_toupper(app->base_dir[0]);
+                gchar* root_title = g_strdup_printf("%c:", drive_letter);
+                gchar* drive_root = g_strdup_printf("%c:\\", drive_letter);
+                BreadcrumbSeg root_seg = { root_title, drive_root, "root" };
+                g_array_append_val(segs, root_seg);
+                accum = g_strdup(drive_root);
+                gint offset = (app->base_dir[2] == '\\' || app->base_dir[2] == '/') ? 3 : 2;
+                rest = app->base_dir + offset;
             } else {
                 BreadcrumbSeg root_seg = { g_strdup("/"), g_strdup("/"), "root" };
                 g_array_append_val(segs, root_seg);
@@ -425,7 +497,14 @@ void update_path_label(AppData* app) {
                 rest = app->base_dir;
             }
 
-            gchar** parts = g_strsplit(rest, "/", -1);
+            gchar* rest_norm = g_strdup(rest);
+            for (gchar* p = rest_norm; *p != '\0'; p++) {
+                if (*p == '\\') {
+                    *p = '/';
+                }
+            }
+            gchar** parts = g_strsplit(rest_norm, "/", -1);
+            g_free(rest_norm);
             for (gint i = 0; parts != NULL && parts[i] != NULL; i++) {
                 if (parts[i][0] == '\0') {
                     continue;

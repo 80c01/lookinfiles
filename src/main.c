@@ -47,7 +47,6 @@
 #include <stdlib.h>
 #include "focus_route.h"
 #include <string.h>
-#include <unistd.h>
 
 /* The window is closed: remember the workspaces for the next launch */
 static gboolean on_window_close_request(GtkWindow* window, gpointer data) {
@@ -297,8 +296,11 @@ int main(int argc, char** argv) {
     gtk_window_set_default_size(GTK_WINDOW(window), win_width, win_height);
 
     /* Get current directory */
-    char cwd_buf[2048];
-    const char* cwd = (getcwd(cwd_buf, sizeof(cwd_buf)) != NULL) ? cwd_buf : "/workspace";
+    gchar* cwd_alloc = g_get_current_dir();
+    const gchar* cwd = (cwd_alloc != NULL) ? cwd_alloc : g_get_home_dir();
+    if (cwd == NULL) {
+        cwd = "/";
+    }
 
     /* Optional CLI argument: folder to display, or file to edit (default: cwd) */
     const char* start_dir = cwd;
@@ -791,6 +793,7 @@ int main(int argc, char** argv) {
     }
     g_free(start_file);
     g_free(target_dir);
+    g_free(cwd_alloc);
 
     g_main_loop_run(loop);
 

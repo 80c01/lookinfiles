@@ -22,7 +22,7 @@ gchar* bookmark_display_location(const gchar* target) {
     const gchar* home = g_get_home_dir();
     gsize home_len = (home != NULL) ? strlen(home) : 0;
     if (home_len > 1 && g_str_has_prefix(target, home) &&
-        (target[home_len] == '\0' || target[home_len] == '/')) {
+        (target[home_len] == '\0' || target[home_len] == '/' || target[home_len] == '\\')) {
         return g_strdup_printf("~%s", target + home_len);
     }
     return g_strdup(target);

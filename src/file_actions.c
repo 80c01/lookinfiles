@@ -138,7 +138,7 @@ static gchar* display_dir(const gchar* path) {
     const gchar* home = g_get_home_dir();
     gsize home_len = (home != NULL) ? strlen(home) : 0;
     if (home_len > 1 && g_str_has_prefix(path, home) &&
-        (path[home_len] == '\0' || path[home_len] == '/')) {
+        (path[home_len] == '\0' || path[home_len] == '/' || path[home_len] == '\\')) {
         return g_strdup_printf("~%s", path + home_len);
     }
     return g_strdup(path);

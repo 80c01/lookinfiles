@@ -46,7 +46,8 @@ static void retarget_editor_tabs(AppData* app, const gchar* old_path, const gcha
             continue;
         }
         gboolean same = (g_strcmp0(tab->path, old_path) == 0);
-        gboolean inside = g_str_has_prefix(tab->path, old_path) && tab->path[old_len] == '/';
+        gboolean inside = g_str_has_prefix(tab->path, old_path) &&
+                          (tab->path[old_len] == '/' || tab->path[old_len] == '\\');
         if (!same && !inside) {
             continue;
         }
