@@ -6,6 +6,17 @@
 #include "palette.h"
 #include "theme.h"
 
+void apply_viewer_background(GtkWidget* view) {
+    gtk_widget_set_name(view, "viewer");
+    /* The rule targets #viewer only: one provider for the display is enough */
+    static GdkDisplay* styled_display = NULL;
+    GdkDisplay* display = gtk_widget_get_display(view);
+    if (display != styled_display) {
+        theme_add_css("#viewer text { background-color: @bg_view; }");
+        styled_display = display;
+    }
+}
+
 #ifdef HAVE_GSV
 /* GtkSourceView style scheme; @role tokens are palette colours
  * (palette_expand()). */
@@ -91,17 +102,6 @@ static const gchar* VSCODE_SCHEME_XML =
     "  <style name=\"org:block\" foreground=\"@fg_subtle\"/>\n"
     "  <style name=\"org:block-content\" foreground=\"@syn_string\"/>\n"
     "</style-scheme>\n";
-
-void apply_viewer_background(GtkWidget* view) {
-    gtk_widget_set_name(view, "viewer");
-    /* The rule targets #viewer only: one provider for the display is enough */
-    static GdkDisplay* styled_display = NULL;
-    GdkDisplay* display = gtk_widget_get_display(view);
-    if (display != styled_display) {
-        theme_add_css("#viewer text { background-color: @bg_view; }");
-        styled_display = display;
-    }
-}
 
 /* The scheme, written from the palette to the cache folder; NULL until
  * first used and after a theme change */
