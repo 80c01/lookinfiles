@@ -56,7 +56,13 @@ if [ -n "${PREFIX}" ] && [ -d "${PREFIX}/bin" ]; then
         fi
     done
 
-    # Collect DLLs recursively using ldd/objdump
+    # Deploy gdk-pixbuf loaders if present
+    if [ -d "${PREFIX}/lib/gdk-pixbuf-2.0" ]; then
+        mkdir -p "${STAGE_DIR}/lib"
+        cp -r "${PREFIX}/lib/gdk-pixbuf-2.0" "${STAGE_DIR}/lib/"
+    fi
+
+    # Collect DLLs recursively using ldd/ntldd
     echo "==> Collecting dependent DLLs..."
     copied=1
     while [ "${copied}" -ne 0 ]; do
@@ -64,7 +70,9 @@ if [ -n "${PREFIX}" ] && [ -d "${PREFIX}/bin" ]; then
         for pe in "${STAGE_DIR}"/*.exe "${STAGE_DIR}"/*.dll; do
             [ -f "${pe}" ] || continue
             # Find DLL dependencies
-            for dll_name in $(ntldd -R "${pe}" 2>/dev/null | awk '{print $3}' || ldd "${pe}" 2>/dev/null | grep -i "${PREFIX}" | awk '{print $3}' || true); do
+            for dll_raw in $(ldd "${pe}" 2>/dev/null | grep -i "${PREFIX}" | awk '{print $3}' || ntldd -R "${pe}" 2>/dev/null | grep -i "${PREFIX}" | awk '{print $3}' || true); do
+                [ -n "${dll_raw}" ] || continue
+                dll_name="$(cygpath -u "${dll_raw}" 2>/dev/null || echo "${dll_raw}")"
                 [ -f "${dll_name}" ] || continue
                 base_dll="$(basename "${dll_name}")"
                 if [ ! -f "${STAGE_DIR}/${base_dll}" ]; then

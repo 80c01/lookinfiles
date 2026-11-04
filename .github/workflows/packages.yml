@@ -122,10 +122,42 @@ jobs:
           name: appimage
           path: artifacts/*.AppImage
 
+  windows:
+    name: Windows (.zip)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pkg-config
+            mingw-w64-ucrt-x86_64-gtk4
+            mingw-w64-ucrt-x86_64-gtksourceview5
+            mingw-w64-ucrt-x86_64-poppler
+            mingw-w64-ucrt-x86_64-sqlite3
+            mingw-w64-ucrt-x86_64-libarchive
+            make
+            zip
+
+      - name: Build Windows package
+        shell: msys2 {0}
+        run: ./packaging/windows/build_windows_zip.sh artifacts/
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-package
+          path: artifacts/*.zip
+
   release:
     name: Create GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [debian, arch, fedora, appimage]
+    needs: [debian, arch, fedora, appimage, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
