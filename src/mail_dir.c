@@ -75,6 +75,8 @@ static void list_files(const gchar* dir, gboolean maildir_new, gboolean mh, GPtr
                 if (t > 0) it->mtime = t;
             }
             const gchar* info = strstr(name, ":2,");
+            if (info == NULL) info = strstr(name, ";2,");
+            if (info == NULL) info = strstr(name, "!2,");
             const gchar* flags = info != NULL ? info + 3 : "";
             it->unread = maildir_new || strchr(flags, 'S') == NULL;
             it->replied = strchr(flags, 'R') != NULL;
