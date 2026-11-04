@@ -58,7 +58,8 @@ enum {
     SIDEBAR_VIEW_FILES = 0,
     SIDEBAR_VIEW_BOOKMARKS,
     SIDEBAR_VIEW_NOTES,
-    SIDEBAR_VIEW_REMOTE
+    SIDEBAR_VIEW_REMOTE,
+    SIDEBAR_VIEW_GAMES
 };
 
 /* Editor modes */
@@ -345,11 +346,14 @@ typedef struct {
     GtkWidget* sidebar_bm_btn;      /* mini icon button: switch to Bookmarks view */
     GtkWidget* sidebar_notes_btn;   /* mini icon button: switch to Notes view */
     GtkWidget* sidebar_remote_btn;  /* mini icon button: switch to Remote (SSH) view */
+    GtkWidget* sidebar_games_btn;   /* mini icon button: switch to Games view */
     GtkWidget* sidebar_notes_actions; /* mini icon bar for note actions (new, folder, collapse, expand) */
     GtkWidget* sidebar_files_toolbar; /* mini action bar for files tree */
     GtkWidget* sidebar_bm_toolbar;    /* mini action bar for bookmarks */
     GtkWidget* sidebar_remote_toolbar; /* mini action bar for remote machines */
+    GtkWidget* sidebar_games_toolbar; /* mini action bar for games */
     GtkWidget* sidebar_files_hidden_btn; /* toggle hidden button in files action bar */
+    gboolean game_mode_unlocked;      /* unlocked via secret sequence in help panel */
     GList* remotes;                   /* list of RemoteMachine* */
     GList* remote_folders;            /* list of RemoteFolder* (remote view folders) */
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */

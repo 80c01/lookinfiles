@@ -607,6 +607,8 @@ void update_path_label(AppData* app) {
             title = "BOOKMARKS";
         } else if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
             title = "REMOTE";
+        } else if (app->sidebar_view == SIDEBAR_VIEW_GAMES) {
+            title = "GAMES";
         }
         gtk_label_set_text(GTK_LABEL(app->sidebar_title), title);
         git_tab_update(app, app->base_dir);
@@ -639,6 +641,14 @@ void update_path_label(AppData* app) {
             gtk_widget_remove_css_class(app->sidebar_remote_btn, "sidebar-icon-active");
         }
     }
+    if (app->sidebar_games_btn != NULL) {
+        gtk_widget_set_visible(app->sidebar_games_btn, app->game_mode_unlocked);
+        if (app->sidebar_view == SIDEBAR_VIEW_GAMES) {
+            gtk_widget_add_css_class(app->sidebar_games_btn, "sidebar-icon-active");
+        } else {
+            gtk_widget_remove_css_class(app->sidebar_games_btn, "sidebar-icon-active");
+        }
+    }
     if (app->sidebar_files_toolbar != NULL) {
         gtk_widget_set_visible(app->sidebar_files_toolbar,
                                app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
@@ -654,6 +664,10 @@ void update_path_label(AppData* app) {
     if (app->sidebar_remote_toolbar != NULL) {
         gtk_widget_set_visible(app->sidebar_remote_toolbar,
                                app->sidebar_view == SIDEBAR_VIEW_REMOTE);
+    }
+    if (app->sidebar_games_toolbar != NULL) {
+        gtk_widget_set_visible(app->sidebar_games_toolbar,
+                               app->sidebar_view == SIDEBAR_VIEW_GAMES);
     }
     if (app->sidebar_files_hidden_btn != NULL) {
         if (app->show_hidden) {

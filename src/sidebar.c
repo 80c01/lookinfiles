@@ -62,6 +62,27 @@ static void on_sidebar_remote_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
+static void on_sidebar_games_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app == NULL) {
+        return;
+    }
+    if (app->sidebar_view != SIDEBAR_VIEW_GAMES) {
+        toggle_games_view(app);
+    } else if (app->tree_view != NULL) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+}
+
+static void on_sidebar_games_play_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    AppData* app = (AppData*)data;
+    if (app != NULL) {
+        activate_selected_entry(app);
+    }
+}
+
 static void on_sidebar_remote_add_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     remote_add_dialog((AppData*)data);
@@ -323,7 +344,18 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(remote_btn, "clicked", G_CALLBACK(on_sidebar_remote_clicked), app);
     gtk_box_append(GTK_BOX(title_row), remote_btn);
 
-    if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
+    GtkWidget* games_btn = icon_button_new("applications-games", NULL);
+    gtk_button_set_has_frame(GTK_BUTTON(games_btn), FALSE);
+    gtk_widget_set_focusable(games_btn, FALSE);
+    gtk_widget_add_css_class(games_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(games_btn, "Games (Game Mode)");
+    g_signal_connect(games_btn, "clicked", G_CALLBACK(on_sidebar_games_clicked), app);
+    gtk_box_append(GTK_BOX(title_row), games_btn);
+    gtk_widget_set_visible(games_btn, app != NULL && app->game_mode_unlocked);
+
+    if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_GAMES) {
+        gtk_widget_add_css_class(games_btn, "sidebar-icon-active");
+    } else if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
         gtk_widget_add_css_class(remote_btn, "sidebar-icon-active");
     } else if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES) {
         gtk_widget_add_css_class(buf_btn, "sidebar-icon-active");
@@ -554,6 +586,20 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_widget_set_visible(remote_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_REMOTE));
     gtk_box_append(GTK_BOX(header), remote_toolbar);
 
+    /* 5. Games Toolbar */
+    GtkWidget* games_toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    gtk_widget_set_name(games_toolbar, "sidebar-games-toolbar");
+    GtkWidget* games_play_btn = icon_button_new("media-playback-start", NULL);
+    gtk_button_set_has_frame(GTK_BUTTON(games_play_btn), FALSE);
+    gtk_widget_set_focusable(games_play_btn, FALSE);
+    gtk_widget_add_css_class(games_play_btn, "sidebar-icon-btn");
+    gtk_widget_set_tooltip_text(games_play_btn, "Play Selected Game (Enter)");
+    g_signal_connect(games_play_btn, "clicked", G_CALLBACK(on_sidebar_games_play_clicked), app);
+    gtk_box_append(GTK_BOX(games_toolbar), games_play_btn);
+
+    gtk_widget_set_visible(games_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_GAMES));
+    gtk_box_append(GTK_BOX(header), games_toolbar);
+
     if (app != NULL) {
         app->sidebar_title = title;
         app->sidebar_section = section;
@@ -561,10 +607,12 @@ GtkWidget* create_sidebar_header(AppData* app) {
         app->sidebar_bm_btn = bm_btn;
         app->sidebar_notes_btn = buf_btn;
         app->sidebar_remote_btn = remote_btn;
+        app->sidebar_games_btn = games_btn;
         app->sidebar_files_toolbar = files_toolbar;
         app->sidebar_bm_toolbar = bm_toolbar;
         app->sidebar_notes_actions = buf_toolbar;
         app->sidebar_remote_toolbar = remote_toolbar;
+        app->sidebar_games_toolbar = games_toolbar;
         app->sidebar_files_hidden_btn = files_hidden_btn;
     }
     g_object_set_data_full(G_OBJECT(header), "collapse-buttons", cb, cb_free);

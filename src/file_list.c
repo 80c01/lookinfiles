@@ -16,6 +16,7 @@
 #include "bookmarks.h"
 #include "notes.h"
 #include "remote.h"
+#include "games.h"
 #include "archive_tree.h"
 #include "archive_extract.h"
 
@@ -318,6 +319,26 @@ void toggle_remote_view(AppData* app) {
         app->show_bookmarks = FALSE;
     } else {
         app->sidebar_view = SIDEBAR_VIEW_REMOTE;
+        app->show_bookmarks = FALSE;
+    }
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
+    refresh_listing(app);
+    select_first_row(app);
+}
+
+void toggle_games_view(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
+        gtk_widget_set_visible(app->left_vbox, TRUE);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+    }
+    if (app->sidebar_view == SIDEBAR_VIEW_GAMES) {
+        app->sidebar_view = SIDEBAR_VIEW_FILES;
+        app->show_bookmarks = FALSE;
+    } else {
+        app->sidebar_view = SIDEBAR_VIEW_GAMES;
         app->show_bookmarks = FALSE;
     }
     app_emit(app, APP_EVENT_CHROME_CHANGED);
@@ -910,6 +931,10 @@ void refresh_listing_with_path(AppData* app, const gchar* select_path) {
         remote_refresh(app);
         return;
     }
+    if (app->sidebar_view == SIDEBAR_VIEW_GAMES) {
+        games_refresh(app);
+        return;
+    }
     start_async_dir_scan(app, app->base_dir, select_path, NULL, FALSE, FALSE, FALSE);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
@@ -996,6 +1021,12 @@ void activate_selected_entry(AppData* app) {
         bookmarks_activate_selected(app);
     } else if (g_strcmp0(type, "remote") == 0 || app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
         remote_activate_selected(app);
+    } else if (g_strcmp0(type, "game") == 0 || g_strcmp0(type, "game_folder") == 0 || app->sidebar_view == SIDEBAR_VIEW_GAMES) {
+        if (g_strcmp0(type, "game_folder") == 0) {
+            explorer_tree_toggle_expanded(app->tree, row);
+        } else {
+            games_activate_selected(app);
+        }
     } else if (g_strcmp0(type, "dir") == 0 || archive_tree_row_is_archive(row) ||
                g_strcmp0(type, "arc_dir") == 0) {
         explorer_tree_toggle_expanded(app->tree, row);

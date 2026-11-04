@@ -31,6 +31,7 @@
 #include "bookmarks.h"
 #include "notes.h"
 #include "remote.h"
+#include "games.h"
 #include "files_menu.h"
 #include "session.h"
 #include "session_bookmark.h"
@@ -558,6 +559,7 @@ int main(int argc, char** argv) {
     notes_attach_context_menu(app);
     remote_init(app);
     remote_attach_context_menu(app);
+    games_init(app);
     files_menu_attach(app);
     orgmode_install_gtksourceview_spec();
     populate_tree(app, start_dir, FALSE, SORT_NAME);

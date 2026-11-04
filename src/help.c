@@ -4,6 +4,7 @@
 #include "panels.h"
 #include "app_events.h"
 #include "nav_keys.h"
+#include "games.h"
 
 /* Modes in which an entry is shown (global mode, nav_keys.h); 0 = every mode */
 #define NP (1u << NAV_STYLE_NOTEPAD)
@@ -253,6 +254,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Ctrl+Shift+L", "Stack the terminal pane under the viewer, or put it back beside it (the explorer panel stays fixed)", 0},
     {"Global", "Ctrl+Shift+R", "Toggle Remote (SSH) machines view in sidebar", 0},
     {"Global", "F1", "User guide in a Help tab (also a click on the top bar's Help button; right click: this cheat sheet)", 0},
+    {"Help panel", "Up Up Down Down Left Right Left Right A B Enter", "Unlock Game Mode in explorer", 0},
     {"Global", "Ctrl+Q", "Quit", 0},
 };
 
@@ -353,6 +355,10 @@ gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval,
     (void)state;
     AppData* app = (AppData*)data;
     if (keyval == GDK_KEY_question || keyval == GDK_KEY_Escape) {
+        toggle_help_panel(app);
+        return TRUE;
+    }
+    if (games_check_help_key(app, keyval)) {
         toggle_help_panel(app);
         return TRUE;
     }

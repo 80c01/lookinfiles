@@ -33,6 +33,7 @@
 #include "focus_route.h"
 #include "image_utils.h"
 #include "note_types.h"
+#include "games.h"
 
 /* Text shown from a Word document before it is cut (images not counted) */
 
@@ -831,11 +832,19 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
         full = cached;
     }
 
-    /* Rows without file content (remote machine, notebook, bookmark folder,
+    /* Rows without file content (games, remote machine, notebook, bookmark folder,
      * notes trash): show a text summary instead of keeping the previous preview */
+    gboolean is_game = (g_strcmp0(type, "game") == 0 || g_strcmp0(type, "game_folder") == 0 ||
+                        app->sidebar_view == SIDEBAR_VIEW_GAMES);
     gboolean is_remote = (g_strcmp0(type, "remote") == 0);
-    gchar* summary = is_remote ? preview_summary_remote(remote_find_by_id(app, full))
-                               : preview_summary_container(row);
+    gchar* summary = NULL;
+    if (is_game) {
+        summary = games_get_preview_summary(row);
+    } else if (is_remote) {
+        summary = preview_summary_remote(remote_find_by_id(app, full));
+    } else {
+        summary = preview_summary_container(row);
+    }
     /* A bookmark's target is never read here (a slow mount would freeze the
      * window): its kind comes from bookmark_icon_check(), which selects the
      * row again once known */

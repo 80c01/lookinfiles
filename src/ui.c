@@ -2,6 +2,7 @@
 #include "canvas_view.h"
 #include "help_guide.h"
 #include "browser.h"
+#include "games.h"
 #include "dialog.h"
 #include "layout_switcher.h"
 #include "preferences.h"
@@ -143,7 +144,7 @@ void close_shown_tab(AppData* app) {
     FocusInfo info;
     focus_route_get(app, &info);
     if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL) &&
-        (canvas_view_close_shown(app) || help_guide_close_shown(app) || browser_close_shown(app))) {
+        (canvas_view_close_shown(app) || help_guide_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app))) {
         return;
     }
     EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);

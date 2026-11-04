@@ -28,6 +28,7 @@ void toggle_hidden_files(AppData* app);
 void toggle_bookmarks_view(AppData* app);
 void toggle_notes_view(AppData* app);
 void toggle_remote_view(AppData* app);
+void toggle_games_view(AppData* app);
 void cycle_sort_mode(AppData* app);
 /* TRUE when a directory is expanded: the collapse / expand toggle collapses */
 gboolean files_any_expanded(AppData* app);

@@ -49,6 +49,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Ctrl+Q` | Quit |
 | `F1` | User guide, in a **Help** tab of the preview panel (also a click on the top bar's **Help** button, which closes the tab when shown; a right click on it shows the cheat sheet) |
 | `?` | Show / hide the shortcut cheat sheet |
+| `Up Up Down Down Left Right Left Right A B Enter` | (In help panel) Unlock Game Mode in explorer |
 | `f` | Toggle fullscreen |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels |
 | `Ctrl+W w` / `Ctrl+W W` (Vim), `C-x o` (Emacs), `F6` / `Shift+F6` (Notepad) | Focus the next / previous panel (global mode, or the mode of the focused editor tab) |
@@ -153,6 +154,7 @@ automatically; one canvas at a time)
 | `Enter`, click | Follow the selected / clicked link (another page of the guide, or a web page in your browser) |
 | `Shift+H` / `Shift+L`, mouse back / forward buttons | Back / forward in the pages visited |
 | `?` | Show / hide the shortcut cheat sheet |
+| `Up Up Down Down Left Right Left Right A B Enter` | (In help panel) Unlock Game Mode in explorer |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Help tab |
 
 **Remote view**
