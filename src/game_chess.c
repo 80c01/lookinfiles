@@ -363,22 +363,29 @@ static void chess_ai_make_move(ChessGame* g) {
     execute_move(g, best_move.from_r, best_move.from_c, best_move.to_r, best_move.to_c);
 }
 
-static const gchar* chess_piece_unicode(gint p) {
-    switch (p) {
-        case 1:  return "♙";
-        case 2:  return "♘";
-        case 3:  return "♗";
-        case 4:  return "♖";
-        case 5:  return "♕";
-        case 6:  return "♔";
-        case -1: return "♟";
-        case -2: return "♞";
-        case -3: return "♝";
-        case -4: return "♜";
-        case -5: return "♛";
-        case -6: return "♚";
-        default: return "";
+static const gchar* chess_piece_glyph(gint p) {
+    switch (abs(p)) {
+        case PIECE_PAWN:   return "♟";
+        case PIECE_KNIGHT: return "♞";
+        case PIECE_BISHOP: return "♝";
+        case PIECE_ROOK:   return "♜";
+        case PIECE_QUEEN:  return "♛";
+        case PIECE_KING:   return "♚";
+        default:           return "";
     }
+}
+
+static void chess_get_board_geometry(int width, int height, gfloat* out_ox, gfloat* out_oy, gfloat* out_sq, gfloat* out_pad) {
+    gfloat avail = (width < height) ? (width * 0.92f) : (height * 0.88f);
+    gfloat pad = avail * 0.04f;
+    if (pad < 16.0f) pad = 16.0f;
+    gfloat sq = (avail - 2.0f * pad) / 8.0f;
+    if (sq < 8.0f) sq = 8.0f;
+
+    *out_sq = sq;
+    *out_pad = pad;
+    *out_ox = (width - sq * 8.0f) * 0.5f;
+    *out_oy = (height - sq * 8.0f) * 0.5f;
 }
 
 static void chess_draw_func(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer user_data) {
@@ -391,40 +398,106 @@ static void chess_draw_func(GtkDrawingArea* area, cairo_t* cr, int width, int he
     cairo_set_source_rgb(cr, bg_r, bg_g, bg_b);
     cairo_paint(cr);
 
-    gfloat size = (width < height) ? (width * 0.9f) : (height * 0.85f);
-    gfloat sq = size / 8.0f;
-    gfloat ox = (width - size) * 0.5f;
-    gfloat oy = (height - size) * 0.5f;
+    gfloat ox, oy, sq, pad;
+    chess_get_board_geometry(width, height, &ox, &oy, &sq, &pad);
+    gfloat size = sq * 8.0f;
+
+    double frame_r, frame_g, frame_b;
+    palette_rgb(PAL_BG_RAISED, &frame_r, &frame_g, &frame_b);
+
+    double border_r, border_g, border_b;
+    palette_rgb(PAL_BORDER_STRONG, &border_r, &border_g, &border_b);
+
+    double coord_r, coord_g, coord_b;
+    palette_rgb(PAL_FG_MUTED, &coord_r, &coord_g, &coord_b);
 
     double light_r, light_g, light_b;
-    palette_rgb(PAL_BG_RAISED, &light_r, &light_g, &light_b);
+    palette_rgb(PAL_ANSI_WHITE, &light_r, &light_g, &light_b);
 
     double dark_r, dark_g, dark_b;
-    palette_rgb(PAL_BG_BLOCK, &dark_r, &dark_g, &dark_b);
+    palette_rgb(PAL_BADGE_GREEN, &dark_r, &dark_g, &dark_b);
 
     double sel_r, sel_g, sel_b;
-    palette_rgb(PAL_BG_SELECTED, &sel_r, &sel_g, &sel_b);
+    palette_rgb(PAL_ACCENT, &sel_r, &sel_g, &sel_b);
 
     double check_r, check_g, check_b;
     palette_rgb(PAL_ERROR, &check_r, &check_g, &check_b);
 
+    double focus_r, focus_g, focus_b;
+    palette_rgb(PAL_FOCUS_RING, &focus_r, &focus_g, &focus_b);
+
+    double piece_white_r, piece_white_g, piece_white_b;
+    palette_rgb(PAL_ACCENT_TEXT, &piece_white_r, &piece_white_g, &piece_white_b);
+
+    double piece_black_r, piece_black_g, piece_black_b;
+    palette_rgb(PAL_ANSI_BLACK, &piece_black_r, &piece_black_g, &piece_black_b);
+
+    /* Draw Board Frame */
+    cairo_set_source_rgb(cr, frame_r, frame_g, frame_b);
+    cairo_rectangle(cr, ox - pad, oy - pad, size + 2.0f * pad, size + 2.0f * pad);
+    cairo_fill(cr);
+
+    cairo_set_source_rgb(cr, border_r, border_g, border_b);
+    cairo_set_line_width(cr, 1.5);
+    cairo_rectangle(cr, ox - pad, oy - pad, size + 2.0f * pad, size + 2.0f * pad);
+    cairo_stroke(cr);
+
     PangoLayout* layout = pango_cairo_create_layout(cr);
     PangoFontDescription* font_desc = pango_font_description_from_string(fonts_family(FONT_UI));
+
+    /* Rank & file coordinate labels */
+    pango_font_description_set_size(font_desc, (gint)(pad * 0.55f * PANGO_SCALE));
+    pango_layout_set_font_description(layout, font_desc);
+    cairo_set_source_rgb(cr, coord_r, coord_g, coord_b);
+
+    /* Ranks 1 to 8 */
+    for (gint r = 0; r < 8; r++) {
+        gchar rank_str[2] = {(gchar)('8' - r), '\0'};
+        pango_layout_set_text(layout, rank_str, -1);
+        int pw, ph;
+        pango_layout_get_pixel_size(layout, &pw, &ph);
+
+        gfloat cy = oy + (r + 0.5f) * sq - ph * 0.5f;
+        cairo_move_to(cr, ox - pad * 0.5f - pw * 0.5f, cy);
+        pango_cairo_show_layout(cr, layout);
+
+        cairo_move_to(cr, ox + size + pad * 0.5f - pw * 0.5f, cy);
+        pango_cairo_show_layout(cr, layout);
+    }
+
+    /* Files a to h */
+    for (gint c = 0; c < 8; c++) {
+        gchar file_str[2] = {(gchar)('a' + c), '\0'};
+        pango_layout_set_text(layout, file_str, -1);
+        int pw, ph;
+        pango_layout_get_pixel_size(layout, &pw, &ph);
+
+        gfloat cx = ox + (c + 0.5f) * sq - pw * 0.5f;
+        cairo_move_to(cr, cx, oy - pad * 0.5f - ph * 0.5f);
+        pango_cairo_show_layout(cr, layout);
+
+        cairo_move_to(cr, cx, oy + size + pad * 0.5f - ph * 0.5f);
+        pango_cairo_show_layout(cr, layout);
+    }
+
+    /* Inner border dividing squares from frame */
+    cairo_set_source_rgb(cr, border_r, border_g, border_b);
+    cairo_set_line_width(cr, 1.0);
+    cairo_rectangle(cr, ox - 0.5f, oy - 0.5f, size + 1.0f, size + 1.0f);
+    cairo_stroke(cr);
+
+    /* Setup font for pieces */
     pango_font_description_set_size(font_desc, (gint)(sq * 0.65f * PANGO_SCALE));
     pango_layout_set_font_description(layout, font_desc);
 
-    /* Draw Board */
+    /* Draw Board Squares & Pieces */
     for (gint r = 0; r < 8; r++) {
         for (gint c = 0; c < 8; c++) {
             gfloat x = ox + c * sq;
             gfloat y = oy + r * sq;
             gboolean is_light = ((r + c) % 2 == 0);
 
-            if (r == g->sel_r && c == g->sel_c) {
-                cairo_set_source_rgb(cr, sel_r, sel_g, sel_b);
-            } else if (g->in_check && g->board[r][c] == g->turn * PIECE_KING) {
-                cairo_set_source_rgba(cr, check_r, check_g, check_b, 0.7);
-            } else if (is_light) {
+            if (is_light) {
                 cairo_set_source_rgb(cr, light_r, light_g, light_b);
             } else {
                 cairo_set_source_rgb(cr, dark_r, dark_g, dark_b);
@@ -432,36 +505,76 @@ static void chess_draw_func(GtkDrawingArea* area, cairo_t* cr, int width, int he
             cairo_rectangle(cr, x, y, sq, sq);
             cairo_fill(cr);
 
+            /* In check highlight on King */
+            if (g->in_check && g->board[r][c] == g->turn * PIECE_KING) {
+                cairo_set_source_rgba(cr, check_r, check_g, check_b, 0.65);
+                cairo_rectangle(cr, x, y, sq, sq);
+                cairo_fill(cr);
+            }
+
+            /* Selected square highlight */
+            if (r == g->sel_r && c == g->sel_c) {
+                cairo_set_source_rgba(cr, sel_r, sel_g, sel_b, 0.40);
+                cairo_rectangle(cr, x, y, sq, sq);
+                cairo_fill(cr);
+
+                cairo_set_source_rgb(cr, sel_r, sel_g, sel_b);
+                cairo_set_line_width(cr, 2.5);
+                cairo_rectangle(cr, x + 1.25f, y + 1.25f, sq - 2.5f, sq - 2.5f);
+                cairo_stroke(cr);
+            }
+
             /* Keyboard cursor highlight */
             if (r == g->cur_r && c == g->cur_c) {
-                cairo_set_source_rgb(cr, sel_r, sel_g, sel_b);
+                cairo_set_source_rgb(cr, focus_r, focus_g, focus_b);
                 cairo_set_line_width(cr, 3.0);
                 cairo_rectangle(cr, x + 1.5f, y + 1.5f, sq - 3.0f, sq - 3.0f);
                 cairo_stroke(cr);
             }
 
-            /* Legal destination move dot */
+            /* Legal destination move dot for empty square */
             if (g->sel_r >= 0 && is_legal_move(g, g->sel_r, g->sel_c, r, c)) {
-                cairo_set_source_rgba(cr, sel_r, sel_g, sel_b, 0.6);
-                cairo_arc(cr, x + sq * 0.5f, y + sq * 0.5f, sq * 0.16f, 0, 2 * M_PI);
-                cairo_fill(cr);
+                if (g->board[r][c] == 0) {
+                    cairo_set_source_rgba(cr, sel_r, sel_g, sel_b, 0.60);
+                    cairo_arc(cr, x + sq * 0.5f, y + sq * 0.5f, sq * 0.16f, 0, 2 * M_PI);
+                    cairo_fill(cr);
+                }
             }
 
             /* Draw piece glyph */
             gint p = g->board[r][c];
             if (p != 0) {
-                const gchar* glyph = chess_piece_unicode(p);
+                const gchar* glyph = chess_piece_glyph(p);
                 pango_layout_set_text(layout, glyph, -1);
                 int pw, ph;
                 pango_layout_get_pixel_size(layout, &pw, &ph);
 
-                if (p > 0) {
-                    cairo_set_source_rgb(cr, 0.98, 0.98, 0.98); /* White piece */
-                } else {
-                    cairo_set_source_rgb(cr, 0.12, 0.12, 0.12); /* Black piece */
-                }
                 cairo_move_to(cr, x + (sq - pw) * 0.5f, y + (sq - ph) * 0.5f);
-                pango_cairo_show_layout(cr, layout);
+                pango_cairo_layout_path(cr, layout);
+
+                if (p > 0) {
+                    /* White piece: Dark outline, bright white fill */
+                    cairo_set_source_rgb(cr, piece_black_r, piece_black_g, piece_black_b);
+                    cairo_set_line_width(cr, sq * 0.055f);
+                    cairo_stroke_preserve(cr);
+                    cairo_set_source_rgb(cr, piece_white_r, piece_white_g, piece_white_b);
+                    cairo_fill(cr);
+                } else {
+                    /* Black piece: Bright outline, deep dark fill */
+                    cairo_set_source_rgb(cr, piece_white_r, piece_white_g, piece_white_b);
+                    cairo_set_line_width(cr, sq * 0.055f);
+                    cairo_stroke_preserve(cr);
+                    cairo_set_source_rgb(cr, piece_black_r, piece_black_g, piece_black_b);
+                    cairo_fill(cr);
+                }
+
+                /* Legal capture ring around enemy piece */
+                if (g->sel_r >= 0 && is_legal_move(g, g->sel_r, g->sel_c, r, c)) {
+                    cairo_set_source_rgba(cr, sel_r, sel_g, sel_b, 0.85);
+                    cairo_set_line_width(cr, sq * 0.075f);
+                    cairo_arc(cr, x + sq * 0.5f, y + sq * 0.5f, sq * 0.42f, 0, 2 * M_PI);
+                    cairo_stroke(cr);
+                }
             }
         }
     }
@@ -481,10 +594,8 @@ static void on_chess_click(GtkGestureClick* gesture, int n_press, double x, doub
     int width = gtk_widget_get_width(w);
     int height = gtk_widget_get_height(w);
 
-    gfloat size = (width < height) ? (width * 0.9f) : (height * 0.85f);
-    gfloat sq = size / 8.0f;
-    gfloat ox = (width - size) * 0.5f;
-    gfloat oy = (height - size) * 0.5f;
+    gfloat ox, oy, sq, pad;
+    chess_get_board_geometry(width, height, &ox, &oy, &sq, &pad);
 
     gint c = (gint)((x - ox) / sq);
     gint r = (gint)((y - oy) / sq);
