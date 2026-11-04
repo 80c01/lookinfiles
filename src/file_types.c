@@ -241,6 +241,10 @@ static const struct {
     { "torrent", FILE_KIND_TORRENT },
     { "pyc", FILE_KIND_PYC },
     { "pyo", FILE_KIND_PYC },
+    { "tfm", FILE_KIND_TFM },
+    { "vf", FILE_KIND_TFM },
+    { "ofm", FILE_KIND_TFM },
+    { "pfb", FILE_KIND_TFM },
 };
 
 /* Manual page section suffix: "1".."9", optionally followed by letters ("3pm", "1ssl") */
@@ -382,6 +386,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_WASM:         return "WebAssembly";
     case FILE_KIND_TORRENT:      return "BitTorrent";
     case FILE_KIND_PYC:          return "Python Bytecode";
+    case FILE_KIND_TFM:          return "TeX Font Metric";
     }
     return NULL;
 }
@@ -527,6 +532,21 @@ static FileKind detect_binary_magic(const gchar* name, const guchar* head, gsize
         guint16 pym = (guint16)(head[0] | (head[1] << 8));
         if (by_name == FILE_KIND_PYC || (pym >= 3000 && pym <= 4000) || pym == 62211) {
             return FILE_KIND_PYC; /* Python bytecode */
+        }
+    }
+    if (HAS(0, "\x80\x01") && (by_name == FILE_KIND_TFM || len >= 6)) {
+        return FILE_KIND_TFM; /* PostScript Type 1 binary font (.pfb) */
+    }
+    if (HAS(0, "\xF7\xCA") && (by_name == FILE_KIND_TFM || len >= 11)) {
+        return FILE_KIND_TFM; /* TeX virtual font (.vf) */
+    }
+    if (by_name == FILE_KIND_TFM && len >= 24) {
+        guint16 lf = (guint16)((head[0] << 8) | head[1]);
+        guint16 lh = (guint16)((head[2] << 8) | head[3]);
+        guint16 bc = (guint16)((head[4] << 8) | head[5]);
+        guint16 ec = (guint16)((head[6] << 8) | head[7]);
+        if (lf >= 6 + lh && ec + 1 >= bc) {
+            return FILE_KIND_TFM; /* TeX font metric (.tfm) */
         }
     }
     if (HAS(0, "OTTO") || HAS(0, "ttcf") || HAS(0, "wOFF") || HAS(0, "wOF2") ||

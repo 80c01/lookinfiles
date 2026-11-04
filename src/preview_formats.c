@@ -34,6 +34,7 @@
 #include "text_encoding.h"
 #include "sqlite_view.h"
 #include "pyc_info.h"
+#include "tfm_info.h"
 #include "torrent_info.h"
 #include "wasm_info.h"
 
@@ -416,11 +417,9 @@ static PreviewDoc* build_cards(const PreviewInput* in, CardAppendFunc append, GE
 static PreviewDoc* build_calendar(const PreviewInput* in, GCancellable* c, GError** e) {
     (void)c; return build_cards(in, card_view_append_calendar, e);
 }
-
 static PreviewDoc* build_contacts(const PreviewInput* in, GCancellable* c, GError** e) {
     (void)c; return build_cards(in, card_view_append_contacts, e);
 }
-
 static PreviewDoc* build_desktop(const PreviewInput* in, GCancellable* c, GError** e) {
     (void)c; return build_cards(in, card_view_append_desktop, e);
 }
@@ -1039,6 +1038,9 @@ static PreviewDoc* build_torrent(const PreviewInput* in, GCancellable* c, GError
 static PreviewDoc* build_pyc(const PreviewInput* in, GCancellable* c, GError** e) {
     (void)c; return build_binary_doc(in, "Python bytecode", 16 * 1024 * 1024, pyc_info_append, e);
 }
+static PreviewDoc* build_tfm(const PreviewInput* in, GCancellable* c, GError** e) {
+    (void)c; return build_binary_doc(in, "TeX font metric", 16 * 1024 * 1024, tfm_info_append, e);
+}
 
 /* --- Registry --- */
 
@@ -1070,6 +1072,7 @@ static PreviewBuildFunc builder_for(FileKind kind) {
     case FILE_KIND_WASM:         return build_wasm;
     case FILE_KIND_TORRENT:      return build_torrent;
     case FILE_KIND_PYC:          return build_pyc;
+    case FILE_KIND_TFM:          return build_tfm;
     default:                     return NULL;
     }
 }

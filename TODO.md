@@ -13,7 +13,7 @@ Rules, coverage and the checklist for a new format: [docs/previews.md](docs/prev
 - [ ] JSON / XML / YAML / TOML tree view with folding
 - [ ] lay `.docx` text out at the page width (fonts, colours and headers are shown)
 - [ ] a placeholder (name, size, kind) when a structured preview takes longer than ~100 ms (none measured over the budget so far)
-- [ ] previews of TeX fonts (`.tfm`, `.pfb`) and Python bytecode (`.pyc`), the largest remaining L0 groups
+- [x] previews of TeX fonts (`.tfm`, `.pfb`) and Python bytecode (`.pyc`), the largest remaining L0 groups
 - [ ] folders and messages of Outlook stores (`.pst`, `.ost`, `.dbx`): would need libpff
 - [ ] find the cause of the GTK warning "Trying to snapshot GtkGizmo" after wide table previews (see docs/previews.md, "Known issues")
 

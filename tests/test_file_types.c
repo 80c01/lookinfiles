@@ -129,6 +129,12 @@ static void test_detect_binary(void) {
     g_assert_cmpint(DETECT("unknown_pyc", "\xA7\x0D\r\n\0\0\0\0\0\0\0\0\0\0\0\0"), ==, FILE_KIND_PYC);
     g_assert_cmpint(file_kind_from_name("code.pyc"), ==, FILE_KIND_PYC);
     g_assert_cmpint(file_kind_from_name("code.pyo"), ==, FILE_KIND_PYC);
+    g_assert_cmpint(file_kind_from_name("cmr10.tfm"), ==, FILE_KIND_TFM);
+    g_assert_cmpint(file_kind_from_name("aeb10.vf"), ==, FILE_KIND_TFM);
+    g_assert_cmpint(file_kind_from_name("font.pfb"), ==, FILE_KIND_TFM);
+    g_assert_cmpint(DETECT("cmr10.tfm", "\0\x25\0\x12\0\x41\0\x42\0\x02\0\x01\0\x01\0\0\0\0\0\0\0\0\0\x07"), ==, FILE_KIND_TFM);
+    g_assert_cmpint(DETECT("virtual", "\xF7\xCA\0\0\0\0\0\0\0\0\0"), ==, FILE_KIND_TFM);
+    g_assert_cmpint(DETECT("postscript", "\x80\x01\x10\0\0\0"), ==, FILE_KIND_TFM);
     /* Unknown binary signature: trust a media name (TGA has no magic number) */
     g_assert_cmpint(DETECT("pic.tga", "\0\0\x02\0\0\0\0\0"), ==, FILE_KIND_IMAGE);
     /* ZIP archives: Word documents by name or by their first entries */

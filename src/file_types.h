@@ -66,10 +66,11 @@ typedef enum {
     FILE_KIND_CLASS,     /* Java bytecode (.class) */
     FILE_KIND_WASM,      /* WebAssembly binary (.wasm) */
     FILE_KIND_TORRENT,   /* BitTorrent metainfo (.torrent) */
-    FILE_KIND_PYC        /* Python bytecode (.pyc, .pyo); keep last (FILE_KIND_LAST) */
+    FILE_KIND_PYC,       /* Python bytecode (.pyc, .pyo) */
+    FILE_KIND_TFM        /* TeX font metrics (.tfm, .vf, .pfb); keep last (FILE_KIND_LAST) */
 } FileKind;
 
-#define FILE_KIND_LAST FILE_KIND_PYC
+#define FILE_KIND_LAST FILE_KIND_TFM
 
 /* Number of leading bytes file_kind_detect() needs */
 #define FILE_SNIFF_BYTES 4096
