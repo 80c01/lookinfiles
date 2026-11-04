@@ -63,10 +63,11 @@ typedef enum {
     FILE_KIND_OLE,       /* OLE2 compound file: Office 97-2003 .doc / .xls / .ppt, .msg... */
     FILE_KIND_MAIL,      /* mail message (.eml), mailbox (mbox), mail store */
     FILE_KIND_TRANSLATION, /* gettext catalogs (.po, .pot, .mo) */
-    FILE_KIND_CLASS      /* Java bytecode (.class); keep last (FILE_KIND_LAST) */
+    FILE_KIND_CLASS,     /* Java bytecode (.class) */
+    FILE_KIND_WASM       /* WebAssembly binary (.wasm); keep last (FILE_KIND_LAST) */
 } FileKind;
 
-#define FILE_KIND_LAST FILE_KIND_CLASS
+#define FILE_KIND_LAST FILE_KIND_WASM
 
 /* Number of leading bytes file_kind_detect() needs */
 #define FILE_SNIFF_BYTES 4096

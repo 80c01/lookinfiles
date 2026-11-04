@@ -184,6 +184,7 @@ every common format to L3 and never leave one below L1.
 | Calendars, contacts, `.desktop` | L2 | `card_view` |
 | gettext catalogs `.po` / `.mo` | L2 | `gettext_view` |
 | Java class files `.class`: class, target version, hierarchy, fields, methods | L2 | `class_info` |
+| WebAssembly `.wasm`: version, functions, memory limits, imports, exports | L2 | `wasm_info` |
 | ELF executables / libraries / objects | L1 | `elf_info` |
 | Directories | L2 | `dir_preview`, `dir_summary` |
 | Any other binary | L0 | `hex_dump` |

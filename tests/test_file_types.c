@@ -120,6 +120,9 @@ static void test_detect_binary(void) {
     g_assert_cmpint(DETECT("Main.class", "\xCA\xFE\xBA\xBE\0\0\0\x3D"), ==, FILE_KIND_CLASS);
     g_assert_cmpint(DETECT("unknown", "\xCA\xFE\xBA\xBE\0\0\0\x3D"), ==, FILE_KIND_CLASS);
     g_assert_cmpint(file_kind_from_name("App.class"), ==, FILE_KIND_CLASS);
+    g_assert_cmpint(DETECT("module.wasm", "\0asm\x01\0\0\0"), ==, FILE_KIND_WASM);
+    g_assert_cmpint(DETECT("binary", "\0asm\x01\0\0\0"), ==, FILE_KIND_WASM);
+    g_assert_cmpint(file_kind_from_name("module.wasm"), ==, FILE_KIND_WASM);
     /* Unknown binary signature: trust a media name (TGA has no magic number) */
     g_assert_cmpint(DETECT("pic.tga", "\0\0\x02\0\0\0\0\0"), ==, FILE_KIND_IMAGE);
     /* ZIP archives: Word documents by name or by their first entries */

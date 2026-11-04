@@ -33,6 +33,7 @@
 #include "spreadsheet.h"
 #include "text_encoding.h"
 #include "sqlite_view.h"
+#include "wasm_info.h"
 
 typedef PreviewDoc* (*PreviewBuildFunc)(const PreviewInput* in, GCancellable* cancellable,
                                         GError** error);
@@ -47,9 +48,7 @@ static gchar* format_count(guint64 n) {
     gsize len = strlen(digits);
     GString* out = g_string_new(NULL);
     for (gsize i = 0; i < len; i++) {
-        if (i > 0 && (len - i) % 3 == 0) {
-            g_string_append_c(out, ',');
-        }
+        if (i > 0 && (len - i) % 3 == 0) g_string_append_c(out, ',');
         g_string_append_c(out, digits[i]);
     }
     g_free(digits);
@@ -62,9 +61,7 @@ static gboolean is_opendocument(const PreviewInput* in) {
     static const gchar NEEDLE[] = "application/vnd.oasis.opendocument";
     gsize n = sizeof(NEEDLE) - 1;
     for (gsize i = 0; in->head != NULL && i + n <= in->head_len; i++) {
-        if (memcmp(in->head + i, NEEDLE, n) == 0) {
-            return TRUE;
-        }
+        if (memcmp(in->head + i, NEEDLE, n) == 0) return TRUE;
     }
     return FALSE;
 }
@@ -437,15 +434,11 @@ static PreviewDoc* build_desktop(const PreviewInput* in, GCancellable* c, GError
 /* Last bytes of a file, starting at a line start; NULL if it cannot be read */
 static gchar* read_tail(const gchar* path, gint64 size, gsize max, gsize* len) {
     FILE* fp = g_fopen(path, "rb");
-    if (fp == NULL) {
-        return NULL;
-    }
+    if (fp == NULL) return NULL;
     gint64 from = size > (gint64)max ? size - (gint64)max : 0;
     gchar* data = g_malloc(max + 1);
     gsize n = 0;
-    if (fseeko(fp, (off_t)from, SEEK_SET) == 0) {
-        n = fread(data, 1, max, fp);
-    }
+    if (fseeko(fp, (off_t)from, SEEK_SET) == 0) n = fread(data, 1, max, fp);
     fclose(fp);
     data[n] = '\0';
     gsize skip = 0;
@@ -643,9 +636,7 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
         preview_doc_section(doc, "License");
         gchar* license = g_utf8_substring(info->license, 0, 600);
         preview_doc_append(doc, PREVIEW_STYLE_DIM, license);
-        if (g_utf8_strlen(info->license, -1) > 600) {
-            preview_doc_append(doc, PREVIEW_STYLE_DIM, "…");
-        }
+        if (g_utf8_strlen(info->license, -1) > 600) preview_doc_append(doc, PREVIEW_STYLE_DIM, "…");
         preview_doc_append_len(doc, "\n", 1);
         g_free(license);
     }
@@ -986,7 +977,7 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
     gsize len = MIN(full_len, (gsize)MAIL_MAX_FILE);
     gboolean tnef = mail_tnef_looks_like((const guint8*)data, len);
     g_autoptr(MailMessage) msg = tnef ? mail_tnef_read((const guint8*)data, len, MAIL_VIEW_MAX_PART, NULL)
-                                      : mail_message_parse(data != NULL ? data : "", data != NULL ? len : 0, MAIL_VIEW_MAX_PART);
+                                      : mail_message_parse(data ? data : "", data ? len : 0, MAIL_VIEW_MAX_PART);
     g_mapped_file_unref(map);
     gchar* size = preview_format_size(in->size);
     gchar* subtitle = g_strdup_printf("%s · %s", tnef ? "Outlook TNEF (winmail.dat)" : "Mail message", size);
@@ -1016,34 +1007,42 @@ static PreviewDoc* build_document(const PreviewInput* in, GCancellable* cancella
     return html != NULL ? preview_doc_new_source(PREVIEW_DOC_HTML, html) : NULL;
 }
 
-/* --- Java class files --- */
+/* --- Binary document helper --- */
 
-static PreviewDoc* build_class(const PreviewInput* in, GCancellable* cancellable, GError** error) {
-    (void)cancellable;
+typedef gboolean (*DocAppendBytesFunc)(PreviewDoc* doc, const guchar* data, gsize len, GError** error);
+
+static PreviewDoc* build_binary_doc(const PreviewInput* in, const gchar* label, gsize max_size,
+                                    DocAppendBytesFunc append_fn, GError** error) {
     gchar* data = NULL;
     gsize len = 0;
-    if (in->size > 16 * 1024 * 1024 || !g_file_get_contents(in->path, &data, &len, error)) {
+    if (in->size > (gint64)max_size || !g_file_get_contents(in->path, &data, &len, error)) {
         if (error != NULL && *error == NULL) {
-            g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "class file too large");
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "file too large");
         }
         return NULL;
     }
     g_autoptr(PreviewDoc) body = preview_doc_new();
-    gboolean ok = class_info_append(body, (const guchar*)data, len, error);
+    gboolean ok = append_fn(body, (const guchar*)data, len, error);
     g_free(data);
-    if (!ok) {
-        return NULL;
-    }
+    if (!ok) return NULL;
     PreviewDoc* doc = preview_doc_new();
     doc->monospace = TRUE;
     doc->wrap = FALSE;
     gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf("Java class file · %s", size);
+    gchar* subtitle = g_strdup_printf("%s · %s", label, size);
     preview_doc_title(doc, in->name, subtitle);
     g_free(subtitle);
     g_free(size);
     append_doc(doc, body);
     return doc;
+}
+
+static PreviewDoc* build_class(const PreviewInput* in, GCancellable* c, GError** e) {
+    (void)c; return build_binary_doc(in, "Java class file", 16 * 1024 * 1024, class_info_append, e);
+}
+
+static PreviewDoc* build_wasm(const PreviewInput* in, GCancellable* c, GError** e) {
+    (void)c; return build_binary_doc(in, "WebAssembly binary", 32 * 1024 * 1024, wasm_info_append, e);
 }
 
 /* --- Registry --- */
@@ -1073,6 +1072,7 @@ static PreviewBuildFunc builder_for(FileKind kind) {
     case FILE_KIND_DATABASE:     return build_database;
     case FILE_KIND_TRANSLATION:  return build_translation;
     case FILE_KIND_CLASS:        return build_class;
+    case FILE_KIND_WASM:         return build_wasm;
     default:                     return NULL;
     }
 }

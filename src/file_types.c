@@ -237,6 +237,7 @@ static const struct {
     { "po", FILE_KIND_TRANSLATION }, { "pot", FILE_KIND_TRANSLATION }, { "mo", FILE_KIND_TRANSLATION },
     { "gmo", FILE_KIND_TRANSLATION },
     { "class", FILE_KIND_CLASS },
+    { "wasm", FILE_KIND_WASM },
 };
 
 /* Manual page section suffix: "1".."9", optionally followed by letters ("3pm", "1ssl") */
@@ -375,6 +376,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_MAIL:         return "Mail";
     case FILE_KIND_TRANSLATION:  return "Translations";
     case FILE_KIND_CLASS:        return "Java Class";
+    case FILE_KIND_WASM:         return "WebAssembly";
     }
     return NULL;
 }
@@ -509,6 +511,9 @@ static FileKind detect_binary_magic(const gchar* name, const guchar* head, gsize
     }
     if (HAS(0, "\xCA\xFE\xBA\xBE") && (by_name == FILE_KIND_CLASS || (len >= 8 && head[4] == 0 && head[6] == 0 && head[7] >= 45))) {
         return FILE_KIND_CLASS; /* Java bytecode */
+    }
+    if (HAS(0, "\0asm") && (by_name == FILE_KIND_WASM || len >= 8)) {
+        return FILE_KIND_WASM; /* WebAssembly binary */
     }
     if (HAS(0, "OTTO") || HAS(0, "ttcf") || HAS(0, "wOFF") || HAS(0, "wOF2") ||
         ((HAS(0, "\0\1\0\0") || HAS(0, "true")) && by_name == FILE_KIND_FONT)) {
