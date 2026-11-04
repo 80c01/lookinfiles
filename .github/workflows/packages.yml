@@ -141,6 +141,7 @@ jobs:
             mingw-w64-ucrt-x86_64-poppler
             mingw-w64-ucrt-x86_64-sqlite3
             mingw-w64-ucrt-x86_64-libarchive
+            diffutils
             make
             zip
 

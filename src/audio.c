@@ -13,7 +13,7 @@ static void update_audio_metadata_label(AppData* app, GtkMediaStream* stream) {
         return;
     }
 
-    struct stat st;
+    GStatBuf st;
     gint64 fsize = (g_stat(app->audio_current_path, &st) == 0) ? (gint64)st.st_size : 0;
     gchar* size_str = g_format_size((guint64)fsize);
 
@@ -246,7 +246,7 @@ static void render_audio_raw(AppData* app, const gchar* name, const gchar* full)
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
     set_view_text_padding(app->text_view);
 
-    struct stat st;
+    GStatBuf st;
     gint64 fsize = (g_stat(full, &st) == 0) ? (gint64)st.st_size : 0;
     gchar* size_str = g_format_size((guint64)fsize);
 

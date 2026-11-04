@@ -231,7 +231,7 @@ static DirScanNode* scan_dir_node_recursive(const gchar* dirname,
             continue;
         }
         gchar* full = g_build_filename(dirname, name, NULL);
-        struct stat st;
+        GStatBuf st;
         gboolean ok = (g_stat(full, &st) == 0);
         FileEntry e;
         e.name = g_strdup(name);
@@ -616,7 +616,7 @@ static void collect_expand_all(const gchar* base, gboolean show_hidden, GHashTab
                 }
                 rows++;
                 gchar* full = g_build_filename(dirname, name, NULL);
-                struct stat st;
+                GStatBuf st;
                 if (g_lstat(full, &st) == 0 && S_ISDIR(st.st_mode)) {
                     g_queue_push_tail(&queue, full);
                 } else {

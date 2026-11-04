@@ -253,7 +253,7 @@ void update_status_bar(AppData* app) {
         gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0 &&
                             g_strcmp0(type, "bm_folder") != 0 && g_strcmp0(type, "notebook") != 0 &&
                             g_strcmp0(type, "trash") != 0 && g_strcmp0(type, "remote_folder") != 0);
-        struct stat st;
+        GStatBuf st;
         if (is_file && full != NULL && g_stat(full, &st) == 0) {
             gchar* size_str = g_format_size((guint64)st.st_size);
             gtk_label_set_text(GTK_LABEL(app->status_size), size_str);

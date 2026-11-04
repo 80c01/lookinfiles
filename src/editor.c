@@ -1119,7 +1119,7 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
         }
     }
 
-    struct stat st;
+    GStatBuf st;
     if (g_stat(full, &st) != 0) {
         gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
         gtk_text_buffer_set_text(app->buffer, msg, -1);

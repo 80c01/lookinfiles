@@ -83,7 +83,7 @@ ALL_LDFLAGS = $(CFLAGS) $(CFLAGS_EXTRA) $(LDFLAGS)
 # rewritten (and gets newer than the objects) only when they differ.
 FLAGS_STAMP = $(BUILD_DIR)/flags
 FLAGS_NOW = $(CC) $(ALL_CFLAGS) | $(ALL_LDFLAGS) $(LIBS)
-$(shell mkdir -p $(BUILD_DIR); printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' | cmp -s - $(FLAGS_STAMP) || printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' > $(FLAGS_STAMP))
+$(shell mkdir -p $(BUILD_DIR); if command -v cmp >/dev/null 2>&1; then printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' | cmp -s - $(FLAGS_STAMP) || printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' > $(FLAGS_STAMP); else printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' > $(FLAGS_STAMP); fi)
 
 # Every .c file in src/ is part of the application: adding a module only
 # requires creating src/<module>.c and src/<module>.h.

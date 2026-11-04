@@ -195,7 +195,7 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
-    struct stat st;
+    GStatBuf st;
     gint64 fsize = (g_stat(td->full, &st) == 0) ? (gint64)st.st_size : 0;
     td->size_str = g_format_size((guint64)fsize);
 
