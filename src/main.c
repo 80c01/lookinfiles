@@ -48,12 +48,15 @@
 #include "focus_route.h"
 #include <string.h>
 
-/* The window is closed: remember the workspaces for the next launch */
+/* The window is closed: ask about unsaved changes like Ctrl+Q, then remember
+ * the workspaces for the next launch. With a dialog open, close the dialog
+ * only: its nested main loop must return before the window goes away. */
 static gboolean on_window_close_request(GtkWindow* window, gpointer data) {
-    (void)window;
-    canvas_view_save((AppData*)data);
-    session_save_now((AppData*)data);
-    return FALSE;
+    if (app_dialog_is_open(window)) {
+        app_dialog_dismiss_top(window);
+        return TRUE;
+    }
+    return !ui_confirm_quit((AppData*)data);
 }
 
 static void on_window_destroy(GtkWidget* widget, gpointer data) {

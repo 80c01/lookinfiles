@@ -72,4 +72,8 @@ gint app_dialog_run(AppDialog* dialog, GtkWidget* focus);
  * then disabled) */
 gboolean app_dialog_is_open(GtkWindow* window);
 
+/* Answer the topmost dialog of the window with APP_RESPONSE_DELETE_EVENT, as
+ * Escape does (the window is about to close: its nested loop must end first) */
+void app_dialog_dismiss_top(GtkWindow* window);
+
 #endif /* DIALOG_H */

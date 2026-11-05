@@ -12,6 +12,10 @@ void focus_prev_panel(AppData* app);
  * (never a tab hidden behind Git Commits or References) */
 void close_shown_tab(AppData* app);
 
+/* Before quitting (Ctrl+Q, window closed): confirm unsaved changes of every
+ * workspace, then save canvases and the session. FALSE when the user cancels. */
+gboolean ui_confirm_quit(AppData* app);
+
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
 
 void layout_save_frac(AppData* app);

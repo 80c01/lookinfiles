@@ -164,6 +164,17 @@ static gboolean focus_in_terminal(AppData* app) {
 #endif
 }
 
+gboolean ui_confirm_quit(AppData* app) {
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        if (!editor_confirm_discard_workspace(app, app->workspaces[i].editors)) {
+            return FALSE;
+        }
+    }
+    canvas_view_save(app);
+    session_save_now(app);
+    return TRUE;
+}
+
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
                              guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
@@ -178,14 +189,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     /* Ctrl+Q: quit */
     if ((state & GDK_CONTROL_MASK) &&
         (keyval == GDK_KEY_q || keyval == GDK_KEY_Q)) {
-        for (gint i = 0; i < app->num_workspaces; i++) {
-            if (!editor_confirm_discard_workspace(app, app->workspaces[i].editors)) {
-                return TRUE;
-            }
-        }
-        canvas_view_save(app);
-        session_save_now(app);
-        if (app->main_loop != NULL && g_main_loop_is_running(app->main_loop)) {
+        if (ui_confirm_quit(app) && app->main_loop != NULL && g_main_loop_is_running(app->main_loop)) {
             g_main_loop_quit(app->main_loop);
         }
         return TRUE;

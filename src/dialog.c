@@ -45,6 +45,13 @@ gboolean app_dialog_is_open(GtkWindow* window) {
     return dialog_stack(window_overlay(window)) != NULL;
 }
 
+void app_dialog_dismiss_top(GtkWindow* window) {
+    GList* stack = dialog_stack(window_overlay(window));
+    if (stack != NULL) {
+        app_dialog_response(APP_DIALOG(g_list_last(stack)->data), APP_RESPONSE_DELETE_EVENT);
+    }
+}
+
 /* Only the topmost layer takes focus and clicks: the window content while no
  * dialog is shown, otherwise the last dialog */
 static void update_interactive_layer(GtkOverlay* overlay) {
