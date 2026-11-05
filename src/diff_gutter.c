@@ -183,6 +183,12 @@ static void on_head_read(GObject* source, GAsyncResult* res, gpointer user_data)
     if (g == NULL || hd->generation != g->generation) {
         return;
     }
+    /* Files changed elsewhere, HEAD did not: the marks are still right (the
+     * line diff runs on the UI thread, not worth repeating) */
+    if (g->base != NULL && hd->blob != NULL && g->base_len == hd->blob_len &&
+        memcmp(g->base, hd->blob, hd->blob_len) == 0) {
+        return;
+    }
     g_free(g->base);
     g->base = g_steal_pointer(&hd->blob);
     g->base_len = hd->blob_len;
