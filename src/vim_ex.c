@@ -25,7 +25,7 @@ static const ExName EX_NAMES[] = {
     {"join", 1, NULL}, {"jumps", 2, NULL},
     {"global", 1, NULL}, {"vglobal", 1, NULL},
     {"normal", 4, NULL}, {"nohlsearch", 3, NULL},
-    {"registers", 3, NULL}, {"redo", 3, NULL}, {"retab", 3, NULL}, {"right", 2, NULL},
+    {"registers", 3, NULL}, {"redo", 3, NULL}, {"read", 1, NULL}, {"retab", 3, NULL}, {"right", 2, NULL},
     {"left", 2, NULL},
     {"k", 1, "mark"},
     {"tabnext", 4, NULL}, {"tabprevious", 4, NULL}, {"tabNext", 4, "tabprevious"},
@@ -39,7 +39,7 @@ static const gchar* const COMMAND_NAMES[] = {
     "substitute", "set", "saveas", "sort", "write", "wq", "wall", "wqall", "xit", "xall",
     "quit", "qall", "edit", "enew", "update", "undo", "delete", "yank", "print", "put",
     "move", "mark", "marks", "copy", "center", "join", "jumps", "global", "vglobal",
-    "normal", "nohlsearch", "registers", "redo", "retab", "right", "left", "tabnext",
+    "normal", "nohlsearch", "registers", "redo", "read", "retab", "right", "left", "tabnext",
     "tabprevious", "file", "help", "tag", "Symbols", "References", "split", "vsplit", "only",
     "close", NULL,
 };

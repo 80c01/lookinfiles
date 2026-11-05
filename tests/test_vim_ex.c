@@ -24,6 +24,7 @@ static void test_names(void) {
         {"d", "delete"}, {"y a", "yank"}, {"pu", "put"}, {"m0", "move"}, {"t.", "copy"},
         {"co$", "copy"}, {"ma a", "mark"}, {"marks", "marks"}, {"ka", "mark"}, {"j!", "join"},
         {"reg", "registers"}, {"di", "registers"}, {"red", "redo"}, {"u", "undo"},
+        {"r", "read"}, {"r! ls", "read"}, {"read", "read"}, {"read! echo 1", "read"},
         {"ce 40", "center"}, {"ri", "right"}, {"le", "left"}, {"ret", "retab"}, {"&&", "&&"},
         {">", ">"}, {"<<", "<"}, {"sg", "substitute"}, {"tabn", "tabnext"}, {"bp", "tabprevious"},
         {"sav x", "saveas"}, {"e!", "edit"}, {"", ""}, {"12", ""},
@@ -55,6 +56,14 @@ static void test_bang_args(void) {
     vim_ex_cmd_clear(&c);
     c = parse_ok("ka");
     g_assert_cmpstr(c.args, ==, "a");
+    vim_ex_cmd_clear(&c);
+    c = parse_ok("r! ls -la");
+    g_assert_true(c.bang);
+    g_assert_cmpstr(c.args, ==, "ls -la");
+    vim_ex_cmd_clear(&c);
+    c = parse_ok("read! echo hello");
+    g_assert_true(c.bang);
+    g_assert_cmpstr(c.args, ==, "echo hello");
     vim_ex_cmd_clear(&c);
 }
 

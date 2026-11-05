@@ -214,7 +214,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Editor: Vim mode", "K", "Code files: help card of the identifier under the cursor", 0},
     {"Editor: Vim mode", "gr / :References / :Symbols", "Code files: references (References tab) / symbols of the file", 0},
     {"Editor: Vim mode", ":[range]s/pat/rep/gi", "Substitute (& \\1 \\u \\U \\r); :g/pat/cmd, :v, :&& , & repeat", 0},
-    {"Editor: Vim mode", ":d :y :m :t :j :> :normal", "Line commands on ranges (%, 'a, '<,'>, /pat/, .+1, $)", 0},
+    {"Editor: Vim mode", ":d :y :pu :r! :m :t :j :> :normal", "Line commands on ranges (%, 'a, '<,'>, /pat/, .+1, $)", 0},
     {"Editor: Vim mode", ":sort :retab :center :reg", "Sort lines (n i u !), retab, align, list registers / :marks", 0},
     {"Editor: Vim mode", ":set sw=2 sts=2 et ic hls nu", "Options (shiftwidth, softtabstop, expandtab, ignorecase, hlsearch, number, wrap, colorcolumn...)", 0},
     {"Editor: Vim mode", ": Tab / Shift+Tab", "Complete a command or :set option, list the matches and cycle through them", 0},

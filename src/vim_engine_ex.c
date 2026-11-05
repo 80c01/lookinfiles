@@ -1046,6 +1046,149 @@ static gboolean host_command(VimEngine* e, const VimExCmd* c, gchar** err) {
     return e->host.ex_command(e->hd, c->name, c->bang, c->args, err);
 }
 
+static gchar* expand_file_wildcards(VimEngine* e, const gchar* cmd, gchar** err) {
+    const gchar* fn = e->host.file_name != NULL ? e->host.file_name(e->hd) : NULL;
+    GString* s = g_string_new(NULL);
+    for (const gchar* p = cmd; *p; p++) {
+        if (*p == '\\' && p[1] == '%') {
+            g_string_append_c(s, '%');
+            p++;
+        } else if (*p == '%') {
+            if (fn == NULL || fn[0] == '\0') {
+                if (err != NULL) *err = g_strdup("E499: Empty file name for '%'");
+                g_string_free(s, TRUE);
+                return NULL;
+            }
+            g_string_append(s, fn);
+        } else {
+            g_string_append_c(s, *p);
+        }
+    }
+    return g_string_free(s, FALSE);
+}
+
+static void ex_read(VimEngine* e, const VimExCmd* c, gint l2) {
+    gboolean is_cmd = c->bang;
+    const gchar* arg = c->args != NULL ? c->args : "";
+    while (*arg == ' ' || *arg == '\t') arg++;
+    if (!is_cmd && *arg == '!') {
+        is_cmd = TRUE;
+        arg++;
+        while (*arg == ' ' || *arg == '\t') arg++;
+    }
+
+    gchar* content = NULL;
+    gsize len = 0;
+
+    if (is_cmd) {
+        if (*arg == '\0') {
+            vim_e_message(e, TRUE, "E471: Argument required");
+            return;
+        }
+        gchar* err = NULL;
+        gchar* cmd = expand_file_wildcards(e, arg, &err);
+        if (cmd == NULL) {
+            vim_e_message(e, TRUE, "%s", err);
+            g_free(err);
+            return;
+        }
+
+        const gchar* fn = e->host.file_name != NULL ? e->host.file_name(e->hd) : NULL;
+        gchar* dir = NULL;
+        if (fn != NULL && g_path_is_absolute(fn)) {
+            dir = g_path_get_dirname(fn);
+        }
+
+        const gchar* argv[] = {"/bin/sh", "-c", cmd, NULL};
+        gchar* out = NULL;
+        gchar* err_out = NULL;
+        gint status = 0;
+        GError* gerr = NULL;
+        gboolean ok = g_spawn_sync(dir, (gchar**)argv, NULL, G_SPAWN_SEARCH_PATH,
+                                   NULL, NULL, &out, &err_out, &status, &gerr);
+        g_free(dir);
+        g_free(cmd);
+
+        if (!ok) {
+            vim_e_message(e, TRUE, "Cannot execute shell: %s", gerr != NULL ? gerr->message : "unknown error");
+            g_clear_error(&gerr);
+            g_free(out);
+            g_free(err_out);
+            return;
+        }
+
+        GError* wait_err = NULL;
+        if (!g_spawn_check_wait_status(status, &wait_err)) {
+            if (err_out != NULL && *err_out != '\0') {
+                gchar* trimmed = g_strstrip(g_strdup(err_out));
+                if (*trimmed != '\0') {
+                    gchar* nl = strchr(trimmed, '\n');
+                    if (nl != NULL) *nl = '\0';
+                    vim_e_message(e, TRUE, "%s", trimmed);
+                }
+                g_free(trimmed);
+            } else if (wait_err != NULL) {
+                if (wait_err->domain == G_SPAWN_EXIT_ERROR) {
+                    vim_e_message(e, TRUE, "shell returned %d", wait_err->code);
+                } else {
+                    vim_e_message(e, TRUE, "%s", wait_err->message);
+                }
+            }
+            g_clear_error(&wait_err);
+        }
+
+        g_free(err_out);
+        content = out;
+        if (content != NULL) len = strlen(content);
+    } else {
+        const gchar* path = arg;
+        gchar* full_path = NULL;
+        if (*path == '\0') {
+            path = e->host.file_name != NULL ? e->host.file_name(e->hd) : NULL;
+            if (path == NULL || *path == '\0') {
+                vim_e_message(e, TRUE, "E32: No file name");
+                return;
+            }
+        }
+        if (!g_path_is_absolute(path)) {
+            const gchar* fn = e->host.file_name != NULL ? e->host.file_name(e->hd) : NULL;
+            if (fn != NULL && g_path_is_absolute(fn)) {
+                gchar* dir = g_path_get_dirname(fn);
+                full_path = g_build_filename(dir, path, NULL);
+                g_free(dir);
+                path = full_path;
+            }
+        }
+        GError* gerr = NULL;
+        if (!g_file_get_contents(path, &content, &len, &gerr)) {
+            vim_e_message(e, TRUE, "E484: Can't open file %s", path);
+            g_clear_error(&gerr);
+            g_free(full_path);
+            return;
+        }
+        g_free(full_path);
+    }
+
+    if (content == NULL || *content == '\0') {
+        g_free(content);
+        return;
+    }
+
+    if (!g_utf8_validate(content, (gssize)len, NULL)) {
+        gchar* valid = g_utf8_make_valid(content, (gssize)len);
+        g_free(content);
+        content = valid;
+    }
+
+    gchar* text = g_str_has_suffix(content, "\n") ? content : g_strconcat(content, "\n", NULL);
+    if (text != content) g_free(content);
+
+    gint after = l2;
+    vim_e_put_lines(e, after, text);
+    vim_e_set_cursor_line(e, MAX(0, after + 1), TRUE);
+    g_free(text);
+}
+
 static void ex_print(VimEngine* e, gint l1, gint l2) {
     GString* out = g_string_new(NULL);
     for (gint l = l1; l <= l2 && l <= l1 + 20; l++) {
@@ -1089,7 +1232,7 @@ void vim_engine_ex(VimEngine* e, const gchar* line) {
         return;
     }
     gint last = vim_e_last_line(e);
-    gboolean allow_zero = strcmp(name, "put") == 0 || name[0] == '\0';
+    gboolean allow_zero = strcmp(name, "put") == 0 || strcmp(name, "read") == 0 || name[0] == '\0';
     if (l2 > last || (l1 < 0 && !allow_zero) || l1 < -1) {
         if (name[0] == '\0') {
             /* :N past the end goes to the last line */
@@ -1143,6 +1286,8 @@ void vim_engine_ex(VimEngine* e, const gchar* line) {
             vim_e_set_cursor_line(e, after + nl, TRUE);
             g_free(text);
         }
+    } else if (strcmp(name, "read") == 0) {
+        ex_read(e, &c, l2);
     } else if (strcmp(name, "move") == 0 || strcmp(name, "copy") == 0) {
         gint t;
         if (!target_line(e, c.args, &t, &err)) {

@@ -495,6 +495,12 @@ static void test_ex(void) {
     check("|a", ":>><CR>", "        a");
     check("|a\nb", ":yank<CR>:$put<CR>", "a\nb\na");
     check("|a\nb", ":2yank x<CR>:0put x<CR>", "b\na\nb");
+    check("|a\nb", ":r! echo foo<CR>", "a\nfoo\nb");
+    check("|a\nb", ":0r! echo foo<CR>", "foo\na\nb");
+    check("|a\nb", ":$r! echo foo<CR>", "a\nb\nfoo");
+    check("a\n|b", ":r! printf 'x\\ny\\n'<CR>", "a\nb\nx\ny");
+    check("|a\nb", ":r !echo foo<CR>", "a\nfoo\nb");
+    check("|a\nb", ":r! echo %<CR>", "a\ntest.txt\nb");
     check("|a\nb\nc", ":/c/d<CR>", "a\nb");
     check("|a\nb\nc\nd", ":/b/,/c/d<CR>", "a\nd");
     check("|a\nb\nc\nd", ":.,+1d<CR>", "c\nd");
@@ -515,6 +521,9 @@ static void test_ex_errors_and_host(void) {
     g_assert_nonnull(strstr(f->host.messages->str, "E492"));
     fx_type(f, ":s/zzz/y/<CR>");
     g_assert_nonnull(strstr(f->host.messages->str, "E486"));
+    fx_type(f, ":r!<CR>");
+    g_assert_nonnull(strstr(f->host.messages->str, "E471"));
+    g_string_truncate(f->host.messages, 0);
     fx_type(f, ":w<CR>:q!<CR>:wq<CR>ZZ");
     g_assert_cmpstr(f->host.ex->str, ==, "write ;quit! ;wq ;xit ;");
     g_string_truncate(f->host.ex, 0);
