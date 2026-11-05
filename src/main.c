@@ -291,7 +291,7 @@ int main(int argc, char** argv) {
 
     GtkWidget* window = gtk_window_new();
     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), loop);
-    gtk_window_set_title(GTK_WINDOW(window), APP_NAME);
+    gtk_window_set_title(GTK_WINDOW(window), APP_NAME " " APP_VERSION);
     gtk_window_set_default_icon_name(APP_ID);
     gtk_window_set_default_size(GTK_WINDOW(window), win_width, win_height);
 
