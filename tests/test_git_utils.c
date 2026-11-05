@@ -126,67 +126,6 @@ static void test_read_branch(Fixture* fx, gconstpointer data) {
     g_free(head);
 }
 
-static void test_read_ahead_behind(Fixture* fx, gconstpointer data) {
-    (void)data;
-    guint ahead = 99, behind = 99;
-
-    /* Outside repo or NULL */
-    g_assert_false(git_read_ahead_behind(NULL, &ahead, &behind));
-    g_assert_cmpuint(ahead, ==, 0);
-    g_assert_cmpuint(behind, ==, 0);
-
-    gchar* plain = make_path(fx, "plain", NULL);
-    g_assert_false(git_read_ahead_behind(plain, &ahead, &behind));
-    g_free(plain);
-
-    /* Repo without upstream */
-    gchar* repo_dir = make_path(fx, "repo", NULL);
-    git_repository* repo = repo_init(repo_dir);
-    g_free(make_path(fx, "repo/file.txt", "initial\n"));
-    repo_add(repo, "file.txt");
-    repo_commit(repo, "commit 1", 100);
-
-    g_assert_false(git_read_ahead_behind(repo_dir, &ahead, &behind));
-    g_assert_cmpuint(ahead, ==, 0);
-    g_assert_cmpuint(behind, ==, 0);
-
-    /* Set up an upstream tracking branch */
-    git_reference* head_ref = NULL;
-    g_assert_cmpint(git_repository_head(&head_ref, repo), ==, 0);
-    const git_oid* head_oid = git_reference_target(head_ref);
-
-    git_reference* upstream_ref = NULL;
-    g_assert_cmpint(git_reference_create(&upstream_ref, repo, "refs/remotes/origin/main", head_oid, 1, "create remote ref"), ==, 0);
-    git_reference_free(upstream_ref);
-
-    g_assert_cmpint(git_branch_set_upstream(head_ref, "origin/main"), ==, 0);
-    git_reference_free(head_ref);
-
-    /* Clean and in sync with upstream */
-    g_assert_true(git_read_ahead_behind(repo_dir, &ahead, &behind));
-    g_assert_cmpuint(ahead, ==, 0);
-    g_assert_cmpuint(behind, ==, 0);
-
-    /* One commit ahead */
-    g_free(make_path(fx, "repo/file.txt", "second\n"));
-    repo_add(repo, "file.txt");
-    repo_commit(repo, "commit 2", 50);
-
-    g_assert_true(git_read_ahead_behind(repo_dir, &ahead, &behind));
-    g_assert_cmpuint(ahead, ==, 1);
-    g_assert_cmpuint(behind, ==, 0);
-
-    /* Also works when given a subdirectory of the repo */
-    gchar* sub = make_path(fx, "repo/subdir", NULL);
-    g_assert_true(git_read_ahead_behind(sub, &ahead, &behind));
-    g_assert_cmpuint(ahead, ==, 1);
-    g_assert_cmpuint(behind, ==, 0);
-    g_free(sub);
-
-    git_repository_free(repo);
-    g_free(repo_dir);
-}
-
 /* A new repository with a work tree at dir */
 static git_repository* repo_init(const gchar* dir) {
     git_repository* repo = NULL;
@@ -227,6 +166,72 @@ static void repo_commit(git_repository* repo, const gchar* message, gint64 secon
     git_signature_free(sig);
     git_tree_free(tree);
 }
+
+static void test_read_ahead_behind(Fixture* fx, gconstpointer data) {
+    (void)data;
+    guint ahead = 99, behind = 99;
+
+    /* Outside repo or NULL */
+    g_assert_false(git_read_ahead_behind(NULL, &ahead, &behind));
+    g_assert_cmpuint(ahead, ==, 0);
+    g_assert_cmpuint(behind, ==, 0);
+
+    gchar* plain = make_path(fx, "plain", NULL);
+    g_assert_false(git_read_ahead_behind(plain, &ahead, &behind));
+    g_free(plain);
+
+    /* Repo without upstream */
+    gchar* repo_dir = make_path(fx, "repo", NULL);
+    git_repository* repo = repo_init(repo_dir);
+    g_free(make_path(fx, "repo/file.txt", "initial\n"));
+    repo_add(repo, "file.txt");
+    repo_commit(repo, "commit 1", 100);
+
+    g_assert_false(git_read_ahead_behind(repo_dir, &ahead, &behind));
+    g_assert_cmpuint(ahead, ==, 0);
+    g_assert_cmpuint(behind, ==, 0);
+
+    /* Set up an upstream tracking branch */
+    git_reference* head_ref = NULL;
+    g_assert_cmpint(git_repository_head(&head_ref, repo), ==, 0);
+    const git_oid* head_oid = git_reference_target(head_ref);
+
+    git_remote* remote = NULL;
+    g_assert_cmpint(git_remote_create(&remote, repo, "origin", "https://example.invalid/repo.git"), ==, 0);
+    git_remote_free(remote);
+
+    git_reference* upstream_ref = NULL;
+    g_assert_cmpint(git_reference_create(&upstream_ref, repo, "refs/remotes/origin/main", head_oid, 1, "create remote ref"), ==, 0);
+    git_reference_free(upstream_ref);
+
+    g_assert_cmpint(git_branch_set_upstream(head_ref, "origin/main"), ==, 0);
+    git_reference_free(head_ref);
+
+    /* Clean and in sync with upstream */
+    g_assert_true(git_read_ahead_behind(repo_dir, &ahead, &behind));
+    g_assert_cmpuint(ahead, ==, 0);
+    g_assert_cmpuint(behind, ==, 0);
+
+    /* One commit ahead */
+    g_free(make_path(fx, "repo/file.txt", "second\n"));
+    repo_add(repo, "file.txt");
+    repo_commit(repo, "commit 2", 50);
+
+    g_assert_true(git_read_ahead_behind(repo_dir, &ahead, &behind));
+    g_assert_cmpuint(ahead, ==, 1);
+    g_assert_cmpuint(behind, ==, 0);
+
+    /* Also works when given a subdirectory of the repo */
+    gchar* sub = make_path(fx, "repo/subdir", NULL);
+    g_assert_true(git_read_ahead_behind(sub, &ahead, &behind));
+    g_assert_cmpuint(ahead, ==, 1);
+    g_assert_cmpuint(behind, ==, 0);
+    g_free(sub);
+
+    git_repository_free(repo);
+    g_free(repo_dir);
+}
+
 
 static void test_scan_statuses(Fixture* fx, gconstpointer data) {
     (void)data;
