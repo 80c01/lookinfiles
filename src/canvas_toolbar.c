@@ -12,7 +12,6 @@ static void ensure_css(void) {
     if (done) return;
     done = TRUE;
     theme_add_css(".canvas-bar { background-color: @bg_bar; padding: 4px 8px; border-bottom: 1px solid @border; }"
-                  ".canvas-bar-group { gap: 2px; }"
                   ".canvas-bar-sep { min-width: 1px; background-color: @border; margin: 2px 4px; }"
                   ".canvas-btn { min-height: 24px; min-width: 24px; padding: 2px 6px; font-size: @size_small; }"
                   ".canvas-pop-item { padding: 4px 8px; font-size: @size_small; }");

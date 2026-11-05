@@ -34,7 +34,7 @@ GtkTextTag* canvas_text_style_tag(GtkTextBuffer* buffer, guint bit_index) {
     case 6: /* h2 */
         return text_tag_ensure(buffer, name, "weight", PANGO_WEIGHT_BOLD, "scale", FONT_SCALE_H2, NULL);
     case 7: /* mark */
-        return text_tag_ensure(buffer, name, "background", "@bg_warning", "foreground", "@fg", NULL);
+        return text_tag_ensure(buffer, name, "background", "@highlight", "foreground", "@highlight_fg", NULL);
     case 8: /* serif */
         return text_tag_ensure(buffer, name, "family", "@font_serif", NULL);
     case 9: /* mono */

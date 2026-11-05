@@ -18,7 +18,7 @@ static void ensure_css(void) {
     if (done) return;
     done = TRUE;
     theme_add_css(".canvas-table-box { background-color: @bg_view; border-radius: 4px; }"
-                  ".canvas-table-bar { padding: 2px 4px; gap: 4px; border-bottom: 1px solid @border; }"
+                  ".canvas-table-bar { padding: 2px 4px; border-bottom: 1px solid @border; }"
                   ".canvas-table-btn { min-width: 20px; min-height: 20px; padding: 1px 4px; font-size: @size_small; }"
                   ".canvas-table-grid { border: 1px solid @border; border-radius: 2px; }"
                   ".canvas-table-cell { background-color: transparent; color: @fg_text; border: 1px solid @rule;"
