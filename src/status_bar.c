@@ -70,35 +70,65 @@ static GtkWidget* undo_button_new(AppData* app) {
 
 static GtkWidget* git_branches_popover = NULL;
 
+/* A branch checkout, run in a worker thread (libgit2 rewrites the work tree) */
 typedef struct {
     AppData* app;
+    gchar* dir;
     gchar* branch_name;
+    gboolean ok;
+    gchar* err_msg;
 } BranchSwitchData;
 
-static gboolean do_switch_branch_idle(gpointer user_data) {
-    BranchSwitchData* bd = (BranchSwitchData*)user_data;
-    AppData* app = bd->app;
-    gchar* err_msg = NULL;
+static void branch_switch_data_free(gpointer data) {
+    BranchSwitchData* bd = data;
+    g_free(bd->dir);
+    g_free(bd->branch_name);
+    g_free(bd->err_msg);
+    g_free(bd);
+}
 
-    gboolean ok = git_checkout_branch(app->base_dir, bd->branch_name, &err_msg);
-    if (ok) {
+static void switch_branch_thread(GTask* task, gpointer source, gpointer task_data,
+                                 GCancellable* cancellable) {
+    (void)source;
+    (void)cancellable;
+    BranchSwitchData* bd = task_data;
+    bd->ok = git_checkout_branch(bd->dir, bd->branch_name, &bd->err_msg);
+    g_task_return_boolean(task, TRUE);
+}
+
+static void on_branch_switched(GObject* source, GAsyncResult* res, gpointer user_data) {
+    (void)source;
+    (void)user_data;
+    BranchSwitchData* bd = g_task_get_task_data(G_TASK(res));
+    AppData* app = bd->app;
+    if (bd->ok) {
         gchar* msg = g_strdup_printf("Switched to branch “%s”", bd->branch_name);
         app_notice(app, msg, FALSE);
         g_free(msg);
-        reload_directory(app, app->base_dir);
+        /* The explorer may have moved elsewhere meanwhile: only reload the
+         * listing that showed the repository */
+        if (g_strcmp0(app->base_dir, bd->dir) == 0) {
+            reload_directory(app, app->base_dir);
+        }
         app_emit(app, APP_EVENT_GIT_STATUS_CHANGED);
         app_emit(app, APP_EVENT_STATUS_CHANGED);
     } else {
-        gchar* msg = g_strdup_printf("Could not switch to branch “%s”: %s",
-                                     bd->branch_name, err_msg != NULL ? err_msg : "unknown error");
+        gchar* msg = g_strdup_printf("Could not switch to branch “%s”: %s", bd->branch_name,
+                                     bd->err_msg != NULL ? bd->err_msg : "unknown error");
         app_notice(app, msg, FALSE);
         g_free(msg);
-        g_free(err_msg);
     }
+}
 
-    g_free(bd->branch_name);
-    g_free(bd);
-    return G_SOURCE_REMOVE;
+static void start_branch_switch(AppData* app, const gchar* branch_name) {
+    BranchSwitchData* bd = g_new0(BranchSwitchData, 1);
+    bd->app = app;
+    bd->dir = g_strdup(app->base_dir);
+    bd->branch_name = g_strdup(branch_name);
+    GTask* task = g_task_new(NULL, NULL, on_branch_switched, NULL);
+    g_task_set_task_data(task, bd, branch_switch_data_free);
+    g_task_run_in_thread(task, switch_branch_thread);
+    g_object_unref(task);
 }
 
 static void on_branch_item_clicked(GtkButton* btn, gpointer data) {
@@ -113,10 +143,9 @@ static void on_branch_item_clicked(GtkButton* btn, gpointer data) {
         return;
     }
 
-    BranchSwitchData* bd = g_new0(BranchSwitchData, 1);
-    bd->app = app;
-    bd->branch_name = g_strdup(branch_name);
-    g_idle_add(do_switch_branch_idle, bd);
+    if (app->base_dir != NULL) {
+        start_branch_switch(app, branch_name);
+    }
 }
 
 static gboolean unparent_idle(gpointer data) {
