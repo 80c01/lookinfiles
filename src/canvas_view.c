@@ -41,6 +41,10 @@ struct CanvasPage {
     CanvasItem* drag_item;
     gboolean drag_resize;
     gint drag_x, drag_y, drag_w, drag_h;
+    /* Last focused widget inside a block (weak): what the toolbar acts on,
+     * since its menus take the focus */
+    GtkWidget* last_focus;
+    gboolean focus_watched;
     /* Pointer coordinates over the page */
     gboolean pointer_in;
     gdouble pointer_x, pointer_y;
@@ -84,12 +88,51 @@ static CanvasItem* focused_item(CanvasPage* p) {
     return (f != NULL && gtk_widget_is_ancestor(f, p->surface)) ? canvas_item_of(f) : NULL;
 }
 
-static CanvasItem* focused_text_item(CanvasPage* p) {
+/* The focused block, or the one focused last if the focus is out of the page
+ * (on the toolbar or one of its menus) */
+static CanvasItem* current_item(CanvasPage* p) {
     CanvasItem* it = focused_item(p);
+    if (it != NULL) return it;
+    if (p->last_focus != NULL && gtk_widget_is_ancestor(p->last_focus, p->surface)) {
+        return canvas_item_of(p->last_focus);
+    }
+    return NULL;
+}
+
+static CanvasItem* current_text_item(CanvasPage* p) {
+    CanvasItem* it = current_item(p);
     return (it != NULL && it->kind == CANVAS_BLOCK_TEXT) ? it : NULL;
 }
 
+/* Give the focus back to the block after a toolbar action */
+static void restore_focus(CanvasPage* p) {
+    if (p->last_focus != NULL && gtk_widget_is_ancestor(p->last_focus, p->surface)) {
+        gtk_widget_grab_focus(p->last_focus);
+    }
+}
+
+static void on_window_focus(GObject* window, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    CanvasPage* p = g_object_get_data(G_OBJECT(data), PAGE_KEY);
+    if (p == NULL || p->closed) return;
+    GtkWidget* f = gtk_root_get_focus(GTK_ROOT(window));
+    if (f == p->surface) {
+        g_clear_weak_pointer(&p->last_focus);
+    } else if (f != NULL && gtk_widget_is_ancestor(f, p->surface)) {
+        g_set_weak_pointer(&p->last_focus, f);
+    }
+}
+
+static void on_root_map(GtkWidget* widget, gpointer data) {
+    CanvasPage* p = data;
+    GtkRoot* window = gtk_widget_get_root(widget);
+    if (p->focus_watched || window == NULL) return;
+    p->focus_watched = TRUE;
+    g_signal_connect_object(window, "notify::focus-widget", G_CALLBACK(on_window_focus), p->root, 0);
+}
+
 static void deselect(CanvasPage* p) {
+    g_clear_weak_pointer(&p->last_focus);
     GtkRoot* root = gtk_widget_get_root(p->surface);
     if (root != NULL) gtk_root_set_focus(root, p->surface);
 }
@@ -274,6 +317,7 @@ static void schedule_save(CanvasPage* p) {
 }
 
 static void clear_surface(CanvasPage* p) {
+    g_clear_weak_pointer(&p->last_focus);
     GtkWidget* c;
     while ((c = gtk_widget_get_first_child(p->surface)) != NULL) {
         gtk_fixed_remove(GTK_FIXED(p->surface), c);
@@ -624,46 +668,51 @@ static void on_toolbar_add_table(gint rows, gint cols, gpointer udata) {
 
 static void on_toolbar_crop(gpointer udata) {
     CanvasPage* p = udata;
-    open_crop_dialog(p, focused_item(p));
+    open_crop_dialog(p, current_item(p));
 }
 
 static void on_toolbar_format_style(guint style_flag, gpointer udata) {
-    CanvasItem* it = focused_text_item(udata);
+    CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_toggle_style(it->buffer, &it->pending, style_flag);
         schedule_save(it->page);
+        restore_focus(it->page);
     }
 }
 
 static void on_toolbar_format_preset(CanvasPreset preset, gpointer udata) {
-    CanvasItem* it = focused_text_item(udata);
+    CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_apply_preset(it->buffer, preset);
         schedule_save(it->page);
+        restore_focus(it->page);
     }
 }
 
 static void on_toolbar_format_list(const gchar* prefix, gpointer udata) {
-    CanvasItem* it = focused_text_item(udata);
+    CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_insert_list(it->buffer, prefix);
         schedule_save(it->page);
+        restore_focus(it->page);
     }
 }
 
 static void on_toolbar_format_indent(gint step, gpointer udata) {
-    CanvasItem* it = focused_text_item(udata);
+    CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_indent(it->buffer, step);
         schedule_save(it->page);
+        restore_focus(it->page);
     }
 }
 
 static void on_toolbar_format_checkbox(gpointer udata) {
-    CanvasItem* it = focused_text_item(udata);
+    CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_toggle_checkbox(it->buffer);
         schedule_save(it->page);
+        restore_focus(it->page);
     }
 }
 
@@ -736,6 +785,7 @@ static void on_root_destroy(GtkWidget* widget, gpointer data) {
 static void page_free(gpointer data) {
     CanvasPage* p = data;
     if (p->save_source != 0) g_source_remove(p->save_source);
+    g_clear_weak_pointer(&p->last_focus);
     if (p->toolbar != NULL) canvas_toolbar_free(p->toolbar);
     g_free(p->dir);
     g_free(p);
@@ -832,6 +882,7 @@ static CanvasPage* ensure_page(AppData* app) {
 
     g_object_set_data_full(G_OBJECT(root), PAGE_KEY, p, page_free);
     g_signal_connect(root, "destroy", G_CALLBACK(on_root_destroy), p);
+    g_signal_connect(root, "map", G_CALLBACK(on_root_map), p);
     app->canvas_page = root;
 
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);

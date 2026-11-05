@@ -107,6 +107,7 @@ static void add_sep(GtkWidget* box) {
 static GtkWidget* make_btn(const gchar* label, const gchar* tip, GCallback cb, gpointer data) {
     GtkWidget* b = gtk_button_new_with_label(label);
     gtk_widget_add_css_class(b, "canvas-btn");
+    gtk_widget_set_focus_on_click(b, FALSE); /* the focus stays in the block */
     if (tip != NULL) gtk_widget_set_tooltip_text(b, tip);
     g_signal_connect(b, "clicked", cb, data);
     return b;
@@ -137,6 +138,7 @@ CanvasToolbar* canvas_toolbar_new(const CanvasToolbarCallbacks* cbs, gpointer us
     GtkWidget* shape_btn = gtk_menu_button_new();
     gtk_menu_button_set_label(GTK_MENU_BUTTON(shape_btn), "+ Shape ▼");
     gtk_widget_add_css_class(shape_btn, "canvas-btn");
+    gtk_widget_set_focus_on_click(shape_btn, FALSE);
     gtk_widget_set_tooltip_text(shape_btn, "Draw Shapes (Rectangle, Ellipse, Diamond, Arrow, Line)");
 
     GtkWidget* shape_pop = gtk_popover_new();
@@ -172,6 +174,7 @@ CanvasToolbar* canvas_toolbar_new(const CanvasToolbarCallbacks* cbs, gpointer us
     GtkWidget* preset_btn = gtk_menu_button_new();
     gtk_menu_button_set_label(GTK_MENU_BUTTON(preset_btn), "Style ▼");
     gtk_widget_add_css_class(preset_btn, "canvas-btn");
+    gtk_widget_set_focus_on_click(preset_btn, FALSE);
     gtk_widget_set_tooltip_text(preset_btn, "Text Presets (Heading 1, Heading 2, Body, Quote)");
 
     GtkWidget* preset_pop = gtk_popover_new();
@@ -209,6 +212,7 @@ CanvasToolbar* canvas_toolbar_new(const CanvasToolbarCallbacks* cbs, gpointer us
     GtkWidget* font_color_btn = gtk_menu_button_new();
     gtk_menu_button_set_label(GTK_MENU_BUTTON(font_color_btn), "Font/Color ▼");
     gtk_widget_add_css_class(font_color_btn, "canvas-btn");
+    gtk_widget_set_focus_on_click(font_color_btn, FALSE);
 
     GtkWidget* fc_pop = gtk_popover_new();
     GtkWidget* fc_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
@@ -271,6 +275,7 @@ CanvasToolbar* canvas_toolbar_new(const CanvasToolbarCallbacks* cbs, gpointer us
 
     GtkWidget* toggle_grid = gtk_toggle_button_new_with_label("Grid");
     gtk_widget_add_css_class(toggle_grid, "canvas-btn");
+    gtk_widget_set_focus_on_click(toggle_grid, FALSE);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(toggle_grid), TRUE);
     gtk_widget_set_tooltip_text(toggle_grid, "Toggle Magnetic Snap Grid");
     g_signal_connect(toggle_grid, "toggled", G_CALLBACK(on_grid_toggled), tb);
@@ -280,6 +285,7 @@ CanvasToolbar* canvas_toolbar_new(const CanvasToolbarCallbacks* cbs, gpointer us
     GtkWidget* align_btn = gtk_menu_button_new();
     gtk_menu_button_set_label(GTK_MENU_BUTTON(align_btn), "Align ▼");
     gtk_widget_add_css_class(align_btn, "canvas-btn");
+    gtk_widget_set_focus_on_click(align_btn, FALSE);
     gtk_widget_set_tooltip_text(align_btn, "Align & Distribute Objects");
 
     GtkWidget* align_pop = gtk_popover_new();
