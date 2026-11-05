@@ -1,5 +1,15 @@
 #include "tab_drop.h"
 
+#if defined(G_OS_WIN32) || defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 /* Set by GtkNotebook on the GdkDrag of a tab drag (documented in
  * gtk_notebook_set_tab_detachable()) */
 #define DRAG_ORIGIN_KEY "gtk-notebook-drag-origin"
@@ -186,10 +196,14 @@ static gint tab_bar_index(GtkNotebook* nb, GtkWidget* child, double x, PaneRect*
 }
 
 static gboolean shift_held(void) {
+#if defined(G_OS_WIN32) || defined(_WIN32)
+    return (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+#else
     GdkDisplay* display = gdk_display_get_default();
     GdkSeat* seat = display != NULL ? gdk_display_get_default_seat(display) : NULL;
     GdkDevice* keyboard = seat != NULL ? gdk_seat_get_keyboard(seat) : NULL;
     return keyboard != NULL && (gdk_device_get_modifier_state(keyboard) & GDK_SHIFT_MASK) != 0;
+#endif
 }
 
 static GtkNotebook* drag_source(GtkDropTarget* dest) {
@@ -261,8 +275,54 @@ static gboolean find_target(TabDrop* td, GtkNotebook* source, double x, double y
 }
 
 /* ------------------------------------------------------------------------- */
-/* Drop target                                                               */
+/* Drop target lifecycle and tracking                                        */
 /* ------------------------------------------------------------------------- */
+
+static TabDrop* active_hover_td = NULL;
+
+static void poll_stop(TabDrop* td) {
+    td->dest = NULL;
+    if (td->poll != 0) {
+        g_source_remove(td->poll);
+        td->poll = 0;
+    }
+}
+
+/* While a tab is dragged over nb, its pages ignore the pointer: a text view
+ * would otherwise scroll when the drag nears its edges */
+static void set_pages_targetable(TabDrop* td, gboolean targetable) {
+    if (td->pages_untargetable == !targetable) {
+        return;
+    }
+    td->pages_untargetable = !targetable;
+    gint n = gtk_notebook_get_n_pages(td->nb);
+    for (gint i = 0; i < n; i++) {
+        gtk_widget_set_can_target(gtk_notebook_get_nth_page(td->nb, i), targetable);
+    }
+}
+
+static void tab_drop_reset(TabDrop* td) {
+    if (td == NULL) {
+        return;
+    }
+    poll_stop(td);
+    set_pages_targetable(td, TRUE);
+    if (td->nb != NULL && GTK_IS_WIDGET(td->nb)) {
+        indicator_hide(GTK_WIDGET(td->nb));
+    }
+}
+
+static void tab_drop_free(gpointer data) {
+    TabDrop* td = (TabDrop*)data;
+    if (td == NULL) {
+        return;
+    }
+    if (active_hover_td == td) {
+        active_hover_td = NULL;
+    }
+    tab_drop_reset(td);
+    g_free(td);
+}
 
 static void pending_finish(PendingDrag* pd) {
     if (pd->source == NULL) {
@@ -282,20 +342,28 @@ static void pending_free(gpointer p) {
 }
 
 static void on_drag_ended(GdkDrag* drag) {
+    if (active_hover_td != NULL) {
+        tab_drop_reset(active_hover_td);
+        active_hover_td = NULL;
+    }
     PendingDrag* pd = g_object_get_data(G_OBJECT(drag), PENDING_KEY);
     if (pd != NULL) {
         pending_finish(pd);
     }
 }
 
-/* GtkNotebook resets a tab drag only on "dnd-finished": after a "cancel"
- * (dropped outside any notebook, or Escape) the tab stays drawn where the
- * drag started. Finish the drag so GTK puts the tab back. Connected after
- * GtkNotebook's own handlers, so this runs after them. */
+/* A cancelled drag must not emit dnd-finished: GtkNotebook and GDK drag
+ * state machines treat cancel and finish as mutually exclusive. Clean up
+ * pending drag tracking without forcing a finish event. */
 static void on_drag_cancelled(GdkDrag* drag, GdkDragCancelReason reason) {
     (void)reason;
-    if (g_object_get_data(G_OBJECT(drag), PENDING_KEY) != NULL) {
-        g_signal_emit_by_name(drag, "dnd-finished"); /* runs on_drag_ended() */
+    if (active_hover_td != NULL) {
+        tab_drop_reset(active_hover_td);
+        active_hover_td = NULL;
+    }
+    PendingDrag* pd = g_object_get_data(G_OBJECT(drag), PENDING_KEY);
+    if (pd != NULL) {
+        pending_finish(pd);
     }
 }
 
@@ -320,19 +388,6 @@ static void watch_drag(GtkDropTarget* dest, GtkNotebook* source, TabDrop* td) {
     g_object_set_data_full(G_OBJECT(drag), PENDING_KEY, pd, pending_free);
     g_signal_connect(drag, "dnd-finished", G_CALLBACK(on_drag_ended), NULL);
     g_signal_connect(drag, "cancel", G_CALLBACK(on_drag_cancelled), NULL);
-}
-
-/* While a tab is dragged over nb, its pages ignore the pointer: a text view
- * would otherwise scroll when the drag nears its edges */
-static void set_pages_targetable(TabDrop* td, gboolean targetable) {
-    if (td->pages_untargetable == !targetable) {
-        return;
-    }
-    td->pages_untargetable = !targetable;
-    gint n = gtk_notebook_get_n_pages(td->nb);
-    for (gint i = 0; i < n; i++) {
-        gtk_widget_set_can_target(gtk_notebook_get_nth_page(td->nb, i), targetable);
-    }
 }
 
 static GdkDragAction on_drop_motion(GtkDropTarget* dest, double x, double y, gpointer data) {
@@ -363,20 +418,16 @@ static gboolean on_shift_poll(gpointer data) {
     return G_SOURCE_CONTINUE;
 }
 
-static void poll_stop(TabDrop* td) {
-    td->dest = NULL;
-    if (td->poll != 0) {
-        g_source_remove(td->poll);
-        td->poll = 0;
-    }
-}
-
 static GdkDragAction on_drop_enter(GtkDropTarget* dest, double x, double y, gpointer data) {
+    TabDrop* td = data;
+    if (active_hover_td != NULL && active_hover_td != td) {
+        tab_drop_reset(active_hover_td);
+    }
+    active_hover_td = td;
     GtkNotebook* source = drag_source(dest);
     if (source != NULL) {
-        watch_drag(dest, source, (TabDrop*)data);
-        set_pages_targetable((TabDrop*)data, FALSE);
-        TabDrop* td = data;
+        watch_drag(dest, source, td);
+        set_pages_targetable(td, FALSE);
         td->dest = dest;
         if (td->swap != NULL && td->poll == 0) {
             td->poll = g_timeout_add(50, on_shift_poll, td);
@@ -388,26 +439,36 @@ static GdkDragAction on_drop_enter(GtkDropTarget* dest, double x, double y, gpoi
 static void on_drop_leave(GtkDropTarget* dest, gpointer data) {
     (void)dest;
     TabDrop* td = data;
-    poll_stop(td);
-    set_pages_targetable(td, TRUE);
-    indicator_hide(GTK_WIDGET(td->nb));
+    if (active_hover_td == td) {
+        active_hover_td = NULL;
+    }
+    tab_drop_reset(td);
 }
 
 static gboolean on_drop(GtkDropTarget* dest, const GValue* value, double x, double y,
                         gpointer data) {
     TabDrop* td = data;
-    poll_stop(td);
-    set_pages_targetable(td, TRUE);
-    indicator_hide(GTK_WIDGET(td->nb));
+    if (active_hover_td == td) {
+        active_hover_td = NULL;
+    }
+    tab_drop_reset(td);
 
-    GtkNotebook* source = drag_source(dest);
-    DropTarget t;
-    if (!G_VALUE_HOLDS(value, GTK_TYPE_NOTEBOOK_PAGE) || !find_target(td, source, x, y, &t)) {
+    if (!G_VALUE_HOLDS(value, GTK_TYPE_NOTEBOOK_PAGE)) {
         return FALSE;
     }
     GtkNotebookPage* page = g_value_get_object(value);
     GtkWidget* child = page != NULL ? gtk_notebook_page_get_child(page) : NULL;
     if (child == NULL) {
+        return FALSE;
+    }
+
+    GtkNotebook* source = drag_source(dest);
+    DropTarget t;
+    if (!find_target(td, source, x, y, &t)) {
+        if (source == td->nb) {
+            /* Dropped back onto its own notebook without moving: accept as a no-op */
+            return TRUE;
+        }
         return FALSE;
     }
 
@@ -429,7 +490,7 @@ void tab_drop_attach(GtkNotebook* nb, gboolean can_split, TabDropFunc on_drop_fu
     td->on_drop = on_drop_func;
     td->on_done = on_done;
     td->data = data;
-    g_object_set_data_full(G_OBJECT(nb), "tab-drop", td, g_free);
+    g_object_set_data_full(G_OBJECT(nb), "tab-drop", td, tab_drop_free);
 
     GtkDropTarget* dest = gtk_drop_target_new(GTK_TYPE_NOTEBOOK_PAGE, GDK_ACTION_MOVE);
     /* Capture: handle tab bar drops too, before GtkNotebook's own target */

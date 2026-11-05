@@ -280,7 +280,11 @@ static void term_move_page(GtkNotebook* from, GtkNotebook* to, GtkWidget* vte, g
     GtkWidget* label = gtk_notebook_get_tab_label(from, vte);
     g_object_ref(vte);
     g_object_ref(label);
-    gtk_notebook_remove_page(from, gtk_notebook_page_num(from, vte));
+    if (gtk_notebook_get_tab_detachable(from, vte)) {
+        gtk_notebook_detach_tab(from, vte);
+    } else {
+        gtk_notebook_remove_page(from, gtk_notebook_page_num(from, vte));
+    }
     term_notebook_add(to, vte, label, index);
     g_object_unref(label);
     g_object_unref(vte);
@@ -528,6 +532,18 @@ static void on_term_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone 
     gtk_widget_grab_focus(child);
 }
 
+static gboolean term_drag_done_idle(gpointer data) {
+    GtkNotebook* source = GTK_NOTEBOOK(data);
+    AppData* app = g_object_get_data(G_OBJECT(source), "app");
+    GtkWidget* w = GTK_WIDGET(source);
+    if (app != NULL && gtk_widget_get_parent(w) != NULL && gtk_notebook_get_n_pages(source) == 0) {
+        term_remove_leaf(w);
+        term_close_panel_if_empty(app);
+    }
+    g_object_unref(source);
+    return G_SOURCE_REMOVE;
+}
+
 /* The drag of a tab out of source has ended: remove source if left empty */
 static void on_term_tab_drag_done(GtkNotebook* source, gpointer data) {
     AppData* app = (AppData*)data;
@@ -535,8 +551,8 @@ static void on_term_tab_drag_done(GtkNotebook* source, gpointer data) {
     if (gtk_widget_get_parent(w) == NULL || gtk_notebook_get_n_pages(source) > 0) {
         return;
     }
-    term_remove_leaf(w);
-    term_close_panel_if_empty(app);
+    g_object_set_data(G_OBJECT(source), "app", app);
+    g_idle_add(term_drag_done_idle, g_object_ref(source));
 }
 
 /* Notebook new terminals go to: the one of the terminal focused last, else
@@ -843,7 +859,11 @@ GtkWidget* terminal_detach_tab(GtkWidget* vte) {
         return NULL;
     }
     g_object_ref(vte);
-    gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, vte));
+    if (gtk_notebook_get_tab_detachable(nb, vte)) {
+        gtk_notebook_detach_tab(nb, vte);
+    } else {
+        gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, vte));
+    }
     return vte;
 }
 

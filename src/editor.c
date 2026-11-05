@@ -635,7 +635,11 @@ void editor_move_tab_to(AppData* app, EditorTab* tab, GtkNotebook* new_nb, gint 
     /* The focus may pass through the old notebook's next page meanwhile */
     focus_route_hold_history(app, TRUE);
     gboolean was_current = (gtk_notebook_get_current_page(old_nb) == old_page);
-    gtk_notebook_remove_page(old_nb, old_page);
+    if (gtk_notebook_get_tab_detachable(old_nb, tab->container)) {
+        gtk_notebook_detach_tab(old_nb, tab->container);
+    } else {
+        gtk_notebook_remove_page(old_nb, old_page);
+    }
     editor_after_current_removed(app, old_nb, was_current);
 
     gint new_page = -1;
@@ -900,7 +904,11 @@ static void editor_move_page(AppData* app, GtkNotebook* from, GtkNotebook* to, G
     focus_route_hold_history(app, TRUE);
     gint page = gtk_notebook_page_num(from, child);
     gboolean was_current = (gtk_notebook_get_current_page(from) == page);
-    gtk_notebook_remove_page(from, page);
+    if (gtk_notebook_get_tab_detachable(from, child)) {
+        gtk_notebook_detach_tab(from, child);
+    } else {
+        gtk_notebook_remove_page(from, page);
+    }
     editor_after_current_removed(app, from, was_current);
     page = (index < 0) ? gtk_notebook_append_page(to, child, label)
                        : gtk_notebook_insert_page(to, child, label, index);
@@ -941,7 +949,11 @@ void editor_remove_page(AppData* app, GtkWidget* child) {
     if (nb == NULL) return;
     gint page = gtk_notebook_page_num(nb, child);
     gboolean was_current = (gtk_notebook_get_current_page(nb) == page);
-    gtk_notebook_remove_page(nb, page);
+    if (gtk_notebook_get_tab_detachable(nb, child)) {
+        gtk_notebook_detach_tab(nb, child);
+    } else {
+        gtk_notebook_remove_page(nb, page);
+    }
     editor_after_current_removed(app, nb, was_current);
     if (GTK_WIDGET(nb) != app->notebook && gtk_notebook_get_n_pages(nb) == 0) {
         editor_cleanup_notebook(app, GTK_WIDGET(nb));
@@ -986,12 +998,7 @@ static void on_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone zone,
 /* The drag of a tab out of source has ended: remove source if left empty */
 static void on_tab_drag_done(GtkNotebook* source, gpointer data) {
     AppData* app = (AppData*)data;
-    GtkWidget* w = GTK_WIDGET(source);
-    if (w != app->notebook && gtk_widget_get_parent(w) != NULL &&
-        gtk_notebook_get_n_pages(source) == 0) {
-        editor_cleanup_notebook(app, w);
-        editor_update_panel_visibilities(app);
-    }
+    editor_cleanup_after_drop(app, source);
 }
 
 
