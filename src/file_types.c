@@ -532,6 +532,13 @@ static FileKind detect_binary_magic(const gchar* name, const guchar* head, gsize
     if (HAS(0, "d") && (by_name == FILE_KIND_TORRENT || (find_ci(head, len, "8:announce") != NULL || find_ci(head, len, "4:info") != NULL))) {
         return FILE_KIND_TORRENT; /* BitTorrent metainfo */
     }
+    if (HAS(0, "\xA1\xB2\xC3\xD4") || HAS(0, "\xD4\xC3\xB2\xA1") ||
+        HAS(0, "\xA1\xB2\x3C\x4D") || HAS(0, "\x4D\x3C\xB2\xA1")) {
+        return FILE_KIND_PCAP; /* libpcap capture */
+    }
+    if (HAS(0, "\x0A\x0D\x0D\x0A") && (by_name == FILE_KIND_PCAP || len >= 12)) {
+        return FILE_KIND_PCAP; /* pcapng capture */
+    }
     if (len >= 4 && head[2] == '\r' && head[3] == '\n') {
         guint16 pym = (guint16)(head[0] | (head[1] << 8));
         if (by_name == FILE_KIND_PYC || (pym >= 3000 && pym <= 4000) || pym == 62211) {
@@ -552,13 +559,6 @@ static FileKind detect_binary_magic(const gchar* name, const guchar* head, gsize
         if (lf >= 6 + lh && ec + 1 >= bc) {
             return FILE_KIND_TFM; /* TeX font metric (.tfm) */
         }
-    }
-    if (HAS(0, "\xA1\xB2\xC3\xD4") || HAS(0, "\xD4\xC3\xB2\xA1") ||
-        HAS(0, "\xA1\xB2\x3C\x4D") || HAS(0, "\x4D\x3C\xB2\xA1")) {
-        return FILE_KIND_PCAP; /* libpcap capture */
-    }
-    if (HAS(0, "\x0A\x0D\x0D\x0A") && (by_name == FILE_KIND_PCAP || len >= 12)) {
-        return FILE_KIND_PCAP; /* pcapng capture */
     }
     if (HAS(0, "OTTO") || HAS(0, "ttcf") || HAS(0, "wOFF") || HAS(0, "wOF2") ||
         ((HAS(0, "\0\1\0\0") || HAS(0, "true")) && by_name == FILE_KIND_FONT)) {

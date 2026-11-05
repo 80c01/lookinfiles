@@ -139,9 +139,19 @@ static gchar* extract_ps_key(const gchar* text, const gchar* key) {
     const gchar* p = strstr(text, key);
     if (p == NULL) return NULL;
     p += strlen(key);
-    while (*p == ' ' || *p == '\t' || *p == '(' || *p == '/') p++;
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == '(') {
+        p++;
+        const gchar* end = strchr(p, ')');
+        const gchar* nl = strchr(p, '\n');
+        if (end != NULL && (nl == NULL || end < nl)) {
+            return g_strndup(p, end - p);
+        }
+        return NULL;
+    }
+    if (*p == '/') p++;
     const gchar* end = p;
-    while (*end && *end != ')' && *end != ' ' && *end != '\t' && *end != '\r' && *end != '\n') end++;
+    while (*end && *end != ' ' && *end != '\t' && *end != '\r' && *end != '\n') end++;
     if (end > p) {
         return g_strndup(p, end - p);
     }

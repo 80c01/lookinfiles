@@ -5,15 +5,15 @@
 
 static void test_torrent_multi_file(void) {
     const gchar sample[] =
-        "d8:announce31:http://tracker.example.com/announce"
-        "13:announce-listll31:http://tracker.example.com/announceel27:udp://tracker2.example.comee"
+        "d8:announce35:http://tracker.example.com/announce"
+        "13:announce-listll35:http://tracker.example.com/announceel26:udp://tracker2.example.comee"
         "7:comment15:A test download"
-        "10:created by12:TestTorrent/1"
+        "10:created by13:TestTorrent/1"
         "13:creation datei1700000000e"
         "4:infod"
           "5:filesl"
-            "d6:lengthi1048576e4:pathl4:docs8:read.txteee"
-            "d6:lengthi2097152e4:pathl3:bin7:app.bineee"
+            "d6:lengthi1048576e4:pathl4:docs8:read.txtee"
+            "d6:lengthi2097152e4:pathl3:bin7:app.binee"
           "e"
           "4:name9:test_data"
           "12:piece lengthi262144e"
@@ -51,7 +51,7 @@ static void test_torrent_multi_file(void) {
 
 static void test_torrent_single_file_and_doc(void) {
     const gchar sample[] =
-        "d8:announce25:http://tracker.example.com"
+        "d8:announce26:http://tracker.example.com"
         "4:infod6:lengthi512e4:name8:file.iso12:piece lengthi256e6:pieces40:1234567890123456789012345678901234567890ee";
 
     PreviewDoc* doc = preview_doc_new();
@@ -78,7 +78,7 @@ static void test_torrent_invalid(void) {
     g_assert_null(torrent_info_parse((const guchar*)bad, strlen(bad), &error));
     g_clear_error(&error);
 
-    const gchar no_info[] = "d8:announce25:http://tracker.example.come";
+    const gchar no_info[] = "d8:announce26:http://tracker.example.come";
     g_assert_null(torrent_info_parse((const guchar*)no_info, strlen(no_info), &error));
     g_clear_error(&error);
 }
