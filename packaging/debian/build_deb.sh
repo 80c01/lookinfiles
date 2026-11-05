@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 OUTPUT_DIR="${1:-${ROOT_DIR}/build}"
 
-VERSION=$(sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' "${ROOT_DIR}/src/app_paths.h")
+VERSION=$(sh "${ROOT_DIR}/tools/version.sh")
 ARCH=$(dpkg --print-architecture 2>/dev/null || uname -m)
 case "${ARCH}" in
     x86_64) ARCH="amd64" ;;
@@ -18,13 +18,13 @@ esac
 
 echo "==> Building LookinFiles v${VERSION} (${ARCH})..."
 cd "${ROOT_DIR}"
-make -j"$(nproc 2>/dev/null || echo 2)"
+make -j"$(nproc 2>/dev/null || echo 2)" VERSION="${VERSION}"
 
 PKG_DIR="${ROOT_DIR}/build/pkg-deb"
 rm -rf "${PKG_DIR}"
 mkdir -p "${PKG_DIR}"
 
-make install DESTDIR="${PKG_DIR}" PREFIX=/usr
+make install DESTDIR="${PKG_DIR}" PREFIX=/usr VERSION="${VERSION}"
 
 mkdir -p "${PKG_DIR}/DEBIAN"
 mkdir -p "${PKG_DIR}/usr/share/doc/lookinfiles"

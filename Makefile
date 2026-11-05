@@ -71,8 +71,10 @@ APP_CFLAGS += -DHAVE_LIBARCHIVE `$(PKG_CONFIG) --cflags libarchive`
 LIBS += `$(PKG_CONFIG) --libs libarchive`
 endif
 
-# Release version, defined once in src/app_paths.h (APP_VERSION)
-VERSION != sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h
+# Release version: can be overridden via make VERSION=... or environment.
+# Defaults to git tags (e.g. v0.4.2 -> 0.4.2), falling back to src/app_paths.h.
+VERSION != sh tools/version.sh 2>/dev/null || sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h 2>/dev/null || echo "0.4.2"
+APP_CFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 
 # Windows platform detection
 ifeq ($(OS),Windows_NT)

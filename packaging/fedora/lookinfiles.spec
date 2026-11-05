@@ -1,5 +1,5 @@
 Name:           lookinfiles
-Version:        0.1.0
+Version:        0.4.2
 Release:        1%{?dist}
 Summary:        Fast, keyboard-driven GTK 4 file explorer with preview panel, editors and terminal
 
@@ -32,7 +32,7 @@ embedded terminal panes, search in files, Git status, and workspaces.
 %autosetup
 
 %build
-%make_build
+%make_build VERSION=%{version}
 
 %check
 make test
@@ -40,7 +40,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/io.github._80c01.Look
 appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/io.github._80c01.LookinFiles.metainfo.xml
 
 %install
-%make_install PREFIX=/usr
+%make_install PREFIX=/usr VERSION=%{version}
 
 %files
 %license LICENSE

@@ -12,8 +12,11 @@
 /* Application ID: names the .desktop file, the metainfo and the icon (data/) */
 #define APP_ID       "io.github._80c01.LookinFiles"
 
-/* Release version (Semantic Versioning); the Makefile reads it from here */
-#define APP_VERSION  "0.1.0"
+/* Release version (Semantic Versioning); passed via -DAPP_VERSION="...".
+ * If not supplied at compile time, falls back to the default here. */
+#ifndef APP_VERSION
+#define APP_VERSION  "0.4.2"
+#endif
 
 /* ~/.config/lookinfiles ($XDG_CONFIG_HOME honoured). Not created. Caller frees. */
 gchar* app_config_dir(void);

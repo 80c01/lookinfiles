@@ -15,18 +15,19 @@ OUTPUT_DIR="$(cd "${OUTPUT_ARG}" && pwd)"
 
 APP_DIR="${ROOT_DIR}/build/AppDir"
 APP_ID="io.github._80c01.LookinFiles"
+VERSION=$(sh "${ROOT_DIR}/tools/version.sh")
 
 # Allow AppImages to run in CI / containers without FUSE
 export APPIMAGE_EXTRACT_AND_RUN=1
 
-echo "==> Building LookinFiles..."
+echo "==> Building LookinFiles v${VERSION}..."
 cd "${ROOT_DIR}"
-make -j"$(nproc 2>/dev/null || echo 2)"
+make -j"$(nproc 2>/dev/null || echo 2)" VERSION="${VERSION}"
 
 echo "==> Installing into AppDir: ${APP_DIR}..."
 rm -rf "${APP_DIR}"
 mkdir -p "${APP_DIR}"
-make install DESTDIR="${APP_DIR}" PREFIX=/usr
+make install DESTDIR="${APP_DIR}" PREFIX=/usr VERSION="${VERSION}"
 
 # Ensure 256x256 PNG icon exists and place it at AppDir root (.DirIcon + AppID.png)
 ICON_PNG="${APP_DIR}/usr/share/icons/hicolor/256x256/apps/${APP_ID}.png"
@@ -75,7 +76,7 @@ cd "${OUTPUT_DIR}"
 
 # Export required environment variables for linuxdeploy-plugin-gtk
 export DEPLOY_GTK_VERSION="4"
-export OUTPUT="${OUTPUT_DIR}/LookinFiles-x86_64.AppImage"
+export OUTPUT="${OUTPUT_DIR}/LookinFiles-${VERSION}-x86_64.AppImage"
 
 # Run linuxdeploy with GTK plugin
 ICON_ARG=()

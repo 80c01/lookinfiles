@@ -15,7 +15,7 @@ OUTPUT_ARG="${1:-${ROOT_DIR}/build}"
 mkdir -p "${OUTPUT_ARG}"
 OUTPUT_DIR="$(cd "${OUTPUT_ARG}" && pwd)"
 
-VERSION=$(sed -n 's/^#define APP_VERSION *"\(.*\)"/\1/p' "${ROOT_DIR}/src/app_paths.h")
+VERSION=$(sh "${ROOT_DIR}/tools/version.sh")
 DIST_NAME="lookinfiles-${VERSION}-windows-x86_64"
 WORK_DIR="${ROOT_DIR}/build/windows-exe"
 ZIP_FILE="${ROOT_DIR}/build/${DIST_NAME}.zip"

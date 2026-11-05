@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install dependencies
         run: |
@@ -46,6 +48,8 @@ jobs:
           pacman -Syu --noconfirm --needed base-devel git gtk4 libgit2 vte4 gtksourceview5 poppler-glib sqlite webkitgtk-6.0 libarchive
 
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Prepare unprivileged build user
         run: |
@@ -55,6 +59,12 @@ jobs:
 
       - name: Build package with makepkg
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          VERSION=$(sh tools/version.sh)
+          make dist VERSION="${VERSION}"
+          cp lookinfiles-${VERSION}.tar.gz packaging/arch/
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" packaging/arch/PKGBUILD
+          chown -R builder:builder .
           su builder -c "
             cd packaging/arch
             makepkg -s --noconfirm --nocheck
@@ -80,15 +90,17 @@ jobs:
             webkitgtk6.0-devel libarchive-devel git
 
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Build source tarball and RPM
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           rpmdev-setuptree
-          make dist
-          VERSION=$(sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h)
+          VERSION=$(sh tools/version.sh)
+          make dist VERSION="${VERSION}"
           cp lookinfiles-${VERSION}.tar.gz ~/rpmbuild/SOURCES/
-          cp packaging/fedora/lookinfiles.spec ~/rpmbuild/SPECS/
+          sed "s/^Version:.*/Version:        ${VERSION}/" packaging/fedora/lookinfiles.spec > ~/rpmbuild/SPECS/lookinfiles.spec
           rpmbuild -ba ~/rpmbuild/SPECS/lookinfiles.spec
           mkdir -p artifacts
           cp ~/rpmbuild/RPMS/*/*.rpm ~/rpmbuild/SRPMS/*.rpm artifacts/
@@ -104,6 +116,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install dependencies
         run: |
@@ -127,6 +141,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
@@ -178,5 +194,6 @@ jobs:
       - name: Publish Release with assets
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ github.ref_name }}
           files: all-artifacts/*
           generate_release_notes: true

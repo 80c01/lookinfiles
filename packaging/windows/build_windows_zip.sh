@@ -12,13 +12,13 @@ OUTPUT_ARG="${1:-${ROOT_DIR}/build}"
 mkdir -p "${OUTPUT_ARG}"
 OUTPUT_DIR="$(cd "${OUTPUT_ARG}" && pwd)"
 
-VERSION=$(sed -n 's/^#define APP_VERSION *"\(.*\)"/\1/p' "${ROOT_DIR}/src/app_paths.h")
+VERSION=$(sh "${ROOT_DIR}/tools/version.sh")
 DIST_NAME="lookinfiles-${VERSION}-windows-x86_64"
 STAGE_DIR="${ROOT_DIR}/build/${DIST_NAME}"
 
-echo "==> Building LookinFiles for Windows..."
+echo "==> Building LookinFiles for Windows (v${VERSION})..."
 cd "${ROOT_DIR}"
-make -j"$(nproc 2>/dev/null || echo 2)"
+make -j"$(nproc 2>/dev/null || echo 2)" VERSION="${VERSION}"
 
 EXE="lookinfiles.exe"
 if [ ! -f "${EXE}" ] && [ -f "lookinfiles" ]; then

@@ -1,6 +1,6 @@
 # Maintainer: 80c01 <noreply@github.com>
 pkgname=lookinfiles
-pkgver=0.1.0
+pkgver=0.4.2
 pkgrel=1
 pkgdesc="Fast, keyboard-driven GTK 4 file explorer with preview panel, editors and terminal"
 arch=('x86_64' 'aarch64')
@@ -28,7 +28,7 @@ sha256sums=('SKIP')
 
 build() {
     cd "$pkgname-$pkgver"
-    make
+    make VERSION="$pkgver"
 }
 
 check() {
@@ -38,6 +38,6 @@ check() {
 
 package() {
     cd "$pkgname-$pkgver"
-    make install DESTDIR="$pkgdir" PREFIX=/usr
+    make install DESTDIR="$pkgdir" PREFIX=/usr VERSION="$pkgver"
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
