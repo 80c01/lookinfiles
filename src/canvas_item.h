@@ -41,6 +41,9 @@ void canvas_item_edit(CanvasItem* it);
 void canvas_item_place(CanvasItem* it);
 void canvas_item_raise(CanvasItem* it);
 
+/* The note moved to dir: pictures are read from there */
+void canvas_item_set_dir(CanvasItem* it, const gchar* dir);
+
 CanvasItem* canvas_item_add(CanvasPage* p, GtkWidget* surface, const gchar* dir,
                             const CanvasBlock* b, CanvasItemNotify on_change,
                             gboolean loading);

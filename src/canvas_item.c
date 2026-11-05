@@ -67,6 +67,14 @@ void canvas_item_raise(CanvasItem* it) {
     }
 }
 
+#define DIR_KEY "note-dir"
+
+void canvas_item_set_dir(CanvasItem* it, const gchar* dir) {
+    if (it == NULL || it->kind != CANVAS_BLOCK_IMAGE || it->frame == NULL) return;
+    g_object_set_data_full(G_OBJECT(it->frame), DIR_KEY, g_strdup(dir), g_free);
+    if (it->content != NULL) gtk_widget_queue_draw(it->content);
+}
+
 /* Static key for change notify callback */
 #define NOTIFY_KEY "canvas-item-notify"
 
@@ -208,7 +216,7 @@ static CanvasItem* add_text(CanvasPage* p, GtkWidget* surface, const CanvasBlock
 static void on_img_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer user_data) {
     (void)area;
     CanvasItem* it = user_data;
-    const gchar* dir = g_object_get_data(G_OBJECT(it->frame), "note-dir");
+    const gchar* dir = g_object_get_data(G_OBJECT(it->frame), DIR_KEY);
     if (it == NULL || it->src == NULL || dir == NULL) return;
     gchar* full = g_build_filename(dir, it->src, NULL);
     double cx = (it->crop_w > 0) ? it->crop_x : 0.0;
@@ -225,7 +233,7 @@ static CanvasItem* add_image(CanvasPage* p, GtkWidget* surface, const gchar* dir
     gtk_widget_set_cursor_from_name(area, "move");
     CanvasItem* it = item_base_new(p, surface, CANVAS_BLOCK_IMAGE, area);
     g_object_set_data(G_OBJECT(it->frame), NOTIFY_KEY, on_change);
-    g_object_set_data_full(G_OBJECT(it->frame), "note-dir", g_strdup(dir), g_free);
+    canvas_item_set_dir(it, dir);
     it->src = g_strdup(b->src);
     it->crop_x = b->crop_x;
     it->crop_y = b->crop_y;

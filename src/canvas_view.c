@@ -980,6 +980,9 @@ void canvas_view_path_moved(AppData* app, const gchar* old_path, const gchar* ne
     gchar* dir = g_strconcat(new_path, p->dir + n, NULL);
     g_free(p->dir);
     p->dir = dir;
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        canvas_item_set_dir(canvas_item_of(c), p->dir);
+    }
     if (title != NULL && p->dir[strlen(new_path)] == '\0') gtk_label_set_text(GTK_LABEL(p->title), title);
 }
 
