@@ -308,8 +308,15 @@ check:
 ui-test: $(TARGET)
 	@sh tests/ui/run_ui_test.sh ./$(TARGET)
 
+# Instrumented build (AddressSanitizer + UBSan) in build-asan/: a crash or a
+# memory error prints its stack. Run build-asan/lookinfiles and keep its output.
+ASAN_DIR = build-asan
+asan:
+	@$(MAKE) --no-print-directory BUILD_DIR=$(ASAN_DIR) TARGET=$(ASAN_DIR)/lookinfiles$(EXE) \
+		CFLAGS="-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer" $(ASAN_DIR)/lookinfiles$(EXE)
+
 clean:
-	rm -rf $(TARGET) lookinfiles lookinfiles.exe $(BUILD_DIR)
+	rm -rf $(TARGET) lookinfiles lookinfiles.exe $(BUILD_DIR) $(ASAN_DIR)
 
 # Installation (make install PREFIX=/usr DESTDIR=pkgroot for packages):
 # the binary, its desktop entry, AppStream metainfo and icon (data/)
@@ -351,4 +358,4 @@ uninstall:
 
 -include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
 
-.PHONY: all deps clean dist install uninstall test check ui-test bench-preview preview-coverage deb appimage windows-zip windows-exe
+.PHONY: all asan deps clean dist install uninstall test check ui-test bench-preview preview-coverage deb appimage windows-zip windows-exe

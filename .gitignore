@@ -1,4 +1,5 @@
 lookinfiles
 build/
+build-asan/
 lookinfiles-*.tar.gz
 __pycache__/

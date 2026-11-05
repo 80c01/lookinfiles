@@ -9,9 +9,14 @@ make              # incremental build into build/ (gcc -Wall -Wextra, pkg-config
 make test         # GLib unit tests (headless, no display needed)
 make check        # zero-warning build + unit tests + module layering rules
 make ui-test      # headless UI smoke test (needs xvfb xdotool imagemagick)
-make clean        # remove binary and build/
+make asan         # AddressSanitizer + UBSan build in build-asan/ (crash stacks)
+make clean        # remove binary, build/ and build-asan/
 ./lookinfiles   # run (requires a display; shows a warning without one)
 ```
+
+- A crash (segfault): run `build-asan/lookinfiles` from `make asan` with
+  `ASAN_OPTIONS=detect_leaks=0`; the report names the bad access and both
+  stacks (where the memory was freed, where it was used).
 
 - **Agents only run `make` after a change**; the test targets below run when
   the user asks. `make check` fails on any compiler warning, failing test, or
