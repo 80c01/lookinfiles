@@ -38,30 +38,27 @@ static gboolean add_single_file(GFile* file, const gchar* dir, gint x, gint y,
     return ok;
 }
 
-gboolean canvas_media_paste_picture(GtkWidget* root, const gchar* dir,
-                                    gint x, gint y,
-                                    CanvasNewPictureFunc on_new_picture,
-                                    CanvasPage* page) {
-    if (root == NULL || dir == NULL) return FALSE;
-    GdkClipboard* clip = gtk_widget_get_clipboard(root);
-    g_autoptr(GError) error = NULL;
-    GdkTexture* texture = gdk_clipboard_read_texture_finish(clip, NULL, &error);
-    if (texture == NULL) return FALSE;
+gboolean canvas_media_clipboard_has_picture(GdkClipboard* clipboard) {
+    return clipboard != NULL &&
+           gdk_content_formats_contain_gtype(gdk_clipboard_get_formats(clipboard), GDK_TYPE_TEXTURE);
+}
 
+gboolean canvas_media_clipboard_has_text(GdkClipboard* clipboard) {
+    return clipboard != NULL &&
+           gdk_content_formats_contain_gtype(gdk_clipboard_get_formats(clipboard), G_TYPE_STRING);
+}
+
+gchar* canvas_media_save_texture(GdkTexture* texture, const gchar* dir) {
+    if (texture == NULL || dir == NULL) return NULL;
     gchar* src = canvas_doc_new_media_path(dir, "png");
     gchar* full = g_build_filename(dir, src, NULL);
     gchar* media = g_path_get_dirname(full);
     g_mkdir_with_parents(media, 0755);
     g_free(media);
-
     gboolean ok = gdk_texture_save_to_png(texture, full);
     g_free(full);
-    if (ok && on_new_picture != NULL) {
-        on_new_picture(page, src, x, y, gdk_texture_get_width(texture), gdk_texture_get_height(texture));
-    }
-    g_free(src);
-    g_object_unref(texture);
-    return ok;
+    if (!ok) g_clear_pointer(&src, g_free);
+    return src;
 }
 
 gboolean canvas_media_drop_files(const GValue* value, const gchar* dir,
