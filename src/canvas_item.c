@@ -1,6 +1,6 @@
 #include "canvas_item.h"
 #include "canvas_crop.h"
-#include "canvas_item_shape.h"
+#include "canvas_rough_draw.h"
 #include "canvas_table.h"
 #include "canvas_text.h"
 
@@ -241,9 +241,24 @@ static CanvasItem* add_image(CanvasPage* p, GtkWidget* surface, const gchar* dir
     return it;
 }
 
+/* Draws from the item's own fields: the block it was made from is gone */
+static void on_shape_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer user_data) {
+    (void)area;
+    const CanvasItem* it = user_data;
+    CanvasBlock view = {0};
+    view.kind = CANVAS_BLOCK_SHAPE;
+    view.shape_type = it->shape_type;
+    view.stroke_color = it->stroke_color;
+    view.fill_style = it->fill_style;
+    view.stroke_width = it->stroke_width;
+    view.rough = it->rough;
+    view.points = it->points;
+    canvas_rough_draw_shape(cr, &view, width, height);
+}
+
 static CanvasItem* add_shape(CanvasPage* p, GtkWidget* surface, const CanvasBlock* b,
                              CanvasItemNotify on_change) {
-    GtkWidget* area = canvas_item_shape_new(b);
+    GtkWidget* area = gtk_drawing_area_new();
     gtk_widget_set_cursor_from_name(area, "move");
     CanvasItem* it = item_base_new(p, surface, CANVAS_BLOCK_SHAPE, area);
     g_object_set_data(G_OBJECT(it->frame), NOTIFY_KEY, on_change);
@@ -261,6 +276,7 @@ static CanvasItem* add_shape(CanvasPage* p, GtkWidget* surface, const CanvasBloc
     it->w = MAX(b->w, 40);
     it->h = MAX(b->h, 40);
     it->aspect = (gdouble)it->w / it->h;
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area), on_shape_draw, it, NULL);
     canvas_item_place(it);
     return it;
 }
