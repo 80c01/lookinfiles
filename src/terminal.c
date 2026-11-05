@@ -78,6 +78,23 @@ static void on_spawn_result(VteTerminal* term, GPid pid, GError* error,
     vte_terminal_watch_child(term, pid);
 }
 
+/* The shell to run: $SHELL, else bash; on Windows $SHELL when it is a
+ * Windows program (not MSYS2's /usr/bin/bash), else PowerShell 7, Windows
+ * PowerShell, then %COMSPEC% (cmd.exe). Caller frees. */
+static gchar* user_shell(void) {
+    const gchar* shell = g_getenv("SHELL");
+#ifdef G_OS_WIN32
+    gchar* found = (shell != NULL && shell[0] != '\0') ? g_find_program_in_path(shell) : NULL;
+    const gchar* fallbacks[] = {"pwsh.exe", "powershell.exe", g_getenv("COMSPEC"), "cmd.exe"};
+    for (gsize i = 0; found == NULL && i < G_N_ELEMENTS(fallbacks); i++) {
+        found = fallbacks[i] != NULL ? g_find_program_in_path(fallbacks[i]) : NULL;
+    }
+    return found != NULL ? found : g_strdup("cmd.exe");
+#else
+    return g_strdup((shell != NULL && shell[0] != '\0') ? shell : "/bin/bash");
+#endif
+}
+
 /* Shell in cwd (NULL: the explorer's directory), or ssh to the active remote */
 static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
     RemoteMachine* rm = remote_get_active_machine(app);
@@ -115,14 +132,12 @@ static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
         return;
     }
 
-    const gchar* shell = g_getenv("SHELL");
-    if (shell == NULL || shell[0] == '\0') {
-        shell = "/bin/bash";
-    }
-    gchar* argv[2] = { (gchar*)shell, NULL };
+    gchar* shell = user_shell();
+    gchar* argv[2] = { shell, NULL };
     vte_terminal_spawn_async(term, VTE_PTY_DEFAULT, cwd != NULL ? cwd : app->base_dir, argv, NULL,
                              G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, -1, NULL,
                              on_spawn_result, app);
+    g_free(shell);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -541,6 +556,26 @@ static GtkNotebook* term_target_notebook(AppData* app) {
     return target != NULL ? term_notebook_of(target) : NULL;
 }
 
+/* Ctrl+Shift+C / Ctrl+Shift+V: copy the selection, paste the clipboard */
+static gboolean on_term_copy_paste_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
+                                       GdkModifierType state, gpointer data) {
+    (void)keycode;
+    (void)data;
+    if ((state & (GDK_CONTROL_MASK | GDK_SHIFT_MASK | GDK_ALT_MASK)) != (GDK_CONTROL_MASK | GDK_SHIFT_MASK)) {
+        return FALSE;
+    }
+    VteTerminal* term = VTE_TERMINAL(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl)));
+    if (keyval == GDK_KEY_C || keyval == GDK_KEY_c) {
+        vte_terminal_copy_clipboard_format(term, VTE_FORMAT_TEXT);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_V || keyval == GDK_KEY_v) {
+        vte_terminal_paste_clipboard(term);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 /* New terminal widget running a shell (not placed yet) */
 static GtkWidget* term_new_pane(AppData* app, const gchar* cwd) {
     GtkWidget* vte = vte_terminal_new();
@@ -563,6 +598,11 @@ static GtkWidget* term_new_pane(AppData* app, const gchar* cwd) {
     GtkEventController* focus_ctrl = gtk_event_controller_focus_new();
     g_signal_connect(focus_ctrl, "enter", G_CALLBACK(on_vte_focus_enter), app);
     gtk_widget_add_controller(vte, focus_ctrl);
+
+    GtkEventController* keys = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_term_copy_paste_key), NULL);
+    gtk_widget_add_controller(vte, keys);
 
     spawn_shell(app, VTE_TERMINAL(vte), cwd);
     return vte;

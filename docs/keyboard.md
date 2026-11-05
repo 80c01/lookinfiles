@@ -67,6 +67,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Ctrl+T` | Open a terminal in a new tab of the focused terminal pane (exit the shell to close it); drag a tab to reorder it, onto another pane to move it there (the preview and editor panels too, beside the files), or near a pane edge to split that side |
 | `Ctrl+Shift+T` | Open a terminal in a new pane below the focused one |
 | `Ctrl+PgDn` / `Ctrl+PgUp` | In a terminal: next / previous tab of its pane (in the editor area, editor tabs included) |
+| `Ctrl+Shift+C` / `Ctrl+Shift+V` | In a terminal: copy the selected text / paste the clipboard (select with the mouse) |
 | `Ctrl+Shift+L` | Stack the terminal under the viewer, or put it back beside it |
 | `Ctrl+Shift+B` | Open an empty browser tab in the preview panel, the focus in its address bar (needs WebKitGTK 6.0; Emacs editor tabs keep `C-S-b`); see [Browser tabs](#browser-tabs) |
 | `Ctrl+A` | Switch between the files and bookmarks views |

@@ -511,6 +511,8 @@ key ctrl+t; sleep 1;    shot terminal
 key ctrl+t; sleep 1;    shot terminal_tabs      # a second terminal: the tabs show
 key ctrl+Page_Up;       shot terminal_prev_tab
 key ctrl+shift+t; sleep 1; shot terminal_split  # a new pane below
+key ctrl+shift+c;       shot terminal_copy      # nothing selected: nothing copied
+key ctrl+shift+v; sleep 1; shot terminal_paste  # the clipboard to the shell
 key ctrl+q
 
 status=0

@@ -13,7 +13,9 @@
 #include "file_types.h"
 #include "note_types.h"
 
-#ifdef HAVE_VTE
+#ifdef HAVE_BUILTIN_TERM
+#include "term_widget.h" /* VTE API on the built-in terminal (Windows) */
+#elif defined(HAVE_VTE)
 #include <vte/vte.h>
 #endif
 

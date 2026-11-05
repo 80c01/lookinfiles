@@ -244,6 +244,14 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   with the setters (they emit `"changed"` so the row redraws). A row that can
   expand must be added with `explorer_row_append_container()`: GTK decides
   once, when the row is inserted, whether it shows an expander.
+- `vt_screen` — screen of the built-in terminal: xterm output (UTF-8, C0,
+  ESC / CSI / OSC: cursor moves, erase, insert / delete, SGR colours (16,
+  256, RGB), scroll region, alternate screen, DEC line drawing, title) on a
+  grid of `VtCell`s with a scrollback; answers to cursor position and device
+  attribute queries (`vt_screen_take_reply()`). No reflow on resize.
+- `vt_pty` — a program on a pseudo-terminal: ConPTY on Windows (output read
+  by a thread, handed to the main context), POSIX pty elsewhere
+  (`TERM=xterm-256color`).
 
 **2. Shared types, events & leaf helpers — may use `AppData` and layer 1 only:**
 - `app_types.h` — `AppData`, `EditorTab`, `VirtualLayout`, `FileEntry`,
@@ -254,6 +262,13 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `explorer_tree_set_expanded()`), `"row-activated"` (double click). Rows are
   addressed by `ExplorerRow*`; positions count visible rows only.
   `explorer_tree_swap_state()` puts the content aside and shows another one.
+- `term_widget` — the built-in terminal widget, for builds without VTE
+  (Windows; `make BUILTIN_TERM=yes` elsewhere): the VTE API `terminal`
+  uses, under VTE's names (`VteTerminal`, `vte_terminal_spawn_async()`...),
+  drawing a `vt_screen` fed by a `vt_pty`. With it `HAVE_VTE` and
+  `HAVE_BUILTIN_TERM` are both defined, and `app_types.h` includes it
+  instead of `<vte/vte.h>`. Keys as xterm sends them, IM text input, drag /
+  double click selection, wheel and `Shift+PgUp` / `Shift+PgDn` scrollback.
 - `icon_picker` — a grid of toggle buttons to choose one theme glyph
   (notebook and bookmark folder dialogs).
 - `dialog` — `AppDialog`, the modal dialog drawn inside the main window: a
@@ -455,11 +470,13 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   in the same dialog (`quick_open_show_recent()`). Ctrl+P: the project's files
   (`code_index_all_files()` in a worker) in an `AppDialog`, ranked by
   `fuzzy_match`; shows the file with `reveal_path_in_tree()` or edits it.
-- `terminal` — embedded VTE terminals as tabs of terminal notebooks (group
+- `terminal` — embedded terminals (VTE, or `term_widget` on Windows) as tabs of terminal notebooks (group
   `TERM_TABS_GROUP`) split by `GtkPaned`s; tabs are dragged between them or
   to a pane edge through `tab_drop` (`Ctrl+T` new tab, `Ctrl+Shift+T` new
   pane below, `terminal_open()` with a working directory); ssh into the
-  active remote machine. Terminal tabs also go into the editor and preview
+  active remote machine; the shell is `$SHELL` (on Windows PowerShell 7,
+  Windows PowerShell, then `%COMSPEC%`); `Ctrl+Shift+C` / `Ctrl+Shift+V`
+  copy the selection / paste. Terminal tabs also go into the editor and preview
   notebooks (`tab_drop_set_accept()` on both sides); `editor_remove_page()`
   takes them out when the shell exits, and the preview notebook's ones stay
   with their workspace (`terminal_workspace_hidden()` / `_shown()`).

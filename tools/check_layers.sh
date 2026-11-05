@@ -75,6 +75,9 @@ tfm_info:preview_doc
 pcap_info:preview_doc
 media_tags:
 text_encoding:
+vt_screen:
+vt_pty:
+term_widget:vt_screen,vt_pty
 preview_formats:mail_box,mail_message,mail_store,mail_tnef,mail_view,office97,file_types,text_encoding,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view,class_info,wasm_info,torrent_info,pyc_info,tfm_info,pcap_info
 org_time:
 org_doc:org_time

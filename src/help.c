@@ -239,6 +239,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Ctrl+T", "Open a terminal in a new tab (exit the shell to close it; drag tabs to move or split)", 0},
     {"Global", "Ctrl+Shift+T", "Open a terminal in a new pane below the focused one", 0},
     {"Global", "Ctrl+PgDn / Ctrl+PgUp", "In a terminal: next / previous tab of its pane", 0},
+    {"Global", "Ctrl+Shift+C / Ctrl+Shift+V", "In a terminal: copy the selected text / paste the clipboard", 0},
     {"Global", "Alt+Left / Alt+Right", "Cycle the keyboard focus between panels", 0},
     {"Global", "Ctrl+W w / Ctrl+W W", "Focus the next / previous panel (also h / l; from Vim editor tabs too)", VI},
     {"Global", "Ctrl+W c", "Close the focused editor tab, or the current one on screen (from Vim editor tabs too; asks when unsaved)", VI},

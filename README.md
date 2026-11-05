@@ -20,7 +20,7 @@ C and GTK 4 for Linux and Windows, with a VS Code look and a keyboard-first desi
 - **Browser tabs for web development** (needs WebKitGTK): open a page, a local
   HTML file or a dev server in a tab of the preview panel, beside your editor
   and terminal. Press `F5` to reload after saving.
-- **Terminal built in** (needs VTE): shell panes next to the preview and the
+- **Terminal built in** (VTE on Linux, ConPTY on Windows): shell panes next to the preview and the
   editors.
 - **Find fast**: fuzzy file finder (`Ctrl+P`) and search in files
   (`Ctrl+Shift+F`).

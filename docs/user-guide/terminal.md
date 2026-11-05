@@ -1,9 +1,11 @@
 # The terminal
 
 LookinFiles has an embedded terminal, so you can run commands without
-leaving the window. It needs the VTE library (see
+leaving the window. On Linux it needs the VTE library (see
 [Getting started](getting-started.md#installing)); without it, the
-terminal panel says "Terminal panel disabled" and how to enable it.
+terminal panel says "Terminal panel disabled" and how to enable it. On
+Windows (10 version 1809 or later) the terminal is built in: the shell is
+PowerShell 7 when installed, else Windows PowerShell, else `cmd.exe`.
 
 ## Opening and closing
 
@@ -16,6 +18,9 @@ terminal panel says "Terminal panel disabled" and how to enable it.
 
 A new shell starts in the explorer's current folder. The right-click menu
 of the explorer can also open a terminal in a given folder.
+
+Select text with the mouse, then `Ctrl+Shift+C` copies it; `Ctrl+Shift+V`
+pastes the clipboard into the shell.
 
 To close a pane, exit its shell (`exit` or `Ctrl+D`). Hiding the panel with
 the **Terminal** button keeps the shells running.

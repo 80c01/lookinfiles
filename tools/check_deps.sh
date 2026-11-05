@@ -26,7 +26,11 @@ check() {
 echo "Required:"
 check gtk4            4.12 "GTK 4"                  libgtk-4-dev            required
 echo "Optional features:"
-check vte-2.91-gtk4   -    "Embedded terminal"      libvte-2.91-gtk4-dev    optional
+if [ "${OS:-}" = Windows_NT ]; then
+    printf '  %-34s yes  (built in, ConPTY)\n' "Embedded terminal"
+else
+    check vte-2.91-gtk4 - "Embedded terminal"      libvte-2.91-gtk4-dev    optional
+fi
 check gtksourceview-5 -    "Syntax highlighting"    libgtksourceview-5-dev  optional
 check poppler-glib    -    "PDF preview"            libpoppler-glib-dev     optional
 check sqlite3         -    "Database preview"       libsqlite3-dev          optional
