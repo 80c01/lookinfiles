@@ -20,6 +20,7 @@ static void set_source_role(cairo_t* cr, PaletteRole role, double alpha) {
  * only repaints, past it the render is rebuilt around the new position */
 #define MINIMAP_CACHE_SCREENS 3
 #define MINIMAP_HIDE_DELAY_MS 200
+#define MINIMAP_MIN_LINE_PX 10
 
 /* Scale, minimap scroll and slider for the view's current position */
 static gboolean is_paged_view(GtkTextView* view) {
@@ -447,13 +448,21 @@ static gboolean minimap_hide_timeout(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
+/* Whether the text has enough lines to fill more than the viewer even with
+ * the smallest line height: a short text hides the minimap at once */
+static gboolean minimap_may_need_bar(AppData* app) {
+    gint lines = gtk_text_buffer_get_line_count(app->buffer);
+    return lines * MINIMAP_MIN_LINE_PX > gtk_adjustment_get_page_size(app->viewer_vadj);
+}
+
 static gboolean minimap_vis_idle(gpointer data) {
     AppData* app = (AppData*)data;
     app->mm_vis_source = 0;
     if (app->minimap == NULL) {
         return G_SOURCE_REMOVE;
     }
-    if (gtk_widget_get_visible(app->minimap) && !minimap_is_useful(app)) {
+    if (gtk_widget_get_visible(app->minimap) && !minimap_is_useful(app) &&
+        minimap_may_need_bar(app)) {
         app->mm_vis_source = g_timeout_add(MINIMAP_HIDE_DELAY_MS, minimap_hide_timeout, app);
         return G_SOURCE_REMOVE;
     }
