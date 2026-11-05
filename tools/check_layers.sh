@@ -22,6 +22,7 @@ path_kind:
 pane_geometry:
 minimap_geometry:
 dir_summary:file_types,text_encoding
+dir_scan:file_types
 hex_dump:
 ps_convert:
 elf_info:

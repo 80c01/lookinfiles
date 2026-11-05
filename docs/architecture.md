@@ -128,6 +128,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `minimap_geometry` — minimap scale, scroll offset and slider (VS Code
   style: fixed minimum scale, the minimap scrolls with the view over long
   documents), slider drag and click-to-center mapping.
+- `dir_scan` — explorer listings read in a worker thread (`dir_scan_read()`):
+  one level sorted like the tree (folders first, then the sort mode) and the
+  levels of its expanded folders; the folders "expand all" opens
+  (`dir_scan_collect_expand_all()`).
 - `dir_summary` — one directory level for the directory preview: entries
   (name, type, size, date), totals, sorting, relative dates, column padding.
 - `preview_cache` — bounded most-recently-used cache of previews built,

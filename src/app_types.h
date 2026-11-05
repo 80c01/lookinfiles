@@ -72,14 +72,6 @@ typedef enum {
     EDITOR_MODE_ORGMODE      /* Org-mode focused emacs style */
 } EditorMode;
 
-/* Entry collected for directory sorting */
-typedef struct {
-    gchar* name;
-    gboolean is_dir;
-    gint64 mtime;
-    gint64 size;
-} FileEntry;
-
 /* One open-for-editing file: a notebook tab in the viewer zone */
 typedef struct {
     gchar* path;          /* absolute file path */

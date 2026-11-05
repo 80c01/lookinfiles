@@ -19,42 +19,10 @@
 #include "games.h"
 #include "archive_tree.h"
 #include "archive_extract.h"
+#include "dir_scan.h"
 
-/* Sort: directories first, then according to active sort mode (thread-safe) */
-static gint compare_entries_with_data(gconstpointer a, gconstpointer b, gpointer user_data) {
-    const FileEntry* ea = (const FileEntry*)a;
-    const FileEntry* eb = (const FileEntry*)b;
-    gint sort_mode = GPOINTER_TO_INT(user_data);
-
-    if (ea->is_dir != eb->is_dir) {
-        return ea->is_dir ? -1 : 1;
-    }
-
-    gint res = 0;
-    switch (sort_mode) {
-    case SORT_DATE:
-        res = (ea->mtime > eb->mtime) ? -1 : (ea->mtime < eb->mtime) ? 1 : 0; /* newest first */
-        break;
-    case SORT_SIZE:
-        res = (ea->size > eb->size) ? -1 : (ea->size < eb->size) ? 1 : 0; /* largest first */
-        break;
-    case SORT_EXT: {
-        gchar* xa = g_utf8_casefold(file_extension(ea->name), -1);
-        gchar* xb = g_utf8_casefold(file_extension(eb->name), -1);
-        res = g_strcmp0(xa, xb);
-        g_free(xa);
-        g_free(xb);
-        break;
-    }
-    default: /* SORT_NAME */
-        break;
-    }
-
-    if (res == 0) {
-        res = g_utf8_collate(ea->name, eb->name); /* tie-breaker by name */
-    }
-    return res;
-}
+G_STATIC_ASSERT((gint)DIR_SCAN_SORT_NAME == SORT_NAME && (gint)DIR_SCAN_SORT_DATE == SORT_DATE &&
+                (gint)DIR_SCAN_SORT_SIZE == SORT_SIZE && (gint)DIR_SCAN_SORT_EXT == SORT_EXT);
 
 
 static void update_tree_git_statuses_recursive(ExplorerRow* parent, GHashTable* statuses) {
@@ -226,94 +194,6 @@ void refresh_git_status_in_place(AppData* app) {
     }
 }
 
-/* Off-thread directory scan snapshot node */
-typedef struct DirScanNode {
-    gchar* dirname;
-    gboolean unreadable;
-    GArray* entries;      /* FileEntry elements */
-    GPtrArray* children;  /* DirScanNode* per entry (NULL if not expanded dir) */
-} DirScanNode;
-
-static void dir_scan_node_free(gpointer data) {
-    DirScanNode* node = (DirScanNode*)data;
-    if (node == NULL) {
-        return;
-    }
-    g_free(node->dirname);
-    if (node->entries != NULL) {
-        for (guint i = 0; i < node->entries->len; i++) {
-            g_free(g_array_index(node->entries, FileEntry, i).name);
-        }
-        g_array_unref(node->entries);
-    }
-    if (node->children != NULL) {
-        for (guint i = 0; i < node->children->len; i++) {
-            dir_scan_node_free(g_ptr_array_index(node->children, i));
-        }
-        g_ptr_array_unref(node->children);
-    }
-    g_free(node);
-}
-
-/* Scan and sort one directory level (and any expanded subdirectories) off-thread */
-static DirScanNode* scan_dir_node_recursive(const gchar* dirname,
-                                            gboolean show_hidden,
-                                            gint sort_mode,
-                                            GHashTable* expanded_set,
-                                            GCancellable* cancellable) {
-    DirScanNode* node = g_new0(DirScanNode, 1);
-    node->dirname = g_strdup(dirname);
-
-    GDir* dir = g_dir_open(dirname, 0, NULL);
-    if (dir == NULL) {
-        node->unreadable = TRUE;
-        return node;
-    }
-
-    node->entries = g_array_new(FALSE, FALSE, sizeof(FileEntry));
-    const gchar* name;
-    while ((name = g_dir_read_name(dir)) != NULL) {
-        if (cancellable != NULL && g_cancellable_is_cancelled(cancellable)) {
-            g_dir_close(dir);
-            return node;
-        }
-        if (!show_hidden && name[0] == '.') {
-            continue;
-        }
-        gchar* full = g_build_filename(dirname, name, NULL);
-        GStatBuf st;
-        gboolean ok = (g_stat(full, &st) == 0);
-        FileEntry e;
-        e.name = g_strdup(name);
-        e.is_dir = ok ? S_ISDIR(st.st_mode) : FALSE;
-        e.mtime = ok ? (gint64)st.st_mtime : 0;
-        e.size = (ok && !e.is_dir) ? (gint64)st.st_size : 0;
-        g_free(full);
-        g_array_append_vals(node->entries, &e, 1);
-    }
-    g_dir_close(dir);
-
-    g_array_sort_with_data(node->entries, compare_entries_with_data,
-                           GINT_TO_POINTER(sort_mode));
-
-    node->children = g_ptr_array_sized_new(node->entries->len);
-    for (guint i = 0; i < node->entries->len; i++) {
-        const FileEntry* e = &g_array_index(node->entries, FileEntry, i);
-        DirScanNode* child_node = NULL;
-        if (e->is_dir && expanded_set != NULL) {
-            gchar* full = g_build_filename(dirname, e->name, NULL);
-            if (g_hash_table_contains(expanded_set, full)) {
-                child_node = scan_dir_node_recursive(full, show_hidden, sort_mode,
-                                                     expanded_set, cancellable);
-            }
-            g_free(full);
-        }
-        g_ptr_array_add(node->children, child_node);
-    }
-
-    return node;
-}
-
 void toggle_bookmarks_view(AppData* app) {
     if (app == NULL) {
         return;
@@ -463,7 +343,7 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
     }
 
     for (guint i = 0; i < node->entries->len; i++) {
-        const FileEntry* e = &g_array_index(node->entries, FileEntry, i);
+        const DirScanEntry* e = &g_array_index(node->entries, DirScanEntry, i);
         const DirScanNode* child_node =
             (node->children != NULL && i < node->children->len)
                 ? (const DirScanNode*)g_ptr_array_index(node->children, i)
@@ -513,7 +393,7 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
 static void populate_level(ExplorerRow* parent, AppData* app, const gchar* dirname,
                            gboolean show_hidden, gint sort_mode) {
     GHashTable* exp = (app != NULL) ? app->expanded_paths : NULL;
-    DirScanNode* node = scan_dir_node_recursive(dirname, show_hidden, sort_mode, exp, NULL);
+    DirScanNode* node = dir_scan_read(dirname, show_hidden, (DirScanSort)sort_mode, exp, NULL);
     apply_dir_node_to_rows(parent, app, node);
     dir_scan_node_free(node);
 }
@@ -642,43 +522,6 @@ static GHashTable* clone_string_set(GHashTable* src) {
 /* Expand all stops opening folders past this many rows: they are built on the UI thread */
 #define EXPAND_ALL_MAX_ROWS 10000
 
-/* Add to out the folders expand all opens: breadth first, so the top levels
- * open before the row budget runs out; symbolic links to folders stay closed
- * (no loops). Runs on the worker thread. */
-static void collect_expand_all(const gchar* base, gboolean show_hidden, GHashTable* out,
-                               GCancellable* cancellable) {
-    GQueue queue = G_QUEUE_INIT;
-    g_queue_push_tail(&queue, g_strdup(base));
-    guint rows = 0;
-    gchar* dirname;
-    while ((dirname = g_queue_pop_head(&queue)) != NULL) {
-        GDir* dir = (rows < EXPAND_ALL_MAX_ROWS && !g_cancellable_is_cancelled(cancellable))
-                        ? g_dir_open(dirname, 0, NULL)
-                        : NULL;
-        if (dir != NULL) {
-            if (rows > 0) {
-                g_hash_table_add(out, g_strdup(dirname)); /* not the base folder */
-            }
-            const gchar* name;
-            while ((name = g_dir_read_name(dir)) != NULL) {
-                if (!show_hidden && name[0] == '.') {
-                    continue;
-                }
-                rows++;
-                gchar* full = g_build_filename(dirname, name, NULL);
-                GStatBuf st;
-                if (g_lstat(full, &st) == 0 && S_ISDIR(st.st_mode)) {
-                    g_queue_push_tail(&queue, full);
-                } else {
-                    g_free(full);
-                }
-            }
-            g_dir_close(dir);
-        }
-        g_free(dirname);
-    }
-}
-
 static void dir_scan_thread_func(GTask* task, gpointer source_object,
                                  gpointer task_data, GCancellable* cancellable) {
     (void)source_object;
@@ -689,11 +532,11 @@ static void dir_scan_thread_func(GTask* task, gpointer source_object,
     }
 
     if (td->expand_all) {
-        collect_expand_all(td->dirname, td->show_hidden, td->expanded_snapshot, cancellable);
+        dir_scan_collect_expand_all(td->dirname, td->show_hidden, EXPAND_ALL_MAX_ROWS,
+                                    td->expanded_snapshot, cancellable);
     }
-    td->root_node = scan_dir_node_recursive(td->dirname, td->show_hidden,
-                                            td->sort_mode, td->expanded_snapshot,
-                                            cancellable);
+    td->root_node = dir_scan_read(td->dirname, td->show_hidden, (DirScanSort)td->sort_mode,
+                                  td->expanded_snapshot, cancellable);
 
     if (g_task_return_error_if_cancelled(task)) {
         return;
@@ -720,7 +563,7 @@ static gboolean rows_match_node(AppData* app, ExplorerRow* parent, const DirScan
         return FALSE;
     }
     for (guint i = 0; i < n; i++) {
-        const FileEntry* e = &g_array_index(node->entries, FileEntry, i);
+        const DirScanEntry* e = &g_array_index(node->entries, DirScanEntry, i);
         ExplorerRow* row = explorer_row_child(parent, i);
         if (!explorer_row_is(row, e->is_dir ? "dir" : "file") || g_strcmp0(row->name, e->name) != 0) {
             return FALSE;
