@@ -553,9 +553,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`preferences_editor_mode()`, `preferences_apply_startup()`).
 - `layout_switcher` — the Alt+L layout list (top-bar grid button): a
   `GtkPopover` listing the current arrangement, the default and the saved
-  layouts; the selected row is shown in full after a short delay, Enter or a
-  click applies it, Escape restores the start; **Edit Layouts…** opens the
-  `layouts` dialog. The previews are `layouts_preview_begin()` / `_show()` /
+  layouts; the hovered or selected row is shown in full after a short delay,
+  Enter or a click applies it, Escape restores the start; **Edit Layouts…** opens
+  the `layouts` dialog. The previews are `layouts_preview_begin()` / `_show()` /
   `_end()` (in `layouts`): the start is an `EditorSnapshot`
   (`editor_layout`) and a `TermSnapshot` (`terminal`) holding the very tabs
   and terminals with their panes, places and current pages; each preview

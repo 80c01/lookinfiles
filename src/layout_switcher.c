@@ -11,6 +11,7 @@ typedef struct {
     AppData* app;
     GtkWidget* popover;
     GtkListBox* list;
+    GtkEventController* motion;
     GPtrArray* layouts; /* one per row: the current panels, the default, the saved ones */
     LayoutsPreview* preview; /* the arrangement at the start, put back unless one is applied */
     GtkWidget* focus;   /* the window's focus at the start (referenced) */
@@ -55,6 +56,18 @@ static void on_row_selected(GtkListBox* list, GtkListBoxRow* row, gpointer data)
         g_source_remove(s->preview_id);
     }
     s->preview_id = g_timeout_add(PREVIEW_DELAY_MS, on_preview_timeout, s);
+}
+
+/* Hovering over a row previews it after the same short delay as arrows */
+static void on_motion(GtkEventControllerMotion* controller, gdouble x, gdouble y, gpointer data) {
+    (void)controller;
+    (void)x;
+    Switcher* s = data;
+    GtkListBoxRow* row = gtk_list_box_get_row_at_y(s->list, (gint)y);
+    if (row != NULL && row != gtk_list_box_get_selected_row(s->list)) {
+        gtk_list_box_select_row(s->list, row);
+        gtk_widget_grab_focus(GTK_WIDGET(row));
+    }
 }
 
 /* The next layout, back to the first after the last */
@@ -126,6 +139,10 @@ static void on_closed(GtkPopover* popover, gpointer data) {
         s->preview_id = 0;
     }
     g_signal_handlers_disconnect_by_func(s->list, on_row_selected, s);
+    if (s->motion != NULL) {
+        g_signal_handlers_disconnect_by_func(s->motion, on_motion, s);
+        s->motion = NULL;
+    }
     open_switcher = NULL;
     g_idle_add(finish_idle, s);
 }
@@ -200,6 +217,11 @@ void layout_switcher_show(AppData* app) {
     gtk_list_box_select_row(s->list, first);
     g_signal_connect(list, "row-selected", G_CALLBACK(on_row_selected), s);
     g_signal_connect(list, "row-activated", G_CALLBACK(on_row_activated), s);
+    GtkEventController* motion = gtk_event_controller_motion_new();
+    s->motion = motion;
+    g_signal_connect(motion, "motion", G_CALLBACK(on_motion), s);
+    g_signal_connect(motion, "enter", G_CALLBACK(on_motion), s);
+    gtk_widget_add_controller(list, motion);
     g_signal_connect(edit, "clicked", G_CALLBACK(on_edit_clicked), s);
     g_signal_connect(popover, "closed", G_CALLBACK(on_closed), s);
     GtkEventController* keys = gtk_event_controller_key_new();
