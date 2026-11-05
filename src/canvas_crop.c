@@ -7,9 +7,9 @@
 typedef struct {
     GtkWidget* dialog;
     gchar* full_path;
-    CanvasBlock* block;
     CanvasCropCallback on_done;
     gpointer user_data;
+    GDestroyNotify destroy;
     GtkWidget* preview_area;
     GtkWidget* scale_x;
     GtkWidget* scale_y;
@@ -73,11 +73,7 @@ static void on_slider_changed(GtkRange* range, gpointer user_data) {
 static void on_crop_dialog_response(AppDialog* dialog, gint response, gpointer user_data) {
     CropState* st = user_data;
     if (response == APP_RESPONSE_APPLY || response == APP_RESPONSE_OK) {
-        st->block->crop_x = st->cx;
-        st->block->crop_y = st->cy;
-        st->block->crop_w = st->cw;
-        st->block->crop_h = st->ch;
-        if (st->on_done != NULL) st->on_done(st->block, st->user_data);
+        if (st->on_done != NULL) st->on_done(st->cx, st->cy, st->cw, st->ch, st->user_data);
         app_dialog_destroy(dialog);
     } else if (response == APP_RESPONSE_REJECT) {
         /* Reset */
@@ -94,23 +90,28 @@ static void on_crop_dialog_response(AppDialog* dialog, gint response, gpointer u
 
 static void on_crop_state_destroy(gpointer data) {
     CropState* st = data;
+    if (st->destroy != NULL) st->destroy(st->user_data);
     g_free(st->full_path);
     g_free(st);
 }
 
 void canvas_crop_dialog_show(GtkWindow* parent_window, const gchar* full_path,
-                             CanvasBlock* b, CanvasCropCallback on_done, gpointer user_data) {
-    if (parent_window == NULL || full_path == NULL || b == NULL) return;
+                             double x, double y, double w, double h,
+                             CanvasCropCallback on_done, gpointer user_data, GDestroyNotify destroy) {
+    if (parent_window == NULL || full_path == NULL) {
+        if (destroy != NULL) destroy(user_data);
+        return;
+    }
 
     CropState* st = g_new0(CropState, 1);
     st->full_path = g_strdup(full_path);
-    st->block = b;
     st->on_done = on_done;
     st->user_data = user_data;
-    st->cx = (b->crop_w > 0) ? b->crop_x : 0.0;
-    st->cy = (b->crop_h > 0) ? b->crop_y : 0.0;
-    st->cw = (b->crop_w > 0) ? b->crop_w : 1.0;
-    st->ch = (b->crop_h > 0) ? b->crop_h : 1.0;
+    st->destroy = destroy;
+    st->cx = (w > 0) ? x : 0.0;
+    st->cy = (h > 0) ? y : 0.0;
+    st->cw = (w > 0) ? w : 1.0;
+    st->ch = (h > 0) ? h : 1.0;
 
     GtkWidget* dlg = app_dialog_new("Crop Image", parent_window,
                                     "Apply", APP_RESPONSE_APPLY,

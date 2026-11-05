@@ -378,28 +378,28 @@ static void on_drag_end(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpointe
     p->drag_item = NULL;
 }
 
-static void on_crop_applied_notify(CanvasBlock* b, gpointer udata) {
-    (void)b;
-    CanvasItem* it = udata;
+/* user_data: a reference on the picture's frame, so the item stays alive
+ * while the dialog is open; ignored if the picture left the page meanwhile */
+static void on_crop_applied(double x, double y, double w, double h, gpointer user_data) {
+    GtkWidget* frame = user_data;
+    CanvasItem* it = canvas_item_of(frame);
+    if (it == NULL || gtk_widget_get_parent(frame) == NULL) return;
+    it->crop_x = x;
+    it->crop_y = y;
+    it->crop_w = w;
+    it->crop_h = h;
     gtk_widget_queue_draw(it->content);
     update_extent(it->page);
     schedule_save(it->page);
 }
 
 static void open_crop_dialog(CanvasPage* p, CanvasItem* it) {
-    if (it == NULL || it->kind != CANVAS_BLOCK_IMAGE || it->src == NULL) return;
+    if (it == NULL || it->kind != CANVAS_BLOCK_IMAGE || it->src == NULL || p->dir == NULL) return;
     GtkRoot* root = gtk_widget_get_root(p->root);
+    if (root == NULL) return;
     gchar* full = g_build_filename(p->dir, it->src, NULL);
-    CanvasBlock tmp = {0};
-    tmp.crop_x = it->crop_x;
-    tmp.crop_y = it->crop_y;
-    tmp.crop_w = (it->crop_w > 0) ? it->crop_w : 1.0;
-    tmp.crop_h = (it->crop_h > 0) ? it->crop_h : 1.0;
-    canvas_crop_dialog_show(GTK_WINDOW(root), full, &tmp, on_crop_applied_notify, it);
-    it->crop_x = tmp.crop_x;
-    it->crop_y = tmp.crop_y;
-    it->crop_w = tmp.crop_w;
-    it->crop_h = tmp.crop_h;
+    canvas_crop_dialog_show(GTK_WINDOW(root), full, it->crop_x, it->crop_y, it->crop_w, it->crop_h,
+                            on_crop_applied, g_object_ref(it->frame), g_object_unref);
     g_free(full);
 }
 
