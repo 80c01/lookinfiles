@@ -284,8 +284,6 @@ static CanvasItem* add_shape(CanvasPage* p, GtkWidget* surface, const CanvasBloc
 static void on_tbl_change(CanvasBlock* b, gpointer user_data) {
     (void)b;
     CanvasItem* it = user_data;
-    it->w = it->table_block->w;
-    it->h = it->table_block->h;
     canvas_item_place(it);
     trigger_notify(it);
 }
@@ -309,7 +307,8 @@ static CanvasItem* add_table(CanvasPage* p, GtkWidget* surface, const CanvasBloc
     }
     GtkWidget* tbl = canvas_table_widget_new(it->table_block, on_tbl_change, it);
     it->content = tbl;
-    gtk_box_append(GTK_BOX(it->frame), tbl);
+    /* Under the resize corner, like the content of the other blocks */
+    gtk_overlay_set_child(GTK_OVERLAY(gtk_widget_get_last_child(it->frame)), tbl);
     it->x = b->x;
     it->y = b->y;
     it->w = MAX(b->w, 80);

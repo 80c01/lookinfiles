@@ -62,6 +62,7 @@ void canvas_table_widget_rebuild(GtkWidget* table_widget) {
             if (r == 0) gtk_widget_add_css_class(entry, "canvas-table-header");
             gint col_w = canvas_table_get_col_width(st->block, c);
             gtk_widget_set_size_request(entry, MAX(col_w, 60), 28);
+            gtk_widget_set_hexpand(entry, TRUE); /* widened by the resize corner */
             const gchar* txt = canvas_table_get_cell(st->block, r, c);
             gtk_editable_set_text(GTK_EDITABLE(entry), txt != NULL ? txt : "");
 

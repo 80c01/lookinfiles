@@ -585,10 +585,16 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
     }
     CanvasItem* it = focused_item(p);
     if (it == NULL) return FALSE;
+    if (focused_widget(p) == it->frame) return block_key(p, it, keyval, state);
     if (it->kind == CANVAS_BLOCK_TEXT && gtk_widget_has_focus(it->content)) {
         return text_key(it, keyval, state);
     }
-    return block_key(p, it, keyval, state);
+    /* Typing inside a block (a table cell): keys are its own, Esc selects it */
+    if (keyval == GDK_KEY_Escape && (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) == 0) {
+        canvas_item_select(it);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 /* ------------------------------------------------------------------------- */
