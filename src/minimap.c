@@ -461,8 +461,17 @@ static gboolean minimap_vis_idle(gpointer data) {
     if (app->minimap == NULL) {
         return G_SOURCE_REMOVE;
     }
-    if (gtk_widget_get_visible(app->minimap) && !minimap_is_useful(app) &&
-        minimap_may_need_bar(app)) {
+    /* A layout or workspace change resizes the viewer: its height estimate is
+     * unreliable until it settles, so any change waits for confirmation */
+    static gint last_w = 0, last_h = 0;
+    gint w = gtk_widget_get_width(app->text_view);
+    gint h = gtk_widget_get_height(app->text_view);
+    gboolean resized = w != last_w || h != last_h;
+    last_w = w;
+    last_h = h;
+    gboolean useful = minimap_is_useful(app);
+    gboolean shown = gtk_widget_get_visible(app->minimap);
+    if (shown != useful && (resized || (shown && minimap_may_need_bar(app)))) {
         app->mm_vis_source = g_timeout_add(MINIMAP_HIDE_DELAY_MS, minimap_hide_timeout, app);
         return G_SOURCE_REMOVE;
     }
