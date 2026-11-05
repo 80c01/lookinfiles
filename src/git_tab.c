@@ -7,25 +7,6 @@
 #include "focus_route.h"
 #include <string.h>
 
-typedef struct {
-    gchar* hash;
-    gchar* short_hash;
-    gchar* subject;
-    gchar* author;
-    gchar* date;
-} GitCommitInfo;
-
-static void git_commit_info_free(gpointer data) {
-    GitCommitInfo* c = (GitCommitInfo*)data;
-    if (c == NULL) return;
-    g_free(c->hash);
-    g_free(c->short_hash);
-    g_free(c->subject);
-    g_free(c->author);
-    g_free(c->date);
-    g_free(c);
-}
-
 /* One row of the commit list (item of app->git_store) */
 #define GIT_TYPE_COMMIT (git_commit_get_type())
 G_DECLARE_FINAL_TYPE(GitCommit, git_commit, GIT, COMMIT, GObject)
@@ -89,56 +70,15 @@ static void git_log_thread_func(GTask* task, gpointer source_object,
 
     if (g_task_return_error_if_cancelled(task)) return;
 
-    gchar* argv[] = {
-        "git",
-        "-C",
-        td->git_root,
-        "log",
-        "-n",
-        "100",
-        "--pretty=format:%H%x1f%h%x1f%s%x1f%an%x1f%cr",
-        NULL
-    };
-
-    gchar* stdout_buf = NULL;
-    gint exit_status = 0;
-    GError* err = NULL;
-
-    gboolean ok = g_spawn_sync(NULL, argv, NULL,
-                               G_SPAWN_SEARCH_PATH | G_SPAWN_STDERR_TO_DEV_NULL,
-                               NULL, NULL, &stdout_buf, NULL, &exit_status, &err);
+    GPtrArray* commits = git_read_log(td->git_root, 100);
 
     if (g_cancellable_is_cancelled(cancellable)) {
-        g_free(stdout_buf);
-        if (err != NULL) g_error_free(err);
+        if (commits != NULL) g_ptr_array_unref(commits);
         g_task_return_error_if_cancelled(task);
         return;
     }
 
-    td->commits = g_ptr_array_new_with_free_func(git_commit_info_free);
-
-    if (ok && exit_status == 0 && stdout_buf != NULL) {
-        gchar** lines = g_strsplit(stdout_buf, "\n", -1);
-        for (gint i = 0; lines[i] != NULL; i++) {
-            if (lines[i][0] == '\0') continue;
-            gchar** parts = g_strsplit(lines[i], "\x1f", 5);
-            if (parts[0] != NULL && parts[1] != NULL && parts[2] != NULL) {
-                GitCommitInfo* ci = g_new0(GitCommitInfo, 1);
-                ci->hash = g_strdup(parts[0]);
-                ci->short_hash = g_strdup(parts[1]);
-                ci->subject = g_strdup(parts[2]);
-                ci->author = (parts[3] != NULL) ? g_strdup(parts[3]) : g_strdup("");
-                ci->date = (parts[4] != NULL) ? g_strdup(parts[4]) : g_strdup("");
-                g_ptr_array_add(td->commits, ci);
-            }
-            g_strfreev(parts);
-        }
-        g_strfreev(lines);
-    }
-
-    g_free(stdout_buf);
-    if (err != NULL) g_error_free(err);
-
+    td->commits = commits != NULL ? commits : g_ptr_array_new_with_free_func(git_commit_info_free);
     g_task_return_boolean(task, TRUE);
 }
 
@@ -165,40 +105,15 @@ static void git_show_thread_func(GTask* task, gpointer source_object,
 
     if (g_task_return_error_if_cancelled(task)) return;
 
-    gchar* argv[] = {
-        "git",
-        "-C",
-        td->git_root,
-        "show",
-        "--stat",
-        "--patch",
-        td->commit_hash,
-        NULL
-    };
-
-    gchar* stdout_buf = NULL;
-    gint exit_status = 0;
-    GError* err = NULL;
-
-    gboolean ok = g_spawn_sync(NULL, argv, NULL,
-                               G_SPAWN_SEARCH_PATH | G_SPAWN_STDERR_TO_DEV_NULL,
-                               NULL, NULL, &stdout_buf, NULL, &exit_status, &err);
+    gchar* text = git_show_commit(td->git_root, td->commit_hash);
 
     if (g_cancellable_is_cancelled(cancellable)) {
-        g_free(stdout_buf);
-        if (err != NULL) g_error_free(err);
+        g_free(text);
         g_task_return_error_if_cancelled(task);
         return;
     }
 
-    if (ok && exit_status == 0 && stdout_buf != NULL) {
-        td->diff_output = stdout_buf;
-    } else {
-        g_free(stdout_buf);
-        td->diff_output = g_strdup("(No diff available or git error)");
-    }
-
-    if (err != NULL) g_error_free(err);
+    td->diff_output = text != NULL ? text : g_strdup("(No diff available or git error)");
     g_task_return_boolean(task, TRUE);
 }
 

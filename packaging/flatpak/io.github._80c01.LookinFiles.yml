@@ -39,6 +39,17 @@ modules:
         url: https://gitlab.gnome.org/GNOME/vte/-/archive/0.78.0/vte-0.78.0.tar.bz2
         sha256: 058866164d1f230ba278dfb696f01df22e2ce2d7ca8cb655822262d1c6df811c
 
+  - name: libgit2
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DBUILD_TESTS=OFF
+      - -DBUILD_CLI=OFF
+    sources:
+      - type: archive
+        url: https://github.com/libgit2/libgit2/archive/refs/tags/v1.9.0.tar.gz
+        sha256: 75b27d4d6df44bd34e2f70663cfd998f5ec41e680e1e593238bbe517a84c7ed2
+
   - name: lookinfiles
     buildsystem: simple
     build-commands:

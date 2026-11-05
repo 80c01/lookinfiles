@@ -1,7 +1,8 @@
 # Git
 
 When the current folder is inside a git repository, LookinFiles shows what
-changed, without running anything yourself. It needs the `git` program.
+changed, without running anything yourself. The `git` program is not
+needed: LookinFiles reads the repository with libgit2.
 
 LookinFiles shows the state of the repository; to stage, commit, push or
 switch branches, use git in the [terminal](terminal.md). The display

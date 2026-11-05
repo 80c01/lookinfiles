@@ -8,6 +8,7 @@ url="https://github.com/80c01/lookinfiles"
 license=('MIT')
 depends=(
     'gtk4'
+    'libgit2'
     'vte4'
     'gtksourceview5'
     'poppler-glib'
@@ -16,7 +17,6 @@ depends=(
     'libarchive'
 )
 optdepends=(
-    'git: git status and diff integration'
     'sshfs: remote folders over SSH'
 )
 makedepends=(

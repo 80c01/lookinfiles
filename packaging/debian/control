@@ -6,6 +6,7 @@ Build-Depends:
  debhelper-compat (= 13),
  pkg-config,
  libgtk-4-dev (>= 4.12),
+ libgit2-dev (>= 1.1),
  libvte-2.91-gtk4-dev,
  libgtksourceview-5-dev,
  libpoppler-glib-dev,
@@ -23,7 +24,6 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends}
 Recommends:
- git,
  sshfs
 Description: Fast, keyboard-driven GTK 4 file explorer
  LookinFiles ("look in your files") is a keyboard-driven file explorer in C with

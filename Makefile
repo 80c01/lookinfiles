@@ -14,8 +14,9 @@ CFLAGS ?= -O2 -g
 LDFLAGS ?=
 CFLAGS_EXTRA ?=
 
-APP_CFLAGS = -Wall -Wextra -Isrc `$(PKG_CONFIG) --cflags gtk4`
-LIBS = `$(PKG_CONFIG) --libs gtk4` -lm
+# Required: GTK 4 and libgit2 (git status, history and file lists, src/git_utils.c)
+APP_CFLAGS = -Wall -Wextra -Isrc `$(PKG_CONFIG) --cflags gtk4 libgit2`
+LIBS = `$(PKG_CONFIG) --libs gtk4 libgit2` -lm
 DEPFLAGS = -MMD -MP
 
 # Optional embedded terminal: enabled automatically when vte-2.91-gtk4 is installed.

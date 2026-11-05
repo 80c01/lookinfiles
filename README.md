@@ -40,7 +40,7 @@ C and GTK 4 for Linux and Windows, with a VS Code look and a keyboard-first desi
 ## Quick start
 
 ```bash
-sudo apt install build-essential pkg-config libgtk-4-dev
+sudo apt install build-essential pkg-config libgtk-4-dev libgit2-dev
 make
 ./lookinfiles .
 ```
@@ -55,6 +55,7 @@ panels, `Ctrl+Q` to quit.
 | Component | Package (Debian / Ubuntu) | Needed for |
 |---|---|---|
 | GTK 4.12 or newer | `libgtk-4-dev` | Required |
+| libgit2 1.1 or newer | `libgit2-dev` | Required (status badges, change bars, Git Commits tab) |
 | C compiler, make, pkg-config | `build-essential pkg-config` | Required |
 | VTE for GTK 4 | `libvte-2.91-gtk4-dev` | Embedded terminal |
 | GtkSourceView 5 | `libgtksourceview-5-dev` | Syntax highlighting |
@@ -62,10 +63,9 @@ panels, `Ctrl+Q` to quit.
 | SQLite | `libsqlite3-dev` | Database preview |
 | libarchive | `libarchive-dev` | 7z, RAR, xz, zstd, ISO, RPM listings |
 | WebKitGTK 6.0 | `libwebkitgtk-6.0-dev` | Browser tabs |
-| Git | `git` | Status badges, Git Commits tab (run time) |
 | SSHFS | `sshfs` | Remote machines (run time) |
 
-Everything below the first two rows is optional: the Makefile detects what
+Everything below the first three rows is optional: the Makefile detects what
 is installed, and a missing feature shows a notice instead. `make deps`
 lists what was found and the package to install for each missing library;
 the same list is printed after each build.
@@ -75,7 +75,7 @@ To install every optional library at once:
 ```bash
 sudo apt install libvte-2.91-gtk4-dev libgtksourceview-5-dev \
   libpoppler-glib-dev libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev \
-  git sshfs
+  sshfs
 ```
 
 ### Build

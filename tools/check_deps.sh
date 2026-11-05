@@ -1,6 +1,6 @@
 #!/bin/sh
 # Lists the libraries LookinFiles builds with (see the README requirements):
-# GTK 4 is required, the others enable optional features. Exits 1 when a
+# GTK 4 and libgit2 are required, the others enable optional features. Exits 1 when a
 # required library is missing. Used by `make deps` and after each build.
 
 PKG_CONFIG=${PKG_CONFIG:-pkg-config}
@@ -25,6 +25,7 @@ check() {
 
 echo "Required:"
 check gtk4            4.12 "GTK 4"                  libgtk-4-dev            required
+check libgit2         1.1  "Git (libgit2)"          libgit2-dev             required
 echo "Optional features:"
 if [ "${OS:-}" = Windows_NT ]; then
     printf '  %-34s yes  (built in, ConPTY)\n' "Embedded terminal"
@@ -37,7 +38,7 @@ check sqlite3         -    "Database preview"       libsqlite3-dev          opti
 check libarchive      -    "7z, RAR, xz, zstd, ISO" libarchive-dev          optional
 check webkitgtk-6.0   -    "Browser tabs"           libwebkitgtk-6.0-dev    optional
 echo "Run time (not needed to build):"
-for tool in git sshfs; do
+for tool in sshfs; do
     if command -v "$tool" >/dev/null 2>&1; then
         printf '  %-34s yes\n' "$tool"
     else

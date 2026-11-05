@@ -13,11 +13,10 @@ run `make` again:
 | SQLite databases show only file details | `libsqlite3-dev` |
 | 7z, RAR, xz, zstd, ISO or RPM files are not listed | `libarchive-dev` |
 
-Two programs are used at run time, without rebuilding:
+One program is used at run time, without rebuilding:
 
 | Symptom | Install |
 |---|---|
-| No git badges, no **Git Commits** tab | `git` |
 | Remote machines do not connect ("sshfs Required") | `sshfs` |
 
 ## "cannot open display"

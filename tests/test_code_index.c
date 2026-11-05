@@ -1,6 +1,7 @@
 /* Unit tests for src/code_index.c: project files and the definition lookup
  * of the built-in code index, on temporary projects. */
 #include "code_index.h"
+#include <git2.h>
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -116,19 +117,12 @@ static void test_walk_files(void) {
 }
 
 static void test_git_files(void) {
-    gchar* git = g_find_program_in_path("git");
-    if (git == NULL) {
-        g_test_skip("git is not installed");
-        return;
-    }
-    g_free(git);
     gchar* root = make_project();
     write_file(root, ".gitignore", "src/extra/\n");
-    gchar* argv[] = {"git", "init", "-q", NULL};
-    gint status = 0;
-    g_assert_true(g_spawn_sync(root, argv, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL,
-                               NULL, NULL, &status, NULL));
-    g_assert_true(g_spawn_check_wait_status(status, NULL));
+    git_libgit2_init();
+    git_repository* repo = NULL;
+    g_assert_cmpint(git_repository_init(&repo, root, 0), ==, 0);
+    git_repository_free(repo);
     gchar* file = g_build_filename(root, "src", "main.c", NULL);
     gchar* project = code_index_project_root(file);
     gchar* canon = g_canonicalize_filename(root, NULL);

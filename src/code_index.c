@@ -55,49 +55,26 @@ static gboolean add_file(GPtrArray* out, const gchar* root, const gchar* rel, gs
     return TRUE;
 }
 
-/* `git ls-files`: FALSE when root is not a work tree or git is missing */
+/* Where git_files() adds the files git_list_files() reports */
+typedef struct {
+    const gchar* root;
+    const Listing* l;
+    GPtrArray* out;
+    GCancellable* cancellable;
+    gboolean* truncated;
+} GitFilesTarget;
+
+static gboolean on_git_file(const gchar* rel, gpointer data) {
+    GitFilesTarget* t = data;
+    if (g_cancellable_is_cancelled(t->cancellable)) return FALSE;
+    return add_file(t->out, t->root, rel, strlen(rel), t->l, t->truncated);
+}
+
+/* The files of `git ls-files --cached --others`: FALSE when root is not a work tree */
 static gboolean git_files(const gchar* root, const Listing* l, GPtrArray* out, GCancellable* cancellable,
                           gboolean* truncated) {
-    GSubprocessLauncher* launcher =
-        g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_SILENCE);
-    g_subprocess_launcher_set_cwd(launcher, root);
-    GError* err = NULL;
-    /* Without --exclude-standard, --others lists the ignored files too */
-    GSubprocess* proc = g_subprocess_launcher_spawn(launcher, &err, "git", "ls-files", "-z", "--cached", "--others",
-                                                    l->ignored ? NULL : "--exclude-standard", NULL);
-    g_object_unref(launcher);
-    if (proc == NULL) {
-        g_clear_error(&err);
-        return FALSE;
-    }
-    GBytes* bytes = NULL;
-    gboolean ok = g_subprocess_communicate(proc, NULL, cancellable, &bytes, NULL, &err) &&
-                  g_subprocess_get_if_exited(proc) && g_subprocess_get_exit_status(proc) == 0;
-    g_clear_error(&err);
-    g_object_unref(proc);
-    if (!ok || bytes == NULL) {
-        if (bytes != NULL) g_bytes_unref(bytes);
-        return FALSE;
-    }
-    gsize len = 0;
-    const gchar* data = g_bytes_get_data(bytes, &len);
-    GHashTable* seen = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-    gsize start = 0;
-    for (gsize i = 0; i < len; i++) {
-        if (data[i] != '\0') continue;
-        if (i > start) {
-            /* --cached and --others can list a file twice (merge conflicts) */
-            gchar* rel = g_strndup(data + start, i - start);
-            if (g_hash_table_add(seen, rel) &&
-                !add_file(out, root, data + start, i - start, l, truncated)) {
-                break;
-            }
-        }
-        start = i + 1;
-    }
-    g_hash_table_destroy(seen);
-    g_bytes_unref(bytes);
-    return TRUE;
+    GitFilesTarget t = {root, l, out, cancellable, truncated};
+    return git_list_files(root, l->ignored, on_git_file, &t);
 }
 
 static gboolean skipped_dir(const gchar* name, gboolean ignored) {

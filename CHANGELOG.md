@@ -7,6 +7,9 @@ All notable changes to this project are listed here. The format follows
 
 ### Changed
 
+- The `git` program is no longer needed: status badges, change bars, the
+  **Git Commits** tab and the project file list read the repository with
+  libgit2, now required to build (`libgit2-dev`).
 - The global mode (Notepad, Emacs, Vim) is shown and picked from a pill in
   the top bar instead of the bottom status bar.
 - The git branch and the short messages (with Undo) move to a bar at the

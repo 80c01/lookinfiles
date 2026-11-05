@@ -45,4 +45,4 @@ by hand are saved in `~/.config/lookinfiles/remotes.xml`.
 
 Every file read goes over the network, so large folders and previews of
 big files are slower than on a local disk. Git badges and the search in
-files work, but run `git` and read files through the mount.
+files work, but read the repository and the files through the mount.

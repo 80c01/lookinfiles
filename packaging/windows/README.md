@@ -16,6 +16,7 @@ LookinFiles can be built natively for Windows using **MSYS2** with the **UCRT64*
      mingw-w64-ucrt-x86_64-gcc \
      mingw-w64-ucrt-x86_64-pkg-config \
      mingw-w64-ucrt-x86_64-gtk4 \
+     mingw-w64-ucrt-x86_64-libgit2 \
      mingw-w64-ucrt-x86_64-gtksourceview5 \
      mingw-w64-ucrt-x86_64-poppler \
      mingw-w64-ucrt-x86_64-sqlite3 \

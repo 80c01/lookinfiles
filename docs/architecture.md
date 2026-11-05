@@ -28,7 +28,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   rows get a matching glyph from `glyph_image_set()`), and by
   `file_type_paintable()` inside text (directory preview).
 - `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
-  `git_read_branch()`, `scan_git_statuses()`, `git_read_head_blob()` (spawns git: worker thread only).
+  `git_read_branch()` (plain file reads); through libgit2, never the git
+  program (worker thread only): `scan_git_statuses()`, `git_read_head_blob()`,
+  `git_read_log()`, `git_show_commit()` (laid out like `git show --stat
+  --patch`), `git_list_files()` (like `git ls-files --cached --others`).
 - `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility,
   split fractions, orientation, dedicated editor panel and its splits as
   `tab_tree` text without files (`0` marks a pane of files, `t` a terminal
@@ -158,8 +161,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   code index of code navigation (code-nav.md): languages and the
   identifier under the cursor (`code_word_at()`), symbol scanners
   (`code_scan_text()`: a C-family state machine, line regexes for the other
-  languages; no parser, locals not listed), the project's files (`git
-  ls-files`, else a bounded walk) and the ranked definition lookup
+  languages; no parser, locals not listed), the project's files (`git_list_files()`,
+  else a bounded walk) and the ranked definition lookup
   (`code_index_find()`, blocking: worker thread only).
 - `code_tags` — ctags backend: finds Universal Ctags (`code_tags_program()`),
   parses its JSON output, and keeps a per-project index (`CodeTagsIndex`,

@@ -35,6 +35,12 @@ gzip -9 -n "${PKG_DIR}/usr/share/doc/lookinfiles/changelog.Debian"
 
 INSTALLED_SIZE=$(du -ks "${PKG_DIR}" | cut -f1)
 
+# The libgit2 package name carries its soname (libgit2-1.9, libgit2-1.5...):
+# take the one the binary was linked with
+LIBGIT2_SO=$(ldd "${ROOT_DIR}/lookinfiles" | awk '/libgit2/ {print $3; exit}')
+LIBGIT2_PKG=$(dpkg -S "${LIBGIT2_SO}" 2>/dev/null | head -n1 | cut -d: -f1)
+LIBGIT2_PKG=${LIBGIT2_PKG:-libgit2-1.9}
+
 cat <<EOF > "${PKG_DIR}/DEBIAN/control"
 Package: lookinfiles
 Version: ${VERSION}-1
@@ -43,8 +49,8 @@ Priority: optional
 Architecture: ${ARCH}
 Installed-Size: ${INSTALLED_SIZE}
 Maintainer: 80c01 <noreply@github.com>
-Depends: libgtk-4-1 (>= 4.12.0), libglib2.0-0 (>= 2.74.0), libc6 (>= 2.34)
-Recommends: git, sshfs, libvte-2.91-gtk4-0, libgtksourceview-5-0, libpoppler-glib8, libsqlite3-0, libarchive13, libwebkitgtk-6.0-4
+Depends: libgtk-4-1 (>= 4.12.0), libglib2.0-0 (>= 2.74.0), libc6 (>= 2.34), ${LIBGIT2_PKG}
+Recommends: sshfs, libvte-2.91-gtk4-0, libgtksourceview-5-0, libpoppler-glib8, libsqlite3-0, libarchive13, libwebkitgtk-6.0-4
 Description: Fast, keyboard-driven GTK 4 file explorer
  LookinFiles ("look in your files") is a keyboard-driven file explorer in C with
  GTK 4, featuring a rich preview panel, text editors in Notepad, Emacs or Vim mode,

@@ -13,6 +13,7 @@ BuildRequires:  pkgconfig
 BuildRequires:  desktop-file-utils
 BuildRequires:  libappstream-glib
 BuildRequires:  pkgconfig(gtk4) >= 4.12
+BuildRequires:  pkgconfig(libgit2) >= 1.1
 BuildRequires:  pkgconfig(vte-2.91-gtk4)
 BuildRequires:  pkgconfig(gtksourceview-5)
 BuildRequires:  pkgconfig(poppler-glib)
@@ -20,7 +21,6 @@ BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(webkitgtk-6.0)
 BuildRequires:  pkgconfig(libarchive)
 
-Recommends:     git
 Recommends:     sshfs
 
 %description
