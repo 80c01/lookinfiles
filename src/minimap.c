@@ -19,6 +19,7 @@ static void set_source_role(cairo_t* cr, PaletteRole role, double alpha) {
 /* Height of the offscreen render, in minimap heights: scrolling within it
  * only repaints, past it the render is rebuilt around the new position */
 #define MINIMAP_CACHE_SCREENS 3
+#define MINIMAP_HIDE_DELAY_MS 200
 
 /* Scale, minimap scroll and slider for the view's current position */
 static gboolean is_paged_view(GtkTextView* view) {
@@ -424,12 +425,7 @@ static void sync_vertical_scrollbar(GtkWidget* view, gboolean minimap_shown) {
     }
 }
 
-static gboolean minimap_vis_idle(gpointer data) {
-    AppData* app = (AppData*)data;
-    app->mm_vis_source = 0;
-    if (app->minimap == NULL) {
-        return G_SOURCE_REMOVE;
-    }
+static void minimap_vis_apply(AppData* app) {
     gboolean useful = minimap_is_useful(app);
     if (gtk_widget_get_visible(app->minimap) != useful) {
         if (!useful) {
@@ -438,6 +434,30 @@ static gboolean minimap_vis_idle(gpointer data) {
         gtk_widget_set_visible(app->minimap, useful);
     }
     sync_vertical_scrollbar(app->text_view, useful);
+}
+
+/* Hiding is confirmed after a short delay: while a long text is rebuilt or
+ * its height is still estimated, the minimap would otherwise flicker */
+static gboolean minimap_hide_timeout(gpointer data) {
+    AppData* app = (AppData*)data;
+    app->mm_vis_source = 0;
+    if (app->minimap != NULL) {
+        minimap_vis_apply(app);
+    }
+    return G_SOURCE_REMOVE;
+}
+
+static gboolean minimap_vis_idle(gpointer data) {
+    AppData* app = (AppData*)data;
+    app->mm_vis_source = 0;
+    if (app->minimap == NULL) {
+        return G_SOURCE_REMOVE;
+    }
+    if (gtk_widget_get_visible(app->minimap) && !minimap_is_useful(app)) {
+        app->mm_vis_source = g_timeout_add(MINIMAP_HIDE_DELAY_MS, minimap_hide_timeout, app);
+        return G_SOURCE_REMOVE;
+    }
+    minimap_vis_apply(app);
     return G_SOURCE_REMOVE;
 }
 
