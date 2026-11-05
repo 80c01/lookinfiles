@@ -121,6 +121,19 @@ static void git_scan_thread_func(GTask* task, gpointer source_object,
     g_task_return_boolean(task, TRUE);
 }
 
+/* One scan at a time: libgit2 cannot stop a status scan, so a scan asked
+ * while one runs (files keep changing during a build) waits for its end
+ * instead of piling up worker threads */
+static gboolean git_scan_running = FALSE;
+static gboolean git_scan_wanted = FALSE;
+
+static void start_async_git_scan(AppData* app);
+
+static gboolean rescan_idle(gpointer data) {
+    start_async_git_scan((AppData*)data);
+    return G_SOURCE_REMOVE;
+}
+
 /* Git badges arrive after the listing: update the rows (and a directory
  * preview, which shows git counts) only when something changed */
 static void on_git_scan_ready(GObject* source_object, GAsyncResult* res,
@@ -131,6 +144,12 @@ static void on_git_scan_ready(GObject* source_object, GAsyncResult* res,
     GCancellable* cancellable = g_task_get_cancellable(task);
     GitScanTaskData* td = (GitScanTaskData*)g_task_get_task_data(task);
     AppData* app = td->app;
+    git_scan_running = FALSE;
+    if (git_scan_wanted) {
+        /* Files changed during the scan: one more scan, after this result */
+        git_scan_wanted = FALSE;
+        g_idle_add_full(G_PRIORITY_DEFAULT_IDLE, rescan_idle, app, NULL);
+    }
     if (g_cancellable_is_cancelled(cancellable) ||
         cancellable != app->git_status_cancellable ||
         app->sidebar_view != SIDEBAR_VIEW_FILES ||
@@ -178,11 +197,19 @@ static void cancel_git_scan(AppData* app) {
 
 /* Read the git status badges of app->base_dir off the UI thread */
 static void start_async_git_scan(AppData* app) {
-    cancel_git_scan(app);
     if (app->tree == NULL || app->base_dir == NULL ||
         app->sidebar_view != SIDEBAR_VIEW_FILES) {
+        cancel_git_scan(app);
         return;
     }
+    if (git_scan_running) {
+        /* The running scan's result is kept only if it is still for this
+         * directory (checked when it ends); a fresh scan follows it */
+        git_scan_wanted = TRUE;
+        return;
+    }
+    cancel_git_scan(app);
+    git_scan_running = TRUE;
     app->git_status_cancellable = g_cancellable_new();
     GitScanTaskData* td = g_new0(GitScanTaskData, 1);
     td->app = app;
