@@ -123,7 +123,7 @@ jobs:
           path: artifacts/*.AppImage
 
   windows:
-    name: Windows (.zip)
+    name: Windows (.zip, .exe)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -146,15 +146,20 @@ jobs:
             make
             zip
 
-      - name: Build Windows package
+      # The single-file .exe embeds the portable zip, which it builds first
+      - name: Build Windows packages
         shell: msys2 {0}
-        run: ./packaging/windows/build_windows_zip.sh artifacts/
+        run: |
+          ./packaging/windows/build_windows_exe.sh artifacts/
+          cp build/lookinfiles-*-windows-x86_64.zip artifacts/
 
-      - name: Upload Windows package
+      - name: Upload Windows packages
         uses: actions/upload-artifact@v4
         with:
           name: windows-package
-          path: artifacts/*.zip
+          path: |
+            artifacts/*.zip
+            artifacts/*.exe
 
   release:
     name: Create GitHub Release
