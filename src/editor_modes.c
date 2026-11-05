@@ -51,7 +51,7 @@ void editor_modes_load_css(void) {
         "}\n"
         ".emacs-modeline-bufname {\n"
         "  font-weight: bold;\n"
-        "  color: @fg_bright;\n"
+        "  color: @fg_strong;\n"
         "}\n"
         ".emacs-modeline-mode {\n"
         "  color: @syn_variable;\n"
@@ -65,7 +65,7 @@ void editor_modes_load_css(void) {
         "}\n"
         /* The entries are flat (theme.c): typed text follows the prompt */
         ".emacs-minibuffer-entry, .vim-commandline-entry {\n"
-        "  color: @fg_bright;\n"
+        "  color: @fg_text;\n"
         "}\n"
         ".emacs-minibuffer-echo {\n"
         "  color: @fg;\n"
@@ -92,7 +92,7 @@ void editor_modes_load_css(void) {
         "}\n"
         ".vim-commandline-prompt {\n"
         "  font-weight: bold;\n"
-        "  color: @fg_bright;\n"
+        "  color: @fg_strong;\n"
         "}\n"
         /* --- Notepad --- */
         ".notepad-statusbar {\n"
