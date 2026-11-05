@@ -111,6 +111,7 @@ LookinFiles builds natively on Windows using MSYS2 UCRT64:
 ```bash
 make             # creates lookinfiles.exe
 make windows-zip # packages build/lookinfiles-<version>-windows-x86_64.zip
+make windows-exe # the same in one file: build/lookinfiles-<version>-windows-x86_64.exe
 ```
 
 See [packaging/windows/README.md](packaging/windows/README.md) for prerequisites and setup details.

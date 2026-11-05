@@ -339,9 +339,13 @@ appimage:
 windows-zip:
 	@sh packaging/windows/build_windows_zip.sh build
 
+# A single .exe holding the whole portable zip (packaging/windows/launcher.c)
+windows-exe:
+	@bash packaging/windows/build_windows_exe.sh build
+
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET) $(INSTALLED_DATA:%=$(DESTDIR)$(DATADIR)/%)
 
 -include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
 
-.PHONY: all deps clean dist install uninstall test check ui-test bench-preview preview-coverage deb appimage windows-zip
+.PHONY: all deps clean dist install uninstall test check ui-test bench-preview preview-coverage deb appimage windows-zip windows-exe

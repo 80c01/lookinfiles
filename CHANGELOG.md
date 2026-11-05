@@ -61,6 +61,9 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- `make windows-exe` builds a single Windows executable holding the whole
+  application: it extracts itself once into
+  `%LOCALAPPDATA%\lookinfiles-runtime\` and starts from there.
 - Themes can pick an icon set with `icons=<set>` in `[Theme]`. Sets are built
   in (**desktop**, pixel icons of a 1990s grey desktop, used by the 1990s
   reference theme; **textmode**, code page 437 style icons in the CGA colours,

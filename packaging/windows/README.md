@@ -51,3 +51,27 @@ make windows-zip
 
 The resulting archive will be placed in `build/lookinfiles-<version>-windows-x86_64.zip`.
 Unzip and run `lookinfiles.exe` on any Windows 10/11 system.
+
+## 4. Creating a Single-File Executable
+
+To get the whole application as one `.exe` (nothing to unzip):
+
+```bash
+make windows-exe
+```
+
+This builds the portable zip above, then embeds it in a small launcher
+(`launcher.c`) as `build/lookinfiles-<version>-windows-x86_64.exe`.
+
+- **First run**: the launcher extracts the zip with the `tar.exe` of Windows
+  into `%LOCALAPPDATA%\lookinfiles-runtime\<version>-<hash>\` (a few
+  seconds), then starts `lookinfiles.exe` from there.
+- **Next runs**: it starts the extracted copy at once, with the same
+  arguments, and returns its exit code.
+- **New build**: the hash of the zip changes, so a new folder is extracted
+  and the folders of older builds are removed (except one still running).
+- Settings stay in `%LOCALAPPDATA%\lookinfiles\`; deleting
+  `lookinfiles-runtime` only forces a new extraction.
+
+`windres` and `gcc` come with `mingw-w64-ucrt-x86_64-gcc` (set `WINDRES` or
+`CC` to use others).
