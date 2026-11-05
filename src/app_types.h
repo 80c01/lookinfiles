@@ -136,6 +136,11 @@ typedef struct {
     gchar* remote_id;    /* ID of remote machine if workspace is connected to remote */
     ExplorerTreeState* tree_state; /* explorer rows while another workspace is shown (owned) */
     GHashTable* git_statuses;      /* git badges while another workspace is shown (owned) */
+    gchar* git_status_root;        /* repository root matching git_statuses and ahead/behind (owned) */
+    gboolean git_has_changes;      /* uncommitted changes in git_status_root */
+    gboolean git_has_upstream;     /* upstream branch exists for HEAD in git_status_root */
+    guint git_ahead;               /* commits ahead of upstream */
+    guint git_behind;              /* commits behind upstream */
     gpointer dir_history;          /* folders shown, for back / forward (private to nav_history.c) */
     gpointer search_state;         /* last search in files and its Search tab (project_search.c) */
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
@@ -212,6 +217,11 @@ typedef struct {
     /* File monitors & async I/O cancellation */
     GHashTable* dir_monitors;          /* active directory monitors: full_path -> GFileMonitor* */
     GHashTable* git_statuses;          /* Git status badges: full_path -> markup string */
+    gchar* git_status_root;            /* repository root matching git_statuses and ahead/behind (owned) */
+    gboolean git_has_changes;          /* uncommitted changes in git_status_root */
+    gboolean git_has_upstream;         /* upstream branch exists for HEAD in git_status_root */
+    guint git_ahead;                   /* commits ahead of upstream */
+    guint git_behind;                  /* commits behind upstream */
     GFileMonitor* file_monitor;        /* viewed file in right pane */
     GFileMonitor* git_monitor;         /* .git monitor for git status & commits updates */
     gchar* git_monitored_path;         /* path to current monitored .git dir */

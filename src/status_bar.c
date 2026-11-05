@@ -213,9 +213,48 @@ void update_status_bar(AppData* app) {
     gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
     gchar* branch = files_view ? git_read_branch(app->base_dir) : NULL;
     if (branch != NULL) {
-        gchar* text = g_strdup_printf("⎇ %s", branch);
-        gtk_label_set_text(GTK_LABEL(app->status_branch), text);
-        g_free(text);
+        gchar* root = find_git_root(app->base_dir);
+        gboolean in_scanned_repo = (root != NULL && g_strcmp0(root, app->git_status_root) == 0);
+        g_free(root);
+
+        GString* text = g_string_new(NULL);
+        g_string_append_printf(text, "⎇ %s", branch);
+        if (in_scanned_repo && app->git_has_changes) {
+            g_string_append(text, " *");
+        }
+        if (in_scanned_repo && app->git_has_upstream) {
+            if (app->git_ahead > 0) {
+                g_string_append_printf(text, " ↑%u", app->git_ahead);
+            }
+            if (app->git_behind > 0) {
+                g_string_append_printf(text, " ↓%u", app->git_behind);
+            }
+        }
+        gtk_label_set_text(GTK_LABEL(app->status_branch), text->str);
+        g_string_free(text, TRUE);
+
+        GString* tip = g_string_new(NULL);
+        g_string_append_printf(tip, "Git Branch: %s", branch);
+        if (in_scanned_repo && app->git_has_changes) {
+            g_string_append(tip, " (uncommitted modifications)");
+        }
+        if (in_scanned_repo && app->git_has_upstream) {
+            if (app->git_ahead > 0 && app->git_behind > 0) {
+                g_string_append_printf(tip, "\n%u commit%s ahead, %u commit%s behind upstream",
+                                       app->git_ahead, app->git_ahead == 1 ? "" : "s",
+                                       app->git_behind, app->git_behind == 1 ? "" : "s");
+            } else if (app->git_ahead > 0) {
+                g_string_append_printf(tip, "\n%u commit%s ahead of upstream",
+                                       app->git_ahead, app->git_ahead == 1 ? "" : "s");
+            } else if (app->git_behind > 0) {
+                g_string_append_printf(tip, "\n%u commit%s behind upstream",
+                                       app->git_behind, app->git_behind == 1 ? "" : "s");
+            } else {
+                g_string_append(tip, "\nUp to date with upstream");
+            }
+        }
+        gtk_widget_set_tooltip_text(app->status_branch, tip->str);
+        g_string_free(tip, TRUE);
     }
     gtk_widget_set_visible(app->status_branch, branch != NULL);
     g_free(branch);

@@ -14,6 +14,12 @@ gchar* git_resolve_dir(const gchar* git_root);
 /* Current branch name (short SHA when detached), NULL outside a repository. Caller frees. */
 gchar* git_read_branch(const gchar* dir);
 
+/* Number of commits HEAD is ahead of and behind its upstream tracking branch.
+ * Returns TRUE when dir is in a repository and HEAD is a branch with an upstream
+ * configured; *ahead and *behind receive the counts. Returns FALSE otherwise (and
+ * sets *ahead and *behind to 0). Worker thread. */
+gboolean git_read_ahead_behind(const gchar* dir, guint* ahead, guint* behind);
+
 /* Status of the repository of dir (and of the repositories just below dir when
  * dir is in none) as full_path -> Pango badge markup, NULL when nothing changed
  * or outside a repository. Uses libgit2 and walks the work tree: call from a

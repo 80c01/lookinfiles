@@ -93,6 +93,10 @@ typedef struct {
     AppData* app;
     gchar* base_dir;     /* app->base_dir when the scan started */
     GHashTable* statuses;
+    guint ahead;
+    guint behind;
+    gboolean has_ahead_behind;
+    gboolean has_changes;
 } GitScanTaskData;
 
 static void git_scan_task_data_free(gpointer data) {
@@ -111,6 +115,8 @@ static void git_scan_thread_func(GTask* task, gpointer source_object,
     GitScanTaskData* td = (GitScanTaskData*)task_data;
     gchar* dir = g_canonicalize_filename(td->base_dir, NULL);
     td->statuses = scan_git_statuses(dir);
+    td->has_changes = (td->statuses != NULL && g_hash_table_size(td->statuses) > 0);
+    td->has_ahead_behind = git_read_ahead_behind(dir, &td->ahead, &td->behind);
     g_free(dir);
     g_task_return_boolean(task, TRUE);
 }
@@ -128,8 +134,15 @@ static void on_git_scan_ready(GObject* source_object, GAsyncResult* res,
     if (g_cancellable_is_cancelled(cancellable) ||
         cancellable != app->git_status_cancellable ||
         app->sidebar_view != SIDEBAR_VIEW_FILES ||
-        g_strcmp0(td->base_dir, app->base_dir) != 0 ||
-        string_maps_equal(app->git_statuses, td->statuses)) {
+        g_strcmp0(td->base_dir, app->base_dir) != 0) {
+        return;
+    }
+    gboolean status_equal = string_maps_equal(app->git_statuses, td->statuses);
+    gboolean ahead_behind_equal = (app->git_ahead == td->ahead &&
+                                   app->git_behind == td->behind &&
+                                   app->git_has_upstream == td->has_ahead_behind &&
+                                   app->git_has_changes == td->has_changes);
+    if (status_equal && ahead_behind_equal) {
         return;
     }
     if (app->git_statuses != NULL) {
@@ -138,12 +151,22 @@ static void on_git_scan_ready(GObject* source_object, GAsyncResult* res,
     app->git_statuses = td->statuses;
     td->statuses = NULL;
 
-    update_tree_git_statuses_recursive(explorer_tree_get_root(app->tree), app->git_statuses);
-    app_emit(app, APP_EVENT_CHROME_CHANGED);
-    ExplorerRow* sel = tree_nav_selected(app);
-    if (sel != NULL && explorer_row_is(sel, "dir")) {
-        app_emit(app, APP_EVENT_PREVIEW_STALE);
+    g_free(app->git_status_root);
+    app->git_status_root = find_git_root(app->base_dir);
+    app->git_has_changes = td->has_changes;
+    app->git_has_upstream = td->has_ahead_behind;
+    app->git_ahead = td->ahead;
+    app->git_behind = td->behind;
+
+    if (!status_equal) {
+        update_tree_git_statuses_recursive(explorer_tree_get_root(app->tree), app->git_statuses);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
+        ExplorerRow* sel = tree_nav_selected(app);
+        if (sel != NULL && explorer_row_is(sel, "dir")) {
+            app_emit(app, APP_EVENT_PREVIEW_STALE);
+        }
     }
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
 }
 
 static void cancel_git_scan(AppData* app) {

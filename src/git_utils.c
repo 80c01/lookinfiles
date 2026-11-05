@@ -298,6 +298,92 @@ gchar* git_read_branch(const gchar* dir) {
     return branch;
 }
 
+/* Number of commits HEAD is ahead of and behind its upstream tracking branch.
+ * Returns TRUE when dir is in a repository and HEAD is a branch with an upstream
+ * configured; *ahead and *behind receive the counts. Returns FALSE otherwise.
+ * Safe to call from worker threads. */
+gboolean git_read_ahead_behind(const gchar* dir, guint* ahead, guint* behind) {
+    if (ahead != NULL) {
+        *ahead = 0;
+    }
+    if (behind != NULL) {
+        *behind = 0;
+    }
+    if (dir == NULL || dir[0] == '\0') {
+        return FALSE;
+    }
+    gchar* root = find_git_root(dir);
+    if (root == NULL) {
+        return FALSE;
+    }
+    git_repository* repo = open_work_tree(root);
+    g_free(root);
+    if (repo == NULL) {
+        return FALSE;
+    }
+
+    git_reference* head = NULL;
+    if (git_repository_head(&head, repo) != 0) {
+        git_repository_free(repo);
+        return FALSE;
+    }
+
+    if (!git_reference_is_branch(head)) {
+        git_reference_free(head);
+        git_repository_free(repo);
+        return FALSE;
+    }
+
+    git_reference* upstream = NULL;
+    if (git_branch_upstream(&upstream, head) != 0) {
+        git_reference_free(head);
+        git_repository_free(repo);
+        return FALSE;
+    }
+
+    const git_oid* local_oid = git_reference_target(head);
+    git_reference* resolved_head = NULL;
+    if (local_oid == NULL) {
+        if (git_reference_resolve(&resolved_head, head) == 0) {
+            local_oid = git_reference_target(resolved_head);
+        }
+    }
+
+    const git_oid* upstream_oid = git_reference_target(upstream);
+    git_reference* resolved_upstream = NULL;
+    if (upstream_oid == NULL) {
+        if (git_reference_resolve(&resolved_upstream, upstream) == 0) {
+            upstream_oid = git_reference_target(resolved_upstream);
+        }
+    }
+
+    gboolean ok = FALSE;
+    if (local_oid != NULL && upstream_oid != NULL) {
+        size_t a = 0;
+        size_t b = 0;
+        if (git_graph_ahead_behind(&a, &b, repo, local_oid, upstream_oid) == 0) {
+            if (ahead != NULL) {
+                *ahead = (guint)a;
+            }
+            if (behind != NULL) {
+                *behind = (guint)b;
+            }
+            ok = TRUE;
+        }
+    }
+
+    if (resolved_upstream != NULL) {
+        git_reference_free(resolved_upstream);
+    }
+    if (resolved_head != NULL) {
+        git_reference_free(resolved_head);
+    }
+    git_reference_free(upstream);
+    git_reference_free(head);
+    git_repository_free(repo);
+    return ok;
+}
+
 gchar* git_read_head_blob(const gchar* path, gsize* len) {
     *len = 0;
     if (path == NULL) {

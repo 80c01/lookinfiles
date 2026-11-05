@@ -808,6 +808,8 @@ int main(int argc, char** argv) {
         g_hash_table_destroy(app->git_statuses);
         app->git_statuses = NULL;
     }
+    g_free(app->git_status_root);
+    app->git_status_root = NULL;
     if (app->expanded_paths != NULL) {
         g_hash_table_destroy(app->expanded_paths);
         app->expanded_paths = NULL;

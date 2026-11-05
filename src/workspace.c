@@ -374,15 +374,36 @@ static gboolean swap_explorer_rows(AppData* app, gint idx) {
     GHashTable* old_git = app->git_statuses;
     app->git_statuses = to->git_statuses;
     to->git_statuses = NULL;
+    gchar* old_root = app->git_status_root;
+    app->git_status_root = to->git_status_root;
+    to->git_status_root = NULL;
+    gboolean old_has_changes = app->git_has_changes;
+    app->git_has_changes = to->git_has_changes;
+    to->git_has_changes = FALSE;
+    gboolean old_has_upstream = app->git_has_upstream;
+    app->git_has_upstream = to->git_has_upstream;
+    to->git_has_upstream = FALSE;
+    guint old_ahead = app->git_ahead;
+    app->git_ahead = to->git_ahead;
+    to->git_ahead = 0;
+    guint old_behind = app->git_behind;
+    app->git_behind = to->git_behind;
+    to->git_behind = 0;
 
     if (keep) {
         from->tree_state = old;
         from->git_statuses = old_git;
+        from->git_status_root = old_root;
+        from->git_has_changes = old_has_changes;
+        from->git_has_upstream = old_has_upstream;
+        from->git_ahead = old_ahead;
+        from->git_behind = old_behind;
     } else {
         explorer_tree_state_free(old);
         if (old_git != NULL) {
             g_hash_table_destroy(old_git);
         }
+        g_free(old_root);
     }
     return had_rows;
 }
@@ -720,6 +741,7 @@ void workspace_remove(AppData* app, gint idx) {
     if (rm->git_statuses != NULL) {
         g_hash_table_destroy(rm->git_statuses);
     }
+    g_free(rm->git_status_root);
     nav_history_workspace_removed(rm);
     project_search_workspace_removed(app, rm);
     help_guide_workspace_removed(app, rm);

@@ -24,8 +24,10 @@ Files show a coloured letter after their name:
 A folder shows **M** when it holds changed files, **U** when it only holds
 new ones.
 
-The bar at the bottom of the explorer shows the branch (⎇ `main`), and the preview of a folder
-lists the branch and the changed files.
+The bar at the bottom of the explorer shows the branch (⎇ `main`), with `*` when
+the repository has uncommitted modifications, and `↑` / `↓` with commit counts
+when ahead or behind its upstream tracking branch (e.g. `⎇ main * ↑1 ↓2`). The
+preview of a folder lists the branch and the changed files.
 
 ## Change bars
 
