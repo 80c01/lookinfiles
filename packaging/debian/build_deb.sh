@@ -36,10 +36,14 @@ gzip -9 -n "${PKG_DIR}/usr/share/doc/lookinfiles/changelog.Debian"
 INSTALLED_SIZE=$(du -ks "${PKG_DIR}" | cut -f1)
 
 # The libgit2 package name carries its soname (libgit2-1.9, libgit2-1.5...):
-# take the one the binary was linked with
-LIBGIT2_SO=$(ldd "${ROOT_DIR}/lookinfiles" | awk '/libgit2/ {print $3; exit}')
-LIBGIT2_PKG=$(dpkg -S "${LIBGIT2_SO}" 2>/dev/null | head -n1 | cut -d: -f1)
-LIBGIT2_PKG=${LIBGIT2_PKG:-libgit2-1.9}
+# take the one the binary was linked with. ldd prints /lib/... while dpkg
+# knows /usr/lib/... on merged-/usr systems, so resolve the path first.
+LIBGIT2_LINE=$(ldd "${ROOT_DIR}/lookinfiles" | awk '/libgit2/ {print $1, $3; exit}')
+LIBGIT2_SONAME=${LIBGIT2_LINE%% *}
+LIBGIT2_SO=$(readlink -f "${LIBGIT2_LINE##* }" || true)
+LIBGIT2_PKG=$(dpkg -S "${LIBGIT2_SO}" 2>/dev/null | head -n1 | cut -d: -f1 || true)
+# Fallback: libgit2.so.1.7 -> libgit2-1.7
+LIBGIT2_PKG=${LIBGIT2_PKG:-$(echo "${LIBGIT2_SONAME}" | sed 's/^libgit2\.so\./libgit2-/')}
 
 cat <<EOF > "${PKG_DIR}/DEBIAN/control"
 Package: lookinfiles
