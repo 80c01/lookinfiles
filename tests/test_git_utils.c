@@ -445,6 +445,100 @@ static void test_relative_date(void) {
     }
 }
 
+static void test_list_branches(Fixture* fx, gconstpointer data) {
+    (void)data;
+    g_assert_null(git_list_branches(NULL));
+    gchar* plain = make_path(fx, "plain", NULL);
+    g_assert_null(git_list_branches(plain));
+    g_free(plain);
+
+    gchar* repo_dir = make_path(fx, "repo", NULL);
+    git_repository* repo = repo_init(repo_dir);
+    g_free(make_path(fx, "repo/f.txt", "content\n"));
+    repo_add(repo, "f.txt");
+    repo_commit(repo, "commit 1", 100);
+
+    /* Create branches: feature-b, feature-a */
+    git_reference* head_ref = NULL;
+    g_assert_cmpint(git_repository_head(&head_ref, repo), ==, 0);
+    const git_oid* head_oid = git_reference_target(head_ref);
+    git_commit* target_commit = NULL;
+    g_assert_cmpint(git_commit_lookup(&target_commit, repo, head_oid), ==, 0);
+
+    git_reference* b1 = NULL;
+    git_reference* b2 = NULL;
+    g_assert_cmpint(git_branch_create(&b1, repo, "feature-b", target_commit, 0), ==, 0);
+    g_assert_cmpint(git_branch_create(&b2, repo, "feature-a", target_commit, 0), ==, 0);
+    git_reference_free(b1);
+    git_reference_free(b2);
+    git_commit_free(target_commit);
+    git_reference_free(head_ref);
+
+    GPtrArray* branches = git_list_branches(repo_dir);
+    g_assert_nonnull(branches);
+    g_assert_cmpuint(branches->len, ==, 3);
+
+    /* Current branch should be first with is_head == TRUE */
+    GitBranchInfo* b = g_ptr_array_index(branches, 0);
+    g_assert_true(b->is_head);
+    g_assert_false(b->is_remote);
+
+    /* Next branches should be sorted alphabetically: feature-a, feature-b */
+    GitBranchInfo* b_next1 = g_ptr_array_index(branches, 1);
+    GitBranchInfo* b_next2 = g_ptr_array_index(branches, 2);
+    g_assert_false(b_next1->is_head);
+    g_assert_false(b_next2->is_head);
+    g_assert_cmpstr(b_next1->name, ==, "feature-a");
+    g_assert_cmpstr(b_next2->name, ==, "feature-b");
+
+    g_ptr_array_unref(branches);
+    git_repository_free(repo);
+    g_free(repo_dir);
+}
+
+static void test_checkout_branch(Fixture* fx, gconstpointer data) {
+    (void)data;
+    gchar* err = NULL;
+    g_assert_false(git_checkout_branch(NULL, "main", &err));
+    g_assert_nonnull(err);
+    g_free(err);
+    err = NULL;
+
+    gchar* repo_dir = make_path(fx, "repo", NULL);
+    git_repository* repo = repo_init(repo_dir);
+    g_free(make_path(fx, "repo/f.txt", "v1\n"));
+    repo_add(repo, "f.txt");
+    repo_commit(repo, "commit 1", 100);
+
+    git_reference* head_ref = NULL;
+    g_assert_cmpint(git_repository_head(&head_ref, repo), ==, 0);
+    const git_oid* head_oid = git_reference_target(head_ref);
+    git_commit* target_commit = NULL;
+    g_assert_cmpint(git_commit_lookup(&target_commit, repo, head_oid), ==, 0);
+
+    git_reference* b1 = NULL;
+    g_assert_cmpint(git_branch_create(&b1, repo, "feature-x", target_commit, 0), ==, 0);
+    git_reference_free(b1);
+    git_commit_free(target_commit);
+    git_reference_free(head_ref);
+
+    /* Checkout feature-x */
+    g_assert_true(git_checkout_branch(repo_dir, "feature-x", &err));
+    g_assert_null(err);
+
+    gchar* cur = git_read_branch(repo_dir);
+    g_assert_cmpstr(cur, ==, "feature-x");
+    g_free(cur);
+
+    /* Checkout invalid branch fails */
+    g_assert_false(git_checkout_branch(repo_dir, "nonexistent", &err));
+    g_assert_nonnull(err);
+    g_free(err);
+
+    git_repository_free(repo);
+    g_free(repo_dir);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     git_libgit2_init();
@@ -459,5 +553,7 @@ int main(int argc, char** argv) {
     g_test_add("/git_utils/show_commit", Fixture, NULL, fixture_setup, test_show_commit, fixture_teardown);
     g_test_add("/git_utils/list_files", Fixture, NULL, fixture_setup, test_list_files, fixture_teardown);
     g_test_add_func("/git_utils/relative_date", test_relative_date);
+    g_test_add("/git_utils/list_branches", Fixture, NULL, fixture_setup, test_list_branches, fixture_teardown);
+    g_test_add("/git_utils/checkout_branch", Fixture, NULL, fixture_setup, test_checkout_branch, fixture_teardown);
     return g_test_run();
 }

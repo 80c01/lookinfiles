@@ -68,6 +68,223 @@ static GtkWidget* undo_button_new(AppData* app) {
     return undo;
 }
 
+static GtkWidget* git_branches_popover = NULL;
+
+typedef struct {
+    AppData* app;
+    gchar* branch_name;
+} BranchSwitchData;
+
+static gboolean do_switch_branch_idle(gpointer user_data) {
+    BranchSwitchData* bd = (BranchSwitchData*)user_data;
+    AppData* app = bd->app;
+    gchar* err_msg = NULL;
+
+    gboolean ok = git_checkout_branch(app->base_dir, bd->branch_name, &err_msg);
+    if (ok) {
+        gchar* msg = g_strdup_printf("Switched to branch “%s”", bd->branch_name);
+        app_notice(app, msg, FALSE);
+        g_free(msg);
+        reload_directory(app, app->base_dir);
+        app_emit(app, APP_EVENT_GIT_STATUS_CHANGED);
+        app_emit(app, APP_EVENT_STATUS_CHANGED);
+    } else {
+        gchar* msg = g_strdup_printf("Could not switch to branch “%s”: %s",
+                                     bd->branch_name, err_msg != NULL ? err_msg : "unknown error");
+        app_notice(app, msg, FALSE);
+        g_free(msg);
+        g_free(err_msg);
+    }
+
+    g_free(bd->branch_name);
+    g_free(bd);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_branch_item_clicked(GtkButton* btn, gpointer data) {
+    GtkWidget* popover = GTK_WIDGET(data);
+    AppData* app = (AppData*)g_object_get_data(G_OBJECT(btn), "app");
+    const gchar* branch_name = (const gchar*)g_object_get_data(G_OBJECT(btn), "branch-name");
+    gboolean is_head = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "is-head"));
+
+    gtk_popover_popdown(GTK_POPOVER(popover));
+
+    if (is_head || app == NULL || branch_name == NULL) {
+        return;
+    }
+
+    BranchSwitchData* bd = g_new0(BranchSwitchData, 1);
+    bd->app = app;
+    bd->branch_name = g_strdup(branch_name);
+    g_idle_add(do_switch_branch_idle, bd);
+}
+
+static gboolean unparent_idle(gpointer data) {
+    gtk_widget_unparent(GTK_WIDGET(data));
+    g_object_unref(data);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_branches_popover_closed(GtkPopover* popover, gpointer data) {
+    (void)data;
+    git_branches_popover = NULL;
+    g_idle_add(unparent_idle, g_object_ref(popover));
+}
+
+static gboolean on_branches_popover_key_pressed(GtkEventControllerKey* controller, guint keyval,
+                                                guint keycode, GdkModifierType state, gpointer data) {
+    (void)keycode;
+    GtkWidget* popover = GTK_WIDGET(data);
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
+    if ((mods & GDK_CONTROL_MASK) && (keyval == GDK_KEY_q || keyval == GDK_KEY_Q)) {
+        AppData* app = (AppData*)g_object_get_data(G_OBJECT(popover), "app");
+        gtk_popover_popdown(GTK_POPOVER(popover));
+        if (app != NULL && app->window != NULL) {
+            return gtk_event_controller_key_forward(controller, GTK_WIDGET(app->window));
+        }
+    }
+    return FALSE;
+}
+
+static void show_git_branches_popover(AppData* app) {
+    if (app == NULL || app->status_branch == NULL || app->base_dir == NULL) {
+        return;
+    }
+    if (git_branches_popover != NULL) {
+        gtk_popover_popdown(GTK_POPOVER(git_branches_popover));
+        return;
+    }
+
+    GPtrArray* branches = git_list_branches(app->base_dir);
+    if (branches == NULL) {
+        return;
+    }
+
+    GtkWidget* popover = gtk_popover_new();
+    git_branches_popover = popover;
+    gtk_widget_set_parent(popover, app->status_branch);
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
+    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_TOP);
+    gtk_widget_set_halign(popover, GTK_ALIGN_START);
+    gtk_widget_set_size_request(popover, 260, -1);
+    g_object_set_data(G_OBJECT(popover), "app", app);
+
+    GtkEventController* key_ctrl = gtk_event_controller_key_new();
+    g_signal_connect(key_ctrl, "key-pressed", G_CALLBACK(on_branches_popover_key_pressed), popover);
+    gtk_widget_add_controller(popover, key_ctrl);
+
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    gtk_widget_set_margin_start(box, 4);
+    gtk_widget_set_margin_end(box, 4);
+    gtk_widget_set_margin_top(box, 4);
+    gtk_widget_set_margin_bottom(box, 4);
+
+    GtkWidget* title = gtk_label_new("Git Branches");
+    gtk_widget_add_css_class(title, "dim-label");
+    gtk_widget_set_margin_start(title, 6);
+    gtk_widget_set_margin_top(title, 2);
+    gtk_widget_set_margin_bottom(title, 4);
+    gtk_label_set_xalign(GTK_LABEL(title), 0.0f);
+    gtk_box_append(GTK_BOX(box), title);
+
+    GtkWidget* scroll = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroll), 280);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scroll), TRUE);
+    gtk_scrolled_window_set_propagate_natural_width(GTK_SCROLLED_WINDOW(scroll), TRUE);
+
+    GtkWidget* list_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
+    gboolean has_remote_sep = FALSE;
+
+    for (guint i = 0; i < branches->len; i++) {
+        const GitBranchInfo* b = g_ptr_array_index(branches, i);
+        if (b->is_remote && !has_remote_sep) {
+            has_remote_sep = TRUE;
+            GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+            gtk_widget_set_margin_top(sep, 4);
+            gtk_widget_set_margin_bottom(sep, 4);
+            gtk_box_append(GTK_BOX(list_box), sep);
+
+            GtkWidget* rem_title = gtk_label_new("Remote Branches");
+            gtk_widget_add_css_class(rem_title, "dim-label");
+            gtk_widget_set_margin_start(rem_title, 6);
+            gtk_widget_set_margin_bottom(rem_title, 2);
+            gtk_label_set_xalign(GTK_LABEL(rem_title), 0.0f);
+            gtk_box_append(GTK_BOX(list_box), rem_title);
+        }
+
+        GtkWidget* btn = gtk_button_new();
+        gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+        gtk_widget_add_css_class(btn, "flat");
+
+        GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+
+        GtkWidget* mark = gtk_label_new("●");
+        gtk_widget_set_opacity(mark, b->is_head ? 1.0 : 0.0);
+        gtk_box_append(GTK_BOX(row), mark);
+
+        GtkWidget* icon_label = gtk_label_new("⎇");
+        if (b->is_remote) {
+            gtk_widget_add_css_class(icon_label, "dim-label");
+        }
+        gtk_box_append(GTK_BOX(row), icon_label);
+
+        GtkWidget* name_label = gtk_label_new(b->name);
+        gtk_label_set_xalign(GTK_LABEL(name_label), 0.0f);
+        gtk_label_set_ellipsize(GTK_LABEL(name_label), PANGO_ELLIPSIZE_MIDDLE);
+        gtk_widget_set_hexpand(name_label, TRUE);
+        if (b->is_remote) {
+            gtk_widget_add_css_class(name_label, "dim-label");
+        }
+        gtk_box_append(GTK_BOX(row), name_label);
+
+        if (b->is_head) {
+            gtk_widget_add_css_class(btn, "menu-item-current");
+            GtkWidget* cur = gtk_label_new("(current)");
+            gtk_widget_add_css_class(cur, "dim-label");
+            gtk_box_append(GTK_BOX(row), cur);
+            gtk_widget_set_tooltip_text(btn, "Currently checked out branch");
+        } else if (b->is_remote) {
+            gchar* tip = g_strdup_printf("Switch to remote tracking branch %s", b->name);
+            gtk_widget_set_tooltip_text(btn, tip);
+            g_free(tip);
+        } else {
+            gchar* tip = g_strdup_printf("Switch to branch %s", b->name);
+            gtk_widget_set_tooltip_text(btn, tip);
+            g_free(tip);
+        }
+
+        gtk_button_set_child(GTK_BUTTON(btn), row);
+
+        g_object_set_data(G_OBJECT(btn), "app", app);
+        g_object_set_data_full(G_OBJECT(btn), "branch-name", g_strdup(b->name), g_free);
+        g_object_set_data(G_OBJECT(btn), "is-head", GINT_TO_POINTER(b->is_head));
+        g_signal_connect(btn, "clicked", G_CALLBACK(on_branch_item_clicked), popover);
+
+        gtk_box_append(GTK_BOX(list_box), btn);
+    }
+
+    g_ptr_array_unref(branches);
+
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), list_box);
+    gtk_box_append(GTK_BOX(box), scroll);
+
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
+    g_signal_connect(popover, "closed", G_CALLBACK(on_branches_popover_closed), NULL);
+    gtk_popover_popup(GTK_POPOVER(popover));
+}
+
+static void on_status_branch_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    (void)y;
+    AppData* app = (AppData*)data;
+    if (app != NULL) {
+        show_git_branches_popover(app);
+    }
+}
+
 static GtkWidget* status_item_new(void) {
     GtkWidget* label = gtk_label_new("");
     gtk_widget_add_css_class(label, "status-item");
@@ -83,7 +300,11 @@ GtkWidget* create_explorer_bar(AppData* app) {
 
     GtkWidget* status_branch = status_item_new();
     gtk_widget_add_css_class(status_branch, "status-branch");
-    gtk_widget_set_tooltip_text(status_branch, "Git Branch of the Current Directory");
+    gtk_widget_set_tooltip_text(status_branch, "Git Branch of the Current Directory — Click to View Branches");
+    gtk_widget_set_cursor_from_name(status_branch, "pointer");
+    GtkGesture* branch_click = gtk_gesture_click_new();
+    g_signal_connect(branch_click, "pressed", G_CALLBACK(on_status_branch_clicked), app);
+    gtk_widget_add_controller(status_branch, GTK_EVENT_CONTROLLER(branch_click));
     gtk_box_append(GTK_BOX(bar), status_branch);
 
     GtkWidget* status_notice = status_item_new();
@@ -253,6 +474,7 @@ void update_status_bar(AppData* app) {
                 g_string_append(tip, "\nUp to date with upstream");
             }
         }
+        g_string_append(tip, "\nClick to view branches");
         gtk_widget_set_tooltip_text(app->status_branch, tip->str);
         g_string_free(tip, TRUE);
     }

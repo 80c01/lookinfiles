@@ -298,6 +298,183 @@ gchar* git_read_branch(const gchar* dir) {
     return branch;
 }
 
+void git_branch_info_free(gpointer data) {
+    GitBranchInfo* info = (GitBranchInfo*)data;
+    if (info == NULL) {
+        return;
+    }
+    g_free(info->name);
+    g_free(info);
+}
+
+static gint compare_branches(gconstpointer a, gconstpointer b) {
+    const GitBranchInfo* ba = *(const GitBranchInfo**)a;
+    const GitBranchInfo* bb = *(const GitBranchInfo**)b;
+    if (ba->is_head != bb->is_head) {
+        return ba->is_head ? -1 : 1;
+    }
+    if (ba->is_remote != bb->is_remote) {
+        return ba->is_remote ? 1 : -1;
+    }
+    return g_ascii_strcasecmp(ba->name, bb->name);
+}
+
+GPtrArray* git_list_branches(const gchar* dir) {
+    if (dir == NULL || dir[0] == '\0') {
+        return NULL;
+    }
+    gchar* root = find_git_root(dir);
+    if (root == NULL) {
+        return NULL;
+    }
+    git_repository* repo = open_work_tree(root);
+    g_free(root);
+    if (repo == NULL) {
+        return NULL;
+    }
+
+    GPtrArray* branches = g_ptr_array_new_with_free_func(git_branch_info_free);
+    git_branch_iterator* iter = NULL;
+    if (git_branch_iterator_new(&iter, repo, GIT_BRANCH_ALL) == 0) {
+        git_reference* ref = NULL;
+        git_branch_t type;
+        while (git_branch_next(&ref, &type, iter) == 0) {
+            const char* name = NULL;
+            if (git_branch_name(&name, ref) == 0 && name != NULL) {
+                if (type != GIT_BRANCH_REMOTE || !g_str_has_suffix(name, "/HEAD")) {
+                    GitBranchInfo* info = g_new0(GitBranchInfo, 1);
+                    info->name = g_strdup(name);
+                    info->is_head = (git_branch_is_head(ref) == 1);
+                    info->is_remote = (type == GIT_BRANCH_REMOTE);
+                    g_ptr_array_add(branches, info);
+                }
+            }
+            git_reference_free(ref);
+        }
+        git_branch_iterator_free(iter);
+    }
+
+    if (git_repository_head_detached(repo) == 1) {
+        git_reference* head_ref = NULL;
+        if (git_repository_head(&head_ref, repo) == 0) {
+            const git_oid* oid = git_reference_target(head_ref);
+            char short_sha[8] = {0};
+            if (oid != NULL) {
+                git_oid_tostr(short_sha, sizeof(short_sha), oid);
+            }
+            GitBranchInfo* info = g_new0(GitBranchInfo, 1);
+            info->name = g_strdup_printf("(HEAD detached at %s)", short_sha);
+            info->is_head = TRUE;
+            info->is_remote = FALSE;
+            g_ptr_array_add(branches, info);
+            git_reference_free(head_ref);
+        }
+    }
+
+    git_repository_free(repo);
+    g_ptr_array_sort(branches, compare_branches);
+    return branches;
+}
+
+gboolean git_checkout_branch(const gchar* dir, const gchar* branch_name, gchar** error_msg) {
+    if (error_msg != NULL) {
+        *error_msg = NULL;
+    }
+    if (dir == NULL || branch_name == NULL || branch_name[0] == '\0') {
+        if (error_msg != NULL) {
+            *error_msg = g_strdup("Invalid argument");
+        }
+        return FALSE;
+    }
+    gchar* root = find_git_root(dir);
+    if (root == NULL) {
+        if (error_msg != NULL) {
+            *error_msg = g_strdup("Not in a Git repository");
+        }
+        return FALSE;
+    }
+    git_repository* repo = open_work_tree(root);
+    g_free(root);
+    if (repo == NULL) {
+        if (error_msg != NULL) {
+            *error_msg = g_strdup("Failed to open repository");
+        }
+        return FALSE;
+    }
+
+    git_reference* branch_ref = NULL;
+    int err = git_branch_lookup(&branch_ref, repo, branch_name, GIT_BRANCH_LOCAL);
+    if (err != 0) {
+        git_reference* remote_ref = NULL;
+        if (git_branch_lookup(&remote_ref, repo, branch_name, GIT_BRANCH_REMOTE) == 0) {
+            const gchar* slash = strchr(branch_name, '/');
+            const gchar* local_name = slash != NULL ? slash + 1 : branch_name;
+            if (git_branch_lookup(&branch_ref, repo, local_name, GIT_BRANCH_LOCAL) != 0) {
+                git_object* commit_obj = NULL;
+                if (git_reference_peel(&commit_obj, remote_ref, GIT_OBJECT_COMMIT) == 0) {
+                    git_branch_create(&branch_ref, repo, local_name, (const git_commit*)commit_obj, 0);
+                    if (branch_ref != NULL) {
+                        git_branch_set_upstream(branch_ref, branch_name);
+                    }
+                    git_object_free(commit_obj);
+                }
+            }
+            git_reference_free(remote_ref);
+        }
+    }
+
+    if (branch_ref == NULL) {
+        const git_error* e = git_error_last();
+        if (error_msg != NULL) {
+            *error_msg = g_strdup(e != NULL && e->message != NULL ? e->message : "Branch not found");
+        }
+        git_repository_free(repo);
+        return FALSE;
+    }
+
+    git_object* treeish = NULL;
+    err = git_reference_peel(&treeish, branch_ref, GIT_OBJECT_COMMIT);
+    if (err != 0) {
+        const git_error* e = git_error_last();
+        if (error_msg != NULL) {
+            *error_msg = g_strdup(e != NULL && e->message != NULL ? e->message : "Failed to resolve commit");
+        }
+        git_reference_free(branch_ref);
+        git_repository_free(repo);
+        return FALSE;
+    }
+
+    git_checkout_options opts;
+    git_checkout_options_init(&opts, GIT_CHECKOUT_OPTIONS_VERSION);
+    opts.checkout_strategy = GIT_CHECKOUT_SAFE;
+    err = git_checkout_tree(repo, treeish, &opts);
+    git_object_free(treeish);
+
+    if (err != 0) {
+        const git_error* e = git_error_last();
+        if (error_msg != NULL) {
+            *error_msg = g_strdup(e != NULL && e->message != NULL ? e->message : "Conflict prevents checkout");
+        }
+        git_reference_free(branch_ref);
+        git_repository_free(repo);
+        return FALSE;
+    }
+
+    err = git_repository_set_head(repo, git_reference_name(branch_ref));
+    git_reference_free(branch_ref);
+    git_repository_free(repo);
+
+    if (err != 0) {
+        const git_error* e = git_error_last();
+        if (error_msg != NULL) {
+            *error_msg = g_strdup(e != NULL && e->message != NULL ? e->message : "Failed to set HEAD");
+        }
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 /* Number of commits HEAD is ahead of and behind its upstream tracking branch.
  * Returns TRUE when dir is in a repository and HEAD is a branch with an upstream
  * configured; *ahead and *behind receive the counts. Returns FALSE otherwise.

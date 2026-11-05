@@ -14,6 +14,25 @@ gchar* git_resolve_dir(const gchar* git_root);
 /* Current branch name (short SHA when detached), NULL outside a repository. Caller frees. */
 gchar* git_read_branch(const gchar* dir);
 
+/* One branch of a repository (git_list_branches()) */
+typedef struct {
+    gchar* name;        /* branch name, e.g. "main" or "origin/main" */
+    gboolean is_head;   /* TRUE if this branch is currently checked out */
+    gboolean is_remote; /* TRUE if remote branch */
+} GitBranchInfo;
+
+void git_branch_info_free(gpointer info);
+
+/* List of GitBranchInfo* for the repository of dir (local branches first,
+ * then remote branches, sorted by name, skipping origin/HEAD).
+ * Returns NULL outside a repository. Caller frees with g_ptr_array_unref(). */
+GPtrArray* git_list_branches(const gchar* dir);
+
+/* Switch (checkout) the repository of dir to branch name (local or remote tracking).
+ * Safe: fails without changing working tree if there are uncommitted conflicts.
+ * Sets *error_msg on failure (caller frees). Returns TRUE on success. */
+gboolean git_checkout_branch(const gchar* dir, const gchar* branch_name, gchar** error_msg);
+
 /* Number of commits HEAD is ahead of and behind its upstream tracking branch.
  * Returns TRUE when dir is in a repository and HEAD is a branch with an upstream
  * configured; *ahead and *behind receive the counts. Returns FALSE otherwise (and
