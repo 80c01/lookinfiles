@@ -732,16 +732,16 @@ void workspace_remove(AppData* app, gint idx) {
         workspace_save_current(app);
     }
 
-    g_free(rm->base_dir);
-    if (rm->expanded_paths != NULL) {
-        g_hash_table_destroy(rm->expanded_paths);
-    }
-    g_free(rm->selected_path);
-    explorer_tree_state_free(rm->tree_state);
-    if (rm->git_statuses != NULL) {
-        g_hash_table_destroy(rm->git_statuses);
-    }
-    g_free(rm->git_status_root);
+    /* The teardown below emits events whose handlers save the current
+     * workspace (maybe this one, half freed): no saving until the switch */
+    app->switching_ws = TRUE;
+    g_clear_pointer(&rm->base_dir, g_free);
+    g_clear_pointer(&rm->expanded_paths, g_hash_table_destroy);
+    g_clear_pointer(&rm->selected_path, g_free);
+    g_clear_pointer(&rm->tree_state, explorer_tree_state_free);
+    g_clear_pointer(&rm->git_statuses, g_hash_table_destroy);
+    g_clear_pointer(&rm->git_status_root, g_free);
+    g_clear_pointer(&rm->remote_id, g_free);
     nav_history_workspace_removed(rm);
     project_search_workspace_removed(app, rm);
     help_guide_workspace_removed(app, rm);
@@ -770,6 +770,7 @@ void workspace_remove(AppData* app, gint idx) {
         target = app->current_ws - 1;
     }
     app->current_ws = -1;
+    app->switching_ws = FALSE;
     ws_minimap_update_size(app);
     workspace_switch(app, target);
 }
