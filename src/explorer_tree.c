@@ -463,13 +463,27 @@ void explorer_tree_toggle_expanded(ExplorerTree* tree, ExplorerRow* row) {
     explorer_tree_set_expanded(tree, row, !explorer_tree_is_expanded(tree, row));
 }
 
+/* Expanding a row may rebuild rows (bookmarks, notes): each ancestor is
+ * referenced while its own ancestors expand, and skipped once detached */
 void explorer_tree_expand_to(ExplorerTree* tree, ExplorerRow* row) {
     g_return_if_fail(EXPLORER_IS_TREE(tree));
     ExplorerRow* parent = (row != NULL) ? explorer_row_get_parent(row) : NULL;
     if (parent != NULL) {
+        g_object_ref(parent);
         explorer_tree_expand_to(tree, parent);
-        explorer_tree_set_expanded(tree, parent, TRUE);
+        if (explorer_tree_contains(tree, parent)) {
+            explorer_tree_set_expanded(tree, parent, TRUE);
+        }
+        g_object_unref(parent);
     }
+}
+
+gboolean explorer_tree_contains(ExplorerTree* tree, ExplorerRow* row) {
+    g_return_val_if_fail(EXPLORER_IS_TREE(tree), FALSE);
+    while (row != NULL && !row->is_root) {
+        row = row->parent;
+    }
+    return row != NULL && row == tree->root;
 }
 
 void explorer_tree_collapse_all(ExplorerTree* tree) {

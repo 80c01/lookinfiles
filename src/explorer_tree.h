@@ -51,6 +51,9 @@ gboolean explorer_tree_is_expanded(ExplorerTree* tree, ExplorerRow* row);
 void explorer_tree_set_expanded(ExplorerTree* tree, ExplorerRow* row, gboolean expanded);
 void explorer_tree_toggle_expanded(ExplorerTree* tree, ExplorerRow* row);
 /* Expand every ancestor of row so it becomes visible */
+/* The row is in the tree (not removed by a rebuild) */
+gboolean explorer_tree_contains(ExplorerTree* tree, ExplorerRow* row);
+
 void explorer_tree_expand_to(ExplorerTree* tree, ExplorerRow* row);
 void explorer_tree_collapse_all(ExplorerTree* tree);
 

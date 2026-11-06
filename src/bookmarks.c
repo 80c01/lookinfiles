@@ -367,9 +367,7 @@ static gboolean bm_select_id(AppData* app, guint id) {
     if (row == NULL) {
         return FALSE;
     }
-    explorer_tree_expand_to(app->tree, row);
-    select_row(app, row);
-    return TRUE;
+    return reveal_row(app, row);
 }
 
 static GNode* bm_selected_node(AppData* app) {

@@ -155,8 +155,9 @@ static void remote_refresh_select(AppData* app, const gchar* type, const gchar* 
         row = explorer_row_find(root, remote_match_row, &key);
     }
     if (row != NULL) {
-        explorer_tree_expand_to(app->tree, row);
-        select_row(app, row);
+        if (!reveal_row(app, row)) {
+            select_first_row(app);
+        }
     } else {
         select_first_row(app);
     }

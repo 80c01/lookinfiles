@@ -10,6 +10,10 @@ ExplorerRow* tree_nav_selected(AppData* app);
 /* Select a visible row and scroll it into view; re-selecting the selected
  * row still refreshes the preview */
 void select_row(AppData* app, ExplorerRow* row);
+
+/* Expand the folders above row, then select it. Expanding may rebuild rows
+ * (bookmarks, notes): FALSE when row was dropped meanwhile (nothing selected). */
+gboolean reveal_row(AppData* app, ExplorerRow* row);
 void select_first_row(AppData* app);
 void select_last_row(AppData* app);
 void select_next_row(AppData* app);

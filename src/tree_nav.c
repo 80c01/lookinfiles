@@ -94,6 +94,20 @@ static gboolean match_path_not_bookmark(ExplorerRow* row, gpointer data) {
     return !explorer_row_is(row, "bookmark") && g_strcmp0(row->path, (const gchar*)data) == 0;
 }
 
+gboolean reveal_row(AppData* app, ExplorerRow* row) {
+    if (row == NULL) {
+        return FALSE;
+    }
+    g_object_ref(row);
+    explorer_tree_expand_to(app->tree, row);
+    gboolean shown = explorer_tree_contains(app->tree, row);
+    if (shown) {
+        select_row(app, row);
+    }
+    g_object_unref(row);
+    return shown;
+}
+
 /* Select row matching full path; regular rows take precedence over bookmarks */
 gboolean select_by_path(AppData* app, const gchar* full_path) {
     if (full_path == NULL) {
@@ -107,8 +121,24 @@ gboolean select_by_path(AppData* app, const gchar* full_path) {
     if (row == NULL) {
         return FALSE;
     }
+    /* Expanding its folders may rebuild rows (bookmarks, notes): the row
+     * found may be gone after, its new copy is looked up again */
+    g_object_ref(row);
     explorer_tree_expand_to(app->tree, row);
-    return explorer_tree_select(app->tree, row);
+    if (!explorer_tree_contains(app->tree, row)) {
+        g_object_unref(row);
+        row = explorer_row_find(root, match_path_not_bookmark, (gpointer)full_path);
+        if (row == NULL) {
+            row = explorer_row_find_by_path(root, full_path);
+        }
+        if (row == NULL) {
+            return FALSE;
+        }
+        g_object_ref(row);
+    }
+    gboolean selected = explorer_tree_select(app->tree, row);
+    g_object_unref(row);
+    return selected;
 }
 
 /* Suspend / resume the preview update on selection changes (while the tree

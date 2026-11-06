@@ -194,8 +194,9 @@ void games_refresh(AppData* app) {
 
     ExplorerRow* row = explorer_row_find_by_path(explorer_tree_get_root(app->tree), sel_path);
     if (row != NULL) {
-        explorer_tree_expand_to(app->tree, row);
-        select_row(app, row);
+        if (!reveal_row(app, row)) {
+            select_first_row(app);
+        }
     } else {
         select_first_row(app);
     }

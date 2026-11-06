@@ -1029,10 +1029,7 @@ gboolean notes_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expan
 /* Select the row of a note or notebook by path, showing it if needed */
 static void notes_select_path(AppData* app, const gchar* path) {
     ExplorerRow* row = explorer_row_find_by_path(explorer_tree_get_root(app->tree), path);
-    if (row != NULL) {
-        explorer_tree_expand_to(app->tree, row);
-        select_row(app, row);
-    }
+    reveal_row(app, row);
 }
 
 void notes_refresh(AppData* app) {
@@ -1051,8 +1048,9 @@ void notes_refresh(AppData* app) {
 
     ExplorerRow* row = explorer_row_find_by_path(explorer_tree_get_root(app->tree), sel_path);
     if (row != NULL) {
-        explorer_tree_expand_to(app->tree, row);
-        select_row(app, row);
+        if (!reveal_row(app, row)) {
+            select_first_row(app);
+        }
     } else {
         select_first_row(app);
     }
