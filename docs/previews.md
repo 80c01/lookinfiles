@@ -143,7 +143,7 @@ every common format to L3 and never leave one below L1.
   `media_tags` (ID3, FLAC, Ogg, MP4, WAV), not GStreamer.
 - **Tools**: fixtures in `tests/fixtures/preview/`; `make bench-preview`
   (latency); `make preview-coverage DIR=...` (share of files per level);
-  one `shot` per format in `tests/ui/formats.sh` (part of `make ui-test`);
+  one `shot` per format in `tests/ui/formats.sh` (part of `make ui-shots`);
   `LOOKIN_DEBUG_PREVIEW=1` prints the time from selection to display.
 
 ## Coverage (updated 2026-10-30)
@@ -255,7 +255,7 @@ the sender and subject), mail client databases (previewed as SQLite).
   sometimes draws the trough of the preview's own scrollbar before
   allocating it. Nothing is drawn wrong. It does not happen with plain text
   previews; clearing the buffer first, overlay scrollbars off, a forced
-  resize and an `ALWAYS` scrollbar policy did not help. `make ui-test`
+  resize and an `ALWAYS` scrollbar policy did not help. `make ui-shots`
   tolerates exactly this message for now; the cause is still to be found.
 
 ## Adding a format: definition of done

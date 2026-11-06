@@ -183,7 +183,8 @@ and [docs/ui-conventions.md](docs/ui-conventions.md) first, then:
 
 ```bash
 make check     # zero warnings, unit tests, module layering rules
-make ui-test   # headless UI test (needs xvfb, xdotool, imagemagick)
+make ui-test   # fast headless UI smoke test (needs xvfb, xdotool)
+make ui-shots  # full UI scenario with screenshots (also needs imagemagick)
 ```
 
 Keep commits focused, with a short imperative subject. When a shortcut

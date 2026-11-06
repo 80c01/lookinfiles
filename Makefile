@@ -305,9 +305,13 @@ check:
 	@$(MAKE) --no-print-directory test
 	@sh tools/check_layers.sh
 
-# Headless UI smoke test (needs Xvfb, xdotool, ImageMagick). Screenshots go to
-# build/ui/shots; set UI_BASELINE=<dir of shots> to compare with a reference run.
+# Fast headless UI smoke test (about a second; needs Xvfb, xdotool)
 ui-test: $(TARGET)
+	@sh tests/ui/smoke.sh ./$(TARGET)
+
+# Full screenshot scenario (needs Xvfb, xdotool, ImageMagick). Screenshots go to
+# build/ui/shots; set UI_BASELINE=<dir of shots> to compare with a reference run.
+ui-shots: $(TARGET)
 	@sh tests/ui/run_ui_test.sh ./$(TARGET)
 
 # Instrumented build (AddressSanitizer + UBSan) in build-asan/: a crash or a
@@ -360,4 +364,4 @@ uninstall:
 
 -include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
 
-.PHONY: all asan deps clean dist install uninstall test check ui-test bench-preview preview-coverage deb appimage windows-zip windows-exe
+.PHONY: all asan deps clean dist install uninstall test check ui-test ui-shots bench-preview preview-coverage deb appimage windows-zip windows-exe

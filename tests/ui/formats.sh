@@ -61,7 +61,7 @@
     cp "$ROOT/tests/fixtures/preview/deck.pptx" 44-deck.pptx   # theme, master, layouts
     # Maildir folder (a directory: listed first)
     cp -r "$ROOT/tests/fixtures/mail/Maildir" 00-Maildir
-) || { echo "ui-test: format fixtures failed"; exit 1; }
+) || { echo "ui-shots: format fixtures failed"; exit 1; }
 
 format_scenario() {
     key Home; sleep 0.5; shot fmt_maildir_folder

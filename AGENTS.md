@@ -29,14 +29,15 @@ make            # build into build/ (then lists the libraries found)
 make deps       # list required / optional libraries and what to install
 make test       # GLib unit tests (headless)
 make check      # zero warnings + unit tests + layering rules
-make ui-test    # headless UI smoke test under Xvfb, screenshots in build/ui/shots/
+make ui-test    # fast headless UI smoke test under Xvfb (about a second)
+make ui-shots   # full UI scenario under Xvfb, screenshots in build/ui/shots/
 ./lookinfiles   # needs a display ("cannot open display" is expected in the sandbox)
 ```
 
 - **After a modification, only run `make`** and fix every warning and error.
-- **Run `make test`, `make check` or `make ui-test` only when the user asks.**
+- **Run `make test`, `make check`, `make ui-test` or `make ui-shots` only when the user asks.**
   Not after an edit, not before a commit. The "`make check` passes" and
-  `make ui-test` items in the docs checklists also wait for the user.
+  `make ui-test` / `make ui-shots` items in the docs checklists also wait for the user.
 - A new shortcut gets a step in `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).
 - `lookinfiles` and `build/` are generated: never edit them.
 

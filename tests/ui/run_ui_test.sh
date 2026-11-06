@@ -1,7 +1,7 @@
 #!/bin/sh
-# Headless UI smoke test: drives the application on a virtual X display.
+# Full headless UI scenario: drives the application on a virtual X display.
 #
-# usage: tests/ui/run_ui_test.sh [BINARY]     (or: make ui-test)
+# usage: tests/ui/run_ui_test.sh [BINARY]     (or: make ui-shots; the quick check is tests/ui/smoke.sh)
 #
 # Requires: Xvfb, xdotool, ImageMagick (sudo apt install xvfb xdotool imagemagick)
 #
@@ -33,11 +33,11 @@ FIX=${TMPDIR:-/tmp}/lookin-ui
 
 for tool in Xvfb xdotool import compare; do
     if ! command -v $tool >/dev/null 2>&1; then
-        echo "ui-test: '$tool' not found. Install: sudo apt install xvfb xdotool imagemagick"
+        echo "ui-shots: '$tool' not found. Install: sudo apt install xvfb xdotool imagemagick"
         exit 1
     fi
 done
-[ -x "$BIN" ] || { echo "ui-test: binary not found: $BIN (run make first)"; exit 1; }
+[ -x "$BIN" ] || { echo "ui-shots: binary not found: $BIN (run make first)"; exit 1; }
 
 rm -rf "$OUT" "$FIX"
 mkdir -p "$SHOTS" "$FIX/home/.config/gtk-4.0" "$FIX/work/src" "$FIX/work/docs"
@@ -92,14 +92,14 @@ printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home
     # (long file: the minimap shows them too)
     seq -f 'plain line %g' 1 1500 | sed -e '1s/1/one/' -e '2a added line' -e '50,59d' \
         -e '90,95s/$/ (edited)/' -e '$a added at the end' > notes.txt
-) || { echo "ui-test: fixture setup failed"; exit 1; }
+) || { echo "ui-shots: fixture setup failed"; exit 1; }
 
 # --- Virtual display (free display number chosen by Xvfb)
 Xvfb -displayfd 3 -screen 0 1280x800x24 -nolisten tcp 3>"$OUT/display" 2>/dev/null &
 XVFB=$!
 i=0
 while [ ! -s "$OUT/display" ] && [ $i -lt 50 ]; do sleep 0.1; i=$((i + 1)); done
-[ -s "$OUT/display" ] || { echo "ui-test: Xvfb did not start"; kill $XVFB 2>/dev/null; exit 1; }
+[ -s "$OUT/display" ] || { echo "ui-shots: Xvfb did not start"; kill $XVFB 2>/dev/null; exit 1; }
 
 export DISPLAY=":$(cat "$OUT/display")"
 export GDK_BACKEND=x11 GSK_RENDERER=cairo NO_AT_BRIDGE=1
@@ -123,7 +123,7 @@ while [ -z "$WIN" ] && [ $i -lt 50 ]; do
     WIN=$(xdotool search --pid $APP 2>/dev/null | tail -1)
     i=$((i + 1))
 done
-[ -n "$WIN" ] || { echo "ui-test: FAIL - application window did not open"; cat "$OUT/app.log"; exit 1; }
+[ -n "$WIN" ] || { echo "ui-shots: FAIL - application window did not open"; cat "$OUT/app.log"; exit 1; }
 sleep 2
 xdotool windowfocus --sync "$WIN" 2>/dev/null
 
@@ -517,19 +517,19 @@ key ctrl+q
 
 status=0
 if [ "$windows" -ne 1 ]; then
-    echo "ui-test: FAIL - the New File dialog opened a separate window ($windows windows)"
+    echo "ui-shots: FAIL - the New File dialog opened a separate window ($windows windows)"
     status=1
 fi
 i=0
 while kill -0 $APP 2>/dev/null && [ $i -lt 30 ]; do sleep 0.1; i=$((i + 1)); done
 if kill -0 $APP 2>/dev/null; then
-    echo "ui-test: FAIL - Ctrl+Q did not quit the application"
+    echo "ui-shots: FAIL - Ctrl+Q did not quit the application"
     status=1
 else
     wait $APP
     rc=$?
     APP=
-    [ $rc -eq 0 ] || { echo "ui-test: FAIL - application exited with code $rc"; status=1; }
+    [ $rc -eq 0 ] || { echo "ui-shots: FAIL - application exited with code $rc"; status=1; }
 fi
 
 # --- Second session: one preview per file format (fixtures from tests/ui/formats.sh)
@@ -547,7 +547,7 @@ while [ -z "$WIN" ] && [ $i -lt 50 ]; do
     i=$((i + 1))
 done
 if [ -z "$WIN" ]; then
-    echo "ui-test: FAIL - format session window did not open"
+    echo "ui-shots: FAIL - format session window did not open"
     status=1
 else
     sleep 2
@@ -557,10 +557,10 @@ else
     i=0
     while kill -0 $APP 2>/dev/null && [ $i -lt 30 ]; do sleep 0.1; i=$((i + 1)); done
     if kill -0 $APP 2>/dev/null; then
-        echo "ui-test: FAIL - Ctrl+Q did not quit the format session"
+        echo "ui-shots: FAIL - Ctrl+Q did not quit the format session"
         status=1
     else
-        wait $APP || { echo "ui-test: FAIL - format session exited with an error"; status=1; }
+        wait $APP || { echo "ui-shots: FAIL - format session exited with an error"; status=1; }
         APP=
     fi
 fi
@@ -577,7 +577,7 @@ cat "$OUT/app.log" "$OUT/app_formats.log" 2>/dev/null | grep -E 'WARNING|CRITICA
     grep -v 'Unable to acquire session bus' |
     grep -v 'Trying to snapshot GtkGizmo .* without a current allocation' > "$OUT/warnings.log"
 if [ -s "$OUT/warnings.log" ]; then
-    echo "ui-test: FAIL - GTK warnings/criticals (see $OUT/app.log, $OUT/app_formats.log):"
+    echo "ui-shots: FAIL - GTK warnings/criticals (see $OUT/app.log, $OUT/app_formats.log):"
     sed 's/^/  /' "$OUT/warnings.log"
     status=1
 fi
@@ -589,18 +589,18 @@ if [ -n "${UI_BASELINE:-}" ]; then
         case "$name" in *_terminal.png|*_terminal_*.png|*_animated.png) continue ;; esac   # prompt timing, animation frame vary
         ref="$UI_BASELINE/$name"
         if [ ! -f "$ref" ]; then
-            echo "ui-test: FAIL - no baseline for $name"
+            echo "ui-shots: FAIL - no baseline for $name"
             status=1
             continue
         fi
         diff=$(compare -fuzz 10% -metric AE "$f" "$ref" /dev/null 2>&1 | cut -d' ' -f1)
         if [ "${diff%.*}" -gt "$TOLERANCE" ] 2>/dev/null; then
-            echo "ui-test: FAIL - $name differs from baseline ($diff pixels)"
+            echo "ui-shots: FAIL - $name differs from baseline ($diff pixels)"
             status=1
         fi
     done
 fi
 
-echo "ui-test: $n screenshots in $SHOTS"
-[ $status -eq 0 ] && echo "ui-test: OK"
+echo "ui-shots: $n screenshots in $SHOTS"
+[ $status -eq 0 ] && echo "ui-shots: OK"
 exit $status
