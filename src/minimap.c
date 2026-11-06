@@ -19,7 +19,10 @@ static void set_source_role(cairo_t* cr, PaletteRole role, double alpha) {
 /* Height of the offscreen render, in minimap heights: scrolling within it
  * only repaints, past it the render is rebuilt around the new position */
 #define MINIMAP_CACHE_SCREENS 3
-#define MINIMAP_HIDE_DELAY_MS 200
+/* A visibility change waits until the layout has been stable this long,
+ * at most MINIMAP_MAX_WAITS times */
+#define MINIMAP_SETTLE_MS 200
+#define MINIMAP_MAX_WAITS 10
 #define MINIMAP_MIN_LINE_PX 10
 
 /* Scale, minimap scroll and slider for the view's current position */
@@ -426,56 +429,85 @@ static void sync_vertical_scrollbar(GtkWidget* view, gboolean minimap_shown) {
     }
 }
 
-static void minimap_vis_apply(AppData* app) {
-    gboolean useful = minimap_is_useful(app);
-    if (gtk_widget_get_visible(app->minimap) != useful) {
-        if (!useful) {
-            minimap_invalidate(app);
-        }
-        gtk_widget_set_visible(app->minimap, useful);
-    }
-    sync_vertical_scrollbar(app->text_view, useful);
-}
-
-/* Hiding is confirmed after a short delay: while a long text is rebuilt or
- * its height is still estimated, the minimap would otherwise flicker */
-static gboolean minimap_hide_timeout(gpointer data) {
-    AppData* app = (AppData*)data;
-    app->mm_vis_source = 0;
-    if (app->minimap != NULL) {
-        minimap_vis_apply(app);
-    }
-    return G_SOURCE_REMOVE;
-}
-
 /* Whether the text has enough lines to fill more than the viewer even with
  * the smallest line height: a short text hides the minimap at once */
-static gboolean minimap_may_need_bar(AppData* app) {
-    gint lines = gtk_text_buffer_get_line_count(app->buffer);
-    return lines * MINIMAP_MIN_LINE_PX > gtk_adjustment_get_page_size(app->viewer_vadj);
+static gboolean may_need_bar(GtkWidget* view, gdouble page) {
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+    return buffer != NULL && gtk_text_buffer_get_line_count(buffer) * MINIMAP_MIN_LINE_PX > page;
 }
 
+/* What the last visibility check saw, kept on the minimap widget */
+typedef struct {
+    gint view_w, view_h;
+    gdouble upper, page;
+    guint waits;
+} MinimapVisState;
+
+/* While a text is laid out or its viewer resized, GtkTextView reports
+ * estimated heights that jump up and down: following them makes the minimap
+ * flicker. A change waits until the viewer size and the content height have
+ * stayed the same for MINIMAP_SETTLE_MS, except showing it in an unchanged
+ * viewer, hiding it for a text too short to need it, or a change the content
+ * height does not explain (another notebook page). */
+static gboolean vis_must_wait(GtkWidget* minimap, GtkWidget* view, gboolean useful) {
+    MinimapVisState* st = g_object_get_data(G_OBJECT(minimap), "minimap-vis");
+    if (st == NULL) {
+        st = g_new0(MinimapVisState, 1);
+        g_object_set_data_full(G_OBJECT(minimap), "minimap-vis", st, g_free);
+    }
+    GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    gint w = gtk_widget_get_width(view);
+    gint h = gtk_widget_get_height(view);
+    gdouble upper = (adj != NULL) ? gtk_adjustment_get_upper(adj) : 0.0;
+    gdouble page = (adj != NULL) ? gtk_adjustment_get_page_size(adj) : 0.0;
+    gboolean resized = w != st->view_w || h != st->view_h;
+    gboolean settled = upper == st->upper && page == st->page;
+    st->view_w = w;
+    st->view_h = h;
+    st->upper = upper;
+    st->page = page;
+
+    gboolean shown = gtk_widget_get_visible(minimap);
+    gboolean wait = FALSE;
+    if (shown != useful) {
+        wait = resized || (shown && !settled && may_need_bar(view, page));
+    }
+    /* Content that never settles (still loading) gets its answer anyway */
+    if (wait && ++st->waits > MINIMAP_MAX_WAITS) {
+        wait = FALSE;
+    }
+    if (!wait) {
+        st->waits = 0;
+    }
+    return wait;
+}
+
+/* Show or hide the minimap now, or check again after MINIMAP_SETTLE_MS by
+ * calling `again` (which stores its source in *source) */
+static void vis_update(GtkWidget* minimap, GtkWidget* view, MinimapCache* cache, gboolean useful,
+                       guint* source, GSourceFunc again, gpointer data) {
+    if (vis_must_wait(minimap, view, useful)) {
+        *source = g_timeout_add(MINIMAP_SETTLE_MS, again, data);
+        return;
+    }
+    if (gtk_widget_get_visible(minimap) != useful) {
+        if (!useful) {
+            minimap_cache_clear(cache);
+        }
+        gtk_widget_set_visible(minimap, useful);
+    }
+    sync_vertical_scrollbar(view, useful);
+}
+
+/* Runs from idle (never mid-size_allocate) and again after each wait */
 static gboolean minimap_vis_idle(gpointer data) {
     AppData* app = (AppData*)data;
     app->mm_vis_source = 0;
-    if (app->minimap == NULL) {
+    if (app->minimap == NULL || app->text_view == NULL) {
         return G_SOURCE_REMOVE;
     }
-    /* A layout or workspace change resizes the viewer: its height estimate is
-     * unreliable until it settles, so any change waits for confirmation */
-    static gint last_w = 0, last_h = 0;
-    gint w = gtk_widget_get_width(app->text_view);
-    gint h = gtk_widget_get_height(app->text_view);
-    gboolean resized = w != last_w || h != last_h;
-    last_w = w;
-    last_h = h;
-    gboolean useful = minimap_is_useful(app);
-    gboolean shown = gtk_widget_get_visible(app->minimap);
-    if (shown != useful && (resized || (shown && minimap_may_need_bar(app)))) {
-        app->mm_vis_source = g_timeout_add(MINIMAP_HIDE_DELAY_MS, minimap_hide_timeout, app);
-        return G_SOURCE_REMOVE;
-    }
-    minimap_vis_apply(app);
+    vis_update(app->minimap, app->text_view, &app->mm_cache, minimap_is_useful(app),
+               &app->mm_vis_source, minimap_vis_idle, app);
     return G_SOURCE_REMOVE;
 }
 
@@ -705,21 +737,12 @@ static gboolean editor_minimap_is_useful(EditorTab* tab) {
 
 static gboolean editor_minimap_vis_idle(gpointer data) {
     EditorTab* tab = (EditorTab*)data;
-    if (tab == NULL) {
-        return G_SOURCE_REMOVE;
-    }
     tab->mm_vis_source = 0;
-    if (tab->minimap == NULL) {
+    if (tab->minimap == NULL || tab->view == NULL) {
         return G_SOURCE_REMOVE;
     }
-    gboolean useful = editor_minimap_is_useful(tab);
-    if (gtk_widget_get_visible(tab->minimap) != useful) {
-        if (!useful) {
-            editor_minimap_invalidate(tab);
-        }
-        gtk_widget_set_visible(tab->minimap, useful);
-    }
-    sync_vertical_scrollbar(tab->view, useful);
+    vis_update(tab->minimap, tab->view, &tab->mm_cache, editor_minimap_is_useful(tab),
+               &tab->mm_vis_source, editor_minimap_vis_idle, tab);
     return G_SOURCE_REMOVE;
 }
 
@@ -957,13 +980,7 @@ static gboolean view_minimap_vis_idle(gpointer data) {
     GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(vm->view));
     gboolean useful = adj != NULL &&
                       gtk_adjustment_get_upper(adj) > gtk_adjustment_get_page_size(adj) + 1.5;
-    if (gtk_widget_get_visible(vm->minimap) != useful) {
-        if (!useful) {
-            view_minimap_invalidate(vm);
-        }
-        gtk_widget_set_visible(vm->minimap, useful);
-    }
-    sync_vertical_scrollbar(vm->view, useful);
+    vis_update(vm->minimap, vm->view, &vm->cache, useful, &vm->vis_source, view_minimap_vis_idle, vm);
     return G_SOURCE_REMOVE;
 }
 
