@@ -21,6 +21,7 @@ preview_cache:
 path_kind:
 pane_geometry:
 minimap_geometry:
+ui_probe:
 dir_summary:file_types,text_encoding
 dir_scan:file_types
 file_save:

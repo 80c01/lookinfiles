@@ -46,6 +46,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "focus_route.h"
+#include "ui_probe.h"
 #include <string.h>
 
 /* The window is closed: ask about unsaved changes like Ctrl+Q, then remember
@@ -275,6 +276,7 @@ int main(int argc, char** argv) {
     g_setenv("GST_PLAY_USE_PLAYBIN3", "0", FALSE);
 
     gtk_init();
+    ui_probe_install(); /* LOOKIN_UI_PROBE: UI tests only */
 #ifdef HAVE_GSV
     gtk_source_init();
 #endif

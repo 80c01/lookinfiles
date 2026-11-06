@@ -16,6 +16,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   binary; `file_kind_of_path()`). The preview
   detects the kind in its worker thread (`app->viewed_kind`): decide on the
   displayed file with `viewed_kind`, not with its name.
+- `ui_probe` — test hook for `make ui-shots`: with `LOOKIN_UI_PROBE=<file>`,
+  each SIGUSR1 writes a new number to the file once the main loop is idle,
+  so a screenshot waits for the application instead of a fixed delay.
 - `notebook_icons` — the icons offered for notebooks and bookmark folders
   (theme glyph names)
   and the mapping of the emoji stored by older versions.
