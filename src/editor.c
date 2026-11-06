@@ -1151,6 +1151,27 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
         return;
     }
 
+    /* A text buffer takes valid UTF-8 only: binary files are not edited (an
+     * empty buffer saved would erase them), other encodings are converted */
+    if (!g_utf8_validate(contents, (gssize)len, NULL)) {
+        if (!file_content_is_text((const guchar*)contents, MIN(len, FILE_SNIFF_BYTES))) {
+            g_free(contents);
+            gchar* msg = g_strdup_printf("%s is a binary file: previewed, not edited", name);
+            app_notice(app, msg, FALSE);
+            g_free(msg);
+            return;
+        }
+        const gchar* encoding = NULL;
+        gchar* utf8 = text_encoding_to_utf8(contents, len, &encoding);
+        g_free(contents);
+        contents = utf8;
+        len = strlen(contents);
+        gchar* msg = g_strdup_printf("%s read as %s: saving writes UTF-8", name,
+                                     encoding != NULL ? encoding : "another encoding");
+        app_notice(app, msg, FALSE);
+        g_free(msg);
+    }
+
     if (app->editor_dedicated) {
         if (app->editor_box != NULL && !gtk_widget_get_visible(app->editor_box)) {
             app_emit(app, APP_EVENT_LAYOUT_CHANGED);
