@@ -6,6 +6,7 @@
 #include "code_help.h"
 #include "code_intel.h"
 #include "editor_info.h"
+#include "file_save.h"
 #include "theme.h"
 #include "fonts.h"
 #include "focus_route.h"
@@ -241,7 +242,7 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
     gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
     GError* err = NULL;
 
-    if (!g_file_set_contents(full_path, text, -1, &err)) {
+    if (!file_save_text(full_path, text, -1, &err)) {
         gchar* msg = g_strdup_printf("Cannot save to %s: %s", full_path, err ? err->message : "error");
         if (err) g_error_free(err);
         if (tab->mode == EDITOR_MODE_EMACS) emacs_echo(tab, msg);

@@ -128,6 +128,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `minimap_geometry` — minimap scale, scroll offset and slider (VS Code
   style: fixed minimum scale, the minimap scrolls with the view over long
   documents), slider drag and click-to-center mapping.
+- `file_save` — `file_save_text()`: edited text written in place (the target
+  of a symbolic link, permissions kept, read-only files refused, atomic).
 - `dir_scan` — explorer listings read in a worker thread (`dir_scan_read()`):
   one level sorted like the tree (folders first, then the sort mode) and the
   levels of its expanded folders; the folders "expand all" opens

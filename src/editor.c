@@ -5,6 +5,7 @@
 #include "app_events.h"
 #include "file_types.h"
 #include "text_encoding.h"
+#include "file_save.h"
 #include "minimap.h"
 #include "diff_gutter.h"
 #include "pane_geometry.h"
@@ -362,11 +363,7 @@ void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data) {
     EditorTab* tab = (EditorTab*)data;
     if (tab != NULL && tab->is_buffer && tab->path != NULL) {
         /* Automatically back buffer to ~/.config file so user doesn't lose changes */
-        GtkTextIter start, end;
-        gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
-        g_file_set_contents(tab->path, text, -1, NULL);
-        g_free(text);
+        editor_tab_write(tab, tab->path, NULL);
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
     }
     editor_tab_label_update(tab);
@@ -1375,11 +1372,7 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
             EditorTab* t = (EditorTab*)l->data;
             if (t != NULL && g_strcmp0(t->path, app->viewed_path) == 0) {
                 if (t->buffer != NULL && (t->is_buffer || gtk_text_buffer_get_modified(t->buffer))) {
-                    GtkTextIter start, end;
-                    gtk_text_buffer_get_bounds(t->buffer, &start, &end);
-                    gchar* text = gtk_text_buffer_get_text(t->buffer, &start, &end, TRUE);
-                    g_file_set_contents(t->path, text, -1, NULL);
-                    g_free(text);
+                    editor_tab_write(t, t->path, NULL);
                     gtk_text_buffer_set_modified(t->buffer, FALSE);
                     editor_tab_label_update(t);
                 }
@@ -1447,11 +1440,7 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
     if (!editor_confirm_discard(app, tab)) return;
 
     if (tab->buffer != NULL && tab->is_buffer && tab->path != NULL) {
-        GtkTextIter start, end;
-        gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-        gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
-        g_file_set_contents(tab->path, text, -1, NULL);
-        g_free(text);
+        editor_tab_write(tab, tab->path, NULL);
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
     }
 
@@ -1746,11 +1735,7 @@ void editor_save_all_buffers(AppData* app) {
     for (GList* l = app->editors; l != NULL; l = l->next) {
         EditorTab* tab = (EditorTab*)l->data;
         if (tab != NULL && tab->is_buffer && tab->path != NULL && tab->buffer != NULL) {
-            GtkTextIter start, end;
-            gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-            gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
-            g_file_set_contents(tab->path, text, -1, NULL);
-            g_free(text);
+            editor_tab_write(tab, tab->path, NULL);
             gtk_text_buffer_set_modified(tab->buffer, FALSE);
         }
     }
@@ -1761,11 +1746,12 @@ gboolean editor_save_current(AppData* app) {
     if (tab == NULL) {
         return FALSE;
     }
-    GtkTextIter start, end;
-    gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
-    if (!g_file_set_contents(tab->path, text, -1, NULL)) {
-        g_printerr("[ Cannot save: %s ]\n", tab->name);
+    GError* error = NULL;
+    if (!editor_tab_write(tab, tab->path, &error)) {
+        gchar* msg = g_strdup_printf("Cannot save %s: %s", tab->name, error->message);
+        app_notice(app, msg, FALSE);
+        g_free(msg);
+        g_error_free(error);
     } else {
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
         editor_tab_label_update(tab);
@@ -1778,6 +1764,14 @@ gboolean editor_save_current(AppData* app) {
             gtk_widget_grab_focus(tab->view);
         }
     }
-    g_free(text);
     return TRUE;
+}
+
+gboolean editor_tab_write(EditorTab* tab, const gchar* path, GError** error) {
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
+    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
+    gboolean ok = file_save_text(path, text, -1, error);
+    g_free(text);
+    return ok;
 }

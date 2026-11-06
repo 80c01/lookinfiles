@@ -939,11 +939,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
             EditorTab* t = (EditorTab*)l->data;
             if (t != NULL && g_strcmp0(t->path, full) == 0) {
                 if (t->buffer != NULL && (t->is_buffer || gtk_text_buffer_get_modified(t->buffer))) {
-                    GtkTextIter start, end;
-                    gtk_text_buffer_get_bounds(t->buffer, &start, &end);
-                    gchar* text = gtk_text_buffer_get_text(t->buffer, &start, &end, FALSE);
-                    g_file_set_contents(t->path, text, -1, NULL);
-                    g_free(text);
+                    editor_tab_write(t, t->path, NULL);
                     gtk_text_buffer_set_modified(t->buffer, FALSE);
                     editor_tab_label_update(t);
                     app->file_dirty = TRUE;

@@ -54,6 +54,10 @@ void editor_close_page(AppData* app, gint page);
 void editor_close_current(AppData* app);
 void editor_save_all_buffers(AppData* app);
 gboolean editor_save_current(AppData* app);
+
+/* Write the tab's text to path in place (file_save_text()); FALSE with error
+ * set when nothing was written */
+gboolean editor_tab_write(EditorTab* tab, const gchar* path, GError** error);
 /* Take the workspace's tabs out of the window. Returns the content of the
  * dedicated editor panel (notebooks and splits, with their tabs; a reference
  * the caller owns, NULL if empty) to give back to editor_attach_tabs(). */
