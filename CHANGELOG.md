@@ -279,6 +279,8 @@ All notable changes to this project are listed here. The format follows
 - Git status scans no longer pile up while files keep changing (one at a
   time); switching branches no longer freezes the window; change bars skip
   the line diff when the committed version did not change.
+- Selecting a huge commit in the Git Commits tab (a large file added) froze
+  the window while its whole diff was laid out: the first 5000 lines show.
 - Canvas notes logged GTK CSS warnings (`gap`, `@bg_warning`).
 - Saving an Emacs or Vim tab updated the modified flag of its mode line
   (`-U:**-`, `[+]`) only after the next cursor move.
