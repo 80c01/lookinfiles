@@ -32,14 +32,21 @@ make clean        # remove binary, build/ and build-asan/
   fails on a missing window, a GTK warning or critical, a dirty `Ctrl+Q` exit,
   or a minimap shown / hidden more often than once per change (from the
   `LOOKIN_DEBUG_MINIMAP` log: catches a flicker no screenshot would show).
-- `make ui-shots` (`tests/ui/run_ui_test.sh`) checks UI changes in depth. It
-  runs the app under Xvfb, drives a keyboard/mouse scenario with xdotool and
+- `make ui-shots` (`tests/ui/run_ui_test.sh`) checks UI changes in depth
+  (about 3 minutes). Each screenshot is taken as soon as the application is
+  idle (`LOOKIN_UI_PROBE`, see `ui_probe`) and the screen still, not after a
+  fixed delay. It runs the app under Xvfb, drives a keyboard/mouse scenario with xdotool and
   saves one screenshot per step in `build/ui/shots/` — open the relevant ones
   to check the result. It fails on a missing window, any GTK warning or
   critical in the log (e.g. invalid Pango markup), or a dirty `Ctrl+Q` exit.
 - To prove a refactoring changes nothing visible: run `make ui-shots` on the
   reference commit (e.g. in a `git worktree`), copy `build/ui/shots` aside,
   then run `UI_BASELINE=<that copy> make ui-shots` on your branch. The terminal
-  step is not compared (shell prompt timing varies).
+  step is not compared (shell prompt timing varies). The fixture files all
+  date from 2000-01-01, so the date sort does not depend on timing. A few
+  steps can still differ between two runs because of things on a timer:
+  status-bar notices that expire, "just now" / "1 min ago" on files the
+  scenario edits, hover popups and fading scrollbars. Check such a
+  difference by eye before taking it for a regression.
 - When adding a feature with a shortcut, add a step to the scenario in
   `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).

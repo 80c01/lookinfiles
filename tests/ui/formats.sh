@@ -61,6 +61,7 @@
     cp "$ROOT/tests/fixtures/preview/deck.pptx" 44-deck.pptx   # theme, master, layouts
     # Maildir folder (a directory: listed first)
     cp -r "$ROOT/tests/fixtures/mail/Maildir" 00-Maildir
+    find . -exec touch -h -d '2000-01-01 00:00:00' {} +   # dates shown do not vary
 ) || { echo "ui-shots: format fixtures failed"; exit 1; }
 
 format_scenario() {

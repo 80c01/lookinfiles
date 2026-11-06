@@ -92,6 +92,9 @@ printf 'Host demo-server\n    HostName 192.0.2.10\n    User demo\n' > "$FIX/home
     # (long file: the minimap shows them too)
     seq -f 'plain line %g' 1 1500 | sed -e '1s/1/one/' -e '2a added line' -e '50,59d' \
         -e '90,95s/$/ (edited)/' -e '$a added at the end' > notes.txt
+    # One fixed date: the date sort and "N min ago" do not depend on how long
+    # the steps take, only files changed by the scenario are newer
+    find . -path ./.git -prune -o -exec touch -h -d '2000-01-01 00:00:00' {} +
 ) || { echo "ui-shots: fixture setup failed"; exit 1; }
 
 # --- Virtual display (free display number chosen by Xvfb)
@@ -104,6 +107,8 @@ while [ ! -s "$OUT/display" ] && [ $i -lt 50 ]; do sleep 0.1; i=$((i + 1)); done
 export DISPLAY=":$(cat "$OUT/display")"
 export GDK_BACKEND=x11 GSK_RENDERER=cairo NO_AT_BRIDGE=1
 export HOME="$FIX/home" XDG_CONFIG_HOME="$FIX/home/.config"
+export LOOKIN_UI_PROBE="$OUT/probe"
+PROBE=$LOOKIN_UI_PROBE
 
 APP=
 cleanup() {
@@ -129,9 +134,35 @@ xdotool windowfocus --sync "$WIN" 2>/dev/null
 
 # --- Scenario: one screenshot per step, named NN_<step>.png
 n=0
+# Screen hash, to see when it stops changing
+screen_hash() { import -window root rgb:- | md5sum; }
+# Wait until the application has handled everything queued (LOOKIN_UI_PROBE:
+# it writes a new number to $PROBE once idle after SIGUSR1), at most 3 s
+app_idle() {
+    before=$(cat "$PROBE" 2>/dev/null)
+    kill -USR1 "$APP" 2>/dev/null || return
+    j=0
+    while [ "$(cat "$PROBE" 2>/dev/null)" = "$before" ] && [ $j -lt 300 ]; do
+        sleep 0.01
+        j=$((j + 1))
+    done
+}
+# Shoot once the application is idle and the screen still (background work,
+# such as a preview read in a thread, ends with a redraw: at most about 1 s)
 shot() {
     n=$((n + 1))
-    sleep 1
+    sleep 0.05
+    app_idle
+    prev=$(screen_hash)
+    i=0
+    while [ $i -lt 20 ]; do
+        sleep 0.05
+        app_idle
+        cur=$(screen_hash)
+        [ "$cur" = "$prev" ] && break
+        prev=$cur
+        i=$((i + 1))
+    done
     import -window root "$SHOTS/$(printf %02d $n)_$1.png"
 }
 key() { xdotool key --delay 120 "$@"; }
