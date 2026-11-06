@@ -435,6 +435,8 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
             gsize len = 0;
             if (tab->path != NULL && g_file_get_contents(tab->path, &text, &len, NULL)) {
                 tab->line_ending = text_line_ending_detect(text, len);
+                tab->final_break = text_final_break(text, len);
+                text[len - strlen(tab->final_break)] = '\0';
                 if (!g_utf8_validate(text, -1, NULL)) {
                     gchar* valid = g_utf8_make_valid(text, -1);
                     g_free(text);

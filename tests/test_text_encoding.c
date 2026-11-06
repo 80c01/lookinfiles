@@ -69,11 +69,23 @@ static void test_line_ending(void) {
     g_assert_cmpstr(text_line_ending_detect("a\r\n", 2), ==, "Mac (CR)");
 }
 
+static void test_final_break(void) {
+    g_assert_cmpstr(text_final_break("a\nb\n", 4), ==, "\n");
+    g_assert_cmpstr(text_final_break("a\r\n", 3), ==, "\r\n");
+    g_assert_cmpstr(text_final_break("a\r", 2), ==, "\r");
+    g_assert_cmpstr(text_final_break("\n", 1), ==, "\n");
+    g_assert_cmpstr(text_final_break("a\n\n", 3), ==, "\n");
+    g_assert_cmpstr(text_final_break("a", 1), ==, "");
+    g_assert_cmpstr(text_final_break("", 0), ==, "");
+    g_assert_cmpstr(text_final_break(NULL, 0), ==, "");
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/text_encoding/utf8", test_utf8);
     g_test_add_func("/text_encoding/utf16", test_utf16);
     g_test_add_func("/text_encoding/legacy", test_legacy);
     g_test_add_func("/text_encoding/line_ending", test_line_ending);
+    g_test_add_func("/text_encoding/final_break", test_final_break);
     return g_test_run();
 }

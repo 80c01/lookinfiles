@@ -97,6 +97,8 @@ typedef struct {
     gchar* status_text;   /* status message */
     gpointer mode_state;  /* mode-specific state (EditorModeState*) */
     const gchar* line_ending; /* "Unix (LF)"... detected at load (static) */
+    const gchar* final_break; /* break the file ended with, kept out of the
+                               * buffer and written back at save (static) */
     /* Cursor and selection of the view while another view of its buffer (a
      * split view) has them: the buffer has one cursor, given to the view in use */
     GtkTextMark* view_insert;

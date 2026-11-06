@@ -1197,6 +1197,10 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     tab->app = app;
     tab->nb = GTK_WIDGET(target_nb);
     tab->line_ending = text_line_ending_detect(contents, len);
+    /* The buffer holds the lines without the final break: a text view would
+     * show it as one more, empty, line */
+    tab->final_break = text_final_break(contents, len);
+    contents[len - strlen(tab->final_break)] = '\0';
     const gchar* cfg = g_get_user_config_dir();
     tab->is_buffer = (cfg != NULL && g_str_has_prefix(full, cfg));
     if (is_org_file(name)) {
@@ -1257,6 +1261,7 @@ EditorTab* editor_add_view(AppData* app, EditorTab* tab, GtkNotebook* nb) {
     twin->nb = GTK_WIDGET(nb);
     twin->is_buffer = tab->is_buffer;
     twin->line_ending = tab->line_ending;
+    twin->final_break = tab->final_break;
     twin->mode = tab->mode;
     twin->text_mode = tab->text_mode;
     editor_view_build(app, twin, tab->buffer);
@@ -1770,7 +1775,9 @@ gboolean editor_save_current(AppData* app) {
 gboolean editor_tab_write(EditorTab* tab, const gchar* path, GError** error) {
     GtkTextIter start, end;
     gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
+    gchar* lines = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
+    gchar* text = g_strconcat(lines, tab->final_break, NULL);
+    g_free(lines);
     gboolean ok = file_save_text(path, text, -1, error);
     g_free(text);
     return ok;

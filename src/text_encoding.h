@@ -22,4 +22,9 @@ gchar* text_encoding_to_utf8(const gchar* data, gsize len, const gchar** encodin
  * (ties go to LF, then CRLF); text without a line break is "Unix (LF)". */
 const gchar* text_line_ending_detect(const gchar* data, gsize len);
 
+/* Line break the text ends with: "\r\n", "\n", "\r" or "" (static strings).
+ * An editor strips it at load (a text view would show an extra empty last
+ * line) and writes it back at save. */
+const gchar* text_final_break(const gchar* data, gsize len);
+
 #endif /* TEXT_ENCODING_H */

@@ -99,3 +99,11 @@ const gchar* text_line_ending_detect(const gchar* data, gsize len) {
     if (cr > lf && cr > crlf) return "Mac (CR)";
     return "Unix (LF)";
 }
+
+const gchar* text_final_break(const gchar* data, gsize len) {
+    if (data == NULL || len == 0) return "";
+    if (data[len - 1] == '\n') {
+        return (len >= 2 && data[len - 2] == '\r') ? "\r\n" : "\n";
+    }
+    return data[len - 1] == '\r' ? "\r" : "";
+}

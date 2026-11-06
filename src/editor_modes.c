@@ -239,7 +239,9 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
 
     GtkTextIter start, end;
     gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-    gchar* text = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
+    gchar* lines = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
+    gchar* text = g_strconcat(lines, tab->final_break, NULL);
+    g_free(lines);
     GError* err = NULL;
 
     if (!file_save_text(full_path, text, -1, &err)) {
