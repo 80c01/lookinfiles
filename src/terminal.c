@@ -66,16 +66,17 @@ void terminal_refresh_theme(void) {
     }
 }
 
-/* Async spawn callback: report failures, then hand child PID to terminal */
+/* Async spawn callback: report failures. VTE already watches the child (and
+ * hangs it up when the terminal was closed meanwhile: term is then NULL); the
+ * error belongs to VTE. */
 static void on_spawn_result(VteTerminal* term, GPid pid, GError* error,
                             gpointer data) {
+    (void)term;
+    (void)pid;
     (void)data;
     if (error != NULL) {
         g_printerr("[ Cannot start terminal shell: %s ]\n", error->message);
-        g_error_free(error);
-        return;
     }
-    vte_terminal_watch_child(term, pid);
 }
 
 /* The shell to run: $SHELL, else bash; on Windows $SHELL when it is a

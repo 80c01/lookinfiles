@@ -768,11 +768,14 @@ void vte_terminal_spawn_async(VteTerminal* t, VtePtyFlags pty_flags, const char*
         g_free(msg);
         gtk_widget_queue_draw(GTK_WIDGET(t));
     }
+    /* As VTE: the child is watched here, the error stays ours */
+    if (t->pty != NULL) {
+        vte_terminal_watch_child(t, pid);
+    }
     if (callback != NULL) {
         callback(t, pid, error, user_data);
-    } else if (error != NULL) {
-        g_error_free(error);
     }
+    g_clear_error(&error);
 }
 
 void vte_terminal_watch_child(VteTerminal* t, GPid pid) {
