@@ -19,10 +19,10 @@ static void set_source_role(cairo_t* cr, PaletteRole role, double alpha) {
 /* Height of the offscreen render, in minimap heights: scrolling within it
  * only repaints, past it the render is rebuilt around the new position */
 #define MINIMAP_CACHE_SCREENS 3
-/* A visibility change waits until the layout has been stable this long,
- * at most MINIMAP_MAX_WAITS times */
-#define MINIMAP_SETTLE_MS 200
-#define MINIMAP_MAX_WAITS 10
+/* A visibility change that may come from a height estimate is checked again
+ * one frame later, at most MINIMAP_MAX_WAITS times (about 100 ms) */
+#define MINIMAP_SETTLE_MS 16
+#define MINIMAP_MAX_WAITS 6
 #define MINIMAP_MIN_LINE_PX 10
 
 /* Scale, minimap scroll and slider for the view's current position */
@@ -443,12 +443,12 @@ typedef struct {
     guint waits;
 } MinimapVisState;
 
-/* While a text is laid out or its viewer resized, GtkTextView reports
- * estimated heights that jump up and down: following them makes the minimap
- * flicker. A change waits until the viewer size and the content height have
- * stayed the same for MINIMAP_SETTLE_MS, except showing it in an unchanged
- * viewer, hiding it for a text too short to need it, or a change the content
- * height does not explain (another notebook page). */
+/* While a text is laid out or its viewer resized, GtkTextView may report an
+ * estimated height for a frame: following it makes the minimap flicker. Such a
+ * change is confirmed on the next frame: showing after a resize, and hiding
+ * while the size or height is still moving for a text long enough to need the
+ * minimap. Everything else applies at once, as does any change while the view
+ * is off screen (nothing can be seen flickering). */
 static gboolean vis_must_wait(GtkWidget* minimap, GtkWidget* view, gboolean useful) {
     MinimapVisState* st = g_object_get_data(G_OBJECT(minimap), "minimap-vis");
     if (st == NULL) {
@@ -469,10 +469,10 @@ static gboolean vis_must_wait(GtkWidget* minimap, GtkWidget* view, gboolean usef
 
     gboolean shown = gtk_widget_get_visible(minimap);
     gboolean wait = FALSE;
-    if (shown != useful) {
-        wait = resized || (shown && !settled && may_need_bar(view, page));
+    if (shown != useful && gtk_widget_get_mapped(view)) {
+        wait = useful ? resized : ((resized || !settled) && may_need_bar(view, page));
     }
-    /* Content that never settles (still loading) gets its answer anyway */
+    /* Content that keeps moving (panel drag, loading) gets its answer anyway */
     if (wait && ++st->waits > MINIMAP_MAX_WAITS) {
         wait = FALSE;
     }
@@ -482,7 +482,7 @@ static gboolean vis_must_wait(GtkWidget* minimap, GtkWidget* view, gboolean usef
     return wait;
 }
 
-/* Show or hide the minimap now, or check again after MINIMAP_SETTLE_MS by
+/* Show or hide the minimap now, or check again next frame by
  * calling `again` (which stores its source in *source) */
 static void vis_update(GtkWidget* minimap, GtkWidget* view, MinimapCache* cache, gboolean useful,
                        guint* source, GSourceFunc again, gpointer data) {
