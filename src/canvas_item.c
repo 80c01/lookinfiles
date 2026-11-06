@@ -149,12 +149,15 @@ static CanvasItem* item_base_new(CanvasPage* p, GtkWidget* surface, CanvasBlockK
     GtkWidget* frame = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(frame, "canvas-block");
     gtk_widget_set_focusable(frame, TRUE);
-    GtkWidget* grip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_add_css_class(grip, "canvas-grip");
-    gtk_widget_set_cursor_from_name(grip, "move");
-    gtk_widget_set_tooltip_text(grip, "Drag to Move (Esc, then Arrows)");
-    g_object_set_data(G_OBJECT(grip), "canvas-grip", GINT_TO_POINTER(1));
-    gtk_box_append(GTK_BOX(frame), grip);
+    /* A shape is moved by dragging it: no bar above it */
+    if (kind != CANVAS_BLOCK_SHAPE) {
+        GtkWidget* grip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+        gtk_widget_add_css_class(grip, "canvas-grip");
+        gtk_widget_set_cursor_from_name(grip, "move");
+        gtk_widget_set_tooltip_text(grip, "Drag to Move (Esc, then Arrows)");
+        g_object_set_data(G_OBJECT(grip), "canvas-grip", GINT_TO_POINTER(1));
+        gtk_box_append(GTK_BOX(frame), grip);
+    }
 
     GtkWidget* overlay = gtk_overlay_new();
     if (content != NULL) gtk_overlay_set_child(GTK_OVERLAY(overlay), content);
@@ -281,8 +284,8 @@ static CanvasItem* add_shape(CanvasPage* p, GtkWidget* surface, const CanvasBloc
     }
     it->x = b->x;
     it->y = b->y;
-    it->w = MAX(b->w, 40);
-    it->h = MAX(b->h, 40);
+    it->w = MAX(b->w, MIN_SHAPE_SIZE);
+    it->h = MAX(b->h, MIN_SHAPE_SIZE);
     it->aspect = (gdouble)it->w / it->h;
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area), on_shape_draw, it, NULL);
     canvas_item_place(it);

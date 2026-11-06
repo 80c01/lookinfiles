@@ -391,6 +391,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `GtkFixed`; move / resize by dragging, pictures pasted (`Ctrl+V`) or dropped
   into `media/`; saved automatically, on close and at quit (never while the page
   is being destroyed). Not an editor tab: `app->editors` stays text only.
+  Its parts: `canvas_toolbar` (floating tool bar: select, shapes, pencil,
+  text, table, eraser, and the grid / align / crop menu), `canvas_props`
+  (floating panel: shape style, or text formatting), `canvas_draw` (a shape
+  following the pointer while it is drawn), `canvas_item` (the block widgets),
+  `canvas_rough_draw` (hand-drawn rendering), `canvas_geometry` (snap, align,
+  drag box, 45-degree lines; unit-tested).
 - `bookmark_dialog` — the add / edit dialogs of the bookmarks view (name,
   location or folder icon, parent folder) and the target helpers they share
   with `bookmarks` (`bookmark_display_location()`, `bookmark_default_name()`).

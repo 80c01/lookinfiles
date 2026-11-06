@@ -41,4 +41,20 @@ typedef enum {
 /* Apply alignment or distribution to an array of rects */
 void canvas_align_boxes(CanvasRect* rects, guint count, CanvasAlignOp op);
 
+/* Room kept around the points of a line, arrow or pencil stroke inside its
+ * block (stroke width, arrowhead) */
+#define CANVAS_LINE_PAD 16
+
+/* Box dragged from (x0, y0) to (x1, y1), whatever the direction; square:
+ * equal sides, the shorter one grown (Shift) */
+void canvas_drag_box(gdouble x0, gdouble y0, gdouble x1, gdouble y1, gboolean square, CanvasRect* out);
+
+/* End point (*x1, *y1) of a line from (x0, y0) turned to the nearest
+ * multiple of 45 degrees, its length kept (Shift) */
+void canvas_snap_angle(gdouble x0, gdouble y0, gdouble* x1, gdouble* y1);
+
+/* Coordinate v of the range [from, from + from_len] placed in
+ * [to, to + to_len]; an empty range goes to the middle */
+gdouble canvas_map_coord(gdouble v, gdouble from, gdouble from_len, gdouble to, gdouble to_len);
+
 #endif /* CANVAS_GEOMETRY_H */

@@ -9,6 +9,9 @@
 /* Frameless, non-focusable icon-only button (sidebar toolbars, close buttons) */
 GtkWidget* icon_button_new(const gchar* icon_name, const gchar* tooltip);
 
+/* Image of a theme icon (in a menu button, a toggle button...) */
+GtkWidget* icon_image_new(const gchar* icon_name);
+
 /* Replace the content of a button with an icon followed by text (text may be NULL) */
 void icon_button_set_content(GtkWidget* button, const gchar* icon_name, const gchar* text);
 

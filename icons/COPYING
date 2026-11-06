@@ -1,6 +1,7 @@
 Icons bundled into LookinFiles (icons/scalable/actions/)
 
-All icons except lookin-utilities-terminal-symbolic.svg and the
+All icons except lookin-utilities-terminal-symbolic.svg, the
+lookin-canvas-*-symbolic.svg Canvas tools and the
 lookin-ft-*-symbolic.svg file-type icons are copied
 unchanged (renamed with the "lookin-" prefix) from the Adwaita icon theme
 by the GNOME Project, https://gitlab.gnome.org/GNOME/adwaita-icon-theme
@@ -12,8 +13,9 @@ License texts:
   CC-BY-SA-4.0  https://creativecommons.org/licenses/by-sa/4.0/
   LGPL-3        https://www.gnu.org/licenses/lgpl-3.0.html
 
-lookin-utilities-terminal-symbolic.svg was drawn for this project in the
-Adwaita symbolic style and is released under the same terms.
+lookin-utilities-terminal-symbolic.svg and the lookin-canvas-*-symbolic.svg
+Canvas tool icons were drawn for this project in the Adwaita symbolic style
+and are released under the same terms.
 
 The file-type icons lookin-ft-*-symbolic.svg are the glyphs of the Seti
 icon font of VS Code (extensions/theme-seti/icons/seti.woff in

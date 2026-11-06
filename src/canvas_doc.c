@@ -95,7 +95,7 @@ CanvasBlock* canvas_doc_add_image(CanvasDoc* doc, gint x, gint y, gint w, gint h
 }
 
 CanvasBlock* canvas_doc_add_shape(CanvasDoc* doc, gint x, gint y, gint w, gint h, CanvasShapeType shape_type) {
-    CanvasBlock* b = block_new(CANVAS_BLOCK_SHAPE, x, y, MAX(w, 20), MAX(h, 20));
+    CanvasBlock* b = block_new(CANVAS_BLOCK_SHAPE, x, y, MAX(w, 16), MAX(h, 16));
     b->shape_type = shape_type;
     g_ptr_array_add(doc->blocks, b);
     return b;

@@ -7,6 +7,7 @@
 #define ITEM_KEY "canvas-item"
 #define MIN_TEXT_WIDTH 80
 #define MIN_IMAGE_SIZE 24
+#define MIN_SHAPE_SIZE 16
 
 typedef struct CanvasPage CanvasPage;
 

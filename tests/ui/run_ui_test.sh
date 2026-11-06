@@ -355,6 +355,13 @@ key ctrl+a ctrl+b;      shot canvas_text_bold
 key Escape;             shot canvas_block_selected
 key Right Right shift+Down;  shot canvas_block_moved
 key Delete;             shot canvas_block_deleted
+# Drawing tools: R and a drag draw a rectangle (selected, its style in the
+# panel), P and a drag a pencil stroke, Esc goes back to Select
+key r;                  shot canvas_tool_rectangle
+drag 700 400 900 520;   shot canvas_rect_drawn
+key p; drag 600 600 640 660; drag 640 660 800 640
+                        shot canvas_pencil_drawn
+key Escape;             shot canvas_tool_select
 key ctrl+w;             shot canvas_closed
 key ctrl+u;             shot files_after_notes
 key ctrl+shift+r;       shot remote_view

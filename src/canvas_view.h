@@ -6,6 +6,9 @@
 /* The Canvas page of the preview notebook: edits a Canvas note (canvas_doc.h),
  * text boxes and pictures placed freely on a page.
  *
+ * - A floating tool bar (canvas_toolbar.h) picks the tool: select, shapes
+ *   and pencil drawn with the mouse, text box, table, eraser; a panel
+ *   (canvas_props.h) sets the shape style or formats the text.
  * - Double click on the page (or Ctrl+Enter): new text box; Ctrl+V with a
  *   picture in the clipboard, or a dropped image file: new picture.
  * - Drag the bar above a block (or a picture itself) to move it, its corner

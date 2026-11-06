@@ -53,27 +53,53 @@ A Canvas note is a freeform workspace of text boxes, hand-drawn shapes,
 tables and pictures, placed where you want them. It opens in the **Canvas**
 tab of the preview panel (one canvas at a time) and is saved automatically.
 
-### Blocks and elements
+### Tools and blocks
 
-| Block type | How to create / edit |
+A floating tool bar sits at the top of the page. Pick a tool, then press
+and drag on the page; the letter in brackets picks it from the keyboard
+(when you are not typing in a block).
+
+| Tool | Use |
 |---|---|
-| Text box | Double-click on the page, `Ctrl+Enter`, or the **+ Text** button |
-| Shapes (Excalidraw style) | **+ Shape** menu: rectangle, rounded rectangle, ellipse, diamond, line, arrow, or freehand pencil sketch; stroke and fill styles (solid, rough sketch) |
-| Tables | **+ Table** button: interactive grid of editable cells with `+ Row`, `- Row`, `+ Col`, `- Col` controls |
-| Pictures | `Ctrl+V` with an image copied, or drop image files onto the page |
-| Image crop | Select an image and click **Crop** to adjust visible borders |
+| Select (`V`) | Select, move and resize blocks |
+| Rectangle (`R`), Diamond (`D`), Ellipse (`O`) | Drag to draw the shape (`Shift`: square, circle); a click makes one of the default size |
+| Arrow (`A`), Line (`L`) | Drag from the start to the end (`Shift`: multiple of 45 degrees) |
+| Pencil (`P`) | Draw freehand; the pencil stays chosen for the next stroke |
+| Text box (`T`) | Click where the text goes (double click or `Ctrl+Enter` also work) |
+| Table (`B`) | Click where the table goes: a 3 × 3 grid of editable cells with `+ Row`, `- Row`, `+ Col`, `- Col` controls |
+| Eraser (`E`) | Click or drag over blocks to delete them |
+
+After drawing a shape, the tool goes back to Select (`Esc` also does).
+The menu at the end of the bar holds **Snap to Grid**, the alignment
+commands and **Crop Selected Picture**.
+
+Pictures come from `Ctrl+V` with an image copied, or image files dropped
+onto the page; double click a picture to crop it.
+
+### Properties panel
+
+A panel on the left shows what the current tool or block can change:
+
+- **Shapes** (while a drawing tool is chosen, or a shape is selected):
+  stroke colour, fill (none, hatched, solid; closed shapes only), stroke
+  width, and hand-drawn or clean style. The choice applies to the selected
+  shape and to the next ones drawn.
+- **Text** (while a text box is edited or selected): paragraph style
+  (headings, body, quote), bold, italic, underline, strikethrough, more
+  styles (highlight, code, fonts, sizes), text colour, lists, task
+  checkboxes and indent.
 
 ### Canvas actions and shortcuts
 
 | Action | How |
 |---|---|
-| Move a block | Drag the handle bar above it (or drag an image directly) |
+| Move a block | Drag the handle bar above it (or drag a picture or a shape directly) |
 | Resize a block | Drag its bottom-right corner (pictures keep proportions) |
-| Snap & Smart Guides | Magnetic snapping to nearby block edges and grid (toggle **Snap**) |
-| Align blocks | **Align** menu: left, center, right, top, middle, bottom, distribute |
-| Predefined styles | **Preset** menu: Title (H1), Subtitle (H2), Body text, Quote callout |
+| Snap & Smart Guides | Magnetic snapping to nearby block edges and grid (**Snap to Grid** in the tool bar menu) |
+| Align blocks | Tool bar menu: left, centers, right, top, middles, bottom, distribute |
+| Predefined styles | Paragraph style menu of the properties panel: Heading 1, Heading 2, Body text, Quote (`Ctrl+Alt+1`, `2`, `0`, `Q`) |
 | Text styling | `Ctrl+B` (bold), `Ctrl+I` (italic), `Ctrl+U` (underline), `Ctrl+Shift+S` (strikethrough), highlight, monospace, font family, text color |
-| Lists & Indents | Bullet list, numbered list, indent more / indent less buttons; Enter auto-continues lists |
+| Lists & Indents | Bullet list, numbered list, indent more / indent less in the properties panel; Enter auto-continues lists |
 | Interactive Checkboxes | Checkbox button or type `- [ ] `; click `[ ]` / `[X]` or press `Ctrl+Space` to toggle |
 | Select block / stop editing | `Esc` |
 | Next / previous block | `Tab` / `Shift+Tab` |

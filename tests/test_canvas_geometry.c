@@ -1,6 +1,8 @@
 /* Unit tests for src/canvas_geometry.c: grid snap and object alignment. */
 #include "canvas_geometry.h"
 
+#include <math.h>
+
 static void test_snap_coord(void) {
     g_assert_cmpint(canvas_snap_coord(0, 16), ==, 0);
     g_assert_cmpint(canvas_snap_coord(7, 16), ==, 0);
@@ -68,10 +70,51 @@ static void test_align_boxes(void) {
     g_assert_cmpint(boxes[2].x, ==, 100);
 }
 
+static void test_drag_box(void) {
+    CanvasRect r;
+    canvas_drag_box(100, 100, 40, 160, FALSE, &r);
+    g_assert_cmpint(r.x, ==, 40);
+    g_assert_cmpint(r.y, ==, 100);
+    g_assert_cmpint(r.w, ==, 60);
+    g_assert_cmpint(r.h, ==, 60);
+    /* Square: the shorter side grows, towards the drag */
+    canvas_drag_box(100, 100, 70, 180, TRUE, &r);
+    g_assert_cmpint(r.x, ==, 20);
+    g_assert_cmpint(r.y, ==, 100);
+    g_assert_cmpint(r.w, ==, 80);
+    g_assert_cmpint(r.h, ==, 80);
+}
+
+static void test_snap_angle(void) {
+    gdouble x = 100, y = 7;
+    canvas_snap_angle(0, 0, &x, &y);
+    g_assert_cmpfloat_with_epsilon(y, 0.0, 1e-9);
+    g_assert_cmpfloat_with_epsilon(x, sqrt(100.0 * 100.0 + 49.0), 1e-9);
+    x = -50;
+    y = -45;
+    canvas_snap_angle(0, 0, &x, &y);
+    g_assert_cmpfloat_with_epsilon(x, y, 1e-9);
+    g_assert_true(x < 0);
+    /* No length: unchanged */
+    x = 3;
+    y = 4;
+    canvas_snap_angle(3, 4, &x, &y);
+    g_assert_cmpfloat(x, ==, 3);
+    g_assert_cmpfloat(y, ==, 4);
+}
+
+static void test_map_coord(void) {
+    g_assert_cmpfloat(canvas_map_coord(15, 10, 10, 100, 40), ==, 120);
+    g_assert_cmpfloat(canvas_map_coord(5, 5, 0, 100, 40), ==, 120);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/canvas_geometry/snap_coord", test_snap_coord);
     g_test_add_func("/canvas_geometry/snap_box", test_snap_box);
     g_test_add_func("/canvas_geometry/align_boxes", test_align_boxes);
+    g_test_add_func("/canvas_geometry/drag_box", test_drag_box);
+    g_test_add_func("/canvas_geometry/snap_angle", test_snap_angle);
+    g_test_add_func("/canvas_geometry/map_coord", test_map_coord);
     return g_test_run();
 }

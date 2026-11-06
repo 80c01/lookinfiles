@@ -1,4 +1,5 @@
 #include "canvas_rough_draw.h"
+#include "canvas_geometry.h"
 #include "palette.h"
 
 #include <math.h>
@@ -88,6 +89,98 @@ static void draw_sketch_fill(cairo_t* cr, double x, double y, double w, double h
     cairo_restore(cr);
 }
 
+/* Points of a line, arrow or pencil stroke, placed in the block: their
+ * bounding box fills it, CANVAS_LINE_PAD from its sides */
+typedef struct {
+    const GArray* pts;
+    double bx, by, bw, bh;   /* bounding box of the points */
+    double width, height;    /* block */
+} PointMap;
+
+static gboolean point_map_init(PointMap* m, const GArray* pts, gint width, gint height) {
+    if (pts == NULL || pts->len < 2) return FALSE;
+    const CanvasPoint* p0 = &g_array_index(pts, CanvasPoint, 0);
+    double x0 = p0->x, y0 = p0->y, x1 = p0->x, y1 = p0->y;
+    for (guint i = 1; i < pts->len; i++) {
+        const CanvasPoint* p = &g_array_index(pts, CanvasPoint, i);
+        x0 = MIN(x0, p->x);
+        y0 = MIN(y0, p->y);
+        x1 = MAX(x1, p->x);
+        y1 = MAX(y1, p->y);
+    }
+    m->pts = pts;
+    m->bx = x0;
+    m->by = y0;
+    m->bw = x1 - x0;
+    m->bh = y1 - y0;
+    m->width = width;
+    m->height = height;
+    return TRUE;
+}
+
+static void point_map_get(const PointMap* m, guint i, double* x, double* y) {
+    const CanvasPoint* p = &g_array_index(m->pts, CanvasPoint, i);
+    double pad = CANVAS_LINE_PAD;
+    *x = canvas_map_coord(p->x, m->bx, m->bw, pad, MAX(m->width - 2 * pad, 0));
+    *y = canvas_map_coord(p->y, m->by, m->bh, pad, MAX(m->height - 2 * pad, 0));
+}
+
+static void draw_arrow_head(cairo_t* cr, double fx, double fy, double tx, double ty,
+                            double stroke_w, gboolean rough, double j_amt) {
+    double angle = atan2(ty - fy, tx - fx);
+    double head_len = CLAMP(stroke_w * 6.0, 10.0, 24.0);
+    double a1 = angle + M_PI * 0.85;
+    double a2 = angle - M_PI * 0.85;
+    if (rough) {
+        draw_rough_line(cr, tx, ty, tx + head_len * cos(a1), ty + head_len * sin(a1), j_amt);
+        draw_rough_line(cr, tx, ty, tx + head_len * cos(a2), ty + head_len * sin(a2), j_amt);
+    } else {
+        cairo_move_to(cr, tx, ty);
+        cairo_line_to(cr, tx + head_len * cos(a1), ty + head_len * sin(a1));
+        cairo_move_to(cr, tx, ty);
+        cairo_line_to(cr, tx + head_len * cos(a2), ty + head_len * sin(a2));
+    }
+}
+
+/* Line or arrow between its first and last points */
+static void draw_point_line(cairo_t* cr, const PointMap* m, gboolean arrow, double stroke_w,
+                            gboolean rough, double j_amt) {
+    double x0, y0, x1, y1;
+    point_map_get(m, 0, &x0, &y0);
+    point_map_get(m, m->pts->len - 1, &x1, &y1);
+    if (rough) {
+        draw_rough_line(cr, x0, y0, x1, y1, j_amt);
+    } else {
+        cairo_move_to(cr, x0, y0);
+        cairo_line_to(cr, x1, y1);
+    }
+    if (arrow) draw_arrow_head(cr, x0, y0, x1, y1, stroke_w, rough, j_amt);
+    cairo_stroke(cr);
+}
+
+/* Pencil stroke, smoothed: quadratic curves through the middles of its
+ * segments */
+static void draw_point_stroke(cairo_t* cr, const PointMap* m) {
+    double px, py;
+    point_map_get(m, 0, &px, &py);
+    cairo_move_to(cr, px, py);
+    double cx = px, cy = py;
+    for (guint i = 1; i < m->pts->len; i++) {
+        double x, y;
+        point_map_get(m, i, &x, &y);
+        double mx = (px + x) / 2.0;
+        double my = (py + y) / 2.0;
+        cairo_curve_to(cr, cx + 2.0 / 3.0 * (px - cx), cy + 2.0 / 3.0 * (py - cy),
+                       mx + 2.0 / 3.0 * (px - mx), my + 2.0 / 3.0 * (py - my), mx, my);
+        cx = mx;
+        cy = my;
+        px = x;
+        py = y;
+    }
+    cairo_line_to(cr, px, py);
+    cairo_stroke(cr);
+}
+
 void canvas_rough_draw_shape(cairo_t* cr, const CanvasBlock* b, gint width, gint height) {
     if (cr == NULL || b == NULL || b->kind != CANVAS_BLOCK_SHAPE) return;
 
@@ -103,6 +196,24 @@ void canvas_rough_draw_shape(cairo_t* cr, const CanvasBlock* b, gint width, gint
 
     double stroke_w = (b->stroke_width > 0) ? (double)b->stroke_width : 2.0;
     double j_amt = b->rough ? 1.8 : 0.0;
+
+    /* Lines, arrows and pencil strokes drawn on the page follow their points */
+    PointMap map;
+    gboolean by_points = (b->shape_type == CANVAS_SHAPE_LINE || b->shape_type == CANVAS_SHAPE_ARROW ||
+                          b->shape_type == CANVAS_SHAPE_FREEHAND) &&
+                         point_map_init(&map, b->points, width, height);
+    if (by_points) {
+        cairo_set_source_rgba(cr, r, g, bl, 0.95);
+        cairo_set_line_width(cr, stroke_w);
+        cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+        cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+        if (b->shape_type == CANVAS_SHAPE_FREEHAND) {
+            draw_point_stroke(cr, &map);
+        } else {
+            draw_point_line(cr, &map, b->shape_type == CANVAS_SHAPE_ARROW, stroke_w, b->rough, j_amt);
+        }
+        return;
+    }
 
     /* Fill */
     if (b->fill_style == CANVAS_FILL_SOLID) {
@@ -196,34 +307,12 @@ void canvas_rough_draw_shape(cairo_t* cr, const CanvasBlock* b, gint width, gint
             cairo_move_to(cr, x, y);
             cairo_line_to(cr, ax2, ay2);
         }
-        /* Arrowhead */
-        double angle = atan2(ay2 - y, ax2 - x);
-        double head_len = CLAMP(stroke_w * 6.0, 10.0, 24.0);
-        double a1 = angle + M_PI * 0.85;
-        double a2 = angle - M_PI * 0.85;
-        if (b->rough) {
-            draw_rough_line(cr, ax2, ay2, ax2 + head_len * cos(a1), ay2 + head_len * sin(a1), j_amt);
-            draw_rough_line(cr, ax2, ay2, ax2 + head_len * cos(a2), ay2 + head_len * sin(a2), j_amt);
-        } else {
-            cairo_move_to(cr, ax2, ay2);
-            cairo_line_to(cr, ax2 + head_len * cos(a1), ay2 + head_len * sin(a1));
-            cairo_move_to(cr, ax2, ay2);
-            cairo_line_to(cr, ax2 + head_len * cos(a2), ay2 + head_len * sin(a2));
-        }
+        draw_arrow_head(cr, x, y, ax2, ay2, stroke_w, b->rough, j_amt);
         cairo_stroke(cr);
         break;
     }
 
     case CANVAS_SHAPE_FREEHAND:
-        if (b->points != NULL && b->points->len >= 2) {
-            const CanvasPoint* p0 = &g_array_index(b->points, CanvasPoint, 0);
-            cairo_move_to(cr, p0->x, p0->y);
-            for (guint i = 1; i < b->points->len; i++) {
-                const CanvasPoint* p1 = &g_array_index(b->points, CanvasPoint, i);
-                cairo_line_to(cr, p1->x, p1->y);
-            }
-            cairo_stroke(cr);
-        }
         break;
     }
 }

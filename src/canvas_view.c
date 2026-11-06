@@ -3,9 +3,11 @@
 #include "canvas_view.h"
 #include "canvas_crop.h"
 #include "canvas_doc.h"
+#include "canvas_draw.h"
 #include "canvas_geometry.h"
 #include "canvas_item.h"
 #include "canvas_media.h"
+#include "canvas_props.h"
 #include "canvas_text.h"
 #include "canvas_toolbar.h"
 #include "focus_route.h"
@@ -29,6 +31,7 @@ struct CanvasPage {
     GtkWidget* root;   /* notebook page */
     GtkWidget* title;
     CanvasToolbar* toolbar;
+    CanvasProps* props;
     GtkWidget* scroll;
     GtkWidget* surface; /* GtkFixed */
     gboolean snap_grid;
@@ -37,6 +40,13 @@ struct CanvasPage {
     gboolean dirty;
     gboolean loading;
     gboolean closed;
+    /* Tool, and the style of the next shapes */
+    CanvasTool tool;
+    CanvasShapeStyle style;
+    /* Shape being drawn, from (draw_x0, draw_y0); eraser held down */
+    CanvasItem* draw_item;
+    gdouble draw_x0, draw_y0;
+    gboolean erasing;
     /* Drag of a block */
     CanvasItem* drag_item;
     gboolean drag_resize;
@@ -53,6 +63,8 @@ struct CanvasPage {
 static void schedule_save(CanvasPage* p);
 static gboolean save_now(CanvasPage* p);
 static void focus_next_item(CanvasPage* p, CanvasItem* from, gint step);
+static void update_props(CanvasPage* p);
+static void set_tool(CanvasPage* p, CanvasTool tool);
 
 static void ensure_css(void) {
     static gboolean done = FALSE;
@@ -61,7 +73,6 @@ static void ensure_css(void) {
     theme_add_css(".canvas-page { background-color: @bg_view; }"
                   ".canvas-page .canvas-header { padding: 6px 10px; color: @fg; }"
                   ".canvas-page .canvas-title { font-weight: bold; }"
-                  ".canvas-page .canvas-hint { color: @fg_subtle; }"
                   ".canvas-surface { background-color: @bg_view; }"
                   ".canvas-block { border: 1px solid transparent; border-radius: 4px; }"
                   ".canvas-block:hover { border-color: @border; }"
@@ -121,6 +132,7 @@ static void on_window_focus(GObject* window, GParamSpec* pspec, gpointer data) {
     } else if (f != NULL && gtk_widget_is_ancestor(f, p->surface)) {
         g_set_weak_pointer(&p->last_focus, f);
     }
+    update_props(p);
 }
 
 static void on_root_map(GtkWidget* widget, gpointer data) {
@@ -188,10 +200,20 @@ static CanvasItem* new_text_box(CanvasPage* p, gint x, gint y, const gchar* text
     return it;
 }
 
+static void apply_style(CanvasItem* it, const CanvasShapeStyle* style) {
+    g_free(it->stroke_color);
+    it->stroke_color = g_strdup(style->stroke_color);
+    it->fill_style = style->fill;
+    it->stroke_width = style->stroke_width;
+    it->rough = style->rough;
+    if (it->content != NULL) gtk_widget_queue_draw(it->content);
+}
+
 static CanvasItem* new_shape(CanvasPage* p, gint x, gint y, gint w, gint h, CanvasShapeType type) {
     g_autoptr(CanvasDoc) tmp = canvas_doc_new();
     CanvasBlock* b = canvas_doc_add_shape(tmp, x, y, w, h, type);
     CanvasItem* it = add_item(p, b);
+    apply_style(it, &p->style);
     update_extent(p);
     schedule_save(p);
     canvas_item_select(it);
@@ -344,6 +366,105 @@ static void load(CanvasPage* p, const gchar* dir, const gchar* title) {
     p->loading = FALSE;
     p->dirty = FALSE;
     update_extent(p);
+    set_tool(p, CANVAS_TOOL_SELECT);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Tools                                                                     */
+/* ------------------------------------------------------------------------- */
+
+static gboolean closed_shape(CanvasShapeType type) {
+    return type != CANVAS_SHAPE_LINE && type != CANVAS_SHAPE_ARROW && type != CANVAS_SHAPE_FREEHAND;
+}
+
+/* The panel shows the style of the next shapes while drawing, else what the
+ * current block can change */
+static void update_props(CanvasPage* p) {
+    if (p->props == NULL) return;
+    if (canvas_tool_draws(p->tool)) {
+        canvas_props_show_shape(p->props, &p->style, closed_shape(canvas_tool_shape(p->tool)));
+        return;
+    }
+    CanvasItem* it = p->tool == CANVAS_TOOL_SELECT ? current_item(p) : NULL;
+    if (it != NULL && it->kind == CANVAS_BLOCK_SHAPE) {
+        CanvasShapeStyle style = {it->stroke_color, it->fill_style, it->stroke_width, it->rough};
+        canvas_props_show_shape(p->props, &style, closed_shape(it->shape_type));
+    } else if (it != NULL && it->kind == CANVAS_BLOCK_TEXT) {
+        canvas_props_show_text(p->props);
+    } else {
+        canvas_props_hide(p->props);
+    }
+}
+
+static void set_tool(CanvasPage* p, CanvasTool tool) {
+    p->tool = tool;
+    canvas_toolbar_set_tool(p->toolbar, tool);
+    const gchar* cursor = NULL;
+    if (canvas_tool_draws(tool) || tool == CANVAS_TOOL_ERASER || tool == CANVAS_TOOL_TABLE) {
+        cursor = "crosshair";
+    } else if (tool == CANVAS_TOOL_TEXT) {
+        cursor = "text";
+    }
+    gtk_widget_set_cursor_from_name(p->surface, cursor);
+    update_props(p);
+}
+
+/* Eraser: remove the block under (x, y) */
+static void erase_at(CanvasPage* p, gdouble x, gdouble y) {
+    CanvasItem* it = canvas_item_of(gtk_widget_pick(p->surface, x, y, GTK_PICK_DEFAULT));
+    if (it == NULL) return;
+    remove_item(it);
+    update_extent(p);
+}
+
+/* A press on the page with another tool than Select: start a shape, place
+ * a text box or a table, erase */
+static void tool_begin(CanvasPage* p, gdouble x, gdouble y) {
+    if (canvas_tool_draws(p->tool)) {
+        CanvasItem* it = new_shape(p, (gint)x, (gint)y, MIN_SHAPE_SIZE, MIN_SHAPE_SIZE, canvas_tool_shape(p->tool));
+        p->draw_item = it;
+        p->draw_x0 = x;
+        p->draw_y0 = y;
+        if (p->tool == CANVAS_TOOL_PENCIL) {
+            canvas_draw_add_point(it, x, y);
+        } else {
+            canvas_draw_update(it, x, y, x, y, FALSE);
+        }
+    } else if (p->tool == CANVAS_TOOL_TEXT) {
+        set_tool(p, CANVAS_TOOL_SELECT);
+        new_text_box(p, (gint)x, (gint)y, "");
+    } else if (p->tool == CANVAS_TOOL_TABLE) {
+        set_tool(p, CANVAS_TOOL_SELECT);
+        new_table(p, (gint)x, (gint)y, 3, 3);
+    } else if (p->tool == CANVAS_TOOL_ERASER) {
+        p->erasing = TRUE;
+        erase_at(p, x, y);
+    }
+}
+
+static void tool_update(CanvasPage* p, GtkGesture* gesture, gdouble x, gdouble y) {
+    if (p->erasing) {
+        erase_at(p, x, y);
+    } else if (p->draw_item != NULL && p->tool == CANVAS_TOOL_PENCIL) {
+        canvas_draw_add_point(p->draw_item, x, y);
+    } else if (p->draw_item != NULL) {
+        GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
+        canvas_draw_update(p->draw_item, p->draw_x0, p->draw_y0, x, y, (state & GDK_SHIFT_MASK) != 0);
+    }
+}
+
+static void tool_end(CanvasPage* p) {
+    p->erasing = FALSE;
+    CanvasItem* it = p->draw_item;
+    if (it == NULL) return;
+    p->draw_item = NULL;
+    canvas_draw_finish(it);
+    update_extent(p);
+    schedule_save(p);
+    /* The pencil stays, to go on drawing; the other tools give the new shape
+     * to Select */
+    if (p->tool != CANVAS_TOOL_PENCIL) set_tool(p, CANVAS_TOOL_SELECT);
+    canvas_item_select(it);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -352,6 +473,12 @@ static void load(CanvasPage* p, const gchar* dir, const gchar* title) {
 
 static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointer data) {
     CanvasPage* p = data;
+    if (p->tool != CANVAS_TOOL_SELECT) {
+        if (p->dir == NULL) return;
+        gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+        tool_begin(p, x, y);
+        return;
+    }
     GtkWidget* hit = gtk_widget_pick(p->surface, x, y, GTK_PICK_DEFAULT);
     CanvasItem* it = canvas_item_of(hit);
     gboolean grip = FALSE, corner = FALSE;
@@ -377,8 +504,13 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
 }
 
 static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpointer data) {
-    (void)gesture;
     CanvasPage* p = data;
+    if (p->draw_item != NULL || p->erasing) {
+        gdouble x0, y0;
+        gtk_gesture_drag_get_start_point(gesture, &x0, &y0);
+        tool_update(p, GTK_GESTURE(gesture), x0 + dx, y0 + dy);
+        return;
+    }
     CanvasItem* it = p->drag_item;
     if (it == NULL) return;
 
@@ -404,6 +536,9 @@ static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpoi
         it->y = new_y;
     } else if (it->kind == CANVAS_BLOCK_TEXT || it->kind == CANVAS_BLOCK_TABLE) {
         it->w = MAX(p->drag_w + (gint)dx, MIN_TEXT_WIDTH);
+    } else if (it->kind == CANVAS_BLOCK_SHAPE) {
+        it->w = MAX(p->drag_w + (gint)dx, MIN_SHAPE_SIZE);
+        it->h = MAX(p->drag_h + (gint)dy, MIN_SHAPE_SIZE);
     } else {
         it->w = MAX(p->drag_w + (gint)dx, MIN_IMAGE_SIZE);
         it->h = MAX((gint)(it->w / it->aspect), MIN_IMAGE_SIZE);
@@ -414,6 +549,10 @@ static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpoi
 static void on_drag_end(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpointer data) {
     (void)gesture;
     CanvasPage* p = data;
+    if (p->draw_item != NULL || p->erasing) {
+        tool_end(p);
+        return;
+    }
     if (p->drag_item == NULL) return;
     if (dx != 0 || dy != 0) {
         update_extent(p);
@@ -449,6 +588,7 @@ static void open_crop_dialog(CanvasPage* p, CanvasItem* it) {
 
 static void on_page_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     CanvasPage* p = data;
+    if (p->tool != CANVAS_TOOL_SELECT) return; /* the tool took the press */
     GtkWidget* hit = gtk_widget_pick(p->surface, x, y, GTK_PICK_DEFAULT);
     CanvasItem* it = canvas_item_of(hit);
     if (it != NULL) {
@@ -664,6 +804,20 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         return TRUE;
     }
     CanvasItem* it = focused_item(p);
+    /* Not typing (the page or a block focused): a letter picks a tool, Esc
+     * goes back to Select */
+    if ((it == NULL || focused_widget(p) == it->frame) && (state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) == 0 &&
+        (it != NULL || focused_widget(p) == p->surface)) {
+        if (keyval == GDK_KEY_Escape && p->tool != CANVAS_TOOL_SELECT) {
+            set_tool(p, CANVAS_TOOL_SELECT);
+            return TRUE;
+        }
+        gint tool = canvas_tool_for_key(keyval);
+        if (tool >= 0) {
+            set_tool(p, (CanvasTool)tool);
+            return TRUE;
+        }
+    }
     if (it == NULL) return FALSE;
     if (focused_widget(p) == it->frame) return block_key(p, it, keyval, state);
     if (it->kind == CANVAS_BLOCK_TEXT && gtk_widget_has_focus(it->content)) {
@@ -681,25 +835,8 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
 /* Toolbar Callbacks                                                         */
 /* ------------------------------------------------------------------------- */
 
-static void on_toolbar_add_text(gpointer udata) {
-    CanvasPage* p = udata;
-    gint x, y;
-    new_block_position(p, FALSE, &x, &y);
-    new_text_box(p, x, y, "");
-}
-
-static void on_toolbar_add_shape(CanvasShapeType type, gpointer udata) {
-    CanvasPage* p = udata;
-    gint x, y;
-    new_block_position(p, FALSE, &x, &y);
-    new_shape(p, x, y, 160, 100, type);
-}
-
-static void on_toolbar_add_table(gint rows, gint cols, gpointer udata) {
-    CanvasPage* p = udata;
-    gint x, y;
-    new_block_position(p, FALSE, &x, &y);
-    new_table(p, x, y, rows, cols);
+static void on_toolbar_tool(CanvasTool tool, gpointer udata) {
+    set_tool(udata, tool);
 }
 
 static void on_toolbar_crop(gpointer udata) {
@@ -707,7 +844,7 @@ static void on_toolbar_crop(gpointer udata) {
     open_crop_dialog(p, current_item(p));
 }
 
-static void on_toolbar_format_style(guint style_flag, gpointer udata) {
+static void on_props_format_style(guint style_flag, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_toggle_style(it->buffer, &it->pending, style_flag);
@@ -716,7 +853,7 @@ static void on_toolbar_format_style(guint style_flag, gpointer udata) {
     }
 }
 
-static void on_toolbar_format_preset(CanvasPreset preset, gpointer udata) {
+static void on_props_format_preset(CanvasPreset preset, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_apply_preset(it->buffer, preset);
@@ -725,7 +862,7 @@ static void on_toolbar_format_preset(CanvasPreset preset, gpointer udata) {
     }
 }
 
-static void on_toolbar_format_list(const gchar* prefix, gpointer udata) {
+static void on_props_format_list(const gchar* prefix, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_insert_list(it->buffer, prefix);
@@ -734,7 +871,7 @@ static void on_toolbar_format_list(const gchar* prefix, gpointer udata) {
     }
 }
 
-static void on_toolbar_format_indent(gint step, gpointer udata) {
+static void on_props_format_indent(gint step, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_indent(it->buffer, step);
@@ -743,13 +880,25 @@ static void on_toolbar_format_indent(gint step, gpointer udata) {
     }
 }
 
-static void on_toolbar_format_checkbox(gpointer udata) {
+static void on_props_format_checkbox(gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) {
         canvas_text_toggle_checkbox(it->buffer);
         schedule_save(it->page);
         restore_focus(it->page);
     }
+}
+
+/* A style picked in the panel: for the next shapes, and the selected one */
+static void on_props_shape_style(const CanvasShapeStyle* style, gpointer udata) {
+    CanvasPage* p = udata;
+    p->style = *style;
+    if (canvas_tool_draws(p->tool)) return;
+    CanvasItem* it = current_item(p);
+    if (it == NULL || it->kind != CANVAS_BLOCK_SHAPE) return;
+    apply_style(it, style);
+    schedule_save(p);
+    restore_focus(p);
 }
 
 static void on_toolbar_toggle_grid(gboolean enabled, gpointer udata) {
@@ -823,6 +972,7 @@ static void page_free(gpointer data) {
     if (p->save_source != 0) g_source_remove(p->save_source);
     g_clear_weak_pointer(&p->last_focus);
     if (p->toolbar != NULL) canvas_toolbar_free(p->toolbar);
+    if (p->props != NULL) canvas_props_free(p->props);
     g_free(p->dir);
     g_free(p);
 }
@@ -851,34 +1001,32 @@ static CanvasPage* ensure_page(AppData* app) {
     gtk_widget_add_css_class(p->title, "canvas-title");
     gtk_label_set_ellipsize(GTK_LABEL(p->title), PANGO_ELLIPSIZE_END);
     gtk_box_append(GTK_BOX(bar), p->title);
-    GtkWidget* hint = gtk_label_new("Excalidraw shapes · Tables · Magnetic grid & align · Typography & Checklists");
-    gtk_widget_add_css_class(hint, "canvas-hint");
-    gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_label_set_ellipsize(GTK_LABEL(hint), PANGO_ELLIPSIZE_END);
-    gtk_widget_set_hexpand(hint, TRUE);
-    gtk_box_append(GTK_BOX(bar), hint);
+    gtk_label_set_xalign(GTK_LABEL(p->title), 0.0f);
+    gtk_widget_set_hexpand(p->title, TRUE);
 
     GtkWidget* close = icon_button_new("window-close", "Close Canvas (Ctrl+W)");
     g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), p);
     gtk_box_append(GTK_BOX(bar), close);
     gtk_box_append(GTK_BOX(root), bar);
 
-    /* Toolbar */
+    /* Floating tool bar (top) and properties panel (left) over the page */
     CanvasToolbarCallbacks cbs = {
-        .on_add_text = on_toolbar_add_text,
-        .on_add_shape = on_toolbar_add_shape,
-        .on_add_table = on_toolbar_add_table,
+        .on_tool = on_toolbar_tool,
         .on_crop_image = on_toolbar_crop,
-        .on_format_style = on_toolbar_format_style,
-        .on_format_preset = on_toolbar_format_preset,
-        .on_format_list = on_toolbar_format_list,
-        .on_format_indent = on_toolbar_format_indent,
-        .on_format_checkbox = on_toolbar_format_checkbox,
         .on_toggle_grid = on_toolbar_toggle_grid,
         .on_align = on_toolbar_align
     };
     p->toolbar = canvas_toolbar_new(&cbs, p);
-    gtk_box_append(GTK_BOX(root), canvas_toolbar_get_widget(p->toolbar));
+    CanvasPropsCallbacks pcbs = {
+        .on_shape_style = on_props_shape_style,
+        .on_format_style = on_props_format_style,
+        .on_format_preset = on_props_format_preset,
+        .on_format_list = on_props_format_list,
+        .on_format_indent = on_props_format_indent,
+        .on_format_checkbox = on_props_format_checkbox
+    };
+    p->props = canvas_props_new(&pcbs, p);
+    canvas_props_default_style(&p->style);
 
     p->surface = gtk_fixed_new();
     gtk_widget_add_css_class(p->surface, "canvas-surface");
@@ -889,7 +1037,19 @@ static CanvasPage* ensure_page(AppData* app) {
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(p->scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_vexpand(p->scroll, TRUE);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(p->scroll), p->surface);
-    gtk_box_append(GTK_BOX(root), p->scroll);
+    GtkWidget* overlay = gtk_overlay_new();
+    gtk_widget_set_vexpand(overlay, TRUE);
+    gtk_overlay_set_child(GTK_OVERLAY(overlay), p->scroll);
+    GtkWidget* bar_widget = canvas_toolbar_get_widget(p->toolbar);
+    gtk_widget_set_margin_top(bar_widget, 10);
+    gtk_widget_set_margin_start(bar_widget, 12);
+    gtk_widget_set_margin_end(bar_widget, 12);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), bar_widget);
+    GtkWidget* props_widget = canvas_props_get_widget(p->props);
+    gtk_widget_set_margin_top(props_widget, 64);
+    gtk_widget_set_margin_start(props_widget, 12);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), props_widget);
+    gtk_box_append(GTK_BOX(root), overlay);
 
     GtkGesture* drag = gtk_gesture_drag_new();
     gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(drag), GTK_PHASE_CAPTURE);

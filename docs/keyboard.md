@@ -133,10 +133,13 @@ automatically; one canvas at a time)
 
 | Key | Action |
 |---|---|
+| `V` / `R` / `D` / `O` / `A` / `L` | Tool: select, rectangle, diamond, ellipse, arrow, line (when not typing in a block) |
+| `P` / `T` / `B` / `E` | Tool: pencil, text box, table, eraser; `Esc` goes back to select |
+| Drag on the page with a shape tool or the pencil | Draw it (`Shift`: square, circle, line at a multiple of 45 degrees) |
 | Double click on the page, `Ctrl+Enter` | New text box (at the click, or below the selected block) |
 | `Ctrl+V` | Paste a picture as a new block (at the pointer); text pasted outside a text box makes a text box |
 | Drop image files | Copy them into the note as pictures |
-| Drag the bar above a block (a picture: anywhere on it) / its corner | Move / resize it (pictures keep their proportions) |
+| Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions) |
 | `Ctrl+B` / `Ctrl+I` / `Ctrl+U` / `Ctrl+Shift+S` / `Ctrl+E` / `Ctrl+Alt+1` | Bold, italic, underline, strikethrough, code, heading (the selection, or the text typed next) |
 | `Ctrl+Space` | Toggle checkbox under cursor (`- [ ]` / `- [X]`) |
 | `Esc` | In a text box: select the block; on a block: deselect |

@@ -36,6 +36,24 @@ static const IconFallback FALLBACKS[] = {
     {"go-home", {"user-home", "folder", NULL}},
     {"process-stop", {"window-close", NULL}},
     {"input-keyboard", {"preferences-desktop-keyboard", "text-x-generic", NULL}},
+    /* Canvas tools and text formatting */
+    {"canvas-select", {"edit-select", "object-select", NULL}},
+    {"canvas-rectangle", {"media-playback-stop", NULL}},
+    {"canvas-diamond", {"media-playback-stop", NULL}},
+    {"canvas-ellipse", {"media-record", NULL}},
+    {"canvas-arrow", {"go-next", NULL}},
+    {"canvas-line", {"list-remove", NULL}},
+    {"canvas-table", {"view-grid", NULL}},
+    {"insert-text", {"text-x-generic", NULL}},
+    {"format-text-bold", {"text-x-generic", NULL}},
+    {"format-text-italic", {"text-x-generic", NULL}},
+    {"format-text-underline", {"text-x-generic", NULL}},
+    {"format-text-strikethrough", {"text-x-generic", NULL}},
+    {"format-text-rich", {"text-x-generic", NULL}},
+    {"view-list-bullet", {"view-list", NULL}},
+    {"view-list-ordered", {"view-list", NULL}},
+    {"format-indent-less", {"go-previous", NULL}},
+    {"format-indent-more", {"go-next", NULL}},
 };
 
 /* TRUE when gdk-pixbuf can load SVG (librsvg loader). Without it, the bundled
@@ -169,6 +187,10 @@ GtkWidget* icon_label_new(const gchar* icon_name, const gchar* text) {
         gtk_box_append(GTK_BOX(box), gtk_label_new(text));
     }
     return box;
+}
+
+GtkWidget* icon_image_new(const gchar* icon_name) {
+    return symbolic_image(icon_name);
 }
 
 void icon_button_set_content(GtkWidget* button, const gchar* icon_name, const gchar* text) {

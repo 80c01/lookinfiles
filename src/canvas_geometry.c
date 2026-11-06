@@ -1,4 +1,5 @@
 #include "canvas_geometry.h"
+#include <math.h>
 #include <stdlib.h>
 
 gint canvas_snap_coord(gint val, gint grid) {
@@ -163,4 +164,41 @@ void canvas_align_boxes(CanvasRect* rects, guint count, CanvasAlignOp op) {
         break;
     }
     }
+}
+
+void canvas_drag_box(gdouble x0, gdouble y0, gdouble x1, gdouble y1, gboolean square, CanvasRect* out) {
+    if (out == NULL) return;
+    gdouble dx = x1 - x0;
+    gdouble dy = y1 - y0;
+    if (square) {
+        gdouble side = MAX(fabs(dx), fabs(dy));
+        dx = dx < 0 ? -side : side;
+        dy = dy < 0 ? -side : side;
+    }
+    out->x = (gint)lround(MIN(x0, x0 + dx));
+    out->y = (gint)lround(MIN(y0, y0 + dy));
+    out->w = (gint)lround(fabs(dx));
+    out->h = (gint)lround(fabs(dy));
+}
+
+void canvas_snap_angle(gdouble x0, gdouble y0, gdouble* x1, gdouble* y1) {
+    if (x1 == NULL || y1 == NULL) return;
+    gdouble dx = *x1 - x0;
+    gdouble dy = *y1 - y0;
+    gdouble len = hypot(dx, dy);
+    if (len == 0) return;
+    gdouble step = G_PI / 4.0;
+    gdouble angle = round(atan2(dy, dx) / step) * step;
+    gdouble c = cos(angle);
+    gdouble s = sin(angle);
+    /* Exact zeros: a horizontal line stays exactly horizontal */
+    if (fabs(c) < 1e-9) c = 0;
+    if (fabs(s) < 1e-9) s = 0;
+    *x1 = x0 + len * c;
+    *y1 = y0 + len * s;
+}
+
+gdouble canvas_map_coord(gdouble v, gdouble from, gdouble from_len, gdouble to, gdouble to_len) {
+    if (from_len <= 0) return to + to_len / 2.0;
+    return to + (v - from) * to_len / from_len;
 }
