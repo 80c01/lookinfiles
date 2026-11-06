@@ -46,6 +46,8 @@ typedef struct {
     gint height;
     gdouble top;   /* minimap content y of the surface's first row */
     gdouble scale; /* scale it was drawn at */
+    gboolean stale;          /* the text changed: redraw, but the old render may stand in */
+    gint64 incomplete_since; /* monotonic time the new layout was first found incomplete */
 } MinimapCache;
 
 /* Text viewer padding in pixels for text/code preview */

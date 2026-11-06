@@ -24,6 +24,8 @@ static void set_source_role(cairo_t* cr, PaletteRole role, double alpha) {
 #define MINIMAP_SETTLE_MS 16
 #define MINIMAP_MAX_WAITS 6
 #define MINIMAP_MIN_LINE_PX 10
+/* Longest time the previous render stands in for a layout in progress */
+#define MINIMAP_LAYOUT_WAIT_US (200 * 1000)
 
 /* Scale, minimap scroll and slider for the view's current position */
 static gboolean is_paged_view(GtkTextView* view) {
@@ -254,10 +256,58 @@ void minimap_cache_clear(MinimapCache* cache) {
     *cache = (MinimapCache){0};
 }
 
+/* The text changed: the render is redrawn on the next draw, but stays
+ * available to stand in while the new layout is incomplete */
+static void minimap_cache_mark_stale(MinimapCache* cache) {
+    cache->stale = TRUE;
+}
+
 /* Does the render cover what the minimap shows now? */
 static gboolean cache_covers(const MinimapCache* c, const MinimapGeometry* g, gint width, gint height) {
-    return c->surface != NULL && c->width == width && c->scale == g->scale &&
+    return c->surface != NULL && !c->stale && c->width == width && c->scale == g->scale &&
            g->offset >= c->top - 0.5 && g->offset + height <= c->top + c->height + 0.5;
+}
+
+/* Whether a line is hidden on purpose (folded Org heading): its zero height
+ * is final */
+static gboolean line_invisible(const GtkTextIter* it) {
+    gboolean hidden = FALSE;
+    GSList* tags = gtk_text_iter_get_tags(it);
+    for (GSList* l = tags; l != NULL; l = l->next) {
+        gboolean set = FALSE, invisible = FALSE;
+        g_object_get(l->data, "invisible-set", &set, "invisible", &invisible, NULL);
+        if (set) {
+            hidden = invisible;
+        }
+    }
+    g_slist_free(tags);
+    return hidden;
+}
+
+/* Whether GtkTextView has laid out every line the minimap would draw for g.
+ * After new text is set it measures the lines in the background: a line not
+ * measured yet has no height, so it and every line after it would be drawn
+ * piled at one spot, and the minimap would flash a cut-off document. */
+static gboolean layout_complete(GtkTextBuffer* buffer, GtkTextView* view, const MinimapGeometry* g,
+                                gint height) {
+    gdouble sy = g->scale;
+    gdouble top = MAX(0.0, g->offset - height * (MINIMAP_CACHE_SCREENS - 1) / 2.0);
+    gdouble bottom = g->offset + height * (MINIMAP_CACHE_SCREENS + 1) / 2.0;
+    GtkTextIter it;
+    gtk_text_view_get_line_at_y(view, &it, (gint)(top / sy), NULL);
+    gint lines = gtk_text_buffer_get_line_count(buffer);
+    for (gint i = gtk_text_iter_get_line(&it); i < lines; i++) {
+        gtk_text_buffer_get_iter_at_line(buffer, &it, i);
+        gint ly = 0, lh = 0;
+        gtk_text_view_get_line_yrange(view, &it, &ly, &lh);
+        if (lh == 0 && !line_invisible(&it)) {
+            return FALSE;
+        }
+        if ((ly + lh) * sy > bottom) {
+            break;
+        }
+    }
+    return TRUE;
 }
 
 /* Draw the document lines around the minimap's position into an offscreen
@@ -392,7 +442,7 @@ static void minimap_build_cache(GtkTextBuffer* buffer, GtkTextView* view, Minima
 }
 
 void minimap_invalidate(AppData* app) {
-    minimap_cache_clear(&app->mm_cache);
+    minimap_cache_mark_stale(&app->mm_cache);
     if (app->minimap != NULL && gtk_widget_get_visible(app->minimap)) {
         gtk_widget_queue_draw(app->minimap);
     }
@@ -615,6 +665,11 @@ static void draw_change_marks(cairo_t* cr, GtkTextView* view, const MinimapGeome
     }
 }
 
+static gboolean redraw_later(gpointer data) {
+    gtk_widget_queue_draw(GTK_WIDGET(data));
+    return G_SOURCE_REMOVE;
+}
+
 void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
                           GtkTextBuffer* buffer, GtkTextView* text_view, MinimapCache* cache) {
     if (width <= 0 || height <= 0 || buffer == NULL || text_view == NULL) {
@@ -622,9 +677,26 @@ void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
     }
     MinimapGeometry g;
     if (minimap_geometry(widget, text_view, &g)) {
-        /* Rebuilt on resize, rescale, or when scrolled out of the render */
+        /* Rebuilt on resize, rescale, or when scrolled out of the render.
+         * While GtkTextView is still laying out changed text, the previous
+         * render stands in (at most MINIMAP_LAYOUT_WAIT_US), checked again
+         * next frame. */
         if (!cache_covers(cache, &g, width, height)) {
-            minimap_build_cache(buffer, text_view, cache, width, height, &g);
+            gboolean wait = FALSE;
+            if (cache->surface != NULL && cache->stale &&
+                !layout_complete(buffer, text_view, &g, height)) {
+                gint64 now = g_get_monotonic_time();
+                if (cache->incomplete_since == 0) {
+                    cache->incomplete_since = now;
+                }
+                wait = now - cache->incomplete_since < MINIMAP_LAYOUT_WAIT_US;
+            }
+            if (wait) {
+                g_timeout_add_full(G_PRIORITY_DEFAULT, MINIMAP_SETTLE_MS, redraw_later,
+                                   g_object_ref(widget), g_object_unref);
+            } else {
+                minimap_build_cache(buffer, text_view, cache, width, height, &g);
+            }
         }
         if (cache->surface != NULL) {
             /* Whole pixels: no blurry resampling */
@@ -742,7 +814,7 @@ void editor_minimap_invalidate(EditorTab* tab) {
     if (tab == NULL) {
         return;
     }
-    minimap_cache_clear(&tab->mm_cache);
+    minimap_cache_mark_stale(&tab->mm_cache);
     if (tab->minimap != NULL && gtk_widget_get_visible(tab->minimap)) {
         gtk_widget_queue_draw(tab->minimap);
     }
@@ -993,7 +1065,7 @@ static void view_minimap_free(gpointer data) {
 }
 
 static void view_minimap_invalidate(ViewMinimap* vm) {
-    minimap_cache_clear(&vm->cache);
+    minimap_cache_mark_stale(&vm->cache);
     if (gtk_widget_get_visible(vm->minimap)) {
         gtk_widget_queue_draw(vm->minimap);
     }

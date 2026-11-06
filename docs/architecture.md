@@ -357,7 +357,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`MinimapCache`), geometry from `minimap_geometry`. `minimap_new_for_view()`
   makes a standalone one for any text view (the Help tab). Shows itself only
   while the text overflows; a change that may come from a height estimate is
-  confirmed on the next frame (no visible delay). `LOOKIN_DEBUG_MINIMAP=1`
+  confirmed on the next frame (no visible delay). While GtkTextView is still
+  laying out changed text (lines not measured yet have no height), the
+  previous render stands in, so the minimap never shows a cut-off document.
+  `LOOKIN_DEBUG_MINIMAP=1`
   prints each show / hide with its time, to check for flicker.
 
 **3. Features:**
