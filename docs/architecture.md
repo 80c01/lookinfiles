@@ -352,7 +352,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   tags in the Dark+ palette, images, HTML / Markdown renderers).
 - `minimap` — scaled file overview; draws only the part around what is shown
   (`MinimapCache`), geometry from `minimap_geometry`. `minimap_new_for_view()`
-  makes a standalone one for any text view (the Help tab).
+  makes a standalone one for any text view (the Help tab). Shows itself only
+  while the text overflows; a change that may come from a height estimate is
+  confirmed on the next frame (no visible delay). `LOOKIN_DEBUG_MINIMAP=1`
+  prints each show / hide with its time, to check for flicker.
 
 **3. Features:**
 - `file_list` — async directory scan (`GTask`), tree population, sorting

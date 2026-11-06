@@ -482,11 +482,33 @@ static gboolean vis_must_wait(GtkWidget* minimap, GtkWidget* view, gboolean usef
     return wait;
 }
 
+/* LOOKIN_DEBUG_MINIMAP=1: print each show / hide (and each wait) with its
+ * time, to spot flicker that lasts too little to be seen on a screenshot */
+static gboolean debug_minimap(void) {
+    static gint enabled = -1;
+    if (enabled < 0) {
+        enabled = g_getenv("LOOKIN_DEBUG_MINIMAP") != NULL;
+    }
+    return enabled;
+}
+
+static void debug_minimap_log(const gchar* who, const gchar* what, GtkWidget* view) {
+    GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    g_printerr("minimap %s %s: %.1f ms (view %dx%d, upper %.0f, page %.0f)\n", who, what,
+               g_get_monotonic_time() / 1000.0, gtk_widget_get_width(view),
+               gtk_widget_get_height(view), adj != NULL ? gtk_adjustment_get_upper(adj) : 0.0,
+               adj != NULL ? gtk_adjustment_get_page_size(adj) : 0.0);
+}
+
 /* Show or hide the minimap now, or check again next frame by
- * calling `again` (which stores its source in *source) */
+ * calling `again` (which stores its source in *source); `who` names it in
+ * the debug log */
 static void vis_update(GtkWidget* minimap, GtkWidget* view, MinimapCache* cache, gboolean useful,
-                       guint* source, GSourceFunc again, gpointer data) {
+                       guint* source, GSourceFunc again, gpointer data, const gchar* who) {
     if (vis_must_wait(minimap, view, useful)) {
+        if (debug_minimap()) {
+            debug_minimap_log(who, useful ? "wait-show" : "wait-hide", view);
+        }
         *source = g_timeout_add(MINIMAP_SETTLE_MS, again, data);
         return;
     }
@@ -495,6 +517,9 @@ static void vis_update(GtkWidget* minimap, GtkWidget* view, MinimapCache* cache,
             minimap_cache_clear(cache);
         }
         gtk_widget_set_visible(minimap, useful);
+        if (debug_minimap()) {
+            debug_minimap_log(who, useful ? "show" : "hide", view);
+        }
     }
     sync_vertical_scrollbar(view, useful);
 }
@@ -507,7 +532,7 @@ static gboolean minimap_vis_idle(gpointer data) {
         return G_SOURCE_REMOVE;
     }
     vis_update(app->minimap, app->text_view, &app->mm_cache, minimap_is_useful(app),
-               &app->mm_vis_source, minimap_vis_idle, app);
+               &app->mm_vis_source, minimap_vis_idle, app, "preview");
     return G_SOURCE_REMOVE;
 }
 
@@ -742,7 +767,7 @@ static gboolean editor_minimap_vis_idle(gpointer data) {
         return G_SOURCE_REMOVE;
     }
     vis_update(tab->minimap, tab->view, &tab->mm_cache, editor_minimap_is_useful(tab),
-               &tab->mm_vis_source, editor_minimap_vis_idle, tab);
+               &tab->mm_vis_source, editor_minimap_vis_idle, tab, "editor");
     return G_SOURCE_REMOVE;
 }
 
@@ -980,7 +1005,7 @@ static gboolean view_minimap_vis_idle(gpointer data) {
     GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(vm->view));
     gboolean useful = adj != NULL &&
                       gtk_adjustment_get_upper(adj) > gtk_adjustment_get_page_size(adj) + 1.5;
-    vis_update(vm->minimap, vm->view, &vm->cache, useful, &vm->vis_source, view_minimap_vis_idle, vm);
+    vis_update(vm->minimap, vm->view, &vm->cache, useful, &vm->vis_source, view_minimap_vis_idle, vm, "help");
     return G_SOURCE_REMOVE;
 }
 
