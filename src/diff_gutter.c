@@ -321,6 +321,14 @@ static void draw_number(DiffGutter* g, cairo_t* cr, PangoLayout* layout, gint nu
     pango_cairo_show_layout(cr, layout);
 }
 
+/* Move to the next line; FALSE on the last one. gtk_text_iter_forward_line()
+ * returns FALSE on reaching an empty last line, which must be drawn too. */
+static gboolean next_line(GtkTextIter* it) {
+    gint line = gtk_text_iter_get_line(it);
+    gtk_text_iter_forward_line(it);
+    return gtk_text_iter_get_line(it) != line;
+}
+
 static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
     (void)area;
     DiffGutter* g = data;
@@ -375,7 +383,7 @@ static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gp
         if (m & LINE_DIFF_DELETED_BELOW) {
             fill_deleted(cr, bar_x, wy + bh);
         }
-    } while (gtk_text_iter_forward_line(&it));
+    } while (next_line(&it));
     if (layout != NULL) {
         g_object_unref(layout);
     }
