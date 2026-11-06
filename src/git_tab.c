@@ -98,6 +98,34 @@ static void git_show_task_data_free(gpointer data) {
     g_free(td);
 }
 
+/* The diff is laid out line by line on the UI thread: a huge commit (a large
+ * file added) shows its first lines only */
+#define GIT_SHOW_MAX_LINES 5000
+
+/* text cut after GIT_SHOW_MAX_LINES lines, with a note of the rest (takes text) */
+static gchar* cut_diff(gchar* text) {
+    const gchar* p = text;
+    for (guint n = 0; n < GIT_SHOW_MAX_LINES; n++) {
+        p = strchr(p, '\n');
+        if (p == NULL) {
+            return text;
+        }
+        p++;
+    }
+    guint rest = 0;
+    for (const gchar* q = p; *q != '\0'; q++) {
+        rest += (*q == '\n');
+    }
+    if (rest == 0 && *p == '\0') {
+        return text;
+    }
+    rest = MAX(rest, 1u); /* a last line without a line break */
+    gchar* cut = g_strdup_printf("%.*s\n… %u more line%s not shown\n", (int)(p - text), text, rest,
+                                 rest == 1 ? "" : "s");
+    g_free(text);
+    return cut;
+}
+
 static void git_show_thread_func(GTask* task, gpointer source_object,
                                  gpointer task_data, GCancellable* cancellable) {
     (void)source_object;
@@ -113,7 +141,7 @@ static void git_show_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
-    td->diff_output = text != NULL ? text : g_strdup("(No diff available or git error)");
+    td->diff_output = text != NULL ? cut_diff(text) : g_strdup("(No diff available or git error)");
     g_task_return_boolean(task, TRUE);
 }
 
