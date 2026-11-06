@@ -256,6 +256,24 @@ All notable changes to this project are listed here. The format follows
 
 ### Fixed
 
+- Crashes: a terminal whose shell could not start freed VTE's error a
+  second time (heap corruption); selecting a row whose folders had to be
+  expanded first could use the row after a bookmarks or notes rebuild freed it.
+- Closing a terminal tab right after opening it called VTE on the closed
+  terminal, and every shell was watched twice (`waitid ... No child
+  processes` warnings).
+- Opening a binary file in the editor gave an empty tab (saving it erased
+  the file); files in other encodings are converted to UTF-8 with a notice.
+- Closing the window with unsaved changes no longer loses them: it asks like
+  `Ctrl+Q`; with a dialog open, the dialog closes first (the window used to
+  hang).
+- Files changing on disk no longer rebuild the whole explorer tree: new and
+  removed entries are merged in, the rest keeps its expansion, selection and
+  scroll position.
+- Git status scans no longer pile up while files keep changing (one at a
+  time); switching branches no longer freezes the window; change bars skip
+  the line diff when the committed version did not change.
+- Canvas notes logged GTK CSS warnings (`gap`, `@bg_warning`).
 - Saving an Emacs or Vim tab updated the modified flag of its mode line
   (`-U:**-`, `[+]`) only after the next cursor move.
 - Moving an editor tab right / left / up / down picked a notebook in another
