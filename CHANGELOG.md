@@ -259,6 +259,12 @@ All notable changes to this project are listed here. The format follows
 - Crashes: a terminal whose shell could not start freed VTE's error a
   second time (heap corruption); selecting a row whose folders had to be
   expanded first could use the row after a bookmarks or notes rebuild freed it.
+- Removing a workspace could free its folder twice (crash): the teardown
+  saved the workspace being removed.
+- Saving a file in the editor replaced it: a symbolic link became a plain
+  file, a script lost its executable bit and read-only files were
+  overwritten. Files are now written in place, read-only ones are refused,
+  and a failed save is reported instead of passing silently.
 - Closing a terminal tab right after opening it called VTE on the closed
   terminal, and every shell was watched twice (`waitid ... No child
   processes` warnings).
