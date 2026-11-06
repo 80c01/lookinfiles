@@ -194,7 +194,8 @@ void refresh_git_status_in_place(AppData* app) {
     }
 }
 
-void toggle_bookmarks_view(AppData* app) {
+/* Show view in the explorer panel, or the files again when it is shown */
+static void toggle_sidebar_view(AppData* app, gint view) {
     if (app == NULL) {
         return;
     }
@@ -202,78 +203,30 @@ void toggle_bookmarks_view(AppData* app) {
         gtk_widget_set_visible(app->left_vbox, TRUE);
         app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
-    if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
-        app->show_bookmarks = FALSE;
-    } else {
-        app->sidebar_view = SIDEBAR_VIEW_BOOKMARKS;
-        app->show_bookmarks = TRUE;
-    }
+    app->sidebar_view = (app->sidebar_view == view) ? SIDEBAR_VIEW_FILES : view;
+    app->show_bookmarks = (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     refresh_listing(app);
-    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
+    /* Back to the files: the scan restores the selection */
+    if (app->sidebar_view != SIDEBAR_VIEW_FILES || view != SIDEBAR_VIEW_BOOKMARKS) {
         select_first_row(app);
     }
 }
 
+void toggle_bookmarks_view(AppData* app) {
+    toggle_sidebar_view(app, SIDEBAR_VIEW_BOOKMARKS);
+}
+
 void toggle_notes_view(AppData* app) {
-    if (app == NULL) {
-        return;
-    }
-    if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
-        gtk_widget_set_visible(app->left_vbox, TRUE);
-        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
-    }
-    if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
-        app->show_bookmarks = FALSE;
-    } else {
-        app->sidebar_view = SIDEBAR_VIEW_NOTES;
-        app->show_bookmarks = FALSE;
-    }
-    app_emit(app, APP_EVENT_CHROME_CHANGED);
-    refresh_listing(app);
-    select_first_row(app);
+    toggle_sidebar_view(app, SIDEBAR_VIEW_NOTES);
 }
 
 void toggle_remote_view(AppData* app) {
-    if (app == NULL) {
-        return;
-    }
-    if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
-        gtk_widget_set_visible(app->left_vbox, TRUE);
-        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
-    }
-    if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
-        app->show_bookmarks = FALSE;
-    } else {
-        app->sidebar_view = SIDEBAR_VIEW_REMOTE;
-        app->show_bookmarks = FALSE;
-    }
-    app_emit(app, APP_EVENT_CHROME_CHANGED);
-    refresh_listing(app);
-    select_first_row(app);
+    toggle_sidebar_view(app, SIDEBAR_VIEW_REMOTE);
 }
 
 void toggle_games_view(AppData* app) {
-    if (app == NULL) {
-        return;
-    }
-    if (app->left_vbox != NULL && !gtk_widget_get_visible(app->left_vbox)) {
-        gtk_widget_set_visible(app->left_vbox, TRUE);
-        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
-    }
-    if (app->sidebar_view == SIDEBAR_VIEW_GAMES) {
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
-        app->show_bookmarks = FALSE;
-    } else {
-        app->sidebar_view = SIDEBAR_VIEW_GAMES;
-        app->show_bookmarks = FALSE;
-    }
-    app_emit(app, APP_EVENT_CHROME_CHANGED);
-    refresh_listing(app);
-    select_first_row(app);
+    toggle_sidebar_view(app, SIDEBAR_VIEW_GAMES);
 }
 
 
@@ -312,6 +265,64 @@ static void append_placeholder(ExplorerRow* parent, const gchar* name, const gch
     explorer_row_append(parent, "-", name, label, path);
 }
 
+/* Expanded level of the folder entry i of node, NULL if it was not expanded */
+static const DirScanNode* entry_child_node(const DirScanNode* node, guint i) {
+    return (node->children != NULL && i < node->children->len) ? g_ptr_array_index(node->children, i) : NULL;
+}
+
+static gchar* entry_path(const DirScanNode* node, guint i) {
+    gchar* full = g_build_filename(node->dirname, g_array_index(node->entries, DirScanEntry, i).name, NULL);
+    gchar* can_full = g_canonicalize_filename(full, NULL);
+    g_free(full);
+    return can_full;
+}
+
+static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirScanNode* node);
+
+/* The row of entry i of node, inserted under parent at position (G_MAXUINT:
+ * appended), with its expanded levels below it */
+static ExplorerRow* insert_entry_row(ExplorerRow* parent, guint position, AppData* app,
+                                     const DirScanNode* node, guint i) {
+    const DirScanEntry* e = &g_array_index(node->entries, DirScanEntry, i);
+    const DirScanNode* child_node = entry_child_node(node, i);
+    gchar* can_full = entry_path(node, i);
+    const gchar* git_badge = "";
+    if (app != NULL && app->git_statuses != NULL) {
+        const gchar* b = (const gchar*)g_hash_table_lookup(app->git_statuses, can_full);
+        if (b != NULL) {
+            git_badge = b;
+        }
+    }
+    ExplorerRow* row;
+    if (e->is_dir) {
+        /* Bare names: the tree draws the icons (explorer_tree.c) */
+        gboolean is_expanded = (child_node != NULL);
+        row = explorer_row_insert(parent, position, TRUE, "dir", e->name, e->name, can_full);
+        explorer_row_set_glyph(row, "folder");
+        explorer_row_set_badge(row, git_badge);
+        explorer_row_set_loaded(row, is_expanded);
+        if (is_expanded) {
+            apply_dir_node_to_rows(row, app, child_node);
+        } else {
+            append_placeholder(row, "", "...", "");
+        }
+    } else {
+        gboolean is_buf = (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES);
+        gboolean as_archive = !is_buf && archive_extract_can_browse(e->name);
+        row = explorer_row_insert(parent, position, as_archive, is_buf ? "buffer" : "file", e->name,
+                                  e->name, can_full);
+        explorer_row_set_icon_name(row, e->name);
+        if (as_archive) {
+            /* Rows start loaded: the first expansion must list the archive */
+            explorer_row_set_loaded(row, FALSE);
+            append_placeholder(row, "", "...", "");
+        }
+        explorer_row_set_badge(row, git_badge);
+    }
+    g_free(can_full);
+    return row;
+}
+
 /* Apply a pre-scanned DirScanNode tree under parent (the root for the top level), on the main thread */
 static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirScanNode* node) {
     gboolean top = parent->is_root;
@@ -343,49 +354,7 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
     }
 
     for (guint i = 0; i < node->entries->len; i++) {
-        const DirScanEntry* e = &g_array_index(node->entries, DirScanEntry, i);
-        const DirScanNode* child_node =
-            (node->children != NULL && i < node->children->len)
-                ? (const DirScanNode*)g_ptr_array_index(node->children, i)
-                : NULL;
-        gchar* full = g_build_filename(node->dirname, e->name, NULL);
-        gchar* can_full = g_canonicalize_filename(full, NULL);
-        g_free(full);
-        const gchar* git_badge = "";
-        if (app != NULL && app->git_statuses != NULL) {
-            const gchar* b = (const gchar*)g_hash_table_lookup(app->git_statuses, can_full);
-            if (b != NULL) {
-                git_badge = b;
-            }
-        }
-
-        if (e->is_dir) {
-            /* Bare names: the tree draws the icons (explorer_tree.c) */
-            gboolean is_expanded = (child_node != NULL);
-            ExplorerRow* row = explorer_row_append_container(parent, "dir", e->name, e->name, can_full);
-            explorer_row_set_glyph(row, "folder");
-            explorer_row_set_badge(row, git_badge);
-            explorer_row_set_loaded(row, is_expanded);
-            if (is_expanded) {
-                apply_dir_node_to_rows(row, app, child_node);
-            } else {
-                append_placeholder(row, "", "...", "");
-            }
-        } else {
-            gboolean is_buf = (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES);
-            gboolean as_archive = !is_buf && archive_extract_can_browse(e->name);
-            ExplorerRow* row = as_archive
-                                   ? explorer_row_append_container(parent, "file", e->name, e->name, can_full)
-                                   : explorer_row_append(parent, is_buf ? "buffer" : "file", e->name, e->name, can_full);
-            explorer_row_set_icon_name(row, e->name);
-            if (as_archive) {
-                /* Rows start loaded: the first expansion must list the archive */
-                explorer_row_set_loaded(row, FALSE);
-                append_placeholder(row, "", "...", "");
-            }
-            explorer_row_set_badge(row, git_badge);
-        }
-        g_free(can_full);
+        insert_entry_row(parent, G_MAXUINT, app, node, i);
     }
 }
 
@@ -415,6 +384,141 @@ void reexpand_paths_recursive(AppData* app, ExplorerRow* parent) {
             reexpand_paths_recursive(app, child);
         }
     }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Rescan results merged into the rows shown                                 */
+/* ------------------------------------------------------------------------- */
+
+/* A level with more changes than this is rebuilt (one model change instead
+ * of many) */
+#define MERGE_MAX_CHANGES 64
+
+typedef struct {
+    GPtrArray* new_dirs; /* folder rows inserted with an expanded level */
+    GPtrArray* rebuilt;  /* rows whose children were all rebuilt */
+} MergeResult;
+
+/* The row shows entry i of node (same kind, name and path) */
+static gboolean row_shows_entry(ExplorerRow* row, const DirScanNode* node, guint i) {
+    const DirScanEntry* e = &g_array_index(node->entries, DirScanEntry, i);
+    if (!explorer_row_is(row, e->is_dir ? "dir" : "file") || g_strcmp0(row->name, e->name) != 0) {
+        return FALSE;
+    }
+    gchar* path = entry_path(node, i);
+    gboolean same = (g_strcmp0(row->path, path) == 0);
+    g_free(path);
+    return same;
+}
+
+static void rebuild_level(AppData* app, ExplorerRow* parent, const DirScanNode* node, MergeResult* out) {
+    if (parent->is_root) {
+        explorer_tree_clear(app->tree);
+    } else {
+        explorer_row_remove_children(parent);
+    }
+    apply_dir_node_to_rows(parent, app, node);
+    g_ptr_array_add(out->rebuilt, parent);
+}
+
+/* Bring the rows under parent to node with the fewest changes: the rows of
+ * entries still there stay (with their expansion, selection and scroll
+ * position), new entries are inserted and gone ones removed. A level whose
+ * order changed (another sort) or that changed a lot is rebuilt. */
+static void merge_level(AppData* app, ExplorerRow* parent, const DirScanNode* node, MergeResult* out) {
+    guint n_old = explorer_row_n_children(parent);
+    gboolean listable = node != NULL && !node->unreadable && node->entries != NULL &&
+                        (node->entries->len > 0 || parent->is_root);
+    ExplorerRow* first = explorer_row_child(parent, 0);
+    if (!listable || (first != NULL && explorer_row_is(first, "-"))) {
+        rebuild_level(app, parent, node, out); /* placeholder shown or wanted */
+        return;
+    }
+    guint n_new = node->entries->len;
+    GHashTable* index = g_hash_table_new(g_str_hash, g_str_equal); /* name -> entry index + 1 */
+    for (guint i = 0; i < n_new; i++) {
+        g_hash_table_insert(index, g_array_index(node->entries, DirScanEntry, i).name, GUINT_TO_POINTER(i + 1));
+    }
+    /* Plan: which rows stay (in the entries' order) */
+    gint* kept = g_new(gint, MAX(n_old, 1)); /* entry index of each row, -1 when it goes */
+    guint n_kept = 0;
+    gint last = -1;
+    gboolean ordered = TRUE;
+    for (guint j = 0; j < n_old; j++) {
+        ExplorerRow* row = explorer_row_child(parent, j);
+        guint idx = GPOINTER_TO_UINT(g_hash_table_lookup(index, row->name));
+        kept[j] = (idx > 0 && row_shows_entry(row, node, idx - 1)) ? (gint)idx - 1 : -1;
+        if (kept[j] >= 0) {
+            ordered = ordered && kept[j] > last;
+            last = kept[j];
+            n_kept++;
+        }
+    }
+    guint changes = (n_old - n_kept) + (n_new - n_kept);
+    if (!ordered || changes > MERGE_MAX_CHANGES) {
+        g_free(kept);
+        g_hash_table_destroy(index);
+        rebuild_level(app, parent, node, out);
+        return;
+    }
+    for (guint j = n_old; j-- > 0;) {
+        if (kept[j] < 0) {
+            explorer_row_remove_at(parent, j);
+        }
+    }
+    g_free(kept);
+    guint pos = 0;
+    for (guint i = 0; i < n_new; i++) {
+        ExplorerRow* row = explorer_row_child(parent, pos);
+        const DirScanNode* child_node = entry_child_node(node, i);
+        if (row != NULL && GPOINTER_TO_UINT(g_hash_table_lookup(index, row->name)) == i + 1) {
+            /* Kept: its expanded level is merged too (when still expanded) */
+            if (child_node != NULL && row->loaded && explorer_tree_is_expanded(app->tree, row)) {
+                merge_level(app, row, child_node, out);
+            }
+        } else {
+            row = insert_entry_row(parent, pos, app, node, i);
+            if (child_node != NULL) {
+                g_ptr_array_add(out->new_dirs, row);
+            }
+        }
+        pos++;
+    }
+    g_hash_table_destroy(index);
+}
+
+/* The rows shown list dirname (its top level is up to date or nearly) */
+static gboolean rows_list_dir(AppData* app, const gchar* dirname) {
+    ExplorerRow* first = explorer_row_child(explorer_tree_get_root(app->tree), 0);
+    if (first == NULL || explorer_row_is(first, "-") || first->path[0] == '\0' ||
+        app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
+        return FALSE;
+    }
+    gchar* parent = g_path_get_dirname(first->path);
+    gchar* dir = g_canonicalize_filename(dirname, NULL);
+    gboolean same = (g_strcmp0(parent, dir) == 0);
+    g_free(dir);
+    g_free(parent);
+    return same;
+}
+
+/* Merge a rescan of the directory shown into its rows, then expand the
+ * folders it inserted that were expanded */
+static void merge_scan(AppData* app, const DirScanNode* root_node) {
+    MergeResult out = { g_ptr_array_new(), g_ptr_array_new() };
+    merge_level(app, explorer_tree_get_root(app->tree), root_node, &out);
+    for (guint i = 0; i < out.new_dirs->len; i++) {
+        ExplorerRow* row = g_ptr_array_index(out.new_dirs, i);
+        if (g_hash_table_contains(app->expanded_paths, row->path)) {
+            explorer_tree_set_expanded(app->tree, row, TRUE);
+            reexpand_paths_recursive(app, row);
+        }
+    }
+    for (guint i = 0; i < out.rebuilt->len; i++) {
+        reexpand_paths_recursive(app, g_ptr_array_index(out.rebuilt, i));
+    }
+    g_ptr_array_unref(out.new_dirs);
+    g_ptr_array_unref(out.rebuilt);
 }
 
 /* Directory row expanded: read its contents (first time) and record the path */
@@ -670,19 +774,29 @@ static void on_dir_scan_ready(GObject* source_object, GAsyncResult* res,
         saved_page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
     }
 
-    explorer_tree_clear(app->tree);
-    apply_dir_node_to_rows(explorer_tree_get_root(app->tree), app, td->root_node);
+    /* The same directory again (files changed): merged into the rows shown,
+     * so the rows left as they were keep their state */
+    gboolean merged = rows_list_dir(app, td->dirname);
     batch_expanding = TRUE;
-    reexpand_paths_recursive(app, explorer_tree_get_root(app->tree));
-    bookmarks_reexpand(app);
-    notes_reexpand(app);
+    if (merged) {
+        merge_scan(app, td->root_node);
+    } else {
+        explorer_tree_clear(app->tree);
+        apply_dir_node_to_rows(explorer_tree_get_root(app->tree), app, td->root_node);
+        reexpand_paths_recursive(app, explorer_tree_get_root(app->tree));
+        bookmarks_reexpand(app);
+        notes_reexpand(app);
+    }
     batch_expanding = FALSE;
     sync_directory_monitors(app);
     if (td->expand_all && !app->switching_ws) {
         app_emit(app, APP_EVENT_LAYOUT_CHANGED); /* the workspace keeps the expansion */
     }
     tree_nav_unblock_selection_handler(app);
-    restore_selection(app, td);
+    ExplorerRow* sel = merged ? tree_nav_selected(app) : NULL;
+    if (sel == NULL || td->refresh_preview || g_strcmp0(sel->path, td->select_path) != 0) {
+        restore_selection(app, td);
+    }
 
     if (saved_page > 0 && app->notebook != NULL && !app->editor_dedicated) {
         gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), saved_page);

@@ -110,10 +110,34 @@ static void test_changed_signal(void) {
     g_object_unref(root);
 }
 
+static void test_insert_and_remove_at(void) {
+    ExplorerRow* root = explorer_row_new_root();
+    explorer_row_append(root, "file", "a", "a", "/a");
+    explorer_row_append(root, "file", "c", "c", "/c");
+    ExplorerRow* b = explorer_row_insert(root, 1, FALSE, "file", "b", "b", "/b");
+    ExplorerRow* d = explorer_row_insert(root, 99, TRUE, "dir", "d", "d", "/d");
+    g_assert_cmpuint(explorer_row_n_children(root), ==, 4);
+    g_assert_true(explorer_row_child(root, 1) == b);
+    g_assert_true(explorer_row_child(root, 3) == d);
+    g_assert_nonnull(d->children);
+    g_assert_null(b->children);
+    g_assert_true(b->parent == root);
+
+    g_object_ref(b);
+    explorer_row_remove_at(root, 1);
+    g_assert_null(b->parent);
+    g_assert_cmpstr(explorer_row_child(root, 1)->name, ==, "c");
+    explorer_row_remove_at(root, 10); /* out of range: nothing */
+    g_assert_cmpuint(explorer_row_n_children(root), ==, 3);
+    g_object_unref(b);
+    g_object_unref(root);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/explorer_row/append_and_parents", test_append_and_parents);
     g_test_add_func("/explorer_row/remove", test_remove);
+    g_test_add_func("/explorer_row/insert_and_remove_at", test_insert_and_remove_at);
     g_test_add_func("/explorer_row/find", test_find);
     g_test_add_func("/explorer_row/changed_signal", test_changed_signal);
     return g_test_run();

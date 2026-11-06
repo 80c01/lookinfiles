@@ -53,6 +53,15 @@ ExplorerRow* explorer_row_append_container(ExplorerRow* parent, const gchar* typ
                                            const gchar* name, const gchar* label,
                                            const gchar* path);
 
+/* Insert a row at position (past the end: appended), a container one (that
+ * can be expanded) when container is TRUE; returns it (owned by parent) */
+ExplorerRow* explorer_row_insert(ExplorerRow* parent, guint position, gboolean container,
+                                 const gchar* type, const gchar* name, const gchar* label,
+                                 const gchar* path);
+
+/* Remove the child at position (nothing when out of range) */
+void explorer_row_remove_at(ExplorerRow* parent, guint position);
+
 /* Remove every child (the row stays expandable) */
 void explorer_row_remove_children(ExplorerRow* row);
 

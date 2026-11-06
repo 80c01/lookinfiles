@@ -63,8 +63,9 @@ static void set_string(gchar** field, const gchar* value) {
     *field = g_strdup(value != NULL ? value : "");
 }
 
-static ExplorerRow* append_row(ExplorerRow* parent, gboolean container, const gchar* type,
-                               const gchar* name, const gchar* label, const gchar* path) {
+static ExplorerRow* insert_row(ExplorerRow* parent, guint position, gboolean container,
+                               const gchar* type, const gchar* name, const gchar* label,
+                               const gchar* path) {
     g_return_val_if_fail(EXPLORER_IS_ROW(parent), NULL);
     g_return_val_if_fail(parent->children != NULL, NULL); /* parent must be a container */
     ExplorerRow* row = g_object_new(EXPLORER_TYPE_ROW, NULL);
@@ -77,20 +78,36 @@ static ExplorerRow* append_row(ExplorerRow* parent, gboolean container, const gc
         /* Before insertion: the view checks once whether a new row can expand */
         row->children = g_list_store_new(EXPLORER_TYPE_ROW);
     }
-    g_list_store_append(parent->children, row);
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(parent->children));
+    g_list_store_insert(parent->children, MIN(position, n), row);
     g_object_unref(row); /* owned by parent->children */
     return row;
 }
 
 ExplorerRow* explorer_row_append(ExplorerRow* parent, const gchar* type, const gchar* name,
                                  const gchar* label, const gchar* path) {
-    return append_row(parent, FALSE, type, name, label, path);
+    return insert_row(parent, G_MAXUINT, FALSE, type, name, label, path);
 }
 
 ExplorerRow* explorer_row_append_container(ExplorerRow* parent, const gchar* type,
                                            const gchar* name, const gchar* label,
                                            const gchar* path) {
-    return append_row(parent, TRUE, type, name, label, path);
+    return insert_row(parent, G_MAXUINT, TRUE, type, name, label, path);
+}
+
+ExplorerRow* explorer_row_insert(ExplorerRow* parent, guint position, gboolean container,
+                                 const gchar* type, const gchar* name, const gchar* label,
+                                 const gchar* path) {
+    return insert_row(parent, position, container, type, name, label, path);
+}
+
+void explorer_row_remove_at(ExplorerRow* parent, guint position) {
+    g_return_if_fail(EXPLORER_IS_ROW(parent));
+    ExplorerRow* child = explorer_row_child(parent, position);
+    if (child != NULL) {
+        child->parent = NULL;
+        g_list_store_remove(parent->children, position);
+    }
 }
 
 void explorer_row_remove_children(ExplorerRow* row) {
