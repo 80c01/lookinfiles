@@ -2,7 +2,6 @@
 #include "editor_tagbar.h"
 #include "code_outline.h"
 #include "icons.h"
-#include "palette.h"
 #include "panels.h"
 #include "settings_store.h"
 
@@ -309,21 +308,22 @@ static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
 /* Rows                                                                      */
 /* ------------------------------------------------------------------------- */
 
-static PaletteRole name_role(const TagbarItem* it) {
-    if (it->group || it->level > 0) return PAL_FG_STRONG;
+/* CSS class of a name (colours in theme.c, so they follow theme changes) */
+static const gchar* name_class(const TagbarItem* it) {
+    if (it->group || it->level > 0) return "tagbar-strong";
     switch (it->kind) {
     case CODE_SYM_FUNCTION:
-    case CODE_SYM_METHOD: return PAL_SYN_FUNCTION;
+    case CODE_SYM_METHOD: return "tagbar-function";
     case CODE_SYM_TYPE:
-    case CODE_SYM_CLASS: return PAL_SYN_TYPE;
+    case CODE_SYM_CLASS: return "tagbar-type";
     case CODE_SYM_MACRO:
-    case CODE_SYM_CONSTANT: return PAL_SYN_CONSTANT;
+    case CODE_SYM_CONSTANT: return "tagbar-constant";
     case CODE_SYM_VARIABLE:
-    case CODE_SYM_FIELD: return PAL_SYN_VARIABLE;
+    case CODE_SYM_FIELD: return "tagbar-variable";
     case CODE_SYM_MODULE:
-    case CODE_SYM_TARGET: return PAL_SYN_KEYWORD;
+    case CODE_SYM_TARGET: return "tagbar-keyword";
     }
-    return PAL_FG;
+    return "tagbar-plain";
 }
 
 static void go_to_item(Tagbar* tb, TagbarItem* it) {
@@ -426,10 +426,10 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
     }
     TagbarItem* it = gtk_tree_list_row_get_item(row);
     gboolean strong = it->group || (it->level > 0 && it->level <= 2);
-    gchar* markup = g_markup_printf_escaped("<span foreground=\"%s\"%s>%s</span>", palette_color(name_role(it)),
-                                            strong ? " weight=\"bold\"" : "", it->name);
-    gtk_label_set_markup(GTK_LABEL(g_object_get_data(G_OBJECT(box), "name")), markup);
-    g_free(markup);
+    GtkWidget* name = g_object_get_data(G_OBJECT(box), "name");
+    const gchar* classes[] = {"tagbar-name", name_class(it), strong ? "tagbar-bold" : NULL, NULL};
+    gtk_widget_set_css_classes(name, classes);
+    gtk_label_set_text(GTK_LABEL(name), it->name);
     gchar* detail;
     if (it->group) {
         detail = g_strdup_printf("%u", it->children != NULL ? g_list_model_get_n_items(G_LIST_MODEL(it->children)) : 0);
