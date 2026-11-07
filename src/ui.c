@@ -200,6 +200,11 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     }
 
+    /* Ctrl+= / Ctrl+- / Ctrl+0 zoom the focused Canvas page */
+    if (canvas_view_claims_key(app, keyval, state)) {
+        return FALSE;
+    }
+
     /* Where the focus is decides what the keys below do */
     FocusInfo info;
     focus_route_get(app, &info);

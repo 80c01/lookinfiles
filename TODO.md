@@ -22,11 +22,13 @@ Rules, coverage and the checklist for a new format: [docs/previews.md](docs/prev
 Excalidraw-like rework. Done: floating tool bar (theme icons), properties
 panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
 (commit 757c298). Code: `canvas_view.c`, `canvas_toolbar.c`,
-`canvas_props.c`, `canvas_draw.c`, `canvas_rough_draw.c`. Next, in this order:
+`canvas_props.c`, `canvas_draw.c`, `canvas_rough_draw.c`, `canvas_history.c`,
+`canvas_viewport.c`. `canvas_view.c` is near 1200 lines: split it (keys,
+drag and tools) before the next step. Next, in this order:
 
 - [x] undo / redo (`Ctrl+Z` / `Ctrl+Shift+Z`): add, delete, move, resize,
   style changes; text being edited keeps its own GtkTextBuffer history
-- [ ] zoom (`Ctrl+wheel`, `Ctrl+0` back to 100 %) and pan (Space + drag or
+- [x] zoom (`Ctrl+wheel`, `Ctrl+0` back to 100 %) and pan (Space + drag or
   middle button)
 - [ ] multi-selection (rubber band, `Shift+click`): move, delete, align
   together (the align items of the `⋯` menu then become useful)
@@ -38,7 +40,8 @@ panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
   block, bring to front / send to back, export the canvas as PNG / SVG
 - [ ] run `make ui-shots` and check the new canvas screenshots
   (`canvas_tool_*`, `canvas_rect_drawn`, `canvas_pencil_drawn`,
-  `canvas_checkbox_toggled`, `canvas_undo_delete`, `canvas_redo_delete`);
+  `canvas_checkbox_toggled`, `canvas_undo_delete`, `canvas_redo_delete`, `canvas_zoom_in`,
+  `canvas_zoom_reset`);
   not run yet
 
 ### Wish list

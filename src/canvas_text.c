@@ -343,3 +343,49 @@ gboolean canvas_text_handle_enter(GtkTextView* view) {
     g_free(line);
     return FALSE;
 }
+
+gboolean canvas_text_key(GtkTextView* view, guint* pending, guint keyval, GdkModifierType state) {
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
+    gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
+    gboolean shift = (state & GDK_SHIFT_MASK) != 0;
+    gboolean alt = (state & GDK_ALT_MASK) != 0;
+
+    if ((keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) && !ctrl && !alt) {
+        return canvas_text_handle_enter(view);
+    }
+    /* Ctrl+Space (as in the Org editor) or Ctrl+Shift+C: toggle the checkbox */
+    if ((ctrl && !shift && !alt && keyval == GDK_KEY_space) ||
+        (ctrl && shift && (keyval == GDK_KEY_c || keyval == GDK_KEY_C))) {
+        canvas_text_toggle_checkbox(buffer);
+        return TRUE;
+    }
+    if (ctrl && alt) {
+        static const struct { guint key, kp_key; CanvasPreset preset; } presets[] = {
+            {GDK_KEY_1, GDK_KEY_KP_1, CANVAS_PRESET_H1},
+            {GDK_KEY_2, GDK_KEY_KP_2, CANVAS_PRESET_H2},
+            {GDK_KEY_0, GDK_KEY_KP_0, CANVAS_PRESET_BODY},
+            {GDK_KEY_q, GDK_KEY_Q, CANVAS_PRESET_QUOTE},
+        };
+        for (guint i = 0; i < G_N_ELEMENTS(presets); i++) {
+            if (keyval == presets[i].key || keyval == presets[i].kp_key) {
+                canvas_text_apply_preset(buffer, presets[i].preset);
+                return TRUE;
+            }
+        }
+    }
+    if (!ctrl) return FALSE;
+
+    guint style = 0;
+    switch (keyval) {
+    case GDK_KEY_b: case GDK_KEY_B: style = (shift || alt) ? 0 : CANVAS_STYLE_BOLD; break;
+    case GDK_KEY_i: case GDK_KEY_I: style = (shift || alt) ? 0 : CANVAS_STYLE_ITALIC; break;
+    case GDK_KEY_u: case GDK_KEY_U: style = (shift || alt) ? 0 : CANVAS_STYLE_UNDERLINE; break;
+    case GDK_KEY_s: case GDK_KEY_S: style = (shift && !alt) ? CANVAS_STYLE_STRIKE : 0; break;
+    case GDK_KEY_e: case GDK_KEY_E: style = (shift || alt) ? 0 : CANVAS_STYLE_CODE; break;
+    case GDK_KEY_h: case GDK_KEY_H: style = CANVAS_STYLE_HIGHLIGHT; break;
+    default: break;
+    }
+    if (style == 0) return FALSE;
+    canvas_text_toggle_style(buffer, pending, style);
+    return TRUE;
+}

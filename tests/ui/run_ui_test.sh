@@ -367,6 +367,9 @@ drag 700 400 900 520;   shot canvas_rect_drawn
 key p; drag 600 600 640 660; drag 640 660 800 640
                         shot canvas_pencil_drawn
 key Escape;             shot canvas_tool_select
+# Zoom: Ctrl+= zooms in (the header shows the scale), Ctrl+0 back to 100 %
+key ctrl+equal ctrl+equal;  shot canvas_zoom_in
+key ctrl+0;             shot canvas_zoom_reset
 key ctrl+w;             shot canvas_closed
 key ctrl+u;             shot files_after_notes
 key ctrl+shift+r;       shot remote_view

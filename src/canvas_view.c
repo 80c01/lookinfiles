@@ -11,6 +11,7 @@
 #include "canvas_props.h"
 #include "canvas_text.h"
 #include "canvas_toolbar.h"
+#include "canvas_viewport.h"
 #include "focus_route.h"
 #include "fonts.h"
 #include "icons.h"
@@ -34,7 +35,8 @@ struct CanvasPage {
     GtkWidget* title;
     CanvasToolbar* toolbar;
     CanvasProps* props;
-    GtkWidget* scroll;
+    CanvasViewport* viewport;
+    GtkWidget* zoom_button; /* shows the scale, back to 100 % */
     GtkWidget* surface; /* GtkFixed */
     gboolean snap_grid;
     guint save_source;
@@ -131,6 +133,7 @@ static void on_window_focus(GObject* window, GParamSpec* pspec, gpointer data) {
     CanvasPage* p = g_object_get_data(G_OBJECT(data), PAGE_KEY);
     if (p == NULL || p->closed) return;
     GtkWidget* f = gtk_root_get_focus(GTK_ROOT(window));
+    if (f == NULL || !gtk_widget_is_ancestor(f, p->root)) canvas_viewport_set_pan_key(p->viewport, FALSE);
     if (f == p->surface) {
         g_clear_weak_pointer(&p->last_focus);
     } else if (f != NULL && gtk_widget_is_ancestor(f, p->surface)) {
@@ -205,10 +208,9 @@ static void new_block_position(CanvasPage* p, gboolean at_pointer, gint* x, gint
         *x = sel->x;
         *y = sel->y + MAX(sel->h, gtk_widget_get_height(sel->frame)) + NEW_OFFSET;
     } else {
-        GtkAdjustment* h = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(p->scroll));
-        GtkAdjustment* v = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(p->scroll));
-        *x = (gint)gtk_adjustment_get_value(h) + NEW_OFFSET;
-        *y = (gint)gtk_adjustment_get_value(v) + NEW_OFFSET;
+        canvas_viewport_origin(p->viewport, x, y);
+        *x += NEW_OFFSET;
+        *y += NEW_OFFSET;
     }
 }
 
@@ -342,6 +344,7 @@ static void load(CanvasPage* p, const gchar* dir, const gchar* title) {
     p->loading = FALSE;
     p->dirty = FALSE;
     update_extent(p);
+    canvas_viewport_reset(p->viewport);
     set_tool(p, CANVAS_TOOL_SELECT);
 }
 
@@ -663,7 +666,6 @@ static void focus_next_item(CanvasPage* p, CanvasItem* from, gint step) {
 
 static gboolean text_key(CanvasItem* it, guint keyval, GdkModifierType state) {
     gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
-    gboolean shift = (state & GDK_SHIFT_MASK) != 0;
     gboolean alt = (state & GDK_ALT_MASK) != 0;
 
     if (keyval == GDK_KEY_Escape && !ctrl && !alt) {
@@ -674,53 +676,7 @@ static gboolean text_key(CanvasItem* it, guint keyval, GdkModifierType state) {
         focus_next_item(it->page, it, keyval == GDK_KEY_Tab ? 1 : -1);
         return TRUE;
     }
-    if ((keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) && !ctrl && !alt) {
-        if (canvas_text_handle_enter(GTK_TEXT_VIEW(it->content))) return TRUE;
-    }
-    /* Ctrl+Space (as in the Org editor) or Ctrl+Shift+C: toggle the checkbox */
-    if ((ctrl && !shift && !alt && keyval == GDK_KEY_space) ||
-        (ctrl && shift && (keyval == GDK_KEY_c || keyval == GDK_KEY_C))) {
-        canvas_text_toggle_checkbox(it->buffer);
-        schedule_save(it->page);
-        return TRUE;
-    }
-    if (ctrl && alt) {
-        if (keyval == GDK_KEY_1 || keyval == GDK_KEY_KP_1) {
-            canvas_text_apply_preset(it->buffer, CANVAS_PRESET_H1);
-            schedule_save(it->page);
-            return TRUE;
-        }
-        if (keyval == GDK_KEY_2 || keyval == GDK_KEY_KP_2) {
-            canvas_text_apply_preset(it->buffer, CANVAS_PRESET_H2);
-            schedule_save(it->page);
-            return TRUE;
-        }
-        if (keyval == GDK_KEY_0 || keyval == GDK_KEY_KP_0) {
-            canvas_text_apply_preset(it->buffer, CANVAS_PRESET_BODY);
-            schedule_save(it->page);
-            return TRUE;
-        }
-        if (keyval == GDK_KEY_q || keyval == GDK_KEY_Q) {
-            canvas_text_apply_preset(it->buffer, CANVAS_PRESET_QUOTE);
-            schedule_save(it->page);
-            return TRUE;
-        }
-    }
-    if (!ctrl) return FALSE;
-
-    guint style = 0;
-    switch (keyval) {
-    case GDK_KEY_b: case GDK_KEY_B: style = (shift || alt) ? 0 : CANVAS_STYLE_BOLD; break;
-    case GDK_KEY_i: case GDK_KEY_I: style = (shift || alt) ? 0 : CANVAS_STYLE_ITALIC; break;
-    case GDK_KEY_u: case GDK_KEY_U: style = (shift || alt) ? 0 : CANVAS_STYLE_UNDERLINE; break;
-    case GDK_KEY_s: case GDK_KEY_S: style = (shift && !alt) ? CANVAS_STYLE_STRIKE : 0; break;
-    case GDK_KEY_e: case GDK_KEY_E: style = (shift || alt) ? 0 : CANVAS_STYLE_CODE; break;
-    case GDK_KEY_h: case GDK_KEY_H: style = CANVAS_STYLE_HIGHLIGHT; break;
-    default: break;
-    }
-    if (style == 0) return FALSE;
-    canvas_text_toggle_style(it->buffer, &it->pending, style);
-    return TRUE;
+    return canvas_text_key(GTK_TEXT_VIEW(it->content), &it->pending, keyval, state);
 }
 
 static gboolean block_key(CanvasPage* p, CanvasItem* it, guint keyval, GdkModifierType state) {
@@ -803,6 +759,32 @@ static gboolean on_paste_picture(CanvasPage* p) {
     return TRUE;
 }
 
+/* Ctrl+= / Ctrl+- / Ctrl+0: zoom in / out / back to 100 % (the window's
+ * font sizes elsewhere: canvas_view_claims_key()) */
+static gint zoom_key_step(guint keyval, GdkModifierType state) {
+    if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) != GDK_CONTROL_MASK) return G_MININT;
+    gboolean shift = (state & GDK_SHIFT_MASK) != 0;
+    if (keyval == GDK_KEY_equal || keyval == GDK_KEY_plus || keyval == GDK_KEY_KP_Add) return 1;
+    if (!shift && (keyval == GDK_KEY_minus || keyval == GDK_KEY_KP_Subtract)) return -1;
+    if (!shift && (keyval == GDK_KEY_0 || keyval == GDK_KEY_KP_0)) return 0;
+    return G_MININT;
+}
+
+static gboolean zoom_key(CanvasPage* p, guint keyval, GdkModifierType state) {
+    gint step = zoom_key_step(keyval, state);
+    if (step == G_MININT) return FALSE;
+    canvas_viewport_zoom_step(p->viewport, step);
+    return TRUE;
+}
+
+static void on_key_released(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
+                            gpointer data) {
+    (void)ctrl;
+    (void)keycode;
+    (void)state;
+    if (keyval == GDK_KEY_space) canvas_viewport_set_pan_key(((CanvasPage*)data)->viewport, FALSE);
+}
+
 static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state, gpointer data) {
     (void)ctrl;
     (void)keycode;
@@ -833,7 +815,14 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         undo(p, shift);
         return TRUE;
     }
+    if (zoom_key(p, keyval, state)) return TRUE;
     CanvasItem* it = focused_item(p);
+    /* Space held on the page or a block: drag to move the view */
+    if (keyval == GDK_KEY_space && (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) == 0 &&
+        (f == p->surface || (it != NULL && f == it->frame))) {
+        canvas_viewport_set_pan_key(p->viewport, TRUE);
+        return TRUE;
+    }
     /* Not typing (the page or a block focused): a letter picks a tool, Esc
      * goes back to Select */
     if ((it == NULL || focused_widget(p) == it->frame) && (state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) == 0 &&
@@ -862,7 +851,7 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
 }
 
 /* ------------------------------------------------------------------------- */
-/* Toolbar Callbacks                                                         */
+/* Toolbar Callbacks (a text change saves the page by itself)                */
 /* ------------------------------------------------------------------------- */
 
 static void on_toolbar_tool(CanvasTool tool, gpointer udata) {
@@ -876,47 +865,32 @@ static void on_toolbar_crop(gpointer udata) {
 
 static void on_props_format_style(guint style_flag, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
-    if (it != NULL) {
-        canvas_text_toggle_style(it->buffer, &it->pending, style_flag);
-        schedule_save(it->page);
-        restore_focus(it->page);
-    }
+    if (it != NULL) canvas_text_toggle_style(it->buffer, &it->pending, style_flag);
+    restore_focus(udata);
 }
 
 static void on_props_format_preset(CanvasPreset preset, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
-    if (it != NULL) {
-        canvas_text_apply_preset(it->buffer, preset);
-        schedule_save(it->page);
-        restore_focus(it->page);
-    }
+    if (it != NULL) canvas_text_apply_preset(it->buffer, preset);
+    restore_focus(udata);
 }
 
 static void on_props_format_list(const gchar* prefix, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
-    if (it != NULL) {
-        canvas_text_insert_list(it->buffer, prefix);
-        schedule_save(it->page);
-        restore_focus(it->page);
-    }
+    if (it != NULL) canvas_text_insert_list(it->buffer, prefix);
+    restore_focus(udata);
 }
 
 static void on_props_format_indent(gint step, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
-    if (it != NULL) {
-        canvas_text_indent(it->buffer, step);
-        schedule_save(it->page);
-        restore_focus(it->page);
-    }
+    if (it != NULL) canvas_text_indent(it->buffer, step);
+    restore_focus(udata);
 }
 
 static void on_props_format_checkbox(gpointer udata) {
     CanvasItem* it = current_text_item(udata);
-    if (it != NULL) {
-        canvas_text_toggle_checkbox(it->buffer);
-        schedule_save(it->page);
-        restore_focus(it->page);
-    }
+    if (it != NULL) canvas_text_toggle_checkbox(it->buffer);
+    restore_focus(udata);
 }
 
 /* A style picked in the panel: for the next shapes, and the selected one */
@@ -981,6 +955,20 @@ static void on_close_clicked(GtkButton* button, gpointer data) {
     close_page(data);
 }
 
+static void on_zoom_changed(gdouble scale, gpointer data) {
+    CanvasPage* p = data;
+    gchar* text = g_strdup_printf("%d%%", (gint)(scale * 100 + 0.5));
+    gtk_button_set_label(GTK_BUTTON(p->zoom_button), text);
+    g_free(text);
+}
+
+static void on_zoom_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    CanvasPage* p = data;
+    canvas_viewport_zoom_step(p->viewport, 0);
+    gtk_widget_grab_focus(p->surface);
+}
+
 static void on_label_middle_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     (void)x;
@@ -1007,6 +995,7 @@ static void page_free(gpointer data) {
     if (p->toolbar != NULL) canvas_toolbar_free(p->toolbar);
     if (p->props != NULL) canvas_props_free(p->props);
     canvas_history_free(p->history);
+    canvas_viewport_free(p->viewport);
     g_free(p->drag_before);
     g_free(p->dir);
     g_free(p);
@@ -1040,6 +1029,12 @@ static CanvasPage* ensure_page(AppData* app) {
     gtk_label_set_xalign(GTK_LABEL(p->title), 0.0f);
     gtk_widget_set_hexpand(p->title, TRUE);
 
+    p->zoom_button = gtk_button_new_with_label("100%");
+    gtk_widget_add_css_class(p->zoom_button, "flat");
+    gtk_widget_set_tooltip_text(p->zoom_button, "Zoom: Ctrl+Wheel, Ctrl+= / Ctrl+-; Click: 100% (Ctrl+0)");
+    g_signal_connect(p->zoom_button, "clicked", G_CALLBACK(on_zoom_clicked), p);
+    gtk_box_append(GTK_BOX(bar), p->zoom_button);
+
     GtkWidget* close = icon_button_new("window-close", "Close Canvas (Ctrl+W)");
     g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), p);
     gtk_box_append(GTK_BOX(bar), close);
@@ -1069,13 +1064,10 @@ static CanvasPage* ensure_page(AppData* app) {
     gtk_widget_set_focusable(p->surface, TRUE);
     gtk_widget_set_hexpand(p->surface, TRUE);
     gtk_widget_set_vexpand(p->surface, TRUE);
-    p->scroll = gtk_scrolled_window_new();
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(p->scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-    gtk_widget_set_vexpand(p->scroll, TRUE);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(p->scroll), p->surface);
+    p->viewport = canvas_viewport_new(p->surface, on_zoom_changed, p);
     GtkWidget* overlay = gtk_overlay_new();
     gtk_widget_set_vexpand(overlay, TRUE);
-    gtk_overlay_set_child(GTK_OVERLAY(overlay), p->scroll);
+    gtk_overlay_set_child(GTK_OVERLAY(overlay), canvas_viewport_get_widget(p->viewport));
     GtkWidget* bar_widget = canvas_toolbar_get_widget(p->toolbar);
     gtk_widget_set_margin_top(bar_widget, 10);
     gtk_widget_set_margin_start(bar_widget, 12);
@@ -1110,6 +1102,7 @@ static CanvasPage* ensure_page(AppData* app) {
     GtkEventController* keys = gtk_event_controller_key_new();
     gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
     g_signal_connect(keys, "key-pressed", G_CALLBACK(on_key), p);
+    g_signal_connect(keys, "key-released", G_CALLBACK(on_key_released), p);
     gtk_widget_add_controller(root, keys);
 
     g_object_set_data_full(G_OBJECT(root), PAGE_KEY, p, page_free);
@@ -1189,4 +1182,11 @@ gboolean canvas_view_close_shown(AppData* app) {
     if (gtk_notebook_get_current_page(nb) != gtk_notebook_page_num(nb, p->root)) return FALSE;
     close_page(p);
     return TRUE;
+}
+
+gboolean canvas_view_claims_key(AppData* app, guint keyval, GdkModifierType state) {
+    CanvasPage* p = app != NULL ? page_of(app) : NULL;
+    if (p == NULL || p->dir == NULL || zoom_key_step(keyval, state) == G_MININT) return FALSE;
+    GtkWidget* f = focused_widget(p);
+    return f != NULL && (f == p->root || gtk_widget_is_ancestor(f, p->root));
 }

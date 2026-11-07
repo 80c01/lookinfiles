@@ -16,6 +16,8 @@
  *   the arrows move it, Enter edits it, Tab goes to the next block.
  * - Ctrl+Z / Ctrl+Shift+Z (Ctrl+Y): undo / redo on the page (canvas_history.h);
  *   while typing, the text box or table cell undoes its own text.
+ * - Ctrl+wheel, Ctrl+= / Ctrl+- zoom, Ctrl+0 back to 100 %; a middle-button
+ *   drag, or Space held and a drag, moves the view (canvas_viewport.h).
  * - Ctrl+B / Ctrl+I / Ctrl+U / Ctrl+Shift+S / Ctrl+E / Ctrl+Alt+1: bold,
  *   italic, underline, strikethrough, code, heading.
  *
@@ -40,5 +42,9 @@ void canvas_view_path_moved(AppData* app, const gchar* old_path, const gchar* ne
 /* Close the Canvas page if it is the current page of the preview notebook
  * (Ctrl+W). Returns TRUE if it was closed. */
 gboolean canvas_view_close_shown(AppData* app);
+
+/* The Canvas page has the focus and takes this key (zoom: Ctrl+= / Ctrl+- /
+ * Ctrl+0, the font sizes elsewhere): the window lets it through */
+gboolean canvas_view_claims_key(AppData* app, guint keyval, GdkModifierType state);
 
 #endif /* CANVAS_VIEW_H */

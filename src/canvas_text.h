@@ -51,4 +51,10 @@ void canvas_text_indent(GtkTextBuffer* buffer, gint step);
  * Returns TRUE if handled (swallowed), FALSE to let default GtkTextView handler run. */
 gboolean canvas_text_handle_enter(GtkTextView* view);
 
+/* Keys of a text box: Enter (lists go on), Ctrl+Space / Ctrl+Shift+C
+ * (checkbox), Ctrl+Alt+1 / 2 / 0 / Q (paragraph style), Ctrl+B / I / U / E /
+ * H, Ctrl+Shift+S (text styles; pending: the styles of the text typed next).
+ * The buffer changes notify the page. Returns TRUE if the key was used. */
+gboolean canvas_text_key(GtkTextView* view, guint* pending, guint keyval, GdkModifierType state);
+
 #endif /* CANVAS_TEXT_H */

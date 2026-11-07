@@ -399,6 +399,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   text, table, eraser, and the grid / align / crop menu), `canvas_props`
   (floating panel: shape style, or text formatting), `canvas_draw` (a shape
   following the pointer while it is drawn), `canvas_item` (the block widgets),
+  `canvas_viewport` (the scrolled view: the page drawn at a scale by a
+  transform, so its coordinates stay page coordinates; Ctrl+wheel zoom, pan),
   `canvas_rough_draw` (hand-drawn rendering), `canvas_geometry` (snap, align,
   drag box, 45-degree lines; unit-tested).
 - `bookmark_dialog` — the add / edit dialogs of the bookmarks view (name,

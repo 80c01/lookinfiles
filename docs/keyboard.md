@@ -61,7 +61,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Alt+L` | Workspace layouts: a list that shows each layout in full as you move through it (`Alt+L` again: the next one); `Enter` applies it, `Escape` puts everything back as it was; **Edit Layouts…** saves the current panels under a name (`Default` for new workspaces), deletes one or resets the default |
 | `Ctrl+,` | Preferences (also the top bar's gear button), on the section shown last: Appearance (themes and fonts), Editor (mode, line numbers and wrap of new editor tabs, a vertical line at a column in every editor tab and in code previews), Window (size at startup), Code navigation (edit `lsp.ini`); Apply keeps every change, Cancel restores them all |
 | `Alt+T` | Preferences on Appearance: pick a theme (applied as you select it), set your interface and code fonts, save the current look as a theme, edit or delete your themes |
-| `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Larger / smaller fonts (interface and code together), or back to the theme's sizes |
+| `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Larger / smaller fonts (interface and code together), or back to the theme's sizes (on the Canvas tab: its zoom) |
 | `Ctrl+P` (Notepad, Vim), `C-x C-f` (Emacs) | Go to a file of the project (its git repository, else the current folder): type part of its name or path, the best matches first; with nothing typed, the recently opened files come first; `Enter` shows it in the explorer, `Ctrl+Enter` opens it in an editor tab (Vim editor tabs and terminals keep `Ctrl+P`) |
 | `Ctrl+Shift+F` | Search in files: a text in every file of the project (any case; the editor selection is filled in), searched in the background; in the dialog `Alt+M` matches the case, `Alt+W` whole words, `Alt+R` a regular expression, `Alt+L` the letters in order, not next to each other; `Alt+N` / `Alt+X` go to the files to include / exclude (patterns such as `*.c, src/`), `Alt+I` includes the files git ignores (all kept for the next search); the results are listed by file in a **Search** tab (`Enter` or a double click opens one, the cross closes the tab). Unsaved changes are not searched |
 | `Ctrl+T` | Open a terminal in a new tab of the focused terminal pane (exit the shell to close it); drag a tab to reorder it, onto another pane to move it there (the preview and editor panels too, beside the files), or near a pane edge to split that side |
@@ -147,6 +147,9 @@ automatically; one canvas at a time)
 | Arrows (`Shift`: further) | Move the selected block |
 | `Enter` | Edit the selected text box |
 | `Delete` / `Backspace` | Delete the selected block (an empty text box goes away when left) |
+| `Ctrl+wheel`, `Ctrl+=` / `Ctrl+-` | Zoom the page in / out (around the pointer with the wheel; 10 % to 400 %, the scale shown above the page) |
+| `Ctrl+0`, click on the scale | Zoom back to 100 % (on the Canvas tab, instead of the font sizes) |
+| Middle-button drag, `Space` held and a drag | Move the view (`Space` when not typing in a block) |
 | `Ctrl+Z` / `Ctrl+Shift+Z`, `Ctrl+Y` | Undo / redo on the page: add, delete, move, resize, style, align, crop (while typing: the text of the box or cell) |
 | `Ctrl+W`, middle click on the tab | Close the Canvas tab (saved first) |
 
