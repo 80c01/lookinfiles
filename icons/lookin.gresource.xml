@@ -16,6 +16,13 @@
     <file>scalable/actions/lookin-canvas-align-bottom-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-distribute-h-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-distribute-v-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-bring-front-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-bring-forward-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-send-backward-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-send-back-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-lock-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-unlock-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-crop-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-arrow-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-diamond-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-ellipse-symbolic.svg</file>

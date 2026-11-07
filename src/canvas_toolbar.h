@@ -2,7 +2,7 @@
 #define CANVAS_TOOLBAR_H
 
 /* Tool bar of the Canvas page: a floating row of tool icons (select, shapes,
- * pencil, text, table, eraser) and a menu (snap to grid, order, lock, crop, export). */
+ * pencil, text, table, eraser) and a menu (snap to grid, export). */
 #include "canvas_doc.h"
 #include <gtk/gtk.h>
 
@@ -24,11 +24,7 @@ typedef struct CanvasToolbar CanvasToolbar;
 
 typedef struct {
     void (*on_tool)(CanvasTool tool, gpointer udata);
-    void (*on_crop_image)(gpointer udata);
     void (*on_toggle_grid)(gboolean enabled, gpointer udata);
-    /* Drawing order of the selection: 2 front, 1 forward, -1 backward, -2 back */
-    void (*on_order)(gint where, gpointer udata);
-    void (*on_lock)(gpointer udata);
     void (*on_export)(gboolean svg, gpointer udata);
 } CanvasToolbarCallbacks;
 

@@ -3,8 +3,10 @@
 
 /* Properties panel of the Canvas page, floating on the left of the page:
  * the shape style (stroke colour, fill, stroke width, hand-drawn or clean)
- * while a drawing tool is chosen or a shape is selected, and the align and
- * distribute buttons while several blocks are selected; hidden otherwise.
+ * while a drawing tool is chosen or a shape is selected, and the actions on
+ * the selected blocks (align and distribute when there are several, drawing
+ * order, lock, crop a picture) while blocks are selected and not edited;
+ * hidden otherwise.
  * Text is formatted with the bar above the text box (canvas_format_bar.h). */
 #include "canvas_doc.h"
 #include "canvas_geometry.h"
@@ -23,6 +25,12 @@ typedef struct {
     void (*on_shape_style)(const CanvasShapeStyle* style, gpointer udata);
     /* Align or distribute the selected blocks */
     void (*on_align)(CanvasAlignOp op, gpointer udata);
+    /* Drawing order of the selection: 2 front, 1 forward, -1 backward, -2 back */
+    void (*on_order)(gint where, gpointer udata);
+    /* Lock or unlock the selected blocks */
+    void (*on_lock)(gpointer udata);
+    /* Crop the selected picture */
+    void (*on_crop)(gpointer udata);
 } CanvasPropsCallbacks;
 
 typedef struct CanvasProps CanvasProps;
@@ -45,8 +53,14 @@ void canvas_props_show_shape(CanvasProps* props, const CanvasShapeStyle* style, 
 /* Hide the shape section */
 void canvas_props_hide_shape(CanvasProps* props);
 
-/* Show the align section for count selected blocks that can move: aligning
- * needs 2, distributing 3; hidden under 2 */
-void canvas_props_show_align(CanvasProps* props, guint count);
+/* The selected blocks, for the selection section */
+typedef struct {
+    guint selected;   /* blocks selected (0: section hidden) */
+    guint movable;    /* of them, not locked: aligning needs 2, distributing 3 */
+    gboolean locked;  /* all locked: the lock button unlocks */
+    gboolean picture; /* a single picture: the crop button shows */
+} CanvasPropsSelection;
+
+void canvas_props_show_selection(CanvasProps* props, const CanvasPropsSelection* sel);
 
 #endif /* CANVAS_PROPS_H */

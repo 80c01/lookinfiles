@@ -84,28 +84,6 @@ static void on_grid_toggled(GtkCheckButton* btn, gpointer data) {
     if (tb->cbs.on_toggle_grid) tb->cbs.on_toggle_grid(gtk_check_button_get_active(btn), tb->user_data);
 }
 
-static void on_crop_clicked(GtkButton* btn, gpointer data) {
-    CanvasToolbar* tb = data;
-    GtkPopover* pop = g_object_get_data(G_OBJECT(btn), "pop");
-    if (pop != NULL) gtk_popover_popdown(pop);
-    if (tb->cbs.on_crop_image) tb->cbs.on_crop_image(tb->user_data);
-}
-
-static void on_order_clicked(GtkButton* btn, gpointer data) {
-    CanvasToolbar* tb = data;
-    GtkPopover* pop = g_object_get_data(G_OBJECT(btn), "pop");
-    if (pop != NULL) gtk_popover_popdown(pop);
-    gint where = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "order"));
-    if (tb->cbs.on_order) tb->cbs.on_order(where, tb->user_data);
-}
-
-static void on_lock_clicked(GtkButton* btn, gpointer data) {
-    CanvasToolbar* tb = data;
-    GtkPopover* pop = g_object_get_data(G_OBJECT(btn), "pop");
-    if (pop != NULL) gtk_popover_popdown(pop);
-    if (tb->cbs.on_lock) tb->cbs.on_lock(tb->user_data);
-}
-
 static void on_export_clicked(GtkButton* btn, gpointer data) {
     CanvasToolbar* tb = data;
     GtkPopover* pop = g_object_get_data(G_OBJECT(btn), "pop");
@@ -124,14 +102,14 @@ static GtkWidget* menu_item(const gchar* label, GtkWidget* pop, GCallback cb, Ca
     return item;
 }
 
-/* The menu at the end of the bar: snap to grid, order, lock, crop, export */
+/* The menu at the end of the bar: snap to grid, export */
 static GtkWidget* more_menu(CanvasToolbar* tb) {
     GtkWidget* mb = gtk_menu_button_new();
     gtk_menu_button_set_child(GTK_MENU_BUTTON(mb), icon_image_new("view-more"));
     gtk_menu_button_set_has_frame(GTK_MENU_BUTTON(mb), FALSE);
     gtk_widget_add_css_class(mb, "canvas-tool");
     gtk_widget_set_focus_on_click(mb, FALSE);
-    gtk_widget_set_tooltip_text(mb, "Grid, Order, Lock, Crop and Export");
+    gtk_widget_set_tooltip_text(mb, "Grid and Export");
 
     GtkWidget* pop = gtk_popover_new();
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
@@ -141,26 +119,6 @@ static GtkWidget* more_menu(CanvasToolbar* tb) {
     gtk_check_button_set_active(GTK_CHECK_BUTTON(grid), TRUE);
     g_signal_connect(grid, "toggled", G_CALLBACK(on_grid_toggled), tb);
     gtk_box_append(GTK_BOX(box), grid);
-    gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
-
-    static const struct {
-        const gchar* name;
-        gint where;
-    } ORDERS[] = {
-        {"Bring to Front (Ctrl+Shift+])", 2},
-        {"Bring Forward (Ctrl+])", 1},
-        {"Send Backward (Ctrl+[)", -1},
-        {"Send to Back (Ctrl+Shift+[)", -2},
-    };
-    for (guint i = 0; i < G_N_ELEMENTS(ORDERS); i++) {
-        GtkWidget* item = menu_item(ORDERS[i].name, pop, G_CALLBACK(on_order_clicked), tb);
-        g_object_set_data(G_OBJECT(item), "order", GINT_TO_POINTER(ORDERS[i].where));
-        gtk_box_append(GTK_BOX(box), item);
-    }
-    gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
-    gtk_box_append(GTK_BOX(box), menu_item("Lock / Unlock (Ctrl+Shift+K)", pop, G_CALLBACK(on_lock_clicked), tb));
-    gtk_box_append(GTK_BOX(box), menu_item("Crop Selected Picture", pop, G_CALLBACK(on_crop_clicked), tb));
-
     gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
     gtk_box_append(GTK_BOX(box), menu_item("Export as PNG", pop, G_CALLBACK(on_export_clicked), tb));
     GtkWidget* svg = menu_item("Export as SVG", pop, G_CALLBACK(on_export_clicked), tb);

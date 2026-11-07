@@ -97,7 +97,7 @@ static void on_toolbar_tool(CanvasTool tool, gpointer udata) {
     canvas_page_set_tool(udata, tool);
 }
 
-static void on_toolbar_crop(gpointer udata) {
+static void on_props_crop(gpointer udata) {
     CanvasPage* p = udata;
     canvas_page_open_crop(p, canvas_page_current_item(p));
 }
@@ -252,13 +252,13 @@ static void on_toolbar_export(gboolean svg, gpointer udata) {
     g_idle_add_full(G_PRIORITY_DEFAULT_IDLE, on_export_idle, job, NULL);
 }
 
-static void on_toolbar_lock(gpointer udata) {
+static void on_props_lock(gpointer udata) {
     CanvasPage* p = udata;
     canvas_page_toggle_lock(p);
     canvas_page_restore_focus(p);
 }
 
-static void on_toolbar_order(gint where, gpointer udata) {
+static void on_props_order(gint where, gpointer udata) {
     CanvasPage* p = udata;
     canvas_page_reorder_selected(p, where);
     canvas_page_restore_focus(p);
@@ -408,14 +408,17 @@ static CanvasPage* page_new(AppData* app) {
     /* Floating tool bar (top) and properties panel (left) over the page */
     CanvasToolbarCallbacks cbs = {
         .on_tool = on_toolbar_tool,
-        .on_crop_image = on_toolbar_crop,
         .on_toggle_grid = on_toolbar_toggle_grid,
-        .on_order = on_toolbar_order,
-        .on_lock = on_toolbar_lock,
         .on_export = on_toolbar_export
     };
     p->toolbar = canvas_toolbar_new(&cbs, p);
-    CanvasPropsCallbacks pcbs = {.on_shape_style = on_props_shape_style, .on_align = on_props_align};
+    CanvasPropsCallbacks pcbs = {
+        .on_shape_style = on_props_shape_style,
+        .on_align = on_props_align,
+        .on_order = on_props_order,
+        .on_lock = on_props_lock,
+        .on_crop = on_props_crop
+    };
     p->props = canvas_props_new(&pcbs, p);
     CanvasFormatBarCallbacks fcbs = {
         .on_style = on_format_style,

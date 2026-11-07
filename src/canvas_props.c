@@ -42,7 +42,7 @@ static const struct {
     {4, "Extra Bold"},
 };
 
-/* Align and distribute buttons: icon (lookin-canvas-<icon>), tooltip */
+/* Align and distribute buttons: icon (lookin-<icon>), tooltip */
 static const struct {
     CanvasAlignOp op;
     const gchar* icon;
@@ -65,10 +65,25 @@ static const struct {
     {CANVAS_DISTRIBUTE_V, "canvas-distribute-v", "Distribute Vertically"},
 };
 
+/* Drawing order buttons: 2 front, 1 forward, -1 backward, -2 back */
+static const struct {
+    gint where;
+    const gchar* icon;
+    const gchar* tip;
+} ORDERS[] = {
+    {2, "canvas-bring-front", "Bring to Front (Ctrl+Shift+])"},
+    {1, "canvas-bring-forward", "Bring Forward (Ctrl+])"},
+    {-1, "canvas-send-backward", "Send Backward (Ctrl+[)"},
+    {-2, "canvas-send-back", "Send to Back (Ctrl+Shift+[)"},
+};
+
 struct CanvasProps {
     GtkWidget* box;
     GtkWidget* shape_box;
+    GtkWidget* selection_box;
     GtkWidget* align_box;
+    GtkWidget* lock;
+    GtkWidget* crop;
     GtkWidget* distributes[G_N_ELEMENTS(DISTRIBUTES)];
     GtkWidget* fill_row;
     GtkWidget* colors[G_N_ELEMENTS(COLORS)];
@@ -265,7 +280,7 @@ static GtkWidget* shape_section(CanvasProps* props) {
 /* The panel shows while one of its sections does */
 static void update_visible(CanvasProps* props) {
     gtk_widget_set_visible(props->box, gtk_widget_get_visible(props->shape_box) ||
-                                           gtk_widget_get_visible(props->align_box));
+                                           gtk_widget_get_visible(props->selection_box));
 }
 
 void canvas_props_show_shape(CanvasProps* props, const CanvasShapeStyle* style, gboolean with_fill) {
@@ -302,24 +317,43 @@ void canvas_props_hide_shape(CanvasProps* props) {
 }
 
 /* ------------------------------------------------------------------------- */
-/* Align section                                                             */
+/* Selection section: align, layers, lock, crop                             */
 /* ------------------------------------------------------------------------- */
 
 static void on_align_clicked(GtkButton* btn, gpointer data) {
     CanvasProps* props = data;
-    CanvasAlignOp op = (CanvasAlignOp)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "align-op"));
+    CanvasAlignOp op = (CanvasAlignOp)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "value"));
     if (props->cbs.on_align) props->cbs.on_align(op, props->user_data);
 }
 
-static GtkWidget* align_button(CanvasProps* props, CanvasAlignOp op, const gchar* icon, const gchar* tip) {
+static void on_order_clicked(GtkButton* btn, gpointer data) {
+    CanvasProps* props = data;
+    gint where = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "value"));
+    if (props->cbs.on_order) props->cbs.on_order(where, props->user_data);
+}
+
+static void on_lock_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    CanvasProps* props = data;
+    if (props->cbs.on_lock) props->cbs.on_lock(props->user_data);
+}
+
+static void on_crop_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    CanvasProps* props = data;
+    if (props->cbs.on_crop) props->cbs.on_crop(props->user_data);
+}
+
+/* Icon button (lookin-<icon>); value: what it applies, given to cb */
+static GtkWidget* action_button(CanvasProps* props, const gchar* icon, const gchar* tip, gint value, GCallback cb) {
     GtkWidget* b = gtk_button_new();
     gtk_button_set_child(GTK_BUTTON(b), icon_image_new(icon));
     gtk_widget_add_css_class(b, "canvas-prop");
     gtk_widget_set_focus_on_click(b, FALSE);
     gtk_widget_set_focusable(b, FALSE);
     gtk_widget_set_tooltip_text(b, tip);
-    g_object_set_data(G_OBJECT(b), "align-op", GINT_TO_POINTER((gint)op));
-    g_signal_connect(b, "clicked", G_CALLBACK(on_align_clicked), props);
+    g_object_set_data(G_OBJECT(b), "value", GINT_TO_POINTER(value));
+    g_signal_connect(b, "clicked", cb, props);
     return b;
 }
 
@@ -330,14 +364,16 @@ static GtkWidget* align_section(CanvasProps* props) {
     for (guint row_start = 0; row_start < G_N_ELEMENTS(ALIGNS); row_start += 3) {
         GtkWidget* row = row_new();
         for (guint i = row_start; i < row_start + 3; i++) {
-            gtk_box_append(GTK_BOX(row), align_button(props, ALIGNS[i].op, ALIGNS[i].icon, ALIGNS[i].tip));
+            gtk_box_append(GTK_BOX(row), action_button(props, ALIGNS[i].icon, ALIGNS[i].tip, (gint)ALIGNS[i].op,
+                                                       G_CALLBACK(on_align_clicked)));
         }
         gtk_box_append(GTK_BOX(box), row);
     }
     gtk_box_append(GTK_BOX(box), section_title("Distribute"));
     GtkWidget* row = row_new();
     for (guint i = 0; i < G_N_ELEMENTS(DISTRIBUTES); i++) {
-        props->distributes[i] = align_button(props, DISTRIBUTES[i].op, DISTRIBUTES[i].icon, DISTRIBUTES[i].tip);
+        props->distributes[i] = action_button(props, DISTRIBUTES[i].icon, DISTRIBUTES[i].tip,
+                                              (gint)DISTRIBUTES[i].op, G_CALLBACK(on_align_clicked));
         gtk_box_append(GTK_BOX(row), props->distributes[i]);
     }
     gtk_box_append(GTK_BOX(box), row);
@@ -345,12 +381,43 @@ static GtkWidget* align_section(CanvasProps* props) {
     return box;
 }
 
-void canvas_props_show_align(CanvasProps* props, guint count) {
-    if (props == NULL) return;
-    for (guint i = 0; i < G_N_ELEMENTS(DISTRIBUTES); i++) {
-        gtk_widget_set_sensitive(props->distributes[i], count >= 3);
+static GtkWidget* selection_section(CanvasProps* props) {
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    props->align_box = align_section(props);
+    gtk_box_append(GTK_BOX(box), props->align_box);
+
+    gtk_box_append(GTK_BOX(box), section_title("Layers"));
+    GtkWidget* row = row_new();
+    for (guint i = 0; i < G_N_ELEMENTS(ORDERS); i++) {
+        gtk_box_append(GTK_BOX(row), action_button(props, ORDERS[i].icon, ORDERS[i].tip, ORDERS[i].where,
+                                                   G_CALLBACK(on_order_clicked)));
     }
-    gtk_widget_set_visible(props->align_box, count >= 2);
+    gtk_box_append(GTK_BOX(box), row);
+
+    gtk_box_append(GTK_BOX(box), section_title("Actions"));
+    row = row_new();
+    props->lock = action_button(props, "canvas-lock", "Lock (Ctrl+Shift+K)", 0, G_CALLBACK(on_lock_clicked));
+    gtk_box_append(GTK_BOX(row), props->lock);
+    props->crop = action_button(props, "canvas-crop", "Crop Picture", 0, G_CALLBACK(on_crop_clicked));
+    gtk_box_append(GTK_BOX(row), props->crop);
+    gtk_box_append(GTK_BOX(box), row);
+    gtk_widget_set_visible(box, FALSE);
+    return box;
+}
+
+void canvas_props_show_selection(CanvasProps* props, const CanvasPropsSelection* sel) {
+    if (props == NULL) return;
+    gboolean shown = sel != NULL && sel->selected > 0;
+    if (shown) {
+        for (guint i = 0; i < G_N_ELEMENTS(DISTRIBUTES); i++) {
+            gtk_widget_set_sensitive(props->distributes[i], sel->movable >= 3);
+        }
+        gtk_widget_set_visible(props->align_box, sel->movable >= 2);
+        gtk_button_set_child(GTK_BUTTON(props->lock), icon_image_new(sel->locked ? "canvas-unlock" : "canvas-lock"));
+        gtk_widget_set_tooltip_text(props->lock, sel->locked ? "Unlock (Ctrl+Shift+K)" : "Lock (Ctrl+Shift+K)");
+        gtk_widget_set_visible(props->crop, sel->picture);
+    }
+    gtk_widget_set_visible(props->selection_box, shown);
     update_visible(props);
 }
 
@@ -369,8 +436,8 @@ CanvasProps* canvas_props_new(const CanvasPropsCallbacks* cbs, gpointer user_dat
     gtk_widget_set_valign(props->box, GTK_ALIGN_START);
     props->shape_box = shape_section(props);
     gtk_box_append(GTK_BOX(props->box), props->shape_box);
-    props->align_box = align_section(props);
-    gtk_box_append(GTK_BOX(props->box), props->align_box);
+    props->selection_box = selection_section(props);
+    gtk_box_append(GTK_BOX(props->box), props->selection_box);
     gtk_widget_set_visible(props->box, FALSE);
     return props;
 }

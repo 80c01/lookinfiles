@@ -748,9 +748,24 @@ void canvas_page_update_props(CanvasPage* p) {
     } else {
         canvas_props_hide_shape(p->props);
     }
-    GPtrArray* movable = p->tool == CANVAS_TOOL_SELECT ? canvas_page_selected_unlocked(p) : NULL;
-    canvas_props_show_align(p->props, movable != NULL ? movable->len : 0);
-    if (movable != NULL) g_ptr_array_unref(movable);
+    /* Actions on the selection: not while a block is edited (its text or
+     * label has the focus), unless others are selected with it */
+    CanvasPropsSelection sel = {0};
+    if (it != NULL && (p->last_focus == it->frame || p->selection->len > 1)) {
+        GPtrArray* items = canvas_page_selected(p);
+        sel.selected = items->len;
+        sel.locked = items->len > 0;
+        for (guint i = 0; i < items->len; i++) {
+            if (((CanvasItem*)g_ptr_array_index(items, i))->locked) {
+                continue;
+            }
+            sel.movable++;
+            sel.locked = FALSE;
+        }
+        sel.picture = items->len == 1 && it->kind == CANVAS_BLOCK_IMAGE;
+        g_ptr_array_unref(items);
+    }
+    canvas_props_show_selection(p->props, &sel);
 }
 
 void canvas_page_set_tool(CanvasPage* p, CanvasTool tool) {
