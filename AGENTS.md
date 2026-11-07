@@ -35,6 +35,8 @@ make ui-shots   # full UI scenario under Xvfb, screenshots in build/ui/shots/
 ```
 
 - **After a modification, only run `make`** and fix every warning and error.
+- **Build with every available CPU**: `make -j"$(nproc)"` (same for any other
+  `make` target you run).
 - **Run `make test`, `make check`, `make ui-test` or `make ui-shots` only when the user asks.**
   Not after an edit, not before a commit. The "`make check` passes" and
   `make ui-test` / `make ui-shots` items in the docs checklists also wait for the user.
