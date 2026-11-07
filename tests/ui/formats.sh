@@ -59,6 +59,7 @@
     cp "$ROOT/tests/fixtures/mail/winmail.dat" 42-winmail.dat  # TNEF
     cp "$ROOT/tests/fixtures/mail/archive.pst" 43-archive.pst  # header only
     cp "$ROOT/tests/fixtures/preview/deck.pptx" 44-deck.pptx   # theme, master, layouts
+    cp "$ROOT/tests/fixtures/preview/clip.mp4" 45-clip.mp4     # Enter: Video tab
     # Maildir folder (a directory: listed first)
     cp -r "$ROOT/tests/fixtures/mail/Maildir" 00-Maildir
     find . -exec touch -h -d '2000-01-01 00:00:00' {} +   # dates shown do not vary
@@ -122,4 +123,12 @@ format_scenario() {
     key Up Up Up Up Up Up Up Up Up Up Up
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
+    # Video: Enter opens a Video tab in the editor panel (playing: the frame
+    # varies, so these shots are not compared with a baseline), Space pauses
+    # it, Ctrl+Alt+Left moves it to the preview panel, Ctrl+W closes it
+    key alt+Left End
+    key Return;         shot fmt_video_tab_animated
+    key space Home;     shot fmt_video_tab_paused_animated
+    key ctrl+alt+Left;  shot fmt_video_tab_moved_animated
+    key ctrl+w;         shot fmt_video_tab_closed
 }

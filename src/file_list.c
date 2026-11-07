@@ -12,6 +12,7 @@
 #include "git_tab.h"
 #include "editor.h"
 #include "video.h"
+#include "video_tab.h"
 #include "audio.h"
 #include "bookmarks.h"
 #include "notes.h"
@@ -1051,7 +1052,14 @@ void activate_selected_entry(AppData* app) {
         FileKind kind = (g_strcmp0(row->path, app->viewed_path) == 0)
                             ? app->viewed_kind
                             : file_kind_of_path(row->path, row->name);
-        if (file_kind_is_media(kind)) {
+        if (kind == FILE_KIND_VIDEO) {
+            /* A tab of its own, moved like an editor tab (Space plays it in the preview) */
+            gchar* name = g_strdup(row->name);
+            gchar* full = g_strdup(row->path);
+            video_tab_open(app, name, full);
+            g_free(name);
+            g_free(full);
+        } else if (file_kind_is_media(kind)) {
             if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
                 app_emit(app, APP_EVENT_LAYOUT_CHANGED);
                 app->applying_layout = TRUE;

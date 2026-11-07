@@ -74,6 +74,11 @@ git change bars along its edge. Click or drag in it to scroll.
 
 `Space` or `p` plays and pauses. The player also has its own controls.
 
+`Enter` on a video opens it in a **Video** tab of the editor panel instead,
+where it plays: drag the tab like an editor tab (another pane, a split, the
+preview panel). In the tab, `Space` plays and pauses, `Left` / `Right` seek
+5 seconds, `Home` goes back to the start, `Ctrl+W` closes it.
+
 ## Mailboxes
 
 A mailbox (Thunderbird `Inbox`, `.mbox`...) first shows the list of its

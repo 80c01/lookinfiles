@@ -434,6 +434,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   the curve through the points of a line; unit-tested), `canvas_preview`
   (the preview of a Canvas note: the same block widgets, read-only, in the
   "canvas" page of the preview stack).
+- `video_tab` — the **Video** tabs (`app->video_pages`, every workspace): a
+  video opened with `Enter` in the explorer plays in a tab of the editor panel,
+  one per file, with its own `GtkMediaFile` (cleared on close: GStreamer frees
+  its pipeline only then); separate from the preview player (`video`). Opened
+  with `editor_add_page()`, movable like a Canvas tab, kept with its workspace
+  through `video_tab_workspace_hidden()` / `_shown()` / `_removed()`.
 - `bookmark_dialog` — the add / edit dialogs of the bookmarks view (name,
   location or folder icon, parent folder) and the target helpers they share
   with `bookmarks` (`bookmark_display_location()`, `bookmark_default_name()`).
