@@ -21,6 +21,7 @@ static void ensure_css(void) {
                   ".canvas-fmt { min-width: 26px; min-height: 26px; padding: 2px; border-radius: 6px;"
                   " background: none; border: none; box-shadow: none; color: @fg; }"
                   ".canvas-fmt:hover { background-color: @bg_hover; }"
+                  ".canvas-fmt:checked { background-color: @accent; color: @accent_text; }"
                   ".canvas-fmt:disabled { opacity: 0.4; }"
                   ".canvas-fmt-sep { margin: 4px 3px; }");
 }

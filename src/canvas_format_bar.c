@@ -30,8 +30,7 @@ static void ensure_css(void) {
     static gboolean done = FALSE;
     if (done) return;
     done = TRUE;
-    GString* css = g_string_new(".canvas-fmt-swatch { min-width: 14px; min-height: 14px; border-radius: 50%; }"
-                                ".canvas-fmt:checked { background-color: @bg_selected; color: @accent; }");
+    GString* css = g_string_new(".canvas-fmt-swatch { min-width: 14px; min-height: 14px; border-radius: 50%; }");
     for (guint i = 0; i < G_N_ELEMENTS(TEXT_COLORS); i++) {
         g_string_append_printf(css, ".canvas-fmt-c-%s { background-color: @%s; }", TEXT_COLORS[i].color,
                                TEXT_COLORS[i].color);
