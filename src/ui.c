@@ -210,6 +210,18 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     FocusInfo info;
     focus_route_get(app, &info);
 
+    /* The focus in an editor tab (or on its tab) of a mode with its own keys */
+    EditorTab* cur_tab = info.area == FOCUS_AREA_EDITOR ? info.tab : NULL;
+    gboolean is_modal_tab = (cur_tab != NULL &&
+                             (cur_tab->mode == EDITOR_MODE_EMACS ||
+                              cur_tab->mode == EDITOR_MODE_ORGMODE ||
+                              cur_tab->mode == EDITOR_MODE_VIM));
+
+    /* Emacs and Org-mode tabs keep C-r (search backward), C-S-f / C-S-b
+     * (select forward / backward) and M-l (downcase word) */
+    gboolean is_emacs_tab = is_modal_tab && (cur_tab->mode == EDITOR_MODE_EMACS ||
+                                             cur_tab->mode == EDITOR_MODE_ORGMODE);
+
     /* F1: the user guide (Help tab), from anywhere */
     if (keyval == GDK_KEY_F1 && (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) == 0) {
         help_guide_show(app, NULL);
@@ -227,7 +239,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
 
     /* Ctrl+Shift+F: search the files of the project (Search tab); before
      * the navigation keys: Vim's Ctrl+F pages down whatever Shift */
-    if ((state & GDK_CONTROL_MASK) && (state & GDK_SHIFT_MASK) && !(state & GDK_ALT_MASK) &&
+    if (!is_emacs_tab && (state & GDK_CONTROL_MASK) && (state & GDK_SHIFT_MASK) && !(state & GDK_ALT_MASK) &&
         (keyval == GDK_KEY_f || keyval == GDK_KEY_F)) {
         project_search_show(app);
         return TRUE;
@@ -307,8 +319,9 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
             quick_open_show_recent(app);
             return TRUE;
         }
-        /* Alt+L: workspace layout switcher (Ctrl+Alt+L moves editor tabs) */
-        if ((keyval == GDK_KEY_l || keyval == GDK_KEY_L) && !(state & GDK_CONTROL_MASK)) {
+        /* Alt+L: workspace layout switcher (Ctrl+Alt+L moves editor tabs;
+         * Emacs tabs keep M-l) */
+        if (!is_emacs_tab && (keyval == GDK_KEY_l || keyval == GDK_KEY_L) && !(state & GDK_CONTROL_MASK)) {
             layout_switcher_show(app);
             return TRUE;
         }
@@ -322,17 +335,6 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         layout_toggle(app);
         return TRUE;
     }
-
-    /* The focus in an editor tab (or on its tab) of a mode with its own keys */
-    EditorTab* cur_tab = info.area == FOCUS_AREA_EDITOR ? info.tab : NULL;
-    gboolean is_modal_tab = (cur_tab != NULL &&
-                             (cur_tab->mode == EDITOR_MODE_EMACS ||
-                              cur_tab->mode == EDITOR_MODE_ORGMODE ||
-                              cur_tab->mode == EDITOR_MODE_VIM));
-
-    /* Emacs and Org-mode tabs keep C-e (end of line) and C-r (search backward) */
-    gboolean is_emacs_tab = is_modal_tab && (cur_tab->mode == EDITOR_MODE_EMACS ||
-                                             cur_tab->mode == EDITOR_MODE_ORGMODE);
 
     /* Ctrl+Shift+B: a new browser tab (Emacs tabs keep it: C-S-b selects
      * backward) */

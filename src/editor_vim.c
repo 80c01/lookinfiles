@@ -957,8 +957,9 @@ gboolean vim_claims_key(EditorTab* tab, guint keyval, GdkModifierType state) {
     EditorModeState* st = state_of(tab);
     if (st == NULL || st->vim == NULL) return FALSE;
     if ((state & GDK_CONTROL_MASK) == 0 || (state & (GDK_SHIFT_MASK | GDK_ALT_MASK)) != 0) return FALSE;
-    /* Ctrl-R redoes (the window binds it otherwise) */
-    return gdk_keyval_to_lower(keyval) == GDK_KEY_r;
+    guint k = gdk_keyval_to_lower(keyval);
+    /* Ctrl-R redoes, Ctrl-T indents in Insert (the window binds them otherwise) */
+    return k == GDK_KEY_r || (k == GDK_KEY_t && vim_is_inserting(tab));
 }
 
 /* Ctrl+W w / W / h / l...: focus another panel; Ctrl+W c: close the tab,
