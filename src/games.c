@@ -19,10 +19,13 @@
 /* Secret sequence token history buffer */
 static gchar s_history[32] = {0};
 static gint s_history_len = 0;
-static gint64 s_last_key_us = 0;
+static gint64 s_key_times_us[32] = {0}; /* when each history token was typed */
 
 /* Longest pause allowed between two keys of the secret sequence */
 #define SEQUENCE_KEY_TIMEOUT_US (1500 * G_TIME_SPAN_MILLISECOND)
+/* Longest time allowed to type the whole secret sequence */
+#define SEQUENCE_TOTAL_TIMEOUT_US (5000 * G_TIME_SPAN_MILLISECOND)
+#define SEQUENCE_LEN 11 /* length of "UUDDLRLRABE" */
 
 void games_init(AppData* app) {
     if (app == NULL) return;
@@ -33,7 +36,7 @@ void games_init(AppData* app) {
 /* Check keyval in help panel or user guide for the Konami / easter egg sequence:
  * Up Up Down Down Left Right Left Right A B Return (or B A Return).
  * The sequence restarts when a key comes more than SEQUENCE_KEY_TIMEOUT_US
- * after the previous one. */
+ * after the previous one, and must be typed within SEQUENCE_TOTAL_TIMEOUT_US. */
 gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state) {
     if (app == NULL) return FALSE;
 
@@ -77,22 +80,26 @@ gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state)
     }
 
     gint64 now = g_get_monotonic_time();
-    if (s_history_len > 0 && now - s_last_key_us > SEQUENCE_KEY_TIMEOUT_US) {
+    if (s_history_len > 0 &&
+        now - s_key_times_us[s_history_len - 1] > SEQUENCE_KEY_TIMEOUT_US) {
         s_history_len = 0;
         s_history[0] = '\0';
     }
-    s_last_key_us = now;
 
     if (s_history_len >= (gint)sizeof(s_history) - 1) {
         memmove(s_history, s_history + 1, sizeof(s_history) - 2);
+        memmove(s_key_times_us, s_key_times_us + 1,
+                (sizeof(s_history) - 2) * sizeof(s_key_times_us[0]));
         s_history_len = (gint)sizeof(s_history) - 2;
     }
+    s_key_times_us[s_history_len] = now;
     s_history[s_history_len++] = token;
     s_history[s_history_len] = '\0';
 
     gboolean matched = FALSE;
-    if (g_str_has_suffix(s_history, "UUDDLRLRABE") ||
-        g_str_has_suffix(s_history, "UUDDLRLRBAE")) {
+    if ((g_str_has_suffix(s_history, "UUDDLRLRABE") ||
+         g_str_has_suffix(s_history, "UUDDLRLRBAE")) &&
+        now - s_key_times_us[s_history_len - SEQUENCE_LEN] <= SEQUENCE_TOTAL_TIMEOUT_US) {
         matched = TRUE;
     }
 
