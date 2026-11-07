@@ -208,12 +208,29 @@ static void test_rotation(void) {
     g_assert_cmpfloat_with_epsilon(py, qy, 0.5);
 }
 
+static void test_keep_ratio(void) {
+    gint w = 300, h = 120;
+    canvas_keep_ratio(200, 100, 10, &w, &h);
+    g_assert_cmpint(w, ==, 300);
+    g_assert_cmpint(h, ==, 150);
+    w = 210, h = 400;
+    canvas_keep_ratio(200, 100, 10, &w, &h);
+    g_assert_cmpint(w, ==, 800);
+    g_assert_cmpint(h, ==, 400);
+    /* Shrunk under the minimum: the shorter side stops at it */
+    w = 10, h = 10;
+    canvas_keep_ratio(200, 100, 20, &w, &h);
+    g_assert_cmpint(w, ==, 40);
+    g_assert_cmpint(h, ==, 20);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/canvas_geometry/snap_coord", test_snap_coord);
     g_test_add_func("/canvas_geometry/snap_box", test_snap_box);
     g_test_add_func("/canvas_geometry/align_boxes", test_align_boxes);
     g_test_add_func("/canvas_geometry/drag_box", test_drag_box);
+    g_test_add_func("/canvas_geometry/keep_ratio", test_keep_ratio);
     g_test_add_func("/canvas_geometry/snap_angle", test_snap_angle);
     g_test_add_func("/canvas_geometry/map_coord", test_map_coord);
     g_test_add_func("/canvas_geometry/edge_point", test_edge_point);

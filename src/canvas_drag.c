@@ -378,6 +378,9 @@ static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpoi
         group_move(p, dx, dy);
         return;
     }
+    /* Shift on a shape: it keeps its proportions */
+    GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
+    gboolean keep = (state & GDK_SHIFT_MASK) != 0;
     if (it->kind == CANVAS_BLOCK_TEXT || it->kind == CANVAS_BLOCK_TABLE) {
         it->w = MAX(p->drag_w + (gint)dx, MIN_TEXT_WIDTH);
     } else if (it->kind == CANVAS_BLOCK_SHAPE && it->angle != 0) {
@@ -386,11 +389,13 @@ static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpoi
         canvas_rotate_point(0, 0, -it->angle, &lx, &ly);
         it->w = MAX(p->drag_w + (gint)lround(lx), MIN_SHAPE_SIZE);
         it->h = MAX(p->drag_h + (gint)lround(ly), MIN_SHAPE_SIZE);
+        if (keep) canvas_keep_ratio(p->drag_w, p->drag_h, MIN_SHAPE_SIZE, &it->w, &it->h);
         CanvasRect start = {p->drag_x, p->drag_y, p->drag_w, p->drag_h};
         canvas_resize_rotated(&start, it->angle, it->w, it->h, &it->x, &it->y);
     } else if (it->kind == CANVAS_BLOCK_SHAPE) {
         it->w = MAX(p->drag_w + (gint)dx, MIN_SHAPE_SIZE);
         it->h = MAX(p->drag_h + (gint)dy, MIN_SHAPE_SIZE);
+        if (keep) canvas_keep_ratio(p->drag_w, p->drag_h, MIN_SHAPE_SIZE, &it->w, &it->h);
     } else {
         it->w = MAX(p->drag_w + (gint)dx, MIN_IMAGE_SIZE);
         it->h = MAX((gint)(it->w / it->aspect), MIN_IMAGE_SIZE);

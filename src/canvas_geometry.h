@@ -82,6 +82,10 @@ gdouble canvas_handle_angle(gdouble cx, gdouble cy, gdouble x, gdouble y, gboole
  * its turned top-left corner kept in place on the page */
 void canvas_resize_rotated(const CanvasRect* box, gdouble angle, gint nw, gint nh, gint* x, gint* y);
 
+/* Size (*w, *h) brought back to the proportions of w0 x h0 (Shift while
+ * resizing a shape): the larger stretch wins, neither side under min */
+void canvas_keep_ratio(gint w0, gint h0, gint min, gint* w, gint* h);
+
 /* Outline of a block an arrow end is bound to */
 typedef enum {
     CANVAS_OUTLINE_RECT,

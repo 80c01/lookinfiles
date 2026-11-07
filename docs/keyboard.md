@@ -145,7 +145,7 @@ editor tab; it stays in its workspace)
 | `Ctrl+]` / `Ctrl+[` (`Shift`: to the front / back) | Bring the selected blocks forward / send them backward |
 | `Ctrl+Shift+K` | Lock the selected blocks in place (not moved, resized or deleted; text still edited), or unlock them |
 | Drop image files | Copy them into the note as pictures |
-| Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions); a selected block takes the other selected ones along |
+| Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions, shapes too with Shift); a selected block takes the other selected ones along |
 | Drag the round handle above a selected rectangle, diamond or ellipse | Rotate it around its centre (`Shift`: steps of 15 degrees) |
 | Drag on the empty page (`Shift`: add) | Select the blocks inside the box |
 | `Shift+click` on a block | Add it to the selection, or take it out (`⋯` menu: align or distribute the selected blocks) |

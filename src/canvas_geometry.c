@@ -380,3 +380,11 @@ gdouble canvas_curve_distance(const gdouble* xy, guint n, gdouble px, gdouble py
     }
     return best;
 }
+
+void canvas_keep_ratio(gint w0, gint h0, gint min, gint* w, gint* h) {
+    if (w == NULL || h == NULL || w0 <= 0 || h0 <= 0) return;
+    gdouble scale = MAX((gdouble)*w / w0, (gdouble)*h / h0);
+    scale = MAX(scale, (gdouble)min / MIN(w0, h0));
+    *w = MAX((gint)lround(w0 * scale), min);
+    *h = MAX((gint)lround(h0 * scale), min);
+}
