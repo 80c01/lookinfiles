@@ -37,7 +37,7 @@ static void ensure_css(void) {
                   ".canvas-tool { min-width: 30px; min-height: 30px; padding: 0; border-radius: 7px;"
                   " background: none; border: none; box-shadow: none; color: @fg; }"
                   ".canvas-tool:hover { background-color: @bg_hover; }"
-                  ".canvas-tool:checked { background-color: @accent; color: @accent_fg; }"
+                  ".canvas-tool:checked { background-color: @accent; color: @accent_text; }"
                   ".canvas-island-sep { min-width: 1px; background-color: @border; margin: 6px 4px; }"
                   ".canvas-pop-item { padding: 4px 8px; font-size: @size_small; }");
 }
