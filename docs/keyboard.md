@@ -388,7 +388,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
 | Windows (split view) | `C-x 2` / `C-x 3` the file in a second window below / to the right (its own point; text and undo shared), `C-x 0` delete this window, `C-x 1` delete the other windows of the file (the changes stay in the window kept) |
 | Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward, `M-?` references, `M-g i` symbols, `C-h .` help; signatures in the echo area |
-| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `visual-line-mode` / `toggle-truncate-lines` (wrap long lines), `org-mode`, `text-mode`, mode switches) |
+| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `visual-line-mode` / `toggle-truncate-lines` (wrap long lines), `org-mode`, `text-mode`, `dunnet`, mode switches) |
 | Minibuffer | `Tab` completes (`M-x` command names, Org tags, `*Heading` links) and lists the candidates; `C-g` / `Esc` quits |
 
 </details>

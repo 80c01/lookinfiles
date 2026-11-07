@@ -88,6 +88,7 @@ preview_formats:mail_box,mail_message,mail_store,mail_tnef,mail_view,office97,fi
 org_time:
 org_doc:org_time
 org_table:org_doc
+dunnet:
 vim_keys:
 nav_keys:
 vim_regex:

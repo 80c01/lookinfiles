@@ -78,6 +78,11 @@ void editor_info_forget(EditorTab* tab) {
 }
 
 static void fill_language(EditorTab* tab, EditorInfo* info) {
+    if (tab->is_buffer && g_strcmp0(tab->name, "*dungeon*") == 0) {
+        info->language = g_strdup("Dungeon");
+        info->language_id = g_strdup("dungeon");
+        return;
+    }
 #ifdef HAVE_GSV
     if (GTK_SOURCE_IS_BUFFER(tab->buffer)) {
         GtkSourceLanguage* lang = gtk_source_buffer_get_language(GTK_SOURCE_BUFFER(tab->buffer));

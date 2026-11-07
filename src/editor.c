@@ -371,9 +371,11 @@ EditorTab* editor_current_tab(AppData* app) {
 void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
     EditorTab* tab = (EditorTab*)data;
-    if (tab != NULL && tab->is_buffer && tab->path != NULL) {
-        /* Automatically back buffer to ~/.config file so user doesn't lose changes */
-        editor_tab_write(tab, tab->path, NULL);
+    if (tab != NULL && tab->is_buffer && gtk_text_buffer_get_modified(tab->buffer)) {
+        if (tab->path != NULL) {
+            /* Automatically back buffer to ~/.config file so user doesn't lose changes */
+            editor_tab_write(tab, tab->path, NULL);
+        }
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
     }
     editor_tab_label_update(tab);
@@ -1413,6 +1415,87 @@ void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
     g_free(contents);
 }
 
+EditorTab* editor_open_buffer(AppData* app, const gchar* name, EditorMode mode) {
+    if (app == NULL || name == NULL) return NULL;
+    GtkNotebook* target_nb = editor_target_notebook(app);
+    if (target_nb == NULL) return NULL;
+
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* t = (EditorTab*)l->data;
+        if (t != NULL && t->is_buffer && t->path == NULL && g_strcmp0(t->name, name) == 0) {
+            t = editor_view_active(t);
+            GtkNotebook* t_nb = editor_tab_notebook(app, t);
+            if (GTK_WIDGET(t_nb) != app->notebook) {
+                if (app->editor_box != NULL && !gtk_widget_get_visible(app->editor_box)) {
+                    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+                    app->applying_layout = TRUE;
+                    gtk_widget_set_visible(app->editor_box, TRUE);
+                    app_emit(app, APP_EVENT_CHROME_CHANGED);
+                    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+                }
+            } else {
+                if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+                    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+                    app->applying_layout = TRUE;
+                    gtk_widget_set_visible(app->viewer_box, TRUE);
+                    app_emit(app, APP_EVENT_CHROME_CHANGED);
+                    app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+                }
+            }
+            gint target_page = gtk_notebook_page_num(t_nb, t->container);
+            if (target_page >= 0) {
+                gtk_notebook_set_current_page(t_nb, target_page);
+            }
+            if (t->view != NULL) {
+                gtk_widget_grab_focus(t->view);
+            }
+            app->last_focused_editor = t;
+            return t;
+        }
+    }
+
+    if (app->editor_dedicated) {
+        if (app->editor_box != NULL && !gtk_widget_get_visible(app->editor_box)) {
+            app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+            app->applying_layout = TRUE;
+            gtk_widget_set_visible(app->editor_box, TRUE);
+            app->editor_dedicated = TRUE;
+            if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+                app->workspaces[app->current_ws].editor_dedicated = TRUE;
+            }
+            app_emit(app, APP_EVENT_CHROME_CHANGED);
+            app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+        }
+    } else {
+        if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+            app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+            app->applying_layout = TRUE;
+            gtk_widget_set_visible(app->viewer_box, TRUE);
+            app_emit(app, APP_EVENT_CHROME_CHANGED);
+            app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+        }
+    }
+
+    EditorTab* tab = g_new0(EditorTab, 1);
+    tab->path = NULL;
+    tab->name = g_strdup(name);
+    tab->is_buffer = TRUE;
+    tab->app = app;
+    tab->nb = GTK_WIDGET(target_nb);
+    tab->line_ending = "Unix (LF)";
+    tab->final_break = "\n";
+    tab->mode = mode;
+#ifdef HAVE_GSV
+    GtkTextBuffer* buffer = GTK_TEXT_BUFFER(gtk_source_buffer_new(NULL));
+#else
+    GtkTextBuffer* buffer = gtk_text_buffer_new(NULL);
+#endif
+    editor_view_build(app, tab, buffer);
+    gtk_text_buffer_set_modified(tab->buffer, FALSE);
+    editor_tab_add_page(app, tab, target_nb);
+    return tab;
+}
+
 void editor_split_tab(AppData* app, EditorTab* tab, EditorMoveDirection dir) {
     if (app == NULL) return;
     if (tab == NULL) {
@@ -1938,7 +2021,7 @@ void editor_save_all_buffers(AppData* app) {
 
 gboolean editor_save_current(AppData* app) {
     EditorTab* tab = editor_current_tab(app);
-    if (tab == NULL) {
+    if (tab == NULL || tab->path == NULL) {
         return FALSE;
     }
     GError* error = NULL;

@@ -122,6 +122,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   clock, lists, checkboxes, statistics cookies, links, `<s` templates. The
   editor (`editor_org`) and the preview (`orgmode`) both edit through it.
 - `org_table` — Org tables: align, cell navigation, row / column editing.
+- `dunnet` — Ron Schnell's Dunnet text adventure state machine (rooms,
+  items, VAX `pokey` UNIX shell, FTP, rlogin to `gamma`, IBM PC XT DOS prompt,
+  Endgame riddles), driven by `editor_dunnet` (`M-x dunnet`).
 - `line_diff` — Myers line diff of a text against its previous version,
   reduced to per-line gutter marks (`LineDiffMark`: added, modified, deleted).
 - `pane_geometry` — `pane_find_neighbor()`: the pane next to another one in a
@@ -525,6 +528,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   Mode bar labels whose text can grow (file names, messages) must use
   `editor_bar_label_shrinkable()`, and filler text `editor_bar_clip()`: a bar
   wider than the panel pushes the minimap out of the window.
+- `editor_dunnet` — the `*dungeon*` buffer tab opened by `M-x dunnet` in Emacs
+  mode (`dunnet` state attached to the `GtkTextBuffer`, prompt protection,
+  `M-p` / `M-n` command history).
 - `code_nav` — code navigation in editor tabs, shared by the three modes:
   definition / declaration lookups in a worker (`code_nav_goto_definition()`,
   `code_nav_goto_symbol()`), the jump with `editor_open_at()`, back /

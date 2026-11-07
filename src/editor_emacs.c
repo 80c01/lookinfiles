@@ -9,6 +9,7 @@
 #include "app_events.h"
 #include "nav_keys.h"
 #include "quick_open.h"
+#include "editor_dunnet.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -381,10 +382,12 @@ void emacs_close_minibuffer(EditorTab* tab) {
 
 /* M-x command names offered by Tab completion */
 static const gchar* MX_COMMANDS[] = {
-    "display-line-numbers-mode", "fill-paragraph", "goto-line", "notepad-mode",
-    "org-mode", "query-replace", "redo", "save-buffer", "set-justification-center",
-    "set-justification-full", "set-justification-left", "set-justification-right",
-    "text-mode", "toggle-truncate-lines", "undo", "vim-mode", "visual-line-mode", "write-file",
+    "display-line-numbers-mode", "dunnet", "fill-paragraph", "goto-line",
+    "notepad-mode", "org-mode", "query-replace", "redo", "save-buffer",
+    "set-justification-center", "set-justification-full",
+    "set-justification-left", "set-justification-right", "text-mode",
+    "toggle-truncate-lines", "undo", "vim-mode", "visual-line-mode",
+    "write-file",
 };
 
 static gint compare_names(gconstpointer a, gconstpointer b) {
@@ -483,7 +486,11 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
         }
         case EMACS_MINI_MX: {
             gchar* cmd = g_strstrip(g_ascii_strdown(text, -1));
-            if (g_strcmp0(cmd, "org-mode") == 0 || g_strcmp0(cmd, "text-mode") == 0) {
+            if (g_strcmp0(cmd, "dunnet") == 0) {
+                AppData* app = (AppData*)tab->app;
+                emacs_close_minibuffer(tab);
+                editor_dunnet_open(app);
+            } else if (g_strcmp0(cmd, "org-mode") == 0 || g_strcmp0(cmd, "text-mode") == 0) {
                 /* Major modes: Org-mode, or plain Emacs editing even for a .org file */
                 gboolean org = (cmd[0] == 'o');
                 tab->text_mode = !org;
@@ -1030,6 +1037,15 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
             return TRUE;
         }
         return TRUE;
+    }
+
+    /* 2c. *dungeon* buffer (M-x dunnet): RET runs the prompt line, C-a stops
+     * after the prompt, Backspace/Delete cannot erase earlier output */
+    if (!alt || (keyval != GDK_KEY_x && keyval != GDK_KEY_X)) {
+        if (editor_dunnet_is_dungeon(tab) &&
+            editor_dunnet_handle_key(tab, keyval, state)) {
+            return TRUE;
+        }
     }
 
     /* 3. Navigation */
