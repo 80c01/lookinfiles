@@ -84,7 +84,7 @@ typedef struct {
     gint id;         /* > 0, unique in the document */
     gint x, y;       /* top-left corner on the page */
     gint w, h;       /* size; h = 0 for a text box: as tall as its text */
-    /* TEXT */
+    /* TEXT, and the label of a SHAPE (NULL or "": none) */
     gchar* text;     /* UTF-8 content */
     GArray* runs;    /* CanvasRun, sorted, not overlapping, styles != 0 */
     /* IMAGE */

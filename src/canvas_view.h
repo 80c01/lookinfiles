@@ -9,6 +9,7 @@
  * - A floating tool bar (canvas_toolbar.h) picks the tool: select, shapes
  *   and pencil drawn with the mouse, text box, table, eraser; a panel
  *   (canvas_props.h) sets the shape style or formats the text.
+ * - Double click on a shape (or Enter on it): type its label, centred.
  * - Double click on the page (or Ctrl+Enter): new text box; Ctrl+V with a
  *   picture in the clipboard, or a dropped image file: new picture.
  * - Drag the bar above a block (or a picture itself) to move it, its corner

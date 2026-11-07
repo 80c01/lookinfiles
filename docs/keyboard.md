@@ -137,6 +137,7 @@ automatically; one canvas at a time)
 | `P` / `T` / `B` / `E` | Tool: pencil, text box, table, eraser; `Esc` goes back to select |
 | Drag on the page with a shape tool or the pencil | Draw it (`Shift`: square, circle, line at a multiple of 45 degrees); an arrow or line end drawn on a block follows that block |
 | Double click on the page, `Ctrl+Enter` | New text box (at the click, or below the selected block) |
+| Double click on a shape, `Enter` on a selected shape | Type text inside it (centred; `Esc` when done) |
 | `Ctrl+V` | Paste a picture as a new block (at the pointer); text pasted outside a text box makes a text box |
 | Drop image files | Copy them into the note as pictures |
 | Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions); a selected block takes the other selected ones along |
@@ -147,7 +148,7 @@ automatically; one canvas at a time)
 | `Esc` | In a text box: select the block; on a block: deselect |
 | `Tab` / `Shift+Tab` | Next / previous block |
 | Arrows (`Shift`: further) | Move the selected blocks |
-| `Enter` | Edit the selected text box |
+| `Enter` | Edit the selected text box, or the text of the selected shape |
 | `Delete` / `Backspace` | Delete the selected blocks (an empty text box goes away when left) |
 | `Ctrl+wheel`, `Ctrl+=` / `Ctrl+-` | Zoom the page in / out (around the pointer with the wheel; 10 % to 400 %, the scale shown above the page) |
 | `Ctrl+0`, click on the scale | Zoom back to 100 % (on the Canvas tab, instead of the font sizes) |

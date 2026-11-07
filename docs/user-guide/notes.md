@@ -62,7 +62,7 @@ and drag on the page; the letter in brackets picks it from the keyboard
 | Tool | Use |
 |---|---|
 | Select (`V`) | Select, move and resize blocks; drag on the empty page to select the blocks inside the box (`Shift`: add them) |
-| Rectangle (`R`), Diamond (`D`), Ellipse (`O`) | Drag to draw the shape (`Shift`: square, circle); a click makes one of the default size |
+| Rectangle (`R`), Diamond (`D`), Ellipse (`O`) | Drag to draw the shape (`Shift`: square, circle); a click makes one of the default size; double click it (or `Enter` when it is selected) to type text inside, centred |
 | Arrow (`A`), Line (`L`) | Drag from the start to the end (`Shift`: multiple of 45 degrees); an end drawn on a block is bound to it and follows it when it moves (moving the arrow alone frees it) |
 | Pencil (`P`) | Draw freehand; the pencil stays chosen for the next stroke |
 | Text box (`T`) | Click where the text goes (double click or `Ctrl+Enter` also work) |
@@ -105,7 +105,7 @@ A panel on the left shows what the current tool or block can change:
 | Select block / stop editing | `Esc` |
 | Next / previous block | `Tab` / `Shift+Tab` |
 | Move selected blocks | Arrow keys (`Shift` for larger steps) |
-| Edit selected text box | `Enter` |
+| Edit selected text box, or the text of a shape | `Enter` (a shape: also a double click) |
 | Delete selected blocks | `Delete` or `Backspace` |
 | Zoom | `Ctrl` + mouse wheel (around the pointer) or `Ctrl+=` / `Ctrl+-`; `Ctrl+0`, or a click on the scale above the page, goes back to 100 % |
 | Move the view | Drag with the middle button, or hold `Space` and drag (when not typing in a block) |

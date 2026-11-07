@@ -147,6 +147,11 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
         p->band_y0 = y;
         return;
     }
+    /* Typing in a shape's label: the pointer is for its text */
+    if (canvas_item_in_label(it, hit)) {
+        gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_DENIED);
+        return;
+    }
     /* Shift+click on a block: add it to the selection, or take it out */
     if (shift) {
         gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
@@ -303,6 +308,8 @@ static void on_page_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, g
     if (it != NULL) {
         if (n_press == 2 && it->kind == CANVAS_BLOCK_IMAGE) {
             canvas_page_open_crop(p, it);
+        } else if (n_press == 2 && it->label != NULL && !canvas_item_in_label(it, hit)) {
+            canvas_item_edit(it); /* type in the shape */
         }
         return;
     }

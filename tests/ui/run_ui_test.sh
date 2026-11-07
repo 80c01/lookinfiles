@@ -382,6 +382,13 @@ key o; drag 1000 400 1150 500
 key a; drag 880 460 1010 450;  shot canvas_arrow_bound
 xdotool mousemove 1075 450 click 1
 key shift+Down shift+Down;     shot canvas_arrow_follows
+# Text in shapes: Enter on the selected ellipse types in it, a double click
+# on the rectangle too; Esc selects the shape again
+key Return; xdotool type --delay 60 "Goal"; key Escape
+                        shot canvas_shape_text_enter
+xdotool mousemove 780 450 click --repeat 2 --delay 80 1
+xdotool type --delay 60 "Start"; key Escape
+                        shot canvas_shape_text_double_click
 # Zoom: Ctrl+= zooms in (the header shows the scale), Ctrl+0 back to 100 %
 key ctrl+equal ctrl+equal;  shot canvas_zoom_in
 key ctrl+0;             shot canvas_zoom_reset

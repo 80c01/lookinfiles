@@ -72,6 +72,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Canvas tab", "P / T / B / E", "Tool: pencil, text box, table, eraser; Esc: back to select", 0},
     {"Canvas tab", "Drag with a shape tool", "Draw the shape (Shift: square, circle, 45-degree line); arrow ends on a block follow it", 0},
     {"Canvas tab", "Double-click / Ctrl+Enter", "New text box (at the click, or below the selected block)", 0},
+    {"Canvas tab", "Double-click a shape", "Type text inside it (also Enter on a selected shape; Esc when done)", 0},
     {"Canvas tab", "Ctrl+V", "Paste a picture as a new block (text outside a text box: new text box)", 0},
     {"Canvas tab", "Drag bar / corner", "Move / resize a block (a picture or shape moves from anywhere on it)", 0},
     {"Canvas tab", "Drag on the page / Shift+click", "Select the blocks in the box / add or remove a block (Shift+drag: add)", 0},

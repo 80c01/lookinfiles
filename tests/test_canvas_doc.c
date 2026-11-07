@@ -344,6 +344,27 @@ static void test_ids_and_bindings(void) {
     g_assert_cmpint(i2, !=, i1);
 }
 
+static void test_shape_label(void) {
+    g_autoptr(CanvasDoc) doc = canvas_doc_new();
+    CanvasBlock* s = canvas_doc_add_shape(doc, 10, 10, 120, 80, CANVAS_SHAPE_ELLIPSE);
+    s->text = g_strdup("Plan & build\n<v2>");
+    canvas_doc_add_shape(doc, 200, 10, 120, 80, CANVAS_SHAPE_RECT);
+
+    g_autofree gchar* xml = canvas_doc_to_xml(doc);
+    g_assert_nonnull(strstr(xml, "label=\"Plan &amp; build&#10;&lt;v2&gt;\"/>"));
+    g_autoptr(GError) error = NULL;
+    g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
+    g_assert_no_error(error);
+    g_assert_cmpstr(((CanvasBlock*)g_ptr_array_index(back->blocks, 0))->text, ==, "Plan & build\n<v2>");
+    g_assert_null(((CanvasBlock*)g_ptr_array_index(back->blocks, 1))->text);
+    g_autofree gchar* xml2 = canvas_doc_to_xml(back);
+    g_assert_cmpstr(xml, ==, xml2);
+
+    /* Markdown: the label; a shape without one is left out */
+    g_autofree gchar* md = canvas_doc_to_markdown(doc, NULL);
+    g_assert_cmpstr(md, ==, "Plan & build\n<v2>\n");
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/canvas_doc/runs_merge", test_runs_merge);
@@ -351,6 +372,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_doc/parse_errors", test_parse_errors);
     g_test_add_func("/canvas_doc/shape_round_trip", test_shape_round_trip);
     g_test_add_func("/canvas_doc/ids_and_bindings", test_ids_and_bindings);
+    g_test_add_func("/canvas_doc/shape_label", test_shape_label);
     g_test_add_func("/canvas_doc/table_round_trip", test_table_round_trip);
     g_test_add_func("/canvas_doc/image_crop_round_trip", test_image_crop_round_trip);
     g_test_add_func("/canvas_doc/raise_remove", test_raise_remove);

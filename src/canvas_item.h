@@ -28,6 +28,7 @@ typedef struct {
     gint stroke_width;
     gboolean rough;
     GArray* points;
+    GtkWidget* label;   /* text view over a shape (not a line or a stroke) */
     /* Table */
     CanvasBlock* table_block;
     gint x, y, w, h;
@@ -40,8 +41,16 @@ typedef void (*CanvasItemNotify)(CanvasPage* p);
 
 CanvasItem* canvas_item_of(GtkWidget* w);
 void canvas_item_select(CanvasItem* it);
+/* Type in it: a text box, or the label of a shape */
 void canvas_item_edit(CanvasItem* it);
 void canvas_item_place(CanvasItem* it);
+
+/* hit (a widget picked on the page) is in the label being typed in: the
+ * pointer places the cursor there instead of moving the shape */
+gboolean canvas_item_in_label(CanvasItem* it, GtkWidget* hit);
+
+/* Label of a shape (free it); NULL when it has none */
+gchar* canvas_item_label_text(const CanvasItem* it);
 void canvas_item_raise(CanvasItem* it);
 
 /* The note moved to dir: pictures are read from there */

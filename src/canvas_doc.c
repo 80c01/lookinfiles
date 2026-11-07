@@ -390,6 +390,8 @@ static void on_start(GMarkupParseContext* ctx, const gchar* element, const gchar
                 }
             }
         }
+        const gchar* label = attr(names, values, "label");
+        if (label != NULL && label[0] != '\0') b->text = g_utf8_make_valid(label, -1);
         b->stroke_width = MAX(attr_int(names, values, "stroke_width"), 1);
         b->rough = (attr_int(names, values, "rough") != 0);
         const gchar* pts = attr(names, values, "points");
@@ -578,7 +580,21 @@ gchar* canvas_doc_to_xml(const CanvasDoc* doc) {
                 SHAPE_NAMES[b->shape_type], b->x, b->y, b->w, b->h,
                 b->stroke_color != NULL ? b->stroke_color : "fg",
                 FILL_NAMES[b->fill_style], b->stroke_width, b->rough ? 1 : 0, pts_str->str);
-            g_string_append(out, line);
+            if (b->text != NULL && b->text[0] != '\0') {
+                /* The label, its line breaks kept as character references */
+                gsize n = strlen(line);
+                if (n >= 3) line[n - 3] = '\0'; /* the closing "/>\n" */
+                gchar* esc = g_markup_escape_text(b->text, -1);
+                gchar** lines = g_strsplit(esc, "\n", -1);
+                gchar* joined = g_strjoinv("&#10;", lines);
+                g_string_append_printf(out, "%s label=\"%s\"/>\n", line, joined);
+                g_free(joined);
+                g_strfreev(lines);
+                g_free(esc);
+                g_free(line);
+                line = NULL;
+            }
+            if (line != NULL) g_string_append(out, line);
             g_free(line);
             g_string_free(pts_str, TRUE);
         } else if (b->kind == CANVAS_BLOCK_TABLE) {
@@ -822,9 +838,13 @@ gchar* canvas_doc_to_markdown(const CanvasDoc* doc, const gchar* media_prefix) {
     for (guint i = 0; i < sorted->len; i++) {
         const CanvasBlock* b = g_ptr_array_index(sorted, i);
         if (b->kind == CANVAS_BLOCK_TEXT && b->text[0] == '\0') continue;
+        /* A shape is written as its label, if it has one */
+        if (b->kind == CANVAS_BLOCK_SHAPE && (b->text == NULL || b->text[0] == '\0')) continue;
         if (out->len > 0) g_string_append(out, "\n\n");
         if (b->kind == CANVAS_BLOCK_TEXT) {
             append_md_text(out, b);
+        } else if (b->kind == CANVAS_BLOCK_SHAPE) {
+            g_string_append(out, b->text);
         } else if (b->kind == CANVAS_BLOCK_TABLE) {
             for (gint r = 0; r < b->table_rows; r++) {
                 g_string_append(out, "|");

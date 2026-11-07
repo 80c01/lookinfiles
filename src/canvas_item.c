@@ -37,6 +37,10 @@ void canvas_item_edit(CanvasItem* it) {
     if (it == NULL) return;
     if (it->kind == CANVAS_BLOCK_TEXT && it->content != NULL) {
         gtk_widget_grab_focus(it->content);
+    } else if (it->label != NULL) {
+        gtk_widget_set_visible(it->label, TRUE);
+        gtk_widget_set_can_target(it->label, TRUE);
+        gtk_widget_grab_focus(it->label);
     } else {
         canvas_item_select(it);
     }
@@ -267,6 +271,60 @@ static void on_shape_draw(GtkDrawingArea* area, cairo_t* cr, int width, int heig
     canvas_rough_draw_shape(cr, &view, width, height);
 }
 
+gboolean canvas_item_in_label(CanvasItem* it, GtkWidget* hit) {
+    return it != NULL && it->label != NULL && hit != NULL && gtk_widget_has_focus(it->label) &&
+           (hit == it->label || gtk_widget_is_ancestor(hit, it->label));
+}
+
+gchar* canvas_item_label_text(const CanvasItem* it) {
+    if (it == NULL || it->label == NULL) return NULL;
+    GtkTextBuffer* buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(it->label));
+    GtkTextIter s, e;
+    gtk_text_buffer_get_bounds(buf, &s, &e);
+    gchar* text = gtk_text_buffer_get_text(buf, &s, &e, FALSE);
+    if (text[0] == '\0') g_clear_pointer(&text, g_free);
+    return text;
+}
+
+/* Typing done: an empty label goes away; the pointer moves the shape again */
+static void on_label_leave(GtkEventControllerFocus* ctrl, gpointer data) {
+    (void)ctrl;
+    CanvasItem* it = data;
+    gtk_widget_set_can_target(it->label, FALSE);
+    gchar* text = canvas_item_label_text(it);
+    if (text == NULL) gtk_widget_set_visible(it->label, FALSE);
+    g_free(text);
+}
+
+/* The label of a shape, centred over it (shown once it has text) */
+static void add_label(CanvasItem* it, const gchar* text) {
+    GtkWidget* view = gtk_text_view_new();
+    gtk_widget_add_css_class(view, "canvas-shape-label");
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD_CHAR);
+    gtk_text_view_set_justification(GTK_TEXT_VIEW(view), GTK_JUSTIFY_CENTER);
+    gtk_text_view_set_accepts_tab(GTK_TEXT_VIEW(view), FALSE);
+    gtk_widget_set_halign(view, GTK_ALIGN_FILL);
+    gtk_widget_set_valign(view, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_start(view, 8);
+    gtk_widget_set_margin_end(view, 8);
+    gtk_widget_set_can_target(view, FALSE);
+    GtkTextBuffer* buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+    gchar* valid = g_utf8_make_valid(text != NULL ? text : "", -1);
+    gtk_text_buffer_set_text(buf, valid, -1);
+    gtk_widget_set_visible(view, valid[0] != '\0');
+    g_free(valid);
+    g_signal_connect(buf, "changed", G_CALLBACK(on_buffer_changed), it);
+    GtkEventController* focus = gtk_event_controller_focus_new();
+    g_signal_connect(focus, "leave", G_CALLBACK(on_label_leave), it);
+    gtk_widget_add_controller(view, focus);
+    /* Under the resize corner, the last overlay */
+    GtkWidget* overlay = gtk_widget_get_parent(it->content);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), view);
+    GtkWidget* corner = gtk_widget_get_prev_sibling(view);
+    if (corner != NULL && corner != it->content) gtk_widget_insert_after(corner, overlay, view);
+    it->label = view;
+}
+
 static CanvasItem* add_shape(CanvasPage* p, GtkWidget* surface, const CanvasBlock* b,
                              CanvasItemNotify on_change) {
     GtkWidget* area = gtk_drawing_area_new();
@@ -288,6 +346,10 @@ static CanvasItem* add_shape(CanvasPage* p, GtkWidget* surface, const CanvasBloc
     it->h = MAX(b->h, MIN_SHAPE_SIZE);
     it->aspect = (gdouble)it->w / it->h;
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area), on_shape_draw, it, NULL);
+    if (b->shape_type != CANVAS_SHAPE_LINE && b->shape_type != CANVAS_SHAPE_ARROW &&
+        b->shape_type != CANVAS_SHAPE_FREEHAND) {
+        add_label(it, b->text);
+    }
     canvas_item_place(it);
     return it;
 }
@@ -368,6 +430,7 @@ static CanvasBlock* item_to_block(CanvasDoc* doc, const CanvasItem* it) {
         if (it->points != NULL) {
             g_array_append_vals(b->points, it->points->data, it->points->len);
         }
+        b->text = canvas_item_label_text(it);
         return b;
     }
     if (it->kind == CANVAS_BLOCK_TABLE && it->table_block != NULL) {

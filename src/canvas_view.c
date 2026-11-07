@@ -39,7 +39,9 @@ static void ensure_css(void) {
                   " .canvas-block:focus .canvas-corner { background-color: @border_strong; }"
                   ".canvas-text, .canvas-text text { background-color: transparent; color: @fg_text;"
                   " font-family: @font_ui; }"
-                  ".canvas-text { padding: 2px 6px 6px 6px; }");
+                  ".canvas-text { padding: 2px 6px 6px 6px; }"
+                  ".canvas-shape-label, .canvas-shape-label text { background-color: transparent;"
+                  " color: @fg_text; font-family: @font_ui; }");
 }
 
 static void on_window_focus(GObject* window, GParamSpec* pspec, gpointer data) {
