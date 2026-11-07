@@ -216,7 +216,7 @@ static gboolean on_export_idle(gpointer data) {
     ExportJob* job = data;
     CanvasPage* p = g_object_get_data(G_OBJECT(job->root), CANVAS_PAGE_KEY);
     if (p != NULL && !p->closed && p->dir != NULL && p->generation == job->generation) {
-        gchar* path = canvas_doc_export_path(p->dir, job->svg ? "svg" : "png");
+        gchar* path = canvas_doc_export_path(p->dir, g_get_home_dir(), job->svg ? "svg" : "png");
         g_autoptr(GError) error = NULL;
         gchar* name = g_path_get_basename(path);
         gchar* text;
@@ -235,7 +235,7 @@ static gboolean on_export_idle(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-/* Export next to the note, once the page is drawn again unselected (the
+/* Export to the home folder, once the page is drawn again unselected (the
  * idle comes after the redraw) */
 static void on_toolbar_export(gboolean svg, gpointer udata) {
     CanvasPage* p = udata;

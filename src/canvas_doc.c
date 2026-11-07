@@ -857,9 +857,9 @@ static void append_md_text(GString* out, const CanvasBlock* b) {
     }
 }
 
-gchar* canvas_doc_export_path(const gchar* dir, const gchar* ext) {
+gchar* canvas_doc_export_path(const gchar* dir, const gchar* out_dir, const gchar* ext) {
     gchar* base = g_path_get_basename(dir);
-    gchar* parent = g_path_get_dirname(dir);
+    gchar* parent = (out_dir != NULL) ? g_strdup(out_dir) : g_path_get_dirname(dir);
     if (g_str_has_suffix(base, CANVAS_EXT)) base[strlen(base) - strlen(CANVAS_EXT)] = '\0';
     gchar* path = NULL;
     for (gint n = 1; path == NULL || g_file_test(path, G_FILE_TEST_EXISTS); n++) {
@@ -878,7 +878,7 @@ gchar* canvas_doc_export_markdown(const gchar* dir, GError** error) {
     if (doc == NULL) return NULL;
     gchar* base = g_path_get_basename(dir);
     gchar* prefix = g_strconcat(base, "/", NULL);
-    gchar* path = canvas_doc_export_path(dir, "md");
+    gchar* path = canvas_doc_export_path(dir, NULL, "md");
     gchar* md = canvas_doc_to_markdown(doc, prefix);
     if (!g_file_set_contents(path, md, -1, error)) g_clear_pointer(&path, g_free);
     g_free(md);
