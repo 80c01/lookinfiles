@@ -170,6 +170,11 @@ void canvas_block_add_run(CanvasBlock* block, gint start, gint end, guint styles
  * picture links are "<media_prefix><src>" (prefix may be NULL) (free it) */
 gchar* canvas_doc_to_markdown(const CanvasDoc* doc, const gchar* media_prefix);
 
+/* A free path next to the Canvas note in dir for an export with extension
+ * ext ("md", "png"): "<title>.<ext>", or "<title> (2).<ext>"... when taken
+ * (free it) */
+gchar* canvas_doc_export_path(const gchar* dir, const gchar* ext);
+
 /* Write the Markdown of the Canvas note in dir next to it: "<title>.md" (or
  * "<title> (2).md"... when taken), its pictures linked inside the note
  * ("<title>.canvas/media/0001.png"). Returns the new file's path (free it),

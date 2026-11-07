@@ -114,6 +114,14 @@ static void on_lock_clicked(GtkButton* btn, gpointer data) {
     if (tb->cbs.on_lock) tb->cbs.on_lock(tb->user_data);
 }
 
+static void on_export_clicked(GtkButton* btn, gpointer data) {
+    CanvasToolbar* tb = data;
+    GtkPopover* pop = g_object_get_data(G_OBJECT(btn), "pop");
+    if (pop != NULL) gtk_popover_popdown(pop);
+    gboolean svg = g_object_get_data(G_OBJECT(btn), "svg") != NULL;
+    if (tb->cbs.on_export) tb->cbs.on_export(svg, tb->user_data);
+}
+
 static GtkWidget* menu_item(const gchar* label, GtkWidget* pop, GCallback cb, CanvasToolbar* tb) {
     GtkWidget* item = gtk_button_new_with_label(label);
     gtk_button_set_has_frame(GTK_BUTTON(item), FALSE);
@@ -131,7 +139,7 @@ static GtkWidget* more_menu(CanvasToolbar* tb) {
     gtk_menu_button_set_has_frame(GTK_MENU_BUTTON(mb), FALSE);
     gtk_widget_add_css_class(mb, "canvas-tool");
     gtk_widget_set_focus_on_click(mb, FALSE);
-    gtk_widget_set_tooltip_text(mb, "Grid, Align, Order, Lock and Crop");
+    gtk_widget_set_tooltip_text(mb, "Grid, Align, Order, Lock, Crop and Export");
 
     GtkWidget* pop = gtk_popover_new();
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
@@ -179,6 +187,12 @@ static GtkWidget* more_menu(CanvasToolbar* tb) {
     gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
     gtk_box_append(GTK_BOX(box), menu_item("Lock / Unlock (Ctrl+Shift+K)", pop, G_CALLBACK(on_lock_clicked), tb));
     gtk_box_append(GTK_BOX(box), menu_item("Crop Selected Picture", pop, G_CALLBACK(on_crop_clicked), tb));
+
+    gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
+    gtk_box_append(GTK_BOX(box), menu_item("Export as PNG", pop, G_CALLBACK(on_export_clicked), tb));
+    GtkWidget* svg = menu_item("Export as SVG", pop, G_CALLBACK(on_export_clicked), tb);
+    g_object_set_data(G_OBJECT(svg), "svg", GINT_TO_POINTER(1));
+    gtk_box_append(GTK_BOX(box), svg);
 
     gtk_popover_set_child(GTK_POPOVER(pop), box);
     gtk_menu_button_set_popover(GTK_MENU_BUTTON(mb), pop);

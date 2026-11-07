@@ -37,8 +37,10 @@ panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
   longer than its shape is cut, the shape does not grow yet
 - [x] floating text-format bar near the selection; the left panel keeps the
   shape style only
-- [ ] small items: duplicate (`Ctrl+D`), copy / paste of shapes, lock a
-  block, bring to front / send to back, export the canvas as PNG / SVG
+- [x] small items: duplicate (`Ctrl+D`), copy / paste of shapes, lock a
+  block (`Ctrl+Shift+K`: `Ctrl+Shift+L` is the window layout), bring to
+  front / send to back, export the canvas as PNG / SVG (tool bar menu; no
+  UI test step, the menu has no key)
 - [ ] run `make ui-shots` and check the new canvas screenshots
   (`canvas_tool_*`, `canvas_text_bold` (the format bar), `canvas_rect_drawn`, `canvas_pencil_drawn`,
   `canvas_checkbox_toggled`, `canvas_undo_delete`, `canvas_redo_delete`, `canvas_zoom_in`,

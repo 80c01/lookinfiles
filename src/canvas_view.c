@@ -3,7 +3,10 @@
  * canvas_page.c, the keys in canvas_keys.c, the pointer in canvas_drag.c. */
 #include "canvas_view.h"
 #include "canvas_bind.h"
+#include "app_events.h"
+#include "canvas_doc.h"
 #include "canvas_drag.h"
+#include "canvas_export.h"
 #include "canvas_format_bar.h"
 #include "canvas_geometry.h"
 #include "canvas_item.h"
@@ -171,6 +174,51 @@ static void on_toolbar_align(CanvasAlignOp op, gpointer udata) {
     canvas_page_restore_focus(p);
 }
 
+/* An export waiting for the page to be drawn without the selection; the
+ * page root kept alive meanwhile, dropped if another note was opened */
+typedef struct {
+    GtkWidget* root;
+    guint generation;
+    gboolean svg;
+} ExportJob;
+
+static gboolean on_export_idle(gpointer data) {
+    ExportJob* job = data;
+    CanvasPage* p = g_object_get_data(G_OBJECT(job->root), CANVAS_PAGE_KEY);
+    if (p != NULL && !p->closed && p->dir != NULL && p->generation == job->generation) {
+        gchar* path = canvas_doc_export_path(p->dir, job->svg ? "svg" : "png");
+        g_autoptr(GError) error = NULL;
+        gchar* name = g_path_get_basename(path);
+        gchar* text;
+        if (canvas_export_picture(p->surface, path, job->svg, &error)) {
+            text = g_strdup_printf("Canvas exported to %s", name);
+        } else {
+            text = g_strdup_printf("Canvas export failed: %s", error->message);
+        }
+        app_notice(p->app, text, FALSE);
+        g_free(text);
+        g_free(name);
+        g_free(path);
+    }
+    g_object_unref(job->root);
+    g_free(job);
+    return G_SOURCE_REMOVE;
+}
+
+/* Export next to the note, once the page is drawn again unselected (the
+ * idle comes after the redraw) */
+static void on_toolbar_export(gboolean svg, gpointer udata) {
+    CanvasPage* p = udata;
+    if (p->dir == NULL) return;
+    canvas_page_deselect(p);
+    canvas_page_update_props(p);
+    ExportJob* job = g_new0(ExportJob, 1);
+    job->root = g_object_ref(p->root);
+    job->generation = p->generation;
+    job->svg = svg;
+    g_idle_add_full(G_PRIORITY_DEFAULT_IDLE, on_export_idle, job, NULL);
+}
+
 static void on_toolbar_lock(gpointer udata) {
     CanvasPage* p = udata;
     canvas_page_toggle_lock(p);
@@ -280,7 +328,8 @@ static CanvasPage* ensure_page(AppData* app) {
         .on_toggle_grid = on_toolbar_toggle_grid,
         .on_align = on_toolbar_align,
         .on_order = on_toolbar_order,
-        .on_lock = on_toolbar_lock
+        .on_lock = on_toolbar_lock,
+        .on_export = on_toolbar_export
     };
     p->toolbar = canvas_toolbar_new(&cbs, p);
     CanvasPropsCallbacks pcbs = {.on_shape_style = on_props_shape_style};

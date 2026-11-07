@@ -71,7 +71,10 @@ and drag on the page; the letter in brackets picks it from the keyboard
 
 After drawing a shape, the tool goes back to Select (`Esc` also does).
 The menu at the end of the bar holds **Snap to Grid**, the alignment
-commands, the drawing order, **Lock / Unlock** and **Crop Selected Picture**.
+commands, the drawing order, **Lock / Unlock**, **Crop Selected Picture**,
+and **Export as PNG** / **Export as SVG**: a picture of the blocks (theme
+colours, PNG at twice the page scale) written next to the note as
+`<title>.png` or `<title>.svg`.
 
 Pictures come from `Ctrl+V` with an image copied, or image files dropped
 onto the page; double click a picture to crop it.
