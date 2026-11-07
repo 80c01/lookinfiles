@@ -19,6 +19,10 @@
 /* Secret sequence token history buffer */
 static gchar s_history[32] = {0};
 static gint s_history_len = 0;
+static gint64 s_last_key_us = 0;
+
+/* Longest pause allowed between two keys of the secret sequence */
+#define SEQUENCE_KEY_TIMEOUT_US (1500 * G_TIME_SPAN_MILLISECOND)
 
 void games_init(AppData* app) {
     if (app == NULL) return;
@@ -27,7 +31,9 @@ void games_init(AppData* app) {
 }
 
 /* Check keyval in help panel or user guide for the Konami / easter egg sequence:
- * Up Up Down Down Left Right Left Right A B Return (or B A Return, or without Return) */
+ * Up Up Down Down Left Right Left Right A B Return (or B A Return).
+ * The sequence restarts when a key comes more than SEQUENCE_KEY_TIMEOUT_US
+ * after the previous one. */
 gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state) {
     if (app == NULL) return FALSE;
 
@@ -70,6 +76,13 @@ gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state)
         return FALSE;
     }
 
+    gint64 now = g_get_monotonic_time();
+    if (s_history_len > 0 && now - s_last_key_us > SEQUENCE_KEY_TIMEOUT_US) {
+        s_history_len = 0;
+        s_history[0] = '\0';
+    }
+    s_last_key_us = now;
+
     if (s_history_len >= (gint)sizeof(s_history) - 1) {
         memmove(s_history, s_history + 1, sizeof(s_history) - 2);
         s_history_len = (gint)sizeof(s_history) - 2;
@@ -79,9 +92,7 @@ gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state)
 
     gboolean matched = FALSE;
     if (g_str_has_suffix(s_history, "UUDDLRLRABE") ||
-        g_str_has_suffix(s_history, "UUDDLRLRBAE") ||
-        g_str_has_suffix(s_history, "UUDDLRLRAB") ||
-        g_str_has_suffix(s_history, "UUDDLRLRBA")) {
+        g_str_has_suffix(s_history, "UUDDLRLRBAE")) {
         matched = TRUE;
     }
 
