@@ -339,11 +339,12 @@ static void test_builtin_contrast(void) {
     fonts_reset();
 }
 
-/* The themes of themes/ (one per decade) are built in: they parse, are
+/* The themes of themes/ are built in: they parse, are
  * complete (every colour and font), and keep their text readable. */
 static void test_bundled_themes(void) {
     static const gchar* const NAMES[] = {"1970s Phosphor", "1980s Text Mode", "1990s Desktop",
-                                         "2000s Glossy",   "2010s Flat Dark", "2020s Pastel"};
+                                         "2000s Glossy",   "2010s Flat Dark", "2020s Pastel",
+                                         "Dark LightRed"};
     GPtrArray* themes = theme_store_list(NULL, NULL);
     for (gsize n = 0; n < G_N_ELEMENTS(NAMES); n++) {
         Theme* t = theme_store_find(themes, NAMES[n]);

@@ -64,6 +64,7 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- A **Dark LightRed** theme: dark grey surfaces with a light red accent.
 - A tagbar beside the preview lists the headings of Markdown, HTML, Org,
   Word (`.docx`, `.doc`), OpenDocument and EPUB previews and the bookmarks
   of PDF documents (`o` or

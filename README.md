@@ -171,7 +171,7 @@ Most of them are written by the application itself (`Ctrl+,` opens the
 Preferences); the two files you may edit by hand are:
 
 - `themes/*.ini`: your themes (`Alt+T` → **Save As…** writes a complete one
-  to start from; the six decade themes of [`themes/`](themes/) are built in).
+  to start from; the themes of [`themes/`](themes/) are built in).
 - `lsp.ini`: which language server to start per language (Preferences →
   Code navigation → **Edit lsp.ini** opens it).
 

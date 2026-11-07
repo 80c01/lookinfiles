@@ -1,8 +1,8 @@
-# Reference themes: one per decade
+# Reference themes
 
 These themes are **built into LookinFiles** (bundled from this folder at build time). They are complete theme files
-(every colour and both fonts, no `inherits`) that show the look of each era
-of computing, and serve as examples for writing your own theme.
+(every colour and both fonts, no `inherits`): one per decade of computing,
+and a few more. They also serve as examples for writing your own theme.
 
 | File | Theme | The era |
 |---|---|---|
@@ -12,6 +12,7 @@ of computing, and serve as examples for writing your own theme.
 | `2000s-glossy.ini` | 2000s Glossy | Glossy desktops and Web 2.0: beige surfaces, saturated blue, a white terminal |
 | `2010s-flat-dark.ini` | 2010s Flat Dark | Flat design and the dark editor: charcoal, vivid accents, Monokai syntax colours |
 | `2020s-pastel.ini` | 2020s Pastel | Soft pastel dark themes: cool purple surfaces, pastel accents, a code font with ligatures |
+| `dark-lightred.ini` | Dark LightRed | A dark grey theme with a light red accent |
 
 Pick one with `Alt+T`. To start your own from one, copy it to your themes folder:
 

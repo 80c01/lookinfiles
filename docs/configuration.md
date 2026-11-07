@@ -77,9 +77,9 @@ The status bar shows what serves the current editor tab: the server name,
 the gear button of the top bar, then **Appearance**).
 Selecting a theme applies it at once to the whole window, including open
 editors, previews and terminals; **Apply** keeps it and **Cancel** goes back.
-Nine themes are built in: **Dark Modern** (the default), **Light Modern**,
-**High Contrast Dark**, and six more, one per decade from the 1970s to the
-2020s (the files of the [`themes/`](../themes/) folder of the source tree,
+Ten themes are built in: **Dark Modern** (the default), **Light Modern**,
+**High Contrast Dark**, six more, one per decade from the 1970s to the
+2020s, and **Dark LightRed** (the files of the [`themes/`](../themes/) folder of the source tree,
 bundled into the binary; copy one into your themes folder to start your own).
 
 Your fonts apply over any theme: the dialog sets the interface font (menus,

@@ -14,9 +14,9 @@ Three themes are built in:
 - **Light Modern**;
 - **High Contrast Dark**.
 
-The `themes/` folder of the source tree has six more, one
-per decade from the 1970s to the 2020s. Copy them into
-`~/.config/lookinfiles/themes/` to use them.
+Seven more are built in from the `themes/` folder of the source tree: one
+per decade from the 1970s to the 2020s, and **Dark LightRed**. Copy one into
+`~/.config/lookinfiles/themes/` to start your own from it.
 
 ## Fonts
 
