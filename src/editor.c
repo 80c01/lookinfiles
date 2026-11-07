@@ -505,6 +505,29 @@ static void tab_menu_mode_item(GtkWidget* box, GtkWidget* popover, AppData* app,
     }
 }
 
+/* Whether moving a tab of cur_nb in direction dir does something: the same
+ * rules as editor_move_tab_direction() and editor_move_page_direction() */
+static gboolean notebook_can_move_tab(AppData* app, GtkNotebook* cur_nb, EditorMoveDirection dir) {
+    if (cur_nb == NULL) return FALSE;
+    if (GTK_WIDGET(cur_nb) == app->notebook) return dir != EDITOR_MOVE_LEFT;
+    if (dir == EDITOR_MOVE_LEFT || neighbor_notebook(app, cur_nb, dir) != NULL) return TRUE;
+    /* Otherwise the move splits the notebook, which needs another tab to stay */
+    return gtk_notebook_get_n_pages(cur_nb) > 1;
+}
+
+/* The move items of a tab menu, by direction */
+static const struct {
+    const char* name;
+    const char* key;
+    EditorMoveDirection dir;
+    gint action;
+} TAB_MOVES[] = {
+    {"Move Right", "Ctrl+Alt+Right", EDITOR_MOVE_RIGHT, TAB_ACTION_MOVE_RIGHT},
+    {"Move Left", "Ctrl+Alt+Left", EDITOR_MOVE_LEFT, TAB_ACTION_MOVE_LEFT},
+    {"Move Down", "Ctrl+Alt+Down", EDITOR_MOVE_DOWN, TAB_ACTION_MOVE_DOWN},
+    {"Move Up", "Ctrl+Alt+Up", EDITOR_MOVE_UP, TAB_ACTION_MOVE_UP},
+};
+
 void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* target_widget) {
     if (app == NULL || tab == NULL || target_widget == NULL) return;
 
@@ -522,15 +545,21 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     gtk_widget_set_margin_top(box, 4);
     gtk_widget_set_margin_bottom(box, 4);
 
-    tab_menu_item(box, popover, app, tab, "Move Right", "Ctrl+Alt+Right", TAB_ACTION_MOVE_RIGHT);
-    tab_menu_item(box, popover, app, tab, "Move Left", "Ctrl+Alt+Left", TAB_ACTION_MOVE_LEFT);
-    tab_menu_item(box, popover, app, tab, "Move Down", "Ctrl+Alt+Down", TAB_ACTION_MOVE_DOWN);
-    tab_menu_item(box, popover, app, tab, "Move Up", "Ctrl+Alt+Up", TAB_ACTION_MOVE_UP);
+    /* Only the moves that would do something */
+    GtkNotebook* cur_nb = editor_tab_notebook(app, tab);
+    gboolean any_move = FALSE;
+    for (gsize i = 0; i < G_N_ELEMENTS(TAB_MOVES); i++) {
+        if (!notebook_can_move_tab(app, cur_nb, TAB_MOVES[i].dir)) continue;
+        tab_menu_item(box, popover, app, tab, TAB_MOVES[i].name, TAB_MOVES[i].key, TAB_MOVES[i].action);
+        any_move = TRUE;
+    }
 
-    GtkWidget* sep2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_widget_set_margin_top(sep2, 4);
-    gtk_widget_set_margin_bottom(sep2, 4);
-    gtk_box_append(GTK_BOX(box), sep2);
+    if (any_move) {
+        GtkWidget* sep2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_widget_set_margin_top(sep2, 4);
+        gtk_widget_set_margin_bottom(sep2, 4);
+        gtk_box_append(GTK_BOX(box), sep2);
+    }
 
     /* The only place where a tab's mode changes: the current one is marked */
     gboolean org = (tab->mode == EDITOR_MODE_ORGMODE);
@@ -1110,15 +1139,24 @@ void editor_page_show_context_menu(AppData* app, GtkWidget* child, GtkWidget* ta
     pm->data = data;
     g_object_set_data_full(G_OBJECT(box), "page-menu", pm, page_menu_free);
 
-    page_menu_item(box, "Move Right", "Ctrl+Alt+Right", TAB_ACTION_MOVE_RIGHT);
-    page_menu_item(box, "Move Left", "Ctrl+Alt+Left", TAB_ACTION_MOVE_LEFT);
-    page_menu_item(box, "Move Down", "Ctrl+Alt+Down", TAB_ACTION_MOVE_DOWN);
-    page_menu_item(box, "Move Up", "Ctrl+Alt+Up", TAB_ACTION_MOVE_UP);
+    /* Only the moves that would do something (none in the terminal panel) */
+    GtkNotebook* cur_nb = notebook_of_page(child);
+    gboolean movable = cur_nb != NULL &&
+        (GTK_WIDGET(cur_nb) == app->notebook ||
+         (app->editor_box != NULL && gtk_widget_is_ancestor(GTK_WIDGET(cur_nb), app->editor_box)));
+    gboolean any_move = FALSE;
+    for (gsize i = 0; movable && i < G_N_ELEMENTS(TAB_MOVES); i++) {
+        if (!notebook_can_move_tab(app, cur_nb, TAB_MOVES[i].dir)) continue;
+        page_menu_item(box, TAB_MOVES[i].name, TAB_MOVES[i].key, TAB_MOVES[i].action);
+        any_move = TRUE;
+    }
     if (on_close != NULL) {
-        GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-        gtk_widget_set_margin_top(sep, 4);
-        gtk_widget_set_margin_bottom(sep, 4);
-        gtk_box_append(GTK_BOX(box), sep);
+        if (any_move) {
+            GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+            gtk_widget_set_margin_top(sep, 4);
+            gtk_widget_set_margin_bottom(sep, 4);
+            gtk_box_append(GTK_BOX(box), sep);
+        }
         page_menu_item(box, "Close Tab", "Ctrl+W", TAB_ACTION_CLOSE);
     }
 
