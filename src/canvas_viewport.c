@@ -92,6 +92,7 @@ struct CanvasViewport {
     /* Window whose focus is watched while the view is mapped */
     GtkRoot* root;
     gulong focus_handler;
+    guint reveal_tick; /* pending on_reveal_tick() */
 };
 
 static GtkAdjustment* adjustment(CanvasViewport* v, GtkOrientation o) {
@@ -226,23 +227,51 @@ static void reveal_axis(CanvasViewport* v, GtkOrientation o, gdouble start, gdou
 
 /* A block (or a widget in it) took the focus: scroll to it only when it is
  * wholly out of sight. The page itself taking the focus (deselect, click on
- * an empty spot) never moves the view. */
-static void on_focus_widget(GObject* object, GParamSpec* pspec, gpointer data) {
-    (void)pspec;
-    CanvasViewport* v = data;
-    GtkWidget* w = gtk_root_get_focus(GTK_ROOT(object));
-    if (w == NULL || w == v->surface || !gtk_widget_is_ancestor(w, v->surface)) return;
+ * an empty spot) never moves the view. FALSE when the block is not laid
+ * out yet. */
+static gboolean reveal_focus(CanvasViewport* v) {
+    if (v->root == NULL) return TRUE;
+    GtkWidget* w = gtk_root_get_focus(v->root);
+    if (w == NULL || w == v->surface || !gtk_widget_is_ancestor(w, v->surface)) return TRUE;
     GtkWidget* view = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(v->scroll));
     graphene_rect_t r;
-    if (view == NULL || !gtk_widget_compute_bounds(w, view, &r)) return;
+    if (view == NULL) return TRUE;
+    /* Unallocated, its bounds would be the page's top-left corner */
+    if (gtk_widget_get_width(w) <= 0 && gtk_widget_get_height(w) <= 0) return FALSE;
+    if (!gtk_widget_compute_bounds(w, view, &r)) return TRUE;
     gdouble vw = gtk_widget_get_width(view), vh = gtk_widget_get_height(view);
     gdouble x = r.origin.x, y = r.origin.y;
-    if (x + r.size.width > 0 && x < vw && y + r.size.height > 0 && y < vh) return;
+    if (x + r.size.width > 0 && x < vw && y + r.size.height > 0 && y < vh) return TRUE;
     reveal_axis(v, GTK_ORIENTATION_HORIZONTAL, x, x + r.size.width);
     reveal_axis(v, GTK_ORIENTATION_VERTICAL, y, y + r.size.height);
+    return TRUE;
+}
+
+/* A new block is focused before it is laid out: check again next frame */
+static gboolean on_reveal_tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
+    (void)widget;
+    (void)clock;
+    CanvasViewport* v = data;
+    v->reveal_tick = 0;
+    reveal_focus(v);
+    return G_SOURCE_REMOVE;
+}
+
+static void cancel_reveal(CanvasViewport* v) {
+    if (v->reveal_tick != 0) gtk_widget_remove_tick_callback(v->scroll, v->reveal_tick);
+    v->reveal_tick = 0;
+}
+
+static void on_focus_widget(GObject* object, GParamSpec* pspec, gpointer data) {
+    (void)object;
+    (void)pspec;
+    CanvasViewport* v = data;
+    cancel_reveal(v);
+    if (!reveal_focus(v)) v->reveal_tick = gtk_widget_add_tick_callback(v->scroll, on_reveal_tick, v, NULL);
 }
 
 static void unwatch_focus(CanvasViewport* v) {
+    cancel_reveal(v);
     if (v->root != NULL && v->focus_handler != 0) g_signal_handler_disconnect(v->root, v->focus_handler);
     v->focus_handler = 0;
     g_clear_weak_pointer(&v->root);
