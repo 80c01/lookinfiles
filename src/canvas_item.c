@@ -359,6 +359,32 @@ static void on_label_leave(GtkEventControllerFocus* ctrl, gpointer data) {
     g_free(text);
 }
 
+/* A text view first laid out at height 0 never asks for its text height
+ * again: once shown, it is laid out again until it has that height (at
+ * most a few frames, the height may be cut to the shape's) */
+#define LABEL_FIT_FRAMES 10
+#define LABEL_FIT_KEY "canvas-label-fit"
+
+static gboolean on_label_tick(GtkWidget* view, GdkFrameClock* clock, gpointer data) {
+    (void)clock;
+    (void)data;
+    gint frames = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(view), LABEL_FIT_KEY)) + 1;
+    g_object_set_data(G_OBJECT(view), LABEL_FIT_KEY, GINT_TO_POINTER(frames));
+    gint width = gtk_widget_get_width(view);
+    if (width <= 0) return frames < LABEL_FIT_FRAMES ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
+    gint nat = 0;
+    gtk_widget_measure(view, GTK_ORIENTATION_VERTICAL, width, NULL, &nat, NULL, NULL);
+    if (nat == gtk_widget_get_height(view) || frames >= LABEL_FIT_FRAMES) return G_SOURCE_REMOVE;
+    gtk_widget_queue_resize(view);
+    return G_SOURCE_CONTINUE;
+}
+
+static void on_label_map(GtkWidget* view, gpointer data) {
+    (void)data;
+    g_object_set_data(G_OBJECT(view), LABEL_FIT_KEY, GINT_TO_POINTER(0));
+    gtk_widget_add_tick_callback(view, on_label_tick, NULL, NULL);
+}
+
 /* The label of a shape, centred over it (shown once it has text) */
 static void add_label(CanvasItem* it, const gchar* text) {
     GtkWidget* view = gtk_text_view_new();
@@ -377,6 +403,7 @@ static void add_label(CanvasItem* it, const gchar* text) {
     gtk_widget_set_visible(view, valid[0] != '\0');
     g_free(valid);
     g_signal_connect(buf, "changed", G_CALLBACK(on_buffer_changed), it);
+    g_signal_connect(view, "map", G_CALLBACK(on_label_map), NULL);
     GtkEventController* focus = gtk_event_controller_focus_new();
     g_signal_connect(focus, "leave", G_CALLBACK(on_label_leave), it);
     gtk_widget_add_controller(view, focus);
