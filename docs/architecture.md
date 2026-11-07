@@ -395,6 +395,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   is being destroyed). Undo / redo restore a page state from `canvas_history`;
   unused pictures are pruned only when a note is loaded or closed, so an undo
   can bring a deleted picture back. Not an editor tab: `app->editors` stays text only.
+  Its files: `canvas_view` (widgets, tool bar and panel actions, public API),
+  `canvas_page` (the page state in `canvas_page_private.h`, internal to these
+  four files: focus, undo, saving, new blocks, the tool), `canvas_keys` (keys,
+  picture paste), `canvas_drag` (drawing tools, moving / resizing with
+  snapping, clicks, drops).
   Its parts: `canvas_toolbar` (floating tool bar: select, shapes, pencil,
   text, table, eraser, and the grid / align / crop menu), `canvas_props`
   (floating panel: shape style, or text formatting), `canvas_draw` (a shape

@@ -23,8 +23,8 @@ Excalidraw-like rework. Done: floating tool bar (theme icons), properties
 panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
 (commit 757c298). Code: `canvas_view.c`, `canvas_toolbar.c`,
 `canvas_props.c`, `canvas_draw.c`, `canvas_rough_draw.c`, `canvas_history.c`,
-`canvas_viewport.c`. `canvas_view.c` is near 1200 lines: split it (keys,
-drag and tools) before the next step. Next, in this order:
+`canvas_viewport.c`, and the page split into `canvas_view.c` (setup, API),
+`canvas_page.c` (core), `canvas_keys.c`, `canvas_drag.c`. Next, in this order:
 
 - [x] undo / redo (`Ctrl+Z` / `Ctrl+Shift+Z`): add, delete, move, resize,
   style changes; text being edited keeps its own GtkTextBuffer history

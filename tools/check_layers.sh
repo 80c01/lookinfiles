@@ -181,6 +181,14 @@ for f in $(grep -l '#include "pptx_shapes_private.h"' src/*.c src/*.h); do
     esac
 done
 
+# canvas_page_private.h is internal to the Canvas page files
+for f in $(grep -l '#include "canvas_page_private.h"' src/*.c src/*.h); do
+    case "$f" in
+        src/canvas_view.c|src/canvas_page.c|src/canvas_keys.c|src/canvas_drag.c) ;;
+        *) echo "layering: $f includes canvas_page_private.h (internal to the Canvas page files)"; status=1 ;;
+    esac
+done
+
 # Event subscribers are called through app_emit() (app_events.h), not directly,
 # outside their own module and main.c (where they are subscribed).
 for pair in update_path_label:topbar update_status_bar:status_bar \
