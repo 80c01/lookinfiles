@@ -19,6 +19,7 @@ CanvasPage* canvas_page_new(AppData* app) {
     p->app = app;
     p->snap_grid = TRUE;
     p->history = canvas_history_new(HISTORY_LIMIT);
+    p->selection = g_ptr_array_new_with_free_func(g_object_unref);
     return p;
 }
 
@@ -30,6 +31,9 @@ void canvas_page_free(CanvasPage* p) {
     canvas_history_free(p->history);
     if (p->viewport != NULL) canvas_viewport_free(p->viewport);
     g_free(p->drag_before);
+    if (p->drag_group != NULL) g_ptr_array_unref(p->drag_group);
+    if (p->drag_starts != NULL) g_array_unref(p->drag_starts);
+    g_ptr_array_unref(p->selection);
     g_free(p->dir);
     g_free(p);
 }
@@ -64,6 +68,7 @@ void canvas_page_restore_focus(CanvasPage* p) {
 }
 
 void canvas_page_deselect(CanvasPage* p) {
+    canvas_page_selection_clear(p);
     g_clear_weak_pointer(&p->last_focus);
     GtkRoot* root = gtk_widget_get_root(p->surface);
     if (root != NULL) gtk_root_set_focus(root, p->surface);
@@ -83,6 +88,108 @@ void canvas_page_focus_next(CanvasPage* p, CanvasItem* from, gint step) {
             return;
         }
     } while (w != start && !(w == NULL && start == NULL));
+}
+
+/* ------------------------------------------------------------------------- */
+/* Selection                                                                 */
+/* ------------------------------------------------------------------------- */
+
+#define SELECTED_CLASS "canvas-selected"
+
+static gboolean in_set(CanvasPage* p, CanvasItem* it) {
+    return it != NULL && g_ptr_array_find(p->selection, it->frame, NULL);
+}
+
+static void set_add(CanvasPage* p, CanvasItem* it) {
+    if (it == NULL || in_set(p, it)) return;
+    g_ptr_array_add(p->selection, g_object_ref(it->frame));
+    gtk_widget_add_css_class(it->frame, SELECTED_CLASS);
+}
+
+static void set_remove(CanvasPage* p, CanvasItem* it) {
+    if (it == NULL) return;
+    gtk_widget_remove_css_class(it->frame, SELECTED_CLASS);
+    g_ptr_array_remove(p->selection, it->frame);
+}
+
+void canvas_page_selection_clear(CanvasPage* p) {
+    for (guint i = 0; i < p->selection->len; i++) {
+        gtk_widget_remove_css_class(g_ptr_array_index(p->selection, i), SELECTED_CLASS);
+    }
+    g_ptr_array_set_size(p->selection, 0);
+}
+
+gboolean canvas_page_is_selected(CanvasPage* p, CanvasItem* it) {
+    return it != NULL && (in_set(p, it) || it == canvas_page_current_item(p));
+}
+
+GPtrArray* canvas_page_selected(CanvasPage* p) {
+    GPtrArray* items = g_ptr_array_new();
+    CanvasItem* current = canvas_page_current_item(p);
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* it = canvas_item_of(c);
+        if (it != NULL && (it == current || in_set(p, it))) g_ptr_array_add(items, it);
+    }
+    return items;
+}
+
+void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it) {
+    if (it == NULL) return;
+    CanvasItem* current = canvas_page_current_item(p);
+    if (!canvas_page_is_selected(p, it)) {
+        set_add(p, current);
+        set_add(p, it);
+        canvas_item_select(it);
+        return;
+    }
+    set_remove(p, it);
+    if (it != current) return;
+    /* The focused block left the selection: focus another one */
+    g_clear_weak_pointer(&p->last_focus);
+    if (p->selection->len > 0) {
+        canvas_item_select(canvas_item_of(g_ptr_array_index(p->selection, p->selection->len - 1)));
+    } else {
+        GtkRoot* root = gtk_widget_get_root(p->surface);
+        if (root != NULL) gtk_root_set_focus(root, p->surface);
+    }
+}
+
+void canvas_page_item_box(CanvasItem* it, gint* x, gint* y, gint* w, gint* h) {
+    *x = it->x;
+    *y = it->y;
+    *w = MAX(it->w, gtk_widget_get_width(it->frame));
+    *h = MAX(it->h, gtk_widget_get_height(it->frame));
+}
+
+void canvas_page_select_box(CanvasPage* p, gint x, gint y, gint w, gint h, gboolean extend) {
+    if (extend) {
+        set_add(p, canvas_page_current_item(p));
+    } else {
+        canvas_page_selection_clear(p);
+    }
+    CanvasItem* last = NULL;
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* it = canvas_item_of(c);
+        if (it == NULL) continue;
+        gint bx, by, bw, bh;
+        canvas_page_item_box(it, &bx, &by, &bw, &bh);
+        if (bx >= x && by >= y && bx + bw <= x + w && by + bh <= y + h) {
+            set_add(p, it);
+            last = it;
+        }
+    }
+    /* Focus the top block, so the keys act on the selection */
+    if (last != NULL) {
+        canvas_item_select(last);
+    } else if (p->selection->len > 0) {
+        canvas_item_select(canvas_item_of(g_ptr_array_index(p->selection, p->selection->len - 1)));
+    }
+}
+
+void canvas_page_focus_changed(CanvasPage* p, GtkWidget* f) {
+    if (f == NULL || !gtk_widget_is_ancestor(f, p->surface)) return;
+    CanvasItem* it = canvas_item_of(f);
+    if (it != NULL && !in_set(p, it)) canvas_page_selection_clear(p);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -163,7 +270,10 @@ static CanvasItem* add_item(CanvasPage* p, const CanvasBlock* b) {
 }
 
 static void clear_surface(CanvasPage* p) {
+    canvas_page_selection_clear(p);
     g_clear_weak_pointer(&p->last_focus);
+    p->band = NULL;
+    p->band_pending = FALSE;
     GtkWidget* c;
     while ((c = gtk_widget_get_first_child(p->surface)) != NULL) {
         gtk_fixed_remove(GTK_FIXED(p->surface), c);
@@ -219,7 +329,7 @@ static void restore(CanvasPage* p, gchar* state) {
 }
 
 void canvas_page_undo(CanvasPage* p, gboolean redo) {
-    if (p->drag_item != NULL || p->draw_item != NULL || p->erasing) return;
+    if (p->drag_item != NULL || p->draw_item != NULL || p->erasing || p->band != NULL) return;
     if (!(redo ? canvas_history_can_redo(p->history) : canvas_history_can_undo(p->history))) return;
     gchar* now = canvas_page_state(p);
     restore(p, redo ? canvas_history_redo(p->history, now) : canvas_history_undo(p->history, now));
@@ -233,7 +343,42 @@ void canvas_page_undo(CanvasPage* p, gboolean redo) {
 void canvas_page_remove_item(CanvasItem* it) {
     CanvasPage* p = it->page;
     canvas_page_remember(p);
+    set_remove(p, it);
     gtk_fixed_remove(GTK_FIXED(p->surface), it->frame);
+    canvas_page_schedule_save(p);
+}
+
+void canvas_page_remove_selected(CanvasPage* p) {
+    GPtrArray* items = canvas_page_selected(p);
+    if (items->len > 0) canvas_page_remember(p);
+    canvas_page_selection_clear(p);
+    for (guint i = 0; i < items->len; i++) {
+        CanvasItem* it = g_ptr_array_index(items, i);
+        gtk_fixed_remove(GTK_FIXED(p->surface), it->frame);
+    }
+    g_ptr_array_unref(items);
+    canvas_page_deselect(p);
+    canvas_page_update_extent(p);
+    canvas_page_schedule_save(p);
+}
+
+void canvas_page_move_selected(CanvasPage* p, gint dx, gint dy) {
+    GPtrArray* items = canvas_page_selected(p);
+    if (items->len > 0) canvas_page_remember(p);
+    /* The blocks keep their places relative to each other at the page edge */
+    for (guint i = 0; i < items->len; i++) {
+        CanvasItem* it = g_ptr_array_index(items, i);
+        dx = MAX(dx, -it->x);
+        dy = MAX(dy, -it->y);
+    }
+    for (guint i = 0; i < items->len; i++) {
+        CanvasItem* it = g_ptr_array_index(items, i);
+        it->x += dx;
+        it->y += dy;
+        canvas_item_place(it);
+    }
+    g_ptr_array_unref(items);
+    canvas_page_update_extent(p);
     canvas_page_schedule_save(p);
 }
 

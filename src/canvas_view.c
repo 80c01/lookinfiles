@@ -28,6 +28,8 @@ static void ensure_css(void) {
                   ".canvas-block:hover { border-color: @border; }"
                   ".canvas-block:focus-within { border-color: @border_strong; }"
                   ".canvas-block:focus { border-color: @focus_ring; box-shadow: 0 0 0 1px @focus_ring; }"
+                  ".canvas-block.canvas-selected { border-color: @focus_ring; }"
+                  ".canvas-band { border: 1px solid @focus_ring; background-color: alpha(@focus_ring, 0.08); }"
                   ".canvas-grip { min-height: 8px; border-radius: 3px 3px 0 0; }"
                   ".canvas-block:hover .canvas-grip, .canvas-block:focus-within .canvas-grip,"
                   " .canvas-block:focus .canvas-grip { background-color: @bg_hover; }"
@@ -44,6 +46,7 @@ static void on_window_focus(GObject* window, GParamSpec* pspec, gpointer data) {
     CanvasPage* p = g_object_get_data(G_OBJECT(data), CANVAS_PAGE_KEY);
     if (p == NULL || p->closed) return;
     GtkWidget* f = gtk_root_get_focus(GTK_ROOT(window));
+    canvas_page_focus_changed(p, f);
     if (f == NULL || !gtk_widget_is_ancestor(f, p->root)) canvas_viewport_set_pan_key(p->viewport, FALSE);
     if (f == p->surface) {
         g_clear_weak_pointer(&p->last_focus);
@@ -109,16 +112,22 @@ static void on_props_format_checkbox(gpointer udata) {
     canvas_page_restore_focus(udata);
 }
 
-/* A style picked in the panel: for the next shapes, and the selected one */
+/* A style picked in the panel: for the next shapes, and the selected ones */
 static void on_props_shape_style(const CanvasShapeStyle* style, gpointer udata) {
     CanvasPage* p = udata;
     p->style = *style;
     if (canvas_tool_draws(p->tool)) return;
-    CanvasItem* it = canvas_page_current_item(p);
-    if (it == NULL || it->kind != CANVAS_BLOCK_SHAPE) return;
-    canvas_page_remember(p);
-    canvas_page_apply_style(it, style);
-    canvas_page_schedule_save(p);
+    GPtrArray* items = canvas_page_selected(p);
+    gboolean changed = FALSE;
+    for (guint i = 0; i < items->len; i++) {
+        CanvasItem* it = g_ptr_array_index(items, i);
+        if (it->kind != CANVAS_BLOCK_SHAPE) continue;
+        if (!changed) canvas_page_remember(p);
+        changed = TRUE;
+        canvas_page_apply_style(it, style);
+    }
+    g_ptr_array_unref(items);
+    if (changed) canvas_page_schedule_save(p);
     canvas_page_restore_focus(p);
 }
 
@@ -126,32 +135,32 @@ static void on_toolbar_toggle_grid(gboolean enabled, gpointer udata) {
     ((CanvasPage*)udata)->snap_grid = enabled;
 }
 
+/* Align or distribute the selected blocks */
 static void on_toolbar_align(CanvasAlignOp op, gpointer udata) {
     CanvasPage* p = udata;
-    GArray* items = g_array_new(FALSE, FALSE, sizeof(CanvasItem*));
-    GArray* rects = g_array_new(FALSE, FALSE, sizeof(CanvasRect));
-    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
-        CanvasItem* it = canvas_item_of(c);
-        if (it == NULL) continue;
-        CanvasRect r = { it->x, it->y, it->w, MAX(it->h, gtk_widget_get_height(it->frame)) };
-        g_array_append_val(items, it);
-        g_array_append_val(rects, r);
-    }
-    if (rects->len >= 2) {
+    GPtrArray* items = canvas_page_selected(p);
+    if (items->len >= 2) {
+        GArray* rects = g_array_new(FALSE, FALSE, sizeof(CanvasRect));
+        for (guint i = 0; i < items->len; i++) {
+            CanvasItem* it = g_ptr_array_index(items, i);
+            CanvasRect r = { it->x, it->y, it->w, MAX(it->h, gtk_widget_get_height(it->frame)) };
+            g_array_append_val(rects, r);
+        }
         canvas_page_remember(p);
         canvas_align_boxes((CanvasRect*)rects->data, rects->len, op);
-        for (guint i = 0; i < rects->len; i++) {
-            CanvasItem* it = g_array_index(items, CanvasItem*, i);
+        for (guint i = 0; i < items->len; i++) {
+            CanvasItem* it = g_ptr_array_index(items, i);
             const CanvasRect* r = &g_array_index(rects, CanvasRect, i);
             it->x = r->x;
             it->y = r->y;
             canvas_item_place(it);
         }
+        g_array_unref(rects);
         canvas_page_update_extent(p);
         canvas_page_schedule_save(p);
     }
-    g_array_unref(items);
-    g_array_unref(rects);
+    g_ptr_array_unref(items);
+    canvas_page_restore_focus(p);
 }
 
 /* ------------------------------------------------------------------------- */

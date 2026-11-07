@@ -25,18 +25,16 @@ static gboolean text_key(CanvasItem* it, guint keyval, GdkModifierType state) {
     return canvas_text_key(GTK_TEXT_VIEW(it->content), &it->pending, keyval, state);
 }
 
+/* Keys on a selected block: Delete and the arrows act on every selected
+ * block */
 static gboolean block_key(CanvasPage* p, CanvasItem* it, guint keyval, GdkModifierType state) {
     if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) != 0) return FALSE;
     gint step = (state & GDK_SHIFT_MASK) ? NUDGE_BIG : NUDGE;
-    if (keyval == GDK_KEY_Left || keyval == GDK_KEY_Right || keyval == GDK_KEY_Up || keyval == GDK_KEY_Down) {
-        canvas_page_remember(p);
-    }
     switch (keyval) {
     case GDK_KEY_Delete:
     case GDK_KEY_KP_Delete:
     case GDK_KEY_BackSpace:
-        canvas_page_remove_item(it);
-        canvas_page_deselect(p);
+        canvas_page_remove_selected(p);
         return TRUE;
     case GDK_KEY_Return:
     case GDK_KEY_KP_Enter:
@@ -51,16 +49,12 @@ static gboolean block_key(CanvasPage* p, CanvasItem* it, guint keyval, GdkModifi
     case GDK_KEY_ISO_Left_Tab:
         canvas_page_focus_next(p, it, -1);
         return TRUE;
-    case GDK_KEY_Left: it->x -= step; break;
-    case GDK_KEY_Right: it->x += step; break;
-    case GDK_KEY_Up: it->y -= step; break;
-    case GDK_KEY_Down: it->y += step; break;
+    case GDK_KEY_Left: canvas_page_move_selected(p, -step, 0); return TRUE;
+    case GDK_KEY_Right: canvas_page_move_selected(p, step, 0); return TRUE;
+    case GDK_KEY_Up: canvas_page_move_selected(p, 0, -step); return TRUE;
+    case GDK_KEY_Down: canvas_page_move_selected(p, 0, step); return TRUE;
     default: return FALSE;
     }
-    canvas_item_place(it);
-    canvas_page_update_extent(p);
-    canvas_page_schedule_save(p);
-    return TRUE;
 }
 
 /* A picture being read from the clipboard; the page root is kept alive

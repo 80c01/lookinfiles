@@ -139,14 +139,16 @@ automatically; one canvas at a time)
 | Double click on the page, `Ctrl+Enter` | New text box (at the click, or below the selected block) |
 | `Ctrl+V` | Paste a picture as a new block (at the pointer); text pasted outside a text box makes a text box |
 | Drop image files | Copy them into the note as pictures |
-| Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions) |
+| Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions); a selected block takes the other selected ones along |
+| Drag on the empty page (`Shift`: add) | Select the blocks inside the box |
+| `Shift+click` on a block | Add it to the selection, or take it out (`⋯` menu: align or distribute the selected blocks) |
 | `Ctrl+B` / `Ctrl+I` / `Ctrl+U` / `Ctrl+Shift+S` / `Ctrl+E` / `Ctrl+Alt+1` | Bold, italic, underline, strikethrough, code, heading (the selection, or the text typed next) |
 | `Ctrl+Space` / `Ctrl+Shift+C` | Toggle checkbox under cursor (`- [ ]` / `- [X]`) |
 | `Esc` | In a text box: select the block; on a block: deselect |
 | `Tab` / `Shift+Tab` | Next / previous block |
-| Arrows (`Shift`: further) | Move the selected block |
+| Arrows (`Shift`: further) | Move the selected blocks |
 | `Enter` | Edit the selected text box |
-| `Delete` / `Backspace` | Delete the selected block (an empty text box goes away when left) |
+| `Delete` / `Backspace` | Delete the selected blocks (an empty text box goes away when left) |
 | `Ctrl+wheel`, `Ctrl+=` / `Ctrl+-` | Zoom the page in / out (around the pointer with the wheel; 10 % to 400 %, the scale shown above the page) |
 | `Ctrl+0`, click on the scale | Zoom back to 100 % (on the Canvas tab, instead of the font sizes) |
 | Middle-button drag, `Space` held and a drag | Move the view (`Space` when not typing in a block) |

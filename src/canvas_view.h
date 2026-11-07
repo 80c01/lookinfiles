@@ -14,6 +14,9 @@
  * - Drag the bar above a block (or a picture itself) to move it, its corner
  *   to resize it; Esc selects the block being edited, then Delete removes it,
  *   the arrows move it, Enter edits it, Tab goes to the next block.
+ * - A drag on the empty page selects the blocks inside its box; Shift+click
+ *   adds a block or takes it out. Moving, Delete, the arrows, the style and
+ *   the align menu act on every selected block.
  * - Ctrl+Z / Ctrl+Shift+Z (Ctrl+Y): undo / redo on the page (canvas_history.h);
  *   while typing, the text box or table cell undoes its own text.
  * - Ctrl+wheel, Ctrl+= / Ctrl+- zoom, Ctrl+0 back to 100 %; a middle-button

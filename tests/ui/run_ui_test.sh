@@ -367,6 +367,15 @@ drag 700 400 900 520;   shot canvas_rect_drawn
 key p; drag 600 600 640 660; drag 640 660 800 640
                         shot canvas_pencil_drawn
 key Escape;             shot canvas_tool_select
+# Multi-selection: a drag on the empty page around both shapes selects them,
+# the arrows move them together, Shift+click takes the rectangle out, Ctrl+Z
+# undoes the move
+drag 560 360 960 700 canvas_band_drawn
+                        shot canvas_band_selected
+key Right Right;        shot canvas_group_moved
+xdotool keydown shift mousemove 820 460 click 1 keyup shift
+                        shot canvas_shift_click
+key ctrl+z;             shot canvas_group_undo
 # Zoom: Ctrl+= zooms in (the header shows the scale), Ctrl+0 back to 100 %
 key ctrl+equal ctrl+equal;  shot canvas_zoom_in
 key ctrl+0;             shot canvas_zoom_reset

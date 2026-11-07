@@ -43,6 +43,18 @@ struct CanvasPage {
     gboolean drag_resize;
     gint drag_x, drag_y, drag_w, drag_h;
     gchar* drag_before; /* page state when the drag began */
+    GPtrArray* drag_group; /* CanvasItem*: the blocks moved together */
+    GArray* drag_starts;   /* CanvasRect: their boxes when the drag began */
+    /* Blocks selected together (frames, referenced; Shift+click, rubber
+     * band); the focused block is selected too */
+    GPtrArray* selection;
+    /* Rubber band: a press on the empty page (band_pending), then a drag
+     * from (band_x0, band_y0) to (band_x1, band_y1); band: its widget on
+     * the surface */
+    gboolean band_pending;
+    gboolean band_extend; /* Shift held: add to the selection */
+    GtkWidget* band;
+    gdouble band_x0, band_y0, band_x1, band_y1;
     CanvasHistory* history;
     /* Last focused widget inside a block (weak): what the toolbar acts on,
      * since its menus take the focus */
@@ -69,6 +81,21 @@ void canvas_page_deselect(CanvasPage* p);
 /* Select the next (step 1) or previous (-1) block after from */
 void canvas_page_focus_next(CanvasPage* p, CanvasItem* from, gint step);
 
+/* Selection: the focused block and the ones selected with it */
+/* The selected blocks, in drawing order (free with g_ptr_array_unref) */
+GPtrArray* canvas_page_selected(CanvasPage* p);
+gboolean canvas_page_is_selected(CanvasPage* p, CanvasItem* it);
+void canvas_page_selection_clear(CanvasPage* p);
+/* Shift+click on a block: add it to the selection, or take it out */
+void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it);
+/* Rubber band: select the blocks inside (x, y, w, h); extend: keep the
+ * blocks already selected */
+void canvas_page_select_box(CanvasPage* p, gint x, gint y, gint w, gint h, gboolean extend);
+/* The focus moved to f: a block out of the selection ends it */
+void canvas_page_focus_changed(CanvasPage* p, GtkWidget* f);
+/* Box of a block on the page */
+void canvas_page_item_box(CanvasItem* it, gint* x, gint* y, gint* w, gint* h);
+
 /* Changes: record the page for undo before, then save and resize after */
 void canvas_page_remember(CanvasPage* p);
 gchar* canvas_page_state(CanvasPage* p);
@@ -82,6 +109,9 @@ void canvas_page_undo(CanvasPage* p, gboolean redo);
 
 /* Blocks */
 void canvas_page_remove_item(CanvasItem* it);
+/* Delete / the arrows on a selected block: every selected block */
+void canvas_page_remove_selected(CanvasPage* p);
+void canvas_page_move_selected(CanvasPage* p, gint dx, gint dy);
 void canvas_page_apply_style(CanvasItem* it, const CanvasShapeStyle* style);
 /* Where a new block goes: the pointer (at_pointer), below the selection, or
  * the view corner */

@@ -61,7 +61,7 @@ and drag on the page; the letter in brackets picks it from the keyboard
 
 | Tool | Use |
 |---|---|
-| Select (`V`) | Select, move and resize blocks |
+| Select (`V`) | Select, move and resize blocks; drag on the empty page to select the blocks inside the box (`Shift`: add them) |
 | Rectangle (`R`), Diamond (`D`), Ellipse (`O`) | Drag to draw the shape (`Shift`: square, circle); a click makes one of the default size |
 | Arrow (`A`), Line (`L`) | Drag from the start to the end (`Shift`: multiple of 45 degrees) |
 | Pencil (`P`) | Draw freehand; the pencil stays chosen for the next stroke |
@@ -83,7 +83,7 @@ A panel on the left shows what the current tool or block can change:
 - **Shapes** (while a drawing tool is chosen, or a shape is selected):
   stroke colour, fill (none, hatched, solid; closed shapes only), stroke
   width, and hand-drawn or clean style. The choice applies to the selected
-  shape and to the next ones drawn.
+  shapes and to the next ones drawn.
 - **Text** (while a text box is edited or selected): paragraph style
   (headings, body, quote), bold, italic, underline, strikethrough, more
   styles (highlight, code, fonts, sizes), text colour, lists, task
@@ -95,17 +95,18 @@ A panel on the left shows what the current tool or block can change:
 |---|---|
 | Move a block | Drag the handle bar above it (or drag a picture or a shape directly) |
 | Resize a block | Drag its bottom-right corner (pictures keep proportions) |
+| Select several blocks | Drag on the empty page around them, or `Shift+click` each one (again to take it out); moving one moves them all |
 | Snap & Smart Guides | Magnetic snapping to nearby block edges and grid (**Snap to Grid** in the tool bar menu) |
-| Align blocks | Tool bar menu: left, centers, right, top, middles, bottom, distribute |
+| Align blocks | Select two blocks or more, then the tool bar menu: left, centers, right, top, middles, bottom, distribute |
 | Predefined styles | Paragraph style menu of the properties panel: Heading 1, Heading 2, Body text, Quote (`Ctrl+Alt+1`, `2`, `0`, `Q`) |
 | Text styling | `Ctrl+B` (bold), `Ctrl+I` (italic), `Ctrl+U` (underline), `Ctrl+Shift+S` (strikethrough), highlight, monospace, font family, text color |
 | Lists & Indents | Bullet list, numbered list, indent more / indent less in the properties panel; Enter auto-continues lists |
 | Interactive Checkboxes | Checkbox button or type `- [ ] `; click `[ ]` / `[X]` or press `Ctrl+Space` (or `Ctrl+Shift+C`) to toggle |
 | Select block / stop editing | `Esc` |
 | Next / previous block | `Tab` / `Shift+Tab` |
-| Move selected block | Arrow keys (`Shift` for 10px steps) |
+| Move selected blocks | Arrow keys (`Shift` for larger steps) |
 | Edit selected text box | `Enter` |
-| Delete selected block | `Delete` or `Backspace` |
+| Delete selected blocks | `Delete` or `Backspace` |
 | Zoom | `Ctrl` + mouse wheel (around the pointer) or `Ctrl+=` / `Ctrl+-`; `Ctrl+0`, or a click on the scale above the page, goes back to 100 % |
 | Move the view | Drag with the middle button, or hold `Space` and drag (when not typing in a block) |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`): blocks added, deleted, moved, resized, restyled, aligned or cropped; while typing in a text box or a table cell, they undo its text |
