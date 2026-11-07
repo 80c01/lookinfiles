@@ -328,6 +328,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `GtkPaned` must go through `wire_paned_controllers()` or at least
   `paned_use_thin_handle()`: a default handle grabs the mouse ~15 px into the
   neighbouring panels and blocks text selection near the edge.
+- `outline_pane` — a tagbar beside some content: a `GtkPaned` with a
+  `GtkListView` over a `GtkTreeListModel` of an outline (`code_outline_tree`),
+  its width shared through an `int*`, collapsed rows kept across refreshes;
+  the owner gives the entries and its cursor line, and is called back to go
+  to an entry, leave the list or hide the tagbar.
 - `focus_route` — where the keyboard focus is (`focus_route_get()`:
   explorer, preview, list page, editor tab; a focused tab bar counts as its
   current page), so the window key handler routes keys like the panels do.
@@ -566,8 +571,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   scanner, or Markdown headings) collected in a worker, for the picker and
   the tagbar.
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
-- `editor_tagbar` — the tagbar of an editor tab: a `GtkPaned` beside the
-  view with a `GtkListView` over a `GtkTreeListModel` of the outline.
+- `editor_tagbar` — the tagbar of an editor tab: an `outline_pane` beside
+  the view, fed by `code_outline` after a pause in the edits, following the
+  cursor and jumping through `code_nav`.
 - `nav_history` — per-workspace folder history (`VirtualLayout.dir_history`,
   fed by `reload_directory()`; `go_back_directory()` / `go_forward_directory()`
   / `go_history_directory()` in `file_list` walk it), with the entry

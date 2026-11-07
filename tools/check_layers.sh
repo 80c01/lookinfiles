@@ -143,6 +143,7 @@ preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,pale
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events,nav_keys
+outline_pane:code_outline_tree,code_symbol,icons,panels
 focus_route:app_types,app_events,nav_keys,panels
 icons:file_type_icons,palette
 icon_sets:app_paths,theme_store
