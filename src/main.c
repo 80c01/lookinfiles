@@ -46,6 +46,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "focus_route.h"
+#include "preview_tagbar.h"
 #include "ui_probe.h"
 #include <string.h>
 
@@ -421,9 +422,9 @@ int main(int argc, char** argv) {
     gtk_widget_set_name(preview_stack, "preview-stack");
     gtk_widget_set_hexpand(preview_stack, TRUE);
     gtk_widget_set_vexpand(preview_stack, TRUE);
-    /* Column line over code previews, as in editors */
-    gtk_stack_add_named(GTK_STACK(preview_stack), color_column_wrap(right_scroll, text_view), "text");
-    color_column_hide_on_change(text_view);
+    /* Filled once AppData exists: column line and tagbar around the text */
+    GtkWidget* text_page = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_stack_add_named(GTK_STACK(preview_stack), text_page, "text");
 
     GtkWidget* notebook = gtk_notebook_new();
     gtk_widget_set_hexpand(notebook, TRUE);
@@ -595,6 +596,10 @@ int main(int argc, char** argv) {
 
     app->notebook = notebook;
     app->preview_stack = preview_stack;
+    /* Column line over code previews, as in editors; headings beside the text */
+    gtk_box_append(GTK_BOX(text_page),
+                   preview_tagbar_wrap(app, color_column_wrap(right_scroll, text_view), text_view));
+    color_column_hide_on_change(text_view);
     video_preview_init(app);
     audio_preview_init(app);
     git_tab_init(app);

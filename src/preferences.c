@@ -7,6 +7,7 @@
 #include "dialog.h"
 #include "editor.h"
 #include "editor_tagbar.h"
+#include "preview_tagbar.h"
 #include "nav_keys.h"
 #include "search.h"
 #include "themes.h"
@@ -28,6 +29,7 @@ typedef struct {
     GtkWidget* line_numbers;  /* GtkCheckButton */
     GtkWidget* wrap;          /* GtkCheckButton */
     GtkWidget* tagbar;        /* GtkCheckButton */
+    GtkWidget* preview_tagbar; /* GtkCheckButton */
     GtkWidget* ruler;         /* GtkCheckButton: vertical line at a column */
     GtkWidget* ruler_column;  /* GtkSpinButton */
     GtkWidget* width;         /* GtkSpinButton */
@@ -59,6 +61,7 @@ void preferences_apply_startup(AppData* app, const Settings* settings) {
     app->editor_wrap = settings->wrap;
     app->editor_color_column = settings->color_column;
     app->editor_tagbar = settings->tagbar;
+    app->preview_tagbar = settings->preview_tagbar;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -138,6 +141,12 @@ static GtkWidget* editor_page(Preferences* p) {
                                            "in every tab, the tabs already open too (Notepad: Ctrl+K Ctrl+O, "
                                            "Emacs: M-x imenu-list, Vim: :TagbarToggle)");
     gtk_box_append(GTK_BOX(box), p->tagbar);
+
+    p->preview_tagbar = gtk_check_button_new_with_mnemonic("Show the tagbar in the _preview");
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->preview_tagbar), p->app->preview_tagbar);
+    gtk_widget_set_tooltip_text(p->preview_tagbar, "Headings of rendered Markdown, HTML and Org previews beside "
+                                                   "the text (in the preview: o or Ctrl+K Ctrl+O)");
+    gtk_box_append(GTK_BOX(box), p->preview_tagbar);
 
     /* Vim's colorcolumn: the line at the left edge of that column */
     GtkWidget* ruler_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -267,6 +276,7 @@ static void save_settings(Preferences* p) {
     s.line_numbers = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->line_numbers));
     s.wrap = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->wrap));
     s.tagbar = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->tagbar));
+    s.preview_tagbar = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->preview_tagbar));
     s.color_column = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->ruler))
                          ? gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->ruler_column))
                          : 0;
@@ -283,6 +293,7 @@ static void save_settings(Preferences* p) {
     app->editor_line_numbers = s.line_numbers;
     app->editor_wrap = s.wrap;
     editor_tagbar_set_shown(app, s.tagbar);
+    preview_tagbar_set_shown(app, s.preview_tagbar);
     if (s.color_column != app->editor_color_column) {
         app->editor_color_column = s.color_column;
         apply_color_column(app);

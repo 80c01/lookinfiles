@@ -171,8 +171,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `tests/test_vim_engine.c` by typing keys on a headless buffer.
 - `code_outline_tree` — outline of a file (code-nav.md): entries from a
   language server or the scanner, Markdown headings (ATX, Setext, outside
-  fences and front matter), the tree (nested in containers, grouped by
-  kind) and the entry at a line. Tested in `tests/test_code_outline_tree.c`.
+  fences and front matter), headings from the tag names of rendered
+  previews (`code_outline_heading_tag_level()`), the tree (nested in
+  containers, grouped by kind) and the entry at a line. Tested in `tests/test_code_outline_tree.c`.
 - `code_symbol`, `code_scan_c`, `code_scan`, `code_index` — the built-in
   code index of code navigation (code-nav.md): languages and the
   identifier under the cursor (`code_word_at()`), symbol scanners
@@ -574,6 +575,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `editor_tagbar` — the tagbar of an editor tab: an `outline_pane` beside
   the view, fed by `code_outline` after a pause in the edits, following the
   cursor and jumping through `code_nav`.
+- `preview_tagbar` — the tagbar of the preview: an `outline_pane` around
+  the preview text, listing the heading tags of the rendered buffer after
+  each render, following the scrolling; `o` / `Ctrl+K Ctrl+O` from
+  `on_viewer_key_press()`.
 - `nav_history` — per-workspace folder history (`VirtualLayout.dir_history`,
   fed by `reload_directory()`; `go_back_directory()` / `go_forward_directory()`
   / `go_history_directory()` in `file_list` walk it), with the entry

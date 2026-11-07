@@ -1,4 +1,5 @@
 /* Unit tests for src/settings_store.c: settings.ini */
+#include <string.h>
 #include "settings_store.h"
 
 #include <glib/gstdio.h>
@@ -24,6 +25,7 @@ static void test_missing_file(void) {
     g_assert_false(s.line_numbers);
     g_assert_false(s.wrap);
     g_assert_false(s.tagbar);
+    g_assert_false(s.preview_tagbar);
     g_assert_cmpint(s.color_column, ==, 81);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
@@ -43,10 +45,15 @@ static void test_save_load(void) {
     s.line_numbers = TRUE;
     s.wrap = TRUE;
     s.tagbar = TRUE;
+    s.preview_tagbar = TRUE;
     s.color_column = 81;
     s.width = 1920;
     s.height = 1080;
     g_assert_true(settings_store_save(path, &s, NULL));
+    gchar* written = NULL;
+    g_assert_true(g_file_get_contents(path, &written, NULL, NULL));
+    g_assert_nonnull(strstr(written, "[Preview]\ntagbar=true"));
+    g_free(written);
 
     Settings r;
     g_assert_true(settings_store_load(path, &r));
@@ -54,6 +61,7 @@ static void test_save_load(void) {
     g_assert_true(r.line_numbers);
     g_assert_true(r.wrap);
     g_assert_true(r.tagbar);
+    g_assert_true(r.preview_tagbar);
     g_assert_cmpint(r.color_column, ==, 81);
     g_assert_cmpint(r.width, ==, 1920);
     g_assert_cmpint(r.height, ==, 1080);

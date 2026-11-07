@@ -22,6 +22,7 @@
 #include "remote.h"
 #include "archive_tree.h"
 #include "orgmode.h"
+#include "preview_tagbar.h"
 #include "diff_gutter.h"
 #include "color_column.h"
 #include "dir_preview.h"
@@ -116,6 +117,10 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         NavAction action = nav_keys_lookup(app_nav_style(app), (NavPrefix)app->nav_prefix, keyval, state, &next);
         app->nav_prefix = next;
         run_viewer_nav(app, action);
+        return TRUE;
+    }
+
+    if (preview_tagbar_key(app, keyval, state)) {
         return TRUE;
     }
 

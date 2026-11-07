@@ -89,6 +89,8 @@ Notes:
   `tagbar=true` in settings.ini; read again 600 ms after the last edit,
   only while shown; follows the cursor (last entry starting at or before its
   line); the rows the user collapsed stay collapsed across refreshes.
+  The widget is `outline_pane`, shared with the preview tagbar
+  (`preview_tagbar`, docs/previews.md).
 
 ## Known limits
 

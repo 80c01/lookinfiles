@@ -15,6 +15,8 @@ format. Open work is in
   (including in-progress `[/]` / `[-]` tasks), tables, quotes, GitHub alerts,
   highlighted code blocks and images.
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
+- A tagbar of the headings beside rendered Markdown, HTML and Org previews
+  (`o` or `Ctrl+K Ctrl+O`).
 - Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
   `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), PostScript and TeX DVI (converted to PDF), video and audio
   with player controls.
@@ -135,6 +137,12 @@ every common format to L3 and never leave one below L1.
   each builds a `PreviewDoc` (`preview_doc`: styled text, spans, images) in
   the worker thread, shown by `preview_doc_view` (layer 2). The viewer has
   no format-specific branch.
+- **Tagbar**: `preview_tagbar` lists the headings of the rendered buffer,
+  read from its heading tags (`md_h*`, `html_h*`, `org_h*`, `pd_h*`:
+  `code_outline_heading_tag_level()`) after each render. A format gets it by
+  tagging its headings with one of these names (a `PreviewDoc` with
+  `PREVIEW_STYLE_HEADING1..3`), never with a branch of its own. Only the
+  rendered part is listed (`PREVIEW_BYTES` for long text files).
 - **Shared building blocks**: the summary card (`preview_doc_title()`,
   `preview_doc_field()`...) and text tables (`PreviewTable`: aligned
   columns, numbers right-aligned, zebra rows, row numbers).

@@ -121,6 +121,42 @@ static gboolean is_paragraph_text(const gchar* p, const gchar* end) {
     return TRUE;
 }
 
+gint code_outline_heading_tag_level(const gchar* tag_name) {
+    static const gchar* const prefixes[] = {"md_h", "html_h", "org_h", "pd_h"};
+    if (tag_name == NULL) return 0;
+    for (gsize i = 0; i < G_N_ELEMENTS(prefixes); i++) {
+        if (!g_str_has_prefix(tag_name, prefixes[i])) continue;
+        const gchar* d = tag_name + strlen(prefixes[i]);
+        if (d[0] >= '1' && d[0] <= '6' && d[1] == '\0') return d[0] - '0';
+    }
+    return 0;
+}
+
+CodeOutlineEntry* code_outline_heading_new(const gchar* text, gint level, gint line) {
+    if (text == NULL) return NULL;
+    gchar* valid = g_utf8_make_valid(text, -1);
+    GString* name = g_string_new(NULL);
+    gboolean space = FALSE;
+    for (const gchar* p = valid; *p != '\0'; p = g_utf8_next_char(p)) {
+        gunichar c = g_utf8_get_char(p);
+        if (g_unichar_isspace(c)) {
+            space = name->len > 0;
+            continue;
+        }
+        if (space) g_string_append_c(name, ' ');
+        space = FALSE;
+        g_string_append_unichar(name, c);
+    }
+    g_free(valid);
+    CodeOutlineEntry* e = NULL;
+    if (name->len > 0) {
+        e = code_outline_entry_new(name->str, NULL, NULL, CODE_SYM_MODULE, line, 0);
+        e->level = level;
+    }
+    g_string_free(name, TRUE);
+    return e;
+}
+
 static void add_heading(GPtrArray* out, const gchar* text, const gchar* start, const gchar* stop, gint level,
                         gint line) {
     if (stop <= start) return;

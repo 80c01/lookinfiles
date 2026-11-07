@@ -185,6 +185,10 @@ drag() {
 shot start
 key Down Down;          shot select_readme_md
 key Down;               shot preview_readme_md_tasks
+key alt+Right                                       # focus the preview
+key o; sleep 0.5;       shot preview_tagbar_shown   # headings of the rendered README.md
+key q;                  shot preview_tagbar_hidden
+key alt+Left
 key Home;               shot gg_first_row
 key Home;               shot gg_reselect_same_row
 key Down;               shot dir_preview_readme   # src: table, git line, rendered README.md

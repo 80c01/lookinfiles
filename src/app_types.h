@@ -392,7 +392,9 @@ typedef struct {
     gboolean editor_wrap;         /* new editor tabs wrap long lines (Preferences) */
     gint editor_color_column;     /* vertical line in editors at this column, 0: none (Preferences) */
     gboolean editor_tagbar;       /* code and Markdown editor tabs show the tagbar (settings.ini) */
-    gint editor_tagbar_width;     /* its width, shared by the tabs */
+    gint editor_tagbar_width;     /* its width, shared by the tabs and the preview */
+    gboolean preview_tagbar;      /* previews with headings show the tagbar (settings.ini) */
+    gpointer preview_tagbar_state; /* preview_tagbar.c */
     gchar* status_notice;         /* bottom bar message (app_notice()), NULL if none */
     gboolean status_notice_undo;  /* the message offers Undo */
     guint status_notice_serial;   /* bumped by each app_notice() (restarts its timeout) */

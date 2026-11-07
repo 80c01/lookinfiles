@@ -15,6 +15,7 @@ void settings_defaults(Settings* s) {
     s->line_numbers = FALSE;
     s->wrap = FALSE;
     s->tagbar = FALSE;
+    s->preview_tagbar = FALSE;
     s->color_column = 81;
     s->width = 1000;
     s->height = 600;
@@ -84,6 +85,7 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     s->line_numbers = read_bool(kf, "Editor", "line-numbers", s->line_numbers);
     s->wrap = read_bool(kf, "Editor", "wrap", s->wrap);
     s->tagbar = read_bool(kf, "Editor", "tagbar", s->tagbar);
+    s->preview_tagbar = read_bool(kf, "Preview", "tagbar", s->preview_tagbar);
     s->color_column = read_int(kf, "Editor", "color-column", 0, SETTINGS_MAX_COLUMN, s->color_column);
     s->width = read_size(kf, "width", SETTINGS_MIN_WIDTH, s->width);
     s->height = read_size(kf, "height", SETTINGS_MIN_HEIGHT, s->height);
@@ -98,6 +100,7 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
     g_key_file_set_boolean(kf, "Editor", "line-numbers", s->line_numbers);
     g_key_file_set_boolean(kf, "Editor", "wrap", s->wrap);
     g_key_file_set_boolean(kf, "Editor", "tagbar", s->tagbar);
+    g_key_file_set_boolean(kf, "Preview", "tagbar", s->preview_tagbar);
     g_key_file_set_integer(kf, "Editor", "color-column", s->color_column);
     g_key_file_set_integer(kf, "Window", "width", s->width);
     g_key_file_set_integer(kf, "Window", "height", s->height);

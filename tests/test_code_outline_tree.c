@@ -132,6 +132,25 @@ static void test_entry_at_line(void) {
     g_ptr_array_unref(late);
 }
 
+static void test_heading_tags(void) {
+    g_assert_cmpint(code_outline_heading_tag_level("md_h1"), ==, 1);
+    g_assert_cmpint(code_outline_heading_tag_level("html_h6"), ==, 6);
+    g_assert_cmpint(code_outline_heading_tag_level("org_h3"), ==, 3);
+    g_assert_cmpint(code_outline_heading_tag_level("pd_h2"), ==, 2);
+    g_assert_cmpint(code_outline_heading_tag_level("md_h7"), ==, 0);
+    g_assert_cmpint(code_outline_heading_tag_level("md_h1x"), ==, 0);
+    g_assert_cmpint(code_outline_heading_tag_level("md_hr"), ==, 0);
+    g_assert_cmpint(code_outline_heading_tag_level("md_hl_ffffff"), ==, 0);
+    g_assert_cmpint(code_outline_heading_tag_level(NULL), ==, 0);
+    CodeOutlineEntry* e = code_outline_heading_new("  Two\n  lines\t here \n", 2, 7);
+    g_assert_nonnull(e);
+    g_assert_cmpstr(e->name, ==, "Two lines here");
+    g_assert_cmpint(e->level, ==, 2);
+    g_assert_cmpint(e->line, ==, 7);
+    code_outline_entry_free(e);
+    g_assert_null(code_outline_heading_new(" \n\t", 1, 0));
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/code_outline_tree/markdown_atx", test_markdown_atx);
@@ -141,5 +160,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/code_outline_tree/tree_symbols", test_tree_symbols);
     g_test_add_func("/code_outline_tree/tree_headings", test_tree_headings);
     g_test_add_func("/code_outline_tree/entry_at_line", test_entry_at_line);
+    g_test_add_func("/code_outline_tree/heading_tags", test_heading_tags);
     return g_test_run();
 }
