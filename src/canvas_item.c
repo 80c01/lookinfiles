@@ -46,6 +46,31 @@ void canvas_item_edit(CanvasItem* it) {
     }
 }
 
+static void clear_selection_in(GtkWidget* w) {
+    if (GTK_IS_TEXT_VIEW(w)) {
+        GtkTextBuffer* buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(w));
+        GtkTextIter at;
+        gtk_text_buffer_get_iter_at_mark(buf, &at, gtk_text_buffer_get_insert(buf));
+        if (gtk_text_buffer_get_has_selection(buf)) gtk_text_buffer_select_range(buf, &at, &at);
+        return;
+    }
+    if (GTK_IS_EDITABLE(w)) {
+        gint start = 0, end = 0;
+        if (gtk_editable_get_selection_bounds(GTK_EDITABLE(w), &start, &end)) {
+            gint pos = gtk_editable_get_position(GTK_EDITABLE(w));
+            gtk_editable_select_region(GTK_EDITABLE(w), pos, pos);
+        }
+        return;
+    }
+    for (GtkWidget* c = gtk_widget_get_first_child(w); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        clear_selection_in(c);
+    }
+}
+
+void canvas_item_clear_text_selection(CanvasItem* it) {
+    if (it != NULL && it->frame != NULL) clear_selection_in(it->frame);
+}
+
 gboolean canvas_item_rotatable(const CanvasItem* it) {
     if (it == NULL || it->kind != CANVAS_BLOCK_SHAPE) return FALSE;
     switch (it->shape_type) {

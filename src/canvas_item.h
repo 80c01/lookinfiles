@@ -49,6 +49,8 @@ CanvasItem* canvas_item_of(GtkWidget* w);
 void canvas_item_select(CanvasItem* it);
 /* Type in it: a text box, or the label of a shape */
 void canvas_item_edit(CanvasItem* it);
+/* No text selected in it any more (it left the selection) */
+void canvas_item_clear_text_selection(CanvasItem* it);
 /* Its frame put at (x, y) with its size, turned by angle around its centre */
 void canvas_item_place(CanvasItem* it);
 

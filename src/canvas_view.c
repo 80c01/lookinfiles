@@ -63,6 +63,7 @@ static void on_window_focus(GObject* window, GParamSpec* pspec, gpointer data) {
     CanvasPage* p = g_object_get_data(G_OBJECT(data), CANVAS_PAGE_KEY);
     if (p == NULL || p->closed) return;
     GtkWidget* f = gtk_root_get_focus(GTK_ROOT(window));
+    CanvasItem* before = canvas_page_current_item(p);
     canvas_page_focus_changed(p, f);
     if (f == NULL || !gtk_widget_is_ancestor(f, p->root)) canvas_viewport_set_pan_key(p->viewport, FALSE);
     if (f == p->surface) {
@@ -70,6 +71,8 @@ static void on_window_focus(GObject* window, GParamSpec* pspec, gpointer data) {
     } else if (f != NULL && gtk_widget_is_ancestor(f, p->surface)) {
         g_set_weak_pointer(&p->last_focus, f);
     }
+    /* A click elsewhere on the page: the text selected in the block left goes too */
+    if (before != NULL && before != canvas_page_current_item(p)) canvas_item_clear_text_selection(before);
     canvas_page_update_props(p);
 }
 
