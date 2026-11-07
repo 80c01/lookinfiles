@@ -232,6 +232,52 @@ static void sol_init(CardsGame* g) {
     }
 }
 
+static gboolean sol_try_move_to_foundation(CardsGame* g, gint pref) {
+    if (g->sol_sel_pile < 0) return FALSE;
+    if (g->sol_sel_pile != 7 &&
+        g->sol_sel_idx != g->sol_tableau[g->sol_sel_pile].count - 1) {
+        return FALSE;
+    }
+
+    Card* src = (g->sol_sel_pile == 7) ?
+                &g->sol_waste.cards[g->sol_waste.count - 1] :
+                &g->sol_tableau[g->sol_sel_pile].cards[g->sol_sel_idx];
+
+    gint target = -1;
+    for (gint pass = 0; pass < 2 && target < 0; pass++) {
+        for (gint i = 0; i < 4; i++) {
+            if (pass == 0 && i != pref) continue;
+            if (pass == 1 && i == pref) continue;
+            if (g->sol_foundations[i].count == 0) {
+                if (src->rank == 1) {
+                    target = i;
+                    break;
+                }
+            } else {
+                Card* top = &g->sol_foundations[i].cards[g->sol_foundations[i].count - 1];
+                if (top->suit == src->suit && src->rank == top->rank + 1) {
+                    target = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (target < 0) return FALSE;
+
+    g->sol_foundations[target].cards[g->sol_foundations[target].count++] = *src;
+    if (g->sol_sel_pile == 7) {
+        g->sol_waste.count--;
+    } else {
+        g->sol_tableau[g->sol_sel_pile].count--;
+        if (g->sol_tableau[g->sol_sel_pile].count > 0) {
+            g->sol_tableau[g->sol_sel_pile].cards[g->sol_tableau[g->sol_sel_pile].count - 1].face_up = TRUE;
+        }
+    }
+    g->sol_sel_pile = -1;
+    return TRUE;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Memory Match                                                              */
 /* ------------------------------------------------------------------------- */
@@ -518,17 +564,43 @@ static void on_cards_click(GtkGestureClick* gesture, int n_press, double x, doub
 
         /* Click Waste */
         if (x >= 125.0f && x <= 125.0f + cw && y >= 20.0f && y <= 20.0f + ch && g->sol_waste.count > 0) {
-            g->sol_sel_pile = 7;
-            g->sol_sel_idx = g->sol_waste.count - 1;
+            if (g->sol_sel_pile == 7 || n_press >= 2) {
+                g->sol_sel_pile = 7;
+                g->sol_sel_idx = g->sol_waste.count - 1;
+                if (!sol_try_move_to_foundation(g, -1) && n_press == 1) {
+                    g->sol_sel_pile = -1;
+                }
+            } else {
+                g->sol_sel_pile = 7;
+                g->sol_sel_idx = g->sol_waste.count - 1;
+            }
             gtk_widget_queue_draw(g->drawing_area);
             return;
+        }
+
+        /* Click Foundations top right */
+        int width = gtk_widget_get_width(g->drawing_area);
+        for (gint i = 0; i < 4; i++) {
+            gfloat fx = width - 360.0f + i * 85.0f;
+            if (x >= fx && x <= fx + cw && y >= 20.0f && y <= 20.0f + ch) {
+                if (g->sol_sel_pile >= 0) {
+                    sol_try_move_to_foundation(g, i);
+                    g->sol_sel_pile = -1;
+                    gtk_widget_queue_draw(g->drawing_area);
+                }
+                return;
+            }
         }
 
         /* Click Tableau Columns */
         for (gint col = 0; col < 7; col++) {
             gfloat tx = 40.0f + col * 85.0f;
             if (x >= tx && x <= tx + cw && y >= 140.0f) {
-                if (g->sol_sel_pile >= 0) {
+                if (g->sol_sel_pile == col && g->sol_tableau[col].count > 0) {
+                    if (!sol_try_move_to_foundation(g, -1)) {
+                        g->sol_sel_pile = -1;
+                    }
+                } else if (g->sol_sel_pile >= 0) {
                     /* Try to move selected card(s) to this column */
                     Card* src = (g->sol_sel_pile == 7) ?
                                 &g->sol_waste.cards[g->sol_waste.count - 1] :
