@@ -106,6 +106,7 @@ onto the page; double click a picture to crop it.
 | Move selected blocks | Arrow keys (`Shift` for larger steps) |
 | Edit selected text box, or the text of a shape | `Enter` (a shape: also a double click) |
 | Delete selected blocks | `Delete` or `Backspace` |
+| Copy, cut, paste, duplicate | `Ctrl+C`, `Ctrl+X`, `Ctrl+V` (at the pointer, also into another Canvas note, pictures included), `Ctrl+D`; arrows copied with their blocks stay bound to the copies |
 | Zoom | `Ctrl` + mouse wheel (around the pointer) or `Ctrl+=` / `Ctrl+-`; `Ctrl+0`, or a click on the scale above the page, goes back to 100 % |
 | Move the view | Drag with the middle button, or hold `Space` and drag (when not typing in a block) |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`): blocks added, deleted, moved, resized, restyled, aligned or cropped; while typing in a text box or a table cell, they undo its text |

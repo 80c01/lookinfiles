@@ -2,7 +2,7 @@
 #define CANVAS_PAGE_PRIVATE_H
 
 /* Internal to the Canvas page files (canvas_view.c, canvas_page.c,
- * canvas_keys.c, canvas_drag.c): the page state and its core helpers,
+ * canvas_keys.c, canvas_drag.c, canvas_clip.c): the page state and its core helpers,
  * defined in canvas_page.c. */
 
 #include "app_types.h"
@@ -111,6 +111,13 @@ void canvas_page_undo(CanvasPage* p, gboolean redo);
 
 /* Blocks */
 void canvas_page_remove_item(CanvasItem* it);
+/* The selected blocks as a document (free it), in drawing order */
+CanvasDoc* canvas_page_selected_doc(CanvasPage* p);
+/* Add copies of the blocks of doc, moved by (dx, dy), and select them:
+ * new ids, the lines bound between them bound between the copies; pictures
+ * of another note (from_dir) copied into this one. Returns how many. */
+guint canvas_page_add_copies(CanvasPage* p, CanvasDoc* doc, gint dx, gint dy, const gchar* from_dir);
+
 /* Delete / the arrows on a selected block: every selected block */
 void canvas_page_remove_selected(CanvasPage* p);
 void canvas_page_move_selected(CanvasPage* p, gint dx, gint dy);

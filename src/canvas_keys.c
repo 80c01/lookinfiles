@@ -1,5 +1,6 @@
 /* Keys of the Canvas page (see canvas_keys.h) */
 #include "canvas_keys.h"
+#include "canvas_clip.h"
 #include "canvas_item.h"
 #include "canvas_media.h"
 #include "canvas_page_private.h"
@@ -128,8 +129,22 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
     if (p->dir == NULL) return FALSE;
     gboolean control = (state & GDK_CONTROL_MASK) != 0;
     gboolean other = (state & (GDK_SHIFT_MASK | GDK_ALT_MASK)) != 0;
+    GtkWidget* f = canvas_page_focused_widget(p);
+    CanvasItem* it = canvas_page_focused_item(p);
+    /* The page or a block focused, not typing in it */
+    gboolean on_blocks = f == p->surface || (it != NULL && f == it->frame);
     if (control && !other && (keyval == GDK_KEY_v || keyval == GDK_KEY_V)) {
+        if (on_blocks && canvas_clip_paste(p)) return TRUE;
         return paste_picture(p);
+    }
+    /* Ctrl+C / Ctrl+X / Ctrl+D: copy, cut, duplicate the selected blocks */
+    if (control && !other && on_blocks && it != NULL) {
+        if (keyval == GDK_KEY_c || keyval == GDK_KEY_C) return canvas_clip_copy(p, FALSE);
+        if (keyval == GDK_KEY_x || keyval == GDK_KEY_X) return canvas_clip_copy(p, TRUE);
+        if (keyval == GDK_KEY_d || keyval == GDK_KEY_D) {
+            canvas_clip_duplicate(p);
+            return TRUE;
+        }
     }
     if (control && !other && (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter)) {
         gint x, y;
@@ -139,7 +154,6 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
     }
     /* Ctrl+Z / Ctrl+Shift+Z or Ctrl+Y: undo / redo on the page; while typing,
      * the text box or the table cell undoes its own text */
-    GtkWidget* f = canvas_page_focused_widget(p);
     gboolean typing = f != NULL && (GTK_IS_EDITABLE(f) || GTK_IS_TEXT_VIEW(f));
     if (control && (state & GDK_ALT_MASK) == 0 && !typing &&
         (keyval == GDK_KEY_z || keyval == GDK_KEY_Z || keyval == GDK_KEY_y || keyval == GDK_KEY_Y)) {
@@ -156,7 +170,6 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         canvas_viewport_zoom_step(p->viewport, zoom);
         return TRUE;
     }
-    CanvasItem* it = canvas_page_focused_item(p);
     /* Space held on the page or a block: drag to move the view */
     if (keyval == GDK_KEY_space && (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) == 0 &&
         (f == p->surface || (it != NULL && f == it->frame))) {

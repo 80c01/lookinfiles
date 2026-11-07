@@ -398,8 +398,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   can bring a deleted picture back. Not an editor tab: `app->editors` stays text only.
   Its files: `canvas_view` (widgets, tool bar and panel actions, public API),
   `canvas_page` (the page state in `canvas_page_private.h`, internal to these
-  four files: focus, undo, saving, new blocks, the tool), `canvas_keys` (keys,
-  picture paste), `canvas_drag` (drawing tools, moving / resizing with
+  files: focus, selection, undo, saving, new blocks, the tool), `canvas_keys` (keys,
+  picture paste), `canvas_clip` (copy / cut / paste / duplicate of blocks: a
+  private clipboard type holding the source note and the blocks' XML, plus
+  their Markdown as text), `canvas_drag` (drawing tools, moving / resizing with
   snapping, clicks, drops).
   Its parts: `canvas_toolbar` (floating tool bar: select, shapes, pencil,
   text, table, eraser, and the grid / align / crop menu), `canvas_props`

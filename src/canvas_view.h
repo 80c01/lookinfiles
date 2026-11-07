@@ -21,6 +21,8 @@
  * - A drag on the empty page selects the blocks inside its box; Shift+click
  *   adds a block or takes it out. Moving, Delete, the arrows, the style and
  *   the align menu act on every selected block.
+ * - Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+D: copy, cut, paste, duplicate the
+ *   selected blocks (canvas_clip.h).
  * - Ctrl+Z / Ctrl+Shift+Z (Ctrl+Y): undo / redo on the page (canvas_history.h);
  *   while typing, the text box or table cell undoes its own text.
  * - Ctrl+wheel, Ctrl+= / Ctrl+- zoom, Ctrl+0 back to 100 %; a middle-button

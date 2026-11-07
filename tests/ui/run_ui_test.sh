@@ -389,6 +389,11 @@ key Return; xdotool type --delay 60 "Goal"; key Escape
 xdotool mousemove 780 450 click --repeat 2 --delay 80 1
 xdotool type --delay 60 "Start"; key Escape
                         shot canvas_shape_text_double_click
+# Ctrl+D duplicates the selected rectangle; Ctrl+C then Ctrl+V pastes it at
+# the pointer
+key ctrl+d;             shot canvas_duplicate
+key ctrl+c; xdotool mousemove 1100 640; key ctrl+v
+                        shot canvas_paste
 # Zoom: Ctrl+= zooms in (the header shows the scale), Ctrl+0 back to 100 %
 key ctrl+equal ctrl+equal;  shot canvas_zoom_in
 key ctrl+0;             shot canvas_zoom_reset

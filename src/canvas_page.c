@@ -11,6 +11,8 @@
 #include "canvas_toolbar.h"
 #include "canvas_viewport.h"
 
+#include <string.h>
+
 #define SAVE_DELAY_MS 800   /* autosave after the last change */
 #define PAGE_MARGIN 400     /* room around blocks */
 #define MAX_NEW_IMAGE_WIDTH 640
@@ -366,6 +368,90 @@ void canvas_page_remove_item(CanvasItem* it) {
     canvas_bind_forget(p->surface, it->id);
     gtk_fixed_remove(GTK_FIXED(p->surface), it->frame);
     canvas_page_schedule_save(p);
+}
+
+CanvasDoc* canvas_page_selected_doc(CanvasPage* p) {
+    GPtrArray* items = canvas_page_selected(p);
+    CanvasDoc* all = canvas_items_to_doc(p->surface);
+    CanvasDoc* doc = canvas_doc_new();
+    /* The blocks of the page document, taken in its order */
+    for (guint i = 0; i < all->blocks->len;) {
+        CanvasBlock* b = g_ptr_array_index(all->blocks, i);
+        gboolean keep = FALSE;
+        for (guint k = 0; k < items->len && !keep; k++) {
+            keep = ((CanvasItem*)g_ptr_array_index(items, k))->id == b->id;
+        }
+        if (keep) {
+            g_ptr_array_add(doc->blocks, g_ptr_array_steal_index(all->blocks, i));
+        } else {
+            i++;
+        }
+    }
+    canvas_doc_free(all);
+    g_ptr_array_unref(items);
+    return doc;
+}
+
+/* A picture of the note in from_dir copied into this one: the new src
+ * (free it), or NULL if it cannot be copied */
+static gchar* copy_picture(CanvasPage* p, const gchar* from_dir, const gchar* src) {
+    const gchar* dot = strrchr(src, '.');
+    gchar* dest_src = canvas_doc_new_media_path(p->dir, dot != NULL ? dot + 1 : "png");
+    gchar* from = g_build_filename(from_dir, src, NULL);
+    gchar* to = g_build_filename(p->dir, dest_src, NULL);
+    gchar* media = g_path_get_dirname(to);
+    g_mkdir_with_parents(media, 0755);
+    GFile* a = g_file_new_for_path(from);
+    GFile* b = g_file_new_for_path(to);
+    g_autoptr(GError) error = NULL;
+    if (!g_file_copy(a, b, G_FILE_COPY_NONE, NULL, NULL, NULL, &error)) {
+        g_warning("canvas: cannot copy the picture %s: %s", from, error->message);
+        g_clear_pointer(&dest_src, g_free);
+    }
+    g_object_unref(a);
+    g_object_unref(b);
+    g_free(media);
+    g_free(to);
+    g_free(from);
+    return dest_src;
+}
+
+guint canvas_page_add_copies(CanvasPage* p, CanvasDoc* doc, gint dx, gint dy, const gchar* from_dir) {
+    if (p->dir == NULL || doc == NULL || doc->blocks->len == 0) return 0;
+    gboolean other_note = from_dir != NULL && g_strcmp0(from_dir, p->dir) != 0;
+    canvas_page_remember(p);
+    canvas_page_selection_clear(p);
+    GHashTable* ids = g_hash_table_new(g_direct_hash, g_direct_equal); /* old id -> new id */
+    GPtrArray* added = g_ptr_array_new();
+    for (guint i = 0; i < doc->blocks->len; i++) {
+        CanvasBlock* b = g_ptr_array_index(doc->blocks, i);
+        if (b->kind == CANVAS_BLOCK_IMAGE && other_note) {
+            gchar* src = copy_picture(p, from_dir, b->src);
+            if (src == NULL) continue;
+            g_free(b->src);
+            b->src = src;
+        }
+        b->x = MAX(b->x + dx, 0);
+        b->y = MAX(b->y + dy, 0);
+        CanvasItem* it = add_item(p, b);
+        if (it == NULL) continue;
+        g_hash_table_insert(ids, GINT_TO_POINTER(b->id), GINT_TO_POINTER(it->id));
+        g_ptr_array_add(added, it);
+    }
+    /* Lines keep only the bindings to blocks copied with them */
+    for (guint i = 0; i < added->len; i++) {
+        CanvasItem* it = g_ptr_array_index(added, i);
+        it->start_id = GPOINTER_TO_INT(g_hash_table_lookup(ids, GINT_TO_POINTER(it->start_id)));
+        it->end_id = GPOINTER_TO_INT(g_hash_table_lookup(ids, GINT_TO_POINTER(it->end_id)));
+        set_add(p, it);
+    }
+    guint n = added->len;
+    if (n > 0) canvas_item_select(g_ptr_array_index(added, n - 1));
+    g_ptr_array_unref(added);
+    g_hash_table_unref(ids);
+    canvas_page_update_extent(p);
+    canvas_page_schedule_save(p);
+    return n;
 }
 
 void canvas_page_remove_selected(CanvasPage* p) {

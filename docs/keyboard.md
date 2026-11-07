@@ -138,7 +138,9 @@ automatically; one canvas at a time)
 | Drag on the page with a shape tool or the pencil | Draw it (`Shift`: square, circle, line at a multiple of 45 degrees); an arrow or line end drawn on a block follows that block |
 | Double click on the page, `Ctrl+Enter` | New text box (at the click, or below the selected block) |
 | Double click on a shape, `Enter` on a selected shape | Type text inside it (centred; `Esc` when done) |
-| `Ctrl+V` | Paste a picture as a new block (at the pointer); text pasted outside a text box makes a text box |
+| `Ctrl+V` | Paste copied blocks, or a picture as a new block (at the pointer); text pasted outside a text box makes a text box |
+| `Ctrl+C` / `Ctrl+X` | Copy / cut the selected blocks (other applications get their text) |
+| `Ctrl+D` | Duplicate the selected blocks |
 | Drop image files | Copy them into the note as pictures |
 | Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions); a selected block takes the other selected ones along |
 | Drag on the empty page (`Shift`: add) | Select the blocks inside the box |
