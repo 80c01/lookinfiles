@@ -346,7 +346,8 @@ key Down;               shot bookmark_dir_preview   # folder preview once its ki
 key ctrl+a;             shot files_after_bookmarks
 key ctrl+u;             shot notes_view
 # Canvas note: Enter opens the Canvas tab; Ctrl+Enter adds a text box, Esc
-# selects it, the arrows move it, Delete removes it, Ctrl+W closes the tab
+# selects it, the arrows move it, Delete removes it, Ctrl+Z brings it back,
+# Ctrl+Shift+Z deletes it again, Ctrl+W closes the tab
 key ctrl+f; xdotool type --delay 60 "Board"; key Escape
                         shot canvas_preview_summary
 key Return;             shot canvas_open
@@ -357,6 +358,8 @@ key ctrl+space;         shot canvas_checkbox_toggled
 key Escape;             shot canvas_block_selected
 key Right Right shift+Down;  shot canvas_block_moved
 key Delete;             shot canvas_block_deleted
+key ctrl+z;             shot canvas_undo_delete
+key ctrl+shift+z;       shot canvas_redo_delete
 # Drawing tools: R and a drag draw a rectangle (selected, its style in the
 # panel), P and a drag a pencil stroke, Esc goes back to Select
 key r;                  shot canvas_tool_rectangle

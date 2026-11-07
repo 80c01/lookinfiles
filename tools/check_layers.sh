@@ -107,6 +107,7 @@ note_types:
 notebook_icons:
 canvas_doc:
 canvas_geometry:
+canvas_history:
 canvas_rough_draw:canvas_doc,canvas_geometry,palette
 canvas_text:canvas_doc,fonts,palette,text_tags
 user_guide:

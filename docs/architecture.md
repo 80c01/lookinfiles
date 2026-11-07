@@ -219,6 +219,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   written as XML, new picture names, unused pictures pruned, Markdown export
   (`canvas_doc_export_markdown()`: a `.md` note next to it, pictures linked
   inside the Canvas).
+- `canvas_history` — undo / redo of a Canvas note: page states (`page.xml`
+  content) recorded before each change, with a step limit.
 - `palette` — every colour of the application, by role (`PaletteRole`:
   surfaces, text, accent, git, diff, syntax, editor, terminal ANSI...):
   `palette_color()` ("#rrggbb" for text tags and Pango markup),
@@ -390,7 +392,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   edits one Canvas note at a time (`canvas_doc`), text boxes and pictures on a
   `GtkFixed`; move / resize by dragging, pictures pasted (`Ctrl+V`) or dropped
   into `media/`; saved automatically, on close and at quit (never while the page
-  is being destroyed). Not an editor tab: `app->editors` stays text only.
+  is being destroyed). Undo / redo restore a page state from `canvas_history`;
+  unused pictures are pruned only when a note is loaded or closed, so an undo
+  can bring a deleted picture back. Not an editor tab: `app->editors` stays text only.
   Its parts: `canvas_toolbar` (floating tool bar: select, shapes, pencil,
   text, table, eraser, and the grid / align / crop menu), `canvas_props`
   (floating panel: shape style, or text formatting), `canvas_draw` (a shape

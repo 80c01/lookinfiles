@@ -106,6 +106,7 @@ A panel on the left shows what the current tool or block can change:
 | Move selected block | Arrow keys (`Shift` for 10px steps) |
 | Edit selected text box | `Enter` |
 | Delete selected block | `Delete` or `Backspace` |
+| Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`): blocks added, deleted, moved, resized, restyled, aligned or cropped; while typing in a text box or a table cell, they undo its text |
 | Close Canvas tab | `Ctrl+W`, or middle click on the tab |
 
 ## Where notes are kept

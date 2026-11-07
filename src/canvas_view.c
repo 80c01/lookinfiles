@@ -5,6 +5,7 @@
 #include "canvas_doc.h"
 #include "canvas_draw.h"
 #include "canvas_geometry.h"
+#include "canvas_history.h"
 #include "canvas_item.h"
 #include "canvas_media.h"
 #include "canvas_props.h"
@@ -24,6 +25,7 @@
 #define NUDGE 8             /* arrows move a selected block by this */
 #define NUDGE_BIG 40        /* Shift+arrows */
 #define MAX_NEW_IMAGE_WIDTH 640
+#define HISTORY_LIMIT 100   /* undo steps kept */
 
 struct CanvasPage {
     AppData* app;
@@ -51,6 +53,8 @@ struct CanvasPage {
     CanvasItem* drag_item;
     gboolean drag_resize;
     gint drag_x, drag_y, drag_w, drag_h;
+    gchar* drag_before; /* page state when the drag began */
+    CanvasHistory* history;
     /* Last focused widget inside a block (weak): what the toolbar acts on,
      * since its menus take the focus */
     GtkWidget* last_focus;
@@ -160,7 +164,23 @@ static void update_extent(CanvasPage* p) {
     gtk_widget_set_size_request(p->surface, w + PAGE_MARGIN, h + PAGE_MARGIN);
 }
 
+/* Page state, as page.xml (free it) */
+static gchar* page_state(CanvasPage* p) {
+    g_autoptr(CanvasDoc) doc = canvas_items_to_doc(p->surface);
+    return canvas_doc_to_xml(doc);
+}
+
+/* Record the page before a change, for undo */
+static void remember(CanvasPage* p) {
+    if (p->loading || p->dir == NULL) return;
+    gchar* state = page_state(p);
+    canvas_history_push(p->history, state);
+    g_free(state);
+}
+
+/* Text typed or a table cell edited: their own widgets undo it */
 static void on_item_changed_notify(CanvasPage* p) {
+    if (!p->loading) canvas_history_clear_redo(p->history);
     update_extent(p);
     schedule_save(p);
 }
@@ -171,6 +191,7 @@ static CanvasItem* add_item(CanvasPage* p, const CanvasBlock* b) {
 
 static void remove_item(CanvasItem* it) {
     CanvasPage* p = it->page;
+    remember(p);
     gtk_fixed_remove(GTK_FIXED(p->surface), it->frame);
     schedule_save(p);
 }
@@ -192,6 +213,7 @@ static void new_block_position(CanvasPage* p, gboolean at_pointer, gint* x, gint
 }
 
 static CanvasItem* new_text_box(CanvasPage* p, gint x, gint y, const gchar* text) {
+    remember(p);
     g_autoptr(CanvasDoc) tmp = canvas_doc_new();
     CanvasItem* it = add_item(p, canvas_doc_add_text(tmp, x, y, 0, text));
     update_extent(p);
@@ -210,6 +232,7 @@ static void apply_style(CanvasItem* it, const CanvasShapeStyle* style) {
 }
 
 static CanvasItem* new_shape(CanvasPage* p, gint x, gint y, gint w, gint h, CanvasShapeType type) {
+    remember(p);
     g_autoptr(CanvasDoc) tmp = canvas_doc_new();
     CanvasBlock* b = canvas_doc_add_shape(tmp, x, y, w, h, type);
     CanvasItem* it = add_item(p, b);
@@ -221,6 +244,7 @@ static CanvasItem* new_shape(CanvasPage* p, gint x, gint y, gint w, gint h, Canv
 }
 
 static CanvasItem* new_table(CanvasPage* p, gint x, gint y, gint rows, gint cols) {
+    remember(p);
     g_autoptr(CanvasDoc) tmp = canvas_doc_new();
     CanvasBlock* b = canvas_doc_add_table(tmp, x, y, rows, cols);
     CanvasItem* it = add_item(p, b);
@@ -236,6 +260,7 @@ static CanvasItem* new_picture(CanvasPage* p, const gchar* src, gint x, gint y, 
         height = (gint)((gdouble)height * MAX_NEW_IMAGE_WIDTH / width);
         width = MAX_NEW_IMAGE_WIDTH;
     }
+    remember(p);
     g_autoptr(CanvasDoc) tmp = canvas_doc_new();
     CanvasBlock* b = canvas_doc_add_image(tmp, x, y, width, height, src);
     CanvasItem* it = add_item(p, b);
@@ -249,76 +274,18 @@ static CanvasItem* new_picture(CanvasPage* p, const gchar* src, gint x, gint y, 
 /* Document Sync                                                             */
 /* ------------------------------------------------------------------------- */
 
-static CanvasDoc* doc_from_widgets(CanvasPage* p) {
-    CanvasDoc* doc = canvas_doc_new();
-    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
-        CanvasItem* it = canvas_item_of(c);
-        if (it == NULL) continue;
-        if (it->kind == CANVAS_BLOCK_IMAGE) {
-            CanvasBlock* b = canvas_doc_add_image(doc, it->x, it->y, it->w, it->h, it->src);
-            b->crop_x = it->crop_x;
-            b->crop_y = it->crop_y;
-            b->crop_w = it->crop_w;
-            b->crop_h = it->crop_h;
-            continue;
-        }
-        if (it->kind == CANVAS_BLOCK_SHAPE) {
-            CanvasBlock* b = canvas_doc_add_shape(doc, it->x, it->y, it->w, it->h, it->shape_type);
-            g_free(b->stroke_color);
-            b->stroke_color = g_strdup(it->stroke_color);
-            b->fill_style = it->fill_style;
-            b->stroke_width = it->stroke_width;
-            b->rough = it->rough;
-            if (it->points != NULL) {
-                g_array_append_vals(b->points, it->points->data, it->points->len);
-            }
-            continue;
-        }
-        if (it->kind == CANVAS_BLOCK_TABLE && it->table_block != NULL) {
-            CanvasBlock* b = canvas_doc_add_table(doc, it->x, it->y,
-                                                  it->table_block->table_rows, it->table_block->table_cols);
-            b->w = it->w;
-            b->h = it->h;
-            for (gint r = 0; r < b->table_rows; r++) {
-                for (gint col = 0; col < b->table_cols; col++) {
-                    canvas_table_set_cell(b, r, col, canvas_table_get_cell(it->table_block, r, col));
-                }
-            }
-            for (gint col = 0; col < b->table_cols; col++) {
-                canvas_table_set_col_width(b, col, canvas_table_get_col_width(it->table_block, col));
-            }
-            continue;
-        }
-        GtkTextIter s, e;
-        gtk_text_buffer_get_bounds(it->buffer, &s, &e);
-        gchar* text = gtk_text_buffer_get_text(it->buffer, &s, &e, TRUE);
-        CanvasBlock* b = canvas_doc_add_text(doc, it->x, it->y, it->w, text);
-        g_free(text);
-        GtkTextIter i = s;
-        while (!gtk_text_iter_is_end(&i)) {
-            GtkTextIter next = i;
-            gtk_text_iter_forward_to_tag_toggle(&next, NULL);
-            canvas_block_add_run(b, gtk_text_iter_get_offset(&i), gtk_text_iter_get_offset(&next),
-                                 canvas_text_styles_at(it->buffer, &i));
-            i = next;
-        }
-    }
-    return doc;
-}
-
 static gboolean save_now(CanvasPage* p) {
     if (p->save_source != 0) {
         g_source_remove(p->save_source);
         p->save_source = 0;
     }
     if (!p->dirty || p->dir == NULL || p->closed) return TRUE;
-    g_autoptr(CanvasDoc) doc = doc_from_widgets(p);
+    g_autoptr(CanvasDoc) doc = canvas_items_to_doc(p->surface);
     g_autoptr(GError) error = NULL;
     if (!canvas_doc_save(doc, p->dir, &error)) {
         g_warning("canvas: cannot save %s: %s", p->dir, error->message);
         return FALSE;
     }
-    canvas_doc_prune_media(doc, p->dir);
     p->dirty = FALSE;
     update_extent(p);
     return TRUE;
@@ -338,6 +305,13 @@ static void schedule_save(CanvasPage* p) {
     p->save_source = g_timeout_add(SAVE_DELAY_MS, on_save_timeout, p);
 }
 
+/* Delete the pictures no block uses, once the history is dropped */
+static void prune_media(CanvasPage* p) {
+    if (p->dir == NULL || p->closed) return;
+    g_autoptr(CanvasDoc) doc = canvas_items_to_doc(p->surface);
+    canvas_doc_prune_media(doc, p->dir);
+}
+
 static void clear_surface(CanvasPage* p) {
     g_clear_weak_pointer(&p->last_focus);
     GtkWidget* c;
@@ -348,6 +322,8 @@ static void clear_surface(CanvasPage* p) {
 
 static void load(CanvasPage* p, const gchar* dir, const gchar* title) {
     save_now(p);
+    prune_media(p);
+    canvas_history_clear(p->history);
     p->generation++;
     p->loading = TRUE;
     clear_surface(p);
@@ -367,6 +343,36 @@ static void load(CanvasPage* p, const gchar* dir, const gchar* title) {
     p->dirty = FALSE;
     update_extent(p);
     set_tool(p, CANVAS_TOOL_SELECT);
+}
+
+/* Put the page back in a state from the history (state freed) */
+static void restore(CanvasPage* p, gchar* state) {
+    if (state == NULL) return;
+    g_autoptr(GError) error = NULL;
+    g_autoptr(CanvasDoc) doc = canvas_doc_parse(state, -1, &error);
+    g_free(state);
+    if (doc == NULL) {
+        g_warning("canvas: cannot restore the page: %s", error != NULL ? error->message : "");
+        return;
+    }
+    p->loading = TRUE;
+    clear_surface(p);
+    for (guint i = 0; i < doc->blocks->len; i++) {
+        add_item(p, g_ptr_array_index(doc->blocks, i));
+    }
+    p->loading = FALSE;
+    update_extent(p);
+    schedule_save(p);
+    deselect(p);
+    update_props(p);
+}
+
+static void undo(CanvasPage* p, gboolean redo) {
+    if (p->drag_item != NULL || p->draw_item != NULL || p->erasing) return;
+    if (!(redo ? canvas_history_can_redo(p->history) : canvas_history_can_undo(p->history))) return;
+    gchar* now = page_state(p);
+    restore(p, redo ? canvas_history_redo(p->history, now) : canvas_history_undo(p->history, now));
+    g_free(now);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -492,6 +498,8 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
         return;
     }
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    g_free(p->drag_before);
+    p->drag_before = page_state(p);
     p->drag_item = it;
     p->drag_resize = corner;
     p->drag_x = it->x;
@@ -555,10 +563,12 @@ static void on_drag_end(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpointe
     }
     if (p->drag_item == NULL) return;
     if (dx != 0 || dy != 0) {
+        canvas_history_push(p->history, p->drag_before);
         update_extent(p);
         schedule_save(p);
     }
     p->drag_item = NULL;
+    g_clear_pointer(&p->drag_before, g_free);
 }
 
 /* user_data: a reference on the picture's frame, so the item stays alive
@@ -567,6 +577,7 @@ static void on_crop_applied(double x, double y, double w, double h, gpointer use
     GtkWidget* frame = user_data;
     CanvasItem* it = canvas_item_of(frame);
     if (it == NULL || gtk_widget_get_parent(frame) == NULL) return;
+    remember(it->page);
     it->crop_x = x;
     it->crop_y = y;
     it->crop_w = w;
@@ -715,6 +726,9 @@ static gboolean text_key(CanvasItem* it, guint keyval, GdkModifierType state) {
 static gboolean block_key(CanvasPage* p, CanvasItem* it, guint keyval, GdkModifierType state) {
     if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) != 0) return FALSE;
     gint step = (state & GDK_SHIFT_MASK) ? NUDGE_BIG : NUDGE;
+    if (keyval == GDK_KEY_Left || keyval == GDK_KEY_Right || keyval == GDK_KEY_Up || keyval == GDK_KEY_Down) {
+        remember(p);
+    }
     switch (keyval) {
     case GDK_KEY_Delete:
     case GDK_KEY_KP_Delete:
@@ -803,6 +817,20 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         gint x, y;
         new_block_position(p, FALSE, &x, &y);
         new_text_box(p, x, y, "");
+        return TRUE;
+    }
+    /* Ctrl+Z / Ctrl+Shift+Z or Ctrl+Y: undo / redo on the page; while typing,
+     * the text box or the table cell undoes its own text */
+    GtkWidget* f = focused_widget(p);
+    gboolean typing = f != NULL && (GTK_IS_EDITABLE(f) || GTK_IS_TEXT_VIEW(f));
+    if (control && (state & GDK_ALT_MASK) == 0 && !typing &&
+        (keyval == GDK_KEY_z || keyval == GDK_KEY_Z || keyval == GDK_KEY_y || keyval == GDK_KEY_Y)) {
+        gboolean shift = (state & GDK_SHIFT_MASK) != 0;
+        if (keyval == GDK_KEY_y || keyval == GDK_KEY_Y) {
+            if (shift) return FALSE;
+            shift = TRUE;
+        }
+        undo(p, shift);
         return TRUE;
     }
     CanvasItem* it = focused_item(p);
@@ -898,6 +926,7 @@ static void on_props_shape_style(const CanvasShapeStyle* style, gpointer udata) 
     if (canvas_tool_draws(p->tool)) return;
     CanvasItem* it = current_item(p);
     if (it == NULL || it->kind != CANVAS_BLOCK_SHAPE) return;
+    remember(p);
     apply_style(it, style);
     schedule_save(p);
     restore_focus(p);
@@ -919,6 +948,7 @@ static void on_toolbar_align(CanvasAlignOp op, gpointer udata) {
         g_array_append_val(rects, r);
     }
     if (rects->len >= 2) {
+        remember(p);
         canvas_align_boxes((CanvasRect*)rects->data, rects->len, op);
         for (guint i = 0; i < rects->len; i++) {
             CanvasItem* it = g_array_index(items, CanvasItem*, i);
@@ -940,6 +970,7 @@ static void on_toolbar_align(CanvasAlignOp op, gpointer udata) {
 
 static void close_page(CanvasPage* p) {
     save_now(p);
+    prune_media(p);
     GtkNotebook* nb = GTK_NOTEBOOK(p->app->notebook);
     gint page = gtk_notebook_page_num(nb, p->root);
     if (page >= 0) gtk_notebook_remove_page(nb, page);
@@ -975,6 +1006,8 @@ static void page_free(gpointer data) {
     g_clear_weak_pointer(&p->last_focus);
     if (p->toolbar != NULL) canvas_toolbar_free(p->toolbar);
     if (p->props != NULL) canvas_props_free(p->props);
+    canvas_history_free(p->history);
+    g_free(p->drag_before);
     g_free(p->dir);
     g_free(p);
 }
@@ -990,6 +1023,7 @@ static CanvasPage* ensure_page(AppData* app) {
     p = g_new0(CanvasPage, 1);
     p->app = app;
     p->snap_grid = TRUE;
+    p->history = canvas_history_new(HISTORY_LIMIT);
 
     GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(root, "canvas-page");

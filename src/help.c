@@ -81,6 +81,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Canvas tab", "Tab / Shift+Tab", "Next / previous block", 0},
     {"Canvas tab", "Arrows / Shift+Arrows", "Move the selected block", 0},
     {"Canvas tab", "Enter / Delete", "Edit / delete the selected block", 0},
+    {"Canvas tab", "Ctrl+Z / Ctrl+Shift+Z", "Undo / redo on the page (also Ctrl+Y); while typing: the text", 0},
     {"Canvas tab", "Ctrl+W", "Close the Canvas tab (saved automatically)", 0},
     {"Help tab", "F1", "Open the user guide (also a click on the top bar's Help button)", 0},
     {"Help tab", "Tab / Shift+Tab", "Select the next / previous link", 0},

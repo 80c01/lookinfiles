@@ -147,6 +147,7 @@ automatically; one canvas at a time)
 | Arrows (`Shift`: further) | Move the selected block |
 | `Enter` | Edit the selected text box |
 | `Delete` / `Backspace` | Delete the selected block (an empty text box goes away when left) |
+| `Ctrl+Z` / `Ctrl+Shift+Z`, `Ctrl+Y` | Undo / redo on the page: add, delete, move, resize, style, align, crop (while typing: the text of the box or cell) |
 | `Ctrl+W`, middle click on the tab | Close the Canvas tab (saved first) |
 
 **Help tab** (the user guide, opened with `F1` or a click on the top bar's

@@ -49,4 +49,7 @@ CanvasItem* canvas_item_add(CanvasPage* p, GtkWidget* surface, const gchar* dir,
                             const CanvasBlock* b, CanvasItemNotify on_change,
                             gboolean loading);
 
+/* The document of the blocks on surface, in drawing order (free it) */
+CanvasDoc* canvas_items_to_doc(GtkWidget* surface);
+
 #endif /* CANVAS_ITEM_H */

@@ -14,6 +14,8 @@
  * - Drag the bar above a block (or a picture itself) to move it, its corner
  *   to resize it; Esc selects the block being edited, then Delete removes it,
  *   the arrows move it, Enter edits it, Tab goes to the next block.
+ * - Ctrl+Z / Ctrl+Shift+Z (Ctrl+Y): undo / redo on the page (canvas_history.h);
+ *   while typing, the text box or table cell undoes its own text.
  * - Ctrl+B / Ctrl+I / Ctrl+U / Ctrl+Shift+S / Ctrl+E / Ctrl+Alt+1: bold,
  *   italic, underline, strikethrough, code, heading.
  *

@@ -24,7 +24,7 @@ panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
 (commit 757c298). Code: `canvas_view.c`, `canvas_toolbar.c`,
 `canvas_props.c`, `canvas_draw.c`, `canvas_rough_draw.c`. Next, in this order:
 
-- [ ] undo / redo (`Ctrl+Z` / `Ctrl+Shift+Z`): add, delete, move, resize,
+- [x] undo / redo (`Ctrl+Z` / `Ctrl+Shift+Z`): add, delete, move, resize,
   style changes; text being edited keeps its own GtkTextBuffer history
 - [ ] zoom (`Ctrl+wheel`, `Ctrl+0` back to 100 %) and pan (Space + drag or
   middle button)
@@ -38,7 +38,8 @@ panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
   block, bring to front / send to back, export the canvas as PNG / SVG
 - [ ] run `make ui-shots` and check the new canvas screenshots
   (`canvas_tool_*`, `canvas_rect_drawn`, `canvas_pencil_drawn`,
-  `canvas_checkbox_toggled`); not run yet
+  `canvas_checkbox_toggled`, `canvas_undo_delete`, `canvas_redo_delete`);
+  not run yet
 
 ### Wish list
 
