@@ -151,7 +151,7 @@ editor tab; it stays in its workspace)
 | Drag a point / a segment middle of a selected arrow or line | Move that point (`Shift`: multiple of 45 degrees) / add a point there and bend it into a curve |
 | Double click a point of a selected arrow or line, or click it then `Delete` | Remove that point (not an end: `Delete` then removes the whole line) |
 | Drag on the empty page (`Shift`: add) | Select the blocks inside the box |
-| `Shift+click` on a block | Add it to the selection, or take it out (`⋯` menu: align or distribute the selected blocks) |
+| `Shift+click` on a block | Add it to the selection, or take it out (the panel on the left then aligns or distributes the selected blocks) |
 | `Ctrl+B` / `Ctrl+I` / `Ctrl+U` / `Ctrl+Shift+S` / `Ctrl+E` / `Ctrl+Alt+1` | Bold, italic, underline, strikethrough, code, heading (the selection, or the text typed next) |
 | `Ctrl+Space` / `Ctrl+Shift+C` | Toggle checkbox under cursor (`- [ ]` / `- [X]`) |
 | `Esc` | In a text box: select the block; on a block: deselect |

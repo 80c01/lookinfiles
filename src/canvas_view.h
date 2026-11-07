@@ -23,7 +23,7 @@
  *   (canvas_bind.h): its end stays on the block's outline when it moves.
  * - A drag on the empty page selects the blocks inside its box; Shift+click
  *   adds a block or takes it out. Moving, Delete, the arrows, the style and
- *   the align menu act on every selected block.
+ *   the align buttons of the panel act on every selected block.
  * - Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+D: copy, cut, paste, duplicate the
  *   selected blocks (canvas_clip.h).
  * - Ctrl+Z / Ctrl+Shift+Z (Ctrl+Y): undo / redo on the page (canvas_history.h);

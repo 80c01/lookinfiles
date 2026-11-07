@@ -91,14 +91,6 @@ static void on_crop_clicked(GtkButton* btn, gpointer data) {
     if (tb->cbs.on_crop_image) tb->cbs.on_crop_image(tb->user_data);
 }
 
-static void on_align_clicked(GtkButton* btn, gpointer data) {
-    CanvasToolbar* tb = data;
-    GtkPopover* pop = g_object_get_data(G_OBJECT(btn), "pop");
-    if (pop != NULL) gtk_popover_popdown(pop);
-    CanvasAlignOp op = (CanvasAlignOp)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "align-op"));
-    if (tb->cbs.on_align) tb->cbs.on_align(op, tb->user_data);
-}
-
 static void on_order_clicked(GtkButton* btn, gpointer data) {
     CanvasToolbar* tb = data;
     GtkPopover* pop = g_object_get_data(G_OBJECT(btn), "pop");
@@ -132,14 +124,14 @@ static GtkWidget* menu_item(const gchar* label, GtkWidget* pop, GCallback cb, Ca
     return item;
 }
 
-/* The menu at the end of the bar: snap to grid, align, crop */
+/* The menu at the end of the bar: snap to grid, order, lock, crop, export */
 static GtkWidget* more_menu(CanvasToolbar* tb) {
     GtkWidget* mb = gtk_menu_button_new();
     gtk_menu_button_set_child(GTK_MENU_BUTTON(mb), icon_image_new("view-more"));
     gtk_menu_button_set_has_frame(GTK_MENU_BUTTON(mb), FALSE);
     gtk_widget_add_css_class(mb, "canvas-tool");
     gtk_widget_set_focus_on_click(mb, FALSE);
-    gtk_widget_set_tooltip_text(mb, "Grid, Align, Order, Lock, Crop and Export");
+    gtk_widget_set_tooltip_text(mb, "Grid, Order, Lock, Crop and Export");
 
     GtkWidget* pop = gtk_popover_new();
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
@@ -151,25 +143,6 @@ static GtkWidget* more_menu(CanvasToolbar* tb) {
     gtk_box_append(GTK_BOX(box), grid);
     gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
 
-    static const struct {
-        const gchar* name;
-        CanvasAlignOp op;
-    } ALIGNS[] = {
-        {"Align Left", CANVAS_ALIGN_LEFT},
-        {"Align Centers", CANVAS_ALIGN_CENTER_H},
-        {"Align Right", CANVAS_ALIGN_RIGHT},
-        {"Align Top", CANVAS_ALIGN_TOP},
-        {"Align Middles", CANVAS_ALIGN_MIDDLE_V},
-        {"Align Bottom", CANVAS_ALIGN_BOTTOM},
-        {"Distribute Horizontally", CANVAS_DISTRIBUTE_H},
-        {"Distribute Vertically", CANVAS_DISTRIBUTE_V},
-    };
-    for (guint i = 0; i < G_N_ELEMENTS(ALIGNS); i++) {
-        GtkWidget* item = menu_item(ALIGNS[i].name, pop, G_CALLBACK(on_align_clicked), tb);
-        g_object_set_data(G_OBJECT(item), "align-op", GINT_TO_POINTER((gint)ALIGNS[i].op));
-        gtk_box_append(GTK_BOX(box), item);
-    }
-    gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
     static const struct {
         const gchar* name;
         gint where;

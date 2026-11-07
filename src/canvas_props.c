@@ -1,6 +1,7 @@
 /* Properties panel of the Canvas page (see canvas_props.h) */
 #include "canvas_props.h"
 #include "canvas_rough_draw.h"
+#include "icons.h"
 #include "palette.h"
 #include "theme.h"
 
@@ -41,9 +42,34 @@ static const struct {
     {4, "Extra Bold"},
 };
 
+/* Align and distribute buttons: icon (lookin-canvas-<icon>), tooltip */
+static const struct {
+    CanvasAlignOp op;
+    const gchar* icon;
+    const gchar* tip;
+} ALIGNS[] = {
+    {CANVAS_ALIGN_LEFT, "canvas-align-left", "Align Left"},
+    {CANVAS_ALIGN_CENTER_H, "canvas-align-center-h", "Align Centers"},
+    {CANVAS_ALIGN_RIGHT, "canvas-align-right", "Align Right"},
+    {CANVAS_ALIGN_TOP, "canvas-align-top", "Align Top"},
+    {CANVAS_ALIGN_MIDDLE_V, "canvas-align-middle-v", "Align Middles"},
+    {CANVAS_ALIGN_BOTTOM, "canvas-align-bottom", "Align Bottom"},
+};
+
+static const struct {
+    CanvasAlignOp op;
+    const gchar* icon;
+    const gchar* tip;
+} DISTRIBUTES[] = {
+    {CANVAS_DISTRIBUTE_H, "canvas-distribute-h", "Distribute Horizontally"},
+    {CANVAS_DISTRIBUTE_V, "canvas-distribute-v", "Distribute Vertically"},
+};
+
 struct CanvasProps {
     GtkWidget* box;
     GtkWidget* shape_box;
+    GtkWidget* align_box;
+    GtkWidget* distributes[G_N_ELEMENTS(DISTRIBUTES)];
     GtkWidget* fill_row;
     GtkWidget* colors[G_N_ELEMENTS(COLORS)];
     GtkWidget* fills[G_N_ELEMENTS(FILLS)];
@@ -66,6 +92,7 @@ static void ensure_css(void) {
         ".canvas-prop { min-width: 28px; min-height: 26px; padding: 2px; border-radius: 6px;"
         " background: none; border: none; box-shadow: none; color: @fg; }"
         ".canvas-prop:hover { background-color: @bg_hover; }"
+        ".canvas-prop:disabled { opacity: 0.4; }"
         ".canvas-prop:checked { background-color: @bg_selected; box-shadow: inset 0 0 0 1px @accent; }"
         ".canvas-swatch { min-width: 16px; min-height: 16px; border-radius: 50%; }");
     for (guint i = 0; i < G_N_ELEMENTS(COLORS); i++) {
@@ -235,6 +262,12 @@ static GtkWidget* shape_section(CanvasProps* props) {
     return box;
 }
 
+/* The panel shows while one of its sections does */
+static void update_visible(CanvasProps* props) {
+    gtk_widget_set_visible(props->box, gtk_widget_get_visible(props->shape_box) ||
+                                           gtk_widget_get_visible(props->align_box));
+}
+
 void canvas_props_show_shape(CanvasProps* props, const CanvasShapeStyle* style, gboolean with_fill) {
     if (props == NULL || style == NULL) return;
     props->updating = TRUE;
@@ -259,11 +292,66 @@ void canvas_props_show_shape(CanvasProps* props, const CanvasShapeStyle* style, 
 
     gtk_widget_set_visible(props->fill_row, with_fill);
     gtk_widget_set_visible(props->shape_box, TRUE);
-    gtk_widget_set_visible(props->box, TRUE);
+    update_visible(props);
 }
 
-void canvas_props_hide(CanvasProps* props) {
-    if (props != NULL) gtk_widget_set_visible(props->box, FALSE);
+void canvas_props_hide_shape(CanvasProps* props) {
+    if (props == NULL) return;
+    gtk_widget_set_visible(props->shape_box, FALSE);
+    update_visible(props);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Align section                                                             */
+/* ------------------------------------------------------------------------- */
+
+static void on_align_clicked(GtkButton* btn, gpointer data) {
+    CanvasProps* props = data;
+    CanvasAlignOp op = (CanvasAlignOp)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "align-op"));
+    if (props->cbs.on_align) props->cbs.on_align(op, props->user_data);
+}
+
+static GtkWidget* align_button(CanvasProps* props, CanvasAlignOp op, const gchar* icon, const gchar* tip) {
+    GtkWidget* b = gtk_button_new();
+    gtk_button_set_child(GTK_BUTTON(b), icon_image_new(icon));
+    gtk_widget_add_css_class(b, "canvas-prop");
+    gtk_widget_set_focus_on_click(b, FALSE);
+    gtk_widget_set_focusable(b, FALSE);
+    gtk_widget_set_tooltip_text(b, tip);
+    g_object_set_data(G_OBJECT(b), "align-op", GINT_TO_POINTER((gint)op));
+    g_signal_connect(b, "clicked", G_CALLBACK(on_align_clicked), props);
+    return b;
+}
+
+static GtkWidget* align_section(CanvasProps* props) {
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    gtk_box_append(GTK_BOX(box), section_title("Align"));
+    /* Horizontal ones, then vertical ones */
+    for (guint row_start = 0; row_start < G_N_ELEMENTS(ALIGNS); row_start += 3) {
+        GtkWidget* row = row_new();
+        for (guint i = row_start; i < row_start + 3; i++) {
+            gtk_box_append(GTK_BOX(row), align_button(props, ALIGNS[i].op, ALIGNS[i].icon, ALIGNS[i].tip));
+        }
+        gtk_box_append(GTK_BOX(box), row);
+    }
+    gtk_box_append(GTK_BOX(box), section_title("Distribute"));
+    GtkWidget* row = row_new();
+    for (guint i = 0; i < G_N_ELEMENTS(DISTRIBUTES); i++) {
+        props->distributes[i] = align_button(props, DISTRIBUTES[i].op, DISTRIBUTES[i].icon, DISTRIBUTES[i].tip);
+        gtk_box_append(GTK_BOX(row), props->distributes[i]);
+    }
+    gtk_box_append(GTK_BOX(box), row);
+    gtk_widget_set_visible(box, FALSE);
+    return box;
+}
+
+void canvas_props_show_align(CanvasProps* props, guint count) {
+    if (props == NULL) return;
+    for (guint i = 0; i < G_N_ELEMENTS(DISTRIBUTES); i++) {
+        gtk_widget_set_sensitive(props->distributes[i], count >= 3);
+    }
+    gtk_widget_set_visible(props->align_box, count >= 2);
+    update_visible(props);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -281,6 +369,8 @@ CanvasProps* canvas_props_new(const CanvasPropsCallbacks* cbs, gpointer user_dat
     gtk_widget_set_valign(props->box, GTK_ALIGN_START);
     props->shape_box = shape_section(props);
     gtk_box_append(GTK_BOX(props->box), props->shape_box);
+    props->align_box = align_section(props);
+    gtk_box_append(GTK_BOX(props->box), props->align_box);
     gtk_widget_set_visible(props->box, FALSE);
     return props;
 }

@@ -179,7 +179,7 @@ static void on_toolbar_toggle_grid(gboolean enabled, gpointer udata) {
 }
 
 /* Align or distribute the selected blocks */
-static void on_toolbar_align(CanvasAlignOp op, gpointer udata) {
+static void on_props_align(CanvasAlignOp op, gpointer udata) {
     CanvasPage* p = udata;
     GPtrArray* items = canvas_page_selected_unlocked(p);
     if (items->len >= 2) {
@@ -410,13 +410,12 @@ static CanvasPage* page_new(AppData* app) {
         .on_tool = on_toolbar_tool,
         .on_crop_image = on_toolbar_crop,
         .on_toggle_grid = on_toolbar_toggle_grid,
-        .on_align = on_toolbar_align,
         .on_order = on_toolbar_order,
         .on_lock = on_toolbar_lock,
         .on_export = on_toolbar_export
     };
     p->toolbar = canvas_toolbar_new(&cbs, p);
-    CanvasPropsCallbacks pcbs = {.on_shape_style = on_props_shape_style};
+    CanvasPropsCallbacks pcbs = {.on_shape_style = on_props_shape_style, .on_align = on_props_align};
     p->props = canvas_props_new(&pcbs, p);
     CanvasFormatBarCallbacks fcbs = {
         .on_style = on_format_style,

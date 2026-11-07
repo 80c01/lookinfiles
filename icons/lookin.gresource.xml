@@ -8,6 +8,14 @@
     <file>scalable/actions/lookin-applications-system-symbolic.svg</file>
     <file>scalable/actions/lookin-avatar-default-symbolic.svg</file>
     <file>scalable/actions/lookin-bookmark-new-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-align-left-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-align-center-h-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-align-right-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-align-top-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-align-middle-v-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-align-bottom-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-distribute-h-symbolic.svg</file>
+    <file>scalable/actions/lookin-canvas-distribute-v-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-arrow-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-diamond-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-ellipse-symbolic.svg</file>

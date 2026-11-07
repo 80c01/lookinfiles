@@ -165,6 +165,7 @@ void canvas_page_toggle_lock(CanvasPage* p) {
     for (guint i = 0; i < items->len; i++) canvas_item_set_locked(g_ptr_array_index(items, i), lock);
     g_ptr_array_unref(items);
     canvas_page_schedule_save(p);
+    canvas_page_update_props(p);
 }
 
 void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it) {
@@ -174,10 +175,14 @@ void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it) {
         set_add(p, current);
         set_add(p, it);
         canvas_item_select(it);
+        canvas_page_update_props(p);
         return;
     }
     set_remove(p, it);
-    if (it != current) return;
+    if (it != current) {
+        canvas_page_update_props(p);
+        return;
+    }
     /* The focused block left the selection: focus another one */
     g_clear_weak_pointer(&p->last_focus);
     if (p->selection->len > 0) {
@@ -219,6 +224,7 @@ void canvas_page_select_box(CanvasPage* p, gint x, gint y, gint w, gint h, gbool
     } else if (p->selection->len > 0) {
         canvas_item_select(canvas_item_of(g_ptr_array_index(p->selection, p->selection->len - 1)));
     }
+    canvas_page_update_props(p);
 }
 
 void canvas_page_select_all(CanvasPage* p) {
@@ -232,6 +238,7 @@ void canvas_page_select_all(CanvasPage* p) {
     }
     /* Focus the top block, so the keys act on the selection */
     if (last != NULL) canvas_item_select(last);
+    canvas_page_update_props(p);
 }
 
 void canvas_page_focus_changed(CanvasPage* p, GtkWidget* f) {
@@ -739,8 +746,11 @@ void canvas_page_update_props(CanvasPage* p) {
         CanvasShapeStyle style = {it->stroke_color, it->fill_style, it->stroke_width, it->rough};
         canvas_props_show_shape(p->props, &style, closed_shape(it->shape_type));
     } else {
-        canvas_props_hide(p->props);
+        canvas_props_hide_shape(p->props);
     }
+    GPtrArray* movable = p->tool == CANVAS_TOOL_SELECT ? canvas_page_selected_unlocked(p) : NULL;
+    canvas_props_show_align(p->props, movable != NULL ? movable->len : 0);
+    if (movable != NULL) g_ptr_array_unref(movable);
 }
 
 void canvas_page_set_tool(CanvasPage* p, CanvasTool tool) {

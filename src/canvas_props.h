@@ -3,9 +3,11 @@
 
 /* Properties panel of the Canvas page, floating on the left of the page:
  * the shape style (stroke colour, fill, stroke width, hand-drawn or clean)
- * while a drawing tool is chosen or a shape is selected; hidden otherwise.
+ * while a drawing tool is chosen or a shape is selected, and the align and
+ * distribute buttons while several blocks are selected; hidden otherwise.
  * Text is formatted with the bar above the text box (canvas_format_bar.h). */
 #include "canvas_doc.h"
+#include "canvas_geometry.h"
 #include <gtk/gtk.h>
 
 /* Style of a shape: the next shapes drawn, or the selected one */
@@ -19,6 +21,8 @@ typedef struct {
 typedef struct {
     /* The user changed the shape style (any of its fields) */
     void (*on_shape_style)(const CanvasShapeStyle* style, gpointer udata);
+    /* Align or distribute the selected blocks */
+    void (*on_align)(CanvasAlignOp op, gpointer udata);
 } CanvasPropsCallbacks;
 
 typedef struct CanvasProps CanvasProps;
@@ -38,6 +42,11 @@ const gchar* canvas_props_color_name(const gchar* name);
  * (closed shapes) */
 void canvas_props_show_shape(CanvasProps* props, const CanvasShapeStyle* style, gboolean with_fill);
 
-void canvas_props_hide(CanvasProps* props);
+/* Hide the shape section */
+void canvas_props_hide_shape(CanvasProps* props);
+
+/* Show the align section for count selected blocks that can move: aligning
+ * needs 2, distributing 3; hidden under 2 */
+void canvas_props_show_align(CanvasProps* props, guint count);
 
 #endif /* CANVAS_PROPS_H */
