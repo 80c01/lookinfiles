@@ -60,7 +60,8 @@ Click in the preview or press `Alt+Right` to give it the focus. Then:
 
 `o` (or `Ctrl+K Ctrl+O`, as in the editor) shows the **tagbar**: the
 headings of a Markdown, HTML, Org, Word (`.docx`, `.doc`), OpenDocument or
-EPUB file beside the text, nested by level. It follows the scrolling; a click or `Enter` scrolls to a heading,
+EPUB file, or the bookmarks of a PDF (for the pages shown), beside the text,
+nested by level. It follows the scrolling; a click or `Enter` scrolls to a heading,
 `Esc` returns to the text, `q` hides it. Once turned on it appears in every
 preview that has headings (kept for the next start; also in Preferences,
 Editor page).

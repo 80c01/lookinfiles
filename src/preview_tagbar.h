@@ -5,7 +5,8 @@
  * rendered preview (Markdown, HTML, Org, documents) beside the text, read
  * from the heading tags of the buffer (code_outline_heading_tag_level()),
  * so every format that tags its headings has one without a branch of its
- * own. It follows the scrolling and a click or Enter scrolls to the
+ * own; a format whose headings are not in the text (PDF bookmarks) hands
+ * them over with preview_tagbar_set_outline(). It follows the scrolling and a click or Enter scrolls to the
  * heading. Shown in previews with headings when turned on (settings.ini:
  * [Preview] tagbar); same width as the editor tagbar. */
 #include "app_types.h"
@@ -16,6 +17,11 @@ GtkWidget* preview_tagbar_wrap(AppData* app, GtkWidget* content, GtkWidget* text
 /* o, or Ctrl+K Ctrl+O, in the preview: show / hide the tagbar (saved in
  * settings.ini). TRUE when the key was taken. */
 gboolean preview_tagbar_key(AppData* app, guint keyval, GdkModifierType state);
+/* Headings that are not tagged in the buffer (CodeOutlineEntry*, lines of
+ * the buffer, referenced): listed with the tagged ones while owner (the
+ * preview's cancellable, referenced) is not cancelled, i.e. until the next
+ * preview */
+void preview_tagbar_set_outline(AppData* app, GCancellable* owner, GPtrArray* entries);
 /* Turn the tagbar on or off (not saved, focus unchanged) */
 void preview_tagbar_set_shown(AppData* app, gboolean shown);
 

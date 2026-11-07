@@ -144,7 +144,7 @@ static GtkWidget* editor_page(Preferences* p) {
 
     p->preview_tagbar = gtk_check_button_new_with_mnemonic("Show the tagbar in the _preview");
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->preview_tagbar), p->app->preview_tagbar);
-    gtk_widget_set_tooltip_text(p->preview_tagbar, "Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews beside "
+    gtk_widget_set_tooltip_text(p->preview_tagbar, "Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews, PDF bookmarks, beside "
                                                    "the text (in the preview: o or Ctrl+K Ctrl+O)");
     gtk_box_append(GTK_BOX(box), p->preview_tagbar);
 

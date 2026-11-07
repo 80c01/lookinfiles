@@ -14,6 +14,8 @@ typedef struct {
     GtkTextBuffer* buffer;
     GtkAdjustment* vadj;       /* or NULL */
     OutlinePane* pane;
+    GCancellable* outline_owner; /* preview_tagbar_set_outline(), or NULL */
+    GPtrArray* outline;
     guint refresh_source;
     guint scroll_source;
     gboolean chord_k;          /* Ctrl+K pressed: Ctrl+O comes next */
@@ -24,6 +26,8 @@ static void tagbar_free(PreviewTagbar* pt) {
     if (pt->vadj != NULL) g_signal_handlers_disconnect_by_data(pt->vadj, pt);
     g_clear_handle_id(&pt->refresh_source, g_source_remove);
     g_clear_handle_id(&pt->scroll_source, g_source_remove);
+    g_clear_object(&pt->outline_owner);
+    g_clear_pointer(&pt->outline, g_ptr_array_unref);
     if (pt->app->preview_tagbar_state == pt) pt->app->preview_tagbar_state = NULL;
     g_free(pt);
 }
@@ -64,8 +68,18 @@ static void add_ranges(GtkTextBuffer* buffer, GtkTextTag* tag, gint level, GPtrA
     }
 }
 
-static GPtrArray* collect_headings(GtkTextBuffer* buffer) {
+static GPtrArray* collect_headings(PreviewTagbar* pt) {
+    GtkTextBuffer* buffer = pt->buffer;
     GPtrArray* entries = code_outline_entries_new();
+    if (pt->outline != NULL && pt->outline_owner != NULL && !g_cancellable_is_cancelled(pt->outline_owner)) {
+        for (guint i = 0; i < pt->outline->len; i++) {
+            const CodeOutlineEntry* e = g_ptr_array_index(pt->outline, i);
+            CodeOutlineEntry* copy = code_outline_heading_new(e->name, e->level, e->line);
+            if (copy == NULL) continue;
+            copy->column = e->column;
+            g_ptr_array_add(entries, copy);
+        }
+    }
     GPtrArray* tags = g_ptr_array_new();
     gtk_text_tag_table_foreach(gtk_text_buffer_get_tag_table(buffer), add_heading_tag, tags);
     for (guint i = 0; i < tags->len; i++) {
@@ -82,7 +96,7 @@ static GPtrArray* collect_headings(GtkTextBuffer* buffer) {
 
 static void refresh_now(PreviewTagbar* pt) {
     g_clear_handle_id(&pt->refresh_source, g_source_remove);
-    GPtrArray* entries = collect_headings(gtk_text_view_get_buffer(pt->view));
+    GPtrArray* entries = collect_headings(pt);
     outline_pane_set_entries(pt->pane, entries, TRUE, NULL);
     outline_pane_set_shown(pt->pane, pt->app->preview_tagbar && entries->len > 0);
     g_ptr_array_unref(entries);
@@ -123,7 +137,14 @@ static void go_to(gpointer data, const CodeOutlineEntry* entry) {
     GtkTextIter it;
     gtk_text_buffer_get_iter_at_line(buffer, &it, entry->line);
     gtk_text_buffer_place_cursor(buffer, &it);
-    gtk_text_view_scroll_to_mark(pt->view, gtk_text_buffer_get_insert(buffer), 0.0, TRUE, 0.0, 0.0);
+    /* Vertical scroll only: centred lines (PDF page badges) would also
+     * scroll sideways with gtk_text_view_scroll_to_mark() */
+    GdkRectangle rect;
+    gtk_text_view_get_iter_location(pt->view, &it, &rect);
+    if (pt->vadj != NULL) {
+        gdouble top = MIN(rect.y, gtk_adjustment_get_upper(pt->vadj) - gtk_adjustment_get_page_size(pt->vadj));
+        gtk_adjustment_set_value(pt->vadj, MAX(top, gtk_adjustment_get_lower(pt->vadj)));
+    }
     gtk_widget_grab_focus(GTK_WIDGET(pt->view));
 }
 
@@ -214,6 +235,20 @@ gboolean preview_tagbar_key(AppData* app, guint keyval, GdkModifierType state) {
         return TRUE;
     }
     return FALSE;
+}
+
+void preview_tagbar_set_outline(AppData* app, GCancellable* owner, GPtrArray* entries) {
+    PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
+    if (pt == NULL) return;
+    g_clear_object(&pt->outline_owner);
+    g_clear_pointer(&pt->outline, g_ptr_array_unref);
+    if (owner != NULL && entries != NULL) {
+        pt->outline_owner = g_object_ref(owner);
+        pt->outline = g_ptr_array_ref(entries);
+    }
+    if (!app->preview_tagbar) return;
+    g_clear_handle_id(&pt->refresh_source, g_source_remove);
+    pt->refresh_source = g_timeout_add(REFRESH_DELAY_MS, on_refresh_timeout, pt);
 }
 
 void preview_tagbar_set_shown(AppData* app, gboolean shown) {

@@ -17,8 +17,8 @@ format. Open work is in
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
 - A tagbar of the headings beside Markdown, HTML, Org, Word (`.docx`,
   `.doc`: Heading N styles and outline levels), OpenDocument and EPUB
-  previews (`o` or `Ctrl+K Ctrl+O`). Not RTF (no headings in its HTML) nor
-  PDF yet.
+  previews, and the bookmarks of PDF documents (`o` or `Ctrl+K Ctrl+O`).
+  Not RTF (no headings in its HTML).
 - Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
   `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), PostScript and TeX DVI (converted to PDF), video and audio
   with player controls.
@@ -146,7 +146,11 @@ every common format to L3 and never leave one below L1.
   `PREVIEW_STYLE_HEADING1..3` in a `PreviewDoc`, or
   `PREVIEW_STYLE_OUTLINE1..6` (no look of its own; `DocPara.outline` in
   `doc_writer`) when the document's fonts already show the heading. Never a
-  branch of its own. Only the
+  branch of its own. Headings that are not in the text are handed over with
+  `preview_tagbar_set_outline()`, tied to the preview's cancellable: the PDF
+  bookmarks (poppler outline, at most 2000), each on the line of its page
+  badge, only for the pages shown (the first 20 rendered pages, every page
+  in the text view). Only the
   rendered part is listed (`PREVIEW_BYTES` for long text files).
 - **Shared building blocks**: the summary card (`preview_doc_title()`,
   `preview_doc_field()`...) and text tables (`PreviewTable`: aligned

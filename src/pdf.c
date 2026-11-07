@@ -6,6 +6,8 @@
 #include "text_style.h"
 #include "file_types.h"
 #include "ps_convert.h"
+#include "code_outline_tree.h"
+#include "preview_tagbar.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
@@ -16,6 +18,8 @@
 #define MAX_RENDER_PAGES 20
 /* Pages rendered before the preview is first shown; the others follow */
 #define FIRST_RENDER_PAGES 3
+/* Bookmarks read for the tagbar at most */
+#define MAX_BOOKMARKS 2000
 
 typedef struct {
     AppData* app;
@@ -37,7 +41,21 @@ typedef struct {
     gchar* doc_ver;
     GPtrArray* page_textures; /* GdkTexture* elements */
     GPtrArray* page_texts;    /* gchar* elements */
+    GPtrArray* marks;         /* PdfMark* (first task only), or NULL */
 } PdfTaskData;
+
+/* A bookmark of the document outline */
+typedef struct {
+    gchar* title;
+    gint level;               /* 1: top level */
+    gint page;                /* 0-based, -1: none (a group of bookmarks) */
+} PdfMark;
+
+static void pdf_mark_free(gpointer data) {
+    PdfMark* m = data;
+    g_free(m->title);
+    g_free(m);
+}
 
 static void pdf_task_data_free(gpointer data) {
     PdfTaskData* td = (PdfTaskData*)data;
@@ -56,6 +74,9 @@ static void pdf_task_data_free(gpointer data) {
     }
     if (td->page_texts != NULL) {
         g_ptr_array_unref(td->page_texts);
+    }
+    if (td->marks != NULL) {
+        g_ptr_array_unref(td->marks);
     }
     g_free(td);
 }
@@ -142,6 +163,103 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
                                     gpointer task_data, GCancellable* cancellable);
 static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res, gpointer user_data);
 
+/* ---- Bookmarks for the tagbar ---- */
+
+/* 0-based page of a destination, -1 when unknown */
+static gint dest_page(PopplerDocument* doc, const PopplerDest* dest) {
+    if (dest->type == POPPLER_DEST_NAMED) {
+        PopplerDest* named = dest->named_dest != NULL ? poppler_document_find_dest(doc, dest->named_dest) : NULL;
+        gint page = named != NULL ? named->page_num - 1 : -1;
+        if (named != NULL) poppler_dest_free(named);
+        return page;
+    }
+    return dest->page_num - 1;
+}
+
+/* The outline from iter on, depth first (worker thread) */
+static void read_outline(PopplerDocument* doc, PopplerIndexIter* iter, gint level, GPtrArray* out) {
+    do {
+        if (out->len >= MAX_BOOKMARKS) return;
+        PopplerAction* action = poppler_index_iter_get_action(iter);
+        if (action != NULL) {
+            gint page = -1;
+            if (action->type == POPPLER_ACTION_GOTO_DEST && action->goto_dest.dest != NULL) {
+                page = dest_page(doc, action->goto_dest.dest);
+            }
+            if (action->any.title != NULL && action->any.title[0] != '\0') {
+                PdfMark* m = g_new0(PdfMark, 1);
+                m->title = g_utf8_make_valid(action->any.title, -1);
+                m->level = MIN(level, 9);
+                m->page = page;
+                g_ptr_array_add(out, m);
+            }
+            poppler_action_free(action);
+        }
+        PopplerIndexIter* child = poppler_index_iter_get_child(iter);
+        if (child != NULL) {
+            read_outline(doc, child, level + 1, out);
+            poppler_index_iter_free(child);
+        }
+    } while (poppler_index_iter_next(iter));
+}
+
+/* The bookmarks of the preview shown, and the buffer line of each page
+ * shown so far (-1: not shown) */
+static struct {
+    GCancellable* owner;
+    GPtrArray* marks;
+    GArray* page_lines;
+} outline;
+
+static void outline_reset(AppData* app, PdfTaskData* td) {
+    g_clear_object(&outline.owner);
+    g_clear_pointer(&outline.marks, g_ptr_array_unref);
+    g_clear_pointer(&outline.page_lines, g_array_unref);
+    if (td->marks == NULL || td->marks->len == 0 || td->total_pages <= 0) return;
+    outline.owner = g_object_ref(app->preview_cancellable);
+    outline.marks = g_steal_pointer(&td->marks);
+    outline.page_lines = g_array_sized_new(FALSE, FALSE, sizeof(gint), (guint)td->total_pages);
+    for (gint i = 0; i < td->total_pages; i++) {
+        gint none = -1;
+        g_array_append_val(outline.page_lines, none);
+    }
+}
+
+static void outline_note_page(GCancellable* owner, gint page, const GtkTextIter* at) {
+    if (outline.owner != owner || outline.page_lines == NULL || page < 0 || (guint)page >= outline.page_lines->len) {
+        return;
+    }
+    g_array_index(outline.page_lines, gint, page) = gtk_text_iter_get_line(at);
+}
+
+/* Hand the bookmarks of the pages shown to the tagbar; a group without a
+ * page of its own goes to the page of the next bookmark */
+static void outline_publish(AppData* app) {
+    if (outline.owner == NULL || outline.owner != app->preview_cancellable) return;
+    GPtrArray* entries = code_outline_entries_new();
+    gint next_page = -1;
+    gint* pages = g_new(gint, outline.marks->len);
+    for (guint k = outline.marks->len; k > 0; k--) {
+        const PdfMark* m = g_ptr_array_index(outline.marks, k - 1);
+        if (m->page >= 0) next_page = m->page;
+        pages[k - 1] = m->page >= 0 ? m->page : next_page;
+    }
+    for (guint i = 0; i < outline.marks->len; i++) {
+        const PdfMark* m = g_ptr_array_index(outline.marks, i);
+        gint page = pages[i];
+        if (page < 0 || (guint)page >= outline.page_lines->len) continue;
+        gint line = g_array_index(outline.page_lines, gint, page);
+        if (line < 0) continue;
+        CodeOutlineEntry* e = code_outline_heading_new(m->title, m->level, line);
+        if (e == NULL) continue;
+        e->column = (gint)i; /* keeps the outline order on a page */
+        g_ptr_array_add(entries, e);
+    }
+    g_free(pages);
+    preview_tagbar_set_outline(app, outline.owner, entries);
+    g_ptr_array_unref(entries);
+}
+
 /* Append the rendered pages of a task at the end of the preview, then start
  * the task of the next pages (or say how many pages are not shown) */
 static void append_pdf_pages(AppData* app, PdfTaskData* td) {
@@ -153,6 +271,7 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
     guint render_count = td->page_textures->len;
     for (guint i = 0; i < render_count; i++) {
         GdkTexture* tex = GDK_TEXTURE(g_ptr_array_index(td->page_textures, i));
+        outline_note_page(app->preview_cancellable, td->first_page + (gint)i, &iter);
         gchar* page_badge = g_strdup_printf("─── Page %d of %d ───\n\n",
                                             td->first_page + (gint)i + 1, td->total_pages);
         gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, page_badge, -1, "pdf_page_badge", NULL);
@@ -164,6 +283,7 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
         gtk_text_buffer_apply_tag_by_name(app->buffer, "pdf_center", &start_img, &iter);
         gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, "\n\n", -1, "pdf_center", NULL);
     }
+    outline_publish(app);
     gint shown = td->first_page + (gint)render_count;
     gint limit = MIN(td->total_pages, MAX_RENDER_PAGES);
     if (shown < limit && render_count > 0) {
@@ -262,6 +382,14 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
     td->doc_title = poppler_document_get_title(doc);
     td->doc_author = poppler_document_get_author(doc);
     td->doc_ver = poppler_document_get_pdf_version_string(doc);
+    if (td->first_page == 0) {
+        PopplerIndexIter* index = poppler_index_iter_new(doc);
+        if (index != NULL) {
+            td->marks = g_ptr_array_new_with_free_func(pdf_mark_free);
+            read_outline(doc, index, 1, td->marks);
+            poppler_index_iter_free(index);
+        }
+    }
 
     if (!td->render_raw) {
         td->page_textures = g_ptr_array_new_with_free_func(g_object_unref);
@@ -372,6 +500,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
 
     gtk_text_buffer_set_text(app->buffer, "", -1);
     app->viewer_match = -1;
+    outline_reset(app, td);
 
     if (td->error_msg != NULL) {
         gtk_text_buffer_set_text(app->buffer, td->error_msg, -1);
@@ -428,6 +557,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     if (td->render_raw && td->page_texts != NULL) {
         for (guint i = 0; i < td->page_texts->len; i++) {
             const gchar* text = (const gchar*)g_ptr_array_index(td->page_texts, i);
+            outline_note_page(app->preview_cancellable, (gint)i, &iter);
             gchar* page_hdr = g_strdup_printf("--- Page %u of %d ---\n\n",
                                               i + 1, td->total_pages);
             gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, page_hdr, -1,
@@ -441,6 +571,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
             }
             gtk_text_buffer_insert(app->buffer, &iter, "\n\n", -1);
         }
+        outline_publish(app);
     }
 }
 

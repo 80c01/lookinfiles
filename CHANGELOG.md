@@ -65,7 +65,8 @@ All notable changes to this project are listed here. The format follows
 ### Added
 
 - A tagbar beside the preview lists the headings of Markdown, HTML, Org,
-  Word (`.docx`, `.doc`), OpenDocument and EPUB previews (`o` or
+  Word (`.docx`, `.doc`), OpenDocument and EPUB previews and the bookmarks
+  of PDF documents (`o` or
   `Ctrl+K Ctrl+O` in the preview); it follows the scrolling, and a click or
   `Enter` scrolls to a heading.
 - The preview of a Canvas note draws its page exactly as the Canvas tab

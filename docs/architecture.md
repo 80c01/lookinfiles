@@ -577,8 +577,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   cursor and jumping through `code_nav`.
 - `preview_tagbar` — the tagbar of the preview: an `outline_pane` around
   the preview text, listing the heading tags of the rendered buffer after
-  each render, following the scrolling; `o` / `Ctrl+K Ctrl+O` from
-  `on_viewer_key_press()`.
+  each render, plus the headings a renderer hands over
+  (`preview_tagbar_set_outline()`: the PDF bookmarks from `pdf`), following
+  the scrolling; `o` / `Ctrl+K Ctrl+O` from `on_viewer_key_press()`.
 - `nav_history` — per-workspace folder history (`VirtualLayout.dir_history`,
   fed by `reload_directory()`; `go_back_directory()` / `go_forward_directory()`
   / `go_history_directory()` in `file_list` walk it), with the entry
