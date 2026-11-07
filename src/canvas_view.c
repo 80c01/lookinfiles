@@ -28,8 +28,9 @@ static void ensure_css(void) {
     if (done) return;
     done = TRUE;
     theme_add_css(".canvas-page { background-color: @bg_view; }"
-                  ".canvas-page .canvas-header { padding: 6px 10px; color: @fg; }"
-                  ".canvas-page .canvas-title { font-weight: bold; }"
+                  ".canvas-page .canvas-statusbar { padding: 0 4px 0 12px; color: @fg_muted;"
+                  " background-color: @bg_bar; border-top: 1px solid @border; font-size: @size_bar; }"
+                  ".canvas-page .canvas-statusbar button { padding: 0 8px; min-height: 0; }"
                   ".canvas-surface { background-color: @bg_view; }"
                   ".canvas-block { border: 1px solid transparent; border-radius: 4px; }"
                   ".canvas-block:hover { border-color: @border; }"
@@ -267,11 +268,6 @@ static void close_page(CanvasPage* p) {
     if (page >= 0) gtk_notebook_remove_page(nb, page);
 }
 
-static void on_close_clicked(GtkButton* button, gpointer data) {
-    (void)button;
-    close_page(data);
-}
-
 static void on_zoom_changed(gdouble scale, gpointer data) {
     CanvasPage* p = data;
     gchar* text = g_strdup_printf("%d%%", (gint)(scale * 100 + 0.5));
@@ -325,26 +321,6 @@ static CanvasPage* ensure_page(AppData* app) {
     gtk_widget_set_vexpand(root, TRUE);
     p->root = root;
 
-    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_widget_add_css_class(bar, "canvas-header");
-    p->title = gtk_label_new(NULL);
-    gtk_widget_add_css_class(p->title, "canvas-title");
-    gtk_label_set_ellipsize(GTK_LABEL(p->title), PANGO_ELLIPSIZE_END);
-    gtk_box_append(GTK_BOX(bar), p->title);
-    gtk_label_set_xalign(GTK_LABEL(p->title), 0.0f);
-    gtk_widget_set_hexpand(p->title, TRUE);
-
-    p->zoom_button = gtk_button_new_with_label("100%");
-    gtk_widget_add_css_class(p->zoom_button, "flat");
-    gtk_widget_set_tooltip_text(p->zoom_button, "Zoom: Ctrl+Wheel, Ctrl+= / Ctrl+-; Click: 100% (Ctrl+0)");
-    g_signal_connect(p->zoom_button, "clicked", G_CALLBACK(on_zoom_clicked), p);
-    gtk_box_append(GTK_BOX(bar), p->zoom_button);
-
-    GtkWidget* close = icon_button_new("window-close", "Close Canvas (Ctrl+W)");
-    g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), p);
-    gtk_box_append(GTK_BOX(bar), close);
-    gtk_box_append(GTK_BOX(root), bar);
-
     /* Floating tool bar (top) and properties panel (left) over the page */
     CanvasToolbarCallbacks cbs = {
         .on_tool = on_toolbar_tool,
@@ -390,6 +366,21 @@ static CanvasPage* ensure_page(AppData* app) {
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), canvas_format_bar_get_widget(p->format_bar));
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), canvas_table_bar_get_widget(p->table_bar));
     gtk_box_append(GTK_BOX(root), overlay);
+
+    /* Status bar (bottom): canvas name and zoom */
+    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_add_css_class(bar, "canvas-statusbar");
+    p->title = gtk_label_new(NULL);
+    gtk_label_set_ellipsize(GTK_LABEL(p->title), PANGO_ELLIPSIZE_END);
+    gtk_label_set_xalign(GTK_LABEL(p->title), 0.0f);
+    gtk_widget_set_hexpand(p->title, TRUE);
+    gtk_box_append(GTK_BOX(bar), p->title);
+    p->zoom_button = gtk_button_new_with_label("100%");
+    gtk_widget_add_css_class(p->zoom_button, "flat");
+    gtk_widget_set_tooltip_text(p->zoom_button, "Zoom: Ctrl+Wheel, Ctrl+= / Ctrl+-; Click: 100% (Ctrl+0)");
+    g_signal_connect(p->zoom_button, "clicked", G_CALLBACK(on_zoom_clicked), p);
+    gtk_box_append(GTK_BOX(bar), p->zoom_button);
+    gtk_box_append(GTK_BOX(root), bar);
 
     canvas_drag_attach(p);
     canvas_keys_attach(p, root);
