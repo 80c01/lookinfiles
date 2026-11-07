@@ -121,6 +121,9 @@ guint canvas_page_add_copies(CanvasPage* p, CanvasDoc* doc, gint dx, gint dy, co
 /* Delete / the arrows on a selected block: every selected block */
 void canvas_page_remove_selected(CanvasPage* p);
 void canvas_page_move_selected(CanvasPage* p, gint dx, gint dy);
+/* Drawing order of the selected blocks: 2 to the front, 1 one step up,
+ * -1 one step down, -2 to the back (their own order kept) */
+void canvas_page_reorder_selected(CanvasPage* p, gint where);
 void canvas_page_apply_style(CanvasItem* it, const CanvasShapeStyle* style);
 /* Where a new block goes: the pointer (at_pointer), below the selection, or
  * the view corner */

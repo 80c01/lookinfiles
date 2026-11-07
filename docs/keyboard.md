@@ -141,6 +141,7 @@ automatically; one canvas at a time)
 | `Ctrl+V` | Paste copied blocks, or a picture as a new block (at the pointer); text pasted outside a text box makes a text box |
 | `Ctrl+C` / `Ctrl+X` | Copy / cut the selected blocks (other applications get their text) |
 | `Ctrl+D` | Duplicate the selected blocks |
+| `Ctrl+]` / `Ctrl+[` (`Shift`: to the front / back) | Bring the selected blocks forward / send them backward |
 | Drop image files | Copy them into the note as pictures |
 | Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions); a selected block takes the other selected ones along |
 | Drag on the empty page (`Shift`: add) | Select the blocks inside the box |

@@ -51,7 +51,6 @@ gboolean canvas_item_in_label(CanvasItem* it, GtkWidget* hit);
 
 /* Label of a shape (free it); NULL when it has none */
 gchar* canvas_item_label_text(const CanvasItem* it);
-void canvas_item_raise(CanvasItem* it);
 
 /* The note moved to dir: pictures are read from there */
 void canvas_item_set_dir(CanvasItem* it, const gchar* dir);

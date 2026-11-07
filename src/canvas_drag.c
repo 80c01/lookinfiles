@@ -179,7 +179,6 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
                 MAX(it->w, gtk_widget_get_width(it->frame)) : it->w;
     p->drag_h = it->h;
     if (!corner) group_begin(p, it);
-    canvas_item_raise(it);
     canvas_item_select(it);
 }
 

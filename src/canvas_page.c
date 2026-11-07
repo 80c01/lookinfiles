@@ -469,6 +469,43 @@ void canvas_page_remove_selected(CanvasPage* p) {
     canvas_page_schedule_save(p);
 }
 
+/* The next (step 1) or previous (-1) block on the page after w */
+static GtkWidget* sibling_block(GtkWidget* w, gint step) {
+    do {
+        w = step > 0 ? gtk_widget_get_next_sibling(w) : gtk_widget_get_prev_sibling(w);
+    } while (w != NULL && canvas_item_of(w) == NULL);
+    return w;
+}
+
+void canvas_page_reorder_selected(CanvasPage* p, gint where) {
+    GPtrArray* items = canvas_page_selected(p);
+    if (items->len > 0) canvas_page_remember(p);
+    guint n = items->len;
+    for (guint k = 0; k < n; k++) {
+        /* Going up: the top block first, so each one can pass the next */
+        CanvasItem* it = g_ptr_array_index(items, where > 0 ? n - 1 - k : k);
+        GtkWidget* f = it->frame;
+        if (where == 2) {
+            /* After the blocks above it moved to the front */
+            GtkWidget* before = k == 0 ? NULL : ((CanvasItem*)g_ptr_array_index(items, n - k))->frame;
+            gtk_widget_insert_before(f, p->surface, before);
+        } else if (where == -2) {
+            GtkWidget* after = k == 0 ? NULL : ((CanvasItem*)g_ptr_array_index(items, k - 1))->frame;
+            gtk_widget_insert_after(f, p->surface, after);
+        } else {
+            GtkWidget* s = sibling_block(f, where);
+            if (s == NULL || canvas_page_is_selected(p, canvas_item_of(s))) continue;
+            if (where > 0) {
+                gtk_widget_insert_after(f, p->surface, s);
+            } else {
+                gtk_widget_insert_before(f, p->surface, s);
+            }
+        }
+    }
+    g_ptr_array_unref(items);
+    canvas_page_schedule_save(p);
+}
+
 void canvas_page_move_selected(CanvasPage* p, gint dx, gint dy) {
     GPtrArray* items = canvas_page_selected(p);
     if (items->len > 0) canvas_page_remember(p);

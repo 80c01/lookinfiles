@@ -137,6 +137,18 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         if (on_blocks && canvas_clip_paste(p)) return TRUE;
         return paste_picture(p);
     }
+    /* Ctrl+] / Ctrl+[: one step up / down; with Shift: to the front / back */
+    if (control && (state & GDK_ALT_MASK) == 0 && on_blocks && it != NULL) {
+        gboolean shift = (state & GDK_SHIFT_MASK) != 0;
+        if (keyval == GDK_KEY_bracketright || keyval == GDK_KEY_braceright) {
+            canvas_page_reorder_selected(p, shift ? 2 : 1);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_bracketleft || keyval == GDK_KEY_braceleft) {
+            canvas_page_reorder_selected(p, shift ? -2 : -1);
+            return TRUE;
+        }
+    }
     /* Ctrl+C / Ctrl+X / Ctrl+D: copy, cut, duplicate the selected blocks */
     if (control && !other && on_blocks && it != NULL) {
         if (keyval == GDK_KEY_c || keyval == GDK_KEY_C) return canvas_clip_copy(p, FALSE);

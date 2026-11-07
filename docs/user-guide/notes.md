@@ -71,7 +71,7 @@ and drag on the page; the letter in brackets picks it from the keyboard
 
 After drawing a shape, the tool goes back to Select (`Esc` also does).
 The menu at the end of the bar holds **Snap to Grid**, the alignment
-commands and **Crop Selected Picture**.
+commands, the drawing order and **Crop Selected Picture**.
 
 Pictures come from `Ctrl+V` with an image copied, or image files dropped
 onto the page; double click a picture to crop it.
@@ -106,6 +106,7 @@ onto the page; double click a picture to crop it.
 | Move selected blocks | Arrow keys (`Shift` for larger steps) |
 | Edit selected text box, or the text of a shape | `Enter` (a shape: also a double click) |
 | Delete selected blocks | `Delete` or `Backspace` |
+| Drawing order | `Ctrl+]` / `Ctrl+[` one step up / down, `Ctrl+Shift+]` / `Ctrl+Shift+[` to the front / back (also in the tool bar menu); moving a block keeps its place in the order |
 | Copy, cut, paste, duplicate | `Ctrl+C`, `Ctrl+X`, `Ctrl+V` (at the pointer, also into another Canvas note, pictures included), `Ctrl+D`; arrows copied with their blocks stay bound to the copies |
 | Zoom | `Ctrl` + mouse wheel (around the pointer) or `Ctrl+=` / `Ctrl+-`; `Ctrl+0`, or a click on the scale above the page, goes back to 100 % |
 | Move the view | Drag with the middle button, or hold `Space` and drag (when not typing in a block) |

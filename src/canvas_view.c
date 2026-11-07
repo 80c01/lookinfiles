@@ -168,6 +168,12 @@ static void on_toolbar_align(CanvasAlignOp op, gpointer udata) {
     canvas_page_restore_focus(p);
 }
 
+static void on_toolbar_order(gint where, gpointer udata) {
+    CanvasPage* p = udata;
+    canvas_page_reorder_selected(p, where);
+    canvas_page_restore_focus(p);
+}
+
 /* ------------------------------------------------------------------------- */
 /* Page Setup and API                                                        */
 /* ------------------------------------------------------------------------- */
@@ -263,7 +269,8 @@ static CanvasPage* ensure_page(AppData* app) {
         .on_tool = on_toolbar_tool,
         .on_crop_image = on_toolbar_crop,
         .on_toggle_grid = on_toolbar_toggle_grid,
-        .on_align = on_toolbar_align
+        .on_align = on_toolbar_align,
+        .on_order = on_toolbar_order
     };
     p->toolbar = canvas_toolbar_new(&cbs, p);
     CanvasPropsCallbacks pcbs = {.on_shape_style = on_props_shape_style};

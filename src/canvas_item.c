@@ -63,14 +63,6 @@ void canvas_item_place(CanvasItem* it) {
     }
 }
 
-void canvas_item_raise(CanvasItem* it) {
-    if (it == NULL || it->frame == NULL) return;
-    GtkWidget* surface = gtk_widget_get_parent(it->frame);
-    if (surface != NULL && gtk_widget_get_last_child(surface) != it->frame) {
-        gtk_widget_insert_before(it->frame, surface, NULL);
-    }
-}
-
 #define DIR_KEY "note-dir"
 
 void canvas_item_set_dir(CanvasItem* it, const gchar* dir) {
