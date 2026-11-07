@@ -22,9 +22,9 @@ static gint s_history_len = 0;
 static gint64 s_key_times_us[32] = {0}; /* when each history token was typed */
 
 /* Longest pause allowed between two keys of the secret sequence */
-#define SEQUENCE_KEY_TIMEOUT_US (1500 * G_TIME_SPAN_MILLISECOND)
+#define SEQUENCE_KEY_TIMEOUT_US (1000 * G_TIME_SPAN_MILLISECOND)
 /* Longest time allowed to type the whole secret sequence */
-#define SEQUENCE_TOTAL_TIMEOUT_US (5000 * G_TIME_SPAN_MILLISECOND)
+#define SEQUENCE_TOTAL_TIMEOUT_US (4000 * G_TIME_SPAN_MILLISECOND)
 #define SEQUENCE_LEN 11 /* length of "UUDDLRLRABE" */
 
 void games_init(AppData* app) {
