@@ -27,7 +27,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libgtk-4-dev libgit2-dev \
             libvte-2.91-gtk4-dev libgtksourceview-5-dev libpoppler-glib-dev \
-            libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev
+            libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev libgstreamer-plugins-base1.0-dev
 
       - name: Build .deb
         run: ./packaging/debian/build_deb.sh artifacts/
@@ -87,7 +87,7 @@ jobs:
         run: |
           dnf install -y gcc make pkgconfig desktop-file-utils libappstream-glib rpmdevtools \
             gtk4-devel libgit2-devel vte291-gtk4-devel gtksourceview5-devel poppler-glib-devel sqlite-devel \
-            webkitgtk6.0-devel libarchive-devel git
+            webkitgtk6.0-devel libarchive-devel gstreamer1-plugins-base-devel git
 
       - uses: actions/checkout@v4
         with:
