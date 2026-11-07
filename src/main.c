@@ -47,6 +47,7 @@
 #include <stdlib.h>
 #include "focus_route.h"
 #include "preview_tagbar.h"
+#include "preview_full.h"
 #include "ui_probe.h"
 #include <string.h>
 
@@ -602,7 +603,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_vexpand(text_row, TRUE);
     gtk_box_append(GTK_BOX(text_row), color_column_wrap(right_scroll, text_view));
     gtk_box_append(GTK_BOX(text_row), minimap);
-    gtk_box_append(GTK_BOX(text_page), preview_tagbar_wrap(app, text_row, text_view));
+    gtk_box_append(GTK_BOX(text_page), preview_tagbar_wrap(app, preview_full_wrap(app, text_row), text_view));
     color_column_hide_on_change(text_view);
     video_preview_init(app);
     audio_preview_init(app);

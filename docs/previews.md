@@ -89,7 +89,8 @@ format. Open work is in
   dump instead. Only the headers are read, even for a large library.
 - `m` switches between the rendered and the raw view (text, or the hex dump
   of binary formats). Text files over 512 KB show their first 64 KB, and the
-  next parts load as you scroll down (up to 8 MB). The encoding is detected
+  next parts load as you scroll down (up to 8 MB); the **Load Whole File**
+  bar above a partial preview reads the file to the end. The encoding is detected
   (UTF-8, UTF-16, Windows-1252) and shown in the preview bar.
 
 ## Rules every preview follows

@@ -29,6 +29,7 @@
 #include "preview_doc_view.h"
 #include "preview_formats.h"
 #include "text_chunks.h"
+#include "preview_full.h"
 #include "text_encoding.h"
 #include "preview_cache.h"
 #include "tree_nav.h"
@@ -259,6 +260,7 @@ typedef struct {
     gchar* name;
     gchar* full;
     gboolean render_raw;
+    gboolean whole;        /* read to the end, whatever the size (Load Whole File) */
     guint page;            /* PreviewInput.page */
 
     /* Results populated by worker thread */
@@ -321,7 +323,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
-    td->preview = (td->fsize > PREVIEW_THRESHOLD);
+    td->preview = (td->fsize > PREVIEW_THRESHOLD) && !td->whole;
     gsize cap = td->preview ? PREVIEW_BYTES : (gsize)td->fsize + 1;
     if (cap < FILE_SNIFF_BYTES) {
         cap = FILE_SNIFF_BYTES;
@@ -473,8 +475,8 @@ static PreviewCache* preview_cache(void) {
 }
 
 /* Cache key: the file and the settings the worker built the preview with */
-static gchar* preview_cache_key(const gchar* full, gboolean render_raw, guint page) {
-    return g_strdup_printf("%d:%u:%s", render_raw ? 1 : 0, page, full);
+static gchar* preview_cache_key(const gchar* full, gboolean render_raw, guint page, gboolean whole) {
+    return g_strdup_printf("%d:%u:%d:%s", render_raw ? 1 : 0, page, whole ? 1 : 0, full);
 }
 
 static gsize preview_doc_bytes(const PreviewDoc* doc) {
@@ -508,7 +510,7 @@ static void cache_text_preview(TextPreviewTaskData* td) {
     gsize bytes = sizeof(TextPreviewTaskData) +
                   (kept->utf8_text != NULL ? strlen(kept->utf8_text) : 0) +
                   preview_doc_bytes(kept->doc);
-    gchar* key = preview_cache_key(kept->full, kept->render_raw, kept->page);
+    gchar* key = preview_cache_key(kept->full, kept->render_raw, kept->page, kept->whole);
     preview_cache_insert(preview_cache(), key, &kept->stamp, kept, bytes);
     g_free(key);
 }
@@ -553,6 +555,9 @@ static void show_text_preview(TextPreviewTaskData* td) {
     AppData* app = td->app;
     app->preview_pages = td->doc != NULL ? td->doc->pages : 0;
     if (app->preview_page > app->preview_pages) app->preview_page = app->preview_pages;
+    /* Text cut at PREVIEW_BYTES: offer the whole file */
+    gboolean partial = td->preview && td->utf8_text != NULL && td->error_msg == NULL;
+    preview_full_update(app, td->full, partial ? (gint64)td->raw_len : -1, td->fsize);
 
     if (g_strcmp0(td->full, app->viewed_path) == 0 &&
         (app->viewed_kind != td->kind || g_strcmp0(app->viewed_content_type, td->content_type) != 0 ||
@@ -670,6 +675,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
  * (one read serves detection and text), so the UI thread does no file I/O. */
 void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     text_chunks_stop(app);
+    preview_full_reset(app, full);
     if (app->preview_cancellable != NULL) {
         g_cancellable_cancel(app->preview_cancellable);
         g_clear_object(&app->preview_cancellable);
@@ -681,6 +687,7 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     td->name = g_strdup(name);
     td->full = g_strdup(full);
     td->render_raw = app->render_raw;
+    td->whole = preview_full_wanted(app, full);
     td->page = app->render_raw ? 0 : app->preview_page;
     td->start_us = g_get_monotonic_time();
     if (g_strcmp0(full, app->viewed_path) != 0) {
@@ -696,7 +703,7 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
      * only draw the old content again before the new one. */
     TextPreviewTaskData* cached = NULL;
     if (g_strcmp0(full, app->viewed_path) != 0) {
-        gchar* key = preview_cache_key(full, td->render_raw, td->page);
+        gchar* key = preview_cache_key(full, td->render_raw, td->page, td->whole);
         cached = preview_cache_lookup(preview_cache(), key, &td->cached_stamp);
         g_free(key);
     }
@@ -823,6 +830,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     }
     if (g_strcmp0(row->path, app->viewed_path) != 0) {
         text_chunks_stop(app); /* another entry: no more chunks of the previous file */
+        preview_full_reset(app, row->path);
     }
 
     gchar* name = g_strdup(row->name);

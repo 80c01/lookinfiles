@@ -8,6 +8,7 @@
 #include "diff_gutter.h"
 #include "color_column.h"
 #include "text_encoding.h"
+#include "preview_full.h"
 
 typedef struct {
     gchar* path;
@@ -107,10 +108,11 @@ static void on_chunk_ready(GObject* source, GAsyncResult* res, gpointer user_dat
     if (c->line_numbers) {
         diff_gutter_set_line_numbers(app->text_view, c->first_line);
     }
+    preview_full_update(app, c->path, c->offset, c->size);
     if (c->offset >= c->size || c->loaded >= TEXT_CHUNKS_MAX_BYTES) {
         gchar* shown = g_format_size((guint64)c->loaded);
         gchar* note = c->offset >= c->size ? NULL
-                      : g_strdup_printf("\n[ Showing the first %s: the preview stops here; open the file in the editor (e) to see the rest ]\n", shown);
+                      : g_strdup_printf("\n[ Showing the first %s: the preview stops here; Load Whole File above, or the editor (e), shows the rest ]\n", shown);
         if (note != NULL) {
             gtk_text_buffer_get_end_iter(app->buffer, &end);
             gtk_text_buffer_insert(app->buffer, &end, note, -1);
