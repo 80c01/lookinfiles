@@ -17,6 +17,29 @@ Rules, coverage and the checklist for a new format: [docs/previews.md](docs/prev
 - [ ] folders and messages of Outlook stores (`.pst`, `.ost`, `.dbx`): would need libpff
 - [ ] find the cause of the GTK warning "Trying to snapshot GtkGizmo" after wide table previews (see docs/previews.md, "Known issues")
 
+### Canvas editor
+
+Excalidraw-like rework. Done: floating tool bar (theme icons), properties
+panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
+(commit 757c298). Code: `canvas_view.c`, `canvas_toolbar.c`,
+`canvas_props.c`, `canvas_draw.c`, `canvas_rough_draw.c`. Next, in this order:
+
+- [ ] undo / redo (`Ctrl+Z` / `Ctrl+Shift+Z`): add, delete, move, resize,
+  style changes; text being edited keeps its own GtkTextBuffer history
+- [ ] zoom (`Ctrl+wheel`, `Ctrl+0` back to 100 %) and pan (Space + drag or
+  middle button)
+- [ ] multi-selection (rubber band, `Shift+click`): move, delete, align
+  together (the align items of the `⋯` menu then become useful)
+- [ ] arrows bound to shapes (they follow when a shape moves)
+- [ ] text inside shapes (double-click a shape to type in it)
+- [ ] floating text-format bar near the selection; the left panel keeps the
+  shape style only
+- [ ] small items: duplicate (`Ctrl+D`), copy / paste of shapes, lock a
+  block, bring to front / send to back, export the canvas as PNG / SVG
+- [ ] run `make ui-shots` and check the new canvas screenshots
+  (`canvas_tool_*`, `canvas_rect_drawn`, `canvas_pencil_drawn`,
+  `canvas_checkbox_toggled`); not run yet
+
 ### Wish list
 
 - [ ] change file icons to match VS Code (`.c`, `.h`, `.md` files)
