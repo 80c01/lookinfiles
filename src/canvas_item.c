@@ -203,6 +203,7 @@ static CanvasItem* item_base_new(CanvasPage* p, GtkWidget* surface, CanvasBlockK
     CanvasItem* it = g_new0(CanvasItem, 1);
     it->page = p;
     it->kind = kind;
+    it->active_point = -1;
     it->content = content;
 
     GtkWidget* frame = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -327,7 +328,7 @@ static void on_shape_draw(GtkDrawingArea* area, cairo_t* cr, int width, int heig
     /* A selected line or arrow: its handles instead of a frame */
     if (is_line(it) && !it->locked &&
         (gtk_widget_has_focus(it->frame) || gtk_widget_has_css_class(it->frame, CANVAS_SELECTED_CLASS))) {
-        canvas_rough_draw_line_handles(cr, &view, width, height);
+        canvas_rough_draw_line_handles(cr, &view, width, height, it->active_point);
     }
 }
 
@@ -338,6 +339,12 @@ static void redraw_content(CanvasItem* it) {
 static void on_line_focus(GtkEventControllerFocus* ctrl, gpointer data) {
     (void)ctrl;
     redraw_content(data);
+}
+
+/* The line lost the focus: no point picked any more */
+static void on_line_leave(GtkEventControllerFocus* ctrl, gpointer data) {
+    ((CanvasItem*)data)->active_point = -1;
+    on_line_focus(ctrl, data);
 }
 
 static void on_line_classes(GObject* frame, GParamSpec* pspec, gpointer data) {
@@ -357,7 +364,7 @@ static void make_line(CanvasItem* it) {
     }
     GtkEventController* focus = gtk_event_controller_focus_new();
     g_signal_connect(focus, "enter", G_CALLBACK(on_line_focus), it);
-    g_signal_connect(focus, "leave", G_CALLBACK(on_line_focus), it);
+    g_signal_connect(focus, "leave", G_CALLBACK(on_line_leave), it);
     gtk_widget_add_controller(it->frame, focus);
     g_signal_connect(it->frame, "notify::css-classes", G_CALLBACK(on_line_classes), it);
 }

@@ -399,6 +399,11 @@ key ctrl+shift+bracketleft;  shot canvas_send_to_back
 # Ctrl+Shift+K locks it: the arrows and Delete leave it in place
 key ctrl+shift+k Right Delete;  shot canvas_locked
 key ctrl+shift+k;       shot canvas_unlocked
+# Line points: L draws a line (selected), a drag of its middle adds a point
+# (active, filled), Delete removes that point, not the line
+key l; drag 640 720 840 720
+drag 740 720 740 680;   shot canvas_line_point_added
+key Delete;             shot canvas_line_point_removed
 # Zoom: Ctrl+= zooms in (the header shows the scale), Ctrl+0 back to 100 %
 key ctrl+equal ctrl+equal;  shot canvas_zoom_in
 key ctrl+0;             shot canvas_zoom_reset

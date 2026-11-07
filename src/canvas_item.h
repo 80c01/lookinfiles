@@ -32,6 +32,7 @@ typedef struct {
     gint stroke_width;
     gboolean rough;
     GArray* points;
+    gint active_point;  /* line or arrow: point clicked last (Delete removes it); -1: none */
     GtkWidget* label;   /* text view over a shape (not a line or a stroke) */
     /* Table */
     CanvasBlock* table_block;

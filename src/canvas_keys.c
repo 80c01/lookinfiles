@@ -1,6 +1,7 @@
 /* Keys of the Canvas page (see canvas_keys.h) */
 #include "canvas_keys.h"
 #include "canvas_clip.h"
+#include "canvas_drag.h"
 #include "canvas_item.h"
 #include "canvas_media.h"
 #include "canvas_page_private.h"
@@ -30,7 +31,7 @@ static gboolean text_key(CanvasItem* it, guint keyval, GdkModifierType state) {
 }
 
 /* Keys on a selected block: Delete and the arrows act on every selected
- * block */
+ * block (Delete on a line with a point active between its ends: that point) */
 static gboolean block_key(CanvasPage* p, CanvasItem* it, guint keyval, GdkModifierType state) {
     if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) != 0) return FALSE;
     gint step = (state & GDK_SHIFT_MASK) ? NUDGE_BIG : NUDGE;
@@ -38,6 +39,7 @@ static gboolean block_key(CanvasPage* p, CanvasItem* it, guint keyval, GdkModifi
     case GDK_KEY_Delete:
     case GDK_KEY_KP_Delete:
     case GDK_KEY_BackSpace:
+        if (it->active_point > 0 && canvas_drag_remove_point(p, it, (guint)it->active_point)) return TRUE;
         canvas_page_remove_selected(p);
         return TRUE;
     case GDK_KEY_Return:

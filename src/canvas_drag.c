@@ -191,6 +191,9 @@ static void point_end(CanvasPage* p, gdouble dx, gdouble dy) {
     CanvasItem* it = p->drag_item;
     guint n = p->drag_points->len;
     guint i = (guint)p->drag_point;
+    /* The point clicked or dragged becomes the active one (Delete removes it) */
+    it->active_point = (p->drag_point_added && dx == 0 && dy == 0) ? -1 : (gint)i;
+    gtk_widget_queue_draw(it->content);
     if (dx != 0 || dy != 0) {
         if (i == 0 || i == n - 1) canvas_bind_attach_end(p->surface, it, i == n - 1);
         canvas_history_push(p->history, p->drag_before);
@@ -205,23 +208,37 @@ static void point_end(CanvasPage* p, gdouble dx, gdouble dy) {
     g_clear_pointer(&p->drag_before, g_free);
 }
 
-/* A double click on a point between the ends of the selected line it
- * removes it */
-static gboolean point_remove_at(CanvasPage* p, CanvasItem* it, gdouble x, gdouble y) {
+gboolean canvas_drag_remove_point(CanvasPage* p, CanvasItem* it, guint index) {
     if (!canvas_draw_is_line(it) || it->locked || !selected_alone(p, it)) return FALSE;
-    gboolean middle = FALSE;
-    gint index = canvas_line_handle_at(it, x, y, &middle);
-    if (index <= 0 || middle) return FALSE;
     gchar* before = canvas_page_state(p);
-    if (!canvas_line_remove_point(it, (guint)index)) {
+    if (!canvas_line_remove_point(it, index)) {
         g_free(before);
         return FALSE;
     }
+    /* The drag of the point the press began ends here: moved a little
+     * further, it would bring the old points back */
+    if (p->drag_item == it && p->drag_points != NULL) {
+        g_clear_pointer(&p->drag_points, g_array_unref);
+        g_clear_pointer(&p->drag_before, g_free);
+        p->drag_item = NULL;
+    }
+    it->active_point = -1;
+    gtk_widget_queue_draw(it->content);
     canvas_history_push(p->history, before);
     canvas_bind_follow(p->surface);
     canvas_page_update_extent(p);
     canvas_page_schedule_save(p);
     return TRUE;
+}
+
+/* A double click on a point between the ends of the selected line it
+ * removes it */
+static gboolean point_remove_at(CanvasPage* p, CanvasItem* it, gdouble x, gdouble y) {
+    if (!canvas_draw_is_line(it)) return FALSE;
+    gboolean middle = FALSE;
+    gint index = canvas_line_handle_at(it, x, y, &middle);
+    if (index <= 0 || middle) return FALSE;
+    return canvas_drag_remove_point(p, it, (guint)index);
 }
 
 static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointer data) {
@@ -279,6 +296,10 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
     if (point_begin(p, it, x, y)) {
         gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
         return;
+    }
+    if (it->active_point >= 0) {
+        it->active_point = -1;
+        gtk_widget_queue_draw(it->content);
     }
     gboolean grip = FALSE, corner = FALSE;
     for (GtkWidget* w = hit; w != NULL && w != it->frame; w = gtk_widget_get_parent(w)) {

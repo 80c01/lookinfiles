@@ -147,6 +147,8 @@ editor tab; it stays in its workspace)
 | Drop image files | Copy them into the note as pictures |
 | Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions, shapes too with Shift); a selected block takes the other selected ones along |
 | Drag the round handle above a selected rectangle, diamond or ellipse | Rotate it around its centre (`Shift`: steps of 15 degrees) |
+| Drag a point / a segment middle of a selected arrow or line | Move that point (`Shift`: multiple of 45 degrees) / add a point there and bend it into a curve |
+| Double click a point of a selected arrow or line, or click it then `Delete` | Remove that point (not an end: `Delete` then removes the whole line) |
 | Drag on the empty page (`Shift`: add) | Select the blocks inside the box |
 | `Shift+click` on a block | Add it to the selection, or take it out (`⋯` menu: align or distribute the selected blocks) |
 | `Ctrl+B` / `Ctrl+I` / `Ctrl+U` / `Ctrl+Shift+S` / `Ctrl+E` / `Ctrl+Alt+1` | Bold, italic, underline, strikethrough, code, heading (the selection, or the text typed next) |

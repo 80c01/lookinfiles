@@ -353,12 +353,13 @@ void canvas_rough_draw_shape(cairo_t* cr, const CanvasBlock* b, gint width, gint
     }
 }
 
-/* Handles of a selected line or arrow: a dot on each point, a fainter one
- * in the middle of each segment (dragged: a new point) */
+/* Handles of a selected line or arrow: a dot on each point (filled: the
+ * point active, clicked last), a fainter one in the middle of each segment
+ * (dragged: a new point) */
 #define HANDLE_R 5.0
 #define MID_HANDLE_R 3.5
 
-void canvas_rough_draw_line_handles(cairo_t* cr, const CanvasBlock* b, gint width, gint height) {
+void canvas_rough_draw_line_handles(cairo_t* cr, const CanvasBlock* b, gint width, gint height, gint active) {
     PointMap map;
     if (cr == NULL || b == NULL || !point_map_init(&map, b->points, TRUE, width, height)) return;
     guint n = map.pts->len;
@@ -379,7 +380,11 @@ void canvas_rough_draw_line_handles(cairo_t* cr, const CanvasBlock* b, gint widt
     for (guint i = 0; i < n; i++) {
         cairo_new_sub_path(cr);
         cairo_arc(cr, xy[2 * i], xy[2 * i + 1], HANDLE_R, 0, 2 * M_PI);
-        cairo_set_source_rgb(cr, br, bg, bb);
+        if ((gint)i == active) {
+            cairo_set_source_rgb(cr, fr, fg, fb);
+        } else {
+            cairo_set_source_rgb(cr, br, bg, bb);
+        }
         cairo_fill_preserve(cr);
         cairo_set_source_rgb(cr, fr, fg, fb);
         cairo_stroke(cr);

@@ -79,6 +79,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Canvas tab", "Ctrl+Shift+K", "Lock / unlock the selected blocks (kept in place)", 0},
     {"Canvas tab", "Drag bar / corner", "Move / resize a block (a picture or shape moves from anywhere on it; Shift: shape keeps its proportions)", 0},
     {"Canvas tab", "Drag round handle", "Rotate the selected shape around its centre (Shift: 15-degree steps)", 0},
+    {"Canvas tab", "Drag line point / middle", "Move a point of the selected arrow or line / add one there (a curve)", 0},
+    {"Canvas tab", "Double-click point / Delete", "Remove the point of the selected line (clicked last; not an end)", 0},
     {"Canvas tab", "Drag on the page / Shift+click", "Select the blocks in the box / add or remove a block (Shift+drag: add)", 0},
     {"Canvas tab", "Ctrl+B / Ctrl+I / Ctrl+U", "Bold / italic / underline (selection, or the text typed next)", 0},
     {"Canvas tab", "Ctrl+Shift+S / Ctrl+E / Ctrl+Alt+1", "Strikethrough / code / heading", 0},
