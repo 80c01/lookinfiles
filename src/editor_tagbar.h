@@ -16,6 +16,9 @@
 GtkWidget* editor_tagbar_wrap(AppData* app, EditorTab* tab, GtkWidget* content);
 /* Stop following tab->buffer (the tab is closing) */
 void editor_tagbar_release(EditorTab* tab);
+/* Show or hide the tagbar in every code and Markdown tab (not saved,
+ * focus unchanged) */
+void editor_tagbar_set_shown(AppData* app, gboolean shown);
 /* Show the tagbar in every code and Markdown tab, the focus in the one of
  * tab, or hide it everywhere, the focus back in the view; saved in
  * settings.ini. A message (through message) when tab has no outline. */

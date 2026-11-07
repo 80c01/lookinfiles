@@ -28,7 +28,7 @@ keeps every change, **Cancel** restores them all.
 | Section | Content |
 |---|---|
 | Appearance | Theme and fonts (see [Themes](#themes)) |
-| Editor | Mode of new editor tabs (Notepad, Vim, Emacs; also the global mode of the top bar), line numbers and line wrap of new tabs, a vertical line at a column in every editor tab and in code previews (Vim's `colorcolumn`, colour `editor_ruler`) |
+| Editor | Mode of new editor tabs (Notepad, Vim, Emacs; also the global mode of the top bar), line numbers and line wrap of new tabs, the tagbar of the code and Markdown tabs (open ones too), a vertical line at a column in every editor tab and in code previews (Vim's `colorcolumn`, colour `editor_ruler`) |
 | Window | Window size at startup (**Use the current size** fills it in) |
 | Code navigation | **Edit lsp.ini** opens `lsp.ini` in an editor tab, created with a commented example if missing (see [Language servers](#language-servers)) |
 

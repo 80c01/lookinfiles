@@ -6,6 +6,7 @@
 #include "diff_gutter.h"
 #include "dialog.h"
 #include "editor.h"
+#include "editor_tagbar.h"
 #include "nav_keys.h"
 #include "search.h"
 #include "themes.h"
@@ -26,6 +27,7 @@ typedef struct {
     GtkWidget* mode;          /* GtkDropDown: Notepad, Vim, Emacs */
     GtkWidget* line_numbers;  /* GtkCheckButton */
     GtkWidget* wrap;          /* GtkCheckButton */
+    GtkWidget* tagbar;        /* GtkCheckButton */
     GtkWidget* ruler;         /* GtkCheckButton: vertical line at a column */
     GtkWidget* ruler_column;  /* GtkSpinButton */
     GtkWidget* width;         /* GtkSpinButton */
@@ -98,7 +100,7 @@ static GtkWidget* response_button(Preferences* p, const gchar* label, gint respo
 static GtkWidget* editor_page(Preferences* p) {
     GtkWidget* box = page_box();
     gtk_box_append(GTK_BOX(box), hint_label("For editor tabs opened from now on; the tabs already open keep "
-                                            "theirs, except for the column line. Org files always open "
+                                            "theirs, except for the column line and the tagbar. Org files always open "
                                             "in Org-mode."));
 
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -129,6 +131,13 @@ static GtkWidget* editor_page(Preferences* p) {
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->wrap), p->app->editor_wrap);
     gtk_widget_set_tooltip_text(p->wrap, "Long lines continue on the next line instead of scrolling sideways");
     gtk_box_append(GTK_BOX(box), p->wrap);
+
+    p->tagbar = gtk_check_button_new_with_mnemonic("Show the _tagbar");
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->tagbar), p->app->editor_tagbar);
+    gtk_widget_set_tooltip_text(p->tagbar, "Symbols of code files and headings of Markdown files beside the text, "
+                                           "in every tab, the tabs already open too (Notepad: Ctrl+K Ctrl+O, "
+                                           "Emacs: M-x imenu-list, Vim: :TagbarToggle)");
+    gtk_box_append(GTK_BOX(box), p->tagbar);
 
     /* Vim's colorcolumn: the line at the left edge of that column */
     GtkWidget* ruler_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -257,6 +266,7 @@ static void save_settings(Preferences* p) {
     s.editor = MODES[selected < G_N_ELEMENTS(MODES) ? selected : 0];
     s.line_numbers = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->line_numbers));
     s.wrap = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->wrap));
+    s.tagbar = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->tagbar));
     s.color_column = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->ruler))
                          ? gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->ruler_column))
                          : 0;
@@ -272,6 +282,7 @@ static void save_settings(Preferences* p) {
     AppData* app = p->app;
     app->editor_line_numbers = s.line_numbers;
     app->editor_wrap = s.wrap;
+    editor_tagbar_set_shown(app, s.tagbar);
     if (s.color_column != app->editor_color_column) {
         app->editor_color_column = s.color_column;
         apply_color_column(app);

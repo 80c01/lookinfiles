@@ -601,17 +601,22 @@ static void update_tabs(GList* tabs) {
     }
 }
 
+void editor_tagbar_set_shown(AppData* app, gboolean shown) {
+    if (app == NULL || app->editor_tagbar == shown) return;
+    app->editor_tagbar = shown;
+    update_tabs(app->editors);
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        if (i != app->current_ws) update_tabs(app->workspaces[i].editors);
+    }
+}
+
 void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
     if (app == NULL || tab == NULL) return;
     if (!app->editor_tagbar && !code_outline_supported(tab)) {
         if (message != NULL) message(tab, "No tagbar for this file type (code and Markdown files)");
         return;
     }
-    app->editor_tagbar = !app->editor_tagbar;
-    update_tabs(app->editors);
-    for (gint i = 0; i < app->num_workspaces; i++) {
-        if (i != app->current_ws) update_tabs(app->workspaces[i].editors);
-    }
+    editor_tagbar_set_shown(app, !app->editor_tagbar);
     Tagbar* tb = tab->tagbar;
     if (app->editor_tagbar && tb != NULL && gtk_widget_get_visible(tb->panel)) {
         gtk_widget_grab_focus(tb->list);
