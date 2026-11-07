@@ -89,6 +89,9 @@ struct CanvasViewport {
     gdouble pan_h, pan_v;
     gboolean cursor_saved;
     GdkCursor* saved_cursor; /* the page's own cursor (may be NULL) */
+    /* Window whose focus is watched while the view is mapped */
+    GtkRoot* root;
+    gulong focus_handler;
 };
 
 static GtkAdjustment* adjustment(CanvasViewport* v, GtkOrientation o) {
@@ -209,6 +212,56 @@ static void on_pan_end(GtkGesture* gesture, GdkEventSequence* sequence, gpointer
     update_cursor(v);
 }
 
+/* Shift one axis just enough to bring [start, end) (view coordinates) in */
+static void reveal_axis(CanvasViewport* v, GtkOrientation o, gdouble start, gdouble end) {
+    GtkAdjustment* adj = adjustment(v, o);
+    gdouble page = gtk_adjustment_get_page_size(adj);
+    gdouble value = gtk_adjustment_get_value(adj);
+    if (start < 0 || end - start > page) {
+        gtk_adjustment_set_value(adj, value + start);
+    } else if (end > page) {
+        gtk_adjustment_set_value(adj, value + end - page);
+    }
+}
+
+/* A block (or a widget in it) took the focus: scroll to it only when it is
+ * wholly out of sight. The page itself taking the focus (deselect, click on
+ * an empty spot) never moves the view. */
+static void on_focus_widget(GObject* object, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    CanvasViewport* v = data;
+    GtkWidget* w = gtk_root_get_focus(GTK_ROOT(object));
+    if (w == NULL || w == v->surface || !gtk_widget_is_ancestor(w, v->surface)) return;
+    GtkWidget* view = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(v->scroll));
+    graphene_rect_t r;
+    if (view == NULL || !gtk_widget_compute_bounds(w, view, &r)) return;
+    gdouble vw = gtk_widget_get_width(view), vh = gtk_widget_get_height(view);
+    gdouble x = r.origin.x, y = r.origin.y;
+    if (x + r.size.width > 0 && x < vw && y + r.size.height > 0 && y < vh) return;
+    reveal_axis(v, GTK_ORIENTATION_HORIZONTAL, x, x + r.size.width);
+    reveal_axis(v, GTK_ORIENTATION_VERTICAL, y, y + r.size.height);
+}
+
+static void unwatch_focus(CanvasViewport* v) {
+    if (v->root != NULL && v->focus_handler != 0) g_signal_handler_disconnect(v->root, v->focus_handler);
+    v->focus_handler = 0;
+    g_clear_weak_pointer(&v->root);
+}
+
+static void on_map(GtkWidget* widget, gpointer data) {
+    CanvasViewport* v = data;
+    unwatch_focus(v);
+    GtkRoot* root = gtk_widget_get_root(widget);
+    if (root == NULL) return;
+    g_set_weak_pointer(&v->root, root);
+    v->focus_handler = g_signal_connect(root, "notify::focus-widget", G_CALLBACK(on_focus_widget), v);
+}
+
+static void on_unmap(GtkWidget* widget, gpointer data) {
+    (void)widget;
+    unwatch_focus(data);
+}
+
 CanvasViewport* canvas_viewport_new(GtkWidget* surface, CanvasZoomNotify on_zoom, gpointer data) {
     CanvasViewport* v = g_new0(CanvasViewport, 1);
     v->surface = surface;
@@ -220,6 +273,13 @@ CanvasViewport* canvas_viewport_new(GtkWidget* surface, CanvasZoomNotify on_zoom
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(v->scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_vexpand(v->scroll, TRUE);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(v->scroll), GTK_WIDGET(v->zoom));
+    /* The page is wrapped in a viewport, which would scroll to the focused
+     * widget: to the page's top-left corner when the page takes the focus.
+     * on_focus_widget() scrolls to blocks instead. */
+    GtkWidget* view = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(v->scroll));
+    if (GTK_IS_VIEWPORT(view)) gtk_viewport_set_scroll_to_focus(GTK_VIEWPORT(view), FALSE);
+    g_signal_connect(v->scroll, "map", G_CALLBACK(on_map), v);
+    g_signal_connect(v->scroll, "unmap", G_CALLBACK(on_unmap), v);
 
     GtkEventController* scroll = gtk_event_controller_scroll_new(GTK_EVENT_CONTROLLER_SCROLL_VERTICAL);
     gtk_event_controller_set_propagation_phase(scroll, GTK_PHASE_CAPTURE);
@@ -244,6 +304,7 @@ CanvasViewport* canvas_viewport_new(GtkWidget* surface, CanvasZoomNotify on_zoom
 
 void canvas_viewport_free(CanvasViewport* v) {
     if (v == NULL) return;
+    unwatch_focus(v);
     g_clear_object(&v->saved_cursor);
     g_free(v);
 }
