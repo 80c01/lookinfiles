@@ -90,6 +90,9 @@ gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state)
         s_history[0] = '\0';
         app->game_mode_unlocked = TRUE;
         app->game_mode_just_unlocked = TRUE;
+        if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
+            app->workspaces[app->current_ws].games_unlocked = TRUE;
+        }
 
         /* Close keyboard shortcuts cheat sheet if open */
         if (app->help_window != NULL && gtk_widget_get_visible(app->help_window)) {
@@ -449,6 +452,36 @@ gboolean games_tab_close_shown(AppData* app) {
     return FALSE;
 }
 
+void games_workspace_hidden(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL || app->notebook == NULL) return;
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    for (gint i = gtk_notebook_get_n_pages(nb) - 1; i >= 0; i--) {
+        GtkWidget* page = gtk_notebook_get_nth_page(nb, i);
+        if (g_object_get_data(G_OBJECT(page), "is-game-tab") == NULL) continue;
+        if (ws->game_pages == NULL) ws->game_pages = g_ptr_array_new_with_free_func(g_object_unref);
+        g_ptr_array_insert(ws->game_pages, 0, g_object_ref(page));
+        gtk_notebook_remove_page(nb, i);
+    }
+}
+
+void games_workspace_shown(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL || ws->game_pages == NULL || app->notebook == NULL) return;
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    for (guint i = 0; i < ws->game_pages->len; i++) {
+        GtkWidget* page = g_ptr_array_index(ws->game_pages, i);
+        gtk_notebook_append_page(nb, page, g_object_get_data(G_OBJECT(page), "game-tab-label"));
+    }
+    g_clear_pointer(&ws->game_pages, g_ptr_array_unref);
+}
+
+void games_workspace_removed(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces && ws == &app->workspaces[app->current_ws]) {
+        games_workspace_hidden(app, ws);
+    }
+    g_clear_pointer(&ws->game_pages, g_ptr_array_unref);
+}
+
 void games_launch(AppData* app, const gchar* game_id) {
     if (app == NULL || app->notebook == NULL || game_id == NULL) return;
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
@@ -520,6 +553,9 @@ void games_launch(AppData* app, const gchar* game_id) {
     gtk_box_append(GTK_BOX(tab_header), icon);
     gtk_box_append(GTK_BOX(tab_header), label);
     gtk_box_append(GTK_BOX(tab_header), close_btn);
+
+    /* Kept with the page while its workspace is hidden */
+    g_object_set_data_full(G_OBJECT(tab_content), "game-tab-label", g_object_ref(tab_header), g_object_unref);
 
     gint page_idx = gtk_notebook_append_page(nb, tab_content, tab_header);
     gtk_notebook_set_current_page(nb, page_idx);

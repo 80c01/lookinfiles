@@ -242,6 +242,8 @@ static void update_cpu_ai(FighterGame* g) {
 static gboolean fighter_tick(gpointer user_data) {
     FighterGame* g = (FighterGame*)user_data;
     if (g == NULL || g->paused) return G_SOURCE_CONTINUE;
+    /* Wait while the tab is not shown (another tab or workspace) */
+    if (!gtk_widget_get_mapped(g->drawing_area)) return G_SOURCE_CONTINUE;
 
     if (g->round_state_timer > 0) {
         g->round_state_timer--;

@@ -280,7 +280,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Global", "Ctrl+Shift+L", "Stack the terminal pane under the viewer, or put it back beside it (the explorer panel stays fixed)", 0},
     {"Global", "Ctrl+Shift+R", "Toggle Remote (SSH) machines view in sidebar", 0},
     {"Global", "F1", "User guide in a Help tab (also a click on the top bar's Help button; right click: this cheat sheet)", 0},
-    {"Help panel", "Up Up Down Down Left Right Left Right A B Enter", "Unlock Game Mode in explorer", 0},
+    {"Help panel", "Up Up Down Down Left Right Left Right A B Enter", "Unlock Game Mode in this workspace", 0},
     {"Global", "Ctrl+Q", "Quit", 0},
 };
 

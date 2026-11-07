@@ -13,5 +13,9 @@ gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state)
 void games_launch(AppData* app, const gchar* game_id);
 void games_close_tab(AppData* app, GtkWidget* page);
 gboolean games_tab_close_shown(AppData* app);
+/* Game tabs belong to their workspace: kept aside while another one is shown */
+void games_workspace_hidden(AppData* app, VirtualLayout* ws);
+void games_workspace_shown(AppData* app, VirtualLayout* ws);
+void games_workspace_removed(AppData* app, VirtualLayout* ws);
 
 #endif /* GAMES_H */

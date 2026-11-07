@@ -122,6 +122,8 @@ static void space_init_game(SpaceGame* g) {
 static gboolean space_tick(gpointer user_data) {
     SpaceGame* g = (SpaceGame*)user_data;
     if (g == NULL || g->paused || g->game_over) return G_SOURCE_CONTINUE;
+    /* Wait while the tab is not shown (another tab or workspace) */
+    if (!gtk_widget_get_mapped(g->drawing_area)) return G_SOURCE_CONTINUE;
 
     /* Move stars */
     for (gint i = 0; i < 40; i++) {

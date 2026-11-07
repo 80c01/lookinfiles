@@ -20,6 +20,7 @@
 #include "browser.h"
 #include "canvas_view.h"
 #include "video_tab.h"
+#include "games.h"
 
 #define WS_CELL_W   32
 #define WS_ADD_W    22
@@ -143,6 +144,7 @@ void workspace_save_current(AppData* app) {
     ws->show_hidden = app->show_hidden;
     ws->show_bookmarks = app->show_bookmarks;
     ws->sidebar_view = app->sidebar_view;
+    ws->games_unlocked = app->game_mode_unlocked;
     ws->sort_mode = app->sort_mode;
     ws->render_raw = app->render_raw;
     ws->editor_dedicated = app->editor_dedicated;
@@ -464,6 +466,7 @@ void workspace_switch(AppData* app, gint idx) {
             browser_workspace_hidden(app, &app->workspaces[app->current_ws]);
             canvas_view_workspace_hidden(app, &app->workspaces[app->current_ws]);
             video_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            games_workspace_hidden(app, &app->workspaces[app->current_ws]);
 #ifdef HAVE_VTE
             terminal_workspace_hidden(app, &app->workspaces[app->current_ws]);
 #endif
@@ -490,6 +493,7 @@ void workspace_switch(AppData* app, gint idx) {
         browser_workspace_shown(app, ws);
         canvas_view_workspace_shown(app, ws);
         video_tab_workspace_shown(app, ws);
+        games_workspace_shown(app, ws);
 #ifdef HAVE_VTE
         terminal_workspace_shown(app, ws);
 #endif
@@ -516,6 +520,8 @@ void workspace_switch(AppData* app, gint idx) {
     app->show_hidden = ws->show_hidden;
     app->show_bookmarks = ws->show_bookmarks;
     app->sidebar_view = ws->sidebar_view;
+    app->game_mode_unlocked = ws->games_unlocked;
+    app->game_mode_just_unlocked = FALSE;
     app->sort_mode = ws->sort_mode;
     g_free(app->current_remote_id);
     app->current_remote_id = g_strdup(ws->remote_id);
@@ -731,6 +737,7 @@ void workspace_remove(AppData* app, gint idx) {
 
     canvas_view_workspace_removed(app, rm); /* saved before the panel goes */
     video_tab_workspace_removed(app, rm);
+    games_workspace_removed(app, rm);
     if (idx == app->current_ws) {
         GtkWidget* panel = editor_detach_tabs(app);
         if (panel != NULL) {

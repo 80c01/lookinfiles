@@ -207,6 +207,8 @@ static gint tet_get_ghost_y(TetrisGame* g) {
 static gboolean tet_tick(gpointer user_data) {
     TetrisGame* g = (TetrisGame*)user_data;
     if (g == NULL || g->paused || g->game_over) return G_SOURCE_CONTINUE;
+    /* Wait while the tab is not shown (another tab or workspace) */
+    if (!gtk_widget_get_mapped(g->drawing_area)) return G_SOURCE_CONTINUE;
 
     if (tet_fits(g, g->piece_type, g->piece_rot, g->piece_x, g->piece_y + 1)) {
         g->piece_y++;

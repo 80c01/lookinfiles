@@ -143,6 +143,8 @@ typedef struct {
     GPtrArray* browser_pages;      /* its browser tabs while another workspace is shown (owned refs, browser.c) */
     GPtrArray* canvas_pages;       /* its Canvas tabs of the preview notebook while another workspace is shown (owned refs, canvas_view.c) */
     GPtrArray* video_pages;        /* its Video tabs of the preview notebook while another workspace is shown (owned refs, video_tab.c) */
+    GPtrArray* game_pages;         /* its game tabs of the preview notebook while another workspace is shown (owned refs, games.c) */
+    gboolean games_unlocked;       /* Game Mode unlocked in this workspace (Games view and its button) */
 #ifdef HAVE_VTE
     GtkWidget* term_box;
     GtkWidget* last_focused_vte;
@@ -364,7 +366,7 @@ typedef struct {
     GtkWidget* sidebar_remote_toolbar; /* mini action bar for remote machines */
     GtkWidget* sidebar_games_toolbar; /* mini action bar for games */
     GtkWidget* sidebar_files_hidden_btn; /* toggle hidden button in files action bar */
-    gboolean game_mode_unlocked;      /* unlocked via secret sequence in help panel */
+    gboolean game_mode_unlocked;      /* current workspace's Game Mode, unlocked via secret sequence in help panel */
     gboolean game_mode_just_unlocked; /* TRUE right after unlocking until next key, consumes trailing Enter */
     GList* remotes;                   /* list of RemoteMachine* */
     GList* remote_folders;            /* list of RemoteFolder* (remote view folders) */

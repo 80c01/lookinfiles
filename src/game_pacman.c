@@ -197,6 +197,8 @@ static void update_ghost_dir(PacGame* g, PacGhost* gh) {
 static gboolean pac_tick(gpointer user_data) {
     PacGame* g = (PacGame*)user_data;
     if (g == NULL || g->paused || g->game_over) return G_SOURCE_CONTINUE;
+    /* Wait while the tab is not shown (another tab or workspace) */
+    if (!gtk_widget_get_mapped(g->drawing_area)) return G_SOURCE_CONTINUE;
 
     /* Mouth animation */
     if (g->mouth_opening) {

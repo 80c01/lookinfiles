@@ -454,6 +454,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   its pipeline only then); separate from the preview player (`video`). Opened
   with `editor_add_page()`, movable like a Canvas tab, kept with its workspace
   through `video_tab_workspace_hidden()` / `_shown()` / `_removed()`.
+- `games` — the hidden Games view (unlocked in the help panel, for the
+  current workspace only: `VirtualLayout.games_unlocked`) and its game tabs
+  (`game_*`) in the preview notebook, kept with their workspace through
+  `games_workspace_hidden()` / `_shown()` / `_removed()`; the real-time games
+  wait while their tab is not on screen.
 - `bookmark_dialog` — the add / edit dialogs of the bookmarks view (name,
   location or folder icon, parent folder) and the target helpers they share
   with `bookmarks` (`bookmark_display_location()`, `bookmark_default_name()`).
