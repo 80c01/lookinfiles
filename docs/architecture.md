@@ -229,6 +229,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `palette_rgb()` (cairo), `palette_set()` / `palette_reset()` (themes),
   each role a CSS named colour (`@bg_window`, `alpha(@accent, 0.25)`), and
   `palette_expand()` for `@role` tokens in text templates.
+- `image_theme` — a theme's colours from an image: main colours of the
+  pixels (weighted k-means over a colour histogram, in OKLab), then every
+  palette role derived in OKLCH (surfaces tinted by the main colour, dark
+  or light by the mean lightness, accent from the most vivid colour, syntax
+  from the other hues, colours with a meaning pulled toward a near hue),
+  text kept at a readable WCAG contrast.
 - `theme_store` — themes: built-in ones (Dark Modern = the defaults,
   Light Modern, High Contrast Dark, then the `themes/*.ini` files bundled as
   GResources by the Makefile; a test keeps their main text pairs at a
@@ -628,7 +634,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`Ctrl+=` / `Ctrl+-` / `Ctrl+0`: both font sizes, `fonts_zoom_percent()`
   in the Notepad status bar), the Appearance page of the Preferences
   (`ThemesPage`: live preview on selection, Cancel restores, fonts,
-  Save As, Edit in a tab, Delete; its buttons report dialog responses
+  Save As, From Image (`image_theme` colours of the selected or typed
+  image file), Edit in a tab, Delete; its buttons report dialog responses
   handled by `themes_page_handle()`), and re-applying the current theme file when it is saved
   (`APP_EVENT_FILES_CHANGED`).
 - `session` — saves the workspaces at quit (`session_save_now()`: Ctrl+Q

@@ -7,6 +7,9 @@
 #include "editor_modes.h"
 #include "fonts.h"
 #include "icon_sets.h"
+#include "file_types.h"
+#include "image_theme.h"
+#include "image_utils.h"
 #include "minimap.h"
 #include "palette.h"
 #include "terminal.h"
@@ -14,8 +17,10 @@
 #include "text_tags.h"
 #include "theme.h"
 #include "theme_store.h"
+#include "tree_nav.h"
 
 #include <glib/gstdio.h>
+#include <string.h>
 
 /* The theme shown: name, interface kind, file (user themes) and its
  * modification time, and its own fonts (before the user's) */
@@ -604,6 +609,8 @@ ThemesPage* themes_page_new(AppData* app, AppDialog* dialog) {
     GtkWidget* buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     page_button(d, buttons, "_Save As…", THEMES_RESPONSE_SAVE_AS,
                 "Save the current colours and fonts as a theme of yours");
+    page_button(d, buttons, "From _Image…", THEMES_RESPONSE_FROM_IMAGE,
+                "Create a theme of yours from the colours of an image (the selected one by default)");
     d->edit_btn = page_button(d, buttons, "_Edit", THEMES_RESPONSE_EDIT,
                               "Open the selected theme file in an editor tab: saving it applies it "
                               "(your themes only)");
@@ -665,6 +672,105 @@ static void save_as(ThemesPage* d) {
     g_free(name);
 }
 
+/* An image path and a theme name typed by the user (caller frees both);
+ * FALSE if cancelled or one is empty */
+static gboolean prompt_image(AppData* app, gchar** path, gchar** name) {
+    ExplorerRow* row = tree_nav_selected(app);
+    const gchar* selected = (row != NULL && row->path != NULL && is_image_file(row->path)) ? row->path : "";
+    GtkWidget* dlg = app_dialog_new("Theme from Image", app->window, "_Cancel", APP_RESPONSE_CANCEL, "_Create",
+                                    APP_RESPONSE_OK, NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
+    GtkWidget* box = padded_box(8);
+    gtk_box_append(GTK_BOX(box), message_label("Create a theme from the colours of the image file:"));
+    GtkWidget* path_entry = gtk_entry_new();
+    gtk_editable_set_text(GTK_EDITABLE(path_entry), selected);
+    gtk_entry_set_activates_default(GTK_ENTRY(path_entry), TRUE);
+    gtk_box_append(GTK_BOX(box), path_entry);
+    gtk_box_append(GTK_BOX(box), message_label("Named:"));
+    GtkWidget* name_entry = gtk_entry_new();
+    gchar* base = g_path_get_basename(selected[0] != '\0' ? selected : "Image");
+    gchar* dot = strrchr(base, '.');
+    if (dot != NULL && dot != base) {
+        *dot = '\0';
+    }
+    gtk_editable_set_text(GTK_EDITABLE(name_entry), base);
+    g_free(base);
+    gtk_entry_set_activates_default(GTK_ENTRY(name_entry), TRUE);
+    gtk_box_append(GTK_BOX(box), name_entry);
+    gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), box);
+    *path = NULL;
+    *name = NULL;
+    if (app_dialog_run(APP_DIALOG(dlg), selected[0] != '\0' ? name_entry : path_entry) == APP_RESPONSE_OK) {
+        *path = g_strstrip(g_strdup(gtk_editable_get_text(GTK_EDITABLE(path_entry))));
+        *name = g_strstrip(g_strdup(gtk_editable_get_text(GTK_EDITABLE(name_entry))));
+    }
+    app_dialog_destroy(APP_DIALOG(dlg));
+    if (*path == NULL || (*path)[0] == '\0' || (*name)[0] == '\0') {
+        g_clear_pointer(path, g_free);
+        g_clear_pointer(name, g_free);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+/* Colours of an image file (scaled down: the main colours are enough) */
+static gboolean derive_from_file(const gchar* path, ImageTheme* theme) {
+    GdkPixbuf* pixbuf = pixbuf_from_file(path, 512);
+    if (pixbuf == NULL) {
+        return FALSE;
+    }
+    gboolean ok = gdk_pixbuf_get_bits_per_sample(pixbuf) == 8 &&
+                  image_theme_derive(gdk_pixbuf_read_pixels(pixbuf), gdk_pixbuf_get_width(pixbuf),
+                                     gdk_pixbuf_get_height(pixbuf), gdk_pixbuf_get_rowstride(pixbuf),
+                                     gdk_pixbuf_get_n_channels(pixbuf), theme);
+    g_object_unref(pixbuf);
+    return ok;
+}
+
+static void save_from_image(ThemesPage* d) {
+    AppData* app = d->app;
+    gchar* path = NULL;
+    gchar* name = NULL;
+    if (!prompt_image(app, &path, &name)) {
+        return;
+    }
+    ImageTheme colors;
+    const Theme* existing = theme_store_find(d->themes, name);
+    if (existing != NULL && existing->path == NULL) {
+        notice(app, "Theme Not Created", "A built-in theme has this name: choose another one.");
+    } else if (!derive_from_file(path, &colors)) {
+        gchar* msg = g_strdup_printf("%s cannot be read as an image (or has no opaque pixel).", path);
+        notice(app, "Theme Not Created", msg);
+        g_free(msg);
+    } else {
+        /* The current look with the image's colours, saved as a new theme */
+        for (gint r = 0; r < PAL_COUNT; r++) {
+            palette_set((PaletteRole)r, colors.colors[r]);
+        }
+        gchar* udir = theme_store_user_dir();
+        GError* error = NULL;
+        gchar* file = theme_store_save_current(udir, name, colors.dark, &error);
+        g_free(udir);
+        if (file == NULL) {
+            gchar* msg = g_strdup_printf("The theme could not be saved: %s", error->message);
+            notice(app, "Theme Not Created", msg);
+            g_free(msg);
+            g_clear_error(&error);
+            set_theme(current_name, &d->fonts, NULL);
+        } else {
+            /* The new theme holds the fonts: no override needed */
+            font_choice_clear(&d->fonts);
+            fill_list(d, name);
+            set_theme(name, &d->fonts, NULL);
+            update_font_fields(d);
+        }
+        themes_refresh(app, current_dark);
+        g_free(file);
+    }
+    g_free(path);
+    g_free(name);
+}
+
 gboolean themes_page_handle(ThemesPage* page, gint response, gboolean* close) {
     ThemesPage* d = page;
     *close = FALSE;
@@ -673,6 +779,9 @@ gboolean themes_page_handle(ThemesPage* page, gint response, gboolean* close) {
     switch (response) {
     case THEMES_RESPONSE_SAVE_AS:
         save_as(d);
+        return TRUE;
+    case THEMES_RESPONSE_FROM_IMAGE:
+        save_from_image(d);
         return TRUE;
     case THEMES_RESPONSE_DELETE:
         if (t != NULL && t->path != NULL) {

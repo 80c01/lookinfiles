@@ -43,6 +43,23 @@ is used) and a size.
 4. Change the colours and save: the theme is applied again at once, or a
    message says what is wrong.
 
+### A theme from an image
+
+**From Image…** builds a theme from the colours of a picture (a wallpaper,
+a photo, a screenshot):
+
+1. Select the image in the explorer, then press `Alt+T`.
+2. Click **From Image…**: the path of the selected image is filled in
+   (type another path if you want), and the name of the file is proposed
+   as the name of the theme.
+3. Click **Create**: the theme is saved with your themes and applied.
+
+A mostly dark image gives a dark theme, a mostly light one a light theme.
+The backgrounds take the main colour of the image, lightly tinted; the
+accent is its most vivid colour; code colours use its other hues; errors
+stay red and additions green, tuned toward the image. Text always keeps a
+readable contrast. Use **Edit** afterwards to adjust any colour.
+
 A theme can inherit from another one and set only what differs:
 
 ```ini

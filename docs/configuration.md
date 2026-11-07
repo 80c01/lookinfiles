@@ -86,7 +86,8 @@ the theme's sizes; the Notepad status bar shows the zoom.
 
 A theme is an INI file in `~/.config/lookinfiles/themes/`. **Save As…** writes the
 current look as a complete file (every colour, with its description as a
-comment), and **Edit** opens one of your themes in an editor tab: saving the
+comment), **From Image…** writes one from the colours of an image (the one
+selected in the explorer by default; see `image_theme`), and **Edit** opens one of your themes in an editor tab: saving the
 file applies it again, or shows what is wrong with it. A theme can inherit
 from another one and set only what differs:
 

@@ -122,6 +122,7 @@ session_store:app_paths,layout_store
 tab_tree:
 settings_store:app_paths
 palette:
+image_theme:palette
 fonts:
 theme_store:fonts,palette,app_paths
 text_tags:fonts,palette

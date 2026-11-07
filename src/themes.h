@@ -32,10 +32,16 @@ void themes_zoom(AppData* app, gint delta);
 void themes_on_files_changed(AppData* app);
 
 /* The Appearance page of the Preferences dialog (preferences.h): pick a
- * theme with a live preview, the interface and code fonts, Save As, Edit
- * and Delete of user themes. Its buttons report these responses on the
+ * theme with a live preview, the interface and code fonts, Save As, From
+ * Image (a theme from the colours of an image), Edit and Delete of user
+ * themes. Its buttons report these responses on the
  * dialog; the dialog's loop passes them to themes_page_handle(). */
-enum { THEMES_RESPONSE_SAVE_AS = 1, THEMES_RESPONSE_EDIT = 2, THEMES_RESPONSE_DELETE = 3 };
+enum {
+    THEMES_RESPONSE_SAVE_AS = 1,
+    THEMES_RESPONSE_EDIT = 2,
+    THEMES_RESPONSE_DELETE = 3,
+    THEMES_RESPONSE_FROM_IMAGE = 4
+};
 
 typedef struct ThemesPage ThemesPage;
 
