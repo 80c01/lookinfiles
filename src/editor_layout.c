@@ -28,6 +28,12 @@ static gboolean is_terminal(GtkWidget* page) {
 #endif
 }
 
+/* A page that moves like an editor tab but is neither one nor a terminal (a
+ * canvas): laid out with the files */
+static gboolean is_other(AppData* app, GtkWidget* page) {
+    return !is_terminal(page) && editor_page_is_movable(page) && tab_of_page(app, page) == NULL;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Capture                                                                   */
 /* ------------------------------------------------------------------------- */
@@ -41,7 +47,7 @@ static TabTreeNode* capture_notebook(AppData* app, GtkNotebook* nb) {
         GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
         if (is_terminal(page)) {
             tab_tree_notebook_add(node, TAB_TREE_TERMINAL);
-        } else if (tab_of_page(app, page) != NULL) {
+        } else if (tab_of_page(app, page) != NULL || is_other(app, page)) {
             files = TRUE;
         }
     }
@@ -207,7 +213,8 @@ static guint* assign_files(GPtrArray* files, GArray* ranks, guint n_panes, GPtrA
 /* Gather every tab of the panel in root, split it as tree describes and
  * place the tabs (see editor_layout_apply()) */
 static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GPtrArray* files, GArray* ranks,
-                    GPtrArray* terms, GPtrArray* currents, EditorTab* focused, GPtrArray* spare) {
+                    GPtrArray* terms, GPtrArray* others, GPtrArray* currents, EditorTab* focused,
+                    GPtrArray* spare) {
 #ifdef HAVE_VTE
     guint wanted = tab_tree_terminal_count(tree);
 #else
@@ -226,6 +233,9 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
         terminal_move_tab(g_ptr_array_index(terms, i), root);
     }
 #endif
+    for (guint i = 0; i < others->len; i++) {
+        editor_move_page_to(app, g_ptr_array_index(others, i), root, -1);
+    }
     if (gtk_notebook_get_n_pages(root) > 0) {
         editor_remove_empty_notebooks(app);
     }
@@ -253,6 +263,11 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
         }
     }
     g_free(target);
+    /* The other pages to the first pane of files */
+    GtkNotebook* first_files = g_ptr_array_index(leaves, g_array_index(file_panes, guint, 0));
+    for (guint i = 0; i < others->len; i++) {
+        editor_move_page_to(app, g_ptr_array_index(others, i), first_files, -1);
+    }
     g_array_unref(file_panes);
 
     /* Two views of a file brought into one pane: the first stays (both in
@@ -354,6 +369,7 @@ void editor_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare
     GPtrArray* files = g_ptr_array_new();
     GArray* ranks = g_array_new(FALSE, FALSE, sizeof(guint));
     GPtrArray* terms = g_ptr_array_new_with_free_func(g_object_unref);
+    GPtrArray* others = g_ptr_array_new();
     GPtrArray* currents = g_ptr_array_new();
     GPtrArray* olds = editor_get_all_notebooks(app);
     guint rank = 0;
@@ -373,16 +389,20 @@ void editor_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare
                 g_ptr_array_add(files, tab);
                 g_array_append_val(ranks, rank);
                 had_files = TRUE;
+            } else if (is_other(app, page)) {
+                g_ptr_array_add(others, page);
             }
         }
         rank += had_files ? 1 : 0;
     }
     g_ptr_array_unref(olds);
     guint wanted = tab_tree_terminal_count(tree);
-    GtkNotebook* root = (files->len > 0 || terms->len > 0 || wanted > 0) ? panel_root(app) : NULL;
+    GtkNotebook* root = (files->len > 0 || terms->len > 0 || others->len > 0 || wanted > 0) ? panel_root(app)
+                                                                                            : NULL;
     if (root != NULL) {
-        rebuild(app, tree, root, files, ranks, terms, currents, focused, spare);
+        rebuild(app, tree, root, files, ranks, terms, others, currents, focused, spare);
     }
+    g_ptr_array_unref(others);
     g_ptr_array_unref(files);
     g_array_unref(ranks);
     g_ptr_array_unref(terms);
@@ -414,7 +434,7 @@ static GtkNotebook* notebook_of(GtkWidget* page) {
 #endif
 
 static gboolean is_placeable(AppData* app, GtkWidget* page) {
-    return is_terminal(page) || tab_of_page(app, page) != NULL;
+    return is_terminal(page) || tab_of_page(app, page) != NULL || is_other(app, page);
 }
 
 static TabTreeNode* snapshot_widget(AppData* app, GtkWidget* w, GPtrArray* pages) {
@@ -502,13 +522,18 @@ static void set_aside(GtkWidget* page, GPtrArray* spare) {
 #endif
 }
 
-/* Put page (an editor tab or a terminal, in a notebook or in spare) into nb */
+/* Put page (an editor tab or a terminal, in a notebook or in spare, or
+ * another movable page of a notebook) into nb */
 static void place_page(AppData* app, GtkWidget* page, GtkNotebook* nb, GPtrArray* spare) {
     EditorTab* tab = tab_of_page(app, page);
     if (tab != NULL) {
         if (tab->nb != GTK_WIDGET(nb)) {
             editor_move_tab_to(app, tab, nb, -1, FALSE);
         }
+        return;
+    }
+    if (is_other(app, page)) {
+        editor_move_page_to(app, page, nb, -1);
         return;
     }
 #ifdef HAVE_VTE
@@ -558,7 +583,7 @@ void editor_layout_restore(AppData* app, const EditorSnapshot* snap, GPtrArray* 
     }
     for (guint i = 0; i < snap->preview->len && app->notebook != NULL; i++) {
         GtkWidget* page = g_ptr_array_index(snap->pages, g_array_index(snap->preview, guint, i));
-        if (tab_of_page(app, page) != NULL) {
+        if (tab_of_page(app, page) != NULL || is_other(app, page)) {
             place_page(app, page, GTK_NOTEBOOK(app->notebook), spare);
         }
     }
@@ -577,6 +602,9 @@ void editor_layout_restore(AppData* app, const EditorSnapshot* snap, GPtrArray* 
             } else if (tab_of_page(app, page) != NULL) {
                 GtkWidget* to = (root != NULL) ? GTK_WIDGET(root) : app->notebook;
                 editor_move_tab_to(app, tab_of_page(app, page), GTK_NOTEBOOK(to), -1, FALSE);
+            } else if (is_other(app, page)) {
+                GtkWidget* to = (root != NULL) ? GTK_WIDGET(root) : app->notebook;
+                editor_move_page_to(app, page, GTK_NOTEBOOK(to), -1);
             }
         }
     }

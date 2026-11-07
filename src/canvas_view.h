@@ -3,8 +3,11 @@
 
 #include "app_types.h"
 
-/* The Canvas page of the preview notebook: edits a Canvas note (canvas_doc.h),
- * text boxes and pictures placed freely on a page.
+/* Canvas tabs: each edits a Canvas note (canvas_doc.h), text boxes and
+ * pictures placed freely on a page. A canvas opens as a tab of the editor
+ * panel, one tab per note, several open together; the tab moves like an
+ * editor tab (dragged to another pane, a split, the preview notebook) and
+ * belongs to the workspace it was opened in.
  *
  * - A floating tool bar (canvas_toolbar.h) picks the tool: select, shapes
  *   and pencil drawn with the mouse, text box, table, eraser; a panel
@@ -30,30 +33,40 @@
  * - Ctrl+B / Ctrl+I / Ctrl+U / Ctrl+Shift+S / Ctrl+E / Ctrl+Alt+1: bold,
  *   italic, underline, strikethrough, code, heading.
  *
- * Saved automatically (shortly after each change, when another note is
- * opened, when the page is closed, and at quit). One canvas at a time. */
+ * Saved automatically (shortly after each change, when the tab is closed,
+ * when its workspace is removed, and at quit). */
 
-/* Open the Canvas note in directory dir (title shown above the page) */
+/* Show the tab of the Canvas note in directory dir, opened in the editor
+ * panel when it is not open (title: tab and status bar); a tab of another
+ * workspace moves to this one */
 void canvas_view_open(AppData* app, const gchar* dir, const gchar* title);
 
-/* Save the open canvas now, if it has changes */
+/* Save every open canvas now (all workspaces), if it has changes */
 void canvas_view_save(AppData* app);
 
-/* Save and close the page if it shows the note at path, or a note under the
- * directory path (before they go to the trash or are deleted). Returns TRUE
- * if it was open. */
+/* Save and close the tabs of the note at path, or of the notes under the
+ * directory path (before they go to the trash or are deleted), in every
+ * workspace. Returns TRUE if one was open. */
 gboolean canvas_view_close_path(AppData* app, const gchar* path);
 
 /* The note at old_path (or a directory holding it) was renamed or moved to
  * new_path: keep editing it there (title: its new title, or NULL) */
 void canvas_view_path_moved(AppData* app, const gchar* old_path, const gchar* new_path, const gchar* title);
 
-/* Close the Canvas page if it is the current page of the preview notebook
- * (Ctrl+W). Returns TRUE if it was closed. */
+/* Close the Canvas tab with the focus, else the one shown as the current
+ * page of the preview notebook (Ctrl+W). Returns TRUE if one was closed. */
 gboolean canvas_view_close_shown(AppData* app);
 
-/* The Canvas page has the focus and takes this key (zoom: Ctrl+= / Ctrl+- /
+/* A Canvas tab has the focus and takes this key (zoom: Ctrl+= / Ctrl+- /
  * Ctrl+0, the font sizes elsewhere): the window lets it through */
 gboolean canvas_view_claims_key(AppData* app, guint keyval, GdkModifierType state);
+
+/* Canvas tabs of the preview notebook leave it with their workspace
+ * (hidden), come back with it (shown), or close with it (removed: call it
+ * before the editor panel goes, every canvas is saved). Those of the editor
+ * panel go with the panel (editor_detach_tabs()). */
+void canvas_view_workspace_hidden(AppData* app, VirtualLayout* ws);
+void canvas_view_workspace_shown(AppData* app, VirtualLayout* ws);
+void canvas_view_workspace_removed(AppData* app, VirtualLayout* ws);
 
 #endif /* CANVAS_VIEW_H */

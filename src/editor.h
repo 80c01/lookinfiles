@@ -99,6 +99,17 @@ void editor_notebook_enable_tab_drop(AppData* app, GtkWidget* nb);
  * exited), out of its editor or preview notebook; an editor notebook left
  * empty goes, the editor panel hides without tabs */
 void editor_remove_page(AppData* app, GtkWidget* child);
+/* Pages other than editor tabs that move between the editor notebooks and
+ * the preview notebook like editor tabs (drag, layouts): terminals, and the
+ * pages marked with editor_page_set_movable() (canvases) */
+void editor_page_set_movable(GtkWidget* page);
+gboolean editor_page_is_movable(GtkWidget* page);
+/* Show child, a movable page (marked here) with its tab label, as the
+ * current page of the editor panel: the notebook of the editor tab used
+ * last, or the first one; the panel shows */
+void editor_add_page(AppData* app, GtkWidget* child, GtkWidget* label);
+/* Move child, a movable page of a notebook, into to at index (-1: append) */
+void editor_move_page_to(AppData* app, GtkWidget* child, GtkNotebook* to, gint index);
 void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* target_widget);
 void on_notebook_page_reordered(GtkNotebook* notebook, GtkWidget* child,
                                 guint page_num, gpointer data);

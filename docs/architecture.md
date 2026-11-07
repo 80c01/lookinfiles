@@ -389,13 +389,17 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   after the `app_notice()` message).
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
-- `canvas_view` — the **Canvas** page of the preview notebook (`app->canvas_page`):
-  edits one Canvas note at a time (`canvas_doc`), text boxes and pictures on a
+- `canvas_view` — the **Canvas** tabs (`app->canvas_pages`, every workspace):
+  each edits one Canvas note (`canvas_doc`), one tab per note, text boxes and pictures on a
   `GtkFixed`; move / resize by dragging, pictures pasted (`Ctrl+V`) or dropped
   into `media/`; saved automatically, on close and at quit (never while the page
   is being destroyed). Undo / redo restore a page state from `canvas_history`;
   unused pictures are pruned only when a note is loaded or closed, so an undo
-  can bring a deleted picture back. Not an editor tab: `app->editors` stays text only.
+  can bring a deleted picture back. Not an editor tab: `app->editors` stays text only;
+  it opens in the editor panel (`editor_add_page()`) and moves like a terminal tab
+  (`editor_page_set_movable()`: drag, splits, layouts with the files). It belongs to
+  its workspace: in the editor panel it goes with the panel, in the preview notebook
+  through `canvas_view_workspace_hidden()` / `_shown()` / `_removed()`.
   Its files: `canvas_view` (widgets, tool bar and panel actions, public API),
   `canvas_page` (the page state in `canvas_page_private.h`, internal to these
   files: focus, selection, undo, saving, new blocks, the tool), `canvas_keys` (keys,
@@ -564,7 +568,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `sidebar` — explorer header: view switcher and per-view action toolbars.
 - `help` — cheat sheet (`?`, right click on the Help button); `KEY_HELP` must stay in sync with `docs/keyboard.md`.
 - `help_guide` — the **Help** page of the preview notebook (`app->help_page`, after
-  the Git, result and Canvas pages): a `user_guide` page rendered by `markdown`,
+  the Git and result pages): a `user_guide` page rendered by `markdown`,
   scrolled with the navigation keys of the global mode; links followed through
   `markdown_link` (`user_guide_resolve_link()`: guide pages and anchors, web pages
   in a browser tab, `browser_open()`), Tab / Enter, back / forward history (Shift+H / Shift+L,

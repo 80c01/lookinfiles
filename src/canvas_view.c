@@ -1,4 +1,4 @@
-/* The Canvas page of the preview notebook (see canvas_view.h): its widgets,
+/* The Canvas tabs of the editor area (see canvas_view.h): its widgets,
  * the tool bar and panel actions, and the public API. The core is in
  * canvas_page.c, the keys in canvas_keys.c, the pointer in canvas_drag.c. */
 #include "canvas_view.h"
@@ -18,6 +18,7 @@
 #include "canvas_text.h"
 #include "canvas_toolbar.h"
 #include "canvas_viewport.h"
+#include "editor.h"
 #include "icons.h"
 #include "theme.h"
 
@@ -264,12 +265,74 @@ static void on_toolbar_order(gint where, gpointer udata) {
 /* Page Setup and API                                                        */
 /* ------------------------------------------------------------------------- */
 
+#define TAB_TEXT_KEY "canvas-tab-text"
+
+static CanvasPage* page_of_root(GtkWidget* root) {
+    return root != NULL ? g_object_get_data(G_OBJECT(root), CANVAS_PAGE_KEY) : NULL;
+}
+
+/* The notebook holding page, or NULL */
+static GtkNotebook* notebook_of(GtkWidget* page) {
+    GtkWidget* parent = gtk_widget_get_parent(page);
+    GtkWidget* nb = parent != NULL ? gtk_widget_get_ancestor(parent, GTK_TYPE_NOTEBOOK) : NULL;
+    return (nb != NULL && gtk_notebook_page_num(GTK_NOTEBOOK(nb), page) >= 0) ? GTK_NOTEBOOK(nb) : NULL;
+}
+
+/* In the window: a tab of the workspace shown */
+static gboolean page_shown(CanvasPage* p) {
+    return p->app->window != NULL && gtk_widget_get_root(p->root) == GTK_ROOT(p->app->window);
+}
+
+/* The open page of the note in dir (any workspace), or NULL */
+static CanvasPage* find_page(AppData* app, const gchar* dir) {
+    for (guint i = 0; app->canvas_pages != NULL && i < app->canvas_pages->len; i++) {
+        CanvasPage* p = page_of_root(g_ptr_array_index(app->canvas_pages, i));
+        if (p != NULL && !p->closed && g_strcmp0(p->dir, dir) == 0) return p;
+    }
+    return NULL;
+}
+
+/* The page holding the keyboard focus, or NULL */
+static CanvasPage* focused_page(AppData* app) {
+    GtkWidget* f = app->window != NULL ? gtk_window_get_focus(app->window) : NULL;
+    for (guint i = 0; f != NULL && app->canvas_pages != NULL && i < app->canvas_pages->len; i++) {
+        GtkWidget* root = g_ptr_array_index(app->canvas_pages, i);
+        if (f == root || gtk_widget_is_ancestor(f, root)) return page_of_root(root);
+    }
+    return NULL;
+}
+
+static void set_title(CanvasPage* p, const gchar* title) {
+    if (title == NULL) return;
+    gtk_label_set_text(GTK_LABEL(p->title), title);
+    GtkWidget* text = g_object_get_data(G_OBJECT(p->tab_label), TAB_TEXT_KEY);
+    gtk_label_set_text(GTK_LABEL(text), title);
+    gtk_widget_set_tooltip_text(p->tab_label, title);
+}
+
+/* Save the page and take it out of its notebook, or of the hidden
+ * workspace keeping it */
 static void close_page(CanvasPage* p) {
+    AppData* app = p->app;
     canvas_page_save_now(p);
     canvas_page_prune_media(p);
-    GtkNotebook* nb = GTK_NOTEBOOK(p->app->notebook);
-    gint page = gtk_notebook_page_num(nb, p->root);
-    if (page >= 0) gtk_notebook_remove_page(nb, page);
+    p->closed = TRUE;
+    GtkWidget* root = g_object_ref(p->root);
+    if (app->canvas_pages != NULL) g_ptr_array_remove(app->canvas_pages, root);
+    GtkNotebook* nb = notebook_of(root);
+    if (nb != NULL && page_shown(p)) {
+        editor_remove_page(app, root);
+    } else if (nb != NULL) {
+        /* In the editor panel of a hidden workspace: a notebook left empty
+         * goes when the workspace shows again */
+        gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, root));
+    } else {
+        for (gint i = 0; i < app->num_workspaces; i++) {
+            GPtrArray* kept = app->workspaces[i].canvas_pages;
+            if (kept != NULL) g_ptr_array_remove(kept, root);
+        }
+    }
+    g_object_unref(root);
 }
 
 static void on_zoom_changed(gdouble scale, gpointer data) {
@@ -291,33 +354,28 @@ static void on_label_middle_click(GtkGestureClick* gesture, gint n_press, gdoubl
     (void)x;
     (void)y;
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
-    close_page(data);
+    CanvasPage* p = data;
+    if (!p->closed) close_page(p);
 }
 
 static void on_root_destroy(GtkWidget* widget, gpointer data) {
-    (void)widget;
     CanvasPage* p = data;
     p->closed = TRUE;
     if (p->save_source != 0) {
         g_source_remove(p->save_source);
         p->save_source = 0;
     }
-    if (p->app->canvas_page == p->root) p->app->canvas_page = NULL;
+    if (p->app->canvas_pages != NULL) g_ptr_array_remove(p->app->canvas_pages, widget);
 }
 
 static void page_free(gpointer data) {
     canvas_page_free(data);
 }
 
-static CanvasPage* page_of(AppData* app) {
-    return app->canvas_page != NULL ? g_object_get_data(G_OBJECT(app->canvas_page), CANVAS_PAGE_KEY) : NULL;
-}
-
-static CanvasPage* ensure_page(AppData* app) {
-    CanvasPage* p = page_of(app);
-    if (p != NULL || app->notebook == NULL) return p;
+/* A new page, in no notebook yet */
+static CanvasPage* page_new(AppData* app) {
     ensure_css();
-    p = canvas_page_new(app);
+    CanvasPage* p = canvas_page_new(app);
 
     GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(root, "canvas-page");
@@ -392,35 +450,38 @@ static CanvasPage* ensure_page(AppData* app) {
     g_object_set_data_full(G_OBJECT(root), CANVAS_PAGE_KEY, p, page_free);
     g_signal_connect(root, "destroy", G_CALLBACK(on_root_destroy), p);
     g_signal_connect(root, "map", G_CALLBACK(on_root_map), p);
-    app->canvas_page = root;
+    if (app->canvas_pages == NULL) app->canvas_pages = g_ptr_array_new();
+    g_ptr_array_add(app->canvas_pages, root);
 
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
-    if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
-    if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
-    GtkWidget* label = icon_label_new("document-edit", "Canvas");
+    /* Tab: the canvas name; a middle click closes it */
+    p->tab_label = g_object_ref_sink(icon_label_new("document-edit", "Canvas"));
+    GtkWidget* text = gtk_widget_get_last_child(p->tab_label);
+    gtk_label_set_ellipsize(GTK_LABEL(text), PANGO_ELLIPSIZE_END);
+    gtk_label_set_max_width_chars(GTK_LABEL(text), 24);
+    g_object_set_data(G_OBJECT(p->tab_label), TAB_TEXT_KEY, text);
     GtkGesture* mclick = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), p);
-    gtk_widget_add_controller(label, GTK_EVENT_CONTROLLER(mclick));
-    gtk_notebook_insert_page(nb, root, label, after + 1);
+    gtk_widget_add_controller(p->tab_label, GTK_EVENT_CONTROLLER(mclick));
     return p;
 }
 
 void canvas_view_open(AppData* app, const gchar* dir, const gchar* title) {
-    if (app == NULL || dir == NULL) return;
-    CanvasPage* p = ensure_page(app);
-    if (p == NULL) return;
-    if (g_strcmp0(p->dir, dir) != 0) {
+    if (app == NULL || dir == NULL || app->notebook == NULL) return;
+    CanvasPage* p = find_page(app, dir);
+    if (p != NULL && !page_shown(p)) {
+        /* Open in another workspace: it moves to this one */
+        close_page(p);
+        p = NULL;
+    }
+    if (p == NULL) {
+        p = page_new(app);
+        editor_add_page(app, p->root, p->tab_label);
         canvas_page_load(p, dir, title);
-    } else if (title != NULL) {
-        gtk_label_set_text(GTK_LABEL(p->title), title);
     }
-    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-        gtk_widget_set_visible(app->viewer_box, TRUE);
-    }
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, p->root));
+    set_title(p, title);
+    GtkNotebook* nb = notebook_of(p->root);
+    if (nb != NULL) gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, p->root));
     GtkWidget* first = gtk_widget_get_first_child(p->surface);
     if (first != NULL && canvas_item_of(first) != NULL) {
         canvas_item_select(canvas_item_of(first));
@@ -430,47 +491,99 @@ void canvas_view_open(AppData* app, const gchar* dir, const gchar* title) {
 }
 
 void canvas_view_save(AppData* app) {
-    CanvasPage* p = app != NULL ? page_of(app) : NULL;
-    if (p != NULL) canvas_page_save_now(p);
+    for (guint i = 0; app != NULL && app->canvas_pages != NULL && i < app->canvas_pages->len; i++) {
+        CanvasPage* p = page_of_root(g_ptr_array_index(app->canvas_pages, i));
+        if (p != NULL && !p->closed) canvas_page_save_now(p);
+    }
+}
+
+/* The note's directory is path, or under it */
+static gboolean dir_within(const gchar* dir, const gchar* path) {
+    gsize n = strlen(path);
+    return dir != NULL && strncmp(dir, path, n) == 0 && (dir[n] == '\0' || dir[n] == '/');
 }
 
 gboolean canvas_view_close_path(AppData* app, const gchar* path) {
-    CanvasPage* p = app != NULL ? page_of(app) : NULL;
-    if (p == NULL || p->dir == NULL || path == NULL) return FALSE;
-    gchar* under = g_strconcat(path, "/", NULL);
-    gboolean inside = g_strcmp0(p->dir, path) == 0 || g_str_has_prefix(p->dir, under);
-    g_free(under);
-    if (!inside) return FALSE;
-    close_page(p);
-    return TRUE;
+    if (app == NULL || path == NULL || app->canvas_pages == NULL) return FALSE;
+    gboolean closed = FALSE;
+    for (guint i = app->canvas_pages->len; i-- > 0;) {
+        if (i >= app->canvas_pages->len) continue;
+        CanvasPage* p = page_of_root(g_ptr_array_index(app->canvas_pages, i));
+        if (p != NULL && !p->closed && dir_within(p->dir, path)) {
+            close_page(p);
+            closed = TRUE;
+        }
+    }
+    return closed;
 }
 
 void canvas_view_path_moved(AppData* app, const gchar* old_path, const gchar* new_path, const gchar* title) {
-    CanvasPage* p = app != NULL ? page_of(app) : NULL;
-    if (p == NULL || p->dir == NULL || old_path == NULL || new_path == NULL) return;
-    gsize n = strlen(old_path);
-    if (strncmp(p->dir, old_path, n) != 0 || (p->dir[n] != '\0' && p->dir[n] != '/')) return;
-    gchar* dir = g_strconcat(new_path, p->dir + n, NULL);
-    g_free(p->dir);
-    p->dir = dir;
-    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
-        canvas_item_set_dir(canvas_item_of(c), p->dir);
+    if (app == NULL || old_path == NULL || new_path == NULL || app->canvas_pages == NULL) return;
+    for (guint i = 0; i < app->canvas_pages->len; i++) {
+        CanvasPage* p = page_of_root(g_ptr_array_index(app->canvas_pages, i));
+        if (p == NULL || p->closed || !dir_within(p->dir, old_path)) continue;
+        gchar* dir = g_strconcat(new_path, p->dir + strlen(old_path), NULL);
+        g_free(p->dir);
+        p->dir = dir;
+        for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+            canvas_item_set_dir(canvas_item_of(c), p->dir);
+        }
+        if (p->dir[strlen(new_path)] == '\0') set_title(p, title);
     }
-    if (title != NULL && p->dir[strlen(new_path)] == '\0') gtk_label_set_text(GTK_LABEL(p->title), title);
 }
 
 gboolean canvas_view_close_shown(AppData* app) {
-    CanvasPage* p = app != NULL ? page_of(app) : NULL;
-    if (p == NULL || app->notebook == NULL || !gtk_widget_get_mapped(p->root)) return FALSE;
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    if (gtk_notebook_get_current_page(nb) != gtk_notebook_page_num(nb, p->root)) return FALSE;
+    if (app == NULL) return FALSE;
+    CanvasPage* p = focused_page(app);
+    if (p == NULL && app->notebook != NULL) {
+        /* Else the current page of the preview notebook */
+        GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+        gint cur = gtk_notebook_get_current_page(nb);
+        p = cur >= 0 ? page_of_root(gtk_notebook_get_nth_page(nb, cur)) : NULL;
+        if (p != NULL && !gtk_widget_get_mapped(p->root)) p = NULL;
+    }
+    if (p == NULL || p->closed) return FALSE;
     close_page(p);
     return TRUE;
 }
 
 gboolean canvas_view_claims_key(AppData* app, guint keyval, GdkModifierType state) {
-    CanvasPage* p = app != NULL ? page_of(app) : NULL;
-    if (p == NULL || p->dir == NULL || canvas_keys_zoom_step(keyval, state) == G_MININT) return FALSE;
-    GtkWidget* f = canvas_page_focused_widget(p);
-    return f != NULL && (f == p->root || gtk_widget_is_ancestor(f, p->root));
+    CanvasPage* p = app != NULL ? focused_page(app) : NULL;
+    return p != NULL && p->dir != NULL && canvas_keys_zoom_step(keyval, state) != G_MININT;
+}
+
+void canvas_view_workspace_hidden(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL || app->notebook == NULL) return;
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    for (gint i = gtk_notebook_get_n_pages(nb) - 1; i >= 0; i--) {
+        GtkWidget* page = gtk_notebook_get_nth_page(nb, i);
+        if (page_of_root(page) == NULL) continue;
+        if (ws->canvas_pages == NULL) ws->canvas_pages = g_ptr_array_new_with_free_func(g_object_unref);
+        g_ptr_array_insert(ws->canvas_pages, 0, g_object_ref(page));
+        gtk_notebook_remove_page(nb, i);
+    }
+}
+
+void canvas_view_workspace_shown(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL || ws->canvas_pages == NULL || app->notebook == NULL) return;
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    for (guint i = 0; i < ws->canvas_pages->len; i++) {
+        GtkWidget* root = g_ptr_array_index(ws->canvas_pages, i);
+        CanvasPage* p = page_of_root(root);
+        if (p == NULL) continue;
+        gtk_notebook_append_page(nb, root, p->tab_label);
+        gtk_notebook_set_tab_reorderable(nb, root, TRUE);
+        gtk_notebook_set_tab_detachable(nb, root, TRUE);
+    }
+    g_clear_pointer(&ws->canvas_pages, g_ptr_array_unref);
+}
+
+void canvas_view_workspace_removed(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    /* Its tabs close with it: every change saved first */
+    canvas_view_save(app);
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces && ws == &app->workspaces[app->current_ws]) {
+        canvas_view_workspace_hidden(app, ws);
+    }
+    g_clear_pointer(&ws->canvas_pages, g_ptr_array_unref);
 }

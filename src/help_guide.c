@@ -401,14 +401,13 @@ static GtkWidget* header_button(GtkWidget* bar, const gchar* icon, const gchar* 
     return btn;
 }
 
-/* Put the page in the notebook: after the Git tab, the result pages and the
- * Canvas page, before the editor tabs */
+/* Put the page in the notebook: after the Git tab and the result pages,
+ * before the editor tabs */
 static void insert_page(AppData* app, HelpGuide* hg) {
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
     if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
     if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
-    if (app->canvas_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->canvas_page));
     gtk_notebook_insert_page(nb, hg->page, hg->label, after + 1);
     app->help_page = hg->page;
     app_emit(app, APP_EVENT_CHROME_CHANGED); /* the Help button */

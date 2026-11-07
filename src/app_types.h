@@ -141,6 +141,7 @@ typedef struct {
     gpointer search_state;         /* last search in files and its Search tab (project_search.c) */
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
     GPtrArray* browser_pages;      /* its browser tabs while another workspace is shown (owned refs, browser.c) */
+    GPtrArray* canvas_pages;       /* its Canvas tabs of the preview notebook while another workspace is shown (owned refs, canvas_view.c) */
 #ifdef HAVE_VTE
     GtkWidget* term_box;
     GtkWidget* last_focused_vte;
@@ -256,7 +257,7 @@ typedef struct {
     guint preview_pages;            /* pages of the shown preview after its first view */
     GtkWidget* refs_page;           /* References page of the preview notebook (code_refs.c), or NULL */
     GtkWidget* search_page;         /* Search page (text search results, code_refs.c), or NULL */
-    GtkWidget* canvas_page;         /* Canvas page (Canvas note being edited, canvas_view.c), or NULL */
+    GPtrArray* canvas_pages;        /* Canvas tabs of every workspace (roots, not referenced; canvas_view.c), or NULL */
     GtkWidget* help_page;           /* Help page (the user guide, help_guide.c), or NULL */
     guint status_idle_id;           /* pending status bar refresh after a page switch */
 

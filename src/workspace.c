@@ -18,6 +18,7 @@
 #include "project_search.h"
 #include "help_guide.h"
 #include "browser.h"
+#include "canvas_view.h"
 
 #define WS_CELL_W   32
 #define WS_ADD_W    22
@@ -460,6 +461,7 @@ void workspace_switch(AppData* app, gint idx) {
             project_search_workspace_hidden(app, &app->workspaces[app->current_ws]);
             help_guide_workspace_hidden(app, &app->workspaces[app->current_ws]);
             browser_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            canvas_view_workspace_hidden(app, &app->workspaces[app->current_ws]);
 #ifdef HAVE_VTE
             terminal_workspace_hidden(app, &app->workspaces[app->current_ws]);
 #endif
@@ -484,6 +486,7 @@ void workspace_switch(AppData* app, gint idx) {
         project_search_workspace_shown(app, ws);
         help_guide_workspace_shown(app, ws);
         browser_workspace_shown(app, ws);
+        canvas_view_workspace_shown(app, ws);
 #ifdef HAVE_VTE
         terminal_workspace_shown(app, ws);
 #endif
@@ -723,6 +726,7 @@ void workspace_remove(AppData* app, gint idx) {
         return;
     }
 
+    canvas_view_workspace_removed(app, rm); /* saved before the panel goes */
     if (idx == app->current_ws) {
         GtkWidget* panel = editor_detach_tabs(app);
         if (panel != NULL) {

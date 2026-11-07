@@ -43,6 +43,7 @@ void canvas_page_free(CanvasPage* p) {
     if (p->drag_starts != NULL) g_array_unref(p->drag_starts);
     if (p->drag_points != NULL) g_array_unref(p->drag_points);
     g_ptr_array_unref(p->selection);
+    g_clear_object(&p->tab_label);
     g_free(p->dir);
     g_free(p);
 }

@@ -21,7 +21,8 @@ struct CanvasPage {
     AppData* app;
     gchar* dir;        /* note directory, NULL when nothing is open */
     GtkWidget* root;   /* notebook page */
-    GtkWidget* title;
+    GtkWidget* title;     /* status bar label */
+    GtkWidget* tab_label; /* notebook tab (referenced: kept while the workspace is hidden) */
     CanvasToolbar* toolbar;
     CanvasProps* props;
     CanvasFormatBar* format_bar;

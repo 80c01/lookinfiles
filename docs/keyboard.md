@@ -129,7 +129,8 @@ count) is dropped when the focus moves to another panel or tab.
 | `o` | Cycle the sort: manual / A–Z / Z–A |
 
 **Canvas tab** (a Canvas note: text boxes and pictures placed freely, saved
-automatically; one canvas at a time)
+automatically; opens in the editor panel, one tab per canvas, dragged like an
+editor tab; it stays in its workspace)
 
 | Key | Action |
 |---|---|
