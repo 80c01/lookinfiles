@@ -522,6 +522,8 @@ xdotool type --delay 80 "ma"
                         shot code_symbols_filtered
 key Return; sleep 0.5;  shot code_symbols_jumped      # cursor on main()
 key ctrl+k ctrl+o; sleep 1; shot tagbar_shown       # symbols beside the text, on main()
+key c;                  shot tagbar_collapsed     # every group collapsed
+key c;                  shot tagbar_expanded
 key s;                  shot tagbar_by_line
 key s Up Return; sleep 0.5; shot tagbar_jumped        # cursor on answer()
 key ctrl+k ctrl+o;      shot tagbar_hidden

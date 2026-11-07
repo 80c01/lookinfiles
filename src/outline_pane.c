@@ -91,6 +91,9 @@ struct OutlinePane {
     GtkWidget* title;
     GtkWidget* source;
     GtkWidget* sort_button;
+    GtkWidget* collapse_button;
+    gboolean collapse_shown; /* the collapse button shows "Collapse All" */
+    guint collapse_idle;     /* pending update of the collapse button */
     GtkWidget* stack;        /* "list" or "empty" */
     GtkWidget* empty;
     GtkWidget* list;
@@ -103,6 +106,7 @@ struct OutlinePane {
 };
 
 static void pane_free(OutlinePane* p) {
+    if (p->collapse_idle != 0) g_source_remove(p->collapse_idle);
     g_clear_object(&p->tree);
     g_clear_pointer(&p->entries, g_ptr_array_unref);
     g_hash_table_unref(p->collapsed);
@@ -172,6 +176,90 @@ void outline_pane_follow_cursor(OutlinePane* p) {
     }
 }
 
+/* ------------------------------------------------------------------------- */
+/* Collapse / expand all                                                     */
+/* ------------------------------------------------------------------------- */
+
+/* Whether a row can be expanded; whether one is expanded */
+static void scan_expanders(OutlinePane* p, gboolean* any_expandable, gboolean* any_expanded) {
+    *any_expandable = FALSE;
+    *any_expanded = FALSE;
+    if (p->tree == NULL) return;
+    GListModel* rows = G_LIST_MODEL(p->tree);
+    guint n = g_list_model_get_n_items(rows);
+    for (guint i = 0; i < n && !*any_expanded; i++) {
+        GtkTreeListRow* row = g_list_model_get_item(rows, i);
+        if (gtk_tree_list_row_is_expandable(row)) {
+            *any_expandable = TRUE;
+            if (gtk_tree_list_row_get_expanded(row)) *any_expanded = TRUE;
+        }
+        g_object_unref(row);
+    }
+}
+
+/* The button shows what a click does: pan-up "Collapse All" while a row is
+ * expanded, else pan-down "Expand All" (like the explorer toolbars) */
+static void update_collapse_button(OutlinePane* p) {
+    gboolean expandable, expanded;
+    scan_expanders(p, &expandable, &expanded);
+    gtk_widget_set_sensitive(p->collapse_button, expandable);
+    if (p->collapse_shown == expanded && gtk_widget_get_tooltip_text(p->collapse_button) != NULL) return;
+    p->collapse_shown = expanded;
+    icon_button_set_content(p->collapse_button, expanded ? "pan-up" : "pan-down", NULL);
+    gtk_widget_set_tooltip_text(p->collapse_button, expanded ? "Collapse All (c)" : "Expand All (c)");
+}
+
+static gboolean collapse_button_idle(gpointer data) {
+    OutlinePane* p = data;
+    p->collapse_idle = 0;
+    update_collapse_button(p);
+    return G_SOURCE_REMOVE;
+}
+
+static void queue_collapse_button(OutlinePane* p) {
+    if (p->collapse_idle == 0) p->collapse_idle = g_idle_add(collapse_button_idle, p);
+}
+
+/* Expand or collapse a row and remember it (on_row_expanded() only watches
+ * the rows shown so far) */
+static void set_row_expanded(OutlinePane* p, GtkTreeListRow* row, gboolean expanded) {
+    OutlineItem* it = gtk_tree_list_row_get_item(row);
+    if (it == NULL) return;
+    if (expanded) {
+        g_hash_table_remove(p->collapsed, it->key);
+    } else {
+        g_hash_table_add(p->collapsed, g_strdup(it->key));
+    }
+    g_object_unref(it);
+    gtk_tree_list_row_set_expanded(row, expanded);
+}
+
+/* Collapse every row if one is expanded, else expand them all. Collapsing
+ * runs from the end (a collapsed row only hides the rows after it) and
+ * expanding from the start (the new children come next), so every level is
+ * reached. */
+static void toggle_collapse_all(OutlinePane* p) {
+    gboolean expandable, expanded;
+    scan_expanders(p, &expandable, &expanded);
+    if (!expandable) return;
+    GListModel* rows = G_LIST_MODEL(p->tree);
+    if (expanded) {
+        for (guint i = g_list_model_get_n_items(rows); i > 0; i--) {
+            GtkTreeListRow* row = g_list_model_get_item(rows, i - 1);
+            if (row == NULL) continue;
+            if (gtk_tree_list_row_get_expanded(row)) set_row_expanded(p, row, FALSE);
+            g_object_unref(row);
+        }
+    } else {
+        for (guint i = 0; i < g_list_model_get_n_items(rows); i++) {
+            GtkTreeListRow* row = g_list_model_get_item(rows, i);
+            if (gtk_tree_list_row_is_expandable(row)) set_row_expanded(p, row, TRUE);
+            g_object_unref(row);
+        }
+    }
+    update_collapse_button(p);
+}
+
 static void collapse_remembered(OutlinePane* p) {
     GListModel* rows = G_LIST_MODEL(p->tree);
     for (guint i = 0; i < g_list_model_get_n_items(rows); i++) {
@@ -197,6 +285,7 @@ static void rebuild(OutlinePane* p) {
     gtk_single_selection_set_model(p->selection, G_LIST_MODEL(p->tree));
     gtk_single_selection_set_selected(p->selection, GTK_INVALID_LIST_POSITION);
     outline_pane_follow_cursor(p);
+    update_collapse_button(p);
 }
 
 void outline_pane_set_entries(OutlinePane* p, GPtrArray* entries, gboolean headings, const gchar* source) {
@@ -279,6 +368,7 @@ static void on_row_expanded(GObject* obj, GParamSpec* pspec, gpointer data) {
         g_hash_table_add(p->collapsed, g_strdup(it->key));
     }
     g_object_unref(it);
+    queue_collapse_button(p);
 }
 
 static void on_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
@@ -371,13 +461,19 @@ static void on_sort_clicked(GtkButton* button, gpointer data) {
     toggle_sort(data);
 }
 
+static void on_collapse_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    toggle_collapse_all(data);
+}
+
 static void on_close_clicked(GtkButton* button, gpointer data) {
     (void)button;
     OutlinePane* p = data;
     if (!p->detached) p->cb.close(p->data);
 }
 
-/* Escape: back to the content; s: sort; q: hide (Enter goes to the entry) */
+/* Escape: back to the content; s: sort; c: collapse / expand all; q: hide
+ * (Enter goes to the entry) */
 static gboolean on_list_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
                             gpointer data) {
     (void)ctrl;
@@ -389,6 +485,7 @@ static gboolean on_list_key(GtkEventControllerKey* ctrl, guint keyval, guint key
     case GDK_KEY_s:
         if (p->entries != NULL && gtk_widget_get_visible(p->sort_button)) toggle_sort(p);
         return TRUE;
+    case GDK_KEY_c: toggle_collapse_all(p); return TRUE;
     case GDK_KEY_q: p->cb.close(p->data); return TRUE;
     default: return FALSE;
     }
@@ -425,6 +522,10 @@ OutlinePane* outline_pane_new(GtkWidget* content, gint* width, const gchar* load
     update_sort_button(p);
     g_signal_connect(p->sort_button, "clicked", G_CALLBACK(on_sort_clicked), p);
     gtk_box_append(GTK_BOX(header), p->sort_button);
+    p->collapse_button = icon_button_new("pan-up", NULL);
+    update_collapse_button(p);
+    g_signal_connect(p->collapse_button, "clicked", G_CALLBACK(on_collapse_clicked), p);
+    gtk_box_append(GTK_BOX(header), p->collapse_button);
     GtkWidget* close = icon_button_new("window-close", "Hide Tagbar (q)");
     g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), p);
     gtk_box_append(GTK_BOX(header), close);

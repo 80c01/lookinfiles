@@ -217,7 +217,7 @@ in the preview)
 | `t` (Vim), `C-o` (Emacs) | Open the previewed file in the dedicated editor panel (in an Org-mode preview, `t` cycles the TODO keyword) |
 | `e` | Open the file in the editor (text files) |
 | `m` | Rendered / raw view: Markdown, HTML, Org, CSV, JSON, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
-| `o`, `Ctrl+K Ctrl+O` | Tagbar: the headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, or the bookmarks of a PDF, beside the text (`Enter` / click scrolls to one, `Esc` back, `q` hides) |
+| `o`, `Ctrl+K Ctrl+O` | Tagbar: the headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, or the bookmarks of a PDF, beside the text (`Enter` / click scrolls to one, `c` collapses / expands all, `Esc` back, `q` hides) |
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |
 | `PgDn` / `PgUp` | PDF: next / previous page; mailbox: from the list into each message and back |
 | `Space` / `p` | Play / pause the video or audio |
@@ -310,7 +310,8 @@ The **tagbar** shows the symbols of a code file beside the text, grouped by
 kind (Functions, Types...) and nested in their struct or class, or the
 headings of a Markdown file. It follows the cursor and is refreshed shortly
 after each edit. A click or `Enter` goes to the symbol (back with the usual
-key), `s` switches between grouping by kind and file order, `Esc` returns to
+key), `s` switches between grouping by kind and file order, `c` (or the arrow
+button of its header) collapses every row or expands them all, `Esc` returns to
 the text, `q` hides it. It is shown in every code and Markdown tab or in
 none (kept for the next start), and its width is shared by the tabs.
 
