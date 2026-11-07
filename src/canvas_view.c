@@ -131,7 +131,18 @@ static void on_table_action(CanvasTableAction action, gpointer udata) {
     if (it == NULL || it->kind != CANVAS_BLOCK_TABLE) return;
     if (!canvas_table_widget_can(it->content, action)) return;
     canvas_page_remember(p);
+    /* What the frame adds around the cells (border, resize corner) */
+    gint extra = MAX(gtk_widget_get_height(it->frame) - gtk_widget_get_height(it->content), 0);
     canvas_table_widget_apply(it->content, action);
+    if (action == CANVAS_TABLE_ROW_ABOVE || action == CANVAS_TABLE_ROW_BELOW || action == CANVAS_TABLE_ROW_DELETE) {
+        /* The frame height is a minimum: fit it to the rows left, so a
+         * deleted row leaves no gap at the bottom */
+        gint min_h = 0;
+        gtk_widget_measure(it->content, GTK_ORIENTATION_VERTICAL, -1, &min_h, NULL, NULL, NULL);
+        it->h = MAX(min_h + extra, 40);
+        canvas_item_place(it);
+        canvas_page_update_extent(p);
+    }
     canvas_page_update_props(p);
 }
 
