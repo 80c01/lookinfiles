@@ -19,9 +19,9 @@ make clean        # remove binary, build/ and build-asan/
   `ASAN_OPTIONS=detect_leaks=0`; the report names the bad access and both
   stacks (where the memory was freed, where it was used).
 
-- **Agents run `make` after a change and `make check` before every commit**;
-  the other test targets below run when the user asks. `make check` fails on any compiler warning, failing test, or
-  layering violation (`tools/check_layers.sh`).
+- **Agents run `make` after a change, and `make test` and `make check` before
+  every commit**; the other test targets below run when the user asks.
+  `make check` fails on any compiler warning, failing test, or layering violation (`tools/check_layers.sh`).
 - The build compiles every `src/*.c` automatically (no file list to maintain)
   and tracks header dependencies, so editing a header rebuilds its users.
 - There is no real display in the sandbox (`Gtk-WARNING: cannot open display`
