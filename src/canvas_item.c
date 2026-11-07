@@ -63,6 +63,11 @@ void canvas_item_place(CanvasItem* it) {
     }
 }
 
+static gboolean is_line(const CanvasItem* it) {
+    return it->kind == CANVAS_BLOCK_SHAPE &&
+           (it->shape_type == CANVAS_SHAPE_LINE || it->shape_type == CANVAS_SHAPE_ARROW);
+}
+
 /* Cursors of the grip, the corner and a shape or picture: none when locked */
 static void set_cursors(GtkWidget* w, const CanvasItem* it) {
     for (GtkWidget* c = gtk_widget_get_first_child(w); c != NULL; c = gtk_widget_get_next_sibling(c)) {
@@ -71,7 +76,8 @@ static void set_cursors(GtkWidget* w, const CanvasItem* it) {
         } else if (g_object_get_data(G_OBJECT(c), "canvas-corner") != NULL) {
             gtk_widget_set_cursor_from_name(c, it->locked ? NULL : "nwse-resize");
         } else if (c == it->content && (it->kind == CANVAS_BLOCK_SHAPE || it->kind == CANVAS_BLOCK_IMAGE)) {
-            gtk_widget_set_cursor_from_name(c, it->locked ? NULL : "move");
+            /* A line: set as the pointer moves over it (canvas_line.c) */
+            if (!is_line(it)) gtk_widget_set_cursor_from_name(c, it->locked ? NULL : "move");
         } else if (GTK_IS_BOX(c) || GTK_IS_OVERLAY(c)) {
             set_cursors(c, it);
         }
@@ -83,6 +89,7 @@ void canvas_item_set_locked(CanvasItem* it, gboolean locked) {
     if (it->locked != locked) {
         it->locked = locked;
         set_cursors(it->frame, it);
+        if (it->content != NULL) gtk_widget_queue_draw(it->content);
     }
     if (locked) {
         gtk_widget_add_css_class(it->frame, "canvas-locked");
@@ -289,6 +296,42 @@ static void on_shape_draw(GtkDrawingArea* area, cairo_t* cr, int width, int heig
     view.rough = it->rough;
     view.points = it->points;
     canvas_rough_draw_shape(cr, &view, width, height);
+    /* A selected line or arrow: its handles instead of a frame */
+    if (is_line(it) && !it->locked &&
+        (gtk_widget_has_focus(it->frame) || gtk_widget_has_css_class(it->frame, CANVAS_SELECTED_CLASS))) {
+        canvas_rough_draw_line_handles(cr, &view, width, height);
+    }
+}
+
+static void redraw_content(CanvasItem* it) {
+    if (it->content != NULL) gtk_widget_queue_draw(it->content);
+}
+
+static void on_line_focus(GtkEventControllerFocus* ctrl, gpointer data) {
+    (void)ctrl;
+    redraw_content(data);
+}
+
+static void on_line_classes(GObject* frame, GParamSpec* pspec, gpointer data) {
+    (void)frame;
+    (void)pspec;
+    redraw_content(data);
+}
+
+/* A line or an arrow: picked on its stroke, its handles drawn when it is
+ * selected (canvas_line.c), so no frame, no resize corner */
+static void make_line(CanvasItem* it) {
+    gtk_widget_add_css_class(it->frame, "canvas-line");
+    gtk_widget_set_cursor(it->content, NULL);
+    GtkWidget* overlay = gtk_widget_get_parent(it->content);
+    for (GtkWidget* c = gtk_widget_get_first_child(overlay); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        if (g_object_get_data(G_OBJECT(c), "canvas-corner") != NULL) gtk_widget_set_visible(c, FALSE);
+    }
+    GtkEventController* focus = gtk_event_controller_focus_new();
+    g_signal_connect(focus, "enter", G_CALLBACK(on_line_focus), it);
+    g_signal_connect(focus, "leave", G_CALLBACK(on_line_focus), it);
+    gtk_widget_add_controller(it->frame, focus);
+    g_signal_connect(it->frame, "notify::css-classes", G_CALLBACK(on_line_classes), it);
 }
 
 gboolean canvas_item_in_label(CanvasItem* it, GtkWidget* hit) {
@@ -366,8 +409,9 @@ static CanvasItem* add_shape(CanvasPage* p, GtkWidget* surface, const CanvasBloc
     it->h = MAX(b->h, MIN_SHAPE_SIZE);
     it->aspect = (gdouble)it->w / it->h;
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area), on_shape_draw, it, NULL);
-    if (b->shape_type != CANVAS_SHAPE_LINE && b->shape_type != CANVAS_SHAPE_ARROW &&
-        b->shape_type != CANVAS_SHAPE_FREEHAND) {
+    if (is_line(it)) {
+        make_line(it);
+    } else if (b->shape_type != CANVAS_SHAPE_FREEHAND) {
         add_label(it, b->text);
     }
     canvas_item_place(it);

@@ -47,6 +47,9 @@ static void ensure_css(void) {
                   ".canvas-block.canvas-locked .canvas-grip, .canvas-block.canvas-locked .canvas-corner"
                   " { background-color: transparent; }"
                   ".canvas-block.canvas-locked:focus { border-style: dashed; }"
+                  /* A line or an arrow shows its handles instead (canvas_line.h) */
+                  ".canvas-block.canvas-line:not(.canvas-locked), .canvas-block.canvas-line:not(.canvas-locked):focus"
+                  " { border-color: transparent; box-shadow: none; }"
                   ".canvas-text, .canvas-text text { background-color: transparent; color: @fg_text;"
                   " font-family: @font_ui; }"
                   ".canvas-text { padding: 2px 6px 6px 6px; }"

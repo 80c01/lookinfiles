@@ -73,41 +73,51 @@ static void on_outline(const CanvasItem* block, gdouble tx, gdouble ty, gdouble*
     canvas_edge_point(block_outline(block), &r, tx, ty, BIND_GAP, x, y);
 }
 
-/* Each bound end goes on its block, aimed at the other block's centre (or
- * at the free end) */
+/* Each bound end goes on its block, aimed at the next point of the line:
+ * with no point between the ends, the other block's centre (or the free
+ * end) */
 static void follow_line(GtkWidget* surface, CanvasItem* line) {
     if (line->start_id <= 0 && line->end_id <= 0) return;
-    gdouble x0, y0, x1, y1;
-    if (!canvas_draw_get_ends(line, &x0, &y0, &x1, &y1)) return;
     CanvasItem* s = block_by_id(surface, line->start_id);
     CanvasItem* e = block_by_id(surface, line->end_id);
     if (s == NULL && e == NULL) return;
     if (s != NULL && s == e) return; /* both ends on one block: left as drawn */
-    gdouble nx0 = x0, ny0 = y0, nx1 = x1, ny1 = y1;
+    GArray* pts = canvas_draw_get_points(line);
+    if (pts == NULL) return;
+    guint n = pts->len;
+    CanvasPoint* first = &g_array_index(pts, CanvasPoint, 0);
+    CanvasPoint* last = &g_array_index(pts, CanvasPoint, n - 1);
+    CanvasPoint old_first = *first, old_last = *last;
     gdouble tx, ty;
     if (s != NULL) {
-        if (e != NULL) {
+        if (n > 2) {
+            tx = g_array_index(pts, CanvasPoint, 1).x;
+            ty = g_array_index(pts, CanvasPoint, 1).y;
+        } else if (e != NULL) {
             centre(e, &tx, &ty);
         } else {
-            tx = x1;
-            ty = y1;
+            tx = old_last.x;
+            ty = old_last.y;
         }
-        on_outline(s, tx, ty, &nx0, &ny0);
+        on_outline(s, tx, ty, &first->x, &first->y);
     }
     if (e != NULL) {
-        if (s != NULL) {
+        if (n > 2) {
+            tx = g_array_index(pts, CanvasPoint, n - 2).x;
+            ty = g_array_index(pts, CanvasPoint, n - 2).y;
+        } else if (s != NULL) {
             centre(s, &tx, &ty);
         } else {
-            tx = x0;
-            ty = y0;
+            tx = old_first.x;
+            ty = old_first.y;
         }
-        on_outline(e, tx, ty, &nx1, &ny1);
+        on_outline(e, tx, ty, &last->x, &last->y);
     }
-    if (fabs(nx0 - x0) < MOVE_EPSILON && fabs(ny0 - y0) < MOVE_EPSILON &&
-        fabs(nx1 - x1) < MOVE_EPSILON && fabs(ny1 - y1) < MOVE_EPSILON) {
-        return;
+    if (fabs(first->x - old_first.x) >= MOVE_EPSILON || fabs(first->y - old_first.y) >= MOVE_EPSILON ||
+        fabs(last->x - old_last.x) >= MOVE_EPSILON || fabs(last->y - old_last.y) >= MOVE_EPSILON) {
+        canvas_draw_set_points(line, pts);
     }
-    canvas_draw_set_ends(line, nx0, ny0, nx1, ny1);
+    g_array_unref(pts);
 }
 
 void canvas_bind_attach(GtkWidget* surface, CanvasItem* line) {
@@ -117,6 +127,20 @@ void canvas_bind_attach(GtkWidget* surface, CanvasItem* line) {
     CanvasItem* e = block_at(surface, line, x1, y1);
     line->start_id = s != NULL ? s->id : 0;
     line->end_id = e != NULL && e != s ? e->id : 0;
+    follow_line(surface, line);
+}
+
+void canvas_bind_attach_end(GtkWidget* surface, CanvasItem* line, gboolean end) {
+    gdouble x0, y0, x1, y1;
+    if (surface == NULL || !canvas_draw_get_ends(line, &x0, &y0, &x1, &y1)) return;
+    CanvasItem* b = end ? block_at(surface, line, x1, y1) : block_at(surface, line, x0, y0);
+    gint other = end ? line->start_id : line->end_id;
+    gint id = b != NULL && b->id != other ? b->id : 0;
+    if (end) {
+        line->end_id = id;
+    } else {
+        line->start_id = id;
+    }
     follow_line(surface, line);
 }
 

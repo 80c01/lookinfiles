@@ -5,6 +5,7 @@
 #include "canvas_geometry.h"
 #include "canvas_history.h"
 #include "canvas_item.h"
+#include "canvas_line.h"
 #include "canvas_media.h"
 #include "canvas_page_private.h"
 #include "canvas_toolbar.h"
@@ -15,7 +16,7 @@
 
 /* Eraser: remove the block under (x, y) */
 static void erase_at(CanvasPage* p, gdouble x, gdouble y) {
-    CanvasItem* it = canvas_item_of(gtk_widget_pick(p->surface, x, y, GTK_PICK_DEFAULT));
+    CanvasItem* it = canvas_item_of(canvas_line_pick(p->surface, x, y));
     if (it == NULL || it->locked) return;
     canvas_page_remove_item(it);
     canvas_page_update_extent(p);
@@ -125,6 +126,101 @@ static void group_begin(CanvasPage* p, CanvasItem* it) {
     }
 }
 
+/* ------------------------------------------------------------------------- */
+/* Points of a Line                                                          */
+/* ------------------------------------------------------------------------- */
+
+/* it is the only block selected: its points can be dragged */
+static gboolean selected_alone(CanvasPage* p, CanvasItem* it) {
+    GPtrArray* sel = canvas_page_selected(p);
+    gboolean alone = sel->len == 1 && g_ptr_array_index(sel, 0) == it;
+    g_ptr_array_unref(sel);
+    return alone;
+}
+
+/* A press on a handle of the selected line it: drag that point, or a new
+ * one made in the middle of a segment. FALSE when (x, y) is no handle. */
+static gboolean point_begin(CanvasPage* p, CanvasItem* it, gdouble x, gdouble y) {
+    if (!canvas_draw_is_line(it) || !selected_alone(p, it)) return FALSE;
+    gboolean middle = FALSE;
+    gint index = canvas_line_handle_at(it, x, y, &middle);
+    if (index < 0) return FALSE;
+    g_free(p->drag_before);
+    p->drag_before = canvas_page_state(p);
+    if (middle) index = canvas_line_insert_point(it, (guint)index);
+    if (index < 0) return FALSE;
+    p->drag_item = it;
+    p->drag_resize = FALSE;
+    p->drag_point = index;
+    p->drag_point_added = middle;
+    p->drag_points = canvas_draw_get_points(it);
+    return p->drag_points != NULL;
+}
+
+static void point_update(CanvasPage* p, GtkGesture* gesture, gdouble dx, gdouble dy) {
+    CanvasItem* it = p->drag_item;
+    GArray* pts = g_array_copy(p->drag_points);
+    guint n = pts->len;
+    guint i = (guint)p->drag_point;
+    CanvasPoint* pt = &g_array_index(pts, CanvasPoint, i);
+    pt->x += dx;
+    pt->y += dy;
+    /* Shift: turned to a multiple of 45 degrees from the point before (the
+     * next one for the first point) */
+    GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
+    if ((state & GDK_SHIFT_MASK) != 0) {
+        const CanvasPoint* from = &g_array_index(pts, CanvasPoint, i > 0 ? i - 1 : 1);
+        canvas_snap_angle(from->x, from->y, &pt->x, &pt->y);
+    }
+    pt->x = MAX(pt->x, 0);
+    pt->y = MAX(pt->y, 0);
+    /* A dragged end lets go of its block (bound again on release) */
+    if (dx != 0 || dy != 0) {
+        if (i == 0) it->start_id = 0;
+        if (i == n - 1) it->end_id = 0;
+    }
+    canvas_draw_set_points(it, pts);
+    g_array_unref(pts);
+    canvas_bind_follow(p->surface);
+}
+
+static void point_end(CanvasPage* p, gdouble dx, gdouble dy) {
+    CanvasItem* it = p->drag_item;
+    guint n = p->drag_points->len;
+    guint i = (guint)p->drag_point;
+    if (dx != 0 || dy != 0) {
+        if (i == 0 || i == n - 1) canvas_bind_attach_end(p->surface, it, i == n - 1);
+        canvas_history_push(p->history, p->drag_before);
+        canvas_page_update_extent(p);
+        canvas_page_schedule_save(p);
+    } else if (p->drag_point_added) {
+        /* A click on a segment middle, no drag: no new point */
+        canvas_line_remove_point(it, i);
+    }
+    g_clear_pointer(&p->drag_points, g_array_unref);
+    p->drag_item = NULL;
+    g_clear_pointer(&p->drag_before, g_free);
+}
+
+/* A double click on a point between the ends of the selected line it
+ * removes it */
+static gboolean point_remove_at(CanvasPage* p, CanvasItem* it, gdouble x, gdouble y) {
+    if (!canvas_draw_is_line(it) || it->locked || !selected_alone(p, it)) return FALSE;
+    gboolean middle = FALSE;
+    gint index = canvas_line_handle_at(it, x, y, &middle);
+    if (index <= 0 || middle) return FALSE;
+    gchar* before = canvas_page_state(p);
+    if (!canvas_line_remove_point(it, (guint)index)) {
+        g_free(before);
+        return FALSE;
+    }
+    canvas_history_push(p->history, before);
+    canvas_bind_follow(p->surface);
+    canvas_page_update_extent(p);
+    canvas_page_schedule_save(p);
+    return TRUE;
+}
+
 static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointer data) {
     CanvasPage* p = data;
     if (p->tool != CANVAS_TOOL_SELECT) {
@@ -133,7 +229,7 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
         tool_begin(p, x, y);
         return;
     }
-    GtkWidget* hit = gtk_widget_pick(p->surface, x, y, GTK_PICK_DEFAULT);
+    GtkWidget* hit = canvas_line_pick(p->surface, x, y);
     CanvasItem* it = canvas_item_of(hit);
     GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
     gboolean shift = (state & GDK_SHIFT_MASK) != 0;
@@ -162,6 +258,11 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
     if (it->locked) {
         gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_DENIED);
         if (it->kind != CANVAS_BLOCK_TEXT && it->kind != CANVAS_BLOCK_TABLE) canvas_item_select(it);
+        return;
+    }
+    /* A handle of the selected line: drag that point */
+    if (point_begin(p, it, x, y)) {
+        gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
         return;
     }
     gboolean grip = FALSE, corner = FALSE;
@@ -247,6 +348,10 @@ static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpoi
     }
     CanvasItem* it = p->drag_item;
     if (it == NULL) return;
+    if (p->drag_points != NULL) {
+        point_update(p, GTK_GESTURE(gesture), dx, dy);
+        return;
+    }
 
     if (!p->drag_resize) {
         group_move(p, dx, dy);
@@ -281,6 +386,10 @@ static void on_drag_end(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpointe
         return;
     }
     if (p->drag_item == NULL) return;
+    if (p->drag_points != NULL) {
+        point_end(p, dx, dy);
+        return;
+    }
     if (dx != 0 || dy != 0) {
         canvas_history_push(p->history, p->drag_before);
         canvas_page_update_extent(p);
@@ -308,10 +417,12 @@ static void on_drag_cancel(GtkGesture* gesture, GdkEventSequence* sequence, gpoi
 static void on_page_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     CanvasPage* p = data;
     if (p->tool != CANVAS_TOOL_SELECT) return; /* the tool took the press */
-    GtkWidget* hit = gtk_widget_pick(p->surface, x, y, GTK_PICK_DEFAULT);
+    GtkWidget* hit = canvas_line_pick(p->surface, x, y);
     CanvasItem* it = canvas_item_of(hit);
     if (it != NULL) {
-        if (n_press == 2 && it->kind == CANVAS_BLOCK_IMAGE) {
+        if (n_press == 2 && point_remove_at(p, it, x, y)) {
+            gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+        } else if (n_press == 2 && it->kind == CANVAS_BLOCK_IMAGE) {
             canvas_page_open_crop(p, it);
         } else if (n_press == 2 && it->label != NULL && !canvas_item_in_label(it, hit)) {
             canvas_item_edit(it); /* type in the shape */
@@ -336,6 +447,9 @@ static void on_motion(GtkEventControllerMotion* ctrl, gdouble x, gdouble y, gpoi
     p->pointer_in = TRUE;
     p->pointer_x = x;
     p->pointer_y = y;
+    /* Over a line: a cursor on its stroke and its handles only */
+    CanvasItem* it = canvas_item_of(gtk_widget_pick(p->surface, x, y, GTK_PICK_DEFAULT));
+    if (canvas_draw_is_line(it)) canvas_line_update_cursor(it, x, y);
 }
 
 static void on_leave(GtkEventControllerMotion* ctrl, gpointer data) {

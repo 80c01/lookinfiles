@@ -49,6 +49,12 @@ struct CanvasPage {
     gchar* drag_before; /* page state when the drag began */
     GPtrArray* drag_group; /* CanvasItem*: the blocks moved together */
     GArray* drag_starts;   /* CanvasRect: their boxes when the drag began */
+    /* Drag of a point of a selected line (drag_item): its index, the points
+     * when the drag began (CanvasPoint, page coordinates; NULL: no point
+     * dragged), added: a new point made by the drag of a segment middle */
+    gint drag_point;
+    GArray* drag_points;
+    gboolean drag_point_added;
     /* Blocks selected together (frames, referenced; Shift+click, rubber
      * band); the focused block is selected too */
     GPtrArray* selection;

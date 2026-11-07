@@ -140,6 +140,36 @@ static void test_edge_point(void) {
     g_assert_cmpfloat(x, ==, -1);
 }
 
+static void test_curve(void) {
+    /* Two points: a straight segment */
+    gdouble line[] = {0, 0, 100, 0};
+    gdouble x, y;
+    canvas_curve_point(line, 2, 0, 0.5, &x, &y);
+    g_assert_cmpfloat_with_epsilon(x, 50, 1e-9);
+    g_assert_cmpfloat_with_epsilon(y, 0, 1e-9);
+    g_assert_cmpfloat_with_epsilon(canvas_curve_distance(line, 2, 30, 10), 10, 1e-6);
+    g_assert_cmpfloat_with_epsilon(canvas_curve_distance(line, 2, -3, -4), 5, 1e-6);
+
+    /* Three points: the curve goes through each of them */
+    gdouble bend[] = {0, 0, 50, 50, 100, 0};
+    canvas_curve_point(bend, 3, 0, 1.0, &x, &y);
+    g_assert_cmpfloat_with_epsilon(x, 50, 1e-9);
+    g_assert_cmpfloat_with_epsilon(y, 50, 1e-9);
+    canvas_curve_point(bend, 3, 1, 1.0, &x, &y);
+    g_assert_cmpfloat_with_epsilon(x, 100, 1e-9);
+    g_assert_cmpfloat_with_epsilon(canvas_curve_distance(bend, 3, 50, 50), 0, 1e-6);
+
+    /* The bounds hold the points; a sharp bend goes a little past them */
+    gdouble x0, y0, x1, y1;
+    canvas_curve_bounds(bend, 3, &x0, &y0, &x1, &y1);
+    g_assert_cmpfloat(x0, <=, 0);
+    g_assert_cmpfloat(x1, >=, 100);
+    g_assert_cmpfloat_with_epsilon(y0, 0, 1e-9);
+    g_assert_cmpfloat(y1, >=, 50);
+    g_assert_cmpfloat(y1, <, 60);
+    g_assert_cmpfloat(canvas_curve_distance(NULL, 0, 0, 0), ==, G_MAXDOUBLE);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/canvas_geometry/snap_coord", test_snap_coord);
@@ -149,5 +179,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_geometry/snap_angle", test_snap_angle);
     g_test_add_func("/canvas_geometry/map_coord", test_map_coord);
     g_test_add_func("/canvas_geometry/edge_point", test_edge_point);
+    g_test_add_func("/canvas_geometry/curve", test_curve);
     return g_test_run();
 }

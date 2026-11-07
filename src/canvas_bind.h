@@ -10,6 +10,10 @@
  * them, and put them on their outlines */
 void canvas_bind_attach(GtkWidget* surface, CanvasItem* line);
 
+/* An end of a line or an arrow (end: the last one, else the first) was just
+ * moved: bind it to the block under it, if any, and put it on its outline */
+void canvas_bind_attach_end(GtkWidget* surface, CanvasItem* line, gboolean end);
+
 /* Put the bound ends of every line and arrow on the page back on their
  * blocks */
 void canvas_bind_follow(GtkWidget* surface);

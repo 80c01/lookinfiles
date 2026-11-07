@@ -98,6 +98,7 @@ onto the page; double click a picture to crop it.
 |---|---|
 | Move a block | Drag the handle bar above it (or drag a picture or a shape directly) |
 | Resize a block | Drag its bottom-right corner (pictures keep proportions) |
+| Edit an arrow or a line | Click its stroke to select it: a handle shows on each point. Drag an end anywhere (dropped on a block, it binds to it), drag the faint handle in the middle of a segment to add a point and bend it into a curve, drag a point to reshape it (`Shift`: multiple of 45 degrees), double click a point between the ends to remove it |
 | Select several blocks | Drag on the empty page around them, or `Shift+click` each one (again to take it out); moving one moves them all |
 | Snap & Smart Guides | Magnetic snapping to nearby block edges and grid (**Snap to Grid** in the tool bar menu) |
 | Align blocks | Select two blocks or more, then the tool bar menu: left, centers, right, top, middles, bottom, distribute |

@@ -41,6 +41,7 @@ void canvas_page_free(CanvasPage* p) {
     g_free(p->drag_before);
     if (p->drag_group != NULL) g_ptr_array_unref(p->drag_group);
     if (p->drag_starts != NULL) g_array_unref(p->drag_starts);
+    if (p->drag_points != NULL) g_array_unref(p->drag_points);
     g_ptr_array_unref(p->selection);
     g_free(p->dir);
     g_free(p);
@@ -102,7 +103,7 @@ void canvas_page_focus_next(CanvasPage* p, CanvasItem* from, gint step) {
 /* Selection                                                                 */
 /* ------------------------------------------------------------------------- */
 
-#define SELECTED_CLASS "canvas-selected"
+#define SELECTED_CLASS CANVAS_SELECTED_CLASS
 
 static gboolean in_set(CanvasPage* p, CanvasItem* it) {
     return it != NULL && g_ptr_array_find(p->selection, it->frame, NULL);

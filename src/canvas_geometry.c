@@ -232,3 +232,91 @@ gboolean canvas_edge_point(CanvasOutline outline, const CanvasRect* box, gdouble
     *y = cy + dy * t + dy / len * gap;
     return TRUE;
 }
+
+#define CURVE_SAMPLES 24 /* per segment, for bounds and distances */
+
+static void curve_pt(const gdouble* xy, guint n, gint i, gdouble* x, gdouble* y) {
+    i = CLAMP(i, 0, (gint)n - 1);
+    *x = xy[2 * i];
+    *y = xy[2 * i + 1];
+}
+
+void canvas_curve_controls(const gdouble* xy, guint n, guint i, gdouble c[4]) {
+    gdouble x0, y0, x1, y1, x2, y2, x3, y3;
+    curve_pt(xy, n, (gint)i - 1, &x0, &y0);
+    curve_pt(xy, n, (gint)i, &x1, &y1);
+    curve_pt(xy, n, (gint)i + 1, &x2, &y2);
+    curve_pt(xy, n, (gint)i + 2, &x3, &y3);
+    if (n <= 2) {
+        /* A straight segment */
+        c[0] = x1 + (x2 - x1) / 3.0;
+        c[1] = y1 + (y2 - y1) / 3.0;
+        c[2] = x1 + 2.0 * (x2 - x1) / 3.0;
+        c[3] = y1 + 2.0 * (y2 - y1) / 3.0;
+        return;
+    }
+    c[0] = x1 + (x2 - x0) / 6.0;
+    c[1] = y1 + (y2 - y0) / 6.0;
+    c[2] = x2 - (x3 - x1) / 6.0;
+    c[3] = y2 - (y3 - y1) / 6.0;
+}
+
+void canvas_curve_point(const gdouble* xy, guint n, guint i, gdouble t, gdouble* x, gdouble* y) {
+    if (n == 0) return;
+    if (n == 1 || i + 1 >= n) {
+        curve_pt(xy, n, (gint)MIN(i, n - 1), x, y);
+        return;
+    }
+    gdouble c[4];
+    canvas_curve_controls(xy, n, i, c);
+    gdouble ax = xy[2 * i], ay = xy[2 * i + 1];
+    gdouble bx = xy[2 * i + 2], by = xy[2 * i + 3];
+    gdouble u = 1.0 - t;
+    gdouble k0 = u * u * u, k1 = 3 * u * u * t, k2 = 3 * u * t * t, k3 = t * t * t;
+    *x = k0 * ax + k1 * c[0] + k2 * c[2] + k3 * bx;
+    *y = k0 * ay + k1 * c[1] + k2 * c[3] + k3 * by;
+}
+
+void canvas_curve_bounds(const gdouble* xy, guint n, gdouble* x0, gdouble* y0, gdouble* x1, gdouble* y1) {
+    if (n == 0) {
+        *x0 = *y0 = *x1 = *y1 = 0;
+        return;
+    }
+    *x0 = *x1 = xy[0];
+    *y0 = *y1 = xy[1];
+    for (guint i = 0; i + 1 < n; i++) {
+        for (gint s = 1; s <= CURVE_SAMPLES; s++) {
+            gdouble x, y;
+            canvas_curve_point(xy, n, i, (gdouble)s / CURVE_SAMPLES, &x, &y);
+            *x0 = MIN(*x0, x);
+            *y0 = MIN(*y0, y);
+            *x1 = MAX(*x1, x);
+            *y1 = MAX(*y1, y);
+        }
+    }
+}
+
+/* Distance from (px, py) to the segment (ax, ay) - (bx, by) */
+static gdouble segment_distance(gdouble ax, gdouble ay, gdouble bx, gdouble by, gdouble px, gdouble py) {
+    gdouble dx = bx - ax, dy = by - ay;
+    gdouble len2 = dx * dx + dy * dy;
+    gdouble t = len2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+    t = CLAMP(t, 0.0, 1.0);
+    return hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+gdouble canvas_curve_distance(const gdouble* xy, guint n, gdouble px, gdouble py) {
+    if (n == 0) return G_MAXDOUBLE;
+    gdouble best = hypot(px - xy[0], py - xy[1]);
+    for (guint i = 0; i + 1 < n; i++) {
+        gdouble ax = xy[2 * i], ay = xy[2 * i + 1];
+        for (gint s = 1; s <= CURVE_SAMPLES; s++) {
+            gdouble x, y;
+            canvas_curve_point(xy, n, i, (gdouble)s / CURVE_SAMPLES, &x, &y);
+            best = MIN(best, segment_distance(ax, ay, x, y, px, py));
+            ax = x;
+            ay = y;
+        }
+    }
+    return best;
+}

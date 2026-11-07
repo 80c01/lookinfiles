@@ -417,9 +417,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `canvas_viewport` (the scrolled view: the page drawn at a scale by a
   transform, so its coordinates stay page coordinates; Ctrl+wheel zoom, pan),
   `canvas_bind` (arrow and line ends bound to blocks by their ids, kept on
-  their outlines), `canvas_rough_draw` (hand-drawn rendering),
-  `canvas_geometry` (snap, align, outline points, drag box, 45-degree lines;
-  unit-tested).
+  their outlines), `canvas_line` (lines and arrows edited as in Excalidraw:
+  picked on their stroke, handles on their points and segment middles),
+  `canvas_rough_draw` (hand-drawn rendering, line handles),
+  `canvas_geometry` (snap, align, outline points, drag box, 45-degree lines,
+  the curve through the points of a line; unit-tested).
 - `bookmark_dialog` — the add / edit dialogs of the bookmarks view (name,
   location or folder icon, parent folder) and the target helpers they share
   with `bookmarks` (`bookmark_display_location()`, `bookmark_default_name()`).

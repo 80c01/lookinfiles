@@ -45,6 +45,11 @@ void canvas_align_boxes(CanvasRect* rects, guint count, CanvasAlignOp op);
  * block (stroke width, arrowhead) */
 #define CANVAS_LINE_PAD 16
 
+/* Distance from a point or segment middle of a selected line that grabs it */
+#define CANVAS_LINE_HANDLE 8
+/* Segments shorter than this have no middle handle */
+#define CANVAS_LINE_MID_MIN (4 * CANVAS_LINE_HANDLE)
+
 /* Box dragged from (x0, y0) to (x1, y1), whatever the direction; square:
  * equal sides, the shorter one grown (Shift) */
 void canvas_drag_box(gdouble x0, gdouble y0, gdouble x1, gdouble y1, gboolean square, CanvasRect* out);
@@ -69,5 +74,21 @@ typedef enum {
  * unchanged) when (tx, ty) is the centre. */
 gboolean canvas_edge_point(CanvasOutline outline, const CanvasRect* box, gdouble tx, gdouble ty,
                            gdouble gap, gdouble* x, gdouble* y);
+
+/* Smooth curve through the n points of xy (x0, y0, x1, y1...): the points
+ * of a line or an arrow, joined by Catmull-Rom segments (two points: a
+ * straight segment). Segment i goes from point i to point i + 1. */
+
+/* Bezier controls of segment i: c = {x1, y1, x2, y2} */
+void canvas_curve_controls(const gdouble* xy, guint n, guint i, gdouble c[4]);
+
+/* Point at t (0..1) of segment i */
+void canvas_curve_point(const gdouble* xy, guint n, guint i, gdouble t, gdouble* x, gdouble* y);
+
+/* Bounding box of the curve (a single point: that point) */
+void canvas_curve_bounds(const gdouble* xy, guint n, gdouble* x0, gdouble* y0, gdouble* x1, gdouble* y1);
+
+/* Distance from (px, py) to the curve (G_MAXDOUBLE without points) */
+gdouble canvas_curve_distance(const gdouble* xy, guint n, gdouble px, gdouble py);
 
 #endif /* CANVAS_GEOMETRY_H */

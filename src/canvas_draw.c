@@ -23,22 +23,39 @@ static void redraw(CanvasItem* it) {
     if (it->content != NULL) gtk_widget_queue_draw(it->content);
 }
 
-/* The block around the points (page coordinates), CANVAS_LINE_PAD away */
+/* The block around the points (page coordinates), CANVAS_LINE_PAD away;
+ * for a line or an arrow, around the curve through them */
 static void fit_points(CanvasItem* it) {
     if (it->points == NULL || it->points->len == 0) return;
-    const CanvasPoint* p0 = &g_array_index(it->points, CanvasPoint, 0);
-    gdouble x0 = p0->x, y0 = p0->y, x1 = p0->x, y1 = p0->y;
-    for (guint i = 1; i < it->points->len; i++) {
-        const CanvasPoint* p = &g_array_index(it->points, CanvasPoint, i);
-        x0 = MIN(x0, p->x);
-        y0 = MIN(y0, p->y);
-        x1 = MAX(x1, p->x);
-        y1 = MAX(y1, p->y);
+    gdouble x0, y0, x1, y1;
+    if (it->shape_type != CANVAS_SHAPE_FREEHAND) {
+        canvas_curve_bounds((const gdouble*)it->points->data, it->points->len, &x0, &y0, &x1, &y1);
+    } else {
+        const CanvasPoint* p0 = &g_array_index(it->points, CanvasPoint, 0);
+        x0 = x1 = p0->x;
+        y0 = y1 = p0->y;
+        for (guint i = 1; i < it->points->len; i++) {
+            const CanvasPoint* p = &g_array_index(it->points, CanvasPoint, i);
+            x0 = MIN(x0, p->x);
+            y0 = MIN(y0, p->y);
+            x1 = MAX(x1, p->x);
+            y1 = MAX(y1, p->y);
+        }
     }
     it->x = (gint)floor(x0) - CANVAS_LINE_PAD;
     it->y = (gint)floor(y0) - CANVAS_LINE_PAD;
     it->w = (gint)ceil(x1 - floor(x0)) + 2 * CANVAS_LINE_PAD;
     it->h = (gint)ceil(y1 - floor(y0)) + 2 * CANVAS_LINE_PAD;
+}
+
+/* Points made relative to the block, so the note does not depend on where
+ * it was drawn */
+static void points_to_block(CanvasItem* it) {
+    for (guint i = 0; i < it->points->len; i++) {
+        CanvasPoint* p = &g_array_index(it->points, CanvasPoint, i);
+        p->x -= it->x;
+        p->y -= it->y;
+    }
 }
 
 void canvas_draw_update(CanvasItem* it, gdouble x0, gdouble y0, gdouble x1, gdouble y1, gboolean shift) {
@@ -91,13 +108,7 @@ void canvas_draw_finish(CanvasItem* it) {
             g_array_index(it->points, CanvasPoint, it->points->len - 1) = end;
         }
         fit_points(it);
-        /* Points relative to the block, so the note does not depend on
-         * where it was drawn */
-        for (guint i = 0; i < it->points->len; i++) {
-            CanvasPoint* p = &g_array_index(it->points, CanvasPoint, i);
-            p->x -= it->x;
-            p->y -= it->y;
-        }
+        points_to_block(it);
     } else if (it->w < CLICK_SIZE && it->h < CLICK_SIZE) {
         it->w = DEFAULT_W;
         it->h = DEFAULT_H;
@@ -114,35 +125,44 @@ gboolean canvas_draw_is_line(const CanvasItem* it) {
 }
 
 /* Same placement as the drawing (canvas_rough_draw.c): the bounding box of
- * the points fills the block, CANVAS_LINE_PAD from its sides */
-gboolean canvas_draw_get_ends(const CanvasItem* it, gdouble* x0, gdouble* y0, gdouble* x1, gdouble* y1) {
-    if (!canvas_draw_is_line(it) || it->points == NULL || it->points->len < 2) return FALSE;
-    const CanvasPoint* a = &g_array_index(it->points, CanvasPoint, 0);
-    const CanvasPoint* b = &g_array_index(it->points, CanvasPoint, it->points->len - 1);
-    gdouble bx = MIN(a->x, b->x), by = MIN(a->y, b->y);
-    gdouble bw = fabs(b->x - a->x), bh = fabs(b->y - a->y);
+ * the curve through the points fills the block, CANVAS_LINE_PAD from its
+ * sides */
+GArray* canvas_draw_get_points(const CanvasItem* it) {
+    if (!canvas_draw_is_line(it) || it->points == NULL || it->points->len < 2) return NULL;
+    guint n = it->points->len;
+    gdouble bx0, by0, bx1, by1;
+    canvas_curve_bounds((const gdouble*)it->points->data, n, &bx0, &by0, &bx1, &by1);
     gdouble pad = CANVAS_LINE_PAD;
     gdouble tw = MAX(it->w - 2 * pad, 0), th = MAX(it->h - 2 * pad, 0);
-    *x0 = it->x + canvas_map_coord(a->x, bx, bw, pad, tw);
-    *y0 = it->y + canvas_map_coord(a->y, by, bh, pad, th);
-    *x1 = it->x + canvas_map_coord(b->x, bx, bw, pad, tw);
-    *y1 = it->y + canvas_map_coord(b->y, by, bh, pad, th);
+    GArray* out = g_array_sized_new(FALSE, FALSE, sizeof(CanvasPoint), n);
+    for (guint i = 0; i < n; i++) {
+        const CanvasPoint* a = &g_array_index(it->points, CanvasPoint, i);
+        CanvasPoint q = {it->x + canvas_map_coord(a->x, bx0, bx1 - bx0, pad, tw),
+                         it->y + canvas_map_coord(a->y, by0, by1 - by0, pad, th)};
+        g_array_append_val(out, q);
+    }
+    return out;
+}
+
+gboolean canvas_draw_get_ends(const CanvasItem* it, gdouble* x0, gdouble* y0, gdouble* x1, gdouble* y1) {
+    GArray* pts = canvas_draw_get_points(it);
+    if (pts == NULL) return FALSE;
+    const CanvasPoint* a = &g_array_index(pts, CanvasPoint, 0);
+    const CanvasPoint* b = &g_array_index(pts, CanvasPoint, pts->len - 1);
+    *x0 = a->x;
+    *y0 = a->y;
+    *x1 = b->x;
+    *y1 = b->y;
+    g_array_unref(pts);
     return TRUE;
 }
 
-void canvas_draw_set_ends(CanvasItem* it, gdouble x0, gdouble y0, gdouble x1, gdouble y1) {
-    if (!canvas_draw_is_line(it)) return;
+void canvas_draw_set_points(CanvasItem* it, const GArray* pts) {
+    if (!canvas_draw_is_line(it) || pts == NULL || pts->len < 2) return;
     ensure_points(it);
     g_array_set_size(it->points, 0);
-    CanvasPoint a = {x0, y0};
-    CanvasPoint b = {x1, y1};
-    g_array_append_val(it->points, a);
-    g_array_append_val(it->points, b);
+    g_array_append_vals(it->points, pts->data, pts->len);
     fit_points(it);
-    for (guint i = 0; i < it->points->len; i++) {
-        CanvasPoint* p = &g_array_index(it->points, CanvasPoint, i);
-        p->x -= it->x;
-        p->y -= it->y;
-    }
+    points_to_block(it);
     redraw(it);
 }

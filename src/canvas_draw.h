@@ -23,8 +23,12 @@ gboolean canvas_draw_is_line(const CanvasItem* it);
  * one */
 gboolean canvas_draw_get_ends(const CanvasItem* it, gdouble* x0, gdouble* y0, gdouble* x1, gdouble* y1);
 
-/* Move the ends of a line or an arrow (page coordinates); its block fits
- * them again */
-void canvas_draw_set_ends(CanvasItem* it, gdouble x0, gdouble y0, gdouble x1, gdouble y1);
+/* Points of a line or an arrow, page coordinates, as drawn (free it); NULL
+ * if it is not one */
+GArray* canvas_draw_get_points(const CanvasItem* it);
+
+/* Give a line or an arrow these points (CanvasPoint, page coordinates, two
+ * or more); its block fits them again */
+void canvas_draw_set_points(CanvasItem* it, const GArray* pts);
 
 #endif /* CANVAS_DRAW_H */
