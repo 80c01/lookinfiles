@@ -378,6 +378,7 @@ typedef struct {
     GtkWidget* status_encoding;   /* preview bar: text encoding, hidden if not text */
     GtkWidget* status_notice_label; /* explorer bar: app_notice() message */
     GtkWidget* status_undo_btn;   /* explorer bar: Undo after the message */
+    GtkWidget* status_sort;       /* explorer bar: sort order of the files view */
     GtkWidget* topbar_notice;     /* top bar: the app_notice() message while the explorer is hidden */
     GtkWidget* topbar_notice_label;
     GtkWidget* topbar_undo_btn;

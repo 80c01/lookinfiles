@@ -1011,6 +1011,7 @@ void toggle_hidden_files(AppData* app) {
 void cycle_sort_mode(AppData* app) {
     app->sort_mode = (app->sort_mode + 1) % SORT_COUNT;
     refresh_listing(app);
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
 }
 
 /* Enter / double-click on a list entry: toggle directory expand/collapse or open editor tab */

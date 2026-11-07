@@ -569,7 +569,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   pills; `update_path_label()`.
 - `status_bar` — panel status bars (no window-wide bar: editor tabs have
   their own, `editor_modes`): explorer bar (`create_explorer_bar()`: Git branch of the files
-  view with modification `*` and ahead/behind `↑` / `↓` indicators, `app_notice()` message with Undo; the message moves to the top bar,
+  view with modification `*` and ahead/behind `↑` / `↓` indicators, `app_notice()` message with Undo, sort order of the files view (click cycles it, like `o`); the message moves to the top bar,
   `create_topbar_notice()`, while the explorer is hidden), preview bar
   (`create_preview_bar()`, under the preview page only: name, size, type,
   encoding); `update_status_bar()` refreshes both.

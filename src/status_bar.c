@@ -1,5 +1,5 @@
 /* Panel status bars: the explorer bar (Git branch, app_notice() messages,
- * shown in the top bar while the explorer is hidden) and the preview bar
+ * shown in the top bar while the explorer is hidden, sort order) and the preview bar
  * (name, size, type and encoding of the previewed entry). Editor tabs have
  * their own bar (editor_modes). */
 #include "status_bar.h"
@@ -314,6 +314,15 @@ static void on_status_branch_clicked(GtkGestureClick* gesture, gint n_press, gdo
     }
 }
 
+static void on_status_sort_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y,
+                                   gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    (void)y;
+    cycle_sort_mode((AppData*)data);
+}
+
 static GtkWidget* status_item_new(void) {
     GtkWidget* label = gtk_label_new("");
     gtk_widget_add_css_class(label, "status-item");
@@ -345,9 +354,19 @@ GtkWidget* create_explorer_bar(AppData* app) {
     gtk_widget_add_css_class(status_undo, "status-item");
     gtk_box_append(GTK_BOX(bar), status_undo);
 
+    /* Sort order of the files view; the other views are ordered by hand */
+    GtkWidget* status_sort = status_item_new();
+    gtk_widget_add_css_class(status_sort, "status-dim");
+    gtk_widget_set_cursor_from_name(status_sort, "pointer");
+    GtkGesture* sort_click = gtk_gesture_click_new();
+    g_signal_connect(sort_click, "pressed", G_CALLBACK(on_status_sort_clicked), app);
+    gtk_widget_add_controller(status_sort, GTK_EVENT_CONTROLLER(sort_click));
+    gtk_box_append(GTK_BOX(bar), status_sort);
+
     app->status_branch = status_branch;
     app->status_notice_label = status_notice;
     app->status_undo_btn = status_undo;
+    app->status_sort = status_sort;
     return bar;
 }
 
@@ -509,6 +528,20 @@ void update_status_bar(AppData* app) {
     }
     gtk_widget_set_visible(app->status_branch, branch != NULL);
     g_free(branch);
+
+    if (app->status_sort != NULL) {
+        static const gchar* sort_labels[SORT_COUNT] = {"⇅ Name", "⇅ Date", "⇅ Size", "⇅ Ext"};
+        static const gchar* sort_tips[SORT_COUNT] = {
+            "Sorted by Name", "Sorted by Date (Newest First)", "Sorted by Size (Largest First)",
+            "Sorted by Extension"
+        };
+        gint mode = CLAMP(app->sort_mode, 0, SORT_COUNT - 1);
+        gtk_label_set_text(GTK_LABEL(app->status_sort), sort_labels[mode]);
+        gchar* tip = g_strdup_printf("%s — Click to Change (o)", sort_tips[mode]);
+        gtk_widget_set_tooltip_text(app->status_sort, tip);
+        g_free(tip);
+        gtk_widget_set_visible(app->status_sort, files_view);
+    }
 
     gchar* name = NULL;
     gchar* type = NULL;
