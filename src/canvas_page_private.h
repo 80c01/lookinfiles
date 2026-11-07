@@ -48,6 +48,7 @@ struct CanvasPage {
     /* Drag of a block */
     CanvasItem* drag_item;
     gboolean drag_resize;
+    gint drag_sx, drag_sy; /* side of the resize handle (canvas_resize_box()) */
     gboolean drag_rotate; /* drag_item turned by its handle, from drag_angle */
     gdouble drag_angle;
     gint drag_x, drag_y, drag_w, drag_h;

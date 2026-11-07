@@ -66,6 +66,10 @@ void canvas_item_set_locked(CanvasItem* it, gboolean locked);
  * pointer places the cursor there instead of moving the shape */
 gboolean canvas_item_in_label(CanvasItem* it, GtkWidget* hit);
 
+/* w is a resize handle of a block, on side (*sx, *sy) (-1: left or top,
+ * 0: middle, 1: right or bottom) */
+gboolean canvas_item_resize_side(GtkWidget* w, gint* sx, gint* sy);
+
 /* Label of a shape (free it); NULL when it has none */
 gchar* canvas_item_label_text(const CanvasItem* it);
 

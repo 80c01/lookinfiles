@@ -253,16 +253,32 @@ gdouble canvas_handle_angle(gdouble cx, gdouble cy, gdouble x, gdouble y, gboole
     return canvas_angle_normalize(a);
 }
 
-void canvas_resize_rotated(const CanvasRect* box, gdouble angle, gint nw, gint nh, gint* x, gint* y) {
-    if (box == NULL || x == NULL || y == NULL) return;
-    /* The turned top-left corner, then the new centre from it */
+void canvas_resize_box(const CanvasRect* box, gdouble angle, gint sx, gint sy, gdouble dx, gdouble dy, gint min,
+                       gboolean keep, CanvasRect* out) {
+    if (box == NULL || out == NULL) return;
+    sx = CLAMP(sx, -1, 1);
+    sy = CLAMP(sy, -1, 1);
+    /* The pointer move along the sides of the turned box */
+    gdouble lx = dx, ly = dy;
+    canvas_rotate_point(0, 0, -angle, &lx, &ly);
+    gint w = MAX(box->w + sx * (gint)lround(lx), min);
+    gint h = MAX(box->h + sy * (gint)lround(ly), min);
+    if (keep && box->w > 0 && box->h > 0) {
+        /* A side handle stretches the other side along */
+        if (sx == 0) w = (gint)lround((gdouble)box->w * h / box->h);
+        if (sy == 0) h = (gint)lround((gdouble)box->h * w / box->w);
+        canvas_keep_ratio(box->w, box->h, min, &w, &h);
+    }
+    /* The opposite handle stays put on the page: the new centre from it */
     gdouble cx = box->x + box->w / 2.0, cy = box->y + box->h / 2.0;
-    gdouble px = box->x, py = box->y;
-    canvas_rotate_point(cx, cy, angle, &px, &py);
-    gdouble ncx = px + nw / 2.0, ncy = py + nh / 2.0;
-    canvas_rotate_point(px, py, angle, &ncx, &ncy);
-    *x = (gint)lround(ncx - nw / 2.0);
-    *y = (gint)lround(ncy - nh / 2.0);
+    gdouble ax = cx - sx * box->w / 2.0, ay = cy - sy * box->h / 2.0;
+    canvas_rotate_point(cx, cy, angle, &ax, &ay);
+    gdouble ox = sx * w / 2.0, oy = sy * h / 2.0;
+    canvas_rotate_point(0, 0, angle, &ox, &oy);
+    out->x = (gint)lround(ax + ox - w / 2.0);
+    out->y = (gint)lround(ay + oy - h / 2.0);
+    out->w = w;
+    out->h = h;
 }
 
 gdouble canvas_map_coord(gdouble v, gdouble from, gdouble from_len, gdouble to, gdouble to_len) {

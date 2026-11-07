@@ -195,17 +195,54 @@ static void test_rotation(void) {
     g_assert_cmpfloat_with_epsilon(canvas_handle_angle(0, 0, -10, -10, TRUE), 315.0, 1e-9);
     g_assert_cmpfloat_with_epsilon(canvas_handle_angle(0, 0, 10, -9, TRUE), 45.0, 1e-9);
 
-    /* Resized at 90 degrees: the turned top-left corner stays put */
-    gint nx, ny;
-    canvas_resize_rotated(&box, 90, 100, 40, &nx, &ny);
-    g_assert_cmpint(nx, ==, 0);
-    g_assert_cmpint(ny, ==, 0);
-    canvas_resize_rotated(&box, 90, 140, 40, &nx, &ny);
-    gdouble px = 0, py = 0, qx = nx, qy = ny;
+    /* Resized at 90 degrees by the bottom-right handle: the turned
+     * top-left corner stays put */
+    CanvasRect r;
+    canvas_resize_box(&box, 90, 1, 1, 0, 0, 1, FALSE, &r);
+    g_assert_cmpint(r.x, ==, 0);
+    g_assert_cmpint(r.y, ==, 0);
+    gdouble mx = 40, my = 0;
+    canvas_rotate_point(0, 0, 90, &mx, &my);
+    canvas_resize_box(&box, 90, 1, 1, mx, my, 1, FALSE, &r);
+    g_assert_cmpint(r.w, ==, 140);
+    g_assert_cmpint(r.h, ==, 40);
+    gdouble px = 0, py = 0, qx = r.x, qy = r.y;
     canvas_rotate_point(50, 20, 90, &px, &py);
-    canvas_rotate_point(nx + 70, ny + 20, 90, &qx, &qy);
+    canvas_rotate_point(r.x + 70, r.y + 20, 90, &qx, &qy);
     g_assert_cmpfloat_with_epsilon(px, qx, 0.5);
     g_assert_cmpfloat_with_epsilon(py, qy, 0.5);
+}
+
+static void test_resize_box(void) {
+    CanvasRect box = {10, 10, 100, 40}, r;
+    /* The top-left handle: the bottom-right corner stays */
+    canvas_resize_box(&box, 0, -1, -1, -20, -10, 16, FALSE, &r);
+    g_assert_cmpint(r.x, ==, -10);
+    g_assert_cmpint(r.y, ==, 0);
+    g_assert_cmpint(r.w, ==, 120);
+    g_assert_cmpint(r.h, ==, 50);
+    /* The left side: the height does not follow the pointer */
+    canvas_resize_box(&box, 0, -1, 0, 30, 99, 16, FALSE, &r);
+    g_assert_cmpint(r.x, ==, 40);
+    g_assert_cmpint(r.y, ==, 10);
+    g_assert_cmpint(r.w, ==, 70);
+    g_assert_cmpint(r.h, ==, 40);
+    /* Past the right side: the minimum, against the right side */
+    canvas_resize_box(&box, 0, -1, 0, 200, 0, 16, FALSE, &r);
+    g_assert_cmpint(r.x, ==, 94);
+    g_assert_cmpint(r.w, ==, 16);
+    /* The right side with Shift: the height grows around the middle */
+    canvas_resize_box(&box, 0, 1, 0, 100, 0, 16, TRUE, &r);
+    g_assert_cmpint(r.x, ==, 10);
+    g_assert_cmpint(r.y, ==, -10);
+    g_assert_cmpint(r.w, ==, 200);
+    g_assert_cmpint(r.h, ==, 80);
+    /* The bottom-right corner, no move: the same box */
+    canvas_resize_box(&box, 0, 1, 1, 0, 0, 16, FALSE, &r);
+    g_assert_cmpint(r.x, ==, 10);
+    g_assert_cmpint(r.y, ==, 10);
+    g_assert_cmpint(r.w, ==, 100);
+    g_assert_cmpint(r.h, ==, 40);
 }
 
 static void test_keep_ratio(void) {
@@ -231,6 +268,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_geometry/align_boxes", test_align_boxes);
     g_test_add_func("/canvas_geometry/drag_box", test_drag_box);
     g_test_add_func("/canvas_geometry/keep_ratio", test_keep_ratio);
+    g_test_add_func("/canvas_geometry/resize_box", test_resize_box);
     g_test_add_func("/canvas_geometry/snap_angle", test_snap_angle);
     g_test_add_func("/canvas_geometry/map_coord", test_map_coord);
     g_test_add_func("/canvas_geometry/edge_point", test_edge_point);

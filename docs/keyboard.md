@@ -145,7 +145,7 @@ editor tab; it stays in its workspace)
 | `Ctrl+]` / `Ctrl+[` (`Shift`: to the front / back) | Bring the selected blocks forward / send them backward |
 | `Ctrl+Shift+K` | Lock the selected blocks in place (not moved, resized or deleted; text still edited), or unlock them |
 | Drop image files | Copy them into the note as pictures |
-| Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions, shapes too with Shift); a selected block takes the other selected ones along |
+| Drag the bar above a block (a picture or a shape: anywhere on it) / its corner (a shape: any corner or side) | Move / resize it, the opposite corner or side staying in place (pictures keep their proportions, shapes too with Shift); a selected block takes the other selected ones along |
 | Drag the round handle above a selected rectangle, diamond or ellipse | Rotate it around its centre (`Shift`: steps of 15 degrees) |
 | Drag a point / a segment middle of a selected arrow or line | Move that point (`Shift`: multiple of 45 degrees) / add a point there and bend it into a curve |
 | Double click a point of a selected arrow or line, or click it then `Delete` | Remove that point (not an end: `Delete` then removes the whole line) |

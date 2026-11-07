@@ -96,13 +96,31 @@ static gboolean is_line(const CanvasItem* it) {
            (it->shape_type == CANVAS_SHAPE_LINE || it->shape_type == CANVAS_SHAPE_ARROW);
 }
 
-/* Cursors of the grip, the corner and a shape or picture: none when locked */
+#define SIDE_KEY "canvas-corner"
+
+/* Cursor of the resize handle on side (sx, sy) */
+static const gchar* side_cursor(gint sx, gint sy) {
+    if (sx == 0) return "ns-resize";
+    if (sy == 0) return "ew-resize";
+    return sx == sy ? "nwse-resize" : "nesw-resize";
+}
+
+gboolean canvas_item_resize_side(GtkWidget* w, gint* sx, gint* sy) {
+    gint code = w != NULL ? GPOINTER_TO_INT(g_object_get_data(G_OBJECT(w), SIDE_KEY)) : 0;
+    if (code == 0) return FALSE;
+    if (sx != NULL) *sx = (code - 1) / 3 - 1;
+    if (sy != NULL) *sy = (code - 1) % 3 - 1;
+    return TRUE;
+}
+
+/* Cursors of the grip, the resize handles and a shape or picture: none when locked */
 static void set_cursors(GtkWidget* w, const CanvasItem* it) {
+    gint sx, sy;
     for (GtkWidget* c = gtk_widget_get_first_child(w); c != NULL; c = gtk_widget_get_next_sibling(c)) {
         if (g_object_get_data(G_OBJECT(c), "canvas-grip") != NULL) {
             gtk_widget_set_cursor_from_name(c, it->locked ? NULL : "move");
-        } else if (g_object_get_data(G_OBJECT(c), "canvas-corner") != NULL) {
-            gtk_widget_set_cursor_from_name(c, it->locked ? NULL : "nwse-resize");
+        } else if (canvas_item_resize_side(c, &sx, &sy)) {
+            gtk_widget_set_cursor_from_name(c, it->locked ? NULL : side_cursor(sx, sy));
         } else if (c == it->content && (it->kind == CANVAS_BLOCK_SHAPE || it->kind == CANVAS_BLOCK_IMAGE)) {
             /* A line: set as the pointer moves over it (canvas_line.c) */
             if (!is_line(it)) gtk_widget_set_cursor_from_name(c, it->locked ? NULL : "move");
@@ -199,6 +217,18 @@ static void on_text_view_click(GtkGestureClick* gesture, gint n_press, gdouble x
     }
 }
 
+static void add_resize_handle(GtkWidget* overlay, gint sx, gint sy) {
+    static const GtkAlign aligns[] = {GTK_ALIGN_START, GTK_ALIGN_CENTER, GTK_ALIGN_END};
+    GtkWidget* handle = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_add_css_class(handle, "canvas-corner");
+    gtk_widget_set_halign(handle, aligns[sx + 1]);
+    gtk_widget_set_valign(handle, aligns[sy + 1]);
+    gtk_widget_set_cursor_from_name(handle, side_cursor(sx, sy));
+    gtk_widget_set_tooltip_text(handle, "Drag to Resize");
+    g_object_set_data(G_OBJECT(handle), SIDE_KEY, GINT_TO_POINTER((sx + 1) * 3 + (sy + 1) + 1));
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), handle);
+}
+
 static CanvasItem* item_base_new(CanvasPage* p, GtkWidget* surface, CanvasBlockKind kind, GtkWidget* content) {
     CanvasItem* it = g_new0(CanvasItem, 1);
     it->page = p;
@@ -222,14 +252,14 @@ static CanvasItem* item_base_new(CanvasPage* p, GtkWidget* surface, CanvasBlockK
     GtkWidget* overlay = gtk_overlay_new();
     if (content != NULL) gtk_overlay_set_child(GTK_OVERLAY(overlay), content);
 
-    GtkWidget* corner = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_add_css_class(corner, "canvas-corner");
-    gtk_widget_set_halign(corner, GTK_ALIGN_END);
-    gtk_widget_set_valign(corner, GTK_ALIGN_END);
-    gtk_widget_set_cursor_from_name(corner, "nwse-resize");
-    gtk_widget_set_tooltip_text(corner, "Drag to Resize");
-    g_object_set_data(G_OBJECT(corner), "canvas-corner", GINT_TO_POINTER(1));
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), corner);
+    /* A shape: a handle on each corner and side; the others: bottom-right */
+    for (gint sy = -1; sy <= 1; sy++) {
+        for (gint sx = -1; sx <= 1; sx++) {
+            if ((sx != 0 || sy != 0) && (kind == CANVAS_BLOCK_SHAPE || (sx == 1 && sy == 1))) {
+                add_resize_handle(overlay, sx, sy);
+            }
+        }
+    }
     gtk_box_append(GTK_BOX(frame), overlay);
 
     it->frame = frame;
@@ -360,7 +390,7 @@ static void make_line(CanvasItem* it) {
     gtk_widget_set_cursor(it->content, NULL);
     GtkWidget* overlay = gtk_widget_get_parent(it->content);
     for (GtkWidget* c = gtk_widget_get_first_child(overlay); c != NULL; c = gtk_widget_get_next_sibling(c)) {
-        if (g_object_get_data(G_OBJECT(c), "canvas-corner") != NULL) gtk_widget_set_visible(c, FALSE);
+        if (canvas_item_resize_side(c, NULL, NULL)) gtk_widget_set_visible(c, FALSE);
     }
     GtkEventController* focus = gtk_event_controller_focus_new();
     g_signal_connect(focus, "enter", G_CALLBACK(on_line_focus), it);
@@ -442,11 +472,10 @@ static void add_label(CanvasItem* it, const gchar* text) {
     GtkEventController* focus = gtk_event_controller_focus_new();
     g_signal_connect(focus, "leave", G_CALLBACK(on_label_leave), it);
     gtk_widget_add_controller(view, focus);
-    /* Under the resize corner, the last overlay */
+    /* Under the resize handles: right above the shape */
     GtkWidget* overlay = gtk_widget_get_parent(it->content);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), view);
-    GtkWidget* corner = gtk_widget_get_prev_sibling(view);
-    if (corner != NULL && corner != it->content) gtk_widget_insert_after(corner, overlay, view);
+    gtk_widget_insert_after(view, overlay, it->content);
     it->label = view;
 }
 

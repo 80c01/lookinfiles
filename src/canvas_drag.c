@@ -306,9 +306,10 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
         gtk_widget_queue_draw(it->content);
     }
     gboolean grip = FALSE, corner = FALSE;
+    gint sx = 1, sy = 1;
     for (GtkWidget* w = hit; w != NULL && w != it->frame; w = gtk_widget_get_parent(w)) {
         if (g_object_get_data(G_OBJECT(w), "canvas-grip") != NULL) grip = TRUE;
-        if (g_object_get_data(G_OBJECT(w), "canvas-corner") != NULL) corner = TRUE;
+        if (canvas_item_resize_side(w, &sx, &sy)) corner = TRUE;
     }
     gboolean move = grip || ((it->kind == CANVAS_BLOCK_IMAGE || it->kind == CANVAS_BLOCK_SHAPE) && !corner);
     if (!move && !corner) {
@@ -320,6 +321,8 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
     p->drag_before = canvas_page_state(p);
     p->drag_item = it;
     p->drag_resize = corner;
+    p->drag_sx = sx;
+    p->drag_sy = sy;
     p->drag_x = it->x;
     p->drag_y = it->y;
     p->drag_w = (it->kind == CANVAS_BLOCK_TEXT || it->kind == CANVAS_BLOCK_TABLE) ?
@@ -408,19 +411,26 @@ static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpoi
     gboolean keep = (state & GDK_SHIFT_MASK) != 0;
     if (it->kind == CANVAS_BLOCK_TEXT || it->kind == CANVAS_BLOCK_TABLE) {
         it->w = MAX(p->drag_w + (gint)dx, MIN_TEXT_WIDTH);
-    } else if (it->kind == CANVAS_BLOCK_SHAPE && it->angle != 0) {
-        /* Turned: the pointer moves along its sides, the opposite corner stays */
-        gdouble lx = dx, ly = dy;
-        canvas_rotate_point(0, 0, -it->angle, &lx, &ly);
-        it->w = MAX(p->drag_w + (gint)lround(lx), MIN_SHAPE_SIZE);
-        it->h = MAX(p->drag_h + (gint)lround(ly), MIN_SHAPE_SIZE);
-        if (keep) canvas_keep_ratio(p->drag_w, p->drag_h, MIN_SHAPE_SIZE, &it->w, &it->h);
-        CanvasRect start = {p->drag_x, p->drag_y, p->drag_w, p->drag_h};
-        canvas_resize_rotated(&start, it->angle, it->w, it->h, &it->x, &it->y);
     } else if (it->kind == CANVAS_BLOCK_SHAPE) {
-        it->w = MAX(p->drag_w + (gint)dx, MIN_SHAPE_SIZE);
-        it->h = MAX(p->drag_h + (gint)dy, MIN_SHAPE_SIZE);
-        if (keep) canvas_keep_ratio(p->drag_w, p->drag_h, MIN_SHAPE_SIZE, &it->w, &it->h);
+        /* By any corner or side, the opposite one kept in place (turned:
+         * the pointer moves along its sides) */
+        CanvasRect start = {p->drag_x, p->drag_y, p->drag_w, p->drag_h}, r;
+        canvas_resize_box(&start, it->angle, p->drag_sx, p->drag_sy, dx, dy, MIN_SHAPE_SIZE, keep, &r);
+        if (it->angle == 0) {
+            /* Stopped at the page edge, the opposite side still in place */
+            if (r.x < 0) {
+                r.w = MAX(r.w + r.x, MIN_SHAPE_SIZE);
+                r.x = 0;
+            }
+            if (r.y < 0) {
+                r.h = MAX(r.h + r.y, MIN_SHAPE_SIZE);
+                r.y = 0;
+            }
+        }
+        it->x = r.x;
+        it->y = r.y;
+        it->w = r.w;
+        it->h = r.h;
     } else {
         it->w = MAX(p->drag_w + (gint)dx, MIN_IMAGE_SIZE);
         it->h = MAX((gint)(it->w / it->aspect), MIN_IMAGE_SIZE);

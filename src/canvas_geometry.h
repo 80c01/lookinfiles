@@ -78,9 +78,12 @@ void canvas_rotated_bounds(const CanvasRect* box, gdouble angle, CanvasRect* out
  * degrees (Shift) */
 gdouble canvas_handle_angle(gdouble cx, gdouble cy, gdouble x, gdouble y, gboolean snap);
 
-/* Top-left corner (*x, *y) of box turned by angle, resized to nw x nh with
- * its turned top-left corner kept in place on the page */
-void canvas_resize_rotated(const CanvasRect* box, gdouble angle, gint nw, gint nh, gint* x, gint* y);
+/* Box turned by angle around its centre, resized by its handle on side
+ * (sx, sy) (-1: left or top, 0: middle, 1: right or bottom) dragged by
+ * (dx, dy) on the page: the opposite handle stays put, neither side under
+ * min; keep: the proportions of box (Shift) */
+void canvas_resize_box(const CanvasRect* box, gdouble angle, gint sx, gint sy, gdouble dx, gdouble dy, gint min,
+                       gboolean keep, CanvasRect* out);
 
 /* Size (*w, *h) brought back to the proportions of w0 x h0 (Shift while
  * resizing a shape): the larger stretch wins, neither side under min */

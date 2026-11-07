@@ -77,7 +77,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Canvas tab", "Ctrl+C / Ctrl+X / Ctrl+D", "Copy / cut / duplicate the selected blocks", 0},
     {"Canvas tab", "Ctrl+] / Ctrl+[", "Bring forward / send backward (Shift: to the front / back)", 0},
     {"Canvas tab", "Ctrl+Shift+K", "Lock / unlock the selected blocks (kept in place)", 0},
-    {"Canvas tab", "Drag bar / corner", "Move / resize a block (a picture or shape moves from anywhere on it; Shift: shape keeps its proportions)", 0},
+    {"Canvas tab", "Drag bar / corner", "Move / resize a block (a picture or shape moves from anywhere on it; a shape resizes by any corner or side; Shift: shape keeps its proportions)", 0},
     {"Canvas tab", "Drag round handle", "Rotate the selected shape around its centre (Shift: 15-degree steps)", 0},
     {"Canvas tab", "Drag line point / middle", "Move a point of the selected arrow or line / add one there (a curve)", 0},
     {"Canvas tab", "Double-click point / Delete", "Remove the point of the selected line (clicked last; not an end)", 0},
