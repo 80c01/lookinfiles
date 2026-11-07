@@ -266,6 +266,7 @@ static void on_toolbar_order(gint where, gpointer udata) {
 /* ------------------------------------------------------------------------- */
 
 #define TAB_TEXT_KEY "canvas-tab-text"
+#define TAB_MAX_CHARS 24
 
 static CanvasPage* page_of_root(GtkWidget* root) {
     return root != NULL ? g_object_get_data(G_OBJECT(root), CANVAS_PAGE_KEY) : NULL;
@@ -307,6 +308,8 @@ static void set_title(CanvasPage* p, const gchar* title) {
     gtk_label_set_text(GTK_LABEL(p->title), title);
     GtkWidget* text = g_object_get_data(G_OBJECT(p->tab_label), TAB_TEXT_KEY);
     gtk_label_set_text(GTK_LABEL(text), title);
+    /* As wide as the name (up to TAB_MAX_CHARS) even when tabs are crowded */
+    gtk_label_set_width_chars(GTK_LABEL(text), (gint)MIN(g_utf8_strlen(title, -1), TAB_MAX_CHARS));
     gtk_widget_set_tooltip_text(p->tab_label, title);
 }
 
@@ -473,7 +476,7 @@ static CanvasPage* page_new(AppData* app) {
     p->tab_label = g_object_ref_sink(icon_label_new("document-edit", "Canvas"));
     GtkWidget* text = gtk_widget_get_last_child(p->tab_label);
     gtk_label_set_ellipsize(GTK_LABEL(text), PANGO_ELLIPSIZE_END);
-    gtk_label_set_max_width_chars(GTK_LABEL(text), 24);
+    gtk_label_set_max_width_chars(GTK_LABEL(text), TAB_MAX_CHARS);
     g_object_set_data(G_OBJECT(p->tab_label), TAB_TEXT_KEY, text);
     GtkGesture* mclick = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
