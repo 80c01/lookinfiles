@@ -2,7 +2,9 @@
 #include "video_tab.h"
 #include "editor.h"
 #include "icons.h"
+#include "media_player.h"
 #include "theme.h"
+#include "track_menu.h"
 #include "video.h"
 
 #define VIDEO_TAB_KEY "lookin-video-tab"
@@ -27,7 +29,8 @@ static void ensure_css(void) {
     done = TRUE;
     theme_add_css(".video-tab { background-color: @bg_view; }"
                   ".video-tab .video-tab-bar { padding: 2px 12px; color: @fg_muted;"
-                  " background-color: @bg_bar; border-top: 1px solid @border; font-size: @size_bar; }");
+                  " background-color: @bg_bar; border-top: 1px solid @border; font-size: @size_bar; }"
+                  ".video-tab .video-tab-bar menubutton > button { padding: 0 6px; min-height: 0; }");
 }
 
 static VideoTab* tab_of(GtkWidget* root) {
@@ -134,6 +137,12 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         return TRUE;
     case GDK_KEY_Home:
         if (gtk_media_stream_is_seekable(vt->stream)) gtk_media_stream_seek(vt->stream, 0);
+        return TRUE;
+    case GDK_KEY_a:
+        media_player_cycle_track(vt->stream, MEDIA_TRACK_AUDIO);
+        return TRUE;
+    case GDK_KEY_s:
+        media_player_cycle_track(vt->stream, MEDIA_TRACK_SUBTITLE);
         return TRUE;
     default:
         return FALSE;
@@ -246,7 +255,8 @@ static VideoTab* tab_new(AppData* app, const gchar* name, const gchar* path) {
     vt->root = root;
 
     /* Its own stream: the preview player keeps its file */
-    vt->stream = gtk_media_file_new_for_filename(path);
+    vt->stream = media_player_new();
+    gtk_media_file_set_filename(GTK_MEDIA_FILE(vt->stream), path);
     g_signal_connect(vt->stream, "notify::error", G_CALLBACK(on_error), vt);
     g_signal_connect(vt->stream, "notify::prepared", G_CALLBACK(on_prepared), vt);
     vt->video = gtk_video_new();
@@ -257,15 +267,17 @@ static VideoTab* tab_new(AppData* app, const gchar* name, const gchar* path) {
     gtk_video_set_media_stream(GTK_VIDEO(vt->video), vt->stream);
     gtk_box_append(GTK_BOX(root), vt->video);
 
-    /* Bar (bottom): the file's path, a playback error */
+    /* Bar (bottom): the file's path, the track menus, a playback error */
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_add_css_class(bar, "video-tab-bar");
     GtkWidget* where = gtk_label_new(path);
     gtk_label_set_ellipsize(GTK_LABEL(where), PANGO_ELLIPSIZE_START);
     gtk_label_set_xalign(GTK_LABEL(where), 0.0f);
     gtk_widget_set_hexpand(where, TRUE);
-    gtk_widget_set_tooltip_text(where, "Space: play / pause; Left / Right: 5 s back / forward; Home: start");
+    gtk_widget_set_tooltip_text(where, "Space: play / pause; Left / Right: 5 s back / forward; Home: start; "
+                                       "a: next audio track; s: next subtitles");
     gtk_box_append(GTK_BOX(bar), where);
+    gtk_box_append(GTK_BOX(bar), track_menu_new(vt->stream, TRUE));
     vt->status = gtk_label_new(NULL);
     gtk_label_set_ellipsize(GTK_LABEL(vt->status), PANGO_ELLIPSIZE_END);
     gtk_widget_set_visible(vt->status, FALSE);

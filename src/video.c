@@ -2,6 +2,8 @@
 #include "text_style.h"
 #include "file_types.h"
 #include "media_tags.h"
+#include "media_player.h"
+#include "track_menu.h"
 #include <string.h>
 #include <sys/stat.h>
 #include <glib/gstdio.h>
@@ -146,11 +148,16 @@ void video_preview_init(AppData* app) {
      * backend, so each previewed video leaked its pipeline's threads and file
      * descriptors until the process ran out of them. Swapping the file shuts
      * the previous pipeline down. */
-    GtkMediaStream* stream = gtk_media_file_new();
+    GtkMediaStream* stream = media_player_new();
     g_signal_connect(stream, "notify::duration", G_CALLBACK(on_video_duration_notify), app);
     g_signal_connect(stream, "notify::prepared", G_CALLBACK(on_video_prepared_notify), app);
     g_signal_connect(stream, "notify::error", G_CALLBACK(on_video_error_notify), app);
     gtk_video_set_media_stream(GTK_VIDEO(video_widget), stream);
+
+    /* Audio and subtitle tracks, under the title */
+    GtkWidget* tracks = track_menu_new(stream, FALSE);
+    gtk_widget_set_halign(tracks, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(header_box), tracks);
     g_object_unref(stream);
 
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(video_scroll), video_box);

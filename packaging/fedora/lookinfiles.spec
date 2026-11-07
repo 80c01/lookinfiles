@@ -20,6 +20,9 @@ BuildRequires:  pkgconfig(poppler-glib)
 BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(webkitgtk-6.0)
 BuildRequires:  pkgconfig(libarchive)
+BuildRequires:  pkgconfig(gstreamer-video-1.0)
+BuildRequires:  pkgconfig(gstreamer-app-1.0)
+BuildRequires:  pkgconfig(gstreamer-tag-1.0)
 
 Recommends:     sshfs
 

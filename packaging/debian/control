@@ -12,7 +12,8 @@ Build-Depends:
  libpoppler-glib-dev,
  libsqlite3-dev,
  libarchive-dev,
- libwebkitgtk-6.0-dev
+ libwebkitgtk-6.0-dev,
+ libgstreamer-plugins-base1.0-dev
 Standards-Version: 4.6.2
 Homepage: https://github.com/80c01/lookinfiles
 Vcs-Git: https://github.com/80c01/lookinfiles.git

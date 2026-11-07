@@ -79,7 +79,15 @@ also has its own controls.
 `Enter` on a video opens it in a **Video** tab of the editor panel instead,
 where it plays: drag the tab like an editor tab (another pane, a split, the
 preview panel). In the tab, `Space` plays and pauses, `Left` / `Right` seek
-5 seconds, `Home` goes back to the start, `Ctrl+W` closes it.
+5 seconds, `Home` goes back to the start, `a` / `s` switch to the next audio
+track / subtitles, `Ctrl+W` closes it.
+
+When a video has several audio tracks (languages) or subtitles, the player
+shows **Audio** and **Subtitles** buttons (under the title in the preview, in
+the bottom bar of a Video tab) to choose them. Subtitle files beside the video
+with the same name (`Movie.srt`, `Movie.fr.srt`; `.srt`, `.ass`, `.ssa`,
+`.vtt`) are listed with those of the file, and the first one is shown from the
+start. This needs a build with GStreamer (`make deps`).
 
 ## Mailboxes
 

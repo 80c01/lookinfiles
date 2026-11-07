@@ -99,6 +99,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Video tab", "Space / k", "Play / pause", 0},
     {"Video tab", "Left / Right", "Seek 5 seconds back / forward", 0},
     {"Video tab", "Home", "Back to the start", 0},
+    {"Video tab", "a", "Next audio track (language)", 0},
+    {"Video tab", "s", "Next subtitles (then off)", 0},
     {"Video tab", "Ctrl+W", "Close the Video tab", 0},
     {"Video tab", "Ctrl+Alt+Arrow / right-click tab", "Move the Video tab to another pane, as an editor tab", 0},
     {"Help tab", "F1", "Open the user guide (also a click on the top bar's Help button)", 0},

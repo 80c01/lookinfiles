@@ -176,6 +176,8 @@ in the preview)
 | `Space` / `k` | Play / pause |
 | `Left` / `Right` | Seek 5 seconds back / forward |
 | `Home` | Back to the start |
+| `a` | Next audio track (language) |
+| `s` | Next subtitles (those of the file, then the subtitle files beside it, then off) |
 | `Ctrl+W`, middle click on the tab | Close the Video tab |
 | `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the Video tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it) |
 

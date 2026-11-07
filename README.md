@@ -63,6 +63,7 @@ panels, `Ctrl+Q` to quit.
 | SQLite | `libsqlite3-dev` | Database preview |
 | libarchive | `libarchive-dev` | 7z, RAR, xz, zstd, ISO, RPM listings |
 | WebKitGTK 6.0 | `libwebkitgtk-6.0-dev` | Browser tabs |
+| GStreamer base libraries | `libgstreamer-plugins-base1.0-dev` | Video player: choice of audio track and subtitles |
 | SSHFS | `sshfs` | Remote machines (run time) |
 | librsvg | `librsvg2-common` | Icons (run time; usually installed with GTK, missing on minimal systems) |
 
@@ -76,7 +77,7 @@ To install every optional library at once:
 ```bash
 sudo apt install libvte-2.91-gtk4-dev libgtksourceview-5-dev \
   libpoppler-glib-dev libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev \
-  sshfs librsvg2-common
+  libgstreamer-plugins-base1.0-dev sshfs librsvg2-common
 ```
 
 ### Build
@@ -202,7 +203,7 @@ see [icons/COPYING](icons/COPYING).
 
 The PDF preview uses poppler-glib, which is GPL: a binary built with it and
 distributed must follow the GPL terms. The other libraries (GTK, VTE,
-GtkSourceView, WebKitGTK) are LGPL.
+GtkSourceView, WebKitGTK, GStreamer) are LGPL.
 
 LookinFiles is an independent project, not affiliated with or endorsed by
 Microsoft. "VS Code" and "Visual Studio Code" are Microsoft trademarks, used

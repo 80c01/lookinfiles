@@ -15,6 +15,7 @@ depends=(
     'sqlite'
     'webkitgtk-6.0'
     'libarchive'
+    'gst-plugins-base'
 )
 optdepends=(
     'sshfs: remote folders over SSH'

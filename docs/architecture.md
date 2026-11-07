@@ -269,6 +269,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   by a thread, handed to the main context), POSIX pty elsewhere
   (`TERM=xterm-256color`).
 
+- `media_tracks` — helpers of the video track menus: track labels
+  (`media_track_label()`: language, title or "Track N") and the subtitle
+  files of a video among its directory's entries (`media_subtitle_files()`).
+
 **2. Shared types, events & leaf helpers — may use `AppData` and layer 1 only:**
 - `app_types.h` — `AppData`, `EditorTab`, `VirtualLayout`, `FileEntry`,
   `SORT_*`, `SIDEBAR_VIEW_*`, `PREVIEW_*` constants.
@@ -285,6 +289,16 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `HAVE_BUILTIN_TERM` are both defined, and `app_types.h` includes it
   instead of `<vte/vte.h>`. Keys as xterm sends them, IM text input, drag /
   double click selection, wheel and `Shift+PgUp` / `Shift+PgDn` scrollback.
+- `media_player` — the media stream of both video players: a `GtkMediaFile`
+  subclass on GStreamer `playbin` (optional, `HAVE_GSTREAMER`) whose frames
+  come from an `appsink` as `GdkMemoryTexture`s (subtitles drawn in them by
+  playbin). Lists and switches the audio and subtitle tracks
+  (`media_player_track_labels()`, `_set_track()`, `_cycle_track()`, signal
+  `"tracks-changed"`); subtitle files beside the video are loaded as playbin's
+  `suburi` (another one reopens the pipeline at the same position). Without
+  GStreamer, `media_player_new()` is a plain `GtkMediaFile` with no tracks.
+- `track_menu` — the **Audio** / **Subtitles** menu buttons of a player,
+  bound to a `media_player` stream (popovers, current track marked).
 - `icon_picker` — a grid of toggle buttons to choose one theme glyph
   (notebook and bookmark folder dialogs).
 - `dialog` — `AppDialog`, the modal dialog drawn inside the main window: a
@@ -436,7 +450,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   "canvas" page of the preview stack).
 - `video_tab` — the **Video** tabs (`app->video_pages`, every workspace): a
   video opened with `Enter` in the explorer plays in a tab of the editor panel,
-  one per file, with its own `GtkMediaFile` (cleared on close: GStreamer frees
+  one per file, with its own `media_player` stream (cleared on close: GStreamer frees
   its pipeline only then); separate from the preview player (`video`). Opened
   with `editor_add_page()`, movable like a Canvas tab, kept with its workspace
   through `video_tab_workspace_hidden()` / `_shown()` / `_removed()`.

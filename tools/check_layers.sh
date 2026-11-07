@@ -77,6 +77,9 @@ pyc_info:preview_doc
 tfm_info:preview_doc
 pcap_info:preview_doc
 media_tags:
+media_tracks:
+media_player:media_tracks
+track_menu:media_player
 text_encoding:
 vt_screen:
 vt_pty:

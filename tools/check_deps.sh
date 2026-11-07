@@ -37,6 +37,7 @@ check poppler-glib    -    "PDF preview"            libpoppler-glib-dev     opti
 check sqlite3         -    "Database preview"       libsqlite3-dev          optional
 check libarchive      -    "7z, RAR, xz, zstd, ISO" libarchive-dev          optional
 check webkitgtk-6.0   -    "Browser tabs"           libwebkitgtk-6.0-dev    optional
+check gstreamer-video-1.0 - "Video audio / subtitle tracks" libgstreamer-plugins-base1.0-dev optional
 echo "Run time (not needed to build):"
 for tool in sshfs; do
     if command -v "$tool" >/dev/null 2>&1; then

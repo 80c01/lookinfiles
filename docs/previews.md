@@ -162,6 +162,7 @@ every common format to L3 and never leave one below L1.
 | PDF (poppler, optional): progressive pages, PgDn / PgUp, zoom | L3 | `pdf` |
 | PostScript `.ps` / `.eps`, TeX `.dvi`: first 20 pages converted to PDF by Ghostscript (and `dvips`) into the user cache, then shown as a PDF; `m` shows the PostScript source. Without the tools: a message | L3 | `pdf`, `ps_convert` |
 | Video / audio: tags, cover art, codecs, duration | L3 | `video`, `audio`, `media_tags` |
+| Video: audio track and subtitle choice, subtitle files | L3 | `media_player`, `track_menu`, `media_tracks` |
 | CSV / TSV | L3 | `csv` |
 | JSON, JSONC, JSON Lines | L3 | `json_view` |
 | Diffs and patches | L3 | `diff_view` |
