@@ -1,7 +1,6 @@
 /* Properties panel of the Canvas page (see canvas_props.h) */
 #include "canvas_props.h"
 #include "canvas_rough_draw.h"
-#include "icons.h"
 #include "palette.h"
 #include "theme.h"
 
@@ -42,24 +41,10 @@ static const struct {
     {4, "Extra Bold"},
 };
 
-/* Text colours: style flags, and the palette role showing them */
-static const struct {
-    guint flag;
-    const gchar* color;
-    const gchar* tip;
-} TEXT_COLORS[] = {
-    {CANVAS_STYLE_MUTED, "fg_subtle", "Grey Text"},
-    {CANVAS_STYLE_ACCENT, "accent", "Accent Text"},
-    {CANVAS_STYLE_DANGER, "error", "Red Text"},
-    {CANVAS_STYLE_SUCCESS, "success", "Green Text"},
-    {CANVAS_STYLE_WARNING, "warning", "Yellow Text"},
-};
-
 struct CanvasProps {
     GtkWidget* box;
     GtkWidget* shape_box;
     GtkWidget* fill_row;
-    GtkWidget* text_box;
     GtkWidget* colors[G_N_ELEMENTS(COLORS)];
     GtkWidget* fills[G_N_ELEMENTS(FILLS)];
     GtkWidget* widths[G_N_ELEMENTS(WIDTHS)];
@@ -273,173 +258,7 @@ void canvas_props_show_shape(CanvasProps* props, const CanvasShapeStyle* style, 
     props->updating = FALSE;
 
     gtk_widget_set_visible(props->fill_row, with_fill);
-    gtk_widget_set_visible(props->text_box, FALSE);
     gtk_widget_set_visible(props->shape_box, TRUE);
-    gtk_widget_set_visible(props->box, TRUE);
-}
-
-/* ------------------------------------------------------------------------- */
-/* Text section                                                              */
-/* ------------------------------------------------------------------------- */
-
-static GtkWidget* action_button(GtkWidget* child, const gchar* tip, GCallback cb, CanvasProps* props) {
-    GtkWidget* b = gtk_button_new();
-    gtk_button_set_child(GTK_BUTTON(b), child);
-    gtk_widget_add_css_class(b, "canvas-prop");
-    gtk_widget_set_focus_on_click(b, FALSE);
-    gtk_widget_set_focusable(b, FALSE);
-    gtk_widget_set_tooltip_text(b, tip);
-    g_signal_connect(b, "clicked", cb, props);
-    return b;
-}
-
-static void on_style_clicked(GtkButton* btn, gpointer data) {
-    CanvasProps* props = data;
-    GtkPopover* pop = g_object_get_data(G_OBJECT(btn), "pop");
-    if (pop != NULL) gtk_popover_popdown(pop);
-    guint flag = (guint)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "style-flag"));
-    if (props->cbs.on_format_style) props->cbs.on_format_style(flag, props->user_data);
-}
-
-static void on_preset_clicked(GtkButton* btn, gpointer data) {
-    CanvasProps* props = data;
-    GtkPopover* pop = g_object_get_data(G_OBJECT(btn), "pop");
-    if (pop != NULL) gtk_popover_popdown(pop);
-    CanvasPreset preset = (CanvasPreset)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "preset"));
-    if (props->cbs.on_format_preset) props->cbs.on_format_preset(preset, props->user_data);
-}
-
-static void on_list_clicked(GtkButton* btn, gpointer data) {
-    CanvasProps* props = data;
-    const gchar* prefix = g_object_get_data(G_OBJECT(btn), "list-prefix");
-    if (props->cbs.on_format_list) props->cbs.on_format_list(prefix, props->user_data);
-}
-
-static void on_checkbox_clicked(GtkButton* btn, gpointer data) {
-    (void)btn;
-    CanvasProps* props = data;
-    if (props->cbs.on_format_checkbox) props->cbs.on_format_checkbox(props->user_data);
-}
-
-static void on_indent_clicked(GtkButton* btn, gpointer data) {
-    CanvasProps* props = data;
-    gint step = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "indent-step"));
-    if (props->cbs.on_format_indent) props->cbs.on_format_indent(step, props->user_data);
-}
-
-static GtkWidget* style_button(const gchar* icon, const gchar* tip, guint flag, CanvasProps* props) {
-    GtkWidget* b = action_button(icon_image_new(icon), tip, G_CALLBACK(on_style_clicked), props);
-    g_object_set_data(G_OBJECT(b), "style-flag", GINT_TO_POINTER((gint)flag));
-    return b;
-}
-
-/* Menu button with an icon; its popover lists text items (filled by the caller) */
-static GtkWidget* menu_button(const gchar* icon, const gchar* tip, GtkWidget** pop_box) {
-    GtkWidget* mb = gtk_menu_button_new();
-    gtk_menu_button_set_child(GTK_MENU_BUTTON(mb), icon_image_new(icon));
-    gtk_menu_button_set_has_frame(GTK_MENU_BUTTON(mb), FALSE);
-    gtk_widget_add_css_class(mb, "canvas-prop");
-    gtk_widget_set_focus_on_click(mb, FALSE);
-    gtk_widget_set_tooltip_text(mb, tip);
-    GtkWidget* pop = gtk_popover_new();
-    *pop_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
-    gtk_popover_set_child(GTK_POPOVER(pop), *pop_box);
-    gtk_menu_button_set_popover(GTK_MENU_BUTTON(mb), pop);
-    return mb;
-}
-
-static GtkWidget* pop_item(GtkWidget* pop_box, const gchar* label, GCallback cb, CanvasProps* props) {
-    GtkWidget* item = gtk_button_new_with_label(label);
-    gtk_button_set_has_frame(GTK_BUTTON(item), FALSE);
-    gtk_widget_add_css_class(item, "canvas-pop-item");
-    gtk_label_set_xalign(GTK_LABEL(gtk_button_get_child(GTK_BUTTON(item))), 0.0f);
-    g_object_set_data(G_OBJECT(item), "pop", gtk_widget_get_ancestor(pop_box, GTK_TYPE_POPOVER));
-    g_signal_connect(item, "clicked", cb, props);
-    gtk_box_append(GTK_BOX(pop_box), item);
-    return item;
-}
-
-static GtkWidget* text_section(CanvasProps* props) {
-    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
-
-    gtk_box_append(GTK_BOX(box), section_title("Text"));
-    GtkWidget* row = row_new();
-    GtkWidget* pop_box;
-    GtkWidget* presets = menu_button("format-text-rich", "Paragraph Style (Ctrl+Alt+1, 2, 0, Q)", &pop_box);
-    static const struct {
-        const gchar* name;
-        CanvasPreset preset;
-    } PRESETS[] = {
-        {"Heading 1", CANVAS_PRESET_H1},
-        {"Heading 2", CANVAS_PRESET_H2},
-        {"Body Text", CANVAS_PRESET_BODY},
-        {"Quote", CANVAS_PRESET_QUOTE},
-    };
-    for (guint i = 0; i < G_N_ELEMENTS(PRESETS); i++) {
-        GtkWidget* item = pop_item(pop_box, PRESETS[i].name, G_CALLBACK(on_preset_clicked), props);
-        g_object_set_data(G_OBJECT(item), "preset", GINT_TO_POINTER((gint)PRESETS[i].preset));
-    }
-    gtk_box_append(GTK_BOX(row), presets);
-    gtk_box_append(GTK_BOX(row), style_button("format-text-bold", "Bold (Ctrl+B)", CANVAS_STYLE_BOLD, props));
-    gtk_box_append(GTK_BOX(row), style_button("format-text-italic", "Italic (Ctrl+I)", CANVAS_STYLE_ITALIC, props));
-    gtk_box_append(GTK_BOX(row),
-                   style_button("format-text-underline", "Underline (Ctrl+U)", CANVAS_STYLE_UNDERLINE, props));
-    gtk_box_append(GTK_BOX(row), style_button("format-text-strikethrough", "Strikethrough (Ctrl+Shift+S)",
-                                              CANVAS_STYLE_STRIKE, props));
-
-    GtkWidget* more = menu_button("view-more", "More Styles", &pop_box);
-    static const struct {
-        const gchar* name;
-        guint flag;
-    } MORE[] = {
-        {"Highlight (Ctrl+H)", CANVAS_STYLE_HIGHLIGHT},
-        {"Code (Ctrl+E)", CANVAS_STYLE_CODE},
-        {"Serif Font", CANVAS_STYLE_SERIF},
-        {"Monospace Font", CANVAS_STYLE_MONO},
-        {"Small Size", CANVAS_STYLE_SMALL},
-        {"Large Size", CANVAS_STYLE_LARGE},
-    };
-    for (guint i = 0; i < G_N_ELEMENTS(MORE); i++) {
-        GtkWidget* item = pop_item(pop_box, MORE[i].name, G_CALLBACK(on_style_clicked), props);
-        g_object_set_data(G_OBJECT(item), "style-flag", GINT_TO_POINTER((gint)MORE[i].flag));
-    }
-    gtk_box_append(GTK_BOX(row), more);
-    gtk_box_append(GTK_BOX(box), row);
-
-    gtk_box_append(GTK_BOX(box), section_title("Color"));
-    row = row_new();
-    for (guint i = 0; i < G_N_ELEMENTS(TEXT_COLORS); i++) {
-        GtkWidget* sw = action_button(swatch_new(TEXT_COLORS[i].color), TEXT_COLORS[i].tip,
-                                      G_CALLBACK(on_style_clicked), props);
-        g_object_set_data(G_OBJECT(sw), "style-flag", GINT_TO_POINTER((gint)TEXT_COLORS[i].flag));
-        gtk_box_append(GTK_BOX(row), sw);
-    }
-    gtk_box_append(GTK_BOX(box), row);
-
-    gtk_box_append(GTK_BOX(box), section_title("Lists"));
-    row = row_new();
-    GtkWidget* b = action_button(icon_image_new("view-list-bullet"), "Bullet List", G_CALLBACK(on_list_clicked), props);
-    g_object_set_data(G_OBJECT(b), "list-prefix", (gpointer)"- ");
-    gtk_box_append(GTK_BOX(row), b);
-    b = action_button(icon_image_new("view-list-ordered"), "Numbered List", G_CALLBACK(on_list_clicked), props);
-    g_object_set_data(G_OBJECT(b), "list-prefix", (gpointer)"1. ");
-    gtk_box_append(GTK_BOX(row), b);
-    gtk_box_append(GTK_BOX(row), action_button(icon_image_new("object-select"), "Task Checkbox (Ctrl+Space)",
-                                               G_CALLBACK(on_checkbox_clicked), props));
-    b = action_button(icon_image_new("format-indent-less"), "Decrease Indent", G_CALLBACK(on_indent_clicked), props);
-    g_object_set_data(G_OBJECT(b), "indent-step", GINT_TO_POINTER(-1));
-    gtk_box_append(GTK_BOX(row), b);
-    b = action_button(icon_image_new("format-indent-more"), "Increase Indent", G_CALLBACK(on_indent_clicked), props);
-    g_object_set_data(G_OBJECT(b), "indent-step", GINT_TO_POINTER(1));
-    gtk_box_append(GTK_BOX(row), b);
-    gtk_box_append(GTK_BOX(box), row);
-    return box;
-}
-
-void canvas_props_show_text(CanvasProps* props) {
-    if (props == NULL) return;
-    gtk_widget_set_visible(props->shape_box, FALSE);
-    gtk_widget_set_visible(props->text_box, TRUE);
     gtk_widget_set_visible(props->box, TRUE);
 }
 
@@ -461,9 +280,7 @@ CanvasProps* canvas_props_new(const CanvasPropsCallbacks* cbs, gpointer user_dat
     gtk_widget_set_halign(props->box, GTK_ALIGN_START);
     gtk_widget_set_valign(props->box, GTK_ALIGN_START);
     props->shape_box = shape_section(props);
-    props->text_box = text_section(props);
     gtk_box_append(GTK_BOX(props->box), props->shape_box);
-    gtk_box_append(GTK_BOX(props->box), props->text_box);
     gtk_widget_set_visible(props->box, FALSE);
     return props;
 }

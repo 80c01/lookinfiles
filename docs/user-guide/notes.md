@@ -76,17 +76,16 @@ commands and **Crop Selected Picture**.
 Pictures come from `Ctrl+V` with an image copied, or image files dropped
 onto the page; double click a picture to crop it.
 
-### Properties panel
+### Properties panel and format bar
 
-A panel on the left shows what the current tool or block can change:
-
-- **Shapes** (while a drawing tool is chosen, or a shape is selected):
-  stroke colour, fill (none, hatched, solid; closed shapes only), stroke
-  width, and hand-drawn or clean style. The choice applies to the selected
-  shapes and to the next ones drawn.
-- **Text** (while a text box is edited or selected): paragraph style
-  (headings, body, quote), bold, italic, underline, strikethrough, more
-  styles (highlight, code, fonts, sizes), text colour, lists, task
+- **Shapes**: a panel on the left (while a drawing tool is chosen, or a
+  shape is selected) sets the stroke colour, fill (none, hatched, solid;
+  closed shapes only), stroke width, and hand-drawn or clean style. The
+  choice applies to the selected shapes and to the next ones drawn.
+- **Text**: while a text box is edited or selected, a bar floats just above
+  it (below it near the top of the page) and follows it: paragraph style
+  (headings, body, quote), bold, italic, underline, strikethrough, text
+  colour, more styles (highlight, code, fonts, sizes), lists, task
   checkboxes and indent.
 
 ### Canvas actions and shortcuts
@@ -98,9 +97,9 @@ A panel on the left shows what the current tool or block can change:
 | Select several blocks | Drag on the empty page around them, or `Shift+click` each one (again to take it out); moving one moves them all |
 | Snap & Smart Guides | Magnetic snapping to nearby block edges and grid (**Snap to Grid** in the tool bar menu) |
 | Align blocks | Select two blocks or more, then the tool bar menu: left, centers, right, top, middles, bottom, distribute |
-| Predefined styles | Paragraph style menu of the properties panel: Heading 1, Heading 2, Body text, Quote (`Ctrl+Alt+1`, `2`, `0`, `Q`) |
+| Predefined styles | Paragraph style menu of the format bar: Heading 1, Heading 2, Body text, Quote (`Ctrl+Alt+1`, `2`, `0`, `Q`) |
 | Text styling | `Ctrl+B` (bold), `Ctrl+I` (italic), `Ctrl+U` (underline), `Ctrl+Shift+S` (strikethrough), highlight, monospace, font family, text color |
-| Lists & Indents | Bullet list, numbered list, indent more / indent less in the properties panel; Enter auto-continues lists |
+| Lists & Indents | Bullet list, numbered list, indent more / indent less in the format bar; Enter auto-continues lists |
 | Interactive Checkboxes | Checkbox button or type `- [ ] `; click `[ ]` / `[X]` or press `Ctrl+Space` (or `Ctrl+Shift+C`) to toggle |
 | Select block / stop editing | `Esc` |
 | Next / previous block | `Tab` / `Shift+Tab` |

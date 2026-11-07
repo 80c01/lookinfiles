@@ -6,6 +6,7 @@
  * defined in canvas_page.c. */
 
 #include "app_types.h"
+#include "canvas_format_bar.h"
 #include "canvas_history.h"
 #include "canvas_item.h"
 #include "canvas_props.h"
@@ -22,6 +23,7 @@ struct CanvasPage {
     GtkWidget* title;
     CanvasToolbar* toolbar;
     CanvasProps* props;
+    CanvasFormatBar* format_bar;
     CanvasViewport* viewport;
     GtkWidget* zoom_button; /* shows the scale, back to 100 % */
     GtkWidget* surface; /* GtkFixed */
@@ -122,7 +124,8 @@ CanvasItem* canvas_page_new_table(CanvasPage* p, gint x, gint y, gint rows, gint
 CanvasItem* canvas_page_new_picture(CanvasPage* p, const gchar* src, gint x, gint y, gint width, gint height);
 void canvas_page_open_crop(CanvasPage* p, CanvasItem* it);
 
-/* Tool, and the properties panel showing what it can change */
+/* Tool, and the panel (shape style) or the format bar (text) showing what
+ * it can change */
 void canvas_page_set_tool(CanvasPage* p, CanvasTool tool);
 void canvas_page_update_props(CanvasPage* p);
 

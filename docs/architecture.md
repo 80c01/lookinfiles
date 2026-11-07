@@ -403,7 +403,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   snapping, clicks, drops).
   Its parts: `canvas_toolbar` (floating tool bar: select, shapes, pencil,
   text, table, eraser, and the grid / align / crop menu), `canvas_props`
-  (floating panel: shape style, or text formatting), `canvas_draw` (a shape
+  (floating panel: shape style), `canvas_format_bar` (text formatting, a row
+  floating above the text box and following it each frame), `canvas_draw` (a shape
   following the pointer while it is drawn), `canvas_item` (the block widgets),
   `canvas_viewport` (the scrolled view: the page drawn at a scale by a
   transform, so its coordinates stay page coordinates; Ctrl+wheel zoom, pan),

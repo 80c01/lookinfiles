@@ -4,6 +4,7 @@
 #include "canvas_view.h"
 #include "canvas_bind.h"
 #include "canvas_drag.h"
+#include "canvas_format_bar.h"
 #include "canvas_geometry.h"
 #include "canvas_item.h"
 #include "canvas_keys.h"
@@ -68,7 +69,7 @@ static void on_root_map(GtkWidget* widget, gpointer data) {
 }
 
 /* ------------------------------------------------------------------------- */
-/* Toolbar Callbacks (a text change saves the page by itself)                */
+/* Tool Bar, Panel and Format Bar Callbacks (a text change saves by itself)  */
 /* ------------------------------------------------------------------------- */
 
 static CanvasItem* current_text_item(CanvasPage* p) {
@@ -85,31 +86,31 @@ static void on_toolbar_crop(gpointer udata) {
     canvas_page_open_crop(p, canvas_page_current_item(p));
 }
 
-static void on_props_format_style(guint style_flag, gpointer udata) {
+static void on_format_style(guint style_flag, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) canvas_text_toggle_style(it->buffer, &it->pending, style_flag);
     canvas_page_restore_focus(udata);
 }
 
-static void on_props_format_preset(CanvasPreset preset, gpointer udata) {
+static void on_format_preset(CanvasPreset preset, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) canvas_text_apply_preset(it->buffer, preset);
     canvas_page_restore_focus(udata);
 }
 
-static void on_props_format_list(const gchar* prefix, gpointer udata) {
+static void on_format_list(const gchar* prefix, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) canvas_text_insert_list(it->buffer, prefix);
     canvas_page_restore_focus(udata);
 }
 
-static void on_props_format_indent(gint step, gpointer udata) {
+static void on_format_indent(gint step, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) canvas_text_indent(it->buffer, step);
     canvas_page_restore_focus(udata);
 }
 
-static void on_props_format_checkbox(gpointer udata) {
+static void on_format_checkbox(gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) canvas_text_toggle_checkbox(it->buffer);
     canvas_page_restore_focus(udata);
@@ -265,15 +266,16 @@ static CanvasPage* ensure_page(AppData* app) {
         .on_align = on_toolbar_align
     };
     p->toolbar = canvas_toolbar_new(&cbs, p);
-    CanvasPropsCallbacks pcbs = {
-        .on_shape_style = on_props_shape_style,
-        .on_format_style = on_props_format_style,
-        .on_format_preset = on_props_format_preset,
-        .on_format_list = on_props_format_list,
-        .on_format_indent = on_props_format_indent,
-        .on_format_checkbox = on_props_format_checkbox
-    };
+    CanvasPropsCallbacks pcbs = {.on_shape_style = on_props_shape_style};
     p->props = canvas_props_new(&pcbs, p);
+    CanvasFormatBarCallbacks fcbs = {
+        .on_style = on_format_style,
+        .on_preset = on_format_preset,
+        .on_list = on_format_list,
+        .on_indent = on_format_indent,
+        .on_checkbox = on_format_checkbox
+    };
+    p->format_bar = canvas_format_bar_new(&fcbs, p);
     canvas_props_default_style(&p->style);
 
     p->surface = gtk_fixed_new();
@@ -294,6 +296,7 @@ static CanvasPage* ensure_page(AppData* app) {
     gtk_widget_set_margin_top(props_widget, 64);
     gtk_widget_set_margin_start(props_widget, 12);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), props_widget);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), canvas_format_bar_get_widget(p->format_bar));
     gtk_box_append(GTK_BOX(root), overlay);
 
     canvas_drag_attach(p);

@@ -4,6 +4,7 @@
 #include "canvas_bind.h"
 #include "canvas_crop.h"
 #include "canvas_doc.h"
+#include "canvas_format_bar.h"
 #include "canvas_history.h"
 #include "canvas_item.h"
 #include "canvas_props.h"
@@ -29,6 +30,7 @@ void canvas_page_free(CanvasPage* p) {
     g_clear_weak_pointer(&p->last_focus);
     if (p->toolbar != NULL) canvas_toolbar_free(p->toolbar);
     if (p->props != NULL) canvas_props_free(p->props);
+    canvas_format_bar_free(p->format_bar);
     canvas_history_free(p->history);
     if (p->viewport != NULL) canvas_viewport_free(p->viewport);
     g_free(p->drag_before);
@@ -508,20 +510,17 @@ static gboolean closed_shape(CanvasShapeType type) {
     return type != CANVAS_SHAPE_LINE && type != CANVAS_SHAPE_ARROW && type != CANVAS_SHAPE_FREEHAND;
 }
 
-/* The panel shows the style of the next shapes while drawing, else what the
- * current block can change */
+/* The panel shows the style of the next shapes while drawing, or of the
+ * current shape; the format bar floats above the current text box */
 void canvas_page_update_props(CanvasPage* p) {
     if (p->props == NULL) return;
+    CanvasItem* it = p->tool == CANVAS_TOOL_SELECT ? canvas_page_current_item(p) : NULL;
+    canvas_format_bar_show_for(p->format_bar, it != NULL && it->kind == CANVAS_BLOCK_TEXT ? it->frame : NULL);
     if (canvas_tool_draws(p->tool)) {
         canvas_props_show_shape(p->props, &p->style, closed_shape(canvas_tool_shape(p->tool)));
-        return;
-    }
-    CanvasItem* it = p->tool == CANVAS_TOOL_SELECT ? canvas_page_current_item(p) : NULL;
-    if (it != NULL && it->kind == CANVAS_BLOCK_SHAPE) {
+    } else if (it != NULL && it->kind == CANVAS_BLOCK_SHAPE) {
         CanvasShapeStyle style = {it->stroke_color, it->fill_style, it->stroke_width, it->rough};
         canvas_props_show_shape(p->props, &style, closed_shape(it->shape_type));
-    } else if (it != NULL && it->kind == CANVAS_BLOCK_TEXT) {
-        canvas_props_show_text(p->props);
     } else {
         canvas_props_hide(p->props);
     }

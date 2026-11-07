@@ -2,13 +2,10 @@
 #define CANVAS_PROPS_H
 
 /* Properties panel of the Canvas page, floating on the left of the page:
- * - shape style (stroke colour, fill, stroke width, hand-drawn or clean)
- *   while a drawing tool is chosen or a shape is selected;
- * - text formatting (styles, colours, lists, indent) while a text box is
- *   edited or selected;
- * hidden otherwise. */
+ * the shape style (stroke colour, fill, stroke width, hand-drawn or clean)
+ * while a drawing tool is chosen or a shape is selected; hidden otherwise.
+ * Text is formatted with the bar above the text box (canvas_format_bar.h). */
 #include "canvas_doc.h"
-#include "canvas_text.h"
 #include <gtk/gtk.h>
 
 /* Style of a shape: the next shapes drawn, or the selected one */
@@ -22,11 +19,6 @@ typedef struct {
 typedef struct {
     /* The user changed the shape style (any of its fields) */
     void (*on_shape_style)(const CanvasShapeStyle* style, gpointer udata);
-    void (*on_format_style)(guint style_flag, gpointer udata);
-    void (*on_format_preset)(CanvasPreset preset, gpointer udata);
-    void (*on_format_list)(const gchar* prefix, gpointer udata);
-    void (*on_format_indent)(gint step, gpointer udata);
-    void (*on_format_checkbox)(gpointer udata);
 } CanvasPropsCallbacks;
 
 typedef struct CanvasProps CanvasProps;
@@ -45,9 +37,6 @@ const gchar* canvas_props_color_name(const gchar* name);
 /* Show the shape section with style selected; with_fill: the fill row
  * (closed shapes) */
 void canvas_props_show_shape(CanvasProps* props, const CanvasShapeStyle* style, gboolean with_fill);
-
-/* Show the text section */
-void canvas_props_show_text(CanvasProps* props);
 
 void canvas_props_hide(CanvasProps* props);
 
