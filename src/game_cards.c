@@ -525,6 +525,7 @@ static void on_cards_click(GtkGestureClick* gesture, int n_press, double x, doub
     (void)n_press;
     CardsGame* g = (CardsGame*)data;
     if (g == NULL) return;
+    gtk_widget_grab_focus(g->drawing_area);
 
     if (g->type == SUBGAME_BLACKJACK) {
         /* Check Action Buttons at bottom */
@@ -684,6 +685,21 @@ static void on_cards_click(GtkGestureClick* gesture, int n_press, double x, doub
     }
 }
 
+static void cards_reset(CardsGame* g) {
+    if (g == NULL) return;
+    if (g->type == SUBGAME_BLACKJACK) {
+        g->bj_chips = 500;
+        g->bj_bet = 25;
+        g->bj_round_active = FALSE;
+        g->bj_status = "Press Deal (D) to play!";
+    } else if (g->type == SUBGAME_SOLITAIRE) {
+        sol_init(g);
+    } else if (g->type == SUBGAME_MEMORY) {
+        mem_init(g);
+    }
+    gtk_widget_queue_draw(g->drawing_area);
+}
+
 static gboolean on_cards_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
     (void)keycode;
@@ -712,20 +728,18 @@ static gboolean on_cards_key_press(GtkEventControllerKey* controller, guint keyv
         gtk_widget_queue_draw(g->drawing_area);
         return TRUE;
     } else if (keyval == GDK_KEY_r || keyval == GDK_KEY_R) {
-        if (g->type == SUBGAME_BLACKJACK) {
-            g->bj_chips = 500;
-            g->bj_bet = 25;
-            g->bj_round_active = FALSE;
-            g->bj_status = "Press Deal (D) to play!";
-        } else if (g->type == SUBGAME_SOLITAIRE) {
-            sol_init(g);
-        } else if (g->type == SUBGAME_MEMORY) {
-            mem_init(g);
-        }
-        gtk_widget_queue_draw(g->drawing_area);
+        cards_reset(g);
         return TRUE;
     }
     return FALSE;
+}
+
+static void on_cards_restart_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    CardsGame* g = (CardsGame*)data;
+    if (g == NULL) return;
+    cards_reset(g);
+    gtk_widget_grab_focus(g->drawing_area);
 }
 
 static void on_subgame_btn_clicked(GtkButton* btn, gpointer data) {
@@ -783,6 +797,11 @@ GtkWidget* game_cards_create_tab(AppData* app, const gchar* subgame) {
     gtk_widget_set_focusable(switch_btn, FALSE);
     g_signal_connect(switch_btn, "clicked", G_CALLBACK(on_subgame_btn_clicked), g);
     gtk_box_append(GTK_BOX(header), switch_btn);
+
+    GtkWidget* restart_btn = gtk_button_new_with_label("New Game (R)");
+    gtk_widget_set_focusable(restart_btn, FALSE);
+    g_signal_connect(restart_btn, "clicked", G_CALLBACK(on_cards_restart_clicked), g);
+    gtk_box_append(GTK_BOX(header), restart_btn);
 
     gtk_box_append(GTK_BOX(box), header);
 

@@ -7,6 +7,7 @@
 #include "explorer_row.h"
 #include "explorer_tree.h"
 #include "tree_nav.h"
+#include "focus_route.h"
 #include "game_pacman.h"
 #include "game_tetris.h"
 #include "game_space.h"
@@ -525,6 +526,7 @@ void games_launch(AppData* app, const gchar* game_id) {
 
     GtkWidget* game_widget = g_object_get_data(G_OBJECT(tab_content), "game-focus-widget");
     if (game_widget != NULL) {
+        focus_route_mark_focus(game_widget);
         gtk_widget_grab_focus(game_widget);
     }
 }
