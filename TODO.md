@@ -41,12 +41,12 @@ panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
   block (`Ctrl+Shift+K`: `Ctrl+Shift+L` is the window layout), bring to
   front / send to back, export the canvas as PNG / SVG (tool bar menu; no
   UI test step, the menu has no key)
-- [ ] run `make ui-shots` and check the new canvas screenshots
+- [x] run `make ui-shots` and check the new canvas screenshots
   (`canvas_tool_*`, `canvas_text_bold` (the format bar), `canvas_rect_drawn`, `canvas_pencil_drawn`,
   `canvas_checkbox_toggled`, `canvas_undo_delete`, `canvas_redo_delete`, `canvas_zoom_in`,
   `canvas_zoom_reset`, `canvas_band_*`, `canvas_group_*`, `canvas_shift_click`, `canvas_arrow_*`, `canvas_shape_text_*`, `canvas_duplicate`, `canvas_paste`,
   `canvas_send_to_back`, `canvas_locked`, `canvas_unlocked`);
-  not run yet
+  checked: each step shows the expected state
 
 ### Wish list
 
