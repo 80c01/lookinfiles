@@ -63,11 +63,12 @@ static void test_align_boxes(void) {
     /* Sorted by x: box 0 (0..20), box 2 (40..60), box 1 (100..120).
      * Total span = 120 - 0 = 120. Total width = 60. Remaining space = 60.
      * Between 3 boxes, 2 gaps of 30.
-     * Box 0 at 0, box 2 at 50, box 1 at 100. */
+     * Box 0 at 0, box 2 at 50, box 1 at 100: each box keeps its slot in
+     * the array, so the caller maps the positions back to the right items. */
     canvas_align_boxes(boxes, 3, CANVAS_DISTRIBUTE_H);
     g_assert_cmpint(boxes[0].x, ==, 0);
-    g_assert_cmpint(boxes[1].x, ==, 50);
-    g_assert_cmpint(boxes[2].x, ==, 100);
+    g_assert_cmpint(boxes[1].x, ==, 100);
+    g_assert_cmpint(boxes[2].x, ==, 50);
 }
 
 static void test_drag_box(void) {

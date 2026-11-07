@@ -85,16 +85,45 @@ void canvas_snap_box(gint* x, gint* y, gint w, gint h,
     }
 }
 
-static gint compare_rect_x(gconstpointer a, gconstpointer b) {
-    const CanvasRect* r1 = a;
-    const CanvasRect* r2 = b;
-    return r1->x - r2->x;
+/* Indices of rects ordered by their left (vertical: top) edge, ties kept in
+ * input order; the rects themselves stay in place so the caller can map
+ * them back to its items */
+static guint* sorted_indices(const CanvasRect* rects, guint count, gboolean vertical) {
+    guint* order = g_new(guint, count);
+    for (guint i = 0; i < count; i++) {
+        guint j = i;
+        gint key = vertical ? rects[i].y : rects[i].x;
+        while (j > 0) {
+            const CanvasRect* prev = &rects[order[j - 1]];
+            if ((vertical ? prev->y : prev->x) <= key) break;
+            order[j] = order[j - 1];
+            j--;
+        }
+        order[j] = i;
+    }
+    return order;
 }
 
-static gint compare_rect_y(gconstpointer a, gconstpointer b) {
-    const CanvasRect* r1 = a;
-    const CanvasRect* r2 = b;
-    return r1->y - r2->y;
+/* Spread the rects between the leftmost and rightmost edges (vertical: top
+ * and bottom) with equal gaps, keeping their order */
+static void distribute(CanvasRect* rects, guint count, gboolean vertical, gint start, gint end) {
+    guint* order = sorted_indices(rects, count, vertical);
+    gint total = 0;
+    for (guint i = 0; i < count; i++) total += vertical ? rects[i].h : rects[i].w;
+    gint free_space = (end - start) - total;
+    gint used = 0;
+    for (guint k = 0; k < count; k++) {
+        CanvasRect* r = &rects[order[k]];
+        gint pos = start + used + (gint)((gint64)free_space * k / (gint)(count - 1));
+        if (vertical) {
+            r->y = pos;
+            used += r->h;
+        } else {
+            r->x = pos;
+            used += r->w;
+        }
+    }
+    g_free(order);
 }
 
 void canvas_align_boxes(CanvasRect* rects, guint count, CanvasAlignOp op) {
@@ -135,34 +164,12 @@ void canvas_align_boxes(CanvasRect* rects, guint count, CanvasAlignOp op) {
     case CANVAS_ALIGN_BOTTOM:
         for (guint i = 0; i < count; i++) rects[i].y = max_b - rects[i].h;
         break;
-    case CANVAS_DISTRIBUTE_H: {
-        qsort(rects, count, sizeof(CanvasRect), compare_rect_x);
-        gint total_w = 0;
-        for (guint i = 0; i < count; i++) total_w += rects[i].w;
-        gint span = (rects[count - 1].x + rects[count - 1].w) - rects[0].x;
-        gint free_space = span - total_w;
-        gint gap = (count > 1) ? free_space / (gint)(count - 1) : 0;
-        gint cur_x = rects[0].x;
-        for (guint i = 0; i < count; i++) {
-            rects[i].x = cur_x;
-            cur_x += rects[i].w + gap;
-        }
+    case CANVAS_DISTRIBUTE_H:
+        distribute(rects, count, FALSE, min_x, max_r);
         break;
-    }
-    case CANVAS_DISTRIBUTE_V: {
-        qsort(rects, count, sizeof(CanvasRect), compare_rect_y);
-        gint total_h = 0;
-        for (guint i = 0; i < count; i++) total_h += rects[i].h;
-        gint span = (rects[count - 1].y + rects[count - 1].h) - rects[0].y;
-        gint free_space = span - total_h;
-        gint gap = (count > 1) ? free_space / (gint)(count - 1) : 0;
-        gint cur_y = rects[0].y;
-        for (guint i = 0; i < count; i++) {
-            rects[i].y = cur_y;
-            cur_y += rects[i].h + gap;
-        }
+    case CANVAS_DISTRIBUTE_V:
+        distribute(rects, count, TRUE, min_y, max_b);
         break;
-    }
     }
 }
 
