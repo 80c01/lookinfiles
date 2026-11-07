@@ -60,6 +60,9 @@ struct CanvasPage {
     gint drag_point;
     GArray* drag_points;
     gboolean drag_point_added;
+    /* The click gesture acted on this press (a double click): the drag
+     * gesture, which sees it next, leaves it alone */
+    gboolean press_taken;
     /* Blocks selected together (frames, referenced; Shift+click, rubber
      * band); the focused block is selected too */
     GPtrArray* selection;

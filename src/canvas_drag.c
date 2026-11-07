@@ -243,6 +243,10 @@ static gboolean point_remove_at(CanvasPage* p, CanvasItem* it, gdouble x, gdoubl
 
 static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointer data) {
     CanvasPage* p = data;
+    if (p->press_taken) {
+        p->press_taken = FALSE;
+        return;
+    }
     if (p->tool != CANVAS_TOOL_SELECT) {
         if (p->dir == NULL) return;
         gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
@@ -489,17 +493,22 @@ static void on_page_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, g
     CanvasItem* it = canvas_item_of(hit);
     if (it != NULL) {
         if (n_press == 2 && point_remove_at(p, it, x, y)) {
+            p->press_taken = TRUE;
             gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
         } else if (n_press == 2 && it->kind == CANVAS_BLOCK_IMAGE) {
+            p->press_taken = TRUE;
             canvas_page_open_crop(p, it);
         } else if (n_press == 2 && it->label != NULL && !canvas_item_in_label(it, hit)) {
+            p->press_taken = TRUE; /* the press goes on to the label */
             canvas_item_edit(it); /* type in the shape */
         }
         return;
     }
     if (p->dir == NULL) return;
     if (n_press == 2) {
+        p->press_taken = TRUE;
         gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+        band_end(p, FALSE);
         canvas_page_new_text_box(p, (gint)x, (gint)y, "");
         return;
     }
@@ -544,9 +553,14 @@ void canvas_drag_attach(CanvasPage* p) {
     g_signal_connect(drag, "cancel", G_CALLBACK(on_drag_cancel), p);
     gtk_widget_add_controller(p->surface, GTK_EVENT_CONTROLLER(drag));
 
+    /* Clicks seen before the children and the drag, in one group with it:
+     * the drag claiming a press on a block leaves the clicks counted, for a
+     * double click on it */
     GtkGesture* click = gtk_gesture_click_new();
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(click), GTK_PHASE_CAPTURE);
     g_signal_connect(click, "pressed", G_CALLBACK(on_page_pressed), p);
     gtk_widget_add_controller(p->surface, GTK_EVENT_CONTROLLER(click));
+    gtk_gesture_group(click, drag);
 
     GtkEventController* motion = gtk_event_controller_motion_new();
     g_signal_connect(motion, "motion", G_CALLBACK(on_motion), p);
