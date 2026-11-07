@@ -10,6 +10,7 @@
 #include "canvas_history.h"
 #include "canvas_item.h"
 #include "canvas_props.h"
+#include "canvas_table_bar.h"
 #include "canvas_toolbar.h"
 #include "canvas_viewport.h"
 
@@ -24,6 +25,7 @@ struct CanvasPage {
     CanvasToolbar* toolbar;
     CanvasProps* props;
     CanvasFormatBar* format_bar;
+    CanvasTableBar* table_bar;
     CanvasViewport* viewport;
     GtkWidget* zoom_button; /* shows the scale, back to 100 % */
     GtkWidget* surface; /* GtkFixed */

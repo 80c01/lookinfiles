@@ -13,6 +13,8 @@
 #include "canvas_keys.h"
 #include "canvas_page_private.h"
 #include "canvas_props.h"
+#include "canvas_table.h"
+#include "canvas_table_bar.h"
 #include "canvas_text.h"
 #include "canvas_toolbar.h"
 #include "canvas_viewport.h"
@@ -120,6 +122,17 @@ static void on_format_checkbox(gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) canvas_text_toggle_checkbox(it->buffer);
     canvas_page_restore_focus(udata);
+}
+
+/* A row or column added or deleted from the table bar: undone with Ctrl+Z */
+static void on_table_action(CanvasTableAction action, gpointer udata) {
+    CanvasPage* p = udata;
+    CanvasItem* it = canvas_page_current_item(p);
+    if (it == NULL || it->kind != CANVAS_BLOCK_TABLE) return;
+    if (!canvas_table_widget_can(it->content, action)) return;
+    canvas_page_remember(p);
+    canvas_table_widget_apply(it->content, action);
+    canvas_page_update_props(p);
 }
 
 /* A style picked in the panel: for the next shapes, and the selected ones */
@@ -342,6 +355,7 @@ static CanvasPage* ensure_page(AppData* app) {
         .on_checkbox = on_format_checkbox
     };
     p->format_bar = canvas_format_bar_new(&fcbs, p);
+    p->table_bar = canvas_table_bar_new(on_table_action, p);
     canvas_props_default_style(&p->style);
 
     p->surface = gtk_fixed_new();
@@ -363,6 +377,7 @@ static CanvasPage* ensure_page(AppData* app) {
     gtk_widget_set_margin_start(props_widget, 12);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), props_widget);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), canvas_format_bar_get_widget(p->format_bar));
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), canvas_table_bar_get_widget(p->table_bar));
     gtk_box_append(GTK_BOX(root), overlay);
 
     canvas_drag_attach(p);

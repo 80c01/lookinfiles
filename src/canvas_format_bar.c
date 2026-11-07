@@ -1,12 +1,9 @@
 /* Text format bar of the Canvas page (see canvas_format_bar.h) */
 #include "canvas_format_bar.h"
 #include "canvas_doc.h"
+#include "canvas_float.h"
 #include "icons.h"
 #include "theme.h"
-
-#define BAR_GAP 6        /* between the bar and the block */
-#define EDGE 8           /* the bar keeps this far from the overlay sides */
-#define TOOLBAR_ROOM 60  /* the tool bar at the top of the page */
 
 /* Text colours: style flags, and the palette role showing them */
 static const struct {
@@ -23,8 +20,7 @@ static const struct {
 
 struct CanvasFormatBar {
     GtkWidget* box;
-    GtkWidget* target; /* weak */
-    guint tick;
+    CanvasFloat* floating;
     CanvasFormatBarCallbacks cbs;
     gpointer user_data;
 };
@@ -33,14 +29,7 @@ static void ensure_css(void) {
     static gboolean done = FALSE;
     if (done) return;
     done = TRUE;
-    GString* css = g_string_new(
-        ".canvas-format-bar { background-color: @bg_raised; border: 1px solid @border; border-radius: 8px;"
-        " padding: 3px 4px; box-shadow: 0 2px 8px @shadow; }"
-        ".canvas-fmt { min-width: 26px; min-height: 26px; padding: 2px; border-radius: 6px;"
-        " background: none; border: none; box-shadow: none; color: @fg; }"
-        ".canvas-fmt:hover { background-color: @bg_hover; }"
-        ".canvas-fmt-sep { margin: 4px 3px; }"
-        ".canvas-fmt-swatch { min-width: 14px; min-height: 14px; border-radius: 50%; }");
+    GString* css = g_string_new(".canvas-fmt-swatch { min-width: 14px; min-height: 14px; border-radius: 50%; }");
     for (guint i = 0; i < G_N_ELEMENTS(TEXT_COLORS); i++) {
         g_string_append_printf(css, ".canvas-fmt-c-%s { background-color: @%s; }", TEXT_COLORS[i].color,
                                TEXT_COLORS[i].color);
@@ -103,14 +92,7 @@ static GtkWidget* swatch_new(const gchar* color) {
 
 /* Buttons never take the focus: the text keeps it */
 static GtkWidget* action_button(GtkWidget* child, const gchar* tip, GCallback cb, CanvasFormatBar* bar) {
-    GtkWidget* b = gtk_button_new();
-    gtk_button_set_child(GTK_BUTTON(b), child);
-    gtk_widget_add_css_class(b, "canvas-fmt");
-    gtk_widget_set_focus_on_click(b, FALSE);
-    gtk_widget_set_focusable(b, FALSE);
-    gtk_widget_set_tooltip_text(b, tip);
-    g_signal_connect(b, "clicked", cb, bar);
-    return b;
+    return canvas_float_button(child, tip, cb, bar);
 }
 
 static GtkWidget* style_button(const gchar* icon, const gchar* tip, guint flag, CanvasFormatBar* bar) {
@@ -145,9 +127,7 @@ static GtkWidget* pop_item(GtkWidget* pop_box, const gchar* label, GCallback cb,
 }
 
 static void add_sep(GtkWidget* row) {
-    GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_VERTICAL);
-    gtk_widget_add_css_class(sep, "canvas-fmt-sep");
-    gtk_box_append(GTK_BOX(row), sep);
+    canvas_float_add_separator(row);
 }
 
 static void build(CanvasFormatBar* bar, GtkWidget* row) {
@@ -220,58 +200,8 @@ static void build(CanvasFormatBar* bar, GtkWidget* row) {
     gtk_box_append(GTK_BOX(row), b);
 }
 
-/* ------------------------------------------------------------------------- */
-/* Placement                                                                 */
-/* ------------------------------------------------------------------------- */
-
-/* Above the block, at its left; below it when the tool bar is in the way;
- * inside the overlay */
-static void place(CanvasFormatBar* bar) {
-    GtkWidget* overlay = gtk_widget_get_parent(bar->box);
-    if (overlay == NULL || bar->target == NULL) return;
-    graphene_point_t top, bottom;
-    gint th = gtk_widget_get_height(bar->target);
-    if (!gtk_widget_compute_point(bar->target, overlay, &GRAPHENE_POINT_INIT(0, 0), &top) ||
-        !gtk_widget_compute_point(bar->target, overlay, &GRAPHENE_POINT_INIT(0, (float)th), &bottom)) {
-        return;
-    }
-    gint bw = gtk_widget_get_width(bar->box), bh = gtk_widget_get_height(bar->box);
-    gint ow = gtk_widget_get_width(overlay), oh = gtk_widget_get_height(overlay);
-    gint x = CLAMP((gint)top.x, EDGE, MAX(ow - bw - EDGE, EDGE));
-    gint y = (gint)top.y - bh - BAR_GAP;
-    if (y < TOOLBAR_ROOM) y = (gint)bottom.y + BAR_GAP;
-    y = CLAMP(y, TOOLBAR_ROOM, MAX(oh - bh - EDGE, TOOLBAR_ROOM));
-    if (gtk_widget_get_margin_start(bar->box) != x) gtk_widget_set_margin_start(bar->box, x);
-    if (gtk_widget_get_margin_top(bar->box) != y) gtk_widget_set_margin_top(bar->box, y);
-}
-
-/* Each frame while shown: the block may move, the view scroll or zoom */
-static gboolean on_tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
-    (void)widget;
-    (void)clock;
-    CanvasFormatBar* bar = data;
-    if (bar->target == NULL || gtk_widget_get_root(bar->target) == NULL) {
-        bar->tick = 0; /* removed by returning G_SOURCE_REMOVE */
-        canvas_format_bar_show_for(bar, NULL);
-        return G_SOURCE_REMOVE;
-    }
-    place(bar);
-    return G_SOURCE_CONTINUE;
-}
-
 void canvas_format_bar_show_for(CanvasFormatBar* bar, GtkWidget* target) {
-    if (bar == NULL) return;
-    if (target == NULL) {
-        g_clear_weak_pointer(&bar->target);
-        if (bar->tick != 0) gtk_widget_remove_tick_callback(bar->box, bar->tick);
-        bar->tick = 0;
-        gtk_widget_set_visible(bar->box, FALSE);
-        return;
-    }
-    g_set_weak_pointer(&bar->target, target);
-    gtk_widget_set_visible(bar->box, TRUE);
-    place(bar);
-    if (bar->tick == 0) bar->tick = gtk_widget_add_tick_callback(bar->box, on_tick, bar, NULL);
+    if (bar != NULL) canvas_float_show_for(bar->floating, target);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -282,11 +212,8 @@ CanvasFormatBar* canvas_format_bar_new(const CanvasFormatBarCallbacks* cbs, gpoi
     if (cbs != NULL) bar->cbs = *cbs;
     bar->user_data = user_data;
     bar->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 1);
-    gtk_widget_add_css_class(bar->box, "canvas-format-bar");
-    gtk_widget_set_halign(bar->box, GTK_ALIGN_START);
-    gtk_widget_set_valign(bar->box, GTK_ALIGN_START);
+    bar->floating = canvas_float_new(bar->box);
     build(bar, bar->box);
-    gtk_widget_set_visible(bar->box, FALSE);
     return bar;
 }
 
@@ -296,6 +223,6 @@ GtkWidget* canvas_format_bar_get_widget(CanvasFormatBar* bar) {
 
 void canvas_format_bar_free(CanvasFormatBar* bar) {
     if (bar == NULL) return;
-    g_clear_weak_pointer(&bar->target);
+    canvas_float_free(bar->floating);
     g_free(bar);
 }

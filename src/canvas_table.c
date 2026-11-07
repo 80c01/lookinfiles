@@ -1,5 +1,4 @@
 #include "canvas_table.h"
-#include "icons.h"
 #include "theme.h"
 
 #define TABLE_STATE_KEY "canvas-table-state"
@@ -11,6 +10,7 @@ typedef struct {
     GtkWidget* box;
     GtkWidget* grid;
     gboolean rebuilding;
+    gint cur_row, cur_col; /* current cell; -1: none yet */
 } CanvasTableState;
 
 static void ensure_css(void) {
@@ -18,8 +18,6 @@ static void ensure_css(void) {
     if (done) return;
     done = TRUE;
     theme_add_css(".canvas-table-box { background-color: @bg_view; border-radius: 4px; }"
-                  ".canvas-table-bar { padding: 2px 4px; border-bottom: 1px solid @border; }"
-                  ".canvas-table-btn { min-width: 20px; min-height: 20px; padding: 1px 4px; font-size: @size_small; }"
                   ".canvas-table-grid { border: 1px solid @border; border-radius: 2px; }"
                   ".canvas-table-cell { background-color: transparent; color: @fg_text; border: 1px solid @rule;"
                   " border-radius: 0; min-height: 24px; padding: 2px 6px; font-family: @font_ui; }"
@@ -37,6 +35,13 @@ static void on_cell_changed(GtkEditable* editable, gpointer user_data) {
     canvas_table_set_cell(st->block, row, col, text);
     if (st->on_change != NULL) st->on_change(st->block, st->user_data);
     (void)user_data;
+}
+
+static void on_cell_focus(GtkEventControllerFocus* ctrl, gpointer user_data) {
+    CanvasTableState* st = user_data;
+    GtkWidget* entry = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
+    st->cur_row = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(entry), "row"));
+    st->cur_col = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(entry), "col"));
 }
 
 void canvas_table_widget_rebuild(GtkWidget* table_widget) {
@@ -70,6 +75,9 @@ void canvas_table_widget_rebuild(GtkWidget* table_widget) {
             g_object_set_data(G_OBJECT(entry), "row", GINT_TO_POINTER(r));
             g_object_set_data(G_OBJECT(entry), "col", GINT_TO_POINTER(c));
             g_signal_connect(entry, "changed", G_CALLBACK(on_cell_changed), st);
+            GtkEventController* focus = gtk_event_controller_focus_new();
+            g_signal_connect(focus, "enter", G_CALLBACK(on_cell_focus), st);
+            gtk_widget_add_controller(entry, focus);
 
             gtk_grid_attach(GTK_GRID(st->grid), entry, c, r, 1, 1);
         }
@@ -78,40 +86,47 @@ void canvas_table_widget_rebuild(GtkWidget* table_widget) {
     st->rebuilding = FALSE;
 }
 
-static void on_add_row(GtkButton* btn, gpointer user_data) {
-    (void)btn;
-    CanvasTableState* st = user_data;
-    canvas_table_insert_row(st->block, st->block->table_rows);
-    canvas_table_widget_rebuild(st->box);
-    if (st->on_change != NULL) st->on_change(st->block, st->user_data);
+/* The current cell, kept inside the table */
+static void current_cell(CanvasTableState* st, gint* row, gint* col) {
+    gint rows = st->block->table_rows, cols = st->block->table_cols;
+    *row = st->cur_row >= 0 ? CLAMP(st->cur_row, 0, rows - 1) : rows - 1;
+    *col = st->cur_col >= 0 ? CLAMP(st->cur_col, 0, cols - 1) : cols - 1;
 }
 
-static void on_del_row(GtkButton* btn, gpointer user_data) {
-    (void)btn;
-    CanvasTableState* st = user_data;
-    if (st->block->table_rows > 1) {
-        canvas_table_delete_row(st->block, st->block->table_rows - 1);
-        canvas_table_widget_rebuild(st->box);
-        if (st->on_change != NULL) st->on_change(st->block, st->user_data);
+gboolean canvas_table_widget_can(GtkWidget* table_widget, CanvasTableAction action) {
+    CanvasTableState* st = g_object_get_data(G_OBJECT(table_widget), TABLE_STATE_KEY);
+    if (st == NULL) return FALSE;
+    if (action == CANVAS_TABLE_ROW_DELETE) return st->block->table_rows > 1;
+    if (action == CANVAS_TABLE_COL_DELETE) return st->block->table_cols > 1;
+    return TRUE;
+}
+
+void canvas_table_widget_apply(GtkWidget* table_widget, CanvasTableAction action) {
+    CanvasTableState* st = g_object_get_data(G_OBJECT(table_widget), TABLE_STATE_KEY);
+    if (st == NULL || !canvas_table_widget_can(table_widget, action)) return;
+    GtkRoot* root = gtk_widget_get_root(table_widget);
+    GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    gboolean typing = focus != NULL && st->grid != NULL && gtk_widget_is_ancestor(focus, st->grid);
+    gint row, col;
+    current_cell(st, &row, &col);
+    switch (action) {
+    case CANVAS_TABLE_ROW_ABOVE: canvas_table_insert_row(st->block, row); break;
+    case CANVAS_TABLE_ROW_BELOW: canvas_table_insert_row(st->block, ++row); break;
+    case CANVAS_TABLE_ROW_DELETE: canvas_table_delete_row(st->block, row); break;
+    case CANVAS_TABLE_COL_LEFT: canvas_table_insert_col(st->block, col); break;
+    case CANVAS_TABLE_COL_RIGHT: canvas_table_insert_col(st->block, ++col); break;
+    case CANVAS_TABLE_COL_DELETE: canvas_table_delete_col(st->block, col); break;
     }
-}
-
-static void on_add_col(GtkButton* btn, gpointer user_data) {
-    (void)btn;
-    CanvasTableState* st = user_data;
-    canvas_table_insert_col(st->block, st->block->table_cols);
+    row = MIN(row, st->block->table_rows - 1);
+    col = MIN(col, st->block->table_cols - 1);
+    st->cur_row = row;
+    st->cur_col = col;
     canvas_table_widget_rebuild(st->box);
-    if (st->on_change != NULL) st->on_change(st->block, st->user_data);
-}
-
-static void on_del_col(GtkButton* btn, gpointer user_data) {
-    (void)btn;
-    CanvasTableState* st = user_data;
-    if (st->block->table_cols > 1) {
-        canvas_table_delete_col(st->block, st->block->table_cols - 1);
-        canvas_table_widget_rebuild(st->box);
-        if (st->on_change != NULL) st->on_change(st->block, st->user_data);
+    if (typing) {
+        GtkWidget* cell = gtk_grid_get_child_at(GTK_GRID(st->grid), col, row);
+        if (cell != NULL) gtk_widget_grab_focus(cell);
     }
+    if (st->on_change != NULL) st->on_change(st->block, st->user_data);
 }
 
 static void on_state_destroy(gpointer data) {
@@ -124,36 +139,12 @@ GtkWidget* canvas_table_widget_new(CanvasBlock* b, CanvasTableChangeNotify on_ch
     st->block = b;
     st->on_change = on_change;
     st->user_data = user_data;
+    st->cur_row = -1;
+    st->cur_col = -1;
 
     st->box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(st->box, "canvas-table-box");
     g_object_set_data_full(G_OBJECT(st->box), TABLE_STATE_KEY, st, on_state_destroy);
-
-    /* Compact toolbar above table */
-    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
-    gtk_widget_add_css_class(bar, "canvas-table-bar");
-
-    GtkWidget* b_add_row = gtk_button_new_with_label("+ Row");
-    gtk_widget_add_css_class(b_add_row, "canvas-table-btn");
-    g_signal_connect(b_add_row, "clicked", G_CALLBACK(on_add_row), st);
-    gtk_box_append(GTK_BOX(bar), b_add_row);
-
-    GtkWidget* b_del_row = gtk_button_new_with_label("- Row");
-    gtk_widget_add_css_class(b_del_row, "canvas-table-btn");
-    g_signal_connect(b_del_row, "clicked", G_CALLBACK(on_del_row), st);
-    gtk_box_append(GTK_BOX(bar), b_del_row);
-
-    GtkWidget* b_add_col = gtk_button_new_with_label("+ Col");
-    gtk_widget_add_css_class(b_add_col, "canvas-table-btn");
-    g_signal_connect(b_add_col, "clicked", G_CALLBACK(on_add_col), st);
-    gtk_box_append(GTK_BOX(bar), b_add_col);
-
-    GtkWidget* b_del_col = gtk_button_new_with_label("- Col");
-    gtk_widget_add_css_class(b_del_col, "canvas-table-btn");
-    g_signal_connect(b_del_col, "clicked", G_CALLBACK(on_del_col), st);
-    gtk_box_append(GTK_BOX(bar), b_del_col);
-
-    gtk_box_append(GTK_BOX(st->box), bar);
 
     canvas_table_widget_rebuild(st->box);
     return st->box;

@@ -5,6 +5,7 @@
 #include "canvas_crop.h"
 #include "canvas_doc.h"
 #include "canvas_format_bar.h"
+#include "canvas_table_bar.h"
 #include "canvas_history.h"
 #include "canvas_item.h"
 #include "canvas_props.h"
@@ -33,6 +34,7 @@ void canvas_page_free(CanvasPage* p) {
     if (p->toolbar != NULL) canvas_toolbar_free(p->toolbar);
     if (p->props != NULL) canvas_props_free(p->props);
     canvas_format_bar_free(p->format_bar);
+    canvas_table_bar_free(p->table_bar);
     canvas_history_free(p->history);
     if (p->viewport != NULL) canvas_viewport_free(p->viewport);
     g_free(p->drag_before);
@@ -659,11 +661,14 @@ static gboolean closed_shape(CanvasShapeType type) {
 }
 
 /* The panel shows the style of the next shapes while drawing, or of the
- * current shape; the format bar floats above the current text box */
+ * current shape; the format bar floats above the current text box, the
+ * table bar above the current table */
 void canvas_page_update_props(CanvasPage* p) {
     if (p->props == NULL) return;
     CanvasItem* it = p->tool == CANVAS_TOOL_SELECT ? canvas_page_current_item(p) : NULL;
     canvas_format_bar_show_for(p->format_bar, it != NULL && it->kind == CANVAS_BLOCK_TEXT ? it->frame : NULL);
+    gboolean table = it != NULL && it->kind == CANVAS_BLOCK_TABLE;
+    canvas_table_bar_show_for(p->table_bar, table ? it->frame : NULL, table ? it->content : NULL);
     if (canvas_tool_draws(p->tool)) {
         canvas_props_show_shape(p->props, &p->style, closed_shape(canvas_tool_shape(p->tool)));
     } else if (it != NULL && it->kind == CANVAS_BLOCK_SHAPE) {

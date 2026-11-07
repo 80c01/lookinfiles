@@ -408,7 +408,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   menu), `canvas_export` (PNG / SVG of the page: its render node drawn with
   cairo, cropped to the blocks), `canvas_props`
   (floating panel: shape style), `canvas_format_bar` (text formatting, a row
-  floating above the text box and following it each frame), `canvas_draw` (a shape
+  floating above the text box), `canvas_table_bar` (insert / delete rows
+  and columns at the current cell, floating above the table),
+  `canvas_float` (what the two bars share: placement next to the block,
+  following it each frame, and their look), `canvas_table` (the cells of a
+  table block), `canvas_draw` (a shape
   following the pointer while it is drawn), `canvas_item` (the block widgets),
   `canvas_viewport` (the scrolled view: the page drawn at a scale by a
   transform, so its coordinates stay page coordinates; Ctrl+wheel zoom, pan),
