@@ -373,6 +373,34 @@ static void test_shape_label(void) {
     g_assert_cmpstr(md, ==, "Plan & build\n<v2>\n");
 }
 
+/* Points and crops are written with a '.' decimal point; notes saved with
+ * a ',' one (French locale: "16,3,17,0") still load */
+static void test_decimal_comma(void) {
+    g_autoptr(CanvasDoc) doc = canvas_doc_new();
+    CanvasBlock* b = canvas_doc_add_shape(doc, 0, 0, 40, 40, CANVAS_SHAPE_LINE);
+    CanvasPoint pt = {16.5, 17.75};
+    g_array_append_val(b->points, pt);
+    g_autofree gchar* xml = canvas_doc_to_xml(doc);
+    g_assert_nonnull(strstr(xml, "points=\"16.5,17.8\""));
+
+    const gchar* old = "<canvas version=\"1\">"
+                       "<shape type=\"arrow\" x=\"0\" y=\"0\" w=\"40\" h=\"40\" points=\"16,3,17,0 17,2,94,0\"/>"
+                       "<image x=\"0\" y=\"0\" w=\"10\" h=\"10\" src=\"media/a.png\" crop=\"0,1000,0,2000,0,5000,0,6000\"/>"
+                       "</canvas>";
+    g_autoptr(GError) error = NULL;
+    g_autoptr(CanvasDoc) back = canvas_doc_parse(old, -1, &error);
+    g_assert_no_error(error);
+    const CanvasBlock* line = g_ptr_array_index(back->blocks, 0);
+    g_assert_cmpuint(line->points->len, ==, 2);
+    g_assert_cmpfloat_with_epsilon(g_array_index(line->points, CanvasPoint, 0).x, 16.3, 1e-9);
+    g_assert_cmpfloat_with_epsilon(g_array_index(line->points, CanvasPoint, 0).y, 17.0, 1e-9);
+    g_assert_cmpfloat_with_epsilon(g_array_index(line->points, CanvasPoint, 1).x, 17.2, 1e-9);
+    g_assert_cmpfloat_with_epsilon(g_array_index(line->points, CanvasPoint, 1).y, 94.0, 1e-9);
+    const CanvasBlock* img = g_ptr_array_index(back->blocks, 1);
+    g_assert_cmpfloat_with_epsilon(img->crop_x, 0.1, 1e-9);
+    g_assert_cmpfloat_with_epsilon(img->crop_h, 0.6, 1e-9);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/canvas_doc/runs_merge", test_runs_merge);
@@ -383,6 +411,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_doc/shape_label", test_shape_label);
     g_test_add_func("/canvas_doc/table_round_trip", test_table_round_trip);
     g_test_add_func("/canvas_doc/image_crop_round_trip", test_image_crop_round_trip);
+    g_test_add_func("/canvas_doc/decimal_comma", test_decimal_comma);
     g_test_add_func("/canvas_doc/raise_remove", test_raise_remove);
     g_test_add_func("/canvas_doc/files", test_files);
     g_test_add_func("/canvas_doc/create_delete", test_create_delete);

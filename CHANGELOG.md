@@ -258,6 +258,10 @@ All notable changes to this project are listed here. The format follows
 
 ### Fixed
 
+- Canvas: in a locale with a decimal comma (French...), the points of lines
+  and arrows and the picture crops were saved as "16,3,17,0", so the preview
+  and the reopened note drew other shapes. They are now written with a dot,
+  and notes saved the old way load as drawn.
 - Crashes: a terminal whose shell could not start freed VTE's error a
   second time (heap corruption); selecting a row whose folders had to be
   expanded first could use the row after a bookmarks or notes rebuild freed it.

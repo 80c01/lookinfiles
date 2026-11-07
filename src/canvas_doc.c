@@ -280,6 +280,26 @@ static gint attr_int(const gchar** names, const gchar** values, const gchar* nam
     return (v != NULL) ? (gint)g_ascii_strtoll(v, NULL, 10) : 0;
 }
 
+/* count numbers separated by ',' into out; also reads the notes saved with
+ * a ',' decimal point (French locale), where "16,3,17,0" is 16.3 and 17.0.
+ * FALSE when s holds neither form. */
+static gboolean parse_numbers(const gchar* s, guint count, gdouble* out) {
+    gchar** parts = g_strsplit(s, ",", -1);
+    guint n = g_strv_length(parts);
+    gboolean ok = n == count || n == 2 * count;
+    for (guint k = 0; ok && k < count; k++) {
+        if (n == count) {
+            out[k] = g_ascii_strtod(parts[k], NULL);
+        } else {
+            gchar* joined = g_strconcat(parts[2 * k], ".", parts[2 * k + 1], NULL);
+            out[k] = g_ascii_strtod(joined, NULL);
+            g_free(joined);
+        }
+    }
+    g_strfreev(parts);
+    return ok;
+}
+
 static guint parse_styles(const gchar* s) {
     guint styles = 0;
     if (s == NULL) return 0;
@@ -357,14 +377,13 @@ static void on_start(GMarkupParseContext* ctx, const gchar* element, const gchar
             CanvasBlock* b = canvas_doc_add_image(st->doc, x, y, w, h, src);
             const gchar* crop = attr(names, values, "crop");
             if (crop != NULL) {
-                gchar** parts = g_strsplit(crop, ",", 4);
-                if (parts[0] && parts[1] && parts[2] && parts[3]) {
-                    b->crop_x = g_ascii_strtod(parts[0], NULL);
-                    b->crop_y = g_ascii_strtod(parts[1], NULL);
-                    b->crop_w = g_ascii_strtod(parts[2], NULL);
-                    b->crop_h = g_ascii_strtod(parts[3], NULL);
+                gdouble v[4];
+                if (parse_numbers(crop, 4, v)) {
+                    b->crop_x = v[0];
+                    b->crop_y = v[1];
+                    b->crop_w = v[2];
+                    b->crop_h = v[3];
                 }
-                g_strfreev(parts);
             }
         }
     } else if (strcmp(element, "shape") == 0) {
@@ -399,10 +418,9 @@ static void on_start(GMarkupParseContext* ctx, const gchar* element, const gchar
         if (pts != NULL && pts[0] != '\0') {
             gchar** pairs = g_strsplit(pts, " ", -1);
             for (gint i = 0; pairs[i] != NULL; i++) {
-                gchar* comma = strchr(pairs[i], ',');
-                if (comma != NULL) {
-                    *comma = '\0';
-                    CanvasPoint pt = {g_ascii_strtod(pairs[i], NULL), g_ascii_strtod(comma + 1, NULL)};
+                gdouble v[2];
+                if (parse_numbers(pairs[i], 2, v)) {
+                    CanvasPoint pt = {v[0], v[1]};
                     g_array_append_val(b->points, pt);
                 }
             }
@@ -547,6 +565,13 @@ static void insert_ids(GString* out, gsize start, const CanvasBlock* b) {
     g_string_free(ids, TRUE);
 }
 
+/* A number with a '.' decimal point whatever the locale (printf would
+ * write "16,3" in a French locale, read back as two numbers) */
+static void append_number(GString* out, const gchar* format, gdouble v) {
+    gchar buf[G_ASCII_DTOSTR_BUF_SIZE];
+    g_string_append(out, g_ascii_formatd(buf, sizeof buf, format, v));
+}
+
 gchar* canvas_doc_to_xml(const CanvasDoc* doc) {
     GString* out = g_string_new("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<canvas version=\"1\">\n");
     for (guint i = 0; doc != NULL && i < doc->blocks->len; i++) {
@@ -557,9 +582,16 @@ gchar* canvas_doc_to_xml(const CanvasDoc* doc) {
         } else if (b->kind == CANVAS_BLOCK_IMAGE) {
             if (b->crop_w > 0 && b->crop_h > 0 &&
                 (b->crop_x > 0.001 || b->crop_y > 0.001 || b->crop_w < 0.999 || b->crop_h < 0.999)) {
+                GString* crop = g_string_new(NULL);
+                const gdouble parts[4] = {b->crop_x, b->crop_y, b->crop_w, b->crop_h};
+                for (guint k = 0; k < 4; k++) {
+                    if (k > 0) g_string_append_c(crop, ',');
+                    append_number(crop, "%.4f", parts[k]);
+                }
                 gchar* line = g_markup_printf_escaped(
-                    "  <image x=\"%d\" y=\"%d\" w=\"%d\" h=\"%d\" src=\"%s\" crop=\"%.4f,%.4f,%.4f,%.4f\"/>\n",
-                    b->x, b->y, b->w, b->h, b->src, b->crop_x, b->crop_y, b->crop_w, b->crop_h);
+                    "  <image x=\"%d\" y=\"%d\" w=\"%d\" h=\"%d\" src=\"%s\" crop=\"%s\"/>\n",
+                    b->x, b->y, b->w, b->h, b->src, crop->str);
+                g_string_free(crop, TRUE);
                 g_string_append(out, line);
                 g_free(line);
             } else {
@@ -574,7 +606,9 @@ gchar* canvas_doc_to_xml(const CanvasDoc* doc) {
                 for (guint p = 0; p < b->points->len; p++) {
                     const CanvasPoint* pt = &g_array_index(b->points, CanvasPoint, p);
                     if (p > 0) g_string_append_c(pts_str, ' ');
-                    g_string_append_printf(pts_str, "%.1f,%.1f", pt->x, pt->y);
+                    append_number(pts_str, "%.1f", pt->x);
+                    g_string_append_c(pts_str, ',');
+                    append_number(pts_str, "%.1f", pt->y);
                 }
             }
             gchar* line = g_markup_printf_escaped(
