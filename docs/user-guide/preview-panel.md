@@ -72,7 +72,9 @@ git change bars along its edge. Click or drag in it to scroll.
 
 ## Video and audio
 
-`Space` or `p` plays and pauses. The player also has its own controls.
+`Space` or `p` plays and pauses, `Left` / `Right` seek 5 seconds back /
+forward in a video (also from the explorer, on the video shown). The player
+also has its own controls.
 
 `Enter` on a video opens it in a **Video** tab of the editor panel instead,
 where it plays: drag the tab like an editor tab (another pane, a split, the

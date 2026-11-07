@@ -207,6 +207,23 @@ void video_preview_toggle_play(AppData* app) {
     }
 }
 
+#define SEEK_STEP_US (5 * G_USEC_PER_SEC)
+
+gboolean video_preview_seek_key(AppData* app, guint keyval, GdkModifierType state) {
+    if (app == NULL || app->video_widget == NULL || app->video_current_path == NULL || app->render_raw ||
+        app->viewed_kind != FILE_KIND_VIDEO || (keyval != GDK_KEY_Left && keyval != GDK_KEY_Right) ||
+        (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK | GDK_SUPER_MASK)) != 0) {
+        return FALSE;
+    }
+    GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
+    if (stream == NULL || !gtk_media_stream_is_seekable(stream)) return TRUE;
+    gint64 to = gtk_media_stream_get_timestamp(stream) + (keyval == GDK_KEY_Right ? SEEK_STEP_US : -SEEK_STEP_US);
+    gint64 duration = gtk_media_stream_get_duration(stream);
+    if (duration > 0 && to > duration) to = duration;
+    gtk_media_stream_seek(stream, MAX(to, 0));
+    return TRUE;
+}
+
 static void render_video_raw(AppData* app, const gchar* name, const gchar* full) {
     video_preview_stop(app);
 

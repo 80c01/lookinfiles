@@ -218,6 +218,7 @@ in the preview)
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |
 | `PgDn` / `PgUp` | PDF: next / previous page; mailbox: from the list into each message and back |
 | `Space` / `p` | Play / pause the video or audio |
+| `Left` / `Right` | Video: seek 5 seconds back / forward (also in the explorer, on the video shown; `h` / `l` still navigate) |
 | `Tab` / `Shift+Tab` | Org-mode: fold the heading / cycle the global visibility |
 | `t` | Org-mode: cycle the TODO keyword (the file's `#+TODO:` keywords; `TODO` → `DONE` → none by default) |
 | `Space` / `Enter` | Org-mode: toggle the checkbox `[ ]` ↔ `[X]` (parents and `[n/m]` cookies follow) |

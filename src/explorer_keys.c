@@ -303,6 +303,12 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         }
     }
 
+    /* Left / Right on a video shown in the preview: seek (h / l still navigate) */
+    if (app->nav_prefix == NAV_PREFIX_NONE && explorer_row_is(tree_nav_selected(app), "file") &&
+        g_strcmp0(tree_nav_selected(app)->path, app->viewed_path) == 0 && video_preview_seek_key(app, keyval, state)) {
+        return TRUE;
+    }
+
     NavPrefix prefix = (NavPrefix)app->nav_prefix;
     NavPrefix next = NAV_PREFIX_NONE;
     NavAction action = nav_keys_lookup(app_nav_style(app), prefix, keyval, state, &next);

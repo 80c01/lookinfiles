@@ -153,6 +153,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Preview panel", "+ / - / 0", "Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)", 0},
     {"Preview panel", "PgDn / PgUp", "PDF: next / previous page; mailbox: next / previous message", 0},
     {"Preview panel", "Space / p", "Play / pause active video or audio preview", 0},
+    {"Preview panel", "Left / Right", "Video: seek 5 seconds back / forward (also in the explorer)", 0},
     {"Org-mode", "Tab / Shift+Tab", "In Org view: Fold/unfold heading or cycle global visibility (Overview -> Contents -> Show All)", 0},
     {"Org-mode", "t / Space / Return", "In Org view: Cycle TODO keyword (#+TODO, default TODO -> DONE) / toggle checkbox", 0},
     {"Org-mode", "Click heading/todo/box", "Interactive click: toggle fold, cycle TODO, toggle checkbox, open link", 0},

@@ -123,10 +123,13 @@ format_scenario() {
     key Up Up Up Up Up Up Up Up Up Up Up
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
-    # Video: Enter opens a Video tab in the editor panel (playing: the frame
-    # varies, so these shots are not compared with a baseline), Space pauses
-    # it, Ctrl+Alt+Left moves it to the preview panel, Ctrl+W closes it
+    # Video: Space plays the preview, Right seeks in it; Enter opens a Video
+    # tab in the editor panel (playing: the frame varies, so these shots are
+    # not compared with a baseline), Space pauses it, Ctrl+Alt+Left moves it
+    # to the preview panel, Ctrl+W closes it
     key alt+Left End
+    key space Right;    shot fmt_video_preview_seek_animated
+    key space
     key Return;         shot fmt_video_tab_animated
     key space Home;     shot fmt_video_tab_paused_animated
     key ctrl+alt+Left;  shot fmt_video_tab_moved_animated

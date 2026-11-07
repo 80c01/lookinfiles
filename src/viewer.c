@@ -146,6 +146,11 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
+    /* Video preview: Left / Right seek 5 s */
+    if (app->nav_prefix == NAV_PREFIX_NONE && video_preview_seek_key(app, keyval, state)) {
+        return TRUE;
+    }
+
     NavPrefix prefix = (NavPrefix)app->nav_prefix;
     NavPrefix next = NAV_PREFIX_NONE;
     NavAction action = nav_keys_lookup(app_nav_style(app), prefix, keyval, state, &next);

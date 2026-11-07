@@ -18,4 +18,8 @@ void video_preview_pause(AppData* app);
 /* Toggle play/pause state of the active video stream */
 void video_preview_toggle_play(AppData* app);
 
+/* Video preview shown (not raw) and keyval Left / Right without modifiers:
+ * seek 5 s back / forward. Returns TRUE when the key was used. */
+gboolean video_preview_seek_key(AppData* app, guint keyval, GdkModifierType state);
+
 #endif /* VIDEO_H */
