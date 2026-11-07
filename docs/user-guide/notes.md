@@ -63,7 +63,7 @@ and drag on the page; the letter in brackets picks it from the keyboard
 |---|---|
 | Select (`V`) | Select, move and resize blocks; drag on the empty page to select the blocks inside the box (`Shift`: add them) |
 | Rectangle (`R`), Diamond (`D`), Ellipse (`O`) | Drag to draw the shape (`Shift`: square, circle); a click makes one of the default size |
-| Arrow (`A`), Line (`L`) | Drag from the start to the end (`Shift`: multiple of 45 degrees) |
+| Arrow (`A`), Line (`L`) | Drag from the start to the end (`Shift`: multiple of 45 degrees); an end drawn on a block is bound to it and follows it when it moves (moving the arrow alone frees it) |
 | Pencil (`P`) | Draw freehand; the pencil stays chosen for the next stroke |
 | Text box (`T`) | Click where the text goes (double click or `Ctrl+Enter` also work) |
 | Table (`B`) | Click where the table goes: a 3 × 3 grid of editable cells with `+ Row`, `- Row`, `+ Col`, `- Col` controls |

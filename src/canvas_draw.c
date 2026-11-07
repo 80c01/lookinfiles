@@ -107,3 +107,42 @@ void canvas_draw_finish(CanvasItem* it) {
     }
     redraw(it);
 }
+
+gboolean canvas_draw_is_line(const CanvasItem* it) {
+    return it != NULL && it->kind == CANVAS_BLOCK_SHAPE &&
+           (it->shape_type == CANVAS_SHAPE_LINE || it->shape_type == CANVAS_SHAPE_ARROW);
+}
+
+/* Same placement as the drawing (canvas_rough_draw.c): the bounding box of
+ * the points fills the block, CANVAS_LINE_PAD from its sides */
+gboolean canvas_draw_get_ends(const CanvasItem* it, gdouble* x0, gdouble* y0, gdouble* x1, gdouble* y1) {
+    if (!canvas_draw_is_line(it) || it->points == NULL || it->points->len < 2) return FALSE;
+    const CanvasPoint* a = &g_array_index(it->points, CanvasPoint, 0);
+    const CanvasPoint* b = &g_array_index(it->points, CanvasPoint, it->points->len - 1);
+    gdouble bx = MIN(a->x, b->x), by = MIN(a->y, b->y);
+    gdouble bw = fabs(b->x - a->x), bh = fabs(b->y - a->y);
+    gdouble pad = CANVAS_LINE_PAD;
+    gdouble tw = MAX(it->w - 2 * pad, 0), th = MAX(it->h - 2 * pad, 0);
+    *x0 = it->x + canvas_map_coord(a->x, bx, bw, pad, tw);
+    *y0 = it->y + canvas_map_coord(a->y, by, bh, pad, th);
+    *x1 = it->x + canvas_map_coord(b->x, bx, bw, pad, tw);
+    *y1 = it->y + canvas_map_coord(b->y, by, bh, pad, th);
+    return TRUE;
+}
+
+void canvas_draw_set_ends(CanvasItem* it, gdouble x0, gdouble y0, gdouble x1, gdouble y1) {
+    if (!canvas_draw_is_line(it)) return;
+    ensure_points(it);
+    g_array_set_size(it->points, 0);
+    CanvasPoint a = {x0, y0};
+    CanvasPoint b = {x1, y1};
+    g_array_append_val(it->points, a);
+    g_array_append_val(it->points, b);
+    fit_points(it);
+    for (guint i = 0; i < it->points->len; i++) {
+        CanvasPoint* p = &g_array_index(it->points, CanvasPoint, i);
+        p->x -= it->x;
+        p->y -= it->y;
+    }
+    redraw(it);
+}

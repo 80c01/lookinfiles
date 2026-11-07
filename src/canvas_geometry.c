@@ -202,3 +202,26 @@ gdouble canvas_map_coord(gdouble v, gdouble from, gdouble from_len, gdouble to, 
     if (from_len <= 0) return to + to_len / 2.0;
     return to + (v - from) * to_len / from_len;
 }
+
+gboolean canvas_edge_point(CanvasOutline outline, const CanvasRect* box, gdouble tx, gdouble ty,
+                           gdouble gap, gdouble* x, gdouble* y) {
+    gdouble hw = MAX(box->w / 2.0, 1.0), hh = MAX(box->h / 2.0, 1.0);
+    gdouble cx = box->x + box->w / 2.0, cy = box->y + box->h / 2.0;
+    gdouble dx = tx - cx, dy = ty - cy;
+    gdouble len = sqrt(dx * dx + dy * dy);
+    if (len < 1e-9) return FALSE;
+    /* t: the part of (dx, dy) from the centre to the outline */
+    gdouble t;
+    if (outline == CANVAS_OUTLINE_ELLIPSE) {
+        t = 1.0 / sqrt((dx / hw) * (dx / hw) + (dy / hh) * (dy / hh));
+    } else if (outline == CANVAS_OUTLINE_DIAMOND) {
+        t = 1.0 / (fabs(dx) / hw + fabs(dy) / hh);
+    } else {
+        gdouble tx_ = fabs(dx) > 1e-9 ? hw / fabs(dx) : G_MAXDOUBLE;
+        gdouble ty_ = fabs(dy) > 1e-9 ? hh / fabs(dy) : G_MAXDOUBLE;
+        t = MIN(tx_, ty_);
+    }
+    *x = cx + dx * t + dx / len * gap;
+    *y = cy + dy * t + dy / len * gap;
+    return TRUE;
+}

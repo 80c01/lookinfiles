@@ -77,27 +77,41 @@ void canvas_doc_free(CanvasDoc* doc) {
     g_free(doc);
 }
 
+/* The id after the highest one in the document */
+static gint next_id(const CanvasDoc* doc) {
+    gint id = 0;
+    for (guint i = 0; i < doc->blocks->len; i++) {
+        id = MAX(id, ((const CanvasBlock*)g_ptr_array_index(doc->blocks, i))->id);
+    }
+    return id + 1;
+}
+
+static void add_block(CanvasDoc* doc, CanvasBlock* b) {
+    b->id = next_id(doc);
+    g_ptr_array_add(doc->blocks, b);
+}
+
 CanvasBlock* canvas_doc_add_text(CanvasDoc* doc, gint x, gint y, gint w, const gchar* text) {
     CanvasBlock* b = block_new(CANVAS_BLOCK_TEXT, x, y, w > 0 ? w : DEFAULT_TEXT_WIDTH, 0);
     if (text != NULL) {
         g_free(b->text);
         b->text = g_utf8_make_valid(text, -1);
     }
-    g_ptr_array_add(doc->blocks, b);
+    add_block(doc, b);
     return b;
 }
 
 CanvasBlock* canvas_doc_add_image(CanvasDoc* doc, gint x, gint y, gint w, gint h, const gchar* src) {
     CanvasBlock* b = block_new(CANVAS_BLOCK_IMAGE, x, y, w, h);
     b->src = g_strdup(src != NULL ? src : "");
-    g_ptr_array_add(doc->blocks, b);
+    add_block(doc, b);
     return b;
 }
 
 CanvasBlock* canvas_doc_add_shape(CanvasDoc* doc, gint x, gint y, gint w, gint h, CanvasShapeType shape_type) {
     CanvasBlock* b = block_new(CANVAS_BLOCK_SHAPE, x, y, MAX(w, 16), MAX(h, 16));
     b->shape_type = shape_type;
-    g_ptr_array_add(doc->blocks, b);
+    add_block(doc, b);
     return b;
 }
 
@@ -114,7 +128,7 @@ CanvasBlock* canvas_doc_add_table(CanvasDoc* doc, gint x, gint y, gint rows, gin
         gint width = 120;
         g_array_append_val(b->col_widths, width);
     }
-    g_ptr_array_add(doc->blocks, b);
+    add_block(doc, b);
     return b;
 }
 
@@ -279,6 +293,26 @@ static guint parse_styles(const gchar* s) {
     return styles;
 }
 
+static gboolean id_taken(const CanvasDoc* doc, const CanvasBlock* self, gint id) {
+    for (guint i = 0; i < doc->blocks->len; i++) {
+        const CanvasBlock* o = g_ptr_array_index(doc->blocks, i);
+        if (o != self && o->id == id) return TRUE;
+    }
+    return FALSE;
+}
+
+/* The id and the bound ends of the block just read; a missing or repeated
+ * id keeps the new one it was given */
+static void read_ids(CanvasDoc* doc, const gchar** names, const gchar** values) {
+    CanvasBlock* b = g_ptr_array_index(doc->blocks, doc->blocks->len - 1);
+    gint id = attr_int(names, values, "id");
+    if (id > 0 && !id_taken(doc, b, id)) b->id = id;
+    if (b->kind == CANVAS_BLOCK_SHAPE) {
+        b->start_id = MAX(attr_int(names, values, "start"), 0);
+        b->end_id = MAX(attr_int(names, values, "end"), 0);
+    }
+}
+
 static void on_start(GMarkupParseContext* ctx, const gchar* element, const gchar** names,
                      const gchar** values, gpointer data, GError** error) {
     (void)ctx;
@@ -310,6 +344,7 @@ static void on_start(GMarkupParseContext* ctx, const gchar* element, const gchar
     gint y = attr_int(names, values, "y");
     gint w = attr_int(names, values, "w");
     gint h = attr_int(names, values, "h");
+    guint before = st->doc->blocks->len;
     if (strcmp(element, "text") == 0) {
         st->text_block = canvas_doc_add_text(st->doc, x, y, w, NULL);
         st->text_block->h = MAX(h, 0);
@@ -386,6 +421,7 @@ static void on_start(GMarkupParseContext* ctx, const gchar* element, const gchar
             g_strfreev(widths);
         }
     }
+    if (st->doc->blocks->len > before) read_ids(st->doc, names, values);
 }
 
 static void on_end(GMarkupParseContext* ctx, const gchar* element, gpointer data, GError** error) {
@@ -494,10 +530,24 @@ static void append_text_block(GString* out, const CanvasBlock* b) {
     g_string_append(out, "</text>\n");
 }
 
+/* Put the id (and the bound ends) of b after the tag name of the element
+ * written from offset start */
+static void insert_ids(GString* out, gsize start, const CanvasBlock* b) {
+    const gchar* name_end = strchr(out->str + start + 3, ' ');
+    if (name_end == NULL) return;
+    GString* ids = g_string_new(NULL);
+    g_string_append_printf(ids, " id=\"%d\"", b->id);
+    if (b->start_id > 0) g_string_append_printf(ids, " start=\"%d\"", b->start_id);
+    if (b->end_id > 0) g_string_append_printf(ids, " end=\"%d\"", b->end_id);
+    g_string_insert(out, name_end - out->str, ids->str);
+    g_string_free(ids, TRUE);
+}
+
 gchar* canvas_doc_to_xml(const CanvasDoc* doc) {
     GString* out = g_string_new("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<canvas version=\"1\">\n");
     for (guint i = 0; doc != NULL && i < doc->blocks->len; i++) {
         const CanvasBlock* b = g_ptr_array_index(doc->blocks, i);
+        gsize start = out->len;
         if (b->kind == CANVAS_BLOCK_TEXT) {
             append_text_block(out, b);
         } else if (b->kind == CANVAS_BLOCK_IMAGE) {
@@ -552,6 +602,7 @@ gchar* canvas_doc_to_xml(const CanvasDoc* doc) {
             }
             g_string_append(out, "  </table>\n");
         }
+        if (out->len > start) insert_ids(out, start, b);
     }
     g_string_append(out, "</canvas>\n");
     return g_string_free(out, FALSE);

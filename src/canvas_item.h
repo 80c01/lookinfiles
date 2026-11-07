@@ -14,6 +14,8 @@ typedef struct CanvasPage CanvasPage;
 typedef struct {
     CanvasPage* page;
     CanvasBlockKind kind;
+    gint id;            /* unique on the page (canvas_doc.h) */
+    gint start_id, end_id; /* line or arrow: blocks its ends are bound to */
     GtkWidget* frame;   /* child of the surface */
     GtkWidget* content; /* text view, picture, shape or table */
     GtkTextBuffer* buffer;

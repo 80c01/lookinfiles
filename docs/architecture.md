@@ -216,7 +216,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   name stored in `notes.xml` (the former `rich` reads as Markdown).
 - `canvas_doc` — Canvas notes (`<title>.canvas/`: `page.xml` and
   `media/`): text boxes with styled runs and pictures placed freely, read and
-  written as XML, new picture names, unused pictures pruned, Markdown export
+  written as XML (each block with a page-unique `id`; line and arrow ends
+  bound to blocks by `start` / `end`), new picture names, unused pictures pruned, Markdown export
   (`canvas_doc_export_markdown()`: a `.md` note next to it, pictures linked
   inside the Canvas).
 - `canvas_history` — undo / redo of a Canvas note: page states (`page.xml`
@@ -406,8 +407,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   following the pointer while it is drawn), `canvas_item` (the block widgets),
   `canvas_viewport` (the scrolled view: the page drawn at a scale by a
   transform, so its coordinates stay page coordinates; Ctrl+wheel zoom, pan),
-  `canvas_rough_draw` (hand-drawn rendering), `canvas_geometry` (snap, align,
-  drag box, 45-degree lines; unit-tested).
+  `canvas_bind` (arrow and line ends bound to blocks by their ids, kept on
+  their outlines), `canvas_rough_draw` (hand-drawn rendering),
+  `canvas_geometry` (snap, align, outline points, drag box, 45-degree lines;
+  unit-tested).
 - `bookmark_dialog` — the add / edit dialogs of the bookmarks view (name,
   location or folder icon, parent folder) and the target helpers they share
   with `bookmarks` (`bookmark_display_location()`, `bookmark_default_name()`).

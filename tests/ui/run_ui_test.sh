@@ -376,6 +376,12 @@ key Right Right;        shot canvas_group_moved
 xdotool keydown shift mousemove 820 460 click 1 keyup shift
                         shot canvas_shift_click
 key ctrl+z;             shot canvas_group_undo
+# Bound arrow: O draws an ellipse, A an arrow from the rectangle to it; the
+# ellipse selected and moved down, the arrow end follows it
+key o; drag 1000 400 1150 500
+key a; drag 880 460 1010 450;  shot canvas_arrow_bound
+xdotool mousemove 1075 450 click 1
+key shift+Down shift+Down;     shot canvas_arrow_follows
 # Zoom: Ctrl+= zooms in (the header shows the scale), Ctrl+0 back to 100 %
 key ctrl+equal ctrl+equal;  shot canvas_zoom_in
 key ctrl+0;             shot canvas_zoom_reset

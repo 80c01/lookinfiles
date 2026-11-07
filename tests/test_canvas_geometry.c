@@ -108,6 +108,37 @@ static void test_map_coord(void) {
     g_assert_cmpfloat(canvas_map_coord(5, 5, 0, 100, 40), ==, 120);
 }
 
+static void test_edge_point(void) {
+    CanvasRect box = {0, 0, 100, 50};
+    gdouble x = 0, y = 0;
+    /* Right: the middle of the right side, for every outline, gap away */
+    for (gint o = CANVAS_OUTLINE_RECT; o <= CANVAS_OUTLINE_DIAMOND; o++) {
+        g_assert_true(canvas_edge_point((CanvasOutline)o, &box, 300, 25, 4, &x, &y));
+        g_assert_cmpfloat_with_epsilon(x, 104, 1e-6);
+        g_assert_cmpfloat_with_epsilon(y, 25, 1e-6);
+    }
+    /* Rectangle: towards the bottom-right corner, the corner */
+    g_assert_true(canvas_edge_point(CANVAS_OUTLINE_RECT, &box, 150, 75, 0, &x, &y));
+    g_assert_cmpfloat_with_epsilon(x, 100, 1e-6);
+    g_assert_cmpfloat_with_epsilon(y, 50, 1e-6);
+    /* Diamond: towards the same corner, half-way along the side */
+    g_assert_true(canvas_edge_point(CANVAS_OUTLINE_DIAMOND, &box, 150, 75, 0, &x, &y));
+    g_assert_cmpfloat_with_epsilon(x, 75, 1e-6);
+    g_assert_cmpfloat_with_epsilon(y, 37.5, 1e-6);
+    /* Ellipse: on the curve */
+    g_assert_true(canvas_edge_point(CANVAS_OUTLINE_ELLIPSE, &box, 150, 75, 0, &x, &y));
+    gdouble ex = (x - 50) / 50, ey = (y - 25) / 25;
+    g_assert_cmpfloat_with_epsilon(ex * ex + ey * ey, 1.0, 1e-6);
+    /* Above: the top side */
+    g_assert_true(canvas_edge_point(CANVAS_OUTLINE_RECT, &box, 50, -100, 0, &x, &y));
+    g_assert_cmpfloat_with_epsilon(x, 50, 1e-6);
+    g_assert_cmpfloat_with_epsilon(y, 0, 1e-6);
+    /* The centre itself: no direction */
+    x = y = -1;
+    g_assert_false(canvas_edge_point(CANVAS_OUTLINE_RECT, &box, 50, 25, 4, &x, &y));
+    g_assert_cmpfloat(x, ==, -1);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/canvas_geometry/snap_coord", test_snap_coord);
@@ -116,5 +147,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_geometry/drag_box", test_drag_box);
     g_test_add_func("/canvas_geometry/snap_angle", test_snap_angle);
     g_test_add_func("/canvas_geometry/map_coord", test_map_coord);
+    g_test_add_func("/canvas_geometry/edge_point", test_edge_point);
     return g_test_run();
 }

@@ -332,18 +332,73 @@ CanvasItem* canvas_item_add(CanvasPage* p, GtkWidget* surface, const gchar* dir,
                             const CanvasBlock* b, CanvasItemNotify on_change,
                             gboolean loading) {
     if (b == NULL || surface == NULL) return NULL;
+    CanvasItem* it = NULL;
     switch (b->kind) {
-    case CANVAS_BLOCK_TEXT:
-        return add_text(p, surface, b, on_change, loading);
-    case CANVAS_BLOCK_IMAGE:
-        return add_image(p, surface, dir, b, on_change);
-    case CANVAS_BLOCK_SHAPE:
-        return add_shape(p, surface, b, on_change);
-    case CANVAS_BLOCK_TABLE:
-        return add_table(p, surface, b, on_change);
-    default:
-        return NULL;
+    case CANVAS_BLOCK_TEXT: it = add_text(p, surface, b, on_change, loading); break;
+    case CANVAS_BLOCK_IMAGE: it = add_image(p, surface, dir, b, on_change); break;
+    case CANVAS_BLOCK_SHAPE: it = add_shape(p, surface, b, on_change); break;
+    case CANVAS_BLOCK_TABLE: it = add_table(p, surface, b, on_change); break;
+    default: return NULL;
     }
+    if (it != NULL) {
+        it->id = b->id;
+        it->start_id = b->start_id;
+        it->end_id = b->end_id;
+    }
+    return it;
+}
+
+/* The block of it, added to doc */
+static CanvasBlock* item_to_block(CanvasDoc* doc, const CanvasItem* it) {
+    if (it->kind == CANVAS_BLOCK_IMAGE) {
+        CanvasBlock* b = canvas_doc_add_image(doc, it->x, it->y, it->w, it->h, it->src);
+        b->crop_x = it->crop_x;
+        b->crop_y = it->crop_y;
+        b->crop_w = it->crop_w;
+        b->crop_h = it->crop_h;
+        return b;
+    }
+    if (it->kind == CANVAS_BLOCK_SHAPE) {
+        CanvasBlock* b = canvas_doc_add_shape(doc, it->x, it->y, it->w, it->h, it->shape_type);
+        g_free(b->stroke_color);
+        b->stroke_color = g_strdup(it->stroke_color);
+        b->fill_style = it->fill_style;
+        b->stroke_width = it->stroke_width;
+        b->rough = it->rough;
+        if (it->points != NULL) {
+            g_array_append_vals(b->points, it->points->data, it->points->len);
+        }
+        return b;
+    }
+    if (it->kind == CANVAS_BLOCK_TABLE && it->table_block != NULL) {
+        CanvasBlock* b = canvas_doc_add_table(doc, it->x, it->y,
+                                              it->table_block->table_rows, it->table_block->table_cols);
+        b->w = it->w;
+        b->h = it->h;
+        for (gint r = 0; r < b->table_rows; r++) {
+            for (gint col = 0; col < b->table_cols; col++) {
+                canvas_table_set_cell(b, r, col, canvas_table_get_cell(it->table_block, r, col));
+            }
+        }
+        for (gint col = 0; col < b->table_cols; col++) {
+            canvas_table_set_col_width(b, col, canvas_table_get_col_width(it->table_block, col));
+        }
+        return b;
+    }
+    GtkTextIter s, e;
+    gtk_text_buffer_get_bounds(it->buffer, &s, &e);
+    gchar* text = gtk_text_buffer_get_text(it->buffer, &s, &e, TRUE);
+    CanvasBlock* b = canvas_doc_add_text(doc, it->x, it->y, it->w, text);
+    g_free(text);
+    GtkTextIter i = s;
+    while (!gtk_text_iter_is_end(&i)) {
+        GtkTextIter next = i;
+        gtk_text_iter_forward_to_tag_toggle(&next, NULL);
+        canvas_block_add_run(b, gtk_text_iter_get_offset(&i), gtk_text_iter_get_offset(&next),
+                             canvas_text_styles_at(it->buffer, &i));
+        i = next;
+    }
+    return b;
 }
 
 CanvasDoc* canvas_items_to_doc(GtkWidget* surface) {
@@ -351,54 +406,10 @@ CanvasDoc* canvas_items_to_doc(GtkWidget* surface) {
     for (GtkWidget* c = gtk_widget_get_first_child(surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
         CanvasItem* it = canvas_item_of(c);
         if (it == NULL) continue;
-        if (it->kind == CANVAS_BLOCK_IMAGE) {
-            CanvasBlock* b = canvas_doc_add_image(doc, it->x, it->y, it->w, it->h, it->src);
-            b->crop_x = it->crop_x;
-            b->crop_y = it->crop_y;
-            b->crop_w = it->crop_w;
-            b->crop_h = it->crop_h;
-            continue;
-        }
-        if (it->kind == CANVAS_BLOCK_SHAPE) {
-            CanvasBlock* b = canvas_doc_add_shape(doc, it->x, it->y, it->w, it->h, it->shape_type);
-            g_free(b->stroke_color);
-            b->stroke_color = g_strdup(it->stroke_color);
-            b->fill_style = it->fill_style;
-            b->stroke_width = it->stroke_width;
-            b->rough = it->rough;
-            if (it->points != NULL) {
-                g_array_append_vals(b->points, it->points->data, it->points->len);
-            }
-            continue;
-        }
-        if (it->kind == CANVAS_BLOCK_TABLE && it->table_block != NULL) {
-            CanvasBlock* b = canvas_doc_add_table(doc, it->x, it->y,
-                                                  it->table_block->table_rows, it->table_block->table_cols);
-            b->w = it->w;
-            b->h = it->h;
-            for (gint r = 0; r < b->table_rows; r++) {
-                for (gint col = 0; col < b->table_cols; col++) {
-                    canvas_table_set_cell(b, r, col, canvas_table_get_cell(it->table_block, r, col));
-                }
-            }
-            for (gint col = 0; col < b->table_cols; col++) {
-                canvas_table_set_col_width(b, col, canvas_table_get_col_width(it->table_block, col));
-            }
-            continue;
-        }
-        GtkTextIter s, e;
-        gtk_text_buffer_get_bounds(it->buffer, &s, &e);
-        gchar* text = gtk_text_buffer_get_text(it->buffer, &s, &e, TRUE);
-        CanvasBlock* b = canvas_doc_add_text(doc, it->x, it->y, it->w, text);
-        g_free(text);
-        GtkTextIter i = s;
-        while (!gtk_text_iter_is_end(&i)) {
-            GtkTextIter next = i;
-            gtk_text_iter_forward_to_tag_toggle(&next, NULL);
-            canvas_block_add_run(b, gtk_text_iter_get_offset(&i), gtk_text_iter_get_offset(&next),
-                                 canvas_text_styles_at(it->buffer, &i));
-            i = next;
-        }
+        CanvasBlock* b = item_to_block(doc, it);
+        if (it->id > 0) b->id = it->id;
+        b->start_id = it->start_id;
+        b->end_id = it->end_id;
     }
     return doc;
 }

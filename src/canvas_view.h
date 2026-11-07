@@ -14,6 +14,8 @@
  * - Drag the bar above a block (or a picture itself) to move it, its corner
  *   to resize it; Esc selects the block being edited, then Delete removes it,
  *   the arrows move it, Enter edits it, Tab goes to the next block.
+ * - An arrow or a line drawn from or to a block is bound to it
+ *   (canvas_bind.h): its end stays on the block's outline when it moves.
  * - A drag on the empty page selects the blocks inside its box; Shift+click
  *   adds a block or takes it out. Moving, Delete, the arrows, the style and
  *   the align menu act on every selected block.

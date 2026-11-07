@@ -70,7 +70,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Notes view", "Right-click", "Context menu: 1-click format conversion (Text, Markdown, Org), Canvas export to Markdown, rename, move", 0},
     {"Canvas tab", "V / R / D / O / A / L", "Tool: select, rectangle, diamond, ellipse, arrow, line (not while typing)", 0},
     {"Canvas tab", "P / T / B / E", "Tool: pencil, text box, table, eraser; Esc: back to select", 0},
-    {"Canvas tab", "Drag with a shape tool", "Draw the shape (Shift: square, circle, 45-degree line)", 0},
+    {"Canvas tab", "Drag with a shape tool", "Draw the shape (Shift: square, circle, 45-degree line); arrow ends on a block follow it", 0},
     {"Canvas tab", "Double-click / Ctrl+Enter", "New text box (at the click, or below the selected block)", 0},
     {"Canvas tab", "Ctrl+V", "Paste a picture as a new block (text outside a text box: new text box)", 0},
     {"Canvas tab", "Drag bar / corner", "Move / resize a block (a picture or shape moves from anywhere on it)", 0},

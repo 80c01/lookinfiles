@@ -13,7 +13,9 @@
  *   </canvas>
  *
  * Text is plain UTF-8 (newlines kept) with styled runs. Blocks are kept in
- * drawing order (the last one on top). Pure model, no widgets. */
+ * drawing order (the last one on top). Each block has an id, unique on the
+ * page (id="3"); a line or an arrow may have its ends bound to blocks
+ * (start="1" end="2"): they follow them. Pure model, no widgets. */
 
 #define CANVAS_PAGE_FILE "page.xml"
 #define CANVAS_MEDIA_DIR "media"
@@ -79,6 +81,7 @@ typedef struct {
 
 typedef struct {
     CanvasBlockKind kind;
+    gint id;         /* > 0, unique in the document */
     gint x, y;       /* top-left corner on the page */
     gint w, h;       /* size; h = 0 for a text box: as tall as its text */
     /* TEXT */
@@ -94,6 +97,7 @@ typedef struct {
     gint stroke_width;
     gboolean rough;   /* TRUE for hand-drawn / excalidraw sketch style */
     GArray* points;   /* CanvasPoint for freehand strokes */
+    gint start_id, end_id; /* line or arrow: blocks its ends are bound to (0: free) */
     /* TABLE */
     gint table_rows;
     gint table_cols;
@@ -135,7 +139,7 @@ guint canvas_doc_prune_media(const CanvasDoc* doc, const gchar* dir);
  * highest one in "<dir>/media" (free it) */
 gchar* canvas_doc_new_media_path(const gchar* dir, const gchar* ext);
 
-/* New blocks, appended on top (owned by the document) */
+/* New blocks, appended on top (owned by the document), with a new id */
 CanvasBlock* canvas_doc_add_text(CanvasDoc* doc, gint x, gint y, gint w, const gchar* text);
 CanvasBlock* canvas_doc_add_image(CanvasDoc* doc, gint x, gint y, gint w, gint h, const gchar* src);
 CanvasBlock* canvas_doc_add_shape(CanvasDoc* doc, gint x, gint y, gint w, gint h, CanvasShapeType shape_type);

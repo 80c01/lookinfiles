@@ -32,7 +32,7 @@ panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
   middle button)
 - [x] multi-selection (rubber band, `Shift+click`): move, delete, align
   together (the align items of the `⋯` menu then become useful)
-- [ ] arrows bound to shapes (they follow when a shape moves)
+- [x] arrows bound to shapes (they follow when a shape moves)
 - [ ] text inside shapes (double-click a shape to type in it)
 - [ ] floating text-format bar near the selection; the left panel keeps the
   shape style only
@@ -41,7 +41,7 @@ panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
 - [ ] run `make ui-shots` and check the new canvas screenshots
   (`canvas_tool_*`, `canvas_rect_drawn`, `canvas_pencil_drawn`,
   `canvas_checkbox_toggled`, `canvas_undo_delete`, `canvas_redo_delete`, `canvas_zoom_in`,
-  `canvas_zoom_reset`, `canvas_band_*`, `canvas_group_*`, `canvas_shift_click`);
+  `canvas_zoom_reset`, `canvas_band_*`, `canvas_group_*`, `canvas_shift_click`, `canvas_arrow_*`);
   not run yet
 
 ### Wish list

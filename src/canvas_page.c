@@ -1,6 +1,7 @@
 /* Core of the Canvas page (see canvas_page_private.h): focus, undo history,
  * saving, new blocks, the tool. */
 #include "canvas_page_private.h"
+#include "canvas_bind.h"
 #include "canvas_crop.h"
 #include "canvas_doc.h"
 #include "canvas_history.h"
@@ -197,6 +198,8 @@ void canvas_page_focus_changed(CanvasPage* p, GtkWidget* f) {
 /* ------------------------------------------------------------------------- */
 
 void canvas_page_update_extent(CanvasPage* p) {
+    /* After any change: the bound arrows follow their blocks */
+    canvas_bind_follow(p->surface);
     gint w = 0, h = 0;
     for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
         CanvasItem* it = canvas_item_of(c);
@@ -265,8 +268,22 @@ static void on_item_changed_notify(CanvasPage* p) {
     canvas_page_schedule_save(p);
 }
 
+/* The id after the highest one on the page */
+static gint next_id(CanvasPage* p) {
+    gint id = 0;
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* it = canvas_item_of(c);
+        if (it != NULL) id = MAX(id, it->id);
+    }
+    return id + 1;
+}
+
+/* A block of the note (loading), or a new one: given a new id */
 static CanvasItem* add_item(CanvasPage* p, const CanvasBlock* b) {
-    return canvas_item_add(p, p->surface, p->dir, b, on_item_changed_notify, p->loading);
+    gint id = p->loading ? 0 : next_id(p);
+    CanvasItem* it = canvas_item_add(p, p->surface, p->dir, b, on_item_changed_notify, p->loading);
+    if (it != NULL && id > 0) it->id = id;
+    return it;
 }
 
 static void clear_surface(CanvasPage* p) {
@@ -344,6 +361,7 @@ void canvas_page_remove_item(CanvasItem* it) {
     CanvasPage* p = it->page;
     canvas_page_remember(p);
     set_remove(p, it);
+    canvas_bind_forget(p->surface, it->id);
     gtk_fixed_remove(GTK_FIXED(p->surface), it->frame);
     canvas_page_schedule_save(p);
 }
@@ -354,6 +372,7 @@ void canvas_page_remove_selected(CanvasPage* p) {
     canvas_page_selection_clear(p);
     for (guint i = 0; i < items->len; i++) {
         CanvasItem* it = g_ptr_array_index(items, i);
+        canvas_bind_forget(p->surface, it->id);
         gtk_fixed_remove(GTK_FIXED(p->surface), it->frame);
     }
     g_ptr_array_unref(items);
@@ -377,6 +396,7 @@ void canvas_page_move_selected(CanvasPage* p, gint dx, gint dy) {
         it->y += dy;
         canvas_item_place(it);
     }
+    canvas_bind_release(items);
     g_ptr_array_unref(items);
     canvas_page_update_extent(p);
     canvas_page_schedule_save(p);

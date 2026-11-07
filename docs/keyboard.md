@@ -135,7 +135,7 @@ automatically; one canvas at a time)
 |---|---|
 | `V` / `R` / `D` / `O` / `A` / `L` | Tool: select, rectangle, diamond, ellipse, arrow, line (when not typing in a block) |
 | `P` / `T` / `B` / `E` | Tool: pencil, text box, table, eraser; `Esc` goes back to select |
-| Drag on the page with a shape tool or the pencil | Draw it (`Shift`: square, circle, line at a multiple of 45 degrees) |
+| Drag on the page with a shape tool or the pencil | Draw it (`Shift`: square, circle, line at a multiple of 45 degrees); an arrow or line end drawn on a block follows that block |
 | Double click on the page, `Ctrl+Enter` | New text box (at the click, or below the selected block) |
 | `Ctrl+V` | Paste a picture as a new block (at the pointer); text pasted outside a text box makes a text box |
 | Drop image files | Copy them into the note as pictures |

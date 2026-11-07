@@ -301,12 +301,56 @@ static void test_markdown(void) {
     g_assert_nonnull(strstr(plain, "![](media/0001.png)"));
 }
 
+static void test_ids_and_bindings(void) {
+    g_autoptr(CanvasDoc) doc = canvas_doc_new();
+    CanvasBlock* t = canvas_doc_add_text(doc, 10, 10, 200, "Start");
+    CanvasBlock* r = canvas_doc_add_shape(doc, 300, 10, 100, 60, CANVAS_SHAPE_RECT);
+    CanvasBlock* a = canvas_doc_add_shape(doc, 200, 20, 100, 30, CANVAS_SHAPE_ARROW);
+    g_assert_cmpint(t->id, ==, 1);
+    g_assert_cmpint(r->id, ==, 2);
+    g_assert_cmpint(a->id, ==, 3);
+    a->start_id = t->id;
+    a->end_id = r->id;
+
+    g_autofree gchar* xml = canvas_doc_to_xml(doc);
+    g_assert_nonnull(strstr(xml, "<text id=\"1\" x="));
+    g_assert_nonnull(strstr(xml, "<shape id=\"3\" start=\"1\" end=\"2\" type=\"arrow\""));
+    g_autoptr(GError) error = NULL;
+    g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
+    g_assert_no_error(error);
+    CanvasBlock* ba = g_ptr_array_index(back->blocks, 2);
+    g_assert_cmpint(ba->id, ==, 3);
+    g_assert_cmpint(ba->start_id, ==, 1);
+    g_assert_cmpint(ba->end_id, ==, 2);
+    g_autofree gchar* xml2 = canvas_doc_to_xml(back);
+    g_assert_cmpstr(xml, ==, xml2);
+
+    /* Ids kept out of order; a missing or repeated id gets a new one */
+    const gchar* page = "<canvas version=\"1\">"
+                        "<shape id=\"7\" type=\"rect\" x=\"0\" y=\"0\" w=\"20\" h=\"20\"/>"
+                        "<shape type=\"rect\" x=\"0\" y=\"0\" w=\"20\" h=\"20\"/>"
+                        "<shape id=\"7\" type=\"rect\" x=\"0\" y=\"0\" w=\"20\" h=\"20\"/>"
+                        "</canvas>";
+    g_autoptr(CanvasDoc) odd = canvas_doc_parse(page, -1, &error);
+    g_assert_no_error(error);
+    gint i0 = ((CanvasBlock*)g_ptr_array_index(odd->blocks, 0))->id;
+    gint i1 = ((CanvasBlock*)g_ptr_array_index(odd->blocks, 1))->id;
+    gint i2 = ((CanvasBlock*)g_ptr_array_index(odd->blocks, 2))->id;
+    g_assert_cmpint(i0, ==, 7);
+    g_assert_cmpint(i1, >, 0);
+    g_assert_cmpint(i2, >, 0);
+    g_assert_cmpint(i1, !=, i0);
+    g_assert_cmpint(i2, !=, i0);
+    g_assert_cmpint(i2, !=, i1);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/canvas_doc/runs_merge", test_runs_merge);
     g_test_add_func("/canvas_doc/xml_round_trip", test_xml_round_trip);
     g_test_add_func("/canvas_doc/parse_errors", test_parse_errors);
     g_test_add_func("/canvas_doc/shape_round_trip", test_shape_round_trip);
+    g_test_add_func("/canvas_doc/ids_and_bindings", test_ids_and_bindings);
     g_test_add_func("/canvas_doc/table_round_trip", test_table_round_trip);
     g_test_add_func("/canvas_doc/image_crop_round_trip", test_image_crop_round_trip);
     g_test_add_func("/canvas_doc/raise_remove", test_raise_remove);

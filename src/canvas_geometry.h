@@ -57,4 +57,17 @@ void canvas_snap_angle(gdouble x0, gdouble y0, gdouble* x1, gdouble* y1);
  * [to, to + to_len]; an empty range goes to the middle */
 gdouble canvas_map_coord(gdouble v, gdouble from, gdouble from_len, gdouble to, gdouble to_len);
 
+/* Outline of a block an arrow end is bound to */
+typedef enum {
+    CANVAS_OUTLINE_RECT,
+    CANVAS_OUTLINE_ELLIPSE,
+    CANVAS_OUTLINE_DIAMOND
+} CanvasOutline;
+
+/* Where a line from the centre of box towards (tx, ty) leaves its outline,
+ * gap further out: the end of an arrow bound to the block. FALSE (point
+ * unchanged) when (tx, ty) is the centre. */
+gboolean canvas_edge_point(CanvasOutline outline, const CanvasRect* box, gdouble tx, gdouble ty,
+                           gdouble gap, gdouble* x, gdouble* y);
+
 #endif /* CANVAS_GEOMETRY_H */

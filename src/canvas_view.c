@@ -2,6 +2,7 @@
  * the tool bar and panel actions, and the public API. The core is in
  * canvas_page.c, the keys in canvas_keys.c, the pointer in canvas_drag.c. */
 #include "canvas_view.h"
+#include "canvas_bind.h"
 #include "canvas_drag.h"
 #include "canvas_geometry.h"
 #include "canvas_item.h"
@@ -155,6 +156,7 @@ static void on_toolbar_align(CanvasAlignOp op, gpointer udata) {
             it->y = r->y;
             canvas_item_place(it);
         }
+        canvas_bind_release(items);
         g_array_unref(rects);
         canvas_page_update_extent(p);
         canvas_page_schedule_save(p);

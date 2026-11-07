@@ -16,4 +16,15 @@ void canvas_draw_add_point(CanvasItem* it, gdouble x, gdouble y);
  * default size; points become relative to the block */
 void canvas_draw_finish(CanvasItem* it);
 
+/* A line or an arrow: TRUE if it is one */
+gboolean canvas_draw_is_line(const CanvasItem* it);
+
+/* Ends of a line or an arrow, page coordinates, as drawn; FALSE if it is not
+ * one */
+gboolean canvas_draw_get_ends(const CanvasItem* it, gdouble* x0, gdouble* y0, gdouble* x1, gdouble* y1);
+
+/* Move the ends of a line or an arrow (page coordinates); its block fits
+ * them again */
+void canvas_draw_set_ends(CanvasItem* it, gdouble x0, gdouble y0, gdouble x1, gdouble y1);
+
 #endif /* CANVAS_DRAW_H */

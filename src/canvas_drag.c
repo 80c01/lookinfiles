@@ -1,5 +1,6 @@
 /* The pointer on the Canvas page (see canvas_drag.h) */
 #include "canvas_drag.h"
+#include "canvas_bind.h"
 #include "canvas_draw.h"
 #include "canvas_geometry.h"
 #include "canvas_history.h"
@@ -63,6 +64,7 @@ static void tool_end(CanvasPage* p) {
     if (it == NULL) return;
     p->draw_item = NULL;
     canvas_draw_finish(it);
+    if (canvas_draw_is_line(it)) canvas_bind_attach(p->surface, it);
     canvas_page_update_extent(p);
     canvas_page_schedule_save(p);
     /* The pencil stays, to go on drawing; the other tools give the new shape
@@ -214,6 +216,9 @@ static void group_move(CanvasPage* p, gdouble dx, gdouble dy) {
         m->y = r->y + new_y - y0;
         canvas_item_place(m);
     }
+    /* Lines moved without their blocks let go of them; the others follow */
+    if (dx != 0 || dy != 0) canvas_bind_release(group);
+    canvas_bind_follow(p->surface);
 }
 
 static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpointer data) {
@@ -247,6 +252,11 @@ static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpoi
         it->h = MAX((gint)(it->w / it->aspect), MIN_IMAGE_SIZE);
     }
     canvas_item_place(it);
+    if (canvas_draw_is_line(it) && (dx != 0 || dy != 0)) {
+        it->start_id = 0;
+        it->end_id = 0;
+    }
+    canvas_bind_follow(p->surface);
 }
 
 static void on_drag_end(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpointer data) {
