@@ -46,6 +46,7 @@ enum {
     DOCX_PP_NUM = 1 << 6,
     DOCX_PP_LEVEL = 1 << 7,
     DOCX_PP_PAGE_BREAK = 1 << 8,
+    DOCX_PP_OUTLINE = 1 << 9,
 };
 
 typedef struct {
@@ -55,6 +56,7 @@ typedef struct {
     gint num_id;          /* 0: no numbering */
     gint ilvl;
     gboolean page_break_before;
+    gint outline;         /* heading level 1-9 (Heading N style, w:outlineLvl), 0: body text */
 } DocxParaProps;
 
 void docx_run_props_clear(DocxRunProps* p);

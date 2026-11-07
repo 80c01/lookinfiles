@@ -30,6 +30,7 @@ static void test_runs_and_paragraphs(void) {
     doc_para_init(&para);
     para.align = PREVIEW_ALIGN_CENTER;
     para.after = 12;
+    para.outline = 8; /* listed as level 6 */
     doc_writer_end_paragraph(w, &para, NULL, NULL);
 
     doc_run_init(&run);
@@ -64,6 +65,9 @@ static void test_runs_and_paragraphs(void) {
     g_assert_nonnull(s);
     g_assert_cmpstr(s->arg, ==, "2.000");
     g_assert_nonnull(span_on(doc, PREVIEW_STYLE_BOLD, "Big title"));
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_OUTLINE6, "Big title"));
+    g_assert_null(span_on(doc, PREVIEW_STYLE_OUTLINE6, "Plain then"));
+    g_assert_null(span_on(doc, PREVIEW_STYLE_OUTLINE1, "FIRST ITEM"));
     s = span_on(doc, PREVIEW_STYLE_COLOR, "Big title");
     g_assert_cmpstr(s->arg, ==, "#1f3864");
     s = span_on(doc, PREVIEW_STYLE_PARAGRAPH, "Big title\n");

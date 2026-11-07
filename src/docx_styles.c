@@ -91,6 +91,7 @@ void docx_para_props_merge(DocxParaProps* dst, const DocxParaProps* src) {
     if (s & DOCX_PP_NUM) dst->num_id = src->num_id;
     if (s & DOCX_PP_LEVEL) dst->ilvl = src->ilvl;
     if (s & DOCX_PP_PAGE_BREAK) dst->page_break_before = src->page_break_before;
+    if (s & DOCX_PP_OUTLINE) dst->outline = src->outline;
     dst->set |= s;
 }
 
@@ -116,6 +117,7 @@ void docx_para_props_to_para(const DocxParaProps* p, DocPara* para) {
     para->first = p->first;
     para->before = p->before;
     para->after = p->after;
+    para->outline = p->outline;
 }
 
 /* Highlighter colours of w:highlight */
@@ -267,6 +269,10 @@ gboolean docx_para_property(DocxParaProps* p, const gchar* name, const gchar** n
     } else if (strcmp(name, "w:pageBreakBefore") == 0) {
         p->page_break_before = attr_on(names, values);
         p->set |= DOCX_PP_PAGE_BREAK;
+    } else if (strcmp(name, "w:outlineLvl") == 0 && attr_number(names, values, "w:val", &n)) {
+        /* 0-8: Heading 1-9, 9: body text */
+        p->outline = n >= 0 && n < 9 ? (gint)n + 1 : 0;
+        p->set |= DOCX_PP_OUTLINE;
     } else {
         return FALSE;
     }
@@ -441,10 +447,18 @@ void docx_styles_para(const DocxStyles* s, const gchar* para_style, DocxParaProp
     memset(out, 0, sizeof *out);
     docx_para_props_merge(out, &s->ppr);
     GPtrArray* chain = style_chain(s, para_style != NULL ? para_style : s->default_para);
+    gint heading = 0;
     for (guint i = 0; i < chain->len; i++) {
-        docx_para_props_merge(out, &((Style*)g_ptr_array_index(chain, i))->ppr);
+        const Style* st = g_ptr_array_index(chain, i);
+        docx_para_props_merge(out, &st->ppr);
+        heading = st->heading > 0 ? st->heading : heading;
     }
     g_ptr_array_free(chain, TRUE);
+    /* Title (10) is no outline level in Word */
+    if (heading > 0 && heading <= 9) {
+        out->outline = heading;
+        out->set |= DOCX_PP_OUTLINE;
+    }
 }
 
 void docx_styles_run(const DocxStyles* s, const gchar* para_style, const gchar* run_style, DocxRunProps* out) {

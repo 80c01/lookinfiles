@@ -48,6 +48,12 @@ static const gchar* const STYLE_TAGS[PREVIEW_STYLE_COUNT] = {
     [PREVIEW_STYLE_SUPERSCRIPT] = "pd_sup",
     [PREVIEW_STYLE_SUBSCRIPT] = "pd_sub",
     [PREVIEW_STYLE_TABLE] = "pd_table",
+    [PREVIEW_STYLE_OUTLINE1] = "pd_outline_h1",
+    [PREVIEW_STYLE_OUTLINE2] = "pd_outline_h2",
+    [PREVIEW_STYLE_OUTLINE3] = "pd_outline_h3",
+    [PREVIEW_STYLE_OUTLINE4] = "pd_outline_h4",
+    [PREVIEW_STYLE_OUTLINE5] = "pd_outline_h5",
+    [PREVIEW_STYLE_OUTLINE6] = "pd_outline_h6",
 };
 
 /* Palette colours on the preview background */
@@ -90,6 +96,10 @@ static void ensure_tags(GtkTextBuffer* buffer) {
                                "pixels-above-lines", 6, "pixels-below-lines", 3, NULL);
     gtk_text_buffer_create_tag(buffer, "pd_h3", "weight", 700, "scale", FONT_SCALE_H3,
                                "pixels-above-lines", 4, "pixels-below-lines", 2, NULL);
+    /* Outline levels: no look, read by the tagbar (preview_tagbar.h) */
+    for (gint i = PREVIEW_STYLE_OUTLINE1; i <= PREVIEW_STYLE_OUTLINE6; i++) {
+        gtk_text_buffer_create_tag(buffer, STYLE_TAGS[i], NULL);
+    }
     text_tag_create(buffer, "pd_code", "family", "@font_code",
                                "paragraph-background", "@bg_block", NULL);
     text_tag_create(buffer, "pd_mono", "family", "@font_code", NULL);

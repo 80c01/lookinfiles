@@ -59,6 +59,14 @@ typedef enum {
     PREVIEW_STYLE_COLOR,     /* arg = text colour of a document ("#rrggbb"), made readable on the view */
     PREVIEW_STYLE_HIGHLIGHT, /* arg = background colour of a run ("#rrggbb"), text colour chosen to contrast */
     PREVIEW_STYLE_PARAGRAPH, /* arg = paragraph layout, see preview_doc_add_paragraph_span() */
+    /* Heading of a document at outline level 1..6 (Word's Heading N): no
+     * look of its own (the document's fonts show it), listed by the tagbar */
+    PREVIEW_STYLE_OUTLINE1,
+    PREVIEW_STYLE_OUTLINE2,
+    PREVIEW_STYLE_OUTLINE3,
+    PREVIEW_STYLE_OUTLINE4,
+    PREVIEW_STYLE_OUTLINE5,
+    PREVIEW_STYLE_OUTLINE6,
     PREVIEW_STYLE_COUNT
 } PreviewStyle;
 

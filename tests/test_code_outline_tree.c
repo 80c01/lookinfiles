@@ -137,6 +137,7 @@ static void test_heading_tags(void) {
     g_assert_cmpint(code_outline_heading_tag_level("html_h6"), ==, 6);
     g_assert_cmpint(code_outline_heading_tag_level("org_h3"), ==, 3);
     g_assert_cmpint(code_outline_heading_tag_level("pd_h2"), ==, 2);
+    g_assert_cmpint(code_outline_heading_tag_level("pd_outline_h4"), ==, 4);
     g_assert_cmpint(code_outline_heading_tag_level("md_h7"), ==, 0);
     g_assert_cmpint(code_outline_heading_tag_level("md_h1x"), ==, 0);
     g_assert_cmpint(code_outline_heading_tag_level("md_hr"), ==, 0);

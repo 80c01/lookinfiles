@@ -32,7 +32,7 @@ void code_outline_sort(GPtrArray* entries);
 GPtrArray* code_outline_markdown(const gchar* text, gsize len);
 
 /* Heading level of a text tag of the rendered previews: "md_h1" .. "md_h6"
- * (Markdown), "html_h*", "org_h*", "pd_h*" (documents); 0 for another tag */
+ * (Markdown), "html_h*", "org_h*", "pd_h*" and "pd_outline_h*" (documents); 0 for another tag */
 gint code_outline_heading_tag_level(const gchar* tag_name);
 /* A heading entry at line (column 0): text made valid UTF-8, its runs of
  * white space (new lines too) made one space, trimmed; NULL when nothing

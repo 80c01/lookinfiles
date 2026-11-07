@@ -64,6 +64,10 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- A tagbar beside the preview lists the headings of Markdown, HTML, Org,
+  Word (`.docx`, `.doc`), OpenDocument and EPUB previews (`o` or
+  `Ctrl+K Ctrl+O` in the preview); it follows the scrolling, and a click or
+  `Enter` scrolls to a heading.
 - The preview of a Canvas note draws its page exactly as the Canvas tab
   does (shapes, arrows, text, tables, pictures), instead of a text summary.
 - `make windows-exe` builds a single Windows executable holding the whole

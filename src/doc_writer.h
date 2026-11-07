@@ -38,6 +38,7 @@ typedef struct {
     gdouble first;       /* first line, relative to left (negative: hanging) */
     gdouble before;
     gdouble after;
+    gint outline;        /* heading at this outline level (1-9; 7-9 listed as 6), 0: body text */
 } DocPara;
 
 void doc_run_init(DocRun* run);

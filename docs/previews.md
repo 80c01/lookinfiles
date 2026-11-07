@@ -15,8 +15,10 @@ format. Open work is in
   (including in-progress `[/]` / `[-]` tasks), tables, quotes, GitHub alerts,
   highlighted code blocks and images.
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
-- A tagbar of the headings beside rendered Markdown, HTML and Org previews
-  (`o` or `Ctrl+K Ctrl+O`).
+- A tagbar of the headings beside Markdown, HTML, Org, Word (`.docx`,
+  `.doc`: Heading N styles and outline levels), OpenDocument and EPUB
+  previews (`o` or `Ctrl+K Ctrl+O`). Not RTF (no headings in its HTML) nor
+  PDF yet.
 - Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
   `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), PostScript and TeX DVI (converted to PDF), video and audio
   with player controls.
@@ -138,10 +140,13 @@ every common format to L3 and never leave one below L1.
   the worker thread, shown by `preview_doc_view` (layer 2). The viewer has
   no format-specific branch.
 - **Tagbar**: `preview_tagbar` lists the headings of the rendered buffer,
-  read from its heading tags (`md_h*`, `html_h*`, `org_h*`, `pd_h*`:
-  `code_outline_heading_tag_level()`) after each render. A format gets it by
-  tagging its headings with one of these names (a `PreviewDoc` with
-  `PREVIEW_STYLE_HEADING1..3`), never with a branch of its own. Only the
+  read from its heading tags (`md_h*`, `html_h*`, `org_h*`, `pd_h*`,
+  `pd_outline_h*`: `code_outline_heading_tag_level()`) after each render. A
+  format gets it by tagging its headings: `<h1>`..`<h6>` in HTML output,
+  `PREVIEW_STYLE_HEADING1..3` in a `PreviewDoc`, or
+  `PREVIEW_STYLE_OUTLINE1..6` (no look of its own; `DocPara.outline` in
+  `doc_writer`) when the document's fonts already show the heading. Never a
+  branch of its own. Only the
   rendered part is listed (`PREVIEW_BYTES` for long text files).
 - **Shared building blocks**: the summary card (`preview_doc_title()`,
   `preview_doc_field()`...) and text tables (`PreviewTable`: aligned
@@ -283,6 +288,8 @@ the sender and subject), mail client databases (previewed as SQLite).
 - [ ] Bounded read, worker thread, cancellation honoured.
 - [ ] Falls back one level down on parse failure.
 - [ ] `m` toggles rendered / raw.
+- [ ] Headings tagged for the tagbar (see "How it is built"), if the format
+      has any.
 - [ ] Within the latency budget in `make bench-preview`.
 - [ ] Fixture + `shot` in `tests/ui/formats.sh`; screenshot checked.
 - [ ] File-type icon: VS Code already maps most extensions

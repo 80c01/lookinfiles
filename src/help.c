@@ -152,7 +152,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {"Preview panel", "C-o", "Show the previewed file in the dedicated editor panel (focus stays in the viewer)", EM},
     {"Preview panel", "e", "Open the current file in the editor (text files only)", 0},
     {"Preview panel", "m", "Toggle rendered preview / raw view (documents, tables, JSON, diffs, logs, archives, certificates, images, PDF, video, audio)", 0},
-    {"Preview panel", "o / Ctrl+K Ctrl+O", "Show / hide the tagbar: headings of a rendered Markdown, HTML or Org preview beside the text (Enter goes, Esc back, q hides)", 0},
+    {"Preview panel", "o / Ctrl+K Ctrl+O", "Show / hide the tagbar: headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview beside the text (Enter goes, Esc back, q hides)", 0},
     {"Preview panel", "+ / - / 0", "Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)", 0},
     {"Preview panel", "PgDn / PgUp", "PDF: next / previous page; mailbox: next / previous message", 0},
     {"Preview panel", "Space / p", "Play / pause active video or audio preview", 0},

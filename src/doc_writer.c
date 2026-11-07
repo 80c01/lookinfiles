@@ -314,6 +314,10 @@ void doc_writer_end_paragraph(DocWriter* w, const DocPara* para, const gchar* la
         layout.above != 0 || layout.below != 0) {
         preview_doc_add_paragraph_span(w->doc, start, preview_doc_offset(w->doc), &layout);
     }
+    if (pp->outline > 0) {
+        preview_doc_add_span(w->doc, start, preview_doc_offset(w->doc),
+                             PREVIEW_STYLE_OUTLINE1 + MIN(pp->outline, 6) - 1);
+    }
     para_free(p);
 }
 

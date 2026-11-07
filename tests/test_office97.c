@@ -444,6 +444,8 @@ static void test_word97_formatting(void) {
     g_assert_nonnull(span_on(doc, PREVIEW_STYLE_BOLD, "Title"));
     g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_SCALE, "Title")->arg, ==, "1.333");
     g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_FAMILY, "Title")->arg, ==, "Liberation Serif");
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_OUTLINE1, "Title")); /* Heading 1 style: the tagbar lists it */
+    g_assert_null(span_on(doc, PREVIEW_STYLE_OUTLINE1, "Red"));
     PreviewParagraph layout;
     g_assert_true(preview_paragraph_parse(span_on(doc, PREVIEW_STYLE_PARAGRAPH, "Title")->arg, &layout));
     g_assert_cmpint(layout.align, ==, PREVIEW_ALIGN_CENTER);
@@ -508,6 +510,7 @@ static void test_word_fixture(void) {
     g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_FAMILY, "Prepared for")->arg, ==, "Calibri");
     /* Headings: the style's font and size (14 pt over 11 pt) */
     g_assert_cmpstr(span_on(doc, PREVIEW_STYLE_SCALE, "Next steps")->arg, ==, "1.273");
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_OUTLINE2, "Next steps")); /* Heading 2: in the tagbar */
     /* Nested list item indented further */
     PreviewParagraph outer, inner;
     g_assert_true(preview_paragraph_parse(span_on(doc, PREVIEW_STYLE_PARAGRAPH, "Faster previews")->arg, &outer));

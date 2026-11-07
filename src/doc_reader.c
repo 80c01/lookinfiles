@@ -57,7 +57,9 @@ typedef struct {
 
 typedef struct {
     gboolean in_table, ttp;
-    gint ilfo, ilvl, outline;
+    gint ilfo, ilvl;
+    gint outline;   /* sprmPOutLvl: 0-8 heading level - 1, 9 body text; UNSET */
+    gint heading;   /* level of a built-in Heading 1-9 style (sti), 0 (resolved paragraphs) */
     gint jc, left, right, first, before, after, page_break;  /* twips; UNSET */
 } ParaProps;
 
@@ -87,7 +89,7 @@ static void char_props_init(CharProps* p) {
 
 static void para_props_init(ParaProps* p) {
     memset(p, 0, sizeof *p);
-    p->outline = 9;
+    p->outline = UNSET;
     p->jc = p->left = p->right = p->first = p->before = p->after = p->page_break = UNSET;
 }
 
@@ -354,6 +356,7 @@ static void merge_para(ParaProps* dst, const ParaProps* src) {
     if (src->before != UNSET) dst->before = src->before;
     if (src->after != UNSET) dst->after = src->after;
     if (src->page_break != UNSET) dst->page_break = src->page_break;
+    if (src->outline != UNSET) dst->outline = src->outline;
 }
 
 /* Character properties of a run in a paragraph of style istd */
@@ -395,7 +398,9 @@ static void resolve_para(const Sheet* sheet, const ParaRun* run, ParaProps* out)
     if (run == NULL) return;
     GPtrArray* chain = style_chain(sheet, run->istd);
     for (guint i = 0; i < chain->len; i++) {
-        merge_para(out, &((const Style*)g_ptr_array_index(chain, i))->pp);
+        const Style* st = g_ptr_array_index(chain, i);
+        merge_para(out, &st->pp);
+        out->heading = st->sti >= 1 && st->sti <= 9 ? st->sti : 0;
     }
     g_ptr_array_free(chain, TRUE);
     merge_para(out, &run->p);
@@ -521,6 +526,8 @@ static void end_paragraph(Out* o, const ParaProps* p) {
     para.first = twips(p->first);
     para.before = twips(p->before);
     para.after = twips(p->after);
+    /* Outline level for the tagbar: the paragraph's or its styles', else a Heading N style */
+    para.outline = p->outline != UNSET ? (p->outline >= 0 && p->outline < 9 ? p->outline + 1 : 0) : p->heading;
     const gchar* label = NULL;
     if (p->ilfo > 0) {
         label = "•";

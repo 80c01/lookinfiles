@@ -223,6 +223,22 @@ static void test_headings(void) {
     g_assert_cmpstr(span_arg(doc, PREVIEW_STYLE_SCALE, "Outline"), ==, "1.091");
     g_assert_null(span_on(doc, PREVIEW_STYLE_SCALE, "Body"));
     g_assert_null(span_on(doc, PREVIEW_STYLE_BOLD, "Body"));
+    /* Outline levels for the tagbar: from the style, inherited, or w:outlineLvl */
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_OUTLINE1, "One"));
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_OUTLINE1, "Inherited"));
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_OUTLINE3, "Outline"));
+    g_assert_null(span_on(doc, PREVIEW_STYLE_OUTLINE1, "Body"));
+    preview_doc_free(doc);
+
+    /* Direct w:outlineLvl: makes a heading, or body text (9) of a heading style */
+    doc = convert_full("<w:p><w:pPr><w:outlineLvl w:val=\"1\"/></w:pPr><w:r><w:t>Direct</w:t></w:r></w:p>"
+                       "<w:p><w:pPr><w:pStyle w:val=\"Titre1\"/><w:outlineLvl w:val=\"9\"/></w:pPr>"
+                       "<w:r><w:t>Demoted</w:t></w:r></w:p>",
+                       TRUE, 1 << 20);
+    g_assert_nonnull(span_on(doc, PREVIEW_STYLE_OUTLINE2, "Direct"));
+    for (gint st = PREVIEW_STYLE_OUTLINE1; st <= PREVIEW_STYLE_OUTLINE6; st++) {
+        g_assert_null(span_on(doc, st, "Demoted"));
+    }
     preview_doc_free(doc);
 }
 

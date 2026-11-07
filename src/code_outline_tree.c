@@ -122,7 +122,7 @@ static gboolean is_paragraph_text(const gchar* p, const gchar* end) {
 }
 
 gint code_outline_heading_tag_level(const gchar* tag_name) {
-    static const gchar* const prefixes[] = {"md_h", "html_h", "org_h", "pd_h"};
+    static const gchar* const prefixes[] = {"md_h", "html_h", "org_h", "pd_h", "pd_outline_h"};
     if (tag_name == NULL) return 0;
     for (gsize i = 0; i < G_N_ELEMENTS(prefixes); i++) {
         if (!g_str_has_prefix(tag_name, prefixes[i])) continue;
