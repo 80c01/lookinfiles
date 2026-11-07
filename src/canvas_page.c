@@ -1,6 +1,7 @@
 /* Core of the Canvas page (see canvas_page_private.h): focus, undo history,
  * saving, new blocks, the tool. */
 #include "canvas_page_private.h"
+#include "app_events.h"
 #include "canvas_bind.h"
 #include "canvas_crop.h"
 #include "canvas_doc.h"
@@ -12,6 +13,8 @@
 #include "canvas_text.h"
 #include "canvas_toolbar.h"
 #include "canvas_viewport.h"
+#include "explorer_row.h"
+#include "tree_nav.h"
 
 #include <string.h>
 
@@ -267,6 +270,10 @@ gboolean canvas_page_save_now(CanvasPage* p) {
     }
     p->dirty = FALSE;
     canvas_page_update_extent(p);
+    /* The preview of this note shows the saved page (the file watcher only
+     * sees the note's folder, not page.xml in it) */
+    ExplorerRow* row = p->app != NULL ? tree_nav_selected(p->app) : NULL;
+    if (row != NULL && g_strcmp0(row->path, p->dir) == 0) app_emit(p->app, APP_EVENT_PREVIEW_STALE);
     return TRUE;
 }
 
