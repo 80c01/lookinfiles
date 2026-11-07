@@ -24,7 +24,7 @@
 
 #include <string.h>
 
-static void ensure_css(void) {
+void canvas_view_ensure_css(void) {
     static gboolean done = FALSE;
     if (done) return;
     done = TRUE;
@@ -393,7 +393,7 @@ static void page_free(gpointer data) {
 
 /* A new page, in no notebook yet */
 static CanvasPage* page_new(AppData* app) {
-    ensure_css();
+    canvas_view_ensure_css();
     CanvasPage* p = canvas_page_new(app);
 
     GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);

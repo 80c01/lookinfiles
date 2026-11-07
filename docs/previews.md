@@ -62,6 +62,10 @@ format. Open work is in
   its icon, size, date and git status, in the explorer's sort order, and the
   folder's README rendered below (one level read in the background, never
   recursively).
+- Canvas notes drawn exactly as their Canvas tab shows them (the same block
+  widgets, read-only, at 100 %; `Ctrl+wheel` zooms, a middle-button drag
+  moves the view); an empty or unreadable page falls back to its text
+  summary.
 - Summaries of notebooks, bookmark folders and machines.
 - A **Git Commits** tab listing the repository history with each commit's diff,
   and a **Search** tab with the results of a search in files (`Ctrl+Shift+F`).
@@ -190,6 +194,7 @@ every common format to L3 and never leave one below L1.
 | TeX font metrics `.tfm`, `.vf`, `.pfb`: family, scheme, design size, parameters | L2 | `tfm_info` |
 | Packet captures `.pcap` / `.pcapng`: link type, snaplen, packet timeline, protocols | L2 | `pcap_info` |
 | ELF executables / libraries / objects | L1 | `elf_info` |
+| Canvas notes: the page drawn by the Canvas tab's own widgets | L3 | `canvas_preview` |
 | Directories | L2 | `dir_preview`, `dir_summary` |
 | Any other binary | L0 | `hex_dump` |
 

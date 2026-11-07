@@ -425,7 +425,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   picked on their stroke, handles on their points and segment middles),
   `canvas_rough_draw` (hand-drawn rendering, line handles),
   `canvas_geometry` (snap, align, outline points, drag box, 45-degree lines,
-  the curve through the points of a line; unit-tested).
+  the curve through the points of a line; unit-tested), `canvas_preview`
+  (the preview of a Canvas note: the same block widgets, read-only, in the
+  "canvas" page of the preview stack).
 - `bookmark_dialog` — the add / edit dialogs of the bookmarks view (name,
   location or folder icon, parent folder) and the target helpers they share
   with `bookmarks` (`bookmark_display_location()`, `bookmark_default_name()`).

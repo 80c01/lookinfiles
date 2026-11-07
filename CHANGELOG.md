@@ -64,6 +64,8 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- The preview of a Canvas note draws its page exactly as the Canvas tab
+  does (shapes, arrows, text, tables, pictures), instead of a text summary.
 - `make windows-exe` builds a single Windows executable holding the whole
   application: it extracts itself once into
   `%LOCALAPPDATA%\lookinfiles-runtime\` and starts from there.

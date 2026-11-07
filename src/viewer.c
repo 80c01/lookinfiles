@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "canvas_preview.h"
 #include "image_preview.h"
 #include "preview_summary.h"
 #include "fs_watch.h"
@@ -875,7 +876,13 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
             set_view_text_padding(app->text_view);
             set_view_monospace(app->text_view, TRUE); /* summary columns are space-aligned */
             if (full != NULL && note_type_from_filename(full) == NOTE_TYPE_CANVAS) {
-                render_canvas_summary(app, summary, full);
+                /* The page as the Canvas tab draws it; else the text
+                 * summary with its pictures */
+                if (canvas_preview_show(app, full)) {
+                    gtk_text_buffer_set_text(app->buffer, summary, -1);
+                } else {
+                    render_canvas_summary(app, summary, full);
+                }
             } else {
                 gtk_text_buffer_set_text(app->buffer, summary, -1);
             }

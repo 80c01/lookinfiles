@@ -41,6 +41,10 @@
  * workspace moves to this one */
 void canvas_view_open(AppData* app, const gchar* dir, const gchar* title);
 
+/* The style of the Canvas page and its blocks (canvas_preview.c draws
+ * them too), added once */
+void canvas_view_ensure_css(void);
+
 /* Save every open canvas now (all workspaces), if it has changes */
 void canvas_view_save(AppData* app);
 
