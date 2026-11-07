@@ -37,9 +37,10 @@ make ui-shots   # full UI scenario under Xvfb, screenshots in build/ui/shots/
 - **After a modification, only run `make`** and fix every warning and error.
 - **Build with every available CPU**: `make -j"$(nproc)"` (same for any other
   `make` target you run).
-- **Run `make test`, `make check`, `make ui-test` or `make ui-shots` only when the user asks.**
-  Not after an edit, not before a commit. The "`make check` passes" and
-  `make ui-test` / `make ui-shots` items in the docs checklists also wait for the user.
+- **Run `make check` before every commit** and fix everything it reports.
+- **Run `make test`, `make ui-test` or `make ui-shots` only when the user asks.**
+  Not after an edit, not before a commit. The `make ui-test` / `make ui-shots`
+  items in the docs checklists also wait for the user.
 - A new shortcut gets a step in `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).
 - `lookinfiles` and `build/` are generated: never edit them.
 
@@ -98,8 +99,8 @@ layer or below (`tools/check_layers.sh` enforces it):
 
 ## Git
 
-- **Always commit**: once a change builds with `make`, commit it right away,
-  without waiting to be asked.
+- **Always commit**: once a change builds with `make` and passes `make check`,
+  commit it right away, without waiting to be asked.
 - One accepted change = one commit; short imperative subject, no body
   other than a `Co-Authored-By:` trailer identifying the AI assistant model
   (e.g. `Co-Authored-By: Gemini 3.8 Flash <noreply@google.com>`).
