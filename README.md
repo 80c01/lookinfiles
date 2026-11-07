@@ -64,6 +64,7 @@ panels, `Ctrl+Q` to quit.
 | libarchive | `libarchive-dev` | 7z, RAR, xz, zstd, ISO, RPM listings |
 | WebKitGTK 6.0 | `libwebkitgtk-6.0-dev` | Browser tabs |
 | SSHFS | `sshfs` | Remote machines (run time) |
+| librsvg | `librsvg2-common` | Icons (run time; usually installed with GTK, missing on minimal systems) |
 
 Everything below the first three rows is optional: the Makefile detects what
 is installed, and a missing feature shows a notice instead. `make deps`
@@ -75,7 +76,7 @@ To install every optional library at once:
 ```bash
 sudo apt install libvte-2.91-gtk4-dev libgtksourceview-5-dev \
   libpoppler-glib-dev libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev \
-  sshfs
+  sshfs librsvg2-common
 ```
 
 ### Build
