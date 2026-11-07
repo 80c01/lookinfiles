@@ -87,6 +87,10 @@ void canvas_page_focus_next(CanvasPage* p, CanvasItem* from, gint step);
 /* The selected blocks, in drawing order (free with g_ptr_array_unref) */
 GPtrArray* canvas_page_selected(CanvasPage* p);
 gboolean canvas_page_is_selected(CanvasPage* p, CanvasItem* it);
+/* The selected blocks that are not locked (free with g_ptr_array_unref) */
+GPtrArray* canvas_page_selected_unlocked(CanvasPage* p);
+/* Ctrl+Shift+K: lock the selected blocks, or unlock them all if they are */
+void canvas_page_toggle_lock(CanvasPage* p);
 void canvas_page_selection_clear(CanvasPage* p);
 /* Shift+click on a block: add it to the selection, or take it out */
 void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it);
@@ -118,7 +122,7 @@ CanvasDoc* canvas_page_selected_doc(CanvasPage* p);
  * of another note (from_dir) copied into this one. Returns how many. */
 guint canvas_page_add_copies(CanvasPage* p, CanvasDoc* doc, gint dx, gint dy, const gchar* from_dir);
 
-/* Delete / the arrows on a selected block: every selected block */
+/* Delete / the arrows on a selected block: every selected block not locked */
 void canvas_page_remove_selected(CanvasPage* p);
 void canvas_page_move_selected(CanvasPage* p, gint dx, gint dy);
 /* Drawing order of the selected blocks: 2 to the front, 1 one step up,

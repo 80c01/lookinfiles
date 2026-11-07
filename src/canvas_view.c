@@ -38,6 +38,9 @@ static void ensure_css(void) {
                   ".canvas-corner { min-width: 10px; min-height: 10px; border-radius: 2px; }"
                   ".canvas-block:hover .canvas-corner, .canvas-block:focus-within .canvas-corner,"
                   " .canvas-block:focus .canvas-corner { background-color: @border_strong; }"
+                  ".canvas-block.canvas-locked .canvas-grip, .canvas-block.canvas-locked .canvas-corner"
+                  " { background-color: transparent; }"
+                  ".canvas-block.canvas-locked:focus { border-style: dashed; }"
                   ".canvas-text, .canvas-text text { background-color: transparent; color: @fg_text;"
                   " font-family: @font_ui; }"
                   ".canvas-text { padding: 2px 6px 6px 6px; }"
@@ -142,7 +145,7 @@ static void on_toolbar_toggle_grid(gboolean enabled, gpointer udata) {
 /* Align or distribute the selected blocks */
 static void on_toolbar_align(CanvasAlignOp op, gpointer udata) {
     CanvasPage* p = udata;
-    GPtrArray* items = canvas_page_selected(p);
+    GPtrArray* items = canvas_page_selected_unlocked(p);
     if (items->len >= 2) {
         GArray* rects = g_array_new(FALSE, FALSE, sizeof(CanvasRect));
         for (guint i = 0; i < items->len; i++) {
@@ -165,6 +168,12 @@ static void on_toolbar_align(CanvasAlignOp op, gpointer udata) {
         canvas_page_schedule_save(p);
     }
     g_ptr_array_unref(items);
+    canvas_page_restore_focus(p);
+}
+
+static void on_toolbar_lock(gpointer udata) {
+    CanvasPage* p = udata;
+    canvas_page_toggle_lock(p);
     canvas_page_restore_focus(p);
 }
 
@@ -270,7 +279,8 @@ static CanvasPage* ensure_page(AppData* app) {
         .on_crop_image = on_toolbar_crop,
         .on_toggle_grid = on_toolbar_toggle_grid,
         .on_align = on_toolbar_align,
-        .on_order = on_toolbar_order
+        .on_order = on_toolbar_order,
+        .on_lock = on_toolbar_lock
     };
     p->toolbar = canvas_toolbar_new(&cbs, p);
     CanvasPropsCallbacks pcbs = {.on_shape_style = on_props_shape_style};

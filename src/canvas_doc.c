@@ -307,6 +307,7 @@ static void read_ids(CanvasDoc* doc, const gchar** names, const gchar** values) 
     CanvasBlock* b = g_ptr_array_index(doc->blocks, doc->blocks->len - 1);
     gint id = attr_int(names, values, "id");
     if (id > 0 && !id_taken(doc, b, id)) b->id = id;
+    b->locked = attr_int(names, values, "locked") != 0;
     if (b->kind == CANVAS_BLOCK_SHAPE) {
         b->start_id = MAX(attr_int(names, values, "start"), 0);
         b->end_id = MAX(attr_int(names, values, "end"), 0);
@@ -532,7 +533,7 @@ static void append_text_block(GString* out, const CanvasBlock* b) {
     g_string_append(out, "</text>\n");
 }
 
-/* Put the id (and the bound ends) of b after the tag name of the element
+/* Put the id (the bound ends, the lock) of b after the tag name of the element
  * written from offset start */
 static void insert_ids(GString* out, gsize start, const CanvasBlock* b) {
     const gchar* name_end = strchr(out->str + start + 3, ' ');
@@ -541,6 +542,7 @@ static void insert_ids(GString* out, gsize start, const CanvasBlock* b) {
     g_string_append_printf(ids, " id=\"%d\"", b->id);
     if (b->start_id > 0) g_string_append_printf(ids, " start=\"%d\"", b->start_id);
     if (b->end_id > 0) g_string_append_printf(ids, " end=\"%d\"", b->end_id);
+    if (b->locked) g_string_append(ids, " locked=\"1\"");
     g_string_insert(out, name_end - out->str, ids->str);
     g_string_free(ids, TRUE);
 }

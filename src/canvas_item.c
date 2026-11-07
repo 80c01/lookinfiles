@@ -63,6 +63,34 @@ void canvas_item_place(CanvasItem* it) {
     }
 }
 
+/* Cursors of the grip, the corner and a shape or picture: none when locked */
+static void set_cursors(GtkWidget* w, const CanvasItem* it) {
+    for (GtkWidget* c = gtk_widget_get_first_child(w); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        if (g_object_get_data(G_OBJECT(c), "canvas-grip") != NULL) {
+            gtk_widget_set_cursor_from_name(c, it->locked ? NULL : "move");
+        } else if (g_object_get_data(G_OBJECT(c), "canvas-corner") != NULL) {
+            gtk_widget_set_cursor_from_name(c, it->locked ? NULL : "nwse-resize");
+        } else if (c == it->content && (it->kind == CANVAS_BLOCK_SHAPE || it->kind == CANVAS_BLOCK_IMAGE)) {
+            gtk_widget_set_cursor_from_name(c, it->locked ? NULL : "move");
+        } else if (GTK_IS_BOX(c) || GTK_IS_OVERLAY(c)) {
+            set_cursors(c, it);
+        }
+    }
+}
+
+void canvas_item_set_locked(CanvasItem* it, gboolean locked) {
+    if (it == NULL || it->frame == NULL) return;
+    if (it->locked != locked) {
+        it->locked = locked;
+        set_cursors(it->frame, it);
+    }
+    if (locked) {
+        gtk_widget_add_css_class(it->frame, "canvas-locked");
+    } else {
+        gtk_widget_remove_css_class(it->frame, "canvas-locked");
+    }
+}
+
 #define DIR_KEY "note-dir"
 
 void canvas_item_set_dir(CanvasItem* it, const gchar* dir) {
@@ -398,6 +426,7 @@ CanvasItem* canvas_item_add(CanvasPage* p, GtkWidget* surface, const gchar* dir,
         it->id = b->id;
         it->start_id = b->start_id;
         it->end_id = b->end_id;
+        canvas_item_set_locked(it, b->locked);
     }
     return it;
 }
@@ -465,6 +494,7 @@ CanvasDoc* canvas_items_to_doc(GtkWidget* surface) {
         if (it->id > 0) b->id = it->id;
         b->start_id = it->start_id;
         b->end_id = it->end_id;
+        b->locked = it->locked;
     }
     return doc;
 }

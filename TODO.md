@@ -42,7 +42,8 @@ panel, mouse drawing (shapes, arrows, lines, pencil, eraser), tool keys
 - [ ] run `make ui-shots` and check the new canvas screenshots
   (`canvas_tool_*`, `canvas_text_bold` (the format bar), `canvas_rect_drawn`, `canvas_pencil_drawn`,
   `canvas_checkbox_toggled`, `canvas_undo_delete`, `canvas_redo_delete`, `canvas_zoom_in`,
-  `canvas_zoom_reset`, `canvas_band_*`, `canvas_group_*`, `canvas_shift_click`, `canvas_arrow_*`, `canvas_shape_text_*`);
+  `canvas_zoom_reset`, `canvas_band_*`, `canvas_group_*`, `canvas_shift_click`, `canvas_arrow_*`, `canvas_shape_text_*`, `canvas_duplicate`, `canvas_paste`,
+  `canvas_send_to_back`, `canvas_locked`, `canvas_unlocked`);
   not run yet
 
 ### Wish list

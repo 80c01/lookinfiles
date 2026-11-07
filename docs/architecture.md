@@ -217,7 +217,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `canvas_doc` — Canvas notes (`<title>.canvas/`: `page.xml` and
   `media/`): text boxes with styled runs and pictures placed freely, read and
   written as XML (each block with a page-unique `id`; line and arrow ends
-  bound to blocks by `start` / `end`; a shape's text in `label`), new picture names, unused pictures pruned, Markdown export
+  bound to blocks by `start` / `end`; a shape's text in `label`; `locked`), new picture names, unused pictures pruned, Markdown export
   (`canvas_doc_export_markdown()`: a `.md` note next to it, pictures linked
   inside the Canvas).
 - `canvas_history` — undo / redo of a Canvas note: page states (`page.xml`
@@ -404,7 +404,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   their Markdown as text), `canvas_drag` (drawing tools, moving / resizing with
   snapping, clicks, drops).
   Its parts: `canvas_toolbar` (floating tool bar: select, shapes, pencil,
-  text, table, eraser, and the grid / align / order / crop menu), `canvas_props`
+  text, table, eraser, and the grid / align / order / lock / crop menu), `canvas_props`
   (floating panel: shape style), `canvas_format_bar` (text formatting, a row
   floating above the text box and following it each frame), `canvas_draw` (a shape
   following the pointer while it is drawn), `canvas_item` (the block widgets),

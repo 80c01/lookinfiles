@@ -138,6 +138,26 @@ GPtrArray* canvas_page_selected(CanvasPage* p) {
     return items;
 }
 
+GPtrArray* canvas_page_selected_unlocked(CanvasPage* p) {
+    GPtrArray* items = canvas_page_selected(p);
+    for (guint i = items->len; i > 0; i--) {
+        if (((CanvasItem*)g_ptr_array_index(items, i - 1))->locked) g_ptr_array_remove_index(items, i - 1);
+    }
+    return items;
+}
+
+void canvas_page_toggle_lock(CanvasPage* p) {
+    GPtrArray* items = canvas_page_selected(p);
+    gboolean lock = FALSE;
+    for (guint i = 0; i < items->len; i++) {
+        if (!((CanvasItem*)g_ptr_array_index(items, i))->locked) lock = TRUE;
+    }
+    if (items->len > 0) canvas_page_remember(p);
+    for (guint i = 0; i < items->len; i++) canvas_item_set_locked(g_ptr_array_index(items, i), lock);
+    g_ptr_array_unref(items);
+    canvas_page_schedule_save(p);
+}
+
 void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it) {
     if (it == NULL) return;
     CanvasItem* current = canvas_page_current_item(p);
@@ -177,6 +197,7 @@ void canvas_page_select_box(CanvasPage* p, gint x, gint y, gint w, gint h, gbool
         CanvasItem* it = canvas_item_of(c);
         if (it == NULL) continue;
         gint bx, by, bw, bh;
+        if (it->locked) continue; /* a band does not take locked blocks */
         canvas_page_item_box(it, &bx, &by, &bw, &bh);
         if (bx >= x && by >= y && bx + bw <= x + w && by + bh <= y + h) {
             set_add(p, it);
@@ -455,8 +476,12 @@ guint canvas_page_add_copies(CanvasPage* p, CanvasDoc* doc, gint dx, gint dy, co
 }
 
 void canvas_page_remove_selected(CanvasPage* p) {
-    GPtrArray* items = canvas_page_selected(p);
-    if (items->len > 0) canvas_page_remember(p);
+    GPtrArray* items = canvas_page_selected_unlocked(p);
+    if (items->len == 0) {
+        g_ptr_array_unref(items);
+        return;
+    }
+    canvas_page_remember(p);
     canvas_page_selection_clear(p);
     for (guint i = 0; i < items->len; i++) {
         CanvasItem* it = g_ptr_array_index(items, i);
@@ -507,7 +532,7 @@ void canvas_page_reorder_selected(CanvasPage* p, gint where) {
 }
 
 void canvas_page_move_selected(CanvasPage* p, gint dx, gint dy) {
-    GPtrArray* items = canvas_page_selected(p);
+    GPtrArray* items = canvas_page_selected_unlocked(p);
     if (items->len > 0) canvas_page_remember(p);
     /* The blocks keep their places relative to each other at the page edge */
     for (guint i = 0; i < items->len; i++) {

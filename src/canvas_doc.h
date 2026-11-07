@@ -15,7 +15,8 @@
  * Text is plain UTF-8 (newlines kept) with styled runs. Blocks are kept in
  * drawing order (the last one on top). Each block has an id, unique on the
  * page (id="3"); a line or an arrow may have its ends bound to blocks
- * (start="1" end="2"): they follow them. Pure model, no widgets. */
+ * (start="1" end="2"): they follow them; a locked block (locked="1") stays
+ * in place. Pure model, no widgets. */
 
 #define CANVAS_PAGE_FILE "page.xml"
 #define CANVAS_MEDIA_DIR "media"
@@ -82,6 +83,7 @@ typedef struct {
 typedef struct {
     CanvasBlockKind kind;
     gint id;         /* > 0, unique in the document */
+    gboolean locked; /* kept in place: not moved, resized or deleted (locked="1") */
     gint x, y;       /* top-left corner on the page */
     gint w, h;       /* size; h = 0 for a text box: as tall as its text */
     /* TEXT, and the label of a SHAPE (NULL or "": none) */

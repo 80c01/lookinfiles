@@ -137,6 +137,13 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         if (on_blocks && canvas_clip_paste(p)) return TRUE;
         return paste_picture(p);
     }
+    /* Ctrl+Shift+K: lock / unlock the selected blocks (Ctrl+Shift+L is the
+     * window layout) */
+    if (control && (state & GDK_ALT_MASK) == 0 && (state & GDK_SHIFT_MASK) != 0 && on_blocks && it != NULL &&
+        (keyval == GDK_KEY_k || keyval == GDK_KEY_K)) {
+        canvas_page_toggle_lock(p);
+        return TRUE;
+    }
     /* Ctrl+] / Ctrl+[: one step up / down; with Shift: to the front / back */
     if (control && (state & GDK_ALT_MASK) == 0 && on_blocks && it != NULL) {
         gboolean shift = (state & GDK_SHIFT_MASK) != 0;

@@ -16,6 +16,7 @@ typedef struct {
     CanvasBlockKind kind;
     gint id;            /* unique on the page (canvas_doc.h) */
     gint start_id, end_id; /* line or arrow: blocks its ends are bound to */
+    gboolean locked;    /* kept in place (canvas_item_set_locked()) */
     GtkWidget* frame;   /* child of the surface */
     GtkWidget* content; /* text view, picture, shape or table */
     GtkTextBuffer* buffer;
@@ -44,6 +45,9 @@ void canvas_item_select(CanvasItem* it);
 /* Type in it: a text box, or the label of a shape */
 void canvas_item_edit(CanvasItem* it);
 void canvas_item_place(CanvasItem* it);
+
+/* Lock it in place (its grip and corner hidden), or unlock it */
+void canvas_item_set_locked(CanvasItem* it, gboolean locked);
 
 /* hit (a widget picked on the page) is in the label being typed in: the
  * pointer places the cursor there instead of moving the shape */

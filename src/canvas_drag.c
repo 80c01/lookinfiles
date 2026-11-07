@@ -16,7 +16,7 @@
 /* Eraser: remove the block under (x, y) */
 static void erase_at(CanvasPage* p, gdouble x, gdouble y) {
     CanvasItem* it = canvas_item_of(gtk_widget_pick(p->surface, x, y, GTK_PICK_DEFAULT));
-    if (it == NULL) return;
+    if (it == NULL || it->locked) return;
     canvas_page_remove_item(it);
     canvas_page_update_extent(p);
 }
@@ -114,7 +114,7 @@ static void group_clear(CanvasPage* p) {
 /* A move of a selected block takes the other selected blocks along */
 static void group_begin(CanvasPage* p, CanvasItem* it) {
     group_clear(p);
-    p->drag_group = canvas_page_is_selected(p, it) ? canvas_page_selected(p) : g_ptr_array_new();
+    p->drag_group = canvas_page_is_selected(p, it) ? canvas_page_selected_unlocked(p) : g_ptr_array_new();
     if (p->drag_group->len == 0) g_ptr_array_add(p->drag_group, it);
     p->drag_starts = g_array_new(FALSE, FALSE, sizeof(CanvasRect));
     for (guint i = 0; i < p->drag_group->len; i++) {
@@ -156,6 +156,12 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
     if (shift) {
         gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
         canvas_page_select_toggle(p, it);
+        return;
+    }
+    /* A locked block: selected, never moved or resized (its text still edited) */
+    if (it->locked) {
+        gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_DENIED);
+        if (it->kind != CANVAS_BLOCK_TEXT && it->kind != CANVAS_BLOCK_TABLE) canvas_item_select(it);
         return;
     }
     gboolean grip = FALSE, corner = FALSE;

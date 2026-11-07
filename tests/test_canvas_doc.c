@@ -311,6 +311,7 @@ static void test_ids_and_bindings(void) {
     g_assert_cmpint(a->id, ==, 3);
     a->start_id = t->id;
     a->end_id = r->id;
+    r->locked = TRUE;
 
     g_autofree gchar* xml = canvas_doc_to_xml(doc);
     g_assert_nonnull(strstr(xml, "<text id=\"1\" x="));
@@ -322,6 +323,9 @@ static void test_ids_and_bindings(void) {
     g_assert_cmpint(ba->id, ==, 3);
     g_assert_cmpint(ba->start_id, ==, 1);
     g_assert_cmpint(ba->end_id, ==, 2);
+    g_assert_true(((CanvasBlock*)g_ptr_array_index(back->blocks, 1))->locked);
+    g_assert_false(ba->locked);
+    g_assert_nonnull(strstr(xml, "<shape id=\"2\" locked=\"1\" type=\"rect\""));
     g_autofree gchar* xml2 = canvas_doc_to_xml(back);
     g_assert_cmpstr(xml, ==, xml2);
 

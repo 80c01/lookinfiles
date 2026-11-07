@@ -396,6 +396,9 @@ key ctrl+c; xdotool mousemove 1100 640; key ctrl+v
                         shot canvas_paste
 # Ctrl+Shift+[ sends the pasted rectangle behind the others
 key ctrl+shift+bracketleft;  shot canvas_send_to_back
+# Ctrl+Shift+K locks it: the arrows and Delete leave it in place
+key ctrl+shift+k Right Delete;  shot canvas_locked
+key ctrl+shift+k;       shot canvas_unlocked
 # Zoom: Ctrl+= zooms in (the header shows the scale), Ctrl+0 back to 100 %
 key ctrl+equal ctrl+equal;  shot canvas_zoom_in
 key ctrl+0;             shot canvas_zoom_reset
