@@ -3,7 +3,8 @@
 
 /* "Load Whole File" bar of the preview: shown above a text preview that
  * stops before the end of the file (large files show their first
- * PREVIEW_BYTES); its button previews the file again, read to the end.
+ * PREVIEW_BYTES); its button previews the file again, read to the end
+ * (after a confirmation above 64 MB).
  * The request holds for that file until another one is selected. */
 #include "app_types.h"
 

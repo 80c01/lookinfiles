@@ -2,6 +2,10 @@
 #include "preview_full.h"
 
 #include "app_events.h"
+#include "dialog.h"
+
+/* Above this size, ask first: showing the text can freeze the window a while */
+#define PREVIEW_FULL_CONFIRM_BYTES (64 * 1024 * 1024)
 
 typedef struct {
     AppData* app;
@@ -9,6 +13,7 @@ typedef struct {
     GtkWidget* label;
     GtkWidget* button;
     gchar* shown_path;   /* file of the partial preview the bar is about */
+    gint64 total;        /* its size */
     gchar* wanted_path;  /* file to read to the end, or NULL */
 } PreviewFull;
 
@@ -19,10 +24,45 @@ static void preview_full_free(gpointer data) {
     g_free(pf);
 }
 
+/* TRUE if the user still wants a file of this size in the preview */
+static gboolean confirm_large(PreviewFull* pf) {
+    GtkWidget* dlg = app_dialog_new("Load Whole File", pf->app->window,
+                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    "_Load", APP_RESPONSE_OK,
+                                    NULL);
+    gchar* size = g_format_size((guint64)pf->total);
+    gchar* message = g_strdup_printf("This file is %s. Showing all of it may make the window "
+                                     "unresponsive for a while. Load it anyway?", size);
+    GtkWidget* label = gtk_label_new(message);
+    g_free(message);
+    g_free(size);
+    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(label), 60);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_widget_set_margin_top(label, 14);
+    gtk_widget_set_margin_bottom(label, 14);
+    gtk_widget_set_margin_start(label, 16);
+    gtk_widget_set_margin_end(label, 16);
+    gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), label);
+    app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL);
+    gint response = app_dialog_run(APP_DIALOG(dlg),
+                                   app_dialog_get_widget_for_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL));
+    app_dialog_destroy(APP_DIALOG(dlg));
+    return response == APP_RESPONSE_OK;
+}
+
 static void on_load_clicked(GtkButton* button, gpointer data) {
     (void)button;
     PreviewFull* pf = data;
     if (pf->shown_path == NULL) {
+        return;
+    }
+    gchar* path = g_strdup(pf->shown_path);
+    gboolean go = pf->total <= PREVIEW_FULL_CONFIRM_BYTES || confirm_large(pf);
+    /* Still the same preview after the dialog */
+    go = go && g_strcmp0(pf->shown_path, path) == 0;
+    g_free(path);
+    if (!go) {
         return;
     }
     g_free(pf->wanted_path);
@@ -74,6 +114,7 @@ void preview_full_update(AppData* app, const gchar* path, gint64 shown, gint64 t
         g_free(pf->shown_path);
         pf->shown_path = g_strdup(path);
     }
+    pf->total = total;
     gchar* s = g_format_size((guint64)shown);
     gchar* t = g_format_size((guint64)total);
     gchar* text = g_strdup_printf("Partial preview: %s of %s shown", s, t);
