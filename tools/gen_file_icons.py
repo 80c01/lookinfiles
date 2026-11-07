@@ -10,6 +10,8 @@ extensions/theme-seti/icons/ (MIT, see icons/COPYING). Needs fontTools
     Seti font as a single-colour path (no transform)
   - src/file_type_icons_table.h: file name / extension -> icon + colour
   - the <file> lines of icons/lookin.gresource.xml for those icons
+The HANDMADE icons (formats Seti has no glyph for) are drawn by hand in
+the same grid: their SVGs are kept, only their table entries are written.
 """
 import json
 import os
@@ -110,6 +112,12 @@ LANGUAGES = {
     "blade": ["blade.php"],
 }
 
+# Hand-drawn lookin-ft-<icon>-symbolic.svg: icon -> (colour, extensions)
+HANDMADE = {
+    "canvas": ("purple", ["canvas"]),
+    "org": ("green", ["org", "org_archive"]),
+}
+
 
 def icon_base(def_id):
     """'_c_1' -> 'c', '_cake_php' -> 'cake-php', '_R' -> 'r'"""
@@ -156,12 +164,18 @@ def main():
     names.update({k.lower(): v for k, v in theme["fileNames"].items()})
     exts.update({k.lower(): v for k, v in theme["fileExtensions"].items()})
 
+    for icon, (color, keys) in HANDMADE.items():
+        exts.update({k: (icon, color) for k in keys})
+
     used = {}  # icon -> codepoint
     entries = []
     for table, items in (("names", names), ("exts", exts)):
         for key, def_id in sorted(items.items()):
-            icon, color, cp = resolve(def_id)
-            used.setdefault(icon, cp)
+            if isinstance(def_id, tuple):  # HANDMADE
+                icon, color = def_id
+            else:
+                icon, color, cp = resolve(def_id)
+                used.setdefault(icon, cp)
             entries.append((table, key, icon, color))
     default = resolve(theme["file"])
     used.setdefault(default[0], default[2])
@@ -170,7 +184,7 @@ def main():
                     next(cp for cp, n in font.getBestCmap().items() if n == "folder"))
 
     for f in os.listdir(ICON_DIR):
-        if f.startswith("lookin-ft-"):
+        if f.startswith("lookin-ft-") and f[10:-13] not in HANDMADE:
             os.remove(os.path.join(ICON_DIR, f))
     for icon, cp in sorted(used.items()):
         path = os.path.join(ICON_DIR, "lookin-ft-%s-symbolic.svg" % icon)
@@ -192,7 +206,8 @@ def main():
     lines = [l for l in open(GRESOURCE, encoding="utf-8").read().splitlines()
              if "lookin-ft-" not in l]
     end = max(i for i, l in enumerate(lines) if "<file>" in l) + 1
-    ft = ["    <file>scalable/actions/lookin-ft-%s-symbolic.svg</file>" % i for i in sorted(used)]
+    ft = ["    <file>scalable/actions/lookin-ft-%s-symbolic.svg</file>" % i
+          for i in sorted(set(used) | set(HANDMADE))]
     lines[end:end] = ft
     with open(GRESOURCE, "w", encoding="utf-8") as out:
         out.write("\n".join(lines) + "\n")

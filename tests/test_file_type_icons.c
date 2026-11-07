@@ -21,6 +21,13 @@ static void test_extensions(void) {
     assert_icon("run.sh", "shell", "green");
 }
 
+/* Hand-drawn icons for the note formats Seti has none for */
+static void test_handmade(void) {
+    assert_icon("todo.org", "org", "green");
+    assert_icon("done.org_archive", "org", "green");
+    assert_icon("board.canvas", "canvas", "purple");
+}
+
 static void test_compound_extensions(void) {
     assert_icon("app.spec.ts", "typescript", "orange");
     assert_icon("archive.tar.zip", "zip", "grey_light");
@@ -60,6 +67,7 @@ static void test_colors_known(void) {
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/file_type_icons/extensions", test_extensions);
+    g_test_add_func("/file_type_icons/handmade", test_handmade);
     g_test_add_func("/file_type_icons/compound_extensions", test_compound_extensions);
     g_test_add_func("/file_type_icons/file_names", test_file_names);
     g_test_add_func("/file_type_icons/defaults", test_defaults);

@@ -82,7 +82,9 @@ Check these before adding or changing an action, a tooltip or a dialog:
   no change for sets to restyle it; build GIcons only through `icons.c`.
   The file-type icons `lookin-ft-*` are generated:
   run `tools/gen_file_icons.py` on the VS Code Seti theme files (see its
-  header) instead of editing them. Check with `make ui-shots`, `UI_ICON_THEME=hicolor
+  header) instead of editing them; the formats Seti has no glyph for
+  (`org`, `canvas`) are drawn by hand on the same 16 px grid and listed in
+  its `HANDMADE` table. Check with `make ui-shots`, `UI_ICON_THEME=hicolor
   make ui-shots` and `LOOKIN_DEBUG_ICONS=1 ./lookin`.
 - **Preview text views** all use `set_view_text_padding()` (10 px sides).
 - **Names**: `Org-mode`, `Markdown`, `Plain Text`, `Canvas`; view titles EXPLORER,

@@ -110,6 +110,7 @@
     <file>scalable/actions/lookin-ft-c-sharp-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-cake-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-cake-php-symbolic.svg</file>
+    <file>scalable/actions/lookin-ft-canvas-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-clock-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-clojure-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-code-climate-symbolic.svg</file>
@@ -191,6 +192,7 @@
     <file>scalable/actions/lookin-ft-nunjucks-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-ocaml-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-odata-symbolic.svg</file>
+    <file>scalable/actions/lookin-ft-org-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-pddl-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-pdf-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-perl-symbolic.svg</file>
