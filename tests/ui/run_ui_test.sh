@@ -399,6 +399,9 @@ key ctrl+shift+bracketleft;  shot canvas_send_to_back
 # Ctrl+Shift+K locks it: the arrows and Delete leave it in place
 key ctrl+shift+k Right Delete;  shot canvas_locked
 key ctrl+shift+k;       shot canvas_unlocked
+# Ctrl+A selects every block; Esc deselects
+key ctrl+a;             shot canvas_select_all
+key Escape
 # Line points: L draws a line (selected), a drag of its middle adds a point
 # (active, filled), Delete removes that point, not the line
 key l; drag 640 720 840 720

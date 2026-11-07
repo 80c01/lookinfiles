@@ -221,6 +221,19 @@ void canvas_page_select_box(CanvasPage* p, gint x, gint y, gint w, gint h, gbool
     }
 }
 
+void canvas_page_select_all(CanvasPage* p) {
+    canvas_page_selection_clear(p);
+    CanvasItem* last = NULL;
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* it = canvas_item_of(c);
+        if (it == NULL || it->locked) continue;
+        set_add(p, it);
+        last = it;
+    }
+    /* Focus the top block, so the keys act on the selection */
+    if (last != NULL) canvas_item_select(last);
+}
+
 void canvas_page_focus_changed(CanvasPage* p, GtkWidget* f) {
     if (f == NULL || !gtk_widget_is_ancestor(f, p->surface)) return;
     CanvasItem* it = canvas_item_of(f);

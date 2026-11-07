@@ -114,6 +114,8 @@ void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it);
 /* Rubber band: select the blocks inside (x, y, w, h); extend: keep the
  * blocks already selected */
 void canvas_page_select_box(CanvasPage* p, gint x, gint y, gint w, gint h, gboolean extend);
+/* Ctrl+A: select every block not locked */
+void canvas_page_select_all(CanvasPage* p);
 /* The focus moved to f: a block out of the selection ends it */
 void canvas_page_focus_changed(CanvasPage* p, GtkWidget* f);
 /* Box of a block on the page */

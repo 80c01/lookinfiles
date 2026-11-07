@@ -161,6 +161,11 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
             return TRUE;
         }
     }
+    /* Ctrl+A: every block (while typing: the text) */
+    if (control && !other && on_blocks && (keyval == GDK_KEY_a || keyval == GDK_KEY_A)) {
+        canvas_page_select_all(p);
+        return TRUE;
+    }
     /* Ctrl+C / Ctrl+X / Ctrl+D: copy, cut, duplicate the selected blocks */
     if (control && !other && on_blocks && it != NULL) {
         if (keyval == GDK_KEY_c || keyval == GDK_KEY_C) return canvas_clip_copy(p, FALSE);
