@@ -231,7 +231,8 @@ CanvasToolbar* canvas_toolbar_new(const CanvasToolbarCallbacks* cbs, gpointer us
         tb->tools[i] = b;
         gtk_box_append(GTK_BOX(box), b);
     }
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(tb->tools[CANVAS_TOOL_SELECT]), TRUE);
+    /* No on_tool call: the page is not built yet */
+    canvas_toolbar_set_tool(tb, CANVAS_TOOL_SELECT);
     add_sep(box);
     gtk_box_append(GTK_BOX(box), more_menu(tb));
     return tb;
