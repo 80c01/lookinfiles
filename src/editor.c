@@ -44,6 +44,7 @@ static void on_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone zone,
 static void on_tab_drag_done(GtkNotebook* source, gpointer data);
 static EditorTab* editor_tab_of_page(AppData* app, GtkWidget* child);
 static GtkNotebook* editor_tab_notebook(AppData* app, EditorTab* tab);
+static GtkWidget* neighbor_notebook(AppData* app, GtkNotebook* cur_nb, EditorMoveDirection dir);
 
 /* Editor tabs can be reordered and dragged to another notebook */
 static void editor_page_set_draggable(GtkNotebook* nb, GtkWidget* child) {
@@ -799,6 +800,32 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
         return;
     }
 
+    GtkWidget* best_target = neighbor_notebook(app, cur_nb, dir);
+    if (best_target != NULL) {
+        editor_move_tab_to_notebook(app, tab, GTK_NOTEBOOK(best_target), -1);
+        return;
+    }
+
+    if (dir == EDITOR_MOVE_LEFT) {
+        editor_move_tab_dedicated(app, tab);
+        return;
+    }
+
+    gint n_pages = gtk_notebook_get_n_pages(cur_nb);
+    if (n_pages <= 1) {
+        return;
+    }
+
+    PaneZone side = dir == EDITOR_MOVE_RIGHT ? PANE_ZONE_RIGHT
+                  : dir == EDITOR_MOVE_UP    ? PANE_ZONE_TOP
+                                             : PANE_ZONE_BOTTOM;
+    GtkWidget* new_nb = editor_split_notebook(app, cur_nb, side);
+    if (new_nb == NULL) return;
+    editor_move_tab_to_notebook(app, tab, GTK_NOTEBOOK(new_nb), -1);
+}
+
+/* The editor notebook next to cur_nb in direction dir, or NULL */
+static GtkWidget* neighbor_notebook(AppData* app, GtkNotebook* cur_nb, EditorMoveDirection dir) {
     GPtrArray* all_nbs = editor_get_all_notebooks(app);
     GtkWidget* best_target = NULL;
 
@@ -830,28 +857,7 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
         g_free(widgets);
     }
     g_ptr_array_unref(all_nbs);
-
-    if (best_target != NULL) {
-        editor_move_tab_to_notebook(app, tab, GTK_NOTEBOOK(best_target), -1);
-        return;
-    }
-
-    if (dir == EDITOR_MOVE_LEFT) {
-        editor_move_tab_dedicated(app, tab);
-        return;
-    }
-
-    gint n_pages = gtk_notebook_get_n_pages(cur_nb);
-    if (n_pages <= 1) {
-        return;
-    }
-
-    PaneZone side = dir == EDITOR_MOVE_RIGHT ? PANE_ZONE_RIGHT
-                  : dir == EDITOR_MOVE_UP    ? PANE_ZONE_TOP
-                                             : PANE_ZONE_BOTTOM;
-    GtkWidget* new_nb = editor_split_notebook(app, cur_nb, side);
-    if (new_nb == NULL) return;
-    editor_move_tab_to_notebook(app, tab, GTK_NOTEBOOK(new_nb), -1);
+    return best_target;
 }
 
 static EditorTab* editor_tab_of_page(AppData* app, GtkWidget* child) {
@@ -985,6 +991,138 @@ void editor_add_page(AppData* app, GtkWidget* child, GtkWidget* label) {
     gtk_notebook_set_current_page(nb, page);
     editor_update_panel_visibilities(app);
     minimap_update_visibility(app);
+}
+
+gboolean editor_move_page_direction(AppData* app, GtkWidget* child, EditorMoveDirection dir) {
+    GtkNotebook* cur_nb = (app != NULL && child != NULL) ? notebook_of_page(child) : NULL;
+    if (cur_nb == NULL || !editor_page_is_movable(child) || editor_tab_of_page(app, child) != NULL) return FALSE;
+    gboolean in_preview = GTK_WIDGET(cur_nb) == app->notebook;
+    if (!in_preview && (app->editor_box == NULL || !gtk_widget_is_ancestor(GTK_WIDGET(cur_nb), app->editor_box))) {
+        return FALSE; /* a terminal of the terminal panel */
+    }
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+    if (in_preview) {
+        /* As for an editor tab: to the editor panel, except to the left */
+        if (dir != EDITOR_MOVE_LEFT) {
+            editor_move_page(app, cur_nb, editor_panel_notebook(app), child, -1);
+            gtk_notebook_set_current_page(cur_nb, 0);
+        }
+    } else {
+        GtkWidget* target = neighbor_notebook(app, cur_nb, dir);
+        if (target != NULL) {
+            editor_move_page(app, cur_nb, GTK_NOTEBOOK(target), child, -1);
+        } else if (dir == EDITOR_MOVE_LEFT && app->notebook != NULL) {
+            editor_move_page(app, cur_nb, GTK_NOTEBOOK(app->notebook), child, -1);
+        } else if (dir != EDITOR_MOVE_LEFT && gtk_notebook_get_n_pages(cur_nb) > 1) {
+            PaneZone side = dir == EDITOR_MOVE_RIGHT ? PANE_ZONE_RIGHT
+                          : dir == EDITOR_MOVE_UP    ? PANE_ZONE_TOP
+                                                     : PANE_ZONE_BOTTOM;
+            GtkWidget* new_nb = editor_split_notebook(app, cur_nb, side);
+            if (new_nb != NULL) editor_move_page(app, cur_nb, GTK_NOTEBOOK(new_nb), child, -1);
+        }
+        if (gtk_notebook_get_n_pages(cur_nb) == 0) editor_cleanup_notebook(app, GTK_WIDGET(cur_nb));
+    }
+    editor_update_panel_visibilities(app);
+    minimap_update_visibility(app);
+    gtk_widget_grab_focus(child);
+    return TRUE;
+}
+
+/* The tab menu of a movable page */
+typedef struct {
+    AppData* app;
+    GtkWidget* child;
+    GtkWidget* popover;
+    EditorPageCloseFunc on_close;
+    gpointer data;
+} PageMenu;
+
+static void page_menu_free(gpointer data) {
+    PageMenu* pm = data;
+    g_object_unref(pm->child);
+    g_free(pm);
+}
+
+static void on_page_menu_action(GtkButton* button, gpointer data) {
+    gint action = GPOINTER_TO_INT(data);
+    PageMenu* pm = g_object_get_data(G_OBJECT(gtk_widget_get_parent(GTK_WIDGET(button))), "page-menu");
+    if (pm == NULL) return;
+    AppData* app = pm->app;
+    GtkWidget* child = g_object_ref(pm->child);
+    EditorPageCloseFunc on_close = pm->on_close;
+    gpointer close_data = pm->data;
+    gtk_popover_popdown(GTK_POPOVER(pm->popover));
+    switch (action) {
+    case TAB_ACTION_MOVE_RIGHT: editor_move_page_direction(app, child, EDITOR_MOVE_RIGHT); break;
+    case TAB_ACTION_MOVE_LEFT: editor_move_page_direction(app, child, EDITOR_MOVE_LEFT); break;
+    case TAB_ACTION_MOVE_DOWN: editor_move_page_direction(app, child, EDITOR_MOVE_DOWN); break;
+    case TAB_ACTION_MOVE_UP: editor_move_page_direction(app, child, EDITOR_MOVE_UP); break;
+    case TAB_ACTION_CLOSE:
+        if (on_close != NULL) on_close(child, close_data);
+        break;
+    default: break;
+    }
+    g_object_unref(child);
+}
+
+static void page_menu_item(GtkWidget* box, const gchar* label, const gchar* shortcut, gint action) {
+    GtkWidget* btn = gtk_button_new();
+    gtk_widget_set_name(btn, "tab-context-btn");
+    gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_set_hexpand(row, TRUE);
+    GtkWidget* lbl = gtk_label_new(label);
+    gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
+    gtk_widget_set_hexpand(lbl, TRUE);
+    gtk_box_append(GTK_BOX(row), lbl);
+    if (shortcut != NULL) {
+        GtkWidget* sc = gtk_label_new(shortcut);
+        gtk_widget_add_css_class(sc, "shortcut-badge");
+        gtk_box_append(GTK_BOX(row), sc);
+    }
+    gtk_button_set_child(GTK_BUTTON(btn), row);
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_page_menu_action), GINT_TO_POINTER(action));
+    gtk_box_append(GTK_BOX(box), btn);
+}
+
+void editor_page_show_context_menu(AppData* app, GtkWidget* child, GtkWidget* target_widget,
+                                   EditorPageCloseFunc on_close, gpointer data) {
+    if (app == NULL || child == NULL || target_widget == NULL) return;
+    GtkWidget* popover = gtk_popover_new();
+    gtk_widget_set_hexpand(popover, FALSE);
+    gtk_widget_set_vexpand(popover, FALSE);
+    gtk_widget_set_parent(popover, target_widget);
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), TRUE);
+    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
+
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    gtk_widget_set_margin_start(box, 4);
+    gtk_widget_set_margin_end(box, 4);
+    gtk_widget_set_margin_top(box, 4);
+    gtk_widget_set_margin_bottom(box, 4);
+    PageMenu* pm = g_new0(PageMenu, 1);
+    pm->app = app;
+    pm->child = g_object_ref(child);
+    pm->popover = popover;
+    pm->on_close = on_close;
+    pm->data = data;
+    g_object_set_data_full(G_OBJECT(box), "page-menu", pm, page_menu_free);
+
+    page_menu_item(box, "Move Right", "Ctrl+Alt+Right", TAB_ACTION_MOVE_RIGHT);
+    page_menu_item(box, "Move Left", "Ctrl+Alt+Left", TAB_ACTION_MOVE_LEFT);
+    page_menu_item(box, "Move Down", "Ctrl+Alt+Down", TAB_ACTION_MOVE_DOWN);
+    page_menu_item(box, "Move Up", "Ctrl+Alt+Up", TAB_ACTION_MOVE_UP);
+    if (on_close != NULL) {
+        GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_widget_set_margin_top(sep, 4);
+        gtk_widget_set_margin_bottom(sep, 4);
+        gtk_box_append(GTK_BOX(box), sep);
+        page_menu_item(box, "Close Tab", "Ctrl+W", TAB_ACTION_CLOSE);
+    }
+
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
+    g_signal_connect_swapped(popover, "closed", G_CALLBACK(gtk_widget_unparent), popover);
+    gtk_popover_popup(GTK_POPOVER(popover));
 }
 
 void editor_remove_page(AppData* app, GtkWidget* child) {

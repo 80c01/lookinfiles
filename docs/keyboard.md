@@ -160,6 +160,7 @@ editor tab; it stays in its workspace)
 | Middle-button drag, `Space` held and a drag | Move the view (`Space` when not typing in a block) |
 | `Ctrl+Z` / `Ctrl+Shift+Z`, `Ctrl+Y` | Undo / redo on the page: add, delete, move, resize, style, align, crop (while typing: the text of the box or cell) |
 | `Ctrl+W`, middle click on the tab | Close the Canvas tab (saved first) |
+| `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the Canvas tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it) |
 
 **Help tab** (the user guide, opened with `F1` or a click on the top bar's
 **Help** button; the navigation keys of the global mode scroll it)

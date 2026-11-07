@@ -358,6 +358,22 @@ static void on_label_middle_click(GtkGestureClick* gesture, gint n_press, gdoubl
     if (!p->closed) close_page(p);
 }
 
+static void on_menu_close(GtkWidget* child, gpointer data) {
+    (void)data;
+    CanvasPage* p = page_of_root(child);
+    if (p != NULL && !p->closed) close_page(p);
+}
+
+/* The tab menu, as for an editor tab: move, close */
+static void on_label_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)n_press;
+    (void)x;
+    (void)y;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    CanvasPage* p = data;
+    if (!p->closed) editor_page_show_context_menu(p->app, p->root, p->tab_label, on_menu_close, NULL);
+}
+
 static void on_root_destroy(GtkWidget* widget, gpointer data) {
     CanvasPage* p = data;
     p->closed = TRUE;
@@ -453,7 +469,7 @@ static CanvasPage* page_new(AppData* app) {
     if (app->canvas_pages == NULL) app->canvas_pages = g_ptr_array_new();
     g_ptr_array_add(app->canvas_pages, root);
 
-    /* Tab: the canvas name; a middle click closes it */
+    /* Tab: the canvas name; a right click opens its menu, a middle click closes it */
     p->tab_label = g_object_ref_sink(icon_label_new("document-edit", "Canvas"));
     GtkWidget* text = gtk_widget_get_last_child(p->tab_label);
     gtk_label_set_ellipsize(GTK_LABEL(text), PANGO_ELLIPSIZE_END);
@@ -463,6 +479,10 @@ static CanvasPage* page_new(AppData* app) {
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), p);
     gtk_widget_add_controller(p->tab_label, GTK_EVENT_CONTROLLER(mclick));
+    GtkGesture* rclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(rclick), GDK_BUTTON_SECONDARY);
+    g_signal_connect(rclick, "pressed", G_CALLBACK(on_label_right_click), p);
+    gtk_widget_add_controller(p->tab_label, GTK_EVENT_CONTROLLER(rclick));
     return p;
 }
 

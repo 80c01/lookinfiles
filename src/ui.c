@@ -366,8 +366,21 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         }
     }
 
-    /* Ctrl+Alt+Arrow / Ctrl+Alt+HJKL: move editor tab */
+    /* Ctrl+Alt+Arrow / Ctrl+Alt+HJKL: move the editor tab, or the Canvas tab
+     * with the focus */
     if ((state & GDK_CONTROL_MASK) && (state & GDK_ALT_MASK)) {
+        EditorMoveDirection dir = (keyval == GDK_KEY_Right || keyval == GDK_KEY_l || keyval == GDK_KEY_L) ? EDITOR_MOVE_RIGHT
+                                : (keyval == GDK_KEY_Left || keyval == GDK_KEY_h || keyval == GDK_KEY_H)  ? EDITOR_MOVE_LEFT
+                                : (keyval == GDK_KEY_Down || keyval == GDK_KEY_j || keyval == GDK_KEY_J)  ? EDITOR_MOVE_DOWN
+                                : (keyval == GDK_KEY_Up || keyval == GDK_KEY_k || keyval == GDK_KEY_K)    ? EDITOR_MOVE_UP
+                                                                                                          : (EditorMoveDirection)-1;
+        if ((gint)dir >= 0 && !focus_in_terminal(app)) {
+            FocusInfo info;
+            focus_route_get(app, &info);
+            if (info.tab == NULL && info.page != NULL && editor_move_page_direction(app, info.page, dir)) {
+                return TRUE;
+            }
+        }
         if (keyval == GDK_KEY_Right || keyval == GDK_KEY_l || keyval == GDK_KEY_L) {
             editor_move_tab_direction(app, NULL, EDITOR_MOVE_RIGHT);
             return TRUE;

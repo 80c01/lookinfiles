@@ -123,6 +123,7 @@ onto the page; double click a picture to crop it.
 | Move the view | Drag with the middle button, or hold `Space` and drag (when not typing in a block) |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`): blocks added, deleted, moved, resized, restyled, aligned or cropped; while typing in a text box or a table cell, they undo its text |
 | Close Canvas tab | `Ctrl+W`, or middle click on the tab |
+| Move Canvas tab | `Ctrl+Alt+Arrow`, the tab menu (right click: Move Right / Left / Down / Up, Close Tab), or drag the tab |
 
 ## Where notes are kept
 

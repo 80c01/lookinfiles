@@ -110,6 +110,15 @@ gboolean editor_page_is_movable(GtkWidget* page);
 void editor_add_page(AppData* app, GtkWidget* child, GtkWidget* label);
 /* Move child, a movable page of a notebook, into to at index (-1: append) */
 void editor_move_page_to(AppData* app, GtkWidget* child, GtkNotebook* to, gint index);
+/* Move child, a movable page of the editor area (not an editor tab), as an
+ * editor tab moves (Ctrl+Alt+Arrow): to the pane beside it, a new split, the
+ * editor panel or the preview notebook. FALSE when it is not such a page. */
+gboolean editor_move_page_direction(AppData* app, GtkWidget* child, EditorMoveDirection dir);
+/* Tab menu of child, a movable page: Move Right / Left / Down / Up, and
+ * Close Tab (on_close) when on_close is not NULL */
+typedef void (*EditorPageCloseFunc)(GtkWidget* child, gpointer data);
+void editor_page_show_context_menu(AppData* app, GtkWidget* child, GtkWidget* target_widget,
+                                   EditorPageCloseFunc on_close, gpointer data);
 void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* target_widget);
 void on_notebook_page_reordered(GtkNotebook* notebook, GtkWidget* child,
                                 guint page_num, gpointer data);
