@@ -16,7 +16,8 @@
  * drawing order (the last one on top). Each block has an id, unique on the
  * page (id="3"); a line or an arrow may have its ends bound to blocks
  * (start="1" end="2"): they follow them; a locked block (locked="1") stays
- * in place. Pure model, no widgets. */
+ * in place; a turned shape (angle="30.0", degrees, clockwise) turns around
+ * its centre, its box the one it has unturned. Pure model, no widgets. */
 
 #define CANVAS_PAGE_FILE "page.xml"
 #define CANVAS_MEDIA_DIR "media"
@@ -86,6 +87,7 @@ typedef struct {
     gboolean locked; /* kept in place: not moved, resized or deleted (locked="1") */
     gint x, y;       /* top-left corner on the page */
     gint w, h;       /* size; h = 0 for a text box: as tall as its text */
+    gdouble angle;   /* SHAPE: turned around its centre, degrees in [0, 360) */
     /* TEXT, and the label of a SHAPE (NULL or "": none) */
     gchar* text;     /* UTF-8 content */
     GArray* runs;    /* CanvasRun, sorted, not overlapping, styles != 0 */
@@ -162,6 +164,9 @@ gboolean canvas_doc_remove(CanvasDoc* doc, CanvasBlock* block);
 
 /* Move a block on top of the others */
 void canvas_doc_raise(CanvasDoc* doc, CanvasBlock* block);
+
+/* Angle a of a turned shape in [0, 360); 0 when almost straight */
+gdouble canvas_doc_angle(gdouble a);
 
 /* Add a styled run to a text block (merged with the runs already there) */
 void canvas_block_add_run(CanvasBlock* block, gint start, gint end, guint styles);

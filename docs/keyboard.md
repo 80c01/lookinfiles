@@ -146,6 +146,7 @@ editor tab; it stays in its workspace)
 | `Ctrl+Shift+K` | Lock the selected blocks in place (not moved, resized or deleted; text still edited), or unlock them |
 | Drop image files | Copy them into the note as pictures |
 | Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions); a selected block takes the other selected ones along |
+| Drag the round handle above a selected rectangle, diamond or ellipse | Rotate it around its centre (`Shift`: steps of 15 degrees) |
 | Drag on the empty page (`Shift`: add) | Select the blocks inside the box |
 | `Shift+click` on a block | Add it to the selection, or take it out (`⋯` menu: align or distribute the selected blocks) |
 | `Ctrl+B` / `Ctrl+I` / `Ctrl+U` / `Ctrl+Shift+S` / `Ctrl+E` / `Ctrl+Alt+1` | Bold, italic, underline, strikethrough, code, heading (the selection, or the text typed next) |
@@ -158,7 +159,7 @@ editor tab; it stays in its workspace)
 | `Ctrl+wheel`, `Ctrl+=` / `Ctrl+-` | Zoom the page in / out (around the pointer with the wheel; 10 % to 400 %, the scale shown above the page) |
 | `Ctrl+0`, click on the scale | Zoom back to 100 % (on the Canvas tab, instead of the font sizes) |
 | Middle-button drag, `Space` held and a drag | Move the view (`Space` when not typing in a block) |
-| `Ctrl+Z` / `Ctrl+Shift+Z`, `Ctrl+Y` | Undo / redo on the page: add, delete, move, resize, style, align, crop (while typing: the text of the box or cell) |
+| `Ctrl+Z` / `Ctrl+Shift+Z`, `Ctrl+Y` | Undo / redo on the page: add, delete, move, resize, rotate, style, align, crop (while typing: the text of the box or cell) |
 | `Ctrl+W`, middle click on the tab | Close the Canvas tab (saved first) |
 | `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the Canvas tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it) |
 

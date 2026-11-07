@@ -28,6 +28,11 @@ static void block_box(const CanvasItem* it, CanvasRect* r) {
     }
 }
 
+/* Angle of a turned shape, 0 for the other blocks */
+static gdouble block_angle(const CanvasItem* it) {
+    return canvas_item_rotatable(it) ? it->angle : 0;
+}
+
 static CanvasOutline block_outline(const CanvasItem* it) {
     if (it->kind != CANVAS_BLOCK_SHAPE) return CANVAS_OUTLINE_RECT;
     if (it->shape_type == CANVAS_SHAPE_ELLIPSE) return CANVAS_OUTLINE_ELLIPSE;
@@ -51,8 +56,11 @@ static CanvasItem* block_at(GtkWidget* surface, const CanvasItem* line, gdouble 
         if (it == NULL || it == line || !bindable(it)) continue;
         CanvasRect r;
         block_box(it, &r);
-        if (x >= r.x - BIND_MARGIN && x <= r.x + r.w + BIND_MARGIN &&
-            y >= r.y - BIND_MARGIN && y <= r.y + r.h + BIND_MARGIN) {
+        /* A turned shape: the point turned back with it */
+        gdouble px = x, py = y;
+        canvas_rotate_point(r.x + r.w / 2.0, r.y + r.h / 2.0, -block_angle(it), &px, &py);
+        if (px >= r.x - BIND_MARGIN && px <= r.x + r.w + BIND_MARGIN &&
+            py >= r.y - BIND_MARGIN && py <= r.y + r.h + BIND_MARGIN) {
             return it;
         }
     }
@@ -70,7 +78,12 @@ static void centre(const CanvasItem* it, gdouble* x, gdouble* y) {
 static void on_outline(const CanvasItem* block, gdouble tx, gdouble ty, gdouble* x, gdouble* y) {
     CanvasRect r;
     block_box(block, &r);
-    canvas_edge_point(block_outline(block), &r, tx, ty, BIND_GAP, x, y);
+    /* A turned shape: aimed in its own frame, then turned back */
+    gdouble cx = r.x + r.w / 2.0, cy = r.y + r.h / 2.0, angle = block_angle(block);
+    canvas_rotate_point(cx, cy, -angle, &tx, &ty);
+    if (canvas_edge_point(block_outline(block), &r, tx, ty, BIND_GAP, x, y)) {
+        canvas_rotate_point(cx, cy, angle, x, y);
+    }
 }
 
 /* Each bound end goes on its block, aimed at the next point of the line:

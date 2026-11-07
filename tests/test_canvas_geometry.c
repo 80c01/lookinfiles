@@ -170,6 +170,44 @@ static void test_curve(void) {
     g_assert_cmpfloat(canvas_curve_distance(NULL, 0, 0, 0), ==, G_MAXDOUBLE);
 }
 
+static void test_rotation(void) {
+    g_assert_cmpfloat_with_epsilon(canvas_angle_normalize(-90), 270.0, 1e-9);
+    g_assert_cmpfloat_with_epsilon(canvas_angle_normalize(720), 0.0, 1e-9);
+    /* Clockwise on the page: right of the centre goes below it */
+    gdouble x = 10, y = 0;
+    canvas_rotate_point(0, 0, 90, &x, &y);
+    g_assert_cmpfloat_with_epsilon(x, 0.0, 1e-9);
+    g_assert_cmpfloat_with_epsilon(y, 10.0, 1e-9);
+
+    CanvasRect box = {0, 0, 100, 40}, out;
+    canvas_rotated_bounds(&box, 90, &out);
+    g_assert_cmpint(out.x, ==, 30);
+    g_assert_cmpint(out.y, ==, -30);
+    g_assert_cmpint(out.w, ==, 40);
+    g_assert_cmpint(out.h, ==, 100);
+    canvas_rotated_bounds(&box, 0, &out);
+    g_assert_cmpint(out.w, ==, 100);
+
+    /* The handle above, to the right, below; Shift snaps to 15 degrees */
+    g_assert_cmpfloat_with_epsilon(canvas_handle_angle(0, 0, 0, -10, FALSE), 0.0, 1e-9);
+    g_assert_cmpfloat_with_epsilon(canvas_handle_angle(0, 0, 10, 0, FALSE), 90.0, 1e-9);
+    g_assert_cmpfloat_with_epsilon(canvas_handle_angle(0, 0, 0, 10, FALSE), 180.0, 1e-9);
+    g_assert_cmpfloat_with_epsilon(canvas_handle_angle(0, 0, -10, -10, TRUE), 315.0, 1e-9);
+    g_assert_cmpfloat_with_epsilon(canvas_handle_angle(0, 0, 10, -9, TRUE), 45.0, 1e-9);
+
+    /* Resized at 90 degrees: the turned top-left corner stays put */
+    gint nx, ny;
+    canvas_resize_rotated(&box, 90, 100, 40, &nx, &ny);
+    g_assert_cmpint(nx, ==, 0);
+    g_assert_cmpint(ny, ==, 0);
+    canvas_resize_rotated(&box, 90, 140, 40, &nx, &ny);
+    gdouble px = 0, py = 0, qx = nx, qy = ny;
+    canvas_rotate_point(50, 20, 90, &px, &py);
+    canvas_rotate_point(nx + 70, ny + 20, 90, &qx, &qy);
+    g_assert_cmpfloat_with_epsilon(px, qx, 0.5);
+    g_assert_cmpfloat_with_epsilon(py, qy, 0.5);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/canvas_geometry/snap_coord", test_snap_coord);
@@ -180,5 +218,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_geometry/map_coord", test_map_coord);
     g_test_add_func("/canvas_geometry/edge_point", test_edge_point);
     g_test_add_func("/canvas_geometry/curve", test_curve);
+    g_test_add_func("/canvas_geometry/rotation", test_rotation);
     return g_test_run();
 }

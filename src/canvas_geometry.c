@@ -205,6 +205,66 @@ void canvas_snap_angle(gdouble x0, gdouble y0, gdouble* x1, gdouble* y1) {
     *y1 = y0 + len * s;
 }
 
+gdouble canvas_angle_normalize(gdouble a) {
+    a = fmod(a, 360.0);
+    if (a < 0) a += 360.0;
+    return a >= 360.0 ? 0.0 : a;
+}
+
+void canvas_rotate_point(gdouble cx, gdouble cy, gdouble angle, gdouble* x, gdouble* y) {
+    if (x == NULL || y == NULL || angle == 0) return;
+    gdouble r = angle * G_PI / 180.0;
+    gdouble c = cos(r), s = sin(r);
+    gdouble dx = *x - cx, dy = *y - cy;
+    *x = cx + dx * c - dy * s;
+    *y = cy + dx * s + dy * c;
+}
+
+void canvas_rotated_bounds(const CanvasRect* box, gdouble angle, CanvasRect* out) {
+    if (box == NULL || out == NULL) return;
+    if (canvas_angle_normalize(angle) == 0) {
+        *out = *box;
+        return;
+    }
+    gdouble cx = box->x + box->w / 2.0, cy = box->y + box->h / 2.0;
+    gdouble x0 = G_MAXDOUBLE, y0 = G_MAXDOUBLE, x1 = -G_MAXDOUBLE, y1 = -G_MAXDOUBLE;
+    for (guint k = 0; k < 4; k++) {
+        gdouble x = box->x + ((k & 1) ? box->w : 0);
+        gdouble y = box->y + ((k & 2) ? box->h : 0);
+        canvas_rotate_point(cx, cy, angle, &x, &y);
+        x0 = MIN(x0, x);
+        y0 = MIN(y0, y);
+        x1 = MAX(x1, x);
+        y1 = MAX(y1, y);
+    }
+    /* Rounding errors (1e-12) do not grow the box by a pixel */
+    out->x = (gint)floor(x0 + 1e-6);
+    out->y = (gint)floor(y0 + 1e-6);
+    out->w = (gint)ceil(x1 - 1e-6) - out->x;
+    out->h = (gint)ceil(y1 - 1e-6) - out->y;
+}
+
+gdouble canvas_handle_angle(gdouble cx, gdouble cy, gdouble x, gdouble y, gboolean snap) {
+    gdouble dx = x - cx, dy = y - cy;
+    if (dx == 0 && dy == 0) return 0;
+    /* The handle is straight above the centre at angle 0 */
+    gdouble a = atan2(dx, -dy) * 180.0 / G_PI;
+    if (snap) a = round(a / 15.0) * 15.0;
+    return canvas_angle_normalize(a);
+}
+
+void canvas_resize_rotated(const CanvasRect* box, gdouble angle, gint nw, gint nh, gint* x, gint* y) {
+    if (box == NULL || x == NULL || y == NULL) return;
+    /* The turned top-left corner, then the new centre from it */
+    gdouble cx = box->x + box->w / 2.0, cy = box->y + box->h / 2.0;
+    gdouble px = box->x, py = box->y;
+    canvas_rotate_point(cx, cy, angle, &px, &py);
+    gdouble ncx = px + nw / 2.0, ncy = py + nh / 2.0;
+    canvas_rotate_point(px, py, angle, &ncx, &ncy);
+    *x = (gint)lround(ncx - nw / 2.0);
+    *y = (gint)lround(ncy - nh / 2.0);
+}
+
 gdouble canvas_map_coord(gdouble v, gdouble from, gdouble from_len, gdouble to, gdouble to_len) {
     if (from_len <= 0) return to + to_len / 2.0;
     return to + (v - from) * to_len / from_len;

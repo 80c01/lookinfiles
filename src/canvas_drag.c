@@ -8,7 +8,10 @@
 #include "canvas_line.h"
 #include "canvas_media.h"
 #include "canvas_page_private.h"
+#include "canvas_rotate.h"
 #include "canvas_toolbar.h"
+
+#include <math.h>
 
 /* ------------------------------------------------------------------------- */
 /* Tools                                                                     */
@@ -229,6 +232,18 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
         tool_begin(p, x, y);
         return;
     }
+    /* The handle above the selected shape: turn it */
+    CanvasItem* turned = canvas_rotate_handle_at(p->rotate, x, y);
+    if (turned != NULL) {
+        gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+        g_free(p->drag_before);
+        p->drag_before = canvas_page_state(p);
+        p->drag_item = turned;
+        p->drag_resize = FALSE;
+        p->drag_rotate = TRUE;
+        p->drag_angle = turned->angle;
+        return;
+    }
     GtkWidget* hit = canvas_line_pick(p->surface, x, y);
     CanvasItem* it = canvas_item_of(hit);
     GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
@@ -352,6 +367,12 @@ static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpoi
         point_update(p, GTK_GESTURE(gesture), dx, dy);
         return;
     }
+    if (p->drag_rotate) {
+        GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
+        canvas_rotate_drag(it, x0 + dx, y0 + dy, (state & GDK_SHIFT_MASK) != 0);
+        canvas_bind_follow(p->surface);
+        return;
+    }
 
     if (!p->drag_resize) {
         group_move(p, dx, dy);
@@ -359,6 +380,14 @@ static void on_drag_update(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpoi
     }
     if (it->kind == CANVAS_BLOCK_TEXT || it->kind == CANVAS_BLOCK_TABLE) {
         it->w = MAX(p->drag_w + (gint)dx, MIN_TEXT_WIDTH);
+    } else if (it->kind == CANVAS_BLOCK_SHAPE && it->angle != 0) {
+        /* Turned: the pointer moves along its sides, the opposite corner stays */
+        gdouble lx = dx, ly = dy;
+        canvas_rotate_point(0, 0, -it->angle, &lx, &ly);
+        it->w = MAX(p->drag_w + (gint)lround(lx), MIN_SHAPE_SIZE);
+        it->h = MAX(p->drag_h + (gint)lround(ly), MIN_SHAPE_SIZE);
+        CanvasRect start = {p->drag_x, p->drag_y, p->drag_w, p->drag_h};
+        canvas_resize_rotated(&start, it->angle, it->w, it->h, &it->x, &it->y);
     } else if (it->kind == CANVAS_BLOCK_SHAPE) {
         it->w = MAX(p->drag_w + (gint)dx, MIN_SHAPE_SIZE);
         it->h = MAX(p->drag_h + (gint)dy, MIN_SHAPE_SIZE);
@@ -390,6 +419,18 @@ static void on_drag_end(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpointe
         point_end(p, dx, dy);
         return;
     }
+    if (p->drag_rotate) {
+        CanvasItem* it = p->drag_item;
+        p->drag_rotate = FALSE;
+        p->drag_item = NULL;
+        if (it->angle != p->drag_angle) {
+            canvas_history_push(p->history, p->drag_before);
+            canvas_page_update_extent(p);
+            canvas_page_schedule_save(p);
+        }
+        g_clear_pointer(&p->drag_before, g_free);
+        return;
+    }
     if (dx != 0 || dy != 0) {
         canvas_history_push(p->history, p->drag_before);
         canvas_page_update_extent(p);
@@ -417,6 +458,7 @@ static void on_drag_cancel(GtkGesture* gesture, GdkEventSequence* sequence, gpoi
 static void on_page_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     CanvasPage* p = data;
     if (p->tool != CANVAS_TOOL_SELECT) return; /* the tool took the press */
+    if (canvas_rotate_handle_at(p->rotate, x, y) != NULL) return; /* the drag turns the shape */
     GtkWidget* hit = canvas_line_pick(p->surface, x, y);
     CanvasItem* it = canvas_item_of(hit);
     if (it != NULL) {

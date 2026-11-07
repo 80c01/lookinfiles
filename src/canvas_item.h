@@ -2,6 +2,7 @@
 #define CANVAS_ITEM_H
 
 #include "canvas_doc.h"
+#include "canvas_geometry.h"
 #include <gtk/gtk.h>
 
 #define ITEM_KEY "canvas-item"
@@ -35,6 +36,7 @@ typedef struct {
     /* Table */
     CanvasBlock* table_block;
     gint x, y, w, h;
+    gdouble angle;      /* turned around its centre (canvas_item_rotatable()) */
     gdouble aspect;     /* width / height */
     guint pending;
     guint insert_styles;
@@ -46,7 +48,15 @@ CanvasItem* canvas_item_of(GtkWidget* w);
 void canvas_item_select(CanvasItem* it);
 /* Type in it: a text box, or the label of a shape */
 void canvas_item_edit(CanvasItem* it);
+/* Its frame put at (x, y) with its size, turned by angle around its centre */
 void canvas_item_place(CanvasItem* it);
+
+/* A rectangle, an ellipse or a diamond: it can be turned (lines and strokes
+ * turn by their points, text boxes, pictures and tables stay straight) */
+gboolean canvas_item_rotatable(const CanvasItem* it);
+
+/* Box holding the block on the page, turned if it is */
+void canvas_item_bounds(const CanvasItem* it, CanvasRect* out);
 
 /* Lock it in place (its grip and corner hidden), or unlock it */
 void canvas_item_set_locked(CanvasItem* it, gboolean locked);

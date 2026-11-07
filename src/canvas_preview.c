@@ -42,8 +42,10 @@ gboolean canvas_preview_show(AppData* app, const gchar* dir) {
     for (guint i = 0; i < doc->blocks->len; i++) {
         CanvasItem* it = canvas_item_add(NULL, surface, dir, g_ptr_array_index(doc->blocks, i), NULL, TRUE);
         if (it == NULL) continue;
-        w = MAX(w, it->x + it->w);
-        h = MAX(h, it->y + it->h);
+        CanvasRect b;
+        canvas_item_bounds(it, &b);
+        w = MAX(w, b.x + b.w);
+        h = MAX(h, b.y + b.h);
     }
     canvas_bind_follow(surface);
     make_read_only(surface);

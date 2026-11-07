@@ -17,10 +17,12 @@ static gboolean blocks_box(GtkWidget* surface, gint* x, gint* y, gint* w, gint* 
     for (GtkWidget* c = gtk_widget_get_first_child(surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
         CanvasItem* it = canvas_item_of(c);
         if (it == NULL) continue;
-        x0 = MIN(x0, it->x);
-        y0 = MIN(y0, it->y);
-        x1 = MAX(x1, it->x + MAX(it->w, gtk_widget_get_width(c)));
-        y1 = MAX(y1, it->y + MAX(it->h, gtk_widget_get_height(c)));
+        CanvasRect b;
+        canvas_item_bounds(it, &b);
+        x0 = MIN(x0, b.x);
+        y0 = MIN(y0, b.y);
+        x1 = MAX(x1, b.x + b.w);
+        y1 = MAX(y1, b.y + b.h);
     }
     if (x0 == G_MAXINT) return FALSE;
     *x = MAX(x0 - EXPORT_MARGIN, 0);

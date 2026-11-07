@@ -2,7 +2,7 @@
 #define CANVAS_PAGE_PRIVATE_H
 
 /* Internal to the Canvas page files (canvas_view.c, canvas_page.c,
- * canvas_keys.c, canvas_drag.c, canvas_clip.c): the page state and its core helpers,
+ * canvas_keys.c, canvas_drag.c, canvas_clip.c, canvas_rotate.c): the page state and its core helpers,
  * defined in canvas_page.c. */
 
 #include "app_types.h"
@@ -10,6 +10,7 @@
 #include "canvas_history.h"
 #include "canvas_item.h"
 #include "canvas_props.h"
+#include "canvas_rotate.h"
 #include "canvas_table_bar.h"
 #include "canvas_toolbar.h"
 #include "canvas_viewport.h"
@@ -27,6 +28,7 @@ struct CanvasPage {
     CanvasProps* props;
     CanvasFormatBar* format_bar;
     CanvasTableBar* table_bar;
+    CanvasRotate* rotate; /* the handle that turns the selected shape */
     CanvasViewport* viewport;
     GtkWidget* zoom_button; /* shows the scale, back to 100 % */
     GtkWidget* surface; /* GtkFixed */
@@ -46,6 +48,8 @@ struct CanvasPage {
     /* Drag of a block */
     CanvasItem* drag_item;
     gboolean drag_resize;
+    gboolean drag_rotate; /* drag_item turned by its handle, from drag_angle */
+    gdouble drag_angle;
     gint drag_x, drag_y, drag_w, drag_h;
     gchar* drag_before; /* page state when the drag began */
     GPtrArray* drag_group; /* CanvasItem*: the blocks moved together */

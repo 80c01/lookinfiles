@@ -39,6 +39,7 @@ void canvas_page_free(CanvasPage* p) {
     if (p->props != NULL) canvas_props_free(p->props);
     canvas_format_bar_free(p->format_bar);
     canvas_table_bar_free(p->table_bar);
+    canvas_rotate_free(p->rotate);
     canvas_history_free(p->history);
     if (p->viewport != NULL) canvas_viewport_free(p->viewport);
     g_free(p->drag_before);
@@ -204,10 +205,10 @@ void canvas_page_select_box(CanvasPage* p, gint x, gint y, gint w, gint h, gbool
     for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
         CanvasItem* it = canvas_item_of(c);
         if (it == NULL) continue;
-        gint bx, by, bw, bh;
         if (it->locked) continue; /* a band does not take locked blocks */
-        canvas_page_item_box(it, &bx, &by, &bw, &bh);
-        if (bx >= x && by >= y && bx + bw <= x + w && by + bh <= y + h) {
+        CanvasRect b;
+        canvas_item_bounds(it, &b);
+        if (b.x >= x && b.y >= y && b.x + b.w <= x + w && b.y + b.h <= y + h) {
             set_add(p, it);
             last = it;
         }
@@ -237,8 +238,10 @@ void canvas_page_update_extent(CanvasPage* p) {
     for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
         CanvasItem* it = canvas_item_of(c);
         if (it == NULL) continue;
-        w = MAX(w, it->x + MAX(it->w, gtk_widget_get_width(c)));
-        h = MAX(h, it->y + MAX(it->h, gtk_widget_get_height(c)));
+        CanvasRect b;
+        canvas_item_bounds(it, &b);
+        w = MAX(w, b.x + b.w);
+        h = MAX(h, b.y + b.h);
     }
     gtk_widget_set_size_request(p->surface, w + PAGE_MARGIN, h + PAGE_MARGIN);
 }
@@ -353,6 +356,7 @@ static CanvasItem* add_item(CanvasPage* p, const CanvasBlock* b) {
 }
 
 static void clear_surface(CanvasPage* p) {
+    canvas_rotate_hide(p->rotate);
     canvas_page_selection_clear(p);
     g_clear_weak_pointer(&p->last_focus);
     p->band = NULL;
@@ -715,6 +719,7 @@ void canvas_page_update_props(CanvasPage* p) {
     canvas_page_update_format(p);
     gboolean table = it != NULL && it->kind == CANVAS_BLOCK_TABLE;
     canvas_table_bar_show_for(p->table_bar, table ? it->frame : NULL, table ? it->content : NULL);
+    canvas_rotate_update(p->rotate);
     if (canvas_tool_draws(p->tool)) {
         canvas_props_show_shape(p->props, &p->style, closed_shape(canvas_tool_shape(p->tool)));
     } else if (it != NULL && it->kind == CANVAS_BLOCK_SHAPE) {

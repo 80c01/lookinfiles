@@ -103,6 +103,7 @@ onto the page; double click a picture to crop it.
 |---|---|
 | Move a block | Drag the handle bar above it (or drag a picture or a shape directly) |
 | Resize a block | Drag its bottom-right corner (pictures keep proportions) |
+| Rotate a shape | Select a rectangle, a diamond or an ellipse alone and drag the round handle above it: it turns around its centre with its text (`Shift`: steps of 15 degrees); arrows bound to it stay on its outline |
 | Edit an arrow or a line | Click its stroke to select it: a handle shows on each point. Drag an end anywhere (dropped on a block, it binds to it), drag the faint handle in the middle of a segment to add a point and bend it into a curve, drag a point to reshape it (`Shift`: multiple of 45 degrees), double click a point between the ends to remove it |
 | Select several blocks | Drag on the empty page around them, or `Shift+click` each one (again to take it out); moving one moves them all |
 | Snap & Smart Guides | Magnetic snapping to nearby block edges and grid (**Snap to Grid** in the tool bar menu) |
@@ -121,7 +122,7 @@ onto the page; double click a picture to crop it.
 | Copy, cut, paste, duplicate | `Ctrl+C`, `Ctrl+X`, `Ctrl+V` (at the pointer, also into another Canvas note, pictures included), `Ctrl+D`; arrows copied with their blocks stay bound to the copies |
 | Zoom | `Ctrl` + mouse wheel (around the pointer) or `Ctrl+=` / `Ctrl+-`; `Ctrl+0`, or a click on the scale above the page, goes back to 100 % |
 | Move the view | Drag with the middle button, or hold `Space` and drag (when not typing in a block) |
-| Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`): blocks added, deleted, moved, resized, restyled, aligned or cropped; while typing in a text box or a table cell, they undo its text |
+| Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`): blocks added, deleted, moved, resized, rotated, restyled, aligned or cropped; while typing in a text box or a table cell, they undo its text |
 | Close Canvas tab | `Ctrl+W`, or middle click on the tab |
 | Move Canvas tab | `Ctrl+Alt+Arrow`, the tab menu (right click: Move Right / Left / Down / Up, Close Tab), or drag the tab |
 

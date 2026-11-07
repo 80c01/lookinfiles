@@ -1,6 +1,7 @@
 #include "canvas_doc.h"
 
 #include <glib/gstdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -321,6 +322,14 @@ static gboolean id_taken(const CanvasDoc* doc, const CanvasBlock* self, gint id)
     return FALSE;
 }
 
+gdouble canvas_doc_angle(gdouble a) {
+    if (!isfinite(a)) return 0;
+    a = fmod(a, 360.0);
+    if (a < 0) a += 360.0;
+    /* Almost straight (or 360 after rounding): straight */
+    return (a < 0.05 || a > 359.95) ? 0 : a;
+}
+
 /* The id and the bound ends of the block just read; a missing or repeated
  * id keeps the new one it was given */
 static void read_ids(CanvasDoc* doc, const gchar** names, const gchar** values) {
@@ -331,6 +340,8 @@ static void read_ids(CanvasDoc* doc, const gchar** names, const gchar** values) 
     if (b->kind == CANVAS_BLOCK_SHAPE) {
         b->start_id = MAX(attr_int(names, values, "start"), 0);
         b->end_id = MAX(attr_int(names, values, "end"), 0);
+        const gchar* angle = attr(names, values, "angle");
+        if (angle != NULL) b->angle = canvas_doc_angle(g_ascii_strtod(angle, NULL));
     }
 }
 
@@ -561,6 +572,11 @@ static void insert_ids(GString* out, gsize start, const CanvasBlock* b) {
     if (b->start_id > 0) g_string_append_printf(ids, " start=\"%d\"", b->start_id);
     if (b->end_id > 0) g_string_append_printf(ids, " end=\"%d\"", b->end_id);
     if (b->locked) g_string_append(ids, " locked=\"1\"");
+    if (b->kind == CANVAS_BLOCK_SHAPE && canvas_doc_angle(b->angle) != 0) {
+        gchar buf[G_ASCII_DTOSTR_BUF_SIZE];
+        g_string_append_printf(ids, " angle=\"%s\"",
+                               g_ascii_formatd(buf, sizeof buf, "%.1f", canvas_doc_angle(b->angle)));
+    }
     g_string_insert(out, name_end - out->str, ids->str);
     g_string_free(ids, TRUE);
 }

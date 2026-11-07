@@ -62,6 +62,26 @@ void canvas_snap_angle(gdouble x0, gdouble y0, gdouble* x1, gdouble* y1);
  * [to, to + to_len]; an empty range goes to the middle */
 gdouble canvas_map_coord(gdouble v, gdouble from, gdouble from_len, gdouble to, gdouble to_len);
 
+/* Turned shapes: angles in degrees, clockwise on the page (y down) */
+
+/* Angle a in [0, 360) */
+gdouble canvas_angle_normalize(gdouble a);
+
+/* (*x, *y) turned by angle around (cx, cy) */
+void canvas_rotate_point(gdouble cx, gdouble cy, gdouble angle, gdouble* x, gdouble* y);
+
+/* Box holding box turned by angle around its centre */
+void canvas_rotated_bounds(const CanvasRect* box, gdouble angle, CanvasRect* out);
+
+/* Angle of a block turned around (cx, cy) by its handle (above it at angle
+ * 0) dragged to (x, y), in [0, 360); snap: the nearest multiple of 15
+ * degrees (Shift) */
+gdouble canvas_handle_angle(gdouble cx, gdouble cy, gdouble x, gdouble y, gboolean snap);
+
+/* Top-left corner (*x, *y) of box turned by angle, resized to nw x nh with
+ * its turned top-left corner kept in place on the page */
+void canvas_resize_rotated(const CanvasRect* box, gdouble angle, gint nw, gint nh, gint* x, gint* y);
+
 /* Outline of a block an arrow end is bound to */
 typedef enum {
     CANVAS_OUTLINE_RECT,

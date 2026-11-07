@@ -217,7 +217,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `canvas_doc` — Canvas notes (`<title>.canvas/`: `page.xml` and
   `media/`): text boxes with styled runs and pictures placed freely, read and
   written as XML (each block with a page-unique `id`; line and arrow ends
-  bound to blocks by `start` / `end`; a shape's text in `label`; `locked`), new picture names, unused pictures pruned, Markdown export
+  bound to blocks by `start` / `end`; a shape's text in `label`; `locked`;
+  a turned shape's `angle` in degrees), new picture names, unused pictures pruned, Markdown export
   (`canvas_doc_export_markdown()`: a `.md` note next to it, pictures linked
   inside the Canvas).
 - `canvas_history` — undo / redo of a Canvas note: page states (`page.xml`
@@ -423,8 +424,13 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `canvas_bind` (arrow and line ends bound to blocks by their ids, kept on
   their outlines), `canvas_line` (lines and arrows edited as in Excalidraw:
   picked on their stroke, handles on their points and segment middles),
+  `canvas_rotate` (the round handle above the selected rectangle, diamond
+  or ellipse that turns it around its centre, as in Excalidraw: a child of
+  the surface on top of the blocks, following the shape each frame while
+  shown; the shape's frame turned by a `GtkFixed` child transform),
   `canvas_rough_draw` (hand-drawn rendering, line handles),
   `canvas_geometry` (snap, align, outline points, drag box, 45-degree lines,
+  turned boxes and the rotation handle angle,
   the curve through the points of a line; unit-tested), `canvas_preview`
   (the preview of a Canvas note: the same block widgets, read-only, in the
   "canvas" page of the preview stack).

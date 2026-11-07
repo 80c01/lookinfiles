@@ -46,12 +46,40 @@ void canvas_item_edit(CanvasItem* it) {
     }
 }
 
+gboolean canvas_item_rotatable(const CanvasItem* it) {
+    if (it == NULL || it->kind != CANVAS_BLOCK_SHAPE) return FALSE;
+    switch (it->shape_type) {
+    case CANVAS_SHAPE_RECT:
+    case CANVAS_SHAPE_ROUND_RECT:
+    case CANVAS_SHAPE_ELLIPSE:
+    case CANVAS_SHAPE_DIAMOND: return TRUE;
+    default: return FALSE;
+    }
+}
+
+void canvas_item_bounds(const CanvasItem* it, CanvasRect* out) {
+    CanvasRect box = {it->x, it->y, it->w, it->h};
+    if (it->frame != NULL) {
+        box.w = MAX(box.w, gtk_widget_get_width(it->frame));
+        box.h = MAX(box.h, gtk_widget_get_height(it->frame));
+    }
+    canvas_rotated_bounds(&box, canvas_item_rotatable(it) ? it->angle : 0, out);
+}
+
 void canvas_item_place(CanvasItem* it) {
     if (it == NULL || it->frame == NULL) return;
     it->x = MAX(it->x, 0);
     it->y = MAX(it->y, 0);
     GtkWidget* surface = gtk_widget_get_parent(it->frame);
-    if (surface != NULL) {
+    if (surface != NULL && it->angle != 0 && canvas_item_rotatable(it)) {
+        /* Turned around the centre of its box (x, y, w, h) */
+        graphene_point_t c = GRAPHENE_POINT_INIT(it->w / 2.0f, it->h / 2.0f);
+        GskTransform* t = gsk_transform_translate(NULL, &GRAPHENE_POINT_INIT(it->x + c.x, it->y + c.y));
+        t = gsk_transform_rotate(t, (float)it->angle);
+        t = gsk_transform_translate(t, &GRAPHENE_POINT_INIT(-c.x, -c.y));
+        gtk_fixed_set_child_transform(GTK_FIXED(surface), it->frame, t);
+        gsk_transform_unref(t);
+    } else if (surface != NULL) {
         gtk_fixed_move(GTK_FIXED(surface), it->frame, it->x, it->y);
     }
     if (it->kind == CANVAS_BLOCK_TEXT) {
@@ -435,6 +463,7 @@ static CanvasItem* add_shape(CanvasPage* p, GtkWidget* surface, const CanvasBloc
     it->w = MAX(b->w, MIN_SHAPE_SIZE);
     it->h = MAX(b->h, MIN_SHAPE_SIZE);
     it->aspect = (gdouble)it->w / it->h;
+    if (canvas_item_rotatable(it)) it->angle = canvas_doc_angle(b->angle);
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area), on_shape_draw, it, NULL);
     if (is_line(it)) {
         make_line(it);
@@ -519,6 +548,7 @@ static CanvasBlock* item_to_block(CanvasDoc* doc, const CanvasItem* it) {
         b->fill_style = it->fill_style;
         b->stroke_width = it->stroke_width;
         b->rough = it->rough;
+        b->angle = canvas_item_rotatable(it) ? it->angle : 0;
         if (it->points != NULL) {
             g_array_append_vals(b->points, it->points->data, it->points->len);
         }

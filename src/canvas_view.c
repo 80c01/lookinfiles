@@ -431,6 +431,7 @@ static CanvasPage* page_new(AppData* app) {
     gtk_widget_set_focusable(p->surface, TRUE);
     gtk_widget_set_hexpand(p->surface, TRUE);
     gtk_widget_set_vexpand(p->surface, TRUE);
+    p->rotate = canvas_rotate_new(p);
     p->viewport = canvas_viewport_new(p->surface, on_zoom_changed, p);
     GtkWidget* overlay = gtk_overlay_new();
     gtk_widget_set_vexpand(overlay, TRUE);
