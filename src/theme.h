@@ -9,8 +9,7 @@
 void apply_panel_borders(void);
 
 /* Add a stylesheet for the display, with the palette's named colours
- * defined. css must stay valid (a static string): it is reloaded by
- * theme_reload(). */
+ * defined. css is copied: it is reloaded by theme_reload(). */
 void theme_add_css(const gchar* css);
 
 /* At startup, before any widget: set the palette and fonts to the theme

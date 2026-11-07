@@ -14,7 +14,7 @@
  * the palette's current values by theme_reload() */
 typedef struct {
     GtkCssProvider* provider;
-    const gchar* source;
+    gchar* source; /* own copy */
 } ThemeSheet;
 
 static GPtrArray* sheets = NULL;
@@ -39,7 +39,7 @@ void theme_add_css(const gchar* css) {
     }
     ThemeSheet* sheet = g_new0(ThemeSheet, 1);
     sheet->provider = gtk_css_provider_new();
-    sheet->source = css;
+    sheet->source = g_strdup(css);
     sheet_load(sheet);
     gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(sheet->provider),
                                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
