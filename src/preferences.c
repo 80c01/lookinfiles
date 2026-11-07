@@ -56,6 +56,7 @@ void preferences_apply_startup(AppData* app, const Settings* settings) {
     app->editor_line_numbers = settings->line_numbers;
     app->editor_wrap = settings->wrap;
     app->editor_color_column = settings->color_column;
+    app->editor_tagbar = settings->tagbar;
 }
 
 /* ------------------------------------------------------------------------- */

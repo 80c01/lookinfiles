@@ -41,6 +41,7 @@ mode=vim
 line-numbers=true
 wrap=false
 color-column=81    # default; 0: no line
+tagbar=false       # code and Markdown tabs show the tagbar (toggled with its key)
 
 [Window]
 width=1600

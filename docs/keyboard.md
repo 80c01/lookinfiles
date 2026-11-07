@@ -290,7 +290,8 @@ Dart, Haskell, Elixir, Erlang, Julia, R and Tcl.
 | Help card (signature, documentation, location) | `Ctrl+K Ctrl+I`, rest the mouse on a name | `C-h .`, mouse | `K`, mouse |
 | Signature of the call being typed | automatic after `(` and `,`, `Ctrl+Shift+Space` | automatic, in the echo area | automatic in Insert mode |
 | References (References tab) | `Shift+F12` | `M-?` | `gr`, `:References` |
-| Symbols of the file (filtered list) | `Ctrl+Shift+O` | `M-g i` | `:Symbols` |
+| Symbols of the file (filtered list; Markdown: headings) | `Ctrl+Shift+O` | `M-g i` | `:Symbols` |
+| Tagbar: symbols or headings beside the text | `Ctrl+K Ctrl+O` | `M-x imenu-list` | `:TagbarToggle`, `:Tagbar` |
 
 Repeated on a definition, the lookup goes to the next candidate (other
 definitions, then the declarations). The message line tells which one is shown
@@ -303,6 +304,14 @@ highlighted. `Ctrl+Click` on a name in the preview of a source file opens it
 at its definition. With a language server, errors and warnings are underlined
 (red, yellow), counted in the bar of the editor tab, and explained when the mouse rests
 on them.
+
+The **tagbar** shows the symbols of a code file beside the text, grouped by
+kind (Functions, Types...) and nested in their struct or class, or the
+headings of a Markdown file. It follows the cursor and is refreshed shortly
+after each edit. A click or `Enter` goes to the symbol (back with the usual
+key), `s` switches between grouping by kind and file order, `Esc` returns to
+the text, `q` hides it. It is shown in every code and Markdown tab or in
+none (kept for the next start), and its width is shared by the tabs.
 
 ### Org-mode editing
 
@@ -387,7 +396,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Undo and redo | `C-/`, `C-_`, `C-x u` / `C-Shift-_`, `M-_` |
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
 | Windows (split view) | `C-x 2` / `C-x 3` the file in a second window below / to the right (its own point; text and undo shared), `C-x 0` delete this window, `C-x 1` delete the other windows of the file (the changes stay in the window kept) |
-| Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward, `M-?` references, `M-g i` symbols, `C-h .` help; signatures in the echo area |
+| Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward, `M-?` references, `M-g i` symbols, `M-x imenu-list` tagbar, `C-h .` help; signatures in the echo area |
 | Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `visual-line-mode` / `toggle-truncate-lines` (wrap long lines), `org-mode`, `text-mode`, `dunnet`, mode switches) |
 | Minibuffer | `Tab` completes (`M-x` command names, Org tags, `*Heading` links) and lists the candidates; `C-g` / `Esc` quits |
 
@@ -416,7 +425,7 @@ listed over the statusline, Vim's wildmenu) and `Ctrl+R` register insert.
 | Marks and jumps | `m{a-z}`, `` `a `` / `'a`, ``` `` ``` / `''`, `` `[ `` `` `] `` `` `< `` `` `. ``, `Ctrl+O` / `Tab` jump list, `:marks`, `:jumps` |
 | Macros | `qa` … `q` record, `@a` run (with a count; stops at the first failure), `@@` again, `@:` repeat the last Ex command |
 | Search | `/` `?` (Vim regex: `\<` `\>` `\(` `\)` `\\|` `\{n,m}` `\zs` `\ze` `\v` `\c`), incremental with all matches highlighted and a `[n/total]` count, `n` `N`, `*` `#` `g*` `g#`, `gd` (first occurrence, when the file is not code); `:noh` |
-| Code | `gd` / `Ctrl+]` definition, `gD` declaration, `:tag[!] name`, `K` help, `gr` / `:References`, `:Symbols`; `Ctrl+O` / `Tab` continue across files |
+| Code | `gd` / `Ctrl+]` definition, `gD` declaration, `:tag[!] name`, `K` help, `gr` / `:References`, `:Symbols`, `:TagbarToggle`; `Ctrl+O` / `Tab` continue across files |
 | Ex commands | Ranges `%` `.` `$` `N` `'a` `'<,'>` `/pat/` `?pat?` `+N` `-N` `;`; `:s/pat/rep/[gine]` (`&` `\1` `\u` `\U` `\r` `~`), `:&` `:&&` `&` `g&`, `:g/pat/cmd` `:v`, `:d [x] [N]`, `:y`, `:pu`, `:r[!]`, `:m`, `:t` / `:co`, `:j[!]`, `:>` `:<`, `:normal`, `:sort [n i u] [!]`, `:retab`, `:center` / `:right` / `:left [width]`, `:k`, `:reg`, `:[N]` |
 | Options | `:set` `ignorecase` `smartcase` `hlsearch` `incsearch` `wrapscan` `expandtab` `autoindent` `shiftwidth` `tabstop` `softtabstop` (default `-1`: same as `shiftwidth`) `textwidth` `clipboard`, `number`, `wrap` (`no` / `inv` / `!` / `?` / `+=`), `colorcolumn` / `cc` (one column: `:set cc=81`, `:set cc=` hides the line; this tab only, the Preferences set every tab) |
 | Scroll | `zz` `zt` `zb` (`z.` `z<CR>` `z-`), `Ctrl+E` / `Ctrl+Y` lines, `Ctrl+D` / `Ctrl+U` half pages, `Ctrl+F` / `Ctrl+B` pages |

@@ -8,6 +8,7 @@
 #include "color_column.h"
 #include "diff_gutter.h"
 #include "code_help.h"
+#include "editor_tagbar.h"
 #include "file_types.h"
 
 /* The tab whose view has the buffer's cursor (the views of a split file share
@@ -292,7 +293,7 @@ void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
     if (tab->minimap != NULL) {
         gtk_box_append(GTK_BOX(hbox), tab->minimap);
     }
-    gtk_box_append(GTK_BOX(container), hbox);
+    gtk_box_append(GTK_BOX(container), editor_tagbar_wrap(app, tab, hbox));
 
     /* Status line for this editor */
     /* Status line for this editor */
@@ -325,6 +326,7 @@ void editor_view_release(EditorTab* tab) {
     /* The buffer stays alive while another view shows it: no handler of this
      * tab or its view may run afterwards */
     code_help_detach(tab);
+    editor_tagbar_release(tab);
     g_signal_handlers_disconnect_by_data(tab->buffer, tab);
     if (tab->view != NULL) {
         g_signal_handlers_disconnect_by_data(tab->buffer, tab->view);

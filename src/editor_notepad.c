@@ -6,6 +6,7 @@
 #include "code_help.h"
 #include "code_refs.h"
 #include "code_symbols.h"
+#include "editor_tagbar.h"
 #include "app_events.h"
 #include "text_tags.h"
 #include <ctype.h>
@@ -595,11 +596,13 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     gboolean shift = (state & GDK_SHIFT_MASK) != 0;
 
     if (st->np_chord_k && !is_modifier_keyval(keyval)) {
-        /* Ctrl+K Ctrl+I: help card */
+        /* Ctrl+K Ctrl+I: help card; Ctrl+K Ctrl+O: tagbar */
         st->np_chord_k = FALSE;
         gtk_label_set_text(GTK_LABEL(st->np_status_label), "");
         if (ctrl && (keyval == GDK_KEY_i || keyval == GDK_KEY_I)) {
             code_help_show((AppData*)tab->app, tab);
+        } else if (ctrl && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
+            editor_tagbar_toggle((AppData*)tab->app, tab, editor_mode_message);
         } else {
             gtk_label_set_text(GTK_LABEL(st->np_status_label), "Ctrl+K: no command for this key");
         }

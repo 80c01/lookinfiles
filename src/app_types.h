@@ -85,6 +85,7 @@ typedef struct {
     GtkTextBuffer* buffer;
     GtkWidget* tab_label; /* tab title, with a bullet when unsaved */
     GtkWidget* minimap;   /* minimap drawing area */
+    gpointer tagbar;      /* symbols beside the view (editor_tagbar.c), or NULL */
     MinimapCache mm_cache;
     gboolean mm_dragging;
     gdouble mm_grab;      /* slider drag: pointer y minus slider top */
@@ -390,6 +391,8 @@ typedef struct {
     gboolean editor_line_numbers; /* new editor tabs show line numbers (Preferences) */
     gboolean editor_wrap;         /* new editor tabs wrap long lines (Preferences) */
     gint editor_color_column;     /* vertical line in editors at this column, 0: none (Preferences) */
+    gboolean editor_tagbar;       /* code and Markdown editor tabs show the tagbar (settings.ini) */
+    gint editor_tagbar_width;     /* its width, shared by the tabs */
     gchar* status_notice;         /* bottom bar message (app_notice()), NULL if none */
     gboolean status_notice_undo;  /* the message offers Undo */
     guint status_notice_serial;   /* bumped by each app_notice() (restarts its timeout) */

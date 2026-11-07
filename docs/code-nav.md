@@ -40,8 +40,8 @@ Emacs, Vim). The modules are described in
 
 | Layer | Modules |
 |---|---|
-| 1 (foundation) | `code_symbol` (languages, word under the cursor), `code_scan`, `code_scan_c` (scanners), `code_index` (project files, ranked lookup), `code_tags` (ctags), `lsp_protocol`, `lsp_client`, `lsp_config`, `jump_list` |
-| 3 (feature) | `code_nav` (lookups, jumps, history), `code_intel` (language servers per project), `code_help` (help cards, signature help, occurrences), `code_refs` (References tab), `code_symbols` (symbol picker) |
+| 1 (foundation) | `code_symbol` (languages, word under the cursor), `code_scan`, `code_scan_c` (scanners), `code_outline_tree` (outline entries, Markdown headings, tree), `code_index` (project files, ranked lookup), `code_tags` (ctags), `lsp_protocol`, `lsp_client`, `lsp_config`, `jump_list` |
+| 3 (feature) | `code_nav` (lookups, jumps, history), `code_intel` (language servers per project), `code_help` (help cards, signature help, occurrences), `code_refs` (References tab), `code_outline` (outline of a tab: server, scanner or Markdown, in a worker), `code_symbols` (symbol picker), `editor_tagbar` (tagbar) |
 
 ## Backends
 
@@ -74,6 +74,7 @@ Emacs, Vim). The modules are described in
 | Help | mouse hover, `Ctrl+K Ctrl+I` | `C-h .` | `K` |
 | Signature | automatic, `Ctrl+Shift+Space` | automatic in the echo area | automatic in Insert mode |
 | Symbols of the file | `Ctrl+Shift+O` | `M-g i` | `:Symbols` |
+| Tagbar | `Ctrl+K Ctrl+O` | `M-x imenu-list` | `:TagbarToggle`, `:Tagbar` |
 | By name | — | — | `:tag {name}` |
 
 Notes:
@@ -84,6 +85,10 @@ Notes:
   jump list in the buffer, then continue in the shared history across files.
 - `Ctrl+Click` also works in the read-only preview of source files.
 - Org-mode tabs are not concerned (no code language).
+- Tagbar: a `GtkPaned` in each editor tab (thin handle), hidden unless
+  `tagbar=true` in settings.ini; read again 600 ms after the last edit,
+  only while shown; follows the cursor (last entry starting at or before its
+  line); the rows the user collapsed stay collapsed across refreshes.
 
 ## Known limits
 

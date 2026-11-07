@@ -2,8 +2,8 @@
 #define CODE_SYMBOLS_H
 
 /* Symbols of the current file (docs/code-nav.md): an AppDialog
- * listing the functions, types, fields... of the editor tab (the language
- * server's document symbols, else the built-in scanner on the buffer), with
+ * listing the functions, types, fields... of the editor tab, or the
+ * headings of a Markdown file (code_outline.h), with
  * a filter entry. Enter, a double click or "Go To" jumps there (remembered
  * in the code navigation history). */
 #include "app_types.h"

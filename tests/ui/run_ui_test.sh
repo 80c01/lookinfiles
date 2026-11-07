@@ -517,6 +517,10 @@ key ctrl+shift+o; sleep 0.5; shot code_symbols_dialog
 xdotool type --delay 80 "ma"
                         shot code_symbols_filtered
 key Return; sleep 0.5;  shot code_symbols_jumped      # cursor on main()
+key ctrl+k ctrl+o; sleep 1; shot tagbar_shown       # symbols beside the text, on main()
+key s;                  shot tagbar_by_line
+key s Up Return; sleep 0.5; shot tagbar_jumped        # cursor on answer()
+key ctrl+k ctrl+o;      shot tagbar_hidden
 xdotool mousemove 747 50 click 3
 xdotool mousemove 747 374 click 1    # pick "Vim" in the tab menu
 key slash; xdotool type --delay 60 "answer"; key Return

@@ -9,6 +9,7 @@
  *   line-numbers=true    # new editor tabs show line numbers
  *   wrap=false           # new editor tabs wrap long lines
  *   color-column=81      # vertical line at this column in editors (0: none)
+ *   tagbar=false         # code and Markdown editor tabs show the tagbar
  *   [Window]
  *   width=1000           # window size at startup
  *   height=600
@@ -34,11 +35,12 @@ typedef struct {
     gboolean line_numbers; /* new editor tabs show line numbers */
     gboolean wrap;         /* new editor tabs wrap long lines */
     gint color_column;     /* vertical line in editors at this column, 0: none */
+    gboolean tagbar;       /* code and Markdown editor tabs show the tagbar */
     gint width;            /* window size at startup */
     gint height;
 } Settings;
 
-/* Notepad, no line numbers, no wrap, no column line, 1000 x 600 */
+/* Notepad, no line numbers, no wrap, column line at 81, no tagbar, 1000 x 600 */
 void settings_defaults(Settings* s);
 
 /* "notepad", "vim", "emacs" (any case): FALSE if name is none of them */

@@ -14,6 +14,7 @@ it is used, and show what it is, in all three modes.
 | Signature of the call being typed | automatic, `Ctrl+Shift+Space` | in the echo area | automatic in Insert mode |
 | References | `Shift+F12` | `M-?` | `gr` |
 | Symbols of the file | `Ctrl+Shift+O` | `M-g i` | `:Symbols` |
+| Tagbar (symbols beside the text) | `Ctrl+K Ctrl+O` | `M-x imenu-list` | `:TagbarToggle` |
 
 - Pressing "definition" again on a definition goes to the next candidate;
   the message line says which one is shown and how many there are.
@@ -21,6 +22,16 @@ it is used, and show what it is, in all three modes.
   by file. `Enter` or a double click opens one; the cross closes the tab.
 - The other uses of the name under the cursor are highlighted.
 - `Ctrl+Click` also works in the preview of a source file.
+
+The **tagbar** shows the symbols of a code file beside the text, grouped by
+kind (Functions, Types...) and nested in their struct or class, or the
+headings of a Markdown file. It follows the cursor and is refreshed shortly
+after each edit. A click or `Enter` goes to the symbol (back with the usual
+key), `s` switches between grouping by kind and file order, `Esc` returns to
+the text, `q` hides it. It is shown in every code and Markdown tab or in
+none (kept for the next start), and its width is shared by the tabs.
+
+In a Markdown file, the symbol list and the tagbar show the headings.
 
 ## Where the answers come from
 

@@ -23,6 +23,7 @@ static void test_missing_file(void) {
     g_assert_cmpint(s.editor, ==, SETTINGS_EDITOR_NOTEPAD);
     g_assert_false(s.line_numbers);
     g_assert_false(s.wrap);
+    g_assert_false(s.tagbar);
     g_assert_cmpint(s.color_column, ==, 81);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
@@ -41,6 +42,7 @@ static void test_save_load(void) {
     s.editor = SETTINGS_EDITOR_VIM;
     s.line_numbers = TRUE;
     s.wrap = TRUE;
+    s.tagbar = TRUE;
     s.color_column = 81;
     s.width = 1920;
     s.height = 1080;
@@ -51,6 +53,7 @@ static void test_save_load(void) {
     g_assert_cmpint(r.editor, ==, SETTINGS_EDITOR_VIM);
     g_assert_true(r.line_numbers);
     g_assert_true(r.wrap);
+    g_assert_true(r.tagbar);
     g_assert_cmpint(r.color_column, ==, 81);
     g_assert_cmpint(r.width, ==, 1920);
     g_assert_cmpint(r.height, ==, 1080);

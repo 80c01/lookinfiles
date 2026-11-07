@@ -49,7 +49,7 @@ Options are not read from a `.vimrc`: set them in the tab with `:set`.
 
 `gd` or `Ctrl+]` goes to the definition, `gD` to the declaration, `K`
 shows a help card, `gr` lists the references, `:Symbols` the symbols of
-the file, `:tag name` finds a name. `Ctrl+O` / `Tab` come back, first in
+the file, `:TagbarToggle` (or `:Tagbar`) shows them beside the text, `:tag name` finds a name. `Ctrl+O` / `Tab` come back, first in
 the file then across files. In files that are not code, `gd` keeps its Vim
 meaning (first occurrence). See [code navigation](code-navigation.md).
 

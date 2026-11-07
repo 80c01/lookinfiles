@@ -6,6 +6,7 @@
 #include "code_help.h"
 #include "code_refs.h"
 #include "code_symbols.h"
+#include "editor_tagbar.h"
 #include "app_events.h"
 #include "nav_keys.h"
 #include "quick_open.h"
@@ -382,7 +383,7 @@ void emacs_close_minibuffer(EditorTab* tab) {
 
 /* M-x command names offered by Tab completion */
 static const gchar* MX_COMMANDS[] = {
-    "display-line-numbers-mode", "dunnet", "fill-paragraph", "goto-line",
+    "display-line-numbers-mode", "dunnet", "fill-paragraph", "goto-line", "imenu-list",
     "notepad-mode", "org-mode", "query-replace", "redo", "save-buffer",
     "set-justification-center", "set-justification-full",
     "set-justification-left", "set-justification-right", "text-mode",
@@ -497,6 +498,10 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
                 editor_set_tab_mode((AppData*)tab->app, tab, org ? EDITOR_MODE_ORGMODE : EDITOR_MODE_EMACS);
                 orgmode_editor_reset_visibility(tab);
                 emacs_echo(tab, org ? "Org-mode enabled" : "Text mode enabled");
+            } else if (g_strcmp0(cmd, "imenu-list") == 0 || g_strcmp0(cmd, "imenu-list-smart-toggle") == 0) {
+                /* imenu-list: the tagbar */
+                emacs_close_minibuffer(tab);
+                editor_tagbar_toggle((AppData*)tab->app, tab, editor_mode_message);
             } else if (strstr(cmd, "goto-line")) {
                 emacs_open_minibuffer(tab, EMACS_MINI_GOTO_LINE, "Goto line: ", "");
             } else if (strstr(cmd, "query-replace")) {

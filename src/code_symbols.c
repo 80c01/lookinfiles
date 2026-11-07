@@ -1,7 +1,7 @@
 /* Symbols of the current file in an AppDialog (see code_symbols.h) */
 #include "code_symbols.h"
 #include "palette.h"
-#include "code_intel.h"
+#include "code_outline.h"
 #include "code_scan.h"
 #include "dialog.h"
 #include <string.h>
@@ -19,7 +19,7 @@ struct _CodeSymbolItem {
     GObject parent;
     gchar* name;
     gchar* detail;     /* signature / type / container, or NULL */
-    CodeSymbolKind kind;
+    const gchar* kind; /* "function", "heading"... (static) */
     gint line;
     gint column;
 };
@@ -41,7 +41,7 @@ static void code_symbol_item_init(CodeSymbolItem* it) {
     (void)it;
 }
 
-static void add_item(GListStore* store, const gchar* name, const gchar* detail, CodeSymbolKind kind, gint line,
+static void add_item(GListStore* store, const gchar* name, const gchar* detail, const gchar* kind, gint line,
                      gint column) {
     CodeSymbolItem* it = g_object_new(CODE_TYPE_SYMBOL_ITEM, NULL);
     it->name = g_strdup(name);
@@ -160,7 +160,7 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
     CodeSymbolItem* it = gtk_list_item_get_item(item);
     gchar* markup = g_markup_printf_escaped("<b>%s</b>  <span foreground=\"%s\">%s%s%s · %d</span>", it->name,
                                             palette_color(PAL_FG_SUBTLE),
-                                            code_symbol_kind_name(it->kind), it->detail != NULL ? " · " : "",
+                                            it->kind, it->detail != NULL ? " · " : "",
                                             it->detail != NULL ? it->detail : "", it->line + 1);
     gtk_label_set_markup(GTK_LABEL(gtk_list_item_get_child(item)), markup);
     g_free(markup);
@@ -239,74 +239,35 @@ static void show_picker(AppData* app, EditorTab* tab, GListStore* store, const g
     gtk_list_view_scroll_to(GTK_LIST_VIEW(p->list), best, GTK_LIST_SCROLL_NONE, NULL);
 }
 
-static gint compare_items(gconstpointer a, gconstpointer b, gpointer data) {
-    (void)data;
-    const CodeSymbolItem* x = a;
-    const CodeSymbolItem* y = b;
-    return x->line != y->line ? x->line - y->line : x->column - y->column;
-}
-
-static void show_scanned(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
-    GtkTextIter s, e;
-    gtk_text_buffer_get_bounds(tab->buffer, &s, &e);
-    gchar* text = gtk_text_buffer_get_text(tab->buffer, &s, &e, TRUE);
-    CodeLang lang = code_lang_from_name(tab->path);
-    GPtrArray* syms = code_scan_text(text, strlen(text), lang, NULL);
-    g_free(text);
-    if (syms->len == 0) {
-        if (message != NULL) message(tab, code_scan_supported(lang) ? "No symbols found in this file"
-                                                                    : "No symbol scanner for this language");
-        g_ptr_array_unref(syms);
-        return;
-    }
-    GListStore* store = g_list_store_new(CODE_TYPE_SYMBOL_ITEM);
-    for (guint i = 0; i < syms->len; i++) {
-        CodeSymbol* sym = g_ptr_array_index(syms, i);
-        add_item(store, sym->name, sym->declaration ? "declaration" : NULL, sym->kind, sym->line, sym->column);
-    }
-    g_ptr_array_unref(syms);
-    g_list_store_sort(store, compare_items, NULL);
-    show_picker(app, tab, store, "built-in scanner");
-}
-
-typedef struct {
-    CodeNavMessageFunc message;
-} SymbolsRequest;
-
-static void on_server_symbols(AppData* app, EditorTab* tab, GPtrArray* symbols, gpointer data) {
-    SymbolsRequest* req = data;
-    CodeNavMessageFunc message = req->message;
-    g_free(req);
+static void on_outline(AppData* app, EditorTab* tab, GPtrArray* entries, const gchar* source, gpointer data) {
+    CodeNavMessageFunc message = (CodeNavMessageFunc)data;
     if (app_dialog_is_open(app->window)) return;
-    if (symbols == NULL || symbols->len == 0) {
-        show_scanned(app, tab, message);
+    if (entries->len == 0) {
+        if (message != NULL) {
+            gboolean scanned = code_nav_is_code(tab) && !code_scan_supported(code_lang_from_name(tab->path));
+            message(tab, scanned ? "No symbol scanner for this language" : "No symbols found in this file");
+        }
         return;
     }
     GListStore* store = g_list_store_new(CODE_TYPE_SYMBOL_ITEM);
-    for (guint i = 0; i < symbols->len; i++) {
-        LspSymbol* s = g_ptr_array_index(symbols, i);
-        gchar* detail = s->detail != NULL && s->container != NULL ? g_strdup_printf("%s · in %s", s->detail, s->container)
-                        : s->container != NULL                    ? g_strdup_printf("in %s", s->container)
-                                                                  : g_strdup(s->detail);
-        add_item(store, s->name, detail, s->kind, s->line, s->column);
+    for (guint i = 0; i < entries->len; i++) {
+        CodeOutlineEntry* e = g_ptr_array_index(entries, i);
+        gchar* detail = e->declaration                               ? g_strdup("declaration")
+                        : e->detail != NULL && e->container != NULL ? g_strdup_printf("%s · in %s", e->detail, e->container)
+                        : e->container != NULL                      ? g_strdup_printf("in %s", e->container)
+                                                                    : g_strdup(e->detail);
+        add_item(store, e->name, detail, e->level > 0 ? "heading" : code_symbol_kind_name(e->kind), e->line, e->column);
         g_free(detail);
     }
-    g_list_store_sort(store, compare_items, NULL);
-    gchar* server = code_intel_server_label(app, tab);
-    show_picker(app, tab, store, server != NULL ? server : "language server");
-    g_free(server);
+    show_picker(app, tab, store, source);
 }
 
 void code_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
     if (app == NULL || tab == NULL || tab->buffer == NULL || app->window == NULL) return;
-    if (!code_nav_is_code(tab)) {
+    if (!code_outline_supported(tab)) {
         if (message != NULL) message(tab, "No code navigation for this file type");
         return;
     }
-    SymbolsRequest* req = g_new0(SymbolsRequest, 1);
-    req->message = message;
-    if (!code_intel_document_symbols(app, tab, on_server_symbols, req)) {
-        g_free(req);
-        show_scanned(app, tab, message);
-    }
+    /* A function pointer through gpointer: the usual GLib callback idiom */
+    code_outline_collect(app, tab, NULL, on_outline, (gpointer)message, NULL);
 }
