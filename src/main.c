@@ -422,7 +422,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_name(preview_stack, "preview-stack");
     gtk_widget_set_hexpand(preview_stack, TRUE);
     gtk_widget_set_vexpand(preview_stack, TRUE);
-    /* Filled once AppData exists: column line and tagbar around the text */
+    /* Filled once AppData exists: column line, minimap and tagbar around the text */
     GtkWidget* text_page = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_stack_add_named(GTK_STACK(preview_stack), text_page, "text");
 
@@ -442,12 +442,11 @@ int main(int argc, char** argv) {
     gtk_widget_set_tooltip_text(split_btn, "Move Editor Tabs to a Dedicated Panel");
     gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), split_btn, GTK_PACK_START);
 
-    /* Preview panel: notebook and minimap, its search bar below them */
+    /* Preview panel: notebook, its search bar below it */
     GtkWidget* viewer_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(viewer_row, TRUE);
     gtk_widget_set_vexpand(viewer_row, TRUE);
     gtk_box_append(GTK_BOX(viewer_row), notebook);
-    gtk_box_append(GTK_BOX(viewer_row), minimap);
     GtkWidget* viewer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name(viewer_box, "viewer-box");
     gtk_widget_set_hexpand(viewer_box, TRUE);
@@ -596,9 +595,14 @@ int main(int argc, char** argv) {
 
     app->notebook = notebook;
     app->preview_stack = preview_stack;
-    /* Column line over code previews, as in editors; headings beside the text */
-    gtk_box_append(GTK_BOX(text_page),
-                   preview_tagbar_wrap(app, color_column_wrap(right_scroll, text_view), text_view));
+    /* Column line over code previews; minimap then headings beside the
+     * text, as in editors */
+    GtkWidget* text_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(text_row, TRUE);
+    gtk_widget_set_vexpand(text_row, TRUE);
+    gtk_box_append(GTK_BOX(text_row), color_column_wrap(right_scroll, text_view));
+    gtk_box_append(GTK_BOX(text_row), minimap);
+    gtk_box_append(GTK_BOX(text_page), preview_tagbar_wrap(app, text_row, text_view));
     color_column_hide_on_change(text_view);
     video_preview_init(app);
     audio_preview_init(app);
