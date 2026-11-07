@@ -1572,14 +1572,23 @@ EditorTab* editor_find_tab(AppData* app, const gchar* path) {
     return found;
 }
 
-/* TRUE when the line of iter is (fully) inside the visible part of the view */
-static gboolean line_visible(GtkTextView* view, const GtkTextIter* iter) {
-    GdkRectangle visible;
-    gtk_text_view_get_visible_rect(view, &visible);
-    if (visible.height <= 0) return FALSE;
-    gint y = 0, h = 0;
-    gtk_text_view_get_line_yrange(view, iter, &y, &h);
-    return y >= visible.y && y + h <= visible.y + visible.height;
+/* Centre again once the current event is handled: a later
+ * scroll_mark_onscreen() (the Vim mode after a command) would otherwise
+ * replace the pending scroll and leave the line at the bottom. */
+static gboolean center_cursor_idle(gpointer data) {
+    GtkTextView* view = GTK_TEXT_VIEW(data);
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
+    if (buffer != NULL) gtk_text_view_scroll_to_mark(view, gtk_text_buffer_get_insert(buffer), 0.0, TRUE, 0.0, 0.5);
+    return G_SOURCE_REMOVE;
+}
+
+void editor_center_cursor(EditorTab* tab) {
+    if (tab == NULL || tab->view == NULL || tab->buffer == NULL) return;
+    /* scroll_to_mark waits for line validation: works for a tab just opened */
+    gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(tab->view), gtk_text_buffer_get_insert(tab->buffer), 0.0, TRUE,
+                                 0.0, 0.5);
+    /* Before the next layout (GDK_PRIORITY_REDRAW) */
+    g_idle_add_full(G_PRIORITY_HIGH_IDLE, center_cursor_idle, g_object_ref(tab->view), g_object_unref);
 }
 
 EditorTab* editor_open_at(AppData* app, const gchar* path, gint line, gint index) {
@@ -1605,16 +1614,10 @@ EditorTab* editor_open_at(AppData* app, const gchar* path, gint line, gint index
     if (!gtk_text_iter_ends_line(&end)) gtk_text_iter_forward_to_line_end(&end);
     gtk_text_iter_set_line_index(&it, CLAMP(index, 0, gtk_text_iter_get_line_index(&end)));
     gtk_text_buffer_place_cursor(tab->buffer, &it);
-    if (tab->view != NULL) {
-        GtkTextView* view = GTK_TEXT_VIEW(tab->view);
-        if (!line_visible(view, &it)) {
-            /* scroll_to_mark waits for line validation: works for a tab just opened */
-            gtk_text_view_scroll_to_mark(view, gtk_text_buffer_get_insert(tab->buffer), 0.0, TRUE, 0.0, 0.3);
-        }
-        gtk_widget_grab_focus(tab->view);
-    }
+    if (tab->view != NULL) gtk_widget_grab_focus(tab->view);
     app->last_focused_editor = tab;
     editor_modes_update_status(tab);
+    editor_center_cursor(tab);
     return tab;
 }
 

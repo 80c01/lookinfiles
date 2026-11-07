@@ -47,9 +47,11 @@ EditorTab* editor_open_dedicated(AppData* app, const gchar* name, const gchar* f
 /* The open tab of path (paths compared canonicalized), or NULL */
 EditorTab* editor_find_tab(AppData* app, const gchar* path);
 /* Open path in an editor tab (or switch to its tab), put the cursor at line
- * (0-based) and byte index (both clamped), scroll it into view when it is
- * not visible and focus the view. NULL when the file cannot be edited. */
+ * (0-based) and byte index (both clamped), centre it vertically and focus
+ * the view. NULL when the file cannot be edited. */
 EditorTab* editor_open_at(AppData* app, const gchar* path, gint line, gint index);
+/* Scroll the view so that the cursor line is in the middle */
+void editor_center_cursor(EditorTab* tab);
 void on_editor_switch_page_changed(GtkNotebook* notebook, GtkWidget* page, guint page_num, gpointer data);
 gboolean editor_confirm_discard(AppData* app, EditorTab* tab);
 void editor_close_tab(AppData* app, EditorTab* tab);

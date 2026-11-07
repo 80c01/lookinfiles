@@ -1,5 +1,6 @@
 /* The tagbar of an editor tab (see editor_tagbar.h) */
 #include "editor_tagbar.h"
+#include "editor.h"
 #include "code_outline.h"
 #include "icons.h"
 #include "panels.h"
@@ -336,8 +337,7 @@ static void go_to_item(Tagbar* tb, TagbarItem* it) {
         GtkTextIter where;
         gtk_text_buffer_get_iter_at_line_index(tab->buffer, &where, it->line, it->column);
         gtk_text_buffer_place_cursor(tab->buffer, &where);
-        gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(tab->view), gtk_text_buffer_get_insert(tab->buffer), 0.1, FALSE,
-                                     0, 0);
+        editor_center_cursor(tab);
         dest = tab;
     }
     if (dest != NULL && dest->view != NULL) gtk_widget_grab_focus(dest->view);
