@@ -23,7 +23,10 @@ static gboolean text_key(CanvasItem* it, guint keyval, GdkModifierType state) {
         canvas_page_focus_next(it->page, it, keyval == GDK_KEY_Tab ? 1 : -1);
         return TRUE;
     }
-    return canvas_text_key(GTK_TEXT_VIEW(it->content), &it->pending, keyval, state);
+    guint before = it->pending;
+    gboolean handled = canvas_text_key(GTK_TEXT_VIEW(it->content), &it->pending, keyval, state);
+    if (it->pending != before) canvas_page_update_format(it->page);
+    return handled;
 }
 
 /* Keys on a selected block: Delete and the arrows act on every selected

@@ -9,6 +9,7 @@
 #include "canvas_history.h"
 #include "canvas_item.h"
 #include "canvas_props.h"
+#include "canvas_text.h"
 #include "canvas_toolbar.h"
 #include "canvas_viewport.h"
 
@@ -305,11 +306,40 @@ static gint next_id(CanvasPage* p) {
     return id + 1;
 }
 
+/* The cursor moved or the text changed in a text box (after its own
+ * handlers, which clear the pending styles) */
+static void on_text_moved(GtkTextBuffer* buffer, gpointer data) {
+    (void)buffer;
+    CanvasPage* p = g_object_get_data(G_OBJECT(data), CANVAS_PAGE_KEY);
+    if (p != NULL && !p->closed) canvas_page_update_format(p);
+}
+
+static void on_text_mark_set(GtkTextBuffer* buffer, const GtkTextIter* location, GtkTextMark* mark, gpointer data) {
+    (void)location;
+    if (mark == gtk_text_buffer_get_insert(buffer) || mark == gtk_text_buffer_get_selection_bound(buffer)) {
+        on_text_moved(buffer, data);
+    }
+}
+
+static void on_text_tag(GtkTextBuffer* buffer, GtkTextTag* tag, const GtkTextIter* s, const GtkTextIter* e,
+                        gpointer data) {
+    (void)tag;
+    (void)s;
+    (void)e;
+    on_text_moved(buffer, data);
+}
+
 /* A block of the note (loading), or a new one: given a new id */
 static CanvasItem* add_item(CanvasPage* p, const CanvasBlock* b) {
     gint id = p->loading ? 0 : next_id(p);
     CanvasItem* it = canvas_item_add(p, p->surface, p->dir, b, on_item_changed_notify, p->loading);
     if (it != NULL && id > 0) it->id = id;
+    if (it != NULL && it->kind == CANVAS_BLOCK_TEXT) {
+        g_signal_connect_object(it->buffer, "mark-set", G_CALLBACK(on_text_mark_set), p->root, G_CONNECT_AFTER);
+        g_signal_connect_object(it->buffer, "changed", G_CALLBACK(on_text_moved), p->root, G_CONNECT_AFTER);
+        g_signal_connect_object(it->buffer, "apply-tag", G_CALLBACK(on_text_tag), p->root, G_CONNECT_AFTER);
+        g_signal_connect_object(it->buffer, "remove-tag", G_CALLBACK(on_text_tag), p->root, G_CONNECT_AFTER);
+    }
     return it;
 }
 
@@ -660,6 +690,12 @@ static gboolean closed_shape(CanvasShapeType type) {
     return type != CANVAS_SHAPE_LINE && type != CANVAS_SHAPE_ARROW && type != CANVAS_SHAPE_FREEHAND;
 }
 
+void canvas_page_update_format(CanvasPage* p) {
+    CanvasItem* it = canvas_page_current_item(p);
+    if (it == NULL || it->kind != CANVAS_BLOCK_TEXT || it->buffer == NULL) return;
+    canvas_format_bar_set_styles(p->format_bar, canvas_text_active_styles(it->buffer, it->pending));
+}
+
 /* The panel shows the style of the next shapes while drawing, or of the
  * current shape; the format bar floats above the current text box, the
  * table bar above the current table */
@@ -667,6 +703,7 @@ void canvas_page_update_props(CanvasPage* p) {
     if (p->props == NULL) return;
     CanvasItem* it = p->tool == CANVAS_TOOL_SELECT ? canvas_page_current_item(p) : NULL;
     canvas_format_bar_show_for(p->format_bar, it != NULL && it->kind == CANVAS_BLOCK_TEXT ? it->frame : NULL);
+    canvas_page_update_format(p);
     gboolean table = it != NULL && it->kind == CANVAS_BLOCK_TABLE;
     canvas_table_bar_show_for(p->table_bar, table ? it->frame : NULL, table ? it->content : NULL);
     if (canvas_tool_draws(p->tool)) {

@@ -99,6 +99,7 @@ static void on_format_style(guint style_flag, gpointer udata) {
     CanvasItem* it = current_text_item(udata);
     if (it != NULL) canvas_text_toggle_style(it->buffer, &it->pending, style_flag);
     canvas_page_restore_focus(udata);
+    canvas_page_update_format(udata);
 }
 
 static void on_format_preset(CanvasPreset preset, gpointer udata) {

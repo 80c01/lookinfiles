@@ -89,6 +89,28 @@ void canvas_text_apply_styles(GtkTextBuffer* buffer, gint start, gint end, guint
     }
 }
 
+guint canvas_text_active_styles(GtkTextBuffer* buffer, guint pending) {
+    GtkTextIter s, e;
+    guint styles = 0;
+    if (gtk_text_buffer_get_selection_bounds(buffer, &s, &e)) {
+        for (guint k = 0; k < CANVAS_TEXT_STYLE_COUNT; k++) {
+            GtkTextTag* tag = canvas_text_style_tag(buffer, k);
+            if (tag == NULL || !gtk_text_iter_has_tag(&s, tag)) continue;
+            GtkTextIter t = s;
+            if (!gtk_text_iter_forward_to_tag_toggle(&t, tag) || gtk_text_iter_compare(&t, &e) >= 0) {
+                styles |= 1u << k;
+            }
+        }
+        return styles;
+    }
+    /* As typing does: the styles of the previous character on the line */
+    GtkTextIter prev = s;
+    if (gtk_text_iter_backward_char(&prev) && gtk_text_iter_get_char(&prev) != '\n') {
+        styles = canvas_text_styles_at(buffer, &prev);
+    }
+    return styles ^ pending;
+}
+
 void canvas_text_toggle_style(GtkTextBuffer* buffer, guint* pending, guint style) {
     guint k = (guint)g_bit_nth_lsf(style, -1);
     GtkTextIter s, e;

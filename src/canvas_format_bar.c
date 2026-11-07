@@ -23,13 +23,15 @@ struct CanvasFormatBar {
     CanvasFloat* floating;
     CanvasFormatBarCallbacks cbs;
     gpointer user_data;
+    GPtrArray* style_buttons; /* the buttons toggling one style flag */
 };
 
 static void ensure_css(void) {
     static gboolean done = FALSE;
     if (done) return;
     done = TRUE;
-    GString* css = g_string_new(".canvas-fmt-swatch { min-width: 14px; min-height: 14px; border-radius: 50%; }");
+    GString* css = g_string_new(".canvas-fmt-swatch { min-width: 14px; min-height: 14px; border-radius: 50%; }"
+                                ".canvas-fmt:checked { background-color: @bg_selected; color: @accent; }");
     for (guint i = 0; i < G_N_ELEMENTS(TEXT_COLORS); i++) {
         g_string_append_printf(css, ".canvas-fmt-c-%s { background-color: @%s; }", TEXT_COLORS[i].color,
                                TEXT_COLORS[i].color);
@@ -98,6 +100,7 @@ static GtkWidget* action_button(GtkWidget* child, const gchar* tip, GCallback cb
 static GtkWidget* style_button(const gchar* icon, const gchar* tip, guint flag, CanvasFormatBar* bar) {
     GtkWidget* b = action_button(icon_image_new(icon), tip, G_CALLBACK(on_style_clicked), bar);
     g_object_set_data(G_OBJECT(b), "style-flag", GINT_TO_POINTER((gint)flag));
+    g_ptr_array_add(bar->style_buttons, b);
     return b;
 }
 
@@ -204,6 +207,22 @@ void canvas_format_bar_show_for(CanvasFormatBar* bar, GtkWidget* target) {
     if (bar != NULL) canvas_float_show_for(bar->floating, target);
 }
 
+void canvas_format_bar_set_styles(CanvasFormatBar* bar, guint styles) {
+    if (bar == NULL) return;
+    for (guint i = 0; i < bar->style_buttons->len; i++) {
+        GtkWidget* b = g_ptr_array_index(bar->style_buttons, i);
+        guint flag = (guint)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "style-flag"));
+        gboolean on = (styles & flag) != 0;
+        if (on) {
+            gtk_widget_set_state_flags(b, GTK_STATE_FLAG_CHECKED, FALSE);
+        } else {
+            gtk_widget_unset_state_flags(b, GTK_STATE_FLAG_CHECKED);
+        }
+        gtk_accessible_update_state(GTK_ACCESSIBLE(b), GTK_ACCESSIBLE_STATE_PRESSED,
+                                    on ? GTK_ACCESSIBLE_TRISTATE_TRUE : GTK_ACCESSIBLE_TRISTATE_FALSE, -1);
+    }
+}
+
 /* ------------------------------------------------------------------------- */
 
 CanvasFormatBar* canvas_format_bar_new(const CanvasFormatBarCallbacks* cbs, gpointer user_data) {
@@ -211,6 +230,7 @@ CanvasFormatBar* canvas_format_bar_new(const CanvasFormatBarCallbacks* cbs, gpoi
     CanvasFormatBar* bar = g_new0(CanvasFormatBar, 1);
     if (cbs != NULL) bar->cbs = *cbs;
     bar->user_data = user_data;
+    bar->style_buttons = g_ptr_array_new();
     bar->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 1);
     bar->floating = canvas_float_new(bar->box);
     build(bar, bar->box);
@@ -224,5 +244,6 @@ GtkWidget* canvas_format_bar_get_widget(CanvasFormatBar* bar) {
 void canvas_format_bar_free(CanvasFormatBar* bar) {
     if (bar == NULL) return;
     canvas_float_free(bar->floating);
+    g_ptr_array_unref(bar->style_buttons);
     g_free(bar);
 }

@@ -28,4 +28,8 @@ GtkWidget* canvas_format_bar_get_widget(CanvasFormatBar* bar);
  * block while it moves, the view scrolls or zooms. NULL hides it. */
 void canvas_format_bar_show_for(CanvasFormatBar* bar, GtkWidget* target);
 
+/* Show the style buttons (bold, italic, underline, strikethrough) whose flag
+ * is in styles as pressed */
+void canvas_format_bar_set_styles(CanvasFormatBar* bar, guint styles);
+
 #endif /* CANVAS_FORMAT_BAR_H */

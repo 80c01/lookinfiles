@@ -145,4 +145,7 @@ void canvas_page_open_crop(CanvasPage* p, CanvasItem* it);
 void canvas_page_set_tool(CanvasPage* p, CanvasTool tool);
 void canvas_page_update_props(CanvasPage* p);
 
+/* The format bar shows the styles at the cursor of the current text box */
+void canvas_page_update_format(CanvasPage* p);
+
 #endif /* CANVAS_PAGE_PRIVATE_H */

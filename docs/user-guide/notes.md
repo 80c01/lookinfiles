@@ -89,7 +89,8 @@ onto the page; double click a picture to crop it.
   it (below it near the top of the page) and follows it: paragraph style
   (headings, body, quote), bold, italic, underline, strikethrough, text
   colour, more styles (highlight, code, fonts, sizes), lists, task
-  checkboxes and indent.
+  checkboxes and indent. Bold, italic, underline and strikethrough show as
+  pressed when the text at the cursor (or the whole selection) has them.
 
 ### Canvas actions and shortcuts
 

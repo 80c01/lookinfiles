@@ -22,6 +22,10 @@ guint canvas_text_styles_at(GtkTextBuffer* buffer, const GtkTextIter* iter);
 /* Apply styles bitmask to range [start, end) */
 void canvas_text_apply_styles(GtkTextBuffer* buffer, gint start, gint end, guint styles);
 
+/* Styles the format bar shows as on: those over the whole selection, or
+ * those of the text typed next at the cursor (pending toggles them) */
+guint canvas_text_active_styles(GtkTextBuffer* buffer, guint pending);
+
 /* Toggle a style bit on the current selection or update pending styles */
 void canvas_text_toggle_style(GtkTextBuffer* buffer, guint* pending, guint style);
 
