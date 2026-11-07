@@ -141,7 +141,7 @@ automatically; one canvas at a time)
 | Drop image files | Copy them into the note as pictures |
 | Drag the bar above a block (a picture or a shape: anywhere on it) / its corner | Move / resize it (pictures keep their proportions) |
 | `Ctrl+B` / `Ctrl+I` / `Ctrl+U` / `Ctrl+Shift+S` / `Ctrl+E` / `Ctrl+Alt+1` | Bold, italic, underline, strikethrough, code, heading (the selection, or the text typed next) |
-| `Ctrl+Space` | Toggle checkbox under cursor (`- [ ]` / `- [X]`) |
+| `Ctrl+Space` / `Ctrl+Shift+C` | Toggle checkbox under cursor (`- [ ]` / `- [X]`) |
 | `Esc` | In a text box: select the block; on a block: deselect |
 | `Tab` / `Shift+Tab` | Next / previous block |
 | Arrows (`Shift`: further) | Move the selected block |

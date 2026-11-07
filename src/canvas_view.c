@@ -666,7 +666,9 @@ static gboolean text_key(CanvasItem* it, guint keyval, GdkModifierType state) {
     if ((keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) && !ctrl && !alt) {
         if (canvas_text_handle_enter(GTK_TEXT_VIEW(it->content))) return TRUE;
     }
-    if (ctrl && shift && (keyval == GDK_KEY_c || keyval == GDK_KEY_C)) {
+    /* Ctrl+Space (as in the Org editor) or Ctrl+Shift+C: toggle the checkbox */
+    if ((ctrl && !shift && !alt && keyval == GDK_KEY_space) ||
+        (ctrl && shift && (keyval == GDK_KEY_c || keyval == GDK_KEY_C))) {
         canvas_text_toggle_checkbox(it->buffer);
         schedule_save(it->page);
         return TRUE;

@@ -100,7 +100,7 @@ A panel on the left shows what the current tool or block can change:
 | Predefined styles | Paragraph style menu of the properties panel: Heading 1, Heading 2, Body text, Quote (`Ctrl+Alt+1`, `2`, `0`, `Q`) |
 | Text styling | `Ctrl+B` (bold), `Ctrl+I` (italic), `Ctrl+U` (underline), `Ctrl+Shift+S` (strikethrough), highlight, monospace, font family, text color |
 | Lists & Indents | Bullet list, numbered list, indent more / indent less in the properties panel; Enter auto-continues lists |
-| Interactive Checkboxes | Checkbox button or type `- [ ] `; click `[ ]` / `[X]` or press `Ctrl+Space` to toggle |
+| Interactive Checkboxes | Checkbox button or type `- [ ] `; click `[ ]` / `[X]` or press `Ctrl+Space` (or `Ctrl+Shift+C`) to toggle |
 | Select block / stop editing | `Esc` |
 | Next / previous block | `Tab` / `Shift+Tab` |
 | Move selected block | Arrow keys (`Shift` for 10px steps) |

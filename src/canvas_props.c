@@ -424,7 +424,7 @@ static GtkWidget* text_section(CanvasProps* props) {
     b = action_button(icon_image_new("view-list-ordered"), "Numbered List", G_CALLBACK(on_list_clicked), props);
     g_object_set_data(G_OBJECT(b), "list-prefix", (gpointer)"1. ");
     gtk_box_append(GTK_BOX(row), b);
-    gtk_box_append(GTK_BOX(row), action_button(icon_image_new("object-select"), "Task Checkbox",
+    gtk_box_append(GTK_BOX(row), action_button(icon_image_new("object-select"), "Task Checkbox (Ctrl+Space)",
                                                G_CALLBACK(on_checkbox_clicked), props));
     b = action_button(icon_image_new("format-indent-less"), "Decrease Indent", G_CALLBACK(on_indent_clicked), props);
     g_object_set_data(G_OBJECT(b), "indent-step", GINT_TO_POINTER(-1));
