@@ -1,5 +1,6 @@
 /* Video tabs of the editor area (see video_tab.h) */
 #include "video_tab.h"
+#include "i18n.h"
 #include "editor.h"
 #include "icons.h"
 #include "media_player.h"
@@ -154,8 +155,8 @@ static void on_error(GtkMediaStream* stream, GParamSpec* pspec, gpointer data) {
     VideoTab* vt = data;
     const GError* err = gtk_media_stream_get_error(stream);
     if (err == NULL || vt->closed) return;
-    gchar* text = g_strdup_printf("Playback error: %s",
-                                  err->message != NULL && err->message[0] != '\0' ? err->message : "unknown");
+    gchar* text = g_strdup_printf(_("Playback error: %s"),
+                                  err->message != NULL && err->message[0] != '\0' ? err->message : _("unknown"));
     gtk_label_set_text(GTK_LABEL(vt->status), text);
     gtk_widget_set_visible(vt->status, TRUE);
     g_free(text);
@@ -274,8 +275,8 @@ static VideoTab* tab_new(AppData* app, const gchar* name, const gchar* path) {
     gtk_label_set_ellipsize(GTK_LABEL(where), PANGO_ELLIPSIZE_START);
     gtk_label_set_xalign(GTK_LABEL(where), 0.0f);
     gtk_widget_set_hexpand(where, TRUE);
-    gtk_widget_set_tooltip_text(where, "Space: play / pause; Left / Right: 5 s back / forward; Home: start; "
-                                       "a: next audio track; s: next subtitles");
+    gtk_widget_set_tooltip_text(where, _("Space: play / pause; Left / Right: 5 s back / forward; Home: start; "
+                                         "a: next audio track; s: next subtitles"));
     gtk_box_append(GTK_BOX(bar), where);
     gtk_box_append(GTK_BOX(bar), track_menu_new(vt->stream, TRUE));
     vt->status = gtk_label_new(NULL);

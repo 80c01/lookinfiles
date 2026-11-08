@@ -1,4 +1,5 @@
 #include "pdf.h"
+#include "i18n.h"
 #include "app_events.h"
 #include "fonts.h"
 #include "text_tags.h"
@@ -16,6 +17,8 @@
 #include <cairo.h>
 
 #define MAX_RENDER_PAGES 20
+/* Start of the page badges, found again by PgUp / PgDn (not translated) */
+#define PAGE_BADGE_PREFIX "─── "
 /* Pages rendered before the preview is first shown; the others follow */
 #define FIRST_RENDER_PAGES 3
 /* Bookmarks read for the tagbar at most */
@@ -272,8 +275,9 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
     for (guint i = 0; i < render_count; i++) {
         GdkTexture* tex = GDK_TEXTURE(g_ptr_array_index(td->page_textures, i));
         outline_note_page(app->preview_cancellable, td->first_page + (gint)i, &iter);
-        gchar* page_badge = g_strdup_printf("─── Page %d of %d ───\n\n",
-                                            td->first_page + (gint)i + 1, td->total_pages);
+        gchar* page = g_strdup_printf(_("Page %1$d of %2$d"), td->first_page + (gint)i + 1, td->total_pages);
+        gchar* page_badge = g_strdup_printf(PAGE_BADGE_PREFIX "%s ───\n\n", page);
+        g_free(page);
         gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, page_badge, -1, "pdf_page_badge", NULL);
         g_free(page_badge);
 
@@ -305,7 +309,7 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
         return;
     }
     if (td->total_pages > limit) {
-        gchar* notice = g_strdup_printf("[ Showing first %d of %d pages • press m to view all extracted text ]\n\n",
+        gchar* notice = g_strdup_printf(_("[ Showing first %1$d of %2$d pages • press m to view all extracted text ]\n\n"),
                                         limit, td->total_pages);
         gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, notice, -1, "pdf_meta", NULL);
         g_free(notice);
@@ -346,8 +350,8 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
                 g_clear_error(&err);
                 return;
             }
-            td->error_msg = g_strdup_printf("[ Cannot preview %s: %s ]", td->name,
-                                            err ? err->message : "conversion failed");
+            td->error_msg = g_strdup_printf(_("[ Cannot preview %1$s: %2$s ]"), td->name,
+                                            err ? err->message : _("conversion failed"));
             g_clear_error(&err);
             g_task_return_boolean(task, TRUE);
             return;
@@ -369,8 +373,8 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
     }
 
     if (doc == NULL) {
-        td->error_msg = g_strdup_printf("[ Cannot open PDF: %s (%s) ]",
-                                        td->name, err ? err->message : "unknown error");
+        td->error_msg = g_strdup_printf(_("[ Cannot open PDF: %1$s (%2$s) ]"),
+                                        td->name, err ? err->message : _("unknown error"));
         if (err != NULL) {
             g_error_free(err);
         }
@@ -527,17 +531,17 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     g_free(header_text);
 
     /* Metadata subtitle: pages, version, size, mode toggle hint */
-    const gchar* mode_hint = td->render_raw ? "  [text mode, press m for rendered pages]"
-                                            : "  [rendered pages, press m for text]";
+    const gchar* mode_hint = td->render_raw ? _("  [text mode, press m for rendered pages]")
+                                            : _("  [rendered pages, press m for text]");
     gchar* type_text = td->converted
         ? g_strdup(td->is_dvi ? "DVI" : "PostScript")
         : g_strdup_printf("PDF %s", td->doc_ver ? td->doc_ver : "1.x");
     gchar* pages_text = (td->converted && td->total_pages >= MAX_RENDER_PAGES)
-        ? g_strdup_printf("first %d pages", MAX_RENDER_PAGES)
-        : g_strdup_printf("%d page%s", td->total_pages, (td->total_pages == 1) ? "" : "s");
+        ? g_strdup_printf(_("first %d pages"), MAX_RENDER_PAGES)
+        : g_strdup_printf(ngettext("%d page", "%d pages", (gulong)td->total_pages), td->total_pages);
     gchar* meta_text;
     if (td->doc_author != NULL && td->doc_author[0] != '\0') {
-        meta_text = g_strdup_printf("By %s  •  %s  •  %s  •  %s%s\n\n",
+        meta_text = g_strdup_printf(_("By %1$s  •  %2$s  •  %3$s  •  %4$s%5$s\n\n"),
                                     td->doc_author, type_text, pages_text, td->size_str, mode_hint);
     } else {
         meta_text = g_strdup_printf("%s  •  %s  •  %s%s\n\n",
@@ -558,7 +562,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
         for (guint i = 0; i < td->page_texts->len; i++) {
             const gchar* text = (const gchar*)g_ptr_array_index(td->page_texts, i);
             outline_note_page(app->preview_cancellable, (gint)i, &iter);
-            gchar* page_hdr = g_strdup_printf("--- Page %u of %d ---\n\n",
+            gchar* page_hdr = g_strdup_printf(_("--- Page %1$u of %2$d ---\n\n"),
                                               i + 1, td->total_pages);
             gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, page_hdr, -1,
                                                      "pdf_text_header", NULL);
@@ -567,7 +571,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
             if (text != NULL && text[0] != '\0') {
                 gtk_text_buffer_insert(app->buffer, &iter, text, -1);
             } else {
-                gtk_text_buffer_insert(app->buffer, &iter, "(no text on this page)\n", -1);
+                gtk_text_buffer_insert(app->buffer, &iter, _("(no text on this page)\n"), -1);
             }
             gtk_text_buffer_insert(app->buffer, &iter, "\n\n", -1);
         }
@@ -588,7 +592,7 @@ gboolean pdf_preview_jump(AppData* app, gint direction) {
     GtkTextIter from, match_start, match_end;
     gtk_text_buffer_get_start_iter(app->buffer, &from);
     gdouble target = direction > 0 ? -1 : 0;
-    while (gtk_text_iter_forward_search(&from, "─── Page ", GTK_TEXT_SEARCH_TEXT_ONLY, &match_start, &match_end,
+    while (gtk_text_iter_forward_search(&from, PAGE_BADGE_PREFIX, GTK_TEXT_SEARCH_TEXT_ONLY, &match_start, &match_end,
                                         NULL)) {
         GdkRectangle rect;
         gtk_text_view_get_iter_location(view, &match_start, &rect);
@@ -709,7 +713,7 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
         g_clear_object(&app->preview_cancellable);
     }
     gchar* msg = g_strdup_printf(
-        "[ PDF preview disabled for %s:\n  install libpoppler-glib-dev then rebuild (make). ]",
+        _("[ PDF preview disabled for %s:\n  install libpoppler-glib-dev then rebuild (make). ]"),
         name);
     gtk_text_buffer_set_text(app->buffer, msg, -1);
     g_free(msg);

@@ -16,14 +16,14 @@ app_paths:
 i18n:
 file_types:text_encoding
 file_type_icons:file_type_icons_table
-git_utils:palette i18n
+git_utils:palette,i18n
 line_diff:
 preview_cache:
 path_kind:
 pane_geometry:
 minimap_geometry:
 ui_probe:
-dir_summary:file_types,text_encoding
+dir_summary:file_types,text_encoding,i18n
 dir_scan:file_types
 file_save:
 hex_dump:
@@ -78,7 +78,7 @@ pyc_info:preview_doc
 tfm_info:preview_doc
 pcap_info:preview_doc
 media_tags:
-media_tracks:
+media_tracks:i18n
 media_player:media_tracks
 track_menu:media_player
 text_encoding:
@@ -120,7 +120,7 @@ user_guide:
 fuzzy_match:
 web_address:
 path_globs:
-text_search:code_index i18n
+text_search:code_index,i18n
 session_store:app_paths,layout_store
 tab_tree:
 settings_store:app_paths
@@ -155,7 +155,7 @@ dialog:
 tab_drop:pane_geometry
 explorer_tree:explorer_row,icons
 remote_store:app_types,app_paths,notebook_icons
-preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc
+preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc,i18n
 fs_watch:app_types,app_events,git_utils,git_tab
 "
 

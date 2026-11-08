@@ -1,5 +1,6 @@
 /* Archives as folders in the explorer (see archive_tree.h). */
 #include "archive_tree.h"
+#include "i18n.h"
 
 #include <string.h>
 
@@ -129,7 +130,7 @@ static void list_thread(GTask* task, gpointer source, gpointer task_data, GCance
     GError* error = NULL;
     ArchiveListing* l = archive_list(d->archive, ARCHIVE_TREE_MAX_ENTRIES, cancellable, &error);
     if (l == NULL) {
-        d->error = g_strdup(error != NULL ? error->message : "cannot read the archive");
+        d->error = g_strdup(error != NULL ? error->message : _("cannot read the archive"));
         g_clear_error(&error);
         g_task_return_boolean(task, FALSE);
         return;
@@ -179,7 +180,7 @@ static void apply_node(ExplorerRow* parent, const gchar* archive, const ArcNode*
             explorer_row_set_loaded(row, TRUE);
             apply_node(row, archive, k);
             if (k->kids->len == 0) {
-                append_note(row, "  (empty)");
+                append_note(row, _("  (empty)"));
             }
         } else {
             gchar* path = g_strdup_printf("%s!/%s", archive, k->orig);
@@ -203,20 +204,20 @@ static void on_listed(GObject* source, GAsyncResult* result, gpointer user_data)
         /* Never leave the row without children: that collapses it */
         ExplorerRow* note = explorer_row_n_children(row) > 0 ? explorer_row_child(row, 0) : NULL;
         if (!ok) {
-            gchar* label = g_strdup_printf("  (%s)", d->error != NULL ? d->error : "cannot read the archive");
+            gchar* label = g_strdup_printf("  (%s)", d->error != NULL ? d->error : _("cannot read the archive"));
             explorer_row_set_label(note, label);
             g_free(label);
         } else {
             apply_node(row, row->path, d->root);
             gboolean more = d->root->kids->len > 0;
             if (d->incomplete) {
-                append_note(row, "  (more entries not shown)");
+                append_note(row, _("  (more entries not shown)"));
                 more = TRUE;
             }
             if (more) {
                 explorer_row_remove(note);
             } else {
-                explorer_row_set_label(note, "  (empty)");
+                explorer_row_set_label(note, _("  (empty)"));
             }
             explorer_row_set_loaded(row, TRUE);
         }
@@ -233,9 +234,9 @@ static void start_listing(AppData* app, ExplorerRow* row) {
     /* Reuse the placeholder: a row emptied while expanded collapses */
     ExplorerRow* first = explorer_row_n_children(row) == 1 ? explorer_row_child(row, 0) : NULL;
     if (first != NULL && explorer_row_is(first, "-")) {
-        explorer_row_set_label(first, "  (reading...)");
+        explorer_row_set_label(first, _("  (reading...)"));
     } else {
-        append_note(row, "  (reading...)");
+        append_note(row, _("  (reading...)"));
         while (explorer_row_n_children(row) > 1) {
             explorer_row_remove(explorer_row_child(row, 0));
         }
@@ -298,7 +299,7 @@ static void extract_thread(GTask* task, gpointer source, gpointer task_data, GCa
     gboolean ok = archive_extract_entry(d->archive, d->entry, d->dest, ARCHIVE_TREE_MAX_EXTRACT,
                                         cancellable, &error);
     if (!ok) {
-        d->error = g_strdup(error != NULL ? error->message : "cannot extract the entry");
+        d->error = g_strdup(error != NULL ? error->message : _("cannot extract the entry"));
         g_clear_error(&error);
     }
     g_task_return_boolean(task, ok);
@@ -316,8 +317,8 @@ static void on_extracted(GObject* source, GAsyncResult* result, gpointer user_da
         if (ok) {
             g_signal_emit_by_name(app->tree, "selection-changed");
         } else if (app->buffer != NULL) {
-            gchar* text = g_strdup_printf("%s\n\nCannot show this entry: %s\n", d->row->name,
-                                          d->error != NULL ? d->error : "extraction failed");
+            gchar* text = g_strdup_printf(_("%1$s\n\nCannot show this entry: %2$s\n"), d->row->name,
+                                          d->error != NULL ? d->error : _("extraction failed"));
             gtk_text_buffer_set_text(app->buffer, text, -1);
             g_free(text);
         }

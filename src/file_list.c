@@ -1,4 +1,5 @@
 #include "file_list.h"
+#include "i18n.h"
 #include "search.h"
 #include "file_actions.h"
 #include "file_moves.h"
@@ -344,13 +345,13 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
 
     if (node->unreadable) {
         append_placeholder(parent, "(cannot read directory)",
-                           top ? "(cannot read directory)" : "  (cannot read directory)",
+                           top ? _("(cannot read directory)") : _("  (cannot read directory)"),
                            node->dirname);
         return;
     }
 
     if (node->entries->len == 0 && !top) {
-        append_placeholder(parent, "(empty)", "  (empty)", "");
+        append_placeholder(parent, "(empty)", _("  (empty)"), "");
         return;
     }
 

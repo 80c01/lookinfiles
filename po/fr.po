@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 08:52+0000\n"
+"POT-Creation-Date: 2026-11-08 08:56+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,6 +17,129 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/archive_tree.c:133 src/archive_tree.c:207
+msgid "cannot read the archive"
+msgstr "impossible de lire l’archive"
+
+#: src/archive_tree.c:183 src/archive_tree.c:220 src/bookmarks.c:309
+#: src/file_list.c:354 src/notes.c:930 src/remote.c:96
+msgid "  (empty)"
+msgstr "  (vide)"
+
+#: src/archive_tree.c:214
+msgid "  (more entries not shown)"
+msgstr "  (autres entrées non affichées)"
+
+#: src/archive_tree.c:237 src/archive_tree.c:239
+msgid "  (reading...)"
+msgstr "  (lecture…)"
+
+#: src/archive_tree.c:302
+msgid "cannot extract the entry"
+msgstr "impossible d’extraire l’entrée"
+
+#: src/archive_tree.c:320
+#, c-format
+msgid ""
+"%1$s\n"
+"\n"
+"Cannot show this entry: %2$s\n"
+msgstr ""
+"%1$s\n"
+"\n"
+"Impossible d’afficher cette entrée : %2$s\n"
+
+#: src/archive_tree.c:321
+msgid "extraction failed"
+msgstr "échec de l’extraction"
+
+#: src/audio.c:42 src/video.c:52
+msgid "  •  [press m for details]"
+msgstr "  •  [m pour les détails]"
+
+#: src/audio.c:73
+msgid "Audio playback error"
+msgstr "Erreur de lecture audio"
+
+#: src/audio.c:74 src/video.c:84
+#, c-format
+msgid "Media playback warning: %s (press 'm' to inspect raw file details)"
+msgstr "Avertissement de lecture : %s (m pour inspecter le fichier brut)"
+
+#: src/audio.c:122
+msgid "Audio Preview"
+msgstr "Aperçu audio"
+
+#. TRANSLATORS: the labels of these lines are padded to the same width
+#: src/audio.c:268 src/video.c:265
+#, c-format
+msgid "File:         %s\n"
+msgstr ""
+"Fichier :     %s\n"
+
+#: src/audio.c:269 src/video.c:266
+#, c-format
+msgid "Path:         %s\n"
+msgstr ""
+"Chemin :      %s\n"
+
+#: src/audio.c:270
+#, c-format
+msgid "Format:       %s\n"
+msgstr ""
+"Format :      %s\n"
+
+#: src/audio.c:271 src/video.c:268
+#, c-format
+msgid "Size:         %1$s (%2$s bytes)\n"
+msgstr ""
+"Taille :      %1$s (%2$s octets)\n"
+
+#: src/audio.c:273 src/video.c:270
+#, c-format
+msgid "Permissions:  0%o\n"
+msgstr ""
+"Droits :      0%o\n"
+
+#: src/audio.c:275 src/video.c:272
+msgid "Mode:         Text / Raw mode active\n"
+msgstr ""
+"Mode :        texte / brut\n"
+
+#: src/audio.c:276
+msgid "              Press 'm' to switch to interactive audio player\n"
+msgstr ""
+"              m pour passer au lecteur audio interactif\n"
+
+#: src/audio.c:300
+#, c-format
+msgid ""
+"Detected Header: %s\n"
+"\n"
+msgstr ""
+"En-tête détecté : %s\n"
+"\n"
+
+#: src/audio.c:303 src/video.c:283
+#, c-format
+msgid "=== File Header Dump (first %zu bytes) ===\n"
+msgstr ""
+"=== Début du fichier (%zu premiers octets) ===\n"
+
+#: src/audio.c:324 src/video.c:304
+msgid "[ Cannot open file for reading ]\n"
+msgstr ""
+"[ Impossible d’ouvrir le fichier en lecture ]\n"
+
+#: src/audio.c:396
+#, c-format
+msgid "Track %s"
+msgstr "Piste %s"
+
+#: src/audio.c:485
+msgid "Could not create media stream for file (press 'm' for details)"
+msgstr "Impossible de créer le flux média du fichier (m pour les détails)"
 
 #: src/bookmark_dialog.c:18
 msgid "Saved workspace"
@@ -50,7 +173,8 @@ msgstr "Par défaut, le nom de l’emplacement"
 msgid "Icon"
 msgstr "Icône"
 
-#: src/bookmark_dialog.c:228
+#: src/bookmark_dialog.c:228 src/preview_summary.c:183
+#: src/preview_summary.c:252 src/preview_summary.c:271
 msgid "Location"
 msgstr "Emplacement"
 
@@ -69,10 +193,6 @@ msgstr "Dossier parent"
 #: src/bookmark_dialog.c:255 src/bookmarks.c:195 src/status_bar.c:429
 msgid "Folder"
 msgstr "Dossier"
-
-#: src/bookmarks.c:309 src/notes.c:930 src/remote.c:96
-msgid "  (empty)"
-msgstr "  (vide)"
 
 #: src/bookmarks.c:331
 msgid "No bookmarks yet — press a or Ctrl+D to add one"
@@ -152,7 +272,8 @@ msgstr ""
 "%s"
 
 #: src/bookmarks.c:864 src/file_actions.c:365 src/file_actions.c:398
-#: src/session_bookmark.c:79 src/session_bookmark.c:99
+#: src/image_preview.c:257 src/pdf.c:377 src/session_bookmark.c:79
+#: src/session_bookmark.c:99
 msgid "unknown error"
 msgstr "erreur inconnue"
 
@@ -258,7 +379,7 @@ msgstr "Références"
 msgid "No references to %s found"
 msgstr "Aucune référence à %s trouvée"
 
-#: src/code_refs.c:351 src/code_refs.c:414
+#: src/code_refs.c:351 src/code_refs.c:414 src/dir_preview.c:209
 #, c-format
 msgid "%u file"
 msgid_plural "%u files"
@@ -330,6 +451,145 @@ msgstr "Aucun identifiant sous le curseur"
 #, c-format
 msgid "Searching the references of %s..."
 msgstr "Recherche des références de %s…"
+
+#: src/dir_preview.c:204
+#, c-format
+msgid "%1$u+ entries (only the first %2$u are read)"
+msgstr "%1$u+ entrées (seules les %2$u premières sont lues)"
+
+#: src/dir_preview.c:213
+#, c-format
+msgid "%u folder"
+msgid_plural "%u folders"
+msgstr[0] "%u dossier"
+msgstr[1] "%u dossiers"
+
+#: src/dir_preview.c:219
+#, c-format
+msgid "%s in files"
+msgstr "%s dans les fichiers"
+
+#. TRANSLATORS: %s is an age: "2 h ago", "yesterday", "2026-01-31"
+#: src/dir_preview.c:226
+#, c-format
+msgid "last change %s"
+msgstr "dernière modification %s"
+
+#: src/dir_preview.c:240
+#, c-format
+msgid "%u conflict"
+msgid_plural "%u conflicts"
+msgstr[0] "%u conflit"
+msgstr[1] "%u conflits"
+
+#: src/dir_preview.c:241
+#, c-format
+msgid "%u modified"
+msgid_plural "%u modified"
+msgstr[0] "%u modifié"
+msgstr[1] "%u modifiés"
+
+#: src/dir_preview.c:242
+#, c-format
+msgid "%u added"
+msgid_plural "%u added"
+msgstr[0] "%u ajouté"
+msgstr[1] "%u ajoutés"
+
+#: src/dir_preview.c:243
+#, c-format
+msgid "%u untracked"
+msgid_plural "%u untracked"
+msgstr[0] "%u non suivi"
+msgstr[1] "%u non suivis"
+
+#: src/dir_preview.c:244
+#, c-format
+msgid "%u deleted"
+msgid_plural "%u deleted"
+msgstr[0] "%u supprimé"
+msgstr[1] "%u supprimés"
+
+#: src/dir_preview.c:245
+#, c-format
+msgid "%u renamed"
+msgid_plural "%u renamed"
+msgstr[0] "%u renommé"
+msgstr[1] "%u renommés"
+
+#: src/dir_preview.c:305
+#, c-format
+msgid "  … and %1$u more (showing %2$u)\n"
+msgstr ""
+"  … et %1$u de plus (%2$u affichées)\n"
+
+#: src/dir_preview.c:464
+msgid "  (cannot read directory)\n"
+msgstr ""
+"  (dossier illisible)\n"
+
+#: src/dir_preview.c:466
+msgid "  (empty)\n"
+msgstr ""
+"  (vide)\n"
+
+#: src/dir_summary.c:140
+#, c-format
+msgid "%u document"
+msgid_plural "%u documents"
+msgstr[0] "%u document"
+msgstr[1] "%u documents"
+
+#: src/dir_summary.c:141
+#, c-format
+msgid "%u image"
+msgid_plural "%u images"
+msgstr[0] "%u image"
+msgstr[1] "%u images"
+
+#: src/dir_summary.c:142
+#, c-format
+msgid "%u video"
+msgid_plural "%u videos"
+msgstr[0] "%u vidéo"
+msgstr[1] "%u vidéos"
+
+#: src/dir_summary.c:143
+#, c-format
+msgid "%u audio file"
+msgid_plural "%u audio files"
+msgstr[0] "%u fichier audio"
+msgstr[1] "%u fichiers audio"
+
+#: src/dir_summary.c:158
+#, c-format
+msgid "%u other"
+msgid_plural "%u others"
+msgstr[0] "%u autre"
+msgstr[1] "%u autres"
+
+#: src/dir_summary.c:238
+msgid "just now"
+msgstr "à l’instant"
+
+#: src/dir_summary.c:241
+#, c-format
+msgid "%d min ago"
+msgstr "il y a %d min"
+
+#: src/dir_summary.c:244
+#, c-format
+msgid "%d h ago"
+msgstr "il y a %d h"
+
+#: src/dir_summary.c:247
+msgid "yesterday"
+msgstr "hier"
+
+#: src/dir_summary.c:250
+#, c-format
+msgid "%d days ago"
+msgstr "il y a %d jours"
 
 #: src/editor.c:526
 msgctxt "editor tab"
@@ -670,6 +930,14 @@ msgstr "Impossible de mettre « %s » à la corbeille : %s"
 #: src/file_actions.c:399
 msgid "Cannot Delete"
 msgstr "Impossible de supprimer"
+
+#: src/file_list.c:348
+msgid "(cannot read directory)"
+msgstr "(dossier illisible)"
+
+#: src/file_list.c:348
+msgid "  (cannot read directory)"
+msgstr "  (dossier illisible)"
 
 #: src/files_menu.c:43
 #, c-format
@@ -1428,7 +1696,7 @@ msgstr "Modifier la machine sélectionnée (aussi son dossier) ou le dossier (no
 msgid "Delete selected machine, or folder (its machines move to the top level)"
 msgstr "Supprimer la machine sélectionnée, ou le dossier (ses machines remontent au premier niveau)"
 
-#: src/help.c:128 src/remote.c:1005
+#: src/help.c:128 src/preview_summary.c:73 src/remote.c:1005
 msgid "Re-scan ~/.ssh/config"
 msgstr "Relire ~/.ssh/config"
 
@@ -2233,6 +2501,47 @@ msgstr "Raccourcis clavier"
 msgid "Close Help Panel (?)"
 msgstr "Fermer le panneau d’aide (?)"
 
+#: src/image_preview.c:149
+#, c-format
+msgid "[ %1$s: no image loader for %2$s is installed (package %3$s) ]"
+msgstr "[ %1$s : aucun chargeur d’images %2$s n’est installé (paquet %3$s) ]"
+
+#: src/image_preview.c:151 src/image_preview.c:266
+#, c-format
+msgid "[ Cannot decode image: %s ]"
+msgstr "[ Impossible de décoder l’image : %s ]"
+
+#: src/image_preview.c:176
+#, c-format
+msgid "%s RAW (embedded preview)"
+msgstr "%s RAW (aperçu intégré)"
+
+#: src/image_preview.c:256
+#, c-format
+msgid "[ Error loading image: %1$s (%2$s) ]"
+msgstr "[ Erreur de chargement de l’image : %1$s (%2$s) ]"
+
+#: src/image_preview.c:362
+msgid "  •  animated"
+msgstr "  •  animée"
+
+#: src/image_preview.c:365
+#, c-format
+msgid "  [%.0f %%, press 0 to fit]"
+msgstr "  [%.0f %%, 0 pour ajuster]"
+
+#: src/image_preview.c:367
+msgid "  [fitted, press m for 1:1, + / - to zoom]"
+msgstr "  [ajustée, m pour 1:1, + / - pour zoomer]"
+
+#: src/image_preview.c:369
+msgid "  [1:1 scale, press m to fit]"
+msgstr "  [échelle 1:1, m pour ajuster]"
+
+#: src/image_preview.c:369
+msgid "  [1:1 scale]"
+msgstr "  [échelle 1:1]"
+
 #: src/layout_switcher.c:171 src/layout_switcher.c:189
 msgid "Current Layout"
 msgstr "Disposition actuelle"
@@ -2387,6 +2696,11 @@ msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
 msgstr ""
 "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
 
+#: src/media_tracks.c:23
+#, c-format
+msgid "Track %u"
+msgstr "Piste %u"
+
 #: src/notes.c:532
 msgid "Markdown (.md - headings, lists, tables, images)"
 msgstr "Markdown (.md - titres, listes, tableaux, images)"
@@ -2451,7 +2765,7 @@ msgstr "Aperçu :"
 msgid "Trash (empty)"
 msgstr "Corbeille (vide)"
 
-#: src/notes.c:953 src/status_bar.c:447
+#: src/notes.c:953 src/preview_summary.c:268 src/status_bar.c:447
 msgid "Trash"
 msgstr "Corbeille"
 
@@ -2646,6 +2960,86 @@ msgstr "Vider la corbeille…"
 msgid "Sort / Order Mode"
 msgstr "Mode de tri / d’ordre"
 
+#: src/pdf.c:278
+#, c-format
+msgid "Page %1$d of %2$d"
+msgstr "Page %1$d sur %2$d"
+
+#: src/pdf.c:312
+#, c-format
+msgid ""
+"[ Showing first %1$d of %2$d pages • press m to view all extracted text ]\n"
+"\n"
+msgstr ""
+"[ %1$d premières pages sur %2$d • m pour voir tout le texte extrait ]\n"
+"\n"
+
+#: src/pdf.c:353
+#, c-format
+msgid "[ Cannot preview %1$s: %2$s ]"
+msgstr "[ Impossible d’afficher %1$s : %2$s ]"
+
+#: src/pdf.c:354
+msgid "conversion failed"
+msgstr "échec de la conversion"
+
+#: src/pdf.c:376
+#, c-format
+msgid "[ Cannot open PDF: %1$s (%2$s) ]"
+msgstr "[ Impossible d’ouvrir le PDF : %1$s (%2$s) ]"
+
+#: src/pdf.c:534
+msgid "  [text mode, press m for rendered pages]"
+msgstr "  [mode texte, m pour les pages rendues]"
+
+#: src/pdf.c:535
+msgid "  [rendered pages, press m for text]"
+msgstr "  [pages rendues, m pour le texte]"
+
+#: src/pdf.c:540
+#, c-format
+msgid "first %d pages"
+msgstr "%d premières pages"
+
+#: src/pdf.c:541
+#, c-format
+msgid "%d page"
+msgid_plural "%d pages"
+msgstr[0] "%d page"
+msgstr[1] "%d pages"
+
+#: src/pdf.c:544
+#, c-format
+msgid ""
+"By %1$s  •  %2$s  •  %3$s  •  %4$s%5$s\n"
+"\n"
+msgstr ""
+"Par %1$s  •  %2$s  •  %3$s  •  %4$s%5$s\n"
+"\n"
+
+#: src/pdf.c:565
+#, c-format
+msgid ""
+"--- Page %1$u of %2$d ---\n"
+"\n"
+msgstr ""
+"--- Page %1$u sur %2$d ---\n"
+"\n"
+
+#: src/pdf.c:574
+msgid "(no text on this page)\n"
+msgstr ""
+"(pas de texte sur cette page)\n"
+
+#: src/pdf.c:716
+#, c-format
+msgid ""
+"[ PDF preview disabled for %s:\n"
+"  install libpoppler-glib-dev then rebuild (make). ]"
+msgstr ""
+"[ Aperçu PDF désactivé pour %s :\n"
+"  installez libpoppler-glib-dev puis recompilez (make). ]"
+
 #: src/preferences.c:106
 msgid ""
 "For editor tabs opened from now on; the tabs already open keep theirs, "
@@ -2774,6 +3168,276 @@ msgstr "Fenêtre"
 #: src/preferences.c:362
 msgid "Code navigation"
 msgstr "Navigation dans le code"
+
+#. TRANSLATORS: a field label followed by its value, "Host: example.org"
+#: src/preview_summary.c:37 src/preview_summary.c:278
+#, c-format
+msgid "%s:"
+msgstr "%s :"
+
+#: src/preview_summary.c:45
+msgid "Shortcuts:"
+msgstr "Raccourcis :"
+
+#: src/preview_summary.c:68
+msgctxt "key"
+msgid "Enter / c / Double-click"
+msgstr "Enter / c / Double-clic"
+
+#: src/preview_summary.c:68
+msgid "Connect and browse remote files in Explorer"
+msgstr "Se connecter et parcourir les fichiers distants dans l’explorateur"
+
+#: src/preview_summary.c:69
+msgid "Open SSH terminal to this machine"
+msgstr "Ouvrir un terminal SSH vers cette machine"
+
+#: src/preview_summary.c:70
+msgid "Edit machine configuration"
+msgstr "Modifier la configuration de la machine"
+
+#: src/preview_summary.c:71
+msgid "Remove machine"
+msgstr "Supprimer la machine"
+
+#: src/preview_summary.c:72
+msgid "Add new remote machine"
+msgstr "Ajouter une machine distante"
+
+#: src/preview_summary.c:76
+#, c-format
+msgid "Remote Machine: %s"
+msgstr "Machine distante : %s"
+
+#: src/preview_summary.c:76
+msgid "Unknown"
+msgstr "Inconnue"
+
+#: src/preview_summary.c:80
+msgid "Status"
+msgstr "État"
+
+#: src/preview_summary.c:80
+msgid "Connected (Mounted via SSHFS)"
+msgstr "Connectée (montée via SSHFS)"
+
+#: src/preview_summary.c:80
+msgid "Disconnected"
+msgstr "Déconnectée"
+
+#: src/preview_summary.c:81
+msgid "Host"
+msgstr "Hôte"
+
+#: src/preview_summary.c:81
+msgid "(none)"
+msgstr "(aucun)"
+
+#: src/preview_summary.c:82
+msgid "User"
+msgstr "Utilisateur"
+
+#: src/preview_summary.c:82
+msgid "(default)"
+msgstr "(par défaut)"
+
+#: src/preview_summary.c:84
+msgid "Port"
+msgstr "Port"
+
+#: src/preview_summary.c:86
+msgid "Remote Path"
+msgstr "Chemin distant"
+
+#: src/preview_summary.c:88
+msgid "Identity Key"
+msgstr "Clé d’identité"
+
+#: src/preview_summary.c:91
+msgid "Mount Point"
+msgstr "Point de montage"
+
+#: src/preview_summary.c:93
+msgid "Source"
+msgstr "Origine"
+
+#: src/preview_summary.c:93
+msgid "Auto-discovered from ~/.ssh/config"
+msgstr "Trouvée dans ~/.ssh/config"
+
+#: src/preview_summary.c:94
+msgid "Configured manually"
+msgstr "Configurée à la main"
+
+#: src/preview_summary.c:133
+msgid "Edit the canvas (Canvas tab)"
+msgstr "Modifier le canvas (onglet Canvas)"
+
+#: src/preview_summary.c:134
+msgid "Rename the note"
+msgstr "Renommer la note"
+
+#: src/preview_summary.c:135
+msgid "Move the note to another notebook"
+msgstr "Déplacer la note dans un autre carnet"
+
+#: src/preview_summary.c:136
+msgid "Move the note to the trash"
+msgstr "Mettre la note à la corbeille"
+
+#: src/preview_summary.c:139
+#, c-format
+msgid "Canvas: %s"
+msgstr "Canvas : %s"
+
+#: src/preview_summary.c:167
+msgid "Text boxes"
+msgstr "Zones de texte"
+
+#: src/preview_summary.c:170
+msgid "Pictures"
+msgstr "Images"
+
+#: src/preview_summary.c:174
+msgid "Shapes"
+msgstr "Formes"
+
+#: src/preview_summary.c:179
+msgid "Tables"
+msgstr "Tableaux"
+
+#: src/preview_summary.c:186
+msgid "(empty)\n"
+msgstr ""
+"(vide)\n"
+
+#: src/preview_summary.c:190
+msgid ""
+"\n"
+"(too large to preview: Enter opens it)\n"
+msgstr ""
+"\n"
+"(trop grand pour l’aperçu : Enter l’ouvre)\n"
+
+#: src/preview_summary.c:190
+msgid ""
+"\n"
+"(unreadable page)\n"
+msgstr ""
+"\n"
+"(page illisible)\n"
+
+#: src/preview_summary.c:227
+#, c-format
+msgid "folder, %u item"
+msgid_plural "folder, %u items"
+msgstr[0] "dossier, %u élément"
+msgstr[1] "dossier, %u éléments"
+
+#: src/preview_summary.c:247
+#, c-format
+msgid "Notebook: %s"
+msgstr "Carnet : %s"
+
+#: src/preview_summary.c:250 src/preview_summary.c:254
+#: src/preview_summary.c:269
+msgid "Notes"
+msgstr "Notes"
+
+#: src/preview_summary.c:256
+#, c-format
+msgid "Bookmark Folder: %s"
+msgstr "Dossier de signets : %s"
+
+#: src/preview_summary.c:259
+msgid "Items"
+msgstr "Éléments"
+
+#: src/preview_summary.c:260
+msgid "Contents"
+msgstr "Contenu"
+
+#: src/preview_summary.c:262
+#, c-format
+msgid "Remote Folder: %s"
+msgstr "Dossier distant : %s"
+
+#: src/preview_summary.c:265 src/preview_summary.c:266
+msgid "Machines"
+msgstr "Machines"
+
+#: src/preview_summary.c:273
+msgid "Trashed notes"
+msgstr "Notes à la corbeille"
+
+#: src/preview_summary.c:291
+msgid ""
+"\n"
+"(empty)\n"
+msgstr ""
+"\n"
+"(vide)\n"
+
+#: src/preview_summary.c:296
+msgid "New note / new notebook"
+msgstr "Nouvelle note / nouveau carnet"
+
+#: src/preview_summary.c:297
+msgid "Edit notebook (name and icon)"
+msgstr "Modifier le carnet (nom et icône)"
+
+#: src/preview_summary.c:298
+msgid "Delete notebook"
+msgstr "Supprimer le carnet"
+
+#: src/preview_summary.c:299
+msgid "Move notebook up / down"
+msgstr "Monter / descendre le carnet"
+
+#: src/preview_summary.c:304 src/preview_summary.c:313
+msgid "Expand / collapse folder"
+msgstr "Déplier / replier le dossier"
+
+#: src/preview_summary.c:305
+msgid "Add bookmark / new folder here"
+msgstr "Ajouter un signet / un dossier ici"
+
+#: src/preview_summary.c:306 src/preview_summary.c:315
+msgid "Edit folder (name and icon)"
+msgstr "Modifier le dossier (nom et icône)"
+
+#: src/preview_summary.c:307
+msgid "Delete folder"
+msgstr "Supprimer le dossier"
+
+#: src/preview_summary.c:308
+msgid "Move folder up / down"
+msgstr "Monter / descendre le dossier"
+
+#: src/preview_summary.c:314
+msgid "Add machine here / new folder"
+msgstr "Ajouter une machine ici / un dossier"
+
+#: src/preview_summary.c:316
+msgid "Delete folder (its machines move to the top level)"
+msgstr "Supprimer le dossier (ses machines remontent au premier niveau)"
+
+#: src/preview_summary.c:321
+msgid "Restore the selected trashed note to its notebook"
+msgstr "Restaurer la note sélectionnée dans son carnet"
+
+#: src/preview_summary.c:322
+msgid "Delete the selected trashed note permanently"
+msgstr "Supprimer définitivement la note sélectionnée"
+
+#: src/preview_summary.c:323
+msgctxt "key"
+msgid "Trash toolbar button"
+msgstr "Bouton Corbeille de la barre d’outils"
+
+#: src/preview_summary.c:323
+msgid "Empty the trash"
+msgstr "Vider la corbeille"
 
 #: src/project_search.c:109
 #, c-format
@@ -3500,6 +4164,87 @@ msgstr "DISTANT"
 #: src/topbar.c:691
 msgid "GAMES"
 msgstr "JEUX"
+
+#: src/video.c:44
+msgid "  •  Video / Audio"
+msgstr "  •  vidéo / audio"
+
+#: src/video.c:46
+msgid "  •  Video only"
+msgstr "  •  vidéo seule"
+
+#: src/video.c:48
+msgid "  •  Audio only"
+msgstr "  •  audio seul"
+
+#: src/video.c:83
+msgid "Video playback error"
+msgstr "Erreur de lecture vidéo"
+
+#: src/video.c:117
+msgid "Video Preview"
+msgstr "Aperçu vidéo"
+
+#: src/video.c:267
+#, c-format
+msgid "Container:    %s\n"
+msgstr ""
+"Conteneur :   %s\n"
+
+#: src/video.c:271
+#, c-format
+msgid "Modified:     %s\n"
+msgstr ""
+"Modifié :     %s\n"
+
+#: src/video.c:273
+msgid "              Press 'm' to switch to interactive video player\n"
+msgstr ""
+"              m pour passer au lecteur vidéo interactif\n"
+
+#: src/video_tab.c:158
+#, c-format
+msgid "Playback error: %s"
+msgstr "Erreur de lecture : %s"
+
+#: src/video_tab.c:159
+msgid "unknown"
+msgstr "inconnue"
+
+#: src/video_tab.c:278
+msgid ""
+"Space: play / pause; Left / Right: 5 s back / forward; Home: start; a: next "
+"audio track; s: next subtitles"
+msgstr "Space : lecture / pause ; Left / Right : 5 s en arrière / en avant ; Home : début ; a : piste audio suivante ; s : sous-titres suivants"
+
+#: src/viewer.c:323
+#, c-format
+msgid "[ Cannot read: %s ]"
+msgstr "[ Lecture impossible : %s ]"
+
+#: src/viewer.c:652
+#, c-format
+msgid ""
+"[ PREVIEW ] %1$s (%2$s bytes total)\n"
+"Large file: %3$u bytes shown, the rest loads as you scroll down.\n"
+"\n"
+msgstr ""
+"[ APERÇU ] %1$s (%2$s octets au total)\n"
+"Gros fichier : %3$u octets affichés, la suite se charge en faisant défiler.\n"
+"\n"
+
+#: src/viewer.c:885
+#, c-format
+msgid ""
+"%s\n"
+"%s\n"
+"\n"
+"(waiting for the file system…)\n"
+msgstr ""
+"%s\n"
+"%s\n"
+"\n"
+"(en attente du système de fichiers…)\n"
 
 #: src/workspace_menu.c:81
 msgid "Save as Bookmark…"

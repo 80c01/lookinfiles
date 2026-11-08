@@ -1,4 +1,5 @@
 #include "dir_summary.h"
+#include "i18n.h"
 
 #include <string.h>
 
@@ -134,17 +135,18 @@ gchar* dir_summary_kinds_line(const DirSummary* s) {
             break;
         }
     }
-    const struct { guint n; const gchar* one; const gchar* many; } parts[] = {
-        { docs, "document", "documents" },
-        { s->kinds[FILE_KIND_IMAGE], "image", "images" },
-        { s->kinds[FILE_KIND_VIDEO], "video", "videos" },
-        { s->kinds[FILE_KIND_AUDIO], "audio file", "audio files" },
+    guint images = s->kinds[FILE_KIND_IMAGE], videos = s->kinds[FILE_KIND_VIDEO], audios = s->kinds[FILE_KIND_AUDIO];
+    const struct { guint n; const gchar* format; } parts[] = {
+        { docs, ngettext("%u document", "%u documents", docs) },
+        { images, ngettext("%u image", "%u images", images) },
+        { videos, ngettext("%u video", "%u videos", videos) },
+        { audios, ngettext("%u audio file", "%u audio files", audios) },
     };
     GString* out = g_string_new(NULL);
     for (gsize i = 0; i < G_N_ELEMENTS(parts); i++) {
         if (parts[i].n > 0) {
-            g_string_append_printf(out, "%s%u %s", out->len > 0 ? " · " : "", parts[i].n,
-                                   parts[i].n == 1 ? parts[i].one : parts[i].many);
+            if (out->len > 0) g_string_append(out, " · ");
+            g_string_append_printf(out, parts[i].format, parts[i].n);
         }
     }
     if (out->len == 0) {
@@ -152,7 +154,8 @@ gchar* dir_summary_kinds_line(const DirSummary* s) {
         return NULL;
     }
     if (other > 0) {
-        g_string_append_printf(out, " · %u other", other);
+        g_string_append(out, " · ");
+        g_string_append_printf(out, ngettext("%u other", "%u others", other), other);
     }
     return g_string_free(out, FALSE);
 }
@@ -232,19 +235,19 @@ gchar* dir_summary_format_age(gint64 mtime, gint64 now) {
     }
     gint64 delta = now - mtime;
     if (delta < 60) {
-        return g_strdup("just now"); /* includes dates slightly in the future */
+        return g_strdup(_("just now")); /* includes dates slightly in the future */
     }
     if (delta < 3600) {
-        return g_strdup_printf("%d min ago", (gint)(delta / 60));
+        return g_strdup_printf(_("%d min ago"), (gint)(delta / 60));
     }
     if (delta < 86400) {
-        return g_strdup_printf("%d h ago", (gint)(delta / 3600));
+        return g_strdup_printf(_("%d h ago"), (gint)(delta / 3600));
     }
     if (delta < 2 * 86400) {
-        return g_strdup("yesterday");
+        return g_strdup(_("yesterday"));
     }
     if (delta < 30 * 86400) {
-        return g_strdup_printf("%d days ago", (gint)(delta / 86400));
+        return g_strdup_printf(_("%d days ago"), (gint)(delta / 86400));
     }
     GDateTime* dt = g_date_time_new_from_unix_local(mtime);
     if (dt == NULL) {

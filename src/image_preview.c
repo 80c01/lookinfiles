@@ -1,6 +1,7 @@
 /* Image preview: fitted / 1:1 / zoomed, EXIF orientation and photo details
  * (see image_preview.h). */
 #include "image_preview.h"
+#include "i18n.h"
 #include "fonts.h"
 #include "text_tags.h"
 #include "icons.h"
@@ -145,9 +146,9 @@ static gchar* missing_loader_message(const gchar* name, const gchar* path) {
         package = "webp-pixbuf-loader";
     }
     if (package != NULL) {
-        return g_strdup_printf("[ %s: no image loader for %s is installed (package %s) ]", name, format, package);
+        return g_strdup_printf(_("[ %1$s: no image loader for %2$s is installed (package %3$s) ]"), name, format, package);
     }
-    return g_strdup_printf("[ Cannot decode image: %s ]", name);
+    return g_strdup_printf(_("[ Cannot decode image: %s ]"), name);
 }
 
 static void image_preview_thread_func(GTask* task, gpointer source_object,
@@ -172,7 +173,7 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
         file_w = gdk_pixbuf_get_width(embedded);
         file_h = gdk_pixbuf_get_height(embedded);
         gchar* ext = g_ascii_strup(file_extension(td->name), -1);
-        td->fmt_upper = g_strdup_printf("%s RAW (embedded preview)", ext);
+        td->fmt_upper = g_strdup_printf(_("%s RAW (embedded preview)"), ext);
         g_free(ext);
     } else {
         exif_info_free(exif);
@@ -252,8 +253,8 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
         GError* err = NULL;
         pix = gdk_pixbuf_new_from_file_at_scale(td->full, load_w, load_h, TRUE, &err);
         if (pix == NULL) {
-            td->error_msg = g_strdup_printf("[ Error loading image: %s (%s) ]",
-                                            td->name, err ? err->message : "unknown error");
+            td->error_msg = g_strdup_printf(_("[ Error loading image: %1$s (%2$s) ]"),
+                                            td->name, err ? err->message : _("unknown error"));
             if (err != NULL) {
                 g_error_free(err);
             }
@@ -262,7 +263,7 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
         }
     }
     if (pix == NULL) {
-        td->error_msg = g_strdup_printf("[ Cannot decode image: %s ]", td->name);
+        td->error_msg = g_strdup_printf(_("[ Cannot decode image: %s ]"), td->name);
         g_task_return_boolean(task, TRUE);
         return;
     }
@@ -358,14 +359,14 @@ static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
     g_free(title);
 
     gboolean resized = td->orig_w != td->target_w || td->orig_h != td->target_h;
-    const gchar* animated = td->animation != NULL ? "  •  animated" : "";
+    const gchar* animated = td->animation != NULL ? _("  •  animated") : "";
     gchar* mode_hint;
     if (td->zoom != 1.0) {
-        mode_hint = g_strdup_printf("  [%.0f %%, press 0 to fit]", 100.0 * td->target_w / td->orig_w);
+        mode_hint = g_strdup_printf(_("  [%.0f %%, press 0 to fit]"), 100.0 * td->target_w / td->orig_w);
     } else if (td->is_fitted) {
-        mode_hint = g_strdup("  [fitted, press m for 1:1, + / - to zoom]");
+        mode_hint = g_strdup(_("  [fitted, press m for 1:1, + / - to zoom]"));
     } else {
-        mode_hint = g_strdup(td->render_raw && resized ? "  [1:1 scale, press m to fit]" : "  [1:1 scale]");
+        mode_hint = g_strdup(td->render_raw && resized ? _("  [1:1 scale, press m to fit]") : _("  [1:1 scale]"));
     }
     gchar* meta = g_strdup_printf("%s  •  %d × %d px  •  %s%s%s\n\n",
                                   td->fmt_upper, td->orig_w, td->orig_h, td->size_str, animated, mode_hint);

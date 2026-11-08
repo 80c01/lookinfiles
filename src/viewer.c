@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "i18n.h"
 #include "canvas_preview.h"
 #include "image_preview.h"
 #include "preview_summary.h"
@@ -319,7 +320,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     }
     FILE* fp = (td->fsize >= 0) ? g_fopen(td->full, "rb") : NULL;
     if (fp == NULL) {
-        td->error_msg = g_strdup_printf("[ Cannot read: %s ]", td->name);
+        td->error_msg = g_strdup_printf(_("[ Cannot read: %s ]"), td->name);
         g_task_return_boolean(task, TRUE);
         return;
     }
@@ -645,10 +646,13 @@ static void show_text_preview(TextPreviewTaskData* td) {
         } else {
             GString* text = g_string_new(NULL);
             if (td->preview) {
+                gchar* total = g_strdup_printf("%" G_GINT64_FORMAT, td->fsize);
+                /* TRANSLATORS: %1$s is the file name, %2$s its size in bytes, %3$u the bytes shown */
                 g_string_append_printf(text,
-                        "[ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)\n"
-                        "Large file: %u bytes shown, the rest loads as you scroll down.\n\n",
-                        td->name, td->fsize, (guint)td->raw_len);
+                        _("[ PREVIEW ] %1$s (%2$s bytes total)\n"
+                          "Large file: %3$u bytes shown, the rest loads as you scroll down.\n\n"),
+                        td->name, total, (guint)td->raw_len);
+                g_free(total);
             }
             /* Line numbers start after the truncation header */
             gint first_line = 0;
@@ -878,7 +882,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     gboolean is_bookmark = (g_strcmp0(type, "bookmark") == 0);
     PathKind bm_kind = is_bookmark ? path_kind_lookup(full) : PATH_KIND_UNKNOWN;
     if (is_bookmark && bm_kind == PATH_KIND_UNKNOWN && !bookmark_target_is_uri(full)) {
-        summary = g_strdup_printf("%s\n%s\n\n(waiting for the file system…)\n", name, full);
+        summary = g_strdup_printf(_("%s\n%s\n\n(waiting for the file system…)\n"), name, full);
     }
     if (is_remote || summary != NULL) {
         if (!reloading_selection && !app->editor_dedicated && app->notebook != NULL) {

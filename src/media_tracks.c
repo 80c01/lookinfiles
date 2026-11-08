@@ -1,4 +1,5 @@
 #include "media_tracks.h"
+#include "i18n.h"
 
 #include <string.h>
 
@@ -19,7 +20,7 @@ gchar* media_track_label(const gchar* language, const gchar* title, guint index)
     }
     if (has_lang) return g_strdup(language);
     if (has_title) return g_strdup(title);
-    return g_strdup_printf("Track %u", index + 1);
+    return g_strdup_printf(_("Track %u"), index + 1);
 }
 
 static gboolean is_subtitle_ext(const gchar* ext) {

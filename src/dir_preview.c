@@ -1,4 +1,5 @@
 #include "dir_preview.h"
+#include "i18n.h"
 #include "fonts.h"
 #include "palette.h"
 #include "text_tags.h"
@@ -200,26 +201,29 @@ static void insert_icon(GtkTextBuffer* buffer, GtkTextIter* it, const gchar* nam
 static gchar* totals_line(const DirSummary* s, gint64 now) {
     GString* out = g_string_new(NULL);
     if (s->truncated) {
-        g_string_append_printf(out, "%u+ entries (only the first %u are read)",
+        g_string_append_printf(out, _("%1$u+ entries (only the first %2$u are read)"),
                                (guint)DIR_SUMMARY_SCAN_LIMIT, (guint)DIR_SUMMARY_SCAN_LIMIT);
     } else {
         /* Zero counts are left out, unless both are zero */
         if (s->n_files > 0 || s->n_dirs == 0) {
-            g_string_append_printf(out, "%u %s", s->n_files, s->n_files == 1 ? "file" : "files");
+            g_string_append_printf(out, ngettext("%u file", "%u files", s->n_files), s->n_files);
         }
         if (s->n_dirs > 0) {
-            g_string_append_printf(out, "%s%u %s", out->len > 0 ? " · " : "",
-                                   s->n_dirs, s->n_dirs == 1 ? "folder" : "folders");
+            if (out->len > 0) g_string_append(out, " · ");
+            g_string_append_printf(out, ngettext("%u folder", "%u folders", s->n_dirs), s->n_dirs);
         }
     }
     if (s->n_files > 0) {
         gchar* size = g_format_size(s->total_size);
-        g_string_append_printf(out, " · %s in files", size);
+        g_string_append(out, " · ");
+        g_string_append_printf(out, _("%s in files"), size);
         g_free(size);
     }
     if (s->newest_mtime > 0) {
         gchar* age = dir_summary_format_age(s->newest_mtime, now);
-        g_string_append_printf(out, " · last change %s", age);
+        g_string_append(out, " · ");
+        /* TRANSLATORS: %s is an age: "2 h ago", "yesterday", "2026-01-31" */
+        g_string_append_printf(out, _("last change %s"), age);
         g_free(age);
     }
     return g_string_free(out, FALSE);
@@ -231,13 +235,19 @@ static gchar* git_line(AppData* app, const DirPreviewJob* job) {
     dir_summary_count_git(app->git_statuses, job->full, &c);
     GString* out = g_string_new(NULL);
     g_string_append_printf(out, "⎇ %s", job->branch);
-    const struct { guint n; const gchar* label; } parts[] = {
-        { c.conflicts, "conflicts" }, { c.modified, "modified" }, { c.added, "added" },
-        { c.untracked, "untracked" }, { c.deleted, "deleted" }, { c.renamed, "renamed" },
+    /* TRANSLATORS: counts of git changes: "2 untracked" */
+    const struct { guint n; const gchar* format; } parts[] = {
+        { c.conflicts, ngettext("%u conflict", "%u conflicts", c.conflicts) },
+        { c.modified, ngettext("%u modified", "%u modified", c.modified) },
+        { c.added, ngettext("%u added", "%u added", c.added) },
+        { c.untracked, ngettext("%u untracked", "%u untracked", c.untracked) },
+        { c.deleted, ngettext("%u deleted", "%u deleted", c.deleted) },
+        { c.renamed, ngettext("%u renamed", "%u renamed", c.renamed) },
     };
     for (gsize i = 0; i < G_N_ELEMENTS(parts); i++) {
         if (parts[i].n > 0) {
-            g_string_append_printf(out, " · %u %s", parts[i].n, parts[i].label);
+            g_string_append(out, " · ");
+            g_string_append_printf(out, parts[i].format, parts[i].n);
         }
     }
     return g_string_free(out, FALSE);
@@ -292,7 +302,7 @@ static void insert_table(GtkTextBuffer* buffer, GtkTextIter* it, AppData* app,
         g_free(label);
     }
     if (s->entries->len > shown) {
-        gchar* more = g_strdup_printf("  … and %u more (showing %u)\n", s->entries->len - shown, shown);
+        gchar* more = g_strdup_printf(_("  … and %1$u more (showing %2$u)\n"), s->entries->len - shown, shown);
         insert_tagged(buffer, it, more, "dir_dim", NULL);
         g_free(more);
     }
@@ -451,9 +461,9 @@ static void render_job(AppData* app, const DirPreviewJob* job) {
     gtk_text_buffer_insert(buffer, &it, "\n", 1);
 
     if (job->unreadable) {
-        insert_tagged(buffer, &it, "  (cannot read directory)\n", "dir_dim", NULL);
+        insert_tagged(buffer, &it, _("  (cannot read directory)\n"), "dir_dim", NULL);
     } else if (s->entries->len == 0) {
-        insert_tagged(buffer, &it, "  (empty)\n", "dir_dim", NULL);
+        insert_tagged(buffer, &it, _("  (empty)\n"), "dir_dim", NULL);
     } else {
         insert_table(buffer, &it, app, job, now);
     }

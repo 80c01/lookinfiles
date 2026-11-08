@@ -1,4 +1,5 @@
 #include "audio.h"
+#include "i18n.h"
 #include "text_style.h"
 #include "file_types.h"
 #include "image_utils.h"
@@ -38,7 +39,7 @@ static void update_audio_metadata_label(AppData* app, GtkMediaStream* stream) {
         }
     }
 
-    g_string_append(info, "  •  [press m for details]");
+    g_string_append(info, _("  •  [press m for details]"));
 
     gtk_label_set_text(GTK_LABEL(app->audio_meta), info->str);
 
@@ -69,8 +70,8 @@ static void on_audio_error_notify(GtkMediaStream* stream, GParamSpec* pspec, gpo
     if (err != NULL && app->audio_status != NULL) {
         const gchar* err_msg = (err->message != NULL && err->message[0] != '\0')
                                    ? err->message
-                                   : "Audio playback error";
-        gchar* msg = g_strdup_printf("Media playback warning: %s (press 'm' to inspect raw file details)",
+                                   : _("Audio playback error");
+        gchar* msg = g_strdup_printf(_("Media playback warning: %s (press 'm' to inspect raw file details)"),
                                      err_msg);
         gtk_label_set_text(GTK_LABEL(app->audio_status), msg);
         gtk_widget_set_visible(app->audio_status, TRUE);
@@ -118,7 +119,7 @@ void audio_preview_init(AppData* app) {
     gtk_box_append(GTK_BOX(audio_card), cover);
 
     /* Title label */
-    GtkWidget* audio_title = gtk_label_new("Audio Preview");
+    GtkWidget* audio_title = gtk_label_new(_("Audio Preview"));
     gtk_widget_set_name(audio_title, "audio-title");
     gtk_label_set_selectable(GTK_LABEL(audio_title), TRUE);
     gtk_label_set_ellipsize(GTK_LABEL(audio_title), PANGO_ELLIPSIZE_MIDDLE);
@@ -262,14 +263,17 @@ static void render_audio_raw(AppData* app, const gchar* name, const gchar* full)
     GString* out = g_string_new(NULL);
     g_string_append_printf(out, "%s\n", name);
     g_string_append_printf(out, "═══════════════════════════════════════════════════════════════\n");
-    g_string_append_printf(out, "File:         %s\n", name);
-    g_string_append_printf(out, "Path:         %s\n", full);
-    g_string_append_printf(out, "Format:       %s\n", ext_upper);
-    g_string_append_printf(out, "Size:         %s (%" G_GINT64_FORMAT " bytes)\n", size_str, fsize);
-    g_string_append_printf(out, "Permissions:  0%o\n", (unsigned int)(st.st_mode & 0777));
+    gchar* bytes = g_strdup_printf("%" G_GINT64_FORMAT, fsize);
+    /* TRANSLATORS: the labels of these lines are padded to the same width */
+    g_string_append_printf(out, _("File:         %s\n"), name);
+    g_string_append_printf(out, _("Path:         %s\n"), full);
+    g_string_append_printf(out, _("Format:       %s\n"), ext_upper);
+    g_string_append_printf(out, _("Size:         %1$s (%2$s bytes)\n"), size_str, bytes);
+    g_free(bytes);
+    g_string_append_printf(out, _("Permissions:  0%o\n"), (unsigned int)(st.st_mode & 0777));
     g_string_append_printf(out, "Modified:     %s\n", time_str ? time_str : "-");
-    g_string_append_printf(out, "Mode:         Text / Raw mode active\n");
-    g_string_append_printf(out, "              Press 'm' to switch to interactive audio player\n");
+    g_string_append(out, _("Mode:         Text / Raw mode active\n"));
+    g_string_append(out, _("              Press 'm' to switch to interactive audio player\n"));
     g_string_append_printf(out, "═══════════════════════════════════════════════════════════════\n\n");
 
     /* Read first 512 bytes for hex dump and inspection */
@@ -293,10 +297,10 @@ static void render_audio_raw(AppData* app, const gchar* name, const gchar* full)
         }
 
         if (tag_detected != NULL) {
-            g_string_append_printf(out, "Detected Header: %s\n\n", tag_detected);
+            g_string_append_printf(out, _("Detected Header: %s\n\n"), tag_detected);
         }
 
-        g_string_append_printf(out, "=== File Header Dump (first %zu bytes) ===\n", n);
+        g_string_append_printf(out, _("=== File Header Dump (first %zu bytes) ===\n"), n);
         for (size_t i = 0; i < n; i += 16) {
             g_string_append_printf(out, "%08zx  ", i);
             for (size_t j = 0; j < 16; j++) {
@@ -317,7 +321,7 @@ static void render_audio_raw(AppData* app, const gchar* name, const gchar* full)
             g_string_append(out, "|\n");
         }
     } else {
-        g_string_append(out, "[ Cannot open file for reading ]\n");
+        g_string_append(out, _("[ Cannot open file for reading ]\n"));
     }
 
     gtk_text_buffer_set_text(app->buffer, out->str, (gint)out->len);
@@ -388,7 +392,8 @@ static void on_audio_tags_ready(GObject* source, GAsyncResult* res, gpointer use
         g_string_append_printf(line, "%s%.4s", line->len > 0 ? " · " : "", tags->year);
     }
     if (tags->track != NULL) {
-        g_string_append_printf(line, "%sTrack %s", line->len > 0 ? " · " : "", tags->track);
+        if (line->len > 0) g_string_append(line, " · ");
+        g_string_append_printf(line, _("Track %s"), tags->track);
     }
     if (tags->genre != NULL) {
         g_string_append_printf(line, "%s%s", line->len > 0 ? " · " : "", tags->genre);
@@ -477,7 +482,7 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
     if (stream == NULL) {
         if (app->audio_status != NULL) {
             gtk_label_set_text(GTK_LABEL(app->audio_status),
-                               "Could not create media stream for file (press 'm' for details)");
+                               _("Could not create media stream for file (press 'm' for details)"));
             gtk_widget_set_visible(app->audio_status, TRUE);
         }
         return;

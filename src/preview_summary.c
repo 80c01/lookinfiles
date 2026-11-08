@@ -1,5 +1,6 @@
 /* Text summaries for explorer rows without file content (see preview_summary.h). */
 #include "preview_summary.h"
+#include "i18n.h"
 #include "note_types.h"
 #include "canvas_doc.h"
 
@@ -32,7 +33,8 @@ static void append_title(GString* s, const gchar* title) {
 
 /* "  Label:        value" */
 static void append_field(GString* s, const gchar* label, const gchar* value) {
-    gchar* with_colon = g_strdup_printf("%s:", label);
+    /* TRANSLATORS: a field label followed by its value, "Host: example.org" */
+    gchar* with_colon = g_strdup_printf(_("%s:"), label);
     g_string_append(s, "  ");
     append_padded(s, with_colon, FIELD_WIDTH);
     g_string_append_printf(s, " %s\n", value);
@@ -40,11 +42,11 @@ static void append_field(GString* s, const gchar* label, const gchar* value) {
 }
 
 static void append_shortcuts(GString* s, const SummaryShortcut* list, gsize count) {
-    g_string_append(s, "\nShortcuts:\n");
+    g_string_append_printf(s, "\n%s\n", _("Shortcuts:"));
     for (gsize i = 0; i < count; i++) {
         g_string_append(s, "  • ");
-        append_padded(s, list[i].keys, KEY_WIDTH);
-        g_string_append_printf(s, " %s\n", list[i].action);
+        append_padded(s, g_dpgettext2(GETTEXT_PACKAGE, "key", list[i].keys), KEY_WIDTH);
+        g_string_append_printf(s, " %s\n", _(list[i].action));
     }
 }
 
@@ -63,33 +65,33 @@ gchar* preview_summary_remote(const RemoteMachine* rm) {
         return NULL;
     }
     static const SummaryShortcut keys[] = {
-        {"Enter / c / Double-click", "Connect and browse remote files in Explorer"},
-        {"t", "Open SSH terminal to this machine"},
-        {"F2 / r / e", "Edit machine configuration"},
-        {"d / Delete", "Remove machine"},
-        {"a", "Add new remote machine"},
-        {"F5", "Re-scan ~/.ssh/config"},
+        {NC_("key", "Enter / c / Double-click"), N_("Connect and browse remote files in Explorer")},
+        {"t", N_("Open SSH terminal to this machine")},
+        {"F2 / r / e", N_("Edit machine configuration")},
+        {"d / Delete", N_("Remove machine")},
+        {"a", N_("Add new remote machine")},
+        {"F5", N_("Re-scan ~/.ssh/config")},
     };
     GString* s = g_string_new(NULL);
-    gchar* title = g_strdup_printf("Remote Machine: %s", rm->name ? rm->name : "Unknown");
+    gchar* title = g_strdup_printf(_("Remote Machine: %s"), rm->name ? rm->name : _("Unknown"));
     append_title(s, title);
     g_free(title);
 
-    append_field(s, "Status", rm->is_connected ? "Connected (Mounted via SSHFS)" : "Disconnected");
-    append_field(s, "Host", rm->host ? rm->host : "(none)");
-    append_field(s, "User", (rm->user && *rm->user) ? rm->user : "(default)");
+    append_field(s, _("Status"), rm->is_connected ? _("Connected (Mounted via SSHFS)") : _("Disconnected"));
+    append_field(s, _("Host"), rm->host ? rm->host : _("(none)"));
+    append_field(s, _("User"), (rm->user && *rm->user) ? rm->user : _("(default)"));
     gchar* port = g_strdup_printf("%d", rm->port);
-    append_field(s, "Port", port);
+    append_field(s, _("Port"), port);
     g_free(port);
-    append_field(s, "Remote Path", rm->remote_path ? rm->remote_path : "~");
+    append_field(s, _("Remote Path"), rm->remote_path ? rm->remote_path : "~");
     if (rm->identity_file && *rm->identity_file) {
-        append_field(s, "Identity Key", rm->identity_file);
+        append_field(s, _("Identity Key"), rm->identity_file);
     }
     if (rm->is_connected && rm->mount_point) {
-        append_field(s, "Mount Point", rm->mount_point);
+        append_field(s, _("Mount Point"), rm->mount_point);
     }
-    append_field(s, "Source", rm->from_ssh_config ? "Auto-discovered from ~/.ssh/config"
-                                                  : "Configured manually");
+    append_field(s, _("Source"), rm->from_ssh_config ? _("Auto-discovered from ~/.ssh/config")
+                                                  : _("Configured manually"));
     append_shortcuts(s, keys, G_N_ELEMENTS(keys));
     return g_string_free(s, FALSE);
 }
@@ -128,13 +130,13 @@ gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
         return NULL;
     }
     static const SummaryShortcut keys[] = {
-        {"Enter", "Edit the canvas (Canvas tab)"},
-        {"F2 / r / e", "Rename the note"},
-        {"m", "Move the note to another notebook"},
-        {"d / Delete", "Move the note to the trash"},
+        {"Enter", N_("Edit the canvas (Canvas tab)")},
+        {"F2 / r / e", N_("Rename the note")},
+        {"m", N_("Move the note to another notebook")},
+        {"d / Delete", N_("Move the note to the trash")},
     };
     GString* s = g_string_new(NULL);
-    gchar* title = g_strdup_printf("Canvas: %s", name != NULL ? name : "");
+    gchar* title = g_strdup_printf(_("Canvas: %s"), name != NULL ? name : "");
     append_title(s, title);
     g_free(title);
 
@@ -162,30 +164,30 @@ gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
             }
         }
         gchar* n = g_strdup_printf("%u", texts);
-        append_field(s, "Text boxes", n);
+        append_field(s, _("Text boxes"), n);
         g_free(n);
         n = g_strdup_printf("%u", pictures);
-        append_field(s, "Pictures", n);
+        append_field(s, _("Pictures"), n);
         g_free(n);
         if (shapes > 0) {
             n = g_strdup_printf("%u", shapes);
-            append_field(s, "Shapes", n);
+            append_field(s, _("Shapes"), n);
             g_free(n);
         }
         if (tables > 0) {
             n = g_strdup_printf("%u", tables);
-            append_field(s, "Tables", n);
+            append_field(s, _("Tables"), n);
             g_free(n);
         }
     }
-    append_field(s, "Location", path);
+    append_field(s, _("Location"), path);
     if (doc != NULL) {
         gchar* md = canvas_doc_to_markdown(doc, NULL);
-        g_string_append_printf(s, "\n%s", md[0] != '\0' ? md : "(empty)\n");
+        g_string_append_printf(s, "\n%s", md[0] != '\0' ? md : _("(empty)\n"));
         g_free(md);
         canvas_doc_free(doc);
     } else {
-        g_string_append(s, too_large ? "\n(too large to preview: Enter opens it)\n" : "\n(unreadable page)\n");
+        g_string_append(s, too_large ? _("\n(too large to preview: Enter opens it)\n") : _("\n(unreadable page)\n"));
     }
     append_shortcuts(s, keys, G_N_ELEMENTS(keys));
     return g_string_free(s, FALSE);
@@ -222,7 +224,7 @@ gchar* preview_summary_container(ExplorerRow* row) {
         if (explorer_row_is(child, "bm_folder")) {
             item->name = g_strdup_printf("%s/", child->name);
             guint n = count_items(child);
-            item->detail = g_strdup_printf("folder, %u item%s", n, n == 1 ? "" : "s");
+            item->detail = g_strdup_printf(ngettext("folder, %u item", "folder, %u items", n), n);
         } else if (explorer_row_is(child, "bookmark")) {
             item->name = g_strdup(child->name);
             item->detail = g_strdup(child->path);
@@ -242,38 +244,40 @@ gchar* preview_summary_container(ExplorerRow* row) {
     gchar* count = g_strdup_printf("%u", items->len);
     const gchar* list_title = NULL;
     if (is_notebook) {
-        gchar* title = g_strdup_printf("Notebook: %s", name ? name : "");
+        gchar* title = g_strdup_printf(_("Notebook: %s"), name ? name : "");
         append_title(s, title);
         g_free(title);
-        append_field(s, "Notes", count);
+        append_field(s, _("Notes"), count);
         if (path != NULL && path[0] != '\0') {
-            append_field(s, "Location", path);
+            append_field(s, _("Location"), path);
         }
-        list_title = "Notes";
+        list_title = _("Notes");
     } else if (is_bm_folder) {
-        gchar* title = g_strdup_printf("Bookmark Folder: %s", name ? name : "");
+        gchar* title = g_strdup_printf(_("Bookmark Folder: %s"), name ? name : "");
         append_title(s, title);
         g_free(title);
-        append_field(s, "Items", count);
-        list_title = "Contents";
+        append_field(s, _("Items"), count);
+        list_title = _("Contents");
     } else if (is_remote_folder) {
-        gchar* title = g_strdup_printf("Remote Folder: %s", name ? name : "");
+        gchar* title = g_strdup_printf(_("Remote Folder: %s"), name ? name : "");
         append_title(s, title);
         g_free(title);
-        append_field(s, "Machines", count);
-        list_title = "Machines";
+        append_field(s, _("Machines"), count);
+        list_title = _("Machines");
     } else {
-        append_title(s, "Trash");
-        append_field(s, "Notes", count);
+        append_title(s, _("Trash"));
+        append_field(s, _("Notes"), count);
         if (path != NULL && path[0] != '\0') {
-            append_field(s, "Location", path);
+            append_field(s, _("Location"), path);
         }
-        list_title = "Trashed notes";
+        list_title = _("Trashed notes");
     }
     g_free(count);
 
     if (items->len > 0) {
-        g_string_append_printf(s, "\n%s:\n", list_title);
+        gchar* heading = g_strdup_printf(_("%s:"), list_title);
+        g_string_append_printf(s, "\n%s\n", heading);
+        g_free(heading);
         for (guint i = 0; i < items->len; i++) {
             SummaryItem* item = (SummaryItem*)g_ptr_array_index(items, i);
             g_string_append(s, "  • ");
@@ -284,39 +288,39 @@ gchar* preview_summary_container(ExplorerRow* row) {
             g_string_append_c(s, '\n');
         }
     } else {
-        g_string_append(s, "\n(empty)\n");
+        g_string_append(s, _("\n(empty)\n"));
     }
 
     if (is_notebook) {
         static const SummaryShortcut keys[] = {
-            {"a / Shift+A", "New note / new notebook"},
-            {"F2 / r / e", "Edit notebook (name and icon)"},
-            {"d / Delete", "Delete notebook"},
-            {"Shift+K / Shift+J", "Move notebook up / down"},
+            {"a / Shift+A", N_("New note / new notebook")},
+            {"F2 / r / e", N_("Edit notebook (name and icon)")},
+            {"d / Delete", N_("Delete notebook")},
+            {"Shift+K / Shift+J", N_("Move notebook up / down")},
         };
         append_shortcuts(s, keys, G_N_ELEMENTS(keys));
     } else if (is_bm_folder) {
         static const SummaryShortcut keys[] = {
-            {"Enter / l", "Expand / collapse folder"},
-            {"a / Shift+A", "Add bookmark / new folder here"},
-            {"F2 / r / e", "Edit folder (name and icon)"},
-            {"d / Delete", "Delete folder"},
-            {"Shift+K / Shift+J", "Move folder up / down"},
+            {"Enter / l", N_("Expand / collapse folder")},
+            {"a / Shift+A", N_("Add bookmark / new folder here")},
+            {"F2 / r / e", N_("Edit folder (name and icon)")},
+            {"d / Delete", N_("Delete folder")},
+            {"Shift+K / Shift+J", N_("Move folder up / down")},
         };
         append_shortcuts(s, keys, G_N_ELEMENTS(keys));
     } else if (is_remote_folder) {
         static const SummaryShortcut keys[] = {
-            {"Enter / l", "Expand / collapse folder"},
-            {"a / Shift+A", "Add machine here / new folder"},
-            {"F2 / r / e", "Edit folder (name and icon)"},
-            {"d / Delete", "Delete folder (its machines move to the top level)"},
+            {"Enter / l", N_("Expand / collapse folder")},
+            {"a / Shift+A", N_("Add machine here / new folder")},
+            {"F2 / r / e", N_("Edit folder (name and icon)")},
+            {"d / Delete", N_("Delete folder (its machines move to the top level)")},
         };
         append_shortcuts(s, keys, G_N_ELEMENTS(keys));
     } else {
         static const SummaryShortcut keys[] = {
-            {"Shift+R", "Restore the selected trashed note to its notebook"},
-            {"d / Delete", "Delete the selected trashed note permanently"},
-            {"Trash toolbar button", "Empty the trash"},
+            {"Shift+R", N_("Restore the selected trashed note to its notebook")},
+            {"d / Delete", N_("Delete the selected trashed note permanently")},
+            {NC_("key", "Trash toolbar button"), N_("Empty the trash")},
         };
         append_shortcuts(s, keys, G_N_ELEMENTS(keys));
     }

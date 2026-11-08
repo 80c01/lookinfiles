@@ -1,4 +1,5 @@
 #include "video.h"
+#include "i18n.h"
 #include "text_style.h"
 #include "file_types.h"
 #include "media_tags.h"
@@ -40,15 +41,15 @@ static void update_video_metadata_label(AppData* app, GtkMediaStream* stream) {
         gboolean has_v = gtk_media_stream_has_video(stream);
         gboolean has_a = gtk_media_stream_has_audio(stream);
         if (has_v && has_a) {
-            g_string_append(info, "  •  Video / Audio");
+            g_string_append(info, _("  •  Video / Audio"));
         } else if (has_v) {
-            g_string_append(info, "  •  Video only");
+            g_string_append(info, _("  •  Video only"));
         } else if (has_a) {
-            g_string_append(info, "  •  Audio only");
+            g_string_append(info, _("  •  Audio only"));
         }
     }
 
-    g_string_append(info, "  •  [press m for details]");
+    g_string_append(info, _("  •  [press m for details]"));
 
     gtk_label_set_text(GTK_LABEL(app->video_meta), info->str);
 
@@ -79,8 +80,8 @@ static void on_video_error_notify(GtkMediaStream* stream, GParamSpec* pspec, gpo
     if (err != NULL && app->video_status != NULL) {
         const gchar* err_msg = (err->message != NULL && err->message[0] != '\0')
                                    ? err->message
-                                   : "Video playback error";
-        gchar* msg = g_strdup_printf("Media playback warning: %s (press 'm' to inspect raw file details)",
+                                   : _("Video playback error");
+        gchar* msg = g_strdup_printf(_("Media playback warning: %s (press 'm' to inspect raw file details)"),
                                      err_msg);
         gtk_label_set_text(GTK_LABEL(app->video_status), msg);
         gtk_widget_set_visible(app->video_status, TRUE);
@@ -113,7 +114,7 @@ void video_preview_init(AppData* app) {
     GtkWidget* header_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_widget_set_hexpand(header_box, TRUE);
 
-    GtkWidget* video_title = gtk_label_new("Video Preview");
+    GtkWidget* video_title = gtk_label_new(_("Video Preview"));
     gtk_widget_set_name(video_title, "video-title");
     gtk_label_set_selectable(GTK_LABEL(video_title), TRUE);
     gtk_label_set_xalign(GTK_LABEL(video_title), 0.5f);
@@ -259,14 +260,17 @@ static void render_video_raw(AppData* app, const gchar* name, const gchar* full)
     GString* out = g_string_new(NULL);
     g_string_append_printf(out, "%s\n", name);
     g_string_append_printf(out, "═══════════════════════════════════════════════════════════════\n");
-    g_string_append_printf(out, "File:         %s\n", name);
-    g_string_append_printf(out, "Path:         %s\n", full);
-    g_string_append_printf(out, "Container:    %s\n", ext_upper);
-    g_string_append_printf(out, "Size:         %s (%" G_GINT64_FORMAT " bytes)\n", size_str, fsize);
-    g_string_append_printf(out, "Permissions:  0%o\n", (unsigned int)(st.st_mode & 0777));
-    g_string_append_printf(out, "Modified:     %s\n", time_str ? time_str : "-");
-    g_string_append_printf(out, "Mode:         Text / Raw mode active\n");
-    g_string_append_printf(out, "              Press 'm' to switch to interactive video player\n");
+    gchar* bytes = g_strdup_printf("%" G_GINT64_FORMAT, fsize);
+    /* TRANSLATORS: the labels of these lines are padded to the same width */
+    g_string_append_printf(out, _("File:         %s\n"), name);
+    g_string_append_printf(out, _("Path:         %s\n"), full);
+    g_string_append_printf(out, _("Container:    %s\n"), ext_upper);
+    g_string_append_printf(out, _("Size:         %1$s (%2$s bytes)\n"), size_str, bytes);
+    g_free(bytes);
+    g_string_append_printf(out, _("Permissions:  0%o\n"), (unsigned int)(st.st_mode & 0777));
+    g_string_append_printf(out, _("Modified:     %s\n"), time_str ? time_str : "-");
+    g_string_append(out, _("Mode:         Text / Raw mode active\n"));
+    g_string_append(out, _("              Press 'm' to switch to interactive video player\n"));
     g_string_append_printf(out, "═══════════════════════════════════════════════════════════════\n\n");
 
     /* Read first 512 bytes for hex dump */
@@ -276,7 +280,7 @@ static void render_video_raw(AppData* app, const gchar* name, const gchar* full)
         size_t n = fread(buf, 1, sizeof(buf), fp);
         fclose(fp);
 
-        g_string_append_printf(out, "=== File Header Dump (first %zu bytes) ===\n", n);
+        g_string_append_printf(out, _("=== File Header Dump (first %zu bytes) ===\n"), n);
         for (size_t i = 0; i < n; i += 16) {
             g_string_append_printf(out, "%08zx  ", i);
             for (size_t j = 0; j < 16; j++) {
@@ -297,7 +301,7 @@ static void render_video_raw(AppData* app, const gchar* name, const gchar* full)
             g_string_append(out, "|\n");
         }
     } else {
-        g_string_append(out, "[ Cannot open file for reading ]\n");
+        g_string_append(out, _("[ Cannot open file for reading ]\n"));
     }
 
     gtk_text_buffer_set_text(app->buffer, out->str, (gint)out->len);
