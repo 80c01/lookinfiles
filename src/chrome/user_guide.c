@@ -1,5 +1,5 @@
 /* The user guide built into the binary (see user_guide.h) */
-#include "user_guide.h"
+#include "chrome/user_guide.h"
 
 #include <gio/gio.h>
 #include <string.h>

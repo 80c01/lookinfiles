@@ -1,7 +1,7 @@
-/* Unit tests for src/user_guide.c: the user guide pages built into the
+/* Unit tests for src/chrome/user_guide.c: the user guide pages built into the
  * binary (docs/user-guide/ and the reference pages) and their titles.
  * Headless. */
-#include "user_guide.h"
+#include "chrome/user_guide.h"
 
 #include <gio/gio.h>
 #include <string.h>

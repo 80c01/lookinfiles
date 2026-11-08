@@ -7,7 +7,7 @@
 #include "editor/editor.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
-#include "focus_route.h"
+#include "chrome/focus_route.h"
 #include "git/git_tab.h"
 #include <stdarg.h>
 #include <string.h>

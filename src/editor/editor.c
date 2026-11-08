@@ -11,7 +11,7 @@
 #include "editor/file_save.h"
 #include "widgets/minimap.h"
 #include "widgets/diff_gutter.h"
-#include "focus_route.h"
+#include "chrome/focus_route.h"
 #include "explorer/nav_history.h"
 #include "editor/editor_view.h"
 #include "theme/icons.h"

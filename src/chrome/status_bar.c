@@ -2,7 +2,7 @@
  * shown in the top bar while the explorer is hidden, sort order) and the preview bar
  * (name, size, type and encoding of the previewed entry). Editor tabs have
  * their own bar (editor_modes). */
-#include "status_bar.h"
+#include "chrome/status_bar.h"
 #include "git/git_state.h"
 #include "preview/preview_state.h"
 #include "core/i18n.h"

@@ -7,7 +7,7 @@
 #include "widgets/panels.h"
 #include "core/app_events.h"
 #include "search/search.h"
-#include "help.h"
+#include "chrome/help.h"
 #include "media/image_preview.h"
 #include "media/video.h"
 #include "media/audio.h"
@@ -16,7 +16,7 @@
 #include "explorer/remote.h"
 #include "explorer/archive_tree.h"
 #include "editor/editor.h"
-#include "focus_route.h"
+#include "chrome/focus_route.h"
 
 /* Rows with children the arrow keys and space expand: directories,
  * bookmark folders, notebooks, the notes trash and remote folders */

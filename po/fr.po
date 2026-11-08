@@ -267,7 +267,7 @@ msgstr "_Retirer le signet"
 #: src/explorer/bookmark_dialog.c:198 src/explorer/bookmarks.c:577 src/code/code_symbols.c:176
 #: src/editor/editor.c:1729 src/explorer/file_actions.c:42 src/explorer/file_actions.c:236
 #: src/workspace/layouts.c:47 src/workspace/layouts.c:319 src/notes/notes.c:587 src/notes/notes.c:768
-#: src/notes/notes.c:852 src/preferences.c:342 src/preview/preview_full.c:31
+#: src/notes/notes.c:852 src/chrome/preferences.c:342 src/preview/preview_full.c:31
 #: src/search/project_search.c:369 src/search/quick_open.c:368 src/explorer/remote.c:322
 #: src/explorer/remote.c:389 src/explorer/remote.c:456 src/explorer/remote.c:487 src/explorer/remote.c:564
 #: src/workspace/session_bookmark.c:13 src/theme/themes.c:222 src/theme/themes.c:237 src/theme/themes.c:682
@@ -309,7 +309,7 @@ msgstr "Dossier courant"
 msgid "Parent folder"
 msgstr "Dossier parent"
 
-#: src/explorer/bookmark_dialog.c:255 src/explorer/bookmarks.c:195 src/status_bar.c:429
+#: src/explorer/bookmark_dialog.c:255 src/explorer/bookmarks.c:195 src/chrome/status_bar.c:429
 msgid "Folder"
 msgstr "Dossier"
 
@@ -1115,7 +1115,7 @@ msgstr "Web"
 msgid "Birthday"
 msgstr "Anniversaire"
 
-#: src/formats/card_view.c:541 src/status_bar.c:453
+#: src/formats/card_view.c:541 src/chrome/status_bar.c:453
 msgid "Note"
 msgstr "Note"
 
@@ -1151,7 +1151,7 @@ msgstr "Nécessite"
 msgid "Directory"
 msgstr "Dossier"
 
-#: src/formats/card_view.c:589 src/workspace/layout_store.c:206 src/main.c:358 src/topbar.c:661
+#: src/formats/card_view.c:589 src/workspace/layout_store.c:206 src/main.c:358 src/chrome/topbar.c:661
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -3048,70 +3048,70 @@ msgstr[1] "%d mois"
 msgid "%1$s, %2$s ago"
 msgstr "il y a %1$s et %2$s"
 
-#: src/help.c:27 src/help.c:28 src/help.c:29 src/help.c:30 src/help.c:31
-#: src/help.c:32 src/help.c:33 src/help.c:34 src/help.c:35 src/help.c:36
-#: src/help.c:37 src/help.c:38 src/help.c:39 src/help.c:40 src/help.c:41
-#: src/help.c:42 src/help.c:43 src/help.c:44 src/help.c:45 src/help.c:46
-#: src/help.c:47 src/help.c:48 src/help.c:49 src/help.c:50 src/help.c:51
-#: src/help.c:52 src/help.c:53 src/help.c:54 src/help.c:55 src/help.c:129
-#: src/help.c:130 src/help.c:131 src/help.c:132 src/help.c:133 src/help.c:134
-#: src/help.c:135 src/help.c:136 src/help.c:137 src/help.c:138 src/help.c:139
+#: src/chrome/help.c:27 src/chrome/help.c:28 src/chrome/help.c:29 src/chrome/help.c:30 src/chrome/help.c:31
+#: src/chrome/help.c:32 src/chrome/help.c:33 src/chrome/help.c:34 src/chrome/help.c:35 src/chrome/help.c:36
+#: src/chrome/help.c:37 src/chrome/help.c:38 src/chrome/help.c:39 src/chrome/help.c:40 src/chrome/help.c:41
+#: src/chrome/help.c:42 src/chrome/help.c:43 src/chrome/help.c:44 src/chrome/help.c:45 src/chrome/help.c:46
+#: src/chrome/help.c:47 src/chrome/help.c:48 src/chrome/help.c:49 src/chrome/help.c:50 src/chrome/help.c:51
+#: src/chrome/help.c:52 src/chrome/help.c:53 src/chrome/help.c:54 src/chrome/help.c:55 src/chrome/help.c:129
+#: src/chrome/help.c:130 src/chrome/help.c:131 src/chrome/help.c:132 src/chrome/help.c:133 src/chrome/help.c:134
+#: src/chrome/help.c:135 src/chrome/help.c:136 src/chrome/help.c:137 src/chrome/help.c:138 src/chrome/help.c:139
 msgid "Explorer panel"
 msgstr "Panneau Explorateur"
 
-#: src/help.c:27 src/help.c:28 src/help.c:29
+#: src/chrome/help.c:27 src/chrome/help.c:28 src/chrome/help.c:29
 msgid "Move down / up"
 msgstr "Descendre / monter"
 
-#: src/help.c:30 src/help.c:31 src/help.c:32 src/help.c:33
+#: src/chrome/help.c:30 src/chrome/help.c:31 src/chrome/help.c:32 src/chrome/help.c:33
 msgid "First / last entry"
 msgstr "Première / dernière entrée"
 
-#: src/help.c:34 src/help.c:35 src/help.c:36
+#: src/chrome/help.c:34 src/chrome/help.c:35 src/chrome/help.c:36
 msgid "Page down / up"
 msgstr "Page suivante / précédente"
 
-#: src/help.c:37
+#: src/chrome/help.c:37
 msgid "Center selected entry in the panel"
 msgstr "Centrer l’entrée sélectionnée dans le panneau"
 
-#: src/help.c:38
+#: src/chrome/help.c:38
 msgid "Scroll selected entry to top / bottom of the panel"
 msgstr "Faire défiler l’entrée sélectionnée en haut / en bas du panneau"
 
-#: src/help.c:39
+#: src/chrome/help.c:39
 msgid "Scroll selected entry to the center, top, bottom in turn"
 msgstr ""
 "Faire défiler l’entrée sélectionnée au centre, en haut, en bas tour à tour"
 
-#: src/help.c:40
+#: src/chrome/help.c:40
 msgid "Expand / collapse directory"
 msgstr "Déplier / replier le dossier"
 
-#: src/help.c:41
+#: src/chrome/help.c:41
 msgid "Expand directory or archive (or step into first child)"
 msgstr "Déplier le dossier ou l’archive (ou entrer dans le premier enfant)"
 
-#: src/help.c:42
+#: src/chrome/help.c:42
 msgid "Expand directory (or step into first child)"
 msgstr "Déplier le dossier (ou entrer dans le premier enfant)"
 
-#: src/help.c:43 src/help.c:44
+#: src/chrome/help.c:43 src/chrome/help.c:44
 msgid "Collapse directory or jump to parent"
 msgstr "Replier le dossier ou aller au parent"
 
-#: src/help.c:45
+#: src/chrome/help.c:45
 msgid ""
 "Expand directory (or step into first child) / collapse it or jump to parent"
 msgstr ""
 "Déplier le dossier (ou entrer dans le premier enfant) / le replier ou aller "
 "au parent"
 
-#: src/help.c:46
+#: src/chrome/help.c:46
 msgid "Search by substring (n / N: next / previous match)"
 msgstr "Rechercher une sous-chaîne (n / N : occurrence suivante / précédente)"
 
-#: src/help.c:47
+#: src/chrome/help.c:47
 msgid ""
 "Search by substring (Enter / F3: next match, Shift+Enter / Shift+F3: "
 "previous, Esc: close)"
@@ -3119,11 +3119,11 @@ msgstr ""
 "Rechercher une sous-chaîne (Enter / F3 : occurrence suivante, Shift+Enter / "
 "Shift+F3 : précédente, Esc : fermer)"
 
-#: src/help.c:48 src/help.c:152
+#: src/chrome/help.c:48 src/chrome/help.c:152
 msgid "Next / previous match of the last search"
 msgstr "Occurrence suivante / précédente de la dernière recherche"
 
-#: src/help.c:49 src/help.c:153
+#: src/chrome/help.c:49 src/chrome/help.c:153
 msgid ""
 "Search forward / backward as you type (again: next / previous match, RET: "
 "stop, C-g: back to the start)"
@@ -3131,14 +3131,14 @@ msgstr ""
 "Rechercher vers l’avant / l’arrière pendant la frappe (à nouveau : "
 "occurrence suivante / précédente, RET : arrêter, C-g : retour au départ)"
 
-#: src/help.c:50
+#: src/chrome/help.c:50
 msgid ""
 "Open the selected file in the dedicated editor panel (focus in the editor)"
 msgstr ""
 "Ouvrir le fichier sélectionné dans le panneau d’édition dédié (focus dans "
 "l’éditeur)"
 
-#: src/help.c:51
+#: src/chrome/help.c:51
 msgid ""
 "Show the selected file in the dedicated editor panel (focus stays in the "
 "explorer)"
@@ -3146,12 +3146,12 @@ msgstr ""
 "Afficher le fichier sélectionné dans le panneau d’édition dédié (le focus "
 "reste dans l’explorateur)"
 
-#: src/help.c:52
+#: src/chrome/help.c:52
 msgctxt "key"
 msgid "Enter / Double-click"
 msgstr "Enter / double-clic"
 
-#: src/help.c:52
+#: src/chrome/help.c:52
 msgid ""
 "Expand/collapse directory, open file in editor (a video in a Video tab), or "
 "open bookmark (Ctrl+Enter to enter directory)"
@@ -3160,12 +3160,12 @@ msgstr ""
 "dans un onglet Vidéo) ou ouvrir le signet (Ctrl+Enter pour entrer dans le "
 "dossier)"
 
-#: src/help.c:53
+#: src/chrome/help.c:53
 msgid "Go to the parent directory (or return to files view from bookmarks)"
 msgstr ""
 "Aller au dossier parent (ou revenir à la vue Fichiers depuis les signets)"
 
-#: src/help.c:54
+#: src/chrome/help.c:54
 msgid ""
 "Bookmark selected entry or current directory (edit / remove if already "
 "bookmarked)"
@@ -3173,96 +3173,96 @@ msgstr ""
 "Ajouter un signet sur l’entrée sélectionnée ou le dossier courant "
 "(modifier / retirer s’il existe déjà)"
 
-#: src/help.c:55
+#: src/chrome/help.c:55
 msgid "Switch between files and bookmarks views in Explorer"
 msgstr "Basculer entre les vues Fichiers et Signets de l’explorateur"
 
-#: src/help.c:56 src/help.c:57 src/help.c:58 src/help.c:59 src/help.c:60
-#: src/help.c:61 src/help.c:62 src/help.c:63 src/help.c:64
+#: src/chrome/help.c:56 src/chrome/help.c:57 src/chrome/help.c:58 src/chrome/help.c:59 src/chrome/help.c:60
+#: src/chrome/help.c:61 src/chrome/help.c:62 src/chrome/help.c:63 src/chrome/help.c:64
 msgid "Bookmarks view"
 msgstr "Vue Signets"
 
-#: src/help.c:56
+#: src/chrome/help.c:56
 msgid "Open bookmark (directory, file or URL) / expand folder"
 msgstr "Ouvrir le signet (dossier, fichier ou URL) / déplier le dossier"
 
-#: src/help.c:57 src/help.c:58
+#: src/chrome/help.c:57 src/chrome/help.c:58
 msgid "Open bookmark / expand folder"
 msgstr "Ouvrir le signet / déplier le dossier"
 
-#: src/help.c:59
+#: src/chrome/help.c:59
 msgid "Add bookmark / new folder (in selected folder)"
 msgstr "Ajouter un signet / nouveau dossier (dans le dossier sélectionné)"
 
-#: src/help.c:60
+#: src/chrome/help.c:60
 msgid ""
 "Edit selected: name, location and folder (folder: name, icon and parent)"
 msgstr ""
 "Modifier la sélection : nom, emplacement et dossier (dossier : nom, icône et "
 "parent)"
 
-#: src/help.c:61
+#: src/chrome/help.c:61
 msgid "Delete selected bookmark or folder"
 msgstr "Supprimer le signet ou le dossier sélectionné"
 
-#: src/help.c:62
+#: src/chrome/help.c:62
 msgid "Move selected item up / down"
 msgstr "Monter / descendre l’élément sélectionné"
 
-#: src/help.c:63
+#: src/chrome/help.c:63
 msgid "Cycle sort: A-Z / Z-A"
 msgstr "Changer le tri : A-Z / Z-A"
 
-#: src/help.c:64 src/help.c:73 src/help.c:134
+#: src/chrome/help.c:64 src/chrome/help.c:73 src/chrome/help.c:134
 msgctxt "key"
 msgid "Right-click"
 msgstr "Clic droit"
 
-#: src/help.c:64
+#: src/chrome/help.c:64
 msgid "Bookmark context menu"
 msgstr "Menu contextuel du signet"
 
-#: src/help.c:65 src/help.c:66 src/help.c:67 src/help.c:68 src/help.c:69
-#: src/help.c:70 src/help.c:71 src/help.c:72 src/help.c:73
+#: src/chrome/help.c:65 src/chrome/help.c:66 src/chrome/help.c:67 src/chrome/help.c:68 src/chrome/help.c:69
+#: src/chrome/help.c:70 src/chrome/help.c:71 src/chrome/help.c:72 src/chrome/help.c:73
 msgid "Notes view"
 msgstr "Vue Notes"
 
-#: src/help.c:65
+#: src/chrome/help.c:65
 msgid "Create new note (Markdown, Org-mode, Plain Text, Canvas) / new notebook"
 msgstr "Créer une note (Markdown, Org-mode, texte brut, Canvas) / un carnet"
 
-#: src/help.c:66
+#: src/chrome/help.c:66
 msgid "Edit the note (editor tab, or the Canvas tab for a Canvas note)"
 msgstr ""
 "Modifier la note (onglet d’édition, ou onglet Canvas pour une note Canvas)"
 
-#: src/help.c:67
+#: src/chrome/help.c:67
 msgid "Edit note (title, format and notebook) or notebook (name and icon)"
 msgstr "Modifier la note (titre, format et carnet) ou le carnet (nom et icône)"
 
-#: src/help.c:68
+#: src/chrome/help.c:68
 msgid "Move note to another notebook (edit dialog, on its notebook)"
 msgstr ""
 "Déplacer la note dans un autre carnet (dialogue de modification, sur son "
 "carnet)"
 
-#: src/help.c:69
+#: src/chrome/help.c:69
 msgid "Delete note (to Trash) or notebook"
 msgstr "Supprimer la note (à la corbeille) ou le carnet"
 
-#: src/help.c:70
+#: src/chrome/help.c:70
 msgid "Restore note from Trash to original notebook"
 msgstr "Restaurer la note de la corbeille dans son carnet d’origine"
 
-#: src/help.c:71
+#: src/chrome/help.c:71
 msgid "Move selected note or notebook up / down"
 msgstr "Monter / descendre la note ou le carnet sélectionné"
 
-#: src/help.c:72
+#: src/chrome/help.c:72
 msgid "Cycle sort: manual / A-Z / Z-A"
 msgstr "Changer le tri : manuel / A-Z / Z-A"
 
-#: src/help.c:73
+#: src/chrome/help.c:73
 msgid ""
 "Context menu: 1-click format conversion (Text, Markdown, Org), Canvas export "
 "to Markdown, rename, move"
@@ -3270,33 +3270,33 @@ msgstr ""
 "Menu contextuel : conversion de format en un clic (texte, Markdown, Org), "
 "export Canvas en Markdown, renommer, déplacer"
 
-#: src/help.c:74 src/help.c:75 src/help.c:76 src/help.c:77 src/help.c:78
-#: src/help.c:79 src/help.c:80 src/help.c:81 src/help.c:82 src/help.c:83
-#: src/help.c:84 src/help.c:85 src/help.c:86 src/help.c:87 src/help.c:88
-#: src/help.c:89 src/help.c:90 src/help.c:91 src/help.c:92 src/help.c:93
-#: src/help.c:94 src/help.c:95 src/help.c:96 src/help.c:97 src/help.c:98
-#: src/help.c:99 src/help.c:100 src/help.c:101
+#: src/chrome/help.c:74 src/chrome/help.c:75 src/chrome/help.c:76 src/chrome/help.c:77 src/chrome/help.c:78
+#: src/chrome/help.c:79 src/chrome/help.c:80 src/chrome/help.c:81 src/chrome/help.c:82 src/chrome/help.c:83
+#: src/chrome/help.c:84 src/chrome/help.c:85 src/chrome/help.c:86 src/chrome/help.c:87 src/chrome/help.c:88
+#: src/chrome/help.c:89 src/chrome/help.c:90 src/chrome/help.c:91 src/chrome/help.c:92 src/chrome/help.c:93
+#: src/chrome/help.c:94 src/chrome/help.c:95 src/chrome/help.c:96 src/chrome/help.c:97 src/chrome/help.c:98
+#: src/chrome/help.c:99 src/chrome/help.c:100 src/chrome/help.c:101
 msgid "Canvas tab"
 msgstr "Onglet Canvas"
 
-#: src/help.c:74
+#: src/chrome/help.c:74
 msgid ""
 "Tool: select, rectangle, diamond, ellipse, arrow, line (not while typing)"
 msgstr ""
 "Outil : sélection, rectangle, losange, ellipse, flèche, ligne (pas pendant "
 "la saisie)"
 
-#: src/help.c:75
+#: src/chrome/help.c:75
 msgid "Tool: pencil, text box, table, eraser; Esc: back to select"
 msgstr ""
 "Outil : crayon, zone de texte, tableau, gomme ; Esc : retour à la sélection"
 
-#: src/help.c:76
+#: src/chrome/help.c:76
 msgctxt "key"
 msgid "Drag with a shape tool"
 msgstr "Glisser avec un outil de forme"
 
-#: src/help.c:76
+#: src/chrome/help.c:76
 msgid ""
 "Draw the shape (Shift: square, circle, 45-degree line); arrow ends on a "
 "block follow it"
@@ -3304,27 +3304,27 @@ msgstr ""
 "Dessiner la forme (Shift : carré, cercle, ligne à 45 degrés) ; les "
 "extrémités de flèche posées sur un bloc le suivent"
 
-#: src/help.c:77
+#: src/chrome/help.c:77
 msgctxt "key"
 msgid "Double-click / Ctrl+Enter"
 msgstr "Double-clic / Ctrl+Enter"
 
-#: src/help.c:77
+#: src/chrome/help.c:77
 msgid "New text box (at the click, or below the selected block)"
 msgstr "Nouvelle zone de texte (au clic, ou sous le bloc sélectionné)"
 
-#: src/help.c:78
+#: src/chrome/help.c:78
 msgctxt "key"
 msgid "Double-click a shape"
 msgstr "Double-clic sur une forme"
 
-#: src/help.c:78
+#: src/chrome/help.c:78
 msgid "Type text inside it (also Enter on a selected shape; Esc when done)"
 msgstr ""
 "Y saisir du texte (aussi Enter sur une forme sélectionnée ; Esc pour "
 "terminer)"
 
-#: src/help.c:79
+#: src/chrome/help.c:79
 msgid ""
 "Paste copied blocks, or a picture as a new block (text outside a text box: "
 "new text box)"
@@ -3332,30 +3332,30 @@ msgstr ""
 "Coller les blocs copiés, ou une image comme nouveau bloc (texte hors d’une "
 "zone de texte : nouvelle zone de texte)"
 
-#: src/help.c:80
+#: src/chrome/help.c:80
 msgid "Select every block (not the locked ones; while typing: the text)"
 msgstr ""
 "Sélectionner tous les blocs (sauf les verrouillés ; pendant la saisie : le "
 "texte)"
 
-#: src/help.c:81
+#: src/chrome/help.c:81
 msgid "Copy / cut / duplicate the selected blocks"
 msgstr "Copier / couper / dupliquer les blocs sélectionnés"
 
-#: src/help.c:82
+#: src/chrome/help.c:82
 msgid "Bring forward / send backward (Shift: to the front / back)"
 msgstr "Avancer / reculer (Shift : au premier plan / à l’arrière-plan)"
 
-#: src/help.c:83
+#: src/chrome/help.c:83
 msgid "Lock / unlock the selected blocks (kept in place)"
 msgstr "Verrouiller / déverrouiller les blocs sélectionnés (fixés sur place)"
 
-#: src/help.c:84
+#: src/chrome/help.c:84
 msgctxt "key"
 msgid "Drag bar / corner"
 msgstr "Glisser la barre / le coin"
 
-#: src/help.c:84
+#: src/chrome/help.c:84
 msgid ""
 "Move / resize a block (a picture or shape moves from anywhere on it; a shape "
 "resizes by any corner or side; Shift: shape keeps its proportions)"
@@ -3364,199 +3364,199 @@ msgstr ""
 "n’importe quel point ; une forme se redimensionne par tout coin ou côté ; "
 "Shift : la forme garde ses proportions)"
 
-#: src/help.c:85
+#: src/chrome/help.c:85
 msgctxt "key"
 msgid "Drag round handle"
 msgstr "Glisser la poignée ronde"
 
-#: src/help.c:85
+#: src/chrome/help.c:85
 msgid "Rotate the selected shape around its centre (Shift: 15-degree steps)"
 msgstr ""
 "Faire pivoter la forme sélectionnée autour de son centre (Shift : par pas de "
 "15 degrés)"
 
-#: src/help.c:86
+#: src/chrome/help.c:86
 msgctxt "key"
 msgid "Drag line point / middle"
 msgstr "Glisser un point / le milieu de la ligne"
 
-#: src/help.c:86
+#: src/chrome/help.c:86
 msgid "Move a point of the selected arrow or line / add one there (a curve)"
 msgstr ""
 "Déplacer un point de la flèche ou de la ligne sélectionnée / en ajouter un à "
 "cet endroit (une courbe)"
 
-#: src/help.c:87
+#: src/chrome/help.c:87
 msgctxt "key"
 msgid "Double-click point / Delete"
 msgstr "Double-clic sur un point / Delete"
 
-#: src/help.c:87
+#: src/chrome/help.c:87
 msgid "Remove the point of the selected line (clicked last; not an end)"
 msgstr ""
 "Retirer le point de la ligne sélectionnée (le dernier cliqué ; pas une "
 "extrémité)"
 
-#: src/help.c:88
+#: src/chrome/help.c:88
 msgctxt "key"
 msgid "Drag on the page / Shift+click"
 msgstr "Glisser sur la page / Shift+clic"
 
-#: src/help.c:88
+#: src/chrome/help.c:88
 msgid "Select the blocks in the box / add or remove a block (Shift+drag: add)"
 msgstr ""
 "Sélectionner les blocs du cadre / ajouter ou retirer un bloc "
 "(Shift+glisser : ajouter)"
 
-#: src/help.c:89
+#: src/chrome/help.c:89
 msgid "Bold / italic / underline (selection, or the text typed next)"
 msgstr "Gras / italique / souligné (sélection, ou le texte saisi ensuite)"
 
-#: src/help.c:90
+#: src/chrome/help.c:90
 msgid "Strikethrough / code / heading"
 msgstr "Barré / code / titre"
 
-#: src/help.c:91
+#: src/chrome/help.c:91
 msgid "Toggle checkbox under cursor (- [ ] / - [X])"
 msgstr "Cocher / décocher la case sous le curseur (- [ ] / - [X])"
 
-#: src/help.c:92
+#: src/chrome/help.c:92
 msgid "In a text box: select the block; on a block: deselect"
 msgstr ""
 "Dans une zone de texte : sélectionner le bloc ; sur un bloc : désélectionner"
 
-#: src/help.c:93
+#: src/chrome/help.c:93
 msgid "Next / previous block"
 msgstr "Bloc suivant / précédent"
 
-#: src/help.c:94
+#: src/chrome/help.c:94
 msgctxt "key"
 msgid "Arrows / Shift+Arrows"
 msgstr "Flèches / Shift+flèches"
 
-#: src/help.c:94
+#: src/chrome/help.c:94
 msgid "Move the selected blocks"
 msgstr "Déplacer les blocs sélectionnés"
 
-#: src/help.c:95
+#: src/chrome/help.c:95
 msgid "Edit the selected block / delete the selected blocks"
 msgstr "Modifier le bloc sélectionné / supprimer les blocs sélectionnés"
 
-#: src/help.c:96
+#: src/chrome/help.c:96
 msgctxt "key"
 msgid "Ctrl+Wheel / Ctrl+= / Ctrl+-"
 msgstr "Ctrl+molette / Ctrl+= / Ctrl+-"
 
-#: src/help.c:96
+#: src/chrome/help.c:96
 msgid "Zoom the page in / out (10% to 400%)"
 msgstr "Agrandir / réduire la page (de 10 % à 400 %)"
 
-#: src/help.c:97
+#: src/chrome/help.c:97
 msgid "Zoom back to 100% (instead of the font sizes)"
 msgstr "Revenir à 100 % (au lieu des tailles de police)"
 
-#: src/help.c:98
+#: src/chrome/help.c:98
 msgctxt "key"
 msgid "Middle drag / Space+drag"
 msgstr "Glisser du milieu / Space+glisser"
 
-#: src/help.c:98
+#: src/chrome/help.c:98
 msgid "Move the view (Space when not typing)"
 msgstr "Déplacer la vue (Space hors saisie)"
 
-#: src/help.c:99
+#: src/chrome/help.c:99
 msgid "Undo / redo on the page (also Ctrl+Y); while typing: the text"
 msgstr ""
 "Annuler / rétablir sur la page (aussi Ctrl+Y) ; pendant la saisie : le texte"
 
-#: src/help.c:100
+#: src/chrome/help.c:100
 msgid "Close the Canvas tab (saved automatically)"
 msgstr "Fermer l’onglet Canvas (enregistré automatiquement)"
 
-#: src/help.c:101 src/help.c:108
+#: src/chrome/help.c:101 src/chrome/help.c:108
 msgctxt "key"
 msgid "Ctrl+Alt+Arrow / right-click tab"
 msgstr "Ctrl+Alt+flèche / clic droit sur l’onglet"
 
-#: src/help.c:101
+#: src/chrome/help.c:101
 msgid "Move the Canvas tab to another pane, as an editor tab"
 msgstr ""
 "Déplacer l’onglet Canvas dans un autre volet, comme un onglet d’édition"
 
-#: src/help.c:102 src/help.c:103 src/help.c:104 src/help.c:105 src/help.c:106
-#: src/help.c:107 src/help.c:108
+#: src/chrome/help.c:102 src/chrome/help.c:103 src/chrome/help.c:104 src/chrome/help.c:105 src/chrome/help.c:106
+#: src/chrome/help.c:107 src/chrome/help.c:108
 msgid "Video tab"
 msgstr "Onglet Vidéo"
 
-#: src/help.c:102
+#: src/chrome/help.c:102
 msgid "Play / pause"
 msgstr "Lecture / pause"
 
-#: src/help.c:103
+#: src/chrome/help.c:103
 msgid "Seek 5 seconds back / forward"
 msgstr "Reculer / avancer de 5 secondes"
 
-#: src/help.c:104
+#: src/chrome/help.c:104
 msgid "Back to the start"
 msgstr "Retour au début"
 
-#: src/help.c:105
+#: src/chrome/help.c:105
 msgid "Next audio track (language)"
 msgstr "Piste audio suivante (langue)"
 
-#: src/help.c:106
+#: src/chrome/help.c:106
 msgid "Next subtitles (then off)"
 msgstr "Sous-titres suivants (puis désactivés)"
 
-#: src/help.c:107
+#: src/chrome/help.c:107
 msgid "Close the Video tab"
 msgstr "Fermer l’onglet Vidéo"
 
-#: src/help.c:108
+#: src/chrome/help.c:108
 msgid "Move the Video tab to another pane, as an editor tab"
 msgstr "Déplacer l’onglet Vidéo dans un autre volet, comme un onglet d’édition"
 
-#: src/help.c:109 src/help.c:110 src/help.c:111 src/help.c:112 src/help.c:113
-#: src/help.c:114
+#: src/chrome/help.c:109 src/chrome/help.c:110 src/chrome/help.c:111 src/chrome/help.c:112 src/chrome/help.c:113
+#: src/chrome/help.c:114
 msgid "Help tab"
 msgstr "Onglet Aide"
 
-#: src/help.c:109
+#: src/chrome/help.c:109
 msgid "Open the user guide (also a click on the top bar's Help button)"
 msgstr ""
 "Ouvrir le guide d’utilisation (aussi un clic sur le bouton Aide de la barre "
 "du haut)"
 
-#: src/help.c:110
+#: src/chrome/help.c:110
 msgid "Select the next / previous link"
 msgstr "Sélectionner le lien suivant / précédent"
 
-#: src/help.c:111
+#: src/chrome/help.c:111
 msgctxt "key"
 msgid "Enter / Click"
 msgstr "Enter / clic"
 
-#: src/help.c:111
+#: src/chrome/help.c:111
 msgid "Follow the selected / clicked link"
 msgstr "Suivre le lien sélectionné / cliqué"
 
-#: src/help.c:112
+#: src/chrome/help.c:112
 msgid ""
 "Back / forward in the pages visited (also the mouse's back / forward buttons)"
 msgstr ""
 "Reculer / avancer dans les pages visitées (aussi les boutons précédent / "
 "suivant de la souris)"
 
-#: src/help.c:113 src/help.c:114
+#: src/chrome/help.c:113 src/chrome/help.c:114
 msgid "Close the Help tab"
 msgstr "Fermer l’onglet Aide"
 
-#: src/help.c:115 src/help.c:116 src/help.c:117 src/help.c:118 src/help.c:119
-#: src/help.c:120 src/help.c:121 src/help.c:122
+#: src/chrome/help.c:115 src/chrome/help.c:116 src/chrome/help.c:117 src/chrome/help.c:118 src/chrome/help.c:119
+#: src/chrome/help.c:120 src/chrome/help.c:121 src/chrome/help.c:122
 msgid "Browser tab"
 msgstr "Onglet Navigateur"
 
-#: src/help.c:115
+#: src/chrome/help.c:115
 msgid ""
 "Open an empty browser tab (also Help links, web bookmarks, right click on an "
 "HTML file)"
@@ -3564,97 +3564,97 @@ msgstr ""
 "Ouvrir un onglet navigateur vide (aussi les liens de l’aide, les signets "
 "web, un clic droit sur un fichier HTML)"
 
-#: src/help.c:116
+#: src/chrome/help.c:116
 msgid ""
 "Go to the address bar: an address, a file path or words to search, then Enter"
 msgstr ""
 "Aller à la barre d’adresse : une adresse, un chemin de fichier ou des mots à "
 "chercher, puis Enter"
 
-#: src/help.c:117
+#: src/chrome/help.c:117
 msgid "Address bar: back to the page; page: stop loading"
 msgstr "Barre d’adresse : retour à la page ; page : arrêter le chargement"
 
-#: src/help.c:118
+#: src/chrome/help.c:118
 msgid "Reload the page"
 msgstr "Recharger la page"
 
-#: src/help.c:119
+#: src/chrome/help.c:119
 msgctxt "key"
 msgid "Mouse back / forward"
 msgstr "Souris précédent / suivant"
 
-#: src/help.c:119
+#: src/chrome/help.c:119
 msgid "Back / forward in the pages visited (also the arrows of the tab)"
 msgstr ""
 "Reculer / avancer dans les pages visitées (aussi les flèches de l’onglet)"
 
-#: src/help.c:120
+#: src/chrome/help.c:120
 msgid "Next / previous tab of the preview panel"
 msgstr "Onglet suivant / précédent du panneau Aperçu"
 
-#: src/help.c:121
+#: src/chrome/help.c:121
 msgid "Focus the next / previous panel"
 msgstr "Focus sur le panneau suivant / précédent"
 
-#: src/help.c:122
+#: src/chrome/help.c:122
 msgid "Close the tab (also its cross, or a middle click on the tab)"
 msgstr "Fermer l’onglet (aussi sa croix, ou un clic du milieu sur l’onglet)"
 
-#: src/help.c:123 src/help.c:124 src/help.c:125 src/help.c:126 src/help.c:127
-#: src/help.c:128
+#: src/chrome/help.c:123 src/chrome/help.c:124 src/chrome/help.c:125 src/chrome/help.c:126 src/chrome/help.c:127
+#: src/chrome/help.c:128
 msgid "Remote view"
 msgstr "Vue Distant"
 
-#: src/help.c:123
+#: src/chrome/help.c:123
 msgid "Connect selected machine (SSHFS) and browse it in Explorer"
 msgstr ""
 "Connecter la machine sélectionnée (SSHFS) et la parcourir dans l’explorateur"
 
-#: src/help.c:124
+#: src/chrome/help.c:124
 msgid "Open SSH terminal to selected machine"
 msgstr "Ouvrir un terminal SSH vers la machine sélectionnée"
 
-#: src/help.c:125
+#: src/chrome/help.c:125
 msgid "Add remote machine (inside the selected folder) / new folder"
 msgstr ""
 "Ajouter une machine distante (dans le dossier sélectionné) / un dossier"
 
-#: src/help.c:126
+#: src/chrome/help.c:126
 msgid "Edit selected machine (also its folder) or folder (name and icon)"
 msgstr ""
 "Modifier la machine sélectionnée (aussi son dossier) ou le dossier (nom et "
 "icône)"
 
-#: src/help.c:127
+#: src/chrome/help.c:127
 msgid "Delete selected machine, or folder (its machines move to the top level)"
 msgstr ""
 "Supprimer la machine sélectionnée, ou le dossier (ses machines remontent au "
 "premier niveau)"
 
-#: src/help.c:128 src/preview/preview_summary.c:73 src/explorer/remote.c:1005
+#: src/chrome/help.c:128 src/preview/preview_summary.c:73 src/explorer/remote.c:1005
 msgid "Re-scan ~/.ssh/config"
 msgstr "Relire ~/.ssh/config"
 
-#: src/help.c:129
+#: src/chrome/help.c:129
 msgid "Switch between files and notes view in Explorer"
 msgstr "Basculer entre les vues Fichiers et Notes de l’explorateur"
 
-#: src/help.c:130
+#: src/chrome/help.c:130
 msgid "New file / new folder in the selected directory"
 msgstr "Nouveau fichier / nouveau dossier dans le dossier sélectionné"
 
-#: src/help.c:131
+#: src/chrome/help.c:131
 msgid "Rename selected file or folder"
 msgstr "Renommer le fichier ou le dossier sélectionné"
 
-#: src/help.c:132
+#: src/chrome/help.c:132
 msgid "Move selected file or folder to the trash (asks first)"
 msgstr ""
 "Mettre le fichier ou le dossier sélectionné à la corbeille (avec "
 "confirmation)"
 
-#: src/help.c:133
+#: src/chrome/help.c:133
 msgid ""
 "Back / forward in the folders shown in this workspace (also the mouse's "
 "back / forward buttons and the top bar arrows; right-click an arrow: the "
@@ -3664,7 +3664,7 @@ msgstr ""
 "(aussi les boutons précédent / suivant de la souris et les flèches de la "
 "barre du haut ; clic droit sur une flèche : la liste)"
 
-#: src/help.c:134
+#: src/chrome/help.c:134
 msgid ""
 "Context menu: open, side panel, default app, terminal here, rename, trash, "
 "copy path, bookmark"
@@ -3672,54 +3672,54 @@ msgstr ""
 "Menu contextuel : ouvrir, panneau latéral, application par défaut, terminal "
 "ici, renommer, corbeille, copier le chemin, signet"
 
-#: src/help.c:135
+#: src/chrome/help.c:135
 msgid ""
 "Undo the last move to the trash or rename (also Undo in the explorer bar)"
 msgstr ""
 "Annuler la dernière mise à la corbeille ou le dernier renommage (aussi "
 "Annuler dans la barre de l’explorateur)"
 
-#: src/help.c:136
+#: src/chrome/help.c:136
 msgid "Toggle hidden files"
 msgstr "Afficher / masquer les fichiers cachés"
 
-#: src/help.c:137
+#: src/chrome/help.c:137
 msgid "Cycle sort: name, date, size, extension"
 msgstr "Changer le tri : nom, date, taille, extension"
 
-#: src/help.c:138
+#: src/chrome/help.c:138
 msgid "Zoom the previewed image or PDF in / out / to the fitted size"
 msgstr "Agrandir / réduire / ajuster l’image ou le PDF en aperçu"
 
-#: src/help.c:139
+#: src/chrome/help.c:139
 msgid "Show / hide this help panel"
 msgstr "Afficher / masquer ce panneau d’aide"
 
-#: src/help.c:141 src/help.c:142 src/help.c:143 src/help.c:144 src/help.c:145
-#: src/help.c:146 src/help.c:147 src/help.c:148 src/help.c:149 src/help.c:150
-#: src/help.c:151 src/help.c:152 src/help.c:153 src/help.c:154 src/help.c:155
-#: src/help.c:156 src/help.c:157 src/help.c:158 src/help.c:159 src/help.c:160
-#: src/help.c:161 src/help.c:162
+#: src/chrome/help.c:141 src/chrome/help.c:142 src/chrome/help.c:143 src/chrome/help.c:144 src/chrome/help.c:145
+#: src/chrome/help.c:146 src/chrome/help.c:147 src/chrome/help.c:148 src/chrome/help.c:149 src/chrome/help.c:150
+#: src/chrome/help.c:151 src/chrome/help.c:152 src/chrome/help.c:153 src/chrome/help.c:154 src/chrome/help.c:155
+#: src/chrome/help.c:156 src/chrome/help.c:157 src/chrome/help.c:158 src/chrome/help.c:159 src/chrome/help.c:160
+#: src/chrome/help.c:161 src/chrome/help.c:162
 msgid "Preview panel"
 msgstr "Panneau Aperçu"
 
-#: src/help.c:141 src/help.c:142 src/help.c:143
+#: src/chrome/help.c:141 src/chrome/help.c:142 src/chrome/help.c:143
 msgid "Scroll a line down / up"
 msgstr "Défiler d’une ligne vers le bas / le haut"
 
-#: src/help.c:144 src/help.c:145
+#: src/chrome/help.c:144 src/chrome/help.c:145
 msgid "Scroll a page down / up"
 msgstr "Défiler d’une page vers le bas / le haut"
 
-#: src/help.c:146 src/help.c:147 src/help.c:148 src/help.c:149
+#: src/chrome/help.c:146 src/chrome/help.c:147 src/chrome/help.c:148 src/chrome/help.c:149
 msgid "Jump to the start / end of the file"
 msgstr "Aller au début / à la fin du fichier"
 
-#: src/help.c:150
+#: src/chrome/help.c:150
 msgid "Search in the file (n / N: next / previous match)"
 msgstr "Rechercher dans le fichier (n / N : occurrence suivante / précédente)"
 
-#: src/help.c:151
+#: src/chrome/help.c:151
 msgid ""
 "Search in the file (Enter / F3: next match, Shift+Enter / Shift+F3: "
 "previous, Esc: close)"
@@ -3727,11 +3727,11 @@ msgstr ""
 "Rechercher dans le fichier (Enter / F3 : occurrence suivante, Shift+Enter / "
 "Shift+F3 : précédente, Esc : fermer)"
 
-#: src/help.c:154
+#: src/chrome/help.c:154
 msgid "Open the previewed file in the dedicated editor panel"
 msgstr "Ouvrir le fichier en aperçu dans le panneau d’édition dédié"
 
-#: src/help.c:155
+#: src/chrome/help.c:155
 msgid ""
 "Show the previewed file in the dedicated editor panel (focus stays in the "
 "viewer)"
@@ -3739,11 +3739,11 @@ msgstr ""
 "Afficher le fichier en aperçu dans le panneau d’édition dédié (le focus "
 "reste dans l’aperçu)"
 
-#: src/help.c:156
+#: src/chrome/help.c:156
 msgid "Open the current file in the editor (text files only)"
 msgstr "Ouvrir le fichier courant dans l’éditeur (fichiers texte uniquement)"
 
-#: src/help.c:157
+#: src/chrome/help.c:157
 msgid ""
 "Toggle rendered preview / raw view (documents, tables, JSON, diffs, logs, "
 "archives, certificates, images, PDF, video, audio)"
@@ -3751,7 +3751,7 @@ msgstr ""
 "Basculer entre l’aperçu rendu et la vue brute (documents, tableaux, JSON, "
 "diffs, journaux, archives, certificats, images, PDF, vidéo, audio)"
 
-#: src/help.c:158
+#: src/chrome/help.c:158
 msgid ""
 "Show / hide the tagbar: headings of a Markdown, HTML, Org, Word, "
 "OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of "
@@ -3763,28 +3763,28 @@ msgstr ""
 "source, à côté du texte (Enter y va, s trie les symboles, c replie / déplie "
 "tout, Esc revient, q masque)"
 
-#: src/help.c:159
+#: src/chrome/help.c:159
 msgid "Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)"
 msgstr "Agrandir / réduire / ajuster l’image ou le PDF (aussi Ctrl+molette)"
 
-#: src/help.c:160
+#: src/chrome/help.c:160
 msgid "PDF: next / previous page; mailbox: next / previous message"
 msgstr ""
 "PDF : page suivante / précédente ; boîte mail : message suivant / précédent"
 
-#: src/help.c:161
+#: src/chrome/help.c:161
 msgid "Play / pause active video or audio preview"
 msgstr "Lecture / pause de l’aperçu vidéo ou audio actif"
 
-#: src/help.c:162
+#: src/chrome/help.c:162
 msgid "Video: seek 5 seconds back / forward (also in the explorer)"
 msgstr "Vidéo : reculer / avancer de 5 secondes (aussi dans l’explorateur)"
 
-#: src/help.c:163 src/help.c:164 src/help.c:165
+#: src/chrome/help.c:163 src/chrome/help.c:164 src/chrome/help.c:165
 msgid "Org-mode"
 msgstr "Org-mode"
 
-#: src/help.c:163
+#: src/chrome/help.c:163
 msgid ""
 "In Org view: Fold/unfold heading or cycle global visibility (Overview -> "
 "Contents -> Show All)"
@@ -3792,7 +3792,7 @@ msgstr ""
 "En vue Org : replier / déplier le titre ou changer la visibilité globale "
 "(Overview -> Contents -> Show All)"
 
-#: src/help.c:164
+#: src/chrome/help.c:164
 msgid ""
 "In Org view: Cycle TODO keyword (#+TODO, default TODO -> DONE) / toggle "
 "checkbox"
@@ -3800,34 +3800,34 @@ msgstr ""
 "En vue Org : changer le mot-clé TODO (#+TODO, par défaut TODO -> DONE) / "
 "cocher la case"
 
-#: src/help.c:165
+#: src/chrome/help.c:165
 msgctxt "key"
 msgid "Click heading/todo/box"
 msgstr "Clic sur titre / TODO / case"
 
-#: src/help.c:165
+#: src/chrome/help.c:165
 msgid "Interactive click: toggle fold, cycle TODO, toggle checkbox, open link"
 msgstr ""
 "Clic interactif : replier / déplier, changer le TODO, cocher la case, ouvrir "
 "le lien"
 
-#: src/help.c:166 src/help.c:167 src/help.c:168 src/help.c:169 src/help.c:170
-#: src/help.c:171 src/help.c:172 src/help.c:173 src/help.c:174
+#: src/chrome/help.c:166 src/chrome/help.c:167 src/chrome/help.c:168 src/chrome/help.c:169 src/chrome/help.c:170
+#: src/chrome/help.c:171 src/chrome/help.c:172 src/chrome/help.c:173 src/chrome/help.c:174
 msgid "Editor tabs"
 msgstr "Onglets d’édition"
 
-#: src/help.c:166
+#: src/chrome/help.c:166
 msgid "Save the file open in the current editor tab"
 msgstr "Enregistrer le fichier ouvert dans l’onglet d’édition courant"
 
-#: src/help.c:167
+#: src/chrome/help.c:167
 msgid ""
 "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"
 msgstr ""
 "Fermer l’onglet d’édition courant (demande s’il n’est pas enregistré ; une "
 "pastille marque les onglets modifiés)"
 
-#: src/help.c:168
+#: src/chrome/help.c:168
 msgid ""
 "Move active editor tab right / left / down / up (Right from the main panel: "
 "dedicated panel; Left from it: dock back)"
@@ -3836,12 +3836,12 @@ msgstr ""
 "(Right depuis le panneau principal : panneau dédié ; Left depuis celui-ci : "
 "le ré-ancrer)"
 
-#: src/help.c:169
+#: src/chrome/help.c:169
 msgctxt "key"
 msgid "Drag tab header"
 msgstr "Glisser l’en-tête d’onglet"
 
-#: src/help.c:169
+#: src/chrome/help.c:169
 msgid ""
 "Drop on a tab bar to move the tab there, near an editor edge to split that "
 "side"
@@ -3849,22 +3849,22 @@ msgstr ""
 "Déposer sur une barre d’onglets pour y déplacer l’onglet, près d’un bord "
 "d’éditeur pour scinder ce côté"
 
-#: src/help.c:170
+#: src/chrome/help.c:170
 msgctxt "key"
 msgid "Shift+drag tab header"
 msgstr "Shift+glisser l’en-tête d’onglet"
 
-#: src/help.c:170
+#: src/chrome/help.c:170
 msgid "Drop on another editor to swap places with the tab shown there"
 msgstr ""
 "Déposer sur un autre éditeur pour échanger sa place avec l’onglet affiché"
 
-#: src/help.c:171
+#: src/chrome/help.c:171
 msgctxt "key"
 msgid "Right-click tab header"
 msgstr "Clic droit sur l’en-tête d’onglet"
 
-#: src/help.c:171
+#: src/chrome/help.c:171
 msgid ""
 "Context menu to change mode, show line numbers, wrap lines, move, split, or "
 "close the editor tab"
@@ -3872,12 +3872,12 @@ msgstr ""
 "Menu contextuel pour changer de mode, afficher les numéros de ligne, "
 "renvoyer les lignes, déplacer, scinder ou fermer l’onglet d’édition"
 
-#: src/help.c:172
+#: src/chrome/help.c:172
 msgctxt "key"
 msgid "Middle-click tab header"
 msgstr "Clic du milieu sur l’en-tête d’onglet"
 
-#: src/help.c:172
+#: src/chrome/help.c:172
 msgid ""
 "Close the tab (editor, References and Search tabs; asks first when there are "
 "unsaved changes)"
@@ -3885,13 +3885,13 @@ msgstr ""
 "Fermer l’onglet (onglets d’édition, Références et Recherche ; demande "
 "d’abord s’il y a des modifications non enregistrées)"
 
-#: src/help.c:173
+#: src/chrome/help.c:173
 msgid "Rename current text buffer (F2 only in Emacs / Org-mode tabs)"
 msgstr ""
 "Renommer le tampon de texte courant (F2 seulement dans les onglets Emacs / "
 "Org-mode)"
 
-#: src/help.c:174
+#: src/chrome/help.c:174
 msgid ""
 "Show or hide line numbers in the current editor tab (:set number / M-x "
 "display-line-numbers-mode)"
@@ -3899,14 +3899,14 @@ msgstr ""
 "Afficher ou masquer les numéros de ligne dans l’onglet d’édition courant "
 "(:set number / M-x display-line-numbers-mode)"
 
-#: src/help.c:175 src/help.c:176 src/help.c:177 src/help.c:178 src/help.c:179
-#: src/help.c:180 src/help.c:181 src/help.c:182 src/help.c:183 src/help.c:184
-#: src/help.c:185 src/help.c:186 src/help.c:187 src/help.c:188 src/help.c:189
-#: src/help.c:190 src/help.c:191
+#: src/chrome/help.c:175 src/chrome/help.c:176 src/chrome/help.c:177 src/chrome/help.c:178 src/chrome/help.c:179
+#: src/chrome/help.c:180 src/chrome/help.c:181 src/chrome/help.c:182 src/chrome/help.c:183 src/chrome/help.c:184
+#: src/chrome/help.c:185 src/chrome/help.c:186 src/chrome/help.c:187 src/chrome/help.c:188 src/chrome/help.c:189
+#: src/chrome/help.c:190 src/chrome/help.c:191
 msgid "Org editor"
 msgstr "Éditeur Org"
 
-#: src/help.c:175
+#: src/chrome/help.c:175
 msgid ""
 "Cycle heading / drawer / block folding, next table cell, <s block; global "
 "visibility"
@@ -3914,15 +3914,15 @@ msgstr ""
 "Replier / déplier titre, tiroir ou bloc, cellule suivante du tableau, bloc "
 "<s ; visibilité globale"
 
-#: src/help.c:176
+#: src/chrome/help.c:176
 msgid "New heading or list item (TODO heading / checkbox item)"
 msgstr "Nouveau titre ou élément de liste (titre TODO / élément à case)"
 
-#: src/help.c:177
+#: src/chrome/help.c:177
 msgid "New heading (TODO heading) after the current subtree"
 msgstr "Nouveau titre (titre TODO) après le sous-arbre courant"
 
-#: src/help.c:178
+#: src/chrome/help.c:178
 msgid ""
 "Promote / demote heading (subtree), indent list item, move (insert / delete) "
 "table column"
@@ -3930,78 +3930,78 @@ msgstr ""
 "Remonter / abaisser le titre (sous-arbre), indenter l’élément de liste, "
 "déplacer (insérer / supprimer) une colonne du tableau"
 
-#: src/help.c:179
+#: src/chrome/help.c:179
 msgid "Move subtree, list item or table row (delete / insert table row)"
 msgstr ""
 "Déplacer le sous-arbre, l’élément de liste ou la ligne du tableau "
 "(supprimer / insérer une ligne)"
 
-#: src/help.c:180
+#: src/chrome/help.c:180
 msgid "Cycle TODO keyword or list bullet; previous / next day on a timestamp"
 msgstr ""
 "Changer le mot-clé TODO ou la puce de liste ; jour précédent / suivant sur "
 "un horodatage"
 
-#: src/help.c:181
+#: src/chrome/help.c:181
 msgid "Raise / lower priority; change the timestamp field under the cursor"
 msgstr ""
 "Augmenter / baisser la priorité ; changer le champ d’horodatage sous le "
 "curseur"
 
-#: src/help.c:182
+#: src/chrome/help.c:182
 msgid "Next table row / toggle the checkbox"
 msgstr "Ligne suivante du tableau / cocher la case"
 
-#: src/help.c:183
+#: src/chrome/help.c:183
 msgid "Context action (checkbox, table, tags) / cycle TODO / set priority"
 msgstr ""
 "Action contextuelle (case, tableau, étiquettes) / changer le TODO / fixer la "
 "priorité"
 
-#: src/help.c:184
+#: src/chrome/help.c:184
 msgid "Schedule / deadline (today, +3, +2w, mon, 2026-11-02 10:00, none)"
 msgstr "Planifier / échéance (today, +3, +2w, mon, 2026-11-02 10:00, none)"
 
-#: src/help.c:185
+#: src/chrome/help.c:185
 msgid "Insert active / inactive timestamp, set tags"
 msgstr "Insérer un horodatage actif / inactif, fixer les étiquettes"
 
-#: src/help.c:186
+#: src/chrome/help.c:186
 msgid "Insert a timestamp with the time of day"
 msgstr "Insérer un horodatage avec l’heure"
 
-#: src/help.c:187
+#: src/chrome/help.c:187
 msgid "Clock in / clock out (LOGBOOK drawer)"
 msgstr "Démarrer / arrêter le chrono (tiroir LOGBOOK)"
 
-#: src/help.c:188
+#: src/chrome/help.c:188
 msgid "Insert link / open link (URL, file:, *Heading, #id)"
 msgstr "Insérer un lien / ouvrir un lien (URL, file:, *Titre, #id)"
 
-#: src/help.c:189
+#: src/chrome/help.c:189
 msgid "Next / previous visible heading, same level, parent"
 msgstr "Titre visible suivant / précédent, même niveau, parent"
 
-#: src/help.c:190
+#: src/chrome/help.c:190
 msgid "List item or table rule / toggle heading / update cookies"
 msgstr ""
 "Élément de liste ou filet de tableau / basculer en titre / mettre à jour les "
 "compteurs"
 
-#: src/help.c:191
+#: src/chrome/help.c:191
 msgid "Sparse tree of open TODO entries / of a regexp"
 msgstr "Arbre filtré des entrées TODO ouvertes / d’une expression régulière"
 
-#: src/help.c:193 src/help.c:194
+#: src/chrome/help.c:193 src/chrome/help.c:194
 msgid "Editor: Mode switching"
 msgstr "Éditeur : changement de mode"
 
-#: src/help.c:193
+#: src/chrome/help.c:193
 msgctxt "key"
 msgid "Right-click on the tab"
 msgstr "Clic droit sur l’onglet"
 
-#: src/help.c:193
+#: src/chrome/help.c:193
 msgid ""
 "Switch the tab between Notepad, Emacs, and Vim modes (the menu shows the "
 "current one)"
@@ -4009,24 +4009,24 @@ msgstr ""
 "Passer l’onglet en mode Notepad, Emacs ou Vim (le menu indique le mode "
 "actuel)"
 
-#: src/help.c:194
+#: src/chrome/help.c:194
 msgid ""
 "In Emacs minibuffer: turn Org-mode editing on / off (also for .org files)"
 msgstr ""
 "Dans le minibuffer Emacs : activer / désactiver l’édition Org-mode (aussi "
 "pour les fichiers .org)"
 
-#: src/help.c:196 src/help.c:197 src/help.c:198 src/help.c:199 src/help.c:200
-#: src/help.c:201 src/help.c:202 src/help.c:203 src/help.c:204 src/help.c:205
-#: src/help.c:206
+#: src/chrome/help.c:196 src/chrome/help.c:197 src/chrome/help.c:198 src/chrome/help.c:199 src/chrome/help.c:200
+#: src/chrome/help.c:201 src/chrome/help.c:202 src/chrome/help.c:203 src/chrome/help.c:204 src/chrome/help.c:205
+#: src/chrome/help.c:206
 msgid "Editor: Notepad mode"
 msgstr "Éditeur : mode Notepad"
 
-#: src/help.c:196
+#: src/chrome/help.c:196
 msgid "Cut, copy, and paste text to system clipboard"
 msgstr "Couper, copier et coller du texte via le presse-papiers du système"
 
-#: src/help.c:197
+#: src/chrome/help.c:197
 msgid ""
 "Find / Replace, case ignored (Enter / F3: next, Shift+Enter / Shift+F3: "
 "previous, Esc: close)"
@@ -4034,41 +4034,41 @@ msgstr ""
 "Rechercher / remplacer, sans tenir compte de la casse (Enter / F3 : suivant, "
 "Shift+Enter / Shift+F3 : précédent, Esc : fermer)"
 
-#: src/help.c:198
+#: src/chrome/help.c:198
 msgid "Align paragraph: Left, Center, Right, Justify"
 msgstr "Aligner le paragraphe : gauche, centre, droite, justifié"
 
-#: src/help.c:199
+#: src/chrome/help.c:199
 msgid "Undo / Redo text changes (also Ctrl+Shift+Z)"
 msgstr "Annuler / rétablir les modifications (aussi Ctrl+Shift+Z)"
 
-#: src/help.c:200
+#: src/chrome/help.c:200
 msgid "Save file / Save As with chosen file name prompt"
 msgstr "Enregistrer / enregistrer sous avec saisie du nom de fichier"
 
-#: src/help.c:201
+#: src/chrome/help.c:201
 msgid "Go to line number in document"
 msgstr "Aller à un numéro de ligne du document"
 
-#: src/help.c:202
+#: src/chrome/help.c:202
 msgid "Go to the definition / declaration of the identifier (code files)"
 msgstr ""
 "Aller à la définition / déclaration de l’identifiant (fichiers de code)"
 
-#: src/help.c:203
+#: src/chrome/help.c:203
 msgid "Back / forward through the definition jumps"
 msgstr "Reculer / avancer dans les sauts vers les définitions"
 
-#: src/help.c:204
+#: src/chrome/help.c:204
 msgid "Help card of the identifier / signature of the call (code files)"
 msgstr ""
 "Fiche d’aide de l’identifiant / signature de l’appel (fichiers de code)"
 
-#: src/help.c:205
+#: src/chrome/help.c:205
 msgid "References (References tab) / symbols of the file"
 msgstr "Références (onglet Références) / symboles du fichier"
 
-#: src/help.c:206 src/help.c:247
+#: src/chrome/help.c:206 src/chrome/help.c:247
 msgid ""
 "Show / hide the tagbar: symbols or Markdown headings beside the text (Enter "
 "goes, s sorts, c collapses / expands all, Esc back, q hides)"
@@ -4076,20 +4076,20 @@ msgstr ""
 "Afficher / masquer la barre de symboles : symboles ou titres Markdown à côté "
 "du texte (Enter y va, s trie, c replie / déplie tout, Esc revient, q masque)"
 
-#: src/help.c:208 src/help.c:209 src/help.c:210 src/help.c:211 src/help.c:212
-#: src/help.c:213 src/help.c:214 src/help.c:215 src/help.c:216 src/help.c:217
-#: src/help.c:218 src/help.c:219 src/help.c:220 src/help.c:221 src/help.c:222
-#: src/help.c:223 src/help.c:224 src/help.c:225 src/help.c:226 src/help.c:227
+#: src/chrome/help.c:208 src/chrome/help.c:209 src/chrome/help.c:210 src/chrome/help.c:211 src/chrome/help.c:212
+#: src/chrome/help.c:213 src/chrome/help.c:214 src/chrome/help.c:215 src/chrome/help.c:216 src/chrome/help.c:217
+#: src/chrome/help.c:218 src/chrome/help.c:219 src/chrome/help.c:220 src/chrome/help.c:221 src/chrome/help.c:222
+#: src/chrome/help.c:223 src/chrome/help.c:224 src/chrome/help.c:225 src/chrome/help.c:226 src/chrome/help.c:227
 msgid "Editor: Emacs mode"
 msgstr "Éditeur : mode Emacs"
 
-#: src/help.c:208
+#: src/chrome/help.c:208
 msgid "Save buffer / Write file (Save As with chosen file name in minibuffer)"
 msgstr ""
 "Enregistrer le tampon / écrire le fichier (enregistrer sous avec le nom "
 "saisi dans le minibuffer)"
 
-#: src/help.c:209
+#: src/chrome/help.c:209
 msgid ""
 "Split view: the file in a second window below / to the right (own point, "
 "shared text and undo)"
@@ -4097,7 +4097,7 @@ msgstr ""
 "Vue scindée : le fichier dans une seconde fenêtre en dessous / à droite "
 "(point propre, texte et annulation partagés)"
 
-#: src/help.c:210
+#: src/chrome/help.c:210
 msgid ""
 "Delete this window / delete the other windows of the file (the other windows "
 "keep the changes)"
@@ -4105,19 +4105,19 @@ msgstr ""
 "Supprimer cette fenêtre / les autres fenêtres du fichier (les autres "
 "fenêtres gardent les modifications)"
 
-#: src/help.c:211
+#: src/chrome/help.c:211
 msgid "Kill region (cut), kill ring save (copy), yank (paste)"
 msgstr "Kill region (couper), kill ring save (copier), yank (coller)"
 
-#: src/help.c:212
+#: src/chrome/help.c:212
 msgid "Delete char, kill word forward, kill line"
 msgstr "Supprimer le caractère, tuer le mot suivant, tuer la ligne"
 
-#: src/help.c:213
+#: src/chrome/help.c:213
 msgid "Set mark (select text region; twice or C-g cancels)"
 msgstr "Poser la marque (sélectionner une région ; deux fois ou C-g annule)"
 
-#: src/help.c:214
+#: src/chrome/help.c:214
 msgid ""
 "Incremental search: again for next / previous (wraps), DEL undo step, C-w "
 "add word, RET stop, C-g back"
@@ -4125,52 +4125,52 @@ msgstr ""
 "Recherche incrémentale : à nouveau pour suivant / précédent (boucle), DEL "
 "annule une étape, C-w ajoute le mot, RET arrête, C-g revient"
 
-#: src/help.c:215
+#: src/chrome/help.c:215
 msgid "Query replace words or phrases in minibuffer"
 msgstr "Remplacement interactif de mots ou de phrases dans le minibuffer"
 
-#: src/help.c:216
+#: src/chrome/help.c:216
 msgid "Fill paragraph (format and wrap text to 72 columns)"
 msgstr ""
 "Remplir le paragraphe (mettre en forme et couper le texte à 72 colonnes)"
 
-#: src/help.c:217
+#: src/chrome/help.c:217
 msgid "Uppercase, lowercase, capitalize word"
 msgstr "Mot en majuscules, en minuscules, avec majuscule initiale"
 
-#: src/help.c:218
+#: src/chrome/help.c:218
 msgid "Undo / Redo text changes (also C-_ / M-_)"
 msgstr "Annuler / rétablir les modifications (aussi C-_ / M-_)"
 
-#: src/help.c:219
+#: src/chrome/help.c:219
 msgid "Move cursor forward / backward / next line / previous line"
 msgstr ""
 "Déplacer le curseur en avant / en arrière / ligne suivante / ligne précédente"
 
-#: src/help.c:220
+#: src/chrome/help.c:220
 msgid "Move forward / backward word, line start / line end"
 msgstr "Mot suivant / précédent, début / fin de ligne"
 
-#: src/help.c:221
+#: src/chrome/help.c:221
 msgid "Goto line prompt in minibuffer"
 msgstr "Aller à une ligne saisie dans le minibuffer"
 
-#: src/help.c:222
+#: src/chrome/help.c:222
 msgid "Go to the definition / declaration (code files), back, forward"
 msgstr ""
 "Aller à la définition / déclaration (fichiers de code), reculer, avancer"
 
-#: src/help.c:223
+#: src/chrome/help.c:223
 msgid "Help card of the identifier at point (signatures go to the echo area)"
 msgstr ""
 "Fiche d’aide de l’identifiant au point (les signatures vont dans la zone "
 "d’écho)"
 
-#: src/help.c:224
+#: src/chrome/help.c:224
 msgid "References (References tab) / symbols of the buffer (imenu)"
 msgstr "Références (onglet Références) / symboles du tampon (imenu)"
 
-#: src/help.c:225
+#: src/chrome/help.c:225
 msgid ""
 "Show / hide the tagbar: symbols or Markdown headings beside the text (RET "
 "goes, s sorts, c collapses / expands all, Esc back, q hides)"
@@ -4178,12 +4178,12 @@ msgstr ""
 "Afficher / masquer la barre de symboles : symboles ou titres Markdown à côté "
 "du texte (RET y va, s trie, c replie / déplie tout, Esc revient, q masque)"
 
-#: src/help.c:226
+#: src/chrome/help.c:226
 msgid "Execute command (e.g. set-justification-center, goto-line, save-buffer)"
 msgstr ""
 "Exécuter une commande (ex. set-justification-center, goto-line, save-buffer)"
 
-#: src/help.c:227
+#: src/chrome/help.c:227
 msgid ""
 "Complete the command, tag or *Heading link (lists candidates) / quit the "
 "prompt"
@@ -4191,16 +4191,16 @@ msgstr ""
 "Compléter la commande, l’étiquette ou le lien *Titre (liste les candidats) / "
 "quitter la saisie"
 
-#: src/help.c:229 src/help.c:230 src/help.c:231 src/help.c:232 src/help.c:233
-#: src/help.c:234 src/help.c:235 src/help.c:236 src/help.c:237 src/help.c:238
-#: src/help.c:239 src/help.c:240 src/help.c:241 src/help.c:242 src/help.c:243
-#: src/help.c:244 src/help.c:245 src/help.c:246 src/help.c:247 src/help.c:248
-#: src/help.c:249 src/help.c:250 src/help.c:251 src/help.c:252 src/help.c:253
-#: src/help.c:254 src/help.c:255 src/help.c:256
+#: src/chrome/help.c:229 src/chrome/help.c:230 src/chrome/help.c:231 src/chrome/help.c:232 src/chrome/help.c:233
+#: src/chrome/help.c:234 src/chrome/help.c:235 src/chrome/help.c:236 src/chrome/help.c:237 src/chrome/help.c:238
+#: src/chrome/help.c:239 src/chrome/help.c:240 src/chrome/help.c:241 src/chrome/help.c:242 src/chrome/help.c:243
+#: src/chrome/help.c:244 src/chrome/help.c:245 src/chrome/help.c:246 src/chrome/help.c:247 src/chrome/help.c:248
+#: src/chrome/help.c:249 src/chrome/help.c:250 src/chrome/help.c:251 src/chrome/help.c:252 src/chrome/help.c:253
+#: src/chrome/help.c:254 src/chrome/help.c:255 src/chrome/help.c:256
 msgid "Editor: Vim mode"
 msgstr "Éditeur : mode Vim"
 
-#: src/help.c:229
+#: src/chrome/help.c:229
 msgid ""
 "Operators d c y > < = g~ gu gU g? gq with any motion or text object (dd, cc, "
 "yy... on lines)"
@@ -4208,80 +4208,80 @@ msgstr ""
 "Opérateurs d c y > < = g~ gu gU g? gq avec tout mouvement ou objet texte "
 "(dd, cc, yy… sur les lignes)"
 
-#: src/help.c:230
+#: src/chrome/help.c:230
 msgid "Character, line and word motions (counts everywhere)"
 msgstr "Mouvements par caractère, ligne et mot (compteurs partout)"
 
-#: src/help.c:231
+#: src/chrome/help.c:231
 msgid "Line positions and character finds (; , repeat)"
 msgstr "Positions dans la ligne et recherche de caractère (; , répètent)"
 
-#: src/help.c:232
+#: src/chrome/help.c:232
 msgid "Document, bracket, paragraph, sentence and screen motions"
 msgstr "Mouvements par document, parenthèse, paragraphe, phrase et écran"
 
-#: src/help.c:233
+#: src/chrome/help.c:233
 msgid ""
 "Text objects: words, sentences, paragraphs, brackets ( [ { <, quotes, tags"
 msgstr ""
 "Objets texte : mots, phrases, paragraphes, parenthèses ( [ { <, guillemets, "
 "balises"
 
-#: src/help.c:234
+#: src/chrome/help.c:234
 msgid "Insert / Replace mode; Esc back to Normal ([count] repeats the text)"
 msgstr ""
 "Mode Insertion / Remplacement ; Esc revient en Normal ([count] répète le "
 "texte)"
 
-#: src/help.c:235
+#: src/chrome/help.c:235
 msgid "Delete word / to line start, indent / unindent the line"
 msgstr ""
 "Supprimer le mot / jusqu’au début de ligne, indenter / désindenter la ligne"
 
-#: src/help.c:236
+#: src/chrome/help.c:236
 msgid "Insert register x, complete a word, run one Normal command"
 msgstr "Insérer le registre x, compléter un mot, lancer une commande Normal"
 
-#: src/help.c:237
+#: src/chrome/help.c:237
 msgid ""
 "Delete chars, delete / yank to line end, join, replace, case, add to number"
 msgstr ""
 "Supprimer des caractères, supprimer / copier jusqu’à la fin de ligne, "
 "joindre, remplacer, casse, ajouter à un nombre"
 
-#: src/help.c:238
+#: src/chrome/help.c:238
 msgid "Put after / before; named registers a-z (A-Z append), 0-9, -, +, _"
 msgstr "Coller après / avant ; registres nommés a-z (A-Z ajoute), 0-9, -, +, _"
 
-#: src/help.c:239
+#: src/chrome/help.c:239
 msgid "Visual char / line / block, reselect, other end; block I / A / c / $"
 msgstr ""
 "Visuel caractère / ligne / bloc, resélection, autre extrémité ; bloc I / A / "
 "c / $"
 
-#: src/help.c:240
+#: src/chrome/help.c:240
 msgid "Undo / redo a whole command / repeat the last change"
 msgstr ""
 "Annuler / rétablir une commande entière / répéter la dernière modification"
 
-#: src/help.c:241
+#: src/chrome/help.c:241
 msgid "Record a macro into register x / run it / run it again"
 msgstr "Enregistrer une macro dans le registre x / la lancer / la relancer"
 
-#: src/help.c:242
+#: src/chrome/help.c:242
 msgid "Set mark / jump to it (line) / back in the jump list (Tab: forward)"
 msgstr ""
 "Poser une marque / y aller (ligne) / reculer dans la liste des sauts (Tab : "
 "avancer)"
 
-#: src/help.c:243
+#: src/chrome/help.c:243
 msgid ""
 "Search (Vim regex, incremental, highlighted; :noh hides), word under cursor"
 msgstr ""
 "Rechercher (regex Vim, incrémentale, surlignée ; :noh masque), mot sous le "
 "curseur"
 
-#: src/help.c:244
+#: src/chrome/help.c:244
 msgid ""
 "Code files: go to the definition / declaration; Ctrl+O / Tab go on across "
 "files"
@@ -4289,29 +4289,29 @@ msgstr ""
 "Fichiers de code : aller à la définition / déclaration ; Ctrl+O / Tab "
 "continuent d’un fichier à l’autre"
 
-#: src/help.c:245
+#: src/chrome/help.c:245
 msgid "Code files: help card of the identifier under the cursor"
 msgstr "Fichiers de code : fiche d’aide de l’identifiant sous le curseur"
 
-#: src/help.c:246
+#: src/chrome/help.c:246
 msgid "Code files: references (References tab) / symbols of the file"
 msgstr ""
 "Fichiers de code : références (onglet Références) / symboles du fichier"
 
-#: src/help.c:248
+#: src/chrome/help.c:248
 msgid "Substitute (& \\1 \\u \\U \\r); :g/pat/cmd, :v, :&& , & repeat"
 msgstr "Substituer (& \\1 \\u \\U \\r) ; :g/pat/cmd, :v, :&& , & répète"
 
-#: src/help.c:249
+#: src/chrome/help.c:249
 msgid "Line commands on ranges (%, 'a, '<,'>, /pat/, .+1, $)"
 msgstr "Commandes de ligne sur des plages (%, 'a, '<,'>, /pat/, .+1, $)"
 
-#: src/help.c:250
+#: src/chrome/help.c:250
 msgid "Sort lines (n i u !), retab, align, list registers / :marks"
 msgstr ""
 "Trier les lignes (n i u !), retab, aligner, lister les registres / :marks"
 
-#: src/help.c:251
+#: src/chrome/help.c:251
 msgid ""
 "Options (shiftwidth, softtabstop, expandtab, ignorecase, hlsearch, number, "
 "wrap, colorcolumn...)"
@@ -4319,20 +4319,20 @@ msgstr ""
 "Options (shiftwidth, softtabstop, expandtab, ignorecase, hlsearch, number, "
 "wrap, colorcolumn…)"
 
-#: src/help.c:252
+#: src/chrome/help.c:252
 msgid ""
 "Complete a command or :set option, list the matches and cycle through them"
 msgstr ""
 "Compléter une commande ou une option de :set, lister les correspondances et "
 "les parcourir"
 
-#: src/help.c:253
+#: src/chrome/help.c:253
 msgid "Save (:w file, :saveas), save and close, close discarding changes"
 msgstr ""
 "Enregistrer (:w fichier, :saveas), enregistrer et fermer, fermer sans "
 "enregistrer"
 
-#: src/help.c:254
+#: src/chrome/help.c:254
 msgid ""
 "Split view: the file in a second view below / to the right (own cursor, "
 "shared text and undo)"
@@ -4340,7 +4340,7 @@ msgstr ""
 "Vue scindée : le fichier dans une seconde vue en dessous / à droite (curseur "
 "propre, texte et annulation partagés)"
 
-#: src/help.c:255
+#: src/chrome/help.c:255
 msgid ""
 "Close the other views of the file / close this view (the other views keep "
 "the changes)"
@@ -4348,30 +4348,30 @@ msgstr ""
 "Fermer les autres vues du fichier / fermer cette vue (les autres vues "
 "gardent les modifications)"
 
-#: src/help.c:256
+#: src/chrome/help.c:256
 msgid ""
 "Scroll the view (cursor line centered, top, bottom; lines, half pages, pages)"
 msgstr ""
 "Faire défiler la vue (ligne du curseur au centre, en haut, en bas ; lignes, "
 "demi-pages, pages)"
 
-#: src/help.c:258 src/help.c:259 src/help.c:260 src/help.c:261 src/help.c:262
-#: src/help.c:263 src/help.c:264 src/help.c:265 src/help.c:266 src/help.c:267
-#: src/help.c:268 src/help.c:269 src/help.c:270 src/help.c:271 src/help.c:272
-#: src/help.c:273 src/help.c:274 src/help.c:275 src/help.c:276 src/help.c:277
-#: src/help.c:278 src/help.c:279 src/help.c:280 src/help.c:281 src/help.c:282
-#: src/help.c:283 src/help.c:284 src/help.c:285 src/help.c:286 src/help.c:287
-#: src/help.c:288 src/help.c:289 src/help.c:291
+#: src/chrome/help.c:258 src/chrome/help.c:259 src/chrome/help.c:260 src/chrome/help.c:261 src/chrome/help.c:262
+#: src/chrome/help.c:263 src/chrome/help.c:264 src/chrome/help.c:265 src/chrome/help.c:266 src/chrome/help.c:267
+#: src/chrome/help.c:268 src/chrome/help.c:269 src/chrome/help.c:270 src/chrome/help.c:271 src/chrome/help.c:272
+#: src/chrome/help.c:273 src/chrome/help.c:274 src/chrome/help.c:275 src/chrome/help.c:276 src/chrome/help.c:277
+#: src/chrome/help.c:278 src/chrome/help.c:279 src/chrome/help.c:280 src/chrome/help.c:281 src/chrome/help.c:282
+#: src/chrome/help.c:283 src/chrome/help.c:284 src/chrome/help.c:285 src/chrome/help.c:286 src/chrome/help.c:287
+#: src/chrome/help.c:288 src/chrome/help.c:289 src/chrome/help.c:291
 msgid "Global"
 msgstr "Global"
 
-#: src/help.c:258
+#: src/chrome/help.c:258
 msgid "Switch between virtual workspaces (or click/scroll top-bar minimap)"
 msgstr ""
 "Passer d’un espace de travail virtuel à l’autre (ou cliquer / défiler sur la "
 "minicarte de la barre du haut)"
 
-#: src/help.c:259
+#: src/chrome/help.c:259
 msgid ""
 "Add a virtual workspace with the default layout (+) or close the current "
 "workspace (-)"
@@ -4379,7 +4379,7 @@ msgstr ""
 "Ajouter un espace de travail virtuel avec la disposition par défaut (+) ou "
 "fermer l’espace courant (-)"
 
-#: src/help.c:260
+#: src/chrome/help.c:260
 msgid ""
 "Recent folders and files: Enter opens a folder or shows a file (Ctrl+Enter "
 "edits it)"
@@ -4387,7 +4387,7 @@ msgstr ""
 "Dossiers et fichiers récents : Enter ouvre un dossier ou affiche un fichier "
 "(Ctrl+Enter le modifie)"
 
-#: src/help.c:261
+#: src/chrome/help.c:261
 msgid ""
 "Workspace layouts: preview while moving (Alt+L: next), Enter applies, Escape "
 "restores; Edit Layouts… saves (not in Emacs editor tabs)"
@@ -4396,7 +4396,7 @@ msgstr ""
 "suivante), Enter applique, Escape restaure ; Modifier les dispositions… "
 "enregistre (pas dans les onglets d’édition Emacs)"
 
-#: src/help.c:262
+#: src/chrome/help.c:262
 msgid ""
 "Preferences: appearance, editor (mode, line numbers, wrap of new tabs, "
 "column line), window size, language servers"
@@ -4405,7 +4405,7 @@ msgstr ""
 "des nouveaux onglets, ligne de colonne), taille de la fenêtre, serveurs de "
 "langage"
 
-#: src/help.c:263
+#: src/chrome/help.c:263
 msgid ""
 "Preferences on Appearance: pick a theme (applied as you select it), set your "
 "fonts, save, edit or delete your themes"
@@ -4413,14 +4413,14 @@ msgstr ""
 "Préférences, page Apparence : choisir un thème (appliqué dès la sélection), "
 "régler les polices, enregistrer, modifier ou supprimer vos thèmes"
 
-#: src/help.c:264
+#: src/chrome/help.c:264
 msgid ""
 "Larger / smaller fonts (interface and code), or back to the theme's sizes"
 msgstr ""
 "Polices plus grandes / plus petites (interface et code), ou retour aux "
 "tailles du thème"
 
-#: src/help.c:265
+#: src/chrome/help.c:265
 msgid ""
 "Go to a file of the project: type part of its name (Enter shows it, "
 "Ctrl+Enter edits it; not in Vim editor tabs)"
@@ -4428,7 +4428,7 @@ msgstr ""
 "Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, "
 "Ctrl+Enter le modifie ; pas dans les onglets d’édition Vim)"
 
-#: src/help.c:266 src/help.c:267
+#: src/chrome/help.c:266 src/chrome/help.c:267
 msgid ""
 "Go to a file of the project: type part of its name (Enter shows it, "
 "Ctrl+Enter edits it)"
@@ -4436,7 +4436,7 @@ msgstr ""
 "Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, "
 "Ctrl+Enter le modifie)"
 
-#: src/help.c:268
+#: src/chrome/help.c:268
 msgid ""
 "Search the text in every file of the project (results in the Search tab, "
 "Enter opens; not in Emacs editor tabs)"
@@ -4444,7 +4444,7 @@ msgstr ""
 "Rechercher le texte dans tous les fichiers du projet (résultats dans "
 "l’onglet Recherche, Enter ouvre ; pas dans les onglets d’édition Emacs)"
 
-#: src/help.c:269
+#: src/chrome/help.c:269
 msgid ""
 "In Search in Files: match case / whole word / regular expression / letters "
 "in order"
@@ -4452,7 +4452,7 @@ msgstr ""
 "Dans Rechercher dans les fichiers : respecter la casse / mot entier / "
 "expression régulière / lettres dans l’ordre"
 
-#: src/help.c:270
+#: src/chrome/help.c:270
 msgid ""
 "In Search in Files: files to include / to exclude (*.c, src/) / include the "
 "files git ignores"
@@ -4460,7 +4460,7 @@ msgstr ""
 "Dans Rechercher dans les fichiers : fichiers à inclure / à exclure (*.c, "
 "src/) / inclure les fichiers ignorés par git"
 
-#: src/help.c:271
+#: src/chrome/help.c:271
 msgid ""
 "Open a terminal in a new tab (exit the shell to close it; drag tabs to move "
 "or split; not in Vim Insert)"
@@ -4468,30 +4468,30 @@ msgstr ""
 "Ouvrir un terminal dans un nouvel onglet (quitter le shell pour le fermer ; "
 "glisser les onglets pour déplacer ou scinder ; pas en Insertion Vim)"
 
-#: src/help.c:272
+#: src/chrome/help.c:272
 msgid "Open a terminal in a new pane below the focused one"
 msgstr "Ouvrir un terminal dans un nouveau volet sous celui qui a le focus"
 
-#: src/help.c:273
+#: src/chrome/help.c:273
 msgid "In a terminal: next / previous tab of its pane"
 msgstr "Dans un terminal : onglet suivant / précédent de son volet"
 
-#: src/help.c:274
+#: src/chrome/help.c:274
 msgid "In a terminal: copy the selected text / paste the clipboard"
 msgstr ""
 "Dans un terminal : copier le texte sélectionné / coller le presse-papiers"
 
-#: src/help.c:275
+#: src/chrome/help.c:275
 msgid "Cycle the keyboard focus between panels"
 msgstr "Faire passer le focus clavier d’un panneau à l’autre"
 
-#: src/help.c:276
+#: src/chrome/help.c:276
 msgid "Focus the next / previous panel (also h / l; from Vim editor tabs too)"
 msgstr ""
 "Focus sur le panneau suivant / précédent (aussi h / l ; depuis les onglets "
 "d’édition Vim aussi)"
 
-#: src/help.c:277
+#: src/chrome/help.c:277
 msgid ""
 "Close the focused editor tab, or the current one on screen (from Vim editor "
 "tabs too; asks when unsaved)"
@@ -4499,19 +4499,19 @@ msgstr ""
 "Fermer l’onglet d’édition qui a le focus, ou celui affiché (depuis les "
 "onglets d’édition Vim aussi ; demande s’il n’est pas enregistré)"
 
-#: src/help.c:278
+#: src/chrome/help.c:278
 msgid "Focus the next panel (from Emacs and Org-mode editor tabs too)"
 msgstr ""
 "Focus sur le panneau suivant (depuis les onglets d’édition Emacs et Org-mode "
 "aussi)"
 
-#: src/help.c:279
+#: src/chrome/help.c:279
 msgid "Focus the next / previous panel (from Notepad editor tabs too)"
 msgstr ""
 "Focus sur le panneau suivant / précédent (depuis les onglets d’édition "
 "Notepad aussi)"
 
-#: src/help.c:280 src/help.c:281 src/help.c:282
+#: src/chrome/help.c:280 src/chrome/help.c:281 src/chrome/help.c:282
 msgid ""
 "Next / previous tab of the focused notebook (from the explorer: the preview "
 "panel, the focus stays)"
@@ -4519,23 +4519,23 @@ msgstr ""
 "Onglet suivant / précédent du groupe d’onglets qui a le focus (depuis "
 "l’explorateur : le panneau Aperçu, le focus reste)"
 
-#: src/help.c:283
+#: src/chrome/help.c:283
 msgctxt "key"
 msgid "Git Commits / References / Search"
 msgstr "Commits Git / Références / Recherche"
 
-#: src/help.c:283
+#: src/chrome/help.c:283
 msgid "The navigation keys of the global mode move in the list (Enter opens)"
 msgstr ""
 "Les touches de navigation du mode global se déplacent dans la liste (Enter "
 "ouvre)"
 
-#: src/help.c:284
+#: src/chrome/help.c:284
 msgctxt "key"
 msgid "Top bar mode"
 msgstr "Mode de la barre du haut"
 
-#: src/help.c:284
+#: src/chrome/help.c:284
 msgid ""
 "Global mode: only the Notepad, Vim or Emacs navigation keys in the explorer, "
 "viewer and their search bars (arrows, Home / End, PgUp / PgDn in all); mode "
@@ -4545,11 +4545,11 @@ msgstr ""
 "l’explorateur, l’aperçu et leurs barres de recherche (flèches, Home / End, "
 "PgUp / PgDn partout) ; mode des nouveaux onglets d’édition"
 
-#: src/help.c:285
+#: src/chrome/help.c:285
 msgid "Toggle fullscreen"
 msgstr "Basculer en plein écran"
 
-#: src/help.c:286
+#: src/chrome/help.c:286
 msgid ""
 "Open an empty browser tab in the preview panel (needs WebKitGTK 6.0; not in "
 "Emacs editor tabs)"
@@ -4557,7 +4557,7 @@ msgstr ""
 "Ouvrir un onglet navigateur vide dans le panneau Aperçu (nécessite WebKitGTK "
 "6.0 ; pas dans les onglets d’édition Emacs)"
 
-#: src/help.c:287
+#: src/chrome/help.c:287
 msgid ""
 "Stack the terminal pane under the viewer, or put it back beside it (the "
 "explorer panel stays fixed)"
@@ -4565,12 +4565,12 @@ msgstr ""
 "Placer le volet terminal sous l’aperçu, ou le remettre à côté (le panneau "
 "Explorateur reste fixe)"
 
-#: src/help.c:288
+#: src/chrome/help.c:288
 msgid "Toggle Remote (SSH) machines view in sidebar"
 msgstr ""
 "Afficher / masquer la vue des machines distantes (SSH) dans la barre latérale"
 
-#: src/help.c:289
+#: src/chrome/help.c:289
 msgid ""
 "User guide in a Help tab (also a click on the top bar's Help button; right "
 "click: this cheat sheet)"
@@ -4578,33 +4578,33 @@ msgstr ""
 "Guide d’utilisation dans un onglet Aide (aussi un clic sur le bouton Aide de "
 "la barre du haut ; clic droit : cet aide-mémoire)"
 
-#: src/help.c:290
+#: src/chrome/help.c:290
 msgid "Help panel"
 msgstr "Panneau d’aide"
 
-#: src/help.c:290
+#: src/chrome/help.c:290
 msgid "Unlock Game Mode in this workspace"
 msgstr "Déverrouiller le mode Jeu dans cet espace de travail"
 
-#: src/help.c:291
+#: src/chrome/help.c:291
 msgid "Quit"
 msgstr "Quitter"
 
 #. TRANSLATORS: %s is Notepad, Vim or Emacs
-#: src/help.c:300
+#: src/chrome/help.c:300
 #, c-format
 msgid "(%s mode)"
 msgstr "(mode %s)"
 
-#: src/help.c:301
+#: src/chrome/help.c:301
 msgid "Keyboard Shortcuts"
 msgstr "Raccourcis clavier"
 
-#: src/help.c:425
+#: src/chrome/help.c:425
 msgid "Close Help Panel (?)"
 msgstr "Fermer le panneau d’aide (?)"
 
-#: src/help_guide.c:126
+#: src/chrome/help_guide.c:126
 #, c-format
 msgid ""
 "# Page Not Found\n"
@@ -4615,36 +4615,36 @@ msgstr ""
 "\n"
 "Le guide d’utilisation n’a pas de page `%s`.\n"
 
-#: src/help_guide.c:137
+#: src/chrome/help_guide.c:137
 msgid "User Guide"
 msgstr "Guide d’utilisation"
 
-#: src/help_guide.c:195
+#: src/chrome/help_guide.c:195
 #, c-format
 msgid "Not in the built-in guide: %s"
 msgstr "Absent du guide intégré : %s"
 
-#: src/help_guide.c:452
+#: src/chrome/help_guide.c:452
 msgid "Back (Shift+H)"
 msgstr "Précédent (Shift+H)"
 
-#: src/help_guide.c:453
+#: src/chrome/help_guide.c:453
 msgid "Forward (Shift+L)"
 msgstr "Suivant (Shift+L)"
 
-#: src/help_guide.c:454
+#: src/chrome/help_guide.c:454
 msgid "Contents of the User Guide"
 msgstr "Sommaire du guide d’utilisation"
 
-#: src/help_guide.c:460
+#: src/chrome/help_guide.c:460
 msgid "Show Keyboard Shortcuts (?)"
 msgstr "Afficher les raccourcis clavier (?)"
 
-#: src/help_guide.c:461
+#: src/chrome/help_guide.c:461
 msgid "Close Help"
 msgstr "Fermer l’aide"
 
-#: src/help_guide.c:496 src/main.c:368
+#: src/chrome/help_guide.c:496 src/main.c:368
 msgid "Help"
 msgstr "Aide"
 
@@ -4968,7 +4968,7 @@ msgstr "Dispositions des espaces de travail"
 msgid "_Save Current…"
 msgstr "_Enregistrer l’actuelle…"
 
-#: src/workspace/layouts.c:522 src/preferences.c:342
+#: src/workspace/layouts.c:522 src/chrome/preferences.c:342
 msgid "_Apply"
 msgstr "A_ppliquer"
 
@@ -5320,7 +5320,7 @@ msgstr "Afficher / masquer le panneau Terminal"
 msgid "User Guide (F1) — Right-Click: Keyboard Shortcuts (?)"
 msgstr "Guide d’utilisation (F1) — clic droit : raccourcis clavier (?)"
 
-#: src/main.c:448 src/topbar.c:647
+#: src/main.c:448 src/chrome/topbar.c:647
 msgid "Move Editor Tabs to a Dedicated Panel"
 msgstr "Déplacer les onglets d’édition dans un panneau dédié"
 
@@ -5442,7 +5442,7 @@ msgstr "Carnet de la note : en choisir un autre pour y déplacer la note"
 msgid "Select Note Format & Type:"
 msgstr "Format et type de la note :"
 
-#: src/notes/notes.c:732 src/notes/notes.c:1383 src/status_bar.c:438
+#: src/notes/notes.c:732 src/notes/notes.c:1383 src/chrome/status_bar.c:438
 msgid "Notebook"
 msgstr "Carnet"
 
@@ -5462,7 +5462,7 @@ msgstr "Aperçu :"
 msgid "Trash (empty)"
 msgstr "Corbeille (vide)"
 
-#: src/notes/notes.c:953 src/preview/preview_summary.c:268 src/status_bar.c:447
+#: src/notes/notes.c:953 src/preview/preview_summary.c:268 src/chrome/status_bar.c:447
 msgid "Trash"
 msgstr "Corbeille"
 
@@ -6125,7 +6125,7 @@ msgid_plural "%u slides"
 msgstr[0] "%u diapositive"
 msgstr[1] "%u diapositives"
 
-#: src/preferences.c:106
+#: src/chrome/preferences.c:106
 msgid ""
 "For editor tabs opened from now on; the tabs already open keep theirs, "
 "except for the column line and the tagbar. Org files always open in Org-mode."
@@ -6134,11 +6134,11 @@ msgstr ""
 "ouverts gardent les leurs, sauf pour la ligne de colonne et la barre de "
 "symboles. Les fichiers Org s’ouvrent toujours en Org-mode."
 
-#: src/preferences.c:111
+#: src/chrome/preferences.c:111
 msgid "_Mode"
 msgstr "_Mode"
 
-#: src/preferences.c:117
+#: src/chrome/preferences.c:117
 msgid ""
 "Keys of new editor tabs, and of the explorer and preview (the global mode of "
 "the status bar; -e on the command line)"
@@ -6146,31 +6146,31 @@ msgstr ""
 "Touches des nouveaux onglets d’édition, de l’explorateur et de l’aperçu (le "
 "mode global de la barre d’état ; -e en ligne de commande)"
 
-#: src/preferences.c:129
+#: src/chrome/preferences.c:129
 msgid "Show _line numbers"
 msgstr "Afficher les numéros de _ligne"
 
-#: src/preferences.c:131
+#: src/chrome/preferences.c:131
 msgid "A tab can still show or hide them from its right-click menu"
 msgstr ""
 "Chaque onglet peut encore les afficher ou les masquer depuis son menu "
 "contextuel"
 
-#: src/preferences.c:134
+#: src/chrome/preferences.c:134
 msgid "_Wrap long lines"
 msgstr "_Renvoyer les longues lignes à la ligne"
 
-#: src/preferences.c:136
+#: src/chrome/preferences.c:136
 msgid "Long lines continue on the next line instead of scrolling sideways"
 msgstr ""
 "Les longues lignes continuent sur la ligne suivante au lieu de défiler "
 "horizontalement"
 
-#: src/preferences.c:139
+#: src/chrome/preferences.c:139
 msgid "Show the _tagbar"
 msgstr "Afficher la _barre de symboles"
 
-#: src/preferences.c:141
+#: src/chrome/preferences.c:141
 msgid ""
 "Symbols of code files and headings of Markdown files beside the text, in "
 "every tab, the tabs already open too (Notepad: Ctrl+K Ctrl+O, Emacs: M-x "
@@ -6180,11 +6180,11 @@ msgstr ""
 "texte, dans chaque onglet, y compris ceux déjà ouverts (Notepad : Ctrl+K "
 "Ctrl+O, Emacs : M-x imenu-list, Vim : :TagbarToggle)"
 
-#: src/preferences.c:146
+#: src/chrome/preferences.c:146
 msgid "Show the tagbar in the _preview"
 msgstr "Afficher la barre de symboles dans l’a_perçu"
 
-#: src/preferences.c:148
+#: src/chrome/preferences.c:148
 msgid ""
 "Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews, PDF "
 "bookmarks, beside the text (in the preview: o or Ctrl+K Ctrl+O)"
@@ -6192,11 +6192,11 @@ msgstr ""
 "Titres des aperçus Markdown, HTML, Org, Word, OpenDocument et EPUB, signets "
 "PDF, à côté du texte (dans l’aperçu : o ou Ctrl+K Ctrl+O)"
 
-#: src/preferences.c:154
+#: src/chrome/preferences.c:154
 msgid "Show a vertical line at _column"
 msgstr "Afficher une ligne verticale à la _colonne"
 
-#: src/preferences.c:156
+#: src/chrome/preferences.c:156
 msgid ""
 "A line before this column in every editor tab, the tabs already open too, "
 "and in code previews (Vim: :set colorcolumn=81)"
@@ -6204,11 +6204,11 @@ msgstr ""
 "Une ligne avant cette colonne dans chaque onglet d’édition, y compris ceux "
 "déjà ouverts, et dans les aperçus de code (Vim : :set colorcolumn=81)"
 
-#: src/preferences.c:162
+#: src/chrome/preferences.c:162
 msgid "81: the line follows the 80th character"
 msgstr "81 : la ligne suit le 80ᵉ caractère"
 
-#: src/preferences.c:197
+#: src/chrome/preferences.c:197
 msgid ""
 "Size of the window at the next launch, in pixels (--size on the command line "
 "wins)."
@@ -6216,23 +6216,23 @@ msgstr ""
 "Taille de la fenêtre au prochain lancement, en pixels (--size en ligne de "
 "commande l’emporte)."
 
-#: src/preferences.c:204
+#: src/chrome/preferences.c:204
 msgid "Wi_dth"
 msgstr "_Largeur"
 
-#: src/preferences.c:205
+#: src/chrome/preferences.c:205
 msgid "_Height"
 msgstr "_Hauteur"
 
-#: src/preferences.c:215
+#: src/chrome/preferences.c:215
 msgid "Use the _current size"
 msgstr "Utiliser la taille a_ctuelle"
 
-#: src/preferences.c:216
+#: src/chrome/preferences.c:216
 msgid "Fill in the size the window has now"
 msgstr "Reprendre la taille actuelle de la fenêtre"
 
-#: src/preferences.c:230
+#: src/chrome/preferences.c:230
 #, c-format
 msgid ""
 "Code navigation starts the language server installed for the file's language "
@@ -6243,33 +6243,33 @@ msgstr ""
 "langage du fichier (clangd, pylsp, gopls, rust-analyzer…). %s remplace la "
 "commande d’un serveur ou le désactive ; il est lu au prochain lancement."
 
-#: src/preferences.c:237
+#: src/chrome/preferences.c:237
 msgid "Edit _lsp.ini"
 msgstr "Modifier _lsp.ini"
 
-#: src/preferences.c:238
+#: src/chrome/preferences.c:238
 msgid "Open lsp.ini in an editor tab (created with an example if missing)"
 msgstr ""
 "Ouvrir lsp.ini dans un onglet d’édition (créé avec un exemple s’il n’existe "
 "pas)"
 
-#: src/preferences.c:342
+#: src/chrome/preferences.c:342
 msgid "Preferences"
 msgstr "Préférences"
 
-#: src/preferences.c:359
+#: src/chrome/preferences.c:359
 msgid "Appearance"
 msgstr "Apparence"
 
-#: src/preferences.c:360
+#: src/chrome/preferences.c:360
 msgid "Editor"
 msgstr "Éditeur"
 
-#: src/preferences.c:361
+#: src/chrome/preferences.c:361
 msgid "Window"
 msgstr "Fenêtre"
 
-#: src/preferences.c:362
+#: src/chrome/preferences.c:362
 msgid "Code navigation"
 msgstr "Navigation dans le code"
 
@@ -7449,119 +7449,119 @@ msgstr ""
 msgid "Open Workspace"
 msgstr "Ouvrir l’espace de travail"
 
-#: src/sidebar.c:213 src/sidebar.c:214
+#: src/chrome/sidebar.c:213 src/chrome/sidebar.c:214
 msgid "Collapse All Folders"
 msgstr "Replier tous les dossiers"
 
-#: src/sidebar.c:213
+#: src/chrome/sidebar.c:213
 msgid "Collapse All Bookmark Folders"
 msgstr "Replier tous les dossiers de signets"
 
-#: src/sidebar.c:213
+#: src/chrome/sidebar.c:213
 msgid "Collapse All Notebooks"
 msgstr "Replier tous les carnets"
 
-#: src/sidebar.c:217 src/sidebar.c:218
+#: src/chrome/sidebar.c:217 src/chrome/sidebar.c:218
 msgid "Expand All Folders"
 msgstr "Déplier tous les dossiers"
 
-#: src/sidebar.c:217
+#: src/chrome/sidebar.c:217
 msgid "Expand All Bookmark Folders"
 msgstr "Déplier tous les dossiers de signets"
 
-#: src/sidebar.c:217
+#: src/chrome/sidebar.c:217
 msgid "Expand All Notebooks"
 msgstr "Déplier tous les carnets"
 
-#: src/sidebar.c:323
+#: src/chrome/sidebar.c:323
 msgid "Explorer (Ctrl+A)"
 msgstr "Explorateur (Ctrl+A)"
 
-#: src/sidebar.c:331
+#: src/chrome/sidebar.c:331
 msgid "Bookmarks (Ctrl+A)"
 msgstr "Signets (Ctrl+A)"
 
-#: src/sidebar.c:339
+#: src/chrome/sidebar.c:339
 msgid "Notes (Ctrl+U)"
 msgstr "Notes (Ctrl+U)"
 
-#: src/sidebar.c:347
+#: src/chrome/sidebar.c:347
 msgid "Remote (Ctrl+Shift+R)"
 msgstr "Distant (Ctrl+Shift+R)"
 
-#: src/sidebar.c:355
+#: src/chrome/sidebar.c:355
 msgid "Games (Game Mode)"
 msgstr "Jeux (mode Jeu)"
 
-#: src/sidebar.c:390
+#: src/chrome/sidebar.c:390
 msgid "New File (a)"
 msgstr "Nouveau fichier (a)"
 
-#: src/sidebar.c:398
+#: src/chrome/sidebar.c:398
 msgid "New Folder (Shift+A)"
 msgstr "Nouveau dossier (Shift+A)"
 
-#: src/sidebar.c:409
+#: src/chrome/sidebar.c:409
 msgid "Toggle Hidden Files (i / I)"
 msgstr "Afficher / masquer les fichiers cachés (i / I)"
 
-#: src/sidebar.c:435
+#: src/chrome/sidebar.c:435
 msgid "Add Bookmark (a)"
 msgstr "Ajouter un signet (a)"
 
-#: src/sidebar.c:443
+#: src/chrome/sidebar.c:443
 msgid "New Bookmark Folder (Shift+A)"
 msgstr "Nouveau dossier de signets (Shift+A)"
 
-#: src/sidebar.c:451 src/sidebar.c:501
+#: src/chrome/sidebar.c:451 src/chrome/sidebar.c:501
 msgid "Edit Selected (F2 / r / e)"
 msgstr "Modifier la sélection (F2 / r / e)"
 
-#: src/sidebar.c:459
+#: src/chrome/sidebar.c:459
 msgid "Delete Selected (d / Delete)"
 msgstr "Supprimer la sélection (d / Delete)"
 
-#: src/sidebar.c:485
+#: src/chrome/sidebar.c:485
 msgid "New Note (a)"
 msgstr "Nouvelle note (a)"
 
-#: src/sidebar.c:493
+#: src/chrome/sidebar.c:493
 msgid "New Notebook (Shift+A)"
 msgstr "Nouveau carnet (Shift+A)"
 
-#: src/sidebar.c:509
+#: src/chrome/sidebar.c:509
 msgid "Move to Trash / Delete (d / Delete)"
 msgstr "Mettre à la corbeille / supprimer (d / Delete)"
 
-#: src/sidebar.c:535
+#: src/chrome/sidebar.c:535
 msgid "Add Remote Machine (a)"
 msgstr "Ajouter une machine distante (a)"
 
-#: src/sidebar.c:543
+#: src/chrome/sidebar.c:543
 msgid "New Remote Folder (Shift+A)"
 msgstr "Nouveau dossier distant (Shift+A)"
 
-#: src/sidebar.c:551
+#: src/chrome/sidebar.c:551
 msgid "Edit Remote Machine (F2 / r / e)"
 msgstr "Modifier la machine distante (F2 / r / e)"
 
-#: src/sidebar.c:559
+#: src/chrome/sidebar.c:559
 msgid "Delete Remote Machine (d / Delete)"
 msgstr "Supprimer la machine distante (d / Delete)"
 
-#: src/sidebar.c:567
+#: src/chrome/sidebar.c:567
 msgid "Connect / Disconnect Selected (Enter / c)"
 msgstr "Connecter / déconnecter la sélection (Enter / c)"
 
-#: src/sidebar.c:575
+#: src/chrome/sidebar.c:575
 msgid "Open Remote SSH Terminal (t)"
 msgstr "Ouvrir un terminal SSH distant (t)"
 
-#: src/sidebar.c:583
+#: src/chrome/sidebar.c:583
 msgid "Re-scan ~/.ssh/config (F5)"
 msgstr "Relire ~/.ssh/config (F5)"
 
-#: src/sidebar.c:600
+#: src/chrome/sidebar.c:600
 msgid "Play Selected Game (Enter)"
 msgstr "Jouer au jeu sélectionné (Enter)"
 
@@ -7673,154 +7673,154 @@ msgstr ""
 "Les tables sont listées quand LookinFiles est compilé avec SQLite "
 "(libsqlite3-dev)."
 
-#: src/status_bar.c:63
+#: src/chrome/status_bar.c:63
 msgid "_Undo"
 msgstr "A_nnuler"
 
-#: src/status_bar.c:66
+#: src/chrome/status_bar.c:66
 msgid "Undo the Last Trash or Rename (u)"
 msgstr "Annuler la dernière mise à la corbeille ou le dernier renommage (u)"
 
-#: src/status_bar.c:106
+#: src/chrome/status_bar.c:106
 #, c-format
 msgid "Switched to branch “%s”"
 msgstr "Passé sur la branche « %s »"
 
-#: src/status_bar.c:117
+#: src/chrome/status_bar.c:117
 #, c-format
 msgid "Could not switch to branch “%s”: %s"
 msgstr "Impossible de passer sur la branche « %s » : %s"
 
-#: src/status_bar.c:212
+#: src/chrome/status_bar.c:212
 msgid "Git Branches"
 msgstr "Branches Git"
 
-#: src/status_bar.c:238
+#: src/chrome/status_bar.c:238
 msgid "Remote Branches"
 msgstr "Branches distantes"
 
-#: src/status_bar.c:273
+#: src/chrome/status_bar.c:273
 msgid "(current)"
 msgstr "(actuelle)"
 
-#: src/status_bar.c:276
+#: src/chrome/status_bar.c:276
 msgid "Currently checked out branch"
 msgstr "Branche actuellement extraite"
 
-#: src/status_bar.c:278
+#: src/chrome/status_bar.c:278
 #, c-format
 msgid "Switch to remote tracking branch %s"
 msgstr "Passer sur la branche de suivi distante %s"
 
-#: src/status_bar.c:282
+#: src/chrome/status_bar.c:282
 #, c-format
 msgid "Switch to branch %s"
 msgstr "Passer sur la branche %s"
 
-#: src/status_bar.c:342
+#: src/chrome/status_bar.c:342
 msgid "Git Branch of the Current Directory — Click to View Branches"
 msgstr "Branche Git du dossier courant — cliquer pour voir les branches"
 
-#: src/status_bar.c:432
+#: src/chrome/status_bar.c:432
 msgid "Bookmark"
 msgstr "Signet"
 
-#: src/status_bar.c:435
+#: src/chrome/status_bar.c:435
 msgid "Bookmark Folder"
 msgstr "Dossier de signets"
 
-#: src/status_bar.c:441
+#: src/chrome/status_bar.c:441
 msgid "Remote Machine"
 msgstr "Machine distante"
 
-#: src/status_bar.c:444
+#: src/chrome/status_bar.c:444
 msgid "Remote Folder"
 msgstr "Dossier distant"
 
-#: src/status_bar.c:450
+#: src/chrome/status_bar.c:450
 msgid "Trashed Note"
 msgstr "Note à la corbeille"
 
-#: src/status_bar.c:473
+#: src/chrome/status_bar.c:473
 msgid "Plain Text"
 msgstr "Texte brut"
 
-#: src/status_bar.c:507
+#: src/chrome/status_bar.c:507
 #, c-format
 msgid "Git Branch: %s"
 msgstr "Branche Git : %s"
 
-#: src/status_bar.c:509
+#: src/chrome/status_bar.c:509
 msgid " (uncommitted modifications)"
 msgstr " (modifications non commitées)"
 
-#: src/status_bar.c:513
+#: src/chrome/status_bar.c:513
 #, c-format
 msgid "%u commit ahead"
 msgid_plural "%u commits ahead"
 msgstr[0] "%u commit en avance"
 msgstr[1] "%u commits en avance"
 
-#: src/status_bar.c:515 src/status_bar.c:530
+#: src/chrome/status_bar.c:515 src/chrome/status_bar.c:530
 #, c-format
 msgid "%u commit behind upstream"
 msgid_plural "%u commits behind upstream"
 msgstr[0] "%u commit en retard sur l’amont"
 msgstr[1] "%u commits en retard sur l’amont"
 
-#: src/status_bar.c:520
+#: src/chrome/status_bar.c:520
 #, c-format
 msgid "%s, %s"
 msgstr "%s, %s"
 
-#: src/status_bar.c:525
+#: src/chrome/status_bar.c:525
 #, c-format
 msgid "%u commit ahead of upstream"
 msgid_plural "%u commits ahead of upstream"
 msgstr[0] "%u commit en avance sur l’amont"
 msgstr[1] "%u commits en avance sur l’amont"
 
-#: src/status_bar.c:535
+#: src/chrome/status_bar.c:535
 msgid "Up to date with upstream"
 msgstr "À jour avec l’amont"
 
-#: src/status_bar.c:539
+#: src/chrome/status_bar.c:539
 msgid "Click to view branches"
 msgstr "Cliquer pour voir les branches"
 
-#: src/status_bar.c:547
+#: src/chrome/status_bar.c:547
 msgid "⇅ Name"
 msgstr "⇅ Nom"
 
-#: src/status_bar.c:547
+#: src/chrome/status_bar.c:547
 msgid "⇅ Date"
 msgstr "⇅ Date"
 
-#: src/status_bar.c:547
+#: src/chrome/status_bar.c:547
 msgid "⇅ Size"
 msgstr "⇅ Taille"
 
-#: src/status_bar.c:547
+#: src/chrome/status_bar.c:547
 msgid "⇅ Ext"
 msgstr "⇅ Ext"
 
-#: src/status_bar.c:549
+#: src/chrome/status_bar.c:549
 msgid "Sorted by Name"
 msgstr "Trié par nom"
 
-#: src/status_bar.c:549
+#: src/chrome/status_bar.c:549
 msgid "Sorted by Date (Newest First)"
 msgstr "Trié par date (plus récent d’abord)"
 
-#: src/status_bar.c:549
+#: src/chrome/status_bar.c:549
 msgid "Sorted by Size (Largest First)"
 msgstr "Trié par taille (plus gros d’abord)"
 
-#: src/status_bar.c:550
+#: src/chrome/status_bar.c:550
 msgid "Sorted by Extension"
 msgstr "Trié par extension"
 
-#: src/status_bar.c:554
+#: src/chrome/status_bar.c:554
 #, c-format
 msgid "%s — Click to Change (o)"
 msgstr "%s — cliquer pour changer (o)"
@@ -8123,58 +8123,58 @@ msgstr "Supprimer le thème « %1$s » et son fichier %2$s ?"
 msgid "Delete Theme"
 msgstr "Supprimer le thème"
 
-#: src/topbar.c:345
+#: src/chrome/topbar.c:345
 msgid "Back (Shift+H) — Right-Click: Folders Before"
 msgstr "Précédent (Maj+H) — clic droit : dossiers précédents"
 
-#: src/topbar.c:347
+#: src/chrome/topbar.c:347
 msgid "Forward (Shift+L) — Right-Click: Folders After"
 msgstr "Suivant (Maj+L) — clic droit : dossiers suivants"
 
-#: src/topbar.c:392
+#: src/chrome/topbar.c:392
 msgid "Global Mode"
 msgstr "Mode global"
 
-#: src/topbar.c:420
+#: src/chrome/topbar.c:420
 msgid "Global Mode: Keys of the Explorer and Preview, Mode of New Editor Tabs"
 msgstr ""
 "Mode global : touches de l’explorateur et de l’aperçu, mode des nouveaux "
 "onglets d’édition"
 
-#: src/topbar.c:438
+#: src/chrome/topbar.c:438
 msgid "⇅ Sort: Name"
 msgstr "⇅ Tri : nom"
 
-#: src/topbar.c:438
+#: src/chrome/topbar.c:438
 msgid "⇅ Sort: Date"
 msgstr "⇅ Tri : date"
 
-#: src/topbar.c:438
+#: src/chrome/topbar.c:438
 msgid "⇅ Sort: Size"
 msgstr "⇅ Tri : taille"
 
-#: src/topbar.c:438
+#: src/chrome/topbar.c:438
 msgid "⇅ Sort: Ext"
 msgstr "⇅ Tri : ext"
 
-#: src/topbar.c:601
+#: src/chrome/topbar.c:601
 msgid "Hidden: On"
 msgstr "Cachés : oui"
 
-#: src/topbar.c:601
+#: src/chrome/topbar.c:601
 msgid "Hidden: Off"
 msgstr "Cachés : non"
 
-#: src/topbar.c:643
+#: src/chrome/topbar.c:643
 msgid "Dock Editor Tabs into Preview Panel"
 msgstr "Ancrer les onglets d’édition dans le panneau Aperçu"
 
-#: src/topbar.c:653
+#: src/chrome/topbar.c:653
 #, c-format
 msgid "SSH: %s"
 msgstr "SSH : %s"
 
-#: src/topbar.c:656
+#: src/chrome/topbar.c:656
 #, c-format
 msgid ""
 "Connected to remote machine: %s (%s). Click to toggle SSH terminal (Ctrl+T)"
@@ -8182,27 +8182,27 @@ msgstr ""
 "Connecté à la machine distante : %s (%s). Cliquer pour afficher ou masquer "
 "le terminal SSH (Ctrl+T)"
 
-#: src/topbar.c:662
+#: src/chrome/topbar.c:662
 msgid "Show / Hide Terminal Panel (Ctrl+T)"
 msgstr "Afficher / masquer le panneau Terminal (Ctrl+T)"
 
-#: src/topbar.c:683
+#: src/chrome/topbar.c:683
 msgid "EXPLORER"
 msgstr "EXPLORATEUR"
 
-#: src/topbar.c:685
+#: src/chrome/topbar.c:685
 msgid "NOTES"
 msgstr "NOTES"
 
-#: src/topbar.c:687
+#: src/chrome/topbar.c:687
 msgid "BOOKMARKS"
 msgstr "SIGNETS"
 
-#: src/topbar.c:689
+#: src/chrome/topbar.c:689
 msgid "REMOTE"
 msgstr "DISTANT"
 
-#: src/topbar.c:691
+#: src/chrome/topbar.c:691
 msgid "GAMES"
 msgstr "JEUX"
 

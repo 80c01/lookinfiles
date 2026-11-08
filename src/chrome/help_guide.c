@@ -1,12 +1,12 @@
 /* The Help tab: the user guide in a page of the preview notebook (see help_guide.h) */
-#include "help_guide.h"
+#include "chrome/help_guide.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "preview/browser.h"
-#include "focus_route.h"
+#include "chrome/focus_route.h"
 #include "games/games.h"
 #include "git/git_tab.h"
-#include "help.h"
+#include "chrome/help.h"
 #include "theme/icons.h"
 #include "markup/markdown.h"
 #include "markup/markdown_link.h"
@@ -15,7 +15,7 @@
 #include "widgets/panels.h"
 #include "theme/text_style.h"
 #include "theme/theme.h"
-#include "user_guide.h"
+#include "chrome/user_guide.h"
 
 #define PAGE_KEY "lookin-help-guide"
 

@@ -48,7 +48,7 @@ The main rules, all checked by `make check` where possible:
 
 Use the same key for the same action in every explorer view. A shortcut
 change updates [docs/keyboard.md](docs/keyboard.md) and `KEY_HELP` in
-`src/help.c` together, and a new shortcut gets a step in
+`src/chrome/help.c` together, and a new shortcut gets a step in
 `tests/ui/run_ui_test.sh`. `Ctrl+Q` must always quit.
 
 ## Pull requests

@@ -18,7 +18,7 @@
 #include "workspace/layout_store.h"
 #include "theme/palette.h"
 #include "search/project_search.h"
-#include "help_guide.h"
+#include "chrome/help_guide.h"
 #include "preview/browser.h"
 #include "canvas/canvas_view.h"
 #include "media/video_tab.h"

@@ -10,7 +10,7 @@
 #include "editor/file_save.h"
 #include "theme/theme.h"
 #include "theme/fonts.h"
-#include "focus_route.h"
+#include "chrome/focus_route.h"
 #include "explorer/nav_keys.h"
 #include "theme/icons.h"
 #include <ctype.h>

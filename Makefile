@@ -155,7 +155,7 @@ $(BUILD_DIR)/icon_resources.c: icons/lookin.gresource.xml $(ICON_FILES) | $(BUIL
 $(BUILD_DIR)/icon_resources.o: $(BUILD_DIR)/icon_resources.c $(FLAGS_STAMP)
 	$(CC) $(ALL_CFLAGS) -c -o $@ $<
 
-# User guide bundled into the binary (src/user_guide.c, the Help tab): every
+# User guide bundled into the binary (src/chrome/user_guide.c, the Help tab): every
 # page of docs/user-guide/ and the reference pages it links to. The resource
 # list is generated, so a new page only needs its .md file.
 GUIDE_FILES = $(sort $(wildcard docs/user-guide/*.md)) docs/keyboard.md docs/previews.md docs/configuration.md

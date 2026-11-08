@@ -1,5 +1,5 @@
 /* Floating key-binding cheat sheet ('?' / top bar Help button). Keep KEY_HELP in sync with README.md. */
-#include "help.h"
+#include "chrome/help.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
 #include "widgets/panels.h"

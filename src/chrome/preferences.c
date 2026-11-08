@@ -1,5 +1,5 @@
 /* The Preferences dialog (see preferences.h). */
-#include "preferences.h"
+#include "chrome/preferences.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "core/app_paths.h"
