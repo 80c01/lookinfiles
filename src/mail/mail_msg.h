@@ -10,7 +10,7 @@
  * unit-tested. */
 #include <glib.h>
 
-#include "mail_message.h"
+#include "mail/mail_message.h"
 #include "office/ole_reader.h"
 
 /* The message; NULL with error set when it has no message properties */

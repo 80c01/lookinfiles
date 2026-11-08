@@ -1065,7 +1065,7 @@ msgstr ""
 msgid "Attendees"
 msgstr "Participants"
 
-#: src/formats/card_view.c:384 src/formats/cert_view.c:597 src/mail_dir.c:212
+#: src/formats/card_view.c:384 src/formats/cert_view.c:597 src/mail/mail_dir.c:212
 #: src/preview/preview_summary.c:80
 msgid "Status"
 msgstr "État"
@@ -1286,8 +1286,8 @@ msgid_plural "valid, expires in %d days"
 msgstr[0] "valide, expire dans %d jour"
 msgstr[1] "valide, expire dans %d jours"
 
-#: src/formats/cert_view.c:602 src/formats/cert_view.c:665 src/mail_dir.c:212
-#: src/mail_view.c:80 src/office/ole_props.c:224 src/preview/preview_formats.c:936
+#: src/formats/cert_view.c:602 src/formats/cert_view.c:665 src/mail/mail_dir.c:212
+#: src/mail/mail_view.c:80 src/office/ole_props.c:224 src/preview/preview_formats.c:936
 msgid "Subject"
 msgstr "Objet"
 
@@ -2904,7 +2904,7 @@ msgstr "Pluriels"
 msgid "%1$u translated, %2$u fuzzy, %3$u untranslated"
 msgstr "traduits : %1$u, approximatifs : %2$u, non traduits : %3$u"
 
-#: src/formats/gettext_view.c:237 src/mail_store.c:101
+#: src/formats/gettext_view.c:237 src/mail/mail_store.c:101
 msgid "Messages"
 msgstr "Messages"
 
@@ -2962,8 +2962,8 @@ msgstr "Message"
 msgid "Author"
 msgstr "Auteur"
 
-#: src/git/git_tab.c:436 src/mail_dir.c:212 src/mail_view.c:33 src/mail_view.c:34
-#: src/mail_view.c:180 src/preview/preview_formats.c:936
+#: src/git/git_tab.c:436 src/mail/mail_dir.c:212 src/mail/mail_view.c:33 src/mail/mail_view.c:34
+#: src/mail/mail_view.c:180 src/preview/preview_formats.c:936
 msgid "Date"
 msgstr "Date"
 
@@ -5015,26 +5015,26 @@ msgstr "Supprimer la disposition « %s » ?"
 msgid "Delete Layout"
 msgstr "Supprimer la disposition"
 
-#: src/mail_dir.c:198
+#: src/mail/mail_dir.c:198
 #, c-format
 msgid "%1$s · %2$u message, %3$u unread"
 msgid_plural "%1$s · %2$u messages, %3$u unread"
 msgstr[0] "%1$s · %2$u message, %3$u non lu"
 msgstr[1] "%1$s · %2$u messages, %3$u non lus"
 
-#: src/mail_dir.c:199
+#: src/mail/mail_dir.c:199
 msgid "Maildir folder"
 msgstr "Dossier Maildir"
 
-#: src/mail_dir.c:199
+#: src/mail/mail_dir.c:199
 msgid "MH folder"
 msgstr "Dossier MH"
 
-#: src/mail_dir.c:205
+#: src/mail/mail_dir.c:205
 msgid "Folders"
 msgstr "Dossiers"
 
-#: src/mail_dir.c:209
+#: src/mail/mail_dir.c:209
 msgid ""
 "\n"
 "(empty)"
@@ -5042,57 +5042,57 @@ msgstr ""
 "\n"
 "(vide)"
 
-#: src/mail_dir.c:212 src/mail_view.c:29 src/mail_view.c:180
+#: src/mail/mail_dir.c:212 src/mail/mail_view.c:29 src/mail/mail_view.c:180
 #: src/preview/preview_formats.c:936
 msgid "From"
 msgstr "De"
 
-#: src/mail_dir.c:217
+#: src/mail/mail_dir.c:217
 msgid "unread"
 msgstr "non lu"
 
-#: src/mail_dir.c:217
+#: src/mail/mail_dir.c:217
 msgid "replied"
 msgstr "répondu"
 
-#: src/mail_dir.c:217
+#: src/mail/mail_dir.c:217
 msgid "read"
 msgstr "lu"
 
-#: src/mail_dir.c:218
+#: src/mail/mail_dir.c:218
 msgid ", flagged"
 msgstr ", marqué"
 
-#: src/mail_dir.c:220 src/mail_view.c:167 src/mail_view.c:220
+#: src/mail/mail_dir.c:220 src/mail/mail_view.c:167 src/mail/mail_view.c:220
 #: src/preview/preview_formats.c:905
 msgid "(no subject)"
 msgstr "(sans objet)"
 
-#: src/mail_dir.c:228
+#: src/mail/mail_dir.c:228
 #, c-format
 msgid "The newest %1$u of %2$u messages are shown."
 msgstr "Les %1$u plus récents des %2$u messages sont affichés."
 
-#: src/mail_msg.c:192
+#: src/mail/mail_msg.c:192
 msgid "no message properties"
 msgstr "aucune propriété de message"
 
-#: src/mail_msg.c:283 src/mail_tnef.c:392
+#: src/mail/mail_msg.c:283 src/mail/mail_tnef.c:392
 msgid "(attachment)"
 msgstr "(pièce jointe)"
 
-#: src/mail_store.c:30
+#: src/mail/mail_store.c:30
 #, c-format
 msgid "%1$s (%2$s byte)"
 msgid_plural "%1$s (%2$s bytes)"
 msgstr[0] "%1$s (%2$s octet)"
 msgstr[1] "%1$s (%2$s octets)"
 
-#: src/mail_store.c:40
+#: src/mail/mail_store.c:40
 msgid "Size in header"
 msgstr "Taille dans l’en-tête"
 
-#: src/mail_store.c:43
+#: src/mail/mail_store.c:43
 msgid ""
 "\n"
 "The file is shorter than its header says: it is truncated."
@@ -5100,55 +5100,55 @@ msgstr ""
 "\n"
 "Le fichier est plus court que ne l’indique son en-tête : il est tronqué."
 
-#: src/mail_store.c:54
+#: src/mail/mail_store.c:54
 msgid "Outlook offline store (OST)"
 msgstr "Stockage hors connexion Outlook (OST)"
 
-#: src/mail_store.c:54
+#: src/mail/mail_store.c:54
 msgid "Outlook data file (PST)"
 msgstr "Fichier de données Outlook (PST)"
 
-#: src/mail_store.c:55
+#: src/mail/mail_store.c:55
 msgid "unknown version"
 msgstr "version inconnue"
 
-#: src/mail_store.c:59
+#: src/mail/mail_store.c:59
 msgid " (Unicode, 4 KB pages: Outlook 2013 and later)"
 msgstr " (Unicode, pages de 4 Ko : Outlook 2013 et plus récent)"
 
-#: src/mail_store.c:60
+#: src/mail/mail_store.c:60
 msgid " (Unicode: Outlook 2003 and later)"
 msgstr " (Unicode : Outlook 2003 et plus récent)"
 
-#: src/mail_store.c:61
+#: src/mail/mail_store.c:61
 msgid " (ANSI: Outlook 97-2002, 2 GB at most)"
 msgstr " (ANSI : Outlook 97-2002, 2 Go au plus)"
 
-#: src/mail_store.c:63
+#: src/mail/mail_store.c:63
 msgid "Format version"
 msgstr "Version du format"
 
-#: src/mail_store.c:77
+#: src/mail/mail_store.c:77
 msgid "Encryption"
 msgstr "Chiffrement"
 
-#: src/mail_store.c:77
+#: src/mail/mail_store.c:77
 msgid "none"
 msgstr "aucun"
 
-#: src/mail_store.c:78
+#: src/mail/mail_store.c:78
 msgid "compressible (permutation)"
 msgstr "compressible (permutation)"
 
-#: src/mail_store.c:79
+#: src/mail/mail_store.c:79
 msgid "high (cyclic)"
 msgstr "élevé (cyclique)"
 
-#: src/mail_store.c:81 src/media/video_tab.c:159
+#: src/mail/mail_store.c:81 src/media/video_tab.c:159
 msgid "unknown"
 msgstr "inconnue"
 
-#: src/mail_store.c:83
+#: src/mail/mail_store.c:83
 msgid ""
 "\n"
 "Folders and messages are not read: export them from Outlook (or with "
@@ -5158,24 +5158,24 @@ msgstr ""
 "Les dossiers et les messages ne sont pas lus : exportez-les depuis Outlook "
 "(ou avec readpst) en fichiers mbox ou .eml pour les voir ici."
 
-#: src/mail_store.c:92
+#: src/mail/mail_store.c:92
 msgid "Outlook Express mail folder (DBX)"
 msgstr "Dossier de courrier Outlook Express (DBX)"
 
-#: src/mail_store.c:93
+#: src/mail/mail_store.c:93
 msgid "Outlook Express folder list (DBX)"
 msgstr "Liste de dossiers Outlook Express (DBX)"
 
-#: src/mail_store.c:94
+#: src/mail/mail_store.c:94
 msgid "Outlook Express database (DBX)"
 msgstr "Base de données Outlook Express (DBX)"
 
-#: src/mail_store.c:107 src/office/office97.c:73 src/preview/preview_formats.c:346
+#: src/mail/mail_store.c:107 src/office/office97.c:73 src/preview/preview_formats.c:346
 #: src/preview/preview_formats.c:347 src/preview/preview_formats.c:936 src/formats/torrent_info.c:371
 msgid "Size"
 msgstr "Taille"
 
-#: src/mail_store.c:110
+#: src/mail/mail_store.c:110
 msgid ""
 "\n"
 "Messages are not read: export them from Outlook Express (or with undbx) "
@@ -5185,39 +5185,39 @@ msgstr ""
 "Les messages ne sont pas lus : exportez-les depuis Outlook Express (ou avec "
 "undbx) en fichiers .eml pour les voir ici."
 
-#: src/mail_tnef.c:266
+#: src/mail/mail_tnef.c:266
 msgid "not a TNEF stream"
 msgstr "pas un flux TNEF"
 
-#: src/mail_view.c:22
+#: src/mail/mail_view.c:22
 msgid "(unnamed)"
 msgstr "(sans nom)"
 
-#: src/mail_view.c:30 src/mail_view.c:180
+#: src/mail/mail_view.c:30 src/mail/mail_view.c:180
 msgid "To"
 msgstr "À"
 
-#: src/mail_view.c:31 src/mail_view.c:180
+#: src/mail/mail_view.c:31 src/mail/mail_view.c:180
 msgid "Cc"
 msgstr "Cc"
 
-#: src/mail_view.c:56
+#: src/mail/mail_view.c:56
 msgid "The message continues; the preview stops here."
 msgstr "Le message continue ; l’aperçu s’arrête ici."
 
-#: src/mail_view.c:65
+#: src/mail/mail_view.c:65
 msgid "Attachment"
 msgstr "Pièce jointe"
 
-#: src/mail_view.c:65 src/mail_view.c:199 src/preview/preview_formats.c:936
+#: src/mail/mail_view.c:65 src/mail/mail_view.c:199 src/preview/preview_formats.c:936
 msgid "Attachments"
 msgstr "Pièces jointes"
 
-#: src/mail_view.c:79
+#: src/mail/mail_view.c:79
 msgid "Forwarded message"
 msgstr "Message transféré"
 
-#: src/mail_view.c:91
+#: src/mail/mail_view.c:91
 msgid "Encrypted message: the body needs the recipient's key."
 msgstr "Message chiffré : le corps demande la clé du destinataire."
 

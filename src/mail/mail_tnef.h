@@ -11,7 +11,7 @@
  * .eml file. Pure GLib, unit-tested. */
 #include <glib.h>
 
-#include "mail_message.h"
+#include "mail/mail_message.h"
 
 #define MAIL_TNEF_SIGNATURE 0x223E9F78u
 

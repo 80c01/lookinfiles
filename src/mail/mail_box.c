@@ -1,5 +1,5 @@
 /* mbox mailboxes (see mail_box.h) */
-#include "mail_box.h"
+#include "mail/mail_box.h"
 #include <string.h>
 
 #define MAX_ENTRIES 20000

@@ -8,7 +8,7 @@
 #include "preview/dir_summary.h"
 #include "theme/text_style.h"
 #include "git/git_utils.h"
-#include "mail_dir.h"
+#include "mail/mail_dir.h"
 #include "preview/preview_doc_view.h"
 #include "markup/markdown.h"
 #include "orgmode.h"

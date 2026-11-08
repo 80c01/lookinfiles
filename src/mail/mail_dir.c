@@ -1,7 +1,7 @@
 /* Maildir and MH mail folders (see mail_dir.h) */
-#include "mail_dir.h"
+#include "mail/mail_dir.h"
 #include "core/i18n.h"
-#include "mail_message.h"
+#include "mail/mail_message.h"
 #include <glib/gstdio.h>
 #include <stdio.h>
 #include <string.h>

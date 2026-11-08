@@ -1,5 +1,5 @@
 /* Mail messages (see mail_message.h) */
-#include "mail_message.h"
+#include "mail/mail_message.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

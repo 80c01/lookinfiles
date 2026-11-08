@@ -1,5 +1,5 @@
 /* PST / OST / DBX header cards (see mail_store.h) */
-#include "mail_store.h"
+#include "mail/mail_store.h"
 #include "core/i18n.h"
 #include <string.h>
 

@@ -9,7 +9,7 @@
  * unit-tested. */
 #include <glib.h>
 
-#include "mail_message.h"
+#include "mail/mail_message.h"
 
 /* Files up to this size are scanned whole (the message count is exact) */
 #define MAIL_BOX_FULL_SCAN (16 * 1024 * 1024)

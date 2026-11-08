@@ -10,7 +10,7 @@
  * messages shown below. Pure GLib, unit-tested. */
 #include <glib.h>
 
-#include "mail_message.h"
+#include "mail/mail_message.h"
 #include "preview/preview_doc.h"
 
 /* The largest part decoded for a preview */
