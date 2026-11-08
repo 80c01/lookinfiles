@@ -1,7 +1,9 @@
 #ifndef VIM_ENGINE_PRIVATE_H
 #define VIM_ENGINE_PRIVATE_H
 
-/* Internal header of the Vim engine (vim_engine.c, vim_engine_ex.c) */
+/* Internal header of the Vim engine: vim_engine.c (core, key feeding),
+ * vim_engine_motions.c, vim_engine_insert.c, vim_engine_ops.c,
+ * vim_engine_normal.c, vim_engine_visual.c and vim_engine_ex.c */
 #include "vim_engine.h"
 #include "vim_parse.h"
 
@@ -151,7 +153,43 @@ struct VimEngine {
     gboolean updating_visual;   /* re-entrancy guard of the Visual highlight */
 };
 
-/* vim_engine.c */
+/* Motion of a command: where it goes and how operators take it */
+typedef struct {
+    GtkTextIter pos;
+    gboolean linewise;
+    gboolean inclusive;
+    gboolean jump;
+    gboolean keep_want;   /* j / k: keep the remembered column */
+    gboolean want_eol;    /* $ */
+    gboolean numbered;    /* deletes go to "1 even within a line (%, n, `...) */
+} Motion;
+
+/* Small helpers (vim_engine*.c) */
+static inline gboolean vim_e_is_blank_char(gunichar c) {
+    return c == ' ' || c == '\t';
+}
+
+static inline gboolean vim_e_is_insert(VimMode m) {
+    return m == VIM_MODE_INSERT || m == VIM_MODE_REPLACE;
+}
+
+static inline gboolean vim_e_is_visual(VimMode m) {
+    return m == VIM_MODE_VISUAL || m == VIM_MODE_VISUAL_LINE || m == VIM_MODE_VISUAL_BLOCK;
+}
+
+static inline void vim_e_iter_at(VimEngine* e, GtkTextIter* it, gint offset) {
+    gtk_text_buffer_get_iter_at_offset(e->buf, it, offset);
+}
+
+static inline void vim_e_iter_line(VimEngine* e, GtkTextIter* it, gint line) {
+    gtk_text_buffer_get_iter_at_line(e->buf, it, line);
+}
+
+static inline gint vim_e_off(const GtkTextIter* it) {
+    return gtk_text_iter_get_offset(it);
+}
+
+/* Also used by vim_engine_ex.c (vim_engine.c, vim_engine_ops.c, vim_engine_visual.c) */
 void vim_e_message(VimEngine* e, gboolean error, const gchar* fmt, ...) G_GNUC_PRINTF(3, 4);
 void vim_e_set_mode(VimEngine* e, VimMode mode);
 void vim_e_cursor(VimEngine* e, GtkTextIter* it);
@@ -188,5 +226,59 @@ void vim_e_highlight_search(VimEngine* e);
 void vim_e_history_add(VimEngine* e, gunichar prompt, const gchar* text);
 gboolean vim_e_word_under_cursor(VimEngine* e, GtkTextIter* ws, GtkTextIter* we);
 void vim_e_substitute_repeat(VimEngine* e, gint l1, gint l2, gboolean keep_flags, gboolean whole);
+
+/* vim_engine.c (shared inside the engine) */
+void vim_e_beep(VimEngine* e);
+void vim_e_clamp_cursor(VimEngine* e);
+gboolean vim_e_host_goto_definition(VimEngine* e, gboolean declaration);
+void vim_e_insert_at_cursor(VimEngine* e, const gchar* text);
+void vim_e_jump_older(VimEngine* e, gint count, gboolean older);
+gint vim_e_last_text_line(VimEngine* e);
+gchar* vim_e_line_indent_text(VimEngine* e, gint line);
+void vim_e_on_insert_text(GtkTextBuffer* buf, GtkTextIter* location, gchar* text, gint len, gpointer data);
+void vim_e_record_insert_key(VimEngine* e, gunichar k);
+void vim_e_record_insert_keys(VimEngine* e, const gchar* keys);
+void vim_e_reg_store(VimEngine* e, gunichar name, const gchar* text, RegType type);
+void vim_e_remember_column(VimEngine* e);
+void vim_e_set_line_indent(VimEngine* e, gint line, gint width);
+gchar* vim_e_slice(VimEngine* e, gint a, gint b);
+void vim_e_undo_close_step(VimEngine* e);
+
+/* vim_engine_motions.c (shared inside the engine) */
+gboolean vim_e_do_motion(VimEngine* e, const VimCmd* cmd, gboolean for_op, const GtkTextIter* from, Motion* m);
+void vim_e_move_cursor(VimEngine* e, const Motion* m);
+
+/* vim_engine_insert.c (shared inside the engine) */
+gboolean vim_e_insert_key(VimEngine* e, gunichar k);
+void vim_e_insert_newline(VimEngine* e, gboolean indent);
+void vim_e_leave_insert(VimEngine* e, gboolean move_left);
+void vim_e_open_line(VimEngine* e, gboolean below);
+void vim_e_start_insert(VimEngine* e, gunichar kind, gint count, VimMode mode);
+
+/* vim_engine_ops.c (shared inside the engine) */
+void vim_e_apply_operator(VimEngine* e, const VimCmd* cmd, VimRange* r, gboolean numbered);
+void vim_e_delete_block(VimEngine* e, const VimRange* r);
+void vim_e_exec_operator(VimEngine* e, const VimCmd* cmd_in);
+void vim_e_exec_operator_lines(VimEngine* e, const VimCmd* cmd);
+gboolean vim_e_motion_range(VimEngine* e, const VimCmd* cmd, const Motion* m, const GtkTextIter* cursor, VimRange* r);
+void vim_e_range_iters(VimEngine* e, const VimRange* r, GtkTextIter* s, GtkTextIter* t);
+void vim_e_transform_span(VimEngine* e, gint a, gint b, gunichar how);
+void vim_e_yank_range(VimEngine* e, const VimRange* r, gunichar reg, RegKind kind);
+
+/* vim_engine_normal.c (shared inside the engine) */
+void vim_e_exec_simple(VimEngine* e, const VimCmd* cmd);
+gboolean vim_e_increment_at(VimEngine* e, GtkTextIter* from, gint limit_off, gint64 delta);
+void vim_e_open_cmdline_for(VimEngine* e, gunichar prompt, const VimCmd* op);
+void vim_e_put_over_selection(VimEngine* e, gunichar reg, gint count, gboolean keep_register);
+void vim_e_scroll_page(VimEngine* e, gunichar k, gint count);
+void vim_e_start_recording_dot(VimEngine* e, const VimCmd* cmd, const gchar* extra);
+
+/* vim_engine_visual.c (shared inside the engine) */
+gboolean vim_e_block_line_span(VimEngine* e, gint line, gint c1, gint c2, GtkTextIter* s, GtkTextIter* t);
+void vim_e_enter_visual(VimEngine* e, VimMode mode);
+void vim_e_exec_visual(VimEngine* e, const VimCmd* cmd);
+void vim_e_exit_visual(VimEngine* e);
+void vim_e_reselect_visual(VimEngine* e);
+VimRange vim_e_visual_range(VimEngine* e);
 
 #endif /* VIM_ENGINE_PRIVATE_H */

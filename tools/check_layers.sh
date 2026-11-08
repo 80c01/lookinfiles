@@ -96,7 +96,12 @@ vim_regex:
 vim_motion:
 vim_parse:vim_keys
 vim_ex:
-vim_engine:vim_engine_private,vim_parse,vim_keys,vim_motion,vim_regex,palette,text_tags
+vim_engine:vim_engine_private,vim_keys,vim_motion,text_tags
+vim_engine_motions:vim_engine_private,vim_motion,vim_regex
+vim_engine_insert:vim_engine_private,vim_keys,vim_motion
+vim_engine_ops:vim_engine_private,vim_keys,vim_motion
+vim_engine_normal:vim_engine_private,vim_keys,vim_motion
+vim_engine_visual:vim_engine_private,vim_keys,vim_motion
 vim_engine_ex:vim_engine_private,vim_ex,vim_keys,vim_motion,vim_regex
 diff_gutter:git_utils,line_diff,palette
 color_column:palette

@@ -175,7 +175,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`vim_parse()`), motions and text objects on `GtkTextIter`, Vim patterns
   translated to GRegex plus `:s` replacements and buffer search, Ex command
   line parsing (ranges, abbreviations).
-- `vim_engine` (+ `vim_engine_ex.c`, internal `vim_engine_private.h`) — the
+- `vim_engine` (+ `vim_engine_motions.c`, `_insert.c`, `_ops.c`, `_normal.c`,
+  `_visual.c`, `_ex.c`, internal `vim_engine_private.h`) — the
   Vim editor on a `GtkTextBuffer`: modes, operators, registers, marks, dot
   repeat, macros, Visual block, its own undo list (one step per command,
   GTK's history merges adjacent edits), search and Ex commands. No widgets:
