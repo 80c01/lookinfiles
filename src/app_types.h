@@ -282,11 +282,8 @@ typedef struct {
     GtkWindow* window;
     GMainLoop* main_loop;
 
-    /* Pane-resize feedback popup */
-    GtkWidget* dim_window;
-    GtkWidget* dim_label;
-    GtkWidget* dims_paned; /* paned whose handle is being dragged */
-    gboolean panning;      /* split handle being dragged */
+    /* Split-handle drag and its size popup (panels.c), NULL before panels_size_popup_attach() */
+    struct PaneDrag* pane_drag;
 
     /* Minimap: scaled file overview right of viewer */
     GtkWidget* minimap;

@@ -734,16 +734,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_vexpand(overlay, TRUE);
     gtk_overlay_set_child(GTK_OVERLAY(overlay), main_paned);
 
-    GtkWidget* dim_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_name(dim_box, "dim-window");
-    gtk_widget_set_halign(dim_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(dim_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_visible(dim_box, FALSE);
-    GtkWidget* dim_label = gtk_label_new("");
-    gtk_box_append(GTK_BOX(dim_box), dim_label);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), dim_box);
-    app->dim_window = dim_box;
-    app->dim_label = dim_label;
+    panels_size_popup_attach(app, GTK_OVERLAY(overlay));
 
     GtkWidget* workspace_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(workspace_hbox, TRUE);
@@ -824,6 +815,7 @@ int main(int argc, char** argv) {
     code_intel_shutdown(app);   /* language servers: shutdown, exit */
     stop_directory_monitors(app);
     git_tab_cleanup(app);
+    panels_size_popup_free(app);
     if (app->git_statuses != NULL) {
         g_hash_table_destroy(app->git_statuses);
         app->git_statuses = NULL;

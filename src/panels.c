@@ -3,6 +3,15 @@
 #include "panels.h"
 #include "app_events.h"
 
+/* Split-handle drag (app->pane_drag), created by panels_size_popup_attach() */
+typedef struct PaneDrag PaneDrag;
+struct PaneDrag {
+    GtkWidget* popup;  /* size badge over the workspace, shown while dragging */
+    GtkWidget* label;  /* "w × h  |  w × h" of the two sides */
+    GtkWidget* paned;  /* paned whose handle is being dragged, or NULL */
+    gboolean active;   /* a split handle is being dragged */
+};
+
 NavStyle app_nav_style(AppData* app) {
     if (app == NULL) return NAV_STYLE_NOTEPAD;
     switch (app->default_editor_mode) {
@@ -105,7 +114,8 @@ void update_active_panel_highlight(AppData* app) {
 }
 
 /* Show or refresh small overlay badge listing w x h of panes */
-void update_pane_dims(GtkWidget* paned_widget, AppData* app) {
+static void update_pane_dims(GtkWidget* paned_widget, AppData* app) {
+    PaneDrag* d = app->pane_drag;
     GtkPaned* paned = GTK_PANED(paned_widget);
     GtkWidget* c1 = gtk_paned_get_start_child(paned);
     GtkWidget* c2 = gtk_paned_get_end_child(paned);
@@ -123,24 +133,29 @@ void update_pane_dims(GtkWidget* paned_widget, AppData* app) {
 
     gchar* text = g_strdup_printf("%d \xc3\x97 %d  |  %d \xc3\x97 %d",
                                   w1, h1, w2, h2);
-    gtk_label_set_text(GTK_LABEL(app->dim_label), text);
+    gtk_label_set_text(GTK_LABEL(d->label), text);
     g_free(text);
 
-    gtk_widget_set_visible(app->dim_window, TRUE);
+    gtk_widget_set_visible(d->popup, TRUE);
 }
 
-gboolean pane_dims_idle(gpointer data) {
+static gboolean pane_dims_idle(gpointer data) {
     AppData* app = (AppData*)data;
-    if (app->panning && app->dims_paned != NULL) {
-        update_pane_dims(app->dims_paned, app);
+    PaneDrag* d = app->pane_drag;
+    if (d != NULL && d->active && d->paned != NULL) {
+        update_pane_dims(d->paned, app);
     }
     return FALSE; /* one-shot */
 }
 
-void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
-                      gdouble x, gdouble y, gpointer data) {
+static void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
+                             gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     AppData* app = (AppData*)data;
+    PaneDrag* d = app->pane_drag;
+    if (d == NULL) {
+        return;
+    }
     GtkWidget* widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
     if (!GTK_IS_PANED(widget)) {
         return;
@@ -170,8 +185,8 @@ void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
             return;
         }
     }
-    app->panning = TRUE;
-    app->dims_paned = widget;
+    d->active = TRUE;
+    d->paned = widget;
     update_pane_dims(widget, app);
 }
 
@@ -248,46 +263,52 @@ static gboolean on_paned_legacy_event(GtkEventControllerLegacy* ctrl,
                                       GdkEvent* event, gpointer data) {
     (void)ctrl;
     AppData* app = (AppData*)data;
-    if (app->panning && gdk_event_get_event_type(event) == GDK_BUTTON_RELEASE) {
-        if (app->dims_paned != NULL) {
-            record_paned_fraction(app, app->dims_paned);
+    PaneDrag* d = app->pane_drag;
+    if (d != NULL && d->active && gdk_event_get_event_type(event) == GDK_BUTTON_RELEASE) {
+        if (d->paned != NULL) {
+            record_paned_fraction(app, d->paned);
         }
-        app->panning = FALSE;
-        app->dims_paned = NULL;
-        gtk_widget_set_visible(app->dim_window, FALSE);
+        d->active = FALSE;
+        d->paned = NULL;
+        gtk_widget_set_visible(d->popup, FALSE);
         app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
     return FALSE;
 }
 
-void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointer data) {
+static void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointer data) {
     (void)pspec;
     AppData* app = (AppData*)data;
-    if (app == NULL || app->switching_ws || app->applying_layout || !app->panning) {
+    PaneDrag* d = app != NULL ? app->pane_drag : NULL;
+    if (d == NULL || app->switching_ws || app->applying_layout || !d->active) {
         return;
     }
     GtkWidget* widget = GTK_WIDGET(object);
-    if (app->dims_paned == NULL || app->dims_paned == widget) {
-        app->dims_paned = widget;
+    if (d->paned == NULL || d->paned == widget) {
+        d->paned = widget;
         record_paned_fraction(app, widget);
         g_idle_add(pane_dims_idle, app);
         app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
 }
 
-void on_paned_released(GtkGestureClick* gesture, gint n_press,
-                       gdouble x, gdouble y, gpointer data) {
+static void on_paned_released(GtkGestureClick* gesture, gint n_press,
+                              gdouble x, gdouble y, gpointer data) {
     (void)gesture;
     (void)n_press;
     (void)x;
     (void)y;
     AppData* app = (AppData*)data;
-    if (app->panning && app->dims_paned != NULL) {
-        record_paned_fraction(app, app->dims_paned);
+    PaneDrag* d = app->pane_drag;
+    if (d == NULL) {
+        return;
     }
-    app->panning = FALSE;
-    app->dims_paned = NULL;
-    gtk_widget_set_visible(app->dim_window, FALSE);
+    if (d->active && d->paned != NULL) {
+        record_paned_fraction(app, d->paned);
+    }
+    d->active = FALSE;
+    d->paned = NULL;
+    gtk_widget_set_visible(d->popup, FALSE);
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
 }
 
@@ -317,4 +338,26 @@ void wire_paned_controllers(GtkWidget* paned, AppData* app) {
 
     g_signal_connect(paned, "notify::position",
                      G_CALLBACK(on_paned_notify_position), app);
+}
+
+void panels_size_popup_attach(AppData* app, GtkOverlay* overlay) {
+    GtkWidget* popup = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_name(popup, "dim-window");
+    gtk_widget_set_halign(popup, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(popup, GTK_ALIGN_CENTER);
+    gtk_widget_set_visible(popup, FALSE);
+    GtkWidget* label = gtk_label_new("");
+    gtk_box_append(GTK_BOX(popup), label);
+    gtk_overlay_add_overlay(overlay, popup);
+
+    PaneDrag* d = g_new0(PaneDrag, 1);
+    d->popup = popup;
+    d->label = label;
+    app->pane_drag = d;
+}
+
+void panels_size_popup_free(AppData* app) {
+    if (app != NULL) {
+        g_clear_pointer(&app->pane_drag, g_free);
+    }
 }
