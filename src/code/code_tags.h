@@ -9,7 +9,7 @@
  * Pure GLib, unit-tested. */
 #include <gio/gio.h>
 
-#include "code_symbol.h"
+#include "code/code_symbol.h"
 
 /* Path of a Universal Ctags with JSON output in PATH ("ctags",
  * "universal-ctags", "ctags-universal"), or NULL. Checked once. */

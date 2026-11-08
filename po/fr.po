@@ -264,7 +264,7 @@ msgstr "Espace de travail enregistré"
 msgid "_Remove Bookmark"
 msgstr "_Retirer le signet"
 
-#: src/explorer/bookmark_dialog.c:198 src/explorer/bookmarks.c:577 src/code_symbols.c:176
+#: src/explorer/bookmark_dialog.c:198 src/explorer/bookmarks.c:577 src/code/code_symbols.c:176
 #: src/editor/editor.c:1729 src/explorer/file_actions.c:42 src/explorer/file_actions.c:236
 #: src/layouts.c:47 src/layouts.c:319 src/notes.c:587 src/notes.c:768
 #: src/notes.c:852 src/preferences.c:342 src/preview/preview_full.c:31
@@ -1465,34 +1465,34 @@ msgstr "Champs (%u)"
 msgid "Methods (%u)"
 msgstr "Méthodes (%u)"
 
-#: src/code_help.c:287
+#: src/code/code_help.c:287
 #, c-format
 msgid "No information found for %s"
 msgstr "Aucune information trouvée pour %s"
 
 #. TRANSLATORS: %s is a symbol kind, e.g. "function"
-#: src/code_help.c:306
+#: src/code/code_help.c:306
 #, c-format
 msgid "%s declaration"
 msgstr "déclaration (%s)"
 
-#: src/code_help.c:316 src/code_help.c:331 src/code_help.c:426
+#: src/code/code_help.c:316 src/code/code_help.c:331 src/code/code_help.c:426
 msgid "No code information for this file type"
 msgstr "Pas d’informations sur le code pour ce type de fichier"
 
-#: src/code_help.c:356 src/code_nav.c:468 src/code_refs.c:651
+#: src/code/code_help.c:356 src/code/code_nav.c:468 src/code/code_refs.c:651
 msgid "No identifier under the cursor"
 msgstr "Aucun identifiant sous le curseur"
 
-#: src/code_help.c:442
+#: src/code/code_help.c:442
 msgid "The cursor is not in a function call"
 msgstr "Le curseur n’est pas dans un appel de fonction"
 
-#: src/code_nav.c:107
+#: src/code/code_nav.c:107
 msgid "built-in index"
 msgstr "index intégré"
 
-#: src/code_nav.c:277 src/code_nav.c:430
+#: src/code/code_nav.c:277 src/code/code_nav.c:430
 #, c-format
 msgid ""
 "Declaration of %1$s is in %2$s:%3$d, which cannot be opened in an editor tab"
@@ -1500,7 +1500,7 @@ msgstr ""
 "La déclaration de %1$s est dans %2$s:%3$d, qui ne peut pas s’ouvrir dans un "
 "onglet d’édition"
 
-#: src/code_nav.c:278 src/code_nav.c:431
+#: src/code/code_nav.c:278 src/code/code_nav.c:431
 #, c-format
 msgid ""
 "Definition of %1$s is in %2$s:%3$d, which cannot be opened in an editor tab"
@@ -1508,179 +1508,179 @@ msgstr ""
 "La définition de %1$s est dans %2$s:%3$d, qui ne peut pas s’ouvrir dans un "
 "onglet d’édition"
 
-#: src/code_nav.c:281
+#: src/code/code_nav.c:281
 #, c-format
 msgid "Declaration of %1$s (%2$s): %3$s:%4$d, 1 of %5$u"
 msgstr "Déclaration de %1$s (%2$s) : %3$s:%4$d, 1 sur %5$u"
 
-#: src/code_nav.c:282
+#: src/code/code_nav.c:282
 #, c-format
 msgid "Definition of %1$s (%2$s): %3$s:%4$d, 1 of %5$u"
 msgstr "Définition de %1$s (%2$s) : %3$s:%4$d, 1 sur %5$u"
 
-#: src/code_nav.c:285
+#: src/code/code_nav.c:285
 #, c-format
 msgid "Declaration of %1$s (%2$s): %3$s:%4$d"
 msgstr "Déclaration de %1$s (%2$s) : %3$s:%4$d"
 
-#: src/code_nav.c:286
+#: src/code/code_nav.c:286
 #, c-format
 msgid "Definition of %1$s (%2$s): %3$s:%4$d"
 msgstr "Définition de %1$s (%2$s) : %3$s:%4$d"
 
 #. TRANSLATORS: appended to a "Definition of ..." message
-#: src/code_nav.c:291
+#: src/code/code_nav.c:291
 msgid " (partial search)"
 msgstr " (recherche partielle)"
 
-#: src/code_nav.c:300
+#: src/code/code_nav.c:300
 #, c-format
 msgid "%s is defined here (no other declaration found)"
 msgstr "%s est défini ici (aucune autre déclaration trouvée)"
 
-#: src/code_nav.c:301
+#: src/code/code_nav.c:301
 #, c-format
 msgid "%s is defined here (no other definition found)"
 msgstr "%s est défini ici (aucune autre définition trouvée)"
 
-#: src/code_nav.c:309
+#: src/code/code_nav.c:309
 #, c-format
 msgid "No definition of %s found: first use in this scope"
 msgstr ""
 "Aucune définition de %s trouvée : première utilisation dans cette portée"
 
-#: src/code_nav.c:314
+#: src/code/code_nav.c:314
 #, c-format
 msgid "No definition found for %s (partial search: project too large)"
 msgstr ""
 "Aucune définition trouvée pour %s (recherche partielle : projet trop grand)"
 
-#: src/code_nav.c:315
+#: src/code/code_nav.c:315
 #, c-format
 msgid "No definition found for %s"
 msgstr "Aucune définition trouvée pour %s"
 
-#: src/code_nav.c:427 src/code_outline.c:155 src/code_refs.c:626
+#: src/code/code_nav.c:427 src/code/code_outline.c:155 src/code/code_refs.c:626
 msgid "language server"
 msgstr "serveur de langage"
 
 #. TRANSLATORS: the last %s is the language server, e.g. clangd
-#: src/code_nav.c:435
+#: src/code/code_nav.c:435
 #, c-format
 msgid "Declaration of %1$s: %2$s:%3$d, 1 of %4$u (%5$s)"
 msgstr "Déclaration de %1$s : %2$s:%3$d, 1 sur %4$u (%5$s)"
 
-#: src/code_nav.c:436
+#: src/code/code_nav.c:436
 #, c-format
 msgid "Definition of %1$s: %2$s:%3$d, 1 of %4$u (%5$s)"
 msgstr "Définition de %1$s : %2$s:%3$d, 1 sur %4$u (%5$s)"
 
 #. TRANSLATORS: the last %s is the language server, e.g. clangd
-#: src/code_nav.c:440
+#: src/code/code_nav.c:440
 #, c-format
 msgid "Declaration of %1$s: %2$s:%3$d (%4$s)"
 msgstr "Déclaration de %1$s : %2$s:%3$d (%4$s)"
 
-#: src/code_nav.c:440
+#: src/code/code_nav.c:440
 #, c-format
 msgid "Definition of %1$s: %2$s:%3$d (%4$s)"
 msgstr "Définition de %1$s : %2$s:%3$d (%4$s)"
 
-#: src/code_nav.c:454 src/code_nav.c:505 src/code_refs.c:638
-#: src/code_symbols.c:271
+#: src/code/code_nav.c:454 src/code/code_nav.c:505 src/code/code_refs.c:638
+#: src/code/code_symbols.c:271
 msgid "No code navigation for this file type"
 msgstr "Pas de navigation dans le code pour ce type de fichier"
 
-#: src/code_nav.c:503
+#: src/code/code_nav.c:503
 msgid "Argument required: the name to look up"
 msgstr "Argument requis : le nom à chercher"
 
-#: src/code_nav.c:532
+#: src/code/code_nav.c:532
 msgid "No previous location"
 msgstr "Pas d’emplacement précédent"
 
-#: src/code_nav.c:532
+#: src/code/code_nav.c:532
 msgid "No next location"
 msgstr "Pas d’emplacement suivant"
 
-#: src/code_nav.c:541
+#: src/code/code_nav.c:541
 #, c-format
 msgid "Back to %1$s:%2$d"
 msgstr "Retour à %1$s:%2$d"
 
-#: src/code_nav.c:541
+#: src/code/code_nav.c:541
 #, c-format
 msgid "Forward to %1$s:%2$d"
 msgstr "Avance vers %1$s:%2$d"
 
-#: src/code_outline.c:102
+#: src/code/code_outline.c:102
 msgid "Markdown headings"
 msgstr "titres Markdown"
 
-#: src/code_outline.c:102 src/preview/preview_tagbar.c:115
+#: src/code/code_outline.c:102 src/preview/preview_tagbar.c:115
 msgid "built-in scanner"
 msgstr "analyseur intégré"
 
-#: src/code_outline_tree.c:258 src/formats/wasm_info.c:271
+#: src/code/code_outline_tree.c:258 src/formats/wasm_info.c:271
 msgid "Functions"
 msgstr "Fonctions"
 
-#: src/code_outline_tree.c:259
+#: src/code/code_outline_tree.c:259
 msgid "Methods"
 msgstr "Méthodes"
 
-#: src/code_outline_tree.c:260
+#: src/code/code_outline_tree.c:260
 msgid "Macros"
 msgstr "Macros"
 
-#: src/code_outline_tree.c:261 src/formats/wasm_info.c:276
+#: src/code/code_outline_tree.c:261 src/formats/wasm_info.c:276
 msgid "Types"
 msgstr "Types"
 
-#: src/code_outline_tree.c:262
+#: src/code/code_outline_tree.c:262
 msgid "Classes"
 msgstr "Classes"
 
-#: src/code_outline_tree.c:263
+#: src/code/code_outline_tree.c:263
 msgid "Variables"
 msgstr "Variables"
 
-#: src/code_outline_tree.c:264
+#: src/code/code_outline_tree.c:264
 msgid "Constants"
 msgstr "Constantes"
 
-#: src/code_outline_tree.c:265
+#: src/code/code_outline_tree.c:265
 msgid "Fields"
 msgstr "Champs"
 
-#: src/code_outline_tree.c:266
+#: src/code/code_outline_tree.c:266
 msgid "Modules"
 msgstr "Modules"
 
-#: src/code_outline_tree.c:267
+#: src/code/code_outline_tree.c:267
 msgid "Targets"
 msgstr "Cibles"
 
-#: src/code_outline_tree.c:269 src/formats/elf_info.c:674 src/widgets/outline_pane.c:303
+#: src/code/code_outline_tree.c:269 src/formats/elf_info.c:674 src/widgets/outline_pane.c:303
 #: src/widgets/outline_pane.c:523
 msgid "Symbols"
 msgstr "Symboles"
 
-#: src/code_refs.c:257
+#: src/code/code_refs.c:257
 #, c-format
 msgid "Close %s"
 msgstr "Fermer %s"
 
-#: src/code_refs.c:341
+#: src/code/code_refs.c:341
 msgid "References"
 msgstr "Références"
 
-#: src/code_refs.c:348
+#: src/code/code_refs.c:348
 #, c-format
 msgid "No references to %s found"
 msgstr "Aucune référence à %s trouvée"
 
-#: src/code_refs.c:351 src/code_refs.c:414 src/preview/dir_preview.c:209
+#: src/code/code_refs.c:351 src/code/code_refs.c:414 src/preview/dir_preview.c:209
 #, c-format
 msgid "%u file"
 msgid_plural "%u files"
@@ -1688,158 +1688,158 @@ msgstr[0] "%u fichier"
 msgstr[1] "%u fichiers"
 
 #. TRANSLATORS: "References to NAME: 12 in 3 files"
-#: src/code_refs.c:353
+#: src/code/code_refs.c:353
 #, c-format
 msgid "References to %1$s: %2$u in %3$s"
 msgstr "Références à %1$s : %2$u dans %3$s"
 
-#: src/code_refs.c:356
+#: src/code/code_refs.c:356
 msgid ", list cut"
 msgstr ", liste tronquée"
 
 #. TRANSLATORS: %s is where the references come from (a language server name, _("whole words in the project"))
-#: src/code_refs.c:363 src/code_refs.c:421
+#: src/code/code_refs.c:363 src/code/code_refs.c:421
 #, c-format
 msgid "%s; Enter opens"
 msgstr "%s ; Enter ouvre"
 
-#: src/code_refs.c:376
+#: src/code/code_refs.c:376
 #, c-format
 msgid "%1$u reference to %2$s (References tab)"
 msgid_plural "%1$u references to %2$s (References tab)"
 msgstr[0] "%1$u référence à %2$s (onglet Références)"
 msgstr[1] "%1$u références à %2$s (onglet Références)"
 
-#: src/code_refs.c:385 src/code_refs.c:435
+#: src/code/code_refs.c:385 src/code/code_refs.c:435
 msgid "Search"
 msgstr "Recherche"
 
-#: src/code_refs.c:391
+#: src/code/code_refs.c:391
 #, c-format
 msgid "Searching for %1$s in %2$s…"
 msgstr "Recherche de %1$s dans %2$s…"
 
-#: src/code_refs.c:412
+#: src/code/code_refs.c:412
 #, c-format
 msgid "No results for %s"
 msgstr "Aucun résultat pour %s"
 
 #. TRANSLATORS: "QUERY: 12 results in 3 files"
-#: src/code_refs.c:416
+#: src/code/code_refs.c:416
 #, c-format
 msgid "%1$s: %2$u result in %3$s"
 msgid_plural "%1$s: %2$u results in %3$s"
 msgstr[0] "%1$s : %2$u résultat dans %3$s"
 msgstr[1] "%1$s : %2$u résultats dans %3$s"
 
-#: src/code_refs.c:516
+#: src/code/code_refs.c:516
 msgid "whole words in the project"
 msgstr "mots entiers dans le projet"
 
-#: src/code_refs.c:657
+#: src/code/code_refs.c:657
 #, c-format
 msgid "Searching the references of %s..."
 msgstr "Recherche des références de %s…"
 
-#: src/code_symbol.c:156
+#: src/code/code_symbol.c:156
 msgctxt "symbol kind"
 msgid "function"
 msgstr "fonction"
 
-#: src/code_symbol.c:157
+#: src/code/code_symbol.c:157
 msgctxt "symbol kind"
 msgid "method"
 msgstr "méthode"
 
-#: src/code_symbol.c:158
+#: src/code/code_symbol.c:158
 msgctxt "symbol kind"
 msgid "macro"
 msgstr "macro"
 
-#: src/code_symbol.c:159
+#: src/code/code_symbol.c:159
 msgctxt "symbol kind"
 msgid "type"
 msgstr "type"
 
-#: src/code_symbol.c:160
+#: src/code/code_symbol.c:160
 msgctxt "symbol kind"
 msgid "class"
 msgstr "classe"
 
-#: src/code_symbol.c:161
+#: src/code/code_symbol.c:161
 msgctxt "symbol kind"
 msgid "variable"
 msgstr "variable"
 
-#: src/code_symbol.c:162
+#: src/code/code_symbol.c:162
 msgctxt "symbol kind"
 msgid "constant"
 msgstr "constante"
 
-#: src/code_symbol.c:163
+#: src/code/code_symbol.c:163
 msgctxt "symbol kind"
 msgid "field"
 msgstr "champ"
 
-#: src/code_symbol.c:164
+#: src/code/code_symbol.c:164
 msgctxt "symbol kind"
 msgid "module"
 msgstr "module"
 
-#: src/code_symbol.c:165
+#: src/code/code_symbol.c:165
 msgctxt "symbol kind"
 msgid "target"
 msgstr "cible"
 
-#: src/code_symbol.c:167
+#: src/code/code_symbol.c:167
 msgctxt "symbol kind"
 msgid "symbol"
 msgstr "symbole"
 
-#: src/code_symbols.c:175
+#: src/code/code_symbols.c:175
 #, c-format
 msgid "Symbols of %s"
 msgstr "Symboles de %s"
 
-#: src/code_symbols.c:176
+#: src/code/code_symbols.c:176
 msgid "_Go To"
 msgstr "_Aller"
 
-#: src/code_symbols.c:189
+#: src/code/code_symbols.c:189
 msgid "Filter the symbols by name"
 msgstr "Filtrer les symboles par nom"
 
 #. TRANSLATORS: %2$s is where the symbols come from, e.g. "built-in scanner"
-#: src/code_symbols.c:217
+#: src/code/code_symbols.c:217
 #, c-format
 msgid "%1$u symbol (%2$s)"
 msgid_plural "%1$u symbols (%2$s)"
 msgstr[0] "%1$u symbole (%2$s)"
 msgstr[1] "%1$u symboles (%2$s)"
 
-#: src/code_symbols.c:251
+#: src/code/code_symbols.c:251
 msgid "No symbol scanner for this language"
 msgstr "Pas d’analyseur de symboles pour ce langage"
 
-#: src/code_symbols.c:251
+#: src/code/code_symbols.c:251
 msgid "No symbols found in this file"
 msgstr "Aucun symbole trouvé dans ce fichier"
 
-#: src/code_symbols.c:258 src/widgets/outline_pane.c:434
+#: src/code/code_symbols.c:258 src/widgets/outline_pane.c:434
 msgid "declaration"
 msgstr "déclaration"
 
-#: src/code_symbols.c:259
+#: src/code/code_symbols.c:259
 #, c-format
 msgid "%1$s · in %2$s"
 msgstr "%1$s · dans %2$s"
 
-#: src/code_symbols.c:260 src/project_search.c:151
+#: src/code/code_symbols.c:260 src/project_search.c:151
 #, c-format
 msgid "in %s"
 msgstr "dans %s"
 
-#: src/code_symbols.c:262
+#: src/code/code_symbols.c:262
 msgctxt "symbol kind"
 msgid "heading"
 msgstr "titre"

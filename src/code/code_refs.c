@@ -1,9 +1,9 @@
 /* References of a symbol in the References tab (see code_refs.h) */
-#include "code_refs.h"
+#include "code/code_refs.h"
 #include "core/i18n.h"
 #include "theme/palette.h"
-#include "code_index.h"
-#include "code_intel.h"
+#include "code/code_index.h"
+#include "code/code_intel.h"
 #include "editor/editor.h"
 #include "theme/icons.h"
 #include "theme/theme.h"

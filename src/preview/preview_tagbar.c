@@ -1,6 +1,6 @@
 /* The tagbar of the preview (see preview_tagbar.h) */
 #include "preview/preview_tagbar.h"
-#include "code_outline_tree.h"
+#include "code/code_outline_tree.h"
 #include "explorer/nav_keys.h"
 #include "widgets/outline_pane.h"
 #include "core/i18n.h"

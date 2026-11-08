@@ -45,8 +45,8 @@
 #include "widgets/color_column.h"
 #include "canvas/canvas_view.h"
 #include "note_types.h"
-#include "code_intel.h"
-#include "code_nav.h"
+#include "code/code_intel.h"
+#include "code/code_nav.h"
 #include "editor/editor_modes.h"
 #include <stdio.h>
 #include <stdlib.h>

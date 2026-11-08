@@ -9,7 +9,7 @@
  * GLib, unit-tested. */
 #include <glib.h>
 
-#include "code_symbol.h"
+#include "code/code_symbol.h"
 #include "formats/json_view.h"
 
 /* --- Framing --- */

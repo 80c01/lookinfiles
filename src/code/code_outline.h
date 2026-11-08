@@ -7,7 +7,7 @@
  * the headings of a Markdown file. Scans run in a worker thread on a copy
  * of the text. */
 #include "core/app_types.h"
-#include "code_outline_tree.h"
+#include "code/code_outline_tree.h"
 
 /* entries: CodeOutlineEntry* sorted by line (empty when the file has none),
  * owned by the caller of code_outline_collect() only during the call;

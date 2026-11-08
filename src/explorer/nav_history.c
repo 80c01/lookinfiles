@@ -1,6 +1,6 @@
 /* Folder history and recent places (see nav_history.h) */
 #include "explorer/nav_history.h"
-#include "jump_list.h"
+#include "code/jump_list.h"
 #include <string.h>
 
 #define FOLDER_HISTORY_MAX 100

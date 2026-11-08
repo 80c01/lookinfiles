@@ -1,6 +1,6 @@
-/* Unit tests for src/lsp_protocol.c: framing, requests, results and
+/* Unit tests for src/code/lsp_protocol.c: framing, requests, results and
  * position conversions of the Language Server Protocol. */
-#include "lsp_protocol.h"
+#include "code/lsp_protocol.h"
 
 #include <string.h>
 

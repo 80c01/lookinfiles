@@ -1,12 +1,12 @@
 /* Language servers for code navigation (see code_intel.h) */
-#include "code_intel.h"
+#include "code/code_intel.h"
 #include "core/app_events.h"
 #include "core/app_paths.h"
 #include "theme/text_tags.h"
-#include "code_index.h"
+#include "code/code_index.h"
 #include "editor/editor.h"
-#include "lsp_client.h"
-#include "lsp_config.h"
+#include "code/lsp_client.h"
+#include "code/lsp_config.h"
 #include <string.h>
 
 #define RESTART_DELAY_US (60 * G_USEC_PER_SEC)

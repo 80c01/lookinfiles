@@ -9,7 +9,7 @@
  * the editor tabs (editor_tagbar.h). */
 #include <gtk/gtk.h>
 
-#include "code_outline_tree.h"
+#include "code/code_outline_tree.h"
 
 typedef struct OutlinePane OutlinePane;
 

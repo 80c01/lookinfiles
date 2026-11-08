@@ -13,7 +13,7 @@
  * defer it to an idle callback. */
 #include <gio/gio.h>
 
-#include "lsp_protocol.h"
+#include "code/lsp_protocol.h"
 
 typedef struct LspClient LspClient;
 

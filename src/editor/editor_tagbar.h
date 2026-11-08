@@ -9,7 +9,7 @@
  * navigation history). Shown in every code and Markdown tab or in none
  * (settings.ini: tagbar), with one width for all. */
 #include "core/app_types.h"
-#include "code_nav.h"
+#include "code/code_nav.h"
 
 /* Put content (the view and its minimap) and the tagbar of tab side by
  * side; returns the GtkPaned to add to the tab's container */

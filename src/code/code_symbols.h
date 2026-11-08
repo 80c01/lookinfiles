@@ -7,7 +7,7 @@
  * a filter entry. Enter, a double click or "Go To" jumps there (remembered
  * in the code navigation history). */
 #include "core/app_types.h"
-#include "code_nav.h"
+#include "code/code_nav.h"
 
 void code_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFunc message);
 

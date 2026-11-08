@@ -9,7 +9,7 @@
 #include "theme/text_style.h"
 #include "core/file_types.h"
 #include "preview/ps_convert.h"
-#include "code_outline_tree.h"
+#include "code/code_outline_tree.h"
 #include "preview/preview_tagbar.h"
 #include "widgets/minimap.h"
 #include <sys/stat.h>

@@ -1,6 +1,6 @@
 /* Built-in code index (see code_index.h) */
-#include "code_index.h"
-#include "code_scan.h"
+#include "code/code_index.h"
+#include "code/code_scan.h"
 #include "git/git_utils.h"
 #include <glib/gstdio.h>
 #include <string.h>

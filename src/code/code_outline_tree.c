@@ -1,5 +1,5 @@
 /* Outline entries and their tree (see code_outline_tree.h) */
-#include "code_outline_tree.h"
+#include "code/code_outline_tree.h"
 #include "core/i18n.h"
 #include <string.h>
 

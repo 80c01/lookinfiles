@@ -8,7 +8,7 @@
  * constants, fields and global variables. Only the first branch of
  * #if / #else is read, so braces stay balanced. Pure GLib, unit-tested
  * through code_scan. */
-#include "code_symbol.h"
+#include "code/code_symbol.h"
 
 /* Append the symbols of text to out (CodeSymbol*): all of them, or only
  * those named only_name when it is not NULL */

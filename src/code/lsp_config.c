@@ -1,5 +1,5 @@
 /* Language server commands (see lsp_config.h) */
-#include "lsp_config.h"
+#include "code/lsp_config.h"
 #include <string.h>
 
 typedef struct {

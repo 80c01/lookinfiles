@@ -1,6 +1,6 @@
-/* Unit tests for src/lsp_client.c against tests/fixtures/fake_lsp.py (a
+/* Unit tests for src/code/lsp_client.c against tests/fixtures/fake_lsp.py (a
  * minimal language server in Python; skipped without python3). */
-#include "lsp_client.h"
+#include "code/lsp_client.h"
 
 #include <string.h>
 

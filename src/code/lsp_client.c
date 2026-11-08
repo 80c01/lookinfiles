@@ -1,5 +1,5 @@
 /* One language server process (see lsp_client.h) */
-#include "lsp_client.h"
+#include "code/lsp_client.h"
 #include <string.h>
 #if defined(G_OS_WIN32) || defined(_WIN32)
 #include <process.h>

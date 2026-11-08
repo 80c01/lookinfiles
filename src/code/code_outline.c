@@ -1,8 +1,8 @@
 /* The outline of an editor tab (see code_outline.h) */
-#include "code_outline.h"
-#include "code_intel.h"
-#include "code_nav.h"
-#include "code_scan.h"
+#include "code/code_outline.h"
+#include "code/code_intel.h"
+#include "code/code_nav.h"
+#include "code/code_scan.h"
 #include "core/file_types.h"
 #include "core/i18n.h"
 #include <string.h>

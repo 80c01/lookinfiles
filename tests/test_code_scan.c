@@ -1,7 +1,7 @@
-/* Unit tests for src/code_symbol.c, src/code_scan.c and src/code_scan_c.c:
+/* Unit tests for src/code/code_symbol.c, src/code/code_scan.c and src/code/code_scan_c.c:
  * languages, the identifier under the cursor, and the symbol scanners of
  * the built-in code index. */
-#include "code_scan.h"
+#include "code/code_scan.h"
 
 #include <string.h>
 

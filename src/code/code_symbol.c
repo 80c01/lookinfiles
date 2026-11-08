@@ -1,5 +1,5 @@
 /* Languages, identifiers and symbols for code navigation */
-#include "code_symbol.h"
+#include "code/code_symbol.h"
 #include "core/i18n.h"
 #include <string.h>
 

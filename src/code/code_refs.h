@@ -9,7 +9,7 @@
  * Enter or a double click opens the location in an editor tab; the tab's
  * close button removes it. */
 #include "core/app_types.h"
-#include "code_nav.h"
+#include "code/code_nav.h"
 
 /* References of the identifier at the cursor of tab. FALSE (and a message)
  * when the tab is not code or the cursor is not on an identifier. */

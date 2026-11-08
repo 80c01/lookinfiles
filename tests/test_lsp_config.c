@@ -1,6 +1,6 @@
-/* Unit tests for src/lsp_config.c: language server commands from the
+/* Unit tests for src/code/lsp_config.c: language server commands from the
  * defaults and lsp.ini. */
-#include "lsp_config.h"
+#include "code/lsp_config.h"
 
 #include <glib/gstdio.h>
 

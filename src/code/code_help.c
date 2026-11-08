@@ -1,8 +1,8 @@
 /* Help cards in editor tabs (see code_help.h) */
-#include "code_help.h"
+#include "code/code_help.h"
 #include "theme/text_tags.h"
-#include "code_intel.h"
-#include "code_scan.h"
+#include "code/code_intel.h"
+#include "code/code_scan.h"
 #include "core/i18n.h"
 #include "markup/markdown.h"
 #include "theme/theme.h"

@@ -1,5 +1,5 @@
 /* Language Server Protocol messages (see lsp_protocol.h) */
-#include "lsp_protocol.h"
+#include "code/lsp_protocol.h"
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */

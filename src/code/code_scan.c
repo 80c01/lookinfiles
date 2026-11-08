@@ -1,6 +1,6 @@
 /* Symbol scanners of the built-in code index (see code_scan.h) */
-#include "code_scan.h"
-#include "code_scan_c.h"
+#include "code/code_scan.h"
+#include "code/code_scan_c.h"
 #include <string.h>
 
 /* Rule flags */

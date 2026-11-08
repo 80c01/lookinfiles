@@ -2,7 +2,7 @@
 #include "editor/editor_tagbar.h"
 #include "core/i18n.h"
 #include "editor/editor.h"
-#include "code_outline.h"
+#include "code/code_outline.h"
 #include "widgets/outline_pane.h"
 #include "core/settings_store.h"
 

@@ -6,7 +6,7 @@
  * Markdown headings, as entries in file order, then as a tree: symbols
  * nested in their container and grouped by kind (or kept in file order),
  * headings nested by level. Pure GLib, unit-tested. */
-#include "code_symbol.h"
+#include "code/code_symbol.h"
 
 typedef struct {
     gchar* name;

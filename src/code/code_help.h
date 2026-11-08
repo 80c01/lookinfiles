@@ -14,7 +14,7 @@
  * outside the call, on Escape or when the view loses the focus. In Emacs mode
  * the signature goes to the echo area (eldoc). */
 #include "core/app_types.h"
-#include "code_nav.h"
+#include "code/code_nav.h"
 
 /* Install the mouse, key and buffer handlers on a new tab (once); message
  * shows one-line messages of the tab's mode */

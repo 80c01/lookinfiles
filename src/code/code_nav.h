@@ -11,7 +11,7 @@
  * changed meanwhile is dropped. Messages go through the caller's message
  * function (editor_mode_message()), to the tab of the result. */
 #include "core/app_types.h"
-#include "code_index.h"
+#include "code/code_index.h"
 
 typedef void (*CodeNavMessageFunc)(EditorTab* tab, const gchar* message);
 /* Answer of code_nav_find(): the best symbol named so (NULL when none), its

@@ -1,7 +1,7 @@
 /* What the bar of an editor tab tells about its file: git branch, relative path, language, code navigation backend, diagnostics. */
 #include "editor/editor_info.h"
-#include "code_intel.h"
-#include "code_nav.h"
+#include "code/code_intel.h"
+#include "code/code_nav.h"
 #include "core/file_types.h"
 #include "git/git_utils.h"
 #include <string.h>

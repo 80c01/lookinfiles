@@ -1,6 +1,6 @@
-/* Unit tests for src/code_index.c: project files and the definition lookup
+/* Unit tests for src/code/code_index.c: project files and the definition lookup
  * of the built-in code index, on temporary projects. */
-#include "code_index.h"
+#include "code/code_index.h"
 #include <git2.h>
 
 #include <glib/gstdio.h>

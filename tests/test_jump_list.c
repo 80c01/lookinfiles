@@ -1,6 +1,6 @@
-/* Unit tests for src/jump_list.c: back / forward history of code
+/* Unit tests for src/code/jump_list.c: back / forward history of code
  * navigation jumps. */
-#include "jump_list.h"
+#include "code/jump_list.h"
 
 #define ASSERT_LOC(loc, p, l)                \
     do {                                     \

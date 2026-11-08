@@ -9,8 +9,8 @@
  * worker thread. Pure GLib, unit-tested. */
 #include <gio/gio.h>
 
-#include "code_symbol.h"
-#include "code_tags.h"
+#include "code/code_symbol.h"
+#include "code/code_tags.h"
 
 #define CODE_INDEX_MAX_FILES 20000
 #define CODE_INDEX_MAX_BYTES (96 * 1024 * 1024)

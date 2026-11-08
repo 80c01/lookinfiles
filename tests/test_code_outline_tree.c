@@ -1,6 +1,6 @@
-/* Unit tests for src/code_outline_tree.c: Markdown headings, the outline
+/* Unit tests for src/code/code_outline_tree.c: Markdown headings, the outline
  * tree (nesting, groups) and the entry at a line. */
-#include "code_outline_tree.h"
+#include "code/code_outline_tree.h"
 
 #include <string.h>
 

@@ -8,7 +8,7 @@
  * files (a NUL byte in their first 8 KB) and files over
  * TEXT_SEARCH_MAX_FILE_BYTES are skipped. Blocking: call it from a worker
  * thread. Pure GLib, unit-tested. */
-#include "code_index.h"
+#include "code/code_index.h"
 
 /* Limits of a search in files (higher than those of code navigation) */
 #define TEXT_SEARCH_MAX_FILES 100000              /* files listed */

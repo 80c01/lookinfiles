@@ -1,8 +1,8 @@
-/* Unit tests for src/code_tags.c: ctags JSON lines, and the per-project
+/* Unit tests for src/code/code_tags.c: ctags JSON lines, and the per-project
  * index with its cache when Universal Ctags is installed (skipped
  * otherwise). */
-#include "code_index.h"
-#include "code_tags.h"
+#include "code/code_index.h"
+#include "code/code_tags.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

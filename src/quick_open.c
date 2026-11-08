@@ -1,7 +1,7 @@
 /* Quick open of a project file (see quick_open.h) */
 #include "quick_open.h"
 #include "core/app_events.h"
-#include "code_index.h"
+#include "code/code_index.h"
 #include "widgets/dialog.h"
 #include "editor/editor.h"
 #include "explorer/file_list.h"

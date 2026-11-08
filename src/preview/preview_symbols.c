@@ -1,7 +1,7 @@
 /* Symbols of a source code preview (see preview_symbols.h) */
 #include "preview/preview_symbols.h"
-#include "code_outline_tree.h"
-#include "code_scan.h"
+#include "code/code_outline_tree.h"
+#include "code/code_scan.h"
 #include "preview/preview_tagbar.h"
 #include <string.h>
 

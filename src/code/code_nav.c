@@ -1,15 +1,15 @@
 /* Code navigation in editor tabs (see code_nav.h) */
-#include "code_nav.h"
+#include "code/code_nav.h"
 #include "preview/preview_state.h"
 #include "core/app_paths.h"
-#include "code_index.h"
-#include "code_intel.h"
-#include "code_tags.h"
-#include "code_scan.h"
+#include "code/code_index.h"
+#include "code/code_intel.h"
+#include "code/code_tags.h"
+#include "code/code_scan.h"
 #include "editor/editor.h"
 #include "core/file_types.h"
 #include "core/i18n.h"
-#include "jump_list.h"
+#include "code/jump_list.h"
 #include <string.h>
 
 #define CODE_NAV_HISTORY 100

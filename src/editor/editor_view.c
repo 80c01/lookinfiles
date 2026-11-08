@@ -9,7 +9,7 @@
 #include "widgets/minimap.h"
 #include "widgets/color_column.h"
 #include "widgets/diff_gutter.h"
-#include "code_help.h"
+#include "code/code_help.h"
 #include "editor/editor_tagbar.h"
 #include "core/file_types.h"
 

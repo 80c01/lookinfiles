@@ -14,7 +14,7 @@
  * fall back to the "c" entry. Pure GLib, unit-tested. */
 #include <glib.h>
 
-#include "code_symbol.h"
+#include "code/code_symbol.h"
 
 /* Key of lang in lsp.ini ("c", "cpp", "python", "javascript"...), NULL when
  * the language has no server */

@@ -1,8 +1,8 @@
 /* Symbols of the current file in an AppDialog (see code_symbols.h) */
-#include "code_symbols.h"
+#include "code/code_symbols.h"
 #include "theme/palette.h"
-#include "code_outline.h"
-#include "code_scan.h"
+#include "code/code_outline.h"
+#include "code/code_scan.h"
 #include "widgets/dialog.h"
 #include "core/i18n.h"
 #include <string.h>

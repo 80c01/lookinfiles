@@ -1,5 +1,5 @@
 /* C-family symbol scanner (see code_scan_c.h) */
-#include "code_scan_c.h"
+#include "code/code_scan_c.h"
 #include <string.h>
 
 typedef enum {

@@ -6,7 +6,7 @@
  * expressions (Python, Shell, JavaScript / TypeScript, Go, Rust, Lua, Ruby,
  * Makefile). Heuristic: no parser, no scopes, local variables are not
  * listed. Pure GLib, unit-tested; safe to call from worker threads. */
-#include "code_symbol.h"
+#include "code/code_symbol.h"
 
 /* TRUE when lang has a built-in scanner (the others need ctags or LSP) */
 gboolean code_scan_supported(CodeLang lang);
