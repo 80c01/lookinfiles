@@ -13,7 +13,7 @@ typedef struct {
     GtkWidget* popover;
     GtkListBox* list;
     GtkEventController* motion;
-    GPtrArray* layouts; /* one per row: the current panels, the default, the saved ones */
+    GPtrArray* layouts; /* one per row: the current panels, the default, the saved ones, the presets */
     LayoutsPreview* preview; /* the arrangement at the start, put back unless one is applied */
     GtkWidget* focus;   /* the window's focus at the start (referenced) */
     guint preview_id;   /* pending preview timeout, 0 = none */
@@ -177,6 +177,12 @@ void layout_switcher_show(AppData* app) {
     for (guint i = 0; i < named->len; i++) {
         g_ptr_array_add(s->layouts, saved_layout_copy(g_ptr_array_index(named, i)));
     }
+    guint first_preset = s->layouts->len;
+    GPtrArray* presets = layout_store_presets(named);
+    for (guint i = 0; i < presets->len; i++) {
+        g_ptr_array_add(s->layouts, saved_layout_copy(g_ptr_array_index(presets, i)));
+    }
+    g_ptr_array_unref(presets);
     g_ptr_array_unref(named);
 
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
@@ -188,10 +194,12 @@ void layout_switcher_show(AppData* app) {
         const SavedLayout* l = g_ptr_array_index(s->layouts, i);
         gchar* title = (i == 0) ? g_strdup(_("Current Layout"))
                      : (i == 1) ? layouts_default_title(l)
+                     : (i >= first_preset) ? layouts_preset_title(l)
                                 : g_strdup(l->name);
         gtk_list_box_append(s->list, layouts_row_new(title, l));
         g_free(title);
     }
+    layouts_list_separate_at(s->list, first_preset < s->layouts->len ? (gint)first_preset : -1);
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroll), 360);

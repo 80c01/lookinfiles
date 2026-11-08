@@ -53,6 +53,14 @@ SavedLayout* layout_store_builtin_default(void);
 /* TRUE when the layout differs from the built-in default */
 gboolean layout_store_is_customized(const SavedLayout* layout);
 
+/* Built-in presets, never written to layouts.ini: Code (explorer, preview,
+ * editor panel, terminal below), Terminal (explorer, preview, two terminals
+ * beside) and Focus (preview only). Names are translated; a saved layout of
+ * the same name replaces a preset, and deleting it brings the preset back.
+ * Returns the presets not replaced by one of saved (may be NULL), as a
+ * GPtrArray of SavedLayout* that frees its items. */
+GPtrArray* layout_store_presets(GPtrArray* saved);
+
 /* ~/.config/lookinfiles/layouts.ini. Caller frees. */
 gchar* layout_store_default_path(void);
 

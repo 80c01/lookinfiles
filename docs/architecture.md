@@ -43,7 +43,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `tab_tree` text without files (`0` marks a pane of files, `t` a terminal
   tab, e.g. `H:0.500([0],[t,t])`), terminal pane tree as text such as
   `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save, and the
-  default layout of new workspaces (group `[Default]`, built-in if absent).
+  default layout of new workspaces (group `[Default]`, built-in if absent);
+  `layout_store_presets()`: the built-in Code, Terminal and Focus layouts,
+  never written, each hidden by a saved layout of the same name.
 - `gif_decoder` — GIF frames composed on an RGBA canvas (LZW, interlacing,
   transparency, disposal, delays, loop count), played by `animation`
   (GdkPixbufAnimation is deprecated in gdk-pixbuf 2.44: never use it).
@@ -704,8 +706,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   restores the theme. Reads `settings.ini` at startup for `main.c`
   (`preferences_editor_mode()`, `preferences_apply_startup()`).
 - `layout_switcher` — the Alt+L layout list (top-bar grid button): a
-  `GtkPopover` listing the current arrangement, the default and the saved
-  layouts; the hovered or selected row is shown in full after a short delay,
+  `GtkPopover` listing the current arrangement, the default, the saved
+  layouts and the built-in presets (below a separator); the hovered or selected row is shown in full after a short delay,
   Enter or a click applies it, Escape restores the start; **Edit Layouts…** opens
   the `layouts` dialog. The previews are `layouts_preview_begin()` / `_show()` /
   `_end()` (in `layouts`): the start is an `EditorSnapshot`
@@ -721,7 +723,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   one from a list in an `AppDialog` (running terminals are kept; closing extra
   ones, in the terminal panel or the editor panel, asks first). The list starts
   with the default layout of new workspaces, which can be replaced (save
-  under the name "Default") or reset. A click selects a row; double click,
+  under the name "Default") or reset, and ends with the built-in presets
+  (not deletable; saving under a preset's name replaces it). A click selects a row; double click,
   Enter or Apply applies it.
 - `ui` — focus tracking and cycling, global key handler
   (`on_window_key_press()`, incl. `Ctrl+Q`), layout toggle.

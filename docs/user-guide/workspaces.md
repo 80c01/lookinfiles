@@ -44,8 +44,8 @@ applying it moves the open files into the editor panes that held files (an
 empty one takes a file from the fullest), reuses the running terminals and
 starts the missing shells.
 `Alt+L` (or the grid button of the top bar) opens the layout list under
-the button: the current arrangement, the default layout, then the saved
-ones. Moving through the list (hovering with the mouse, arrows, or `Alt+L`
+the button: the current arrangement, the default layout, the saved ones,
+then the built-in layouts. Moving through the list (hovering with the mouse, arrows, or `Alt+L`
 again for the next one) shows each layout exactly as it would be applied:
 panels, editor splits and tabs, terminal panes. Nothing closes meanwhile: terminals a layout has
 no room for are only set aside, and the shells started for a preview end
@@ -59,6 +59,15 @@ same tabs in the same places and the same terminals.
 - **save** the current panels under a name;
 - save it as **Default** to use it for new workspaces;
 - **delete** a layout, or reset the default.
+
+Three layouts come built in, below a line at the end of the list:
+
+- **Code**: explorer, preview and editor panel, a terminal below;
+- **Terminal**: explorer and preview, two terminals beside them;
+- **Focus**: the preview alone.
+
+They cannot be deleted. Saving a layout under the name of a built-in one
+replaces it; deleting yours brings the built-in one back.
 
 Layouts are saved in `~/.config/lookinfiles/layouts.ini`. Applying a
 layout keeps its tagbars on or off afterwards, as their toggle keys do; a

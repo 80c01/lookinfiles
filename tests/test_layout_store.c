@@ -243,6 +243,51 @@ static void test_tagbars(void) {
     g_key_file_free(kf);
 }
 
+static void test_presets(void) {
+    GPtrArray* presets = layout_store_presets(NULL);
+    g_assert_cmpuint(presets->len, ==, 3);
+    const SavedLayout* code = layout_store_find(presets, "Code");
+    g_assert_nonnull(code);
+    g_assert_true(code->editor_dedicated && code->term_vis && code->stacked);
+    const SavedLayout* term = layout_store_find(presets, "Terminal");
+    g_assert_nonnull(term);
+    TermLayoutNode* tree = term_layout_parse(term->terminals);
+    g_assert_cmpuint(term_layout_count(tree), ==, 2);
+    term_layout_free(tree);
+    const SavedLayout* focus = layout_store_find(presets, "Focus");
+    g_assert_nonnull(focus);
+    g_assert_true(focus->preview_vis && !focus->files_vis && !focus->term_vis);
+    for (guint i = 0; i < presets->len; i++) {
+        const SavedLayout* l = g_ptr_array_index(presets, i);
+        g_assert_true(layout_store_is_customized(l));
+        g_assert_false(l->tagbars); /* presets keep the current tagbars */
+    }
+    g_ptr_array_unref(presets);
+
+    /* A saved layout of the same name replaces the preset */
+    GPtrArray* saved = g_ptr_array_new_with_free_func(saved_layout_free);
+    layout_store_put(saved, saved_layout_new("Code"));
+    presets = layout_store_presets(saved);
+    g_assert_cmpuint(presets->len, ==, 2);
+    g_assert_null(layout_store_find(presets, "Code"));
+    g_ptr_array_unref(presets);
+
+    /* Presets are never written to the file */
+    gchar* dir = g_dir_make_tmp("layouts-XXXXXX", NULL);
+    gchar* path = g_build_filename(dir, "layouts.ini", NULL);
+    GPtrArray* empty = g_ptr_array_new_with_free_func(saved_layout_free);
+    g_assert_true(layout_store_save(path, empty, NULL, NULL));
+    GPtrArray* loaded = layout_store_load(path);
+    g_assert_cmpuint(loaded->len, ==, 0);
+    g_ptr_array_unref(loaded);
+    g_ptr_array_unref(empty);
+    g_ptr_array_unref(saved);
+    g_remove(path);
+    g_rmdir(dir);
+    g_free(path);
+    g_free(dir);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/layout_store/term_tree", test_term_tree);
@@ -251,5 +296,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/layout_store/summary", test_summary);
     g_test_add_func("/layout_store/editor_splits", test_editor_splits);
     g_test_add_func("/layout_store/tagbars", test_tagbars);
+    g_test_add_func("/layout_store/presets", test_presets);
     return g_test_run();
 }

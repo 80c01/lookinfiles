@@ -460,9 +460,9 @@ key alt+r;              shot recent_places
 key Escape;             shot recent_places_closed
 key alt+l;              shot layout_switcher      # current panels, then the default layout
 key Down;               shot layout_switcher_preview_default
-key alt+l;              shot layout_switcher_next # Alt+L again: wraps to the current panels
+key alt+l;              shot layout_switcher_next # Alt+L again: the next layout (a built-in preset)
 key Down Escape;        shot layout_switcher_restored
-key alt+l Tab Return;   shot layouts_dialog       # Edit Layouts…: saved workspace layouts (empty list)
+key alt+l Tab Return;   shot layouts_dialog       # Edit Layouts…: the default and the built-in presets
 key Escape;             shot layouts_dialog_closed
 # Themes (Alt+T, Preferences on Appearance): selecting a row previews it, Escape goes back, Enter applies
 key alt+t;              shot themes_dialog

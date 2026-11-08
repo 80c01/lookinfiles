@@ -284,6 +284,7 @@ typedef struct {
     AppData* app;
     SavedLayout* def;    /* default layout of new workspaces */
     GPtrArray* layouts;  /* named layouts */
+    GPtrArray* presets;  /* built-in presets not replaced by a named layout */
     GtkListBox* list;
     AppDialog* dialog;
 } LayoutsDialog;
@@ -350,6 +351,10 @@ static gint save_current(LayoutsDialog* d, const gchar* suggestion) {
             msg = g_strdup(_("Make the panels of this workspace the default layout of new workspaces?"));
         } else if (layout_store_find(d->layouts, name) != NULL) {
             msg = g_strdup_printf(_("A layout named “%s” already exists. Replace it?"), name);
+        } else if (layout_store_find(d->presets, name) != NULL) {
+            msg = g_strdup_printf(_("Replace the built-in layout “%s” with the panels of this workspace? "
+                                    "Deleting yours brings it back."),
+                                  name);
         }
         if (msg != NULL) {
             gboolean ok = confirm(app, is_default ? _("Replace Default Layout") : _("Replace Layout"), msg,
@@ -402,6 +407,28 @@ GtkWidget* layouts_row_new(const gchar* title, const SavedLayout* l) {
     return box;
 }
 
+static void separator_header(GtkListBoxRow* row, GtkListBoxRow* before, gpointer data) {
+    gboolean wanted = before != NULL && gtk_list_box_row_get_index(row) == GPOINTER_TO_INT(data);
+    if (!wanted) {
+        gtk_list_box_row_set_header(row, NULL);
+    } else if (gtk_list_box_row_get_header(row) == NULL) {
+        gtk_list_box_row_set_header(row, gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
+    }
+}
+
+void layouts_list_separate_at(GtkListBox* list, gint index) {
+    if (index < 0) {
+        gtk_list_box_set_header_func(list, NULL, NULL, NULL);
+    } else {
+        gtk_list_box_set_header_func(list, separator_header, GINT_TO_POINTER(index), NULL);
+    }
+}
+
+gchar* layouts_preset_title(const SavedLayout* preset) {
+    /* TRANSLATORS: %s is the name of a layout that comes with the application */
+    return g_strdup_printf(_("%s (built-in)"), preset->name);
+}
+
 gchar* layouts_default_title(const SavedLayout* def) {
     return g_strdup(layout_store_is_customized(def) ? _("Default — new workspaces")
                                                     : _("Default — new workspaces (built-in)"));
@@ -420,7 +447,18 @@ static void fill_list(LayoutsDialog* d, gint select_index) {
         const SavedLayout* l = g_ptr_array_index(d->layouts, i);
         gtk_list_box_append(d->list, layouts_row_new(l->name, l));
     }
-    gint n = (gint)d->layouts->len + 1;
+    if (d->presets != NULL) {
+        g_ptr_array_unref(d->presets);
+    }
+    d->presets = layout_store_presets(d->layouts);
+    for (guint i = 0; i < d->presets->len; i++) {
+        const SavedLayout* l = g_ptr_array_index(d->presets, i);
+        gchar* preset_title = layouts_preset_title(l);
+        gtk_list_box_append(d->list, layouts_row_new(preset_title, l));
+        g_free(preset_title);
+    }
+    layouts_list_separate_at(d->list, d->presets->len > 0 ? (gint)d->layouts->len + 1 : -1);
+    gint n = (gint)(d->layouts->len + d->presets->len) + 1;
     gtk_list_box_select_row(d->list, gtk_list_box_get_row_at_index(d->list, CLAMP(select_index, 0, n - 1)));
 }
 
@@ -430,12 +468,24 @@ static gint selected_index(LayoutsDialog* d) {
     return (row != NULL) ? gtk_list_box_row_get_index(row) : -1;
 }
 
+/* Row index: 0 the default, then the named layouts, then the presets */
 static const SavedLayout* layout_at(LayoutsDialog* d, gint index) {
     if (index == 0) {
         return d->def;
     }
-    return (index > 0 && (guint)index <= d->layouts->len) ? g_ptr_array_index(d->layouts, (guint)index - 1)
-                                                          : NULL;
+    if (index < 0) {
+        return NULL;
+    }
+    guint i = (guint)index - 1;
+    if (i < d->layouts->len) {
+        return g_ptr_array_index(d->layouts, i);
+    }
+    i -= d->layouts->len;
+    return (d->presets != NULL && i < d->presets->len) ? g_ptr_array_index(d->presets, i) : NULL;
+}
+
+static gboolean is_preset_index(LayoutsDialog* d, gint index) {
+    return index > (gint)d->layouts->len;
 }
 
 /* Delete removes a named layout; on the default layout it becomes Reset */
@@ -445,7 +495,8 @@ static void update_buttons(GtkListBox* list, GtkListBoxRow* row, gpointer data) 
     gint index = (row != NULL) ? gtk_list_box_row_get_index(row) : -1;
     GtkWidget* del = app_dialog_get_widget_for_response(d->dialog, RESPONSE_DELETE);
     gtk_button_set_label(GTK_BUTTON(del), index == 0 ? _("_Reset Default") : _("_Delete"));
-    gtk_widget_set_sensitive(del, index > 0 || (index == 0 && layout_store_is_customized(d->def)));
+    gtk_widget_set_sensitive(del, (index > 0 && !is_preset_index(d, index)) ||
+                                      (index == 0 && layout_store_is_customized(d->def)));
     gtk_widget_set_sensitive(app_dialog_get_widget_for_response(d->dialog, APP_RESPONSE_OK), index >= 0);
 }
 
@@ -461,7 +512,7 @@ void layouts_show_dialog(AppData* app) {
         return;
     }
     gchar* path = layout_store_default_path();
-    LayoutsDialog d = { app, layout_store_load_default(path), layout_store_load(path), NULL, NULL };
+    LayoutsDialog d = { app, layout_store_load_default(path), layout_store_load(path), NULL, NULL, NULL };
     g_free(path);
 
     GtkWidget* dlg = app_dialog_new(_("Workspace Layouts"), app->window,
@@ -485,7 +536,8 @@ void layouts_show_dialog(AppData* app) {
     GtkWidget* hint = gtk_label_new(_("Select a layout, then Apply it to this workspace (or "
                                       "double-click it). Save Current… replaces the selected "
                                       "layout or adds a new one; the default layout is the one "
-                                      "new workspaces open with."));
+                                      "new workspaces open with. Saving under the name of a "
+                                      "built-in layout replaces it."));
     gtk_widget_add_css_class(hint, "dim-label");
     gtk_label_set_wrap(GTK_LABEL(hint), TRUE);
     gtk_label_set_max_width_chars(GTK_LABEL(hint), 58);
@@ -535,7 +587,7 @@ void layouts_show_dialog(AppData* app) {
                 save_store(&d);
                 fill_list(&d, 0);
             }
-        } else if (resp == RESPONSE_DELETE && l != NULL) {
+        } else if (resp == RESPONSE_DELETE && l != NULL && !is_preset_index(&d, index)) {
             gchar* msg = g_strdup_printf(_("Delete the layout “%s”?"), l->name);
             if (confirm(app, _("Delete Layout"), msg, _("_Delete"))) {
                 layout_store_remove(d.layouts, l->name);
@@ -553,6 +605,7 @@ void layouts_show_dialog(AppData* app) {
     g_signal_handlers_disconnect_by_func(list, update_buttons, &d);
     app_dialog_destroy(d.dialog);
     g_ptr_array_unref(d.layouts);
+    g_ptr_array_unref(d.presets);
     saved_layout_free(d.def);
     if (to_apply != NULL) {
         layouts_apply(app, to_apply);

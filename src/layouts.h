@@ -32,6 +32,11 @@ gboolean layouts_preview_end(LayoutsPreview* preview, const SavedLayout* layout)
 
 /* A list row: the title above the layout's summary */
 GtkWidget* layouts_row_new(const gchar* title, const SavedLayout* layout);
+/* Draw a separator above row index of list (the first built-in preset);
+ * a negative index removes it */
+void layouts_list_separate_at(GtkListBox* list, gint index);
+/* Title of a built-in preset's row, e.g. "Code (built-in)". Caller frees. */
+gchar* layouts_preset_title(const SavedLayout* preset);
 /* Title of the default layout's row. Caller frees. */
 gchar* layouts_default_title(const SavedLayout* def);
 

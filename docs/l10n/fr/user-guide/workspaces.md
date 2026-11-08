@@ -53,7 +53,7 @@ manquent.
 
 `Alt+L` (ou le bouton grille de la barre du haut) ouvre la liste des
 dispositions sous le bouton : l’agencement actuel, la disposition par
-défaut, puis celles enregistrées. Se déplacer dans la liste (survol à la
+défaut, celles enregistrées, puis les dispositions intégrées. Se déplacer dans la liste (survol à la
 souris, flèches, ou `Alt+L` à nouveau pour la suivante) montre chaque
 disposition exactement comme elle serait appliquée : panneaux, divisions et
 onglets d’édition, panneaux de terminal. Rien ne se ferme entre-temps : les
@@ -71,6 +71,16 @@ dispositions :
 - l’enregistrer comme **disposition par défaut** pour les nouveaux espaces
   de travail ;
 - **supprimer** une disposition, ou réinitialiser celle par défaut.
+
+Trois dispositions sont intégrées, sous une ligne en fin de liste :
+
+- **Code** : explorateur, aperçu et panneau d’édition, un terminal dessous ;
+- **Terminal** : explorateur et aperçu, deux terminaux à côté ;
+- **Focus** : l’aperçu seul.
+
+Elles ne peuvent pas être supprimées. Enregistrer une disposition sous le
+nom d’une disposition intégrée la remplace ; supprimer la vôtre fait
+revenir celle intégrée.
 
 Les dispositions sont enregistrées dans `~/.config/lookinfiles/layouts.ini`.
 Appliquer une disposition garde ensuite ses barres de symboles activées ou

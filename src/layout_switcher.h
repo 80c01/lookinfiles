@@ -2,7 +2,8 @@
 #define LAYOUT_SWITCHER_H
 
 /* Alt+L layout switcher: a popover under the top-bar layouts button that
- * lists the current arrangement, the default layout and the saved ones.
+ * lists the current arrangement, the default layout, the saved ones and the
+ * built-in presets.
  * Moving through the list shows each layout in full (layouts_preview_*:
  * nothing closes meanwhile); Enter applies it, Escape puts everything back
  * exactly. Edit Layouts… opens the dialog of layouts.h. */

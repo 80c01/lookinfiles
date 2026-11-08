@@ -194,6 +194,43 @@ SavedLayout* layout_store_builtin_default(void) {
     return saved_layout_new("Default");
 }
 
+typedef struct {
+    const gchar* name;
+    gboolean files_vis, preview_vis, term_vis, editor_dedicated, stacked;
+    gdouble main_frac, right_frac, editor_frac;
+    const gchar* terminals;
+} Preset;
+
+static const Preset PRESETS[] = {
+    { N_("Code"), TRUE, TRUE, TRUE, TRUE, TRUE, 0.18, 0.70, 0.40, "T" },
+    { N_("Terminal"), TRUE, TRUE, TRUE, FALSE, FALSE, 0.22, 0.40, 0.50, "H:0.500(T,T)" },
+    { N_("Focus"), FALSE, TRUE, FALSE, FALSE, FALSE, 0.25, 0.70, 0.50, "" },
+};
+
+GPtrArray* layout_store_presets(GPtrArray* saved) {
+    GPtrArray* presets = g_ptr_array_new_with_free_func(saved_layout_free);
+    for (guint i = 0; i < G_N_ELEMENTS(PRESETS); i++) {
+        const Preset* p = &PRESETS[i];
+        const gchar* name = _(p->name);
+        if (saved != NULL && layout_store_find(saved, name) != NULL) {
+            continue;
+        }
+        SavedLayout* l = saved_layout_new(name);
+        l->files_vis = p->files_vis;
+        l->preview_vis = p->preview_vis;
+        l->term_vis = p->term_vis;
+        l->editor_dedicated = p->editor_dedicated;
+        l->stacked = p->stacked;
+        l->main_frac = p->main_frac;
+        l->right_frac = p->right_frac;
+        l->editor_frac = p->editor_frac;
+        g_free(l->terminals);
+        l->terminals = g_strdup(p->terminals);
+        g_ptr_array_add(presets, l);
+    }
+    return presets;
+}
+
 gboolean layout_store_is_customized(const SavedLayout* l) {
     SavedLayout* d = layout_store_builtin_default();
     gboolean differs = l->files_vis != d->files_vis || l->preview_vis != d->preview_vis ||

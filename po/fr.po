@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 09:57+0000\n"
+"POT-Creation-Date: 2026-11-08 15:24+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -266,7 +266,7 @@ msgstr "_Retirer le signet"
 
 #: src/bookmark_dialog.c:198 src/bookmarks.c:577 src/code_symbols.c:176
 #: src/editor.c:1729 src/file_actions.c:42 src/file_actions.c:236
-#: src/layouts.c:47 src/layouts.c:318 src/notes.c:587 src/notes.c:768
+#: src/layouts.c:47 src/layouts.c:319 src/notes.c:587 src/notes.c:768
 #: src/notes.c:852 src/preferences.c:342 src/preview_full.c:31
 #: src/project_search.c:369 src/quick_open.c:368 src/remote.c:322
 #: src/remote.c:389 src/remote.c:456 src/remote.c:487 src/remote.c:564
@@ -355,7 +355,7 @@ msgstr "Supprimer le dossier"
 msgid "Delete Bookmark"
 msgstr "Supprimer le signet"
 
-#: src/bookmarks.c:577 src/layouts.c:447 src/layouts.c:468 src/layouts.c:540
+#: src/bookmarks.c:577 src/layouts.c:497 src/layouts.c:519 src/layouts.c:592
 #: src/notes.c:1700 src/remote.c:457 src/remote.c:565 src/themes.c:619
 #: src/themes.c:791
 msgid "_Delete"
@@ -369,7 +369,7 @@ msgstr "Modifier le dossier"
 msgid "Edit Bookmark"
 msgstr "Modifier le signet"
 
-#: src/bookmarks.c:606 src/layouts.c:319 src/notes.c:1487 src/notes.c:1557
+#: src/bookmarks.c:606 src/layouts.c:320 src/notes.c:1487 src/notes.c:1557
 #: src/remote.c:324 src/remote.c:390 src/remote.c:541 src/session_bookmark.c:14
 #: src/themes.c:237
 msgid "_Save"
@@ -404,7 +404,7 @@ msgid "Open Bookmark"
 msgstr "Ouvrir le signet"
 
 #: src/bookmarks.c:865 src/file_actions.c:95 src/layouts.c:270
-#: src/layouts.c:470 src/notes.c:883 src/remote.c:598 src/remote.c:680
+#: src/layouts.c:521 src/notes.c:883 src/remote.c:598 src/remote.c:680
 #: src/session_bookmark.c:62 src/session_bookmark.c:80
 #: src/session_bookmark.c:100 src/themes.c:212
 msgid "_Close"
@@ -1151,7 +1151,7 @@ msgstr "Nécessite"
 msgid "Directory"
 msgstr "Dossier"
 
-#: src/card_view.c:589 src/main.c:358 src/topbar.c:661
+#: src/card_view.c:589 src/layout_store.c:206 src/main.c:358 src/topbar.c:661
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -4837,15 +4837,23 @@ msgstr "Barre de symboles (aperçu)"
 msgid "Tagbar"
 msgstr "Barre de symboles"
 
-#: src/layout_switcher.c:171 src/layout_switcher.c:189
+#: src/layout_store.c:205 src/themes.c:527
+msgid "Code"
+msgstr "Code"
+
+#: src/layout_store.c:207
+msgid "Focus"
+msgstr "Focus"
+
+#: src/layout_switcher.c:171 src/layout_switcher.c:195
 msgid "Current Layout"
 msgstr "Disposition actuelle"
 
-#: src/layout_switcher.c:203
+#: src/layout_switcher.c:211
 msgid "_Edit Layouts…"
 msgstr "_Modifier les dispositions…"
 
-#: src/layout_switcher.c:205
+#: src/layout_switcher.c:213
 msgid "Save, Delete or Reset Layouts"
 msgstr "Enregistrer, supprimer ou réinitialiser les dispositions"
 
@@ -4872,7 +4880,7 @@ msgstr "Fermer des terminaux"
 msgid "_Apply Layout"
 msgstr "_Appliquer la disposition"
 
-#: src/layouts.c:295
+#: src/layouts.c:296
 #, c-format
 msgid ""
 "Could not save %1$s:\n"
@@ -4881,95 +4889,112 @@ msgstr ""
 "Impossible d’enregistrer %1$s :\n"
 "%2$s"
 
-#: src/layouts.c:296
+#: src/layouts.c:297
 msgid "Layouts Not Saved"
 msgstr "Dispositions non enregistrées"
 
-#: src/layouts.c:307
+#: src/layouts.c:308
 msgctxt "layout name"
 msgid "Default"
 msgstr "Par défaut"
 
-#: src/layouts.c:318
+#: src/layouts.c:319
 msgid "Save Layout"
 msgstr "Enregistrer la disposition"
 
 #. TRANSLATORS: %s is the name of the default layout ("Default")
-#: src/layouts.c:326
+#: src/layouts.c:327
 #, c-format
 msgid "Save the panels of this workspace as (“%s” for new workspaces):"
 msgstr ""
 "Enregistrer les panneaux de cet espace de travail sous (« %s » pour les "
 "nouveaux espaces de travail) :"
 
-#: src/layouts.c:350
+#: src/layouts.c:351
 msgid "Make the panels of this workspace the default layout of new workspaces?"
 msgstr ""
 "Faire des panneaux de cet espace de travail la disposition par défaut des "
 "nouveaux espaces de travail ?"
 
-#: src/layouts.c:352
+#: src/layouts.c:353
 #, c-format
 msgid "A layout named “%s” already exists. Replace it?"
 msgstr "Une disposition nommée « %s » existe déjà. La remplacer ?"
 
 #: src/layouts.c:355
+#, c-format
+msgid ""
+"Replace the built-in layout “%s” with the panels of this workspace? Deleting "
+"yours brings it back."
+msgstr ""
+"Remplacer la disposition intégrée « %s » par les panneaux de cet espace de "
+"travail ? Supprimer la vôtre la fait revenir."
+
+#: src/layouts.c:360
 msgid "Replace Default Layout"
 msgstr "Remplacer la disposition par défaut"
 
-#: src/layouts.c:355
+#: src/layouts.c:360
 msgid "Replace Layout"
 msgstr "Remplacer la disposition"
 
-#: src/layouts.c:356
+#: src/layouts.c:361
 msgid "_Replace"
 msgstr "_Remplacer"
 
-#: src/layouts.c:406
+#. TRANSLATORS: %s is the name of a layout that comes with the application
+#: src/layouts.c:429
+#, c-format
+msgid "%s (built-in)"
+msgstr "%s (intégrée)"
+
+#: src/layouts.c:433
 msgid "Default — new workspaces"
 msgstr "Par défaut — nouveaux espaces de travail"
 
-#: src/layouts.c:407
+#: src/layouts.c:434
 msgid "Default — new workspaces (built-in)"
 msgstr "Par défaut — nouveaux espaces de travail (intégrée)"
 
-#: src/layouts.c:447
+#: src/layouts.c:497
 msgid "_Reset Default"
 msgstr "_Réinitialiser"
 
-#: src/layouts.c:467
+#: src/layouts.c:518
 msgid "Workspace Layouts"
 msgstr "Dispositions des espaces de travail"
 
-#: src/layouts.c:469
+#: src/layouts.c:520
 msgid "_Save Current…"
 msgstr "_Enregistrer l’actuelle…"
 
-#: src/layouts.c:471 src/preferences.c:342
+#: src/layouts.c:522 src/preferences.c:342
 msgid "_Apply"
 msgstr "A_ppliquer"
 
-#: src/layouts.c:485
+#: src/layouts.c:536
 msgid ""
 "Select a layout, then Apply it to this workspace (or double-click it). Save "
 "Current… replaces the selected layout or adds a new one; the default layout "
-"is the one new workspaces open with."
+"is the one new workspaces open with. Saving under the name of a built-in "
+"layout replaces it."
 msgstr ""
 "Choisissez une disposition, puis Appliquer pour l’appliquer à cet espace de "
 "travail (ou double-cliquez dessus). Enregistrer l’actuelle… remplace la "
 "disposition choisie ou en ajoute une ; la disposition par défaut est celle "
-"des nouveaux espaces de travail."
+"des nouveaux espaces de travail. Enregistrer sous le nom d’une disposition "
+"intégrée la remplace."
 
-#: src/layouts.c:522
+#: src/layouts.c:574
 #, c-format
 msgid "Layout %u"
 msgstr "Disposition %u"
 
-#: src/layouts.c:529
+#: src/layouts.c:581
 msgid "Reset Default Layout"
 msgstr "Réinitialiser la disposition par défaut"
 
-#: src/layouts.c:530
+#: src/layouts.c:582
 msgid ""
 "Reset the default layout of new workspaces to the built-in one (explorer and "
 "preview, no terminal)?"
@@ -4977,16 +5002,16 @@ msgstr ""
 "Rétablir la disposition intégrée pour les nouveaux espaces de travail "
 "(explorateur et aperçu, sans terminal) ?"
 
-#: src/layouts.c:532
+#: src/layouts.c:584
 msgid "_Reset"
 msgstr "_Réinitialiser"
 
-#: src/layouts.c:539
+#: src/layouts.c:591
 #, c-format
 msgid "Delete the layout “%s”?"
 msgstr "Supprimer la disposition « %s » ?"
 
-#: src/layouts.c:540
+#: src/layouts.c:592
 msgid "Delete Layout"
 msgstr "Supprimer la disposition"
 
@@ -5345,7 +5370,7 @@ msgstr "Formule (source TeX)"
 msgid "TeX (source)"
 msgstr "TeX (source)"
 
-#: src/media_player.c:507
+#: src/media_player.c:523
 msgid "Only local files can be played"
 msgstr "Seuls les fichiers locaux peuvent être lus"
 
@@ -6328,7 +6353,7 @@ msgstr "%.0f %% gagnés"
 msgid "Content"
 msgstr "Contenu"
 
-#: src/preview_formats.c:254 src/spreadsheet.c:705 src/sqlite_view.c:158
+#: src/preview_formats.c:254 src/spreadsheet.c:712 src/sqlite_view.c:158
 msgid "(empty)"
 msgstr "(vide)"
 
@@ -7560,24 +7585,24 @@ msgstr "(aucune diapositive)"
 msgid "Sheet"
 msgstr "Feuille"
 
-#: src/spreadsheet.c:524
+#: src/spreadsheet.c:531
 msgid "Excel workbook"
 msgstr "Classeur Excel"
 
-#: src/spreadsheet.c:661
+#: src/spreadsheet.c:668
 msgid "OpenDocument spreadsheet"
 msgstr "Classeur OpenDocument"
 
-#: src/spreadsheet.c:687
+#: src/spreadsheet.c:694
 msgid "not a spreadsheet (no workbook)"
 msgstr "pas un classeur (aucun workbook)"
 
-#: src/spreadsheet.c:722
+#: src/spreadsheet.c:729
 #, c-format
 msgid "Showing the first %u rows."
 msgstr "Affichage des %u premières lignes."
 
-#: src/spreadsheet.c:728
+#: src/spreadsheet.c:735
 #, c-format
 msgid ""
 "\n"
@@ -7984,10 +8009,6 @@ msgstr " · utilisé"
 #: src/themes.c:527
 msgid "Interface"
 msgstr "Interface"
-
-#: src/themes.c:527
-msgid "Code"
-msgstr "Code"
 
 #: src/themes.c:529
 msgid ""
