@@ -1,5 +1,6 @@
 /* Manual page formatting (see man_view.h). */
 #include "man_view.h"
+#include "i18n.h"
 
 #include <string.h>
 
@@ -447,7 +448,7 @@ static void request(Man* m, const gchar* name, const gchar* rest) {
     } else if (strcmp(name, "UR") == 0 || strcmp(name, "MT") == 0) {
         text_line(m, all);
     } else if (strcmp(name, "so") == 0) {
-        gchar* see = g_strdup_printf("See %s.", all);
+        gchar* see = g_strdup_printf(_("See %s."), all);
         text_line(m, see);
         g_free(see);
     } else if (strcmp(name, "SY") == 0) {

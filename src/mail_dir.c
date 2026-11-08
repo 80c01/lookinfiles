@@ -1,5 +1,6 @@
 /* Maildir and MH mail folders (see mail_dir.h) */
 #include "mail_dir.h"
+#include "i18n.h"
 #include "mail_message.h"
 #include <glib/gstdio.h>
 #include <stdio.h>
@@ -194,29 +195,29 @@ PreviewDoc* mail_dir_preview(const gchar* path, const gchar* name, guint max_mes
     PreviewDoc* doc = preview_doc_new();
     doc->monospace = TRUE;
     doc->wrap = FALSE;
-    gchar* subtitle = g_strdup_printf("%s · %u %s, %u unread", kind == MAIL_DIR_MAILDIR ? "Maildir folder" : "MH folder",
-                                      total, total == 1 ? "message" : "messages", unread);
+    gchar* subtitle = g_strdup_printf(ngettext("%1$s · %2$u message, %3$u unread", "%1$s · %2$u messages, %3$u unread", total),
+                                      kind == MAIL_DIR_MAILDIR ? _("Maildir folder") : _("MH folder"), total, unread);
     preview_doc_title(doc, name, subtitle);
     g_free(subtitle);
     if (folders->len > 0) {
         g_ptr_array_add(folders, NULL);
         gchar* list = g_strjoinv(" · ", (gchar**)folders->pdata);
-        preview_doc_field(doc, "Folders", list);
+        preview_doc_field(doc, _("Folders"), list);
         g_free(list);
     }
     if (items->len == 0) {
-        preview_doc_note(doc, "\n(empty)");
+        preview_doc_note(doc, _("\n(empty)"));
     } else {
         g_autoptr(PreviewTable) table = preview_table_new(4);
-        const gchar* header[] = {"Date", "From", "Subject", "Status"};
+        const gchar* header[] = {_("Date"), _("From"), _("Subject"), _("Status")};
         preview_table_set_header(table, header);
         for (guint i = 0; i < items->len; i++) {
             Item* it = g_ptr_array_index(items, i);
             gchar* date = format_date(it->date);
-            GString* status = g_string_new(it->unread ? "unread" : it->replied ? "replied" : "read");
-            if (it->flagged) g_string_append(status, ", flagged");
+            GString* status = g_string_new(it->unread ? _("unread") : it->replied ? _("replied") : _("read"));
+            if (it->flagged) g_string_append(status, _(", flagged"));
             const gchar* row[] = {date, it->from != NULL ? it->from : "",
-                                  it->subject != NULL ? it->subject : "(no subject)", status->str};
+                                  it->subject != NULL ? it->subject : _("(no subject)"), status->str};
             preview_table_add_row(table, row, 4);
             g_string_free(status, TRUE);
             g_free(date);
@@ -224,7 +225,7 @@ PreviewDoc* mail_dir_preview(const gchar* path, const gchar* name, guint max_mes
         preview_doc_append_len(doc, "\n", 1);
         preview_doc_add_table(doc, table);
         if (total > items->len) {
-            gchar* note = g_strdup_printf("The newest %u of %u messages are shown.", items->len, total);
+            gchar* note = g_strdup_printf(_("The newest %1$u of %2$u messages are shown."), items->len, total);
             preview_doc_note(doc, note);
             g_free(note);
         }

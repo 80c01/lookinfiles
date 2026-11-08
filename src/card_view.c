@@ -1,5 +1,6 @@
 /* Calendars, contacts and desktop entries for the preview (see card_view.h). */
 #include "card_view.h"
+#include "i18n.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -187,7 +188,7 @@ static gchar* format_when(const VLine* start_line, const VLine* end_line) {
     GDateTime* s = g_date_time_new_from_unix_local(start);
     gchar* out;
     if (all_day) {
-        out = g_date_time_format(s, "%Y-%m-%d %a (all day)");
+        out = g_date_time_format(s, _("%Y-%m-%d %a (all day)"));
     } else {
         out = g_date_time_format(s, "%Y-%m-%d %a %H:%M");
     }
@@ -230,14 +231,17 @@ static gchar* format_rrule(const gchar* rule) {
         }
     }
     if (freq != NULL) {
-        const gchar* unit = g_ascii_strcasecmp(freq, "DAILY") == 0 ? "day"
-                            : g_ascii_strcasecmp(freq, "WEEKLY") == 0 ? "week"
-                            : g_ascii_strcasecmp(freq, "MONTHLY") == 0 ? "month"
-                            : g_ascii_strcasecmp(freq, "YEARLY") == 0 ? "year" : NULL;
-        if (unit != NULL && interval != NULL && strcmp(interval, "1") != 0) {
-            g_string_append_printf(out, "every %s %ss", interval, unit);
-        } else if (unit != NULL) {
-            g_string_append_printf(out, "every %s", unit);
+        gint u = g_ascii_strcasecmp(freq, "DAILY") == 0     ? 0
+                 : g_ascii_strcasecmp(freq, "WEEKLY") == 0  ? 1
+                 : g_ascii_strcasecmp(freq, "MONTHLY") == 0 ? 2
+                 : g_ascii_strcasecmp(freq, "YEARLY") == 0  ? 3
+                                                            : -1;
+        const gchar* every[] = { N_("every day"), N_("every week"), N_("every month"), N_("every year") };
+        const gchar* every_n[] = { N_("every %s days"), N_("every %s weeks"), N_("every %s months"), N_("every %s years") };
+        if (u >= 0 && interval != NULL && strcmp(interval, "1") != 0) {
+            g_string_append_printf(out, _(every_n[u]), interval);
+        } else if (u >= 0) {
+            g_string_append(out, _(every[u]));
         } else {
             g_string_append(out, freq);
         }
@@ -246,16 +250,16 @@ static gchar* format_rrule(const gchar* rule) {
         if (g_str_has_prefix(parts[i], "BYDAY=")) {
             gchar* days = g_strdup(parts[i] + 6);
             g_strdelimit(days, ",", '/');
-            g_string_append_printf(out, " on %s", days);
+            g_string_append_printf(out, _(" on %s"), days);
             g_free(days);
         } else if (g_str_has_prefix(parts[i], "COUNT=")) {
-            g_string_append_printf(out, ", %s times", parts[i] + 6);
+            g_string_append_printf(out, _(", %s times"), parts[i] + 6);
         } else if (g_str_has_prefix(parts[i], "UNTIL=")) {
             gint64 until = vformat_parse_time(parts[i] + 6, NULL);
             if (until >= 0) {
                 GDateTime* u = g_date_time_new_from_unix_local(until);
                 gchar* text = g_date_time_format(u, "%Y-%m-%d");
-                g_string_append_printf(out, ", until %s", text);
+                g_string_append_printf(out, _(", until %s"), text);
                 g_free(text);
                 g_date_time_unref(u);
             }
@@ -318,11 +322,11 @@ gboolean card_view_append_calendar(PreviewDoc* doc, const gchar* text, gsize len
     }
     GString* counts = g_string_new(NULL);
     if (events > 0) {
-        g_string_append_printf(counts, "%u %s", events, events == 1 ? "event" : "events");
+        g_string_append_printf(counts, ngettext("%u event", "%u events", events), events);
     }
     if (todos > 0) {
-        g_string_append_printf(counts, "%s%u %s", counts->len > 0 ? " · " : "", todos,
-                               todos == 1 ? "to-do" : "to-dos");
+        if (counts->len > 0) g_string_append(counts, " · ");
+        g_string_append_printf(counts, ngettext("%u to-do", "%u to-dos", todos), todos);
     }
     preview_doc_note(doc, counts->str);
     g_string_free(counts, TRUE);
@@ -332,31 +336,31 @@ gboolean card_view_append_calendar(PreviewDoc* doc, const gchar* text, gsize len
         const CalItem* it = &g_array_index(items, CalItem, i);
         gchar* summary = first_value(lines, it->from, it->to, "SUMMARY");
         preview_doc_append_len(doc, "\n", 1);
-        preview_doc_append(doc, PREVIEW_STYLE_SECTION, summary != NULL ? summary : "(no title)");
+        preview_doc_append(doc, PREVIEW_STYLE_SECTION, summary != NULL ? summary : _("(no title)"));
         if (it->todo) {
-            preview_doc_append(doc, PREVIEW_STYLE_DIM, "  to-do");
+            preview_doc_append(doc, PREVIEW_STYLE_DIM, _("  to-do"));
         }
         preview_doc_append_len(doc, "\n", 1);
         g_free(summary);
         const VLine* start = first_line(lines, it->from, it->to, it->todo ? "DUE" : "DTSTART");
         if (start != NULL) {
             gchar* when = format_when(start, first_line(lines, it->from, it->to, "DTEND"));
-            preview_doc_field(doc, it->todo ? "Due" : "When", when);
+            preview_doc_field(doc, it->todo ? _("Due") : _("When"), when);
             g_free(when);
         }
         gchar* location = first_value(lines, it->from, it->to, "LOCATION");
-        preview_doc_field(doc, "Where", location);
+        preview_doc_field(doc, _("Where"), location);
         g_free(location);
         const VLine* rrule = first_line(lines, it->from, it->to, "RRULE");
         if (rrule != NULL) {
             gchar* repeat = format_rrule(rrule->value);
-            preview_doc_field(doc, "Repeats", repeat);
+            preview_doc_field(doc, _("Repeats"), repeat);
             g_free(repeat);
         }
         const VLine* organizer = first_line(lines, it->from, it->to, "ORGANIZER");
         if (organizer != NULL) {
             gchar* who = format_person(organizer);
-            preview_doc_field(doc, "Organizer", who);
+            preview_doc_field(doc, _("Organizer"), who);
             g_free(who);
         }
         GString* attendees = g_string_new(NULL);
@@ -370,25 +374,25 @@ gboolean card_view_append_calendar(PreviewDoc* doc, const gchar* text, gsize len
             }
         }
         if (n_attendees > 10) {
-            g_string_append_printf(attendees, "\n… %u more", n_attendees - 10);
+            g_string_append_printf(attendees, _("\n… %u more"), n_attendees - 10);
         }
-        preview_doc_field(doc, "Attendees", attendees->str);
+        preview_doc_field(doc, _("Attendees"), attendees->str);
         g_string_free(attendees, TRUE);
         gchar* status = first_value(lines, it->from, it->to, "STATUS");
         if (status != NULL) {
             gchar* lower = g_ascii_strdown(status, -1);
-            preview_doc_field(doc, "Status", lower);
+            preview_doc_field(doc, _("Status"), lower);
             g_free(lower);
         }
         g_free(status);
         gchar* description = first_value(lines, it->from, it->to, "DESCRIPTION");
         gchar* short_desc = shorten(description, 400);
-        preview_doc_field(doc, "Notes", short_desc);
+        preview_doc_field(doc, _("Notes"), short_desc);
         g_free(short_desc);
         g_free(description);
     }
     if (items->len > CARD_VIEW_MAX_ITEMS) {
-        preview_doc_note(doc, "\n(more items not shown)");
+        preview_doc_note(doc, _("\n(more items not shown)"));
     }
     g_array_free(items, TRUE);
     g_array_free(lines, TRUE);
@@ -501,7 +505,7 @@ gboolean card_view_append_contacts(PreviewDoc* doc, const gchar* text, gsize len
         gchar* fn = first_value(lines, from, to, "FN");
         if (fn == NULL) {
             const VLine* n = first_line(lines, from, to, "N");
-            fn = n != NULL ? join_parts(n->value, " ") : g_strdup("(no name)");
+            fn = n != NULL ? join_parts(n->value, " ") : g_strdup(_("(no name)"));
         }
         if (doc->text->len > 0) {
             preview_doc_append_len(doc, "\n", 1);
@@ -519,22 +523,22 @@ gboolean card_view_append_contacts(PreviewDoc* doc, const gchar* text, gsize len
         const VLine* org = first_line(lines, from, to, "ORG");
         if (org != NULL) {
             gchar* text_org = join_parts(org->value, ", ");
-            preview_doc_field(doc, "Organization", text_org);
+            preview_doc_field(doc, _("Organization"), text_org);
             g_free(text_org);
         }
         gchar* title = first_value(lines, from, to, "TITLE");
-        preview_doc_field(doc, "Title", title);
+        preview_doc_field(doc, _("Title"), title);
         g_free(title);
-        append_multi(doc, lines, from, to, "EMAIL", "E-mail", FALSE);
-        append_multi(doc, lines, from, to, "TEL", "Phone", FALSE);
-        append_multi(doc, lines, from, to, "ADR", "Address", TRUE);
-        append_multi(doc, lines, from, to, "URL", "Web", FALSE);
+        append_multi(doc, lines, from, to, "EMAIL", _("E-mail"), FALSE);
+        append_multi(doc, lines, from, to, "TEL", _("Phone"), FALSE);
+        append_multi(doc, lines, from, to, "ADR", _("Address"), TRUE);
+        append_multi(doc, lines, from, to, "URL", _("Web"), FALSE);
         gchar* bday = first_value(lines, from, to, "BDAY");
-        preview_doc_field(doc, "Birthday", bday);
+        preview_doc_field(doc, _("Birthday"), bday);
         g_free(bday);
         gchar* note = first_value(lines, from, to, "NOTE");
         gchar* short_note = shorten(note, 300);
-        preview_doc_field(doc, "Note", short_note);
+        preview_doc_field(doc, _("Note"), short_note);
         g_free(short_note);
         g_free(note);
     }
@@ -543,7 +547,7 @@ gboolean card_view_append_contacts(PreviewDoc* doc, const gchar* text, gsize len
         return FALSE;
     }
     if (total > shown) {
-        gchar* more = g_strdup_printf("\n%u more contacts not shown.", total - shown);
+        gchar* more = g_strdup_printf(ngettext("\n%u more contact not shown.", "\n%u more contacts not shown.", total - shown), total - shown);
         preview_doc_note(doc, more);
         g_free(more);
     }
@@ -561,7 +565,7 @@ gboolean card_view_append_desktop(PreviewDoc* doc, const gchar* text, gsize len)
     }
     const gchar* g = "Desktop Entry";
     gchar* name = g_key_file_get_locale_string(kf, g, "Name", NULL, NULL);
-    preview_doc_append(doc, PREVIEW_STYLE_HEADING2, name != NULL ? name : "(no name)");
+    preview_doc_append(doc, PREVIEW_STYLE_HEADING2, name != NULL ? name : _("(no name)"));
     preview_doc_append_len(doc, "\n", 1);
     g_free(name);
     gchar* generic = g_key_file_get_locale_string(kf, g, "GenericName", NULL, NULL);
@@ -581,9 +585,9 @@ gboolean card_view_append_desktop(PreviewDoc* doc, const gchar* text, gsize len)
         const gchar* key;
         const gchar* label;
     } FIELDS[] = {
-        { "Type", "Type" }, { "Exec", "Command" }, { "TryExec", "Requires" }, { "Path", "Directory" },
-        { "Icon", "Icon" }, { "Terminal", "Terminal" }, { "StartupWMClass", "Window class" },
-        { "NoDisplay", "Hidden" }, { "OnlyShowIn", "Only in" }, { "NotShowIn", "Not in" },
+        { "Type", N_("Type") }, { "Exec", N_("Command") }, { "TryExec", N_("Requires") }, { "Path", N_("Directory") },
+        { "Icon", N_("Icon") }, { "Terminal", N_("Terminal") }, { "StartupWMClass", N_("Window class") },
+        { "NoDisplay", N_("Hidden") }, { "OnlyShowIn", N_("Only in") }, { "NotShowIn", N_("Not in") },
         { "URL", "URL" },
     };
     for (gsize i = 0; i < G_N_ELEMENTS(FIELDS); i++) {
@@ -591,7 +595,7 @@ gboolean card_view_append_desktop(PreviewDoc* doc, const gchar* text, gsize len)
         if (v != NULL && g_str_has_suffix(v, ";")) {
             v[strlen(v) - 1] = '\0';
         }
-        preview_doc_field_styled(doc, FIELDS[i].label, v,
+        preview_doc_field_styled(doc, _(FIELDS[i].label), v,
                                  strcmp(FIELDS[i].key, "Exec") == 0 ? PREVIEW_STYLE_MONO : PREVIEW_STYLE_PLAIN);
         g_free(v);
     }
@@ -599,14 +603,14 @@ gboolean card_view_append_desktop(PreviewDoc* doc, const gchar* text, gsize len)
     gchar** cats = g_key_file_get_string_list(kf, g, "Categories", &n, NULL);
     if (cats != NULL && n > 0) {
         gchar* joined = g_strjoinv(", ", cats);
-        preview_doc_field(doc, "Categories", joined);
+        preview_doc_field(doc, _("Categories"), joined);
         g_free(joined);
     }
     g_strfreev(cats);
     gchar** keywords = g_key_file_get_locale_string_list(kf, g, "Keywords", NULL, &n, NULL);
     if (keywords != NULL && n > 0) {
         gchar* joined = g_strjoinv(", ", keywords);
-        preview_doc_field(doc, "Keywords", joined);
+        preview_doc_field(doc, _("Keywords"), joined);
         g_free(joined);
     }
     g_strfreev(keywords);
@@ -617,9 +621,9 @@ gboolean card_view_append_desktop(PreviewDoc* doc, const gchar* text, gsize len)
             g_string_append_printf(list, "%s%s", i > 0 ? "\n" : "", mimes[i]);
         }
         if (n > 8) {
-            g_string_append_printf(list, "\n… %" G_GSIZE_FORMAT " more", n - 8);
+            g_string_append_printf(list, _("\n… %u more"), (guint)(n - 8));
         }
-        preview_doc_field(doc, "Opens", list->str);
+        preview_doc_field(doc, _("Opens"), list->str);
         g_string_free(list, TRUE);
     }
     g_strfreev(mimes);
@@ -631,7 +635,7 @@ gboolean card_view_append_desktop(PreviewDoc* doc, const gchar* text, gsize len)
             continue;
         }
         if (!header) {
-            preview_doc_section(doc, "Actions");
+            preview_doc_section(doc, _("Actions"));
             header = TRUE;
         }
         gchar* action = g_key_file_get_locale_string(kf, groups[i], "Name", NULL, NULL);

@@ -1,5 +1,6 @@
 /* TNEF winmail.dat (see mail_tnef.h) */
 #include "mail_tnef.h"
+#include "i18n.h"
 #include "mail_msg.h"
 #include <gio/gio.h>
 #include <string.h>
@@ -262,7 +263,7 @@ static void set_field(gchar** field, gchar* value) {
 
 MailMessage* mail_tnef_read(const guint8* data, gsize len, gsize max_part, GError** error) {
     if (!mail_tnef_looks_like(data, len)) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a TNEF stream");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a TNEF stream"));
         return NULL;
     }
     gchar* charset = g_strdup("windows-1252");
@@ -388,7 +389,7 @@ MailMessage* mail_tnef_read(const guint8* data, gsize len, gsize max_part, GErro
         GBytes* bytes = a->has_data && a->size <= max_part ? g_bytes_new(a->data, a->size) : NULL;
         MailPart* part = mail_msg_part_new(a->mime, NULL, bytes);
         if (part->content_type == NULL) part->content_type = mail_msg_guess_type(name != NULL ? name : "file");
-        part->filename = g_strdup(name != NULL ? name : "(attachment)");
+        part->filename = g_strdup(name != NULL ? name : _("(attachment)"));
         part->attachment = TRUE;
         part->size = a->size;
         g_ptr_array_add(msg->root->children, part);

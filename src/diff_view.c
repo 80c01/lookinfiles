@@ -1,5 +1,6 @@
 /* Unified diff preview (see diff_view.h). */
 #include "diff_view.h"
+#include "i18n.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -229,8 +230,8 @@ static void append_summary(PreviewDoc* doc, const DiffSummary* s) {
         preview_doc_append_len(doc, "\n", 1);
     }
     gint start = preview_doc_offset(doc);
-    preview_doc_appendf(doc, PREVIEW_STYLE_PLAIN, "%u %s changed, ", s->files->len,
-                        s->files->len == 1 ? "file" : "files");
+    preview_doc_appendf(doc, PREVIEW_STYLE_PLAIN, ngettext("%u file changed, ", "%u files changed, ", s->files->len),
+                        s->files->len);
     preview_doc_appendf(doc, PREVIEW_STYLE_SUCCESS, "+%u", s->added);
     preview_doc_append(doc, PREVIEW_STYLE_PLAIN, " ");
     preview_doc_appendf(doc, PREVIEW_STYLE_ERROR, "−%u", s->removed);

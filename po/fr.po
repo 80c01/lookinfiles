@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 09:47+0000\n"
+"POT-Creation-Date: 2026-11-08 09:52+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -152,7 +152,7 @@ msgstr "_Annuler"
 
 #: src/bookmark_dialog.c:207 src/file_actions.c:252 src/preview_formats.c:344
 #: src/preview_formats.c:345 src/pyc_info.c:578 src/session_bookmark.c:26
-#: src/torrent_info.c:325
+#: src/sqlite_view.c:222 src/torrent_info.c:325
 msgid "Name"
 msgstr "Nom"
 
@@ -164,7 +164,7 @@ msgstr "Nom du dossier"
 msgid "Defaults to the location's name"
 msgstr "Par défaut, le nom de l’emplacement"
 
-#: src/bookmark_dialog.c:224
+#: src/bookmark_dialog.c:224 src/card_view.c:589
 msgid "Icon"
 msgstr "Icône"
 
@@ -717,7 +717,7 @@ msgstr "Répartir"
 msgid "Layers"
 msgstr "Plans"
 
-#: src/canvas_props.c:398
+#: src/canvas_props.c:398 src/card_view.c:638
 msgid "Actions"
 msgstr "Actions"
 
@@ -830,6 +830,447 @@ msgstr "Échec de l’export du canvas : %s"
 #: src/canvas_view.c:468
 msgid "Zoom: Ctrl+Wheel, Ctrl+= / Ctrl+-; Click: 100% (Ctrl+0)"
 msgstr "Zoom : Ctrl+molette, Ctrl+= / Ctrl+- ; clic : 100 % (Ctrl+0)"
+
+#: src/card_view.c:191
+msgid "%Y-%m-%d %a (all day)"
+msgstr "%Y-%m-%d %a (toute la journée)"
+
+#: src/card_view.c:239
+msgid "every day"
+msgstr "tous les jours"
+
+#: src/card_view.c:239
+msgid "every week"
+msgstr "toutes les semaines"
+
+#: src/card_view.c:239
+msgid "every month"
+msgstr "tous les mois"
+
+#: src/card_view.c:239
+msgid "every year"
+msgstr "tous les ans"
+
+#: src/card_view.c:240
+#, c-format
+msgid "every %s days"
+msgstr "tous les %s jours"
+
+#: src/card_view.c:240
+#, c-format
+msgid "every %s weeks"
+msgstr "toutes les %s semaines"
+
+#: src/card_view.c:240
+#, c-format
+msgid "every %s months"
+msgstr "tous les %s mois"
+
+#: src/card_view.c:240
+#, c-format
+msgid "every %s years"
+msgstr "tous les %s ans"
+
+#: src/card_view.c:253
+#, c-format
+msgid " on %s"
+msgstr " le %s"
+
+#: src/card_view.c:256
+#, c-format
+msgid ", %s times"
+msgstr ", %s fois"
+
+#: src/card_view.c:262
+#, c-format
+msgid ", until %s"
+msgstr ", jusqu’au %s"
+
+#: src/card_view.c:325
+#, c-format
+msgid "%u event"
+msgid_plural "%u events"
+msgstr[0] "%u événement"
+msgstr[1] "%u événements"
+
+#: src/card_view.c:329
+#, c-format
+msgid "%u to-do"
+msgid_plural "%u to-dos"
+msgstr[0] "%u tâche"
+msgstr[1] "%u tâches"
+
+#: src/card_view.c:339
+msgid "(no title)"
+msgstr "(sans titre)"
+
+#: src/card_view.c:341
+msgid "  to-do"
+msgstr "  tâche"
+
+#: src/card_view.c:348
+msgid "Due"
+msgstr "Échéance"
+
+#: src/card_view.c:348
+msgid "When"
+msgstr "Quand"
+
+#: src/card_view.c:352
+msgid "Where"
+msgstr "Où"
+
+#: src/card_view.c:357
+msgid "Repeats"
+msgstr "Répétition"
+
+#: src/card_view.c:363
+msgid "Organizer"
+msgstr "Organisateur"
+
+#: src/card_view.c:377 src/card_view.c:624 src/cert_view.c:614
+#, c-format
+msgid ""
+"\n"
+"… %u more"
+msgstr ""
+"\n"
+"… %u de plus"
+
+#: src/card_view.c:379
+msgid "Attendees"
+msgstr "Participants"
+
+#: src/card_view.c:384 src/cert_view.c:597 src/mail_dir.c:212
+#: src/preview_summary.c:80
+msgid "Status"
+msgstr "État"
+
+#: src/card_view.c:390 src/preview_summary.c:250 src/preview_summary.c:254
+#: src/preview_summary.c:269
+msgid "Notes"
+msgstr "Notes"
+
+#: src/card_view.c:395
+msgid ""
+"\n"
+"(more items not shown)"
+msgstr ""
+"\n"
+"(d’autres éléments ne sont pas affichés)"
+
+#: src/card_view.c:508 src/card_view.c:568
+msgid "(no name)"
+msgstr "(sans nom)"
+
+#: src/card_view.c:526
+msgid "Organization"
+msgstr "Organisation"
+
+#: src/card_view.c:530
+msgid "Title"
+msgstr "Titre"
+
+#: src/card_view.c:532
+msgid "E-mail"
+msgstr "Courriel"
+
+#: src/card_view.c:533
+msgid "Phone"
+msgstr "Téléphone"
+
+#: src/card_view.c:534
+msgid "Address"
+msgstr "Adresse"
+
+#: src/card_view.c:535
+msgid "Web"
+msgstr "Web"
+
+#: src/card_view.c:537
+msgid "Birthday"
+msgstr "Anniversaire"
+
+#: src/card_view.c:541 src/status_bar.c:453
+msgid "Note"
+msgstr "Note"
+
+#: src/card_view.c:550
+#, c-format
+msgid ""
+"\n"
+"%u more contact not shown."
+msgid_plural ""
+"\n"
+"%u more contacts not shown."
+msgstr[0] ""
+"\n"
+"%u autre contact non affiché."
+msgstr[1] ""
+"\n"
+"%u autres contacts non affichés."
+
+#: src/card_view.c:588 src/elf_info.c:640 src/elf_info.c:643
+#: src/sqlite_view.c:222
+msgid "Type"
+msgstr "Type"
+
+#: src/card_view.c:588
+msgid "Command"
+msgstr "Commande"
+
+#: src/card_view.c:588
+msgid "Requires"
+msgstr "Nécessite"
+
+#: src/card_view.c:588
+msgid "Directory"
+msgstr "Dossier"
+
+#: src/card_view.c:589 src/main.c:358 src/topbar.c:661
+msgid "Terminal"
+msgstr "Terminal"
+
+#: src/card_view.c:589
+msgid "Window class"
+msgstr "Classe de fenêtre"
+
+#: src/card_view.c:590
+msgid "Hidden"
+msgstr "Masqué"
+
+#: src/card_view.c:590
+msgid "Only in"
+msgstr "Seulement dans"
+
+#: src/card_view.c:590
+msgid "Not in"
+msgstr "Pas dans"
+
+#: src/card_view.c:606
+msgid "Categories"
+msgstr "Catégories"
+
+#: src/card_view.c:613
+msgid "Keywords"
+msgstr "Mots-clés"
+
+#: src/card_view.c:626
+msgid "Opens"
+msgstr "Ouvre"
+
+#: src/cert_view.c:272
+#, c-format
+msgid "RSA %u bits"
+msgstr "RSA %u bits"
+
+#: src/cert_view.c:330
+msgid "Digital Signature"
+msgstr "Signature numérique"
+
+#: src/cert_view.c:330
+msgid "Non Repudiation"
+msgstr "Non-répudiation"
+
+#: src/cert_view.c:330
+msgid "Key Encipherment"
+msgstr "Chiffrement de clé"
+
+#: src/cert_view.c:330
+msgid "Data Encipherment"
+msgstr "Chiffrement de données"
+
+#: src/cert_view.c:331
+msgid "Key Agreement"
+msgstr "Accord de clé"
+
+#: src/cert_view.c:331
+msgid "Certificate Sign"
+msgstr "Signature de certificat"
+
+#: src/cert_view.c:331
+msgid "CRL Sign"
+msgstr "Signature de CRL"
+
+#: src/cert_view.c:331
+msgid "Encipher Only"
+msgstr "Chiffrement seul"
+
+#: src/cert_view.c:331
+msgid "Decipher Only"
+msgstr "Déchiffrement seul"
+
+#: src/cert_view.c:353
+msgid "TLS Web Server Authentication"
+msgstr "Authentification de serveur web TLS"
+
+#: src/cert_view.c:354
+msgid "TLS Web Client Authentication"
+msgstr "Authentification de client web TLS"
+
+#: src/cert_view.c:355
+msgid "Code Signing"
+msgstr "Signature de code"
+
+#: src/cert_view.c:356
+msgid "E-mail Protection"
+msgstr "Protection du courriel"
+
+#: src/cert_view.c:357
+msgid "Time Stamping"
+msgstr "Horodatage"
+
+#: src/cert_view.c:358
+msgid "OCSP Signing"
+msgstr "Signature OCSP"
+
+#: src/cert_view.c:359
+msgid "Any"
+msgstr "Tout usage"
+
+#: src/cert_view.c:426 src/cert_view.c:771
+msgid "not a valid X.509 certificate"
+msgstr "pas un certificat X.509 valide"
+
+#: src/cert_view.c:575
+msgid "Valid from"
+msgstr "Valide depuis"
+
+#: src/cert_view.c:576
+msgid "Valid until"
+msgstr "Expire le"
+
+#: src/cert_view.c:586
+msgid "not valid yet"
+msgstr "pas encore valide"
+
+#: src/cert_view.c:590
+msgid "expired today"
+msgstr "expiré aujourd’hui"
+
+#: src/cert_view.c:591
+#, c-format
+msgid "expired %d day ago"
+msgid_plural "expired %d days ago"
+msgstr[0] "expiré il y a %d jour"
+msgstr[1] "expiré il y a %d jours"
+
+#: src/cert_view.c:594
+#, c-format
+msgid "valid, expires in %d day"
+msgid_plural "valid, expires in %d days"
+msgstr[0] "valide, expire dans %d jour"
+msgstr[1] "valide, expire dans %d jours"
+
+#: src/cert_view.c:602 src/cert_view.c:665 src/mail_dir.c:212
+#: src/mail_view.c:80 src/preview_formats.c:934
+msgid "Subject"
+msgstr "Objet"
+
+#: src/cert_view.c:604
+#, c-format
+msgid "%s (self-signed)"
+msgstr "%s (autosigné)"
+
+#: src/cert_view.c:605
+msgid "Issuer"
+msgstr "Émetteur"
+
+#: src/cert_view.c:616
+msgid "Alt names"
+msgstr "Autres noms"
+
+#: src/cert_view.c:619 src/cert_view.c:666 src/cert_view.c:749
+msgid "Public key"
+msgstr "Clé publique"
+
+#: src/cert_view.c:620
+msgid "Signature"
+msgstr "Signature"
+
+#: src/cert_view.c:622
+msgid "CA"
+msgstr "AC"
+
+#: src/cert_view.c:622 src/preview_formats.c:903
+msgid "yes"
+msgstr "oui"
+
+#: src/cert_view.c:622
+msgid "no"
+msgstr "non"
+
+#: src/cert_view.c:624
+msgid "Key usage"
+msgstr "Usage de la clé"
+
+#: src/cert_view.c:625
+msgid "Extended use"
+msgstr "Usage étendu"
+
+#: src/cert_view.c:626
+msgid "Serial"
+msgstr "N° de série"
+
+#: src/cert_view.c:628 src/preview_formats.c:597 src/pyc_info.c:538
+msgid "Version"
+msgstr "Version"
+
+#: src/cert_view.c:630
+msgid "SHA-256"
+msgstr "SHA-256"
+
+#: src/cert_view.c:631
+msgid "SHA-1"
+msgstr "SHA-1"
+
+#: src/cert_view.c:686
+msgid "no certificate or key found"
+msgstr "aucun certificat ni clé trouvé"
+
+#: src/cert_view.c:697
+#, c-format
+msgid "%u certificates (the first ones in detail)\n"
+msgstr "%u certificats (les premiers en détail)\n"
+
+#: src/cert_view.c:698
+#, c-format
+msgid "%u certificates\n"
+msgstr "%u certificats\n"
+
+#: src/cert_view.c:713
+#, c-format
+msgid "%1$u. %2$s — until %3$s"
+msgstr "%1$u. %2$s — jusqu’au %3$s"
+
+#: src/cert_view.c:716
+msgid "Other certificates"
+msgstr "Autres certificats"
+
+#: src/cert_view.c:725
+#, c-format
+msgid "Certificate %1$u of %2$u"
+msgstr "Certificat %1$u sur %2$u"
+
+#: src/cert_view.c:726
+msgid "Certificate"
+msgstr "Certificat"
+
+#: src/cert_view.c:730
+msgid "Damaged certificate: it cannot be decoded."
+msgstr "Certificat endommagé : il ne peut pas être décodé."
+
+#: src/cert_view.c:741 src/cert_view.c:754
+msgid "Algorithm"
+msgstr "Algorithme"
+
+#: src/cert_view.c:742
+msgid "The key itself is not shown."
+msgstr "La clé elle-même n’est pas affichée."
+
+#: src/cert_view.c:761
+msgid "Certificate request"
+msgstr "Demande de certificat"
 
 #: src/class_info.c:174
 msgid "static block"
@@ -1253,6 +1694,13 @@ msgstr "barre verticale"
 msgctxt "csv separator"
 msgid "comma"
 msgstr "virgule"
+
+#: src/diff_view.c:233
+#, c-format
+msgid "%u file changed, "
+msgid_plural "%u files changed, "
+msgstr[0] "%u fichier modifié, "
+msgstr[1] "%u fichiers modifiés, "
 
 #: src/dir_preview.c:204
 #, c-format
@@ -1719,10 +2167,6 @@ msgstr "petit-boutiste"
 msgid "Architecture"
 msgstr "Architecture"
 
-#: src/elf_info.c:640 src/elf_info.c:643
-msgid "Type"
-msgstr "Type"
-
 #: src/elf_info.c:642
 #, c-format
 msgid "Unknown type %u"
@@ -2181,6 +2625,65 @@ msgstr "Solitaire"
 msgid "Close Game (Ctrl+W)"
 msgstr "Fermer le jeu (Ctrl+W)"
 
+#: src/gettext_view.c:55
+msgid "not a gettext catalog"
+msgstr "pas un catalogue gettext"
+
+#: src/gettext_view.c:185
+msgid "no messages"
+msgstr "aucun message"
+
+#: src/gettext_view.c:215
+msgid "Project"
+msgstr "Projet"
+
+#: src/gettext_view.c:215
+msgid "Language"
+msgstr "Langue"
+
+#: src/gettext_view.c:216
+msgid "Translator"
+msgstr "Traducteur"
+
+#: src/gettext_view.c:216
+msgid "Team"
+msgstr "Équipe"
+
+#: src/gettext_view.c:217
+msgid "Revised"
+msgstr "Révisé"
+
+#: src/gettext_view.c:217
+msgid "Plural forms"
+msgstr "Pluriels"
+
+#: src/gettext_view.c:234
+#, c-format
+msgid "%1$u translated, %2$u fuzzy, %3$u untranslated"
+msgstr "traduits : %1$u, approximatifs : %2$u, non traduits : %3$u"
+
+#: src/gettext_view.c:237 src/mail_store.c:101
+msgid "Messages"
+msgstr "Messages"
+
+#: src/gettext_view.c:246
+msgid "Original"
+msgstr "Original"
+
+#: src/gettext_view.c:246
+msgid "Translation"
+msgstr "Traduction"
+
+#: src/gettext_view.c:252
+#, c-format
+msgid "%s (fuzzy)"
+msgstr "%s (approximatif)"
+
+#: src/gettext_view.c:260
+#, c-format
+msgid "Showing the first %u messages."
+msgstr "Affichage des %u premiers messages."
+
 #: src/git_tab.c:124
 #, c-format
 msgid "… %u more line not shown"
@@ -2208,7 +2711,8 @@ msgstr "Message"
 msgid "Author"
 msgstr "Auteur"
 
-#: src/git_tab.c:436 src/preview_formats.c:934
+#: src/git_tab.c:436 src/mail_dir.c:212 src/mail_view.c:33 src/mail_view.c:34
+#: src/mail_view.c:180 src/preview_formats.c:934
 msgid "Date"
 msgstr "Date"
 
@@ -3934,6 +4438,68 @@ msgstr "  [échelle 1:1, m pour ajuster]"
 msgid "  [1:1 scale]"
 msgstr "  [échelle 1:1]"
 
+#: src/json_view.c:49
+#, c-format
+msgid "line %1$u, column %2$u: %3$s"
+msgstr "ligne %1$u, colonne %2$u : %3$s"
+
+#: src/json_view.c:97
+msgid "unterminated string"
+msgstr "chaîne non terminée"
+
+#: src/json_view.c:116
+msgid "missing }"
+msgstr "} manquante"
+
+#: src/json_view.c:116
+msgid "missing ]"
+msgstr "] manquant"
+
+#: src/json_view.c:139
+msgid "expected a member name"
+msgstr "nom de membre attendu"
+
+#: src/json_view.c:148
+msgid "expected :"
+msgstr "« : » attendu"
+
+#: src/json_view.c:166
+msgid "expected , or }"
+msgstr "« , » ou « } » attendu"
+
+#: src/json_view.c:166
+msgid "expected , or ]"
+msgstr "« , » ou « ] » attendu"
+
+#: src/json_view.c:176
+msgid "expected a value"
+msgstr "valeur attendue"
+
+#: src/json_view.c:180
+msgid "nested too deeply"
+msgstr "imbrication trop profonde"
+
+#: src/json_view.c:209
+msgid "unexpected word"
+msgstr "mot inattendu"
+
+#: src/json_view.c:214
+msgid "unexpected character"
+msgstr "caractère inattendu"
+
+#: src/json_view.c:334 src/json_view.c:384
+msgid "unexpected text after the value"
+msgstr "texte inattendu après la valeur"
+
+#: src/json_view.c:339
+msgid "empty document"
+msgstr "document vide"
+
+#: src/json_view.c:366
+#, c-format
+msgid "… (stopped after %u lines)"
+msgstr "… (arrêté après %u lignes)"
+
 #: src/layout_store.c:46 src/main.c:344
 msgid "Explorer"
 msgstr "Explorateur"
@@ -4162,6 +4728,212 @@ msgstr "Supprimer la disposition « %s » ?"
 msgid "Delete Layout"
 msgstr "Supprimer la disposition"
 
+#: src/mail_dir.c:198
+#, c-format
+msgid "%1$s · %2$u message, %3$u unread"
+msgid_plural "%1$s · %2$u messages, %3$u unread"
+msgstr[0] "%1$s · %2$u message, %3$u non lu"
+msgstr[1] "%1$s · %2$u messages, %3$u non lus"
+
+#: src/mail_dir.c:199
+msgid "Maildir folder"
+msgstr "Dossier Maildir"
+
+#: src/mail_dir.c:199
+msgid "MH folder"
+msgstr "Dossier MH"
+
+#: src/mail_dir.c:205
+msgid "Folders"
+msgstr "Dossiers"
+
+#: src/mail_dir.c:209
+msgid ""
+"\n"
+"(empty)"
+msgstr ""
+"\n"
+"(vide)"
+
+#: src/mail_dir.c:212 src/mail_view.c:29 src/mail_view.c:180
+#: src/preview_formats.c:934
+msgid "From"
+msgstr "De"
+
+#: src/mail_dir.c:217
+msgid "unread"
+msgstr "non lu"
+
+#: src/mail_dir.c:217
+msgid "replied"
+msgstr "répondu"
+
+#: src/mail_dir.c:217
+msgid "read"
+msgstr "lu"
+
+#: src/mail_dir.c:218
+msgid ", flagged"
+msgstr ", marqué"
+
+#: src/mail_dir.c:220 src/mail_view.c:167 src/mail_view.c:220
+#: src/preview_formats.c:903
+msgid "(no subject)"
+msgstr "(sans objet)"
+
+#: src/mail_dir.c:228
+#, c-format
+msgid "The newest %1$u of %2$u messages are shown."
+msgstr "Les %1$u plus récents des %2$u messages sont affichés."
+
+#: src/mail_msg.c:192
+msgid "no message properties"
+msgstr "aucune propriété de message"
+
+#: src/mail_msg.c:283 src/mail_tnef.c:392
+msgid "(attachment)"
+msgstr "(pièce jointe)"
+
+#: src/mail_store.c:30
+#, c-format
+msgid "%1$s (%2$s byte)"
+msgid_plural "%1$s (%2$s bytes)"
+msgstr[0] "%1$s (%2$s octet)"
+msgstr[1] "%1$s (%2$s octets)"
+
+#: src/mail_store.c:40
+msgid "Size in header"
+msgstr "Taille dans l’en-tête"
+
+#: src/mail_store.c:43
+msgid ""
+"\n"
+"The file is shorter than its header says: it is truncated."
+msgstr ""
+"\n"
+"Le fichier est plus court que ne l’indique son en-tête : il est tronqué."
+
+#: src/mail_store.c:54
+msgid "Outlook offline store (OST)"
+msgstr "Stockage hors connexion Outlook (OST)"
+
+#: src/mail_store.c:54
+msgid "Outlook data file (PST)"
+msgstr "Fichier de données Outlook (PST)"
+
+#: src/mail_store.c:55
+msgid "unknown version"
+msgstr "version inconnue"
+
+#: src/mail_store.c:59
+msgid " (Unicode, 4 KB pages: Outlook 2013 and later)"
+msgstr " (Unicode, pages de 4 Ko : Outlook 2013 et plus récent)"
+
+#: src/mail_store.c:60
+msgid " (Unicode: Outlook 2003 and later)"
+msgstr " (Unicode : Outlook 2003 et plus récent)"
+
+#: src/mail_store.c:61
+msgid " (ANSI: Outlook 97-2002, 2 GB at most)"
+msgstr " (ANSI : Outlook 97-2002, 2 Go au plus)"
+
+#: src/mail_store.c:63
+msgid "Format version"
+msgstr "Version du format"
+
+#: src/mail_store.c:77
+msgid "Encryption"
+msgstr "Chiffrement"
+
+#: src/mail_store.c:77
+msgid "none"
+msgstr "aucun"
+
+#: src/mail_store.c:78
+msgid "compressible (permutation)"
+msgstr "compressible (permutation)"
+
+#: src/mail_store.c:79
+msgid "high (cyclic)"
+msgstr "élevé (cyclique)"
+
+#: src/mail_store.c:81 src/video_tab.c:159
+msgid "unknown"
+msgstr "inconnue"
+
+#: src/mail_store.c:83
+msgid ""
+"\n"
+"Folders and messages are not read: export them from Outlook (or with "
+"readpst) to mbox or .eml files to preview them here."
+msgstr ""
+"\n"
+"Les dossiers et les messages ne sont pas lus : exportez-les depuis Outlook "
+"(ou avec readpst) en fichiers mbox ou .eml pour les voir ici."
+
+#: src/mail_store.c:92
+msgid "Outlook Express mail folder (DBX)"
+msgstr "Dossier de courrier Outlook Express (DBX)"
+
+#: src/mail_store.c:93
+msgid "Outlook Express folder list (DBX)"
+msgstr "Liste de dossiers Outlook Express (DBX)"
+
+#: src/mail_store.c:94
+msgid "Outlook Express database (DBX)"
+msgstr "Base de données Outlook Express (DBX)"
+
+#: src/mail_store.c:107 src/preview_formats.c:344 src/preview_formats.c:345
+#: src/preview_formats.c:934 src/torrent_info.c:371
+msgid "Size"
+msgstr "Taille"
+
+#: src/mail_store.c:110
+msgid ""
+"\n"
+"Messages are not read: export them from Outlook Express (or with undbx) "
+"to .eml files to preview them here."
+msgstr ""
+"\n"
+"Les messages ne sont pas lus : exportez-les depuis Outlook Express (ou avec "
+"undbx) en fichiers .eml pour les voir ici."
+
+#: src/mail_tnef.c:266
+msgid "not a TNEF stream"
+msgstr "pas un flux TNEF"
+
+#: src/mail_view.c:22
+msgid "(unnamed)"
+msgstr "(sans nom)"
+
+#: src/mail_view.c:30 src/mail_view.c:180
+msgid "To"
+msgstr "À"
+
+#: src/mail_view.c:31 src/mail_view.c:180
+msgid "Cc"
+msgstr "Cc"
+
+#: src/mail_view.c:56
+msgid "The message continues; the preview stops here."
+msgstr "Le message continue ; l’aperçu s’arrête ici."
+
+#: src/mail_view.c:65
+msgid "Attachment"
+msgstr "Pièce jointe"
+
+#: src/mail_view.c:65 src/mail_view.c:199 src/preview_formats.c:934
+msgid "Attachments"
+msgstr "Pièces jointes"
+
+#: src/mail_view.c:79
+msgid "Forwarded message"
+msgstr "Message transféré"
+
+#: src/mail_view.c:91
+msgid "Encrypted message: the body needs the recipient's key."
+msgstr "Message chiffré : le corps demande la clé du destinataire."
+
 #: src/main.c:141
 #, c-format
 msgid ""
@@ -4253,10 +5025,6 @@ msgstr "Afficher / masquer le panneau Explorateur"
 msgid "Show / Hide Preview Panel"
 msgstr "Afficher / masquer le panneau Aperçu"
 
-#: src/main.c:358 src/topbar.c:661
-msgid "Terminal"
-msgstr "Terminal"
-
 #: src/main.c:362
 msgid "Show / Hide Terminal Panel"
 msgstr "Afficher / masquer le panneau Terminal"
@@ -4289,6 +5057,11 @@ msgstr "Préférences (Ctrl+,)"
 #, c-format
 msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
 msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
+
+#: src/man_view.c:451
+#, c-format
+msgid "See %s."
+msgstr "Voir %s."
 
 #: src/media_tracks.c:23
 #, c-format
@@ -5026,7 +5799,7 @@ msgstr "%.0f %% gagnés"
 msgid "Content"
 msgstr "Contenu"
 
-#: src/preview_formats.c:254
+#: src/preview_formats.c:254 src/sqlite_view.c:158
 msgid "(empty)"
 msgstr "(vide)"
 
@@ -5071,11 +5844,6 @@ msgstr "Contenu"
 #: src/preview_formats.c:317
 msgid "Unpacked"
 msgstr "Décompressé"
-
-#: src/preview_formats.c:344 src/preview_formats.c:345
-#: src/preview_formats.c:934 src/torrent_info.c:371
-msgid "Size"
-msgstr "Taille"
 
 #: src/preview_formats.c:344
 msgid "Packed"
@@ -5170,10 +5938,6 @@ msgstr "Police %1$s · %2$s"
 msgid "Full name"
 msgstr "Nom complet"
 
-#: src/preview_formats.c:597 src/pyc_info.c:538
-msgid "Version"
-msgstr "Version"
-
 #: src/preview_formats.c:598
 msgid "Designer"
 msgstr "Créateur"
@@ -5257,14 +6021,6 @@ msgstr "pas une page de manuel"
 msgid "not a valid ELF file"
 msgstr "pas un fichier ELF valide"
 
-#: src/preview_formats.c:903
-msgid "(no subject)"
-msgstr "(sans objet)"
-
-#: src/preview_formats.c:903
-msgid "yes"
-msgstr "oui"
-
 #. TRANSLATORS: %3$s is "+" when the mailbox was not read to the end
 #: src/preview_formats.c:919
 #, c-format
@@ -5284,18 +6040,6 @@ msgid "Mailbox · %1$s · the first %2$u and last %3$u messages shown"
 msgstr ""
 "Boîte aux lettres · %1$s · les %2$u premiers et %3$u derniers messages "
 "affichés"
-
-#: src/preview_formats.c:934
-msgid "From"
-msgstr "De"
-
-#: src/preview_formats.c:934
-msgid "Subject"
-msgstr "Objet"
-
-#: src/preview_formats.c:934
-msgid "Attachments"
-msgstr "Pièces jointes"
 
 #: src/preview_formats.c:949
 msgid ""
@@ -5450,10 +6194,6 @@ msgid "Unknown"
 msgstr "Inconnue"
 
 #: src/preview_summary.c:80
-msgid "Status"
-msgstr "État"
-
-#: src/preview_summary.c:80
 msgid "Connected (Mounted via SSHFS)"
 msgstr "Connectée (montée via SSHFS)"
 
@@ -5569,11 +6309,6 @@ msgstr[1] "dossier, %u éléments"
 #, c-format
 msgid "Notebook: %s"
 msgstr "Carnet : %s"
-
-#: src/preview_summary.c:250 src/preview_summary.c:254
-#: src/preview_summary.c:269
-msgid "Notes"
-msgstr "Notes"
 
 #: src/preview_summary.c:256
 #, c-format
@@ -6267,6 +7002,68 @@ msgstr "Relire ~/.ssh/config (F5)"
 msgid "Play Selected Game (Enter)"
 msgstr "Jouer au jeu sélectionné (Enter)"
 
+#: src/sqlite_view.c:34
+#, c-format
+msgid "%1$s × %2$u bytes"
+msgstr "%1$s × %2$u octets"
+
+#: src/sqlite_view.c:36
+msgid "Pages"
+msgstr "Pages"
+
+#: src/sqlite_view.c:38
+msgid "Encoding"
+msgstr "Encodage"
+
+#: src/sqlite_view.c:39
+msgid "Journal"
+msgstr "Journal"
+
+#: src/sqlite_view.c:43
+msgid "Written by"
+msgstr "Écrit par"
+
+#: src/sqlite_view.c:48
+msgid "User version"
+msgstr "Version schéma"
+
+#: src/sqlite_view.c:53
+msgid "Application ID"
+msgstr "ID d’application"
+
+#: src/sqlite_view.c:190
+msgid "cannot open"
+msgstr "ouverture impossible"
+
+#: src/sqlite_view.c:218
+msgid ""
+"\n"
+"No tables yet."
+msgstr ""
+"\n"
+"Pas encore de tables."
+
+#: src/sqlite_view.c:222
+msgid "Rows"
+msgstr "Lignes"
+
+#: src/sqlite_view.c:222
+msgid "Columns"
+msgstr "Colonnes"
+
+#: src/sqlite_view.c:268
+msgid "not an SQLite database"
+msgstr "pas une base de données SQLite"
+
+#: src/sqlite_view.c:276
+msgid ""
+"\n"
+"Tables are listed when LookinFiles is built with SQLite (libsqlite3-dev)."
+msgstr ""
+"\n"
+"Les tables sont listées quand LookinFiles est compilé avec SQLite "
+"(libsqlite3-dev)."
+
 #: src/status_bar.c:63
 msgid "_Undo"
 msgstr "A_nnuler"
@@ -6334,10 +7131,6 @@ msgstr "Dossier distant"
 #: src/status_bar.c:450
 msgid "Trashed Note"
 msgstr "Note à la corbeille"
-
-#: src/status_bar.c:453
-msgid "Note"
-msgstr "Note"
 
 #: src/status_bar.c:473
 msgid "Plain Text"
@@ -6897,10 +7690,6 @@ msgstr "              m pour passer au lecteur vidéo interactif\n"
 #, c-format
 msgid "Playback error: %s"
 msgstr "Erreur de lecture : %s"
-
-#: src/video_tab.c:159
-msgid "unknown"
-msgstr "inconnue"
 
 #: src/video_tab.c:278
 msgid ""

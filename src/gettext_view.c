@@ -1,5 +1,6 @@
 /* gettext catalogs for the preview (see gettext_view.h). */
 #include "gettext_view.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -51,7 +52,7 @@ GettextCatalog* gettext_parse_mo(const guchar* data, gsize len, GError** error) 
     } else if (len >= 28 && memcmp(data, "\x95\x04\x12\xDE", 4) == 0) {
         le = FALSE;
     } else {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a gettext catalog");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a gettext catalog"));
         return NULL;
     }
 #define U32(off) (le ? ((guint32)data[(off)] | ((guint32)data[(off) + 1] << 8) | ((guint32)data[(off) + 2] << 16) | ((guint32)data[(off) + 3] << 24)) \
@@ -181,7 +182,7 @@ GettextCatalog* gettext_parse_po(const gchar* text, gsize len, GError** error) {
     g_strfreev(lines);
     if (!any) {
         gettext_catalog_free(c);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "no messages");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("no messages"));
         return NULL;
     }
     return c;
@@ -211,13 +212,13 @@ void gettext_view_append(PreviewDoc* doc, const GettextCatalog* catalog) {
         const gchar* field;
         const gchar* label;
     } FIELDS[] = {
-        { "Project-Id-Version", "Project" }, { "Language", "Language" },
-        { "Last-Translator", "Translator" }, { "Language-Team", "Team" },
-        { "PO-Revision-Date", "Revised" }, { "Plural-Forms", "Plural forms" },
+        { "Project-Id-Version", N_("Project") }, { "Language", N_("Language") },
+        { "Last-Translator", N_("Translator") }, { "Language-Team", N_("Team") },
+        { "PO-Revision-Date", N_("Revised") }, { "Plural-Forms", N_("Plural forms") },
     };
     for (gsize i = 0; i < G_N_ELEMENTS(FIELDS); i++) {
         gchar* v = gettext_header_field(catalog, FIELDS[i].field);
-        preview_doc_field(doc, FIELDS[i].label, v);
+        preview_doc_field(doc, _(FIELDS[i].label), v);
         g_free(v);
     }
     guint translated = 0, fuzzy = 0;
@@ -230,10 +231,10 @@ void gettext_view_append(PreviewDoc* doc, const GettextCatalog* catalog) {
         }
     }
     guint total = catalog->messages->len;
-    gchar* counts = g_strdup_printf("%u translated, %u fuzzy, %u untranslated", translated, fuzzy,
+    gchar* counts = g_strdup_printf(_("%1$u translated, %2$u fuzzy, %3$u untranslated"), translated, fuzzy,
                                     total - translated - fuzzy);
     gchar* label = g_strdup_printf("%u", total);
-    preview_doc_field(doc, "Messages", label);
+    preview_doc_field(doc, _("Messages"), label);
     preview_doc_field(doc, "", counts);
     g_free(label);
     g_free(counts);
@@ -242,13 +243,13 @@ void gettext_view_append(PreviewDoc* doc, const GettextCatalog* catalog) {
         return;
     }
     g_autoptr(PreviewTable) t = preview_table_new(2);
-    const gchar* header[] = { "Original", "Translation" };
+    const gchar* header[] = { _("Original"), _("Translation") };
     preview_table_set_header(t, header);
     preview_table_set_max_cell_width(t, 60);
     for (guint i = 0; i < total && i < GETTEXT_VIEW_MAX_ROWS; i++) {
         const GettextMessage* m = &g_array_index(catalog->messages, GettextMessage, i);
         gchar* original = m->context != NULL ? g_strdup_printf("%s [%s]", m->id, m->context) : g_strdup(m->id);
-        gchar* translation = m->fuzzy ? g_strdup_printf("%s (fuzzy)", m->translation) : g_strdup(m->translation);
+        gchar* translation = m->fuzzy ? g_strdup_printf(_("%s (fuzzy)"), m->translation) : g_strdup(m->translation);
         const gchar* row[] = { original, translation };
         preview_table_add_row(t, row, 2);
         g_free(translation);
@@ -256,7 +257,7 @@ void gettext_view_append(PreviewDoc* doc, const GettextCatalog* catalog) {
     }
     preview_doc_add_table(doc, t);
     if (total > GETTEXT_VIEW_MAX_ROWS) {
-        gchar* note = g_strdup_printf("Showing the first %u messages.", GETTEXT_VIEW_MAX_ROWS);
+        gchar* note = g_strdup_printf(_("Showing the first %u messages."), GETTEXT_VIEW_MAX_ROWS);
         preview_doc_note(doc, note);
         g_free(note);
     }

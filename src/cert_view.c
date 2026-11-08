@@ -1,5 +1,6 @@
 /* X.509 certificates and keys for the preview (see cert_view.h). */
 #include "cert_view.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>
@@ -268,7 +269,7 @@ static gchar* describe_key(Der spki) {
         Der bits = { key.p + 1, key.len - 1 }; /* skip the unused-bits byte */
         Der seq, modulus;
         if (der_expect(&bits, TAG_SEQUENCE, &seq) && der_expect(&seq, TAG_INTEGER, &modulus)) {
-            gchar* out = g_strdup_printf("RSA %u bits", integer_bits(modulus));
+            gchar* out = g_strdup_printf(_("RSA %u bits"), integer_bits(modulus));
             g_free(name);
             return out;
         }
@@ -326,8 +327,8 @@ static void parse_alt_names(X509Info* info, Der value) {
 }
 
 static const gchar* const KEY_USAGES[] = {
-    "Digital Signature", "Non Repudiation", "Key Encipherment", "Data Encipherment",
-    "Key Agreement", "Certificate Sign", "CRL Sign", "Encipher Only", "Decipher Only",
+    N_("Digital Signature"), N_("Non Repudiation"), N_("Key Encipherment"), N_("Data Encipherment"),
+    N_("Key Agreement"), N_("Certificate Sign"), N_("CRL Sign"), N_("Encipher Only"), N_("Decipher Only"),
 };
 
 static gchar* parse_key_usage(Der value) {
@@ -339,7 +340,7 @@ static gchar* parse_key_usage(Der value) {
     for (guint i = 0; i < G_N_ELEMENTS(KEY_USAGES); i++) {
         gsize byte = 1 + i / 8;
         if (byte < bits.len && (bits.p[byte] & (0x80 >> (i % 8)))) {
-            g_string_append_printf(s, "%s%s", s->len > 0 ? ", " : "", KEY_USAGES[i]);
+            g_string_append_printf(s, "%s%s", s->len > 0 ? ", " : "", _(KEY_USAGES[i]));
         }
     }
     return g_string_free(s, s->len == 0);
@@ -349,13 +350,13 @@ static const struct {
     const gchar* oid;
     const gchar* name;
 } EXT_KEY_USAGES[] = {
-    { "1.3.6.1.5.5.7.3.1", "TLS Web Server Authentication" },
-    { "1.3.6.1.5.5.7.3.2", "TLS Web Client Authentication" },
-    { "1.3.6.1.5.5.7.3.3", "Code Signing" },
-    { "1.3.6.1.5.5.7.3.4", "E-mail Protection" },
-    { "1.3.6.1.5.5.7.3.8", "Time Stamping" },
-    { "1.3.6.1.5.5.7.3.9", "OCSP Signing" },
-    { "2.5.29.37.0", "Any" },
+    { "1.3.6.1.5.5.7.3.1", N_("TLS Web Server Authentication") },
+    { "1.3.6.1.5.5.7.3.2", N_("TLS Web Client Authentication") },
+    { "1.3.6.1.5.5.7.3.3", N_("Code Signing") },
+    { "1.3.6.1.5.5.7.3.4", N_("E-mail Protection") },
+    { "1.3.6.1.5.5.7.3.8", N_("Time Stamping") },
+    { "1.3.6.1.5.5.7.3.9", N_("OCSP Signing") },
+    { "2.5.29.37.0", N_("Any") },
 };
 
 static gchar* parse_ext_key_usage(Der value) {
@@ -369,7 +370,7 @@ static gchar* parse_ext_key_usage(Der value) {
         const gchar* name = id;
         for (gsize i = 0; i < G_N_ELEMENTS(EXT_KEY_USAGES); i++) {
             if (strcmp(EXT_KEY_USAGES[i].oid, id) == 0) {
-                name = EXT_KEY_USAGES[i].name;
+                name = _(EXT_KEY_USAGES[i].name);
             }
         }
         g_string_append_printf(s, "%s%s", s->len > 0 ? ", " : "", name);
@@ -422,7 +423,7 @@ static gchar* fingerprint(GChecksumType type, const guchar* der, gsize len) {
 }
 
 static gboolean invalid(GError** error) {
-    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a valid X.509 certificate");
+    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a valid X.509 certificate"));
     return FALSE;
 }
 
@@ -571,8 +572,8 @@ static gchar* format_date(gint64 t) {
 static void append_validity(PreviewDoc* doc, const X509Info* info, gint64 now) {
     gchar* from = format_date(info->not_before);
     gchar* until = format_date(info->not_after);
-    preview_doc_field(doc, "Valid from", from);
-    preview_doc_field(doc, "Valid until", until);
+    preview_doc_field(doc, _("Valid from"), from);
+    preview_doc_field(doc, _("Valid until"), until);
     g_free(from);
     g_free(until);
     if (info->not_after < 0) {
@@ -582,26 +583,26 @@ static void append_validity(PreviewDoc* doc, const X509Info* info, gint64 now) {
     gchar* status;
     PreviewStyle style;
     if (info->not_before > now) {
-        status = g_strdup("not valid yet");
+        status = g_strdup(_("not valid yet"));
         style = PREVIEW_STYLE_WARNING;
     } else if (info->not_after < now) {
         gint64 ago = (now - info->not_after) / 86400;
-        status = ago == 0 ? g_strdup("expired today")
-                          : g_strdup_printf("expired %" G_GINT64_FORMAT " %s ago", ago, ago == 1 ? "day" : "days");
+        status = ago == 0 ? g_strdup(_("expired today"))
+                          : g_strdup_printf(ngettext("expired %d day ago", "expired %d days ago", (gulong)ago), (gint)ago);
         style = PREVIEW_STYLE_ERROR;
     } else {
-        status = g_strdup_printf("valid, expires in %" G_GINT64_FORMAT " %s", days, days == 1 ? "day" : "days");
+        status = g_strdup_printf(ngettext("valid, expires in %d day", "valid, expires in %d days", (gulong)days), (gint)days);
         style = days < 30 ? PREVIEW_STYLE_WARNING : PREVIEW_STYLE_SUCCESS;
     }
-    preview_doc_field_styled(doc, "Status", status, style);
+    preview_doc_field_styled(doc, _("Status"), status, style);
     g_free(status);
 }
 
 static void append_certificate(PreviewDoc* doc, const X509Info* info, gint64 now) {
-    preview_doc_field_styled(doc, "Subject", info->subject, PREVIEW_STYLE_BOLD);
+    preview_doc_field_styled(doc, _("Subject"), info->subject, PREVIEW_STYLE_BOLD);
     gboolean self_signed = g_strcmp0(info->subject, info->issuer) == 0;
-    gchar* issuer = self_signed ? g_strdup_printf("%s (self-signed)", info->issuer) : g_strdup(info->issuer);
-    preview_doc_field(doc, "Issuer", issuer);
+    gchar* issuer = self_signed ? g_strdup_printf(_("%s (self-signed)"), info->issuer) : g_strdup(info->issuer);
+    preview_doc_field(doc, _("Issuer"), issuer);
     g_free(issuer);
     append_validity(doc, info, now);
     if (info->alt_names->len > 0) {
@@ -610,24 +611,24 @@ static void append_certificate(PreviewDoc* doc, const X509Info* info, gint64 now
             g_string_append_printf(names, "%s%s", i > 0 ? "\n" : "", (gchar*)g_ptr_array_index(info->alt_names, i));
         }
         if (info->alt_names->len > 50) {
-            g_string_append_printf(names, "\n… %u more", info->alt_names->len - 50);
+            g_string_append_printf(names, _("\n… %u more"), info->alt_names->len - 50);
         }
-        preview_doc_field(doc, "Alt names", names->str);
+        preview_doc_field(doc, _("Alt names"), names->str);
         g_string_free(names, TRUE);
     }
-    preview_doc_field(doc, "Public key", info->key);
-    preview_doc_field(doc, "Signature", info->signature);
+    preview_doc_field(doc, _("Public key"), info->key);
+    preview_doc_field(doc, _("Signature"), info->signature);
     if (info->is_ca >= 0) {
-        preview_doc_field(doc, "CA", info->is_ca ? "yes" : "no");
+        preview_doc_field(doc, _("CA"), info->is_ca ? _("yes") : _("no"));
     }
-    preview_doc_field(doc, "Key usage", info->key_usage);
-    preview_doc_field(doc, "Extended use", info->ext_key_usage);
-    preview_doc_field(doc, "Serial", info->serial);
+    preview_doc_field(doc, _("Key usage"), info->key_usage);
+    preview_doc_field(doc, _("Extended use"), info->ext_key_usage);
+    preview_doc_field(doc, _("Serial"), info->serial);
     gchar* version = g_strdup_printf("%u", info->version);
-    preview_doc_field(doc, "Version", version);
+    preview_doc_field(doc, _("Version"), version);
     g_free(version);
-    preview_doc_field(doc, "SHA-256", info->sha256);
-    preview_doc_field(doc, "SHA-1", info->sha1);
+    preview_doc_field(doc, _("SHA-256"), info->sha256);
+    preview_doc_field(doc, _("SHA-1"), info->sha1);
 }
 
 /* Name of a private key block, from its PEM label */
@@ -661,8 +662,8 @@ static void append_request(PreviewDoc* doc, const guchar* der, gsize len) {
         der_expect(&info, TAG_SEQUENCE, &spki)) {
         gchar* name = parse_name(subject, NULL);
         gchar* key = describe_key(spki);
-        preview_doc_field_styled(doc, "Subject", name, PREVIEW_STYLE_BOLD);
-        preview_doc_field(doc, "Public key", key);
+        preview_doc_field_styled(doc, _("Subject"), name, PREVIEW_STYLE_BOLD);
+        preview_doc_field(doc, _("Public key"), key);
         g_free(key);
         g_free(name);
     }
@@ -682,7 +683,7 @@ gboolean cert_view_append(PreviewDoc* doc, const guchar* data, gsize len, gint64
     }
     if (blocks->len == 0) {
         g_array_free(blocks, TRUE);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "no certificate or key found");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("no certificate or key found"));
         return FALSE;
     }
 
@@ -692,8 +693,10 @@ gboolean cert_view_append(PreviewDoc* doc, const guchar* data, gsize len, gint64
         n_certs += (strcmp(label, "CERTIFICATE") == 0 || strcmp(label, "TRUSTED CERTIFICATE") == 0);
     }
     if (n_certs > 1) {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "%u certificates%s\n", n_certs,
-                            n_certs > CERT_VIEW_MAX_DETAILED ? " (the first ones in detail)" : "");
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM,
+                            n_certs > CERT_VIEW_MAX_DETAILED ? _("%u certificates (the first ones in detail)\n")
+                                                             : _("%u certificates\n"),
+                            n_certs);
     }
 
     guint cert_index = 0;
@@ -707,10 +710,10 @@ gboolean cert_view_append(PreviewDoc* doc, const guchar* data, gsize len, gint64
             if (cert_index > CERT_VIEW_MAX_DETAILED) {
                 if (info != NULL) {
                     gchar* until = format_date(info->not_after);
-                    gchar* line = g_strdup_printf("%u. %s — until %s", cert_index,
+                    gchar* line = g_strdup_printf(_("%1$u. %2$s — until %3$s"), cert_index,
                                                   info->subject_cn != NULL ? info->subject_cn : info->subject, until);
                     if (cert_index == CERT_VIEW_MAX_DETAILED + 1) {
-                        preview_doc_section(doc, "Other certificates");
+                        preview_doc_section(doc, _("Other certificates"));
                     }
                     preview_doc_item(doc, line);
                     g_free(line);
@@ -719,12 +722,12 @@ gboolean cert_view_append(PreviewDoc* doc, const guchar* data, gsize len, gint64
                 any |= info != NULL;
                 continue;
             }
-            gchar* title = n_certs > 1 ? g_strdup_printf("Certificate %u of %u", cert_index, n_certs)
-                                       : g_strdup("Certificate");
+            gchar* title = n_certs > 1 ? g_strdup_printf(_("Certificate %1$u of %2$u"), cert_index, n_certs)
+                                       : g_strdup(_("Certificate"));
             preview_doc_section(doc, title);
             g_free(title);
             if (info == NULL) {
-                preview_doc_note(doc, "Damaged certificate: it cannot be decoded.");
+                preview_doc_note(doc, _("Damaged certificate: it cannot be decoded."));
                 continue;
             }
             append_certificate(doc, info, now);
@@ -735,27 +738,27 @@ gboolean cert_view_append(PreviewDoc* doc, const guchar* data, gsize len, gint64
         if (key != NULL) {
             preview_doc_section(doc, key);
             gchar* alg = strcmp(b->label, "PRIVATE KEY") == 0 ? pkcs8_algorithm(b->der, b->len) : NULL;
-            preview_doc_field(doc, "Algorithm", alg);
-            preview_doc_note(doc, "The key itself is not shown.");
+            preview_doc_field(doc, _("Algorithm"), alg);
+            preview_doc_note(doc, _("The key itself is not shown."));
             g_free(alg);
             g_free(key);
             any = TRUE;
             continue;
         }
         if (strcmp(b->label, "PUBLIC KEY") == 0) {
-            preview_doc_section(doc, "Public key");
+            preview_doc_section(doc, _("Public key"));
             Der all = { b->der, b->len };
             Der spki;
             if (der_expect(&all, TAG_SEQUENCE, &spki)) {
                 gchar* desc = describe_key(spki);
-                preview_doc_field(doc, "Algorithm", desc);
+                preview_doc_field(doc, _("Algorithm"), desc);
                 g_free(desc);
             }
             any = TRUE;
             continue;
         }
         if (strcmp(b->label, "CERTIFICATE REQUEST") == 0 || strcmp(b->label, "NEW CERTIFICATE REQUEST") == 0) {
-            preview_doc_section(doc, "Certificate request");
+            preview_doc_section(doc, _("Certificate request"));
             append_request(doc, b->der, b->len);
             any = TRUE;
             continue;
@@ -765,7 +768,7 @@ gboolean cert_view_append(PreviewDoc* doc, const guchar* data, gsize len, gint64
     }
     g_array_free(blocks, TRUE);
     if (!any) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a valid X.509 certificate");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a valid X.509 certificate"));
         return FALSE;
     }
     return TRUE;

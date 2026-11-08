@@ -1,5 +1,6 @@
 /* Outlook messages (see mail_msg.h) */
 #include "mail_msg.h"
+#include "i18n.h"
 #include "rtf.h"
 #include <gio/gio.h>
 #include <string.h>
@@ -188,7 +189,7 @@ MailMessage* mail_msg_read(OleReader* ole, gsize max_part, GError** error) {
     GBytes* body = prop(ole, "", 0x1000, PT_UNICODE);
     if (body == NULL) body = prop(ole, "", 0x1000, PT_STRING8);
     if (subject == NULL && klass == NULL && body == NULL) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "no message properties");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("no message properties"));
         return NULL;
     }
     /* The transport headers, when the message came by SMTP: a whole header block */
@@ -279,7 +280,7 @@ MailMessage* mail_msg_read(OleReader* ole, gsize max_part, GError** error) {
         GBytes* data = idx >= 0 && di.size <= max_part ? ole_reader_read_entry(ole, (guint)idx, max_part, NULL) : NULL;
         MailPart* part = mail_msg_part_new(mime != NULL ? mime : NULL, NULL, data);
         if (part->content_type == NULL) part->content_type = mail_msg_guess_type(name != NULL ? name : "file");
-        part->filename = name != NULL ? name : g_strdup("(attachment)");
+        part->filename = name != NULL ? name : g_strdup(_("(attachment)"));
         part->attachment = TRUE;
         if (data == NULL) part->size = (gsize)di.size;
         g_ptr_array_add(msg->root->children, part);

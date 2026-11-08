@@ -1,5 +1,6 @@
 /* SQLite database preview (see sqlite_view.h). */
 #include "sqlite_view.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -29,25 +30,27 @@ gboolean sqlite_view_read_header(const guchar* head, gsize len, SqliteHeader* h)
 }
 
 static void append_header(PreviewDoc* doc, const SqliteHeader* h) {
-    gchar* pages = g_strdup_printf("%" G_GUINT64_FORMAT " × %u bytes", h->page_count, h->page_size);
-    preview_doc_field(doc, "Pages", pages);
+    gchar* count = g_strdup_printf("%" G_GUINT64_FORMAT, h->page_count);
+    gchar* pages = g_strdup_printf(_("%1$s × %2$u bytes"), count, h->page_size);
+    g_free(count);
+    preview_doc_field(doc, _("Pages"), pages);
     g_free(pages);
-    preview_doc_field(doc, "Encoding", h->encoding);
-    preview_doc_field(doc, "Journal", h->wal ? "write-ahead log (WAL)" : "rollback journal");
+    preview_doc_field(doc, _("Encoding"), h->encoding);
+    preview_doc_field(doc, _("Journal"), h->wal ? "write-ahead log (WAL)" : "rollback journal");
     if (h->sqlite_version > 0) {
         gchar* version = g_strdup_printf("%u.%u.%u", h->sqlite_version / 1000000,
                                          (h->sqlite_version / 1000) % 1000, h->sqlite_version % 1000);
-        preview_doc_field(doc, "Written by", version);
+        preview_doc_field(doc, _("Written by"), version);
         g_free(version);
     }
     if (h->user_version != 0) {
         gchar* v = g_strdup_printf("%u", h->user_version);
-        preview_doc_field(doc, "User version", v);
+        preview_doc_field(doc, _("User version"), v);
         g_free(v);
     }
     if (h->application_id != 0) {
         gchar* v = g_strdup_printf("0x%08X", h->application_id);
-        preview_doc_field(doc, "Application ID", v);
+        preview_doc_field(doc, _("Application ID"), v);
         g_free(v);
     }
 }
@@ -152,7 +155,7 @@ static void append_rows(PreviewDoc* doc, sqlite3* db, const gchar* table, gint64
     sqlite3_finalize(st);
     g_free(sql);
     if (preview_table_get_n_rows(t) == 0) {
-        preview_doc_note(doc, "(empty)");
+        preview_doc_note(doc, _("(empty)"));
         return;
     }
     preview_doc_add_table(doc, t);
@@ -184,7 +187,7 @@ static gboolean append_database(PreviewDoc* doc, const gchar* path, GError** err
     int rc = sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, NULL);
     g_free(uri);
     if (rc != SQLITE_OK) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "%s", db != NULL ? sqlite3_errmsg(db) : "cannot open");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "%s", db != NULL ? sqlite3_errmsg(db) : _("cannot open"));
         sqlite3_close(db);
         return FALSE;
     }
@@ -212,11 +215,11 @@ static gboolean append_database(PreviewDoc* doc, const gchar* path, GError** err
     sqlite3_finalize(st);
 
     if (items->len == 0) {
-        preview_doc_note(doc, "\nNo tables yet.");
+        preview_doc_note(doc, _("\nNo tables yet."));
     } else {
         preview_doc_append_len(doc, "\n", 1);
         g_autoptr(PreviewTable) list = preview_table_new(4);
-        const gchar* header[] = { "Name", "Type", "Rows", "Columns" };
+        const gchar* header[] = { _("Name"), _("Type"), _("Rows"), _("Columns") };
         preview_table_set_header(list, header);
         preview_table_set_right_aligned(list, 2);
         preview_table_set_max_cell_width(list, 60);
@@ -262,7 +265,7 @@ gboolean sqlite_view_append(PreviewDoc* doc, const gchar* path, const guchar* he
                             GError** error) {
     SqliteHeader header;
     if (!sqlite_view_read_header(head, head_len, &header)) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not an SQLite database");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not an SQLite database"));
         return FALSE;
     }
     append_header(doc, &header);
@@ -270,7 +273,7 @@ gboolean sqlite_view_append(PreviewDoc* doc, const gchar* path, const guchar* he
     return append_database(doc, path, error);
 #else
     (void)path;
-    preview_doc_note(doc, "\nTables are listed when LookinFiles is built with SQLite (libsqlite3-dev).");
+    preview_doc_note(doc, _("\nTables are listed when LookinFiles is built with SQLite (libsqlite3-dev)."));
     return TRUE;
 #endif
 }

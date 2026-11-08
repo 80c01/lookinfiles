@@ -1,5 +1,6 @@
 /* JSON pretty-printing for the preview (see json_view.h). */
 #include "json_view.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -45,7 +46,7 @@ static gboolean fail(Parser* p, const gchar* what) {
                 col++;
             }
         }
-        g_set_error(p->error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "line %u, column %u: %s",
+        g_set_error(p->error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("line %1$u, column %2$u: %3$s"),
                     line, col, what);
     }
     return FALSE;
@@ -93,7 +94,7 @@ static gboolean scan_string(Parser* p) {
             break;
         }
     }
-    return fail(p, "unterminated string");
+    return fail(p, _("unterminated string"));
 }
 
 static gboolean is_word_char(gchar c) {
@@ -112,7 +113,7 @@ static JsonNode* parse_container(Parser* p, guint depth) {
     for (;;) {
         skip_space(p, FALSE);
         if (p->pos >= p->len) {
-            fail(p, object ? "missing }" : "missing ]");
+            fail(p, object ? _("missing }") : _("missing ]"));
             node_free(node);
             return NULL;
         }
@@ -135,7 +136,7 @@ static JsonNode* parse_container(Parser* p, guint depth) {
                     p->pos++;
                 }
                 if (p->pos == start) {
-                    fail(p, "expected a member name");
+                    fail(p, _("expected a member name"));
                     node_free(node);
                     return NULL;
                 }
@@ -144,7 +145,7 @@ static JsonNode* parse_container(Parser* p, guint depth) {
             key_len = p->pos - start;
             skip_space(p, FALSE);
             if (p->pos >= p->len || p->text[p->pos] != ':') {
-                fail(p, "expected :");
+                fail(p, _("expected :"));
                 node_free(node);
                 return NULL;
             }
@@ -162,7 +163,7 @@ static JsonNode* parse_container(Parser* p, guint depth) {
         if (p->pos < p->len && p->text[p->pos] == ',') {
             p->pos++;
         } else if (p->pos < p->len && p->text[p->pos] != close) {
-            fail(p, object ? "expected , or }" : "expected , or ]");
+            fail(p, object ? _("expected , or }") : _("expected , or ]"));
             node_free(node);
             return NULL;
         }
@@ -172,11 +173,11 @@ static JsonNode* parse_container(Parser* p, guint depth) {
 static JsonNode* parse_value(Parser* p, guint depth) {
     skip_space(p, FALSE);
     if (p->pos >= p->len) {
-        fail(p, "expected a value");
+        fail(p, _("expected a value"));
         return NULL;
     }
     if (depth > MAX_DEPTH) {
-        fail(p, "nested too deeply");
+        fail(p, _("nested too deeply"));
         return NULL;
     }
     gchar c = p->text[p->pos];
@@ -205,12 +206,12 @@ static JsonNode* parse_value(Parser* p, guint depth) {
               (n == 5 && memcmp(w, "false", 5) == 0) || (n == 3 && memcmp(w, "NaN", 3) == 0) ||
               (n == 8 && memcmp(w, "Infinity", 8) == 0))) {
             p->pos = start;
-            fail(p, "unexpected word");
+            fail(p, _("unexpected word"));
             return NULL;
         }
         type = J_KEYWORD;
     } else {
-        fail(p, "unexpected character");
+        fail(p, _("unexpected character"));
         return NULL;
     }
     JsonNode* node = g_new0(JsonNode, 1);
@@ -330,12 +331,12 @@ gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonVie
         /* JSON Lines: the next value starts on another line */
         skip_space(&p, TRUE);
         if (p.pos < p.len && p.text[p.pos] != '\n') {
-            ok = fail(&p, "unexpected text after the value");
+            ok = fail(&p, _("unexpected text after the value"));
             break;
         }
     }
     if (ok && values->len == 0) {
-        ok = fail(&p, "empty document");
+        ok = fail(&p, _("empty document"));
     }
     if (!ok) {
         g_ptr_array_free(values, TRUE);
@@ -362,7 +363,7 @@ gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonVie
     }
     preview_doc_append_len(doc, "\n", 1);
     if (pr.stopped) {
-        gchar* note = g_strdup_printf("… (stopped after %u lines)", JSON_VIEW_MAX_LINES);
+        gchar* note = g_strdup_printf(_("… (stopped after %u lines)"), JSON_VIEW_MAX_LINES);
         preview_doc_note(doc, note);
         g_free(note);
     }
@@ -380,7 +381,7 @@ JsonValue* json_value_parse(const gchar* text, gsize len, GError** error) {
     }
     skip_space(&p, FALSE);
     if (p.pos < p.len) {
-        fail(&p, "unexpected text after the value");
+        fail(&p, _("unexpected text after the value"));
         node_free(node);
         return NULL;
     }

@@ -1,5 +1,6 @@
 /* Previews of mail messages (see mail_view.h) */
 #include "mail_view.h"
+#include "i18n.h"
 #include <string.h>
 
 #define MAX_FORWARD_DEPTH 3
@@ -18,19 +19,19 @@ static gchar* attachment_label(const MailPart* p) {
     gchar* size = g_format_size(p->size);
     const gchar* name = p->filename != NULL ? p->filename
                         : p->message != NULL && p->message->subject != NULL ? p->message->subject
-                                                                            : "(unnamed)";
+                                                                            : _("(unnamed)");
     gchar* label = g_strdup_printf("%s · %s · %s", name, p->content_type, size);
     g_free(size);
     return label;
 }
 
 static void header_fields(PreviewDoc* doc, const MailMessage* msg) {
-    if (msg->from != NULL) preview_doc_field(doc, "From", msg->from);
-    if (msg->to != NULL) preview_doc_field(doc, "To", msg->to);
-    if (msg->cc != NULL) preview_doc_field(doc, "Cc", msg->cc);
+    if (msg->from != NULL) preview_doc_field(doc, _("From"), msg->from);
+    if (msg->to != NULL) preview_doc_field(doc, _("To"), msg->to);
+    if (msg->cc != NULL) preview_doc_field(doc, _("Cc"), msg->cc);
     gchar* date = mail_view_format_date(msg->date);
-    if (date != NULL) preview_doc_field(doc, "Date", date);
-    else if (msg->date_raw != NULL) preview_doc_field(doc, "Date", msg->date_raw);
+    if (date != NULL) preview_doc_field(doc, _("Date"), date);
+    else if (msg->date_raw != NULL) preview_doc_field(doc, _("Date"), msg->date_raw);
     g_free(date);
 }
 
@@ -52,7 +53,7 @@ static void plain_body(PreviewDoc* doc, const gchar* text) {
         preview_doc_append_len(doc, "\n", 1);
         total += n + 1;
         if (total > MAX_BODY_CHARS) {
-            preview_doc_note(doc, "The message continues; the preview stops here.");
+            preview_doc_note(doc, _("The message continues; the preview stops here."));
             break;
         }
     }
@@ -61,7 +62,7 @@ static void plain_body(PreviewDoc* doc, const gchar* text) {
 
 static void attachments_section(PreviewDoc* doc, GPtrArray* parts) {
     if (parts->len == 0) return;
-    preview_doc_section(doc, parts->len == 1 ? "Attachment" : "Attachments");
+    preview_doc_section(doc, parts->len == 1 ? _("Attachment") : _("Attachments"));
     for (guint i = 0; i < parts->len; i++) {
         gchar* label = attachment_label(g_ptr_array_index(parts, i));
         preview_doc_item(doc, label);
@@ -75,8 +76,8 @@ static void forwarded(PreviewDoc* doc, GPtrArray* parts, gint depth) {
     for (guint i = 0; i < parts->len && depth < MAX_FORWARD_DEPTH; i++) {
         const MailPart* p = g_ptr_array_index(parts, i);
         if (p->message == NULL) continue;
-        preview_doc_section(doc, "Forwarded message");
-        if (p->message->subject != NULL) preview_doc_field(doc, "Subject", p->message->subject);
+        preview_doc_section(doc, _("Forwarded message"));
+        if (p->message->subject != NULL) preview_doc_field(doc, _("Subject"), p->message->subject);
         text_message(doc, p->message, depth + 1);
     }
 }
@@ -87,7 +88,7 @@ static void text_message(PreviewDoc* doc, const MailMessage* msg, gint depth) {
     header_fields(doc, msg);
     preview_doc_append_len(doc, "\n", 1);
     if (msg->encrypted) {
-        preview_doc_note(doc, "Encrypted message: the body needs the recipient's key.");
+        preview_doc_note(doc, _("Encrypted message: the body needs the recipient's key."));
         return;
     }
     const MailPart* plain = mail_message_body(msg, FALSE);
@@ -163,7 +164,7 @@ static gchar* html_inner(const MailMessage* msg, const gchar* html) {
 
 static PreviewDoc* html_message(const MailMessage* msg, const MailPart* html, const gchar* subtitle) {
     GString* out = g_string_new("<html><head><title>");
-    append_escaped(out, msg->subject != NULL ? msg->subject : "(no subject)");
+    append_escaped(out, msg->subject != NULL ? msg->subject : _("(no subject)"));
     g_string_append(out, "</title>");
     if (msg->from != NULL) {
         g_string_append(out, "<meta name=\"author\" content=\"");
@@ -176,12 +177,12 @@ static PreviewDoc* html_message(const MailMessage* msg, const MailPart* html, co
         g_string_append(out, "\">");
     }
     g_string_append(out, "</head><body>\n<p>");
-    static const gchar* const LABELS[] = {"From", "To", "Cc", "Date"};
+    static const gchar* const LABELS[] = {N_("From"), N_("To"), N_("Cc"), N_("Date")};
     gchar* date = mail_view_format_date(msg->date);
     const gchar* values[] = {msg->from, msg->to, msg->cc, date != NULL ? date : msg->date_raw};
     for (gsize i = 0; i < G_N_ELEMENTS(LABELS); i++) {
         if (values[i] == NULL) continue;
-        g_string_append_printf(out, "<b>%s:</b> ", LABELS[i]);
+        g_string_append_printf(out, "<b>%s:</b> ", _(LABELS[i]));
         append_escaped(out, values[i]);
         g_string_append(out, "<br>\n");
     }
@@ -195,7 +196,7 @@ static PreviewDoc* html_message(const MailMessage* msg, const MailPart* html, co
     g_free(text);
     GPtrArray* parts = mail_message_attachments(msg);
     if (parts->len > 0) {
-        g_string_append(out, "\n<hr>\n<p><b>Attachments</b></p>\n<ul>\n");
+        g_string_append_printf(out, "\n<hr>\n<p><b>%s</b></p>\n<ul>\n", _("Attachments"));
         for (guint i = 0; i < parts->len; i++) {
             gchar* label = attachment_label(g_ptr_array_index(parts, i));
             g_string_append(out, "<li>");
@@ -216,7 +217,7 @@ PreviewDoc* mail_view_message(const MailMessage* msg, const gchar* subtitle) {
     if (plain == NULL && html != NULL && !msg->encrypted) return html_message(msg, html, subtitle);
     PreviewDoc* doc = preview_doc_new();
     doc->monospace = TRUE; /* aligned header fields, plain text as mail clients show it */
-    preview_doc_title(doc, msg->subject != NULL && msg->subject[0] != '\0' ? msg->subject : "(no subject)", subtitle);
+    preview_doc_title(doc, msg->subject != NULL && msg->subject[0] != '\0' ? msg->subject : _("(no subject)"), subtitle);
     text_message(doc, msg, 0);
     return doc;
 }
