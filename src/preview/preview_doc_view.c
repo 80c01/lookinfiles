@@ -5,10 +5,10 @@
 
 #include <string.h>
 
-#include "html.h"
-#include "html_tags.h"
+#include "markup/html.h"
+#include "markup/html_tags.h"
 #include "image_utils.h"
-#include "markdown.h"
+#include "markup/markdown.h"
 #include "theme/palette.h"
 #include "theme/text_style.h"
 

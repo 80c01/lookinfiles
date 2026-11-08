@@ -1,5 +1,5 @@
 /* HTML text helpers (see html_text.h) */
-#include "html_text.h"
+#include "markup/html_text.h"
 #include <ctype.h>
 #include <string.h>
 

@@ -1,5 +1,5 @@
 /* Links that can be followed in rendered Markdown (see markdown_link.h) */
-#include "markdown_link.h"
+#include "markup/markdown_link.h"
 
 #define LINKS_KEY "lookin-md-links"     /* buffer: GArray of MdLink (links on) */
 #define HANDLER_KEY "lookin-md-handler" /* view: LinkHandler */

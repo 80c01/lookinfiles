@@ -4648,7 +4648,7 @@ msgstr "Fermer l’aide"
 msgid "Help"
 msgstr "Aide"
 
-#: src/html.c:1432
+#: src/markup/html.c:1432
 #, c-format
 msgid ""
 "[ PREVIEW ] %1$s (%2$s in all)\n"
@@ -5350,23 +5350,23 @@ msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
 msgid "See %s."
 msgstr "Voir %s."
 
-#: src/markdown.c:766
+#: src/markup/markdown.c:766
 msgid "Mermaid diagram (source)"
 msgstr "Diagramme Mermaid (source)"
 
-#: src/markdown.c:766
+#: src/markup/markdown.c:766
 msgid "PlantUML diagram (source)"
 msgstr "Diagramme PlantUML (source)"
 
-#: src/markdown.c:767
+#: src/markup/markdown.c:767
 msgid "Graphviz diagram (source)"
 msgstr "Diagramme Graphviz (source)"
 
-#: src/markdown.c:768 src/markdown.c:769
+#: src/markup/markdown.c:768 src/markup/markdown.c:769
 msgid "Math (TeX source)"
 msgstr "Formule (source TeX)"
 
-#: src/markdown.c:769
+#: src/markup/markdown.c:769
 msgid "TeX (source)"
 msgstr "TeX (source)"
 

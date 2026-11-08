@@ -10,7 +10,7 @@
 #include "git/git_utils.h"
 #include "mail_dir.h"
 #include "preview/preview_doc_view.h"
-#include "markdown.h"
+#include "markup/markdown.h"
 #include "orgmode.h"
 #include "preview/preview_cache.h"
 #include "theme/icons.h"

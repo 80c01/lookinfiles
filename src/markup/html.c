@@ -1,5 +1,5 @@
-#include "html.h"
-#include "html_text.h"
+#include "markup/html.h"
+#include "markup/html_text.h"
 #include "core/i18n.h"
 #include "image_utils.h"
 #include "theme/icons.h"

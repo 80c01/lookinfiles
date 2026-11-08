@@ -1,6 +1,6 @@
-/* Unit tests for src/html_text.c: entities, attributes, tag stripping */
+/* Unit tests for src/markup/html_text.c: entities, attributes, tag stripping */
 #include <string.h>
-#include "html_text.h"
+#include "markup/html_text.h"
 
 /* Decode every entity of s */
 static gchar* decode(const gchar* s) {

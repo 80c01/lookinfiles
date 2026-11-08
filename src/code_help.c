@@ -4,7 +4,7 @@
 #include "code_intel.h"
 #include "code_scan.h"
 #include "core/i18n.h"
-#include "markdown.h"
+#include "markup/markdown.h"
 #include "theme/theme.h"
 #include <string.h>
 

@@ -1,5 +1,5 @@
 /* Text tags of the HTML preview (see html_tags.h) */
-#include "html_tags.h"
+#include "markup/html_tags.h"
 #include "theme/fonts.h"
 #include "theme/text_tags.h"
 
