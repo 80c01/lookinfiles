@@ -753,6 +753,14 @@ Handlers run synchronously inside `app_emit()`. `make check` rejects direct
 calls to the first five subscribers outside their module and `main.c`. A new
 upward notification = a new `AppEvent` + one `app_events_subscribe()` in `main.c`.
 
+### Feature state (keep it out of `AppData`)
+
+A feature keeps its widgets and state in a private struct defined in its own
+`.c` file, with a typed pointer in `AppData` (`struct AudioPreview* audio`,
+`audio.c`): created by its `*_init()`, freed by its `*_free()`, never read
+by other modules. Another module that needs something gets a function in the
+feature's header, not a field. Do not add feature fields to `AppData`.
+
 ### Known coupling (avoid making it worse)
 
 `make check` fails on any include cycle (two `.c` files including each other's

@@ -9,22 +9,41 @@
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
+/* Audio player state (app->audio), created by audio_preview_init() */
+typedef struct AudioPreview AudioPreview;
+struct AudioPreview {
+    GtkWidget* controls;     /* GtkMediaControls */
+    GtkWidget* title;        /* title label */
+    GtkWidget* meta;         /* format, size and duration label */
+    GtkWidget* status;       /* warning / error label */
+    GtkWidget* icon;         /* note icon, hidden when there is a cover */
+    GtkWidget* cover;        /* GtkImage: embedded cover art */
+    GtkWidget* tag_line;     /* album / year / track / genre */
+    gchar* details;          /* technical line from the tags (codec, rate...), or NULL */
+    GtkMediaStream* stream;  /* playing stream, or NULL */
+    gulong duration_sig;     /* notify::duration handler */
+    gulong prepared_sig;     /* notify::prepared handler */
+    gulong error_sig;        /* notify::error handler */
+    gchar* current_path;     /* file loaded in the player, or NULL */
+};
+
 static void update_audio_metadata_label(AppData* app, GtkMediaStream* stream) {
-    if (app == NULL || app->audio_current_path == NULL || app->audio_meta == NULL) {
+    AudioPreview* a = app != NULL ? app->audio : NULL;
+    if (a == NULL || a->current_path == NULL) {
         return;
     }
 
     GStatBuf st;
-    gint64 fsize = (g_stat(app->audio_current_path, &st) == 0) ? (gint64)st.st_size : 0;
+    gint64 fsize = (g_stat(a->current_path, &st) == 0) ? (gint64)st.st_size : 0;
     gchar* size_str = g_format_size((guint64)fsize);
 
-    const gchar* ext = file_extension(app->audio_current_path);
+    const gchar* ext = file_extension(a->current_path);
     gchar* ext_upper = g_ascii_strup(ext, -1);
 
-    GString* info = g_string_new(app->audio_details != NULL ? app->audio_details : ext_upper);
+    GString* info = g_string_new(a->details != NULL ? a->details : ext_upper);
     g_string_append_printf(info, "  •  %s", size_str);
 
-    if (stream != NULL && (app->audio_details == NULL || strchr(app->audio_details, ':') == NULL)) {
+    if (stream != NULL && (a->details == NULL || strchr(a->details, ':') == NULL)) {
         gint64 dur_us = gtk_media_stream_get_duration(stream);
         if (dur_us > 0) {
             gint64 total_secs = dur_us / G_USEC_PER_SEC;
@@ -41,7 +60,7 @@ static void update_audio_metadata_label(AppData* app, GtkMediaStream* stream) {
 
     g_string_append(info, _("  •  [press m for details]"));
 
-    gtk_label_set_text(GTK_LABEL(app->audio_meta), info->str);
+    gtk_label_set_text(GTK_LABEL(a->meta), info->str);
 
     g_string_free(info, TRUE);
     g_free(ext_upper);
@@ -63,18 +82,19 @@ static void on_audio_prepared_notify(GtkMediaStream* stream, GParamSpec* pspec, 
 static void on_audio_error_notify(GtkMediaStream* stream, GParamSpec* pspec, gpointer user_data) {
     (void)pspec;
     AppData* app = (AppData*)user_data;
-    if (app == NULL || stream == NULL) {
+    if (app == NULL || app->audio == NULL || stream == NULL) {
         return;
     }
+    AudioPreview* a = app->audio;
     const GError* err = gtk_media_stream_get_error(stream);
-    if (err != NULL && app->audio_status != NULL) {
+    if (err != NULL) {
         const gchar* err_msg = (err->message != NULL && err->message[0] != '\0')
                                    ? err->message
                                    : _("Audio playback error");
         gchar* msg = g_strdup_printf(_("Media playback warning: %s (press 'm' to inspect raw file details)"),
                                      err_msg);
-        gtk_label_set_text(GTK_LABEL(app->audio_status), msg);
-        gtk_widget_set_visible(app->audio_status, TRUE);
+        gtk_label_set_text(GTK_LABEL(a->status), msg);
+        gtk_widget_set_visible(a->status, TRUE);
         g_free(msg);
     }
 }
@@ -159,79 +179,80 @@ void audio_preview_init(AppData* app) {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(audio_scroll), audio_box);
     gtk_stack_add_named(GTK_STACK(app->preview_stack), audio_scroll, "audio");
 
-    app->audio_scroll = audio_scroll;
-    app->audio_box = audio_box;
-    app->audio_card = audio_card;
-    app->audio_controls = audio_controls;
-    app->audio_title = audio_title;
-    app->audio_meta = audio_meta;
-    app->audio_status = audio_status;
-    app->audio_icon = icon_label;
-    app->audio_cover = cover;
-    app->audio_tags = audio_tags;
-    app->audio_details = NULL;
-    app->audio_stream = NULL;
-    app->audio_duration_sig = 0;
-    app->audio_prepared_sig = 0;
-    app->audio_error_sig = 0;
-    app->audio_current_path = NULL;
+    AudioPreview* a = g_new0(AudioPreview, 1);
+    app->audio = a;
+    a->controls = audio_controls;
+    a->title = audio_title;
+    a->meta = audio_meta;
+    a->status = audio_status;
+    a->icon = icon_label;
+    a->cover = cover;
+    a->tag_line = audio_tags;
 }
 
 void audio_preview_stop(AppData* app) {
-    if (app == NULL || (app->audio_stream == NULL && app->audio_current_path == NULL)) {
+    AudioPreview* a = app != NULL ? app->audio : NULL;
+    if (a == NULL || (a->stream == NULL && a->current_path == NULL)) {
         return;
     }
 
-    if (app->audio_stream != NULL) {
-        GtkMediaStream* stream = app->audio_stream;
-        app->audio_stream = NULL;
+    if (a->stream != NULL) {
+        GtkMediaStream* stream = a->stream;
+        a->stream = NULL;
 
-        if (app->audio_duration_sig != 0) {
-            g_signal_handler_disconnect(stream, app->audio_duration_sig);
-            app->audio_duration_sig = 0;
+        if (a->duration_sig != 0) {
+            g_signal_handler_disconnect(stream, a->duration_sig);
+            a->duration_sig = 0;
         }
-        if (app->audio_prepared_sig != 0) {
-            g_signal_handler_disconnect(stream, app->audio_prepared_sig);
-            app->audio_prepared_sig = 0;
+        if (a->prepared_sig != 0) {
+            g_signal_handler_disconnect(stream, a->prepared_sig);
+            a->prepared_sig = 0;
         }
-        if (app->audio_error_sig != 0) {
-            g_signal_handler_disconnect(stream, app->audio_error_sig);
-            app->audio_error_sig = 0;
+        if (a->error_sig != 0) {
+            g_signal_handler_disconnect(stream, a->error_sig);
+            a->error_sig = 0;
         }
 
         if (gtk_media_stream_get_playing(stream)) {
             gtk_media_stream_pause(stream);
         }
 
-        if (app->audio_controls != NULL) {
-            gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(app->audio_controls), NULL);
-        }
+        gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(a->controls), NULL);
 
         g_object_unref(stream);
     }
 
-    g_free(app->audio_current_path);
-    app->audio_current_path = NULL;
-    g_clear_pointer(&app->audio_details, g_free);
+    g_clear_pointer(&a->current_path, g_free);
+    g_clear_pointer(&a->details, g_free);
+}
+
+void audio_preview_free(AppData* app) {
+    if (app == NULL || app->audio == NULL) {
+        return;
+    }
+    audio_preview_stop(app);
+    g_clear_pointer(&app->audio, g_free);
 }
 
 void audio_preview_pause(AppData* app) {
-    if (app == NULL || app->audio_stream == NULL) {
+    AudioPreview* a = app != NULL ? app->audio : NULL;
+    if (a == NULL || a->stream == NULL) {
         return;
     }
-    if (gtk_media_stream_get_playing(app->audio_stream)) {
-        gtk_media_stream_pause(app->audio_stream);
+    if (gtk_media_stream_get_playing(a->stream)) {
+        gtk_media_stream_pause(a->stream);
     }
 }
 
 void audio_preview_toggle_play(AppData* app) {
-    if (app == NULL || app->audio_stream == NULL) {
+    AudioPreview* a = app != NULL ? app->audio : NULL;
+    if (a == NULL || a->stream == NULL) {
         return;
     }
-    if (gtk_media_stream_get_playing(app->audio_stream)) {
-        gtk_media_stream_pause(app->audio_stream);
+    if (gtk_media_stream_get_playing(a->stream)) {
+        gtk_media_stream_pause(a->stream);
     } else {
-        gtk_media_stream_play(app->audio_stream);
+        gtk_media_stream_play(a->stream);
     }
 }
 
@@ -372,19 +393,19 @@ static void on_audio_tags_ready(GObject* source, GAsyncResult* res, gpointer use
     (void)user_data;
     GTask* task = G_TASK(res);
     AudioTagsTask* t = g_task_get_task_data(task);
-    AppData* app = t->app;
-    if (g_cancellable_is_cancelled(g_task_get_cancellable(task)) ||
-        g_strcmp0(app->audio_current_path, t->path) != 0) {
+    AudioPreview* a = t->app->audio;
+    if (a == NULL || g_cancellable_is_cancelled(g_task_get_cancellable(task)) ||
+        g_strcmp0(a->current_path, t->path) != 0) {
         return;
     }
     MediaTags* tags = t->tags;
     if (tags == NULL) {
         return;
     }
-    if (tags->title != NULL && app->audio_title != NULL) {
+    if (tags->title != NULL) {
         gchar* title = tags->artist != NULL ? g_strdup_printf("%s — %s", tags->artist, tags->title)
                                             : g_strdup(tags->title);
-        gtk_label_set_text(GTK_LABEL(app->audio_title), title);
+        gtk_label_set_text(GTK_LABEL(a->title), title);
         g_free(title);
     }
     GString* line = g_string_new(tags->album != NULL ? tags->album : "");
@@ -398,17 +419,17 @@ static void on_audio_tags_ready(GObject* source, GAsyncResult* res, gpointer use
     if (tags->genre != NULL) {
         g_string_append_printf(line, "%s%s", line->len > 0 ? " · " : "", tags->genre);
     }
-    gtk_label_set_text(GTK_LABEL(app->audio_tags), line->str);
-    gtk_widget_set_visible(app->audio_tags, line->len > 0);
+    gtk_label_set_text(GTK_LABEL(a->tag_line), line->str);
+    gtk_widget_set_visible(a->tag_line, line->len > 0);
     g_string_free(line, TRUE);
     if (t->cover != NULL) {
-        gtk_image_set_from_paintable(GTK_IMAGE(app->audio_cover), GDK_PAINTABLE(t->cover));
-        gtk_widget_set_visible(app->audio_cover, TRUE);
-        gtk_widget_set_visible(app->audio_icon, FALSE);
+        gtk_image_set_from_paintable(GTK_IMAGE(a->cover), GDK_PAINTABLE(t->cover));
+        gtk_widget_set_visible(a->cover, TRUE);
+        gtk_widget_set_visible(a->icon, FALSE);
     }
-    g_free(app->audio_details);
-    app->audio_details = media_tags_technical_line(tags);
-    update_audio_metadata_label(app, app->audio_stream);
+    g_free(a->details);
+    a->details = media_tags_technical_line(tags);
+    update_audio_metadata_label(t->app, a->stream);
 }
 
 static void read_audio_tags(AppData* app, const gchar* full) {
@@ -441,33 +462,26 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
         return;
     }
 
-    if (app->preview_stack != NULL) {
-        gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "audio");
+    AudioPreview* a = app->audio;
+    if (a == NULL) {
+        return;
     }
+    gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "audio");
 
-    if (app->audio_current_path != NULL && g_strcmp0(app->audio_current_path, full) == 0) {
+    if (a->current_path != NULL && g_strcmp0(a->current_path, full) == 0) {
         return;
     }
 
     audio_preview_stop(app);
-    app->audio_current_path = g_strdup(full);
+    a->current_path = g_strdup(full);
 
-    if (app->audio_title != NULL) {
-        gchar* title_text = g_strdup(name);
-        gtk_label_set_text(GTK_LABEL(app->audio_title), title_text);
-        g_free(title_text);
-    }
-
-    if (app->audio_status != NULL) {
-        gtk_label_set_text(GTK_LABEL(app->audio_status), "");
-        gtk_widget_set_visible(app->audio_status, FALSE);
-    }
-    if (app->audio_cover != NULL) {
-        gtk_image_clear(GTK_IMAGE(app->audio_cover));
-        gtk_widget_set_visible(app->audio_cover, FALSE);
-        gtk_widget_set_visible(app->audio_icon, TRUE);
-        gtk_widget_set_visible(app->audio_tags, FALSE);
-    }
+    gtk_label_set_text(GTK_LABEL(a->title), name);
+    gtk_label_set_text(GTK_LABEL(a->status), "");
+    gtk_widget_set_visible(a->status, FALSE);
+    gtk_image_clear(GTK_IMAGE(a->cover));
+    gtk_widget_set_visible(a->cover, FALSE);
+    gtk_widget_set_visible(a->icon, TRUE);
+    gtk_widget_set_visible(a->tag_line, FALSE);
 
     update_audio_metadata_label(app, NULL);
     read_audio_tags(app, full);
@@ -480,24 +494,20 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
     g_object_unref(file);
 
     if (stream == NULL) {
-        if (app->audio_status != NULL) {
-            gtk_label_set_text(GTK_LABEL(app->audio_status),
-                               _("Could not create media stream for file (press 'm' for details)"));
-            gtk_widget_set_visible(app->audio_status, TRUE);
-        }
+        gtk_label_set_text(GTK_LABEL(a->status),
+                           _("Could not create media stream for file (press 'm' for details)"));
+        gtk_widget_set_visible(a->status, TRUE);
         return;
     }
 
-    app->audio_stream = stream;
-    if (app->audio_controls != NULL) {
-        gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(app->audio_controls), stream);
-    }
+    a->stream = stream;
+    gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(a->controls), stream);
 
-    app->audio_duration_sig = g_signal_connect(stream, "notify::duration",
+    a->duration_sig = g_signal_connect(stream, "notify::duration",
                                               G_CALLBACK(on_audio_duration_notify), app);
-    app->audio_prepared_sig = g_signal_connect(stream, "notify::prepared",
+    a->prepared_sig = g_signal_connect(stream, "notify::prepared",
                                               G_CALLBACK(on_audio_prepared_notify), app);
-    app->audio_error_sig = g_signal_connect(stream, "notify::error",
+    a->error_sig = g_signal_connect(stream, "notify::error",
                                            G_CALLBACK(on_audio_error_notify), app);
 
     if (gtk_media_stream_is_prepared(stream)) {

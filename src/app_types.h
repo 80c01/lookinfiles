@@ -276,25 +276,10 @@ typedef struct {
     GtkWidget* video_meta;      /* Video metadata info label */
     GtkWidget* video_status;    /* Video warning/error status label */
     gchar* video_current_path;  /* Canonical path of currently loaded video */
+    gchar* video_details;       /* Technical line of the video (size, codecs, duration), or NULL */
 
     /* Audio preview */
-    GtkWidget* audio_scroll;    /* Scrolled window wrapping audio_box */
-    GtkWidget* audio_box;       /* Box container for audio preview */
-    GtkWidget* audio_card;      /* Centered player card inside audio_box */
-    GtkWidget* audio_controls;  /* GtkMediaControls widget */
-    GtkWidget* audio_title;     /* Audio title label */
-    GtkWidget* audio_meta;      /* Audio metadata info label */
-    GtkWidget* audio_status;    /* Audio warning/error status label */
-    GtkWidget* audio_icon;      /* Note icon, hidden when there is a cover */
-    GtkWidget* audio_cover;     /* GtkImage: embedded cover art */
-    GtkWidget* audio_tags;      /* Album / year / track / genre line */
-    gchar* audio_details;       /* Technical line from the tags (codec, rate...), or NULL */
-    gchar* video_details;       /* Technical line of the video (size, codecs, duration), or NULL */
-    GtkMediaStream* audio_stream; /* Active audio GtkMediaStream */
-    gulong audio_duration_sig;  /* Signal ID for notify::duration */
-    gulong audio_prepared_sig;  /* Signal ID for notify::prepared */
-    gulong audio_error_sig;     /* Signal ID for notify::error */
-    gchar* audio_current_path;  /* Canonical path of currently loaded audio */
+    struct AudioPreview* audio; /* audio player state (audio.c), NULL before audio_preview_init() */
 
 
     /* Git commits tab in preview panel */

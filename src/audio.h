@@ -15,6 +15,9 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full);
 /* Stop playback and clear the active audio stream */
 void audio_preview_stop(AppData* app);
 
+/* Stop playback and free the player state (at exit) */
+void audio_preview_free(AppData* app);
+
 /* Pause audio playback if currently playing */
 void audio_preview_pause(AppData* app);
 
