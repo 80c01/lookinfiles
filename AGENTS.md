@@ -49,8 +49,11 @@ make ui-shots   # full UI scenario under Xvfb, screenshots in build/ui/shots/
 
 ## Architecture
 
-Modules are `src/<module>.c` + `.h`. A module may depend only on its own
-layer or below (`tools/check_layers.sh` enforces it):
+Modules are `src/<dir>/<module>.c` + `.h`, grouped by feature (`canvas/`,
+`editor/`, `preview/`...; list in docs/architecture.md); only `main.c` is at
+the top of `src/`. Module names are unique, and headers are included by their
+path from `src/` (`#include "core/i18n.h"`). A module may depend only on its
+own layer or below (`tools/check_layers.sh` enforces it):
 
 1. **Foundation**: pure helpers, no `AppData`, no widgets, unit-tested.
 2. **Shared types and helpers**: `app_types.h`, events, leaf widgets; layer 1 only.

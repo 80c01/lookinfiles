@@ -4,7 +4,38 @@ Module reference for LookinFiles. The short rules are in [AGENTS.md](../AGENTS.m
 
 ## Architecture (keep it when editing)
 
-Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
+Modules live in `src/<dir>/<module>.c` + `src/<dir>/<module>.h`; only
+`main.c` is at the top of `src/`. Module names are unique across directories
+(the objects are flat in `build/`), and a header is included by its path from
+`src/`: `#include "canvas/canvas_doc.h"`, also from the same directory.
+The directories group modules by feature, not by layer:
+
+| Directory | Contents |
+|---|---|
+| `core/` | application paths, i18n, `AppData` types, events, file types, text encodings, path helpers, settings |
+| `theme/` | palette, fonts, themes, text tags and styles, icons and icon sets |
+| `widgets/` | shared widgets: dialogs, panels, minimap, gutters, tagbar pane, tab drop |
+| `explorer/` | explorer tree and rows, files view and actions, bookmarks, remote machines, filesystem watch |
+| `git/` | libgit2 helpers, git state, the Git tab |
+| `preview/` | the viewer, preview state and cache, `preview_formats`, directory preview, PDF, browser tabs |
+| `markup/` | HTML and Markdown renderers |
+| `media/` | images, GIF animation, EXIF, audio and video players |
+| `formats/` | parsers of the structured previews (archives, binaries, data and text formats) |
+| `office/` | office documents: Word, Excel, PowerPoint, OpenDocument, OLE2, EPUB, RTF |
+| `mail/` | mail messages, mailboxes and stores |
+| `editor/` | editor tabs, editing modes (Notepad, Emacs, Vim, Org), saving |
+| `vim/` | the Vim engine |
+| `code/` | code navigation: index, scanners, ctags, language servers, outline, jumps |
+| `search/` | search bars, search in files, Quick Open |
+| `org/` | Org-mode documents |
+| `notes/` | notes and notebooks |
+| `canvas/` | Canvas notes |
+| `games/` | games mode |
+| `terminal/` | terminal panes and the built-in terminal |
+| `workspace/` | workspaces, layouts, session |
+| `chrome/` | top bar, status bar, sidebar, help, preferences, `ui` |
+
+Layers, from bottom to top
 (a module may only depend on modules in its own layer or below):
 
 **1. Foundation — pure helpers, no `AppData`, no widgets, unit-tested in `tests/`:**

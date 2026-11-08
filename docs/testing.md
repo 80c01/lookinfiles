@@ -22,7 +22,7 @@ make clean        # remove binary, build/ and build-asan/
 - **Agents run `make` after a change, and `make test` and `make check` before
   every commit**; the other test targets below run when the user asks.
   `make check` fails on any compiler warning, failing test, or layering violation (`tools/check_layers.sh`).
-- The build compiles every `src/*.c` automatically (no file list to maintain)
+- The build compiles every `src/*/*.c` automatically (no file list to maintain)
   and tracks header dependencies, so editing a header rebuilds its users.
 - There is no real display in the sandbox (`Gtk-WARNING: cannot open display`
   is expected when running the binary directly). Logic that can be tested

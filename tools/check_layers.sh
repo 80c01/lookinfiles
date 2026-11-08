@@ -28,6 +28,13 @@ included() {
     sed -n 's/^#include "\([a-z_0-9/]*\)\.h".*/\1/p' "$1" | sed 's|.*/||'
 }
 
+# Modules are in the directories of src/: only main.c is at the top
+for f in src/*.[ch]; do
+    [ "$f" = src/main.c ] && continue
+    echo "layout: $f is at the top of src/ (put the module in a directory, docs/architecture.md)"
+    status=1
+done
+
 # Module names are unique: the objects are flat in build/
 dups=$(for f in $SRC_CH; do basename "$f"; done | sort | uniq -d)
 for d in $dups; do
