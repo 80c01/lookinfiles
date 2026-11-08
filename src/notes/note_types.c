@@ -1,4 +1,4 @@
-#include "note_types.h"
+#include "notes/note_types.h"
 
 #include <string.h>
 

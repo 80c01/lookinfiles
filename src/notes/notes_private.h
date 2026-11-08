@@ -3,8 +3,8 @@
 
 /* Internal header of the Notes view: notes.c (rows, selection, keys, menu),
  * notes_dialogs.c and notes_actions.c (the public API is notes.h) */
-#include "notes.h"
-#include "notes_store.h"
+#include "notes/notes.h"
+#include "notes/notes_store.h"
 
 /* What the selected row of the Notes view is */
 typedef enum {

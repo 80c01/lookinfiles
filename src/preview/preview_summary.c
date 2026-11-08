@@ -1,7 +1,7 @@
 /* Text summaries for explorer rows without file content (see preview_summary.h). */
 #include "preview/preview_summary.h"
 #include "core/i18n.h"
-#include "note_types.h"
+#include "notes/note_types.h"
 #include "canvas/canvas_doc.h"
 
 #include <string.h>

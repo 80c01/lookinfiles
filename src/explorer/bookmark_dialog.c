@@ -4,7 +4,7 @@
 #include "explorer/bookmark_icons.h"
 #include "widgets/dialog.h"
 #include "widgets/icon_picker.h"
-#include "notebook_icons.h"
+#include "notes/notebook_icons.h"
 #include "session_store.h"
 
 #include <string.h>

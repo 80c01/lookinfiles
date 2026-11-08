@@ -2,7 +2,7 @@
  * ~/.ssh/config discovery and lookups. No widgets (unit-tested in tests/). */
 #include "explorer/remote_store.h"
 #include "core/app_paths.h"
-#include "notebook_icons.h"
+#include "notes/notebook_icons.h"
 
 #include <stdio.h>
 #include <stdlib.h>

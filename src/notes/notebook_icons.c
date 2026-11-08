@@ -1,5 +1,5 @@
 /* Notebook and bookmark folder icons (see notebook_icons.h) */
-#include "notebook_icons.h"
+#include "notes/notebook_icons.h"
 
 const gchar* const NOTEBOOK_ICONS[] = {
     "notebook", "folder-documents", "emoji-objects", "applications-science", "starred",

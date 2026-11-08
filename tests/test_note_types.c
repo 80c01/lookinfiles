@@ -1,6 +1,6 @@
-/* Unit tests for src/note_types.c: note type extensions, names and the
+/* Unit tests for src/notes/note_types.c: note type extensions, names and the
  * strings stored in notes.xml. Headless. */
-#include "note_types.h"
+#include "notes/note_types.h"
 
 static void test_from_filename(void) {
     g_assert_cmpint(note_type_from_filename("a.org"), ==, NOTE_TYPE_ORG);

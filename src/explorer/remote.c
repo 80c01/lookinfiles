@@ -8,7 +8,7 @@
 #include "terminal.h"
 #include "explorer/explorer_tree.h"
 #include "widgets/icon_picker.h"
-#include "notebook_icons.h"
+#include "notes/notebook_icons.h"
 
 #include <stdio.h>
 #include <stdlib.h>

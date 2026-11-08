@@ -1,11 +1,11 @@
 /* Notes view dialogs: new or edited note and notebook (title, type, icon),
  * confirmations and notices (see notes_private.h) */
-#include "notes.h"
-#include "notes_private.h"
+#include "notes/notes.h"
+#include "notes/notes_private.h"
 #include "core/i18n.h"
-#include "note_types.h"
-#include "notes_store.h"
-#include "notebook_icons.h"
+#include "notes/note_types.h"
+#include "notes/notes_store.h"
+#include "notes/notebook_icons.h"
 #include "theme/icons.h"
 #include "widgets/icon_picker.h"
 #include "theme/palette.h"

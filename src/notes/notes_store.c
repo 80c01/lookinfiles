@@ -1,6 +1,6 @@
 /* The notes on disk and their manifest (see notes_store.h) */
-#include "notes_store.h"
-#include "notebook_icons.h"
+#include "notes/notes_store.h"
+#include "notes/notebook_icons.h"
 #include <string.h>
 
 NoteItem* note_item_new(const gchar* filename, const gchar* title, const gchar* path, NoteType type) {

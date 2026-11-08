@@ -5,7 +5,7 @@
 #include "core/app_events.h"
 #include "explorer/bookmarks.h"
 #include "explorer/file_list.h"
-#include "notes.h"
+#include "notes/notes.h"
 #include "explorer/remote.h"
 #include "explorer/tree_nav.h"
 

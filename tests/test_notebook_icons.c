@@ -1,5 +1,5 @@
-/* Unit tests for src/notebook_icons.c (notebook and bookmark folder icon names). */
-#include "notebook_icons.h"
+/* Unit tests for src/notes/notebook_icons.c (notebook and bookmark folder icon names). */
+#include "notes/notebook_icons.h"
 
 static void test_presets_kept(void) {
     for (gsize i = 0; NOTEBOOK_ICONS[i] != NULL; i++) {

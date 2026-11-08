@@ -7,7 +7,7 @@
 #include "explorer/tree_nav.h"
 #include "explorer/file_list.h"
 #include "explorer/bookmark_icons.h"
-#include "notebook_icons.h"
+#include "notes/notebook_icons.h"
 #include "explorer/bookmark_dialog.h"
 #include "preview/browser.h"
 #include "preview/web_address.h"

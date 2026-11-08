@@ -10,7 +10,7 @@
  *   <root>/<Notebook>/<file>  a note (a Canvas note is a directory)
  *   <root>/.trash/<file>      a trashed note */
 #include <glib.h>
-#include "note_types.h"
+#include "notes/note_types.h"
 
 #define NOTES_STORE_MANIFEST "notes.xml"
 #define NOTES_STORE_TRASH ".trash"

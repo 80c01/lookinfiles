@@ -12,7 +12,7 @@
 #include "media/video.h"
 #include "media/audio.h"
 #include "explorer/bookmarks.h"
-#include "notes.h"
+#include "notes/notes.h"
 #include "explorer/remote.h"
 #include "explorer/archive_tree.h"
 #include "editor/editor.h"

@@ -40,7 +40,7 @@
 #include "explorer/tree_nav.h"
 #include "focus_route.h"
 #include "media/image_utils.h"
-#include "note_types.h"
+#include "notes/note_types.h"
 #include "games.h"
 
 /* Text shown from a Word document before it is cut (images not counted) */

@@ -13,7 +13,7 @@
 #include "workspace.h"
 #include "explorer/file_list.h"
 #include "terminal.h"
-#include "notes.h"
+#include "notes/notes.h"
 #include "editor/editor.h"
 #include "editor/editor_modes.h"
 #include "focus_route.h"

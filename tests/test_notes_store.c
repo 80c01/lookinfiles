@@ -1,6 +1,6 @@
-/* Unit tests for src/notes_store.c: notebooks on disk and notes.xml */
+/* Unit tests for src/notes/notes_store.c: notebooks on disk and notes.xml */
 #include <string.h>
-#include "notes_store.h"
+#include "notes/notes_store.h"
 
 #include <glib/gstdio.h>
 

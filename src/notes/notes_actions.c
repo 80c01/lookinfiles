@@ -1,12 +1,12 @@
 /* Notes view actions: create, edit, convert, export, move, reorder, sort,
  * trash and restore notes and notebooks (see notes.h) */
-#include "notes.h"
-#include "notes_private.h"
+#include "notes/notes.h"
+#include "notes/notes_private.h"
 #include "preview/preview_state.h"
 #include "core/i18n.h"
-#include "note_types.h"
-#include "notes_store.h"
-#include "notebook_icons.h"
+#include "notes/note_types.h"
+#include "notes/notes_store.h"
+#include "notes/notebook_icons.h"
 #include "canvas/canvas_doc.h"
 #include "canvas/canvas_view.h"
 #include "explorer/tree_nav.h"
