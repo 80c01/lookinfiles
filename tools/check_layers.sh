@@ -16,7 +16,7 @@ app_paths:
 i18n:
 file_types:text_encoding
 file_type_icons:file_type_icons_table
-git_utils:palette
+git_utils:palette i18n
 line_diff:
 preview_cache:
 path_kind:

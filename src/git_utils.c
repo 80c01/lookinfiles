@@ -3,6 +3,7 @@
  * through libgit2 (no git program). No AppData and no widgets; safe to call
  * from worker threads (each call opens its own repository). */
 #include "git_utils.h"
+#include "i18n.h"
 #include "palette.h"
 
 #include <git2.h>
@@ -607,60 +608,66 @@ void git_commit_info_free(gpointer data) {
     g_free(c);
 }
 
-/* "1 day" or "3 days" */
-static gchar* count_of(gint64 n, const gchar* unit) {
-    return g_strdup_printf("%" G_GINT64_FORMAT " %s%s", n, unit, n == 1 ? "" : "s");
-}
+typedef enum { UNIT_SECOND, UNIT_MINUTE, UNIT_HOUR, UNIT_DAY, UNIT_WEEK, UNIT_MONTH, UNIT_YEAR } TimeUnit;
 
-static gchar* units_ago(gint64 n, const gchar* unit) {
-    gchar* count = count_of(n, unit);
-    gchar* text = g_strconcat(count, " ago", NULL);
-    g_free(count);
-    return text;
+/* "3 days ago" */
+static gchar* units_ago(gint64 n, TimeUnit unit) {
+    gulong k = (gulong)n;
+    gint v = (gint)n;
+    switch (unit) {
+    case UNIT_SECOND: return g_strdup_printf(ngettext("%d second ago", "%d seconds ago", k), v);
+    case UNIT_MINUTE: return g_strdup_printf(ngettext("%d minute ago", "%d minutes ago", k), v);
+    case UNIT_HOUR: return g_strdup_printf(ngettext("%d hour ago", "%d hours ago", k), v);
+    case UNIT_DAY: return g_strdup_printf(ngettext("%d day ago", "%d days ago", k), v);
+    case UNIT_WEEK: return g_strdup_printf(ngettext("%d week ago", "%d weeks ago", k), v);
+    case UNIT_MONTH: return g_strdup_printf(ngettext("%d month ago", "%d months ago", k), v);
+    default: return g_strdup_printf(ngettext("%d year ago", "%d years ago", k), v);
+    }
 }
 
 /* Same steps and rounding as git (show_date_relative() in date.c) */
 gchar* git_relative_date(gint64 seconds) {
     if (seconds < 0) {
-        return g_strdup("in the future");
+        return g_strdup(_("in the future"));
     }
     gint64 diff = seconds;
     if (diff < 90) {
-        return units_ago(diff, "second");
+        return units_ago(diff, UNIT_SECOND);
     }
     diff = (diff + 30) / 60; /* minutes */
     if (diff < 90) {
-        return units_ago(diff, "minute");
+        return units_ago(diff, UNIT_MINUTE);
     }
     diff = (diff + 30) / 60; /* hours */
     if (diff < 36) {
-        return units_ago(diff, "hour");
+        return units_ago(diff, UNIT_HOUR);
     }
     diff = (diff + 12) / 24; /* days */
     if (diff < 14) {
-        return units_ago(diff, "day");
+        return units_ago(diff, UNIT_DAY);
     }
     if (diff < 70) {
-        return units_ago((diff + 3) / 7, "week");
+        return units_ago((diff + 3) / 7, UNIT_WEEK);
     }
     if (diff < 365) {
-        return units_ago((diff + 15) / 30, "month");
+        return units_ago((diff + 15) / 30, UNIT_MONTH);
     }
     if (diff < 1825) {
         gint64 total_months = (diff * 12 * 2 + 365) / (365 * 2);
         gint64 years = total_months / 12;
         gint64 months = total_months % 12;
         if (months == 0) {
-            return units_ago(years, "year");
+            return units_ago(years, UNIT_YEAR);
         }
-        gchar* y = count_of(years, "year");
-        gchar* m = count_of(months, "month");
-        gchar* text = g_strdup_printf("%s, %s ago", y, m);
+        gchar* y = g_strdup_printf(ngettext("%d year", "%d years", (gulong)years), (gint)years);
+        gchar* m = g_strdup_printf(ngettext("%d month", "%d months", (gulong)months), (gint)months);
+        /* TRANSLATORS: "1 year, 2 months ago" */
+        gchar* text = g_strdup_printf(_("%1$s, %2$s ago"), y, m);
         g_free(y);
         g_free(m);
         return text;
     }
-    return units_ago((diff + 183) / 365, "year");
+    return units_ago((diff + 183) / 365, UNIT_YEAR);
 }
 
 /* Shortest unique abbreviation of an object, like git's %h */

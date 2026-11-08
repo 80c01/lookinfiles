@@ -1,4 +1,5 @@
 #include "git_tab.h"
+#include "i18n.h"
 #include "text_tags.h"
 #include "icons.h"
 #include "panels.h"
@@ -120,8 +121,9 @@ static gchar* cut_diff(gchar* text) {
         return text;
     }
     rest = MAX(rest, 1u); /* a last line without a line break */
-    gchar* cut = g_strdup_printf("%.*s\n… %u more line%s not shown\n", (int)(p - text), text, rest,
-                                 rest == 1 ? "" : "s");
+    gchar* more = g_strdup_printf(ngettext("… %u more line not shown", "… %u more lines not shown", rest), rest);
+    gchar* cut = g_strdup_printf("%.*s\n%s\n", (int)(p - text), text, more);
+    g_free(more);
     g_free(text);
     return cut;
 }
@@ -141,7 +143,7 @@ static void git_show_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
-    td->diff_output = text != NULL ? cut_diff(text) : g_strdup("(No diff available or git error)");
+    td->diff_output = text != NULL ? cut_diff(text) : g_strdup(_("(No diff available or git error)"));
     g_task_return_boolean(task, TRUE);
 }
 
@@ -315,7 +317,7 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
         gtk_single_selection_set_selected(sel, target); /* shows its diff */
     } else {
         if (app->git_header_label != NULL) {
-            gtk_label_set_text(GTK_LABEL(app->git_header_label), "No commits in this repository.");
+            gtk_label_set_text(GTK_LABEL(app->git_header_label), _("No commits in this repository."));
         }
         if (app->git_detail_buf != NULL) {
             gtk_text_buffer_set_text(app->git_detail_buf, "", -1);
@@ -428,10 +430,10 @@ void git_tab_init(AppData* app) {
     focus_route_attach_list(app, tree_view, app->git_selection);
     gtk_widget_set_name(tree_view, "git-tree");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(tree_view), FALSE);
-    git_add_column(tree_view, "Commit", G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);
-    git_add_column(tree_view, "Message", G_STRUCT_OFFSET(GitCommitInfo, subject), "git-subject", TRUE);
-    git_add_column(tree_view, "Author", G_STRUCT_OFFSET(GitCommitInfo, author), "git-author", FALSE);
-    git_add_column(tree_view, "Date", G_STRUCT_OFFSET(GitCommitInfo, date), "git-date", FALSE);
+    git_add_column(tree_view, _("Commit"), G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);
+    git_add_column(tree_view, _("Message"), G_STRUCT_OFFSET(GitCommitInfo, subject), "git-subject", TRUE);
+    git_add_column(tree_view, _("Author"), G_STRUCT_OFFSET(GitCommitInfo, author), "git-author", FALSE);
+    git_add_column(tree_view, _("Date"), G_STRUCT_OFFSET(GitCommitInfo, date), "git-date", FALSE);
 
     GtkWidget* tree_scroll = gtk_scrolled_window_new();
     gtk_widget_set_hexpand(tree_scroll, TRUE);
@@ -448,7 +450,7 @@ void git_tab_init(AppData* app) {
 
     GtkWidget* header_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_set_name(header_bar, "git-header-bar");
-    GtkWidget* header_lbl = gtk_label_new("Select a commit to view diff");
+    GtkWidget* header_lbl = gtk_label_new(_("Select a commit to view diff"));
     gtk_label_set_xalign(GTK_LABEL(header_lbl), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(header_lbl), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(header_lbl, TRUE);
@@ -494,7 +496,7 @@ void git_tab_init(AppData* app) {
     gtk_box_append(GTK_BOX(tab_box), paned);
     app->git_tab_box = tab_box;
 
-    app->git_tab_label = icon_label_new("document-open-recent", "Git Commits");
+    app->git_tab_label = icon_label_new("document-open-recent", _("Git Commits"));
     gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), tab_box, app->git_tab_label);
 
     git_tab_update(app, app->base_dir);

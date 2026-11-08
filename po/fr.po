@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 08:49+0000\n"
+"POT-Creation-Date: 2026-11-08 08:52+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -795,6 +795,118 @@ msgstr "Solitaire"
 #: src/games.c:569
 msgid "Close Game (Ctrl+W)"
 msgstr "Fermer le jeu (Ctrl+W)"
+
+#: src/git_tab.c:124
+#, c-format
+msgid "… %u more line not shown"
+msgid_plural "… %u more lines not shown"
+msgstr[0] "… %u ligne de plus non affichée"
+msgstr[1] "… %u lignes de plus non affichées"
+
+#: src/git_tab.c:146
+msgid "(No diff available or git error)"
+msgstr "(Aucun diff disponible ou erreur git)"
+
+#: src/git_tab.c:320
+msgid "No commits in this repository."
+msgstr "Aucun commit dans ce dépôt."
+
+#: src/git_tab.c:433
+msgid "Commit"
+msgstr "Commit"
+
+#: src/git_tab.c:434
+msgid "Message"
+msgstr "Message"
+
+#: src/git_tab.c:435
+msgid "Author"
+msgstr "Auteur"
+
+#: src/git_tab.c:436
+msgid "Date"
+msgstr "Date"
+
+#: src/git_tab.c:453
+msgid "Select a commit to view diff"
+msgstr "Sélectionnez un commit pour voir son diff"
+
+#: src/git_tab.c:499
+msgid "Git Commits"
+msgstr "Commits Git"
+
+#: src/git_utils.c:618
+#, c-format
+msgid "%d second ago"
+msgid_plural "%d seconds ago"
+msgstr[0] "il y a %d seconde"
+msgstr[1] "il y a %d secondes"
+
+#: src/git_utils.c:619
+#, c-format
+msgid "%d minute ago"
+msgid_plural "%d minutes ago"
+msgstr[0] "il y a %d minute"
+msgstr[1] "il y a %d minutes"
+
+#: src/git_utils.c:620
+#, c-format
+msgid "%d hour ago"
+msgid_plural "%d hours ago"
+msgstr[0] "il y a %d heure"
+msgstr[1] "il y a %d heures"
+
+#: src/git_utils.c:621
+#, c-format
+msgid "%d day ago"
+msgid_plural "%d days ago"
+msgstr[0] "il y a %d jour"
+msgstr[1] "il y a %d jours"
+
+#: src/git_utils.c:622
+#, c-format
+msgid "%d week ago"
+msgid_plural "%d weeks ago"
+msgstr[0] "il y a %d semaine"
+msgstr[1] "il y a %d semaines"
+
+#: src/git_utils.c:623
+#, c-format
+msgid "%d month ago"
+msgid_plural "%d months ago"
+msgstr[0] "il y a %d mois"
+msgstr[1] "il y a %d mois"
+
+#: src/git_utils.c:624
+#, c-format
+msgid "%d year ago"
+msgid_plural "%d years ago"
+msgstr[0] "il y a %d an"
+msgstr[1] "il y a %d ans"
+
+#: src/git_utils.c:631
+msgid "in the future"
+msgstr "dans le futur"
+
+#: src/git_utils.c:662
+#, c-format
+msgid "%d year"
+msgid_plural "%d years"
+msgstr[0] "%d an"
+msgstr[1] "%d ans"
+
+#: src/git_utils.c:663
+#, c-format
+msgid "%d month"
+msgid_plural "%d months"
+msgstr[0] "%d mois"
+msgstr[1] "%d mois"
+
+#. TRANSLATORS: "1 year, 2 months ago"
+#: src/git_utils.c:665
+#, c-format
+msgid "%1$s, %2$s ago"
+msgstr "il y a %1$s et %2$s"
 
 #: src/help.c:27 src/help.c:28 src/help.c:29 src/help.c:30 src/help.c:31
 #: src/help.c:32 src/help.c:33 src/help.c:34 src/help.c:35 src/help.c:36

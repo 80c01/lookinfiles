@@ -44,14 +44,14 @@ The template `po/lookinfiles.pot` is generated, not committed.
 
 | Language | Catalog | Covered |
 |----------|---------|---------|
-| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences, keyboard shortcuts panel (`help.c`), sidebar and its views (bookmarks, notes, remote, games list), editor tab menu and Notepad mode, find bar, Search in Files, References and Search tabs |
+| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences, keyboard shortcuts panel (`help.c`), sidebar and its views (bookmarks, notes, remote, games list), editor tab menu and Notepad mode, find bar, Search in Files, References and Search tabs, Git tab (commit list, relative dates) |
 
-Not marked yet: the user guide (docs/user-guide/, Help tab), Git tab,
-previews. Left in English on purpose: file contents created for the user
+Not marked yet: the user guide (docs/user-guide/, Help tab), previews. Left in English on purpose: file contents created for the user
 (welcome note, note templates, the default "General" notebook), the game
 description sheets and the games themselves, and the Emacs, Org-mode and Vim
 minibuffer and echo messages (they mimic those editors, whose words the users
-of these modes know).
+of these modes know), and what git itself prints in the Git tab (the commit
+diff and its `--stat` summary, the detached HEAD name).
 
 ## Adding a language
 
