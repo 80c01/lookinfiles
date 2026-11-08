@@ -1,5 +1,6 @@
 /* Word 97-2003 documents shown like Word (see doc_reader.h) */
 #include "doc_reader.h"
+#include "i18n.h"
 #include "doc_writer.h"
 #include <gio/gio.h>
 #include <string.h>
@@ -721,20 +722,20 @@ PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* 
     Doc doc = { 0 };
     doc.word = g_bytes_get_data(wb, &doc.word_len);
     if (doc.word_len < 0x20) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "the document header is truncated");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("the document header is truncated"));
         g_bytes_unref(wb);
         return NULL;
     }
     const guint8* word = doc.word;
     guint16 ident = u16(word), nfib = u16(word + 2), flags = u16(word + 0x0A);
     if (ident != 0xA5EC && ident != 0xA5DC) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a Word document");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a Word document"));
         g_bytes_unref(wb);
         return NULL;
     }
     if (flags & 0x0100) {
         if (encrypted != NULL) *encrypted = TRUE;
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED, "the document is encrypted");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED, _("the document is encrypted"));
         g_bytes_unref(wb);
         return NULL;
     }
@@ -786,7 +787,7 @@ PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* 
                     doc.lcb_clx = 0;
                 }
                 if (!ok && error != NULL && *error == NULL) {
-                    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "damaged piece table");
+                    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("damaged piece table"));
                 }
                 guint32 fc_papx = FCLCB(26), lcb_papx = FCLCB(27);
                 if ((guint64)fc_papx + lcb_papx <= doc.table_len) {
@@ -803,7 +804,7 @@ PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* 
             }
 #undef FCLCB
         } else {
-            g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "the document header is damaged");
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("the document header is damaged"));
         }
     }
     PreviewDoc* result = NULL;
@@ -834,12 +835,12 @@ PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* 
 #undef STORY
         }
         result = doc_writer_page(title, subtitle, header, body, footer,
-                                 o.truncated ? "The document continues; the preview stops here." : NULL);
+                                 o.truncated ? _("The document continues; the preview stops here.") : NULL);
         preview_doc_free(body);
         if (header != NULL) preview_doc_free(header);
         if (footer != NULL) preview_doc_free(footer);
     } else if (error != NULL && *error == NULL) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "the text of the document cannot be found");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("the text of the document cannot be found"));
     }
     if (tb != NULL) g_bytes_unref(tb);
     g_array_free(chars, TRUE);

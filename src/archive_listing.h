@@ -53,6 +53,11 @@ typedef struct {
 /* Name of the archive or compression format of these first bytes, or NULL */
 const gchar* archive_listing_format_name(const guchar* head, gsize len);
 
+/* The format name of a listing ("ZIP archive", "xz-compressed tar archive")
+ * in the user's language; the format names stay in English in the code.
+ * Caller frees. */
+gchar* archive_listing_format_label(const gchar* format);
+
 /* TRUE if the format of these bytes can be listed by archive_list() */
 gboolean archive_listing_can_list(const guchar* head, gsize len);
 

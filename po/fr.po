@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 09:52+0000\n"
+"POT-Creation-Date: 2026-11-08 09:55+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,6 +17,130 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/archive_extract.c:105
+#, c-format
+msgid "cannot create %s"
+msgstr "impossible de créer %s"
+
+#: src/archive_extract.c:120 src/archive_extract.c:208
+#, c-format
+msgid "no such entry: %s"
+msgstr "entrée introuvable : %s"
+
+#: src/archive_extract.c:126 src/archive_extract.c:179
+#, c-format
+msgid "entry too large (%s)"
+msgstr "entrée trop grande (%s)"
+
+#: src/archive_extract.c:149 src/archive_listing.c:606
+#: src/archive_listing.c:697
+msgid "unknown archive format"
+msgstr "format d’archive inconnu"
+
+#: src/archive_extract.c:158
+msgid "cancelled"
+msgstr "annulé"
+
+#: src/archive_extract.c:174
+#, c-format
+msgid "not a regular file: %s"
+msgstr "pas un fichier ordinaire : %s"
+
+#: src/archive_extract.c:221
+#, c-format
+msgid "cannot open %s"
+msgstr "impossible d’ouvrir %s"
+
+#: src/archive_extract.c:233
+msgid "this format needs libarchive"
+msgstr "ce format demande libarchive"
+
+#: src/archive_listing.c:47 src/archive_listing.c:163 src/archive_listing.c:537
+msgid "ZIP archive"
+msgstr "archive ZIP"
+
+#: src/archive_listing.c:48 src/archive_listing.c:429
+msgid "gzip-compressed file"
+msgstr "fichier compressé par gzip"
+
+#: src/archive_listing.c:49
+msgid "bzip2-compressed file"
+msgstr "fichier compressé par bzip2"
+
+#: src/archive_listing.c:50
+msgid "xz-compressed file"
+msgstr "fichier compressé par xz"
+
+#: src/archive_listing.c:51
+msgid "Zstandard-compressed file"
+msgstr "fichier compressé par Zstandard"
+
+#: src/archive_listing.c:52
+msgid "lzip-compressed file"
+msgstr "fichier compressé par lzip"
+
+#: src/archive_listing.c:53 src/archive_listing.c:539
+msgid "7-Zip archive"
+msgstr "archive 7-Zip"
+
+#: src/archive_listing.c:54 src/archive_listing.c:541 src/archive_listing.c:542
+msgid "RAR archive"
+msgstr "archive RAR"
+
+#: src/archive_listing.c:55 src/archive_listing.c:442 src/archive_listing.c:538
+msgid "ar archive"
+msgstr "archive ar"
+
+#: src/archive_listing.c:56
+msgid "RPM package"
+msgstr "paquet RPM"
+
+#: src/archive_listing.c:57 src/archive_listing.c:540
+msgid "Cabinet archive"
+msgstr "archive Cabinet"
+
+#: src/archive_listing.c:58 src/archive_listing.c:534 src/archive_listing.c:688
+msgid "tar archive"
+msgstr "archive tar"
+
+#: src/archive_listing.c:419
+msgid "gzip-compressed tar archive"
+msgstr "archive tar compressée par gzip"
+
+#: src/archive_listing.c:535
+msgid "cpio archive"
+msgstr "archive cpio"
+
+#: src/archive_listing.c:536
+msgid "ISO image"
+msgstr "image ISO"
+
+#: src/archive_listing.c:543
+msgid "LHA archive"
+msgstr "archive LHA"
+
+#: src/archive_listing.c:544
+msgid "xar archive"
+msgstr "archive xar"
+
+#: src/archive_listing.c:545
+msgid "WARC archive"
+msgstr "archive WARC"
+
+#. TRANSLATORS: "xz-compressed tar archive": %1$s is the filter, %2$s the archive format
+#: src/archive_listing.c:559
+#, c-format
+msgid "%1$s-compressed %2$s"
+msgstr "%2$s (compression %1$s)"
+
+#: src/archive_listing.c:612
+msgid "file"
+msgstr "fichier"
+
+#: src/archive_listing.c:628
+msgid "archive"
+msgstr "archive"
 
 #: src/archive_tree.c:133 src/archive_tree.c:207
 msgid "cannot read the archive"
@@ -150,9 +274,9 @@ msgstr "_Retirer le signet"
 msgid "_Cancel"
 msgstr "_Annuler"
 
-#: src/bookmark_dialog.c:207 src/file_actions.c:252 src/preview_formats.c:344
-#: src/preview_formats.c:345 src/pyc_info.c:578 src/session_bookmark.c:26
-#: src/sqlite_view.c:222 src/torrent_info.c:325
+#: src/bookmark_dialog.c:207 src/file_actions.c:252 src/office97.c:73
+#: src/preview_formats.c:346 src/preview_formats.c:347 src/pyc_info.c:578
+#: src/session_bookmark.c:26 src/sqlite_view.c:222 src/torrent_info.c:325
 msgid "Name"
 msgstr "Nom"
 
@@ -967,7 +1091,7 @@ msgstr "(sans nom)"
 msgid "Organization"
 msgstr "Organisation"
 
-#: src/card_view.c:530
+#: src/card_view.c:530 src/ole_props.c:223
 msgid "Title"
 msgstr "Titre"
 
@@ -1051,7 +1175,7 @@ msgstr "Pas dans"
 msgid "Categories"
 msgstr "Catégories"
 
-#: src/card_view.c:613
+#: src/card_view.c:613 src/ole_props.c:227
 msgid "Keywords"
 msgstr "Mots-clés"
 
@@ -1163,7 +1287,7 @@ msgstr[0] "valide, expire dans %d jour"
 msgstr[1] "valide, expire dans %d jours"
 
 #: src/cert_view.c:602 src/cert_view.c:665 src/mail_dir.c:212
-#: src/mail_view.c:80 src/preview_formats.c:934
+#: src/mail_view.c:80 src/ole_props.c:224 src/preview_formats.c:936
 msgid "Subject"
 msgstr "Objet"
 
@@ -1192,7 +1316,7 @@ msgstr "Signature"
 msgid "CA"
 msgstr "AC"
 
-#: src/cert_view.c:622 src/preview_formats.c:903
+#: src/cert_view.c:622 src/preview_formats.c:905
 msgid "yes"
 msgstr "oui"
 
@@ -1212,7 +1336,7 @@ msgstr "Usage étendu"
 msgid "Serial"
 msgstr "N° de série"
 
-#: src/cert_view.c:628 src/preview_formats.c:597 src/pyc_info.c:538
+#: src/cert_view.c:628 src/preview_formats.c:599 src/pyc_info.c:538
 msgid "Version"
 msgstr "Version"
 
@@ -1707,7 +1831,7 @@ msgstr[1] "%u fichiers modifiés, "
 msgid "%1$u+ entries (only the first %2$u are read)"
 msgstr "%1$u+ entrées (seules les %2$u premières sont lues)"
 
-#: src/dir_preview.c:213 src/preview_formats.c:308
+#: src/dir_preview.c:213 src/preview_formats.c:310
 #, c-format
 msgid "%u folder"
 msgid_plural "%u folders"
@@ -1838,6 +1962,46 @@ msgstr "hier"
 msgid "%d days ago"
 msgstr "il y a %d jours"
 
+#: src/doc_reader.c:725
+msgid "the document header is truncated"
+msgstr "l’en-tête du document est tronqué"
+
+#: src/doc_reader.c:732
+msgid "not a Word document"
+msgstr "pas un document Word"
+
+#: src/doc_reader.c:738
+msgid "the document is encrypted"
+msgstr "le document est chiffré"
+
+#: src/doc_reader.c:790
+msgid "damaged piece table"
+msgstr "table des morceaux endommagée"
+
+#: src/doc_reader.c:807
+msgid "the document header is damaged"
+msgstr "l’en-tête du document est endommagé"
+
+#: src/doc_reader.c:838
+msgid "The document continues; the preview stops here."
+msgstr "Le document continue ; l’aperçu s’arrête ici."
+
+#: src/doc_reader.c:843
+msgid "the text of the document cannot be found"
+msgstr "le texte du document est introuvable"
+
+#: src/docx.c:649
+msgid "Not a Word document"
+msgstr "Pas un document Word"
+
+#: src/docx.c:700
+msgid "Word document"
+msgstr "Document Word"
+
+#: src/docx.c:708 src/odf.c:450 src/rtf.c:458
+msgid "Document truncated: only the beginning is shown."
+msgstr "Document tronqué : seul le début est affiché."
+
 #: src/editor.c:526
 msgctxt "editor tab"
 msgid "Move Right"
@@ -1931,14 +2095,14 @@ msgstr "Mac (CR)"
 msgid "Ln %1$d, Col %2$d   |   %3$d%%   |   %4$s   |   %5$s   |   UTF-8"
 msgstr "Li %1$d, Col %2$d   |   %3$d %%   |   %4$s   |   %5$s   |   UTF-8"
 
-#: src/editor_modes.c:728 src/preview_formats.c:492
+#: src/editor_modes.c:728 src/preview_formats.c:494
 #, c-format
 msgid "%u error"
 msgid_plural "%u errors"
 msgstr[0] "%u erreur"
 msgstr[1] "%u erreurs"
 
-#: src/editor_modes.c:729 src/preview_formats.c:496
+#: src/editor_modes.c:729 src/preview_formats.c:498
 #, c-format
 msgid "%u warning"
 msgid_plural "%u warnings"
@@ -2254,6 +2418,43 @@ msgid ""
 msgstr ""
 "\n"
 "Symboles exportés (%u)\n"
+
+#: src/epub.c:290
+msgid "not an EPUB (no package document)"
+msgstr "pas un EPUB (pas de document de paquet)"
+
+#: src/epub.c:370 src/ole_props.c:246 src/preview_formats.c:315
+#: src/preview_summary.c:260
+msgid "Contents"
+msgstr "Contenu"
+
+#: src/epub.c:399
+msgid "Only the first chapters are shown."
+msgstr "Seuls les premiers chapitres sont affichés."
+
+#: src/exif.c:429
+msgid "flash"
+msgstr "flash"
+
+#: src/exif.c:440
+#, c-format
+msgid "Taken %1$04d-%2$02d-%3$02d %4$02d:%5$02d"
+msgstr "Prise le %1$04d-%2$02d-%3$02d à %4$02d:%5$02d"
+
+#: src/exif.c:442
+#, c-format
+msgid "Taken %s"
+msgstr "Prise le %s"
+
+#: src/exif.c:457
+#, c-format
+msgid "Edited with %s"
+msgstr "Retouchée avec %s"
+
+#: src/exif.c:461
+#, c-format
+msgid "By %s"
+msgstr "Par %s"
 
 #: src/file_actions.c:234
 msgid "New Folder"
@@ -2684,6 +2885,15 @@ msgstr "%s (approximatif)"
 msgid "Showing the first %u messages."
 msgstr "Affichage des %u premiers messages."
 
+#: src/gif_decoder.c:116
+msgid "Not a GIF image"
+msgstr "Pas une image GIF"
+
+#: src/gif_decoder.c:122
+#, c-format
+msgid "Invalid GIF size %1$d x %2$d"
+msgstr "Taille GIF invalide %1$d x %2$d"
+
 #: src/git_tab.c:124
 #, c-format
 msgid "… %u more line not shown"
@@ -2707,12 +2917,12 @@ msgstr "Commit"
 msgid "Message"
 msgstr "Message"
 
-#: src/git_tab.c:435
+#: src/git_tab.c:435 src/ole_props.c:225
 msgid "Author"
 msgstr "Auteur"
 
 #: src/git_tab.c:436 src/mail_dir.c:212 src/mail_view.c:33 src/mail_view.c:34
-#: src/mail_view.c:180 src/preview_formats.c:934
+#: src/mail_view.c:180 src/preview_formats.c:936
 msgid "Date"
 msgstr "Date"
 
@@ -4756,7 +4966,7 @@ msgstr ""
 "(vide)"
 
 #: src/mail_dir.c:212 src/mail_view.c:29 src/mail_view.c:180
-#: src/preview_formats.c:934
+#: src/preview_formats.c:936
 msgid "From"
 msgstr "De"
 
@@ -4777,7 +4987,7 @@ msgid ", flagged"
 msgstr ", marqué"
 
 #: src/mail_dir.c:220 src/mail_view.c:167 src/mail_view.c:220
-#: src/preview_formats.c:903
+#: src/preview_formats.c:905
 msgid "(no subject)"
 msgstr "(sans objet)"
 
@@ -4883,8 +5093,8 @@ msgstr "Liste de dossiers Outlook Express (DBX)"
 msgid "Outlook Express database (DBX)"
 msgstr "Base de données Outlook Express (DBX)"
 
-#: src/mail_store.c:107 src/preview_formats.c:344 src/preview_formats.c:345
-#: src/preview_formats.c:934 src/torrent_info.c:371
+#: src/mail_store.c:107 src/office97.c:73 src/preview_formats.c:346
+#: src/preview_formats.c:347 src/preview_formats.c:936 src/torrent_info.c:371
 msgid "Size"
 msgstr "Taille"
 
@@ -4922,7 +5132,7 @@ msgstr "Le message continue ; l’aperçu s’arrête ici."
 msgid "Attachment"
 msgstr "Pièce jointe"
 
-#: src/mail_view.c:65 src/mail_view.c:199 src/preview_formats.c:934
+#: src/mail_view.c:65 src/mail_view.c:199 src/preview_formats.c:936
 msgid "Attachments"
 msgstr "Pièces jointes"
 
@@ -5067,6 +5277,25 @@ msgstr "Voir %s."
 #, c-format
 msgid "Track %u"
 msgstr "Piste %u"
+
+#: src/notebook.c:53
+#, c-format
+msgid "… (%u more line)\n"
+msgid_plural "… (%u more lines)\n"
+msgstr[0] "… (%u ligne de plus)\n"
+msgstr[1] "… (%u lignes de plus)\n"
+
+#: src/notebook.c:87
+msgid "(image too large to show)"
+msgstr "(image trop grande pour être affichée)"
+
+#: src/notebook.c:121
+msgid "(HTML output)"
+msgstr "(sortie HTML)"
+
+#: src/notebook.c:182
+msgid "not a Jupyter notebook (no cells)"
+msgstr "pas un notebook Jupyter (aucune cellule)"
 
 #: src/notes.c:532
 msgid "Markdown (.md - headings, lists, tables, images)"
@@ -5335,6 +5564,218 @@ msgstr "Vider la corbeille…"
 msgid "Sort / Order Mode"
 msgstr "Mode de tri / d’ordre"
 
+#: src/odf.c:301 src/slide_render.c:681
+#, c-format
+msgid "Slide %u"
+msgstr "Diapositive %u"
+
+#: src/odf.c:415
+msgid "not an OpenDocument file (no content.xml)"
+msgstr "pas un fichier OpenDocument (pas de content.xml)"
+
+#: src/office97.c:36
+msgid "Word 97-2003 document"
+msgstr "Document Word 97-2003"
+
+#: src/office97.c:37 src/xls_reader.c:504
+msgid "Excel 97-2003 workbook"
+msgstr "Classeur Excel 97-2003"
+
+#: src/office97.c:38 src/xls_reader.c:504
+msgid "Excel 5.0/95 workbook"
+msgstr "Classeur Excel 5.0/95"
+
+#: src/office97.c:39
+msgid "PowerPoint 97-2003 presentation"
+msgstr "Présentation PowerPoint 97-2003"
+
+#: src/office97.c:40
+msgid "Outlook message"
+msgstr "Message Outlook"
+
+#: src/office97.c:43
+msgid "Compound file"
+msgstr "Fichier composé"
+
+#: src/office97.c:70
+msgid "Streams"
+msgstr "Flux"
+
+#: src/office97.c:90
+#, c-format
+msgid "The first %1$u of %2$u entries are listed."
+msgstr "Les %1$u premières des %2$u entrées sont listées."
+
+#: src/office97.c:102 src/office97.c:138 src/office97.c:150 src/office97.c:185
+msgid "Encrypted: the content needs the password."
+msgstr "Chiffré : le contenu demande le mot de passe."
+
+#: src/office97.c:109
+#, c-format
+msgid "The message cannot be read: %s."
+msgstr "Le message ne peut pas être lu : %s."
+
+#: src/office97.c:116
+#, c-format
+msgid "Outlook message · %s"
+msgstr "Message Outlook · %s"
+
+#: src/office97.c:139
+#, c-format
+msgid "The text cannot be read: %s."
+msgstr "Le texte ne peut pas être lu : %s."
+
+#: src/office97.c:151
+#, c-format
+msgid "The cells cannot be read: %s."
+msgstr "Les cellules ne peuvent pas être lues : %s."
+
+#: src/office97.c:162 src/preview_formats.c:733
+#, c-format
+msgid "%1$s · %2$u sheet · %3$s"
+msgid_plural "%1$s · %2$u sheets · %3$s"
+msgstr[0] "%1$s · %2$u feuille · %3$s"
+msgstr[1] "%1$s · %2$u feuilles · %3$s"
+
+#: src/office97.c:174 src/preview_formats.c:743
+msgid "Sheets"
+msgstr "Feuilles"
+
+#: src/office97.c:186
+#, c-format
+msgid "The slides cannot be read: %s."
+msgstr "Les diapositives ne peuvent pas être lues : %s."
+
+#: src/ole_props.c:226
+msgid "Company"
+msgstr "Société"
+
+#: src/ole_props.c:228
+msgid "Comments"
+msgstr "Commentaires"
+
+#: src/ole_props.c:230 src/torrent_info.c:350
+msgid "Created"
+msgstr "Créé"
+
+#: src/ole_props.c:233 src/preview_formats.c:346 src/preview_formats.c:347
+msgid "Modified"
+msgstr "Modifié"
+
+#: src/ole_props.c:235
+msgid "Last saved by"
+msgstr "Enregistré par"
+
+#: src/ole_props.c:237 src/ole_props.c:258 src/pdf.c:541
+#, c-format
+msgid "%d page"
+msgid_plural "%d pages"
+msgstr[0] "%d page"
+msgstr[1] "%d pages"
+
+#: src/ole_props.c:240 src/ole_props.c:262
+#, c-format
+msgid "%d word"
+msgid_plural "%d words"
+msgstr[0] "%d mot"
+msgstr[1] "%d mots"
+
+#: src/ole_props.c:244 src/ole_props.c:266
+#, c-format
+msgid "%d slide"
+msgid_plural "%d slides"
+msgstr[0] "%d diapositive"
+msgstr[1] "%d diapositives"
+
+#: src/ole_props.c:248
+msgid "Application"
+msgstr "Application"
+
+#: src/ole_props.c:249
+msgid "Security"
+msgstr "Sécurité"
+
+#: src/ole_props.c:249
+msgid "Password protected"
+msgstr "Protégé par mot de passe"
+
+#: src/ole_props.c:272
+#, c-format
+msgid "modified %s"
+msgstr "modifié le %s"
+
+#: src/ole_reader.c:53
+#, c-format
+msgid "damaged compound file: %s"
+msgstr "fichier composé endommagé : %s"
+
+#: src/ole_reader.c:76
+msgid "sector out of range"
+msgstr "secteur hors limites"
+
+#: src/ole_reader.c:76
+msgid "loop in a sector chain"
+msgstr "boucle dans une chaîne de secteurs"
+
+#: src/ole_reader.c:91
+msgid "bad FAT size"
+msgstr "taille de FAT incorrecte"
+
+#: src/ole_reader.c:101
+msgid "DIFAT sector out of range"
+msgstr "secteur DIFAT hors limites"
+
+#: src/ole_reader.c:108
+msgid "incomplete DIFAT"
+msgstr "DIFAT incomplète"
+
+#: src/ole_reader.c:116
+msgid "FAT sector out of range"
+msgstr "secteur FAT hors limites"
+
+#: src/ole_reader.c:144
+msgid "empty directory"
+msgstr "répertoire vide"
+
+#: src/ole_reader.c:161
+msgid "no root entry"
+msgstr "pas d’entrée racine"
+
+#: src/ole_reader.c:207
+msgid "not a compound file"
+msgstr "pas un fichier composé"
+
+#: src/ole_reader.c:213
+msgid "unsupported header"
+msgstr "en-tête non pris en charge"
+
+#: src/ole_reader.c:330
+msgid "no such stream"
+msgstr "flux introuvable"
+
+#: src/ole_reader.c:335
+#, c-format
+msgid "%s is a storage"
+msgstr "%s est un stockage"
+
+#: src/ole_reader.c:340
+#, c-format
+msgid "%1$s is too large (%2$s)"
+msgstr "%1$s est trop grand (%2$s)"
+
+#: src/ole_reader.c:359
+msgid "mini stream chain"
+msgstr "chaîne du mini-flux"
+
+#: src/ole_reader.c:372
+msgid "stream shorter than its size"
+msgstr "flux plus court que sa taille"
+
+#: src/ole_reader.c:387
+#, c-format
+msgid "no stream %s"
+msgstr "pas de flux %s"
+
 #: src/outline_pane.c:217
 msgid "Collapse All (c)"
 msgstr "Tout replier (c)"
@@ -5533,13 +5974,6 @@ msgstr "  [pages rendues, m pour le texte]"
 msgid "first %d pages"
 msgstr "%d premières pages"
 
-#: src/pdf.c:541
-#, c-format
-msgid "%d page"
-msgid_plural "%d pages"
-msgstr[0] "%d page"
-msgstr[1] "%d pages"
-
 #: src/pdf.c:544
 #, c-format
 msgid ""
@@ -5570,6 +6004,25 @@ msgid ""
 msgstr ""
 "[ Aperçu PDF désactivé pour %s :\n"
 "  installez libpoppler-glib-dev puis recompilez (make). ]"
+
+#: src/ppt_reader.c:917
+msgid "the presentation is encrypted"
+msgstr "la présentation est chiffrée"
+
+#: src/ppt_reader.c:919
+msgid "no presentation records"
+msgstr "aucun enregistrement de présentation"
+
+#: src/pptx.c:179
+msgid "PowerPoint presentation"
+msgstr "Présentation PowerPoint"
+
+#: src/pptx.c:181
+#, c-format
+msgid "%u slide"
+msgid_plural "%u slides"
+msgstr[0] "%u diapositive"
+msgstr[1] "%u diapositives"
 
 #: src/preferences.c:106
 msgid ""
@@ -5799,27 +6252,27 @@ msgstr "%.0f %% gagnés"
 msgid "Content"
 msgstr "Contenu"
 
-#: src/preview_formats.c:254 src/sqlite_view.c:158
+#: src/preview_formats.c:254 src/spreadsheet.c:705 src/sqlite_view.c:158
 msgid "(empty)"
 msgstr "(vide)"
 
-#: src/preview_formats.c:288
+#: src/preview_formats.c:290
 msgid "Listing the content of this format is not supported yet."
 msgstr "Lister le contenu de ce format n’est pas encore pris en charge."
 
-#: src/preview_formats.c:293
+#: src/preview_formats.c:295
 msgid "Original name"
 msgstr "Nom d’origine"
 
-#: src/preview_formats.c:296
+#: src/preview_formats.c:298
 msgid "Original size"
 msgstr "Taille d’origine"
 
-#: src/preview_formats.c:299 src/preview_formats.c:322
+#: src/preview_formats.c:301 src/preview_formats.c:324
 msgid "Compression"
 msgstr "Compression"
 
-#: src/preview_formats.c:307
+#: src/preview_formats.c:309
 #, c-format
 msgid "%s file"
 msgid_plural "%s files"
@@ -5827,38 +6280,30 @@ msgstr[0] "%s fichier"
 msgstr[1] "%s fichiers"
 
 #. TRANSLATORS: "12 files, 3 folders"
-#: src/preview_formats.c:310
+#: src/preview_formats.c:312
 #, c-format
 msgid "at least %1$s, %2$s"
 msgstr "au moins %1$s, %2$s"
 
-#: src/preview_formats.c:310
+#: src/preview_formats.c:312
 #, c-format
 msgid "%1$s, %2$s"
 msgstr "%1$s, %2$s"
 
-#: src/preview_formats.c:313 src/preview_summary.c:260
-msgid "Contents"
-msgstr "Contenu"
-
-#: src/preview_formats.c:317
+#: src/preview_formats.c:319
 msgid "Unpacked"
 msgstr "Décompressé"
 
-#: src/preview_formats.c:344
+#: src/preview_formats.c:346
 msgid "Packed"
 msgstr "Compressé"
 
-#: src/preview_formats.c:344 src/preview_formats.c:345
-msgid "Modified"
-msgstr "Modifié"
-
-#: src/preview_formats.c:355
+#: src/preview_formats.c:357
 #, c-format
 msgid "%s (encrypted)"
 msgstr "%s (chiffré)"
 
-#: src/preview_formats.c:372
+#: src/preview_formats.c:374
 #, c-format
 msgid ""
 "\n"
@@ -5867,7 +6312,7 @@ msgstr ""
 "\n"
 "Affichage des %s premières entrées (l’archive n’a pas été lue jusqu’au bout)."
 
-#: src/preview_formats.c:373
+#: src/preview_formats.c:375
 #, c-format
 msgid ""
 "\n"
@@ -5876,98 +6321,98 @@ msgstr ""
 "\n"
 "Affichage des %s premières entrées."
 
-#: src/preview_formats.c:421
+#: src/preview_formats.c:423
 msgid "nothing to show"
 msgstr "rien à afficher"
 
-#: src/preview_formats.c:486
+#: src/preview_formats.c:488
 #, c-format
 msgid "last %s line"
 msgid_plural "last %s lines"
 msgstr[0] "dernière ligne (%s)"
 msgstr[1] "%s dernières lignes"
 
-#: src/preview_formats.c:487
+#: src/preview_formats.c:489
 #, c-format
 msgid "%s line"
 msgid_plural "%s lines"
 msgstr[0] "%s ligne"
 msgstr[1] "%s lignes"
 
-#: src/preview_formats.c:504
+#: src/preview_formats.c:506
 #, c-format
 msgid "Showing the end of the file: the last %1$s of %2$s."
 msgstr "Affichage de la fin du fichier : les derniers %1$s sur %2$s."
 
-#: src/preview_formats.c:530
+#: src/preview_formats.c:532
 msgid "catalog too large"
 msgstr "catalogue trop grand"
 
-#: src/preview_formats.c:544
+#: src/preview_formats.c:546
 #, c-format
 msgid "gettext translations (.po) · %s"
 msgstr "traductions gettext (.po) · %s"
 
-#: src/preview_formats.c:545
+#: src/preview_formats.c:547
 #, c-format
 msgid "gettext compiled translations (.mo) · %s"
 msgstr "traductions gettext compilées (.mo) · %s"
 
-#: src/preview_formats.c:567
+#: src/preview_formats.c:569
 #, c-format
 msgid "SQLite database · %s"
 msgstr "Base de données SQLite · %s"
 
 #. TRANSLATORS: a pangram of your language for the font sample
-#: src/preview_formats.c:578
+#: src/preview_formats.c:580
 msgid "The quick brown fox jumps over the lazy dog"
 msgstr "Portez ce vieux whisky au juge blond qui fume"
 
 #. TRANSLATORS: "%1$s font" names the format, e.g. "TrueType font"
-#: src/preview_formats.c:591
+#: src/preview_formats.c:593
 #, c-format
 msgid "%1$s font · %2$s · %3$s"
 msgstr "Police %1$s · %2$s · %3$s"
 
-#: src/preview_formats.c:592
+#: src/preview_formats.c:594
 #, c-format
 msgid "%1$s font · %2$s"
 msgstr "Police %1$s · %2$s"
 
-#: src/preview_formats.c:596 src/tfm_info.c:213
+#: src/preview_formats.c:598 src/tfm_info.c:213
 msgid "Full name"
 msgstr "Nom complet"
 
-#: src/preview_formats.c:598
+#: src/preview_formats.c:600
 msgid "Designer"
 msgstr "Créateur"
 
-#: src/preview_formats.c:599
+#: src/preview_formats.c:601
 msgid "Foundry"
 msgstr "Fonderie"
 
-#: src/preview_formats.c:602
+#: src/preview_formats.c:604
 msgid "Glyphs"
 msgstr "Glyphes"
 
-#: src/preview_formats.c:606
+#: src/preview_formats.c:608
 #, c-format
 msgid "%u (the first one is shown)"
 msgstr "%u (la première est affichée)"
 
-#: src/preview_formats.c:607
+#: src/preview_formats.c:609
 msgid "Fonts"
 msgstr "Polices"
 
-#: src/preview_formats.c:610
+#: src/preview_formats.c:612
 msgid "Copyright"
 msgstr "Copyright"
 
-#: src/preview_formats.c:611
+#: src/preview_formats.c:613
 msgid "License URL"
 msgstr "URL de la licence"
 
-#: src/preview_formats.c:614
+#: src/preview_formats.c:616
 msgid ""
 "\n"
 "No sample: the font names cannot be read (WOFF2 tables are compressed)."
@@ -5976,72 +6421,61 @@ msgstr ""
 "Pas d’échantillon : les noms de la police sont illisibles (les tables WOFF2 "
 "sont compressées)."
 
-#: src/preview_formats.c:628
+#: src/preview_formats.c:630
 msgid "Sample"
 msgstr "Échantillon"
 
-#: src/preview_formats.c:649
+#: src/preview_formats.c:651
 msgid "License"
 msgstr "Licence"
 
-#: src/preview_formats.c:700
+#: src/preview_formats.c:702
 #, c-format
 msgid "Presentation · %u slide"
 msgid_plural "Presentation · %u slides"
 msgstr[0] "Présentation · %u diapositive"
 msgstr[1] "Présentation · %u diapositives"
 
-#: src/preview_formats.c:731
-#, c-format
-msgid "%1$s · %2$u sheet · %3$s"
-msgid_plural "%1$s · %2$u sheets · %3$s"
-msgstr[0] "%1$s · %2$u feuille · %3$s"
-msgstr[1] "%1$s · %2$u feuilles · %3$s"
-
-#: src/preview_formats.c:741
-msgid "Sheets"
-msgstr "Feuilles"
-
-#: src/preview_formats.c:764
+#: src/preview_formats.c:766
 #, c-format
 msgid "Jupyter notebook · %1$u cell (%2$u code)"
 msgid_plural "Jupyter notebook · %1$u cells (%2$u code)"
 msgstr[0] "Notebook Jupyter · %1$u cellule (%2$u de code)"
 msgstr[1] "Notebook Jupyter · %1$u cellules (%2$u de code)"
 
-#: src/preview_formats.c:810
+#: src/preview_formats.c:812
 msgid "only gzip-compressed pages can be read"
 msgstr "seules les pages compressées par gzip sont lisibles"
 
-#: src/preview_formats.c:826
+#: src/preview_formats.c:828
 msgid "not a manual page"
 msgstr "pas une page de manuel"
 
-#: src/preview_formats.c:840
+#: src/preview_formats.c:842
 msgid "not a valid ELF file"
 msgstr "pas un fichier ELF valide"
 
 #. TRANSLATORS: %3$s is "+" when the mailbox was not read to the end
-#: src/preview_formats.c:919
+#: src/preview_formats.c:921
 #, c-format
 msgid "Message %1$u of %2$u%3$s · %4$s · PgUp / PgDn"
 msgstr "Message %1$u sur %2$u%3$s · %4$s · PgUp / PgDn"
 
-#: src/preview_formats.c:928
+#: src/preview_formats.c:930
 #, c-format
 msgid "Mailbox · %1$u message · %2$s"
 msgid_plural "Mailbox · %1$u messages · %2$s"
 msgstr[0] "Boîte aux lettres · %1$u message · %2$s"
 msgstr[1] "Boîte aux lettres · %1$u messages · %2$s"
 
-#: src/preview_formats.c:929
+#: src/preview_formats.c:931
 #, c-format
 msgid "Mailbox · %1$s · the first %2$u and last %3$u messages shown"
 msgstr ""
 "Boîte aux lettres · %1$s · les %2$u premiers et %3$u derniers messages "
 "affichés"
 
-#: src/preview_formats.c:949
+#: src/preview_formats.c:951
 msgid ""
 "\n"
 "PgDn opens the messages one by one, PgUp comes back."
@@ -6049,72 +6483,72 @@ msgstr ""
 "\n"
 "PgDn ouvre les messages un par un, PgUp revient."
 
-#: src/preview_formats.c:960
+#: src/preview_formats.c:962
 msgid "no file"
 msgstr "aucun fichier"
 
-#: src/preview_formats.c:983
+#: src/preview_formats.c:985
 #, c-format
 msgid "Thunderbird index of %s"
 msgstr "Index Thunderbird de %s"
 
-#: src/preview_formats.c:996
+#: src/preview_formats.c:998
 msgid "Mail message"
 msgstr "Message électronique"
 
-#: src/preview_formats.c:1033
+#: src/preview_formats.c:1035
 msgid "file too large"
 msgstr "fichier trop grand"
 
-#: src/preview_formats.c:1053
+#: src/preview_formats.c:1055
 msgid "Java class file"
 msgstr "Fichier de classe Java"
 
-#: src/preview_formats.c:1056
+#: src/preview_formats.c:1058
 msgid "WebAssembly binary"
 msgstr "Binaire WebAssembly"
 
-#: src/preview_formats.c:1059
+#: src/preview_formats.c:1061
 msgid "BitTorrent metainfo"
 msgstr "Métadonnées BitTorrent"
 
-#: src/preview_formats.c:1062
+#: src/preview_formats.c:1064
 msgid "Python bytecode"
 msgstr "Bytecode Python"
 
-#: src/preview_formats.c:1065
+#: src/preview_formats.c:1067
 msgid "TeX font metric"
 msgstr "Métriques de police TeX"
 
-#: src/preview_formats.c:1068
+#: src/preview_formats.c:1070
 msgid "Packet capture"
 msgstr "Capture réseau"
 
-#: src/preview_formats.c:1115
+#: src/preview_formats.c:1117
 msgid "no preview for this format yet"
 msgstr "pas encore d’aperçu pour ce format"
 
-#: src/preview_formats.c:1184
+#: src/preview_formats.c:1186
 msgid "[ Binary file ]"
 msgstr "[ Fichier binaire ]"
 
 #. TRANSLATORS: %s is a file kind, e.g. "Archive"
-#: src/preview_formats.c:1187
+#: src/preview_formats.c:1189
 #, c-format
 msgid "[ %s file ]"
 msgstr "[ Fichier : %s ]"
 
-#: src/preview_formats.c:1191
+#: src/preview_formats.c:1193
 #, c-format
 msgid "Cannot show the file: %s.\n"
 msgstr "Impossible d’afficher le fichier : %s.\n"
 
-#: src/preview_formats.c:1192
+#: src/preview_formats.c:1194
 #, c-format
 msgid "Cannot show the content: %s.\n"
 msgstr "Impossible d’afficher le contenu : %s.\n"
 
-#: src/preview_formats.c:1197
+#: src/preview_formats.c:1199
 #, c-format
 msgid "Showing the first %s.\n"
 msgstr "Affichage des premiers %s.\n"
@@ -6519,6 +6953,30 @@ msgstr ""
 msgid "In the files of %s"
 msgstr "Dans les fichiers de %s"
 
+#: src/ps_convert.c:145
+#, c-format
+msgid "%1$s exited with code %2$d: %3$s"
+msgstr "%1$s s’est terminé avec le code %2$d : %3$s"
+
+#: src/ps_convert.c:148
+#, c-format
+msgid "%1$s exited with code %2$d"
+msgstr "%1$s s’est terminé avec le code %2$d"
+
+#: src/ps_convert.c:164
+#, c-format
+msgid "cannot read %s"
+msgstr "impossible de lire %s"
+
+#: src/ps_convert.c:170
+#, c-format
+msgid "%s is not installed"
+msgstr "%s n’est pas installé"
+
+#: src/ps_convert.c:228
+msgid "cannot store the converted file"
+msgstr "impossible d’enregistrer le fichier converti"
+
 #: src/pyc_info.c:449
 msgid "file too small for Python bytecode"
 msgstr "fichier trop petit pour du bytecode Python"
@@ -6825,6 +7283,10 @@ msgstr "Ajouter une machine ici…"
 msgid "Add Remote Machine…"
 msgstr "Ajouter une machine distante…"
 
+#: src/rtf.c:294
+msgid "not an RTF document"
+msgstr "pas un document RTF"
+
 #: src/session.c:161
 msgid "This workspace has no folder"
 msgstr "Cet espace de travail n’a pas de dossier"
@@ -7001,6 +7463,52 @@ msgstr "Relire ~/.ssh/config (F5)"
 #: src/sidebar.c:600
 msgid "Play Selected Game (Enter)"
 msgstr "Jouer au jeu sélectionné (Enter)"
+
+#: src/slide_render.c:680
+#, c-format
+msgid "Slide %1$u · %2$s"
+msgstr "Diapositive %1$u · %2$s"
+
+#: src/slide_render.c:688
+#, c-format
+msgid "The first %1$u of %2$u slides are drawn; the others are listed."
+msgstr ""
+"Les %1$u premières des %2$u diapositives sont dessinées ; les autres sont "
+"listées."
+
+#: src/slide_render.c:714
+msgid "(no slides)"
+msgstr "(aucune diapositive)"
+
+#: src/spreadsheet.c:25 src/xls_reader.c:473
+msgid "Sheet"
+msgstr "Feuille"
+
+#: src/spreadsheet.c:524
+msgid "Excel workbook"
+msgstr "Classeur Excel"
+
+#: src/spreadsheet.c:661
+msgid "OpenDocument spreadsheet"
+msgstr "Classeur OpenDocument"
+
+#: src/spreadsheet.c:687
+msgid "not a spreadsheet (no workbook)"
+msgstr "pas un classeur (aucun workbook)"
+
+#: src/spreadsheet.c:722
+#, c-format
+msgid "Showing the first %u rows."
+msgstr "Affichage des %u premières lignes."
+
+#: src/spreadsheet.c:728
+#, c-format
+msgid ""
+"\n"
+"The first %u sheets are shown."
+msgstr ""
+"\n"
+"Les %u premières feuilles sont affichées."
 
 #: src/sqlite_view.c:34
 #, c-format
@@ -7632,10 +8140,6 @@ msgstr[1] "%1$s (%2$u morceaux)"
 msgid "Piece size"
 msgstr "Taille des morceaux"
 
-#: src/torrent_info.c:350
-msgid "Created"
-msgstr "Créé"
-
 #: src/torrent_info.c:357
 msgid "Created by"
 msgstr "Créé par"
@@ -7843,3 +8347,111 @@ msgstr "Enregistrer comme signet…"
 #: src/workspace_menu.c:86
 msgid "Close Workspace"
 msgstr "Fermer l’espace de travail"
+
+#: src/xls_reader.c:457
+msgid "the workbook is encrypted"
+msgstr "le classeur est chiffré"
+
+#: src/xls_reader.c:498
+msgid "the workbook has no sheet"
+msgstr "le classeur n’a aucune feuille"
+
+#: src/xls_reader.c:501
+msgid "not an Excel workbook"
+msgstr "pas un classeur Excel"
+
+#: src/zip_reader.c:57
+#, c-format
+msgid "Not a valid ZIP archive: %s"
+msgstr "Pas une archive ZIP valide : %s"
+
+#: src/zip_reader.c:64
+msgid "data past the end of the file"
+msgstr "données au-delà de la fin du fichier"
+
+#: src/zip_reader.c:74
+msgid "truncated file"
+msgstr "fichier tronqué"
+
+#: src/zip_reader.c:84
+msgid "file too short"
+msgstr "fichier trop court"
+
+#: src/zip_reader.c:108
+msgid "no end of central directory"
+msgstr "pas de fin de répertoire central"
+
+#: src/zip_reader.c:123
+msgid "missing ZIP64 locator"
+msgstr "localisateur ZIP64 absent"
+
+#: src/zip_reader.c:129
+msgid "bad ZIP64 end of central directory"
+msgstr "fin de répertoire central ZIP64 incorrecte"
+
+#: src/zip_reader.c:137
+msgid "central directory past the end of the file"
+msgstr "répertoire central au-delà de la fin du fichier"
+
+#: src/zip_reader.c:140
+msgid "central directory too large"
+msgstr "répertoire central trop grand"
+
+#: src/zip_reader.c:182 src/zip_reader.c:190
+msgid "damaged central directory"
+msgstr "répertoire central endommagé"
+
+#: src/zip_reader.c:227
+msgid "Stream is not seekable"
+msgstr "Le flux ne permet pas de se déplacer"
+
+#: src/zip_reader.c:332
+#, c-format
+msgid "Damaged ZIP entry %1$s: %2$s"
+msgstr "Entrée ZIP %1$s endommagée : %2$s"
+
+#: src/zip_reader.c:338
+#, c-format
+msgid "Damaged ZIP entry %s: more data than announced"
+msgstr "Entrée ZIP %s endommagée : plus de données qu’annoncé"
+
+#: src/zip_reader.c:345
+#, c-format
+msgid "Damaged ZIP entry %s: less data than announced"
+msgstr "Entrée ZIP %s endommagée : moins de données qu’annoncé"
+
+#: src/zip_reader.c:351
+#, c-format
+msgid "Damaged ZIP entry %s: truncated data"
+msgstr "Entrée ZIP %s endommagée : données tronquées"
+
+#: src/zip_reader.c:363
+#, c-format
+msgid "No entry %s in the archive"
+msgstr "Pas d’entrée %s dans l’archive"
+
+#: src/zip_reader.c:367
+#, c-format
+msgid "ZIP entry %s is encrypted"
+msgstr "L’entrée ZIP %s est chiffrée"
+
+#: src/zip_reader.c:372
+#, c-format
+msgid "ZIP entry %1$s uses an unsupported compression method (%2$u)"
+msgstr ""
+"L’entrée ZIP %1$s utilise une méthode de compression non prise en charge "
+"(%2$u)"
+
+#: src/zip_reader.c:377
+#, c-format
+msgid "ZIP entry %1$s is too large (%2$s)"
+msgstr "L’entrée ZIP %1$s est trop grande (%2$s)"
+
+#: src/zip_reader.c:385
+#, c-format
+msgid "Damaged ZIP entry %s: inconsistent sizes"
+msgstr "Entrée ZIP %s endommagée : tailles incohérentes"
+
+#: src/zip_reader.c:394
+msgid "bad local file header"
+msgstr "en-tête de fichier local incorrect"

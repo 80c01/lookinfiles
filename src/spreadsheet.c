@@ -1,5 +1,6 @@
 /* Spreadsheet reading (see spreadsheet.h). */
 #include "spreadsheet.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <math.h>
@@ -21,7 +22,7 @@ static void sheet_free(gpointer data) {
 
 static Sheet* sheet_new(const gchar* name) {
     Sheet* s = g_new0(Sheet, 1);
-    s->name = g_strdup(name != NULL ? name : "Sheet");
+    s->name = g_strdup(name != NULL ? name : _("Sheet"));
     s->rows = g_ptr_array_new_with_free_func((GDestroyNotify)g_strfreev);
     return s;
 }
@@ -520,7 +521,7 @@ static Workbook* read_xlsx(ZipReader* zip, guint max_sheets, guint max_rows, GEr
     zip_xml_parse(zip, "xl/styles.xml", MAX_PART, TRUE, &styles_parser, &styles, NULL);
 
     Workbook* book = g_new0(Workbook, 1);
-    book->format = "Excel workbook";
+    book->format = _("Excel workbook");
     book->sheets = g_ptr_array_new_with_free_func(sheet_free);
     for (guint i = 0; i < w.names->len; i++) {
         Sheet* sheet = sheet_new(g_ptr_array_index(w.names, i));
@@ -657,7 +658,7 @@ static void ods_text(GMarkupParseContext* ctx, const gchar* text, gsize len, gpo
 
 static Workbook* read_ods(ZipReader* zip, guint max_sheets, guint max_rows, GError** error) {
     Workbook* book = g_new0(Workbook, 1);
-    book->format = "OpenDocument spreadsheet";
+    book->format = _("OpenDocument spreadsheet");
     book->sheets = g_ptr_array_new_with_free_func(sheet_free);
     OdsParse p = { book, max_sheets, { NULL, max_rows, g_ptr_array_new_with_free_func(g_free), -1 },
                    FALSE, 0, FALSE, 1, 0, g_string_new(NULL), 0, 1 };
@@ -683,7 +684,7 @@ Workbook* spreadsheet_read(const gchar* path, guint max_sheets, guint max_rows, 
     } else if (zip_reader_has(zip, "content.xml")) {
         book = read_ods(zip, max_sheets, max_rows, error);
     } else {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a spreadsheet (no workbook)");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a spreadsheet (no workbook)"));
     }
     zip_reader_free(zip);
     return book;
@@ -701,7 +702,7 @@ void spreadsheet_append_sheets(PreviewDoc* doc, const Workbook* book, guint show
             preview_doc_append_len(doc, "\n", 1);
         }
         if (sheet->rows->len == 0 || sheet->n_cols == 0) {
-            preview_doc_note(doc, "(empty)");
+            preview_doc_note(doc, _("(empty)"));
             continue;
         }
         g_autoptr(PreviewTable) table = preview_table_new(sheet->n_cols);
@@ -718,13 +719,13 @@ void spreadsheet_append_sheets(PreviewDoc* doc, const Workbook* book, guint show
         }
         preview_doc_add_table(doc, table);
         if (sheet->truncated) {
-            gchar* note = g_strdup_printf("Showing the first %u rows.", max_rows);
+            gchar* note = g_strdup_printf(_("Showing the first %u rows."), max_rows);
             preview_doc_note(doc, note);
             g_free(note);
         }
     }
     if (book->sheets->len > shown) {
-        gchar* note = g_strdup_printf("\nThe first %u sheets are shown.", shown);
+        gchar* note = g_strdup_printf(_("\nThe first %u sheets are shown."), shown);
         preview_doc_note(doc, note);
         g_free(note);
     }

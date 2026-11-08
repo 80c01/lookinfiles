@@ -1,5 +1,6 @@
 /* Reading one entry out of an archive (see archive_extract.h). */
 #include "archive_extract.h"
+#include "i18n.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -101,7 +102,7 @@ gchar* archive_extract_cache_path(const gchar* archive, const gchar* entry) {
 static gboolean write_dest(const gchar* dest, const guchar* data, gsize len, GError** error) {
     gchar* dir = g_path_get_dirname(dest);
     if (g_mkdir_with_parents(dir, 0700) != 0) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "cannot create %s", dir);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("cannot create %s"), dir);
         g_free(dir);
         return FALSE;
     }
@@ -116,12 +117,14 @@ static gboolean extract_zip(const gchar* archive, const gchar* entry, const gcha
         return FALSE;
     }
     if (!zip_reader_has(zip, entry)) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "no such entry: %s", entry);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("no such entry: %s"), entry);
         return FALSE;
     }
     gint64 size = zip_reader_get_size(zip, entry);
     if (size >= 0 && (guint64)size > max_size) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "entry too large (%" G_GINT64_FORMAT " bytes)", size);
+        gchar* text = g_format_size((guint64)size);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("entry too large (%s)"), text);
+        g_free(text);
         return FALSE;
     }
     GBytes* data = zip_reader_read(zip, entry, (gsize)max_size, error);
@@ -143,7 +146,7 @@ static gboolean extract_libarchive(const gchar* archive, const gchar* entry, con
     archive_read_support_format_all(a);
     if (archive_read_open_filename(a, archive, 64 * 1024) != ARCHIVE_OK) {
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "%s",
-                    archive_error_string(a) != NULL ? archive_error_string(a) : "unknown archive format");
+                    archive_error_string(a) != NULL ? archive_error_string(a) : _("unknown archive format"));
         archive_read_free(a);
         return FALSE;
     }
@@ -152,7 +155,7 @@ static gboolean extract_libarchive(const gchar* archive, const gchar* entry, con
     struct archive_entry* ae = NULL;
     while (archive_read_next_header(a, &ae) == ARCHIVE_OK) {
         if (g_cancellable_is_cancelled(cancellable)) {
-            g_set_error(error, G_IO_ERROR, G_IO_ERROR_CANCELLED, "cancelled");
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_CANCELLED, _("cancelled"));
             break;
         }
         const gchar* name = archive_entry_pathname_utf8(ae);
@@ -168,12 +171,13 @@ static gboolean extract_libarchive(const gchar* archive, const gchar* entry, con
         }
         found = TRUE;
         if (archive_entry_filetype(ae) != AE_IFREG) {
-            g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "not a regular file: %s", entry);
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("not a regular file: %s"), entry);
             break;
         }
         if (archive_entry_size_is_set(ae) && (guint64)archive_entry_size(ae) > max_size) {
-            g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "entry too large (%" G_GINT64_FORMAT " bytes)",
-                        (gint64)archive_entry_size(ae));
+            gchar* text = g_format_size((guint64)archive_entry_size(ae));
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("entry too large (%s)"), text);
+            g_free(text);
             break;
         }
         GByteArray* buf = g_byte_array_new();
@@ -201,7 +205,7 @@ static gboolean extract_libarchive(const gchar* archive, const gchar* entry, con
         break;
     }
     if (!found && error != NULL && *error == NULL) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "no such entry: %s", entry);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("no such entry: %s"), entry);
     }
     archive_read_free(a);
     return ok;
@@ -214,7 +218,7 @@ gboolean archive_extract_entry(const gchar* archive, const gchar* entry, const g
     gsize got = 0;
     FILE* f = g_fopen(archive, "rb");
     if (f == NULL) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "cannot open %s", archive);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("cannot open %s"), archive);
         return FALSE;
     }
     got = fread(head, 1, sizeof(head), f);
@@ -226,7 +230,7 @@ gboolean archive_extract_entry(const gchar* archive, const gchar* entry, const g
     return extract_libarchive(archive, entry, dest, max_size, cancellable, error);
 #else
     (void)cancellable;
-    g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "this format needs libarchive");
+    g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("this format needs libarchive"));
     return FALSE;
 #endif
 }

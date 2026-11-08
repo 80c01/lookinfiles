@@ -1,5 +1,6 @@
 /* GIF decoder (see gif_decoder.h). */
 #include "gif_decoder.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -112,13 +113,13 @@ GifDecoder* gif_decoder_new(GBytes* data, GError** error) {
     gsize len = 0;
     const guint8* d = g_bytes_get_data(data, &len);
     if (len < 13 || (memcmp(d, "GIF87a", 6) != 0 && memcmp(d, "GIF89a", 6) != 0)) {
-        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "Not a GIF image");
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("Not a GIF image"));
         return NULL;
     }
     gint width = (gint)read_u16(d + 6);
     gint height = (gint)read_u16(d + 8);
     if (width <= 0 || height <= 0 || (guint64)width * (guint64)height > GIF_MAX_PIXELS) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "Invalid GIF size %d x %d", width, height);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("Invalid GIF size %1$d x %2$d"), width, height);
         return NULL;
     }
     GifDecoder* gif = g_new0(GifDecoder, 1);

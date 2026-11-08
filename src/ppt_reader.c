@@ -1,5 +1,6 @@
 /* PowerPoint 97-2003 presentations read into slides (see ppt_reader.h) */
 #include "ppt_reader.h"
+#include "i18n.h"
 #include "preview_doc.h"
 #include <gio/gio.h>
 #include <string.h>
@@ -913,9 +914,9 @@ SlideDeck* ppt_reader_read(OleReader* ole, gboolean* encrypted, GError** error) 
     SlideDeck* deck = NULL;
     if (ppt.encrypted) {
         if (encrypted != NULL) *encrypted = TRUE;
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED, "the presentation is encrypted");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED, _("the presentation is encrypted"));
     } else if (!any) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "no presentation records");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("no presentation records"));
     } else {
         deck = slide_deck_new(ppt.width, ppt.height);
         deck->font = ppt.fonts->len > 0 ? g_strdup(g_ptr_array_index(ppt.fonts, 0)) : NULL;

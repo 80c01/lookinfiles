@@ -276,7 +276,9 @@ static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellab
     doc->monospace = TRUE;
     doc->wrap = FALSE;
     gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf("%s · %s", format, size);
+    gchar* format_text = archive_listing_format_label(format);
+    gchar* subtitle = g_strdup_printf("%s · %s", format_text, size);
+    g_free(format_text);
     gchar* title_format = g_strdup(subtitle);
     title_format[0] = g_ascii_toupper(title_format[0]);
     preview_doc_title(doc, in->name, title_format);

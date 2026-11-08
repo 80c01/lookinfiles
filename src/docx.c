@@ -1,5 +1,6 @@
 /* Word documents (.docx) shown like Word (see docx.h) */
 #include "docx.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -645,7 +646,7 @@ PreviewDoc* docx_to_preview(ZipReader* zip, const gchar* name, const gchar* size
     g_return_val_if_fail(zip != NULL, NULL);
     gchar* main = main_part_name(zip);
     if (main == NULL) {
-        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "Not a Word document");
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("Not a Word document"));
         return NULL;
     }
     gchar* dir = zip_xml_dirname(main);
@@ -696,7 +697,7 @@ PreviewDoc* docx_to_preview(ZipReader* zip, const gchar* name, const gchar* size
         zip_xml_parse(zip, "docProps/core.xml", MAX_PART, TRUE, &core_parser, &cp, NULL);
         gchar* title = stripped_or_null(cp.title);
         gchar* author = stripped_or_null(cp.creator);
-        GString* subtitle = g_string_new("Word document");
+        GString* subtitle = g_string_new(_("Word document"));
         if (author != NULL) {
             g_string_append_printf(subtitle, " · %s", author);
         }
@@ -704,7 +705,7 @@ PreviewDoc* docx_to_preview(ZipReader* zip, const gchar* name, const gchar* size
             g_string_append_printf(subtitle, " · %s", size_text);
         }
         doc = doc_writer_page(title != NULL ? title : (name != NULL ? name : ""), subtitle->str, header, body,
-                              footer, d.truncated ? "Document truncated: only the beginning is shown." : NULL);
+                              footer, d.truncated ? _("Document truncated: only the beginning is shown.") : NULL);
         g_string_free(subtitle, TRUE);
         g_free(title);
         g_free(author);

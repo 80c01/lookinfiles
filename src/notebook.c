@@ -1,5 +1,6 @@
 /* Jupyter notebooks to Markdown (see notebook.h). */
 #include "notebook.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -49,7 +50,7 @@ static void append_block(GString* md, const gchar* text, const gchar* language, 
         for (const gchar* q = p; *q != '\0'; q++) {
             more += (*q == '\n');
         }
-        g_string_append_printf(md, "… (%u more lines)\n", more + 1);
+        g_string_append_printf(md, ngettext("… (%u more line)\n", "… (%u more lines)\n", more + 1), more + 1);
     }
     g_string_append_printf(md, "%s\n\n", fence);
     g_free(clean);
@@ -83,7 +84,7 @@ static void append_rich_output(GString* md, const JsonValue* data, const gchar* 
                 return;
             }
             g_free(b64);
-            g_string_append(md, "*(image too large to show)*\n\n");
+            g_string_append_printf(md, "*%s*\n\n", _("(image too large to show)"));
             return;
         }
     }
@@ -117,7 +118,7 @@ static void append_rich_output(GString* md, const JsonValue* data, const gchar* 
         return;
     }
     if (json_value_get(data, "text/html") != NULL) {
-        g_string_append(md, "*(HTML output)*\n\n");
+        g_string_append_printf(md, "*%s*\n\n", _("(HTML output)"));
     }
 }
 
@@ -178,7 +179,7 @@ gchar* notebook_to_markdown(const gchar* text, gsize len, NotebookInfo* info, GE
         cells = json_value_get(json_value_get_item(sheets, 0), "cells");
     }
     if (cells == NULL || json_value_get_type(cells) != JSON_VALUE_ARRAY) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a Jupyter notebook (no cells)");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a Jupyter notebook (no cells)"));
         return NULL;
     }
     const JsonValue* meta = json_value_get(root, "metadata");

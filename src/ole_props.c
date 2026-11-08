@@ -1,5 +1,6 @@
 /* Document properties of compound files (see ole_props.h) */
 #include "ole_props.h"
+#include "i18n.h"
 #include <string.h>
 
 #define PROPS_MAX_BYTES (1024 * 1024)
@@ -219,40 +220,56 @@ static gchar* format_time(gint64 t) {
 
 void ole_properties_card(PreviewDoc* doc, const OleProperties* p) {
     if (doc == NULL || p == NULL) return;
-    if (p->title != NULL) preview_doc_field(doc, "Title", p->title);
-    if (p->subject != NULL) preview_doc_field(doc, "Subject", p->subject);
-    if (p->author != NULL) preview_doc_field(doc, "Author", p->author);
-    if (p->company != NULL) preview_doc_field(doc, "Company", p->company);
-    if (p->keywords != NULL) preview_doc_field(doc, "Keywords", p->keywords);
-    if (p->comments != NULL) preview_doc_field(doc, "Comments", p->comments);
+    if (p->title != NULL) preview_doc_field(doc, _("Title"), p->title);
+    if (p->subject != NULL) preview_doc_field(doc, _("Subject"), p->subject);
+    if (p->author != NULL) preview_doc_field(doc, _("Author"), p->author);
+    if (p->company != NULL) preview_doc_field(doc, _("Company"), p->company);
+    if (p->keywords != NULL) preview_doc_field(doc, _("Keywords"), p->keywords);
+    if (p->comments != NULL) preview_doc_field(doc, _("Comments"), p->comments);
     gchar* t = p->created >= 0 ? format_time(p->created) : NULL;
-    if (t != NULL) preview_doc_field(doc, "Created", t);
+    if (t != NULL) preview_doc_field(doc, _("Created"), t);
     g_free(t);
     t = p->modified >= 0 ? format_time(p->modified) : NULL;
-    if (t != NULL) preview_doc_field(doc, "Modified", t);
+    if (t != NULL) preview_doc_field(doc, _("Modified"), t);
     g_free(t);
-    if (p->last_author != NULL) preview_doc_field(doc, "Last saved by", p->last_author);
+    if (p->last_author != NULL) preview_doc_field(doc, _("Last saved by"), p->last_author);
     GString* counts = g_string_new(NULL);
-    if (p->pages > 0) g_string_append_printf(counts, "%d page%s", p->pages, p->pages == 1 ? "" : "s");
-    if (p->words > 0) g_string_append_printf(counts, "%s%d words", counts->len ? " · " : "", p->words);
-    if (p->slides > 0) g_string_append_printf(counts, "%s%d slide%s", counts->len ? " · " : "", p->slides, p->slides == 1 ? "" : "s");
-    if (counts->len > 0) preview_doc_field(doc, "Contents", counts->str);
+    if (p->pages > 0) g_string_append_printf(counts, ngettext("%d page", "%d pages", p->pages), p->pages);
+    if (p->words > 0) {
+        if (counts->len > 0) g_string_append(counts, " · ");
+        g_string_append_printf(counts, ngettext("%d word", "%d words", p->words), p->words);
+    }
+    if (p->slides > 0) {
+        if (counts->len > 0) g_string_append(counts, " · ");
+        g_string_append_printf(counts, ngettext("%d slide", "%d slides", p->slides), p->slides);
+    }
+    if (counts->len > 0) preview_doc_field(doc, _("Contents"), counts->str);
     g_string_free(counts, TRUE);
-    if (p->app_name != NULL) preview_doc_field(doc, "Application", p->app_name);
-    if (p->password) preview_doc_field(doc, "Security", "Password protected");
+    if (p->app_name != NULL) preview_doc_field(doc, _("Application"), p->app_name);
+    if (p->password) preview_doc_field(doc, _("Security"), _("Password protected"));
 }
 
 gchar* ole_properties_subtitle(const OleProperties* p, const gchar* kind) {
     GString* desc = g_string_new(kind != NULL ? kind : "");
     if (p != NULL) {
         if (p->author != NULL) g_string_append_printf(desc, " · %s", p->author);
-        if (p->pages > 0) g_string_append_printf(desc, " · %d page%s", p->pages, p->pages == 1 ? "" : "s");
-        if (p->words > 0) g_string_append_printf(desc, " · %d words", p->words);
-        if (p->slides > 0) g_string_append_printf(desc, " · %d slide%s", p->slides, p->slides == 1 ? "" : "s");
+        if (p->pages > 0) {
+            g_string_append(desc, " · ");
+            g_string_append_printf(desc, ngettext("%d page", "%d pages", p->pages), p->pages);
+        }
+        if (p->words > 0) {
+            g_string_append(desc, " · ");
+            g_string_append_printf(desc, ngettext("%d word", "%d words", p->words), p->words);
+        }
+        if (p->slides > 0) {
+            g_string_append(desc, " · ");
+            g_string_append_printf(desc, ngettext("%d slide", "%d slides", p->slides), p->slides);
+        }
         gchar* t = p->modified >= 0 ? format_time(p->modified) : NULL;
         if (t != NULL) {
             t[10] = '\0'; /* the date is enough */
-            g_string_append_printf(desc, " · modified %s", t);
+            g_string_append(desc, " · ");
+            g_string_append_printf(desc, _("modified %s"), t);
         }
         g_free(t);
     }

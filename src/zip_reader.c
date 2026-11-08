@@ -1,5 +1,6 @@
 /* Minimal ZIP archive reader: central directory + stored / deflated entries */
 #include "zip_reader.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -53,14 +54,14 @@ static void zip_entry_free(gpointer data) {
 }
 
 static gboolean set_invalid(GError** error, const gchar* what) {
-    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "Not a valid ZIP archive: %s", what);
+    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("Not a valid ZIP archive: %s"), what);
     return FALSE;
 }
 
 /* Read exactly len bytes at offset */
 static gboolean read_at(ZipReader* zip, guint64 offset, void* buf, gsize len, GError** error) {
     if (offset > zip->archive_size || len > zip->archive_size - offset) {
-        return set_invalid(error, "data past the end of the file");
+        return set_invalid(error, _("data past the end of the file"));
     }
     if (!g_seekable_seek(G_SEEKABLE(zip->stream), (goffset)offset, G_SEEK_SET, NULL, error)) {
         return FALSE;
@@ -70,7 +71,7 @@ static gboolean read_at(ZipReader* zip, guint64 offset, void* buf, gsize len, GE
         return FALSE;
     }
     if (got != len) {
-        return set_invalid(error, "truncated file");
+        return set_invalid(error, _("truncated file"));
     }
     return TRUE;
 }
@@ -80,7 +81,7 @@ static gboolean find_central_dir(ZipReader* zip, guint64* cd_offset, guint64* cd
                                  guint64* n_entries, GError** error) {
     gsize tail_len = (gsize)MIN(zip->archive_size, (guint64)(EOCD_SIZE + EOCD_MAX_COMMENT));
     if (tail_len < EOCD_SIZE) {
-        return set_invalid(error, "file too short");
+        return set_invalid(error, _("file too short"));
     }
     guint64 tail_start = zip->archive_size - tail_len;
     guchar* tail = g_malloc(tail_len);
@@ -104,7 +105,7 @@ static gboolean find_central_dir(ZipReader* zip, guint64* cd_offset, guint64* cd
     }
     if (found < 0) {
         g_free(tail);
-        return set_invalid(error, "no end of central directory");
+        return set_invalid(error, _("no end of central directory"));
     }
     const guchar* eocd = tail + found;
     guint64 eocd_pos = tail_start + (guint64)found;
@@ -119,13 +120,13 @@ static gboolean find_central_dir(ZipReader* zip, guint64* cd_offset, guint64* cd
         if (eocd_pos < ZIP64_LOCATOR_SIZE ||
             !read_at(zip, eocd_pos - ZIP64_LOCATOR_SIZE, loc, sizeof loc, NULL) ||
             memcmp(loc, "PK\x06\x07", 4) != 0) {
-            return set_invalid(error, "missing ZIP64 locator");
+            return set_invalid(error, _("missing ZIP64 locator"));
         }
         if (!read_at(zip, get_u64(loc + 8), rec, sizeof rec, error)) {
             return FALSE;
         }
         if (memcmp(rec, "PK\x06\x06", 4) != 0) {
-            return set_invalid(error, "bad ZIP64 end of central directory");
+            return set_invalid(error, _("bad ZIP64 end of central directory"));
         }
         *n_entries = get_u64(rec + 32);
         *cd_size = get_u64(rec + 40);
@@ -133,10 +134,10 @@ static gboolean find_central_dir(ZipReader* zip, guint64* cd_offset, guint64* cd
     }
 
     if (*cd_offset > zip->archive_size || *cd_size > zip->archive_size - *cd_offset) {
-        return set_invalid(error, "central directory past the end of the file");
+        return set_invalid(error, _("central directory past the end of the file"));
     }
     if (*cd_size > MAX_CENTRAL_DIR || *n_entries > *cd_size / CENTRAL_HEADER_SIZE) {
-        return set_invalid(error, "central directory too large");
+        return set_invalid(error, _("central directory too large"));
     }
     return TRUE;
 }
@@ -178,7 +179,7 @@ static gboolean read_central_dir(ZipReader* zip, GError** error) {
     for (guint64 n = 0; n < n_entries; n++) {
         if (pos + CENTRAL_HEADER_SIZE > cd_size || memcmp(cd + pos, "PK\x01\x02", 4) != 0) {
             g_free(cd);
-            return set_invalid(error, "damaged central directory");
+            return set_invalid(error, _("damaged central directory"));
         }
         const guchar* h = cd + pos;
         gsize name_len = get_u16(h + 28);
@@ -186,7 +187,7 @@ static gboolean read_central_dir(ZipReader* zip, GError** error) {
         gsize comment_len = get_u16(h + 32);
         if (pos + CENTRAL_HEADER_SIZE + name_len + extra_len + comment_len > cd_size) {
             g_free(cd);
-            return set_invalid(error, "damaged central directory");
+            return set_invalid(error, _("damaged central directory"));
         }
 
         ZipEntry* e = g_new0(ZipEntry, 1);
@@ -223,7 +224,7 @@ static ZipReader* zip_reader_new_from_stream(GInputStream* stream, GError** erro
     if (!G_IS_SEEKABLE(stream) || !g_seekable_can_seek(G_SEEKABLE(stream)) ||
         !g_seekable_seek(G_SEEKABLE(stream), 0, G_SEEK_END, NULL, error)) {
         if (error != NULL && *error == NULL) {
-            g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "Stream is not seekable");
+            g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("Stream is not seekable"));
         }
         zip_reader_free(zip);
         return NULL;
@@ -328,26 +329,26 @@ static gboolean inflate_raw(const guchar* in, gsize in_len, guchar* out, gsize s
         out_pos += nwritten;
         if (res == G_CONVERTER_ERROR) {
             g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
-                        "Damaged ZIP entry %s: %s", name, err->message);
+                        _("Damaged ZIP entry %1$s: %2$s"), name, err->message);
             g_error_free(err);
             break;
         }
         if (out_pos > size) {
             g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
-                        "Damaged ZIP entry %s: more data than announced", name);
+                        _("Damaged ZIP entry %s: more data than announced"), name);
             break;
         }
         if (res == G_CONVERTER_FINISHED) {
             ok = (out_pos == size);
             if (!ok) {
                 g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
-                            "Damaged ZIP entry %s: less data than announced", name);
+                            _("Damaged ZIP entry %s: less data than announced"), name);
             }
             break;
         }
         if (nread == 0 && nwritten == 0) {
             g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
-                        "Damaged ZIP entry %s: truncated data", name);
+                        _("Damaged ZIP entry %s: truncated data"), name);
             break;
         }
     }
@@ -359,28 +360,29 @@ GBytes* zip_reader_read(ZipReader* zip, const gchar* name, gsize max_size, GErro
     g_return_val_if_fail(zip != NULL && name != NULL, NULL);
     const ZipEntry* e = g_hash_table_lookup(zip->by_name, name);
     if (e == NULL) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "No entry %s in the archive", name);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("No entry %s in the archive"), name);
         return NULL;
     }
     if (e->flags & FLAG_ENCRYPTED) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "ZIP entry %s is encrypted", name);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("ZIP entry %s is encrypted"), name);
         return NULL;
     }
     if (e->method != METHOD_STORED && e->method != METHOD_DEFLATED) {
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                    "ZIP entry %s uses an unsupported compression method (%u)", name, e->method);
+                    _("ZIP entry %1$s uses an unsupported compression method (%2$u)"), name, e->method);
         return NULL;
     }
     if (e->size > max_size) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_MESSAGE_TOO_LARGE,
-                    "ZIP entry %s is too large (%" G_GUINT64_FORMAT " bytes)", name, e->size);
+        gchar* size = g_format_size(e->size);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_MESSAGE_TOO_LARGE, _("ZIP entry %1$s is too large (%2$s)"), name, size);
+        g_free(size);
         return NULL;
     }
     /* DEFLATE never grows data by more than a few bytes per 16 KB block */
     if ((e->method == METHOD_STORED && e->comp_size != e->size) ||
         (e->method == METHOD_DEFLATED && e->comp_size > e->size + e->size / 64 + 1024)) {
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
-                    "Damaged ZIP entry %s: inconsistent sizes", name);
+                    _("Damaged ZIP entry %s: inconsistent sizes"), name);
         return NULL;
     }
 
@@ -389,7 +391,7 @@ GBytes* zip_reader_read(ZipReader* zip, const gchar* name, gsize max_size, GErro
         return NULL;
     }
     if (memcmp(local, "PK\x03\x04", 4) != 0) {
-        set_invalid(error, "bad local file header");
+        set_invalid(error, _("bad local file header"));
         return NULL;
     }
     guint64 data_offset = e->local_offset + LOCAL_HEADER_SIZE + get_u16(local + 26) + get_u16(local + 28);

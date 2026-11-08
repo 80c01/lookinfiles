@@ -1,5 +1,6 @@
 /* PowerPoint presentations drawn like PowerPoint (see pptx.h) */
 #include "pptx.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -175,8 +176,9 @@ PreviewDoc* pptx_file_preview(const gchar* path, const gchar* name, const gchar*
     if (n_slides != NULL) {
         *n_slides = n;
     }
-    GString* subtitle = g_string_new("PowerPoint presentation");
-    g_string_append_printf(subtitle, " · %u %s", n, n == 1 ? "slide" : "slides");
+    GString* subtitle = g_string_new(_("PowerPoint presentation"));
+    g_string_append(subtitle, " · ");
+    g_string_append_printf(subtitle, ngettext("%u slide", "%u slides", n), n);
     if (size_text != NULL) {
         g_string_append_printf(subtitle, " · %s", size_text);
     }

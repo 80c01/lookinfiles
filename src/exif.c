@@ -1,5 +1,6 @@
 /* EXIF photo details (see exif.h). */
 #include "exif.h"
+#include "i18n.h"
 
 #include <glib/gstdio.h>
 #include <math.h>
@@ -425,7 +426,7 @@ gchar** exif_summary_lines(const ExifInfo* info) {
         }
     }
     if (info->flash > 0 && (info->flash & 1)) {
-        g_string_append_printf(exposure, "%sflash", exposure->len > 0 ? " · " : "");
+        g_string_append_printf(exposure, "%s%s", exposure->len > 0 ? " · " : "", _("flash"));
     }
     if (exposure->len > 0) {
         g_ptr_array_add(lines, g_string_free(exposure, FALSE));
@@ -436,9 +437,9 @@ gchar** exif_summary_lines(const ExifInfo* info) {
     if (info->date_taken != NULL) {
         gint y, mo, d, h, mi;
         if (sscanf(info->date_taken, "%d:%d:%d %d:%d", &y, &mo, &d, &h, &mi) == 5) {
-            g_ptr_array_add(lines, g_strdup_printf("Taken %04d-%02d-%02d %02d:%02d", y, mo, d, h, mi));
+            g_ptr_array_add(lines, g_strdup_printf(_("Taken %1$04d-%2$02d-%3$02d %4$02d:%5$02d"), y, mo, d, h, mi));
         } else {
-            g_ptr_array_add(lines, g_strdup_printf("Taken %s", info->date_taken));
+            g_ptr_array_add(lines, g_strdup_printf(_("Taken %s"), info->date_taken));
         }
     }
     if (info->has_gps) {
@@ -453,10 +454,11 @@ gchar** exif_summary_lines(const ExifInfo* info) {
     }
     GString* other = g_string_new(NULL);
     if (info->software != NULL) {
-        g_string_append_printf(other, "Edited with %s", info->software);
+        g_string_append_printf(other, _("Edited with %s"), info->software);
     }
     if (info->artist != NULL) {
-        g_string_append_printf(other, "%sBy %s", other->len > 0 ? " · " : "", info->artist);
+        if (other->len > 0) g_string_append(other, " · ");
+        g_string_append_printf(other, _("By %s"), info->artist);
     }
     if (info->copyright != NULL) {
         g_string_append_printf(other, "%s%s%s", other->len > 0 ? " · " : "",

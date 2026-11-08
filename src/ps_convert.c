@@ -1,4 +1,5 @@
 #include "ps_convert.h"
+#include "i18n.h"
 #include <string.h>
 #include <sys/stat.h>
 #include <utime.h>
@@ -140,9 +141,13 @@ static gboolean run_tool(gchar** argv, const gchar* cwd, const gchar* output,
         if (detail == NULL) {
             detail = first_error_line(err != NULL && err[0] != '\0' ? err : out);
         }
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "%s exited with code %d%s%s",
-                    argv[0], g_subprocess_get_exit_status(proc),
-                    detail != NULL ? ": " : "", detail != NULL ? detail : "");
+        if (detail != NULL) {
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("%1$s exited with code %2$d: %3$s"), argv[0],
+                        g_subprocess_get_exit_status(proc), detail);
+        } else {
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("%1$s exited with code %2$d"), argv[0],
+                        g_subprocess_get_exit_status(proc));
+        }
         g_free(detail);
         ok = FALSE;
     }
@@ -156,13 +161,13 @@ gchar* ps_convert_to_pdf(const gchar* path, PsSource source, gint last_page,
                          GCancellable* cancellable, GError** error) {
     GStatBuf st;
     if (g_stat(path, &st) != 0) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "cannot read %s", path);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("cannot read %s"), path);
         return NULL;
     }
     gchar* gs = g_find_program_in_path("gs");
     gchar* dvips = source == PS_SOURCE_DVI ? g_find_program_in_path("dvips") : NULL;
     if (gs == NULL || (source == PS_SOURCE_DVI && dvips == NULL)) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "%s is not installed",
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("%s is not installed"),
                     gs == NULL ? "ghostscript (gs)" : "dvips");
         g_free(gs);
         g_free(dvips);
@@ -220,7 +225,7 @@ gchar* ps_convert_to_pdf(const gchar* path, PsSource source, gint last_page,
             out = NULL;
         } else {
             if (ok && error != NULL && *error == NULL) {
-                g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "cannot store the converted file");
+                g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("cannot store the converted file"));
             }
             g_remove(part);
         }

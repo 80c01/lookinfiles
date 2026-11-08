@@ -1,5 +1,6 @@
 /* OLE2 compound file reader (see ole_reader.h) */
 #include "ole_reader.h"
+#include "i18n.h"
 #include <gio/gio.h>
 #include <string.h>
 
@@ -49,7 +50,7 @@ static guint32 u32(const guint8* p) {
 }
 
 static gboolean fail(GError** error, const gchar* what) {
-    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "damaged compound file: %s", what);
+    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("damaged compound file: %s"), what);
     return FALSE;
 }
 
@@ -72,7 +73,7 @@ static GByteArray* read_chain(const OleReader* ole, guint32 start, gsize limit, 
         if (p == NULL || loop) {
             g_byte_array_free(out, TRUE);
             g_free(seen);
-            fail(error, p == NULL ? "sector out of range" : "loop in a sector chain");
+            fail(error, p == NULL ? _("sector out of range") : _("loop in a sector chain"));
             return NULL;
         }
         seen[s / 8] |= (guint8)(1u << (s % 8));
@@ -87,7 +88,7 @@ static gboolean load_fat(OleReader* ole, const guint8* h, GError** error) {
     guint32 n_fat_sectors = u32(h + 0x2C);
     guint32 difat_start = u32(h + 0x44);
     guint32 n_difat = u32(h + 0x48);
-    if (n_fat_sectors == 0 || n_fat_sectors > ole->n_sectors) return fail(error, "bad FAT size");
+    if (n_fat_sectors == 0 || n_fat_sectors > ole->n_sectors) return fail(error, _("bad FAT size"));
     guint32 per = (guint32)(ole->ssz / 4);
     guint32* fat_sectors = g_new(guint32, n_fat_sectors);
     guint32 k = 0;
@@ -97,14 +98,14 @@ static gboolean load_fat(OleReader* ole, const guint8* h, GError** error) {
         const guint8* p = sector(ole, d);
         if (p == NULL) {
             g_free(fat_sectors);
-            return fail(error, "DIFAT sector out of range");
+            return fail(error, _("DIFAT sector out of range"));
         }
         for (guint32 j = 0; j < per - 1 && k < n_fat_sectors; j++) fat_sectors[k++] = u32(p + j * 4);
         d = u32(p + (per - 1) * 4);
     }
     if (k < n_fat_sectors) {
         g_free(fat_sectors);
-        return fail(error, "incomplete DIFAT");
+        return fail(error, _("incomplete DIFAT"));
     }
     ole->n_fat = n_fat_sectors * per;
     ole->fat = g_new(guint32, ole->n_fat);
@@ -112,7 +113,7 @@ static gboolean load_fat(OleReader* ole, const guint8* h, GError** error) {
         const guint8* p = sector(ole, fat_sectors[i]);
         if (p == NULL) {
             g_free(fat_sectors);
-            return fail(error, "FAT sector out of range");
+            return fail(error, _("FAT sector out of range"));
         }
         for (guint32 j = 0; j < per; j++) ole->fat[i * per + j] = u32(p + j * 4);
     }
@@ -140,7 +141,7 @@ static gboolean load_dir(OleReader* ole, guint32 start, GError** error) {
     ole->n_dir = raw->len / 128;
     if (ole->n_dir == 0) {
         g_byte_array_free(raw, TRUE);
-        return fail(error, "empty directory");
+        return fail(error, _("empty directory"));
     }
     ole->dir = g_new0(DirEntry, ole->n_dir);
     for (guint32 i = 0; i < ole->n_dir; i++) {
@@ -157,7 +158,7 @@ static gboolean load_dir(OleReader* ole, guint32 start, GError** error) {
         if (ole->shift == 12) d->size |= (guint64)u32(e + 0x7C) << 32;
     }
     g_byte_array_free(raw, TRUE);
-    if (ole->dir[0].type != OLE_ENTRY_ROOT) return fail(error, "no root entry");
+    if (ole->dir[0].type != OLE_ENTRY_ROOT) return fail(error, _("no root entry"));
     return TRUE;
 }
 
@@ -203,13 +204,13 @@ static void walk(OleReader* ole, guint32 child, const gchar* prefix, gint depth,
 static OleReader* open_buffer(OleReader* ole, GError** error) {
     const guint8* h = ole->buf;
     if (ole->len < 512 || memcmp(h, OLE_MAGIC, 8) != 0) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a compound file");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a compound file"));
         ole_reader_free(ole);
         return NULL;
     }
     guint shift = u16(h + 0x1E);
     if (u16(h + 0x1C) != 0xFFFE || (shift != 9 && shift != 12) || u16(h + 0x20) != 6) {
-        fail(error, "unsupported header");
+        fail(error, _("unsupported header"));
         ole_reader_free(ole);
         return NULL;
     }
@@ -326,17 +327,18 @@ static gboolean load_ministream(OleReader* ole, GError** error) {
 
 GBytes* ole_reader_read_entry(OleReader* ole, guint i, gsize max_size, GError** error) {
     if (ole == NULL || i >= ole->order->len) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "no such stream");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("no such stream"));
         return NULL;
     }
     const DirEntry* d = &ole->dir[g_array_index(ole->order, guint32, i)];
     if (d->type != OLE_ENTRY_STREAM) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_IS_DIRECTORY, "%s is a storage", d->name);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_IS_DIRECTORY, _("%s is a storage"), d->name);
         return NULL;
     }
     if (d->size > max_size) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NO_SPACE, "%s is too large (%" G_GUINT64_FORMAT " bytes)", d->name,
-                    d->size);
+        gchar* size = g_format_size(d->size);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NO_SPACE, _("%1$s is too large (%2$s)"), d->name, size);
+        g_free(size);
         return NULL;
     }
     gsize size = (gsize)d->size;
@@ -354,7 +356,7 @@ GBytes* ole_reader_read_entry(OleReader* ole, guint i, gsize max_size, GError** 
             if (s == ENDOFCHAIN || s >= ole->n_minifat || off + msz > mlen || (seen[s / 8] & (1u << (s % 8))) != 0) {
                 g_byte_array_free(out, TRUE);
                 g_free(seen);
-                fail(error, "mini stream chain");
+                fail(error, _("mini stream chain"));
                 return NULL;
             }
             seen[s / 8] |= (guint8)(1u << (s % 8));
@@ -367,7 +369,7 @@ GBytes* ole_reader_read_entry(OleReader* ole, guint i, gsize max_size, GError** 
         if (out == NULL) return NULL;
         if (out->len < size) {
             g_byte_array_free(out, TRUE);
-            fail(error, "stream shorter than its size");
+            fail(error, _("stream shorter than its size"));
             return NULL;
         }
     }
@@ -382,7 +384,7 @@ GBytes* ole_reader_read_entry(OleReader* ole, guint i, gsize max_size, GError** 
 GBytes* ole_reader_read(OleReader* ole, const gchar* path, gsize max_size, GError** error) {
     gint i = ole_reader_find(ole, path);
     if (i < 0) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "no stream %s", path != NULL ? path : "");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("no stream %s"), path != NULL ? path : "");
         return NULL;
     }
     return ole_reader_read_entry(ole, (guint)i, max_size, error);

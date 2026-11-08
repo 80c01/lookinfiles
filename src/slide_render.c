@@ -1,5 +1,6 @@
 /* Slides drawn like PowerPoint (see slide_render.h) */
 #include "slide_render.h"
+#include "i18n.h"
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <math.h>
@@ -676,15 +677,15 @@ PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const 
     guint n = deck->slides->len;
     for (guint i = 0; i < n; i++) {
         const Slide* s = g_ptr_array_index(deck->slides, i);
-        gchar* label = s->title != NULL && s->title[0] != '\0' ? g_strdup_printf("Slide %u · %s", i + 1, s->title)
-                                                               : g_strdup_printf("Slide %u", i + 1);
+        gchar* label = s->title != NULL && s->title[0] != '\0' ? g_strdup_printf(_("Slide %1$u · %2$s"), i + 1, s->title)
+                                                               : g_strdup_printf(_("Slide %u"), i + 1);
         for (gchar* c = label; *c != '\0'; c++) {
             if (*c == '\n') {
                 *c = ' ';
             }
         }
         if (i == max_drawn) {
-            gchar* note = g_strdup_printf("The first %u of %u slides are drawn; the others are listed.", max_drawn, n);
+            gchar* note = g_strdup_printf(_("The first %1$u of %2$u slides are drawn; the others are listed."), max_drawn, n);
             preview_doc_note(doc, note);
             g_free(note);
             preview_doc_append_len(doc, "\n", 1);
@@ -710,7 +711,7 @@ PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const 
         preview_doc_append_len(doc, "\n", 1);
     }
     if (n == 0) {
-        preview_doc_note(doc, "(no slides)");
+        preview_doc_note(doc, _("(no slides)"));
     }
     return doc;
 }

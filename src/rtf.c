@@ -1,5 +1,6 @@
 /* RTF to HTML (see rtf.h). */
 #include "rtf.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <stdlib.h>
@@ -290,7 +291,7 @@ static void end_picture(Rtf* r) {
 
 gchar* rtf_to_html(const gchar* rtf, gsize len, gsize max_text, GError** error) {
     if (len < 5 || strncmp(rtf, "{\\rtf", 5) != 0) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not an RTF document");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not an RTF document"));
         return NULL;
     }
     Rtf r = { 0 };
@@ -454,7 +455,7 @@ gchar* rtf_to_html(const gchar* rtf, gsize len, gsize max_text, GError** error) 
     g_string_append(doc, "</head><body>\n");
     g_string_append_len(doc, r.out->str, (gssize)r.out->len);
     if (r.truncated) {
-        g_string_append(doc, "<hr>\n<p><i>Document truncated: only the beginning is shown.</i></p>\n");
+        g_string_append_printf(doc, "<hr>\n<p><i>%s</i></p>\n", _("Document truncated: only the beginning is shown."));
     }
     g_string_append(doc, "</body></html>\n");
     g_string_free(r.out, TRUE);

@@ -1,5 +1,6 @@
 /* Archive listings for the preview (see archive_listing.h). */
 #include "archive_listing.h"
+#include "i18n.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,18 +44,18 @@ static gboolean is_tar(const guchar* head, gsize len) {
 }
 
 const gchar* archive_listing_format_name(const guchar* head, gsize len) {
-    if (HAS(0, "PK\x03\x04") || HAS(0, "PK\x05\x06")) return "ZIP archive";
-    if (HAS(0, "\x1F\x8B")) return "gzip-compressed file";
-    if (HAS(0, "BZh")) return "bzip2-compressed file";
-    if (HAS(0, "\xFD" "7zXZ")) return "xz-compressed file";
-    if (HAS(0, "\x28\xB5\x2F\xFD")) return "Zstandard-compressed file";
-    if (HAS(0, "LZIP")) return "lzip-compressed file";
-    if (HAS(0, "7z\xBC\xAF\x27\x1C")) return "7-Zip archive";
-    if (HAS(0, "Rar!\x1A\x07")) return "RAR archive";
-    if (HAS(0, "!<arch>\n")) return "ar archive";
-    if (HAS(0, "\xED\xAB\xEE\xDB")) return "RPM package";
-    if (HAS(0, "MSCF")) return "Cabinet archive";
-    if (is_tar(head, len)) return "tar archive";
+    if (HAS(0, "PK\x03\x04") || HAS(0, "PK\x05\x06")) return N_("ZIP archive");
+    if (HAS(0, "\x1F\x8B")) return N_("gzip-compressed file");
+    if (HAS(0, "BZh")) return N_("bzip2-compressed file");
+    if (HAS(0, "\xFD" "7zXZ")) return N_("xz-compressed file");
+    if (HAS(0, "\x28\xB5\x2F\xFD")) return N_("Zstandard-compressed file");
+    if (HAS(0, "LZIP")) return N_("lzip-compressed file");
+    if (HAS(0, "7z\xBC\xAF\x27\x1C")) return N_("7-Zip archive");
+    if (HAS(0, "Rar!\x1A\x07")) return N_("RAR archive");
+    if (HAS(0, "!<arch>\n")) return N_("ar archive");
+    if (HAS(0, "\xED\xAB\xEE\xDB")) return N_("RPM package");
+    if (HAS(0, "MSCF")) return N_("Cabinet archive");
+    if (is_tar(head, len)) return N_("tar archive");
     return NULL;
 }
 
@@ -159,7 +160,7 @@ static ArchiveListing* list_zip(const gchar* path, guint max_entries, GError** e
     if (zip == NULL) {
         return NULL;
     }
-    ArchiveListing* l = listing_new("ZIP archive");
+    ArchiveListing* l = listing_new(N_("ZIP archive"));
     guint n = zip_reader_get_n_entries(zip);
     for (guint i = 0; i < n; i++) {
         ZipEntryInfo info;
@@ -415,7 +416,7 @@ static ArchiveListing* list_gzip(GFileInputStream* file, const guchar* head, gsi
 
     ArchiveListing* l;
     if (got >= TAR_BLOCK && is_tar(first, got)) {
-        l = listing_new("gzip-compressed tar archive");
+        l = listing_new(N_("gzip-compressed tar archive"));
         /* Restart from the beginning of the decompressed data */
         g_object_unref(in);
         g_seekable_seek(G_SEEKABLE(file), 0, G_SEEK_SET, NULL, NULL);
@@ -425,7 +426,7 @@ static ArchiveListing* list_gzip(GFileInputStream* file, const guchar* head, gsi
         list_tar_stream(l, in, max_entries, TRUE, cancellable);
         g_free(first);
     } else {
-        l = listing_new("gzip-compressed file");
+        l = listing_new(N_("gzip-compressed file"));
         l->single = TRUE;
         l->inner_name = gzip_name(head, head_len);
         l->inner_size = inner_size;
@@ -438,7 +439,7 @@ static ArchiveListing* list_gzip(GFileInputStream* file, const guchar* head, gsi
 /* --- ar --- */
 
 static ArchiveListing* list_ar(GInputStream* in, guint max_entries, GCancellable* cancellable) {
-    ArchiveListing* l = listing_new("ar archive");
+    ArchiveListing* l = listing_new(N_("ar archive"));
     skip_bytes(in, 8, cancellable);
     gchar* names = NULL; /* GNU long name table ("//") */
     gsize names_len = 0;
@@ -530,20 +531,36 @@ static const gchar* filter_label(struct archive* a) {
 
 static const gchar* format_label(struct archive* a) {
     switch (archive_format(a) & ARCHIVE_FORMAT_BASE_MASK) {
-    case ARCHIVE_FORMAT_TAR: return "tar archive";
-    case ARCHIVE_FORMAT_CPIO: return "cpio archive";
-    case ARCHIVE_FORMAT_ISO9660: return "ISO image";
-    case ARCHIVE_FORMAT_ZIP: return "ZIP archive";
-    case ARCHIVE_FORMAT_AR: return "ar archive";
-    case ARCHIVE_FORMAT_7ZIP: return "7-Zip archive";
-    case ARCHIVE_FORMAT_CAB: return "Cabinet archive";
-    case ARCHIVE_FORMAT_RAR: return "RAR archive";
-    case ARCHIVE_FORMAT_RAR_V5: return "RAR archive";
-    case ARCHIVE_FORMAT_LHA: return "LHA archive";
-    case ARCHIVE_FORMAT_XAR: return "xar archive";
-    case ARCHIVE_FORMAT_WARC: return "WARC archive";
+    case ARCHIVE_FORMAT_TAR: return N_("tar archive");
+    case ARCHIVE_FORMAT_CPIO: return N_("cpio archive");
+    case ARCHIVE_FORMAT_ISO9660: return N_("ISO image");
+    case ARCHIVE_FORMAT_ZIP: return N_("ZIP archive");
+    case ARCHIVE_FORMAT_AR: return N_("ar archive");
+    case ARCHIVE_FORMAT_7ZIP: return N_("7-Zip archive");
+    case ARCHIVE_FORMAT_CAB: return N_("Cabinet archive");
+    case ARCHIVE_FORMAT_RAR: return N_("RAR archive");
+    case ARCHIVE_FORMAT_RAR_V5: return N_("RAR archive");
+    case ARCHIVE_FORMAT_LHA: return N_("LHA archive");
+    case ARCHIVE_FORMAT_XAR: return N_("xar archive");
+    case ARCHIVE_FORMAT_WARC: return N_("WARC archive");
     default: return "archive";
     }
+}
+
+gchar* archive_listing_format_label(const gchar* format) {
+    if (format == NULL) return NULL;
+    const gchar* translated = _(format);
+    if (translated != format) return g_strdup(translated);
+    /* "xz-compressed tar archive" composed from a libarchive filter */
+    const gchar* dash = strstr(format, "-compressed ");
+    if (dash != NULL) {
+        gchar* filter = g_strndup(format, (gsize)(dash - format));
+        /* TRANSLATORS: "xz-compressed tar archive": %1$s is the filter, %2$s the archive format */
+        gchar* label = g_strdup_printf(_("%1$s-compressed %2$s"), filter, _(dash + strlen("-compressed ")));
+        g_free(filter);
+        return label;
+    }
+    return g_strdup(format);
 }
 
 /* Interned "xz-compressed tar archive" (the listing keeps a static string) */
@@ -586,13 +603,13 @@ static ArchiveListing* list_libarchive(const gchar* path, guint max_entries, GCa
         if (a == NULL || archive_read_next_header(a, &entry) != ARCHIVE_OK || filter_label(a) == NULL) {
             g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "%s",
                         a != NULL && archive_error_string(a) != NULL ? archive_error_string(a)
-                                                                     : "unknown archive format");
+                                                                     : _("unknown archive format"));
             if (a != NULL) {
                 archive_read_free(a);
             }
             return NULL;
         }
-        ArchiveListing* l = listing_new(compose_format(filter_label(a), "file"));
+        ArchiveListing* l = listing_new(compose_format(filter_label(a), N_("file")));
         l->single = TRUE;
         guchar* data = g_malloc(ARCHIVE_INNER_HEAD);
         gsize got = 0;
@@ -608,7 +625,7 @@ static ArchiveListing* list_libarchive(const gchar* path, guint max_entries, GCa
         return l;
     }
 
-    ArchiveListing* l = listing_new("archive");
+    ArchiveListing* l = listing_new(N_("archive"));
     gint64 start = g_get_monotonic_time();
     while (rc == ARCHIVE_OK || rc == ARCHIVE_WARN) {
         const gchar* name = archive_entry_pathname_utf8(entry);
@@ -668,7 +685,7 @@ ArchiveListing* archive_list(const gchar* path, guint max_entries, GCancellable*
     } else if (len >= 8 && memcmp(head, "!<arch>\n", 8) == 0) {
         l = list_ar(G_INPUT_STREAM(stream), max_entries, cancellable);
     } else if (is_tar(head, len)) {
-        l = listing_new("tar archive");
+        l = listing_new(N_("tar archive"));
         list_tar_stream(l, G_INPUT_STREAM(stream), max_entries, FALSE, cancellable);
     } else {
 #ifdef HAVE_LIBARCHIVE
@@ -677,7 +694,7 @@ ArchiveListing* archive_list(const gchar* path, guint max_entries, GCancellable*
 #endif
         const gchar* format = archive_listing_format_name(head, len);
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "%s",
-                    format != NULL ? format : "unknown archive format");
+                    format != NULL ? _(format) : _("unknown archive format"));
     }
     g_object_unref(stream);
     return l;

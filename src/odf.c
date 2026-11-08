@@ -1,5 +1,6 @@
 /* OpenDocument text and presentations to HTML (see odf.h). */
 #include "odf.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <stdlib.h>
@@ -297,7 +298,9 @@ static void body_start(GMarkupParseContext* ctx, const gchar* name, const gchar*
         push_closer(b, "");
     } else if (strcmp(name, "draw:page") == 0) {
         b->slides++;
-        g_string_append_printf(b->out, "%s<h2>Slide %u</h2>\n", b->slides > 1 ? "<hr>\n" : "", b->slides);
+        gchar* slide = g_strdup_printf(_("Slide %u"), b->slides);
+        g_string_append_printf(b->out, "%s<h2>%s</h2>\n", b->slides > 1 ? "<hr>\n" : "", slide);
+        g_free(slide);
         push_closer(b, "");
     } else if (strcmp(name, "draw:frame") == 0) {
         const gchar* cls = zip_xml_attr(names, values, "class");
@@ -409,7 +412,7 @@ gchar* odf_file_to_html(const gchar* path, gsize max_text, OdfInfo* info, GError
     }
     if (!zip_reader_has(zip, "content.xml")) {
         zip_reader_free(zip);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not an OpenDocument file (no content.xml)");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not an OpenDocument file (no content.xml)"));
         return NULL;
     }
     StylesParse sp = { g_hash_table_new_full(g_str_hash, g_str_equal, g_free, odf_style_free),
@@ -444,7 +447,7 @@ gchar* odf_file_to_html(const gchar* path, gsize max_text, OdfInfo* info, GError
         g_string_append(doc, "</head><body>\n");
         g_string_append_len(doc, b.out->str, (gssize)b.out->len);
         if (b.truncated) {
-            g_string_append(doc, "<hr>\n<p><i>Document truncated: only the beginning is shown.</i></p>\n");
+            g_string_append_printf(doc, "<hr>\n<p><i>%s</i></p>\n", _("Document truncated: only the beginning is shown."));
         }
         g_string_append(doc, "</body></html>\n");
         html = g_string_free(doc, FALSE);

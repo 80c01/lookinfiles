@@ -1,5 +1,6 @@
 /* Excel 97-2003 and 5.0 / 95 workbooks (see xls_reader.h) */
 #include "xls_reader.h"
+#include "i18n.h"
 #include <gio/gio.h>
 #include <math.h>
 #include <string.h>
@@ -453,7 +454,7 @@ Workbook* xls_reader_read(OleReader* ole, guint max_sheets, guint max_rows, gboo
         switch (type) {
             case REC_FILEPASS:
                 if (encrypted != NULL) *encrypted = TRUE;
-                g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED, "the workbook is encrypted");
+                g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED, _("the workbook is encrypted"));
                 ok = FALSE;
                 break;
             case REC_CODEPAGE:
@@ -469,7 +470,7 @@ Workbook* xls_reader_read(OleReader* ole, guint max_sheets, guint max_rows, gboo
                     gchar* name = read_string(&b, d + 6, d + len, 1);
                     g_array_append_val(positions, p);
                     g_array_append_val(kinds, kind);
-                    g_ptr_array_add(names, name != NULL ? name : g_strdup("Sheet"));
+                    g_ptr_array_add(names, name != NULL ? name : g_strdup(_("Sheet")));
                 }
                 break;
             case REC_SST:
@@ -494,13 +495,13 @@ Workbook* xls_reader_read(OleReader* ole, guint max_sheets, guint max_rows, gboo
         }
     }
     if (ok && names->len == 0) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "the workbook has no sheet");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("the workbook has no sheet"));
         ok = FALSE;
     } else if (!ok && error != NULL && *error == NULL) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not an Excel workbook");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not an Excel workbook"));
     }
     if (ok) {
-        book = spreadsheet_workbook_new(b.biff8 ? "Excel 97-2003 workbook" : "Excel 5.0/95 workbook");
+        book = spreadsheet_workbook_new(b.biff8 ? _("Excel 97-2003 workbook") : _("Excel 5.0/95 workbook"));
         guint loaded = 0;
         for (guint i = 0; i < names->len; i++) {
             Sheet* sheet = spreadsheet_sheet_add(book, g_ptr_array_index(names, i));

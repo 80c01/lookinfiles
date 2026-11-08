@@ -1,5 +1,6 @@
 /* EPUB e-books to HTML (see epub.h). */
 #include "epub.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -286,7 +287,7 @@ gchar* epub_file_to_html(const gchar* path, gsize max_text, EpubInfo* info, GErr
     if (!zip_xml_parse(zip, "META-INF/container.xml", 1024 * 1024, FALSE, &container_parser, &opf_part, error) ||
         opf_part == NULL) {
         if (error != NULL && *error == NULL) {
-            g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not an EPUB (no package document)");
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not an EPUB (no package document)"));
         }
         g_free(opf_part);
         zip_reader_free(zip);
@@ -366,7 +367,7 @@ gchar* epub_file_to_html(const gchar* path, gsize max_text, EpubInfo* info, GErr
             zip_xml_parse(zip, ncx->href, MAX_PART, TRUE, &nav_parser, &toc, NULL);
         }
         if (toc.entries->len > 0) {
-            g_string_append(out, "<h2>Contents</h2>\n<ul>\n");
+            g_string_append_printf(out, "<h2>%s</h2>\n<ul>\n", _("Contents"));
             for (guint i = 0; i < toc.entries->len; i++) {
                 g_string_append_printf(out, "<li>%s</li>\n", (gchar*)g_ptr_array_index(toc.entries, i));
             }
@@ -395,7 +396,7 @@ gchar* epub_file_to_html(const gchar* path, gsize max_text, EpubInfo* info, GErr
             }
         }
         if (cut) {
-            g_string_append(out, "<hr>\n<p><i>Only the first chapters are shown.</i></p>\n");
+            g_string_append_printf(out, "<hr>\n<p><i>%s</i></p>\n", _("Only the first chapters are shown."));
         }
         g_string_append(out, "</body></html>\n");
         html = g_string_free(out, FALSE);
