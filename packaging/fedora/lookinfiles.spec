@@ -9,6 +9,7 @@ Source0:        %{url}/archive/refs/tags/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:  gcc
 BuildRequires:  make
+BuildRequires:  gettext
 BuildRequires:  pkgconfig
 BuildRequires:  desktop-file-utils
 BuildRequires:  libappstream-glib
@@ -44,8 +45,9 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/io.github
 
 %install
 %make_install PREFIX=/usr VERSION=%{version}
+%find_lang %{name}
 
-%files
+%files -f %{name}.lang
 %license LICENSE
 %doc README.md CHANGELOG.md
 %{_bindir}/lookinfiles
