@@ -8,7 +8,7 @@
  * file then one per occurrence (line number, line, the name in bold).
  * Enter or a double click opens the location in an editor tab; the tab's
  * close button removes it. */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "code_nav.h"
 
 /* References of the identifier at the cursor of tab. FALSE (and a message)

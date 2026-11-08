@@ -1,7 +1,7 @@
 #ifndef GAME_FIGHTER_H
 #define GAME_FIGHTER_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 GtkWidget* game_fighter_create_tab(AppData* app);
 

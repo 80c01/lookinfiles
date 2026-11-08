@@ -36,7 +36,7 @@ mkdir -p "${STAGE_DIR}"
 
 cp "${EXE}" "${STAGE_DIR}/lookinfiles.exe"
 
-# Translations (make builds them in build/locale; src/i18n.c finds share/locale
+# Translations (make builds them in build/locale; src/core/i18n.c finds share/locale
 # next to the executable)
 if [ -d build/locale ]; then
     mkdir -p "${STAGE_DIR}/share/locale"

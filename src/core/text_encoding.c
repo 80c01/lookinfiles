@@ -1,5 +1,5 @@
 /* Text encoding detection and conversion (see text_encoding.h). */
-#include "text_encoding.h"
+#include "core/text_encoding.h"
 
 #include <string.h>
 

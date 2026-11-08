@@ -1,6 +1,6 @@
 /* Previews of mail messages (see mail_view.h) */
 #include "mail_view.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include <string.h>
 
 #define MAX_FORWARD_DEPTH 3

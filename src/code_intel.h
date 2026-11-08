@@ -12,7 +12,7 @@
  * the tab (not installed, failed, or the capability is missing): the
  * caller then uses the built-in index. Once TRUE, the callback is always
  * called, with NULL results when the server did not answer. */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "lsp_protocol.h"
 
 /* A location with a byte column (LspLocation, column converted) */

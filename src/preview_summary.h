@@ -6,7 +6,7 @@
  * Canvas notes (directories).
  * Columns are padded with spaces: display them in a monospace font.
  * No widgets (unit-tested in tests/). */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "explorer_row.h"
 #include "remote_store.h"
 

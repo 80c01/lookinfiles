@@ -1,14 +1,14 @@
 /* Themes in the running application: switching, zoom and the Appearance
  * page of the Preferences dialog (see themes.h). */
 #include "themes.h"
-#include "i18n.h"
-#include "app_events.h"
+#include "core/i18n.h"
+#include "core/app_events.h"
 #include "dialog.h"
 #include "editor.h"
 #include "editor_modes.h"
 #include "fonts.h"
 #include "icon_sets.h"
-#include "file_types.h"
+#include "core/file_types.h"
 #include "image_theme.h"
 #include "image_utils.h"
 #include "minimap.h"

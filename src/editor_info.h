@@ -4,7 +4,7 @@
 /* What the bar of an editor tab tells about its file: git branch, relative
  * path, language, code navigation backend and diagnostics. Each mode
  * (editor_modes) shows it in its own style. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 typedef struct {
     gchar* branch;      /* git branch of the file's repository, NULL outside one */

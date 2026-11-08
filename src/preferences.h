@@ -12,8 +12,8 @@
  *
  * The values are kept in settings.ini (settings_store.h); command-line
  * options win over them. */
-#include "app_types.h"
-#include "settings_store.h"
+#include "core/app_types.h"
+#include "core/settings_store.h"
 
 #define PREFERENCES_APPEARANCE "appearance"
 

@@ -5,7 +5,7 @@
  * entries (icon, name, size, date). Reads one directory level only, in a
  * worker thread started after a short delay, so moving quickly through the
  * explorer never waits on a directory. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Show the overview of directory full (display name name) in app->buffer.
  * Cancels the current preview task and replaces app->preview_cancellable. */

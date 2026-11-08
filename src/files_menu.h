@@ -6,7 +6,7 @@
  * move to the trash, copy the path, bookmark, open a terminal in a folder;
  * on an empty area, new file / folder and undo. Same actions as the keys.
  * Also the mouse's back / forward buttons (folder history). */
-#include "app_types.h"
+#include "core/app_types.h"
 
 void files_menu_attach(AppData* app);
 

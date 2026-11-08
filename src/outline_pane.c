@@ -1,7 +1,7 @@
 /* A tagbar beside some content (see outline_pane.h) */
 #include "outline_pane.h"
 #include "icons.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "panels.h"
 
 #define DEFAULT_WIDTH 180

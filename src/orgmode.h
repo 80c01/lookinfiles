@@ -1,7 +1,7 @@
 #ifndef ORGMODE_H
 #define ORGMODE_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Orgmode global fold states */
 enum {

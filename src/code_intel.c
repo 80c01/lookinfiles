@@ -1,7 +1,7 @@
 /* Language servers for code navigation (see code_intel.h) */
 #include "code_intel.h"
-#include "app_events.h"
-#include "app_paths.h"
+#include "core/app_events.h"
+#include "core/app_paths.h"
 #include "text_tags.h"
 #include "code_index.h"
 #include "editor.h"

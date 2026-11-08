@@ -1,5 +1,5 @@
 #include "dir_summary.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <string.h>
 

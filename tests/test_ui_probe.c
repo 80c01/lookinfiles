@@ -1,5 +1,5 @@
-/* Unit tests for src/ui_probe.c: SIGUSR2 writes a counter once idle. */
-#include "ui_probe.h"
+/* Unit tests for src/core/ui_probe.c: SIGUSR2 writes a counter once idle. */
+#include "core/ui_probe.h"
 
 #include <glib/gstdio.h>
 #ifdef G_OS_UNIX

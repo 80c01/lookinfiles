@@ -1,6 +1,6 @@
 /* EXIF photo details (see exif.h). */
 #include "exif.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <glib/gstdio.h>
 #include <math.h>

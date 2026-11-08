@@ -1,7 +1,7 @@
 #ifndef NOTES_H
 #define NOTES_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Notes & Notebooks Manager
  * Manages hierarchical notebooks (carnets de notes), notes, and a trash bin (corbeille).

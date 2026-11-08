@@ -1,6 +1,6 @@
 /* BitTorrent metainfo (.torrent) bencode parser and preview builder. */
 #include "torrent_info.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>

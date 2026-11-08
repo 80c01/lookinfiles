@@ -1,8 +1,8 @@
 /* File type detection (by name, and by content: magic numbers) and icons.
  * No AppData, no widgets; the only I/O is file_kind_of_path() (unit-tested in tests/). */
-#include "file_types.h"
-#include "i18n.h"
-#include "text_encoding.h"
+#include "core/file_types.h"
+#include "core/i18n.h"
+#include "core/text_encoding.h"
 
 #include <glib/gstdio.h>
 #include <stdio.h>

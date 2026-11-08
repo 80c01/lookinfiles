@@ -4,7 +4,7 @@
 /* The text view of an editor tab: view, scroll, minimap, mode lines and the
  * view's controllers, around a buffer that the views of one file share (a
  * split view, editor_split_tab()) */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Build tab's widgets (tab->view, scroll, container, minimap, mode state)
  * showing buffer. tab->path, name and mode are set; buffer is not owned. */

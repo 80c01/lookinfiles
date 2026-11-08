@@ -1,7 +1,7 @@
 #ifndef GAME_ZORK_H
 #define GAME_ZORK_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 GtkWidget* game_zork_create_tab(AppData* app);
 

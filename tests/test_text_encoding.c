@@ -1,5 +1,5 @@
-/* Unit tests for src/text_encoding.c. */
-#include "text_encoding.h"
+/* Unit tests for src/core/text_encoding.c. */
+#include "core/text_encoding.h"
 
 #include <string.h>
 

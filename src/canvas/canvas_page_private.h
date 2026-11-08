@@ -5,7 +5,7 @@
  * canvas_keys.c, canvas_drag.c, canvas_clip.c, canvas_rotate.c): the page state and its core helpers,
  * defined in canvas_page.c. */
 
-#include "app_types.h"
+#include "core/app_types.h"
 #include "canvas/canvas_format_bar.h"
 #include "canvas/canvas_history.h"
 #include "canvas/canvas_item.h"

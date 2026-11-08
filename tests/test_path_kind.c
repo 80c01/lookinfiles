@@ -1,5 +1,5 @@
-/* Unit tests for src/path_kind.c: path kinds read in a worker thread and kept. */
-#include "path_kind.h"
+/* Unit tests for src/core/path_kind.c: path kinds read in a worker thread and kept. */
+#include "core/path_kind.h"
 
 #include <glib/gstdio.h>
 

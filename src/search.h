@@ -1,7 +1,7 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Search state: created before the bars, freed at exit */
 void search_init(AppData* app);

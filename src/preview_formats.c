@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "archive_listing.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "card_view.h"
 #include "cert_view.h"
 #include "class_info.h"
@@ -32,7 +32,7 @@
 #include "pptx.h"
 #include "rtf.h"
 #include "spreadsheet.h"
-#include "text_encoding.h"
+#include "core/text_encoding.h"
 #include "sqlite_view.h"
 #include "pcap_info.h"
 #include "pyc_info.h"

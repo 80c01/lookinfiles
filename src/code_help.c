@@ -3,7 +3,7 @@
 #include "text_tags.h"
 #include "code_intel.h"
 #include "code_scan.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "markdown.h"
 #include "theme.h"
 #include <string.h>

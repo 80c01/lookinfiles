@@ -1,7 +1,7 @@
 #ifndef GIT_TAB_H
 #define GIT_TAB_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Initialize the Git commits tab in the preview panel notebook */
 void git_tab_init(AppData* app);

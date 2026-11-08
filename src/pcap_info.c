@@ -1,6 +1,6 @@
 /* PCAP / PCAPNG network packet capture parser and preview builder. */
 #include "pcap_info.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>

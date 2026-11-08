@@ -2,7 +2,7 @@
  * confirmations and notices (see notes_private.h) */
 #include "notes.h"
 #include "notes_private.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "note_types.h"
 #include "notes_store.h"
 #include "notebook_icons.h"

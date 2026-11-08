@@ -3,7 +3,7 @@
  * Notepad find bar (Find Next / Find Prev), Emacs I-search minibuffer (match
  * count, Failing / Wrapped prompt), Vim "/" command line (E486 message). */
 #include "search.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "tree_nav.h"
 #include "panels.h"
 #include "icons.h"

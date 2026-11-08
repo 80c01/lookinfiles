@@ -1,8 +1,8 @@
 /* Text view styling shared by the viewer, editor and preview renderers:
  * Dark+ GtkSourceView scheme, panel background, monospace and syntax language. */
 #include "text_style.h"
-#include "file_types.h"
-#include "app_paths.h"
+#include "core/file_types.h"
+#include "core/app_paths.h"
 #include "palette.h"
 #include "theme.h"
 

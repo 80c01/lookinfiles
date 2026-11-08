@@ -1,6 +1,6 @@
 /* Font file details (see font_info.h). */
 #include "font_info.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>

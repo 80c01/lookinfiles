@@ -4,7 +4,7 @@
 /* Remote machine data model (no widgets): machines and their folders (private
  * to remote_store.c, read with remote_machine_list() / remote_folder_list()), persistence in <config>/remotes.xml, discovery from
  * ~/.ssh/config. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Remote SSH Machine definition */
 typedef struct {

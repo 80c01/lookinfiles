@@ -1,6 +1,6 @@
 /* Manual page formatting (see man_view.h). */
 #include "man_view.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <string.h>
 

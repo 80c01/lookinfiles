@@ -1,9 +1,9 @@
 /* Floating key-binding cheat sheet ('?' / top bar Help button). Keep KEY_HELP in sync with README.md. */
 #include "help.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "icons.h"
 #include "panels.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "nav_keys.h"
 #include "games.h"
 

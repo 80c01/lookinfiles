@@ -1,6 +1,6 @@
 /* X.509 certificates and keys for the preview (see cert_view.h). */
 #include "cert_view.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>

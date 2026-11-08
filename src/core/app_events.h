@@ -23,7 +23,7 @@
  *   APP_EVENT_SAVE_WORKSPACE_BOOKMARK -> session_bookmark_save() (session_bookmark.c)
  *   APP_EVENT_OPEN_WORKSPACE_BOOKMARK -> session_bookmark_open() (session_bookmark.c)
  */
-#include "app_types.h"
+#include "core/app_types.h"
 
 typedef enum {
     /* State shown in the top bar changed: directory, sort, hidden files,

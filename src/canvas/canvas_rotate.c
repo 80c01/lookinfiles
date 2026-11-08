@@ -1,7 +1,7 @@
 /* Shapes turned on the Canvas page (see canvas_rotate.h) */
 #include "canvas/canvas_rotate.h"
 #include "canvas/canvas_geometry.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "canvas/canvas_page_private.h"
 #include "theme.h"
 

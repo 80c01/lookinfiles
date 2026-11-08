@@ -11,7 +11,7 @@
  * Ctrl+Shift+B opens an empty tab; in a tab Ctrl+L goes to the address bar,
  * F5 reloads, Escape stops loading; its close button, a middle click on the
  * tab, Ctrl+W close it. Each workspace has its own browser tabs. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* TRUE when built with WebKitGTK (browser tabs available) */
 gboolean browser_available(void);

@@ -2,7 +2,7 @@
 #define PANELS_H
 
 /* Panel helpers shared by features and window chrome */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "nav_keys.h"
 
 /* Navigation keys of the explorer and viewer panels (nav_keys.h): those of the

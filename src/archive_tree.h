@@ -8,7 +8,7 @@
  * (leaves) whose path is "<archive>!/<entry name>". Selecting an "arc_file"
  * row extracts the entry to the cache (archive_extract_cache_path()) in a
  * worker thread and previews that copy. Read-only. */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "explorer_row.h"
 
 /* A file row that opens as a folder */

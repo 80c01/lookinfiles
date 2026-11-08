@@ -4,7 +4,7 @@
  * the line diff runs on the UI thread (debounced while editing). */
 #include "diff_gutter.h"
 #include "git_utils.h"
-#include "line_diff.h"
+#include "core/line_diff.h"
 #include "palette.h"
 
 #include <pango/pangocairo.h>

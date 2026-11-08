@@ -1,5 +1,5 @@
 #include "markdown.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "markdown_link.h"
 #include "markdown_table.h"
 #include "fonts.h"

@@ -1,6 +1,6 @@
 /* Bar floating next to a Canvas block (see canvas_float.h) */
 #include "canvas/canvas_float.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "theme.h"
 
 #define BAR_GAP 6        /* between the bar and the block */

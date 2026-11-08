@@ -1,6 +1,6 @@
 /* Video tabs of the editor area (see video_tab.h) */
 #include "video_tab.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "editor.h"
 #include "icons.h"
 #include "media_player.h"

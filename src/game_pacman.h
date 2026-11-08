@@ -1,7 +1,7 @@
 #ifndef GAME_PACMAN_H
 #define GAME_PACMAN_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 GtkWidget* game_pacman_create_tab(AppData* app);
 

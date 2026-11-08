@@ -1,7 +1,7 @@
 /* Games mode: secret arcade and retro games explorer view and player. */
 #include "games.h"
-#include "i18n.h"
-#include "app_events.h"
+#include "core/i18n.h"
+#include "core/app_events.h"
 #include "icons.h"
 #include "palette.h"
 #include "fonts.h"

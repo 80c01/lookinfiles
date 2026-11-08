@@ -1,11 +1,11 @@
 /* Reading one entry out of an archive (see archive_extract.h). */
 #include "archive_extract.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
 
-#include "app_paths.h"
+#include "core/app_paths.h"
 #include "zip_reader.h"
 
 #ifdef HAVE_LIBARCHIVE

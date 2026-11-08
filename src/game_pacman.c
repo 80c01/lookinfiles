@@ -3,7 +3,7 @@
 #include "palette.h"
 #include "fonts.h"
 #include "icons.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include <math.h>
 
 #define PAC_COLS 19

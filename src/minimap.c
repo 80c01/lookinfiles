@@ -1,7 +1,7 @@
 #include "minimap.h"
 #include "preview_state.h"
 #include "diff_gutter.h"
-#include "line_diff.h"
+#include "core/line_diff.h"
 #include "minimap_geometry.h"
 #include "palette.h"
 

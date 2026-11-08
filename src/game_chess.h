@@ -1,7 +1,7 @@
 #ifndef GAME_CHESS_H
 #define GAME_CHESS_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 GtkWidget* game_chess_create_tab(AppData* app);
 

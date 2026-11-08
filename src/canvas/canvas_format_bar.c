@@ -2,7 +2,7 @@
 #include "canvas/canvas_format_bar.h"
 #include "canvas/canvas_doc.h"
 #include "canvas/canvas_float.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "icons.h"
 #include "theme.h"
 

@@ -1,7 +1,7 @@
 #ifndef VIDEO_H
 #define VIDEO_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Initialize video preview widgets inside app->preview_stack */
 void video_preview_init(AppData* app);

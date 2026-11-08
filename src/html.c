@@ -1,6 +1,6 @@
 #include "html.h"
 #include "html_text.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "image_utils.h"
 #include "icons.h"
 #include <ctype.h>

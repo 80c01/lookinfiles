@@ -1,7 +1,7 @@
 #ifndef VIDEO_TAB_H
 #define VIDEO_TAB_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Video tabs: a video file played in a tab of the editor panel (Enter on a
  * video in the explorer), one tab per file. The tab moves like an editor tab

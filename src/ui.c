@@ -9,7 +9,7 @@
 #include "preferences.h"
 #include "themes.h"
 #include "panels.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "workspace.h"
 #include "file_list.h"
 #include "terminal.h"

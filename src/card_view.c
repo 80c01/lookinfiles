@@ -1,6 +1,6 @@
 /* Calendars, contacts and desktop entries for the preview (see card_view.h). */
 #include "card_view.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <stdio.h>
 #include <string.h>

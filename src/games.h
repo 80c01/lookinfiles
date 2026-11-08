@@ -2,7 +2,7 @@
 #define GAMES_H
 
 /* Games mode: secret arcade and retro games explorer view and player. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 void games_init(AppData* app);
 void games_append_rows(ExplorerRow* root, AppData* app);

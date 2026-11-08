@@ -1,6 +1,6 @@
 /* GIF decoder (see gif_decoder.h). */
 #include "gif_decoder.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>

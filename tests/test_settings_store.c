@@ -1,6 +1,6 @@
-/* Unit tests for src/settings_store.c: settings.ini */
+/* Unit tests for src/core/settings_store.c: settings.ini */
 #include <string.h>
-#include "settings_store.h"
+#include "core/settings_store.h"
 
 #include <glib/gstdio.h>
 

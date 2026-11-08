@@ -1,6 +1,6 @@
 /* OpenDocument text and presentations to HTML (see odf.h). */
 #include "odf.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <stdlib.h>

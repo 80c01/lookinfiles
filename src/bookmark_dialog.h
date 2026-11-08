@@ -1,7 +1,7 @@
 #ifndef BOOKMARK_DIALOG_H
 #define BOOKMARK_DIALOG_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Dialogs of the bookmarks view (bookmarks.c) and the target helpers they
  * share with it. */

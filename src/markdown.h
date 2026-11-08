@@ -1,7 +1,7 @@
 #ifndef MARKDOWN_H
 #define MARKDOWN_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 void ensure_markdown_tags(GtkTextBuffer* buffer);
 /* Render Markdown into buffer. With a view, tables are grid widgets

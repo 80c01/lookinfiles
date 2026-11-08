@@ -1,9 +1,9 @@
 /* "Load Whole File" bar of the preview (see preview_full.h). */
 #include "preview_full.h"
 
-#include "app_events.h"
+#include "core/app_events.h"
 #include "dialog.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 /* Above this size, ask first: showing the text can freeze the window a while */
 #define PREVIEW_FULL_CONFIRM_BYTES (64 * 1024 * 1024)

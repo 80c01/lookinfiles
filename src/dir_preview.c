@@ -1,7 +1,7 @@
 #include "dir_preview.h"
 #include "git_state.h"
 #include "search.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "fonts.h"
 #include "palette.h"
 #include "text_tags.h"

@@ -3,7 +3,7 @@
 #include "editor.h"
 #include "editor_private.h"
 #include "editor_modes.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "diff_gutter.h"
 
 typedef struct {

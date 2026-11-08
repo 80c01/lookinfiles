@@ -6,7 +6,7 @@
  * buffer (one undo step, folds and cursor kept). */
 #include "editor_modes_private.h"
 #include "editor.h"
-#include "file_types.h"
+#include "core/file_types.h"
 #include "org_doc.h"
 #include "org_table.h"
 #include "org_time.h"

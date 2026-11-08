@@ -3,7 +3,7 @@
 
 #include <gio/gio.h>
 
-#include "file_types.h"
+#include "core/file_types.h"
 #include "preview_doc.h"
 
 /* Registry of the structured previews: one builder per FileKind, run in the

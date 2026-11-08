@@ -1,6 +1,6 @@
-/* Unit tests for src/app_paths.c: per-user directories named after the
+/* Unit tests for src/core/app_paths.c: per-user directories named after the
  * application. */
-#include "app_paths.h"
+#include "core/app_paths.h"
 
 static void test_dirs_use_app_name(void) {
     gchar* cfg = app_config_dir();

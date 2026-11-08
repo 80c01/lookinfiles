@@ -1,6 +1,6 @@
 #include "canvas/canvas_item.h"
 #include "canvas/canvas_crop.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "canvas/canvas_rough_draw.h"
 #include "canvas/canvas_table.h"
 #include "canvas/canvas_text.h"

@@ -1,6 +1,6 @@
 /* Document properties of compound files (see ole_props.h) */
 #include "ole_props.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include <string.h>
 
 #define PROPS_MAX_BYTES (1024 * 1024)

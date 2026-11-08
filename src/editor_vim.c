@@ -14,8 +14,8 @@
 #include "vim_engine.h"
 #include "vim_keys.h"
 #include "nav_keys.h"
-#include "app_events.h"
-#include "text_encoding.h"
+#include "core/app_events.h"
+#include "core/text_encoding.h"
 #include <string.h>
 
 static EditorModeState* state_of(EditorTab* tab) {

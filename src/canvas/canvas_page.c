@@ -1,7 +1,7 @@
 /* Core of the Canvas page (see canvas_page_private.h): focus, undo history,
  * saving, new blocks, the tool. */
 #include "canvas/canvas_page_private.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "canvas/canvas_bind.h"
 #include "canvas/canvas_crop.h"
 #include "canvas/canvas_doc.h"

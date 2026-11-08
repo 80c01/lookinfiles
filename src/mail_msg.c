@@ -1,6 +1,6 @@
 /* Outlook messages (see mail_msg.h) */
 #include "mail_msg.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "rtf.h"
 #include <gio/gio.h>
 #include <string.h>

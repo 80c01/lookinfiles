@@ -2,7 +2,7 @@
 #include "canvas/canvas_table_bar.h"
 #include "canvas/canvas_float.h"
 #include "icons.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #define ACTION_KEY "canvas-table-action"
 

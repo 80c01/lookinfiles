@@ -7,7 +7,7 @@
  * as you type; with nothing typed, the recently opened files come first.
  * Enter shows the file in the explorer (preview), Ctrl+Enter opens it in an
  * editor tab. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 void quick_open_show(AppData* app);
 

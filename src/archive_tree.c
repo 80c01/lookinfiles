@@ -1,6 +1,6 @@
 /* Archives as folders in the explorer (see archive_tree.h). */
 #include "archive_tree.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <string.h>
 

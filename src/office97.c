@@ -1,6 +1,6 @@
 /* Previews of OLE2 compound files (see office97.h) */
 #include "office97.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "doc_reader.h"
 #include "mail_msg.h"
 #include "mail_view.h"

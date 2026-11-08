@@ -1,7 +1,7 @@
 #ifndef TEXT_CHUNKS_H
 #define TEXT_CHUNKS_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Large text files in the preview: the viewer shows the first PREVIEW_BYTES;
  * scrolling near the end loads the next chunk in a worker thread and appends

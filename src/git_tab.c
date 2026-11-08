@@ -1,5 +1,5 @@
 #include "git_tab.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "text_tags.h"
 #include "icons.h"
 #include "panels.h"

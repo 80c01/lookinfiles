@@ -1,6 +1,6 @@
 /* ELF header reader for the preview of executables and libraries */
 #include "elf_info.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <stdio.h>
 #include <string.h>

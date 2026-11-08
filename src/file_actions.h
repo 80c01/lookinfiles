@@ -2,7 +2,7 @@
 #define FILE_ACTIONS_H
 
 /* Explorer file actions (files view) */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Each action runs its dialog and the filesystem change, then returns the path
  * the explorer should select after refreshing (caller frees), or NULL when

@@ -1,7 +1,7 @@
 /* Saved workspace layouts (see layout_store.h) */
 #include "layout_store.h"
-#include "app_paths.h"
-#include "i18n.h"
+#include "core/app_paths.h"
+#include "core/i18n.h"
 #include "tab_tree.h"
 
 #include <stdlib.h>

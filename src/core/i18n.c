@@ -1,4 +1,4 @@
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <locale.h>
 

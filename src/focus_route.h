@@ -5,7 +5,7 @@
  * editor tab), so that every key handler routes a key the same way; tab
  * switching that always lands the focus in the new page; the navigation keys
  * of the global mode in list pages (Git Commits, References). */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "nav_keys.h"
 
 typedef enum {

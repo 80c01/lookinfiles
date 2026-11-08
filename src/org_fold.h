@@ -1,7 +1,7 @@
 #ifndef ORG_FOLD_H
 #define ORG_FOLD_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Folding of the Org file in the preview: headings folded by hand and the
  * global state (Shift+Tab). Kept across previews, freed at exit. */

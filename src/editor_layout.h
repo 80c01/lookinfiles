@@ -5,7 +5,7 @@
  * its splits, their sizes, which panes hold files and the terminal tabs of
  * each pane, without the files themselves (text format: editor_splits in
  * layout_store.h). */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Shape of the current workspace's editor panel; "" when it is not shown
  * or holds no tab. Caller frees. */

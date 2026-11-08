@@ -7,7 +7,7 @@
  * Moving through the list shows each layout in full (layouts_preview_*:
  * nothing closes meanwhile); Enter applies it, Escape puts everything back
  * exactly. Edit Layouts… opens the dialog of layouts.h. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Open the switcher; when it is already open, select the next layout */
 void layout_switcher_show(AppData* app);

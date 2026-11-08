@@ -7,7 +7,7 @@
 
 #include "diff_gutter.h"
 #include "color_column.h"
-#include "text_encoding.h"
+#include "core/text_encoding.h"
 #include "preview_full.h"
 
 typedef struct TextChunks {

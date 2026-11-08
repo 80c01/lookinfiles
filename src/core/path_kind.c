@@ -1,4 +1,4 @@
-#include "path_kind.h"
+#include "core/path_kind.h"
 
 #include <gio/gio.h>
 #include <glib/gstdio.h>

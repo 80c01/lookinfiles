@@ -1,7 +1,7 @@
 #ifndef GAME_CARDS_H
 #define GAME_CARDS_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 GtkWidget* game_cards_create_tab(AppData* app, const gchar* subgame);
 

@@ -1,5 +1,5 @@
 /* Path patterns (see path_globs.h) */
-#include "path_globs.h"
+#include "core/path_globs.h"
 
 #include <string.h>
 

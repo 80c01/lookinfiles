@@ -1,7 +1,7 @@
 #ifndef EDITOR_MODES_H
 #define EDITOR_MODES_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Case conversion modes */
 enum {

@@ -4,7 +4,7 @@
 # 2. $GITHUB_REF_NAME when running on a tag in GitHub Actions (e.g. v0.4.2 -> 0.4.2)
 # 3. Exact git tag if HEAD points to one (v0.4.2 -> 0.4.2)
 # 4. Git describe for dev/branch builds (v0.4.2-2-gba23999 -> 0.4.2.2.gba23999)
-# 5. Fallback defined in src/app_paths.h
+# 5. Fallback defined in src/core/app_paths.h
 set -eu
 
 if [ -n "${VERSION:-}" ]; then

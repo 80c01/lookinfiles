@@ -1,5 +1,5 @@
 #include "bookmark_icons.h"
-#include "path_kind.h"
+#include "core/path_kind.h"
 #include "session_store.h"
 #include "tree_nav.h"
 

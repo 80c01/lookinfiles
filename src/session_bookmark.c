@@ -1,6 +1,6 @@
 /* Workspace bookmarks (see session_bookmark.h) */
 #include "session_bookmark.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "bookmark_dialog.h"
 #include "bookmarks.h"
 #include "dialog.h"

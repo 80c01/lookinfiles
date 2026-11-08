@@ -1,6 +1,6 @@
 /* RTF to HTML (see rtf.h). */
 #include "rtf.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <stdlib.h>

@@ -7,7 +7,7 @@
  * panels, split sizes and terminal panes are saved; a launch without a file
  * or folder argument restores them (terminals with new shells). Missing
  * folders and files are skipped. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Save the workspaces (Ctrl+Q, window closed) */
 void session_save_now(AppData* app);

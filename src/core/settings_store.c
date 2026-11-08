@@ -1,6 +1,6 @@
 /* User preferences in settings.ini (see settings_store.h). */
-#include "settings_store.h"
-#include "app_paths.h"
+#include "core/settings_store.h"
+#include "core/app_paths.h"
 
 #include <glib/gstdio.h>
 

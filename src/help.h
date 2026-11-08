@@ -2,7 +2,7 @@
 #define HELP_H
 
 /* Floating key-binding cheat sheet */
-#include "app_types.h"
+#include "core/app_types.h"
 
 void create_help_panel(GtkWindow* parent, AppData* app);
 void toggle_help_panel(AppData* app);

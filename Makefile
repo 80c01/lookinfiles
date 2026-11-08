@@ -81,15 +81,15 @@ LIBS += `$(PKG_CONFIG) --libs $(GST_PKGS)`
 endif
 
 # Installation prefix (make install PREFIX=/usr): also tells the binary where
-# the translations are installed (src/i18n.c looks next to it first)
+# the translations are installed (src/core/i18n.c looks next to it first)
 PREFIX ?= /usr/local
 DATADIR = $(PREFIX)/share
 LOCALEDIR = $(DATADIR)/locale
 APP_CFLAGS += -DLOCALEDIR=\"$(LOCALEDIR)\"
 
 # Release version: can be overridden via make VERSION=... or environment.
-# Defaults to git tags (e.g. v0.4.2 -> 0.4.2), falling back to src/app_paths.h.
-VERSION != sh tools/version.sh 2>/dev/null || sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h 2>/dev/null || echo "0.6.0"
+# Defaults to git tags (e.g. v0.4.2 -> 0.4.2), falling back to src/core/app_paths.h.
+VERSION != sh tools/version.sh 2>/dev/null || sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/core/app_paths.h 2>/dev/null || echo "0.6.0"
 APP_CFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 
 # Windows platform detection
@@ -200,7 +200,7 @@ $(BUILD_DIR)/theme_resources.o: $(BUILD_DIR)/theme_resources.c $(FLAGS_STAMP)
 $(BUILD_DIR):
 	mkdir -p $@
 
-# Translations (src/i18n.h, po/): po/<lang>.po compiled to
+# Translations (src/core/i18n.h, po/): po/<lang>.po compiled to
 # build/locale/<lang>/LC_MESSAGES/lookinfiles.mo, where ./lookinfiles finds
 # them. Without msgfmt (gettext tools) the build goes on in English.
 # make pot rebuilds the template from the marked strings; make po-update merges

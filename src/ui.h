@@ -1,7 +1,7 @@
 #ifndef UI_H
 #define UI_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 void wire_focus_tracking(AppData* app);
 void focus_adjacent_panel(gint step, AppData* app);

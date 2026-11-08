@@ -1,6 +1,6 @@
 /* Quick open of a project file (see quick_open.h) */
 #include "quick_open.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "code_index.h"
 #include "dialog.h"
 #include "editor.h"
@@ -8,7 +8,7 @@
 #include "focus_route.h"
 #include "fuzzy_match.h"
 #include "icons.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "nav_history.h"
 #include "palette.h"
 #include "tree_nav.h"

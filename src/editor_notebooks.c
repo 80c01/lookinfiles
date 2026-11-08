@@ -4,7 +4,7 @@
 #include "editor_private.h"
 #include "pane_geometry.h"
 #include "panels.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "minimap.h"
 #include "tab_drop.h"
 #include "focus_route.h"

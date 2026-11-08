@@ -1,7 +1,7 @@
 #ifndef TERMINAL_H
 #define TERMINAL_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Group name of the terminal notebooks (their tabs move between them only) */
 #define TERM_TABS_GROUP "term-tabs"

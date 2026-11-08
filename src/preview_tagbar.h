@@ -10,7 +10,7 @@
  * them over with preview_tagbar_set_outline(). It follows the scrolling and a click or Enter scrolls to the
  * heading. Shown in previews with headings when turned on (settings.ini:
  * [Preview] tagbar); same width as the editor tagbar. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Put content (the preview's scrolled text view) and the tagbar side by
  * side; returns the GtkPaned to put in its place */

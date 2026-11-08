@@ -1,6 +1,6 @@
 /* Python compiled bytecode (.pyc, .pyo) parser and preview builder. */
 #include "pyc_info.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>

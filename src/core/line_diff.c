@@ -1,6 +1,6 @@
 /* Line diff of two texts (Myers' O(ND) algorithm) reduced to per-line marks,
  * as shown in an editor gutter: added, modified, deleted above / below. */
-#include "line_diff.h"
+#include "core/line_diff.h"
 
 #include <string.h>
 

@@ -1,14 +1,14 @@
 /* Code navigation in editor tabs (see code_nav.h) */
 #include "code_nav.h"
 #include "preview_state.h"
-#include "app_paths.h"
+#include "core/app_paths.h"
 #include "code_index.h"
 #include "code_intel.h"
 #include "code_tags.h"
 #include "code_scan.h"
 #include "editor.h"
-#include "file_types.h"
-#include "i18n.h"
+#include "core/file_types.h"
+#include "core/i18n.h"
 #include "jump_list.h"
 #include <string.h>
 

@@ -5,7 +5,7 @@
  * built-in scanner (code_scan.h) runs on the text shown in a worker, and
  * the symbols go to preview_tagbar_set_outline() while the preview is
  * current. No language server: previews change too often to start one. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Scan text (the text of the preview, valid UTF-8, copied) of the file
  * name; first_line: line of the buffer where text starts (after a

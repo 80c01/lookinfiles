@@ -3,7 +3,7 @@
  * Reports changes through app_events only; knows neither the tree nor the viewer. */
 #include "fs_watch.h"
 #include "preview_state.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "git_utils.h"
 #include "git_tab.h"
 

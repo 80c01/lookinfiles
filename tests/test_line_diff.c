@@ -1,6 +1,6 @@
-/* Unit tests for src/line_diff.c: per-line change marks of a text against
+/* Unit tests for src/core/line_diff.c: per-line change marks of a text against
  * its previous version. */
-#include "line_diff.h"
+#include "core/line_diff.h"
 
 #include <string.h>
 

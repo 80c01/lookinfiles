@@ -1,7 +1,7 @@
 #ifndef BOOKMARK_ICONS_H
 #define BOOKMARK_ICONS_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Icons of the bookmarks view links. The icon depends on what the target is
  * (folder, file, missing): that is read in a worker thread (path_kind), never

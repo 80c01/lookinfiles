@@ -1,6 +1,6 @@
 /* Alt+L layout switcher: preview layouts from a popover (see layout_switcher.h) */
 #include "layout_switcher.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "layout_store.h"
 #include "layouts.h"
 

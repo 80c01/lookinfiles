@@ -1,6 +1,6 @@
 /* Outline entries and their tree (see code_outline_tree.h) */
 #include "code_outline_tree.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include <string.h>
 
 CodeOutlineEntry* code_outline_entry_new(const gchar* name, const gchar* detail, const gchar* container,

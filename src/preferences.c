@@ -1,8 +1,8 @@
 /* The Preferences dialog (see preferences.h). */
 #include "preferences.h"
-#include "i18n.h"
-#include "app_events.h"
-#include "app_paths.h"
+#include "core/i18n.h"
+#include "core/app_events.h"
+#include "core/app_paths.h"
 #include "color_column.h"
 #include "diff_gutter.h"
 #include "dialog.h"

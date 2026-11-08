@@ -6,7 +6,7 @@
  * and the recent folders and files of every session (recent.ini, Alt+R,
  * quick open). The explorer reports its folder changes; going back or
  * forward returns the folder to show, the explorer shows it. */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "session_store.h"
 
 /* The explorer's folder changed (file_list.c): history and recent folders.

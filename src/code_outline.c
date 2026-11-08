@@ -3,8 +3,8 @@
 #include "code_intel.h"
 #include "code_nav.h"
 #include "code_scan.h"
-#include "file_types.h"
-#include "i18n.h"
+#include "core/file_types.h"
+#include "core/i18n.h"
 #include <string.h>
 
 /* A server that has not answered by then (starting, indexing, hung) is not

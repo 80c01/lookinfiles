@@ -1,7 +1,7 @@
 #ifndef PREVIEW_STATE_H
 #define PREVIEW_STATE_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* What the preview shows: the file, its detected kind, raw or rendered view,
  * zoom and page. Read by any module; written by the viewer and the few places

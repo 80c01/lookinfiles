@@ -1,6 +1,6 @@
 /* TNEF winmail.dat (see mail_tnef.h) */
 #include "mail_tnef.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "mail_msg.h"
 #include <gio/gio.h>
 #include <string.h>

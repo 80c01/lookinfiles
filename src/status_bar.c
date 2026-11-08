@@ -5,10 +5,10 @@
 #include "status_bar.h"
 #include "git_state.h"
 #include "preview_state.h"
-#include "i18n.h"
-#include "app_events.h"
+#include "core/i18n.h"
+#include "core/app_events.h"
 #include "file_list.h"
-#include "file_types.h"
+#include "core/file_types.h"
 #include "git_utils.h"
 
 /* Private to this file: the widgets of the explorer bar, the top-bar notice

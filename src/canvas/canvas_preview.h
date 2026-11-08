@@ -1,7 +1,7 @@
 #ifndef CANVAS_PREVIEW_H
 #define CANVAS_PREVIEW_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* The preview of a Canvas note: its page drawn by the same block widgets
  * as the Canvas tab (canvas_item.h), read-only, at 100 % from the top-left

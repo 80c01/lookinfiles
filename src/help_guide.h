@@ -9,7 +9,7 @@
  * the global mode and its minimap scroll it; its close button, a middle click on the tab,
  * Ctrl+W (Vim Ctrl+W c) close it. Each workspace has its own Help tab
  * (page shown, history, scroll position). */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Show the guide at page (a user_guide page name, NULL: the table of
  * contents), opening the tab when needed; the focus goes into it */

@@ -1,14 +1,14 @@
 /* Saved workspace layouts: capture, apply and the list dialog (see layouts.h) */
 #include "layouts.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "dialog.h"
 #include "editor.h"
 #include "editor_layout.h"
 #include "editor_tagbar.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "layout_store.h"
 #include "preview_tagbar.h"
-#include "settings_store.h"
+#include "core/settings_store.h"
 #include "terminal.h"
 #include "workspace.h"
 

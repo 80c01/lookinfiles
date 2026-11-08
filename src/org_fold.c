@@ -1,8 +1,8 @@
 /* Folding state of the Org preview (see org_fold.h). */
 #include "org_fold.h"
 #include "preview_state.h"
-#include "app_events.h"
-#include "file_types.h"
+#include "core/app_events.h"
+#include "core/file_types.h"
 
 /* Private to this file */
 struct OrgFold {

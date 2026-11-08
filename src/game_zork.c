@@ -3,7 +3,7 @@
 #include "palette.h"
 #include "fonts.h"
 #include "icons.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include <string.h>
 
 #define MAX_ITEMS 20

@@ -7,7 +7,7 @@
 #include "code_refs.h"
 #include "code_symbols.h"
 #include "editor_tagbar.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "nav_keys.h"
 #include "quick_open.h"
 #include "editor_dunnet.h"

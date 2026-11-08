@@ -1,6 +1,6 @@
 /* CSV / TSV parsing (see csv.h). */
 #include "csv.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <string.h>
 

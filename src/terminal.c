@@ -1,6 +1,6 @@
 #include "terminal.h"
 #include "panels.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "remote_store.h"
 #include "layout_store.h"
 #include "palette.h"

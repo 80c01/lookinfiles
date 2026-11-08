@@ -3,7 +3,7 @@
 
 /* The menu of a box of the top-bar workspace map (right click): Save as
  * Bookmark… (session_bookmark.h) and Close Workspace. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 typedef void (*WorkspaceCloseFn)(AppData* app, gint idx);
 

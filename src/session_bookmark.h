@@ -8,7 +8,7 @@
  * with a "lookinfiles-session://<id>" target, and the file goes with the
  * bookmark when it is deleted. The bookmarks view asks through
  * APP_EVENT_SAVE_WORKSPACE_BOOKMARK / APP_EVENT_OPEN_WORKSPACE_BOOKMARK. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Ask for a name, save the current workspace and add the bookmark */
 void session_bookmark_save(AppData* app);

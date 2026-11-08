@@ -6,7 +6,7 @@
  * headings of a Markdown file (code_outline.h), with
  * a filter entry. Enter, a double click or "Go To" jumps there (remembered
  * in the code navigation history). */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "code_nav.h"
 
 void code_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFunc message);

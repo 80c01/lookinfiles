@@ -1,5 +1,5 @@
-#include "app_paths.h"
-#include "i18n.h"
+#include "core/app_paths.h"
+#include "core/i18n.h"
 #include "topbar.h"
 #include "dialog.h"
 #include "layout_switcher.h"
@@ -7,13 +7,13 @@
 #include "fs_watch.h"
 #include "preview_state.h"
 #include "panels.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "text_style.h"
 #include "tree_nav.h"
 #include "theme.h"
 #include "themes.h"
 #include "preferences.h"
-#include "settings_store.h"
+#include "core/settings_store.h"
 #include "status_bar.h"
 #include "sidebar.h"
 #include "workspace.h"
@@ -53,7 +53,7 @@
 #include "focus_route.h"
 #include "preview_tagbar.h"
 #include "preview_full.h"
-#include "ui_probe.h"
+#include "core/ui_probe.h"
 #include <string.h>
 
 /* The window is closed: ask about unsaved changes like Ctrl+Q, then remember

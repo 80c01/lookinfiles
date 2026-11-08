@@ -10,10 +10,10 @@
 #include <ctype.h>
 
 #include "explorer_tree.h"
-#include "file_types.h"
+#include "core/file_types.h"
 #include "git_state.h"
 #include "note_types.h"
-#include "settings_store.h"
+#include "core/settings_store.h"
 
 #ifdef HAVE_BUILTIN_TERM
 #include "term_widget.h" /* VTE API on the built-in terminal (Windows) */

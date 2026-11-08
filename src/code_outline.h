@@ -6,7 +6,7 @@
  * server's document symbols, else the built-in scanner on the buffer, or
  * the headings of a Markdown file. Scans run in a worker thread on a copy
  * of the text. */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "code_outline_tree.h"
 
 /* entries: CodeOutlineEntry* sorted by line (empty when the file has none),

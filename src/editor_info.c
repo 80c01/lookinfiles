@@ -2,7 +2,7 @@
 #include "editor_info.h"
 #include "code_intel.h"
 #include "code_nav.h"
-#include "file_types.h"
+#include "core/file_types.h"
 #include "git_utils.h"
 #include <string.h>
 

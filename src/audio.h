@@ -1,7 +1,7 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Return TRUE if filename indicates an audio file */
 gboolean is_audio_file(const gchar* name);

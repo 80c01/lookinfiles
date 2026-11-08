@@ -1,7 +1,7 @@
 /* The Help tab: the user guide in a page of the preview notebook (see help_guide.h) */
 #include "help_guide.h"
-#include "i18n.h"
-#include "app_events.h"
+#include "core/i18n.h"
+#include "core/app_events.h"
 #include "browser.h"
 #include "focus_route.h"
 #include "games.h"

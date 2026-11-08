@@ -1,5 +1,5 @@
 /* Application event bus (see app_events.h). */
-#include "app_events.h"
+#include "core/app_events.h"
 
 #define APP_EVENT_MAX_HANDLERS 4
 

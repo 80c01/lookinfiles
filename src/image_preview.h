@@ -1,7 +1,7 @@
 #ifndef IMAGE_PREVIEW_H
 #define IMAGE_PREVIEW_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Image preview in the preview text view: decoded in a worker thread at the
  * size it is shown (fitted to the panel, or 1:1 with m), turned upright from

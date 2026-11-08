@@ -8,7 +8,7 @@
  * edits, and a click or Enter goes to the symbol (remembered in the code
  * navigation history). Shown in every code and Markdown tab or in none
  * (settings.ini: tagbar), with one width for all. */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "code_nav.h"
 
 /* Put content (the view and its minimap) and the tagbar of tab side by

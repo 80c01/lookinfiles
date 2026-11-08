@@ -1,6 +1,6 @@
 /* Unified diff preview (see diff_view.h). */
 #include "diff_view.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <stdlib.h>
 #include <string.h>

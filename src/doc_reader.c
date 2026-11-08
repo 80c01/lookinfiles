@@ -1,6 +1,6 @@
 /* Word 97-2003 documents shown like Word (see doc_reader.h) */
 #include "doc_reader.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "doc_writer.h"
 #include <gio/gio.h>
 #include <string.h>

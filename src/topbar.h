@@ -2,7 +2,7 @@
 #define TOPBAR_H
 
 /* Top bar breadcrumbs and toggle pills */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Rebuild the top bar from AppData: single source of truth for directory/sort/hidden state */
 void update_path_label(AppData* app);

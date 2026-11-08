@@ -2,7 +2,7 @@
 #define TEXT_STYLE_H
 
 /* Text view styling shared by the viewer, editor and preview renderers */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Monospace font toggle for a GtkTextView */
 void set_view_monospace(GtkWidget* view, gboolean monospace);

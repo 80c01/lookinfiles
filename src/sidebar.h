@@ -2,7 +2,7 @@
 #define SIDEBAR_H
 
 /* Explorer panel header and per-view action toolbars */
-#include "app_types.h"
+#include "core/app_types.h"
 
 GtkWidget* create_sidebar_header(AppData* app);
 /* Show the current view in the header (title, active switch, its action bar,

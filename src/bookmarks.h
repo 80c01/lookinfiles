@@ -1,7 +1,7 @@
 #ifndef BOOKMARKS_H
 #define BOOKMARKS_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Bookmark manager: named links to directories, files or URLs, organized
  * in user-defined virtual folders. Persisted as XML in

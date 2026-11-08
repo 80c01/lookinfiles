@@ -2,7 +2,7 @@
 #include "canvas/canvas_props.h"
 #include "canvas/canvas_rough_draw.h"
 #include "icons.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "palette.h"
 #include "theme.h"
 

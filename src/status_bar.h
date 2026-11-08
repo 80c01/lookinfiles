@@ -2,7 +2,7 @@
 #define STATUS_BAR_H
 
 /* Panel status bars: explorer bar (Git branch, messages) and preview bar */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Bar at the bottom of the explorer panel: Git branch of the current
  * directory (files view) and the app_notice() message with its Undo */

@@ -1,7 +1,7 @@
 /* Explorer file actions on the files view: new file / new folder (a / Shift+A),
  * rename (F2 / r / e) and move to trash (d / Delete), with their dialogs. */
 #include "file_actions.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "dialog.h"
 #include "editor.h"
 #include "file_moves.h"

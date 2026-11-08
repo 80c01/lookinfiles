@@ -1,4 +1,4 @@
-#include "ui_probe.h"
+#include "core/ui_probe.h"
 
 #ifdef G_OS_UNIX
 #include <glib-unix.h>

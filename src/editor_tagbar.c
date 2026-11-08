@@ -1,10 +1,10 @@
 /* The tagbar of an editor tab (see editor_tagbar.h) */
 #include "editor_tagbar.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "editor.h"
 #include "code_outline.h"
 #include "outline_pane.h"
-#include "settings_store.h"
+#include "core/settings_store.h"
 
 #define REFRESH_DELAY_MS 600   /* pause in the edits before the outline is read again */
 #define CURSOR_DELAY_MS 80     /* cursor moves are followed after this pause */

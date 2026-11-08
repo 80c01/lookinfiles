@@ -4,7 +4,7 @@
 #include "code_outline.h"
 #include "code_scan.h"
 #include "dialog.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include <string.h>
 
 #define RESPONSE_GO 1

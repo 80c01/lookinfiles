@@ -4,7 +4,7 @@ LookinFiles uses gettext. The source strings are English; each translation is
 a catalog `po/<lang>.po` (`fr`, `de`, `pt_BR`...). Building needs `msgfmt`
 (package `gettext`); without it the application builds and runs in English.
 
-## Marking strings (`src/i18n.h`)
+## Marking strings (`src/core/i18n.h`)
 
 | Case | Write |
 |------|-------|

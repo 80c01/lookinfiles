@@ -1,6 +1,6 @@
 /* PowerPoint presentations drawn like PowerPoint (see pptx.h) */
 #include "pptx.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>

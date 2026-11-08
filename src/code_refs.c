@@ -1,6 +1,6 @@
 /* References of a symbol in the References tab (see code_refs.h) */
 #include "code_refs.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "palette.h"
 #include "code_index.h"
 #include "code_intel.h"

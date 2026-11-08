@@ -2,7 +2,7 @@
 #define WORKSPACE_H
 
 /* Virtual workspaces and top-bar workspace minimap */
-#include "app_types.h"
+#include "core/app_types.h"
 
 void workspaces_init(AppData* app);
 void workspace_save_current(AppData* app);

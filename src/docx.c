@@ -1,6 +1,6 @@
 /* Word documents (.docx) shown like Word (see docx.h) */
 #include "docx.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>

@@ -1,7 +1,7 @@
 #ifndef EDITOR_DUNNET_H
 #define EDITOR_DUNNET_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Open (or focus / restart) the Emacs *dungeon* buffer tab running Dunnet. */
 EditorTab* editor_dunnet_open(AppData* app);

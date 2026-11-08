@@ -7,7 +7,7 @@
  *
  * The user's fonts (theme.ini [Fonts]) apply over any theme; the zoom keys
  * change their sizes. */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "dialog.h"
 
 /* Apply the theme named name (with the user's fonts) to the whole

@@ -1,5 +1,5 @@
 #include "ps_convert.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include <string.h>
 #include <sys/stat.h>
 #include <utime.h>

@@ -1,6 +1,6 @@
 /* Java bytecode (.class) parser and preview builder. */
 #include "class_info.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>

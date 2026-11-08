@@ -1,6 +1,6 @@
 /* Spreadsheet reading (see spreadsheet.h). */
 #include "spreadsheet.h"
-#include "i18n.h"
+#include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <math.h>

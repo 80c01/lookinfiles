@@ -1,5 +1,5 @@
-/* Unit tests for src/file_types.c (name- and content-based detection). */
-#include "file_types.h"
+/* Unit tests for src/core/file_types.c (name- and content-based detection). */
+#include "core/file_types.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

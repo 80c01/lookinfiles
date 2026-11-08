@@ -5,7 +5,7 @@
  * under a name and apply a saved one, from the Edit Layouts dialog inside
  * the window (the Alt+L switcher is layout_switcher.h). Data and file
  * format: layout_store.h. */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "layout_store.h"
 
 /* The Edit Layouts dialog: apply, save, delete, reset the default */

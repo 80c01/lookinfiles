@@ -1,5 +1,5 @@
-/* Unit tests for src/path_globs.c: path patterns. */
-#include "path_globs.h"
+/* Unit tests for src/core/path_globs.c: path patterns. */
+#include "core/path_globs.h"
 
 static gboolean matches(const gchar* list, const gchar* rel) {
     PathGlobs* g = path_globs_new(list);

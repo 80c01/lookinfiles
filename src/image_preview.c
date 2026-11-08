@@ -3,7 +3,7 @@
 #include "image_preview.h"
 #include "preview_state.h"
 #include "search.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "fonts.h"
 #include "text_tags.h"
 #include "icons.h"
@@ -15,9 +15,9 @@
 #include <sys/stat.h>
 
 #include "animation.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "exif.h"
-#include "file_types.h"
+#include "core/file_types.h"
 #include "image_utils.h"
 #include "text_style.h"
 

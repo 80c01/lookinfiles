@@ -5,8 +5,8 @@
 #include "org_doc.h"
 #include "image_utils.h"
 #include "icons.h"
-#include "app_events.h"
-#include "file_types.h"
+#include "core/app_events.h"
+#include "core/file_types.h"
 #include "editor.h"
 #include "org_fold.h"
 

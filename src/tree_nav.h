@@ -2,7 +2,7 @@
 #define TREE_NAV_H
 
 /* Explorer tree navigation and selection helpers (rows: explorer_row.h) */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Selected row, NULL if none (borrowed) */
 ExplorerRow* tree_nav_selected(AppData* app);

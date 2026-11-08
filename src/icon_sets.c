@@ -7,7 +7,7 @@
  * changing the paths makes GTK redraw every image. */
 #include "icon_sets.h"
 
-#include "app_paths.h"
+#include "core/app_paths.h"
 #include "theme_store.h"
 
 #include <gtk/gtk.h>

@@ -1,6 +1,6 @@
 /* Session and recent places between launches (see session_store.h) */
 #include "session_store.h"
-#include "app_paths.h"
+#include "core/app_paths.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

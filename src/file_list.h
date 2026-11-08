@@ -1,7 +1,7 @@
 #ifndef FILE_LIST_H
 #define FILE_LIST_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Re-read the git status badges in a worker thread, then update the rows */
 void refresh_git_status_in_place(AppData* app);

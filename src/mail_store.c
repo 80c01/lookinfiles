@@ -1,6 +1,6 @@
 /* PST / OST / DBX header cards (see mail_store.h) */
 #include "mail_store.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include <string.h>
 
 #define DBX_MAGIC "\xCF\xAD\x12\xFE"

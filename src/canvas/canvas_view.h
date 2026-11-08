@@ -1,7 +1,7 @@
 #ifndef CANVAS_VIEW_H
 #define CANVAS_VIEW_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Canvas tabs: each edits a Canvas note (canvas_doc.h), text boxes and
  * pictures placed freely on a page. A canvas opens as a tab of the editor

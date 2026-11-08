@@ -7,7 +7,7 @@
 #include "nav_history.h"
 #include "fs_watch.h"
 #include "panels.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "tree_nav.h"
 #include "audio.h"
 #include "editor.h"

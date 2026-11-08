@@ -6,7 +6,7 @@
  * PREVIEW_BYTES); its button previews the file again, read to the end
  * (after a confirmation above 64 MB).
  * The request holds for that file until another one is selected. */
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* Put the bar above content (the preview's text area); returns the box to
  * put in its place */

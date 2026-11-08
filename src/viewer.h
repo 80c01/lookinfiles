@@ -1,7 +1,7 @@
 #ifndef VIEWER_H
 #define VIEWER_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 void viewer_scroll_lines(AppData* app, gint lines);
 void viewer_scroll_page(AppData* app, gint direction);

@@ -5,7 +5,7 @@
 #include "file_list.h"
 #include "tree_nav.h"
 #include "panels.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "search.h"
 #include "help.h"
 #include "image_preview.h"

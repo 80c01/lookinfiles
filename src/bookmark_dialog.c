@@ -1,6 +1,6 @@
 /* Bookmark dialogs (see bookmark_dialog.h) */
 #include "bookmark_dialog.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "bookmark_icons.h"
 #include "dialog.h"
 #include "icon_picker.h"

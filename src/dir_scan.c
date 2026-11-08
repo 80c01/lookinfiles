@@ -1,6 +1,6 @@
 /* Directory listings for the explorer tree (see dir_scan.h) */
 #include "dir_scan.h"
-#include "file_types.h"
+#include "core/file_types.h"
 
 #include <glib/gstdio.h>
 #include <sys/stat.h>

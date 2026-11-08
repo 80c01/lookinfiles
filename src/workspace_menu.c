@@ -1,7 +1,7 @@
 /* The menu of the workspace map (see workspace_menu.h) */
 #include "workspace_menu.h"
-#include "i18n.h"
-#include "app_events.h"
+#include "core/i18n.h"
+#include "core/app_events.h"
 
 typedef struct {
     AppData* app;

@@ -2612,112 +2612,112 @@ msgstr "Renommé à nouveau en « %s »"
 msgid "Cannot undo: %s"
 msgstr "Impossible d’annuler : %s"
 
-#: src/file_types.c:362
+#: src/core/file_types.c:362
 msgctxt "file kind"
 msgid "Image"
 msgstr "Image"
 
-#: src/file_types.c:364
+#: src/core/file_types.c:364
 msgctxt "file kind"
 msgid "Video"
 msgstr "Vidéo"
 
-#: src/file_types.c:365
+#: src/core/file_types.c:365
 msgctxt "file kind"
 msgid "Audio"
 msgstr "Audio"
 
-#: src/file_types.c:366
+#: src/core/file_types.c:366
 msgctxt "file kind"
 msgid "Binary"
 msgstr "Binaire"
 
-#: src/file_types.c:368
+#: src/core/file_types.c:368
 msgctxt "file kind"
 msgid "Document"
 msgstr "Document"
 
-#: src/file_types.c:369
+#: src/core/file_types.c:369
 msgctxt "file kind"
 msgid "Spreadsheet"
 msgstr "Classeur"
 
-#: src/file_types.c:370
+#: src/core/file_types.c:370
 msgctxt "file kind"
 msgid "Presentation"
 msgstr "Présentation"
 
-#: src/file_types.c:372
+#: src/core/file_types.c:372
 msgctxt "file kind"
 msgid "Archive"
 msgstr "Archive"
 
-#: src/file_types.c:373
+#: src/core/file_types.c:373
 msgctxt "file kind"
 msgid "Font"
 msgstr "Police"
 
-#: src/file_types.c:375
+#: src/core/file_types.c:375
 msgctxt "file kind"
 msgid "Certificate"
 msgstr "Certificat"
 
-#: src/file_types.c:379
+#: src/core/file_types.c:379
 msgctxt "file kind"
 msgid "Diff"
 msgstr "Diff"
 
-#: src/file_types.c:380
+#: src/core/file_types.c:380
 msgctxt "file kind"
 msgid "Log"
 msgstr "Journal"
 
-#: src/file_types.c:381
+#: src/core/file_types.c:381
 msgctxt "file kind"
 msgid "Calendar"
 msgstr "Agenda"
 
-#: src/file_types.c:383
+#: src/core/file_types.c:383
 msgctxt "file kind"
 msgid "Desktop Entry"
 msgstr "Lanceur (.desktop)"
 
-#: src/file_types.c:384
+#: src/core/file_types.c:384
 msgctxt "file kind"
 msgid "Man Page"
 msgstr "Page de manuel"
 
-#: src/file_types.c:385
+#: src/core/file_types.c:385
 msgctxt "file kind"
 msgid "Rich Text"
 msgstr "Texte enrichi"
 
-#: src/file_types.c:387
+#: src/core/file_types.c:387
 msgctxt "file kind"
 msgid "Mail"
 msgstr "Courriel"
 
-#: src/file_types.c:388
+#: src/core/file_types.c:388
 msgctxt "file kind"
 msgid "Translations"
 msgstr "Traductions"
 
-#: src/file_types.c:389
+#: src/core/file_types.c:389
 msgctxt "file kind"
 msgid "Java Class"
 msgstr "Classe Java"
 
-#: src/file_types.c:392
+#: src/core/file_types.c:392
 msgctxt "file kind"
 msgid "Python Bytecode"
 msgstr "Bytecode Python"
 
-#: src/file_types.c:393
+#: src/core/file_types.c:393
 msgctxt "file kind"
 msgid "TeX Font Metric"
 msgstr "Métriques de police TeX"
 
-#: src/file_types.c:394
+#: src/core/file_types.c:394
 msgctxt "file kind"
 msgid "Packet Capture"
 msgstr "Capture réseau"

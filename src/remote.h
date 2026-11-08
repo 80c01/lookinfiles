@@ -1,7 +1,7 @@
 #ifndef REMOTE_H
 #define REMOTE_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 #include "remote_store.h"
 
 /* Explorer panel integration */

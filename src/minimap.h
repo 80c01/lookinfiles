@@ -1,7 +1,7 @@
 #ifndef MINIMAP_H
 #define MINIMAP_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* The preview's minimap: a minimap_new_for_view() of app->text_view (already
  * in its GtkScrolledWindow) shown only on the Preview page (once, when the

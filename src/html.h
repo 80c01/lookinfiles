@@ -1,7 +1,7 @@
 #ifndef HTML_H
 #define HTML_H
 
-#include "app_types.h"
+#include "core/app_types.h"
 
 /* view: where images fit their width (NULL: natural size) */
 void render_html_to_buffer(GtkTextBuffer* buffer,

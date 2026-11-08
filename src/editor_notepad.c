@@ -1,6 +1,6 @@
 /* Notepad editor mode: find/replace, go to line and save-as bars, Windows-style key bindings. */
 #include "editor_modes_private.h"
-#include "i18n.h"
+#include "core/i18n.h"
 #include "icons.h"
 #include "editor.h"
 #include "code_nav.h"
@@ -8,7 +8,7 @@
 #include "code_refs.h"
 #include "code_symbols.h"
 #include "editor_tagbar.h"
-#include "app_events.h"
+#include "core/app_events.h"
 #include "text_tags.h"
 #include <ctype.h>
 #include <string.h>

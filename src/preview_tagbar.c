@@ -3,8 +3,8 @@
 #include "code_outline_tree.h"
 #include "nav_keys.h"
 #include "outline_pane.h"
-#include "i18n.h"
-#include "settings_store.h"
+#include "core/i18n.h"
+#include "core/settings_store.h"
 
 #define REFRESH_DELAY_MS 120   /* after the last change of the buffer (a render) */
 #define SCROLL_DELAY_MS 80     /* scrolling is followed after this pause */

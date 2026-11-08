@@ -1,6 +1,6 @@
 #include "editor_modes.h"
-#include "i18n.h"
-#include "app_events.h"
+#include "core/i18n.h"
+#include "core/app_events.h"
 #include "text_style.h"
 #include "diff_gutter.h"
 #include "code_nav.h"

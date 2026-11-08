@@ -6,7 +6,7 @@
  * the directory (one level only, never recursively) and adds the entries. */
 #include <glib.h>
 
-#include "file_types.h"
+#include "core/file_types.h"
 
 /* Entries kept at most: a larger directory is reported as truncated */
 #define DIR_SUMMARY_SCAN_LIMIT 5000

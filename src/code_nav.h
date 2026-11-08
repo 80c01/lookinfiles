@@ -10,7 +10,7 @@
  * request replaces the previous one, and an answer for a tab closed or
  * changed meanwhile is dropped. Messages go through the caller's message
  * function (editor_mode_message()), to the tab of the result. */
-#include "app_types.h"
+#include "core/app_types.h"
 #include "code_index.h"
 
 typedef void (*CodeNavMessageFunc)(EditorTab* tab, const gchar* message);
