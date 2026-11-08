@@ -708,7 +708,7 @@ void editor_move_tab_to(AppData* app, EditorTab* tab, GtkNotebook* new_nb, gint 
     if (tab->view != NULL) {
         gtk_widget_grab_focus(tab->view);
     }
-    editor_minimap_update_visibility(tab);
+    minimap_view_update_visibility(tab->minimap);
     minimap_update_visibility(app);
 }
 
@@ -1272,7 +1272,7 @@ static void editor_tab_add_page(AppData* app, EditorTab* tab, GtkNotebook* targe
     gtk_notebook_set_current_page(target_nb, page);
     gtk_widget_grab_focus(tab->view);
 
-    editor_minimap_update_visibility(tab);
+    minimap_view_update_visibility(tab->minimap);
 
     g_signal_connect(tab->buffer, "modified-changed",
                      G_CALLBACK(on_editor_modified_changed), tab);
@@ -1705,7 +1705,7 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
             EditorTab* t = (EditorTab*)l->data;
             if (t != NULL && t->container == cur_child) {
                 app->last_focused_editor = t;
-                editor_minimap_update_visibility(t);
+                minimap_view_update_visibility(t->minimap);
                 editor_modes_update_status(t);
                 break;
             }
@@ -1798,11 +1798,6 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
             : (app->notebook ? gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook)) : 0);
         app->workspaces[app->current_ws].notebook_page = (cur >= 0 ? cur : 0);
     }
-    if (tab->mm_vis_source != 0) {
-        g_source_remove(tab->mm_vis_source);
-        tab->mm_vis_source = 0;
-    }
-    minimap_cache_clear(&tab->mm_cache);
     g_object_unref(tab->container);
     g_object_unref(tab->tab_label);
     editor_modes_free_tab(tab);
@@ -1932,7 +1927,7 @@ void editor_attach_tabs(AppData* app, GList* editors, GtkWidget* panel) {
             editor_page_set_draggable(nb, tab->container);
         }
         if (tab != NULL) {
-            editor_minimap_update_visibility(tab);
+            minimap_view_update_visibility(tab->minimap);
         }
     }
     app->editors = editors;
@@ -1971,11 +1966,6 @@ void editor_free_tabs(AppData* app, GList* editors, gboolean detach_first) {
             app->last_focused_editor = NULL;
         }
         editor_view_release(tab);
-        if (tab->mm_vis_source != 0) {
-            g_source_remove(tab->mm_vis_source);
-            tab->mm_vis_source = 0;
-        }
-        minimap_cache_clear(&tab->mm_cache);
         if (tab->container != NULL) {
             g_object_unref(tab->container);
             tab->container = NULL;
@@ -2043,7 +2033,7 @@ void editor_set_dedicated(AppData* app, gboolean dedicated) {
     EditorTab* cur = editor_current_tab(app);
     if (cur != NULL && cur->view != NULL) {
         gtk_widget_grab_focus(cur->view);
-        editor_minimap_update_visibility(cur);
+        minimap_view_update_visibility(cur->minimap);
     }
 }
 

@@ -104,7 +104,7 @@ static void refresh_editor_tabs(AppData* app) {
         for (GList* l = editors; l != NULL; l = l->next) {
             EditorTab* tab = l->data;
             if (tab != NULL && g_hash_table_add(seen, tab)) {
-                minimap_cache_clear(&tab->mm_cache);
+                minimap_view_cache_clear(tab->minimap);
                 editor_modes_update_status(tab);
             }
         }

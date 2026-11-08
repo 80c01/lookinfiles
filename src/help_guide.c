@@ -490,7 +490,7 @@ static HelpGuide* ensure_page(AppData* app) {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), hg->view);
     GtkWidget* body = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_append(GTK_BOX(body), scroll);
-    gtk_box_append(GTK_BOX(body), minimap_new_for_view(hg->view));
+    gtk_box_append(GTK_BOX(body), minimap_new_for_view(hg->view, "help"));
     gtk_box_append(GTK_BOX(page), body);
 
     hg->page = page;

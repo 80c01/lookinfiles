@@ -354,7 +354,8 @@ void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD_CHAR);
     }
 
-    editor_minimap_init(tab);
+    tab->minimap = minimap_new_for_view(view, "editor");
+    diff_gutter_add_companion(view, tab->minimap);
 
     GtkWidget* container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_hexpand(container, TRUE);

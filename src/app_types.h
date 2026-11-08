@@ -38,18 +38,6 @@ enum { SORT_NAME, SORT_DATE, SORT_SIZE, SORT_EXT, SORT_COUNT };
 /* Minimap width in pixels */
 #define MINIMAP_WIDTH 110
 
-/* Offscreen render of the part of the document around what the minimap
- * shows (the minimap scrolls over long documents) */
-typedef struct {
-    cairo_surface_t* surface;
-    gint width;
-    gint height;
-    gdouble top;   /* minimap content y of the surface's first row */
-    gdouble scale; /* scale it was drawn at */
-    gboolean stale;          /* the text changed: redraw, but the old render may stand in */
-    gint64 incomplete_since; /* monotonic time the new layout was first found incomplete */
-} MinimapCache;
-
 /* Text viewer padding in pixels for text/code preview */
 #define PREVIEW_TEXT_PADDING_X 10
 #define PREVIEW_TEXT_PADDING_Y 6
@@ -84,12 +72,8 @@ typedef struct {
     GtkWidget* view;      /* the editable text view */
     GtkTextBuffer* buffer;
     GtkWidget* tab_label; /* tab title, with a bullet when unsaved */
-    GtkWidget* minimap;   /* minimap drawing area */
+    GtkWidget* minimap;   /* minimap_new_for_view() of view */
     gpointer tagbar;      /* symbols beside the view (editor_tagbar.c), or NULL */
-    MinimapCache mm_cache;
-    gboolean mm_dragging;
-    gdouble mm_grab;      /* slider drag: pointer y minus slider top */
-    guint mm_vis_source;
     GtkWidget* nb;        /* GtkNotebook containing this tab */
     gpointer app;         /* pointer to AppData */
     EditorMode mode;      /* current editor mode */
