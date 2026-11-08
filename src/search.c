@@ -3,6 +3,7 @@
  * Notepad find bar (Find Next / Find Prev), Emacs I-search minibuffer (match
  * count, Failing / Wrapped prompt), Vim "/" command line (E486 message). */
 #include "search.h"
+#include "i18n.h"
 #include "tree_nav.h"
 #include "panels.h"
 #include "icons.h"
@@ -155,7 +156,7 @@ static void style_bar(AppData* app, AppSearchBar* sb) {
         break;
     default:
         gtk_widget_add_css_class(sb->bar, "notepad-bar");
-        gtk_label_set_text(GTK_LABEL(sb->prompt), "Find:");
+        gtk_label_set_text(GTK_LABEL(sb->prompt), _("Find:"));
         break;
     }
 }
@@ -195,7 +196,7 @@ static void report(AppData* app, SearchResult result, gint index, gint total) {
         break;
     default:
         if (!empty && result == SEARCH_FAILED) {
-            msg = g_strdup_printf("Cannot find \"%s\"", term);
+            msg = g_strdup_printf(_("Cannot find \"%s\""), term);
         }
         set_echo(sb, msg, "dim-label");
         break;
@@ -570,7 +571,7 @@ GtkWidget* search_bar_new(AppData* app, AppSearchBar* sb) {
     g_object_set_data(G_OBJECT(sb->bar), "search-row", row);
     gtk_box_append(GTK_BOX(sb->bar), row);
 
-    sb->prompt = gtk_label_new("Find:");
+    sb->prompt = gtk_label_new(_("Find:"));
     sb->entry = gtk_entry_new();
     gtk_editable_set_width_chars(GTK_EDITABLE(sb->entry), 5);
     gtk_widget_set_hexpand(sb->entry, TRUE);
@@ -582,9 +583,9 @@ GtkWidget* search_bar_new(AppData* app, AppSearchBar* sb) {
     gtk_widget_set_visible(sb->echo, FALSE);
 
     sb->buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    GtkWidget* next = bar_button_new("Find Next", "Find Next (Enter / F3)");
-    GtkWidget* prev = bar_button_new("Find Prev", "Find Previous (Shift+Enter / Shift+F3)");
-    GtkWidget* close = icon_button_new("window-close", "Close Find Bar (Esc)");
+    GtkWidget* next = bar_button_new(_("Find Next"), _("Find Next (Enter / F3)"));
+    GtkWidget* prev = bar_button_new(_("Find Prev"), _("Find Previous (Shift+Enter / Shift+F3)"));
+    GtkWidget* close = icon_button_new("window-close", _("Close Find Bar (Esc)"));
     g_signal_connect(next, "clicked", G_CALLBACK(on_find_next_clicked), app);
     g_signal_connect(prev, "clicked", G_CALLBACK(on_find_prev_clicked), app);
     g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), app);

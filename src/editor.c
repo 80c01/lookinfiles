@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "i18n.h"
 #include "editor_modes.h"
 #include "dialog.h"
 #include "panels.h"
@@ -522,10 +523,10 @@ static const struct {
     EditorMoveDirection dir;
     gint action;
 } TAB_MOVES[] = {
-    {"Move Right", "Ctrl+Alt+Right", EDITOR_MOVE_RIGHT, TAB_ACTION_MOVE_RIGHT},
-    {"Move Left", "Ctrl+Alt+Left", EDITOR_MOVE_LEFT, TAB_ACTION_MOVE_LEFT},
-    {"Move Down", "Ctrl+Alt+Down", EDITOR_MOVE_DOWN, TAB_ACTION_MOVE_DOWN},
-    {"Move Up", "Ctrl+Alt+Up", EDITOR_MOVE_UP, TAB_ACTION_MOVE_UP},
+    {NC_("editor tab", "Move Right"), "Ctrl+Alt+Right", EDITOR_MOVE_RIGHT, TAB_ACTION_MOVE_RIGHT},
+    {NC_("editor tab", "Move Left"), "Ctrl+Alt+Left", EDITOR_MOVE_LEFT, TAB_ACTION_MOVE_LEFT},
+    {NC_("editor tab", "Move Down"), "Ctrl+Alt+Down", EDITOR_MOVE_DOWN, TAB_ACTION_MOVE_DOWN},
+    {NC_("editor tab", "Move Up"), "Ctrl+Alt+Up", EDITOR_MOVE_UP, TAB_ACTION_MOVE_UP},
 };
 
 void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* target_widget) {
@@ -550,7 +551,8 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     gboolean any_move = FALSE;
     for (gsize i = 0; i < G_N_ELEMENTS(TAB_MOVES); i++) {
         if (!notebook_can_move_tab(app, cur_nb, TAB_MOVES[i].dir)) continue;
-        tab_menu_item(box, popover, app, tab, TAB_MOVES[i].name, TAB_MOVES[i].key, TAB_MOVES[i].action);
+        tab_menu_item(box, popover, app, tab, g_dpgettext2(GETTEXT_PACKAGE, "editor tab", TAB_MOVES[i].name),
+                      TAB_MOVES[i].key, TAB_MOVES[i].action);
         any_move = TRUE;
     }
 
@@ -563,7 +565,7 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
 
     /* The only place where a tab's mode changes: the current one is marked */
     gboolean org = (tab->mode == EDITOR_MODE_ORGMODE);
-    GtkWidget* mode_lbl = gtk_label_new("Tab Mode");
+    GtkWidget* mode_lbl = gtk_label_new(_("Tab Mode"));
     gtk_widget_add_css_class(mode_lbl, "dim-label");
     gtk_label_set_xalign(GTK_LABEL(mode_lbl), 0.0f);
     gtk_widget_set_margin_start(mode_lbl, 8);
@@ -581,9 +583,9 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     gtk_box_append(GTK_BOX(box), sep3);
 
     tab_menu_item(box, popover, app, tab,
-                  diff_gutter_get_line_numbers(tab->view) ? "Hide Line Numbers" : "Show Line Numbers",
+                  diff_gutter_get_line_numbers(tab->view) ? _("Hide Line Numbers") : _("Show Line Numbers"),
                   "Ctrl+Alt+N", TAB_ACTION_LINE_NUMBERS);
-    tab_menu_item(box, popover, app, tab, editor_mode_get_wrap(tab) ? "Don't Wrap Lines" : "Wrap Lines",
+    tab_menu_item(box, popover, app, tab, editor_mode_get_wrap(tab) ? _("Don't Wrap Lines") : _("Wrap Lines"),
                   NULL, TAB_ACTION_WRAP);
 
     GtkWidget* sep_split = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
@@ -593,9 +595,9 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     /* The keys of the tab's mode (Notepad has none) */
     gboolean vim = (tab->mode == EDITOR_MODE_VIM);
     gboolean emacs = (tab->mode == EDITOR_MODE_EMACS || org);
-    tab_menu_item(box, popover, app, tab, "Split Right", vim ? "Ctrl+W v" : emacs ? "C-x 3" : NULL,
+    tab_menu_item(box, popover, app, tab, _("Split Right"), vim ? "Ctrl+W v" : emacs ? "C-x 3" : NULL,
                   TAB_ACTION_SPLIT_RIGHT);
-    tab_menu_item(box, popover, app, tab, "Split Down", vim ? "Ctrl+W s" : emacs ? "C-x 2" : NULL,
+    tab_menu_item(box, popover, app, tab, _("Split Down"), vim ? "Ctrl+W s" : emacs ? "C-x 2" : NULL,
                   TAB_ACTION_SPLIT_DOWN);
 
     GtkWidget* sep4 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
@@ -603,7 +605,7 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     gtk_widget_set_margin_bottom(sep4, 4);
     gtk_box_append(GTK_BOX(box), sep4);
 
-    tab_menu_item(box, popover, app, tab, "Close Tab", "Ctrl+W", TAB_ACTION_CLOSE);
+    tab_menu_item(box, popover, app, tab, _("Close Tab"), "Ctrl+W", TAB_ACTION_CLOSE);
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     g_signal_connect_swapped(popover, "closed", G_CALLBACK(gtk_widget_unparent), popover);
@@ -1147,7 +1149,8 @@ void editor_page_show_context_menu(AppData* app, GtkWidget* child, GtkWidget* ta
     gboolean any_move = FALSE;
     for (gsize i = 0; movable && i < G_N_ELEMENTS(TAB_MOVES); i++) {
         if (!notebook_can_move_tab(app, cur_nb, TAB_MOVES[i].dir)) continue;
-        page_menu_item(box, TAB_MOVES[i].name, TAB_MOVES[i].key, TAB_MOVES[i].action);
+        page_menu_item(box, g_dpgettext2(GETTEXT_PACKAGE, "editor tab", TAB_MOVES[i].name), TAB_MOVES[i].key,
+                       TAB_MOVES[i].action);
         any_move = TRUE;
     }
     if (on_close != NULL) {
@@ -1157,7 +1160,7 @@ void editor_page_show_context_menu(AppData* app, GtkWidget* child, GtkWidget* ta
             gtk_widget_set_margin_bottom(sep, 4);
             gtk_box_append(GTK_BOX(box), sep);
         }
-        page_menu_item(box, "Close Tab", "Ctrl+W", TAB_ACTION_CLOSE);
+        page_menu_item(box, _("Close Tab"), "Ctrl+W", TAB_ACTION_CLOSE);
     }
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);
@@ -1722,11 +1725,11 @@ gboolean editor_confirm_discard(AppData* app, EditorTab* tab) {
     if (editor_view_twin(app, tab) != NULL) {
         return TRUE; /* another view of the file keeps the changes */
     }
-    GtkWidget* dlg = app_dialog_new("Unsaved Changes", app ? app->window : NULL,
-                                    "_Cancel", APP_RESPONSE_CANCEL,
-                                    "Close _Without Saving", APP_RESPONSE_OK,
+    GtkWidget* dlg = app_dialog_new(_("Unsaved Changes"), app ? app->window : NULL,
+                                    _("_Cancel"), APP_RESPONSE_CANCEL,
+                                    _("Close _Without Saving"), APP_RESPONSE_OK,
                                     NULL);
-    gchar* message = g_strdup_printf("%s has unsaved changes. Close anyway?", tab->name);
+    gchar* message = g_strdup_printf(_("%s has unsaved changes. Close anyway?"), tab->name);
     GtkWidget* label = gtk_label_new(message);
     g_free(message);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
@@ -2067,7 +2070,7 @@ gboolean editor_save_current(AppData* app) {
     }
     GError* error = NULL;
     if (!editor_tab_write(tab, tab->path, &error)) {
-        gchar* msg = g_strdup_printf("Cannot save %s: %s", tab->name, error->message);
+        gchar* msg = g_strdup_printf(_("Cannot save %s: %s"), tab->name, error->message);
         app_notice(app, msg, FALSE);
         g_free(msg);
         g_error_free(error);

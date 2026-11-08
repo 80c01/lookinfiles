@@ -1,5 +1,6 @@
 /* The text view of an editor tab (see editor_view.h) */
 #include "editor_view.h"
+#include "i18n.h"
 #include <math.h>
 #include "editor_modes.h"
 #include "app_events.h"
@@ -377,13 +378,13 @@ void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
     gtk_label_set_xalign(GTK_LABEL(stat_lbl), 0.0f);
     gtk_widget_set_hexpand(stat_lbl, TRUE);
     if (is_org_file(tab->name) || tab->mode == EDITOR_MODE_ORGMODE) {
-        gtk_label_set_text(GTK_LABEL(stat_lbl), "Org-mode (Emacs keys) | Tab/S-Tab: fold | M-RET: heading | M-arrows: structure | S-arrows: TODO | C-c C-c");
+        gtk_label_set_text(GTK_LABEL(stat_lbl), _("Org-mode (Emacs keys) | Tab/S-Tab: fold | M-RET: heading | M-arrows: structure | S-arrows: TODO | C-c C-c"));
     } else if (tab->mode == EDITOR_MODE_VIM) {
         gtk_label_set_text(GTK_LABEL(stat_lbl), "VIM -- NORMAL --");
     } else if (tab->mode == EDITOR_MODE_EMACS) {
-        gtk_label_set_text(GTK_LABEL(stat_lbl), "Emacs mode");
+        gtk_label_set_text(GTK_LABEL(stat_lbl), _("Emacs mode"));
     } else {
-        gtk_label_set_text(GTK_LABEL(stat_lbl), "Notepad mode");
+        gtk_label_set_text(GTK_LABEL(stat_lbl), _("Notepad mode"));
     }
     g_object_set_data(G_OBJECT(tab->status_bar), "label", stat_lbl);
     gtk_box_append(GTK_BOX(tab->status_bar), stat_lbl);

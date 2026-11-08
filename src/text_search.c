@@ -1,5 +1,6 @@
 /* Search the files of a project for a text (see text_search.h) */
 #include "text_search.h"
+#include "i18n.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -61,12 +62,13 @@ gchar* text_search_check(const gchar* query, const TextSearchOptions* opts) {
 }
 
 gchar* text_search_describe(const TextSearchOptions* opts) {
-    GString* s = g_string_new(opts != NULL && opts->match_case ? "case sensitive" : "any case");
+    /* TRANSLATORS: the search options, a list separated by ", " */
+    GString* s = g_string_new(opts != NULL && opts->match_case ? _("case sensitive") : _("any case"));
     if (opts != NULL && opts->fuzzy) {
-        g_string_append(s, ", letters in order");
+        g_string_append_printf(s, ", %s", _("letters in order"));
     } else if (opts != NULL) {
-        if (opts->whole_word) g_string_append(s, ", whole word");
-        if (opts->regex) g_string_append(s, ", regex");
+        if (opts->whole_word) g_string_append_printf(s, ", %s", _("whole word"));
+        if (opts->regex) g_string_append_printf(s, ", %s", _("regex"));
     }
     return g_string_free(s, FALSE);
 }

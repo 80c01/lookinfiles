@@ -1,4 +1,5 @@
 #include "editor_modes.h"
+#include "i18n.h"
 #include "app_events.h"
 #include "text_style.h"
 #include "diff_gutter.h"
@@ -286,7 +287,7 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
     } else {
         EditorModeState* st = (EditorModeState*)tab->mode_state;
         if (st && st->np_status_label) {
-            gchar* msg = g_strdup_printf("Saved to %s", tab->name);
+            gchar* msg = g_strdup_printf(_("Saved to %s"), tab->name);
             gtk_label_set_text(GTK_LABEL(st->np_status_label), msg);
             g_free(msg);
         }
@@ -690,7 +691,7 @@ typedef enum { EOL_NOTEPAD, EOL_EMACS, EOL_VIM } EolStyle;
 
 static const gchar* eol_label(EditorTab* tab, EolStyle style) {
     static const gchar* const names[3][3] = {
-        {"Unix (LF)", "Windows (CRLF)", "Mac (CR)"},
+        {N_("Unix (LF)"), N_("Windows (CRLF)"), N_("Mac (CR)")},
         {":", "\\", "/"},
         {"unix", "dos", "mac"},
     };
@@ -700,7 +701,7 @@ static const gchar* eol_label(EditorTab* tab, EolStyle style) {
     } else if (g_strcmp0(tab->line_ending, "Mac (CR)") == 0) {
         kind = 2;
     }
-    return names[style][kind];
+    return style == EOL_NOTEPAD ? _(names[style][kind]) : names[style][kind];
 }
 
 /* Notepad: "⎇ main   src/main.c •" on the left, "Ln 3, Col 7 | 100% | C | Unix (LF) | UTF-8 | clangd: 1 error" on the right */
@@ -718,13 +719,18 @@ static void notepad_update_status(EditorTab* tab, EditorModeState* st, const Edi
     g_string_free(file, TRUE);
 
     GString* text = g_string_new(NULL);
-    g_string_append_printf(text, "Ln %d, Col %d   |   %d%%   |   %s   |   %s   |   UTF-8", line, col,
+    /* TRANSLATORS: Notepad status bar: line, column, zoom, language, line ending */
+    g_string_append_printf(text, _("Ln %1$d, Col %2$d   |   %3$d%%   |   %4$s   |   %5$s   |   UTF-8"), line, col,
                            fonts_zoom_percent(), info->language, eol_label(tab, EOL_NOTEPAD));
     if (info->backend != NULL) {
         g_string_append_printf(text, "   |   %s", info->backend);
         if (info->errors > 0 || info->warnings > 0) {
-            g_string_append_printf(text, ": %u error%s, %u warning%s", info->errors,
-                                   info->errors == 1 ? "" : "s", info->warnings, info->warnings == 1 ? "" : "s");
+            gchar* errors = g_strdup_printf(ngettext("%u error", "%u errors", info->errors), info->errors);
+            gchar* warnings = g_strdup_printf(ngettext("%u warning", "%u warnings", info->warnings), info->warnings);
+            /* TRANSLATORS: after the language server name: "1 error, 2 warnings" */
+            g_string_append_printf(text, _(": %1$s, %2$s"), errors, warnings);
+            g_free(errors);
+            g_free(warnings);
         }
     }
     gtk_label_set_text(GTK_LABEL(st->np_info_label), text->str);

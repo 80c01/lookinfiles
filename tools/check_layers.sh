@@ -120,7 +120,7 @@ user_guide:
 fuzzy_match:
 web_address:
 path_globs:
-text_search:code_index
+text_search:code_index i18n
 session_store:app_paths,layout_store
 tab_tree:
 settings_store:app_paths

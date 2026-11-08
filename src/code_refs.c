@@ -1,5 +1,6 @@
 /* References of a symbol in the References tab (see code_refs.h) */
 #include "code_refs.h"
+#include "i18n.h"
 #include "palette.h"
 #include "code_index.h"
 #include "code_intel.h"
@@ -7,6 +8,7 @@
 #include "icons.h"
 #include "theme.h"
 #include "focus_route.h"
+#include <stdarg.h>
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */
@@ -73,6 +75,26 @@ GtkWidget* code_refs_page(AppData* app) {
 
 GtkWidget* code_refs_search_page(AppData* app) {
     return app != NULL ? app->search_page : NULL;
+}
+
+/* A translated sentence put in Pango markup: the sentence is escaped, the
+ * arguments are markup already (bold names, count_markup()) or numbers */
+static gchar* markup_sentence(const gchar* translated, ...) {
+    gchar* format = g_markup_escape_text(translated, -1);
+    va_list args;
+    va_start(args, translated);
+    gchar* out = g_strdup_vprintf(format, args);
+    va_end(args);
+    g_free(format);
+    return out;
+}
+
+/* "3 files", translated and escaped for markup */
+static gchar* count_markup(const gchar* translated, guint n) {
+    gchar* text = g_strdup_printf(translated, n);
+    gchar* out = g_markup_escape_text(text, -1);
+    g_free(text);
+    return out;
 }
 
 static void ensure_css(void) {
@@ -232,7 +254,7 @@ static RefsPage* ensure_page(AppData* app, GtkWidget** slot, const gchar* title)
     gtk_label_set_ellipsize(GTK_LABEL(rp->header), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(rp->header, TRUE);
     gtk_box_append(GTK_BOX(bar), rp->header);
-    gchar* tip = g_strdup_printf("Close %s", title);
+    gchar* tip = g_strdup_printf(_("Close %s"), title);
     GtkWidget* close = icon_button_new("window-close", tip);
     g_free(tip);
     g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), rp);
@@ -316,32 +338,59 @@ static void present_page(AppData* app, RefsPage* rp, gboolean any) {
 /* Show the references (CodeReference*) of name */
 static void show_references(AppData* app, EditorTab* tab, CodeNavMessageFunc message, const gchar* name,
                             GPtrArray* refs, const gchar* root, const gchar* source, gboolean truncated) {
-    RefsPage* rp = ensure_page(app, &app->refs_page, "References");
+    RefsPage* rp = ensure_page(app, &app->refs_page, _("References"));
     if (rp == NULL) return;
     guint files = fill_page(rp, refs, root, strlen(name));
-    gchar* markup = refs->len == 0
-                        ? g_markup_printf_escaped("No references to <b>%s</b> found <span foreground=\"%s\">(%s)</span>",
-                                                  name, palette_color(PAL_FG_SUBTLE), source)
-                        : g_markup_printf_escaped("References to <b>%s</b>: %u in %u file%s%s "
-                                                  "<span foreground=\"%s\">(%s; Enter opens)</span>",
-                                                  name, refs->len, files, files > 1 ? "s" : "",
-                                                  truncated ? ", list cut" : "", palette_color(PAL_FG_SUBTLE), source);
+    gchar* bold = g_markup_printf_escaped("<b>%s</b>", name);
+    gchar* sentence = NULL;
+    gchar* hint = NULL;
+    if (refs->len == 0) {
+        sentence = markup_sentence(_("No references to %s found"), bold);
+        hint = g_strdup(source);
+    } else {
+        gchar* in_files = count_markup(ngettext("%u file", "%u files", files), files);
+        /* TRANSLATORS: "References to NAME: 12 in 3 files" */
+        sentence = markup_sentence(_("References to %1$s: %2$u in %3$s"), bold, refs->len, in_files);
+        g_free(in_files);
+        if (truncated) {
+            gchar* cut = g_markup_escape_text(_(", list cut"), -1);
+            gchar* joined = g_strconcat(sentence, cut, NULL);
+            g_free(sentence);
+            g_free(cut);
+            sentence = joined;
+        }
+        /* TRANSLATORS: %s is where the references come from (a language server name, _("whole words in the project")) */
+        hint = g_strdup_printf(_("%s; Enter opens"), source);
+    }
+    gchar* markup = g_markup_printf_escaped(" <span foreground=\"%s\">(%s)</span>", palette_color(PAL_FG_SUBTLE), hint);
+    gchar* full = g_strconcat(sentence, markup, NULL);
+    g_free(markup);
+    markup = full;
+    g_free(sentence);
+    g_free(hint);
+    g_free(bold);
     gtk_label_set_markup(GTK_LABEL(rp->header), markup);
     g_free(markup);
     present_page(app, rp, refs->len > 0);
     if (message != NULL && tab != NULL && g_list_find(app->editors, tab) != NULL) {
-        gchar* msg = g_strdup_printf("%u reference%s to %s (References tab)", refs->len, refs->len == 1 ? "" : "s", name);
+        gchar* msg = g_strdup_printf(ngettext("%1$u reference to %2$s (References tab)",
+                                                "%1$u references to %2$s (References tab)", refs->len),
+                                       refs->len, name);
         message(tab, msg);
         g_free(msg);
     }
 }
 
 void code_refs_show_searching(AppData* app, const gchar* query, const gchar* root) {
-    RefsPage* rp = ensure_page(app, &app->search_page, "Search");
+    RefsPage* rp = ensure_page(app, &app->search_page, _("Search"));
     if (rp == NULL) return;
     g_list_store_remove_all(rp->store);
     gchar* base = g_path_get_basename(root);
-    gchar* markup = g_markup_printf_escaped("Searching for <b>%s</b> in %s…", query, base);
+    gchar* bold = g_markup_printf_escaped("<b>%s</b>", query);
+    gchar* where = g_markup_escape_text(base, -1);
+    gchar* markup = markup_sentence(_("Searching for %1$s in %2$s…"), bold, where);
+    g_free(where);
+    g_free(bold);
     gtk_label_set_markup(GTK_LABEL(rp->header), markup);
     gtk_widget_set_tooltip_text(rp->header, NULL);
     g_free(markup);
@@ -357,12 +406,21 @@ static void set_search(RefsPage* rp, const gchar* query, GPtrArray* refs, const 
     gchar* warn = note != NULL ? g_markup_printf_escaped(" <span foreground=\"%s\">· %s</span>",
                                                          palette_color(PAL_WARNING), note)
                                : g_strdup("");
-    gchar* markup = refs->len == 0
-                        ? g_markup_printf_escaped("No results for <b>%s</b>", query)
-                        : g_markup_printf_escaped("<b>%s</b>: %u result%s in %u file%s", query, refs->len,
-                                                  refs->len == 1 ? "" : "s", files, files > 1 ? "s" : "");
-    gchar* tail = g_markup_printf_escaped(" <span foreground=\"%s\">(%s%s)</span>", palette_color(PAL_FG_SUBTLE), how,
-                                          refs->len > 0 ? "; Enter opens" : "");
+    gchar* bold = g_markup_printf_escaped("<b>%s</b>", query);
+    gchar* markup = NULL;
+    if (refs->len == 0) {
+        markup = markup_sentence(_("No results for %s"), bold);
+    } else {
+        gchar* in_files = count_markup(ngettext("%u file", "%u files", files), files);
+        /* TRANSLATORS: "QUERY: 12 results in 3 files" */
+        markup = markup_sentence(ngettext("%1$s: %2$u result in %3$s", "%1$s: %2$u results in %3$s", refs->len), bold,
+                                 refs->len, in_files);
+        g_free(in_files);
+    }
+    g_free(bold);
+    gchar* hint = refs->len > 0 ? g_strdup_printf(_("%s; Enter opens"), how) : g_strdup(how);
+    gchar* tail = g_markup_printf_escaped(" <span foreground=\"%s\">(%s)</span>", palette_color(PAL_FG_SUBTLE), hint);
+    g_free(hint);
     gchar* all = g_strconcat(markup, warn, tail, NULL);
     gtk_label_set_markup(GTK_LABEL(rp->header), all);
     gtk_widget_set_tooltip_markup(rp->header, all);
@@ -374,7 +432,7 @@ static void set_search(RefsPage* rp, const gchar* query, GPtrArray* refs, const 
 
 void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
                            const gchar* how, const gchar* note) {
-    RefsPage* rp = ensure_page(app, &app->search_page, "Search");
+    RefsPage* rp = ensure_page(app, &app->search_page, _("Search"));
     if (rp == NULL) return;
     set_search(rp, query, refs, root, how, note);
     present_page(app, rp, refs->len > 0);
@@ -455,7 +513,7 @@ static void refs_done(GObject* source, GAsyncResult* res, gpointer data) {
     (void)data;
     RefsLookup* rl = g_task_get_task_data(G_TASK(res));
     if (rl->serial != refs_serial || g_task_had_error(G_TASK(res))) return;
-    show_references(rl->app, rl->tab, rl->message, rl->name, rl->refs, rl->root, "whole words in the project",
+    show_references(rl->app, rl->tab, rl->message, rl->name, rl->refs, rl->root, _("whole words in the project"),
                     rl->truncated);
 }
 
@@ -565,7 +623,7 @@ static void on_server_refs(AppData* app, EditorTab* tab, GPtrArray* locations, g
     g_ptr_array_sort_with_data(refs, compare_refs, origin);
     gchar* root = code_index_project_root(origin);
     gchar* server = code_intel_server_label(app, tab);
-    show_references(app, tab, sr->message, sr->name, refs, root, server != NULL ? server : "language server", FALSE);
+    show_references(app, tab, sr->message, sr->name, refs, root, server != NULL ? server : _("language server"), FALSE);
     g_free(server);
     g_free(root);
     g_free(origin);
@@ -577,7 +635,7 @@ static void on_server_refs(AppData* app, EditorTab* tab, GPtrArray* locations, g
 gboolean code_refs_find(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
     if (app == NULL || tab == NULL || tab->buffer == NULL) return FALSE;
     if (!code_nav_is_code(tab)) {
-        if (message != NULL) message(tab, "No code navigation for this file type");
+        if (message != NULL) message(tab, _("No code navigation for this file type"));
         return FALSE;
     }
     GtkTextIter it, s, e;
@@ -590,13 +648,13 @@ gboolean code_refs_find(AppData* app, EditorTab* tab, CodeNavMessageFunc message
     gint ws = 0, we = 0;
     if (!code_word_at(line, -1, gtk_text_iter_get_line_index(&it), code_lang_from_name(tab->path), &ws, &we)) {
         g_free(line);
-        if (message != NULL) message(tab, "No identifier under the cursor");
+        if (message != NULL) message(tab, _("No identifier under the cursor"));
         return FALSE;
     }
     gchar* name = g_strndup(line + ws, (gsize)(we - ws));
     g_free(line);
     if (message != NULL) {
-        gchar* msg = g_strdup_printf("Searching the references of %s...", name);
+        gchar* msg = g_strdup_printf(_("Searching the references of %s..."), name);
         message(tab, msg);
         g_free(msg);
     }

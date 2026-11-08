@@ -1,5 +1,6 @@
 /* Notepad editor mode: find/replace, go to line and save-as bars, Windows-style key bindings. */
 #include "editor_modes_private.h"
+#include "i18n.h"
 #include "icons.h"
 #include "editor.h"
 #include "code_nav.h"
@@ -41,7 +42,7 @@ static void np_status(EditorModeState* st, const gchar* msg) {
 }
 
 static void np_not_found(EditorModeState* st) {
-    gchar* msg = g_strdup_printf("Cannot find \"%s\"", np_query(st));
+    gchar* msg = g_strdup_printf(_("Cannot find \"%s\""), np_query(st));
     np_status(st, msg);
     g_free(msg);
 }
@@ -217,7 +218,7 @@ static void on_np_replace_clicked(GtkButton* btn, gpointer user_data) {
     st->np_ms = st->np_me = -1;
     gtk_text_buffer_place_cursor(tab->buffer, &s);
     if (np_search_from(tab, st, &s, TRUE)) {
-        np_status(st, "Occurrence replaced");
+        np_status(st, _("Occurrence replaced"));
     }
 }
 
@@ -246,7 +247,7 @@ static void on_np_replace_all_clicked(GtkButton* btn, gpointer user_data) {
     if (count == 0) {
         np_not_found(st);
     } else {
-        gchar* msg = g_strdup_printf("Replaced %d occurrence(s)", count);
+        gchar* msg = g_strdup_printf(ngettext("Replaced %d occurrence", "Replaced %d occurrences", count), count);
         np_status(st, msg);
         g_free(msg);
     }
@@ -370,12 +371,12 @@ static void on_np_goto_confirm(GtkWidget* w, gpointer user_data) {
     gint64 line = g_ascii_strtoll(text, &end, 10);
     while (end != NULL && g_ascii_isspace(*end)) end++;
     if (end == text || (end != NULL && *end != '\0') || line < 1) {
-        np_status(st, "Type a line number");
+        np_status(st, _("Type a line number"));
         return;
     }
     gint total = gtk_text_buffer_get_line_count(tab->buffer);
     if (line > total) {
-        gchar* msg = g_strdup_printf("The file has %d lines", total);
+        gchar* msg = g_strdup_printf(ngettext("The file has %d line", "The file has %d lines", total), total);
         np_status(st, msg);
         g_free(msg);
         return;
@@ -460,12 +461,12 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
 
     /* Row 1: Find */
     GtkWidget* row1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    GtkWidget* lbl_f = gtk_label_new("Find:");
+    GtkWidget* lbl_f = gtk_label_new(_("Find:"));
     st->np_find_entry = gtk_entry_new();
     gtk_widget_set_hexpand(st->np_find_entry, TRUE);
-    GtkWidget* btn_fn = np_button("Find Next", "Find Next (Enter / F3)");
-    GtkWidget* btn_fp = np_button("Find Prev", "Find Previous (Shift+Enter / Shift+F3)");
-    GtkWidget* btn_fc = icon_button_new("window-close", "Close Find Bar (Esc)");
+    GtkWidget* btn_fn = np_button(_("Find Next"), _("Find Next (Enter / F3)"));
+    GtkWidget* btn_fp = np_button(_("Find Prev"), _("Find Previous (Shift+Enter / Shift+F3)"));
+    GtkWidget* btn_fc = icon_button_new("window-close", _("Close Find Bar (Esc)"));
 
     g_signal_connect(btn_fn, "clicked", G_CALLBACK(on_np_find_next_clicked), tab);
     g_signal_connect(btn_fp, "clicked", G_CALLBACK(on_np_find_prev_clicked), tab);
@@ -482,11 +483,11 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
 
     /* Row 2: Replace */
     GtkWidget* row2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    GtkWidget* lbl_r = gtk_label_new("Replace:");
+    GtkWidget* lbl_r = gtk_label_new(_("Replace:"));
     st->np_replace_entry = gtk_entry_new();
     gtk_widget_set_hexpand(st->np_replace_entry, TRUE);
-    GtkWidget* btn_rep = np_button("Replace", "Replace the match and find the next one (Enter)");
-    GtkWidget* btn_rep_all = np_button("Replace All", "Replace every match");
+    GtkWidget* btn_rep = np_button(_("Replace"), _("Replace the match and find the next one (Enter)"));
+    GtkWidget* btn_rep_all = np_button(_("Replace All"), _("Replace every match"));
 
     g_signal_connect(btn_rep, "clicked", G_CALLBACK(on_np_replace_clicked), tab);
     g_signal_connect(btn_rep_all, "clicked", G_CALLBACK(on_np_replace_all_clicked), tab);
@@ -498,13 +499,13 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     gtk_box_append(GTK_BOX(row2), btn_rep_all);
 
     /* Formatting quick buttons in notepad bar */
-    GtkWidget* btn_al = np_button("Left", "Align left (Ctrl+L)");
+    GtkWidget* btn_al = np_button(_("Left"), _("Align left (Ctrl+L)"));
     g_object_set_data((GObject*)btn_al, "align-type", (gpointer)"left");
     g_signal_connect(btn_al, "clicked", G_CALLBACK(on_np_align_btn_clicked), tab);
-    GtkWidget* btn_ac = np_button("Center", "Center (Ctrl+E)");
+    GtkWidget* btn_ac = np_button(_("Center"), _("Center (Ctrl+E)"));
     g_object_set_data((GObject*)btn_ac, "align-type", (gpointer)"center");
     g_signal_connect(btn_ac, "clicked", G_CALLBACK(on_np_align_btn_clicked), tab);
-    GtkWidget* btn_ar = np_button("Right", "Align right (Ctrl+R)");
+    GtkWidget* btn_ar = np_button(_("Right"), _("Align right (Ctrl+R)"));
     g_object_set_data((GObject*)btn_ar, "align-type", (gpointer)"right");
     g_signal_connect(btn_ar, "clicked", G_CALLBACK(on_np_align_btn_clicked), tab);
 
@@ -521,12 +522,12 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     GtkWidget* goto_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(goto_bar, "notepad-bar");
     gtk_widget_set_visible(goto_bar, FALSE);
-    GtkWidget* lbl_g = gtk_label_new("Go to line:");
+    GtkWidget* lbl_g = gtk_label_new(_("Go to line:"));
     st->np_goto_entry = gtk_entry_new();
     gtk_editable_set_width_chars(GTK_EDITABLE(st->np_goto_entry), 8);
     gtk_entry_set_input_purpose(GTK_ENTRY(st->np_goto_entry), GTK_INPUT_PURPOSE_DIGITS);
-    GtkWidget* btn_go = np_button("Go To", "Go to the line (Enter)");
-    GtkWidget* btn_gc = icon_button_new("window-close", "Close (Esc)");
+    GtkWidget* btn_go = np_button(_("Go To"), _("Go to the line (Enter)"));
+    GtkWidget* btn_gc = icon_button_new("window-close", _("Close (Esc)"));
     g_signal_connect(btn_go, "clicked", G_CALLBACK(on_np_goto_confirm), tab);
     g_signal_connect_swapped(btn_gc, "clicked", G_CALLBACK(notepad_hide_goto), tab);
     g_signal_connect(st->np_goto_entry, "activate", G_CALLBACK(on_np_goto_confirm), tab);
@@ -541,11 +542,11 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     GtkWidget* save_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(save_bar, "notepad-bar");
     gtk_widget_set_visible(save_bar, FALSE);
-    GtkWidget* lbl_sa = gtk_label_new("Save As:");
+    GtkWidget* lbl_sa = gtk_label_new(_("Save As:"));
     st->np_save_entry = gtk_entry_new();
     gtk_widget_set_hexpand(st->np_save_entry, TRUE);
-    GtkWidget* btn_sa_save = gtk_button_new_with_label("Save");
-    GtkWidget* btn_sa_canc = gtk_button_new_with_label("Cancel");
+    GtkWidget* btn_sa_save = gtk_button_new_with_label(_("Save"));
+    GtkWidget* btn_sa_canc = gtk_button_new_with_label(_("Cancel"));
 
     g_signal_connect(btn_sa_save, "clicked", G_CALLBACK(on_np_save_as_confirm), tab);
     g_signal_connect_swapped(btn_sa_canc, "clicked", G_CALLBACK(notepad_hide_save_as), tab);
@@ -564,7 +565,7 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     st->np_file_label = gtk_label_new("");
     editor_bar_label_shrinkable(st->np_file_label, PANGO_ELLIPSIZE_START);
     gtk_label_set_xalign(GTK_LABEL(st->np_file_label), 0.0f);
-    st->np_status_label = gtk_label_new("Ready");
+    st->np_status_label = gtk_label_new(_("Ready"));
     editor_bar_label_shrinkable(st->np_status_label, PANGO_ELLIPSIZE_END);
     gtk_label_set_xalign(GTK_LABEL(st->np_status_label), 0.0f);
     gtk_widget_set_hexpand(st->np_status_label, TRUE);

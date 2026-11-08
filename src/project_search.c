@@ -1,5 +1,6 @@
 /* Search in files (see project_search.h) */
 #include "project_search.h"
+#include "i18n.h"
 #include "code_index.h"
 #include "code_refs.h"
 #include "dialog.h"
@@ -105,26 +106,31 @@ static gchar* stop_note(const Search* s) {
     GString* n = g_string_new(NULL);
     gchar* t = NULL;
     if (s->cut_files) {
-        add_note(n, t = g_strdup_printf("only the first %u files listed", (guint)TEXT_SEARCH_MAX_FILES));
+        add_note(n, t = g_strdup_printf(_("only the first %u files listed"), (guint)TEXT_SEARCH_MAX_FILES));
         g_free(t);
     }
     if (s->stats.stop == TEXT_SEARCH_MAX_RESULTS_HIT) {
-        add_note(n, t = g_strdup_printf("stopped at %u results", (guint)TEXT_SEARCH_MAX_RESULTS));
+        add_note(n, t = g_strdup_printf(_("stopped at %u results"), (guint)TEXT_SEARCH_MAX_RESULTS));
         g_free(t);
     } else if (s->stats.stop == TEXT_SEARCH_MAX_BYTES_HIT) {
-        add_note(n, t = g_strdup_printf("stopped after %u MB read, %u files searched",
+        add_note(n, t = g_strdup_printf(ngettext("stopped after %1$u MB read, %2$u file searched",
+                                                 "stopped after %1$u MB read, %2$u files searched",
+                                                 s->stats.searched),
                                         (guint)(TEXT_SEARCH_MAX_BYTES / (1024 * 1024)), s->stats.searched));
         g_free(t);
     }
     if (s->stats.skipped_large > 0) {
-        add_note(n, t = g_strdup_printf("%u file%s over %u MB skipped", s->stats.skipped_large,
-                                        s->stats.skipped_large == 1 ? "" : "s",
+        add_note(n, t = g_strdup_printf(ngettext("%1$u file over %2$u MB skipped", "%1$u files over %2$u MB skipped",
+                                                 s->stats.skipped_large),
+                                        s->stats.skipped_large,
                                         (guint)(TEXT_SEARCH_MAX_FILE_BYTES / (1024 * 1024))));
         g_free(t);
     }
     if (s->stats.too_complex > 0) {
-        add_note(n, t = g_strdup_printf("expression too complex in %u file%s, matches may be missing",
-                                        s->stats.too_complex, s->stats.too_complex == 1 ? "" : "s"));
+        add_note(n, t = g_strdup_printf(ngettext("expression too complex in %u file, matches may be missing",
+                                                 "expression too complex in %u files, matches may be missing",
+                                                 s->stats.too_complex),
+                                        s->stats.too_complex));
         g_free(t);
     }
     if (n->len == 0) {
@@ -139,9 +145,16 @@ static gchar* describe(const TextSearchOptions* opts, const Scope* sc) {
     gchar* how = text_search_describe(opts);
     GString* s = g_string_new(how);
     g_free(how);
-    if (sc->include[0] != '\0') g_string_append_printf(s, ", in %s", sc->include);
-    if (sc->exclude[0] != '\0') g_string_append_printf(s, ", not in %s", sc->exclude);
-    if (sc->ignored) g_string_append(s, ", ignored files too");
+    /* TRANSLATORS: items of the search description list, after the options */
+    if (sc->include[0] != '\0') {
+        g_string_append(s, ", ");
+        g_string_append_printf(s, _("in %s"), sc->include);
+    }
+    if (sc->exclude[0] != '\0') {
+        g_string_append(s, ", ");
+        g_string_append_printf(s, _("not in %s"), sc->exclude);
+    }
+    if (sc->ignored) g_string_append_printf(s, ", %s", _("ignored files too"));
     return g_string_free(s, FALSE);
 }
 
@@ -341,8 +354,8 @@ static GtkWidget* filter_row(GtkGrid* grid, gint row, const gchar* label, const 
 }
 
 #define GLOBS_TOOLTIP                                                                                       \
-    "Patterns separated by commas: *.c (a name at any depth), src/ui (from the project root), build/ (folders " \
-    "only)"
+    _("Patterns separated by commas: *.c (a name at any depth), src/ui (from the project root), build/ (folders " \
+    "only)")
 
 void project_search_show(AppData* app) {
     if (app == NULL || app->window == NULL || app->base_dir == NULL || app_dialog_is_open(app->window) ||
@@ -353,8 +366,8 @@ void project_search_show(AppData* app) {
     gchar* root = code_index_project_root(app->base_dir);
     Prompt* p = g_new0(Prompt, 1);
     p->app = app;
-    GtkWidget* dlg = app_dialog_new("Search in Files", app->window, "_Cancel", APP_RESPONSE_CANCEL, NULL);
-    p->search = app_dialog_add_button(APP_DIALOG(dlg), "_Search", RESPONSE_SEARCH);
+    GtkWidget* dlg = app_dialog_new(_("Search in Files"), app->window, _("_Cancel"), APP_RESPONSE_CANCEL, NULL);
+    p->search = app_dialog_add_button(APP_DIALOG(dlg), _("_Search"), RESPONSE_SEARCH);
     gtk_widget_add_css_class(p->search, "suggested-action");
     app_dialog_set_default_response(APP_DIALOG(dlg), RESPONSE_SEARCH);
     app_dialog_set_width(APP_DIALOG(dlg), 560);
@@ -370,7 +383,7 @@ void project_search_show(AppData* app) {
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     p->entry = gtk_entry_new();
     gtk_widget_set_hexpand(p->entry, TRUE);
-    gtk_entry_set_placeholder_text(GTK_ENTRY(p->entry), "Text to find");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(p->entry), _("Text to find"));
     gtk_entry_set_activates_default(GTK_ENTRY(p->entry), TRUE);
     gchar* initial = selected_text(app);
     gtk_editable_set_text(GTK_EDITABLE(p->entry), initial != NULL ? initial : last->query != NULL ? last->query : "");
@@ -378,12 +391,12 @@ void project_search_show(AppData* app) {
     gtk_box_append(GTK_BOX(row), p->entry);
     GtkWidget* toggles = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(toggles, "linked");
-    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_CASE, "Aa", "Match Case (Alt+M)", last->opts.match_case));
-    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_WORD, "ab", "Whole Word (Alt+W)", last->opts.whole_word));
-    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_REGEX, ".*", "Regular Expression, PCRE Syntax (Alt+R)",
+    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_CASE, "Aa", _("Match Case (Alt+M)"), last->opts.match_case));
+    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_WORD, "ab", _("Whole Word (Alt+W)"), last->opts.whole_word));
+    gtk_box_append(GTK_BOX(toggles), option_new(p, OPT_REGEX, ".*", _("Regular Expression, PCRE Syntax (Alt+R)"),
                                                 last->opts.regex));
     gtk_box_append(GTK_BOX(toggles),
-                   option_new(p, OPT_FUZZY, "a…z", "Letters in Order, Not Next to Each Other: edvim Finds editor_vim (Alt+L)",
+                   option_new(p, OPT_FUZZY, "a…z", _("Letters in Order, Not Next to Each Other: edvim Finds editor_vim (Alt+L)"),
                               last->opts.fuzzy));
     gtk_box_append(GTK_BOX(row), toggles);
     gtk_box_append(GTK_BOX(box), row);
@@ -400,17 +413,17 @@ void project_search_show(AppData* app) {
     gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
     gtk_widget_set_margin_top(grid, 4);
-    p->include = filter_row(GTK_GRID(grid), 0, "Files to i_nclude", "*.c, src/ (empty: every file)", GLOBS_TOOLTIP,
+    p->include = filter_row(GTK_GRID(grid), 0, _("Files to i_nclude"), _("*.c, src/ (empty: every file)"), GLOBS_TOOLTIP,
                             last->scope.include);
-    p->exclude = filter_row(GTK_GRID(grid), 1, "Files to e_xclude", "tests/, *.min.js", GLOBS_TOOLTIP,
+    p->exclude = filter_row(GTK_GRID(grid), 1, _("Files to e_xclude"), _("tests/, *.min.js"), GLOBS_TOOLTIP,
                             last->scope.exclude);
     gtk_box_append(GTK_BOX(box), grid);
-    p->ignored = gtk_check_button_new_with_mnemonic("Include _ignored files");
-    gtk_widget_set_tooltip_text(p->ignored, "Also the files git ignores (.gitignore); outside git, hidden and build folders");
+    p->ignored = gtk_check_button_new_with_mnemonic(_("Include _ignored files"));
+    gtk_widget_set_tooltip_text(p->ignored, _("Also the files git ignores (.gitignore); outside git, hidden and build folders"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->ignored), last->scope.ignored);
     gtk_box_append(GTK_BOX(box), p->ignored);
 
-    gchar* where = g_strdup_printf("In the files of %s", root);
+    gchar* where = g_strdup_printf(_("In the files of %s"), root);
     GtkWidget* note = gtk_label_new(where);
     g_free(where);
     gtk_widget_add_css_class(note, "dim-label");

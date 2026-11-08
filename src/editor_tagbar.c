@@ -1,5 +1,6 @@
 /* The tagbar of an editor tab (see editor_tagbar.h) */
 #include "editor_tagbar.h"
+#include "i18n.h"
 #include "editor.h"
 #include "code_outline.h"
 #include "outline_pane.h"
@@ -146,7 +147,7 @@ GtkWidget* editor_tagbar_wrap(AppData* app, EditorTab* tab, GtkWidget* content) 
     tb->app = app;
     tb->tab = tab;
     tab->tagbar = tb;
-    tb->pane = outline_pane_new(content, &app->editor_tagbar_width, "Reading the symbols…", &callbacks, tb);
+    tb->pane = outline_pane_new(content, &app->editor_tagbar_width, _("Reading the symbols…"), &callbacks, tb);
     GtkWidget* paned = outline_pane_widget(tb->pane);
     g_object_set_data_full(G_OBJECT(paned), "editor-tagbar", tb, (GDestroyNotify)tagbar_free);
     g_signal_connect(tab->buffer, "mark-set", G_CALLBACK(on_mark_set), tb);
@@ -202,7 +203,7 @@ void editor_tagbar_set_width(AppData* app, gint width) {
 void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
     if (app == NULL || tab == NULL) return;
     if (!app->editor_tagbar && !code_outline_supported(tab)) {
-        if (message != NULL) message(tab, "No tagbar for this file type (code and Markdown files)");
+        if (message != NULL) message(tab, _("No tagbar for this file type (code and Markdown files)"));
         return;
     }
     editor_tagbar_set_shown(app, !app->editor_tagbar);
