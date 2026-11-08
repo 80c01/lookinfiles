@@ -7,7 +7,7 @@
  * keeps the angle to multiples of 15 degrees. The handle is a child of the
  * page surface, on top of the blocks, turned with the shape; it follows it
  * each frame while shown. */
-#include "canvas_item.h"
+#include "canvas/canvas_item.h"
 
 typedef struct CanvasRotate CanvasRotate;
 

@@ -8,8 +8,8 @@
  * order, lock, crop a picture) while blocks are selected and not edited;
  * hidden otherwise.
  * Text is formatted with the bar above the text box (canvas_format_bar.h). */
-#include "canvas_doc.h"
-#include "canvas_geometry.h"
+#include "canvas/canvas_doc.h"
+#include "canvas/canvas_geometry.h"
 #include <gtk/gtk.h>
 
 /* Style of a shape: the next shapes drawn, or the selected one */

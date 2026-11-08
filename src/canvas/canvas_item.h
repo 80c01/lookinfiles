@@ -1,8 +1,8 @@
 #ifndef CANVAS_ITEM_H
 #define CANVAS_ITEM_H
 
-#include "canvas_doc.h"
-#include "canvas_geometry.h"
+#include "canvas/canvas_doc.h"
+#include "canvas/canvas_geometry.h"
 #include <gtk/gtk.h>
 
 #define ITEM_KEY "canvas-item"

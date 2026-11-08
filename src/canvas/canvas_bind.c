@@ -1,7 +1,7 @@
 /* Lines and arrows bound to blocks on the Canvas page (see canvas_bind.h) */
-#include "canvas_bind.h"
-#include "canvas_draw.h"
-#include "canvas_geometry.h"
+#include "canvas/canvas_bind.h"
+#include "canvas/canvas_draw.h"
+#include "canvas/canvas_geometry.h"
 
 #include <math.h>
 

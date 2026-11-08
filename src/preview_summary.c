@@ -2,7 +2,7 @@
 #include "preview_summary.h"
 #include "i18n.h"
 #include "note_types.h"
-#include "canvas_doc.h"
+#include "canvas/canvas_doc.h"
 
 #include <string.h>
 

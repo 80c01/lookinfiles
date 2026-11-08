@@ -1,10 +1,10 @@
 /* The preview of a Canvas note (see canvas_preview.h) */
-#include "canvas_preview.h"
-#include "canvas_bind.h"
-#include "canvas_doc.h"
-#include "canvas_item.h"
-#include "canvas_view.h"
-#include "canvas_viewport.h"
+#include "canvas/canvas_preview.h"
+#include "canvas/canvas_bind.h"
+#include "canvas/canvas_doc.h"
+#include "canvas/canvas_item.h"
+#include "canvas/canvas_view.h"
+#include "canvas/canvas_viewport.h"
 
 #define STACK_NAME "canvas"
 #define PAGE_MARGIN 400 /* room around the blocks, as on the Canvas tab */

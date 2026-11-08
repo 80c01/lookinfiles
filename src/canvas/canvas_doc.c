@@ -1,4 +1,4 @@
-#include "canvas_doc.h"
+#include "canvas/canvas_doc.h"
 
 #include <glib/gstdio.h>
 #include <math.h>

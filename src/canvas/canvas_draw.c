@@ -1,6 +1,6 @@
 /* Shapes drawn with the mouse on the Canvas page (see canvas_draw.h) */
-#include "canvas_draw.h"
-#include "canvas_geometry.h"
+#include "canvas/canvas_draw.h"
+#include "canvas/canvas_geometry.h"
 
 #include <math.h>
 

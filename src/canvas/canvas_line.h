@@ -5,7 +5,7 @@
  * their stroke only (not anywhere in their box), and, once selected, a
  * handle on each point to drag it and one in the middle of each segment to
  * add a point there (the line bends into a curve through its points). */
-#include "canvas_item.h"
+#include "canvas/canvas_item.h"
 
 /* (x, y) (page coordinates) is on the stroke of the line or arrow it */
 gboolean canvas_line_hits(const CanvasItem* it, gdouble x, gdouble y);

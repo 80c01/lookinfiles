@@ -3,7 +3,7 @@
 
 /* Shapes drawn with the mouse on the Canvas page: the shape block follows
  * the pointer while the button is held, then gets its final geometry. */
-#include "canvas_item.h"
+#include "canvas/canvas_item.h"
 
 /* Shape it dragged from (x0, y0) to (x1, y1), page coordinates. shift:
  * square / circle, or a line turned to a multiple of 45 degrees. */

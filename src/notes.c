@@ -3,7 +3,7 @@
 #include "i18n.h"
 #include "note_types.h"
 #include "notes_store.h"
-#include "canvas_view.h"
+#include "canvas/canvas_view.h"
 #include "palette.h"
 #include "app_paths.h"
 #include "app_events.h"

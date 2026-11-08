@@ -1,5 +1,5 @@
-#include "canvas_media.h"
-#include "canvas_doc.h"
+#include "canvas/canvas_media.h"
+#include "canvas/canvas_doc.h"
 
 #include <string.h>
 

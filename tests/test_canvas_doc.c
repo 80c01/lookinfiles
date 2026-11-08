@@ -1,6 +1,6 @@
-/* Unit tests for src/canvas_doc.c: canvas note pages (page.xml), styled runs,
+/* Unit tests for src/canvas/canvas_doc.c: canvas note pages (page.xml), styled runs,
  * media files and the Markdown export. Headless. */
-#include "canvas_doc.h"
+#include "canvas/canvas_doc.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

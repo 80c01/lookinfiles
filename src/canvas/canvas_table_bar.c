@@ -1,6 +1,6 @@
 /* Table bar of the Canvas page (see canvas_table_bar.h) */
-#include "canvas_table_bar.h"
-#include "canvas_float.h"
+#include "canvas/canvas_table_bar.h"
+#include "canvas/canvas_float.h"
 #include "icons.h"
 #include "i18n.h"
 

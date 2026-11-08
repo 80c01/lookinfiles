@@ -1,5 +1,5 @@
 /* Tool bar of the Canvas page (see canvas_toolbar.h) */
-#include "canvas_toolbar.h"
+#include "canvas/canvas_toolbar.h"
 #include "icons.h"
 #include "i18n.h"
 #include "theme.h"

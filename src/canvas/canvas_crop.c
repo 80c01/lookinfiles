@@ -1,4 +1,4 @@
-#include "canvas_crop.h"
+#include "canvas/canvas_crop.h"
 #include "dialog.h"
 #include "i18n.h"
 #include "theme.h"

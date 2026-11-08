@@ -1,5 +1,5 @@
-#include "canvas_rough_draw.h"
-#include "canvas_geometry.h"
+#include "canvas/canvas_rough_draw.h"
+#include "canvas/canvas_geometry.h"
 #include "palette.h"
 
 #include <math.h>

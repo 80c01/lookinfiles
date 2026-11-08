@@ -5,7 +5,7 @@
  * being edited or selected (below it when there is no room), over the page
  * overlay. Insert a row above / below, delete the row, insert a column
  * left / right, delete the column, at the current cell. */
-#include "canvas_table.h"
+#include "canvas/canvas_table.h"
 #include <gtk/gtk.h>
 
 typedef void (*CanvasTableBarAction)(CanvasTableAction action, gpointer udata);

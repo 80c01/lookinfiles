@@ -1,7 +1,7 @@
 #ifndef CANVAS_DRAG_H
 #define CANVAS_DRAG_H
 
-#include "canvas_item.h"
+#include "canvas/canvas_item.h"
 
 #include <gtk/gtk.h>
 

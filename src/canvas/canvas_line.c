@@ -1,7 +1,7 @@
 /* Lines and arrows edited on the Canvas page (see canvas_line.h) */
-#include "canvas_line.h"
-#include "canvas_draw.h"
-#include "canvas_geometry.h"
+#include "canvas/canvas_line.h"
+#include "canvas/canvas_draw.h"
+#include "canvas/canvas_geometry.h"
 
 #include <math.h>
 

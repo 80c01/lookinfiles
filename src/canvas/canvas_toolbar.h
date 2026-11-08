@@ -3,7 +3,7 @@
 
 /* Tool bar of the Canvas page: a floating row of tool icons (select, shapes,
  * pencil, text, table, eraser) and a menu (snap to grid, export). */
-#include "canvas_doc.h"
+#include "canvas/canvas_doc.h"
 #include <gtk/gtk.h>
 
 typedef enum {

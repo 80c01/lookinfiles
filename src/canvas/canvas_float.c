@@ -1,5 +1,5 @@
 /* Bar floating next to a Canvas block (see canvas_float.h) */
-#include "canvas_float.h"
+#include "canvas/canvas_float.h"
 #include "i18n.h"
 #include "theme.h"
 

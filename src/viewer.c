@@ -1,7 +1,7 @@
 #include "viewer.h"
 #include "preview_state.h"
 #include "i18n.h"
-#include "canvas_preview.h"
+#include "canvas/canvas_preview.h"
 #include "image_preview.h"
 #include "preview_summary.h"
 #include "fs_watch.h"

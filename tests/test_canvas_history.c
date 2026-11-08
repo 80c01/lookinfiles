@@ -1,5 +1,5 @@
-/* Unit tests for src/canvas_history.c: undo / redo of page states. */
-#include "canvas_history.h"
+/* Unit tests for src/canvas/canvas_history.c: undo / redo of page states. */
+#include "canvas/canvas_history.h"
 
 static void test_undo_redo(void) {
     CanvasHistory* h = canvas_history_new(10);

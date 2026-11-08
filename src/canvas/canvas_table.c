@@ -1,4 +1,4 @@
-#include "canvas_table.h"
+#include "canvas/canvas_table.h"
 #include "theme.h"
 
 #define TABLE_STATE_KEY "canvas-table-state"

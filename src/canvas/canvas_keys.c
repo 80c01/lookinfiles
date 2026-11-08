@@ -1,13 +1,13 @@
 /* Keys of the Canvas page (see canvas_keys.h) */
-#include "canvas_keys.h"
-#include "canvas_clip.h"
-#include "canvas_drag.h"
-#include "canvas_item.h"
-#include "canvas_media.h"
-#include "canvas_page_private.h"
-#include "canvas_text.h"
-#include "canvas_toolbar.h"
-#include "canvas_viewport.h"
+#include "canvas/canvas_keys.h"
+#include "canvas/canvas_clip.h"
+#include "canvas/canvas_drag.h"
+#include "canvas/canvas_item.h"
+#include "canvas/canvas_media.h"
+#include "canvas/canvas_page_private.h"
+#include "canvas/canvas_text.h"
+#include "canvas/canvas_toolbar.h"
+#include "canvas/canvas_viewport.h"
 
 #define NUDGE 8      /* arrows move a selected block by this */
 #define NUDGE_BIG 40 /* Shift+arrows */

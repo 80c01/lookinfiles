@@ -1,7 +1,7 @@
 /* The editor tabs of a workspace saved with the session (see editor_session.h) */
 #include "editor_session.h"
 #include <string.h>
-#include "canvas_view.h"
+#include "canvas/canvas_view.h"
 #include "editor.h"
 #include "editor_view.h"
 #include "tab_tree.h"

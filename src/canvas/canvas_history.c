@@ -1,5 +1,5 @@
 /* Undo / redo history of a Canvas note (see canvas_history.h). */
-#include "canvas_history.h"
+#include "canvas/canvas_history.h"
 
 struct CanvasHistory {
     GQueue undo; /* gchar*, the most recent first */

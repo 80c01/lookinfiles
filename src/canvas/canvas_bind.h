@@ -4,7 +4,7 @@
 /* Lines and arrows bound to blocks on the Canvas page: an end drawn on a
  * block is bound to it (CanvasItem start_id / end_id) and stays on its
  * outline when the block moves or changes size. */
-#include "canvas_item.h"
+#include "canvas/canvas_item.h"
 
 /* A line or an arrow was just drawn: bind its ends to the blocks under
  * them, and put them on their outlines */

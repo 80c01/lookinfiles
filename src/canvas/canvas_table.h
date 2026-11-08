@@ -1,7 +1,7 @@
 #ifndef CANVAS_TABLE_H
 #define CANVAS_TABLE_H
 
-#include "canvas_doc.h"
+#include "canvas/canvas_doc.h"
 #include <gtk/gtk.h>
 
 typedef void (*CanvasTableChangeNotify)(CanvasBlock* b, gpointer user_data);

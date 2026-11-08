@@ -1,5 +1,5 @@
-/* Unit tests for src/canvas_geometry.c: grid snap and object alignment. */
-#include "canvas_geometry.h"
+/* Unit tests for src/canvas/canvas_geometry.c: grid snap and object alignment. */
+#include "canvas/canvas_geometry.h"
 
 #include <math.h>
 

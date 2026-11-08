@@ -1,7 +1,7 @@
 /* Text format bar of the Canvas page (see canvas_format_bar.h) */
-#include "canvas_format_bar.h"
-#include "canvas_doc.h"
-#include "canvas_float.h"
+#include "canvas/canvas_format_bar.h"
+#include "canvas/canvas_doc.h"
+#include "canvas/canvas_float.h"
 #include "i18n.h"
 #include "icons.h"
 #include "theme.h"

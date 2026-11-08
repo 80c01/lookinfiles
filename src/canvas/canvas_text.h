@@ -1,7 +1,7 @@
 #ifndef CANVAS_TEXT_H
 #define CANVAS_TEXT_H
 
-#include "canvas_doc.h"
+#include "canvas/canvas_doc.h"
 #include <gtk/gtk.h>
 
 /* Number of style tags recognized in CanvasStyle bit order */

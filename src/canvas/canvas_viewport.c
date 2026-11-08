@@ -1,5 +1,5 @@
 /* The scrolled, zoomed view of a Canvas page (see canvas_viewport.h). */
-#include "canvas_viewport.h"
+#include "canvas/canvas_viewport.h"
 
 #include <math.h>
 

@@ -20,7 +20,7 @@
 #include "project_search.h"
 #include "help_guide.h"
 #include "browser.h"
-#include "canvas_view.h"
+#include "canvas/canvas_view.h"
 #include "video_tab.h"
 #include "games.h"
 

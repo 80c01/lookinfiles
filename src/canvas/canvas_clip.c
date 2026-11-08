@@ -1,7 +1,7 @@
 /* Copy, cut, paste and duplicate Canvas blocks (see canvas_clip.h) */
-#include "canvas_clip.h"
-#include "canvas_doc.h"
-#include "canvas_page_private.h"
+#include "canvas/canvas_clip.h"
+#include "canvas/canvas_doc.h"
+#include "canvas/canvas_page_private.h"
 
 #include <string.h>
 

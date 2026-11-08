@@ -5,7 +5,7 @@
  * box being edited or selected (below it when there is no room), over the
  * page overlay. Paragraph style, bold / italic / underline / strikethrough,
  * more styles, text colour, lists, checkbox, indent. */
-#include "canvas_text.h"
+#include "canvas/canvas_text.h"
 #include <gtk/gtk.h>
 
 typedef struct {

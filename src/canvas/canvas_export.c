@@ -1,6 +1,6 @@
 /* Export the Canvas page as a picture (see canvas_export.h) */
-#include "canvas_export.h"
-#include "canvas_item.h"
+#include "canvas/canvas_export.h"
+#include "canvas/canvas_item.h"
 #include "i18n.h"
 #include "palette.h"
 

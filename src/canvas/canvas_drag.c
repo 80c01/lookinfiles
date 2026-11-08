@@ -1,15 +1,15 @@
 /* The pointer on the Canvas page (see canvas_drag.h) */
-#include "canvas_drag.h"
-#include "canvas_bind.h"
-#include "canvas_draw.h"
-#include "canvas_geometry.h"
-#include "canvas_history.h"
-#include "canvas_item.h"
-#include "canvas_line.h"
-#include "canvas_media.h"
-#include "canvas_page_private.h"
-#include "canvas_rotate.h"
-#include "canvas_toolbar.h"
+#include "canvas/canvas_drag.h"
+#include "canvas/canvas_bind.h"
+#include "canvas/canvas_draw.h"
+#include "canvas/canvas_geometry.h"
+#include "canvas/canvas_history.h"
+#include "canvas/canvas_item.h"
+#include "canvas/canvas_line.h"
+#include "canvas/canvas_media.h"
+#include "canvas/canvas_page_private.h"
+#include "canvas/canvas_rotate.h"
+#include "canvas/canvas_toolbar.h"
 
 #include <math.h>
 

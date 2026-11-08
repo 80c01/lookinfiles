@@ -6,14 +6,14 @@
  * defined in canvas_page.c. */
 
 #include "app_types.h"
-#include "canvas_format_bar.h"
-#include "canvas_history.h"
-#include "canvas_item.h"
-#include "canvas_props.h"
-#include "canvas_rotate.h"
-#include "canvas_table_bar.h"
-#include "canvas_toolbar.h"
-#include "canvas_viewport.h"
+#include "canvas/canvas_format_bar.h"
+#include "canvas/canvas_history.h"
+#include "canvas/canvas_item.h"
+#include "canvas/canvas_props.h"
+#include "canvas/canvas_rotate.h"
+#include "canvas/canvas_table_bar.h"
+#include "canvas/canvas_toolbar.h"
+#include "canvas/canvas_viewport.h"
 
 #define CANVAS_PAGE_KEY "canvas-page"
 #define CANVAS_NEW_OFFSET 24 /* offset from view corner or selection */
