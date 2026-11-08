@@ -103,9 +103,11 @@ static void on_scanned(GObject* source, GAsyncResult* res, gpointer data) {
     }
 }
 
-/* Takes one reference of r */
-static void start_scan(Request* r) {
-    if (r->scanning || !request_live(r)) {
+/* Takes one reference of r. Started from code_outline_collect(), the tab
+ * may not be in the editor list yet (the tagbar reads it while the tab is
+ * built): the caller vouches for it, only later starts check it. */
+static void start_scan(Request* r, gboolean check_tab) {
+    if (r->scanning || r->answered || (check_tab && !request_live(r))) {
         request_unref(r);
         return;
     }
@@ -139,7 +141,7 @@ static void on_server_symbols(AppData* app, EditorTab* tab, GPtrArray* symbols, 
         return;
     }
     if (symbols == NULL || symbols->len == 0) {
-        start_scan(r);
+        start_scan(r, TRUE);
         return;
     }
     GPtrArray* entries = code_outline_entries_new();
@@ -158,7 +160,7 @@ static void on_server_symbols(AppData* app, EditorTab* tab, GPtrArray* symbols, 
 static gboolean on_server_wait(gpointer data) {
     Request* r = data;
     r->wait_source = 0;
-    start_scan(r); /* the timeout's reference */
+    start_scan(r, TRUE); /* the timeout's reference */
     return G_SOURCE_REMOVE;
 }
 
@@ -177,7 +179,7 @@ void code_outline_collect(AppData* app, EditorTab* tab, GCancellable* cancellabl
         return;
     }
     if (is_markdown(tab) || !code_intel_document_symbols(app, tab, on_server_symbols, r)) {
-        start_scan(r);
+        start_scan(r, FALSE);
         return;
     }
     /* The server holds the first reference, the wait the second */

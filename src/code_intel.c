@@ -153,7 +153,10 @@ static void sync_documents(AppData* app, Server* s, EditorTab* origin) {
     CodeIntel* ci = intel_of(app);
     gchar* origin_key = server_key(ci, origin, NULL, NULL);
     GHashTable* open = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-    for (GList* l = app->editors; l != NULL; l = l->next) {
+    /* origin may not be in the list yet (a tab being built) */
+    GList* tabs = g_list_find(app->editors, origin) != NULL ? g_list_copy(app->editors)
+                                                            : g_list_prepend(g_list_copy(app->editors), origin);
+    for (GList* l = tabs; l != NULL; l = l->next) {
         EditorTab* t = l->data;
         if (t->path == NULL || t->buffer == NULL) continue;
         gchar* key = t == origin ? NULL : server_key(ci, t, NULL, NULL);
@@ -166,6 +169,7 @@ static void sync_documents(AppData* app, Server* s, EditorTab* origin) {
         }
         g_free(key);
     }
+    g_list_free(tabs);
     GList* docs = lsp_client_get_documents(s->client);
     GPtrArray* closed = g_ptr_array_new_with_free_func(g_free);
     for (GList* l = docs; l != NULL; l = l->next) {
