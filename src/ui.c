@@ -27,7 +27,6 @@ static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, g
     (void)pspec;
     AppData* app = (AppData*)user_data;
     if (app != NULL) {
-        GtkWidget* before = app->active_panel;
         /* A key sequence started elsewhere does not carry over (g, C-x, Ctrl+W) */
         focus_route_focus_changed(app);
         GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
@@ -38,9 +37,8 @@ static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, g
                 editor_modes_cancel_pending(t);
             }
         }
-        update_active_panel_highlight(app);
         /* The editor mode shown in the status bar follows the focused panel */
-        if (app->active_panel != before) {
+        if (update_active_panel_highlight(app)) {
             app_emit(app, APP_EVENT_STATUS_CHANGED);
         }
     }
@@ -436,24 +434,6 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     return TRUE;
 }
 
-
-/* Remember the viewer/terminal split as a fraction of pane size */
-void layout_save_frac(AppData* app) {
-    if (app->right_paned == NULL) {
-        return;
-    }
-    GtkOrientation o =
-        gtk_orientable_get_orientation(GTK_ORIENTABLE(app->right_paned));
-    gint len = (o == GTK_ORIENTATION_VERTICAL
-                    ? gtk_widget_get_height(app->right_paned)
-                    : gtk_widget_get_width(app->right_paned));
-    if (len > 40) {
-        gint pos = gtk_paned_get_position(GTK_PANED(app->right_paned));
-        if (pos > 0 && pos < len) {
-            app->right_frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
-        }
-    }
-}
 
 /* Restore saved split proportion once new paned is laid out */
 gboolean layout_position_idle(gpointer data) {

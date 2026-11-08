@@ -345,6 +345,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `GtkPaned` must go through `wire_paned_controllers()` or at least
   `paned_use_thin_handle()`: a default handle grabs the mouse ~15 px into the
   neighbouring panels and blocks text selection near the edge.
+  The focused panel and the drag state stay private (`struct Panels`); split
+  fractions live only in the workspace (`VirtualLayout`), not in `AppData`.
 - `outline_pane` — a tagbar beside some content: a `GtkPaned` with a
   `GtkListView` over a `GtkTreeListModel` of an outline (`code_outline_tree`),
   its width shared through an `int*`, collapsed rows kept across refreshes;

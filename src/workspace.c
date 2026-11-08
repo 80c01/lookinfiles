@@ -159,7 +159,6 @@ void workspace_save_current(AppData* app) {
     ws->sort_mode = app->sort_mode;
     ws->render_raw = preview_state_raw(app);
     ws->editor_dedicated = app->editor_dedicated;
-    ws->editor_frac = app->editor_frac;
     if (app->editor_dedicated && app->editor_notebook != NULL) {
         gint cur_page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->editor_notebook));
         if (cur_page >= 0) {
@@ -466,9 +465,7 @@ void workspace_switch(AppData* app, gint idx) {
 
     VirtualLayout* ws = &app->workspaces[idx];
     gchar* target_path = g_strdup(ws->selected_path);
-    app->right_frac = ws->right_frac;
     app->editor_dedicated = ws->editor_dedicated;
-    app->editor_frac = ws->editor_frac;
 
     if (ws_changed) {
         GtkWidget* panel = ws->editor_panel;
@@ -593,8 +590,6 @@ void workspace_show_panels(AppData* app) {
         return;
     }
     VirtualLayout* ws = &app->workspaces[app->current_ws];
-    app->right_frac = ws->right_frac;
-    app->editor_frac = ws->editor_frac;
     app->switching_ws = TRUE;
     show_ws_panels(app, ws);
     app_emit(app, APP_EVENT_CHROME_CHANGED);

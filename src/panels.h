@@ -12,8 +12,9 @@ NavStyle app_nav_style(AppData* app);
 gboolean window_is_fullscreen(GtkWindow* win);
 void toggle_fullscreen(GtkWindow* window);
 
-/* Move the "panel-focused" CSS highlight to the panel owning keyboard focus */
-void update_active_panel_highlight(AppData* app);
+/* Move the "panel-focused" CSS highlight to the panel owning keyboard focus;
+ * TRUE when that panel changed */
+gboolean update_active_panel_highlight(AppData* app);
 
 /* Usable width of the workspace area (falls back to window / main paned width) */
 gint get_workspace_total_width(AppData* app);
@@ -27,7 +28,7 @@ void paned_use_thin_handle(GtkWidget* paned);
 /* Add the size popup shown while a split handle is dragged over overlay
  * (once, when the window is built) */
 void panels_size_popup_attach(AppData* app, GtkOverlay* overlay);
-/* Free the split-handle drag state (at exit) */
-void panels_size_popup_free(AppData* app);
+/* Free the focused-panel and split-handle drag state (at exit) */
+void panels_free(AppData* app);
 
 #endif /* PANELS_H */

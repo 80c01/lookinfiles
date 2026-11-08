@@ -616,8 +616,6 @@ int main(int argc, char** argv) {
     app->editor_box = editor_box;
     app->editor_notebook = editor_notebook;
     app->editor_dedicated = FALSE;
-    app->editor_frac = 0.50;
-    app->right_frac = 0.70;
     layout_build(app, GTK_ORIENTATION_HORIZONTAL);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 
@@ -691,7 +689,7 @@ int main(int argc, char** argv) {
     code_intel_shutdown(app);   /* language servers: shutdown, exit */
     fs_watch_free(app);
     git_tab_cleanup(app);
-    panels_size_popup_free(app);
+    panels_free(app);
     g_clear_pointer(&app->git_state, git_state_free);
     if (app->expanded_paths != NULL) {
         g_hash_table_destroy(app->expanded_paths);

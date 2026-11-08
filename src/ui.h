@@ -18,7 +18,6 @@ gboolean ui_confirm_quit(AppData* app);
 
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state, gpointer data);
 
-void layout_save_frac(AppData* app);
 gboolean layout_position_idle(gpointer data);
 void layout_build(AppData* app, GtkOrientation orientation);
 void layout_toggle(AppData* app);

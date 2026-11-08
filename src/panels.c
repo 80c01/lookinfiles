@@ -3,14 +3,24 @@
 #include "panels.h"
 #include "app_events.h"
 
-/* Split-handle drag (app->pane_drag), created by panels_size_popup_attach() */
-typedef struct PaneDrag PaneDrag;
-struct PaneDrag {
-    GtkWidget* popup;  /* size badge over the workspace, shown while dragging */
-    GtkWidget* label;  /* "w × h  |  w × h" of the two sides */
-    GtkWidget* paned;  /* paned whose handle is being dragged, or NULL */
-    gboolean active;   /* a split handle is being dragged */
+/* Focused panel and split-handle drag (app->panels), created on first use */
+typedef struct Panels Panels;
+struct Panels {
+    GtkWidget* focused; /* panel holding the keyboard focus ("panel-focused"), or NULL */
+    GtkWidget* popup;   /* size badge over the workspace, shown while dragging; NULL before
+                         * panels_size_popup_attach() */
+    GtkWidget* label;   /* "w × h  |  w × h" of the two sides */
+    GtkWidget* paned;   /* paned whose handle is being dragged, or NULL */
+    gboolean active;    /* a split handle is being dragged */
+    gboolean following_main; /* the right pane follows a main pane drag: not a drag of its own */
 };
+
+static Panels* panels_get(AppData* app) {
+    if (app->panels == NULL) {
+        app->panels = g_new0(Panels, 1);
+    }
+    return app->panels;
+}
 
 NavStyle app_nav_style(AppData* app) {
     if (app == NULL) return NAV_STYLE_NOTEPAD;
@@ -65,9 +75,9 @@ gint get_workspace_total_width(AppData* app) {
 
 
 /* Update the active-panel CSS highlight based on which panel owns keyboard focus */
-void update_active_panel_highlight(AppData* app) {
+gboolean update_active_panel_highlight(AppData* app) {
     if (app == NULL || app->window == NULL) {
-        return;
+        return FALSE;
     }
 
     GtkWidget* focused = gtk_window_get_focus(app->window);
@@ -98,24 +108,23 @@ void update_active_panel_highlight(AppData* app) {
         w = gtk_widget_get_parent(w);
     }
 
-    if (app->active_panel == target_panel) {
-        return;
+    Panels* p = panels_get(app);
+    if (p->focused == target_panel) {
+        return FALSE;
     }
-
-    if (app->active_panel != NULL) {
-        gtk_widget_remove_css_class(app->active_panel, "panel-focused");
+    if (p->focused != NULL) {
+        gtk_widget_remove_css_class(p->focused, "panel-focused");
     }
-
-    app->active_panel = target_panel;
-
-    if (app->active_panel != NULL) {
-        gtk_widget_add_css_class(app->active_panel, "panel-focused");
+    p->focused = target_panel;
+    if (p->focused != NULL) {
+        gtk_widget_add_css_class(p->focused, "panel-focused");
     }
+    return TRUE;
 }
 
 /* Show or refresh small overlay badge listing w x h of panes */
 static void update_pane_dims(GtkWidget* paned_widget, AppData* app) {
-    PaneDrag* d = app->pane_drag;
+    Panels* d = app->panels;
     GtkPaned* paned = GTK_PANED(paned_widget);
     GtkWidget* c1 = gtk_paned_get_start_child(paned);
     GtkWidget* c2 = gtk_paned_get_end_child(paned);
@@ -141,7 +150,7 @@ static void update_pane_dims(GtkWidget* paned_widget, AppData* app) {
 
 static gboolean pane_dims_idle(gpointer data) {
     AppData* app = (AppData*)data;
-    PaneDrag* d = app->pane_drag;
+    Panels* d = app->panels;
     if (d != NULL && d->active && d->paned != NULL) {
         update_pane_dims(d->paned, app);
     }
@@ -152,8 +161,8 @@ static void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
                              gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     AppData* app = (AppData*)data;
-    PaneDrag* d = app->pane_drag;
-    if (d == NULL) {
+    Panels* d = app->panels;
+    if (d == NULL || d->popup == NULL) {
         return;
     }
     GtkWidget* widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
@@ -190,12 +199,10 @@ static void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
     update_pane_dims(widget, app);
 }
 
-/* The right pane is moved to follow a main pane drag: not a drag of its own */
-static gboolean following_main = FALSE;
-
 static void record_paned_fraction(AppData* app, GtkWidget* widget) {
     if (app == NULL || widget == NULL || !GTK_IS_PANED(widget) ||
-        app->switching_ws || app_layout_held(app) || following_main ||
+        app->switching_ws || app_layout_held(app) ||
+        (app->panels != NULL && app->panels->following_main) ||
         app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
         return;
     }
@@ -215,10 +222,10 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
                     ws->right_orient == GTK_ORIENTATION_HORIZONTAL) {
                     gint rw = mw - pos;
                     if (rw > 40) {
-                        following_main = TRUE;
+                        panels_get(app)->following_main = TRUE;
                         gtk_paned_set_position(GTK_PANED(app->right_paned),
                                                (gint)(ws->right_frac * rw + 0.5));
-                        following_main = FALSE;
+                        panels_get(app)->following_main = FALSE;
                     }
                 }
             }
@@ -229,7 +236,6 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
             gint pos = gtk_paned_get_position(GTK_PANED(app->editor_paned));
             if (len > 40 && pos > 0 && pos < len) {
                 ws->editor_frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
-                app->editor_frac = ws->editor_frac;
             }
         }
     } else if (widget == app->right_paned) {
@@ -240,7 +246,6 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
             gint pos = gtk_paned_get_position(GTK_PANED(app->right_paned));
             if (len > 40 && pos > 0 && pos < len) {
                 ws->right_frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
-                app->right_frac = ws->right_frac;
             }
         }
     } else {
@@ -266,7 +271,7 @@ static gboolean on_paned_legacy_event(GtkEventControllerLegacy* ctrl,
                                       GdkEvent* event, gpointer data) {
     (void)ctrl;
     AppData* app = (AppData*)data;
-    PaneDrag* d = app->pane_drag;
+    Panels* d = app->panels;
     if (d != NULL && d->active && gdk_event_get_event_type(event) == GDK_BUTTON_RELEASE) {
         if (d->paned != NULL) {
             record_paned_fraction(app, d->paned);
@@ -282,8 +287,9 @@ static gboolean on_paned_legacy_event(GtkEventControllerLegacy* ctrl,
 static void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointer data) {
     (void)pspec;
     AppData* app = (AppData*)data;
-    PaneDrag* d = app != NULL ? app->pane_drag : NULL;
-    if (d == NULL || app->switching_ws || app_layout_held(app) || following_main || !d->active) {
+    Panels* d = app != NULL ? app->panels : NULL;
+    if (d == NULL || app->switching_ws || app_layout_held(app) ||
+        d->following_main || !d->active) {
         return;
     }
     GtkWidget* widget = GTK_WIDGET(object);
@@ -302,7 +308,7 @@ static void on_paned_released(GtkGestureClick* gesture, gint n_press,
     (void)x;
     (void)y;
     AppData* app = (AppData*)data;
-    PaneDrag* d = app->pane_drag;
+    Panels* d = app->panels;
     if (d == NULL) {
         return;
     }
@@ -353,14 +359,13 @@ void panels_size_popup_attach(AppData* app, GtkOverlay* overlay) {
     gtk_box_append(GTK_BOX(popup), label);
     gtk_overlay_add_overlay(overlay, popup);
 
-    PaneDrag* d = g_new0(PaneDrag, 1);
+    Panels* d = panels_get(app);
     d->popup = popup;
     d->label = label;
-    app->pane_drag = d;
 }
 
-void panels_size_popup_free(AppData* app) {
+void panels_free(AppData* app) {
     if (app != NULL) {
-        g_clear_pointer(&app->pane_drag, g_free);
+        g_clear_pointer(&app->panels, g_free);
     }
 }

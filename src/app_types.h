@@ -177,7 +177,6 @@ typedef struct AppData {
     GtkWidget* editor_box;      /* dedicated editor panel container right of preview */
     GtkWidget* editor_paned;    /* resizable paned divider between preview_box and editor_box */
     gboolean editor_dedicated;  /* TRUE when editor tabs are in dedicated panel right of preview */
-    gdouble editor_frac;        /* split ratio between preview panel and editor panel */
     GList* editors;             /* EditorTab*, order matching tab order */
     EditorTab* last_focused_editor; /* last focused editor tab */
     struct CodeNav* code_nav;       /* code navigation state (code_nav.c), created on first use */
@@ -203,8 +202,8 @@ typedef struct AppData {
     GtkWindow* window;
     GMainLoop* main_loop;
 
-    /* Split-handle drag and its size popup (panels.c), NULL before panels_size_popup_attach() */
-    struct PaneDrag* pane_drag;
+    /* Focused panel and split-handle drag (panels.c), NULL until first used */
+    struct Panels* panels;
 
     /* Minimap right of the preview (minimap_viewer_new(), minimap.c), or NULL */
     GtkWidget* viewer_minimap;
@@ -213,10 +212,7 @@ typedef struct AppData {
     GtkWidget* viewer_box;   /* right pane content: viewer + minimap */
     GtkWidget* main_paned;   /* list | rest (fixed split) */
     GtkWidget* right_paned;  /* viewer | terminal (rebuilt on toggle) */
-    gdouble right_frac;      /* viewer share of viewer/terminal pair */
 
-    /* Active focused panel tracking and visual highlight */
-    GtkWidget* active_panel;     /* currently focused panel container widget */
     /* Virtual workspace layouts & top-bar workspace minimap */
     VirtualLayout workspaces[MAX_VIRTUAL_LAYOUTS];
     gint num_workspaces;
