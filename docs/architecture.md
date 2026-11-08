@@ -418,7 +418,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   drag thread, in `DoDragDrop`): a capture gesture on each notebook follows
   the drag instead and drops through the same targets
   (`LOOKIN_INTERNAL_TAB_DRAG=1` turns it on elsewhere, to test it).
-- `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
+- `markdown`, `html` — rich renderers into a `GtkTextBuffer`. The HTML tags are
+  created by `html_tags` (`ensure_html_tags()`), its string helpers are `html_text`.
   `markdown_table` — Markdown tables for `markdown`: rows split into cells, a
   grid widget anchored in the view (scrolling horizontally in its own frame
   when wider than the text), or a box-drawn text table without a view.

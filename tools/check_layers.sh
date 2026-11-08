@@ -145,9 +145,10 @@ theme:palette,fonts,theme_store,file_type_icons,icon_sets
 markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link,icons,i18n
 markdown_link:
 markdown_table:fonts,palette,markdown_link
-html:app_types,html_text,image_utils,palette,fonts,text_tags,icons,i18n
+html_tags:fonts,text_tags
+html:app_types,html_text,image_utils,icons,i18n
 minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette,preview_state
-preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette,fonts,text_tags
+preview_doc_view:preview_doc,html,html_tags,markdown,image_utils,text_style,app_types,palette,fonts,text_tags
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events,nav_keys

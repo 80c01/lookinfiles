@@ -14,6 +14,7 @@
 #include "file_list.h"
 #include "markdown.h"
 #include "html.h"
+#include "html_tags.h"
 #include "pdf.h"
 #include "video.h"
 #include "audio.h"

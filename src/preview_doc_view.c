@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "html.h"
+#include "html_tags.h"
 #include "image_utils.h"
 #include "markdown.h"
 #include "palette.h"
