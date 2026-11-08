@@ -1,5 +1,10 @@
 # LookinFiles — look in your files
 
+[![CI](https://github.com/80c01/lookinfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/80c01/lookinfiles/actions/workflows/ci.yml)
+[![Packages](https://github.com/80c01/lookinfiles/actions/workflows/packages.yml/badge.svg)](https://github.com/80c01/lookinfiles/actions/workflows/packages.yml)
+[![Release](https://img.shields.io/github/v/release/80c01/lookinfiles)](https://github.com/80c01/lookinfiles/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 A file explorer that shows what is inside your files. Select a file and see it
 rendered right away: code, Markdown, PDF, images, office documents (Word,
 Excel, PowerPoint), archives, databases and many more. Also play videos. Edit
