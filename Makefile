@@ -306,8 +306,8 @@ PREVIEW_MODULES = preview_formats preview_doc doc_writer file_types text_encodin
 PREVIEW_FORMAT_OBJS = $(PREVIEW_MODULES:%=$(BUILD_DIR)/%.o)
 TEST_DEPS_test_preview_formats = $(PREVIEW_FORMAT_OBJS)
 TEST_DEPS_test_org_time = $(BUILD_DIR)/org_time.o
-TEST_DEPS_test_org_doc = $(BUILD_DIR)/org_doc.o $(BUILD_DIR)/org_time.o
-TEST_DEPS_test_org_table = $(BUILD_DIR)/org_table.o $(BUILD_DIR)/org_doc.o $(BUILD_DIR)/org_time.o
+TEST_DEPS_test_org_doc = $(BUILD_DIR)/org_doc.o $(BUILD_DIR)/org_list.o $(BUILD_DIR)/org_time.o
+TEST_DEPS_test_org_table = $(BUILD_DIR)/org_table.o $(BUILD_DIR)/org_doc.o $(BUILD_DIR)/org_list.o $(BUILD_DIR)/org_time.o
 TEST_DEPS_test_dunnet = $(BUILD_DIR)/dunnet.o
 VIM_OBJS = $(BUILD_DIR)/vim_engine.o $(BUILD_DIR)/vim_engine_motions.o $(BUILD_DIR)/vim_engine_insert.o $(BUILD_DIR)/vim_engine_ops.o $(BUILD_DIR)/vim_engine_normal.o $(BUILD_DIR)/vim_engine_visual.o $(BUILD_DIR)/vim_engine_ex.o $(BUILD_DIR)/vim_parse.o $(BUILD_DIR)/vim_motion.o $(BUILD_DIR)/vim_regex.o $(BUILD_DIR)/vim_ex.o $(BUILD_DIR)/vim_keys.o
 TEST_DEPS_test_vim_engine = $(VIM_OBJS) $(BUILD_DIR)/text_tags.o $(BUILD_DIR)/palette.o $(BUILD_DIR)/fonts.o

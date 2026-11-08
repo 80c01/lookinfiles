@@ -135,6 +135,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   headings, subtrees, TODO keywords (`#+TODO`), priorities, tags, planning,
   clock, lists, checkboxes, statistics cookies, links, `<s` templates. The
   editor (`editor_org`) and the preview (`orgmode`) both edit through it.
+  Lists, checkboxes and statistics cookies are in `org_list.c` (same header);
+  both files share the line helpers of `org_doc_private.h`.
 - `org_table` — Org tables: align, cell navigation, row / column editing.
 - `dunnet` — Ron Schnell's Dunnet text adventure state machine (rooms,
   items, VAX `pokey` UNIX shell, FTP, rlogin to `gamma`, IBM PC XT DOS prompt,
