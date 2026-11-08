@@ -18,7 +18,7 @@ jobs:
     name: Debian / Ubuntu (.deb)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -47,7 +47,7 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed base-devel git gtk4 libgit2 vte4 gtksourceview5 poppler-glib sqlite webkitgtk-6.0 libarchive
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -89,7 +89,7 @@ jobs:
             gtk4-devel libgit2-devel vte291-gtk4-devel gtksourceview5-devel poppler-glib-devel sqlite-devel \
             webkitgtk6.0-devel libarchive-devel gstreamer1-plugins-base-devel git
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -115,7 +115,7 @@ jobs:
     name: AppImage
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -140,7 +140,7 @@ jobs:
     name: Windows (.zip, .exe)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
