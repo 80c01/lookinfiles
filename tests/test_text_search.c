@@ -1,5 +1,5 @@
-/* Unit tests for src/text_search.c: search the files of a project. */
-#include "text_search.h"
+/* Unit tests for src/search/text_search.c: search the files of a project. */
+#include "search/text_search.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

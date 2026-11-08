@@ -10,7 +10,7 @@
 #include "editor/editor_tagbar.h"
 #include "preview/preview_tagbar.h"
 #include "explorer/nav_keys.h"
-#include "search.h"
+#include "search/search.h"
 #include "theme/themes.h"
 
 #include <glib/gstdio.h>

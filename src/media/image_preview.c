@@ -2,7 +2,7 @@
  * (see image_preview.h). */
 #include "media/image_preview.h"
 #include "preview/preview_state.h"
-#include "search.h"
+#include "search/search.h"
 #include "core/i18n.h"
 #include "theme/fonts.h"
 #include "theme/text_tags.h"

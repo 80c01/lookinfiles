@@ -1,5 +1,5 @@
 /* Search the files of a project for a text (see text_search.h) */
-#include "text_search.h"
+#include "search/text_search.h"
 #include "core/i18n.h"
 
 #include <glib/gstdio.h>

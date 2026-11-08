@@ -18,7 +18,7 @@
 #include "preview/pdf.h"
 #include "media/video.h"
 #include "media/audio.h"
-#include "search.h"
+#include "search/search.h"
 #include "explorer/bookmarks.h"
 #include "explorer/bookmark_icons.h"
 #include "core/path_kind.h"

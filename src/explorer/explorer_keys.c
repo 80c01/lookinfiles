@@ -6,7 +6,7 @@
 #include "explorer/tree_nav.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
-#include "search.h"
+#include "search/search.h"
 #include "help.h"
 #include "media/image_preview.h"
 #include "media/video.h"

@@ -1,6 +1,6 @@
 /* Fuzzy matching of file paths (see fuzzy_match.h): a small dynamic
  * programming alignment in the spirit of fzy. */
-#include "fuzzy_match.h"
+#include "search/fuzzy_match.h"
 
 #include <string.h>
 

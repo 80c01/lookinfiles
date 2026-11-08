@@ -12,7 +12,7 @@
 #include "explorer/nav_history.h"
 #include "explorer/nav_keys.h"
 #include "explorer/remote.h"
-#include "search.h"
+#include "search/search.h"
 #include "sidebar.h"
 #include "terminal.h"
 #include "status_bar.h"

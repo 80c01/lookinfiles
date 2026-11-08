@@ -268,7 +268,7 @@ msgstr "_Retirer le signet"
 #: src/editor/editor.c:1729 src/explorer/file_actions.c:42 src/explorer/file_actions.c:236
 #: src/layouts.c:47 src/layouts.c:319 src/notes.c:587 src/notes.c:768
 #: src/notes.c:852 src/preferences.c:342 src/preview/preview_full.c:31
-#: src/project_search.c:369 src/quick_open.c:368 src/explorer/remote.c:322
+#: src/search/project_search.c:369 src/search/quick_open.c:368 src/explorer/remote.c:322
 #: src/explorer/remote.c:389 src/explorer/remote.c:456 src/explorer/remote.c:487 src/explorer/remote.c:564
 #: src/session_bookmark.c:13 src/theme/themes.c:222 src/theme/themes.c:237 src/theme/themes.c:682
 msgid "_Cancel"
@@ -1834,7 +1834,7 @@ msgstr "déclaration"
 msgid "%1$s · in %2$s"
 msgstr "%1$s · dans %2$s"
 
-#: src/code/code_symbols.c:260 src/project_search.c:151
+#: src/code/code_symbols.c:260 src/search/project_search.c:151
 #, c-format
 msgid "in %s"
 msgstr "dans %s"
@@ -2160,7 +2160,7 @@ msgstr[1] "%u avertissements"
 msgid ": %1$s, %2$s"
 msgstr " : %1$s, %2$s"
 
-#: src/editor/editor_notepad.c:45 src/search.c:199
+#: src/editor/editor_notepad.c:45 src/search/search.c:199
 #, c-format
 msgid "Cannot find \"%s\""
 msgstr "Impossible de trouver « %s »"
@@ -2187,27 +2187,27 @@ msgid_plural "The file has %d lines"
 msgstr[0] "Le fichier a %d ligne"
 msgstr[1] "Le fichier a %d lignes"
 
-#: src/editor/editor_notepad.c:464 src/search.c:159 src/search.c:574
+#: src/editor/editor_notepad.c:464 src/search/search.c:159 src/search/search.c:574
 msgid "Find:"
 msgstr "Rechercher :"
 
-#: src/editor/editor_notepad.c:467 src/search.c:586
+#: src/editor/editor_notepad.c:467 src/search/search.c:586
 msgid "Find Next"
 msgstr "Suivant"
 
-#: src/editor/editor_notepad.c:467 src/search.c:586
+#: src/editor/editor_notepad.c:467 src/search/search.c:586
 msgid "Find Next (Enter / F3)"
 msgstr "Occurrence suivante (Enter / F3)"
 
-#: src/editor/editor_notepad.c:468 src/search.c:587
+#: src/editor/editor_notepad.c:468 src/search/search.c:587
 msgid "Find Prev"
 msgstr "Précédent"
 
-#: src/editor/editor_notepad.c:468 src/search.c:587
+#: src/editor/editor_notepad.c:468 src/search/search.c:587
 msgid "Find Previous (Shift+Enter / Shift+F3)"
 msgstr "Occurrence précédente (Shift+Enter / Shift+F3)"
 
-#: src/editor/editor_notepad.c:469 src/search.c:588
+#: src/editor/editor_notepad.c:469 src/search/search.c:588
 msgid "Close Find Bar (Esc)"
 msgstr "Fermer la barre de recherche (Esc)"
 
@@ -6940,31 +6940,31 @@ msgstr "Vider la corbeille"
 msgid "Reading the headings…"
 msgstr "Lecture des titres…"
 
-#: src/project_search.c:109
+#: src/search/project_search.c:109
 #, c-format
 msgid "only the first %u files listed"
 msgstr "seuls les %u premiers fichiers listés"
 
-#: src/project_search.c:113
+#: src/search/project_search.c:113
 #, c-format
 msgid "stopped at %u results"
 msgstr "arrêt à %u résultats"
 
-#: src/project_search.c:116
+#: src/search/project_search.c:116
 #, c-format
 msgid "stopped after %1$u MB read, %2$u file searched"
 msgid_plural "stopped after %1$u MB read, %2$u files searched"
 msgstr[0] "arrêt après %1$u Mo lus, %2$u fichier parcouru"
 msgstr[1] "arrêt après %1$u Mo lus, %2$u fichiers parcourus"
 
-#: src/project_search.c:123
+#: src/search/project_search.c:123
 #, c-format
 msgid "%1$u file over %2$u MB skipped"
 msgid_plural "%1$u files over %2$u MB skipped"
 msgstr[0] "%1$u fichier de plus de %2$u Mo ignoré"
 msgstr[1] "%1$u fichiers de plus de %2$u Mo ignorés"
 
-#: src/project_search.c:130
+#: src/search/project_search.c:130
 #, c-format
 msgid "expression too complex in %u file, matches may be missing"
 msgid_plural "expression too complex in %u files, matches may be missing"
@@ -6973,16 +6973,16 @@ msgstr[0] ""
 msgstr[1] ""
 "expression trop complexe dans %u fichiers, des résultats peuvent manquer"
 
-#: src/project_search.c:155
+#: src/search/project_search.c:155
 #, c-format
 msgid "not in %s"
 msgstr "hors de %s"
 
-#: src/project_search.c:157
+#: src/search/project_search.c:157
 msgid "ignored files too"
 msgstr "fichiers ignorés aussi"
 
-#: src/project_search.c:357
+#: src/search/project_search.c:357
 msgid ""
 "Patterns separated by commas: *.c (a name at any depth), src/ui (from the "
 "project root), build/ (folders only)"
@@ -6990,58 +6990,58 @@ msgstr ""
 "Motifs séparés par des virgules : *.c (un nom à toute profondeur), src/ui "
 "(depuis la racine du projet), build/ (dossiers seulement)"
 
-#: src/project_search.c:369
+#: src/search/project_search.c:369
 msgid "Search in Files"
 msgstr "Rechercher dans les fichiers"
 
-#: src/project_search.c:370
+#: src/search/project_search.c:370
 msgid "_Search"
 msgstr "_Rechercher"
 
-#: src/project_search.c:386
+#: src/search/project_search.c:386
 msgid "Text to find"
 msgstr "Texte à rechercher"
 
-#: src/project_search.c:394
+#: src/search/project_search.c:394
 msgid "Match Case (Alt+M)"
 msgstr "Respecter la casse (Alt+M)"
 
-#: src/project_search.c:395
+#: src/search/project_search.c:395
 msgid "Whole Word (Alt+W)"
 msgstr "Mot entier (Alt+W)"
 
-#: src/project_search.c:396
+#: src/search/project_search.c:396
 msgid "Regular Expression, PCRE Syntax (Alt+R)"
 msgstr "Expression régulière, syntaxe PCRE (Alt+R)"
 
-#: src/project_search.c:399
+#: src/search/project_search.c:399
 msgid ""
 "Letters in Order, Not Next to Each Other: edvim Finds editor_vim (Alt+L)"
 msgstr ""
 "Lettres dans l’ordre, pas forcément voisines : edvim trouve editor_vim "
 "(Alt+L)"
 
-#: src/project_search.c:416
+#: src/search/project_search.c:416
 msgid "Files to i_nclude"
 msgstr "Fichiers à i_nclure"
 
-#: src/project_search.c:416
+#: src/search/project_search.c:416
 msgid "*.c, src/ (empty: every file)"
 msgstr "*.c, src/ (vide : tous les fichiers)"
 
-#: src/project_search.c:418
+#: src/search/project_search.c:418
 msgid "Files to e_xclude"
 msgstr "Fichiers à e_xclure"
 
-#: src/project_search.c:418
+#: src/search/project_search.c:418
 msgid "tests/, *.min.js"
 msgstr "tests/, *.min.js"
 
-#: src/project_search.c:421
+#: src/search/project_search.c:421
 msgid "Include _ignored files"
 msgstr "Inclure les fichiers _ignorés"
 
-#: src/project_search.c:422
+#: src/search/project_search.c:422
 msgid ""
 "Also the files git ignores (.gitignore); outside git, hidden and build "
 "folders"
@@ -7049,7 +7049,7 @@ msgstr ""
 "Aussi les fichiers ignorés par git (.gitignore) ; hors git, les dossiers "
 "cachés et de compilation"
 
-#: src/project_search.c:426
+#: src/search/project_search.c:426
 #, c-format
 msgid "In the files of %s"
 msgstr "Dans les fichiers de %s"
@@ -7124,11 +7124,11 @@ msgstr "Args"
 msgid "Referenced Symbols"
 msgstr "Symboles référencés"
 
-#: src/quick_open.c:65
+#: src/search/quick_open.c:65
 msgid "Listing the project files…"
 msgstr "Liste des fichiers du projet…"
 
-#: src/quick_open.c:67
+#: src/search/quick_open.c:67
 #, c-format
 msgid ""
 "%1$u of %2$u recent places · Enter opens a folder or shows a file, "
@@ -7137,45 +7137,45 @@ msgstr ""
 "%1$u sur %2$u lieux récents · Enter ouvre un dossier ou affiche un fichier, "
 "Ctrl+Enter modifie un fichier"
 
-#: src/quick_open.c:71
+#: src/search/quick_open.c:71
 #, c-format
 msgid "%1$u of %2$u files (list cut) · Enter shows it, Ctrl+Enter edits it"
 msgstr ""
 "%1$u sur %2$u fichiers (liste tronquée) · Enter l’affiche, Ctrl+Enter le "
 "modifie"
 
-#: src/quick_open.c:72
+#: src/search/quick_open.c:72
 #, c-format
 msgid "%1$u of %2$u files · Enter shows it, Ctrl+Enter edits it"
 msgstr "%1$u sur %2$u fichiers · Enter l’affiche, Ctrl+Enter le modifie"
 
-#: src/quick_open.c:277
+#: src/search/quick_open.c:277
 #, c-format
 msgid "“%s” no longer exists"
 msgstr "« %s » n’existe plus"
 
-#: src/quick_open.c:368 src/theme/themes.c:616
+#: src/search/quick_open.c:368 src/theme/themes.c:616
 msgid "_Edit"
 msgstr "_Modifier"
 
-#: src/quick_open.c:369
+#: src/search/quick_open.c:369
 msgid "_Open"
 msgstr "_Ouvrir"
 
-#: src/quick_open.c:424
+#: src/search/quick_open.c:424
 #, c-format
 msgid "Go to File in %s"
 msgstr "Aller au fichier dans %s"
 
-#: src/quick_open.c:425
+#: src/search/quick_open.c:425
 msgid "Type part of a file name or path"
 msgstr "Tapez une partie d’un nom ou d’un chemin de fichier"
 
-#: src/quick_open.c:444
+#: src/search/quick_open.c:444
 msgid "Recent Folders and Files"
 msgstr "Dossiers et fichiers récents"
 
-#: src/quick_open.c:444
+#: src/search/quick_open.c:444
 msgid "Type part of a folder or file name"
 msgstr "Tapez une partie d’un nom de dossier ou de fichier"
 
@@ -7826,23 +7826,23 @@ msgid "%s — Click to Change (o)"
 msgstr "%s — cliquer pour changer (o)"
 
 #. TRANSLATORS: the search options, a list separated by ", "
-#: src/text_search.c:66
+#: src/search/text_search.c:66
 msgid "case sensitive"
 msgstr "casse respectée"
 
-#: src/text_search.c:66
+#: src/search/text_search.c:66
 msgid "any case"
 msgstr "toute casse"
 
-#: src/text_search.c:68
+#: src/search/text_search.c:68
 msgid "letters in order"
 msgstr "lettres dans l’ordre"
 
-#: src/text_search.c:70
+#: src/search/text_search.c:70
 msgid "whole word"
 msgstr "mot entier"
 
-#: src/text_search.c:71
+#: src/search/text_search.c:71
 msgid "regex"
 msgstr "regex"
 

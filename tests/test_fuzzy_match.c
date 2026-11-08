@@ -1,5 +1,5 @@
-/* Unit tests for src/fuzzy_match.c: quick open path matching. */
-#include "fuzzy_match.h"
+/* Unit tests for src/search/fuzzy_match.c: quick open path matching. */
+#include "search/fuzzy_match.h"
 
 static void test_matches(void) {
     g_assert_cmpint(fuzzy_match_score("flc", "src/file_list.c"), >=, 0);

@@ -17,7 +17,7 @@
 #include "media/video.h"
 #include "layout_store.h"
 #include "theme/palette.h"
-#include "project_search.h"
+#include "search/project_search.h"
 #include "help_guide.h"
 #include "preview/browser.h"
 #include "canvas/canvas_view.h"

@@ -17,8 +17,8 @@
 #include "editor/editor.h"
 #include "editor/editor_modes.h"
 #include "focus_route.h"
-#include "quick_open.h"
-#include "project_search.h"
+#include "search/quick_open.h"
+#include "search/project_search.h"
 #include "session.h"
 
 

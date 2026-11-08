@@ -2,7 +2,7 @@
 #include "git/git_state.h"
 #include "preview/preview_state.h"
 #include "core/i18n.h"
-#include "search.h"
+#include "search/search.h"
 #include "explorer/file_actions.h"
 #include "explorer/file_moves.h"
 #include "explorer/nav_history.h"

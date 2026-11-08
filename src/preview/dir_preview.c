@@ -1,6 +1,6 @@
 #include "preview/dir_preview.h"
 #include "git/git_state.h"
-#include "search.h"
+#include "search/search.h"
 #include "core/i18n.h"
 #include "theme/fonts.h"
 #include "theme/palette.h"

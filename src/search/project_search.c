@@ -1,12 +1,12 @@
 /* Search in files (see project_search.h) */
-#include "project_search.h"
+#include "search/project_search.h"
 #include "core/i18n.h"
 #include "code/code_index.h"
 #include "code/code_refs.h"
 #include "widgets/dialog.h"
 #include "editor/editor.h"
 #include "core/path_globs.h"
-#include "text_search.h"
+#include "search/text_search.h"
 
 #include <string.h>
 

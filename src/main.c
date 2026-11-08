@@ -27,7 +27,7 @@
 #include "media/video.h"
 #include "media/audio.h"
 #include "widgets/minimap.h"
-#include "search.h"
+#include "search/search.h"
 #include "ui.h"
 #include "editor/editor.h"
 #include "git/git_tab.h"
