@@ -180,14 +180,26 @@ static void fit_table_frame(GtkAdjustment* hadj, gpointer data) {
     /* - 1: the text layout keeps a pixel for the cursor after the table */
     gint avail = page - gtk_text_view_get_left_margin(GTK_TEXT_VIEW(view)) -
                  gtk_text_view_get_right_margin(GTK_TEXT_VIEW(view)) - 1;
-    gint natural = 0;
-    gtk_widget_measure(gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(frame)),
-                       GTK_ORIENTATION_HORIZONTAL, -1, NULL, &natural, NULL, NULL);
+    GtkWidget* grid = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(frame));
+    gint minimum = 0, natural = 0;
+    gtk_widget_measure(grid, GTK_ORIENTATION_HORIZONTAL, -1, &minimum, &natural, NULL, NULL);
     gint width = MAX(MIN(natural, avail), 1);
-    gint old = 0;
-    gtk_widget_get_size_request(frame, &old, NULL);
-    if (width != old) {
-        gtk_widget_set_size_request(frame, width, -1);
+    /* A fixed (not overlay) scrollbar takes room under the table, which the
+     * frame does not count: add it when the table overflows */
+    gint height = -1;
+    gboolean overlay = TRUE;
+    g_object_get(gtk_widget_get_settings(frame), "gtk-overlay-scrolling", &overlay, NULL);
+    if (minimum > width && !(overlay && gtk_scrolled_window_get_overlay_scrolling(GTK_SCROLLED_WINDOW(frame)))) {
+        gint table_h = 0, bar_h = 0;
+        gtk_widget_measure(grid, GTK_ORIENTATION_VERTICAL, minimum, &table_h, NULL, NULL, NULL);
+        gtk_widget_measure(gtk_scrolled_window_get_hscrollbar(GTK_SCROLLED_WINDOW(frame)),
+                           GTK_ORIENTATION_VERTICAL, -1, NULL, &bar_h, NULL, NULL);
+        height = table_h + bar_h;
+    }
+    gint old_w = 0, old_h = 0;
+    gtk_widget_get_size_request(frame, &old_w, &old_h);
+    if (width != old_w || height != old_h) {
+        gtk_widget_set_size_request(frame, width, height);
     }
 }
 
