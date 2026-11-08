@@ -1,5 +1,5 @@
-/* Unit tests for src/vim_ex.c: Ex command line parsing */
-#include "vim_ex.h"
+/* Unit tests for src/vim/vim_ex.c: Ex command line parsing */
+#include "vim/vim_ex.h"
 
 #include <string.h>
 

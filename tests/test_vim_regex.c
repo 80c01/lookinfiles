@@ -1,7 +1,7 @@
-/* Unit tests for src/vim_regex.c (Vim patterns on GRegex) and the text
- * objects of src/vim_motion.c */
-#include "vim_regex.h"
-#include "vim_motion.h"
+/* Unit tests for src/vim/vim_regex.c (Vim patterns on GRegex) and the text
+ * objects of src/vim/vim_motion.c */
+#include "vim/vim_regex.h"
+#include "vim/vim_motion.h"
 
 #include <string.h>
 

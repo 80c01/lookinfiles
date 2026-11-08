@@ -1,8 +1,8 @@
 /* Vim engine: Insert and Replace modes (typed keys, completion, soft tabs,
  * block insert) (see vim_engine_private.h) */
-#include "vim_engine_private.h"
-#include "vim_keys.h"
-#include "vim_motion.h"
+#include "vim/vim_engine_private.h"
+#include "vim/vim_keys.h"
+#include "vim/vim_motion.h"
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */

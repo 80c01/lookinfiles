@@ -1,6 +1,6 @@
-/* Unit tests for src/vim_parse.c: the Normal / Visual command grammar */
-#include "vim_parse.h"
-#include "vim_keys.h"
+/* Unit tests for src/vim/vim_parse.c: the Normal / Visual command grammar */
+#include "vim/vim_parse.h"
+#include "vim/vim_keys.h"
 
 #include <string.h>
 

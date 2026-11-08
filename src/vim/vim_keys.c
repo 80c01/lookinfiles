@@ -1,5 +1,5 @@
 /* Vim key codes: GDK conversion, normalization, <notation> */
-#include "vim_keys.h"
+#include "vim/vim_keys.h"
 #include <string.h>
 
 gunichar vim_key_from_gdk(guint keyval, GdkModifierType state) {

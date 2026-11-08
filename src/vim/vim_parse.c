@@ -1,6 +1,6 @@
 /* Vim Normal / Visual command grammar */
-#include "vim_parse.h"
-#include "vim_keys.h"
+#include "vim/vim_parse.h"
+#include "vim/vim_keys.h"
 #include <string.h>
 
 /* Keys standing for other keys in Normal / Visual mode */

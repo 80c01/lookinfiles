@@ -1,9 +1,9 @@
 /* Vim engine: command line, search and Ex commands */
-#include "vim_engine_private.h"
-#include "vim_ex.h"
-#include "vim_keys.h"
-#include "vim_motion.h"
-#include "vim_regex.h"
+#include "vim/vim_engine_private.h"
+#include "vim/vim_ex.h"
+#include "vim/vim_keys.h"
+#include "vim/vim_motion.h"
+#include "vim/vim_regex.h"
 #include <stdlib.h>
 #include <string.h>
 

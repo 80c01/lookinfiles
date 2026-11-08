@@ -1,5 +1,5 @@
 /* Vim regular expressions translated to GRegex (PCRE) */
-#include "vim_regex.h"
+#include "vim/vim_regex.h"
 #include <string.h>
 
 typedef enum { MAGIC_VERY_NO, MAGIC_NO, MAGIC_ON, MAGIC_VERY } MagicLevel;

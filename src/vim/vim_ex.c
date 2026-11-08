@@ -1,5 +1,5 @@
 /* Ex command line parsing */
-#include "vim_ex.h"
+#include "vim/vim_ex.h"
 #include <string.h>
 
 typedef struct {

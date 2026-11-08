@@ -1,8 +1,8 @@
 /* Vim engine: line operations shared with Ex commands, and the operators
  * (d c y > < = gq g~ ...) over a motion or a Visual range (see vim_engine_private.h) */
-#include "vim_engine_private.h"
-#include "vim_keys.h"
-#include "vim_motion.h"
+#include "vim/vim_engine_private.h"
+#include "vim/vim_keys.h"
+#include "vim/vim_motion.h"
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */

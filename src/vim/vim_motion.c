@@ -1,5 +1,5 @@
 /* Vim motions and text objects on GtkTextIter */
-#include "vim_motion.h"
+#include "vim/vim_motion.h"
 #include <string.h>
 
 gint vim_char_class(gunichar c, gboolean big) {

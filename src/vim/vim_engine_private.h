@@ -4,8 +4,8 @@
 /* Internal header of the Vim engine: vim_engine.c (core, key feeding),
  * vim_engine_motions.c, vim_engine_insert.c, vim_engine_ops.c,
  * vim_engine_normal.c, vim_engine_visual.c and vim_engine_ex.c */
-#include "vim_engine.h"
-#include "vim_parse.h"
+#include "vim/vim_engine.h"
+#include "vim/vim_parse.h"
 
 #define VIM_MAXCOL G_MAXINT
 

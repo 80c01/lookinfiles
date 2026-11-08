@@ -1,8 +1,8 @@
 /* Vim engine: motions (h j k l, words, f / t, %, marks, searches...) for the
  * cursor, Visual mode and operators (see vim_engine_private.h) */
-#include "vim_engine_private.h"
-#include "vim_motion.h"
-#include "vim_regex.h"
+#include "vim/vim_engine_private.h"
+#include "vim/vim_motion.h"
+#include "vim/vim_regex.h"
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */

@@ -1,10 +1,10 @@
 /* Vim engine: modes, registers, marks, undo grouping, recording, lifecycle
  * and key feeding. Motions, Insert mode, operators, Normal and Visual
  * commands are in vim_engine_*.c; Ex commands and search in vim_engine_ex.c */
-#include "vim_engine_private.h"
+#include "vim/vim_engine_private.h"
 #include "theme/text_tags.h"
-#include "vim_keys.h"
-#include "vim_motion.h"
+#include "vim/vim_keys.h"
+#include "vim/vim_motion.h"
 #include <stdarg.h>
 #include <string.h>
 

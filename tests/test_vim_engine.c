@@ -1,9 +1,9 @@
-/* Unit tests for the Vim engine (src/vim_engine.c, vim_engine_ex.c) on a
+/* Unit tests for the Vim engine (src/vim/vim_engine.c, vim_engine_ex.c) on a
  * headless GtkTextBuffer. Texts mark the cursor with '|'. Keys use Vim
  * notation (<Esc>, <CR>, <C-v>...) and are typed "live": keys the engine
  * leaves to the text view are inserted the way GtkTextView would. */
-#include "vim_engine.h"
-#include "vim_keys.h"
+#include "vim/vim_engine.h"
+#include "vim/vim_keys.h"
 
 #include <string.h>
 
