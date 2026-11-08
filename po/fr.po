@@ -2792,61 +2792,61 @@ msgstr "police sans table de noms"
 msgid "font file too large"
 msgstr "fichier de police trop grand"
 
-#: src/games.c:143
+#: src/games/games.c:143
 msgid "★ Game Mode Unlocked! Select a game to play ★"
 msgstr "★ Mode Jeu déverrouillé ! Choisissez un jeu ★"
 
-#: src/games.c:160 src/games.c:170
+#: src/games/games.c:160 src/games/games.c:170
 msgctxt "game genre"
 msgid "Arcade"
 msgstr "Arcade"
 
-#: src/games.c:165
+#: src/games/games.c:165
 msgctxt "game genre"
 msgid "Puzzle"
 msgstr "Réflexion"
 
-#: src/games.c:175
+#: src/games/games.c:175
 msgctxt "game genre"
 msgid "Fighting"
 msgstr "Combat"
 
-#: src/games.c:178 src/games.c:540
+#: src/games/games.c:178 src/games/games.c:540
 msgid "Chess"
 msgstr "Échecs"
 
-#: src/games.c:180
+#: src/games/games.c:180
 msgctxt "game genre"
 msgid "Board"
 msgstr "Plateau"
 
-#: src/games.c:183
+#: src/games/games.c:183
 msgid "Card Games"
 msgstr "Jeux de cartes"
 
-#: src/games.c:185
+#: src/games/games.c:185
 msgid "3 games"
 msgstr "3 jeux"
 
-#: src/games.c:189 src/games.c:193 src/games.c:197
+#: src/games/games.c:189 src/games/games.c:193 src/games/games.c:197
 msgctxt "game genre"
 msgid "Cards"
 msgstr "Cartes"
 
-#: src/games.c:191
+#: src/games/games.c:191
 msgid "Klondike Solitaire"
 msgstr "Solitaire Klondike"
 
-#: src/games.c:195 src/games.c:549
+#: src/games/games.c:195 src/games/games.c:549
 msgid "Memory Match"
 msgstr "Memory"
 
-#: src/games.c:202
+#: src/games/games.c:202
 msgctxt "game genre"
 msgid "Adventure"
 msgstr "Aventure"
 
-#: src/games.c:424
+#: src/games/games.c:424
 #, c-format
 msgid ""
 "Game: %s\n"
@@ -2855,15 +2855,15 @@ msgstr ""
 "Jeu : %s\n"
 "Appuyez sur Enter pour jouer !\n"
 
-#: src/games.c:524
+#: src/games/games.c:524
 msgid "Game"
 msgstr "Jeu"
 
-#: src/games.c:546
+#: src/games/games.c:546
 msgid "Solitaire"
 msgstr "Solitaire"
 
-#: src/games.c:569
+#: src/games/games.c:569
 msgid "Close Game (Ctrl+W)"
 msgstr "Fermer le jeu (Ctrl+W)"
 

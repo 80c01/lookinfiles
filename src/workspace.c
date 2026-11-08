@@ -22,7 +22,7 @@
 #include "preview/browser.h"
 #include "canvas/canvas_view.h"
 #include "media/video_tab.h"
-#include "games.h"
+#include "games/games.h"
 
 /* Private to this file: the workspace minimap of the top bar and the layout
  * being applied after a switch */

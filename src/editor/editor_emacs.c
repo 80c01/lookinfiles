@@ -10,7 +10,7 @@
 #include "core/app_events.h"
 #include "explorer/nav_keys.h"
 #include "search/quick_open.h"
-#include "editor_dunnet.h"
+#include "games/editor_dunnet.h"
 #include <ctype.h>
 #include <string.h>
 

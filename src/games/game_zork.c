@@ -1,5 +1,5 @@
 /* Zork: The Great Underground Empire interactive text adventure for LookinFiles */
-#include "game_zork.h"
+#include "games/game_zork.h"
 #include "theme/palette.h"
 #include "theme/fonts.h"
 #include "theme/icons.h"

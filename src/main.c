@@ -34,7 +34,7 @@
 #include "explorer/bookmarks.h"
 #include "notes/notes.h"
 #include "explorer/remote.h"
-#include "games.h"
+#include "games/games.h"
 #include "explorer/files_menu.h"
 #include "session.h"
 #include "session_bookmark.h"

@@ -1,6 +1,6 @@
 #include <glib.h>
 #include <string.h>
-#include "dunnet.h"
+#include "games/dunnet.h"
 
 static void assert_cmd_contains(DunnetState* d, const gchar* cmd, const gchar* expected) {
     gchar* out = dunnet_command(d, cmd);

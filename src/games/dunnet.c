@@ -1,5 +1,5 @@
 /* Dunnet text adventure (Ron Schnell, 1992) for the Emacs *dungeon* buffer. */
-#include "dunnet.h"
+#include "games/dunnet.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

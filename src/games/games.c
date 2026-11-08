@@ -1,5 +1,5 @@
 /* Games mode: secret arcade and retro games explorer view and player. */
-#include "games.h"
+#include "games/games.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "theme/icons.h"
@@ -9,13 +9,13 @@
 #include "explorer/explorer_tree.h"
 #include "explorer/tree_nav.h"
 #include "focus_route.h"
-#include "game_pacman.h"
-#include "game_tetris.h"
-#include "game_space.h"
-#include "game_fighter.h"
-#include "game_chess.h"
-#include "game_cards.h"
-#include "game_zork.h"
+#include "games/game_pacman.h"
+#include "games/game_tetris.h"
+#include "games/game_space.h"
+#include "games/game_fighter.h"
+#include "games/game_chess.h"
+#include "games/game_cards.h"
+#include "games/game_zork.h"
 
 /* Secret sequence token history buffer */
 static gchar s_history[32] = {0};

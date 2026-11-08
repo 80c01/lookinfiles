@@ -1,5 +1,5 @@
 /* Tetris game for LookinFiles */
-#include "game_tetris.h"
+#include "games/game_tetris.h"
 #include "theme/palette.h"
 #include "theme/fonts.h"
 #include "theme/icons.h"

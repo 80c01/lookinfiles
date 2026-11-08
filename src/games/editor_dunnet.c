@@ -1,6 +1,6 @@
 /* Emacs *dungeon* buffer integration for Dunnet (M-x dunnet). */
-#include "editor_dunnet.h"
-#include "dunnet.h"
+#include "games/editor_dunnet.h"
+#include "games/dunnet.h"
 #include "editor/editor.h"
 #include "widgets/diff_gutter.h"
 #include "widgets/color_column.h"

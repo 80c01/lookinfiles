@@ -41,7 +41,7 @@
 #include "focus_route.h"
 #include "media/image_utils.h"
 #include "notes/note_types.h"
-#include "games.h"
+#include "games/games.h"
 
 /* Text shown from a Word document before it is cut (images not counted) */
 

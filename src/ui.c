@@ -3,7 +3,7 @@
 #include "media/video_tab.h"
 #include "help_guide.h"
 #include "preview/browser.h"
-#include "games.h"
+#include "games/games.h"
 #include "widgets/dialog.h"
 #include "layout_switcher.h"
 #include "preferences.h"

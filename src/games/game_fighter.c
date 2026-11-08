@@ -1,5 +1,5 @@
 /* Street Fighter 2D arcade fighting game for LookinFiles */
-#include "game_fighter.h"
+#include "games/game_fighter.h"
 #include "theme/palette.h"
 #include "theme/fonts.h"
 #include "theme/icons.h"

@@ -1,5 +1,5 @@
 /* Chess game with Minimax AI for LookinFiles */
-#include "game_chess.h"
+#include "games/game_chess.h"
 #include "theme/palette.h"
 #include "theme/fonts.h"
 #include "theme/icons.h"

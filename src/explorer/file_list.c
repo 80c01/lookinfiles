@@ -20,7 +20,7 @@
 #include "explorer/bookmarks.h"
 #include "notes/notes.h"
 #include "explorer/remote.h"
-#include "games.h"
+#include "games/games.h"
 #include "explorer/archive_tree.h"
 #include "formats/archive_extract.h"
 #include "explorer/dir_scan.h"
