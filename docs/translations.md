@@ -13,6 +13,7 @@ a catalog `po/<lang>.po` (`fr`, `de`, `pt_BR`...). Building needs `msgfmt`
 | Same English word, two meanings | `C_("sort order", "Name")` |
 | A count | `g_strdup_printf(ngettext("%d file", "%d files", n), n)` |
 | Note for translators | `/* TRANSLATORS: ... */` on the line above |
+| Shortcut table (`help.c`) | `N_()` on sections and descriptions; keys stay as written, except mouse actions and words: `NC_("key", "Right-click")` |
 
 Rules:
 
@@ -43,9 +44,9 @@ The template `po/lookinfiles.pot` is generated, not committed.
 
 | Language | Catalog | Covered |
 |----------|---------|---------|
-| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences |
+| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences, keyboard shortcuts panel (`help.c`) |
 
-Not marked yet: help and keyboard shortcuts (`help.c`), sidebar views
+Not marked yet: the user guide (docs/user-guide/, Help tab), sidebar views
 (notes, bookmarks, remote, games), editor, search, Git tab, previews.
 
 ## Adding a language
