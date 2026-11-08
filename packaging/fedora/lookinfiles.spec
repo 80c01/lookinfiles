@@ -1,5 +1,5 @@
 Name:           lookinfiles
-Version:        0.4.2
+Version:        0.6.0
 Release:        1%{?dist}
 Summary:        Fast, keyboard-driven GTK 4 file explorer with preview panel, editors and terminal
 

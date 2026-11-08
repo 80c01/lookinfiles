@@ -1,9 +1,14 @@
 # Changelog
 
 All notable changes to this project are listed here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions
+follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.6.0] - 2026-11-07
+
+Everything up to 0.6.0, including the first tagged releases (0.1.0 to 0.5.0).
 
 ### Changed
 
@@ -304,93 +309,100 @@ All notable changes to this project are listed here. The format follows
 - Escape on a dialog logged a GTK critical (dialog destroyed twice).
 - Empty bookmark folders were summarised as holding one item.
 
-## [2.0]
+## Before 0.1.0
+
+Untagged prototypes, before the project used Semantic Versioning.
+
+### Prototype 2.0
 
 - Migrated to GTK 4 (`gtk4`, `gtksourceview-5`, `vte-2.91-gtk4`) with GSK
   rendering, `GdkPaintable` / `GdkTexture` image and PDF rendering, GTK 4 event
   controllers, and `GTask` + `GCancellable` background work for directory
   scans, file reading, image scaling and PDF rasterization.
 
-## [1.17]
+### Prototype 1.17
 
 - Hanging indent for wrapped list items in Markdown and HTML previews, at
   every nesting level, including multi-paragraph items.
 
-## [1.16]
+### Prototype 1.16
 
 - Richer HTML preview: base64 images, code blocks with language banners,
   description lists, `<details>` / `<summary>`, task lists, `<kbd>`, `<abbr>`,
   table captions and numeric alignment, metadata banner, math, Greek and arrow
   entities.
 
-## [1.15]
+### Prototype 1.15
 
 - Panel backgrounds (`#191A1B` explorer, `#121314` preview and editor,
   `#1f2021` terminal) and high-contrast selection.
 
-## [1.14]
+### Prototype 1.14
 
 - VS Code Dark+ palette across all panels and VS Code file icon mappings.
 
-## [1.13]
+### Prototype 1.13
 
 - Comfortable text padding in the preview and editor tabs.
 
-## [1.12]
+### Prototype 1.12
 
 - PDF preview with poppler-glib: metadata banner, page rendering, text mode.
 
-## [1.11]
+### Prototype 1.11
 
 - Image preview with metadata, fitted to the window or at 1:1 scale.
 
-## [1.10]
+### Prototype 1.10
 
 - Monospace font for code files and raw markup views.
 
-## [1.9]
+### Prototype 1.9
 
 - Expandable directory tree with lazy loading, folder icons and keyboard
   expand / collapse.
 
-## [1.8]
+### Prototype 1.8
 
 - Resizable multi-terminal layout: panes side by side (`Ctrl+T`) or stacked
   (`Ctrl+Shift+T`).
 
-## [1.7]
+### Prototype 1.7
 
 - Rendered HTML preview with an `m` toggle to the raw markup.
 
-## [1.6]
+### Prototype 1.6
 
 - Modular code: the program split into modules in `src/`.
 
-## [1.5]
+### Prototype 1.5
 
 - Rendered Markdown preview with an `m` toggle to the raw source.
 
-## [1.4]
+### Prototype 1.4
 
 - File-type icons, embedded terminal (`Ctrl+T`), fullscreen start (`-f`),
   panel focus cycling (`Alt+Left` / `Alt+Right`), viewer with Vim keys, search
   and optional syntax highlighting.
 
-## [1.3]
+### Prototype 1.3
 
 - Hidden files toggle, sort cycling, directory listing in the preview, large
   file preview, dark theme.
 
-## [1.2]
+### Prototype 1.2
 
 - Vim keys (`j` / `k`, `gg`, `G`, `/`, `n` / `N`) and tree navigation
   (`Enter` / `Backspace`).
 
-## [1.1]
+### Prototype 1.1
 
 - Listing of the current directory, resizable panel, preview linked to the
   selection, `Ctrl+Q`.
 
-## [1.0]
+### Prototype 1.0
 
 - First version with two panels.
+
+[Unreleased]: https://github.com/80c01/lookinfiles/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/80c01/lookinfiles/releases/tag/v0.6.0

@@ -1,6 +1,6 @@
 # Maintainer: 80c01 <noreply@github.com>
 pkgname=lookinfiles
-pkgver=0.4.2
+pkgver=0.6.0
 pkgrel=1
 pkgdesc="Fast, keyboard-driven GTK 4 file explorer with preview panel, editors and terminal"
 arch=('x86_64' 'aarch64')

@@ -37,4 +37,4 @@ if [ -n "${V}" ]; then
     exit 0
 fi
 
-echo "0.4.2"
+echo "0.6.0"

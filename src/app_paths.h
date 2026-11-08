@@ -15,7 +15,7 @@
 /* Release version (Semantic Versioning); passed via -DAPP_VERSION="...".
  * If not supplied at compile time, falls back to the default here. */
 #ifndef APP_VERSION
-#define APP_VERSION  "0.4.2"
+#define APP_VERSION  "0.6.0"
 #endif
 
 /* ~/.config/lookinfiles ($XDG_CONFIG_HOME honoured). Not created. Caller frees. */
