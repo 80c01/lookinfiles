@@ -169,7 +169,7 @@ typedef struct {
     GPtrArray* buffers;      /* temporary/custom buffer names or paths */
     gint next_buffer_id;     /* incremental counter for Untitled buffers */
     gpointer notes_mgr;      /* NotesManager* instance (see notes.c) */
-    gpointer events;         /* AppEvents* subscription table (see app_events.c) */
+    gpointer events;         /* AppEvents* subscriptions and app_notice() message (see app_events.c) */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
     gint nav_prefix;      /* NavPrefix (nav_keys.h): explorer / viewer prefix key waiting (gg, zz, C-x o) */
     gint nav_recenter_step; /* next Emacs C-l position: 0 center, 1 top, 2 bottom */
@@ -315,9 +315,6 @@ typedef struct {
     gint editor_tagbar_width;     /* its width, shared by the tabs and the preview */
     gboolean preview_tagbar;      /* previews with headings show the tagbar (settings.ini) */
     gpointer preview_tagbar_state; /* preview_tagbar.c */
-    gchar* status_notice;         /* bottom bar message (app_notice()), NULL if none */
-    gboolean status_notice_undo;  /* the message offers Undo */
-    guint status_notice_serial;   /* bumped by each app_notice() (restarts its timeout) */
     gpointer file_undo;           /* last trash or move, for undo (file_moves.c) */
 } AppData;
 

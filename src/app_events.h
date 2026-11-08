@@ -67,5 +67,11 @@ void app_emit(AppData* app, AppEvent event);
 /* Show a short message in the status bar for a few seconds (NULL clears it);
  * with undo, an Undo button follows it (the last trash or move, key u) */
 void app_notice(AppData* app, const gchar* text, gboolean undo);
+/* The current app_notice() message, NULL if none; undo and serial (bumped by
+ * each app_notice()) may be NULL */
+const gchar* app_notice_get(AppData* app, gboolean* undo, guint* serial);
+
+/* Free the subscriptions and the message (main.c, at exit) */
+void app_events_free(AppData* app);
 
 #endif /* APP_EVENTS_H */

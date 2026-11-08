@@ -38,17 +38,18 @@ static void set_notice(GtkWidget* label, GtkWidget* undo, const gchar* text, gbo
 /* The app_notice() message and its Undo button, in the explorer bar or, while
  * the explorer is hidden, in the top bar; a new message restarts the timeout */
 static void update_notice(AppData* app) {
-    gboolean shown = (app->status_notice != NULL);
+    gboolean undo = FALSE;
+    guint serial = 0;
+    const gchar* notice = app_notice_get(app, &undo, &serial);
+    gboolean shown = (notice != NULL);
     gboolean in_explorer = (app->left_vbox == NULL) || gtk_widget_get_visible(app->left_vbox);
-    set_notice(app->status_notice_label, app->status_undo_btn,
-               in_explorer ? app->status_notice : NULL, app->status_notice_undo);
-    set_notice(app->topbar_notice_label, app->topbar_undo_btn,
-               in_explorer ? NULL : app->status_notice, app->status_notice_undo);
+    set_notice(app->status_notice_label, app->status_undo_btn, in_explorer ? notice : NULL, undo);
+    set_notice(app->topbar_notice_label, app->topbar_undo_btn, in_explorer ? NULL : notice, undo);
     if (app->topbar_notice != NULL) {
         gtk_widget_set_visible(app->topbar_notice, shown && !in_explorer);
     }
-    if (notice_shown_serial != app->status_notice_serial) {
-        notice_shown_serial = app->status_notice_serial;
+    if (notice_shown_serial != serial) {
+        notice_shown_serial = serial;
         if (notice_timeout_id != 0) {
             g_source_remove(notice_timeout_id);
             notice_timeout_id = 0;

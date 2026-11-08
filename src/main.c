@@ -823,6 +823,7 @@ int main(int argc, char** argv) {
         g_free(app->workspaces[i].remote_id);
         app->workspaces[i].remote_id = NULL;
     }
+    app_events_free(app);
 
     g_main_loop_unref(loop);
 
