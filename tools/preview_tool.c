@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include "core/file_types.h"
-#include "preview_formats.h"
+#include "preview/preview_formats.h"
 
 /* Same text limit as the viewer reads for files up to PREVIEW_THRESHOLD */
 #define TEXT_LIMIT (512 * 1024)

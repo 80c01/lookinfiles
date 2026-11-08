@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Manual pages (roff with the man(7) macros, and the common mdoc(7) ones)
  * formatted for the preview like man does in a terminal: the title line,

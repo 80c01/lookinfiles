@@ -1,5 +1,5 @@
 /* Display of PreviewDocs in the preview text view (see preview_doc_view.h). */
-#include "preview_doc_view.h"
+#include "preview/preview_doc_view.h"
 #include "theme/fonts.h"
 #include "theme/text_tags.h"
 

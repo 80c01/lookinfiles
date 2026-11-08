@@ -1,4 +1,4 @@
-#include "dir_summary.h"
+#include "preview/dir_summary.h"
 #include "core/i18n.h"
 
 #include <string.h>

@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Readable cards for small structured text formats:
  *   - iCalendar (.ics): events sorted by start (when, where, repeat rule,

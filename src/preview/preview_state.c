@@ -1,5 +1,5 @@
 /* What the preview shows (see preview_state.h). */
-#include "preview_state.h"
+#include "preview/preview_state.h"
 
 /* Private to this file */
 struct PreviewState {

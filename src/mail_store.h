@@ -9,7 +9,7 @@
  * messages would need libpff, not used. Pure GLib, unit-tested. */
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Bytes of the file start to pass in */
 #define MAIL_STORE_HEADER_BYTES 1024

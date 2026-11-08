@@ -2,7 +2,7 @@
  * and the .git directory, with a debounced refresh (schedule_refresh()).
  * Reports changes through app_events only; knows neither the tree nor the viewer. */
 #include "explorer/fs_watch.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "core/app_events.h"
 #include "git/git_utils.h"
 #include "git/git_tab.h"

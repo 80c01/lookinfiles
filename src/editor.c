@@ -3,7 +3,7 @@
 #include "editor_modes.h"
 #include "core/file_types.h"
 #include "widgets/pane_geometry.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "core/i18n.h"
 #include "widgets/dialog.h"
 #include "core/app_events.h"

@@ -1,5 +1,5 @@
-/* Unit tests for src/preview_formats.c (registry, ELF, documents, hex dump). */
-#include "preview_formats.h"
+/* Unit tests for src/preview/preview_formats.c (registry, ELF, documents, hex dump). */
+#include "preview/preview_formats.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

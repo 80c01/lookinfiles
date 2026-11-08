@@ -1,6 +1,6 @@
-/* Unit tests for src/dir_summary.c: directory overview totals, sorting,
+/* Unit tests for src/preview/dir_summary.c: directory overview totals, sorting,
  * relative dates and column padding. */
-#include "dir_summary.h"
+#include "preview/dir_summary.h"
 
 #include <string.h>
 

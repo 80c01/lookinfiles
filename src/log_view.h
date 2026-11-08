@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Log files for the preview: timestamps at the start of lines dimmed (ISO
  * 8601, syslog "Oct 29 10:00:00", bracketed or epoch times), level words

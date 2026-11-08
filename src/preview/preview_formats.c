@@ -1,5 +1,5 @@
 /* Structured preview builders, one per FileKind (see preview_formats.h). */
-#include "preview_formats.h"
+#include "preview/preview_formats.h"
 
 #include <glib/gstdio.h>
 #include <stdio.h>

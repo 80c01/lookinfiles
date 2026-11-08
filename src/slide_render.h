@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Slides of presentations (.pptx, .ppt) drawn like PowerPoint draws them:
  * a model of the slides (shapes with their position, rotation, geometry,

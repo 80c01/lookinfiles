@@ -7,7 +7,7 @@
 #include "editor_tagbar.h"
 #include "core/i18n.h"
 #include "layout_store.h"
-#include "preview_tagbar.h"
+#include "preview/preview_tagbar.h"
 #include "core/settings_store.h"
 #include "terminal.h"
 #include "workspace.h"

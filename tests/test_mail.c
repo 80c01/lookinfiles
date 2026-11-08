@@ -1,5 +1,5 @@
 /* Unit tests for src/mail_message.c and src/mail_view.c (and the mail
- * previews of src/preview_formats.c): headers, MIME, charsets and the
+ * previews of src/preview/preview_formats.c): headers, MIME, charsets and the
  * fixtures of tests/fixtures/mail. */
 #include "core/file_types.h"
 #include "mail_box.h"
@@ -9,7 +9,7 @@
 #include "mail_store.h"
 #include "mail_tnef.h"
 #include "mail_view.h"
-#include "preview_formats.h"
+#include "preview/preview_formats.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

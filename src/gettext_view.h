@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* gettext translation catalogs for the preview: compiled .mo files and .po /
  * .pot sources. The catalog header (project, language, translator, revision

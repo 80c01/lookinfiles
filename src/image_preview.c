@@ -1,7 +1,7 @@
 /* Image preview: fitted / 1:1 / zoomed, EXIF orientation and photo details
  * (see image_preview.h). */
 #include "image_preview.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "search.h"
 #include "core/i18n.h"
 #include "theme/fonts.h"

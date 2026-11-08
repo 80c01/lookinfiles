@@ -2,7 +2,7 @@
 #define PCAP_INFO_H
 
 #include <glib.h>
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* PCAP / PCAPNG network packet capture parser and preview builder.
  * Extracts capture format, link layer type, snaplen, packet counts,

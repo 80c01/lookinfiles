@@ -5,7 +5,7 @@
 #include "layout_switcher.h"
 #include "theme/icons.h"
 #include "explorer/fs_watch.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
 #include "theme/text_style.h"
@@ -21,9 +21,9 @@
 #include "explorer/file_list.h"
 #include "git/git_state.h"
 #include "explorer/explorer_keys.h"
-#include "viewer.h"
+#include "preview/viewer.h"
 #include "image_preview.h"
-#include "text_chunks.h"
+#include "preview/text_chunks.h"
 #include "video.h"
 #include "audio.h"
 #include "widgets/minimap.h"
@@ -51,8 +51,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "focus_route.h"
-#include "preview_tagbar.h"
-#include "preview_full.h"
+#include "preview/preview_tagbar.h"
+#include "preview/preview_full.h"
 #include "core/ui_probe.h"
 #include <string.h>
 

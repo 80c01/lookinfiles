@@ -2,7 +2,7 @@
  * trash and restore notes and notebooks (see notes.h) */
 #include "notes.h"
 #include "notes_private.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "core/i18n.h"
 #include "note_types.h"
 #include "notes_store.h"
@@ -12,7 +12,7 @@
 #include "explorer/tree_nav.h"
 #include "core/file_types.h"
 #include "editor.h"
-#include "viewer.h"
+#include "preview/viewer.h"
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */

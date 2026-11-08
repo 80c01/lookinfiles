@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Spreadsheets for the preview: Excel (.xlsx, Office Open XML) and
  * OpenDocument (.ods). Every sheet's name, and the cells of the first rows

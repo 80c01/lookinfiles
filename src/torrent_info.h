@@ -2,7 +2,7 @@
 #define TORRENT_INFO_H
 
 #include <glib.h>
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* BitTorrent metainfo (.torrent) bencode parser and preview builder.
  * Extracts torrent name, file list, total size, piece size, trackers,

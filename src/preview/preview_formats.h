@@ -4,7 +4,7 @@
 #include <gio/gio.h>
 
 #include "core/file_types.h"
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Registry of the structured previews: one builder per FileKind, run in the
  * preview worker thread. A builder reads only what it needs (bounded) and

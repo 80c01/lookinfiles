@@ -8,7 +8,7 @@
 #include "widgets/dialog.h"
 #include "editor.h"
 #include "editor_tagbar.h"
-#include "preview_tagbar.h"
+#include "preview/preview_tagbar.h"
 #include "explorer/nav_keys.h"
 #include "search.h"
 #include "theme/themes.h"

@@ -1,5 +1,5 @@
-/* Unit tests for src/preview_doc.c (styled preview documents, tables). */
-#include "preview_doc.h"
+/* Unit tests for src/preview/preview_doc.c (styled preview documents, tables). */
+#include "preview/preview_doc.h"
 
 #include <string.h>
 

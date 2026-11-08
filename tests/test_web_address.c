@@ -1,5 +1,5 @@
-/* Unit tests for src/web_address.c: address bar text to URI. */
-#include "web_address.h"
+/* Unit tests for src/preview/web_address.c: address bar text to URI. */
+#include "preview/web_address.h"
 
 static void check(const gchar* text, const gchar* expected) {
     gchar* uri = web_address_to_uri(text);

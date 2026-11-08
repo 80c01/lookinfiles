@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 #include "zip_reader.h"
 
 /* Word documents (.docx, Office Open XML) shown like Word shows them

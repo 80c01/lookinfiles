@@ -3,7 +3,7 @@
 
 #include <gtk/gtk.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Show a PreviewDoc in a text view (UI thread): styled text with its tags
  * and images, or the HTML / Markdown renderers for those formats. Sets the

@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Certificates and keys for the preview: PEM files (any number of blocks:
  * chains, CA bundles, keys, certificate requests) and DER certificates.

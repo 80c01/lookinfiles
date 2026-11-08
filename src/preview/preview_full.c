@@ -1,5 +1,5 @@
 /* "Load Whole File" bar of the preview (see preview_full.h). */
-#include "preview_full.h"
+#include "preview/preview_full.h"
 
 #include "core/app_events.h"
 #include "widgets/dialog.h"

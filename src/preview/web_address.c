@@ -1,5 +1,5 @@
 /* Address bar text to URI (see web_address.h) */
-#include "web_address.h"
+#include "preview/web_address.h"
 
 #include <string.h>
 

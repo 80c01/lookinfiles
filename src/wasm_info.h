@@ -2,7 +2,7 @@
 #define WASM_INFO_H
 
 #include <glib.h>
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* WebAssembly (.wasm) binary parser and preview builder.
  * Extracts WASM version, imported modules/functions, exports, memory limits,

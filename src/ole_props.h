@@ -10,7 +10,7 @@
 #include <glib.h>
 
 #include "ole_reader.h"
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 typedef struct {
     gchar* title;

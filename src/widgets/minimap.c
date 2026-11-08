@@ -1,5 +1,5 @@
 #include "widgets/minimap.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "widgets/diff_gutter.h"
 #include "core/line_diff.h"
 #include "widgets/minimap_geometry.h"

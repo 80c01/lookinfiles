@@ -1,6 +1,6 @@
-/* Unit tests for src/preview_cache.c: bounded most-recently-used cache of
+/* Unit tests for src/preview/preview_cache.c: bounded most-recently-used cache of
  * previews, with file stamps. */
-#include "preview_cache.h"
+#include "preview/preview_cache.h"
 
 #include <glib/gstdio.h>
 

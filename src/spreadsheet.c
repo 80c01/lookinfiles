@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 #include "zip_reader.h"
 #include "zip_xml.h"
 

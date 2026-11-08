@@ -2,7 +2,7 @@
 #define PYC_INFO_H
 
 #include <glib.h>
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Python compiled bytecode (.pyc, .pyo) parser and preview builder.
  * Extracts Python target version, PEP 552 validation mode (timestamp / hash),

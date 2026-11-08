@@ -1,5 +1,5 @@
 #include "orgmode.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "theme/fonts.h"
 #include "theme/text_tags.h"
 #include "org_doc.h"

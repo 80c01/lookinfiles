@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Unified diffs and patches (git diff, git format-patch, diff -u, svn) for
  * the preview: a summary of the changed files with their added / removed

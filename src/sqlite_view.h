@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* SQLite databases for the preview. With the SQLite library (HAVE_SQLITE):
  * the tables and views with their row counts and columns, then the first

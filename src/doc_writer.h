@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Word processing documents (.docx, .doc) written as a PreviewDoc that looks
  * like the document: fonts, sizes relative to the default size, colours,

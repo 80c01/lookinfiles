@@ -11,7 +11,7 @@
 #include <glib.h>
 
 #include "mail_message.h"
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* The largest part decoded for a preview */
 #define MAIL_VIEW_MAX_PART (8 * 1024 * 1024)

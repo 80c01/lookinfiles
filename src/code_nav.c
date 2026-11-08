@@ -1,6 +1,6 @@
 /* Code navigation in editor tabs (see code_nav.h) */
 #include "code_nav.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "core/app_paths.h"
 #include "code_index.h"
 #include "code_intel.h"

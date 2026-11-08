@@ -1,11 +1,11 @@
 /* Right-click menu of the files view (same labels and keys as the toolbar
  * tooltips and the README tables). */
 #include "explorer/files_menu.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "explorer/bookmarks.h"
-#include "browser.h"
+#include "preview/browser.h"
 #include "editor.h"
 #include "explorer/file_list.h"
 #include "explorer/file_moves.h"

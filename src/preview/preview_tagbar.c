@@ -1,5 +1,5 @@
 /* The tagbar of the preview (see preview_tagbar.h) */
-#include "preview_tagbar.h"
+#include "preview/preview_tagbar.h"
 #include "code_outline_tree.h"
 #include "explorer/nav_keys.h"
 #include "widgets/outline_pane.h"

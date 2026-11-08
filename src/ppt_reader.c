@@ -1,7 +1,7 @@
 /* PowerPoint 97-2003 presentations read into slides (see ppt_reader.h) */
 #include "ppt_reader.h"
 #include "core/i18n.h"
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 #include <gio/gio.h>
 #include <string.h>
 

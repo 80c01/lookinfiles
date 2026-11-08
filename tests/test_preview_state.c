@@ -1,5 +1,5 @@
-/* Unit tests for src/preview_state.c: what the preview shows. */
-#include "preview_state.h"
+/* Unit tests for src/preview/preview_state.c: what the preview shows. */
+#include "preview/preview_state.h"
 
 static void test_defaults(void) {
     AppData app = {0};

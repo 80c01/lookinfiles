@@ -4,7 +4,7 @@
  * their own bar (editor_modes). */
 #include "status_bar.h"
 #include "git/git_state.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"

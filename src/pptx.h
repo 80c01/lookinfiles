@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 #include "slide_render.h"
 
 /* PowerPoint presentations (.pptx, Office Open XML) drawn like PowerPoint

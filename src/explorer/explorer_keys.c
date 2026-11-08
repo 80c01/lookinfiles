@@ -1,7 +1,7 @@
 /* Keys of the explorer panel. Navigation follows the global mode (nav_keys.h);
  * the view actions (a, d, r, o...) are the same in every mode. */
 #include "explorer/explorer_keys.h"
-#include "preview_state.h"
+#include "preview/preview_state.h"
 #include "explorer/file_list.h"
 #include "explorer/tree_nav.h"
 #include "widgets/panels.h"

@@ -4,7 +4,7 @@
 
 #include <string.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 #define MAX_TABLE_CELLS 4096
 

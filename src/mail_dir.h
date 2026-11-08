@@ -10,7 +10,7 @@
  * thread. Pure GLib, unit-tested. */
 #include <gio/gio.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 typedef enum {
     MAIL_DIR_NONE = 0,

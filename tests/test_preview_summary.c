@@ -1,6 +1,6 @@
-/* Unit tests for src/preview_summary.c: summaries of remote machines, notebooks,
+/* Unit tests for src/preview/preview_summary.c: summaries of remote machines, notebooks,
  * bookmark folders and the notes trash, and their column alignment. */
-#include "preview_summary.h"
+#include "preview/preview_summary.h"
 #include "canvas/canvas_doc.h"
 
 #include <glib/gstdio.h>

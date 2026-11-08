@@ -2,7 +2,7 @@
 #define TFM_INFO_H
 
 #include <glib.h>
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* TeX font metric (.tfm), virtual font (.vf) and PostScript Type 1 (.pfb) parser
  * and preview builder.

@@ -5,7 +5,7 @@
 #include "office97.h"
 #include "ppt_reader.h"
 #include "ole_props.h"
-#include "preview_formats.h"
+#include "preview/preview_formats.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

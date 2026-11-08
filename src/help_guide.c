@@ -2,7 +2,7 @@
 #include "help_guide.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
-#include "browser.h"
+#include "preview/browser.h"
 #include "focus_route.h"
 #include "games.h"
 #include "git/git_tab.h"

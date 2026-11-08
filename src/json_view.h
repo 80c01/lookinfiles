@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* JSON pretty-printer for the preview: parses a document (tolerant: comments,
  * trailing commas, unquoted keys, NaN / Infinity, as in JSONC and JSON5) or a

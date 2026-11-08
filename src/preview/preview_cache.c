@@ -1,5 +1,5 @@
 /* Cache of the last previews built (see preview_cache.h) */
-#include "preview_cache.h"
+#include "preview/preview_cache.h"
 
 #include <glib/gstdio.h>
 #include <sys/stat.h>

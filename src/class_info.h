@@ -2,7 +2,7 @@
 #define CLASS_INFO_H
 
 #include <glib.h>
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* Java bytecode (.class) parser and preview builder.
  * Extracts class name, superclass, interfaces, version, fields, and methods.

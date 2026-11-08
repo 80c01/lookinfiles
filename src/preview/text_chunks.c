@@ -1,5 +1,5 @@
 /* Large text files loaded chunk by chunk on scroll (see text_chunks.h). */
-#include "text_chunks.h"
+#include "preview/text_chunks.h"
 
 #include <glib/gstdio.h>
 #include <stdio.h>
@@ -8,7 +8,7 @@
 #include "widgets/diff_gutter.h"
 #include "widgets/color_column.h"
 #include "core/text_encoding.h"
-#include "preview_full.h"
+#include "preview/preview_full.h"
 
 typedef struct TextChunks {
     gchar* path;

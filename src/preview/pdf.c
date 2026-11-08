@@ -1,5 +1,5 @@
-#include "pdf.h"
-#include "preview_state.h"
+#include "preview/pdf.h"
+#include "preview/preview_state.h"
 #include "search.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
@@ -8,9 +8,9 @@
 #include "theme/icons.h"
 #include "theme/text_style.h"
 #include "core/file_types.h"
-#include "ps_convert.h"
+#include "preview/ps_convert.h"
 #include "code_outline_tree.h"
-#include "preview_tagbar.h"
+#include "preview/preview_tagbar.h"
 #include "widgets/minimap.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>

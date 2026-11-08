@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 #include "zip_xml.h"
 
 #define MAX_PART (32u * 1024 * 1024)

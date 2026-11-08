@@ -14,7 +14,7 @@
 #include <glib.h>
 
 #include "ole_reader.h"
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 /* The document under a title and subtitle. NULL with error set when it
  * cannot be read; *encrypted (may be NULL) tells when it is

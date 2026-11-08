@@ -9,8 +9,8 @@
 #include "explorer/bookmark_icons.h"
 #include "notebook_icons.h"
 #include "explorer/bookmark_dialog.h"
-#include "browser.h"
-#include "web_address.h"
+#include "preview/browser.h"
+#include "preview/web_address.h"
 #include "session_store.h"
 
 /* Bookmark tree and its counters, private to this file */

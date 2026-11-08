@@ -1,4 +1,4 @@
-#include "ps_convert.h"
+#include "preview/ps_convert.h"
 
 static void test_gs_argv(void) {
     gchar** argv = ps_gs_argv("/usr/bin/gs", "/tmp/a.ps", "/tmp/o.pdf", FALSE, 20);

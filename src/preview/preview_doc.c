@@ -1,5 +1,5 @@
 /* Styled preview documents built in worker threads (see preview_doc.h). */
-#include "preview_doc.h"
+#include "preview/preview_doc.h"
 
 #include <math.h>
 #include <stdio.h>
