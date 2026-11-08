@@ -729,17 +729,22 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     g_object_unref(task);
 }
 
+/* Set while the preview re-renders the selected row: the current tab stays in front */
+static gboolean reloading_selection = FALSE;
+
 /* Re-render the file currently shown in the preview (APP_EVENT_PREVIEW_STALE) */
 void viewer_reload_preview(AppData* app) {
     if (app->viewed_path == NULL) {
-        /* A folder or canvas note: its overview again (git counts, theme); other rows
-         * without a file (summaries) have nothing to read again */
+        /* A folder: its overview again (git counts, theme); other rows without
+         * a file (notebook, trash, canvas note, bookmark folder): their summary */
         ExplorerRow* row = tree_nav_selected(app);
         if (row != NULL && row->path[0] != '\0') {
-            if (note_type_from_filename(row->path) == NOTE_TYPE_CANVAS) {
-                on_selection_changed(app->tree, app);
-            } else if (explorer_row_is(row, "dir")) {
+            if (explorer_row_is(row, "dir")) {
                 dir_preview_show(app, row->name, row->path);
+            } else {
+                reloading_selection = TRUE;
+                on_selection_changed(app->tree, app);
+                reloading_selection = FALSE;
             }
         }
         return;
@@ -876,7 +881,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
         summary = g_strdup_printf("%s\n%s\n\n(waiting for the file system…)\n", name, full);
     }
     if (is_remote || summary != NULL) {
-        if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
+        if (!reloading_selection && !app->editor_dedicated && app->notebook != NULL) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         }
         /* Leave the player page before stopping it (its controls must not be
@@ -939,7 +944,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
         name = g_path_get_basename(full);
     }
 
-    if (app != NULL && !app->editor_dedicated && app->notebook != NULL) {
+    if (!reloading_selection && !app->editor_dedicated && app->notebook != NULL) {
         /* Do not return to preview tab if the user is currently editing in an editor tab,
          * unless the tree view has focus (e.g. user navigating or clicking in the tree view)
          * or a different file/note was selected in the explorer panel. */

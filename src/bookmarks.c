@@ -362,12 +362,22 @@ static ExplorerRow* bm_find_row_by_id(AppData* app, guint id) {
     return explorer_row_find(explorer_tree_get_root(app->tree), bm_match_id, GUINT_TO_POINTER(id));
 }
 
-static gboolean bm_select_id(AppData* app, guint id) {
+/* prev_path: path of the row selected before the rebuild (NULL if none) */
+static gboolean bm_select_id(AppData* app, guint id, const gchar* prev_path) {
     ExplorerRow* row = bm_find_row_by_id(app, id);
     if (row == NULL) {
         return FALSE;
     }
-    return reveal_row(app, row);
+    if (prev_path == NULL || g_strcmp0(row->path, prev_path) != 0) {
+        return reveal_row(app, row);
+    }
+    /* The same row again (e.g. a file saved): its preview is re-rendered
+     * without bringing the preview tab in front of the editor */
+    if (!reveal_row_quietly(app, row)) {
+        return FALSE;
+    }
+    app_emit(app, APP_EVENT_PREVIEW_STALE);
+    return TRUE;
 }
 
 static GNode* bm_selected_node(AppData* app) {
@@ -393,14 +403,17 @@ static void bm_refresh_select(AppData* app, guint select_id) {
     }
     app->dir_scan_pending = FALSE;
 
+    ExplorerRow* prev = tree_nav_selected(app);
+    gchar* prev_path = (prev != NULL && prev->bm_id == select_id) ? g_strdup(prev->path) : NULL;
     tree_nav_block_selection_handler(app);
     explorer_tree_clear(app->tree);
     bookmarks_append_rows(explorer_tree_get_root(app->tree), app);
     bm_reexpand_level(app, explorer_tree_get_root(app->tree));
     tree_nav_unblock_selection_handler(app);
-    if (!bm_select_id(app, select_id)) {
+    if (!bm_select_id(app, select_id, prev_path)) {
         select_first_row(app);
     }
+    g_free(prev_path);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 

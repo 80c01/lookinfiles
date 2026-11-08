@@ -14,6 +14,9 @@ void select_row(AppData* app, ExplorerRow* row);
 /* Expand the folders above row, then select it. Expanding may rebuild rows
  * (bookmarks, notes): FALSE when row was dropped meanwhile (nothing selected). */
 gboolean reveal_row(AppData* app, ExplorerRow* row);
+/* reveal_row() without running the selection handler: for the row selected
+ * again after its list was rebuilt (the caller re-renders the preview in place) */
+gboolean reveal_row_quietly(AppData* app, ExplorerRow* row);
 void select_first_row(AppData* app);
 void select_last_row(AppData* app);
 void select_next_row(AppData* app);

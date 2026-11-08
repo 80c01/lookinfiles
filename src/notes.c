@@ -1048,7 +1048,11 @@ void notes_refresh(AppData* app) {
 
     ExplorerRow* row = explorer_row_find_by_path(explorer_tree_get_root(app->tree), sel_path);
     if (row != NULL) {
-        if (!reveal_row(app, row)) {
+        /* The same row again (e.g. a note saved): its preview is re-rendered
+         * without bringing the preview tab in front of the editor */
+        if (reveal_row_quietly(app, row)) {
+            app_emit(app, APP_EVENT_PREVIEW_STALE);
+        } else {
             select_first_row(app);
         }
     } else {

@@ -108,6 +108,13 @@ gboolean reveal_row(AppData* app, ExplorerRow* row) {
     return shown;
 }
 
+gboolean reveal_row_quietly(AppData* app, ExplorerRow* row) {
+    tree_nav_block_selection_handler(app);
+    gboolean shown = reveal_row(app, row);
+    tree_nav_unblock_selection_handler(app);
+    return shown;
+}
+
 /* Select row matching full path; regular rows take precedence over bookmarks */
 gboolean select_by_path(AppData* app, const gchar* full_path) {
     if (full_path == NULL) {
