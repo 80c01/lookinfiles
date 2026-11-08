@@ -76,7 +76,15 @@ cd "${OUTPUT_DIR}"
 
 # Export required environment variables for linuxdeploy-plugin-gtk
 export DEPLOY_GTK_VERSION="4"
-export OUTPUT="${OUTPUT_DIR}/LookinFiles-${VERSION}-x86_64.AppImage"
+export LDAI_OUTPUT="${OUTPUT_DIR}/LookinFiles-${VERSION}-x86_64.AppImage"
+
+# appimagetool's own AppStream check fetches every URL in the metainfo, so a
+# slow or failing github.com breaks the build. Validate offline instead.
+export LDAI_NO_APPSTREAM=1
+if command -v appstreamcli >/dev/null 2>&1; then
+    echo "==> Validating AppStream metadata (offline)..."
+    appstreamcli validate --no-net "${META_DIR}/${APP_ID}.metainfo.xml"
+fi
 
 # Run linuxdeploy with GTK plugin
 ICON_ARG=()
@@ -93,4 +101,4 @@ PATH="${TOOLS_DIR}:${PATH}" "${LINUXDEPLOY}" \
     --plugin gtk \
     --output appimage
 
-echo "==> AppImage created successfully: ${OUTPUT}"
+echo "==> AppImage created successfully: ${LDAI_OUTPUT}"
