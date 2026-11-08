@@ -100,6 +100,7 @@ struct OutlinePane {
     GtkSingleSelection* selection;
     GtkTreeListModel* tree;
     GPtrArray* entries;      /* CodeOutlineEntry* of the rows, or NULL before the first outline */
+    gint jumped;             /* entry last gone to, -1: kept selected while the cursor is on its line */
     CodeOutlineSort sort;
     GHashTable* collapsed;   /* keys of the rows the user collapsed */
     gboolean placing;        /* the paned position is being set by the code */
@@ -159,6 +160,12 @@ static void on_position(GObject* obj, GParamSpec* pspec, gpointer data) {
 void outline_pane_follow_cursor(OutlinePane* p) {
     if (p == NULL || p->detached || p->tree == NULL || p->entries == NULL) return;
     gint entry = code_outline_entry_at_line(p->entries, p->cb.cursor_line(p->data));
+    /* Several entries on one line: the one gone to, not the last one */
+    if (entry >= 0 && p->jumped >= 0 && (guint)p->jumped < p->entries->len) {
+        const CodeOutlineEntry* at = g_ptr_array_index(p->entries, entry);
+        const CodeOutlineEntry* gone = g_ptr_array_index(p->entries, p->jumped);
+        if (gone->line == at->line) entry = p->jumped;
+    }
     GListModel* rows = G_LIST_MODEL(p->tree);
     guint n = g_list_model_get_n_items(rows);
     guint found = GTK_INVALID_LIST_POSITION;
@@ -291,6 +298,7 @@ static void rebuild(OutlinePane* p) {
 void outline_pane_set_entries(OutlinePane* p, GPtrArray* entries, gboolean headings, const gchar* source) {
     g_clear_pointer(&p->entries, g_ptr_array_unref);
     p->entries = g_ptr_array_ref(entries);
+    p->jumped = -1;
     gtk_label_set_text(GTK_LABEL(p->title), headings ? "Headings" : "Symbols");
     gtk_label_set_text(GTK_LABEL(p->source), headings || source == NULL ? "" : source);
     gtk_widget_set_visible(p->sort_button, !headings);
@@ -331,6 +339,7 @@ static void activate_row(OutlinePane* p, GtkTreeListRow* row) {
     if (it->group) {
         gtk_tree_list_row_set_expanded(row, !gtk_tree_list_row_get_expanded(row));
     } else if (!p->detached && p->entries != NULL && it->entry >= 0 && (guint)it->entry < p->entries->len) {
+        p->jumped = it->entry;
         p->cb.go_to(p->data, g_ptr_array_index(p->entries, it->entry));
     }
     g_object_unref(it);
@@ -500,6 +509,7 @@ OutlinePane* outline_pane_new(GtkWidget* content, gint* width, const gchar* load
     OutlinePane* p = g_new0(OutlinePane, 1);
     p->cb = *callbacks;
     p->data = data;
+    p->jumped = -1;
     p->width = width;
     p->sort = CODE_OUTLINE_BY_KIND;
     p->collapsed = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);

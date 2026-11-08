@@ -18,6 +18,8 @@ typedef struct {
     GPtrArray* outline;
     guint refresh_source;
     guint scroll_source;
+    gint jump_line;            /* line of the entry gone to, -1 */
+    GCancellable* jump_owner;  /* the preview it was in (referenced), or NULL */
     gboolean chord_k;          /* Ctrl+K pressed: Ctrl+O comes next */
 } PreviewTagbar;
 
@@ -27,6 +29,7 @@ static void tagbar_free(PreviewTagbar* pt) {
     g_clear_handle_id(&pt->refresh_source, g_source_remove);
     g_clear_handle_id(&pt->scroll_source, g_source_remove);
     g_clear_object(&pt->outline_owner);
+    g_clear_object(&pt->jump_owner);
     g_clear_pointer(&pt->outline, g_ptr_array_unref);
     if (pt->app->preview_tagbar_state == pt) pt->app->preview_tagbar_state = NULL;
     g_free(pt);
@@ -132,18 +135,30 @@ static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
 /* Pane callbacks                                                            */
 /* ------------------------------------------------------------------------- */
 
-/* The line at the top of the view: the section being read */
+/* The line at the top of the view: the section being read. After a jump,
+ * the line gone to while it is on screen and not above the top: near the
+ * end of the text it cannot be scrolled to the top. */
 static gint top_line(gpointer data) {
     PreviewTagbar* pt = data;
     GdkRectangle rect;
     gtk_text_view_get_visible_rect(pt->view, &rect);
     GtkTextIter it;
     gtk_text_view_get_line_at_y(pt->view, &it, rect.y + 1, NULL);
-    return gtk_text_iter_get_line(&it);
+    gint top = gtk_text_iter_get_line(&it);
+    if (pt->jump_owner != pt->app->preview_cancellable) pt->jump_line = -1; /* another preview */
+    if (pt->jump_line >= top) {
+        gtk_text_view_get_line_at_y(pt->view, &it, rect.y + rect.height - 1, NULL);
+        if (pt->jump_line <= gtk_text_iter_get_line(&it)) return pt->jump_line;
+    }
+    pt->jump_line = -1;
+    g_clear_object(&pt->jump_owner);
+    return top;
 }
 
 static void go_to(gpointer data, const CodeOutlineEntry* entry) {
     PreviewTagbar* pt = data;
+    pt->jump_line = entry->line;
+    g_set_object(&pt->jump_owner, pt->app->preview_cancellable);
     GtkTextBuffer* buffer = gtk_text_view_get_buffer(pt->view);
     GtkTextIter it;
     gtk_text_buffer_get_iter_at_line(buffer, &it, entry->line);
@@ -215,6 +230,7 @@ GtkWidget* preview_tagbar_wrap(AppData* app, GtkWidget* content, GtkWidget* text
     PreviewTagbar* pt = g_new0(PreviewTagbar, 1);
     pt->app = app;
     pt->view = GTK_TEXT_VIEW(text_view);
+    pt->jump_line = -1;
     app->preview_tagbar_state = pt;
     pt->pane = outline_pane_new(content, &app->editor_tagbar_width, "Reading the headings…", &callbacks, pt);
     GtkWidget* paned = outline_pane_widget(pt->pane);
