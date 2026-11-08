@@ -19,7 +19,7 @@
 #include <string.h>
 
 static EditorModeState* state_of(EditorTab* tab) {
-    return (EditorModeState*)tab->mode_state;
+    return tab->mode_state;
 }
 
 static void set_echo(EditorTab* tab, const gchar* msg, gboolean error) {
@@ -230,7 +230,7 @@ static void report_written(EditorTab* tab) {
 }
 
 static gboolean save_tab(EditorTab* tab, const gchar* path, gchar** error) {
-    AppData* app = (AppData*)tab->app;
+    AppData* app = tab->app;
     if (path != NULL && path[0] != '\0') return editor_save_tab_as(app, tab, path);
     if (tab->path == NULL) {
         if (error) *error = g_strdup("E32: No file name");
@@ -264,14 +264,14 @@ static gboolean run_deferred_close(gpointer data) {
 
 static void defer_close(EditorTab* tab) {
     DeferredClose* d = g_new0(DeferredClose, 1);
-    d->app = (AppData*)tab->app;
+    d->app = tab->app;
     d->tab = tab;
     g_idle_add(run_deferred_close, d);
 }
 
 static gboolean close_tab(EditorTab* tab, gboolean force, gchar** error) {
     /* A view of a split file closes: the other views keep the changes */
-    gboolean twin = editor_view_twin((AppData*)tab->app, tab) != NULL;
+    gboolean twin = editor_view_twin(tab->app, tab) != NULL;
     if (!twin && !force && gtk_text_buffer_get_modified(tab->buffer) && !tab->is_buffer) {
         if (error) *error = g_strdup("E37: No write since last change (add ! to override)");
         return FALSE;
@@ -300,7 +300,7 @@ static gboolean run_deferred_split(gpointer data) {
 
 static void defer_split(EditorTab* tab, EditorMoveDirection dir) {
     DeferredSplit* d = g_new0(DeferredSplit, 1);
-    d->app = (AppData*)tab->app;
+    d->app = tab->app;
     d->tab = tab;
     d->dir = dir;
     g_idle_add(run_deferred_split, d);
@@ -308,13 +308,13 @@ static void defer_split(EditorTab* tab, EditorMoveDirection dir) {
 
 /* :only, Ctrl+W o: the other views of the file close */
 static void only_view(EditorTab* tab) {
-    if (editor_close_other_views((AppData*)tab->app, tab) == 0) {
+    if (editor_close_other_views(tab->app, tab) == 0) {
         set_echo(tab, "Already only one window", FALSE);
     }
 }
 
 static gboolean set_view_option(EditorTab* tab, const gchar* arg) {
-    AppData* app = (AppData*)tab->app;
+    AppData* app = tab->app;
     gboolean shown = diff_gutter_get_line_numbers(tab->view);
     if (strcmp(arg, "number") == 0 || strcmp(arg, "nu") == 0) {
         if (!shown) editor_toggle_line_numbers(app, tab);
@@ -375,7 +375,7 @@ static gboolean set_view_option(EditorTab* tab, const gchar* arg) {
 static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, const gchar* args,
                               gchar** error) {
     EditorTab* tab = data;
-    AppData* app = (AppData*)tab->app;
+    AppData* app = tab->app;
     if (strcmp(name, "set") == 0) return set_view_option(tab, args);
     if (strcmp(name, "Symbols") == 0) {
         code_symbols_show(app, tab, editor_mode_message);
@@ -482,7 +482,7 @@ static gboolean on_goto_definition(gpointer data, const gchar* word, gboolean de
     (void)word; /* code_nav reads the identifier at the cursor itself */
     EditorTab* tab = data;
     if (!code_nav_is_code(tab)) return FALSE;
-    return code_nav_goto_definition((AppData*)tab->app, tab, declaration, editor_mode_message);
+    return code_nav_goto_definition(tab->app, tab, declaration, editor_mode_message);
 }
 
 /* K: the help card of the identifier under the cursor */
@@ -490,20 +490,20 @@ static gboolean on_keyword_help(gpointer data, const gchar* word) {
     (void)word;
     EditorTab* tab = data;
     if (!code_nav_is_code(tab)) return FALSE;
-    code_help_show((AppData*)tab->app, tab);
+    code_help_show(tab->app, tab);
     return TRUE;
 }
 
 /* gr: the References tab */
 static gboolean on_references(gpointer data) {
     EditorTab* tab = data;
-    return code_refs_find((AppData*)tab->app, tab, editor_mode_message);
+    return code_refs_find(tab->app, tab, editor_mode_message);
 }
 
 /* Ctrl-O / Tab past the buffer's jump list: the history across files */
 static gboolean on_jump_history(gpointer data, gboolean older) {
     EditorTab* tab = data;
-    AppData* app = (AppData*)tab->app;
+    AppData* app = tab->app;
     return older ? code_nav_back(app, tab, editor_mode_message) : code_nav_forward(app, tab, editor_mode_message);
 }
 
@@ -991,9 +991,9 @@ static gboolean handle_window_command(EditorTab* tab, EditorModeState* st, guint
     st->vim_ctrl_w = FALSE;
     set_echo(tab, "", FALSE);
     if (action == NAV_PANEL_NEXT) {
-        app_emit((AppData*)tab->app, APP_EVENT_FOCUS_NEXT_PANEL);
+        app_emit(tab->app, APP_EVENT_FOCUS_NEXT_PANEL);
     } else if (action == NAV_PANEL_PREV) {
-        app_emit((AppData*)tab->app, APP_EVENT_FOCUS_PREV_PANEL);
+        app_emit(tab->app, APP_EVENT_FOCUS_PREV_PANEL);
     } else if (action == NAV_TAB_CLOSE) {
         defer_close(tab);
     }
@@ -1001,7 +1001,7 @@ static gboolean handle_window_command(EditorTab* tab, EditorModeState* st, guint
 }
 
 gboolean vim_cancel_pending(EditorTab* tab) {
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     if (st == NULL) return FALSE;
     gboolean had = st->vim_ctrl_w;
     st->vim_ctrl_w = FALSE;

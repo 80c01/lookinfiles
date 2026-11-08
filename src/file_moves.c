@@ -10,7 +10,7 @@
 
 typedef enum { UNDO_TRASH, UNDO_MOVE } UndoKind;
 
-typedef struct {
+typedef struct FileUndo {
     UndoKind kind;
     gchar* from; /* trashed path, or the path before the move */
     gchar* to;   /* the path after the move (NULL for a trash) */
@@ -25,7 +25,7 @@ static void file_undo_free(FileUndo* u) {
 }
 
 static void remember(AppData* app, UndoKind kind, const gchar* from, const gchar* to) {
-    file_undo_free((FileUndo*)app->file_undo);
+    file_undo_free(app->file_undo);
     FileUndo* u = g_new0(FileUndo, 1);
     u->kind = kind;
     u->from = g_strdup(from);
@@ -34,7 +34,7 @@ static void remember(AppData* app, UndoKind kind, const gchar* from, const gchar
 }
 
 static void forget(AppData* app) {
-    file_undo_free((FileUndo*)app->file_undo);
+    file_undo_free(app->file_undo);
     app->file_undo = NULL;
 }
 
@@ -121,7 +121,7 @@ gchar* file_moves_undo(AppData* app) {
         app_notice(app, _("Nothing to undo"), FALSE);
         return NULL;
     }
-    FileUndo* u = (FileUndo*)app->file_undo;
+    FileUndo* u = app->file_undo;
     GError* err = NULL;
     gboolean ok = (u->kind == UNDO_TRASH) ? trash_restore(u->from, &err)
                                           : move_path(app, u->to, u->from, &err);

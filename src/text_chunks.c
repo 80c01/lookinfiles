@@ -10,7 +10,7 @@
 #include "text_encoding.h"
 #include "preview_full.h"
 
-typedef struct {
+typedef struct TextChunks {
     gchar* path;
     gint64 offset;          /* next byte to read */
     gint64 size;

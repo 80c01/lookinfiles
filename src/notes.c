@@ -46,7 +46,7 @@ typedef struct {
     NoteType type;       /* note type */
 } TrashNoteItem;
 
-typedef struct {
+typedef struct NotesManager {
     GList* notebooks;    /* list of NotebookItem* in custom user order */
     GList* trash;        /* list of TrashNoteItem* */
     gboolean trash_expanded;
@@ -136,7 +136,7 @@ static void trash_item_free(TrashNoteItem* item) {
 }
 
 static NotesManager* get_notes_mgr(AppData* app) {
-    return (app != NULL) ? (NotesManager*)app->notes_mgr : NULL;
+    return (app != NULL) ? app->notes_mgr : NULL;
 }
 
 gchar* notes_get_root_dir(void) {
@@ -480,7 +480,7 @@ void notes_init(AppData* app) {
 
 void notes_free(AppData* app) {
     if (app == NULL || app->notes_mgr == NULL) return;
-    NotesManager* mgr = (NotesManager*)app->notes_mgr;
+    NotesManager* mgr = app->notes_mgr;
     g_list_free_full(mgr->notebooks, (GDestroyNotify)notebook_item_free);
     g_list_free_full(mgr->trash, (GDestroyNotify)trash_item_free);
     g_free(mgr);

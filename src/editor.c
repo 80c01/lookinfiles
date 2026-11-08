@@ -619,7 +619,7 @@ static void on_tab_label_right_click(GtkGestureClick* gesture, gint n_press,
     (void)gesture; (void)n_press; (void)x; (void)y;
     EditorTab* tab = (EditorTab*)user_data;
     if (tab != NULL && tab->app != NULL && tab->tab_label != NULL) {
-        editor_tab_show_context_menu((AppData*)tab->app, tab, tab->tab_label);
+        editor_tab_show_context_menu(tab->app, tab, tab->tab_label);
     }
 }
 
@@ -628,7 +628,7 @@ static void on_tab_label_left_click(GtkGestureClick* gesture, gint n_press,
     (void)gesture; (void)n_press; (void)x; (void)y;
     EditorTab* tab = (EditorTab*)user_data;
     if (tab != NULL && tab->app != NULL) {
-        AppData* app = (AppData*)tab->app;
+        AppData* app = tab->app;
         app->last_focused_editor = tab;
         if (tab->view != NULL) {
             gtk_widget_grab_focus(tab->view);
@@ -642,7 +642,7 @@ static void on_tab_label_middle_click(GtkGestureClick* gesture, gint n_press,
     EditorTab* tab = (EditorTab*)user_data;
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
     if (tab != NULL && tab->app != NULL) {
-        editor_close_tab((AppData*)tab->app, tab);
+        editor_close_tab(tab->app, tab);
     }
 }
 

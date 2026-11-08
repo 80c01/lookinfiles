@@ -9,7 +9,7 @@
 #define REFRESH_DELAY_MS 120   /* after the last change of the buffer (a render) */
 #define SCROLL_DELAY_MS 80     /* scrolling is followed after this pause */
 
-typedef struct {
+typedef struct PreviewTagbar {
     AppData* app;
     GtkTextView* view;
     GtkTextBuffer* buffer;

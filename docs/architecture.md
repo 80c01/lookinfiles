@@ -786,6 +786,9 @@ A feature keeps its widgets and state in a private struct defined in its own
 `audio.c`): created by its `*_init()`, freed by its `*_free()`, never read
 by other modules. Another module that needs something gets a function in the
 feature's header, not a field. Do not add feature fields to `AppData`.
+The pointer is typed, never a `gpointer`: name the struct
+(`typedef struct Foo { ... } Foo;` in the `.c` file) and declare the field
+`struct Foo* foo` in `app_types.h`, so the compiler checks every use.
 
 ### Known coupling (avoid making it worse)
 

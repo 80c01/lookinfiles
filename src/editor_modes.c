@@ -285,7 +285,7 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
         vim_echo(tab, msg);
         g_free(msg);
     } else {
-        EditorModeState* st = (EditorModeState*)tab->mode_state;
+        EditorModeState* st = tab->mode_state;
         if (st && st->np_status_label) {
             gchar* msg = g_strdup_printf(_("Saved to %s"), tab->name);
             gtk_label_set_text(GTK_LABEL(st->np_status_label), msg);
@@ -810,7 +810,7 @@ static void vim_update_status(EditorTab* tab, EditorModeState* st, const EditorI
 
 void editor_modes_update_status(EditorTab* tab) {
     if (tab == NULL || tab->mode_state == NULL) return;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
 
     gint line = 1, col = 1, percent = 0, total = 1;
     get_cursor_position(tab, &line, &col, &percent, &total);
@@ -877,7 +877,7 @@ static void on_view_ctrl_click(GtkGestureClick* gesture, gint n_press, gdouble x
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
     gtk_text_buffer_place_cursor(tab->buffer, &it);
     gtk_widget_grab_focus(tab->view);
-    code_nav_goto_definition((AppData*)tab->app, tab, FALSE, editor_mode_message);
+    code_nav_goto_definition(tab->app, tab, FALSE, editor_mode_message);
 }
 
 void editor_modes_init_tab(AppData* app, EditorTab* tab) {
@@ -925,7 +925,7 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
 
 void editor_modes_free_tab(EditorTab* tab) {
     if (tab == NULL || tab->mode_state == NULL) return;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     g_free(st->emacs_last_search);
     g_free(st->emacs_qr_find);
     g_free(st->emacs_qr_rep);
@@ -939,7 +939,7 @@ void editor_modes_free_tab(EditorTab* tab) {
 
 void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
     if (tab == NULL || tab->mode_state == NULL) return;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     tab->mode = mode;
     if (mode == EDITOR_MODE_ORGMODE) {
         tab->text_mode = FALSE;
@@ -1056,7 +1056,7 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
                                  guint keycode, GdkModifierType state) {
     (void)keycode;
     if (tab == NULL || tab->mode_state == NULL) return FALSE;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     code_help_on_key(tab, keyval);
     gboolean was_c_u = st->emacs_universal_arg;
     gboolean handled = dispatch_key(app, tab, st, keyval, state);
@@ -1083,12 +1083,12 @@ void editor_modes_step_tab(EditorTab* tab, gint step) {
     /* The notebook holding the page now (a dragged tab changed notebook) */
     GtkWidget* nb = gtk_widget_get_ancestor(tab->container, GTK_TYPE_NOTEBOOK);
     if (nb == NULL) nb = tab->nb;
-    if (nb != NULL) focus_route_step_tab((AppData*)tab->app, GTK_NOTEBOOK(nb), step, TRUE);
+    if (nb != NULL) focus_route_step_tab(tab->app, GTK_NOTEBOOK(nb), step, TRUE);
 }
 
 void editor_modes_cancel_pending(EditorTab* tab) {
     if (tab == NULL || tab->mode_state == NULL) return;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     gboolean had = st->emacs_prefix != EMACS_PREFIX_NONE || st->org_prefix != ORG_PREFIX_NONE ||
                    st->emacs_universal_arg;
     st->emacs_prefix = EMACS_PREFIX_NONE;
@@ -1102,7 +1102,7 @@ void editor_modes_cancel_pending(EditorTab* tab) {
 
 void editor_mode_message(EditorTab* tab, const gchar* msg) {
     if (tab == NULL || tab->mode_state == NULL) return;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     if (tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) {
         emacs_echo(tab, msg);
     } else if (tab->mode == EDITOR_MODE_VIM) {

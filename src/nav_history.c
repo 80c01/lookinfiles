@@ -7,7 +7,7 @@
 #define SELECTION_MAX 200
 
 /* VirtualLayout.dir_history */
-typedef struct {
+typedef struct FolderHistory {
     JumpList* folders;
     GHashTable* selection;  /* folder -> name of the entry selected when left */
 } FolderHistory;

@@ -9,7 +9,7 @@
 #define REFRESH_DELAY_MS 600   /* pause in the edits before the outline is read again */
 #define CURSOR_DELAY_MS 80     /* cursor moves are followed after this pause */
 
-typedef struct {
+typedef struct Tagbar {
     AppData* app;
     EditorTab* tab;          /* NULL once released */
     OutlinePane* pane;
@@ -187,7 +187,7 @@ void editor_tagbar_set_shown(AppData* app, gboolean shown) {
 static void place_tabs(GList* tabs) {
     for (GList* l = tabs; l != NULL; l = l->next) {
         EditorTab* t = l->data;
-        if (t != NULL && t->tagbar != NULL) outline_pane_place(((Tagbar*)t->tagbar)->pane);
+        if (t != NULL && t->tagbar != NULL) outline_pane_place(t->tagbar->pane);
     }
 }
 

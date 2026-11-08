@@ -27,7 +27,7 @@ gboolean orgmode_editor_is_org(EditorTab* tab) {
 }
 
 static EditorModeState* state_of(EditorTab* tab) {
-    return (EditorModeState*)tab->mode_state;
+    return tab->mode_state;
 }
 
 static gboolean emacs_like(EditorTab* tab) {
@@ -668,7 +668,7 @@ static void open_link(EditorTab* tab) {
         org_echo(tab, "No link under the cursor");
         return;
     }
-    AppData* app = (AppData*)tab->app;
+    AppData* app = tab->app;
     if (strstr(target, "://") != NULL || g_str_has_prefix(target, "mailto:")) {
         GtkUriLauncher* launcher = gtk_uri_launcher_new(target);
         gtk_uri_launcher_launch(launcher, GTK_WINDOW(app->window), NULL, NULL, NULL);

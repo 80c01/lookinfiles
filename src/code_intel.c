@@ -19,7 +19,7 @@ typedef struct {
     gint64 failed_at;   /* monotonic time of the failure, 0 when running */
 } Server;
 
-typedef struct {
+typedef struct CodeIntel {
     GHashTable* servers;   /* "root\ncommand" -> Server* */
     GHashTable* commands;  /* CodeLang (as pointer) -> gchar** argv, or a NULL value: none */
     GHashTable* diagnostics; /* canonical path -> GPtrArray of LspDiagnostic (byte columns) */

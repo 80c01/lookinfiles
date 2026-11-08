@@ -68,7 +68,7 @@ static void on_editor_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) 
     (void)ctrl;
     EditorTab* tab = (EditorTab*)data;
     if (tab != NULL && tab->app != NULL) {
-        AppData* app = (AppData*)tab->app;
+        AppData* app = tab->app;
         editor_view_activate(tab);
         app->last_focused_editor = tab;
         update_active_panel_highlight(app);
@@ -114,7 +114,7 @@ static gboolean on_editor_view_key_press(GtkEventControllerKey* controller, guin
     EditorTab* tab = (EditorTab*)data;
     end_stuck_drag(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(controller)), state);
     if (tab != NULL && tab->app != NULL) {
-        if (editor_modes_handle_key((AppData*)tab->app, tab, keyval, keycode, state)) {
+        if (editor_modes_handle_key(tab->app, tab, keyval, keycode, state)) {
             return TRUE;
         }
     }
@@ -410,7 +410,7 @@ void editor_view_release(EditorTab* tab) {
     }
     if (active_of(tab->buffer) == tab) {
         /* The view left takes its own cursor back */
-        EditorTab* twin = editor_view_twin((AppData*)tab->app, tab);
+        EditorTab* twin = editor_view_twin(tab->app, tab);
         g_object_set_data(G_OBJECT(tab->buffer), ACTIVE_VIEW_KEY, twin);
         if (twin != NULL) {
             twin->view_passive = FALSE;

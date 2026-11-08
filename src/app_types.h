@@ -74,14 +74,14 @@ typedef struct {
     GtkTextBuffer* buffer;
     GtkWidget* tab_label; /* tab title, with a bullet when unsaved */
     GtkWidget* minimap;   /* minimap_new_for_view() of view */
-    gpointer tagbar;      /* symbols beside the view (editor_tagbar.c), or NULL */
+    struct Tagbar* tagbar; /* symbols beside the view (editor_tagbar.c), or NULL */
     GtkWidget* nb;        /* GtkNotebook containing this tab */
-    gpointer app;         /* pointer to AppData */
+    struct AppData* app;  /* the application */
     EditorMode mode;      /* current editor mode */
     gboolean text_mode;   /* M-x text-mode: no Org-mode, even for a .org file */
     GtkWidget* status_bar; /* status line for this editor tab */
     gchar* status_text;   /* status message */
-    gpointer mode_state;  /* mode-specific state (EditorModeState*) */
+    struct EditorModeState* mode_state; /* mode-specific state (editor_modes_private.h) */
     const gchar* line_ending; /* "Unix (LF)"... detected at load (static) */
     const gchar* final_break; /* break the file ended with, kept out of the
                                * buffer and written back at save (static) */
@@ -118,8 +118,8 @@ typedef struct {
     gchar* remote_id;    /* ID of remote machine if workspace is connected to remote */
     ExplorerTreeState* tree_state; /* explorer rows while another workspace is shown (owned) */
     GitState* git_state;           /* git badges and counts while another workspace is shown (owned) */
-    gpointer dir_history;          /* folders shown, for back / forward (private to nav_history.c) */
-    gpointer search_state;         /* last search in files and its Search tab (project_search.c) */
+    struct FolderHistory* dir_history; /* folders shown, for back / forward (private to nav_history.c) */
+    struct WsSearch* search_state; /* last search in files and its Search tab (project_search.c) */
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
     GPtrArray* browser_pages;      /* its browser tabs while another workspace is shown (owned refs, browser.c) */
     GPtrArray* canvas_pages;       /* its Canvas tabs of the preview notebook while another workspace is shown (owned refs, canvas_view.c) */
@@ -132,7 +132,7 @@ typedef struct {
 } VirtualLayout;
 
 /* Shared application state */
-typedef struct {
+typedef struct AppData {
     GtkTextBuffer* buffer;
     gchar* base_dir;
     gchar* start_dir;       /* directory opened at launch: new workspaces start there */
@@ -151,14 +151,14 @@ typedef struct {
     gchar* session_open_target; /* saved-workspace target to open on APP_EVENT_OPEN_WORKSPACE_BOOKMARK */
     GPtrArray* buffers;      /* temporary/custom buffer names or paths */
     gint next_buffer_id;     /* incremental counter for Untitled buffers */
-    gpointer notes_mgr;      /* NotesManager* instance (see notes.c) */
-    gpointer events;         /* AppEvents* subscriptions and app_notice() message (see app_events.c) */
+    struct NotesManager* notes_mgr; /* notes and notebooks (notes.c) */
+    struct AppEvents* events; /* subscriptions and app_notice() message (app_events.c) */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
     gint nav_prefix;      /* NavPrefix (nav_keys.h): explorer / viewer prefix key waiting (gg, zz, C-x o) */
     gint nav_recenter_step; /* next Emacs C-l position: 0 center, 1 top, 2 bottom */
     struct PreviewState* preview_state; /* file shown, kind, raw view, zoom, page (preview_state.c), NULL until first set */
-    gpointer text_chunks;  /* large text loaded on scroll (text_chunks.c) */
-    gpointer preview_full; /* "Load Whole File" bar of the preview (preview_full.c) */
+    struct TextChunks* text_chunks; /* large text loaded on scroll (text_chunks.c) */
+    struct PreviewFull* preview_full; /* "Load Whole File" bar of the preview (preview_full.c) */
     GHashTable* expanded_paths; /* set of full_path strings for expanded directories */
 
     /* File monitors & async I/O cancellation */
@@ -183,8 +183,8 @@ typedef struct {
     gdouble editor_frac;        /* split ratio between preview panel and editor panel */
     GList* editors;             /* EditorTab*, order matching tab order */
     EditorTab* last_focused_editor; /* last focused editor tab */
-    gpointer code_nav;              /* code navigation state (code_nav.c), created on first use */
-    gpointer code_intel;            /* language servers (code_intel.c), created on first use */
+    struct CodeNav* code_nav;       /* code navigation state (code_nav.c), created on first use */
+    struct CodeIntel* code_intel;   /* language servers (code_intel.c), created on first use */
     GtkWidget* refs_page;           /* References page of the preview notebook (code_refs.c), or NULL */
     GtkWidget* search_page;         /* Search page (text search results, code_refs.c), or NULL */
     GPtrArray* canvas_pages;        /* Canvas tabs of every workspace (roots, not referenced; canvas_view.c), or NULL */
@@ -249,8 +249,8 @@ typedef struct {
     gboolean editor_tagbar;       /* code and Markdown editor tabs show the tagbar (settings.ini) */
     gint editor_tagbar_width;     /* its width, shared by the tabs and the preview */
     gboolean preview_tagbar;      /* previews with headings show the tagbar (settings.ini) */
-    gpointer preview_tagbar_state; /* preview_tagbar.c */
-    gpointer file_undo;           /* last trash or move, for undo (file_moves.c) */
+    struct PreviewTagbar* preview_tagbar_state; /* headings beside the preview (preview_tagbar.c), or NULL */
+    struct FileUndo* file_undo;   /* last trash or move, for undo (file_moves.c) */
 } AppData;
 
 #endif /* APP_TYPES_H */

@@ -26,7 +26,7 @@
 #define NP_FLAGS (GTK_TEXT_SEARCH_TEXT_ONLY | GTK_TEXT_SEARCH_CASE_INSENSITIVE)
 
 static EditorModeState* np_state(EditorTab* tab) {
-    return tab != NULL ? (EditorModeState*)tab->mode_state : NULL;
+    return tab != NULL ? tab->mode_state : NULL;
 }
 
 static gboolean np_find_open(EditorModeState* st) {
@@ -401,17 +401,17 @@ static gboolean on_np_bar_entry_escape(GtkEventControllerKey* ctrl, guint keyval
 static void on_np_save_as_confirm(GtkButton* btn, gpointer user_data) {
     (void)btn;
     EditorTab* tab = (EditorTab*)user_data;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     const gchar* path = gtk_editable_get_text(GTK_EDITABLE(st->np_save_entry));
     if (path && path[0] != '\0') {
-        editor_save_tab_as((AppData*)tab->app, tab, path);
+        editor_save_tab_as(tab->app, tab, path);
     }
     notepad_hide_save_as(tab);
 }
 
 void notepad_show_save_as(EditorTab* tab) {
     if (tab == NULL || tab->mode_state == NULL) return;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     gtk_editable_set_text(GTK_EDITABLE(st->np_save_entry), tab->name ? tab->name : "untitled.txt");
     gtk_widget_set_visible(st->np_save_bar, TRUE);
     gtk_widget_grab_focus(st->np_save_entry);
@@ -419,7 +419,7 @@ void notepad_show_save_as(EditorTab* tab) {
 
 void notepad_hide_save_as(EditorTab* tab) {
     if (tab == NULL || tab->mode_state == NULL) return;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     gtk_widget_set_visible(st->np_save_bar, FALSE);
     if (tab->view) gtk_widget_grab_focus(tab->view);
 }
@@ -601,9 +601,9 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
         st->np_chord_k = FALSE;
         gtk_label_set_text(GTK_LABEL(st->np_status_label), "");
         if (ctrl && (keyval == GDK_KEY_i || keyval == GDK_KEY_I)) {
-            code_help_show((AppData*)tab->app, tab);
+            code_help_show(tab->app, tab);
         } else if (ctrl && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
-            editor_tagbar_toggle((AppData*)tab->app, tab, editor_mode_message);
+            editor_tagbar_toggle(tab->app, tab, editor_mode_message);
         } else {
             gtk_label_set_text(GTK_LABEL(st->np_status_label), "Ctrl+K: no command for this key");
         }
@@ -619,7 +619,7 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     }
     if (keyval == GDK_KEY_F6 && !ctrl) {
         /* F6 / Shift+F6: next / previous panel */
-        app_emit((AppData*)tab->app, shift ? APP_EVENT_FOCUS_PREV_PANEL : APP_EVENT_FOCUS_NEXT_PANEL);
+        app_emit(tab->app, shift ? APP_EVENT_FOCUS_PREV_PANEL : APP_EVENT_FOCUS_NEXT_PANEL);
         return TRUE;
     }
     if (keyval == GDK_KEY_F3 && !ctrl) {
@@ -633,7 +633,7 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     }
     if (ctrl && !shift && (keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
         if (tab->path != NULL && tab->path[0] != '\0') {
-            editor_save_current((AppData*)tab->app);
+            editor_save_current(tab->app);
         } else {
             notepad_show_save_as(tab);
         }
@@ -680,27 +680,27 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
         return TRUE;
     }
     if (ctrl && shift && !alt && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
-        code_symbols_show((AppData*)tab->app, tab, editor_mode_message);
+        code_symbols_show(tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (ctrl && shift && !alt && keyval == GDK_KEY_space) {
-        code_help_signature((AppData*)tab->app, tab);
+        code_help_signature(tab->app, tab);
         return TRUE;
     }
     if (keyval == GDK_KEY_F12 && shift && !ctrl && !alt) {
-        code_refs_find((AppData*)tab->app, tab, editor_mode_message);
+        code_refs_find(tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (keyval == GDK_KEY_F12 && !shift && !alt) {
-        code_nav_goto_definition((AppData*)tab->app, tab, ctrl, editor_mode_message);
+        code_nav_goto_definition(tab->app, tab, ctrl, editor_mode_message);
         return TRUE;
     }
     if (ctrl && alt && !shift && (keyval == GDK_KEY_minus || keyval == GDK_KEY_KP_Subtract)) {
-        code_nav_back((AppData*)tab->app, tab, editor_mode_message);
+        code_nav_back(tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (ctrl && shift && !alt && (keyval == GDK_KEY_underscore || keyval == GDK_KEY_minus)) {
-        code_nav_forward((AppData*)tab->app, tab, editor_mode_message);
+        code_nav_forward(tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (keyval == GDK_KEY_Escape) {

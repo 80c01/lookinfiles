@@ -16,7 +16,7 @@
 
 void emacs_echo(EditorTab* tab, const gchar* msg) {
     if (tab == NULL || tab->mode_state == NULL) return;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     if (st->emacs_mb_echo != NULL) {
         gtk_label_set_text(GTK_LABEL(st->emacs_mb_echo), msg ? msg : "");
     }
@@ -32,7 +32,7 @@ void emacs_echo(EditorTab* tab, const gchar* msg) {
  * replace text while typing: the character under the cursor gets an
  * inverted-colour tag instead, and a box stands in at line ends. */
 static void block_cursor_update(EditorTab* tab) {
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     if (st == NULL || tab->view == NULL) return;
     /* The tag is the buffer's: drawn by the view of a split file that has the cursor */
     if (tab->view_passive) return;
@@ -91,7 +91,7 @@ static void on_block_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
 }
 
 void emacs_block_cursor_set(EditorTab* tab, gboolean on) {
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     if (st == NULL || tab->view == NULL) return;
     /* Once per view: the views of a split file share the buffer */
     if (g_object_get_data(G_OBJECT(tab->view), "emacs-block-cursor-wired") == NULL) {
@@ -368,7 +368,7 @@ static void isearch_end(EditorTab* tab, EditorModeState* st) {
 }
 
 void emacs_close_minibuffer(EditorTab* tab) {
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     if (is_isearch(st)) isearch_end(tab, st);
     st->emacs_mini_mode = EMACS_MINI_NONE;
     st->emacs_prefix = EMACS_PREFIX_NONE;
@@ -396,7 +396,7 @@ static gint compare_names(gconstpointer a, gconstpointer b) {
 }
 
 void emacs_prompt_set_completions(EditorTab* tab, GPtrArray* candidates, gboolean last_word) {
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     if (st->emacs_completions != NULL) g_ptr_array_unref(st->emacs_completions);
     st->emacs_completions = candidates;
     st->emacs_complete_word = last_word;
@@ -404,7 +404,7 @@ void emacs_prompt_set_completions(EditorTab* tab, GPtrArray* candidates, gboolea
 
 static void emacs_open_minibuffer(EditorTab* tab, EmacsMiniMode mode,
                                   const gchar* prompt, const gchar* default_val) {
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     st->emacs_mini_mode = mode;
     g_clear_pointer(&st->emacs_completions, g_ptr_array_unref);
     if (mode == EMACS_MINI_MX) {
@@ -424,7 +424,7 @@ static void emacs_open_minibuffer(EditorTab* tab, EmacsMiniMode mode,
 
 void emacs_prompt(EditorTab* tab, const gchar* prompt, const gchar* initial,
                   EmacsPromptFunc cb, gchar* data) {
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     g_free(st->emacs_prompt_data);
     emacs_open_minibuffer(tab, EMACS_MINI_CALLBACK, prompt, initial);
     st->emacs_prompt_cb = cb;
@@ -435,7 +435,7 @@ void emacs_prompt(EditorTab* tab, const gchar* prompt, const gchar* initial,
 static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
     (void)entry;
     EditorTab* tab = (EditorTab*)user_data;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     const gchar* text = gtk_editable_get_text(GTK_EDITABLE(st->emacs_mb_entry));
 
     switch (st->emacs_mini_mode) {
@@ -458,7 +458,7 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
             break;
         case EMACS_MINI_WRITE_FILE: {
             if (text && text[0] != '\0') {
-                editor_save_tab_as((AppData*)tab->app, tab, text);
+                editor_save_tab_as(tab->app, tab, text);
             }
             emacs_close_minibuffer(tab);
             break;
@@ -488,20 +488,20 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
         case EMACS_MINI_MX: {
             gchar* cmd = g_strstrip(g_ascii_strdown(text, -1));
             if (g_strcmp0(cmd, "dunnet") == 0) {
-                AppData* app = (AppData*)tab->app;
+                AppData* app = tab->app;
                 emacs_close_minibuffer(tab);
                 editor_dunnet_open(app);
             } else if (g_strcmp0(cmd, "org-mode") == 0 || g_strcmp0(cmd, "text-mode") == 0) {
                 /* Major modes: Org-mode, or plain Emacs editing even for a .org file */
                 gboolean org = (cmd[0] == 'o');
                 tab->text_mode = !org;
-                editor_set_tab_mode((AppData*)tab->app, tab, org ? EDITOR_MODE_ORGMODE : EDITOR_MODE_EMACS);
+                editor_set_tab_mode(tab->app, tab, org ? EDITOR_MODE_ORGMODE : EDITOR_MODE_EMACS);
                 orgmode_editor_reset_visibility(tab);
                 emacs_echo(tab, org ? "Org-mode enabled" : "Text mode enabled");
             } else if (g_strcmp0(cmd, "imenu-list") == 0 || g_strcmp0(cmd, "imenu-list-smart-toggle") == 0) {
                 /* imenu-list: the tagbar */
                 emacs_close_minibuffer(tab);
-                editor_tagbar_toggle((AppData*)tab->app, tab, editor_mode_message);
+                editor_tagbar_toggle(tab->app, tab, editor_mode_message);
             } else if (strstr(cmd, "goto-line")) {
                 emacs_open_minibuffer(tab, EMACS_MINI_GOTO_LINE, "Goto line: ", "");
             } else if (strstr(cmd, "query-replace")) {
@@ -511,7 +511,7 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
                 emacs_echo(tab, "Filled paragraph");
                 emacs_close_minibuffer(tab);
             } else if (strstr(cmd, "save-buffer")) {
-                editor_save_current((AppData*)tab->app);
+                editor_save_current(tab->app);
                 emacs_echo(tab, "Wrote buffer");
                 emacs_close_minibuffer(tab);
             } else if (strstr(cmd, "write-file")) {
@@ -547,7 +547,7 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
                 emacs_close_minibuffer(tab);
             } else if (strstr(cmd, "line-numbers")) {
                 /* display-line-numbers-mode */
-                editor_toggle_line_numbers((AppData*)tab->app, tab);
+                editor_toggle_line_numbers(tab->app, tab);
                 emacs_close_minibuffer(tab);
             } else if (strstr(cmd, "undo")) {
                 gtk_text_buffer_undo(tab->buffer);
@@ -574,7 +574,7 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
 
 static void on_emacs_mb_entry_changed(GtkEditable* editable, gpointer user_data) {
     EditorTab* tab = (EditorTab*)user_data;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     (void)editable;
     if (is_isearch(st)) {
         /* A typed character: one search step */
@@ -660,7 +660,7 @@ static void emacs_complete(EditorModeState* st) {
 }
 
 void emacs_isearch_exit(EditorTab* tab, gboolean accept) {
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     if (!is_isearch(st)) return;
     const gchar* q = isearch_query(st);
     if (accept) {
@@ -767,7 +767,7 @@ static gboolean on_emacs_mb_key_press(GtkEventControllerKey* controller, guint k
     (void)controller;
     (void)keycode;
     EditorTab* tab = data;
-    EditorModeState* st = (EditorModeState*)tab->mode_state;
+    EditorModeState* st = tab->mode_state;
     gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
     if (is_isearch(st)) return isearch_key(tab, st, keyval, state);
     if (keyval == GDK_KEY_Escape || (ctrl && (keyval == GDK_KEY_g || keyval == GDK_KEY_G))) {
@@ -958,7 +958,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         st->emacs_prefix = EMACS_PREFIX_NONE;
         if (keyval == GDK_KEY_period) {
             /* display-local-help: what the identifier at point is */
-            code_help_show((AppData*)tab->app, tab);
+            code_help_show(tab->app, tab);
         } else {
             emacs_echo(tab, "C-h: no help command for this key (C-h . describes the symbol at point)");
         }
@@ -969,7 +969,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     if (st->emacs_prefix == EMACS_PREFIX_CTRL_X) {
         st->emacs_prefix = EMACS_PREFIX_NONE;
         if (ctrl && (keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
-            editor_save_current((AppData*)tab->app);
+            editor_save_current(tab->app);
             emacs_echo(tab, "Wrote buffer");
             return TRUE;
         }
@@ -990,29 +990,29 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
             return TRUE;
         }
         if (ctrl && (keyval == GDK_KEY_c || keyval == GDK_KEY_C)) {
-            editor_close_tab((AppData*)tab->app, tab);
+            editor_close_tab(tab->app, tab);
             return TRUE;
         }
         /* Windows: split below / to the right (a second view of the file),
          * delete this one, keep only this one (the other views of the file) */
         if (!ctrl && !alt && (keyval == GDK_KEY_2 || keyval == GDK_KEY_3)) {
             emacs_echo(tab, "");
-            editor_split_tab((AppData*)tab->app, tab, keyval == GDK_KEY_3 ? EDITOR_MOVE_RIGHT : EDITOR_MOVE_DOWN);
+            editor_split_tab(tab->app, tab, keyval == GDK_KEY_3 ? EDITOR_MOVE_RIGHT : EDITOR_MOVE_DOWN);
             return TRUE;
         }
         if (!ctrl && !alt && keyval == GDK_KEY_0) {
-            editor_close_tab((AppData*)tab->app, tab);
+            editor_close_tab(tab->app, tab);
             return TRUE;
         }
         if (!ctrl && !alt && keyval == GDK_KEY_1) {
             emacs_echo(tab, "");
-            editor_close_other_views((AppData*)tab->app, tab);
+            editor_close_other_views(tab->app, tab);
             return TRUE;
         }
         NavAction action = nav_keys_ctrl_x(keyval, state);
         switch (action) {
         case NAV_PANEL_NEXT: /* other-window: the next panel */
-            app_emit((AppData*)tab->app, APP_EVENT_FOCUS_NEXT_PANEL);
+            app_emit(tab->app, APP_EVENT_FOCUS_NEXT_PANEL);
             return TRUE;
         case NAV_TAB_NEXT: /* next-buffer / previous-buffer: the tabs of the notebook */
         case NAV_TAB_PREV:
@@ -1020,7 +1020,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
             editor_modes_step_tab(tab, action == NAV_TAB_NEXT ? 1 : -1);
             return TRUE;
         case NAV_QUICK_OPEN: /* find-file: a file of the project */
-            quick_open_show((AppData*)tab->app);
+            quick_open_show(tab->app);
             return TRUE;
         default:
             break;
@@ -1038,7 +1038,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         }
         if (keyval == GDK_KEY_i || keyval == GDK_KEY_I) {
             /* imenu: the symbols of the buffer */
-            code_symbols_show((AppData*)tab->app, tab, editor_mode_message);
+            code_symbols_show(tab->app, tab, editor_mode_message);
             return TRUE;
         }
         return TRUE;
@@ -1132,17 +1132,17 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     }
     /* xref: M-. definition (C-u M-. declaration), M-, back, C-M-, forward */
     if (alt && keyval == GDK_KEY_period) {
-        code_nav_goto_definition((AppData*)tab->app, tab, st->emacs_universal_arg, editor_mode_message);
+        code_nav_goto_definition(tab->app, tab, st->emacs_universal_arg, editor_mode_message);
         return TRUE;
     }
     if (alt && keyval == GDK_KEY_question) {
         /* xref-find-references */
-        code_refs_find((AppData*)tab->app, tab, editor_mode_message);
+        code_refs_find(tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (alt && keyval == GDK_KEY_comma) {
-        if (ctrl) code_nav_forward((AppData*)tab->app, tab, editor_mode_message);
-        else code_nav_back((AppData*)tab->app, tab, editor_mode_message);
+        if (ctrl) code_nav_forward(tab->app, tab, editor_mode_message);
+        else code_nav_back(tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (alt && keyval == GDK_KEY_less) {

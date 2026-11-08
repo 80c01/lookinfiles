@@ -14,7 +14,7 @@
 
 #define CODE_NAV_HISTORY 100
 
-typedef struct {
+typedef struct CodeNav {
     JumpList* jumps;
     GCancellable* cancellable;  /* lookup in progress */
     guint serial;               /* of the latest lookup: older answers are dropped */

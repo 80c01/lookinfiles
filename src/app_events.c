@@ -3,7 +3,7 @@
 
 #define APP_EVENT_MAX_HANDLERS 4
 
-typedef struct {
+typedef struct AppEvents {
     AppEventHandler handlers[APP_EVENT_COUNT][APP_EVENT_MAX_HANDLERS];
     gint count[APP_EVENT_COUNT];
     gchar* notice;       /* app_notice() message, NULL if none */
@@ -15,14 +15,14 @@ static AppEvents* events_get(AppData* app) {
     if (app->events == NULL) {
         app->events = g_new0(AppEvents, 1);
     }
-    return (AppEvents*)app->events;
+    return app->events;
 }
 
 void app_events_free(AppData* app) {
     if (app == NULL || app->events == NULL) {
         return;
     }
-    g_free(((AppEvents*)app->events)->notice);
+    g_free(app->events->notice);
     g_clear_pointer(&app->events, g_free);
 }
 
@@ -38,7 +38,7 @@ void app_emit(AppData* app, AppEvent event) {
     if (app == NULL || app->events == NULL || event < 0 || event >= APP_EVENT_COUNT) {
         return;
     }
-    AppEvents* ev = (AppEvents*)app->events;
+    AppEvents* ev = app->events;
     for (gint i = 0; i < ev->count[event]; i++) {
         ev->handlers[event][i](app);
     }

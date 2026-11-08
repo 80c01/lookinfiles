@@ -32,7 +32,7 @@ static void scope_copy(Scope* to, const Scope* from) {
 
 /* A workspace's search (VirtualLayout.search_state), kept for its next
  * search: any case, every file by default */
-typedef struct {
+typedef struct WsSearch {
     gchar* query;
     TextSearchOptions opts;
     Scope scope;

@@ -42,7 +42,7 @@ typedef enum {
 typedef void (*EmacsPromptFunc)(EditorTab* tab, const gchar* text, gchar* data);
 
 /* Mode-specific data for one EditorTab */
-typedef struct {
+typedef struct EditorModeState {
     EditorTab* tab;
     AppData* app;
 
