@@ -16,6 +16,7 @@
 #include "sidebar.h"
 #include "terminal.h"
 #include "status_bar.h"
+#include "tree_nav.h"
 
 /* Private to this file: the top bar's widgets (NULL until topbar_new()) */
 struct TopBar {
@@ -56,7 +57,7 @@ static void on_breadcrumb_clicked(GtkButton* btn, gpointer data) {
 #endif
         if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || g_strcmp0(target, app->base_dir) != 0) {
             if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
-                app->sidebar_view = SIDEBAR_VIEW_FILES;
+                explorer_set_view(app, SIDEBAR_VIEW_FILES);
             }
             reload_directory(app, target);
         }

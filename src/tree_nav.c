@@ -161,3 +161,11 @@ void tree_nav_unblock_selection_handler(AppData* app) {
         g_signal_handler_unblock(app->tree, app->selection_changed_id);
     }
 }
+
+gboolean explorer_set_view(AppData* app, gint view) {
+    if (app == NULL || app->sidebar_view == view) {
+        return FALSE;
+    }
+    app->sidebar_view = view;
+    return TRUE;
+}

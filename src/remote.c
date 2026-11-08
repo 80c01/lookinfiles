@@ -623,7 +623,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
             g_free(cur->remote_id);
             cur->remote_id = g_strdup(rm->id);
         }
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
+        explorer_set_view(app, SIDEBAR_VIEW_FILES);
         reload_directory(app, rm->mount_point);
         app_emit(app, APP_EVENT_CHROME_CHANGED);
         g_free(mount_dir);
@@ -710,7 +710,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     }
 
     /* Switch to Files Explorer view and navigate into remote mount */
-    app->sidebar_view = SIDEBAR_VIEW_FILES;
+    explorer_set_view(app, SIDEBAR_VIEW_FILES);
     reload_directory(app, rm->mount_point);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     return TRUE;

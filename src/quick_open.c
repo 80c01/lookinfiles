@@ -11,6 +11,7 @@
 #include "i18n.h"
 #include "nav_history.h"
 #include "palette.h"
+#include "tree_nav.h"
 
 #include <string.h>
 
@@ -281,7 +282,7 @@ static void choose(Picker* p, gboolean edit) {
     }
     if (is_folder) {
         /* A recent folder becomes the explorer's folder */
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
+        explorer_set_view(app, SIDEBAR_VIEW_FILES);
         reload_directory(app, path);
         if (app->tree_view != NULL) gtk_widget_grab_focus(app->tree_view);
         g_free(path);

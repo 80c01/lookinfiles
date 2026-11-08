@@ -368,7 +368,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `tree_nav` — explorer row traversal and selection (j/k, arrows, gg/G,
   Ctrl+F/B, zz/zt/zb, `tree_nav_selected()`, `select_row()`,
   `select_by_path()`), and suspending the preview handler while the tree is
-  rebuilt (`tree_nav_block_selection_handler()`).
+  rebuilt (`tree_nav_block_selection_handler()`). `explorer_set_view()` is
+  the only way to change the explorer view (`make check` rejects other writes
+  of `app->sidebar_view` outside the workspace switch).
 - `remote_store` — `RemoteMachine` list and `RemoteFolder`s, `remotes.xml`, `~/.ssh/config`
   discovery, lookups (unit-tested).
 - `preview_summary` — text summaries shown in the preview for rows without

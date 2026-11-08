@@ -7,6 +7,7 @@
 #include "file_list.h"
 #include "notes.h"
 #include "remote.h"
+#include "tree_nav.h"
 
 /* Private to this file: the header's widgets updated by sidebar_header_update() */
 struct SidebarHeader {
@@ -31,8 +32,7 @@ static void on_sidebar_files_clicked(GtkButton* btn, gpointer data) {
     if (app == NULL) {
         return;
     }
-    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
+    if (explorer_set_view(app, SIDEBAR_VIEW_FILES)) {
         app_emit(app, APP_EVENT_CHROME_CHANGED);
         app_emit(app, APP_EVENT_FILES_CHANGED);
     } else if (app->tree_view != NULL) {

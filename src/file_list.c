@@ -172,7 +172,7 @@ static void toggle_sidebar_view(AppData* app, gint view) {
         gtk_widget_set_visible(app->left_vbox, TRUE);
         app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
-    app->sidebar_view = (app->sidebar_view == view) ? SIDEBAR_VIEW_FILES : view;
+    explorer_set_view(app, app->sidebar_view == view ? SIDEBAR_VIEW_FILES : view);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     refresh_listing(app);
     /* Back to the files: the scan restores the selection */
@@ -917,7 +917,7 @@ void reveal_path_in_tree(AppData* app, const gchar* path) {
         gtk_widget_set_visible(app->left_vbox, TRUE);
         app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
-    app->sidebar_view = SIDEBAR_VIEW_FILES;
+    explorer_set_view(app, SIDEBAR_VIEW_FILES);
     gsize n = strlen(app->base_dir);
     gboolean inside = g_str_has_prefix(path, app->base_dir) && n > 0 &&
                       (path[n] == '/' || path[n] == '\\' ||
@@ -1079,16 +1079,14 @@ void trash_selected_in_tree(AppData* app) {
 /* Shift+H / Shift+L, mouse back / forward, the top bar arrows: the folder
  * shown steps before / after */
 static void walk_history(AppData* app, gboolean back, guint steps) {
-    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
-    }
     gchar* dir = steps > 1 ? nav_history_go(app, back, steps)
                            : back ? nav_history_back(app) : nav_history_forward(app);
     if (dir == NULL) {
         app_notice(app, steps > 1 ? "That folder no longer exists"
                         : back ? "No earlier folder" : "No later folder", FALSE);
-        return;
+        return; /* the view shown stays */
     }
+    explorer_set_view(app, SIDEBAR_VIEW_FILES);
     /* The entry selected when the folder was left; else, coming back to a
      * folder from one of its subfolders, that subfolder */
     gchar* select = g_strdup(nav_history_selection(app, dir));
@@ -1120,8 +1118,7 @@ void undo_last_file_move(AppData* app) {
 
 /* Backspace: parent directory, or back to the files view from the other views */
 void go_to_parent_directory(AppData* app) {
-    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
-        app->sidebar_view = SIDEBAR_VIEW_FILES;
+    if (explorer_set_view(app, SIDEBAR_VIEW_FILES)) {
         refresh_listing(app);
         return;
     }

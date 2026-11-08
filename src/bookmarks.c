@@ -890,7 +890,7 @@ void bookmarks_activate_selected(AppData* app) {
     }
 
     gchar* target = g_strdup(it->target);
-    app->sidebar_view = SIDEBAR_VIEW_FILES;
+    explorer_set_view(app, SIDEBAR_VIEW_FILES);
     navigate_to_path(app, target);
     g_free(target);
 }
