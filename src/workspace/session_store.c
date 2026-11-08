@@ -1,5 +1,5 @@
 /* Session and recent places between launches (see session_store.h) */
-#include "session_store.h"
+#include "workspace/session_store.h"
 #include "core/app_paths.h"
 
 #include <glib/gstdio.h>

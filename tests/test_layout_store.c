@@ -1,5 +1,5 @@
-/* Unit tests for src/layout_store.c: saved layouts file and terminal pane trees */
-#include "layout_store.h"
+/* Unit tests for src/workspace/layout_store.c: saved layouts file and terminal pane trees */
+#include "workspace/layout_store.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

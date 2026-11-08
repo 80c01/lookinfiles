@@ -5,7 +5,7 @@
 #include "widgets/dialog.h"
 #include "widgets/icon_picker.h"
 #include "notes/notebook_icons.h"
-#include "session_store.h"
+#include "workspace/session_store.h"
 
 #include <string.h>
 

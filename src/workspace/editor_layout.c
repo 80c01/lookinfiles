@@ -1,8 +1,8 @@
 /* The shape of the dedicated editor panel in saved layouts (see editor_layout.h) */
-#include "editor_layout.h"
+#include "workspace/editor_layout.h"
 #include "editor/editor.h"
-#include "layout_store.h"
-#include "tab_tree.h"
+#include "workspace/layout_store.h"
+#include "workspace/tab_tree.h"
 #include "terminal/terminal.h"
 
 /* Share of a split's first child, kept on the GtkPaned and applied by

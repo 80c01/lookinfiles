@@ -1,5 +1,5 @@
 /* The editor tabs of a workspace as text (see tab_tree.h) */
-#include "tab_tree.h"
+#include "workspace/tab_tree.h"
 
 TabTreeNode* tab_tree_notebook_new(void) {
     TabTreeNode* n = g_new0(TabTreeNode, 1);

@@ -2,7 +2,7 @@
 #include "widgets/panels.h"
 #include "core/app_events.h"
 #include "explorer/remote_store.h"
-#include "layout_store.h"
+#include "workspace/layout_store.h"
 #include "theme/palette.h"
 #include "theme/fonts.h"
 #include "widgets/tab_drop.h"

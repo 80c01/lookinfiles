@@ -7,7 +7,7 @@
  * quick open). The explorer reports its folder changes; going back or
  * forward returns the folder to show, the explorer shows it. */
 #include "core/app_types.h"
-#include "session_store.h"
+#include "workspace/session_store.h"
 
 /* The explorer's folder changed (file_list.c): history and recent folders.
  * selected: the row selected in old_dir (or NULL), shown again when the

@@ -1,5 +1,5 @@
-/* Unit tests for src/tab_tree.c: the editor tabs of a workspace as text. */
-#include "tab_tree.h"
+/* Unit tests for src/workspace/tab_tree.c: the editor tabs of a workspace as text. */
+#include "workspace/tab_tree.h"
 
 static void test_round_trip(void) {
     const gchar* texts[] = {

@@ -266,17 +266,17 @@ msgstr "_Retirer le signet"
 
 #: src/explorer/bookmark_dialog.c:198 src/explorer/bookmarks.c:577 src/code/code_symbols.c:176
 #: src/editor/editor.c:1729 src/explorer/file_actions.c:42 src/explorer/file_actions.c:236
-#: src/layouts.c:47 src/layouts.c:319 src/notes/notes.c:587 src/notes/notes.c:768
+#: src/workspace/layouts.c:47 src/workspace/layouts.c:319 src/notes/notes.c:587 src/notes/notes.c:768
 #: src/notes/notes.c:852 src/preferences.c:342 src/preview/preview_full.c:31
 #: src/search/project_search.c:369 src/search/quick_open.c:368 src/explorer/remote.c:322
 #: src/explorer/remote.c:389 src/explorer/remote.c:456 src/explorer/remote.c:487 src/explorer/remote.c:564
-#: src/session_bookmark.c:13 src/theme/themes.c:222 src/theme/themes.c:237 src/theme/themes.c:682
+#: src/workspace/session_bookmark.c:13 src/theme/themes.c:222 src/theme/themes.c:237 src/theme/themes.c:682
 msgid "_Cancel"
 msgstr "_Annuler"
 
 #: src/explorer/bookmark_dialog.c:207 src/explorer/file_actions.c:252 src/office/office97.c:73
 #: src/preview/preview_formats.c:346 src/preview/preview_formats.c:347 src/formats/pyc_info.c:578
-#: src/session_bookmark.c:26 src/formats/sqlite_view.c:222 src/formats/torrent_info.c:325
+#: src/workspace/session_bookmark.c:26 src/formats/sqlite_view.c:222 src/formats/torrent_info.c:325
 msgid "Name"
 msgstr "Nom"
 
@@ -355,7 +355,7 @@ msgstr "Supprimer le dossier"
 msgid "Delete Bookmark"
 msgstr "Supprimer le signet"
 
-#: src/explorer/bookmarks.c:577 src/layouts.c:497 src/layouts.c:519 src/layouts.c:592
+#: src/explorer/bookmarks.c:577 src/workspace/layouts.c:497 src/workspace/layouts.c:519 src/workspace/layouts.c:592
 #: src/notes/notes.c:1700 src/explorer/remote.c:457 src/explorer/remote.c:565 src/theme/themes.c:619
 #: src/theme/themes.c:791
 msgid "_Delete"
@@ -369,8 +369,8 @@ msgstr "Modifier le dossier"
 msgid "Edit Bookmark"
 msgstr "Modifier le signet"
 
-#: src/explorer/bookmarks.c:606 src/layouts.c:320 src/notes/notes.c:1487 src/notes/notes.c:1557
-#: src/explorer/remote.c:324 src/explorer/remote.c:390 src/explorer/remote.c:541 src/session_bookmark.c:14
+#: src/explorer/bookmarks.c:606 src/workspace/layouts.c:320 src/notes/notes.c:1487 src/notes/notes.c:1557
+#: src/explorer/remote.c:324 src/explorer/remote.c:390 src/explorer/remote.c:541 src/workspace/session_bookmark.c:14
 #: src/theme/themes.c:237
 msgid "_Save"
 msgstr "_Enregistrer"
@@ -395,7 +395,7 @@ msgstr ""
 
 #: src/explorer/bookmarks.c:864 src/explorer/file_actions.c:365 src/explorer/file_actions.c:398
 #: src/explorer/file_moves.c:131 src/media/image_preview.c:257 src/preview/pdf.c:377
-#: src/session_bookmark.c:79 src/session_bookmark.c:99
+#: src/workspace/session_bookmark.c:79 src/workspace/session_bookmark.c:99
 msgid "unknown error"
 msgstr "erreur inconnue"
 
@@ -403,10 +403,10 @@ msgstr "erreur inconnue"
 msgid "Open Bookmark"
 msgstr "Ouvrir le signet"
 
-#: src/explorer/bookmarks.c:865 src/explorer/file_actions.c:95 src/layouts.c:270
-#: src/layouts.c:521 src/notes/notes.c:883 src/explorer/remote.c:598 src/explorer/remote.c:680
-#: src/session_bookmark.c:62 src/session_bookmark.c:80
-#: src/session_bookmark.c:100 src/theme/themes.c:212
+#: src/explorer/bookmarks.c:865 src/explorer/file_actions.c:95 src/workspace/layouts.c:270
+#: src/workspace/layouts.c:521 src/notes/notes.c:883 src/explorer/remote.c:598 src/explorer/remote.c:680
+#: src/workspace/session_bookmark.c:62 src/workspace/session_bookmark.c:80
+#: src/workspace/session_bookmark.c:100 src/theme/themes.c:212
 msgid "_Close"
 msgstr "_Fermer"
 
@@ -1151,7 +1151,7 @@ msgstr "Nécessite"
 msgid "Directory"
 msgstr "Dossier"
 
-#: src/formats/card_view.c:589 src/layout_store.c:206 src/main.c:358 src/topbar.c:661
+#: src/formats/card_view.c:589 src/workspace/layout_store.c:206 src/main.c:358 src/topbar.c:661
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -4762,22 +4762,22 @@ msgstr "document vide"
 msgid "… (stopped after %u lines)"
 msgstr "… (arrêté après %u lignes)"
 
-#: src/layout_store.c:46 src/main.c:344
+#: src/workspace/layout_store.c:46 src/main.c:344
 msgid "Explorer"
 msgstr "Explorateur"
 
-#: src/layout_store.c:49 src/main.c:351 src/main.c:441
+#: src/workspace/layout_store.c:49 src/main.c:351 src/main.c:441
 msgid "Preview"
 msgstr "Aperçu"
 
-#: src/layout_store.c:56
+#: src/workspace/layout_store.c:56
 #, c-format
 msgid "%u pane"
 msgid_plural "%u panes"
 msgstr[0] "%u volet"
 msgstr[1] "%u volets"
 
-#: src/layout_store.c:57
+#: src/workspace/layout_store.c:57
 #, c-format
 msgid "%u terminal"
 msgid_plural "%u terminals"
@@ -4785,79 +4785,79 @@ msgstr[0] "%u terminal"
 msgstr[1] "%u terminaux"
 
 #. TRANSLATORS: e.g. "Editor Panel (2 panes, 1 terminal)"
-#: src/layout_store.c:61
+#: src/workspace/layout_store.c:61
 #, c-format
 msgid "Editor Panel (%1$s, %2$s)"
 msgstr "Panneau d’édition (%1$s, %2$s)"
 
-#: src/layout_store.c:63
+#: src/workspace/layout_store.c:63
 #, c-format
 msgid "Editor Panel (%s)"
 msgstr "Panneau d’édition (%s)"
 
-#: src/layout_store.c:65
+#: src/workspace/layout_store.c:65
 msgid "Editor Panel"
 msgstr "Panneau d’édition"
 
-#: src/layout_store.c:78
+#: src/workspace/layout_store.c:78
 #, c-format
 msgid "Terminal (%u terminal, below)"
 msgid_plural "Terminal (%u terminals, below)"
 msgstr[0] "Terminal (%u terminal, en dessous)"
 msgstr[1] "Terminal (%u terminaux, en dessous)"
 
-#: src/layout_store.c:79
+#: src/workspace/layout_store.c:79
 #, c-format
 msgid "Terminal (%u terminal, beside)"
 msgid_plural "Terminal (%u terminals, beside)"
 msgstr[0] "Terminal (%u terminal, à côté)"
 msgstr[1] "Terminal (%u terminaux, à côté)"
 
-#: src/layout_store.c:82
+#: src/workspace/layout_store.c:82
 msgid "Terminal (below)"
 msgstr "Terminal (en dessous)"
 
-#: src/layout_store.c:82
+#: src/workspace/layout_store.c:82
 msgid "Terminal (beside)"
 msgstr "Terminal (à côté)"
 
-#: src/layout_store.c:87
+#: src/workspace/layout_store.c:87
 msgid "No panels"
 msgstr "Aucun panneau"
 
-#: src/layout_store.c:90
+#: src/workspace/layout_store.c:90
 msgid "Tagbar (editor)"
 msgstr "Barre de symboles (édition)"
 
-#: src/layout_store.c:91
+#: src/workspace/layout_store.c:91
 msgid "Tagbar (preview)"
 msgstr "Barre de symboles (aperçu)"
 
-#: src/layout_store.c:92
+#: src/workspace/layout_store.c:92
 msgid "Tagbar"
 msgstr "Barre de symboles"
 
-#: src/layout_store.c:205 src/theme/themes.c:527
+#: src/workspace/layout_store.c:205 src/theme/themes.c:527
 msgid "Code"
 msgstr "Code"
 
-#: src/layout_store.c:207
+#: src/workspace/layout_store.c:207
 msgid "Focus"
 msgstr "Focus"
 
-#: src/layout_switcher.c:171 src/layout_switcher.c:195
+#: src/workspace/layout_switcher.c:171 src/workspace/layout_switcher.c:195
 msgid "Current Layout"
 msgstr "Disposition actuelle"
 
-#: src/layout_switcher.c:211
+#: src/workspace/layout_switcher.c:211
 msgid "_Edit Layouts…"
 msgstr "_Modifier les dispositions…"
 
-#: src/layout_switcher.c:213
+#: src/workspace/layout_switcher.c:213
 msgid "Save, Delete or Reset Layouts"
 msgstr "Enregistrer, supprimer ou réinitialiser les dispositions"
 
-#: src/layouts.c:135
+#: src/workspace/layouts.c:135
 #, c-format
 msgid ""
 "The layout “%1$s” has fewer terminals than are running; %2$u running "
@@ -4872,15 +4872,15 @@ msgstr[1] ""
 "La disposition « %1$s » a moins de terminaux qu’il n’en tourne ; %2$u "
 "terminaux en cours seront fermés."
 
-#: src/layouts.c:141
+#: src/workspace/layouts.c:141
 msgid "Close Terminals"
 msgstr "Fermer des terminaux"
 
-#: src/layouts.c:141
+#: src/workspace/layouts.c:141
 msgid "_Apply Layout"
 msgstr "_Appliquer la disposition"
 
-#: src/layouts.c:296
+#: src/workspace/layouts.c:296
 #, c-format
 msgid ""
 "Could not save %1$s:\n"
@@ -4889,39 +4889,39 @@ msgstr ""
 "Impossible d’enregistrer %1$s :\n"
 "%2$s"
 
-#: src/layouts.c:297
+#: src/workspace/layouts.c:297
 msgid "Layouts Not Saved"
 msgstr "Dispositions non enregistrées"
 
-#: src/layouts.c:308
+#: src/workspace/layouts.c:308
 msgctxt "layout name"
 msgid "Default"
 msgstr "Par défaut"
 
-#: src/layouts.c:319
+#: src/workspace/layouts.c:319
 msgid "Save Layout"
 msgstr "Enregistrer la disposition"
 
 #. TRANSLATORS: %s is the name of the default layout ("Default")
-#: src/layouts.c:327
+#: src/workspace/layouts.c:327
 #, c-format
 msgid "Save the panels of this workspace as (“%s” for new workspaces):"
 msgstr ""
 "Enregistrer les panneaux de cet espace de travail sous (« %s » pour les "
 "nouveaux espaces de travail) :"
 
-#: src/layouts.c:351
+#: src/workspace/layouts.c:351
 msgid "Make the panels of this workspace the default layout of new workspaces?"
 msgstr ""
 "Faire des panneaux de cet espace de travail la disposition par défaut des "
 "nouveaux espaces de travail ?"
 
-#: src/layouts.c:353
+#: src/workspace/layouts.c:353
 #, c-format
 msgid "A layout named “%s” already exists. Replace it?"
 msgstr "Une disposition nommée « %s » existe déjà. La remplacer ?"
 
-#: src/layouts.c:355
+#: src/workspace/layouts.c:355
 #, c-format
 msgid ""
 "Replace the built-in layout “%s” with the panels of this workspace? Deleting "
@@ -4930,49 +4930,49 @@ msgstr ""
 "Remplacer la disposition intégrée « %s » par les panneaux de cet espace de "
 "travail ? Supprimer la vôtre la fait revenir."
 
-#: src/layouts.c:360
+#: src/workspace/layouts.c:360
 msgid "Replace Default Layout"
 msgstr "Remplacer la disposition par défaut"
 
-#: src/layouts.c:360
+#: src/workspace/layouts.c:360
 msgid "Replace Layout"
 msgstr "Remplacer la disposition"
 
-#: src/layouts.c:361
+#: src/workspace/layouts.c:361
 msgid "_Replace"
 msgstr "_Remplacer"
 
 #. TRANSLATORS: %s is the name of a layout that comes with the application
-#: src/layouts.c:429
+#: src/workspace/layouts.c:429
 #, c-format
 msgid "%s (built-in)"
 msgstr "%s (intégrée)"
 
-#: src/layouts.c:433
+#: src/workspace/layouts.c:433
 msgid "Default — new workspaces"
 msgstr "Par défaut — nouveaux espaces de travail"
 
-#: src/layouts.c:434
+#: src/workspace/layouts.c:434
 msgid "Default — new workspaces (built-in)"
 msgstr "Par défaut — nouveaux espaces de travail (intégrée)"
 
-#: src/layouts.c:497
+#: src/workspace/layouts.c:497
 msgid "_Reset Default"
 msgstr "_Réinitialiser"
 
-#: src/layouts.c:518
+#: src/workspace/layouts.c:518
 msgid "Workspace Layouts"
 msgstr "Dispositions des espaces de travail"
 
-#: src/layouts.c:520
+#: src/workspace/layouts.c:520
 msgid "_Save Current…"
 msgstr "_Enregistrer l’actuelle…"
 
-#: src/layouts.c:522 src/preferences.c:342
+#: src/workspace/layouts.c:522 src/preferences.c:342
 msgid "_Apply"
 msgstr "A_ppliquer"
 
-#: src/layouts.c:536
+#: src/workspace/layouts.c:536
 msgid ""
 "Select a layout, then Apply it to this workspace (or double-click it). Save "
 "Current… replaces the selected layout or adds a new one; the default layout "
@@ -4985,16 +4985,16 @@ msgstr ""
 "des nouveaux espaces de travail. Enregistrer sous le nom d’une disposition "
 "intégrée la remplace."
 
-#: src/layouts.c:574
+#: src/workspace/layouts.c:574
 #, c-format
 msgid "Layout %u"
 msgstr "Disposition %u"
 
-#: src/layouts.c:581
+#: src/workspace/layouts.c:581
 msgid "Reset Default Layout"
 msgstr "Réinitialiser la disposition par défaut"
 
-#: src/layouts.c:582
+#: src/workspace/layouts.c:582
 msgid ""
 "Reset the default layout of new workspaces to the built-in one (explorer and "
 "preview, no terminal)?"
@@ -5002,16 +5002,16 @@ msgstr ""
 "Rétablir la disposition intégrée pour les nouveaux espaces de travail "
 "(explorateur et aperçu, sans terminal) ?"
 
-#: src/layouts.c:584
+#: src/workspace/layouts.c:584
 msgid "_Reset"
 msgstr "_Réinitialiser"
 
-#: src/layouts.c:591
+#: src/workspace/layouts.c:591
 #, c-format
 msgid "Delete the layout “%s”?"
 msgstr "Supprimer la disposition « %s » ?"
 
-#: src/layouts.c:592
+#: src/workspace/layouts.c:592
 msgid "Delete Layout"
 msgstr "Supprimer la disposition"
 
@@ -7388,29 +7388,29 @@ msgstr "Ajouter une machine distante…"
 msgid "not an RTF document"
 msgstr "pas un document RTF"
 
-#: src/session.c:161
+#: src/workspace/session.c:161
 msgid "This workspace has no folder"
 msgstr "Cet espace de travail n’a pas de dossier"
 
-#: src/session.c:173
+#: src/workspace/session.c:173
 msgid "The saved workspace is missing or unreadable"
 msgstr "L’espace de travail enregistré est absent ou illisible"
 
-#: src/session.c:179
+#: src/workspace/session.c:179
 #, c-format
 msgid "Folder not found: %s"
 msgstr "Dossier introuvable : %s"
 
-#: src/session.c:181
+#: src/workspace/session.c:181
 #, c-format
 msgid "All %d workspaces are in use"
 msgstr "Les %d espaces de travail sont tous utilisés"
 
-#: src/session_bookmark.c:12
+#: src/workspace/session_bookmark.c:12
 msgid "Save Workspace as Bookmark"
 msgstr "Enregistrer l’espace de travail comme signet"
 
-#: src/session_bookmark.c:34
+#: src/workspace/session_bookmark.c:34
 msgid ""
 "Keeps this workspace's folder, open editor tabs and panels. Opening the "
 "bookmark restores them in a new workspace."
@@ -7419,15 +7419,15 @@ msgstr ""
 "espace de travail. Ouvrir le signet les restaure dans un nouvel espace de "
 "travail."
 
-#: src/session_bookmark.c:62 src/session_bookmark.c:80
+#: src/workspace/session_bookmark.c:62 src/workspace/session_bookmark.c:80
 msgid "Save Workspace"
 msgstr "Enregistrer l’espace de travail"
 
-#: src/session_bookmark.c:62
+#: src/workspace/session_bookmark.c:62
 msgid "This workspace has no folder to save."
 msgstr "Cet espace de travail n’a pas de dossier à enregistrer."
 
-#: src/session_bookmark.c:79
+#: src/workspace/session_bookmark.c:79
 #, c-format
 msgid ""
 "Could not save the workspace:\n"
@@ -7436,7 +7436,7 @@ msgstr ""
 "Impossible d’enregistrer l’espace de travail :\n"
 "%s"
 
-#: src/session_bookmark.c:99
+#: src/workspace/session_bookmark.c:99
 #, c-format
 msgid ""
 "Could not open this workspace:\n"
@@ -7445,7 +7445,7 @@ msgstr ""
 "Impossible d’ouvrir cet espace de travail :\n"
 "%s"
 
-#: src/session_bookmark.c:100
+#: src/workspace/session_bookmark.c:100
 msgid "Open Workspace"
 msgstr "Ouvrir l’espace de travail"
 
@@ -8445,11 +8445,11 @@ msgstr "Importations (%u)"
 msgid "Exports (%u)"
 msgstr "Exportations (%u)"
 
-#: src/workspace_menu.c:81
+#: src/workspace/workspace_menu.c:81
 msgid "Save as Bookmark…"
 msgstr "Enregistrer comme signet…"
 
-#: src/workspace_menu.c:86
+#: src/workspace/workspace_menu.c:86
 msgid "Close Workspace"
 msgstr "Fermer l’espace de travail"
 

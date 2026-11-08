@@ -1,11 +1,11 @@
 /* Workspace bookmarks (see session_bookmark.h) */
-#include "session_bookmark.h"
+#include "workspace/session_bookmark.h"
 #include "core/i18n.h"
 #include "explorer/bookmark_dialog.h"
 #include "explorer/bookmarks.h"
 #include "widgets/dialog.h"
-#include "session.h"
-#include "session_store.h"
+#include "workspace/session.h"
+#include "workspace/session_store.h"
 
 /* Name of the bookmark to create; NULL when cancelled (caller frees) */
 static gchar* ask_name(AppData* app, const gchar* initial) {

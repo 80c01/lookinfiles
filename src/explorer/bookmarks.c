@@ -11,7 +11,7 @@
 #include "explorer/bookmark_dialog.h"
 #include "preview/browser.h"
 #include "preview/web_address.h"
-#include "session_store.h"
+#include "workspace/session_store.h"
 
 /* Bookmark tree and its counters, private to this file */
 struct Bookmarks {

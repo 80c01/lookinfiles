@@ -6,7 +6,7 @@
  * the window (the Alt+L switcher is layout_switcher.h). Data and file
  * format: layout_store.h. */
 #include "core/app_types.h"
-#include "layout_store.h"
+#include "workspace/layout_store.h"
 
 /* The Edit Layouts dialog: apply, save, delete, reset the default */
 void layouts_show_dialog(AppData* app);

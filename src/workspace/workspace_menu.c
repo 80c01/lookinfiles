@@ -1,5 +1,5 @@
 /* The menu of the workspace map (see workspace_menu.h) */
-#include "workspace_menu.h"
+#include "workspace/workspace_menu.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 

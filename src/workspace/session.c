@@ -1,13 +1,13 @@
 /* The session between launches (see session.h) */
-#include "session.h"
+#include "workspace/session.h"
 #include "core/app_events.h"
 #include "editor/editor_session.h"
-#include "layout_store.h"
+#include "workspace/layout_store.h"
 #include "core/i18n.h"
 #include "explorer/remote.h"
-#include "session_store.h"
+#include "workspace/session_store.h"
 #include "terminal/terminal.h"
-#include "workspace.h"
+#include "workspace/workspace.h"
 
 static gchar** set_to_strv(GHashTable* set) {
     GPtrArray* out = g_ptr_array_new();

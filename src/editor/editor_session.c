@@ -4,7 +4,7 @@
 #include "canvas/canvas_view.h"
 #include "editor/editor.h"
 #include "editor/editor_view.h"
-#include "tab_tree.h"
+#include "workspace/tab_tree.h"
 #include "terminal/terminal.h"
 
 /* Share of a split's first child, kept on the GtkPaned by panels.c and

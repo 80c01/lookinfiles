@@ -5,12 +5,12 @@
 #include "preview/browser.h"
 #include "games/games.h"
 #include "widgets/dialog.h"
-#include "layout_switcher.h"
+#include "workspace/layout_switcher.h"
 #include "preferences.h"
 #include "theme/themes.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
-#include "workspace.h"
+#include "workspace/workspace.h"
 #include "explorer/file_list.h"
 #include "terminal/terminal.h"
 #include "notes/notes.h"
@@ -19,7 +19,7 @@
 #include "focus_route.h"
 #include "search/quick_open.h"
 #include "search/project_search.h"
-#include "session.h"
+#include "workspace/session.h"
 
 
 static void on_window_notify_focus_widget(GObject* gobject, GParamSpec* pspec, gpointer user_data) {

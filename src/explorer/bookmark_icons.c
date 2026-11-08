@@ -1,6 +1,6 @@
 #include "explorer/bookmark_icons.h"
 #include "core/path_kind.h"
-#include "session_store.h"
+#include "workspace/session_store.h"
 #include "explorer/tree_nav.h"
 
 #include <string.h>

@@ -1,16 +1,16 @@
 /* Saved workspace layouts: capture, apply and the list dialog (see layouts.h) */
-#include "layouts.h"
+#include "workspace/layouts.h"
 #include "core/app_events.h"
 #include "widgets/dialog.h"
 #include "editor/editor.h"
-#include "editor_layout.h"
+#include "workspace/editor_layout.h"
 #include "editor/editor_tagbar.h"
 #include "core/i18n.h"
-#include "layout_store.h"
+#include "workspace/layout_store.h"
 #include "preview/preview_tagbar.h"
 #include "core/settings_store.h"
 #include "terminal/terminal.h"
-#include "workspace.h"
+#include "workspace/workspace.h"
 
 enum { RESPONSE_SAVE = 1, RESPONSE_DELETE = 2 };
 

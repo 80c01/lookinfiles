@@ -1,8 +1,8 @@
 /* Alt+L layout switcher: preview layouts from a popover (see layout_switcher.h) */
-#include "layout_switcher.h"
+#include "workspace/layout_switcher.h"
 #include "core/i18n.h"
-#include "layout_store.h"
-#include "layouts.h"
+#include "workspace/layout_store.h"
+#include "workspace/layouts.h"
 
 /* Wait this long on a row before previewing it, so that holding an arrow
  * key does not rebuild the panels at every step */

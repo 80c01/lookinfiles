@@ -9,7 +9,7 @@
  *  - recent.ini: recent folders and files, most recent first.
  * Pure data and file I/O (GKeyFile), no widgets: unit-tested in tests/. */
 #include <glib.h>
-#include "layout_store.h"
+#include "workspace/layout_store.h"
 
 #define RECENT_MAX 30
 

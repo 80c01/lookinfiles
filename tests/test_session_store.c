@@ -1,5 +1,5 @@
-/* Unit tests for src/session_store.c: session and recent places. */
-#include "session_store.h"
+/* Unit tests for src/workspace/session_store.c: session and recent places. */
+#include "workspace/session_store.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
