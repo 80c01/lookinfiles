@@ -1,4 +1,5 @@
 #include "html.h"
+#include "html_text.h"
 #include "i18n.h"
 #include "fonts.h"
 #include "text_tags.h"
@@ -454,273 +455,6 @@ static void insert_styled_text(HtmlRenderContext* ctx, const gchar* text, gssize
     }
 }
 
-static const gchar* decode_named_entity(const gchar* name, gint len) {
-    #define MATCH(s, val) if (len == (gint)strlen(s) && g_ascii_strncasecmp(name, s, len) == 0) return val;
-    /* XML / Basic */
-    MATCH("amp", "&");
-    MATCH("lt", "<");
-    MATCH("gt", ">");
-    MATCH("quot", "\"");
-    MATCH("apos", "'");
-
-    /* Spaces */
-    MATCH("nbsp", " ");
-    MATCH("ensp", " ");
-    MATCH("emsp", "  ");
-    MATCH("thinsp", " ");
-
-    /* Punctuation & Typography */
-    MATCH("mdash", "—");
-    MATCH("ndash", "–");
-    MATCH("hellip", "…");
-    MATCH("bull", "•");
-    MATCH("middot", "·");
-    MATCH("copy", "©");
-    MATCH("reg", "®");
-    MATCH("trade", "™");
-    MATCH("euro", "€");
-    MATCH("pound", "£");
-    MATCH("yen", "¥");
-    MATCH("cent", "¢");
-    MATCH("deg", "°");
-    MATCH("plusmn", "±");
-    MATCH("times", "×");
-    MATCH("divide", "÷");
-    MATCH("minus", "−");
-    MATCH("lsquo", "‘");
-    MATCH("rsquo", "’");
-    MATCH("ldquo", "“");
-    MATCH("rdquo", "”");
-    MATCH("laquo", "«");
-    MATCH("raquo", "»");
-    MATCH("check", "✓");
-    MATCH("cross", "✗");
-    MATCH("star", "★");
-    MATCH("heart", "♥");
-    MATCH("sect", "§");
-    MATCH("para", "¶");
-    MATCH("dagger", "†");
-    MATCH("Dagger", "‡");
-    MATCH("permil", "‰");
-    MATCH("lowast", "∗");
-
-    /* Math & Logic */
-    MATCH("ge", "≥");
-    MATCH("le", "≤");
-    MATCH("ne", "≠");
-    MATCH("approx", "≈");
-    MATCH("equiv", "≡");
-    MATCH("infin", "∞");
-    MATCH("empty", "∅");
-    MATCH("sum", "∑");
-    MATCH("prod", "∏");
-    MATCH("radic", "√");
-    MATCH("part", "∂");
-    MATCH("int", "∫");
-    MATCH("nabla", "∇");
-    MATCH("isin", "∈");
-    MATCH("notin", "∉");
-
-    /* Arrows */
-    MATCH("larr", "←");
-    MATCH("rarr", "→");
-    MATCH("uarr", "↑");
-    MATCH("darr", "↓");
-    MATCH("harr", "↔");
-    MATCH("lArr", "⇐");
-    MATCH("rArr", "⇒");
-    MATCH("hArr", "⇔");
-
-    /* Greek Letters */
-    MATCH("alpha", "α");
-    MATCH("beta", "β");
-    MATCH("gamma", "γ");
-    MATCH("delta", "δ");
-    MATCH("epsilon", "ε");
-    MATCH("theta", "θ");
-    MATCH("lambda", "λ");
-    MATCH("mu", "μ");
-    MATCH("pi", "π");
-    MATCH("sigma", "σ");
-    MATCH("omega", "ω");
-    MATCH("Delta", "Δ");
-    MATCH("Omega", "Ω");
-    MATCH("Sigma", "Σ");
-    MATCH("Pi", "Π");
-
-    #undef MATCH
-    return NULL;
-}
-
-static void append_entity(GString* out, const gchar** ptr) {
-    const gchar* p = *ptr; /* points to '&' */
-    const gchar* semi = strchr(p, ';');
-    if (semi == NULL || semi - p > 12) {
-        g_string_append_c(out, '&');
-        (*ptr)++;
-        return;
-    }
-
-    gint elen = (gint)(semi - p - 1);
-    const gchar* ename = p + 1;
-
-    if (ename[0] == '#') {
-        gunichar c = 0;
-        if (ename[1] == 'x' || ename[1] == 'X') {
-            c = (gunichar)g_ascii_strtoull(ename + 2, NULL, 16);
-        } else {
-            c = (gunichar)g_ascii_strtoull(ename + 1, NULL, 10);
-        }
-        if (c > 0 && g_unichar_validate(c)) {
-            gchar buf[7] = {0};
-            gint ulen = g_unichar_to_utf8(c, buf);
-            buf[ulen] = '\0';
-            g_string_append(out, buf);
-            *ptr = semi + 1;
-            return;
-        }
-    } else {
-        const gchar* decoded = decode_named_entity(ename, elen);
-        if (decoded != NULL) {
-            g_string_append(out, decoded);
-            *ptr = semi + 1;
-            return;
-        }
-    }
-
-    /* Fallback */
-    g_string_append_len(out, p, semi - p + 1);
-    *ptr = semi + 1;
-}
-
-static gchar* html_get_attr(const gchar* tag_str, const gchar* attr_name) {
-    if (tag_str == NULL || attr_name == NULL) return NULL;
-    gsize alen = strlen(attr_name);
-    const gchar* p = tag_str;
-    while (*p != '\0' && *p != '>') {
-        if ((p == tag_str || isspace((unsigned char)*(p - 1))) &&
-            g_ascii_strncasecmp(p, attr_name, alen) == 0) {
-            const gchar* eq = p + alen;
-            while (*eq == ' ' || *eq == '\t') eq++;
-            if (*eq == '=') {
-                eq++;
-                while (*eq == ' ' || *eq == '\t') eq++;
-                if (*eq == '"' || *eq == '\'') {
-                    gchar q = *eq;
-                    eq++;
-                    const gchar* qend = strchr(eq, q);
-                    if (qend != NULL) {
-                        return g_strndup(eq, qend - eq);
-                    }
-                } else {
-                    const gchar* vend = eq;
-                    while (*vend != '\0' && !isspace((unsigned char)*vend) && *vend != '>' && *vend != '/') vend++;
-                    return g_strndup(eq, vend - eq);
-                }
-            }
-        }
-        p++;
-    }
-    return NULL;
-}
-
-static const gchar* strstr_case(const gchar* haystack, const gchar* needle, const gchar* limit) {
-    if (haystack == NULL || needle == NULL) return NULL;
-    gsize nlen = strlen(needle);
-    const gchar* h = haystack;
-    while (*h != '\0' && (limit == NULL || h + nlen <= limit)) {
-        if (g_ascii_strncasecmp(h, needle, nlen) == 0) return h;
-        h++;
-    }
-    return NULL;
-}
-
-static gchar* strip_tags_and_entities(const gchar* src) {
-    if (src == NULL) return g_strdup("");
-    GString* res = g_string_new(NULL);
-    const gchar* p = src;
-    gboolean last_space = TRUE;
-    while (*p != '\0') {
-        if (*p == '<') {
-            const gchar* close = strchr(p, '>');
-            if (close != NULL) {
-                p = close + 1;
-            } else {
-                p++;
-            }
-            continue;
-        }
-        if (*p == '&') {
-            append_entity(res, &p);
-            last_space = FALSE;
-            continue;
-        }
-        if (isspace((unsigned char)*p)) {
-            if (!last_space) {
-                g_string_append_c(res, ' ');
-                last_space = TRUE;
-            }
-            p++;
-            continue;
-        }
-        g_string_append_c(res, *p);
-        last_space = FALSE;
-        p++;
-    }
-    if (res->len > 0 && res->str[res->len - 1] == ' ') {
-        g_string_truncate(res, res->len - 1);
-    }
-    return g_string_free(res, FALSE);
-}
-
-
-/* Extract language name from class="language-..." or class="lang-..." */
-static gchar* extract_code_lang(const gchar* tag_str) {
-    gchar* cls = html_get_attr(tag_str, "class");
-    if (cls == NULL) return NULL;
-    const gchar* p = cls;
-    gchar* lang = NULL;
-    while (*p != '\0') {
-        while (*p == ' ' || *p == '\t') p++;
-        if (g_str_has_prefix(p, "language-") || g_str_has_prefix(p, "lang-")) {
-            const gchar* lstart = strchr(p, '-') + 1;
-            const gchar* lend = lstart;
-            while (*lend != '\0' && !isspace((unsigned char)*lend) && *lend != '"' && *lend != '\'') lend++;
-            if (lend > lstart) {
-                lang = g_strndup(lstart, lend - lstart);
-                break;
-            }
-        }
-        while (*p != '\0' && !isspace((unsigned char)*p)) p++;
-    }
-    g_free(cls);
-    return lang;
-}
-
-/* Extract <meta name="..." content="..."> */
-static gchar* extract_meta_content(const gchar* html, const gchar* name) {
-    const gchar* p = html;
-    while ((p = strstr_case(p, "<meta", NULL)) != NULL) {
-        const gchar* gt = strchr(p, '>');
-        if (gt == NULL) break;
-        gchar* tag = g_strndup(p, gt - p + 1);
-        gchar* mname = html_get_attr(tag, "name");
-        if (mname == NULL) {
-            mname = html_get_attr(tag, "property");
-        }
-        if (mname != NULL && g_ascii_strcasecmp(mname, name) == 0) {
-            gchar* cont = html_get_attr(tag, "content");
-            g_free(mname);
-            g_free(tag);
-            return cont;
-        }
-        g_free(mname);
-        g_free(tag);
-        p = gt + 1;
-    }
-    return NULL;
-}
-
 typedef struct {
     gchar* text;
     gboolean is_num;
@@ -735,18 +469,18 @@ static void free_table_cell(gpointer data) {
 }
 
 static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
-    const gchar* table_end = strstr_case(p, "</table", NULL);
+    const gchar* table_end = html_text_find_case(p, "</table", NULL);
     const gchar* search_limit = (table_end != NULL) ? table_end + 8 : p + strlen(p);
 
     /* Extract and render table caption if present */
-    const gchar* cap_start = strstr_case(p, "<caption", search_limit);
+    const gchar* cap_start = html_text_find_case(p, "<caption", search_limit);
     if (cap_start != NULL && cap_start < search_limit) {
         const gchar* cap_gt = strchr(cap_start, '>');
         if (cap_gt != NULL && cap_gt < search_limit) {
-            const gchar* cap_end = strstr_case(cap_gt, "</caption", search_limit);
+            const gchar* cap_end = html_text_find_case(cap_gt, "</caption", search_limit);
             if (cap_end != NULL && cap_end < search_limit) {
                 gchar* raw_cap = g_strndup(cap_gt + 1, cap_end - (cap_gt + 1));
-                gchar* clean_cap = strip_tags_and_entities(raw_cap);
+                gchar* clean_cap = html_text_strip(raw_cap);
                 g_free(raw_cap);
                 if (clean_cap != NULL && clean_cap[0] != '\0') {
                     ensure_newlines(ctx, 2);
@@ -764,15 +498,15 @@ static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
 
     const gchar* cur = p;
     while (cur < search_limit) {
-        const gchar* tr_start = strstr_case(cur, "<tr", search_limit);
+        const gchar* tr_start = html_text_find_case(cur, "<tr", search_limit);
         if (tr_start == NULL || tr_start >= search_limit) break;
 
         const gchar* tr_close_tag = strchr(tr_start, '>');
         if (tr_close_tag == NULL || tr_close_tag >= search_limit) break;
 
-        const gchar* tr_end = strstr_case(tr_close_tag, "</tr", search_limit);
+        const gchar* tr_end = html_text_find_case(tr_close_tag, "</tr", search_limit);
         if (tr_end == NULL || tr_end > search_limit) {
-            const gchar* next_tr = strstr_case(tr_close_tag + 1, "<tr", search_limit);
+            const gchar* next_tr = html_text_find_case(tr_close_tag + 1, "<tr", search_limit);
             tr_end = (next_tr != NULL) ? next_tr : search_limit;
         }
 
@@ -781,8 +515,8 @@ static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
 
         const gchar* cell_cur = tr_close_tag + 1;
         while (cell_cur < tr_end) {
-            const gchar* th_start = strstr_case(cell_cur, "<th", tr_end);
-            const gchar* td_start = strstr_case(cell_cur, "<td", tr_end);
+            const gchar* th_start = html_text_find_case(cell_cur, "<th", tr_end);
+            const gchar* td_start = html_text_find_case(cell_cur, "<td", tr_end);
 
             const gchar* cell_start = NULL;
             gboolean is_th = FALSE;
@@ -803,16 +537,16 @@ static const gchar* render_html_table(HtmlRenderContext* ctx, const gchar* p) {
             if (cell_close_tag == NULL || cell_close_tag >= tr_end) break;
 
             const gchar* cell_end = NULL;
-            if (is_th) cell_end = strstr_case(cell_close_tag, "</th", tr_end);
-            else cell_end = strstr_case(cell_close_tag, "</td", tr_end);
+            if (is_th) cell_end = html_text_find_case(cell_close_tag, "</th", tr_end);
+            else cell_end = html_text_find_case(cell_close_tag, "</td", tr_end);
 
             if (cell_end == NULL || cell_end > tr_end) {
-                const gchar* next_cell = strstr_case(cell_close_tag + 1, "<t", tr_end);
+                const gchar* next_cell = html_text_find_case(cell_close_tag + 1, "<t", tr_end);
                 cell_end = (next_cell != NULL) ? next_cell : tr_end;
             }
 
             gchar* cell_raw = g_strndup(cell_close_tag + 1, cell_end - (cell_close_tag + 1));
-            gchar* clean = strip_tags_and_entities(cell_raw);
+            gchar* clean = html_text_strip(cell_raw);
             g_free(cell_raw);
 
             /* Detect if cell is numeric for right alignment */
@@ -1101,7 +835,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             if (ctx->in_pre) {
                 ctx->in_pre_code = TRUE;
                 if (ctx->pre_lang == NULL) {
-                    ctx->pre_lang = extract_code_lang(full_tag);
+                    ctx->pre_lang = html_text_code_lang(full_tag);
                     if (ctx->pre_lang != NULL && ctx->pre_lang[0] != '\0') {
                         gchar* hdr = g_strdup_printf("  ──  %s  ──\n", ctx->pre_lang);
                         insert_tag_text(ctx, hdr, "html_code_header");
@@ -1123,11 +857,11 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             push_tag(ctx, "html_sup");
         } else if (strcmp(tag, "abbr") == 0) {
             g_free(ctx->current_abbr_title);
-            ctx->current_abbr_title = html_get_attr(full_tag, "title");
+            ctx->current_abbr_title = html_text_attr(full_tag, "title");
             push_tag(ctx, "html_underline");
         } else if (strcmp(tag, "a") == 0) {
             g_free(ctx->current_link_url);
-            ctx->current_link_url = html_get_attr(full_tag, "href");
+            ctx->current_link_url = html_text_attr(full_tag, "href");
             if (ctx->current_link_text != NULL) {
                 g_string_free(ctx->current_link_text, TRUE);
             }
@@ -1216,7 +950,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             ctx->in_pre = TRUE;
             ctx->in_pre_code = FALSE;
             g_free(ctx->pre_lang);
-            ctx->pre_lang = extract_code_lang(full_tag);
+            ctx->pre_lang = html_text_code_lang(full_tag);
             if (ctx->pre_lang != NULL && ctx->pre_lang[0] != '\0') {
                 gchar* hdr = g_strdup_printf("  ──  %s  ──\n", ctx->pre_lang);
                 insert_tag_text(ctx, hdr, "html_code_header");
@@ -1227,8 +961,8 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             close_current_li(ctx);
             ensure_newlines(ctx, 1);
             if (ctx->list_depth < 16) {
-                gchar* type_attr = html_get_attr(full_tag, "type");
-                gchar* start_attr = html_get_attr(full_tag, "start");
+                gchar* type_attr = html_text_attr(full_tag, "type");
+                gchar* start_attr = html_text_attr(full_tag, "start");
                 gchar ltype = (type_attr && type_attr[0]) ? type_attr[0] : '1';
                 gint start_num = (start_attr && start_attr[0]) ? atoi(start_attr) : 1;
                 g_free(type_attr);
@@ -1254,7 +988,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
 
             /* Check if this li is a task list item */
             gboolean is_task = FALSE;
-            if (strstr_case(full_tag, "task", NULL) != NULL) {
+            if (html_text_find_case(full_tag, "task", NULL) != NULL) {
                 is_task = TRUE;
             } else if (ctx->p_cur != NULL) {
                 const gchar* peek = ctx->p_cur;
@@ -1264,7 +998,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
                     const gchar* gt = strchr(peek, '>');
                     if (gt != NULL) {
                         gchar* inp = g_strndup(peek, gt - peek + 1);
-                        gchar* itype = html_get_attr(inp, "type");
+                        gchar* itype = html_text_attr(inp, "type");
                         if (itype != NULL && g_ascii_strcasecmp(itype, "checkbox") == 0) {
                             is_task = TRUE;
                         }
@@ -1335,10 +1069,10 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             ensure_newlines(ctx, 1);
             push_tag(ctx, "html_figcaption");
         } else if (strcmp(tag, "input") == 0) {
-            gchar* type = html_get_attr(full_tag, "type");
+            gchar* type = html_text_attr(full_tag, "type");
             if (type != NULL && g_ascii_strcasecmp(type, "checkbox") == 0) {
-                gboolean checked = (html_get_attr(full_tag, "checked") != NULL ||
-                                    strstr_case(full_tag, "checked", NULL) != NULL);
+                gboolean checked = (html_text_attr(full_tag, "checked") != NULL ||
+                                    html_text_find_case(full_tag, "checked", NULL) != NULL);
                 if (checked) {
                     insert_tag_text(ctx, "☑ ", "html_task_done");
                 } else {
@@ -1347,13 +1081,13 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
             }
             g_free(type);
         } else if (strcmp(tag, "img") == 0) {
-            gchar* src = html_get_attr(full_tag, "src");
-            gchar* alt = html_get_attr(full_tag, "alt");
+            gchar* src = html_text_attr(full_tag, "src");
+            gchar* alt = html_text_attr(full_tag, "alt");
             if (src != NULL && src[0] != '\0') {
                 /* Natural size or width="N" pixels, shrunk to the view
                  * width (CSS "max-width: 100%", as in VS Code) */
                 gint max_width = FIT_IMAGE_MAX_WIDTH;
-                gchar* width_attr = html_get_attr(full_tag, "width");
+                gchar* width_attr = html_text_attr(full_tag, "width");
                 if (width_attr != NULL) {
                     gchar* end = NULL;
                     gint64 w = g_ascii_strtoll(width_attr, &end, 10);
@@ -1439,15 +1173,15 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
     }
 
     /* Extract and display document title & metadata if present */
-    const gchar* t_open = strstr_case(html_text, "<title", NULL);
+    const gchar* t_open = html_text_find_case(html_text, "<title", NULL);
     gboolean title_rendered = FALSE;
     if (t_open != NULL) {
         const gchar* t_gt = strchr(t_open, '>');
         if (t_gt != NULL) {
-            const gchar* t_close = strstr_case(t_gt, "</title", NULL);
+            const gchar* t_close = html_text_find_case(t_gt, "</title", NULL);
             if (t_close != NULL && t_close > t_gt) {
                 gchar* raw_title = g_strndup(t_gt + 1, t_close - (t_gt + 1));
-                gchar* clean_title = strip_tags_and_entities(raw_title);
+                gchar* clean_title = html_text_strip(raw_title);
                 g_free(raw_title);
                 if (clean_title != NULL && clean_title[0] != '\0') {
                     insert_glyph(&ctx, "link", "html_title");
@@ -1461,10 +1195,10 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
     }
 
     /* Metadata subtitle: author / description */
-    gchar* raw_author = extract_meta_content(html_text, "author");
-    gchar* raw_desc = extract_meta_content(html_text, "description");
-    gchar* clean_author = raw_author ? strip_tags_and_entities(raw_author) : NULL;
-    gchar* clean_desc = raw_desc ? strip_tags_and_entities(raw_desc) : NULL;
+    gchar* raw_author = html_text_meta(html_text, "author");
+    gchar* raw_desc = html_text_meta(html_text, "description");
+    gchar* clean_author = raw_author ? html_text_strip(raw_author) : NULL;
+    gchar* clean_desc = raw_desc ? html_text_strip(raw_desc) : NULL;
     g_free(raw_author);
     g_free(raw_desc);
 
@@ -1545,7 +1279,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
             else if (g_ascii_strncasecmp(p + 1, "svg", 3) == 0) end_tag = "</svg";
             else end_tag = "</noscript";
 
-            const gchar* close = strstr_case(p, end_tag, NULL);
+            const gchar* close = html_text_find_case(p, end_tag, NULL);
             if (close != NULL) {
                 const gchar* gt = strchr(close, '>');
                 if (gt != NULL) {
@@ -1559,7 +1293,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
         /* Skip <head> block contents (title/meta extracted at top) */
         if (p[0] == '<' && g_ascii_strncasecmp(p + 1, "head", 4) == 0 &&
             (p[5] == '>' || isspace((unsigned char)p[5]))) {
-            const gchar* close = strstr_case(p, "</head", NULL);
+            const gchar* close = html_text_find_case(p, "</head", NULL);
             if (close != NULL) {
                 const gchar* gt = strchr(close, '>');
                 if (gt != NULL) {
@@ -1613,7 +1347,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
         if (ctx.in_pre) {
             if (*p == '&') {
                 GString* ent_str = g_string_new(NULL);
-                append_entity(ent_str, &p);
+                html_text_append_entity(ent_str, &p);
                 insert_styled_text(&ctx, ent_str->str, ent_str->len);
                 g_string_free(ent_str, TRUE);
             } else {
@@ -1639,7 +1373,7 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
 
         if (*p == '&') {
             GString* ent_str = g_string_new(NULL);
-            append_entity(ent_str, &p);
+            html_text_append_entity(ent_str, &p);
             insert_styled_text(&ctx, ent_str->str, ent_str->len);
             ctx.last_was_ws = (ent_str->len > 0 && ent_str->str[ent_str->len - 1] == ' ');
             g_string_free(ent_str, TRUE);

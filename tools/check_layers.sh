@@ -115,6 +115,7 @@ code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
 trash_restore:
 note_types:
+html_text:
 notes_store:note_types,notebook_icons
 notebook_icons:
 canvas_doc:
@@ -144,7 +145,7 @@ theme:palette,fonts,theme_store,file_type_icons,icon_sets
 markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link,icons,i18n
 markdown_link:
 markdown_table:fonts,palette,markdown_link
-html:app_types,image_utils,palette,fonts,text_tags,icons,i18n
+html:app_types,html_text,image_utils,palette,fonts,text_tags,icons,i18n
 minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette,preview_state
 preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette,fonts,text_tags
 tree_nav:app_types

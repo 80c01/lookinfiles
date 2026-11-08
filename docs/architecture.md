@@ -236,6 +236,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `trash_restore` — puts back a file moved to the trash: finds its newest
   `.trashinfo` (home trash, then the mount's `.Trash-$uid` / `.Trash/$uid`)
   and moves it back.
+- `html_text` — text helpers of the HTML preview: entities (names are
+  case-sensitive), attributes, tag stripping, code language, `<meta>`.
 - `note_types` — note types of the notes view (`NoteType`: Plain Text,
   Markdown, Org-mode): extension, display name, icon, row badge and the
   name stored in `notes.xml` (the former `rich` reads as Markdown).
