@@ -69,12 +69,12 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
         return;
     }
 
-    if (app->remotes == NULL && app->remote_folders == NULL) {
+    if (remote_machine_list(app) == NULL && remote_folder_list(app) == NULL) {
         explorer_row_append(root, "-", "", _("No remote machines yet — press a to add one"), "");
         return;
     }
 
-    for (GList* f = app->remote_folders; f != NULL; f = f->next) {
+    for (GList* f = remote_folder_list(app); f != NULL; f = f->next) {
         RemoteFolder* folder = (RemoteFolder*)f->data;
         /* The row path holds the folder id (see remote_get_selected_folder()) */
         ExplorerRow* row = explorer_row_append_container(root, "remote_folder", folder->name,
@@ -86,7 +86,7 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
             explorer_row_set_badge(row, badge);
             g_free(badge);
         }
-        for (GList* l = app->remotes; l != NULL; l = l->next) {
+        for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
             RemoteMachine* rm = (RemoteMachine*)l->data;
             if (rm != NULL && remote_machine_folder(app, rm) == folder) {
                 remote_append_machine_row(row, rm);
@@ -97,7 +97,7 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
         }
     }
 
-    for (GList* l = app->remotes; l != NULL; l = l->next) {
+    for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm != NULL && remote_machine_folder(app, rm) == NULL) {
             remote_append_machine_row(root, rm);
@@ -191,7 +191,7 @@ gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expa
 
 /* Collapse every folder if one is expanded, else expand them all */
 gboolean remote_any_expanded(AppData* app) {
-    for (GList* l = app != NULL ? app->remote_folders : NULL; l != NULL; l = l->next) {
+    for (GList* l = remote_folder_list(app); l != NULL; l = l->next) {
         if (((RemoteFolder*)l->data)->expanded) {
             return TRUE;
         }
@@ -200,11 +200,11 @@ gboolean remote_any_expanded(AppData* app) {
 }
 
 void remote_toggle_collapse_expand(AppData* app) {
-    if (app == NULL || app->remote_folders == NULL) {
+    if (app == NULL || remote_folder_list(app) == NULL) {
         return;
     }
     gboolean expand = !remote_any_expanded(app);
-    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
+    for (GList* l = remote_folder_list(app); l != NULL; l = l->next) {
         ((RemoteFolder*)l->data)->expanded = expand;
     }
     remote_save(app);
@@ -284,7 +284,7 @@ static GtkWidget* create_folder_dropdown(GtkWidget* box, AppData* app, RemoteFol
     GPtrArray* labels = g_ptr_array_new();
     g_ptr_array_add(labels, (gpointer)_("Remote machines (top level)"));
     guint selected = 0;
-    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
+    for (GList* l = remote_folder_list(app); l != NULL; l = l->next) {
         RemoteFolder* folder = (RemoteFolder*)l->data;
         if (folder == current) {
             selected = labels->len;
@@ -311,7 +311,7 @@ static RemoteFolder* folder_from_dropdown(AppData* app, GtkWidget* dd) {
     if (idx == 0 || idx == GTK_INVALID_LIST_POSITION) {
         return NULL;
     }
-    return (RemoteFolder*)g_list_nth_data(app->remote_folders, idx - 1);
+    return (RemoteFolder*)g_list_nth_data(remote_folder_list(app), idx - 1);
 }
 
 void remote_add_dialog(AppData* app) {
@@ -361,7 +361,7 @@ void remote_add_dialog(AppData* app) {
             if (folder != NULL) {
                 folder->expanded = TRUE;
             }
-            app->remotes = g_list_append(app->remotes, rm);
+            remote_machine_add(app, rm);
             remote_save(app);
             remote_refresh_select(app, "remote", rm->id);
 
@@ -472,8 +472,7 @@ void remote_delete_selected(AppData* app) {
         if (rm->is_connected) {
             remote_disconnect_machine(app, rm);
         }
-        app->remotes = g_list_remove(app->remotes, rm);
-        remote_machine_free(rm);
+        remote_machine_delete(app, rm);
         remote_save(app);
         remote_refresh(app);
     }
@@ -1003,7 +1002,7 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
     add_menu_item(box, popover, app, folder != NULL ? _("Add Machine Here…") : _("Add Remote Machine…"), "a", 6);
     add_menu_item(box, popover, app, _("New Folder…"), "Shift+A", 8);
     add_menu_item(box, popover, app, _("Re-scan ~/.ssh/config"), "F5", 7);
-    if (app->remote_folders != NULL) {
+    if (remote_folder_list(app) != NULL) {
         add_menu_item(box, popover, app, _("Collapse / Expand All"), NULL, 10);
     }
 

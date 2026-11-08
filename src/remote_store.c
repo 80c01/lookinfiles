@@ -9,6 +9,36 @@
 #include <string.h>
 #include <sys/stat.h>
 
+/* Machines and folders of the remote view, private to this file */
+struct RemoteStore {
+    GList* machines; /* RemoteMachine*, in display order */
+    GList* folders;  /* RemoteFolder*, in display order */
+};
+
+static struct RemoteStore* store(AppData* app) {
+    if (app->remote_store == NULL) {
+        app->remote_store = g_new0(struct RemoteStore, 1);
+    }
+    return app->remote_store;
+}
+
+GList* remote_machine_list(AppData* app) {
+    return (app != NULL && app->remote_store != NULL) ? app->remote_store->machines : NULL;
+}
+
+GList* remote_folder_list(AppData* app) {
+    return (app != NULL && app->remote_store != NULL) ? app->remote_store->folders : NULL;
+}
+
+void remote_machine_add(AppData* app, RemoteMachine* rm) {
+    store(app)->machines = g_list_append(store(app)->machines, rm);
+}
+
+void remote_machine_delete(AppData* app, RemoteMachine* rm) {
+    store(app)->machines = g_list_remove(store(app)->machines, rm);
+    remote_machine_free(rm);
+}
+
 #define REMOTES_XML_FILE "remotes.xml"
 
 void remote_machine_free(RemoteMachine* rm) {
@@ -55,7 +85,7 @@ RemoteMachine* remote_find_by_id(AppData* app, const gchar* id) {
     if (app == NULL || id == NULL) {
         return NULL;
     }
-    for (GList* l = app->remotes; l != NULL; l = l->next) {
+    for (GList* l = store(app)->machines; l != NULL; l = l->next) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm != NULL && g_strcmp0(rm->id, id) == 0) {
             return rm;
@@ -68,7 +98,7 @@ RemoteFolder* remote_folder_find(AppData* app, const gchar* id) {
     if (app == NULL || id == NULL) {
         return NULL;
     }
-    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
+    for (GList* l = store(app)->folders; l != NULL; l = l->next) {
         RemoteFolder* folder = (RemoteFolder*)l->data;
         if (folder != NULL && g_strcmp0(folder->id, id) == 0) {
             return folder;
@@ -93,7 +123,7 @@ RemoteFolder* remote_folder_add(AppData* app, const gchar* name, const gchar* ic
     folder->name = g_strdup((name != NULL && name[0] != '\0') ? name : "Folder");
     folder->icon = bookmark_folder_icon_normalize(icon);
     folder->expanded = TRUE;
-    app->remote_folders = g_list_append(app->remote_folders, folder);
+    store(app)->folders = g_list_append(store(app)->folders, folder);
     return folder;
 }
 
@@ -101,13 +131,13 @@ void remote_folder_remove(AppData* app, RemoteFolder* folder) {
     if (app == NULL || folder == NULL) {
         return;
     }
-    for (GList* l = app->remotes; l != NULL; l = l->next) {
+    for (GList* l = store(app)->machines; l != NULL; l = l->next) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm != NULL && g_strcmp0(rm->folder_id, folder->id) == 0) {
             remote_machine_set_folder(rm, NULL);
         }
     }
-    app->remote_folders = g_list_remove(app->remote_folders, folder);
+    store(app)->folders = g_list_remove(store(app)->folders, folder);
     remote_folder_free(folder);
 }
 
@@ -116,7 +146,7 @@ guint remote_folder_count(AppData* app, const RemoteFolder* folder) {
     if (app == NULL || folder == NULL) {
         return 0;
     }
-    for (GList* l = app->remotes; l != NULL; l = l->next) {
+    for (GList* l = store(app)->machines; l != NULL; l = l->next) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm != NULL && g_strcmp0(rm->folder_id, folder->id) == 0) {
             n++;
@@ -164,7 +194,7 @@ static void parse_folder_element(AppData* app, const gchar** names, const gchar*
     folder->name = g_strdup((name != NULL && name[0] != '\0') ? name : "Folder");
     folder->icon = bookmark_folder_icon_normalize(icon);
     folder->expanded = g_strcmp0(expanded, "false") != 0;
-    app->remote_folders = g_list_append(app->remote_folders, folder);
+    store(app)->folders = g_list_append(store(app)->folders, folder);
 }
 
 /* <machine id="" name="" host="" user="" port="" path="" key="" folder=""/> in remotes.xml */
@@ -214,10 +244,10 @@ static void on_remotes_xml_start(GMarkupParseContext* ctx, const gchar* element,
     rm->is_connected = FALSE;
     rm->mount_point = NULL;
     rm->folder_id = (folder_id != NULL && folder_id[0] != '\0') ? g_strdup(folder_id) : NULL;
-    app->remotes = g_list_append(app->remotes, rm);
+    store(app)->machines = g_list_append(store(app)->machines, rm);
 }
 
-/* Append the machines saved in remotes.xml to app->remotes (entities decoded) */
+/* Append the machines saved in remotes.xml to the machine list (entities decoded) */
 static void parse_remotes_xml(AppData* app, const gchar* path) {
     gchar* contents = NULL;
     gsize length = 0;
@@ -285,7 +315,7 @@ static void parse_ssh_config(AppData* app) {
                 if (cur != NULL && cur->host != NULL && cur->host[0] != '\0') {
                     /* Check if already present */
                     gboolean exists = FALSE;
-                    for (GList* l = app->remotes; l != NULL; l = l->next) {
+                    for (GList* l = store(app)->machines; l != NULL; l = l->next) {
                         RemoteMachine* existing = (RemoteMachine*)l->data;
                         if (existing != NULL && (g_strcmp0(existing->name, cur->name) == 0 ||
                                                  g_strcmp0(existing->host, cur->host) == 0)) {
@@ -294,7 +324,7 @@ static void parse_ssh_config(AppData* app) {
                         }
                     }
                     if (!exists) {
-                        app->remotes = g_list_append(app->remotes, cur);
+                        store(app)->machines = g_list_append(store(app)->machines, cur);
                     } else {
                         remote_machine_free(cur);
                     }
@@ -338,7 +368,7 @@ static void parse_ssh_config(AppData* app) {
 
     if (cur != NULL && cur->host != NULL && cur->host[0] != '\0') {
         gboolean exists = FALSE;
-        for (GList* l = app->remotes; l != NULL; l = l->next) {
+        for (GList* l = store(app)->machines; l != NULL; l = l->next) {
             RemoteMachine* existing = (RemoteMachine*)l->data;
             if (existing != NULL && (g_strcmp0(existing->name, cur->name) == 0 ||
                                      g_strcmp0(existing->host, cur->host) == 0)) {
@@ -347,7 +377,7 @@ static void parse_ssh_config(AppData* app) {
             }
         }
         if (!exists) {
-            app->remotes = g_list_append(app->remotes, cur);
+            store(app)->machines = g_list_append(store(app)->machines, cur);
         } else {
             remote_machine_free(cur);
         }
@@ -364,13 +394,13 @@ void remote_reload_ssh_config(AppData* app) {
     if (app == NULL) {
         return;
     }
-    GList* l = app->remotes;
+    GList* l = store(app)->machines;
     while (l != NULL) {
         GList* next = l->next;
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm != NULL && rm->from_ssh_config && !rm->is_connected) {
             remote_machine_free(rm);
-            app->remotes = g_list_delete_link(app->remotes, l);
+            store(app)->machines = g_list_delete_link(store(app)->machines, l);
         }
         l = next;
     }
@@ -381,8 +411,6 @@ void remote_init(AppData* app) {
     if (app == NULL) {
         return;
     }
-    app->remotes = NULL;
-    app->remote_folders = NULL;
     app->current_remote_id = NULL;
 
     gchar* cfg = remote_get_config_path();
@@ -396,7 +424,7 @@ void remote_free(AppData* app) {
     if (app == NULL) {
         return;
     }
-    for (GList* l = app->remotes; l != NULL; l = l->next) {
+    for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm != NULL) {
             if (rm->is_connected && rm->mount_point != NULL) {
@@ -410,10 +438,11 @@ void remote_free(AppData* app) {
             remote_machine_free(rm);
         }
     }
-    g_list_free(app->remotes);
-    app->remotes = NULL;
-    g_list_free_full(app->remote_folders, (GDestroyNotify)remote_folder_free);
-    app->remote_folders = NULL;
+    if (app->remote_store != NULL) {
+        g_list_free(app->remote_store->machines);
+        g_list_free_full(app->remote_store->folders, (GDestroyNotify)remote_folder_free);
+        g_clear_pointer(&app->remote_store, g_free);
+    }
     g_free(app->current_remote_id);
     app->current_remote_id = NULL;
 }
@@ -425,7 +454,7 @@ void remote_save(AppData* app) {
     gchar* path = remote_get_config_path();
     GString* xml = g_string_new("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<remotes>\n");
 
-    for (GList* l = app->remote_folders; l != NULL; l = l->next) {
+    for (GList* l = store(app)->folders; l != NULL; l = l->next) {
         RemoteFolder* folder = (RemoteFolder*)l->data;
         if (folder == NULL) {
             continue;
@@ -437,7 +466,7 @@ void remote_save(AppData* app) {
         g_free(line);
     }
 
-    for (GList* l = app->remotes; l != NULL; l = l->next) {
+    for (GList* l = store(app)->machines; l != NULL; l = l->next) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm == NULL || rm->from_ssh_config) {
             continue; /* Keep ~/.ssh/config hosts separate from custom saved machines */

@@ -68,7 +68,7 @@ static void test_ssh_config(void) {
                      "    User ignored\n"
                      "Host plain\n");
     AppData* app = new_app();
-    g_assert_cmpuint(g_list_length(app->remotes), ==, 2);
+    g_assert_cmpuint(g_list_length(remote_machine_list(app)), ==, 2);
 
     RemoteMachine* web = remote_find_by_id(app, "ssh_web");
     g_assert_nonnull(web);
@@ -91,7 +91,7 @@ static void test_save_and_reload(void) {
     reset_files();
     write_ssh_config("Host fromssh\n    HostName ssh.example.com\n");
     AppData* app = new_app();
-    g_assert_cmpuint(g_list_length(app->remotes), ==, 1);
+    g_assert_cmpuint(g_list_length(remote_machine_list(app)), ==, 1);
 
     RemoteMachine* rm = g_new0(RemoteMachine, 1);
     rm->id = g_strdup("rem_1");
@@ -101,13 +101,13 @@ static void test_save_and_reload(void) {
     rm->port = 2200;
     rm->remote_path = g_strdup("/srv/data");
     rm->identity_file = g_strdup("");
-    app->remotes = g_list_append(app->remotes, rm);
+    remote_machine_add(app, rm);
     remote_save(app);
     free_app(app);
 
     app = new_app();
     /* Saved machine reloaded first, ssh config host merged after it */
-    g_assert_cmpuint(g_list_length(app->remotes), ==, 2);
+    g_assert_cmpuint(g_list_length(remote_machine_list(app)), ==, 2);
     RemoteMachine* back = remote_find_by_id(app, "rem_1");
     g_assert_nonnull(back);
     g_assert_cmpstr(back->name, ==, "R&D <lab> \"main\"");
@@ -138,7 +138,7 @@ static void test_ssh_host_already_saved(void) {
     write_ssh_config("Host other\n    HostName box.example.com\n");
     AppData* app = new_app();
     /* Same host as a saved machine: the ssh config entry is skipped */
-    g_assert_cmpuint(g_list_length(app->remotes), ==, 1);
+    g_assert_cmpuint(g_list_length(remote_machine_list(app)), ==, 1);
     g_assert_nonnull(remote_find_by_id(app, "rem_9"));
     free_app(app);
 }
@@ -164,7 +164,7 @@ static void test_reload_ssh_config(void) {
                       "port=\"22\" path=\"~\" key=\"\"/>\n</remotes>\n");
     write_ssh_config("Host old\nHost busy\n");
     AppData* app = new_app();
-    g_assert_cmpuint(g_list_length(app->remotes), ==, 3);
+    g_assert_cmpuint(g_list_length(remote_machine_list(app)), ==, 3);
     remote_find_by_id(app, "ssh_busy")->is_connected = TRUE;
 
     write_ssh_config("Host new\n");
@@ -173,7 +173,7 @@ static void test_reload_ssh_config(void) {
     g_assert_nonnull(remote_find_by_id(app, "ssh_new"));   /* added to config */
     g_assert_null(remote_find_by_id(app, "ssh_old"));      /* removed from config */
     g_assert_nonnull(remote_find_by_id(app, "ssh_busy"));  /* connected: kept */
-    g_assert_cmpuint(g_list_length(app->remotes), ==, 3);
+    g_assert_cmpuint(g_list_length(remote_machine_list(app)), ==, 3);
     remote_find_by_id(app, "ssh_busy")->is_connected = FALSE; /* no unmount in free */
     free_app(app);
 }
@@ -213,7 +213,7 @@ static void test_folders(void) {
     rm->remote_path = g_strdup("~");
     rm->identity_file = g_strdup("");
     remote_machine_set_folder(rm, prod);
-    app->remotes = g_list_append(app->remotes, rm);
+    remote_machine_add(app, rm);
     prod->expanded = FALSE;
     g_assert_cmpuint(remote_folder_count(app, prod), ==, 1);
     g_assert_true(remote_machine_folder(app, remote_find_by_id(app, "ssh_fromssh")) == NULL);
@@ -221,7 +221,7 @@ static void test_folders(void) {
     free_app(app);
 
     app = new_app();
-    g_assert_cmpuint(g_list_length(app->remote_folders), ==, 2);
+    g_assert_cmpuint(g_list_length(remote_folder_list(app)), ==, 2);
     RemoteFolder* back = remote_folder_find(app, prod_id);
     g_assert_nonnull(back);
     g_assert_cmpstr(back->name, ==, "Prod & <test>");
@@ -234,7 +234,7 @@ static void test_folders(void) {
     remote_folder_remove(app, back);
     g_assert_null(remote_folder_find(app, prod_id));
     g_assert_null(box->folder_id);
-    g_assert_cmpuint(g_list_length(app->remote_folders), ==, 1);
+    g_assert_cmpuint(g_list_length(remote_folder_list(app)), ==, 1);
     g_free(prod_id);
     free_app(app);
 }

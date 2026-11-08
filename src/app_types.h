@@ -290,8 +290,7 @@ typedef struct {
     GtkWidget* sidebar_files_hidden_btn; /* toggle hidden button in files action bar */
     gboolean game_mode_unlocked;      /* current workspace's Game Mode, unlocked via secret sequence in help panel */
     gboolean game_mode_just_unlocked; /* TRUE right after unlocking until next key, consumes trailing Enter */
-    GList* remotes;                   /* list of RemoteMachine* */
-    GList* remote_folders;            /* list of RemoteFolder* (remote view folders) */
+    struct RemoteStore* remote_store; /* remote machines and their folders (remote_store.c), or NULL */
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */
     GHashTable* org_folded_lines;     /* set of line numbers folded in currently viewed org file */
     gint org_global_fold;             /* 0 = all expanded, 1 = overview, 2 = contents */

@@ -1,8 +1,8 @@
 #ifndef REMOTE_STORE_H
 #define REMOTE_STORE_H
 
-/* Remote machine data model (no widgets): list in app->remotes, folders in
- * app->remote_folders, persistence in <config>/remotes.xml, discovery from
+/* Remote machine data model (no widgets): machines and their folders (private
+ * to remote_store.c, read with remote_machine_list() / remote_folder_list()), persistence in <config>/remotes.xml, discovery from
  * ~/.ssh/config. */
 #include "app_types.h"
 
@@ -29,7 +29,7 @@ typedef struct {
     gboolean expanded;     /* expanded in the explorer panel */
 } RemoteFolder;
 
-/* Load remotes.xml then merge ~/.ssh/config hosts into app->remotes */
+/* Load remotes.xml then merge ~/.ssh/config hosts into the machine list */
 void remote_init(AppData* app);
 void remote_free(AppData* app);
 /* Write manually managed machines to remotes.xml */
@@ -41,10 +41,19 @@ void remote_reload_ssh_config(AppData* app);
 
 RemoteMachine* remote_find_by_id(AppData* app, const gchar* id);
 
+/* Machines (RemoteMachine*) and folders (RemoteFolder*) in display order,
+ * owned by the store; NULL when empty */
+GList* remote_machine_list(AppData* app);
+GList* remote_folder_list(AppData* app);
+/* Append a new machine (the store takes it) */
+void remote_machine_add(AppData* app, RemoteMachine* rm);
+/* Remove a machine from the list and free it */
+void remote_machine_delete(AppData* app, RemoteMachine* rm);
+
 RemoteFolder* remote_folder_find(AppData* app, const gchar* id);
 /* Folder of a machine, NULL at the top level (or when its folder is gone) */
 RemoteFolder* remote_machine_folder(AppData* app, const RemoteMachine* rm);
-/* New folder appended to app->remote_folders (icon NULL: the default) */
+/* New folder appended to the folder list (icon NULL: the default) */
 RemoteFolder* remote_folder_add(AppData* app, const gchar* name, const gchar* icon);
 /* Remove and free a folder; its machines move to the top level */
 void remote_folder_remove(AppData* app, RemoteFolder* folder);
