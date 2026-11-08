@@ -12,6 +12,7 @@
 #include "pane_geometry.h"
 #include "tab_drop.h"
 #include "focus_route.h"
+#include "git_tab.h"
 #include "nav_history.h"
 #include "editor_view.h"
 #include "icons.h"
@@ -648,8 +649,9 @@ static void on_tab_label_middle_click(GtkGestureClick* gesture, gint n_press,
  * lands on the Git tab of the preview notebook (no editor tab left beside
  * it), show the preview instead */
 static void editor_after_current_removed(AppData* app, GtkNotebook* nb, gboolean was_current) {
-    if (was_current && GTK_WIDGET(nb) == app->notebook && app->git_tab_box != NULL &&
-        gtk_notebook_get_current_page(nb) == gtk_notebook_page_num(nb, app->git_tab_box)) {
+    GtkWidget* git_page = git_tab_page(app);
+    if (was_current && GTK_WIDGET(nb) == app->notebook && git_page != NULL &&
+        gtk_notebook_get_current_page(nb) == gtk_notebook_page_num(nb, git_page)) {
         gtk_notebook_set_current_page(nb, 0);
     }
 }

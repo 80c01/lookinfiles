@@ -5,6 +5,7 @@
 #include "browser.h"
 #include "focus_route.h"
 #include "games.h"
+#include "git_tab.h"
 #include "help.h"
 #include "icons.h"
 #include "markdown.h"
@@ -406,7 +407,8 @@ static GtkWidget* header_button(GtkWidget* bar, const gchar* icon, const gchar* 
  * before the editor tabs */
 static void insert_page(AppData* app, HelpGuide* hg) {
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
+    GtkWidget* git_page = git_tab_page(app);
+    gint after = git_page != NULL ? gtk_notebook_page_num(nb, git_page) : 0;
     if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
     if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
     gtk_notebook_insert_page(nb, hg->page, hg->label, after + 1);

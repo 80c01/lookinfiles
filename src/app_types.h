@@ -273,19 +273,7 @@ typedef struct {
     struct AudioPreview* audio; /* audio player state (audio.c), NULL before audio_preview_init() */
 
 
-    /* Git commits tab in preview panel */
-    GtkWidget* git_tab_box;       /* Box widget container for the Git tab */
-    GtkWidget* git_tab_label;     /* Label widget for Git tab header */
-    GtkWidget* git_paned;         /* Paned separating commit list and commit details */
-    GListStore* git_store;        /* commit list (GitCommit items, see git_tab.c) */
-    GtkSingleSelection* git_selection; /* selection over git_store */
-    GtkWidget* git_list_view;     /* GtkColumnView displaying commits */
-    GtkWidget* git_header_label;  /* Summary header of the selected commit */
-    GtkWidget* git_detail_view;   /* Text view for git diff / commit details */
-    GtkTextBuffer* git_detail_buf;/* Buffer for git diff / commit details */
-    gchar* git_current_root;      /* Currently scanned git root path */
-    gchar* git_selected_hash;     /* Currently selected commit hash */
-    GCancellable* git_cancellable;/* Cancellable for background git log tasks */
+    struct GitTab* git;           /* Git commits tab state (git_tab.c), NULL before git_tab_init() */
     /* Floating key-binding cheat sheet (toggled by '?') */
     GtkWidget* help_window;
     GtkWidget* workspace_hbox;

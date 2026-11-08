@@ -13,7 +13,10 @@ void git_tab_update(AppData* app, const gchar* dir);
 /* Reload the history of the current repository (after .git changed) */
 void git_tab_reload(AppData* app);
 
-/* Clean up Git tab resources */
+/* Notebook page of the Git tab, or NULL before git_tab_init() */
+GtkWidget* git_tab_page(AppData* app);
+
+/* Cancel the pending tasks and free the Git tab state (at exit) */
 void git_tab_cleanup(AppData* app);
 
 #endif /* GIT_TAB_H */

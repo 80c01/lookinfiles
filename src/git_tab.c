@@ -8,7 +8,20 @@
 #include "focus_route.h"
 #include <string.h>
 
-/* One row of the commit list (item of app->git_store) */
+/* Git commits tab state (app->git), created by git_tab_init() */
+typedef struct GitTab GitTab;
+struct GitTab {
+    GtkWidget* page;            /* notebook page of the tab */
+    GListStore* store;          /* commit list (GitCommit items) */
+    GtkSingleSelection* selection; /* selection over store */
+    GtkWidget* header_label;    /* summary of the selected commit */
+    GtkTextBuffer* detail_buf;  /* diff of the selected commit */
+    gchar* current_root;        /* repository shown, or NULL */
+    gchar* selected_hash;       /* selected commit, or NULL */
+    GCancellable* cancellable;  /* log and show tasks */
+};
+
+/* One row of the commit list (item of GitTab.store) */
 #define GIT_TYPE_COMMIT (git_commit_get_type())
 G_DECLARE_FINAL_TYPE(GitCommit, git_commit, GIT, COMMIT, GObject)
 
@@ -40,8 +53,8 @@ static GitCommit* git_commit_new(GitCommitInfo* info) {
 }
 
 /* Commit at position i of the list, NULL if out of range (borrowed) */
-static GitCommitInfo* git_commit_at(AppData* app, guint i) {
-    GitCommit* c = g_list_model_get_item(G_LIST_MODEL(app->git_store), i);
+static GitCommitInfo* git_commit_at(GitTab* g, guint i) {
+    GitCommit* c = g_list_model_get_item(G_LIST_MODEL(g->store), i);
     if (c == NULL) return NULL;
     GitCommitInfo* info = c->info;
     g_object_unref(c); /* the store keeps it alive */
@@ -221,18 +234,19 @@ static void on_git_show_ready(GObject* source_object, GAsyncResult* res, gpointe
     (void)user_data;
     GTask* task = G_TASK(res);
     GitShowTaskData* td = (GitShowTaskData*)g_task_get_task_data(task);
-    if (td == NULL || td->app == NULL) return;
+    if (td == NULL || td->app == NULL || td->app->git == NULL) return;
 
-    AppData* app = td->app;
-    if (td->commit_hash != NULL && g_strcmp0(td->commit_hash, app->git_selected_hash) == 0) {
-        format_git_diff_markup(app->git_detail_buf, td->diff_output);
+    GitTab* g = td->app->git;
+    if (td->commit_hash != NULL && g_strcmp0(td->commit_hash, g->selected_hash) == 0) {
+        format_git_diff_markup(g->detail_buf, td->diff_output);
     }
 }
 
 static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* pspec, gpointer user_data) {
     (void)pspec;
     AppData* app = (AppData*)user_data;
-    if (app == NULL || app->git_store == NULL || app->git_current_root == NULL) return;
+    GitTab* g = app != NULL ? app->git : NULL;
+    if (g == NULL || g->current_root == NULL) return;
 
     GitCommit* item = gtk_single_selection_get_selected_item(selection);
     if (item == NULL || item->info == NULL || item->info->hash == NULL) {
@@ -244,25 +258,23 @@ static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* 
     const gchar* author = item->info->author;
     const gchar* date = item->info->date;
 
-    g_free(app->git_selected_hash);
-    app->git_selected_hash = g_strdup(hash);
+    g_free(g->selected_hash);
+    g->selected_hash = g_strdup(hash);
 
     gchar* header_text = g_strdup_printf("[%s] %s  •  %s  (%s)",
                                         short_hash ? short_hash : "",
                                         subject ? subject : "",
                                         author ? author : "",
                                         date ? date : "");
-    if (app->git_header_label != NULL) {
-        gtk_label_set_text(GTK_LABEL(app->git_header_label), header_text);
-    }
+    gtk_label_set_text(GTK_LABEL(g->header_label), header_text);
     g_free(header_text);
 
     GitShowTaskData* td = g_new0(GitShowTaskData, 1);
     td->app = app;
-    td->git_root = g_strdup(app->git_current_root);
+    td->git_root = g_strdup(g->current_root);
     td->commit_hash = g_strdup(hash);
 
-    GTask* task = g_task_new(NULL, app->git_cancellable, on_git_show_ready, NULL);
+    GTask* task = g_task_new(NULL, g->cancellable, on_git_show_ready, NULL);
     g_task_set_task_data(task, td, git_show_task_data_free);
     g_task_run_in_thread(task, git_show_thread_func);
     g_object_unref(task);
@@ -273,27 +285,28 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
     (void)user_data;
     GTask* task = G_TASK(res);
     GitLogTaskData* td = (GitLogTaskData*)g_task_get_task_data(task);
-    if (td == NULL || td->app == NULL || td->app->git_store == NULL) return;
+    if (td == NULL || td->app == NULL || td->app->git == NULL) return;
 
     AppData* app = td->app;
+    GitTab* g = app->git;
 
-    GtkSingleSelection* sel = app->git_selection;
+    GtkSingleSelection* sel = g->selection;
     g_signal_handlers_block_by_func(sel, (gpointer)on_git_selection_changed, app);
 
     /* Follow the newest commit unless an older one was selected on purpose */
     gboolean follow_head = TRUE;
-    GitCommitInfo* old_first = git_commit_at(app, 0);
-    if (app->git_selected_hash != NULL && old_first != NULL) {
-        follow_head = (g_strcmp0(old_first->hash, app->git_selected_hash) == 0);
+    GitCommitInfo* old_first = git_commit_at(g, 0);
+    if (g->selected_hash != NULL && old_first != NULL) {
+        follow_head = (g_strcmp0(old_first->hash, g->selected_hash) == 0);
     }
 
-    g_list_store_remove_all(app->git_store);
+    g_list_store_remove_all(g->store);
     if (td->commits != NULL) {
         /* The store takes the commits over */
         g_ptr_array_set_free_func(td->commits, NULL);
         for (guint i = 0; i < td->commits->len; i++) {
             GitCommit* item = git_commit_new(g_ptr_array_index(td->commits, i));
-            g_list_store_append(app->git_store, item);
+            g_list_store_append(g->store, item);
             g_object_unref(item);
         }
         g_ptr_array_set_size(td->commits, 0);
@@ -303,12 +316,12 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
     g_signal_handlers_unblock_by_func(sel, (gpointer)on_git_selection_changed, app);
 
     /* Select the newest commit, or keep an older commit the user selected */
-    guint n = g_list_model_get_n_items(G_LIST_MODEL(app->git_store));
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(g->store));
     if (n > 0) {
         guint target = 0;
-        if (!follow_head && app->git_selected_hash != NULL) {
+        if (!follow_head && g->selected_hash != NULL) {
             for (guint i = 0; i < n; i++) {
-                if (g_strcmp0(git_commit_at(app, i)->hash, app->git_selected_hash) == 0) {
+                if (g_strcmp0(git_commit_at(g, i)->hash, g->selected_hash) == 0) {
                     target = i;
                     break;
                 }
@@ -316,65 +329,60 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
         }
         gtk_single_selection_set_selected(sel, target); /* shows its diff */
     } else {
-        if (app->git_header_label != NULL) {
-            gtk_label_set_text(GTK_LABEL(app->git_header_label), _("No commits in this repository."));
-        }
-        if (app->git_detail_buf != NULL) {
-            gtk_text_buffer_set_text(app->git_detail_buf, "", -1);
-        }
+        gtk_label_set_text(GTK_LABEL(g->header_label), _("No commits in this repository."));
+        gtk_text_buffer_set_text(g->detail_buf, "", -1);
     }
 }
 
 /* Re-read the history of the current repository even if the root is unchanged
  * (called when .git changed: commit, checkout, reset, pull...) */
 void git_tab_reload(AppData* app) {
-    if (app == NULL) {
+    if (app == NULL || app->git == NULL) {
         return;
     }
-    g_free(app->git_current_root);
-    app->git_current_root = NULL;
+    g_clear_pointer(&app->git->current_root, g_free);
     git_tab_update(app, app->base_dir);
 }
 
 void git_tab_update(AppData* app, const gchar* dir) {
-    if (app == NULL || app->git_tab_box == NULL) return;
+    GitTab* g = app != NULL ? app->git : NULL;
+    if (g == NULL) return;
 
     /* Hide git commits tab when in Bookmarks, Notes or Remote view */
     if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->sidebar_view == SIDEBAR_VIEW_NOTES ||
         app->sidebar_view == SIDEBAR_VIEW_REMOTE || app->show_bookmarks) {
-        gtk_widget_set_visible(app->git_tab_box, FALSE);
+        gtk_widget_set_visible(g->page, FALSE);
         return;
     }
 
     gchar* root = find_git_root(dir);
     if (root == NULL) {
-        gtk_widget_set_visible(app->git_tab_box, FALSE);
-        g_free(app->git_current_root);
-        app->git_current_root = NULL;
+        gtk_widget_set_visible(g->page, FALSE);
+        g_clear_pointer(&g->current_root, g_free);
         return;
     }
 
-    gtk_widget_set_visible(app->git_tab_box, TRUE);
+    gtk_widget_set_visible(g->page, TRUE);
 
-    if (g_strcmp0(app->git_current_root, root) == 0) {
+    if (g_strcmp0(g->current_root, root) == 0) {
         g_free(root);
         return;
     }
 
-    g_free(app->git_current_root);
-    app->git_current_root = root;
+    g_free(g->current_root);
+    g->current_root = root;
 
-    if (app->git_cancellable != NULL) {
-        g_cancellable_cancel(app->git_cancellable);
-        g_clear_object(&app->git_cancellable);
+    if (g->cancellable != NULL) {
+        g_cancellable_cancel(g->cancellable);
+        g_clear_object(&g->cancellable);
     }
-    app->git_cancellable = g_cancellable_new();
+    g->cancellable = g_cancellable_new();
 
     GitLogTaskData* td = g_new0(GitLogTaskData, 1);
     td->app = app;
-    td->git_root = g_strdup(app->git_current_root);
+    td->git_root = g_strdup(g->current_root);
 
-    GTask* task = g_task_new(NULL, app->git_cancellable, on_git_log_ready, NULL);
+    GTask* task = g_task_new(NULL, g->cancellable, on_git_log_ready, NULL);
     g_task_set_task_data(task, td, git_log_task_data_free);
     g_task_run_in_thread(task, git_log_thread_func);
     g_object_unref(task);
@@ -417,17 +425,19 @@ static void git_add_column(GtkWidget* view, const gchar* title, gsize field_offs
 void git_tab_init(AppData* app) {
     if (app == NULL || app->notebook == NULL) return;
 
+    GitTab* g = g_new0(GitTab, 1);
+    app->git = g;
+
     /* Commit list: newest first, one GitCommit per row */
-    app->git_store = g_list_store_new(GIT_TYPE_COMMIT);
-    app->git_selection = gtk_single_selection_new(G_LIST_MODEL(g_object_ref(app->git_store)));
-    gtk_single_selection_set_autoselect(app->git_selection, FALSE);
-    gtk_single_selection_set_selected(app->git_selection, GTK_INVALID_LIST_POSITION);
-    g_signal_connect(app->git_selection, "notify::selected-item",
+    g->store = g_list_store_new(GIT_TYPE_COMMIT);
+    g->selection = gtk_single_selection_new(G_LIST_MODEL(g_object_ref(g->store)));
+    gtk_single_selection_set_autoselect(g->selection, FALSE);
+    gtk_single_selection_set_selected(g->selection, GTK_INVALID_LIST_POSITION);
+    g_signal_connect(g->selection, "notify::selected-item",
                      G_CALLBACK(on_git_selection_changed), app);
 
-    GtkWidget* tree_view = gtk_column_view_new(GTK_SELECTION_MODEL(app->git_selection));
-    app->git_list_view = tree_view;
-    focus_route_attach_list(app, tree_view, app->git_selection);
+    GtkWidget* tree_view = gtk_column_view_new(GTK_SELECTION_MODEL(g->selection));
+    focus_route_attach_list(app, tree_view, g->selection);
     gtk_widget_set_name(tree_view, "git-tree");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(tree_view), FALSE);
     git_add_column(tree_view, _("Commit"), G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);
@@ -455,22 +465,22 @@ void git_tab_init(AppData* app) {
     gtk_label_set_ellipsize(GTK_LABEL(header_lbl), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(header_lbl, TRUE);
     gtk_box_append(GTK_BOX(header_bar), header_lbl);
-    app->git_header_label = header_lbl;
+    g->header_label = header_lbl;
 
-    app->git_detail_buf = gtk_text_buffer_new(NULL);
-    app->git_detail_view = gtk_text_view_new_with_buffer(app->git_detail_buf);
-    gtk_text_view_set_editable(GTK_TEXT_VIEW(app->git_detail_view), FALSE);
-    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(app->git_detail_view), FALSE);
-    set_view_text_padding(app->git_detail_view);
-    set_view_monospace(app->git_detail_view, TRUE);
-    apply_viewer_background(app->git_detail_view);
+    g->detail_buf = gtk_text_buffer_new(NULL);
+    GtkWidget* detail_view = gtk_text_view_new_with_buffer(g->detail_buf);
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(detail_view), FALSE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(detail_view), FALSE);
+    set_view_text_padding(detail_view);
+    set_view_monospace(detail_view, TRUE);
+    apply_viewer_background(detail_view);
 
     GtkWidget* detail_scroll = gtk_scrolled_window_new();
     gtk_widget_set_hexpand(detail_scroll, TRUE);
     gtk_widget_set_vexpand(detail_scroll, TRUE);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(detail_scroll),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(detail_scroll), app->git_detail_view);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(detail_scroll), detail_view);
 
     gtk_box_append(GTK_BOX(detail_box), header_bar);
     gtk_box_append(GTK_BOX(detail_box), detail_scroll);
@@ -487,29 +497,36 @@ void git_tab_init(AppData* app) {
     gtk_paned_set_resize_end_child(GTK_PANED(paned), TRUE);
     gtk_paned_set_shrink_end_child(GTK_PANED(paned), FALSE);
     gtk_paned_set_position(GTK_PANED(paned), 220);
-    app->git_paned = paned;
 
     /* Container box for the whole Git tab page */
     GtkWidget* tab_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_hexpand(tab_box, TRUE);
     gtk_widget_set_vexpand(tab_box, TRUE);
     gtk_box_append(GTK_BOX(tab_box), paned);
-    app->git_tab_box = tab_box;
+    g->page = tab_box;
 
-    app->git_tab_label = icon_label_new("document-open-recent", _("Git Commits"));
-    gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), tab_box, app->git_tab_label);
+    GtkWidget* tab_label = icon_label_new("document-open-recent", _("Git Commits"));
+    gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), tab_box, tab_label);
 
     git_tab_update(app, app->base_dir);
 }
 
+GtkWidget* git_tab_page(AppData* app) {
+    return app != NULL && app->git != NULL ? app->git->page : NULL;
+}
+
 void git_tab_cleanup(AppData* app) {
-    if (app == NULL) return;
-    if (app->git_cancellable != NULL) {
-        g_cancellable_cancel(app->git_cancellable);
-        g_clear_object(&app->git_cancellable);
+    GitTab* g = app != NULL ? app->git : NULL;
+    if (g == NULL) return;
+    if (g->cancellable != NULL) {
+        g_cancellable_cancel(g->cancellable);
+        g_clear_object(&g->cancellable);
     }
-    g_free(app->git_current_root);
-    app->git_current_root = NULL;
-    g_free(app->git_selected_hash);
-    app->git_selected_hash = NULL;
+    /* The widgets keep their own references to the store and the buffer;
+     * pending tasks and handlers see app->git NULL from now on */
+    g_clear_object(&g->store);
+    g_clear_object(&g->detail_buf);
+    g_free(g->current_root);
+    g_free(g->selected_hash);
+    g_clear_pointer(&app->git, g_free);
 }

@@ -8,6 +8,7 @@
 #include "icons.h"
 #include "theme.h"
 #include "focus_route.h"
+#include "git_tab.h"
 #include <stdarg.h>
 #include <string.h>
 
@@ -223,7 +224,8 @@ static void page_free(gpointer p) {
  * page (editor tabs follow) */
 static void insert_page(AppData* app, RefsPage* rp) {
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint after = app->git_tab_box != NULL ? gtk_notebook_page_num(nb, app->git_tab_box) : 0;
+    GtkWidget* git_page = git_tab_page(app);
+    gint after = git_page != NULL ? gtk_notebook_page_num(nb, git_page) : 0;
     GtkWidget* other = rp->slot == &app->refs_page ? app->search_page : app->refs_page;
     if (other != NULL) after = MAX(after, gtk_notebook_page_num(nb, other));
     gtk_notebook_insert_page(nb, rp->page, rp->label, after + 1);
