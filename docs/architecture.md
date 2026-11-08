@@ -459,7 +459,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   expansion following, remembered for one undo step (`u`, explorer bar Undo
   after the `app_notice()` message).
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
-  (XML persistence: `bookmarks.xml`, `notes.xml`; remotes via `remote_store`).
+  (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
+  `remote_store`). The notes view is `notes.c` (rows, selection, keys, menu),
+  `notes_dialogs.c` and `notes_actions.c`, sharing `notes_private.h`.
 - `canvas_view` — the **Canvas** tabs (`app->canvas_pages`, every workspace):
   each edits one Canvas note (`canvas_doc`), one tab per note, text boxes and pictures on a
   `GtkFixed`; move / resize by dragging, pictures pasted (`Ctrl+V`) or dropped

@@ -181,6 +181,14 @@ for rule in $RULES; do
     done
 done
 
+# notes_private.h is internal to the Notes view files
+for f in $(grep -l '#include "notes_private.h"' src/*.c src/*.h); do
+    case "$f" in
+        src/notes.c|src/notes_dialogs.c|src/notes_actions.c) ;;
+        *) echo "layering: $f includes notes_private.h (internal to notes.c, notes_dialogs.c, notes_actions.c)"; status=1 ;;
+    esac
+done
+
 # editor_private.h is internal to the editor tab files
 for f in $(grep -l '#include "editor_private.h"' src/*.c src/*.h); do
     case "$f" in
