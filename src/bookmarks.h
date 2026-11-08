@@ -10,6 +10,8 @@
 
 void bookmarks_init(AppData* app);
 void bookmarks_free(AppData* app);
+/* TRUE between bookmarks_init() and bookmarks_free() */
+gboolean bookmarks_loaded(const AppData* app);
 void bookmarks_save(AppData* app);
 
 /* Explorer panel integration */

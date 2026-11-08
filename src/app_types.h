@@ -176,9 +176,7 @@ typedef struct {
     gboolean show_hidden; /* hidden files (dot-prefixed) */
     gboolean show_bookmarks; /* bookmarks view active in explorer panel */
     gint sidebar_view;       /* SIDEBAR_VIEW_FILES / BOOKMARKS / NOTES */
-    GNode* bookmarks;        /* bookmark tree root (see bookmarks.c): named folders and links */
-    guint bm_next_id;        /* last assigned bookmark item id */
-    guint bm_last_folder_id; /* folder last used when adding a bookmark (0 = top level) */
+    struct Bookmarks* bm;    /* bookmark tree and counters (bookmarks.c), NULL outside bookmarks_init() / bookmarks_free() */
     gint session_save_ws;       /* workspace to save on APP_EVENT_SAVE_WORKSPACE_BOOKMARK */
     gchar* session_open_target; /* saved-workspace target to open on APP_EVENT_OPEN_WORKSPACE_BOOKMARK */
     GPtrArray* buffers;      /* temporary/custom buffer names or paths */
@@ -313,7 +311,6 @@ typedef struct {
     GList* remotes;                   /* list of RemoteMachine* */
     GList* remote_folders;            /* list of RemoteFolder* (remote view folders) */
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */
-    gboolean bookmarks_sort_desc;        /* sort order for bookmarks view */
     GHashTable* org_folded_lines;     /* set of line numbers folded in currently viewed org file */
     gint org_global_fold;             /* 0 = all expanded, 1 = overview, 2 = contents */
     GtkWidget* status_branch;     /* explorer bar: Git branch of base_dir */

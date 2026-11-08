@@ -13,6 +13,14 @@
 #include "web_address.h"
 #include "session_store.h"
 
+/* Bookmark tree and its counters, private to this file */
+struct Bookmarks {
+    GNode* root;           /* tree root: named folders and links (BookmarkItem data) */
+    guint next_id;         /* last assigned item id */
+    guint last_folder_id;  /* folder last used when adding a bookmark (0 = top level) */
+    gboolean sort_desc;    /* Z–A after the last sort toggle */
+};
+
 /* One node of the bookmark tree (GNode data). The root node has NULL data. */
 typedef struct {
     guint id;           /* session-unique id, stored in ExplorerRow.bm_id */
@@ -51,7 +59,7 @@ static gboolean bm_is_folder(GNode* node) {
 
 static GNode* bm_new_node(AppData* app, gboolean is_folder, const gchar* name, const gchar* target) {
     BookmarkItem* it = g_new0(BookmarkItem, 1);
-    it->id = ++app->bm_next_id;
+    it->id = ++app->bm->next_id;
     it->is_folder = is_folder;
     it->name = g_strdup(name != NULL ? name : "");
     it->target = is_folder ? NULL : g_strdup(target != NULL ? target : "");
@@ -153,11 +161,11 @@ static void bm_write_children(GString* out, GNode* node, gint depth) {
 }
 
 void bookmarks_save(AppData* app) {
-    if (app == NULL || app->bookmarks == NULL) {
+    if (app == NULL || app->bm == NULL) {
         return;
     }
     GString* out = g_string_new("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bookmarks version=\"2\">\n");
-    bm_write_children(out, app->bookmarks, 1);
+    bm_write_children(out, app->bm->root, 1);
     g_string_append(out, "</bookmarks>\n");
     gchar* path = bm_config_file("bookmarks.xml");
     g_file_set_contents(path, out->str, (gssize)out->len, NULL);
@@ -230,13 +238,13 @@ static gboolean bm_import_legacy(AppData* app) {
             GNode* node = NULL;
             if (g_str_has_prefix(line, "BM::")) {
                 node = bm_new_node(app, TRUE, line + 4, NULL);
-            } else if (bm_find_link_by_target(app->bookmarks, line) == NULL) {
+            } else if (bm_find_link_by_target(app->bm->root, line) == NULL) {
                 gchar* name = bookmark_default_name(line);
                 node = bm_new_node(app, FALSE, name, line);
                 g_free(name);
             }
             if (node != NULL) {
-                g_node_append(app->bookmarks, node);
+                g_node_append(app->bm->root, node);
                 imported = TRUE;
             }
         }
@@ -251,9 +259,8 @@ void bookmarks_init(AppData* app) {
     if (app == NULL) {
         return;
     }
-    app->bookmarks = g_node_new(NULL);
-    app->bm_next_id = 0;
-    app->bm_last_folder_id = 0;
+    app->bm = g_new0(struct Bookmarks, 1);
+    app->bm->root = g_node_new(NULL);
     app->show_bookmarks = FALSE;
 
     gchar* path = bm_config_file("bookmarks.xml");
@@ -261,7 +268,7 @@ void bookmarks_init(AppData* app) {
     gsize length = 0;
     if (g_file_get_contents(path, &content, &length, NULL)) {
         static const GMarkupParser parser = { bm_parse_start, bm_parse_end, NULL, NULL, NULL };
-        BmParseState st = { app, app->bookmarks };
+        BmParseState st = { app, app->bm->root };
         GMarkupParseContext* ctx = g_markup_parse_context_new(&parser, 0, &st, NULL);
         if (!g_markup_parse_context_parse(ctx, content, (gssize)length, NULL)) {
             g_warning("Bookmarks file %s is malformed; entries after the error were skipped", path);
@@ -274,12 +281,16 @@ void bookmarks_init(AppData* app) {
     g_free(path);
 }
 
+gboolean bookmarks_loaded(const AppData* app) {
+    return app != NULL && app->bm != NULL;
+}
+
 void bookmarks_free(AppData* app) {
-    if (app == NULL || app->bookmarks == NULL) {
+    if (app == NULL || app->bm == NULL) {
         return;
     }
-    bm_destroy_subtree(app->bookmarks);
-    app->bookmarks = NULL;
+    bm_destroy_subtree(app->bm->root);
+    g_clear_pointer(&app->bm, g_free);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -324,20 +335,20 @@ static void bm_append_children(AppData* app, ExplorerRow* parent, GNode* node) {
 }
 
 void bookmarks_append_rows(ExplorerRow* root, AppData* app) {
-    if (root == NULL || app == NULL || app->bookmarks == NULL) {
+    if (root == NULL || app == NULL || app->bm == NULL) {
         return;
     }
-    if (app->bookmarks->children == NULL) {
+    if (app->bm->root->children == NULL) {
         bm_append_placeholder(root, _("No bookmarks yet — press a or Ctrl+D to add one"));
         return;
     }
-    bm_append_children(app, root, app->bookmarks);
+    bm_append_children(app, root, app->bm->root);
 }
 
 static void bm_reexpand_level(AppData* app, ExplorerRow* parent) {
     for (guint i = 0; i < explorer_row_n_children(parent); i++) {
         ExplorerRow* child = explorer_row_child(parent, i);
-        GNode* node = bm_find_by_id(app->bookmarks, child->bm_id);
+        GNode* node = bm_find_by_id(app->bm->root, child->bm_id);
         if (bm_is_folder(node) && bm_item(node)->expanded) {
             explorer_tree_set_expanded(app->tree, child, TRUE);
             bm_reexpand_level(app, child);
@@ -386,7 +397,7 @@ static GNode* bm_selected_node(AppData* app) {
         return NULL;
     }
     ExplorerRow* row = tree_nav_selected(app);
-    return row != NULL ? bm_find_by_id(app->bookmarks, row->bm_id) : NULL;
+    return row != NULL ? bm_find_by_id(app->bm->root, row->bm_id) : NULL;
 }
 
 /* Rebuild the bookmarks view synchronously and select the given item */
@@ -427,7 +438,7 @@ gboolean bookmarks_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean e
     if (app == NULL || !explorer_row_is(row, "bm_folder")) {
         return FALSE;
     }
-    GNode* node = bm_find_by_id(app->bookmarks, row->bm_id);
+    GNode* node = bm_find_by_id(app->bm->root, row->bm_id);
     if (bm_is_folder(node)) {
         BookmarkItem* it = bm_item(node);
         if (it->expanded != expanded) {
@@ -469,9 +480,9 @@ static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok
                                gchar** out_name, gchar** out_target, GNode** out_parent) {
     GPtrArray* nodes = g_ptr_array_new();
     GPtrArray* labels = g_ptr_array_new_with_free_func(g_free);
-    g_ptr_array_add(nodes, app->bookmarks);
+    g_ptr_array_add(nodes, app->bm->root);
     g_ptr_array_add(labels, g_strdup(_("Bookmarks (top level)")));
-    bm_collect_folders(app->bookmarks, 1, exclude, nodes, labels);
+    bm_collect_folders(app->bm->root, 1, exclude, nodes, labels);
     guint selected = 0;
     for (guint i = 0; i < nodes->len; i++) {
         if (g_ptr_array_index(nodes, i) == init_parent) {
@@ -488,7 +499,7 @@ static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok
     guint idx = 0;
     gint resp = bookmark_item_dialog(app, &spec, out_name, out_target, &icon, &idx);
     if (resp == APP_RESPONSE_OK) {
-        *out_parent = (idx < nodes->len) ? (GNode*)g_ptr_array_index(nodes, idx) : app->bookmarks;
+        *out_parent = (idx < nodes->len) ? (GNode*)g_ptr_array_index(nodes, idx) : app->bm->root;
         if (inout_icon != NULL && icon != NULL) {
             *inout_icon = icon;
         }
@@ -510,7 +521,7 @@ static guint bm_folder_id(GNode* folder) {
 static GNode* bm_context_folder(AppData* app) {
     GNode* sel = bm_selected_node(app);
     if (sel == NULL) {
-        return app->bookmarks;
+        return app->bm->root;
     }
     return bm_is_folder(sel) ? sel : sel->parent;
 }
@@ -534,7 +545,7 @@ static void bm_add_dialog(AppData* app, const gchar* init_target, GNode* parent)
         if (bm_is_folder(out_parent)) {
             bm_item(out_parent)->expanded = TRUE;
         }
-        app->bm_last_folder_id = bm_folder_id(out_parent);
+        app->bm->last_folder_id = bm_folder_id(out_parent);
         bm_after_change(app, bm_item(node)->id);
     }
     g_free(init_name);
@@ -556,7 +567,7 @@ static gboolean bm_remove_snapshot(GNode* node, gpointer data) {
 }
 
 static void bm_delete_node(AppData* app, GNode* node, gboolean confirm) {
-    if (node == NULL || node == app->bookmarks) {
+    if (node == NULL || node == app->bm->root) {
         return;
     }
     BookmarkItem* it = bm_item(node);
@@ -582,11 +593,11 @@ static void bm_delete_node(AppData* app, GNode* node, gboolean confirm) {
     }
     GNode* next = (node->next != NULL) ? node->next : node->prev;
     guint select_id = (next != NULL) ? bm_item(next)->id : bm_folder_id(node->parent);
-    if (app->bm_last_folder_id != 0 && bm_find_by_id(node, app->bm_last_folder_id) != NULL) {
-        app->bm_last_folder_id = 0;
+    if (app->bm->last_folder_id != 0 && bm_find_by_id(node, app->bm->last_folder_id) != NULL) {
+        app->bm->last_folder_id = 0;
     }
-    if (it->is_folder && it->id == app->bm_last_folder_id) {
-        app->bm_last_folder_id = 0;
+    if (it->is_folder && it->id == app->bm->last_folder_id) {
+        app->bm->last_folder_id = 0;
     }
     g_node_unlink(node);
     g_node_traverse(node, G_IN_ORDER, G_TRAVERSE_ALL, -1, bm_remove_snapshot, NULL);
@@ -643,29 +654,29 @@ void bookmarks_add(AppData* app) {
  * directory); an existing bookmark for it opens in the edit dialog instead,
  * where it can also be removed. In the bookmarks view, add a new bookmark. */
 void bookmarks_add_session(AppData* app, const gchar* name, const gchar* target) {
-    if (app == NULL || app->bookmarks == NULL || target == NULL) {
+    if (app == NULL || app->bm == NULL || target == NULL) {
         return;
     }
     GNode* parent = NULL;
     if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
         parent = bm_context_folder(app);
     } else {
-        parent = bm_find_by_id(app->bookmarks, app->bm_last_folder_id);
+        parent = bm_find_by_id(app->bm->root, app->bm->last_folder_id);
     }
     if (parent == NULL) {
-        parent = app->bookmarks;
+        parent = app->bm->root;
     }
     GNode* node = bm_new_node(app, FALSE, name, target);
     g_node_append(parent, node);
     if (bm_is_folder(parent)) {
         bm_item(parent)->expanded = TRUE;
     }
-    app->bm_last_folder_id = bm_folder_id(parent);
+    app->bm->last_folder_id = bm_folder_id(parent);
     bm_after_change(app, bm_item(node)->id);
 }
 
 void bookmarks_add_from_context(AppData* app) {
-    if (app == NULL || app->bookmarks == NULL) {
+    if (app == NULL || app->bm == NULL) {
         return;
     }
     if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
@@ -685,18 +696,18 @@ void bookmarks_add_from_context(AppData* app) {
     if (target == NULL) {
         return;
     }
-    GNode* existing = bm_find_link_by_target(app->bookmarks, target);
+    GNode* existing = bm_find_link_by_target(app->bm->root, target);
     if (existing != NULL) {
         bm_edit_node(app, existing, TRUE);
     } else {
-        GNode* parent = bm_find_by_id(app->bookmarks, app->bm_last_folder_id);
-        bm_add_dialog(app, target, parent != NULL ? parent : app->bookmarks);
+        GNode* parent = bm_find_by_id(app->bm->root, app->bm->last_folder_id);
+        bm_add_dialog(app, target, parent != NULL ? parent : app->bm->root);
     }
     g_free(target);
 }
 
 void bookmarks_new_folder(AppData* app) {
-    if (app == NULL || app->bookmarks == NULL) {
+    if (app == NULL || app->bm == NULL) {
         return;
     }
     gchar* name = NULL;
@@ -787,13 +798,13 @@ static void bm_sort_children(GNode* node, gboolean desc) {
 }
 
 void bookmarks_toggle_sort(AppData* app) {
-    if (app == NULL || app->bookmarks == NULL) {
+    if (app == NULL || app->bm == NULL) {
         return;
     }
     GNode* sel = bm_selected_node(app);
     guint sel_id = (sel != NULL) ? bm_item(sel)->id : 0;
-    app->bookmarks_sort_desc = !app->bookmarks_sort_desc;
-    bm_sort_children(app->bookmarks, app->bookmarks_sort_desc);
+    app->bm->sort_desc = !app->bm->sort_desc;
+    bm_sort_children(app->bm->root, app->bm->sort_desc);
     bm_after_change(app, sel_id);
 }
 
@@ -816,18 +827,18 @@ static void bm_set_expanded_all(GNode* node, gboolean expanded) {
 }
 
 gboolean bookmarks_any_expanded(AppData* app) {
-    return app != NULL && app->bookmarks != NULL && bm_any_expanded(app->bookmarks);
+    return app != NULL && app->bm != NULL && bm_any_expanded(app->bm->root);
 }
 
 void bookmarks_toggle_collapse_expand(AppData* app) {
-    if (app == NULL || app->bookmarks == NULL) {
+    if (app == NULL || app->bm == NULL) {
         return;
     }
-    gboolean expand = !bm_any_expanded(app->bookmarks);
-    bm_set_expanded_all(app->bookmarks, expand);
+    gboolean expand = !bm_any_expanded(app->bm->root);
+    bm_set_expanded_all(app->bm->root, expand);
     GNode* sel = bm_selected_node(app);
     /* Keep a visible row selected when collapsing */
-    while (!expand && sel != NULL && sel->parent != NULL && sel->parent != app->bookmarks) {
+    while (!expand && sel != NULL && sel->parent != NULL && sel->parent != app->bm->root) {
         sel = sel->parent;
     }
     bm_after_change(app, sel != NULL ? bm_item(sel)->id : 0);
@@ -1076,8 +1087,8 @@ static void bm_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x,
     }
     bm_menu_separator(box);
     bm_menu_item(box, popover, app, _("Save Workspace as Bookmark…"), NULL, BM_ACTION_SAVE_WORKSPACE, TRUE);
-    bm_menu_item(box, popover, app, _("Sort A–Z / Z–A"), "o", BM_ACTION_SORT, app->bookmarks->children != NULL);
-    bm_menu_item(box, popover, app, _("Collapse / Expand All"), NULL, BM_ACTION_COLLAPSE, app->bookmarks->children != NULL);
+    bm_menu_item(box, popover, app, _("Sort A–Z / Z–A"), "o", BM_ACTION_SORT, app->bm->root->children != NULL);
+    bm_menu_item(box, popover, app, _("Collapse / Expand All"), NULL, BM_ACTION_COLLAPSE, app->bm->root->children != NULL);
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     g_signal_connect(popover, "closed", G_CALLBACK(bm_on_popover_closed), NULL);

@@ -52,7 +52,7 @@ static gchar* ask_name(AppData* app, const gchar* initial) {
 }
 
 void session_bookmark_save(AppData* app) {
-    if (app == NULL || app->bookmarks == NULL) {
+    if (!bookmarks_loaded(app)) {
         return;
     }
     gint ws = CLAMP(app->session_save_ws, 0, MAX(app->num_workspaces - 1, 0));
