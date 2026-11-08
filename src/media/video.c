@@ -1,12 +1,12 @@
-#include "video.h"
+#include "media/video.h"
 #include "preview/preview_state.h"
 #include "search.h"
 #include "core/i18n.h"
 #include "theme/text_style.h"
 #include "core/file_types.h"
-#include "media_tags.h"
-#include "media_player.h"
-#include "track_menu.h"
+#include "media/media_tags.h"
+#include "media/media_player.h"
+#include "media/track_menu.h"
 #include <string.h>
 #include <sys/stat.h>
 #include <glib/gstdio.h>

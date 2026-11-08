@@ -1,8 +1,8 @@
 /* Animated image paintable (see animation.h). */
-#include "animation.h"
+#include "media/animation.h"
 
-#include "gif_decoder.h"
-#include "image_utils.h"
+#include "media/gif_decoder.h"
+#include "media/image_utils.h"
 
 /* Largest GIF file read, and memory budget of the scaled frames */
 #define MAX_GIF_FILE_BYTES (64u * 1024 * 1024)

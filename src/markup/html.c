@@ -1,7 +1,7 @@
 #include "markup/html.h"
 #include "markup/html_text.h"
 #include "core/i18n.h"
-#include "image_utils.h"
+#include "media/image_utils.h"
 #include "theme/icons.h"
 #include <ctype.h>
 #include <string.h>

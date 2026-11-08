@@ -1,5 +1,5 @@
-/* Unit tests for src/media_tags.c (ID3, FLAC, MP4 tags and audio details). */
-#include "media_tags.h"
+/* Unit tests for src/media/media_tags.c (ID3, FLAC, MP4 tags and audio details). */
+#include "media/media_tags.h"
 
 #include <math.h>
 #include <string.h>

@@ -1,12 +1,12 @@
 /* Video tabs of the editor area (see video_tab.h) */
-#include "video_tab.h"
+#include "media/video_tab.h"
 #include "core/i18n.h"
 #include "editor.h"
 #include "theme/icons.h"
-#include "media_player.h"
+#include "media/media_player.h"
 #include "theme/theme.h"
-#include "track_menu.h"
-#include "video.h"
+#include "media/track_menu.h"
+#include "media/video.h"
 
 #define VIDEO_TAB_KEY "lookin-video-tab"
 #define TAB_MAX_CHARS 24

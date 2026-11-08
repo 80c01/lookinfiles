@@ -1,10 +1,10 @@
 /* Video player stream on GStreamer playbin (see media_player.h) */
-#include "media_player.h"
+#include "media/media_player.h"
 #include "core/i18n.h"
 
 #ifdef HAVE_GSTREAMER
 
-#include "media_tracks.h"
+#include "media/media_tracks.h"
 
 #include <gst/app/gstappsink.h>
 #include <gst/gst.h>

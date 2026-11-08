@@ -1,6 +1,6 @@
 /* Image preview: fitted / 1:1 / zoomed, EXIF orientation and photo details
  * (see image_preview.h). */
-#include "image_preview.h"
+#include "media/image_preview.h"
 #include "preview/preview_state.h"
 #include "search.h"
 #include "core/i18n.h"
@@ -14,11 +14,11 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "animation.h"
+#include "media/animation.h"
 #include "core/app_events.h"
-#include "exif.h"
+#include "media/exif.h"
 #include "core/file_types.h"
-#include "image_utils.h"
+#include "media/image_utils.h"
 #include "theme/text_style.h"
 
 /* Largest decoded image, in pixels (zooming in on a large photo) */

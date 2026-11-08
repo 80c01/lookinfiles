@@ -1,5 +1,5 @@
 /* Image helpers (see image_utils.h) */
-#include "image_utils.h"
+#include "media/image_utils.h"
 
 #include <string.h>
 

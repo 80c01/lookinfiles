@@ -1,5 +1,5 @@
 /* Audio and video tags (see media_tags.h). */
-#include "media_tags.h"
+#include "media/media_tags.h"
 
 #include <glib/gstdio.h>
 #include <stdio.h>

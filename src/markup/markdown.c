@@ -5,7 +5,7 @@
 #include "theme/fonts.h"
 #include "theme/palette.h"
 #include "theme/text_tags.h"
-#include "image_utils.h"
+#include "media/image_utils.h"
 #include "theme/icons.h"
 
 void ensure_markdown_tags(GtkTextBuffer* buffer) {

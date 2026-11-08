@@ -1,5 +1,5 @@
-/* Unit tests for src/exif.c (EXIF in JPEG / TIFF, summary lines). */
-#include "exif.h"
+/* Unit tests for src/media/exif.c (EXIF in JPEG / TIFF, summary lines). */
+#include "media/exif.h"
 
 #include <math.h>
 #include <string.h>

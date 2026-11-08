@@ -1,5 +1,5 @@
-/* Unit tests for src/gif_decoder.c: LZW, composition, disposal, loops. */
-#include "gif_decoder.h"
+/* Unit tests for src/media/gif_decoder.c: LZW, composition, disposal, loops. */
+#include "media/gif_decoder.h"
 
 #include <string.h>
 

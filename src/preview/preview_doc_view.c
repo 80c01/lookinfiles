@@ -7,7 +7,7 @@
 
 #include "markup/html.h"
 #include "markup/html_tags.h"
-#include "image_utils.h"
+#include "media/image_utils.h"
 #include "markup/markdown.h"
 #include "theme/palette.h"
 #include "theme/text_style.h"

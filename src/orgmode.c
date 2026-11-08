@@ -3,7 +3,7 @@
 #include "theme/fonts.h"
 #include "theme/text_tags.h"
 #include "org_doc.h"
-#include "image_utils.h"
+#include "media/image_utils.h"
 #include "theme/icons.h"
 #include "core/app_events.h"
 #include "core/file_types.h"

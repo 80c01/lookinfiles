@@ -1,5 +1,5 @@
 /* EXIF photo details (see exif.h). */
-#include "exif.h"
+#include "media/exif.h"
 #include "core/i18n.h"
 
 #include <glib/gstdio.h>

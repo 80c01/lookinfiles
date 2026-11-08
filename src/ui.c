@@ -1,6 +1,6 @@
 #include "ui.h"
 #include "canvas/canvas_view.h"
-#include "video_tab.h"
+#include "media/video_tab.h"
 #include "help_guide.h"
 #include "preview/browser.h"
 #include "games.h"

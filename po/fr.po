@@ -178,58 +178,58 @@ msgstr ""
 msgid "extraction failed"
 msgstr "échec de l’extraction"
 
-#: src/audio.c:42 src/video.c:52
+#: src/media/audio.c:42 src/media/video.c:52
 msgid "  •  [press m for details]"
 msgstr "  •  [m pour les détails]"
 
-#: src/audio.c:73
+#: src/media/audio.c:73
 msgid "Audio playback error"
 msgstr "Erreur de lecture audio"
 
-#: src/audio.c:74 src/video.c:84
+#: src/media/audio.c:74 src/media/video.c:84
 #, c-format
 msgid "Media playback warning: %s (press 'm' to inspect raw file details)"
 msgstr "Avertissement de lecture : %s (m pour inspecter le fichier brut)"
 
-#: src/audio.c:122
+#: src/media/audio.c:122
 msgid "Audio Preview"
 msgstr "Aperçu audio"
 
 #. TRANSLATORS: the labels of these lines are padded to the same width
-#: src/audio.c:268 src/video.c:265
+#: src/media/audio.c:268 src/media/video.c:265
 #, c-format
 msgid "File:         %s\n"
 msgstr "Fichier :     %s\n"
 
-#: src/audio.c:269 src/video.c:266
+#: src/media/audio.c:269 src/media/video.c:266
 #, c-format
 msgid "Path:         %s\n"
 msgstr "Chemin :      %s\n"
 
-#: src/audio.c:270
+#: src/media/audio.c:270
 #, c-format
 msgid "Format:       %s\n"
 msgstr "Format :      %s\n"
 
-#: src/audio.c:271 src/video.c:268
+#: src/media/audio.c:271 src/media/video.c:268
 #, c-format
 msgid "Size:         %1$s (%2$s bytes)\n"
 msgstr "Taille :      %1$s (%2$s octets)\n"
 
-#: src/audio.c:273 src/video.c:270
+#: src/media/audio.c:273 src/media/video.c:270
 #, c-format
 msgid "Permissions:  0%o\n"
 msgstr "Droits :      0%o\n"
 
-#: src/audio.c:275 src/video.c:272
+#: src/media/audio.c:275 src/media/video.c:272
 msgid "Mode:         Text / Raw mode active\n"
 msgstr "Mode :        texte / brut\n"
 
-#: src/audio.c:276
+#: src/media/audio.c:276
 msgid "              Press 'm' to switch to interactive audio player\n"
 msgstr "              m pour passer au lecteur audio interactif\n"
 
-#: src/audio.c:300
+#: src/media/audio.c:300
 #, c-format
 msgid ""
 "Detected Header: %s\n"
@@ -238,21 +238,21 @@ msgstr ""
 "En-tête détecté : %s\n"
 "\n"
 
-#: src/audio.c:303 src/video.c:283
+#: src/media/audio.c:303 src/media/video.c:283
 #, c-format
 msgid "=== File Header Dump (first %zu bytes) ===\n"
 msgstr "=== Début du fichier (%zu premiers octets) ===\n"
 
-#: src/audio.c:324 src/video.c:304
+#: src/media/audio.c:324 src/media/video.c:304
 msgid "[ Cannot open file for reading ]\n"
 msgstr "[ Impossible d’ouvrir le fichier en lecture ]\n"
 
-#: src/audio.c:396
+#: src/media/audio.c:396
 #, c-format
 msgid "Track %s"
 msgstr "Piste %s"
 
-#: src/audio.c:485
+#: src/media/audio.c:485
 msgid "Could not create media stream for file (press 'm' for details)"
 msgstr "Impossible de créer le flux média du fichier (m pour les détails)"
 
@@ -394,7 +394,7 @@ msgstr ""
 "%s"
 
 #: src/explorer/bookmarks.c:864 src/explorer/file_actions.c:365 src/explorer/file_actions.c:398
-#: src/explorer/file_moves.c:131 src/image_preview.c:257 src/preview/pdf.c:377
+#: src/explorer/file_moves.c:131 src/media/image_preview.c:257 src/preview/pdf.c:377
 #: src/session_bookmark.c:79 src/session_bookmark.c:99
 msgid "unknown error"
 msgstr "erreur inconnue"
@@ -2473,26 +2473,26 @@ msgstr "Contenu"
 msgid "Only the first chapters are shown."
 msgstr "Seuls les premiers chapitres sont affichés."
 
-#: src/exif.c:429
+#: src/media/exif.c:429
 msgid "flash"
 msgstr "flash"
 
-#: src/exif.c:440
+#: src/media/exif.c:440
 #, c-format
 msgid "Taken %1$04d-%2$02d-%3$02d %4$02d:%5$02d"
 msgstr "Prise le %1$04d-%2$02d-%3$02d à %4$02d:%5$02d"
 
-#: src/exif.c:442
+#: src/media/exif.c:442
 #, c-format
 msgid "Taken %s"
 msgstr "Prise le %s"
 
-#: src/exif.c:457
+#: src/media/exif.c:457
 #, c-format
 msgid "Edited with %s"
 msgstr "Retouchée avec %s"
 
-#: src/exif.c:461
+#: src/media/exif.c:461
 #, c-format
 msgid "By %s"
 msgstr "Par %s"
@@ -2926,11 +2926,11 @@ msgstr "%s (approximatif)"
 msgid "Showing the first %u messages."
 msgstr "Affichage des %u premiers messages."
 
-#: src/gif_decoder.c:116
+#: src/media/gif_decoder.c:116
 msgid "Not a GIF image"
 msgstr "Pas une image GIF"
 
-#: src/gif_decoder.c:122
+#: src/media/gif_decoder.c:122
 #, c-format
 msgid "Invalid GIF size %1$d x %2$d"
 msgstr "Taille GIF invalide %1$d x %2$d"
@@ -4659,44 +4659,44 @@ msgstr ""
 "Affichage des %3$d premiers Ko de ce gros fichier.\n"
 "\n"
 
-#: src/image_preview.c:149
+#: src/media/image_preview.c:149
 #, c-format
 msgid "[ %1$s: no image loader for %2$s is installed (package %3$s) ]"
 msgstr "[ %1$s : aucun chargeur d’images %2$s n’est installé (paquet %3$s) ]"
 
-#: src/image_preview.c:151 src/image_preview.c:266
+#: src/media/image_preview.c:151 src/media/image_preview.c:266
 #, c-format
 msgid "[ Cannot decode image: %s ]"
 msgstr "[ Impossible de décoder l’image : %s ]"
 
-#: src/image_preview.c:176
+#: src/media/image_preview.c:176
 #, c-format
 msgid "%s RAW (embedded preview)"
 msgstr "%s RAW (aperçu intégré)"
 
-#: src/image_preview.c:256
+#: src/media/image_preview.c:256
 #, c-format
 msgid "[ Error loading image: %1$s (%2$s) ]"
 msgstr "[ Erreur de chargement de l’image : %1$s (%2$s) ]"
 
-#: src/image_preview.c:362
+#: src/media/image_preview.c:362
 msgid "  •  animated"
 msgstr "  •  animée"
 
-#: src/image_preview.c:365
+#: src/media/image_preview.c:365
 #, c-format
 msgid "  [%.0f %%, press 0 to fit]"
 msgstr "  [%.0f %%, 0 pour ajuster]"
 
-#: src/image_preview.c:367
+#: src/media/image_preview.c:367
 msgid "  [fitted, press m for 1:1, + / - to zoom]"
 msgstr "  [ajustée, m pour 1:1, + / - pour zoomer]"
 
-#: src/image_preview.c:369
+#: src/media/image_preview.c:369
 msgid "  [1:1 scale, press m to fit]"
 msgstr "  [échelle 1:1, m pour ajuster]"
 
-#: src/image_preview.c:369
+#: src/media/image_preview.c:369
 msgid "  [1:1 scale]"
 msgstr "  [échelle 1:1]"
 
@@ -5144,7 +5144,7 @@ msgstr "compressible (permutation)"
 msgid "high (cyclic)"
 msgstr "élevé (cyclique)"
 
-#: src/mail_store.c:81 src/video_tab.c:159
+#: src/mail_store.c:81 src/media/video_tab.c:159
 msgid "unknown"
 msgstr "inconnue"
 
@@ -5370,11 +5370,11 @@ msgstr "Formule (source TeX)"
 msgid "TeX (source)"
 msgstr "TeX (source)"
 
-#: src/media_player.c:523
+#: src/media/media_player.c:523
 msgid "Only local files can be played"
 msgstr "Seuls les fichiers locaux peuvent être lus"
 
-#: src/media_tracks.c:23
+#: src/media/media_tracks.c:23
 #, c-format
 msgid "Track %u"
 msgstr "Piste %u"
@@ -8253,62 +8253,62 @@ msgstr "Chemin du fichier"
 msgid "Trackers"
 msgstr "Trackers"
 
-#: src/track_menu.c:94
+#: src/media/track_menu.c:94
 msgid "Audio Track (a)"
 msgstr "Piste audio (a)"
 
-#: src/track_menu.c:94
+#: src/media/track_menu.c:94
 msgid "Audio Track"
 msgstr "Piste audio"
 
-#: src/track_menu.c:95
+#: src/media/track_menu.c:95
 msgid "Subtitles (s)"
 msgstr "Sous-titres (s)"
 
-#: src/track_menu.c:95
+#: src/media/track_menu.c:95
 msgid "Subtitles"
 msgstr "Sous-titres"
 
-#: src/video.c:44
+#: src/media/video.c:44
 msgid "  •  Video / Audio"
 msgstr "  •  vidéo / audio"
 
-#: src/video.c:46
+#: src/media/video.c:46
 msgid "  •  Video only"
 msgstr "  •  vidéo seule"
 
-#: src/video.c:48
+#: src/media/video.c:48
 msgid "  •  Audio only"
 msgstr "  •  audio seul"
 
-#: src/video.c:83
+#: src/media/video.c:83
 msgid "Video playback error"
 msgstr "Erreur de lecture vidéo"
 
-#: src/video.c:117
+#: src/media/video.c:117
 msgid "Video Preview"
 msgstr "Aperçu vidéo"
 
-#: src/video.c:267
+#: src/media/video.c:267
 #, c-format
 msgid "Container:    %s\n"
 msgstr "Conteneur :   %s\n"
 
-#: src/video.c:271
+#: src/media/video.c:271
 #, c-format
 msgid "Modified:     %s\n"
 msgstr "Modifié :     %s\n"
 
-#: src/video.c:273
+#: src/media/video.c:273
 msgid "              Press 'm' to switch to interactive video player\n"
 msgstr "              m pour passer au lecteur vidéo interactif\n"
 
-#: src/video_tab.c:158
+#: src/media/video_tab.c:158
 #, c-format
 msgid "Playback error: %s"
 msgstr "Erreur de lecture : %s"
 
-#: src/video_tab.c:278
+#: src/media/video_tab.c:278
 msgid ""
 "Space: play / pause; Left / Right: 5 s back / forward; Home: start; a: next "
 "audio track; s: next subtitles"

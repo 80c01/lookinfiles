@@ -1,5 +1,5 @@
-/* Unit tests for src/media_tracks.c (track labels, subtitle files). */
-#include "media_tracks.h"
+/* Unit tests for src/media/media_tracks.c (track labels, subtitle files). */
+#include "media/media_tracks.h"
 
 static void check_label(const gchar* language, const gchar* title, guint index, const gchar* expected) {
     gchar* label = media_track_label(language, title, index);

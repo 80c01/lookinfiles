@@ -1,7 +1,7 @@
 /* Audio and subtitle track buttons of the video players (see track_menu.h) */
-#include "track_menu.h"
+#include "media/track_menu.h"
 #include "core/i18n.h"
-#include "media_player.h"
+#include "media/media_player.h"
 
 #define KIND_KEY "lookin-track-kind"
 #define INDEX_KEY "lookin-track-index"

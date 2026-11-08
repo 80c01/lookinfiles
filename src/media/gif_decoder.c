@@ -1,5 +1,5 @@
 /* GIF decoder (see gif_decoder.h). */
-#include "gif_decoder.h"
+#include "media/gif_decoder.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

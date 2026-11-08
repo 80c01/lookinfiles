@@ -10,7 +10,7 @@
 #include "theme/icon_sets.h"
 #include "core/file_types.h"
 #include "theme/image_theme.h"
-#include "image_utils.h"
+#include "media/image_utils.h"
 #include "widgets/minimap.h"
 #include "theme/palette.h"
 #include "terminal.h"
