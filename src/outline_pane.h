@@ -45,6 +45,8 @@ gboolean outline_pane_has_entries(OutlinePane* pane);
 void outline_pane_follow_cursor(OutlinePane* pane);
 
 void outline_pane_set_shown(OutlinePane* pane, gboolean shown);
+/* Move the handle to the shared width (after it changed elsewhere) */
+void outline_pane_place(OutlinePane* pane);
 gboolean outline_pane_shown(OutlinePane* pane);
 /* Focus the list; whether the list has the focus */
 void outline_pane_focus(OutlinePane* pane);

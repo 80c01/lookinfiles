@@ -183,6 +183,22 @@ void editor_tagbar_set_shown(AppData* app, gboolean shown) {
     }
 }
 
+static void place_tabs(GList* tabs) {
+    for (GList* l = tabs; l != NULL; l = l->next) {
+        EditorTab* t = l->data;
+        if (t != NULL && t->tagbar != NULL) outline_pane_place(((Tagbar*)t->tagbar)->pane);
+    }
+}
+
+void editor_tagbar_set_width(AppData* app, gint width) {
+    if (app == NULL || app->editor_tagbar_width == width) return;
+    app->editor_tagbar_width = width;
+    place_tabs(app->editors);
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        if (i != app->current_ws) place_tabs(app->workspaces[i].editors);
+    }
+}
+
 void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
     if (app == NULL || tab == NULL) return;
     if (!app->editor_tagbar && !code_outline_supported(tab)) {

@@ -36,8 +36,10 @@ middle-click it to close it.
 ## Saved layouts: `Alt+L`
 
 A layout is an arrangement of panels: which ones are visible, their sizes,
-whether the terminal is beside or under the viewer, the terminal panes, and
-the splits of the editor panel with their terminal tabs. It keeps no files:
+whether the terminal is beside or under the viewer, the terminal panes, the
+splits of the editor panel with their terminal tabs, and the tagbars (shown
+in the editor tabs, in the preview, and their width; layouts saved before
+this keep the current tagbars). It keeps no files:
 applying it moves the open files into the editor panes that held files (an
 empty one takes a file from the fullest), reuses the running terminals and
 starts the missing shells.
@@ -58,7 +60,10 @@ same tabs in the same places and the same terminals.
 - save it as **Default** to use it for new workspaces;
 - **delete** a layout, or reset the default.
 
-Layouts are saved in `~/.config/lookinfiles/layouts.ini`.
+Layouts are saved in `~/.config/lookinfiles/layouts.ini`. Applying a
+layout keeps its tagbars on or off afterwards, as their toggle keys do; a
+new workspace keeps the current tagbars, since they are shared by all
+workspaces.
 
 ## The session
 

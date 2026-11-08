@@ -24,5 +24,7 @@ gboolean preview_tagbar_key(AppData* app, guint keyval, GdkModifierType state);
 void preview_tagbar_set_outline(AppData* app, GCancellable* owner, GPtrArray* entries);
 /* Turn the tagbar on or off (not saved, focus unchanged) */
 void preview_tagbar_set_shown(AppData* app, gboolean shown);
+/* Move the handle to the shared tagbar width (editor_tagbar_set_width()) */
+void preview_tagbar_place(AppData* app);
 
 #endif /* PREVIEW_TAGBAR_H */

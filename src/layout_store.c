@@ -77,6 +77,11 @@ gchar* saved_layout_summary(const SavedLayout* layout) {
     if (parts->len == 0) {
         g_ptr_array_add(parts, g_strdup("No panels"));
     }
+    if (layout->tagbars && (layout->editor_tagbar || layout->preview_tagbar)) {
+        g_ptr_array_add(parts, g_strdup(!layout->preview_tagbar ? "Tagbar (editor)"
+                                        : !layout->editor_tagbar ? "Tagbar (preview)"
+                                                                 : "Tagbar"));
+    }
     g_ptr_array_add(parts, NULL);
     gchar* text = g_strjoinv(" · ", (gchar**)parts->pdata);
     g_ptr_array_free(parts, TRUE);
@@ -110,6 +115,8 @@ static gboolean read_bool(GKeyFile* kf, const gchar* group, const gchar* key, gb
     return v;
 }
 
+#define TAGBAR_MAX_WIDTH 4000
+
 static const gchar* DEFAULT_GROUP = "Default";
 
 SavedLayout* saved_layout_read(GKeyFile* kf, const gchar* group, const gchar* name) {
@@ -134,6 +141,12 @@ SavedLayout* saved_layout_read(GKeyFile* kf, const gchar* group, const gchar* na
     l->editor_splits = (editor != NULL) ? tab_tree_to_string(editor) : g_strdup("");
     tab_tree_free(editor);
     g_free(splits);
+    l->tagbars = g_key_file_has_key(kf, group, "EditorTagbar", NULL) ||
+                 g_key_file_has_key(kf, group, "PreviewTagbar", NULL);
+    l->editor_tagbar = read_bool(kf, group, "EditorTagbar", FALSE);
+    l->preview_tagbar = read_bool(kf, group, "PreviewTagbar", FALSE);
+    gint width = g_key_file_get_integer(kf, group, "TagbarWidth", NULL); /* 0 if missing */
+    l->tagbar_width = CLAMP(width, 0, TAGBAR_MAX_WIDTH);
     return l;
 }
 
@@ -180,7 +193,8 @@ gboolean layout_store_is_customized(const SavedLayout* l) {
                        ABS(l->right_frac - d->right_frac) > 0.0005 ||
                        ABS(l->editor_frac - d->editor_frac) > 0.0005 ||
                        g_strcmp0(l->terminals, d->terminals) != 0 ||
-                       g_strcmp0(l->editor_splits, d->editor_splits) != 0;
+                       g_strcmp0(l->editor_splits, d->editor_splits) != 0 ||
+                       (l->tagbars && (l->editor_tagbar || l->preview_tagbar));
     saved_layout_free(d);
     return differs;
 }
@@ -218,6 +232,13 @@ void saved_layout_write(GKeyFile* kf, const gchar* group, const SavedLayout* l, 
     g_key_file_set_string(kf, group, "TerminalPanes", l->terminals);
     if (l->editor_splits != NULL && l->editor_splits[0] != '\0') {
         g_key_file_set_string(kf, group, "EditorSplits", l->editor_splits);
+    }
+    if (l->tagbars) {
+        g_key_file_set_boolean(kf, group, "EditorTagbar", l->editor_tagbar);
+        g_key_file_set_boolean(kf, group, "PreviewTagbar", l->preview_tagbar);
+        if (l->tagbar_width > 0) {
+            g_key_file_set_integer(kf, group, "TagbarWidth", l->tagbar_width);
+        }
     }
 }
 

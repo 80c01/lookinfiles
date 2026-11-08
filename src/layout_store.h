@@ -4,7 +4,8 @@
 /* Saved workspace layouts: named panel arrangements the user saves and picks
  * from a list (layouts.c). A layout holds panel visibility, split sizes, the
  * preview/terminal orientation, the dedicated editor panel with its splits
- * and terminal tabs, and the terminal pane tree; not the folder, view or
+ * and terminal tabs, the terminal pane tree, and the tagbars (shown in the
+ * editor tabs, in the preview, and their width); not the folder, view or
  * open files. Applying one never changes
  * the default view of new workspaces, except the default layout below.
  *
@@ -33,6 +34,11 @@ typedef struct {
                                 * text: a notebook lists LAYOUT_EDITOR_FILES ("0")
                                 * when it held files, then "t" per terminal tab,
                                 * e.g. "H:0.500([0],[t,t])"; "" if none */
+    gboolean tagbars;          /* the three tagbar fields below were saved (layouts
+                                * saved before them keep the current tagbars) */
+    gboolean editor_tagbar;    /* code and Markdown editor tabs show the tagbar */
+    gboolean preview_tagbar;   /* the preview shows the tagbar */
+    gint tagbar_width;         /* tagbar width in pixels, 0 = default width */
 } SavedLayout;
 
 SavedLayout* saved_layout_new(const gchar* name);

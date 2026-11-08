@@ -591,6 +591,10 @@ void outline_pane_set_shown(OutlinePane* p, gboolean shown) {
     if (shown) place_handle(p);
 }
 
+void outline_pane_place(OutlinePane* p) {
+    if (p != NULL && !p->detached) place_handle(p);
+}
+
 gboolean outline_pane_shown(OutlinePane* p) {
     return gtk_widget_get_visible(p->panel);
 }

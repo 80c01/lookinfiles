@@ -195,6 +195,54 @@ static void test_editor_splits(void) {
     g_key_file_free(kf);
 }
 
+/* The tagbars are saved with the layout; older layouts keep the current ones */
+static void test_tagbars(void) {
+    GKeyFile* kf = g_key_file_new();
+    SavedLayout* l = saved_layout_new("Tags");
+    saved_layout_write(kf, "Old", l, TRUE);
+    SavedLayout* back = saved_layout_read(kf, "Old", "Tags");
+    g_assert_false(back->tagbars);
+    g_assert_false(g_key_file_has_key(kf, "Old", "EditorTagbar", NULL));
+    saved_layout_free(back);
+
+    l->tagbars = TRUE;
+    g_assert_false(layout_store_is_customized(l)); /* both hidden: as built in */
+    l->editor_tagbar = TRUE;
+    l->tagbar_width = 310;
+    g_assert_true(layout_store_is_customized(l));
+    gchar* s = saved_layout_summary(l);
+    g_assert_cmpstr(s, ==, "Explorer · Preview · Tagbar (editor)");
+    g_free(s);
+    saved_layout_write(kf, "New", l, TRUE);
+    back = saved_layout_read(kf, "New", "Tags");
+    g_assert_true(back->tagbars);
+    g_assert_true(back->editor_tagbar);
+    g_assert_false(back->preview_tagbar);
+    g_assert_cmpint(back->tagbar_width, ==, 310);
+    SavedLayout* copy = saved_layout_copy(back);
+    g_assert_cmpint(copy->tagbar_width, ==, 310);
+    saved_layout_free(copy);
+    saved_layout_free(back);
+
+    l->preview_tagbar = TRUE;
+    s = saved_layout_summary(l);
+    g_assert_cmpstr(s, ==, "Explorer · Preview · Tagbar");
+    g_free(s);
+
+    /* Default width: no key; a bad width falls back to the default */
+    l->tagbar_width = 0;
+    saved_layout_write(kf, "Wide", l, TRUE);
+    g_assert_false(g_key_file_has_key(kf, "Wide", "TagbarWidth", NULL));
+    g_key_file_set_integer(kf, "Wide", "TagbarWidth", -5);
+    back = saved_layout_read(kf, "Wide", "Tags");
+    g_assert_cmpint(back->tagbar_width, ==, 0);
+    g_assert_true(back->preview_tagbar);
+    saved_layout_free(back);
+
+    saved_layout_free(l);
+    g_key_file_free(kf);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/layout_store/term_tree", test_term_tree);
@@ -202,5 +250,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/layout_store/default", test_default);
     g_test_add_func("/layout_store/summary", test_summary);
     g_test_add_func("/layout_store/editor_splits", test_editor_splits);
+    g_test_add_func("/layout_store/tagbars", test_tagbars);
     return g_test_run();
 }

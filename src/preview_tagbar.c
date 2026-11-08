@@ -262,3 +262,8 @@ void preview_tagbar_set_shown(AppData* app, gboolean shown) {
         outline_pane_set_shown(pt->pane, FALSE);
     }
 }
+
+void preview_tagbar_place(AppData* app) {
+    PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
+    if (pt != NULL) outline_pane_place(pt->pane);
+}

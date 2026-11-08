@@ -35,7 +35,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   program (worker thread only): `scan_git_statuses()`, `git_read_head_blob()`,
   `git_read_log()`, `git_show_commit()` (laid out like `git show --stat
   --patch`), `git_list_files()` (like `git ls-files --cached --others`).
-- `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility,
+- `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility, tagbars,
   split fractions, orientation, dedicated editor panel and its splits as
   `tab_tree` text without files (`0` marks a pane of files, `t` a terminal
   tab, e.g. `H:0.500([0],[t,t])`), terminal pane tree as text such as

@@ -4,7 +4,10 @@
 #include "dialog.h"
 #include "editor.h"
 #include "editor_layout.h"
+#include "editor_tagbar.h"
 #include "layout_store.h"
+#include "preview_tagbar.h"
+#include "settings_store.h"
 #include "terminal.h"
 #include "workspace.h"
 
@@ -32,6 +35,10 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name) {
 #endif
     g_free(l->editor_splits);
     l->editor_splits = editor_layout_capture(app);
+    l->tagbars = TRUE;
+    l->editor_tagbar = app->editor_tagbar;
+    l->preview_tagbar = app->preview_tagbar;
+    l->tagbar_width = MAX(app->editor_tagbar_width, 0);
     return l;
 }
 
@@ -68,6 +75,35 @@ static void set_panels(AppData* app, const SavedLayout* l) {
     if (!ws->files_vis && !ws->preview_vis && !ws->term_vis && !ws->editor_dedicated) {
         ws->preview_vis = TRUE; /* never leave the window empty */
     }
+}
+
+/* Show the tagbars of a layout that saved them (not saved in settings.ini) */
+static void set_tagbars(AppData* app, const SavedLayout* l) {
+    if (!l->tagbars) {
+        return;
+    }
+    editor_tagbar_set_width(app, l->tagbar_width);
+    preview_tagbar_place(app);
+    editor_tagbar_set_shown(app, l->editor_tagbar);
+    preview_tagbar_set_shown(app, l->preview_tagbar);
+}
+
+/* An applied layout's tagbars stay on or off, as with their toggle keys */
+static void save_tagbars(AppData* app, const SavedLayout* l) {
+    if (!l->tagbars) {
+        return;
+    }
+    gchar* path = settings_store_path();
+    Settings s;
+    settings_store_load(path, &s);
+    s.tagbar = app->editor_tagbar;
+    s.preview_tagbar = app->preview_tagbar;
+    GError* error = NULL;
+    if (!settings_store_save(path, &s, &error)) {
+        g_printerr("[ Tagbar setting not saved: %s ]\n", error->message);
+        g_clear_error(&error);
+    }
+    g_free(path);
 }
 
 /* Running terminals (term_running in the terminal panel, editor_running in
@@ -125,6 +161,7 @@ static void arrange(AppData* app, const SavedLayout* l, GPtrArray* term_spare, G
     (void)term_spare;
 #endif
     set_panels(app, l);
+    set_tagbars(app, l);
 }
 
 static guint running_terminals(AppData* app) {
@@ -142,6 +179,7 @@ gboolean layouts_apply(AppData* app, const SavedLayout* l) {
     }
     arrange(app, l, NULL, NULL);
     workspace_switch(app, app->current_ws); /* re-applies the current workspace */
+    save_tagbars(app, l);
     return TRUE;
 }
 
@@ -184,6 +222,7 @@ static void restore_start(LayoutsPreview* p) {
     term_snapshot_restore(p->app, p->terms, p->term_spare);
 #endif
     set_panels(p->app, p->panels);
+    set_tagbars(p->app, p->panels);
 }
 
 void layouts_preview_show(LayoutsPreview* p, const SavedLayout* l) {
@@ -206,6 +245,7 @@ gboolean layouts_preview_end(LayoutsPreview* p, const SavedLayout* l) {
     if (apply) {
         arrange(app, l, NULL, NULL);
         workspace_switch(app, app->current_ws); /* re-applies the current workspace */
+        save_tagbars(app, l);
     } else {
         workspace_show_panels(app);
     }
