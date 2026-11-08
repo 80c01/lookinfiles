@@ -1,5 +1,6 @@
 /* TeX font metric (.tfm), virtual font (.vf) and PostScript Type 1 (.pfb) parser. */
 #include "tfm_info.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>
@@ -33,7 +34,7 @@ void tfm_info_free(TfmInfo* info) {
 
 static TfmInfo* parse_tfm(const guchar* data, gsize len, GError** error) {
     if (len < 24) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "file too short for TFM");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("file too short for TFM"));
         return NULL;
     }
 
@@ -51,7 +52,7 @@ static TfmInfo* parse_tfm(const guchar* data, gsize len, GError** error) {
     guint16 np = read_be16(data + 22);
 
     if (lf < 6 + lh || ec + 1 < bc) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "invalid TFM header dimensions");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("invalid TFM header dimensions"));
         return NULL;
     }
 
@@ -112,13 +113,13 @@ static TfmInfo* parse_tfm(const guchar* data, gsize len, GError** error) {
 
 static TfmInfo* parse_vf(const guchar* data, gsize len, GError** error) {
     if (len < 11 || data[0] != 0xF7 || data[1] != 202) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a TeX virtual font");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a TeX virtual font"));
         return NULL;
     }
 
     guint k = data[2];
     if (3 + k + 8 > len) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "truncated VF header");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("truncated VF header"));
         return NULL;
     }
 
@@ -160,7 +161,7 @@ static gchar* extract_ps_key(const gchar* text, const gchar* key) {
 
 static TfmInfo* parse_pfb(const guchar* data, gsize len, GError** error) {
     if (len < 16 || data[0] != 0x80 || data[1] != 0x01) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a PostScript Type 1 binary font");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a PostScript Type 1 binary font"));
         return NULL;
     }
 
@@ -183,7 +184,7 @@ static TfmInfo* parse_pfb(const guchar* data, gsize len, GError** error) {
 
 TfmInfo* tfm_info_parse(const guchar* data, gsize len, GError** error) {
     if (data == NULL || len < 6) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "data too short");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("data too short"));
         return NULL;
     }
 
@@ -203,88 +204,88 @@ gboolean tfm_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError*
     doc->monospace = TRUE;
     doc->wrap = FALSE;
 
-    preview_doc_field(doc, "Format", info->format);
+    preview_doc_field(doc, _("Format"), info->format);
 
     if (info->font_family != NULL) {
-        preview_doc_field(doc, "Family", info->font_family);
+        preview_doc_field(doc, _("Family"), info->font_family);
     }
     if (info->full_name != NULL) {
-        preview_doc_field(doc, "Full name", info->full_name);
+        preview_doc_field(doc, _("Full name"), info->full_name);
     }
     if (info->comment != NULL && info->comment[0] != '\0') {
-        preview_doc_field(doc, "Comment", info->comment);
+        preview_doc_field(doc, _("Comment"), info->comment);
     }
     if (info->coding_scheme != NULL) {
-        preview_doc_field(doc, "Coding scheme", info->coding_scheme);
+        preview_doc_field(doc, _("Coding scheme"), info->coding_scheme);
     }
 
     if (info->design_size > 0.0) {
         gchar* ds_str = g_strdup_printf("%.2f pt", info->design_size);
-        preview_doc_field(doc, "Design size", ds_str);
+        preview_doc_field(doc, _("Design size"), ds_str);
         g_free(ds_str);
     }
 
     if (info->checksum != 0) {
         gchar* cs_str = g_strdup_printf("0x%08X", info->checksum);
-        preview_doc_field(doc, "Checksum", cs_str);
+        preview_doc_field(doc, _("Checksum"), cs_str);
         g_free(cs_str);
     }
 
     if (info->n_chars > 0) {
-        gchar* ch_str = g_strdup_printf("%u glyphs (code %u .. %u)", info->n_chars, info->bc, info->ec);
-        preview_doc_field(doc, "Characters", ch_str);
+        gchar* ch_str = g_strdup_printf(_("%1$u glyphs (code %2$u .. %3$u)"), info->n_chars, info->bc, info->ec);
+        preview_doc_field(doc, _("Characters"), ch_str);
         g_free(ch_str);
     }
 
     if (info->has_params) {
         preview_doc_append_len(doc, "\n", 1);
-        preview_doc_section(doc, "Font Metric Parameters");
+        preview_doc_section(doc, _("Font Metric Parameters"));
 
-        gchar* sp_str = g_strdup_printf("%.4f (stretch %.4f, shrink %.4f)",
+        gchar* sp_str = g_strdup_printf(_("%1$.4f (stretch %2$.4f, shrink %3$.4f)"),
                                         info->space, info->space_stretch, info->space_shrink);
-        preview_doc_field(doc, "Normal space", sp_str);
+        preview_doc_field(doc, _("Normal space"), sp_str);
         g_free(sp_str);
 
         gchar* ex_str = g_strdup_printf("%.4f", info->x_height);
-        preview_doc_field(doc, "x-height (ex)", ex_str);
+        preview_doc_field(doc, _("x-height (ex)"), ex_str);
         g_free(ex_str);
 
         gchar* q_str = g_strdup_printf("%.4f", info->quad);
-        preview_doc_field(doc, "Quad width (em)", q_str);
+        preview_doc_field(doc, _("Quad width (em)"), q_str);
         g_free(q_str);
 
         if (info->slant != 0.0) {
             gchar* sl_str = g_strdup_printf("%.4f", info->slant);
-            preview_doc_field(doc, "Slant ratio", sl_str);
+            preview_doc_field(doc, _("Slant ratio"), sl_str);
             g_free(sl_str);
         }
     }
 
     if (info->nw > 0 || info->nh > 0 || info->nd > 0) {
         preview_doc_append_len(doc, "\n", 1);
-        preview_doc_section(doc, "Metric Tables");
+        preview_doc_section(doc, _("Metric Tables"));
 
         g_autoptr(PreviewTable) table = preview_table_new(3);
-        const gchar* header[] = { "Table", "Words", "Description" };
+        const gchar* header[] = { _("Table"), _("Words"), _("Description") };
         preview_table_set_header(table, header);
         preview_table_set_right_aligned(table, 1);
         preview_table_set_max_cell_width(table, 50);
 
         struct { const gchar* name; guint words; const gchar* desc; } tbls[] = {
-            { "Width (nw)", info->nw, "Character widths" },
-            { "Height (nh)", info->nh, "Character heights" },
-            { "Depth (nd)", info->nd, "Character depths" },
-            { "Italic (ni)", info->ni, "Italic corrections" },
-            { "Lig/Kern (nl)", info->nl, "Ligature and kerning steps" },
-            { "Kern (nk)", info->nk, "Kerning distances" },
-            { "Extensible (ne)", info->ne, "Extensible character recipes" },
-            { "Param (np)", info->np, "Font parameter words" }
+            { "Width (nw)", info->nw, N_("Character widths") },
+            { "Height (nh)", info->nh, N_("Character heights") },
+            { "Depth (nd)", info->nd, N_("Character depths") },
+            { "Italic (ni)", info->ni, N_("Italic corrections") },
+            { "Lig/Kern (nl)", info->nl, N_("Ligature and kerning steps") },
+            { "Kern (nk)", info->nk, N_("Kerning distances") },
+            { "Extensible (ne)", info->ne, N_("Extensible character recipes") },
+            { "Param (np)", info->np, N_("Font parameter words") }
         };
 
         for (guint i = 0; i < G_N_ELEMENTS(tbls); i++) {
             if (tbls[i].words > 0) {
                 gchar* w_str = g_strdup_printf("%u", tbls[i].words);
-                const gchar* row[] = { tbls[i].name, w_str, tbls[i].desc };
+                const gchar* row[] = { tbls[i].name, w_str, _(tbls[i].desc) };
                 preview_table_add_row(table, row, 3);
                 g_free(w_str);
             }

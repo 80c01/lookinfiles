@@ -1,5 +1,6 @@
 /* Python compiled bytecode (.pyc, .pyo) parser and preview builder. */
 #include "pyc_info.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>
@@ -445,11 +446,11 @@ void pyc_info_free(PycInfo* info) {
 
 PycInfo* pyc_info_parse(const guchar* data, gsize len, GError** error) {
     if (data == NULL || len < 16) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "file too small for Python bytecode");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("file too small for Python bytecode"));
         return NULL;
     }
     if (data[2] != '\r' || data[3] != '\n') {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "invalid .pyc magic delimiter");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("invalid .pyc magic delimiter"));
         return NULL;
     }
 
@@ -533,30 +534,30 @@ gboolean pyc_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError*
     doc->monospace = TRUE;
     doc->wrap = FALSE;
 
-    gchar* ver_str = g_strdup_printf("%s (magic %u)", info->python_version, info->magic);
-    preview_doc_field(doc, "Version", ver_str);
+    gchar* ver_str = g_strdup_printf(_("%1$s (magic %2$u)"), info->python_version, info->magic);
+    preview_doc_field(doc, _("Version"), ver_str);
     g_free(ver_str);
 
     if (info->filename != NULL) {
-        preview_doc_field(doc, "Source file", info->filename);
+        preview_doc_field(doc, _("Source file"), info->filename);
     }
 
     if (info->hash_based) {
         gchar* h_str = g_strdup_printf("%s (%s)", info->hash_hex != NULL ? info->hash_hex : "",
                                        info->check_hash ? "checked" : "unchecked");
-        preview_doc_field(doc, "Hash (PEP 552)", h_str);
+        preview_doc_field(doc, _("Hash (PEP 552)"), h_str);
         g_free(h_str);
     } else {
         if (info->source_size > 0) {
             gchar* sz_str = g_format_size(info->source_size);
-            preview_doc_field(doc, "Source size", sz_str);
+            preview_doc_field(doc, _("Source size"), sz_str);
             g_free(sz_str);
         }
         if (info->source_mtime > 0) {
             GDateTime* dt = g_date_time_new_from_unix_local(info->source_mtime);
             if (dt != NULL) {
                 gchar* d_str = g_date_time_format(dt, "%Y-%m-%d %H:%M:%S");
-                preview_doc_field(doc, "Source modified", d_str);
+                preview_doc_field(doc, _("Source modified"), d_str);
                 g_free(d_str);
                 g_date_time_unref(dt);
             }
@@ -564,17 +565,17 @@ gboolean pyc_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError*
     }
 
     if (info->main_name != NULL) {
-        gchar* main_str = g_strdup_printf("%s (starts line %u)", info->main_name, info->main_firstlineno);
-        preview_doc_field(doc, "Entry point", main_str);
+        gchar* main_str = g_strdup_printf(_("%1$s (starts line %2$u)"), info->main_name, info->main_firstlineno);
+        preview_doc_field(doc, _("Entry point"), main_str);
         g_free(main_str);
     }
 
     if (info->functions != NULL && info->functions->len > 0) {
         preview_doc_append_len(doc, "\n", 1);
-        preview_doc_section(doc, "Functions and Classes");
+        preview_doc_section(doc, _("Functions and Classes"));
 
         g_autoptr(PreviewTable) table = preview_table_new(3);
-        const gchar* header[] = { "Name", "Line", "Args" };
+        const gchar* header[] = { _("Name"), _("Line"), _("Args") };
         preview_table_set_header(table, header);
         preview_table_set_right_aligned(table, 1);
         preview_table_set_right_aligned(table, 2);
@@ -594,7 +595,7 @@ gboolean pyc_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError*
 
     if (info->names != NULL && info->names->len > 0) {
         preview_doc_append_len(doc, "\n", 1);
-        preview_doc_section(doc, "Referenced Symbols");
+        preview_doc_section(doc, _("Referenced Symbols"));
         GString* line = g_string_new("  ");
         for (guint i = 0; i < info->names->len; i++) {
             const gchar* sym = (const gchar*)g_ptr_array_index(info->names, i);

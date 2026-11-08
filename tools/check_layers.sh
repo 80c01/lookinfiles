@@ -28,7 +28,7 @@ dir_scan:file_types
 file_save:
 hex_dump:
 ps_convert:
-elf_info:
+elf_info:i18n
 zip_reader:
 gif_decoder:
 ole_reader:
@@ -57,7 +57,7 @@ cert_view:preview_doc
 card_view:preview_doc
 log_view:preview_doc
 exif:
-font_info:
+font_info:i18n
 man_view:preview_doc
 notebook:json_view
 zip_xml:zip_reader
@@ -71,12 +71,12 @@ epub:zip_reader,zip_xml
 rtf:
 sqlite_view:preview_doc
 gettext_view:preview_doc
-class_info:preview_doc
-wasm_info:preview_doc
-torrent_info:preview_doc
-pyc_info:preview_doc
-tfm_info:preview_doc
-pcap_info:preview_doc
+class_info:preview_doc,i18n
+wasm_info:preview_doc,i18n
+torrent_info:preview_doc,i18n
+pyc_info:preview_doc,i18n
+tfm_info:preview_doc,i18n
+pcap_info:preview_doc,i18n
 media_tags:
 media_tracks:i18n
 media_player:media_tracks

@@ -1,5 +1,6 @@
 /* WebAssembly (.wasm) binary parser and preview builder. */
 #include "wasm_info.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>
@@ -153,7 +154,7 @@ static void parse_export_section(ByteReader* r, gsize end_pos, WasmInfo* info) {
         case 3: kind_desc = "global"; break;
         }
         if (info->exports->len < MAX_WASM_EXPORTS) {
-            gchar* entry = (kind == 0) ? g_strdup_printf("%s (func #%u)", name, idx)
+            gchar* entry = (kind == 0) ? g_strdup_printf(_("%1$s (func #%2$u)"), name, idx)
                                        : g_strdup_printf("%s (%s)", name, kind_desc);
             g_ptr_array_add(info->exports, entry);
         }
@@ -183,17 +184,17 @@ static void parse_memory_section(ByteReader* r, WasmInfo* info) {
 
 WasmInfo* wasm_info_parse(const guchar* data, gsize len, GError** error) {
     if (data == NULL || len < 8) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "file too small for WebAssembly binary");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("file too small for WebAssembly binary"));
         return NULL;
     }
     if (memcmp(data, WASM_MAGIC, 4) != 0) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a WebAssembly binary (bad magic)");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a WebAssembly binary (bad magic)"));
         return NULL;
     }
     ByteReader r = { .data = data, .len = len, .pos = 4 };
     guint32 version = 0;
     if (!br_read_u32_le(&r, &version)) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "truncated version header");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("truncated version header"));
         return NULL;
     }
 
@@ -260,54 +261,57 @@ gboolean wasm_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError
     doc->monospace = TRUE;
     doc->wrap = FALSE;
 
-    gchar* v_str = g_strdup_printf("Version %u", info->version);
-    preview_doc_field(doc, "Format", v_str);
+    gchar* v_str = g_strdup_printf(_("Version %u"), info->version);
+    preview_doc_field(doc, _("Format"), v_str);
     g_free(v_str);
 
     guint total_funcs = info->n_imported_funcs + info->n_defined_funcs;
-    gchar* f_str = g_strdup_printf("%u (%u defined, %u imported)", total_funcs,
+    gchar* f_str = g_strdup_printf(_("%1$u (%2$u defined, %3$u imported)"), total_funcs,
                                    info->n_defined_funcs, info->n_imported_funcs);
-    preview_doc_field(doc, "Functions", f_str);
+    preview_doc_field(doc, _("Functions"), f_str);
     g_free(f_str);
 
     if (info->n_types > 0) {
         gchar* t_str = g_strdup_printf("%u", info->n_types);
-        preview_doc_field(doc, "Types", t_str);
+        preview_doc_field(doc, _("Types"), t_str);
         g_free(t_str);
     }
 
     guint total_mems = info->n_mems + info->n_imported_mems;
     if (total_mems > 0) {
         guint64 kb = info->mem_initial_pages * 64;
-        gchar* m_str = info->has_mem_max
-            ? g_strdup_printf("%" G_GUINT64_FORMAT " pages (%" G_GUINT64_FORMAT " KB), max %" G_GUINT64_FORMAT " pages",
-                              info->mem_initial_pages, kb, info->mem_max_pages)
-            : g_strdup_printf("%" G_GUINT64_FORMAT " pages (%" G_GUINT64_FORMAT " KB), unbounded",
-                              info->mem_initial_pages, kb);
-        preview_doc_field(doc, "Memory", m_str);
+        gchar* pages = g_strdup_printf("%" G_GUINT64_FORMAT, info->mem_initial_pages);
+        gchar* kbs = g_strdup_printf("%" G_GUINT64_FORMAT, kb);
+        gchar* max = g_strdup_printf("%" G_GUINT64_FORMAT, info->mem_max_pages);
+        gchar* m_str = info->has_mem_max ? g_strdup_printf(_("%1$s pages (%2$s KB), max %3$s pages"), pages, kbs, max)
+                                         : g_strdup_printf(_("%1$s pages (%2$s KB), unbounded"), pages, kbs);
+        g_free(max);
+        g_free(kbs);
+        g_free(pages);
+        preview_doc_field(doc, _("Memory"), m_str);
         g_free(m_str);
     }
 
     if (info->n_tables + info->n_imported_tables > 0) {
         gchar* tbl_str = g_strdup_printf("%u", info->n_tables + info->n_imported_tables);
-        preview_doc_field(doc, "Tables", tbl_str);
+        preview_doc_field(doc, _("Tables"), tbl_str);
         g_free(tbl_str);
     }
 
     if (info->n_globals + info->n_imported_globals > 0) {
         gchar* g_str = g_strdup_printf("%u", info->n_globals + info->n_imported_globals);
-        preview_doc_field(doc, "Globals", g_str);
+        preview_doc_field(doc, _("Globals"), g_str);
         g_free(g_str);
     }
 
     if (info->n_data_segments > 0) {
-        gchar* d_str = g_strdup_printf("%u segments", info->n_data_segments);
-        preview_doc_field(doc, "Data", d_str);
+        gchar* d_str = g_strdup_printf(ngettext("%u segment", "%u segments", info->n_data_segments), info->n_data_segments);
+        preview_doc_field(doc, _("Data"), d_str);
         g_free(d_str);
     }
 
     if (info->imports != NULL && info->imports->len > 0) {
-        gchar* title = g_strdup_printf("Imports (%u)", info->imports->len);
+        gchar* title = g_strdup_printf(_("Imports (%u)"), info->imports->len);
         preview_doc_section(doc, title);
         g_free(title);
         for (guint i = 0; i < info->imports->len; i++) {
@@ -319,7 +323,7 @@ gboolean wasm_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError
     }
 
     if (info->exports != NULL && info->exports->len > 0) {
-        gchar* title = g_strdup_printf("Exports (%u)", info->exports->len);
+        gchar* title = g_strdup_printf(_("Exports (%u)"), info->exports->len);
         preview_doc_section(doc, title);
         g_free(title);
         for (guint i = 0; i < info->exports->len; i++) {

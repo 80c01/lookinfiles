@@ -44,12 +44,11 @@ The template `po/lookinfiles.pot` is generated, not committed.
 
 | Language | Catalog | Covered |
 |----------|---------|---------|
-| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences, keyboard shortcuts panel (`help.c`), sidebar and its views (bookmarks, notes, remote, games list), editor tab menu and Notepad mode, find bar, Search in Files, References and Search tabs, Git tab (commit list, relative dates), preview core (sidebar row summaries, directory preview, images, PDF, audio, video, archive rows), Appearance page (themes and fonts), code navigation (definition jumps, help cards, symbols picker, tagbar), Quick Open, Canvas notes (toolbars, properties panel, crop dialog), browser tabs, workspace layouts dialog, undo of renames and trash moves, terminal start errors, file type names in the status bar, the frames of the preview format cards and the Load Whole File bar, Help tab and the whole user guide (`docs/l10n/fr/`) |
+| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences, keyboard shortcuts panel (`help.c`), sidebar and its views (bookmarks, notes, remote, games list), editor tab menu and Notepad mode, find bar, Search in Files, References and Search tabs, Git tab (commit list, relative dates), preview core (sidebar row summaries, directory preview, images, PDF, audio, video, archive rows), Appearance page (themes and fonts), code navigation (definition jumps, help cards, symbols picker, tagbar), Quick Open, Canvas notes (toolbars, properties panel, crop dialog), browser tabs, workspace layouts dialog, undo of renames and trash moves, terminal start errors, file type names in the status bar, the frames of the preview format cards, the binary file cards (ELF, Java class, WebAssembly, Python bytecode, TeX fonts, packet captures, torrents, fonts) and the Load Whole File bar, Help tab and the whole user guide (`docs/l10n/fr/`) |
 
 Not marked yet: the details the
-format modules of the preview write (`*_info`, `*_view` and the document
-readers); their frames (`preview_formats`: titles, counts, fields, notes) are
-translated. Left in English on purpose: file contents created for the user
+`*_view` modules and the document readers of the preview write; the frames
+of the cards (`preview_formats`) and the `*_info` modules are translated. Left in English on purpose: file contents created for the user
 (welcome note, note templates, the default "General" notebook), the game
 description sheets and the games themselves, and the Emacs, Org-mode and Vim
 minibuffer and echo messages (they mimic those editors, whose words the users

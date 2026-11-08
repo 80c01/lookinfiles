@@ -1,5 +1,6 @@
 /* Java bytecode (.class) parser and preview builder. */
 #include "class_info.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>
@@ -170,7 +171,7 @@ static gchar* format_method_signature(const gchar* name, const gchar* desc) {
     if (g_strcmp0(name, "<init>") == 0) {
         sig = g_strdup_printf("new %s", args->str);
     } else if (g_strcmp0(name, "<clinit>") == 0) {
-        sig = g_strdup("static block");
+        sig = g_strdup(_("static block"));
     } else {
         sig = g_strdup_printf("%s %s%s", ret_type, name, args->str);
     }
@@ -203,24 +204,24 @@ void class_info_free(ClassInfo* info) {
 
 ClassInfo* class_info_parse(const guchar* data, gsize len, GError** error) {
     if (data == NULL || len < 10) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "file too small for Java class");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("file too small for Java class"));
         return NULL;
     }
     ByteReader r = { .data = data, .len = len, .pos = 0 };
     guint32 magic = 0;
     if (!br_read_u32(&r, &magic) || magic != JAVA_CLASS_MAGIC) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a Java class (bad magic 0x%08X)", magic);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a Java class (bad magic 0x%08X)"), magic);
         return NULL;
     }
     guint16 minor = 0, major = 0;
     if (!br_read_u16(&r, &minor) || !br_read_u16(&r, &major)) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "truncated class header");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("truncated class header"));
         return NULL;
     }
 
     guint16 cp_count = 0;
     if (!br_read_u16(&r, &cp_count) || cp_count == 0) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "invalid constant pool count");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("invalid constant pool count"));
         return NULL;
     }
 
@@ -274,7 +275,7 @@ ClassInfo* class_info_parse(const guchar* data, gsize len, GError** error) {
     if (!ok) {
         for (guint16 i = 1; i < cp_count; i++) g_free(cp[i].str);
         g_free(cp);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "corrupted constant pool");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("corrupted constant pool"));
         return NULL;
     }
 
@@ -285,7 +286,7 @@ ClassInfo* class_info_parse(const guchar* data, gsize len, GError** error) {
         !br_read_u16(&r, &interfaces_count)) {
         for (guint16 i = 1; i < cp_count; i++) g_free(cp[i].str);
         g_free(cp);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "truncated class declaration");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("truncated class declaration"));
         return NULL;
     }
 
@@ -389,14 +390,14 @@ gboolean class_info_append(PreviewDoc* doc, const guchar* data, gsize len, GErro
     doc->wrap = FALSE;
 
     const gchar* vname = java_version_name(info->major);
-    gchar* target = vname != NULL ? g_strdup_printf("%s (class %u.%u)", vname, info->major, info->minor)
-                                  : g_strdup_printf("class %u.%u", info->major, info->minor);
-    preview_doc_field(doc, "Class", info->this_class != NULL ? info->this_class : "(unnamed)");
-    preview_doc_field(doc, "Target", target);
+    gchar* target = vname != NULL ? g_strdup_printf(_("%1$s (class %2$u.%3$u)"), vname, info->major, info->minor)
+                                  : g_strdup_printf(_("class %1$u.%2$u"), info->major, info->minor);
+    preview_doc_field(doc, _("Class"), info->this_class != NULL ? info->this_class : "(unnamed)");
+    preview_doc_field(doc, _("Target"), target);
     g_free(target);
 
     if (info->super_class != NULL) {
-        preview_doc_field(doc, "Extends", info->super_class);
+        preview_doc_field(doc, _("Extends"), info->super_class);
     }
     if (info->interfaces != NULL && info->interfaces->len > 0) {
         GString* ifaces = g_string_new(NULL);
@@ -404,15 +405,15 @@ gboolean class_info_append(PreviewDoc* doc, const guchar* data, gsize len, GErro
             if (i > 0) g_string_append(ifaces, ", ");
             g_string_append(ifaces, (const gchar*)g_ptr_array_index(info->interfaces, i));
         }
-        preview_doc_field(doc, "Implements", ifaces->str);
+        preview_doc_field(doc, _("Implements"), ifaces->str);
         g_string_free(ifaces, TRUE);
     }
     if (info->source_file != NULL) {
-        preview_doc_field(doc, "Source file", info->source_file);
+        preview_doc_field(doc, _("Source file"), info->source_file);
     }
 
     if (info->fields != NULL && info->fields->len > 0) {
-        gchar* title = g_strdup_printf("Fields (%u)", info->fields->len);
+        gchar* title = g_strdup_printf(_("Fields (%u)"), info->fields->len);
         preview_doc_section(doc, title);
         g_free(title);
         for (guint i = 0; i < info->fields->len; i++) {
@@ -424,7 +425,7 @@ gboolean class_info_append(PreviewDoc* doc, const guchar* data, gsize len, GErro
     }
 
     if (info->methods != NULL && info->methods->len > 0) {
-        gchar* title = g_strdup_printf("Methods (%u)", info->methods->len);
+        gchar* title = g_strdup_printf(_("Methods (%u)"), info->methods->len);
         preview_doc_section(doc, title);
         g_free(title);
         for (guint i = 0; i < info->methods->len; i++) {

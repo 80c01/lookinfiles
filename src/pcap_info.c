@@ -1,5 +1,6 @@
 /* PCAP / PCAPNG network packet capture parser and preview builder. */
 #include "pcap_info.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>
@@ -113,10 +114,10 @@ static void decode_packet(const guchar* pkt, guint cap_len, guint32 linktype,
                 *out_dst = g_strdup(dst_ip);
                 *out_proto = "ICMP";
                 guint8 type = l4[0];
-                if (type == 8) *out_info = g_strdup("Echo (ping) request");
-                else if (type == 0) *out_info = g_strdup("Echo (ping) reply");
-                else if (type == 3) *out_info = g_strdup("Destination unreachable");
-                else *out_info = g_strdup_printf("Type %u", type);
+                if (type == 8) *out_info = g_strdup(_("Echo (ping) request"));
+                else if (type == 0) *out_info = g_strdup(_("Echo (ping) reply"));
+                else if (type == 3) *out_info = g_strdup(_("Destination unreachable"));
+                else *out_info = g_strdup_printf(_("Type %u"), type);
             }
         }
         if (*out_src == NULL) {
@@ -141,8 +142,8 @@ static void decode_packet(const guchar* pkt, guint cap_len, guint32 linktype,
         guint16 op = (guint16)((payload[6] << 8) | payload[7]);
         *out_src = g_strdup_printf("%u.%u.%u.%u", payload[14], payload[15], payload[16], payload[17]);
         *out_dst = g_strdup_printf("%u.%u.%u.%u", payload[24], payload[25], payload[26], payload[27]);
-        if (op == 1) *out_info = g_strdup_printf("Who has %s? Tell %s", *out_dst, *out_src);
-        else if (op == 2) *out_info = g_strdup_printf("%s is at sender MAC", *out_src);
+        if (op == 1) *out_info = g_strdup_printf(_("Who has %1$s? Tell %2$s"), *out_dst, *out_src);
+        else if (op == 2) *out_info = g_strdup_printf(_("%s is at sender MAC"), *out_src);
     }
 
     if (*out_src == NULL && cap_len >= 12 && linktype == 1) {
@@ -170,7 +171,7 @@ void pcap_info_free(PcapInfo* info) {
 
 static PcapInfo* parse_classic_pcap(const guchar* data, gsize len, GError** error) {
     if (len < 24) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "file too small for PCAP header");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("file too small for PCAP header"));
         return NULL;
     }
 
@@ -187,12 +188,12 @@ static PcapInfo* parse_classic_pcap(const guchar* data, gsize len, GError** erro
     } else if (raw_magic == 0x4D3CB2A1 || ((guint32)data[0] == 0x4D && (guint32)data[1] == 0x3C)) {
         is_le = TRUE; is_nsec = TRUE;
     } else {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "unrecognized PCAP magic number");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("unrecognized PCAP magic number"));
         return NULL;
     }
 
     PcapInfo* info = g_new0(PcapInfo, 1);
-    info->format = is_nsec ? "libpcap (nanosecond)" : "libpcap (microsecond)";
+    info->format = is_nsec ? _("libpcap (nanosecond)") : _("libpcap (microsecond)");
     info->major_version = r16(data + 4, is_le);
     info->minor_version = r16(data + 6, is_le);
     info->snaplen = r32(data + 16, is_le);
@@ -246,7 +247,7 @@ static PcapInfo* parse_classic_pcap(const guchar* data, gsize len, GError** erro
 
 static PcapInfo* parse_pcapng(const guchar* data, gsize len, GError** error) {
     if (len < 32 || r32(data, FALSE) != PCAPNG_BLOCK_SHB) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a valid pcapng file");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a valid pcapng file"));
         return NULL;
     }
 
@@ -314,7 +315,7 @@ static PcapInfo* parse_pcapng(const guchar* data, gsize len, GError** error) {
 
 PcapInfo* pcap_info_parse(const guchar* data, gsize len, GError** error) {
     if (data == NULL || len < 24) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "file too small for packet capture");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("file too small for packet capture"));
         return NULL;
     }
 
@@ -331,25 +332,24 @@ gboolean pcap_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError
     doc->monospace = TRUE;
     doc->wrap = FALSE;
 
-    preview_doc_field(doc, "Format", info->format);
+    preview_doc_field(doc, _("Format"), info->format);
 
-    gchar* link_str = g_strdup_printf("%s (linktype %u)", info->link_name, info->linktype);
-    preview_doc_field(doc, "Link layer", link_str);
+    gchar* link_str = g_strdup_printf(_("%1$s (linktype %2$u)"), info->link_name, info->linktype);
+    preview_doc_field(doc, _("Link layer"), link_str);
     g_free(link_str);
 
     if (info->snaplen > 0) {
         gchar* snap_sz = g_format_size(info->snaplen);
-        preview_doc_field(doc, "Snap length", snap_sz);
+        preview_doc_field(doc, _("Snap length"), snap_sz);
         g_free(snap_sz);
     }
 
     gchar* cap_sz = g_format_size(info->total_cap_bytes);
     gchar* orig_sz = g_format_size(info->total_orig_bytes);
-    gchar* pkts_str = g_strdup_printf("%u %s (captured %s, wire %s)",
-                                      info->total_packets,
-                                      info->total_packets == 1 ? "packet" : "packets",
-                                      cap_sz, orig_sz);
-    preview_doc_field(doc, "Captured", pkts_str);
+    gchar* pkts_str = g_strdup_printf(ngettext("%1$u packet (captured %2$s, wire %3$s)",
+                                               "%1$u packets (captured %2$s, wire %3$s)", info->total_packets),
+                                      info->total_packets, cap_sz, orig_sz);
+    preview_doc_field(doc, _("Captured"), pkts_str);
     g_free(pkts_str);
     g_free(orig_sz);
     g_free(cap_sz);
@@ -361,8 +361,8 @@ gboolean pcap_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError
             gchar* s1 = g_date_time_format(dt1, "%Y-%m-%d %H:%M:%S");
             gchar* s2 = g_date_time_format(dt2, "%H:%M:%S");
             gint64 dur = info->end_time - info->start_time;
-            gchar* tr_str = g_strdup_printf("%s .. %s (%ld sec)", s1, s2, (long)dur);
-            preview_doc_field(doc, "Time range", tr_str);
+            gchar* tr_str = g_strdup_printf(_("%1$s .. %2$s (%3$ld sec)"), s1, s2, (long)dur);
+            preview_doc_field(doc, _("Time range"), tr_str);
             g_free(tr_str);
             g_free(s2);
             g_free(s1);
@@ -375,7 +375,7 @@ gboolean pcap_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError
         preview_doc_append_len(doc, "\n", 1);
 
         g_autoptr(PreviewTable) table = preview_table_new(7);
-        const gchar* header[] = { "No.", "Time (s)", "Source", "Destination", "Proto", "Len", "Info" };
+        const gchar* header[] = { _("No."), _("Time (s)"), _("Source"), _("Destination"), _("Proto"), _("Len"), _("Info") };
         preview_table_set_header(table, header);
         preview_table_set_right_aligned(table, 0);
         preview_table_set_right_aligned(table, 1);
@@ -406,7 +406,7 @@ gboolean pcap_info_append(PreviewDoc* doc, const guchar* data, gsize len, GError
         preview_doc_add_table(doc, table);
 
         if (info->total_packets > info->packets->len) {
-            gchar* note = g_strdup_printf("\nShowing first %u of %u captured packets.",
+            gchar* note = g_strdup_printf(_("\nShowing first %1$u of %2$u captured packets."),
                                           info->packets->len, info->total_packets);
             preview_doc_note(doc, note);
             g_free(note);

@@ -1,5 +1,6 @@
 /* ELF header reader for the preview of executables and libraries */
 #include "elf_info.h"
+#include "i18n.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -431,17 +432,17 @@ static void set_error(gchar** error, const gchar* msg) {
 ElfInfo* elf_info_read(ElfReadFunc read, gpointer ctx, gchar** error) {
     guchar eh[64];
     if (!read(ctx, 0, eh, 52) || !elf_info_is_elf(eh, 52)) {
-        set_error(error, "Not an ELF file");
+        set_error(error, _("Not an ELF file"));
         return NULL;
     }
     if ((eh[4] != 1 && eh[4] != 2) || (eh[5] != 1 && eh[5] != 2)) {
-        set_error(error, "Unknown ELF class or byte order");
+        set_error(error, _("Unknown ELF class or byte order"));
         return NULL;
     }
     Reader rd = { read, ctx, eh[4] == 2, eh[5] == 2 };
     const Reader* r = &rd;
     if (r->is_64 && !read(ctx, 0, eh, 64)) {
-        set_error(error, "Truncated ELF header");
+        set_error(error, _("Truncated ELF header"));
         return NULL;
     }
 
@@ -527,7 +528,7 @@ static gboolean read_from_file(gpointer ctx, guint64 offset, gpointer buf, gsize
 ElfInfo* elf_info_read_file(const gchar* path, gchar** error) {
     FILE* fp = g_fopen(path, "rb");
     if (fp == NULL) {
-        set_error(error, "Cannot open the file");
+        set_error(error, _("Cannot open the file"));
         return NULL;
     }
     ElfInfo* info = elf_info_read(read_from_file, fp, error);
@@ -587,14 +588,14 @@ gchar* elf_info_machine_name(guint16 machine) {
 
 const gchar* elf_info_type_name(const ElfInfo* info) {
     switch (info->type) {
-    case ET_REL:  return "Relocatable object";
-    case ET_EXEC: return "Executable";
+    case ET_REL:  return _("Relocatable object");
+    case ET_EXEC: return _("Executable");
     case ET_DYN:
         /* A PIE has an interpreter; a library has none (or a soname, like libc) */
         return (info->interpreter != NULL && info->soname == NULL)
-                   ? "Position-independent executable" : "Shared library";
-    case ET_CORE: return "Core dump";
-    default:      return "Unknown type";
+                   ? _("Position-independent executable") : _("Shared library");
+    case ET_CORE: return _("Core dump");
+    default:      return _("Unknown type");
     }
 }
 
@@ -612,41 +613,49 @@ static const gchar* osabi_name(guint8 osabi) {
     }
 }
 
+/* The label padded to ELF_INFO_LABEL_WIDTH characters (translated labels may
+ * hold multibyte characters) */
 static void add_field(GString* out, const gchar* label, const gchar* value) {
-    g_string_append_printf(out, "%-*s %s\n", ELF_INFO_LABEL_WIDTH, label, value);
+    g_string_append(out, label);
+    for (glong n = g_utf8_strlen(label, -1); n < ELF_INFO_LABEL_WIDTH; n++) {
+        g_string_append_c(out, ' ');
+    }
+    g_string_append_printf(out, " %s\n", value);
 }
 
 gchar* elf_info_format(const ElfInfo* info) {
     GString* out = g_string_new(NULL);
     gchar* machine = elf_info_machine_name(info->machine);
-    gchar* arch = g_strdup_printf("%s (%s, %s)", machine, info->is_64 ? "64-bit" : "32-bit",
-                                  info->big_endian ? "big-endian" : "little-endian");
-    add_field(out, "Architecture", arch);
+    /* TRANSLATORS: "x86-64 (64-bit, little-endian)" */
+    gchar* arch = g_strdup_printf(_("%1$s (%2$s, %3$s)"), machine, info->is_64 ? _("64-bit") : _("32-bit"),
+                                  info->big_endian ? _("big-endian") : _("little-endian"));
+    /* TRANSLATORS: the labels of the ELF fields fit in 13 characters */
+    add_field(out, _("Architecture"), arch);
     g_free(arch);
     g_free(machine);
 
     gboolean linkable = (info->type == ET_EXEC || info->type == ET_DYN);
     if (info->type == ET_EXEC || info->type == ET_DYN || info->type == ET_REL ||
         info->type == ET_CORE) {
-        add_field(out, "Type", elf_info_type_name(info));
+        add_field(out, _("Type"), elf_info_type_name(info));
     } else {
-        gchar* t = g_strdup_printf("Unknown type %u", info->type);
-        add_field(out, "Type", t);
+        gchar* t = g_strdup_printf(_("Unknown type %u"), info->type);
+        add_field(out, _("Type"), t);
         g_free(t);
     }
     const gchar* abi = osabi_name(info->osabi);
     gchar* abi_num = abi == NULL ? g_strdup_printf("%u", info->osabi) : NULL;
-    add_field(out, "OS ABI", abi != NULL ? abi : abi_num);
+    add_field(out, _("OS ABI"), abi != NULL ? abi : abi_num);
     g_free(abi_num);
     if (linkable) {
-        add_field(out, "Linking", info->has_dynamic ? "Dynamic" : "Static");
+        add_field(out, _("Linking"), info->has_dynamic ? _("Dynamic") : _("Static"));
     }
     if (info->interpreter != NULL) {
-        add_field(out, "Interpreter", info->interpreter);
+        add_field(out, _("Interpreter"), info->interpreter);
     }
     if (linkable && info->entry != 0) {
         gchar* e = g_strdup_printf("0x%" G_GINT64_MODIFIER "x", info->entry);
-        add_field(out, "Entry point", e);
+        add_field(out, _("Entry point"), e);
         g_free(e);
     }
     if (info->soname != NULL) {
@@ -659,33 +668,33 @@ gchar* elf_info_format(const ElfInfo* info) {
         add_field(out, "RUNPATH", info->runpath);
     }
     if (info->build_id != NULL) {
-        add_field(out, "Build ID", info->build_id);
+        add_field(out, _("Build ID"), info->build_id);
     }
     if (info->type != ET_CORE) {
-        add_field(out, "Symbols", info->has_debug ? "Debug info" :
-                                  info->has_symtab ? "Not stripped" : "Stripped");
+        add_field(out, _("Symbols"), info->has_debug ? _("Debug info") :
+                                     info->has_symtab ? _("Not stripped") : _("Stripped"));
     }
     gchar* n = g_strdup_printf("%u", info->n_sections);
-    add_field(out, "Sections", n);
+    add_field(out, _("Sections"), n);
     g_free(n);
 
     if (linkable) {
         if (info->needed->len > 0) {
-            g_string_append_printf(out, "\nLinked libraries (%u)\n", info->needed->len);
+            g_string_append_printf(out, _("\nLinked libraries (%u)\n"), info->needed->len);
             for (guint i = 0; i < info->needed->len; i++) {
                 g_string_append_printf(out, "  %s\n", (const gchar*)info->needed->pdata[i]);
             }
         } else {
-            g_string_append(out, "\nLinked libraries: none\n");
+            g_string_append(out, _("\nLinked libraries: none\n"));
         }
     }
 
     if (info->n_exported > 0) {
         if (info->exported->len < info->n_exported) {
-            g_string_append_printf(out, "\nExported symbols (%u, first %u shown)\n",
+            g_string_append_printf(out, _("\nExported symbols (%1$u, first %2$u shown)\n"),
                                    info->n_exported, info->exported->len);
         } else {
-            g_string_append_printf(out, "\nExported symbols (%u)\n", info->n_exported);
+            g_string_append_printf(out, _("\nExported symbols (%u)\n"), info->n_exported);
         }
         for (guint i = 0; i < info->exported->len; i++) {
             g_string_append_printf(out, "  %s\n", (const gchar*)info->exported->pdata[i]);

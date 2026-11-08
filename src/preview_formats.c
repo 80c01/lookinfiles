@@ -859,11 +859,18 @@ static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, 
         if (lines[i + 1] == NULL && len == 0) {
             break;
         }
-        if (len > ELF_INFO_LABEL_WIDTH && line[0] != ' ' &&
-            line[ELF_INFO_LABEL_WIDTH - 1] == ' ' && line[ELF_INFO_LABEL_WIDTH] == ' ') {
-            gchar* label = g_strndup(line, ELF_INFO_LABEL_WIDTH);
+        /* The label width counts characters (translated labels) */
+        const gchar* end = NULL;
+        if (len > ELF_INFO_LABEL_WIDTH && line[0] != ' ') {
+            end = g_utf8_validate(line, -1, NULL) && g_utf8_strlen(line, -1) > ELF_INFO_LABEL_WIDTH
+                      ? g_utf8_offset_to_pointer(line, ELF_INFO_LABEL_WIDTH)
+                      : line + ELF_INFO_LABEL_WIDTH;
+            if (end[-1] != ' ' || end[0] != ' ') end = NULL;
+        }
+        if (end != NULL) {
+            gchar* label = g_strndup(line, (gsize)(end - line));
             preview_doc_append(doc, PREVIEW_STYLE_DIM, label);
-            preview_doc_append_len(doc, line + ELF_INFO_LABEL_WIDTH, -1);
+            preview_doc_append_len(doc, end, -1);
             g_free(label);
         } else if (len > 0 && line[0] != ' ') {
             preview_doc_append(doc, PREVIEW_STYLE_SECTION, line);

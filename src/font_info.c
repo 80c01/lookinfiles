@@ -1,5 +1,6 @@
 /* Font file details (see font_info.h). */
 #include "font_info.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -171,7 +172,7 @@ static gchar* get_name(const Table* t, guint id) {
 }
 
 static gboolean not_a_font(GError** error) {
-    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a font file");
+    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a font file"));
     return FALSE;
 }
 
@@ -197,7 +198,7 @@ FontInfo* font_info_parse(const guchar* data, gsize len, GError** error) {
         info->n_fonts = be32(data + 8);
         base = len >= 16 ? be32(data + 12) : len;
         flavor = base + 4 <= len ? be32(data + base) : 0;
-        info->format = g_strdup(flavor == 0x4F54544F ? "OpenType collection" : "TrueType collection");
+        info->format = g_strdup(flavor == 0x4F54544F ? _("OpenType collection") : _("TrueType collection"));
     } else if (flavor == 0x00010000 || memcmp(data, "true", 4) == 0) {
         info->format = g_strdup("TrueType");
     } else if (memcmp(data, "OTTO", 4) == 0) {
@@ -211,7 +212,7 @@ FontInfo* font_info_parse(const guchar* data, gsize len, GError** error) {
     Table name = { 0 };
     if (!find_table(data, len, base, woff, "name", &name)) {
         font_info_free(info);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "font without a name table");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("font without a name table"));
         return NULL;
     }
     info->family = get_name(&name, 16);
@@ -260,7 +261,7 @@ FontInfo* font_info_read_file(const gchar* path, GError** error) {
     g_object_unref(finfo);
     if (size > (goffset)MAX_FONT_FILE) {
         g_object_unref(file);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "font file too large");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("font file too large"));
         return NULL;
     }
     gboolean ok = g_file_load_contents(file, NULL, &data, &len, NULL, error);

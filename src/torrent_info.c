@@ -1,5 +1,6 @@
 /* BitTorrent metainfo (.torrent) bencode parser and preview builder. */
 #include "torrent_info.h"
+#include "i18n.h"
 
 #include <gio/gio.h>
 #include <stdio.h>
@@ -221,14 +222,14 @@ void torrent_info_free(TorrentInfo* info) {
 
 TorrentInfo* torrent_info_parse(const guchar* data, gsize len, GError** error) {
     if (data == NULL || len < 10) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "file too small for torrent");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("file too small for torrent"));
         return NULL;
     }
     BencodeReader r = { .data = data, .len = len, .pos = 0 };
     BencodeValue* root = parse_value(&r, 0);
     if (root == NULL || root->type != BENCODE_DICT) {
         bencode_free(root);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "invalid bencode root dictionary");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("invalid bencode root dictionary"));
         return NULL;
     }
 
@@ -236,7 +237,7 @@ TorrentInfo* torrent_info_parse(const guchar* data, gsize len, GError** error) {
     GHashTable* info_dict = dict_get_dict(d, "info");
     if (info_dict == NULL) {
         bencode_free(root);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "torrent missing 'info' dictionary");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("torrent missing 'info' dictionary"));
         return NULL;
     }
 
@@ -321,23 +322,23 @@ gboolean torrent_info_append(PreviewDoc* doc, const guchar* data, gsize len, GEr
     doc->monospace = TRUE;
     doc->wrap = FALSE;
 
-    preview_doc_field(doc, "Name", info->name);
+    preview_doc_field(doc, _("Name"), info->name);
 
     gchar* total_str = g_format_size(info->total_size);
-    preview_doc_field(doc, "Total size", total_str);
+    preview_doc_field(doc, _("Total size"), total_str);
     g_free(total_str);
 
     if (info->files != NULL) {
         gchar* count_str = g_strdup_printf("%u %s", info->files->len,
                                            info->files->len == 1 ? "file" : "files");
-        preview_doc_field(doc, "Files", count_str);
+        preview_doc_field(doc, _("Files"), count_str);
         g_free(count_str);
     }
 
     if (info->piece_length > 0) {
         gchar* piece_sz = g_format_size(info->piece_length);
-        gchar* piece_str = g_strdup_printf("%s (%u pieces)", piece_sz, info->n_pieces);
-        preview_doc_field(doc, "Piece size", piece_str);
+        gchar* piece_str = g_strdup_printf(ngettext("%1$s (%2$u piece)", "%1$s (%2$u pieces)", info->n_pieces), piece_sz, info->n_pieces);
+        preview_doc_field(doc, _("Piece size"), piece_str);
         g_free(piece_str);
         g_free(piece_sz);
     }
@@ -346,28 +347,28 @@ gboolean torrent_info_append(PreviewDoc* doc, const guchar* data, gsize len, GEr
         GDateTime* dt = g_date_time_new_from_unix_local(info->creation_date);
         if (dt != NULL) {
             gchar* d_str = g_date_time_format(dt, "%Y-%m-%d %H:%M");
-            preview_doc_field(doc, "Created", d_str);
+            preview_doc_field(doc, _("Created"), d_str);
             g_free(d_str);
             g_date_time_unref(dt);
         }
     }
 
     if (info->created_by != NULL) {
-        preview_doc_field(doc, "Created by", info->created_by);
+        preview_doc_field(doc, _("Created by"), info->created_by);
     }
     if (info->comment != NULL) {
-        preview_doc_field(doc, "Comment", info->comment);
+        preview_doc_field(doc, _("Comment"), info->comment);
     }
 
     if (info->trackers != NULL && info->trackers->len > 0) {
-        preview_doc_field(doc, "Primary tracker", (const gchar*)g_ptr_array_index(info->trackers, 0));
+        preview_doc_field(doc, _("Primary tracker"), (const gchar*)g_ptr_array_index(info->trackers, 0));
     }
 
     /* Table of files */
     if (info->files != NULL && info->files->len > 0) {
         preview_doc_append_len(doc, "\n", 1);
         g_autoptr(PreviewTable) table = preview_table_new(2);
-        const gchar* header[] = { "File Path", "Size" };
+        const gchar* header[] = { _("File Path"), _("Size") };
         preview_table_set_header(table, header);
         preview_table_set_right_aligned(table, 1);
         preview_table_set_max_cell_width(table, 80);
@@ -383,7 +384,7 @@ gboolean torrent_info_append(PreviewDoc* doc, const guchar* data, gsize len, GEr
     }
 
     if (info->trackers != NULL && info->trackers->len > 1) {
-        preview_doc_section(doc, "Trackers");
+        preview_doc_section(doc, _("Trackers"));
         for (guint i = 0; i < info->trackers->len; i++) {
             const gchar* tr = g_ptr_array_index(info->trackers, i);
             preview_doc_append(doc, PREVIEW_STYLE_PLAIN, "  • ");

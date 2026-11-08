@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 09:44+0000\n"
+"POT-Creation-Date: 2026-11-08 09:47+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -151,7 +151,8 @@ msgid "_Cancel"
 msgstr "_Annuler"
 
 #: src/bookmark_dialog.c:207 src/file_actions.c:252 src/preview_formats.c:344
-#: src/preview_formats.c:345 src/session_bookmark.c:26
+#: src/preview_formats.c:345 src/pyc_info.c:578 src/session_bookmark.c:26
+#: src/torrent_info.c:325
 msgid "Name"
 msgstr "Nom"
 
@@ -829,6 +830,75 @@ msgstr "Échec de l’export du canvas : %s"
 #: src/canvas_view.c:468
 msgid "Zoom: Ctrl+Wheel, Ctrl+= / Ctrl+-; Click: 100% (Ctrl+0)"
 msgstr "Zoom : Ctrl+molette, Ctrl+= / Ctrl+- ; clic : 100 % (Ctrl+0)"
+
+#: src/class_info.c:174
+msgid "static block"
+msgstr "bloc statique"
+
+#: src/class_info.c:207
+msgid "file too small for Java class"
+msgstr "fichier trop petit pour une classe Java"
+
+#: src/class_info.c:213
+#, c-format
+msgid "not a Java class (bad magic 0x%08X)"
+msgstr "pas une classe Java (nombre magique 0x%08X incorrect)"
+
+#: src/class_info.c:218
+msgid "truncated class header"
+msgstr "en-tête de classe tronqué"
+
+#: src/class_info.c:224
+msgid "invalid constant pool count"
+msgstr "nombre d’entrées du pool de constantes invalide"
+
+#: src/class_info.c:278
+msgid "corrupted constant pool"
+msgstr "pool de constantes corrompu"
+
+#: src/class_info.c:289
+msgid "truncated class declaration"
+msgstr "déclaration de classe tronquée"
+
+#: src/class_info.c:393
+#, c-format
+msgid "%1$s (class %2$u.%3$u)"
+msgstr "%1$s (classe %2$u.%3$u)"
+
+#: src/class_info.c:394
+#, c-format
+msgid "class %1$u.%2$u"
+msgstr "classe %1$u.%2$u"
+
+#: src/class_info.c:395
+msgid "Class"
+msgstr "Classe"
+
+#: src/class_info.c:396
+msgid "Target"
+msgstr "Cible"
+
+#: src/class_info.c:400
+msgid "Extends"
+msgstr "Hérite de"
+
+#: src/class_info.c:408
+msgid "Implements"
+msgstr "Implémente"
+
+#: src/class_info.c:412 src/pyc_info.c:542
+msgid "Source file"
+msgstr "Fichier source"
+
+#: src/class_info.c:416
+#, c-format
+msgid "Fields (%u)"
+msgstr "Champs (%u)"
+
+#: src/class_info.c:428
+#, c-format
+msgid "Methods (%u)"
+msgstr "Méthodes (%u)"
 
 #: src/code_help.c:287
 #, c-format
@@ -1582,6 +1652,165 @@ msgstr "Mode Emacs"
 msgid "Notepad mode"
 msgstr "Mode Notepad"
 
+#: src/elf_info.c:435
+msgid "Not an ELF file"
+msgstr "Pas un fichier ELF"
+
+#: src/elf_info.c:439
+msgid "Unknown ELF class or byte order"
+msgstr "Classe ELF ou ordre des octets inconnu"
+
+#: src/elf_info.c:445
+msgid "Truncated ELF header"
+msgstr "En-tête ELF tronqué"
+
+#: src/elf_info.c:531
+msgid "Cannot open the file"
+msgstr "Impossible d’ouvrir le fichier"
+
+#: src/elf_info.c:591
+msgid "Relocatable object"
+msgstr "Objet relogeable"
+
+#: src/elf_info.c:592
+msgid "Executable"
+msgstr "Exécutable"
+
+#: src/elf_info.c:596
+msgid "Position-independent executable"
+msgstr "Exécutable indépendant de la position"
+
+#: src/elf_info.c:596
+msgid "Shared library"
+msgstr "Bibliothèque partagée"
+
+#: src/elf_info.c:597
+msgid "Core dump"
+msgstr "Image mémoire (core)"
+
+#: src/elf_info.c:598
+msgid "Unknown type"
+msgstr "Type inconnu"
+
+#. TRANSLATORS: "x86-64 (64-bit, little-endian)"
+#: src/elf_info.c:630
+#, c-format
+msgid "%1$s (%2$s, %3$s)"
+msgstr "%1$s (%2$s, %3$s)"
+
+#: src/elf_info.c:630
+msgid "64-bit"
+msgstr "64 bits"
+
+#: src/elf_info.c:630
+msgid "32-bit"
+msgstr "32 bits"
+
+#: src/elf_info.c:631
+msgid "big-endian"
+msgstr "gros-boutiste"
+
+#: src/elf_info.c:631
+msgid "little-endian"
+msgstr "petit-boutiste"
+
+#. TRANSLATORS: the labels of the ELF fields fit in 13 characters
+#: src/elf_info.c:633
+msgid "Architecture"
+msgstr "Architecture"
+
+#: src/elf_info.c:640 src/elf_info.c:643
+msgid "Type"
+msgstr "Type"
+
+#: src/elf_info.c:642
+#, c-format
+msgid "Unknown type %u"
+msgstr "Type inconnu %u"
+
+#: src/elf_info.c:648
+msgid "OS ABI"
+msgstr "ABI de l’OS"
+
+#: src/elf_info.c:651
+msgid "Linking"
+msgstr "Liaison"
+
+#: src/elf_info.c:651
+msgid "Dynamic"
+msgstr "Dynamique"
+
+#: src/elf_info.c:651
+msgid "Static"
+msgstr "Statique"
+
+#: src/elf_info.c:654
+msgid "Interpreter"
+msgstr "Interpréteur"
+
+#: src/elf_info.c:658 src/pyc_info.c:569
+msgid "Entry point"
+msgstr "Entrée"
+
+#: src/elf_info.c:671
+msgid "Build ID"
+msgstr "ID de build"
+
+#: src/elf_info.c:674 src/outline_pane.c:303 src/outline_pane.c:523
+msgid "Symbols"
+msgstr "Symboles"
+
+#: src/elf_info.c:674
+msgid "Debug info"
+msgstr "Infos de débogage"
+
+#: src/elf_info.c:675
+msgid "Not stripped"
+msgstr "Non épuré"
+
+#: src/elf_info.c:675
+msgid "Stripped"
+msgstr "Épuré"
+
+#: src/elf_info.c:678
+msgid "Sections"
+msgstr "Sections"
+
+#: src/elf_info.c:683
+#, c-format
+msgid ""
+"\n"
+"Linked libraries (%u)\n"
+msgstr ""
+"\n"
+"Bibliothèques liées (%u)\n"
+
+#: src/elf_info.c:688
+msgid ""
+"\n"
+"Linked libraries: none\n"
+msgstr ""
+"\n"
+"Bibliothèques liées : aucune\n"
+
+#: src/elf_info.c:694
+#, c-format
+msgid ""
+"\n"
+"Exported symbols (%1$u, first %2$u shown)\n"
+msgstr ""
+"\n"
+"Symboles exportés (%1$u, les %2$u premiers affichés)\n"
+
+#: src/elf_info.c:697
+#, c-format
+msgid ""
+"\n"
+"Exported symbols (%u)\n"
+msgstr ""
+"\n"
+"Symboles exportés (%u)\n"
+
 #: src/file_actions.c:234
 msgid "New Folder"
 msgstr "Nouveau dossier"
@@ -1857,6 +2086,26 @@ msgstr "Nouveau fichier…"
 msgid "Undo"
 msgstr "Annuler"
 
+#: src/font_info.c:175
+msgid "not a font file"
+msgstr "pas un fichier de police"
+
+#: src/font_info.c:201
+msgid "OpenType collection"
+msgstr "Collection OpenType"
+
+#: src/font_info.c:201
+msgid "TrueType collection"
+msgstr "Collection TrueType"
+
+#: src/font_info.c:215
+msgid "font without a name table"
+msgstr "police sans table de noms"
+
+#: src/font_info.c:264
+msgid "font file too large"
+msgstr "fichier de police trop grand"
+
 #: src/games.c:143
 msgid "★ Game Mode Unlocked! Select a game to play ★"
 msgstr "★ Mode Jeu déverrouillé ! Choisissez un jeu ★"
@@ -1959,7 +2208,7 @@ msgstr "Message"
 msgid "Author"
 msgstr "Auteur"
 
-#: src/git_tab.c:436 src/preview_formats.c:927
+#: src/git_tab.c:436 src/preview_formats.c:934
 msgid "Date"
 msgstr "Date"
 
@@ -4325,10 +4574,6 @@ msgstr "Tout déplier (c)"
 msgid "Headings"
 msgstr "Titres"
 
-#: src/outline_pane.c:303 src/outline_pane.c:523
-msgid "Symbols"
-msgstr "Symboles"
-
 #: src/outline_pane.c:306
 msgid "No headings in this file"
 msgstr "Aucun titre dans ce fichier"
@@ -4348,6 +4593,131 @@ msgstr "Grouper par type (s)"
 #: src/outline_pane.c:540
 msgid "Hide Tagbar (q)"
 msgstr "Masquer la barre de symboles (q)"
+
+#: src/pcap_info.c:117
+msgid "Echo (ping) request"
+msgstr "Demande d’écho (ping)"
+
+#: src/pcap_info.c:118
+msgid "Echo (ping) reply"
+msgstr "Réponse d’écho (ping)"
+
+#: src/pcap_info.c:119
+msgid "Destination unreachable"
+msgstr "Destination inaccessible"
+
+#: src/pcap_info.c:120
+#, c-format
+msgid "Type %u"
+msgstr "Type %u"
+
+#: src/pcap_info.c:145
+#, c-format
+msgid "Who has %1$s? Tell %2$s"
+msgstr "Qui a %1$s ? Répondre à %2$s"
+
+#: src/pcap_info.c:146
+#, c-format
+msgid "%s is at sender MAC"
+msgstr "%s est à l’adresse MAC de l’émetteur"
+
+#: src/pcap_info.c:174
+msgid "file too small for PCAP header"
+msgstr "fichier trop petit pour un en-tête PCAP"
+
+#: src/pcap_info.c:191
+msgid "unrecognized PCAP magic number"
+msgstr "nombre magique PCAP non reconnu"
+
+#: src/pcap_info.c:196
+msgid "libpcap (nanosecond)"
+msgstr "libpcap (nanoseconde)"
+
+#: src/pcap_info.c:196
+msgid "libpcap (microsecond)"
+msgstr "libpcap (microseconde)"
+
+#: src/pcap_info.c:250
+msgid "not a valid pcapng file"
+msgstr "pas un fichier pcapng valide"
+
+#: src/pcap_info.c:318
+msgid "file too small for packet capture"
+msgstr "fichier trop petit pour une capture réseau"
+
+#: src/pcap_info.c:335 src/tfm_info.c:207 src/wasm_info.c:265
+msgid "Format"
+msgstr "Format"
+
+#: src/pcap_info.c:337
+#, c-format
+msgid "%1$s (linktype %2$u)"
+msgstr "%1$s (type de lien %2$u)"
+
+#: src/pcap_info.c:338
+msgid "Link layer"
+msgstr "Couche liaison"
+
+#: src/pcap_info.c:343
+msgid "Snap length"
+msgstr "Longueur de capture"
+
+#: src/pcap_info.c:349
+#, c-format
+msgid "%1$u packet (captured %2$s, wire %3$s)"
+msgid_plural "%1$u packets (captured %2$s, wire %3$s)"
+msgstr[0] "%1$u paquet (capturé %2$s, sur le réseau %3$s)"
+msgstr[1] "%1$u paquets (capturés %2$s, sur le réseau %3$s)"
+
+#: src/pcap_info.c:352
+msgid "Captured"
+msgstr "Capturé"
+
+#: src/pcap_info.c:364
+#, c-format
+msgid "%1$s .. %2$s (%3$ld sec)"
+msgstr "%1$s .. %2$s (%3$ld s)"
+
+#: src/pcap_info.c:365
+msgid "Time range"
+msgstr "Période"
+
+#: src/pcap_info.c:378
+msgid "No."
+msgstr "N°"
+
+#: src/pcap_info.c:378
+msgid "Time (s)"
+msgstr "Temps (s)"
+
+#: src/pcap_info.c:378 src/preview_summary.c:93
+msgid "Source"
+msgstr "Origine"
+
+#: src/pcap_info.c:378
+msgid "Destination"
+msgstr "Destination"
+
+#: src/pcap_info.c:378
+msgid "Proto"
+msgstr "Proto"
+
+#: src/pcap_info.c:378
+msgid "Len"
+msgstr "Long."
+
+#: src/pcap_info.c:378
+msgid "Info"
+msgstr "Info"
+
+#: src/pcap_info.c:409
+#, c-format
+msgid ""
+"\n"
+"Showing first %1$u of %2$u captured packets."
+msgstr ""
+"\n"
+"Affichage des %1$u premiers des %2$u paquets capturés."
 
 #: src/pdf.c:278
 #, c-format
@@ -4703,7 +5073,7 @@ msgid "Unpacked"
 msgstr "Décompressé"
 
 #: src/preview_formats.c:344 src/preview_formats.c:345
-#: src/preview_formats.c:927
+#: src/preview_formats.c:934 src/torrent_info.c:371
 msgid "Size"
 msgstr "Taille"
 
@@ -4796,11 +5166,11 @@ msgstr "Police %1$s · %2$s · %3$s"
 msgid "%1$s font · %2$s"
 msgstr "Police %1$s · %2$s"
 
-#: src/preview_formats.c:596
+#: src/preview_formats.c:596 src/tfm_info.c:213
 msgid "Full name"
 msgstr "Nom complet"
 
-#: src/preview_formats.c:597
+#: src/preview_formats.c:597 src/pyc_info.c:538
 msgid "Version"
 msgstr "Version"
 
@@ -4887,47 +5257,47 @@ msgstr "pas une page de manuel"
 msgid "not a valid ELF file"
 msgstr "pas un fichier ELF valide"
 
-#: src/preview_formats.c:896
+#: src/preview_formats.c:903
 msgid "(no subject)"
 msgstr "(sans objet)"
 
-#: src/preview_formats.c:896
+#: src/preview_formats.c:903
 msgid "yes"
 msgstr "oui"
 
 #. TRANSLATORS: %3$s is "+" when the mailbox was not read to the end
-#: src/preview_formats.c:912
+#: src/preview_formats.c:919
 #, c-format
 msgid "Message %1$u of %2$u%3$s · %4$s · PgUp / PgDn"
 msgstr "Message %1$u sur %2$u%3$s · %4$s · PgUp / PgDn"
 
-#: src/preview_formats.c:921
+#: src/preview_formats.c:928
 #, c-format
 msgid "Mailbox · %1$u message · %2$s"
 msgid_plural "Mailbox · %1$u messages · %2$s"
 msgstr[0] "Boîte aux lettres · %1$u message · %2$s"
 msgstr[1] "Boîte aux lettres · %1$u messages · %2$s"
 
-#: src/preview_formats.c:922
+#: src/preview_formats.c:929
 #, c-format
 msgid "Mailbox · %1$s · the first %2$u and last %3$u messages shown"
 msgstr ""
 "Boîte aux lettres · %1$s · les %2$u premiers et %3$u derniers messages "
 "affichés"
 
-#: src/preview_formats.c:927
+#: src/preview_formats.c:934
 msgid "From"
 msgstr "De"
 
-#: src/preview_formats.c:927
+#: src/preview_formats.c:934
 msgid "Subject"
 msgstr "Objet"
 
-#: src/preview_formats.c:927
+#: src/preview_formats.c:934
 msgid "Attachments"
 msgstr "Pièces jointes"
 
-#: src/preview_formats.c:942
+#: src/preview_formats.c:949
 msgid ""
 "\n"
 "PgDn opens the messages one by one, PgUp comes back."
@@ -4935,72 +5305,72 @@ msgstr ""
 "\n"
 "PgDn ouvre les messages un par un, PgUp revient."
 
-#: src/preview_formats.c:953
+#: src/preview_formats.c:960
 msgid "no file"
 msgstr "aucun fichier"
 
-#: src/preview_formats.c:976
+#: src/preview_formats.c:983
 #, c-format
 msgid "Thunderbird index of %s"
 msgstr "Index Thunderbird de %s"
 
-#: src/preview_formats.c:989
+#: src/preview_formats.c:996
 msgid "Mail message"
 msgstr "Message électronique"
 
-#: src/preview_formats.c:1026
+#: src/preview_formats.c:1033
 msgid "file too large"
 msgstr "fichier trop grand"
 
-#: src/preview_formats.c:1046
+#: src/preview_formats.c:1053
 msgid "Java class file"
 msgstr "Fichier de classe Java"
 
-#: src/preview_formats.c:1049
+#: src/preview_formats.c:1056
 msgid "WebAssembly binary"
 msgstr "Binaire WebAssembly"
 
-#: src/preview_formats.c:1052
+#: src/preview_formats.c:1059
 msgid "BitTorrent metainfo"
 msgstr "Métadonnées BitTorrent"
 
-#: src/preview_formats.c:1055
+#: src/preview_formats.c:1062
 msgid "Python bytecode"
 msgstr "Bytecode Python"
 
-#: src/preview_formats.c:1058
+#: src/preview_formats.c:1065
 msgid "TeX font metric"
 msgstr "Métriques de police TeX"
 
-#: src/preview_formats.c:1061
+#: src/preview_formats.c:1068
 msgid "Packet capture"
 msgstr "Capture réseau"
 
-#: src/preview_formats.c:1108
+#: src/preview_formats.c:1115
 msgid "no preview for this format yet"
 msgstr "pas encore d’aperçu pour ce format"
 
-#: src/preview_formats.c:1177
+#: src/preview_formats.c:1184
 msgid "[ Binary file ]"
 msgstr "[ Fichier binaire ]"
 
 #. TRANSLATORS: %s is a file kind, e.g. "Archive"
-#: src/preview_formats.c:1180
+#: src/preview_formats.c:1187
 #, c-format
 msgid "[ %s file ]"
 msgstr "[ Fichier : %s ]"
 
-#: src/preview_formats.c:1184
+#: src/preview_formats.c:1191
 #, c-format
 msgid "Cannot show the file: %s.\n"
 msgstr "Impossible d’afficher le fichier : %s.\n"
 
-#: src/preview_formats.c:1185
+#: src/preview_formats.c:1192
 #, c-format
 msgid "Cannot show the content: %s.\n"
 msgstr "Impossible d’afficher le contenu : %s.\n"
 
-#: src/preview_formats.c:1190
+#: src/preview_formats.c:1197
 #, c-format
 msgid "Showing the first %s.\n"
 msgstr "Affichage des premiers %s.\n"
@@ -5124,10 +5494,6 @@ msgid "Mount Point"
 msgstr "Point de montage"
 
 #: src/preview_summary.c:93
-msgid "Source"
-msgstr "Origine"
-
-#: src/preview_summary.c:93
 msgid "Auto-discovered from ~/.ssh/config"
 msgstr "Trouvée dans ~/.ssh/config"
 
@@ -5168,7 +5534,7 @@ msgstr "Images"
 msgid "Shapes"
 msgstr "Formes"
 
-#: src/preview_summary.c:179
+#: src/preview_summary.c:179 src/wasm_info.c:297
 msgid "Tables"
 msgstr "Tableaux"
 
@@ -5417,6 +5783,52 @@ msgstr ""
 #, c-format
 msgid "In the files of %s"
 msgstr "Dans les fichiers de %s"
+
+#: src/pyc_info.c:449
+msgid "file too small for Python bytecode"
+msgstr "fichier trop petit pour du bytecode Python"
+
+#: src/pyc_info.c:453
+msgid "invalid .pyc magic delimiter"
+msgstr "délimiteur magique .pyc invalide"
+
+#: src/pyc_info.c:537
+#, c-format
+msgid "%1$s (magic %2$u)"
+msgstr "%1$s (nombre magique %2$u)"
+
+#: src/pyc_info.c:548
+msgid "Hash (PEP 552)"
+msgstr "Empreinte (PEP 552)"
+
+#: src/pyc_info.c:553
+msgid "Source size"
+msgstr "Taille de la source"
+
+#: src/pyc_info.c:560
+msgid "Source modified"
+msgstr "Source modifiée"
+
+#: src/pyc_info.c:568
+#, c-format
+msgid "%1$s (starts line %2$u)"
+msgstr "%1$s (commence ligne %2$u)"
+
+#: src/pyc_info.c:575
+msgid "Functions and Classes"
+msgstr "Fonctions et classes"
+
+#: src/pyc_info.c:578
+msgid "Line"
+msgstr "Ligne"
+
+#: src/pyc_info.c:578
+msgid "Args"
+msgstr "Args"
+
+#: src/pyc_info.c:598
+msgid "Referenced Symbols"
+msgstr "Symboles référencés"
 
 #: src/quick_open.c:65
 msgid "Listing the project files…"
@@ -6032,6 +6444,132 @@ msgstr "mot entier"
 msgid "regex"
 msgstr "regex"
 
+#: src/tfm_info.c:37
+msgid "file too short for TFM"
+msgstr "fichier trop court pour du TFM"
+
+#: src/tfm_info.c:55
+msgid "invalid TFM header dimensions"
+msgstr "dimensions d’en-tête TFM invalides"
+
+#: src/tfm_info.c:116
+msgid "not a TeX virtual font"
+msgstr "pas une police virtuelle TeX"
+
+#: src/tfm_info.c:122
+msgid "truncated VF header"
+msgstr "en-tête VF tronqué"
+
+#: src/tfm_info.c:164
+msgid "not a PostScript Type 1 binary font"
+msgstr "pas une police binaire PostScript Type 1"
+
+#: src/tfm_info.c:187
+msgid "data too short"
+msgstr "données trop courtes"
+
+#: src/tfm_info.c:210
+msgid "Family"
+msgstr "Famille"
+
+#: src/tfm_info.c:216 src/torrent_info.c:360
+msgid "Comment"
+msgstr "Commentaire"
+
+#: src/tfm_info.c:219
+msgid "Coding scheme"
+msgstr "Codage"
+
+#: src/tfm_info.c:224
+msgid "Design size"
+msgstr "Taille de conception"
+
+#: src/tfm_info.c:230
+msgid "Checksum"
+msgstr "Somme de contrôle"
+
+#: src/tfm_info.c:235
+#, c-format
+msgid "%1$u glyphs (code %2$u .. %3$u)"
+msgstr "%1$u glyphes (codes %2$u .. %3$u)"
+
+#: src/tfm_info.c:236
+msgid "Characters"
+msgstr "Caractères"
+
+#: src/tfm_info.c:242
+msgid "Font Metric Parameters"
+msgstr "Paramètres métriques de la police"
+
+#: src/tfm_info.c:244
+#, c-format
+msgid "%1$.4f (stretch %2$.4f, shrink %3$.4f)"
+msgstr "%1$.4f (étirement %2$.4f, contraction %3$.4f)"
+
+#: src/tfm_info.c:246
+msgid "Normal space"
+msgstr "Espace normale"
+
+#: src/tfm_info.c:250
+msgid "x-height (ex)"
+msgstr "Hauteur d’x (ex)"
+
+#: src/tfm_info.c:254
+msgid "Quad width (em)"
+msgstr "Largeur du cadratin (em)"
+
+#: src/tfm_info.c:259
+msgid "Slant ratio"
+msgstr "Inclinaison"
+
+#: src/tfm_info.c:266
+msgid "Metric Tables"
+msgstr "Tables métriques"
+
+#: src/tfm_info.c:269
+msgid "Table"
+msgstr "Table"
+
+#: src/tfm_info.c:269
+msgid "Words"
+msgstr "Mots"
+
+#: src/tfm_info.c:269
+msgid "Description"
+msgstr "Description"
+
+#: src/tfm_info.c:275
+msgid "Character widths"
+msgstr "Largeurs des caractères"
+
+#: src/tfm_info.c:276
+msgid "Character heights"
+msgstr "Hauteurs des caractères"
+
+#: src/tfm_info.c:277
+msgid "Character depths"
+msgstr "Profondeurs des caractères"
+
+#: src/tfm_info.c:278
+msgid "Italic corrections"
+msgstr "Corrections d’italique"
+
+#: src/tfm_info.c:279
+msgid "Ligature and kerning steps"
+msgstr "Étapes de ligature et de crénage"
+
+#: src/tfm_info.c:280
+msgid "Kerning distances"
+msgstr "Distances de crénage"
+
+#: src/tfm_info.c:281
+msgid "Extensible character recipes"
+msgstr "Recettes des caractères extensibles"
+
+#: src/tfm_info.c:282
+msgid "Font parameter words"
+msgstr "Mots de paramètres de la police"
+
 #: src/themes.c:237
 msgid "Save Theme As"
 msgstr "Enregistrer le thème sous"
@@ -6270,6 +6808,57 @@ msgstr "DISTANT"
 msgid "GAMES"
 msgstr "JEUX"
 
+#: src/torrent_info.c:225
+msgid "file too small for torrent"
+msgstr "fichier trop petit pour un torrent"
+
+#: src/torrent_info.c:232
+msgid "invalid bencode root dictionary"
+msgstr "dictionnaire racine bencode invalide"
+
+#: src/torrent_info.c:240
+msgid "torrent missing 'info' dictionary"
+msgstr "dictionnaire 'info' absent du torrent"
+
+#: src/torrent_info.c:328
+msgid "Total size"
+msgstr "Taille totale"
+
+#: src/torrent_info.c:334
+msgid "Files"
+msgstr "Fichiers"
+
+#: src/torrent_info.c:340
+#, c-format
+msgid "%1$s (%2$u piece)"
+msgid_plural "%1$s (%2$u pieces)"
+msgstr[0] "%1$s (%2$u morceau)"
+msgstr[1] "%1$s (%2$u morceaux)"
+
+#: src/torrent_info.c:341
+msgid "Piece size"
+msgstr "Taille des morceaux"
+
+#: src/torrent_info.c:350
+msgid "Created"
+msgstr "Créé"
+
+#: src/torrent_info.c:357
+msgid "Created by"
+msgstr "Créé par"
+
+#: src/torrent_info.c:364
+msgid "Primary tracker"
+msgstr "Tracker principal"
+
+#: src/torrent_info.c:371
+msgid "File Path"
+msgstr "Chemin du fichier"
+
+#: src/torrent_info.c:387
+msgid "Trackers"
+msgstr "Trackers"
+
 #: src/video.c:44
 msgid "  •  Video / Audio"
 msgstr "  •  vidéo / audio"
@@ -6383,6 +6972,80 @@ msgstr "Impossible d’ouvrir un pseudo-terminal : %s"
 #, c-format
 msgid "Cannot start %1$s: %2$s"
 msgstr "Impossible de lancer %1$s : %2$s"
+
+#: src/wasm_info.c:157
+#, c-format
+msgid "%1$s (func #%2$u)"
+msgstr "%1$s (fonction n°%2$u)"
+
+#: src/wasm_info.c:187
+msgid "file too small for WebAssembly binary"
+msgstr "fichier trop petit pour un binaire WebAssembly"
+
+#: src/wasm_info.c:191
+msgid "not a WebAssembly binary (bad magic)"
+msgstr "pas un binaire WebAssembly (nombre magique incorrect)"
+
+#: src/wasm_info.c:197
+msgid "truncated version header"
+msgstr "en-tête de version tronqué"
+
+#: src/wasm_info.c:264
+#, c-format
+msgid "Version %u"
+msgstr "Version %u"
+
+#: src/wasm_info.c:269
+#, c-format
+msgid "%1$u (%2$u defined, %3$u imported)"
+msgstr "%1$u (%2$u définies, %3$u importées)"
+
+#: src/wasm_info.c:271
+msgid "Functions"
+msgstr "Fonctions"
+
+#: src/wasm_info.c:276
+msgid "Types"
+msgstr "Types"
+
+#: src/wasm_info.c:286
+#, c-format
+msgid "%1$s pages (%2$s KB), max %3$s pages"
+msgstr "%1$s pages (%2$s Ko), max %3$s pages"
+
+#: src/wasm_info.c:287
+#, c-format
+msgid "%1$s pages (%2$s KB), unbounded"
+msgstr "%1$s pages (%2$s Ko), sans limite"
+
+#: src/wasm_info.c:291
+msgid "Memory"
+msgstr "Mémoire"
+
+#: src/wasm_info.c:303
+msgid "Globals"
+msgstr "Globales"
+
+#: src/wasm_info.c:308
+#, c-format
+msgid "%u segment"
+msgid_plural "%u segments"
+msgstr[0] "%u segment"
+msgstr[1] "%u segments"
+
+#: src/wasm_info.c:309
+msgid "Data"
+msgstr "Données"
+
+#: src/wasm_info.c:314
+#, c-format
+msgid "Imports (%u)"
+msgstr "Importations (%u)"
+
+#: src/wasm_info.c:326
+#, c-format
+msgid "Exports (%u)"
+msgstr "Exportations (%u)"
 
 #: src/workspace_menu.c:81
 msgid "Save as Bookmark…"
