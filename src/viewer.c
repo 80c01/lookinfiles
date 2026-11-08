@@ -593,7 +593,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
         gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
     }
 
-    app->viewer_match = -1;
+    search_forget_viewer_match(app);
     g_object_set_data(G_OBJECT(app->buffer), "minimap_paged", NULL);
 
     if (td->error_msg != NULL) {

@@ -1,4 +1,5 @@
 #include "dir_preview.h"
+#include "search.h"
 #include "i18n.h"
 #include "fonts.h"
 #include "palette.h"
@@ -412,14 +413,14 @@ static void render_job(AppData* app, const DirPreviewJob* job) {
     GtkTextBuffer* buffer = app->buffer;
     apply_viewer_language(app, NULL, NULL);
     if (job->mail != NULL) {
-        app->viewer_match = -1;
+        search_forget_viewer_match(app);
         preview_doc_show(GTK_TEXT_VIEW(app->text_view), job->mail, job->full, job->name, -1);
         return;
     }
     set_view_monospace(app->text_view, FALSE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
     set_view_text_padding(app->text_view);
-    app->viewer_match = -1;
+    search_forget_viewer_match(app);
     ensure_tags(buffer);
     render_readme(app, job);
 

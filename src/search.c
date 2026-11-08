@@ -12,6 +12,49 @@
 
 #define SEARCH_MAX_COUNT 1000 /* matches counted for the Emacs [n/total] */
 
+/* Search bar of the explorer or the preview, drawn like the search of an
+ * editor tab in the global mode: Notepad find bar, Emacs I-search
+ * minibuffer, Vim "/" command line */
+typedef struct {
+    GtkWidget* bar;
+    GtkWidget* prompt;  /* "Find:", "I-search:", "/" */
+    GtkWidget* entry;
+    GtkWidget* echo;    /* match count, wrap or failure message */
+    GtkWidget* buttons; /* Notepad: Find Next, Find Prev, close */
+} AppSearchBar;
+
+/* Both search bars and the open or last search, private to this file */
+struct Search {
+    AppSearchBar explorer_bar; /* at the bottom of the explorer */
+    AppSearchBar viewer_bar;   /* at the bottom of the preview */
+    gchar* term;               /* text of the open or last search, NULL if none */
+    gboolean in_viewer;        /* '/' opened from the viewer, not the list */
+    gboolean backward;         /* bar opened backward (Emacs C-r) */
+    gint origin_row;           /* explorer row position when the bar opened (C-g goes back) */
+    gdouble origin_scroll;     /* viewer scroll when the bar opened */
+    gint viewer_match;         /* last viewer match (char offset), -1 = none */
+    gint viewer_match_len;     /* its length in characters */
+};
+
+void search_init(AppData* app) {
+    app->search = g_new0(struct Search, 1);
+    app->search->viewer_match = -1;
+}
+
+void search_free(AppData* app) {
+    if (app->search == NULL) {
+        return;
+    }
+    g_free(app->search->term);
+    g_clear_pointer(&app->search, g_free);
+}
+
+void search_forget_viewer_match(AppData* app) {
+    if (app->search != NULL) {
+        app->search->viewer_match = -1;
+    }
+}
+
 typedef enum {
     SEARCH_FOUND,
     SEARCH_WRAPPED, /* found after going around the end */
@@ -19,7 +62,7 @@ typedef enum {
 } SearchResult;
 
 static AppSearchBar* active_bar(AppData* app) {
-    return app->search_in_viewer ? &app->viewer_search : &app->explorer_search;
+    return app->search->in_viewer ? &app->search->viewer_bar : &app->search->explorer_bar;
 }
 
 /* Vertical scroll of the preview */
@@ -107,7 +150,7 @@ static void set_echo(AppSearchBar* sb, const gchar* text, const gchar* css_class
 static void set_emacs_prompt(AppData* app, AppSearchBar* sb, gboolean failing, gboolean wrapped) {
     gchar* prompt = g_strdup_printf("%s%sI-search%s: ", failing ? "Failing " : "",
                                     wrapped ? (failing ? "wrapped " : "Wrapped ") : "",
-                                    app->search_backward ? " backward" : "");
+                                    app->search->backward ? " backward" : "");
     gtk_label_set_text(GTK_LABEL(sb->prompt), prompt);
     g_free(prompt);
 }
@@ -157,7 +200,7 @@ static void style_bar(AppData* app, AppSearchBar* sb) {
         gtk_widget_add_css_class(sb->bar, "vim-commandline");
         gtk_widget_add_css_class(sb->prompt, "vim-commandline-prompt");
         gtk_widget_add_css_class(sb->entry, "vim-commandline-entry");
-        gtk_label_set_text(GTK_LABEL(sb->prompt), app->search_backward ? "?" : "/");
+        gtk_label_set_text(GTK_LABEL(sb->prompt), app->search->backward ? "?" : "/");
         break;
     default:
         gtk_widget_add_css_class(sb->bar, "notepad-bar");
@@ -172,7 +215,7 @@ static void report(AppData* app, SearchResult result, gint index, gint total) {
         return;
     }
     AppSearchBar* sb = active_bar(app);
-    const gchar* term = app->search_term != NULL ? app->search_term : "";
+    const gchar* term = app->search->term != NULL ? app->search->term : "";
     gboolean empty = term[0] == '\0';
     gchar* msg = NULL;
     switch (app_nav_style(app)) {
@@ -192,7 +235,7 @@ static void report(AppData* app, SearchResult result, gint index, gint total) {
             msg = g_strdup_printf("E486: Pattern not found: %s", term);
             set_echo(sb, msg, "vim-message-error");
         } else if (!empty && result == SEARCH_WRAPPED) {
-            set_echo(sb, app->search_backward ? "search hit TOP, continuing at BOTTOM"
+            set_echo(sb, app->search->backward ? "search hit TOP, continuing at BOTTOM"
                                               : "search hit BOTTOM, continuing at TOP",
                      "vim-message-error");
         } else {
@@ -214,11 +257,11 @@ static void report(AppData* app, SearchResult result, gint index, gint total) {
 /* ------------------------------------------------------------------------- */
 
 static gboolean row_matches(AppData* app, ExplorerRow* row) {
-    if (row == NULL || app->search_term == NULL || app->search_term[0] == '\0') {
+    if (row == NULL || app->search->term == NULL || app->search->term[0] == '\0') {
         return FALSE;
     }
     gchar* hay = g_utf8_casefold(row->name, -1);
-    gchar* needle = g_utf8_casefold(app->search_term, -1);
+    gchar* needle = g_utf8_casefold(app->search->term, -1);
     gboolean res = (strstr(hay, needle) != NULL);
     g_free(hay);
     g_free(needle);
@@ -227,7 +270,7 @@ static gboolean row_matches(AppData* app, ExplorerRow* row) {
 
 /* Matching visible rows, and the 1-based index of the selected one */
 static void report_rows(AppData* app, SearchResult result) {
-    if (app->search_in_viewer || !bar_open(app)) {
+    if (app->search->in_viewer || !bar_open(app)) {
         return;
     }
     gint total = 0, index = 0;
@@ -265,7 +308,7 @@ static SearchResult explorer_search(AppData* app, gint direction) {
 
 /* Select the next (direction > 0) or previous visible row whose name matches */
 void do_search(AppData* app, gint direction) {
-    if (app->search_term == NULL || app->search_term[0] == '\0') {
+    if (app->search->term == NULL || app->search->term[0] == '\0') {
         return;
     }
     report_rows(app, explorer_search(app, direction));
@@ -297,7 +340,6 @@ static gint count_matches(const gunichar* hcv, gint hlen, const gunichar* ncv, g
 #define VIEWER_CURRENT_TAG "viewer-search-current"
 #define VIEWER_MAX_TAGGED 20000
 
-static gint viewer_match_len = 0;
 
 static GtkTextTag* viewer_tag(GtkTextBuffer* buf, const gchar* name, const gchar* bg) {
     GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buf);
@@ -339,7 +381,7 @@ static void viewer_tag_matches(AppData* app, const gunichar* hcv, gint hlen, con
 }
 
 void do_viewer_search(AppData* app, gint direction) {
-    if (app->search_term == NULL || app->search_term[0] == '\0') {
+    if (app->search->term == NULL || app->search->term[0] == '\0') {
         return;
     }
     GtkTextIter start, end;
@@ -347,14 +389,14 @@ void do_viewer_search(AppData* app, gint direction) {
     gchar* text = gtk_text_buffer_get_text(app->buffer, &start, &end, FALSE);
     if (text == NULL || text[0] == '\0') {
         g_free(text);
-        if (app->search_in_viewer) report(app, SEARCH_FAILED, 0, 0);
+        if (app->search->in_viewer) report(app, SEARCH_FAILED, 0, 0);
         return;
     }
 
     gint hlen = 0, nlen = 0;
     gunichar* hcv = fold_chars(text, &hlen);
-    gunichar* ncv = fold_chars(app->search_term, &nlen);
-    gint anchor = (app->viewer_match >= 0 && app->viewer_match < hlen) ? app->viewer_match : -1;
+    gunichar* ncv = fold_chars(app->search->term, &nlen);
+    gint anchor = (app->search->viewer_match >= 0 && app->search->viewer_match < hlen) ? app->search->viewer_match : -1;
 
     gint match = -1;
     gboolean wrapped = FALSE;
@@ -381,7 +423,7 @@ void do_viewer_search(AppData* app, gint direction) {
     }
 
     gint index = 0, total = 0;
-    gboolean tagged = app->search_in_viewer && bar_open(app);
+    gboolean tagged = app->search->in_viewer && bar_open(app);
     viewer_clear_tags(app);
     if (tagged) viewer_tag_matches(app, hcv, hlen, ncv, nlen, match);
     if (match >= 0) {
@@ -389,11 +431,11 @@ void do_viewer_search(AppData* app, gint direction) {
         gtk_text_buffer_get_iter_at_offset(app->buffer, &ms, match);
         gtk_text_buffer_get_iter_at_offset(app->buffer, &me, match + nlen);
         gtk_text_buffer_select_range(app->buffer, &ms, tagged ? &ms : &me);
-        viewer_match_len = nlen;
+        app->search->viewer_match_len = nlen;
         gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(app->text_view), &ms, 0.0, TRUE, 0.0, 0.5);
-        app->viewer_match = match;
+        app->search->viewer_match = match;
     }
-    if (app->search_in_viewer && bar_open(app)) {
+    if (app->search->in_viewer && bar_open(app)) {
         if (app_nav_style(app) == NAV_STYLE_EMACS) {
             total = count_matches(hcv, hlen, ncv, nlen, match, &index);
         }
@@ -410,17 +452,17 @@ void do_viewer_search(AppData* app, gint direction) {
 
 void show_search(AppData* app, gboolean from_viewer, gboolean backward) {
     /* One bar at a time: the other panel's one closes */
-    AppSearchBar* other = from_viewer ? &app->explorer_search : &app->viewer_search;
+    AppSearchBar* other = from_viewer ? &app->search->explorer_bar : &app->search->viewer_bar;
     if (other->bar != NULL) {
         gtk_widget_set_visible(other->bar, FALSE);
     }
-    app->search_in_viewer = from_viewer;
-    app->search_backward = backward;
+    app->search->in_viewer = from_viewer;
+    app->search->backward = backward;
     /* Where C-g (Emacs) goes back to */
     ExplorerRow* selected = tree_nav_selected(app);
-    app->search_origin_row = selected != NULL ? (gint)explorer_tree_position(app->tree, selected) : -1;
+    app->search->origin_row = selected != NULL ? (gint)explorer_tree_position(app->tree, selected) : -1;
     GtkAdjustment* vadj = viewer_vadj(app);
-    app->search_origin_scroll = vadj != NULL ? gtk_adjustment_get_value(vadj) : 0.0;
+    app->search->origin_scroll = vadj != NULL ? gtk_adjustment_get_value(vadj) : 0.0;
     AppSearchBar* sb = active_bar(app);
     style_bar(app, sb);
     gtk_widget_set_visible(sb->bar, TRUE);
@@ -432,25 +474,25 @@ void show_search(AppData* app, gboolean from_viewer, gboolean backward) {
 
 void hide_search(AppData* app) {
     gtk_widget_set_visible(active_bar(app)->bar, FALSE);
-    if (app->search_in_viewer && app->buffer != NULL) {
+    if (app->search->in_viewer && app->buffer != NULL) {
         viewer_clear_tags(app);
         /* Select the match the bar left (cancel_search resets it) */
         GtkTextIter s, e;
         gtk_text_buffer_get_end_iter(app->buffer, &e);
-        if (app->viewer_match >= 0 && app->viewer_match + viewer_match_len <= gtk_text_iter_get_offset(&e)) {
-            gtk_text_buffer_get_iter_at_offset(app->buffer, &s, app->viewer_match);
-            gtk_text_buffer_get_iter_at_offset(app->buffer, &e, app->viewer_match + viewer_match_len);
+        if (app->search->viewer_match >= 0 && app->search->viewer_match + app->search->viewer_match_len <= gtk_text_iter_get_offset(&e)) {
+            gtk_text_buffer_get_iter_at_offset(app->buffer, &s, app->search->viewer_match);
+            gtk_text_buffer_get_iter_at_offset(app->buffer, &e, app->search->viewer_match + app->search->viewer_match_len);
             gtk_text_buffer_select_range(app->buffer, &s, &e);
         }
     }
     /* Return to the panel that opened the bar */
-    gtk_widget_grab_focus(app->search_in_viewer ? app->text_view
+    gtk_widget_grab_focus(app->search->in_viewer ? app->text_view
                                                 : GTK_WIDGET(app->tree_view));
 }
 
 /* Next / previous match from the bar or the panel that opened it */
 void search_again(AppData* app, gint direction) {
-    if (app->search_in_viewer) {
+    if (app->search->in_viewer) {
         do_viewer_search(app, direction);
     } else {
         do_search(app, direction);
@@ -464,27 +506,27 @@ void search_mode_changed(AppData* app) {
 }
 
 void search_clear_explorer(AppData* app) {
-    g_free(app->search_term);
-    app->search_term = NULL;
-    if (app->explorer_search.entry != NULL) {
-        gtk_editable_set_text(GTK_EDITABLE(app->explorer_search.entry), "");
+    g_free(app->search->term);
+    app->search->term = NULL;
+    if (app->search->explorer_bar.entry != NULL) {
+        gtk_editable_set_text(GTK_EDITABLE(app->search->explorer_bar.entry), "");
     }
 }
 
 /* Close the bar and go back where the search started */
 static void cancel_search(AppData* app) {
-    if (app->search_in_viewer) {
+    if (app->search->in_viewer) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(app->buffer, &it, gtk_text_buffer_get_insert(app->buffer));
         gtk_text_buffer_select_range(app->buffer, &it, &it);
         GtkAdjustment* vadj = viewer_vadj(app);
         if (vadj != NULL) {
-            gtk_adjustment_set_value(vadj, app->search_origin_scroll);
+            gtk_adjustment_set_value(vadj, app->search->origin_scroll);
         }
-        app->viewer_match = -1;
-    } else if (app->search_origin_row >= 0 &&
-               (guint)app->search_origin_row < explorer_tree_n_visible(app->tree)) {
-        select_row(app, explorer_tree_visible_row(app->tree, (guint)app->search_origin_row));
+        app->search->viewer_match = -1;
+    } else if (app->search->origin_row >= 0 &&
+               (guint)app->search->origin_row < explorer_tree_n_visible(app->tree)) {
+        select_row(app, explorer_tree_visible_row(app->tree, (guint)app->search->origin_row));
     }
     hide_search(app);
 }
@@ -494,12 +536,12 @@ static void on_search_changed(GtkEditable* entry, gpointer data) {
     if (!bar_open(app) || active_bar(app)->entry != GTK_WIDGET(entry)) {
         return; /* text set by the program (cleared on directory change) */
     }
-    g_free(app->search_term);
-    app->search_term = g_strdup(gtk_editable_get_text(entry));
-    gint direction = app->search_backward ? -1 : +1;
-    if (app->search_term[0] == '\0') {
+    g_free(app->search->term);
+    app->search->term = g_strdup(gtk_editable_get_text(entry));
+    gint direction = app->search->backward ? -1 : +1;
+    if (app->search->term[0] == '\0') {
         report(app, SEARCH_FOUND, 0, 0);
-    } else if (app->search_in_viewer) {
+    } else if (app->search->in_viewer) {
         do_viewer_search(app, direction);
     } else if (row_matches(app, tree_nav_selected(app))) {
         /* The selected row stays while it still matches the longer text */
@@ -568,7 +610,8 @@ static GtkWidget* bar_button_new(const gchar* text, const gchar* tooltip) {
     return btn;
 }
 
-GtkWidget* search_bar_new(AppData* app, AppSearchBar* sb) {
+GtkWidget* search_bar_new(AppData* app, gboolean in_viewer) {
+    AppSearchBar* sb = in_viewer ? &app->search->viewer_bar : &app->search->explorer_bar;
     editor_modes_load_css();
 
     sb->bar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);

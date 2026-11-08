@@ -137,17 +137,6 @@ typedef struct {
 #endif
 } VirtualLayout;
 
-/* Search bar of the explorer or the preview (search.c), drawn like the search
- * of an editor tab in the global mode: Notepad find bar, Emacs I-search
- * minibuffer, Vim "/" command line */
-typedef struct {
-    GtkWidget* bar;
-    GtkWidget* prompt;  /* "Find:", "I-search:", "/" */
-    GtkWidget* entry;
-    GtkWidget* echo;    /* match count, wrap or failure message */
-    GtkWidget* buttons; /* Notepad: Find Next, Find Prev, close */
-} AppSearchBar;
-
 /* Shared application state */
 typedef struct {
     GtkTextBuffer* buffer;
@@ -157,8 +146,7 @@ typedef struct {
     GtkWidget* tree_view;   /* the explorer GtkListView (explorer_tree_get_widget(tree)) */
     GtkWidget* text_view; /* right pane viewer (Alt+Left/Right cycling) */
     gulong selection_changed_id; /* preview handler on tree "selection-changed" (main.c), 0 = not connected */
-    AppSearchBar explorer_search; /* search bar at the bottom of the explorer (search.c) */
-    AppSearchBar viewer_search;   /* search bar at the bottom of the preview */
+    struct Search* search;  /* search bars and the open or last search (search.c), NULL before search_init() */
     GtkWidget* path_label;
     GtkWidget* breadcrumb_box;
     GtkWidget* history_back_btn;  /* top bar arrows: folder history (topbar.c) */
@@ -172,7 +160,6 @@ typedef struct {
     GtkWidget* hidden_btn;
     GtkWidget* help_btn;
     GtkWidget* left_vbox;
-    gchar* search_term;
     gboolean show_hidden; /* hidden files (dot-prefixed) */
     gboolean show_bookmarks; /* bookmarks view active in explorer panel */
     gint sidebar_view;       /* SIDEBAR_VIEW_FILES / BOOKMARKS / NOTES */
@@ -186,11 +173,6 @@ typedef struct {
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
     gint nav_prefix;      /* NavPrefix (nav_keys.h): explorer / viewer prefix key waiting (gg, zz, C-x o) */
     gint nav_recenter_step; /* next Emacs C-l position: 0 center, 1 top, 2 bottom */
-    gboolean search_in_viewer; /* '/' opened from viewer, not list */
-    gboolean search_backward;  /* search bar opened backward (Emacs C-r) */
-    gint search_origin_row;    /* explorer row position when the bar opened (C-g goes back) */
-    gdouble search_origin_scroll; /* viewer scroll when the bar opened */
-    gint viewer_match;    /* last viewer match (char offset), -1 = none */
     gboolean render_raw;   /* FALSE = rendered preview (default), TRUE = raw text */
     gdouble preview_zoom;  /* image and PDF zoom, relative to the fitted size (1.0) */
     const gchar* viewed_encoding; /* text encoding of the previewed file (static string), NULL if not text */

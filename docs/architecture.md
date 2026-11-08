@@ -635,7 +635,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`VirtualLayout.browser_pages`): taken out of the notebook on a switch
   (`browser_workspace_hidden()` / `_shown()`). Not saved in the session.
 - `search` — the search bars of the explorer and of the preview, one at the
-  bottom of each panel (`AppSearchBar`, `search_bar_new()`), opened and
+  bottom of each panel (`search_bar_new()`; bars and state in the private `struct Search`), opened and
   driven by the keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s`
   `C-r` `C-g`) and drawn like an editor tab's search in that mode (Notepad
   find bar, Emacs I-search minibuffer, Vim `/` command line: the mode bar

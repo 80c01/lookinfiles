@@ -559,6 +559,7 @@ int main(int argc, char** argv) {
     app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     g_signal_connect(window, "notify::is-active", G_CALLBACK(on_window_active_changed), app);
+    search_init(app);
     bookmarks_init(app);
     bookmarks_attach_context_menu(app);
     notes_init(app);
@@ -658,7 +659,7 @@ int main(int argc, char** argv) {
     gtk_widget_add_controller(text_view, GTK_EVENT_CONTROLLER(viewer_click_ctrl));
 
     /* Search bars at the bottom of the explorer and of the preview */
-    gtk_box_append(GTK_BOX(viewer_box), search_bar_new(app, &app->viewer_search));
+    gtk_box_append(GTK_BOX(viewer_box), search_bar_new(app, TRUE));
     gtk_box_append(GTK_BOX(viewer_box), create_preview_bar(app));
 
     GtkWidget* left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -667,7 +668,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_vexpand(left_vbox, TRUE);
     gtk_box_append(GTK_BOX(left_vbox), create_sidebar_header(app));
     gtk_box_append(GTK_BOX(left_vbox), left_scroll);
-    gtk_box_append(GTK_BOX(left_vbox), search_bar_new(app, &app->explorer_search));
+    gtk_box_append(GTK_BOX(left_vbox), search_bar_new(app, FALSE));
     gtk_box_append(GTK_BOX(left_vbox), create_explorer_bar(app));
 
     GtkWidget* main_paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
@@ -792,6 +793,7 @@ int main(int argc, char** argv) {
         g_hash_table_destroy(app->expanded_paths);
         app->expanded_paths = NULL;
     }
+    search_free(app);
     bookmarks_free(app);
     notes_free(app);
     remote_free(app);

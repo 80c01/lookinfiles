@@ -1,4 +1,5 @@
 #include "video.h"
+#include "search.h"
 #include "i18n.h"
 #include "text_style.h"
 #include "file_types.h"
@@ -335,7 +336,7 @@ static void render_video_raw(AppData* app, const gchar* name, const gchar* full)
     }
 
     gtk_text_buffer_set_text(app->buffer, out->str, (gint)out->len);
-    app->viewer_match = -1;
+    search_forget_viewer_match(app);
 
     g_string_free(out, TRUE);
     g_free(ext_upper);

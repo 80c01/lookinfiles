@@ -1,6 +1,7 @@
 /* Image preview: fitted / 1:1 / zoomed, EXIF orientation and photo details
  * (see image_preview.h). */
 #include "image_preview.h"
+#include "search.h"
 #include "i18n.h"
 #include "fonts.h"
 #include "text_tags.h"
@@ -340,7 +341,7 @@ static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
     }
 
     gtk_text_buffer_set_text(app->buffer, "", -1);
-    app->viewer_match = -1;
+    search_forget_viewer_match(app);
 
     if (td->error_msg != NULL) {
         gtk_text_buffer_set_text(app->buffer, td->error_msg, -1);

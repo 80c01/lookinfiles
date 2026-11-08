@@ -1,4 +1,5 @@
 #include "pdf.h"
+#include "search.h"
 #include "i18n.h"
 #include "app_events.h"
 #include "fonts.h"
@@ -504,7 +505,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     }
 
     gtk_text_buffer_set_text(app->buffer, "", -1);
-    app->viewer_match = -1;
+    search_forget_viewer_match(app);
     outline_reset(app, td);
 
     if (td->error_msg != NULL) {

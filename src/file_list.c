@@ -886,7 +886,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     set_view_text_padding(app->text_view);
     set_view_monospace(app->text_view, FALSE);
     gtk_text_buffer_set_text(app->buffer, "", -1);
-    app->viewer_match = -1;
+    search_forget_viewer_match(app);
 
     /* Stop monitoring previous viewed file */
     g_free(app->viewed_path);

@@ -3,9 +3,14 @@
 
 #include "app_types.h"
 
-/* Build a search bar (explorer or preview) into sb; returns its widget, to
- * put at the bottom of the panel. Its look follows the global mode. */
-GtkWidget* search_bar_new(AppData* app, AppSearchBar* sb);
+/* Search state: created before the bars, freed at exit */
+void search_init(AppData* app);
+void search_free(AppData* app);
+/* Build the search bar of the explorer or of the preview; returns its widget,
+ * to put at the bottom of the panel. Its look follows the global mode. */
+GtkWidget* search_bar_new(AppData* app, gboolean in_viewer);
+/* The preview shows something else: the next search starts from the top */
+void search_forget_viewer_match(AppData* app);
 /* Open the search bar of the explorer or of the viewer; backward (Emacs C-r)
  * searches upward as you type */
 void show_search(AppData* app, gboolean from_viewer, gboolean backward);
