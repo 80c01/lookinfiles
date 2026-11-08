@@ -220,12 +220,39 @@ static void on_selected_item_changed(GtkSingleSelection* selection, GParamSpec* 
     g_signal_emit(tree, signals[SIGNAL_SELECTION_CHANGED], 0);
 }
 
+typedef struct {
+    ExplorerTree* tree;
+    ExplorerRow* row;
+} PendingActivate;
+
+static void pending_activate_free(gpointer data) {
+    PendingActivate* p = data;
+    g_object_unref(p->tree);
+    g_object_unref(p->row);
+    g_free(p);
+}
+
+static gboolean emit_pending_activate(gpointer data) {
+    PendingActivate* p = data;
+    if (p->tree->view != NULL) {
+        g_signal_emit(p->tree, signals[SIGNAL_ROW_ACTIVATED], 0, p->row);
+    }
+    return G_SOURCE_REMOVE;
+}
+
+/* GtkListView emits "activate" from the row's click gesture, then the row
+ * grabs the focus: emit once the click is done, so a handler that focuses
+ * another widget (the editor) keeps it */
 static void on_activate(GtkListView* view, guint position, gpointer data) {
     (void)view;
     ExplorerTree* tree = EXPLORER_TREE(data);
     ExplorerRow* row = explorer_tree_visible_row(tree, position);
     if (row != NULL) {
-        g_signal_emit(tree, signals[SIGNAL_ROW_ACTIVATED], 0, row);
+        PendingActivate* p = g_new(PendingActivate, 1);
+        p->tree = g_object_ref(tree);
+        p->row = g_object_ref(row);
+        g_idle_add_full(G_PRIORITY_DEFAULT_IDLE, emit_pending_activate, p,
+                        pending_activate_free);
     }
 }
 
