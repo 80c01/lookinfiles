@@ -89,6 +89,8 @@ Notes:
   `tagbar=true` in settings.ini; read again 600 ms after the last edit,
   only while shown; follows the cursor (last entry starting at or before its
   line); the rows the user collapsed stay collapsed across refreshes.
+  A language server that has not answered within 2.5 s (starting,
+  indexing, hung) is not waited for: the built-in scanner fills it.
   The widget is `outline_pane`, shared with the preview tagbar
   (`preview_tagbar`, docs/previews.md).
 

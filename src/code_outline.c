@@ -6,6 +6,10 @@
 #include "file_types.h"
 #include <string.h>
 
+/* A server that has not answered by then (starting, indexing, hung) is not
+ * waited for: the built-in scanner answers instead */
+#define SERVER_WAIT_MS 2500
+
 typedef struct {
     AppData* app;
     EditorTab* tab;
@@ -13,13 +17,18 @@ typedef struct {
     CodeOutlineFunc func;
     gpointer data;
     GDestroyNotify destroy;
+    gint refs;           /* the server answer, the wait timeout, the scan */
+    guint wait_source;   /* SERVER_WAIT_MS timeout, 0 once over */
+    gboolean scanning;   /* the built-in scanner was started */
+    gboolean answered;   /* func was called: later answers are dropped */
     /* Worker input */
     gchar* text;
     CodeLang lang;
     gboolean markdown;
 } Request;
 
-static void request_free(Request* r) {
+static void request_unref(Request* r) {
+    if (--r->refs > 0) return;
     if (r->destroy != NULL) r->destroy(r->data);
     g_clear_object(&r->cancellable);
     g_free(r->text);
@@ -34,14 +43,26 @@ gboolean code_outline_supported(EditorTab* tab) {
     return tab != NULL && tab->buffer != NULL && (is_markdown(tab) || code_nav_is_code(tab));
 }
 
-/* The request can still answer: not cancelled, its tab open */
+/* Is tab open, in the current workspace or another one */
+static gboolean tab_open(AppData* app, EditorTab* tab) {
+    if (g_list_find(app->editors, tab) != NULL) return TRUE;
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        if (i != app->current_ws && g_list_find(app->workspaces[i].editors, tab) != NULL) return TRUE;
+    }
+    return FALSE;
+}
+
+/* The request can still answer: not answered yet nor cancelled, its tab open */
 static gboolean request_live(Request* r) {
+    if (r->answered) return FALSE;
     if (r->cancellable != NULL && g_cancellable_is_cancelled(r->cancellable)) return FALSE;
-    return g_list_find(r->app->editors, r->tab) != NULL;
+    return tab_open(r->app, r->tab);
 }
 
 static void answer(Request* r, GPtrArray* entries, const gchar* source) {
-    if (request_live(r)) r->func(r->app, r->tab, entries, source, r->data);
+    if (!request_live(r)) return;
+    r->answered = TRUE;
+    r->func(r->app, r->tab, entries, source, r->data);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -82,14 +103,20 @@ static void on_scanned(GObject* source, GAsyncResult* res, gpointer data) {
     }
 }
 
+/* Takes one reference of r */
 static void start_scan(Request* r) {
+    if (r->scanning || !request_live(r)) {
+        request_unref(r);
+        return;
+    }
+    r->scanning = TRUE;
     GtkTextIter s, e;
     gtk_text_buffer_get_bounds(r->tab->buffer, &s, &e);
     r->text = gtk_text_buffer_get_text(r->tab->buffer, &s, &e, TRUE);
     r->markdown = is_markdown(r->tab);
     r->lang = r->markdown ? CODE_LANG_NONE : code_lang_from_name(r->tab->path);
     GTask* task = g_task_new(NULL, NULL, on_scanned, NULL);
-    g_task_set_task_data(task, r, (GDestroyNotify)request_free);
+    g_task_set_task_data(task, r, (GDestroyNotify)request_unref);
     g_task_run_in_thread(task, scan_thread);
     g_object_unref(task);
 }
@@ -102,8 +129,13 @@ static void on_server_symbols(AppData* app, EditorTab* tab, GPtrArray* symbols, 
     (void)app;
     (void)tab;
     Request* r = data;
+    if (r->wait_source != 0) {
+        /* Answered in time: the wait's reference goes (the server's stays) */
+        g_clear_handle_id(&r->wait_source, g_source_remove);
+        r->refs--;
+    }
     if (!request_live(r)) {
-        request_free(r);
+        request_unref(r);
         return;
     }
     if (symbols == NULL || symbols->len == 0) {
@@ -120,7 +152,14 @@ static void on_server_symbols(AppData* app, EditorTab* tab, GPtrArray* symbols, 
     answer(r, entries, server != NULL ? server : "language server");
     g_free(server);
     g_ptr_array_unref(entries);
-    request_free(r);
+    request_unref(r);
+}
+
+static gboolean on_server_wait(gpointer data) {
+    Request* r = data;
+    r->wait_source = 0;
+    start_scan(r); /* the timeout's reference */
+    return G_SOURCE_REMOVE;
 }
 
 void code_outline_collect(AppData* app, EditorTab* tab, GCancellable* cancellable, CodeOutlineFunc func,
@@ -132,9 +171,16 @@ void code_outline_collect(AppData* app, EditorTab* tab, GCancellable* cancellabl
     r->func = func;
     r->data = data;
     r->destroy = destroy;
+    r->refs = 1;
     if (app == NULL || !code_outline_supported(tab)) {
-        request_free(r);
+        request_unref(r);
         return;
     }
-    if (is_markdown(tab) || !code_intel_document_symbols(app, tab, on_server_symbols, r)) start_scan(r);
+    if (is_markdown(tab) || !code_intel_document_symbols(app, tab, on_server_symbols, r)) {
+        start_scan(r);
+        return;
+    }
+    /* The server holds the first reference, the wait the second */
+    r->refs++;
+    r->wait_source = g_timeout_add(SERVER_WAIT_MS, on_server_wait, r);
 }

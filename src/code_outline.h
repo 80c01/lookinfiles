@@ -19,7 +19,8 @@ typedef void (*CodeOutlineFunc)(AppData* app, EditorTab* tab, GPtrArray* entries
 gboolean code_outline_supported(EditorTab* tab);
 
 /* Collect the outline of tab and call func on the UI thread, unless tab was
- * closed or cancellable (may be NULL) cancelled meanwhile. destroy (may be
+ * closed or cancellable (may be NULL) cancelled meanwhile. A server that is
+ * slow to answer is not waited for: the built-in scanner answers. destroy (may be
  * NULL) frees data once the request is over, except for a server request
  * dropped with its closed tab (code_intel.h): pass data that needs no
  * freeing, guarded by cancellable, when that matters. */
