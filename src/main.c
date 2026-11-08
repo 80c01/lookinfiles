@@ -819,7 +819,7 @@ int main(int argc, char** argv) {
     g_main_loop_run(loop);
 
     audio_preview_free(app);
-    video_preview_stop(app);
+    video_preview_free(app);
     editor_save_all_buffers(app);
     code_intel_shutdown(app);   /* language servers: shutdown, exit */
     stop_directory_monitors(app);

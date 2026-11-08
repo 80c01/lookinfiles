@@ -267,18 +267,9 @@ typedef struct {
     GtkWidget* help_page;           /* Help page (the user guide, help_guide.c), or NULL */
     guint status_idle_id;           /* pending status bar refresh after a page switch */
 
-    /* Video preview */
+    /* Media previews */
     GtkWidget* preview_stack;   /* GtkStack: "text" (text_view), "video" (video_player), or "audio" (audio_player) */
-    GtkWidget* video_scroll;    /* Scrolled window wrapping video_box */
-    GtkWidget* video_box;       /* Box container for video preview */
-    GtkWidget* video_widget;    /* GtkVideo widget */
-    GtkWidget* video_title;     /* Video title label */
-    GtkWidget* video_meta;      /* Video metadata info label */
-    GtkWidget* video_status;    /* Video warning/error status label */
-    gchar* video_current_path;  /* Canonical path of currently loaded video */
-    gchar* video_details;       /* Technical line of the video (size, codecs, duration), or NULL */
-
-    /* Audio preview */
+    struct VideoPreview* video; /* video player state (video.c), NULL before video_preview_init() */
     struct AudioPreview* audio; /* audio player state (audio.c), NULL before audio_preview_init() */
 
 

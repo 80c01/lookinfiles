@@ -12,6 +12,9 @@ void render_video_preview(AppData* app, const gchar* name, const gchar* full);
 /* Stop playback and clear the active video stream */
 void video_preview_stop(AppData* app);
 
+/* Stop playback and free the player state (at exit) */
+void video_preview_free(AppData* app);
+
 /* Pause video playback if currently playing */
 void video_preview_pause(AppData* app);
 

@@ -9,24 +9,41 @@
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
+/* Video player state (app->video), created by video_preview_init() */
+typedef struct VideoPreview VideoPreview;
+struct VideoPreview {
+    GtkWidget* widget;       /* GtkVideo, holding the session's media stream */
+    GtkWidget* title;        /* title label */
+    GtkWidget* meta;         /* format, size, duration and tracks label */
+    GtkWidget* status;       /* warning / error label */
+    gchar* details;          /* technical line (size, codecs, duration), or NULL */
+    gchar* current_path;     /* file loaded in the player, or NULL */
+};
+
+/* The session's media stream (never NULL once initialized) */
+static GtkMediaStream* video_stream(VideoPreview* v) {
+    return gtk_video_get_media_stream(GTK_VIDEO(v->widget));
+}
+
 static void update_video_metadata_label(AppData* app, GtkMediaStream* stream) {
-    if (app == NULL || app->video_current_path == NULL || app->video_meta == NULL) {
+    VideoPreview* v = app != NULL ? app->video : NULL;
+    if (v == NULL || v->current_path == NULL) {
         return;
     }
 
     GStatBuf st;
-    gint64 fsize = (g_stat(app->video_current_path, &st) == 0) ? (gint64)st.st_size : 0;
+    gint64 fsize = (g_stat(v->current_path, &st) == 0) ? (gint64)st.st_size : 0;
     gchar* size_str = g_format_size((guint64)fsize);
 
-    const gchar* ext = file_extension(app->video_current_path);
+    const gchar* ext = file_extension(v->current_path);
     gchar* ext_upper = g_ascii_strup(ext, -1);
 
-    GString* info = g_string_new(app->video_details != NULL ? app->video_details : ext_upper);
+    GString* info = g_string_new(v->details != NULL ? v->details : ext_upper);
     g_string_append_printf(info, "  •  %s", size_str);
 
     if (stream != NULL) {
         gint64 dur_us = gtk_media_stream_get_duration(stream);
-        if (dur_us > 0 && (app->video_details == NULL || strchr(app->video_details, ':') == NULL)) {
+        if (dur_us > 0 && (v->details == NULL || strchr(v->details, ':') == NULL)) {
             gint64 total_secs = dur_us / G_USEC_PER_SEC;
             gint hours = (gint)(total_secs / 3600);
             gint mins = (gint)((total_secs % 3600) / 60);
@@ -51,7 +68,7 @@ static void update_video_metadata_label(AppData* app, GtkMediaStream* stream) {
 
     g_string_append(info, _("  •  [press m for details]"));
 
-    gtk_label_set_text(GTK_LABEL(app->video_meta), info->str);
+    gtk_label_set_text(GTK_LABEL(v->meta), info->str);
 
     g_string_free(info, TRUE);
     g_free(ext_upper);
@@ -73,18 +90,19 @@ static void on_video_prepared_notify(GtkMediaStream* stream, GParamSpec* pspec, 
 static void on_video_error_notify(GtkMediaStream* stream, GParamSpec* pspec, gpointer user_data) {
     (void)pspec;
     AppData* app = (AppData*)user_data;
-    if (app == NULL || stream == NULL) {
+    if (app == NULL || app->video == NULL || stream == NULL) {
         return;
     }
+    VideoPreview* v = app->video;
     const GError* err = gtk_media_stream_get_error(stream);
-    if (err != NULL && app->video_status != NULL) {
+    if (err != NULL) {
         const gchar* err_msg = (err->message != NULL && err->message[0] != '\0')
                                    ? err->message
                                    : _("Video playback error");
         gchar* msg = g_strdup_printf(_("Media playback warning: %s (press 'm' to inspect raw file details)"),
                                      err_msg);
-        gtk_label_set_text(GTK_LABEL(app->video_status), msg);
-        gtk_widget_set_visible(app->video_status, TRUE);
+        gtk_label_set_text(GTK_LABEL(v->status), msg);
+        gtk_widget_set_visible(v->status, TRUE);
         g_free(msg);
     }
 }
@@ -164,25 +182,24 @@ void video_preview_init(AppData* app) {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(video_scroll), video_box);
     gtk_stack_add_named(GTK_STACK(app->preview_stack), video_scroll, "video");
 
-    app->video_scroll = video_scroll;
-    app->video_box = video_box;
-    app->video_widget = video_widget;
-    app->video_title = video_title;
-    app->video_meta = video_meta;
-    app->video_status = video_status;
-    app->video_current_path = NULL;
+    VideoPreview* v = g_new0(VideoPreview, 1);
+    app->video = v;
+    v->widget = video_widget;
+    v->title = video_title;
+    v->meta = video_meta;
+    v->status = video_status;
 }
 
 void video_preview_stop(AppData* app) {
-    if (app == NULL || app->video_widget == NULL || app->video_current_path == NULL) {
+    VideoPreview* v = app != NULL ? app->video : NULL;
+    if (v == NULL || v->current_path == NULL) {
         return;
     }
     /* Cleared first: the notifications emitted while closing see no file */
-    g_free(app->video_current_path);
-    app->video_current_path = NULL;
-    g_clear_pointer(&app->video_details, g_free);
+    g_clear_pointer(&v->current_path, g_free);
+    g_clear_pointer(&v->details, g_free);
 
-    GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
+    GtkMediaStream* stream = video_stream(v);
     if (stream != NULL) {
         if (gtk_media_stream_get_playing(stream)) {
             gtk_media_stream_pause(stream);
@@ -191,21 +208,33 @@ void video_preview_stop(AppData* app) {
     }
 }
 
-void video_preview_pause(AppData* app) {
-    if (app == NULL || app->video_widget == NULL) {
+void video_preview_free(AppData* app) {
+    if (app == NULL || app->video == NULL) {
         return;
     }
-    GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
+    video_preview_stop(app);
+    /* The stream outlives this state (the widget holds it): its handlers
+     * see app->video NULL from now on */
+    g_clear_pointer(&app->video, g_free);
+}
+
+void video_preview_pause(AppData* app) {
+    VideoPreview* v = app != NULL ? app->video : NULL;
+    if (v == NULL) {
+        return;
+    }
+    GtkMediaStream* stream = video_stream(v);
     if (stream != NULL && gtk_media_stream_get_playing(stream)) {
         gtk_media_stream_pause(stream);
     }
 }
 
 void video_preview_toggle_play(AppData* app) {
-    if (app == NULL || app->video_widget == NULL) {
+    VideoPreview* v = app != NULL ? app->video : NULL;
+    if (v == NULL) {
         return;
     }
-    GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
+    GtkMediaStream* stream = video_stream(v);
     if (stream != NULL) {
         if (gtk_media_stream_get_playing(stream)) {
             gtk_media_stream_pause(stream);
@@ -218,12 +247,13 @@ void video_preview_toggle_play(AppData* app) {
 #define SEEK_STEP_US (5 * G_USEC_PER_SEC)
 
 gboolean video_preview_seek_key(AppData* app, guint keyval, GdkModifierType state) {
-    if (app == NULL || app->video_widget == NULL || app->video_current_path == NULL || app->render_raw ||
+    VideoPreview* v = app != NULL ? app->video : NULL;
+    if (v == NULL || v->current_path == NULL || app->render_raw ||
         app->viewed_kind != FILE_KIND_VIDEO || (keyval != GDK_KEY_Left && keyval != GDK_KEY_Right) ||
         (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK | GDK_SUPER_MASK)) != 0) {
         return FALSE;
     }
-    GtkMediaStream* stream = gtk_video_get_media_stream(GTK_VIDEO(app->video_widget));
+    GtkMediaStream* stream = video_stream(v);
     if (stream == NULL || !gtk_media_stream_is_seekable(stream)) return TRUE;
     gint64 to = gtk_media_stream_get_timestamp(stream) + (keyval == GDK_KEY_Right ? SEEK_STEP_US : -SEEK_STEP_US);
     gint64 duration = gtk_media_stream_get_duration(stream);
@@ -341,20 +371,17 @@ static void on_video_tags_ready(GObject* source, GAsyncResult* res, gpointer use
     (void)user_data;
     GTask* task = G_TASK(res);
     VideoTagsTask* t = g_task_get_task_data(task);
-    AppData* app = t->app;
-    if (g_cancellable_is_cancelled(g_task_get_cancellable(task)) || t->tags == NULL ||
-        g_strcmp0(app->video_current_path, t->path) != 0) {
+    VideoPreview* v = t->app->video;
+    if (v == NULL || g_cancellable_is_cancelled(g_task_get_cancellable(task)) || t->tags == NULL ||
+        g_strcmp0(v->current_path, t->path) != 0) {
         return;
     }
-    if (t->tags->title != NULL && app->video_title != NULL) {
-        gchar* title = g_strdup(t->tags->title);
-        gtk_label_set_text(GTK_LABEL(app->video_title), title);
-        g_free(title);
+    if (t->tags->title != NULL) {
+        gtk_label_set_text(GTK_LABEL(v->title), t->tags->title);
     }
-    g_free(app->video_details);
-    app->video_details = media_tags_technical_line(t->tags);
-    GtkMediaStream* stream = app->video_widget != NULL ? gtk_video_get_media_stream(GTK_VIDEO(app->video_widget)) : NULL;
-    update_video_metadata_label(app, stream);
+    g_free(v->details);
+    v->details = media_tags_technical_line(t->tags);
+    update_video_metadata_label(t->app, video_stream(v));
 }
 
 static void read_video_tags(AppData* app, const gchar* full) {
@@ -387,34 +414,27 @@ void render_video_preview(AppData* app, const gchar* name, const gchar* full) {
         return;
     }
 
-    if (app->preview_stack != NULL) {
-        gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "video");
+    VideoPreview* v = app->video;
+    if (v == NULL) {
+        return;
     }
+    gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "video");
 
-    if (app->video_current_path != NULL && g_strcmp0(app->video_current_path, full) == 0) {
+    if (v->current_path != NULL && g_strcmp0(v->current_path, full) == 0) {
         return;
     }
 
     video_preview_stop(app);
-    app->video_current_path = g_strdup(full);
+    v->current_path = g_strdup(full);
 
-    if (app->video_title != NULL) {
-        gchar* title_text = g_strdup(name);
-        gtk_label_set_text(GTK_LABEL(app->video_title), title_text);
-        g_free(title_text);
-    }
-
-    if (app->video_status != NULL) {
-        gtk_label_set_text(GTK_LABEL(app->video_status), "");
-        gtk_widget_set_visible(app->video_status, FALSE);
-    }
+    gtk_label_set_text(GTK_LABEL(v->title), name);
+    gtk_label_set_text(GTK_LABEL(v->status), "");
+    gtk_widget_set_visible(v->status, FALSE);
 
     update_video_metadata_label(app, NULL);
     read_video_tags(app, full);
 
-    GtkMediaStream* stream = (app->video_widget != NULL)
-                                 ? gtk_video_get_media_stream(GTK_VIDEO(app->video_widget))
-                                 : NULL;
+    GtkMediaStream* stream = video_stream(v);
     if (stream != NULL) {
         GFile* file = g_file_new_for_path(full);
         gtk_media_file_set_file(GTK_MEDIA_FILE(stream), file);
