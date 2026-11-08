@@ -2,6 +2,7 @@
 #include "canvas_props.h"
 #include "canvas_rough_draw.h"
 #include "icons.h"
+#include "i18n.h"
 #include "palette.h"
 #include "theme.h"
 
@@ -15,31 +16,31 @@ static const struct {
     const gchar* name;
     const gchar* tip;
 } COLORS[] = {
-    {"fg", "Default"},
-    {"fg_subtle", "Grey"},
-    {"accent", "Accent"},
-    {"error", "Red"},
-    {"success", "Green"},
-    {"warning", "Yellow"},
-    {"icon_purple", "Purple"},
+    {"fg", N_("Default")},
+    {"fg_subtle", N_("Grey")},
+    {"accent", N_("Accent")},
+    {"error", N_("Red")},
+    {"success", N_("Green")},
+    {"warning", N_("Yellow")},
+    {"icon_purple", N_("Purple")},
 };
 
 static const struct {
     CanvasFillStyle fill;
     const gchar* tip;
 } FILLS[] = {
-    {CANVAS_FILL_NONE, "No Fill"},
-    {CANVAS_FILL_SKETCH, "Hatched Fill"},
-    {CANVAS_FILL_SOLID, "Solid Fill"},
+    {CANVAS_FILL_NONE, N_("No Fill")},
+    {CANVAS_FILL_SKETCH, N_("Hatched Fill")},
+    {CANVAS_FILL_SOLID, N_("Solid Fill")},
 };
 
 static const struct {
     gint width;
     const gchar* tip;
 } WIDTHS[] = {
-    {1, "Thin"},
-    {2, "Bold"},
-    {4, "Extra Bold"},
+    {1, NC_("stroke width", "Thin")},
+    {2, NC_("stroke width", "Bold")},
+    {4, NC_("stroke width", "Extra Bold")},
 };
 
 /* Align and distribute buttons: icon (lookin-<icon>), tooltip */
@@ -48,12 +49,12 @@ static const struct {
     const gchar* icon;
     const gchar* tip;
 } ALIGNS[] = {
-    {CANVAS_ALIGN_LEFT, "canvas-align-left", "Align Left"},
-    {CANVAS_ALIGN_CENTER_H, "canvas-align-center-h", "Align Centers"},
-    {CANVAS_ALIGN_RIGHT, "canvas-align-right", "Align Right"},
-    {CANVAS_ALIGN_TOP, "canvas-align-top", "Align Top"},
-    {CANVAS_ALIGN_MIDDLE_V, "canvas-align-middle-v", "Align Middles"},
-    {CANVAS_ALIGN_BOTTOM, "canvas-align-bottom", "Align Bottom"},
+    {CANVAS_ALIGN_LEFT, "canvas-align-left", N_("Align Left")},
+    {CANVAS_ALIGN_CENTER_H, "canvas-align-center-h", N_("Align Centers")},
+    {CANVAS_ALIGN_RIGHT, "canvas-align-right", N_("Align Right")},
+    {CANVAS_ALIGN_TOP, "canvas-align-top", N_("Align Top")},
+    {CANVAS_ALIGN_MIDDLE_V, "canvas-align-middle-v", N_("Align Middles")},
+    {CANVAS_ALIGN_BOTTOM, "canvas-align-bottom", N_("Align Bottom")},
 };
 
 static const struct {
@@ -61,8 +62,8 @@ static const struct {
     const gchar* icon;
     const gchar* tip;
 } DISTRIBUTES[] = {
-    {CANVAS_DISTRIBUTE_H, "canvas-distribute-h", "Distribute Horizontally"},
-    {CANVAS_DISTRIBUTE_V, "canvas-distribute-v", "Distribute Vertically"},
+    {CANVAS_DISTRIBUTE_H, "canvas-distribute-h", N_("Distribute Horizontally")},
+    {CANVAS_DISTRIBUTE_V, "canvas-distribute-v", N_("Distribute Vertically")},
 };
 
 /* Drawing order buttons: 2 front, 1 forward, -1 backward, -2 back */
@@ -71,10 +72,10 @@ static const struct {
     const gchar* icon;
     const gchar* tip;
 } ORDERS[] = {
-    {2, "canvas-bring-front", "Bring to Front (Ctrl+Shift+])"},
-    {1, "canvas-bring-forward", "Bring Forward (Ctrl+])"},
-    {-1, "canvas-send-backward", "Send Backward (Ctrl+[)"},
-    {-2, "canvas-send-back", "Send to Back (Ctrl+Shift+[)"},
+    {2, "canvas-bring-front", N_("Bring to Front (Ctrl+Shift+])")},
+    {1, "canvas-bring-forward", N_("Bring Forward (Ctrl+])")},
+    {-1, "canvas-send-backward", N_("Send Backward (Ctrl+[)")},
+    {-2, "canvas-send-back", N_("Send to Back (Ctrl+Shift+[)")},
 };
 
 struct CanvasProps {
@@ -225,7 +226,7 @@ static GtkWidget* swatch_new(const gchar* color) {
 }
 
 static GtkWidget* section_title(const gchar* text) {
-    GtkWidget* l = gtk_label_new(text);
+    GtkWidget* l = gtk_label_new(_(text));
     gtk_widget_add_css_class(l, "canvas-props-title");
     gtk_label_set_xalign(GTK_LABEL(l), 0.0f);
     return l;
@@ -238,39 +239,39 @@ static GtkWidget* row_new(void) {
 static GtkWidget* shape_section(CanvasProps* props) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
 
-    gtk_box_append(GTK_BOX(box), section_title("Stroke"));
+    gtk_box_append(GTK_BOX(box), section_title(N_("Stroke")));
     GtkWidget* row = row_new();
     for (guint i = 0; i < G_N_ELEMENTS(COLORS); i++) {
-        props->colors[i] = choice_new(props, "color", (gint)i, swatch_new(COLORS[i].name), COLORS[i].tip,
+        props->colors[i] = choice_new(props, "color", (gint)i, swatch_new(COLORS[i].name), _(COLORS[i].tip),
                                       i > 0 ? props->colors[0] : NULL);
         gtk_box_append(GTK_BOX(row), props->colors[i]);
     }
     gtk_box_append(GTK_BOX(box), row);
 
     props->fill_row = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
-    gtk_box_append(GTK_BOX(props->fill_row), section_title("Fill"));
+    gtk_box_append(GTK_BOX(props->fill_row), section_title(N_("Fill")));
     row = row_new();
     for (guint i = 0; i < G_N_ELEMENTS(FILLS); i++) {
-        props->fills[i] = choice_new(props, "fill", (gint)i, preview_new(PREVIEW_FILL, FILLS[i].fill), FILLS[i].tip,
+        props->fills[i] = choice_new(props, "fill", (gint)i, preview_new(PREVIEW_FILL, FILLS[i].fill), _(FILLS[i].tip),
                                      i > 0 ? props->fills[0] : NULL);
         gtk_box_append(GTK_BOX(row), props->fills[i]);
     }
     gtk_box_append(GTK_BOX(props->fill_row), row);
     gtk_box_append(GTK_BOX(box), props->fill_row);
 
-    gtk_box_append(GTK_BOX(box), section_title("Stroke Width"));
+    gtk_box_append(GTK_BOX(box), section_title(N_("Stroke Width")));
     row = row_new();
     for (guint i = 0; i < G_N_ELEMENTS(WIDTHS); i++) {
         props->widths[i] = choice_new(props, "width", (gint)i, preview_new(PREVIEW_WIDTH, WIDTHS[i].width),
-                                      WIDTHS[i].tip, i > 0 ? props->widths[0] : NULL);
+                                      g_dpgettext2(NULL, "stroke width", WIDTHS[i].tip), i > 0 ? props->widths[0] : NULL);
         gtk_box_append(GTK_BOX(row), props->widths[i]);
     }
     gtk_box_append(GTK_BOX(box), row);
 
-    gtk_box_append(GTK_BOX(box), section_title("Style"));
+    gtk_box_append(GTK_BOX(box), section_title(N_("Style")));
     row = row_new();
-    props->styles[0] = choice_new(props, "style", 0, preview_new(PREVIEW_STYLE, 1), "Hand-Drawn", NULL);
-    props->styles[1] = choice_new(props, "style", 1, preview_new(PREVIEW_STYLE, 0), "Clean", props->styles[0]);
+    props->styles[0] = choice_new(props, "style", 0, preview_new(PREVIEW_STYLE, 1), _("Hand-Drawn"), NULL);
+    props->styles[1] = choice_new(props, "style", 1, preview_new(PREVIEW_STYLE, 0), _("Clean"), props->styles[0]);
     gtk_box_append(GTK_BOX(row), props->styles[0]);
     gtk_box_append(GTK_BOX(row), props->styles[1]);
     gtk_box_append(GTK_BOX(box), row);
@@ -351,7 +352,7 @@ static GtkWidget* action_button(CanvasProps* props, const gchar* icon, const gch
     gtk_widget_add_css_class(b, "canvas-prop");
     gtk_widget_set_focus_on_click(b, FALSE);
     gtk_widget_set_focusable(b, FALSE);
-    gtk_widget_set_tooltip_text(b, tip);
+    gtk_widget_set_tooltip_text(b, _(tip));
     g_object_set_data(G_OBJECT(b), "value", GINT_TO_POINTER(value));
     g_signal_connect(b, "clicked", cb, props);
     return b;
@@ -359,7 +360,7 @@ static GtkWidget* action_button(CanvasProps* props, const gchar* icon, const gch
 
 static GtkWidget* align_section(CanvasProps* props) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
-    gtk_box_append(GTK_BOX(box), section_title("Align"));
+    gtk_box_append(GTK_BOX(box), section_title(N_("Align")));
     /* Horizontal ones, then vertical ones */
     for (guint row_start = 0; row_start < G_N_ELEMENTS(ALIGNS); row_start += 3) {
         GtkWidget* row = row_new();
@@ -369,7 +370,7 @@ static GtkWidget* align_section(CanvasProps* props) {
         }
         gtk_box_append(GTK_BOX(box), row);
     }
-    gtk_box_append(GTK_BOX(box), section_title("Distribute"));
+    gtk_box_append(GTK_BOX(box), section_title(N_("Distribute")));
     GtkWidget* row = row_new();
     for (guint i = 0; i < G_N_ELEMENTS(DISTRIBUTES); i++) {
         props->distributes[i] = action_button(props, DISTRIBUTES[i].icon, DISTRIBUTES[i].tip,
@@ -386,7 +387,7 @@ static GtkWidget* selection_section(CanvasProps* props) {
     props->align_box = align_section(props);
     gtk_box_append(GTK_BOX(box), props->align_box);
 
-    gtk_box_append(GTK_BOX(box), section_title("Layers"));
+    gtk_box_append(GTK_BOX(box), section_title(N_("Layers")));
     GtkWidget* row = row_new();
     for (guint i = 0; i < G_N_ELEMENTS(ORDERS); i++) {
         gtk_box_append(GTK_BOX(row), action_button(props, ORDERS[i].icon, ORDERS[i].tip, ORDERS[i].where,
@@ -394,11 +395,11 @@ static GtkWidget* selection_section(CanvasProps* props) {
     }
     gtk_box_append(GTK_BOX(box), row);
 
-    gtk_box_append(GTK_BOX(box), section_title("Actions"));
+    gtk_box_append(GTK_BOX(box), section_title(N_("Actions")));
     row = row_new();
-    props->lock = action_button(props, "canvas-lock", "Lock (Ctrl+Shift+K)", 0, G_CALLBACK(on_lock_clicked));
+    props->lock = action_button(props, "canvas-lock", N_("Lock (Ctrl+Shift+K)"), 0, G_CALLBACK(on_lock_clicked));
     gtk_box_append(GTK_BOX(row), props->lock);
-    props->crop = action_button(props, "canvas-crop", "Crop Picture", 0, G_CALLBACK(on_crop_clicked));
+    props->crop = action_button(props, "canvas-crop", N_("Crop Picture"), 0, G_CALLBACK(on_crop_clicked));
     gtk_box_append(GTK_BOX(row), props->crop);
     gtk_box_append(GTK_BOX(box), row);
     gtk_widget_set_visible(box, FALSE);
@@ -414,7 +415,7 @@ void canvas_props_show_selection(CanvasProps* props, const CanvasPropsSelection*
         }
         gtk_widget_set_visible(props->align_box, sel->movable >= 2);
         gtk_button_set_child(GTK_BUTTON(props->lock), icon_image_new(sel->locked ? "canvas-unlock" : "canvas-lock"));
-        gtk_widget_set_tooltip_text(props->lock, sel->locked ? "Unlock (Ctrl+Shift+K)" : "Lock (Ctrl+Shift+K)");
+        gtk_widget_set_tooltip_text(props->lock, sel->locked ? _("Unlock (Ctrl+Shift+K)") : _("Lock (Ctrl+Shift+K)"));
         gtk_widget_set_visible(props->crop, sel->picture);
     }
     gtk_widget_set_visible(props->selection_box, shown);

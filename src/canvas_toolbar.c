@@ -1,6 +1,7 @@
 /* Tool bar of the Canvas page (see canvas_toolbar.h) */
 #include "canvas_toolbar.h"
 #include "icons.h"
+#include "i18n.h"
 #include "theme.h"
 
 struct CanvasToolbar {
@@ -16,16 +17,16 @@ static const struct {
     const gchar* tip;
     guint key;
 } TOOLS[CANVAS_TOOL_COUNT] = {
-    [CANVAS_TOOL_SELECT] = {"canvas-select", "Select and Move (V)", GDK_KEY_v},
-    [CANVAS_TOOL_RECT] = {"canvas-rectangle", "Rectangle (R)", GDK_KEY_r},
-    [CANVAS_TOOL_DIAMOND] = {"canvas-diamond", "Diamond (D)", GDK_KEY_d},
-    [CANVAS_TOOL_ELLIPSE] = {"canvas-ellipse", "Ellipse (O)", GDK_KEY_o},
-    [CANVAS_TOOL_ARROW] = {"canvas-arrow", "Arrow (A)", GDK_KEY_a},
-    [CANVAS_TOOL_LINE] = {"canvas-line", "Line (L)", GDK_KEY_l},
-    [CANVAS_TOOL_PENCIL] = {"document-edit", "Pencil (P)", GDK_KEY_p},
-    [CANVAS_TOOL_TEXT] = {"insert-text", "Text Box (T)", GDK_KEY_t},
-    [CANVAS_TOOL_TABLE] = {"canvas-table", "Table (B)", GDK_KEY_b},
-    [CANVAS_TOOL_ERASER] = {"edit-clear", "Eraser (E)", GDK_KEY_e},
+    [CANVAS_TOOL_SELECT] = {"canvas-select", N_("Select and Move (V)"), GDK_KEY_v},
+    [CANVAS_TOOL_RECT] = {"canvas-rectangle", N_("Rectangle (R)"), GDK_KEY_r},
+    [CANVAS_TOOL_DIAMOND] = {"canvas-diamond", N_("Diamond (D)"), GDK_KEY_d},
+    [CANVAS_TOOL_ELLIPSE] = {"canvas-ellipse", N_("Ellipse (O)"), GDK_KEY_o},
+    [CANVAS_TOOL_ARROW] = {"canvas-arrow", N_("Arrow (A)"), GDK_KEY_a},
+    [CANVAS_TOOL_LINE] = {"canvas-line", N_("Line (L)"), GDK_KEY_l},
+    [CANVAS_TOOL_PENCIL] = {"document-edit", N_("Pencil (P)"), GDK_KEY_p},
+    [CANVAS_TOOL_TEXT] = {"insert-text", N_("Text Box (T)"), GDK_KEY_t},
+    [CANVAS_TOOL_TABLE] = {"canvas-table", N_("Table (B)"), GDK_KEY_b},
+    [CANVAS_TOOL_ERASER] = {"edit-clear", N_("Eraser (E)"), GDK_KEY_e},
 };
 
 static void ensure_css(void) {
@@ -93,7 +94,7 @@ static void on_export_clicked(GtkButton* btn, gpointer data) {
 }
 
 static GtkWidget* menu_item(const gchar* label, GtkWidget* pop, GCallback cb, CanvasToolbar* tb) {
-    GtkWidget* item = gtk_button_new_with_label(label);
+    GtkWidget* item = gtk_button_new_with_label(_(label));
     gtk_button_set_has_frame(GTK_BUTTON(item), FALSE);
     gtk_widget_add_css_class(item, "canvas-pop-item");
     gtk_label_set_xalign(GTK_LABEL(gtk_button_get_child(GTK_BUTTON(item))), 0.0f);
@@ -109,19 +110,19 @@ static GtkWidget* more_menu(CanvasToolbar* tb) {
     gtk_menu_button_set_has_frame(GTK_MENU_BUTTON(mb), FALSE);
     gtk_widget_add_css_class(mb, "canvas-tool");
     gtk_widget_set_focus_on_click(mb, FALSE);
-    gtk_widget_set_tooltip_text(mb, "Grid and Export");
+    gtk_widget_set_tooltip_text(mb, _("Grid and Export"));
 
     GtkWidget* pop = gtk_popover_new();
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
 
-    GtkWidget* grid = gtk_check_button_new_with_label("Snap to Grid");
+    GtkWidget* grid = gtk_check_button_new_with_label(_("Snap to Grid"));
     gtk_widget_add_css_class(grid, "canvas-pop-item");
     gtk_check_button_set_active(GTK_CHECK_BUTTON(grid), TRUE);
     g_signal_connect(grid, "toggled", G_CALLBACK(on_grid_toggled), tb);
     gtk_box_append(GTK_BOX(box), grid);
     gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
-    gtk_box_append(GTK_BOX(box), menu_item("Export as PNG", pop, G_CALLBACK(on_export_clicked), tb));
-    GtkWidget* svg = menu_item("Export as SVG", pop, G_CALLBACK(on_export_clicked), tb);
+    gtk_box_append(GTK_BOX(box), menu_item(N_("Export as PNG"), pop, G_CALLBACK(on_export_clicked), tb));
+    GtkWidget* svg = menu_item(N_("Export as SVG"), pop, G_CALLBACK(on_export_clicked), tb);
     g_object_set_data(G_OBJECT(svg), "svg", GINT_TO_POINTER(1));
     gtk_box_append(GTK_BOX(box), svg);
 
@@ -155,7 +156,7 @@ CanvasToolbar* canvas_toolbar_new(const CanvasToolbarCallbacks* cbs, gpointer us
         icon_button_set_content(b, TOOLS[i].icon, NULL);
         gtk_widget_add_css_class(b, "canvas-tool");
         gtk_widget_set_focus_on_click(b, FALSE);
-        gtk_widget_set_tooltip_text(b, TOOLS[i].tip);
+        gtk_widget_set_tooltip_text(b, _(TOOLS[i].tip));
         if (i > 0) gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(b), GTK_TOGGLE_BUTTON(tb->tools[0]));
         g_object_set_data(G_OBJECT(b), "tool", GINT_TO_POINTER(i));
         g_signal_connect(b, "toggled", G_CALLBACK(on_tool_toggled), tb);

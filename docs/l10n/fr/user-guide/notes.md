@@ -79,10 +79,10 @@ dans un bloc).
 | Gomme (`E`) | Cliquez ou faites glisser sur des blocs pour les supprimer |
 
 Après le dessin d’une forme, l’outil revient à Sélection (`Esc` aussi).
-Le menu au bout de la barre contient **Snap to Grid** (aimanter à la
-grille), les commandes d’alignement, l’ordre de dessin, **Lock / Unlock**
-(verrouiller / déverrouiller), **Crop Selected Picture** (recadrer l’image
-sélectionnée) et **Export as PNG** / **Export as SVG** : une image des blocs
+Le menu au bout de la barre contient **Aimanter à la grille**, les
+commandes d’alignement, l’ordre de dessin, **Verrouiller / Déverrouiller**,
+**Recadrer l’image** (l’image sélectionnée) et **Exporter en PNG** /
+**Exporter en SVG** : une image des blocs
 (couleurs du thème, PNG au double de l’échelle de la page) écrite à côté de
 la note sous le nom `<titre>.png` ou `<titre>.svg`.
 
@@ -113,7 +113,7 @@ déposés sur la page ; double-cliquez sur une image pour la recadrer.
 | Faire pivoter une forme | Sélectionnez un rectangle, un losange ou une ellipse seul et faites glisser la poignée ronde au-dessus : elle tourne autour de son centre avec son texte (`Shift` : pas de 15 degrés) ; les flèches qui y sont attachées restent sur son contour |
 | Modifier une flèche ou une ligne | Cliquez sur son trait pour la sélectionner : une poignée apparaît sur chaque point. Faites glisser une extrémité n’importe où (déposée sur un bloc, elle s’y attache), faites glisser la poignée pâle au milieu d’un segment pour ajouter un point et le courber, faites glisser un point pour changer la forme (`Shift` : multiple de 45 degrés), double-cliquez sur un point entre les extrémités pour le supprimer (ou cliquez dessus, plein une fois choisi, puis `Delete`) |
 | Sélectionner plusieurs blocs | Faites glisser sur la page vide autour d’eux, ou `Shift+clic` sur chacun (à nouveau pour le retirer) ; en déplacer un les déplace tous |
-| Aimantation et guides | Aimantation aux bords des blocs voisins et à la grille (**Snap to Grid** dans le menu de la barre d’outils) |
+| Aimantation et guides | Aimantation aux bords des blocs voisins et à la grille (**Aimanter à la grille** dans le menu de la barre d’outils) |
 | Aligner des blocs | Sélectionnez deux blocs ou plus, puis le menu de la barre d’outils : gauche, centres, droite, haut, milieux, bas, répartir |
 | Styles prédéfinis | Menu du style de paragraphe de la barre de mise en forme : Titre 1, Titre 2, Corps de texte, Citation (`Ctrl+Alt+1`, `2`, `0`, `Q`) |
 | Mise en forme du texte | `Ctrl+B` (gras), `Ctrl+I` (italique), `Ctrl+U` (souligné), `Ctrl+Shift+S` (barré), surlignage, chasse fixe, police, couleur du texte |

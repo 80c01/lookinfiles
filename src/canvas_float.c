@@ -1,5 +1,6 @@
 /* Bar floating next to a Canvas block (see canvas_float.h) */
 #include "canvas_float.h"
+#include "i18n.h"
 #include "theme.h"
 
 #define BAR_GAP 6        /* between the bar and the block */
@@ -82,7 +83,7 @@ GtkWidget* canvas_float_button(GtkWidget* child, const gchar* tip, GCallback cb,
     gtk_widget_add_css_class(b, "canvas-fmt");
     gtk_widget_set_focus_on_click(b, FALSE);
     gtk_widget_set_focusable(b, FALSE);
-    gtk_widget_set_tooltip_text(b, tip);
+    gtk_widget_set_tooltip_text(b, _(tip)); /* tip: an N_() string */
     g_signal_connect(b, "clicked", cb, data);
     return b;
 }

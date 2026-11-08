@@ -1,6 +1,7 @@
 /* Shapes turned on the Canvas page (see canvas_rotate.h) */
 #include "canvas_rotate.h"
 #include "canvas_geometry.h"
+#include "i18n.h"
 #include "canvas_page_private.h"
 #include "theme.h"
 
@@ -128,7 +129,7 @@ CanvasRotate* canvas_rotate_new(CanvasPage* p) {
     gtk_widget_add_css_class(r->handle, "canvas-rotate");
     gtk_widget_set_size_request(r->handle, HANDLE_SIZE, HANDLE_SIZE);
     gtk_widget_set_cursor_from_name(r->handle, "grab");
-    gtk_widget_set_tooltip_text(r->handle, "Drag to Rotate (Shift: 15° Steps)");
+    gtk_widget_set_tooltip_text(r->handle, _("Drag to Rotate (Shift: 15° Steps)"));
     return r;
 }
 

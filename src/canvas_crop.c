@@ -1,5 +1,6 @@
 #include "canvas_crop.h"
 #include "dialog.h"
+#include "i18n.h"
 #include "theme.h"
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -113,10 +114,10 @@ void canvas_crop_dialog_show(GtkWindow* parent_window, const gchar* full_path,
     st->cw = (w > 0) ? w : 1.0;
     st->ch = (h > 0) ? h : 1.0;
 
-    GtkWidget* dlg = app_dialog_new("Crop Image", parent_window,
-                                    "Apply", APP_RESPONSE_APPLY,
-                                    "Reset", APP_RESPONSE_REJECT,
-                                    "Cancel", APP_RESPONSE_CANCEL,
+    GtkWidget* dlg = app_dialog_new(_("Crop Image"), parent_window,
+                                    _("Apply"), APP_RESPONSE_APPLY,
+                                    _("Reset"), APP_RESPONSE_REJECT,
+                                    _("Cancel"), APP_RESPONSE_CANCEL,
                                     NULL);
     st->dialog = dlg;
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_APPLY);
@@ -138,7 +139,7 @@ void canvas_crop_dialog_show(GtkWindow* parent_window, const gchar* full_path,
     gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 8);
 
-    GtkWidget* lbl_x = gtk_label_new("Left %");
+    GtkWidget* lbl_x = gtk_label_new(_("Left %"));
     st->scale_x = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 90, 1);
     gtk_range_set_value(GTK_RANGE(st->scale_x), st->cx * 100.0);
     gtk_widget_set_hexpand(st->scale_x, TRUE);
@@ -146,7 +147,7 @@ void canvas_crop_dialog_show(GtkWindow* parent_window, const gchar* full_path,
     gtk_grid_attach(GTK_GRID(grid), lbl_x, 0, 0, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), st->scale_x, 1, 0, 1, 1);
 
-    GtkWidget* lbl_y = gtk_label_new("Top %");
+    GtkWidget* lbl_y = gtk_label_new(_("Top %"));
     st->scale_y = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 90, 1);
     gtk_range_set_value(GTK_RANGE(st->scale_y), st->cy * 100.0);
     gtk_widget_set_hexpand(st->scale_y, TRUE);
@@ -154,7 +155,7 @@ void canvas_crop_dialog_show(GtkWindow* parent_window, const gchar* full_path,
     gtk_grid_attach(GTK_GRID(grid), lbl_y, 0, 1, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), st->scale_y, 1, 1, 1, 1);
 
-    GtkWidget* lbl_w = gtk_label_new("Width %");
+    GtkWidget* lbl_w = gtk_label_new(_("Width %"));
     st->scale_w = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 10, 100, 1);
     gtk_range_set_value(GTK_RANGE(st->scale_w), st->cw * 100.0);
     gtk_widget_set_hexpand(st->scale_w, TRUE);
@@ -162,7 +163,7 @@ void canvas_crop_dialog_show(GtkWindow* parent_window, const gchar* full_path,
     gtk_grid_attach(GTK_GRID(grid), lbl_w, 0, 2, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), st->scale_w, 1, 2, 1, 1);
 
-    GtkWidget* lbl_h = gtk_label_new("Height %");
+    GtkWidget* lbl_h = gtk_label_new(_("Height %"));
     st->scale_h = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 10, 100, 1);
     gtk_range_set_value(GTK_RANGE(st->scale_h), st->ch * 100.0);
     gtk_widget_set_hexpand(st->scale_h, TRUE);

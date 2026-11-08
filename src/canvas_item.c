@@ -1,5 +1,6 @@
 #include "canvas_item.h"
 #include "canvas_crop.h"
+#include "i18n.h"
 #include "canvas_rough_draw.h"
 #include "canvas_table.h"
 #include "canvas_text.h"
@@ -249,7 +250,7 @@ static void add_resize_handle(GtkWidget* overlay, gint sx, gint sy) {
     gtk_widget_set_halign(handle, aligns[sx + 1]);
     gtk_widget_set_valign(handle, aligns[sy + 1]);
     gtk_widget_set_cursor_from_name(handle, side_cursor(sx, sy));
-    gtk_widget_set_tooltip_text(handle, "Drag to Resize");
+    gtk_widget_set_tooltip_text(handle, _("Drag to Resize"));
     g_object_set_data(G_OBJECT(handle), SIDE_KEY, GINT_TO_POINTER((sx + 1) * 3 + (sy + 1) + 1));
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), handle);
 }
@@ -269,7 +270,7 @@ static CanvasItem* item_base_new(CanvasPage* p, GtkWidget* surface, CanvasBlockK
         GtkWidget* grip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
         gtk_widget_add_css_class(grip, "canvas-grip");
         gtk_widget_set_cursor_from_name(grip, "move");
-        gtk_widget_set_tooltip_text(grip, "Drag to Move (Esc, then Arrows)");
+        gtk_widget_set_tooltip_text(grip, _("Drag to Move (Esc, then Arrows)"));
         g_object_set_data(G_OBJECT(grip), "canvas-grip", GINT_TO_POINTER(1));
         gtk_box_append(GTK_BOX(frame), grip);
     }

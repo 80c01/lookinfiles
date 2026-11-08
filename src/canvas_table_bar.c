@@ -2,6 +2,7 @@
 #include "canvas_table_bar.h"
 #include "canvas_float.h"
 #include "icons.h"
+#include "i18n.h"
 
 #define ACTION_KEY "canvas-table-action"
 
@@ -33,13 +34,13 @@ CanvasTableBar* canvas_table_bar_new(CanvasTableBarAction on_action, gpointer us
     bar->user_data = user_data;
     bar->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 1);
     bar->floating = canvas_float_new(bar->box);
-    add_button(bar, "canvas-row-add-above", "Insert Row Above", CANVAS_TABLE_ROW_ABOVE);
-    add_button(bar, "canvas-row-add-below", "Insert Row Below", CANVAS_TABLE_ROW_BELOW);
-    bar->del_row = add_button(bar, "canvas-row-delete", "Delete Row", CANVAS_TABLE_ROW_DELETE);
+    add_button(bar, "canvas-row-add-above", N_("Insert Row Above"), CANVAS_TABLE_ROW_ABOVE);
+    add_button(bar, "canvas-row-add-below", N_("Insert Row Below"), CANVAS_TABLE_ROW_BELOW);
+    bar->del_row = add_button(bar, "canvas-row-delete", N_("Delete Row"), CANVAS_TABLE_ROW_DELETE);
     canvas_float_add_separator(bar->box);
-    add_button(bar, "canvas-column-add-left", "Insert Column Left", CANVAS_TABLE_COL_LEFT);
-    add_button(bar, "canvas-column-add-right", "Insert Column Right", CANVAS_TABLE_COL_RIGHT);
-    bar->del_col = add_button(bar, "canvas-column-delete", "Delete Column", CANVAS_TABLE_COL_DELETE);
+    add_button(bar, "canvas-column-add-left", N_("Insert Column Left"), CANVAS_TABLE_COL_LEFT);
+    add_button(bar, "canvas-column-add-right", N_("Insert Column Right"), CANVAS_TABLE_COL_RIGHT);
+    bar->del_col = add_button(bar, "canvas-column-delete", N_("Delete Column"), CANVAS_TABLE_COL_DELETE);
     return bar;
 }
 

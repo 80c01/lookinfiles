@@ -1,6 +1,7 @@
 /* Export the Canvas page as a picture (see canvas_export.h) */
 #include "canvas_export.h"
 #include "canvas_item.h"
+#include "i18n.h"
 #include "palette.h"
 
 #include <cairo.h>
@@ -35,12 +36,12 @@ static gboolean blocks_box(GtkWidget* surface, gint* x, gint* y, gint* w, gint* 
 gboolean canvas_export_picture(GtkWidget* surface, const gchar* path, gboolean svg, GError** error) {
     gint x, y, w, h;
     if (!blocks_box(surface, &x, &y, &w, &h)) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "The canvas is empty.");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("The canvas is empty."));
         return FALSE;
     }
 #ifndef CAIRO_HAS_SVG_SURFACE
     if (svg) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "This build of cairo cannot write SVG.");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("This build of cairo cannot write SVG."));
         return FALSE;
     }
 #endif
@@ -51,7 +52,7 @@ gboolean canvas_export_picture(GtkWidget* surface, const gchar* path, gboolean s
     GskRenderNode* node = gtk_snapshot_free_to_node(snapshot);
     g_object_unref(paintable);
     if (node == NULL) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "The canvas is not shown.");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("The canvas is not shown."));
         return FALSE;
     }
 

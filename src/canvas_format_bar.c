@@ -2,6 +2,7 @@
 #include "canvas_format_bar.h"
 #include "canvas_doc.h"
 #include "canvas_float.h"
+#include "i18n.h"
 #include "icons.h"
 #include "theme.h"
 
@@ -11,11 +12,11 @@ static const struct {
     const gchar* color;
     const gchar* tip;
 } TEXT_COLORS[] = {
-    {CANVAS_STYLE_MUTED, "fg_subtle", "Grey Text"},
-    {CANVAS_STYLE_ACCENT, "accent", "Accent Text"},
-    {CANVAS_STYLE_DANGER, "error", "Red Text"},
-    {CANVAS_STYLE_SUCCESS, "success", "Green Text"},
-    {CANVAS_STYLE_WARNING, "warning", "Yellow Text"},
+    {CANVAS_STYLE_MUTED, "fg_subtle", N_("Grey Text")},
+    {CANVAS_STYLE_ACCENT, "accent", N_("Accent Text")},
+    {CANVAS_STYLE_DANGER, "error", N_("Red Text")},
+    {CANVAS_STYLE_SUCCESS, "success", N_("Green Text")},
+    {CANVAS_STYLE_WARNING, "warning", N_("Yellow Text")},
 };
 
 struct CanvasFormatBar {
@@ -110,7 +111,7 @@ static GtkWidget* menu_button(GtkWidget* child, const gchar* tip, GtkWidget** po
     gtk_menu_button_set_has_frame(GTK_MENU_BUTTON(mb), FALSE);
     gtk_widget_add_css_class(mb, "canvas-fmt");
     gtk_widget_set_focus_on_click(mb, FALSE);
-    gtk_widget_set_tooltip_text(mb, tip);
+    gtk_widget_set_tooltip_text(mb, _(tip));
     GtkWidget* pop = gtk_popover_new();
     *pop_box = gtk_box_new(o, 2);
     gtk_popover_set_child(GTK_POPOVER(pop), *pop_box);
@@ -119,7 +120,7 @@ static GtkWidget* menu_button(GtkWidget* child, const gchar* tip, GtkWidget** po
 }
 
 static GtkWidget* pop_item(GtkWidget* pop_box, const gchar* label, GCallback cb, CanvasFormatBar* bar) {
-    GtkWidget* item = gtk_button_new_with_label(label);
+    GtkWidget* item = gtk_button_new_with_label(_(label));
     gtk_button_set_has_frame(GTK_BUTTON(item), FALSE);
     gtk_widget_add_css_class(item, "canvas-pop-item");
     gtk_label_set_xalign(GTK_LABEL(gtk_button_get_child(GTK_BUTTON(item))), 0.0f);
@@ -134,16 +135,16 @@ static void add_sep(GtkWidget* row) {
 
 static void build(CanvasFormatBar* bar, GtkWidget* row) {
     GtkWidget* pop_box;
-    GtkWidget* presets = menu_button(icon_image_new("format-text-rich"), "Paragraph Style (Ctrl+Alt+1, 2, 0, Q)",
+    GtkWidget* presets = menu_button(icon_image_new("format-text-rich"), N_("Paragraph Style (Ctrl+Alt+1, 2, 0, Q)"),
                                      &pop_box, GTK_ORIENTATION_VERTICAL);
     static const struct {
         const gchar* name;
         CanvasPreset preset;
     } PRESETS[] = {
-        {"Heading 1", CANVAS_PRESET_H1},
-        {"Heading 2", CANVAS_PRESET_H2},
-        {"Body Text", CANVAS_PRESET_BODY},
-        {"Quote", CANVAS_PRESET_QUOTE},
+        {N_("Heading 1"), CANVAS_PRESET_H1},
+        {N_("Heading 2"), CANVAS_PRESET_H2},
+        {N_("Body Text"), CANVAS_PRESET_BODY},
+        {N_("Quote"), CANVAS_PRESET_QUOTE},
     };
     for (guint i = 0; i < G_N_ELEMENTS(PRESETS); i++) {
         GtkWidget* item = pop_item(pop_box, PRESETS[i].name, G_CALLBACK(on_preset_clicked), bar);
@@ -151,14 +152,14 @@ static void build(CanvasFormatBar* bar, GtkWidget* row) {
     }
     gtk_box_append(GTK_BOX(row), presets);
     add_sep(row);
-    gtk_box_append(GTK_BOX(row), style_button("format-text-bold", "Bold (Ctrl+B)", CANVAS_STYLE_BOLD, bar));
-    gtk_box_append(GTK_BOX(row), style_button("format-text-italic", "Italic (Ctrl+I)", CANVAS_STYLE_ITALIC, bar));
+    gtk_box_append(GTK_BOX(row), style_button("format-text-bold", N_("Bold (Ctrl+B)"), CANVAS_STYLE_BOLD, bar));
+    gtk_box_append(GTK_BOX(row), style_button("format-text-italic", N_("Italic (Ctrl+I)"), CANVAS_STYLE_ITALIC, bar));
     gtk_box_append(GTK_BOX(row),
-                   style_button("format-text-underline", "Underline (Ctrl+U)", CANVAS_STYLE_UNDERLINE, bar));
-    gtk_box_append(GTK_BOX(row), style_button("format-text-strikethrough", "Strikethrough (Ctrl+Shift+S)",
+                   style_button("format-text-underline", N_("Underline (Ctrl+U)"), CANVAS_STYLE_UNDERLINE, bar));
+    gtk_box_append(GTK_BOX(row), style_button("format-text-strikethrough", N_("Strikethrough (Ctrl+Shift+S)"),
                                               CANVAS_STYLE_STRIKE, bar));
 
-    GtkWidget* colors = menu_button(swatch_new("accent"), "Text Color", &pop_box, GTK_ORIENTATION_HORIZONTAL);
+    GtkWidget* colors = menu_button(swatch_new("accent"), N_("Text Color"), &pop_box, GTK_ORIENTATION_HORIZONTAL);
     for (guint i = 0; i < G_N_ELEMENTS(TEXT_COLORS); i++) {
         GtkWidget* sw = action_button(swatch_new(TEXT_COLORS[i].color), TEXT_COLORS[i].tip,
                                       G_CALLBACK(on_style_clicked), bar);
@@ -167,17 +168,17 @@ static void build(CanvasFormatBar* bar, GtkWidget* row) {
     }
     gtk_box_append(GTK_BOX(row), colors);
 
-    GtkWidget* more = menu_button(icon_image_new("view-more"), "More Styles", &pop_box, GTK_ORIENTATION_VERTICAL);
+    GtkWidget* more = menu_button(icon_image_new("view-more"), N_("More Styles"), &pop_box, GTK_ORIENTATION_VERTICAL);
     static const struct {
         const gchar* name;
         guint flag;
     } MORE[] = {
-        {"Highlight (Ctrl+H)", CANVAS_STYLE_HIGHLIGHT},
-        {"Code (Ctrl+E)", CANVAS_STYLE_CODE},
-        {"Serif Font", CANVAS_STYLE_SERIF},
-        {"Monospace Font", CANVAS_STYLE_MONO},
-        {"Small Size", CANVAS_STYLE_SMALL},
-        {"Large Size", CANVAS_STYLE_LARGE},
+        {N_("Highlight (Ctrl+H)"), CANVAS_STYLE_HIGHLIGHT},
+        {N_("Code (Ctrl+E)"), CANVAS_STYLE_CODE},
+        {N_("Serif Font"), CANVAS_STYLE_SERIF},
+        {N_("Monospace Font"), CANVAS_STYLE_MONO},
+        {N_("Small Size"), CANVAS_STYLE_SMALL},
+        {N_("Large Size"), CANVAS_STYLE_LARGE},
     };
     for (guint i = 0; i < G_N_ELEMENTS(MORE); i++) {
         GtkWidget* item = pop_item(pop_box, MORE[i].name, G_CALLBACK(on_style_clicked), bar);
@@ -186,18 +187,18 @@ static void build(CanvasFormatBar* bar, GtkWidget* row) {
     gtk_box_append(GTK_BOX(row), more);
     add_sep(row);
 
-    GtkWidget* b = action_button(icon_image_new("view-list-bullet"), "Bullet List", G_CALLBACK(on_list_clicked), bar);
+    GtkWidget* b = action_button(icon_image_new("view-list-bullet"), N_("Bullet List"), G_CALLBACK(on_list_clicked), bar);
     g_object_set_data(G_OBJECT(b), "list-prefix", (gpointer)"- ");
     gtk_box_append(GTK_BOX(row), b);
-    b = action_button(icon_image_new("view-list-ordered"), "Numbered List", G_CALLBACK(on_list_clicked), bar);
+    b = action_button(icon_image_new("view-list-ordered"), N_("Numbered List"), G_CALLBACK(on_list_clicked), bar);
     g_object_set_data(G_OBJECT(b), "list-prefix", (gpointer)"1. ");
     gtk_box_append(GTK_BOX(row), b);
-    gtk_box_append(GTK_BOX(row), action_button(icon_image_new("object-select"), "Task Checkbox (Ctrl+Space)",
+    gtk_box_append(GTK_BOX(row), action_button(icon_image_new("object-select"), N_("Task Checkbox (Ctrl+Space)"),
                                                G_CALLBACK(on_checkbox_clicked), bar));
-    b = action_button(icon_image_new("format-indent-less"), "Decrease Indent", G_CALLBACK(on_indent_clicked), bar);
+    b = action_button(icon_image_new("format-indent-less"), N_("Decrease Indent"), G_CALLBACK(on_indent_clicked), bar);
     g_object_set_data(G_OBJECT(b), "indent-step", GINT_TO_POINTER(-1));
     gtk_box_append(GTK_BOX(row), b);
-    b = action_button(icon_image_new("format-indent-more"), "Increase Indent", G_CALLBACK(on_indent_clicked), bar);
+    b = action_button(icon_image_new("format-indent-more"), N_("Increase Indent"), G_CALLBACK(on_indent_clicked), bar);
     g_object_set_data(G_OBJECT(b), "indent-step", GINT_TO_POINTER(1));
     gtk_box_append(GTK_BOX(row), b);
 }

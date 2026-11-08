@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 09:21+0000\n"
+"POT-Creation-Date: 2026-11-08 09:25+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -357,6 +357,419 @@ msgstr "Trier A–Z / Z–A"
 #: src/bookmarks.c:1080 src/notes.c:2171 src/remote.c:1007
 msgid "Collapse / Expand All"
 msgstr "Tout replier / déplier"
+
+#: src/canvas_crop.c:117
+msgid "Crop Image"
+msgstr "Recadrer l’image"
+
+#: src/canvas_crop.c:118
+msgid "Apply"
+msgstr "Appliquer"
+
+#: src/canvas_crop.c:119
+msgid "Reset"
+msgstr "Réinitialiser"
+
+#: src/canvas_crop.c:120 src/editor_notepad.c:549
+msgid "Cancel"
+msgstr "Annuler"
+
+#: src/canvas_crop.c:142
+msgid "Left %"
+msgstr "Gauche %"
+
+#: src/canvas_crop.c:150
+msgid "Top %"
+msgstr "Haut %"
+
+#: src/canvas_crop.c:158
+msgid "Width %"
+msgstr "Largeur %"
+
+#: src/canvas_crop.c:166
+msgid "Height %"
+msgstr "Hauteur %"
+
+#: src/canvas_export.c:39
+msgid "The canvas is empty."
+msgstr "Le canvas est vide."
+
+#: src/canvas_export.c:44
+msgid "This build of cairo cannot write SVG."
+msgstr "Cette version de cairo ne sait pas écrire de SVG."
+
+#: src/canvas_export.c:55
+msgid "The canvas is not shown."
+msgstr "Le canvas n’est pas affiché."
+
+#: src/canvas_format_bar.c:15
+msgid "Grey Text"
+msgstr "Texte gris"
+
+#: src/canvas_format_bar.c:16
+msgid "Accent Text"
+msgstr "Texte d’accent"
+
+#: src/canvas_format_bar.c:17
+msgid "Red Text"
+msgstr "Texte rouge"
+
+#: src/canvas_format_bar.c:18
+msgid "Green Text"
+msgstr "Texte vert"
+
+#: src/canvas_format_bar.c:19
+msgid "Yellow Text"
+msgstr "Texte jaune"
+
+#: src/canvas_format_bar.c:138
+msgid "Paragraph Style (Ctrl+Alt+1, 2, 0, Q)"
+msgstr "Style de paragraphe (Ctrl+Alt+1, 2, 0, Q)"
+
+#: src/canvas_format_bar.c:144
+msgid "Heading 1"
+msgstr "Titre 1"
+
+#: src/canvas_format_bar.c:145
+msgid "Heading 2"
+msgstr "Titre 2"
+
+#: src/canvas_format_bar.c:146
+msgid "Body Text"
+msgstr "Corps de texte"
+
+#: src/canvas_format_bar.c:147
+msgid "Quote"
+msgstr "Citation"
+
+#: src/canvas_format_bar.c:155
+msgid "Bold (Ctrl+B)"
+msgstr "Gras (Ctrl+B)"
+
+#: src/canvas_format_bar.c:156
+msgid "Italic (Ctrl+I)"
+msgstr "Italique (Ctrl+I)"
+
+#: src/canvas_format_bar.c:158
+msgid "Underline (Ctrl+U)"
+msgstr "Souligné (Ctrl+U)"
+
+#: src/canvas_format_bar.c:159
+msgid "Strikethrough (Ctrl+Shift+S)"
+msgstr "Barré (Ctrl+Shift+S)"
+
+#: src/canvas_format_bar.c:162
+msgid "Text Color"
+msgstr "Couleur du texte"
+
+#: src/canvas_format_bar.c:171
+msgid "More Styles"
+msgstr "Autres styles"
+
+#: src/canvas_format_bar.c:176
+msgid "Highlight (Ctrl+H)"
+msgstr "Surlignage (Ctrl+H)"
+
+#: src/canvas_format_bar.c:177
+msgid "Code (Ctrl+E)"
+msgstr "Code (Ctrl+E)"
+
+#: src/canvas_format_bar.c:178
+msgid "Serif Font"
+msgstr "Police à empattements"
+
+#: src/canvas_format_bar.c:179
+msgid "Monospace Font"
+msgstr "Police à chasse fixe"
+
+#: src/canvas_format_bar.c:180
+msgid "Small Size"
+msgstr "Petite taille"
+
+#: src/canvas_format_bar.c:181
+msgid "Large Size"
+msgstr "Grande taille"
+
+#: src/canvas_format_bar.c:190
+msgid "Bullet List"
+msgstr "Liste à puces"
+
+#: src/canvas_format_bar.c:193
+msgid "Numbered List"
+msgstr "Liste numérotée"
+
+#: src/canvas_format_bar.c:196
+msgid "Task Checkbox (Ctrl+Space)"
+msgstr "Case à cocher (Ctrl+Space)"
+
+#: src/canvas_format_bar.c:198
+msgid "Decrease Indent"
+msgstr "Diminuer le retrait"
+
+#: src/canvas_format_bar.c:201
+msgid "Increase Indent"
+msgstr "Augmenter le retrait"
+
+#: src/canvas_item.c:253
+msgid "Drag to Resize"
+msgstr "Faire glisser pour redimensionner"
+
+#: src/canvas_item.c:273
+msgid "Drag to Move (Esc, then Arrows)"
+msgstr "Faire glisser pour déplacer (Esc, puis les flèches)"
+
+#: src/canvas_props.c:19
+msgid "Default"
+msgstr "Par défaut"
+
+#: src/canvas_props.c:20
+msgid "Grey"
+msgstr "Gris"
+
+#: src/canvas_props.c:21
+msgid "Accent"
+msgstr "Accent"
+
+#: src/canvas_props.c:22
+msgid "Red"
+msgstr "Rouge"
+
+#: src/canvas_props.c:23
+msgid "Green"
+msgstr "Vert"
+
+#: src/canvas_props.c:24
+msgid "Yellow"
+msgstr "Jaune"
+
+#: src/canvas_props.c:25
+msgid "Purple"
+msgstr "Violet"
+
+#: src/canvas_props.c:32
+msgid "No Fill"
+msgstr "Sans remplissage"
+
+#: src/canvas_props.c:33
+msgid "Hatched Fill"
+msgstr "Remplissage hachuré"
+
+#: src/canvas_props.c:34
+msgid "Solid Fill"
+msgstr "Remplissage plein"
+
+#: src/canvas_props.c:41
+msgctxt "stroke width"
+msgid "Thin"
+msgstr "Fin"
+
+#: src/canvas_props.c:42
+msgctxt "stroke width"
+msgid "Bold"
+msgstr "Épais"
+
+#: src/canvas_props.c:43
+msgctxt "stroke width"
+msgid "Extra Bold"
+msgstr "Très épais"
+
+#: src/canvas_props.c:52
+msgid "Align Left"
+msgstr "Aligner à gauche"
+
+#: src/canvas_props.c:53
+msgid "Align Centers"
+msgstr "Aligner les centres"
+
+#: src/canvas_props.c:54
+msgid "Align Right"
+msgstr "Aligner à droite"
+
+#: src/canvas_props.c:55
+msgid "Align Top"
+msgstr "Aligner en haut"
+
+#: src/canvas_props.c:56
+msgid "Align Middles"
+msgstr "Aligner les milieux"
+
+#: src/canvas_props.c:57
+msgid "Align Bottom"
+msgstr "Aligner en bas"
+
+#: src/canvas_props.c:65
+msgid "Distribute Horizontally"
+msgstr "Répartir horizontalement"
+
+#: src/canvas_props.c:66
+msgid "Distribute Vertically"
+msgstr "Répartir verticalement"
+
+#: src/canvas_props.c:75
+msgid "Bring to Front (Ctrl+Shift+])"
+msgstr "Mettre au premier plan (Ctrl+Shift+])"
+
+#: src/canvas_props.c:76
+msgid "Bring Forward (Ctrl+])"
+msgstr "Avancer (Ctrl+])"
+
+#: src/canvas_props.c:77
+msgid "Send Backward (Ctrl+[)"
+msgstr "Reculer (Ctrl+[)"
+
+#: src/canvas_props.c:78
+msgid "Send to Back (Ctrl+Shift+[)"
+msgstr "Mettre à l’arrière-plan (Ctrl+Shift+[)"
+
+#: src/canvas_props.c:242
+msgid "Stroke"
+msgstr "Trait"
+
+#: src/canvas_props.c:252
+msgid "Fill"
+msgstr "Remplissage"
+
+#: src/canvas_props.c:262
+msgid "Stroke Width"
+msgstr "Épaisseur du trait"
+
+#: src/canvas_props.c:271
+msgid "Style"
+msgstr "Style"
+
+#: src/canvas_props.c:273
+msgid "Hand-Drawn"
+msgstr "À main levée"
+
+#: src/canvas_props.c:274
+msgid "Clean"
+msgstr "Net"
+
+#: src/canvas_props.c:363
+msgid "Align"
+msgstr "Aligner"
+
+#: src/canvas_props.c:373
+msgid "Distribute"
+msgstr "Répartir"
+
+#: src/canvas_props.c:390
+msgid "Layers"
+msgstr "Plans"
+
+#: src/canvas_props.c:398
+msgid "Actions"
+msgstr "Actions"
+
+#: src/canvas_props.c:400 src/canvas_props.c:418
+msgid "Lock (Ctrl+Shift+K)"
+msgstr "Verrouiller (Ctrl+Shift+K)"
+
+#: src/canvas_props.c:402
+msgid "Crop Picture"
+msgstr "Recadrer l’image"
+
+#: src/canvas_props.c:418
+msgid "Unlock (Ctrl+Shift+K)"
+msgstr "Déverrouiller (Ctrl+Shift+K)"
+
+#: src/canvas_rotate.c:132
+msgid "Drag to Rotate (Shift: 15° Steps)"
+msgstr "Faire glisser pour pivoter (Shift : pas de 15°)"
+
+#: src/canvas_table_bar.c:37
+msgid "Insert Row Above"
+msgstr "Insérer une ligne au-dessus"
+
+#: src/canvas_table_bar.c:38
+msgid "Insert Row Below"
+msgstr "Insérer une ligne en dessous"
+
+#: src/canvas_table_bar.c:39
+msgid "Delete Row"
+msgstr "Supprimer la ligne"
+
+#: src/canvas_table_bar.c:41
+msgid "Insert Column Left"
+msgstr "Insérer une colonne à gauche"
+
+#: src/canvas_table_bar.c:42
+msgid "Insert Column Right"
+msgstr "Insérer une colonne à droite"
+
+#: src/canvas_table_bar.c:43
+msgid "Delete Column"
+msgstr "Supprimer la colonne"
+
+#: src/canvas_toolbar.c:20
+msgid "Select and Move (V)"
+msgstr "Sélectionner et déplacer (V)"
+
+#: src/canvas_toolbar.c:21
+msgid "Rectangle (R)"
+msgstr "Rectangle (R)"
+
+#: src/canvas_toolbar.c:22
+msgid "Diamond (D)"
+msgstr "Losange (D)"
+
+#: src/canvas_toolbar.c:23
+msgid "Ellipse (O)"
+msgstr "Ellipse (O)"
+
+#: src/canvas_toolbar.c:24
+msgid "Arrow (A)"
+msgstr "Flèche (A)"
+
+#: src/canvas_toolbar.c:25
+msgid "Line (L)"
+msgstr "Ligne (L)"
+
+#: src/canvas_toolbar.c:26
+msgid "Pencil (P)"
+msgstr "Crayon (P)"
+
+#: src/canvas_toolbar.c:27
+msgid "Text Box (T)"
+msgstr "Zone de texte (T)"
+
+#: src/canvas_toolbar.c:28
+msgid "Table (B)"
+msgstr "Tableau (B)"
+
+#: src/canvas_toolbar.c:29
+msgid "Eraser (E)"
+msgstr "Gomme (E)"
+
+#: src/canvas_toolbar.c:113
+msgid "Grid and Export"
+msgstr "Grille et export"
+
+#: src/canvas_toolbar.c:118
+msgid "Snap to Grid"
+msgstr "Aimanter à la grille"
+
+#: src/canvas_toolbar.c:124
+msgid "Export as PNG"
+msgstr "Exporter en PNG"
+
+#: src/canvas_toolbar.c:125
+msgid "Export as SVG"
+msgstr "Exporter en SVG"
+
+#: src/canvas_view.c:228
+#, c-format
+msgid "Canvas exported to %s"
+msgstr "Canvas exporté vers %s"
+
+#: src/canvas_view.c:230
+#, c-format
+msgid "Canvas export failed: %s"
+msgstr "Échec de l’export du canvas : %s"
+
+#: src/canvas_view.c:468
+msgid "Zoom: Ctrl+Wheel, Ctrl+= / Ctrl+-; Click: 100% (Ctrl+0)"
+msgstr "Zoom : Ctrl+molette, Ctrl+= / Ctrl+- ; clic : 100 % (Ctrl+0)"
 
 #: src/code_help.c:287
 #, c-format
@@ -1059,10 +1472,6 @@ msgstr "Enregistrer sous :"
 #: src/editor_notepad.c:548
 msgid "Save"
 msgstr "Enregistrer"
-
-#: src/editor_notepad.c:549
-msgid "Cancel"
-msgstr "Annuler"
 
 #: src/editor_notepad.c:568
 msgid "Ready"

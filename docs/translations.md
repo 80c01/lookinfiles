@@ -44,13 +44,12 @@ The template `po/lookinfiles.pot` is generated, not committed.
 
 | Language | Catalog | Covered |
 |----------|---------|---------|
-| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences, keyboard shortcuts panel (`help.c`), sidebar and its views (bookmarks, notes, remote, games list), editor tab menu and Notepad mode, find bar, Search in Files, References and Search tabs, Git tab (commit list, relative dates), preview core (sidebar row summaries, directory preview, images, PDF, audio, video, archive rows), Appearance page (themes and fonts), code navigation (definition jumps, help cards, symbols picker, tagbar), Quick Open, Help tab and the whole user guide (`docs/l10n/fr/`) |
+| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences, keyboard shortcuts panel (`help.c`), sidebar and its views (bookmarks, notes, remote, games list), editor tab menu and Notepad mode, find bar, Search in Files, References and Search tabs, Git tab (commit list, relative dates), preview core (sidebar row summaries, directory preview, images, PDF, audio, video, archive rows), Appearance page (themes and fonts), code navigation (definition jumps, help cards, symbols picker, tagbar), Quick Open, Canvas notes (toolbars, properties panel, crop dialog), Help tab and the whole user guide (`docs/l10n/fr/`) |
 
 Not marked yet: the format cards of
-the preview (`preview_formats` and the `*_info` / `*_view` modules), the
-Canvas notes toolbars and panels (`canvas_*`), browser tabs, saved layouts,
-the terminal start errors (`vt_pty`), the file type names (`file_types`),
-trash restore and file moves. Left in English on purpose: file contents created for the user
+the preview (`preview_formats` and the `*_info` / `*_view` modules), browser
+tabs, saved layouts, the terminal start errors (`vt_pty`), the file type names
+(`file_types`), trash restore and file moves. Left in English on purpose: file contents created for the user
 (welcome note, note templates, the default "General" notebook), the game
 description sheets and the games themselves, and the Emacs, Org-mode and Vim
 minibuffer and echo messages (they mimic those editors, whose words the users

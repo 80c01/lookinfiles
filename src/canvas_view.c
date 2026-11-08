@@ -10,6 +10,7 @@
 #include "canvas_format_bar.h"
 #include "canvas_geometry.h"
 #include "canvas_item.h"
+#include "i18n.h"
 #include "canvas_keys.h"
 #include "canvas_page_private.h"
 #include "canvas_props.h"
@@ -224,9 +225,9 @@ static gboolean on_export_idle(gpointer data) {
         gchar* name = g_path_get_basename(path);
         gchar* text;
         if (canvas_export_picture(p->surface, path, job->svg, &error)) {
-            text = g_strdup_printf("Canvas exported to %s", name);
+            text = g_strdup_printf(_("Canvas exported to %s"), name);
         } else {
-            text = g_strdup_printf("Canvas export failed: %s", error->message);
+            text = g_strdup_printf(_("Canvas export failed: %s"), error->message);
         }
         app_notice(p->app, text, FALSE);
         g_free(text);
@@ -464,7 +465,7 @@ static CanvasPage* page_new(AppData* app) {
     gtk_box_append(GTK_BOX(bar), p->title);
     p->zoom_button = gtk_button_new_with_label("100%");
     gtk_widget_add_css_class(p->zoom_button, "flat");
-    gtk_widget_set_tooltip_text(p->zoom_button, "Zoom: Ctrl+Wheel, Ctrl+= / Ctrl+-; Click: 100% (Ctrl+0)");
+    gtk_widget_set_tooltip_text(p->zoom_button, _("Zoom: Ctrl+Wheel, Ctrl+= / Ctrl+-; Click: 100% (Ctrl+0)"));
     g_signal_connect(p->zoom_button, "clicked", G_CALLBACK(on_zoom_clicked), p);
     gtk_box_append(GTK_BOX(bar), p->zoom_button);
     gtk_box_append(GTK_BOX(root), bar);
