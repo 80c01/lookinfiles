@@ -81,7 +81,7 @@ static SessionWorkspace* capture_workspace(AppData* app, Session* s, gint i) {
     editor_session_capture(app, i, tabs, &preview_tabs, &editor_tabs);
     g_ptr_array_add(tabs, NULL);
     /* The bookmarks, notes and remote views keep no file selection */
-    const gchar* selected = (ws->sidebar_view == SIDEBAR_VIEW_FILES && !ws->show_bookmarks)
+    const gchar* selected = (ws->sidebar_view == SIDEBAR_VIEW_FILES)
                                 ? ws->selected_path : NULL;
     SessionWorkspace* sw = session_add_workspace(s, ws->base_dir, (const gchar* const*)expanded, selected,
                                                  ws->show_hidden, ws->sort_mode,
@@ -89,7 +89,7 @@ static SessionWorkspace* capture_workspace(AppData* app, Session* s, gint i) {
     if (ws->remote_id != NULL && remote_find_by_id(app, ws->remote_id) != NULL) {
         sw->remote_id = g_strdup(ws->remote_id);
     }
-    sw->view = ws->show_bookmarks ? SIDEBAR_VIEW_BOOKMARKS : ws->sidebar_view;
+    sw->view = ws->sidebar_view;
     sw->preview_tabs = preview_tabs;
     sw->editor_tabs = editor_tabs;
     sw->panels = capture_panels(ws);

@@ -31,9 +31,8 @@ static void on_sidebar_files_clicked(GtkButton* btn, gpointer data) {
     if (app == NULL) {
         return;
     }
-    if (app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
+    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
         app->sidebar_view = SIDEBAR_VIEW_FILES;
-        app->show_bookmarks = FALSE;
         app_emit(app, APP_EVENT_CHROME_CHANGED);
         app_emit(app, APP_EVENT_FILES_CHANGED);
     } else if (app->tree_view != NULL) {
@@ -380,7 +379,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
         gtk_widget_add_css_class(remote_btn, "sidebar-icon-active");
     } else if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES) {
         gtk_widget_add_css_class(buf_btn, "sidebar-icon-active");
-    } else if (app != NULL && (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks)) {
+    } else if (app != NULL && app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
         gtk_widget_add_css_class(bm_btn, "sidebar-icon-active");
     } else {
         gtk_widget_add_css_class(files_btn, "sidebar-icon-active");
@@ -430,7 +429,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     GtkWidget* files_collapse_btn = collapse_button_new(cb, CB_FILES, G_CALLBACK(on_sidebar_files_collapse_clicked));
     gtk_box_append(GTK_BOX(files_toolbar), files_collapse_btn);
 
-    gtk_widget_set_visible(files_toolbar, (app == NULL || (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks)));
+    gtk_widget_set_visible(files_toolbar, (app == NULL || app->sidebar_view == SIDEBAR_VIEW_FILES));
     gtk_box_append(GTK_BOX(header), files_toolbar);
 
     /* 2. Bookmarks Toolbar: mini action icons */
@@ -480,7 +479,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     GtkWidget* bm_collapse_btn = collapse_button_new(cb, CB_BOOKMARKS, G_CALLBACK(on_sidebar_bm_collapse_clicked));
     gtk_box_append(GTK_BOX(bm_toolbar), bm_collapse_btn);
 
-    gtk_widget_set_visible(bm_toolbar, (app != NULL && (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks)));
+    gtk_widget_set_visible(bm_toolbar, (app != NULL && app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS));
     gtk_box_append(GTK_BOX(header), bm_toolbar);
 
     /* 3. Buffers Toolbar: mini action icons */
@@ -664,8 +663,8 @@ gboolean sidebar_header_update(AppData* app) {
     if (h == NULL) {
         return FALSE;
     }
-    gboolean files = (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
-    gboolean bookmarks = (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks);
+    gboolean files = (app->sidebar_view == SIDEBAR_VIEW_FILES);
+    gboolean bookmarks = (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS);
     gboolean notes = (app->sidebar_view == SIDEBAR_VIEW_NOTES);
     gboolean remote = (app->sidebar_view == SIDEBAR_VIEW_REMOTE);
     gboolean games = (app->sidebar_view == SIDEBAR_VIEW_GAMES);

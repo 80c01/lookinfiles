@@ -517,7 +517,7 @@ void update_status_bar(AppData* app) {
     }
 
     /* The branch only makes sense for the files view (like the Git Commits tab) */
-    gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
+    gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES);
     gchar* branch = files_view ? git_read_branch(app->base_dir) : NULL;
     if (branch != NULL) {
         gchar* root = find_git_root(app->base_dir);

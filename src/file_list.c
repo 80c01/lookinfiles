@@ -173,7 +173,6 @@ static void toggle_sidebar_view(AppData* app, gint view) {
         app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
     app->sidebar_view = (app->sidebar_view == view) ? SIDEBAR_VIEW_FILES : view;
-    app->show_bookmarks = (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     refresh_listing(app);
     /* Back to the files: the scan restores the selection */
@@ -298,7 +297,7 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
             notes_append_rows(parent, app);
             return;
         }
-        if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
+        if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
             bookmarks_append_rows(parent, app);
             return;
         }
@@ -458,7 +457,7 @@ static void merge_level(AppData* app, ExplorerRow* parent, const DirScanNode* no
 static gboolean rows_list_dir(AppData* app, const gchar* dirname) {
     ExplorerRow* first = explorer_row_child(explorer_tree_get_root(app->tree), 0);
     if (first == NULL || explorer_row_is(first, "-") || first->path[0] == '\0' ||
-        app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
+        app->sidebar_view != SIDEBAR_VIEW_FILES) {
         return FALSE;
     }
     gchar* parent = g_path_get_dirname(first->path);
@@ -619,7 +618,7 @@ static void dir_scan_thread_func(GTask* task, gpointer source_object,
  * same expanded folders (any doubt counts as a difference) */
 static gboolean rows_match_node(AppData* app, ExplorerRow* parent, const DirScanNode* node) {
     if (parent->is_root &&
-        (app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks)) {
+        app->sidebar_view != SIDEBAR_VIEW_FILES) {
         return FALSE;
     }
     if (node == NULL || node->unreadable || node->entries == NULL) {
@@ -919,7 +918,6 @@ void reveal_path_in_tree(AppData* app, const gchar* path) {
         app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
     app->sidebar_view = SIDEBAR_VIEW_FILES;
-    app->show_bookmarks = FALSE;
     gsize n = strlen(app->base_dir);
     gboolean inside = g_str_has_prefix(path, app->base_dir) && n > 0 &&
                       (path[n] == '/' || path[n] == '\\' ||
@@ -1082,9 +1080,8 @@ void trash_selected_in_tree(AppData* app) {
 /* Shift+H / Shift+L, mouse back / forward, the top bar arrows: the folder
  * shown steps before / after */
 static void walk_history(AppData* app, gboolean back, guint steps) {
-    if (app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
+    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
         app->sidebar_view = SIDEBAR_VIEW_FILES;
-        app->show_bookmarks = FALSE;
     }
     gchar* dir = steps > 1 ? nav_history_go(app, back, steps)
                            : back ? nav_history_back(app) : nav_history_forward(app);
@@ -1124,9 +1121,8 @@ void undo_last_file_move(AppData* app) {
 
 /* Backspace: parent directory, or back to the files view from the other views */
 void go_to_parent_directory(AppData* app) {
-    if (app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
+    if (app->sidebar_view != SIDEBAR_VIEW_FILES) {
         app->sidebar_view = SIDEBAR_VIEW_FILES;
-        app->show_bookmarks = FALSE;
         refresh_listing(app);
         return;
     }

@@ -54,8 +54,7 @@ static void on_breadcrumb_clicked(GtkButton* btn, gpointer data) {
             return;
         }
 #endif
-        if (app->show_bookmarks || g_strcmp0(target, app->base_dir) != 0) {
-            app->show_bookmarks = FALSE;
+        if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || g_strcmp0(target, app->base_dir) != 0) {
             if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
                 app->sidebar_view = SIDEBAR_VIEW_FILES;
             }
@@ -473,7 +472,7 @@ void update_path_label(AppData* app) {
         gchar* text = g_strdup_printf("Directory: %s   [sort: %s] [hidden: %s] [view: %s]",
                                        app->base_dir, sort_names[app->sort_mode],
                                        app->show_hidden ? "on" : "off",
-                                       app->show_bookmarks ? "bookmarks" : "files");
+                                       app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS ? "bookmarks" : "files");
         gtk_label_set_text(GTK_LABEL(t->path_label), text);
         g_free(text);
     }

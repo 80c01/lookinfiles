@@ -350,7 +350,7 @@ void git_tab_update(AppData* app, const gchar* dir) {
 
     /* Hide git commits tab when in Bookmarks, Notes or Remote view */
     if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->sidebar_view == SIDEBAR_VIEW_NOTES ||
-        app->sidebar_view == SIDEBAR_VIEW_REMOTE || app->show_bookmarks) {
+        app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
         gtk_widget_set_visible(g->page, FALSE);
         return;
     }

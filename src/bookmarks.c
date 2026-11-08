@@ -261,7 +261,6 @@ void bookmarks_init(AppData* app) {
     }
     app->bm = g_new0(struct Bookmarks, 1);
     app->bm->root = g_node_new(NULL);
-    app->show_bookmarks = FALSE;
 
     gchar* path = bm_config_file("bookmarks.xml");
     gchar* content = NULL;
@@ -892,7 +891,6 @@ void bookmarks_activate_selected(AppData* app) {
 
     gchar* target = g_strdup(it->target);
     app->sidebar_view = SIDEBAR_VIEW_FILES;
-    app->show_bookmarks = FALSE;
     navigate_to_path(app, target);
     g_free(target);
 }

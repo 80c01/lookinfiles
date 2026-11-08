@@ -132,7 +132,6 @@ gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state)
 
         /* Switch sidebar to Games view */
         app->sidebar_view = SIDEBAR_VIEW_GAMES;
-        app->show_bookmarks = FALSE;
         app_emit(app, APP_EVENT_CHROME_CHANGED);
         games_refresh(app);
 

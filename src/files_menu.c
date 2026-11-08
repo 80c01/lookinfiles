@@ -196,7 +196,7 @@ static void fill_folder_menu(GtkWidget* box, GtkWidget* popover, AppData* app) {
 static void on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     AppData* app = (AppData*)data;
-    if (app == NULL || app->sidebar_view != SIDEBAR_VIEW_FILES || app->show_bookmarks) {
+    if (app == NULL || app->sidebar_view != SIDEBAR_VIEW_FILES) {
         return;
     }
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);

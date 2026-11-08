@@ -283,7 +283,6 @@ static void choose(Picker* p, gboolean edit) {
     if (is_folder) {
         /* A recent folder becomes the explorer's folder */
         app->sidebar_view = SIDEBAR_VIEW_FILES;
-        app->show_bookmarks = FALSE;
         reload_directory(app, path);
         if (app->tree_view != NULL) gtk_widget_grab_focus(app->tree_view);
         g_free(path);

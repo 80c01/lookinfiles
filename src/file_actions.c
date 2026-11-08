@@ -113,8 +113,7 @@ static gboolean is_valid_name(const gchar* name) {
 /* Selected file or directory row of the files view (not the base directory);
  * returns its path, or NULL. */
 static gchar* selected_entry_path(AppData* app) {
-    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_FILES ||
-        app->show_bookmarks) {
+    if (app == NULL || app->tree == NULL || app->sidebar_view != SIDEBAR_VIEW_FILES) {
         return NULL;
     }
     ExplorerRow* row = explorer_tree_get_selected(app->tree);

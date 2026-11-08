@@ -108,7 +108,6 @@ typedef struct {
     GHashTable* expanded_paths;
     gchar* selected_path;
     gboolean show_hidden;
-    gboolean show_bookmarks;
     gint sidebar_view;   /* SIDEBAR_VIEW_FILES / BOOKMARKS / NOTES */
     gint sort_mode;
     gint notebook_page;
@@ -143,14 +142,11 @@ typedef struct AppData {
     struct Search* search;  /* search bars and the open or last search (search.c), NULL before search_init() */
     struct TopBar* topbar;  /* top bar widgets (topbar.c), NULL before topbar_new() */
     GtkWidget* left_vbox;
-    gboolean show_hidden; /* hidden files (dot-prefixed) */
-    gboolean show_bookmarks; /* bookmarks view active in explorer panel */
+    gboolean show_hidden; /* hidden files (dot-prefixed) */ /* bookmarks view active in explorer panel */
     gint sidebar_view;       /* SIDEBAR_VIEW_FILES / BOOKMARKS / NOTES */
     struct Bookmarks* bm;    /* bookmark tree and counters (bookmarks.c), NULL outside bookmarks_init() / bookmarks_free() */
     gint session_save_ws;       /* workspace to save on APP_EVENT_SAVE_WORKSPACE_BOOKMARK */
     gchar* session_open_target; /* saved-workspace target to open on APP_EVENT_OPEN_WORKSPACE_BOOKMARK */
-    GPtrArray* buffers;      /* temporary/custom buffer names or paths */
-    gint next_buffer_id;     /* incremental counter for Untitled buffers */
     struct NotesManager* notes_mgr; /* notes and notebooks (notes.c) */
     struct AppEvents* events; /* subscriptions and app_notice() message (app_events.c) */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */

@@ -113,7 +113,6 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     ws->selected_path = NULL;
     ws->show_hidden = FALSE;
-    ws->show_bookmarks = FALSE;
     ws->sidebar_view = SIDEBAR_VIEW_FILES;
     ws->sort_mode = SORT_NAME;
     ws->notebook_page = 0;
@@ -155,7 +154,6 @@ void workspace_save_current(AppData* app) {
     ws->preview_vis = gtk_widget_get_visible(app->viewer_box);
     ws->term_vis = gtk_widget_get_visible(app->term_scroll);
     ws->show_hidden = app->show_hidden;
-    ws->show_bookmarks = app->show_bookmarks;
     ws->sidebar_view = app->sidebar_view;
     ws->games_unlocked = app->game_mode_unlocked;
     ws->sort_mode = app->sort_mode;
@@ -492,13 +490,11 @@ void workspace_switch(AppData* app, gint idx) {
     gboolean need_rescan = app->dir_scan_pending ||
                            (g_strcmp0(app->base_dir, ws->base_dir) != 0) ||
                            (app->show_hidden != ws->show_hidden) ||
-                           (app->show_bookmarks != ws->show_bookmarks) ||
                            (app->sidebar_view != ws->sidebar_view) ||
                            (app->sort_mode != ws->sort_mode) ||
                            !ws_paths_equal(app->expanded_paths, ws->expanded_paths);
 
     app->show_hidden = ws->show_hidden;
-    app->show_bookmarks = ws->show_bookmarks;
     app->sidebar_view = ws->sidebar_view;
     app->game_mode_unlocked = ws->games_unlocked;
     app->game_mode_just_unlocked = FALSE;
@@ -534,7 +530,7 @@ void workspace_switch(AppData* app, gint idx) {
 
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 
-    gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
+    gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES);
     /* Selecting a row below goes back to the Preview tab: the workspace's
      * editor tab is put back in front after it */
     gint page = (app->notebook != NULL && !app->editor_dedicated)
@@ -690,7 +686,6 @@ void workspace_restore_state(AppData* app, gint idx, const gchar* dir, const gch
     /* The games view needs its unlock, never restored */
     gboolean known = (view == SIDEBAR_VIEW_BOOKMARKS || view == SIDEBAR_VIEW_NOTES || view == SIDEBAR_VIEW_REMOTE);
     ws->sidebar_view = known ? view : SIDEBAR_VIEW_FILES;
-    ws->show_bookmarks = (ws->sidebar_view == SIDEBAR_VIEW_BOOKMARKS);
     workspace_switch(app, idx); /* lists the folder with that state */
 }
 

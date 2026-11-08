@@ -707,9 +707,6 @@ int main(int argc, char** argv) {
     topbar_free(app);
     workspace_view_free(app);
     status_bar_free(app);
-    if (app->buffers != NULL) {
-        g_ptr_array_unref(app->buffers);
-    }
     if (app->dir_cancellable != NULL) {
         g_cancellable_cancel(app->dir_cancellable);
         g_clear_object(&app->dir_cancellable);

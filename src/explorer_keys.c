@@ -29,7 +29,7 @@ static gboolean is_container_row(ExplorerRow* row) {
 
 /* Files view (not bookmarks / notes / remote) */
 static gboolean is_files_view(AppData* app) {
-    return app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks;
+    return app->sidebar_view == SIDEBAR_VIEW_FILES;
 }
 
 /* Right / l / C-f: open a bookmark, expand a folder or step into its first child */
@@ -185,7 +185,7 @@ static gboolean handle_action_key(AppData* app, guint keyval, GdkModifierType st
         }
         return TRUE;
     case GDK_KEY_o: /* Cycle the sort of the current view */
-        if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
+        if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS) {
             bookmarks_toggle_sort(app);
         } else if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
             notes_toggle_sort(app);
