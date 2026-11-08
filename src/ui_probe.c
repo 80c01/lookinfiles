@@ -30,7 +30,9 @@ void ui_probe_install_file(const gchar* path) {
         return;
     }
     probe_path = g_strdup(path);
-    g_unix_signal_add(SIGUSR1, on_probe_signal, NULL);
+    /* Not SIGUSR1: WebKit's JavaScriptCore takes it for its garbage collector
+     * once a browser tab loads, and crashes on a SIGUSR1 it did not send */
+    g_unix_signal_add(SIGUSR2, on_probe_signal, NULL);
 }
 #else
 void ui_probe_install_file(const gchar* path) {

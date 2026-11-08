@@ -1,4 +1,4 @@
-/* Unit tests for src/ui_probe.c: SIGUSR1 writes a counter once idle. */
+/* Unit tests for src/ui_probe.c: SIGUSR2 writes a counter once idle. */
 #include "ui_probe.h"
 
 #include <glib/gstdio.h>
@@ -28,7 +28,7 @@ static void test_signal_counts(void) {
         /* Higher-priority work pending: the counter is written after it */
         gint runs = 0;
         g_idle_add_full(G_PRIORITY_DEFAULT_IDLE, on_busy, &runs, NULL);
-        raise(SIGUSR1);
+        raise(SIGUSR2);
         gchar* text = NULL;
         while ((text = read_probe(path)) == NULL || (guint)g_ascii_strtoull(text, NULL, 10) < n) {
             g_free(text);

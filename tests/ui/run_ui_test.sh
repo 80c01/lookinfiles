@@ -142,10 +142,13 @@ n=0
 # Screen hash, to see when it stops changing
 screen_hash() { import -window root rgb:- | md5sum; }
 # Wait until the application has handled everything queued (LOOKIN_UI_PROBE:
-# it writes a new number to $PROBE once idle after SIGUSR1), at most 3 s
+# it writes a new number to $PROBE once idle after SIGUSR2), at most 3 s.
+# Not SIGUSR1: WebKit takes it once a browser tab loads, and crashes on it.
+# An application gone (crashed) is recorded in $died: the first step without it.
+died=
 app_idle() {
     before=$(cat "$PROBE" 2>/dev/null)
-    kill -USR1 "$APP" 2>/dev/null || return
+    kill -USR2 "$APP" 2>/dev/null || { died=${died:-$n}; return; }
     j=0
     while [ "$(cat "$PROBE" 2>/dev/null)" = "$before" ] && [ $j -lt 300 ]; do
         sleep 0.01
@@ -614,9 +617,16 @@ key ctrl+Page_Up;       shot terminal_prev_tab
 key ctrl+shift+t; sleep 1; shot terminal_split  # a new pane below
 key ctrl+shift+c;       shot terminal_copy      # nothing selected: nothing copied
 key ctrl+shift+v; sleep 1; shot terminal_paste  # the clipboard to the shell
-key ctrl+q
+key ctrl+q;             shot quit_unsaved_changes  # main.c and 7.md were edited: asks first
+# Close Without Saving (Alt+W), once per edited file
+for _ in 1 2 3 4; do kill -0 $APP 2>/dev/null || break; key alt+w; sleep 0.5; done
 
 status=0
+if [ -n "$died" ]; then
+    echo "ui-shots: FAIL - the application was gone from step $died on (crashed?)"
+    status=1
+fi
+died=
 if [ "$windows" -ne 1 ]; then
     echo "ui-shots: FAIL - the New File dialog opened a separate window ($windows windows)"
     status=1
@@ -664,6 +674,11 @@ else
         wait $APP || { echo "ui-shots: FAIL - format session exited with an error"; status=1; }
         APP=
     fi
+fi
+
+if [ -n "$died" ]; then
+    echo "ui-shots: FAIL - the format session was gone from step $died on (crashed?)"
+    status=1
 fi
 
 # Time from the selection to the preview on screen, per format

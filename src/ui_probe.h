@@ -4,7 +4,7 @@
 #include <glib.h>
 
 /* Test hook for the headless UI tests: with LOOKIN_UI_PROBE=<file>, each
- * SIGUSR1 writes an increasing number to <file> once the main loop has run
+ * SIGUSR2 writes an increasing number to <file> once the main loop has run
  * everything of higher priority than G_PRIORITY_LOW (input, layout,
  * redraws). A test that sends the signal and waits for the number to change
  * knows the application has caught up. Does nothing without the variable or
