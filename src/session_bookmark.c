@@ -3,7 +3,7 @@
 #include "core/i18n.h"
 #include "bookmark_dialog.h"
 #include "bookmarks.h"
-#include "dialog.h"
+#include "widgets/dialog.h"
 #include "session.h"
 #include "session_store.h"
 

@@ -1,5 +1,5 @@
-/* Unit tests for src/pane_geometry.c: choosing the pane next to another one. */
-#include "pane_geometry.h"
+/* Unit tests for src/widgets/pane_geometry.c: choosing the pane next to another one. */
+#include "widgets/pane_geometry.h"
 
 /* 2x2 grid of 100x100 panes: 0 top-left, 1 top-right, 2 bottom-left,
  * 3 bottom-right */

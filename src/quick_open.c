@@ -2,7 +2,7 @@
 #include "quick_open.h"
 #include "core/app_events.h"
 #include "code_index.h"
-#include "dialog.h"
+#include "widgets/dialog.h"
 #include "editor.h"
 #include "file_list.h"
 #include "focus_route.h"

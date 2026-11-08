@@ -3,7 +3,7 @@
 #include "core/i18n.h"
 #include "code_index.h"
 #include "code_refs.h"
-#include "dialog.h"
+#include "widgets/dialog.h"
 #include "editor.h"
 #include "core/path_globs.h"
 #include "text_search.h"

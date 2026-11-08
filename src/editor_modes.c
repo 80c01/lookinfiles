@@ -2,7 +2,7 @@
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "theme/text_style.h"
-#include "diff_gutter.h"
+#include "widgets/diff_gutter.h"
 #include "code_nav.h"
 #include "code_help.h"
 #include "code_intel.h"

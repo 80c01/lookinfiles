@@ -1,4 +1,4 @@
-#include "minimap_geometry.h"
+#include "widgets/minimap_geometry.h"
 
 static gdouble max_value(gdouble upper, gdouble page) {
     return MAX(0.0, upper - page);

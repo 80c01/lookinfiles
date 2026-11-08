@@ -2,7 +2,7 @@
 #include "core/i18n.h"
 #include "theme/palette.h"
 #include "core/app_paths.h"
-#include "dialog.h"
+#include "widgets/dialog.h"
 #include "core/app_events.h"
 #include "tree_nav.h"
 #include "file_list.h"

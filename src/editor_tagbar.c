@@ -3,7 +3,7 @@
 #include "core/i18n.h"
 #include "editor.h"
 #include "code_outline.h"
-#include "outline_pane.h"
+#include "widgets/outline_pane.h"
 #include "core/settings_store.h"
 
 #define REFRESH_DELAY_MS 600   /* pause in the edits before the outline is read again */

@@ -1,4 +1,4 @@
-#include "tab_drop.h"
+#include "widgets/tab_drop.h"
 
 #if defined(G_OS_WIN32) || defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN

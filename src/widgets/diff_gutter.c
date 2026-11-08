@@ -2,7 +2,7 @@
  * the lines added, modified or deleted since the last git commit, like the
  * VS Code editor gutter. The HEAD version is read by git in a worker thread;
  * the line diff runs on the UI thread (debounced while editing). */
-#include "diff_gutter.h"
+#include "widgets/diff_gutter.h"
 #include "git_utils.h"
 #include "core/line_diff.h"
 #include "theme/palette.h"

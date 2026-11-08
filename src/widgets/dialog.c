@@ -1,5 +1,5 @@
 /* Modal dialog drawn inside the main window (see dialog.h) */
-#include "dialog.h"
+#include "widgets/dialog.h"
 
 struct _AppDialog {
     GtkBox parent_instance;     /* the dimmed layer covering the window */

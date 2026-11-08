@@ -2,11 +2,11 @@
  * splitting and dropping editor tabs and movable pages (see editor.h) */
 #include "editor.h"
 #include "editor_private.h"
-#include "pane_geometry.h"
-#include "panels.h"
+#include "widgets/pane_geometry.h"
+#include "widgets/panels.h"
 #include "core/app_events.h"
-#include "minimap.h"
-#include "tab_drop.h"
+#include "widgets/minimap.h"
+#include "widgets/tab_drop.h"
 #include "focus_route.h"
 #include "git_tab.h"
 

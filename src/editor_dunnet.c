@@ -2,8 +2,8 @@
 #include "editor_dunnet.h"
 #include "dunnet.h"
 #include "editor.h"
-#include "diff_gutter.h"
-#include "color_column.h"
+#include "widgets/diff_gutter.h"
+#include "widgets/color_column.h"
 #include <string.h>
 
 #define DUNNET_BUF_KEY "dunnet-buffer-state"

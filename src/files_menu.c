@@ -11,7 +11,7 @@
 #include "file_moves.h"
 #include "core/file_types.h"
 #include "nav_keys.h"
-#include "panels.h"
+#include "widgets/panels.h"
 #include "terminal.h"
 #include "tree_nav.h"
 

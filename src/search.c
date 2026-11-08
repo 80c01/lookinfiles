@@ -5,7 +5,7 @@
 #include "search.h"
 #include "core/i18n.h"
 #include "tree_nav.h"
-#include "panels.h"
+#include "widgets/panels.h"
 #include "theme/icons.h"
 #include "editor_modes.h"
 #include "theme/text_tags.h"

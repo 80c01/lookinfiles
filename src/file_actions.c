@@ -2,7 +2,7 @@
  * rename (F2 / r / e) and move to trash (d / Delete), with their dialogs. */
 #include "file_actions.h"
 #include "core/i18n.h"
-#include "dialog.h"
+#include "widgets/dialog.h"
 #include "editor.h"
 #include "file_moves.h"
 

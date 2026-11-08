@@ -11,7 +11,7 @@
 #include "ps_convert.h"
 #include "code_outline_tree.h"
 #include "preview_tagbar.h"
-#include "minimap.h"
+#include "widgets/minimap.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 

@@ -1,11 +1,11 @@
 #include "terminal.h"
-#include "panels.h"
+#include "widgets/panels.h"
 #include "core/app_events.h"
 #include "remote_store.h"
 #include "layout_store.h"
 #include "theme/palette.h"
 #include "theme/fonts.h"
-#include "tab_drop.h"
+#include "widgets/tab_drop.h"
 #include "editor.h"
 #include "focus_route.h"
 

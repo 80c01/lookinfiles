@@ -3,7 +3,7 @@
 
 #include <gtk/gtk.h>
 
-#include "pane_geometry.h"
+#include "widgets/pane_geometry.h"
 
 /* Dropping notebook tabs dragged with the mouse (GtkNotebook tab DnD between
  * notebooks of one group) onto a notebook: on its tab bar (insert there),

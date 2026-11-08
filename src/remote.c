@@ -1,13 +1,13 @@
 #include "remote.h"
 #include "core/i18n.h"
 #include "theme/palette.h"
-#include "dialog.h"
+#include "widgets/dialog.h"
 #include "tree_nav.h"
 #include "core/app_events.h"
 #include "file_list.h"
 #include "terminal.h"
 #include "explorer_tree.h"
-#include "icon_picker.h"
+#include "widgets/icon_picker.h"
 #include "notebook_icons.h"
 
 #include <stdio.h>

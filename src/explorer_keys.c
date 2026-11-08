@@ -4,7 +4,7 @@
 #include "preview_state.h"
 #include "file_list.h"
 #include "tree_nav.h"
-#include "panels.h"
+#include "widgets/panels.h"
 #include "core/app_events.h"
 #include "search.h"
 #include "help.h"

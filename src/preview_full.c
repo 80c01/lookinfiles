@@ -2,7 +2,7 @@
 #include "preview_full.h"
 
 #include "core/app_events.h"
-#include "dialog.h"
+#include "widgets/dialog.h"
 #include "core/i18n.h"
 
 /* Above this size, ask first: showing the text can freeze the window a while */

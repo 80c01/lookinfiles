@@ -1,4 +1,4 @@
-#include "pane_geometry.h"
+#include "widgets/pane_geometry.h"
 
 /* Tolerance for edges that touch (paned handles, rounding) */
 #define EDGE_EPSILON 2.0

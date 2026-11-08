@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "diff_gutter.h"
-#include "color_column.h"
+#include "widgets/diff_gutter.h"
+#include "widgets/color_column.h"
 #include "core/text_encoding.h"
 #include "preview_full.h"
 

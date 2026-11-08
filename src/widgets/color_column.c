@@ -1,5 +1,5 @@
 /* Vertical line at a column of a text view (see color_column.h) */
-#include "color_column.h"
+#include "widgets/color_column.h"
 #include "theme/palette.h"
 
 #define COLOR_COLUMN_KEY "lookin-color-column"

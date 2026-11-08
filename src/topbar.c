@@ -8,7 +8,7 @@
 #include "git_tab.h"
 #include "help.h"
 #include "help_guide.h"
-#include "minimap.h"
+#include "widgets/minimap.h"
 #include "nav_history.h"
 #include "nav_keys.h"
 #include "remote.h"

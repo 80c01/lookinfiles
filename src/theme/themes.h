@@ -8,7 +8,7 @@
  * The user's fonts (theme.ini [Fonts]) apply over any theme; the zoom keys
  * change their sizes. */
 #include "core/app_types.h"
-#include "dialog.h"
+#include "widgets/dialog.h"
 
 /* Apply the theme named name (with the user's fonts) to the whole
  * application; remember it as the chosen theme when remember is TRUE

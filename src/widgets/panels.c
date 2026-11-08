@@ -1,6 +1,6 @@
 /* Panel helpers shared by features and window chrome: fullscreen, focused-panel
  * highlight, workspace width, split-handle drag feedback and split fractions. */
-#include "panels.h"
+#include "widgets/panels.h"
 #include "core/app_events.h"
 
 /* Focused panel and split-handle drag (app->panels), created on first use */

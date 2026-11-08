@@ -2,8 +2,8 @@
 #include "bookmark_dialog.h"
 #include "core/i18n.h"
 #include "bookmark_icons.h"
-#include "dialog.h"
-#include "icon_picker.h"
+#include "widgets/dialog.h"
+#include "widgets/icon_picker.h"
 #include "notebook_icons.h"
 #include "session_store.h"
 

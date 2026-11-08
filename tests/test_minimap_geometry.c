@@ -1,5 +1,5 @@
-/* Unit tests for src/minimap_geometry.c: minimap scale, scroll and slider. */
-#include "minimap_geometry.h"
+/* Unit tests for src/widgets/minimap_geometry.c: minimap scale, scroll and slider. */
+#include "widgets/minimap_geometry.h"
 
 #define EPS 1e-6
 

@@ -4,7 +4,7 @@
 #include "editor_private.h"
 #include "editor_modes.h"
 #include "core/i18n.h"
-#include "diff_gutter.h"
+#include "widgets/diff_gutter.h"
 
 typedef struct {
     AppData* app;

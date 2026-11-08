@@ -2,7 +2,7 @@
 #include "help.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
-#include "panels.h"
+#include "widgets/panels.h"
 #include "core/app_events.h"
 #include "nav_keys.h"
 #include "games.h"

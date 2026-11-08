@@ -2,7 +2,7 @@
  * global mode keys in list pages. */
 #include "focus_route.h"
 #include "core/app_events.h"
-#include "panels.h"
+#include "widgets/panels.h"
 
 #include <string.h>
 

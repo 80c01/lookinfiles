@@ -2,7 +2,7 @@
 #include "core/i18n.h"
 #include "theme/text_tags.h"
 #include "theme/icons.h"
-#include "panels.h"
+#include "widgets/panels.h"
 #include "theme/text_style.h"
 #include "git_utils.h"
 #include "focus_route.h"

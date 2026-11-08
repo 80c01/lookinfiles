@@ -1,5 +1,5 @@
 /* Icon picker (see icon_picker.h) */
-#include "icon_picker.h"
+#include "widgets/icon_picker.h"
 #include "theme/icons.h"
 
 #define PER_ROW 11

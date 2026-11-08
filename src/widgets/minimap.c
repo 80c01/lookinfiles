@@ -1,8 +1,8 @@
-#include "minimap.h"
+#include "widgets/minimap.h"
 #include "preview_state.h"
-#include "diff_gutter.h"
+#include "widgets/diff_gutter.h"
 #include "core/line_diff.h"
-#include "minimap_geometry.h"
+#include "widgets/minimap_geometry.h"
 #include "theme/palette.h"
 
 /* Offscreen render of the part of the document around what the minimap

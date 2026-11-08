@@ -1661,8 +1661,8 @@ msgstr "Modules"
 msgid "Targets"
 msgstr "Cibles"
 
-#: src/code_outline_tree.c:269 src/elf_info.c:674 src/outline_pane.c:303
-#: src/outline_pane.c:523
+#: src/code_outline_tree.c:269 src/elf_info.c:674 src/widgets/outline_pane.c:303
+#: src/widgets/outline_pane.c:523
 msgid "Symbols"
 msgstr "Symboles"
 
@@ -1825,7 +1825,7 @@ msgstr "Pas d’analyseur de symboles pour ce langage"
 msgid "No symbols found in this file"
 msgstr "Aucun symbole trouvé dans ce fichier"
 
-#: src/code_symbols.c:258 src/outline_pane.c:434
+#: src/code_symbols.c:258 src/widgets/outline_pane.c:434
 msgid "declaration"
 msgstr "déclaration"
 
@@ -5877,35 +5877,35 @@ msgstr "flux plus court que sa taille"
 msgid "no stream %s"
 msgstr "pas de flux %s"
 
-#: src/outline_pane.c:217
+#: src/widgets/outline_pane.c:217
 msgid "Collapse All (c)"
 msgstr "Tout replier (c)"
 
-#: src/outline_pane.c:217
+#: src/widgets/outline_pane.c:217
 msgid "Expand All (c)"
 msgstr "Tout déplier (c)"
 
-#: src/outline_pane.c:303
+#: src/widgets/outline_pane.c:303
 msgid "Headings"
 msgstr "Titres"
 
-#: src/outline_pane.c:306
+#: src/widgets/outline_pane.c:306
 msgid "No headings in this file"
 msgstr "Aucun titre dans ce fichier"
 
-#: src/outline_pane.c:306
+#: src/widgets/outline_pane.c:306
 msgid "No symbols in this file"
 msgstr "Aucun symbole dans ce fichier"
 
-#: src/outline_pane.c:460
+#: src/widgets/outline_pane.c:460
 msgid "Sort By Line (s)"
 msgstr "Trier par ligne (s)"
 
-#: src/outline_pane.c:460
+#: src/widgets/outline_pane.c:460
 msgid "Group By Kind (s)"
 msgstr "Grouper par type (s)"
 
-#: src/outline_pane.c:540
+#: src/widgets/outline_pane.c:540
 msgid "Hide Tagbar (q)"
 msgstr "Masquer la barre de symboles (q)"
 
