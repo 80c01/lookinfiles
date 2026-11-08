@@ -1,6 +1,7 @@
 /* Unit tests for src/spreadsheet.c (.xlsx and .ods reading, number formats). */
 #include "spreadsheet.h"
 
+#include <locale.h>
 #include <string.h>
 
 static const gchar* cell(const Sheet* s, guint row, guint col) {
@@ -46,6 +47,28 @@ static void test_formats(void) {
     check_format(12500, 165, "\"$\"#,##0.00", "$12,500.00");
     check_format(-3.456, 166, "0.0", "-3.5");
     check_format(1500, 167, "#,##0 \"€\";[Red]-#,##0 \"€\"", "1,500 €");
+}
+
+/* A locale with a decimal comma (French, German...) does not change the cells */
+static void test_formats_comma_locale(void) {
+    gchar* saved = g_strdup(setlocale(LC_NUMERIC, NULL));
+    const gchar* const LOCALES[] = { "fr_FR.UTF-8", "fr_FR.utf8", "de_DE.UTF-8", "de_DE.utf8", NULL };
+    gboolean set = FALSE;
+    for (gint i = 0; LOCALES[i] != NULL && !set; i++) {
+        set = setlocale(LC_NUMERIC, LOCALES[i]) != NULL;
+    }
+    if (!set) {
+        g_free(saved);
+        g_test_skip("no locale with a decimal comma");
+        return;
+    }
+    check_format(1234.5, 4, NULL, "1,234.50");
+    check_format(0.625, 10, NULL, "62.50%");
+    check_format(0.1 + 0.2, 0, NULL, "0.3");
+    check_format(-3.456, 166, "0.0", "-3.5");
+    check_format(12345, 11, NULL, "1.23E+04");
+    setlocale(LC_NUMERIC, saved);
+    g_free(saved);
 }
 
 static void test_xlsx(void) {
@@ -107,6 +130,7 @@ int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/spreadsheet/columns", test_columns);
     g_test_add_func("/spreadsheet/formats", test_formats);
+    g_test_add_func("/spreadsheet/formats_comma_locale", test_formats_comma_locale);
     g_test_add_func("/spreadsheet/xlsx", test_xlsx);
     g_test_add_func("/spreadsheet/ods", test_ods);
     g_test_add_func("/spreadsheet/not_a_spreadsheet", test_not_a_spreadsheet);

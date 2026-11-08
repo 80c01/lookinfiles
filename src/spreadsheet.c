@@ -125,6 +125,13 @@ static gboolean code_is_date(const gchar* clean) {
     return FALSE;
 }
 
+/* The cells keep the separators of their format code ("#,##0.00"), whatever
+ * the locale: numbers are written with a dot, as in the C locale */
+static gchar* ascii_number(const gchar* format, gdouble value) {
+    gchar buf[512]; /* "%.2f" of 1e300 fits */
+    return g_strdup(g_ascii_formatd(buf, sizeof buf, format, value));
+}
+
 /* "2026-10-29", "2026-10-29 10:30", "10:30:00" from a serial date */
 static gchar* format_date(gdouble value, gboolean has_date, gboolean has_time, gboolean seconds) {
     gdouble days = floor(value);
@@ -137,7 +144,7 @@ static gchar* format_date(gdouble value, gboolean has_date, gboolean has_time, g
     GDateTime* dt = g_date_time_add_days(epoch, (gint)days);
     g_date_time_unref(epoch);
     if (dt == NULL) {
-        return g_strdup_printf("%g", value);
+        return ascii_number("%g", value);
     }
     GDateTime* full = g_date_time_add_seconds(dt, (gdouble)secs);
     g_date_time_unref(dt);
@@ -150,7 +157,9 @@ static gchar* format_date(gdouble value, gboolean has_date, gboolean has_time, g
 
 /* Number with a fixed number of decimals and optional thousands separators */
 static gchar* format_fixed(gdouble value, gint decimals, gboolean thousands) {
-    gchar* digits = g_strdup_printf("%.*f", decimals, fabs(value));
+    gchar* format = g_strdup_printf("%%.%df", CLAMP(decimals, 0, 30));
+    gchar* digits = ascii_number(format, fabs(value));
+    g_free(format);
     gchar* dot = strchr(digits, '.');
     gsize int_len = dot != NULL ? (gsize)(dot - digits) : strlen(digits);
     GString* out = g_string_new(value < 0 && strspn(digits, "0.") != strlen(digits) ? "-" : "");
@@ -170,11 +179,9 @@ static gchar* format_fixed(gdouble value, gint decimals, gboolean thousands) {
 /* General format: up to 10 significant digits, no trailing zeros */
 static gchar* format_general(gdouble value) {
     if (value == floor(value) && fabs(value) < 1e15) {
-        return g_strdup_printf("%.0f", value);
+        return ascii_number("%.0f", value);
     }
-    gchar buf[G_ASCII_DTOSTR_BUF_SIZE];
-    g_ascii_formatd(buf, sizeof(buf), "%.10g", value);
-    return g_strdup(buf);
+    return ascii_number("%.10g", value);
 }
 
 gchar* spreadsheet_format_number(gdouble value, guint builtin_id, const gchar* format_code) {
@@ -202,7 +209,7 @@ gchar* spreadsheet_format_number(gdouble value, guint builtin_id, const gchar* f
         gboolean time = strpbrk(code, "hHsS") != NULL;
         out = format_date(value, date, time, strpbrk(code, "sS") != NULL);
     } else if (strpbrk(code, "Ee") != NULL && strchr(code, '0') != NULL) {
-        out = g_strdup_printf("%.2E", value);
+        out = ascii_number("%.2E", value);
     } else {
         gboolean percent = strchr(code, '%') != NULL;
         gboolean thousands = strstr(code, "#,") != NULL || strstr(code, "0,0") != NULL;
