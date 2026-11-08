@@ -114,10 +114,11 @@ FLAGS_STAMP = $(BUILD_DIR)/flags
 FLAGS_NOW = $(CC) $(ALL_CFLAGS) | $(ALL_LDFLAGS) $(LIBS)
 $(shell mkdir -p $(BUILD_DIR); if command -v cmp >/dev/null 2>&1; then printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' | cmp -s - $(FLAGS_STAMP) || printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' > $(FLAGS_STAMP); else printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' > $(FLAGS_STAMP); fi)
 
-# Every .c file in src/ is part of the application: adding a module only
-# requires creating src/<module>.c and src/<module>.h.
-SRCS = $(sort $(wildcard src/*.c))
-OBJS = $(SRCS:src/%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/icon_resources.o $(BUILD_DIR)/guide_resources.o $(BUILD_DIR)/theme_resources.o
+# Every .c file in src/<dir>/ is part of the application: adding a module only
+# requires creating src/<dir>/<module>.c and its .h. Module names are unique,
+# so the objects stay flat in build/ (build/<module>.o).
+SRCS = $(sort $(wildcard src/*.c src/*/*.c))
+OBJS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRCS:.c=.o))) $(BUILD_DIR)/icon_resources.o $(BUILD_DIR)/guide_resources.o $(BUILD_DIR)/theme_resources.o
 
 # Toolbar icons bundled into the binary (icons/, see icons/COPYING and src/icons.c)
 GLIB_COMPILE_RESOURCES != $(PKG_CONFIG) --variable=glib_compile_resources gio-2.0
@@ -136,8 +137,17 @@ $(TARGET): $(OBJS) $(FLAGS_STAMP)
 deps:
 	@PKG_CONFIG=$(PKG_CONFIG) sh tools/check_deps.sh
 
-$(BUILD_DIR)/%.o: src/%.c $(FLAGS_STAMP) | $(BUILD_DIR)
-	$(CC) $(ALL_CFLAGS) $(DEPFLAGS) -c -o $@ $<
+# One static pattern rule per directory of src/: each object is bound to its
+# own source (no search path, so an old path in build/*.d cannot win)
+define module_dir_rule
+$(patsubst $(1)%.c,$(BUILD_DIR)/%.o,$(wildcard $(1)*.c)): $(BUILD_DIR)/%.o: $(1)%.c $(FLAGS_STAMP) | $(BUILD_DIR)
+	$$(CC) $$(ALL_CFLAGS) $$(DEPFLAGS) -c -o $$@ $$<
+endef
+$(foreach d,$(sort $(dir $(SRCS))),$(eval $(call module_dir_rule,$(d))))
+
+# A source moved to another directory of src/ keeps its old path in build/*.d
+# until it is rebuilt: the old path is not an error (-MP does the same for headers)
+src/%.c: ;
 
 $(BUILD_DIR)/icon_resources.c: icons/lookin.gresource.xml $(ICON_FILES) | $(BUILD_DIR)
 	$(GLIB_COMPILE_RESOURCES) --sourcedir=icons --generate-source --target=$@ $<
@@ -221,7 +231,7 @@ $(BUILD_DIR)/locale/%/LC_MESSAGES/$(GETTEXT_DOMAIN).mo: po/%.po
 
 pot:
 	@echo "xgettext -> po/$(GETTEXT_DOMAIN).pot"
-	@$(XGETTEXT) $(XGETTEXT_FLAGS) -o po/$(GETTEXT_DOMAIN).pot $(sort $(wildcard src/*.c src/*.h))
+	@$(XGETTEXT) $(XGETTEXT_FLAGS) -o po/$(GETTEXT_DOMAIN).pot $(sort $(wildcard src/*.c src/*.h src/*/*.c src/*/*.h))
 
 po-update: pot
 	@for po in $(PO_FILES); do echo "== $$po"; $(MSGMERGE) --update --backup=none $$po po/$(GETTEXT_DOMAIN).pot || exit 1; done
