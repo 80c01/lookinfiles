@@ -1,5 +1,6 @@
 /* Bookmark dialogs (see bookmark_dialog.h) */
 #include "bookmark_dialog.h"
+#include "i18n.h"
 #include "bookmark_icons.h"
 #include "dialog.h"
 #include "icon_picker.h"
@@ -14,7 +15,7 @@ gchar* bookmark_display_location(const gchar* target) {
         return g_strdup("");
     }
     if (session_target_id(target) != NULL) {
-        return g_strdup("Saved workspace");
+        return g_strdup(_("Saved workspace"));
     }
     if (bookmark_target_is_uri(target)) {
         return g_strdup(target);
@@ -191,10 +192,10 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
     GtkWidget* dlg = app_dialog_new(spec->title, app->window,
                                     NULL, NULL);
     if (spec->allow_remove) {
-        GtkWidget* rm = app_dialog_add_button(APP_DIALOG(dlg), "_Remove Bookmark", APP_RESPONSE_REJECT);
+        GtkWidget* rm = app_dialog_add_button(APP_DIALOG(dlg), _("_Remove Bookmark"), APP_RESPONSE_REJECT);
         gtk_widget_add_css_class(rm, "destructive-action");
     }
-    app_dialog_add_button(APP_DIALOG(dlg), "_Cancel", APP_RESPONSE_CANCEL);
+    app_dialog_add_button(APP_DIALOG(dlg), _("_Cancel"), APP_RESPONSE_CANCEL);
     GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), spec->ok_label, APP_RESPONSE_OK);
     gtk_widget_add_css_class(ok, "suggested-action");
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
@@ -203,10 +204,10 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
     GtkWidget* box = bm_dialog_body(dlg);
 
     /* Name */
-    gtk_box_append(GTK_BOX(box), bm_field_label("Name"));
+    gtk_box_append(GTK_BOX(box), bm_field_label(_("Name")));
     GtkWidget* name_entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(name_entry),
-                                   is_folder ? "Folder name" : "Defaults to the location's name");
+                                   is_folder ? _("Folder name") : _("Defaults to the location's name"));
     if (spec->name != NULL) {
         gtk_editable_set_text(GTK_EDITABLE(name_entry), spec->name);
     }
@@ -220,15 +221,15 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
     /* A saved workspace keeps its target: only its name and folder change */
     gboolean fixed_target = !is_folder && session_target_id(spec->target) != NULL;
     if (is_folder) {
-        gtk_box_append(GTK_BOX(box), bm_field_label("Icon"));
+        gtk_box_append(GTK_BOX(box), bm_field_label(_("Icon")));
         picker = icon_picker_new(NOTEBOOK_ICONS, spec->icon, NULL, NULL);
         gtk_box_append(GTK_BOX(box), picker);
     } else {
-        gtk_box_append(GTK_BOX(box), bm_field_label("Location"));
+        gtk_box_append(GTK_BOX(box), bm_field_label(_("Location")));
         GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
         target_entry = gtk_entry_new();
         gtk_widget_set_hexpand(target_entry, TRUE);
-        gtk_entry_set_placeholder_text(GTK_ENTRY(target_entry), "~/projects, /etc/hosts or https://…");
+        gtk_entry_set_placeholder_text(GTK_ENTRY(target_entry), _("~/projects, /etc/hosts or https://…"));
         if (spec->target != NULL) {
             gchar* shown = bookmark_display_location(spec->target);
             gtk_editable_set_text(GTK_EDITABLE(target_entry), shown);
@@ -241,7 +242,7 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
         if (fixed_target) {
             gtk_editable_set_editable(GTK_EDITABLE(target_entry), FALSE);
         } else {
-            GtkWidget* cur_btn = gtk_button_new_with_label("Current Directory");
+            GtkWidget* cur_btn = gtk_button_new_with_label(_("Current Directory"));
             gtk_widget_set_tooltip_text(cur_btn, app->base_dir);
             g_object_set_data_full(G_OBJECT(cur_btn), "base-dir", g_strdup(app->base_dir), g_free);
             g_signal_connect(cur_btn, "clicked", G_CALLBACK(bm_on_use_current_dir), target_entry);
@@ -251,7 +252,7 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
     }
 
     /* Parent folder */
-    gtk_box_append(GTK_BOX(box), bm_field_label(is_folder ? "Parent folder" : "Folder"));
+    gtk_box_append(GTK_BOX(box), bm_field_label(is_folder ? _("Parent folder") : _("Folder")));
     GtkWidget* folder_dd = gtk_drop_down_new_from_strings(spec->folders);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(folder_dd), spec->folder);
     gtk_box_append(GTK_BOX(box), folder_dd);

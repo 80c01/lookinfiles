@@ -1,5 +1,6 @@
 /* Games mode: secret arcade and retro games explorer view and player. */
 #include "games.h"
+#include "i18n.h"
 #include "app_events.h"
 #include "icons.h"
 #include "palette.h"
@@ -139,7 +140,7 @@ gboolean games_check_help_key(AppData* app, guint keyval, GdkModifierType state)
             gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
         }
 
-        app_notice(app, "★ Game Mode Unlocked! Select a game to play ★", FALSE);
+        app_notice(app, _("★ Game Mode Unlocked! Select a game to play ★"), FALSE);
         return TRUE;
     }
 
@@ -156,49 +157,49 @@ void games_append_rows(ExplorerRow* root, AppData* app) {
     /* 1. Pac-Man */
     ExplorerRow* r1 = explorer_row_append(root, "game", "pacman", "Pac-Man", "game:pacman");
     r1->glyph = g_strdup("applications-games");
-    r1->badge = g_strdup_printf("<span foreground=\"%s\">Arcade</span>", fg_badge);
+    r1->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, C_("game genre", "Arcade"));
 
     /* 2. Tetris */
     ExplorerRow* r2 = explorer_row_append(root, "game", "tetris", "Tetris", "game:tetris");
     r2->glyph = g_strdup("applications-games");
-    r2->badge = g_strdup_printf("<span foreground=\"%s\">Puzzle</span>", fg_badge);
+    r2->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, C_("game genre", "Puzzle"));
 
     /* 3. Space Commander */
     ExplorerRow* r3 = explorer_row_append(root, "game", "space_commander", "Space Commander", "game:space_commander");
     r3->glyph = g_strdup("applications-games");
-    r3->badge = g_strdup_printf("<span foreground=\"%s\">Arcade</span>", fg_badge);
+    r3->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, C_("game genre", "Arcade"));
 
     /* 4. Street Fighter */
     ExplorerRow* r4 = explorer_row_append(root, "game", "street_fighter", "Street Fighter", "game:street_fighter");
     r4->glyph = g_strdup("applications-games");
-    r4->badge = g_strdup_printf("<span foreground=\"%s\">Fighting</span>", fg_badge);
+    r4->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, C_("game genre", "Fighting"));
 
     /* 5. Chess */
-    ExplorerRow* r5 = explorer_row_append(root, "game", "chess", "Chess", "game:chess");
+    ExplorerRow* r5 = explorer_row_append(root, "game", "chess", _("Chess"), "game:chess");
     r5->glyph = g_strdup("applications-games");
-    r5->badge = g_strdup_printf("<span foreground=\"%s\">Board</span>", fg_badge);
+    r5->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, C_("game genre", "Board"));
 
     /* 6. Card Games (Expandable folder) */
-    ExplorerRow* cards_folder = explorer_row_append_container(root, "game_folder", "card_games", "Card Games", "game_folder:cards");
+    ExplorerRow* cards_folder = explorer_row_append_container(root, "game_folder", "card_games", _("Card Games"), "game_folder:cards");
     cards_folder->glyph = g_strdup("folder");
-    cards_folder->badge = g_strdup_printf("<span foreground=\"%s\">3 games</span>", fg_badge);
+    cards_folder->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, _("3 games"));
 
     ExplorerRow* c1 = explorer_row_append(cards_folder, "game", "cards_blackjack", "Blackjack (21)", "game:cards_blackjack");
     c1->glyph = g_strdup("applications-games");
-    c1->badge = g_strdup_printf("<span foreground=\"%s\">Cards</span>", fg_badge);
+    c1->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, C_("game genre", "Cards"));
 
-    ExplorerRow* c2 = explorer_row_append(cards_folder, "game", "cards_solitaire", "Klondike Solitaire", "game:cards_solitaire");
+    ExplorerRow* c2 = explorer_row_append(cards_folder, "game", "cards_solitaire", _("Klondike Solitaire"), "game:cards_solitaire");
     c2->glyph = g_strdup("applications-games");
-    c2->badge = g_strdup_printf("<span foreground=\"%s\">Cards</span>", fg_badge);
+    c2->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, C_("game genre", "Cards"));
 
-    ExplorerRow* c3 = explorer_row_append(cards_folder, "game", "cards_memory", "Memory Match", "game:cards_memory");
+    ExplorerRow* c3 = explorer_row_append(cards_folder, "game", "cards_memory", _("Memory Match"), "game:cards_memory");
     c3->glyph = g_strdup("applications-games");
-    c3->badge = g_strdup_printf("<span foreground=\"%s\">Cards</span>", fg_badge);
+    c3->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, C_("game genre", "Cards"));
 
     /* 7. Zork */
     ExplorerRow* r7 = explorer_row_append(root, "game", "zork", "Zork: The Great Underground Empire", "game:zork");
     r7->glyph = g_strdup("applications-games");
-    r7->badge = g_strdup_printf("<span foreground=\"%s\">Adventure</span>", fg_badge);
+    r7->badge = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", fg_badge, C_("game genre", "Adventure"));
 }
 
 void games_refresh(AppData* app) {
@@ -420,7 +421,7 @@ gchar* games_get_preview_summary(ExplorerRow* row) {
             "▶ Press ENTER or Double-Click to ENTER THE EMPIRE!\n");
     }
 
-    return g_strdup_printf("Game: %s\nPress Enter to play!\n", row->name);
+    return g_strdup_printf(_("Game: %s\nPress Enter to play!\n"), row->name);
 }
 
 void games_activate_selected(AppData* app) {
@@ -520,7 +521,7 @@ void games_launch(AppData* app, const gchar* game_id) {
     }
 
     GtkWidget* tab_content = NULL;
-    const gchar* tab_title = "Game";
+    const gchar* tab_title = _("Game");
 
     if (g_strcmp0(game_id, "game:pacman") == 0) {
         tab_content = game_pacman_create_tab(app);
@@ -536,16 +537,16 @@ void games_launch(AppData* app, const gchar* game_id) {
         tab_title = "Street Fighter";
     } else if (g_strcmp0(game_id, "game:chess") == 0) {
         tab_content = game_chess_create_tab(app);
-        tab_title = "Chess";
+        tab_title = _("Chess");
     } else if (g_strcmp0(game_id, "game:cards_blackjack") == 0) {
         tab_content = game_cards_create_tab(app, "blackjack");
         tab_title = "Blackjack";
     } else if (g_strcmp0(game_id, "game:cards_solitaire") == 0) {
         tab_content = game_cards_create_tab(app, "solitaire");
-        tab_title = "Solitaire";
+        tab_title = _("Solitaire");
     } else if (g_strcmp0(game_id, "game:cards_memory") == 0) {
         tab_content = game_cards_create_tab(app, "memory");
-        tab_title = "Memory Match";
+        tab_title = _("Memory Match");
     } else if (g_strcmp0(game_id, "game:zork") == 0) {
         tab_content = game_zork_create_tab(app);
         tab_title = "Zork";
@@ -565,7 +566,7 @@ void games_launch(AppData* app, const gchar* game_id) {
     gtk_button_set_has_frame(GTK_BUTTON(close_btn), FALSE);
     gtk_widget_set_focusable(close_btn, FALSE);
     gtk_widget_add_css_class(close_btn, "tab-close-btn");
-    gtk_widget_set_tooltip_text(close_btn, "Close Game (Ctrl+W)");
+    gtk_widget_set_tooltip_text(close_btn, _("Close Game (Ctrl+W)"));
     g_signal_connect(close_btn, "clicked", G_CALLBACK(on_game_tab_close_clicked), tab_content);
 
     gtk_box_append(GTK_BOX(tab_header), icon);

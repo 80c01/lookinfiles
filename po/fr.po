@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 08:33+0000\n"
+"POT-Creation-Date: 2026-11-08 08:39+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -18,13 +18,230 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/file_actions.c:42 src/file_actions.c:236 src/preferences.c:342
+#: src/bookmark_dialog.c:18
+msgid "Saved workspace"
+msgstr "Espace de travail enregistré"
+
+#: src/bookmark_dialog.c:195
+msgid "_Remove Bookmark"
+msgstr "_Retirer le signet"
+
+#: src/bookmark_dialog.c:198 src/bookmarks.c:577 src/file_actions.c:42
+#: src/file_actions.c:236 src/notes.c:587 src/notes.c:768 src/notes.c:852
+#: src/preferences.c:342 src/remote.c:322 src/remote.c:389 src/remote.c:456
+#: src/remote.c:487 src/remote.c:564 src/session_bookmark.c:13
 msgid "_Cancel"
 msgstr "_Annuler"
 
-#: src/file_actions.c:95
+#: src/bookmark_dialog.c:207 src/file_actions.c:252 src/session_bookmark.c:26
+msgid "Name"
+msgstr "Nom"
+
+#: src/bookmark_dialog.c:210 src/file_actions.c:254
+msgid "Folder name"
+msgstr "Nom du dossier"
+
+#: src/bookmark_dialog.c:210
+msgid "Defaults to the location's name"
+msgstr "Par défaut, le nom de l’emplacement"
+
+#: src/bookmark_dialog.c:224
+msgid "Icon"
+msgstr "Icône"
+
+#: src/bookmark_dialog.c:228
+msgid "Location"
+msgstr "Emplacement"
+
+#: src/bookmark_dialog.c:232
+msgid "~/projects, /etc/hosts or https://…"
+msgstr "~/projets, /etc/hosts ou https://…"
+
+#: src/bookmark_dialog.c:245
+msgid "Current Directory"
+msgstr "Dossier courant"
+
+#: src/bookmark_dialog.c:255 src/file_actions.c:257
+msgid "Parent folder"
+msgstr "Dossier parent"
+
+#: src/bookmark_dialog.c:255 src/bookmarks.c:195 src/status_bar.c:429
+msgid "Folder"
+msgstr "Dossier"
+
+#: src/bookmarks.c:309 src/notes.c:930 src/remote.c:96
+msgid "  (empty)"
+msgstr "  (vide)"
+
+#: src/bookmarks.c:331
+msgid "No bookmarks yet — press a or Ctrl+D to add one"
+msgstr "Aucun signet — appuyez sur a ou Ctrl+D pour en ajouter un"
+
+#: src/bookmarks.c:473
+msgid "Bookmarks (top level)"
+msgstr "Signets (premier niveau)"
+
+#: src/bookmarks.c:528
+msgid "Add Bookmark"
+msgstr "Ajouter un signet"
+
+#: src/bookmarks.c:528
+msgid "_Add"
+msgstr "_Ajouter"
+
+#: src/bookmarks.c:568
+#, c-format
+msgid "Delete the folder “%s” and the %u item it contains?"
+msgid_plural "Delete the folder “%s” and the %u items it contains?"
+msgstr[0] "Supprimer le dossier « %s » et l’élément qu’il contient ?"
+msgstr[1] "Supprimer le dossier « %s » et les %u éléments qu’il contient ?"
+
+#: src/bookmarks.c:572 src/remote.c:562
+#, c-format
+msgid "Delete the empty folder “%s”?"
+msgstr "Supprimer le dossier vide « %s » ?"
+
+#: src/bookmarks.c:574
+#, c-format
+msgid "Delete the bookmark “%s”?"
+msgstr "Supprimer le signet « %s » ?"
+
+#: src/bookmarks.c:576 src/bookmarks.c:1059 src/file_actions.c:390
+#: src/remote.c:997
+msgid "Delete Folder"
+msgstr "Supprimer le dossier"
+
+#: src/bookmarks.c:576
+msgid "Delete Bookmark"
+msgstr "Supprimer le signet"
+
+#: src/bookmarks.c:577 src/notes.c:1700 src/remote.c:457 src/remote.c:565
+msgid "_Delete"
+msgstr "_Supprimer"
+
+#: src/bookmarks.c:606
+msgid "Edit Folder"
+msgstr "Modifier le dossier"
+
+#: src/bookmarks.c:606
+msgid "Edit Bookmark"
+msgstr "Modifier le signet"
+
+#: src/bookmarks.c:606 src/notes.c:1487 src/notes.c:1557 src/remote.c:324
+#: src/remote.c:390 src/remote.c:541 src/session_bookmark.c:14
+msgid "_Save"
+msgstr "_Enregistrer"
+
+#: src/bookmarks.c:706
+msgid "New Bookmark Folder"
+msgstr "Nouveau dossier de signets"
+
+#: src/bookmarks.c:706 src/file_actions.c:237 src/notes.c:1245 src/notes.c:1383
+#: src/remote.c:526
+msgid "_Create"
+msgstr "_Créer"
+
+#: src/bookmarks.c:863
+#, c-format
+msgid ""
+"Could not open “%s”:\n"
+"%s"
+msgstr ""
+"Impossible d’ouvrir « %s » :\n"
+"%s"
+
+#: src/bookmarks.c:864 src/file_actions.c:365 src/file_actions.c:398
+#: src/session_bookmark.c:79 src/session_bookmark.c:99
+msgid "unknown error"
+msgstr "erreur inconnue"
+
+#: src/bookmarks.c:865
+msgid "Open Bookmark"
+msgstr "Ouvrir le signet"
+
+#: src/bookmarks.c:865 src/file_actions.c:95 src/notes.c:883 src/remote.c:598
+#: src/remote.c:680 src/session_bookmark.c:62 src/session_bookmark.c:80
+#: src/session_bookmark.c:100
 msgid "_Close"
 msgstr "_Fermer"
+
+#: src/bookmarks.c:873
+#, c-format
+msgid ""
+"The location of “%s” no longer exists:\n"
+"%s\n"
+"\n"
+"Remove this bookmark?"
+msgstr ""
+"L’emplacement de « %s » n’existe plus :\n"
+"%s\n"
+"\n"
+"Retirer ce signet ?"
+
+#: src/bookmarks.c:875
+msgid "Missing Location"
+msgstr "Emplacement introuvable"
+
+#: src/bookmarks.c:875
+msgid "_Remove"
+msgstr "_Retirer"
+
+#: src/bookmarks.c:875
+msgid "_Keep"
+msgstr "_Garder"
+
+#: src/bookmarks.c:1055
+msgid "Add Bookmark Here…"
+msgstr "Ajouter un signet ici…"
+
+#: src/bookmarks.c:1056
+msgid "New Subfolder…"
+msgstr "Nouveau sous-dossier…"
+
+#: src/bookmarks.c:1058
+msgid "Rename / Move…"
+msgstr "Renommer / déplacer…"
+
+#: src/bookmarks.c:1059 src/bookmarks.c:1063
+msgid "Delete"
+msgstr "Supprimer"
+
+#: src/bookmarks.c:1061 src/files_menu.c:162
+msgid "Open"
+msgstr "Ouvrir"
+
+#: src/bookmarks.c:1062
+msgid "Edit…"
+msgstr "Modifier…"
+
+#: src/bookmarks.c:1066 src/notes.c:2140 src/notes.c:2151
+msgid "Move Up"
+msgstr "Monter"
+
+#: src/bookmarks.c:1067 src/notes.c:2141 src/notes.c:2152
+msgid "Move Down"
+msgstr "Descendre"
+
+#: src/bookmarks.c:1070 src/bookmarks.c:1074
+msgid "Add Bookmark…"
+msgstr "Ajouter un signet…"
+
+#: src/bookmarks.c:1071 src/bookmarks.c:1075 src/files_menu.c:188
+#: src/remote.c:1004
+msgid "New Folder…"
+msgstr "Nouveau dossier…"
+
+#: src/bookmarks.c:1078
+msgid "Save Workspace as Bookmark…"
+msgstr "Enregistrer l’espace de travail comme signet…"
+
+#: src/bookmarks.c:1079
+msgid "Sort A–Z / Z–A"
+msgstr "Trier A–Z / Z–A"
+
+#: src/bookmarks.c:1080 src/notes.c:2171 src/remote.c:1007
+msgid "Collapse / Expand All"
+msgstr "Tout replier / déplier"
 
 #: src/file_actions.c:234
 msgid "New Folder"
@@ -34,25 +251,9 @@ msgstr "Nouveau dossier"
 msgid "New File"
 msgstr "Nouveau fichier"
 
-#: src/file_actions.c:237
-msgid "_Create"
-msgstr "_Créer"
-
-#: src/file_actions.c:252
-msgid "Name"
-msgstr "Nom"
-
-#: src/file_actions.c:254
-msgid "Folder name"
-msgstr "Nom du dossier"
-
 #: src/file_actions.c:254
 msgid "File name"
 msgstr "Nom du fichier"
-
-#: src/file_actions.c:257
-msgid "Parent folder"
-msgstr "Dossier parent"
 
 #: src/file_actions.c:259
 msgid "~/projects or /tmp"
@@ -93,10 +294,6 @@ msgstr "« %s » existe déjà dans ce dossier."
 msgid "Could not rename “%s”: %s"
 msgstr "Impossible de renommer « %s » : %s"
 
-#: src/file_actions.c:365 src/file_actions.c:398
-msgid "unknown error"
-msgstr "erreur inconnue"
-
 #: src/file_actions.c:388
 #, c-format
 msgid "Move the folder “%s” to the trash?"
@@ -108,14 +305,10 @@ msgid "Move the file “%s” to the trash?"
 msgstr "Mettre le fichier « %s » à la corbeille ?"
 
 #: src/file_actions.c:390
-msgid "Delete Folder"
-msgstr "Supprimer le dossier"
-
-#: src/file_actions.c:390
 msgid "Delete File"
 msgstr "Supprimer le fichier"
 
-#: src/file_actions.c:391
+#: src/file_actions.c:391 src/notes.c:1670
 msgid "_Move to Trash"
 msgstr "_Mettre à la corbeille"
 
@@ -137,10 +330,6 @@ msgstr "Impossible d’ouvrir avec l’application par défaut : %s"
 #, c-format
 msgid "Copied “%s”"
 msgstr "« %s » copié"
-
-#: src/files_menu.c:162
-msgid "Open"
-msgstr "Ouvrir"
 
 #: src/files_menu.c:168
 msgid "Open in Side Panel"
@@ -178,13 +367,84 @@ msgstr "Ajouter un signet…"
 msgid "New File…"
 msgstr "Nouveau fichier…"
 
-#: src/files_menu.c:188
-msgid "New Folder…"
-msgstr "Nouveau dossier…"
-
 #: src/files_menu.c:230
 msgid "Undo"
 msgstr "Annuler"
+
+#: src/games.c:143
+msgid "★ Game Mode Unlocked! Select a game to play ★"
+msgstr "★ Mode Jeu déverrouillé ! Choisissez un jeu ★"
+
+#: src/games.c:160 src/games.c:170
+msgctxt "game genre"
+msgid "Arcade"
+msgstr "Arcade"
+
+#: src/games.c:165
+msgctxt "game genre"
+msgid "Puzzle"
+msgstr "Réflexion"
+
+#: src/games.c:175
+msgctxt "game genre"
+msgid "Fighting"
+msgstr "Combat"
+
+#: src/games.c:178 src/games.c:540
+msgid "Chess"
+msgstr "Échecs"
+
+#: src/games.c:180
+msgctxt "game genre"
+msgid "Board"
+msgstr "Plateau"
+
+#: src/games.c:183
+msgid "Card Games"
+msgstr "Jeux de cartes"
+
+#: src/games.c:185
+msgid "3 games"
+msgstr "3 jeux"
+
+#: src/games.c:189 src/games.c:193 src/games.c:197
+msgctxt "game genre"
+msgid "Cards"
+msgstr "Cartes"
+
+#: src/games.c:191
+msgid "Klondike Solitaire"
+msgstr "Solitaire Klondike"
+
+#: src/games.c:195 src/games.c:549
+msgid "Memory Match"
+msgstr "Memory"
+
+#: src/games.c:202
+msgctxt "game genre"
+msgid "Adventure"
+msgstr "Aventure"
+
+#: src/games.c:424
+#, c-format
+msgid ""
+"Game: %s\n"
+"Press Enter to play!\n"
+msgstr ""
+"Jeu : %s\n"
+"Appuyez sur Enter pour jouer !\n"
+
+#: src/games.c:524
+msgid "Game"
+msgstr "Jeu"
+
+#: src/games.c:546
+msgid "Solitaire"
+msgstr "Solitaire"
+
+#: src/games.c:569
+msgid "Close Game (Ctrl+W)"
+msgstr "Fermer le jeu (Ctrl+W)"
 
 #: src/help.c:27 src/help.c:28 src/help.c:29 src/help.c:30 src/help.c:31
 #: src/help.c:32 src/help.c:33 src/help.c:34 src/help.c:35 src/help.c:36
@@ -706,7 +966,7 @@ msgstr "Modifier la machine sélectionnée (aussi son dossier) ou le dossier (no
 msgid "Delete selected machine, or folder (its machines move to the top level)"
 msgstr "Supprimer la machine sélectionnée, ou le dossier (ses machines remontent au premier niveau)"
 
-#: src/help.c:128
+#: src/help.c:128 src/remote.c:1005
 msgid "Re-scan ~/.ssh/config"
 msgstr "Relire ~/.ssh/config"
 
@@ -1665,6 +1925,265 @@ msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
 msgstr ""
 "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
 
+#: src/notes.c:532
+msgid "Markdown (.md - headings, lists, tables, images)"
+msgstr "Markdown (.md - titres, listes, tableaux, images)"
+
+#: src/notes.c:533
+msgid "Org-mode (.org - Emacs tasks, TODOs, checkboxes, folding)"
+msgstr "Org-mode (.org - tâches Emacs, TODO, cases à cocher, pliage)"
+
+#: src/notes.c:534
+msgid "Plain Text (.txt - unformatted plain text)"
+msgstr "Texte brut (.txt - texte sans mise en forme)"
+
+#: src/notes.c:535
+msgid "Canvas (text boxes and pasted pictures placed freely)"
+msgstr "Canvas (zones de texte et images collées placées librement)"
+
+#: src/notes.c:549
+msgid "Untitled"
+msgstr "Sans titre"
+
+#: src/notes.c:555
+msgid "File Preview:"
+msgstr "Aperçu du fichier :"
+
+#: src/notes.c:588 src/notes.c:769
+msgid "_OK"
+msgstr "_OK"
+
+#: src/notes.c:593
+msgid "Note Title:"
+msgstr "Titre de la note :"
+
+#: src/notes.c:607
+msgid "Notebook:"
+msgstr "Carnet :"
+
+#: src/notes.c:625
+msgid "Notebook the note belongs to: pick another one to move the note"
+msgstr "Carnet de la note : en choisir un autre pour y déplacer la note"
+
+#: src/notes.c:635
+msgid "Select Note Format & Type:"
+msgstr "Format et type de la note :"
+
+#: src/notes.c:732 src/notes.c:1383 src/status_bar.c:438
+msgid "Notebook"
+msgstr "Carnet"
+
+#: src/notes.c:780
+msgid "Notebook Name:"
+msgstr "Nom du carnet :"
+
+#: src/notes.c:793
+msgid "Notebook Icon:"
+msgstr "Icône du carnet :"
+
+#: src/notes.c:806
+msgid "Preview:"
+msgstr "Aperçu :"
+
+#: src/notes.c:953
+msgid "Trash (empty)"
+msgstr "Corbeille (vide)"
+
+#: src/notes.c:953 src/status_bar.c:447
+msgid "Trash"
+msgstr "Corbeille"
+
+#: src/notes.c:965
+msgid "  (trash is empty)"
+msgstr "  (la corbeille est vide)"
+
+#: src/notes.c:969
+#, c-format
+msgid "<span foreground=\"%s\" size=\"small\">from %s</span>"
+msgstr "<span foreground=\"%s\" size=\"small\">de %s</span>"
+
+#: src/notes.c:1242
+#, c-format
+msgid "Untitled-%d"
+msgstr "Sans-titre-%d"
+
+#: src/notes.c:1245 src/notes.c:2165
+msgid "New Note"
+msgstr "Nouvelle note"
+
+#: src/notes.c:1383
+msgid "New Notebook"
+msgstr "Nouveau carnet"
+
+#: src/notes.c:1392 src/notes.c:1576
+msgid "Notebook Exists"
+msgstr "Le carnet existe"
+
+#: src/notes.c:1392
+msgid ""
+"A notebook with that name already exists. Please choose a different name."
+msgstr "Un carnet de ce nom existe déjà. Choisissez un autre nom."
+
+#: src/notes.c:1428 src/notes.c:1506
+msgid "Note Exists"
+msgstr "La note existe"
+
+#: src/notes.c:1428
+msgid "A note with this name and format already exists in this notebook."
+msgstr "Une note de ce nom et de ce format existe déjà dans ce carnet."
+
+#: src/notes.c:1464
+msgid "Export Failed"
+msgstr "Échec de l’export"
+
+#: src/notes.c:1464
+msgid "The canvas cannot be read."
+msgstr "Le canvas ne peut pas être lu."
+
+#: src/notes.c:1487
+msgid "Edit Note"
+msgstr "Modifier la note"
+
+#: src/notes.c:1507
+msgid ""
+"A note with that title and format already exists in the target notebook."
+msgstr "Une note de ce titre et de ce format existe déjà dans le carnet de destination."
+
+#: src/notes.c:1508
+msgid "A note with that title and format already exists in this notebook."
+msgstr "Une note de ce titre et de ce format existe déjà dans ce carnet."
+
+#: src/notes.c:1557
+msgid "Edit Notebook"
+msgstr "Modifier le carnet"
+
+#: src/notes.c:1576
+msgid "A notebook with that name already exists."
+msgstr "Un carnet de ce nom existe déjà."
+
+#: src/notes.c:1628
+msgid "Move Note"
+msgstr "Déplacer la note"
+
+#: src/notes.c:1628
+msgid ""
+"There are no other notebooks to move this note to. Create another notebook "
+"first."
+msgstr "Il n’y a pas d’autre carnet où déplacer cette note. Créez d’abord un autre carnet."
+
+#: src/notes.c:1667
+#, c-format
+msgid "Move notebook '%s' and its %u note to Trash?"
+msgid_plural "Move notebook '%s' and its %u notes to Trash?"
+msgstr[0] "Mettre le carnet « %s » (%u note) à la corbeille ?"
+msgstr[1] "Mettre le carnet « %s » (%u notes) à la corbeille ?"
+
+#: src/notes.c:1670
+msgid "Delete Notebook"
+msgstr "Supprimer le carnet"
+
+#: src/notes.c:1699
+#, c-format
+msgid "Permanently delete '%s'? This action cannot be undone."
+msgstr "Supprimer définitivement « %s » ? Cette action est irréversible."
+
+#: src/notes.c:1700 src/notes.c:2159
+msgid "Delete Permanently"
+msgstr "Supprimer définitivement"
+
+#: src/notes.c:1786 src/notes.c:1794
+msgid "Empty Trash"
+msgstr "Vider la corbeille"
+
+#: src/notes.c:1786
+msgid "The Trash bin is already empty."
+msgstr "La corbeille est déjà vide."
+
+#: src/notes.c:1790
+#, c-format
+msgid "Permanently delete the %u item in the Trash? This cannot be undone."
+msgid_plural ""
+"Permanently delete all %u items in the Trash? This cannot be undone."
+msgstr[0] "Supprimer définitivement l’élément de la corbeille ? Cette action est irréversible."
+msgstr[1] "Supprimer définitivement les %u éléments de la corbeille ? Cette action est irréversible."
+
+#: src/notes.c:1794
+msgid "_Empty Trash"
+msgstr "_Vider la corbeille"
+
+#: src/notes.c:1933
+#, c-format
+msgid ""
+"Note '%s' is in the Trash bin.\n"
+"Do you want to restore it so you can edit it?"
+msgstr ""
+"La note « %s » est dans la corbeille.\n"
+"Voulez-vous la restaurer pour la modifier ?"
+
+#: src/notes.c:1934 src/notes.c:2158
+msgid "Restore Note"
+msgstr "Restaurer la note"
+
+#: src/notes.c:1934
+msgid "_Restore"
+msgstr "_Restaurer"
+
+#: src/notes.c:2122
+msgid "Open Note"
+msgstr "Ouvrir la note"
+
+#: src/notes.c:2123
+msgid "Edit / Rename Note…"
+msgstr "Modifier / renommer la note…"
+
+#: src/notes.c:2124
+msgid "Move to Notebook…"
+msgstr "Déplacer vers un carnet…"
+
+#: src/notes.c:2128
+msgid "Convert to Plain Text (.txt)"
+msgstr "Convertir en texte brut (.txt)"
+
+#: src/notes.c:2131
+msgid "Convert to Markdown (.md)"
+msgstr "Convertir en Markdown (.md)"
+
+#: src/notes.c:2134
+msgid "Export to Markdown (.md)"
+msgstr "Exporter en Markdown (.md)"
+
+#: src/notes.c:2137
+msgid "Convert to Org-mode (.org)"
+msgstr "Convertir en Org-mode (.org)"
+
+#: src/notes.c:2143
+msgid "Move to Trash"
+msgstr "Mettre à la corbeille"
+
+#: src/notes.c:2145 src/notes.c:2148
+msgid "New Note Here"
+msgstr "Nouvelle note ici"
+
+#: src/notes.c:2146 src/notes.c:2156 src/notes.c:2166
+msgid "New Notebook…"
+msgstr "Nouveau carnet…"
+
+#: src/notes.c:2149
+msgid "Edit Notebook…"
+msgstr "Modifier le carnet…"
+
+#: src/notes.c:2154
+msgid "Move Notebook to Trash"
+msgstr "Mettre le carnet à la corbeille"
+
+#: src/notes.c:2161 src/notes.c:2163
+msgid "Empty Trash…"
+msgstr "Vider la corbeille…"
+
+#: src/notes.c:2170
+msgid "Sort / Order Mode"
+msgstr "Mode de tri / d’ordre"
+
 #: src/preferences.c:106
 msgid ""
 "For editor tabs opened from now on; the tabs already open keep theirs, "
@@ -1794,6 +2313,365 @@ msgstr "Fenêtre"
 msgid "Code navigation"
 msgstr "Navigation dans le code"
 
+#: src/remote.c:50
+msgid "Connected"
+msgstr "Connecté"
+
+#: src/remote.c:73
+msgid "No remote machines yet — press a to add one"
+msgstr "Aucune machine distante — appuyez sur a pour en ajouter une"
+
+#: src/remote.c:285
+msgid "Remote machines (top level)"
+msgstr "Machines distantes (premier niveau)"
+
+#: src/remote.c:297
+msgid "Folder:"
+msgstr "Dossier :"
+
+#: src/remote.c:321
+msgid "Add Remote Machine (SSH)"
+msgstr "Ajouter une machine distante (SSH)"
+
+#: src/remote.c:323
+msgid "_Save & Connect"
+msgstr "Enregistrer et _connecter"
+
+#: src/remote.c:329 src/remote.c:398
+msgid "Friendly Name:"
+msgstr "Nom affiché :"
+
+#: src/remote.c:329
+msgid "Dev Server"
+msgstr "Serveur de dev"
+
+#: src/remote.c:329
+msgid "e.g. AWS Production"
+msgstr "ex. Production AWS"
+
+#: src/remote.c:330 src/remote.c:399
+msgid "Host / IP Address *:"
+msgstr "Hôte / adresse IP * :"
+
+#: src/remote.c:330
+msgid "e.g. 192.168.1.100 or dev.example.com"
+msgstr "ex. 192.168.1.100 ou dev.example.com"
+
+#: src/remote.c:331 src/remote.c:400
+msgid "User:"
+msgstr "Utilisateur :"
+
+#: src/remote.c:331
+msgid "e.g. ubuntu, root, dev"
+msgstr "ex. ubuntu, root, dev"
+
+#: src/remote.c:332 src/remote.c:401
+msgid "Port:"
+msgstr "Port :"
+
+#: src/remote.c:332
+msgid "default: 22"
+msgstr "par défaut : 22"
+
+#: src/remote.c:333 src/remote.c:402
+msgid "Remote Directory:"
+msgstr "Dossier distant :"
+
+#: src/remote.c:333
+msgid "default: ~ or /var/www"
+msgstr "par défaut : ~ ou /var/www"
+
+#: src/remote.c:334 src/remote.c:403
+msgid "Identity Key Path (optional):"
+msgstr "Chemin de la clé d’identité (facultatif) :"
+
+#: src/remote.c:334
+msgid "e.g. ~/.ssh/id_ed25519"
+msgstr "ex. ~/.ssh/id_ed25519"
+
+#: src/remote.c:388
+msgid "Edit Remote Machine"
+msgstr "Modifier la machine distante"
+
+#: src/remote.c:453
+#, c-format
+msgid "Are you sure you want to remove remote machine '%s' (%s)?"
+msgstr "Voulez-vous vraiment retirer la machine distante « %s » (%s) ?"
+
+#: src/remote.c:455
+msgid "Remove Remote Machine"
+msgstr "Retirer la machine distante"
+
+#: src/remote.c:492
+msgid "Name:"
+msgstr "Nom :"
+
+#: src/remote.c:492
+msgid "e.g. Production"
+msgstr "ex. Production"
+
+#: src/remote.c:495
+msgid "Icon:"
+msgstr "Icône :"
+
+#: src/remote.c:526
+msgid "New Remote Folder"
+msgstr "Nouveau dossier distant"
+
+#: src/remote.c:541
+msgid "Edit Remote Folder"
+msgstr "Modifier le dossier distant"
+
+#: src/remote.c:559
+#, c-format
+msgid "Delete the folder “%s”? Its %u machine moves to the top level."
+msgid_plural "Delete the folder “%s”? Its %u machines move to the top level."
+msgstr[0] "Supprimer le dossier « %s » ? Sa machine remonte au premier niveau."
+msgstr[1] "Supprimer le dossier « %s » ? Ses %u machines remontent au premier niveau."
+
+#: src/remote.c:563
+msgid "Delete Remote Folder"
+msgstr "Supprimer le dossier distant"
+
+#: src/remote.c:597
+msgid "sshfs Required"
+msgstr "sshfs requis"
+
+#: src/remote.c:601
+msgid ""
+"To browse and edit remote files, 'sshfs' is required.\n"
+"\n"
+"Please install it:\n"
+"  Ubuntu / Debian: sudo apt install sshfs\n"
+"  Fedora: sudo dnf install fuse-sshfs\n"
+"  Arch: sudo pacman -S sshfs\n"
+"\n"
+"You can still open an SSH terminal session using the terminal button."
+msgstr ""
+"Pour parcourir et modifier des fichiers distants, « sshfs » est requis.\n"
+"\n"
+"Installez-le :\n"
+"  Ubuntu / Debian : sudo apt install sshfs\n"
+"  Fedora : sudo dnf install fuse-sshfs\n"
+"  Arch : sudo pacman -S sshfs\n"
+"\n"
+"Vous pouvez toujours ouvrir une session de terminal SSH avec le bouton Terminal."
+
+#: src/remote.c:679
+msgid "Connection Failed"
+msgstr "Échec de la connexion"
+
+#: src/remote.c:683
+#, c-format
+msgid ""
+"Could not connect to '%s' (%s):\n"
+"\n"
+"%s"
+msgstr ""
+"Impossible de se connecter à « %s » (%s) :\n"
+"\n"
+"%s"
+
+#: src/remote.c:685
+msgid "sshfs process exited with an error."
+msgstr "le processus sshfs s’est terminé avec une erreur."
+
+#: src/remote.c:981
+msgid "Connect (Browse Files)"
+msgstr "Connecter (parcourir les fichiers)"
+
+#: src/remote.c:983
+msgid "Open in Explorer"
+msgstr "Ouvrir dans l’explorateur"
+
+#: src/remote.c:984
+msgid "Disconnect"
+msgstr "Déconnecter"
+
+#: src/remote.c:986
+msgid "Open SSH Terminal"
+msgstr "Ouvrir un terminal SSH"
+
+#: src/remote.c:987
+msgid "Edit Machine…"
+msgstr "Modifier la machine…"
+
+#: src/remote.c:988
+msgid "Delete Machine"
+msgstr "Supprimer la machine"
+
+#: src/remote.c:995
+msgid "Expand / Collapse"
+msgstr "Déplier / replier"
+
+#: src/remote.c:996
+msgid "Edit Folder…"
+msgstr "Modifier le dossier…"
+
+#: src/remote.c:1003
+msgid "Add Machine Here…"
+msgstr "Ajouter une machine ici…"
+
+#: src/remote.c:1003
+msgid "Add Remote Machine…"
+msgstr "Ajouter une machine distante…"
+
+#: src/session_bookmark.c:12
+msgid "Save Workspace as Bookmark"
+msgstr "Enregistrer l’espace de travail comme signet"
+
+#: src/session_bookmark.c:34
+msgid ""
+"Keeps this workspace's folder, open editor tabs and panels. Opening the "
+"bookmark restores them in a new workspace."
+msgstr "Garde le dossier, les onglets d’édition ouverts et les panneaux de cet espace de travail. Ouvrir le signet les restaure dans un nouvel espace de travail."
+
+#: src/session_bookmark.c:62 src/session_bookmark.c:80
+msgid "Save Workspace"
+msgstr "Enregistrer l’espace de travail"
+
+#: src/session_bookmark.c:62
+msgid "This workspace has no folder to save."
+msgstr "Cet espace de travail n’a pas de dossier à enregistrer."
+
+#: src/session_bookmark.c:79
+#, c-format
+msgid ""
+"Could not save the workspace:\n"
+"%s"
+msgstr ""
+"Impossible d’enregistrer l’espace de travail :\n"
+"%s"
+
+#: src/session_bookmark.c:99
+#, c-format
+msgid ""
+"Could not open this workspace:\n"
+"%s"
+msgstr ""
+"Impossible d’ouvrir cet espace de travail :\n"
+"%s"
+
+#: src/session_bookmark.c:100
+msgid "Open Workspace"
+msgstr "Ouvrir l’espace de travail"
+
+#: src/sidebar.c:213 src/sidebar.c:214
+msgid "Collapse All Folders"
+msgstr "Replier tous les dossiers"
+
+#: src/sidebar.c:213
+msgid "Collapse All Bookmark Folders"
+msgstr "Replier tous les dossiers de signets"
+
+#: src/sidebar.c:213
+msgid "Collapse All Notebooks"
+msgstr "Replier tous les carnets"
+
+#: src/sidebar.c:217 src/sidebar.c:218
+msgid "Expand All Folders"
+msgstr "Déplier tous les dossiers"
+
+#: src/sidebar.c:217
+msgid "Expand All Bookmark Folders"
+msgstr "Déplier tous les dossiers de signets"
+
+#: src/sidebar.c:217
+msgid "Expand All Notebooks"
+msgstr "Déplier tous les carnets"
+
+#: src/sidebar.c:323
+msgid "Explorer (Ctrl+A)"
+msgstr "Explorateur (Ctrl+A)"
+
+#: src/sidebar.c:331
+msgid "Bookmarks (Ctrl+A)"
+msgstr "Signets (Ctrl+A)"
+
+#: src/sidebar.c:339
+msgid "Notes (Ctrl+U)"
+msgstr "Notes (Ctrl+U)"
+
+#: src/sidebar.c:347
+msgid "Remote (Ctrl+Shift+R)"
+msgstr "Distant (Ctrl+Shift+R)"
+
+#: src/sidebar.c:355
+msgid "Games (Game Mode)"
+msgstr "Jeux (mode Jeu)"
+
+#: src/sidebar.c:390
+msgid "New File (a)"
+msgstr "Nouveau fichier (a)"
+
+#: src/sidebar.c:398
+msgid "New Folder (Shift+A)"
+msgstr "Nouveau dossier (Shift+A)"
+
+#: src/sidebar.c:409
+msgid "Toggle Hidden Files (i / I)"
+msgstr "Afficher / masquer les fichiers cachés (i / I)"
+
+#: src/sidebar.c:435
+msgid "Add Bookmark (a)"
+msgstr "Ajouter un signet (a)"
+
+#: src/sidebar.c:443
+msgid "New Bookmark Folder (Shift+A)"
+msgstr "Nouveau dossier de signets (Shift+A)"
+
+#: src/sidebar.c:451 src/sidebar.c:501
+msgid "Edit Selected (F2 / r / e)"
+msgstr "Modifier la sélection (F2 / r / e)"
+
+#: src/sidebar.c:459
+msgid "Delete Selected (d / Delete)"
+msgstr "Supprimer la sélection (d / Delete)"
+
+#: src/sidebar.c:485
+msgid "New Note (a)"
+msgstr "Nouvelle note (a)"
+
+#: src/sidebar.c:493
+msgid "New Notebook (Shift+A)"
+msgstr "Nouveau carnet (Shift+A)"
+
+#: src/sidebar.c:509
+msgid "Move to Trash / Delete (d / Delete)"
+msgstr "Mettre à la corbeille / supprimer (d / Delete)"
+
+#: src/sidebar.c:535
+msgid "Add Remote Machine (a)"
+msgstr "Ajouter une machine distante (a)"
+
+#: src/sidebar.c:543
+msgid "New Remote Folder (Shift+A)"
+msgstr "Nouveau dossier distant (Shift+A)"
+
+#: src/sidebar.c:551
+msgid "Edit Remote Machine (F2 / r / e)"
+msgstr "Modifier la machine distante (F2 / r / e)"
+
+#: src/sidebar.c:559
+msgid "Delete Remote Machine (d / Delete)"
+msgstr "Supprimer la machine distante (d / Delete)"
+
+#: src/sidebar.c:567
+msgid "Connect / Disconnect Selected (Enter / c)"
+msgstr "Connecter / déconnecter la sélection (Enter / c)"
+
+#: src/sidebar.c:575
+msgid "Open Remote SSH Terminal (t)"
+msgstr "Ouvrir un terminal SSH distant (t)"
+
+#: src/sidebar.c:583
+msgid "Re-scan ~/.ssh/config (F5)"
+msgstr "Relire ~/.ssh/config (F5)"
+
+#: src/sidebar.c:600
+msgid "Play Selected Game (Enter)"
+msgstr "Jouer au jeu sélectionné (Enter)"
+
 #: src/status_bar.c:63
 msgid "_Undo"
 msgstr "A_nnuler"
@@ -1842,10 +2720,6 @@ msgstr "Passer sur la branche %s"
 msgid "Git Branch of the Current Directory — Click to View Branches"
 msgstr "Branche Git du dossier courant — cliquer pour voir les branches"
 
-#: src/status_bar.c:429
-msgid "Folder"
-msgstr "Dossier"
-
 #: src/status_bar.c:432
 msgid "Bookmark"
 msgstr "Signet"
@@ -1854,10 +2728,6 @@ msgstr "Signet"
 msgid "Bookmark Folder"
 msgstr "Dossier de signets"
 
-#: src/status_bar.c:438
-msgid "Notebook"
-msgstr "Carnet"
-
 #: src/status_bar.c:441
 msgid "Remote Machine"
 msgstr "Machine distante"
@@ -1865,10 +2735,6 @@ msgstr "Machine distante"
 #: src/status_bar.c:444
 msgid "Remote Folder"
 msgstr "Dossier distant"
-
-#: src/status_bar.c:447
-msgid "Trash"
-msgstr "Corbeille"
 
 #: src/status_bar.c:450
 msgid "Trashed Note"

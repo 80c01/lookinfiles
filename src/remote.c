@@ -1,4 +1,5 @@
 #include "remote.h"
+#include "i18n.h"
 #include "palette.h"
 #include "dialog.h"
 #include "tree_nav.h"
@@ -45,8 +46,8 @@ static void remote_append_machine_row(ExplorerRow* parent, RemoteMachine* rm) {
 
     gchar* status_markup = NULL;
     if (rm->is_connected) {
-        status_markup = g_markup_printf_escaped("<span foreground=\"%s\" weight=\"bold\">● Connected</span>  <span foreground=\"%s\">(%s:%d)</span>",
-                                        palette_color(PAL_SUCCESS), palette_color(PAL_FG_SUBTLE), target, rm->port);
+        status_markup = g_markup_printf_escaped("<span foreground=\"%s\" weight=\"bold\">● %s</span>  <span foreground=\"%s\">(%s:%d)</span>",
+                                        palette_color(PAL_SUCCESS), _("Connected"), palette_color(PAL_FG_SUBTLE), target, rm->port);
     } else {
         status_markup = g_markup_printf_escaped("<span foreground=\"%s\">%s:%d</span>",
                                         palette_color(PAL_FG_SUBTLE), target, rm->port);
@@ -69,7 +70,7 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
     }
 
     if (app->remotes == NULL && app->remote_folders == NULL) {
-        explorer_row_append(root, "-", "", "No remote machines yet — press a to add one", "");
+        explorer_row_append(root, "-", "", _("No remote machines yet — press a to add one"), "");
         return;
     }
 
@@ -92,7 +93,7 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
             }
         }
         if (n == 0) {
-            explorer_row_append(row, "-", "", "  (empty)", "");
+            explorer_row_append(row, "-", "", _("  (empty)"), "");
         }
     }
 
@@ -281,7 +282,7 @@ static GtkWidget* create_labeled_entry(GtkWidget* box, const gchar* label_text, 
 /* "Folder" drop-down of the machine dialogs: the top level, then every folder */
 static GtkWidget* create_folder_dropdown(GtkWidget* box, AppData* app, RemoteFolder* current) {
     GPtrArray* labels = g_ptr_array_new();
-    g_ptr_array_add(labels, (gpointer)"Remote machines (top level)");
+    g_ptr_array_add(labels, (gpointer)_("Remote machines (top level)"));
     guint selected = 0;
     for (GList* l = app->remote_folders; l != NULL; l = l->next) {
         RemoteFolder* folder = (RemoteFolder*)l->data;
@@ -293,7 +294,7 @@ static GtkWidget* create_folder_dropdown(GtkWidget* box, AppData* app, RemoteFol
     g_ptr_array_add(labels, NULL);
 
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
-    GtkWidget* lbl = gtk_label_new("Folder:");
+    GtkWidget* lbl = gtk_label_new(_("Folder:"));
     gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
     gtk_widget_add_css_class(lbl, "field-label");
     GtkWidget* dd = gtk_drop_down_new_from_strings((const gchar* const*)labels->pdata);
@@ -317,20 +318,20 @@ void remote_add_dialog(AppData* app) {
     if (app == NULL) {
         return;
     }
-    GtkWidget* dlg = app_dialog_new("Add Remote Machine (SSH)", app->window,
-                                    "_Cancel", APP_RESPONSE_CANCEL,
-                                    "_Save & Connect", APP_RESPONSE_APPLY,
-                                    "_Save", APP_RESPONSE_OK,
+    GtkWidget* dlg = app_dialog_new(_("Add Remote Machine (SSH)"), app->window,
+                                    _("_Cancel"), APP_RESPONSE_CANCEL,
+                                    _("_Save & Connect"), APP_RESPONSE_APPLY,
+                                    _("_Save"), APP_RESPONSE_OK,
                                     NULL);
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = remote_dialog_body(dlg);
 
-    GtkWidget* name_ent = create_labeled_entry(box, "Friendly Name:", "Dev Server", "e.g. AWS Production");
-    GtkWidget* host_ent = create_labeled_entry(box, "Host / IP Address *:", "", "e.g. 192.168.1.100 or dev.example.com");
-    GtkWidget* user_ent = create_labeled_entry(box, "User:", g_get_user_name(), "e.g. ubuntu, root, dev");
-    GtkWidget* port_ent = create_labeled_entry(box, "Port:", "22", "default: 22");
-    GtkWidget* path_ent = create_labeled_entry(box, "Remote Directory:", "~", "default: ~ or /var/www");
-    GtkWidget* key_ent  = create_labeled_entry(box, "Identity Key Path (optional):", "", "e.g. ~/.ssh/id_ed25519");
+    GtkWidget* name_ent = create_labeled_entry(box, _("Friendly Name:"), _("Dev Server"), _("e.g. AWS Production"));
+    GtkWidget* host_ent = create_labeled_entry(box, _("Host / IP Address *:"), "", _("e.g. 192.168.1.100 or dev.example.com"));
+    GtkWidget* user_ent = create_labeled_entry(box, _("User:"), g_get_user_name(), _("e.g. ubuntu, root, dev"));
+    GtkWidget* port_ent = create_labeled_entry(box, _("Port:"), "22", _("default: 22"));
+    GtkWidget* path_ent = create_labeled_entry(box, _("Remote Directory:"), "~", _("default: ~ or /var/www"));
+    GtkWidget* key_ent  = create_labeled_entry(box, _("Identity Key Path (optional):"), "", _("e.g. ~/.ssh/id_ed25519"));
     GtkWidget* folder_dd = create_folder_dropdown(box, app, remote_context_folder(app));
 
     RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
@@ -384,9 +385,9 @@ void remote_edit_dialog(AppData* app) {
         return;
     }
 
-    GtkWidget* dlg = app_dialog_new("Edit Remote Machine", app->window,
-                                    "_Cancel", APP_RESPONSE_CANCEL,
-                                    "_Save", APP_RESPONSE_OK,
+    GtkWidget* dlg = app_dialog_new(_("Edit Remote Machine"), app->window,
+                                    _("_Cancel"), APP_RESPONSE_CANCEL,
+                                    _("_Save"), APP_RESPONSE_OK,
                                     NULL);
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = remote_dialog_body(dlg);
@@ -394,12 +395,12 @@ void remote_edit_dialog(AppData* app) {
     gchar port_buf[16];
     snprintf(port_buf, sizeof(port_buf), "%d", rm->port);
 
-    GtkWidget* name_ent = create_labeled_entry(box, "Friendly Name:", rm->name, "");
-    GtkWidget* host_ent = create_labeled_entry(box, "Host / IP Address *:", rm->host, "");
-    GtkWidget* user_ent = create_labeled_entry(box, "User:", rm->user, "");
-    GtkWidget* port_ent = create_labeled_entry(box, "Port:", port_buf, "");
-    GtkWidget* path_ent = create_labeled_entry(box, "Remote Directory:", rm->remote_path, "");
-    GtkWidget* key_ent  = create_labeled_entry(box, "Identity Key Path (optional):", rm->identity_file, "");
+    GtkWidget* name_ent = create_labeled_entry(box, _("Friendly Name:"), rm->name, "");
+    GtkWidget* host_ent = create_labeled_entry(box, _("Host / IP Address *:"), rm->host, "");
+    GtkWidget* user_ent = create_labeled_entry(box, _("User:"), rm->user, "");
+    GtkWidget* port_ent = create_labeled_entry(box, _("Port:"), port_buf, "");
+    GtkWidget* path_ent = create_labeled_entry(box, _("Remote Directory:"), rm->remote_path, "");
+    GtkWidget* key_ent  = create_labeled_entry(box, _("Identity Key Path (optional):"), rm->identity_file, "");
     GtkWidget* folder_dd = create_folder_dropdown(box, app, remote_machine_folder(app, rm));
 
     RemoteDialogHelper d = { NULL, APP_RESPONSE_CANCEL };
@@ -449,11 +450,11 @@ void remote_delete_selected(AppData* app) {
         return;
     }
 
-    gchar* msg = g_strdup_printf("Are you sure you want to remove remote machine '%s' (%s)?",
+    gchar* msg = g_strdup_printf(_("Are you sure you want to remove remote machine '%s' (%s)?"),
                                  rm->name ? rm->name : rm->host, rm->host);
-    GtkWidget* dlg = app_dialog_new("Remove Remote Machine", app->window,
-                                    "_Cancel", APP_RESPONSE_CANCEL,
-                                    "_Delete", APP_RESPONSE_OK,
+    GtkWidget* dlg = app_dialog_new(_("Remove Remote Machine"), app->window,
+                                    _("_Cancel"), APP_RESPONSE_CANCEL,
+                                    _("_Delete"), APP_RESPONSE_OK,
                                     NULL);
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL);
     GtkWidget* box = remote_dialog_body(dlg);
@@ -483,15 +484,15 @@ static gboolean remote_folder_dialog(AppData* app, const gchar* title, const gch
                                      const gchar* init_name, const gchar* init_icon,
                                      gchar** out_name, const gchar** out_icon) {
     GtkWidget* dlg = app_dialog_new(title, app->window,
-                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    _("_Cancel"), APP_RESPONSE_CANCEL,
                                     ok_label, APP_RESPONSE_OK,
                                     NULL);
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = remote_dialog_body(dlg);
-    GtkWidget* name_ent = create_labeled_entry(box, "Name:", init_name, "e.g. Production");
+    GtkWidget* name_ent = create_labeled_entry(box, _("Name:"), init_name, _("e.g. Production"));
     gtk_entry_set_activates_default(GTK_ENTRY(name_ent), TRUE);
 
-    GtkWidget* lbl = gtk_label_new("Icon:");
+    GtkWidget* lbl = gtk_label_new(_("Icon:"));
     gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
     gtk_widget_add_css_class(lbl, "field-label");
     gtk_box_append(GTK_BOX(box), lbl);
@@ -522,7 +523,7 @@ void remote_new_folder_dialog(AppData* app) {
     }
     gchar* name = NULL;
     const gchar* icon = BOOKMARK_FOLDER_ICON_DEFAULT;
-    if (remote_folder_dialog(app, "New Remote Folder", "_Create", NULL, icon, &name, &icon)) {
+    if (remote_folder_dialog(app, _("New Remote Folder"), _("_Create"), NULL, icon, &name, &icon)) {
         RemoteFolder* folder = remote_folder_add(app, name, icon);
         remote_save(app);
         remote_refresh_select(app, "remote_folder", folder->id);
@@ -537,7 +538,7 @@ void remote_edit_folder_dialog(AppData* app) {
     }
     gchar* name = NULL;
     const gchar* icon = folder->icon;
-    if (remote_folder_dialog(app, "Edit Remote Folder", "_Save", folder->name, folder->icon, &name, &icon)) {
+    if (remote_folder_dialog(app, _("Edit Remote Folder"), _("_Save"), folder->name, folder->icon, &name, &icon)) {
         g_free(folder->name);
         folder->name = name;
         name = NULL;
@@ -555,12 +556,13 @@ void remote_delete_folder_selected(AppData* app) {
     }
     guint n = remote_folder_count(app, folder);
     gchar* msg = (n > 0)
-        ? g_strdup_printf("Delete the folder “%s”? Its %u machine%s move%s to the top level.",
-                          folder->name, n, n == 1 ? "" : "s", n == 1 ? "s" : "")
-        : g_strdup_printf("Delete the empty folder “%s”?", folder->name);
-    GtkWidget* dlg = app_dialog_new("Delete Remote Folder", app->window,
-                                    "_Cancel", APP_RESPONSE_CANCEL,
-                                    "_Delete", APP_RESPONSE_OK,
+        ? g_strdup_printf(ngettext("Delete the folder “%s”? Its %u machine moves to the top level.",
+                                   "Delete the folder “%s”? Its %u machines move to the top level.", n),
+                          folder->name, n)
+        : g_strdup_printf(_("Delete the empty folder “%s”?"), folder->name);
+    GtkWidget* dlg = app_dialog_new(_("Delete Remote Folder"), app->window,
+                                    _("_Cancel"), APP_RESPONSE_CANCEL,
+                                    _("_Delete"), APP_RESPONSE_OK,
                                     NULL);
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL);
     GtkWidget* box = remote_dialog_body(dlg);
@@ -592,16 +594,16 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
 
     /* Check if sshfs is installed */
     if (g_find_program_in_path("sshfs") == NULL) {
-        GtkWidget* dlg = app_dialog_new("sshfs Required", app->window,
-                                        "_Close", APP_RESPONSE_OK,
+        GtkWidget* dlg = app_dialog_new(_("sshfs Required"), app->window,
+                                        _("_Close"), APP_RESPONSE_OK,
                                         NULL);
         GtkWidget* box = remote_dialog_body(dlg);
-        GtkWidget* lbl = gtk_label_new("To browse and edit remote files, 'sshfs' is required.\n\n"
+        GtkWidget* lbl = gtk_label_new(_("To browse and edit remote files, 'sshfs' is required.\n\n"
                                        "Please install it:\n"
                                        "  Ubuntu / Debian: sudo apt install sshfs\n"
                                        "  Fedora: sudo dnf install fuse-sshfs\n"
                                        "  Arch: sudo pacman -S sshfs\n\n"
-                                       "You can still open an SSH terminal session using the terminal button.");
+                                       "You can still open an SSH terminal session using the terminal button."));
         gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
         gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
         gtk_box_append(GTK_BOX(box), lbl);
@@ -674,13 +676,13 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     }
 
     if (!ok || exit_status != 0) {
-        GtkWidget* dlg = app_dialog_new("Connection Failed", app->window,
-                                        "_Close", APP_RESPONSE_OK,
+        GtkWidget* dlg = app_dialog_new(_("Connection Failed"), app->window,
+                                        _("_Close"), APP_RESPONSE_OK,
                                         NULL);
         GtkWidget* box = remote_dialog_body(dlg);
-        gchar* err_msg = g_strdup_printf("Could not connect to '%s' (%s):\n\n%s",
+        gchar* err_msg = g_strdup_printf(_("Could not connect to '%s' (%s):\n\n%s"),
                                          rm->name ? rm->name : rm->host, rm->host,
-                                         (stderr_buf && stderr_buf[0]) ? stderr_buf : "sshfs process exited with an error.");
+                                         (stderr_buf && stderr_buf[0]) ? stderr_buf : _("sshfs process exited with an error."));
         GtkWidget* lbl = gtk_label_new(err_msg);
         gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
         gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
@@ -976,33 +978,33 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
 
     if (rm != NULL) {
         if (!rm->is_connected) {
-            add_menu_item(box, popover, app, "Connect (Browse Files)", "Enter", 1);
+            add_menu_item(box, popover, app, _("Connect (Browse Files)"), "Enter", 1);
         } else {
-            add_menu_item(box, popover, app, "Open in Explorer", "Enter", 1);
-            add_menu_item(box, popover, app, "Disconnect", "c", 2);
+            add_menu_item(box, popover, app, _("Open in Explorer"), "Enter", 1);
+            add_menu_item(box, popover, app, _("Disconnect"), "c", 2);
         }
-        add_menu_item(box, popover, app, "Open SSH Terminal", "t", 3);
-        add_menu_item(box, popover, app, "Edit Machine…", "F2", 4);
-        add_menu_item(box, popover, app, "Delete Machine", "Delete", 5);
+        add_menu_item(box, popover, app, _("Open SSH Terminal"), "t", 3);
+        add_menu_item(box, popover, app, _("Edit Machine…"), "F2", 4);
+        add_menu_item(box, popover, app, _("Delete Machine"), "Delete", 5);
 
         GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
         gtk_box_append(GTK_BOX(box), sep);
     }
 
     if (folder != NULL) {
-        add_menu_item(box, popover, app, "Expand / Collapse", "Enter", 9);
-        add_menu_item(box, popover, app, "Edit Folder…", "F2", 4);
-        add_menu_item(box, popover, app, "Delete Folder", "Delete", 5);
+        add_menu_item(box, popover, app, _("Expand / Collapse"), "Enter", 9);
+        add_menu_item(box, popover, app, _("Edit Folder…"), "F2", 4);
+        add_menu_item(box, popover, app, _("Delete Folder"), "Delete", 5);
 
         GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
         gtk_box_append(GTK_BOX(box), sep);
     }
 
-    add_menu_item(box, popover, app, folder != NULL ? "Add Machine Here…" : "Add Remote Machine…", "a", 6);
-    add_menu_item(box, popover, app, "New Folder…", "Shift+A", 8);
-    add_menu_item(box, popover, app, "Re-scan ~/.ssh/config", "F5", 7);
+    add_menu_item(box, popover, app, folder != NULL ? _("Add Machine Here…") : _("Add Remote Machine…"), "a", 6);
+    add_menu_item(box, popover, app, _("New Folder…"), "Shift+A", 8);
+    add_menu_item(box, popover, app, _("Re-scan ~/.ssh/config"), "F5", 7);
     if (app->remote_folders != NULL) {
-        add_menu_item(box, popover, app, "Collapse / Expand All", NULL, 10);
+        add_menu_item(box, popover, app, _("Collapse / Expand All"), NULL, 10);
     }
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);

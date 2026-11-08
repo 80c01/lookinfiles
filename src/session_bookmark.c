@@ -1,5 +1,6 @@
 /* Workspace bookmarks (see session_bookmark.h) */
 #include "session_bookmark.h"
+#include "i18n.h"
 #include "bookmark_dialog.h"
 #include "bookmarks.h"
 #include "dialog.h"
@@ -8,9 +9,9 @@
 
 /* Name of the bookmark to create; NULL when cancelled (caller frees) */
 static gchar* ask_name(AppData* app, const gchar* initial) {
-    GtkWidget* dlg = app_dialog_new("Save Workspace as Bookmark", app->window, NULL, NULL);
-    app_dialog_add_button(APP_DIALOG(dlg), "_Cancel", APP_RESPONSE_CANCEL);
-    GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), "_Save", APP_RESPONSE_OK);
+    GtkWidget* dlg = app_dialog_new(_("Save Workspace as Bookmark"), app->window, NULL, NULL);
+    app_dialog_add_button(APP_DIALOG(dlg), _("_Cancel"), APP_RESPONSE_CANCEL);
+    GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), _("_Save"), APP_RESPONSE_OK);
     gtk_widget_add_css_class(ok, "suggested-action");
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     app_dialog_set_width(APP_DIALOG(dlg), 480);
@@ -22,7 +23,7 @@ static gchar* ask_name(AppData* app, const gchar* initial) {
     gtk_widget_set_margin_end(box, 16);
     gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), box);
 
-    GtkWidget* label = gtk_label_new("Name");
+    GtkWidget* label = gtk_label_new(_("Name"));
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_widget_add_css_class(label, "dim-label");
     gtk_box_append(GTK_BOX(box), label);
@@ -30,8 +31,8 @@ static gchar* ask_name(AppData* app, const gchar* initial) {
     gtk_editable_set_text(GTK_EDITABLE(entry), initial);
     gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
     gtk_box_append(GTK_BOX(box), entry);
-    GtkWidget* hint = gtk_label_new("Keeps this workspace's folder, open editor tabs and panels. "
-                                    "Opening the bookmark restores them in a new workspace.");
+    GtkWidget* hint = gtk_label_new(_("Keeps this workspace's folder, open editor tabs and panels. "
+                                    "Opening the bookmark restores them in a new workspace."));
     gtk_label_set_wrap(GTK_LABEL(hint), TRUE);
     gtk_label_set_max_width_chars(GTK_LABEL(hint), 60);
     gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
@@ -58,7 +59,7 @@ void session_bookmark_save(AppData* app) {
     /* The current workspace keeps its folder in app->base_dir until it is left */
     const gchar* dir = (ws == app->current_ws) ? app->base_dir : app->workspaces[ws].base_dir;
     if (dir == NULL || dir[0] == '\0') {
-        bookmark_message(app, "Save Workspace", "This workspace has no folder to save.", "_Close", NULL);
+        bookmark_message(app, _("Save Workspace"), _("This workspace has no folder to save."), _("_Close"), NULL);
         return;
     }
     gchar* initial = g_path_get_basename(dir);
@@ -75,8 +76,8 @@ void session_bookmark_save(AppData* app) {
     if (path != NULL && target != NULL && session_save_workspace(app, ws, path, &err)) {
         bookmarks_add_session(app, name, target);
     } else {
-        gchar* msg = g_strdup_printf("Could not save the workspace:\n%s", err != NULL ? err->message : "unknown error");
-        bookmark_message(app, "Save Workspace", msg, "_Close", NULL);
+        gchar* msg = g_strdup_printf(_("Could not save the workspace:\n%s"), err != NULL ? err->message : _("unknown error"));
+        bookmark_message(app, _("Save Workspace"), msg, _("_Close"), NULL);
         g_free(msg);
     }
     g_clear_error(&err);
@@ -95,8 +96,8 @@ void session_bookmark_open(AppData* app) {
     gchar* path = session_snapshot_path(session_target_id(target));
     GError* err = NULL;
     if (path == NULL || !session_open_workspace(app, path, &err)) {
-        gchar* msg = g_strdup_printf("Could not open this workspace:\n%s", err != NULL ? err->message : "unknown error");
-        bookmark_message(app, "Open Workspace", msg, "_Close", NULL);
+        gchar* msg = g_strdup_printf(_("Could not open this workspace:\n%s"), err != NULL ? err->message : _("unknown error"));
+        bookmark_message(app, _("Open Workspace"), msg, _("_Close"), NULL);
         g_free(msg);
     }
     g_clear_error(&err);

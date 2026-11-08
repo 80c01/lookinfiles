@@ -1,4 +1,5 @@
 #include "bookmarks.h"
+#include "i18n.h"
 #include "palette.h"
 #include "app_paths.h"
 #include "dialog.h"
@@ -191,7 +192,7 @@ static void bm_parse_start(GMarkupParseContext* ctx, const gchar* element,
         }
     }
     if (g_strcmp0(element, "folder") == 0) {
-        GNode* node = bm_new_node(st->app, TRUE, (name != NULL && name[0] != '\0') ? name : "Folder", NULL);
+        GNode* node = bm_new_node(st->app, TRUE, (name != NULL && name[0] != '\0') ? name : _("Folder"), NULL);
         bm_item(node)->expanded = (g_strcmp0(expanded, "true") == 0);
         bm_item(node)->icon = bookmark_folder_icon_normalize(icon);
         g_node_append(st->current, node);
@@ -305,7 +306,7 @@ static void bm_append_children(AppData* app, ExplorerRow* parent, GNode* node) {
             if (c->children != NULL) {
                 bm_append_children(app, row, c);
             } else {
-                bm_append_placeholder(row, "  (empty)");
+                bm_append_placeholder(row, _("  (empty)"));
             }
         } else {
             bookmark_icon_check(app, it->target);
@@ -327,7 +328,7 @@ void bookmarks_append_rows(ExplorerRow* root, AppData* app) {
         return;
     }
     if (app->bookmarks->children == NULL) {
-        bm_append_placeholder(root, "No bookmarks yet — press a or Ctrl+D to add one");
+        bm_append_placeholder(root, _("No bookmarks yet — press a or Ctrl+D to add one"));
         return;
     }
     bm_append_children(app, root, app->bookmarks);
@@ -469,7 +470,7 @@ static gint bm_run_item_dialog(AppData* app, const gchar* title, const gchar* ok
     GPtrArray* nodes = g_ptr_array_new();
     GPtrArray* labels = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(nodes, app->bookmarks);
-    g_ptr_array_add(labels, g_strdup("Bookmarks (top level)"));
+    g_ptr_array_add(labels, g_strdup(_("Bookmarks (top level)")));
     bm_collect_folders(app->bookmarks, 1, exclude, nodes, labels);
     guint selected = 0;
     for (guint i = 0; i < nodes->len; i++) {
@@ -524,7 +525,7 @@ static void bm_add_dialog(AppData* app, const gchar* init_target, GNode* parent)
     gchar* name = NULL;
     gchar* target = NULL;
     GNode* out_parent = NULL;
-    gint resp = bm_run_item_dialog(app, "Add Bookmark", "_Add", FALSE, FALSE,
+    gint resp = bm_run_item_dialog(app, _("Add Bookmark"), _("_Add"), FALSE, FALSE,
                                    init_name, init_target, parent, NULL, NULL,
                                    &name, &target, &out_parent);
     if (resp == APP_RESPONSE_OK && target != NULL && out_parent != NULL) {
@@ -564,15 +565,16 @@ static void bm_delete_node(AppData* app, GNode* node, gboolean confirm) {
         gchar* msg = NULL;
         if (it->is_folder && node->children != NULL) {
             guint n = g_node_n_nodes(node, G_TRAVERSE_ALL) - 1;
-            msg = g_strdup_printf("Delete the folder “%s” and the %u item%s it contains?",
-                                  it->name, n, n == 1 ? "" : "s");
+            msg = g_strdup_printf(ngettext("Delete the folder “%s” and the %u item it contains?",
+                                           "Delete the folder “%s” and the %u items it contains?", n),
+                                  it->name, n);
         } else if (it->is_folder) {
-            msg = g_strdup_printf("Delete the empty folder “%s”?", it->name);
+            msg = g_strdup_printf(_("Delete the empty folder “%s”?"), it->name);
         } else {
-            msg = g_strdup_printf("Delete the bookmark “%s”?", it->name);
+            msg = g_strdup_printf(_("Delete the bookmark “%s”?"), it->name);
         }
-        gboolean ok = bookmark_message(app, it->is_folder ? "Delete Folder" : "Delete Bookmark", msg,
-                                 "_Delete", "_Cancel");
+        gboolean ok = bookmark_message(app, it->is_folder ? _("Delete Folder") : _("Delete Bookmark"), msg,
+                                 _("_Delete"), _("_Cancel"));
         g_free(msg);
         if (!ok) {
             return;
@@ -601,7 +603,7 @@ static void bm_edit_node(AppData* app, GNode* node, gboolean allow_remove) {
     gchar* target = NULL;
     GNode* out_parent = NULL;
     const gchar* icon = it->icon;
-    gint resp = bm_run_item_dialog(app, it->is_folder ? "Edit Folder" : "Edit Bookmark", "_Save",
+    gint resp = bm_run_item_dialog(app, it->is_folder ? _("Edit Folder") : _("Edit Bookmark"), _("_Save"),
                                    it->is_folder, allow_remove, it->name, it->target,
                                    node->parent, it->is_folder ? node : NULL, &icon,
                                    &name, &target, &out_parent);
@@ -701,7 +703,7 @@ void bookmarks_new_folder(AppData* app) {
     gchar* target = NULL;
     GNode* out_parent = NULL;
     const gchar* icon = BOOKMARK_FOLDER_ICON_DEFAULT;
-    gint resp = bm_run_item_dialog(app, "New Bookmark Folder", "_Create", TRUE, FALSE,
+    gint resp = bm_run_item_dialog(app, _("New Bookmark Folder"), _("_Create"), TRUE, FALSE,
                                    NULL, NULL, bm_context_folder(app), NULL, &icon,
                                    &name, &target, &out_parent);
     if (resp == APP_RESPONSE_OK && name != NULL && name[0] != '\0' && out_parent != NULL) {
@@ -858,9 +860,9 @@ void bookmarks_activate_selected(AppData* app) {
     if (bookmark_target_is_uri(it->target)) {
         GError* err = NULL;
         if (!g_app_info_launch_default_for_uri(it->target, NULL, &err)) {
-            gchar* msg = g_strdup_printf("Could not open “%s”:\n%s", it->target,
-                                         err != NULL ? err->message : "unknown error");
-            bookmark_message(app, "Open Bookmark", msg, "_Close", NULL);
+            gchar* msg = g_strdup_printf(_("Could not open “%s”:\n%s"), it->target,
+                                         err != NULL ? err->message : _("unknown error"));
+            bookmark_message(app, _("Open Bookmark"), msg, _("_Close"), NULL);
             g_free(msg);
         }
         g_clear_error(&err);
@@ -868,9 +870,9 @@ void bookmarks_activate_selected(AppData* app) {
     }
 
     if (!g_file_test(it->target, G_FILE_TEST_EXISTS)) {
-        gchar* msg = g_strdup_printf("The location of “%s” no longer exists:\n%s\n\nRemove this bookmark?",
+        gchar* msg = g_strdup_printf(_("The location of “%s” no longer exists:\n%s\n\nRemove this bookmark?"),
                                      it->name, it->target);
-        if (bookmark_message(app, "Missing Location", msg, "_Remove", "_Keep")) {
+        if (bookmark_message(app, _("Missing Location"), msg, _("_Remove"), _("_Keep"))) {
             bm_delete_node(app, node, FALSE);
         }
         g_free(msg);
@@ -1050,32 +1052,32 @@ static void bm_on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x,
     if (node != NULL) {
         gboolean folder = bm_is_folder(node);
         if (folder) {
-            bm_menu_item(box, popover, app, "Add Bookmark Here…", "a", BM_ACTION_ADD, TRUE);
-            bm_menu_item(box, popover, app, "New Subfolder…", "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
+            bm_menu_item(box, popover, app, _("Add Bookmark Here…"), "a", BM_ACTION_ADD, TRUE);
+            bm_menu_item(box, popover, app, _("New Subfolder…"), "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
             bm_menu_separator(box);
-            bm_menu_item(box, popover, app, "Rename / Move…", "F2", BM_ACTION_EDIT, TRUE);
-            bm_menu_item(box, popover, app, "Delete Folder", "Delete", BM_ACTION_DELETE, TRUE);
+            bm_menu_item(box, popover, app, _("Rename / Move…"), "F2", BM_ACTION_EDIT, TRUE);
+            bm_menu_item(box, popover, app, _("Delete Folder"), _("Delete"), BM_ACTION_DELETE, TRUE);
         } else {
-            bm_menu_item(box, popover, app, "Open", "Enter", BM_ACTION_OPEN, TRUE);
-            bm_menu_item(box, popover, app, "Edit…", "F2", BM_ACTION_EDIT, TRUE);
-            bm_menu_item(box, popover, app, "Delete", "Delete", BM_ACTION_DELETE, TRUE);
+            bm_menu_item(box, popover, app, _("Open"), "Enter", BM_ACTION_OPEN, TRUE);
+            bm_menu_item(box, popover, app, _("Edit…"), "F2", BM_ACTION_EDIT, TRUE);
+            bm_menu_item(box, popover, app, _("Delete"), _("Delete"), BM_ACTION_DELETE, TRUE);
         }
         bm_menu_separator(box);
-        bm_menu_item(box, popover, app, "Move Up", "Shift+K", BM_ACTION_MOVE_UP, node->prev != NULL);
-        bm_menu_item(box, popover, app, "Move Down", "Shift+J", BM_ACTION_MOVE_DOWN, node->next != NULL);
+        bm_menu_item(box, popover, app, _("Move Up"), "Shift+K", BM_ACTION_MOVE_UP, node->prev != NULL);
+        bm_menu_item(box, popover, app, _("Move Down"), "Shift+J", BM_ACTION_MOVE_DOWN, node->next != NULL);
         if (!folder) {
             bm_menu_separator(box);
-            bm_menu_item(box, popover, app, "Add Bookmark…", "a", BM_ACTION_ADD, TRUE);
-            bm_menu_item(box, popover, app, "New Folder…", "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
+            bm_menu_item(box, popover, app, _("Add Bookmark…"), "a", BM_ACTION_ADD, TRUE);
+            bm_menu_item(box, popover, app, _("New Folder…"), "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
         }
     } else {
-        bm_menu_item(box, popover, app, "Add Bookmark…", "a", BM_ACTION_ADD, TRUE);
-        bm_menu_item(box, popover, app, "New Folder…", "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
+        bm_menu_item(box, popover, app, _("Add Bookmark…"), "a", BM_ACTION_ADD, TRUE);
+        bm_menu_item(box, popover, app, _("New Folder…"), "Shift+A", BM_ACTION_ADD_FOLDER, TRUE);
     }
     bm_menu_separator(box);
-    bm_menu_item(box, popover, app, "Save Workspace as Bookmark…", NULL, BM_ACTION_SAVE_WORKSPACE, TRUE);
-    bm_menu_item(box, popover, app, "Sort A–Z / Z–A", "o", BM_ACTION_SORT, app->bookmarks->children != NULL);
-    bm_menu_item(box, popover, app, "Collapse / Expand All", NULL, BM_ACTION_COLLAPSE, app->bookmarks->children != NULL);
+    bm_menu_item(box, popover, app, _("Save Workspace as Bookmark…"), NULL, BM_ACTION_SAVE_WORKSPACE, TRUE);
+    bm_menu_item(box, popover, app, _("Sort A–Z / Z–A"), "o", BM_ACTION_SORT, app->bookmarks->children != NULL);
+    bm_menu_item(box, popover, app, _("Collapse / Expand All"), NULL, BM_ACTION_COLLAPSE, app->bookmarks->children != NULL);
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     g_signal_connect(popover, "closed", G_CALLBACK(bm_on_popover_closed), NULL);
