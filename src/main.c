@@ -789,6 +789,8 @@ int main(int argc, char** argv) {
     remote_free(app);
     org_fold_free(app);
     preview_state_free(app);
+    sidebar_free(app);
+    status_bar_free(app);
     if (app->buffers != NULL) {
         g_ptr_array_unref(app->buffers);
     }

@@ -15,5 +15,7 @@ GtkWidget* create_topbar_notice(AppData* app);
 GtkWidget* create_preview_bar(AppData* app);
 /* Refresh the explorer and preview bars (APP_EVENT_STATUS_CHANGED) */
 void update_status_bar(AppData* app);
+/* Forget the bars' widgets (at exit) */
+void status_bar_free(AppData* app);
 
 #endif /* STATUS_BAR_H */

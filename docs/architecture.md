@@ -668,8 +668,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   view with modification `*` and ahead/behind `↑` / `↓` indicators, `app_notice()` message with Undo, sort order of the files view (click cycles it, like `o`); the message moves to the top bar,
   `create_topbar_notice()`, while the explorer is hidden), preview bar
   (`create_preview_bar()`, under the preview page only: name, size, type,
-  encoding); `update_status_bar()` refreshes both.
-- `sidebar` — explorer header: view switcher and per-view action toolbars.
+  encoding); `update_status_bar()` refreshes both. Their widgets are private
+  (`struct StatusBars`).
+- `sidebar` — explorer header: view switcher and per-view action toolbars;
+  `sidebar_header_update()` (called by `update_path_label()`) shows the
+  current view. Its widgets are private (`struct SidebarHeader`).
 - `help` — cheat sheet (`?`, right click on the Help button); `KEY_HELP` must stay in sync with `docs/keyboard.md`.
 - `help_guide` — the **Help** page of the preview notebook (`app->help_page`, after
   the Git and result pages): a `user_guide` page rendered by `markdown`,

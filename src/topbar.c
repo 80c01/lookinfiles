@@ -13,6 +13,7 @@
 #include "nav_keys.h"
 #include "remote.h"
 #include "search.h"
+#include "sidebar.h"
 #include "terminal.h"
 
 #if defined(G_OS_WIN32) || defined(_WIN32)
@@ -679,92 +680,8 @@ void update_path_label(AppData* app) {
     }
 
     /* Explorer panel header (VS Code style): view title + current folder section */
-    if (app->sidebar_title != NULL) {
-        const gchar* title = _("EXPLORER");
-        if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
-            title = _("NOTES");
-        } else if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
-            title = _("BOOKMARKS");
-        } else if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
-            title = _("REMOTE");
-        } else if (app->sidebar_view == SIDEBAR_VIEW_GAMES) {
-            title = _("GAMES");
-        }
-        gtk_label_set_text(GTK_LABEL(app->sidebar_title), title);
+    if (sidebar_header_update(app)) {
         git_tab_update(app, app->base_dir);
-    }
-    if (app->sidebar_files_btn != NULL) {
-        if (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks) {
-            gtk_widget_add_css_class(app->sidebar_files_btn, "sidebar-icon-active");
-        } else {
-            gtk_widget_remove_css_class(app->sidebar_files_btn, "sidebar-icon-active");
-        }
-    }
-    if (app->sidebar_bm_btn != NULL) {
-        if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
-            gtk_widget_add_css_class(app->sidebar_bm_btn, "sidebar-icon-active");
-        } else {
-            gtk_widget_remove_css_class(app->sidebar_bm_btn, "sidebar-icon-active");
-        }
-    }
-    if (app->sidebar_notes_btn != NULL) {
-        if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
-            gtk_widget_add_css_class(app->sidebar_notes_btn, "sidebar-icon-active");
-        } else {
-            gtk_widget_remove_css_class(app->sidebar_notes_btn, "sidebar-icon-active");
-        }
-    }
-    if (app->sidebar_remote_btn != NULL) {
-        if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
-            gtk_widget_add_css_class(app->sidebar_remote_btn, "sidebar-icon-active");
-        } else {
-            gtk_widget_remove_css_class(app->sidebar_remote_btn, "sidebar-icon-active");
-        }
-    }
-    if (app->sidebar_games_btn != NULL) {
-        gtk_widget_set_visible(app->sidebar_games_btn, app->game_mode_unlocked);
-        if (app->sidebar_view == SIDEBAR_VIEW_GAMES) {
-            gtk_widget_add_css_class(app->sidebar_games_btn, "sidebar-icon-active");
-        } else {
-            gtk_widget_remove_css_class(app->sidebar_games_btn, "sidebar-icon-active");
-        }
-    }
-    if (app->sidebar_files_toolbar != NULL) {
-        gtk_widget_set_visible(app->sidebar_files_toolbar,
-                               app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
-    }
-    if (app->sidebar_bm_toolbar != NULL) {
-        gtk_widget_set_visible(app->sidebar_bm_toolbar,
-                               app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks);
-    }
-    if (app->sidebar_notes_actions != NULL) {
-        gtk_widget_set_visible(app->sidebar_notes_actions,
-                               app->sidebar_view == SIDEBAR_VIEW_NOTES);
-    }
-    if (app->sidebar_remote_toolbar != NULL) {
-        gtk_widget_set_visible(app->sidebar_remote_toolbar,
-                               app->sidebar_view == SIDEBAR_VIEW_REMOTE);
-    }
-    if (app->sidebar_games_toolbar != NULL) {
-        gtk_widget_set_visible(app->sidebar_games_toolbar,
-                               app->sidebar_view == SIDEBAR_VIEW_GAMES);
-    }
-    if (app->sidebar_files_hidden_btn != NULL) {
-        if (app->show_hidden) {
-            gtk_widget_add_css_class(app->sidebar_files_hidden_btn, "sidebar-icon-active");
-        } else {
-            gtk_widget_remove_css_class(app->sidebar_files_hidden_btn, "sidebar-icon-active");
-        }
-    }
-    if (app->sidebar_section != NULL && app->base_dir != NULL) {
-        gchar* base = g_path_get_basename(app->base_dir);
-        gchar* upper = g_utf8_strup(base, -1);
-        gchar* section = g_strdup_printf("▾ %s", upper);
-        gtk_label_set_text(GTK_LABEL(app->sidebar_section), section);
-        gtk_widget_set_tooltip_text(app->sidebar_section, app->base_dir);
-        g_free(section);
-        g_free(upper);
-        g_free(base);
     }
 
     app_emit(app, APP_EVENT_STATUS_CHANGED);

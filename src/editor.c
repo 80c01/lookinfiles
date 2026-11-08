@@ -1665,9 +1665,11 @@ EditorTab* editor_open_at(AppData* app, const gchar* path, gint line, gint index
     return tab;
 }
 
+static guint status_idle_id = 0; /* pending status bar refresh after a page switch */
+
 static gboolean emit_status_changed_idle(gpointer data) {
     AppData* app = (AppData*)data;
-    app->status_idle_id = 0;
+    status_idle_id = 0;
     app_emit(app, APP_EVENT_STATUS_CHANGED);
     return G_SOURCE_REMOVE;
 }
@@ -1715,8 +1717,8 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
     /* Also on the preview page: the bar then shows the default editor mode.
      * "switch-page" runs before the notebook changes its current page and
      * moves the focus, so refresh once the switch is done. */
-    if (app->status_idle_id == 0) {
-        app->status_idle_id = g_idle_add(emit_status_changed_idle, app);
+    if (status_idle_id == 0) {
+        status_idle_id = g_idle_add(emit_status_changed_idle, app);
     }
     minimap_update_visibility(app);
 }

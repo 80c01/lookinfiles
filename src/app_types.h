@@ -201,7 +201,6 @@ typedef struct {
     GPtrArray* canvas_pages;        /* Canvas tabs of every workspace (roots, not referenced; canvas_view.c), or NULL */
     GPtrArray* video_pages;         /* Video tabs of every workspace (roots, not referenced; video_tab.c), or NULL */
     GtkWidget* help_page;           /* Help page (the user guide, help_guide.c), or NULL */
-    guint status_idle_id;           /* pending status bar refresh after a page switch */
 
     /* Media previews */
     GtkWidget* preview_stack;   /* GtkStack: "text" (text_view), "video" (video_player), or "audio" (audio_player) */
@@ -247,36 +246,13 @@ typedef struct {
     GtkWidget* layouts_btn;       /* top-bar button: anchor of the Alt+L layout switcher */
 
     /* VS Code-style chrome: explorer panel header and bottom status bar */
-    GtkWidget* sidebar_title;     /* "EXPLORER" / "BOOKMARKS" header label */
-    GtkWidget* sidebar_section;   /* current folder section label (files view) */
-    GtkWidget* sidebar_files_btn;   /* mini icon button: switch to Explorer view */
-    GtkWidget* sidebar_bm_btn;      /* mini icon button: switch to Bookmarks view */
-    GtkWidget* sidebar_notes_btn;   /* mini icon button: switch to Notes view */
-    GtkWidget* sidebar_remote_btn;  /* mini icon button: switch to Remote (SSH) view */
-    GtkWidget* sidebar_games_btn;   /* mini icon button: switch to Games view */
-    GtkWidget* sidebar_notes_actions; /* mini icon bar for note actions (new, folder, collapse, expand) */
-    GtkWidget* sidebar_files_toolbar; /* mini action bar for files tree */
-    GtkWidget* sidebar_bm_toolbar;    /* mini action bar for bookmarks */
-    GtkWidget* sidebar_remote_toolbar; /* mini action bar for remote machines */
-    GtkWidget* sidebar_games_toolbar; /* mini action bar for games */
-    GtkWidget* sidebar_files_hidden_btn; /* toggle hidden button in files action bar */
+    struct SidebarHeader* sidebar_header; /* explorer panel header widgets (sidebar.c), NULL before create_sidebar_header() */
+    struct StatusBars* status_bars;       /* explorer, top-bar notice and preview bar widgets (status_bar.c), or NULL */
     gboolean game_mode_unlocked;      /* current workspace's Game Mode, unlocked via secret sequence in help panel */
     gboolean game_mode_just_unlocked; /* TRUE right after unlocking until next key, consumes trailing Enter */
     struct RemoteStore* remote_store; /* remote machines and their folders (remote_store.c), or NULL */
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */
     struct OrgFold* org_fold;         /* folding of the Org preview (org_fold.c), NULL until first used */
-    GtkWidget* status_branch;     /* explorer bar: Git branch of base_dir */
-    GtkWidget* preview_bar;       /* preview bar (status_bar.c), shown under the preview page */
-    GtkWidget* status_selection;  /* preview bar: previewed entry name */
-    GtkWidget* status_size;       /* preview bar: file size */
-    GtkWidget* status_type;       /* preview bar: file type / language */
-    GtkWidget* status_encoding;   /* preview bar: text encoding, hidden if not text */
-    GtkWidget* status_notice_label; /* explorer bar: app_notice() message */
-    GtkWidget* status_undo_btn;   /* explorer bar: Undo after the message */
-    GtkWidget* status_sort;       /* explorer bar: sort order of the files view */
-    GtkWidget* topbar_notice;     /* top bar: the app_notice() message while the explorer is hidden */
-    GtkWidget* topbar_notice_label;
-    GtkWidget* topbar_undo_btn;
     EditorMode default_editor_mode; /* mode of new non-Org editor tabs (-e / --editor) */
     gboolean editor_line_numbers; /* new editor tabs show line numbers (Preferences) */
     gboolean editor_wrap;         /* new editor tabs wrap long lines (Preferences) */

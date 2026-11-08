@@ -11,6 +11,34 @@
 #include "file_types.h"
 #include "git_utils.h"
 
+/* Private to this file: the widgets of the explorer bar, the top-bar notice
+ * and the preview bar (NULL until their create_*() call) */
+struct StatusBars {
+    GtkWidget* branch;        /* explorer bar: Git branch of base_dir */
+    GtkWidget* notice_label;  /* explorer bar: app_notice() message */
+    GtkWidget* undo_btn;      /* explorer bar: Undo after the message */
+    GtkWidget* sort;          /* explorer bar: sort order of the files view */
+    GtkWidget* topbar_notice; /* top bar: the message while the explorer is hidden */
+    GtkWidget* topbar_notice_label;
+    GtkWidget* topbar_undo_btn;
+    GtkWidget* preview_bar;   /* shown under the preview page */
+    GtkWidget* selection;     /* preview bar: previewed entry name */
+    GtkWidget* size;          /* preview bar: file size */
+    GtkWidget* type;          /* preview bar: file type / language */
+    GtkWidget* encoding;      /* preview bar: text encoding, hidden if not text */
+};
+
+static struct StatusBars* bars_get(AppData* app) {
+    if (app->status_bars == NULL) {
+        app->status_bars = g_new0(struct StatusBars, 1);
+    }
+    return app->status_bars;
+}
+
+void status_bar_free(AppData* app) {
+    g_clear_pointer(&app->status_bars, g_free);
+}
+
 /* How long an app_notice() message stays */
 #define NOTICE_SECONDS 8
 
@@ -40,15 +68,16 @@ static void set_notice(GtkWidget* label, GtkWidget* undo, const gchar* text, gbo
 /* The app_notice() message and its Undo button, in the explorer bar or, while
  * the explorer is hidden, in the top bar; a new message restarts the timeout */
 static void update_notice(AppData* app) {
+    struct StatusBars* b = bars_get(app);
     gboolean undo = FALSE;
     guint serial = 0;
     const gchar* notice = app_notice_get(app, &undo, &serial);
     gboolean shown = (notice != NULL);
     gboolean in_explorer = (app->left_vbox == NULL) || gtk_widget_get_visible(app->left_vbox);
-    set_notice(app->status_notice_label, app->status_undo_btn, in_explorer ? notice : NULL, undo);
-    set_notice(app->topbar_notice_label, app->topbar_undo_btn, in_explorer ? NULL : notice, undo);
-    if (app->topbar_notice != NULL) {
-        gtk_widget_set_visible(app->topbar_notice, shown && !in_explorer);
+    set_notice(b->notice_label, b->undo_btn, in_explorer ? notice : NULL, undo);
+    set_notice(b->topbar_notice_label, b->topbar_undo_btn, in_explorer ? NULL : notice, undo);
+    if (b->topbar_notice != NULL) {
+        gtk_widget_set_visible(b->topbar_notice, shown && !in_explorer);
     }
     if (notice_shown_serial != serial) {
         notice_shown_serial = serial;
@@ -180,9 +209,10 @@ static gboolean on_branches_popover_key_pressed(GtkEventControllerKey* controlle
 }
 
 static void show_git_branches_popover(AppData* app) {
-    if (app == NULL || app->status_branch == NULL || app->base_dir == NULL) {
+    if (app == NULL || app->status_bars == NULL || app->status_bars->branch == NULL || app->base_dir == NULL) {
         return;
     }
+    struct StatusBars* b = app->status_bars;
     if (git_branches_popover != NULL) {
         gtk_popover_popdown(GTK_POPOVER(git_branches_popover));
         return;
@@ -195,7 +225,7 @@ static void show_git_branches_popover(AppData* app) {
 
     GtkWidget* popover = gtk_popover_new();
     git_branches_popover = popover;
-    gtk_widget_set_parent(popover, app->status_branch);
+    gtk_widget_set_parent(popover, b->branch);
     gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
     gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_TOP);
     gtk_widget_set_halign(popover, GTK_ALIGN_START);
@@ -367,10 +397,11 @@ GtkWidget* create_explorer_bar(AppData* app) {
     gtk_widget_add_controller(status_sort, GTK_EVENT_CONTROLLER(sort_click));
     gtk_box_append(GTK_BOX(bar), status_sort);
 
-    app->status_branch = status_branch;
-    app->status_notice_label = status_notice;
-    app->status_undo_btn = status_undo;
-    app->status_sort = status_sort;
+    struct StatusBars* b = bars_get(app);
+    b->branch = status_branch;
+    b->notice_label = status_notice;
+    b->undo_btn = status_undo;
+    b->sort = status_sort;
     return bar;
 }
 
@@ -389,9 +420,10 @@ GtkWidget* create_topbar_notice(AppData* app) {
     gtk_widget_add_css_class(undo, "status-pill");
     gtk_box_append(GTK_BOX(box), undo);
 
-    app->topbar_notice = box;
-    app->topbar_notice_label = label;
-    app->topbar_undo_btn = undo;
+    struct StatusBars* b = bars_get(app);
+    b->topbar_notice = box;
+    b->topbar_notice_label = label;
+    b->topbar_undo_btn = undo;
     return box;
 }
 
@@ -417,11 +449,12 @@ GtkWidget* create_preview_bar(AppData* app) {
     GtkWidget* status_encoding = status_item_new();
     gtk_box_append(GTK_BOX(bar), status_encoding);
 
-    app->preview_bar = bar;
-    app->status_selection = status_selection;
-    app->status_size = status_size;
-    app->status_type = status_type;
-    app->status_encoding = status_encoding;
+    struct StatusBars* b = bars_get(app);
+    b->preview_bar = bar;
+    b->selection = status_selection;
+    b->size = status_size;
+    b->type = status_type;
+    b->encoding = status_encoding;
     return bar;
 }
 
@@ -478,7 +511,8 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
 
 /* Refresh the explorer bar (branch, message) and the preview bar (selected entry) */
 void update_status_bar(AppData* app) {
-    if (app == NULL || app->status_selection == NULL) {
+    struct StatusBars* b = (app != NULL) ? app->status_bars : NULL;
+    if (b == NULL || b->selection == NULL) {
         return;
     }
 
@@ -504,7 +538,7 @@ void update_status_bar(AppData* app) {
                 g_string_append_printf(text, " ↓%u", git_state_behind(git));
             }
         }
-        gtk_label_set_text(GTK_LABEL(app->status_branch), text->str);
+        gtk_label_set_text(GTK_LABEL(b->branch), text->str);
         g_string_free(text, TRUE);
 
         GString* tip = g_string_new(NULL);
@@ -541,24 +575,24 @@ void update_status_bar(AppData* app) {
         }
         g_string_append_c(tip, '\n');
         g_string_append(tip, _("Click to view branches"));
-        gtk_widget_set_tooltip_text(app->status_branch, tip->str);
+        gtk_widget_set_tooltip_text(b->branch, tip->str);
         g_string_free(tip, TRUE);
     }
-    gtk_widget_set_visible(app->status_branch, branch != NULL);
+    gtk_widget_set_visible(b->branch, branch != NULL);
     g_free(branch);
 
-    if (app->status_sort != NULL) {
+    if (b->sort != NULL) {
         static const gchar* sort_labels[SORT_COUNT] = {N_("⇅ Name"), N_("⇅ Date"), N_("⇅ Size"), N_("⇅ Ext")};
         static const gchar* sort_tips[SORT_COUNT] = {
             N_("Sorted by Name"), N_("Sorted by Date (Newest First)"), N_("Sorted by Size (Largest First)"),
             N_("Sorted by Extension")
         };
         gint mode = CLAMP(app->sort_mode, 0, SORT_COUNT - 1);
-        gtk_label_set_text(GTK_LABEL(app->status_sort), _(sort_labels[mode]));
+        gtk_label_set_text(GTK_LABEL(b->sort), _(sort_labels[mode]));
         gchar* tip = g_strdup_printf(_("%s — Click to Change (o)"), _(sort_tips[mode]));
-        gtk_widget_set_tooltip_text(app->status_sort, tip);
+        gtk_widget_set_tooltip_text(b->sort, tip);
         g_free(tip);
-        gtk_widget_set_visible(app->status_sort, files_view);
+        gtk_widget_set_visible(b->sort, files_view);
     }
 
     gchar* name = NULL;
@@ -575,20 +609,20 @@ void update_status_bar(AppData* app) {
     gboolean has_size = FALSE;
     gboolean has_encoding = FALSE;
     if (has_sel) {
-        gtk_label_set_text(GTK_LABEL(app->status_selection), name);
-        gtk_widget_set_tooltip_text(app->status_selection, full);
+        gtk_label_set_text(GTK_LABEL(b->selection), name);
+        gtk_widget_set_tooltip_text(b->selection, full);
 
         /* The previewed file's kind comes from its content; others from their name */
         gboolean previewed = (full != NULL && g_strcmp0(full, preview_state_path(app)) == 0);
         FileKind kind = previewed ? preview_state_kind(app) : file_kind_from_name(name);
         gchar* type_label = status_type_label(name, type, kind,
                                               previewed ? preview_state_content_type(app) : NULL);
-        gtk_label_set_text(GTK_LABEL(app->status_type), type_label);
+        gtk_label_set_text(GTK_LABEL(b->type), type_label);
         g_free(type_label);
         /* Encoding of a previewed text file, as detected */
         has_encoding = (previewed && preview_state_encoding(app) != NULL);
         if (has_encoding) {
-            gtk_label_set_text(GTK_LABEL(app->status_encoding), preview_state_encoding(app));
+            gtk_label_set_text(GTK_LABEL(b->encoding), preview_state_encoding(app));
         }
 
         gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0 &&
@@ -597,18 +631,18 @@ void update_status_bar(AppData* app) {
         GStatBuf st;
         if (is_file && full != NULL && g_stat(full, &st) == 0) {
             gchar* size_str = g_format_size((guint64)st.st_size);
-            gtk_label_set_text(GTK_LABEL(app->status_size), size_str);
+            gtk_label_set_text(GTK_LABEL(b->size), size_str);
             g_free(size_str);
             has_size = TRUE;
         }
     }
-    gtk_widget_set_visible(app->status_selection, has_sel);
-    gtk_widget_set_visible(app->status_type, has_sel);
-    gtk_widget_set_visible(app->status_size, has_size);
-    gtk_widget_set_visible(app->status_encoding, has_encoding);
+    gtk_widget_set_visible(b->selection, has_sel);
+    gtk_widget_set_visible(b->type, has_sel);
+    gtk_widget_set_visible(b->size, has_size);
+    gtk_widget_set_visible(b->encoding, has_encoding);
     /* Only under the preview page: editor, Git and Help tabs have their own bars */
-    if (app->preview_bar != NULL && app->notebook != NULL) {
-        gtk_widget_set_visible(app->preview_bar,
+    if (b->preview_bar != NULL && app->notebook != NULL) {
+        gtk_widget_set_visible(b->preview_bar,
                                gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook)) == 0);
     }
 

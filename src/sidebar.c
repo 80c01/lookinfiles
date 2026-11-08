@@ -8,6 +8,23 @@
 #include "notes.h"
 #include "remote.h"
 
+/* Private to this file: the header's widgets updated by sidebar_header_update() */
+struct SidebarHeader {
+    GtkWidget* title;           /* "EXPLORER" / "BOOKMARKS" / ... */
+    GtkWidget* section;         /* current folder (files view) */
+    GtkWidget* files_btn;       /* view switches */
+    GtkWidget* bm_btn;
+    GtkWidget* notes_btn;
+    GtkWidget* remote_btn;
+    GtkWidget* games_btn;
+    GtkWidget* files_toolbar;   /* action bar of each view */
+    GtkWidget* bm_toolbar;
+    GtkWidget* notes_toolbar;
+    GtkWidget* remote_toolbar;
+    GtkWidget* games_toolbar;
+    GtkWidget* files_hidden_btn; /* hidden files toggle of the files view */
+};
+
 static void on_sidebar_files_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     AppData* app = (AppData*)data;
@@ -605,19 +622,23 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_box_append(GTK_BOX(header), games_toolbar);
 
     if (app != NULL) {
-        app->sidebar_title = title;
-        app->sidebar_section = section;
-        app->sidebar_files_btn = files_btn;
-        app->sidebar_bm_btn = bm_btn;
-        app->sidebar_notes_btn = buf_btn;
-        app->sidebar_remote_btn = remote_btn;
-        app->sidebar_games_btn = games_btn;
-        app->sidebar_files_toolbar = files_toolbar;
-        app->sidebar_bm_toolbar = bm_toolbar;
-        app->sidebar_notes_actions = buf_toolbar;
-        app->sidebar_remote_toolbar = remote_toolbar;
-        app->sidebar_games_toolbar = games_toolbar;
-        app->sidebar_files_hidden_btn = files_hidden_btn;
+        struct SidebarHeader* h = app->sidebar_header;
+        if (h == NULL) {
+            h = app->sidebar_header = g_new0(struct SidebarHeader, 1);
+        }
+        h->title = title;
+        h->section = section;
+        h->files_btn = files_btn;
+        h->bm_btn = bm_btn;
+        h->notes_btn = buf_btn;
+        h->remote_btn = remote_btn;
+        h->games_btn = games_btn;
+        h->files_toolbar = files_toolbar;
+        h->bm_toolbar = bm_toolbar;
+        h->notes_toolbar = buf_toolbar;
+        h->remote_toolbar = remote_toolbar;
+        h->games_toolbar = games_toolbar;
+        h->files_hidden_btn = files_hidden_btn;
     }
     g_object_set_data_full(G_OBJECT(header), "collapse-buttons", cb, cb_free);
     if (app != NULL && app->tree_view != NULL) {
@@ -628,4 +649,65 @@ GtkWidget* create_sidebar_header(AppData* app) {
     }
     cb_update(cb);
     return header;
+}
+
+static void set_active(GtkWidget* button, gboolean active) {
+    if (active) {
+        gtk_widget_add_css_class(button, "sidebar-icon-active");
+    } else {
+        gtk_widget_remove_css_class(button, "sidebar-icon-active");
+    }
+}
+
+gboolean sidebar_header_update(AppData* app) {
+    struct SidebarHeader* h = (app != NULL) ? app->sidebar_header : NULL;
+    if (h == NULL) {
+        return FALSE;
+    }
+    gboolean files = (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
+    gboolean bookmarks = (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks);
+    gboolean notes = (app->sidebar_view == SIDEBAR_VIEW_NOTES);
+    gboolean remote = (app->sidebar_view == SIDEBAR_VIEW_REMOTE);
+    gboolean games = (app->sidebar_view == SIDEBAR_VIEW_GAMES);
+
+    const gchar* title = _("EXPLORER");
+    if (notes) {
+        title = _("NOTES");
+    } else if (bookmarks) {
+        title = _("BOOKMARKS");
+    } else if (remote) {
+        title = _("REMOTE");
+    } else if (games) {
+        title = _("GAMES");
+    }
+    gtk_label_set_text(GTK_LABEL(h->title), title);
+
+    set_active(h->files_btn, files);
+    set_active(h->bm_btn, bookmarks);
+    set_active(h->notes_btn, notes);
+    set_active(h->remote_btn, remote);
+    gtk_widget_set_visible(h->games_btn, app->game_mode_unlocked);
+    set_active(h->games_btn, games);
+    gtk_widget_set_visible(h->files_toolbar, files);
+    gtk_widget_set_visible(h->bm_toolbar, bookmarks);
+    gtk_widget_set_visible(h->notes_toolbar, notes);
+    gtk_widget_set_visible(h->remote_toolbar, remote);
+    gtk_widget_set_visible(h->games_toolbar, games);
+    set_active(h->files_hidden_btn, app->show_hidden);
+
+    if (app->base_dir != NULL) {
+        gchar* base = g_path_get_basename(app->base_dir);
+        gchar* upper = g_utf8_strup(base, -1);
+        gchar* section = g_strdup_printf("▾ %s", upper);
+        gtk_label_set_text(GTK_LABEL(h->section), section);
+        gtk_widget_set_tooltip_text(h->section, app->base_dir);
+        g_free(section);
+        g_free(upper);
+        g_free(base);
+    }
+    return TRUE;
+}
+
+void sidebar_free(AppData* app) {
+    g_clear_pointer(&app->sidebar_header, g_free);
 }
