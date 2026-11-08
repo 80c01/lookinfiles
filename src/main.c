@@ -37,6 +37,7 @@
 #include "session.h"
 #include "session_bookmark.h"
 #include "orgmode.h"
+#include "org_fold.h"
 #include "diff_gutter.h"
 #include "color_column.h"
 #include "canvas_view.h"
@@ -797,10 +798,7 @@ int main(int argc, char** argv) {
     bookmarks_free(app);
     notes_free(app);
     remote_free(app);
-    if (app->org_folded_lines != NULL) {
-        g_hash_table_destroy(app->org_folded_lines);
-        app->org_folded_lines = NULL;
-    }
+    org_fold_free(app);
     if (app->buffers != NULL) {
         g_ptr_array_unref(app->buffers);
     }

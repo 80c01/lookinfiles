@@ -23,6 +23,7 @@
 #include "remote.h"
 #include "archive_tree.h"
 #include "orgmode.h"
+#include "org_fold.h"
 #include "preview_symbols.h"
 #include "preview_tagbar.h"
 #include "diff_gutter.h"
@@ -639,10 +640,11 @@ static void show_text_preview(TextPreviewTaskData* td) {
             render_html_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,
                                   td->preview, td->name, td->fsize);
         } else if (is_org) {
+            gint global_fold = 0;
+            GHashTable* folded = org_fold_state(app, &global_fold);
             ensure_orgmode_tags(app->buffer);
             render_orgmode_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,
-                                     td->preview, td->name, td->fsize,
-                                     app->org_folded_lines, app->org_global_fold);
+                                     td->preview, td->name, td->fsize, folded, global_fold);
         } else {
             GString* text = g_string_new(NULL);
             if (td->preview) {

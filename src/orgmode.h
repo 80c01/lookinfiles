@@ -39,8 +39,6 @@ gint orgmode_heading_level(const gchar* line);
 gboolean orgmode_cycle_todo_at_line(const gchar* file_path, gint file_line);
 gboolean orgmode_toggle_checkbox_at_line(const gchar* file_path, gint file_line);
 
-/* Cycle global folding state (Show All -> Overview -> Contents -> Show All) */
-void orgmode_cycle_global_fold(AppData* app);
 
 /* Helper to generate and install GtkSourceView 5 org.lang syntax spec for Dark+ theme */
 void orgmode_install_gtksourceview_spec(void);

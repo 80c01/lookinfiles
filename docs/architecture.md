@@ -513,6 +513,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   again only if the worker reads something different.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
+  `org_fold` keeps the folding of the Org preview (headings folded by hand,
+  the global Shift+Tab state) that `orgmode` toggles and `viewer` renders with.
 - `editor` — editor tabs in the notebook(s): open, save, close, move, split
   view (`editor_split_tab()`: a second tab on the same buffer), dedicated panel.
 - `editor_session` — the editor tabs of a workspace for the session:

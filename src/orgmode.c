@@ -7,6 +7,7 @@
 #include "app_events.h"
 #include "file_types.h"
 #include "editor.h"
+#include "org_fold.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -1114,37 +1115,6 @@ static OrgLineInfo* find_line_info(GtkTextBuffer* buffer, gint target_buf_line) 
         }
     }
     return NULL;
-}
-
-gboolean orgmode_toggle_heading_fold(AppData* app, gint file_line) {
-    if (app == NULL) return FALSE;
-    if (app->org_folded_lines == NULL) {
-        app->org_folded_lines = g_hash_table_new(g_direct_hash, g_direct_equal);
-    }
-
-    gpointer key = GINT_TO_POINTER(file_line);
-    if (g_hash_table_contains(app->org_folded_lines, key)) {
-        g_hash_table_remove(app->org_folded_lines, key);
-    } else {
-        g_hash_table_add(app->org_folded_lines, key);
-    }
-
-    if (app->viewed_path != NULL && is_org_file(app->viewed_path)) {
-        app_emit(app, APP_EVENT_PREVIEW_STALE);
-        return TRUE;
-    }
-    return FALSE;
-}
-
-void orgmode_cycle_global_fold(AppData* app) {
-    if (app == NULL) return;
-    app->org_global_fold = (app->org_global_fold + 1) % 3;
-    if (app->org_folded_lines != NULL) {
-        g_hash_table_remove_all(app->org_folded_lines);
-    }
-    if (app->viewed_path != NULL && is_org_file(app->viewed_path)) {
-        app_emit(app, APP_EVENT_PREVIEW_STALE);
-    }
 }
 
 /* Run an org_doc command on line file_line of the Org file on disk and save it */

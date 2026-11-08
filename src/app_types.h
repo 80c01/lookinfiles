@@ -292,8 +292,7 @@ typedef struct {
     gboolean game_mode_just_unlocked; /* TRUE right after unlocking until next key, consumes trailing Enter */
     struct RemoteStore* remote_store; /* remote machines and their folders (remote_store.c), or NULL */
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */
-    GHashTable* org_folded_lines;     /* set of line numbers folded in currently viewed org file */
-    gint org_global_fold;             /* 0 = all expanded, 1 = overview, 2 = contents */
+    struct OrgFold* org_fold;         /* folding of the Org preview (org_fold.c), NULL until first used */
     GtkWidget* status_branch;     /* explorer bar: Git branch of base_dir */
     GtkWidget* preview_bar;       /* preview bar (status_bar.c), shown under the preview page */
     GtkWidget* status_selection;  /* preview bar: previewed entry name */
