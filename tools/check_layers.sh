@@ -180,6 +180,14 @@ for rule in $RULES; do
     done
 done
 
+# editor_private.h is internal to the editor tab files
+for f in $(grep -l '#include "editor_private.h"' src/*.c src/*.h); do
+    case "$f" in
+        src/editor.c|src/editor_notebooks.c|src/editor_tab_menu.c) ;;
+        *) echo "layering: $f includes editor_private.h (internal to editor.c, editor_notebooks.c, editor_tab_menu.c)"; status=1 ;;
+    esac
+done
+
 # editor_modes_private.h is internal to the editor mode files
 for f in $(grep -l '#include "editor_modes_private.h"' src/*.c src/*.h); do
     case "$f" in

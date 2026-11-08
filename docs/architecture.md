@@ -535,6 +535,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   the global Shift+Tab state) that `orgmode` toggles and `viewer` renders with.
 - `editor` — editor tabs in the notebook(s): open, save, close, move, split
   view (`editor_split_tab()`: a second tab on the same buffer), dedicated panel.
+  `editor_notebooks.c` holds the notebook tree (moving, splitting, dropping
+  tabs and movable pages), `editor_tab_menu.c` the tab menus and the clicks on
+  a tab title; they share `editor_private.h`, the public API stays `editor.h`.
 - `editor_session` — the editor tabs of a workspace for the session:
   `editor_session_capture()` describes the preview notebook and the
   dedicated panel (notebooks, splits, sizes, current pages, view last
