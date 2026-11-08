@@ -180,18 +180,10 @@ theme format.
 
 ## Contributing
 
-Contributions are welcome. Read [docs/architecture.md](docs/architecture.md)
-and [docs/ui-conventions.md](docs/ui-conventions.md) first, then:
-
-```bash
-make check     # zero warnings, unit tests, module layering rules
-make ui-test   # fast headless UI smoke test (needs xvfb, xdotool)
-make ui-shots  # full UI scenario with screenshots (also needs imagemagick)
-```
-
-Keep commits focused, with a short imperative subject. When a shortcut
-changes, update `src/help.c` and [docs/keyboard.md](docs/keyboard.md)
-together. Release history is in [CHANGELOG.md](CHANGELOG.md).
+Contributions are welcome: read [CONTRIBUTING.md](CONTRIBUTING.md) for the
+build, the code rules and the pull request checklist. Release history is in
+[CHANGELOG.md](CHANGELOG.md); security issues go through
+[SECURITY.md](SECURITY.md).
 
 ## License
 
