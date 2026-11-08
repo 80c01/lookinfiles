@@ -45,7 +45,14 @@ typedef struct {
     GtkNotebook* source; /* ref held until the drag ends */
     TabDragDoneFunc on_done;
     gpointer data;
+    GtkNotebook* drop_nb;  /* drop applied once the drag is over (Windows), ref */
+    GtkWidget* drop_child; /* ref */
+    DropTarget drop;
+    guint drop_timeout;
 } PendingDrag;
+
+/* Wait for the end of the drag at most this long before applying a drop */
+#define DEFERRED_DROP_MS 1000
 
 /* ------------------------------------------------------------------------- */
 /* Highlight                                                                 */
@@ -324,7 +331,34 @@ static void tab_drop_free(gpointer data) {
     g_free(td);
 }
 
+/* Apply a drop accepted on td->nb */
+static void apply_drop(TabDrop* td, GtkWidget* child, const DropTarget* t) {
+    if (t->swap && td->swap != NULL && td->swap(td->nb, child, TRUE, td->data)) {
+        return;
+    }
+    td->on_drop(td->nb, child, t->zone, t->index, td->data);
+}
+
+static void pending_apply_drop(PendingDrag* pd) {
+    if (pd->drop_nb == NULL) {
+        return;
+    }
+    GtkNotebook* nb = pd->drop_nb;
+    GtkWidget* child = pd->drop_child;
+    pd->drop_nb = NULL;
+    pd->drop_child = NULL;
+    g_clear_handle_id(&pd->drop_timeout, g_source_remove);
+    TabDrop* td = g_object_get_data(G_OBJECT(nb), "tab-drop");
+    if (td != NULL && gtk_widget_get_root(GTK_WIDGET(nb)) != NULL &&
+        gtk_widget_get_ancestor(child, GTK_TYPE_NOTEBOOK) != NULL) {
+        apply_drop(td, child, &pd->drop);
+    }
+    g_object_unref(child);
+    g_object_unref(nb);
+}
+
 static void pending_finish(PendingDrag* pd) {
+    pending_apply_drop(pd);
     if (pd->source == NULL) {
         return;
     }
@@ -365,6 +399,43 @@ static void on_drag_cancelled(GdkDrag* drag, GdkDragCancelReason reason) {
     if (pd != NULL) {
         pending_finish(pd);
     }
+}
+
+#if defined(G_OS_WIN32) || defined(_WIN32)
+/* The drag never reported its end: apply the drop anyway */
+static gboolean on_deferred_drop_timeout(gpointer data) {
+    PendingDrag* pd = data;
+    pd->drop_timeout = 0;
+    pending_finish(pd);
+    return G_SOURCE_REMOVE;
+}
+#endif
+
+/* On Windows a drop is handled inside the OLE drop call, in a nested main
+ * loop, while the GDK drag thread still runs DoDragDrop: moving the page
+ * there crashes GTK. Keep the drop and apply it once the drag is over.
+ * FALSE when the drag is not followed (the drop is applied at once). */
+static gboolean defer_drop(GtkDropTarget* dest, TabDrop* td, GtkWidget* child,
+                           const DropTarget* t) {
+#if defined(G_OS_WIN32) || defined(_WIN32)
+    GdkDrop* drop = gtk_drop_target_get_current_drop(dest);
+    GdkDrag* drag = drop != NULL ? gdk_drop_get_drag(drop) : NULL;
+    PendingDrag* pd = drag != NULL ? g_object_get_data(G_OBJECT(drag), PENDING_KEY) : NULL;
+    if (pd == NULL || pd->drop_nb != NULL) {
+        return FALSE;
+    }
+    pd->drop_nb = g_object_ref(td->nb);
+    pd->drop_child = g_object_ref(child);
+    pd->drop = *t;
+    pd->drop_timeout = g_timeout_add(DEFERRED_DROP_MS, on_deferred_drop_timeout, pd);
+    return TRUE;
+#else
+    (void)dest;
+    (void)td;
+    (void)child;
+    (void)t;
+    return FALSE;
+#endif
 }
 
 /* Follow the tab drag currently over a notebook of ours until it ends, to
@@ -473,10 +544,9 @@ static gboolean on_drop(GtkDropTarget* dest, const GValue* value, double x, doub
     }
 
     watch_drag(dest, source, td);
-    if (t.swap && td->swap(td->nb, child, TRUE, td->data)) {
-        return TRUE;
+    if (!defer_drop(dest, td, child, &t)) {
+        apply_drop(td, child, &t);
     }
-    td->on_drop(td->nb, child, t.zone, t.index, td->data);
     return TRUE;
 }
 
