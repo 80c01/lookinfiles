@@ -239,6 +239,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `note_types` — note types of the notes view (`NoteType`: Plain Text,
   Markdown, Org-mode): extension, display name, icon, row badge and the
   name stored in `notes.xml` (the former `rich` reads as Markdown).
+- `notes_store` — the notes on disk: notebooks (directories), notes in user
+  order, the trash, and the `notes.xml` manifest (`notes_store_load()`
+  reconciles it with the disk, `notes_store_save()`). The Notes view is `notes`.
 - `canvas_doc` — Canvas notes (`<title>.canvas/`: `page.xml` and
   `media/`): text boxes with styled runs and pictures placed freely, read and
   written as XML (each block with a page-unique `id`; line and arrow ends

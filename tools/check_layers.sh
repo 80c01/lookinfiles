@@ -115,6 +115,7 @@ code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
 trash_restore:
 note_types:
+notes_store:note_types,notebook_icons
 notebook_icons:
 canvas_doc:
 canvas_geometry:
