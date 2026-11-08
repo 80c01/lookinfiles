@@ -285,8 +285,8 @@ typedef struct {
     /* Split-handle drag and its size popup (panels.c), NULL before panels_size_popup_attach() */
     struct PaneDrag* pane_drag;
 
-    /* Minimap right of the preview (minimap.c), NULL before minimap_viewer_new() */
-    struct ViewerMinimap* viewer_minimap;
+    /* Minimap right of the preview (minimap_viewer_new(), minimap.c), or NULL */
+    GtkWidget* viewer_minimap;
 
     /* Layout of the viewer/terminal pair (Ctrl+Shift+L) */
     GtkWidget* viewer_box;   /* right pane content: viewer + minimap */

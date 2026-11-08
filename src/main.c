@@ -600,7 +600,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_hexpand(text_row, TRUE);
     gtk_widget_set_vexpand(text_row, TRUE);
     gtk_box_append(GTK_BOX(text_row), color_column_wrap(right_scroll, text_view));
-    gtk_box_append(GTK_BOX(text_row), minimap_viewer_new(app, right_scroll));
+    gtk_box_append(GTK_BOX(text_row), minimap_viewer_new(app));
     gtk_box_append(GTK_BOX(text_page), preview_tagbar_wrap(app, preview_full_wrap(app, text_row), text_view));
     color_column_hide_on_change(text_view);
     video_preview_init(app);
@@ -782,7 +782,6 @@ int main(int argc, char** argv) {
     stop_directory_monitors(app);
     git_tab_cleanup(app);
     panels_size_popup_free(app);
-    minimap_viewer_free(app);
     if (app->git_statuses != NULL) {
         g_hash_table_destroy(app->git_statuses);
         app->git_statuses = NULL;

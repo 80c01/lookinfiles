@@ -406,7 +406,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   tags in the Dark+ palette, images, HTML / Markdown renderers).
 - `minimap` — scaled file overview; draws only the part around what is shown
   (`MinimapCache`), geometry from `minimap_geometry`. `minimap_new_for_view()`
-  makes a standalone one for any text view (the Help tab). Shows itself only
+  makes one for a read-only text view: the Help tab, and the preview
+  (`minimap_viewer_new()`, with `minimap_view_set_shown_if()`: Preview page
+  only); editor tabs have their own (`editor_minimap_init()`). Shows itself only
   while the text overflows; a change that may come from a height estimate is
   confirmed on the next frame (no visible delay). While GtkTextView is still
   laying out changed text (lines not measured yet have no height), the

@@ -441,44 +441,6 @@ static void minimap_build_cache(GtkTextBuffer* buffer, GtkTextView* view, Minima
     cairo_destroy(cc);
 }
 
-/* The preview's minimap (app->viewer_minimap), created by minimap_viewer_new() */
-typedef struct ViewerMinimap ViewerMinimap;
-struct ViewerMinimap {
-    GtkWidget* widget;   /* drawing area right of the preview */
-    GtkAdjustment* vadj; /* vertical adjustment of the preview */
-    MinimapCache cache;
-    gboolean dragging;
-    gdouble grab;        /* slider drag: pointer y minus slider top */
-    guint vis_source;    /* idle source of the visibility update */
-};
-
-void minimap_invalidate(AppData* app) {
-    ViewerMinimap* vm = app->viewer_minimap;
-    if (vm == NULL) {
-        return;
-    }
-    minimap_cache_mark_stale(&vm->cache);
-    if (gtk_widget_get_visible(vm->widget)) {
-        gtk_widget_queue_draw(vm->widget);
-    }
-}
-
-static gboolean minimap_is_useful(AppData* app) {
-    ViewerMinimap* vm = app->viewer_minimap;
-    if (vm == NULL) {
-        return FALSE;
-    }
-    /* Only on the Preview page: Git, References or an editor tab may share
-     * the notebook, even while editors live in the dedicated panel */
-    if (app->notebook != NULL &&
-        gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook)) != 0) {
-        return FALSE;
-    }
-    GtkAdjustment* adj = vm->vadj;
-    return gtk_adjustment_get_upper(adj) >
-           gtk_adjustment_get_page_size(adj) + 1.5;
-}
-
 /* While the minimap is shown it is the vertical scrollbar (click / drag), as
  * in VS Code: hide GTK's overlay scrollbar, which would be drawn over the
  * end of long lines. Wheel and keyboard scrolling are unchanged. */
@@ -588,41 +550,6 @@ static void vis_update(GtkWidget* minimap, GtkWidget* view, MinimapCache* cache,
         }
     }
     sync_vertical_scrollbar(view, useful);
-}
-
-/* Runs from idle (never mid-size_allocate) and again after each wait */
-static gboolean minimap_vis_idle(gpointer data) {
-    AppData* app = (AppData*)data;
-    ViewerMinimap* vm = app->viewer_minimap;
-    if (vm == NULL) {
-        return G_SOURCE_REMOVE;
-    }
-    vm->vis_source = 0;
-    if (app->text_view == NULL) {
-        return G_SOURCE_REMOVE;
-    }
-    vis_update(vm->widget, app->text_view, &vm->cache, minimap_is_useful(app),
-               &vm->vis_source, minimap_vis_idle, app, "preview");
-    return G_SOURCE_REMOVE;
-}
-
-/* Hide the minimap when the whole file is visible in the viewer */
-void minimap_update_visibility(AppData* app) {
-    ViewerMinimap* vm = app->viewer_minimap;
-    if (vm == NULL) {
-        return;
-    }
-    /* Defer visibility change to idle so it never runs mid-size_allocate */
-    if (vm->vis_source == 0) {
-        vm->vis_source = g_idle_add(minimap_vis_idle, app);
-    }
-}
-
-/* Content height changed (layout done, panel resized): redraw the minimap */
-static void on_minimap_adj_changed(GtkAdjustment* adjustment, gpointer data) {
-    (void)adjustment;
-    minimap_invalidate((AppData*)data);
-    minimap_update_visibility((AppData*)data);
 }
 
 /* Git change marks (diff_gutter) as a bar along the left edge, like VS Code:
@@ -742,15 +669,6 @@ void minimap_draw_content(GtkWidget* widget, cairo_t* cr, int width, int height,
     set_source_role(cr, PAL_BORDER, 1.0);
     cairo_rectangle(cr, 0, 0, 1, height);
     cairo_fill(cr);
-}
-
-static void on_minimap_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
-    AppData* app = (AppData*)data;
-    if (app == NULL || app->viewer_minimap == NULL || app->buffer == NULL || app->text_view == NULL) {
-        return;
-    }
-    minimap_draw_content(GTK_WIDGET(area), cr, width, height,
-                         app->buffer, GTK_TEXT_VIEW(app->text_view), &app->viewer_minimap->cache);
 }
 
 static void set_scroll(GtkWidget* minimap, GtkTextView* text_view, gdouble value) {
@@ -1003,130 +921,8 @@ void editor_minimap_init(EditorTab* tab) {
     tab->mm_vis_source = 0;
 }
 
-static void on_minimap_pressed(GtkGestureClick* gesture, gint n_press,
-                               gdouble x, gdouble y, gpointer data) {
-    (void)gesture;
-    (void)n_press;
-    (void)x;
-    AppData* app = (AppData*)data;
-    ViewerMinimap* vm = app->viewer_minimap;
-    if (vm == NULL || app->buffer == NULL || app->text_view == NULL) {
-        return;
-    }
-    vm->dragging = TRUE;
-    minimap_press_view(vm->widget, GTK_TEXT_VIEW(app->text_view), y, &vm->grab);
-}
-
-static void on_minimap_motion(GtkEventControllerMotion* ctrl,
-                              gdouble x, gdouble y, gpointer data) {
-    (void)ctrl;
-    (void)x;
-    AppData* app = (AppData*)data;
-    ViewerMinimap* vm = app->viewer_minimap;
-    if (vm != NULL && vm->dragging && app->text_view != NULL) {
-        minimap_drag_view(vm->widget, GTK_TEXT_VIEW(app->text_view), y, vm->grab);
-    }
-}
-
-static void on_minimap_released(GtkGestureClick* gesture, gint n_press,
-                                gdouble x, gdouble y, gpointer data) {
-    (void)gesture;
-    (void)n_press;
-    (void)x;
-    (void)y;
-    AppData* app = (AppData*)data;
-    if (app->viewer_minimap != NULL) {
-        app->viewer_minimap->dragging = FALSE;
-    }
-}
-
-static void on_minimap_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
-    (void)buffer;
-    minimap_invalidate((AppData*)data);
-    minimap_update_visibility((AppData*)data);
-}
-
-static void on_minimap_scroll(GtkAdjustment* adjustment, gpointer data) {
-    (void)adjustment;
-    AppData* app = (AppData*)data;
-    ViewerMinimap* vm = app->viewer_minimap;
-    if (vm != NULL && gtk_widget_get_visible(vm->widget)) {
-        gtk_widget_queue_draw(vm->widget);
-    }
-}
-
-static void on_minimap_resize(GtkDrawingArea* area, gint width, gint height,
-                              gpointer data) {
-    (void)area;
-    (void)width;
-    (void)height;
-    minimap_invalidate((AppData*)data);
-}
-
-static void on_minimap_realize(GtkWidget* widget, gpointer data) {
-    (void)widget;
-    minimap_update_visibility((AppData*)data);
-}
-
-GtkWidget* minimap_viewer_new(AppData* app, GtkWidget* scroll) {
-    GtkWidget* minimap = gtk_drawing_area_new();
-    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(minimap), MINIMAP_WIDTH);
-    gtk_widget_set_size_request(minimap, MINIMAP_WIDTH, -1);
-    gtk_widget_set_vexpand(minimap, TRUE);
-    gtk_widget_set_visible(minimap, FALSE);
-
-    ViewerMinimap* vm = g_new0(ViewerMinimap, 1);
-    vm->widget = minimap;
-    vm->vadj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scroll));
-    app->viewer_minimap = vm;
-
-    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(minimap), on_minimap_draw, app, NULL);
-    diff_gutter_add_companion(app->text_view, minimap);
-
-    GtkGesture* click = gtk_gesture_click_new();
-    g_signal_connect(click, "pressed", G_CALLBACK(on_minimap_pressed), app);
-    g_signal_connect(click, "released", G_CALLBACK(on_minimap_released), app);
-    gtk_widget_add_controller(minimap, GTK_EVENT_CONTROLLER(click));
-
-    GtkEventController* motion = gtk_event_controller_motion_new();
-    g_signal_connect(motion, "motion", G_CALLBACK(on_minimap_motion), app);
-    gtk_widget_add_controller(minimap, motion);
-    minimap_attach_wheel(minimap, app->text_view);
-
-    g_signal_connect(minimap, "resize", G_CALLBACK(on_minimap_resize), app);
-    g_signal_connect(minimap, "realize", G_CALLBACK(on_minimap_realize), app);
-    g_signal_connect(app->buffer, "changed", G_CALLBACK(on_minimap_buffer_changed), app);
-    g_signal_connect(vm->vadj, "value-changed", G_CALLBACK(on_minimap_scroll), app);
-    g_signal_connect(vm->vadj, "changed", G_CALLBACK(on_minimap_adj_changed), app);
-    return minimap;
-}
-
-gboolean minimap_viewer_is_hidden(AppData* app) {
-    ViewerMinimap* vm = app->viewer_minimap;
-    return vm != NULL && !gtk_widget_get_visible(vm->widget);
-}
-
-void minimap_viewer_cache_clear(AppData* app) {
-    if (app->viewer_minimap != NULL) {
-        minimap_cache_clear(&app->viewer_minimap->cache);
-    }
-}
-
-void minimap_viewer_free(AppData* app) {
-    ViewerMinimap* vm = app->viewer_minimap;
-    if (vm == NULL) {
-        return;
-    }
-    if (vm->vis_source != 0) {
-        g_source_remove(vm->vis_source);
-    }
-    minimap_cache_clear(&vm->cache);
-    /* The buffer and adjustment handlers see app->viewer_minimap NULL from now on */
-    g_clear_pointer(&app->viewer_minimap, g_free);
-}
-
 /* =========================================================================
- * Standalone minimap for a text view (the Help tab)
+ * Minimap of a read-only text view (the preview, the Help tab)
  * ========================================================================= */
 
 typedef struct {
@@ -1136,6 +932,9 @@ typedef struct {
     gboolean dragging;
     gdouble grab;
     guint vis_source;
+    MinimapShownIf shown_if; /* extra condition to show it, or NULL */
+    gpointer shown_data;
+    const gchar* who;        /* its name in the LOOKIN_DEBUG_MINIMAP log */
 } ViewMinimap;
 
 static void view_minimap_free(gpointer data) {
@@ -1159,8 +958,9 @@ static gboolean view_minimap_vis_idle(gpointer data) {
     vm->vis_source = 0;
     GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(vm->view));
     gboolean useful = adj != NULL &&
-                      gtk_adjustment_get_upper(adj) > gtk_adjustment_get_page_size(adj) + 1.5;
-    vis_update(vm->minimap, vm->view, &vm->cache, useful, &vm->vis_source, view_minimap_vis_idle, vm, "help");
+                      gtk_adjustment_get_upper(adj) > gtk_adjustment_get_page_size(adj) + 1.5 &&
+                      (vm->shown_if == NULL || vm->shown_if(vm->shown_data));
+    vis_update(vm->minimap, vm->view, &vm->cache, useful, &vm->vis_source, view_minimap_vis_idle, vm, vm->who);
     return G_SOURCE_REMOVE;
 }
 
@@ -1230,6 +1030,7 @@ static void on_view_minimap_realize(GtkWidget* widget, gpointer data) {
 GtkWidget* minimap_new_for_view(GtkWidget* text_view) {
     ViewMinimap* vm = g_new0(ViewMinimap, 1);
     vm->view = text_view;
+    vm->who = "help";
     GtkWidget* minimap = gtk_drawing_area_new();
     vm->minimap = minimap;
     gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(minimap), MINIMAP_WIDTH);
@@ -1262,4 +1063,74 @@ GtkWidget* minimap_new_for_view(GtkWidget* text_view) {
         g_signal_connect_object(vadj, "changed", G_CALLBACK(on_view_minimap_stale), minimap, G_CONNECT_SWAPPED);
     }
     return minimap;
+}
+
+static ViewMinimap* view_minimap_of(GtkWidget* minimap) {
+    return minimap != NULL ? g_object_get_data(G_OBJECT(minimap), "view-minimap") : NULL;
+}
+
+void minimap_view_set_shown_if(GtkWidget* minimap, const gchar* who, MinimapShownIf shown_if, gpointer data) {
+    ViewMinimap* vm = view_minimap_of(minimap);
+    if (vm != NULL) {
+        vm->who = who;
+        vm->shown_if = shown_if;
+        vm->shown_data = data;
+    }
+}
+
+void minimap_view_invalidate(GtkWidget* minimap) {
+    ViewMinimap* vm = view_minimap_of(minimap);
+    if (vm != NULL) {
+        view_minimap_invalidate(vm);
+    }
+}
+
+void minimap_view_update_visibility(GtkWidget* minimap) {
+    ViewMinimap* vm = view_minimap_of(minimap);
+    if (vm != NULL) {
+        view_minimap_update_visibility(vm);
+    }
+}
+
+void minimap_view_cache_clear(GtkWidget* minimap) {
+    ViewMinimap* vm = view_minimap_of(minimap);
+    if (vm != NULL) {
+        minimap_cache_clear(&vm->cache);
+    }
+}
+
+/* =========================================================================
+ * The preview's minimap (app->viewer_minimap)
+ * ========================================================================= */
+
+/* Only on the Preview page: Git, References or an editor tab may share the
+ * notebook, even while editors live in the dedicated panel */
+static gboolean preview_page_shown(gpointer data) {
+    AppData* app = data;
+    return app->notebook == NULL || gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook)) == 0;
+}
+
+GtkWidget* minimap_viewer_new(AppData* app) {
+    GtkWidget* minimap = minimap_new_for_view(app->text_view);
+    minimap_view_set_shown_if(minimap, "preview", preview_page_shown, app);
+    diff_gutter_add_companion(app->text_view, minimap);
+    app->viewer_minimap = minimap;
+    return minimap;
+}
+
+gboolean minimap_viewer_is_hidden(AppData* app) {
+    return app->viewer_minimap != NULL && !gtk_widget_get_visible(app->viewer_minimap);
+}
+
+void minimap_viewer_cache_clear(AppData* app) {
+    minimap_view_cache_clear(app->viewer_minimap);
+}
+
+void minimap_invalidate(AppData* app) {
+    minimap_view_invalidate(app->viewer_minimap);
+}
+
+/* Hide the minimap when the whole file is visible in the viewer */
+void minimap_update_visibility(AppData* app) {
+    minimap_view_update_visibility(app->viewer_minimap);
 }
