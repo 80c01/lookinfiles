@@ -2,7 +2,8 @@
 #define PREVIEW_TAGBAR_H
 
 /* The tagbar of the preview (docs/previews.md): the headings of the
- * rendered preview (Markdown, HTML, Org, documents) beside the text, read
+ * rendered preview (Markdown, HTML, Org, documents), or the symbols of
+ * source code (preview_symbols.h), beside the text, read
  * from the heading tags of the buffer (code_outline_heading_tag_level()),
  * so every format that tags its headings has one without a branch of its
  * own; a format whose headings are not in the text (PDF bookmarks) hands
@@ -17,7 +18,8 @@ GtkWidget* preview_tagbar_wrap(AppData* app, GtkWidget* content, GtkWidget* text
 /* o, or Ctrl+K Ctrl+O, in the preview: show / hide the tagbar (saved in
  * settings.ini). TRUE when the key was taken. */
 gboolean preview_tagbar_key(AppData* app, guint keyval, GdkModifierType state);
-/* Headings that are not tagged in the buffer (CodeOutlineEntry*, lines of
+/* Headings that are not tagged in the buffer, or symbols (level 0)
+ * (CodeOutlineEntry*, lines of
  * the buffer, referenced): listed with the tagged ones while owner (the
  * preview's cancellable, referenced) is not cancelled, i.e. until the next
  * preview */

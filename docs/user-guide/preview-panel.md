@@ -61,10 +61,13 @@ Click in the preview or press `Alt+Right` to give it the focus. Then:
 `o` (or `Ctrl+K Ctrl+O`, as in the editor) shows the **tagbar**: the
 headings of a Markdown, HTML, Org, Word (`.docx`, `.doc`), OpenDocument or
 EPUB file, or the bookmarks of a PDF (for the pages shown), beside the text,
-nested by level. It follows the scrolling; a click or `Enter` scrolls to a heading,
+nested by level; for source code, its functions, types... found by the
+built-in scanner (no language server), grouped by kind (`s`: file order).
+It follows the scrolling; a click or `Enter` scrolls to a heading or symbol,
 `Esc` returns to the text, `q` hides it. Once turned on it appears in every
-preview that has headings (kept for the next start; also in Preferences,
-Editor page).
+preview that has headings or symbols (kept for the next start; also in
+Preferences, Editor page). In a large file, only the part first shown is
+listed.
 
 `e` opens the previewed text file in an editor tab; `t` (Vim) or `C-o`
 (Emacs) opens it in the dedicated editor panel.

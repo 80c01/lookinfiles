@@ -68,15 +68,22 @@ static void add_ranges(GtkTextBuffer* buffer, GtkTextTag* tag, gint level, GPtrA
     }
 }
 
-static GPtrArray* collect_headings(PreviewTagbar* pt) {
+static GPtrArray* collect_entries(PreviewTagbar* pt) {
     GtkTextBuffer* buffer = pt->buffer;
     GPtrArray* entries = code_outline_entries_new();
     if (pt->outline != NULL && pt->outline_owner != NULL && !g_cancellable_is_cancelled(pt->outline_owner)) {
         for (guint i = 0; i < pt->outline->len; i++) {
             const CodeOutlineEntry* e = g_ptr_array_index(pt->outline, i);
-            CodeOutlineEntry* copy = code_outline_heading_new(e->name, e->level, e->line);
-            if (copy == NULL) continue;
-            copy->column = e->column;
+            CodeOutlineEntry* copy;
+            if (e->level > 0) {
+                copy = code_outline_heading_new(e->name, e->level, e->line);
+                if (copy == NULL) continue;
+                copy->column = e->column;
+            } else {
+                /* A symbol of a code preview (preview_symbols) */
+                copy = code_outline_entry_new(e->name, e->detail, e->container, e->kind, e->line, e->column);
+                copy->declaration = e->declaration;
+            }
             g_ptr_array_add(entries, copy);
         }
     }
@@ -96,8 +103,12 @@ static GPtrArray* collect_headings(PreviewTagbar* pt) {
 
 static void refresh_now(PreviewTagbar* pt) {
     g_clear_handle_id(&pt->refresh_source, g_source_remove);
-    GPtrArray* entries = collect_headings(pt);
-    outline_pane_set_entries(pt->pane, entries, TRUE, NULL);
+    GPtrArray* entries = collect_entries(pt);
+    gboolean symbols = FALSE;
+    for (guint i = 0; i < entries->len && !symbols; i++) {
+        symbols = ((const CodeOutlineEntry*)g_ptr_array_index(entries, i))->level == 0;
+    }
+    outline_pane_set_entries(pt->pane, entries, !symbols, symbols ? "built-in scanner" : NULL);
     outline_pane_set_shown(pt->pane, pt->app->preview_tagbar && entries->len > 0);
     g_ptr_array_unref(entries);
 }

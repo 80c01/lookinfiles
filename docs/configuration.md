@@ -44,7 +44,7 @@ color-column=81    # default; 0: no line
 tagbar=false       # code and Markdown tabs show the tagbar (toggled with its key)
 
 [Preview]
-tagbar=false       # previews with headings show the tagbar (o in the preview)
+tagbar=false       # previews with headings or symbols show the tagbar (o in the preview)
 
 [Window]
 width=1600

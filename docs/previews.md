@@ -17,7 +17,9 @@ format. Open work is in
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
 - A tagbar of the headings beside Markdown, HTML, Org, Word (`.docx`,
   `.doc`: Heading N styles and outline levels), OpenDocument and EPUB
-  previews, and the bookmarks of PDF documents (`o` or `Ctrl+K Ctrl+O`).
+  previews, the bookmarks of PDF documents, and the symbols of source code
+  (built-in scanner: C family, Python, Shell, JavaScript / TypeScript, Go,
+  Rust, Lua, Ruby, Makefile) (`o` or `Ctrl+K Ctrl+O`).
   Not RTF (no headings in its HTML).
 - Images (EXIF orientation, camera, exposure, date and GPS details, zoom with
   `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), PostScript and TeX DVI (converted to PDF), video and audio
@@ -152,8 +154,11 @@ every common format to L3 and never leave one below L1.
   `preview_tagbar_set_outline()`, tied to the preview's cancellable: the PDF
   bookmarks (poppler outline, at most 2000), each on the line of its page
   badge, only for the pages shown (the first 20 rendered pages, every page
-  in the text view). Only the
-  rendered part is listed (`PREVIEW_BYTES` for long text files).
+  in the text view); the symbols of source code from `preview_symbols`
+  (the built-in scanner in a worker, never a language server: previews
+  change too often to start one). Only the
+  rendered part is listed (`PREVIEW_BYTES` for long text files: the chunks
+  loaded on scroll are not scanned).
 - **Shared building blocks**: the summary card (`preview_doc_title()`,
   `preview_doc_field()`...) and text tables (`PreviewTable`: aligned
   columns, numbers right-aligned, zebra rows, row numbers).

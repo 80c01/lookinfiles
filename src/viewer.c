@@ -22,6 +22,7 @@
 #include "remote.h"
 #include "archive_tree.h"
 #include "orgmode.h"
+#include "preview_symbols.h"
 #include "preview_tagbar.h"
 #include "diff_gutter.h"
 #include "color_column.h"
@@ -660,6 +661,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
             if (code) {
                 diff_gutter_set_line_numbers(app->text_view, first_line);
                 color_column_set(app->text_view, app->editor_color_column);
+                preview_symbols_start(app, td->name, td->utf8_text, first_line);
             }
             /* Git change bars, for whole files only (a truncated preview has a header) */
             if (!td->preview) {
