@@ -1,5 +1,6 @@
 /* CSV / TSV parsing (see csv.h). */
 #include "csv.h"
+#include "i18n.h"
 
 #include <string.h>
 
@@ -178,9 +179,9 @@ gboolean csv_has_header(const CsvData* data) {
 
 const gchar* csv_separator_name(gchar separator) {
     switch (separator) {
-    case '\t': return "tab";
-    case ';':  return "semicolon";
-    case '|':  return "pipe";
-    default:   return "comma";
+    case '\t': return NC_("csv separator", "tab");
+    case ';':  return NC_("csv separator", "semicolon");
+    case '|':  return NC_("csv separator", "pipe");
+    default:   return NC_("csv separator", "comma");
     }
 }

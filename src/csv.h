@@ -28,7 +28,8 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(CsvData, csv_data_free)
  * cell, while another row has a numeric cell, or all its names differ */
 gboolean csv_has_header(const CsvData* data);
 
-/* "comma", "tab", "semicolon", "pipe" */
+/* "comma", "tab", "semicolon", "pipe" (English: shown through
+ * g_dpgettext2(NULL, "csv separator", name)) */
 const gchar* csv_separator_name(gchar separator);
 
 #endif /* CSV_H */

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 09:36+0000\n"
+"POT-Creation-Date: 2026-11-08 09:44+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -143,14 +143,15 @@ msgstr "_Retirer le signet"
 #: src/bookmark_dialog.c:198 src/bookmarks.c:577 src/code_symbols.c:176
 #: src/editor.c:1729 src/file_actions.c:42 src/file_actions.c:236
 #: src/layouts.c:47 src/layouts.c:318 src/notes.c:587 src/notes.c:768
-#: src/notes.c:852 src/preferences.c:342 src/project_search.c:369
-#: src/quick_open.c:368 src/remote.c:322 src/remote.c:389 src/remote.c:456
-#: src/remote.c:487 src/remote.c:564 src/session_bookmark.c:13 src/themes.c:222
-#: src/themes.c:237 src/themes.c:682
+#: src/notes.c:852 src/preferences.c:342 src/preview_full.c:31
+#: src/project_search.c:369 src/quick_open.c:368 src/remote.c:322
+#: src/remote.c:389 src/remote.c:456 src/remote.c:487 src/remote.c:564
+#: src/session_bookmark.c:13 src/themes.c:222 src/themes.c:237 src/themes.c:682
 msgid "_Cancel"
 msgstr "_Annuler"
 
-#: src/bookmark_dialog.c:207 src/file_actions.c:252 src/session_bookmark.c:26
+#: src/bookmark_dialog.c:207 src/file_actions.c:252 src/preview_formats.c:344
+#: src/preview_formats.c:345 src/session_bookmark.c:26
 msgid "Name"
 msgstr "Nom"
 
@@ -981,7 +982,7 @@ msgstr "Avance vers %1$s:%2$d"
 msgid "Markdown headings"
 msgstr "titres Markdown"
 
-#: src/code_outline.c:102
+#: src/code_outline.c:102 src/preview_tagbar.c:115
 msgid "built-in scanner"
 msgstr "analyseur intégré"
 
@@ -1163,12 +1164,32 @@ msgctxt "symbol kind"
 msgid "heading"
 msgstr "titre"
 
+#: src/csv.c:182
+msgctxt "csv separator"
+msgid "tab"
+msgstr "tabulation"
+
+#: src/csv.c:183
+msgctxt "csv separator"
+msgid "semicolon"
+msgstr "point-virgule"
+
+#: src/csv.c:184
+msgctxt "csv separator"
+msgid "pipe"
+msgstr "barre verticale"
+
+#: src/csv.c:185
+msgctxt "csv separator"
+msgid "comma"
+msgstr "virgule"
+
 #: src/dir_preview.c:204
 #, c-format
 msgid "%1$u+ entries (only the first %2$u are read)"
 msgstr "%1$u+ entrées (seules les %2$u premières sont lues)"
 
-#: src/dir_preview.c:213
+#: src/dir_preview.c:213 src/preview_formats.c:308
 #, c-format
 msgid "%u folder"
 msgid_plural "%u folders"
@@ -1392,14 +1413,14 @@ msgstr "Mac (CR)"
 msgid "Ln %1$d, Col %2$d   |   %3$d%%   |   %4$s   |   %5$s   |   UTF-8"
 msgstr "Li %1$d, Col %2$d   |   %3$d %%   |   %4$s   |   %5$s   |   UTF-8"
 
-#: src/editor_modes.c:728
+#: src/editor_modes.c:728 src/preview_formats.c:492
 #, c-format
 msgid "%u error"
 msgid_plural "%u errors"
 msgstr[0] "%u erreur"
 msgstr[1] "%u erreurs"
 
-#: src/editor_modes.c:729
+#: src/editor_modes.c:729 src/preview_formats.c:496
 #, c-format
 msgid "%u warning"
 msgid_plural "%u warnings"
@@ -1938,7 +1959,7 @@ msgstr "Message"
 msgid "Author"
 msgstr "Auteur"
 
-#: src/git_tab.c:436
+#: src/git_tab.c:436 src/preview_formats.c:927
 msgid "Date"
 msgstr "Date"
 
@@ -4555,6 +4576,465 @@ msgstr "Fenêtre"
 msgid "Code navigation"
 msgstr "Navigation dans le code"
 
+#: src/preview_formats.c:79
+#, c-format
+msgid "Only the first %1$s of %2$s were read."
+msgstr "Seuls les premiers %1$s sur %2$s ont été lus."
+
+#: src/preview_formats.c:110
+msgid "no rows"
+msgstr "aucune ligne"
+
+#: src/preview_formats.c:120
+#, c-format
+msgid "%s row"
+msgid_plural "%s rows"
+msgstr[0] "%s ligne"
+msgstr[1] "%s lignes"
+
+#: src/preview_formats.c:121
+#, c-format
+msgid "%s column"
+msgid_plural "%s columns"
+msgstr[0] "%s colonne"
+msgstr[1] "%s colonnes"
+
+#: src/preview_formats.c:125
+#, c-format
+msgid "%1$s × %2$s · %3$s-separated (start of the file)\n"
+msgstr "%1$s × %2$s · séparateur %3$s (début du fichier)\n"
+
+#: src/preview_formats.c:126
+#, c-format
+msgid "%1$s × %2$s · %3$s-separated\n"
+msgstr "%1$s × %2$s · séparateur %3$s\n"
+
+#: src/preview_formats.c:148
+#, c-format
+msgid ""
+"\n"
+"Showing the first %s rows."
+msgstr ""
+"\n"
+"Affichage des %s premières lignes."
+
+#: src/preview_formats.c:154
+msgid "Showing the first 100 columns."
+msgstr "Affichage des 100 premières colonnes."
+
+#: src/preview_formats.c:173
+#, c-format
+msgid "JSON Lines · %s record\n"
+msgid_plural "JSON Lines · %s records\n"
+msgstr[0] "JSON Lines · %s enregistrement\n"
+msgstr[1] "JSON Lines · %s enregistrements\n"
+
+#: src/preview_formats.c:175
+#, c-format
+msgid "Object · %s key\n"
+msgid_plural "Object · %s keys\n"
+msgstr[0] "Objet · %s clé\n"
+msgstr[1] "Objet · %s clés\n"
+
+#: src/preview_formats.c:177
+#, c-format
+msgid "Array · %s item\n"
+msgid_plural "Array · %s items\n"
+msgstr[0] "Tableau · %s élément\n"
+msgstr[1] "Tableau · %s éléments\n"
+
+#: src/preview_formats.c:198
+msgid "no file changes found"
+msgstr "aucune modification de fichier trouvée"
+
+#: src/preview_formats.c:220
+#, c-format
+msgid "%.0f %% saved"
+msgstr "%.0f %% gagnés"
+
+#: src/preview_formats.c:229
+msgid "Content"
+msgstr "Contenu"
+
+#: src/preview_formats.c:254
+msgid "(empty)"
+msgstr "(vide)"
+
+#: src/preview_formats.c:288
+msgid "Listing the content of this format is not supported yet."
+msgstr "Lister le contenu de ce format n’est pas encore pris en charge."
+
+#: src/preview_formats.c:293
+msgid "Original name"
+msgstr "Nom d’origine"
+
+#: src/preview_formats.c:296
+msgid "Original size"
+msgstr "Taille d’origine"
+
+#: src/preview_formats.c:299 src/preview_formats.c:322
+msgid "Compression"
+msgstr "Compression"
+
+#: src/preview_formats.c:307
+#, c-format
+msgid "%s file"
+msgid_plural "%s files"
+msgstr[0] "%s fichier"
+msgstr[1] "%s fichiers"
+
+#. TRANSLATORS: "12 files, 3 folders"
+#: src/preview_formats.c:310
+#, c-format
+msgid "at least %1$s, %2$s"
+msgstr "au moins %1$s, %2$s"
+
+#: src/preview_formats.c:310
+#, c-format
+msgid "%1$s, %2$s"
+msgstr "%1$s, %2$s"
+
+#: src/preview_formats.c:313 src/preview_summary.c:260
+msgid "Contents"
+msgstr "Contenu"
+
+#: src/preview_formats.c:317
+msgid "Unpacked"
+msgstr "Décompressé"
+
+#: src/preview_formats.c:344 src/preview_formats.c:345
+#: src/preview_formats.c:927
+msgid "Size"
+msgstr "Taille"
+
+#: src/preview_formats.c:344
+msgid "Packed"
+msgstr "Compressé"
+
+#: src/preview_formats.c:344 src/preview_formats.c:345
+msgid "Modified"
+msgstr "Modifié"
+
+#: src/preview_formats.c:355
+#, c-format
+msgid "%s (encrypted)"
+msgstr "%s (chiffré)"
+
+#: src/preview_formats.c:372
+#, c-format
+msgid ""
+"\n"
+"Showing the first %s entries (the archive was not read to the end)."
+msgstr ""
+"\n"
+"Affichage des %s premières entrées (l’archive n’a pas été lue jusqu’au bout)."
+
+#: src/preview_formats.c:373
+#, c-format
+msgid ""
+"\n"
+"Showing the first %s entries."
+msgstr ""
+"\n"
+"Affichage des %s premières entrées."
+
+#: src/preview_formats.c:421
+msgid "nothing to show"
+msgstr "rien à afficher"
+
+#: src/preview_formats.c:486
+#, c-format
+msgid "last %s line"
+msgid_plural "last %s lines"
+msgstr[0] "dernière ligne (%s)"
+msgstr[1] "%s dernières lignes"
+
+#: src/preview_formats.c:487
+#, c-format
+msgid "%s line"
+msgid_plural "%s lines"
+msgstr[0] "%s ligne"
+msgstr[1] "%s lignes"
+
+#: src/preview_formats.c:504
+#, c-format
+msgid "Showing the end of the file: the last %1$s of %2$s."
+msgstr "Affichage de la fin du fichier : les derniers %1$s sur %2$s."
+
+#: src/preview_formats.c:530
+msgid "catalog too large"
+msgstr "catalogue trop grand"
+
+#: src/preview_formats.c:544
+#, c-format
+msgid "gettext translations (.po) · %s"
+msgstr "traductions gettext (.po) · %s"
+
+#: src/preview_formats.c:545
+#, c-format
+msgid "gettext compiled translations (.mo) · %s"
+msgstr "traductions gettext compilées (.mo) · %s"
+
+#: src/preview_formats.c:567
+#, c-format
+msgid "SQLite database · %s"
+msgstr "Base de données SQLite · %s"
+
+#. TRANSLATORS: a pangram of your language for the font sample
+#: src/preview_formats.c:578
+msgid "The quick brown fox jumps over the lazy dog"
+msgstr "Portez ce vieux whisky au juge blond qui fume"
+
+#. TRANSLATORS: "%1$s font" names the format, e.g. "TrueType font"
+#: src/preview_formats.c:591
+#, c-format
+msgid "%1$s font · %2$s · %3$s"
+msgstr "Police %1$s · %2$s · %3$s"
+
+#: src/preview_formats.c:592
+#, c-format
+msgid "%1$s font · %2$s"
+msgstr "Police %1$s · %2$s"
+
+#: src/preview_formats.c:596
+msgid "Full name"
+msgstr "Nom complet"
+
+#: src/preview_formats.c:597
+msgid "Version"
+msgstr "Version"
+
+#: src/preview_formats.c:598
+msgid "Designer"
+msgstr "Créateur"
+
+#: src/preview_formats.c:599
+msgid "Foundry"
+msgstr "Fonderie"
+
+#: src/preview_formats.c:602
+msgid "Glyphs"
+msgstr "Glyphes"
+
+#: src/preview_formats.c:606
+#, c-format
+msgid "%u (the first one is shown)"
+msgstr "%u (la première est affichée)"
+
+#: src/preview_formats.c:607
+msgid "Fonts"
+msgstr "Polices"
+
+#: src/preview_formats.c:610
+msgid "Copyright"
+msgstr "Copyright"
+
+#: src/preview_formats.c:611
+msgid "License URL"
+msgstr "URL de la licence"
+
+#: src/preview_formats.c:614
+msgid ""
+"\n"
+"No sample: the font names cannot be read (WOFF2 tables are compressed)."
+msgstr ""
+"\n"
+"Pas d’échantillon : les noms de la police sont illisibles (les tables WOFF2 "
+"sont compressées)."
+
+#: src/preview_formats.c:628
+msgid "Sample"
+msgstr "Échantillon"
+
+#: src/preview_formats.c:649
+msgid "License"
+msgstr "Licence"
+
+#: src/preview_formats.c:700
+#, c-format
+msgid "Presentation · %u slide"
+msgid_plural "Presentation · %u slides"
+msgstr[0] "Présentation · %u diapositive"
+msgstr[1] "Présentation · %u diapositives"
+
+#: src/preview_formats.c:731
+#, c-format
+msgid "%1$s · %2$u sheet · %3$s"
+msgid_plural "%1$s · %2$u sheets · %3$s"
+msgstr[0] "%1$s · %2$u feuille · %3$s"
+msgstr[1] "%1$s · %2$u feuilles · %3$s"
+
+#: src/preview_formats.c:741
+msgid "Sheets"
+msgstr "Feuilles"
+
+#: src/preview_formats.c:764
+#, c-format
+msgid "Jupyter notebook · %1$u cell (%2$u code)"
+msgid_plural "Jupyter notebook · %1$u cells (%2$u code)"
+msgstr[0] "Notebook Jupyter · %1$u cellule (%2$u de code)"
+msgstr[1] "Notebook Jupyter · %1$u cellules (%2$u de code)"
+
+#: src/preview_formats.c:810
+msgid "only gzip-compressed pages can be read"
+msgstr "seules les pages compressées par gzip sont lisibles"
+
+#: src/preview_formats.c:826
+msgid "not a manual page"
+msgstr "pas une page de manuel"
+
+#: src/preview_formats.c:840
+msgid "not a valid ELF file"
+msgstr "pas un fichier ELF valide"
+
+#: src/preview_formats.c:896
+msgid "(no subject)"
+msgstr "(sans objet)"
+
+#: src/preview_formats.c:896
+msgid "yes"
+msgstr "oui"
+
+#. TRANSLATORS: %3$s is "+" when the mailbox was not read to the end
+#: src/preview_formats.c:912
+#, c-format
+msgid "Message %1$u of %2$u%3$s · %4$s · PgUp / PgDn"
+msgstr "Message %1$u sur %2$u%3$s · %4$s · PgUp / PgDn"
+
+#: src/preview_formats.c:921
+#, c-format
+msgid "Mailbox · %1$u message · %2$s"
+msgid_plural "Mailbox · %1$u messages · %2$s"
+msgstr[0] "Boîte aux lettres · %1$u message · %2$s"
+msgstr[1] "Boîte aux lettres · %1$u messages · %2$s"
+
+#: src/preview_formats.c:922
+#, c-format
+msgid "Mailbox · %1$s · the first %2$u and last %3$u messages shown"
+msgstr ""
+"Boîte aux lettres · %1$s · les %2$u premiers et %3$u derniers messages "
+"affichés"
+
+#: src/preview_formats.c:927
+msgid "From"
+msgstr "De"
+
+#: src/preview_formats.c:927
+msgid "Subject"
+msgstr "Objet"
+
+#: src/preview_formats.c:927
+msgid "Attachments"
+msgstr "Pièces jointes"
+
+#: src/preview_formats.c:942
+msgid ""
+"\n"
+"PgDn opens the messages one by one, PgUp comes back."
+msgstr ""
+"\n"
+"PgDn ouvre les messages un par un, PgUp revient."
+
+#: src/preview_formats.c:953
+msgid "no file"
+msgstr "aucun fichier"
+
+#: src/preview_formats.c:976
+#, c-format
+msgid "Thunderbird index of %s"
+msgstr "Index Thunderbird de %s"
+
+#: src/preview_formats.c:989
+msgid "Mail message"
+msgstr "Message électronique"
+
+#: src/preview_formats.c:1026
+msgid "file too large"
+msgstr "fichier trop grand"
+
+#: src/preview_formats.c:1046
+msgid "Java class file"
+msgstr "Fichier de classe Java"
+
+#: src/preview_formats.c:1049
+msgid "WebAssembly binary"
+msgstr "Binaire WebAssembly"
+
+#: src/preview_formats.c:1052
+msgid "BitTorrent metainfo"
+msgstr "Métadonnées BitTorrent"
+
+#: src/preview_formats.c:1055
+msgid "Python bytecode"
+msgstr "Bytecode Python"
+
+#: src/preview_formats.c:1058
+msgid "TeX font metric"
+msgstr "Métriques de police TeX"
+
+#: src/preview_formats.c:1061
+msgid "Packet capture"
+msgstr "Capture réseau"
+
+#: src/preview_formats.c:1108
+msgid "no preview for this format yet"
+msgstr "pas encore d’aperçu pour ce format"
+
+#: src/preview_formats.c:1177
+msgid "[ Binary file ]"
+msgstr "[ Fichier binaire ]"
+
+#. TRANSLATORS: %s is a file kind, e.g. "Archive"
+#: src/preview_formats.c:1180
+#, c-format
+msgid "[ %s file ]"
+msgstr "[ Fichier : %s ]"
+
+#: src/preview_formats.c:1184
+#, c-format
+msgid "Cannot show the file: %s.\n"
+msgstr "Impossible d’afficher le fichier : %s.\n"
+
+#: src/preview_formats.c:1185
+#, c-format
+msgid "Cannot show the content: %s.\n"
+msgstr "Impossible d’afficher le contenu : %s.\n"
+
+#: src/preview_formats.c:1190
+#, c-format
+msgid "Showing the first %s.\n"
+msgstr "Affichage des premiers %s.\n"
+
+#: src/preview_full.c:30 src/preview_full.c:89
+msgid "Load Whole File"
+msgstr "Charger tout le fichier"
+
+#: src/preview_full.c:32
+msgid "_Load"
+msgstr "_Charger"
+
+#: src/preview_full.c:35
+#, c-format
+msgid ""
+"This file is %s. Showing all of it may make the window unresponsive for a "
+"while. Load it anyway?"
+msgstr ""
+"Ce fichier fait %s. L’afficher en entier peut bloquer la fenêtre un moment. "
+"Le charger quand même ?"
+
+#: src/preview_full.c:72
+msgid "Loading the whole file…"
+msgstr "Chargement de tout le fichier…"
+
+#: src/preview_full.c:91
+msgid "Load Whole File into the Preview"
+msgstr "Charger tout le fichier dans l’aperçu"
+
+#: src/preview_full.c:122
+#, c-format
+msgid "Partial preview: %1$s of %2$s shown"
+msgstr "Aperçu partiel : %1$s sur %2$s affichés"
+
 #. TRANSLATORS: a field label followed by its value, "Host: example.org"
 #: src/preview_summary.c:37 src/preview_summary.c:278
 #, c-format
@@ -4738,10 +5218,6 @@ msgstr "Dossier de signets : %s"
 msgid "Items"
 msgstr "Éléments"
 
-#: src/preview_summary.c:260
-msgid "Contents"
-msgstr "Contenu"
-
 #: src/preview_summary.c:262
 #, c-format
 msgid "Remote Folder: %s"
@@ -4823,6 +5299,10 @@ msgstr "Bouton Corbeille de la barre d’outils"
 #: src/preview_summary.c:323
 msgid "Empty the trash"
 msgstr "Vider la corbeille"
+
+#: src/preview_tagbar.c:236
+msgid "Reading the headings…"
+msgstr "Lecture des titres…"
 
 #: src/project_search.c:109
 #, c-format

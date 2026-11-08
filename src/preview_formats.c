@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "archive_listing.h"
+#include "i18n.h"
 #include "card_view.h"
 #include "cert_view.h"
 #include "class_info.h"
@@ -75,7 +76,7 @@ static void note_truncated_text(PreviewDoc* doc, const PreviewInput* in) {
     if (in->text_truncated) {
         gchar* shown = g_format_size(in->text_len);
         gchar* total = preview_format_size(in->size);
-        gchar* note = g_strdup_printf("Only the first %s of %s were read.", shown, total);
+        gchar* note = g_strdup_printf(_("Only the first %1$s of %2$s were read."), shown, total);
         preview_doc_note(doc, note);
         g_free(note);
         g_free(total);
@@ -106,7 +107,7 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     gchar sep = csv_sniff_separator(in->text, in->text_len, in->name);
     g_autoptr(CsvData) data = csv_parse(in->text, in->text_len, sep, TABLE_MAX_ROWS + 1);
     if (data->n_rows == 0) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "no rows");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("no rows"));
         return NULL;
     }
     gboolean header = csv_has_header(data);
@@ -116,9 +117,16 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     PreviewDoc* doc = preview_doc_new();
     gchar* rows = format_count(body_rows);
     gchar* cols = format_count(data->n_cols);
-    preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "%s %s × %s %s · %s-separated%s\n", rows,
-                        body_rows == 1 ? "row" : "rows", cols, data->n_cols == 1 ? "column" : "columns",
-                        csv_separator_name(sep), in->text_truncated ? " (start of the file)" : "");
+    gchar* rows_text = g_strdup_printf(ngettext("%s row", "%s rows", body_rows), rows);
+    gchar* cols_text = g_strdup_printf(ngettext("%s column", "%s columns", data->n_cols), cols);
+    const gchar* sep_name = g_dpgettext2(NULL, "csv separator", csv_separator_name(sep));
+    /* TRANSLATORS: "12 rows × 3 columns · comma-separated" */
+    preview_doc_appendf(doc, PREVIEW_STYLE_DIM,
+                        in->text_truncated ? _("%1$s × %2$s · %3$s-separated (start of the file)\n")
+                                           : _("%1$s × %2$s · %3$s-separated\n"),
+                        rows_text, cols_text, sep_name);
+    g_free(rows_text);
+    g_free(cols_text);
     g_free(cols); g_free(rows);
     note_truncated_text(doc, in);
     preview_doc_append_len(doc, "\n", 1);
@@ -137,13 +145,13 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     preview_doc_add_table(doc, table);
     if (body_rows > TABLE_MAX_ROWS) {
         gchar* shown = format_count(TABLE_MAX_ROWS);
-        gchar* note = g_strdup_printf("\nShowing the first %s rows.", shown);
+        gchar* note = g_strdup_printf(_("\nShowing the first %s rows."), shown);
         preview_doc_note(doc, note);
         g_free(note);
         g_free(shown);
     }
     if (data->n_cols > TABLE_MAX_COLS) {
-        preview_doc_note(doc, "Showing the first 100 columns.");
+        preview_doc_note(doc, _("Showing the first 100 columns."));
     }
     return doc;
 }
@@ -162,13 +170,11 @@ static PreviewDoc* build_json(const PreviewInput* in, GCancellable* cancellable,
     doc->wrap = FALSE;
     gchar* count = format_count(info.lines ? info.n_values : info.n_root_items);
     if (info.lines) {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "JSON Lines · %s records\n", count);
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("JSON Lines · %s record\n", "JSON Lines · %s records\n", info.n_values), count);
     } else if (info.root == '{') {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "Object · %s %s\n", count,
-                            info.n_root_items == 1 ? "key" : "keys");
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Object · %s key\n", "Object · %s keys\n", info.n_root_items), count);
     } else if (info.root == '[') {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, "Array · %s %s\n", count,
-                            info.n_root_items == 1 ? "item" : "items");
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Array · %s item\n", "Array · %s items\n", info.n_root_items), count);
     }
     g_free(count);
     note_truncated_text(doc, in);
@@ -189,7 +195,7 @@ static PreviewDoc* build_diff(const PreviewInput* in, GCancellable* cancellable,
     note_truncated_text(doc, in);
     if (!diff_view_append(doc, in->text, in->text_len)) {
         preview_doc_free(doc);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "no file changes found");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("no file changes found"));
         return NULL;
     }
     return doc;
@@ -211,7 +217,7 @@ static gchar* format_time(gint64 t, gboolean utc) {
 
 static gchar* format_percent_saved(guint64 packed, guint64 size) {
     if (size == 0 || packed > size) return NULL;
-    return g_strdup_printf("%.0f %% saved", 100.0 * (gdouble)(size - packed) / (gdouble)size);
+    return g_strdup_printf(_("%.0f %% saved"), 100.0 * (gdouble)(size - packed) / (gdouble)size);
 }
 
 /* Decompressed content of a single compressed file: its own structured
@@ -220,7 +226,7 @@ static void append_inner_content(PreviewDoc* doc, GBytes* bytes, const gchar* in
                                  const gchar* outer_name, gint64 inner_size) {
     gsize len = 0;
     const guchar* data = g_bytes_get_data(bytes, &len);
-    preview_doc_section(doc, "Content");
+    preview_doc_section(doc, _("Content"));
     /* "notes.csv.gz" names "notes.csv" when the header has no name */
     gchar* name = inner_name != NULL ? g_strdup(inner_name) : g_strdup(outer_name);
     gchar* dot = strrchr(name, '.');
@@ -245,7 +251,7 @@ static void append_inner_content(PreviewDoc* doc, GBytes* bytes, const gchar* in
     }
     g_free(name);
     if (len == 0) {
-        preview_doc_note(doc, "(empty)");
+        preview_doc_note(doc, _("(empty)"));
     } else if (text) {
         preview_doc_append_len(doc, (const gchar*)data, (gssize)len);
         preview_doc_append_len(doc, "\n", 1);
@@ -279,18 +285,18 @@ static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellab
     g_free(size);
     if (l == NULL) {
         g_clear_error(&err);
-        preview_doc_note(doc, "Listing the content of this format is not supported yet.");
+        preview_doc_note(doc, _("Listing the content of this format is not supported yet."));
         return doc;
     }
 
     if (l->single) {
-        preview_doc_field(doc, "Original name", l->inner_name);
+        preview_doc_field(doc, _("Original name"), l->inner_name);
         if (l->inner_size >= 0) {
             gchar* inner = g_format_size((guint64)l->inner_size);
-            preview_doc_field(doc, "Original size", inner);
+            preview_doc_field(doc, _("Original size"), inner);
             g_free(inner);
             gchar* saved = in->size >= 0 ? format_percent_saved((guint64)in->size, (guint64)l->inner_size) : NULL;
-            preview_doc_field(doc, "Compression", saved);
+            preview_doc_field(doc, _("Compression"), saved);
             g_free(saved);
         }
         append_inner_content(doc, l->inner_head, l->inner_name, in->name, l->inner_size);
@@ -298,19 +304,22 @@ static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellab
     }
 
     gchar* files = format_count(l->n_files);
-    gchar* contents = g_strdup_printf("%s%s %s, %u %s", l->incomplete ? "at least " : "", files,
-                                      l->n_files == 1 ? "file" : "files", l->n_dirs,
-                                      l->n_dirs == 1 ? "folder" : "folders");
-    preview_doc_field(doc, "Contents", contents);
+    gchar* files_text = g_strdup_printf(ngettext("%s file", "%s files", l->n_files), files);
+    gchar* dirs_text = g_strdup_printf(ngettext("%u folder", "%u folders", l->n_dirs), l->n_dirs);
+    /* TRANSLATORS: "12 files, 3 folders" */
+    gchar* contents = g_strdup_printf(l->incomplete ? _("at least %1$s, %2$s") : _("%1$s, %2$s"), files_text, dirs_text);
+    g_free(files_text);
+    g_free(dirs_text);
+    preview_doc_field(doc, _("Contents"), contents);
     g_free(contents);
     g_free(files);
     gchar* unpacked = g_format_size(l->total_size);
-    preview_doc_field(doc, "Unpacked", unpacked);
+    preview_doc_field(doc, _("Unpacked"), unpacked);
     g_free(unpacked);
     gboolean zip = g_str_has_prefix(l->format, "ZIP");
     if (zip) {
         gchar* saved = format_percent_saved(l->total_packed, l->total_size);
-        preview_doc_field(doc, "Compression", saved);
+        preview_doc_field(doc, _("Compression"), saved);
         g_free(saved);
     }
     if (l->manifest != NULL) {
@@ -332,8 +341,8 @@ static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellab
 
     guint n_cols = zip ? 4 : 3;
     g_autoptr(PreviewTable) table = preview_table_new(n_cols);
-    const gchar* zip_header[] = { "Name", "Size", "Packed", "Modified" };
-    const gchar* header[] = { "Name", "Size", "Modified" };
+    const gchar* zip_header[] = { _("Name"), _("Size"), _("Packed"), _("Modified") };
+    const gchar* header[] = { _("Name"), _("Size"), _("Modified") };
     preview_table_set_header(table, zip ? zip_header : header);
     preview_table_set_right_aligned(table, 1);
     if (zip) {
@@ -343,7 +352,7 @@ static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellab
     for (guint i = 0; i < l->entries->len; i++) {
         const ArchiveEntry* e = &g_array_index(l->entries, ArchiveEntry, i);
         gchar* name = e->link != NULL ? g_strdup_printf("%s → %s", e->path, e->link)
-                      : e->encrypted ? g_strdup_printf("%s (encrypted)", e->path)
+                      : e->encrypted ? g_strdup_printf(_("%s (encrypted)"), e->path)
                       : g_strdup(e->path);
         gboolean dir = (e->type == ARCHIVE_ENTRY_DIR);
         gchar* esize = dir ? g_strdup("") : g_format_size(e->size);
@@ -360,8 +369,9 @@ static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellab
     preview_doc_add_table(doc, table);
     if (l->n_entries > l->entries->len || l->incomplete) {
         gchar* shown = format_count(l->entries->len);
-        gchar* note = g_strdup_printf("\nShowing the first %s entries%s.", shown,
-                                      l->incomplete ? " (the archive was not read to the end)" : "");
+        gchar* note = g_strdup_printf(l->incomplete ? _("\nShowing the first %s entries (the archive was not read to the end).")
+                                                    : _("\nShowing the first %s entries."),
+                                      shown);
         preview_doc_note(doc, note);
         g_free(note);
         g_free(shown);
@@ -408,7 +418,7 @@ static PreviewDoc* build_cards(const PreviewInput* in, CardAppendFunc append, GE
     note_truncated_text(doc, in);
     if (!append(doc, in->text, in->text_len)) {
         preview_doc_free(doc);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "nothing to show");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("nothing to show"));
         return NULL;
     }
     return doc;
@@ -472,24 +482,26 @@ static PreviewDoc* build_log(const PreviewInput* in, GCancellable* cancellable, 
     doc->scroll_to_end = TRUE;
     gchar* lines = format_count(stats.lines);
     gint start = preview_doc_offset(doc);
-    preview_doc_appendf(doc, PREVIEW_STYLE_PLAIN, "%s%s %s", (tail != NULL || in->text_truncated) ? "last " : "",
-                        lines, stats.lines == 1 ? "line" : "lines");
+    preview_doc_appendf(doc, PREVIEW_STYLE_PLAIN,
+                        (tail != NULL || in->text_truncated) ? ngettext("last %s line", "last %s lines", stats.lines)
+                                                             : ngettext("%s line", "%s lines", stats.lines),
+                        lines);
     preview_doc_add_span(doc, start, preview_doc_offset(doc), PREVIEW_STYLE_DIM);
     if (stats.errors > 0) {
         preview_doc_append(doc, PREVIEW_STYLE_DIM, " · ");
-        preview_doc_appendf(doc, PREVIEW_STYLE_ERROR, "%u %s", stats.errors, stats.errors == 1 ? "error" : "errors");
+        preview_doc_appendf(doc, PREVIEW_STYLE_ERROR, ngettext("%u error", "%u errors", stats.errors), stats.errors);
     }
     if (stats.warnings > 0) {
         preview_doc_append(doc, PREVIEW_STYLE_DIM, " · ");
-        preview_doc_appendf(doc, PREVIEW_STYLE_WARNING, "%u %s", stats.warnings,
-                            stats.warnings == 1 ? "warning" : "warnings");
+        preview_doc_appendf(doc, PREVIEW_STYLE_WARNING, ngettext("%u warning", "%u warnings", stats.warnings),
+                            stats.warnings);
     }
     preview_doc_append_len(doc, "\n", 1);
     g_free(lines);
     if (tail != NULL) {
         gchar* shown = g_format_size(tail_len);
         gchar* total = preview_format_size(in->size);
-        gchar* note = g_strdup_printf("Showing the end of the file: the last %s of %s.", shown, total);
+        gchar* note = g_strdup_printf(_("Showing the end of the file: the last %1$s of %2$s."), shown, total);
         preview_doc_note(doc, note);
         g_free(note);
         g_free(total);
@@ -515,7 +527,7 @@ static PreviewDoc* build_translation(const PreviewInput* in, GCancellable* cance
         gsize len = 0;
         if (in->size > 64 * 1024 * 1024 || !g_file_get_contents(in->path, &data, &len, error)) {
             if (error != NULL && *error == NULL) {
-                g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "catalog too large");
+                g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("catalog too large"));
             }
             return NULL;
         }
@@ -529,7 +541,8 @@ static PreviewDoc* build_translation(const PreviewInput* in, GCancellable* cance
     doc->monospace = TRUE;
     doc->wrap = FALSE;
     gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf("gettext %s · %s", in->text != NULL ? "translations (.po)" : "compiled translations (.mo)",
+    gchar* subtitle = g_strdup_printf(in->text != NULL ? _("gettext translations (.po) · %s")
+                                                       : _("gettext compiled translations (.mo) · %s"),
                                       size);
     preview_doc_title(doc, in->name, subtitle);
     g_free(subtitle);
@@ -551,7 +564,7 @@ static PreviewDoc* build_database(const PreviewInput* in, GCancellable* cancella
     doc->monospace = TRUE;
     doc->wrap = FALSE;
     gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf("SQLite database · %s", size);
+    gchar* subtitle = g_strdup_printf(_("SQLite database · %s"), size);
     preview_doc_title(doc, in->name, subtitle);
     g_free(subtitle);
     g_free(size);
@@ -561,7 +574,8 @@ static PreviewDoc* build_database(const PreviewInput* in, GCancellable* cancella
 
 /* --- Fonts --- */
 
-static const gchar* const FONT_SAMPLE = "The quick brown fox jumps over the lazy dog";
+/* TRANSLATORS: a pangram of your language for the font sample */
+#define FONT_SAMPLE _("The quick brown fox jumps over the lazy dog")
 
 static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
@@ -573,30 +587,31 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     doc->monospace = TRUE;
     gchar* size = preview_format_size(in->size);
     const gchar* style = info->style != NULL ? info->style : font_info_weight_name(info->weight);
-    gchar* subtitle = g_strdup_printf("%s font%s%s · %s", info->format, style != NULL ? " · " : "",
-                                      style != NULL ? style : "", size);
+    /* TRANSLATORS: "%1$s font" names the format, e.g. "TrueType font" */
+    gchar* subtitle = style != NULL ? g_strdup_printf(_("%1$s font · %2$s · %3$s"), info->format, style, size)
+                                    : g_strdup_printf(_("%1$s font · %2$s"), info->format, size);
     preview_doc_title(doc, info->family != NULL ? info->family : in->name, subtitle);
     g_free(subtitle);
     g_free(size);
-    preview_doc_field(doc, "Full name", info->full_name);
-    preview_doc_field(doc, "Version", info->version);
-    preview_doc_field(doc, "Designer", info->designer);
-    preview_doc_field(doc, "Foundry", info->manufacturer);
+    preview_doc_field(doc, _("Full name"), info->full_name);
+    preview_doc_field(doc, _("Version"), info->version);
+    preview_doc_field(doc, _("Designer"), info->designer);
+    preview_doc_field(doc, _("Foundry"), info->manufacturer);
     if (info->n_glyphs > 0) {
         gchar* glyphs = format_count(info->n_glyphs);
-        preview_doc_field(doc, "Glyphs", glyphs);
+        preview_doc_field(doc, _("Glyphs"), glyphs);
         g_free(glyphs);
     }
     if (info->n_fonts > 1) {
-        gchar* fonts = g_strdup_printf("%u (the first one is shown)", info->n_fonts);
-        preview_doc_field(doc, "Fonts", fonts);
+        gchar* fonts = g_strdup_printf(_("%u (the first one is shown)"), info->n_fonts);
+        preview_doc_field(doc, _("Fonts"), fonts);
         g_free(fonts);
     }
-    preview_doc_field(doc, "Copyright", info->copyright);
-    preview_doc_field(doc, "License URL", info->license_url);
+    preview_doc_field(doc, _("Copyright"), info->copyright);
+    preview_doc_field(doc, _("License URL"), info->license_url);
 
     if (info->family == NULL) {
-        preview_doc_note(doc, "\nNo sample: the font names cannot be read (WOFF2 tables are compressed).");
+        preview_doc_note(doc, _("\nNo sample: the font names cannot be read (WOFF2 tables are compressed)."));
         return doc;
     }
     /* Samples in the font itself: family, weight and slant from the file */
@@ -610,7 +625,7 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     static const gint SIZES[] = { 12, 18, 24, 36, 48 };
     const gchar* const LINES[] = { "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz",
                                    "0123456789 .,;:!? &@#%$€ ()[]{} «»“”" };
-    preview_doc_section(doc, "Sample");
+    preview_doc_section(doc, _("Sample"));
     for (gsize i = 0; i < G_N_ELEMENTS(LINES); i++) {
         gint start = preview_doc_offset(doc);
         preview_doc_append(doc, PREVIEW_STYLE_PLAIN, LINES[i]);
@@ -631,7 +646,7 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     }
     g_string_free(face, TRUE);
     if (info->license != NULL) {
-        preview_doc_section(doc, "License");
+        preview_doc_section(doc, _("License"));
         gchar* license = g_utf8_substring(info->license, 0, 600);
         preview_doc_append(doc, PREVIEW_STYLE_DIM, license);
         if (g_utf8_strlen(info->license, -1) > 600) preview_doc_append(doc, PREVIEW_STYLE_DIM, "…");
@@ -682,8 +697,9 @@ static PreviewDoc* build_presentation(const PreviewInput* in, GCancellable* canc
     }
     /* Slide count in the metadata banner */
     guint slides = info.n_slides;
-    gchar* count = g_strdup_printf("<meta name=\"description\" content=\"Presentation · %u %s\"></head>", slides,
-                                   slides == 1 ? "slide" : "slides");
+    gchar* label = g_strdup_printf(ngettext("Presentation · %u slide", "Presentation · %u slides", slides), slides);
+    gchar* count = g_markup_printf_escaped("<meta name=\"description\" content=\"%s\"></head>", label);
+    g_free(label);
     gchar* head_end = strstr(html, "</head>");
     gchar* page;
     if (head_end != NULL) {
@@ -712,8 +728,8 @@ static PreviewDoc* build_spreadsheet(const PreviewInput* in, GCancellable* cance
     doc->monospace = TRUE;
     doc->wrap = FALSE;
     gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf("%s · %u %s · %s", book->format, book->sheets->len,
-                                      book->sheets->len == 1 ? "sheet" : "sheets", size);
+    gchar* subtitle = g_strdup_printf(ngettext("%1$s · %2$u sheet · %3$s", "%1$s · %2$u sheets · %3$s", book->sheets->len),
+                                      book->format, book->sheets->len, size);
     preview_doc_title(doc, in->name, subtitle);
     g_free(subtitle);
     g_free(size);
@@ -722,7 +738,7 @@ static PreviewDoc* build_spreadsheet(const PreviewInput* in, GCancellable* cance
         for (guint i = 0; i < book->sheets->len; i++) {
             g_string_append_printf(names, "%s%s", i > 0 ? " · " : "", ((Sheet*)g_ptr_array_index(book->sheets, i))->name);
         }
-        preview_doc_field(doc, "Sheets", names->str);
+        preview_doc_field(doc, _("Sheets"), names->str);
         g_string_free(names, TRUE);
     }
     spreadsheet_append_sheets(doc, book, SHEETS_SHOWN, SHEET_ROWS);
@@ -745,8 +761,11 @@ static PreviewDoc* build_notebook(const PreviewInput* in, GCancellable* cancella
     g_free(whole);
     if (md == NULL) return NULL;
     GString* page = g_string_new(NULL);
-    g_string_append_printf(page, "*Jupyter notebook · %u cells (%u code)%s%s*\n\n", info.n_cells, info.n_code,
-                           info.kernel ? " · " : "", info.kernel ? info.kernel : "");
+    gchar* cells = g_strdup_printf(ngettext("Jupyter notebook · %1$u cell (%2$u code)", "Jupyter notebook · %1$u cells (%2$u code)",
+                                            info.n_cells),
+                                   info.n_cells, info.n_code);
+    g_string_append_printf(page, "*%s%s%s*\n\n", cells, info.kernel ? " · " : "", info.kernel ? info.kernel : "");
+    g_free(cells);
     g_string_append(page, md);
     g_free(md);
     notebook_info_clear(&info);
@@ -788,7 +807,7 @@ static PreviewDoc* build_manpage(const PreviewInput* in, GCancellable* cancellab
     gsize len = in->text_len;
     if (text == NULL) {
         if (in->head_len < 2 || in->head[0] != 0x1F || in->head[1] != 0x8B) {
-            g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "only gzip-compressed pages can be read");
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("only gzip-compressed pages can be read"));
             return NULL;
         }
         unzipped = gunzip_text(in->path, MAN_MAX_TEXT, error);
@@ -804,7 +823,7 @@ static PreviewDoc* build_manpage(const PreviewInput* in, GCancellable* cancellab
     g_free(unzipped);
     if (!ok) {
         preview_doc_free(doc);
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "not a manual page");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("not a manual page"));
         return NULL;
     }
     return doc;
@@ -818,7 +837,7 @@ static PreviewDoc* build_elf(const PreviewInput* in, GCancellable* cancellable, 
     ElfInfo* info = elf_info_read_file(in->path, &why);
     if (info == NULL) {
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "%s",
-                    why != NULL ? why : "not a valid ELF file");
+                    why != NULL ? why : _("not a valid ELF file"));
         g_free(why);
         return NULL;
     }
@@ -874,7 +893,7 @@ static void mailbox_row(PreviewTable* table, const MailBoxEntry* e, guint number
     gchar* date = mail_view_format_date(e->date);
     gchar* size = preview_format_size((gint64)e->length);
     const gchar* row[] = {num, date != NULL ? date : "", e->from != NULL ? e->from : "",
-                          e->subject != NULL ? e->subject : "(no subject)", size, e->attachments ? "yes" : ""};
+                          e->subject != NULL ? e->subject : _("(no subject)"), size, e->attachments ? _("yes") : ""};
     preview_table_add_row(table, row, 6);
     g_free(size);
     g_free(date);
@@ -889,7 +908,8 @@ static PreviewDoc* build_mailbox(const PreviewInput* in, const gchar* data, gsiz
     PreviewDoc* doc;
     if (in->page > 0 && in->page <= n) {
         g_autoptr(MailMessage) msg = mail_box_message(box, in->page - 1, data, len, MAIL_VIEW_MAX_PART);
-        gchar* subtitle = g_strdup_printf("Message %u of %u%s · %s · PgUp / PgDn", in->page, n,
+        /* TRANSLATORS: %3$s is "+" when the mailbox was not read to the end */
+        gchar* subtitle = g_strdup_printf(_("Message %1$u of %2$u%3$s · %4$s · PgUp / PgDn"), in->page, n,
                                           box->complete ? "" : "+", in->name);
         doc = mail_view_message(msg, subtitle);
         g_free(subtitle);
@@ -898,13 +918,13 @@ static PreviewDoc* build_mailbox(const PreviewInput* in, const gchar* data, gsiz
         doc->monospace = TRUE;
         doc->wrap = FALSE;
         gchar* subtitle = box != NULL && box->complete
-                              ? g_strdup_printf("Mailbox · %u %s · %s", n, n == 1 ? "message" : "messages", size)
-                              : g_strdup_printf("Mailbox · %s · the first %u and last %u messages shown", size,
+                              ? g_strdup_printf(ngettext("Mailbox · %1$u message · %2$s", "Mailbox · %1$u messages · %2$s", n), n, size)
+                              : g_strdup_printf(_("Mailbox · %1$s · the first %2$u and last %3$u messages shown"), size,
                                                 box != NULL ? box->head_count : 0, n - (box != NULL ? box->head_count : 0));
         preview_doc_title(doc, in->name, subtitle);
         g_free(subtitle);
         g_autoptr(PreviewTable) table = preview_table_new(6);
-        const gchar* header[] = {"#", "Date", "From", "Subject", "Size", "Attachments"};
+        const gchar* header[] = {"#", _("Date"), _("From"), _("Subject"), _("Size"), _("Attachments")};
         preview_table_set_header(table, header);
         preview_table_set_right_aligned(table, 4);
         guint shown = 0;
@@ -919,7 +939,7 @@ static PreviewDoc* build_mailbox(const PreviewInput* in, const gchar* data, gsiz
             shown++;
         }
         preview_doc_add_table(doc, table);
-        if (n > 0) preview_doc_note(doc, "\nPgDn opens the messages one by one, PgUp comes back.");
+        if (n > 0) preview_doc_note(doc, _("\nPgDn opens the messages one by one, PgUp comes back."));
     }
     doc->pages = n;
     g_free(size);
@@ -930,7 +950,7 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
     (void)cancellable;
     /* The raw bytes: the viewer's text is converted to UTF-8 already */
     if (in->path == NULL) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "no file");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("no file"));
         return NULL;
     }
     GMappedFile* map = g_mapped_file_new(in->path, FALSE, error);
@@ -953,7 +973,7 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
         g_mapped_file_unref(map);
         PreviewDoc* doc = preview_doc_new();
         gchar* box = g_strndup(in->name, strlen(in->name) > 4 ? strlen(in->name) - 4 : strlen(in->name));
-        gchar* line = g_strdup_printf("Thunderbird index of %s", box);
+        gchar* line = g_strdup_printf(_("Thunderbird index of %s"), box);
         gchar* size = preview_format_size(in->size);
         preview_doc_title(doc, in->name, size);
         preview_doc_note(doc, line);
@@ -966,7 +986,7 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
                                       : mail_message_parse(data ? data : "", data ? len : 0, MAIL_VIEW_MAX_PART);
     g_mapped_file_unref(map);
     gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf("%s · %s", tnef ? "Outlook TNEF (winmail.dat)" : "Mail message", size);
+    gchar* subtitle = g_strdup_printf("%s · %s", tnef ? "Outlook TNEF (winmail.dat)" : _("Mail message"), size);
     PreviewDoc* doc = mail_view_message(msg, subtitle);
     g_free(subtitle);
     g_free(size);
@@ -1003,7 +1023,7 @@ static PreviewDoc* build_binary_doc(const PreviewInput* in, const gchar* label, 
     gsize len = 0;
     if (in->size > (gint64)max_size || !g_file_get_contents(in->path, &data, &len, error)) {
         if (error != NULL && *error == NULL) {
-            g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "file too large");
+            g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("file too large"));
         }
         return NULL;
     }
@@ -1023,22 +1043,22 @@ static PreviewDoc* build_binary_doc(const PreviewInput* in, const gchar* label, 
 }
 
 static PreviewDoc* build_class(const PreviewInput* in, GCancellable* c, GError** e) {
-    (void)c; return build_binary_doc(in, "Java class file", 16 * 1024 * 1024, class_info_append, e);
+    (void)c; return build_binary_doc(in, _("Java class file"), 16 * 1024 * 1024, class_info_append, e);
 }
 static PreviewDoc* build_wasm(const PreviewInput* in, GCancellable* c, GError** e) {
-    (void)c; return build_binary_doc(in, "WebAssembly binary", 32 * 1024 * 1024, wasm_info_append, e);
+    (void)c; return build_binary_doc(in, _("WebAssembly binary"), 32 * 1024 * 1024, wasm_info_append, e);
 }
 static PreviewDoc* build_torrent(const PreviewInput* in, GCancellable* c, GError** e) {
-    (void)c; return build_binary_doc(in, "BitTorrent metainfo", 16 * 1024 * 1024, torrent_info_append, e);
+    (void)c; return build_binary_doc(in, _("BitTorrent metainfo"), 16 * 1024 * 1024, torrent_info_append, e);
 }
 static PreviewDoc* build_pyc(const PreviewInput* in, GCancellable* c, GError** e) {
-    (void)c; return build_binary_doc(in, "Python bytecode", 16 * 1024 * 1024, pyc_info_append, e);
+    (void)c; return build_binary_doc(in, _("Python bytecode"), 16 * 1024 * 1024, pyc_info_append, e);
 }
 static PreviewDoc* build_tfm(const PreviewInput* in, GCancellable* c, GError** e) {
-    (void)c; return build_binary_doc(in, "TeX font metric", 16 * 1024 * 1024, tfm_info_append, e);
+    (void)c; return build_binary_doc(in, _("TeX font metric"), 16 * 1024 * 1024, tfm_info_append, e);
 }
 static PreviewDoc* build_pcap(const PreviewInput* in, GCancellable* c, GError** e) {
-    (void)c; return build_binary_doc(in, "Packet capture", 32 * 1024 * 1024, pcap_info_append, e);
+    (void)c; return build_binary_doc(in, _("Packet capture"), 32 * 1024 * 1024, pcap_info_append, e);
 }
 
 /* --- Registry --- */
@@ -1085,7 +1105,7 @@ PreviewDoc* preview_format_build(const PreviewInput* input, GCancellable* cancel
                                  GError** error) {
     PreviewBuildFunc build = builder_for(input->kind);
     if (build == NULL) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "no preview for this format yet");
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("no preview for this format yet"));
         return NULL;
     }
     return build(input, cancellable, error);
@@ -1154,18 +1174,20 @@ PreviewDoc* preview_format_hex_dump(const gchar* name, FileKind kind, gint64 siz
     const gchar* label = file_kind_label(kind);
     GString* header = g_string_new(NULL);
     if (kind == FILE_KIND_BINARY || label == NULL) {
-        g_string_append(header, "[ Binary file ]");
+        g_string_append(header, _("[ Binary file ]"));
     } else {
-        g_string_append_printf(header, "[ %s file ]", label);
+        /* TRANSLATORS: %s is a file kind, e.g. "Archive" */
+        g_string_append_printf(header, _("[ %s file ]"), g_dpgettext2(NULL, "file kind", label));
     }
     g_string_append_printf(header, " %s (%s)\n", name, size_str);
     if (reason != NULL) {
-        g_string_append_printf(header, "Cannot show the %s: %s.\n",
-                               kind == FILE_KIND_BINARY ? "file" : "content", reason);
+        g_string_append_printf(header, kind == FILE_KIND_BINARY ? _("Cannot show the file: %s.\n")
+                                                                : _("Cannot show the content: %s.\n"),
+                               reason);
     }
     if (size >= 0 && (gint64)len < size) {
         gchar* shown = g_format_size((guint64)len);
-        g_string_append_printf(header, "Showing the first %s.\n", shown);
+        g_string_append_printf(header, _("Showing the first %s.\n"), shown);
         g_free(shown);
     }
     g_string_append_c(header, '\n');

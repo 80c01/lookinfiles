@@ -3,6 +3,7 @@
 #include "code_outline_tree.h"
 #include "nav_keys.h"
 #include "outline_pane.h"
+#include "i18n.h"
 #include "settings_store.h"
 
 #define REFRESH_DELAY_MS 120   /* after the last change of the buffer (a render) */
@@ -111,7 +112,7 @@ static void refresh_now(PreviewTagbar* pt) {
     for (guint i = 0; i < entries->len && !symbols; i++) {
         symbols = ((const CodeOutlineEntry*)g_ptr_array_index(entries, i))->level == 0;
     }
-    outline_pane_set_entries(pt->pane, entries, !symbols, symbols ? "built-in scanner" : NULL);
+    outline_pane_set_entries(pt->pane, entries, !symbols, symbols ? _("built-in scanner") : NULL);
     outline_pane_set_shown(pt->pane, pt->app->preview_tagbar && entries->len > 0);
     g_ptr_array_unref(entries);
 }
@@ -232,7 +233,7 @@ GtkWidget* preview_tagbar_wrap(AppData* app, GtkWidget* content, GtkWidget* text
     pt->view = GTK_TEXT_VIEW(text_view);
     pt->jump_line = -1;
     app->preview_tagbar_state = pt;
-    pt->pane = outline_pane_new(content, &app->editor_tagbar_width, "Reading the headings…", &callbacks, pt);
+    pt->pane = outline_pane_new(content, &app->editor_tagbar_width, _("Reading the headings…"), &callbacks, pt);
     GtkWidget* paned = outline_pane_widget(pt->pane);
     g_object_set_data_full(G_OBJECT(paned), "preview-tagbar", pt, (GDestroyNotify)tagbar_free);
     pt->buffer = gtk_text_view_get_buffer(pt->view);

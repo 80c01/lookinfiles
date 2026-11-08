@@ -48,7 +48,7 @@ docx:zip_reader,zip_xml,preview_doc,doc_writer,docx_styles
 docx_styles:zip_reader,zip_xml,preview_doc,doc_writer
 preview_doc:
 doc_writer:preview_doc
-csv:preview_doc
+csv:preview_doc,i18n
 json_view:preview_doc
 diff_view:preview_doc
 archive_listing:zip_reader

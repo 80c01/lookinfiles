@@ -3,6 +3,7 @@
 
 #include "app_events.h"
 #include "dialog.h"
+#include "i18n.h"
 
 /* Above this size, ask first: showing the text can freeze the window a while */
 #define PREVIEW_FULL_CONFIRM_BYTES (64 * 1024 * 1024)
@@ -26,13 +27,14 @@ static void preview_full_free(gpointer data) {
 
 /* TRUE if the user still wants a file of this size in the preview */
 static gboolean confirm_large(PreviewFull* pf) {
-    GtkWidget* dlg = app_dialog_new("Load Whole File", pf->app->window,
-                                    "_Cancel", APP_RESPONSE_CANCEL,
-                                    "_Load", APP_RESPONSE_OK,
+    GtkWidget* dlg = app_dialog_new(_("Load Whole File"), pf->app->window,
+                                    _("_Cancel"), APP_RESPONSE_CANCEL,
+                                    _("_Load"), APP_RESPONSE_OK,
                                     NULL);
     gchar* size = g_format_size((guint64)pf->total);
-    gchar* message = g_strdup_printf("This file is %s. Showing all of it may make the window "
-                                     "unresponsive for a while. Load it anyway?", size);
+    gchar* message = g_strdup_printf(_("This file is %s. Showing all of it may make the window "
+                                       "unresponsive for a while. Load it anyway?"),
+                                     size);
     GtkWidget* label = gtk_label_new(message);
     g_free(message);
     g_free(size);
@@ -67,7 +69,7 @@ static void on_load_clicked(GtkButton* button, gpointer data) {
     }
     g_free(pf->wanted_path);
     pf->wanted_path = g_strdup(pf->shown_path);
-    gtk_label_set_text(GTK_LABEL(pf->label), "Loading the whole file…");
+    gtk_label_set_text(GTK_LABEL(pf->label), _("Loading the whole file…"));
     gtk_widget_set_sensitive(pf->button, FALSE);
     app_emit(pf->app, APP_EVENT_PREVIEW_STALE);
 }
@@ -84,9 +86,9 @@ GtkWidget* preview_full_wrap(AppData* app, GtkWidget* content) {
     gtk_label_set_ellipsize(GTK_LABEL(pf->label), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(pf->label, TRUE);
     gtk_box_append(GTK_BOX(pf->bar), pf->label);
-    pf->button = gtk_button_new_with_label("Load Whole File");
+    pf->button = gtk_button_new_with_label(_("Load Whole File"));
     gtk_widget_set_focusable(pf->button, FALSE);
-    gtk_widget_set_tooltip_text(pf->button, "Load Whole File into the Preview");
+    gtk_widget_set_tooltip_text(pf->button, _("Load Whole File into the Preview"));
     g_signal_connect(pf->button, "clicked", G_CALLBACK(on_load_clicked), pf);
     gtk_box_append(GTK_BOX(pf->bar), pf->button);
     gtk_widget_set_visible(pf->bar, FALSE);
@@ -117,7 +119,7 @@ void preview_full_update(AppData* app, const gchar* path, gint64 shown, gint64 t
     pf->total = total;
     gchar* s = g_format_size((guint64)shown);
     gchar* t = g_format_size((guint64)total);
-    gchar* text = g_strdup_printf("Partial preview: %s of %s shown", s, t);
+    gchar* text = g_strdup_printf(_("Partial preview: %1$s of %2$s shown"), s, t);
     gtk_label_set_text(GTK_LABEL(pf->label), text);
     g_free(text);
     g_free(t);
