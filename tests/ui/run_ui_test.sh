@@ -48,7 +48,9 @@ rm -rf "$OUT" "$FIX"
 mkdir -p "$SHOTS" "$FIX/home/.config/gtk-4.0" "$FIX/work/src" "$FIX/work/docs"
 
 # --- Fixture: small git repository with one modified and several untracked files
-printf '[Settings]\ngtk-cursor-blink=false\n' > "$FIX/home/.config/gtk-4.0/settings.ini"
+# Fixed scrollbars: an overlay scrollbar shows for a moment after each scroll
+# or resize, so whether a screenshot catches it would depend on timing
+printf '[Settings]\ngtk-cursor-blink=false\ngtk-overlay-scrolling=false\n' > "$FIX/home/.config/gtk-4.0/settings.ini"
 if [ -n "${UI_ICON_THEME:-}" ]; then
     printf 'gtk-icon-theme-name=%s\n' "$UI_ICON_THEME" >> "$FIX/home/.config/gtk-4.0/settings.ini"
 fi

@@ -46,7 +46,8 @@ make clean        # remove binary, build/ and build-asan/
   date from 2000-01-01, so the date sort does not depend on timing. A few
   steps can still differ between two runs because of things on a timer:
   status-bar notices that expire, "just now" / "1 min ago" on files the
-  scenario edits, hover popups and fading scrollbars. Check such a
+  scenario edits and hover popups (scrollbars are fixed, not overlay:
+  `gtk-overlay-scrolling=false` in the test's `settings.ini`). Check such a
   difference by eye before taking it for a regression.
 - When adding a feature with a shortcut, add a step to the scenario in
   `tests/ui/run_ui_test.sh` (`key ...; shot <name>`).
