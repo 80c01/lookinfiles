@@ -1,8 +1,8 @@
-/* Unit tests for src/text_tags.c: text tags whose colours and fonts are
+/* Unit tests for src/theme/text_tags.c: text tags whose colours and fonts are
  * palette / font roles, set again after a theme change. Headless. */
-#include "text_tags.h"
-#include "fonts.h"
-#include "palette.h"
+#include "theme/text_tags.h"
+#include "theme/fonts.h"
+#include "theme/palette.h"
 
 static gchar* tag_string(GtkTextTag* tag, const gchar* property) {
     gchar* value = NULL;

@@ -7,10 +7,10 @@
 #include "file_list.h"
 #include "focus_route.h"
 #include "fuzzy_match.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "core/i18n.h"
 #include "nav_history.h"
-#include "palette.h"
+#include "theme/palette.h"
 #include "tree_nav.h"
 
 #include <string.h>

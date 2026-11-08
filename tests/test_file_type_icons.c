@@ -1,5 +1,5 @@
-/* Unit tests for src/file_type_icons.c (VS Code Seti file icons). */
-#include "file_type_icons.h"
+/* Unit tests for src/theme/file_type_icons.c (VS Code Seti file icons). */
+#include "theme/file_type_icons.h"
 
 static void assert_icon(const gchar* name, const gchar* icon, const gchar* color) {
     FileTypeIcon ft = file_type_icon(name, FALSE);

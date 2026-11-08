@@ -1,12 +1,12 @@
 /* Application-wide CSS theme (VS Code Dark Modern inspired panels, toolbars,
  * tabs). Colours are the palette roles (palette.h) as CSS named colours,
  * fonts and sizes the font roles (fonts.h: @font_ui, @size_normal...). */
-#include "theme.h"
-#include "icon_sets.h"
-#include "palette.h"
-#include "fonts.h"
-#include "theme_store.h"
-#include "file_type_icons.h"
+#include "theme/theme.h"
+#include "theme/icon_sets.h"
+#include "theme/palette.h"
+#include "theme/fonts.h"
+#include "theme/theme_store.h"
+#include "theme/file_type_icons.h"
 
 #include <gtk/gtk.h>
 

@@ -16,7 +16,7 @@
 #include "terminal.h"
 #include "video.h"
 #include "layout_store.h"
-#include "palette.h"
+#include "theme/palette.h"
 #include "project_search.h"
 #include "help_guide.h"
 #include "browser.h"

@@ -4,7 +4,7 @@
  * from worker threads (each call opens its own repository). */
 #include "git_utils.h"
 #include "core/i18n.h"
-#include "palette.h"
+#include "theme/palette.h"
 
 #include <git2.h>
 #include <string.h>

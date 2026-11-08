@@ -5,9 +5,9 @@
  * ship symbolic icons that GTK 4.22 draws invisible. If SVG icons cannot be
  * loaded at all (old GTK without librsvg), each name falls back to the icon
  * theme, then to an icon built into libgtk itself (pre-rendered PNG). */
-#include "icons.h"
-#include "file_type_icons.h"
-#include "palette.h"
+#include "theme/icons.h"
+#include "theme/file_type_icons.h"
+#include "theme/palette.h"
 
 #include <string.h>
 

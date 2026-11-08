@@ -1,5 +1,5 @@
-/* Unit tests for src/palette.c: application colours by role. */
-#include "palette.h"
+/* Unit tests for src/theme/palette.c: application colours by role. */
+#include "theme/palette.h"
 
 #include <string.h>
 

@@ -3,8 +3,8 @@
 #include "canvas/canvas_doc.h"
 #include "canvas/canvas_float.h"
 #include "core/i18n.h"
-#include "icons.h"
-#include "theme.h"
+#include "theme/icons.h"
+#include "theme/theme.h"
 
 /* Text colours: style flags, and the palette role showing them */
 static const struct {

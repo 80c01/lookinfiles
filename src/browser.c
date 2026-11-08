@@ -2,9 +2,9 @@
 #include "browser.h"
 #include "core/app_events.h"
 #include "focus_route.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "core/i18n.h"
-#include "theme.h"
+#include "theme/theme.h"
 #include "web_address.h"
 
 #ifdef HAVE_WEBKIT

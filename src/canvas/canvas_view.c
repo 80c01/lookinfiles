@@ -20,8 +20,8 @@
 #include "canvas/canvas_toolbar.h"
 #include "canvas/canvas_viewport.h"
 #include "editor.h"
-#include "icons.h"
-#include "theme.h"
+#include "theme/icons.h"
+#include "theme/theme.h"
 
 #include <string.h>
 

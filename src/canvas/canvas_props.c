@@ -1,10 +1,10 @@
 /* Properties panel of the Canvas page (see canvas_props.h) */
 #include "canvas/canvas_props.h"
 #include "canvas/canvas_rough_draw.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "core/i18n.h"
-#include "palette.h"
-#include "theme.h"
+#include "theme/palette.h"
+#include "theme/theme.h"
 
 #include <string.h>
 

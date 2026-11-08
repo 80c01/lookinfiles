@@ -4,7 +4,7 @@
 #include "note_types.h"
 #include "notes_store.h"
 #include "canvas/canvas_view.h"
-#include "palette.h"
+#include "theme/palette.h"
 #include "core/app_paths.h"
 #include "core/app_events.h"
 #include "tree_nav.h"

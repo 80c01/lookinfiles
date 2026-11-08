@@ -2,7 +2,7 @@
 #include "canvas/canvas_export.h"
 #include "canvas/canvas_item.h"
 #include "core/i18n.h"
-#include "palette.h"
+#include "theme/palette.h"
 
 #include <cairo.h>
 #ifdef CAIRO_HAS_SVG_SURFACE

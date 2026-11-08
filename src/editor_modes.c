@@ -1,18 +1,18 @@
 #include "editor_modes.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
-#include "text_style.h"
+#include "theme/text_style.h"
 #include "diff_gutter.h"
 #include "code_nav.h"
 #include "code_help.h"
 #include "code_intel.h"
 #include "editor_info.h"
 #include "file_save.h"
-#include "theme.h"
-#include "fonts.h"
+#include "theme/theme.h"
+#include "theme/fonts.h"
 #include "focus_route.h"
 #include "nav_keys.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include <ctype.h>
 #include <string.h>
 

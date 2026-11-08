@@ -1,6 +1,6 @@
 /* Symbols of the current file in an AppDialog (see code_symbols.h) */
 #include "code_symbols.h"
-#include "palette.h"
+#include "theme/palette.h"
 #include "code_outline.h"
 #include "code_scan.h"
 #include "dialog.h"

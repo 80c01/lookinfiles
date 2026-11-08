@@ -1,7 +1,7 @@
 #include "canvas/canvas_crop.h"
 #include "dialog.h"
 #include "core/i18n.h"
-#include "theme.h"
+#include "theme/theme.h"
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
 

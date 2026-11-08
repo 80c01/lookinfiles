@@ -1,5 +1,5 @@
 /* Application colours by role (see palette.h). */
-#include "palette.h"
+#include "theme/palette.h"
 
 #include <string.h>
 

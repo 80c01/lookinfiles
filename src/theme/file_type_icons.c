@@ -1,5 +1,5 @@
 /* VS Code file-type icons (see file_type_icons.h) */
-#include "file_type_icons.h"
+#include "theme/file_type_icons.h"
 
 #include <string.h>
 
@@ -8,7 +8,7 @@ typedef struct {
     FileTypeIcon icon;
 } FileTypeIconEntry;
 
-#include "file_type_icons_table.h"
+#include "theme/file_type_icons_table.h"
 
 const gchar* const FILE_TYPE_ICON_COLORS[] = {
     "blue", "grey", "grey_light", "green", "orange", "pink",

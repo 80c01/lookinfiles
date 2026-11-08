@@ -2,18 +2,18 @@
 #include "git_state.h"
 #include "search.h"
 #include "core/i18n.h"
-#include "fonts.h"
-#include "palette.h"
-#include "text_tags.h"
+#include "theme/fonts.h"
+#include "theme/palette.h"
+#include "theme/text_tags.h"
 #include "dir_summary.h"
-#include "text_style.h"
+#include "theme/text_style.h"
 #include "git_utils.h"
 #include "mail_dir.h"
 #include "preview_doc_view.h"
 #include "markdown.h"
 #include "orgmode.h"
 #include "preview_cache.h"
-#include "icons.h"
+#include "theme/icons.h"
 
 #include <stdio.h>
 

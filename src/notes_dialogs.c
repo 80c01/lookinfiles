@@ -6,9 +6,9 @@
 #include "note_types.h"
 #include "notes_store.h"
 #include "notebook_icons.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "icon_picker.h"
-#include "palette.h"
+#include "theme/palette.h"
 #include "dialog.h"
 #include <string.h>
 

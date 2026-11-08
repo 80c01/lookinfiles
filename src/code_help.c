@@ -1,11 +1,11 @@
 /* Help cards in editor tabs (see code_help.h) */
 #include "code_help.h"
-#include "text_tags.h"
+#include "theme/text_tags.h"
 #include "code_intel.h"
 #include "code_scan.h"
 #include "core/i18n.h"
 #include "markdown.h"
-#include "theme.h"
+#include "theme/theme.h"
 #include <string.h>
 
 #define HOVER_DELAY_MS 800

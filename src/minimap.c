@@ -3,7 +3,7 @@
 #include "diff_gutter.h"
 #include "core/line_diff.h"
 #include "minimap_geometry.h"
-#include "palette.h"
+#include "theme/palette.h"
 
 /* Offscreen render of the part of the document around what the minimap
  * shows (the minimap scrolls over long documents) */

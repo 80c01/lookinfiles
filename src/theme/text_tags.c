@@ -1,7 +1,7 @@
 /* Text tags that follow the theme (see text_tags.h). */
-#include "text_tags.h"
-#include "fonts.h"
-#include "palette.h"
+#include "theme/text_tags.h"
+#include "theme/fonts.h"
+#include "theme/palette.h"
 
 #include <gobject/gvaluecollector.h>
 #include <string.h>

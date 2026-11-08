@@ -1,7 +1,7 @@
 /* Top bar: clickable path breadcrumbs, the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
 #include "topbar.h"
 #include "core/i18n.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "core/app_events.h"
 #include "file_list.h"
 #include "editor.h"

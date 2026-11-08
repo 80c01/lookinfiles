@@ -1,8 +1,8 @@
 /* Card games suite (Blackjack, Klondike Solitaire, Memory Match) for LookinFiles */
 #include "game_cards.h"
-#include "palette.h"
-#include "fonts.h"
-#include "icons.h"
+#include "theme/palette.h"
+#include "theme/fonts.h"
+#include "theme/icons.h"
 #include "core/app_events.h"
 #include <stdlib.h>
 #include <math.h>

@@ -3,7 +3,7 @@
 #include "canvas/canvas_geometry.h"
 #include "core/i18n.h"
 #include "canvas/canvas_page_private.h"
-#include "theme.h"
+#include "theme/theme.h"
 
 #include <math.h>
 

@@ -8,7 +8,7 @@
 #include "nav_history.h"
 #include "fs_watch.h"
 #include "core/app_events.h"
-#include "text_style.h"
+#include "theme/text_style.h"
 #include "tree_nav.h"
 #include "git_utils.h"
 #include "core/file_types.h"

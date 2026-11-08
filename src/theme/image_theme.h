@@ -16,7 +16,7 @@
  * Pure GLib, no widgets: unit-tested in tests/. */
 #include <glib.h>
 
-#include "palette.h"
+#include "theme/palette.h"
 
 typedef struct {
     gchar colors[PAL_COUNT][8]; /* "#rrggbb" by role */

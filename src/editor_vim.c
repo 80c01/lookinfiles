@@ -3,7 +3,7 @@
 #include "editor_modes_private.h"
 #include "editor.h"
 #include "editor_view.h"
-#include "palette.h"
+#include "theme/palette.h"
 #include "color_column.h"
 #include "diff_gutter.h"
 #include "code_nav.h"

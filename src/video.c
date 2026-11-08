@@ -2,7 +2,7 @@
 #include "preview_state.h"
 #include "search.h"
 #include "core/i18n.h"
-#include "text_style.h"
+#include "theme/text_style.h"
 #include "core/file_types.h"
 #include "media_tags.h"
 #include "media_player.h"

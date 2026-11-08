@@ -120,7 +120,7 @@ $(shell mkdir -p $(BUILD_DIR); if command -v cmp >/dev/null 2>&1; then printf '%
 SRCS = $(sort $(wildcard src/*.c src/*/*.c))
 OBJS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRCS:.c=.o))) $(BUILD_DIR)/icon_resources.o $(BUILD_DIR)/guide_resources.o $(BUILD_DIR)/theme_resources.o
 
-# Toolbar icons bundled into the binary (icons/, see icons/COPYING and src/icons.c)
+# Toolbar icons bundled into the binary (icons/, see icons/COPYING and src/theme/icons.c)
 GLIB_COMPILE_RESOURCES != $(PKG_CONFIG) --variable=glib_compile_resources gio-2.0
 ICON_FILES = $(sort $(wildcard icons/scalable/actions/*.svg icons/sets/*/*.svg))
 DEPS = $(OBJS:.o=.d)

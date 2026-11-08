@@ -2,7 +2,7 @@
 #include "html_text.h"
 #include "core/i18n.h"
 #include "image_utils.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>

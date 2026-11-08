@@ -1,7 +1,7 @@
 /* Text tags of the HTML preview (see html_tags.h) */
 #include "html_tags.h"
-#include "fonts.h"
-#include "text_tags.h"
+#include "theme/fonts.h"
+#include "theme/text_tags.h"
 
 void ensure_html_tags(GtkTextBuffer* buffer) {
     GtkTextTagTable* tt = gtk_text_buffer_get_tag_table(buffer);

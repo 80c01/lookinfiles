@@ -1,6 +1,6 @@
 #include "canvas/canvas_rough_draw.h"
 #include "canvas/canvas_geometry.h"
-#include "palette.h"
+#include "theme/palette.h"
 
 #include <math.h>
 #include <string.h>

@@ -7,7 +7,7 @@
 #include "dialog.h"
 #include "layout_switcher.h"
 #include "preferences.h"
-#include "themes.h"
+#include "theme/themes.h"
 #include "panels.h"
 #include "core/app_events.h"
 #include "workspace.h"

@@ -1,7 +1,7 @@
 /* Themes: built-in and user theme files (see theme_store.h). */
-#include "theme_store.h"
+#include "theme/theme_store.h"
 #include "core/app_paths.h"
-#include "palette.h"
+#include "theme/palette.h"
 
 #include <gio/gio.h>
 #include <glib/gstdio.h>

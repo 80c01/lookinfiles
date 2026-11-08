@@ -1,8 +1,8 @@
 /* Markdown tables (see markdown_table.h) */
 #include "markdown_table.h"
 #include "markdown_link.h"
-#include "fonts.h"
-#include "palette.h"
+#include "theme/fonts.h"
+#include "theme/palette.h"
 
 #include <string.h>
 

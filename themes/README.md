@@ -26,5 +26,5 @@ Serif...) and fall back to common ones when they are not installed.
 
 `make test` checks every file here: it parses, sets every colour and font,
 and keeps its main text readable (the same contrast rules as the built-in
-themes). When a palette role is added to `src/palette.h`, add it to each
+themes). When a palette role is added to `src/theme/palette.h`, add it to each
 file.

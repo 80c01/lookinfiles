@@ -8,7 +8,7 @@ extensions/theme-seti/icons/ (MIT, see icons/COPYING). Needs fontTools
 (and brotli for .woff2). Writes:
   - icons/scalable/actions/lookin-ft-<icon>-symbolic.svg: one glyph of the
     Seti font as a single-colour path (no transform)
-  - src/file_type_icons_table.h: file name / extension -> icon + colour
+  - src/theme/file_type_icons_table.h: file name / extension -> icon + colour
   - the <file> lines of icons/lookin.gresource.xml for those icons
 The HANDMADE icons (formats Seti has no glyph for) are drawn by hand in
 the same grid: their SVGs are kept, only their table entries are written.
@@ -24,7 +24,7 @@ from fontTools.ttLib import TTFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ICON_DIR = os.path.join(ROOT, "icons", "scalable", "actions")
-TABLE = os.path.join(ROOT, "src", "file_type_icons_table.h")
+TABLE = os.path.join(ROOT, "src", "theme", "file_type_icons_table.h")
 GRESOURCE = os.path.join(ROOT, "icons", "lookin.gresource.xml")
 
 # Seti colours (dark variants) -> palette role suffix (icon_<name>)

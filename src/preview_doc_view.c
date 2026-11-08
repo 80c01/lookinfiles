@@ -1,7 +1,7 @@
 /* Display of PreviewDocs in the preview text view (see preview_doc_view.h). */
 #include "preview_doc_view.h"
-#include "fonts.h"
-#include "text_tags.h"
+#include "theme/fonts.h"
+#include "theme/text_tags.h"
 
 #include <string.h>
 
@@ -9,8 +9,8 @@
 #include "html_tags.h"
 #include "image_utils.h"
 #include "markdown.h"
-#include "palette.h"
-#include "text_style.h"
+#include "theme/palette.h"
+#include "theme/text_style.h"
 
 /* Tag name of a style */
 static const gchar* const STYLE_TAGS[PREVIEW_STYLE_COUNT] = {

@@ -4,9 +4,9 @@
 #include "preview_state.h"
 #include "search.h"
 #include "core/i18n.h"
-#include "fonts.h"
-#include "text_tags.h"
-#include "icons.h"
+#include "theme/fonts.h"
+#include "theme/text_tags.h"
+#include "theme/icons.h"
 
 #include <glib/gstdio.h>
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "exif.h"
 #include "core/file_types.h"
 #include "image_utils.h"
-#include "text_style.h"
+#include "theme/text_style.h"
 
 /* Largest decoded image, in pixels (zooming in on a large photo) */
 #define MAX_DECODED_PIXELS (48u * 1024 * 1024)

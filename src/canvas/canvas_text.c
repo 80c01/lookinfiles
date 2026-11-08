@@ -1,7 +1,7 @@
 #include "canvas/canvas_text.h"
-#include "fonts.h"
-#include "palette.h"
-#include "text_tags.h"
+#include "theme/fonts.h"
+#include "theme/palette.h"
+#include "theme/text_tags.h"
 
 #include <ctype.h>
 #include <string.h>

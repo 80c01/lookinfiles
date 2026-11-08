@@ -1,8 +1,8 @@
 /* Pac-Man arcade game for LookinFiles */
 #include "game_pacman.h"
-#include "palette.h"
-#include "fonts.h"
-#include "icons.h"
+#include "theme/palette.h"
+#include "theme/fonts.h"
+#include "theme/icons.h"
 #include "core/app_events.h"
 #include <math.h>
 

@@ -14,7 +14,7 @@
 #include "focus_route.h"
 #include "nav_history.h"
 #include "editor_view.h"
-#include "icons.h"
+#include "theme/icons.h"
 
 
 /* Show or hide the line numbers of tab (NULL: the current editor tab) */

@@ -6,9 +6,9 @@
 #include "core/i18n.h"
 #include "tree_nav.h"
 #include "panels.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "editor_modes.h"
-#include "text_tags.h"
+#include "theme/text_tags.h"
 
 #define SEARCH_MAX_COUNT 1000 /* matches counted for the Emacs [n/total] */
 

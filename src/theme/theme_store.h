@@ -28,7 +28,7 @@
  * Pure data and file I/O (GKeyFile), no widgets: unit-tested in tests/. */
 #include <glib.h>
 
-#include "fonts.h"
+#include "theme/fonts.h"
 
 /* Name of the default theme: the palette and font defaults */
 #define THEME_DEFAULT_NAME "Dark Modern"

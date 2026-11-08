@@ -5,7 +5,7 @@
 #include "editor_modes.h"
 #include "core/app_events.h"
 #include "panels.h"
-#include "text_style.h"
+#include "theme/text_style.h"
 #include "minimap.h"
 #include "color_column.h"
 #include "diff_gutter.h"

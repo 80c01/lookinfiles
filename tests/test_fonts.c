@@ -1,5 +1,5 @@
-/* Unit tests for src/fonts.c: application fonts by role. */
-#include "fonts.h"
+/* Unit tests for src/theme/fonts.c: application fonts by role. */
+#include "theme/fonts.h"
 
 static void test_defaults(void) {
     fonts_reset();

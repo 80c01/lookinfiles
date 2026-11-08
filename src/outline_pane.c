@@ -1,6 +1,6 @@
 /* A tagbar beside some content (see outline_pane.h) */
 #include "outline_pane.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "core/i18n.h"
 #include "panels.h"
 

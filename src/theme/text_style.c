@@ -1,10 +1,10 @@
 /* Text view styling shared by the viewer, editor and preview renderers:
  * Dark+ GtkSourceView scheme, panel background, monospace and syntax language. */
-#include "text_style.h"
+#include "theme/text_style.h"
 #include "core/file_types.h"
 #include "core/app_paths.h"
-#include "palette.h"
-#include "theme.h"
+#include "theme/palette.h"
+#include "theme/theme.h"
 
 void apply_viewer_background(GtkWidget* view) {
     gtk_widget_set_name(view, "viewer");

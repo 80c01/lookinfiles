@@ -11,7 +11,7 @@
 #include "preview_tagbar.h"
 #include "nav_keys.h"
 #include "search.h"
-#include "themes.h"
+#include "theme/themes.h"
 
 #include <glib/gstdio.h>
 

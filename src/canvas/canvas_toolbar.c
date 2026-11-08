@@ -1,8 +1,8 @@
 /* Tool bar of the Canvas page (see canvas_toolbar.h) */
 #include "canvas/canvas_toolbar.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "core/i18n.h"
-#include "theme.h"
+#include "theme/theme.h"
 
 struct CanvasToolbar {
     GtkWidget* box;

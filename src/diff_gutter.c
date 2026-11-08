@@ -5,7 +5,7 @@
 #include "diff_gutter.h"
 #include "git_utils.h"
 #include "core/line_diff.h"
-#include "palette.h"
+#include "theme/palette.h"
 
 #include <pango/pangocairo.h>
 #include <string.h>

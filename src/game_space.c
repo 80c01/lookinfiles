@@ -1,8 +1,8 @@
 /* Space Commander (Space Invaders) arcade game for LookinFiles */
 #include "game_space.h"
-#include "palette.h"
-#include "fonts.h"
-#include "icons.h"
+#include "theme/palette.h"
+#include "theme/fonts.h"
+#include "theme/icons.h"
 #include "core/app_events.h"
 #include <stdlib.h>
 #include <math.h>

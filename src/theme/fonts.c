@@ -1,5 +1,5 @@
 /* Application fonts by role (see fonts.h). */
-#include "fonts.h"
+#include "theme/fonts.h"
 
 #include <string.h>
 

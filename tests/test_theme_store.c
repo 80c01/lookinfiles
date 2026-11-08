@@ -1,8 +1,8 @@
-/* Unit tests for src/theme_store.c: theme files, inheritance, save and the
+/* Unit tests for src/theme/theme_store.c: theme files, inheritance, save and the
  * remembered choice. */
-#include "theme_store.h"
-#include "palette.h"
-#include "fonts.h"
+#include "theme/theme_store.h"
+#include "theme/palette.h"
+#include "theme/fonts.h"
 
 #include <glib/gstdio.h>
 #include <math.h>

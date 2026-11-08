@@ -7,7 +7,7 @@
 #include "fs_watch.h"
 #include "panels.h"
 #include "core/app_events.h"
-#include "text_style.h"
+#include "theme/text_style.h"
 #include "help.h"
 #include "core/file_types.h"
 #include "editor.h"

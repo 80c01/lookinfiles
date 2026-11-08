@@ -1,5 +1,5 @@
 /* A theme's colours from the colours of an image (see image_theme.h). */
-#include "image_theme.h"
+#include "theme/image_theme.h"
 
 #include <math.h>
 #include <string.h>

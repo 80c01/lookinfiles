@@ -1,5 +1,5 @@
-/* Unit tests for src/image_theme.c: theme colours from an image. */
-#include "image_theme.h"
+/* Unit tests for src/theme/image_theme.c: theme colours from an image. */
+#include "theme/image_theme.h"
 
 #include <math.h>
 

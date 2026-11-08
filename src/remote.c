@@ -1,6 +1,6 @@
 #include "remote.h"
 #include "core/i18n.h"
-#include "palette.h"
+#include "theme/palette.h"
 #include "dialog.h"
 #include "tree_nav.h"
 #include "core/app_events.h"

@@ -1,7 +1,7 @@
 /* Emacs editor mode (visual clone): modeline, minibuffer, prefix keys and commands. */
 #include "editor_modes_private.h"
 #include "editor.h"
-#include "text_tags.h"
+#include "theme/text_tags.h"
 #include "code_nav.h"
 #include "code_help.h"
 #include "code_refs.h"

@@ -2,9 +2,9 @@
 #include "video_tab.h"
 #include "core/i18n.h"
 #include "editor.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "media_player.h"
-#include "theme.h"
+#include "theme/theme.h"
 #include "track_menu.h"
 #include "video.h"
 

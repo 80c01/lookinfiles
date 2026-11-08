@@ -1,7 +1,7 @@
 /* Table bar of the Canvas page (see canvas_table_bar.h) */
 #include "canvas/canvas_table_bar.h"
 #include "canvas/canvas_float.h"
-#include "icons.h"
+#include "theme/icons.h"
 #include "core/i18n.h"
 
 #define ACTION_KEY "canvas-table-action"

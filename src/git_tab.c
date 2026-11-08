@@ -1,9 +1,9 @@
 #include "git_tab.h"
 #include "core/i18n.h"
-#include "text_tags.h"
-#include "icons.h"
+#include "theme/text_tags.h"
+#include "theme/icons.h"
 #include "panels.h"
-#include "text_style.h"
+#include "theme/text_style.h"
 #include "git_utils.h"
 #include "focus_route.h"
 #include <string.h>

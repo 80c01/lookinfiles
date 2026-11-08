@@ -1,5 +1,5 @@
 #include "canvas/canvas_table.h"
-#include "theme.h"
+#include "theme/theme.h"
 
 #define TABLE_STATE_KEY "canvas-table-state"
 

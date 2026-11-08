@@ -2,11 +2,11 @@
 #include "core/i18n.h"
 #include "markdown_link.h"
 #include "markdown_table.h"
-#include "fonts.h"
-#include "palette.h"
-#include "text_tags.h"
+#include "theme/fonts.h"
+#include "theme/palette.h"
+#include "theme/text_tags.h"
 #include "image_utils.h"
-#include "icons.h"
+#include "theme/icons.h"
 
 void ensure_markdown_tags(GtkTextBuffer* buffer) {
     GtkTextTagTable* tt = gtk_text_buffer_get_tag_table(buffer);

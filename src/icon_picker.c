@@ -1,6 +1,6 @@
 /* Icon picker (see icon_picker.h) */
 #include "icon_picker.h"
-#include "icons.h"
+#include "theme/icons.h"
 
 #define PER_ROW 11
 
