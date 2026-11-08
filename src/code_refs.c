@@ -4,7 +4,7 @@
 #include "theme/palette.h"
 #include "code_index.h"
 #include "code_intel.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
 #include "focus_route.h"

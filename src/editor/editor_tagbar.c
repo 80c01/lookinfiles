@@ -1,7 +1,7 @@
 /* The tagbar of an editor tab (see editor_tagbar.h) */
-#include "editor_tagbar.h"
+#include "editor/editor_tagbar.h"
 #include "core/i18n.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "code_outline.h"
 #include "widgets/outline_pane.h"
 #include "core/settings_store.h"

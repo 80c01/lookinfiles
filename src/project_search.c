@@ -4,7 +4,7 @@
 #include "code_index.h"
 #include "code_refs.h"
 #include "widgets/dialog.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "core/path_globs.h"
 #include "text_search.h"
 

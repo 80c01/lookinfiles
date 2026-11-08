@@ -1,7 +1,7 @@
 /* Editor notebooks: the notebook tree of the dedicated panel, moving,
  * splitting and dropping editor tabs and movable pages (see editor.h) */
-#include "editor.h"
-#include "editor_private.h"
+#include "editor/editor.h"
+#include "editor/editor_private.h"
 #include "widgets/pane_geometry.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"

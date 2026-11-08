@@ -4,7 +4,7 @@
 /* Internal header shared by editor_modes.c and the per-mode files
  * (editor_notepad.c, editor_emacs.c, editor_vim.c, editor_org.c). Other modules must
  * use editor_modes.h instead. */
-#include "editor_modes.h"
+#include "editor/editor_modes.h"
 
 typedef struct VimEngine VimEngine;
 

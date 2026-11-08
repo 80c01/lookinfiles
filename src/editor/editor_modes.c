@@ -1,4 +1,4 @@
-#include "editor_modes.h"
+#include "editor/editor_modes.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "theme/text_style.h"
@@ -6,8 +6,8 @@
 #include "code_nav.h"
 #include "code_help.h"
 #include "code_intel.h"
-#include "editor_info.h"
-#include "file_save.h"
+#include "editor/editor_info.h"
+#include "editor/file_save.h"
 #include "theme/theme.h"
 #include "theme/fonts.h"
 #include "focus_route.h"
@@ -16,7 +16,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "editor_modes_private.h"
+#include "editor/editor_modes_private.h"
 
 /* CSS for visual clones */
 void editor_modes_load_css(void) {

@@ -7,7 +7,7 @@
 #include "explorer/tree_nav.h"
 #include "widgets/panels.h"
 #include "theme/icons.h"
-#include "editor_modes.h"
+#include "editor/editor_modes.h"
 #include "theme/text_tags.h"
 
 #define SEARCH_MAX_COUNT 1000 /* matches counted for the Emacs [n/total] */

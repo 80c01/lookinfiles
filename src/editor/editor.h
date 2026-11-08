@@ -2,7 +2,7 @@
 #define EDITOR_H
 
 #include "core/app_types.h"
-#include "editor_modes.h"
+#include "editor/editor_modes.h"
 
 #define EDIT_MAX_BYTES (2 * 1024 * 1024) /* editing size cap */
 

@@ -4,8 +4,8 @@
  * the Emacs Org-mode keys. The editing logic lives in org_doc / org_table /
  * org_time; this file maps keys to commands and applies their result to the
  * buffer (one undo step, folds and cursor kept). */
-#include "editor_modes_private.h"
-#include "editor.h"
+#include "editor/editor_modes_private.h"
+#include "editor/editor.h"
 #include "core/file_types.h"
 #include "org_doc.h"
 #include "org_table.h"

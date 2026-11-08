@@ -1,8 +1,8 @@
 /* Vim editor mode: status line, command line and the host side of the Vim
  * engine (vim_engine.h), which does the editing itself. */
-#include "editor_modes_private.h"
-#include "editor.h"
-#include "editor_view.h"
+#include "editor/editor_modes_private.h"
+#include "editor/editor.h"
+#include "editor/editor_view.h"
 #include "theme/palette.h"
 #include "widgets/color_column.h"
 #include "widgets/diff_gutter.h"
@@ -10,7 +10,7 @@
 #include "code_help.h"
 #include "code_refs.h"
 #include "code_symbols.h"
-#include "editor_tagbar.h"
+#include "editor/editor_tagbar.h"
 #include "vim_engine.h"
 #include "vim_keys.h"
 #include "explorer/nav_keys.h"

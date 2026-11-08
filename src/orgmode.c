@@ -7,7 +7,7 @@
 #include "theme/icons.h"
 #include "core/app_events.h"
 #include "core/file_types.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "org_fold.h"
 
 #include <string.h>

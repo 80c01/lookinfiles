@@ -1,8 +1,8 @@
 /* Editor tab menus: the menu of an editor tab and of a movable page, and
  * the clicks on a tab title (see editor.h) */
-#include "editor.h"
-#include "editor_private.h"
-#include "editor_modes.h"
+#include "editor/editor.h"
+#include "editor/editor_private.h"
+#include "editor/editor_modes.h"
 #include "core/i18n.h"
 #include "widgets/diff_gutter.h"
 

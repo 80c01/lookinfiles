@@ -1,6 +1,6 @@
-/* Unit tests for src/file_save.c: in-place saves keep links, modes and
+/* Unit tests for src/editor/file_save.c: in-place saves keep links, modes and
  * read-only files. */
-#include "file_save.h"
+#include "editor/file_save.h"
 
 #include <glib/gstdio.h>
 #include <sys/stat.h>

@@ -3,7 +3,7 @@
 
 /* Internal header of the editor tabs: editor.c, editor_notebooks.c and
  * editor_tab_menu.c (the public API is editor.h) */
-#include "editor.h"
+#include "editor/editor.h"
 #include "widgets/pane_geometry.h"
 
 /* editor_notebooks.c */

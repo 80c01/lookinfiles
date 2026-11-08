@@ -4,7 +4,7 @@
 #include "core/app_paths.h"
 #include "theme/text_tags.h"
 #include "code_index.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "lsp_client.h"
 #include "lsp_config.h"
 #include <string.h>

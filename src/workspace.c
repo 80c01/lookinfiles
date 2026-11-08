@@ -10,7 +10,7 @@
 #include "core/app_events.h"
 #include "explorer/tree_nav.h"
 #include "media/audio.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "explorer/file_list.h"
 #include "widgets/minimap.h"
 #include "terminal.h"

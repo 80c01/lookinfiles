@@ -11,7 +11,7 @@
 #include "canvas/canvas_view.h"
 #include "explorer/tree_nav.h"
 #include "core/file_types.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "preview/viewer.h"
 #include <string.h>
 

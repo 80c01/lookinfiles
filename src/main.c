@@ -29,7 +29,7 @@
 #include "widgets/minimap.h"
 #include "search.h"
 #include "ui.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "git/git_tab.h"
 #include "explorer/bookmarks.h"
 #include "notes.h"
@@ -47,7 +47,7 @@
 #include "note_types.h"
 #include "code_intel.h"
 #include "code_nav.h"
-#include "editor_modes.h"
+#include "editor/editor_modes.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "focus_route.h"

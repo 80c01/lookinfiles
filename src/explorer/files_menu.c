@@ -6,7 +6,7 @@
 #include "core/app_events.h"
 #include "explorer/bookmarks.h"
 #include "preview/browser.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "explorer/file_list.h"
 #include "explorer/file_moves.h"
 #include "core/file_types.h"

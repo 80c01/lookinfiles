@@ -3,7 +3,7 @@
 #include "core/app_events.h"
 #include "code_index.h"
 #include "widgets/dialog.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "explorer/file_list.h"
 #include "focus_route.h"
 #include "fuzzy_match.h"

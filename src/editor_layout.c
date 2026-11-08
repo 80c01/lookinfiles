@@ -1,6 +1,6 @@
 /* The shape of the dedicated editor panel in saved layouts (see editor_layout.h) */
 #include "editor_layout.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "layout_store.h"
 #include "tab_tree.h"
 #include "terminal.h"

@@ -1,5 +1,5 @@
 /* Saving edited text in place (see file_save.h) */
-#include "file_save.h"
+#include "editor/file_save.h"
 
 #include <glib/gstdio.h>
 #include <sys/stat.h>

@@ -265,7 +265,7 @@ msgid "_Remove Bookmark"
 msgstr "_Retirer le signet"
 
 #: src/explorer/bookmark_dialog.c:198 src/explorer/bookmarks.c:577 src/code_symbols.c:176
-#: src/editor.c:1729 src/explorer/file_actions.c:42 src/explorer/file_actions.c:236
+#: src/editor/editor.c:1729 src/explorer/file_actions.c:42 src/explorer/file_actions.c:236
 #: src/layouts.c:47 src/layouts.c:319 src/notes.c:587 src/notes.c:768
 #: src/notes.c:852 src/preferences.c:342 src/preview/preview_full.c:31
 #: src/project_search.c:369 src/quick_open.c:368 src/explorer/remote.c:322
@@ -554,7 +554,7 @@ msgstr "Appliquer"
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#: src/canvas/canvas_crop.c:120 src/editor_notepad.c:549
+#: src/canvas/canvas_crop.c:120 src/editor/editor_notepad.c:549
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -2047,107 +2047,107 @@ msgstr "Document Word"
 msgid "Document truncated: only the beginning is shown."
 msgstr "Document tronqué : seul le début est affiché."
 
-#: src/editor.c:526
+#: src/editor/editor.c:526
 msgctxt "editor tab"
 msgid "Move Right"
 msgstr "Déplacer à droite"
 
-#: src/editor.c:527
+#: src/editor/editor.c:527
 msgctxt "editor tab"
 msgid "Move Left"
 msgstr "Déplacer à gauche"
 
-#: src/editor.c:528
+#: src/editor/editor.c:528
 msgctxt "editor tab"
 msgid "Move Down"
 msgstr "Déplacer en bas"
 
-#: src/editor.c:529
+#: src/editor/editor.c:529
 msgctxt "editor tab"
 msgid "Move Up"
 msgstr "Déplacer en haut"
 
-#: src/editor.c:568
+#: src/editor/editor.c:568
 msgid "Tab Mode"
 msgstr "Mode de l’onglet"
 
-#: src/editor.c:586
+#: src/editor/editor.c:586
 msgid "Hide Line Numbers"
 msgstr "Masquer les numéros de ligne"
 
-#: src/editor.c:586
+#: src/editor/editor.c:586
 msgid "Show Line Numbers"
 msgstr "Afficher les numéros de ligne"
 
-#: src/editor.c:588
+#: src/editor/editor.c:588
 msgid "Don't Wrap Lines"
 msgstr "Ne pas renvoyer à la ligne"
 
-#: src/editor.c:588
+#: src/editor/editor.c:588
 msgid "Wrap Lines"
 msgstr "Renvoyer à la ligne"
 
-#: src/editor.c:598
+#: src/editor/editor.c:598
 msgid "Split Right"
 msgstr "Diviser à droite"
 
-#: src/editor.c:600
+#: src/editor/editor.c:600
 msgid "Split Down"
 msgstr "Diviser en bas"
 
-#: src/editor.c:608 src/editor.c:1163
+#: src/editor/editor.c:608 src/editor/editor.c:1163
 msgid "Close Tab"
 msgstr "Fermer l’onglet"
 
-#: src/editor.c:1728
+#: src/editor/editor.c:1728
 msgid "Unsaved Changes"
 msgstr "Modifications non enregistrées"
 
-#: src/editor.c:1730
+#: src/editor/editor.c:1730
 msgid "Close _Without Saving"
 msgstr "Fermer _sans enregistrer"
 
-#: src/editor.c:1732
+#: src/editor/editor.c:1732
 #, c-format
 msgid "%s has unsaved changes. Close anyway?"
 msgstr "%s contient des modifications non enregistrées. Fermer quand même ?"
 
-#: src/editor.c:2073
+#: src/editor/editor.c:2073
 #, c-format
 msgid "Cannot save %s: %s"
 msgstr "Impossible d’enregistrer %s : %s"
 
-#: src/editor_modes.c:290
+#: src/editor/editor_modes.c:290
 #, c-format
 msgid "Saved to %s"
 msgstr "Enregistré dans %s"
 
-#: src/editor_modes.c:694
+#: src/editor/editor_modes.c:694
 msgid "Unix (LF)"
 msgstr "Unix (LF)"
 
-#: src/editor_modes.c:694
+#: src/editor/editor_modes.c:694
 msgid "Windows (CRLF)"
 msgstr "Windows (CRLF)"
 
-#: src/editor_modes.c:694
+#: src/editor/editor_modes.c:694
 msgid "Mac (CR)"
 msgstr "Mac (CR)"
 
 #. TRANSLATORS: Notepad status bar: line, column, zoom, language, line ending
-#: src/editor_modes.c:723
+#: src/editor/editor_modes.c:723
 #, c-format
 msgid "Ln %1$d, Col %2$d   |   %3$d%%   |   %4$s   |   %5$s   |   UTF-8"
 msgstr "Li %1$d, Col %2$d   |   %3$d %%   |   %4$s   |   %5$s   |   UTF-8"
 
-#: src/editor_modes.c:728 src/preview/preview_formats.c:494
+#: src/editor/editor_modes.c:728 src/preview/preview_formats.c:494
 #, c-format
 msgid "%u error"
 msgid_plural "%u errors"
 msgstr[0] "%u erreur"
 msgstr[1] "%u erreurs"
 
-#: src/editor_modes.c:729 src/preview/preview_formats.c:498
+#: src/editor/editor_modes.c:729 src/preview/preview_formats.c:498
 #, c-format
 msgid "%u warning"
 msgid_plural "%u warnings"
@@ -2155,145 +2155,145 @@ msgstr[0] "%u avertissement"
 msgstr[1] "%u avertissements"
 
 #. TRANSLATORS: after the language server name: "1 error, 2 warnings"
-#: src/editor_modes.c:731
+#: src/editor/editor_modes.c:731
 #, c-format
 msgid ": %1$s, %2$s"
 msgstr " : %1$s, %2$s"
 
-#: src/editor_notepad.c:45 src/search.c:199
+#: src/editor/editor_notepad.c:45 src/search.c:199
 #, c-format
 msgid "Cannot find \"%s\""
 msgstr "Impossible de trouver « %s »"
 
-#: src/editor_notepad.c:221
+#: src/editor/editor_notepad.c:221
 msgid "Occurrence replaced"
 msgstr "Occurrence remplacée"
 
-#: src/editor_notepad.c:250
+#: src/editor/editor_notepad.c:250
 #, c-format
 msgid "Replaced %d occurrence"
 msgid_plural "Replaced %d occurrences"
 msgstr[0] "%d occurrence remplacée"
 msgstr[1] "%d occurrences remplacées"
 
-#: src/editor_notepad.c:374
+#: src/editor/editor_notepad.c:374
 msgid "Type a line number"
 msgstr "Tapez un numéro de ligne"
 
-#: src/editor_notepad.c:379
+#: src/editor/editor_notepad.c:379
 #, c-format
 msgid "The file has %d line"
 msgid_plural "The file has %d lines"
 msgstr[0] "Le fichier a %d ligne"
 msgstr[1] "Le fichier a %d lignes"
 
-#: src/editor_notepad.c:464 src/search.c:159 src/search.c:574
+#: src/editor/editor_notepad.c:464 src/search.c:159 src/search.c:574
 msgid "Find:"
 msgstr "Rechercher :"
 
-#: src/editor_notepad.c:467 src/search.c:586
+#: src/editor/editor_notepad.c:467 src/search.c:586
 msgid "Find Next"
 msgstr "Suivant"
 
-#: src/editor_notepad.c:467 src/search.c:586
+#: src/editor/editor_notepad.c:467 src/search.c:586
 msgid "Find Next (Enter / F3)"
 msgstr "Occurrence suivante (Enter / F3)"
 
-#: src/editor_notepad.c:468 src/search.c:587
+#: src/editor/editor_notepad.c:468 src/search.c:587
 msgid "Find Prev"
 msgstr "Précédent"
 
-#: src/editor_notepad.c:468 src/search.c:587
+#: src/editor/editor_notepad.c:468 src/search.c:587
 msgid "Find Previous (Shift+Enter / Shift+F3)"
 msgstr "Occurrence précédente (Shift+Enter / Shift+F3)"
 
-#: src/editor_notepad.c:469 src/search.c:588
+#: src/editor/editor_notepad.c:469 src/search.c:588
 msgid "Close Find Bar (Esc)"
 msgstr "Fermer la barre de recherche (Esc)"
 
-#: src/editor_notepad.c:486
+#: src/editor/editor_notepad.c:486
 msgid "Replace:"
 msgstr "Remplacer :"
 
-#: src/editor_notepad.c:489
+#: src/editor/editor_notepad.c:489
 msgid "Replace"
 msgstr "Remplacer"
 
-#: src/editor_notepad.c:489
+#: src/editor/editor_notepad.c:489
 msgid "Replace the match and find the next one (Enter)"
 msgstr "Remplacer l’occurrence et chercher la suivante (Enter)"
 
-#: src/editor_notepad.c:490
+#: src/editor/editor_notepad.c:490
 msgid "Replace All"
 msgstr "Tout remplacer"
 
-#: src/editor_notepad.c:490
+#: src/editor/editor_notepad.c:490
 msgid "Replace every match"
 msgstr "Remplacer toutes les occurrences"
 
-#: src/editor_notepad.c:502
+#: src/editor/editor_notepad.c:502
 msgid "Left"
 msgstr "Gauche"
 
-#: src/editor_notepad.c:502
+#: src/editor/editor_notepad.c:502
 msgid "Align left (Ctrl+L)"
 msgstr "Aligner à gauche (Ctrl+L)"
 
-#: src/editor_notepad.c:505
+#: src/editor/editor_notepad.c:505
 msgid "Center"
 msgstr "Centrer"
 
-#: src/editor_notepad.c:505
+#: src/editor/editor_notepad.c:505
 msgid "Center (Ctrl+E)"
 msgstr "Centrer (Ctrl+E)"
 
-#: src/editor_notepad.c:508
+#: src/editor/editor_notepad.c:508
 msgid "Right"
 msgstr "Droite"
 
-#: src/editor_notepad.c:508
+#: src/editor/editor_notepad.c:508
 msgid "Align right (Ctrl+R)"
 msgstr "Aligner à droite (Ctrl+R)"
 
-#: src/editor_notepad.c:525
+#: src/editor/editor_notepad.c:525
 msgid "Go to line:"
 msgstr "Aller à la ligne :"
 
-#: src/editor_notepad.c:529
+#: src/editor/editor_notepad.c:529
 msgid "Go To"
 msgstr "Aller"
 
-#: src/editor_notepad.c:529
+#: src/editor/editor_notepad.c:529
 msgid "Go to the line (Enter)"
 msgstr "Aller à la ligne (Enter)"
 
-#: src/editor_notepad.c:530
+#: src/editor/editor_notepad.c:530
 msgid "Close (Esc)"
 msgstr "Fermer (Esc)"
 
-#: src/editor_notepad.c:545
+#: src/editor/editor_notepad.c:545
 msgid "Save As:"
 msgstr "Enregistrer sous :"
 
-#: src/editor_notepad.c:548
+#: src/editor/editor_notepad.c:548
 msgid "Save"
 msgstr "Enregistrer"
 
-#: src/editor_notepad.c:568
+#: src/editor/editor_notepad.c:568
 msgid "Ready"
 msgstr "Prêt"
 
-#: src/editor_tagbar.c:150
+#: src/editor/editor_tagbar.c:150
 msgid "Reading the symbols…"
 msgstr "Lecture des symboles…"
 
-#: src/editor_tagbar.c:206
+#: src/editor/editor_tagbar.c:206
 msgid "No tagbar for this file type (code and Markdown files)"
 msgstr ""
 "Pas de barre de symboles pour ce type de fichier (fichiers de code et "
 "Markdown)"
 
-#: src/editor_view.c:381
+#: src/editor/editor_view.c:381
 msgid ""
 "Org-mode (Emacs keys) | Tab/S-Tab: fold | M-RET: heading | M-arrows: "
 "structure | S-arrows: TODO | C-c C-c"
@@ -2301,11 +2301,11 @@ msgstr ""
 "Org-mode (touches Emacs) | Tab/S-Tab : plier | M-RET : titre | M-flèches : "
 "structure | S-flèches : TODO | C-c C-c"
 
-#: src/editor_view.c:385
+#: src/editor/editor_view.c:385
 msgid "Emacs mode"
 msgstr "Mode Emacs"
 
-#: src/editor_view.c:387
+#: src/editor/editor_view.c:387
 msgid "Notepad mode"
 msgstr "Mode Notepad"
 

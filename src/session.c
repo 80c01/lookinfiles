@@ -1,7 +1,7 @@
 /* The session between launches (see session.h) */
 #include "session.h"
 #include "core/app_events.h"
-#include "editor_session.h"
+#include "editor/editor_session.h"
 #include "layout_store.h"
 #include "core/i18n.h"
 #include "explorer/remote.h"

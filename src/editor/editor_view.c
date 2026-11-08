@@ -1,8 +1,8 @@
 /* The text view of an editor tab (see editor_view.h) */
-#include "editor_view.h"
+#include "editor/editor_view.h"
 #include "core/i18n.h"
 #include <math.h>
-#include "editor_modes.h"
+#include "editor/editor_modes.h"
 #include "core/app_events.h"
 #include "widgets/panels.h"
 #include "theme/text_style.h"
@@ -10,7 +10,7 @@
 #include "widgets/color_column.h"
 #include "widgets/diff_gutter.h"
 #include "code_help.h"
-#include "editor_tagbar.h"
+#include "editor/editor_tagbar.h"
 #include "core/file_types.h"
 
 /* The tab whose view has the buffer's cursor (the views of a split file share

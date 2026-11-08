@@ -3,7 +3,7 @@
 #include "explorer/file_actions.h"
 #include "core/i18n.h"
 #include "widgets/dialog.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "explorer/file_moves.h"
 
 #include <glib/gstdio.h>

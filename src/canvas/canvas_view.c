@@ -19,7 +19,7 @@
 #include "canvas/canvas_text.h"
 #include "canvas/canvas_toolbar.h"
 #include "canvas/canvas_viewport.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
 

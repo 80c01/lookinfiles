@@ -15,7 +15,7 @@
 #include "notes.h"
 #include "explorer/remote.h"
 #include "explorer/archive_tree.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "focus_route.h"
 
 /* Rows with children the arrow keys and space expand: directories,

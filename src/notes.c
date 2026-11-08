@@ -8,7 +8,7 @@
 #include "core/app_paths.h"
 #include "core/app_events.h"
 #include "explorer/tree_nav.h"
-#include "editor.h"
+#include "editor/editor.h"
 
 #include <string.h>
 

@@ -13,7 +13,7 @@
 #include "git/git_utils.h"
 #include "core/file_types.h"
 #include "git/git_tab.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "media/video.h"
 #include "media/video_tab.h"
 #include "media/audio.h"

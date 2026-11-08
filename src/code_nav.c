@@ -6,7 +6,7 @@
 #include "code_intel.h"
 #include "code_tags.h"
 #include "code_scan.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "core/file_types.h"
 #include "core/i18n.h"
 #include "jump_list.h"

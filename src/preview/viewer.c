@@ -10,7 +10,7 @@
 #include "theme/text_style.h"
 #include "help.h"
 #include "core/file_types.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "explorer/file_list.h"
 #include "markup/markdown.h"
 #include "markup/html.h"

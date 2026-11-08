@@ -6,7 +6,7 @@
 #include "theme/palette.h"
 #include "theme/fonts.h"
 #include "widgets/tab_drop.h"
-#include "editor.h"
+#include "editor/editor.h"
 #include "focus_route.h"
 
 #ifdef HAVE_VTE
