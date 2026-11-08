@@ -45,14 +45,7 @@ typedef struct {
     GtkNotebook* source; /* ref held until the drag ends */
     TabDragDoneFunc on_done;
     gpointer data;
-    GtkNotebook* drop_nb;  /* drop applied once the drag is over (Windows), ref */
-    GtkWidget* drop_child; /* ref */
-    DropTarget drop;
-    guint drop_timeout;
 } PendingDrag;
-
-/* Wait for the end of the drag at most this long before applying a drop */
-#define DEFERRED_DROP_MS 1000
 
 /* ------------------------------------------------------------------------- */
 /* Highlight                                                                 */
@@ -339,26 +332,7 @@ static void apply_drop(TabDrop* td, GtkWidget* child, const DropTarget* t) {
     td->on_drop(td->nb, child, t->zone, t->index, td->data);
 }
 
-static void pending_apply_drop(PendingDrag* pd) {
-    if (pd->drop_nb == NULL) {
-        return;
-    }
-    GtkNotebook* nb = pd->drop_nb;
-    GtkWidget* child = pd->drop_child;
-    pd->drop_nb = NULL;
-    pd->drop_child = NULL;
-    g_clear_handle_id(&pd->drop_timeout, g_source_remove);
-    TabDrop* td = g_object_get_data(G_OBJECT(nb), "tab-drop");
-    if (td != NULL && gtk_widget_get_root(GTK_WIDGET(nb)) != NULL &&
-        gtk_widget_get_ancestor(child, GTK_TYPE_NOTEBOOK) != NULL) {
-        apply_drop(td, child, &pd->drop);
-    }
-    g_object_unref(child);
-    g_object_unref(nb);
-}
-
 static void pending_finish(PendingDrag* pd) {
-    pending_apply_drop(pd);
     if (pd->source == NULL) {
         return;
     }
@@ -399,43 +373,6 @@ static void on_drag_cancelled(GdkDrag* drag, GdkDragCancelReason reason) {
     if (pd != NULL) {
         pending_finish(pd);
     }
-}
-
-#if defined(G_OS_WIN32) || defined(_WIN32)
-/* The drag never reported its end: apply the drop anyway */
-static gboolean on_deferred_drop_timeout(gpointer data) {
-    PendingDrag* pd = data;
-    pd->drop_timeout = 0;
-    pending_finish(pd);
-    return G_SOURCE_REMOVE;
-}
-#endif
-
-/* On Windows a drop is handled inside the OLE drop call, in a nested main
- * loop, while the GDK drag thread still runs DoDragDrop: moving the page
- * there crashes GTK. Keep the drop and apply it once the drag is over.
- * FALSE when the drag is not followed (the drop is applied at once). */
-static gboolean defer_drop(GtkDropTarget* dest, TabDrop* td, GtkWidget* child,
-                           const DropTarget* t) {
-#if defined(G_OS_WIN32) || defined(_WIN32)
-    GdkDrop* drop = gtk_drop_target_get_current_drop(dest);
-    GdkDrag* drag = drop != NULL ? gdk_drop_get_drag(drop) : NULL;
-    PendingDrag* pd = drag != NULL ? g_object_get_data(G_OBJECT(drag), PENDING_KEY) : NULL;
-    if (pd == NULL || pd->drop_nb != NULL) {
-        return FALSE;
-    }
-    pd->drop_nb = g_object_ref(td->nb);
-    pd->drop_child = g_object_ref(child);
-    pd->drop = *t;
-    pd->drop_timeout = g_timeout_add(DEFERRED_DROP_MS, on_deferred_drop_timeout, pd);
-    return TRUE;
-#else
-    (void)dest;
-    (void)td;
-    (void)child;
-    (void)t;
-    return FALSE;
-#endif
 }
 
 /* Follow the tab drag currently over a notebook of ours until it ends, to
@@ -544,10 +481,273 @@ static gboolean on_drop(GtkDropTarget* dest, const GValue* value, double x, doub
     }
 
     watch_drag(dest, source, td);
-    if (!defer_drop(dest, td, child, &t)) {
-        apply_drop(td, child, &t);
-    }
+    apply_drop(td, child, &t);
     return TRUE;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Tab drag without GDK drag and drop (Windows)                              */
+/* ------------------------------------------------------------------------- */
+
+/* On Windows, GTK's drag thread crashes in DoDragDrop when a notebook tab is
+ * dragged. There each notebook follows the drag of its tabs itself: once
+ * the pointer leaves the tab bar, a capture gesture claims the press, which
+ * stops GtkNotebook from starting its own drag, and the drop goes through
+ * find_target() and apply_drop() as above. LOOKIN_INTERNAL_TAB_DRAG=1 turns
+ * it on elsewhere, to test it. */
+
+#define INTERNAL_DRAG_KEY "tab-drop-internal-drag"
+
+typedef struct {
+    TabDrop* td;          /* the notebook the tab is dragged from */
+    GtkWidget* child;     /* the pressed page, ref */
+    double start_x, start_y;
+    double last_x, last_y; /* pointer, in td->nb coordinates */
+    gboolean dragging;
+    GtkNotebook* over;    /* notebook under the pointer, ref */
+    double over_x, over_y; /* pointer, in `over` coordinates */
+    gboolean shift;       /* Shift state at the last refresh */
+    guint poll;           /* refreshes the highlight when Shift changes */
+    GdkCursor* saved_cursor; /* cursor of the window before the drag, ref */
+} InternalDrag;
+
+static gboolean internal_tab_drag_enabled(void) {
+#if defined(G_OS_WIN32) || defined(_WIN32)
+    return TRUE;
+#else
+    static gint enabled = -1;
+    if (enabled < 0) {
+        enabled = g_strcmp0(g_getenv("LOOKIN_INTERNAL_TAB_DRAG"), "1") == 0;
+    }
+    return enabled;
+#endif
+}
+
+/* The detachable page whose tab is at (x, y) of nb, else NULL */
+static GtkWidget* tab_page_at(GtkNotebook* nb, double x, double y) {
+    gint n = gtk_notebook_get_n_pages(nb);
+    for (gint i = 0; i < n; i++) {
+        GtkWidget* page = gtk_notebook_get_nth_page(nb, i);
+        PaneRect r;
+        if (bounds_in(gtk_notebook_get_tab_label(nb, page), GTK_WIDGET(nb), &r) &&
+            x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height) {
+            return gtk_notebook_get_tab_detachable(nb, page) ? page : NULL;
+        }
+    }
+    return NULL;
+}
+
+/* Whether (x, y) of nb is far enough from the tabs to start a drag: sooner
+ * than GtkNotebook would start its own */
+static gboolean away_from_tab_bar(GtkNotebook* nb, double x, double y) {
+    gint threshold = 8;
+    g_object_get(gtk_widget_get_settings(GTK_WIDGET(nb)), "gtk-dnd-drag-threshold", &threshold,
+                 NULL);
+    double margin = threshold * 2.0; /* within GtkNotebook's own margin (4x) */
+    gboolean have_bar = FALSE;
+    double left = 0.0, right = 0.0, top = 0.0, bottom = 0.0;
+    gint n = gtk_notebook_get_n_pages(nb);
+    for (gint i = 0; i < n; i++) {
+        PaneRect r;
+        GtkWidget* page = gtk_notebook_get_nth_page(nb, i);
+        if (!bounds_in(gtk_notebook_get_tab_label(nb, page), GTK_WIDGET(nb), &r)) {
+            continue;
+        }
+        left = have_bar ? MIN(left, r.x) : r.x;
+        right = have_bar ? MAX(right, r.x + r.width) : r.x + r.width;
+        top = have_bar ? MIN(top, r.y) : r.y;
+        bottom = have_bar ? MAX(bottom, r.y + r.height) : r.y + r.height;
+        have_bar = TRUE;
+    }
+    if (!have_bar) {
+        return FALSE;
+    }
+    return y < top - margin || y > bottom + margin || x < left - margin || x > right + margin;
+}
+
+static void internal_set_over(InternalDrag* ig, GtkNotebook* over) {
+    if (ig->over == over) {
+        return;
+    }
+    if (ig->over != NULL) {
+        indicator_hide(GTK_WIDGET(ig->over));
+        g_object_unref(ig->over);
+    }
+    ig->over = over != NULL ? g_object_ref(over) : NULL;
+}
+
+/* The notebook of ours under (x, y) of the source notebook, and the point in
+ * its coordinates */
+static GtkNotebook* notebook_under(GtkWidget* src, double x, double y, double* ox, double* oy) {
+    GtkRoot* root = gtk_widget_get_root(src);
+    graphene_point_t p, q;
+    if (root == NULL ||
+        !gtk_widget_compute_point(src, GTK_WIDGET(root), &GRAPHENE_POINT_INIT((float)x, (float)y), &p)) {
+        return NULL;
+    }
+    GtkWidget* w = gtk_widget_pick(GTK_WIDGET(root), p.x, p.y, GTK_PICK_DEFAULT);
+    while (w != NULL && !(GTK_IS_NOTEBOOK(w) && g_object_get_data(G_OBJECT(w), "tab-drop") != NULL)) {
+        w = gtk_widget_get_parent(w);
+    }
+    if (w == NULL || !gtk_widget_compute_point(GTK_WIDGET(root), w, &p, &q)) {
+        return NULL;
+    }
+    *ox = q.x;
+    *oy = q.y;
+    return GTK_NOTEBOOK(w);
+}
+
+/* Follow the pointer at (x, y) of the source notebook: highlight the target */
+static void internal_track(InternalDrag* ig, double x, double y) {
+    ig->last_x = x;
+    ig->last_y = y;
+    ig->shift = shift_held();
+    double ox = 0.0, oy = 0.0;
+    GtkNotebook* over = notebook_under(GTK_WIDGET(ig->td->nb), x, y, &ox, &oy);
+    internal_set_over(ig, over);
+    ig->over_x = ox;
+    ig->over_y = oy;
+    if (over == NULL) {
+        return;
+    }
+    DropTarget t;
+    TabDrop* target = g_object_get_data(G_OBJECT(over), "tab-drop");
+    if (find_target(target, ig->td->nb, ox, oy, &t)) {
+        indicator_show(GTK_WIDGET(over), &t.shown, t.swap);
+    } else {
+        indicator_hide(GTK_WIDGET(over));
+    }
+}
+
+static gboolean on_internal_shift_poll(gpointer data) {
+    InternalDrag* ig = data;
+    if (!ig->dragging) {
+        ig->poll = 0;
+        return G_SOURCE_REMOVE;
+    }
+    if (shift_held() != ig->shift) {
+        internal_track(ig, ig->last_x, ig->last_y);
+    }
+    return G_SOURCE_CONTINUE;
+}
+
+/* End the drag (dropped or not) */
+static void internal_stop(InternalDrag* ig) {
+    if (ig->dragging) {
+        GtkRoot* root = gtk_widget_get_root(GTK_WIDGET(ig->td->nb));
+        if (root != NULL) {
+            gtk_widget_set_cursor(GTK_WIDGET(root), ig->saved_cursor);
+        }
+    }
+    g_clear_object(&ig->saved_cursor);
+    ig->dragging = FALSE;
+    g_clear_handle_id(&ig->poll, g_source_remove);
+    internal_set_over(ig, NULL);
+    g_clear_object(&ig->child);
+}
+
+static void internal_drag_free(gpointer data) {
+    InternalDrag* ig = data;
+    internal_stop(ig);
+    g_free(ig);
+}
+
+static void on_internal_drag_begin(GtkGestureDrag* gesture, double x, double y, gpointer data) {
+    InternalDrag* ig = data;
+    internal_stop(ig);
+    GtkWidget* page = tab_page_at(ig->td->nb, x, y);
+    if (page == NULL) {
+        gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_DENIED);
+        return;
+    }
+    ig->child = g_object_ref(page);
+    ig->start_x = x;
+    ig->start_y = y;
+}
+
+static void on_internal_drag_update(GtkGestureDrag* gesture, double dx, double dy, gpointer data) {
+    InternalDrag* ig = data;
+    GtkNotebook* nb = ig->td->nb;
+    double x = ig->start_x + dx;
+    double y = ig->start_y + dy;
+    if (ig->child == NULL) {
+        return;
+    }
+    if (!ig->dragging) {
+        gint num = gtk_notebook_page_num(nb, ig->child);
+        if (!away_from_tab_bar(nb, x, y)) {
+            return;
+        }
+        if (num < 0) {
+            gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_DENIED);
+            return;
+        }
+        /* Claiming cancels GtkNotebook's press: it starts no drag of its own */
+        gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+        ig->dragging = TRUE;
+        gtk_notebook_set_current_page(nb, num); /* find_target() drags the shown page */
+        GtkRoot* root = gtk_widget_get_root(GTK_WIDGET(nb));
+        if (root != NULL) {
+            GdkCursor* cursor = gtk_widget_get_cursor(GTK_WIDGET(root));
+            ig->saved_cursor = cursor != NULL ? g_object_ref(cursor) : NULL;
+            gtk_widget_set_cursor_from_name(GTK_WIDGET(root), "grabbing");
+        }
+        ig->poll = g_timeout_add(50, on_internal_shift_poll, ig);
+    }
+    internal_track(ig, x, y);
+}
+
+static void on_internal_drag_end(GtkGestureDrag* gesture, double dx, double dy, gpointer data) {
+    (void)gesture;
+    InternalDrag* ig = data;
+    if (!ig->dragging || ig->child == NULL) {
+        internal_stop(ig);
+        return;
+    }
+    internal_track(ig, ig->start_x + dx, ig->start_y + dy);
+    GtkNotebook* source = g_object_ref(ig->td->nb);
+    TabDragDoneFunc on_done = ig->td->on_done;
+    gpointer done_data = ig->td->data;
+    GtkWidget* child = g_object_ref(ig->child);
+    GtkNotebook* over = ig->over != NULL ? g_object_ref(ig->over) : NULL;
+    double ox = ig->over_x, oy = ig->over_y;
+    internal_stop(ig);
+
+    TabDrop* target = over != NULL ? g_object_get_data(G_OBJECT(over), "tab-drop") : NULL;
+    DropTarget t;
+    if (target != NULL && find_target(target, source, ox, oy, &t)) {
+        apply_drop(target, child, &t);
+    }
+    if (on_done != NULL) {
+        on_done(source, done_data);
+    }
+    if (over != NULL) {
+        g_object_unref(over);
+    }
+    g_object_unref(child);
+    g_object_unref(source);
+}
+
+static void on_internal_drag_cancel(GtkGesture* gesture, GdkEventSequence* sequence,
+                                    gpointer data) {
+    (void)gesture;
+    (void)sequence;
+    internal_stop(data);
+}
+
+static void internal_drag_attach(TabDrop* td) {
+    GtkGesture* gesture = gtk_gesture_drag_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), GDK_BUTTON_PRIMARY);
+    /* Capture: sees the press and the motion before GtkNotebook */
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(gesture), GTK_PHASE_CAPTURE);
+    InternalDrag* ig = g_new0(InternalDrag, 1);
+    ig->td = td;
+    g_object_set_data_full(G_OBJECT(gesture), INTERNAL_DRAG_KEY, ig, internal_drag_free);
+    g_signal_connect(gesture, "drag-begin", G_CALLBACK(on_internal_drag_begin), ig);
+    g_signal_connect(gesture, "drag-update", G_CALLBACK(on_internal_drag_update), ig);
+    g_signal_connect(gesture, "drag-end", G_CALLBACK(on_internal_drag_end), ig);
+    g_signal_connect(gesture, "cancel", G_CALLBACK(on_internal_drag_cancel), ig);
+    gtk_widget_add_controller(GTK_WIDGET(td->nb), GTK_EVENT_CONTROLLER(gesture));
 }
 
 void tab_drop_attach(GtkNotebook* nb, gboolean can_split, TabDropFunc on_drop_func,
@@ -570,6 +770,10 @@ void tab_drop_attach(GtkNotebook* nb, gboolean can_split, TabDropFunc on_drop_fu
     g_signal_connect(dest, "leave", G_CALLBACK(on_drop_leave), td);
     g_signal_connect(dest, "drop", G_CALLBACK(on_drop), td);
     gtk_widget_add_controller(GTK_WIDGET(nb), GTK_EVENT_CONTROLLER(dest));
+
+    if (internal_tab_drag_enabled()) {
+        internal_drag_attach(td);
+    }
 }
 
 void tab_drop_set_accept(GtkNotebook* nb, TabAcceptFunc accept) {

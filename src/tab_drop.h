@@ -9,7 +9,8 @@
  * notebooks of one group) onto a notebook: on its tab bar (insert there),
  * on its page (move into it) or near a page edge (split that side). A
  * translucent highlight on the nearest GtkOverlay ancestor shows the target
- * while dragging. */
+ * while dragging. On Windows, where GTK's tab drag crashes, the notebooks
+ * follow the drag of their tabs themselves (no GDK drag and drop). */
 
 /* A tab dropped on `target`: `zone` PANE_ZONE_CENTER moves it into target at
  * `index` (-1: append), another zone splits target on that side. `child` is

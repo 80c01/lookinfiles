@@ -388,7 +388,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   source notebook — remove an emptied notebook only then. Same group by
   default, `tab_drop_set_accept()` to take other tabs. Knows nothing of
   `EditorTab`; `editor` attaches it with `editor_notebook_enable_tab_drop()`,
-  `terminal` to its own notebooks.
+  `terminal` to its own notebooks. On Windows GTK's tab DnD crashes (its
+  drag thread, in `DoDragDrop`): a capture gesture on each notebook follows
+  the drag instead and drops through the same targets
+  (`LOOKIN_INTERNAL_TAB_DRAG=1` turns it on elsewhere, to test it).
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
   `markdown_table` — Markdown tables for `markdown`: rows split into cells, a
   grid widget anchored in the view, or a box-drawn text table without a view.
