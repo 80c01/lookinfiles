@@ -334,50 +334,6 @@ int main(int argc, char** argv) {
         }
     }
 
-    /* Top bar path label & interactive breadcrumbs / status pills */
-    gchar* path_text = g_strdup_printf("Directory: %s", start_dir);
-    GtkWidget* path_label = gtk_label_new(path_text);
-    g_free(path_text);
-    gtk_widget_set_visible(path_label, FALSE);
-
-    GtkWidget* breadcrumb_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
-    gtk_widget_set_valign(breadcrumb_box, GTK_ALIGN_CENTER);
-
-    GtkWidget* files_btn = gtk_button_new();
-    icon_button_set_content(files_btn, "folder", _("Explorer"));
-    gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
-    gtk_widget_set_focusable(files_btn, FALSE);
-    gtk_widget_add_css_class(files_btn, "status-pill");
-    gtk_widget_set_tooltip_text(files_btn, _("Show / Hide Explorer Panel"));
-
-    GtkWidget* preview_btn = gtk_button_new();
-    icon_button_set_content(preview_btn, "document-print-preview", _("Preview"));
-    gtk_button_set_has_frame(GTK_BUTTON(preview_btn), FALSE);
-    gtk_widget_set_focusable(preview_btn, FALSE);
-    gtk_widget_add_css_class(preview_btn, "status-pill");
-    gtk_widget_set_tooltip_text(preview_btn, _("Show / Hide Preview Panel"));
-
-    GtkWidget* term_btn = gtk_button_new();
-    icon_button_set_content(term_btn, "utilities-terminal", _("Terminal"));
-    gtk_button_set_has_frame(GTK_BUTTON(term_btn), FALSE);
-    gtk_widget_set_focusable(term_btn, FALSE);
-    gtk_widget_add_css_class(term_btn, "status-pill");
-    gtk_widget_set_tooltip_text(term_btn, _("Show / Hide Terminal Panel"));
-
-    GtkWidget* pill_div_label = gtk_label_new("|");
-    gtk_widget_add_css_class(pill_div_label, "breadcrumb-sep");
-
-    GtkWidget* help_btn = gtk_button_new();
-    icon_button_set_content(help_btn, "dialog-question", _("Help"));
-    gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);
-    gtk_widget_set_focusable(help_btn, FALSE);
-    gtk_widget_add_css_class(help_btn, "status-pill");
-    gtk_widget_set_tooltip_text(help_btn, _("User Guide (F1) — Right-Click: Keyboard Shortcuts (?)"));
-
-    /* Spacer label for top bar */
-    GtkWidget* sep_label = gtk_label_new(" ");
-    gtk_widget_set_halign(sep_label, GTK_ALIGN_START);
-    gtk_widget_set_hexpand(sep_label, TRUE);
 
     /* Left pane: explorer tree (files, bookmarks, notes, remote views) */
     ExplorerTree* explorer = explorer_tree_new();
@@ -435,14 +391,6 @@ int main(int argc, char** argv) {
     gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "editor-tabs");
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
                              icon_label_new("document-print-preview", _("Preview")));
-    /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
-    GtkWidget* split_btn = icon_button_new("view-dual", NULL);
-    gtk_widget_set_name(split_btn, "tab-split-btn");
-    gtk_button_set_has_frame(GTK_BUTTON(split_btn), FALSE);
-    gtk_widget_set_focusable(split_btn, FALSE);
-    gtk_widget_add_css_class(split_btn, "tab-action-btn");
-    gtk_widget_set_tooltip_text(split_btn, _("Move Editor Tabs to a Dedicated Panel"));
-    gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), split_btn, GTK_PACK_START);
 
     /* Preview panel: notebook, its search bar below it */
     GtkWidget* viewer_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -548,8 +496,6 @@ int main(int argc, char** argv) {
     GtkWidget* prefs_btn = icon_button_new("applications-system", _("Preferences (Ctrl+,)"));
     gtk_widget_add_css_class(prefs_btn, "status-pill");
     g_signal_connect(prefs_btn, "clicked", G_CALLBACK(on_preferences_clicked), app);
-    GtkWidget* ws_div_label = gtk_label_new("|");
-    gtk_widget_add_css_class(ws_div_label, "breadcrumb-sep");
     app->tree = explorer;
     app->tree_view = tree_view;
     app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -568,24 +514,9 @@ int main(int argc, char** argv) {
     app->text_view = text_view;
     g_object_set_data(G_OBJECT(text_view), "app", app);
     code_nav_attach_preview(app, editor_mode_message);   /* Ctrl+Click in source previews */
-    app->path_label = path_label;
-    app->breadcrumb_box = breadcrumb_box;
-    app->files_btn = files_btn;
-    app->preview_btn = preview_btn;
-    app->split_btn = split_btn;
-    app->term_btn = term_btn;
-    app->sort_btn = NULL;
-    app->hidden_btn = NULL;
-    app->help_btn = help_btn;
-    g_signal_connect(files_btn, "clicked", G_CALLBACK(on_files_pill_clicked), app);
-    g_signal_connect(preview_btn, "clicked", G_CALLBACK(on_preview_pill_clicked), app);
-    g_signal_connect(split_btn, "clicked", G_CALLBACK(on_split_btn_clicked), app);
-    g_signal_connect(term_btn, "clicked", G_CALLBACK(on_term_pill_clicked), app);
-    g_signal_connect(help_btn, "clicked", G_CALLBACK(on_help_pill_clicked), app);
-    GtkGesture* help_right = gtk_gesture_click_new();
-    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(help_right), GDK_BUTTON_SECONDARY);
-    g_signal_connect(help_right, "pressed", G_CALLBACK(on_help_pill_right_clicked), app);
-    gtk_widget_add_controller(help_btn, GTK_EVENT_CONTROLLER(help_right));
+    GtkWidget* top_row = topbar_new(app, ws_minimap, layouts_btn, prefs_btn);
+    /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
+    gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), topbar_split_button_new(app), GTK_PACK_START);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 
     app->notebook = notebook;
@@ -706,24 +637,7 @@ int main(int argc, char** argv) {
     app->workspace_hbox = workspace_hbox;
 
     GtkWidget* outer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    GtkWidget* label_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    gtk_widget_set_name(label_row, "statusbar");
-    gtk_box_append(GTK_BOX(label_row), path_label);
-    gtk_box_append(GTK_BOX(label_row), topbar_history_buttons_new(app));
-    gtk_box_append(GTK_BOX(label_row), breadcrumb_box);
-    gtk_box_append(GTK_BOX(label_row), sep_label);
-    gtk_box_append(GTK_BOX(label_row), create_topbar_notice(app));
-    gtk_box_append(GTK_BOX(label_row), topbar_mode_button_new(app));
-    gtk_box_append(GTK_BOX(label_row), ws_minimap);
-    gtk_box_append(GTK_BOX(label_row), layouts_btn);
-    gtk_box_append(GTK_BOX(label_row), prefs_btn);
-    gtk_box_append(GTK_BOX(label_row), ws_div_label);
-    gtk_box_append(GTK_BOX(label_row), files_btn);
-    gtk_box_append(GTK_BOX(label_row), preview_btn);
-    gtk_box_append(GTK_BOX(label_row), term_btn);
-    gtk_box_append(GTK_BOX(label_row), pill_div_label);
-    gtk_box_append(GTK_BOX(label_row), help_btn);
-    gtk_box_append(GTK_BOX(outer_vbox), label_row);
+    gtk_box_append(GTK_BOX(outer_vbox), top_row);
     gtk_box_append(GTK_BOX(outer_vbox), workspace_hbox);
     app_emit(app, APP_EVENT_STATUS_CHANGED);
 
@@ -790,6 +704,7 @@ int main(int argc, char** argv) {
     org_fold_free(app);
     preview_state_free(app);
     sidebar_free(app);
+    topbar_free(app);
     status_bar_free(app);
     if (app->buffers != NULL) {
         g_ptr_array_unref(app->buffers);

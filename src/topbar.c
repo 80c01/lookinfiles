@@ -15,6 +15,28 @@
 #include "search.h"
 #include "sidebar.h"
 #include "terminal.h"
+#include "status_bar.h"
+
+/* Private to this file: the top bar's widgets (NULL until topbar_new()) */
+struct TopBar {
+    GtkWidget* path_label;      /* hidden text of the state (directory, sort, hidden, view) */
+    GtkWidget* breadcrumb_box;  /* folders of base_dir */
+    GtkWidget* history_back_btn; /* folder history arrows */
+    GtkWidget* history_fwd_btn;
+    GtkWidget* mode_btn;        /* global mode pill */
+    GtkWidget* files_btn;       /* panel pills */
+    GtkWidget* preview_btn;
+    GtkWidget* term_btn;
+    GtkWidget* help_btn;
+    GtkWidget* split_btn;       /* action button of the preview notebook: dedicated editor panel */
+};
+
+static struct TopBar* bar_get(AppData* app) {
+    if (app->topbar == NULL) {
+        app->topbar = g_new0(struct TopBar, 1);
+    }
+    return app->topbar;
+}
 
 #if defined(G_OS_WIN32) || defined(_WIN32)
 static void show_drive_switcher(GtkWidget* parent, AppData* app);
@@ -98,12 +120,12 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
-void on_split_btn_clicked(GtkButton* btn, gpointer data) {
+static void on_split_btn_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     editor_toggle_dedicated((AppData*)data);
 }
 
-void on_term_pill_clicked(GtkButton* btn, gpointer data) {
+static void on_term_pill_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     AppData* app = (AppData*)data;
     if (app->term_scroll == NULL) {
@@ -151,24 +173,14 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
-void on_sort_pill_clicked(GtkButton* btn, gpointer data) {
-    (void)btn;
-    cycle_sort_mode((AppData*)data);
-}
-
-void on_hidden_pill_clicked(GtkButton* btn, gpointer data) {
-    (void)btn;
-    toggle_hidden_files((AppData*)data);
-}
-
-void on_help_pill_clicked(GtkButton* btn, gpointer data) {
+static void on_help_pill_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     /* Toggle: a click on the shown Help tab closes it */
     AppData* app = (AppData*)data;
     if (!help_guide_close_shown(app)) help_guide_show(app, NULL);
 }
 
-void on_help_pill_right_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+static void on_help_pill_right_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     (void)x;
     (void)y;
@@ -180,7 +192,7 @@ void on_help_pill_right_clicked(GtkGestureClick* gesture, gint n_press, gdouble 
 
 static void on_history_clicked(GtkButton* btn, gpointer data) {
     AppData* app = (AppData*)data;
-    if (GTK_WIDGET(btn) == app->history_back_btn) {
+    if (GTK_WIDGET(btn) == bar_get(app)->history_back_btn) {
         go_back_directory(app);
     } else {
         go_forward_directory(app);
@@ -294,9 +306,10 @@ static void on_history_right_clicked(GtkGestureClick* gesture, gint n_press, gdo
     (void)x;
     (void)y;
     AppData* app = (AppData*)data;
+    struct TopBar* t = bar_get(app);
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
     GtkWidget* button = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
-    gboolean back = button == app->history_back_btn;
+    gboolean back = button == t->history_back_btn;
     GPtrArray* folders = nav_history_folders(app, back);
     if (folders->len == 0) {
         g_ptr_array_unref(folders);
@@ -339,15 +352,16 @@ static GtkWidget* history_button_new(AppData* app, const gchar* icon, const gcha
     return btn;
 }
 
-GtkWidget* topbar_history_buttons_new(AppData* app) {
+static GtkWidget* history_buttons_new(AppData* app) {
+    struct TopBar* t = bar_get(app);
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
-    app->history_back_btn = history_button_new(app, "go-previous",
+    t->history_back_btn = history_button_new(app, "go-previous",
                                                _("Back (Shift+H) — Right-Click: Folders Before"));
-    app->history_fwd_btn = history_button_new(app, "go-next",
+    t->history_fwd_btn = history_button_new(app, "go-next",
                                               _("Forward (Shift+L) — Right-Click: Folders After"));
-    gtk_box_append(GTK_BOX(box), app->history_back_btn);
-    gtk_box_append(GTK_BOX(box), app->history_fwd_btn);
+    gtk_box_append(GTK_BOX(box), t->history_back_btn);
+    gtk_box_append(GTK_BOX(box), t->history_fwd_btn);
     return box;
 }
 
@@ -413,7 +427,8 @@ static void on_mode_pill_clicked(GtkButton* btn, gpointer data) {
     gtk_popover_popup(GTK_POPOVER(popover));
 }
 
-GtkWidget* topbar_mode_button_new(AppData* app) {
+static GtkWidget* mode_button_new(AppData* app) {
+    struct TopBar* t = bar_get(app);
     GtkWidget* btn = gtk_button_new();
     gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
     gtk_widget_set_focusable(btn, FALSE);
@@ -422,7 +437,7 @@ GtkWidget* topbar_mode_button_new(AppData* app) {
     g_signal_connect(btn, "clicked", G_CALLBACK(on_mode_pill_clicked), app);
     icon_button_set_content(btn, "input-keyboard", mode_name(app->default_editor_mode));
     g_object_set_data(G_OBJECT(btn), "mode-state", GINT_TO_POINTER((gint)app->default_editor_mode + 1));
-    app->mode_btn = btn;
+    t->mode_btn = btn;
     return btn;
 }
 
@@ -433,27 +448,42 @@ typedef struct {
 } BreadcrumbSeg;
 
 /* Top bar: clickable path breadcrumbs + right-aligned sort/hidden/help pills */
+/* A panel pill of the top bar: icon and label, no frame, never focused */
+static GtkWidget* pill_new(const gchar* icon, const gchar* label, const gchar* tooltip) {
+    GtkWidget* btn = gtk_button_new();
+    icon_button_set_content(btn, icon, label);
+    gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+    gtk_widget_set_focusable(btn, FALSE);
+    gtk_widget_add_css_class(btn, "status-pill");
+    gtk_widget_set_tooltip_text(btn, tooltip);
+    return btn;
+}
+
+static GtkWidget* separator_new(void) {
+    GtkWidget* sep = gtk_label_new("|");
+    gtk_widget_add_css_class(sep, "breadcrumb-sep");
+    return sep;
+}
+
 void update_path_label(AppData* app) {
     static const gchar* sort_names[SORT_COUNT] = {"name", "date", "size", "ext"};
-    static const gchar* sort_pill_labels[SORT_COUNT] = {
-        N_("⇅ Sort: Name"), N_("⇅ Sort: Date"), N_("⇅ Sort: Size"), N_("⇅ Sort: Ext")
-    };
+    struct TopBar* t = bar_get(app);
 
-    if (app->path_label != NULL) {
+    if (t->path_label != NULL) {
         gchar* text = g_strdup_printf("Directory: %s   [sort: %s] [hidden: %s] [view: %s]",
                                        app->base_dir, sort_names[app->sort_mode],
                                        app->show_hidden ? "on" : "off",
                                        app->show_bookmarks ? "bookmarks" : "files");
-        gtk_label_set_text(GTK_LABEL(app->path_label), text);
+        gtk_label_set_text(GTK_LABEL(t->path_label), text);
         g_free(text);
     }
 
-    if (app->breadcrumb_box != NULL && app->base_dir != NULL) {
-        const gchar* built_dir = (const gchar*)g_object_get_data(G_OBJECT(app->breadcrumb_box), "built-dir");
+    if (t->breadcrumb_box != NULL && app->base_dir != NULL) {
+        const gchar* built_dir = (const gchar*)g_object_get_data(G_OBJECT(t->breadcrumb_box), "built-dir");
         if (g_strcmp0(built_dir, app->base_dir) != 0) {
             GtkWidget* child;
-            while ((child = gtk_widget_get_first_child(app->breadcrumb_box)) != NULL) {
-                gtk_box_remove(GTK_BOX(app->breadcrumb_box), child);
+            while ((child = gtk_widget_get_first_child(t->breadcrumb_box)) != NULL) {
+                gtk_box_remove(GTK_BOX(t->breadcrumb_box), child);
             }
 
             GArray* segs = g_array_new(FALSE, FALSE, sizeof(BreadcrumbSeg));
@@ -527,11 +557,11 @@ void update_path_label(AppData* app) {
                 if (total > 6 && i == 1) {
                     GtkWidget* sep = gtk_label_new("›");
                     gtk_widget_add_css_class(sep, "breadcrumb-sep");
-                    gtk_box_append(GTK_BOX(app->breadcrumb_box), sep);
+                    gtk_box_append(GTK_BOX(t->breadcrumb_box), sep);
 
                     GtkWidget* dots = gtk_label_new("…");
                     gtk_widget_add_css_class(dots, "breadcrumb-sep");
-                    gtk_box_append(GTK_BOX(app->breadcrumb_box), dots);
+                    gtk_box_append(GTK_BOX(t->breadcrumb_box), dots);
 
                     i = total - 4;
                 }
@@ -539,7 +569,7 @@ void update_path_label(AppData* app) {
                 if (i > 0) {
                     GtkWidget* sep = gtk_label_new("›");
                     gtk_widget_add_css_class(sep, "breadcrumb-sep");
-                    gtk_box_append(GTK_BOX(app->breadcrumb_box), sep);
+                    gtk_box_append(GTK_BOX(t->breadcrumb_box), sep);
                 }
 
                 BreadcrumbSeg* s = &g_array_index(segs, BreadcrumbSeg, i);
@@ -560,7 +590,7 @@ void update_path_label(AppData* app) {
                                        g_strdup(s->full_path), g_free);
                 g_signal_connect(btn, "clicked",
                                  G_CALLBACK(on_breadcrumb_clicked), app);
-                gtk_box_append(GTK_BOX(app->breadcrumb_box), btn);
+                gtk_box_append(GTK_BOX(t->breadcrumb_box), btn);
             }
 
             for (guint i = 0; i < segs->len; i++) {
@@ -570,42 +600,22 @@ void update_path_label(AppData* app) {
             }
             g_array_unref(segs);
 
-            g_object_set_data_full(G_OBJECT(app->breadcrumb_box), "built-dir",
+            g_object_set_data_full(G_OBJECT(t->breadcrumb_box), "built-dir",
                                    g_strdup(app->base_dir), g_free);
         }
     }
 
-    if (app->history_back_btn != NULL) {
-        gtk_widget_set_sensitive(app->history_back_btn, nav_history_can_go(app, TRUE));
-        gtk_widget_set_sensitive(app->history_fwd_btn, nav_history_can_go(app, FALSE));
+    if (t->history_back_btn != NULL) {
+        gtk_widget_set_sensitive(t->history_back_btn, nav_history_can_go(app, TRUE));
+        gtk_widget_set_sensitive(t->history_fwd_btn, nav_history_can_go(app, FALSE));
     }
 
-    if (app->mode_btn != NULL) {
+    if (t->mode_btn != NULL) {
         /* Rebuilt only when the mode changes (stored as mode + 1) */
         gint state = (gint)app->default_editor_mode + 1;
-        if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(app->mode_btn), "mode-state")) != state) {
-            icon_button_set_content(app->mode_btn, "input-keyboard", mode_name(app->default_editor_mode));
-            g_object_set_data(G_OBJECT(app->mode_btn), "mode-state", GINT_TO_POINTER(state));
-        }
-    }
-
-    if (app->sort_btn != NULL) {
-        gtk_button_set_label(GTK_BUTTON(app->sort_btn),
-                             _(sort_pill_labels[app->sort_mode]));
-    }
-
-    if (app->hidden_btn != NULL) {
-        /* Rebuilt only when the state changes (1 = off, 2 = on) */
-        gint state = app->show_hidden ? 2 : 1;
-        if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(app->hidden_btn), "hidden-state")) != state) {
-            icon_button_set_content(app->hidden_btn, "view-reveal",
-                                    app->show_hidden ? _("Hidden: On") : _("Hidden: Off"));
-            g_object_set_data(G_OBJECT(app->hidden_btn), "hidden-state", GINT_TO_POINTER(state));
-        }
-        if (app->show_hidden) {
-            gtk_widget_add_css_class(app->hidden_btn, "pill-active");
-        } else {
-            gtk_widget_remove_css_class(app->hidden_btn, "pill-active");
+        if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(t->mode_btn), "mode-state")) != state) {
+            icon_button_set_content(t->mode_btn, "input-keyboard", mode_name(app->default_editor_mode));
+            g_object_set_data(G_OBJECT(t->mode_btn), "mode-state", GINT_TO_POINTER(state));
         }
     }
 
@@ -621,61 +631,61 @@ void update_path_label(AppData* app) {
         gtk_widget_set_visible(app->right_paned, preview_vis || editor_vis || term_vis);
     }
 
-    if (app->files_btn != NULL) {
+    if (t->files_btn != NULL) {
         if (files_vis) {
-            gtk_widget_add_css_class(app->files_btn, "pill-active");
+            gtk_widget_add_css_class(t->files_btn, "pill-active");
         } else {
-            gtk_widget_remove_css_class(app->files_btn, "pill-active");
+            gtk_widget_remove_css_class(t->files_btn, "pill-active");
         }
     }
-    if (app->preview_btn != NULL) {
+    if (t->preview_btn != NULL) {
         if (preview_vis) {
-            gtk_widget_add_css_class(app->preview_btn, "pill-active");
+            gtk_widget_add_css_class(t->preview_btn, "pill-active");
         } else {
-            gtk_widget_remove_css_class(app->preview_btn, "pill-active");
+            gtk_widget_remove_css_class(t->preview_btn, "pill-active");
         }
     }
-    if (app->split_btn != NULL) {
+    if (t->split_btn != NULL) {
         /* Nothing to move or dock without an editor tab */
-        gtk_widget_set_visible(app->split_btn, app->editors != NULL);
+        gtk_widget_set_visible(t->split_btn, app->editors != NULL);
         if (app->editor_dedicated) {
-            gtk_widget_add_css_class(app->split_btn, "tab-action-active");
-            icon_button_set_content(app->split_btn, "view-paged", NULL);
-            gtk_widget_set_tooltip_text(app->split_btn, _("Dock Editor Tabs into Preview Panel"));
+            gtk_widget_add_css_class(t->split_btn, "tab-action-active");
+            icon_button_set_content(t->split_btn, "view-paged", NULL);
+            gtk_widget_set_tooltip_text(t->split_btn, _("Dock Editor Tabs into Preview Panel"));
         } else {
-            gtk_widget_remove_css_class(app->split_btn, "tab-action-active");
-            icon_button_set_content(app->split_btn, "view-dual", NULL);
-            gtk_widget_set_tooltip_text(app->split_btn, _("Move Editor Tabs to a Dedicated Panel"));
+            gtk_widget_remove_css_class(t->split_btn, "tab-action-active");
+            icon_button_set_content(t->split_btn, "view-dual", NULL);
+            gtk_widget_set_tooltip_text(t->split_btn, _("Move Editor Tabs to a Dedicated Panel"));
         }
     }
-    if (app->term_btn != NULL) {
+    if (t->term_btn != NULL) {
         RemoteMachine* act_rm = remote_get_active_machine(app);
         if (act_rm != NULL) {
             gchar* term_label = g_strdup_printf(_("SSH: %s"), act_rm->name ? act_rm->name : act_rm->host);
-            icon_button_set_content(app->term_btn, "network-server", term_label);
+            icon_button_set_content(t->term_btn, "network-server", term_label);
             g_free(term_label);
             gchar* tip = g_strdup_printf(_("Connected to remote machine: %s (%s). Click to toggle SSH terminal (Ctrl+T)"),
                                          act_rm->name ? act_rm->name : act_rm->host, act_rm->host);
-            gtk_widget_set_tooltip_text(app->term_btn, tip);
+            gtk_widget_set_tooltip_text(t->term_btn, tip);
             g_free(tip);
         } else {
-            icon_button_set_content(app->term_btn, "utilities-terminal", _("Terminal"));
-            gtk_widget_set_tooltip_text(app->term_btn, _("Show / Hide Terminal Panel (Ctrl+T)"));
+            icon_button_set_content(t->term_btn, "utilities-terminal", _("Terminal"));
+            gtk_widget_set_tooltip_text(t->term_btn, _("Show / Hide Terminal Panel (Ctrl+T)"));
         }
         if (term_vis) {
-            gtk_widget_add_css_class(app->term_btn, "pill-active");
+            gtk_widget_add_css_class(t->term_btn, "pill-active");
         } else {
-            gtk_widget_remove_css_class(app->term_btn, "pill-active");
+            gtk_widget_remove_css_class(t->term_btn, "pill-active");
         }
     }
-    if (app->help_btn != NULL) {
+    if (t->help_btn != NULL) {
         /* Lit while the cheat sheet or the Help tab is open */
         gboolean help_vis = ((app->help_window != NULL) && gtk_widget_get_visible(app->help_window)) ||
                             help_guide_is_open(app);
         if (help_vis) {
-            gtk_widget_add_css_class(app->help_btn, "pill-active");
+            gtk_widget_add_css_class(t->help_btn, "pill-active");
         } else {
-            gtk_widget_remove_css_class(app->help_btn, "pill-active");
+            gtk_widget_remove_css_class(t->help_btn, "pill-active");
         }
     }
 
@@ -686,4 +696,68 @@ void update_path_label(AppData* app) {
 
     app_emit(app, APP_EVENT_STATUS_CHANGED);
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+}
+
+GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_btn, GtkWidget* prefs_btn) {
+    struct TopBar* t = bar_get(app);
+
+    t->path_label = gtk_label_new(NULL);
+    gtk_widget_set_visible(t->path_label, FALSE);
+
+    t->breadcrumb_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    gtk_widget_set_valign(t->breadcrumb_box, GTK_ALIGN_CENTER);
+
+    t->files_btn = pill_new("folder", _("Explorer"), _("Show / Hide Explorer Panel"));
+    g_signal_connect(t->files_btn, "clicked", G_CALLBACK(on_files_pill_clicked), app);
+    t->preview_btn = pill_new("document-print-preview", _("Preview"), _("Show / Hide Preview Panel"));
+    g_signal_connect(t->preview_btn, "clicked", G_CALLBACK(on_preview_pill_clicked), app);
+    t->term_btn = pill_new("utilities-terminal", _("Terminal"), _("Show / Hide Terminal Panel"));
+    g_signal_connect(t->term_btn, "clicked", G_CALLBACK(on_term_pill_clicked), app);
+    t->help_btn = pill_new("dialog-question", _("Help"),
+                           _("User Guide (F1) — Right-Click: Keyboard Shortcuts (?)"));
+    g_signal_connect(t->help_btn, "clicked", G_CALLBACK(on_help_pill_clicked), app);
+    GtkGesture* help_right = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(help_right), GDK_BUTTON_SECONDARY);
+    g_signal_connect(help_right, "pressed", G_CALLBACK(on_help_pill_right_clicked), app);
+    gtk_widget_add_controller(t->help_btn, GTK_EVENT_CONTROLLER(help_right));
+
+    /* Pushes the rest of the row to the right */
+    GtkWidget* spacer = gtk_label_new(" ");
+    gtk_widget_set_halign(spacer, GTK_ALIGN_START);
+    gtk_widget_set_hexpand(spacer, TRUE);
+
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_set_name(row, "statusbar");
+    gtk_box_append(GTK_BOX(row), t->path_label);
+    gtk_box_append(GTK_BOX(row), history_buttons_new(app));
+    gtk_box_append(GTK_BOX(row), t->breadcrumb_box);
+    gtk_box_append(GTK_BOX(row), spacer);
+    gtk_box_append(GTK_BOX(row), create_topbar_notice(app));
+    gtk_box_append(GTK_BOX(row), mode_button_new(app));
+    gtk_box_append(GTK_BOX(row), ws_minimap);
+    gtk_box_append(GTK_BOX(row), layouts_btn);
+    gtk_box_append(GTK_BOX(row), prefs_btn);
+    gtk_box_append(GTK_BOX(row), separator_new());
+    gtk_box_append(GTK_BOX(row), t->files_btn);
+    gtk_box_append(GTK_BOX(row), t->preview_btn);
+    gtk_box_append(GTK_BOX(row), t->term_btn);
+    gtk_box_append(GTK_BOX(row), separator_new());
+    gtk_box_append(GTK_BOX(row), t->help_btn);
+    return row;
+}
+
+GtkWidget* topbar_split_button_new(AppData* app) {
+    struct TopBar* t = bar_get(app);
+    t->split_btn = icon_button_new("view-dual", NULL);
+    gtk_widget_set_name(t->split_btn, "tab-split-btn");
+    gtk_button_set_has_frame(GTK_BUTTON(t->split_btn), FALSE);
+    gtk_widget_set_focusable(t->split_btn, FALSE);
+    gtk_widget_add_css_class(t->split_btn, "tab-action-btn");
+    gtk_widget_set_tooltip_text(t->split_btn, _("Move Editor Tabs to a Dedicated Panel"));
+    g_signal_connect(t->split_btn, "clicked", G_CALLBACK(on_split_btn_clicked), app);
+    return t->split_btn;
+}
+
+void topbar_free(AppData* app) {
+    g_clear_pointer(&app->topbar, g_free);
 }

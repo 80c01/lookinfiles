@@ -7,25 +7,18 @@
 /* Rebuild the top bar from AppData: single source of truth for directory/sort/hidden state */
 void update_path_label(AppData* app);
 
-/* Back / forward arrows before the breadcrumbs: a click goes one folder
- * back / forward in this workspace's history, a right click lists the
- * folders to pick one. Sets app->history_back_btn / history_fwd_btn. */
-GtkWidget* topbar_history_buttons_new(AppData* app);
+/* The top bar row: folder history arrows, breadcrumbs, app_notice() message,
+ * global mode pill, then ws_minimap, layouts_btn and prefs_btn, then the
+ * panel pills and Help. Its widgets stay private to topbar.c. */
+GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_btn, GtkWidget* prefs_btn);
+/* Action button of the preview notebook: move the editor tabs to the
+ * dedicated panel, or dock them back */
+GtkWidget* topbar_split_button_new(AppData* app);
+/* Forget the top bar's widgets (at exit) */
+void topbar_free(AppData* app);
 
-/* Global mode pill (Notepad / Emacs / Vim): the keys of the explorer and
- * preview, and the mode of new editor tabs; a click opens a menu to change
- * it. Sets app->mode_btn. */
-GtkWidget* topbar_mode_button_new(AppData* app);
-
+/* Show / hide the explorer and the preview panels (pills, keys) */
 void on_files_pill_clicked(GtkButton* btn, gpointer data);
 void on_preview_pill_clicked(GtkButton* btn, gpointer data);
-void on_split_btn_clicked(GtkButton* btn, gpointer data);
-void on_term_pill_clicked(GtkButton* btn, gpointer data);
-void on_sort_pill_clicked(GtkButton* btn, gpointer data);
-void on_hidden_pill_clicked(GtkButton* btn, gpointer data);
-/* Help button: a click opens the user guide (Help tab), a right click shows
- * or hides the keyboard cheat sheet */
-void on_help_pill_clicked(GtkButton* btn, gpointer data);
-void on_help_pill_right_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data);
 
 #endif /* TOPBAR_H */

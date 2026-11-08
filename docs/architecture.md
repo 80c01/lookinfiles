@@ -659,10 +659,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   stylesheet of `editor_modes_load_css()`).
 
 **4. Window chrome — may call features:**
-- `topbar` — back / forward arrows (folder history, right click: the list),
-  breadcrumbs, global mode pill (`topbar_mode_button_new()`: it shows and sets
-  the global mode only; a tab's mode is set from its tab menu) and toggle
-  pills; `update_path_label()`.
+- `topbar` — the top bar row built by `topbar_new()`: back / forward arrows
+  (folder history, right click: the list), breadcrumbs, global mode pill (it
+  shows and sets the global mode only; a tab's mode is set from its tab menu)
+  and toggle pills; the split / dock button of the preview notebook
+  (`topbar_split_button_new()`); `update_path_label()`. Its widgets are
+  private (`struct TopBar`).
 - `status_bar` — panel status bars (no window-wide bar: editor tabs have
   their own, `editor_modes`): explorer bar (`create_explorer_bar()`: Git branch of the files
   view with modification `*` and ahead/behind `↑` / `↓` indicators, `app_notice()` message with Undo, sort order of the files view (click cycles it, like `o`); the message moves to the top bar,

@@ -141,18 +141,7 @@ typedef struct {
     GtkWidget* text_view; /* right pane viewer (Alt+Left/Right cycling) */
     gulong selection_changed_id; /* preview handler on tree "selection-changed" (main.c), 0 = not connected */
     struct Search* search;  /* search bars and the open or last search (search.c), NULL before search_init() */
-    GtkWidget* path_label;
-    GtkWidget* breadcrumb_box;
-    GtkWidget* history_back_btn;  /* top bar arrows: folder history (topbar.c) */
-    GtkWidget* mode_btn;          /* top bar: global mode pill (topbar.c) */
-    GtkWidget* history_fwd_btn;
-    GtkWidget* files_btn;
-    GtkWidget* preview_btn;
-    GtkWidget* split_btn;         /* tab action button to split/dock editor panel */
-    GtkWidget* term_btn;
-    GtkWidget* sort_btn;
-    GtkWidget* hidden_btn;
-    GtkWidget* help_btn;
+    struct TopBar* topbar;  /* top bar widgets (topbar.c), NULL before topbar_new() */
     GtkWidget* left_vbox;
     gboolean show_hidden; /* hidden files (dot-prefixed) */
     gboolean show_bookmarks; /* bookmarks view active in explorer panel */
