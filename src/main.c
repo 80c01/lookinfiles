@@ -5,6 +5,7 @@
 #include "layout_switcher.h"
 #include "icons.h"
 #include "fs_watch.h"
+#include "preview_state.h"
 #include "panels.h"
 #include "app_events.h"
 #include "text_style.h"
@@ -504,7 +505,6 @@ int main(int argc, char** argv) {
 
     /* Allocate and wire AppData */
     AppData* app = g_new0(AppData, 1);
-    app->preview_zoom = 1.0;
 
     /* Event subscriptions: before any code can emit (see app_events.h) */
     app_events_subscribe(app, APP_EVENT_CHROME_CHANGED, update_path_label);
@@ -792,6 +792,7 @@ int main(int argc, char** argv) {
     notes_free(app);
     remote_free(app);
     org_fold_free(app);
+    preview_state_free(app);
     if (app->buffers != NULL) {
         g_ptr_array_unref(app->buffers);
     }

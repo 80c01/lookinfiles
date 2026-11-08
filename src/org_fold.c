@@ -1,5 +1,6 @@
 /* Folding state of the Org preview (see org_fold.h). */
 #include "org_fold.h"
+#include "preview_state.h"
 #include "app_events.h"
 #include "file_types.h"
 
@@ -18,7 +19,7 @@ static struct OrgFold* fold_get(AppData* app) {
 }
 
 static gboolean refresh_org_preview(AppData* app) {
-    if (app->viewed_path != NULL && is_org_file(app->viewed_path)) {
+    if (preview_state_path(app) != NULL && is_org_file(preview_state_path(app))) {
         app_emit(app, APP_EVENT_PREVIEW_STALE);
         return TRUE;
     }

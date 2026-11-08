@@ -3,6 +3,7 @@
  * (name, size, type and encoding of the previewed entry). Editor tabs have
  * their own bar (editor_modes). */
 #include "status_bar.h"
+#include "preview_state.h"
 #include "i18n.h"
 #include "app_events.h"
 #include "file_list.h"
@@ -576,16 +577,16 @@ void update_status_bar(AppData* app) {
         gtk_widget_set_tooltip_text(app->status_selection, full);
 
         /* The previewed file's kind comes from its content; others from their name */
-        gboolean previewed = (full != NULL && g_strcmp0(full, app->viewed_path) == 0);
-        FileKind kind = previewed ? app->viewed_kind : file_kind_from_name(name);
+        gboolean previewed = (full != NULL && g_strcmp0(full, preview_state_path(app)) == 0);
+        FileKind kind = previewed ? preview_state_kind(app) : file_kind_from_name(name);
         gchar* type_label = status_type_label(name, type, kind,
-                                              previewed ? app->viewed_content_type : NULL);
+                                              previewed ? preview_state_content_type(app) : NULL);
         gtk_label_set_text(GTK_LABEL(app->status_type), type_label);
         g_free(type_label);
         /* Encoding of a previewed text file, as detected */
-        has_encoding = (previewed && app->viewed_encoding != NULL);
+        has_encoding = (previewed && preview_state_encoding(app) != NULL);
         if (has_encoding) {
-            gtk_label_set_text(GTK_LABEL(app->status_encoding), app->viewed_encoding);
+            gtk_label_set_text(GTK_LABEL(app->status_encoding), preview_state_encoding(app));
         }
 
         gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0 &&

@@ -1,4 +1,5 @@
 #include "file_list.h"
+#include "preview_state.h"
 #include "i18n.h"
 #include "search.h"
 #include "file_actions.h"
@@ -889,10 +890,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     search_forget_viewer_match(app);
 
     /* Stop monitoring previous viewed file */
-    g_free(app->viewed_path);
-    g_free(app->viewed_name);
-    app->viewed_path = NULL;
-    app->viewed_name = NULL;
+    preview_state_set_file(app, NULL, NULL);
     app->file_dirty = FALSE;
     fs_watch_forget_dir_changes(app);
     monitor_file(app, NULL);
@@ -1050,8 +1048,8 @@ void activate_selected_entry(AppData* app) {
             g_free(cached);
         }
     } else if (g_strcmp0(type, "file") == 0 && row->path[0] != '\0') {
-        FileKind kind = (g_strcmp0(row->path, app->viewed_path) == 0)
-                            ? app->viewed_kind
+        FileKind kind = (g_strcmp0(row->path, preview_state_path(app)) == 0)
+                            ? preview_state_kind(app)
                             : file_kind_of_path(row->path, row->name);
         if (kind == FILE_KIND_VIDEO) {
             /* A tab of its own, moved like an editor tab (Space plays it in the preview) */

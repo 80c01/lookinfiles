@@ -1,4 +1,5 @@
 #include "audio.h"
+#include "preview_state.h"
 #include "search.h"
 #include "i18n.h"
 #include "text_style.h"
@@ -458,7 +459,7 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
         g_clear_object(&app->preview_cancellable);
     }
 
-    if (app->render_raw) {
+    if (preview_state_raw(app)) {
         render_audio_raw(app, name, full);
         return;
     }

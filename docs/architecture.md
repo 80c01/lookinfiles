@@ -17,8 +17,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   `is_*_file()`, `file_kind_from_name()`) and by content (`FileKind`,
   `file_kind_detect()` on the first `FILE_SNIFF_BYTES`: magic numbers, text vs
   binary; `file_kind_of_path()`). The preview
-  detects the kind in its worker thread (`app->viewed_kind`): decide on the
-  displayed file with `viewed_kind`, not with its name.
+  detects the kind in its worker thread (`preview_state_kind()`): decide on
+  the displayed file with it, not with its name.
 - `ui_probe` — test hook for `make ui-shots`: with `LOOKIN_UI_PROBE=<file>`,
   each SIGUSR2 writes a new number to the file once the main loop is idle,
   so a screenshot waits for the application instead of a fixed delay
@@ -76,7 +76,7 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   Windows-1252 fallback; the preview (header card, text or HTML body,
   attachments, forwarded messages), shared by every mail source.
   `mail_box` — mbox scan (bounded: both ends of large files). Paged
-  previews: `PreviewDoc.pages` + `PreviewInput.page` (`app->preview_page`,
+  previews: `PreviewDoc.pages` + `PreviewInput.page` (`preview_state_page()`,
   `PgDn` / `PgUp` in the viewer). `mail_dir` — Maildir / MH folders as a
   message table, used by `dir_preview` instead of the listing.
   `mail_msg` — Outlook `.msg` (MAPI property streams of an OLE2 file) to a
@@ -369,6 +369,12 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `preview_summary` — text summaries shown in the preview for rows without
   file content (remote machine, notebook, bookmark folder, trash); columns
   padded for a monospace font (unit-tested).
+- `preview_state` — what the preview shows, in a private struct: the file
+  (`preview_state_path()`, `_name()`, `_set_file()`), its detected kind,
+  content type and encoding (`_set_detected()`), raw or rendered view
+  (`_raw()`), image / PDF zoom, page of a paged preview. Read anywhere;
+  written by the viewer and the few places that change what is shown
+  (unit-tested).
 - `fs_watch` — `GFileMonitor`s on expanded directories, the previewed file and
   `.git`, debounced `schedule_refresh()` (state in a private `struct FsWatch`,
   `fs_watch_free()` at exit); reports through events only.

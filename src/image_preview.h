@@ -6,7 +6,7 @@
 /* Image preview in the preview text view: decoded in a worker thread at the
  * size it is shown (fitted to the panel, or 1:1 with m), turned upright from
  * its EXIF orientation, with the photo details (camera, exposure, date, GPS)
- * under it. Zoom: + / - / 0 and Ctrl+wheel (app->preview_zoom, relative to
+ * under it. Zoom: + / - / 0 and Ctrl+wheel (preview_state_zoom(app), relative to
  * the fitted size; PDF pages use it too). */
 
 /* Render the image preview of a file (cancels the previous preview) */

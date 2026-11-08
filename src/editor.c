@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "preview_state.h"
 #include "i18n.h"
 #include "editor_modes.h"
 #include "dialog.h"
@@ -1292,7 +1293,7 @@ static void editor_tab_add_page(AppData* app, EditorTab* tab, GtkNotebook* targe
 }
 
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
-    FileKind kind = (g_strcmp0(full, app->viewed_path) == 0) ? app->viewed_kind
+    FileKind kind = (g_strcmp0(full, preview_state_path(app)) == 0) ? preview_state_kind(app)
                                                              : file_kind_of_path(full, name);
     if (file_kind_is_media(kind)) {
         /* Images, PDFs, Videos, and Audio are previewed in the main viewer tab */
@@ -1683,10 +1684,10 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
         app->workspaces[app->current_ws].notebook_page = (gint)page_num;
     }
 
-    if (GTK_WIDGET(notebook) == app->notebook && page_num == 0 && app->viewed_path != NULL) {
+    if (GTK_WIDGET(notebook) == app->notebook && page_num == 0 && preview_state_path(app) != NULL) {
         for (GList* l = app->editors; l != NULL; l = l->next) {
             EditorTab* t = (EditorTab*)l->data;
-            if (t != NULL && g_strcmp0(t->path, app->viewed_path) == 0) {
+            if (t != NULL && g_strcmp0(t->path, preview_state_path(app)) == 0) {
                 if (t->buffer != NULL && (t->is_buffer || gtk_text_buffer_get_modified(t->buffer))) {
                     editor_tab_write(t, t->path, NULL);
                     gtk_text_buffer_set_modified(t->buffer, FALSE);
@@ -1807,7 +1808,7 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
     minimap_update_visibility(app);
 
     if (closed_path != NULL) {
-        gboolean is_viewed = (app->viewed_path != NULL && g_strcmp0(app->viewed_path, closed_path) == 0);
+        gboolean is_viewed = (preview_state_path(app) != NULL && g_strcmp0(preview_state_path(app), closed_path) == 0);
         gboolean is_selected = FALSE;
         gchar* sel_path = NULL;
         gchar* sel_name = NULL;
@@ -1821,10 +1822,9 @@ void editor_close_tab(AppData* app, EditorTab* tab) {
 
         if (is_viewed || is_selected) {
             if (!is_viewed) {
-                g_free(app->viewed_path);
-                g_free(app->viewed_name);
-                app->viewed_path = g_strdup(closed_path);
-                app->viewed_name = g_path_get_basename(closed_path);
+                gchar* closed_name = g_path_get_basename(closed_path);
+                preview_state_set_file(app, closed_path, closed_name);
+                g_free(closed_name);
             }
             app->file_dirty = FALSE;
             app_emit(app, APP_EVENT_PREVIEW_STALE);
@@ -2070,7 +2070,7 @@ gboolean editor_save_current(AppData* app) {
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
         editor_tab_label_update(tab);
         app_emit(app, APP_EVENT_FILES_CHANGED);
-        if (app->viewed_path != NULL && g_strcmp0(app->viewed_path, tab->path) == 0) {
+        if (preview_state_path(app) != NULL && g_strcmp0(preview_state_path(app), tab->path) == 0) {
             app->file_dirty = FALSE;
             app_emit(app, APP_EVENT_PREVIEW_STALE);
         }

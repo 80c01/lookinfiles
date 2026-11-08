@@ -1,4 +1,5 @@
 #include "notes.h"
+#include "preview_state.h"
 #include "i18n.h"
 #include "note_types.h"
 #include "notebook_icons.h"
@@ -1442,7 +1443,7 @@ void notes_convert_selected_type(AppData* app, NoteType target_type) {
         notes_save(app);
         notes_refresh(app);
 
-        if (app->viewed_path != NULL) {
+        if (preview_state_path(app) != NULL) {
             load_file_content(app, note->filename, note->path);
         }
     } else {
@@ -1538,7 +1539,7 @@ static void notes_edit_note(AppData* app, NotebookItem* nb, NoteItem* note, gboo
     notes_refresh(app);
     if (nb_changed) notes_select_path(app, note->path);
 
-    if (app->viewed_path != NULL) {
+    if (preview_state_path(app) != NULL) {
         load_file_content(app, note->filename, note->path);
     }
 }

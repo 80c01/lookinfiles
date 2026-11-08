@@ -2,6 +2,7 @@
  * and the .git directory, with a debounced refresh (schedule_refresh()).
  * Reports changes through app_events only; knows neither the tree nor the viewer. */
 #include "fs_watch.h"
+#include "preview_state.h"
 #include "app_events.h"
 #include "git_utils.h"
 #include "git_tab.h"
@@ -57,19 +58,19 @@ static gboolean deferred_refresh(gpointer data) {
         app->file_dirty = FALSE;
         /* Do not overwrite preview if the viewed file is an open buffer being edited */
         gboolean is_open_buffer = FALSE;
-        if (app->viewed_path != NULL) {
+        if (preview_state_path(app) != NULL) {
             const gchar* cfg = g_get_user_config_dir();
-            if (cfg != NULL && g_str_has_prefix(app->viewed_path, cfg)) {
+            if (cfg != NULL && g_str_has_prefix(preview_state_path(app), cfg)) {
                 for (GList* l = app->editors; l != NULL; l = l->next) {
                     EditorTab* tab = (EditorTab*)l->data;
-                    if (tab != NULL && g_strcmp0(tab->path, app->viewed_path) == 0) {
+                    if (tab != NULL && g_strcmp0(tab->path, preview_state_path(app)) == 0) {
                         is_open_buffer = TRUE;
                         break;
                     }
                 }
             }
         }
-        if (app->viewed_path != NULL && !is_open_buffer) {
+        if (preview_state_path(app) != NULL && !is_open_buffer) {
             app_emit(app, APP_EVENT_PREVIEW_STALE);
         }
     }
@@ -125,9 +126,9 @@ static void on_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file
     case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
     case G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
         watch_get(app)->git_dirty = TRUE;
-        if (file != NULL && app->viewed_path != NULL) {
+        if (file != NULL && preview_state_path(app) != NULL) {
             gchar* p = g_file_get_path(file);
-            if (p != NULL && g_strcmp0(p, app->viewed_path) == 0) {
+            if (p != NULL && g_strcmp0(p, preview_state_path(app)) == 0) {
                 app->file_dirty = TRUE;
             }
             g_free(p);

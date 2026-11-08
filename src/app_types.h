@@ -171,9 +171,7 @@ typedef struct {
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
     gint nav_prefix;      /* NavPrefix (nav_keys.h): explorer / viewer prefix key waiting (gg, zz, C-x o) */
     gint nav_recenter_step; /* next Emacs C-l position: 0 center, 1 top, 2 bottom */
-    gboolean render_raw;   /* FALSE = rendered preview (default), TRUE = raw text */
-    gdouble preview_zoom;  /* image and PDF zoom, relative to the fitted size (1.0) */
-    const gchar* viewed_encoding; /* text encoding of the previewed file (static string), NULL if not text */
+    struct PreviewState* preview_state; /* file shown, kind, raw view, zoom, page (preview_state.c), NULL until first set */
     gpointer text_chunks;  /* large text loaded on scroll (text_chunks.c) */
     gpointer preview_full; /* "Load Whole File" bar of the preview (preview_full.c) */
     GHashTable* expanded_paths; /* set of full_path strings for expanded directories */
@@ -189,10 +187,6 @@ typedef struct {
     GCancellable* dir_cancellable;     /* active left-pane directory scan GTask */
     GCancellable* git_status_cancellable; /* active git status badge scan GTask */
     GCancellable* preview_cancellable; /* active right-pane preview GTask */
-    gchar* viewed_path;          /* path of displayed file, NULL otherwise */
-    gchar* viewed_name;          /* name of displayed file */
-    FileKind viewed_kind;        /* kind of displayed file, detected from its content */
-    gchar* viewed_content_type;  /* GIO content type of displayed text, NULL until read */
     gboolean file_dirty;         /* the preview must be read again (file changed, raw/rendered toggled) */
 
     /* Embedded terminal panel (Ctrl+T) */
@@ -212,8 +206,6 @@ typedef struct {
     EditorTab* last_focused_editor; /* last focused editor tab */
     gpointer code_nav;              /* code navigation state (code_nav.c), created on first use */
     gpointer code_intel;            /* language servers (code_intel.c), created on first use */
-    guint preview_page;             /* page of a paged preview (mailbox message), 0: its first view */
-    guint preview_pages;            /* pages of the shown preview after its first view */
     GtkWidget* refs_page;           /* References page of the preview notebook (code_refs.c), or NULL */
     GtkWidget* search_page;         /* Search page (text search results, code_refs.c), or NULL */
     GPtrArray* canvas_pages;        /* Canvas tabs of every workspace (roots, not referenced; canvas_view.c), or NULL */

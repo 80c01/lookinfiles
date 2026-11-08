@@ -1,4 +1,5 @@
 #include "viewer.h"
+#include "preview_state.h"
 #include "i18n.h"
 #include "canvas_preview.h"
 #include "image_preview.h"
@@ -94,9 +95,9 @@ static void run_viewer_nav(AppData* app, NavAction action) {
     case NAV_OPEN_DEDICATED:
     case NAV_DISPLAY_DEDICATED:
         /* The previewed file, in the dedicated editor panel */
-        if (app->viewed_path != NULL && app->viewed_name != NULL) {
-            gchar* name = g_strdup(app->viewed_name);
-            gchar* full = g_strdup(app->viewed_path);
+        if (preview_state_path(app) != NULL && preview_state_name(app) != NULL) {
+            gchar* name = g_strdup(preview_state_name(app));
+            gchar* full = g_strdup(preview_state_path(app));
             editor_open_dedicated(app, name, full,
                                   action == NAV_DISPLAY_DEDICATED ? app->text_view : NULL);
             g_free(name);
@@ -143,13 +144,14 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
     /* Paged previews (mailbox messages): PgDn / PgUp step through the pages */
-    if ((keyval == GDK_KEY_Page_Down || keyval == GDK_KEY_Page_Up) && app->preview_pages > 0 && !app->render_raw &&
+    guint pages = preview_state_pages(app);
+    if ((keyval == GDK_KEY_Page_Down || keyval == GDK_KEY_Page_Up) && pages > 0 && !preview_state_raw(app) &&
         (state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) == 0) {
-        guint page = app->preview_page;
-        if (keyval == GDK_KEY_Page_Down && page < app->preview_pages) page++;
+        guint page = preview_state_page(app);
+        if (keyval == GDK_KEY_Page_Down && page < pages) page++;
         else if (keyval == GDK_KEY_Page_Up && page > 0) page--;
-        if (page != app->preview_page) {
-            app->preview_page = page;
+        if (page != preview_state_page(app)) {
+            preview_state_set_page(app, page, pages);
             viewer_reload_preview(app);
         }
         return TRUE;
@@ -206,11 +208,11 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_p:
     case GDK_KEY_P:
     case GDK_KEY_space:
-        if (app->viewed_name != NULL && !app->render_raw) {
-            if (app->viewed_kind == FILE_KIND_VIDEO) {
+        if (preview_state_name(app) != NULL && !preview_state_raw(app)) {
+            if (preview_state_kind(app) == FILE_KIND_VIDEO) {
                 video_preview_toggle_play(app);
                 return TRUE;
-            } else if (app->viewed_kind == FILE_KIND_AUDIO) {
+            } else if (preview_state_kind(app) == FILE_KIND_AUDIO) {
                 audio_preview_toggle_play(app);
                 return TRUE;
             }
@@ -218,25 +220,25 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return FALSE;
     case GDK_KEY_m:
     case GDK_KEY_M:
-        if (app->viewed_name != NULL && file_kind_is_renderable(app->viewed_kind)) {
-            app->render_raw = !app->render_raw;
+        if (preview_state_name(app) != NULL && file_kind_is_renderable(preview_state_kind(app))) {
+            preview_state_set_raw(app, !preview_state_raw(app));
             app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-            if (app->viewed_path != NULL) {
-                load_file_content(app, app->viewed_name, app->viewed_path);
+            if (preview_state_path(app) != NULL) {
+                load_file_content(app, preview_state_name(app), preview_state_path(app));
             }
             return TRUE;
         }
         return FALSE;
     case GDK_KEY_e:
     case GDK_KEY_E:
-        if (app->viewed_path != NULL && app->viewed_name != NULL) {
-            if (g_file_test(app->viewed_path, G_FILE_TEST_IS_DIR)) {
+        if (preview_state_path(app) != NULL && preview_state_name(app) != NULL) {
+            if (g_file_test(preview_state_path(app), G_FILE_TEST_IS_DIR)) {
                 return FALSE;
             }
-            if (file_kind_is_media(app->viewed_kind)) {
+            if (file_kind_is_media(preview_state_kind(app))) {
                 return FALSE;
             }
-            editor_open_file(app, app->viewed_name, app->viewed_path);
+            editor_open_file(app, preview_state_name(app), preview_state_path(app));
             return TRUE;
         }
         return FALSE;
@@ -556,19 +558,13 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
 
 static void show_text_preview(TextPreviewTaskData* td) {
     AppData* app = td->app;
-    app->preview_pages = td->doc != NULL ? td->doc->pages : 0;
-    if (app->preview_page > app->preview_pages) app->preview_page = app->preview_pages;
+    preview_state_set_page(app, preview_state_page(app), td->doc != NULL ? td->doc->pages : 0);
     /* Text cut at PREVIEW_BYTES: offer the whole file */
     gboolean partial = td->preview && td->utf8_text != NULL && td->error_msg == NULL;
     preview_full_update(app, td->full, partial ? (gint64)td->raw_len : -1, td->fsize);
 
-    if (g_strcmp0(td->full, app->viewed_path) == 0 &&
-        (app->viewed_kind != td->kind || g_strcmp0(app->viewed_content_type, td->content_type) != 0 ||
-         app->viewed_encoding != td->encoding)) {
-        app->viewed_kind = td->kind;
-        app->viewed_encoding = td->encoding;
-        g_free(app->viewed_content_type);
-        app->viewed_content_type = g_strdup(td->content_type);
+    if (g_strcmp0(td->full, preview_state_path(app)) == 0 &&
+        preview_state_set_detected(app, td->kind, td->encoding, td->content_type)) {
         app_emit(app, APP_EVENT_STATUS_CHANGED);
     }
 
@@ -694,23 +690,21 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     td->app = app;
     td->name = g_strdup(name);
     td->full = g_strdup(full);
-    td->render_raw = app->render_raw;
+    td->render_raw = preview_state_raw(app);
     td->whole = preview_full_wanted(app, full);
-    td->page = app->render_raw ? 0 : app->preview_page;
+    td->page = td->render_raw ? 0 : preview_state_page(app);
     td->start_us = g_get_monotonic_time();
-    if (g_strcmp0(full, app->viewed_path) != 0) {
-        app->preview_page = 0;
-        app->preview_pages = 0;
+    if (g_strcmp0(full, preview_state_path(app)) != 0) {
+        preview_state_set_page(app, 0, 0);
         /* Provisional kind until the content is read */
-        app->viewed_kind = file_kind_from_name(name);
-        g_clear_pointer(&app->viewed_content_type, g_free);
+        preview_state_set_detected(app, file_kind_from_name(name), preview_state_encoding(app), NULL);
     }
 
     /* Built before: show it now; the worker only checks the file is unchanged.
      * Not for the file already shown (reloaded because it changed): it would
      * only draw the old content again before the new one. */
     TextPreviewTaskData* cached = NULL;
-    if (g_strcmp0(full, app->viewed_path) != 0) {
+    if (g_strcmp0(full, preview_state_path(app)) != 0) {
         gchar* key = preview_cache_key(full, td->render_raw, td->page, td->whole);
         cached = preview_cache_lookup(preview_cache(), key, &td->cached_stamp);
         g_free(key);
@@ -719,10 +713,7 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         td->has_cached = TRUE;
         cached->app = app;
         show_text_preview(cached);
-        app->viewed_kind = cached->kind;
-        app->viewed_encoding = cached->encoding;
-        g_free(app->viewed_content_type);
-        app->viewed_content_type = g_strdup(cached->content_type);
+        preview_state_set_detected(app, cached->kind, cached->encoding, cached->content_type);
         if (debug_preview_timings()) {
             g_printerr("preview %s [cached]: %.1f ms\n", name,
                        (g_get_monotonic_time() - td->start_us) / 1000.0);
@@ -740,7 +731,7 @@ static gboolean reloading_selection = FALSE;
 
 /* Re-render the file currently shown in the preview (APP_EVENT_PREVIEW_STALE) */
 void viewer_reload_preview(AppData* app) {
-    if (app->viewed_path == NULL) {
+    if (preview_state_path(app) == NULL) {
         /* A folder: its overview again (git counts, theme); other rows without
          * a file (notebook, trash, canvas note, bookmark folder): their summary */
         ExplorerRow* row = tree_nav_selected(app);
@@ -755,10 +746,10 @@ void viewer_reload_preview(AppData* app) {
         }
         return;
     }
-    gchar* fallback = (app->viewed_name == NULL && app->viewed_path != NULL)
-                          ? g_path_get_basename(app->viewed_path)
+    gchar* fallback = (preview_state_name(app) == NULL && preview_state_path(app) != NULL)
+                          ? g_path_get_basename(preview_state_path(app))
                           : NULL;
-    load_file_content(app, app->viewed_name != NULL ? app->viewed_name : fallback, app->viewed_path);
+    load_file_content(app, preview_state_name(app) != NULL ? preview_state_name(app) : fallback, preview_state_path(app));
     g_free(fallback);
 }
 
@@ -841,7 +832,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     if (row == NULL) {
         return;
     }
-    if (g_strcmp0(row->path, app->viewed_path) != 0) {
+    if (g_strcmp0(row->path, preview_state_path(app)) != 0) {
         text_chunks_stop(app); /* another entry: no more chunks of the previous file */
         preview_full_reset(app, row->path);
     }
@@ -919,10 +910,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
             }
         }
         g_free(summary);
-        g_free(app->viewed_path);
-        g_free(app->viewed_name);
-        app->viewed_path = NULL;
-        app->viewed_name = NULL;
+        preview_state_set_file(app, NULL, NULL);
         monitor_file(app, NULL);
 
         g_free(name);
@@ -986,8 +974,8 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
             }
         }
 
-        if (g_strcmp0(full, app->viewed_path) == 0 && !app->file_dirty &&
-            (app->viewed_kind == FILE_KIND_VIDEO || app->viewed_kind == FILE_KIND_AUDIO ||
+        if (g_strcmp0(full, preview_state_path(app)) == 0 && !app->file_dirty &&
+            (preview_state_kind(app) == FILE_KIND_VIDEO || preview_state_kind(app) == FILE_KIND_AUDIO ||
              gtk_text_buffer_get_char_count(app->buffer) > 0)) {
             if (!app->switching_ws) {
                 app_emit(app, APP_EVENT_LAYOUT_CHANGED);
@@ -997,23 +985,19 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
             g_free(type);
             return;
         }
-        if (!app->switching_ws && g_strcmp0(name, app->viewed_name) != 0) {
-            app->render_raw = FALSE;
-            app->preview_zoom = 1.0;
+        if (!app->switching_ws && g_strcmp0(name, preview_state_name(app)) != 0) {
+            preview_state_set_raw(app, FALSE);
+            preview_state_set_zoom(app, 1.0);
         }
         app->file_dirty = FALSE;
         load_file_content(app, name, full);
     }
 
-    g_free(app->viewed_path);
-    g_free(app->viewed_name);
     if (as_dir) {
-        app->viewed_path = NULL;
-        app->viewed_name = NULL;
+        preview_state_set_file(app, NULL, NULL);
         monitor_file(app, NULL);
     } else {
-        app->viewed_path = g_strdup(full);
-        app->viewed_name = g_strdup(name);
+        preview_state_set_file(app, full, name);
         monitor_file(app, full);
     }
 

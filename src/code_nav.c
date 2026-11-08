@@ -1,5 +1,6 @@
 /* Code navigation in editor tabs (see code_nav.h) */
 #include "code_nav.h"
+#include "preview_state.h"
 #include "app_paths.h"
 #include "code_index.h"
 #include "code_intel.h"
@@ -167,8 +168,8 @@ static void on_preview_click(GtkGestureClick* gesture, gint n_press, gdouble x, 
     GdkModifierType mods = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
     if (n_press != 1 || (mods & GDK_CONTROL_MASK) == 0 || (mods & (GDK_SHIFT_MASK | GDK_ALT_MASK)) != 0) return;
     /* Only a source file shown as text (not rendered, not a summary) */
-    if (app->viewed_path == NULL || app->viewed_kind != FILE_KIND_TEXT ||
-        code_lang_from_name(app->viewed_path) == CODE_LANG_NONE) {
+    if (preview_state_path(app) == NULL || preview_state_kind(app) != FILE_KIND_TEXT ||
+        code_lang_from_name(preview_state_path(app)) == CODE_LANG_NONE) {
         return;
     }
     GtkTextView* view = GTK_TEXT_VIEW(app->text_view);
@@ -179,7 +180,7 @@ static void on_preview_click(GtkGestureClick* gesture, gint n_press, gdouble x, 
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
     gint line = gtk_text_iter_get_line(&it);
     gint index = gtk_text_iter_get_line_index(&it);
-    gchar* path = g_strdup(app->viewed_path);
+    gchar* path = g_strdup(preview_state_path(app));
     EditorTab* tab = editor_open_at(app, path, line, index);
     g_free(path);
     CodeNavMessageFunc message = g_object_get_data(G_OBJECT(gesture), "code-nav-message");

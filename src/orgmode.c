@@ -1,4 +1,5 @@
 #include "orgmode.h"
+#include "preview_state.h"
 #include "fonts.h"
 #include "text_tags.h"
 #include "org_doc.h"
@@ -1169,8 +1170,8 @@ gboolean orgmode_toggle_checkbox_at_line(const gchar* file_path, gint file_line)
 
 gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
     if (app == NULL || app->text_view == NULL || app->buffer == NULL) return FALSE;
-    if (app->viewed_name == NULL || !is_org_file(app->viewed_name)) return FALSE;
-    if (app->render_raw) return FALSE;
+    if (preview_state_name(app) == NULL || !is_org_file(preview_state_name(app))) return FALSE;
+    if (preview_state_raw(app)) return FALSE;
 
     GtkTextIter iter;
     gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(app->text_view), &iter, (gint)x, (gint)y);
@@ -1202,7 +1203,7 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
     if (on_todo || info->heading_level > 0) {
         if (on_todo) {
             /* Cycle TODO state */
-            orgmode_cycle_todo_at_line(app->viewed_path, info->file_line);
+            orgmode_cycle_todo_at_line(preview_state_path(app), info->file_line);
             app_emit(app, APP_EVENT_PREVIEW_STALE);
             return TRUE;
         } else {
@@ -1214,7 +1215,7 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
 
     /* 2. If line has checkbox, toggle it */
     if (info->is_checkbox) {
-        orgmode_toggle_checkbox_at_line(app->viewed_path, info->file_line);
+        orgmode_toggle_checkbox_at_line(preview_state_path(app), info->file_line);
         app_emit(app, APP_EVENT_PREVIEW_STALE);
         return TRUE;
     }
@@ -1223,8 +1224,8 @@ gboolean orgmode_handle_click(AppData* app, gdouble x, gdouble y) {
 }
 
 gboolean orgmode_handle_viewer_key(AppData* app, guint keyval, GdkModifierType state) {
-    if (app == NULL || app->viewed_name == NULL || !is_org_file(app->viewed_name)) return FALSE;
-    if (app->render_raw) return FALSE;
+    if (app == NULL || preview_state_name(app) == NULL || !is_org_file(preview_state_name(app))) return FALSE;
+    if (preview_state_raw(app)) return FALSE;
 
     /* Shift+Tab: Global Visibility Cycling */
     if ((keyval == GDK_KEY_ISO_Left_Tab) || (keyval == GDK_KEY_Tab && (state & GDK_SHIFT_MASK))) {
@@ -1254,7 +1255,7 @@ gboolean orgmode_handle_viewer_key(AppData* app, guint keyval, GdkModifierType s
         gint buf_line = gtk_text_iter_get_line(&iter);
         OrgLineInfo* info = find_line_info(app->buffer, buf_line);
         if (info != NULL && info->heading_level > 0) {
-            orgmode_cycle_todo_at_line(app->viewed_path, info->file_line);
+            orgmode_cycle_todo_at_line(preview_state_path(app), info->file_line);
             app_emit(app, APP_EVENT_PREVIEW_STALE);
             return TRUE;
         }
@@ -1267,7 +1268,7 @@ gboolean orgmode_handle_viewer_key(AppData* app, guint keyval, GdkModifierType s
         gint buf_line = gtk_text_iter_get_line(&iter);
         OrgLineInfo* info = find_line_info(app->buffer, buf_line);
         if (info != NULL && info->is_checkbox) {
-            orgmode_toggle_checkbox_at_line(app->viewed_path, info->file_line);
+            orgmode_toggle_checkbox_at_line(preview_state_path(app), info->file_line);
             app_emit(app, APP_EVENT_PREVIEW_STALE);
             return TRUE;
         }

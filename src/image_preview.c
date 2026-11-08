@@ -1,6 +1,7 @@
 /* Image preview: fitted / 1:1 / zoomed, EXIF orientation and photo details
  * (see image_preview.h). */
 #include "image_preview.h"
+#include "preview_state.h"
 #include "search.h"
 #include "i18n.h"
 #include "fonts.h"
@@ -409,8 +410,8 @@ void render_image_preview(AppData* app, const gchar* name, const gchar* full) {
     td->app = app;
     td->name = g_strdup(name);
     td->full = g_strdup(full);
-    td->render_raw = app->render_raw;
-    td->zoom = app->preview_zoom > 0 ? app->preview_zoom : 1.0;
+    td->render_raw = preview_state_raw(app);
+    td->zoom = preview_state_zoom(app) > 0 ? preview_state_zoom(app) : 1.0;
     td->alloc_w = gtk_widget_get_width(app->text_view);
     td->alloc_h = gtk_widget_get_height(app->text_view);
 
@@ -423,8 +424,8 @@ void render_image_preview(AppData* app, const gchar* name, const gchar* full) {
 /* --- Zoom --- */
 
 static gboolean zoomable(AppData* app) {
-    return app->viewed_path != NULL &&
-           (app->viewed_kind == FILE_KIND_IMAGE || app->viewed_kind == FILE_KIND_PDF);
+    return preview_state_path(app) != NULL &&
+           (preview_state_kind(app) == FILE_KIND_IMAGE || preview_state_kind(app) == FILE_KIND_PDF);
 }
 
 static void set_zoom(AppData* app, gdouble zoom) {
@@ -432,10 +433,10 @@ static void set_zoom(AppData* app, gdouble zoom) {
     if (fabs(zoom - 1.0) < 0.01) {
         zoom = 1.0;
     }
-    if (zoom == app->preview_zoom) {
+    if (zoom == preview_state_zoom(app)) {
         return;
     }
-    app->preview_zoom = zoom;
+    preview_state_set_zoom(app, zoom);
     app_emit(app, APP_EVENT_PREVIEW_STALE);
 }
 
@@ -447,11 +448,11 @@ gboolean image_preview_zoom_key(AppData* app, guint keyval) {
     case GDK_KEY_plus:
     case GDK_KEY_equal:
     case GDK_KEY_KP_Add:
-        set_zoom(app, app->preview_zoom * 1.25);
+        set_zoom(app, preview_state_zoom(app) * 1.25);
         return TRUE;
     case GDK_KEY_minus:
     case GDK_KEY_KP_Subtract:
-        set_zoom(app, app->preview_zoom / 1.25);
+        set_zoom(app, preview_state_zoom(app) / 1.25);
         return TRUE;
     case GDK_KEY_0:
     case GDK_KEY_KP_0:
@@ -470,7 +471,7 @@ static gboolean on_preview_scroll(GtkEventControllerScroll* controller, gdouble 
     if (!(state & GDK_CONTROL_MASK) || !zoomable(app) || dy == 0) {
         return FALSE;
     }
-    set_zoom(app, dy < 0 ? app->preview_zoom * 1.25 : app->preview_zoom / 1.25);
+    set_zoom(app, dy < 0 ? preview_state_zoom(app) * 1.25 : preview_state_zoom(app) / 1.25);
     return TRUE;
 }
 

@@ -1,4 +1,5 @@
 #include "pdf.h"
+#include "preview_state.h"
 #include "search.h"
 #include "i18n.h"
 #include "app_events.h"
@@ -582,7 +583,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
 }
 
 gboolean pdf_preview_jump(AppData* app, gint direction) {
-    if (app->viewed_kind != FILE_KIND_PDF || app->render_raw) {
+    if (preview_state_kind(app) != FILE_KIND_PDF || preview_state_raw(app)) {
         return FALSE;
     }
     /* The page badges, from the first: the next one below the scroll
@@ -660,7 +661,7 @@ static void watch_viewport(AppData* app) {
 }
 
 void pdf_preview_refit(AppData* app) {
-    if (app->viewed_kind != FILE_KIND_PDF || app->render_raw || app->text_view == NULL) {
+    if (preview_state_kind(app) != FILE_KIND_PDF || preview_state_raw(app) || app->text_view == NULL) {
         return;
     }
     gint w = pdf_fit_width(app);
@@ -684,9 +685,9 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
     td->app = app;
     td->name = g_strdup(name);
     td->full = g_strdup(full);
-    td->render_raw = app->render_raw;
+    td->render_raw = preview_state_raw(app);
     /* Zoomed pages are at most 4096 px wide (memory: up to MAX_RENDER_PAGES textures) */
-    td->max_w = MIN((gint)(max_w * (app->preview_zoom > 0 ? app->preview_zoom : 1.0)), 4096);
+    td->max_w = MIN((gint)(max_w * (preview_state_zoom(app) > 0 ? preview_state_zoom(app) : 1.0)), 4096);
     td->first_page = 0;
     td->page_count = FIRST_RENDER_PAGES;
 

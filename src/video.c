@@ -1,4 +1,5 @@
 #include "video.h"
+#include "preview_state.h"
 #include "search.h"
 #include "i18n.h"
 #include "text_style.h"
@@ -249,8 +250,8 @@ void video_preview_toggle_play(AppData* app) {
 
 gboolean video_preview_seek_key(AppData* app, guint keyval, GdkModifierType state) {
     VideoPreview* v = app != NULL ? app->video : NULL;
-    if (v == NULL || v->current_path == NULL || app->render_raw ||
-        app->viewed_kind != FILE_KIND_VIDEO || (keyval != GDK_KEY_Left && keyval != GDK_KEY_Right) ||
+    if (v == NULL || v->current_path == NULL || preview_state_raw(app) ||
+        preview_state_kind(app) != FILE_KIND_VIDEO || (keyval != GDK_KEY_Left && keyval != GDK_KEY_Right) ||
         (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK | GDK_SUPER_MASK)) != 0) {
         return FALSE;
     }
@@ -410,7 +411,7 @@ void render_video_preview(AppData* app, const gchar* name, const gchar* full) {
         g_clear_object(&app->preview_cancellable);
     }
 
-    if (app->render_raw) {
+    if (preview_state_raw(app)) {
         render_video_raw(app, name, full);
         return;
     }

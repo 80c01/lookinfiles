@@ -1,6 +1,7 @@
 /* Keys of the explorer panel. Navigation follows the global mode (nav_keys.h);
  * the view actions (a, d, r, o...) are the same in every mode. */
 #include "explorer_keys.h"
+#include "preview_state.h"
 #include "file_list.h"
 #include "tree_nav.h"
 #include "panels.h"
@@ -109,12 +110,12 @@ static void run_nav(AppData* app, NavAction action) {
 
 /* Video or audio preview shown: play / pause it */
 static gboolean toggle_media(AppData* app) {
-    if (app->viewed_name == NULL || app->render_raw) return FALSE;
-    if (app->viewed_kind == FILE_KIND_VIDEO) {
+    if (preview_state_name(app) == NULL || preview_state_raw(app)) return FALSE;
+    if (preview_state_kind(app) == FILE_KIND_VIDEO) {
         video_preview_toggle_play(app);
         return TRUE;
     }
-    if (app->viewed_kind == FILE_KIND_AUDIO) {
+    if (preview_state_kind(app) == FILE_KIND_AUDIO) {
         audio_preview_toggle_play(app);
         return TRUE;
     }
@@ -268,10 +269,10 @@ static gboolean handle_action_key(AppData* app, guint keyval, GdkModifierType st
         return TRUE;
     case GDK_KEY_m:
     case GDK_KEY_M:
-        if (app->viewed_name != NULL && file_kind_is_renderable(app->viewed_kind)) {
-            app->render_raw = !app->render_raw;
+        if (preview_state_name(app) != NULL && file_kind_is_renderable(preview_state_kind(app))) {
+            preview_state_set_raw(app, !preview_state_raw(app));
             app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-            if (app->viewed_path != NULL) {
+            if (preview_state_path(app) != NULL) {
                 app_emit(app, APP_EVENT_PREVIEW_STALE);
             }
             return TRUE;
@@ -305,7 +306,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
 
     /* Left / Right on a video shown in the preview: seek (h / l still navigate) */
     if (app->nav_prefix == NAV_PREFIX_NONE && explorer_row_is(tree_nav_selected(app), "file") &&
-        g_strcmp0(tree_nav_selected(app)->path, app->viewed_path) == 0 && video_preview_seek_key(app, keyval, state)) {
+        g_strcmp0(tree_nav_selected(app)->path, preview_state_path(app)) == 0 && video_preview_seek_key(app, keyval, state)) {
         return TRUE;
     }
 

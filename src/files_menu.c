@@ -1,6 +1,7 @@
 /* Right-click menu of the files view (same labels and keys as the toolbar
  * tooltips and the README tables). */
 #include "files_menu.h"
+#include "preview_state.h"
 #include "i18n.h"
 #include "app_events.h"
 #include "bookmarks.h"
@@ -161,8 +162,8 @@ static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, Ex
     gboolean is_dir = explorer_row_is(row, "dir");
     menu_item(box, popover, app, _("Open"), "Enter", FM_OPEN);
     if (!is_dir) {
-        FileKind kind = (g_strcmp0(row->path, app->viewed_path) == 0)
-                            ? app->viewed_kind
+        FileKind kind = (g_strcmp0(row->path, preview_state_path(app)) == 0)
+                            ? preview_state_kind(app)
                             : file_kind_of_path(row->path, row->name);
         if (file_kind_is_text(kind)) {
             menu_item(box, popover, app, _("Open in Side Panel"), side_panel_key(app), FM_OPEN_SIDE);

@@ -1,4 +1,5 @@
 #include "minimap.h"
+#include "preview_state.h"
 #include "diff_gutter.h"
 #include "line_diff.h"
 #include "minimap_geometry.h"
@@ -55,8 +56,8 @@ static gboolean is_paged_view(GtkTextView* view) {
         }
     }
     AppData* app = g_object_get_data(G_OBJECT(view), "app");
-    if (app != NULL && !app->render_raw &&
-        (app->viewed_kind == FILE_KIND_PDF || app->viewed_kind == FILE_KIND_PRESENTATION)) {
+    if (app != NULL && !preview_state_raw(app) &&
+        (preview_state_kind(app) == FILE_KIND_PDF || preview_state_kind(app) == FILE_KIND_PRESENTATION)) {
         return TRUE;
     }
     return FALSE;

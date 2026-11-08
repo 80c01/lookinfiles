@@ -139,7 +139,7 @@ markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_l
 markdown_link:
 markdown_table:fonts,palette,markdown_link
 html:app_types,image_utils,palette,fonts,text_tags,icons,i18n
-minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette
+minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette,preview_state
 preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette,fonts,text_tags
 tree_nav:app_types
 app_events:app_types
@@ -156,7 +156,8 @@ tab_drop:pane_geometry
 explorer_tree:explorer_row,icons
 remote_store:app_types,app_paths,notebook_icons
 preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc,i18n
-fs_watch:app_types,app_events,git_utils,git_tab
+fs_watch:app_types,app_events,git_utils,git_tab,preview_state
+preview_state:app_types
 "
 
 for rule in $RULES; do

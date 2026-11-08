@@ -6,7 +6,7 @@
 /* Initialize video preview widgets inside app->preview_stack */
 void video_preview_init(AppData* app);
 
-/* Render video preview (or raw info / hex dump if render_raw is active) */
+/* Render video preview (or raw info / hex dump in the raw view, preview_state_raw()) */
 void render_video_preview(AppData* app, const gchar* name, const gchar* full);
 
 /* Stop playback and clear the active video stream */

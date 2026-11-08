@@ -1,5 +1,6 @@
 /* Virtual workspaces (Alt+1..8): per-workspace layout snapshots and the top-bar workspace minimap. */
 #include "workspace.h"
+#include "preview_state.h"
 #include "pdf.h"
 #include "workspace_menu.h"
 #include "nav_history.h"
@@ -136,7 +137,7 @@ void workspace_save_current(AppData* app) {
     ws->sidebar_view = app->sidebar_view;
     ws->games_unlocked = app->game_mode_unlocked;
     ws->sort_mode = app->sort_mode;
-    ws->render_raw = app->render_raw;
+    ws->render_raw = preview_state_raw(app);
     ws->editor_dedicated = app->editor_dedicated;
     ws->editor_frac = app->editor_frac;
     if (app->editor_dedicated && app->editor_notebook != NULL) {
@@ -513,8 +514,8 @@ void workspace_switch(AppData* app, gint idx) {
     app->expanded_paths = clone_ws_paths(ws->expanded_paths);
     sync_directory_monitors(app);
 
-    if (app->render_raw != ws->render_raw) {
-        app->render_raw = ws->render_raw;
+    if (preview_state_raw(app) != ws->render_raw) {
+        preview_state_set_raw(app, ws->render_raw);
         app->file_dirty = TRUE;
     }
     if (app->editor_dedicated) {

@@ -9,7 +9,7 @@ gboolean is_audio_file(const gchar* name);
 /* Initialize audio preview widgets inside app->preview_stack */
 void audio_preview_init(AppData* app);
 
-/* Render audio preview (or raw info / hex dump if render_raw is active) */
+/* Render audio preview (or raw info / hex dump in the raw view, preview_state_raw()) */
 void render_audio_preview(AppData* app, const gchar* name, const gchar* full);
 
 /* Stop playback and clear the active audio stream */
