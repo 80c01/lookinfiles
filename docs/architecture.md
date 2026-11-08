@@ -397,7 +397,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`LOOKIN_INTERNAL_TAB_DRAG=1` turns it on elsewhere, to test it).
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`.
   `markdown_table` — Markdown tables for `markdown`: rows split into cells, a
-  grid widget anchored in the view, or a box-drawn text table without a view.
+  grid widget anchored in the view (scrolling horizontally in its own frame
+  when wider than the text), or a box-drawn text table without a view.
   `markdown_link` — links that can be followed, off by default (previews keep
   them as text): `markdown_link_attach()` on a view makes the renderer record the
   links of its buffer and calls a handler on click (table cells: `<a href>` labels).

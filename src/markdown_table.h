@@ -3,7 +3,8 @@
 
 /* Markdown tables for the Markdown renderer (markdown.h): a row split into
  * cells, and the table inserted in a text buffer, as a grid widget anchored
- * in the text view (VS Code look) or, without a view, as a text table with
+ * in the text view (VS Code look; a table wider than the text scrolls
+ * horizontally in its own frame) or, without a view, as a text table with
  * box-drawing borders (tags md_table, md_table_header, md_table_border of
  * ensure_markdown_tags()). */
 #include <gtk/gtk.h>

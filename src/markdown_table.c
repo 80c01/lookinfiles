@@ -165,6 +165,32 @@ static gfloat cell_align(const gchar* sep_cell) {
     return (left && right) ? 0.5f : right ? 1.0f : 0.0f;
 }
 
+/* The text view sizes an anchored widget at its minimum: the table's frame
+ * asks for the table's width, at most the width of the text, and scrolls
+ * the rest horizontally (followed on each resize of the view). The view's
+ * scrolled window must scroll horizontally too (not GTK_POLICY_NEVER), or
+ * the frame's width would hold the view at its old width. */
+static void fit_table_frame(GtkAdjustment* hadj, gpointer data) {
+    GtkWidget* frame = data;
+    GtkWidget* view = gtk_widget_get_ancestor(frame, GTK_TYPE_TEXT_VIEW);
+    gint page = (gint)gtk_adjustment_get_page_size(hadj);
+    if (view == NULL || page <= 0) {
+        return;
+    }
+    /* - 1: the text layout keeps a pixel for the cursor after the table */
+    gint avail = page - gtk_text_view_get_left_margin(GTK_TEXT_VIEW(view)) -
+                 gtk_text_view_get_right_margin(GTK_TEXT_VIEW(view)) - 1;
+    gint natural = 0;
+    gtk_widget_measure(gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(frame)),
+                       GTK_ORIENTATION_HORIZONTAL, -1, NULL, &natural, NULL, NULL);
+    gint width = MAX(MIN(natural, avail), 1);
+    gint old = 0;
+    gtk_widget_get_size_request(frame, &old, NULL);
+    if (width != old) {
+        gtk_widget_set_size_request(frame, width, -1);
+    }
+}
+
 /* Table as a grid widget in the text (VS Code: no vertical borders, a line
  * under the header, faint lines between rows; CSS in theme.c) */
 static void insert_table_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextIter* iter,
@@ -203,8 +229,19 @@ static void insert_table_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextI
             gtk_grid_attach(GTK_GRID(grid), label, (gint)c, (gint)r, 1, 1);
         }
     }
+    GtkWidget* frame = gtk_scrolled_window_new();
+    gtk_widget_add_css_class(frame, "md-table-frame");
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(frame), GTK_POLICY_AUTOMATIC, GTK_POLICY_NEVER);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(frame), TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(frame), grid);
     GtkTextChildAnchor* anchor = gtk_text_buffer_create_child_anchor(buffer, iter);
-    gtk_text_view_add_child_at_anchor(view, grid, anchor);
+    gtk_text_view_add_child_at_anchor(view, frame, anchor);
+    GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(view));
+    if (hadj != NULL) {
+        /* Disconnected when the frame goes (the text is rendered again) */
+        g_signal_connect_object(hadj, "changed", G_CALLBACK(fit_table_frame), frame, 0);
+        fit_table_frame(hadj, frame);
+    }
     gtk_text_buffer_insert(buffer, iter, "\n", 1);
 }
 

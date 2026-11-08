@@ -482,7 +482,9 @@ static HelpGuide* ensure_page(AppData* app) {
     gtk_widget_add_controller(hg->view, GTK_EVENT_CONTROLLER(side));
 
     GtkWidget* scroll = gtk_scrolled_window_new();
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    /* Not GTK_POLICY_NEVER: a wide table or picture would hold the page at its
+     * width (cut by the panel); tables scroll in their own frame */
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_vexpand(scroll, TRUE);
     gtk_widget_set_hexpand(scroll, TRUE);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), hg->view);
