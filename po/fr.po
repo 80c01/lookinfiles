@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 08:56+0000\n"
+"POT-Creation-Date: 2026-11-08 09:09+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -153,7 +153,8 @@ msgstr "_Retirer le signet"
 #: src/file_actions.c:42 src/file_actions.c:236 src/notes.c:587 src/notes.c:768
 #: src/notes.c:852 src/preferences.c:342 src/project_search.c:369
 #: src/remote.c:322 src/remote.c:389 src/remote.c:456 src/remote.c:487
-#: src/remote.c:564 src/session_bookmark.c:13
+#: src/remote.c:564 src/session_bookmark.c:13 src/themes.c:222 src/themes.c:237
+#: src/themes.c:682
 msgid "_Cancel"
 msgstr "_Annuler"
 
@@ -237,6 +238,7 @@ msgid "Delete Bookmark"
 msgstr "Supprimer le signet"
 
 #: src/bookmarks.c:577 src/notes.c:1700 src/remote.c:457 src/remote.c:565
+#: src/themes.c:619 src/themes.c:791
 msgid "_Delete"
 msgstr "_Supprimer"
 
@@ -249,7 +251,7 @@ msgid "Edit Bookmark"
 msgstr "Modifier le signet"
 
 #: src/bookmarks.c:606 src/notes.c:1487 src/notes.c:1557 src/remote.c:324
-#: src/remote.c:390 src/remote.c:541 src/session_bookmark.c:14
+#: src/remote.c:390 src/remote.c:541 src/session_bookmark.c:14 src/themes.c:237
 msgid "_Save"
 msgstr "_Enregistrer"
 
@@ -258,7 +260,7 @@ msgid "New Bookmark Folder"
 msgstr "Nouveau dossier de signets"
 
 #: src/bookmarks.c:706 src/file_actions.c:237 src/notes.c:1245 src/notes.c:1383
-#: src/remote.c:526
+#: src/remote.c:526 src/themes.c:682
 msgid "_Create"
 msgstr "_Créer"
 
@@ -283,7 +285,7 @@ msgstr "Ouvrir le signet"
 
 #: src/bookmarks.c:865 src/file_actions.c:95 src/notes.c:883 src/remote.c:598
 #: src/remote.c:680 src/session_bookmark.c:62 src/session_bookmark.c:80
-#: src/session_bookmark.c:100
+#: src/session_bookmark.c:100 src/themes.c:212
 msgid "_Close"
 msgstr "_Fermer"
 
@@ -2501,6 +2503,50 @@ msgstr "Raccourcis clavier"
 msgid "Close Help Panel (?)"
 msgstr "Fermer le panneau d’aide (?)"
 
+#: src/help_guide.c:126
+#, c-format
+msgid ""
+"# Page Not Found\n"
+"\n"
+"The user guide has no page `%s`.\n"
+msgstr ""
+"# Page introuvable\n"
+"\n"
+"Le guide d’utilisation n’a pas de page `%s`.\n"
+
+#: src/help_guide.c:137
+msgid "User Guide"
+msgstr "Guide d’utilisation"
+
+#: src/help_guide.c:195
+#, c-format
+msgid "Not in the built-in guide: %s"
+msgstr "Absent du guide intégré : %s"
+
+#: src/help_guide.c:452
+msgid "Back (Shift+H)"
+msgstr "Précédent (Shift+H)"
+
+#: src/help_guide.c:453
+msgid "Forward (Shift+L)"
+msgstr "Suivant (Shift+L)"
+
+#: src/help_guide.c:454
+msgid "Contents of the User Guide"
+msgstr "Sommaire du guide d’utilisation"
+
+#: src/help_guide.c:460
+msgid "Show Keyboard Shortcuts (?)"
+msgstr "Afficher les raccourcis clavier (?)"
+
+#: src/help_guide.c:461
+msgid "Close Help"
+msgstr "Fermer l’aide"
+
+#: src/help_guide.c:496 src/main.c:368
+msgid "Help"
+msgstr "Aide"
+
 #: src/image_preview.c:149
 #, c-format
 msgid "[ %1$s: no image loader for %2$s is installed (package %3$s) ]"
@@ -2661,10 +2707,6 @@ msgstr "Terminal"
 #: src/main.c:362
 msgid "Show / Hide Terminal Panel"
 msgstr "Afficher / masquer le panneau Terminal"
-
-#: src/main.c:368
-msgid "Help"
-msgstr "Aide"
 
 #: src/main.c:372
 msgid "User Guide (F1) — Right-Click: Keyboard Shortcuts (?)"
@@ -4085,6 +4127,153 @@ msgstr "mot entier"
 #: src/text_search.c:71
 msgid "regex"
 msgstr "regex"
+
+#: src/themes.c:237
+msgid "Save Theme As"
+msgstr "Enregistrer le thème sous"
+
+#: src/themes.c:241
+msgid "Save the current colours and fonts as a theme named:"
+msgstr "Enregistrer les couleurs et les polices actuelles comme un thème nommé :"
+
+#: src/themes.c:266
+msgid "Theme Not Applied"
+msgstr "Thème non appliqué"
+
+#: src/themes.c:367
+#, c-format
+msgid "your theme, %s"
+msgstr "votre thème, %s"
+
+#: src/themes.c:367
+msgid "built-in"
+msgstr "intégré"
+
+#: src/themes.c:368
+msgid "Dark"
+msgstr "Sombre"
+
+#: src/themes.c:368
+msgid "Light"
+msgstr "Clair"
+
+#: src/themes.c:369
+msgid " · in use"
+msgstr " · utilisé"
+
+#: src/themes.c:527
+msgid "Interface"
+msgstr "Interface"
+
+#: src/themes.c:527
+msgid "Code"
+msgstr "Code"
+
+#: src/themes.c:529
+msgid ""
+"Interface and documents: font names separated by commas (empty: the theme's)"
+msgstr "Interface et documents : noms de police séparés par des virgules (vide : ceux du thème)"
+
+#: src/themes.c:530
+msgid ""
+"Files, code and terminals: font names separated by commas (empty: the "
+"theme's)"
+msgstr "Fichiers, code et terminaux : noms de police séparés par des virgules (vide : ceux du thème)"
+
+#: src/themes.c:542
+msgid "Size in pixels (Ctrl+= / Ctrl+- / Ctrl+0)"
+msgstr "Taille en pixels (Ctrl+= / Ctrl+- / Ctrl+0)"
+
+#: src/themes.c:590
+#, c-format
+msgid ""
+"Selecting a theme applies it at once; Apply keeps it, Cancel goes back. Your "
+"themes are INI files in %s."
+msgstr "Sélectionner un thème l’applique aussitôt ; Appliquer le garde, Annuler revient en arrière. Vos thèmes sont des fichiers INI dans %s."
+
+#: src/themes.c:612
+msgid "_Save As…"
+msgstr "_Enregistrer sous…"
+
+#: src/themes.c:613
+msgid "Save the current colours and fonts as a theme of yours"
+msgstr "Enregistrer les couleurs et les polices actuelles comme un de vos thèmes"
+
+#: src/themes.c:614
+msgid "From _Image…"
+msgstr "Depuis une _image…"
+
+#: src/themes.c:615
+msgid ""
+"Create a theme of yours from the colours of an image (the selected one by "
+"default)"
+msgstr "Créer un de vos thèmes à partir des couleurs d’une image (celle sélectionnée par défaut)"
+
+#: src/themes.c:616
+msgid "_Edit"
+msgstr "_Modifier"
+
+#: src/themes.c:617
+msgid ""
+"Open the selected theme file in an editor tab: saving it applies it (your "
+"themes only)"
+msgstr "Ouvrir le fichier du thème sélectionné dans un onglet d’édition : l’enregistrer l’applique (vos thèmes seulement)"
+
+#: src/themes.c:620
+msgid "Delete the selected theme file (your themes only)"
+msgstr "Supprimer le fichier du thème sélectionné (vos thèmes seulement)"
+
+#: src/themes.c:624
+msgid "Your fonts, over any theme"
+msgstr "Vos polices, par-dessus n’importe quel thème"
+
+#: src/themes.c:649
+#, c-format
+msgid "%s (mine)"
+msgstr "%s (le mien)"
+
+#: src/themes.c:654 src/themes.c:662
+msgid "Theme Not Saved"
+msgstr "Thème non enregistré"
+
+#: src/themes.c:654 src/themes.c:742
+msgid "A built-in theme has this name: choose another one."
+msgstr "Un thème intégré porte ce nom : choisissez-en un autre."
+
+#: src/themes.c:661 src/themes.c:757
+#, c-format
+msgid "The theme could not be saved: %s"
+msgstr "Le thème n’a pas pu être enregistré : %s"
+
+#: src/themes.c:682
+msgid "Theme from Image"
+msgstr "Thème depuis une image"
+
+#: src/themes.c:686
+msgid "Create a theme from the colours of the image file:"
+msgstr "Créer un thème à partir des couleurs du fichier image :"
+
+#: src/themes.c:691
+msgid "Named:"
+msgstr "Nommé :"
+
+#: src/themes.c:742 src/themes.c:745 src/themes.c:758
+msgid "Theme Not Created"
+msgstr "Thème non créé"
+
+#: src/themes.c:744
+#, c-format
+msgid "%s cannot be read as an image (or has no opaque pixel)."
+msgstr "%s ne peut pas être lu comme une image (ou n’a aucun pixel opaque)."
+
+#: src/themes.c:790
+#, c-format
+msgid "Delete the theme “%1$s” and its file %2$s?"
+msgstr "Supprimer le thème « %1$s » et son fichier %2$s ?"
+
+#: src/themes.c:791
+msgid "Delete Theme"
+msgstr "Supprimer le thème"
 
 #: src/topbar.c:345
 msgid "Back (Shift+H) — Right-Click: Folders Before"

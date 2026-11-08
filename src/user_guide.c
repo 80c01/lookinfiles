@@ -7,13 +7,16 @@
 /* Resource path of the pages (guide.gresource.xml, made by the Makefile) */
 #define GUIDE_PREFIX "/org/lookin/guide/"
 
-gchar* user_guide_read(const gchar* page) {
-    if (page == NULL || page[0] == '\0' || page[0] == '/' || strstr(page, "..") != NULL) {
-        return NULL;
-    }
-    gchar* path = g_strconcat(GUIDE_PREFIX, page, NULL);
+/* Translated pages: <lang>/<page> (docs/l10n/, see the Makefile) */
+#define GUIDE_L10N_PREFIX "/org/lookin/guide-l10n/"
+
+static gboolean valid_name(const gchar* name) {
+    return name != NULL && name[0] != '\0' && name[0] != '/' && strstr(name, "..") == NULL;
+}
+
+/* Valid UTF-8 text of the resource at path, or NULL */
+static gchar* read_resource(const gchar* path) {
     GBytes* bytes = g_resources_lookup_data(path, G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
-    g_free(path);
     if (bytes == NULL) {
         return NULL;
     }
@@ -22,6 +25,40 @@ gchar* user_guide_read(const gchar* page) {
     gchar* text = g_utf8_make_valid(data != NULL ? data : "", (gssize)len);
     g_bytes_unref(bytes);
     return text;
+}
+
+gchar* user_guide_read(const gchar* page) {
+    if (!valid_name(page)) {
+        return NULL;
+    }
+    gchar* path = g_strconcat(GUIDE_PREFIX, page, NULL);
+    gchar* text = read_resource(path);
+    g_free(path);
+    return text;
+}
+
+gchar* user_guide_read_in(const gchar* page, const gchar* lang) {
+    if (!valid_name(page) || !valid_name(lang) || strchr(lang, '/') != NULL) {
+        return NULL;
+    }
+    gchar* path = g_strconcat(GUIDE_L10N_PREFIX, lang, "/", page, NULL);
+    gchar* text = read_resource(path);
+    g_free(path);
+    return text;
+}
+
+gchar* user_guide_read_localized(const gchar* page) {
+    const gchar* const* langs = g_get_language_names();
+    for (gint i = 0; langs[i] != NULL; i++) {
+        if (strcmp(langs[i], "C") == 0 || strcmp(langs[i], "POSIX") == 0) {
+            break; /* the untranslated guide */
+        }
+        gchar* text = user_guide_read_in(page, langs[i]);
+        if (text != NULL) {
+            return text;
+        }
+    }
+    return user_guide_read(page);
 }
 
 gchar* user_guide_title(const gchar* markdown) {

@@ -77,7 +77,9 @@ layer or below (`tools/check_layers.sh` enforces it):
 
 1. **English only**: strings, comments, commits, docs. User-visible strings
    are written in English and marked for translation with `_()` (`i18n.h`,
-   see docs/translations.md); translations live only in `po/<lang>.po`.
+   see docs/translations.md); translations live only in `po/<lang>.po` and,
+   for the user guide, `docs/l10n/<lang>/` (change a translated page with its
+   English page).
 2. **No deprecated GTK API**: lists are `GListStore` + `GtkListView` /
    `GtkColumnView`; dialogs are `AppDialog` (`dialog.h`); URIs open with
    `GtkUriLauncher`; CSS providers go on the display.

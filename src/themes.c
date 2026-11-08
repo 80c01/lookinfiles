@@ -1,6 +1,7 @@
 /* Themes in the running application: switching, zoom and the Appearance
  * page of the Preferences dialog (see themes.h). */
 #include "themes.h"
+#include "i18n.h"
 #include "app_events.h"
 #include "dialog.h"
 #include "editor.h"
@@ -208,7 +209,7 @@ static GtkWidget* message_label(const gchar* message) {
 }
 
 static void notice(AppData* app, const gchar* title, const gchar* message) {
-    GtkWidget* dlg = app_dialog_new(title, app->window, "_Close", APP_RESPONSE_CLOSE, NULL);
+    GtkWidget* dlg = app_dialog_new(title, app->window, _("_Close"), APP_RESPONSE_CLOSE, NULL);
     GtkWidget* box = padded_box(0);
     gtk_box_append(GTK_BOX(box), message_label(message));
     gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), box);
@@ -218,7 +219,7 @@ static void notice(AppData* app, const gchar* title, const gchar* message) {
 }
 
 static gboolean confirm(AppData* app, const gchar* title, const gchar* message, const gchar* ok_label) {
-    GtkWidget* dlg = app_dialog_new(title, app->window, "_Cancel", APP_RESPONSE_CANCEL, NULL);
+    GtkWidget* dlg = app_dialog_new(title, app->window, _("_Cancel"), APP_RESPONSE_CANCEL, NULL);
     GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), ok_label, APP_RESPONSE_OK);
     gtk_widget_add_css_class(ok, "destructive-action");
     GtkWidget* box = padded_box(0);
@@ -233,11 +234,11 @@ static gboolean confirm(AppData* app, const gchar* title, const gchar* message, 
 
 /* A name typed by the user (caller frees), NULL if cancelled or empty */
 static gchar* prompt_name(AppData* app, const gchar* initial) {
-    GtkWidget* dlg = app_dialog_new("Save Theme As", app->window, "_Cancel", APP_RESPONSE_CANCEL, "_Save",
+    GtkWidget* dlg = app_dialog_new(_("Save Theme As"), app->window, _("_Cancel"), APP_RESPONSE_CANCEL, _("_Save"),
                                     APP_RESPONSE_OK, NULL);
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = padded_box(8);
-    gtk_box_append(GTK_BOX(box), message_label("Save the current colours and fonts as a theme named:"));
+    gtk_box_append(GTK_BOX(box), message_label(_("Save the current colours and fonts as a theme named:")));
     GtkWidget* entry = gtk_entry_new();
     gtk_editable_set_text(GTK_EDITABLE(entry), initial);
     gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
@@ -262,7 +263,7 @@ static gboolean show_theme_error(gpointer data) {
     AppData* app = data;
     gchar* message = g_object_steal_data(G_OBJECT(app->window), "theme-error");
     if (message != NULL && !app_dialog_is_open(app->window)) {
-        notice(app, "Theme Not Applied", message);
+        notice(app, _("Theme Not Applied"), message);
     }
     g_free(message);
     return G_SOURCE_REMOVE;
@@ -363,9 +364,10 @@ static GtkWidget* theme_row(GPtrArray* themes, const Theme* t, gboolean in_use) 
     gtk_label_set_xalign(GTK_LABEL(name), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(name), PANGO_ELLIPSIZE_END);
     gchar* base = (t->path != NULL) ? g_path_get_basename(t->path) : NULL;
-    gchar* summary_text = g_strdup_printf("%s · %s%s%s", dark ? "Dark" : "Light",
-                                          base != NULL ? "your theme, " : "built-in",
-                                          base != NULL ? base : "", in_use ? " · in use" : "");
+    gchar* origin = base != NULL ? g_strdup_printf(_("your theme, %s"), base) : g_strdup(_("built-in"));
+    gchar* summary_text = g_strdup_printf("%s · %s%s", dark ? _("Dark") : _("Light"), origin,
+                                          in_use ? _(" · in use") : "");
+    g_free(origin);
     g_free(base);
     GtkWidget* summary = gtk_label_new(summary_text);
     g_free(summary_text);
@@ -522,22 +524,22 @@ static void on_family_changed(GtkEditable* editable, gpointer data) {
 }
 
 static GtkWidget* fonts_grid(ThemesPage* d) {
-    static const gchar* const LABELS[FONT_COUNT] = {[FONT_UI] = "Interface", [FONT_CODE] = "Code"};
+    static const gchar* const LABELS[FONT_COUNT] = {[FONT_UI] = N_("Interface"), [FONT_CODE] = N_("Code")};
     static const gchar* const TIPS[FONT_COUNT] = {
-        [FONT_UI] = "Interface and documents: font names separated by commas (empty: the theme's)",
-        [FONT_CODE] = "Files, code and terminals: font names separated by commas (empty: the theme's)",
+        [FONT_UI] = N_("Interface and documents: font names separated by commas (empty: the theme's)"),
+        [FONT_CODE] = N_("Files, code and terminals: font names separated by commas (empty: the theme's)"),
     };
     GtkWidget* grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 8);
     for (gint r = 0; r < FONT_COUNT; r++) {
-        GtkWidget* label = gtk_label_new(LABELS[r]);
+        GtkWidget* label = gtk_label_new(_(LABELS[r]));
         gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
         d->family[r] = gtk_entry_new();
         gtk_widget_set_hexpand(d->family[r], TRUE);
-        gtk_widget_set_tooltip_text(d->family[r], TIPS[r]);
+        gtk_widget_set_tooltip_text(d->family[r], _(TIPS[r]));
         d->size[r] = gtk_spin_button_new_with_range(FONTS_MIN_SIZE, FONTS_MAX_SIZE, 1);
-        gtk_widget_set_tooltip_text(d->size[r], "Size in pixels (Ctrl+= / Ctrl+- / Ctrl+0)");
+        gtk_widget_set_tooltip_text(d->size[r], _("Size in pixels (Ctrl+= / Ctrl+- / Ctrl+0)"));
         gtk_grid_attach(GTK_GRID(grid), label, 0, r, 1, 1);
         gtk_grid_attach(GTK_GRID(grid), d->family[r], 1, r, 1, 1);
         gtk_grid_attach(GTK_GRID(grid), d->size[r], 2, r, 1, 1);
@@ -585,8 +587,8 @@ ThemesPage* themes_page_new(AppData* app, AppDialog* dialog) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     d->widget = box;
     gchar* dir = theme_store_user_dir();
-    gchar* hint_text = g_strdup_printf("Selecting a theme applies it at once; Apply keeps it, Cancel goes "
-                                       "back. Your themes are INI files in %s.", dir);
+    gchar* hint_text = g_strdup_printf(_("Selecting a theme applies it at once; Apply keeps it, Cancel goes "
+                                         "back. Your themes are INI files in %s."), dir);
     g_free(dir);
     GtkWidget* hint = message_label(hint_text);
     g_free(hint_text);
@@ -607,19 +609,19 @@ ThemesPage* themes_page_new(AppData* app, AppDialog* dialog) {
     gtk_box_append(GTK_BOX(box), scroll);
 
     GtkWidget* buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    page_button(d, buttons, "_Save As…", THEMES_RESPONSE_SAVE_AS,
-                "Save the current colours and fonts as a theme of yours");
-    page_button(d, buttons, "From _Image…", THEMES_RESPONSE_FROM_IMAGE,
-                "Create a theme of yours from the colours of an image (the selected one by default)");
-    d->edit_btn = page_button(d, buttons, "_Edit", THEMES_RESPONSE_EDIT,
-                              "Open the selected theme file in an editor tab: saving it applies it "
-                              "(your themes only)");
-    d->delete_btn = page_button(d, buttons, "_Delete", THEMES_RESPONSE_DELETE,
-                                "Delete the selected theme file (your themes only)");
+    page_button(d, buttons, _("_Save As…"), THEMES_RESPONSE_SAVE_AS,
+                _("Save the current colours and fonts as a theme of yours"));
+    page_button(d, buttons, _("From _Image…"), THEMES_RESPONSE_FROM_IMAGE,
+                _("Create a theme of yours from the colours of an image (the selected one by default)"));
+    d->edit_btn = page_button(d, buttons, _("_Edit"), THEMES_RESPONSE_EDIT,
+                              _("Open the selected theme file in an editor tab: saving it applies it "
+                                "(your themes only)"));
+    d->delete_btn = page_button(d, buttons, _("_Delete"), THEMES_RESPONSE_DELETE,
+                                _("Delete the selected theme file (your themes only)"));
     gtk_widget_add_css_class(d->delete_btn, "destructive-action");
     gtk_box_append(GTK_BOX(box), buttons);
 
-    GtkWidget* fonts_title = gtk_label_new("Your fonts, over any theme");
+    GtkWidget* fonts_title = gtk_label_new(_("Your fonts, over any theme"));
     gtk_widget_add_css_class(fonts_title, "dialog-section");
     gtk_label_set_xalign(GTK_LABEL(fonts_title), 0.0f);
     gtk_widget_set_margin_top(fonts_title, 6);
@@ -644,20 +646,20 @@ GtkWidget* themes_page_focus(ThemesPage* page) {
 
 static void save_as(ThemesPage* d) {
     AppData* app = d->app;
-    gchar* suggestion = g_strdup_printf("%s (mine)", current_name);
+    gchar* suggestion = g_strdup_printf(_("%s (mine)"), current_name);
     gchar* name = prompt_name(app, suggestion);
     g_free(suggestion);
     const Theme* existing = theme_store_find(d->themes, name);
     if (name != NULL && existing != NULL && existing->path == NULL) {
-        notice(app, "Theme Not Saved", "A built-in theme has this name: choose another one.");
+        notice(app, _("Theme Not Saved"), _("A built-in theme has this name: choose another one."));
     } else if (name != NULL) {
         gchar* udir = theme_store_user_dir();
         GError* error = NULL;
         gchar* path = theme_store_save_current(udir, name, current_dark, &error);
         g_free(udir);
         if (path == NULL) {
-            gchar* msg = g_strdup_printf("The theme could not be saved: %s", error->message);
-            notice(app, "Theme Not Saved", msg);
+            gchar* msg = g_strdup_printf(_("The theme could not be saved: %s"), error->message);
+            notice(app, _("Theme Not Saved"), msg);
             g_free(msg);
             g_clear_error(&error);
         } else {
@@ -677,16 +679,16 @@ static void save_as(ThemesPage* d) {
 static gboolean prompt_image(AppData* app, gchar** path, gchar** name) {
     ExplorerRow* row = tree_nav_selected(app);
     const gchar* selected = (row != NULL && row->path != NULL && is_image_file(row->path)) ? row->path : "";
-    GtkWidget* dlg = app_dialog_new("Theme from Image", app->window, "_Cancel", APP_RESPONSE_CANCEL, "_Create",
+    GtkWidget* dlg = app_dialog_new(_("Theme from Image"), app->window, _("_Cancel"), APP_RESPONSE_CANCEL, _("_Create"),
                                     APP_RESPONSE_OK, NULL);
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     GtkWidget* box = padded_box(8);
-    gtk_box_append(GTK_BOX(box), message_label("Create a theme from the colours of the image file:"));
+    gtk_box_append(GTK_BOX(box), message_label(_("Create a theme from the colours of the image file:")));
     GtkWidget* path_entry = gtk_entry_new();
     gtk_editable_set_text(GTK_EDITABLE(path_entry), selected);
     gtk_entry_set_activates_default(GTK_ENTRY(path_entry), TRUE);
     gtk_box_append(GTK_BOX(box), path_entry);
-    gtk_box_append(GTK_BOX(box), message_label("Named:"));
+    gtk_box_append(GTK_BOX(box), message_label(_("Named:")));
     GtkWidget* name_entry = gtk_entry_new();
     gchar* base = g_path_get_basename(selected[0] != '\0' ? selected : "Image");
     gchar* dot = strrchr(base, '.');
@@ -737,10 +739,10 @@ static void save_from_image(ThemesPage* d) {
     ImageTheme colors;
     const Theme* existing = theme_store_find(d->themes, name);
     if (existing != NULL && existing->path == NULL) {
-        notice(app, "Theme Not Created", "A built-in theme has this name: choose another one.");
+        notice(app, _("Theme Not Created"), _("A built-in theme has this name: choose another one."));
     } else if (!derive_from_file(path, &colors)) {
-        gchar* msg = g_strdup_printf("%s cannot be read as an image (or has no opaque pixel).", path);
-        notice(app, "Theme Not Created", msg);
+        gchar* msg = g_strdup_printf(_("%s cannot be read as an image (or has no opaque pixel)."), path);
+        notice(app, _("Theme Not Created"), msg);
         g_free(msg);
     } else {
         /* The current look with the image's colours, saved as a new theme */
@@ -752,8 +754,8 @@ static void save_from_image(ThemesPage* d) {
         gchar* file = theme_store_save_current(udir, name, colors.dark, &error);
         g_free(udir);
         if (file == NULL) {
-            gchar* msg = g_strdup_printf("The theme could not be saved: %s", error->message);
-            notice(app, "Theme Not Created", msg);
+            gchar* msg = g_strdup_printf(_("The theme could not be saved: %s"), error->message);
+            notice(app, _("Theme Not Created"), msg);
             g_free(msg);
             g_clear_error(&error);
             set_theme(current_name, &d->fonts, NULL);
@@ -785,8 +787,8 @@ gboolean themes_page_handle(ThemesPage* page, gint response, gboolean* close) {
         return TRUE;
     case THEMES_RESPONSE_DELETE:
         if (t != NULL && t->path != NULL) {
-            gchar* msg = g_strdup_printf("Delete the theme “%s” and its file %s?", t->name, t->path);
-            if (confirm(d->app, "Delete Theme", msg, "_Delete")) {
+            gchar* msg = g_strdup_printf(_("Delete the theme “%1$s” and its file %2$s?"), t->name, t->path);
+            if (confirm(d->app, _("Delete Theme"), msg, _("_Delete"))) {
                 g_remove(t->path);
                 fill_list(d, THEME_DEFAULT_NAME);
                 on_row_selected(d->list, gtk_list_box_get_selected_row(d->list), d);

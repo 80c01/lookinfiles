@@ -117,7 +117,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (generated list, prefix `/org/lookin/guide/`); `user_guide_read()` by page name
   (`"user-guide/editor.md"`, `"keyboard.md"`), `user_guide_title()`,
   `user_guide_pages()`, `user_guide_resolve_link()` (page, anchor, web or outside),
-  `user_guide_anchor()` (GitHub heading ids). Its test checks every link of the guide.
+  `user_guide_anchor()` (GitHub heading ids); translated pages from
+  `docs/l10n/<lang>/` (prefix `/org/lookin/guide-l10n/`): `user_guide_read_in()`,
+  `user_guide_read_localized()` (the Help tab). Its test checks every link of the
+  guide and of each translation.
 - `org_time` — Org timestamps (`<2026-10-29 Thu 10:00 +1w>`): parse, format,
   field arithmetic, repeaters, the date prompt (`org_timestamp_read()`).
 - `org_doc` — Org document commands on an array of lines + cursor (`OrgPos`):

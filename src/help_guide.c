@@ -1,5 +1,6 @@
 /* The Help tab: the user guide in a page of the preview notebook (see help_guide.h) */
 #include "help_guide.h"
+#include "i18n.h"
 #include "app_events.h"
 #include "browser.h"
 #include "focus_route.h"
@@ -120,9 +121,9 @@ static void update_buttons(HelpGuide* hg) {
 
 /* Render page in the view and show its title */
 static void load_page(HelpGuide* hg, const gchar* page) {
-    gchar* text = user_guide_read(page);
+    gchar* text = user_guide_read_localized(page);
     if (text == NULL) {
-        text = g_strdup_printf("# Page Not Found\n\nThe user guide has no page `%s`.\n", page);
+        text = g_strdup_printf(_("# Page Not Found\n\nThe user guide has no page `%s`.\n"), page);
     }
     GtkTextBuffer* buffer = guide_buffer(hg);
     ensure_markdown_tags(buffer);
@@ -133,7 +134,7 @@ static void load_page(HelpGuide* hg, const gchar* page) {
     hg->link = -1;
 
     gchar* title = user_guide_title(text);
-    gtk_label_set_text(GTK_LABEL(hg->title), title != NULL ? title : "User Guide");
+    gtk_label_set_text(GTK_LABEL(hg->title), title != NULL ? title : _("User Guide"));
     g_free(title);
     g_free(text);
     if (page != hg->current) {
@@ -191,7 +192,7 @@ static void on_link(GtkTextView* view, const gchar* url, gpointer data) {
         browser_open(hg->app, url); /* a browser tab, or the default browser */
         break;
     default: {
-        gchar* msg = g_strdup_printf("Not in the built-in guide: %s", page != NULL ? page : url);
+        gchar* msg = g_strdup_printf(_("Not in the built-in guide: %s"), page != NULL ? page : url);
         app_notice(hg->app, msg, FALSE);
         g_free(msg);
         break;
@@ -448,16 +449,16 @@ static HelpGuide* ensure_page(AppData* app) {
 
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(bar, "help-guide-header");
-    hg->back_btn = header_button(bar, "go-previous", "Back (Shift+H)", G_CALLBACK(on_back_clicked), hg);
-    hg->forward_btn = header_button(bar, "go-next", "Forward (Shift+L)", G_CALLBACK(on_forward_clicked), hg);
-    header_button(bar, "go-home", "Contents of the User Guide", G_CALLBACK(on_contents_clicked), hg);
+    hg->back_btn = header_button(bar, "go-previous", _("Back (Shift+H)"), G_CALLBACK(on_back_clicked), hg);
+    hg->forward_btn = header_button(bar, "go-next", _("Forward (Shift+L)"), G_CALLBACK(on_forward_clicked), hg);
+    header_button(bar, "go-home", _("Contents of the User Guide"), G_CALLBACK(on_contents_clicked), hg);
     hg->title = gtk_label_new(NULL);
     gtk_label_set_xalign(GTK_LABEL(hg->title), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(hg->title), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(hg->title, TRUE);
     gtk_box_append(GTK_BOX(bar), hg->title);
-    header_button(bar, "dialog-question", "Show Keyboard Shortcuts (?)", G_CALLBACK(on_shortcuts_clicked), hg);
-    header_button(bar, "window-close", "Close Help", G_CALLBACK(on_close_clicked), hg);
+    header_button(bar, "dialog-question", _("Show Keyboard Shortcuts (?)"), G_CALLBACK(on_shortcuts_clicked), hg);
+    header_button(bar, "window-close", _("Close Help"), G_CALLBACK(on_close_clicked), hg);
     gtk_box_append(GTK_BOX(page), bar);
 
     hg->view = gtk_text_view_new();
@@ -492,7 +493,7 @@ static HelpGuide* ensure_page(AppData* app) {
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, hg, guide_free);
     update_buttons(hg);
 
-    hg->label = g_object_ref(icon_label_new("dialog-question", "Help"));
+    hg->label = g_object_ref(icon_label_new("dialog-question", _("Help")));
     GtkGesture* mclick = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), hg);

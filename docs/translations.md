@@ -44,21 +44,42 @@ The template `po/lookinfiles.pot` is generated, not committed.
 
 | Language | Catalog | Covered |
 |----------|---------|---------|
-| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences, keyboard shortcuts panel (`help.c`), sidebar and its views (bookmarks, notes, remote, games list), editor tab menu and Notepad mode, find bar, Search in Files, References and Search tabs, Git tab (commit list, relative dates), preview core (sidebar row summaries, directory preview, images, PDF, audio, video, archive rows) |
+| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences, keyboard shortcuts panel (`help.c`), sidebar and its views (bookmarks, notes, remote, games list), editor tab menu and Notepad mode, find bar, Search in Files, References and Search tabs, Git tab (commit list, relative dates), preview core (sidebar row summaries, directory preview, images, PDF, audio, video, archive rows), Appearance page (themes and fonts), Help tab and the whole user guide (`docs/l10n/fr/`) |
 
-Not marked yet: the user guide (docs/user-guide/, Help tab), the format cards of
+Not marked yet: the format cards of
 the preview (`preview_formats` and the `*_info` / `*_view` modules). Left in English on purpose: file contents created for the user
 (welcome note, note templates, the default "General" notebook), the game
 description sheets and the games themselves, and the Emacs, Org-mode and Vim
 minibuffer and echo messages (they mimic those editors, whose words the users
-of these modes know), and what git itself prints in the Git tab (the commit
+of these modes know), the reference pages linked from the user guide
+(`docs/keyboard.md`, `docs/previews.md`, `docs/configuration.md`), and what git itself prints in the Git tab (the commit
 diff and its `--stat` summary, the detached HEAD name).
+
+## The user guide
+
+The guide of the Help tab (`docs/user-guide/`) is translated page by page,
+not with gettext: `docs/l10n/<lang>/user-guide/<page>.md`, with the same
+file names. `make` builds them into the binary (`guide-l10n` resource), and
+the Help tab shows each page in the first of the user's languages that has
+it (`user_guide_read_localized()`), else in English.
+
+- Translate every page: `make test` (`/user_guide/translations`) fails on a
+  missing page, a page the English guide lacks, or a broken link.
+- Keep the links as in English (`editor.md`, `../keyboard.md`): page names
+  are never translated. An anchor follows the translated heading
+  (`#rechercher-par-nom`), except into the reference pages, which stay in
+  English (`../keyboard.md#editor-tabs`).
+- Key names, commands, paths and code blocks stay as written; UI labels use
+  the words of `po/<lang>.po`.
+- When an English page changes, change its translation in the same commit.
 
 ## Adding a language
 
 1. `make pot`
 2. `msginit -i po/lookinfiles.pot -o po/<lang>.po -l <lang>.UTF-8 --no-translator`
 3. Translate the `msgstr` entries; `make` checks the catalog (`msgfmt --check`).
+4. Optionally, the user guide: every page of `docs/user-guide/` into
+   `docs/l10n/<lang>/user-guide/` (see above).
 
 ## Where the catalogs are found
 

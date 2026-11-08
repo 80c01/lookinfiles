@@ -16,6 +16,15 @@
  * page. Caller frees. */
 gchar* user_guide_read(const gchar* page);
 
+/* Translation of page into lang ("fr", "pt_BR"), from
+ * docs/l10n/<lang>/<page>, or NULL when it has none. Caller frees. */
+gchar* user_guide_read_in(const gchar* page, const gchar* lang);
+
+/* page in the first of the user's languages (g_get_language_names()) that
+ * has a translation of it, else in English (user_guide_read()). Links and
+ * page names stay the English ones. Caller frees. */
+gchar* user_guide_read_localized(const gchar* page);
+
 /* Text of the first "# " heading of markdown, or NULL. Caller frees. */
 gchar* user_guide_title(const gchar* markdown);
 

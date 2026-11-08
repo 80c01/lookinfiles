@@ -3,6 +3,7 @@
  * Headless. */
 #include "user_guide.h"
 
+#include <gio/gio.h>
 #include <string.h>
 
 static void test_home(void) {
@@ -168,6 +169,84 @@ static void test_guide_links(void) {
     g_strfreev(pages);
 }
 
+/* The links of the lang translation, checked as /user_guide/guide_links
+ * checks the English ones (every page must be translated). Anchors are
+ * looked up in the translated target page, or in the English one when the
+ * target has no translation (the reference pages). */
+static guint check_links(const gchar* lang) {
+    gchar** pages = user_guide_pages();
+    GRegex* re = g_regex_new("\\]\\(([^)\\s]+)\\)", 0, 0, NULL);
+    guint checked = 0;
+    for (gint i = 0; pages[i] != NULL; i++) {
+        if (!g_str_has_prefix(pages[i], "user-guide/")) continue;
+        gchar* text = user_guide_read_in(pages[i], lang);
+        if (text == NULL) {
+            g_error("%s: no %s translation of the page", pages[i], lang);
+        }
+        gchar* title = user_guide_title(text);
+        g_assert_nonnull(title);
+        g_free(title);
+        GMatchInfo* m = NULL;
+        g_regex_match(re, text, 0, &m);
+        while (g_match_info_matches(m)) {
+            gchar* href = g_match_info_fetch(m, 1);
+            gchar* page = NULL;
+            gchar* anchor = NULL;
+            UserGuideLink kind = user_guide_resolve_link(pages[i], href, &page, &anchor);
+            if (kind == USER_GUIDE_LINK_NONE) {
+                g_error("%s (%s): link %s leads outside the guide", pages[i], lang, href);
+            }
+            if (kind == USER_GUIDE_LINK_PAGE && anchor != NULL) {
+                gchar* target = user_guide_read_in(page, lang);
+                if (target == NULL) target = user_guide_read(page);
+                if (!has_anchor(target, anchor)) {
+                    g_error("%s (%s): link %s: no heading with that anchor", pages[i], lang, href);
+                }
+                g_free(target);
+            }
+            checked++;
+            g_free(page);
+            g_free(anchor);
+            g_free(href);
+            g_match_info_next(m, NULL);
+        }
+        g_match_info_free(m);
+        g_free(text);
+    }
+    g_regex_unref(re);
+    g_strfreev(pages);
+    return checked;
+}
+
+/* Every translation covers every page of the guide, has no page the guide
+ * lacks, and its links and anchors all lead somewhere */
+static void test_translations(void) {
+    gchar** langs = g_resources_enumerate_children("/org/lookin/guide-l10n/", G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
+    g_assert_nonnull(langs); /* French at least */
+    for (gint i = 0; langs[i] != NULL; i++) {
+        gchar* lang = g_strndup(langs[i], strlen(langs[i]) - 1); /* "fr/" */
+        gchar* dir = g_strdup_printf("/org/lookin/guide-l10n/%s/user-guide/", lang);
+        gchar** files = g_resources_enumerate_children(dir, G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
+        g_assert_nonnull(files);
+        for (gint j = 0; files[j] != NULL; j++) {
+            gchar* page = g_strconcat("user-guide/", files[j], NULL);
+            gchar* english = user_guide_read(page);
+            if (english == NULL) {
+                g_error("%s: %s translates no page of the guide", lang, page);
+            }
+            g_free(english);
+            g_free(page);
+        }
+        g_assert_cmpuint(check_links(lang), >, 50);
+        g_strfreev(files);
+        g_free(dir);
+        g_free(lang);
+    }
+    g_strfreev(langs);
+    g_assert_null(user_guide_read_in("user-guide/README.md", "xx"));
+    g_assert_null(user_guide_read_in("user-guide/README.md", "../fr"));
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/user_guide/home", test_home);
@@ -177,5 +256,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/user_guide/resolve_link", test_resolve_link);
     g_test_add_func("/user_guide/anchor", test_anchor);
     g_test_add_func("/user_guide/guide_links", test_guide_links);
+    g_test_add_func("/user_guide/translations", test_translations);
     return g_test_run();
 }

@@ -149,16 +149,21 @@ $(BUILD_DIR)/icon_resources.o: $(BUILD_DIR)/icon_resources.c $(FLAGS_STAMP)
 # page of docs/user-guide/ and the reference pages it links to. The resource
 # list is generated, so a new page only needs its .md file.
 GUIDE_FILES = $(sort $(wildcard docs/user-guide/*.md)) docs/keyboard.md docs/previews.md docs/configuration.md
+# Translated pages (docs/l10n/<lang>/user-guide/), served as <lang>/user-guide/...
+GUIDE_L10N_FILES = $(sort $(wildcard docs/l10n/*/user-guide/*.md))
 
-$(BUILD_DIR)/guide.gresource.xml: $(GUIDE_FILES) Makefile | $(BUILD_DIR)
+$(BUILD_DIR)/guide.gresource.xml: $(GUIDE_FILES) $(GUIDE_L10N_FILES) Makefile | $(BUILD_DIR)
 	@{ echo '<?xml version="1.0" encoding="UTF-8"?>'; \
 	  echo '<gresources>'; \
 	  echo '  <gresource prefix="/org/lookin/guide">'; \
 	  for f in $(GUIDE_FILES:docs/%=%); do echo "    <file>$$f</file>"; done; \
 	  echo '  </gresource>'; \
+	  echo '  <gresource prefix="/org/lookin/guide-l10n">'; \
+	  for f in $(GUIDE_L10N_FILES:docs/%=%); do echo "    <file alias=\"$${f#l10n/}\">$$f</file>"; done; \
+	  echo '  </gresource>'; \
 	  echo '</gresources>'; } > $@
 
-$(BUILD_DIR)/guide_resources.c: $(BUILD_DIR)/guide.gresource.xml $(GUIDE_FILES)
+$(BUILD_DIR)/guide_resources.c: $(BUILD_DIR)/guide.gresource.xml $(GUIDE_FILES) $(GUIDE_L10N_FILES)
 	$(GLIB_COMPILE_RESOURCES) --sourcedir=docs --c-name guide --generate-source --target=$@ $<
 
 $(BUILD_DIR)/guide_resources.o: $(BUILD_DIR)/guide_resources.c $(FLAGS_STAMP)
