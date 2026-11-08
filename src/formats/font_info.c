@@ -1,5 +1,5 @@
 /* Font file details (see font_info.h). */
-#include "font_info.h"
+#include "formats/font_info.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

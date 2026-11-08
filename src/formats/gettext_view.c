@@ -1,5 +1,5 @@
 /* gettext catalogs for the preview (see gettext_view.h). */
-#include "gettext_view.h"
+#include "formats/gettext_view.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

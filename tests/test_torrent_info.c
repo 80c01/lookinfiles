@@ -1,5 +1,5 @@
-/* Unit tests for src/torrent_info.c (BitTorrent metainfo preview). */
-#include "torrent_info.h"
+/* Unit tests for src/formats/torrent_info.c (BitTorrent metainfo preview). */
+#include "formats/torrent_info.h"
 
 #include <string.h>
 

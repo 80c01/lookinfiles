@@ -1,5 +1,5 @@
 /* Minimal ZIP archive reader: central directory + stored / deflated entries */
-#include "zip_reader.h"
+#include "formats/zip_reader.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

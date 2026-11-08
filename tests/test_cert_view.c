@@ -1,5 +1,5 @@
-/* Unit tests for src/cert_view.c (X.509 decoding, PEM blocks, display). */
-#include "cert_view.h"
+/* Unit tests for src/formats/cert_view.c (X.509 decoding, PEM blocks, display). */
+#include "formats/cert_view.h"
 
 #include <string.h>
 

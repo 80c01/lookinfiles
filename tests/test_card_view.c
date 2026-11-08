@@ -1,5 +1,5 @@
-/* Unit tests for src/card_view.c (iCalendar, vCard, desktop entries). */
-#include "card_view.h"
+/* Unit tests for src/formats/card_view.c (iCalendar, vCard, desktop entries). */
+#include "formats/card_view.h"
 
 #include <string.h>
 

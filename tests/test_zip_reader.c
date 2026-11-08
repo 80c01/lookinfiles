@@ -1,5 +1,5 @@
-/* Unit tests for src/zip_reader.c: ZIP central directory and entry reading. */
-#include "zip_reader.h"
+/* Unit tests for src/formats/zip_reader.c: ZIP central directory and entry reading. */
+#include "formats/zip_reader.h"
 #include "zip_builder.h"
 
 #include <gio/gio.h>

@@ -10,7 +10,7 @@
 #include <glib.h>
 
 #include "code_symbol.h"
-#include "json_view.h"
+#include "formats/json_view.h"
 
 /* --- Framing --- */
 

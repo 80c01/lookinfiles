@@ -1,11 +1,11 @@
 /* Archive listings for the preview (see archive_listing.h). */
-#include "archive_listing.h"
+#include "formats/archive_listing.h"
 #include "core/i18n.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "zip_reader.h"
+#include "formats/zip_reader.h"
 
 #ifdef HAVE_LIBARCHIVE
 #include <archive.h>

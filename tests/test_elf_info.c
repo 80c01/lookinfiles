@@ -1,7 +1,7 @@
-/* Unit tests for src/elf_info.c: ELF header details (architecture, type,
+/* Unit tests for src/formats/elf_info.c: ELF header details (architecture, type,
  * linked libraries, exported symbols). Synthetic files are built in memory;
  * the test binary itself and an object file of the build are read too. */
-#include "elf_info.h"
+#include "formats/elf_info.h"
 
 #include <string.h>
 

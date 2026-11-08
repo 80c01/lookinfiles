@@ -1,5 +1,5 @@
-/* Unit tests for src/notebook.c (Jupyter notebooks to Markdown). */
-#include "notebook.h"
+/* Unit tests for src/formats/notebook.c (Jupyter notebooks to Markdown). */
+#include "formats/notebook.h"
 
 #include <string.h>
 

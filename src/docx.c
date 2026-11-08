@@ -7,7 +7,7 @@
 
 #include "doc_writer.h"
 #include "docx_styles.h"
-#include "zip_xml.h"
+#include "formats/zip_xml.h"
 
 #define MAX_PART (16u * 1024 * 1024)          /* relationships, headers, properties */
 #define MAX_IMAGE (16u * 1024 * 1024)         /* one embedded image */

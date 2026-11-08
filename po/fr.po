@@ -18,127 +18,127 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/archive_extract.c:105
+#: src/formats/archive_extract.c:105
 #, c-format
 msgid "cannot create %s"
 msgstr "impossible de créer %s"
 
-#: src/archive_extract.c:120 src/archive_extract.c:208
+#: src/formats/archive_extract.c:120 src/formats/archive_extract.c:208
 #, c-format
 msgid "no such entry: %s"
 msgstr "entrée introuvable : %s"
 
-#: src/archive_extract.c:126 src/archive_extract.c:179
+#: src/formats/archive_extract.c:126 src/formats/archive_extract.c:179
 #, c-format
 msgid "entry too large (%s)"
 msgstr "entrée trop grande (%s)"
 
-#: src/archive_extract.c:149 src/archive_listing.c:606
-#: src/archive_listing.c:697
+#: src/formats/archive_extract.c:149 src/formats/archive_listing.c:606
+#: src/formats/archive_listing.c:697
 msgid "unknown archive format"
 msgstr "format d’archive inconnu"
 
-#: src/archive_extract.c:158
+#: src/formats/archive_extract.c:158
 msgid "cancelled"
 msgstr "annulé"
 
-#: src/archive_extract.c:174
+#: src/formats/archive_extract.c:174
 #, c-format
 msgid "not a regular file: %s"
 msgstr "pas un fichier ordinaire : %s"
 
-#: src/archive_extract.c:221
+#: src/formats/archive_extract.c:221
 #, c-format
 msgid "cannot open %s"
 msgstr "impossible d’ouvrir %s"
 
-#: src/archive_extract.c:233
+#: src/formats/archive_extract.c:233
 msgid "this format needs libarchive"
 msgstr "ce format demande libarchive"
 
-#: src/archive_listing.c:47 src/archive_listing.c:163 src/archive_listing.c:537
+#: src/formats/archive_listing.c:47 src/formats/archive_listing.c:163 src/formats/archive_listing.c:537
 msgid "ZIP archive"
 msgstr "archive ZIP"
 
-#: src/archive_listing.c:48 src/archive_listing.c:429
+#: src/formats/archive_listing.c:48 src/formats/archive_listing.c:429
 msgid "gzip-compressed file"
 msgstr "fichier compressé par gzip"
 
-#: src/archive_listing.c:49
+#: src/formats/archive_listing.c:49
 msgid "bzip2-compressed file"
 msgstr "fichier compressé par bzip2"
 
-#: src/archive_listing.c:50
+#: src/formats/archive_listing.c:50
 msgid "xz-compressed file"
 msgstr "fichier compressé par xz"
 
-#: src/archive_listing.c:51
+#: src/formats/archive_listing.c:51
 msgid "Zstandard-compressed file"
 msgstr "fichier compressé par Zstandard"
 
-#: src/archive_listing.c:52
+#: src/formats/archive_listing.c:52
 msgid "lzip-compressed file"
 msgstr "fichier compressé par lzip"
 
-#: src/archive_listing.c:53 src/archive_listing.c:539
+#: src/formats/archive_listing.c:53 src/formats/archive_listing.c:539
 msgid "7-Zip archive"
 msgstr "archive 7-Zip"
 
-#: src/archive_listing.c:54 src/archive_listing.c:541 src/archive_listing.c:542
+#: src/formats/archive_listing.c:54 src/formats/archive_listing.c:541 src/formats/archive_listing.c:542
 msgid "RAR archive"
 msgstr "archive RAR"
 
-#: src/archive_listing.c:55 src/archive_listing.c:442 src/archive_listing.c:538
+#: src/formats/archive_listing.c:55 src/formats/archive_listing.c:442 src/formats/archive_listing.c:538
 msgid "ar archive"
 msgstr "archive ar"
 
-#: src/archive_listing.c:56
+#: src/formats/archive_listing.c:56
 msgid "RPM package"
 msgstr "paquet RPM"
 
-#: src/archive_listing.c:57 src/archive_listing.c:540
+#: src/formats/archive_listing.c:57 src/formats/archive_listing.c:540
 msgid "Cabinet archive"
 msgstr "archive Cabinet"
 
-#: src/archive_listing.c:58 src/archive_listing.c:534 src/archive_listing.c:688
+#: src/formats/archive_listing.c:58 src/formats/archive_listing.c:534 src/formats/archive_listing.c:688
 msgid "tar archive"
 msgstr "archive tar"
 
-#: src/archive_listing.c:419
+#: src/formats/archive_listing.c:419
 msgid "gzip-compressed tar archive"
 msgstr "archive tar compressée par gzip"
 
-#: src/archive_listing.c:535
+#: src/formats/archive_listing.c:535
 msgid "cpio archive"
 msgstr "archive cpio"
 
-#: src/archive_listing.c:536
+#: src/formats/archive_listing.c:536
 msgid "ISO image"
 msgstr "image ISO"
 
-#: src/archive_listing.c:543
+#: src/formats/archive_listing.c:543
 msgid "LHA archive"
 msgstr "archive LHA"
 
-#: src/archive_listing.c:544
+#: src/formats/archive_listing.c:544
 msgid "xar archive"
 msgstr "archive xar"
 
-#: src/archive_listing.c:545
+#: src/formats/archive_listing.c:545
 msgid "WARC archive"
 msgstr "archive WARC"
 
 #. TRANSLATORS: "xz-compressed tar archive": %1$s is the filter, %2$s the archive format
-#: src/archive_listing.c:559
+#: src/formats/archive_listing.c:559
 #, c-format
 msgid "%1$s-compressed %2$s"
 msgstr "%2$s (compression %1$s)"
 
-#: src/archive_listing.c:612
+#: src/formats/archive_listing.c:612
 msgid "file"
 msgstr "fichier"
 
-#: src/archive_listing.c:628
+#: src/formats/archive_listing.c:628
 msgid "archive"
 msgstr "archive"
 
@@ -275,8 +275,8 @@ msgid "_Cancel"
 msgstr "_Annuler"
 
 #: src/explorer/bookmark_dialog.c:207 src/explorer/file_actions.c:252 src/office97.c:73
-#: src/preview/preview_formats.c:346 src/preview/preview_formats.c:347 src/pyc_info.c:578
-#: src/session_bookmark.c:26 src/sqlite_view.c:222 src/torrent_info.c:325
+#: src/preview/preview_formats.c:346 src/preview/preview_formats.c:347 src/formats/pyc_info.c:578
+#: src/session_bookmark.c:26 src/formats/sqlite_view.c:222 src/formats/torrent_info.c:325
 msgid "Name"
 msgstr "Nom"
 
@@ -288,7 +288,7 @@ msgstr "Nom du dossier"
 msgid "Defaults to the location's name"
 msgstr "Par défaut, le nom de l’emplacement"
 
-#: src/explorer/bookmark_dialog.c:224 src/card_view.c:589
+#: src/explorer/bookmark_dialog.c:224 src/formats/card_view.c:589
 msgid "Icon"
 msgstr "Icône"
 
@@ -841,7 +841,7 @@ msgstr "Répartir"
 msgid "Layers"
 msgstr "Plans"
 
-#: src/canvas/canvas_props.c:398 src/card_view.c:638
+#: src/canvas/canvas_props.c:398 src/formats/card_view.c:638
 msgid "Actions"
 msgstr "Actions"
 
@@ -955,104 +955,104 @@ msgstr "Échec de l’export du canvas : %s"
 msgid "Zoom: Ctrl+Wheel, Ctrl+= / Ctrl+-; Click: 100% (Ctrl+0)"
 msgstr "Zoom : Ctrl+molette, Ctrl+= / Ctrl+- ; clic : 100 % (Ctrl+0)"
 
-#: src/card_view.c:191
+#: src/formats/card_view.c:191
 msgid "%Y-%m-%d %a (all day)"
 msgstr "%Y-%m-%d %a (toute la journée)"
 
-#: src/card_view.c:239
+#: src/formats/card_view.c:239
 msgid "every day"
 msgstr "tous les jours"
 
-#: src/card_view.c:239
+#: src/formats/card_view.c:239
 msgid "every week"
 msgstr "toutes les semaines"
 
-#: src/card_view.c:239
+#: src/formats/card_view.c:239
 msgid "every month"
 msgstr "tous les mois"
 
-#: src/card_view.c:239
+#: src/formats/card_view.c:239
 msgid "every year"
 msgstr "tous les ans"
 
-#: src/card_view.c:240
+#: src/formats/card_view.c:240
 #, c-format
 msgid "every %s days"
 msgstr "tous les %s jours"
 
-#: src/card_view.c:240
+#: src/formats/card_view.c:240
 #, c-format
 msgid "every %s weeks"
 msgstr "toutes les %s semaines"
 
-#: src/card_view.c:240
+#: src/formats/card_view.c:240
 #, c-format
 msgid "every %s months"
 msgstr "tous les %s mois"
 
-#: src/card_view.c:240
+#: src/formats/card_view.c:240
 #, c-format
 msgid "every %s years"
 msgstr "tous les %s ans"
 
-#: src/card_view.c:253
+#: src/formats/card_view.c:253
 #, c-format
 msgid " on %s"
 msgstr " le %s"
 
-#: src/card_view.c:256
+#: src/formats/card_view.c:256
 #, c-format
 msgid ", %s times"
 msgstr ", %s fois"
 
-#: src/card_view.c:262
+#: src/formats/card_view.c:262
 #, c-format
 msgid ", until %s"
 msgstr ", jusqu’au %s"
 
-#: src/card_view.c:325
+#: src/formats/card_view.c:325
 #, c-format
 msgid "%u event"
 msgid_plural "%u events"
 msgstr[0] "%u événement"
 msgstr[1] "%u événements"
 
-#: src/card_view.c:329
+#: src/formats/card_view.c:329
 #, c-format
 msgid "%u to-do"
 msgid_plural "%u to-dos"
 msgstr[0] "%u tâche"
 msgstr[1] "%u tâches"
 
-#: src/card_view.c:339
+#: src/formats/card_view.c:339
 msgid "(no title)"
 msgstr "(sans titre)"
 
-#: src/card_view.c:341
+#: src/formats/card_view.c:341
 msgid "  to-do"
 msgstr "  tâche"
 
-#: src/card_view.c:348
+#: src/formats/card_view.c:348
 msgid "Due"
 msgstr "Échéance"
 
-#: src/card_view.c:348
+#: src/formats/card_view.c:348
 msgid "When"
 msgstr "Quand"
 
-#: src/card_view.c:352
+#: src/formats/card_view.c:352
 msgid "Where"
 msgstr "Où"
 
-#: src/card_view.c:357
+#: src/formats/card_view.c:357
 msgid "Repeats"
 msgstr "Répétition"
 
-#: src/card_view.c:363
+#: src/formats/card_view.c:363
 msgid "Organizer"
 msgstr "Organisateur"
 
-#: src/card_view.c:377 src/card_view.c:624 src/cert_view.c:614
+#: src/formats/card_view.c:377 src/formats/card_view.c:624 src/formats/cert_view.c:614
 #, c-format
 msgid ""
 "\n"
@@ -1061,21 +1061,21 @@ msgstr ""
 "\n"
 "… %u de plus"
 
-#: src/card_view.c:379
+#: src/formats/card_view.c:379
 msgid "Attendees"
 msgstr "Participants"
 
-#: src/card_view.c:384 src/cert_view.c:597 src/mail_dir.c:212
+#: src/formats/card_view.c:384 src/formats/cert_view.c:597 src/mail_dir.c:212
 #: src/preview/preview_summary.c:80
 msgid "Status"
 msgstr "État"
 
-#: src/card_view.c:390 src/preview/preview_summary.c:250 src/preview/preview_summary.c:254
+#: src/formats/card_view.c:390 src/preview/preview_summary.c:250 src/preview/preview_summary.c:254
 #: src/preview/preview_summary.c:269
 msgid "Notes"
 msgstr "Notes"
 
-#: src/card_view.c:395
+#: src/formats/card_view.c:395
 msgid ""
 "\n"
 "(more items not shown)"
@@ -1083,43 +1083,43 @@ msgstr ""
 "\n"
 "(d’autres éléments ne sont pas affichés)"
 
-#: src/card_view.c:508 src/card_view.c:568
+#: src/formats/card_view.c:508 src/formats/card_view.c:568
 msgid "(no name)"
 msgstr "(sans nom)"
 
-#: src/card_view.c:526
+#: src/formats/card_view.c:526
 msgid "Organization"
 msgstr "Organisation"
 
-#: src/card_view.c:530 src/ole_props.c:223
+#: src/formats/card_view.c:530 src/ole_props.c:223
 msgid "Title"
 msgstr "Titre"
 
-#: src/card_view.c:532
+#: src/formats/card_view.c:532
 msgid "E-mail"
 msgstr "Courriel"
 
-#: src/card_view.c:533
+#: src/formats/card_view.c:533
 msgid "Phone"
 msgstr "Téléphone"
 
-#: src/card_view.c:534
+#: src/formats/card_view.c:534
 msgid "Address"
 msgstr "Adresse"
 
-#: src/card_view.c:535
+#: src/formats/card_view.c:535
 msgid "Web"
 msgstr "Web"
 
-#: src/card_view.c:537
+#: src/formats/card_view.c:537
 msgid "Birthday"
 msgstr "Anniversaire"
 
-#: src/card_view.c:541 src/status_bar.c:453
+#: src/formats/card_view.c:541 src/status_bar.c:453
 msgid "Note"
 msgstr "Note"
 
-#: src/card_view.c:550
+#: src/formats/card_view.c:550
 #, c-format
 msgid ""
 "\n"
@@ -1134,333 +1134,333 @@ msgstr[1] ""
 "\n"
 "%u autres contacts non affichés."
 
-#: src/card_view.c:588 src/elf_info.c:640 src/elf_info.c:643
-#: src/sqlite_view.c:222
+#: src/formats/card_view.c:588 src/formats/elf_info.c:640 src/formats/elf_info.c:643
+#: src/formats/sqlite_view.c:222
 msgid "Type"
 msgstr "Type"
 
-#: src/card_view.c:588
+#: src/formats/card_view.c:588
 msgid "Command"
 msgstr "Commande"
 
-#: src/card_view.c:588
+#: src/formats/card_view.c:588
 msgid "Requires"
 msgstr "Nécessite"
 
-#: src/card_view.c:588
+#: src/formats/card_view.c:588
 msgid "Directory"
 msgstr "Dossier"
 
-#: src/card_view.c:589 src/layout_store.c:206 src/main.c:358 src/topbar.c:661
+#: src/formats/card_view.c:589 src/layout_store.c:206 src/main.c:358 src/topbar.c:661
 msgid "Terminal"
 msgstr "Terminal"
 
-#: src/card_view.c:589
+#: src/formats/card_view.c:589
 msgid "Window class"
 msgstr "Classe de fenêtre"
 
-#: src/card_view.c:590
+#: src/formats/card_view.c:590
 msgid "Hidden"
 msgstr "Masqué"
 
-#: src/card_view.c:590
+#: src/formats/card_view.c:590
 msgid "Only in"
 msgstr "Seulement dans"
 
-#: src/card_view.c:590
+#: src/formats/card_view.c:590
 msgid "Not in"
 msgstr "Pas dans"
 
-#: src/card_view.c:606
+#: src/formats/card_view.c:606
 msgid "Categories"
 msgstr "Catégories"
 
-#: src/card_view.c:613 src/ole_props.c:227
+#: src/formats/card_view.c:613 src/ole_props.c:227
 msgid "Keywords"
 msgstr "Mots-clés"
 
-#: src/card_view.c:626
+#: src/formats/card_view.c:626
 msgid "Opens"
 msgstr "Ouvre"
 
-#: src/cert_view.c:272
+#: src/formats/cert_view.c:272
 #, c-format
 msgid "RSA %u bits"
 msgstr "RSA %u bits"
 
-#: src/cert_view.c:330
+#: src/formats/cert_view.c:330
 msgid "Digital Signature"
 msgstr "Signature numérique"
 
-#: src/cert_view.c:330
+#: src/formats/cert_view.c:330
 msgid "Non Repudiation"
 msgstr "Non-répudiation"
 
-#: src/cert_view.c:330
+#: src/formats/cert_view.c:330
 msgid "Key Encipherment"
 msgstr "Chiffrement de clé"
 
-#: src/cert_view.c:330
+#: src/formats/cert_view.c:330
 msgid "Data Encipherment"
 msgstr "Chiffrement de données"
 
-#: src/cert_view.c:331
+#: src/formats/cert_view.c:331
 msgid "Key Agreement"
 msgstr "Accord de clé"
 
-#: src/cert_view.c:331
+#: src/formats/cert_view.c:331
 msgid "Certificate Sign"
 msgstr "Signature de certificat"
 
-#: src/cert_view.c:331
+#: src/formats/cert_view.c:331
 msgid "CRL Sign"
 msgstr "Signature de CRL"
 
-#: src/cert_view.c:331
+#: src/formats/cert_view.c:331
 msgid "Encipher Only"
 msgstr "Chiffrement seul"
 
-#: src/cert_view.c:331
+#: src/formats/cert_view.c:331
 msgid "Decipher Only"
 msgstr "Déchiffrement seul"
 
-#: src/cert_view.c:353
+#: src/formats/cert_view.c:353
 msgid "TLS Web Server Authentication"
 msgstr "Authentification de serveur web TLS"
 
-#: src/cert_view.c:354
+#: src/formats/cert_view.c:354
 msgid "TLS Web Client Authentication"
 msgstr "Authentification de client web TLS"
 
-#: src/cert_view.c:355
+#: src/formats/cert_view.c:355
 msgid "Code Signing"
 msgstr "Signature de code"
 
-#: src/cert_view.c:356
+#: src/formats/cert_view.c:356
 msgid "E-mail Protection"
 msgstr "Protection du courriel"
 
-#: src/cert_view.c:357
+#: src/formats/cert_view.c:357
 msgid "Time Stamping"
 msgstr "Horodatage"
 
-#: src/cert_view.c:358
+#: src/formats/cert_view.c:358
 msgid "OCSP Signing"
 msgstr "Signature OCSP"
 
-#: src/cert_view.c:359
+#: src/formats/cert_view.c:359
 msgid "Any"
 msgstr "Tout usage"
 
-#: src/cert_view.c:426 src/cert_view.c:771
+#: src/formats/cert_view.c:426 src/formats/cert_view.c:771
 msgid "not a valid X.509 certificate"
 msgstr "pas un certificat X.509 valide"
 
-#: src/cert_view.c:575
+#: src/formats/cert_view.c:575
 msgid "Valid from"
 msgstr "Valide depuis"
 
-#: src/cert_view.c:576
+#: src/formats/cert_view.c:576
 msgid "Valid until"
 msgstr "Expire le"
 
-#: src/cert_view.c:586
+#: src/formats/cert_view.c:586
 msgid "not valid yet"
 msgstr "pas encore valide"
 
-#: src/cert_view.c:590
+#: src/formats/cert_view.c:590
 msgid "expired today"
 msgstr "expiré aujourd’hui"
 
-#: src/cert_view.c:591
+#: src/formats/cert_view.c:591
 #, c-format
 msgid "expired %d day ago"
 msgid_plural "expired %d days ago"
 msgstr[0] "expiré il y a %d jour"
 msgstr[1] "expiré il y a %d jours"
 
-#: src/cert_view.c:594
+#: src/formats/cert_view.c:594
 #, c-format
 msgid "valid, expires in %d day"
 msgid_plural "valid, expires in %d days"
 msgstr[0] "valide, expire dans %d jour"
 msgstr[1] "valide, expire dans %d jours"
 
-#: src/cert_view.c:602 src/cert_view.c:665 src/mail_dir.c:212
+#: src/formats/cert_view.c:602 src/formats/cert_view.c:665 src/mail_dir.c:212
 #: src/mail_view.c:80 src/ole_props.c:224 src/preview/preview_formats.c:936
 msgid "Subject"
 msgstr "Objet"
 
-#: src/cert_view.c:604
+#: src/formats/cert_view.c:604
 #, c-format
 msgid "%s (self-signed)"
 msgstr "%s (autosigné)"
 
-#: src/cert_view.c:605
+#: src/formats/cert_view.c:605
 msgid "Issuer"
 msgstr "Émetteur"
 
-#: src/cert_view.c:616
+#: src/formats/cert_view.c:616
 msgid "Alt names"
 msgstr "Autres noms"
 
-#: src/cert_view.c:619 src/cert_view.c:666 src/cert_view.c:749
+#: src/formats/cert_view.c:619 src/formats/cert_view.c:666 src/formats/cert_view.c:749
 msgid "Public key"
 msgstr "Clé publique"
 
-#: src/cert_view.c:620
+#: src/formats/cert_view.c:620
 msgid "Signature"
 msgstr "Signature"
 
-#: src/cert_view.c:622
+#: src/formats/cert_view.c:622
 msgid "CA"
 msgstr "AC"
 
-#: src/cert_view.c:622 src/preview/preview_formats.c:905
+#: src/formats/cert_view.c:622 src/preview/preview_formats.c:905
 msgid "yes"
 msgstr "oui"
 
-#: src/cert_view.c:622
+#: src/formats/cert_view.c:622
 msgid "no"
 msgstr "non"
 
-#: src/cert_view.c:624
+#: src/formats/cert_view.c:624
 msgid "Key usage"
 msgstr "Usage de la clé"
 
-#: src/cert_view.c:625
+#: src/formats/cert_view.c:625
 msgid "Extended use"
 msgstr "Usage étendu"
 
-#: src/cert_view.c:626
+#: src/formats/cert_view.c:626
 msgid "Serial"
 msgstr "N° de série"
 
-#: src/cert_view.c:628 src/preview/preview_formats.c:599 src/pyc_info.c:538
+#: src/formats/cert_view.c:628 src/preview/preview_formats.c:599 src/formats/pyc_info.c:538
 msgid "Version"
 msgstr "Version"
 
-#: src/cert_view.c:630
+#: src/formats/cert_view.c:630
 msgid "SHA-256"
 msgstr "SHA-256"
 
-#: src/cert_view.c:631
+#: src/formats/cert_view.c:631
 msgid "SHA-1"
 msgstr "SHA-1"
 
-#: src/cert_view.c:686
+#: src/formats/cert_view.c:686
 msgid "no certificate or key found"
 msgstr "aucun certificat ni clé trouvé"
 
-#: src/cert_view.c:697
+#: src/formats/cert_view.c:697
 #, c-format
 msgid "%u certificates (the first ones in detail)\n"
 msgstr "%u certificats (les premiers en détail)\n"
 
-#: src/cert_view.c:698
+#: src/formats/cert_view.c:698
 #, c-format
 msgid "%u certificates\n"
 msgstr "%u certificats\n"
 
-#: src/cert_view.c:713
+#: src/formats/cert_view.c:713
 #, c-format
 msgid "%1$u. %2$s — until %3$s"
 msgstr "%1$u. %2$s — jusqu’au %3$s"
 
-#: src/cert_view.c:716
+#: src/formats/cert_view.c:716
 msgid "Other certificates"
 msgstr "Autres certificats"
 
-#: src/cert_view.c:725
+#: src/formats/cert_view.c:725
 #, c-format
 msgid "Certificate %1$u of %2$u"
 msgstr "Certificat %1$u sur %2$u"
 
-#: src/cert_view.c:726
+#: src/formats/cert_view.c:726
 msgid "Certificate"
 msgstr "Certificat"
 
-#: src/cert_view.c:730
+#: src/formats/cert_view.c:730
 msgid "Damaged certificate: it cannot be decoded."
 msgstr "Certificat endommagé : il ne peut pas être décodé."
 
-#: src/cert_view.c:741 src/cert_view.c:754
+#: src/formats/cert_view.c:741 src/formats/cert_view.c:754
 msgid "Algorithm"
 msgstr "Algorithme"
 
-#: src/cert_view.c:742
+#: src/formats/cert_view.c:742
 msgid "The key itself is not shown."
 msgstr "La clé elle-même n’est pas affichée."
 
-#: src/cert_view.c:761
+#: src/formats/cert_view.c:761
 msgid "Certificate request"
 msgstr "Demande de certificat"
 
-#: src/class_info.c:174
+#: src/formats/class_info.c:174
 msgid "static block"
 msgstr "bloc statique"
 
-#: src/class_info.c:207
+#: src/formats/class_info.c:207
 msgid "file too small for Java class"
 msgstr "fichier trop petit pour une classe Java"
 
-#: src/class_info.c:213
+#: src/formats/class_info.c:213
 #, c-format
 msgid "not a Java class (bad magic 0x%08X)"
 msgstr "pas une classe Java (nombre magique 0x%08X incorrect)"
 
-#: src/class_info.c:218
+#: src/formats/class_info.c:218
 msgid "truncated class header"
 msgstr "en-tête de classe tronqué"
 
-#: src/class_info.c:224
+#: src/formats/class_info.c:224
 msgid "invalid constant pool count"
 msgstr "nombre d’entrées du pool de constantes invalide"
 
-#: src/class_info.c:278
+#: src/formats/class_info.c:278
 msgid "corrupted constant pool"
 msgstr "pool de constantes corrompu"
 
-#: src/class_info.c:289
+#: src/formats/class_info.c:289
 msgid "truncated class declaration"
 msgstr "déclaration de classe tronquée"
 
-#: src/class_info.c:393
+#: src/formats/class_info.c:393
 #, c-format
 msgid "%1$s (class %2$u.%3$u)"
 msgstr "%1$s (classe %2$u.%3$u)"
 
-#: src/class_info.c:394
+#: src/formats/class_info.c:394
 #, c-format
 msgid "class %1$u.%2$u"
 msgstr "classe %1$u.%2$u"
 
-#: src/class_info.c:395
+#: src/formats/class_info.c:395
 msgid "Class"
 msgstr "Classe"
 
-#: src/class_info.c:396
+#: src/formats/class_info.c:396
 msgid "Target"
 msgstr "Cible"
 
-#: src/class_info.c:400
+#: src/formats/class_info.c:400
 msgid "Extends"
 msgstr "Hérite de"
 
-#: src/class_info.c:408
+#: src/formats/class_info.c:408
 msgid "Implements"
 msgstr "Implémente"
 
-#: src/class_info.c:412 src/pyc_info.c:542
+#: src/formats/class_info.c:412 src/formats/pyc_info.c:542
 msgid "Source file"
 msgstr "Fichier source"
 
-#: src/class_info.c:416
+#: src/formats/class_info.c:416
 #, c-format
 msgid "Fields (%u)"
 msgstr "Champs (%u)"
 
-#: src/class_info.c:428
+#: src/formats/class_info.c:428
 #, c-format
 msgid "Methods (%u)"
 msgstr "Méthodes (%u)"
@@ -1621,7 +1621,7 @@ msgstr "titres Markdown"
 msgid "built-in scanner"
 msgstr "analyseur intégré"
 
-#: src/code_outline_tree.c:258 src/wasm_info.c:271
+#: src/code_outline_tree.c:258 src/formats/wasm_info.c:271
 msgid "Functions"
 msgstr "Fonctions"
 
@@ -1633,7 +1633,7 @@ msgstr "Méthodes"
 msgid "Macros"
 msgstr "Macros"
 
-#: src/code_outline_tree.c:261 src/wasm_info.c:276
+#: src/code_outline_tree.c:261 src/formats/wasm_info.c:276
 msgid "Types"
 msgstr "Types"
 
@@ -1661,7 +1661,7 @@ msgstr "Modules"
 msgid "Targets"
 msgstr "Cibles"
 
-#: src/code_outline_tree.c:269 src/elf_info.c:674 src/widgets/outline_pane.c:303
+#: src/code_outline_tree.c:269 src/formats/elf_info.c:674 src/widgets/outline_pane.c:303
 #: src/widgets/outline_pane.c:523
 msgid "Symbols"
 msgstr "Symboles"
@@ -1844,27 +1844,27 @@ msgctxt "symbol kind"
 msgid "heading"
 msgstr "titre"
 
-#: src/csv.c:182
+#: src/formats/csv.c:182
 msgctxt "csv separator"
 msgid "tab"
 msgstr "tabulation"
 
-#: src/csv.c:183
+#: src/formats/csv.c:183
 msgctxt "csv separator"
 msgid "semicolon"
 msgstr "point-virgule"
 
-#: src/csv.c:184
+#: src/formats/csv.c:184
 msgctxt "csv separator"
 msgid "pipe"
 msgstr "barre verticale"
 
-#: src/csv.c:185
+#: src/formats/csv.c:185
 msgctxt "csv separator"
 msgid "comma"
 msgstr "virgule"
 
-#: src/diff_view.c:233
+#: src/formats/diff_view.c:233
 #, c-format
 msgid "%u file changed, "
 msgid_plural "%u files changed, "
@@ -2309,123 +2309,123 @@ msgstr "Mode Emacs"
 msgid "Notepad mode"
 msgstr "Mode Notepad"
 
-#: src/elf_info.c:435
+#: src/formats/elf_info.c:435
 msgid "Not an ELF file"
 msgstr "Pas un fichier ELF"
 
-#: src/elf_info.c:439
+#: src/formats/elf_info.c:439
 msgid "Unknown ELF class or byte order"
 msgstr "Classe ELF ou ordre des octets inconnu"
 
-#: src/elf_info.c:445
+#: src/formats/elf_info.c:445
 msgid "Truncated ELF header"
 msgstr "En-tête ELF tronqué"
 
-#: src/elf_info.c:531
+#: src/formats/elf_info.c:531
 msgid "Cannot open the file"
 msgstr "Impossible d’ouvrir le fichier"
 
-#: src/elf_info.c:591
+#: src/formats/elf_info.c:591
 msgid "Relocatable object"
 msgstr "Objet relogeable"
 
-#: src/elf_info.c:592
+#: src/formats/elf_info.c:592
 msgid "Executable"
 msgstr "Exécutable"
 
-#: src/elf_info.c:596
+#: src/formats/elf_info.c:596
 msgid "Position-independent executable"
 msgstr "Exécutable indépendant de la position"
 
-#: src/elf_info.c:596
+#: src/formats/elf_info.c:596
 msgid "Shared library"
 msgstr "Bibliothèque partagée"
 
-#: src/elf_info.c:597
+#: src/formats/elf_info.c:597
 msgid "Core dump"
 msgstr "Image mémoire (core)"
 
-#: src/elf_info.c:598
+#: src/formats/elf_info.c:598
 msgid "Unknown type"
 msgstr "Type inconnu"
 
 #. TRANSLATORS: "x86-64 (64-bit, little-endian)"
-#: src/elf_info.c:630
+#: src/formats/elf_info.c:630
 #, c-format
 msgid "%1$s (%2$s, %3$s)"
 msgstr "%1$s (%2$s, %3$s)"
 
-#: src/elf_info.c:630
+#: src/formats/elf_info.c:630
 msgid "64-bit"
 msgstr "64 bits"
 
-#: src/elf_info.c:630
+#: src/formats/elf_info.c:630
 msgid "32-bit"
 msgstr "32 bits"
 
-#: src/elf_info.c:631
+#: src/formats/elf_info.c:631
 msgid "big-endian"
 msgstr "gros-boutiste"
 
-#: src/elf_info.c:631
+#: src/formats/elf_info.c:631
 msgid "little-endian"
 msgstr "petit-boutiste"
 
 #. TRANSLATORS: the labels of the ELF fields fit in 13 characters
-#: src/elf_info.c:633
+#: src/formats/elf_info.c:633
 msgid "Architecture"
 msgstr "Architecture"
 
-#: src/elf_info.c:642
+#: src/formats/elf_info.c:642
 #, c-format
 msgid "Unknown type %u"
 msgstr "Type inconnu %u"
 
-#: src/elf_info.c:648
+#: src/formats/elf_info.c:648
 msgid "OS ABI"
 msgstr "ABI de l’OS"
 
-#: src/elf_info.c:651
+#: src/formats/elf_info.c:651
 msgid "Linking"
 msgstr "Liaison"
 
-#: src/elf_info.c:651
+#: src/formats/elf_info.c:651
 msgid "Dynamic"
 msgstr "Dynamique"
 
-#: src/elf_info.c:651
+#: src/formats/elf_info.c:651
 msgid "Static"
 msgstr "Statique"
 
-#: src/elf_info.c:654
+#: src/formats/elf_info.c:654
 msgid "Interpreter"
 msgstr "Interpréteur"
 
-#: src/elf_info.c:658 src/pyc_info.c:569
+#: src/formats/elf_info.c:658 src/formats/pyc_info.c:569
 msgid "Entry point"
 msgstr "Entrée"
 
-#: src/elf_info.c:671
+#: src/formats/elf_info.c:671
 msgid "Build ID"
 msgstr "ID de build"
 
-#: src/elf_info.c:674
+#: src/formats/elf_info.c:674
 msgid "Debug info"
 msgstr "Infos de débogage"
 
-#: src/elf_info.c:675
+#: src/formats/elf_info.c:675
 msgid "Not stripped"
 msgstr "Non épuré"
 
-#: src/elf_info.c:675
+#: src/formats/elf_info.c:675
 msgid "Stripped"
 msgstr "Épuré"
 
-#: src/elf_info.c:678
+#: src/formats/elf_info.c:678
 msgid "Sections"
 msgstr "Sections"
 
-#: src/elf_info.c:683
+#: src/formats/elf_info.c:683
 #, c-format
 msgid ""
 "\n"
@@ -2434,7 +2434,7 @@ msgstr ""
 "\n"
 "Bibliothèques liées (%u)\n"
 
-#: src/elf_info.c:688
+#: src/formats/elf_info.c:688
 msgid ""
 "\n"
 "Linked libraries: none\n"
@@ -2442,7 +2442,7 @@ msgstr ""
 "\n"
 "Bibliothèques liées : aucune\n"
 
-#: src/elf_info.c:694
+#: src/formats/elf_info.c:694
 #, c-format
 msgid ""
 "\n"
@@ -2451,7 +2451,7 @@ msgstr ""
 "\n"
 "Symboles exportés (%1$u, les %2$u premiers affichés)\n"
 
-#: src/elf_info.c:697
+#: src/formats/elf_info.c:697
 #, c-format
 msgid ""
 "\n"
@@ -2772,23 +2772,23 @@ msgstr "Nouveau fichier…"
 msgid "Undo"
 msgstr "Annuler"
 
-#: src/font_info.c:175
+#: src/formats/font_info.c:175
 msgid "not a font file"
 msgstr "pas un fichier de police"
 
-#: src/font_info.c:201
+#: src/formats/font_info.c:201
 msgid "OpenType collection"
 msgstr "Collection OpenType"
 
-#: src/font_info.c:201
+#: src/formats/font_info.c:201
 msgid "TrueType collection"
 msgstr "Collection TrueType"
 
-#: src/font_info.c:215
+#: src/formats/font_info.c:215
 msgid "font without a name table"
 msgstr "police sans table de noms"
 
-#: src/font_info.c:264
+#: src/formats/font_info.c:264
 msgid "font file too large"
 msgstr "fichier de police trop grand"
 
@@ -2867,61 +2867,61 @@ msgstr "Solitaire"
 msgid "Close Game (Ctrl+W)"
 msgstr "Fermer le jeu (Ctrl+W)"
 
-#: src/gettext_view.c:55
+#: src/formats/gettext_view.c:55
 msgid "not a gettext catalog"
 msgstr "pas un catalogue gettext"
 
-#: src/gettext_view.c:185
+#: src/formats/gettext_view.c:185
 msgid "no messages"
 msgstr "aucun message"
 
-#: src/gettext_view.c:215
+#: src/formats/gettext_view.c:215
 msgid "Project"
 msgstr "Projet"
 
-#: src/gettext_view.c:215
+#: src/formats/gettext_view.c:215
 msgid "Language"
 msgstr "Langue"
 
-#: src/gettext_view.c:216
+#: src/formats/gettext_view.c:216
 msgid "Translator"
 msgstr "Traducteur"
 
-#: src/gettext_view.c:216
+#: src/formats/gettext_view.c:216
 msgid "Team"
 msgstr "Équipe"
 
-#: src/gettext_view.c:217
+#: src/formats/gettext_view.c:217
 msgid "Revised"
 msgstr "Révisé"
 
-#: src/gettext_view.c:217
+#: src/formats/gettext_view.c:217
 msgid "Plural forms"
 msgstr "Pluriels"
 
-#: src/gettext_view.c:234
+#: src/formats/gettext_view.c:234
 #, c-format
 msgid "%1$u translated, %2$u fuzzy, %3$u untranslated"
 msgstr "traduits : %1$u, approximatifs : %2$u, non traduits : %3$u"
 
-#: src/gettext_view.c:237 src/mail_store.c:101
+#: src/formats/gettext_view.c:237 src/mail_store.c:101
 msgid "Messages"
 msgstr "Messages"
 
-#: src/gettext_view.c:246
+#: src/formats/gettext_view.c:246
 msgid "Original"
 msgstr "Original"
 
-#: src/gettext_view.c:246
+#: src/formats/gettext_view.c:246
 msgid "Translation"
 msgstr "Traduction"
 
-#: src/gettext_view.c:252
+#: src/formats/gettext_view.c:252
 #, c-format
 msgid "%s (fuzzy)"
 msgstr "%s (approximatif)"
 
-#: src/gettext_view.c:260
+#: src/formats/gettext_view.c:260
 #, c-format
 msgid "Showing the first %u messages."
 msgstr "Affichage des %u premiers messages."
@@ -4700,64 +4700,64 @@ msgstr "  [échelle 1:1, m pour ajuster]"
 msgid "  [1:1 scale]"
 msgstr "  [échelle 1:1]"
 
-#: src/json_view.c:49
+#: src/formats/json_view.c:49
 #, c-format
 msgid "line %1$u, column %2$u: %3$s"
 msgstr "ligne %1$u, colonne %2$u : %3$s"
 
-#: src/json_view.c:97
+#: src/formats/json_view.c:97
 msgid "unterminated string"
 msgstr "chaîne non terminée"
 
-#: src/json_view.c:116
+#: src/formats/json_view.c:116
 msgid "missing }"
 msgstr "} manquante"
 
-#: src/json_view.c:116
+#: src/formats/json_view.c:116
 msgid "missing ]"
 msgstr "] manquant"
 
-#: src/json_view.c:139
+#: src/formats/json_view.c:139
 msgid "expected a member name"
 msgstr "nom de membre attendu"
 
-#: src/json_view.c:148
+#: src/formats/json_view.c:148
 msgid "expected :"
 msgstr "« : » attendu"
 
-#: src/json_view.c:166
+#: src/formats/json_view.c:166
 msgid "expected , or }"
 msgstr "« , » ou « } » attendu"
 
-#: src/json_view.c:166
+#: src/formats/json_view.c:166
 msgid "expected , or ]"
 msgstr "« , » ou « ] » attendu"
 
-#: src/json_view.c:176
+#: src/formats/json_view.c:176
 msgid "expected a value"
 msgstr "valeur attendue"
 
-#: src/json_view.c:180
+#: src/formats/json_view.c:180
 msgid "nested too deeply"
 msgstr "imbrication trop profonde"
 
-#: src/json_view.c:209
+#: src/formats/json_view.c:209
 msgid "unexpected word"
 msgstr "mot inattendu"
 
-#: src/json_view.c:214
+#: src/formats/json_view.c:214
 msgid "unexpected character"
 msgstr "caractère inattendu"
 
-#: src/json_view.c:334 src/json_view.c:384
+#: src/formats/json_view.c:334 src/formats/json_view.c:384
 msgid "unexpected text after the value"
 msgstr "texte inattendu après la valeur"
 
-#: src/json_view.c:339
+#: src/formats/json_view.c:339
 msgid "empty document"
 msgstr "document vide"
 
-#: src/json_view.c:366
+#: src/formats/json_view.c:366
 #, c-format
 msgid "… (stopped after %u lines)"
 msgstr "… (arrêté après %u lignes)"
@@ -5171,7 +5171,7 @@ msgid "Outlook Express database (DBX)"
 msgstr "Base de données Outlook Express (DBX)"
 
 #: src/mail_store.c:107 src/office97.c:73 src/preview/preview_formats.c:346
-#: src/preview/preview_formats.c:347 src/preview/preview_formats.c:936 src/torrent_info.c:371
+#: src/preview/preview_formats.c:347 src/preview/preview_formats.c:936 src/formats/torrent_info.c:371
 msgid "Size"
 msgstr "Taille"
 
@@ -5345,7 +5345,7 @@ msgstr "Préférences (Ctrl+,)"
 msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
 msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
 
-#: src/man_view.c:451
+#: src/formats/man_view.c:451
 #, c-format
 msgid "See %s."
 msgstr "Voir %s."
@@ -5379,22 +5379,22 @@ msgstr "Seuls les fichiers locaux peuvent être lus"
 msgid "Track %u"
 msgstr "Piste %u"
 
-#: src/notebook.c:53
+#: src/formats/notebook.c:53
 #, c-format
 msgid "… (%u more line)\n"
 msgid_plural "… (%u more lines)\n"
 msgstr[0] "… (%u ligne de plus)\n"
 msgstr[1] "… (%u lignes de plus)\n"
 
-#: src/notebook.c:87
+#: src/formats/notebook.c:87
 msgid "(image too large to show)"
 msgstr "(image trop grande pour être affichée)"
 
-#: src/notebook.c:121
+#: src/formats/notebook.c:121
 msgid "(HTML output)"
 msgstr "(sortie HTML)"
 
-#: src/notebook.c:182
+#: src/formats/notebook.c:182
 msgid "not a Jupyter notebook (no cells)"
 msgstr "pas un notebook Jupyter (aucune cellule)"
 
@@ -5755,7 +5755,7 @@ msgstr "Société"
 msgid "Comments"
 msgstr "Commentaires"
 
-#: src/ole_props.c:230 src/torrent_info.c:350
+#: src/ole_props.c:230 src/formats/torrent_info.c:350
 msgid "Created"
 msgstr "Créé"
 
@@ -5909,123 +5909,123 @@ msgstr "Grouper par type (s)"
 msgid "Hide Tagbar (q)"
 msgstr "Masquer la barre de symboles (q)"
 
-#: src/pcap_info.c:117
+#: src/formats/pcap_info.c:117
 msgid "Echo (ping) request"
 msgstr "Demande d’écho (ping)"
 
-#: src/pcap_info.c:118
+#: src/formats/pcap_info.c:118
 msgid "Echo (ping) reply"
 msgstr "Réponse d’écho (ping)"
 
-#: src/pcap_info.c:119
+#: src/formats/pcap_info.c:119
 msgid "Destination unreachable"
 msgstr "Destination inaccessible"
 
-#: src/pcap_info.c:120
+#: src/formats/pcap_info.c:120
 #, c-format
 msgid "Type %u"
 msgstr "Type %u"
 
-#: src/pcap_info.c:145
+#: src/formats/pcap_info.c:145
 #, c-format
 msgid "Who has %1$s? Tell %2$s"
 msgstr "Qui a %1$s ? Répondre à %2$s"
 
-#: src/pcap_info.c:146
+#: src/formats/pcap_info.c:146
 #, c-format
 msgid "%s is at sender MAC"
 msgstr "%s est à l’adresse MAC de l’émetteur"
 
-#: src/pcap_info.c:174
+#: src/formats/pcap_info.c:174
 msgid "file too small for PCAP header"
 msgstr "fichier trop petit pour un en-tête PCAP"
 
-#: src/pcap_info.c:191
+#: src/formats/pcap_info.c:191
 msgid "unrecognized PCAP magic number"
 msgstr "nombre magique PCAP non reconnu"
 
-#: src/pcap_info.c:196
+#: src/formats/pcap_info.c:196
 msgid "libpcap (nanosecond)"
 msgstr "libpcap (nanoseconde)"
 
-#: src/pcap_info.c:196
+#: src/formats/pcap_info.c:196
 msgid "libpcap (microsecond)"
 msgstr "libpcap (microseconde)"
 
-#: src/pcap_info.c:250
+#: src/formats/pcap_info.c:250
 msgid "not a valid pcapng file"
 msgstr "pas un fichier pcapng valide"
 
-#: src/pcap_info.c:318
+#: src/formats/pcap_info.c:318
 msgid "file too small for packet capture"
 msgstr "fichier trop petit pour une capture réseau"
 
-#: src/pcap_info.c:335 src/tfm_info.c:207 src/wasm_info.c:265
+#: src/formats/pcap_info.c:335 src/formats/tfm_info.c:207 src/formats/wasm_info.c:265
 msgid "Format"
 msgstr "Format"
 
-#: src/pcap_info.c:337
+#: src/formats/pcap_info.c:337
 #, c-format
 msgid "%1$s (linktype %2$u)"
 msgstr "%1$s (type de lien %2$u)"
 
-#: src/pcap_info.c:338
+#: src/formats/pcap_info.c:338
 msgid "Link layer"
 msgstr "Couche liaison"
 
-#: src/pcap_info.c:343
+#: src/formats/pcap_info.c:343
 msgid "Snap length"
 msgstr "Longueur de capture"
 
-#: src/pcap_info.c:349
+#: src/formats/pcap_info.c:349
 #, c-format
 msgid "%1$u packet (captured %2$s, wire %3$s)"
 msgid_plural "%1$u packets (captured %2$s, wire %3$s)"
 msgstr[0] "%1$u paquet (capturé %2$s, sur le réseau %3$s)"
 msgstr[1] "%1$u paquets (capturés %2$s, sur le réseau %3$s)"
 
-#: src/pcap_info.c:352
+#: src/formats/pcap_info.c:352
 msgid "Captured"
 msgstr "Capturé"
 
-#: src/pcap_info.c:364
+#: src/formats/pcap_info.c:364
 #, c-format
 msgid "%1$s .. %2$s (%3$ld sec)"
 msgstr "%1$s .. %2$s (%3$ld s)"
 
-#: src/pcap_info.c:365
+#: src/formats/pcap_info.c:365
 msgid "Time range"
 msgstr "Période"
 
-#: src/pcap_info.c:378
+#: src/formats/pcap_info.c:378
 msgid "No."
 msgstr "N°"
 
-#: src/pcap_info.c:378
+#: src/formats/pcap_info.c:378
 msgid "Time (s)"
 msgstr "Temps (s)"
 
-#: src/pcap_info.c:378 src/preview/preview_summary.c:93
+#: src/formats/pcap_info.c:378 src/preview/preview_summary.c:93
 msgid "Source"
 msgstr "Origine"
 
-#: src/pcap_info.c:378
+#: src/formats/pcap_info.c:378
 msgid "Destination"
 msgstr "Destination"
 
-#: src/pcap_info.c:378
+#: src/formats/pcap_info.c:378
 msgid "Proto"
 msgstr "Proto"
 
-#: src/pcap_info.c:378
+#: src/formats/pcap_info.c:378
 msgid "Len"
 msgstr "Long."
 
-#: src/pcap_info.c:378
+#: src/formats/pcap_info.c:378
 msgid "Info"
 msgstr "Info"
 
-#: src/pcap_info.c:409
+#: src/formats/pcap_info.c:409
 #, c-format
 msgid ""
 "\n"
@@ -6353,7 +6353,7 @@ msgstr "%.0f %% gagnés"
 msgid "Content"
 msgstr "Contenu"
 
-#: src/preview/preview_formats.c:254 src/spreadsheet.c:712 src/sqlite_view.c:158
+#: src/preview/preview_formats.c:254 src/spreadsheet.c:712 src/formats/sqlite_view.c:158
 msgid "(empty)"
 msgstr "(vide)"
 
@@ -6480,7 +6480,7 @@ msgstr "Police %1$s · %2$s · %3$s"
 msgid "%1$s font · %2$s"
 msgstr "Police %1$s · %2$s"
 
-#: src/preview/preview_formats.c:598 src/tfm_info.c:213
+#: src/preview/preview_formats.c:598 src/formats/tfm_info.c:213
 msgid "Full name"
 msgstr "Nom complet"
 
@@ -6809,7 +6809,7 @@ msgstr "Images"
 msgid "Shapes"
 msgstr "Formes"
 
-#: src/preview/preview_summary.c:179 src/wasm_info.c:297
+#: src/preview/preview_summary.c:179 src/formats/wasm_info.c:297
 msgid "Tables"
 msgstr "Tableaux"
 
@@ -7078,49 +7078,49 @@ msgstr "%s n’est pas installé"
 msgid "cannot store the converted file"
 msgstr "impossible d’enregistrer le fichier converti"
 
-#: src/pyc_info.c:449
+#: src/formats/pyc_info.c:449
 msgid "file too small for Python bytecode"
 msgstr "fichier trop petit pour du bytecode Python"
 
-#: src/pyc_info.c:453
+#: src/formats/pyc_info.c:453
 msgid "invalid .pyc magic delimiter"
 msgstr "délimiteur magique .pyc invalide"
 
-#: src/pyc_info.c:537
+#: src/formats/pyc_info.c:537
 #, c-format
 msgid "%1$s (magic %2$u)"
 msgstr "%1$s (nombre magique %2$u)"
 
-#: src/pyc_info.c:548
+#: src/formats/pyc_info.c:548
 msgid "Hash (PEP 552)"
 msgstr "Empreinte (PEP 552)"
 
-#: src/pyc_info.c:553
+#: src/formats/pyc_info.c:553
 msgid "Source size"
 msgstr "Taille de la source"
 
-#: src/pyc_info.c:560
+#: src/formats/pyc_info.c:560
 msgid "Source modified"
 msgstr "Source modifiée"
 
-#: src/pyc_info.c:568
+#: src/formats/pyc_info.c:568
 #, c-format
 msgid "%1$s (starts line %2$u)"
 msgstr "%1$s (commence ligne %2$u)"
 
-#: src/pyc_info.c:575
+#: src/formats/pyc_info.c:575
 msgid "Functions and Classes"
 msgstr "Fonctions et classes"
 
-#: src/pyc_info.c:578
+#: src/formats/pyc_info.c:578
 msgid "Line"
 msgstr "Ligne"
 
-#: src/pyc_info.c:578
+#: src/formats/pyc_info.c:578
 msgid "Args"
 msgstr "Args"
 
-#: src/pyc_info.c:598
+#: src/formats/pyc_info.c:598
 msgid "Referenced Symbols"
 msgstr "Symboles référencés"
 
@@ -7611,40 +7611,40 @@ msgstr ""
 "\n"
 "Les %u premières feuilles sont affichées."
 
-#: src/sqlite_view.c:34
+#: src/formats/sqlite_view.c:34
 #, c-format
 msgid "%1$s × %2$u bytes"
 msgstr "%1$s × %2$u octets"
 
-#: src/sqlite_view.c:36
+#: src/formats/sqlite_view.c:36
 msgid "Pages"
 msgstr "Pages"
 
-#: src/sqlite_view.c:38
+#: src/formats/sqlite_view.c:38
 msgid "Encoding"
 msgstr "Encodage"
 
-#: src/sqlite_view.c:39
+#: src/formats/sqlite_view.c:39
 msgid "Journal"
 msgstr "Journal"
 
-#: src/sqlite_view.c:43
+#: src/formats/sqlite_view.c:43
 msgid "Written by"
 msgstr "Écrit par"
 
-#: src/sqlite_view.c:48
+#: src/formats/sqlite_view.c:48
 msgid "User version"
 msgstr "Version schéma"
 
-#: src/sqlite_view.c:53
+#: src/formats/sqlite_view.c:53
 msgid "Application ID"
 msgstr "ID d’application"
 
-#: src/sqlite_view.c:190
+#: src/formats/sqlite_view.c:190
 msgid "cannot open"
 msgstr "ouverture impossible"
 
-#: src/sqlite_view.c:218
+#: src/formats/sqlite_view.c:218
 msgid ""
 "\n"
 "No tables yet."
@@ -7652,19 +7652,19 @@ msgstr ""
 "\n"
 "Pas encore de tables."
 
-#: src/sqlite_view.c:222
+#: src/formats/sqlite_view.c:222
 msgid "Rows"
 msgstr "Lignes"
 
-#: src/sqlite_view.c:222
+#: src/formats/sqlite_view.c:222
 msgid "Columns"
 msgstr "Colonnes"
 
-#: src/sqlite_view.c:268
+#: src/formats/sqlite_view.c:268
 msgid "not an SQLite database"
 msgstr "pas une base de données SQLite"
 
-#: src/sqlite_view.c:276
+#: src/formats/sqlite_view.c:276
 msgid ""
 "\n"
 "Tables are listed when LookinFiles is built with SQLite (libsqlite3-dev)."
@@ -7846,129 +7846,129 @@ msgstr "mot entier"
 msgid "regex"
 msgstr "regex"
 
-#: src/tfm_info.c:37
+#: src/formats/tfm_info.c:37
 msgid "file too short for TFM"
 msgstr "fichier trop court pour du TFM"
 
-#: src/tfm_info.c:55
+#: src/formats/tfm_info.c:55
 msgid "invalid TFM header dimensions"
 msgstr "dimensions d’en-tête TFM invalides"
 
-#: src/tfm_info.c:116
+#: src/formats/tfm_info.c:116
 msgid "not a TeX virtual font"
 msgstr "pas une police virtuelle TeX"
 
-#: src/tfm_info.c:122
+#: src/formats/tfm_info.c:122
 msgid "truncated VF header"
 msgstr "en-tête VF tronqué"
 
-#: src/tfm_info.c:164
+#: src/formats/tfm_info.c:164
 msgid "not a PostScript Type 1 binary font"
 msgstr "pas une police binaire PostScript Type 1"
 
-#: src/tfm_info.c:187
+#: src/formats/tfm_info.c:187
 msgid "data too short"
 msgstr "données trop courtes"
 
-#: src/tfm_info.c:210
+#: src/formats/tfm_info.c:210
 msgid "Family"
 msgstr "Famille"
 
-#: src/tfm_info.c:216 src/torrent_info.c:360
+#: src/formats/tfm_info.c:216 src/formats/torrent_info.c:360
 msgid "Comment"
 msgstr "Commentaire"
 
-#: src/tfm_info.c:219
+#: src/formats/tfm_info.c:219
 msgid "Coding scheme"
 msgstr "Codage"
 
-#: src/tfm_info.c:224
+#: src/formats/tfm_info.c:224
 msgid "Design size"
 msgstr "Taille de conception"
 
-#: src/tfm_info.c:230
+#: src/formats/tfm_info.c:230
 msgid "Checksum"
 msgstr "Somme de contrôle"
 
-#: src/tfm_info.c:235
+#: src/formats/tfm_info.c:235
 #, c-format
 msgid "%1$u glyphs (code %2$u .. %3$u)"
 msgstr "%1$u glyphes (codes %2$u .. %3$u)"
 
-#: src/tfm_info.c:236
+#: src/formats/tfm_info.c:236
 msgid "Characters"
 msgstr "Caractères"
 
-#: src/tfm_info.c:242
+#: src/formats/tfm_info.c:242
 msgid "Font Metric Parameters"
 msgstr "Paramètres métriques de la police"
 
-#: src/tfm_info.c:244
+#: src/formats/tfm_info.c:244
 #, c-format
 msgid "%1$.4f (stretch %2$.4f, shrink %3$.4f)"
 msgstr "%1$.4f (étirement %2$.4f, contraction %3$.4f)"
 
-#: src/tfm_info.c:246
+#: src/formats/tfm_info.c:246
 msgid "Normal space"
 msgstr "Espace normale"
 
-#: src/tfm_info.c:250
+#: src/formats/tfm_info.c:250
 msgid "x-height (ex)"
 msgstr "Hauteur d’x (ex)"
 
-#: src/tfm_info.c:254
+#: src/formats/tfm_info.c:254
 msgid "Quad width (em)"
 msgstr "Largeur du cadratin (em)"
 
-#: src/tfm_info.c:259
+#: src/formats/tfm_info.c:259
 msgid "Slant ratio"
 msgstr "Inclinaison"
 
-#: src/tfm_info.c:266
+#: src/formats/tfm_info.c:266
 msgid "Metric Tables"
 msgstr "Tables métriques"
 
-#: src/tfm_info.c:269
+#: src/formats/tfm_info.c:269
 msgid "Table"
 msgstr "Table"
 
-#: src/tfm_info.c:269
+#: src/formats/tfm_info.c:269
 msgid "Words"
 msgstr "Mots"
 
-#: src/tfm_info.c:269
+#: src/formats/tfm_info.c:269
 msgid "Description"
 msgstr "Description"
 
-#: src/tfm_info.c:275
+#: src/formats/tfm_info.c:275
 msgid "Character widths"
 msgstr "Largeurs des caractères"
 
-#: src/tfm_info.c:276
+#: src/formats/tfm_info.c:276
 msgid "Character heights"
 msgstr "Hauteurs des caractères"
 
-#: src/tfm_info.c:277
+#: src/formats/tfm_info.c:277
 msgid "Character depths"
 msgstr "Profondeurs des caractères"
 
-#: src/tfm_info.c:278
+#: src/formats/tfm_info.c:278
 msgid "Italic corrections"
 msgstr "Corrections d’italique"
 
-#: src/tfm_info.c:279
+#: src/formats/tfm_info.c:279
 msgid "Ligature and kerning steps"
 msgstr "Étapes de ligature et de crénage"
 
-#: src/tfm_info.c:280
+#: src/formats/tfm_info.c:280
 msgid "Kerning distances"
 msgstr "Distances de crénage"
 
-#: src/tfm_info.c:281
+#: src/formats/tfm_info.c:281
 msgid "Extensible character recipes"
 msgstr "Recettes des caractères extensibles"
 
-#: src/tfm_info.c:282
+#: src/formats/tfm_info.c:282
 msgid "Font parameter words"
 msgstr "Mots de paramètres de la police"
 
@@ -8206,50 +8206,50 @@ msgstr "DISTANT"
 msgid "GAMES"
 msgstr "JEUX"
 
-#: src/torrent_info.c:225
+#: src/formats/torrent_info.c:225
 msgid "file too small for torrent"
 msgstr "fichier trop petit pour un torrent"
 
-#: src/torrent_info.c:232
+#: src/formats/torrent_info.c:232
 msgid "invalid bencode root dictionary"
 msgstr "dictionnaire racine bencode invalide"
 
-#: src/torrent_info.c:240
+#: src/formats/torrent_info.c:240
 msgid "torrent missing 'info' dictionary"
 msgstr "dictionnaire 'info' absent du torrent"
 
-#: src/torrent_info.c:328
+#: src/formats/torrent_info.c:328
 msgid "Total size"
 msgstr "Taille totale"
 
-#: src/torrent_info.c:334
+#: src/formats/torrent_info.c:334
 msgid "Files"
 msgstr "Fichiers"
 
-#: src/torrent_info.c:340
+#: src/formats/torrent_info.c:340
 #, c-format
 msgid "%1$s (%2$u piece)"
 msgid_plural "%1$s (%2$u pieces)"
 msgstr[0] "%1$s (%2$u morceau)"
 msgstr[1] "%1$s (%2$u morceaux)"
 
-#: src/torrent_info.c:341
+#: src/formats/torrent_info.c:341
 msgid "Piece size"
 msgstr "Taille des morceaux"
 
-#: src/torrent_info.c:357
+#: src/formats/torrent_info.c:357
 msgid "Created by"
 msgstr "Créé par"
 
-#: src/torrent_info.c:364
+#: src/formats/torrent_info.c:364
 msgid "Primary tracker"
 msgstr "Tracker principal"
 
-#: src/torrent_info.c:371
+#: src/formats/torrent_info.c:371
 msgid "File Path"
 msgstr "Chemin du fichier"
 
-#: src/torrent_info.c:387
+#: src/formats/torrent_info.c:387
 msgid "Trackers"
 msgstr "Trackers"
 
@@ -8379,68 +8379,68 @@ msgstr "Impossible d’ouvrir un pseudo-terminal : %s"
 msgid "Cannot start %1$s: %2$s"
 msgstr "Impossible de lancer %1$s : %2$s"
 
-#: src/wasm_info.c:157
+#: src/formats/wasm_info.c:157
 #, c-format
 msgid "%1$s (func #%2$u)"
 msgstr "%1$s (fonction n°%2$u)"
 
-#: src/wasm_info.c:187
+#: src/formats/wasm_info.c:187
 msgid "file too small for WebAssembly binary"
 msgstr "fichier trop petit pour un binaire WebAssembly"
 
-#: src/wasm_info.c:191
+#: src/formats/wasm_info.c:191
 msgid "not a WebAssembly binary (bad magic)"
 msgstr "pas un binaire WebAssembly (nombre magique incorrect)"
 
-#: src/wasm_info.c:197
+#: src/formats/wasm_info.c:197
 msgid "truncated version header"
 msgstr "en-tête de version tronqué"
 
-#: src/wasm_info.c:264
+#: src/formats/wasm_info.c:264
 #, c-format
 msgid "Version %u"
 msgstr "Version %u"
 
-#: src/wasm_info.c:269
+#: src/formats/wasm_info.c:269
 #, c-format
 msgid "%1$u (%2$u defined, %3$u imported)"
 msgstr "%1$u (%2$u définies, %3$u importées)"
 
-#: src/wasm_info.c:286
+#: src/formats/wasm_info.c:286
 #, c-format
 msgid "%1$s pages (%2$s KB), max %3$s pages"
 msgstr "%1$s pages (%2$s Ko), max %3$s pages"
 
-#: src/wasm_info.c:287
+#: src/formats/wasm_info.c:287
 #, c-format
 msgid "%1$s pages (%2$s KB), unbounded"
 msgstr "%1$s pages (%2$s Ko), sans limite"
 
-#: src/wasm_info.c:291
+#: src/formats/wasm_info.c:291
 msgid "Memory"
 msgstr "Mémoire"
 
-#: src/wasm_info.c:303
+#: src/formats/wasm_info.c:303
 msgid "Globals"
 msgstr "Globales"
 
-#: src/wasm_info.c:308
+#: src/formats/wasm_info.c:308
 #, c-format
 msgid "%u segment"
 msgid_plural "%u segments"
 msgstr[0] "%u segment"
 msgstr[1] "%u segments"
 
-#: src/wasm_info.c:309
+#: src/formats/wasm_info.c:309
 msgid "Data"
 msgstr "Données"
 
-#: src/wasm_info.c:314
+#: src/formats/wasm_info.c:314
 #, c-format
 msgid "Imports (%u)"
 msgstr "Importations (%u)"
 
-#: src/wasm_info.c:326
+#: src/formats/wasm_info.c:326
 #, c-format
 msgid "Exports (%u)"
 msgstr "Exportations (%u)"
@@ -8465,98 +8465,98 @@ msgstr "le classeur n’a aucune feuille"
 msgid "not an Excel workbook"
 msgstr "pas un classeur Excel"
 
-#: src/zip_reader.c:57
+#: src/formats/zip_reader.c:57
 #, c-format
 msgid "Not a valid ZIP archive: %s"
 msgstr "Pas une archive ZIP valide : %s"
 
-#: src/zip_reader.c:64
+#: src/formats/zip_reader.c:64
 msgid "data past the end of the file"
 msgstr "données au-delà de la fin du fichier"
 
-#: src/zip_reader.c:74
+#: src/formats/zip_reader.c:74
 msgid "truncated file"
 msgstr "fichier tronqué"
 
-#: src/zip_reader.c:84
+#: src/formats/zip_reader.c:84
 msgid "file too short"
 msgstr "fichier trop court"
 
-#: src/zip_reader.c:108
+#: src/formats/zip_reader.c:108
 msgid "no end of central directory"
 msgstr "pas de fin de répertoire central"
 
-#: src/zip_reader.c:123
+#: src/formats/zip_reader.c:123
 msgid "missing ZIP64 locator"
 msgstr "localisateur ZIP64 absent"
 
-#: src/zip_reader.c:129
+#: src/formats/zip_reader.c:129
 msgid "bad ZIP64 end of central directory"
 msgstr "fin de répertoire central ZIP64 incorrecte"
 
-#: src/zip_reader.c:137
+#: src/formats/zip_reader.c:137
 msgid "central directory past the end of the file"
 msgstr "répertoire central au-delà de la fin du fichier"
 
-#: src/zip_reader.c:140
+#: src/formats/zip_reader.c:140
 msgid "central directory too large"
 msgstr "répertoire central trop grand"
 
-#: src/zip_reader.c:182 src/zip_reader.c:190
+#: src/formats/zip_reader.c:182 src/formats/zip_reader.c:190
 msgid "damaged central directory"
 msgstr "répertoire central endommagé"
 
-#: src/zip_reader.c:227
+#: src/formats/zip_reader.c:227
 msgid "Stream is not seekable"
 msgstr "Le flux ne permet pas de se déplacer"
 
-#: src/zip_reader.c:332
+#: src/formats/zip_reader.c:332
 #, c-format
 msgid "Damaged ZIP entry %1$s: %2$s"
 msgstr "Entrée ZIP %1$s endommagée : %2$s"
 
-#: src/zip_reader.c:338
+#: src/formats/zip_reader.c:338
 #, c-format
 msgid "Damaged ZIP entry %s: more data than announced"
 msgstr "Entrée ZIP %s endommagée : plus de données qu’annoncé"
 
-#: src/zip_reader.c:345
+#: src/formats/zip_reader.c:345
 #, c-format
 msgid "Damaged ZIP entry %s: less data than announced"
 msgstr "Entrée ZIP %s endommagée : moins de données qu’annoncé"
 
-#: src/zip_reader.c:351
+#: src/formats/zip_reader.c:351
 #, c-format
 msgid "Damaged ZIP entry %s: truncated data"
 msgstr "Entrée ZIP %s endommagée : données tronquées"
 
-#: src/zip_reader.c:363
+#: src/formats/zip_reader.c:363
 #, c-format
 msgid "No entry %s in the archive"
 msgstr "Pas d’entrée %s dans l’archive"
 
-#: src/zip_reader.c:367
+#: src/formats/zip_reader.c:367
 #, c-format
 msgid "ZIP entry %s is encrypted"
 msgstr "L’entrée ZIP %s est chiffrée"
 
-#: src/zip_reader.c:372
+#: src/formats/zip_reader.c:372
 #, c-format
 msgid "ZIP entry %1$s uses an unsupported compression method (%2$u)"
 msgstr ""
 "L’entrée ZIP %1$s utilise une méthode de compression non prise en charge "
 "(%2$u)"
 
-#: src/zip_reader.c:377
+#: src/formats/zip_reader.c:377
 #, c-format
 msgid "ZIP entry %1$s is too large (%2$s)"
 msgstr "L’entrée ZIP %1$s est trop grande (%2$s)"
 
-#: src/zip_reader.c:385
+#: src/formats/zip_reader.c:385
 #, c-format
 msgid "Damaged ZIP entry %s: inconsistent sizes"
 msgstr "Entrée ZIP %s endommagée : tailles incohérentes"
 
-#: src/zip_reader.c:394
+#: src/formats/zip_reader.c:394
 msgid "bad local file header"
 msgstr "en-tête de fichier local incorrect"

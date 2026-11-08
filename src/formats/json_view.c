@@ -1,5 +1,5 @@
 /* JSON pretty-printing for the preview (see json_view.h). */
-#include "json_view.h"
+#include "formats/json_view.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

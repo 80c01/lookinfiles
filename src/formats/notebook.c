@@ -1,11 +1,11 @@
 /* Jupyter notebooks to Markdown (see notebook.h). */
-#include "notebook.h"
+#include "formats/notebook.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
 
-#include "json_view.h"
+#include "formats/json_view.h"
 
 gchar* notebook_strip_ansi(const gchar* text) {
     GString* out = g_string_new(NULL);

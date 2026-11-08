@@ -1,5 +1,5 @@
 /* Hex dump formatting for the preview of binary files */
-#include "hex_dump.h"
+#include "formats/hex_dump.h"
 
 gchar* hex_dump_format(const guchar* data, gsize len, guint64 base_offset) {
     static const gchar digits[] = "0123456789abcdef";

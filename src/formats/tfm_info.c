@@ -1,5 +1,5 @@
 /* TeX font metric (.tfm), virtual font (.vf) and PostScript Type 1 (.pfb) parser. */
-#include "tfm_info.h"
+#include "formats/tfm_info.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

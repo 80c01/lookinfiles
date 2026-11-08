@@ -4,8 +4,8 @@
 
 #include <string.h>
 
-#include "archive_extract.h"
-#include "archive_listing.h"
+#include "formats/archive_extract.h"
+#include "formats/archive_listing.h"
 #include "explorer/explorer_tree.h"
 
 /* Entries kept in the tree, and the largest entry extracted for a preview */

@@ -1,5 +1,5 @@
-/* Unit tests for src/json_view.c (tolerant JSON pretty-printing). */
-#include "json_view.h"
+/* Unit tests for src/formats/json_view.c (tolerant JSON pretty-printing). */
+#include "formats/json_view.h"
 
 #include <string.h>
 

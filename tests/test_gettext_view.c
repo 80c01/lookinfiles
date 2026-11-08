@@ -1,5 +1,5 @@
-/* Unit tests for src/gettext_view.c (.po and .mo catalogs). */
-#include "gettext_view.h"
+/* Unit tests for src/formats/gettext_view.c (.po and .mo catalogs). */
+#include "formats/gettext_view.h"
 
 #include <string.h>
 

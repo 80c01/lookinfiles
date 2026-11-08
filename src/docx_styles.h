@@ -4,7 +4,7 @@
 #include <glib.h>
 
 #include "doc_writer.h"
-#include "zip_reader.h"
+#include "formats/zip_reader.h"
 
 /* Formatting of Word documents (.docx): run and paragraph properties
  * (w:rPr, w:pPr), the styles with their basedOn chains and document

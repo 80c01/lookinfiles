@@ -7,8 +7,8 @@
 
 #include "pptx_shapes.h"
 #include "slide_render.h"
-#include "zip_reader.h"
-#include "zip_xml.h"
+#include "formats/zip_reader.h"
+#include "formats/zip_xml.h"
 
 #define MAX_PART (32u * 1024 * 1024)
 #define EMU_PER_PT 12700.0

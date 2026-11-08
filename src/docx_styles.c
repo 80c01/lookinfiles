@@ -4,7 +4,7 @@
 #include <gio/gio.h>
 #include <string.h>
 
-#include "zip_xml.h"
+#include "formats/zip_xml.h"
 
 #define MAX_PART (16u * 1024 * 1024)
 #define MAX_LEVELS 9

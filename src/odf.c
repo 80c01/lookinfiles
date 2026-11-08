@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "zip_reader.h"
-#include "zip_xml.h"
+#include "formats/zip_reader.h"
+#include "formats/zip_xml.h"
 
 #define MAX_PART (64u * 1024 * 1024)
 #define MAX_IMAGE (4u * 1024 * 1024)

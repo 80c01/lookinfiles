@@ -1,5 +1,5 @@
 /* WebAssembly (.wasm) binary parser and preview builder. */
-#include "wasm_info.h"
+#include "formats/wasm_info.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

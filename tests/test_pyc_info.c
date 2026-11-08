@@ -1,5 +1,5 @@
-/* Unit tests for src/pyc_info.c (Python bytecode preview). */
-#include "pyc_info.h"
+/* Unit tests for src/formats/pyc_info.c (Python bytecode preview). */
+#include "formats/pyc_info.h"
 
 #include <string.h>
 

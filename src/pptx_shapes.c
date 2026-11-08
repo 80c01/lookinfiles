@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "preview/preview_doc.h"
-#include "zip_xml.h"
+#include "formats/zip_xml.h"
 
 #define MAX_PART (32u * 1024 * 1024)
 #define MAX_PICTURE (16u * 1024 * 1024)

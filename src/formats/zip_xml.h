@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "zip_reader.h"
+#include "formats/zip_reader.h"
 
 /* XML parts of ZIP-based documents (Office Open XML, OpenDocument, EPUB):
  * parse a part with a GMarkupParser, resolve relationship targets, read

@@ -1,5 +1,5 @@
-/* Unit tests for src/archive_extract.c (entry paths, ZIP extraction). */
-#include "archive_extract.h"
+/* Unit tests for src/formats/archive_extract.c (entry paths, ZIP extraction). */
+#include "formats/archive_extract.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

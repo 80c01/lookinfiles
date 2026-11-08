@@ -4,7 +4,7 @@
 #include <glib.h>
 
 #include "slide_render.h"
-#include "zip_reader.h"
+#include "formats/zip_reader.h"
 
 /* DrawingML of PowerPoint presentations (.pptx): the theme (colour scheme,
  * fonts), the shape trees of slide masters, layouts, slides and notes

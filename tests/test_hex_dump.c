@@ -1,5 +1,5 @@
-/* Unit tests for src/hex_dump.c: hex dump of binary content. */
-#include "hex_dump.h"
+/* Unit tests for src/formats/hex_dump.c: hex dump of binary content. */
+#include "formats/hex_dump.h"
 
 #include <string.h>
 

@@ -22,7 +22,7 @@
 #include "explorer/remote.h"
 #include "games.h"
 #include "explorer/archive_tree.h"
-#include "archive_extract.h"
+#include "formats/archive_extract.h"
 #include "explorer/dir_scan.h"
 
 G_STATIC_ASSERT((gint)DIR_SCAN_SORT_NAME == SORT_NAME && (gint)DIR_SCAN_SORT_DATE == SORT_DATE &&

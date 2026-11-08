@@ -1,5 +1,5 @@
-/* Unit tests for src/archive_listing.c (ZIP, tar, gzip and ar listings). */
-#include "archive_listing.h"
+/* Unit tests for src/formats/archive_listing.c (ZIP, tar, gzip and ar listings). */
+#include "formats/archive_listing.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

@@ -1,6 +1,6 @@
 /* ctags backend of code navigation (see code_tags.h) */
 #include "code_tags.h"
-#include "json_view.h"
+#include "formats/json_view.h"
 #include <glib/gstdio.h>
 #include <stdlib.h>
 #include <string.h>

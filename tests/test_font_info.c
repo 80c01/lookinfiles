@@ -1,6 +1,6 @@
-/* Unit tests for src/font_info.c (OpenType name table, WOFF). Uses the fonts
+/* Unit tests for src/formats/font_info.c (OpenType name table, WOFF). Uses the fonts
  * installed on the system when present. */
-#include "font_info.h"
+#include "formats/font_info.h"
 
 #include <gio/gio.h>
 #include <string.h>

@@ -1,5 +1,5 @@
-/* Unit tests for src/tfm_info.c (TeX font metric preview). */
-#include "tfm_info.h"
+/* Unit tests for src/formats/tfm_info.c (TeX font metric preview). */
+#include "formats/tfm_info.h"
 
 #include <string.h>
 

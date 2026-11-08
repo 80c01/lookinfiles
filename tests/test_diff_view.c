@@ -1,5 +1,5 @@
-/* Unit tests for src/diff_view.c (unified diff summary and colours). */
-#include "diff_view.h"
+/* Unit tests for src/formats/diff_view.c (unified diff summary and colours). */
+#include "formats/diff_view.h"
 
 #include <string.h>
 

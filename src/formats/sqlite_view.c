@@ -1,5 +1,5 @@
 /* SQLite database preview (see sqlite_view.h). */
-#include "sqlite_view.h"
+#include "formats/sqlite_view.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

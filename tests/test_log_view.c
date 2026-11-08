@@ -1,5 +1,5 @@
-/* Unit tests for src/log_view.c (timestamps, levels, tail of logs). */
-#include "log_view.h"
+/* Unit tests for src/formats/log_view.c (timestamps, levels, tail of logs). */
+#include "formats/log_view.h"
 
 #include <string.h>
 

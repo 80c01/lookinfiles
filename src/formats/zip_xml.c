@@ -1,5 +1,5 @@
 /* XML parts of ZIP-based documents (see zip_xml.h). */
-#include "zip_xml.h"
+#include "formats/zip_xml.h"
 
 #include <string.h>
 

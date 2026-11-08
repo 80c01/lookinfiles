@@ -1,5 +1,5 @@
-/* Unit tests for src/wasm_info.c (WebAssembly preview). */
-#include "wasm_info.h"
+/* Unit tests for src/formats/wasm_info.c (WebAssembly preview). */
+#include "formats/wasm_info.h"
 
 #include <string.h>
 

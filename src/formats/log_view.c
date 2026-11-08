@@ -1,5 +1,5 @@
 /* Log file preview (see log_view.h). */
-#include "log_view.h"
+#include "formats/log_view.h"
 
 #include <string.h>
 

@@ -1,5 +1,5 @@
-/* Unit tests for src/class_info.c (Java class file preview). */
-#include "class_info.h"
+/* Unit tests for src/formats/class_info.c (Java class file preview). */
+#include "formats/class_info.h"
 
 #include <string.h>
 

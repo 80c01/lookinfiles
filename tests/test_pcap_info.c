@@ -1,5 +1,5 @@
-/* Unit tests for src/pcap_info.c (PCAP / PCAPNG packet capture preview). */
-#include "pcap_info.h"
+/* Unit tests for src/formats/pcap_info.c (PCAP / PCAPNG packet capture preview). */
+#include "formats/pcap_info.h"
 
 #include <string.h>
 

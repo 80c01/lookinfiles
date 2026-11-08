@@ -1,5 +1,5 @@
-/* Unit tests for src/sqlite_view.c (SQLite database preview). */
-#include "sqlite_view.h"
+/* Unit tests for src/formats/sqlite_view.c (SQLite database preview). */
+#include "formats/sqlite_view.h"
 
 #include <string.h>
 

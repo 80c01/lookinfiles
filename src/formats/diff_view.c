@@ -1,5 +1,5 @@
 /* Unified diff preview (see diff_view.h). */
-#include "diff_view.h"
+#include "formats/diff_view.h"
 #include "core/i18n.h"
 
 #include <stdlib.h>

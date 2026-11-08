@@ -1,5 +1,5 @@
-/* Unit tests for src/csv.c (separator sniffing, RFC 4180 parsing, header). */
-#include "csv.h"
+/* Unit tests for src/formats/csv.c (separator sniffing, RFC 4180 parsing, header). */
+#include "formats/csv.h"
 
 #include <string.h>
 

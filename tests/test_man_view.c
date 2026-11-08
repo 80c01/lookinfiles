@@ -1,5 +1,5 @@
-/* Unit tests for src/man_view.c (roff man pages). */
-#include "man_view.h"
+/* Unit tests for src/formats/man_view.c (roff man pages). */
+#include "formats/man_view.h"
 
 #include <string.h>
 

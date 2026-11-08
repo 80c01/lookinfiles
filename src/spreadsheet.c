@@ -8,8 +8,8 @@
 #include <string.h>
 
 #include "preview/preview_doc.h"
-#include "zip_reader.h"
-#include "zip_xml.h"
+#include "formats/zip_reader.h"
+#include "formats/zip_xml.h"
 
 #define MAX_PART (48u * 1024 * 1024)
 
