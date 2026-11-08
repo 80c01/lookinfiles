@@ -3,6 +3,7 @@
  * (name, size, type and encoding of the previewed entry). Editor tabs have
  * their own bar (editor_modes). */
 #include "status_bar.h"
+#include "git_state.h"
 #include "preview_state.h"
 #include "i18n.h"
 #include "app_events.h"
@@ -486,20 +487,21 @@ void update_status_bar(AppData* app) {
     gchar* branch = files_view ? git_read_branch(app->base_dir) : NULL;
     if (branch != NULL) {
         gchar* root = find_git_root(app->base_dir);
-        gboolean in_scanned_repo = (root != NULL && g_strcmp0(root, app->git_status_root) == 0);
+        const GitState* git = app->git_state;
+        gboolean in_scanned_repo = (root != NULL && g_strcmp0(root, git_state_root(git)) == 0);
         g_free(root);
 
         GString* text = g_string_new(NULL);
         g_string_append_printf(text, "⎇ %s", branch);
-        if (in_scanned_repo && app->git_has_changes) {
+        if (in_scanned_repo && git_state_has_changes(git)) {
             g_string_append(text, " *");
         }
-        if (in_scanned_repo && app->git_has_upstream) {
-            if (app->git_ahead > 0) {
-                g_string_append_printf(text, " ↑%u", app->git_ahead);
+        if (in_scanned_repo && git_state_has_upstream(git)) {
+            if (git_state_ahead(git) > 0) {
+                g_string_append_printf(text, " ↑%u", git_state_ahead(git));
             }
-            if (app->git_behind > 0) {
-                g_string_append_printf(text, " ↓%u", app->git_behind);
+            if (git_state_behind(git) > 0) {
+                g_string_append_printf(text, " ↓%u", git_state_behind(git));
             }
         }
         gtk_label_set_text(GTK_LABEL(app->status_branch), text->str);
@@ -507,31 +509,31 @@ void update_status_bar(AppData* app) {
 
         GString* tip = g_string_new(NULL);
         g_string_append_printf(tip, _("Git Branch: %s"), branch);
-        if (in_scanned_repo && app->git_has_changes) {
+        if (in_scanned_repo && git_state_has_changes(git)) {
             g_string_append(tip, _(" (uncommitted modifications)"));
         }
-        if (in_scanned_repo && app->git_has_upstream) {
-            if (app->git_ahead > 0 && app->git_behind > 0) {
+        if (in_scanned_repo && git_state_has_upstream(git)) {
+            if (git_state_ahead(git) > 0 && git_state_behind(git) > 0) {
                 gchar* ahead = g_strdup_printf(ngettext("%u commit ahead", "%u commits ahead",
-                                                        app->git_ahead), app->git_ahead);
+                                                        git_state_ahead(git)), git_state_ahead(git));
                 gchar* behind = g_strdup_printf(ngettext("%u commit behind upstream",
                                                          "%u commits behind upstream",
-                                                         app->git_behind), app->git_behind);
+                                                         git_state_behind(git)), git_state_behind(git));
                 /* TRANSLATORS: "2 commits ahead, 1 commit behind upstream" */
                 g_string_append_c(tip, '\n');
                 g_string_append_printf(tip, _("%s, %s"), ahead, behind);
                 g_free(ahead);
                 g_free(behind);
-            } else if (app->git_ahead > 0) {
+            } else if (git_state_ahead(git) > 0) {
                 g_string_append_c(tip, '\n');
                 g_string_append_printf(tip, ngettext("%u commit ahead of upstream",
-                                                     "%u commits ahead of upstream", app->git_ahead),
-                                       app->git_ahead);
-            } else if (app->git_behind > 0) {
+                                                     "%u commits ahead of upstream", git_state_ahead(git)),
+                                       git_state_ahead(git));
+            } else if (git_state_behind(git) > 0) {
                 g_string_append_c(tip, '\n');
                 g_string_append_printf(tip, ngettext("%u commit behind upstream",
-                                                     "%u commits behind upstream", app->git_behind),
-                                       app->git_behind);
+                                                     "%u commits behind upstream", git_state_behind(git)),
+                                       git_state_behind(git));
             } else {
                 g_string_append_c(tip, '\n');
                 g_string_append(tip, _("Up to date with upstream"));

@@ -39,6 +39,11 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   program (worker thread only): `scan_git_statuses()`, `git_read_head_blob()`,
   `git_read_log()`, `git_show_commit()` (laid out like `git show --stat
   --patch`), `git_list_files()` (like `git ls-files --cached --others`).
+- `git_state` — `GitState`, the result of the explorer's git scan: badge of
+  each changed path, repository root, uncommitted changes, upstream ahead /
+  behind counts, and comparisons that skip a redraw when nothing changed. The
+  shown workspace's is `app->git_state`; each other workspace keeps its own
+  in `VirtualLayout`.
 - `layout_store` — saved workspace layouts (`SavedLayout`: panel visibility, tagbars,
   split fractions, orientation, dedicated editor panel and its splits as
   `tab_tree` text without files (`0` marks a pane of files, `t` a terminal

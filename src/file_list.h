@@ -5,6 +5,8 @@
 
 /* Re-read the git status badges in a worker thread, then update the rows */
 void refresh_git_status_in_place(AppData* app);
+/* Drop the result of the running git status scan (at exit) */
+void cancel_git_status_scan(AppData* app);
 
 /* Fill the tree with a directory listing, synchronously (start-up); git badges follow */
 void populate_tree(AppData* app, const gchar* dirname, gboolean show_hidden, gint sort_mode);

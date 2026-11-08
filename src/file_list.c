@@ -1,4 +1,5 @@
 #include "file_list.h"
+#include "git_state.h"
 #include "preview_state.h"
 #include "i18n.h"
 #include "search.h"
@@ -28,54 +29,27 @@ G_STATIC_ASSERT((gint)DIR_SCAN_SORT_NAME == SORT_NAME && (gint)DIR_SCAN_SORT_DAT
                 (gint)DIR_SCAN_SORT_SIZE == SORT_SIZE && (gint)DIR_SCAN_SORT_EXT == SORT_EXT);
 
 
-static void update_tree_git_statuses_recursive(ExplorerRow* parent, GHashTable* statuses) {
+static void update_tree_git_statuses_recursive(ExplorerRow* parent, const GitState* git) {
     for (guint i = 0; i < explorer_row_n_children(parent); i++) {
         ExplorerRow* row = explorer_row_child(parent, i);
         if (row->path[0] != '\0') {
-            const gchar* badge = (statuses != NULL) ? g_hash_table_lookup(statuses, row->path) : NULL;
+            const gchar* badge = git_state_badge(git, row->path);
             explorer_row_set_badge(row, badge != NULL ? badge : "");
         }
-        update_tree_git_statuses_recursive(row, statuses);
+        update_tree_git_statuses_recursive(row, git);
     }
-}
-
-/* Same keys and values (git status maps: path -> badge markup) */
-static gboolean string_maps_equal(GHashTable* a, GHashTable* b) {
-    guint na = (a != NULL) ? g_hash_table_size(a) : 0;
-    guint nb = (b != NULL) ? g_hash_table_size(b) : 0;
-    if (na != nb) {
-        return FALSE;
-    }
-    if (na == 0) {
-        return TRUE;
-    }
-    GHashTableIter iter;
-    gpointer key, value;
-    g_hash_table_iter_init(&iter, a);
-    while (g_hash_table_iter_next(&iter, &key, &value)) {
-        if (g_strcmp0(value, g_hash_table_lookup(b, key)) != 0) {
-            return FALSE;
-        }
-    }
-    return TRUE;
 }
 
 typedef struct {
     AppData* app;
     gchar* base_dir;     /* app->base_dir when the scan started */
-    GHashTable* statuses;
-    guint ahead;
-    guint behind;
-    gboolean has_ahead_behind;
-    gboolean has_changes;
+    GitState* state;     /* read by the scan */
 } GitScanTaskData;
 
 static void git_scan_task_data_free(gpointer data) {
     GitScanTaskData* td = (GitScanTaskData*)data;
     g_free(td->base_dir);
-    if (td->statuses != NULL) {
-        g_hash_table_destroy(td->statuses);
-    }
+    git_state_free(td->state);
     g_free(td);
 }
 
@@ -85,9 +59,12 @@ static void git_scan_thread_func(GTask* task, gpointer source_object,
     (void)cancellable;
     GitScanTaskData* td = (GitScanTaskData*)task_data;
     gchar* dir = g_canonicalize_filename(td->base_dir, NULL);
-    td->statuses = scan_git_statuses(dir);
-    td->has_changes = (td->statuses != NULL && g_hash_table_size(td->statuses) > 0);
-    td->has_ahead_behind = git_read_ahead_behind(dir, &td->ahead, &td->behind);
+    GHashTable* statuses = scan_git_statuses(dir);
+    guint ahead = 0, behind = 0;
+    gboolean has_upstream = git_read_ahead_behind(dir, &ahead, &behind);
+    gchar* root = find_git_root(td->base_dir);
+    td->state = git_state_new(statuses, root, has_upstream, ahead, behind);
+    g_free(root);
     g_free(dir);
     g_task_return_boolean(task, TRUE);
 }
@@ -97,6 +74,7 @@ static void git_scan_thread_func(GTask* task, gpointer source_object,
  * instead of piling up worker threads */
 static gboolean git_scan_running = FALSE;
 static gboolean git_scan_wanted = FALSE;
+static GCancellable* git_scan_cancellable = NULL; /* the scan whose result is wanted */
 
 static void start_async_git_scan(AppData* app);
 
@@ -122,34 +100,21 @@ static void on_git_scan_ready(GObject* source_object, GAsyncResult* res,
         g_idle_add_full(G_PRIORITY_DEFAULT_IDLE, rescan_idle, app, NULL);
     }
     if (g_cancellable_is_cancelled(cancellable) ||
-        cancellable != app->git_status_cancellable ||
+        cancellable != git_scan_cancellable ||
         app->sidebar_view != SIDEBAR_VIEW_FILES ||
         g_strcmp0(td->base_dir, app->base_dir) != 0) {
         return;
     }
-    gboolean status_equal = string_maps_equal(app->git_statuses, td->statuses);
-    gboolean ahead_behind_equal = (app->git_ahead == td->ahead &&
-                                   app->git_behind == td->behind &&
-                                   app->git_has_upstream == td->has_ahead_behind &&
-                                   app->git_has_changes == td->has_changes);
-    if (status_equal && ahead_behind_equal) {
+    gboolean status_equal = git_state_same_badges(app->git_state, td->state);
+    if (status_equal && git_state_same_counts(app->git_state, td->state)) {
         return;
     }
-    if (app->git_statuses != NULL) {
-        g_hash_table_destroy(app->git_statuses);
-    }
-    app->git_statuses = td->statuses;
-    td->statuses = NULL;
-
-    g_free(app->git_status_root);
-    app->git_status_root = find_git_root(app->base_dir);
-    app->git_has_changes = td->has_changes;
-    app->git_has_upstream = td->has_ahead_behind;
-    app->git_ahead = td->ahead;
-    app->git_behind = td->behind;
+    git_state_free(app->git_state);
+    app->git_state = td->state;
+    td->state = NULL;
 
     if (!status_equal) {
-        update_tree_git_statuses_recursive(explorer_tree_get_root(app->tree), app->git_statuses);
+        update_tree_git_statuses_recursive(explorer_tree_get_root(app->tree), app->git_state);
         app_emit(app, APP_EVENT_CHROME_CHANGED);
         ExplorerRow* sel = tree_nav_selected(app);
         if (sel != NULL && explorer_row_is(sel, "dir")) {
@@ -159,10 +124,11 @@ static void on_git_scan_ready(GObject* source_object, GAsyncResult* res,
     app_emit(app, APP_EVENT_STATUS_CHANGED);
 }
 
-static void cancel_git_scan(AppData* app) {
-    if (app->git_status_cancellable != NULL) {
-        g_cancellable_cancel(app->git_status_cancellable);
-        g_clear_object(&app->git_status_cancellable);
+void cancel_git_status_scan(AppData* app) {
+    (void)app;
+    if (git_scan_cancellable != NULL) {
+        g_cancellable_cancel(git_scan_cancellable);
+        g_clear_object(&git_scan_cancellable);
     }
 }
 
@@ -170,7 +136,7 @@ static void cancel_git_scan(AppData* app) {
 static void start_async_git_scan(AppData* app) {
     if (app->tree == NULL || app->base_dir == NULL ||
         app->sidebar_view != SIDEBAR_VIEW_FILES) {
-        cancel_git_scan(app);
+        cancel_git_status_scan(app);
         return;
     }
     if (git_scan_running) {
@@ -179,13 +145,13 @@ static void start_async_git_scan(AppData* app) {
         git_scan_wanted = TRUE;
         return;
     }
-    cancel_git_scan(app);
+    cancel_git_status_scan(app);
     git_scan_running = TRUE;
-    app->git_status_cancellable = g_cancellable_new();
+    git_scan_cancellable = g_cancellable_new();
     GitScanTaskData* td = g_new0(GitScanTaskData, 1);
     td->app = app;
     td->base_dir = g_strdup(app->base_dir);
-    GTask* task = g_task_new(NULL, app->git_status_cancellable, on_git_scan_ready, NULL);
+    GTask* task = g_task_new(NULL, git_scan_cancellable, on_git_scan_ready, NULL);
     g_task_set_task_data(task, td, git_scan_task_data_free);
     g_task_run_in_thread(task, git_scan_thread_func);
     g_object_unref(task);
@@ -290,11 +256,9 @@ static ExplorerRow* insert_entry_row(ExplorerRow* parent, guint position, AppDat
     const DirScanNode* child_node = entry_child_node(node, i);
     gchar* can_full = entry_path(node, i);
     const gchar* git_badge = "";
-    if (app != NULL && app->git_statuses != NULL) {
-        const gchar* b = (const gchar*)g_hash_table_lookup(app->git_statuses, can_full);
-        if (b != NULL) {
-            git_badge = b;
-        }
+    const gchar* b = (app != NULL) ? git_state_badge(app->git_state, can_full) : NULL;
+    if (b != NULL) {
+        git_badge = b;
     }
     ExplorerRow* row;
     if (e->is_dir) {
@@ -823,7 +787,7 @@ static void start_async_dir_scan(AppData* app, const gchar* dirname,
     if (!keep_view) {
         app->dir_scan_pending = TRUE; /* the rows shown are not this listing's yet */
     }
-    cancel_git_scan(app);
+    cancel_git_status_scan(app);
 
     DirScanTaskData* td = g_new0(DirScanTaskData, 1);
     td->app = app;
@@ -984,7 +948,7 @@ void cancel_listing_scans(AppData* app) {
         g_clear_object(&app->dir_cancellable);
     }
     app->dir_scan_pending = FALSE;
-    cancel_git_scan(app);
+    cancel_git_status_scan(app);
 }
 
 void check_listing(AppData* app) {

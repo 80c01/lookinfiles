@@ -158,6 +158,7 @@ remote_store:app_types,app_paths,notebook_icons
 preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc,i18n
 fs_watch:app_types,app_events,git_utils,git_tab,preview_state
 preview_state:app_types
+git_state:
 "
 
 for rule in $RULES; do

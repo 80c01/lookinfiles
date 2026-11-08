@@ -19,6 +19,7 @@
 #include "workspace.h"
 #include "help.h"
 #include "file_list.h"
+#include "git_state.h"
 #include "explorer_keys.h"
 #include "viewer.h"
 #include "image_preview.h"
@@ -777,12 +778,7 @@ int main(int argc, char** argv) {
     fs_watch_free(app);
     git_tab_cleanup(app);
     panels_size_popup_free(app);
-    if (app->git_statuses != NULL) {
-        g_hash_table_destroy(app->git_statuses);
-        app->git_statuses = NULL;
-    }
-    g_free(app->git_status_root);
-    app->git_status_root = NULL;
+    g_clear_pointer(&app->git_state, git_state_free);
     if (app->expanded_paths != NULL) {
         g_hash_table_destroy(app->expanded_paths);
         app->expanded_paths = NULL;
@@ -800,10 +796,7 @@ int main(int argc, char** argv) {
         g_cancellable_cancel(app->dir_cancellable);
         g_clear_object(&app->dir_cancellable);
     }
-    if (app->git_status_cancellable != NULL) {
-        g_cancellable_cancel(app->git_status_cancellable);
-        g_clear_object(&app->git_status_cancellable);
-    }
+    cancel_git_status_scan(app);
     if (app->preview_cancellable != NULL) {
         g_cancellable_cancel(app->preview_cancellable);
         g_clear_object(&app->preview_cancellable);

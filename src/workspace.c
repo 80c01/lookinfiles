@@ -1,5 +1,6 @@
 /* Virtual workspaces (Alt+1..8): per-workspace layout snapshots and the top-bar workspace minimap. */
 #include "workspace.h"
+#include "git_state.h"
 #include "preview_state.h"
 #include "pdf.h"
 #include "workspace_menu.h"
@@ -362,39 +363,16 @@ static gboolean swap_explorer_rows(AppData* app, gint idx) {
     gboolean had_rows = (to->tree_state != NULL);
     ExplorerTreeState* old = explorer_tree_swap_state(app->tree, to->tree_state);
     to->tree_state = NULL;
-    GHashTable* old_git = app->git_statuses;
-    app->git_statuses = to->git_statuses;
-    to->git_statuses = NULL;
-    gchar* old_root = app->git_status_root;
-    app->git_status_root = to->git_status_root;
-    to->git_status_root = NULL;
-    gboolean old_has_changes = app->git_has_changes;
-    app->git_has_changes = to->git_has_changes;
-    to->git_has_changes = FALSE;
-    gboolean old_has_upstream = app->git_has_upstream;
-    app->git_has_upstream = to->git_has_upstream;
-    to->git_has_upstream = FALSE;
-    guint old_ahead = app->git_ahead;
-    app->git_ahead = to->git_ahead;
-    to->git_ahead = 0;
-    guint old_behind = app->git_behind;
-    app->git_behind = to->git_behind;
-    to->git_behind = 0;
+    GitState* old_git = app->git_state;
+    app->git_state = to->git_state;
+    to->git_state = NULL;
 
     if (keep) {
         from->tree_state = old;
-        from->git_statuses = old_git;
-        from->git_status_root = old_root;
-        from->git_has_changes = old_has_changes;
-        from->git_has_upstream = old_has_upstream;
-        from->git_ahead = old_ahead;
-        from->git_behind = old_behind;
+        from->git_state = old_git;
     } else {
         explorer_tree_state_free(old);
-        if (old_git != NULL) {
-            g_hash_table_destroy(old_git);
-        }
-        g_free(old_root);
+        git_state_free(old_git);
     }
     return had_rows;
 }
@@ -735,8 +713,7 @@ void workspace_remove(AppData* app, gint idx) {
     g_clear_pointer(&rm->expanded_paths, g_hash_table_destroy);
     g_clear_pointer(&rm->selected_path, g_free);
     g_clear_pointer(&rm->tree_state, explorer_tree_state_free);
-    g_clear_pointer(&rm->git_statuses, g_hash_table_destroy);
-    g_clear_pointer(&rm->git_status_root, g_free);
+    g_clear_pointer(&rm->git_state, git_state_free);
     g_clear_pointer(&rm->remote_id, g_free);
     nav_history_workspace_removed(rm);
     project_search_workspace_removed(app, rm);

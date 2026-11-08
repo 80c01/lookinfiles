@@ -11,6 +11,7 @@
 
 #include "explorer_tree.h"
 #include "file_types.h"
+#include "git_state.h"
 #include "note_types.h"
 
 #ifdef HAVE_BUILTIN_TERM
@@ -116,12 +117,7 @@ typedef struct {
     gboolean render_raw;
     gchar* remote_id;    /* ID of remote machine if workspace is connected to remote */
     ExplorerTreeState* tree_state; /* explorer rows while another workspace is shown (owned) */
-    GHashTable* git_statuses;      /* git badges while another workspace is shown (owned) */
-    gchar* git_status_root;        /* repository root matching git_statuses and ahead/behind (owned) */
-    gboolean git_has_changes;      /* uncommitted changes in git_status_root */
-    gboolean git_has_upstream;     /* upstream branch exists for HEAD in git_status_root */
-    guint git_ahead;               /* commits ahead of upstream */
-    guint git_behind;              /* commits behind upstream */
+    GitState* git_state;           /* git badges and counts while another workspace is shown (owned) */
     gpointer dir_history;          /* folders shown, for back / forward (private to nav_history.c) */
     gpointer search_state;         /* last search in files and its Search tab (project_search.c) */
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
@@ -178,14 +174,8 @@ typedef struct {
 
     /* File monitors & async I/O cancellation */
     struct FsWatch* fs_watch;          /* file monitors and pending refresh (fs_watch.c), NULL until first used */
-    GHashTable* git_statuses;          /* Git status badges: full_path -> markup string */
-    gchar* git_status_root;            /* repository root matching git_statuses and ahead/behind (owned) */
-    gboolean git_has_changes;          /* uncommitted changes in git_status_root */
-    gboolean git_has_upstream;         /* upstream branch exists for HEAD in git_status_root */
-    guint git_ahead;                   /* commits ahead of upstream */
-    guint git_behind;                  /* commits behind upstream */
+    GitState* git_state;               /* git badges and upstream counts of base_dir (git_state.h, owned), or NULL */
     GCancellable* dir_cancellable;     /* active left-pane directory scan GTask */
-    GCancellable* git_status_cancellable; /* active git status badge scan GTask */
     GCancellable* preview_cancellable; /* active right-pane preview GTask */
     gboolean file_dirty;         /* the preview must be read again (file changed, raw/rendered toggled) */
 

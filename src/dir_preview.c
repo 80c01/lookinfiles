@@ -1,4 +1,5 @@
 #include "dir_preview.h"
+#include "git_state.h"
 #include "search.h"
 #include "i18n.h"
 #include "fonts.h"
@@ -233,7 +234,7 @@ static gchar* totals_line(const DirSummary* s, gint64 now) {
 /* "⎇ main · 2 untracked · 1 modified" (changes known from the explorer's git scan) */
 static gchar* git_line(AppData* app, const DirPreviewJob* job) {
     DirGitCounts c;
-    dir_summary_count_git(app->git_statuses, job->full, &c);
+    dir_summary_count_git(git_state_badges(app->git_state), job->full, &c);
     GString* out = g_string_new(NULL);
     g_string_append_printf(out, "⎇ %s", job->branch);
     /* TRANSLATORS: counts of git changes: "2 untracked" */
@@ -283,9 +284,9 @@ static void insert_table(GtkTextBuffer* buffer, GtkTextIter* it, AppData* app,
         gchar* rest = g_strdup_printf("  %s  ", size);
         insert_tagged(buffer, it, rest, "dir_table", NULL);
         insert_tagged(buffer, it, age, "dir_table", "dir_dim");
-        if (app->git_statuses != NULL) {
+        if (git_state_badges(app->git_state) != NULL) {
             gchar* path = g_build_filename(job->full, e->name, NULL);
-            const gchar* tag = git_tag(dir_summary_git_letter(g_hash_table_lookup(app->git_statuses, path)));
+            const gchar* tag = git_tag(dir_summary_git_letter(git_state_badge(app->git_state, path)));
             if (tag != NULL) {
                 gchar letter[] = { ' ', tag[8], '\0' }; /* "dir_git_X" -> " X" */
                 insert_tagged(buffer, it, letter, "dir_table", tag);
