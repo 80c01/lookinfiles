@@ -9,7 +9,7 @@
  * row extracts the entry to the cache (archive_extract_cache_path()) in a
  * worker thread and previews that copy. Read-only. */
 #include "core/app_types.h"
-#include "explorer_row.h"
+#include "explorer/explorer_row.h"
 
 /* A file row that opens as a folder */
 gboolean archive_tree_row_is_archive(ExplorerRow* row);

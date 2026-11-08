@@ -1,4 +1,4 @@
-#include "nav_keys.h"
+#include "explorer/nav_keys.h"
 
 #define CTRL_ALT (GDK_CONTROL_MASK | GDK_ALT_MASK)
 

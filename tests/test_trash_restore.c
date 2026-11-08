@@ -1,5 +1,5 @@
-/* Unit tests for src/trash_restore.c: put back files moved to the trash. */
-#include "trash_restore.h"
+/* Unit tests for src/explorer/trash_restore.c: put back files moved to the trash. */
+#include "explorer/trash_restore.h"
 
 #include <gio/gio.h>
 #include <glib/gstdio.h>

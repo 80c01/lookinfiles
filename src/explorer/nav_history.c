@@ -1,5 +1,5 @@
 /* Folder history and recent places (see nav_history.h) */
-#include "nav_history.h"
+#include "explorer/nav_history.h"
 #include "jump_list.h"
 #include <string.h>
 

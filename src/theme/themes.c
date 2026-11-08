@@ -18,7 +18,7 @@
 #include "theme/text_tags.h"
 #include "theme/theme.h"
 #include "theme/theme_store.h"
-#include "tree_nav.h"
+#include "explorer/tree_nav.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

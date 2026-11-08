@@ -9,7 +9,7 @@
 #include <glib/gstdio.h>
 #include <ctype.h>
 
-#include "explorer_tree.h"
+#include "explorer/explorer_tree.h"
 #include "core/file_types.h"
 #include "git_state.h"
 #include "note_types.h"

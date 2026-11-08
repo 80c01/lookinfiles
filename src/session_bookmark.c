@@ -1,8 +1,8 @@
 /* Workspace bookmarks (see session_bookmark.h) */
 #include "session_bookmark.h"
 #include "core/i18n.h"
-#include "bookmark_dialog.h"
-#include "bookmarks.h"
+#include "explorer/bookmark_dialog.h"
+#include "explorer/bookmarks.h"
 #include "widgets/dialog.h"
 #include "session.h"
 #include "session_store.h"

@@ -1,6 +1,6 @@
-/* Unit tests for src/explorer_row.c: the explorer row tree (children, parent
+/* Unit tests for src/explorer/explorer_row.c: the explorer row tree (children, parent
  * links, lookup, "changed" notifications). */
-#include "explorer_row.h"
+#include "explorer/explorer_row.h"
 
 static void on_changed(ExplorerRow* row, gpointer data) {
     (void)row;

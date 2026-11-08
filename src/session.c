@@ -4,7 +4,7 @@
 #include "editor_session.h"
 #include "layout_store.h"
 #include "core/i18n.h"
-#include "remote.h"
+#include "explorer/remote.h"
 #include "session_store.h"
 #include "terminal.h"
 #include "workspace.h"

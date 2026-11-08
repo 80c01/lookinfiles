@@ -1,5 +1,5 @@
 /* Explorer tree navigation: visible-row moves (j/k, gg/G, Ctrl+F/B, zz/zt/zb) and lookup by name or path. */
-#include "tree_nav.h"
+#include "explorer/tree_nav.h"
 
 ExplorerRow* tree_nav_selected(AppData* app) {
     return (app != NULL && app->tree != NULL) ? explorer_tree_get_selected(app->tree) : NULL;

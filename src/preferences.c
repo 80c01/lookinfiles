@@ -9,7 +9,7 @@
 #include "editor.h"
 #include "editor_tagbar.h"
 #include "preview_tagbar.h"
-#include "nav_keys.h"
+#include "explorer/nav_keys.h"
 #include "search.h"
 #include "theme/themes.h"
 

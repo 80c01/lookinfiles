@@ -4,7 +4,7 @@
 #include "theme/icons.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
-#include "nav_keys.h"
+#include "explorer/nav_keys.h"
 #include "games.h"
 
 /* Modes in which an entry is shown (global mode, nav_keys.h); 0 = every mode */

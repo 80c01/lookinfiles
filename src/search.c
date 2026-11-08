@@ -4,7 +4,7 @@
  * count, Failing / Wrapped prompt), Vim "/" command line (E486 message). */
 #include "search.h"
 #include "core/i18n.h"
-#include "tree_nav.h"
+#include "explorer/tree_nav.h"
 #include "widgets/panels.h"
 #include "theme/icons.h"
 #include "editor_modes.h"

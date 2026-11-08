@@ -1,5 +1,5 @@
 /* Explorer tree rows (see explorer_row.h) */
-#include "explorer_row.h"
+#include "explorer/explorer_row.h"
 
 G_DEFINE_FINAL_TYPE(ExplorerRow, explorer_row, G_TYPE_OBJECT)
 

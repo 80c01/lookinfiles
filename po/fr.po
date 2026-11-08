@@ -142,28 +142,28 @@ msgstr "fichier"
 msgid "archive"
 msgstr "archive"
 
-#: src/archive_tree.c:133 src/archive_tree.c:207
+#: src/explorer/archive_tree.c:133 src/explorer/archive_tree.c:207
 msgid "cannot read the archive"
 msgstr "impossible de lire l’archive"
 
-#: src/archive_tree.c:183 src/archive_tree.c:220 src/bookmarks.c:309
-#: src/file_list.c:354 src/notes.c:930 src/remote.c:96
+#: src/explorer/archive_tree.c:183 src/explorer/archive_tree.c:220 src/explorer/bookmarks.c:309
+#: src/explorer/file_list.c:354 src/notes.c:930 src/explorer/remote.c:96
 msgid "  (empty)"
 msgstr "  (vide)"
 
-#: src/archive_tree.c:214
+#: src/explorer/archive_tree.c:214
 msgid "  (more entries not shown)"
 msgstr "  (autres entrées non affichées)"
 
-#: src/archive_tree.c:237 src/archive_tree.c:239
+#: src/explorer/archive_tree.c:237 src/explorer/archive_tree.c:239
 msgid "  (reading...)"
 msgstr "  (lecture…)"
 
-#: src/archive_tree.c:302
+#: src/explorer/archive_tree.c:302
 msgid "cannot extract the entry"
 msgstr "impossible d’extraire l’entrée"
 
-#: src/archive_tree.c:320
+#: src/explorer/archive_tree.c:320
 #, c-format
 msgid ""
 "%1$s\n"
@@ -174,7 +174,7 @@ msgstr ""
 "\n"
 "Impossible d’afficher cette entrée : %2$s\n"
 
-#: src/archive_tree.c:321
+#: src/explorer/archive_tree.c:321
 msgid "extraction failed"
 msgstr "échec de l’extraction"
 
@@ -256,135 +256,135 @@ msgstr "Piste %s"
 msgid "Could not create media stream for file (press 'm' for details)"
 msgstr "Impossible de créer le flux média du fichier (m pour les détails)"
 
-#: src/bookmark_dialog.c:18
+#: src/explorer/bookmark_dialog.c:18
 msgid "Saved workspace"
 msgstr "Espace de travail enregistré"
 
-#: src/bookmark_dialog.c:195
+#: src/explorer/bookmark_dialog.c:195
 msgid "_Remove Bookmark"
 msgstr "_Retirer le signet"
 
-#: src/bookmark_dialog.c:198 src/bookmarks.c:577 src/code_symbols.c:176
-#: src/editor.c:1729 src/file_actions.c:42 src/file_actions.c:236
+#: src/explorer/bookmark_dialog.c:198 src/explorer/bookmarks.c:577 src/code_symbols.c:176
+#: src/editor.c:1729 src/explorer/file_actions.c:42 src/explorer/file_actions.c:236
 #: src/layouts.c:47 src/layouts.c:319 src/notes.c:587 src/notes.c:768
 #: src/notes.c:852 src/preferences.c:342 src/preview_full.c:31
-#: src/project_search.c:369 src/quick_open.c:368 src/remote.c:322
-#: src/remote.c:389 src/remote.c:456 src/remote.c:487 src/remote.c:564
+#: src/project_search.c:369 src/quick_open.c:368 src/explorer/remote.c:322
+#: src/explorer/remote.c:389 src/explorer/remote.c:456 src/explorer/remote.c:487 src/explorer/remote.c:564
 #: src/session_bookmark.c:13 src/theme/themes.c:222 src/theme/themes.c:237 src/theme/themes.c:682
 msgid "_Cancel"
 msgstr "_Annuler"
 
-#: src/bookmark_dialog.c:207 src/file_actions.c:252 src/office97.c:73
+#: src/explorer/bookmark_dialog.c:207 src/explorer/file_actions.c:252 src/office97.c:73
 #: src/preview_formats.c:346 src/preview_formats.c:347 src/pyc_info.c:578
 #: src/session_bookmark.c:26 src/sqlite_view.c:222 src/torrent_info.c:325
 msgid "Name"
 msgstr "Nom"
 
-#: src/bookmark_dialog.c:210 src/file_actions.c:254
+#: src/explorer/bookmark_dialog.c:210 src/explorer/file_actions.c:254
 msgid "Folder name"
 msgstr "Nom du dossier"
 
-#: src/bookmark_dialog.c:210
+#: src/explorer/bookmark_dialog.c:210
 msgid "Defaults to the location's name"
 msgstr "Par défaut, le nom de l’emplacement"
 
-#: src/bookmark_dialog.c:224 src/card_view.c:589
+#: src/explorer/bookmark_dialog.c:224 src/card_view.c:589
 msgid "Icon"
 msgstr "Icône"
 
-#: src/bookmark_dialog.c:228 src/preview_summary.c:183
+#: src/explorer/bookmark_dialog.c:228 src/preview_summary.c:183
 #: src/preview_summary.c:252 src/preview_summary.c:271
 msgid "Location"
 msgstr "Emplacement"
 
-#: src/bookmark_dialog.c:232
+#: src/explorer/bookmark_dialog.c:232
 msgid "~/projects, /etc/hosts or https://…"
 msgstr "~/projets, /etc/hosts ou https://…"
 
-#: src/bookmark_dialog.c:245
+#: src/explorer/bookmark_dialog.c:245
 msgid "Current Directory"
 msgstr "Dossier courant"
 
-#: src/bookmark_dialog.c:255 src/file_actions.c:257
+#: src/explorer/bookmark_dialog.c:255 src/explorer/file_actions.c:257
 msgid "Parent folder"
 msgstr "Dossier parent"
 
-#: src/bookmark_dialog.c:255 src/bookmarks.c:195 src/status_bar.c:429
+#: src/explorer/bookmark_dialog.c:255 src/explorer/bookmarks.c:195 src/status_bar.c:429
 msgid "Folder"
 msgstr "Dossier"
 
-#: src/bookmarks.c:331
+#: src/explorer/bookmarks.c:331
 msgid "No bookmarks yet — press a or Ctrl+D to add one"
 msgstr "Aucun signet — appuyez sur a ou Ctrl+D pour en ajouter un"
 
-#: src/bookmarks.c:473
+#: src/explorer/bookmarks.c:473
 msgid "Bookmarks (top level)"
 msgstr "Signets (premier niveau)"
 
-#: src/bookmarks.c:528
+#: src/explorer/bookmarks.c:528
 msgid "Add Bookmark"
 msgstr "Ajouter un signet"
 
-#: src/bookmarks.c:528
+#: src/explorer/bookmarks.c:528
 msgid "_Add"
 msgstr "_Ajouter"
 
-#: src/bookmarks.c:568
+#: src/explorer/bookmarks.c:568
 #, c-format
 msgid "Delete the folder “%s” and the %u item it contains?"
 msgid_plural "Delete the folder “%s” and the %u items it contains?"
 msgstr[0] "Supprimer le dossier « %s » et l’élément qu’il contient ?"
 msgstr[1] "Supprimer le dossier « %s » et les %u éléments qu’il contient ?"
 
-#: src/bookmarks.c:572 src/remote.c:562
+#: src/explorer/bookmarks.c:572 src/explorer/remote.c:562
 #, c-format
 msgid "Delete the empty folder “%s”?"
 msgstr "Supprimer le dossier vide « %s » ?"
 
-#: src/bookmarks.c:574
+#: src/explorer/bookmarks.c:574
 #, c-format
 msgid "Delete the bookmark “%s”?"
 msgstr "Supprimer le signet « %s » ?"
 
-#: src/bookmarks.c:576 src/bookmarks.c:1059 src/file_actions.c:390
-#: src/remote.c:997
+#: src/explorer/bookmarks.c:576 src/explorer/bookmarks.c:1059 src/explorer/file_actions.c:390
+#: src/explorer/remote.c:997
 msgid "Delete Folder"
 msgstr "Supprimer le dossier"
 
-#: src/bookmarks.c:576
+#: src/explorer/bookmarks.c:576
 msgid "Delete Bookmark"
 msgstr "Supprimer le signet"
 
-#: src/bookmarks.c:577 src/layouts.c:497 src/layouts.c:519 src/layouts.c:592
-#: src/notes.c:1700 src/remote.c:457 src/remote.c:565 src/theme/themes.c:619
+#: src/explorer/bookmarks.c:577 src/layouts.c:497 src/layouts.c:519 src/layouts.c:592
+#: src/notes.c:1700 src/explorer/remote.c:457 src/explorer/remote.c:565 src/theme/themes.c:619
 #: src/theme/themes.c:791
 msgid "_Delete"
 msgstr "_Supprimer"
 
-#: src/bookmarks.c:606
+#: src/explorer/bookmarks.c:606
 msgid "Edit Folder"
 msgstr "Modifier le dossier"
 
-#: src/bookmarks.c:606
+#: src/explorer/bookmarks.c:606
 msgid "Edit Bookmark"
 msgstr "Modifier le signet"
 
-#: src/bookmarks.c:606 src/layouts.c:320 src/notes.c:1487 src/notes.c:1557
-#: src/remote.c:324 src/remote.c:390 src/remote.c:541 src/session_bookmark.c:14
+#: src/explorer/bookmarks.c:606 src/layouts.c:320 src/notes.c:1487 src/notes.c:1557
+#: src/explorer/remote.c:324 src/explorer/remote.c:390 src/explorer/remote.c:541 src/session_bookmark.c:14
 #: src/theme/themes.c:237
 msgid "_Save"
 msgstr "_Enregistrer"
 
-#: src/bookmarks.c:706
+#: src/explorer/bookmarks.c:706
 msgid "New Bookmark Folder"
 msgstr "Nouveau dossier de signets"
 
-#: src/bookmarks.c:706 src/file_actions.c:237 src/notes.c:1245 src/notes.c:1383
-#: src/remote.c:526 src/theme/themes.c:682
+#: src/explorer/bookmarks.c:706 src/explorer/file_actions.c:237 src/notes.c:1245 src/notes.c:1383
+#: src/explorer/remote.c:526 src/theme/themes.c:682
 msgid "_Create"
 msgstr "_Créer"
 
-#: src/bookmarks.c:863
+#: src/explorer/bookmarks.c:863
 #, c-format
 msgid ""
 "Could not open “%s”:\n"
@@ -393,24 +393,24 @@ msgstr ""
 "Impossible d’ouvrir « %s » :\n"
 "%s"
 
-#: src/bookmarks.c:864 src/file_actions.c:365 src/file_actions.c:398
-#: src/file_moves.c:131 src/image_preview.c:257 src/pdf.c:377
+#: src/explorer/bookmarks.c:864 src/explorer/file_actions.c:365 src/explorer/file_actions.c:398
+#: src/explorer/file_moves.c:131 src/image_preview.c:257 src/pdf.c:377
 #: src/session_bookmark.c:79 src/session_bookmark.c:99
 msgid "unknown error"
 msgstr "erreur inconnue"
 
-#: src/bookmarks.c:865
+#: src/explorer/bookmarks.c:865
 msgid "Open Bookmark"
 msgstr "Ouvrir le signet"
 
-#: src/bookmarks.c:865 src/file_actions.c:95 src/layouts.c:270
-#: src/layouts.c:521 src/notes.c:883 src/remote.c:598 src/remote.c:680
+#: src/explorer/bookmarks.c:865 src/explorer/file_actions.c:95 src/layouts.c:270
+#: src/layouts.c:521 src/notes.c:883 src/explorer/remote.c:598 src/explorer/remote.c:680
 #: src/session_bookmark.c:62 src/session_bookmark.c:80
 #: src/session_bookmark.c:100 src/theme/themes.c:212
 msgid "_Close"
 msgstr "_Fermer"
 
-#: src/bookmarks.c:873
+#: src/explorer/bookmarks.c:873
 #, c-format
 msgid ""
 "The location of “%s” no longer exists:\n"
@@ -423,68 +423,68 @@ msgstr ""
 "\n"
 "Retirer ce signet ?"
 
-#: src/bookmarks.c:875
+#: src/explorer/bookmarks.c:875
 msgid "Missing Location"
 msgstr "Emplacement introuvable"
 
-#: src/bookmarks.c:875
+#: src/explorer/bookmarks.c:875
 msgid "_Remove"
 msgstr "_Retirer"
 
-#: src/bookmarks.c:875
+#: src/explorer/bookmarks.c:875
 msgid "_Keep"
 msgstr "_Garder"
 
-#: src/bookmarks.c:1055
+#: src/explorer/bookmarks.c:1055
 msgid "Add Bookmark Here…"
 msgstr "Ajouter un signet ici…"
 
-#: src/bookmarks.c:1056
+#: src/explorer/bookmarks.c:1056
 msgid "New Subfolder…"
 msgstr "Nouveau sous-dossier…"
 
-#: src/bookmarks.c:1058
+#: src/explorer/bookmarks.c:1058
 msgid "Rename / Move…"
 msgstr "Renommer / déplacer…"
 
-#: src/bookmarks.c:1059 src/bookmarks.c:1063
+#: src/explorer/bookmarks.c:1059 src/explorer/bookmarks.c:1063
 msgid "Delete"
 msgstr "Supprimer"
 
-#: src/bookmarks.c:1061 src/files_menu.c:162
+#: src/explorer/bookmarks.c:1061 src/explorer/files_menu.c:162
 msgid "Open"
 msgstr "Ouvrir"
 
-#: src/bookmarks.c:1062
+#: src/explorer/bookmarks.c:1062
 msgid "Edit…"
 msgstr "Modifier…"
 
-#: src/bookmarks.c:1066 src/notes.c:2140 src/notes.c:2151
+#: src/explorer/bookmarks.c:1066 src/notes.c:2140 src/notes.c:2151
 msgid "Move Up"
 msgstr "Monter"
 
-#: src/bookmarks.c:1067 src/notes.c:2141 src/notes.c:2152
+#: src/explorer/bookmarks.c:1067 src/notes.c:2141 src/notes.c:2152
 msgid "Move Down"
 msgstr "Descendre"
 
-#: src/bookmarks.c:1070 src/bookmarks.c:1074
+#: src/explorer/bookmarks.c:1070 src/explorer/bookmarks.c:1074
 msgid "Add Bookmark…"
 msgstr "Ajouter un signet…"
 
-#: src/bookmarks.c:1071 src/bookmarks.c:1075 src/files_menu.c:188
-#: src/remote.c:1004
+#: src/explorer/bookmarks.c:1071 src/explorer/bookmarks.c:1075 src/explorer/files_menu.c:188
+#: src/explorer/remote.c:1004
 msgid "New Folder…"
 msgstr "Nouveau dossier…"
 
-#: src/bookmarks.c:1078
+#: src/explorer/bookmarks.c:1078
 msgid "Save Workspace as Bookmark…"
 msgstr "Enregistrer l’espace de travail comme signet…"
 
-#: src/bookmarks.c:1079
+#: src/explorer/bookmarks.c:1079
 msgid "Sort A–Z / Z–A"
 msgstr "Trier A–Z / Z–A"
 
-#: src/bookmarks.c:1080 src/notes.c:2171 src/remote.c:1007
+#: src/explorer/bookmarks.c:1080 src/notes.c:2171 src/explorer/remote.c:1007
 msgid "Collapse / Expand All"
 msgstr "Tout replier / déplier"
 
@@ -2497,117 +2497,117 @@ msgstr "Retouchée avec %s"
 msgid "By %s"
 msgstr "Par %s"
 
-#: src/file_actions.c:234
+#: src/explorer/file_actions.c:234
 msgid "New Folder"
 msgstr "Nouveau dossier"
 
-#: src/file_actions.c:234
+#: src/explorer/file_actions.c:234
 msgid "New File"
 msgstr "Nouveau fichier"
 
-#: src/file_actions.c:254
+#: src/explorer/file_actions.c:254
 msgid "File name"
 msgstr "Nom du fichier"
 
-#: src/file_actions.c:259
+#: src/explorer/file_actions.c:259
 msgid "~/projects or /tmp"
 msgstr "~/projets ou /tmp"
 
-#: src/file_actions.c:343
+#: src/explorer/file_actions.c:343
 #, c-format
 msgid "Rename “%s” to:"
 msgstr "Renommer « %s » en :"
 
-#: src/file_actions.c:346
+#: src/explorer/file_actions.c:346
 msgid "Rename Folder"
 msgstr "Renommer le dossier"
 
-#: src/file_actions.c:346
+#: src/explorer/file_actions.c:346
 msgid "Rename File"
 msgstr "Renommer le fichier"
 
-#: src/file_actions.c:347
+#: src/explorer/file_actions.c:347
 msgid "_Rename"
 msgstr "_Renommer"
 
-#: src/file_actions.c:354 src/file_actions.c:357 src/file_actions.c:366
+#: src/explorer/file_actions.c:354 src/explorer/file_actions.c:357 src/explorer/file_actions.c:366
 msgid "Cannot Rename"
 msgstr "Impossible de renommer"
 
-#: src/file_actions.c:354
+#: src/explorer/file_actions.c:354
 msgid "A name cannot contain “/” or be “.” or “..”."
 msgstr "Un nom ne peut pas contenir « / » ni être « . » ou « .. »."
 
-#: src/file_actions.c:356
+#: src/explorer/file_actions.c:356
 #, c-format
 msgid "“%s” already exists in this folder."
 msgstr "« %s » existe déjà dans ce dossier."
 
-#: src/file_actions.c:364
+#: src/explorer/file_actions.c:364
 #, c-format
 msgid "Could not rename “%s”: %s"
 msgstr "Impossible de renommer « %s » : %s"
 
-#: src/file_actions.c:388
+#: src/explorer/file_actions.c:388
 #, c-format
 msgid "Move the folder “%s” to the trash?"
 msgstr "Mettre le dossier « %s » à la corbeille ?"
 
-#: src/file_actions.c:389
+#: src/explorer/file_actions.c:389
 #, c-format
 msgid "Move the file “%s” to the trash?"
 msgstr "Mettre le fichier « %s » à la corbeille ?"
 
-#: src/file_actions.c:390
+#: src/explorer/file_actions.c:390
 msgid "Delete File"
 msgstr "Supprimer le fichier"
 
-#: src/file_actions.c:391 src/notes.c:1670
+#: src/explorer/file_actions.c:391 src/notes.c:1670
 msgid "_Move to Trash"
 msgstr "_Mettre à la corbeille"
 
-#: src/file_actions.c:397
+#: src/explorer/file_actions.c:397
 #, c-format
 msgid "Could not move “%s” to the trash: %s"
 msgstr "Impossible de mettre « %s » à la corbeille : %s"
 
-#: src/file_actions.c:399
+#: src/explorer/file_actions.c:399
 msgid "Cannot Delete"
 msgstr "Impossible de supprimer"
 
-#: src/file_list.c:348
+#: src/explorer/file_list.c:348
 msgid "(cannot read directory)"
 msgstr "(dossier illisible)"
 
-#: src/file_list.c:348
+#: src/explorer/file_list.c:348
 msgid "  (cannot read directory)"
 msgstr "  (dossier illisible)"
 
-#: src/file_moves.c:91
+#: src/explorer/file_moves.c:91
 #, c-format
 msgid "Renamed “%1$s” to “%2$s”"
 msgstr "« %1$s » renommé en « %2$s »"
 
-#: src/file_moves.c:108
+#: src/explorer/file_moves.c:108
 #, c-format
 msgid "Moved “%s” to the trash"
 msgstr "« %s » mis à la corbeille"
 
-#: src/file_moves.c:121
+#: src/explorer/file_moves.c:121
 msgid "Nothing to undo"
 msgstr "Rien à annuler"
 
-#: src/file_moves.c:129
+#: src/explorer/file_moves.c:129
 #, c-format
 msgid "Restored “%s” from the trash"
 msgstr "« %s » restauré depuis la corbeille"
 
-#: src/file_moves.c:130
+#: src/explorer/file_moves.c:130
 #, c-format
 msgid "Renamed back to “%s”"
 msgstr "Renommé à nouveau en « %s »"
 
-#: src/file_moves.c:131
+#: src/explorer/file_moves.c:131
 #, c-format
 msgid "Cannot undo: %s"
 msgstr "Impossible d’annuler : %s"
@@ -2722,53 +2722,53 @@ msgctxt "file kind"
 msgid "Packet Capture"
 msgstr "Capture réseau"
 
-#: src/files_menu.c:43
+#: src/explorer/files_menu.c:43
 #, c-format
 msgid "Cannot open with the default application: %s"
 msgstr "Impossible d’ouvrir avec l’application par défaut : %s"
 
-#: src/files_menu.c:62
+#: src/explorer/files_menu.c:62
 #, c-format
 msgid "Copied “%s”"
 msgstr "« %s » copié"
 
-#: src/files_menu.c:168
+#: src/explorer/files_menu.c:168
 msgid "Open in Side Panel"
 msgstr "Ouvrir dans le panneau latéral"
 
-#: src/files_menu.c:170
+#: src/explorer/files_menu.c:170
 msgid "Open With Default App"
 msgstr "Ouvrir avec l’application par défaut"
 
-#: src/files_menu.c:173
+#: src/explorer/files_menu.c:173
 msgid "Open in Browser Tab"
 msgstr "Ouvrir dans un onglet navigateur"
 
-#: src/files_menu.c:176 src/files_menu.c:190
+#: src/explorer/files_menu.c:176 src/explorer/files_menu.c:190
 msgid "Open Terminal Here"
 msgstr "Ouvrir un terminal ici"
 
-#: src/files_menu.c:179
+#: src/explorer/files_menu.c:179
 msgid "Rename…"
 msgstr "Renommer…"
 
-#: src/files_menu.c:180
+#: src/explorer/files_menu.c:180
 msgid "Move to Trash…"
 msgstr "Mettre à la corbeille…"
 
-#: src/files_menu.c:182 src/files_menu.c:191
+#: src/explorer/files_menu.c:182 src/explorer/files_menu.c:191
 msgid "Copy Path"
 msgstr "Copier le chemin"
 
-#: src/files_menu.c:183 src/files_menu.c:192
+#: src/explorer/files_menu.c:183 src/explorer/files_menu.c:192
 msgid "Bookmark…"
 msgstr "Ajouter un signet…"
 
-#: src/files_menu.c:187
+#: src/explorer/files_menu.c:187
 msgid "New File…"
 msgstr "Nouveau fichier…"
 
-#: src/files_menu.c:230
+#: src/explorer/files_menu.c:230
 msgid "Undo"
 msgstr "Annuler"
 
@@ -3632,7 +3632,7 @@ msgstr ""
 "Supprimer la machine sélectionnée, ou le dossier (ses machines remontent au "
 "premier niveau)"
 
-#: src/help.c:128 src/preview_summary.c:73 src/remote.c:1005
+#: src/help.c:128 src/preview_summary.c:73 src/explorer/remote.c:1005
 msgid "Re-scan ~/.ssh/config"
 msgstr "Relire ~/.ssh/config"
 
@@ -7179,116 +7179,116 @@ msgstr "Dossiers et fichiers récents"
 msgid "Type part of a folder or file name"
 msgstr "Tapez une partie d’un nom de dossier ou de fichier"
 
-#: src/remote.c:50
+#: src/explorer/remote.c:50
 msgid "Connected"
 msgstr "Connecté"
 
-#: src/remote.c:73
+#: src/explorer/remote.c:73
 msgid "No remote machines yet — press a to add one"
 msgstr "Aucune machine distante — appuyez sur a pour en ajouter une"
 
-#: src/remote.c:285
+#: src/explorer/remote.c:285
 msgid "Remote machines (top level)"
 msgstr "Machines distantes (premier niveau)"
 
-#: src/remote.c:297
+#: src/explorer/remote.c:297
 msgid "Folder:"
 msgstr "Dossier :"
 
-#: src/remote.c:321
+#: src/explorer/remote.c:321
 msgid "Add Remote Machine (SSH)"
 msgstr "Ajouter une machine distante (SSH)"
 
-#: src/remote.c:323
+#: src/explorer/remote.c:323
 msgid "_Save & Connect"
 msgstr "Enregistrer et _connecter"
 
-#: src/remote.c:329 src/remote.c:398
+#: src/explorer/remote.c:329 src/explorer/remote.c:398
 msgid "Friendly Name:"
 msgstr "Nom affiché :"
 
-#: src/remote.c:329
+#: src/explorer/remote.c:329
 msgid "Dev Server"
 msgstr "Serveur de dev"
 
-#: src/remote.c:329
+#: src/explorer/remote.c:329
 msgid "e.g. AWS Production"
 msgstr "ex. Production AWS"
 
-#: src/remote.c:330 src/remote.c:399
+#: src/explorer/remote.c:330 src/explorer/remote.c:399
 msgid "Host / IP Address *:"
 msgstr "Hôte / adresse IP * :"
 
-#: src/remote.c:330
+#: src/explorer/remote.c:330
 msgid "e.g. 192.168.1.100 or dev.example.com"
 msgstr "ex. 192.168.1.100 ou dev.example.com"
 
-#: src/remote.c:331 src/remote.c:400
+#: src/explorer/remote.c:331 src/explorer/remote.c:400
 msgid "User:"
 msgstr "Utilisateur :"
 
-#: src/remote.c:331
+#: src/explorer/remote.c:331
 msgid "e.g. ubuntu, root, dev"
 msgstr "ex. ubuntu, root, dev"
 
-#: src/remote.c:332 src/remote.c:401
+#: src/explorer/remote.c:332 src/explorer/remote.c:401
 msgid "Port:"
 msgstr "Port :"
 
-#: src/remote.c:332
+#: src/explorer/remote.c:332
 msgid "default: 22"
 msgstr "par défaut : 22"
 
-#: src/remote.c:333 src/remote.c:402
+#: src/explorer/remote.c:333 src/explorer/remote.c:402
 msgid "Remote Directory:"
 msgstr "Dossier distant :"
 
-#: src/remote.c:333
+#: src/explorer/remote.c:333
 msgid "default: ~ or /var/www"
 msgstr "par défaut : ~ ou /var/www"
 
-#: src/remote.c:334 src/remote.c:403
+#: src/explorer/remote.c:334 src/explorer/remote.c:403
 msgid "Identity Key Path (optional):"
 msgstr "Chemin de la clé d’identité (facultatif) :"
 
-#: src/remote.c:334
+#: src/explorer/remote.c:334
 msgid "e.g. ~/.ssh/id_ed25519"
 msgstr "ex. ~/.ssh/id_ed25519"
 
-#: src/remote.c:388
+#: src/explorer/remote.c:388
 msgid "Edit Remote Machine"
 msgstr "Modifier la machine distante"
 
-#: src/remote.c:453
+#: src/explorer/remote.c:453
 #, c-format
 msgid "Are you sure you want to remove remote machine '%s' (%s)?"
 msgstr "Voulez-vous vraiment retirer la machine distante « %s » (%s) ?"
 
-#: src/remote.c:455
+#: src/explorer/remote.c:455
 msgid "Remove Remote Machine"
 msgstr "Retirer la machine distante"
 
-#: src/remote.c:492
+#: src/explorer/remote.c:492
 msgid "Name:"
 msgstr "Nom :"
 
-#: src/remote.c:492
+#: src/explorer/remote.c:492
 msgid "e.g. Production"
 msgstr "ex. Production"
 
-#: src/remote.c:495
+#: src/explorer/remote.c:495
 msgid "Icon:"
 msgstr "Icône :"
 
-#: src/remote.c:526
+#: src/explorer/remote.c:526
 msgid "New Remote Folder"
 msgstr "Nouveau dossier distant"
 
-#: src/remote.c:541
+#: src/explorer/remote.c:541
 msgid "Edit Remote Folder"
 msgstr "Modifier le dossier distant"
 
-#: src/remote.c:559
+#: src/explorer/remote.c:559
 #, c-format
 msgid "Delete the folder “%s”? Its %u machine moves to the top level."
 msgid_plural "Delete the folder “%s”? Its %u machines move to the top level."
@@ -7296,15 +7296,15 @@ msgstr[0] "Supprimer le dossier « %s » ? Sa machine remonte au premier niveau
 msgstr[1] ""
 "Supprimer le dossier « %s » ? Ses %u machines remontent au premier niveau."
 
-#: src/remote.c:563
+#: src/explorer/remote.c:563
 msgid "Delete Remote Folder"
 msgstr "Supprimer le dossier distant"
 
-#: src/remote.c:597
+#: src/explorer/remote.c:597
 msgid "sshfs Required"
 msgstr "sshfs requis"
 
-#: src/remote.c:601
+#: src/explorer/remote.c:601
 msgid ""
 "To browse and edit remote files, 'sshfs' is required.\n"
 "\n"
@@ -7325,11 +7325,11 @@ msgstr ""
 "Vous pouvez toujours ouvrir une session de terminal SSH avec le bouton "
 "Terminal."
 
-#: src/remote.c:679
+#: src/explorer/remote.c:679
 msgid "Connection Failed"
 msgstr "Échec de la connexion"
 
-#: src/remote.c:683
+#: src/explorer/remote.c:683
 #, c-format
 msgid ""
 "Could not connect to '%s' (%s):\n"
@@ -7340,47 +7340,47 @@ msgstr ""
 "\n"
 "%s"
 
-#: src/remote.c:685
+#: src/explorer/remote.c:685
 msgid "sshfs process exited with an error."
 msgstr "le processus sshfs s’est terminé avec une erreur."
 
-#: src/remote.c:981
+#: src/explorer/remote.c:981
 msgid "Connect (Browse Files)"
 msgstr "Connecter (parcourir les fichiers)"
 
-#: src/remote.c:983
+#: src/explorer/remote.c:983
 msgid "Open in Explorer"
 msgstr "Ouvrir dans l’explorateur"
 
-#: src/remote.c:984
+#: src/explorer/remote.c:984
 msgid "Disconnect"
 msgstr "Déconnecter"
 
-#: src/remote.c:986
+#: src/explorer/remote.c:986
 msgid "Open SSH Terminal"
 msgstr "Ouvrir un terminal SSH"
 
-#: src/remote.c:987
+#: src/explorer/remote.c:987
 msgid "Edit Machine…"
 msgstr "Modifier la machine…"
 
-#: src/remote.c:988
+#: src/explorer/remote.c:988
 msgid "Delete Machine"
 msgstr "Supprimer la machine"
 
-#: src/remote.c:995
+#: src/explorer/remote.c:995
 msgid "Expand / Collapse"
 msgstr "Déplier / replier"
 
-#: src/remote.c:996
+#: src/explorer/remote.c:996
 msgid "Edit Folder…"
 msgstr "Modifier le dossier…"
 
-#: src/remote.c:1003
+#: src/explorer/remote.c:1003
 msgid "Add Machine Here…"
 msgstr "Ajouter une machine ici…"
 
-#: src/remote.c:1003
+#: src/explorer/remote.c:1003
 msgid "Add Remote Machine…"
 msgstr "Ajouter une machine distante…"
 

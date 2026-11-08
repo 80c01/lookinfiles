@@ -14,7 +14,7 @@
  * Row positions count visible rows only (children of collapsed rows are not
  * visible). Returned rows are borrowed: they live as long as they stay in the tree. */
 #include <gtk/gtk.h>
-#include "explorer_row.h"
+#include "explorer/explorer_row.h"
 
 #define EXPLORER_TYPE_TREE (explorer_tree_get_type())
 G_DECLARE_FINAL_TYPE(ExplorerTree, explorer_tree, EXPLORER, TREE, GObject)

@@ -1,7 +1,7 @@
 /* Bookmark dialogs (see bookmark_dialog.h) */
-#include "bookmark_dialog.h"
+#include "explorer/bookmark_dialog.h"
 #include "core/i18n.h"
-#include "bookmark_icons.h"
+#include "explorer/bookmark_icons.h"
 #include "widgets/dialog.h"
 #include "widgets/icon_picker.h"
 #include "notebook_icons.h"

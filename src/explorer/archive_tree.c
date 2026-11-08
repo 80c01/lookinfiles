@@ -1,12 +1,12 @@
 /* Archives as folders in the explorer (see archive_tree.h). */
-#include "archive_tree.h"
+#include "explorer/archive_tree.h"
 #include "core/i18n.h"
 
 #include <string.h>
 
 #include "archive_extract.h"
 #include "archive_listing.h"
-#include "explorer_tree.h"
+#include "explorer/explorer_tree.h"
 
 /* Entries kept in the tree, and the largest entry extracted for a preview */
 #define ARCHIVE_TREE_MAX_ENTRIES 20000

@@ -13,8 +13,8 @@
 #include "canvas/canvas_text.h"
 #include "canvas/canvas_toolbar.h"
 #include "canvas/canvas_viewport.h"
-#include "explorer_row.h"
-#include "tree_nav.h"
+#include "explorer/explorer_row.h"
+#include "explorer/tree_nav.h"
 
 #include <string.h>
 

@@ -7,8 +7,8 @@
  * Columns are padded with spaces: display them in a monospace font.
  * No widgets (unit-tested in tests/). */
 #include "core/app_types.h"
-#include "explorer_row.h"
-#include "remote_store.h"
+#include "explorer/explorer_row.h"
+#include "explorer/remote_store.h"
 
 /* Summary of a remote machine (connection details and view shortcuts). Caller frees. */
 gchar* preview_summary_remote(const RemoteMachine* rm);

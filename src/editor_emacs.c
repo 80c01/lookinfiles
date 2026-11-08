@@ -8,7 +8,7 @@
 #include "code_symbols.h"
 #include "editor_tagbar.h"
 #include "core/app_events.h"
-#include "nav_keys.h"
+#include "explorer/nav_keys.h"
 #include "quick_open.h"
 #include "editor_dunnet.h"
 #include <ctype.h>

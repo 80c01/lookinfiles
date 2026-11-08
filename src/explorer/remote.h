@@ -2,7 +2,7 @@
 #define REMOTE_H
 
 #include "core/app_types.h"
-#include "remote_store.h"
+#include "explorer/remote_store.h"
 
 /* Explorer panel integration */
 void remote_append_rows(ExplorerRow* root, AppData* app);

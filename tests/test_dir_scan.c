@@ -1,6 +1,6 @@
-/* Unit tests for src/dir_scan.c: explorer listings (sorting, hidden entries,
+/* Unit tests for src/explorer/dir_scan.c: explorer listings (sorting, hidden entries,
  * expanded folders, unreadable folders, expand all). */
-#include "dir_scan.h"
+#include "explorer/dir_scan.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

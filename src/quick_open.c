@@ -4,14 +4,14 @@
 #include "code_index.h"
 #include "widgets/dialog.h"
 #include "editor.h"
-#include "file_list.h"
+#include "explorer/file_list.h"
 #include "focus_route.h"
 #include "fuzzy_match.h"
 #include "theme/icons.h"
 #include "core/i18n.h"
-#include "nav_history.h"
+#include "explorer/nav_history.h"
 #include "theme/palette.h"
-#include "tree_nav.h"
+#include "explorer/tree_nav.h"
 
 #include <string.h>
 

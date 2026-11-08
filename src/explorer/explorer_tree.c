@@ -1,5 +1,5 @@
 /* Explorer tree view (see explorer_tree.h) */
-#include "explorer_tree.h"
+#include "explorer/explorer_tree.h"
 #include "theme/icons.h"
 
 #include <string.h>

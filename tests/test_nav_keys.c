@@ -1,5 +1,5 @@
-/* Unit tests for src/nav_keys.c: navigation keys of each global mode. */
-#include "nav_keys.h"
+/* Unit tests for src/explorer/nav_keys.c: navigation keys of each global mode. */
+#include "explorer/nav_keys.h"
 
 static NavAction look(NavStyle style, guint keyval, GdkModifierType state) {
     return nav_keys_lookup(style, NAV_PREFIX_NONE, keyval, state, NULL);

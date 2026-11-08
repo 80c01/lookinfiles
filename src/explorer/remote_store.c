@@ -1,6 +1,6 @@
 /* Remote machine data: RemoteMachine list in AppData, remotes.xml persistence,
  * ~/.ssh/config discovery and lookups. No widgets (unit-tested in tests/). */
-#include "remote_store.h"
+#include "explorer/remote_store.h"
 #include "core/app_paths.h"
 #include "notebook_icons.h"
 

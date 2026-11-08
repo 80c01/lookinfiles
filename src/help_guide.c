@@ -11,7 +11,7 @@
 #include "markdown.h"
 #include "markdown_link.h"
 #include "widgets/minimap.h"
-#include "nav_keys.h"
+#include "explorer/nav_keys.h"
 #include "widgets/panels.h"
 #include "theme/text_style.h"
 #include "theme/theme.h"

@@ -1,6 +1,6 @@
-/* Unit tests for src/remote_store.c: ~/.ssh/config discovery and remotes.xml
+/* Unit tests for src/explorer/remote_store.c: ~/.ssh/config discovery and remotes.xml
  * persistence. HOME and the XDG directories point to a temporary directory. */
-#include "remote_store.h"
+#include "explorer/remote_store.h"
 
 #include <glib/gstdio.h>
 #include <string.h>

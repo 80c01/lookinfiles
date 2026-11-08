@@ -3,11 +3,11 @@
 #include "core/i18n.h"
 #include "theme/icons.h"
 #include "core/app_events.h"
-#include "bookmarks.h"
-#include "file_list.h"
+#include "explorer/bookmarks.h"
+#include "explorer/file_list.h"
 #include "notes.h"
-#include "remote.h"
-#include "tree_nav.h"
+#include "explorer/remote.h"
+#include "explorer/tree_nav.h"
 
 /* Private to this file: the header's widgets updated by sidebar_header_update() */
 struct SidebarHeader {

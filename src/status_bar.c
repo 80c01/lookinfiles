@@ -7,7 +7,7 @@
 #include "preview_state.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
-#include "file_list.h"
+#include "explorer/file_list.h"
 #include "core/file_types.h"
 #include "git_utils.h"
 

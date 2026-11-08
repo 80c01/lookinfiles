@@ -1,7 +1,7 @@
 /* The tagbar of the preview (see preview_tagbar.h) */
 #include "preview_tagbar.h"
 #include "code_outline_tree.h"
-#include "nav_keys.h"
+#include "explorer/nav_keys.h"
 #include "widgets/outline_pane.h"
 #include "core/i18n.h"
 #include "core/settings_store.h"

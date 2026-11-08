@@ -7,7 +7,7 @@
 #include "theme/palette.h"
 #include "core/app_paths.h"
 #include "core/app_events.h"
-#include "tree_nav.h"
+#include "explorer/tree_nav.h"
 #include "editor.h"
 
 #include <string.h>

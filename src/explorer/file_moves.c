@@ -1,9 +1,9 @@
 /* Moves of files and folders in the files view, and undo of the last one. */
-#include "file_moves.h"
+#include "explorer/file_moves.h"
 #include "core/app_events.h"
 #include "editor_modes.h"
 #include "core/i18n.h"
-#include "trash_restore.h"
+#include "explorer/trash_restore.h"
 
 #include <errno.h>
 #include <string.h>

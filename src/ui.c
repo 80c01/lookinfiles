@@ -11,7 +11,7 @@
 #include "widgets/panels.h"
 #include "core/app_events.h"
 #include "workspace.h"
-#include "file_list.h"
+#include "explorer/file_list.h"
 #include "terminal.h"
 #include "notes.h"
 #include "editor.h"

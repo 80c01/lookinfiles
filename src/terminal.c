@@ -1,7 +1,7 @@
 #include "terminal.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
-#include "remote_store.h"
+#include "explorer/remote_store.h"
 #include "layout_store.h"
 #include "theme/palette.h"
 #include "theme/fonts.h"

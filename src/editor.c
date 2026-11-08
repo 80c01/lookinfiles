@@ -12,7 +12,7 @@
 #include "widgets/minimap.h"
 #include "widgets/diff_gutter.h"
 #include "focus_route.h"
-#include "nav_history.h"
+#include "explorer/nav_history.h"
 #include "editor_view.h"
 #include "theme/icons.h"
 

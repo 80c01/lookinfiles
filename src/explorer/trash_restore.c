@@ -1,5 +1,5 @@
 /* Put back a file moved to the trash (freedesktop.org trash specification). */
-#include "trash_restore.h"
+#include "explorer/trash_restore.h"
 
 #include <errno.h>
 #include <gio/gio.h>

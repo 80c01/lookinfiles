@@ -9,7 +9,7 @@
 #include "notebook_icons.h"
 #include "canvas/canvas_doc.h"
 #include "canvas/canvas_view.h"
-#include "tree_nav.h"
+#include "explorer/tree_nav.h"
 #include "core/file_types.h"
 #include "editor.h"
 #include "viewer.h"

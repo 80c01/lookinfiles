@@ -1,9 +1,9 @@
 /* Keys of the explorer panel. Navigation follows the global mode (nav_keys.h);
  * the view actions (a, d, r, o...) are the same in every mode. */
-#include "explorer_keys.h"
+#include "explorer/explorer_keys.h"
 #include "preview_state.h"
-#include "file_list.h"
-#include "tree_nav.h"
+#include "explorer/file_list.h"
+#include "explorer/tree_nav.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
 #include "search.h"
@@ -11,10 +11,10 @@
 #include "image_preview.h"
 #include "video.h"
 #include "audio.h"
-#include "bookmarks.h"
+#include "explorer/bookmarks.h"
 #include "notes.h"
-#include "remote.h"
-#include "archive_tree.h"
+#include "explorer/remote.h"
+#include "explorer/archive_tree.h"
 #include "editor.h"
 #include "focus_route.h"
 

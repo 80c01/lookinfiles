@@ -1,19 +1,19 @@
 /* Right-click menu of the files view (same labels and keys as the toolbar
  * tooltips and the README tables). */
-#include "files_menu.h"
+#include "explorer/files_menu.h"
 #include "preview_state.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
-#include "bookmarks.h"
+#include "explorer/bookmarks.h"
 #include "browser.h"
 #include "editor.h"
-#include "file_list.h"
-#include "file_moves.h"
+#include "explorer/file_list.h"
+#include "explorer/file_moves.h"
 #include "core/file_types.h"
-#include "nav_keys.h"
+#include "explorer/nav_keys.h"
 #include "widgets/panels.h"
 #include "terminal.h"
-#include "tree_nav.h"
+#include "explorer/tree_nav.h"
 
 typedef enum {
     FM_OPEN,
