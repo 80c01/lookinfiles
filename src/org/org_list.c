@@ -1,7 +1,7 @@
 /* Org-mode plain lists: items, bullets, checkboxes and statistics cookies
  * ([2/3], [66%]) on an array of lines (see org_doc.h) */
-#include "org_doc.h"
-#include "org_doc_private.h"
+#include "org/org_doc.h"
+#include "org/org_doc_private.h"
 
 #include <stdlib.h>
 #include <string.h>

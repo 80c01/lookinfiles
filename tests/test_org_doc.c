@@ -1,7 +1,7 @@
-/* Unit tests for src/org_doc.c: Org-mode headings, structure editing, TODO
+/* Unit tests for src/org/org_doc.c: Org-mode headings, structure editing, TODO
  * keywords, priorities, tags, planning, clock, lists, checkboxes,
  * statistics cookies, links and templates. "‸" marks the cursor. */
-#include "org_doc.h"
+#include "org/org_doc.h"
 #include "org_test_util.h"
 
 typedef gboolean (*Op)(GPtrArray* lines, OrgPos* pos, gpointer data);

@@ -1,5 +1,5 @@
 /* Folding state of the Org preview (see org_fold.h). */
-#include "org_fold.h"
+#include "org/org_fold.h"
 #include "preview/preview_state.h"
 #include "core/app_events.h"
 #include "core/file_types.h"

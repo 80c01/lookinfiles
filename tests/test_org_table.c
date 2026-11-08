@@ -1,6 +1,6 @@
-/* Unit tests for src/org_table.c: Org-mode table alignment and editing.
+/* Unit tests for src/org/org_table.c: Org-mode table alignment and editing.
  * "‸" marks the cursor. */
-#include "org_table.h"
+#include "org/org_table.h"
 #include "org_test_util.h"
 
 typedef gboolean (*Op)(GPtrArray* lines, OrgPos* pos);

@@ -1,7 +1,7 @@
 /* Org-mode document structure and editing commands on an array of lines. */
-#include "org_doc.h"
-#include "org_doc_private.h"
-#include "org_time.h"
+#include "org/org_doc.h"
+#include "org/org_doc_private.h"
+#include "org/org_time.h"
 
 #include <string.h>
 

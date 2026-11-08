@@ -1,5 +1,5 @@
 /* Org-mode timestamps: parsing, formatting, arithmetic, repeaters, date prompt. */
-#include "org_time.h"
+#include "org/org_time.h"
 
 #include <string.h>
 

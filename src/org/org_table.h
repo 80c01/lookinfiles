@@ -5,7 +5,7 @@
  * navigation, row and column editing. Works on the same lines and cursor as
  * org_doc.h; every command first re-aligns the table. Pure GLib. */
 #include <glib.h>
-#include "org_doc.h"
+#include "org/org_doc.h"
 
 gboolean org_table_is_line(const gchar* line);
 /* Table rows around line: [*start, *end). FALSE if line is not in a table. */

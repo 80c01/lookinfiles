@@ -2,7 +2,7 @@
 #define ORG_DOC_PRIVATE_H
 
 /* Line helpers shared by org_doc.c and org_list.c */
-#include "org_doc.h"
+#include "org/org_doc.h"
 
 static inline gint org_doc_n_lines(GPtrArray* lines) {
     return (gint)lines->len;

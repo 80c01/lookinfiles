@@ -3,7 +3,7 @@
 #ifndef ORG_TEST_UTIL_H
 #define ORG_TEST_UTIL_H
 
-#include "org_doc.h"
+#include "org/org_doc.h"
 
 #include <string.h>
 

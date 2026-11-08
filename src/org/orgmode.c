@@ -1,14 +1,14 @@
-#include "orgmode.h"
+#include "org/orgmode.h"
 #include "preview/preview_state.h"
 #include "theme/fonts.h"
 #include "theme/text_tags.h"
-#include "org_doc.h"
+#include "org/org_doc.h"
 #include "media/image_utils.h"
 #include "theme/icons.h"
 #include "core/app_events.h"
 #include "core/file_types.h"
 #include "editor/editor.h"
-#include "org_fold.h"
+#include "org/org_fold.h"
 
 #include <string.h>
 #include <stdio.h>

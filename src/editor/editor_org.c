@@ -7,9 +7,9 @@
 #include "editor/editor_modes_private.h"
 #include "editor/editor.h"
 #include "core/file_types.h"
-#include "org_doc.h"
-#include "org_table.h"
-#include "org_time.h"
+#include "org/org_doc.h"
+#include "org/org_table.h"
+#include "org/org_time.h"
 
 #include <string.h>
 

@@ -11,7 +11,7 @@
 #include "mail/mail_dir.h"
 #include "preview/preview_doc_view.h"
 #include "markup/markdown.h"
-#include "orgmode.h"
+#include "org/orgmode.h"
 #include "preview/preview_cache.h"
 #include "theme/icons.h"
 

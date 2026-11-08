@@ -1,5 +1,5 @@
-/* Unit tests for src/org_time.c: Org-mode timestamps. */
-#include "org_time.h"
+/* Unit tests for src/org/org_time.c: Org-mode timestamps. */
+#include "org/org_time.h"
 
 #include <string.h>
 

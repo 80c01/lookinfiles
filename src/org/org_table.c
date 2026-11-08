@@ -1,5 +1,5 @@
 /* Org-mode tables: parse, align, navigate and edit rows and columns. */
-#include "org_table.h"
+#include "org/org_table.h"
 
 #include <string.h>
 
