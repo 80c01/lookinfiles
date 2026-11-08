@@ -221,7 +221,6 @@ typedef struct AppData {
     gint num_workspaces;
     gint current_ws;
     gboolean switching_ws;
-    gboolean applying_layout;
     gboolean dir_scan_pending;
     struct WorkspaceView* workspace_view; /* minimap and layout being applied (workspace.c), or NULL */
     GtkWidget* layouts_btn;       /* top-bar button: anchor of the Alt+L layout switcher */

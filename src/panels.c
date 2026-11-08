@@ -190,9 +190,12 @@ static void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
     update_pane_dims(widget, app);
 }
 
+/* The right pane is moved to follow a main pane drag: not a drag of its own */
+static gboolean following_main = FALSE;
+
 static void record_paned_fraction(AppData* app, GtkWidget* widget) {
     if (app == NULL || widget == NULL || !GTK_IS_PANED(widget) ||
-        app->switching_ws || app->applying_layout ||
+        app->switching_ws || app_layout_held(app) || following_main ||
         app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
         return;
     }
@@ -212,10 +215,10 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
                     ws->right_orient == GTK_ORIENTATION_HORIZONTAL) {
                     gint rw = mw - pos;
                     if (rw > 40) {
-                        app->applying_layout = TRUE;
+                        following_main = TRUE;
                         gtk_paned_set_position(GTK_PANED(app->right_paned),
                                                (gint)(ws->right_frac * rw + 0.5));
-                        app->applying_layout = FALSE;
+                        following_main = FALSE;
                     }
                 }
             }
@@ -280,7 +283,7 @@ static void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointe
     (void)pspec;
     AppData* app = (AppData*)data;
     PaneDrag* d = app != NULL ? app->pane_drag : NULL;
-    if (d == NULL || app->switching_ws || app->applying_layout || !d->active) {
+    if (d == NULL || app->switching_ws || app_layout_held(app) || following_main || !d->active) {
         return;
     }
     GtkWidget* widget = GTK_WIDGET(object);

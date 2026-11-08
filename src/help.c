@@ -365,7 +365,7 @@ void toggle_help_panel(AppData* app) {
     if (!vis) {
         fill_help_panel(app, app->help_window); /* the global mode may have changed */
     }
-    app->applying_layout = TRUE;
+    app_layout_hold(app);
     gtk_widget_set_visible(app->help_window, !vis);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     app_emit(app, APP_EVENT_LAYOUT_REBUILT);

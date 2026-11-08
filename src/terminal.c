@@ -416,8 +416,7 @@ static void term_panel_closed(AppData* app) {
      * went to the editor area) */
     GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(GTK_WINDOW(app->window)) : NULL;
     gboolean move_focus = (focus == NULL || gtk_widget_is_ancestor(focus, app->term_scroll));
-    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-    app->applying_layout = TRUE;
+    app_layout_begin(app);
     gtk_widget_set_visible(app->term_scroll, FALSE);
     gboolean files_vis = (app->left_vbox != NULL) && gtk_widget_get_visible(app->left_vbox);
     gboolean preview_vis = (app->viewer_box != NULL) && gtk_widget_get_visible(app->viewer_box);
@@ -1165,8 +1164,7 @@ void terminal_open(AppData* app, gboolean new_row, const gchar* cwd) {
     /* Each pane gets its own shell */
     gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
     if (!was_term_vis) {
-        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-        app->applying_layout = TRUE;
+        app_layout_begin(app);
     }
     if (app->right_paned != NULL) {
         gtk_widget_set_visible(app->right_paned, TRUE);
@@ -1184,8 +1182,7 @@ void terminal_open(AppData* app, gboolean new_row, const gchar* cwd) {
     (void)cwd;
     /* No VTE installed: the panel is a notice instead of a terminal */
     gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
-    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-    app->applying_layout = TRUE;
+    app_layout_begin(app);
     gtk_widget_set_visible(app->term_scroll, !was_term_vis);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     app_emit(app, APP_EVENT_LAYOUT_REBUILT);

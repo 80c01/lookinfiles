@@ -254,8 +254,7 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
 /* Show the preview panel if hidden, switch to its Preview tab and focus it */
 static void focus_preview_tab(AppData* app) {
     if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-        app->applying_layout = TRUE;
+        app_layout_begin(app);
         gtk_widget_set_visible(app->viewer_box, TRUE);
         app_emit(app, APP_EVENT_CHROME_CHANGED);
         app_emit(app, APP_EVENT_LAYOUT_REBUILT);

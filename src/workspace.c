@@ -131,7 +131,7 @@ void workspaces_init(AppData* app) {
     app->current_ws = 0;
     v->hover = -1;
     app->switching_ws = FALSE;
-    app->applying_layout = FALSE;
+    app_layout_release(app);
     app->dir_scan_pending = FALSE;
     v->tick_id = 0;
     v->apply_frames = 0;
@@ -346,7 +346,7 @@ static gboolean workspace_apply_positions_tick(GtkWidget* widget,
         return G_SOURCE_CONTINUE;
     }
 
-    app->applying_layout = FALSE;
+    app_layout_release(app);
     v->tick_id = 0;
     pdf_preview_refit(app); /* the pane sizes are final now */
     if (v->minimap != NULL) {
@@ -360,7 +360,7 @@ void workspace_apply_positions(AppData* app) {
         return;
     }
     struct WorkspaceView* v = view_get(app);
-    app->applying_layout = TRUE;
+    app_layout_hold(app);
     v->apply_frames = 0;
     v->retry_count = 0;
     apply_ws_positions_now(app);
@@ -439,7 +439,7 @@ void workspace_switch(AppData* app, gint idx) {
         workspace_save_current(app);
     }
     app->switching_ws = TRUE;
-    app->applying_layout = TRUE;
+    app_layout_hold(app);
 
     if (ws_changed) {
         audio_preview_stop(app);

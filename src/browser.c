@@ -153,8 +153,7 @@ static void on_history_changed(WebKitBackForwardList* list, WebKitBackForwardLis
 /* The preview panel holds the tabs: show it when hidden */
 static void show_preview_panel(AppData* app) {
     if (app->viewer_box == NULL || gtk_widget_get_visible(app->viewer_box)) return;
-    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-    app->applying_layout = TRUE;
+    app_layout_begin(app);
     gtk_widget_set_visible(app->viewer_box, TRUE);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     app_emit(app, APP_EVENT_LAYOUT_REBUILT);

@@ -76,8 +76,7 @@ void on_files_pill_clicked(GtkButton* btn, gpointer data) {
     if (cur && !preview_vis && !term_vis && !editor_vis) {
         return; /* keep at least one panel visible */
     }
-    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-    app->applying_layout = TRUE;
+    app_layout_begin(app);
     gtk_widget_set_visible(app->left_vbox, !cur);
     update_path_label(app);
     app_emit(app, APP_EVENT_LAYOUT_REBUILT);
@@ -106,8 +105,7 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
     if (cur && !files_vis && !term_vis && !editor_vis) {
         return; /* keep at least one panel visible */
     }
-    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-    app->applying_layout = TRUE;
+    app_layout_begin(app);
     gtk_widget_set_visible(app->viewer_box, !cur);
     update_path_label(app);
     app_emit(app, APP_EVENT_LAYOUT_REBUILT);
@@ -138,8 +136,7 @@ static void on_term_pill_clicked(GtkButton* btn, gpointer data) {
         if (!files_vis && !preview_vis && !editor_vis) {
             return; /* keep at least one panel visible */
         }
-        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-        app->applying_layout = TRUE;
+        app_layout_begin(app);
         gtk_widget_set_visible(app->term_scroll, FALSE);
         update_path_label(app);
         app_emit(app, APP_EVENT_LAYOUT_REBUILT);
@@ -149,8 +146,7 @@ static void on_term_pill_clicked(GtkButton* btn, gpointer data) {
             gtk_widget_grab_focus(app->text_view);
         }
     } else {
-        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-        app->applying_layout = TRUE;
+        app_layout_begin(app);
         if (app->right_paned != NULL) {
             gtk_widget_set_visible(app->right_paned, TRUE);
         }

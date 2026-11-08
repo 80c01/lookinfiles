@@ -313,7 +313,7 @@ static gboolean history_held(AppData* app) {
 static gboolean lost_focus_idle(gpointer data) {
     AppData* app = (AppData*)data;
     if (app->window != NULL && gtk_window_get_focus(GTK_WINDOW(app->window)) == NULL &&
-        !app->switching_ws && !app->applying_layout) {
+        !app->switching_ws && !app_layout_held(app)) {
         focus_recent(app, NULL);
     }
     return G_SOURCE_REMOVE;

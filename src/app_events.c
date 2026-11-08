@@ -9,6 +9,7 @@ typedef struct AppEvents {
     gchar* notice;       /* app_notice() message, NULL if none */
     gboolean notice_undo; /* the message offers Undo */
     guint notice_serial; /* bumped by each app_notice() (restarts its timeout) */
+    gboolean layout_held; /* app_layout_begin() until app_layout_release() */
 } AppEvents;
 
 static AppEvents* events_get(AppData* app) {
@@ -65,4 +66,28 @@ const gchar* app_notice_get(AppData* app, gboolean* undo, guint* serial) {
         *serial = ev != NULL ? ev->notice_serial : 0;
     }
     return ev != NULL ? ev->notice : NULL;
+}
+
+void app_layout_begin(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+    app_layout_hold(app);
+}
+
+void app_layout_hold(AppData* app) {
+    if (app != NULL) {
+        events_get(app)->layout_held = TRUE;
+    }
+}
+
+void app_layout_release(AppData* app) {
+    if (app != NULL && app->events != NULL) {
+        app->events->layout_held = FALSE;
+    }
+}
+
+gboolean app_layout_held(AppData* app) {
+    return app != NULL && app->events != NULL && app->events->layout_held;
 }

@@ -1022,8 +1022,7 @@ void activate_selected_entry(AppData* app) {
             g_free(full);
         } else if (file_kind_is_media(kind)) {
             if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-                app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-                app->applying_layout = TRUE;
+                app_layout_begin(app);
                 gtk_widget_set_visible(app->viewer_box, TRUE);
                 app_emit(app, APP_EVENT_CHROME_CHANGED);
                 app_emit(app, APP_EVENT_LAYOUT_REBUILT);

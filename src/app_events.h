@@ -71,6 +71,17 @@ void app_notice(AppData* app, const gchar* text, gboolean undo);
  * each app_notice()) may be NULL */
 const gchar* app_notice_get(AppData* app, gboolean* undo, guint* serial);
 
+/* Showing or hiding a panel: snapshot the layout (APP_EVENT_LAYOUT_CHANGED)
+ * and hold it. Change the widgets, then emit APP_EVENT_LAYOUT_REBUILT: the
+ * saved positions are re-applied and the hold released. */
+void app_layout_begin(AppData* app);
+/* Same hold without the snapshot (the layout was already saved) */
+void app_layout_hold(AppData* app);
+/* The saved positions are applied (workspace.c): pane moves count again */
+void app_layout_release(AppData* app);
+/* TRUE while held: pane moves come from the layout, not from the user */
+gboolean app_layout_held(AppData* app);
+
 /* Free the subscriptions and the message (main.c, at exit) */
 void app_events_free(AppData* app);
 

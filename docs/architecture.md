@@ -780,6 +780,12 @@ Handlers run synchronously inside `app_emit()`. `make check` rejects direct
 calls to the first five subscribers outside their module and `main.c`. A new
 upward notification = a new `AppEvent` + one `app_events_subscribe()` in `main.c`.
 
+To show or hide a panel, call `app_layout_begin()` (snapshot + hold), change
+the widgets, then emit `APP_EVENT_LAYOUT_REBUILT`. While the layout is held
+(`app_layout_held()`), pane moves are not recorded as user drags; the
+workspace releases it (`app_layout_release()`) once the saved positions are
+applied. `app_layout_hold()` holds without the snapshot.
+
 ### Feature state (keep it out of `AppData`)
 
 A feature keeps its widgets and state in a private struct defined in its own
