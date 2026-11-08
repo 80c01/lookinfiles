@@ -2,7 +2,7 @@
  * history, file lists. Everything but the root and branch lookups goes
  * through libgit2 (no git program). No AppData and no widgets; safe to call
  * from worker threads (each call opens its own repository). */
-#include "git_utils.h"
+#include "git/git_utils.h"
 #include "core/i18n.h"
 #include "theme/palette.h"
 

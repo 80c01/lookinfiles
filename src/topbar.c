@@ -5,7 +5,7 @@
 #include "core/app_events.h"
 #include "explorer/file_list.h"
 #include "editor.h"
-#include "git_tab.h"
+#include "git/git_tab.h"
 #include "help.h"
 #include "help_guide.h"
 #include "widgets/minimap.h"

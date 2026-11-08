@@ -14,7 +14,7 @@ CFLAGS ?= -O2 -g
 LDFLAGS ?=
 CFLAGS_EXTRA ?=
 
-# Required: GTK 4 and libgit2 (git status, history and file lists, src/git_utils.c)
+# Required: GTK 4 and libgit2 (git status, history and file lists, src/git/git_utils.c)
 APP_CFLAGS = -Wall -Wextra -Isrc `$(PKG_CONFIG) --cflags gtk4 libgit2`
 LIBS = `$(PKG_CONFIG) --libs gtk4 libgit2` -lm
 DEPFLAGS = -MMD -MP

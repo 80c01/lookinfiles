@@ -2935,107 +2935,107 @@ msgstr "Pas une image GIF"
 msgid "Invalid GIF size %1$d x %2$d"
 msgstr "Taille GIF invalide %1$d x %2$d"
 
-#: src/git_tab.c:124
+#: src/git/git_tab.c:124
 #, c-format
 msgid "… %u more line not shown"
 msgid_plural "… %u more lines not shown"
 msgstr[0] "… %u ligne de plus non affichée"
 msgstr[1] "… %u lignes de plus non affichées"
 
-#: src/git_tab.c:146
+#: src/git/git_tab.c:146
 msgid "(No diff available or git error)"
 msgstr "(Aucun diff disponible ou erreur git)"
 
-#: src/git_tab.c:320
+#: src/git/git_tab.c:320
 msgid "No commits in this repository."
 msgstr "Aucun commit dans ce dépôt."
 
-#: src/git_tab.c:433
+#: src/git/git_tab.c:433
 msgid "Commit"
 msgstr "Commit"
 
-#: src/git_tab.c:434
+#: src/git/git_tab.c:434
 msgid "Message"
 msgstr "Message"
 
-#: src/git_tab.c:435 src/ole_props.c:225
+#: src/git/git_tab.c:435 src/ole_props.c:225
 msgid "Author"
 msgstr "Auteur"
 
-#: src/git_tab.c:436 src/mail_dir.c:212 src/mail_view.c:33 src/mail_view.c:34
+#: src/git/git_tab.c:436 src/mail_dir.c:212 src/mail_view.c:33 src/mail_view.c:34
 #: src/mail_view.c:180 src/preview_formats.c:936
 msgid "Date"
 msgstr "Date"
 
-#: src/git_tab.c:453
+#: src/git/git_tab.c:453
 msgid "Select a commit to view diff"
 msgstr "Sélectionnez un commit pour voir son diff"
 
-#: src/git_tab.c:499
+#: src/git/git_tab.c:499
 msgid "Git Commits"
 msgstr "Commits Git"
 
-#: src/git_utils.c:618
+#: src/git/git_utils.c:618
 #, c-format
 msgid "%d second ago"
 msgid_plural "%d seconds ago"
 msgstr[0] "il y a %d seconde"
 msgstr[1] "il y a %d secondes"
 
-#: src/git_utils.c:619
+#: src/git/git_utils.c:619
 #, c-format
 msgid "%d minute ago"
 msgid_plural "%d minutes ago"
 msgstr[0] "il y a %d minute"
 msgstr[1] "il y a %d minutes"
 
-#: src/git_utils.c:620
+#: src/git/git_utils.c:620
 #, c-format
 msgid "%d hour ago"
 msgid_plural "%d hours ago"
 msgstr[0] "il y a %d heure"
 msgstr[1] "il y a %d heures"
 
-#: src/git_utils.c:621
+#: src/git/git_utils.c:621
 #, c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
 msgstr[0] "il y a %d jour"
 msgstr[1] "il y a %d jours"
 
-#: src/git_utils.c:622
+#: src/git/git_utils.c:622
 #, c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
 msgstr[0] "il y a %d semaine"
 msgstr[1] "il y a %d semaines"
 
-#: src/git_utils.c:623
+#: src/git/git_utils.c:623
 #, c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
 msgstr[0] "il y a %d mois"
 msgstr[1] "il y a %d mois"
 
-#: src/git_utils.c:624
+#: src/git/git_utils.c:624
 #, c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
 msgstr[0] "il y a %d an"
 msgstr[1] "il y a %d ans"
 
-#: src/git_utils.c:631
+#: src/git/git_utils.c:631
 msgid "in the future"
 msgstr "dans le futur"
 
-#: src/git_utils.c:662
+#: src/git/git_utils.c:662
 #, c-format
 msgid "%d year"
 msgid_plural "%d years"
 msgstr[0] "%d an"
 msgstr[1] "%d ans"
 
-#: src/git_utils.c:663
+#: src/git/git_utils.c:663
 #, c-format
 msgid "%d month"
 msgid_plural "%d months"
@@ -3043,7 +3043,7 @@ msgstr[0] "%d mois"
 msgstr[1] "%d mois"
 
 #. TRANSLATORS: "1 year, 2 months ago"
-#: src/git_utils.c:665
+#: src/git/git_utils.c:665
 #, c-format
 msgid "%1$s, %2$s ago"
 msgstr "il y a %1$s et %2$s"

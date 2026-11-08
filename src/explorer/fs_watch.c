@@ -4,8 +4,8 @@
 #include "explorer/fs_watch.h"
 #include "preview_state.h"
 #include "core/app_events.h"
-#include "git_utils.h"
-#include "git_tab.h"
+#include "git/git_utils.h"
+#include "git/git_tab.h"
 
 /* Private to this file */
 struct FsWatch {

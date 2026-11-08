@@ -1,6 +1,6 @@
-/* Unit tests for src/git_utils.c. Each test works in a fresh temporary
+/* Unit tests for src/git/git_utils.c. Each test works in a fresh temporary
  * directory; repositories are made with libgit2 (no git program needed). */
-#include "git_utils.h"
+#include "git/git_utils.h"
 
 #include <git2.h>
 #include <glib/gstdio.h>

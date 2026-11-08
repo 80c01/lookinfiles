@@ -8,7 +8,7 @@
 #include "widgets/minimap.h"
 #include "widgets/tab_drop.h"
 #include "focus_route.h"
-#include "git_tab.h"
+#include "git/git_tab.h"
 
 static void collect_editor_notebooks_recursive(GtkWidget* widget, GPtrArray* array) {
     if (widget == NULL) return;

@@ -11,7 +11,7 @@
 
 #include "explorer/explorer_tree.h"
 #include "core/file_types.h"
-#include "git_state.h"
+#include "git/git_state.h"
 #include "note_types.h"
 #include "core/settings_store.h"
 

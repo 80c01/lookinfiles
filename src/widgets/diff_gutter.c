@@ -3,7 +3,7 @@
  * VS Code editor gutter. The HEAD version is read by git in a worker thread;
  * the line diff runs on the UI thread (debounced while editing). */
 #include "widgets/diff_gutter.h"
-#include "git_utils.h"
+#include "git/git_utils.h"
 #include "core/line_diff.h"
 #include "theme/palette.h"
 

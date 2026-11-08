@@ -3,7 +3,7 @@
 #include "code_intel.h"
 #include "code_nav.h"
 #include "core/file_types.h"
-#include "git_utils.h"
+#include "git/git_utils.h"
 #include <string.h>
 
 #define PLACE_KEY "editor-info-place"

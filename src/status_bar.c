@@ -3,13 +3,13 @@
  * (name, size, type and encoding of the previewed entry). Editor tabs have
  * their own bar (editor_modes). */
 #include "status_bar.h"
-#include "git_state.h"
+#include "git/git_state.h"
 #include "preview_state.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"
 #include "core/file_types.h"
-#include "git_utils.h"
+#include "git/git_utils.h"
 
 /* Private to this file: the widgets of the explorer bar, the top-bar notice
  * and the preview bar (NULL until their create_*() call) */

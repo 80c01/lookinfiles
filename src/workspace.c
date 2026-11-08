@@ -1,6 +1,6 @@
 /* Virtual workspaces (Alt+1..8): per-workspace layout snapshots and the top-bar workspace minimap. */
 #include "workspace.h"
-#include "git_state.h"
+#include "git/git_state.h"
 #include "preview_state.h"
 #include "pdf.h"
 #include "workspace_menu.h"

@@ -8,7 +8,7 @@
 #include "theme/icons.h"
 #include "theme/theme.h"
 #include "focus_route.h"
-#include "git_tab.h"
+#include "git/git_tab.h"
 #include <stdarg.h>
 #include <string.h>
 

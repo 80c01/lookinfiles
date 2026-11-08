@@ -1,5 +1,5 @@
 /* Git state of the explorer's folder (see git_state.h). */
-#include "git_state.h"
+#include "git/git_state.h"
 
 struct GitState {
     GHashTable* statuses; /* full_path -> badge markup, or NULL */

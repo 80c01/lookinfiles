@@ -5,7 +5,7 @@
 #include "browser.h"
 #include "focus_route.h"
 #include "games.h"
-#include "git_tab.h"
+#include "git/git_tab.h"
 #include "help.h"
 #include "theme/icons.h"
 #include "markdown.h"
