@@ -22,6 +22,8 @@ C and GTK 4 for Linux and Windows, with a VS Code look and a keyboard-first desi
 - **Edit in place**: tabs you can split in every direction, each in Notepad,
   Emacs or Vim mode (with a full Vim grammar), Org-mode editing, and go to
   definition and references (built-in index, ctags or a language server).
+- **Tagbar**: the symbols of a code file, or the headings of a Markdown, Org,
+  HTML or office document, beside the text; click one to jump to it.
 - **Browser tabs for web development** (needs WebKitGTK): open a page, a local
   HTML file or a dev server in a tab of the preview panel, beside your editor
   and terminal. Press `F5` to reload after saving.
@@ -32,15 +34,19 @@ C and GTK 4 for Linux and Windows, with a VS Code look and a keyboard-first desi
 - **Git at a glance**: status badges in the tree, change bars in the gutter,
   a commit history tab.
 - **Four explorer views**: files, bookmarks (folders, files, web pages and
-  saved workspaces), notes (plain text, Markdown, Org) and SSH machines
-  browsed over SSHFS.
+  saved workspaces), notes (plain text, Markdown, Org, Canvas) and SSH
+  machines browsed over SSHFS.
+- **Canvas notes**: a free page of text boxes, pictures, shapes, tables,
+  lines and arrows that follow the blocks they join, saved automatically
+  and exportable as a picture.
 - **Workspaces**: up to eight, each with its own folder, panels, editors and
   terminals, restored at the next launch. Save one as a **bookmark** to
-  reopen that whole session later, in a new workspace.
+  reopen that whole session later, in a new workspace. Save panel
+  arrangements as named **layouts** and switch between them with `Alt+L`.
 - **Keyboard first**: the same key for the same action in every view, and a
   cheat sheet on `?`.
 - **Themes and fonts**: Dark Modern, Light Modern, High Contrast Dark, six
-  decade themes, or your own INI file.
+  decade themes, Dark LightRed, or your own INI file.
 
 ## Quick start
 

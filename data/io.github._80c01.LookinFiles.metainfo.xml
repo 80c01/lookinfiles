@@ -15,9 +15,13 @@
     </p>
     <ul>
       <li>Previews of text, code, images, PDF, office documents, archives, databases, mail and many more formats</li>
-      <li>Editor tabs in Notepad, Emacs or Vim mode, with Org-mode and code navigation</li>
-      <li>Embedded terminal panes</li>
-      <li>Search in files, Git status, notes and workspaces</li>
+      <li>Video player</li>
+      <li>Editor tabs in Notepad, Emacs or Vim mode, with Org-mode, code navigation and a tagbar of symbols and headings</li>
+      <li>Embedded terminal panes and browser tabs for web development</li>
+      <li>Fuzzy file finder, search in files and Git status</li>
+      <li>Notes in plain text, Markdown, Org-mode or Canvas (a free page of text, pictures and shapes)</li>
+      <li>Bookmarks and remote machines browsed over SSHFS</li>
+      <li>Workspaces and saved panel layouts</li>
       <li>Themes and font settings</li>
     </ul>
   </description>
