@@ -22,6 +22,11 @@ static AppSearchBar* active_bar(AppData* app) {
     return app->search_in_viewer ? &app->viewer_search : &app->explorer_search;
 }
 
+/* Vertical scroll of the preview */
+static GtkAdjustment* viewer_vadj(AppData* app) {
+    return app->text_view != NULL ? gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(app->text_view)) : NULL;
+}
+
 static gboolean bar_open(AppData* app) {
     AppSearchBar* sb = active_bar(app);
     return sb->bar != NULL && gtk_widget_get_visible(sb->bar);
@@ -414,7 +419,8 @@ void show_search(AppData* app, gboolean from_viewer, gboolean backward) {
     /* Where C-g (Emacs) goes back to */
     ExplorerRow* selected = tree_nav_selected(app);
     app->search_origin_row = selected != NULL ? (gint)explorer_tree_position(app->tree, selected) : -1;
-    app->search_origin_scroll = app->viewer_vadj != NULL ? gtk_adjustment_get_value(app->viewer_vadj) : 0.0;
+    GtkAdjustment* vadj = viewer_vadj(app);
+    app->search_origin_scroll = vadj != NULL ? gtk_adjustment_get_value(vadj) : 0.0;
     AppSearchBar* sb = active_bar(app);
     style_bar(app, sb);
     gtk_widget_set_visible(sb->bar, TRUE);
@@ -471,8 +477,9 @@ static void cancel_search(AppData* app) {
         GtkTextIter it;
         gtk_text_buffer_get_iter_at_mark(app->buffer, &it, gtk_text_buffer_get_insert(app->buffer));
         gtk_text_buffer_select_range(app->buffer, &it, &it);
-        if (app->viewer_vadj != NULL) {
-            gtk_adjustment_set_value(app->viewer_vadj, app->search_origin_scroll);
+        GtkAdjustment* vadj = viewer_vadj(app);
+        if (vadj != NULL) {
+            gtk_adjustment_set_value(vadj, app->search_origin_scroll);
         }
         app->viewer_match = -1;
     } else if (app->search_origin_row >= 0 &&

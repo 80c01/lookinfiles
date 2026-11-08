@@ -9,6 +9,7 @@
 #include "ps_convert.h"
 #include "code_outline_tree.h"
 #include "preview_tagbar.h"
+#include "minimap.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
@@ -619,7 +620,7 @@ static gint pdf_fit_width(AppData* app) {
     gint alloc_w = gtk_widget_get_width(scroller != NULL ? scroller : app->text_view);
     /* The minimap appears once the tall content is loaded and then takes its
      * width from the viewport: reserve it up front. */
-    if (app->minimap != NULL && !gtk_widget_get_visible(app->minimap)) {
+    if (minimap_viewer_is_hidden(app)) {
         alloc_w -= MINIMAP_WIDTH;
     }
     return (alloc_w > 120) ? (alloc_w - 60) : 700;

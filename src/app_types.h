@@ -285,13 +285,8 @@ typedef struct {
     /* Split-handle drag and its size popup (panels.c), NULL before panels_size_popup_attach() */
     struct PaneDrag* pane_drag;
 
-    /* Minimap: scaled file overview right of viewer */
-    GtkWidget* minimap;
-    GtkAdjustment* viewer_vadj;  /* vertical scroll adjustment */
-    MinimapCache mm_cache;
-    gboolean mm_dragging;
-    gdouble mm_grab;             /* slider drag: pointer y minus slider top */
-    guint mm_vis_source;         /* idle source for safe visibility toggle */
+    /* Minimap right of the preview (minimap.c), NULL before minimap_viewer_new() */
+    struct ViewerMinimap* viewer_minimap;
 
     /* Layout of the viewer/terminal pair (Ctrl+Shift+L) */
     GtkWidget* viewer_box;   /* right pane content: viewer + minimap */

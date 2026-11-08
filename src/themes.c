@@ -97,7 +97,7 @@ static void queue_draw_tree(GtkWidget* widget) {
 
 /* Editor tabs of every workspace: minimap caches cleared, status (zoom) updated */
 static void refresh_editor_tabs(AppData* app) {
-    minimap_cache_clear(&app->mm_cache);
+    minimap_viewer_cache_clear(app);
     GHashTable* seen = g_hash_table_new(g_direct_hash, g_direct_equal);
     for (gint w = -1; w < app->num_workspaces; w++) {
         GList* editors = (w < 0) ? app->editors : app->workspaces[w].editors;

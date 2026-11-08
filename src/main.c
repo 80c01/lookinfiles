@@ -416,13 +416,6 @@ int main(int argc, char** argv) {
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(right_scroll), text_view);
 
-    /* Minimap column */
-    GtkWidget* minimap = gtk_drawing_area_new();
-    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(minimap), MINIMAP_WIDTH);
-    gtk_widget_set_size_request(minimap, MINIMAP_WIDTH, -1);
-    gtk_widget_set_vexpand(minimap, TRUE);
-    gtk_widget_set_visible(minimap, FALSE);
-
     /* Viewer zone: notebook (page 0 is preview stack, additional pages are editor tabs) */
     GtkWidget* preview_stack = gtk_stack_new();
     gtk_widget_set_name(preview_stack, "preview-stack");
@@ -607,7 +600,7 @@ int main(int argc, char** argv) {
     gtk_widget_set_hexpand(text_row, TRUE);
     gtk_widget_set_vexpand(text_row, TRUE);
     gtk_box_append(GTK_BOX(text_row), color_column_wrap(right_scroll, text_view));
-    gtk_box_append(GTK_BOX(text_row), minimap);
+    gtk_box_append(GTK_BOX(text_row), minimap_viewer_new(app, right_scroll));
     gtk_box_append(GTK_BOX(text_page), preview_tagbar_wrap(app, preview_full_wrap(app, text_row), text_view));
     color_column_hide_on_change(text_view);
     video_preview_init(app);
@@ -623,33 +616,6 @@ int main(int argc, char** argv) {
                      G_CALLBACK(on_notebook_page_reordered), app);
     editor_notebook_enable_tab_drop(app, notebook);
     editor_notebook_enable_tab_drop(app, editor_notebook);
-
-    app->minimap = minimap;
-    app->viewer_vadj =
-        gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(right_scroll));
-    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(minimap), on_minimap_draw, app, NULL);
-    diff_gutter_add_companion(text_view, minimap);
-
-    GtkGesture* mm_click = gtk_gesture_click_new();
-    g_signal_connect(mm_click, "pressed", G_CALLBACK(on_minimap_pressed), app);
-    g_signal_connect(mm_click, "released", G_CALLBACK(on_minimap_released), app);
-    gtk_widget_add_controller(minimap, GTK_EVENT_CONTROLLER(mm_click));
-
-    GtkEventController* mm_motion = gtk_event_controller_motion_new();
-    g_signal_connect(mm_motion, "motion", G_CALLBACK(on_minimap_motion), app);
-    gtk_widget_add_controller(minimap, mm_motion);
-    minimap_attach_wheel(minimap, text_view);
-
-    g_signal_connect(minimap, "resize",
-                     G_CALLBACK(on_minimap_resize), app);
-    g_signal_connect(minimap, "realize",
-                     G_CALLBACK(on_minimap_realize), app);
-    g_signal_connect(app->buffer, "changed",
-                     G_CALLBACK(on_minimap_buffer_changed), app);
-    g_signal_connect(app->viewer_vadj, "value-changed",
-                     G_CALLBACK(on_minimap_scroll), app);
-    g_signal_connect(app->viewer_vadj, "changed",
-                     G_CALLBACK(on_minimap_adj_changed), app);
 
     create_help_panel(GTK_WINDOW(window), app);
 
@@ -816,6 +782,7 @@ int main(int argc, char** argv) {
     stop_directory_monitors(app);
     git_tab_cleanup(app);
     panels_size_popup_free(app);
+    minimap_viewer_free(app);
     if (app->git_statuses != NULL) {
         g_hash_table_destroy(app->git_statuses);
         app->git_statuses = NULL;

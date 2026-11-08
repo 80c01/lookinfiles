@@ -14,6 +14,16 @@ void minimap_cache_clear(MinimapCache* cache);
 void minimap_press_view(GtkWidget* minimap, GtkTextView* text_view, gdouble y, gdouble* grab);
 void minimap_drag_view(GtkWidget* minimap, GtkTextView* text_view, gdouble y, gdouble grab);
 
+/* The preview's minimap, beside text_view in scroll (once, when the window
+ * is built); NULL-safe calls below before it exists and after its free */
+GtkWidget* minimap_viewer_new(AppData* app, GtkWidget* scroll);
+/* TRUE while the preview's minimap exists but is hidden */
+gboolean minimap_viewer_is_hidden(AppData* app);
+/* Drop the preview minimap's render (theme changed) */
+void minimap_viewer_cache_clear(AppData* app);
+/* Free the preview minimap's state (at exit) */
+void minimap_viewer_free(AppData* app);
+
 void minimap_invalidate(AppData* app);
 void minimap_update_visibility(AppData* app);
 /* Mouse wheel over minimap scrolls text_view */
@@ -27,15 +37,5 @@ GtkWidget* minimap_new_for_view(GtkWidget* text_view);
 void editor_minimap_init(EditorTab* tab);
 void editor_minimap_invalidate(EditorTab* tab);
 void editor_minimap_update_visibility(EditorTab* tab);
-
-void on_minimap_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data);
-void on_minimap_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data);
-void on_minimap_motion(GtkEventControllerMotion* ctrl, gdouble x, gdouble y, gpointer data);
-void on_minimap_released(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data);
-void on_minimap_buffer_changed(GtkTextBuffer* buffer, gpointer data);
-void on_minimap_scroll(GtkAdjustment* adjustment, gpointer data);
-void on_minimap_adj_changed(GtkAdjustment* adjustment, gpointer data);
-void on_minimap_resize(GtkDrawingArea* area, gint width, gint height, gpointer data);
-void on_minimap_realize(GtkWidget* widget, gpointer data);
 
 #endif /* MINIMAP_H */
