@@ -1,0 +1,68 @@
+name: Bug report
+description: Something does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please check
+        [troubleshooting](https://github.com/80c01/lookinfiles/blob/main/docs/user-guide/troubleshooting.md)
+        and the existing issues first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a folder with ...
+        2. Select ...
+        3. Press ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: LookinFiles version
+      description: Output of `lookinfiles --version`.
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installed from
+      options:
+        - Built from source
+        - .deb package
+        - Arch package
+        - Fedora .rpm
+        - Flatpak
+        - AppImage
+        - Windows build
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: Distribution or Windows version, desktop, X11 or Wayland.
+      placeholder: Ubuntu 24.04, GNOME, Wayland
+    validations:
+      required: true
+  - type: textarea
+    id: deps
+    attributes:
+      label: Libraries found
+      description: When built from source, paste the output of `make deps`.
+      render: text
+  - type: textarea
+    id: log
+    attributes:
+      label: Terminal output
+      description: Warnings or errors printed when running `lookinfiles` from a terminal.
+      render: text
