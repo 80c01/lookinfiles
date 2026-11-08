@@ -22,5 +22,9 @@ void workspace_remove(AppData* app, gint idx);
 void workspace_restore_state(AppData* app, gint idx, const gchar* dir, const gchar* const* expanded,
                              const gchar* selected, gboolean show_hidden, gint sort_mode, gint view);
 GtkWidget* create_workspace_minimap(AppData* app);
+/* Redraw the minimap (a workspace's layout changed) */
+void workspace_minimap_redraw(AppData* app);
+/* Forget the minimap and the layout being applied (at exit) */
+void workspace_view_free(AppData* app);
 
 #endif /* WORKSPACE_H */

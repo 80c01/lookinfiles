@@ -224,14 +224,10 @@ typedef struct AppData {
     VirtualLayout workspaces[MAX_VIRTUAL_LAYOUTS];
     gint num_workspaces;
     gint current_ws;
-    gint hover_ws;
     gboolean switching_ws;
     gboolean applying_layout;
     gboolean dir_scan_pending;
-    guint layout_tick_id;
-    gint layout_apply_frames;
-    gint layout_retry_count;
-    GtkWidget* ws_minimap;
+    struct WorkspaceView* workspace_view; /* minimap and layout being applied (workspace.c), or NULL */
     GtkWidget* layouts_btn;       /* top-bar button: anchor of the Alt+L layout switcher */
 
     /* VS Code-style chrome: explorer panel header and bottom status bar */

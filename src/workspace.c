@@ -24,6 +24,24 @@
 #include "video_tab.h"
 #include "games.h"
 
+/* Private to this file: the workspace minimap of the top bar and the layout
+ * being applied after a switch */
+struct WorkspaceView {
+    GtkWidget* minimap;  /* top-bar minimap (create_workspace_minimap()), or NULL */
+    gint hover;          /* workspace under the pointer in the minimap, -1: none */
+    guint tick_id;       /* tick callback applying split positions, 0: none */
+    gint apply_frames;   /* frames since the positions started to be applied */
+    gint retry_count;    /* waits for the widgets to be allocated */
+};
+
+static struct WorkspaceView* view_get(AppData* app) {
+    if (app->workspace_view == NULL) {
+        app->workspace_view = g_new0(struct WorkspaceView, 1);
+        app->workspace_view->hover = -1;
+    }
+    return app->workspace_view;
+}
+
 #define WS_CELL_W   32
 #define WS_ADD_W    22
 #define WS_CELL_H   20
@@ -66,17 +84,18 @@ static gboolean ws_paths_equal(GHashTable* a, GHashTable* b) {
 }
 
 static void ws_minimap_update_size(AppData* app) {
-    if (app == NULL || app->ws_minimap == NULL) {
+    if (app == NULL || app->workspace_view == NULL || app->workspace_view->minimap == NULL) {
         return;
     }
+    struct WorkspaceView* v = view_get(app);
     gboolean has_add = (app->num_workspaces < MAX_VIRTUAL_LAYOUTS);
     gint total_w = WS_PAD_X * 2 + app->num_workspaces * WS_CELL_W +
                    (app->num_workspaces - 1) * WS_CELL_GAP +
                    (has_add ? (WS_CELL_GAP + WS_ADD_W) : 0);
     gint total_h = WS_CELL_H + WS_PAD_Y * 2;
-    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(app->ws_minimap), total_w);
-    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(app->ws_minimap), total_h);
-    gtk_widget_queue_draw(app->ws_minimap);
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(v->minimap), total_w);
+    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(v->minimap), total_h);
+    gtk_widget_queue_draw(v->minimap);
 }
 
 /* Default view of a workspace: files view of `dir` (hidden files off, sorted
@@ -108,15 +127,16 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
 }
 
 void workspaces_init(AppData* app) {
+    struct WorkspaceView* v = view_get(app);
     app->num_workspaces = 1;
     app->current_ws = 0;
-    app->hover_ws = -1;
+    v->hover = -1;
     app->switching_ws = FALSE;
     app->applying_layout = FALSE;
     app->dir_scan_pending = FALSE;
-    app->layout_tick_id = 0;
-    app->layout_apply_frames = 0;
-    app->layout_retry_count = 0;
+    v->tick_id = 0;
+    v->apply_frames = 0;
+    v->retry_count = 0;
     init_workspace_slot(app, 0, app->base_dir);
 #ifdef HAVE_VTE
     terminal_workspace_shown(app, &app->workspaces[0]);
@@ -129,6 +149,7 @@ void workspace_save_current(AppData* app) {
         app->left_vbox == NULL || app->viewer_box == NULL || app->term_scroll == NULL) {
         return;
     }
+    struct WorkspaceView* v = view_get(app);
     VirtualLayout* ws = &app->workspaces[app->current_ws];
     ws->files_vis = gtk_widget_get_visible(app->left_vbox);
     ws->preview_vis = gtk_widget_get_visible(app->viewer_box);
@@ -176,8 +197,8 @@ void workspace_save_current(AppData* app) {
             gtk_orientable_get_orientation(GTK_ORIENTABLE(app->right_paned));
     }
 
-    if (app->ws_minimap != NULL) {
-        gtk_widget_queue_draw(app->ws_minimap);
+    if (v->minimap != NULL) {
+        gtk_widget_queue_draw(v->minimap);
     }
 }
 
@@ -283,7 +304,7 @@ static gboolean apply_ws_positions_now(AppData* app) {
                        ? gtk_widget_get_height(app->right_paned)
                        : gtk_widget_get_width(app->right_paned);
         if (ws->right_orient == GTK_ORIENTATION_HORIZONTAL) {
-            if (app->layout_apply_frames <= 1 || len <= 40) {
+            if (view_get(app)->apply_frames <= 1 || len <= 40) {
                 len = right_w;
             }
         } else if (len <= 40 && mh > 40) {
@@ -315,22 +336,23 @@ static gboolean workspace_apply_positions_tick(GtkWidget* widget,
     (void)widget;
     (void)frame_clock;
     AppData* app = (AppData*)data;
-    app->layout_apply_frames++;
+    struct WorkspaceView* v = view_get(app);
+    v->apply_frames++;
 
-    if (app->layout_apply_frames <= 3) {
+    if (v->apply_frames <= 3) {
         gboolean ready = apply_ws_positions_now(app);
-        if (!ready && app->layout_apply_frames == 2 && app->layout_retry_count < 10) {
-            app->layout_retry_count++;
-            app->layout_apply_frames = 1; /* wait until widgets are allocated */
+        if (!ready && v->apply_frames == 2 && v->retry_count < 10) {
+            v->retry_count++;
+            v->apply_frames = 1; /* wait until widgets are allocated */
         }
         return G_SOURCE_CONTINUE;
     }
 
     app->applying_layout = FALSE;
-    app->layout_tick_id = 0;
+    v->tick_id = 0;
     pdf_preview_refit(app); /* the pane sizes are final now */
-    if (app->ws_minimap != NULL) {
-        gtk_widget_queue_draw(app->ws_minimap);
+    if (v->minimap != NULL) {
+        gtk_widget_queue_draw(v->minimap);
     }
     return G_SOURCE_REMOVE;
 }
@@ -339,12 +361,13 @@ void workspace_apply_positions(AppData* app) {
     if (app == NULL || app->main_paned == NULL) {
         return;
     }
+    struct WorkspaceView* v = view_get(app);
     app->applying_layout = TRUE;
-    app->layout_apply_frames = 0;
-    app->layout_retry_count = 0;
+    v->apply_frames = 0;
+    v->retry_count = 0;
     apply_ws_positions_now(app);
-    if (app->layout_tick_id == 0) {
-        app->layout_tick_id = gtk_widget_add_tick_callback(
+    if (v->tick_id == 0) {
+        v->tick_id = gtk_widget_add_tick_callback(
             app->main_paned, workspace_apply_positions_tick, app, NULL);
     }
 }
@@ -777,12 +800,13 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
     (void)area;
     (void)width;
     AppData* app = (AppData*)data;
+    struct WorkspaceView* v = view_get(app);
     gdouble start_y = (height - WS_CELL_H) * 0.5;
 
     for (gint i = 0; i < app->num_workspaces; i++) {
         VirtualLayout* ws = &app->workspaces[i];
         gboolean is_active = (i == app->current_ws);
-        gboolean is_hover = (i == app->hover_ws);
+        gboolean is_hover = (i == v->hover);
         gdouble bx = WS_PAD_X + i * (WS_CELL_W + WS_CELL_GAP);
         gdouble by = start_y;
 
@@ -911,7 +935,7 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
 
     /* Draw the '+' Add Workspace button at the right end (Ubuntu style) */
     if (app->num_workspaces < MAX_VIRTUAL_LAYOUTS) {
-        gboolean add_hover = (app->hover_ws == app->num_workspaces);
+        gboolean add_hover = (v->hover == app->num_workspaces);
         gdouble ax = WS_PAD_X + app->num_workspaces * (WS_CELL_W + WS_CELL_GAP);
         gdouble ay = start_y;
 
@@ -983,7 +1007,7 @@ static void on_ws_minimap_pressed(GtkGestureClick* gesture, gint n_press,
         return;
     }
     if (button == GDK_BUTTON_SECONDARY) {
-        workspace_menu_popup(app, app->ws_minimap, x, y, idx, workspace_remove);
+        workspace_menu_popup(app, view_get(app)->minimap, x, y, idx, workspace_remove);
     } else if (button == GDK_BUTTON_MIDDLE) {
         workspace_remove(app, idx);
     } else if (button == GDK_BUTTON_PRIMARY) {
@@ -996,19 +1020,21 @@ static void on_ws_minimap_motion(GtkEventControllerMotion* ctrl,
     (void)ctrl;
     (void)y;
     AppData* app = (AppData*)data;
+    struct WorkspaceView* v = view_get(app);
     gint idx = ws_index_at_x(app, x);
-    if (idx != app->hover_ws) {
-        app->hover_ws = idx;
-        gtk_widget_queue_draw(app->ws_minimap);
+    if (idx != v->hover) {
+        v->hover = idx;
+        gtk_widget_queue_draw(v->minimap);
     }
 }
 
 static void on_ws_minimap_leave(GtkEventControllerMotion* ctrl, gpointer data) {
     (void)ctrl;
     AppData* app = (AppData*)data;
-    if (app->hover_ws != -1) {
-        app->hover_ws = -1;
-        gtk_widget_queue_draw(app->ws_minimap);
+    struct WorkspaceView* v = view_get(app);
+    if (v->hover != -1) {
+        v->hover = -1;
+        gtk_widget_queue_draw(v->minimap);
     }
 }
 
@@ -1052,7 +1078,19 @@ GtkWidget* create_workspace_minimap(AppData* app) {
     g_signal_connect(scroll, "scroll", G_CALLBACK(on_ws_minimap_scroll), app);
     gtk_widget_add_controller(area, scroll);
 
-    app->ws_minimap = area;
+    view_get(app)->minimap = area;
     ws_minimap_update_size(app);
     return area;
+}
+
+void workspace_minimap_redraw(AppData* app) {
+    struct WorkspaceView* v = (app != NULL) ? app->workspace_view : NULL;
+    if (v != NULL && v->minimap != NULL) {
+        gtk_widget_queue_draw(v->minimap);
+    }
+}
+
+void workspace_view_free(AppData* app) {
+    /* After the main loop: no frame can run the tick callback any more */
+    g_clear_pointer(&app->workspace_view, g_free);
 }

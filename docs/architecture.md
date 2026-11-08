@@ -687,7 +687,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   scroll position, is taken out of the notebook on a switch and put back
   when its workspace returns (`help_guide_workspace_hidden()` / `_shown()`).
 - `workspace` — virtual workspaces (Alt+1..8): save/apply layout snapshots,
-  top-bar workspace minimap. A new workspace (Alt++) starts from the default
+  top-bar workspace minimap (`workspace_minimap_redraw()`; the minimap and
+  the layout being applied are private, `struct WorkspaceView`). A new workspace (Alt++) starts from the default
   view (start directory, files view) with the panels of the default layout
   (`layout_store_load_default()`), never from a copy of the current one. The
   first workspace gets the same panels at startup

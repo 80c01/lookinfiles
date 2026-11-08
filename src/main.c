@@ -705,6 +705,7 @@ int main(int argc, char** argv) {
     preview_state_free(app);
     sidebar_free(app);
     topbar_free(app);
+    workspace_view_free(app);
     status_bar_free(app);
     if (app->buffers != NULL) {
         g_ptr_array_unref(app->buffers);

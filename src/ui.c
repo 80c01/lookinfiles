@@ -508,8 +508,6 @@ void layout_toggle(AppData* app) {
         app->workspaces[app->current_ws].right_orient = next_orient;
     }
     layout_build(app, next_orient);
-    if (app->ws_minimap != NULL) {
-        gtk_widget_queue_draw(app->ws_minimap);
-    }
+    workspace_minimap_redraw(app);
 }
 
