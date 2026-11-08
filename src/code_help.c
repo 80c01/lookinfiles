@@ -3,6 +3,7 @@
 #include "text_tags.h"
 #include "code_intel.h"
 #include "code_scan.h"
+#include "i18n.h"
 #include "markdown.h"
 #include "theme.h"
 #include <string.h>
@@ -283,7 +284,7 @@ static void on_found(AppData* app, EditorTab* tab, const CodeMatch* match, const
     }
     if (match == NULL) {
         if (kind == CARD_HELP && h->message != NULL) {
-            gchar* msg = g_strdup_printf("No information found for %s", h->word);
+            gchar* msg = g_strdup_printf(_("No information found for %s"), h->word);
             h->message(tab, msg);
             g_free(msg);
         }
@@ -300,8 +301,11 @@ static void on_found(AppData* app, EditorTab* tab, const CodeMatch* match, const
         append_escaped(md, doc, -1);
         g_string_append(md, "\n\n");
     }
-    g_string_append_printf(md, "*%s%s* · %s:%d", code_symbol_kind_name(sym->kind),
-                           sym->declaration ? " declaration" : "", shown_path(match->path, root), sym->line + 1);
+    const gchar* kind_name = code_symbol_kind_name(sym->kind);
+    /* TRANSLATORS: %s is a symbol kind, e.g. "function" */
+    gchar* what = sym->declaration ? g_strdup_printf(_("%s declaration"), kind_name) : g_strdup(kind_name);
+    g_string_append_printf(md, "*%s* · %s:%d", what, shown_path(match->path, root), sym->line + 1);
+    g_free(what);
     show_card(h, kind, md->str);
     g_string_free(md, TRUE);
 }
@@ -309,7 +313,7 @@ static void on_found(AppData* app, EditorTab* tab, const CodeMatch* match, const
 static void index_lookup(CodeHelp* h, const gchar* name) {
     if (!code_nav_find(h->app, h->tab, name, on_found, GUINT_TO_POINTER(h->serial)) && h->asked == CARD_HELP &&
         h->message != NULL) {
-        h->message(h->tab, "No code information for this file type");
+        h->message(h->tab, _("No code information for this file type"));
     }
 }
 
@@ -324,7 +328,7 @@ static void on_hover(AppData* app, EditorTab* tab, const gchar* markdown, gpoint
 /* Help for the identifier at it (from the keyboard, or under the mouse) */
 static void request_help(CodeHelp* h, const GtkTextIter* it, CardKind kind) {
     if (!code_nav_is_code(h->tab)) {
-        if (kind == CARD_HELP && h->message != NULL) h->message(h->tab, "No code information for this file type");
+        if (kind == CARD_HELP && h->message != NULL) h->message(h->tab, _("No code information for this file type"));
         return;
     }
     GtkTextIter s = *it;
@@ -349,7 +353,7 @@ static void request_help(CodeHelp* h, const GtkTextIter* it, CardKind kind) {
             show_card(h, kind, diagnostics);
             return;
         }
-        if (kind == CARD_HELP && h->message != NULL) h->message(h->tab, "No identifier under the cursor");
+        if (kind == CARD_HELP && h->message != NULL) h->message(h->tab, _("No identifier under the cursor"));
         return;
     }
     code_help_hide(h->tab);
@@ -419,7 +423,7 @@ static void on_signature(AppData* app, EditorTab* tab, const LspSignature* sig, 
 static void request_signature(CodeHelp* h, gboolean explicit_) {
     EditorTab* tab = h->tab;
     if (!code_nav_is_code(tab)) {
-        if (explicit_ && h->message != NULL) h->message(tab, "No code information for this file type");
+        if (explicit_ && h->message != NULL) h->message(tab, _("No code information for this file type"));
         return;
     }
     GtkTextIter it, s, e;
@@ -435,7 +439,7 @@ static void request_signature(CodeHelp* h, gboolean explicit_) {
     if (!code_scan_call_at(line, -1, index, lang, &ns, &ne, &arg)) {
         g_free(line);
         hide_kind(h, CARD_SIGNATURE);
-        if (explicit_ && h->message != NULL) h->message(tab, "The cursor is not in a function call");
+        if (explicit_ && h->message != NULL) h->message(tab, _("The cursor is not in a function call"));
         return;
     }
     if (h->showing != CARD_SIGNATURE) code_help_hide(tab);

@@ -7,6 +7,7 @@
 #include "code_scan.h"
 #include "editor.h"
 #include "file_types.h"
+#include "i18n.h"
 #include "jump_list.h"
 #include <string.h>
 
@@ -103,7 +104,7 @@ static CodeLang tab_lang(EditorTab* tab) {
 
 const gchar* code_nav_backend_label(EditorTab* tab) {
     if (!code_nav_is_code(tab)) return NULL;
-    return code_tags_program() != NULL ? "ctags" : "built-in index";
+    return code_tags_program() != NULL ? "ctags" : _("built-in index");
 }
 
 gboolean code_nav_is_code(EditorTab* tab) {
@@ -268,40 +269,51 @@ static void lookup_done(GObject* source, GAsyncResult* res, gpointer data) {
     if (target != NULL) {
         EditorTab* dest = jump(app, lk->tab, target->path, target->symbol->line, target->symbol->column);
         gchar* msg;
-        const gchar* what = target->symbol->declaration ? "Declaration" : "Definition";
+        gboolean decl = target->symbol->declaration;
         const gchar* path = shown_path(target->path, lk->root);
+        const gchar* kind = code_symbol_kind_name(target->symbol->kind);
+        gint line = target->symbol->line + 1;
         if (dest == NULL) {
-            msg = g_strdup_printf("%s of %s is in %s:%d, which cannot be opened in an editor tab", what,
-                                  lk->name, path, target->symbol->line + 1);
+            msg = g_strdup_printf(decl ? _("Declaration of %1$s is in %2$s:%3$d, which cannot be opened in an editor tab")
+                                       : _("Definition of %1$s is in %2$s:%3$d, which cannot be opened in an editor tab"),
+                                  lk->name, path, line);
         } else if (count > 1) {
-            msg = g_strdup_printf("%s of %s (%s): %s:%d, 1 of %u%s", what, lk->name,
-                                  code_symbol_kind_name(target->symbol->kind), path, target->symbol->line + 1,
-                                  count, lk->truncated ? " (partial search)" : "");
+            msg = g_strdup_printf(decl ? _("Declaration of %1$s (%2$s): %3$s:%4$d, 1 of %5$u")
+                                       : _("Definition of %1$s (%2$s): %3$s:%4$d, 1 of %5$u"),
+                                  lk->name, kind, path, line, count);
         } else {
-            msg = g_strdup_printf("%s of %s (%s): %s:%d%s", what, lk->name,
-                                  code_symbol_kind_name(target->symbol->kind), path, target->symbol->line + 1,
-                                  lk->truncated ? " (partial search)" : "");
+            msg = g_strdup_printf(decl ? _("Declaration of %1$s (%2$s): %3$s:%4$d")
+                                       : _("Definition of %1$s (%2$s): %3$s:%4$d"),
+                                  lk->name, kind, path, line);
+        }
+        if (dest != NULL && lk->truncated) {
+            /* TRANSLATORS: appended to a "Definition of ..." message */
+            gchar* full = g_strconcat(msg, _(" (partial search)"), NULL);
+            g_free(msg);
+            msg = full;
         }
         say(lk->message, dest != NULL ? dest : lk->tab, msg);
         g_free(msg);
         return;
     }
     if (on_symbol) {
-        gchar* msg = g_strdup_printf("%s is defined here (no other %s found)", lk->name,
-                                     lk->declaration ? "declaration" : "definition");
+        gchar* msg = g_strdup_printf(lk->declaration ? _("%s is defined here (no other declaration found)")
+                                                     : _("%s is defined here (no other definition found)"),
+                                     lk->name);
         say(lk->message, lk->tab, msg);
         g_free(msg);
         return;
     }
     if (lk->local_found) {
         EditorTab* dest = jump(app, lk->tab, lk->origin, lk->local_line, lk->local_column);
-        gchar* msg = g_strdup_printf("No definition of %s found: first use in this scope", lk->name);
+        gchar* msg = g_strdup_printf(_("No definition of %s found: first use in this scope"), lk->name);
         say(lk->message, dest != NULL ? dest : lk->tab, msg);
         g_free(msg);
         return;
     }
-    gchar* msg = g_strdup_printf("No definition found for %s%s", lk->name,
-                                 lk->truncated ? " (partial search: project too large)" : "");
+    gchar* msg = g_strdup_printf(lk->truncated ? _("No definition found for %s (partial search: project too large)")
+                                               : _("No definition found for %s"),
+                                 lk->name);
     say(lk->message, lk->tab, msg);
     g_free(msg);
 }
@@ -410,16 +422,26 @@ static void on_server_definition(AppData* app, EditorTab* tab, GPtrArray* locati
     gchar* root = code_index_project_root(sl->origin);
     gchar* server = code_intel_server_label(app, tab);
     EditorTab* dest = jump(app, tab, target->path, target->line, target->column);
-    const gchar* what = sl->declaration ? "Declaration" : "Definition";
-    gchar* count_text = count > 1 ? g_strdup_printf(", 1 of %u", count) : g_strdup("");
-    gchar* msg = dest == NULL
-                     ? g_strdup_printf("%s of %s is in %s:%d, which cannot be opened in an editor tab", what, sl->name,
-                                       shown_path(target->path, root), target->line + 1)
-                     : g_strdup_printf("%s of %s: %s:%d%s (%s)", what, sl->name, shown_path(target->path, root),
-                                       target->line + 1, count_text, server != NULL ? server : "language server");
+    gboolean decl = sl->declaration;
+    const gchar* path = shown_path(target->path, root);
+    const gchar* by = server != NULL ? server : _("language server");
+    gchar* msg;
+    if (dest == NULL) {
+        msg = g_strdup_printf(decl ? _("Declaration of %1$s is in %2$s:%3$d, which cannot be opened in an editor tab")
+                                   : _("Definition of %1$s is in %2$s:%3$d, which cannot be opened in an editor tab"),
+                              sl->name, path, target->line + 1);
+    } else if (count > 1) {
+        /* TRANSLATORS: the last %s is the language server, e.g. clangd */
+        msg = g_strdup_printf(decl ? _("Declaration of %1$s: %2$s:%3$d, 1 of %4$u (%5$s)")
+                                   : _("Definition of %1$s: %2$s:%3$d, 1 of %4$u (%5$s)"),
+                              sl->name, path, target->line + 1, count, by);
+    } else {
+        /* TRANSLATORS: the last %s is the language server, e.g. clangd */
+        msg = g_strdup_printf(decl ? _("Declaration of %1$s: %2$s:%3$d (%4$s)") : _("Definition of %1$s: %2$s:%3$d (%4$s)"),
+                              sl->name, path, target->line + 1, by);
+    }
     say(sl->message, dest != NULL ? dest : tab, msg);
     g_free(msg);
-    g_free(count_text);
     g_free(server);
     g_free(root);
     server_lookup_free(sl);
@@ -429,7 +451,7 @@ gboolean code_nav_goto_definition(AppData* app, EditorTab* tab, gboolean declara
                                   CodeNavMessageFunc message) {
     if (app == NULL || tab == NULL || tab->buffer == NULL) return FALSE;
     if (!code_nav_is_code(tab)) {
-        say(message, tab, "No code navigation for this file type");
+        say(message, tab, _("No code navigation for this file type"));
         return FALSE;
     }
     GtkTextIter it, start, end;
@@ -443,7 +465,7 @@ gboolean code_nav_goto_definition(AppData* app, EditorTab* tab, gboolean declara
     gboolean found = code_word_at(text, -1, gtk_text_iter_get_line_index(&it), tab_lang(tab), &ws, &we);
     if (!found) {
         g_free(text);
-        say(message, tab, "No identifier under the cursor");
+        say(message, tab, _("No identifier under the cursor"));
         return FALSE;
     }
     gchar* name = g_strndup(text + ws, (gsize)(we - ws));
@@ -478,9 +500,9 @@ gboolean code_nav_goto_symbol(AppData* app, EditorTab* tab, const gchar* name, g
     gchar* clean = g_strstrip(g_strdup(name != NULL ? name : ""));
     gboolean ok = FALSE;
     if (clean[0] == '\0') {
-        say(message, tab, "Argument required: the name to look up");
+        say(message, tab, _("Argument required: the name to look up"));
     } else if (!code_nav_is_code(tab)) {
-        say(message, tab, "No code navigation for this file type");
+        say(message, tab, _("No code navigation for this file type"));
     } else {
         gint line = 0, col = 0;
         cursor_of(tab, &line, &col);
@@ -507,7 +529,7 @@ static gboolean walk_history(AppData* app, EditorTab* tab, gboolean back, CodeNa
     for (;;) {
         const JumpLocation* loc = back ? jump_list_back(nav->jumps, path, line, col) : jump_list_forward(nav->jumps);
         if (loc == NULL) {
-            say(message, tab, back ? "No previous location" : "No next location");
+            say(message, tab, back ? _("No previous location") : _("No next location"));
             g_free(path);
             return FALSE;
         }
@@ -516,7 +538,7 @@ static gboolean walk_history(AppData* app, EditorTab* tab, gboolean back, CodeNa
         if (show_location(app, loc)) {
             EditorTab* dest = editor_find_tab(app, where);
             gchar* base = g_path_get_basename(where);
-            gchar* msg = g_strdup_printf("%s %s:%d", back ? "Back to" : "Forward to", base, where_line + 1);
+            gchar* msg = g_strdup_printf(back ? _("Back to %1$s:%2$d") : _("Forward to %1$s:%2$d"), base, where_line + 1);
             say(message, dest, msg);
             g_free(msg);
             g_free(base);

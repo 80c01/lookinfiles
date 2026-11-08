@@ -4,6 +4,7 @@
 #include "code_outline.h"
 #include "code_scan.h"
 #include "dialog.h"
+#include "i18n.h"
 #include <string.h>
 
 #define RESPONSE_GO 1
@@ -171,8 +172,8 @@ static void show_picker(AppData* app, EditorTab* tab, GListStore* store, const g
     Picker* p = g_new0(Picker, 1);
     p->app = app;
     p->tab = tab;
-    gchar* title = g_strdup_printf("Symbols of %s", tab->name);
-    p->dialog = app_dialog_new(title, app->window, "_Cancel", APP_RESPONSE_CANCEL, "_Go To", RESPONSE_GO, NULL);
+    gchar* title = g_strdup_printf(_("Symbols of %s"), tab->name);
+    p->dialog = app_dialog_new(title, app->window, _("_Cancel"), APP_RESPONSE_CANCEL, _("_Go To"), RESPONSE_GO, NULL);
     g_free(title);
     app_dialog_set_width(APP_DIALOG(p->dialog), 560);
     app_dialog_set_default_response(APP_DIALOG(p->dialog), RESPONSE_GO);
@@ -185,7 +186,7 @@ static void show_picker(AppData* app, EditorTab* tab, GListStore* store, const g
     gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(p->dialog))), area);
 
     p->entry = gtk_search_entry_new();
-    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(p->entry), "Filter the symbols by name");
+    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(p->entry), _("Filter the symbols by name"));
     g_signal_connect(p->entry, "search-changed", G_CALLBACK(on_search_changed), p);
     g_signal_connect(p->entry, "activate", G_CALLBACK(on_entry_activate), p);
     GtkEventController* keys = gtk_event_controller_key_new();
@@ -211,7 +212,9 @@ static void show_picker(AppData* app, EditorTab* tab, GListStore* store, const g
     gtk_widget_set_margin_top(scroll, 6);
     gtk_box_append(GTK_BOX(area), scroll);
 
-    gchar* hint = g_strdup_printf("%u symbols (%s)", g_list_model_get_n_items(G_LIST_MODEL(store)), source);
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(store));
+    /* TRANSLATORS: %2$s is where the symbols come from, e.g. "built-in scanner" */
+    gchar* hint = g_strdup_printf(ngettext("%1$u symbol (%2$s)", "%1$u symbols (%2$s)", n), n, source);
     GtkWidget* note = gtk_label_new(hint);
     g_free(hint);
     gtk_widget_add_css_class(note, "dim-label");
@@ -245,18 +248,18 @@ static void on_outline(AppData* app, EditorTab* tab, GPtrArray* entries, const g
     if (entries->len == 0) {
         if (message != NULL) {
             gboolean scanned = code_nav_is_code(tab) && !code_scan_supported(code_lang_from_name(tab->path));
-            message(tab, scanned ? "No symbol scanner for this language" : "No symbols found in this file");
+            message(tab, scanned ? _("No symbol scanner for this language") : _("No symbols found in this file"));
         }
         return;
     }
     GListStore* store = g_list_store_new(CODE_TYPE_SYMBOL_ITEM);
     for (guint i = 0; i < entries->len; i++) {
         CodeOutlineEntry* e = g_ptr_array_index(entries, i);
-        gchar* detail = e->declaration                               ? g_strdup("declaration")
-                        : e->detail != NULL && e->container != NULL ? g_strdup_printf("%s · in %s", e->detail, e->container)
-                        : e->container != NULL                      ? g_strdup_printf("in %s", e->container)
+        gchar* detail = e->declaration                               ? g_strdup(_("declaration"))
+                        : e->detail != NULL && e->container != NULL ? g_strdup_printf(_("%1$s · in %2$s"), e->detail, e->container)
+                        : e->container != NULL                      ? g_strdup_printf(_("in %s"), e->container)
                                                                     : g_strdup(e->detail);
-        add_item(store, e->name, detail, e->level > 0 ? "heading" : code_symbol_kind_name(e->kind), e->line, e->column);
+        add_item(store, e->name, detail, e->level > 0 ? C_("symbol kind", "heading") : code_symbol_kind_name(e->kind), e->line, e->column);
         g_free(detail);
     }
     show_picker(app, tab, store, source);
@@ -265,7 +268,7 @@ static void on_outline(AppData* app, EditorTab* tab, GPtrArray* entries, const g
 void code_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
     if (app == NULL || tab == NULL || tab->buffer == NULL || app->window == NULL) return;
     if (!code_outline_supported(tab)) {
-        if (message != NULL) message(tab, "No code navigation for this file type");
+        if (message != NULL) message(tab, _("No code navigation for this file type"));
         return;
     }
     /* A function pointer through gpointer: the usual GLib callback idiom */

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 09:09+0000\n"
+"POT-Creation-Date: 2026-11-08 09:21+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -75,42 +75,35 @@ msgstr "Aperçu audio"
 #: src/audio.c:268 src/video.c:265
 #, c-format
 msgid "File:         %s\n"
-msgstr ""
-"Fichier :     %s\n"
+msgstr "Fichier :     %s\n"
 
 #: src/audio.c:269 src/video.c:266
 #, c-format
 msgid "Path:         %s\n"
-msgstr ""
-"Chemin :      %s\n"
+msgstr "Chemin :      %s\n"
 
 #: src/audio.c:270
 #, c-format
 msgid "Format:       %s\n"
-msgstr ""
-"Format :      %s\n"
+msgstr "Format :      %s\n"
 
 #: src/audio.c:271 src/video.c:268
 #, c-format
 msgid "Size:         %1$s (%2$s bytes)\n"
-msgstr ""
-"Taille :      %1$s (%2$s octets)\n"
+msgstr "Taille :      %1$s (%2$s octets)\n"
 
 #: src/audio.c:273 src/video.c:270
 #, c-format
 msgid "Permissions:  0%o\n"
-msgstr ""
-"Droits :      0%o\n"
+msgstr "Droits :      0%o\n"
 
 #: src/audio.c:275 src/video.c:272
 msgid "Mode:         Text / Raw mode active\n"
-msgstr ""
-"Mode :        texte / brut\n"
+msgstr "Mode :        texte / brut\n"
 
 #: src/audio.c:276
 msgid "              Press 'm' to switch to interactive audio player\n"
-msgstr ""
-"              m pour passer au lecteur audio interactif\n"
+msgstr "              m pour passer au lecteur audio interactif\n"
 
 #: src/audio.c:300
 #, c-format
@@ -124,13 +117,11 @@ msgstr ""
 #: src/audio.c:303 src/video.c:283
 #, c-format
 msgid "=== File Header Dump (first %zu bytes) ===\n"
-msgstr ""
-"=== Début du fichier (%zu premiers octets) ===\n"
+msgstr "=== Début du fichier (%zu premiers octets) ===\n"
 
 #: src/audio.c:324 src/video.c:304
 msgid "[ Cannot open file for reading ]\n"
-msgstr ""
-"[ Impossible d’ouvrir le fichier en lecture ]\n"
+msgstr "[ Impossible d’ouvrir le fichier en lecture ]\n"
 
 #: src/audio.c:396
 #, c-format
@@ -149,12 +140,12 @@ msgstr "Espace de travail enregistré"
 msgid "_Remove Bookmark"
 msgstr "_Retirer le signet"
 
-#: src/bookmark_dialog.c:198 src/bookmarks.c:577 src/editor.c:1729
-#: src/file_actions.c:42 src/file_actions.c:236 src/notes.c:587 src/notes.c:768
-#: src/notes.c:852 src/preferences.c:342 src/project_search.c:369
-#: src/remote.c:322 src/remote.c:389 src/remote.c:456 src/remote.c:487
-#: src/remote.c:564 src/session_bookmark.c:13 src/themes.c:222 src/themes.c:237
-#: src/themes.c:682
+#: src/bookmark_dialog.c:198 src/bookmarks.c:577 src/code_symbols.c:176
+#: src/editor.c:1729 src/file_actions.c:42 src/file_actions.c:236
+#: src/notes.c:587 src/notes.c:768 src/notes.c:852 src/preferences.c:342
+#: src/project_search.c:369 src/quick_open.c:368 src/remote.c:322
+#: src/remote.c:389 src/remote.c:456 src/remote.c:487 src/remote.c:564
+#: src/session_bookmark.c:13 src/themes.c:222 src/themes.c:237 src/themes.c:682
 msgid "_Cancel"
 msgstr "_Annuler"
 
@@ -367,6 +358,162 @@ msgstr "Trier A–Z / Z–A"
 msgid "Collapse / Expand All"
 msgstr "Tout replier / déplier"
 
+#: src/code_help.c:287
+#, c-format
+msgid "No information found for %s"
+msgstr "Aucune information trouvée pour %s"
+
+#. TRANSLATORS: %s is a symbol kind, e.g. "function"
+#: src/code_help.c:306
+#, c-format
+msgid "%s declaration"
+msgstr "déclaration (%s)"
+
+#: src/code_help.c:316 src/code_help.c:331 src/code_help.c:426
+msgid "No code information for this file type"
+msgstr "Pas d’informations sur le code pour ce type de fichier"
+
+#: src/code_help.c:356 src/code_nav.c:468 src/code_refs.c:651
+msgid "No identifier under the cursor"
+msgstr "Aucun identifiant sous le curseur"
+
+#: src/code_help.c:442
+msgid "The cursor is not in a function call"
+msgstr "Le curseur n’est pas dans un appel de fonction"
+
+#: src/code_nav.c:107
+msgid "built-in index"
+msgstr "index intégré"
+
+#: src/code_nav.c:277 src/code_nav.c:430
+#, c-format
+msgid ""
+"Declaration of %1$s is in %2$s:%3$d, which cannot be opened in an editor tab"
+msgstr ""
+"La déclaration de %1$s est dans %2$s:%3$d, qui ne peut pas s’ouvrir dans un "
+"onglet d’édition"
+
+#: src/code_nav.c:278 src/code_nav.c:431
+#, c-format
+msgid ""
+"Definition of %1$s is in %2$s:%3$d, which cannot be opened in an editor tab"
+msgstr ""
+"La définition de %1$s est dans %2$s:%3$d, qui ne peut pas s’ouvrir dans un "
+"onglet d’édition"
+
+#: src/code_nav.c:281
+#, c-format
+msgid "Declaration of %1$s (%2$s): %3$s:%4$d, 1 of %5$u"
+msgstr "Déclaration de %1$s (%2$s) : %3$s:%4$d, 1 sur %5$u"
+
+#: src/code_nav.c:282
+#, c-format
+msgid "Definition of %1$s (%2$s): %3$s:%4$d, 1 of %5$u"
+msgstr "Définition de %1$s (%2$s) : %3$s:%4$d, 1 sur %5$u"
+
+#: src/code_nav.c:285
+#, c-format
+msgid "Declaration of %1$s (%2$s): %3$s:%4$d"
+msgstr "Déclaration de %1$s (%2$s) : %3$s:%4$d"
+
+#: src/code_nav.c:286
+#, c-format
+msgid "Definition of %1$s (%2$s): %3$s:%4$d"
+msgstr "Définition de %1$s (%2$s) : %3$s:%4$d"
+
+#. TRANSLATORS: appended to a "Definition of ..." message
+#: src/code_nav.c:291
+msgid " (partial search)"
+msgstr " (recherche partielle)"
+
+#: src/code_nav.c:300
+#, c-format
+msgid "%s is defined here (no other declaration found)"
+msgstr "%s est défini ici (aucune autre déclaration trouvée)"
+
+#: src/code_nav.c:301
+#, c-format
+msgid "%s is defined here (no other definition found)"
+msgstr "%s est défini ici (aucune autre définition trouvée)"
+
+#: src/code_nav.c:309
+#, c-format
+msgid "No definition of %s found: first use in this scope"
+msgstr ""
+"Aucune définition de %s trouvée : première utilisation dans cette portée"
+
+#: src/code_nav.c:314
+#, c-format
+msgid "No definition found for %s (partial search: project too large)"
+msgstr ""
+"Aucune définition trouvée pour %s (recherche partielle : projet trop grand)"
+
+#: src/code_nav.c:315
+#, c-format
+msgid "No definition found for %s"
+msgstr "Aucune définition trouvée pour %s"
+
+#: src/code_nav.c:427 src/code_outline.c:155 src/code_refs.c:626
+msgid "language server"
+msgstr "serveur de langage"
+
+#. TRANSLATORS: the last %s is the language server, e.g. clangd
+#: src/code_nav.c:435
+#, c-format
+msgid "Declaration of %1$s: %2$s:%3$d, 1 of %4$u (%5$s)"
+msgstr "Déclaration de %1$s : %2$s:%3$d, 1 sur %4$u (%5$s)"
+
+#: src/code_nav.c:436
+#, c-format
+msgid "Definition of %1$s: %2$s:%3$d, 1 of %4$u (%5$s)"
+msgstr "Définition de %1$s : %2$s:%3$d, 1 sur %4$u (%5$s)"
+
+#. TRANSLATORS: the last %s is the language server, e.g. clangd
+#: src/code_nav.c:440
+#, c-format
+msgid "Declaration of %1$s: %2$s:%3$d (%4$s)"
+msgstr "Déclaration de %1$s : %2$s:%3$d (%4$s)"
+
+#: src/code_nav.c:440
+#, c-format
+msgid "Definition of %1$s: %2$s:%3$d (%4$s)"
+msgstr "Définition de %1$s : %2$s:%3$d (%4$s)"
+
+#: src/code_nav.c:454 src/code_nav.c:505 src/code_refs.c:638
+#: src/code_symbols.c:271
+msgid "No code navigation for this file type"
+msgstr "Pas de navigation dans le code pour ce type de fichier"
+
+#: src/code_nav.c:503
+msgid "Argument required: the name to look up"
+msgstr "Argument requis : le nom à chercher"
+
+#: src/code_nav.c:532
+msgid "No previous location"
+msgstr "Pas d’emplacement précédent"
+
+#: src/code_nav.c:532
+msgid "No next location"
+msgstr "Pas d’emplacement suivant"
+
+#: src/code_nav.c:541
+#, c-format
+msgid "Back to %1$s:%2$d"
+msgstr "Retour à %1$s:%2$d"
+
+#: src/code_nav.c:541
+#, c-format
+msgid "Forward to %1$s:%2$d"
+msgstr "Avance vers %1$s:%2$d"
+
+#: src/code_outline.c:102
+msgid "Markdown headings"
+msgstr "titres Markdown"
+
+#: src/code_outline.c:102
+msgid "built-in scanner"
+msgstr "analyseur intégré"
+
 #: src/code_refs.c:257
 #, c-format
 msgid "Close %s"
@@ -437,22 +584,113 @@ msgstr[1] "%1$s : %2$u résultats dans %3$s"
 msgid "whole words in the project"
 msgstr "mots entiers dans le projet"
 
-#: src/code_refs.c:626
-msgid "language server"
-msgstr "serveur de langage"
-
-#: src/code_refs.c:638
-msgid "No code navigation for this file type"
-msgstr "Pas de navigation dans le code pour ce type de fichier"
-
-#: src/code_refs.c:651
-msgid "No identifier under the cursor"
-msgstr "Aucun identifiant sous le curseur"
-
 #: src/code_refs.c:657
 #, c-format
 msgid "Searching the references of %s..."
 msgstr "Recherche des références de %s…"
+
+#: src/code_symbol.c:156
+msgctxt "symbol kind"
+msgid "function"
+msgstr "fonction"
+
+#: src/code_symbol.c:157
+msgctxt "symbol kind"
+msgid "method"
+msgstr "méthode"
+
+#: src/code_symbol.c:158
+msgctxt "symbol kind"
+msgid "macro"
+msgstr "macro"
+
+#: src/code_symbol.c:159
+msgctxt "symbol kind"
+msgid "type"
+msgstr "type"
+
+#: src/code_symbol.c:160
+msgctxt "symbol kind"
+msgid "class"
+msgstr "classe"
+
+#: src/code_symbol.c:161
+msgctxt "symbol kind"
+msgid "variable"
+msgstr "variable"
+
+#: src/code_symbol.c:162
+msgctxt "symbol kind"
+msgid "constant"
+msgstr "constante"
+
+#: src/code_symbol.c:163
+msgctxt "symbol kind"
+msgid "field"
+msgstr "champ"
+
+#: src/code_symbol.c:164
+msgctxt "symbol kind"
+msgid "module"
+msgstr "module"
+
+#: src/code_symbol.c:165
+msgctxt "symbol kind"
+msgid "target"
+msgstr "cible"
+
+#: src/code_symbol.c:167
+msgctxt "symbol kind"
+msgid "symbol"
+msgstr "symbole"
+
+#: src/code_symbols.c:175
+#, c-format
+msgid "Symbols of %s"
+msgstr "Symboles de %s"
+
+#: src/code_symbols.c:176
+msgid "_Go To"
+msgstr "_Aller"
+
+#: src/code_symbols.c:189
+msgid "Filter the symbols by name"
+msgstr "Filtrer les symboles par nom"
+
+#. TRANSLATORS: %2$s is where the symbols come from, e.g. "built-in scanner"
+#: src/code_symbols.c:217
+#, c-format
+msgid "%1$u symbol (%2$s)"
+msgid_plural "%1$u symbols (%2$s)"
+msgstr[0] "%1$u symbole (%2$s)"
+msgstr[1] "%1$u symboles (%2$s)"
+
+#: src/code_symbols.c:251
+msgid "No symbol scanner for this language"
+msgstr "Pas d’analyseur de symboles pour ce langage"
+
+#: src/code_symbols.c:251
+msgid "No symbols found in this file"
+msgstr "Aucun symbole trouvé dans ce fichier"
+
+#: src/code_symbols.c:258 src/outline_pane.c:434
+msgid "declaration"
+msgstr "déclaration"
+
+#: src/code_symbols.c:259
+#, c-format
+msgid "%1$s · in %2$s"
+msgstr "%1$s · dans %2$s"
+
+#: src/code_symbols.c:260 src/project_search.c:151
+#, c-format
+msgid "in %s"
+msgstr "dans %s"
+
+#: src/code_symbols.c:262
+msgctxt "symbol kind"
+msgid "heading"
+msgstr "titre"
 
 #: src/dir_preview.c:204
 #, c-format
@@ -522,18 +760,15 @@ msgstr[1] "%u renommés"
 #: src/dir_preview.c:305
 #, c-format
 msgid "  … and %1$u more (showing %2$u)\n"
-msgstr ""
-"  … et %1$u de plus (%2$u affichées)\n"
+msgstr "  … et %1$u de plus (%2$u affichées)\n"
 
 #: src/dir_preview.c:464
 msgid "  (cannot read directory)\n"
-msgstr ""
-"  (dossier illisible)\n"
+msgstr "  (dossier illisible)\n"
 
 #: src/dir_preview.c:466
 msgid "  (empty)\n"
-msgstr ""
-"  (vide)\n"
+msgstr "  (vide)\n"
 
 #: src/dir_summary.c:140
 #, c-format
@@ -839,13 +1074,17 @@ msgstr "Lecture des symboles…"
 
 #: src/editor_tagbar.c:206
 msgid "No tagbar for this file type (code and Markdown files)"
-msgstr "Pas de barre de symboles pour ce type de fichier (fichiers de code et Markdown)"
+msgstr ""
+"Pas de barre de symboles pour ce type de fichier (fichiers de code et "
+"Markdown)"
 
 #: src/editor_view.c:381
 msgid ""
 "Org-mode (Emacs keys) | Tab/S-Tab: fold | M-RET: heading | M-arrows: "
 "structure | S-arrows: TODO | C-c C-c"
-msgstr "Org-mode (touches Emacs) | Tab/S-Tab : plier | M-RET : titre | M-flèches : structure | S-flèches : TODO | C-c C-c"
+msgstr ""
+"Org-mode (touches Emacs) | Tab/S-Tab : plier | M-RET : titre | M-flèches : "
+"structure | S-flèches : TODO | C-c C-c"
 
 #: src/editor_view.c:385
 msgid "Emacs mode"
@@ -1211,7 +1450,8 @@ msgstr "Faire défiler l’entrée sélectionnée en haut / en bas du panneau"
 
 #: src/help.c:39
 msgid "Scroll selected entry to the center, top, bottom in turn"
-msgstr "Faire défiler l’entrée sélectionnée au centre, en haut, en bas tour à tour"
+msgstr ""
+"Faire défiler l’entrée sélectionnée au centre, en haut, en bas tour à tour"
 
 #: src/help.c:40
 msgid "Expand / collapse directory"
@@ -1232,7 +1472,9 @@ msgstr "Replier le dossier ou aller au parent"
 #: src/help.c:45
 msgid ""
 "Expand directory (or step into first child) / collapse it or jump to parent"
-msgstr "Déplier le dossier (ou entrer dans le premier enfant) / le replier ou aller au parent"
+msgstr ""
+"Déplier le dossier (ou entrer dans le premier enfant) / le replier ou aller "
+"au parent"
 
 #: src/help.c:46
 msgid "Search by substring (n / N: next / previous match)"
@@ -1242,7 +1484,9 @@ msgstr "Rechercher une sous-chaîne (n / N : occurrence suivante / précédente
 msgid ""
 "Search by substring (Enter / F3: next match, Shift+Enter / Shift+F3: "
 "previous, Esc: close)"
-msgstr "Rechercher une sous-chaîne (Enter / F3 : occurrence suivante, Shift+Enter / Shift+F3 : précédente, Esc : fermer)"
+msgstr ""
+"Rechercher une sous-chaîne (Enter / F3 : occurrence suivante, Shift+Enter / "
+"Shift+F3 : précédente, Esc : fermer)"
 
 #: src/help.c:48 src/help.c:152
 msgid "Next / previous match of the last search"
@@ -1252,18 +1496,24 @@ msgstr "Occurrence suivante / précédente de la dernière recherche"
 msgid ""
 "Search forward / backward as you type (again: next / previous match, RET: "
 "stop, C-g: back to the start)"
-msgstr "Rechercher vers l’avant / l’arrière pendant la frappe (à nouveau : occurrence suivante / précédente, RET : arrêter, C-g : retour au départ)"
+msgstr ""
+"Rechercher vers l’avant / l’arrière pendant la frappe (à nouveau : "
+"occurrence suivante / précédente, RET : arrêter, C-g : retour au départ)"
 
 #: src/help.c:50
 msgid ""
 "Open the selected file in the dedicated editor panel (focus in the editor)"
-msgstr "Ouvrir le fichier sélectionné dans le panneau d’édition dédié (focus dans l’éditeur)"
+msgstr ""
+"Ouvrir le fichier sélectionné dans le panneau d’édition dédié (focus dans "
+"l’éditeur)"
 
 #: src/help.c:51
 msgid ""
 "Show the selected file in the dedicated editor panel (focus stays in the "
 "explorer)"
-msgstr "Afficher le fichier sélectionné dans le panneau d’édition dédié (le focus reste dans l’explorateur)"
+msgstr ""
+"Afficher le fichier sélectionné dans le panneau d’édition dédié (le focus "
+"reste dans l’explorateur)"
 
 #: src/help.c:52
 msgctxt "key"
@@ -1274,17 +1524,23 @@ msgstr "Enter / double-clic"
 msgid ""
 "Expand/collapse directory, open file in editor (a video in a Video tab), or "
 "open bookmark (Ctrl+Enter to enter directory)"
-msgstr "Déplier / replier le dossier, ouvrir le fichier dans l’éditeur (une vidéo dans un onglet Vidéo) ou ouvrir le signet (Ctrl+Enter pour entrer dans le dossier)"
+msgstr ""
+"Déplier / replier le dossier, ouvrir le fichier dans l’éditeur (une vidéo "
+"dans un onglet Vidéo) ou ouvrir le signet (Ctrl+Enter pour entrer dans le "
+"dossier)"
 
 #: src/help.c:53
 msgid "Go to the parent directory (or return to files view from bookmarks)"
-msgstr "Aller au dossier parent (ou revenir à la vue Fichiers depuis les signets)"
+msgstr ""
+"Aller au dossier parent (ou revenir à la vue Fichiers depuis les signets)"
 
 #: src/help.c:54
 msgid ""
 "Bookmark selected entry or current directory (edit / remove if already "
 "bookmarked)"
-msgstr "Ajouter un signet sur l’entrée sélectionnée ou le dossier courant (modifier / retirer s’il existe déjà)"
+msgstr ""
+"Ajouter un signet sur l’entrée sélectionnée ou le dossier courant "
+"(modifier / retirer s’il existe déjà)"
 
 #: src/help.c:55
 msgid "Switch between files and bookmarks views in Explorer"
@@ -1310,7 +1566,9 @@ msgstr "Ajouter un signet / nouveau dossier (dans le dossier sélectionné)"
 #: src/help.c:60
 msgid ""
 "Edit selected: name, location and folder (folder: name, icon and parent)"
-msgstr "Modifier la sélection : nom, emplacement et dossier (dossier : nom, icône et parent)"
+msgstr ""
+"Modifier la sélection : nom, emplacement et dossier (dossier : nom, icône et "
+"parent)"
 
 #: src/help.c:61
 msgid "Delete selected bookmark or folder"
@@ -1344,7 +1602,8 @@ msgstr "Créer une note (Markdown, Org-mode, texte brut, Canvas) / un carnet"
 
 #: src/help.c:66
 msgid "Edit the note (editor tab, or the Canvas tab for a Canvas note)"
-msgstr "Modifier la note (onglet d’édition, ou onglet Canvas pour une note Canvas)"
+msgstr ""
+"Modifier la note (onglet d’édition, ou onglet Canvas pour une note Canvas)"
 
 #: src/help.c:67
 msgid "Edit note (title, format and notebook) or notebook (name and icon)"
@@ -1352,7 +1611,9 @@ msgstr "Modifier la note (titre, format et carnet) ou le carnet (nom et icône)"
 
 #: src/help.c:68
 msgid "Move note to another notebook (edit dialog, on its notebook)"
-msgstr "Déplacer la note dans un autre carnet (dialogue de modification, sur son carnet)"
+msgstr ""
+"Déplacer la note dans un autre carnet (dialogue de modification, sur son "
+"carnet)"
 
 #: src/help.c:69
 msgid "Delete note (to Trash) or notebook"
@@ -1374,7 +1635,9 @@ msgstr "Changer le tri : manuel / A-Z / Z-A"
 msgid ""
 "Context menu: 1-click format conversion (Text, Markdown, Org), Canvas export "
 "to Markdown, rename, move"
-msgstr "Menu contextuel : conversion de format en un clic (texte, Markdown, Org), export Canvas en Markdown, renommer, déplacer"
+msgstr ""
+"Menu contextuel : conversion de format en un clic (texte, Markdown, Org), "
+"export Canvas en Markdown, renommer, déplacer"
 
 #: src/help.c:74 src/help.c:75 src/help.c:76 src/help.c:77 src/help.c:78
 #: src/help.c:79 src/help.c:80 src/help.c:81 src/help.c:82 src/help.c:83
@@ -1388,11 +1651,14 @@ msgstr "Onglet Canvas"
 #: src/help.c:74
 msgid ""
 "Tool: select, rectangle, diamond, ellipse, arrow, line (not while typing)"
-msgstr "Outil : sélection, rectangle, losange, ellipse, flèche, ligne (pas pendant la saisie)"
+msgstr ""
+"Outil : sélection, rectangle, losange, ellipse, flèche, ligne (pas pendant "
+"la saisie)"
 
 #: src/help.c:75
 msgid "Tool: pencil, text box, table, eraser; Esc: back to select"
-msgstr "Outil : crayon, zone de texte, tableau, gomme ; Esc : retour à la sélection"
+msgstr ""
+"Outil : crayon, zone de texte, tableau, gomme ; Esc : retour à la sélection"
 
 #: src/help.c:76
 msgctxt "key"
@@ -1403,7 +1669,9 @@ msgstr "Glisser avec un outil de forme"
 msgid ""
 "Draw the shape (Shift: square, circle, 45-degree line); arrow ends on a "
 "block follow it"
-msgstr "Dessiner la forme (Shift : carré, cercle, ligne à 45 degrés) ; les extrémités de flèche posées sur un bloc le suivent"
+msgstr ""
+"Dessiner la forme (Shift : carré, cercle, ligne à 45 degrés) ; les "
+"extrémités de flèche posées sur un bloc le suivent"
 
 #: src/help.c:77
 msgctxt "key"
@@ -1421,17 +1689,23 @@ msgstr "Double-clic sur une forme"
 
 #: src/help.c:78
 msgid "Type text inside it (also Enter on a selected shape; Esc when done)"
-msgstr "Y saisir du texte (aussi Enter sur une forme sélectionnée ; Esc pour terminer)"
+msgstr ""
+"Y saisir du texte (aussi Enter sur une forme sélectionnée ; Esc pour "
+"terminer)"
 
 #: src/help.c:79
 msgid ""
 "Paste copied blocks, or a picture as a new block (text outside a text box: "
 "new text box)"
-msgstr "Coller les blocs copiés, ou une image comme nouveau bloc (texte hors d’une zone de texte : nouvelle zone de texte)"
+msgstr ""
+"Coller les blocs copiés, ou une image comme nouveau bloc (texte hors d’une "
+"zone de texte : nouvelle zone de texte)"
 
 #: src/help.c:80
 msgid "Select every block (not the locked ones; while typing: the text)"
-msgstr "Sélectionner tous les blocs (sauf les verrouillés ; pendant la saisie : le texte)"
+msgstr ""
+"Sélectionner tous les blocs (sauf les verrouillés ; pendant la saisie : le "
+"texte)"
 
 #: src/help.c:81
 msgid "Copy / cut / duplicate the selected blocks"
@@ -1454,7 +1728,10 @@ msgstr "Glisser la barre / le coin"
 msgid ""
 "Move / resize a block (a picture or shape moves from anywhere on it; a shape "
 "resizes by any corner or side; Shift: shape keeps its proportions)"
-msgstr "Déplacer / redimensionner un bloc (une image ou une forme se déplace depuis n’importe quel point ; une forme se redimensionne par tout coin ou côté ; Shift : la forme garde ses proportions)"
+msgstr ""
+"Déplacer / redimensionner un bloc (une image ou une forme se déplace depuis "
+"n’importe quel point ; une forme se redimensionne par tout coin ou côté ; "
+"Shift : la forme garde ses proportions)"
 
 #: src/help.c:85
 msgctxt "key"
@@ -1463,7 +1740,9 @@ msgstr "Glisser la poignée ronde"
 
 #: src/help.c:85
 msgid "Rotate the selected shape around its centre (Shift: 15-degree steps)"
-msgstr "Faire pivoter la forme sélectionnée autour de son centre (Shift : par pas de 15 degrés)"
+msgstr ""
+"Faire pivoter la forme sélectionnée autour de son centre (Shift : par pas de "
+"15 degrés)"
 
 #: src/help.c:86
 msgctxt "key"
@@ -1472,7 +1751,9 @@ msgstr "Glisser un point / le milieu de la ligne"
 
 #: src/help.c:86
 msgid "Move a point of the selected arrow or line / add one there (a curve)"
-msgstr "Déplacer un point de la flèche ou de la ligne sélectionnée / en ajouter un à cet endroit (une courbe)"
+msgstr ""
+"Déplacer un point de la flèche ou de la ligne sélectionnée / en ajouter un à "
+"cet endroit (une courbe)"
 
 #: src/help.c:87
 msgctxt "key"
@@ -1481,7 +1762,9 @@ msgstr "Double-clic sur un point / Delete"
 
 #: src/help.c:87
 msgid "Remove the point of the selected line (clicked last; not an end)"
-msgstr "Retirer le point de la ligne sélectionnée (le dernier cliqué ; pas une extrémité)"
+msgstr ""
+"Retirer le point de la ligne sélectionnée (le dernier cliqué ; pas une "
+"extrémité)"
 
 #: src/help.c:88
 msgctxt "key"
@@ -1490,7 +1773,9 @@ msgstr "Glisser sur la page / Shift+clic"
 
 #: src/help.c:88
 msgid "Select the blocks in the box / add or remove a block (Shift+drag: add)"
-msgstr "Sélectionner les blocs du cadre / ajouter ou retirer un bloc (Shift+glisser : ajouter)"
+msgstr ""
+"Sélectionner les blocs du cadre / ajouter ou retirer un bloc "
+"(Shift+glisser : ajouter)"
 
 #: src/help.c:89
 msgid "Bold / italic / underline (selection, or the text typed next)"
@@ -1506,7 +1791,8 @@ msgstr "Cocher / décocher la case sous le curseur (- [ ] / - [X])"
 
 #: src/help.c:92
 msgid "In a text box: select the block; on a block: deselect"
-msgstr "Dans une zone de texte : sélectionner le bloc ; sur un bloc : désélectionner"
+msgstr ""
+"Dans une zone de texte : sélectionner le bloc ; sur un bloc : désélectionner"
 
 #: src/help.c:93
 msgid "Next / previous block"
@@ -1549,7 +1835,8 @@ msgstr "Déplacer la vue (Space hors saisie)"
 
 #: src/help.c:99
 msgid "Undo / redo on the page (also Ctrl+Y); while typing: the text"
-msgstr "Annuler / rétablir sur la page (aussi Ctrl+Y) ; pendant la saisie : le texte"
+msgstr ""
+"Annuler / rétablir sur la page (aussi Ctrl+Y) ; pendant la saisie : le texte"
 
 #: src/help.c:100
 msgid "Close the Canvas tab (saved automatically)"
@@ -1562,7 +1849,8 @@ msgstr "Ctrl+Alt+flèche / clic droit sur l’onglet"
 
 #: src/help.c:101
 msgid "Move the Canvas tab to another pane, as an editor tab"
-msgstr "Déplacer l’onglet Canvas dans un autre volet, comme un onglet d’édition"
+msgstr ""
+"Déplacer l’onglet Canvas dans un autre volet, comme un onglet d’édition"
 
 #: src/help.c:102 src/help.c:103 src/help.c:104 src/help.c:105 src/help.c:106
 #: src/help.c:107 src/help.c:108
@@ -1604,7 +1892,9 @@ msgstr "Onglet Aide"
 
 #: src/help.c:109
 msgid "Open the user guide (also a click on the top bar's Help button)"
-msgstr "Ouvrir le guide d’utilisation (aussi un clic sur le bouton Aide de la barre du haut)"
+msgstr ""
+"Ouvrir le guide d’utilisation (aussi un clic sur le bouton Aide de la barre "
+"du haut)"
 
 #: src/help.c:110
 msgid "Select the next / previous link"
@@ -1622,7 +1912,9 @@ msgstr "Suivre le lien sélectionné / cliqué"
 #: src/help.c:112
 msgid ""
 "Back / forward in the pages visited (also the mouse's back / forward buttons)"
-msgstr "Reculer / avancer dans les pages visitées (aussi les boutons précédent / suivant de la souris)"
+msgstr ""
+"Reculer / avancer dans les pages visitées (aussi les boutons précédent / "
+"suivant de la souris)"
 
 #: src/help.c:113 src/help.c:114
 msgid "Close the Help tab"
@@ -1637,12 +1929,16 @@ msgstr "Onglet Navigateur"
 msgid ""
 "Open an empty browser tab (also Help links, web bookmarks, right click on an "
 "HTML file)"
-msgstr "Ouvrir un onglet navigateur vide (aussi les liens de l’aide, les signets web, un clic droit sur un fichier HTML)"
+msgstr ""
+"Ouvrir un onglet navigateur vide (aussi les liens de l’aide, les signets "
+"web, un clic droit sur un fichier HTML)"
 
 #: src/help.c:116
 msgid ""
 "Go to the address bar: an address, a file path or words to search, then Enter"
-msgstr "Aller à la barre d’adresse : une adresse, un chemin de fichier ou des mots à chercher, puis Enter"
+msgstr ""
+"Aller à la barre d’adresse : une adresse, un chemin de fichier ou des mots à "
+"chercher, puis Enter"
 
 #: src/help.c:117
 msgid "Address bar: back to the page; page: stop loading"
@@ -1659,7 +1955,8 @@ msgstr "Souris précédent / suivant"
 
 #: src/help.c:119
 msgid "Back / forward in the pages visited (also the arrows of the tab)"
-msgstr "Reculer / avancer dans les pages visitées (aussi les flèches de l’onglet)"
+msgstr ""
+"Reculer / avancer dans les pages visitées (aussi les flèches de l’onglet)"
 
 #: src/help.c:120
 msgid "Next / previous tab of the preview panel"
@@ -1680,7 +1977,8 @@ msgstr "Vue Distant"
 
 #: src/help.c:123
 msgid "Connect selected machine (SSHFS) and browse it in Explorer"
-msgstr "Connecter la machine sélectionnée (SSHFS) et la parcourir dans l’explorateur"
+msgstr ""
+"Connecter la machine sélectionnée (SSHFS) et la parcourir dans l’explorateur"
 
 #: src/help.c:124
 msgid "Open SSH terminal to selected machine"
@@ -1688,15 +1986,20 @@ msgstr "Ouvrir un terminal SSH vers la machine sélectionnée"
 
 #: src/help.c:125
 msgid "Add remote machine (inside the selected folder) / new folder"
-msgstr "Ajouter une machine distante (dans le dossier sélectionné) / un dossier"
+msgstr ""
+"Ajouter une machine distante (dans le dossier sélectionné) / un dossier"
 
 #: src/help.c:126
 msgid "Edit selected machine (also its folder) or folder (name and icon)"
-msgstr "Modifier la machine sélectionnée (aussi son dossier) ou le dossier (nom et icône)"
+msgstr ""
+"Modifier la machine sélectionnée (aussi son dossier) ou le dossier (nom et "
+"icône)"
 
 #: src/help.c:127
 msgid "Delete selected machine, or folder (its machines move to the top level)"
-msgstr "Supprimer la machine sélectionnée, ou le dossier (ses machines remontent au premier niveau)"
+msgstr ""
+"Supprimer la machine sélectionnée, ou le dossier (ses machines remontent au "
+"premier niveau)"
 
 #: src/help.c:128 src/preview_summary.c:73 src/remote.c:1005
 msgid "Re-scan ~/.ssh/config"
@@ -1716,25 +2019,34 @@ msgstr "Renommer le fichier ou le dossier sélectionné"
 
 #: src/help.c:132
 msgid "Move selected file or folder to the trash (asks first)"
-msgstr "Mettre le fichier ou le dossier sélectionné à la corbeille (avec confirmation)"
+msgstr ""
+"Mettre le fichier ou le dossier sélectionné à la corbeille (avec "
+"confirmation)"
 
 #: src/help.c:133
 msgid ""
 "Back / forward in the folders shown in this workspace (also the mouse's "
 "back / forward buttons and the top bar arrows; right-click an arrow: the "
 "list)"
-msgstr "Reculer / avancer dans les dossiers affichés dans cet espace de travail (aussi les boutons précédent / suivant de la souris et les flèches de la barre du haut ; clic droit sur une flèche : la liste)"
+msgstr ""
+"Reculer / avancer dans les dossiers affichés dans cet espace de travail "
+"(aussi les boutons précédent / suivant de la souris et les flèches de la "
+"barre du haut ; clic droit sur une flèche : la liste)"
 
 #: src/help.c:134
 msgid ""
 "Context menu: open, side panel, default app, terminal here, rename, trash, "
 "copy path, bookmark"
-msgstr "Menu contextuel : ouvrir, panneau latéral, application par défaut, terminal ici, renommer, corbeille, copier le chemin, signet"
+msgstr ""
+"Menu contextuel : ouvrir, panneau latéral, application par défaut, terminal "
+"ici, renommer, corbeille, copier le chemin, signet"
 
 #: src/help.c:135
 msgid ""
 "Undo the last move to the trash or rename (also Undo in the explorer bar)"
-msgstr "Annuler la dernière mise à la corbeille ou le dernier renommage (aussi Annuler dans la barre de l’explorateur)"
+msgstr ""
+"Annuler la dernière mise à la corbeille ou le dernier renommage (aussi "
+"Annuler dans la barre de l’explorateur)"
 
 #: src/help.c:136
 msgid "Toggle hidden files"
@@ -1780,7 +2092,9 @@ msgstr "Rechercher dans le fichier (n / N : occurrence suivante / précédente)
 msgid ""
 "Search in the file (Enter / F3: next match, Shift+Enter / Shift+F3: "
 "previous, Esc: close)"
-msgstr "Rechercher dans le fichier (Enter / F3 : occurrence suivante, Shift+Enter / Shift+F3 : précédente, Esc : fermer)"
+msgstr ""
+"Rechercher dans le fichier (Enter / F3 : occurrence suivante, Shift+Enter / "
+"Shift+F3 : précédente, Esc : fermer)"
 
 #: src/help.c:154
 msgid "Open the previewed file in the dedicated editor panel"
@@ -1790,7 +2104,9 @@ msgstr "Ouvrir le fichier en aperçu dans le panneau d’édition dédié"
 msgid ""
 "Show the previewed file in the dedicated editor panel (focus stays in the "
 "viewer)"
-msgstr "Afficher le fichier en aperçu dans le panneau d’édition dédié (le focus reste dans l’aperçu)"
+msgstr ""
+"Afficher le fichier en aperçu dans le panneau d’édition dédié (le focus "
+"reste dans l’aperçu)"
 
 #: src/help.c:156
 msgid "Open the current file in the editor (text files only)"
@@ -1800,7 +2116,9 @@ msgstr "Ouvrir le fichier courant dans l’éditeur (fichiers texte uniquement)"
 msgid ""
 "Toggle rendered preview / raw view (documents, tables, JSON, diffs, logs, "
 "archives, certificates, images, PDF, video, audio)"
-msgstr "Basculer entre l’aperçu rendu et la vue brute (documents, tableaux, JSON, diffs, journaux, archives, certificats, images, PDF, vidéo, audio)"
+msgstr ""
+"Basculer entre l’aperçu rendu et la vue brute (documents, tableaux, JSON, "
+"diffs, journaux, archives, certificats, images, PDF, vidéo, audio)"
 
 #: src/help.c:158
 msgid ""
@@ -1808,7 +2126,11 @@ msgid ""
 "OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of "
 "source code, beside the text (Enter goes, s sorts symbols, c collapses / "
 "expands all, Esc back, q hides)"
-msgstr "Afficher / masquer la barre de symboles : titres d’un aperçu Markdown, HTML, Org, Word, OpenDocument ou EPUB, signets d’un PDF ou symboles du code source, à côté du texte (Enter y va, s trie les symboles, c replie / déplie tout, Esc revient, q masque)"
+msgstr ""
+"Afficher / masquer la barre de symboles : titres d’un aperçu Markdown, HTML, "
+"Org, Word, OpenDocument ou EPUB, signets d’un PDF ou symboles du code "
+"source, à côté du texte (Enter y va, s trie les symboles, c replie / déplie "
+"tout, Esc revient, q masque)"
 
 #: src/help.c:159
 msgid "Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)"
@@ -1816,7 +2138,8 @@ msgstr "Agrandir / réduire / ajuster l’image ou le PDF (aussi Ctrl+molette)"
 
 #: src/help.c:160
 msgid "PDF: next / previous page; mailbox: next / previous message"
-msgstr "PDF : page suivante / précédente ; boîte mail : message suivant / précédent"
+msgstr ""
+"PDF : page suivante / précédente ; boîte mail : message suivant / précédent"
 
 #: src/help.c:161
 msgid "Play / pause active video or audio preview"
@@ -1834,13 +2157,17 @@ msgstr "Org-mode"
 msgid ""
 "In Org view: Fold/unfold heading or cycle global visibility (Overview -> "
 "Contents -> Show All)"
-msgstr "En vue Org : replier / déplier le titre ou changer la visibilité globale (Overview -> Contents -> Show All)"
+msgstr ""
+"En vue Org : replier / déplier le titre ou changer la visibilité globale "
+"(Overview -> Contents -> Show All)"
 
 #: src/help.c:164
 msgid ""
 "In Org view: Cycle TODO keyword (#+TODO, default TODO -> DONE) / toggle "
 "checkbox"
-msgstr "En vue Org : changer le mot-clé TODO (#+TODO, par défaut TODO -> DONE) / cocher la case"
+msgstr ""
+"En vue Org : changer le mot-clé TODO (#+TODO, par défaut TODO -> DONE) / "
+"cocher la case"
 
 #: src/help.c:165
 msgctxt "key"
@@ -1849,7 +2176,9 @@ msgstr "Clic sur titre / TODO / case"
 
 #: src/help.c:165
 msgid "Interactive click: toggle fold, cycle TODO, toggle checkbox, open link"
-msgstr "Clic interactif : replier / déplier, changer le TODO, cocher la case, ouvrir le lien"
+msgstr ""
+"Clic interactif : replier / déplier, changer le TODO, cocher la case, ouvrir "
+"le lien"
 
 #: src/help.c:166 src/help.c:167 src/help.c:168 src/help.c:169 src/help.c:170
 #: src/help.c:171 src/help.c:172 src/help.c:173 src/help.c:174
@@ -1863,13 +2192,18 @@ msgstr "Enregistrer le fichier ouvert dans l’onglet d’édition courant"
 #: src/help.c:167
 msgid ""
 "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"
-msgstr "Fermer l’onglet d’édition courant (demande s’il n’est pas enregistré ; une pastille marque les onglets modifiés)"
+msgstr ""
+"Fermer l’onglet d’édition courant (demande s’il n’est pas enregistré ; une "
+"pastille marque les onglets modifiés)"
 
 #: src/help.c:168
 msgid ""
 "Move active editor tab right / left / down / up (Right from the main panel: "
 "dedicated panel; Left from it: dock back)"
-msgstr "Déplacer l’onglet d’édition actif à droite / à gauche / en bas / en haut (Right depuis le panneau principal : panneau dédié ; Left depuis celui-ci : le ré-ancrer)"
+msgstr ""
+"Déplacer l’onglet d’édition actif à droite / à gauche / en bas / en haut "
+"(Right depuis le panneau principal : panneau dédié ; Left depuis celui-ci : "
+"le ré-ancrer)"
 
 #: src/help.c:169
 msgctxt "key"
@@ -1880,7 +2214,9 @@ msgstr "Glisser l’en-tête d’onglet"
 msgid ""
 "Drop on a tab bar to move the tab there, near an editor edge to split that "
 "side"
-msgstr "Déposer sur une barre d’onglets pour y déplacer l’onglet, près d’un bord d’éditeur pour scinder ce côté"
+msgstr ""
+"Déposer sur une barre d’onglets pour y déplacer l’onglet, près d’un bord "
+"d’éditeur pour scinder ce côté"
 
 #: src/help.c:170
 msgctxt "key"
@@ -1889,7 +2225,8 @@ msgstr "Shift+glisser l’en-tête d’onglet"
 
 #: src/help.c:170
 msgid "Drop on another editor to swap places with the tab shown there"
-msgstr "Déposer sur un autre éditeur pour échanger sa place avec l’onglet affiché"
+msgstr ""
+"Déposer sur un autre éditeur pour échanger sa place avec l’onglet affiché"
 
 #: src/help.c:171
 msgctxt "key"
@@ -1900,7 +2237,9 @@ msgstr "Clic droit sur l’en-tête d’onglet"
 msgid ""
 "Context menu to change mode, show line numbers, wrap lines, move, split, or "
 "close the editor tab"
-msgstr "Menu contextuel pour changer de mode, afficher les numéros de ligne, renvoyer les lignes, déplacer, scinder ou fermer l’onglet d’édition"
+msgstr ""
+"Menu contextuel pour changer de mode, afficher les numéros de ligne, "
+"renvoyer les lignes, déplacer, scinder ou fermer l’onglet d’édition"
 
 #: src/help.c:172
 msgctxt "key"
@@ -1911,17 +2250,23 @@ msgstr "Clic du milieu sur l’en-tête d’onglet"
 msgid ""
 "Close the tab (editor, References and Search tabs; asks first when there are "
 "unsaved changes)"
-msgstr "Fermer l’onglet (onglets d’édition, Références et Recherche ; demande d’abord s’il y a des modifications non enregistrées)"
+msgstr ""
+"Fermer l’onglet (onglets d’édition, Références et Recherche ; demande "
+"d’abord s’il y a des modifications non enregistrées)"
 
 #: src/help.c:173
 msgid "Rename current text buffer (F2 only in Emacs / Org-mode tabs)"
-msgstr "Renommer le tampon de texte courant (F2 seulement dans les onglets Emacs / Org-mode)"
+msgstr ""
+"Renommer le tampon de texte courant (F2 seulement dans les onglets Emacs / "
+"Org-mode)"
 
 #: src/help.c:174
 msgid ""
 "Show or hide line numbers in the current editor tab (:set number / M-x "
 "display-line-numbers-mode)"
-msgstr "Afficher ou masquer les numéros de ligne dans l’onglet d’édition courant (:set number / M-x display-line-numbers-mode)"
+msgstr ""
+"Afficher ou masquer les numéros de ligne dans l’onglet d’édition courant "
+"(:set number / M-x display-line-numbers-mode)"
 
 #: src/help.c:175 src/help.c:176 src/help.c:177 src/help.c:178 src/help.c:179
 #: src/help.c:180 src/help.c:181 src/help.c:182 src/help.c:183 src/help.c:184
@@ -1934,7 +2279,9 @@ msgstr "Éditeur Org"
 msgid ""
 "Cycle heading / drawer / block folding, next table cell, <s block; global "
 "visibility"
-msgstr "Replier / déplier titre, tiroir ou bloc, cellule suivante du tableau, bloc <s ; visibilité globale"
+msgstr ""
+"Replier / déplier titre, tiroir ou bloc, cellule suivante du tableau, bloc "
+"<s ; visibilité globale"
 
 #: src/help.c:176
 msgid "New heading or list item (TODO heading / checkbox item)"
@@ -1948,19 +2295,27 @@ msgstr "Nouveau titre (titre TODO) après le sous-arbre courant"
 msgid ""
 "Promote / demote heading (subtree), indent list item, move (insert / delete) "
 "table column"
-msgstr "Remonter / abaisser le titre (sous-arbre), indenter l’élément de liste, déplacer (insérer / supprimer) une colonne du tableau"
+msgstr ""
+"Remonter / abaisser le titre (sous-arbre), indenter l’élément de liste, "
+"déplacer (insérer / supprimer) une colonne du tableau"
 
 #: src/help.c:179
 msgid "Move subtree, list item or table row (delete / insert table row)"
-msgstr "Déplacer le sous-arbre, l’élément de liste ou la ligne du tableau (supprimer / insérer une ligne)"
+msgstr ""
+"Déplacer le sous-arbre, l’élément de liste ou la ligne du tableau "
+"(supprimer / insérer une ligne)"
 
 #: src/help.c:180
 msgid "Cycle TODO keyword or list bullet; previous / next day on a timestamp"
-msgstr "Changer le mot-clé TODO ou la puce de liste ; jour précédent / suivant sur un horodatage"
+msgstr ""
+"Changer le mot-clé TODO ou la puce de liste ; jour précédent / suivant sur "
+"un horodatage"
 
 #: src/help.c:181
 msgid "Raise / lower priority; change the timestamp field under the cursor"
-msgstr "Augmenter / baisser la priorité ; changer le champ d’horodatage sous le curseur"
+msgstr ""
+"Augmenter / baisser la priorité ; changer le champ d’horodatage sous le "
+"curseur"
 
 #: src/help.c:182
 msgid "Next table row / toggle the checkbox"
@@ -1968,7 +2323,9 @@ msgstr "Ligne suivante du tableau / cocher la case"
 
 #: src/help.c:183
 msgid "Context action (checkbox, table, tags) / cycle TODO / set priority"
-msgstr "Action contextuelle (case, tableau, étiquettes) / changer le TODO / fixer la priorité"
+msgstr ""
+"Action contextuelle (case, tableau, étiquettes) / changer le TODO / fixer la "
+"priorité"
 
 #: src/help.c:184
 msgid "Schedule / deadline (today, +3, +2w, mon, 2026-11-02 10:00, none)"
@@ -1996,7 +2353,9 @@ msgstr "Titre visible suivant / précédent, même niveau, parent"
 
 #: src/help.c:190
 msgid "List item or table rule / toggle heading / update cookies"
-msgstr "Élément de liste ou filet de tableau / basculer en titre / mettre à jour les compteurs"
+msgstr ""
+"Élément de liste ou filet de tableau / basculer en titre / mettre à jour les "
+"compteurs"
 
 #: src/help.c:191
 msgid "Sparse tree of open TODO entries / of a regexp"
@@ -2015,12 +2374,16 @@ msgstr "Clic droit sur l’onglet"
 msgid ""
 "Switch the tab between Notepad, Emacs, and Vim modes (the menu shows the "
 "current one)"
-msgstr "Passer l’onglet en mode Notepad, Emacs ou Vim (le menu indique le mode actuel)"
+msgstr ""
+"Passer l’onglet en mode Notepad, Emacs ou Vim (le menu indique le mode "
+"actuel)"
 
 #: src/help.c:194
 msgid ""
 "In Emacs minibuffer: turn Org-mode editing on / off (also for .org files)"
-msgstr "Dans le minibuffer Emacs : activer / désactiver l’édition Org-mode (aussi pour les fichiers .org)"
+msgstr ""
+"Dans le minibuffer Emacs : activer / désactiver l’édition Org-mode (aussi "
+"pour les fichiers .org)"
 
 #: src/help.c:196 src/help.c:197 src/help.c:198 src/help.c:199 src/help.c:200
 #: src/help.c:201 src/help.c:202 src/help.c:203 src/help.c:204 src/help.c:205
@@ -2036,7 +2399,9 @@ msgstr "Couper, copier et coller du texte via le presse-papiers du système"
 msgid ""
 "Find / Replace, case ignored (Enter / F3: next, Shift+Enter / Shift+F3: "
 "previous, Esc: close)"
-msgstr "Rechercher / remplacer, sans tenir compte de la casse (Enter / F3 : suivant, Shift+Enter / Shift+F3 : précédent, Esc : fermer)"
+msgstr ""
+"Rechercher / remplacer, sans tenir compte de la casse (Enter / F3 : suivant, "
+"Shift+Enter / Shift+F3 : précédent, Esc : fermer)"
 
 #: src/help.c:198
 msgid "Align paragraph: Left, Center, Right, Justify"
@@ -2056,7 +2421,8 @@ msgstr "Aller à un numéro de ligne du document"
 
 #: src/help.c:202
 msgid "Go to the definition / declaration of the identifier (code files)"
-msgstr "Aller à la définition / déclaration de l’identifiant (fichiers de code)"
+msgstr ""
+"Aller à la définition / déclaration de l’identifiant (fichiers de code)"
 
 #: src/help.c:203
 msgid "Back / forward through the definition jumps"
@@ -2064,7 +2430,8 @@ msgstr "Reculer / avancer dans les sauts vers les définitions"
 
 #: src/help.c:204
 msgid "Help card of the identifier / signature of the call (code files)"
-msgstr "Fiche d’aide de l’identifiant / signature de l’appel (fichiers de code)"
+msgstr ""
+"Fiche d’aide de l’identifiant / signature de l’appel (fichiers de code)"
 
 #: src/help.c:205
 msgid "References (References tab) / symbols of the file"
@@ -2074,7 +2441,9 @@ msgstr "Références (onglet Références) / symboles du fichier"
 msgid ""
 "Show / hide the tagbar: symbols or Markdown headings beside the text (Enter "
 "goes, s sorts, c collapses / expands all, Esc back, q hides)"
-msgstr "Afficher / masquer la barre de symboles : symboles ou titres Markdown à côté du texte (Enter y va, s trie, c replie / déplie tout, Esc revient, q masque)"
+msgstr ""
+"Afficher / masquer la barre de symboles : symboles ou titres Markdown à côté "
+"du texte (Enter y va, s trie, c replie / déplie tout, Esc revient, q masque)"
 
 #: src/help.c:208 src/help.c:209 src/help.c:210 src/help.c:211 src/help.c:212
 #: src/help.c:213 src/help.c:214 src/help.c:215 src/help.c:216 src/help.c:217
@@ -2085,19 +2454,25 @@ msgstr "Éditeur : mode Emacs"
 
 #: src/help.c:208
 msgid "Save buffer / Write file (Save As with chosen file name in minibuffer)"
-msgstr "Enregistrer le tampon / écrire le fichier (enregistrer sous avec le nom saisi dans le minibuffer)"
+msgstr ""
+"Enregistrer le tampon / écrire le fichier (enregistrer sous avec le nom "
+"saisi dans le minibuffer)"
 
 #: src/help.c:209
 msgid ""
 "Split view: the file in a second window below / to the right (own point, "
 "shared text and undo)"
-msgstr "Vue scindée : le fichier dans une seconde fenêtre en dessous / à droite (point propre, texte et annulation partagés)"
+msgstr ""
+"Vue scindée : le fichier dans une seconde fenêtre en dessous / à droite "
+"(point propre, texte et annulation partagés)"
 
 #: src/help.c:210
 msgid ""
 "Delete this window / delete the other windows of the file (the other windows "
 "keep the changes)"
-msgstr "Supprimer cette fenêtre / les autres fenêtres du fichier (les autres fenêtres gardent les modifications)"
+msgstr ""
+"Supprimer cette fenêtre / les autres fenêtres du fichier (les autres "
+"fenêtres gardent les modifications)"
 
 #: src/help.c:211
 msgid "Kill region (cut), kill ring save (copy), yank (paste)"
@@ -2115,7 +2490,9 @@ msgstr "Poser la marque (sélectionner une région ; deux fois ou C-g annule)"
 msgid ""
 "Incremental search: again for next / previous (wraps), DEL undo step, C-w "
 "add word, RET stop, C-g back"
-msgstr "Recherche incrémentale : à nouveau pour suivant / précédent (boucle), DEL annule une étape, C-w ajoute le mot, RET arrête, C-g revient"
+msgstr ""
+"Recherche incrémentale : à nouveau pour suivant / précédent (boucle), DEL "
+"annule une étape, C-w ajoute le mot, RET arrête, C-g revient"
 
 #: src/help.c:215
 msgid "Query replace words or phrases in minibuffer"
@@ -2123,7 +2500,8 @@ msgstr "Remplacement interactif de mots ou de phrases dans le minibuffer"
 
 #: src/help.c:216
 msgid "Fill paragraph (format and wrap text to 72 columns)"
-msgstr "Remplir le paragraphe (mettre en forme et couper le texte à 72 colonnes)"
+msgstr ""
+"Remplir le paragraphe (mettre en forme et couper le texte à 72 colonnes)"
 
 #: src/help.c:217
 msgid "Uppercase, lowercase, capitalize word"
@@ -2135,7 +2513,8 @@ msgstr "Annuler / rétablir les modifications (aussi C-_ / M-_)"
 
 #: src/help.c:219
 msgid "Move cursor forward / backward / next line / previous line"
-msgstr "Déplacer le curseur en avant / en arrière / ligne suivante / ligne précédente"
+msgstr ""
+"Déplacer le curseur en avant / en arrière / ligne suivante / ligne précédente"
 
 #: src/help.c:220
 msgid "Move forward / backward word, line start / line end"
@@ -2147,11 +2526,14 @@ msgstr "Aller à une ligne saisie dans le minibuffer"
 
 #: src/help.c:222
 msgid "Go to the definition / declaration (code files), back, forward"
-msgstr "Aller à la définition / déclaration (fichiers de code), reculer, avancer"
+msgstr ""
+"Aller à la définition / déclaration (fichiers de code), reculer, avancer"
 
 #: src/help.c:223
 msgid "Help card of the identifier at point (signatures go to the echo area)"
-msgstr "Fiche d’aide de l’identifiant au point (les signatures vont dans la zone d’écho)"
+msgstr ""
+"Fiche d’aide de l’identifiant au point (les signatures vont dans la zone "
+"d’écho)"
 
 #: src/help.c:224
 msgid "References (References tab) / symbols of the buffer (imenu)"
@@ -2161,17 +2543,22 @@ msgstr "Références (onglet Références) / symboles du tampon (imenu)"
 msgid ""
 "Show / hide the tagbar: symbols or Markdown headings beside the text (RET "
 "goes, s sorts, c collapses / expands all, Esc back, q hides)"
-msgstr "Afficher / masquer la barre de symboles : symboles ou titres Markdown à côté du texte (RET y va, s trie, c replie / déplie tout, Esc revient, q masque)"
+msgstr ""
+"Afficher / masquer la barre de symboles : symboles ou titres Markdown à côté "
+"du texte (RET y va, s trie, c replie / déplie tout, Esc revient, q masque)"
 
 #: src/help.c:226
 msgid "Execute command (e.g. set-justification-center, goto-line, save-buffer)"
-msgstr "Exécuter une commande (ex. set-justification-center, goto-line, save-buffer)"
+msgstr ""
+"Exécuter une commande (ex. set-justification-center, goto-line, save-buffer)"
 
 #: src/help.c:227
 msgid ""
 "Complete the command, tag or *Heading link (lists candidates) / quit the "
 "prompt"
-msgstr "Compléter la commande, l’étiquette ou le lien *Titre (liste les candidats) / quitter la saisie"
+msgstr ""
+"Compléter la commande, l’étiquette ou le lien *Titre (liste les candidats) / "
+"quitter la saisie"
 
 #: src/help.c:229 src/help.c:230 src/help.c:231 src/help.c:232 src/help.c:233
 #: src/help.c:234 src/help.c:235 src/help.c:236 src/help.c:237 src/help.c:238
@@ -2186,7 +2573,9 @@ msgstr "Éditeur : mode Vim"
 msgid ""
 "Operators d c y > < = g~ gu gU g? gq with any motion or text object (dd, cc, "
 "yy... on lines)"
-msgstr "Opérateurs d c y > < = g~ gu gU g? gq avec tout mouvement ou objet texte (dd, cc, yy… sur les lignes)"
+msgstr ""
+"Opérateurs d c y > < = g~ gu gU g? gq avec tout mouvement ou objet texte "
+"(dd, cc, yy… sur les lignes)"
 
 #: src/help.c:230
 msgid "Character, line and word motions (counts everywhere)"
@@ -2203,15 +2592,20 @@ msgstr "Mouvements par document, parenthèse, paragraphe, phrase et écran"
 #: src/help.c:233
 msgid ""
 "Text objects: words, sentences, paragraphs, brackets ( [ { <, quotes, tags"
-msgstr "Objets texte : mots, phrases, paragraphes, parenthèses ( [ { <, guillemets, balises"
+msgstr ""
+"Objets texte : mots, phrases, paragraphes, parenthèses ( [ { <, guillemets, "
+"balises"
 
 #: src/help.c:234
 msgid "Insert / Replace mode; Esc back to Normal ([count] repeats the text)"
-msgstr "Mode Insertion / Remplacement ; Esc revient en Normal ([count] répète le texte)"
+msgstr ""
+"Mode Insertion / Remplacement ; Esc revient en Normal ([count] répète le "
+"texte)"
 
 #: src/help.c:235
 msgid "Delete word / to line start, indent / unindent the line"
-msgstr "Supprimer le mot / jusqu’au début de ligne, indenter / désindenter la ligne"
+msgstr ""
+"Supprimer le mot / jusqu’au début de ligne, indenter / désindenter la ligne"
 
 #: src/help.c:236
 msgid "Insert register x, complete a word, run one Normal command"
@@ -2220,7 +2614,9 @@ msgstr "Insérer le registre x, compléter un mot, lancer une commande Normal"
 #: src/help.c:237
 msgid ""
 "Delete chars, delete / yank to line end, join, replace, case, add to number"
-msgstr "Supprimer des caractères, supprimer / copier jusqu’à la fin de ligne, joindre, remplacer, casse, ajouter à un nombre"
+msgstr ""
+"Supprimer des caractères, supprimer / copier jusqu’à la fin de ligne, "
+"joindre, remplacer, casse, ajouter à un nombre"
 
 #: src/help.c:238
 msgid "Put after / before; named registers a-z (A-Z append), 0-9, -, +, _"
@@ -2228,11 +2624,14 @@ msgstr "Coller après / avant ; registres nommés a-z (A-Z ajoute), 0-9, -, +, 
 
 #: src/help.c:239
 msgid "Visual char / line / block, reselect, other end; block I / A / c / $"
-msgstr "Visuel caractère / ligne / bloc, resélection, autre extrémité ; bloc I / A / c / $"
+msgstr ""
+"Visuel caractère / ligne / bloc, resélection, autre extrémité ; bloc I / A / "
+"c / $"
 
 #: src/help.c:240
 msgid "Undo / redo a whole command / repeat the last change"
-msgstr "Annuler / rétablir une commande entière / répéter la dernière modification"
+msgstr ""
+"Annuler / rétablir une commande entière / répéter la dernière modification"
 
 #: src/help.c:241
 msgid "Record a macro into register x / run it / run it again"
@@ -2240,18 +2639,24 @@ msgstr "Enregistrer une macro dans le registre x / la lancer / la relancer"
 
 #: src/help.c:242
 msgid "Set mark / jump to it (line) / back in the jump list (Tab: forward)"
-msgstr "Poser une marque / y aller (ligne) / reculer dans la liste des sauts (Tab : avancer)"
+msgstr ""
+"Poser une marque / y aller (ligne) / reculer dans la liste des sauts (Tab : "
+"avancer)"
 
 #: src/help.c:243
 msgid ""
 "Search (Vim regex, incremental, highlighted; :noh hides), word under cursor"
-msgstr "Rechercher (regex Vim, incrémentale, surlignée ; :noh masque), mot sous le curseur"
+msgstr ""
+"Rechercher (regex Vim, incrémentale, surlignée ; :noh masque), mot sous le "
+"curseur"
 
 #: src/help.c:244
 msgid ""
 "Code files: go to the definition / declaration; Ctrl+O / Tab go on across "
 "files"
-msgstr "Fichiers de code : aller à la définition / déclaration ; Ctrl+O / Tab continuent d’un fichier à l’autre"
+msgstr ""
+"Fichiers de code : aller à la définition / déclaration ; Ctrl+O / Tab "
+"continuent d’un fichier à l’autre"
 
 #: src/help.c:245
 msgid "Code files: help card of the identifier under the cursor"
@@ -2259,7 +2664,8 @@ msgstr "Fichiers de code : fiche d’aide de l’identifiant sous le curseur"
 
 #: src/help.c:246
 msgid "Code files: references (References tab) / symbols of the file"
-msgstr "Fichiers de code : références (onglet Références) / symboles du fichier"
+msgstr ""
+"Fichiers de code : références (onglet Références) / symboles du fichier"
 
 #: src/help.c:248
 msgid "Substitute (& \\1 \\u \\U \\r); :g/pat/cmd, :v, :&& , & repeat"
@@ -2271,39 +2677,52 @@ msgstr "Commandes de ligne sur des plages (%, 'a, '<,'>, /pat/, .+1, $)"
 
 #: src/help.c:250
 msgid "Sort lines (n i u !), retab, align, list registers / :marks"
-msgstr "Trier les lignes (n i u !), retab, aligner, lister les registres / :marks"
+msgstr ""
+"Trier les lignes (n i u !), retab, aligner, lister les registres / :marks"
 
 #: src/help.c:251
 msgid ""
 "Options (shiftwidth, softtabstop, expandtab, ignorecase, hlsearch, number, "
 "wrap, colorcolumn...)"
-msgstr "Options (shiftwidth, softtabstop, expandtab, ignorecase, hlsearch, number, wrap, colorcolumn…)"
+msgstr ""
+"Options (shiftwidth, softtabstop, expandtab, ignorecase, hlsearch, number, "
+"wrap, colorcolumn…)"
 
 #: src/help.c:252
 msgid ""
 "Complete a command or :set option, list the matches and cycle through them"
-msgstr "Compléter une commande ou une option de :set, lister les correspondances et les parcourir"
+msgstr ""
+"Compléter une commande ou une option de :set, lister les correspondances et "
+"les parcourir"
 
 #: src/help.c:253
 msgid "Save (:w file, :saveas), save and close, close discarding changes"
-msgstr "Enregistrer (:w fichier, :saveas), enregistrer et fermer, fermer sans enregistrer"
+msgstr ""
+"Enregistrer (:w fichier, :saveas), enregistrer et fermer, fermer sans "
+"enregistrer"
 
 #: src/help.c:254
 msgid ""
 "Split view: the file in a second view below / to the right (own cursor, "
 "shared text and undo)"
-msgstr "Vue scindée : le fichier dans une seconde vue en dessous / à droite (curseur propre, texte et annulation partagés)"
+msgstr ""
+"Vue scindée : le fichier dans une seconde vue en dessous / à droite (curseur "
+"propre, texte et annulation partagés)"
 
 #: src/help.c:255
 msgid ""
 "Close the other views of the file / close this view (the other views keep "
 "the changes)"
-msgstr "Fermer les autres vues du fichier / fermer cette vue (les autres vues gardent les modifications)"
+msgstr ""
+"Fermer les autres vues du fichier / fermer cette vue (les autres vues "
+"gardent les modifications)"
 
 #: src/help.c:256
 msgid ""
 "Scroll the view (cursor line centered, top, bottom; lines, half pages, pages)"
-msgstr "Faire défiler la vue (ligne du curseur au centre, en haut, en bas ; lignes, demi-pages, pages)"
+msgstr ""
+"Faire défiler la vue (ligne du curseur au centre, en haut, en bas ; lignes, "
+"demi-pages, pages)"
 
 #: src/help.c:258 src/help.c:259 src/help.c:260 src/help.c:261 src/help.c:262
 #: src/help.c:263 src/help.c:264 src/help.c:265 src/help.c:266 src/help.c:267
@@ -2317,78 +2736,106 @@ msgstr "Global"
 
 #: src/help.c:258
 msgid "Switch between virtual workspaces (or click/scroll top-bar minimap)"
-msgstr "Passer d’un espace de travail virtuel à l’autre (ou cliquer / défiler sur la minicarte de la barre du haut)"
+msgstr ""
+"Passer d’un espace de travail virtuel à l’autre (ou cliquer / défiler sur la "
+"minicarte de la barre du haut)"
 
 #: src/help.c:259
 msgid ""
 "Add a virtual workspace with the default layout (+) or close the current "
 "workspace (-)"
-msgstr "Ajouter un espace de travail virtuel avec la disposition par défaut (+) ou fermer l’espace courant (-)"
+msgstr ""
+"Ajouter un espace de travail virtuel avec la disposition par défaut (+) ou "
+"fermer l’espace courant (-)"
 
 #: src/help.c:260
 msgid ""
 "Recent folders and files: Enter opens a folder or shows a file (Ctrl+Enter "
 "edits it)"
-msgstr "Dossiers et fichiers récents : Enter ouvre un dossier ou affiche un fichier (Ctrl+Enter le modifie)"
+msgstr ""
+"Dossiers et fichiers récents : Enter ouvre un dossier ou affiche un fichier "
+"(Ctrl+Enter le modifie)"
 
 #: src/help.c:261
 msgid ""
 "Workspace layouts: preview while moving (Alt+L: next), Enter applies, Escape "
 "restores; Edit Layouts… saves (not in Emacs editor tabs)"
-msgstr "Dispositions de l’espace de travail : aperçu en se déplaçant (Alt+L : suivante), Enter applique, Escape restaure ; Modifier les dispositions… enregistre (pas dans les onglets d’édition Emacs)"
+msgstr ""
+"Dispositions de l’espace de travail : aperçu en se déplaçant (Alt+L : "
+"suivante), Enter applique, Escape restaure ; Modifier les dispositions… "
+"enregistre (pas dans les onglets d’édition Emacs)"
 
 #: src/help.c:262
 msgid ""
 "Preferences: appearance, editor (mode, line numbers, wrap of new tabs, "
 "column line), window size, language servers"
-msgstr "Préférences : apparence, éditeur (mode, numéros de ligne, renvoi à la ligne des nouveaux onglets, ligne de colonne), taille de la fenêtre, serveurs de langage"
+msgstr ""
+"Préférences : apparence, éditeur (mode, numéros de ligne, renvoi à la ligne "
+"des nouveaux onglets, ligne de colonne), taille de la fenêtre, serveurs de "
+"langage"
 
 #: src/help.c:263
 msgid ""
 "Preferences on Appearance: pick a theme (applied as you select it), set your "
 "fonts, save, edit or delete your themes"
-msgstr "Préférences, page Apparence : choisir un thème (appliqué dès la sélection), régler les polices, enregistrer, modifier ou supprimer vos thèmes"
+msgstr ""
+"Préférences, page Apparence : choisir un thème (appliqué dès la sélection), "
+"régler les polices, enregistrer, modifier ou supprimer vos thèmes"
 
 #: src/help.c:264
 msgid ""
 "Larger / smaller fonts (interface and code), or back to the theme's sizes"
-msgstr "Polices plus grandes / plus petites (interface et code), ou retour aux tailles du thème"
+msgstr ""
+"Polices plus grandes / plus petites (interface et code), ou retour aux "
+"tailles du thème"
 
 #: src/help.c:265
 msgid ""
 "Go to a file of the project: type part of its name (Enter shows it, "
 "Ctrl+Enter edits it; not in Vim editor tabs)"
-msgstr "Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, Ctrl+Enter le modifie ; pas dans les onglets d’édition Vim)"
+msgstr ""
+"Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, "
+"Ctrl+Enter le modifie ; pas dans les onglets d’édition Vim)"
 
 #: src/help.c:266 src/help.c:267
 msgid ""
 "Go to a file of the project: type part of its name (Enter shows it, "
 "Ctrl+Enter edits it)"
-msgstr "Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, Ctrl+Enter le modifie)"
+msgstr ""
+"Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, "
+"Ctrl+Enter le modifie)"
 
 #: src/help.c:268
 msgid ""
 "Search the text in every file of the project (results in the Search tab, "
 "Enter opens; not in Emacs editor tabs)"
-msgstr "Rechercher le texte dans tous les fichiers du projet (résultats dans l’onglet Recherche, Enter ouvre ; pas dans les onglets d’édition Emacs)"
+msgstr ""
+"Rechercher le texte dans tous les fichiers du projet (résultats dans "
+"l’onglet Recherche, Enter ouvre ; pas dans les onglets d’édition Emacs)"
 
 #: src/help.c:269
 msgid ""
 "In Search in Files: match case / whole word / regular expression / letters "
 "in order"
-msgstr "Dans Rechercher dans les fichiers : respecter la casse / mot entier / expression régulière / lettres dans l’ordre"
+msgstr ""
+"Dans Rechercher dans les fichiers : respecter la casse / mot entier / "
+"expression régulière / lettres dans l’ordre"
 
 #: src/help.c:270
 msgid ""
 "In Search in Files: files to include / to exclude (*.c, src/) / include the "
 "files git ignores"
-msgstr "Dans Rechercher dans les fichiers : fichiers à inclure / à exclure (*.c, src/) / inclure les fichiers ignorés par git"
+msgstr ""
+"Dans Rechercher dans les fichiers : fichiers à inclure / à exclure (*.c, "
+"src/) / inclure les fichiers ignorés par git"
 
 #: src/help.c:271
 msgid ""
 "Open a terminal in a new tab (exit the shell to close it; drag tabs to move "
 "or split; not in Vim Insert)"
-msgstr "Ouvrir un terminal dans un nouvel onglet (quitter le shell pour le fermer ; glisser les onglets pour déplacer ou scinder ; pas en Insertion Vim)"
+msgstr ""
+"Ouvrir un terminal dans un nouvel onglet (quitter le shell pour le fermer ; "
+"glisser les onglets pour déplacer ou scinder ; pas en Insertion Vim)"
 
 #: src/help.c:272
 msgid "Open a terminal in a new pane below the focused one"
@@ -2400,7 +2847,8 @@ msgstr "Dans un terminal : onglet suivant / précédent de son volet"
 
 #: src/help.c:274
 msgid "In a terminal: copy the selected text / paste the clipboard"
-msgstr "Dans un terminal : copier le texte sélectionné / coller le presse-papiers"
+msgstr ""
+"Dans un terminal : copier le texte sélectionné / coller le presse-papiers"
 
 #: src/help.c:275
 msgid "Cycle the keyboard focus between panels"
@@ -2408,27 +2856,37 @@ msgstr "Faire passer le focus clavier d’un panneau à l’autre"
 
 #: src/help.c:276
 msgid "Focus the next / previous panel (also h / l; from Vim editor tabs too)"
-msgstr "Focus sur le panneau suivant / précédent (aussi h / l ; depuis les onglets d’édition Vim aussi)"
+msgstr ""
+"Focus sur le panneau suivant / précédent (aussi h / l ; depuis les onglets "
+"d’édition Vim aussi)"
 
 #: src/help.c:277
 msgid ""
 "Close the focused editor tab, or the current one on screen (from Vim editor "
 "tabs too; asks when unsaved)"
-msgstr "Fermer l’onglet d’édition qui a le focus, ou celui affiché (depuis les onglets d’édition Vim aussi ; demande s’il n’est pas enregistré)"
+msgstr ""
+"Fermer l’onglet d’édition qui a le focus, ou celui affiché (depuis les "
+"onglets d’édition Vim aussi ; demande s’il n’est pas enregistré)"
 
 #: src/help.c:278
 msgid "Focus the next panel (from Emacs and Org-mode editor tabs too)"
-msgstr "Focus sur le panneau suivant (depuis les onglets d’édition Emacs et Org-mode aussi)"
+msgstr ""
+"Focus sur le panneau suivant (depuis les onglets d’édition Emacs et Org-mode "
+"aussi)"
 
 #: src/help.c:279
 msgid "Focus the next / previous panel (from Notepad editor tabs too)"
-msgstr "Focus sur le panneau suivant / précédent (depuis les onglets d’édition Notepad aussi)"
+msgstr ""
+"Focus sur le panneau suivant / précédent (depuis les onglets d’édition "
+"Notepad aussi)"
 
 #: src/help.c:280 src/help.c:281 src/help.c:282
 msgid ""
 "Next / previous tab of the focused notebook (from the explorer: the preview "
 "panel, the focus stays)"
-msgstr "Onglet suivant / précédent du groupe d’onglets qui a le focus (depuis l’explorateur : le panneau Aperçu, le focus reste)"
+msgstr ""
+"Onglet suivant / précédent du groupe d’onglets qui a le focus (depuis "
+"l’explorateur : le panneau Aperçu, le focus reste)"
 
 #: src/help.c:283
 msgctxt "key"
@@ -2437,7 +2895,9 @@ msgstr "Commits Git / Références / Recherche"
 
 #: src/help.c:283
 msgid "The navigation keys of the global mode move in the list (Enter opens)"
-msgstr "Les touches de navigation du mode global se déplacent dans la liste (Enter ouvre)"
+msgstr ""
+"Les touches de navigation du mode global se déplacent dans la liste (Enter "
+"ouvre)"
 
 #: src/help.c:284
 msgctxt "key"
@@ -2449,7 +2909,10 @@ msgid ""
 "Global mode: only the Notepad, Vim or Emacs navigation keys in the explorer, "
 "viewer and their search bars (arrows, Home / End, PgUp / PgDn in all); mode "
 "of new editor tabs"
-msgstr "Mode global : seules les touches de navigation Notepad, Vim ou Emacs dans l’explorateur, l’aperçu et leurs barres de recherche (flèches, Home / End, PgUp / PgDn partout) ; mode des nouveaux onglets d’édition"
+msgstr ""
+"Mode global : seules les touches de navigation Notepad, Vim ou Emacs dans "
+"l’explorateur, l’aperçu et leurs barres de recherche (flèches, Home / End, "
+"PgUp / PgDn partout) ; mode des nouveaux onglets d’édition"
 
 #: src/help.c:285
 msgid "Toggle fullscreen"
@@ -2459,23 +2922,30 @@ msgstr "Basculer en plein écran"
 msgid ""
 "Open an empty browser tab in the preview panel (needs WebKitGTK 6.0; not in "
 "Emacs editor tabs)"
-msgstr "Ouvrir un onglet navigateur vide dans le panneau Aperçu (nécessite WebKitGTK 6.0 ; pas dans les onglets d’édition Emacs)"
+msgstr ""
+"Ouvrir un onglet navigateur vide dans le panneau Aperçu (nécessite WebKitGTK "
+"6.0 ; pas dans les onglets d’édition Emacs)"
 
 #: src/help.c:287
 msgid ""
 "Stack the terminal pane under the viewer, or put it back beside it (the "
 "explorer panel stays fixed)"
-msgstr "Placer le volet terminal sous l’aperçu, ou le remettre à côté (le panneau Explorateur reste fixe)"
+msgstr ""
+"Placer le volet terminal sous l’aperçu, ou le remettre à côté (le panneau "
+"Explorateur reste fixe)"
 
 #: src/help.c:288
 msgid "Toggle Remote (SSH) machines view in sidebar"
-msgstr "Afficher / masquer la vue des machines distantes (SSH) dans la barre latérale"
+msgstr ""
+"Afficher / masquer la vue des machines distantes (SSH) dans la barre latérale"
 
 #: src/help.c:289
 msgid ""
 "User guide in a Help tab (also a click on the top bar's Help button; right "
 "click: this cheat sheet)"
-msgstr "Guide d’utilisation dans un onglet Aide (aussi un clic sur le bouton Aide de la barre du haut ; clic droit : cet aide-mémoire)"
+msgstr ""
+"Guide d’utilisation dans un onglet Aide (aussi un clic sur le bouton Aide de "
+"la barre du haut ; clic droit : cet aide-mémoire)"
 
 #: src/help.c:290
 msgid "Help panel"
@@ -2627,7 +3097,8 @@ msgstr ""
 "\n"
 "Sans argument, rouvre les espaces de travail de la dernière session (sinon\n"
 "affiche le dossier courant ; « . » l’affiche toujours).\n"
-"Un dossier s’affiche dans l’explorateur ; un fichier s’ouvre dans le panneau\n"
+"Un dossier s’affiche dans l’explorateur ; un fichier s’ouvre dans le "
+"panneau\n"
 "d’édition dédié, explorateur et aperçu masqués.\n"
 "Avec -n, l’argument est une note : « Titre » ou « Carnet/Titre » ; une\n"
 "extension .org, .md ou .txt fixe le type. Les notes absentes sont créées.\n"
@@ -2635,8 +3106,10 @@ msgstr ""
 "Options :\n"
 "  -h, --help                       affiche cette aide et quitte\n"
 "  -V, --version                    affiche la version et quitte\n"
-"  -e, --editor emacs|vim|notepad   mode d’édition par défaut des nouveaux onglets\n"
-"                                   (les fichiers Org s’ouvrent toujours en Org-mode)\n"
+"  -e, --editor emacs|vim|notepad   mode d’édition par défaut des nouveaux "
+"onglets\n"
+"                                   (les fichiers Org s’ouvrent toujours en "
+"Org-mode)\n"
 "  -n, --note                       l’argument est une note, pas un fichier\n"
 "  -f, --fullscreen                 démarre en plein écran\n"
 "  -s, --size LARGEURxHAUTEUR       taille de la fenêtre (ex. 1920x1080)\n"
@@ -2644,39 +3117,35 @@ msgstr ""
 #: src/main.c:196
 #, c-format
 msgid "%s: option '%s' requires an argument\n"
-msgstr ""
-"%s : l’option « %s » attend un argument\n"
+msgstr "%s : l’option « %s » attend un argument\n"
 
 #: src/main.c:235
 #, c-format
 msgid "%s: only one file or folder can be given\n"
-msgstr ""
-"%s : un seul fichier ou dossier peut être donné\n"
+msgstr "%s : un seul fichier ou dossier peut être donné\n"
 
 #: src/main.c:254
 #, c-format
 msgid "%s: unknown editor '%s' (expected emacs, vim or notepad)\n"
-msgstr ""
-"%s : éditeur inconnu « %s » (attendu : emacs, vim ou notepad)\n"
+msgstr "%s : éditeur inconnu « %s » (attendu : emacs, vim ou notepad)\n"
 
 #: src/main.c:260
 #, c-format
 msgid ""
 "[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n"
 msgstr ""
-"[ Taille invalide « %s » : format attendu LARGEURxHAUTEUR (ex. --size 1920x1080) ]\n"
+"[ Taille invalide « %s » : format attendu LARGEURxHAUTEUR (ex. --size "
+"1920x1080) ]\n"
 
 #: src/main.c:264
 #, c-format
 msgid "%s: unknown option '%s'\n"
-msgstr ""
-"%s : option inconnue « %s »\n"
+msgstr "%s : option inconnue « %s »\n"
 
 #: src/main.c:271
 #, c-format
 msgid "%s: option '-n' needs a note name\n"
-msgstr ""
-"%s : l’option « -n » attend un nom de note\n"
+msgstr "%s : l’option « -n » attend un nom de note\n"
 
 #: src/main.c:329
 #, c-format
@@ -2735,8 +3204,7 @@ msgstr "Préférences (Ctrl+,)"
 #: src/main.c:810
 #, c-format
 msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
-msgstr ""
-"[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
+msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
 
 #: src/media_tracks.c:23
 #, c-format
@@ -2865,7 +3333,9 @@ msgstr "Modifier la note"
 #: src/notes.c:1507
 msgid ""
 "A note with that title and format already exists in the target notebook."
-msgstr "Une note de ce titre et de ce format existe déjà dans le carnet de destination."
+msgstr ""
+"Une note de ce titre et de ce format existe déjà dans le carnet de "
+"destination."
 
 #: src/notes.c:1508
 msgid "A note with that title and format already exists in this notebook."
@@ -2887,7 +3357,9 @@ msgstr "Déplacer la note"
 msgid ""
 "There are no other notebooks to move this note to. Create another notebook "
 "first."
-msgstr "Il n’y a pas d’autre carnet où déplacer cette note. Créez d’abord un autre carnet."
+msgstr ""
+"Il n’y a pas d’autre carnet où déplacer cette note. Créez d’abord un autre "
+"carnet."
 
 #: src/notes.c:1667
 #, c-format
@@ -2922,8 +3394,12 @@ msgstr "La corbeille est déjà vide."
 msgid "Permanently delete the %u item in the Trash? This cannot be undone."
 msgid_plural ""
 "Permanently delete all %u items in the Trash? This cannot be undone."
-msgstr[0] "Supprimer définitivement l’élément de la corbeille ? Cette action est irréversible."
-msgstr[1] "Supprimer définitivement les %u éléments de la corbeille ? Cette action est irréversible."
+msgstr[0] ""
+"Supprimer définitivement l’élément de la corbeille ? Cette action est "
+"irréversible."
+msgstr[1] ""
+"Supprimer définitivement les %u éléments de la corbeille ? Cette action est "
+"irréversible."
 
 #: src/notes.c:1794
 msgid "_Empty Trash"
@@ -3002,6 +3478,42 @@ msgstr "Vider la corbeille…"
 msgid "Sort / Order Mode"
 msgstr "Mode de tri / d’ordre"
 
+#: src/outline_pane.c:217
+msgid "Collapse All (c)"
+msgstr "Tout replier (c)"
+
+#: src/outline_pane.c:217
+msgid "Expand All (c)"
+msgstr "Tout déplier (c)"
+
+#: src/outline_pane.c:303
+msgid "Headings"
+msgstr "Titres"
+
+#: src/outline_pane.c:303 src/outline_pane.c:523
+msgid "Symbols"
+msgstr "Symboles"
+
+#: src/outline_pane.c:306
+msgid "No headings in this file"
+msgstr "Aucun titre dans ce fichier"
+
+#: src/outline_pane.c:306
+msgid "No symbols in this file"
+msgstr "Aucun symbole dans ce fichier"
+
+#: src/outline_pane.c:460
+msgid "Sort By Line (s)"
+msgstr "Trier par ligne (s)"
+
+#: src/outline_pane.c:460
+msgid "Group By Kind (s)"
+msgstr "Grouper par type (s)"
+
+#: src/outline_pane.c:540
+msgid "Hide Tagbar (q)"
+msgstr "Masquer la barre de symboles (q)"
+
 #: src/pdf.c:278
 #, c-format
 msgid "Page %1$d of %2$d"
@@ -3070,8 +3582,7 @@ msgstr ""
 
 #: src/pdf.c:574
 msgid "(no text on this page)\n"
-msgstr ""
-"(pas de texte sur cette page)\n"
+msgstr "(pas de texte sur cette page)\n"
 
 #: src/pdf.c:716
 #, c-format
@@ -3086,7 +3597,10 @@ msgstr ""
 msgid ""
 "For editor tabs opened from now on; the tabs already open keep theirs, "
 "except for the column line and the tagbar. Org files always open in Org-mode."
-msgstr "Pour les onglets d’édition ouverts à partir de maintenant ; les onglets déjà ouverts gardent les leurs, sauf pour la ligne de colonne et la barre de symboles. Les fichiers Org s’ouvrent toujours en Org-mode."
+msgstr ""
+"Pour les onglets d’édition ouverts à partir de maintenant ; les onglets déjà "
+"ouverts gardent les leurs, sauf pour la ligne de colonne et la barre de "
+"symboles. Les fichiers Org s’ouvrent toujours en Org-mode."
 
 #: src/preferences.c:111
 msgid "_Mode"
@@ -3096,7 +3610,9 @@ msgstr "_Mode"
 msgid ""
 "Keys of new editor tabs, and of the explorer and preview (the global mode of "
 "the status bar; -e on the command line)"
-msgstr "Touches des nouveaux onglets d’édition, de l’explorateur et de l’aperçu (le mode global de la barre d’état ; -e en ligne de commande)"
+msgstr ""
+"Touches des nouveaux onglets d’édition, de l’explorateur et de l’aperçu (le "
+"mode global de la barre d’état ; -e en ligne de commande)"
 
 #: src/preferences.c:129
 msgid "Show _line numbers"
@@ -3104,7 +3620,9 @@ msgstr "Afficher les numéros de _ligne"
 
 #: src/preferences.c:131
 msgid "A tab can still show or hide them from its right-click menu"
-msgstr "Chaque onglet peut encore les afficher ou les masquer depuis son menu contextuel"
+msgstr ""
+"Chaque onglet peut encore les afficher ou les masquer depuis son menu "
+"contextuel"
 
 #: src/preferences.c:134
 msgid "_Wrap long lines"
@@ -3112,7 +3630,9 @@ msgstr "_Renvoyer les longues lignes à la ligne"
 
 #: src/preferences.c:136
 msgid "Long lines continue on the next line instead of scrolling sideways"
-msgstr "Les longues lignes continuent sur la ligne suivante au lieu de défiler horizontalement"
+msgstr ""
+"Les longues lignes continuent sur la ligne suivante au lieu de défiler "
+"horizontalement"
 
 #: src/preferences.c:139
 msgid "Show the _tagbar"
@@ -3123,7 +3643,10 @@ msgid ""
 "Symbols of code files and headings of Markdown files beside the text, in "
 "every tab, the tabs already open too (Notepad: Ctrl+K Ctrl+O, Emacs: M-x "
 "imenu-list, Vim: :TagbarToggle)"
-msgstr "Symboles des fichiers de code et titres des fichiers Markdown à côté du texte, dans chaque onglet, y compris ceux déjà ouverts (Notepad : Ctrl+K Ctrl+O, Emacs : M-x imenu-list, Vim : :TagbarToggle)"
+msgstr ""
+"Symboles des fichiers de code et titres des fichiers Markdown à côté du "
+"texte, dans chaque onglet, y compris ceux déjà ouverts (Notepad : Ctrl+K "
+"Ctrl+O, Emacs : M-x imenu-list, Vim : :TagbarToggle)"
 
 #: src/preferences.c:146
 msgid "Show the tagbar in the _preview"
@@ -3133,7 +3656,9 @@ msgstr "Afficher la barre de symboles dans l’a_perçu"
 msgid ""
 "Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews, PDF "
 "bookmarks, beside the text (in the preview: o or Ctrl+K Ctrl+O)"
-msgstr "Titres des aperçus Markdown, HTML, Org, Word, OpenDocument et EPUB, signets PDF, à côté du texte (dans l’aperçu : o ou Ctrl+K Ctrl+O)"
+msgstr ""
+"Titres des aperçus Markdown, HTML, Org, Word, OpenDocument et EPUB, signets "
+"PDF, à côté du texte (dans l’aperçu : o ou Ctrl+K Ctrl+O)"
 
 #: src/preferences.c:154
 msgid "Show a vertical line at _column"
@@ -3143,7 +3668,9 @@ msgstr "Afficher une ligne verticale à la _colonne"
 msgid ""
 "A line before this column in every editor tab, the tabs already open too, "
 "and in code previews (Vim: :set colorcolumn=81)"
-msgstr "Une ligne avant cette colonne dans chaque onglet d’édition, y compris ceux déjà ouverts, et dans les aperçus de code (Vim : :set colorcolumn=81)"
+msgstr ""
+"Une ligne avant cette colonne dans chaque onglet d’édition, y compris ceux "
+"déjà ouverts, et dans les aperçus de code (Vim : :set colorcolumn=81)"
 
 #: src/preferences.c:162
 msgid "81: the line follows the 80th character"
@@ -3153,7 +3680,9 @@ msgstr "81 : la ligne suit le 80ᵉ caractère"
 msgid ""
 "Size of the window at the next launch, in pixels (--size on the command line "
 "wins)."
-msgstr "Taille de la fenêtre au prochain lancement, en pixels (--size en ligne de commande l’emporte)."
+msgstr ""
+"Taille de la fenêtre au prochain lancement, en pixels (--size en ligne de "
+"commande l’emporte)."
 
 #: src/preferences.c:204
 msgid "Wi_dth"
@@ -3177,7 +3706,10 @@ msgid ""
 "Code navigation starts the language server installed for the file's language "
 "(clangd, pylsp, gopls, rust-analyzer...). %s replaces a server's command or "
 "turns it off; it is read at the next launch."
-msgstr "La navigation dans le code lance le serveur de langage installé pour le langage du fichier (clangd, pylsp, gopls, rust-analyzer…). %s remplace la commande d’un serveur ou le désactive ; il est lu au prochain lancement."
+msgstr ""
+"La navigation dans le code lance le serveur de langage installé pour le "
+"langage du fichier (clangd, pylsp, gopls, rust-analyzer…). %s remplace la "
+"commande d’un serveur ou le désactive ; il est lu au prochain lancement."
 
 #: src/preferences.c:237
 msgid "Edit _lsp.ini"
@@ -3185,7 +3717,9 @@ msgstr "Modifier _lsp.ini"
 
 #: src/preferences.c:238
 msgid "Open lsp.ini in an editor tab (created with an example if missing)"
-msgstr "Ouvrir lsp.ini dans un onglet d’édition (créé avec un exemple s’il n’existe pas)"
+msgstr ""
+"Ouvrir lsp.ini dans un onglet d’édition (créé avec un exemple s’il n’existe "
+"pas)"
 
 #: src/preferences.c:342
 msgid "Preferences"
@@ -3350,8 +3884,7 @@ msgstr "Tableaux"
 
 #: src/preview_summary.c:186
 msgid "(empty)\n"
-msgstr ""
-"(vide)\n"
+msgstr "(vide)\n"
 
 #: src/preview_summary.c:190
 msgid ""
@@ -3509,13 +4042,10 @@ msgstr[1] "%1$u fichiers de plus de %2$u Mo ignorés"
 #, c-format
 msgid "expression too complex in %u file, matches may be missing"
 msgid_plural "expression too complex in %u files, matches may be missing"
-msgstr[0] "expression trop complexe dans %u fichier, des résultats peuvent manquer"
-msgstr[1] "expression trop complexe dans %u fichiers, des résultats peuvent manquer"
-
-#: src/project_search.c:151
-#, c-format
-msgid "in %s"
-msgstr "dans %s"
+msgstr[0] ""
+"expression trop complexe dans %u fichier, des résultats peuvent manquer"
+msgstr[1] ""
+"expression trop complexe dans %u fichiers, des résultats peuvent manquer"
 
 #: src/project_search.c:155
 #, c-format
@@ -3530,7 +4060,9 @@ msgstr "fichiers ignorés aussi"
 msgid ""
 "Patterns separated by commas: *.c (a name at any depth), src/ui (from the "
 "project root), build/ (folders only)"
-msgstr "Motifs séparés par des virgules : *.c (un nom à toute profondeur), src/ui (depuis la racine du projet), build/ (dossiers seulement)"
+msgstr ""
+"Motifs séparés par des virgules : *.c (un nom à toute profondeur), src/ui "
+"(depuis la racine du projet), build/ (dossiers seulement)"
 
 #: src/project_search.c:369
 msgid "Search in Files"
@@ -3559,7 +4091,9 @@ msgstr "Expression régulière, syntaxe PCRE (Alt+R)"
 #: src/project_search.c:399
 msgid ""
 "Letters in Order, Not Next to Each Other: edvim Finds editor_vim (Alt+L)"
-msgstr "Lettres dans l’ordre, pas forcément voisines : edvim trouve editor_vim (Alt+L)"
+msgstr ""
+"Lettres dans l’ordre, pas forcément voisines : edvim trouve editor_vim "
+"(Alt+L)"
 
 #: src/project_search.c:416
 msgid "Files to i_nclude"
@@ -3585,12 +4119,69 @@ msgstr "Inclure les fichiers _ignorés"
 msgid ""
 "Also the files git ignores (.gitignore); outside git, hidden and build "
 "folders"
-msgstr "Aussi les fichiers ignorés par git (.gitignore) ; hors git, les dossiers cachés et de compilation"
+msgstr ""
+"Aussi les fichiers ignorés par git (.gitignore) ; hors git, les dossiers "
+"cachés et de compilation"
 
 #: src/project_search.c:426
 #, c-format
 msgid "In the files of %s"
 msgstr "Dans les fichiers de %s"
+
+#: src/quick_open.c:65
+msgid "Listing the project files…"
+msgstr "Liste des fichiers du projet…"
+
+#: src/quick_open.c:67
+#, c-format
+msgid ""
+"%1$u of %2$u recent places · Enter opens a folder or shows a file, "
+"Ctrl+Enter edits a file"
+msgstr ""
+"%1$u sur %2$u lieux récents · Enter ouvre un dossier ou affiche un fichier, "
+"Ctrl+Enter modifie un fichier"
+
+#: src/quick_open.c:71
+#, c-format
+msgid "%1$u of %2$u files (list cut) · Enter shows it, Ctrl+Enter edits it"
+msgstr ""
+"%1$u sur %2$u fichiers (liste tronquée) · Enter l’affiche, Ctrl+Enter le "
+"modifie"
+
+#: src/quick_open.c:72
+#, c-format
+msgid "%1$u of %2$u files · Enter shows it, Ctrl+Enter edits it"
+msgstr "%1$u sur %2$u fichiers · Enter l’affiche, Ctrl+Enter le modifie"
+
+#: src/quick_open.c:277
+#, c-format
+msgid "“%s” no longer exists"
+msgstr "« %s » n’existe plus"
+
+#: src/quick_open.c:368 src/themes.c:616
+msgid "_Edit"
+msgstr "_Modifier"
+
+#: src/quick_open.c:369
+msgid "_Open"
+msgstr "_Ouvrir"
+
+#: src/quick_open.c:424
+#, c-format
+msgid "Go to File in %s"
+msgstr "Aller au fichier dans %s"
+
+#: src/quick_open.c:425
+msgid "Type part of a file name or path"
+msgstr "Tapez une partie d’un nom ou d’un chemin de fichier"
+
+#: src/quick_open.c:444
+msgid "Recent Folders and Files"
+msgstr "Dossiers et fichiers récents"
+
+#: src/quick_open.c:444
+msgid "Type part of a folder or file name"
+msgstr "Tapez une partie d’un nom de dossier ou de fichier"
 
 #: src/remote.c:50
 msgid "Connected"
@@ -3706,7 +4297,8 @@ msgstr "Modifier le dossier distant"
 msgid "Delete the folder “%s”? Its %u machine moves to the top level."
 msgid_plural "Delete the folder “%s”? Its %u machines move to the top level."
 msgstr[0] "Supprimer le dossier « %s » ? Sa machine remonte au premier niveau."
-msgstr[1] "Supprimer le dossier « %s » ? Ses %u machines remontent au premier niveau."
+msgstr[1] ""
+"Supprimer le dossier « %s » ? Ses %u machines remontent au premier niveau."
 
 #: src/remote.c:563
 msgid "Delete Remote Folder"
@@ -3734,7 +4326,8 @@ msgstr ""
 "  Fedora : sudo dnf install fuse-sshfs\n"
 "  Arch : sudo pacman -S sshfs\n"
 "\n"
-"Vous pouvez toujours ouvrir une session de terminal SSH avec le bouton Terminal."
+"Vous pouvez toujours ouvrir une session de terminal SSH avec le bouton "
+"Terminal."
 
 #: src/remote.c:679
 msgid "Connection Failed"
@@ -3803,7 +4396,10 @@ msgstr "Enregistrer l’espace de travail comme signet"
 msgid ""
 "Keeps this workspace's folder, open editor tabs and panels. Opening the "
 "bookmark restores them in a new workspace."
-msgstr "Garde le dossier, les onglets d’édition ouverts et les panneaux de cet espace de travail. Ouvrir le signet les restaure dans un nouvel espace de travail."
+msgstr ""
+"Garde le dossier, les onglets d’édition ouverts et les panneaux de cet "
+"espace de travail. Ouvrir le signet les restaure dans un nouvel espace de "
+"travail."
 
 #: src/session_bookmark.c:62 src/session_bookmark.c:80
 msgid "Save Workspace"
@@ -4134,7 +4730,8 @@ msgstr "Enregistrer le thème sous"
 
 #: src/themes.c:241
 msgid "Save the current colours and fonts as a theme named:"
-msgstr "Enregistrer les couleurs et les polices actuelles comme un thème nommé :"
+msgstr ""
+"Enregistrer les couleurs et les polices actuelles comme un thème nommé :"
 
 #: src/themes.c:266
 msgid "Theme Not Applied"
@@ -4172,13 +4769,17 @@ msgstr "Code"
 #: src/themes.c:529
 msgid ""
 "Interface and documents: font names separated by commas (empty: the theme's)"
-msgstr "Interface et documents : noms de police séparés par des virgules (vide : ceux du thème)"
+msgstr ""
+"Interface et documents : noms de police séparés par des virgules (vide : "
+"ceux du thème)"
 
 #: src/themes.c:530
 msgid ""
 "Files, code and terminals: font names separated by commas (empty: the "
 "theme's)"
-msgstr "Fichiers, code et terminaux : noms de police séparés par des virgules (vide : ceux du thème)"
+msgstr ""
+"Fichiers, code et terminaux : noms de police séparés par des virgules "
+"(vide : ceux du thème)"
 
 #: src/themes.c:542
 msgid "Size in pixels (Ctrl+= / Ctrl+- / Ctrl+0)"
@@ -4189,7 +4790,9 @@ msgstr "Taille en pixels (Ctrl+= / Ctrl+- / Ctrl+0)"
 msgid ""
 "Selecting a theme applies it at once; Apply keeps it, Cancel goes back. Your "
 "themes are INI files in %s."
-msgstr "Sélectionner un thème l’applique aussitôt ; Appliquer le garde, Annuler revient en arrière. Vos thèmes sont des fichiers INI dans %s."
+msgstr ""
+"Sélectionner un thème l’applique aussitôt ; Appliquer le garde, Annuler "
+"revient en arrière. Vos thèmes sont des fichiers INI dans %s."
 
 #: src/themes.c:612
 msgid "_Save As…"
@@ -4197,7 +4800,8 @@ msgstr "_Enregistrer sous…"
 
 #: src/themes.c:613
 msgid "Save the current colours and fonts as a theme of yours"
-msgstr "Enregistrer les couleurs et les polices actuelles comme un de vos thèmes"
+msgstr ""
+"Enregistrer les couleurs et les polices actuelles comme un de vos thèmes"
 
 #: src/themes.c:614
 msgid "From _Image…"
@@ -4207,17 +4811,17 @@ msgstr "Depuis une _image…"
 msgid ""
 "Create a theme of yours from the colours of an image (the selected one by "
 "default)"
-msgstr "Créer un de vos thèmes à partir des couleurs d’une image (celle sélectionnée par défaut)"
-
-#: src/themes.c:616
-msgid "_Edit"
-msgstr "_Modifier"
+msgstr ""
+"Créer un de vos thèmes à partir des couleurs d’une image (celle sélectionnée "
+"par défaut)"
 
 #: src/themes.c:617
 msgid ""
 "Open the selected theme file in an editor tab: saving it applies it (your "
 "themes only)"
-msgstr "Ouvrir le fichier du thème sélectionné dans un onglet d’édition : l’enregistrer l’applique (vos thèmes seulement)"
+msgstr ""
+"Ouvrir le fichier du thème sélectionné dans un onglet d’édition : "
+"l’enregistrer l’applique (vos thèmes seulement)"
 
 #: src/themes.c:620
 msgid "Delete the selected theme file (your themes only)"
@@ -4289,7 +4893,9 @@ msgstr "Mode global"
 
 #: src/topbar.c:420
 msgid "Global Mode: Keys of the Explorer and Preview, Mode of New Editor Tabs"
-msgstr "Mode global : touches de l’explorateur et de l’aperçu, mode des nouveaux onglets d’édition"
+msgstr ""
+"Mode global : touches de l’explorateur et de l’aperçu, mode des nouveaux "
+"onglets d’édition"
 
 #: src/topbar.c:438
 msgid "⇅ Sort: Name"
@@ -4328,7 +4934,9 @@ msgstr "SSH : %s"
 #, c-format
 msgid ""
 "Connected to remote machine: %s (%s). Click to toggle SSH terminal (Ctrl+T)"
-msgstr "Connecté à la machine distante : %s (%s). Cliquer pour afficher ou masquer le terminal SSH (Ctrl+T)"
+msgstr ""
+"Connecté à la machine distante : %s (%s). Cliquer pour afficher ou masquer "
+"le terminal SSH (Ctrl+T)"
 
 #: src/topbar.c:662
 msgid "Show / Hide Terminal Panel (Ctrl+T)"
@@ -4377,19 +4985,16 @@ msgstr "Aperçu vidéo"
 #: src/video.c:267
 #, c-format
 msgid "Container:    %s\n"
-msgstr ""
-"Conteneur :   %s\n"
+msgstr "Conteneur :   %s\n"
 
 #: src/video.c:271
 #, c-format
 msgid "Modified:     %s\n"
-msgstr ""
-"Modifié :     %s\n"
+msgstr "Modifié :     %s\n"
 
 #: src/video.c:273
 msgid "              Press 'm' to switch to interactive video player\n"
-msgstr ""
-"              m pour passer au lecteur vidéo interactif\n"
+msgstr "              m pour passer au lecteur vidéo interactif\n"
 
 #: src/video_tab.c:158
 #, c-format
@@ -4404,7 +5009,9 @@ msgstr "inconnue"
 msgid ""
 "Space: play / pause; Left / Right: 5 s back / forward; Home: start; a: next "
 "audio track; s: next subtitles"
-msgstr "Space : lecture / pause ; Left / Right : 5 s en arrière / en avant ; Home : début ; a : piste audio suivante ; s : sous-titres suivants"
+msgstr ""
+"Space : lecture / pause ; Left / Right : 5 s en arrière / en avant ; Home : "
+"début ; a : piste audio suivante ; s : sous-titres suivants"
 
 #: src/viewer.c:323
 #, c-format

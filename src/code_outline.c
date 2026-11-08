@@ -4,6 +4,7 @@
 #include "code_nav.h"
 #include "code_scan.h"
 #include "file_types.h"
+#include "i18n.h"
 #include <string.h>
 
 /* A server that has not answered by then (starting, indexing, hung) is not
@@ -98,7 +99,7 @@ static void on_scanned(GObject* source, GAsyncResult* res, gpointer data) {
     Request* r = g_task_get_task_data(G_TASK(res));
     GPtrArray* entries = g_task_propagate_pointer(G_TASK(res), NULL);
     if (entries != NULL) {
-        answer(r, entries, r->markdown ? "Markdown headings" : "built-in scanner");
+        answer(r, entries, r->markdown ? _("Markdown headings") : _("built-in scanner"));
         g_ptr_array_unref(entries);
     }
 }
@@ -151,7 +152,7 @@ static void on_server_symbols(AppData* app, EditorTab* tab, GPtrArray* symbols, 
     }
     code_outline_sort(entries);
     gchar* server = code_intel_server_label(r->app, r->tab);
-    answer(r, entries, server != NULL ? server : "language server");
+    answer(r, entries, server != NULL ? server : _("language server"));
     g_free(server);
     g_ptr_array_unref(entries);
     request_unref(r);

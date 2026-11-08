@@ -1,6 +1,7 @@
 /* A tagbar beside some content (see outline_pane.h) */
 #include "outline_pane.h"
 #include "icons.h"
+#include "i18n.h"
 #include "panels.h"
 
 #define DEFAULT_WIDTH 240
@@ -213,7 +214,7 @@ static void update_collapse_button(OutlinePane* p) {
     if (p->collapse_shown == expanded && gtk_widget_get_tooltip_text(p->collapse_button) != NULL) return;
     p->collapse_shown = expanded;
     icon_button_set_content(p->collapse_button, expanded ? "pan-up" : "pan-down", NULL);
-    gtk_widget_set_tooltip_text(p->collapse_button, expanded ? "Collapse All (c)" : "Expand All (c)");
+    gtk_widget_set_tooltip_text(p->collapse_button, expanded ? _("Collapse All (c)") : _("Expand All (c)"));
 }
 
 static gboolean collapse_button_idle(gpointer data) {
@@ -299,10 +300,10 @@ void outline_pane_set_entries(OutlinePane* p, GPtrArray* entries, gboolean headi
     g_clear_pointer(&p->entries, g_ptr_array_unref);
     p->entries = g_ptr_array_ref(entries);
     p->jumped = -1;
-    gtk_label_set_text(GTK_LABEL(p->title), headings ? "Headings" : "Symbols");
+    gtk_label_set_text(GTK_LABEL(p->title), headings ? _("Headings") : _("Symbols"));
     gtk_label_set_text(GTK_LABEL(p->source), headings || source == NULL ? "" : source);
     gtk_widget_set_visible(p->sort_button, !headings);
-    gtk_label_set_text(GTK_LABEL(p->empty), headings ? "No headings in this file" : "No symbols in this file");
+    gtk_label_set_text(GTK_LABEL(p->empty), headings ? _("No headings in this file") : _("No symbols in this file"));
     gtk_stack_set_visible_child_name(GTK_STACK(p->stack), entries->len > 0 ? "list" : "empty");
     rebuild(p);
 }
@@ -430,7 +431,7 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
         detail = NULL;
     } else {
         const gchar* kind = p->sort == CODE_OUTLINE_BY_LINE ? code_symbol_kind_name(it->kind) : NULL;
-        const gchar* extra = it->declaration ? "declaration" : it->detail;
+        const gchar* extra = it->declaration ? _("declaration") : it->detail;
         detail = kind != NULL && extra != NULL ? g_strdup_printf("%s · %s", kind, extra) : g_strdup(kind != NULL ? kind : extra);
     }
     GtkWidget* detail_label = g_object_get_data(G_OBJECT(box), "detail");
@@ -456,7 +457,7 @@ static void on_unbind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer d
 static void update_sort_button(OutlinePane* p) {
     gboolean by_kind = p->sort == CODE_OUTLINE_BY_KIND;
     icon_button_set_content(p->sort_button, by_kind ? "view-list-ordered" : "view-list-bullet", NULL);
-    gtk_widget_set_tooltip_text(p->sort_button, by_kind ? "Sort By Line (s)" : "Group By Kind (s)");
+    gtk_widget_set_tooltip_text(p->sort_button, by_kind ? _("Sort By Line (s)") : _("Group By Kind (s)"));
 }
 
 static void toggle_sort(OutlinePane* p) {
@@ -519,7 +520,7 @@ OutlinePane* outline_pane_new(GtkWidget* content, gint* width, const gchar* load
     gtk_widget_set_size_request(p->panel, MIN_WIDTH, -1);
     GtkWidget* header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(header, "tagbar-header");
-    p->title = gtk_label_new("Symbols");
+    p->title = gtk_label_new(_("Symbols"));
     gtk_widget_add_css_class(p->title, "tagbar-title");
     gtk_box_append(GTK_BOX(header), p->title);
     p->source = gtk_label_new(NULL);
@@ -536,7 +537,7 @@ OutlinePane* outline_pane_new(GtkWidget* content, gint* width, const gchar* load
     update_collapse_button(p);
     g_signal_connect(p->collapse_button, "clicked", G_CALLBACK(on_collapse_clicked), p);
     gtk_box_append(GTK_BOX(header), p->collapse_button);
-    GtkWidget* close = icon_button_new("window-close", "Hide Tagbar (q)");
+    GtkWidget* close = icon_button_new("window-close", _("Hide Tagbar (q)"));
     g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), p);
     gtk_box_append(GTK_BOX(header), close);
     gtk_box_append(GTK_BOX(p->panel), header);

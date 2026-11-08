@@ -1,5 +1,6 @@
 /* Languages, identifiers and symbols for code navigation */
 #include "code_symbol.h"
+#include "i18n.h"
 #include <string.h>
 
 typedef struct {
@@ -152,18 +153,18 @@ const gchar* code_lang_name(CodeLang lang) {
 
 const gchar* code_symbol_kind_name(CodeSymbolKind kind) {
     switch (kind) {
-        case CODE_SYM_FUNCTION: return "function";
-        case CODE_SYM_METHOD: return "method";
-        case CODE_SYM_MACRO: return "macro";
-        case CODE_SYM_TYPE: return "type";
-        case CODE_SYM_CLASS: return "class";
-        case CODE_SYM_VARIABLE: return "variable";
-        case CODE_SYM_CONSTANT: return "constant";
-        case CODE_SYM_FIELD: return "field";
-        case CODE_SYM_MODULE: return "module";
-        case CODE_SYM_TARGET: return "target";
+        case CODE_SYM_FUNCTION: return C_("symbol kind", "function");
+        case CODE_SYM_METHOD: return C_("symbol kind", "method");
+        case CODE_SYM_MACRO: return C_("symbol kind", "macro");
+        case CODE_SYM_TYPE: return C_("symbol kind", "type");
+        case CODE_SYM_CLASS: return C_("symbol kind", "class");
+        case CODE_SYM_VARIABLE: return C_("symbol kind", "variable");
+        case CODE_SYM_CONSTANT: return C_("symbol kind", "constant");
+        case CODE_SYM_FIELD: return C_("symbol kind", "field");
+        case CODE_SYM_MODULE: return C_("symbol kind", "module");
+        case CODE_SYM_TARGET: return C_("symbol kind", "target");
     }
-    return "symbol";
+    return C_("symbol kind", "symbol");
 }
 
 gboolean code_is_word_char(CodeLang lang, gunichar c) {

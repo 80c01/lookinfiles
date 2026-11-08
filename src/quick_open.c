@@ -8,6 +8,7 @@
 #include "focus_route.h"
 #include "fuzzy_match.h"
 #include "icons.h"
+#include "i18n.h"
 #include "nav_history.h"
 #include "palette.h"
 
@@ -61,13 +62,15 @@ static gint compare_scored(gconstpointer a, gconstpointer b) {
 static void update_note(Picker* p, guint matches) {
     gchar* text;
     if (p->files == NULL) {
-        text = g_strdup("Listing the project files…");
+        text = g_strdup(_("Listing the project files…"));
     } else if (p->recent_mode) {
-        text = g_strdup_printf("%u of %u recent places · Enter opens a folder or shows a file, "
-                               "Ctrl+Enter edits a file", matches, p->files->len);
+        text = g_strdup_printf(_("%1$u of %2$u recent places · Enter opens a folder or shows a file, "
+                                 "Ctrl+Enter edits a file"),
+                               matches, p->files->len);
     } else {
-        text = g_strdup_printf("%u of %u files%s · Enter shows it, Ctrl+Enter edits it", matches, p->files->len,
-                               p->truncated ? " (list cut)" : "");
+        text = g_strdup_printf(p->truncated ? _("%1$u of %2$u files (list cut) · Enter shows it, Ctrl+Enter edits it")
+                                            : _("%1$u of %2$u files · Enter shows it, Ctrl+Enter edits it"),
+                               matches, p->files->len);
     }
     gtk_label_set_text(GTK_LABEL(p->note), text);
     g_free(text);
@@ -271,7 +274,7 @@ static void choose(Picker* p, gboolean edit) {
     gboolean is_folder = p->folders != NULL && g_hash_table_contains(p->folders, rel);
     app_dialog_destroy(APP_DIALOG(p->dialog)); /* frees p, and rel */
     if (!g_file_test(path, G_FILE_TEST_EXISTS)) {
-        gchar* msg = g_strdup_printf("“%s” no longer exists", path);
+        gchar* msg = g_strdup_printf(_("“%s” no longer exists"), path);
         app_notice(app, msg, FALSE);
         g_free(msg);
         g_free(path);
@@ -362,8 +365,8 @@ static Picker* picker_new(AppData* app, const gchar* title, const gchar* placeho
     p->app = app;
     p->cancellable = g_cancellable_new();
     p->query = g_strdup("");
-    p->dialog = app_dialog_new(title, app->window, "_Cancel", APP_RESPONSE_CANCEL, "_Edit", RESPONSE_EDIT,
-                               "_Open", RESPONSE_SHOW, NULL);
+    p->dialog = app_dialog_new(title, app->window, _("_Cancel"), APP_RESPONSE_CANCEL, _("_Edit"), RESPONSE_EDIT,
+                               _("_Open"), RESPONSE_SHOW, NULL);
     app_dialog_set_width(APP_DIALOG(p->dialog), 640);
     app_dialog_set_default_response(APP_DIALOG(p->dialog), RESPONSE_SHOW);
     GtkWidget* area = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -418,8 +421,8 @@ void quick_open_show(AppData* app) {
     }
     gchar* root = code_index_project_root(app->base_dir);
     gchar* root_name = g_path_get_basename(root);
-    gchar* title = g_strdup_printf("Go to File in %s", root_name);
-    Picker* p = picker_new(app, title, "Type part of a file name or path");
+    gchar* title = g_strdup_printf(_("Go to File in %s"), root_name);
+    Picker* p = picker_new(app, title, _("Type part of a file name or path"));
     p->root = root;
     g_free(title);
     g_free(root_name);
@@ -438,7 +441,7 @@ void quick_open_show_recent(AppData* app) {
     if (app == NULL || app->window == NULL || app_dialog_is_open(app->window)) {
         return;
     }
-    Picker* p = picker_new(app, "Recent Folders and Files", "Type part of a folder or file name");
+    Picker* p = picker_new(app, _("Recent Folders and Files"), _("Type part of a folder or file name"));
     p->recent_mode = TRUE;
     p->folders = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     p->files = g_ptr_array_new_with_free_func(g_free);

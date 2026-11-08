@@ -101,7 +101,7 @@ vim_engine_ex:vim_engine_private,vim_ex,vim_keys,vim_motion,vim_regex
 diff_gutter:git_utils,line_diff,palette
 color_column:palette
 explorer_row:
-code_symbol:
+code_symbol:i18n
 code_scan_c:code_symbol
 code_scan:code_symbol,code_scan_c
 code_outline_tree:code_symbol
@@ -144,7 +144,7 @@ preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,pale
 tree_nav:app_types
 app_events:app_types
 panels:app_types,app_events,nav_keys
-outline_pane:code_outline_tree,code_symbol,icons,panels
+outline_pane:code_outline_tree,code_symbol,icons,panels,i18n
 focus_route:app_types,app_events,nav_keys,panels
 icons:file_type_icons,palette
 icon_sets:app_paths,theme_store
