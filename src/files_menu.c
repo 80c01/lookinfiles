@@ -1,6 +1,7 @@
 /* Right-click menu of the files view (same labels and keys as the toolbar
  * tooltips and the README tables). */
 #include "files_menu.h"
+#include "i18n.h"
 #include "app_events.h"
 #include "bookmarks.h"
 #include "browser.h"
@@ -39,7 +40,7 @@ static void on_launch_done(GObject* source, GAsyncResult* res, gpointer data) {
     GError* err = NULL;
     if (!gtk_file_launcher_launch_finish(GTK_FILE_LAUNCHER(source), res, &err)) {
         if (!g_error_matches(err, GTK_DIALOG_ERROR, GTK_DIALOG_ERROR_DISMISSED)) {
-            gchar* msg = g_strdup_printf("Cannot open with the default application: %s", err->message);
+            gchar* msg = g_strdup_printf(_("Cannot open with the default application: %s"), err->message);
             app_notice(app, msg, FALSE);
             g_free(msg);
         }
@@ -58,7 +59,7 @@ static void open_default_app(AppData* app, const gchar* path) {
 static void copy_path(AppData* app, const gchar* path) {
     GdkClipboard* clip = gtk_widget_get_clipboard(GTK_WIDGET(app->window));
     gdk_clipboard_set_text(clip, path);
-    gchar* msg = g_strdup_printf("Copied “%s”", path);
+    gchar* msg = g_strdup_printf(_("Copied “%s”"), path);
     app_notice(app, msg, FALSE);
     g_free(msg);
 }
@@ -158,37 +159,37 @@ static const gchar* side_panel_key(AppData* app) {
 
 static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, ExplorerRow* row) {
     gboolean is_dir = explorer_row_is(row, "dir");
-    menu_item(box, popover, app, "Open", "Enter", FM_OPEN);
+    menu_item(box, popover, app, _("Open"), "Enter", FM_OPEN);
     if (!is_dir) {
         FileKind kind = (g_strcmp0(row->path, app->viewed_path) == 0)
                             ? app->viewed_kind
                             : file_kind_of_path(row->path, row->name);
         if (file_kind_is_text(kind)) {
-            menu_item(box, popover, app, "Open in Side Panel", side_panel_key(app), FM_OPEN_SIDE);
+            menu_item(box, popover, app, _("Open in Side Panel"), side_panel_key(app), FM_OPEN_SIDE);
         } else {
-            menu_item(box, popover, app, "Open With Default App", NULL, FM_OPEN_DEFAULT_APP);
+            menu_item(box, popover, app, _("Open With Default App"), NULL, FM_OPEN_DEFAULT_APP);
         }
         if (browser_available() && is_html_file(row->name)) {
-            menu_item(box, popover, app, "Open in Browser Tab", NULL, FM_OPEN_BROWSER);
+            menu_item(box, popover, app, _("Open in Browser Tab"), NULL, FM_OPEN_BROWSER);
         }
     } else {
-        menu_item(box, popover, app, "Open Terminal Here", NULL, FM_TERMINAL);
+        menu_item(box, popover, app, _("Open Terminal Here"), NULL, FM_TERMINAL);
     }
     menu_separator(box);
-    menu_item(box, popover, app, "Rename…", "F2", FM_RENAME);
-    menu_item(box, popover, app, "Move to Trash…", "Delete", FM_TRASH);
+    menu_item(box, popover, app, _("Rename…"), "F2", FM_RENAME);
+    menu_item(box, popover, app, _("Move to Trash…"), "Delete", FM_TRASH);
     menu_separator(box);
-    menu_item(box, popover, app, "Copy Path", NULL, FM_COPY_PATH);
-    menu_item(box, popover, app, "Bookmark…", "Ctrl+D", FM_BOOKMARK);
+    menu_item(box, popover, app, _("Copy Path"), NULL, FM_COPY_PATH);
+    menu_item(box, popover, app, _("Bookmark…"), "Ctrl+D", FM_BOOKMARK);
 }
 
 static void fill_folder_menu(GtkWidget* box, GtkWidget* popover, AppData* app) {
-    menu_item(box, popover, app, "New File…", "a", FM_NEW_FILE);
-    menu_item(box, popover, app, "New Folder…", "Shift+A", FM_NEW_FOLDER);
+    menu_item(box, popover, app, _("New File…"), "a", FM_NEW_FILE);
+    menu_item(box, popover, app, _("New Folder…"), "Shift+A", FM_NEW_FOLDER);
     menu_separator(box);
-    menu_item(box, popover, app, "Open Terminal Here", NULL, FM_TERMINAL);
-    menu_item(box, popover, app, "Copy Path", NULL, FM_COPY_PATH);
-    menu_item(box, popover, app, "Bookmark…", "Ctrl+D", FM_BOOKMARK);
+    menu_item(box, popover, app, _("Open Terminal Here"), NULL, FM_TERMINAL);
+    menu_item(box, popover, app, _("Copy Path"), NULL, FM_COPY_PATH);
+    menu_item(box, popover, app, _("Bookmark…"), "Ctrl+D", FM_BOOKMARK);
 }
 
 static void on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
@@ -226,7 +227,7 @@ static void on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gd
     }
     if (file_moves_can_undo(app)) {
         menu_separator(box);
-        menu_item(box, popover, app, "Undo", "u", FM_UNDO);
+        menu_item(box, popover, app, _("Undo"), "u", FM_UNDO);
     }
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);

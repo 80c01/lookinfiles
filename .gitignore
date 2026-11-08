@@ -3,3 +3,4 @@ build/
 build-asan/
 lookinfiles-*.tar.gz
 __pycache__/
+po/*.pot

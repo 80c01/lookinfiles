@@ -1,5 +1,6 @@
 /* The Preferences dialog (see preferences.h). */
 #include "preferences.h"
+#include "i18n.h"
 #include "app_events.h"
 #include "app_paths.h"
 #include "color_column.h"
@@ -102,19 +103,19 @@ static GtkWidget* response_button(Preferences* p, const gchar* label, gint respo
 
 static GtkWidget* editor_page(Preferences* p) {
     GtkWidget* box = page_box();
-    gtk_box_append(GTK_BOX(box), hint_label("For editor tabs opened from now on; the tabs already open keep "
+    gtk_box_append(GTK_BOX(box), hint_label(_("For editor tabs opened from now on; the tabs already open keep "
                                             "theirs, except for the column line and the tagbar. Org files always open "
-                                            "in Org-mode."));
+                                            "in Org-mode.")));
 
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    GtkWidget* label = gtk_label_new_with_mnemonic("_Mode");
+    GtkWidget* label = gtk_label_new_with_mnemonic(_("_Mode"));
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_widget_set_hexpand(label, TRUE);
     static const char* const NAMES[] = {"Notepad", "Vim", "Emacs", NULL};
     p->mode = gtk_drop_down_new_from_strings(NAMES);
     gtk_label_set_mnemonic_widget(GTK_LABEL(label), p->mode);
-    gtk_widget_set_tooltip_text(p->mode, "Keys of new editor tabs, and of the explorer and preview "
-                                         "(the global mode of the status bar; -e on the command line)");
+    gtk_widget_set_tooltip_text(p->mode, _("Keys of new editor tabs, and of the explorer and preview "
+                                         "(the global mode of the status bar; -e on the command line)"));
     SettingsEditor current = settings_editor_of(p->app->default_editor_mode);
     for (guint i = 0; i < G_N_ELEMENTS(MODES); i++) {
         if (MODES[i] == current) {
@@ -125,40 +126,40 @@ static GtkWidget* editor_page(Preferences* p) {
     gtk_box_append(GTK_BOX(row), p->mode);
     gtk_box_append(GTK_BOX(box), row);
 
-    p->line_numbers = gtk_check_button_new_with_mnemonic("Show _line numbers");
+    p->line_numbers = gtk_check_button_new_with_mnemonic(_("Show _line numbers"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->line_numbers), p->app->editor_line_numbers);
-    gtk_widget_set_tooltip_text(p->line_numbers, "A tab can still show or hide them from its right-click menu");
+    gtk_widget_set_tooltip_text(p->line_numbers, _("A tab can still show or hide them from its right-click menu"));
     gtk_box_append(GTK_BOX(box), p->line_numbers);
 
-    p->wrap = gtk_check_button_new_with_mnemonic("_Wrap long lines");
+    p->wrap = gtk_check_button_new_with_mnemonic(_("_Wrap long lines"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->wrap), p->app->editor_wrap);
-    gtk_widget_set_tooltip_text(p->wrap, "Long lines continue on the next line instead of scrolling sideways");
+    gtk_widget_set_tooltip_text(p->wrap, _("Long lines continue on the next line instead of scrolling sideways"));
     gtk_box_append(GTK_BOX(box), p->wrap);
 
-    p->tagbar = gtk_check_button_new_with_mnemonic("Show the _tagbar");
+    p->tagbar = gtk_check_button_new_with_mnemonic(_("Show the _tagbar"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->tagbar), p->app->editor_tagbar);
-    gtk_widget_set_tooltip_text(p->tagbar, "Symbols of code files and headings of Markdown files beside the text, "
+    gtk_widget_set_tooltip_text(p->tagbar, _("Symbols of code files and headings of Markdown files beside the text, "
                                            "in every tab, the tabs already open too (Notepad: Ctrl+K Ctrl+O, "
-                                           "Emacs: M-x imenu-list, Vim: :TagbarToggle)");
+                                           "Emacs: M-x imenu-list, Vim: :TagbarToggle)"));
     gtk_box_append(GTK_BOX(box), p->tagbar);
 
-    p->preview_tagbar = gtk_check_button_new_with_mnemonic("Show the tagbar in the _preview");
+    p->preview_tagbar = gtk_check_button_new_with_mnemonic(_("Show the tagbar in the _preview"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->preview_tagbar), p->app->preview_tagbar);
-    gtk_widget_set_tooltip_text(p->preview_tagbar, "Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews, PDF bookmarks, beside "
-                                                   "the text (in the preview: o or Ctrl+K Ctrl+O)");
+    gtk_widget_set_tooltip_text(p->preview_tagbar, _("Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews, PDF bookmarks, beside "
+                                                   "the text (in the preview: o or Ctrl+K Ctrl+O)"));
     gtk_box_append(GTK_BOX(box), p->preview_tagbar);
 
     /* Vim's colorcolumn: the line at the left edge of that column */
     GtkWidget* ruler_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    p->ruler = gtk_check_button_new_with_mnemonic("Show a vertical line at _column");
+    p->ruler = gtk_check_button_new_with_mnemonic(_("Show a vertical line at _column"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->ruler), p->app->editor_color_column > 0);
-    gtk_widget_set_tooltip_text(p->ruler, "A line before this column in every editor tab, the tabs already "
-                                          "open too, and in code previews (Vim: :set colorcolumn=81)");
+    gtk_widget_set_tooltip_text(p->ruler, _("A line before this column in every editor tab, the tabs already "
+                                          "open too, and in code previews (Vim: :set colorcolumn=81)"));
     gtk_widget_set_hexpand(p->ruler, TRUE);
     p->ruler_column = gtk_spin_button_new_with_range(1, SETTINGS_MAX_COLUMN, 1);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(p->ruler_column),
                               p->app->editor_color_column > 0 ? p->app->editor_color_column : 81);
-    gtk_widget_set_tooltip_text(p->ruler_column, "81: the line follows the 80th character");
+    gtk_widget_set_tooltip_text(p->ruler_column, _("81: the line follows the 80th character"));
     g_object_bind_property(p->ruler, "active", p->ruler_column, "sensitive", G_BINDING_SYNC_CREATE);
     gtk_box_append(GTK_BOX(ruler_row), p->ruler);
     gtk_box_append(GTK_BOX(ruler_row), p->ruler_column);
@@ -193,15 +194,15 @@ static GtkWidget* size_spin(gint min, gint value) {
 
 static GtkWidget* window_page(Preferences* p, const Settings* s) {
     GtkWidget* box = page_box();
-    gtk_box_append(GTK_BOX(box), hint_label("Size of the window at the next launch, in pixels "
-                                            "(--size on the command line wins)."));
+    gtk_box_append(GTK_BOX(box), hint_label(_("Size of the window at the next launch, in pixels "
+                                            "(--size on the command line wins).")));
     GtkWidget* grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 8);
     p->width = size_spin(SETTINGS_MIN_WIDTH, s->width);
     p->height = size_spin(SETTINGS_MIN_HEIGHT, s->height);
-    GtkWidget* wl = gtk_label_new_with_mnemonic("Wi_dth");
-    GtkWidget* hl = gtk_label_new_with_mnemonic("_Height");
+    GtkWidget* wl = gtk_label_new_with_mnemonic(_("Wi_dth"));
+    GtkWidget* hl = gtk_label_new_with_mnemonic(_("_Height"));
     gtk_label_set_mnemonic_widget(GTK_LABEL(wl), p->width);
     gtk_label_set_mnemonic_widget(GTK_LABEL(hl), p->height);
     gtk_label_set_xalign(GTK_LABEL(wl), 0.0f);
@@ -211,8 +212,8 @@ static GtkWidget* window_page(Preferences* p, const Settings* s) {
     gtk_grid_attach(GTK_GRID(grid), hl, 0, 1, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), p->height, 1, 1, 1, 1);
     gtk_box_append(GTK_BOX(box), grid);
-    gtk_box_append(GTK_BOX(box), response_button(p, "Use the _current size", RESPONSE_CURRENT_SIZE,
-                                                 "Fill in the size the window has now"));
+    gtk_box_append(GTK_BOX(box), response_button(p, _("Use the _current size"), RESPONSE_CURRENT_SIZE,
+                                                 _("Fill in the size the window has now")));
     return box;
 }
 
@@ -226,16 +227,16 @@ static gchar* lsp_ini_path(void) {
 static GtkWidget* code_page(Preferences* p) {
     GtkWidget* box = page_box();
     gchar* path = lsp_ini_path();
-    gchar* text = g_strdup_printf("Code navigation starts the language server installed for the file's "
+    gchar* text = g_strdup_printf(_("Code navigation starts the language server installed for the file's "
                                   "language (clangd, pylsp, gopls, rust-analyzer...). %s replaces a "
-                                  "server's command or turns it off; it is read at the next launch.",
+                                  "server's command or turns it off; it is read at the next launch."),
                                   path);
     g_free(path);
     gtk_box_append(GTK_BOX(box), hint_label(text));
     g_free(text);
-    gtk_box_append(GTK_BOX(box), response_button(p, "Edit _lsp.ini", RESPONSE_EDIT_LSP,
-                                                 "Open lsp.ini in an editor tab (created with an example "
-                                                 "if missing)"));
+    gtk_box_append(GTK_BOX(box), response_button(p, _("Edit _lsp.ini"), RESPONSE_EDIT_LSP,
+                                                 _("Open lsp.ini in an editor tab (created with an example "
+                                                 "if missing)")));
     return box;
 }
 
@@ -338,7 +339,7 @@ void preferences_show(AppData* app, const gchar* section) {
     }
     Preferences p = {0};
     p.app = app;
-    GtkWidget* dlg = app_dialog_new("Preferences", app->window, "_Cancel", APP_RESPONSE_CANCEL, "_Apply",
+    GtkWidget* dlg = app_dialog_new(_("Preferences"), app->window, _("_Cancel"), APP_RESPONSE_CANCEL, _("_Apply"),
                                     APP_RESPONSE_OK, NULL);
     p.dialog = APP_DIALOG(dlg);
     app_dialog_set_default_response(p.dialog, APP_RESPONSE_OK);
@@ -355,10 +356,10 @@ void preferences_show(AppData* app, const gchar* section) {
     p.themes = themes_page_new(app, p.dialog);
     GtkWidget* appearance = page_box();
     gtk_box_append(GTK_BOX(appearance), themes_page_widget(p.themes));
-    gtk_stack_add_titled(p.stack, appearance, PREFERENCES_APPEARANCE, "Appearance");
-    gtk_stack_add_titled(p.stack, editor_page(&p), "editor", "Editor");
-    gtk_stack_add_titled(p.stack, window_page(&p, &s), "window", "Window");
-    gtk_stack_add_titled(p.stack, code_page(&p), "code", "Code navigation");
+    gtk_stack_add_titled(p.stack, appearance, PREFERENCES_APPEARANCE, _("Appearance"));
+    gtk_stack_add_titled(p.stack, editor_page(&p), "editor", _("Editor"));
+    gtk_stack_add_titled(p.stack, window_page(&p, &s), "window", _("Window"));
+    gtk_stack_add_titled(p.stack, code_page(&p), "code", _("Code navigation"));
     const gchar* show = (section != NULL) ? section : last_section;
     if (show != NULL && gtk_stack_get_child_by_name(p.stack, show) != NULL) {
         gtk_stack_set_visible_child_name(p.stack, show);

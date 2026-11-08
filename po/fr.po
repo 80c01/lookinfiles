@@ -1,0 +1,725 @@
+# French translations for lookinfiles package
+# Traductions françaises du paquet lookinfiles.
+# Copyright (C) 2026 THE lookinfiles'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the lookinfiles package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
+"Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
+"POT-Creation-Date: 2026-11-08 08:29+0000\n"
+"PO-Revision-Date: 2026-11-08 08:29+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/file_actions.c:42 src/file_actions.c:236 src/preferences.c:342
+msgid "_Cancel"
+msgstr "_Annuler"
+
+#: src/file_actions.c:95
+msgid "_Close"
+msgstr "_Fermer"
+
+#: src/file_actions.c:234
+msgid "New Folder"
+msgstr "Nouveau dossier"
+
+#: src/file_actions.c:234
+msgid "New File"
+msgstr "Nouveau fichier"
+
+#: src/file_actions.c:237
+msgid "_Create"
+msgstr "_Créer"
+
+#: src/file_actions.c:252
+msgid "Name"
+msgstr "Nom"
+
+#: src/file_actions.c:254
+msgid "Folder name"
+msgstr "Nom du dossier"
+
+#: src/file_actions.c:254
+msgid "File name"
+msgstr "Nom du fichier"
+
+#: src/file_actions.c:257
+msgid "Parent folder"
+msgstr "Dossier parent"
+
+#: src/file_actions.c:259
+msgid "~/projects or /tmp"
+msgstr "~/projets ou /tmp"
+
+#: src/file_actions.c:343
+#, c-format
+msgid "Rename “%s” to:"
+msgstr "Renommer « %s » en :"
+
+#: src/file_actions.c:346
+msgid "Rename Folder"
+msgstr "Renommer le dossier"
+
+#: src/file_actions.c:346
+msgid "Rename File"
+msgstr "Renommer le fichier"
+
+#: src/file_actions.c:347
+msgid "_Rename"
+msgstr "_Renommer"
+
+#: src/file_actions.c:354 src/file_actions.c:357 src/file_actions.c:366
+msgid "Cannot Rename"
+msgstr "Impossible de renommer"
+
+#: src/file_actions.c:354
+msgid "A name cannot contain “/” or be “.” or “..”."
+msgstr "Un nom ne peut pas contenir « / » ni être « . » ou « .. »."
+
+#: src/file_actions.c:356
+#, c-format
+msgid "“%s” already exists in this folder."
+msgstr "« %s » existe déjà dans ce dossier."
+
+#: src/file_actions.c:364
+#, c-format
+msgid "Could not rename “%s”: %s"
+msgstr "Impossible de renommer « %s » : %s"
+
+#: src/file_actions.c:365 src/file_actions.c:398
+msgid "unknown error"
+msgstr "erreur inconnue"
+
+#: src/file_actions.c:388
+#, c-format
+msgid "Move the folder “%s” to the trash?"
+msgstr "Mettre le dossier « %s » à la corbeille ?"
+
+#: src/file_actions.c:389
+#, c-format
+msgid "Move the file “%s” to the trash?"
+msgstr "Mettre le fichier « %s » à la corbeille ?"
+
+#: src/file_actions.c:390
+msgid "Delete Folder"
+msgstr "Supprimer le dossier"
+
+#: src/file_actions.c:390
+msgid "Delete File"
+msgstr "Supprimer le fichier"
+
+#: src/file_actions.c:391
+msgid "_Move to Trash"
+msgstr "_Mettre à la corbeille"
+
+#: src/file_actions.c:397
+#, c-format
+msgid "Could not move “%s” to the trash: %s"
+msgstr "Impossible de mettre « %s » à la corbeille : %s"
+
+#: src/file_actions.c:399
+msgid "Cannot Delete"
+msgstr "Impossible de supprimer"
+
+#: src/files_menu.c:43
+#, c-format
+msgid "Cannot open with the default application: %s"
+msgstr "Impossible d’ouvrir avec l’application par défaut : %s"
+
+#: src/files_menu.c:62
+#, c-format
+msgid "Copied “%s”"
+msgstr "« %s » copié"
+
+#: src/files_menu.c:162
+msgid "Open"
+msgstr "Ouvrir"
+
+#: src/files_menu.c:168
+msgid "Open in Side Panel"
+msgstr "Ouvrir dans le panneau latéral"
+
+#: src/files_menu.c:170
+msgid "Open With Default App"
+msgstr "Ouvrir avec l’application par défaut"
+
+#: src/files_menu.c:173
+msgid "Open in Browser Tab"
+msgstr "Ouvrir dans un onglet navigateur"
+
+#: src/files_menu.c:176 src/files_menu.c:190
+msgid "Open Terminal Here"
+msgstr "Ouvrir un terminal ici"
+
+#: src/files_menu.c:179
+msgid "Rename…"
+msgstr "Renommer…"
+
+#: src/files_menu.c:180
+msgid "Move to Trash…"
+msgstr "Mettre à la corbeille…"
+
+#: src/files_menu.c:182 src/files_menu.c:191
+msgid "Copy Path"
+msgstr "Copier le chemin"
+
+#: src/files_menu.c:183 src/files_menu.c:192
+msgid "Bookmark…"
+msgstr "Ajouter un signet…"
+
+#: src/files_menu.c:187
+msgid "New File…"
+msgstr "Nouveau fichier…"
+
+#: src/files_menu.c:188
+msgid "New Folder…"
+msgstr "Nouveau dossier…"
+
+#: src/files_menu.c:230
+msgid "Undo"
+msgstr "Annuler"
+
+#: src/layout_switcher.c:171 src/layout_switcher.c:189
+msgid "Current Layout"
+msgstr "Disposition actuelle"
+
+#: src/layout_switcher.c:203
+msgid "_Edit Layouts…"
+msgstr "_Modifier les dispositions…"
+
+#: src/layout_switcher.c:205
+msgid "Save, Delete or Reset Layouts"
+msgstr "Enregistrer, supprimer ou réinitialiser les dispositions"
+
+#: src/main.c:141
+#, c-format
+msgid ""
+"Usage: %s [options] [<file>|<folder>]\n"
+"       %s [options] -n <note>\n"
+"\n"
+"Without argument, reopens the workspaces of the last session (else\n"
+"shows the current directory; \".\" always shows it).\n"
+"A folder is shown in the explorer; a file is opened in the dedicated\n"
+"editor panel, with the explorer and the preview hidden.\n"
+"With -n, the argument is a note: \"Title\" or \"Notebook/Title\"; a\n"
+".org, .md or .txt extension sets the type. Missing notes are created.\n"
+"\n"
+"Options:\n"
+"  -h, --help                       show this help and exit\n"
+"  -V, --version                    show the version and exit\n"
+"  -e, --editor emacs|vim|notepad   default editor mode of new tabs\n"
+"                                   (Org files always open in Org-mode)\n"
+"  -n, --note                       the argument is a note, not a file\n"
+"  -f, --fullscreen                 start in fullscreen\n"
+"  -s, --size WIDTHxHEIGHT          window size (e.g. 1920x1080)\n"
+msgstr ""
+"Usage : %s [options] [<fichier>|<dossier>]\n"
+"        %s [options] -n <note>\n"
+"\n"
+"Sans argument, rouvre les espaces de travail de la dernière session (sinon\n"
+"affiche le dossier courant ; « . » l’affiche toujours).\n"
+"Un dossier s’affiche dans l’explorateur ; un fichier s’ouvre dans le panneau\n"
+"d’édition dédié, explorateur et aperçu masqués.\n"
+"Avec -n, l’argument est une note : « Titre » ou « Carnet/Titre » ; une\n"
+"extension .org, .md ou .txt fixe le type. Les notes absentes sont créées.\n"
+"\n"
+"Options :\n"
+"  -h, --help                       affiche cette aide et quitte\n"
+"  -V, --version                    affiche la version et quitte\n"
+"  -e, --editor emacs|vim|notepad   mode d’édition par défaut des nouveaux onglets\n"
+"                                   (les fichiers Org s’ouvrent toujours en Org-mode)\n"
+"  -n, --note                       l’argument est une note, pas un fichier\n"
+"  -f, --fullscreen                 démarre en plein écran\n"
+"  -s, --size LARGEURxHAUTEUR       taille de la fenêtre (ex. 1920x1080)\n"
+
+#: src/main.c:196
+#, c-format
+msgid "%s: option '%s' requires an argument\n"
+msgstr ""
+"%s : l’option « %s » attend un argument\n"
+
+#: src/main.c:235
+#, c-format
+msgid "%s: only one file or folder can be given\n"
+msgstr ""
+"%s : un seul fichier ou dossier peut être donné\n"
+
+#: src/main.c:254
+#, c-format
+msgid "%s: unknown editor '%s' (expected emacs, vim or notepad)\n"
+msgstr ""
+"%s : éditeur inconnu « %s » (attendu : emacs, vim ou notepad)\n"
+
+#: src/main.c:260
+#, c-format
+msgid ""
+"[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n"
+msgstr ""
+"[ Taille invalide « %s » : format attendu LARGEURxHAUTEUR (ex. --size 1920x1080) ]\n"
+
+#: src/main.c:264
+#, c-format
+msgid "%s: unknown option '%s'\n"
+msgstr ""
+"%s : option inconnue « %s »\n"
+
+#: src/main.c:271
+#, c-format
+msgid "%s: option '-n' needs a note name\n"
+msgstr ""
+"%s : l’option « -n » attend un nom de note\n"
+
+#: src/main.c:329
+#, c-format
+msgid "[ '%s' is not a file or a directory: showing %s instead ]\n"
+msgstr ""
+"[ « %s » n’est ni un fichier ni un dossier : affichage de %s à la place ]\n"
+
+#: src/main.c:344
+msgid "Explorer"
+msgstr "Explorateur"
+
+#: src/main.c:348
+msgid "Show / Hide Explorer Panel"
+msgstr "Afficher / masquer le panneau Explorateur"
+
+#: src/main.c:351 src/main.c:441
+msgid "Preview"
+msgstr "Aperçu"
+
+#: src/main.c:355
+msgid "Show / Hide Preview Panel"
+msgstr "Afficher / masquer le panneau Aperçu"
+
+#: src/main.c:358 src/topbar.c:661
+msgid "Terminal"
+msgstr "Terminal"
+
+#: src/main.c:362
+msgid "Show / Hide Terminal Panel"
+msgstr "Afficher / masquer le panneau Terminal"
+
+#: src/main.c:368
+msgid "Help"
+msgstr "Aide"
+
+#: src/main.c:372
+msgid "User Guide (F1) — Right-Click: Keyboard Shortcuts (?)"
+msgstr "Guide d’utilisation (F1) — clic droit : raccourcis clavier (?)"
+
+#: src/main.c:448 src/topbar.c:647
+msgid "Move Editor Tabs to a Dedicated Panel"
+msgstr "Déplacer les onglets d’édition dans un panneau dédié"
+
+#: src/main.c:511
+msgid ""
+"Terminal panel disabled:\n"
+"install libvte-2.91-gtk4-dev then rebuild (make)."
+msgstr ""
+"Panneau Terminal désactivé :\n"
+"installez libvte-2.91-gtk4-dev puis recompilez (make)."
+
+#: src/main.c:555
+msgid "Workspace Layouts (Alt+L)"
+msgstr "Dispositions de l’espace de travail (Alt+L)"
+
+#: src/main.c:559
+msgid "Preferences (Ctrl+,)"
+msgstr "Préférences (Ctrl+,)"
+
+#: src/main.c:810
+#, c-format
+msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
+msgstr ""
+"[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
+
+#: src/preferences.c:106
+msgid ""
+"For editor tabs opened from now on; the tabs already open keep theirs, "
+"except for the column line and the tagbar. Org files always open in Org-mode."
+msgstr "Pour les onglets d’édition ouverts à partir de maintenant ; les onglets déjà ouverts gardent les leurs, sauf pour la ligne de colonne et la barre de symboles. Les fichiers Org s’ouvrent toujours en Org-mode."
+
+#: src/preferences.c:111
+msgid "_Mode"
+msgstr "_Mode"
+
+#: src/preferences.c:117
+msgid ""
+"Keys of new editor tabs, and of the explorer and preview (the global mode of "
+"the status bar; -e on the command line)"
+msgstr "Touches des nouveaux onglets d’édition, de l’explorateur et de l’aperçu (le mode global de la barre d’état ; -e en ligne de commande)"
+
+#: src/preferences.c:129
+msgid "Show _line numbers"
+msgstr "Afficher les numéros de _ligne"
+
+#: src/preferences.c:131
+msgid "A tab can still show or hide them from its right-click menu"
+msgstr "Chaque onglet peut encore les afficher ou les masquer depuis son menu contextuel"
+
+#: src/preferences.c:134
+msgid "_Wrap long lines"
+msgstr "_Renvoyer les longues lignes à la ligne"
+
+#: src/preferences.c:136
+msgid "Long lines continue on the next line instead of scrolling sideways"
+msgstr "Les longues lignes continuent sur la ligne suivante au lieu de défiler horizontalement"
+
+#: src/preferences.c:139
+msgid "Show the _tagbar"
+msgstr "Afficher la _barre de symboles"
+
+#: src/preferences.c:141
+msgid ""
+"Symbols of code files and headings of Markdown files beside the text, in "
+"every tab, the tabs already open too (Notepad: Ctrl+K Ctrl+O, Emacs: M-x "
+"imenu-list, Vim: :TagbarToggle)"
+msgstr "Symboles des fichiers de code et titres des fichiers Markdown à côté du texte, dans chaque onglet, y compris ceux déjà ouverts (Notepad : Ctrl+K Ctrl+O, Emacs : M-x imenu-list, Vim : :TagbarToggle)"
+
+#: src/preferences.c:146
+msgid "Show the tagbar in the _preview"
+msgstr "Afficher la barre de symboles dans l’a_perçu"
+
+#: src/preferences.c:148
+msgid ""
+"Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews, PDF "
+"bookmarks, beside the text (in the preview: o or Ctrl+K Ctrl+O)"
+msgstr "Titres des aperçus Markdown, HTML, Org, Word, OpenDocument et EPUB, signets PDF, à côté du texte (dans l’aperçu : o ou Ctrl+K Ctrl+O)"
+
+#: src/preferences.c:154
+msgid "Show a vertical line at _column"
+msgstr "Afficher une ligne verticale à la _colonne"
+
+#: src/preferences.c:156
+msgid ""
+"A line before this column in every editor tab, the tabs already open too, "
+"and in code previews (Vim: :set colorcolumn=81)"
+msgstr "Une ligne avant cette colonne dans chaque onglet d’édition, y compris ceux déjà ouverts, et dans les aperçus de code (Vim : :set colorcolumn=81)"
+
+#: src/preferences.c:162
+msgid "81: the line follows the 80th character"
+msgstr "81 : la ligne suit le 80ᵉ caractère"
+
+#: src/preferences.c:197
+msgid ""
+"Size of the window at the next launch, in pixels (--size on the command line "
+"wins)."
+msgstr "Taille de la fenêtre au prochain lancement, en pixels (--size en ligne de commande l’emporte)."
+
+#: src/preferences.c:204
+msgid "Wi_dth"
+msgstr "_Largeur"
+
+#: src/preferences.c:205
+msgid "_Height"
+msgstr "_Hauteur"
+
+#: src/preferences.c:215
+msgid "Use the _current size"
+msgstr "Utiliser la taille a_ctuelle"
+
+#: src/preferences.c:216
+msgid "Fill in the size the window has now"
+msgstr "Reprendre la taille actuelle de la fenêtre"
+
+#: src/preferences.c:230
+#, c-format
+msgid ""
+"Code navigation starts the language server installed for the file's language "
+"(clangd, pylsp, gopls, rust-analyzer...). %s replaces a server's command or "
+"turns it off; it is read at the next launch."
+msgstr "La navigation dans le code lance le serveur de langage installé pour le langage du fichier (clangd, pylsp, gopls, rust-analyzer…). %s remplace la commande d’un serveur ou le désactive ; il est lu au prochain lancement."
+
+#: src/preferences.c:237
+msgid "Edit _lsp.ini"
+msgstr "Modifier _lsp.ini"
+
+#: src/preferences.c:238
+msgid "Open lsp.ini in an editor tab (created with an example if missing)"
+msgstr "Ouvrir lsp.ini dans un onglet d’édition (créé avec un exemple s’il n’existe pas)"
+
+#: src/preferences.c:342
+msgid "Preferences"
+msgstr "Préférences"
+
+#: src/preferences.c:342
+msgid "_Apply"
+msgstr "A_ppliquer"
+
+#: src/preferences.c:359
+msgid "Appearance"
+msgstr "Apparence"
+
+#: src/preferences.c:360
+msgid "Editor"
+msgstr "Éditeur"
+
+#: src/preferences.c:361
+msgid "Window"
+msgstr "Fenêtre"
+
+#: src/preferences.c:362
+msgid "Code navigation"
+msgstr "Navigation dans le code"
+
+#: src/status_bar.c:63
+msgid "_Undo"
+msgstr "A_nnuler"
+
+#: src/status_bar.c:66
+msgid "Undo the Last Trash or Rename (u)"
+msgstr "Annuler la dernière mise à la corbeille ou le dernier renommage (u)"
+
+#: src/status_bar.c:106
+#, c-format
+msgid "Switched to branch “%s”"
+msgstr "Passé sur la branche « %s »"
+
+#: src/status_bar.c:117
+#, c-format
+msgid "Could not switch to branch “%s”: %s"
+msgstr "Impossible de passer sur la branche « %s » : %s"
+
+#: src/status_bar.c:212
+msgid "Git Branches"
+msgstr "Branches Git"
+
+#: src/status_bar.c:238
+msgid "Remote Branches"
+msgstr "Branches distantes"
+
+#: src/status_bar.c:273
+msgid "(current)"
+msgstr "(actuelle)"
+
+#: src/status_bar.c:276
+msgid "Currently checked out branch"
+msgstr "Branche actuellement extraite"
+
+#: src/status_bar.c:278
+#, c-format
+msgid "Switch to remote tracking branch %s"
+msgstr "Passer sur la branche de suivi distante %s"
+
+#: src/status_bar.c:282
+#, c-format
+msgid "Switch to branch %s"
+msgstr "Passer sur la branche %s"
+
+#: src/status_bar.c:342
+msgid "Git Branch of the Current Directory — Click to View Branches"
+msgstr "Branche Git du dossier courant — cliquer pour voir les branches"
+
+#: src/status_bar.c:429
+msgid "Folder"
+msgstr "Dossier"
+
+#: src/status_bar.c:432
+msgid "Bookmark"
+msgstr "Signet"
+
+#: src/status_bar.c:435
+msgid "Bookmark Folder"
+msgstr "Dossier de signets"
+
+#: src/status_bar.c:438
+msgid "Notebook"
+msgstr "Carnet"
+
+#: src/status_bar.c:441
+msgid "Remote Machine"
+msgstr "Machine distante"
+
+#: src/status_bar.c:444
+msgid "Remote Folder"
+msgstr "Dossier distant"
+
+#: src/status_bar.c:447
+msgid "Trash"
+msgstr "Corbeille"
+
+#: src/status_bar.c:450
+msgid "Trashed Note"
+msgstr "Note à la corbeille"
+
+#: src/status_bar.c:453
+msgid "Note"
+msgstr "Note"
+
+#: src/status_bar.c:473
+msgid "Plain Text"
+msgstr "Texte brut"
+
+#: src/status_bar.c:507
+#, c-format
+msgid "Git Branch: %s"
+msgstr "Branche Git : %s"
+
+#: src/status_bar.c:509
+msgid " (uncommitted modifications)"
+msgstr " (modifications non commitées)"
+
+#: src/status_bar.c:513
+#, c-format
+msgid "%u commit ahead"
+msgid_plural "%u commits ahead"
+msgstr[0] "%u commit en avance"
+msgstr[1] "%u commits en avance"
+
+#: src/status_bar.c:515 src/status_bar.c:530
+#, c-format
+msgid "%u commit behind upstream"
+msgid_plural "%u commits behind upstream"
+msgstr[0] "%u commit en retard sur l’amont"
+msgstr[1] "%u commits en retard sur l’amont"
+
+#: src/status_bar.c:520
+#, c-format
+msgid "%s, %s"
+msgstr "%s, %s"
+
+#: src/status_bar.c:525
+#, c-format
+msgid "%u commit ahead of upstream"
+msgid_plural "%u commits ahead of upstream"
+msgstr[0] "%u commit en avance sur l’amont"
+msgstr[1] "%u commits en avance sur l’amont"
+
+#: src/status_bar.c:535
+msgid "Up to date with upstream"
+msgstr "À jour avec l’amont"
+
+#: src/status_bar.c:539
+msgid "Click to view branches"
+msgstr "Cliquer pour voir les branches"
+
+#: src/status_bar.c:547
+msgid "⇅ Name"
+msgstr "⇅ Nom"
+
+#: src/status_bar.c:547
+msgid "⇅ Date"
+msgstr "⇅ Date"
+
+#: src/status_bar.c:547
+msgid "⇅ Size"
+msgstr "⇅ Taille"
+
+#: src/status_bar.c:547
+msgid "⇅ Ext"
+msgstr "⇅ Ext"
+
+#: src/status_bar.c:549
+msgid "Sorted by Name"
+msgstr "Trié par nom"
+
+#: src/status_bar.c:549
+msgid "Sorted by Date (Newest First)"
+msgstr "Trié par date (plus récent d’abord)"
+
+#: src/status_bar.c:549
+msgid "Sorted by Size (Largest First)"
+msgstr "Trié par taille (plus gros d’abord)"
+
+#: src/status_bar.c:550
+msgid "Sorted by Extension"
+msgstr "Trié par extension"
+
+#: src/status_bar.c:554
+#, c-format
+msgid "%s — Click to Change (o)"
+msgstr "%s — cliquer pour changer (o)"
+
+#: src/topbar.c:345
+msgid "Back (Shift+H) — Right-Click: Folders Before"
+msgstr "Précédent (Maj+H) — clic droit : dossiers précédents"
+
+#: src/topbar.c:347
+msgid "Forward (Shift+L) — Right-Click: Folders After"
+msgstr "Suivant (Maj+L) — clic droit : dossiers suivants"
+
+#: src/topbar.c:392
+msgid "Global Mode"
+msgstr "Mode global"
+
+#: src/topbar.c:420
+msgid "Global Mode: Keys of the Explorer and Preview, Mode of New Editor Tabs"
+msgstr "Mode global : touches de l’explorateur et de l’aperçu, mode des nouveaux onglets d’édition"
+
+#: src/topbar.c:438
+msgid "⇅ Sort: Name"
+msgstr "⇅ Tri : nom"
+
+#: src/topbar.c:438
+msgid "⇅ Sort: Date"
+msgstr "⇅ Tri : date"
+
+#: src/topbar.c:438
+msgid "⇅ Sort: Size"
+msgstr "⇅ Tri : taille"
+
+#: src/topbar.c:438
+msgid "⇅ Sort: Ext"
+msgstr "⇅ Tri : ext"
+
+#: src/topbar.c:601
+msgid "Hidden: On"
+msgstr "Cachés : oui"
+
+#: src/topbar.c:601
+msgid "Hidden: Off"
+msgstr "Cachés : non"
+
+#: src/topbar.c:643
+msgid "Dock Editor Tabs into Preview Panel"
+msgstr "Ancrer les onglets d’édition dans le panneau Aperçu"
+
+#: src/topbar.c:653
+#, c-format
+msgid "SSH: %s"
+msgstr "SSH : %s"
+
+#: src/topbar.c:656
+#, c-format
+msgid ""
+"Connected to remote machine: %s (%s). Click to toggle SSH terminal (Ctrl+T)"
+msgstr "Connecté à la machine distante : %s (%s). Cliquer pour afficher ou masquer le terminal SSH (Ctrl+T)"
+
+#: src/topbar.c:662
+msgid "Show / Hide Terminal Panel (Ctrl+T)"
+msgstr "Afficher / masquer le panneau Terminal (Ctrl+T)"
+
+#: src/topbar.c:683
+msgid "EXPLORER"
+msgstr "EXPLORATEUR"
+
+#: src/topbar.c:685
+msgid "NOTES"
+msgstr "NOTES"
+
+#: src/topbar.c:687
+msgid "BOOKMARKS"
+msgstr "SIGNETS"
+
+#: src/topbar.c:689
+msgid "REMOTE"
+msgstr "DISTANT"
+
+#: src/topbar.c:691
+msgid "GAMES"
+msgstr "JEUX"
+
+#: src/workspace_menu.c:81
+msgid "Save as Bookmark…"
+msgstr "Enregistrer comme signet…"
+
+#: src/workspace_menu.c:86
+msgid "Close Workspace"
+msgstr "Fermer l’espace de travail"

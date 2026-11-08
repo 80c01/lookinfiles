@@ -1,5 +1,6 @@
 /* Top bar: clickable path breadcrumbs, the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
 #include "topbar.h"
+#include "i18n.h"
 #include "icons.h"
 #include "app_events.h"
 #include "file_list.h"
@@ -341,9 +342,9 @@ GtkWidget* topbar_history_buttons_new(AppData* app) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
     app->history_back_btn = history_button_new(app, "go-previous",
-                                               "Back (Shift+H) — Right-Click: Folders Before");
+                                               _("Back (Shift+H) — Right-Click: Folders Before"));
     app->history_fwd_btn = history_button_new(app, "go-next",
-                                              "Forward (Shift+L) — Right-Click: Folders After");
+                                              _("Forward (Shift+L) — Right-Click: Folders After"));
     gtk_box_append(GTK_BOX(box), app->history_back_btn);
     gtk_box_append(GTK_BOX(box), app->history_fwd_btn);
     return box;
@@ -388,7 +389,7 @@ static void on_mode_pill_clicked(GtkButton* btn, gpointer data) {
     gtk_widget_set_margin_top(box, 6);
     gtk_widget_set_margin_bottom(box, 6);
 
-    GtkWidget* title = gtk_label_new("Global Mode");
+    GtkWidget* title = gtk_label_new(_("Global Mode"));
     gtk_widget_add_css_class(title, "dim-label");
     gtk_widget_set_margin_bottom(title, 2);
     gtk_box_append(GTK_BOX(box), title);
@@ -416,7 +417,7 @@ GtkWidget* topbar_mode_button_new(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
     gtk_widget_set_focusable(btn, FALSE);
     gtk_widget_add_css_class(btn, "status-pill");
-    gtk_widget_set_tooltip_text(btn, "Global Mode: Keys of the Explorer and Preview, Mode of New Editor Tabs");
+    gtk_widget_set_tooltip_text(btn, _("Global Mode: Keys of the Explorer and Preview, Mode of New Editor Tabs"));
     g_signal_connect(btn, "clicked", G_CALLBACK(on_mode_pill_clicked), app);
     icon_button_set_content(btn, "input-keyboard", mode_name(app->default_editor_mode));
     g_object_set_data(G_OBJECT(btn), "mode-state", GINT_TO_POINTER((gint)app->default_editor_mode + 1));
@@ -434,7 +435,7 @@ typedef struct {
 void update_path_label(AppData* app) {
     static const gchar* sort_names[SORT_COUNT] = {"name", "date", "size", "ext"};
     static const gchar* sort_pill_labels[SORT_COUNT] = {
-        "⇅ Sort: Name", "⇅ Sort: Date", "⇅ Sort: Size", "⇅ Sort: Ext"
+        N_("⇅ Sort: Name"), N_("⇅ Sort: Date"), N_("⇅ Sort: Size"), N_("⇅ Sort: Ext")
     };
 
     if (app->path_label != NULL) {
@@ -589,7 +590,7 @@ void update_path_label(AppData* app) {
 
     if (app->sort_btn != NULL) {
         gtk_button_set_label(GTK_BUTTON(app->sort_btn),
-                             sort_pill_labels[app->sort_mode]);
+                             _(sort_pill_labels[app->sort_mode]));
     }
 
     if (app->hidden_btn != NULL) {
@@ -597,7 +598,7 @@ void update_path_label(AppData* app) {
         gint state = app->show_hidden ? 2 : 1;
         if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(app->hidden_btn), "hidden-state")) != state) {
             icon_button_set_content(app->hidden_btn, "view-reveal",
-                                    app->show_hidden ? "Hidden: On" : "Hidden: Off");
+                                    app->show_hidden ? _("Hidden: On") : _("Hidden: Off"));
             g_object_set_data(G_OBJECT(app->hidden_btn), "hidden-state", GINT_TO_POINTER(state));
         }
         if (app->show_hidden) {
@@ -639,26 +640,26 @@ void update_path_label(AppData* app) {
         if (app->editor_dedicated) {
             gtk_widget_add_css_class(app->split_btn, "tab-action-active");
             icon_button_set_content(app->split_btn, "view-paged", NULL);
-            gtk_widget_set_tooltip_text(app->split_btn, "Dock Editor Tabs into Preview Panel");
+            gtk_widget_set_tooltip_text(app->split_btn, _("Dock Editor Tabs into Preview Panel"));
         } else {
             gtk_widget_remove_css_class(app->split_btn, "tab-action-active");
             icon_button_set_content(app->split_btn, "view-dual", NULL);
-            gtk_widget_set_tooltip_text(app->split_btn, "Move Editor Tabs to a Dedicated Panel");
+            gtk_widget_set_tooltip_text(app->split_btn, _("Move Editor Tabs to a Dedicated Panel"));
         }
     }
     if (app->term_btn != NULL) {
         RemoteMachine* act_rm = remote_get_active_machine(app);
         if (act_rm != NULL) {
-            gchar* term_label = g_strdup_printf("SSH: %s", act_rm->name ? act_rm->name : act_rm->host);
+            gchar* term_label = g_strdup_printf(_("SSH: %s"), act_rm->name ? act_rm->name : act_rm->host);
             icon_button_set_content(app->term_btn, "network-server", term_label);
             g_free(term_label);
-            gchar* tip = g_strdup_printf("Connected to remote machine: %s (%s). Click to toggle SSH terminal (Ctrl+T)",
+            gchar* tip = g_strdup_printf(_("Connected to remote machine: %s (%s). Click to toggle SSH terminal (Ctrl+T)"),
                                          act_rm->name ? act_rm->name : act_rm->host, act_rm->host);
             gtk_widget_set_tooltip_text(app->term_btn, tip);
             g_free(tip);
         } else {
-            icon_button_set_content(app->term_btn, "utilities-terminal", "Terminal");
-            gtk_widget_set_tooltip_text(app->term_btn, "Show / Hide Terminal Panel (Ctrl+T)");
+            icon_button_set_content(app->term_btn, "utilities-terminal", _("Terminal"));
+            gtk_widget_set_tooltip_text(app->term_btn, _("Show / Hide Terminal Panel (Ctrl+T)"));
         }
         if (term_vis) {
             gtk_widget_add_css_class(app->term_btn, "pill-active");
@@ -679,15 +680,15 @@ void update_path_label(AppData* app) {
 
     /* Explorer panel header (VS Code style): view title + current folder section */
     if (app->sidebar_title != NULL) {
-        const gchar* title = "EXPLORER";
+        const gchar* title = _("EXPLORER");
         if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
-            title = "NOTES";
+            title = _("NOTES");
         } else if (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS || app->show_bookmarks) {
-            title = "BOOKMARKS";
+            title = _("BOOKMARKS");
         } else if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
-            title = "REMOTE";
+            title = _("REMOTE");
         } else if (app->sidebar_view == SIDEBAR_VIEW_GAMES) {
-            title = "GAMES";
+            title = _("GAMES");
         }
         gtk_label_set_text(GTK_LABEL(app->sidebar_title), title);
         git_tab_update(app, app->base_dir);

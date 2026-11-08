@@ -215,7 +215,8 @@ $(BUILD_DIR)/locale/%/LC_MESSAGES/$(GETTEXT_DOMAIN).mo: po/%.po
 	$(MSGFMT) --check -o $@ $<
 
 pot:
-	$(XGETTEXT) $(XGETTEXT_FLAGS) -o po/$(GETTEXT_DOMAIN).pot $(sort $(wildcard src/*.c src/*.h))
+	@echo "xgettext -> po/$(GETTEXT_DOMAIN).pot"
+	@$(XGETTEXT) $(XGETTEXT_FLAGS) -o po/$(GETTEXT_DOMAIN).pot $(sort $(wildcard src/*.c src/*.h))
 
 po-update: pot
 	@for po in $(PO_FILES); do echo "== $$po"; $(MSGMERGE) --update --backup=none $$po po/$(GETTEXT_DOMAIN).pot || exit 1; done

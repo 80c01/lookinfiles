@@ -1,5 +1,6 @@
 /* The menu of the workspace map (see workspace_menu.h) */
 #include "workspace_menu.h"
+#include "i18n.h"
 #include "app_events.h"
 
 typedef struct {
@@ -77,12 +78,12 @@ void workspace_menu_popup(AppData* app, GtkWidget* map, gdouble x, gdouble y, gi
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     MenuAction save = { app, idx, TRUE, close };
     MenuAction rm = { app, idx, FALSE, close };
-    add_item(box, popover, "Save as Bookmark…", NULL, &save, TRUE);
+    add_item(box, popover, _("Save as Bookmark…"), NULL, &save, TRUE);
     GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_margin_top(sep, 3);
     gtk_widget_set_margin_bottom(sep, 3);
     gtk_box_append(GTK_BOX(box), sep);
-    add_item(box, popover, "Close Workspace", idx == app->current_ws ? "Alt+-" : NULL, &rm,
+    add_item(box, popover, _("Close Workspace"), idx == app->current_ws ? "Alt+-" : NULL, &rm,
              app->num_workspaces > 1);
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);

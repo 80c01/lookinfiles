@@ -11,6 +11,10 @@
 # (make ui-shots).
 set -u
 
+# English interface whatever the locale, so screenshots stay comparable
+# (UI_LANGUAGE=fr runs the scenario with the French translation)
+export LANGUAGE="${UI_LANGUAGE:-en}"
+
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 BIN=$(cd "$(dirname "${1:-$ROOT/lookinfiles}")" && pwd)/$(basename "${1:-lookinfiles}")
 OUT=${UI_OUT:-$ROOT/build/ui}

@@ -33,8 +33,20 @@ Rules:
 make pot          # po/lookinfiles.pot from the marked strings (xgettext)
 make po-update    # merge the template into every po/<lang>.po (msgmerge)
 make              # also compiles po/*.po into build/locale/
-LANGUAGE=fr ./lookinfiles   # run in French (needs a non-C locale, e.g. fr_FR.UTF-8)
+LC_ALL=fr_FR.UTF-8 ./lookinfiles   # run in French (the locale must be installed)
+UI_LANGUAGE=fr make ui-shots       # UI scenario in French (default: English)
 ```
+
+The template `po/lookinfiles.pot` is generated, not committed.
+
+## Status
+
+| Language | Catalog | Covered |
+|----------|---------|---------|
+| French | `po/fr.po` | command line, top bar, status bar, explorer context menu, workspace menu, layout switcher, new / rename / trash dialogs, Preferences |
+
+Not marked yet: help and keyboard shortcuts (`help.c`), sidebar views
+(notes, bookmarks, remote, games), editor, search, Git tab, previews.
 
 ## Adding a language
 

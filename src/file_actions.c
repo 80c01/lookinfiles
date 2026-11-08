@@ -1,6 +1,7 @@
 /* Explorer file actions on the files view: new file / new folder (a / Shift+A),
  * rename (F2 / r / e) and move to trash (d / Delete), with their dialogs. */
 #include "file_actions.h"
+#include "i18n.h"
 #include "dialog.h"
 #include "editor.h"
 #include "file_moves.h"
@@ -38,7 +39,7 @@ static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* messa
                        const gchar* entry_text, gboolean select_stem,
                        const gchar* ok_label, gchar** out_text) {
     GtkWidget* dlg = app_dialog_new(title, parent,
-                                    "_Cancel", APP_RESPONSE_CANCEL,
+                                    _("_Cancel"), APP_RESPONSE_CANCEL,
                                     ok_label, APP_RESPONSE_OK,
                                     NULL);
     /* Confirmations (no entry) default to Cancel, like the other delete dialogs */
@@ -91,7 +92,7 @@ static gint run_dialog(GtkWindow* parent, const gchar* title, const gchar* messa
 
 static void show_error(GtkWindow* parent, const gchar* title, const gchar* message) {
     GtkWidget* dlg = app_dialog_new(title, parent,
-                                    "_Close", APP_RESPONSE_CLOSE, NULL);
+                                    _("_Close"), APP_RESPONSE_CLOSE, NULL);
     GtkWidget* label = gtk_label_new(message);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
     gtk_widget_set_margin_top(label, 14);
@@ -230,10 +231,10 @@ static GtkWidget* field_entry(const gchar* text, const gchar* placeholder, Creat
  * new bookmark folder dialog). Returns TRUE with *out_name and *out_dir set. */
 static gboolean run_create_dialog(AppData* app, gboolean is_folder, const gchar* init_dir,
                                   gchar** out_name, gchar** out_dir) {
-    GtkWidget* dlg = app_dialog_new(is_folder ? "New Folder" : "New File", app->window,
+    GtkWidget* dlg = app_dialog_new(is_folder ? _("New Folder") : _("New File"), app->window,
                                     NULL, NULL);
-    app_dialog_add_button(APP_DIALOG(dlg), "_Cancel", APP_RESPONSE_CANCEL);
-    GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), "_Create", APP_RESPONSE_OK);
+    app_dialog_add_button(APP_DIALOG(dlg), _("_Cancel"), APP_RESPONSE_CANCEL);
+    GtkWidget* ok = app_dialog_add_button(APP_DIALOG(dlg), _("_Create"), APP_RESPONSE_OK);
     gtk_widget_add_css_class(ok, "suggested-action");
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
     app_dialog_set_width(APP_DIALOG(dlg), 480);
@@ -248,14 +249,14 @@ static gboolean run_create_dialog(AppData* app, gboolean is_folder, const gchar*
     CreateRun run = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL, NULL,
                       app->base_dir, NULL, NULL };
 
-    gtk_box_append(GTK_BOX(box), field_label("Name"));
+    gtk_box_append(GTK_BOX(box), field_label(_("Name")));
     run.name_entry = field_entry(is_folder ? "folder" : "",
-                                 is_folder ? "Folder name" : "File name", &run);
+                                 is_folder ? _("Folder name") : _("File name"), &run);
     gtk_box_append(GTK_BOX(box), run.name_entry);
 
-    gtk_box_append(GTK_BOX(box), field_label("Parent folder"));
+    gtk_box_append(GTK_BOX(box), field_label(_("Parent folder")));
     gchar* shown = display_dir(init_dir);
-    run.dir_entry = field_entry(shown, "~/projects or /tmp", &run);
+    run.dir_entry = field_entry(shown, _("~/projects or /tmp"), &run);
     g_free(shown);
     gtk_box_append(GTK_BOX(box), run.dir_entry);
 
@@ -339,30 +340,30 @@ gchar* file_action_rename_selected(AppData* app) {
     }
     gchar* select_path = NULL;
     gchar* old_name = g_path_get_basename(path);
-    gchar* message = g_strdup_printf("Rename “%s” to:", old_name);
+    gchar* message = g_strdup_printf(_("Rename “%s” to:"), old_name);
     gchar* new_name = NULL;
     gboolean is_dir = g_file_test(path, G_FILE_TEST_IS_DIR);
-    gint response = run_dialog(app->window, is_dir ? "Rename Folder" : "Rename File", message,
-                               old_name, !is_dir, "_Rename", &new_name);
+    gint response = run_dialog(app->window, is_dir ? _("Rename Folder") : _("Rename File"), message,
+                               old_name, !is_dir, _("_Rename"), &new_name);
     g_free(message);
 
     if (response == APP_RESPONSE_OK && new_name != NULL && g_strcmp0(new_name, old_name) != 0) {
         gchar* dir = g_path_get_dirname(path);
         gchar* new_path = g_build_filename(dir, new_name, NULL);
         if (!is_valid_name(new_name)) {
-            show_error(app->window, "Cannot Rename", "A name cannot contain “/” or be “.” or “..”.");
+            show_error(app->window, _("Cannot Rename"), _("A name cannot contain “/” or be “.” or “..”."));
         } else if (g_file_test(new_path, G_FILE_TEST_EXISTS)) {
-            gchar* msg = g_strdup_printf("“%s” already exists in this folder.", new_name);
-            show_error(app->window, "Cannot Rename", msg);
+            gchar* msg = g_strdup_printf(_("“%s” already exists in this folder."), new_name);
+            show_error(app->window, _("Cannot Rename"), msg);
             g_free(msg);
         } else {
             GError* err = NULL;
             if (file_moves_rename(app, path, new_path, &err)) {
                 select_path = g_strdup(new_path);
             } else {
-                gchar* msg = g_strdup_printf("Could not rename “%s”: %s", old_name,
-                                             err != NULL ? err->message : "unknown error");
-                show_error(app->window, "Cannot Rename", msg);
+                gchar* msg = g_strdup_printf(_("Could not rename “%s”: %s"), old_name,
+                                             err != NULL ? err->message : _("unknown error"));
+                show_error(app->window, _("Cannot Rename"), msg);
                 g_free(msg);
                 g_clear_error(&err);
             }
@@ -384,17 +385,18 @@ gchar* file_action_trash_selected(AppData* app) {
     gchar* select_path = NULL;
     gchar* name = g_path_get_basename(path);
     gboolean is_dir = g_file_test(path, G_FILE_TEST_IS_DIR);
-    gchar* message = g_strdup_printf("Move %s “%s” to the trash?", is_dir ? "the folder" : "the file", name);
-    gint response = run_dialog(app->window, is_dir ? "Delete Folder" : "Delete File", message,
-                               NULL, FALSE, "_Move to Trash", NULL);
+    gchar* message = is_dir ? g_strdup_printf(_("Move the folder “%s” to the trash?"), name)
+                             : g_strdup_printf(_("Move the file “%s” to the trash?"), name);
+    gint response = run_dialog(app->window, is_dir ? _("Delete Folder") : _("Delete File"), message,
+                               NULL, FALSE, _("_Move to Trash"), NULL);
     g_free(message);
 
     if (response == APP_RESPONSE_OK) {
         GError* err = NULL;
         if (!file_moves_trash(app, path, &err)) {
-            gchar* msg = g_strdup_printf("Could not move “%s” to the trash: %s", name,
-                                         err != NULL ? err->message : "unknown error");
-            show_error(app->window, "Cannot Delete", msg);
+            gchar* msg = g_strdup_printf(_("Could not move “%s” to the trash: %s"), name,
+                                         err != NULL ? err->message : _("unknown error"));
+            show_error(app->window, _("Cannot Delete"), msg);
             g_free(msg);
             g_clear_error(&err);
         } else {

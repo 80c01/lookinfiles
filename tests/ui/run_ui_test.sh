@@ -10,6 +10,7 @@
 #   UI_ICON_THEME  optional icon theme to force (e.g. hicolor, which has no
 #                symbolic icons: checks that every icon falls back to one built
 #                into GTK; a missing icon logs a warning and fails the test)
+#   UI_LANGUAGE  interface language (default: en, untranslated)
 #   UI_BASELINE  optional directory of reference screenshots (e.g. the shots of a
 #                run on another branch); every step except the terminal and
 #                animation ones must
@@ -20,6 +21,10 @@
 # logs a warning or critical, Ctrl+Q does not quit cleanly, or a screenshot
 # differs from the baseline.
 set -u
+
+# English interface whatever the locale, so screenshots stay comparable
+# (UI_LANGUAGE=fr runs the scenario with the French translation)
+export LANGUAGE="${UI_LANGUAGE:-en}"
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 BIN=$(cd "$(dirname "${1:-$ROOT/lookinfiles}")" && pwd)/$(basename "${1:-lookinfiles}")

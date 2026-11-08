@@ -3,6 +3,7 @@
  * (name, size, type and encoding of the previewed entry). Editor tabs have
  * their own bar (editor_modes). */
 #include "status_bar.h"
+#include "i18n.h"
 #include "app_events.h"
 #include "file_list.h"
 #include "file_types.h"
@@ -59,10 +60,10 @@ static void update_notice(AppData* app) {
 }
 
 static GtkWidget* undo_button_new(AppData* app) {
-    GtkWidget* undo = gtk_button_new_with_mnemonic("_Undo");
+    GtkWidget* undo = gtk_button_new_with_mnemonic(_("_Undo"));
     gtk_button_set_has_frame(GTK_BUTTON(undo), FALSE);
     gtk_widget_set_focusable(undo, FALSE);
-    gtk_widget_set_tooltip_text(undo, "Undo the Last Trash or Rename (u)");
+    gtk_widget_set_tooltip_text(undo, _("Undo the Last Trash or Rename (u)"));
     gtk_widget_set_visible(undo, FALSE);
     g_signal_connect(undo, "clicked", G_CALLBACK(on_undo_clicked), app);
     return undo;
@@ -102,7 +103,7 @@ static void on_branch_switched(GObject* source, GAsyncResult* res, gpointer user
     BranchSwitchData* bd = g_task_get_task_data(G_TASK(res));
     AppData* app = bd->app;
     if (bd->ok) {
-        gchar* msg = g_strdup_printf("Switched to branch “%s”", bd->branch_name);
+        gchar* msg = g_strdup_printf(_("Switched to branch “%s”"), bd->branch_name);
         app_notice(app, msg, FALSE);
         g_free(msg);
         /* The explorer may have moved elsewhere meanwhile: only reload the
@@ -113,7 +114,7 @@ static void on_branch_switched(GObject* source, GAsyncResult* res, gpointer user
         app_emit(app, APP_EVENT_GIT_STATUS_CHANGED);
         app_emit(app, APP_EVENT_STATUS_CHANGED);
     } else {
-        gchar* msg = g_strdup_printf("Could not switch to branch “%s”: %s", bd->branch_name,
+        gchar* msg = g_strdup_printf(_("Could not switch to branch “%s”: %s"), bd->branch_name,
                                      bd->err_msg != NULL ? bd->err_msg : "unknown error");
         app_notice(app, msg, FALSE);
         g_free(msg);
@@ -208,7 +209,7 @@ static void show_git_branches_popover(AppData* app) {
     gtk_widget_set_margin_top(box, 4);
     gtk_widget_set_margin_bottom(box, 4);
 
-    GtkWidget* title = gtk_label_new("Git Branches");
+    GtkWidget* title = gtk_label_new(_("Git Branches"));
     gtk_widget_add_css_class(title, "dim-label");
     gtk_widget_set_margin_start(title, 6);
     gtk_widget_set_margin_top(title, 2);
@@ -234,7 +235,7 @@ static void show_git_branches_popover(AppData* app) {
             gtk_widget_set_margin_bottom(sep, 4);
             gtk_box_append(GTK_BOX(list_box), sep);
 
-            GtkWidget* rem_title = gtk_label_new("Remote Branches");
+            GtkWidget* rem_title = gtk_label_new(_("Remote Branches"));
             gtk_widget_add_css_class(rem_title, "dim-label");
             gtk_widget_set_margin_start(rem_title, 6);
             gtk_widget_set_margin_bottom(rem_title, 2);
@@ -269,16 +270,16 @@ static void show_git_branches_popover(AppData* app) {
 
         if (b->is_head) {
             gtk_widget_add_css_class(btn, "menu-item-current");
-            GtkWidget* cur = gtk_label_new("(current)");
+            GtkWidget* cur = gtk_label_new(_("(current)"));
             gtk_widget_add_css_class(cur, "dim-label");
             gtk_box_append(GTK_BOX(row), cur);
-            gtk_widget_set_tooltip_text(btn, "Currently checked out branch");
+            gtk_widget_set_tooltip_text(btn, _("Currently checked out branch"));
         } else if (b->is_remote) {
-            gchar* tip = g_strdup_printf("Switch to remote tracking branch %s", b->name);
+            gchar* tip = g_strdup_printf(_("Switch to remote tracking branch %s"), b->name);
             gtk_widget_set_tooltip_text(btn, tip);
             g_free(tip);
         } else {
-            gchar* tip = g_strdup_printf("Switch to branch %s", b->name);
+            gchar* tip = g_strdup_printf(_("Switch to branch %s"), b->name);
             gtk_widget_set_tooltip_text(btn, tip);
             g_free(tip);
         }
@@ -338,7 +339,7 @@ GtkWidget* create_explorer_bar(AppData* app) {
 
     GtkWidget* status_branch = status_item_new();
     gtk_widget_add_css_class(status_branch, "status-branch");
-    gtk_widget_set_tooltip_text(status_branch, "Git Branch of the Current Directory — Click to View Branches");
+    gtk_widget_set_tooltip_text(status_branch, _("Git Branch of the Current Directory — Click to View Branches"));
     gtk_widget_set_cursor_from_name(status_branch, "pointer");
     GtkGesture* branch_click = gtk_gesture_click_new();
     g_signal_connect(branch_click, "pressed", G_CALLBACK(on_status_branch_clicked), app);
@@ -425,31 +426,31 @@ GtkWidget* create_preview_bar(AppData* app) {
 static gchar* status_type_label(const gchar* name, const gchar* type, FileKind kind,
                                 const gchar* content_type) {
     if (g_strcmp0(type, "dir") == 0) {
-        return g_strdup("Folder");
+        return g_strdup(_("Folder"));
     }
     if (g_strcmp0(type, "bookmark") == 0) {
-        return g_strdup("Bookmark");
+        return g_strdup(_("Bookmark"));
     }
     if (g_strcmp0(type, "bm_folder") == 0) {
-        return g_strdup("Bookmark Folder");
+        return g_strdup(_("Bookmark Folder"));
     }
     if (g_strcmp0(type, "notebook") == 0) {
-        return g_strdup("Notebook");
+        return g_strdup(_("Notebook"));
     }
     if (g_strcmp0(type, "remote") == 0) {
-        return g_strdup("Remote Machine");
+        return g_strdup(_("Remote Machine"));
     }
     if (g_strcmp0(type, "remote_folder") == 0) {
-        return g_strdup("Remote Folder");
+        return g_strdup(_("Remote Folder"));
     }
     if (g_strcmp0(type, "trash") == 0) {
-        return g_strdup("Trash");
+        return g_strdup(_("Trash"));
     }
     if (g_strcmp0(type, "trash_note") == 0) {
-        return g_strdup("Trashed Note");
+        return g_strdup(_("Trashed Note"));
     }
     if (g_strcmp0(type, "note") == 0 || g_strcmp0(type, "buffer") == 0) {
-        return g_strdup("Note");
+        return g_strdup(_("Note"));
     }
     const gchar* label = file_kind_label(kind);
     if (label != NULL) {
@@ -469,7 +470,7 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
     if (ext[0] != '\0') {
         return g_ascii_strup(ext, -1);
     }
-    return g_strdup("Plain Text");
+    return g_strdup(_("Plain Text"));
 }
 
 /* Refresh the explorer bar (branch, message) and the preview bar (selected entry) */
@@ -503,26 +504,39 @@ void update_status_bar(AppData* app) {
         g_string_free(text, TRUE);
 
         GString* tip = g_string_new(NULL);
-        g_string_append_printf(tip, "Git Branch: %s", branch);
+        g_string_append_printf(tip, _("Git Branch: %s"), branch);
         if (in_scanned_repo && app->git_has_changes) {
-            g_string_append(tip, " (uncommitted modifications)");
+            g_string_append(tip, _(" (uncommitted modifications)"));
         }
         if (in_scanned_repo && app->git_has_upstream) {
             if (app->git_ahead > 0 && app->git_behind > 0) {
-                g_string_append_printf(tip, "\n%u commit%s ahead, %u commit%s behind upstream",
-                                       app->git_ahead, app->git_ahead == 1 ? "" : "s",
-                                       app->git_behind, app->git_behind == 1 ? "" : "s");
+                gchar* ahead = g_strdup_printf(ngettext("%u commit ahead", "%u commits ahead",
+                                                        app->git_ahead), app->git_ahead);
+                gchar* behind = g_strdup_printf(ngettext("%u commit behind upstream",
+                                                         "%u commits behind upstream",
+                                                         app->git_behind), app->git_behind);
+                /* TRANSLATORS: "2 commits ahead, 1 commit behind upstream" */
+                g_string_append_c(tip, '\n');
+                g_string_append_printf(tip, _("%s, %s"), ahead, behind);
+                g_free(ahead);
+                g_free(behind);
             } else if (app->git_ahead > 0) {
-                g_string_append_printf(tip, "\n%u commit%s ahead of upstream",
-                                       app->git_ahead, app->git_ahead == 1 ? "" : "s");
+                g_string_append_c(tip, '\n');
+                g_string_append_printf(tip, ngettext("%u commit ahead of upstream",
+                                                     "%u commits ahead of upstream", app->git_ahead),
+                                       app->git_ahead);
             } else if (app->git_behind > 0) {
-                g_string_append_printf(tip, "\n%u commit%s behind upstream",
-                                       app->git_behind, app->git_behind == 1 ? "" : "s");
+                g_string_append_c(tip, '\n');
+                g_string_append_printf(tip, ngettext("%u commit behind upstream",
+                                                     "%u commits behind upstream", app->git_behind),
+                                       app->git_behind);
             } else {
-                g_string_append(tip, "\nUp to date with upstream");
+                g_string_append_c(tip, '\n');
+                g_string_append(tip, _("Up to date with upstream"));
             }
         }
-        g_string_append(tip, "\nClick to view branches");
+        g_string_append_c(tip, '\n');
+        g_string_append(tip, _("Click to view branches"));
         gtk_widget_set_tooltip_text(app->status_branch, tip->str);
         g_string_free(tip, TRUE);
     }
@@ -530,14 +544,14 @@ void update_status_bar(AppData* app) {
     g_free(branch);
 
     if (app->status_sort != NULL) {
-        static const gchar* sort_labels[SORT_COUNT] = {"⇅ Name", "⇅ Date", "⇅ Size", "⇅ Ext"};
+        static const gchar* sort_labels[SORT_COUNT] = {N_("⇅ Name"), N_("⇅ Date"), N_("⇅ Size"), N_("⇅ Ext")};
         static const gchar* sort_tips[SORT_COUNT] = {
-            "Sorted by Name", "Sorted by Date (Newest First)", "Sorted by Size (Largest First)",
-            "Sorted by Extension"
+            N_("Sorted by Name"), N_("Sorted by Date (Newest First)"), N_("Sorted by Size (Largest First)"),
+            N_("Sorted by Extension")
         };
         gint mode = CLAMP(app->sort_mode, 0, SORT_COUNT - 1);
-        gtk_label_set_text(GTK_LABEL(app->status_sort), sort_labels[mode]);
-        gchar* tip = g_strdup_printf("%s — Click to Change (o)", sort_tips[mode]);
+        gtk_label_set_text(GTK_LABEL(app->status_sort), _(sort_labels[mode]));
+        gchar* tip = g_strdup_printf(_("%s — Click to Change (o)"), _(sort_tips[mode]));
         gtk_widget_set_tooltip_text(app->status_sort, tip);
         g_free(tip);
         gtk_widget_set_visible(app->status_sort, files_view);

@@ -134,8 +134,11 @@ static void open_start_file(AppData* app, const gchar* path) {
 }
 
 static void print_usage(FILE* out) {
+    /* TRANSLATORS: keep the option names (-h, --help...) and the metavariables
+     * <file>, <folder>, <note>, WIDTHxHEIGHT untranslated, or translate the
+     * metavariables everywhere they appear */
     fprintf(out,
-            "Usage: %s [options] [<file>|<folder>]\n"
+            _("Usage: %s [options] [<file>|<folder>]\n"
             "       %s [options] -n <note>\n"
             "\n"
             "Without argument, reopens the workspaces of the last session (else\n"
@@ -152,7 +155,7 @@ static void print_usage(FILE* out) {
             "                                   (Org files always open in Org-mode)\n"
             "  -n, --note                       the argument is a note, not a file\n"
             "  -f, --fullscreen                 start in fullscreen\n"
-            "  -s, --size WIDTHxHEIGHT          window size (e.g. 1920x1080)\n",
+            "  -s, --size WIDTHxHEIGHT          window size (e.g. 1920x1080)\n"),
             APP_DIR_NAME, APP_DIR_NAME);
 }
 
@@ -190,7 +193,7 @@ static const char* option_value(int argc, char** argv, int* i,
     const char* arg = argv[*i];
     if (g_strcmp0(arg, short_opt) == 0 || g_strcmp0(arg, long_opt) == 0) {
         if (*i + 1 >= argc) {
-            g_printerr("%s: option '%s' requires an argument\n", APP_DIR_NAME, arg);
+            g_printerr(_("%s: option '%s' requires an argument\n"), APP_DIR_NAME, arg);
             print_usage(stderr);
             exit(2);
         }
@@ -229,7 +232,7 @@ int main(int argc, char** argv) {
         const char* val = NULL;
         if (options_done || arg[0] != '-' || arg[1] == '\0') {
             if (target != NULL) {
-                g_printerr("%s: only one file or folder can be given\n", APP_DIR_NAME);
+                g_printerr(_("%s: only one file or folder can be given\n"), APP_DIR_NAME);
                 print_usage(stderr);
                 return 2;
             }
@@ -248,24 +251,24 @@ int main(int argc, char** argv) {
             start_fullscreen = TRUE;
         } else if ((val = option_value(argc, argv, &i, "-e", "--editor")) != NULL) {
             if (!parse_editor_mode(val, &default_editor_mode)) {
-                g_printerr("%s: unknown editor '%s' (expected emacs, vim or notepad)\n",
+                g_printerr(_("%s: unknown editor '%s' (expected emacs, vim or notepad)\n"),
                            APP_DIR_NAME, val);
                 return 2;
             }
         } else if ((val = option_value(argc, argv, &i, "-s", "--size")) != NULL) {
             if (!parse_size(val, &win_width, &win_height)) {
-                g_printerr("[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n",
+                g_printerr(_("[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n"),
                            val);
             }
         } else {
-            g_printerr("%s: unknown option '%s'\n", APP_DIR_NAME, arg);
+            g_printerr(_("%s: unknown option '%s'\n"), APP_DIR_NAME, arg);
             print_usage(stderr);
             return 2;
         }
     }
 
     if (target_is_note && target == NULL) {
-        g_printerr("%s: option '-n' needs a note name\n", APP_DIR_NAME);
+        g_printerr(_("%s: option '-n' needs a note name\n"), APP_DIR_NAME);
         print_usage(stderr);
         return 2;
     }
@@ -323,7 +326,7 @@ int main(int argc, char** argv) {
             target_dir = g_path_get_dirname(start_file);
             start_dir = target_dir;
         } else {
-            g_printerr("[ '%s' is not a file or a directory: showing %s instead ]\n",
+            g_printerr(_("[ '%s' is not a file or a directory: showing %s instead ]\n"),
                        target, cwd);
         }
     }
@@ -338,35 +341,35 @@ int main(int argc, char** argv) {
     gtk_widget_set_valign(breadcrumb_box, GTK_ALIGN_CENTER);
 
     GtkWidget* files_btn = gtk_button_new();
-    icon_button_set_content(files_btn, "folder", "Explorer");
+    icon_button_set_content(files_btn, "folder", _("Explorer"));
     gtk_button_set_has_frame(GTK_BUTTON(files_btn), FALSE);
     gtk_widget_set_focusable(files_btn, FALSE);
     gtk_widget_add_css_class(files_btn, "status-pill");
-    gtk_widget_set_tooltip_text(files_btn, "Show / Hide Explorer Panel");
+    gtk_widget_set_tooltip_text(files_btn, _("Show / Hide Explorer Panel"));
 
     GtkWidget* preview_btn = gtk_button_new();
-    icon_button_set_content(preview_btn, "document-print-preview", "Preview");
+    icon_button_set_content(preview_btn, "document-print-preview", _("Preview"));
     gtk_button_set_has_frame(GTK_BUTTON(preview_btn), FALSE);
     gtk_widget_set_focusable(preview_btn, FALSE);
     gtk_widget_add_css_class(preview_btn, "status-pill");
-    gtk_widget_set_tooltip_text(preview_btn, "Show / Hide Preview Panel");
+    gtk_widget_set_tooltip_text(preview_btn, _("Show / Hide Preview Panel"));
 
     GtkWidget* term_btn = gtk_button_new();
-    icon_button_set_content(term_btn, "utilities-terminal", "Terminal");
+    icon_button_set_content(term_btn, "utilities-terminal", _("Terminal"));
     gtk_button_set_has_frame(GTK_BUTTON(term_btn), FALSE);
     gtk_widget_set_focusable(term_btn, FALSE);
     gtk_widget_add_css_class(term_btn, "status-pill");
-    gtk_widget_set_tooltip_text(term_btn, "Show / Hide Terminal Panel");
+    gtk_widget_set_tooltip_text(term_btn, _("Show / Hide Terminal Panel"));
 
     GtkWidget* pill_div_label = gtk_label_new("|");
     gtk_widget_add_css_class(pill_div_label, "breadcrumb-sep");
 
     GtkWidget* help_btn = gtk_button_new();
-    icon_button_set_content(help_btn, "dialog-question", "Help");
+    icon_button_set_content(help_btn, "dialog-question", _("Help"));
     gtk_button_set_has_frame(GTK_BUTTON(help_btn), FALSE);
     gtk_widget_set_focusable(help_btn, FALSE);
     gtk_widget_add_css_class(help_btn, "status-pill");
-    gtk_widget_set_tooltip_text(help_btn, "User Guide (F1) — Right-Click: Keyboard Shortcuts (?)");
+    gtk_widget_set_tooltip_text(help_btn, _("User Guide (F1) — Right-Click: Keyboard Shortcuts (?)"));
 
     /* Spacer label for top bar */
     GtkWidget* sep_label = gtk_label_new(" ");
@@ -435,14 +438,14 @@ int main(int argc, char** argv) {
     gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), TRUE);
     gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "editor-tabs");
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
-                             icon_label_new("document-print-preview", "Preview"));
+                             icon_label_new("document-print-preview", _("Preview")));
     /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
     GtkWidget* split_btn = icon_button_new("view-dual", NULL);
     gtk_widget_set_name(split_btn, "tab-split-btn");
     gtk_button_set_has_frame(GTK_BUTTON(split_btn), FALSE);
     gtk_widget_set_focusable(split_btn, FALSE);
     gtk_widget_add_css_class(split_btn, "tab-action-btn");
-    gtk_widget_set_tooltip_text(split_btn, "Move Editor Tabs to a Dedicated Panel");
+    gtk_widget_set_tooltip_text(split_btn, _("Move Editor Tabs to a Dedicated Panel"));
     gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), split_btn, GTK_PACK_START);
 
     /* Preview panel: notebook, its search bar below it */
@@ -505,7 +508,7 @@ int main(int argc, char** argv) {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(term_scroll), term_stack);
 #else
     GtkWidget* term_stub = gtk_label_new(
-        "Terminal panel disabled:\ninstall libvte-2.91-gtk4-dev then rebuild (make).");
+        _("Terminal panel disabled:\ninstall libvte-2.91-gtk4-dev then rebuild (make)."));
     gtk_widget_set_halign(term_stub, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(term_stub, GTK_ALIGN_CENTER);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(term_scroll), term_stub);
@@ -549,11 +552,11 @@ int main(int argc, char** argv) {
 #endif
     workspaces_init(app);
     GtkWidget* ws_minimap = create_workspace_minimap(app);
-    GtkWidget* layouts_btn = icon_button_new("view-grid", "Workspace Layouts (Alt+L)");
+    GtkWidget* layouts_btn = icon_button_new("view-grid", _("Workspace Layouts (Alt+L)"));
     gtk_widget_add_css_class(layouts_btn, "status-pill");
     g_signal_connect_swapped(layouts_btn, "clicked", G_CALLBACK(layout_switcher_show), app);
     app->layouts_btn = layouts_btn;
-    GtkWidget* prefs_btn = icon_button_new("applications-system", "Preferences (Ctrl+,)");
+    GtkWidget* prefs_btn = icon_button_new("applications-system", _("Preferences (Ctrl+,)"));
     gtk_widget_add_css_class(prefs_btn, "status-pill");
     g_signal_connect(prefs_btn, "clicked", G_CALLBACK(on_preferences_clicked), app);
     GtkWidget* ws_div_label = gtk_label_new("|");
@@ -804,7 +807,7 @@ int main(int argc, char** argv) {
             }
             g_free(note_path);
         } else {
-            g_printerr("[ Invalid note name '%s': expected Title or Notebook/Title ]\n", target);
+            g_printerr(_("[ Invalid note name '%s': expected Title or Notebook/Title ]\n"), target);
         }
     } else if (start_file != NULL) {
         open_start_file(app, start_file);

@@ -1,5 +1,6 @@
 /* Alt+L layout switcher: preview layouts from a popover (see layout_switcher.h) */
 #include "layout_switcher.h"
+#include "i18n.h"
 #include "layout_store.h"
 #include "layouts.h"
 
@@ -167,7 +168,7 @@ void layout_switcher_show(AppData* app) {
     s->focus = (focus != NULL) ? g_object_ref(focus) : NULL;
     s->preview = layouts_preview_begin(app);
     s->layouts = g_ptr_array_new_with_free_func(saved_layout_free);
-    g_ptr_array_add(s->layouts, layouts_capture(app, "Current Layout"));
+    g_ptr_array_add(s->layouts, layouts_capture(app, _("Current Layout")));
     gchar* path = layout_store_default_path();
     SavedLayout* def = layout_store_load_default(path);
     GPtrArray* named = layout_store_load(path);
@@ -185,7 +186,7 @@ void layout_switcher_show(AppData* app) {
     gtk_list_box_set_selection_mode(s->list, GTK_SELECTION_SINGLE);
     for (guint i = 0; i < s->layouts->len; i++) {
         const SavedLayout* l = g_ptr_array_index(s->layouts, i);
-        gchar* title = (i == 0) ? g_strdup("Current Layout")
+        gchar* title = (i == 0) ? g_strdup(_("Current Layout"))
                      : (i == 1) ? layouts_default_title(l)
                                 : g_strdup(l->name);
         gtk_list_box_append(s->list, layouts_row_new(title, l));
@@ -199,9 +200,9 @@ void layout_switcher_show(AppData* app) {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), list);
     gtk_box_append(GTK_BOX(box), scroll);
     gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
-    GtkWidget* edit = gtk_button_new_with_mnemonic("_Edit Layouts…");
+    GtkWidget* edit = gtk_button_new_with_mnemonic(_("_Edit Layouts…"));
     gtk_button_set_has_frame(GTK_BUTTON(edit), FALSE);
-    gtk_widget_set_tooltip_text(edit, "Save, Delete or Reset Layouts");
+    gtk_widget_set_tooltip_text(edit, _("Save, Delete or Reset Layouts"));
     gtk_box_append(GTK_BOX(box), edit);
 
     GtkWidget* popover = gtk_popover_new();
