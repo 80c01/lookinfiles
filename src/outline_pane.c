@@ -4,7 +4,7 @@
 #include "i18n.h"
 #include "panels.h"
 
-#define DEFAULT_WIDTH 240
+#define DEFAULT_WIDTH 180
 #define MIN_WIDTH 120
 
 /* ------------------------------------------------------------------------- */
