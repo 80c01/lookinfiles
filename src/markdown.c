@@ -1,4 +1,5 @@
 #include "markdown.h"
+#include "i18n.h"
 #include "markdown_link.h"
 #include "markdown_table.h"
 #include "fonts.h"
@@ -762,15 +763,15 @@ void render_markdown_to_buffer(GtkTextBuffer* buffer,
             /* Diagrams and math need a renderer (JavaScript, TeX): their
              * source is shown, with a label saying what it is */
             static const struct { const gchar* lang; const gchar* label; } SOURCES[] = {
-                { "mermaid", "Mermaid diagram (source)" }, { "plantuml", "PlantUML diagram (source)" },
-                { "dot", "Graphviz diagram (source)" }, { "graphviz", "Graphviz diagram (source)" },
-                { "math", "Math (TeX source)" }, { "latex", "Math (TeX source)" },
-                { "tex", "TeX (source)" }, { "katex", "Math (TeX source)" },
+                { "mermaid", N_("Mermaid diagram (source)") }, { "plantuml", N_("PlantUML diagram (source)") },
+                { "dot", N_("Graphviz diagram (source)") }, { "graphviz", N_("Graphviz diagram (source)") },
+                { "math", N_("Math (TeX source)") }, { "latex", N_("Math (TeX source)") },
+                { "tex", N_("TeX (source)") }, { "katex", N_("Math (TeX source)") },
             };
             for (gsize k = 0; k < G_N_ELEMENTS(SOURCES); k++) {
                 gsize n = strlen(SOURCES[k].lang);
                 if (g_ascii_strncasecmp(info, SOURCES[k].lang, n) == 0 && !g_ascii_isalnum(info[n])) {
-                    gchar* label = g_strdup_printf("%s\n", SOURCES[k].label);
+                    gchar* label = g_strdup_printf("%s\n", _(SOURCES[k].label));
                     insert_tagged(buffer, &iter, label, "md_code_label");
                     g_free(label);
                     break;

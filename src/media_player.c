@@ -1,5 +1,6 @@
 /* Video player stream on GStreamer playbin (see media_player.h) */
 #include "media_player.h"
+#include "i18n.h"
 
 #ifdef HAVE_GSTREAMER
 
@@ -503,7 +504,7 @@ static void player_open(GtkMediaFile* file) {
     GFile* gfile = gtk_media_file_get_file(file);
     gchar* path = gfile != NULL ? g_file_get_path(gfile) : NULL;
     if (path == NULL) {
-        gtk_media_stream_error(stream, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "Only local files can be played");
+        gtk_media_stream_error(stream, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("Only local files can be played"));
         return;
     }
     if (!ensure_playbin(self)) {

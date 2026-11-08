@@ -1,5 +1,6 @@
 /* Outline entries and their tree (see code_outline_tree.h) */
 #include "code_outline_tree.h"
+#include "i18n.h"
 #include <string.h>
 
 CodeOutlineEntry* code_outline_entry_new(const gchar* name, const gchar* detail, const gchar* container,
@@ -254,18 +255,18 @@ static const CodeSymbolKind GROUP_ORDER[] = {
 
 const gchar* code_outline_group_label(CodeSymbolKind kind) {
     switch (kind) {
-    case CODE_SYM_FUNCTION: return "Functions";
-    case CODE_SYM_METHOD: return "Methods";
-    case CODE_SYM_MACRO: return "Macros";
-    case CODE_SYM_TYPE: return "Types";
-    case CODE_SYM_CLASS: return "Classes";
-    case CODE_SYM_VARIABLE: return "Variables";
-    case CODE_SYM_CONSTANT: return "Constants";
-    case CODE_SYM_FIELD: return "Fields";
-    case CODE_SYM_MODULE: return "Modules";
-    case CODE_SYM_TARGET: return "Targets";
+    case CODE_SYM_FUNCTION: return _("Functions");
+    case CODE_SYM_METHOD: return _("Methods");
+    case CODE_SYM_MACRO: return _("Macros");
+    case CODE_SYM_TYPE: return _("Types");
+    case CODE_SYM_CLASS: return _("Classes");
+    case CODE_SYM_VARIABLE: return _("Variables");
+    case CODE_SYM_CONSTANT: return _("Constants");
+    case CODE_SYM_FIELD: return _("Fields");
+    case CODE_SYM_MODULE: return _("Modules");
+    case CODE_SYM_TARGET: return _("Targets");
     }
-    return "Symbols";
+    return _("Symbols");
 }
 
 /* Index of the parent of entry i, or -1 */

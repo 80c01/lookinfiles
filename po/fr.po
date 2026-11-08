@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 09:55+0000\n"
+"POT-Creation-Date: 2026-11-08 09:57+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1621,6 +1621,51 @@ msgstr "titres Markdown"
 msgid "built-in scanner"
 msgstr "analyseur intégré"
 
+#: src/code_outline_tree.c:258 src/wasm_info.c:271
+msgid "Functions"
+msgstr "Fonctions"
+
+#: src/code_outline_tree.c:259
+msgid "Methods"
+msgstr "Méthodes"
+
+#: src/code_outline_tree.c:260
+msgid "Macros"
+msgstr "Macros"
+
+#: src/code_outline_tree.c:261 src/wasm_info.c:276
+msgid "Types"
+msgstr "Types"
+
+#: src/code_outline_tree.c:262
+msgid "Classes"
+msgstr "Classes"
+
+#: src/code_outline_tree.c:263
+msgid "Variables"
+msgstr "Variables"
+
+#: src/code_outline_tree.c:264
+msgid "Constants"
+msgstr "Constantes"
+
+#: src/code_outline_tree.c:265
+msgid "Fields"
+msgstr "Champs"
+
+#: src/code_outline_tree.c:266
+msgid "Modules"
+msgstr "Modules"
+
+#: src/code_outline_tree.c:267
+msgid "Targets"
+msgstr "Cibles"
+
+#: src/code_outline_tree.c:269 src/elf_info.c:674 src/outline_pane.c:303
+#: src/outline_pane.c:523
+msgid "Symbols"
+msgstr "Symboles"
+
 #: src/code_refs.c:257
 #, c-format
 msgid "Close %s"
@@ -2363,10 +2408,6 @@ msgstr "Entrée"
 #: src/elf_info.c:671
 msgid "Build ID"
 msgstr "ID de build"
-
-#: src/elf_info.c:674 src/outline_pane.c:303 src/outline_pane.c:523
-msgid "Symbols"
-msgstr "Symboles"
 
 #: src/elf_info.c:674
 msgid "Debug info"
@@ -4607,6 +4648,17 @@ msgstr "Fermer l’aide"
 msgid "Help"
 msgstr "Aide"
 
+#: src/html.c:1432
+#, c-format
+msgid ""
+"[ PREVIEW ] %1$s (%2$s in all)\n"
+"Showing the first %3$d KB of this large file.\n"
+"\n"
+msgstr ""
+"[ APERÇU ] %1$s (%2$s au total)\n"
+"Affichage des %3$d premiers Ko de ce gros fichier.\n"
+"\n"
+
 #: src/image_preview.c:149
 #, c-format
 msgid "[ %1$s: no image loader for %2$s is installed (package %3$s) ]"
@@ -5272,6 +5324,30 @@ msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
 #, c-format
 msgid "See %s."
 msgstr "Voir %s."
+
+#: src/markdown.c:766
+msgid "Mermaid diagram (source)"
+msgstr "Diagramme Mermaid (source)"
+
+#: src/markdown.c:766
+msgid "PlantUML diagram (source)"
+msgstr "Diagramme PlantUML (source)"
+
+#: src/markdown.c:767
+msgid "Graphviz diagram (source)"
+msgstr "Diagramme Graphviz (source)"
+
+#: src/markdown.c:768 src/markdown.c:769
+msgid "Math (TeX source)"
+msgstr "Formule (source TeX)"
+
+#: src/markdown.c:769
+msgid "TeX (source)"
+msgstr "TeX (source)"
+
+#: src/media_player.c:507
+msgid "Only local files can be played"
+msgstr "Seuls les fichiers locaux peuvent être lus"
 
 #: src/media_tracks.c:23
 #, c-format
@@ -8156,6 +8232,22 @@ msgstr "Chemin du fichier"
 msgid "Trackers"
 msgstr "Trackers"
 
+#: src/track_menu.c:94
+msgid "Audio Track (a)"
+msgstr "Piste audio (a)"
+
+#: src/track_menu.c:94
+msgid "Audio Track"
+msgstr "Piste audio"
+
+#: src/track_menu.c:95
+msgid "Subtitles (s)"
+msgstr "Sous-titres (s)"
+
+#: src/track_menu.c:95
+msgid "Subtitles"
+msgstr "Sous-titres"
+
 #: src/video.c:44
 msgid "  •  Video / Audio"
 msgstr "  •  vidéo / audio"
@@ -8292,14 +8384,6 @@ msgstr "Version %u"
 #, c-format
 msgid "%1$u (%2$u defined, %3$u imported)"
 msgstr "%1$u (%2$u définies, %3$u importées)"
-
-#: src/wasm_info.c:271
-msgid "Functions"
-msgstr "Fonctions"
-
-#: src/wasm_info.c:276
-msgid "Types"
-msgstr "Types"
 
 #: src/wasm_info.c:286
 #, c-format

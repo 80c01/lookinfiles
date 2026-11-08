@@ -1,5 +1,6 @@
 /* Audio and subtitle track buttons of the video players (see track_menu.h) */
 #include "track_menu.h"
+#include "i18n.h"
 #include "media_player.h"
 
 #define KIND_KEY "lookin-track-kind"
@@ -90,8 +91,8 @@ GtkWidget* track_menu_new(GtkMediaStream* stream, gboolean key_hints) {
     gtk_widget_add_css_class(box, "track-menu");
     TrackMenu* tm = g_new0(TrackMenu, 1);
     tm->stream = g_object_ref(stream);
-    tm->buttons[MEDIA_TRACK_AUDIO] = kind_button_new(key_hints ? "Audio Track (a)" : "Audio Track");
-    tm->buttons[MEDIA_TRACK_SUBTITLE] = kind_button_new(key_hints ? "Subtitles (s)" : "Subtitles");
+    tm->buttons[MEDIA_TRACK_AUDIO] = kind_button_new(key_hints ? _("Audio Track (a)") : _("Audio Track"));
+    tm->buttons[MEDIA_TRACK_SUBTITLE] = kind_button_new(key_hints ? _("Subtitles (s)") : _("Subtitles"));
     gtk_box_append(GTK_BOX(box), tm->buttons[MEDIA_TRACK_AUDIO]);
     gtk_box_append(GTK_BOX(box), tm->buttons[MEDIA_TRACK_SUBTITLE]);
     g_object_set_data_full(G_OBJECT(box), "lookin-track-menu", tm, track_menu_free);

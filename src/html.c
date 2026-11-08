@@ -1,4 +1,5 @@
 #include "html.h"
+#include "i18n.h"
 #include "fonts.h"
 #include "text_tags.h"
 #include "image_utils.h"
@@ -1427,9 +1428,10 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
     ctx.doc_dir = doc_dir;
 
     if (is_preview) {
-        gchar* hdr = g_strdup_printf("[ PREVIEW ] %s (%" G_GINT64_FORMAT " bytes total)\n"
-                                     "Showing first %d KB. Large file, display truncated.\n\n",
-                                     file_name, total_size, (int)(PREVIEW_BYTES / 1024));
+        gchar* total = g_format_size((guint64)MAX(total_size, 0));
+        gchar* hdr = g_strdup_printf(_("[ PREVIEW ] %1$s (%2$s in all)\nShowing the first %3$d KB of this large file.\n\n"),
+                                     file_name, total, (int)(PREVIEW_BYTES / 1024));
+        g_free(total);
         insert_tag_text(&ctx, hdr, "html_preview_header");
         g_free(hdr);
         insert_tag_text(&ctx, "────────────────────────────────────────────────────────────────────────\n\n", "html_hr");

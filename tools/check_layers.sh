@@ -79,8 +79,8 @@ tfm_info:preview_doc,i18n
 pcap_info:preview_doc,i18n
 media_tags:
 media_tracks:i18n
-media_player:media_tracks
-track_menu:media_player
+media_player:media_tracks,i18n
+track_menu:media_player,i18n
 text_encoding:
 vt_screen:
 vt_pty:i18n
@@ -104,7 +104,7 @@ explorer_row:
 code_symbol:i18n
 code_scan_c:code_symbol
 code_scan:code_symbol,code_scan_c
-code_outline_tree:code_symbol
+code_outline_tree:code_symbol,i18n
 code_tags:code_symbol,json_view
 code_index:code_symbol,code_scan,code_tags,git_utils
 jump_list:
@@ -135,10 +135,10 @@ lsp_config:code_symbol
 layout_store:app_paths,tab_tree,i18n
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store,file_type_icons,icon_sets
-markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link,icons
+markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link,icons,i18n
 markdown_link:
 markdown_table:fonts,palette,markdown_link
-html:app_types,image_utils,palette,fonts,text_tags,icons
+html:app_types,image_utils,palette,fonts,text_tags,icons,i18n
 minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette
 preview_doc_view:preview_doc,html,markdown,image_utils,text_style,app_types,palette,fonts,text_tags
 tree_nav:app_types
