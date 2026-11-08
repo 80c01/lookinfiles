@@ -9,7 +9,7 @@
 #include "layout_store.h"
 #include "preview/preview_tagbar.h"
 #include "core/settings_store.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "workspace.h"
 
 enum { RESPONSE_SAVE = 1, RESPONSE_DELETE = 2 };

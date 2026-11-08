@@ -16,7 +16,7 @@
 #include "core/settings_store.h"
 
 #ifdef HAVE_BUILTIN_TERM
-#include "term_widget.h" /* VTE API on the built-in terminal (Windows) */
+#include "terminal/term_widget.h" /* VTE API on the built-in terminal (Windows) */
 #elif defined(HAVE_VTE)
 #include <vte/vte.h>
 #endif

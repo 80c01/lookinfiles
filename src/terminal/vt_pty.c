@@ -10,7 +10,7 @@
 #define _DARWIN_C_SOURCE
 #endif
 
-#include "vt_pty.h"
+#include "terminal/vt_pty.h"
 #include "core/i18n.h"
 
 #include <string.h>

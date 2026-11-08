@@ -5,7 +5,7 @@
 #include "explorer/tree_nav.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "explorer/explorer_tree.h"
 #include "widgets/icon_picker.h"
 #include "notes/notebook_icons.h"

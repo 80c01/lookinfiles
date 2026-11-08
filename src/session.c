@@ -6,7 +6,7 @@
 #include "core/i18n.h"
 #include "explorer/remote.h"
 #include "session_store.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "workspace.h"
 
 static gchar** set_to_strv(GHashTable* set) {

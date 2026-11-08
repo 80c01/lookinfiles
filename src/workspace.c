@@ -13,7 +13,7 @@
 #include "editor/editor.h"
 #include "explorer/file_list.h"
 #include "widgets/minimap.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "media/video.h"
 #include "layout_store.h"
 #include "theme/palette.h"

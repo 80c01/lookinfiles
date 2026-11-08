@@ -13,7 +13,7 @@
 #include "media/image_utils.h"
 #include "widgets/minimap.h"
 #include "theme/palette.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "theme/text_style.h"
 #include "theme/text_tags.h"
 #include "theme/theme.h"

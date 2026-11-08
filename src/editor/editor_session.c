@@ -5,7 +5,7 @@
 #include "editor/editor.h"
 #include "editor/editor_view.h"
 #include "tab_tree.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 
 /* Share of a split's first child, kept on the GtkPaned by panels.c and
  * applied by workspace.c (also used by the terminal panes) */

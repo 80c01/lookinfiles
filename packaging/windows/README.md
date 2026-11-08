@@ -28,7 +28,7 @@ LookinFiles can be built natively for Windows using **MSYS2** with the **UCRT64*
    ```
 
 *(Note: VTE does not exist on Windows; the terminal panel (`Ctrl+T`) uses the
-built-in terminal instead (`src/term_widget.c`) on a Windows pseudo console
+built-in terminal instead (`src/terminal/term_widget.c`) on a Windows pseudo console
 (ConPTY), which needs Windows 10 version 1809 or later. The shell is
 PowerShell 7 (`pwsh.exe`) when installed, else Windows PowerShell, else
 `cmd.exe`; set `SHELL` to a Windows program to choose another one.)*

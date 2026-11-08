@@ -20,7 +20,7 @@ LIBS = `$(PKG_CONFIG) --libs gtk4 libgit2` -lm
 DEPFLAGS = -MMD -MP
 
 # Optional embedded terminal: enabled automatically when vte-2.91-gtk4 is installed.
-# On Windows (no VTE) the built-in terminal is used instead (src/term_widget.c
+# On Windows (no VTE) the built-in terminal is used instead (src/terminal/term_widget.c
 # on ConPTY, under the VTE API: HAVE_VTE means "a terminal is available");
 # BUILTIN_TERM=yes uses it on other systems too.
 HAVE_VTE != $(PKG_CONFIG) --exists vte-2.91-gtk4 2>/dev/null && echo yes || echo no

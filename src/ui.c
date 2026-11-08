@@ -12,7 +12,7 @@
 #include "core/app_events.h"
 #include "workspace.h"
 #include "explorer/file_list.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "notes/notes.h"
 #include "editor/editor.h"
 #include "editor/editor_modes.h"

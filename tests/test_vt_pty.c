@@ -1,5 +1,5 @@
-/* Unit tests for src/vt_pty.c: programs run on a pseudo-terminal. */
-#include "vt_pty.h"
+/* Unit tests for src/terminal/vt_pty.c: programs run on a pseudo-terminal. */
+#include "terminal/vt_pty.h"
 
 #include <string.h>
 

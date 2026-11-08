@@ -3,7 +3,7 @@
 #include "editor/editor.h"
 #include "layout_store.h"
 #include "tab_tree.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 
 /* Share of a split's first child, kept on the GtkPaned and applied by
  * workspace.c (as for the session and the terminal panes) */

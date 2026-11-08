@@ -40,7 +40,7 @@
 #include "session_bookmark.h"
 #include "org/orgmode.h"
 #include "org/org_fold.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "widgets/diff_gutter.h"
 #include "widgets/color_column.h"
 #include "canvas/canvas_view.h"

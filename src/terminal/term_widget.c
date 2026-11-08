@@ -1,9 +1,9 @@
 /* Built-in terminal widget (VTE API subset) drawing a vt_screen fed by a vt_pty. */
 #ifdef HAVE_BUILTIN_TERM
 
-#include "term_widget.h"
-#include "vt_pty.h"
-#include "vt_screen.h"
+#include "terminal/term_widget.h"
+#include "terminal/vt_pty.h"
+#include "terminal/vt_screen.h"
 
 #include <string.h>
 

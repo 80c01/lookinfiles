@@ -8345,17 +8345,17 @@ msgstr ""
 "\n"
 "(en attente du système de fichiers…)\n"
 
-#: src/vt_pty.c:151 src/vt_pty.c:361
+#: src/terminal/vt_pty.c:151 src/terminal/vt_pty.c:361
 #, c-format
 msgid "%s: program not found"
 msgstr "%s : programme introuvable"
 
-#: src/vt_pty.c:158
+#: src/terminal/vt_pty.c:158
 #, c-format
 msgid "Cannot create pipes: %s"
 msgstr "Impossible de créer les tubes : %s"
 
-#: src/vt_pty.c:175
+#: src/terminal/vt_pty.c:175
 #, c-format
 msgid ""
 "Cannot create a pseudo console (error 0x%08lx; Windows 10 1809 or later "
@@ -8364,17 +8364,17 @@ msgstr ""
 "Impossible de créer une pseudo-console (erreur 0x%08lx ; Windows 10 1809 ou "
 "plus récent requis)"
 
-#: src/vt_pty.c:225
+#: src/terminal/vt_pty.c:225
 #, c-format
 msgid "Cannot run %1$s: %2$s"
 msgstr "Impossible d’exécuter %1$s : %2$s"
 
-#: src/vt_pty.c:368
+#: src/terminal/vt_pty.c:368
 #, c-format
 msgid "Cannot open a pseudo-terminal: %s"
 msgstr "Impossible d’ouvrir un pseudo-terminal : %s"
 
-#: src/vt_pty.c:411
+#: src/terminal/vt_pty.c:411
 #, c-format
 msgid "Cannot start %1$s: %2$s"
 msgstr "Impossible de lancer %1$s : %2$s"

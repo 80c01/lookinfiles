@@ -14,7 +14,7 @@
 #include "explorer/remote.h"
 #include "search/search.h"
 #include "sidebar.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "status_bar.h"
 #include "explorer/tree_nav.h"
 

@@ -1,4 +1,4 @@
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
 #include "explorer/remote_store.h"

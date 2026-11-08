@@ -1,5 +1,5 @@
-/* Unit tests for src/vt_screen.c: terminal screen model. */
-#include "vt_screen.h"
+/* Unit tests for src/terminal/vt_screen.c: terminal screen model. */
+#include "terminal/vt_screen.h"
 
 #include <string.h>
 

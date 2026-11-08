@@ -1,5 +1,5 @@
 /* Terminal screen model: parser of xterm output and grid of cells. */
-#include "vt_screen.h"
+#include "terminal/vt_screen.h"
 
 #include <stdlib.h>
 #include <string.h>

@@ -12,7 +12,7 @@
 #include "core/file_types.h"
 #include "explorer/nav_keys.h"
 #include "widgets/panels.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "explorer/tree_nav.h"
 
 typedef enum {
