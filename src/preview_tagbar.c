@@ -113,7 +113,7 @@ static void refresh_now(PreviewTagbar* pt) {
         symbols = ((const CodeOutlineEntry*)g_ptr_array_index(entries, i))->level == 0;
     }
     outline_pane_set_entries(pt->pane, entries, !symbols, symbols ? _("built-in scanner") : NULL);
-    outline_pane_set_shown(pt->pane, pt->app->preview_tagbar && entries->len > 0);
+    outline_pane_set_shown(pt->pane, pt->app->settings.preview_tagbar && entries->len > 0);
     g_ptr_array_unref(entries);
 }
 
@@ -127,7 +127,7 @@ static gboolean on_refresh_timeout(gpointer data) {
 static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
     PreviewTagbar* pt = data;
-    if (!pt->app->preview_tagbar) return; /* read again when turned on */
+    if (!pt->app->settings.preview_tagbar) return; /* read again when turned on */
     g_clear_handle_id(&pt->refresh_source, g_source_remove);
     pt->refresh_source = g_timeout_add(REFRESH_DELAY_MS, on_refresh_timeout, pt);
 }
@@ -184,7 +184,7 @@ static void save_setting(AppData* app) {
     gchar* path = settings_store_path();
     Settings s;
     settings_store_load(path, &s);
-    s.preview_tagbar = app->preview_tagbar;
+    s.preview_tagbar = app->settings.preview_tagbar;
     GError* error = NULL;
     if (!settings_store_save(path, &s, &error)) {
         g_printerr("[ Tagbar setting not saved: %s ]\n", error->message);
@@ -194,7 +194,7 @@ static void save_setting(AppData* app) {
 }
 
 static void toggle(PreviewTagbar* pt) {
-    preview_tagbar_set_shown(pt->app, !pt->app->preview_tagbar);
+    preview_tagbar_set_shown(pt->app, !pt->app->settings.preview_tagbar);
     if (outline_pane_shown(pt->pane)) {
         outline_pane_focus(pt->pane);
     } else {
@@ -274,15 +274,15 @@ void preview_tagbar_set_outline(AppData* app, GCancellable* owner, GPtrArray* en
         pt->outline_owner = g_object_ref(owner);
         pt->outline = g_ptr_array_ref(entries);
     }
-    if (!app->preview_tagbar) return;
+    if (!app->settings.preview_tagbar) return;
     g_clear_handle_id(&pt->refresh_source, g_source_remove);
     pt->refresh_source = g_timeout_add(REFRESH_DELAY_MS, on_refresh_timeout, pt);
 }
 
 void preview_tagbar_set_shown(AppData* app, gboolean shown) {
     PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
-    if (app == NULL || app->preview_tagbar == shown) return;
-    app->preview_tagbar = shown;
+    if (app == NULL || app->settings.preview_tagbar == shown) return;
+    app->settings.preview_tagbar = shown;
     if (pt == NULL) return;
     if (shown) {
         refresh_now(pt); /* the buffer was not followed while off */

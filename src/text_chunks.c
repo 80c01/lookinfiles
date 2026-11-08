@@ -123,7 +123,7 @@ static void on_chunk_ready(GObject* source, GAsyncResult* res, gpointer user_dat
     }
     /* Inserting text hid the column line */
     if (c->line_numbers) {
-        color_column_set(app->text_view, app->editor_color_column);
+        color_column_set(app->text_view, app->settings.color_column);
     }
 }
 

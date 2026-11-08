@@ -58,11 +58,7 @@ static SettingsEditor settings_editor_of(EditorMode mode) {
 }
 
 void preferences_apply_startup(AppData* app, const Settings* settings) {
-    app->editor_line_numbers = settings->line_numbers;
-    app->editor_wrap = settings->wrap;
-    app->editor_color_column = settings->color_column;
-    app->editor_tagbar = settings->tagbar;
-    app->preview_tagbar = settings->preview_tagbar;
+    app->settings = *settings;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -127,24 +123,24 @@ static GtkWidget* editor_page(Preferences* p) {
     gtk_box_append(GTK_BOX(box), row);
 
     p->line_numbers = gtk_check_button_new_with_mnemonic(_("Show _line numbers"));
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->line_numbers), p->app->editor_line_numbers);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->line_numbers), p->app->settings.line_numbers);
     gtk_widget_set_tooltip_text(p->line_numbers, _("A tab can still show or hide them from its right-click menu"));
     gtk_box_append(GTK_BOX(box), p->line_numbers);
 
     p->wrap = gtk_check_button_new_with_mnemonic(_("_Wrap long lines"));
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->wrap), p->app->editor_wrap);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->wrap), p->app->settings.wrap);
     gtk_widget_set_tooltip_text(p->wrap, _("Long lines continue on the next line instead of scrolling sideways"));
     gtk_box_append(GTK_BOX(box), p->wrap);
 
     p->tagbar = gtk_check_button_new_with_mnemonic(_("Show the _tagbar"));
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->tagbar), p->app->editor_tagbar);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->tagbar), p->app->settings.tagbar);
     gtk_widget_set_tooltip_text(p->tagbar, _("Symbols of code files and headings of Markdown files beside the text, "
                                            "in every tab, the tabs already open too (Notepad: Ctrl+K Ctrl+O, "
                                            "Emacs: M-x imenu-list, Vim: :TagbarToggle)"));
     gtk_box_append(GTK_BOX(box), p->tagbar);
 
     p->preview_tagbar = gtk_check_button_new_with_mnemonic(_("Show the tagbar in the _preview"));
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->preview_tagbar), p->app->preview_tagbar);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->preview_tagbar), p->app->settings.preview_tagbar);
     gtk_widget_set_tooltip_text(p->preview_tagbar, _("Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews, PDF bookmarks, beside "
                                                    "the text (in the preview: o or Ctrl+K Ctrl+O)"));
     gtk_box_append(GTK_BOX(box), p->preview_tagbar);
@@ -152,13 +148,13 @@ static GtkWidget* editor_page(Preferences* p) {
     /* Vim's colorcolumn: the line at the left edge of that column */
     GtkWidget* ruler_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     p->ruler = gtk_check_button_new_with_mnemonic(_("Show a vertical line at _column"));
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->ruler), p->app->editor_color_column > 0);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->ruler), p->app->settings.color_column > 0);
     gtk_widget_set_tooltip_text(p->ruler, _("A line before this column in every editor tab, the tabs already "
                                           "open too, and in code previews (Vim: :set colorcolumn=81)"));
     gtk_widget_set_hexpand(p->ruler, TRUE);
     p->ruler_column = gtk_spin_button_new_with_range(1, SETTINGS_MAX_COLUMN, 1);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(p->ruler_column),
-                              p->app->editor_color_column > 0 ? p->app->editor_color_column : 81);
+                              p->app->settings.color_column > 0 ? p->app->settings.color_column : 81);
     gtk_widget_set_tooltip_text(p->ruler_column, _("81: the line follows the 80th character"));
     g_object_bind_property(p->ruler, "active", p->ruler_column, "sensitive", G_BINDING_SYNC_CREATE);
     gtk_box_append(GTK_BOX(ruler_row), p->ruler);
@@ -171,17 +167,17 @@ static GtkWidget* editor_page(Preferences* p) {
  * workspace (the preview shows line numbers for code only) */
 static void apply_color_column(AppData* app) {
     if (app->text_view != NULL && diff_gutter_get_line_numbers(app->text_view)) {
-        color_column_set(app->text_view, app->editor_color_column);
+        color_column_set(app->text_view, app->settings.color_column);
     }
     for (GList* l = app->editors; l != NULL; l = l->next) {
         EditorTab* tab = l->data;
-        color_column_set(tab->view, app->editor_color_column);
+        color_column_set(tab->view, app->settings.color_column);
     }
     for (gint i = 0; i < app->num_workspaces; i++) {
         if (i == app->current_ws) continue;
         for (GList* l = app->workspaces[i].editors; l != NULL; l = l->next) {
             EditorTab* tab = l->data;
-            color_column_set(tab->view, app->editor_color_column);
+            color_column_set(tab->view, app->settings.color_column);
         }
     }
 }
@@ -291,12 +287,11 @@ static void save_settings(Preferences* p) {
     g_free(path);
 
     AppData* app = p->app;
-    app->editor_line_numbers = s.line_numbers;
-    app->editor_wrap = s.wrap;
-    editor_tagbar_set_shown(app, s.tagbar);
+    editor_tagbar_set_shown(app, s.tagbar); /* before the copy: they compare */
     preview_tagbar_set_shown(app, s.preview_tagbar);
-    if (s.color_column != app->editor_color_column) {
-        app->editor_color_column = s.color_column;
+    gboolean column_changed = (s.color_column != app->settings.color_column);
+    app->settings = s;
+    if (column_changed) {
         apply_color_column(app);
     }
     EditorMode mode = preferences_editor_mode(s.editor);

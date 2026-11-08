@@ -228,9 +228,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   focused, and the splits with their share, e.g.
   `H:0.500([0*,2],V:0.400([1!],[0,t]))`.
 - `settings_store` — `settings.ini` (`Settings`: editor mode, line numbers
-  and wrap of new editor tabs, column line of the editors, window size at
-  startup), defaults for
-  missing or invalid values, other keys kept on save.
+  and wrap of new editor tabs, column line of the editors, tagbars, window
+  size at startup), defaults for missing or invalid values, other keys kept
+  on save. `app->settings` holds the values in use; the live editor mode is
+  `app->default_editor_mode` (top bar, `-e`).
 - `trash_restore` — puts back a file moved to the trash: finds its newest
   `.trashinfo` (home trash, then the mount's `.Trash-$uid` / `.Trash/$uid`)
   and moves it back.

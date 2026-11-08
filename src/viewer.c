@@ -662,7 +662,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
             g_string_free(text, TRUE);
             if (code) {
                 diff_gutter_set_line_numbers(app->text_view, first_line);
-                color_column_set(app->text_view, app->editor_color_column);
+                color_column_set(app->text_view, app->settings.color_column);
                 preview_symbols_start(app, td->name, td->utf8_text, first_line);
             }
             /* Git change bars, for whole files only (a truncated preview has a header) */

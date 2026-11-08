@@ -13,6 +13,7 @@
 #include "file_types.h"
 #include "git_state.h"
 #include "note_types.h"
+#include "settings_store.h"
 
 #ifdef HAVE_BUILTIN_TERM
 #include "term_widget.h" /* VTE API on the built-in terminal (Windows) */
@@ -234,12 +235,9 @@ typedef struct AppData {
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */
     struct OrgFold* org_fold;         /* folding of the Org preview (org_fold.c), NULL until first used */
     EditorMode default_editor_mode; /* mode of new non-Org editor tabs (-e / --editor) */
-    gboolean editor_line_numbers; /* new editor tabs show line numbers (Preferences) */
-    gboolean editor_wrap;         /* new editor tabs wrap long lines (Preferences) */
-    gint editor_color_column;     /* vertical line in editors at this column, 0: none (Preferences) */
-    gboolean editor_tagbar;       /* code and Markdown editor tabs show the tagbar (settings.ini) */
-    gint editor_tagbar_width;     /* its width, shared by the tabs and the preview */
-    gboolean preview_tagbar;      /* previews with headings show the tagbar (settings.ini) */
+    Settings settings;            /* settings.ini as loaded or saved (settings_store.h): line numbers,
+                                   * wrap, color column, tagbars; the live mode is default_editor_mode */
+    gint editor_tagbar_width;     /* tagbar width, shared by the tabs and the preview */
     struct PreviewTagbar* preview_tagbar_state; /* headings beside the preview (preview_tagbar.c), or NULL */
     struct FileUndo* file_undo;   /* last trash or move, for undo (file_moves.c) */
 } AppData;

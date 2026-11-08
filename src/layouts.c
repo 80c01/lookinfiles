@@ -37,8 +37,8 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name) {
     g_free(l->editor_splits);
     l->editor_splits = editor_layout_capture(app);
     l->tagbars = TRUE;
-    l->editor_tagbar = app->editor_tagbar;
-    l->preview_tagbar = app->preview_tagbar;
+    l->editor_tagbar = app->settings.tagbar;
+    l->preview_tagbar = app->settings.preview_tagbar;
     l->tagbar_width = MAX(app->editor_tagbar_width, 0);
     return l;
 }
@@ -97,8 +97,8 @@ static void save_tagbars(AppData* app, const SavedLayout* l) {
     gchar* path = settings_store_path();
     Settings s;
     settings_store_load(path, &s);
-    s.tagbar = app->editor_tagbar;
-    s.preview_tagbar = app->preview_tagbar;
+    s.tagbar = app->settings.tagbar;
+    s.preview_tagbar = app->settings.preview_tagbar;
     GError* error = NULL;
     if (!settings_store_save(path, &s, &error)) {
         g_printerr("[ Tagbar setting not saved: %s ]\n", error->message);

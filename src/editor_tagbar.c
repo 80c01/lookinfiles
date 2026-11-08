@@ -28,7 +28,7 @@ static void tagbar_free(Tagbar* tb) {
 }
 
 static gboolean tagbar_wanted(Tagbar* tb) {
-    return tb->tab != NULL && tb->app->editor_tagbar && code_outline_supported(tb->tab);
+    return tb->tab != NULL && tb->app->settings.tagbar && code_outline_supported(tb->tab);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -176,8 +176,8 @@ static void update_tabs(GList* tabs) {
 }
 
 void editor_tagbar_set_shown(AppData* app, gboolean shown) {
-    if (app == NULL || app->editor_tagbar == shown) return;
-    app->editor_tagbar = shown;
+    if (app == NULL || app->settings.tagbar == shown) return;
+    app->settings.tagbar = shown;
     update_tabs(app->editors);
     for (gint i = 0; i < app->num_workspaces; i++) {
         if (i != app->current_ws) update_tabs(app->workspaces[i].editors);
@@ -202,13 +202,13 @@ void editor_tagbar_set_width(AppData* app, gint width) {
 
 void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
     if (app == NULL || tab == NULL) return;
-    if (!app->editor_tagbar && !code_outline_supported(tab)) {
+    if (!app->settings.tagbar && !code_outline_supported(tab)) {
         if (message != NULL) message(tab, _("No tagbar for this file type (code and Markdown files)"));
         return;
     }
-    editor_tagbar_set_shown(app, !app->editor_tagbar);
+    editor_tagbar_set_shown(app, !app->settings.tagbar);
     Tagbar* tb = tab->tagbar;
-    if (app->editor_tagbar && tb != NULL && outline_pane_shown(tb->pane)) {
+    if (app->settings.tagbar && tb != NULL && outline_pane_shown(tb->pane)) {
         outline_pane_focus(tb->pane);
     } else if (tab->view != NULL) {
         gtk_widget_grab_focus(tab->view);
@@ -216,7 +216,7 @@ void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc messa
     gchar* path = settings_store_path();
     Settings s;
     settings_store_load(path, &s);
-    s.tagbar = app->editor_tagbar;
+    s.tagbar = app->settings.tagbar;
     GError* error = NULL;
     if (!settings_store_save(path, &s, &error)) {
         g_printerr("[ Tagbar setting not saved: %s ]\n", error->message);
