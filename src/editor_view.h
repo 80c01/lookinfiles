@@ -9,6 +9,10 @@
 /* Build tab's widgets (tab->view, scroll, container, minimap, mode state)
  * showing buffer. tab->path, name and mode are set; buffer is not owned. */
 void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer);
+/* For the first frames tab's view is shown, put it back in line with its
+ * scrollbar when GtkTextView loses track of it (done for every new view);
+ * follow_cursor also scrolls an off-screen cursor back (a restored session) */
+void editor_view_watch_scroll(EditorTab* tab, gboolean follow_cursor);
 /* Disconnect from tab->buffer what tab and its view connected to it: the
  * buffer outlives a view while another one shows it (which gets the cursor
  * back when tab had it). Call before freeing tab. */

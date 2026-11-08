@@ -1,9 +1,9 @@
 /* The editor tabs of a workspace saved with the session (see editor_session.h) */
 #include "editor_session.h"
-#include <math.h>
 #include <string.h>
 #include "canvas_view.h"
 #include "editor.h"
+#include "editor_view.h"
 #include "tab_tree.h"
 #include "terminal.h"
 
@@ -212,58 +212,6 @@ typedef struct {
     EditorTab* focused;
 } Restore;
 
-/* While a restored session settles, the layout of a view can change under its
- * scroll position: GtkTextView then keeps an internal offset that differs from
- * its vertical adjustment (the adjustment says 0, the view is scrolled to the
- * last line: only that line number is drawn, and moving the cursor does nothing
- * as the adjustment already holds the requested value), or the offset is
- * somewhere else than the cursor. During the first moments it is shown, check
- * the view and put it back on its cursor. */
-#define RESYNC_FRAMES 60
-
-static void resync_nudge(GtkAdjustment* adj) {
-    gdouble lo = gtk_adjustment_get_lower(adj);
-    gdouble up = gtk_adjustment_get_upper(adj);
-    gdouble page = gtk_adjustment_get_page_size(adj);
-    gdouble step = gtk_adjustment_get_step_increment(adj);
-    gdouble pinc = gtk_adjustment_get_page_increment(adj);
-    /* Two real value changes: the view takes the adjustment's value again */
-    gtk_adjustment_configure(adj, lo + 1, lo, MAX(up, page + 2), step, pinc, page);
-    gtk_adjustment_configure(adj, lo, lo, up, step, pinc, page);
-}
-
-static gboolean resync_view_tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
-    (void)clock;
-    guint* frames = data;
-    if (!gtk_widget_get_mapped(widget) || gtk_widget_get_height(widget) <= 1) {
-        return G_SOURCE_CONTINUE; /* a background tab: wait until it is shown */
-    }
-    if (++*frames > RESYNC_FRAMES) {
-        return G_SOURCE_REMOVE;
-    }
-    GtkTextView* view = GTK_TEXT_VIEW(widget);
-    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
-    GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
-    if (vadj == NULL) {
-        return G_SOURCE_REMOVE;
-    }
-    GdkRectangle visible;
-    gtk_text_view_get_visible_rect(view, &visible);
-    gdouble offset = visible.y + gtk_text_view_get_top_margin(view);
-    if (fabs(offset - gtk_adjustment_get_value(vadj)) > 2.0) {
-        resync_nudge(vadj);
-        gtk_text_view_get_visible_rect(view, &visible);
-    }
-    GtkTextIter ins;
-    gtk_text_buffer_get_iter_at_mark(buffer, &ins, gtk_text_buffer_get_insert(buffer));
-    gint y = 0, h = 0;
-    gtk_text_view_get_line_yrange(view, &ins, &y, &h);
-    if (y < visible.y || y + h > visible.y + visible.height) {
-        gtk_text_view_scroll_to_mark(view, gtk_text_buffer_get_insert(buffer), 0.0, TRUE, 0.0, 0.3);
-    }
-    return G_SOURCE_CONTINUE; /* the layout may still move for a few frames */
-}
-
 /* A view of path in nb (an editor notebook or the preview notebook): the
  * file opened and its tab moved there, or a second view of it when it is
  * already open in another editor notebook. NULL when it cannot be edited. */
@@ -277,8 +225,8 @@ static EditorTab* place_view(AppData* app, const gchar* path, GtkNotebook* nb) {
         if (tab != NULL && tab->nb != GTK_WIDGET(nb)) {
             editor_move_tab_to(app, tab, nb, -1, FALSE); /* the notebooks still empty stay */
         }
-        if (tab != NULL && tab->view != NULL) {
-            gtk_widget_add_tick_callback(tab->view, resync_view_tick, g_new0(guint, 1), g_free);
+        if (tab != NULL) {
+            editor_view_watch_scroll(tab, TRUE); /* the layout settles under it */
         }
         return tab;
     }

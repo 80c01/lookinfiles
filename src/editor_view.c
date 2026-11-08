@@ -1,5 +1,6 @@
 /* The text view of an editor tab (see editor_view.h) */
 #include "editor_view.h"
+#include <math.h>
 #include "editor_modes.h"
 #include "app_events.h"
 #include "panels.h"
@@ -213,6 +214,79 @@ static void on_editor_cursor_moved(GtkTextBuffer* buffer, const GtkTextIter* loc
     g_idle_add_full(G_PRIORITY_LOW, keep_cursor_clear, g_object_ref(data), g_object_unref);
 }
 
+/* While a new view settles, its layout can change under its scroll position:
+ * GtkTextView then keeps an internal offset that differs from its vertical
+ * adjustment (the adjustment says 0, the view is scrolled to the last line:
+ * only that line is drawn, and moving the cursor does nothing as the
+ * adjustment already holds the requested value). During the first moments the
+ * view is shown, check it and put it back on its cursor. */
+#define SCROLL_WATCH_KEY "editor-scroll-watch"
+#define SCROLL_WATCH_FRAMES 60
+
+typedef struct {
+    guint frames;
+    gboolean follow_cursor; /* also bring an off-screen cursor back */
+} ScrollWatch;
+
+static void resync_nudge(GtkAdjustment* adj) {
+    gdouble lo = gtk_adjustment_get_lower(adj);
+    gdouble up = gtk_adjustment_get_upper(adj);
+    gdouble page = gtk_adjustment_get_page_size(adj);
+    gdouble step = gtk_adjustment_get_step_increment(adj);
+    gdouble pinc = gtk_adjustment_get_page_increment(adj);
+    /* Two real value changes: the view takes the adjustment's value again */
+    gtk_adjustment_configure(adj, lo + 1, lo, MAX(up, page + 2), step, pinc, page);
+    gtk_adjustment_configure(adj, lo, lo, up, step, pinc, page);
+}
+
+static gboolean scroll_watch_tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
+    (void)clock;
+    ScrollWatch* w = data;
+    if (!gtk_widget_get_mapped(widget) || gtk_widget_get_height(widget) <= 1) {
+        return G_SOURCE_CONTINUE; /* a background tab: wait until it is shown */
+    }
+    GtkTextView* view = GTK_TEXT_VIEW(widget);
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    if (++w->frames > SCROLL_WATCH_FRAMES || vadj == NULL) {
+        g_object_set_data(G_OBJECT(widget), SCROLL_WATCH_KEY, NULL);
+        return G_SOURCE_REMOVE;
+    }
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
+    GtkTextMark* insert = gtk_text_buffer_get_insert(buffer);
+    GdkRectangle visible;
+    gtk_text_view_get_visible_rect(view, &visible);
+    gdouble offset = visible.y + gtk_text_view_get_top_margin(view);
+    if (fabs(offset - gtk_adjustment_get_value(vadj)) > 2.0) {
+        resync_nudge(vadj);
+        /* The offset was wrong: whatever was shown, show the cursor */
+        gtk_text_view_scroll_to_mark(view, insert, 0.0, TRUE, 0.0, w->follow_cursor ? 0.3 : 0.5);
+        return G_SOURCE_CONTINUE;
+    }
+    if (w->follow_cursor) {
+        GtkTextIter ins;
+        gtk_text_buffer_get_iter_at_mark(buffer, &ins, insert);
+        gint y = 0, h = 0;
+        gtk_text_view_get_line_yrange(view, &ins, &y, &h);
+        if (y < visible.y || y + h > visible.y + visible.height) {
+            gtk_text_view_scroll_to_mark(view, insert, 0.0, TRUE, 0.0, 0.3);
+        }
+    }
+    return G_SOURCE_CONTINUE; /* the layout may still move for a few frames */
+}
+
+void editor_view_watch_scroll(EditorTab* tab, gboolean follow_cursor) {
+    if (tab == NULL || tab->view == NULL) return;
+    ScrollWatch* w = g_object_get_data(G_OBJECT(tab->view), SCROLL_WATCH_KEY);
+    if (w == NULL) {
+        w = g_new0(ScrollWatch, 1);
+        /* The tick owns w: the key only finds it again */
+        g_object_set_data(G_OBJECT(tab->view), SCROLL_WATCH_KEY, w);
+        gtk_widget_add_tick_callback(tab->view, scroll_watch_tick, w, g_free);
+    }
+    w->frames = 0;
+    w->follow_cursor = w->follow_cursor || follow_cursor;
+}
+
 void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
 #ifdef HAVE_GSV
     GtkWidget* view =
@@ -319,6 +393,7 @@ void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
 
     g_signal_connect(buffer, "mark-set", G_CALLBACK(on_editor_cursor_moved), view);
     g_signal_connect_after(buffer, "changed", G_CALLBACK(on_editor_text_changed), view);
+    editor_view_watch_scroll(tab, FALSE);
 }
 
 void editor_view_release(EditorTab* tab) {
