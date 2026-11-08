@@ -131,9 +131,7 @@ typedef struct {
     GPtrArray* game_pages;         /* its game tabs of the preview notebook while another workspace is shown (owned refs, games.c) */
     gboolean games_unlocked;       /* Game Mode unlocked in this workspace (Games view and its button) */
 #ifdef HAVE_VTE
-    GtkWidget* term_box;
-    GtkWidget* last_focused_vte;
-    GPtrArray* preview_terms; /* its terminal tabs of the preview notebook while another workspace is shown (terminal.c) */
+    struct TermWorkspace* term; /* its terminal panes, last focused pane and set-aside tabs (terminal.c) */
 #endif
 } VirtualLayout;
 
@@ -206,9 +204,7 @@ typedef struct {
     /* Embedded terminal panel (Ctrl+T) */
     GtkWidget* term_scroll;
 #ifdef HAVE_VTE
-    GtkWidget* term_stack; /* stack holding each workspace's independent term_box */
-    GtkWidget* term_box; /* active workspace's root container of terminal panes */
-    GtkWidget* last_focused_vte; /* last focused terminal pane for splitting */
+    struct Terminal* terminal; /* the panel's stack of per-workspace panes (terminal.c), NULL before terminal_init() */
 #endif
 
     /* Editor tabs (double-click / Enter on a file in the list) */

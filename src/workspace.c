@@ -101,14 +101,7 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->editor_frac = 0.50;
     ws->render_raw = FALSE;
 #ifdef HAVE_VTE
-    if (app->term_stack != NULL) {
-        GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-        gtk_widget_set_hexpand(box, TRUE);
-        gtk_widget_set_vexpand(box, TRUE);
-        gtk_stack_add_child(GTK_STACK(app->term_stack), box);
-        ws->term_box = box;
-    }
-    ws->last_focused_vte = NULL;
+    terminal_workspace_init(app, ws);
 #endif
 }
 
@@ -124,10 +117,7 @@ void workspaces_init(AppData* app) {
     app->layout_retry_count = 0;
     init_workspace_slot(app, 0, app->base_dir);
 #ifdef HAVE_VTE
-    app->term_box = app->workspaces[0].term_box;
-    if (app->term_stack != NULL && app->term_box != NULL) {
-        gtk_stack_set_visible_child(GTK_STACK(app->term_stack), app->term_box);
-    }
+    terminal_workspace_shown(app, &app->workspaces[0]);
 #endif
 }
 
@@ -178,10 +168,6 @@ void workspace_save_current(AppData* app) {
         g_free(ws->selected_path);
         ws->selected_path = (row != NULL) ? g_strdup(row->path) : NULL;
     }
-
-#ifdef HAVE_VTE
-    ws->last_focused_vte = app->last_focused_vte;
-#endif
 
     if (app->right_paned != NULL) {
         ws->right_orient =
@@ -311,8 +297,8 @@ static gboolean apply_ws_positions_now(AppData* app) {
     }
 
 #ifdef HAVE_VTE
-    if (ws->term_vis && ws->term_box != NULL) {
-        apply_paned_fractions_recursive(ws->term_box);
+    if (ws->term_vis && terminal_workspace_box(ws) != NULL) {
+        apply_paned_fractions_recursive(terminal_workspace_box(ws));
     }
 #endif
     if (ws->editor_dedicated && app->editor_box != NULL) {
@@ -433,7 +419,7 @@ static void show_ws_panels(AppData* app, const VirtualLayout* ws) {
     }
 
 #ifdef HAVE_VTE
-    if (ws->term_vis && ws->term_box != NULL) {
+    if (ws->term_vis && terminal_workspace_box(ws) != NULL) {
         GPtrArray* panes = term_visible_panes(app);
         if (panes->len == 0) {
             term_spawn_pane(app, FALSE);
@@ -498,14 +484,6 @@ void workspace_switch(AppData* app, gint idx) {
         terminal_workspace_shown(app, ws);
 #endif
     }
-
-#ifdef HAVE_VTE
-    app->term_box = ws->term_box;
-    app->last_focused_vte = ws->last_focused_vte;
-    if (app->term_stack != NULL && ws->term_box != NULL) {
-        gtk_stack_set_visible_child(GTK_STACK(app->term_stack), ws->term_box);
-    }
-#endif
 
     show_ws_panels(app, ws);
 
@@ -765,9 +743,6 @@ void workspace_remove(AppData* app, gint idx) {
     browser_workspace_removed(app, rm);
 #ifdef HAVE_VTE
     terminal_workspace_removed(app, rm);
-    if (app->term_stack != NULL && rm->term_box != NULL) {
-        gtk_stack_remove(GTK_STACK(app->term_stack), rm->term_box);
-    }
 #endif
 
     editor_free_tabs(app, rm->editors, FALSE);

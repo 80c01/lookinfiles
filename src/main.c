@@ -38,6 +38,7 @@
 #include "session_bookmark.h"
 #include "orgmode.h"
 #include "org_fold.h"
+#include "terminal.h"
 #include "diff_gutter.h"
 #include "color_column.h"
 #include "canvas_view.h"
@@ -494,13 +495,7 @@ int main(int argc, char** argv) {
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 #endif
     gtk_widget_set_visible(term_scroll, FALSE);
-#ifdef HAVE_VTE
-    GtkWidget* term_stack = gtk_stack_new();
-    gtk_widget_set_name(term_stack, "term-box");
-    gtk_widget_set_hexpand(term_stack, TRUE);
-    gtk_widget_set_vexpand(term_stack, TRUE);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(term_scroll), term_stack);
-#else
+#ifndef HAVE_VTE
     GtkWidget* term_stub = gtk_label_new(
         _("Terminal panel disabled:\ninstall libvte-2.91-gtk4-dev then rebuild (make)."));
     gtk_widget_set_halign(term_stub, GTK_ALIGN_CENTER);
@@ -542,7 +537,7 @@ int main(int argc, char** argv) {
     app->start_dir = g_canonicalize_filename(start_dir, NULL);
     app->term_scroll = term_scroll;
 #ifdef HAVE_VTE
-    app->term_stack = term_stack;
+    terminal_init(app, term_scroll);
 #endif
     workspaces_init(app);
     GtkWidget* ws_minimap = create_workspace_minimap(app);
@@ -821,6 +816,9 @@ int main(int argc, char** argv) {
         g_free(app->workspaces[i].remote_id);
         app->workspaces[i].remote_id = NULL;
     }
+#ifdef HAVE_VTE
+    terminal_free(app);
+#endif
     app_events_free(app);
 
     g_main_loop_unref(loop);

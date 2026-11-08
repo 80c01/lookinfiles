@@ -37,7 +37,7 @@ static SavedLayout* capture_panels(const VirtualLayout* ws) {
     l->editor_frac = ws->editor_frac;
 #ifdef HAVE_VTE
     g_free(l->terminals);
-    l->terminals = term_layout_capture_box(ws->term_box);
+    l->terminals = term_layout_capture_box(terminal_workspace_box(ws));
 #endif
     return l;
 }

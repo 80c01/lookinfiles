@@ -621,7 +621,10 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   copy the selection / paste. Terminal tabs also go into the editor and preview
   notebooks (`tab_drop_set_accept()` on both sides); `editor_remove_page()`
   takes them out when the shell exits, and the preview notebook's ones stay
-  with their workspace (`terminal_workspace_hidden()` / `_shown()`).
+  with their workspace (`terminal_workspace_hidden()` / `_shown()`). Each
+  workspace keeps its own panes, last focused pane and set-aside tabs in
+  `VirtualLayout.term` (private `struct TermWorkspace`); the shown one is
+  read from there, never copied into `AppData`.
   `term_snapshot_take()` / `_restore()` put back the exact panes of the
   panel after a layout preview; `terminal_detach_tab()` /
   `terminal_attach_tab()` keep a terminal running out of any notebook.

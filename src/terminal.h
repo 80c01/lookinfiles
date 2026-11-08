@@ -7,6 +7,21 @@
 #define TERM_TABS_GROUP "term-tabs"
 
 #ifdef HAVE_VTE
+/* Build the terminal panel's stack into panel (a GtkScrolledWindow, app->term_scroll) */
+void terminal_init(AppData* app, GtkWidget* panel);
+/* Free the terminal state of every workspace (at exit) */
+void terminal_free(AppData* app);
+/* Terminal state of a new workspace: its own box of panes in the panel */
+void terminal_workspace_init(AppData* app, VirtualLayout* ws);
+/* Root box of a workspace's panes (for term_layout_capture_box()), or NULL */
+GtkWidget* terminal_workspace_box(const VirtualLayout* ws);
+/* Terminal tabs of the preview notebook set aside with a hidden workspace */
+guint terminal_workspace_preview_tab_count(const VirtualLayout* ws);
+/* Last focused terminal pane of the shown workspace, or NULL */
+GtkWidget* terminal_last_focused(AppData* app);
+/* vte is closed or leaves the panel: no workspace keeps it as last focused */
+void terminal_forget(AppData* app, GtkWidget* vte);
+
 /* New terminal: a tab beside the focused one, or (new_row) a pane below it */
 void term_spawn_pane(AppData* app, gboolean new_row);
 /* The terminal each pane shows (its current tab) */
@@ -48,8 +63,9 @@ GtkWidget* terminal_detach_tab(GtkWidget* vte);
 /* Add a detached terminal as the last tab of nb (a new tab label) */
 void terminal_attach_tab(GtkWidget* vte, GtkNotebook* nb);
 /* Terminal tabs dragged into the preview notebook belong to the workspace:
- * they leave it with the workspace (hidden), come back with it (shown), or
- * close with it (removed) */
+ * they leave it with the workspace (hidden), come back with it (shown, which
+ * also shows its panes in the panel), or close with it (removed, with its
+ * panes and its state) */
 void terminal_workspace_hidden(AppData* app, VirtualLayout* ws);
 void terminal_workspace_shown(AppData* app, VirtualLayout* ws);
 void terminal_workspace_removed(AppData* app, VirtualLayout* ws);

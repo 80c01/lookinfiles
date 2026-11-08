@@ -166,8 +166,8 @@ void editor_session_capture(AppData* app, gint ws, GPtrArray* files, gchar** pre
             add_path(&c, preview, canvas_view_page_dir(g_ptr_array_index(canvases, i)), FALSE, FALSE);
         }
 #ifdef HAVE_VTE
-        GPtrArray* terms = app->workspaces[ws].preview_terms; /* set aside with the workspace */
-        for (guint i = 0; terms != NULL && i < terms->len; i++) {
+        guint terms = terminal_workspace_preview_tab_count(&app->workspaces[ws]); /* set aside with the workspace */
+        for (guint i = 0; i < terms; i++) {
             add_terminal(preview, FALSE);
         }
 #endif

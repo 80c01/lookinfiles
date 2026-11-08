@@ -334,9 +334,7 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
      * confirmed it), or go to spare */
     for (; wanted > 0 && next < terms->len; next++) {
         GtkWidget* vte = g_ptr_array_index(terms, next);
-        if (app->last_focused_vte == vte) {
-            app->last_focused_vte = NULL;
-        }
+        terminal_forget(app, vte);
         if (spare != NULL) {
             GtkWidget* kept = terminal_detach_tab(vte);
             if (kept != NULL) {

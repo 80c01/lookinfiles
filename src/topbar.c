@@ -138,8 +138,8 @@ void on_term_pill_clicked(GtkButton* btn, gpointer data) {
         if (panes->len == 0) {
             term_spawn_pane(app, FALSE);
         } else {
-            GtkWidget* target = (app->last_focused_vte != NULL)
-                                    ? app->last_focused_vte
+            GtkWidget* target = (terminal_last_focused(app) != NULL)
+                                    ? terminal_last_focused(app)
                                     : GTK_WIDGET(g_ptr_array_index(panes, 0));
             gtk_widget_grab_focus(target);
         }
