@@ -10,6 +10,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 **1. Foundation — pure helpers, no `AppData`, no widgets, unit-tested in `tests/`:**
 - `app_paths` — application name (`APP_NAME`), config and cache directories
   (`app_config_dir()`, `app_cache_dir()`: never hard-code the directory name).
+- `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
+  catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
+  `N_()`, `C_()`, `ngettext()` (docs/translations.md).
 - `file_types` — file type detection: by name (`file_extension()`,
   `is_*_file()`, `file_kind_from_name()`) and by content (`FileKind`,
   `file_kind_detect()` on the first `FILE_SNIFF_BYTES`: magic numbers, text vs

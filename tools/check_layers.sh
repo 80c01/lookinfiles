@@ -13,6 +13,7 @@ status=0
 # module:allowed-project-headers (comma separated)
 RULES="
 app_paths:
+i18n:
 file_types:text_encoding
 file_type_icons:file_type_icons_table
 git_utils:palette

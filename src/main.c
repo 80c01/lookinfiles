@@ -1,4 +1,5 @@
 #include "app_paths.h"
+#include "i18n.h"
 #include "topbar.h"
 #include "dialog.h"
 #include "layout_switcher.h"
@@ -210,6 +211,7 @@ static void on_preferences_clicked(GtkButton* button, gpointer data) {
 }
 
 int main(int argc, char** argv) {
+    i18n_init(argc > 0 ? argv[0] : NULL); /* before any message is printed */
     gboolean start_fullscreen = FALSE;
     /* Preferences (settings.ini), then the command line over them */
     Settings prefs;

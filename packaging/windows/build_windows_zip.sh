@@ -36,6 +36,13 @@ mkdir -p "${STAGE_DIR}"
 
 cp "${EXE}" "${STAGE_DIR}/lookinfiles.exe"
 
+# Translations (make builds them in build/locale; src/i18n.c finds share/locale
+# next to the executable)
+if [ -d build/locale ]; then
+    mkdir -p "${STAGE_DIR}/share/locale"
+    cp -r build/locale/* "${STAGE_DIR}/share/locale/"
+fi
+
 # If running in MSYS2 / MinGW environment, bundle runtime dependencies
 PREFIX="${MINGW_PREFIX:-}"
 if [ -n "${PREFIX}" ] && [ -d "${PREFIX}/bin" ]; then

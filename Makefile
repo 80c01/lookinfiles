@@ -80,6 +80,13 @@ APP_CFLAGS += -DHAVE_GSTREAMER `$(PKG_CONFIG) --cflags $(GST_PKGS)`
 LIBS += `$(PKG_CONFIG) --libs $(GST_PKGS)`
 endif
 
+# Installation prefix (make install PREFIX=/usr): also tells the binary where
+# the translations are installed (src/i18n.c looks next to it first)
+PREFIX ?= /usr/local
+DATADIR = $(PREFIX)/share
+LOCALEDIR = $(DATADIR)/locale
+APP_CFLAGS += -DLOCALEDIR=\"$(LOCALEDIR)\"
+
 # Release version: can be overridden via make VERSION=... or environment.
 # Defaults to git tags (e.g. v0.4.2 -> 0.4.2), falling back to src/app_paths.h.
 VERSION != sh tools/version.sh 2>/dev/null || sed -n 's/^\#define APP_VERSION *"\(.*\)"/\1/p' src/app_paths.h 2>/dev/null || echo "0.6.0"
@@ -117,7 +124,7 @@ GLIB_COMPILE_RESOURCES != $(PKG_CONFIG) --variable=glib_compile_resources gio-2.
 ICON_FILES = $(sort $(wildcard icons/scalable/actions/*.svg icons/sets/*/*.svg))
 DEPS = $(OBJS:.o=.d)
 
-all: $(TARGET)
+all: $(TARGET) translations
 
 $(TARGET): $(OBJS) $(FLAGS_STAMP)
 	$(CC) $(ALL_LDFLAGS) -o $@ $(OBJS) $(LIBS)
@@ -178,15 +185,51 @@ $(BUILD_DIR)/theme_resources.o: $(BUILD_DIR)/theme_resources.c $(FLAGS_STAMP)
 $(BUILD_DIR):
 	mkdir -p $@
 
+# Translations (src/i18n.h, po/): po/<lang>.po compiled to
+# build/locale/<lang>/LC_MESSAGES/lookinfiles.mo, where ./lookinfiles finds
+# them. Without msgfmt (gettext tools) the build goes on in English.
+# make pot rebuilds the template from the marked strings; make po-update merges
+# it into every po/<lang>.po.
+XGETTEXT ?= xgettext
+MSGFMT ?= msgfmt
+MSGMERGE ?= msgmerge
+GETTEXT_DOMAIN = lookinfiles
+PO_FILES = $(sort $(wildcard po/*.po))
+LINGUAS = $(PO_FILES:po/%.po=%)
+MO_FILES = $(LINGUAS:%=$(BUILD_DIR)/locale/%/LC_MESSAGES/$(GETTEXT_DOMAIN).mo)
+HAVE_MSGFMT != command -v $(MSGFMT) >/dev/null 2>&1 && echo yes || echo no
+XGETTEXT_FLAGS = --from-code=UTF-8 --language=C --add-comments=TRANSLATORS: \
+	--keyword=_ --keyword=N_ --keyword=C_:1c,2 --keyword=NC_:1c,2 \
+	--keyword=ngettext:1,2 --keyword=g_dngettext:2,3 \
+	--package-name=$(TARGET) --package-version=$(VERSION) --msgid-bugs-address=https://github.com/80c01/lookinfiles/issues
+
+ifeq ($(HAVE_MSGFMT),yes)
+translations: $(MO_FILES)
+else
+translations:
+	@[ -z "$(PO_FILES)" ] || echo "msgfmt not found (gettext): translations not built"
+endif
+
+$(BUILD_DIR)/locale/%/LC_MESSAGES/$(GETTEXT_DOMAIN).mo: po/%.po
+	@mkdir -p $(dir $@)
+	$(MSGFMT) --check -o $@ $<
+
+pot:
+	$(XGETTEXT) $(XGETTEXT_FLAGS) -o po/$(GETTEXT_DOMAIN).pot $(sort $(wildcard src/*.c src/*.h))
+
+po-update: pot
+	@for po in $(PO_FILES); do echo "== $$po"; $(MSGMERGE) --update --backup=none $$po po/$(GETTEXT_DOMAIN).pot || exit 1; done
+
 # Unit tests (GLib g_test, no display needed): tests/test_<module>.c links
 # against the listed objects only. Modules under test must not create widgets.
 # Tests use the application CFLAGS so that AppData has the same layout as in
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(ALL_CFLAGS)
 TEST_LDFLAGS = $(ALL_LDFLAGS) $(LIBS)
-TESTS = test_app_paths test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_slide_render test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_ps_convert test_vt_screen test_vt_pty test_ui_probe
+TESTS = test_app_paths test_i18n test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_spreadsheet test_odf test_pptx test_slide_render test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_ps_convert test_vt_screen test_vt_pty test_ui_probe
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
+TEST_DEPS_test_i18n = $(BUILD_DIR)/i18n.o
 TEST_DEPS_test_file_types = $(BUILD_DIR)/file_types.o $(BUILD_DIR)/text_encoding.o
 TEST_DEPS_test_file_type_icons = $(BUILD_DIR)/file_type_icons.o
 TEST_DEPS_test_notebook_icons = $(BUILD_DIR)/notebook_icons.o
@@ -342,13 +385,16 @@ clean:
 # Installation (make install PREFIX=/usr DESTDIR=pkgroot for packages):
 # the binary, its desktop entry, AppStream metainfo and icon (data/)
 APP_ID = io.github._80c01.LookinFiles
-PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
-DATADIR = $(PREFIX)/share
 INSTALLED_DATA = applications/$(APP_ID).desktop metainfo/$(APP_ID).metainfo.xml icons/hicolor/scalable/apps/$(APP_ID).svg icons/hicolor/256x256/apps/$(APP_ID).png
 
-install: $(TARGET)
+install: $(TARGET) translations
 	install -Dm755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
+	@for mo in $(wildcard $(MO_FILES)); do \
+	  lang=$${mo#$(BUILD_DIR)/locale/}; lang=$${lang%%/*}; \
+	  echo install -Dm644 $$mo $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(GETTEXT_DOMAIN).mo; \
+	  install -Dm644 $$mo $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(GETTEXT_DOMAIN).mo || exit 1; \
+	done
 	install -Dm644 data/$(APP_ID).desktop $(DESTDIR)$(DATADIR)/applications/$(APP_ID).desktop
 	install -Dm644 data/$(APP_ID).metainfo.xml $(DESTDIR)$(DATADIR)/metainfo/$(APP_ID).metainfo.xml
 	install -Dm644 data/icons/hicolor/scalable/apps/$(APP_ID).svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/$(APP_ID).svg
@@ -376,7 +422,8 @@ windows-exe:
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET) $(INSTALLED_DATA:%=$(DESTDIR)$(DATADIR)/%)
+	rm -f $(LINGUAS:%=$(DESTDIR)$(LOCALEDIR)/%/LC_MESSAGES/$(GETTEXT_DOMAIN).mo)
 
 -include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
 
-.PHONY: all asan deps clean dist install uninstall test check ui-test ui-shots bench-preview preview-coverage deb appimage windows-zip windows-exe
+.PHONY: all translations pot po-update asan deps clean dist install uninstall test check ui-test ui-shots bench-preview preview-coverage deb appimage windows-zip windows-exe

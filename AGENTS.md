@@ -21,6 +21,8 @@ More detail, read when the task touches it:
   `help.c`).
 - [docs/configuration.md](docs/configuration.md): config files, language
   servers, theme format.
+- [docs/translations.md](docs/translations.md): marking strings, adding a
+  language.
 
 ## Build and test
 
@@ -73,7 +75,9 @@ layer or below (`tools/check_layers.sh` enforces it):
 
 ## Hard rules
 
-1. **English only**: strings, comments, commits, docs.
+1. **English only**: strings, comments, commits, docs. User-visible strings
+   are written in English and marked for translation with `_()` (`i18n.h`,
+   see docs/translations.md); translations live only in `po/<lang>.po`.
 2. **No deprecated GTK API**: lists are `GListStore` + `GtkListView` /
    `GtkColumnView`; dialogs are `AppDialog` (`dialog.h`); URIs open with
    `GtkUriLauncher`; CSS providers go on the display.
