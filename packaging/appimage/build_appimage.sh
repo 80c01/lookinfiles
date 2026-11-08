@@ -56,19 +56,34 @@ mkdir -p "${TOOLS_DIR}"
 
 LINUXDEPLOY="${TOOLS_DIR}/linuxdeploy-x86_64.AppImage"
 GTK_PLUGIN="${TOOLS_DIR}/linuxdeploy-plugin-gtk.sh"
+RUNTIME_FILE="${TOOLS_DIR}/runtime-x86_64"
+
+# GitHub downloads fail now and then (502/504): retry before giving up, and
+# write to a temporary file so a failed download never leaves a partial tool.
+fetch() {
+    curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o "$1.part" "$2"
+    mv "$1.part" "$1"
+}
 
 if [ ! -f "${LINUXDEPLOY}" ]; then
     echo "==> Fetching linuxdeploy..."
-    curl -fsSL -o "${LINUXDEPLOY}" \
+    fetch "${LINUXDEPLOY}" \
         "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
     chmod +x "${LINUXDEPLOY}"
 fi
 
 if [ ! -f "${GTK_PLUGIN}" ]; then
     echo "==> Fetching linuxdeploy-plugin-gtk..."
-    curl -fsSL -o "${GTK_PLUGIN}" \
+    fetch "${GTK_PLUGIN}" \
         "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh"
     chmod +x "${GTK_PLUGIN}"
+fi
+
+# appimagetool downloads its runtime without retrying, so fetch it here.
+if [ ! -f "${RUNTIME_FILE}" ]; then
+    echo "==> Fetching AppImage runtime..."
+    fetch "${RUNTIME_FILE}" \
+        "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64"
 fi
 
 echo "==> Packaging AppImage with linuxdeploy..."
@@ -77,6 +92,7 @@ cd "${OUTPUT_DIR}"
 # Export required environment variables for linuxdeploy-plugin-gtk
 export DEPLOY_GTK_VERSION="4"
 export LDAI_OUTPUT="${OUTPUT_DIR}/LookinFiles-${VERSION}-x86_64.AppImage"
+export LDAI_RUNTIME_FILE="${RUNTIME_FILE}"
 
 # appimagetool's own AppStream check fetches every URL in the metainfo, so a
 # slow or failing github.com breaks the build. Validate offline instead.
