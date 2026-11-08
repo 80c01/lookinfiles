@@ -365,7 +365,7 @@ key ctrl+f; xdotool type --delay 60 "Board"; key Escape
 key Return;             shot canvas_open
 key ctrl+Return; xdotool type --delay 60 "Hello canvas"
 key ctrl+a ctrl+b;      shot canvas_text_bold
-key End Return; xdotool type --delay 60 "- [ ] task"
+key End Return; xdotool type --delay 60 -- "- [ ] task"  # --: the text starts with a dash
 key ctrl+space;         shot canvas_checkbox_toggled
 key Escape;             shot canvas_block_selected
 key Right Right shift+Down;  shot canvas_block_moved
