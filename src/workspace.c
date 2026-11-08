@@ -555,21 +555,18 @@ void workspace_switch(AppData* app, gint idx) {
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 
     gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES && !app->show_bookmarks);
+    /* Selecting a row below goes back to the Preview tab: the workspace's
+     * editor tab is put back in front after it */
+    gint page = (app->notebook != NULL && !app->editor_dedicated)
+                    ? gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook))
+                    : -1;
     if (restored_rows && files_view) {
         /* The rows are this workspace's own, as it was left: preview its
          * selection now, then check the directory quietly in the background */
-        gint page = (app->notebook != NULL && !app->editor_dedicated)
-                        ? gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook))
-                        : -1;
         if (tree_nav_selected(app) != NULL) {
             g_signal_emit_by_name(app->tree, "selection-changed");
         } else if (target_path == NULL || !select_by_path(app, target_path)) {
             select_first_row(app);
-        }
-        /* The preview update goes back to the Preview tab: keep the
-         * workspace's editor tab in front */
-        if (page > 0) {
-            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), page);
         }
         check_listing(app);
     } else if (need_rescan || ws_changed) {
@@ -590,6 +587,9 @@ void workspace_switch(AppData* app, gint idx) {
         }
     } else {
         select_first_row(app);
+    }
+    if (page > 0 && page < gtk_notebook_get_n_pages(GTK_NOTEBOOK(app->notebook))) {
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), page);
     }
 
     minimap_update_visibility(app);
