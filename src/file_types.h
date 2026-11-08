@@ -101,7 +101,8 @@ gboolean file_kind_is_text(FileKind kind);
 gboolean file_content_is_text(const guchar* head, gsize len);
 
 /* Short name of a kind for the status bar ("CSV", "Archive"...); NULL for
- * plain text (the syntax language names it) */
+ * plain text (the syntax language names it). In English: show it with
+ * g_dpgettext2(NULL, "file kind", label) */
 const gchar* file_kind_label(FileKind kind);
 
 

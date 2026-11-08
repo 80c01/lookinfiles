@@ -11,6 +11,7 @@
 #endif
 
 #include "vt_pty.h"
+#include "i18n.h"
 
 #include <string.h>
 
@@ -147,14 +148,14 @@ VtPty* vt_pty_spawn(gchar** argv, const gchar* cwd, gchar** envv, gboolean searc
     g_return_val_if_fail(argv != NULL && argv[0] != NULL, NULL);
     gchar* program = search_path ? g_find_program_in_path(argv[0]) : g_strdup(argv[0]);
     if (program == NULL) {
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT, "%s: program not found", argv[0]);
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT, _("%s: program not found"), argv[0]);
         return NULL;
     }
 
     HANDLE in_read = NULL, in_write = NULL, out_read = NULL, out_write = NULL;
     if (!CreatePipe(&in_read, &in_write, NULL, 0) || !CreatePipe(&out_read, &out_write, NULL, 0)) {
         gchar* msg = g_win32_error_message((gint)GetLastError());
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "Cannot create pipes: %s", msg);
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, _("Cannot create pipes: %s"), msg);
         g_free(msg);
         if (in_read != NULL) {
             CloseHandle(in_read);
@@ -171,7 +172,7 @@ VtPty* vt_pty_spawn(gchar** argv, const gchar* cwd, gchar** envv, gboolean searc
     CloseHandle(out_write);
     if (FAILED(hr)) {
         g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED,
-                    "Cannot create a pseudo console (error 0x%08lx; Windows 10 1809 or later needed)",
+                    _("Cannot create a pseudo console (error 0x%08lx; Windows 10 1809 or later needed)"),
                     (unsigned long)hr);
         CloseHandle(in_write);
         CloseHandle(out_read);
@@ -221,7 +222,7 @@ VtPty* vt_pty_spawn(gchar** argv, const gchar* cwd, gchar** envv, gboolean searc
 
     if (!ok) {
         gchar* msg = g_win32_error_message((gint)err);
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "Cannot run %s: %s", program, msg);
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, _("Cannot run %1$s: %2$s"), program, msg);
         g_free(msg);
         g_free(program);
         ClosePseudoConsole(console);
@@ -357,14 +358,14 @@ VtPty* vt_pty_spawn(gchar** argv, const gchar* cwd, gchar** envv, gboolean searc
     gchar* program = (search_path && strchr(argv[0], '/') == NULL) ? g_find_program_in_path(argv[0])
                                                                     : g_strdup(argv[0]);
     if (program == NULL) {
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT, "%s: program not found", argv[0]);
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT, _("%s: program not found"), argv[0]);
         return NULL;
     }
     gint master = posix_openpt(O_RDWR | O_NOCTTY);
     const gchar* slave_name = master >= 0 && grantpt(master) == 0 && unlockpt(master) == 0
                                   ? ptsname(master) : NULL;
     if (slave_name == NULL) {
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "Cannot open a pseudo-terminal: %s",
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, _("Cannot open a pseudo-terminal: %s"),
                     g_strerror(errno));
         if (master >= 0) {
             close(master);
@@ -407,7 +408,7 @@ VtPty* vt_pty_spawn(gchar** argv, const gchar* cwd, gchar** envv, gboolean searc
     g_free(program);
     g_strfreev(env);
     if (child < 0) {
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FORK, "Cannot start %s: %s", argv[0],
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FORK, _("Cannot start %1$s: %2$s"), argv[0],
                     g_strerror(fork_errno));
         close(master);
         return NULL;

@@ -2,6 +2,7 @@
 #include "file_moves.h"
 #include "app_events.h"
 #include "editor_modes.h"
+#include "i18n.h"
 #include "trash_restore.h"
 
 #include <errno.h>
@@ -87,7 +88,7 @@ gboolean file_moves_rename(AppData* app, const gchar* from, const gchar* to, GEr
     remember(app, UNDO_MOVE, from, to);
     gchar* old_name = g_path_get_basename(from);
     gchar* new_name = g_path_get_basename(to);
-    gchar* msg = g_strdup_printf("Renamed “%s” to “%s”", old_name, new_name);
+    gchar* msg = g_strdup_printf(_("Renamed “%1$s” to “%2$s”"), old_name, new_name);
     app_notice(app, msg, TRUE);
     g_free(msg);
     g_free(new_name);
@@ -104,7 +105,7 @@ gboolean file_moves_trash(AppData* app, const gchar* path, GError** error) {
     }
     remember(app, UNDO_TRASH, path, NULL);
     gchar* name = g_path_get_basename(path);
-    gchar* msg = g_strdup_printf("Moved “%s” to the trash", name);
+    gchar* msg = g_strdup_printf(_("Moved “%s” to the trash"), name);
     app_notice(app, msg, TRUE);
     g_free(msg);
     g_free(name);
@@ -117,7 +118,7 @@ gboolean file_moves_can_undo(AppData* app) {
 
 gchar* file_moves_undo(AppData* app) {
     if (!file_moves_can_undo(app)) {
-        app_notice(app, "Nothing to undo", FALSE);
+        app_notice(app, _("Nothing to undo"), FALSE);
         return NULL;
     }
     FileUndo* u = (FileUndo*)app->file_undo;
@@ -125,9 +126,9 @@ gchar* file_moves_undo(AppData* app) {
     gboolean ok = (u->kind == UNDO_TRASH) ? trash_restore(u->from, &err)
                                           : move_path(app, u->to, u->from, &err);
     gchar* name = g_path_get_basename(u->from);
-    gchar* msg = ok ? g_strdup_printf(u->kind == UNDO_TRASH ? "Restored “%s” from the trash"
-                                                            : "Renamed back to “%s”", name)
-                    : g_strdup_printf("Cannot undo: %s", err != NULL ? err->message : "unknown error");
+    gchar* msg = ok ? g_strdup_printf(u->kind == UNDO_TRASH ? _("Restored “%s” from the trash")
+                                                            : _("Renamed back to “%s”"), name)
+                    : g_strdup_printf(_("Cannot undo: %s"), err != NULL ? err->message : _("unknown error"));
     gchar* select = ok ? g_strdup(u->from) : NULL;
     if (ok && app->expanded_paths != NULL) {
         /* Show the restored entry even if its folder was collapsed */

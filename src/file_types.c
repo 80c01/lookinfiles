@@ -1,6 +1,7 @@
 /* File type detection (by name, and by content: magic numbers) and icons.
  * No AppData, no widgets; the only I/O is file_kind_of_path() (unit-tested in tests/). */
 #include "file_types.h"
+#include "i18n.h"
 #include "text_encoding.h"
 
 #include <glib/gstdio.h>
@@ -358,39 +359,39 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_MARKDOWN:     return "Markdown";
     case FILE_KIND_HTML:         return "HTML";
     case FILE_KIND_ORG:          return "Org-mode";
-    case FILE_KIND_IMAGE:        return "Image";
+    case FILE_KIND_IMAGE:        return NC_("file kind", "Image");
     case FILE_KIND_PDF:          return "PDF";
-    case FILE_KIND_VIDEO:        return "Video";
-    case FILE_KIND_AUDIO:        return "Audio";
-    case FILE_KIND_BINARY:       return "Binary";
+    case FILE_KIND_VIDEO:        return NC_("file kind", "Video");
+    case FILE_KIND_AUDIO:        return NC_("file kind", "Audio");
+    case FILE_KIND_BINARY:       return NC_("file kind", "Binary");
     case FILE_KIND_EXECUTABLE:   return "ELF";
-    case FILE_KIND_DOCUMENT:     return "Document";
-    case FILE_KIND_SPREADSHEET:  return "Spreadsheet";
-    case FILE_KIND_PRESENTATION: return "Presentation";
+    case FILE_KIND_DOCUMENT:     return NC_("file kind", "Document");
+    case FILE_KIND_SPREADSHEET:  return NC_("file kind", "Spreadsheet");
+    case FILE_KIND_PRESENTATION: return NC_("file kind", "Presentation");
     case FILE_KIND_EBOOK:        return "EPUB";
-    case FILE_KIND_ARCHIVE:      return "Archive";
-    case FILE_KIND_FONT:         return "Font";
+    case FILE_KIND_ARCHIVE:      return NC_("file kind", "Archive");
+    case FILE_KIND_FONT:         return NC_("file kind", "Font");
     case FILE_KIND_DATABASE:     return "SQLite";
-    case FILE_KIND_CERTIFICATE:  return "Certificate";
+    case FILE_KIND_CERTIFICATE:  return NC_("file kind", "Certificate");
     case FILE_KIND_CSV:          return "CSV";
     case FILE_KIND_JSON:         return "JSON";
     case FILE_KIND_NOTEBOOK:     return "Jupyter";
-    case FILE_KIND_DIFF:         return "Diff";
-    case FILE_KIND_LOG:          return "Log";
-    case FILE_KIND_CALENDAR:     return "Calendar";
+    case FILE_KIND_DIFF:         return NC_("file kind", "Diff");
+    case FILE_KIND_LOG:          return NC_("file kind", "Log");
+    case FILE_KIND_CALENDAR:     return NC_("file kind", "Calendar");
     case FILE_KIND_CONTACT:      return "vCard";
-    case FILE_KIND_DESKTOP:      return "Desktop Entry";
-    case FILE_KIND_MANPAGE:      return "Man Page";
-    case FILE_KIND_RTF:          return "Rich Text";
+    case FILE_KIND_DESKTOP:      return NC_("file kind", "Desktop Entry");
+    case FILE_KIND_MANPAGE:      return NC_("file kind", "Man Page");
+    case FILE_KIND_RTF:          return NC_("file kind", "Rich Text");
     case FILE_KIND_OLE:          return "Office 97-2003";
-    case FILE_KIND_MAIL:         return "Mail";
-    case FILE_KIND_TRANSLATION:  return "Translations";
-    case FILE_KIND_CLASS:        return "Java Class";
+    case FILE_KIND_MAIL:         return NC_("file kind", "Mail");
+    case FILE_KIND_TRANSLATION:  return NC_("file kind", "Translations");
+    case FILE_KIND_CLASS:        return NC_("file kind", "Java Class");
     case FILE_KIND_WASM:         return "WebAssembly";
     case FILE_KIND_TORRENT:      return "BitTorrent";
-    case FILE_KIND_PYC:          return "Python Bytecode";
-    case FILE_KIND_TFM:          return "TeX Font Metric";
-    case FILE_KIND_PCAP:         return "Packet Capture";
+    case FILE_KIND_PYC:          return NC_("file kind", "Python Bytecode");
+    case FILE_KIND_TFM:          return NC_("file kind", "TeX Font Metric");
+    case FILE_KIND_PCAP:         return NC_("file kind", "Packet Capture");
     }
     return NULL;
 }

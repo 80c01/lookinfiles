@@ -3,6 +3,7 @@
 #include "app_events.h"
 #include "editor_session.h"
 #include "layout_store.h"
+#include "i18n.h"
 #include "remote.h"
 #include "session_store.h"
 #include "terminal.h"
@@ -157,7 +158,7 @@ gboolean session_save_workspace(AppData* app, gint idx, const gchar* path, GErro
     if (capture_workspace(app, s, idx) != NULL) {
         ok = session_save(s, path, error);
     } else {
-        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "This workspace has no folder");
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("This workspace has no folder"));
     }
     session_free(s);
     return ok;
@@ -169,15 +170,15 @@ gboolean session_open_workspace(AppData* app, const gchar* path, GError** error)
     }
     Session* s = session_load(path);
     if (s == NULL) {
-        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "The saved workspace is missing or unreadable");
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("The saved workspace is missing or unreadable"));
         return FALSE;
     }
     const SessionWorkspace* sw = g_ptr_array_index(s->workspaces, 0); /* session_load() never returns an empty one */
     gboolean ok = FALSE;
     if (sw->remote_id == NULL && !g_file_test(sw->dir, G_FILE_TEST_IS_DIR)) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "Folder not found: %s", sw->dir);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("Folder not found: %s"), sw->dir);
     } else if (app->num_workspaces >= MAX_VIRTUAL_LAYOUTS) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "All %d workspaces are in use", MAX_VIRTUAL_LAYOUTS);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("All %d workspaces are in use"), MAX_VIRTUAL_LAYOUTS);
     } else {
         workspace_add(app);
         ok = apply_workspace(app, sw);

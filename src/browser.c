@@ -3,6 +3,7 @@
 #include "app_events.h"
 #include "focus_route.h"
 #include "icons.h"
+#include "i18n.h"
 #include "theme.h"
 #include "web_address.h"
 
@@ -91,7 +92,7 @@ static void update_buttons(BrowserTab* bt) {
     if (loading != bt->loading) {
         bt->loading = loading;
         icon_button_set_content(bt->reload_btn, loading ? "process-stop" : "view-refresh", NULL);
-        gtk_widget_set_tooltip_text(bt->reload_btn, loading ? "Stop (Escape)" : "Reload (F5)");
+        gtk_widget_set_tooltip_text(bt->reload_btn, loading ? _("Stop (Escape)") : _("Reload (F5)"));
     }
     if (!loading) gtk_entry_set_progress_fraction(GTK_ENTRY(bt->entry), 0.0);
 }
@@ -108,7 +109,7 @@ static void update_title(BrowserTab* bt) {
     const gchar* uri = webkit_web_view_get_uri(bt->view);
     const gchar* text = title != NULL && title[0] != '\0' ? title
                         : uri != NULL && uri[0] != '\0' && g_strcmp0(uri, "about:blank") != 0 ? uri
-                        : "New Tab";
+                        : _("New Tab");
     gtk_label_set_text(GTK_LABEL(bt->title), text);
     gtk_widget_set_tooltip_text(bt->label, text);
 }
@@ -272,7 +273,7 @@ static gboolean on_decide_policy(WebKitWebView* view, WebKitPolicyDecision* deci
     }
     gchar* uri = g_strdup(webkit_uri_request_get_uri(webkit_response_policy_decision_get_request(rd)));
     webkit_policy_decision_ignore(decision);
-    gchar* msg = g_strdup_printf("Not shown in the tab, opened with the default application: %s", uri);
+    gchar* msg = g_strdup_printf(_("Not shown in the tab, opened with the default application: %s"), uri);
     app_notice(bt->app, msg, FALSE);
     g_free(msg);
     launch_external(bt->app, uri);
@@ -292,7 +293,7 @@ static gboolean on_permission(WebKitWebView* view, WebKitPermissionRequest* requ
 static gboolean on_file_chooser(WebKitWebView* view, WebKitFileChooserRequest* request, gpointer data) {
     (void)view;
     webkit_file_chooser_request_cancel(request);
-    app_notice(((BrowserTab*)data)->app, "Choosing a file to upload is not supported in browser tabs", FALSE);
+    app_notice(((BrowserTab*)data)->app, _("Choosing a file to upload is not supported in browser tabs"), FALSE);
     return TRUE;
 }
 
@@ -300,7 +301,7 @@ static gboolean on_file_chooser(WebKitWebView* view, WebKitFileChooserRequest* r
 static gboolean on_print(WebKitWebView* view, WebKitPrintOperation* op, gpointer data) {
     (void)view;
     (void)op;
-    app_notice(((BrowserTab*)data)->app, "Printing is not supported in browser tabs", FALSE);
+    app_notice(((BrowserTab*)data)->app, _("Printing is not supported in browser tabs"), FALSE);
     return TRUE;
 }
 
@@ -447,17 +448,17 @@ static BrowserTab* tab_new(AppData* app, WebKitWebView* related) {
 
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(bar, "browser-bar");
-    bt->back_btn = g_object_ref(bar_button(bar, "go-previous", "Back", G_CALLBACK(on_back_clicked), bt));
-    bt->forward_btn = g_object_ref(bar_button(bar, "go-next", "Forward", G_CALLBACK(on_forward_clicked), bt));
-    bt->reload_btn = g_object_ref(bar_button(bar, "view-refresh", "Reload (F5)", G_CALLBACK(on_reload_clicked), bt));
+    bt->back_btn = g_object_ref(bar_button(bar, "go-previous", _("Back"), G_CALLBACK(on_back_clicked), bt));
+    bt->forward_btn = g_object_ref(bar_button(bar, "go-next", _("Forward"), G_CALLBACK(on_forward_clicked), bt));
+    bt->reload_btn = g_object_ref(bar_button(bar, "view-refresh", _("Reload (F5)"), G_CALLBACK(on_reload_clicked), bt));
     bt->entry = g_object_ref(gtk_entry_new());
-    gtk_entry_set_placeholder_text(GTK_ENTRY(bt->entry), "Address, file path or search");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(bt->entry), _("Address, file path or search"));
     gtk_entry_set_input_purpose(GTK_ENTRY(bt->entry), GTK_INPUT_PURPOSE_URL);
-    gtk_widget_set_tooltip_text(bt->entry, "Address or words to search (Ctrl+L)");
+    gtk_widget_set_tooltip_text(bt->entry, _("Address or words to search (Ctrl+L)"));
     gtk_widget_set_hexpand(bt->entry, TRUE);
     g_signal_connect(bt->entry, "activate", G_CALLBACK(on_entry_activate), bt);
     gtk_box_append(GTK_BOX(bar), bt->entry);
-    bar_button(bar, "window-close", "Close Tab (Ctrl+W)", G_CALLBACK(on_close_clicked), bt);
+    bar_button(bar, "window-close", _("Close Tab (Ctrl+W)"), G_CALLBACK(on_close_clicked), bt);
     gtk_box_append(GTK_BOX(page), bar);
 
     GtkWidget* view = related != NULL ? g_object_new(WEBKIT_TYPE_WEB_VIEW, "related-view", related, NULL)
@@ -495,7 +496,7 @@ static BrowserTab* tab_new(AppData* app, WebKitWebView* related) {
     bt->page = page;
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, bt, tab_free);
 
-    bt->label = g_object_ref(icon_label_new("network-transmit-receive", "New Tab"));
+    bt->label = g_object_ref(icon_label_new("network-transmit-receive", _("New Tab")));
     bt->title = g_object_ref(gtk_widget_get_last_child(bt->label));
     gtk_label_set_ellipsize(GTK_LABEL(bt->title), PANGO_ELLIPSIZE_END);
     gtk_label_set_width_chars(GTK_LABEL(bt->title), 12); /* minimum width when tabs are crowded */
@@ -573,7 +574,7 @@ void browser_open(AppData* app, const gchar* uri) {
     if (uri != NULL) {
         launch_external(app, uri);
     } else {
-        app_notice(app, "Browser tabs need WebKitGTK 6.0 (install libwebkitgtk-6.0-dev and rebuild)", FALSE);
+        app_notice(app, _("Browser tabs need WebKitGTK 6.0 (install libwebkitgtk-6.0-dev and rebuild)"), FALSE);
     }
 }
 

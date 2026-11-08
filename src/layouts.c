@@ -5,6 +5,7 @@
 #include "editor.h"
 #include "editor_layout.h"
 #include "editor_tagbar.h"
+#include "i18n.h"
 #include "layout_store.h"
 #include "preview_tagbar.h"
 #include "settings_store.h"
@@ -43,7 +44,7 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name) {
 }
 
 static gboolean confirm(AppData* app, const gchar* title, const gchar* message, const gchar* ok_label) {
-    GtkWidget* dlg = app_dialog_new(title, app->window, "_Cancel", APP_RESPONSE_CANCEL,
+    GtkWidget* dlg = app_dialog_new(title, app->window, _("_Cancel"), APP_RESPONSE_CANCEL,
                                     ok_label, APP_RESPONSE_OK, NULL);
     GtkWidget* label = gtk_label_new(message);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
@@ -131,10 +132,13 @@ static gboolean confirm_closing(AppData* app, const SavedLayout* l, guint closin
     if (closing == 0) {
         return TRUE;
     }
-    gchar* msg = g_strdup_printf("The layout “%s” has fewer terminals than are running; %u "
-                                 "running terminal%s will be closed.", l->name, closing,
-                                 closing == 1 ? "" : "s");
-    gboolean ok = confirm(app, "Close Terminals", msg, "_Apply Layout");
+    gchar* msg = g_strdup_printf(ngettext("The layout “%1$s” has fewer terminals than are running; %2$u "
+                                          "running terminal will be closed.",
+                                          "The layout “%1$s” has fewer terminals than are running; %2$u "
+                                          "running terminals will be closed.",
+                                          closing),
+                                 l->name, closing);
+    gboolean ok = confirm(app, _("Close Terminals"), msg, _("_Apply Layout"));
     g_free(msg);
     return ok;
 }
@@ -263,7 +267,7 @@ gboolean layouts_preview_end(LayoutsPreview* p, const SavedLayout* l) {
 /* ------------------------------------------------------------------------- */
 
 static void notice(AppData* app, const gchar* title, const gchar* message) {
-    GtkWidget* dlg = app_dialog_new(title, app->window, "_Close", APP_RESPONSE_CLOSE, NULL);
+    GtkWidget* dlg = app_dialog_new(title, app->window, _("_Close"), APP_RESPONSE_CLOSE, NULL);
     GtkWidget* label = gtk_label_new(message);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
     gtk_widget_set_margin_top(label, 14);
@@ -288,29 +292,41 @@ static void save_store(LayoutsDialog* d) {
     gchar* path = layout_store_default_path();
     GError* err = NULL;
     if (!layout_store_save(path, d->layouts, d->def, &err)) {
-        gchar* msg = g_strdup_printf("Could not save %s:\n%s", path, err ? err->message : "");
-        notice(d->app, "Layouts Not Saved", msg);
+        gchar* msg = g_strdup_printf(_("Could not save %1$s:\n%2$s"), path, err ? err->message : "");
+        notice(d->app, _("Layouts Not Saved"), msg);
         g_free(msg);
         g_clear_error(&err);
     }
     g_free(path);
 }
 
+/* Name of the default layout in layouts.ini; the user may also type its translation */
 static const gchar* DEFAULT_NAME = "Default";
+
+static const gchar* default_name_shown(void) {
+    return C_("layout name", "Default");
+}
+
+static gboolean is_default_name(const gchar* name) {
+    return g_ascii_strcasecmp(name, DEFAULT_NAME) == 0 || g_utf8_collate(name, default_name_shown()) == 0;
+}
 
 /* Ask a name and save the current layout under it ("Default" replaces the
  * default layout). Returns the list index saved to (0 = default), or -1. */
 static gint save_current(LayoutsDialog* d, const gchar* suggestion) {
     AppData* app = d->app;
-    GtkWidget* dlg = app_dialog_new("Save Layout", app->window, "_Cancel", APP_RESPONSE_CANCEL,
-                                    "_Save", APP_RESPONSE_OK, NULL);
+    GtkWidget* dlg = app_dialog_new(_("Save Layout"), app->window, _("_Cancel"), APP_RESPONSE_CANCEL,
+                                    _("_Save"), APP_RESPONSE_OK, NULL);
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_widget_set_margin_top(box, 14);
     gtk_widget_set_margin_bottom(box, 14);
     gtk_widget_set_margin_start(box, 16);
     gtk_widget_set_margin_end(box, 16);
-    GtkWidget* label = gtk_label_new("Save the panels of this workspace as "
-                                     "(“Default” for new workspaces):");
+    /* TRANSLATORS: %s is the name of the default layout ("Default") */
+    gchar* prompt = g_strdup_printf(_("Save the panels of this workspace as (“%s” for new workspaces):"),
+                                    default_name_shown());
+    GtkWidget* label = gtk_label_new(prompt);
+    g_free(prompt);
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
     gtk_box_append(GTK_BOX(box), label);
@@ -325,19 +341,19 @@ static gint save_current(LayoutsDialog* d, const gchar* suggestion) {
     gchar* name = NULL;
     while (app_dialog_run(APP_DIALOG(dlg), entry) == APP_RESPONSE_OK) {
         name = g_strstrip(g_strdup(gtk_editable_get_text(GTK_EDITABLE(entry))));
-        gboolean is_default = (g_ascii_strcasecmp(name, DEFAULT_NAME) == 0);
+        gboolean is_default = is_default_name(name);
         gchar* msg = NULL;
         if (name[0] == '\0') {
             g_clear_pointer(&name, g_free);
             continue;
         } else if (is_default) {
-            msg = g_strdup("Make the panels of this workspace the default layout of new workspaces?");
+            msg = g_strdup(_("Make the panels of this workspace the default layout of new workspaces?"));
         } else if (layout_store_find(d->layouts, name) != NULL) {
-            msg = g_strdup_printf("A layout named “%s” already exists. Replace it?", name);
+            msg = g_strdup_printf(_("A layout named “%s” already exists. Replace it?"), name);
         }
         if (msg != NULL) {
-            gboolean ok = confirm(app, is_default ? "Replace Default Layout" : "Replace Layout", msg,
-                                  "_Replace");
+            gboolean ok = confirm(app, is_default ? _("Replace Default Layout") : _("Replace Layout"), msg,
+                                  _("_Replace"));
             g_free(msg);
             if (!ok) {
                 g_clear_pointer(&name, g_free);
@@ -351,7 +367,7 @@ static gint save_current(LayoutsDialog* d, const gchar* suggestion) {
         return -1;
     }
     gint index = 0;
-    if (g_ascii_strcasecmp(name, DEFAULT_NAME) == 0) {
+    if (is_default_name(name)) {
         saved_layout_free(d->def);
         d->def = layouts_capture(app, DEFAULT_NAME);
     } else {
@@ -387,7 +403,8 @@ GtkWidget* layouts_row_new(const gchar* title, const SavedLayout* l) {
 }
 
 gchar* layouts_default_title(const SavedLayout* def) {
-    return g_strdup_printf("Default — new workspaces%s", layout_store_is_customized(def) ? "" : " (built-in)");
+    return g_strdup(layout_store_is_customized(def) ? _("Default — new workspaces")
+                                                    : _("Default — new workspaces (built-in)"));
 }
 
 static void fill_list(LayoutsDialog* d, gint select_index) {
@@ -427,7 +444,7 @@ static void update_buttons(GtkListBox* list, GtkListBoxRow* row, gpointer data) 
     LayoutsDialog* d = data;
     gint index = (row != NULL) ? gtk_list_box_row_get_index(row) : -1;
     GtkWidget* del = app_dialog_get_widget_for_response(d->dialog, RESPONSE_DELETE);
-    gtk_button_set_label(GTK_BUTTON(del), index == 0 ? "_Reset Default" : "_Delete");
+    gtk_button_set_label(GTK_BUTTON(del), index == 0 ? _("_Reset Default") : _("_Delete"));
     gtk_widget_set_sensitive(del, index > 0 || (index == 0 && layout_store_is_customized(d->def)));
     gtk_widget_set_sensitive(app_dialog_get_widget_for_response(d->dialog, APP_RESPONSE_OK), index >= 0);
 }
@@ -447,11 +464,11 @@ void layouts_show_dialog(AppData* app) {
     LayoutsDialog d = { app, layout_store_load_default(path), layout_store_load(path), NULL, NULL };
     g_free(path);
 
-    GtkWidget* dlg = app_dialog_new("Workspace Layouts", app->window,
-                                    "_Delete", RESPONSE_DELETE,
-                                    "_Save Current…", RESPONSE_SAVE,
-                                    "_Close", APP_RESPONSE_CLOSE,
-                                    "_Apply", APP_RESPONSE_OK, NULL);
+    GtkWidget* dlg = app_dialog_new(_("Workspace Layouts"), app->window,
+                                    _("_Delete"), RESPONSE_DELETE,
+                                    _("_Save Current…"), RESPONSE_SAVE,
+                                    _("_Close"), APP_RESPONSE_CLOSE,
+                                    _("_Apply"), APP_RESPONSE_OK, NULL);
     d.dialog = APP_DIALOG(dlg);
     gtk_widget_add_css_class(app_dialog_get_widget_for_response(d.dialog, RESPONSE_DELETE),
                              "destructive-action");
@@ -465,10 +482,10 @@ void layouts_show_dialog(AppData* app) {
     gtk_widget_set_margin_bottom(box, 14);
     gtk_widget_set_margin_start(box, 16);
     gtk_widget_set_margin_end(box, 16);
-    GtkWidget* hint = gtk_label_new("Select a layout, then Apply it to this workspace (or "
-                                    "double-click it). Save Current… replaces the selected "
-                                    "layout or adds a new one; the default layout is the one "
-                                    "new workspaces open with.");
+    GtkWidget* hint = gtk_label_new(_("Select a layout, then Apply it to this workspace (or "
+                                      "double-click it). Save Current… replaces the selected "
+                                      "layout or adds a new one; the default layout is the one "
+                                      "new workspaces open with."));
     gtk_widget_add_css_class(hint, "dim-label");
     gtk_label_set_wrap(GTK_LABEL(hint), TRUE);
     gtk_label_set_max_width_chars(GTK_LABEL(hint), 58);
@@ -500,26 +517,27 @@ void layouts_show_dialog(AppData* app) {
         gint index = selected_index(&d);
         const SavedLayout* l = layout_at(&d, index);
         if (resp == RESPONSE_SAVE) {
-            gchar* suggestion = (index == 0) ? g_strdup(DEFAULT_NAME)
+            gchar* suggestion = (index == 0) ? g_strdup(default_name_shown())
                               : (l != NULL)  ? g_strdup(l->name)
-                                             : g_strdup_printf("Layout %u", d.layouts->len + 1);
+                                             : g_strdup_printf(_("Layout %u"), d.layouts->len + 1);
             gint saved = save_current(&d, suggestion);
             g_free(suggestion);
             if (saved >= 0) {
                 fill_list(&d, saved);
             }
         } else if (resp == RESPONSE_DELETE && index == 0) {
-            if (confirm(app, "Reset Default Layout",
-                        "Reset the default layout of new workspaces to the built-in one "
-                        "(explorer and preview, no terminal)?", "_Reset")) {
+            if (confirm(app, _("Reset Default Layout"),
+                        _("Reset the default layout of new workspaces to the built-in one "
+                          "(explorer and preview, no terminal)?"),
+                        _("_Reset"))) {
                 saved_layout_free(d.def);
                 d.def = layout_store_builtin_default();
                 save_store(&d);
                 fill_list(&d, 0);
             }
         } else if (resp == RESPONSE_DELETE && l != NULL) {
-            gchar* msg = g_strdup_printf("Delete the layout “%s”?", l->name);
-            if (confirm(app, "Delete Layout", msg, "_Delete")) {
+            gchar* msg = g_strdup_printf(_("Delete the layout “%s”?"), l->name);
+            if (confirm(app, _("Delete Layout"), msg, _("_Delete"))) {
                 layout_store_remove(d.layouts, l->name);
                 save_store(&d);
                 fill_list(&d, index - 1);

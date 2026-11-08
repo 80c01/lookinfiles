@@ -14,7 +14,7 @@ status=0
 RULES="
 app_paths:
 i18n:
-file_types:text_encoding
+file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table
 git_utils:palette,i18n
 line_diff:
@@ -83,7 +83,7 @@ media_player:media_tracks
 track_menu:media_player
 text_encoding:
 vt_screen:
-vt_pty:
+vt_pty:i18n
 term_widget:vt_screen,vt_pty
 preview_formats:mail_box,mail_message,mail_store,mail_tnef,mail_view,office97,file_types,text_encoding,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view,class_info,wasm_info,torrent_info,pyc_info,tfm_info,pcap_info
 org_time:
@@ -132,7 +132,7 @@ text_tags:fonts,palette
 lsp_protocol:code_symbol,json_view
 lsp_client:lsp_protocol
 lsp_config:code_symbol
-layout_store:app_paths,tab_tree
+layout_store:app_paths,tab_tree,i18n
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store,file_type_icons,icon_sets
 markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link,icons

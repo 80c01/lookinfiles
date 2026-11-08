@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-08 09:25+0000\n"
+"POT-Creation-Date: 2026-11-08 09:36+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -142,10 +142,11 @@ msgstr "_Retirer le signet"
 
 #: src/bookmark_dialog.c:198 src/bookmarks.c:577 src/code_symbols.c:176
 #: src/editor.c:1729 src/file_actions.c:42 src/file_actions.c:236
-#: src/notes.c:587 src/notes.c:768 src/notes.c:852 src/preferences.c:342
-#: src/project_search.c:369 src/quick_open.c:368 src/remote.c:322
-#: src/remote.c:389 src/remote.c:456 src/remote.c:487 src/remote.c:564
-#: src/session_bookmark.c:13 src/themes.c:222 src/themes.c:237 src/themes.c:682
+#: src/layouts.c:47 src/layouts.c:318 src/notes.c:587 src/notes.c:768
+#: src/notes.c:852 src/preferences.c:342 src/project_search.c:369
+#: src/quick_open.c:368 src/remote.c:322 src/remote.c:389 src/remote.c:456
+#: src/remote.c:487 src/remote.c:564 src/session_bookmark.c:13 src/themes.c:222
+#: src/themes.c:237 src/themes.c:682
 msgid "_Cancel"
 msgstr "_Annuler"
 
@@ -228,8 +229,9 @@ msgstr "Supprimer le dossier"
 msgid "Delete Bookmark"
 msgstr "Supprimer le signet"
 
-#: src/bookmarks.c:577 src/notes.c:1700 src/remote.c:457 src/remote.c:565
-#: src/themes.c:619 src/themes.c:791
+#: src/bookmarks.c:577 src/layouts.c:447 src/layouts.c:468 src/layouts.c:540
+#: src/notes.c:1700 src/remote.c:457 src/remote.c:565 src/themes.c:619
+#: src/themes.c:791
 msgid "_Delete"
 msgstr "_Supprimer"
 
@@ -241,8 +243,9 @@ msgstr "Modifier le dossier"
 msgid "Edit Bookmark"
 msgstr "Modifier le signet"
 
-#: src/bookmarks.c:606 src/notes.c:1487 src/notes.c:1557 src/remote.c:324
-#: src/remote.c:390 src/remote.c:541 src/session_bookmark.c:14 src/themes.c:237
+#: src/bookmarks.c:606 src/layouts.c:319 src/notes.c:1487 src/notes.c:1557
+#: src/remote.c:324 src/remote.c:390 src/remote.c:541 src/session_bookmark.c:14
+#: src/themes.c:237
 msgid "_Save"
 msgstr "_Enregistrer"
 
@@ -265,8 +268,8 @@ msgstr ""
 "%s"
 
 #: src/bookmarks.c:864 src/file_actions.c:365 src/file_actions.c:398
-#: src/image_preview.c:257 src/pdf.c:377 src/session_bookmark.c:79
-#: src/session_bookmark.c:99
+#: src/file_moves.c:131 src/image_preview.c:257 src/pdf.c:377
+#: src/session_bookmark.c:79 src/session_bookmark.c:99
 msgid "unknown error"
 msgstr "erreur inconnue"
 
@@ -274,8 +277,9 @@ msgstr "erreur inconnue"
 msgid "Open Bookmark"
 msgstr "Ouvrir le signet"
 
-#: src/bookmarks.c:865 src/file_actions.c:95 src/notes.c:883 src/remote.c:598
-#: src/remote.c:680 src/session_bookmark.c:62 src/session_bookmark.c:80
+#: src/bookmarks.c:865 src/file_actions.c:95 src/layouts.c:270
+#: src/layouts.c:470 src/notes.c:883 src/remote.c:598 src/remote.c:680
+#: src/session_bookmark.c:62 src/session_bookmark.c:80
 #: src/session_bookmark.c:100 src/themes.c:212
 msgid "_Close"
 msgstr "_Fermer"
@@ -357,6 +361,60 @@ msgstr "Trier A–Z / Z–A"
 #: src/bookmarks.c:1080 src/notes.c:2171 src/remote.c:1007
 msgid "Collapse / Expand All"
 msgstr "Tout replier / déplier"
+
+#: src/browser.c:95
+msgid "Stop (Escape)"
+msgstr "Arrêter (Escape)"
+
+#: src/browser.c:95 src/browser.c:453
+msgid "Reload (F5)"
+msgstr "Recharger (F5)"
+
+#: src/browser.c:112 src/browser.c:499
+msgid "New Tab"
+msgstr "Nouvel onglet"
+
+#: src/browser.c:276
+#, c-format
+msgid "Not shown in the tab, opened with the default application: %s"
+msgstr "Non affiché dans l’onglet, ouvert avec l’application par défaut : %s"
+
+#: src/browser.c:296
+msgid "Choosing a file to upload is not supported in browser tabs"
+msgstr ""
+"Le choix d’un fichier à envoyer n’est pas pris en charge dans les onglets "
+"navigateur"
+
+#: src/browser.c:304
+msgid "Printing is not supported in browser tabs"
+msgstr "L’impression n’est pas prise en charge dans les onglets navigateur"
+
+#: src/browser.c:451
+msgid "Back"
+msgstr "Précédent"
+
+#: src/browser.c:452
+msgid "Forward"
+msgstr "Suivant"
+
+#: src/browser.c:455
+msgid "Address, file path or search"
+msgstr "Adresse, chemin de fichier ou recherche"
+
+#: src/browser.c:457
+msgid "Address or words to search (Ctrl+L)"
+msgstr "Adresse ou mots à rechercher (Ctrl+L)"
+
+#: src/browser.c:461
+msgid "Close Tab (Ctrl+W)"
+msgstr "Fermer l’onglet (Ctrl+W)"
+
+#: src/browser.c:577
+msgid ""
+"Browser tabs need WebKitGTK 6.0 (install libwebkitgtk-6.0-dev and rebuild)"
+msgstr ""
+"Les onglets navigateur demandent WebKitGTK 6.0 (installez libwebkitgtk-6.0-"
+"dev et recompilez)"
 
 #: src/canvas_crop.c:117
 msgid "Crop Image"
@@ -1588,6 +1646,145 @@ msgstr "(dossier illisible)"
 #: src/file_list.c:348
 msgid "  (cannot read directory)"
 msgstr "  (dossier illisible)"
+
+#: src/file_moves.c:91
+#, c-format
+msgid "Renamed “%1$s” to “%2$s”"
+msgstr "« %1$s » renommé en « %2$s »"
+
+#: src/file_moves.c:108
+#, c-format
+msgid "Moved “%s” to the trash"
+msgstr "« %s » mis à la corbeille"
+
+#: src/file_moves.c:121
+msgid "Nothing to undo"
+msgstr "Rien à annuler"
+
+#: src/file_moves.c:129
+#, c-format
+msgid "Restored “%s” from the trash"
+msgstr "« %s » restauré depuis la corbeille"
+
+#: src/file_moves.c:130
+#, c-format
+msgid "Renamed back to “%s”"
+msgstr "Renommé à nouveau en « %s »"
+
+#: src/file_moves.c:131
+#, c-format
+msgid "Cannot undo: %s"
+msgstr "Impossible d’annuler : %s"
+
+#: src/file_types.c:362
+msgctxt "file kind"
+msgid "Image"
+msgstr "Image"
+
+#: src/file_types.c:364
+msgctxt "file kind"
+msgid "Video"
+msgstr "Vidéo"
+
+#: src/file_types.c:365
+msgctxt "file kind"
+msgid "Audio"
+msgstr "Audio"
+
+#: src/file_types.c:366
+msgctxt "file kind"
+msgid "Binary"
+msgstr "Binaire"
+
+#: src/file_types.c:368
+msgctxt "file kind"
+msgid "Document"
+msgstr "Document"
+
+#: src/file_types.c:369
+msgctxt "file kind"
+msgid "Spreadsheet"
+msgstr "Classeur"
+
+#: src/file_types.c:370
+msgctxt "file kind"
+msgid "Presentation"
+msgstr "Présentation"
+
+#: src/file_types.c:372
+msgctxt "file kind"
+msgid "Archive"
+msgstr "Archive"
+
+#: src/file_types.c:373
+msgctxt "file kind"
+msgid "Font"
+msgstr "Police"
+
+#: src/file_types.c:375
+msgctxt "file kind"
+msgid "Certificate"
+msgstr "Certificat"
+
+#: src/file_types.c:379
+msgctxt "file kind"
+msgid "Diff"
+msgstr "Diff"
+
+#: src/file_types.c:380
+msgctxt "file kind"
+msgid "Log"
+msgstr "Journal"
+
+#: src/file_types.c:381
+msgctxt "file kind"
+msgid "Calendar"
+msgstr "Agenda"
+
+#: src/file_types.c:383
+msgctxt "file kind"
+msgid "Desktop Entry"
+msgstr "Lanceur (.desktop)"
+
+#: src/file_types.c:384
+msgctxt "file kind"
+msgid "Man Page"
+msgstr "Page de manuel"
+
+#: src/file_types.c:385
+msgctxt "file kind"
+msgid "Rich Text"
+msgstr "Texte enrichi"
+
+#: src/file_types.c:387
+msgctxt "file kind"
+msgid "Mail"
+msgstr "Courriel"
+
+#: src/file_types.c:388
+msgctxt "file kind"
+msgid "Translations"
+msgstr "Traductions"
+
+#: src/file_types.c:389
+msgctxt "file kind"
+msgid "Java Class"
+msgstr "Classe Java"
+
+#: src/file_types.c:392
+msgctxt "file kind"
+msgid "Python Bytecode"
+msgstr "Bytecode Python"
+
+#: src/file_types.c:393
+msgctxt "file kind"
+msgid "TeX Font Metric"
+msgstr "Métriques de police TeX"
+
+#: src/file_types.c:394
+msgctxt "file kind"
+msgid "Packet Capture"
+msgstr "Capture réseau"
 
 #: src/files_menu.c:43
 #, c-format
@@ -3467,6 +3664,81 @@ msgstr "  [échelle 1:1, m pour ajuster]"
 msgid "  [1:1 scale]"
 msgstr "  [échelle 1:1]"
 
+#: src/layout_store.c:46 src/main.c:344
+msgid "Explorer"
+msgstr "Explorateur"
+
+#: src/layout_store.c:49 src/main.c:351 src/main.c:441
+msgid "Preview"
+msgstr "Aperçu"
+
+#: src/layout_store.c:56
+#, c-format
+msgid "%u pane"
+msgid_plural "%u panes"
+msgstr[0] "%u volet"
+msgstr[1] "%u volets"
+
+#: src/layout_store.c:57
+#, c-format
+msgid "%u terminal"
+msgid_plural "%u terminals"
+msgstr[0] "%u terminal"
+msgstr[1] "%u terminaux"
+
+#. TRANSLATORS: e.g. "Editor Panel (2 panes, 1 terminal)"
+#: src/layout_store.c:61
+#, c-format
+msgid "Editor Panel (%1$s, %2$s)"
+msgstr "Panneau d’édition (%1$s, %2$s)"
+
+#: src/layout_store.c:63
+#, c-format
+msgid "Editor Panel (%s)"
+msgstr "Panneau d’édition (%s)"
+
+#: src/layout_store.c:65
+msgid "Editor Panel"
+msgstr "Panneau d’édition"
+
+#: src/layout_store.c:78
+#, c-format
+msgid "Terminal (%u terminal, below)"
+msgid_plural "Terminal (%u terminals, below)"
+msgstr[0] "Terminal (%u terminal, en dessous)"
+msgstr[1] "Terminal (%u terminaux, en dessous)"
+
+#: src/layout_store.c:79
+#, c-format
+msgid "Terminal (%u terminal, beside)"
+msgid_plural "Terminal (%u terminals, beside)"
+msgstr[0] "Terminal (%u terminal, à côté)"
+msgstr[1] "Terminal (%u terminaux, à côté)"
+
+#: src/layout_store.c:82
+msgid "Terminal (below)"
+msgstr "Terminal (en dessous)"
+
+#: src/layout_store.c:82
+msgid "Terminal (beside)"
+msgstr "Terminal (à côté)"
+
+#: src/layout_store.c:87
+msgid "No panels"
+msgstr "Aucun panneau"
+
+#: src/layout_store.c:90
+msgid "Tagbar (editor)"
+msgstr "Barre de symboles (édition)"
+
+#: src/layout_store.c:91
+msgid "Tagbar (preview)"
+msgstr "Barre de symboles (aperçu)"
+
+#: src/layout_store.c:92
+msgid "Tagbar"
+msgstr "Barre de symboles"
+
 #: src/layout_switcher.c:171 src/layout_switcher.c:189
 msgid "Current Layout"
 msgstr "Disposition actuelle"
@@ -3478,6 +3750,147 @@ msgstr "_Modifier les dispositions…"
 #: src/layout_switcher.c:205
 msgid "Save, Delete or Reset Layouts"
 msgstr "Enregistrer, supprimer ou réinitialiser les dispositions"
+
+#: src/layouts.c:135
+#, c-format
+msgid ""
+"The layout “%1$s” has fewer terminals than are running; %2$u running "
+"terminal will be closed."
+msgid_plural ""
+"The layout “%1$s” has fewer terminals than are running; %2$u running "
+"terminals will be closed."
+msgstr[0] ""
+"La disposition « %1$s » a moins de terminaux qu’il n’en tourne ; %2$u "
+"terminal en cours sera fermé."
+msgstr[1] ""
+"La disposition « %1$s » a moins de terminaux qu’il n’en tourne ; %2$u "
+"terminaux en cours seront fermés."
+
+#: src/layouts.c:141
+msgid "Close Terminals"
+msgstr "Fermer des terminaux"
+
+#: src/layouts.c:141
+msgid "_Apply Layout"
+msgstr "_Appliquer la disposition"
+
+#: src/layouts.c:295
+#, c-format
+msgid ""
+"Could not save %1$s:\n"
+"%2$s"
+msgstr ""
+"Impossible d’enregistrer %1$s :\n"
+"%2$s"
+
+#: src/layouts.c:296
+msgid "Layouts Not Saved"
+msgstr "Dispositions non enregistrées"
+
+#: src/layouts.c:307
+msgctxt "layout name"
+msgid "Default"
+msgstr "Par défaut"
+
+#: src/layouts.c:318
+msgid "Save Layout"
+msgstr "Enregistrer la disposition"
+
+#. TRANSLATORS: %s is the name of the default layout ("Default")
+#: src/layouts.c:326
+#, c-format
+msgid "Save the panels of this workspace as (“%s” for new workspaces):"
+msgstr ""
+"Enregistrer les panneaux de cet espace de travail sous (« %s » pour les "
+"nouveaux espaces de travail) :"
+
+#: src/layouts.c:350
+msgid "Make the panels of this workspace the default layout of new workspaces?"
+msgstr ""
+"Faire des panneaux de cet espace de travail la disposition par défaut des "
+"nouveaux espaces de travail ?"
+
+#: src/layouts.c:352
+#, c-format
+msgid "A layout named “%s” already exists. Replace it?"
+msgstr "Une disposition nommée « %s » existe déjà. La remplacer ?"
+
+#: src/layouts.c:355
+msgid "Replace Default Layout"
+msgstr "Remplacer la disposition par défaut"
+
+#: src/layouts.c:355
+msgid "Replace Layout"
+msgstr "Remplacer la disposition"
+
+#: src/layouts.c:356
+msgid "_Replace"
+msgstr "_Remplacer"
+
+#: src/layouts.c:406
+msgid "Default — new workspaces"
+msgstr "Par défaut — nouveaux espaces de travail"
+
+#: src/layouts.c:407
+msgid "Default — new workspaces (built-in)"
+msgstr "Par défaut — nouveaux espaces de travail (intégrée)"
+
+#: src/layouts.c:447
+msgid "_Reset Default"
+msgstr "_Réinitialiser"
+
+#: src/layouts.c:467
+msgid "Workspace Layouts"
+msgstr "Dispositions des espaces de travail"
+
+#: src/layouts.c:469
+msgid "_Save Current…"
+msgstr "_Enregistrer l’actuelle…"
+
+#: src/layouts.c:471 src/preferences.c:342
+msgid "_Apply"
+msgstr "A_ppliquer"
+
+#: src/layouts.c:485
+msgid ""
+"Select a layout, then Apply it to this workspace (or double-click it). Save "
+"Current… replaces the selected layout or adds a new one; the default layout "
+"is the one new workspaces open with."
+msgstr ""
+"Choisissez une disposition, puis Appliquer pour l’appliquer à cet espace de "
+"travail (ou double-cliquez dessus). Enregistrer l’actuelle… remplace la "
+"disposition choisie ou en ajoute une ; la disposition par défaut est celle "
+"des nouveaux espaces de travail."
+
+#: src/layouts.c:522
+#, c-format
+msgid "Layout %u"
+msgstr "Disposition %u"
+
+#: src/layouts.c:529
+msgid "Reset Default Layout"
+msgstr "Réinitialiser la disposition par défaut"
+
+#: src/layouts.c:530
+msgid ""
+"Reset the default layout of new workspaces to the built-in one (explorer and "
+"preview, no terminal)?"
+msgstr ""
+"Rétablir la disposition intégrée pour les nouveaux espaces de travail "
+"(explorateur et aperçu, sans terminal) ?"
+
+#: src/layouts.c:532
+msgid "_Reset"
+msgstr "_Réinitialiser"
+
+#: src/layouts.c:539
+#, c-format
+msgid "Delete the layout “%s”?"
+msgstr "Supprimer la disposition « %s » ?"
+
+#: src/layouts.c:540
+msgid "Delete Layout"
+msgstr "Supprimer la disposition"
 
 #: src/main.c:141
 #, c-format
@@ -3562,17 +3975,9 @@ msgid "[ '%s' is not a file or a directory: showing %s instead ]\n"
 msgstr ""
 "[ « %s » n’est ni un fichier ni un dossier : affichage de %s à la place ]\n"
 
-#: src/main.c:344
-msgid "Explorer"
-msgstr "Explorateur"
-
 #: src/main.c:348
 msgid "Show / Hide Explorer Panel"
 msgstr "Afficher / masquer le panneau Explorateur"
-
-#: src/main.c:351 src/main.c:441
-msgid "Preview"
-msgstr "Aperçu"
 
 #: src/main.c:355
 msgid "Show / Hide Preview Panel"
@@ -4133,10 +4538,6 @@ msgstr ""
 #: src/preferences.c:342
 msgid "Preferences"
 msgstr "Préférences"
-
-#: src/preferences.c:342
-msgid "_Apply"
-msgstr "A_ppliquer"
 
 #: src/preferences.c:359
 msgid "Appearance"
@@ -4797,6 +5198,24 @@ msgstr "Ajouter une machine ici…"
 msgid "Add Remote Machine…"
 msgstr "Ajouter une machine distante…"
 
+#: src/session.c:161
+msgid "This workspace has no folder"
+msgstr "Cet espace de travail n’a pas de dossier"
+
+#: src/session.c:173
+msgid "The saved workspace is missing or unreadable"
+msgstr "L’espace de travail enregistré est absent ou illisible"
+
+#: src/session.c:179
+#, c-format
+msgid "Folder not found: %s"
+msgstr "Dossier introuvable : %s"
+
+#: src/session.c:181
+#, c-format
+msgid "All %d workspaces are in use"
+msgstr "Les %d espaces de travail sont tous utilisés"
+
 #: src/session_bookmark.c:12
 msgid "Save Workspace as Bookmark"
 msgstr "Enregistrer l’espace de travail comme signet"
@@ -5450,6 +5869,40 @@ msgstr ""
 "%s\n"
 "\n"
 "(en attente du système de fichiers…)\n"
+
+#: src/vt_pty.c:151 src/vt_pty.c:361
+#, c-format
+msgid "%s: program not found"
+msgstr "%s : programme introuvable"
+
+#: src/vt_pty.c:158
+#, c-format
+msgid "Cannot create pipes: %s"
+msgstr "Impossible de créer les tubes : %s"
+
+#: src/vt_pty.c:175
+#, c-format
+msgid ""
+"Cannot create a pseudo console (error 0x%08lx; Windows 10 1809 or later "
+"needed)"
+msgstr ""
+"Impossible de créer une pseudo-console (erreur 0x%08lx ; Windows 10 1809 ou "
+"plus récent requis)"
+
+#: src/vt_pty.c:225
+#, c-format
+msgid "Cannot run %1$s: %2$s"
+msgstr "Impossible d’exécuter %1$s : %2$s"
+
+#: src/vt_pty.c:368
+#, c-format
+msgid "Cannot open a pseudo-terminal: %s"
+msgstr "Impossible d’ouvrir un pseudo-terminal : %s"
+
+#: src/vt_pty.c:411
+#, c-format
+msgid "Cannot start %1$s: %2$s"
+msgstr "Impossible de lancer %1$s : %2$s"
 
 #: src/workspace_menu.c:81
 msgid "Save as Bookmark…"

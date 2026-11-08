@@ -454,7 +454,7 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
     }
     const gchar* label = file_kind_label(kind);
     if (label != NULL) {
-        return g_strdup(label);
+        return g_strdup(g_dpgettext2(NULL, "file kind", label));
     }
 #ifdef HAVE_GSV
     /* The content type of the previewed text also finds scripts without extension (#!) */

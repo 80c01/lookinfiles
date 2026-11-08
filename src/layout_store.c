@@ -1,6 +1,7 @@
 /* Saved workspace layouts (see layout_store.h) */
 #include "layout_store.h"
 #include "app_paths.h"
+#include "i18n.h"
 #include "tab_tree.h"
 
 #include <stdlib.h>
@@ -42,45 +43,53 @@ void saved_layout_free(gpointer layout) {
 gchar* saved_layout_summary(const SavedLayout* layout) {
     GPtrArray* parts = g_ptr_array_new_with_free_func(g_free);
     if (layout->files_vis) {
-        g_ptr_array_add(parts, g_strdup("Explorer"));
+        g_ptr_array_add(parts, g_strdup(_("Explorer")));
     }
     if (layout->preview_vis) {
-        g_ptr_array_add(parts, g_strdup("Preview"));
+        g_ptr_array_add(parts, g_strdup(_("Preview")));
     }
     if (layout->editor_dedicated) {
         TabTreeNode* tree = tab_tree_parse(layout->editor_splits);
         guint panes = tab_tree_notebook_count(tree);
         guint terms = tab_tree_terminal_count(tree);
         tab_tree_free(tree);
-        GString* text = g_string_new("Editor Panel");
-        if (panes > 1 || terms > 0) {
-            g_string_append(text, " (");
-            if (panes > 1) {
-                g_string_append_printf(text, "%u panes%s", panes, terms > 0 ? ", " : "");
-            }
-            if (terms > 0) {
-                g_string_append_printf(text, "%u terminal%s", terms, terms == 1 ? "" : "s");
-            }
-            g_string_append_c(text, ')');
+        gchar* pane_text = panes > 1 ? g_strdup_printf(ngettext("%u pane", "%u panes", panes), panes) : NULL;
+        gchar* term_text = terms > 0 ? g_strdup_printf(ngettext("%u terminal", "%u terminals", terms), terms) : NULL;
+        gchar* text;
+        if (pane_text != NULL && term_text != NULL) {
+            /* TRANSLATORS: e.g. "Editor Panel (2 panes, 1 terminal)" */
+            text = g_strdup_printf(_("Editor Panel (%1$s, %2$s)"), pane_text, term_text);
+        } else if (pane_text != NULL || term_text != NULL) {
+            text = g_strdup_printf(_("Editor Panel (%s)"), pane_text != NULL ? pane_text : term_text);
+        } else {
+            text = g_strdup(_("Editor Panel"));
         }
-        g_ptr_array_add(parts, g_string_free(text, FALSE));
+        g_free(pane_text);
+        g_free(term_text);
+        g_ptr_array_add(parts, text);
     }
     if (layout->term_vis) {
         TermLayoutNode* tree = term_layout_parse(layout->terminals);
         guint n = MAX(1, term_layout_count(tree));
         term_layout_free(tree);
-        g_ptr_array_add(parts, n > 1 ? g_strdup_printf("Terminal (%u terminals, %s)", n,
-                                                      layout->stacked ? "below" : "beside")
-                                     : g_strdup_printf("Terminal (%s)",
-                                                      layout->stacked ? "below" : "beside"));
+        gchar* text;
+        if (n > 1) {
+            text = g_strdup_printf(layout->stacked
+                                       ? ngettext("Terminal (%u terminal, below)", "Terminal (%u terminals, below)", n)
+                                       : ngettext("Terminal (%u terminal, beside)", "Terminal (%u terminals, beside)", n),
+                                   n);
+        } else {
+            text = g_strdup(layout->stacked ? _("Terminal (below)") : _("Terminal (beside)"));
+        }
+        g_ptr_array_add(parts, text);
     }
     if (parts->len == 0) {
-        g_ptr_array_add(parts, g_strdup("No panels"));
+        g_ptr_array_add(parts, g_strdup(_("No panels")));
     }
     if (layout->tagbars && (layout->editor_tagbar || layout->preview_tagbar)) {
-        g_ptr_array_add(parts, g_strdup(!layout->preview_tagbar ? "Tagbar (editor)"
-                                        : !layout->editor_tagbar ? "Tagbar (preview)"
-                                                                 : "Tagbar"));
+        g_ptr_array_add(parts, g_strdup(!layout->preview_tagbar ? _("Tagbar (editor)")
+                                        : !layout->editor_tagbar ? _("Tagbar (preview)")
+                                                                 : _("Tagbar")));
     }
     g_ptr_array_add(parts, NULL);
     gchar* text = g_strjoinv(" · ", (gchar**)parts->pdata);
