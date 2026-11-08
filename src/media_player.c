@@ -475,10 +475,26 @@ static gboolean ensure_playbin(MediaPlayer* self) {
     gst_app_sink_set_callbacks(GST_APP_SINK(sink), &callbacks, self, NULL);
     g_object_set(playbin, "video-sink", sink, NULL);
     self->playbin = gst_object_ref_sink(playbin);
+    /* A new playbin per file: keep the volume of the previous one */
+    GtkMediaStream* stream = GTK_MEDIA_STREAM(self);
+    gdouble volume = gtk_media_stream_get_volume(stream);
+    g_object_set(playbin, "mute", gtk_media_stream_get_muted(stream), "volume", volume * volume * volume, NULL);
     GstBus* bus = gst_element_get_bus(playbin);
     self->bus_watch = gst_bus_add_watch(bus, on_bus, self);
     gst_object_unref(bus);
     return TRUE;
+}
+
+/* A playbin is never reused for another file: its stream synchronizer
+ * numbers its pads from 0 again once in NULL, while pads requested late by a
+ * streaming thread can survive, and the next file then aborts GStreamer with
+ * "Padname sink_1 is not unique". */
+static void release_playbin(MediaPlayer* self) {
+    if (self->playbin == NULL) return;
+    gst_element_set_state(self->playbin, GST_STATE_NULL);
+    if (self->bus_watch != 0) g_source_remove(self->bus_watch);
+    self->bus_watch = 0;
+    gst_clear_object(&self->playbin);
 }
 
 static void find_sub_files(MediaPlayer* self, const gchar* path) {
@@ -540,10 +556,7 @@ static void player_close(GtkMediaFile* file) {
     /* First: unpreparing pauses the stream, which must not reopen the file */
     self->opened = FALSE;
     stop_tick(self);
-    if (self->playbin != NULL) {
-        gst_element_set_state(self->playbin, GST_STATE_NULL);
-        flush_bus(self);
-    }
+    release_playbin(self);
     clear_frames(self);
     g_clear_pointer(&self->sub_files, g_strfreev);
     g_clear_pointer(&self->dir, g_free);
@@ -608,12 +621,7 @@ static void player_update_audio(GtkMediaStream* stream, gboolean muted, double v
 static void player_dispose(GObject* object) {
     MediaPlayer* self = MEDIA_PLAYER(object);
     stop_tick(self);
-    if (self->playbin != NULL) {
-        gst_element_set_state(self->playbin, GST_STATE_NULL);
-        if (self->bus_watch != 0) g_source_remove(self->bus_watch);
-        self->bus_watch = 0;
-        gst_clear_object(&self->playbin);
-    }
+    release_playbin(self);
     clear_frames(self);
     G_OBJECT_CLASS(media_player_parent_class)->dispose(object);
 }
