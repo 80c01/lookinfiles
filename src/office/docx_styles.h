@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "doc_writer.h"
+#include "office/doc_writer.h"
 #include "formats/zip_reader.h"
 
 /* Formatting of Word documents (.docx): run and paragraph properties

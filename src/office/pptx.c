@@ -1,12 +1,12 @@
 /* PowerPoint presentations drawn like PowerPoint (see pptx.h) */
-#include "pptx.h"
+#include "office/pptx.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
 
-#include "pptx_shapes.h"
-#include "slide_render.h"
+#include "office/pptx_shapes.h"
+#include "office/slide_render.h"
 #include "formats/zip_reader.h"
 #include "formats/zip_xml.h"
 

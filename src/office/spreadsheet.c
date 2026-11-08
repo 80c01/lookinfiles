@@ -1,5 +1,5 @@
 /* Spreadsheet reading (see spreadsheet.h). */
-#include "spreadsheet.h"
+#include "office/spreadsheet.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

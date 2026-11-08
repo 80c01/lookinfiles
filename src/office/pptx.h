@@ -4,7 +4,7 @@
 #include <glib.h>
 
 #include "preview/preview_doc.h"
-#include "slide_render.h"
+#include "office/slide_render.h"
 
 /* PowerPoint presentations (.pptx, Office Open XML) drawn like PowerPoint
  * (slide_render): each slide from its shapes, its layout and master

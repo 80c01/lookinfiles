@@ -1,5 +1,5 @@
-/* Unit tests for src/spreadsheet.c (.xlsx and .ods reading, number formats). */
-#include "spreadsheet.h"
+/* Unit tests for src/office/spreadsheet.c (.xlsx and .ods reading, number formats). */
+#include "office/spreadsheet.h"
 
 #include <locale.h>
 #include <string.h>

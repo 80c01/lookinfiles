@@ -1,5 +1,5 @@
-/* Unit tests for src/docx.c and src/docx_styles.c: Word documents as styled previews. */
-#include "docx.h"
+/* Unit tests for src/office/docx.c and src/office/docx_styles.c: Word documents as styled previews. */
+#include "office/docx.h"
 #include "zip_builder.h"
 
 #include <string.h>

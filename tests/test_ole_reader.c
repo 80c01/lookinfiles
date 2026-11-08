@@ -1,7 +1,7 @@
-/* Unit tests for src/ole_reader.c: OLE2 compound files built in memory
+/* Unit tests for src/office/ole_reader.c: OLE2 compound files built in memory
  * (tests/ole_builder.h), the LibreOffice fixtures, and damaged files. */
 #include "ole_builder.h"
-#include "ole_reader.h"
+#include "office/ole_reader.h"
 
 #include <gio/gio.h>
 #include <string.h>

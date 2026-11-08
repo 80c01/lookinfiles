@@ -1,5 +1,5 @@
-/* Unit tests for src/pptx.c and src/pptx_shapes.c: presentations as slides. */
-#include "pptx.h"
+/* Unit tests for src/office/pptx.c and src/office/pptx_shapes.c: presentations as slides. */
+#include "office/pptx.h"
 
 #include <string.h>
 

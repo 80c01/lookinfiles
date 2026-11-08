@@ -1,5 +1,5 @@
-/* Unit tests for src/odf.c (OpenDocument text and presentations to HTML). */
-#include "odf.h"
+/* Unit tests for src/office/odf.c (OpenDocument text and presentations to HTML). */
+#include "office/odf.h"
 
 #include <string.h>
 

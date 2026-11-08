@@ -1,5 +1,5 @@
 /* Document properties of compound files (see ole_props.h) */
-#include "ole_props.h"
+#include "office/ole_props.h"
 #include "core/i18n.h"
 #include <string.h>
 

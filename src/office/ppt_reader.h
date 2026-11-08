@@ -13,8 +13,8 @@
  * boxes. Pure GLib (and the slide model), unit-tested. */
 #include <glib.h>
 
-#include "ole_reader.h"
-#include "slide_render.h"
+#include "office/ole_reader.h"
+#include "office/slide_render.h"
 
 /* The slides; NULL with error set when they cannot be read; *encrypted
  * (may be NULL) tells when the presentation is password-protected */

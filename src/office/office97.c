@@ -1,14 +1,14 @@
 /* Previews of OLE2 compound files (see office97.h) */
-#include "office97.h"
+#include "office/office97.h"
 #include "core/i18n.h"
-#include "doc_reader.h"
+#include "office/doc_reader.h"
 #include "mail_msg.h"
 #include "mail_view.h"
-#include "ole_props.h"
-#include "ppt_reader.h"
-#include "slide_render.h"
-#include "spreadsheet.h"
-#include "xls_reader.h"
+#include "office/ole_props.h"
+#include "office/ppt_reader.h"
+#include "office/slide_render.h"
+#include "office/spreadsheet.h"
+#include "office/xls_reader.h"
 #include <gio/gio.h>
 #include <string.h>
 

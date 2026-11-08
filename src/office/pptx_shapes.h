@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "slide_render.h"
+#include "office/slide_render.h"
 #include "formats/zip_reader.h"
 
 /* DrawingML of PowerPoint presentations (.pptx): the theme (colour scheme,

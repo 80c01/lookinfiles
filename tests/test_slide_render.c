@@ -1,5 +1,5 @@
-/* Unit tests for src/slide_render.c: slides drawn as pictures, deck previews. */
-#include "slide_render.h"
+/* Unit tests for src/office/slide_render.c: slides drawn as pictures, deck previews. */
+#include "office/slide_render.h"
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <string.h>

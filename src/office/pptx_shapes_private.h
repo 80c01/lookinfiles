@@ -3,7 +3,7 @@
 
 /* Types shared by pptx_shapes.c (theme, shape tree parser) and
  * pptx_build.c (slides from the trees); internal to those two files. */
-#include "pptx_shapes.h"
+#include "office/pptx_shapes.h"
 
 #define MAX_LEVELS 9
 #define EMU_PER_PT 12700.0

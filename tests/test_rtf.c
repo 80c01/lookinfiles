@@ -1,5 +1,5 @@
-/* Unit tests for src/rtf.c (RTF to HTML). */
-#include "rtf.h"
+/* Unit tests for src/office/rtf.c (RTF to HTML). */
+#include "office/rtf.h"
 
 #include <string.h>
 

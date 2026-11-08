@@ -1,5 +1,5 @@
-/* Unit tests for src/epub.c (EPUB e-books to HTML). */
-#include "epub.h"
+/* Unit tests for src/office/epub.c (EPUB e-books to HTML). */
+#include "office/epub.h"
 
 #include <string.h>
 

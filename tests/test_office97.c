@@ -1,10 +1,10 @@
-/* Unit tests for src/ole_props.c and src/office97.c (and the Office
+/* Unit tests for src/office/ole_props.c and src/office/office97.c (and the Office
  * 97-2003 readers): compound files built in memory (tests/ole_builder.h)
  * and the LibreOffice fixtures of tests/fixtures/preview. */
 #include "ole_builder.h"
-#include "office97.h"
-#include "ppt_reader.h"
-#include "ole_props.h"
+#include "office/office97.h"
+#include "office/ppt_reader.h"
+#include "office/ole_props.h"
 #include "preview/preview_formats.h"
 
 #include <glib/gstdio.h>

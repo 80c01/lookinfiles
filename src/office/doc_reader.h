@@ -13,7 +13,7 @@
  * text of their single 8-bit piece, as paragraphs. Pure GLib, unit-tested. */
 #include <glib.h>
 
-#include "ole_reader.h"
+#include "office/ole_reader.h"
 #include "preview/preview_doc.h"
 
 /* The document under a title and subtitle. NULL with error set when it

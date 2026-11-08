@@ -1,5 +1,5 @@
 /* EPUB e-books to HTML (see epub.h). */
-#include "epub.h"
+#include "office/epub.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

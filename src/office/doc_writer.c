@@ -1,5 +1,5 @@
 /* Word processing documents written as preview documents (see doc_writer.h) */
-#include "doc_writer.h"
+#include "office/doc_writer.h"
 
 #include <string.h>
 

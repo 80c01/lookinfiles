@@ -1,5 +1,5 @@
-/* Unit tests for src/doc_writer.c (Word-like documents as preview documents) */
-#include "doc_writer.h"
+/* Unit tests for src/office/doc_writer.c (Word-like documents as preview documents) */
+#include "office/doc_writer.h"
 
 #include <string.h>
 

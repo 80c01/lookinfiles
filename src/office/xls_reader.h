@@ -9,8 +9,8 @@
  * 1904 date system). Pure GLib, unit-tested. */
 #include <glib.h>
 
-#include "ole_reader.h"
-#include "spreadsheet.h"
+#include "office/ole_reader.h"
+#include "office/spreadsheet.h"
 
 /* The cells of the first max_sheets worksheets, at most max_rows rows and
  * SPREADSHEET_MAX_COLS columns each. NULL with error set when the workbook

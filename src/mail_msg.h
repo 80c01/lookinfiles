@@ -11,7 +11,7 @@
 #include <glib.h>
 
 #include "mail_message.h"
-#include "ole_reader.h"
+#include "office/ole_reader.h"
 
 /* The message; NULL with error set when it has no message properties */
 MailMessage* mail_msg_read(OleReader* ole, gsize max_part, GError** error);

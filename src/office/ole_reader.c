@@ -1,5 +1,5 @@
 /* OLE2 compound file reader (see ole_reader.h) */
-#include "ole_reader.h"
+#include "office/ole_reader.h"
 #include "core/i18n.h"
 #include <gio/gio.h>
 #include <string.h>

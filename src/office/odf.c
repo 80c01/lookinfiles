@@ -1,5 +1,5 @@
 /* OpenDocument text and presentations to HTML (see odf.h). */
-#include "odf.h"
+#include "office/odf.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>

@@ -1,12 +1,12 @@
 /* Word documents (.docx) shown like Word (see docx.h) */
-#include "docx.h"
+#include "office/docx.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
 
-#include "doc_writer.h"
-#include "docx_styles.h"
+#include "office/doc_writer.h"
+#include "office/docx_styles.h"
 #include "formats/zip_xml.h"
 
 #define MAX_PART (16u * 1024 * 1024)          /* relationships, headers, properties */

@@ -1,5 +1,5 @@
 /* Formatting of Word documents: properties, styles, theme fonts, numbering (see docx_styles.h) */
-#include "docx_styles.h"
+#include "office/docx_styles.h"
 
 #include <gio/gio.h>
 #include <string.h>

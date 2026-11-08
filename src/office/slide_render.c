@@ -1,5 +1,5 @@
 /* Slides drawn like PowerPoint (see slide_render.h) */
-#include "slide_render.h"
+#include "office/slide_render.h"
 #include "core/i18n.h"
 
 #include <gdk-pixbuf/gdk-pixbuf.h>

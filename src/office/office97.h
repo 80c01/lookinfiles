@@ -10,7 +10,7 @@
  * stream list. Pure GLib, unit-tested. */
 #include <glib.h>
 
-#include "ole_reader.h"
+#include "office/ole_reader.h"
 #include "preview/preview_doc.h"
 
 typedef enum {

@@ -274,7 +274,7 @@ msgstr "_Retirer le signet"
 msgid "_Cancel"
 msgstr "_Annuler"
 
-#: src/explorer/bookmark_dialog.c:207 src/explorer/file_actions.c:252 src/office97.c:73
+#: src/explorer/bookmark_dialog.c:207 src/explorer/file_actions.c:252 src/office/office97.c:73
 #: src/preview/preview_formats.c:346 src/preview/preview_formats.c:347 src/formats/pyc_info.c:578
 #: src/session_bookmark.c:26 src/formats/sqlite_view.c:222 src/formats/torrent_info.c:325
 msgid "Name"
@@ -1091,7 +1091,7 @@ msgstr "(sans nom)"
 msgid "Organization"
 msgstr "Organisation"
 
-#: src/formats/card_view.c:530 src/ole_props.c:223
+#: src/formats/card_view.c:530 src/office/ole_props.c:223
 msgid "Title"
 msgstr "Titre"
 
@@ -1175,7 +1175,7 @@ msgstr "Pas dans"
 msgid "Categories"
 msgstr "Catégories"
 
-#: src/formats/card_view.c:613 src/ole_props.c:227
+#: src/formats/card_view.c:613 src/office/ole_props.c:227
 msgid "Keywords"
 msgstr "Mots-clés"
 
@@ -1287,7 +1287,7 @@ msgstr[0] "valide, expire dans %d jour"
 msgstr[1] "valide, expire dans %d jours"
 
 #: src/formats/cert_view.c:602 src/formats/cert_view.c:665 src/mail_dir.c:212
-#: src/mail_view.c:80 src/ole_props.c:224 src/preview/preview_formats.c:936
+#: src/mail_view.c:80 src/office/ole_props.c:224 src/preview/preview_formats.c:936
 msgid "Subject"
 msgstr "Objet"
 
@@ -2007,43 +2007,43 @@ msgstr "hier"
 msgid "%d days ago"
 msgstr "il y a %d jours"
 
-#: src/doc_reader.c:725
+#: src/office/doc_reader.c:725
 msgid "the document header is truncated"
 msgstr "l’en-tête du document est tronqué"
 
-#: src/doc_reader.c:732
+#: src/office/doc_reader.c:732
 msgid "not a Word document"
 msgstr "pas un document Word"
 
-#: src/doc_reader.c:738
+#: src/office/doc_reader.c:738
 msgid "the document is encrypted"
 msgstr "le document est chiffré"
 
-#: src/doc_reader.c:790
+#: src/office/doc_reader.c:790
 msgid "damaged piece table"
 msgstr "table des morceaux endommagée"
 
-#: src/doc_reader.c:807
+#: src/office/doc_reader.c:807
 msgid "the document header is damaged"
 msgstr "l’en-tête du document est endommagé"
 
-#: src/doc_reader.c:838
+#: src/office/doc_reader.c:838
 msgid "The document continues; the preview stops here."
 msgstr "Le document continue ; l’aperçu s’arrête ici."
 
-#: src/doc_reader.c:843
+#: src/office/doc_reader.c:843
 msgid "the text of the document cannot be found"
 msgstr "le texte du document est introuvable"
 
-#: src/docx.c:649
+#: src/office/docx.c:649
 msgid "Not a Word document"
 msgstr "Pas un document Word"
 
-#: src/docx.c:700
+#: src/office/docx.c:700
 msgid "Word document"
 msgstr "Document Word"
 
-#: src/docx.c:708 src/odf.c:450 src/rtf.c:458
+#: src/office/docx.c:708 src/office/odf.c:450 src/office/rtf.c:458
 msgid "Document truncated: only the beginning is shown."
 msgstr "Document tronqué : seul le début est affiché."
 
@@ -2460,16 +2460,16 @@ msgstr ""
 "\n"
 "Symboles exportés (%u)\n"
 
-#: src/epub.c:290
+#: src/office/epub.c:290
 msgid "not an EPUB (no package document)"
 msgstr "pas un EPUB (pas de document de paquet)"
 
-#: src/epub.c:370 src/ole_props.c:246 src/preview/preview_formats.c:315
+#: src/office/epub.c:370 src/office/ole_props.c:246 src/preview/preview_formats.c:315
 #: src/preview/preview_summary.c:260
 msgid "Contents"
 msgstr "Contenu"
 
-#: src/epub.c:399
+#: src/office/epub.c:399
 msgid "Only the first chapters are shown."
 msgstr "Seuls les premiers chapitres sont affichés."
 
@@ -2958,7 +2958,7 @@ msgstr "Commit"
 msgid "Message"
 msgstr "Message"
 
-#: src/git/git_tab.c:435 src/ole_props.c:225
+#: src/git/git_tab.c:435 src/office/ole_props.c:225
 msgid "Author"
 msgstr "Auteur"
 
@@ -5170,7 +5170,7 @@ msgstr "Liste de dossiers Outlook Express (DBX)"
 msgid "Outlook Express database (DBX)"
 msgstr "Base de données Outlook Express (DBX)"
 
-#: src/mail_store.c:107 src/office97.c:73 src/preview/preview_formats.c:346
+#: src/mail_store.c:107 src/office/office97.c:73 src/preview/preview_formats.c:346
 #: src/preview/preview_formats.c:347 src/preview/preview_formats.c:936 src/formats/torrent_info.c:371
 msgid "Size"
 msgstr "Taille"
@@ -5665,214 +5665,214 @@ msgstr "Vider la corbeille…"
 msgid "Sort / Order Mode"
 msgstr "Mode de tri / d’ordre"
 
-#: src/odf.c:301 src/slide_render.c:681
+#: src/office/odf.c:301 src/office/slide_render.c:681
 #, c-format
 msgid "Slide %u"
 msgstr "Diapositive %u"
 
-#: src/odf.c:415
+#: src/office/odf.c:415
 msgid "not an OpenDocument file (no content.xml)"
 msgstr "pas un fichier OpenDocument (pas de content.xml)"
 
-#: src/office97.c:36
+#: src/office/office97.c:36
 msgid "Word 97-2003 document"
 msgstr "Document Word 97-2003"
 
-#: src/office97.c:37 src/xls_reader.c:504
+#: src/office/office97.c:37 src/office/xls_reader.c:504
 msgid "Excel 97-2003 workbook"
 msgstr "Classeur Excel 97-2003"
 
-#: src/office97.c:38 src/xls_reader.c:504
+#: src/office/office97.c:38 src/office/xls_reader.c:504
 msgid "Excel 5.0/95 workbook"
 msgstr "Classeur Excel 5.0/95"
 
-#: src/office97.c:39
+#: src/office/office97.c:39
 msgid "PowerPoint 97-2003 presentation"
 msgstr "Présentation PowerPoint 97-2003"
 
-#: src/office97.c:40
+#: src/office/office97.c:40
 msgid "Outlook message"
 msgstr "Message Outlook"
 
-#: src/office97.c:43
+#: src/office/office97.c:43
 msgid "Compound file"
 msgstr "Fichier composé"
 
-#: src/office97.c:70
+#: src/office/office97.c:70
 msgid "Streams"
 msgstr "Flux"
 
-#: src/office97.c:90
+#: src/office/office97.c:90
 #, c-format
 msgid "The first %1$u of %2$u entries are listed."
 msgstr "Les %1$u premières des %2$u entrées sont listées."
 
-#: src/office97.c:102 src/office97.c:138 src/office97.c:150 src/office97.c:185
+#: src/office/office97.c:102 src/office/office97.c:138 src/office/office97.c:150 src/office/office97.c:185
 msgid "Encrypted: the content needs the password."
 msgstr "Chiffré : le contenu demande le mot de passe."
 
-#: src/office97.c:109
+#: src/office/office97.c:109
 #, c-format
 msgid "The message cannot be read: %s."
 msgstr "Le message ne peut pas être lu : %s."
 
-#: src/office97.c:116
+#: src/office/office97.c:116
 #, c-format
 msgid "Outlook message · %s"
 msgstr "Message Outlook · %s"
 
-#: src/office97.c:139
+#: src/office/office97.c:139
 #, c-format
 msgid "The text cannot be read: %s."
 msgstr "Le texte ne peut pas être lu : %s."
 
-#: src/office97.c:151
+#: src/office/office97.c:151
 #, c-format
 msgid "The cells cannot be read: %s."
 msgstr "Les cellules ne peuvent pas être lues : %s."
 
-#: src/office97.c:162 src/preview/preview_formats.c:733
+#: src/office/office97.c:162 src/preview/preview_formats.c:733
 #, c-format
 msgid "%1$s · %2$u sheet · %3$s"
 msgid_plural "%1$s · %2$u sheets · %3$s"
 msgstr[0] "%1$s · %2$u feuille · %3$s"
 msgstr[1] "%1$s · %2$u feuilles · %3$s"
 
-#: src/office97.c:174 src/preview/preview_formats.c:743
+#: src/office/office97.c:174 src/preview/preview_formats.c:743
 msgid "Sheets"
 msgstr "Feuilles"
 
-#: src/office97.c:186
+#: src/office/office97.c:186
 #, c-format
 msgid "The slides cannot be read: %s."
 msgstr "Les diapositives ne peuvent pas être lues : %s."
 
-#: src/ole_props.c:226
+#: src/office/ole_props.c:226
 msgid "Company"
 msgstr "Société"
 
-#: src/ole_props.c:228
+#: src/office/ole_props.c:228
 msgid "Comments"
 msgstr "Commentaires"
 
-#: src/ole_props.c:230 src/formats/torrent_info.c:350
+#: src/office/ole_props.c:230 src/formats/torrent_info.c:350
 msgid "Created"
 msgstr "Créé"
 
-#: src/ole_props.c:233 src/preview/preview_formats.c:346 src/preview/preview_formats.c:347
+#: src/office/ole_props.c:233 src/preview/preview_formats.c:346 src/preview/preview_formats.c:347
 msgid "Modified"
 msgstr "Modifié"
 
-#: src/ole_props.c:235
+#: src/office/ole_props.c:235
 msgid "Last saved by"
 msgstr "Enregistré par"
 
-#: src/ole_props.c:237 src/ole_props.c:258 src/preview/pdf.c:541
+#: src/office/ole_props.c:237 src/office/ole_props.c:258 src/preview/pdf.c:541
 #, c-format
 msgid "%d page"
 msgid_plural "%d pages"
 msgstr[0] "%d page"
 msgstr[1] "%d pages"
 
-#: src/ole_props.c:240 src/ole_props.c:262
+#: src/office/ole_props.c:240 src/office/ole_props.c:262
 #, c-format
 msgid "%d word"
 msgid_plural "%d words"
 msgstr[0] "%d mot"
 msgstr[1] "%d mots"
 
-#: src/ole_props.c:244 src/ole_props.c:266
+#: src/office/ole_props.c:244 src/office/ole_props.c:266
 #, c-format
 msgid "%d slide"
 msgid_plural "%d slides"
 msgstr[0] "%d diapositive"
 msgstr[1] "%d diapositives"
 
-#: src/ole_props.c:248
+#: src/office/ole_props.c:248
 msgid "Application"
 msgstr "Application"
 
-#: src/ole_props.c:249
+#: src/office/ole_props.c:249
 msgid "Security"
 msgstr "Sécurité"
 
-#: src/ole_props.c:249
+#: src/office/ole_props.c:249
 msgid "Password protected"
 msgstr "Protégé par mot de passe"
 
-#: src/ole_props.c:272
+#: src/office/ole_props.c:272
 #, c-format
 msgid "modified %s"
 msgstr "modifié le %s"
 
-#: src/ole_reader.c:53
+#: src/office/ole_reader.c:53
 #, c-format
 msgid "damaged compound file: %s"
 msgstr "fichier composé endommagé : %s"
 
-#: src/ole_reader.c:76
+#: src/office/ole_reader.c:76
 msgid "sector out of range"
 msgstr "secteur hors limites"
 
-#: src/ole_reader.c:76
+#: src/office/ole_reader.c:76
 msgid "loop in a sector chain"
 msgstr "boucle dans une chaîne de secteurs"
 
-#: src/ole_reader.c:91
+#: src/office/ole_reader.c:91
 msgid "bad FAT size"
 msgstr "taille de FAT incorrecte"
 
-#: src/ole_reader.c:101
+#: src/office/ole_reader.c:101
 msgid "DIFAT sector out of range"
 msgstr "secteur DIFAT hors limites"
 
-#: src/ole_reader.c:108
+#: src/office/ole_reader.c:108
 msgid "incomplete DIFAT"
 msgstr "DIFAT incomplète"
 
-#: src/ole_reader.c:116
+#: src/office/ole_reader.c:116
 msgid "FAT sector out of range"
 msgstr "secteur FAT hors limites"
 
-#: src/ole_reader.c:144
+#: src/office/ole_reader.c:144
 msgid "empty directory"
 msgstr "répertoire vide"
 
-#: src/ole_reader.c:161
+#: src/office/ole_reader.c:161
 msgid "no root entry"
 msgstr "pas d’entrée racine"
 
-#: src/ole_reader.c:207
+#: src/office/ole_reader.c:207
 msgid "not a compound file"
 msgstr "pas un fichier composé"
 
-#: src/ole_reader.c:213
+#: src/office/ole_reader.c:213
 msgid "unsupported header"
 msgstr "en-tête non pris en charge"
 
-#: src/ole_reader.c:330
+#: src/office/ole_reader.c:330
 msgid "no such stream"
 msgstr "flux introuvable"
 
-#: src/ole_reader.c:335
+#: src/office/ole_reader.c:335
 #, c-format
 msgid "%s is a storage"
 msgstr "%s est un stockage"
 
-#: src/ole_reader.c:340
+#: src/office/ole_reader.c:340
 #, c-format
 msgid "%1$s is too large (%2$s)"
 msgstr "%1$s est trop grand (%2$s)"
 
-#: src/ole_reader.c:359
+#: src/office/ole_reader.c:359
 msgid "mini stream chain"
 msgstr "chaîne du mini-flux"
 
-#: src/ole_reader.c:372
+#: src/office/ole_reader.c:372
 msgid "stream shorter than its size"
 msgstr "flux plus court que sa taille"
 
-#: src/ole_reader.c:387
+#: src/office/ole_reader.c:387
 #, c-format
 msgid "no stream %s"
 msgstr "pas de flux %s"
@@ -6106,19 +6106,19 @@ msgstr ""
 "[ Aperçu PDF désactivé pour %s :\n"
 "  installez libpoppler-glib-dev puis recompilez (make). ]"
 
-#: src/ppt_reader.c:917
+#: src/office/ppt_reader.c:917
 msgid "the presentation is encrypted"
 msgstr "la présentation est chiffrée"
 
-#: src/ppt_reader.c:919
+#: src/office/ppt_reader.c:919
 msgid "no presentation records"
 msgstr "aucun enregistrement de présentation"
 
-#: src/pptx.c:179
+#: src/office/pptx.c:179
 msgid "PowerPoint presentation"
 msgstr "Présentation PowerPoint"
 
-#: src/pptx.c:181
+#: src/office/pptx.c:181
 #, c-format
 msgid "%u slide"
 msgid_plural "%u slides"
@@ -6353,7 +6353,7 @@ msgstr "%.0f %% gagnés"
 msgid "Content"
 msgstr "Contenu"
 
-#: src/preview/preview_formats.c:254 src/spreadsheet.c:712 src/formats/sqlite_view.c:158
+#: src/preview/preview_formats.c:254 src/office/spreadsheet.c:712 src/formats/sqlite_view.c:158
 msgid "(empty)"
 msgstr "(vide)"
 
@@ -7384,7 +7384,7 @@ msgstr "Ajouter une machine ici…"
 msgid "Add Remote Machine…"
 msgstr "Ajouter une machine distante…"
 
-#: src/rtf.c:294
+#: src/office/rtf.c:294
 msgid "not an RTF document"
 msgstr "pas un document RTF"
 
@@ -7565,44 +7565,44 @@ msgstr "Relire ~/.ssh/config (F5)"
 msgid "Play Selected Game (Enter)"
 msgstr "Jouer au jeu sélectionné (Enter)"
 
-#: src/slide_render.c:680
+#: src/office/slide_render.c:680
 #, c-format
 msgid "Slide %1$u · %2$s"
 msgstr "Diapositive %1$u · %2$s"
 
-#: src/slide_render.c:688
+#: src/office/slide_render.c:688
 #, c-format
 msgid "The first %1$u of %2$u slides are drawn; the others are listed."
 msgstr ""
 "Les %1$u premières des %2$u diapositives sont dessinées ; les autres sont "
 "listées."
 
-#: src/slide_render.c:714
+#: src/office/slide_render.c:714
 msgid "(no slides)"
 msgstr "(aucune diapositive)"
 
-#: src/spreadsheet.c:25 src/xls_reader.c:473
+#: src/office/spreadsheet.c:25 src/office/xls_reader.c:473
 msgid "Sheet"
 msgstr "Feuille"
 
-#: src/spreadsheet.c:531
+#: src/office/spreadsheet.c:531
 msgid "Excel workbook"
 msgstr "Classeur Excel"
 
-#: src/spreadsheet.c:668
+#: src/office/spreadsheet.c:668
 msgid "OpenDocument spreadsheet"
 msgstr "Classeur OpenDocument"
 
-#: src/spreadsheet.c:694
+#: src/office/spreadsheet.c:694
 msgid "not a spreadsheet (no workbook)"
 msgstr "pas un classeur (aucun workbook)"
 
-#: src/spreadsheet.c:729
+#: src/office/spreadsheet.c:729
 #, c-format
 msgid "Showing the first %u rows."
 msgstr "Affichage des %u premières lignes."
 
-#: src/spreadsheet.c:735
+#: src/office/spreadsheet.c:735
 #, c-format
 msgid ""
 "\n"
@@ -8453,15 +8453,15 @@ msgstr "Enregistrer comme signet…"
 msgid "Close Workspace"
 msgstr "Fermer l’espace de travail"
 
-#: src/xls_reader.c:457
+#: src/office/xls_reader.c:457
 msgid "the workbook is encrypted"
 msgstr "le classeur est chiffré"
 
-#: src/xls_reader.c:498
+#: src/office/xls_reader.c:498
 msgid "the workbook has no sheet"
 msgstr "le classeur n’a aucune feuille"
 
-#: src/xls_reader.c:501
+#: src/office/xls_reader.c:501
 msgid "not an Excel workbook"
 msgstr "pas un classeur Excel"
 

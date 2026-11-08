@@ -1,6 +1,6 @@
 /* DrawingML shapes of PowerPoint presentations (see pptx_shapes.h) */
-#include "pptx_shapes.h"
-#include "pptx_shapes_private.h"
+#include "office/pptx_shapes.h"
+#include "office/pptx_shapes_private.h"
 
 #include <math.h>
 #include <stdlib.h>

@@ -1,5 +1,5 @@
 /* Excel 97-2003 and 5.0 / 95 workbooks (see xls_reader.h) */
-#include "xls_reader.h"
+#include "office/xls_reader.h"
 #include "core/i18n.h"
 #include <gio/gio.h>
 #include <math.h>
