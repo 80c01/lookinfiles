@@ -3,7 +3,8 @@
 
 /* What LookinFiles remembers between launches, in app_config_dir():
  *  - session.ini: the workspaces at quit (folder, expanded folders, selected
- *    entry, hidden files, sort, open files and their place, panels) and the
+ *    entry, hidden files, sort, explorer view, open files and notes and their
+ *    place, panels) and the
  *    current one;
  *  - recent.ini: recent folders and files, most recent first.
  * Pure data and file I/O (GKeyFile), no widgets: unit-tested in tests/. */
@@ -18,6 +19,7 @@ typedef struct {
     gchar* selected;     /* selected entry, or NULL */
     gboolean show_hidden;
     gint sort_mode;
+    gint view;           /* explorer view (SIDEBAR_VIEW_* of app_types.h), 0: the files */
     gchar** tabs;        /* files open in editor tabs, in order, each once */
     /* Where the tabs are (tab_tree.h, indices into tabs), NULL when not
      * saved (older session files: every tab in one notebook) */

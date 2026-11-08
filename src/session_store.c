@@ -79,6 +79,7 @@ Session* session_load(const gchar* path) {
                                                          g_key_file_get_boolean(kf, group, "hidden", NULL),
                                                          g_key_file_get_integer(kf, group, "sort", NULL),
                                                          (const gchar* const*)tabs);
+            ws->view = g_key_file_get_integer(kf, group, "view", NULL);
             ws->remote_id = g_key_file_get_string(kf, group, "remote", NULL);
             ws->preview_tabs = g_key_file_get_string(kf, group, "preview_tabs", NULL);
             ws->editor_tabs = g_key_file_get_string(kf, group, "editor_tabs", NULL);
@@ -122,6 +123,7 @@ gboolean session_save(const Session* session, const gchar* path, GError** error)
         if (ws->selected != NULL) g_key_file_set_string(kf, group, "selected", ws->selected);
         g_key_file_set_boolean(kf, group, "hidden", ws->show_hidden);
         g_key_file_set_integer(kf, group, "sort", ws->sort_mode);
+        if (ws->view != 0) g_key_file_set_integer(kf, group, "view", ws->view);
         g_key_file_set_string_list(kf, group, "tabs", (const gchar* const*)ws->tabs, g_strv_length(ws->tabs));
         if (ws->remote_id != NULL) g_key_file_set_string(kf, group, "remote", ws->remote_id);
         if (ws->preview_tabs != NULL) g_key_file_set_string(kf, group, "preview_tabs", ws->preview_tabs);

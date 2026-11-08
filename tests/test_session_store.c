@@ -13,7 +13,7 @@ static void test_session_round_trip(void) {
     Session* s = session_new();
     const gchar* expanded[] = { "/w/src", "/w/odd;name", NULL };
     const gchar* tabs[] = { "/w/src/a.c", "/w/README.md", NULL };
-    session_add_workspace(s, "/w", expanded, "/w/src/a.c", TRUE, 2, tabs);
+    session_add_workspace(s, "/w", expanded, "/w/src/a.c", TRUE, 2, tabs)->view = 2;
     session_add_workspace(s, "/home/u", NULL, NULL, FALSE, 0, NULL);
     s->current = 1;
     GError* err = NULL;
@@ -32,9 +32,11 @@ static void test_session_round_trip(void) {
     g_assert_cmpstr(w->selected, ==, "/w/src/a.c");
     g_assert_true(w->show_hidden);
     g_assert_cmpint(w->sort_mode, ==, 2);
+    g_assert_cmpint(w->view, ==, 2);
     g_assert_cmpuint(g_strv_length(w->tabs), ==, 2);
     g_assert_cmpstr(w->tabs[0], ==, "/w/src/a.c");
     w = g_ptr_array_index(s->workspaces, 1);
+    g_assert_cmpint(w->view, ==, 0); /* the files */
     g_assert_null(w->selected);
     g_assert_cmpuint(g_strv_length(w->expanded), ==, 0);
     g_assert_cmpuint(g_strv_length(w->tabs), ==, 0);

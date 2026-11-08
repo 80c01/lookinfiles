@@ -202,8 +202,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   (`TextSearchStats`).
 - `jump_list` — back / forward history of navigation jumps across files
   (also the explorer's folder history, `nav_history`).
-- `session_store` — `session.ini` (workspaces at quit, with their panels
-  as a `SavedLayout` and their editor tabs as `tab_tree` text) and
+- `session_store` — `session.ini` (workspaces at quit, with their explorer
+  view, their panels as a `SavedLayout` and their editor tabs as `tab_tree`
+  text) and
   `recent.ini` (recent folders and files, most recent first, `RECENT_MAX`),
   and the saved workspaces of the workspace bookmarks (`sessions/<id>.ini`,
   target `lookinfiles-session://<id>`: `session_target_make()` /
@@ -502,8 +503,9 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
 - `editor_session` — the editor tabs of a workspace for the session:
   `editor_session_capture()` describes the preview notebook and the
   dedicated panel (notebooks, splits, sizes, current pages, view last
-  focused) as `tab_tree` text, `editor_session_restore()` reopens the files
-  at the same place (`editor_notebook_split()`, `editor_move_tab_to()`,
+  focused) as `tab_tree` text (the files of the tabs, notes included, and
+  the directories of the Canvas tabs), `editor_session_restore()` reopens
+  the files and Canvas notes (`canvas_view_open()`) at the same place (`editor_notebook_split()`, `editor_move_tab_to()`,
   `editor_add_view()` for split views) and starts a new shell for each
   terminal tab there (`terminal_add_tab()`).
 - `editor_layout` — the shape of the dedicated panel for saved layouts:

@@ -495,8 +495,8 @@ static CanvasPage* page_new(AppData* app) {
     return p;
 }
 
-void canvas_view_open(AppData* app, const gchar* dir, const gchar* title) {
-    if (app == NULL || dir == NULL || app->notebook == NULL) return;
+GtkWidget* canvas_view_open(AppData* app, const gchar* dir, const gchar* title) {
+    if (app == NULL || dir == NULL || app->notebook == NULL) return NULL;
     CanvasPage* p = find_page(app, dir);
     if (p != NULL && !page_shown(p)) {
         /* Open in another workspace: it moves to this one */
@@ -517,6 +517,12 @@ void canvas_view_open(AppData* app, const gchar* dir, const gchar* title) {
     } else {
         gtk_widget_grab_focus(p->surface);
     }
+    return p->root;
+}
+
+const gchar* canvas_view_page_dir(GtkWidget* page) {
+    CanvasPage* p = page_of_root(page);
+    return (p != NULL && !p->closed) ? p->dir : NULL;
 }
 
 void canvas_view_save(AppData* app) {

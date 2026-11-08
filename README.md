@@ -143,7 +143,7 @@ See [packaging/windows/README.md](packaging/windows/README.md) for prerequisites
 ./lookinfiles --version           # (-V)
 ```
 
-The session (workspaces, folders, open files and where they were, panels, split sizes, terminal panes) is saved when LookinFiles quits.
+The session (workspaces, folders, explorer view, open files and notes and where they were, panels, split sizes, terminal panes) is saved when LookinFiles quits.
 
 ### Essential shortcuts
 

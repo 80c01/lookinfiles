@@ -1,6 +1,8 @@
 /* The editor tabs of a workspace saved with the session (see editor_session.h) */
 #include "editor_session.h"
 #include <math.h>
+#include <string.h>
+#include "canvas_view.h"
 #include "editor.h"
 #include "tab_tree.h"
 #include "terminal.h"
@@ -29,23 +31,23 @@ static EditorTab* tab_of_page(GList* editors, GtkWidget* child) {
     return NULL;
 }
 
-/* Index of the tab's file in the list, added when new; -1 when it is not
- * saved (notes' buffers, unsaved buffers) */
-static gint file_index(Capture* c, const EditorTab* tab) {
-    if (tab->is_buffer || tab->path == NULL || !g_path_is_absolute(tab->path)) {
+/* Index of path (a file, or the directory of a Canvas note) in the list,
+ * added when new; -1 when it is not saved (in-memory buffers) */
+static gint file_index(Capture* c, const gchar* path) {
+    if (path == NULL || !g_path_is_absolute(path)) {
         return -1;
     }
     for (guint i = 0; i < c->files->len; i++) {
-        if (g_strcmp0(g_ptr_array_index(c->files, i), tab->path) == 0) {
+        if (g_strcmp0(g_ptr_array_index(c->files, i), path) == 0) {
             return (gint)i;
         }
     }
-    g_ptr_array_add(c->files, g_strdup(tab->path));
+    g_ptr_array_add(c->files, g_strdup(path));
     return (gint)c->files->len - 1;
 }
 
-static void add_tab(Capture* c, TabTreeNode* node, EditorTab* tab, gboolean current) {
-    gint index = (tab != NULL) ? file_index(c, tab) : -1;
+static void add_path(Capture* c, TabTreeNode* node, const gchar* path, gboolean current, gboolean focused) {
+    gint index = file_index(c, path);
     if (index < 0) {
         return;
     }
@@ -53,8 +55,14 @@ static void add_tab(Capture* c, TabTreeNode* node, EditorTab* tab, gboolean curr
     if (current) {
         node->current = pos;
     }
-    if (tab == c->focused) {
+    if (focused) {
         node->focused = pos;
+    }
+}
+
+static void add_tab(Capture* c, TabTreeNode* node, EditorTab* tab, gboolean current) {
+    if (tab != NULL) {
+        add_path(c, node, tab->path, current, tab == c->focused);
     }
 }
 
@@ -87,7 +95,12 @@ static TabTreeNode* capture_notebook(Capture* c, GtkNotebook* nb) {
             continue;
         }
 #endif
-        add_tab(c, node, tab_of_page(c->editors, page), p == current);
+        EditorTab* tab = tab_of_page(c->editors, page);
+        if (tab != NULL) {
+            add_tab(c, node, tab, p == current);
+        } else {
+            add_path(c, node, canvas_view_page_dir(page), p == current, FALSE);
+        }
     }
     return finish_notebook(node);
 }
@@ -148,6 +161,10 @@ void editor_session_capture(AppData* app, gint ws, GPtrArray* files, gchar** pre
                 add_tab(&c, preview, t, FALSE);
             }
         }
+        GPtrArray* canvases = app->workspaces[ws].canvas_pages; /* set aside with the workspace */
+        for (guint i = 0; canvases != NULL && i < canvases->len; i++) {
+            add_path(&c, preview, canvas_view_page_dir(g_ptr_array_index(canvases, i)), FALSE, FALSE);
+        }
 #ifdef HAVE_VTE
         GPtrArray* terms = app->workspaces[ws].preview_terms; /* set aside with the workspace */
         for (guint i = 0; terms != NULL && i < terms->len; i++) {
@@ -167,10 +184,29 @@ void editor_session_capture(AppData* app, gint ws, GPtrArray* files, gchar** pre
 /* Restore                                                                   */
 /* ------------------------------------------------------------------------- */
 
+/* The directory of a Canvas note (canvas_doc.h: "<title>.canvas/") */
+static gboolean is_canvas_dir(const gchar* path) {
+    return g_str_has_suffix(path, ".canvas") && g_file_test(path, G_FILE_TEST_IS_DIR);
+}
+
+/* The Canvas note in dir as a page of nb */
+static GtkWidget* place_canvas(AppData* app, const gchar* dir, GtkNotebook* nb) {
+    gchar* title = g_path_get_basename(dir);
+    title[strlen(title) - strlen(".canvas")] = '\0';
+    GtkWidget* page = canvas_view_open(app, dir, title);
+    g_free(title);
+    GtkWidget* parent = (page != NULL) ? gtk_widget_get_parent(page) : NULL;
+    GtkWidget* in = (parent != NULL) ? gtk_widget_get_ancestor(parent, GTK_TYPE_NOTEBOOK) : NULL;
+    if (page != NULL && in != GTK_WIDGET(nb)) {
+        editor_move_page_to(app, page, nb, -1);
+    }
+    return page;
+}
+
 typedef struct {
     AppData* app;
     const gchar* const* files;
-    gboolean* usable; /* per file: a regular file now */
+    gboolean* usable; /* per file: a regular file or a Canvas note now */
     guint n_files;
     GPtrArray* currents; /* GtkWidget*: the current page of each notebook */
     EditorTab* focused;
@@ -272,6 +308,13 @@ static void restore_notebook(Restore* r, const TabTreeNode* node, GtkNotebook* n
         if (index >= r->n_files || !r->usable[index]) {
             continue;
         }
+        if (is_canvas_dir(r->files[index])) {
+            GtkWidget* page = place_canvas(r->app, r->files[index], nb);
+            if (page != NULL && (gint)i == node->current) {
+                current = page;
+            }
+            continue;
+        }
         EditorTab* tab = place_view(r->app, r->files[index], nb);
         if (tab != NULL && (gint)i == node->current) {
             current = tab->container;
@@ -358,14 +401,14 @@ void editor_session_restore(AppData* app, const gchar* const* files, const gchar
     Restore r = { app, files, NULL, g_strv_length((gchar**)files), g_ptr_array_new(), NULL };
     r.usable = g_new0(gboolean, MAX(r.n_files, 1));
     for (guint i = 0; i < r.n_files; i++) {
-        r.usable[i] = g_file_test(files[i], G_FILE_TEST_IS_REGULAR);
+        r.usable[i] = g_file_test(files[i], G_FILE_TEST_IS_REGULAR) || is_canvas_dir(files[i]);
     }
     TabTreeNode* preview = tab_tree_parse(preview_tabs);
     TabTreeNode* panel = tab_tree_parse(editor_tabs);
     if (preview == NULL && panel == NULL) {
         /* Older session files: the files only, opened in order */
         for (guint i = 0; i < r.n_files; i++) {
-            if (r.usable[i]) {
+            if (r.usable[i] && !is_canvas_dir(files[i])) {
                 gchar* name = g_path_get_basename(files[i]);
                 editor_open_file(app, name, files[i]);
                 g_free(name);

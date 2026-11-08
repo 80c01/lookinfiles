@@ -687,7 +687,7 @@ void workspace_add(AppData* app) {
 }
 
 void workspace_restore_state(AppData* app, gint idx, const gchar* dir, const gchar* const* expanded,
-                             const gchar* selected, gboolean show_hidden, gint sort_mode) {
+                             const gchar* selected, gboolean show_hidden, gint sort_mode, gint view) {
     if (app == NULL || idx < 0 || idx >= app->num_workspaces || dir == NULL) {
         return;
     }
@@ -707,8 +707,10 @@ void workspace_restore_state(AppData* app, gint idx, const gchar* dir, const gch
     ws->selected_path = g_strdup(selected);
     ws->show_hidden = show_hidden;
     ws->sort_mode = (sort_mode >= 0 && sort_mode < SORT_COUNT) ? sort_mode : SORT_NAME;
-    ws->sidebar_view = SIDEBAR_VIEW_FILES;
-    ws->show_bookmarks = FALSE;
+    /* The games view needs its unlock, never restored */
+    gboolean known = (view == SIDEBAR_VIEW_BOOKMARKS || view == SIDEBAR_VIEW_NOTES || view == SIDEBAR_VIEW_REMOTE);
+    ws->sidebar_view = known ? view : SIDEBAR_VIEW_FILES;
+    ws->show_bookmarks = (ws->sidebar_view == SIDEBAR_VIEW_BOOKMARKS);
     workspace_switch(app, idx); /* lists the folder with that state */
 }
 

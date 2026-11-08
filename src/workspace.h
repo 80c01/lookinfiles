@@ -17,9 +17,10 @@ void workspace_add(AppData* app);
 void workspace_apply_default_layout(AppData* app);
 void workspace_remove(AppData* app, gint idx);
 /* Session restore: give workspace idx this folder, expanded folders,
- * selection, hidden files and sort, and show it */
+ * selection, hidden files, sort and explorer view (SIDEBAR_VIEW_FILES,
+ * _BOOKMARKS, _NOTES or _REMOTE; any other shows the files), and show it */
 void workspace_restore_state(AppData* app, gint idx, const gchar* dir, const gchar* const* expanded,
-                             const gchar* selected, gboolean show_hidden, gint sort_mode);
+                             const gchar* selected, gboolean show_hidden, gint sort_mode, gint view);
 GtkWidget* create_workspace_minimap(AppData* app);
 
 #endif /* WORKSPACE_H */

@@ -38,8 +38,11 @@
 
 /* Show the tab of the Canvas note in directory dir, opened in the editor
  * panel when it is not open (title: tab and status bar); a tab of another
- * workspace moves to this one */
-void canvas_view_open(AppData* app, const gchar* dir, const gchar* title);
+ * workspace moves to this one. Returns the tab's page. */
+GtkWidget* canvas_view_open(AppData* app, const gchar* dir, const gchar* title);
+
+/* The note directory of page when it is a Canvas tab, else NULL */
+const gchar* canvas_view_page_dir(GtkWidget* page);
 
 /* The style of the Canvas page and its blocks (canvas_preview.c draws
  * them too), added once */

@@ -88,6 +88,7 @@ static SessionWorkspace* capture_workspace(AppData* app, Session* s, gint i) {
     if (ws->remote_id != NULL && remote_find_by_id(app, ws->remote_id) != NULL) {
         sw->remote_id = g_strdup(ws->remote_id);
     }
+    sw->view = ws->show_bookmarks ? SIDEBAR_VIEW_BOOKMARKS : ws->sidebar_view;
     sw->preview_tabs = preview_tabs;
     sw->editor_tabs = editor_tabs;
     sw->panels = capture_panels(ws);
@@ -112,7 +113,7 @@ static gboolean apply_workspace(AppData* app, const SessionWorkspace* sw) {
     const gchar* selected = (sw->selected != NULL && g_file_test(sw->selected, G_FILE_TEST_EXISTS))
                                 ? sw->selected : NULL;
     workspace_restore_state(app, app->current_ws, sw->dir, (const gchar* const*)sw->expanded, selected,
-                            sw->show_hidden, sw->sort_mode);
+                            sw->show_hidden, sw->sort_mode, sw->view);
     if (sw->remote_id != NULL) {
         VirtualLayout* cur = &app->workspaces[app->current_ws];
         g_free(cur->remote_id);
