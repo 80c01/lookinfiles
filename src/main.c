@@ -77,8 +77,7 @@ static void on_window_active_changed(GObject* object, GParamSpec* pspec, gpointe
     (void)pspec;
     AppData* app = (AppData*)user_data;
     if (app != NULL && gtk_window_is_active(GTK_WINDOW(object))) {
-        app->git_dirty = TRUE;
-        schedule_refresh(app);
+        fs_watch_git_changed(app);
     }
 }
 
@@ -553,7 +552,6 @@ int main(int argc, char** argv) {
     app->tree = explorer;
     app->tree_view = tree_view;
     app->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-    app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     g_signal_connect(window, "notify::is-active", G_CALLBACK(on_window_active_changed), app);
     search_init(app);
     bookmarks_init(app);
@@ -776,7 +774,7 @@ int main(int argc, char** argv) {
     video_preview_free(app);
     editor_save_all_buffers(app);
     code_intel_shutdown(app);   /* language servers: shutdown, exit */
-    stop_directory_monitors(app);
+    fs_watch_free(app);
     git_tab_cleanup(app);
     panels_size_popup_free(app);
     if (app->git_statuses != NULL) {

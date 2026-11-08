@@ -179,16 +179,13 @@ typedef struct {
     GHashTable* expanded_paths; /* set of full_path strings for expanded directories */
 
     /* File monitors & async I/O cancellation */
-    GHashTable* dir_monitors;          /* active directory monitors: full_path -> GFileMonitor* */
+    struct FsWatch* fs_watch;          /* file monitors and pending refresh (fs_watch.c), NULL until first used */
     GHashTable* git_statuses;          /* Git status badges: full_path -> markup string */
     gchar* git_status_root;            /* repository root matching git_statuses and ahead/behind (owned) */
     gboolean git_has_changes;          /* uncommitted changes in git_status_root */
     gboolean git_has_upstream;         /* upstream branch exists for HEAD in git_status_root */
     guint git_ahead;                   /* commits ahead of upstream */
     guint git_behind;                  /* commits behind upstream */
-    GFileMonitor* file_monitor;        /* viewed file in right pane */
-    GFileMonitor* git_monitor;         /* .git monitor for git status & commits updates */
-    gchar* git_monitored_path;         /* path to current monitored .git dir */
     GCancellable* dir_cancellable;     /* active left-pane directory scan GTask */
     GCancellable* git_status_cancellable; /* active git status badge scan GTask */
     GCancellable* preview_cancellable; /* active right-pane preview GTask */
@@ -196,10 +193,7 @@ typedef struct {
     gchar* viewed_name;          /* name of displayed file */
     FileKind viewed_kind;        /* kind of displayed file, detected from its content */
     gchar* viewed_content_type;  /* GIO content type of displayed text, NULL until read */
-    gboolean dir_dirty;          /* pending directory event */
-    gboolean file_dirty;         /* pending file event */
-    gboolean git_dirty;          /* pending git status update */
-    guint refresh_source;        /* debounce timeout id, 0 = idle */
+    gboolean file_dirty;         /* the preview must be read again (file changed, raw/rendered toggled) */
 
     /* Embedded terminal panel (Ctrl+T) */
     GtkWidget* term_scroll;

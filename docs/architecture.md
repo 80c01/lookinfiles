@@ -370,7 +370,8 @@ Modules live in `src/<module>.c` + `src/<module>.h`. Layers, from bottom to top
   file content (remote machine, notebook, bookmark folder, trash); columns
   padded for a monospace font (unit-tested).
 - `fs_watch` — `GFileMonitor`s on expanded directories, the previewed file and
-  `.git`, debounced `schedule_refresh()`; reports through events only.
+  `.git`, debounced `schedule_refresh()` (state in a private `struct FsWatch`,
+  `fs_watch_free()` at exit); reports through events only.
 - `diff_gutter` — left gutter of a text view: line numbers
   (`diff_gutter_set_line_numbers()`: code previews, editor toggle `Ctrl+Alt+N`)
   and git change bars

@@ -6,14 +6,43 @@
 #include "git_utils.h"
 #include "git_tab.h"
 
+/* Private to this file */
+struct FsWatch {
+    GHashTable* dir_monitors;  /* watched directories: full_path -> GFileMonitor* */
+    GFileMonitor* file_monitor; /* file shown in the preview */
+    GFileMonitor* git_monitor;  /* .git directory of base_dir */
+    gchar* git_monitored_path;  /* the .git directory git_monitor watches */
+    gboolean dir_dirty;         /* pending directory event */
+    gboolean git_dirty;         /* pending git status update */
+    guint refresh_source;       /* debounce timeout id, 0 = idle */
+};
+
+static struct FsWatch* watch_get(AppData* app) {
+    if (app->fs_watch == NULL) {
+        app->fs_watch = g_new0(struct FsWatch, 1);
+        app->fs_watch->dir_monitors =
+            g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+    }
+    return app->fs_watch;
+}
+
+static void cancel_monitor(GFileMonitor** monitor) {
+    if (*monitor != NULL) {
+        g_file_monitor_cancel(*monitor);
+        g_object_unref(*monitor);
+        *monitor = NULL;
+    }
+}
+
 static gboolean deferred_refresh(gpointer data) {
     AppData* app = (AppData*)data;
-    app->refresh_source = 0;
+    struct FsWatch* w = watch_get(app);
+    w->refresh_source = 0;
 
-    gboolean dir_changed = app->dir_dirty;
-    gboolean git_changed = app->git_dirty;
-    app->dir_dirty = FALSE;
-    app->git_dirty = FALSE;
+    gboolean dir_changed = w->dir_dirty;
+    gboolean git_changed = w->git_dirty;
+    w->dir_dirty = FALSE;
+    w->git_dirty = FALSE;
     if (dir_changed) {
         app_emit(app, APP_EVENT_FILES_CHANGED); /* rescans git badges too */
     } else if (git_changed) {
@@ -48,8 +77,9 @@ static gboolean deferred_refresh(gpointer data) {
 }
 
 void schedule_refresh(AppData* app) {
-    if (app->refresh_source == 0) {
-        app->refresh_source = g_timeout_add(150, deferred_refresh, app);
+    struct FsWatch* w = watch_get(app);
+    if (w->refresh_source == 0) {
+        w->refresh_source = g_timeout_add(150, deferred_refresh, app);
     }
 }
 
@@ -88,13 +118,13 @@ static void on_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file
     case G_FILE_MONITOR_EVENT_RENAMED:
     case G_FILE_MONITOR_EVENT_MOVED_IN:
     case G_FILE_MONITOR_EVENT_MOVED_OUT:
-        app->dir_dirty = TRUE;
+        watch_get(app)->dir_dirty = TRUE;
         schedule_refresh(app);
         break;
     case G_FILE_MONITOR_EVENT_CHANGED:
     case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
     case G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
-        app->git_dirty = TRUE;
+        watch_get(app)->git_dirty = TRUE;
         if (file != NULL && app->viewed_path != NULL) {
             gchar* p = g_file_get_path(file);
             if (p != NULL && g_strcmp0(p, app->viewed_path) == 0) {
@@ -130,7 +160,7 @@ static void on_file_changed(GFileMonitor* monitor, GFile* file, GFile* other_fil
     case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
     case G_FILE_MONITOR_EVENT_DELETED:
         app->file_dirty = TRUE;
-        app->git_dirty = TRUE;
+        watch_get(app)->git_dirty = TRUE;
         schedule_refresh(app);
         break;
     default:
@@ -156,61 +186,45 @@ static void on_git_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_
             g_free(name);
         }
     }
-    app->git_dirty = TRUE;
+    watch_get(app)->git_dirty = TRUE;
     schedule_refresh(app);
+}
+
+static void stop_git_monitor(struct FsWatch* w) {
+    cancel_monitor(&w->git_monitor);
+    g_free(w->git_monitored_path);
+    w->git_monitored_path = NULL;
 }
 
 static void sync_git_monitor(AppData* app) {
     if (app == NULL) {
         return;
     }
+    struct FsWatch* w = watch_get(app);
     gchar* git_root = (app->base_dir != NULL) ? find_git_root(app->base_dir) : NULL;
-    if (git_root == NULL) {
-        if (app->git_monitor != NULL) {
-            g_file_monitor_cancel(app->git_monitor);
-            g_object_unref(app->git_monitor);
-            app->git_monitor = NULL;
-        }
-        g_free(app->git_monitored_path);
-        app->git_monitored_path = NULL;
-        return;
-    }
-
-    gchar* git_dir = git_resolve_dir(git_root);
+    gchar* git_dir = (git_root != NULL) ? git_resolve_dir(git_root) : NULL;
     g_free(git_root);
-
     if (git_dir == NULL) {
-        if (app->git_monitor != NULL) {
-            g_file_monitor_cancel(app->git_monitor);
-            g_object_unref(app->git_monitor);
-            app->git_monitor = NULL;
-        }
-        g_free(app->git_monitored_path);
-        app->git_monitored_path = NULL;
+        stop_git_monitor(w);
         return;
     }
 
-    if (app->git_monitor != NULL && g_strcmp0(app->git_monitored_path, git_dir) == 0) {
+    if (w->git_monitor != NULL && g_strcmp0(w->git_monitored_path, git_dir) == 0) {
         g_free(git_dir);
         return;
     }
 
-    if (app->git_monitor != NULL) {
-        g_file_monitor_cancel(app->git_monitor);
-        g_object_unref(app->git_monitor);
-        app->git_monitor = NULL;
-    }
-    g_free(app->git_monitored_path);
-    app->git_monitored_path = git_dir;
+    stop_git_monitor(w);
+    w->git_monitored_path = git_dir;
 
     GFile* gf = g_file_new_for_path(git_dir);
     GError* err = NULL;
-    app->git_monitor = g_file_monitor_directory(gf, G_FILE_MONITOR_NONE, NULL, &err);
+    w->git_monitor = g_file_monitor_directory(gf, G_FILE_MONITOR_NONE, NULL, &err);
     if (err != NULL) {
         g_error_free(err);
-        app->git_monitor = NULL;
-    } else if (app->git_monitor != NULL) {
-        g_signal_connect(app->git_monitor, "changed", G_CALLBACK(on_git_dir_changed), app);
+        w->git_monitor = NULL;
+    } else if (w->git_monitor != NULL) {
+        g_signal_connect(w->git_monitor, "changed", G_CALLBACK(on_git_dir_changed), app);
     }
     g_object_unref(gf);
 }
@@ -219,10 +233,8 @@ static void add_single_dir_monitor(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL || path[0] == '\0') {
         return;
     }
-    if (app->dir_monitors == NULL) {
-        app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
-    }
-    if (g_hash_table_contains(app->dir_monitors, path)) {
+    struct FsWatch* w = watch_get(app);
+    if (g_hash_table_contains(w->dir_monitors, path)) {
         return;
     }
     if (!g_file_test(path, G_FILE_TEST_IS_DIR)) {
@@ -235,45 +247,46 @@ static void add_single_dir_monitor(AppData* app, const gchar* path) {
         g_error_free(err);
     } else if (mon != NULL) {
         g_signal_connect(mon, "changed", G_CALLBACK(on_dir_changed), app);
-        g_hash_table_insert(app->dir_monitors, g_strdup(path), mon);
+        g_hash_table_insert(w->dir_monitors, g_strdup(path), mon);
     }
     g_object_unref(f);
 }
 
-void stop_directory_monitors(AppData* app) {
-    if (app == NULL) {
+void fs_watch_free(AppData* app) {
+    struct FsWatch* w = (app != NULL) ? app->fs_watch : NULL;
+    if (w == NULL) {
         return;
     }
-    if (app->git_monitor != NULL) {
-        g_file_monitor_cancel(app->git_monitor);
-        g_object_unref(app->git_monitor);
-        app->git_monitor = NULL;
-    }
-    g_free(app->git_monitored_path);
-    app->git_monitored_path = NULL;
-
-    if (app->dir_monitors == NULL) {
-        return;
-    }
+    g_clear_handle_id(&w->refresh_source, g_source_remove);
+    stop_git_monitor(w);
+    cancel_monitor(&w->file_monitor);
     GHashTableIter iter;
     gpointer value;
-    g_hash_table_iter_init(&iter, app->dir_monitors);
+    g_hash_table_iter_init(&iter, w->dir_monitors);
     while (g_hash_table_iter_next(&iter, NULL, &value)) {
         if (value != NULL) {
             g_file_monitor_cancel(G_FILE_MONITOR(value));
         }
     }
-    g_hash_table_destroy(app->dir_monitors);
-    app->dir_monitors = NULL;
+    g_hash_table_destroy(w->dir_monitors);
+    g_free(w);
+    app->fs_watch = NULL;
+}
+
+void fs_watch_git_changed(AppData* app) {
+    watch_get(app)->git_dirty = TRUE;
+    schedule_refresh(app);
+}
+
+void fs_watch_forget_dir_changes(AppData* app) {
+    watch_get(app)->dir_dirty = FALSE;
 }
 
 void sync_directory_monitors(AppData* app) {
     if (app == NULL) {
         return;
     }
-    if (app->dir_monitors == NULL) {
-        app->dir_monitors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
-    }
+    struct FsWatch* w = watch_get(app);
 
     /* Collect all paths that should currently be monitored:
      * base_dir and all existing expanded subdirectories */
@@ -300,7 +313,7 @@ void sync_directory_monitors(AppData* app) {
     /* Remove monitors that are no longer needed */
     GHashTableIter miter;
     gpointer mkey, mvalue;
-    g_hash_table_iter_init(&miter, app->dir_monitors);
+    g_hash_table_iter_init(&miter, w->dir_monitors);
     while (g_hash_table_iter_next(&miter, &mkey, &mvalue)) {
         const gchar* mp = (const gchar*)mkey;
         if (!g_hash_table_contains(needed, mp)) {
@@ -317,7 +330,7 @@ void sync_directory_monitors(AppData* app) {
     g_hash_table_iter_init(&niter, needed);
     while (g_hash_table_iter_next(&niter, &nkey, &nvalue)) {
         const gchar* np = (const gchar*)nkey;
-        if (!g_hash_table_contains(app->dir_monitors, np)) {
+        if (!g_hash_table_contains(w->dir_monitors, np)) {
             add_single_dir_monitor(app, np);
         }
     }
@@ -331,20 +344,17 @@ void monitor_directory(AppData* app) {
 }
 
 void monitor_file(AppData* app, const char* path) {
-    if (app->file_monitor != NULL) {
-        g_file_monitor_cancel(app->file_monitor);
-        g_object_unref(app->file_monitor);
-        app->file_monitor = NULL;
-    }
+    struct FsWatch* w = watch_get(app);
+    cancel_monitor(&w->file_monitor);
     if (path != NULL) {
         GFile* f = g_file_new_for_path(path);
         GError* err = NULL;
-        app->file_monitor = g_file_monitor(f, G_FILE_MONITOR_NONE, NULL, &err);
+        w->file_monitor = g_file_monitor(f, G_FILE_MONITOR_NONE, NULL, &err);
         if (err != NULL) {
             g_error_free(err);
-            app->file_monitor = NULL;
+            w->file_monitor = NULL;
         } else {
-            g_signal_connect(app->file_monitor, "changed",
+            g_signal_connect(w->file_monitor, "changed",
                              G_CALLBACK(on_file_changed), app);
         }
         g_object_unref(f);

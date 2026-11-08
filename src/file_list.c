@@ -894,7 +894,7 @@ static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
     app->viewed_path = NULL;
     app->viewed_name = NULL;
     app->file_dirty = FALSE;
-    app->dir_dirty = FALSE;
+    fs_watch_forget_dir_changes(app);
     monitor_file(app, NULL);
     monitor_directory(app);
 
