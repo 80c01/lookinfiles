@@ -8,6 +8,10 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The **Auto** layout fits its grid to the size of the editor panel: two
+  files go side by side when it is wide and one above the other when it is
+  tall, three and four make one row or one column when two by two does not
+  fit, and it never makes a pane smaller than about 60 columns by 12 lines.
 - The **Preview** button of the top bar reads **Main** while editor tabs
   share the preview panel, since it then hides them too.
 - A Canvas note opens where a text file would (beside the editor tab used

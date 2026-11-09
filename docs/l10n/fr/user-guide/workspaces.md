@@ -84,10 +84,21 @@ revenir celle intégrée.
 
 Quand des fichiers sont ouverts, **Auto** vient en premier parmi elles : les
 panneaux restent tels quels, et les fichiers ouverts vont dans le panneau
-d’édition, en grille selon leur nombre : une zone pour un fichier, deux côte
-à côte pour deux, une à gauche et deux empilées à droite pour trois, deux
-par deux à partir de quatre (au-delà, les fichiers se partagent les zones
-en onglets ; le fichier courant reste dans la première zone).
+d’édition, en grille selon leur nombre et la place que le panneau a dans la
+fenêtre :
+
+- un fichier : une zone ;
+- deux : côte à côte quand le panneau est plus large que haut, l’une
+  au-dessus de l’autre sinon ;
+- trois : une à gauche et deux empilées à droite (panneau large), ou une en
+  haut et deux côte à côte en dessous (panneau haut) ;
+- quatre ou plus : deux par deux.
+
+Aucune zone ne fait moins d’environ 60 colonnes sur 12 lignes : sans place
+pour deux par deux, les zones forment une rangée (panneau large) ou une
+colonne (panneau haut), et quand il y a moins de place que de fichiers, les
+fichiers se partagent les zones en onglets. Le fichier courant reste dans
+la première zone.
 
 Les dispositions sont enregistrées dans `~/.config/lookinfiles/layouts.ini`.
 Appliquer une disposition garde ensuite ses barres de symboles activées ou

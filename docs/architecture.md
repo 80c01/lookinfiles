@@ -85,7 +85,9 @@ Layers, from bottom to top
   never written, each hidden by a saved layout of the same name;
   `layout_store_auto()` / `layout_store_grid_splits()`: the Auto layout,
   the current panels with the editor panel split in a grid for the number
-  of open files (1, 2, 3, then 2×2).
+  of open files and the panel's size (`layout_store_editor_area()`): side
+  by side when wide, stacked when tall, 2×2 or one row / column for four,
+  panes of at least `LAYOUT_GRID_MIN_W` × `LAYOUT_GRID_MIN_H`.
 - `gif_decoder` — GIF frames composed on an RGBA canvas (LZW, interlacing,
   transparency, disposal, delays, loop count), played by `animation`
   (GdkPixbufAnimation is deprecated in gdk-pixbuf 2.44: never use it).

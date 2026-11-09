@@ -61,13 +61,27 @@ gboolean layout_store_is_customized(const SavedLayout* layout);
  * GPtrArray of SavedLayout* that frees its items. */
 GPtrArray* layout_store_presets(GPtrArray* saved);
 
+/* Smallest pane the Auto grid makes, in pixels (about 60 columns by 12 lines) */
+#define LAYOUT_GRID_MIN_W 480
+#define LAYOUT_GRID_MIN_H 240
+
 /* The Auto layout (name translated): current with the editor tabs in the
- * dedicated panel, split as layout_store_grid_splits(files). Caller frees. */
-SavedLayout* layout_store_auto(const SavedLayout* current, guint files);
-/* editor_splits text of a grid for files open files: one pane, two side by
- * side, one on the left and two stacked on the right, then two by two (more
- * files share the panes as tabs). Caller frees. */
-gchar* layout_store_grid_splits(guint files);
+ * dedicated panel, split as layout_store_grid_splits() for the size the
+ * editor panel gets in a main area of width x height pixels (0 = unknown).
+ * Caller frees. */
+SavedLayout* layout_store_auto(const SavedLayout* current, guint files, gint width, gint height);
+/* editor_splits text of a grid for files open files in an editor panel of
+ * width x height pixels (0 = unknown, taken as wide), panes being at least
+ * LAYOUT_GRID_MIN_W x LAYOUT_GRID_MIN_H: up to four panes, as many as fit
+ * (more files share the panes as tabs). Two go side by side when the panel
+ * is wide, one above the other when it is tall; three go one on the left
+ * and two stacked on the right (wide) or one on top and two below (tall);
+ * four go two by two; without room for two by two, the panes make one row
+ * or one column. Caller frees. */
+gchar* layout_store_grid_splits(guint files, gint width, gint height);
+/* Size the dedicated editor panel gets with layout l in a main area of
+ * width x height pixels (explorer, terminal and preview taken off) */
+void layout_store_editor_area(const SavedLayout* l, gint width, gint height, gint* editor_w, gint* editor_h);
 
 /* ~/.config/lookinfiles/layouts.ini. Caller frees. */
 gchar* layout_store_default_path(void);

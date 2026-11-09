@@ -71,9 +71,19 @@ replaces it; deleting yours brings the built-in one back.
 
 With files open, **Auto** comes first among them: the panels stay as they
 are, and the open files go to the editor panel in a grid made for their
-number: one pane for one file, two side by side for two, one on the left
-and two stacked on the right for three, two by two from four (more files
-share the panes as tabs; the current file stays in the first pane).
+number and for the room the panel gets in the window:
+
+- one file: one pane;
+- two: side by side when the panel is wider than tall, one above the other
+  otherwise;
+- three: one on the left and two stacked on the right (wide panel), or one
+  on top and two side by side below (tall panel);
+- four or more: two by two.
+
+No pane gets smaller than about 60 columns by 12 lines: without room for
+two by two, the panes make one row (wide panel) or one column (tall one),
+and with room for fewer panes than files, the files share the panes as
+tabs. The current file stays in the first pane.
 
 Layouts are saved in `~/.config/lookinfiles/layouts.ini`. Applying a
 layout keeps its tagbars on or off afterwards, as their toggle keys do; a

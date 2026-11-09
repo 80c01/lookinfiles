@@ -247,7 +247,7 @@ static void test_tagbars(void) {
 static void test_grid(void) {
     static const guint panes[] = { 1, 1, 2, 3, 4, 4, 4 };
     for (guint files = 0; files < G_N_ELEMENTS(panes); files++) {
-        gchar* text = layout_store_grid_splits(files);
+        gchar* text = layout_store_grid_splits(files, 0, 0);
         TabTreeNode* tree = tab_tree_parse(text);
         g_assert_nonnull(tree);
         g_assert_cmpuint(tab_tree_notebook_count(tree), ==, panes[files]);
@@ -261,13 +261,72 @@ static void test_grid(void) {
     current->term_vis = TRUE;
     g_free(current->terminals);
     current->terminals = g_strdup("H:0.500(T,T)");
-    SavedLayout* l = layout_store_auto(current, 3);
+    SavedLayout* l = layout_store_auto(current, 3, 0, 0);
     g_assert_cmpstr(l->name, ==, "Auto");
     g_assert_true(l->editor_dedicated && l->term_vis && l->files_vis == current->files_vis);
     g_assert_cmpstr(l->terminals, ==, "H:0.500(T,T)");
     g_assert_cmpstr(l->editor_splits, ==, "H:0.500([0],V:0.500([0],[0]))");
     saved_layout_free(l);
     saved_layout_free(current);
+}
+
+static void expect_grid(guint files, gint w, gint h, const gchar* want) {
+    gchar* text = layout_store_grid_splits(files, w, h);
+    g_assert_cmpstr(text, ==, want);
+    TabTreeNode* tree = tab_tree_parse(text);
+    g_assert_nonnull(tree);
+    tab_tree_free(tree);
+    g_free(text);
+}
+
+static void test_grid_size(void) {
+    /* wide: side by side; tall: one above the other */
+    expect_grid(2, 1200, 800, "H:0.500([0],[0])");
+    expect_grid(2, 800, 1000, "V:0.500([0],[0])");
+    /* too narrow for two side by side, too short for two stacked */
+    expect_grid(2, 1000, 200, "H:0.500([0],[0])");
+    expect_grid(2, 400, 1000, "V:0.500([0],[0])");
+    expect_grid(3, 400, 200, "[0]");
+    /* three */
+    expect_grid(3, 1200, 800, "H:0.500([0],V:0.500([0],[0]))");
+    expect_grid(3, 1000, 1200, "V:0.500([0],H:0.500([0],[0]))");
+    expect_grid(3, 1600, 300, "H:0.333([0],H:0.500([0],[0]))");
+    expect_grid(3, 400, 900, "V:0.333([0],V:0.500([0],[0]))");
+    expect_grid(3, 1000, 200, "H:0.500([0],[0])");
+    /* four and more */
+    expect_grid(6, 1200, 800, "H:0.500(V:0.500([0],[0]),V:0.500([0],[0]))");
+    expect_grid(4, 2000, 300, "H:0.250([0],H:0.333([0],H:0.500([0],[0])))");
+    expect_grid(5, 400, 1000, "V:0.250([0],V:0.333([0],V:0.500([0],[0])))");
+
+    /* the editor panel's share of the window */
+    SavedLayout* l = saved_layout_new("Area");
+    l->files_vis = TRUE;
+    l->main_frac = 0.25;
+    l->preview_vis = TRUE;
+    l->editor_frac = 0.50;
+    l->term_vis = TRUE;
+    l->stacked = TRUE;
+    l->right_frac = 0.60;
+    gint w = 0;
+    gint h = 0;
+    layout_store_editor_area(l, 1600, 1000, &w, &h);
+    g_assert_cmpint(w, ==, 600);
+    g_assert_cmpint(h, ==, 600);
+    l->stacked = FALSE;
+    layout_store_editor_area(l, 1600, 1000, &w, &h);
+    g_assert_cmpint(w, ==, 360);
+    g_assert_cmpint(h, ==, 1000);
+
+    /* a narrow editor panel stacks its two files */
+    l->editor_dedicated = TRUE;
+    SavedLayout* a = layout_store_auto(l, 2, 1600, 1000);
+    g_assert_cmpstr(a->editor_splits, ==, "V:0.500([0],[0])");
+    saved_layout_free(a);
+    l->term_vis = FALSE;
+    a = layout_store_auto(l, 2, 3000, 1000);
+    g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
+    saved_layout_free(a);
+    saved_layout_free(l);
 }
 
 static void test_presets(void) {
@@ -325,5 +384,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/layout_store/tagbars", test_tagbars);
     g_test_add_func("/layout_store/presets", test_presets);
     g_test_add_func("/layout_store/grid", test_grid);
+    g_test_add_func("/layout_store/grid_size", test_grid_size);
     return g_test_run();
 }

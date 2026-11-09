@@ -179,9 +179,12 @@ void layout_switcher_show(AppData* app) {
         g_ptr_array_add(s->layouts, saved_layout_copy(g_ptr_array_index(named, i)));
     }
     guint first_preset = s->layouts->len;
-    /* Auto: the open files in a grid, unless a saved layout took its name */
+    /* Auto: the open files in a grid fitted to the window, unless a saved
+     * layout took its name */
     guint files = editor_layout_file_count(app);
-    SavedLayout* auto_layout = layout_store_auto(g_ptr_array_index(s->layouts, 0), files);
+    GtkWidget* area = (app->main_paned != NULL) ? app->main_paned : GTK_WIDGET(app->window);
+    SavedLayout* auto_layout = layout_store_auto(g_ptr_array_index(s->layouts, 0), files,
+                                                 gtk_widget_get_width(area), gtk_widget_get_height(area));
     if (files > 0 && layout_store_find(named, auto_layout->name) == NULL) {
         g_ptr_array_add(s->layouts, auto_layout);
     } else {

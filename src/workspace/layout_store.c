@@ -231,21 +231,68 @@ GPtrArray* layout_store_presets(GPtrArray* saved) {
     return presets;
 }
 
-gchar* layout_store_grid_splits(guint files) {
-    switch (files) {
-    case 0:
+/* n panes in a row (H) or a column (V), sharing the room evenly */
+static gchar* grid_line(guint n, gchar dir) {
+    if (n <= 1) {
+        return g_strdup("[0]");
+    }
+    gchar* rest = grid_line(n - 1, dir);
+    gchar* text = g_strdup_printf("%c:%.3f([0],%s)", dir, 1.0 / n, rest);
+    g_free(rest);
+    return text;
+}
+
+gchar* layout_store_grid_splits(guint files, gint width, gint height) {
+    if (width <= 0 || height <= 0) { /* size unknown: a wide panel */
+        width = 2 * LAYOUT_GRID_MIN_W;
+        height = 2 * LAYOUT_GRID_MIN_H;
+    }
+    guint cols = (guint)MAX(1, width / LAYOUT_GRID_MIN_W);
+    guint rows = (guint)MAX(1, height / LAYOUT_GRID_MIN_H);
+    guint n = MIN(MIN(MAX(files, 1u), 4u), cols * rows);
+    gboolean wide = width >= height;
+    gboolean square = cols >= 2 && rows >= 2; /* room for two by two */
+    switch (n) {
     case 1:
         return g_strdup("[0]");
     case 2:
-        return g_strdup("H:0.500([0],[0])");
+        /* side by side when wide, else one above the other */
+        return grid_line(2, (cols >= 2 && (wide || rows < 2)) ? 'H' : 'V');
     case 3:
-        return g_strdup("H:0.500([0],V:0.500([0],[0]))");
+        if (square) {
+            return g_strdup(wide ? "H:0.500([0],V:0.500([0],[0]))"  /* one left, two stacked right */
+                                 : "V:0.500([0],H:0.500([0],[0]))"); /* one on top, two below */
+        }
+        return grid_line(3, cols >= 3 ? 'H' : 'V');
     default:
-        return g_strdup("H:0.500(V:0.500([0],[0]),V:0.500([0],[0]))");
+        if (square) {
+            return g_strdup("H:0.500(V:0.500([0],[0]),V:0.500([0],[0]))");
+        }
+        return grid_line(4, cols >= 4 ? 'H' : 'V');
     }
 }
 
-SavedLayout* layout_store_auto(const SavedLayout* current, guint files) {
+void layout_store_editor_area(const SavedLayout* l, gint width, gint height, gint* editor_w, gint* editor_h) {
+    gdouble w = width;
+    gdouble h = height;
+    if (l->files_vis) {
+        w *= 1.0 - l->main_frac;
+    }
+    if (l->term_vis) {
+        if (l->stacked) {
+            h *= l->right_frac;
+        } else {
+            w *= l->right_frac;
+        }
+    }
+    if (l->preview_vis) {
+        w *= 1.0 - l->editor_frac;
+    }
+    *editor_w = (gint)(w + 0.5);
+    *editor_h = (gint)(h + 0.5);
+}
+
+SavedLayout* layout_store_auto(const SavedLayout* current, guint files, gint width, gint height) {
     SavedLayout* l = saved_layout_copy(current);
     g_free(l->name);
     l->name = g_strdup(_("Auto"));
@@ -253,8 +300,13 @@ SavedLayout* layout_store_auto(const SavedLayout* current, guint files) {
         l->editor_frac = 0.40; /* the editor panel opens beside the preview: give it the room */
     }
     l->editor_dedicated = TRUE;
+    gint ew = 0;
+    gint eh = 0;
+    if (width > 0 && height > 0) {
+        layout_store_editor_area(l, width, height, &ew, &eh);
+    }
     g_free(l->editor_splits);
-    l->editor_splits = layout_store_grid_splits(files);
+    l->editor_splits = layout_store_grid_splits(files, ew, eh);
     return l;
 }
 
