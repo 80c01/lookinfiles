@@ -21,11 +21,21 @@ static void test_extensions(void) {
     assert_icon("run.sh", "shell", "green");
 }
 
-/* Hand-drawn icons for the note formats Seti has none for */
+/* Hand-drawn icons for the formats Seti has none for */
 static void test_handmade(void) {
     assert_icon("todo.org", "org", "green");
     assert_icon("done.org_archive", "org", "green");
     assert_icon("board.canvas", "canvas", "purple");
+    assert_icon("talk.pptx", "slides", "orange");
+    assert_icon("talk.odp", "slides", "orange");
+    assert_icon("novel.epub", "book", "yellow");
+}
+
+/* Formats Seti leaves generic get the icon of a sibling format */
+static void test_aliases(void) {
+    assert_icon("letter.odt", "word", "blue");
+    assert_icon("budget.ods", "xls", "green");
+    assert_icon("cache.sqlite", "db", "pink");
 }
 
 static void test_compound_extensions(void) {
@@ -68,6 +78,7 @@ int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/file_type_icons/extensions", test_extensions);
     g_test_add_func("/file_type_icons/handmade", test_handmade);
+    g_test_add_func("/file_type_icons/aliases", test_aliases);
     g_test_add_func("/file_type_icons/compound_extensions", test_compound_extensions);
     g_test_add_func("/file_type_icons/file_names", test_file_names);
     g_test_add_func("/file_type_icons/defaults", test_defaults);

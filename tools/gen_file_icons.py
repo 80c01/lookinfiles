@@ -12,6 +12,7 @@ extensions/theme-seti/icons/ (MIT, see icons/COPYING). Needs fontTools
   - the <file> lines of icons/lookin.gresource.xml for those icons
 The HANDMADE icons (formats Seti has no glyph for) are drawn by hand in
 the same grid: their SVGs are kept, only their table entries are written.
+ALIASES give a Seti icon to the formats Seti leaves generic (.odt, .ods...).
 """
 import json
 import os
@@ -114,8 +115,18 @@ LANGUAGES = {
 
 # Hand-drawn lookin-ft-<icon>-symbolic.svg: icon -> (colour, extensions)
 HANDMADE = {
+    "book": ("yellow", ["epub", "mobi", "azw3", "fb2"]),
     "canvas": ("purple", ["canvas"]),
     "org": ("green", ["org", "org_archive"]),
+    "slides": ("orange", ["pptx", "ppt", "pps", "ppsx", "odp", "otp", "fodp"]),
+}
+
+# Formats Seti leaves generic that share a Seti icon with a sibling format:
+# icon -> (colour, extensions); the icon must be one Seti already uses
+ALIASES = {
+    "word": ("blue", ["odt", "ott", "fodt", "rtf"]),
+    "xls": ("green", ["ods", "ots", "fods"]),
+    "db": ("pink", ["sqlite", "sqlite3", "db", "db3"]),
 }
 
 
@@ -166,12 +177,14 @@ def main():
 
     for icon, (color, keys) in HANDMADE.items():
         exts.update({k: (icon, color) for k in keys})
+    for icon, (color, keys) in ALIASES.items():  # Seti's own entries win
+        exts.update({k: (icon, color) for k in keys if k not in exts})
 
     used = {}  # icon -> codepoint
     entries = []
     for table, items in (("names", names), ("exts", exts)):
         for key, def_id in sorted(items.items()):
-            if isinstance(def_id, tuple):  # HANDMADE
+            if isinstance(def_id, tuple):  # HANDMADE or ALIASES
                 icon, color = def_id
             else:
                 icon, color, cp = resolve(def_id)

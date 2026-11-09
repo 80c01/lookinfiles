@@ -107,6 +107,7 @@
     <file>scalable/actions/lookin-ft-babel-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-bazel-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-bicep-symbolic.svg</file>
+    <file>scalable/actions/lookin-ft-book-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-bower-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-bsl-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-c-symbolic.svg</file>
@@ -223,6 +224,7 @@
     <file>scalable/actions/lookin-ft-sbt-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-scala-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-shell-symbolic.svg</file>
+    <file>scalable/actions/lookin-ft-slides-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-slim-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-smarty-symbolic.svg</file>
     <file>scalable/actions/lookin-ft-spring-symbolic.svg</file>
