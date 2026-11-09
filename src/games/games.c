@@ -8,7 +8,7 @@
 #include "explorer/explorer_row.h"
 #include "explorer/explorer_tree.h"
 #include "explorer/tree_nav.h"
-#include "chrome/focus_route.h"
+#include "widgets/focus_route.h"
 #include "games/game_pacman.h"
 #include "games/game_tetris.h"
 #include "games/game_space.h"

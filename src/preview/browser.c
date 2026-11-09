@@ -1,7 +1,7 @@
 /* Browser tabs: web pages in the preview notebook (see browser.h) */
 #include "preview/browser.h"
 #include "core/app_events.h"
-#include "chrome/focus_route.h"
+#include "widgets/focus_route.h"
 #include "theme/icons.h"
 #include "core/i18n.h"
 #include "theme/theme.h"

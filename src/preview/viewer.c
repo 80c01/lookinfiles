@@ -38,7 +38,7 @@
 #include "core/text_encoding.h"
 #include "preview/preview_cache.h"
 #include "explorer/tree_nav.h"
-#include "chrome/focus_route.h"
+#include "widgets/focus_route.h"
 #include "media/image_utils.h"
 #include "notes/note_types.h"
 #include "games/games.h"

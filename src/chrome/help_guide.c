@@ -3,7 +3,7 @@
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "preview/browser.h"
-#include "chrome/focus_route.h"
+#include "widgets/focus_route.h"
 #include "games/games.h"
 #include "git/git_tab.h"
 #include "chrome/help.h"

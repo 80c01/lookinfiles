@@ -5,7 +5,7 @@
 #include "widgets/dialog.h"
 #include "editor/editor.h"
 #include "explorer/file_list.h"
-#include "chrome/focus_route.h"
+#include "widgets/focus_route.h"
 #include "search/fuzzy_match.h"
 #include "theme/icons.h"
 #include "core/i18n.h"

@@ -11,7 +11,7 @@
 #include "theme/text_style.h"
 #include "explorer/tree_nav.h"
 #include "theme/theme.h"
-#include "theme/themes.h"
+#include "chrome/themes.h"
 #include "chrome/preferences.h"
 #include "core/settings_store.h"
 #include "chrome/status_bar.h"
@@ -50,7 +50,7 @@
 #include "editor/editor_modes.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "chrome/focus_route.h"
+#include "widgets/focus_route.h"
 #include "preview/preview_tagbar.h"
 #include "preview/preview_full.h"
 #include "core/ui_probe.h"

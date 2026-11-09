@@ -1,6 +1,6 @@
 /* Themes in the running application: switching, zoom and the Appearance
  * page of the Preferences dialog (see themes.h). */
-#include "theme/themes.h"
+#include "chrome/themes.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "widgets/dialog.h"

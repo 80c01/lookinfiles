@@ -16,7 +16,7 @@
 #include "explorer/remote.h"
 #include "explorer/archive_tree.h"
 #include "editor/editor.h"
-#include "chrome/focus_route.h"
+#include "widgets/focus_route.h"
 
 /* Rows with children the arrow keys and space expand: directories,
  * bookmark folders, notebooks, the notes trash and remote folders */

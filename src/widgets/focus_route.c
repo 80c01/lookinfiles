@@ -1,6 +1,6 @@
 /* Keyboard focus routing: which panel or page owns the focus, tab switching,
  * global mode keys in list pages. */
-#include "chrome/focus_route.h"
+#include "widgets/focus_route.h"
 #include "core/app_events.h"
 #include "widgets/panels.h"
 

@@ -13,8 +13,8 @@ The directories group modules by feature, not by layer:
 | Directory | Contents |
 |---|---|
 | `core/` | application paths, i18n, `AppData` types, events, file types, text encodings, path helpers, settings |
-| `theme/` | palette, fonts, themes, text tags and styles, icons and icon sets |
-| `widgets/` | shared widgets: dialogs, panels, minimap, gutters, tagbar pane, tab drop |
+| `theme/` | palette, fonts, theme files, text tags and styles, icons and icon sets |
+| `widgets/` | shared widgets: dialogs, panels, focus routing, minimap, gutters, tagbar pane, tab drop |
 | `explorer/` | explorer tree and rows, files view and actions, bookmarks, remote machines, filesystem watch |
 | `git/` | libgit2 helpers, git state, the Git tab |
 | `preview/` | the viewer, preview state and cache, `preview_formats`, directory preview, PDF, browser tabs |
@@ -33,7 +33,7 @@ The directories group modules by feature, not by layer:
 | `games/` | games mode |
 | `terminal/` | terminal panes and the built-in terminal |
 | `workspace/` | workspaces, layouts, session |
-| `chrome/` | top bar, status bar, sidebar, help, preferences, `ui` |
+| `chrome/` | top bar, status bar, sidebar, help, preferences, applying themes, `ui` |
 
 Layers, from bottom to top
 (a module may only depend on modules in its own layer or below):

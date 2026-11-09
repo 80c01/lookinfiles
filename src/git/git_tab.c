@@ -5,7 +5,7 @@
 #include "widgets/panels.h"
 #include "theme/text_style.h"
 #include "git/git_utils.h"
-#include "chrome/focus_route.h"
+#include "widgets/focus_route.h"
 #include <string.h>
 
 /* Git commits tab state (app->git), created by git_tab_init() */
