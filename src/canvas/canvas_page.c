@@ -766,6 +766,13 @@ void canvas_page_update_props(CanvasPage* p) {
         g_ptr_array_unref(items);
     }
     canvas_props_show_selection(p->props, &sel);
+    /* Room right of the page for the panel, with its margin on each side */
+    GtkWidget* panel = canvas_props_get_widget(p->props);
+    if (gtk_widget_get_visible(panel)) {
+        gint nat = 0;
+        gtk_widget_measure(panel, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &nat, NULL, NULL);
+        canvas_viewport_reserve_right(p->viewport, nat + 2 * gtk_widget_get_margin_end(panel));
+    }
 }
 
 void canvas_page_set_tool(CanvasPage* p, CanvasTool tool) {

@@ -1,7 +1,8 @@
 #ifndef CANVAS_PROPS_H
 #define CANVAS_PROPS_H
 
-/* Properties panel of the Canvas page, floating on the left of the page:
+/* Properties panel of the Canvas page, floating on the right of the page
+ * (the page has room on its right to scroll a block out from under it):
  * the shape style (stroke colour, fill, stroke width, hand-drawn or clean)
  * while a drawing tool is chosen or a shape is selected, and the actions on
  * the selected blocks (align and distribute when there are several, drawing

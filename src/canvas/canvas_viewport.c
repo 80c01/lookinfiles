@@ -94,6 +94,7 @@ struct CanvasViewport {
     gulong focus_handler;
     guint reveal_tick; /* pending on_reveal_tick() */
     gint top_inset;    /* view pixels above the page, under the tool bar */
+    gint right_inset;  /* view pixels right of the page, under the properties panel */
 };
 
 static GtkAdjustment* adjustment(CanvasViewport* v, GtkOrientation o) {
@@ -106,7 +107,7 @@ static GtkAdjustment* adjustment(CanvasViewport* v, GtkOrientation o) {
  * later: the range it will have is set now, so the value is not clamped to
  * the old one. */
 static gint axis_inset(CanvasViewport* v, GtkOrientation o) {
-    return o == GTK_ORIENTATION_VERTICAL ? v->top_inset : 0;
+    return o == GTK_ORIENTATION_VERTICAL ? v->top_inset : v->right_inset;
 }
 
 static void scroll_axis(CanvasViewport* v, GtkOrientation o, gdouble value) {
@@ -361,6 +362,12 @@ void canvas_viewport_zoom_step(CanvasViewport* v, gint step) {
 void canvas_viewport_set_top_inset(CanvasViewport* v, gint inset) {
     v->top_inset = MAX(inset, 0);
     gtk_widget_set_margin_top(GTK_WIDGET(v->zoom), v->top_inset);
+}
+
+void canvas_viewport_reserve_right(CanvasViewport* v, gint inset) {
+    if (inset <= v->right_inset) return;
+    v->right_inset = inset;
+    gtk_widget_set_margin_end(GTK_WIDGET(v->zoom), v->right_inset);
 }
 
 void canvas_viewport_reset(CanvasViewport* v) {

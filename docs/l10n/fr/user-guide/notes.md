@@ -91,11 +91,12 @@ déposés sur la page ; double-cliquez sur une image pour la recadrer.
 
 ### Panneau des propriétés et barre de mise en forme
 
-- **Formes** : un panneau à gauche (quand un outil de dessin est choisi, ou
+- **Formes** : un panneau à droite (quand un outil de dessin est choisi, ou
   qu’une forme est sélectionnée) règle la couleur du trait, le remplissage
   (aucun, hachuré, plein ; formes fermées seulement), l’épaisseur du trait
   et le style dessiné à la main ou net. Le choix s’applique aux formes
-  sélectionnées et aux suivantes.
+  sélectionnées et aux suivantes. La page a de la place à sa droite : on
+  peut faire défiler une forme placée là hors du panneau.
 - **Texte** : quand une zone de texte est éditée ou sélectionnée, une barre
   flotte juste au-dessus (en dessous près du haut de la page) et la suit :
   style de paragraphe (titres, corps, citation), gras, italique, souligné,

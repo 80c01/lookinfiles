@@ -406,7 +406,7 @@ static CanvasPage* page_new(AppData* app) {
     gtk_widget_set_vexpand(root, TRUE);
     p->root = root;
 
-    /* Floating tool bar (top) and properties panel (left) over the page */
+    /* Floating tool bar (top) and properties panel (right) over the page */
     CanvasToolbarCallbacks cbs = {
         .on_tool = on_toolbar_tool,
         .on_toggle_grid = on_toolbar_toggle_grid,
@@ -451,7 +451,7 @@ static CanvasPage* page_new(AppData* app) {
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), bar_widget);
     GtkWidget* props_widget = canvas_props_get_widget(p->props);
     gtk_widget_set_margin_top(props_widget, 64);
-    gtk_widget_set_margin_start(props_widget, 12);
+    gtk_widget_set_margin_end(props_widget, 12);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), props_widget);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), canvas_format_bar_get_widget(p->format_bar));
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), canvas_table_bar_get_widget(p->table_bar));

@@ -519,7 +519,7 @@ Layers, from bottom to top
   Its parts: `canvas_toolbar` (floating tool bar: select, shapes, pencil,
   text, table, eraser, and the grid / export menu), `canvas_export` (PNG / SVG of the page, written to the home folder: its
   render node drawn with cairo, cropped to the blocks), `canvas_props`
-  (floating panel: shape style; the actions on the selected blocks: align
+  (floating panel on the right, with room for it right of the page: shape style; the actions on the selected blocks: align
   and distribute, drawing order, lock, crop a picture), `canvas_format_bar` (text formatting, a row
   floating above the text box), `canvas_table_bar` (insert / delete rows
   and columns at the current cell, floating above the table),

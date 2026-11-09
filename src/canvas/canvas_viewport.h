@@ -37,6 +37,11 @@ void canvas_viewport_reset(CanvasViewport* v);
  * under the floating tool bar at first */
 void canvas_viewport_set_top_inset(CanvasViewport* v, gint inset);
 
+/* Room right of the page, in view pixels (not zoomed), at least inset, so
+ * that its right side can be scrolled out from under the properties panel;
+ * it only grows */
+void canvas_viewport_reserve_right(CanvasViewport* v, gint inset);
+
 /* Page point at the top-left corner of the view, below the top inset */
 void canvas_viewport_origin(CanvasViewport* v, gint* x, gint* y);
 

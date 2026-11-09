@@ -86,10 +86,12 @@ onto the page; double click a picture to crop it.
 
 ### Properties panel and format bar
 
-- **Shapes**: a panel on the left (while a drawing tool is chosen, or a
+- **Shapes**: a panel on the right (while a drawing tool is chosen, or a
   shape is selected) sets the stroke colour, fill (none, hatched, solid;
   closed shapes only), stroke width, and hand-drawn or clean style. The
-  choice applies to the selected shapes and to the next ones drawn.
+  choice applies to the selected shapes and to the next ones drawn. The
+  page has room on its right, so a shape there can be scrolled out from
+  under the panel.
 - **Text**: while a text box is edited or selected, a bar floats just above
   it (below it near the top of the page) and follows it: paragraph style
   (headings, body, quote), bold, italic, underline, strikethrough, text

@@ -433,7 +433,7 @@ CanvasProps* canvas_props_new(const CanvasPropsCallbacks* cbs, gpointer user_dat
 
     props->box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(props->box, "canvas-props");
-    gtk_widget_set_halign(props->box, GTK_ALIGN_START);
+    gtk_widget_set_halign(props->box, GTK_ALIGN_END);
     gtk_widget_set_valign(props->box, GTK_ALIGN_START);
     props->shape_box = shape_section(props);
     gtk_box_append(GTK_BOX(props->box), props->shape_box);
