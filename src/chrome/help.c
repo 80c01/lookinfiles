@@ -158,6 +158,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Preview panel"), "m", N_("Toggle rendered preview / raw view (documents, tables, JSON, diffs, logs, archives, certificates, images, PDF, video, audio)"), 0},
     {N_("Preview panel"), "o / Ctrl+K Ctrl+O", N_("Show / hide the tagbar: headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of source code, beside the text (Enter goes, s sorts symbols, c collapses / expands all, Esc back, q hides)"), 0},
     {N_("Preview panel"), "+ / - / 0", N_("Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)"), 0},
+    {N_("Preview panel"), NC_("key", "Right-click"), N_("On an image: Copy Image to the clipboard"), 0},
     {N_("Preview panel"), "PgDn / PgUp", N_("PDF: next / previous page; mailbox: next / previous message"), 0},
     {N_("Preview panel"), "Space / p", N_("Play / pause active video or audio preview"), 0},
     {N_("Preview panel"), "Left / Right", N_("Video: seek 5 seconds back / forward (also in the explorer)"), 0},

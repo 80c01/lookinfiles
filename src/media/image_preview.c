@@ -475,6 +475,119 @@ static gboolean on_preview_scroll(GtkEventControllerScroll* controller, gdouble 
     return TRUE;
 }
 
+/* --- Copy Image (preview context menu) --- */
+
+/* Worker: the whole image, upright, at its own size (capped) */
+static void copy_image_thread_func(GTask* task, gpointer source_object,
+                                   gpointer task_data, GCancellable* cancellable) {
+    (void)source_object;
+    (void)cancellable;
+    const gchar* path = task_data;
+    gchar* name = g_path_get_basename(path);
+    ExifInfo* exif = NULL;
+    GdkPixbuf* pix = NULL;
+    if (is_raw_photo_file(name)) {
+        pix = raw_preview(path, &exif);
+    }
+    if (pix == NULL) {
+        exif_info_free(exif);
+        exif = exif_read_file(path);
+        gint w = 0, h = 0;
+        if (gdk_pixbuf_get_file_info(path, &w, &h) != NULL && w > 0 && h > 0) {
+            gdouble pixels = (gdouble)w * h;
+            if (pixels > MAX_DECODED_PIXELS) {
+                gdouble scale = sqrt(MAX_DECODED_PIXELS / pixels);
+                pix = gdk_pixbuf_new_from_file_at_scale(path, MAX(1, (gint)(w * scale)),
+                                                        MAX(1, (gint)(h * scale)), TRUE, NULL);
+            } else {
+                pix = gdk_pixbuf_new_from_file(path, NULL);
+            }
+        }
+    }
+    g_free(name);
+    if (pix == NULL) {
+        exif_info_free(exif);
+        g_task_return_pointer(task, NULL, NULL);
+        return;
+    }
+    pix = apply_orientation(pix, exif != NULL ? exif->orientation : 0);
+    exif_info_free(exif);
+    GdkTexture* texture = texture_new_for_pixbuf(pix);
+    g_object_unref(pix);
+    g_task_return_pointer(task, texture, g_object_unref);
+}
+
+static void on_copy_image_ready(GObject* source_object, GAsyncResult* res, gpointer user_data) {
+    (void)source_object;
+    AppData* app = user_data;
+    GdkTexture* texture = g_task_propagate_pointer(G_TASK(res), NULL);
+    gchar* name = g_path_get_basename(g_task_get_task_data(G_TASK(res)));
+    gchar* msg;
+    if (texture != NULL) {
+        gdk_clipboard_set_texture(gtk_widget_get_clipboard(app->text_view), texture);
+        g_object_unref(texture);
+        msg = g_strdup_printf(_("Copied image “%s”"), name);
+    } else {
+        msg = g_strdup_printf(_("Cannot copy image “%s”"), name);
+    }
+    app_notice(app, msg, FALSE);
+    g_free(msg);
+    g_free(name);
+}
+
+static void on_copy_image(GSimpleAction* action, GVariant* param, gpointer data) {
+    (void)action;
+    (void)param;
+    AppData* app = data;
+    const gchar* path = preview_state_path(app);
+    if (path == NULL || preview_state_kind(app) != FILE_KIND_IMAGE) {
+        return;
+    }
+    GTask* task = g_task_new(NULL, NULL, on_copy_image_ready, app);
+    g_task_set_task_data(task, g_strdup(path), g_free);
+    g_task_run_in_thread(task, copy_image_thread_func);
+    g_object_unref(task);
+}
+
+/* Right click: the menu item shows only while an image is previewed */
+static void on_preview_secondary_press(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y,
+                                       gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    (void)y;
+    GSimpleAction* action = data;
+    AppData* app = g_object_get_data(G_OBJECT(action), "app");
+    g_simple_action_set_enabled(action, preview_state_path(app) != NULL &&
+                                            preview_state_kind(app) == FILE_KIND_IMAGE);
+}
+
+void image_preview_attach_menu(AppData* app, GtkWidget* text_view) {
+    GSimpleActionGroup* group = g_simple_action_group_new();
+    GSimpleAction* action = g_simple_action_new("copy-image", NULL);
+    g_object_set_data(G_OBJECT(action), "app", app);
+    g_simple_action_set_enabled(action, FALSE);
+    g_signal_connect(action, "activate", G_CALLBACK(on_copy_image), app);
+    g_action_map_add_action(G_ACTION_MAP(group), G_ACTION(action));
+    gtk_widget_insert_action_group(text_view, "image", G_ACTION_GROUP(group));
+    g_object_unref(group);
+
+    GMenu* menu = g_menu_new();
+    GMenuItem* item = g_menu_item_new(_("Copy Image"), "image.copy-image");
+    g_menu_item_set_attribute(item, "hidden-when", "s", "action-disabled");
+    g_menu_append_item(menu, item);
+    g_object_unref(item);
+    gtk_text_view_set_extra_menu(GTK_TEXT_VIEW(text_view), G_MENU_MODEL(menu));
+    g_object_unref(menu);
+
+    GtkGesture* click = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), GDK_BUTTON_SECONDARY);
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(click), GTK_PHASE_CAPTURE);
+    g_signal_connect(click, "pressed", G_CALLBACK(on_preview_secondary_press), action);
+    gtk_widget_add_controller(text_view, GTK_EVENT_CONTROLLER(click));
+    g_object_unref(action);
+}
+
 void image_preview_attach_zoom(AppData* app, GtkWidget* text_view) {
     GtkEventController* scroll = gtk_event_controller_scroll_new(
         GTK_EVENT_CONTROLLER_SCROLL_VERTICAL | GTK_EVENT_CONTROLLER_SCROLL_DISCRETE);

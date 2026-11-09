@@ -577,6 +577,7 @@ int main(int argc, char** argv) {
     gtk_widget_add_controller(text_view, viewer_key_ctrl);
     focus_route_mark_nav(text_view);
     image_preview_attach_zoom(app, text_view);
+    image_preview_attach_menu(app, text_view);
     text_chunks_attach(app);
 
     GtkGesture* viewer_click_ctrl = gtk_gesture_click_new();

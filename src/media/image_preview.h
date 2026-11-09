@@ -19,6 +19,10 @@ gboolean image_preview_zoom_key(AppData* app, guint keyval);
 /* Ctrl+wheel over the preview zooms images and PDFs */
 void image_preview_attach_zoom(AppData* app, GtkWidget* text_view);
 
+/* "Copy Image" in the preview context menu (shown while an image is
+ * previewed): copies the whole image, upright, to the clipboard */
+void image_preview_attach_menu(AppData* app, GtkWidget* text_view);
+
 /* Most zoom in / out, relative to the fitted size */
 #define PREVIEW_ZOOM_MIN 0.1
 #define PREVIEW_ZOOM_MAX 8.0

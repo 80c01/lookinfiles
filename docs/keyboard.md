@@ -220,6 +220,7 @@ in the preview)
 | `m` | Rendered / raw view: Markdown, HTML, Org, CSV, JSON, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
 | `o`, `Ctrl+K Ctrl+O` | Tagbar: the headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of source code, beside the text (`Enter` / click scrolls to one, `s` sorts symbols, `c` collapses / expands all, `Esc` back, `q` hides) |
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |
+| Right click on an image | Context menu: **Copy Image** copies the whole image to the clipboard |
 | `PgDn` / `PgUp` | PDF: next / previous page; mailbox: from the list into each message and back |
 | `Space` / `p` | Play / pause the video or audio |
 | `Left` / `Right` | Video: seek 5 seconds back / forward (also in the explorer, on the video shown; `h` / `l` still navigate) |

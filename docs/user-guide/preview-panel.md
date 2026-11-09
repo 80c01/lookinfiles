@@ -79,6 +79,8 @@ git change bars along its edge. Click or drag in it to scroll.
 
 - `+` / `-` zoom in and out, `0` goes back to the fitted size;
   `Ctrl+wheel` zooms too.
+- Right-click an image and choose **Copy Image** to put the whole image
+  in the clipboard.
 - In a PDF, `Page Down` / `Page Up` go to the next and previous page.
 
 ## Video and audio

@@ -8562,3 +8562,17 @@ msgstr "Dégrouper (Ctrl+Shift+G)"
 #: src/chrome/help.c
 msgid "Group the selected blocks (selected and moved together) / ungroup them"
 msgstr "Grouper les blocs sélectionnés (sélectionnés et déplacés ensemble) / les dégrouper"
+
+msgid "Copy Image"
+msgstr "Copier l’image"
+
+#, c-format
+msgid "Copied image “%s”"
+msgstr "Image « %s » copiée"
+
+#, c-format
+msgid "Cannot copy image “%s”"
+msgstr "Impossible de copier l’image « %s »"
+
+msgid "On an image: Copy Image to the clipboard"
+msgstr "Sur une image : copier l’image dans le presse-papiers"

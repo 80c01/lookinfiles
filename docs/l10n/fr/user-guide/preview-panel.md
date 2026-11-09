@@ -84,6 +84,8 @@ dedans pour faire défiler.
 
 - `+` / `-` zooment et dézooment, `0` revient à la taille ajustée ;
   `Ctrl+molette` zoome aussi.
+- Clic droit sur une image, puis **Copier l’image**, met l’image entière
+  dans le presse-papiers.
 - Dans un PDF, `Page Down` / `Page Up` vont à la page suivante et
   précédente.
 
