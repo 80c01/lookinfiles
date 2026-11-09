@@ -83,9 +83,10 @@ nom d’une disposition intégrée la remplace ; supprimer la vôtre fait
 revenir celle intégrée.
 
 Quand des fichiers sont ouverts, **Auto** vient en premier parmi elles : les
-panneaux restent tels quels, et les fichiers ouverts vont dans le panneau
-d’édition, en grille selon leur nombre et la place que le panneau a dans la
-fenêtre :
+panneaux restent tels quels, l’explorateur prend la largeur de son plus long
+nom visible (jusqu’à 40 % de la fenêtre), et les fichiers ouverts vont dans
+le panneau d’édition, en grille selon leur nombre et la place que le panneau
+a dans la fenêtre :
 
 - un fichier : une zone ;
 - deux : côte à côte quand le panneau est plus large que haut et a la place

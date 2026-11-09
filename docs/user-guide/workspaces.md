@@ -70,8 +70,9 @@ They cannot be deleted. Saving a layout under the name of a built-in one
 replaces it; deleting yours brings the built-in one back.
 
 With files open, **Auto** comes first among them: the panels stay as they
-are, and the open files go to the editor panel in a grid made for their
-number and for the room the panel gets in the window:
+are, the explorer narrows or widens to its widest visible name (up to 40%
+of the window), and the open files go to the editor panel in a grid made
+for their number and for the room the panel gets in the window:
 
 - one file: one pane;
 - two: side by side when the panel is wider than tall and has room for two

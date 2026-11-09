@@ -20,7 +20,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   one column when two by two does not fit, and it never makes a pane smaller
   than about 70 columns by 12 lines. With the preview beside the editor
   panel, it narrows the preview (down to a quarter) when that puts two
-  editors side by side.
+  editors side by side. It also fits the explorer to its widest visible
+  name (up to 40% of the window).
 - The **Preview** button of the top bar reads **Main** while editor tabs
   share the preview panel, since it then hides them too.
 - A Canvas note opens where a text file would (beside the editor tab used

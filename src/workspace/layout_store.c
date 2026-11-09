@@ -313,6 +313,9 @@ SavedLayout* layout_store_auto(const SavedLayout* current, guint files, const Au
     if (rules != NULL && rules->terminal_below >= 0) {
         l->stacked = (rules->terminal_below > 0);
     }
+    if (rules != NULL && rules->explorer_frac > 0) {
+        l->main_frac = MIN(rules->explorer_frac, LAYOUT_EXPLORER_MAX_FRAC);
+    }
     gint ew = 0;
     gint eh = 0;
     if (width > 0 && height > 0) {

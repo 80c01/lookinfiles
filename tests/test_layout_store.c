@@ -386,6 +386,20 @@ static void test_grid_size(void) {
     g_assert_true(!a->term_vis && a->preview_vis);
     saved_layout_free(a);
 
+    /* the explorer fitted to its content, at most LAYOUT_EXPLORER_MAX_FRAC */
+    rules = (AutoRules){-1, -1, -1, 0.10};
+    a = layout_store_auto(l, 2, &rules, 1600, 1000);
+    g_assert_cmpfloat(a->main_frac, ==, 0.10);
+    saved_layout_free(a);
+    rules.explorer_frac = 0.60;
+    a = layout_store_auto(l, 2, &rules, 1600, 1000);
+    g_assert_cmpfloat(a->main_frac, ==, LAYOUT_EXPLORER_MAX_FRAC);
+    saved_layout_free(a);
+    rules.explorer_frac = 0;
+    a = layout_store_auto(l, 2, &rules, 1600, 1000);
+    g_assert_cmpfloat(a->main_frac, ==, l->main_frac);
+    saved_layout_free(a);
+
     /* the terminal below leaves the whole width to the editor panel */
     l->preview_vis = FALSE;
     rules = (AutoRules){1, -1, 1};

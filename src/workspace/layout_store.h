@@ -69,12 +69,18 @@ GPtrArray* layout_store_presets(GPtrArray* saved);
  * makes to put two editors side by side */
 #define LAYOUT_PREVIEW_MIN_FRAC 0.25
 
-/* What the Auto layout changes in the panels: each field is 1 (yes), 0
- * (no) or -1 (as it is) */
+/* Largest share of the window the Auto layout gives the explorer when it
+ * fits it to its content */
+#define LAYOUT_EXPLORER_MAX_FRAC 0.40
+
+/* What the Auto layout changes in the panels: show_terminal, show_preview
+ * and terminal_below are 1 (yes), 0 (no) or -1 (as it is) */
 typedef struct {
     gint show_terminal;
     gint show_preview;
-    gint terminal_below; /* stacked: below the preview (else beside it) */
+    gint terminal_below;   /* stacked: below the preview (else beside it) */
+    gdouble explorer_frac; /* explorer share fitted to its content (at most
+                            * LAYOUT_EXPLORER_MAX_FRAC); 0: as it is */
 } AutoRules;
 
 /* The Auto layout (name translated): current with the editor tabs in the
