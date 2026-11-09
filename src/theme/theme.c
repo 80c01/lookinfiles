@@ -813,6 +813,16 @@ void apply_panel_borders(void) {
         "#layout-list > row:selected, #theme-list > row:selected {\n"
         "  background-color: @bg_selected;\n"
         "}\n"
+        /* Section list of the preferences: theme colours, not GTK's base
+         * theme (which keeps its dark or light variant) */
+        "#preferences-sections, #preferences-sections list {\n"
+        "  background-color: @bg_bar;\n"
+        "  color: @fg;\n"
+        "}\n"
+        "#preferences-sections list > row:selected {\n"
+        "  background-color: @bg_selected;\n"
+        "  color: @fg_bright;\n"
+        "}\n"
         "#layout-list .layout-name, #theme-list .layout-name {\n"
         "  font-weight: 600;\n"
         "}\n"
