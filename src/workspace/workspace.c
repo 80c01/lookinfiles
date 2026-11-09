@@ -3,6 +3,7 @@
 #include "git/git_state.h"
 #include "preview/preview_state.h"
 #include "preview/pdf.h"
+#include "preview/preview_tagbar.h"
 #include "workspace/workspace_menu.h"
 #include "explorer/nav_history.h"
 #include "explorer/fs_watch.h"
@@ -120,6 +121,8 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->editor_dedicated = FALSE;
     ws->editor_frac = 0.50;
     ws->render_raw = FALSE;
+    ws->preview_tagbar = app->settings.preview_tagbar; /* the preferences */
+    ws->preview_minimap = app->settings.minimap;
 #ifdef HAVE_VTE
     terminal_workspace_init(app, ws);
 #endif
@@ -158,6 +161,8 @@ void workspace_save_current(AppData* app) {
     ws->games_unlocked = app->game_mode_unlocked;
     ws->sort_mode = app->sort_mode;
     ws->render_raw = preview_state_raw(app);
+    ws->preview_tagbar = preview_tagbar_wanted(app);
+    ws->preview_minimap = minimap_viewer_enabled(app);
     ws->editor_dedicated = app->editor_dedicated;
     if (app->editor_dedicated && app->editor_notebook != NULL) {
         gint cur_page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->editor_notebook));
@@ -512,6 +517,8 @@ void workspace_switch(AppData* app, gint idx) {
         preview_state_set_raw(app, ws->render_raw);
         app->file_dirty = TRUE;
     }
+    preview_tagbar_set_wanted(app, ws->preview_tagbar);
+    minimap_viewer_set_enabled(app, ws->preview_minimap);
     if (app->editor_dedicated) {
         /* The dedicated panel's notebooks kept their own current tab */
         if (app->notebook != NULL) {
@@ -1071,6 +1078,20 @@ GtkWidget* create_workspace_minimap(AppData* app) {
     view_get(app)->minimap = area;
     ws_minimap_update_size(app);
     return area;
+}
+
+void workspace_set_preview_tagbar(AppData* app, gboolean shown) {
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        app->workspaces[i].preview_tagbar = shown;
+    }
+    preview_tagbar_set_wanted(app, shown);
+}
+
+void workspace_set_preview_minimap(AppData* app, gboolean enabled) {
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        app->workspaces[i].preview_minimap = enabled;
+    }
+    minimap_viewer_set_enabled(app, enabled);
 }
 
 void workspace_minimap_redraw(AppData* app) {

@@ -30,8 +30,7 @@ static void on_minimap(GSimpleAction* action, GVariant* param, gpointer data) {
     (void)action;
     (void)param;
     PreviewMenu* pm = data;
-    GtkWidget* minimap = pm->app->viewer_minimap;
-    minimap_view_set_enabled(minimap, !minimap_view_enabled(minimap));
+    minimap_viewer_set_enabled(pm->app, !minimap_viewer_enabled(pm->app));
 }
 
 static void append_item(GMenu* menu, const gchar* label, const gchar* action, const gchar* accel) {
@@ -56,7 +55,7 @@ static void on_secondary_press(GtkGestureClick* gesture, gint n_press, gdouble x
     append_item(pm->section, preview_tagbar_shown(app) ? _("Hide Tagbar") : _("Show Tagbar"), "preview.tagbar",
                 "o");
     append_item(pm->section,
-                minimap_view_enabled(app->viewer_minimap) ? _("Hide Minimap") : _("Show Minimap"),
+                minimap_viewer_enabled(app) ? _("Hide Minimap") : _("Show Minimap"),
                 "preview.minimap", NULL);
 }
 

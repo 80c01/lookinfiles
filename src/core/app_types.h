@@ -115,6 +115,8 @@ typedef struct {
     GList* editors;
     GtkWidget* editor_panel; /* dedicated editor panel content while another workspace is shown (owned ref) */
     gboolean render_raw;
+    gboolean preview_tagbar;  /* the preview's tagbar shown in this workspace (preview_tagbar_wanted()) */
+    gboolean preview_minimap; /* the preview's minimap shown in this workspace (minimap_viewer_enabled()) */
     gchar* remote_id;    /* ID of remote machine if workspace is connected to remote */
     ExplorerTreeState* tree_state; /* explorer rows while another workspace is shown (owned) */
     GitState* git_state;           /* git badges and counts while another workspace is shown (owned) */

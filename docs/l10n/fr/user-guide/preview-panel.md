@@ -69,10 +69,14 @@ ses fonctions, types… trouvés par l’analyseur intégré (sans serveur de
 langage), regroupés par sorte (`s` : ordre du fichier). Elle suit le
 défilement ; un clic ou `Enter` fait défiler jusqu’à un titre ou un
 symbole, `Esc` revient au texte, `q` la masque. Une fois activée, elle
-apparaît dans chaque aperçu qui a des titres ou des symboles (gardé pour le
-prochain démarrage ; aussi dans les Préférences, page Éditeur).
-**Afficher / Masquer la barre de symboles** dans le menu du clic droit de
-l’aperçu fait de même. Dans un gros fichier, seule la partie affichée en premier est listée.
+apparaît dans chaque aperçu de l’espace de travail qui a des titres ou des
+symboles ; chaque espace de travail garde son propre choix, et les
+nouveaux espaces de travail et le prochain démarrage suivent le dernier
+fait avec `o` (aussi dans les Préférences, page Éditeur, qui règle tous
+les espaces de travail). **Afficher / Masquer la barre de symboles** dans
+le menu du clic droit de l’aperçu le fait pour l’espace de travail courant
+seulement, sans le garder. Dans un gros fichier, seule la partie affichée
+en premier est listée.
 
 `e` ouvre le fichier texte affiché dans un onglet d’édition ; `t` (Vim) ou
 `C-o` (Emacs) l’ouvre dans le panneau d’édition dédié.
@@ -81,9 +85,9 @@ l’aperçu fait de même. Dans un gros fichier, seule la partie affichée en pr
 barres de modification git le long de son bord. Cliquez ou faites glisser
 dedans pour faire défiler. Pour la masquer (et retrouver la barre de
 défilement), choisissez **Masquer la minicarte** dans le menu du clic droit
-de l’aperçu (jusqu’au prochain démarrage), ou décochez **Afficher la
-minicarte** dans les Préférences, page Éditeur (toutes les minicartes,
-gardé).
+de l’aperçu (l’espace de travail courant seulement, sans le garder), ou
+décochez **Afficher la minicarte** dans les Préférences, page Éditeur
+(toutes les minicartes et tous les espaces de travail, gardé).
 
 ## Images et PDF
 

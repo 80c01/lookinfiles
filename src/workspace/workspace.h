@@ -22,6 +22,10 @@ void workspace_remove(AppData* app, gint idx);
 void workspace_restore_state(AppData* app, gint idx, const gchar* dir, const gchar* const* expanded,
                              const gchar* selected, gboolean show_hidden, gint sort_mode, gint view);
 GtkWidget* create_workspace_minimap(AppData* app);
+/* Show or hide the preview's tagbar / minimap in every workspace (a
+ * preference changed); otherwise each workspace keeps its own */
+void workspace_set_preview_tagbar(AppData* app, gboolean shown);
+void workspace_set_preview_minimap(AppData* app, gboolean enabled);
 /* Redraw the minimap (a workspace's layout changed) */
 void workspace_minimap_redraw(AppData* app);
 /* Forget the minimap and the layout being applied (at exit) */

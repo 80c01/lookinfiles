@@ -675,7 +675,9 @@ Layers, from bottom to top
 - `preview_menu` — the right-click menu of the preview: a section added to
   the text view's extra menu (after Copy Image) that shows or hides the
   tagbar (`preview_tagbar_toggle()`) and the preview's minimap
-  (`minimap_view_set_enabled()`), labels updated on each right click.
+  (`minimap_viewer_set_enabled()`) in the current workspace, labels
+  updated on each right click. `workspace` keeps both per workspace
+  (`VirtualLayout.preview_tagbar` / `preview_minimap`).
 - `preview_symbols` — the symbols of a source code preview: the built-in
   scanner (`code_scan`) on the text shown, in a worker, handed to
   `preview_tagbar_set_outline()` while the preview is current.

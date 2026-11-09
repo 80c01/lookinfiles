@@ -24,6 +24,7 @@ typedef struct PreviewTagbar {
     gint jump_line;            /* line of the entry gone to, -1 */
     GCancellable* jump_owner;  /* the preview it was in (referenced), or NULL */
     gboolean chord_k;          /* Ctrl+K pressed: Ctrl+O comes next */
+    gboolean wanted;           /* shown in the current workspace (when there are entries) */
 } PreviewTagbar;
 
 static void tagbar_free(PreviewTagbar* pt) {
@@ -115,7 +116,7 @@ static void refresh_now(PreviewTagbar* pt) {
         symbols = ((const CodeOutlineEntry*)g_ptr_array_index(entries, i))->level == 0;
     }
     outline_pane_set_entries(pt->pane, entries, !symbols, symbols ? _("built-in scanner") : NULL);
-    outline_pane_set_shown(pt->pane, pt->app->settings.preview_tagbar && entries->len > 0);
+    outline_pane_set_shown(pt->pane, pt->wanted && entries->len > 0);
     g_ptr_array_unref(entries);
 }
 
@@ -129,7 +130,7 @@ static gboolean on_refresh_timeout(gpointer data) {
 static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
     PreviewTagbar* pt = data;
-    if (!pt->app->settings.preview_tagbar) return; /* read again when turned on */
+    if (!pt->wanted) return; /* read again when turned on */
     g_clear_handle_id(&pt->refresh_source, g_source_remove);
     pt->refresh_source = g_timeout_add(REFRESH_DELAY_MS, on_refresh_timeout, pt);
 }
@@ -195,18 +196,33 @@ static void save_setting(AppData* app) {
     g_free(path);
 }
 
-static void toggle(PreviewTagbar* pt) {
-    preview_tagbar_set_shown(pt->app, !pt->app->settings.preview_tagbar);
+static void set_wanted(PreviewTagbar* pt, gboolean wanted) {
+    if (pt->wanted == wanted) return;
+    pt->wanted = wanted;
+    if (wanted) {
+        refresh_now(pt); /* the buffer was not followed while off */
+    } else {
+        outline_pane_set_shown(pt->pane, FALSE);
+    }
+}
+
+/* Show / hide in the current workspace, the focus in the tagbar or the
+ * text; save: also the preference (settings.ini), as o does */
+static void toggle(PreviewTagbar* pt, gboolean save) {
+    set_wanted(pt, !pt->wanted);
     if (outline_pane_shown(pt->pane)) {
         outline_pane_focus(pt->pane);
     } else {
         gtk_widget_grab_focus(GTK_WIDGET(pt->view));
     }
-    save_setting(pt->app);
+    if (save) {
+        pt->app->settings.preview_tagbar = pt->wanted;
+        save_setting(pt->app);
+    }
 }
 
 static void close_tagbar(gpointer data) {
-    toggle(data);
+    toggle(data, TRUE);
 }
 
 /* The navigation keys of the global mode */
@@ -245,6 +261,7 @@ GtkWidget* preview_tagbar_wrap(AppData* app, GtkWidget* content, GtkWidget* text
     pt->app = app;
     pt->view = GTK_TEXT_VIEW(text_view);
     pt->jump_line = -1;
+    pt->wanted = app->settings.preview_tagbar;
     app->preview_tagbar_state = pt;
     pt->pane = outline_pane_new(content, &app->editor_tagbar_width, _("Reading the headings…"), &callbacks, pt);
     GtkWidget* paned = outline_pane_widget(pt->pane);
@@ -264,7 +281,7 @@ gboolean preview_tagbar_key(AppData* app, guint keyval, GdkModifierType state) {
         /* Shift, Control... alone keep the chord waiting */
         if (keyval >= GDK_KEY_Shift_L && keyval <= GDK_KEY_Hyper_R) return FALSE;
         pt->chord_k = FALSE;
-        if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) toggle(pt);
+        if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) toggle(pt, TRUE);
         return TRUE;
     }
     if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_k || keyval == GDK_KEY_K)) {
@@ -272,7 +289,7 @@ gboolean preview_tagbar_key(AppData* app, guint keyval, GdkModifierType state) {
         return TRUE;
     }
     if (mods == 0 && keyval == GDK_KEY_o && app->nav_prefix == NAV_PREFIX_NONE) {
-        toggle(pt);
+        toggle(pt, TRUE);
         return TRUE;
     }
     return FALSE;
@@ -287,14 +304,14 @@ void preview_tagbar_set_outline(AppData* app, GCancellable* owner, GPtrArray* en
         pt->outline_owner = g_object_ref(owner);
         pt->outline = g_ptr_array_ref(entries);
     }
-    if (!app->settings.preview_tagbar) return;
+    if (!pt->wanted) return;
     g_clear_handle_id(&pt->refresh_source, g_source_remove);
     pt->refresh_source = g_timeout_add(REFRESH_DELAY_MS, on_refresh_timeout, pt);
 }
 
 void preview_tagbar_toggle(AppData* app) {
     PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
-    if (pt != NULL) toggle(pt);
+    if (pt != NULL) toggle(pt, FALSE);
 }
 
 gboolean preview_tagbar_available(AppData* app) {
@@ -313,15 +330,19 @@ gboolean preview_tagbar_shown(AppData* app) {
 }
 
 void preview_tagbar_set_shown(AppData* app, gboolean shown) {
-    PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
-    if (app == NULL || app->settings.preview_tagbar == shown) return;
+    if (app == NULL) return;
     app->settings.preview_tagbar = shown;
-    if (pt == NULL) return;
-    if (shown) {
-        refresh_now(pt); /* the buffer was not followed while off */
-    } else {
-        outline_pane_set_shown(pt->pane, FALSE);
-    }
+    preview_tagbar_set_wanted(app, shown);
+}
+
+void preview_tagbar_set_wanted(AppData* app, gboolean shown) {
+    PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
+    if (pt != NULL) set_wanted(pt, shown);
+}
+
+gboolean preview_tagbar_wanted(AppData* app) {
+    PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
+    return pt != NULL ? pt->wanted : app != NULL && app->settings.preview_tagbar;
 }
 
 void preview_tagbar_place(AppData* app) {

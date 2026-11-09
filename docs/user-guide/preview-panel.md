@@ -65,10 +65,12 @@ nested by level; for source code, its functions, types... found by the
 built-in scanner (no language server), grouped by kind (`s`: file order).
 It follows the scrolling; a click or `Enter` scrolls to a heading or symbol,
 `Esc` returns to the text, `q` hides it. Once turned on it appears in every
-preview that has headings or symbols (kept for the next start; also in
-Preferences, Editor page). **Show / Hide Tagbar** in the right-click menu
-of the preview does the same. In a large file, only the part first shown
-is listed.
+preview of the workspace that has headings or symbols; each workspace keeps
+its own choice, and new workspaces and the next start follow the last one
+made with `o` (also in Preferences, Editor page, which sets every
+workspace). **Show / Hide Tagbar** in the right-click menu of the preview
+does it for the current workspace only, not kept. In a large file, only
+the part first shown is listed.
 
 `e` opens the previewed text file in an editor tab; `t` (Vim) or `C-o`
 (Emacs) opens it in the dedicated editor panel.
@@ -76,8 +78,9 @@ is listed.
 On the right, the **minimap** shows the whole document in small, with the
 git change bars along its edge. Click or drag in it to scroll. To hide it
 (and get the scrollbar back), choose **Hide Minimap** in the right-click
-menu of the preview (until the next start), or untick **Show the minimap**
-in the Preferences, Editor page (every minimap, kept).
+menu of the preview (the current workspace only, not kept), or untick
+**Show the minimap** in the Preferences, Editor page (every minimap and
+workspace, kept).
 
 ## Images and PDF
 

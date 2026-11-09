@@ -10,6 +10,10 @@ GtkWidget* minimap_viewer_new(AppData* app);
 /* TRUE while the preview's minimap exists, is enabled, but is hidden (it
  * shows once the text is taller than the view) */
 gboolean minimap_viewer_is_hidden(AppData* app);
+/* Show or hide the preview's minimap (its workspace's choice) / whether it
+ * is enabled */
+void minimap_viewer_set_enabled(AppData* app, gboolean enabled);
+gboolean minimap_viewer_enabled(AppData* app);
 /* Drop the preview minimap's render (theme changed) */
 void minimap_viewer_cache_clear(AppData* app);
 /* Redraw the preview's minimap / check whether it should show */

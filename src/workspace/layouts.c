@@ -39,7 +39,7 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name) {
     l->tagbars = TRUE;
     l->editor_tagbar = app->settings.tagbar; /* the preference */
     l->editor_tagbar_as_is = TRUE;
-    l->preview_tagbar = app->settings.preview_tagbar;
+    l->preview_tagbar = preview_tagbar_wanted(app); /* this workspace's */
     l->tagbar_width = MAX(app->editor_tagbar_width, 0);
     return l;
 }

@@ -1004,6 +1004,14 @@ gboolean minimap_viewer_is_hidden(AppData* app) {
            !gtk_widget_get_visible(app->viewer_minimap);
 }
 
+void minimap_viewer_set_enabled(AppData* app, gboolean enabled) {
+    minimap_view_set_enabled(app->viewer_minimap, enabled);
+}
+
+gboolean minimap_viewer_enabled(AppData* app) {
+    return minimap_view_enabled(app->viewer_minimap);
+}
+
 void minimap_viewer_cache_clear(AppData* app) {
     minimap_view_cache_clear(app->viewer_minimap);
 }

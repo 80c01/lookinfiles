@@ -46,7 +46,7 @@ tagbar=false       # new code and Markdown tabs show the tagbar
 minimap=true       # editor tabs, the preview and Help show the minimap
 
 [Preview]
-tagbar=false       # previews with headings or symbols show the tagbar (o in the preview)
+tagbar=false       # previews with headings or symbols show the tagbar (o in the preview; new workspaces)
 
 [Window]
 width=1600

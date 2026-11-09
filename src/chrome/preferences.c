@@ -10,6 +10,7 @@
 #include "editor/editor_tagbar.h"
 #include "preview/preview_tagbar.h"
 #include "widgets/minimap.h"
+#include "workspace/workspace.h"
 #include "explorer/nav_keys.h"
 #include "search/search.h"
 #include "chrome/themes.h"
@@ -371,9 +372,12 @@ static void save_settings(Preferences* p) {
     if (s.tagbar != app->settings.tagbar) {
         editor_tagbar_set_shown(app, s.tagbar); /* every tab: only when changed */
     }
-    preview_tagbar_set_shown(app, s.preview_tagbar);
+    if (s.preview_tagbar != app->settings.preview_tagbar) {
+        workspace_set_preview_tagbar(app, s.preview_tagbar); /* every workspace: only when changed */
+    }
     if (s.minimap != app->settings.minimap) {
         minimap_set_enabled(s.minimap); /* every tab: only when changed */
+        workspace_set_preview_minimap(app, s.minimap);
     }
     gboolean column_changed = (s.color_column != app->settings.color_column);
     app->settings = s;
