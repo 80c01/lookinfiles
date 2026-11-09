@@ -10,6 +10,8 @@
 /* Shape of the current workspace's editor panel; "" when it is not shown
  * or holds no tab. Caller frees. */
 gchar* editor_layout_capture(AppData* app);
+/* Open file tabs and canvases, in the editor panel or the preview notebook */
+guint editor_layout_file_count(AppData* app);
 /* Terminal tabs in the current workspace's editor panel */
 guint editor_layout_terminal_count(AppData* app);
 /* Terminal tabs the shape text asks for */

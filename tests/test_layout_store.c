@@ -1,5 +1,6 @@
 /* Unit tests for src/workspace/layout_store.c: saved layouts file and terminal pane trees */
 #include "workspace/layout_store.h"
+#include "workspace/tab_tree.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -243,6 +244,32 @@ static void test_tagbars(void) {
     g_key_file_free(kf);
 }
 
+static void test_grid(void) {
+    static const guint panes[] = { 1, 1, 2, 3, 4, 4, 4 };
+    for (guint files = 0; files < G_N_ELEMENTS(panes); files++) {
+        gchar* text = layout_store_grid_splits(files);
+        TabTreeNode* tree = tab_tree_parse(text);
+        g_assert_nonnull(tree);
+        g_assert_cmpuint(tab_tree_notebook_count(tree), ==, panes[files]);
+        g_assert_cmpuint(tab_tree_terminal_count(tree), ==, 0);
+        tab_tree_free(tree);
+        g_free(text);
+    }
+
+    /* Auto keeps the panels and puts the files in the editor panel */
+    SavedLayout* current = saved_layout_new("Current");
+    current->term_vis = TRUE;
+    g_free(current->terminals);
+    current->terminals = g_strdup("H:0.500(T,T)");
+    SavedLayout* l = layout_store_auto(current, 3);
+    g_assert_cmpstr(l->name, ==, "Auto");
+    g_assert_true(l->editor_dedicated && l->term_vis && l->files_vis == current->files_vis);
+    g_assert_cmpstr(l->terminals, ==, "H:0.500(T,T)");
+    g_assert_cmpstr(l->editor_splits, ==, "H:0.500([0],V:0.500([0],[0]))");
+    saved_layout_free(l);
+    saved_layout_free(current);
+}
+
 static void test_presets(void) {
     GPtrArray* presets = layout_store_presets(NULL);
     g_assert_cmpuint(presets->len, ==, 3);
@@ -297,5 +324,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/layout_store/editor_splits", test_editor_splits);
     g_test_add_func("/layout_store/tagbars", test_tagbars);
     g_test_add_func("/layout_store/presets", test_presets);
+    g_test_add_func("/layout_store/grid", test_grid);
     return g_test_run();
 }

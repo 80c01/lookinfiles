@@ -4835,6 +4835,10 @@ msgstr "Code"
 msgid "Focus"
 msgstr "Focus"
 
+#: src/workspace/layout_store.c:251
+msgid "Auto"
+msgstr "Auto"
+
 #: src/workspace/layout_switcher.c:171 src/workspace/layout_switcher.c:195
 msgid "Current Layout"
 msgstr "Disposition actuelle"

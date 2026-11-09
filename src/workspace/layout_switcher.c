@@ -1,6 +1,7 @@
 /* Alt+L layout switcher: preview layouts from a popover (see layout_switcher.h) */
 #include "workspace/layout_switcher.h"
 #include "core/i18n.h"
+#include "workspace/editor_layout.h"
 #include "workspace/layout_store.h"
 #include "workspace/layouts.h"
 
@@ -13,7 +14,7 @@ typedef struct {
     GtkWidget* popover;
     GtkListBox* list;
     GtkEventController* motion;
-    GPtrArray* layouts; /* one per row: the current panels, the default, the saved ones, the presets */
+    GPtrArray* layouts; /* one per row: the current panels, the default, the saved ones, Auto, the presets */
     LayoutsPreview* preview; /* the arrangement at the start, put back unless one is applied */
     GtkWidget* focus;   /* the window's focus at the start (referenced) */
     guint preview_id;   /* pending preview timeout, 0 = none */
@@ -178,6 +179,14 @@ void layout_switcher_show(AppData* app) {
         g_ptr_array_add(s->layouts, saved_layout_copy(g_ptr_array_index(named, i)));
     }
     guint first_preset = s->layouts->len;
+    /* Auto: the open files in a grid, unless a saved layout took its name */
+    guint files = editor_layout_file_count(app);
+    SavedLayout* auto_layout = layout_store_auto(g_ptr_array_index(s->layouts, 0), files);
+    if (files > 0 && layout_store_find(named, auto_layout->name) == NULL) {
+        g_ptr_array_add(s->layouts, auto_layout);
+    } else {
+        saved_layout_free(auto_layout);
+    }
     GPtrArray* presets = layout_store_presets(named);
     for (guint i = 0; i < presets->len; i++) {
         g_ptr_array_add(s->layouts, saved_layout_copy(g_ptr_array_index(presets, i)));

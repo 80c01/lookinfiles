@@ -61,6 +61,14 @@ gboolean layout_store_is_customized(const SavedLayout* layout);
  * GPtrArray of SavedLayout* that frees its items. */
 GPtrArray* layout_store_presets(GPtrArray* saved);
 
+/* The Auto layout (name translated): current with the editor tabs in the
+ * dedicated panel, split as layout_store_grid_splits(files). Caller frees. */
+SavedLayout* layout_store_auto(const SavedLayout* current, guint files);
+/* editor_splits text of a grid for files open files: one pane, two side by
+ * side, one on the left and two stacked on the right, then two by two (more
+ * files share the panes as tabs). Caller frees. */
+gchar* layout_store_grid_splits(guint files);
+
 /* ~/.config/lookinfiles/layouts.ini. Caller frees. */
 gchar* layout_store_default_path(void);
 

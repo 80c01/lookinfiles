@@ -114,6 +114,33 @@ guint editor_layout_terminal_count(AppData* app) {
     return n;
 }
 
+static guint count_others(AppData* app, GtkNotebook* nb) {
+    guint n = 0;
+    for (gint p = 0; p < gtk_notebook_get_n_pages(nb); p++) {
+        n += is_other(app, gtk_notebook_get_nth_page(nb, p)) ? 1 : 0;
+    }
+    return n;
+}
+
+guint editor_layout_file_count(AppData* app) {
+    if (app == NULL) {
+        return 0;
+    }
+    guint n = 0;
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        n += (l->data != NULL) ? 1 : 0;
+    }
+    GPtrArray* nbs = editor_get_all_notebooks(app);
+    for (guint i = 0; i < nbs->len; i++) {
+        n += count_others(app, g_ptr_array_index(nbs, i));
+    }
+    g_ptr_array_unref(nbs);
+    if (app->notebook != NULL) {
+        n += count_others(app, GTK_NOTEBOOK(app->notebook));
+    }
+    return n;
+}
+
 guint editor_layout_wanted_terminals(const gchar* text) {
     TabTreeNode* tree = tab_tree_parse(text);
     guint n = tab_tree_terminal_count(tree);

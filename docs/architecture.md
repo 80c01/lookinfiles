@@ -82,7 +82,10 @@ Layers, from bottom to top
   `H:0.500(T,V:0.400(T,T))`), `layouts.ini` load/save, and the
   default layout of new workspaces (group `[Default]`, built-in if absent);
   `layout_store_presets()`: the built-in Code, Terminal and Focus layouts,
-  never written, each hidden by a saved layout of the same name.
+  never written, each hidden by a saved layout of the same name;
+  `layout_store_auto()` / `layout_store_grid_splits()`: the Auto layout,
+  the current panels with the editor panel split in a grid for the number
+  of open files (1, 2, 3, then 2×2).
 - `gif_decoder` — GIF frames composed on an RGBA canvas (LZW, interlacing,
   transparency, disposal, delays, loop count), played by `animation`
   (GdkPixbufAnimation is deprecated in gdk-pixbuf 2.44: never use it).
@@ -789,7 +792,8 @@ Layers, from bottom to top
   (`preferences_editor_mode()`, `preferences_apply_startup()`).
 - `layout_switcher` — the Alt+L layout list (top-bar grid button): a
   `GtkPopover` listing the current arrangement, the default, the saved
-  layouts and the built-in presets (below a separator); the hovered or selected row is shown in full after a short delay,
+  layouts, then below a separator Auto (with files open:
+  `editor_layout_file_count()`) and the built-in presets; the hovered or selected row is shown in full after a short delay,
   Enter or a click applies it, Escape restores the start; **Edit Layouts…** opens
   the `layouts` dialog. The previews are `layouts_preview_begin()` / `_show()` /
   `_end()` (in `layouts`): the start is an `EditorSnapshot`

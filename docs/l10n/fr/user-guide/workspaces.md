@@ -82,6 +82,13 @@ Elles ne peuvent pas être supprimées. Enregistrer une disposition sous le
 nom d’une disposition intégrée la remplace ; supprimer la vôtre fait
 revenir celle intégrée.
 
+Quand des fichiers sont ouverts, **Auto** vient en premier parmi elles : les
+panneaux restent tels quels, et les fichiers ouverts vont dans le panneau
+d’édition, en grille selon leur nombre : une zone pour un fichier, deux côte
+à côte pour deux, une à gauche et deux empilées à droite pour trois, deux
+par deux à partir de quatre (au-delà, les fichiers se partagent les zones
+en onglets ; le fichier courant reste dans la première zone).
+
 Les dispositions sont enregistrées dans `~/.config/lookinfiles/layouts.ini`.
 Appliquer une disposition garde ensuite ses barres de symboles activées ou
 non, comme le font leurs touches ; un nouvel espace de travail garde les

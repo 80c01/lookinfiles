@@ -231,6 +231,33 @@ GPtrArray* layout_store_presets(GPtrArray* saved) {
     return presets;
 }
 
+gchar* layout_store_grid_splits(guint files) {
+    switch (files) {
+    case 0:
+    case 1:
+        return g_strdup("[0]");
+    case 2:
+        return g_strdup("H:0.500([0],[0])");
+    case 3:
+        return g_strdup("H:0.500([0],V:0.500([0],[0]))");
+    default:
+        return g_strdup("H:0.500(V:0.500([0],[0]),V:0.500([0],[0]))");
+    }
+}
+
+SavedLayout* layout_store_auto(const SavedLayout* current, guint files) {
+    SavedLayout* l = saved_layout_copy(current);
+    g_free(l->name);
+    l->name = g_strdup(_("Auto"));
+    if (!current->editor_dedicated) {
+        l->editor_frac = 0.40; /* the editor panel opens beside the preview: give it the room */
+    }
+    l->editor_dedicated = TRUE;
+    g_free(l->editor_splits);
+    l->editor_splits = layout_store_grid_splits(files);
+    return l;
+}
+
 gboolean layout_store_is_customized(const SavedLayout* l) {
     SavedLayout* d = layout_store_builtin_default();
     gboolean differs = l->files_vis != d->files_vis || l->preview_vis != d->preview_vis ||

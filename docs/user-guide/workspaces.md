@@ -69,6 +69,12 @@ Three layouts come built in, below a line at the end of the list:
 They cannot be deleted. Saving a layout under the name of a built-in one
 replaces it; deleting yours brings the built-in one back.
 
+With files open, **Auto** comes first among them: the panels stay as they
+are, and the open files go to the editor panel in a grid made for their
+number: one pane for one file, two side by side for two, one on the left
+and two stacked on the right for three, two by two from four (more files
+share the panes as tabs; the current file stays in the first pane).
+
 Layouts are saved in `~/.config/lookinfiles/layouts.ini`. Applying a
 layout keeps its tagbars on or off afterwards, as their toggle keys do; a
 new workspace keeps the current tagbars, since they are shared by all
