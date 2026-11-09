@@ -79,6 +79,48 @@ static void test_notebook(void) {
     g_object_unref(root);
 }
 
+/* The typed lines summary_view draws: icons come from the rows */
+static void test_lines(void) {
+    ExplorerRow* root = explorer_row_new_root();
+    ExplorerRow* nb = add_row(root, "notebook", "General", "/notes/General", "");
+    explorer_row_set_glyph(nb, "notebook");
+    ExplorerRow* n = add_row(nb, "note", "plan", "/notes/General/plan.md", "md");
+    explorer_row_set_icon_name(n, "plan.md");
+    GPtrArray* lines = preview_summary_container_lines(nb);
+    const PreviewSummaryLine* title = g_ptr_array_index(lines, 0);
+    g_assert_cmpint(title->kind, ==, PREVIEW_SUMMARY_TITLE);
+    g_assert_cmpstr(title->glyph, ==, "notebook");
+    const PreviewSummaryLine* field = g_ptr_array_index(lines, 1);
+    g_assert_cmpint(field->kind, ==, PREVIEW_SUMMARY_FIELD);
+    g_assert_cmpstr(field->text, ==, "Notes");
+    g_assert_cmpstr(field->detail, ==, "1");
+    gboolean seen_item = FALSE;
+    for (guint i = 0; i < lines->len; i++) {
+        const PreviewSummaryLine* line = g_ptr_array_index(lines, i);
+        if (line->kind == PREVIEW_SUMMARY_ITEM) {
+            g_assert_cmpstr(line->text, ==, "plan");
+            g_assert_cmpstr(line->detail, ==, "Markdown");
+            g_assert_null(line->glyph);
+            g_assert_cmpstr(line->file_icon, ==, "plan.md");
+            g_assert_cmpint(preview_summary_item_width(lines, i), ==, 4);
+            seen_item = TRUE;
+        }
+    }
+    g_assert_true(seen_item);
+    g_ptr_array_unref(lines);
+
+    /* An empty notebook has no Notes heading, only a note */
+    ExplorerRow* empty = add_row(root, "notebook", "Empty", "/notes/Empty", "");
+    lines = preview_summary_container_lines(empty);
+    for (guint i = 0; i < lines->len; i++) {
+        const PreviewSummaryLine* line = g_ptr_array_index(lines, i);
+        g_assert_false(line->kind == PREVIEW_SUMMARY_HEADING && g_strcmp0(line->text, "Notes") == 0);
+    }
+    g_ptr_array_unref(lines);
+    g_assert_null(preview_summary_container_lines(n));
+    g_object_unref(root);
+}
+
 static void test_canvas(void) {
     g_autofree gchar* tmp = g_dir_make_tmp("summary-XXXXXX", NULL);
     g_autofree gchar* dir = g_build_filename(tmp, "Board.canvas", NULL);
@@ -156,5 +198,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_summary/notebook", test_notebook);
     g_test_add_func("/preview_summary/bookmark_folder_and_trash", test_bookmark_folder_and_trash);
     g_test_add_func("/preview_summary/canvas", test_canvas);
+    g_test_add_func("/preview_summary/lines", test_lines);
     return g_test_run();
 }

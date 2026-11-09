@@ -1,4 +1,4 @@
-/* Text summaries for explorer rows without file content (see preview_summary.h). */
+/* Summaries for explorer rows without file content (see preview_summary.h). */
 #include "preview/preview_summary.h"
 #include "core/i18n.h"
 #include "notes/note_types.h"
@@ -8,45 +8,53 @@
 
 #define FIELD_WIDTH 14 /* label column of "Label: value" lines */
 #define KEY_WIDTH   26 /* key column of the shortcut lists */
-#define ITEM_NAME_MAX    40 /* name column of item lists (longer names are not padded) */
 
 typedef struct {
     const gchar* keys;
     const gchar* action;
 } SummaryShortcut;
 
-/* Append text padded with spaces to width characters */
-static void append_padded(GString* s, const gchar* text, gint width) {
-    g_string_append(s, text);
-    for (glong n = g_utf8_strlen(text, -1); n < width; n++) {
-        g_string_append_c(s, ' ');
+static void line_free(gpointer data) {
+    PreviewSummaryLine* line = data;
+    g_free(line->text);
+    g_free(line->detail);
+    g_free(line->glyph);
+    g_free(line->file_icon);
+    g_free(line);
+}
+
+static GPtrArray* lines_new(void) {
+    return g_ptr_array_new_with_free_func(line_free);
+}
+
+/* Empty strings are stored as NULL */
+static gchar* dup_or_null(const gchar* s) {
+    return (s != NULL && s[0] != '\0') ? g_strdup(s) : NULL;
+}
+
+static PreviewSummaryLine* add_line(GPtrArray* lines, PreviewSummaryKind kind,
+                                    const gchar* text, const gchar* detail) {
+    PreviewSummaryLine* line = g_new0(PreviewSummaryLine, 1);
+    line->kind = kind;
+    line->text = g_strdup(text != NULL ? text : "");
+    line->detail = dup_or_null(detail);
+    g_ptr_array_add(lines, line);
+    return line;
+}
+
+/* The icon a row shows in the explorer: its glyph, else its file-type icon */
+static void line_set_row_icon(PreviewSummaryLine* line, ExplorerRow* row) {
+    line->glyph = dup_or_null(row->glyph);
+    if (line->glyph == NULL) {
+        line->file_icon = dup_or_null(row->icon_name);
     }
 }
 
-static void append_title(GString* s, const gchar* title) {
-    g_string_append_printf(s, "%s\n", title);
-    for (glong n = g_utf8_strlen(title, -1); n > 0; n--) {
-        g_string_append_c(s, '=');
-    }
-    g_string_append(s, "\n\n");
-}
-
-/* "  Label:        value" */
-static void append_field(GString* s, const gchar* label, const gchar* value) {
-    /* TRANSLATORS: a field label followed by its value, "Host: example.org" */
-    gchar* with_colon = g_strdup_printf(_("%s:"), label);
-    g_string_append(s, "  ");
-    append_padded(s, with_colon, FIELD_WIDTH);
-    g_string_append_printf(s, " %s\n", value);
-    g_free(with_colon);
-}
-
-static void append_shortcuts(GString* s, const SummaryShortcut* list, gsize count) {
-    g_string_append_printf(s, "\n%s\n", _("Shortcuts:"));
+static void add_shortcuts(GPtrArray* lines, const SummaryShortcut* list, gsize count) {
+    add_line(lines, PREVIEW_SUMMARY_HEADING, _("Shortcuts"), NULL);
     for (gsize i = 0; i < count; i++) {
-        g_string_append(s, "  • ");
-        append_padded(s, g_dpgettext2(GETTEXT_PACKAGE, "key", list[i].keys), KEY_WIDTH);
-        g_string_append_printf(s, " %s\n", _(list[i].action));
+        add_line(lines, PREVIEW_SUMMARY_KEY, g_dpgettext2(GETTEXT_PACKAGE, "key", list[i].keys),
+                 _(list[i].action));
     }
 }
 
@@ -60,7 +68,7 @@ static gchar* markup_to_text(const gchar* markup) {
     return text;
 }
 
-gchar* preview_summary_remote(const RemoteMachine* rm) {
+GPtrArray* preview_summary_remote_lines(const RemoteMachine* rm) {
     if (rm == NULL) {
         return NULL;
     }
@@ -72,45 +80,36 @@ gchar* preview_summary_remote(const RemoteMachine* rm) {
         {"a", N_("Add new remote machine")},
         {"F5", N_("Re-scan ~/.ssh/config")},
     };
-    GString* s = g_string_new(NULL);
+    GPtrArray* lines = lines_new();
     gchar* title = g_strdup_printf(_("Remote Machine: %s"), rm->name ? rm->name : _("Unknown"));
-    append_title(s, title);
+    PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+    head->glyph = g_strdup(rm->is_connected ? "remote-connected" : "remote");
     g_free(title);
 
-    append_field(s, _("Status"), rm->is_connected ? _("Connected (Mounted via SSHFS)") : _("Disconnected"));
-    append_field(s, _("Host"), rm->host ? rm->host : _("(none)"));
-    append_field(s, _("User"), (rm->user && *rm->user) ? rm->user : _("(default)"));
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Status"),
+             rm->is_connected ? _("Connected (Mounted via SSHFS)") : _("Disconnected"));
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Host"), rm->host ? rm->host : _("(none)"));
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("User"),
+             (rm->user && *rm->user) ? rm->user : _("(default)"));
     gchar* port = g_strdup_printf("%d", rm->port);
-    append_field(s, _("Port"), port);
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Port"), port);
     g_free(port);
-    append_field(s, _("Remote Path"), rm->remote_path ? rm->remote_path : "~");
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Remote Path"), rm->remote_path ? rm->remote_path : "~");
     if (rm->identity_file && *rm->identity_file) {
-        append_field(s, _("Identity Key"), rm->identity_file);
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Identity Key"), rm->identity_file);
     }
     if (rm->is_connected && rm->mount_point) {
-        append_field(s, _("Mount Point"), rm->mount_point);
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Mount Point"), rm->mount_point);
     }
-    append_field(s, _("Source"), rm->from_ssh_config ? _("Auto-discovered from ~/.ssh/config")
-                                                  : _("Configured manually"));
-    append_shortcuts(s, keys, G_N_ELEMENTS(keys));
-    return g_string_free(s, FALSE);
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Source"),
+             rm->from_ssh_config ? _("Auto-discovered from ~/.ssh/config") : _("Configured manually"));
+    add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
+    return lines;
 }
 
 /* Human-readable note format from the note row badge ("md", "org" or empty) */
 static const gchar* note_format_name(const gchar* badge_text) {
     return note_type_name(note_type_from_badge(badge_text));
-}
-
-typedef struct {
-    gchar* name;
-    gchar* detail;
-} SummaryItem;
-
-static void summary_item_free(gpointer data) {
-    SummaryItem* item = (SummaryItem*)data;
-    g_free(item->name);
-    g_free(item->detail);
-    g_free(item);
 }
 
 /* Children of a row, placeholders (type "-") excluded */
@@ -124,7 +123,13 @@ static guint count_items(ExplorerRow* row) {
     return n;
 }
 
-gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
+static void add_count(GPtrArray* lines, const gchar* label, guint n) {
+    gchar* text = g_strdup_printf("%u", n);
+    add_line(lines, PREVIEW_SUMMARY_FIELD, label, text);
+    g_free(text);
+}
+
+GPtrArray* preview_summary_canvas_lines(const gchar* name, const gchar* path) {
     if (path == NULL || note_type_from_filename(path) != NOTE_TYPE_CANVAS ||
         !g_file_test(path, G_FILE_TEST_IS_DIR)) {
         return NULL;
@@ -135,9 +140,10 @@ gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
         {"m", N_("Move the note to another notebook")},
         {"d / Delete", N_("Move the note to the trash")},
     };
-    GString* s = g_string_new(NULL);
+    GPtrArray* lines = lines_new();
     gchar* title = g_strdup_printf(_("Canvas: %s"), name != NULL ? name : "");
-    append_title(s, title);
+    PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+    head->file_icon = g_path_get_basename(path);
     g_free(title);
 
     /* Bounded read: a larger page is only opened in the Canvas tab */
@@ -163,43 +169,75 @@ gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
                 tables++;
             }
         }
-        gchar* n = g_strdup_printf("%u", texts);
-        append_field(s, _("Text boxes"), n);
-        g_free(n);
-        n = g_strdup_printf("%u", pictures);
-        append_field(s, _("Pictures"), n);
-        g_free(n);
+        add_count(lines, _("Text boxes"), texts);
+        add_count(lines, _("Pictures"), pictures);
         if (shapes > 0) {
-            n = g_strdup_printf("%u", shapes);
-            append_field(s, _("Shapes"), n);
-            g_free(n);
+            add_count(lines, _("Shapes"), shapes);
         }
         if (tables > 0) {
-            n = g_strdup_printf("%u", tables);
-            append_field(s, _("Tables"), n);
-            g_free(n);
+            add_count(lines, _("Tables"), tables);
         }
     }
-    append_field(s, _("Location"), path);
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Location"), path);
     if (doc != NULL) {
         gchar* md = canvas_doc_to_markdown(doc, NULL);
-        g_string_append_printf(s, "\n%s", md[0] != '\0' ? md : _("(empty)\n"));
+        if (md[0] != '\0') {
+            add_line(lines, PREVIEW_SUMMARY_TEXT, md, NULL);
+        } else {
+            add_line(lines, PREVIEW_SUMMARY_NOTE, _("(empty)"), NULL);
+        }
         g_free(md);
         canvas_doc_free(doc);
     } else {
-        g_string_append(s, too_large ? _("\n(too large to preview: Enter opens it)\n") : _("\n(unreadable page)\n"));
+        add_line(lines, PREVIEW_SUMMARY_NOTE,
+                 too_large ? _("(too large to preview: Enter opens it)") : _("(unreadable page)"), NULL);
     }
-    append_shortcuts(s, keys, G_N_ELEMENTS(keys));
-    return g_string_free(s, FALSE);
+    add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
+    return lines;
 }
 
-gchar* preview_summary_container(ExplorerRow* row) {
+/* One line per child, placeholder rows (type "-") skipped */
+static guint add_items(GPtrArray* lines, ExplorerRow* row) {
+    guint n = 0;
+    for (guint i = 0; i < explorer_row_n_children(row); i++) {
+        ExplorerRow* child = explorer_row_child(row, i);
+        if (explorer_row_is(child, "-")) {
+            continue;
+        }
+        gchar* badge_text = markup_to_text(child->badge);
+        gchar* name = NULL;
+        gchar* detail = NULL;
+        if (explorer_row_is(child, "bm_folder")) {
+            name = g_strdup_printf("%s/", child->name);
+            guint count = count_items(child);
+            detail = g_strdup_printf(ngettext("folder, %u item", "folder, %u items", count), count);
+        } else if (explorer_row_is(child, "bookmark")) {
+            name = g_strdup(child->name);
+            detail = g_strdup(child->path);
+        } else if (explorer_row_is(child, "note")) {
+            name = g_strdup(child->name);
+            detail = g_strdup(note_format_name(badge_text));
+        } else {
+            name = g_strdup(child->name);
+            detail = g_strdup(badge_text); /* e.g. "from General" */
+        }
+        PreviewSummaryLine* line = add_line(lines, PREVIEW_SUMMARY_ITEM, name, detail);
+        line_set_row_icon(line, child);
+        g_free(name);
+        g_free(detail);
+        g_free(badge_text);
+        n++;
+    }
+    return n;
+}
+
+GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
     if (row == NULL) {
         return NULL;
     }
-    const gchar* name = row->name;
+    const gchar* name = row->name ? row->name : "";
     const gchar* path = row->path;
-    gchar* canvas = preview_summary_canvas(name, path);
+    GPtrArray* canvas = preview_summary_canvas_lines(name, path);
     if (canvas != NULL) {
         return canvas;
     }
@@ -211,84 +249,43 @@ gchar* preview_summary_container(ExplorerRow* row) {
         return NULL;
     }
 
-    /* Collect the children, skipping placeholder rows (type "-") */
-    GPtrArray* items = g_ptr_array_new_with_free_func(summary_item_free);
-    glong name_width = 0;
-    for (guint i = 0; i < explorer_row_n_children(row); i++) {
-        ExplorerRow* child = explorer_row_child(row, i);
-        if (explorer_row_is(child, "-")) {
-            continue;
-        }
-        SummaryItem* item = g_new0(SummaryItem, 1);
-        gchar* badge_text = markup_to_text(child->badge);
-        if (explorer_row_is(child, "bm_folder")) {
-            item->name = g_strdup_printf("%s/", child->name);
-            guint n = count_items(child);
-            item->detail = g_strdup_printf(ngettext("folder, %u item", "folder, %u items", n), n);
-        } else if (explorer_row_is(child, "bookmark")) {
-            item->name = g_strdup(child->name);
-            item->detail = g_strdup(child->path);
-        } else if (explorer_row_is(child, "note")) {
-            item->name = g_strdup(child->name);
-            item->detail = g_strdup(note_format_name(badge_text));
-        } else {
-            item->name = g_strdup(child->name);
-            item->detail = g_strdup(badge_text); /* e.g. "from General" */
-        }
-        g_free(badge_text);
-        name_width = MAX(name_width, MIN(g_utf8_strlen(item->name, -1), ITEM_NAME_MAX));
-        g_ptr_array_add(items, item);
-    }
-
-    GString* s = g_string_new(NULL);
-    gchar* count = g_strdup_printf("%u", items->len);
+    GPtrArray* lines = lines_new();
+    gchar* title = NULL;
+    const gchar* count_label = NULL;
     const gchar* list_title = NULL;
+    gboolean show_path = FALSE;
     if (is_notebook) {
-        gchar* title = g_strdup_printf(_("Notebook: %s"), name ? name : "");
-        append_title(s, title);
-        g_free(title);
-        append_field(s, _("Notes"), count);
-        if (path != NULL && path[0] != '\0') {
-            append_field(s, _("Location"), path);
-        }
+        title = g_strdup_printf(_("Notebook: %s"), name);
+        count_label = _("Notes");
         list_title = _("Notes");
+        show_path = TRUE;
     } else if (is_bm_folder) {
-        gchar* title = g_strdup_printf(_("Bookmark Folder: %s"), name ? name : "");
-        append_title(s, title);
-        g_free(title);
-        append_field(s, _("Items"), count);
+        title = g_strdup_printf(_("Bookmark Folder: %s"), name);
+        count_label = _("Items");
         list_title = _("Contents");
     } else if (is_remote_folder) {
-        gchar* title = g_strdup_printf(_("Remote Folder: %s"), name ? name : "");
-        append_title(s, title);
-        g_free(title);
-        append_field(s, _("Machines"), count);
+        title = g_strdup_printf(_("Remote Folder: %s"), name);
+        count_label = _("Machines");
         list_title = _("Machines");
     } else {
-        append_title(s, _("Trash"));
-        append_field(s, _("Notes"), count);
-        if (path != NULL && path[0] != '\0') {
-            append_field(s, _("Location"), path);
-        }
+        title = g_strdup(_("Trash"));
+        count_label = _("Notes");
         list_title = _("Trashed notes");
+        show_path = TRUE;
     }
-    g_free(count);
+    PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+    line_set_row_icon(head, row);
+    g_free(title);
+    add_count(lines, count_label, count_items(row));
+    if (show_path && path != NULL && path[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Location"), path);
+    }
 
-    if (items->len > 0) {
-        gchar* heading = g_strdup_printf(_("%s:"), list_title);
-        g_string_append_printf(s, "\n%s\n", heading);
-        g_free(heading);
-        for (guint i = 0; i < items->len; i++) {
-            SummaryItem* item = (SummaryItem*)g_ptr_array_index(items, i);
-            g_string_append(s, "  • ");
-            append_padded(s, item->name, (gint)name_width);
-            if (item->detail != NULL && item->detail[0] != '\0') {
-                g_string_append_printf(s, "   %s", item->detail);
-            }
-            g_string_append_c(s, '\n');
-        }
-    } else {
-        g_string_append(s, _("\n(empty)\n"));
+    guint heading_at = lines->len;
+    add_line(lines, PREVIEW_SUMMARY_HEADING, list_title, NULL);
+    if (add_items(lines, row) == 0) {
+        g_ptr_array_remove_index(lines, heading_at);
+        add_line(lines, PREVIEW_SUMMARY_NOTE, _("(empty)"), NULL);
     }
 
     if (is_notebook) {
@@ -298,7 +295,7 @@ gchar* preview_summary_container(ExplorerRow* row) {
             {"d / Delete", N_("Delete notebook")},
             {"Shift+K / Shift+J", N_("Move notebook up / down")},
         };
-        append_shortcuts(s, keys, G_N_ELEMENTS(keys));
+        add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
     } else if (is_bm_folder) {
         static const SummaryShortcut keys[] = {
             {"Enter / l", N_("Expand / collapse folder")},
@@ -307,7 +304,7 @@ gchar* preview_summary_container(ExplorerRow* row) {
             {"d / Delete", N_("Delete folder")},
             {"Shift+K / Shift+J", N_("Move folder up / down")},
         };
-        append_shortcuts(s, keys, G_N_ELEMENTS(keys));
+        add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
     } else if (is_remote_folder) {
         static const SummaryShortcut keys[] = {
             {"Enter / l", N_("Expand / collapse folder")},
@@ -315,16 +312,116 @@ gchar* preview_summary_container(ExplorerRow* row) {
             {"F2 / r / e", N_("Edit folder (name and icon)")},
             {"d / Delete", N_("Delete folder (its machines move to the top level)")},
         };
-        append_shortcuts(s, keys, G_N_ELEMENTS(keys));
+        add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
     } else {
         static const SummaryShortcut keys[] = {
             {"Shift+R", N_("Restore the selected trashed note to its notebook")},
             {"d / Delete", N_("Delete the selected trashed note permanently")},
             {NC_("key", "Trash toolbar button"), N_("Empty the trash")},
         };
-        append_shortcuts(s, keys, G_N_ELEMENTS(keys));
+        add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
     }
+    return lines;
+}
 
-    g_ptr_array_free(items, TRUE);
+/* ---- Plain text form ---- */
+
+/* Append text padded with spaces to width characters */
+static void append_padded(GString* s, const gchar* text, glong width) {
+    g_string_append(s, text);
+    for (glong n = g_utf8_strlen(text, -1); n < width; n++) {
+        g_string_append_c(s, ' ');
+    }
+}
+
+static gchar* with_colon(const gchar* label) {
+    /* TRANSLATORS: a field label or a list heading followed by a colon, "Host:" */
+    return g_strdup_printf(_("%s:"), label);
+}
+
+glong preview_summary_item_width(GPtrArray* lines, guint i) {
+    glong width = 0;
+    for (; i < lines->len; i++) {
+        const PreviewSummaryLine* line = g_ptr_array_index(lines, i);
+        if (line->kind != PREVIEW_SUMMARY_ITEM) {
+            break;
+        }
+        width = MAX(width, MIN(g_utf8_strlen(line->text, -1), PREVIEW_SUMMARY_NAME_MAX));
+    }
+    return width;
+}
+
+gchar* preview_summary_to_text(GPtrArray* lines) {
+    if (lines == NULL) {
+        return NULL;
+    }
+    GString* s = g_string_new(NULL);
+    glong item_width = 0;
+    for (guint i = 0; i < lines->len; i++) {
+        const PreviewSummaryLine* line = g_ptr_array_index(lines, i);
+        switch (line->kind) {
+        case PREVIEW_SUMMARY_TITLE:
+            g_string_append_printf(s, "%s\n", line->text);
+            for (glong n = g_utf8_strlen(line->text, -1); n > 0; n--) {
+                g_string_append_c(s, '=');
+            }
+            g_string_append(s, "\n\n");
+            break;
+        case PREVIEW_SUMMARY_FIELD: {
+            gchar* label = with_colon(line->text);
+            g_string_append(s, "  ");
+            append_padded(s, label, FIELD_WIDTH);
+            g_string_append_printf(s, " %s\n", line->detail ? line->detail : "");
+            g_free(label);
+            break;
+        }
+        case PREVIEW_SUMMARY_HEADING: {
+            gchar* heading = with_colon(line->text);
+            g_string_append_printf(s, "\n%s\n", heading);
+            g_free(heading);
+            item_width = preview_summary_item_width(lines, i + 1);
+            break;
+        }
+        case PREVIEW_SUMMARY_ITEM:
+            g_string_append(s, "  • ");
+            append_padded(s, line->text, item_width);
+            if (line->detail != NULL) {
+                g_string_append_printf(s, "   %s", line->detail);
+            }
+            g_string_append_c(s, '\n');
+            break;
+        case PREVIEW_SUMMARY_KEY:
+            g_string_append(s, "  • ");
+            append_padded(s, line->text, KEY_WIDTH);
+            g_string_append_printf(s, " %s\n", line->detail ? line->detail : "");
+            break;
+        case PREVIEW_SUMMARY_NOTE:
+            g_string_append_printf(s, "\n%s\n", line->text);
+            break;
+        case PREVIEW_SUMMARY_TEXT:
+            g_string_append_printf(s, "\n%s", line->text);
+            break;
+        }
+    }
     return g_string_free(s, FALSE);
+}
+
+static gchar* to_text_and_free(GPtrArray* lines) {
+    gchar* text = preview_summary_to_text(lines);
+    if (lines != NULL) {
+        g_ptr_array_unref(lines);
+    }
+    return text;
+}
+
+gchar* preview_summary_remote(const RemoteMachine* rm) {
+    return to_text_and_free(preview_summary_remote_lines(rm));
+}
+
+gchar* preview_summary_container(ExplorerRow* row) {
+    return to_text_and_free(preview_summary_container_lines(row));
+}
+
+gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
+    return to_text_and_free(preview_summary_canvas_lines(name, path));
 }

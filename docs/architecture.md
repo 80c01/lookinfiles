@@ -415,9 +415,10 @@ Layers, from bottom to top
   of `app->sidebar_view` outside the workspace switch).
 - `remote_store` — `RemoteMachine` list and `RemoteFolder`s, `remotes.xml`, `~/.ssh/config`
   discovery, lookups (unit-tested).
-- `preview_summary` — text summaries shown in the preview for rows without
-  file content (remote machine, notebook, bookmark folder, trash); columns
-  padded for a monospace font (unit-tested).
+- `preview_summary` — summaries shown in the preview for rows without
+  file content (remote machine, notebook, bookmark folder, trash, Canvas
+  note) as typed lines (title, fields, headings, items, keys), and their
+  plain text with columns padded for a monospace font (unit-tested).
 - `preview_state` — what the preview shows, in a private struct: the file
   (`preview_state_path()`, `_name()`, `_set_file()`), its detected kind,
   content type and encoding (`_set_detected()`), raw or rendered view
@@ -567,6 +568,8 @@ Layers, from bottom to top
   never add a format-specific branch to the viewer. Its results are kept in a
   `preview_cache`: a file selected again is shown at once, and the worker
   only checks the file's stamp (it reads and shows the file again if changed).
+- `summary_view` — draws a `preview_summary` in the preview in the style of
+  the directory preview (icons, section bands, columns on tab stops).
 - `dir_preview` — directory preview (`dir_preview_show()`): one level read
   in a worker thread after a short delay (never recursive), header and table.
   A folder seen before is shown at once from a `preview_cache`, and drawn

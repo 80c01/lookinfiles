@@ -4,6 +4,7 @@
 #include "canvas/canvas_preview.h"
 #include "media/image_preview.h"
 #include "preview/preview_summary.h"
+#include "preview/summary_view.h"
 #include "explorer/fs_watch.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
@@ -863,12 +864,18 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
                         app->sidebar_view == SIDEBAR_VIEW_GAMES);
     gboolean is_remote = (g_strcmp0(type, "remote") == 0);
     gchar* summary = NULL;
+    GPtrArray* summary_lines = NULL; /* drawn by summary_view, except for Canvas notes */
+    gboolean is_canvas = full != NULL && note_type_from_filename(full) == NOTE_TYPE_CANVAS;
     if (is_game) {
         summary = games_get_preview_summary(row);
     } else if (is_remote) {
-        summary = preview_summary_remote(remote_find_by_id(app, full));
+        summary_lines = preview_summary_remote_lines(remote_find_by_id(app, full));
     } else {
-        summary = preview_summary_container(row);
+        summary_lines = preview_summary_container_lines(row);
+        if (summary_lines != NULL && is_canvas) {
+            summary = preview_summary_to_text(summary_lines);
+            g_clear_pointer(&summary_lines, g_ptr_array_unref);
+        }
     }
     /* A bookmark's target is never read here (a slow mount would freeze the
      * window): its kind comes from bookmark_icon_check(), which selects the
@@ -878,7 +885,7 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     if (is_bookmark && bm_kind == PATH_KIND_UNKNOWN && !bookmark_target_is_uri(full)) {
         summary = g_strdup_printf(_("%s\n%s\n\n(waiting for the file system…)\n"), name, full);
     }
-    if (is_remote || summary != NULL) {
+    if (is_remote || summary != NULL || summary_lines != NULL) {
         if (!reloading_selection && !app->editor_dedicated && app->notebook != NULL) {
             gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
         }
@@ -893,12 +900,18 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
             g_cancellable_cancel(app->preview_cancellable);
             g_clear_object(&app->preview_cancellable);
         }
-        if (summary != NULL && app->buffer != NULL) {
+        if (summary_lines != NULL && app->buffer != NULL) {
+            apply_viewer_language(app, NULL, NULL);
+            set_view_monospace(app->text_view, FALSE);
+            gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_WORD_CHAR);
+            set_view_text_padding(app->text_view);
+            summary_view_render(app->text_view, summary_lines);
+        } else if (summary != NULL && app->buffer != NULL) {
             apply_viewer_language(app, NULL, NULL);
             gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(app->text_view), GTK_WRAP_NONE);
             set_view_text_padding(app->text_view);
             set_view_monospace(app->text_view, TRUE); /* summary columns are space-aligned */
-            if (full != NULL && note_type_from_filename(full) == NOTE_TYPE_CANVAS) {
+            if (is_canvas) {
                 /* The page as the Canvas tab draws it; else the text
                  * summary with its pictures */
                 if (canvas_preview_show(app, full)) {
@@ -911,6 +924,9 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
             }
         }
         g_free(summary);
+        if (summary_lines != NULL) {
+            g_ptr_array_unref(summary_lines);
+        }
         preview_state_set_file(app, NULL, NULL);
         monitor_file(app, NULL);
 

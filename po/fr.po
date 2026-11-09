@@ -6681,8 +6681,8 @@ msgid "%s:"
 msgstr "%s :"
 
 #: src/preview/preview_summary.c:45
-msgid "Shortcuts:"
-msgstr "Raccourcis :"
+msgid "Shortcuts"
+msgstr "Raccourcis"
 
 #: src/preview/preview_summary.c:68
 msgctxt "key"
@@ -6803,25 +6803,13 @@ msgstr "Formes"
 msgid "Tables"
 msgstr "Tableaux"
 
-#: src/preview/preview_summary.c:186
-msgid "(empty)\n"
-msgstr "(vide)\n"
+#: src/preview/preview_summary.c:190
+msgid "(too large to preview: Enter opens it)"
+msgstr "(trop grand pour l’aperçu : Enter l’ouvre)"
 
 #: src/preview/preview_summary.c:190
-msgid ""
-"\n"
-"(too large to preview: Enter opens it)\n"
-msgstr ""
-"\n"
-"(trop grand pour l’aperçu : Enter l’ouvre)\n"
-
-#: src/preview/preview_summary.c:190
-msgid ""
-"\n"
-"(unreadable page)\n"
-msgstr ""
-"\n"
-"(page illisible)\n"
+msgid "(unreadable page)"
+msgstr "(page illisible)"
 
 #: src/preview/preview_summary.c:227
 #, c-format
@@ -6856,14 +6844,6 @@ msgstr "Machines"
 #: src/preview/preview_summary.c:273
 msgid "Trashed notes"
 msgstr "Notes à la corbeille"
-
-#: src/preview/preview_summary.c:291
-msgid ""
-"\n"
-"(empty)\n"
-msgstr ""
-"\n"
-"(vide)\n"
 
 #: src/preview/preview_summary.c:296
 msgid "New note / new notebook"
