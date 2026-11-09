@@ -364,6 +364,7 @@ void preferences_show(AppData* app, const gchar* section) {
     gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(sidebar), p.stack);
     gtk_widget_set_name(sidebar, "preferences-sections");
     GtkWidget* body = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_name(body, "preferences-body");
     gtk_box_append(GTK_BOX(body), sidebar);
     gtk_box_append(GTK_BOX(body), stack);
     gtk_box_append(GTK_BOX(app_dialog_get_content_area(p.dialog)), body);

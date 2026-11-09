@@ -785,7 +785,9 @@ void apply_panel_borders(void) {
         "}\n"
         ".dialog-card .dialog-title {\n"
         "  font-weight: bold;\n"
-        "  padding: 12px 16px 0 16px;\n"
+        "  font-size: @size_title;\n"
+        "  color: @fg_bright;\n"
+        "  padding: 14px 16px 12px 16px;\n"
         "}\n"
         ".dialog-card .dialog-action-area {\n"
         "  margin: 0 12px 12px 12px;\n"
@@ -821,6 +823,9 @@ void apply_panel_borders(void) {
         "}\n"
         /* Section list of the preferences: theme colours, not GTK's base
          * theme (which keeps its dark or light variant) */
+        "#preferences-body {\n"
+        "  border-top: 1px solid @border;\n"
+        "}\n"
         "#preferences-sections, #preferences-sections list {\n"
         "  background-color: @bg_bar;\n"
         "  color: @fg;\n"
