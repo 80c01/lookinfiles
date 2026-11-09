@@ -4,6 +4,7 @@
 #include "core/i18n.h"
 #include "workspace/tab_tree.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -314,6 +315,19 @@ SavedLayout* layout_store_auto(const SavedLayout* current, guint files, const Au
     gint eh = 0;
     if (width > 0 && height > 0) {
         layout_store_editor_area(l, width, height, &ew, &eh);
+    }
+    if (files >= 2 && l->preview_vis && ew > 0 && ew < 2 * LAYOUT_GRID_MIN_W) {
+        /* the preview narrows (down to LAYOUT_PREVIEW_MIN_FRAC) when that
+         * leaves room for two editors side by side */
+        l->preview_vis = FALSE;
+        gint shared = 0;
+        layout_store_editor_area(l, width, height, &shared, &eh);
+        l->preview_vis = TRUE;
+        gdouble frac = floor((1.0 - 2.0 * LAYOUT_GRID_MIN_W / shared) * 100.0) / 100.0;
+        if (frac >= LAYOUT_PREVIEW_MIN_FRAC && frac < l->editor_frac) {
+            l->editor_frac = frac;
+            layout_store_editor_area(l, width, height, &ew, &eh);
+        }
     }
     g_free(l->editor_splits);
     l->editor_splits = layout_store_grid_splits(files, ew, eh);

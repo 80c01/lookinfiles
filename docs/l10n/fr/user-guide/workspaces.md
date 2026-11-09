@@ -99,7 +99,9 @@ Aucune zone ne fait moins d’environ 90 colonnes sur 12 lignes : sans place
 pour deux par deux, les zones forment une rangée (panneau large) ou une
 colonne (panneau haut), et quand il y a moins de place que de fichiers, les
 fichiers se partagent les zones en onglets. Le fichier courant reste dans
-la première zone.
+la première zone. Avec deux fichiers ou plus et l’aperçu à côté du panneau
+d’édition, l’aperçu se rétrécit (jusqu’au quart de la place qu’ils se
+partagent) quand cela laisse la place à deux éditeurs côte à côte.
 
 Préférences (`Ctrl+,`) → **Dispositions** règle ce qu’Auto fait du terminal
 et de l’aperçu : les laisser tels quels (par défaut), les afficher ou les

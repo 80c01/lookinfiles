@@ -83,7 +83,9 @@ number and for the room the panel gets in the window:
 No pane gets smaller than about 90 columns by 12 lines: without room for
 two by two, the panes make one row (wide panel) or one column (tall one),
 and with room for fewer panes than files, the files share the panes as
-tabs. The current file stays in the first pane.
+tabs. The current file stays in the first pane. With two files or more and
+the preview beside the editor panel, the preview narrows (down to a quarter
+of the room they share) when that leaves room for two editors side by side.
 
 Preferences (`Ctrl+,`) → **Layouts** sets what Auto does with the terminal
 and the preview: leave them as they are (the default), show them, or hide

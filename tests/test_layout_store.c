@@ -326,7 +326,32 @@ static void test_grid_size(void) {
     l->term_vis = FALSE;
     a = layout_store_auto(l, 2, NULL, 4000, 1000);
     g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
+    g_assert_cmpfloat(a->editor_frac, ==, 0.50);
     saved_layout_free(a);
+
+    /* the preview narrows for two editors side by side (1800 px shared: 28%) */
+    a = layout_store_auto(l, 2, NULL, 2400, 1000);
+    g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
+    g_assert_cmpfloat(a->editor_frac, ==, 0.28);
+    saved_layout_free(a);
+    /* not below a quarter (1500 px shared) */
+    a = layout_store_auto(l, 2, NULL, 2000, 1000);
+    g_assert_cmpstr(a->editor_splits, ==, "V:0.500([0],[0])");
+    g_assert_cmpfloat(a->editor_frac, ==, 0.50);
+    saved_layout_free(a);
+    /* one file: the preview keeps its room */
+    a = layout_store_auto(l, 1, NULL, 2400, 1000);
+    g_assert_cmpfloat(a->editor_frac, ==, 0.50);
+    saved_layout_free(a);
+    /* a terminal on the right of a 4K window */
+    l->term_vis = TRUE;
+    l->stacked = FALSE;
+    l->right_frac = 0.70;
+    a = layout_store_auto(l, 2, NULL, 3840, 1100);
+    g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
+    g_assert_cmpfloat(a->editor_frac, ==, 0.36);
+    saved_layout_free(a);
+    l->term_vis = FALSE;
 
     /* the rules for the terminal and the preview */
     AutoRules rules = {1, 0, -1};

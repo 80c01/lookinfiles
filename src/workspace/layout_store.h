@@ -65,6 +65,9 @@ GPtrArray* layout_store_presets(GPtrArray* saved);
  * lines): panes go side by side only with that room for each */
 #define LAYOUT_GRID_MIN_W 640
 #define LAYOUT_GRID_MIN_H 240
+/* Smallest share of the preview beside the editor panel the Auto layout
+ * makes to put two editors side by side */
+#define LAYOUT_PREVIEW_MIN_FRAC 0.25
 
 /* What the Auto layout changes in the panels: each field is 1 (yes), 0
  * (no) or -1 (as it is) */
