@@ -217,11 +217,32 @@ GtkWidget* icon_image_new(const gchar* icon_name) {
     return symbolic_image(icon_name);
 }
 
+/* The content is updated in place when it has the same shape: a new child
+ * under a still pointer would get the next click, which the button would
+ * then miss */
 void icon_button_set_content(GtkWidget* button, const gchar* icon_name, const gchar* text) {
-    if (text == NULL) {
-        gtk_button_set_child(GTK_BUTTON(button), symbolic_image(icon_name));
-    } else {
-        gtk_button_set_child(GTK_BUTTON(button), icon_label_new(icon_name, text));
+    GtkWidget* child = gtk_button_get_child(GTK_BUTTON(button));
+    GtkWidget* image = NULL;
+    GtkWidget* label = NULL;
+    if (text == NULL && GTK_IS_IMAGE(child)) {
+        image = child;
+    } else if (text != NULL && GTK_IS_BOX(child)) {
+        image = gtk_widget_get_first_child(child);
+        label = gtk_widget_get_last_child(child);
+        if (!GTK_IS_IMAGE(image) || !GTK_IS_LABEL(label)) {
+            image = NULL;
+        }
+    }
+    if (image == NULL) {
+        gtk_button_set_child(GTK_BUTTON(button), text == NULL ? symbolic_image(icon_name)
+                                                              : icon_label_new(icon_name, text));
+        return;
+    }
+    GIcon* icon = themed_icon_with_fallbacks(icon_name);
+    gtk_image_set_from_gicon(GTK_IMAGE(image), icon);
+    g_object_unref(icon);
+    if (label != NULL && g_strcmp0(gtk_label_get_text(GTK_LABEL(label)), text) != 0) {
+        gtk_label_set_text(GTK_LABEL(label), text);
     }
 }
 
