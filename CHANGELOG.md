@@ -9,7 +9,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Preferences → **Layouts**: the **Auto** layout can show or hide the
-  terminal and the preview (by default it leaves them as they are).
+  terminal and the preview, and put the terminal below or on the right (by
+  default it leaves them as they are).
 
 ### Changed
 

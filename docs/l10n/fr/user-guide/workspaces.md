@@ -103,8 +103,9 @@ la première zone.
 
 Préférences (`Ctrl+,`) → **Dispositions** règle ce qu’Auto fait du terminal
 et de l’aperçu : les laisser tels quels (par défaut), les afficher ou les
-masquer. La grille est faite pour la place qui reste une fois ceux-ci
-affichés ou masqués.
+masquer ; et où il met le terminal : où il est (par défaut), en bas ou à
+droite (comme le fait `Ctrl+Shift+L`). La grille est faite pour la place qui
+reste une fois ceux-ci placés.
 
 Les dispositions sont enregistrées dans `~/.config/lookinfiles/layouts.ini`.
 Appliquer une disposition garde ensuite ses barres de symboles activées ou

@@ -87,7 +87,9 @@ tabs. The current file stays in the first pane.
 
 Preferences (`Ctrl+,`) → **Layouts** sets what Auto does with the terminal
 and the preview: leave them as they are (the default), show them, or hide
-them. The grid is made for the room left once they are shown or hidden.
+them; and where it puts the terminal: where it is (the default), below, or
+on the right (as `Ctrl+Shift+L` does). The grid is made for the room left
+once they are placed.
 
 Layouts are saved in `~/.config/lookinfiles/layouts.ini`. Applying a
 layout keeps its tagbars on or off afterwards, as their toggle keys do; a

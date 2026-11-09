@@ -37,10 +37,13 @@ typedef struct {
     GtkWidget* height;
     GtkWidget* auto_terminal; /* GtkDropDown: as it is, shown, hidden (PANEL_CHOICES) */
     GtkWidget* auto_preview;
+    GtkWidget* auto_place;    /* GtkDropDown: where it is, below, beside (PLACE_CHOICES) */
 } Preferences;
 
 /* Drop-down order of the panel rules of the Auto layout */
 static const SettingsPanel PANEL_CHOICES[] = {SETTINGS_PANEL_KEEP, SETTINGS_PANEL_SHOW, SETTINGS_PANEL_HIDE};
+/* Drop-down order of the terminal places of the Auto layout */
+static const SettingsPlace PLACE_CHOICES[] = {SETTINGS_PLACE_KEEP, SETTINGS_PLACE_BELOW, SETTINGS_PLACE_BESIDE};
 
 /* Drop-down order of the editor modes */
 static const SettingsEditor MODES[] = {SETTINGS_EDITOR_NOTEPAD, SETTINGS_EDITOR_VIM, SETTINGS_EDITOR_EMACS};
@@ -218,16 +221,11 @@ static GtkWidget* window_page(Preferences* p, const Settings* s) {
     return box;
 }
 
-/* A labelled drop-down choosing what the Auto layout does with a panel */
-static GtkWidget* panel_choice(GtkWidget* grid, gint row, const gchar* label_text, const gchar* tooltip,
-                               SettingsPanel value) {
-    const char* const names[] = {_("As it is"), _("Shown"), _("Hidden"), NULL};
+/* A labelled drop-down of names, at row of grid, selecting selected */
+static GtkWidget* grid_choice(GtkWidget* grid, gint row, const gchar* label_text, const gchar* tooltip,
+                              const char* const* names, guint selected) {
     GtkWidget* drop = gtk_drop_down_new_from_strings(names);
-    for (guint i = 0; i < G_N_ELEMENTS(PANEL_CHOICES); i++) {
-        if (PANEL_CHOICES[i] == value) {
-            gtk_drop_down_set_selected(GTK_DROP_DOWN(drop), i);
-        }
-    }
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(drop), selected);
     gtk_widget_set_tooltip_text(drop, tooltip);
     GtkWidget* label = gtk_label_new_with_mnemonic(label_text);
     gtk_label_set_mnemonic_widget(GTK_LABEL(label), drop);
@@ -235,6 +233,17 @@ static GtkWidget* panel_choice(GtkWidget* grid, gint row, const gchar* label_tex
     gtk_grid_attach(GTK_GRID(grid), label, 0, row, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), drop, 1, row, 1, 1);
     return drop;
+}
+
+/* A drop-down choosing what the Auto layout does with a panel */
+static GtkWidget* panel_choice(GtkWidget* grid, gint row, const gchar* label_text, const gchar* tooltip,
+                               SettingsPanel value) {
+    const char* const names[] = {_("As it is"), _("Shown"), _("Hidden"), NULL};
+    guint selected = 0;
+    for (guint i = 0; i < G_N_ELEMENTS(PANEL_CHOICES); i++) {
+        selected = (PANEL_CHOICES[i] == value) ? i : selected;
+    }
+    return grid_choice(grid, row, label_text, tooltip, names, selected);
 }
 
 static SettingsPanel panel_selected(GtkWidget* drop) {
@@ -246,7 +255,7 @@ static GtkWidget* layouts_page(Preferences* p, const Settings* s) {
     GtkWidget* box = page_box();
     gtk_box_append(GTK_BOX(box), hint_label(_("The Auto layout (Alt+L) puts the open files in a grid in the "
                                             "editor panel; it can also show or hide the terminal and the "
-                                            "preview.")));
+                                            "preview, and place the terminal.")));
     GtkWidget* grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 8);
@@ -254,6 +263,15 @@ static GtkWidget* layouts_page(Preferences* p, const Settings* s) {
                                     s->auto_terminal);
     p->auto_preview = panel_choice(grid, 1, _("_Preview"), _("Preview panel with the Auto layout"),
                                    s->auto_preview);
+    const char* const places[] = {_("Where it is"), _("Below"), _("On the right"), NULL};
+    guint place = 0;
+    for (guint i = 0; i < G_N_ELEMENTS(PLACE_CHOICES); i++) {
+        place = (PLACE_CHOICES[i] == s->auto_terminal_place) ? i : place;
+    }
+    p->auto_place = grid_choice(grid, 2, _("Terminal p_lace"),
+                                _("Terminal below the preview and the editor panel, or on their right, with "
+                                  "the Auto layout (as Ctrl+Shift+L does)"),
+                                places, place);
     gtk_box_append(GTK_BOX(box), grid);
     return box;
 }
@@ -326,6 +344,8 @@ static void save_settings(Preferences* p) {
     s.height = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->height));
     s.auto_terminal = panel_selected(p->auto_terminal);
     s.auto_preview = panel_selected(p->auto_preview);
+    guint place = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->auto_place));
+    s.auto_terminal_place = (place < G_N_ELEMENTS(PLACE_CHOICES)) ? PLACE_CHOICES[place] : SETTINGS_PLACE_KEEP;
     GError* error = NULL;
     if (!settings_store_save(path, &s, &error)) {
         g_printerr("[ Preferences not saved: %s ]\n", error->message);

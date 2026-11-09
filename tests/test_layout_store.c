@@ -261,7 +261,7 @@ static void test_grid(void) {
     current->term_vis = TRUE;
     g_free(current->terminals);
     current->terminals = g_strdup("H:0.500(T,T)");
-    SavedLayout* l = layout_store_auto(current, 3, -1, -1, 0, 0);
+    SavedLayout* l = layout_store_auto(current, 3, NULL, 0, 0);
     g_assert_cmpstr(l->name, ==, "Auto");
     g_assert_true(l->editor_dedicated && l->term_vis && l->files_vis == current->files_vis);
     g_assert_cmpstr(l->terminals, ==, "H:0.500(T,T)");
@@ -320,22 +320,37 @@ static void test_grid_size(void) {
 
     /* a narrow editor panel stacks its two files */
     l->editor_dedicated = TRUE;
-    SavedLayout* a = layout_store_auto(l, 2, -1, -1, 1600, 1000);
+    SavedLayout* a = layout_store_auto(l, 2, NULL, 1600, 1000);
     g_assert_cmpstr(a->editor_splits, ==, "V:0.500([0],[0])");
     saved_layout_free(a);
     l->term_vis = FALSE;
-    a = layout_store_auto(l, 2, -1, -1, 4000, 1000);
+    a = layout_store_auto(l, 2, NULL, 4000, 1000);
     g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
     saved_layout_free(a);
 
     /* the rules for the terminal and the preview */
-    a = layout_store_auto(l, 2, 1, 0, 1600, 1000);
+    AutoRules rules = {1, 0, -1};
+    a = layout_store_auto(l, 2, &rules, 1600, 1000);
     g_assert_true(a->term_vis && !a->preview_vis);
     g_assert_cmpstr(a->editor_splits, ==, "V:0.500([0],[0])"); /* the terminal takes room beside */
     saved_layout_free(a);
     l->term_vis = TRUE;
-    a = layout_store_auto(l, 2, 0, -1, 4000, 1000);
+    rules = (AutoRules){0, -1, -1};
+    a = layout_store_auto(l, 2, &rules, 4000, 1000);
     g_assert_true(!a->term_vis && a->preview_vis);
+    saved_layout_free(a);
+
+    /* the terminal below leaves the whole width to the editor panel */
+    l->preview_vis = FALSE;
+    rules = (AutoRules){1, -1, 1};
+    a = layout_store_auto(l, 2, &rules, 1800, 1000);
+    g_assert_true(a->term_vis && a->stacked);
+    g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])"); /* 1350 x 600 */
+    saved_layout_free(a);
+    rules.terminal_below = 0;
+    a = layout_store_auto(l, 2, &rules, 1800, 1000);
+    g_assert_false(a->stacked);
+    g_assert_cmpstr(a->editor_splits, ==, "V:0.500([0],[0])"); /* 810 x 1000 */
     saved_layout_free(a);
     saved_layout_free(l);
 }

@@ -6290,11 +6290,12 @@ msgstr "Affiché"
 #: src/chrome/preferences.c
 msgid ""
 "The Auto layout (Alt+L) puts the open files in a grid in the editor panel; "
-"it can also show or hide the terminal and the preview."
+"it can also show or hide the terminal and the preview, and place the "
+"terminal."
 msgstr ""
 "La disposition Auto (Alt+L) place les fichiers ouverts en grille dans le "
 "panneau d’édition ; elle peut aussi afficher ou masquer le terminal et "
-"l’aperçu."
+"l’aperçu, et placer le terminal."
 
 #: src/chrome/preferences.c
 msgid "_Terminal"
@@ -6311,6 +6312,30 @@ msgstr "A_perçu"
 #: src/chrome/preferences.c
 msgid "Preview panel with the Auto layout"
 msgstr "Panneau d’aperçu avec la disposition Auto"
+
+#: src/chrome/preferences.c
+msgid "Where it is"
+msgstr "Où il est"
+
+#: src/chrome/preferences.c
+msgid "Below"
+msgstr "En bas"
+
+#: src/chrome/preferences.c
+msgid "On the right"
+msgstr "À droite"
+
+#: src/chrome/preferences.c
+msgid "Terminal p_lace"
+msgstr "P_osition du terminal"
+
+#: src/chrome/preferences.c
+msgid ""
+"Terminal below the preview and the editor panel, or on their right, with the "
+"Auto layout (as Ctrl+Shift+L does)"
+msgstr ""
+"Terminal sous l’aperçu et le panneau d’édition, ou à leur droite, avec la "
+"disposition Auto (comme le fait Ctrl+Shift+L)"
 
 #: src/preview/preview_formats.c:79
 #, c-format

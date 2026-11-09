@@ -188,9 +188,13 @@ void layout_switcher_show(AppData* app) {
      * layout took its name */
     guint files = editor_layout_file_count(app);
     GtkWidget* area = (app->main_paned != NULL) ? app->main_paned : GTK_WIDGET(app->window);
-    SavedLayout* auto_layout = layout_store_auto(g_ptr_array_index(s->layouts, 0), files,
-                                                 panel_rule(app->settings.auto_terminal),
-                                                 panel_rule(app->settings.auto_preview),
+    SettingsPlace place = app->settings.auto_terminal_place;
+    AutoRules rules = {
+        .show_terminal = panel_rule(app->settings.auto_terminal),
+        .show_preview = panel_rule(app->settings.auto_preview),
+        .terminal_below = (place == SETTINGS_PLACE_BELOW) ? 1 : (place == SETTINGS_PLACE_BESIDE) ? 0 : -1,
+    };
+    SavedLayout* auto_layout = layout_store_auto(g_ptr_array_index(s->layouts, 0), files, &rules,
                                                  gtk_widget_get_width(area), gtk_widget_get_height(area));
     if (files > 0 && layout_store_find(named, auto_layout->name) == NULL) {
         g_ptr_array_add(s->layouts, auto_layout);

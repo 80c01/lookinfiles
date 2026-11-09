@@ -18,6 +18,7 @@ void settings_defaults(Settings* s) {
     s->preview_tagbar = FALSE;
     s->auto_terminal = SETTINGS_PANEL_KEEP;
     s->auto_preview = SETTINGS_PANEL_KEEP;
+    s->auto_terminal_place = SETTINGS_PLACE_KEEP;
     s->color_column = 81;
     s->width = 1000;
     s->height = 600;
@@ -80,6 +81,16 @@ static void write_panel(GKeyFile* kf, const gchar* key, SettingsPanel panel) {
     }
 }
 
+/* The terminal place: "below" or "beside", else where it is */
+static SettingsPlace read_place(GKeyFile* kf) {
+    gchar* value = g_key_file_get_string(kf, "Layouts", "auto-terminal-place", NULL);
+    SettingsPlace place = (g_strcmp0(value, "below") == 0)    ? SETTINGS_PLACE_BELOW
+                        : (g_strcmp0(value, "beside") == 0) ? SETTINGS_PLACE_BESIDE
+                                                            : SETTINGS_PLACE_KEEP;
+    g_free(value);
+    return place;
+}
+
 /* An integer key within [min, max], or its default */
 static gint read_int(GKeyFile* kf, const gchar* group, const gchar* key, gint min, gint max, gint def) {
     GError* error = NULL;
@@ -112,6 +123,7 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     s->preview_tagbar = read_bool(kf, "Preview", "tagbar", s->preview_tagbar);
     s->auto_terminal = read_panel(kf, "auto-terminal");
     s->auto_preview = read_panel(kf, "auto-preview");
+    s->auto_terminal_place = read_place(kf);
     s->color_column = read_int(kf, "Editor", "color-column", 0, SETTINGS_MAX_COLUMN, s->color_column);
     s->width = read_size(kf, "width", SETTINGS_MIN_WIDTH, s->width);
     s->height = read_size(kf, "height", SETTINGS_MIN_HEIGHT, s->height);
@@ -130,6 +142,12 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
     g_key_file_set_integer(kf, "Editor", "color-column", s->color_column);
     write_panel(kf, "auto-terminal", s->auto_terminal);
     write_panel(kf, "auto-preview", s->auto_preview);
+    if (s->auto_terminal_place == SETTINGS_PLACE_KEEP) {
+        g_key_file_remove_key(kf, "Layouts", "auto-terminal-place", NULL);
+    } else {
+        g_key_file_set_string(kf, "Layouts", "auto-terminal-place",
+                              s->auto_terminal_place == SETTINGS_PLACE_BELOW ? "below" : "beside");
+    }
     g_key_file_set_integer(kf, "Window", "width", s->width);
     g_key_file_set_integer(kf, "Window", "height", s->height);
     gchar* dir = g_path_get_dirname(path);

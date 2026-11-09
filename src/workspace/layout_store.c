@@ -292,8 +292,8 @@ void layout_store_editor_area(const SavedLayout* l, gint width, gint height, gin
     *editor_h = (gint)(h + 0.5);
 }
 
-SavedLayout* layout_store_auto(const SavedLayout* current, guint files, gint show_terminal, gint show_preview,
-                               gint width, gint height) {
+SavedLayout* layout_store_auto(const SavedLayout* current, guint files, const AutoRules* rules, gint width,
+                               gint height) {
     SavedLayout* l = saved_layout_copy(current);
     g_free(l->name);
     l->name = g_strdup(_("Auto"));
@@ -301,11 +301,14 @@ SavedLayout* layout_store_auto(const SavedLayout* current, guint files, gint sho
         l->editor_frac = 0.40; /* the editor panel opens beside the preview: give it the room */
     }
     l->editor_dedicated = TRUE;
-    if (show_terminal >= 0) {
-        l->term_vis = (show_terminal > 0);
+    if (rules != NULL && rules->show_terminal >= 0) {
+        l->term_vis = (rules->show_terminal > 0);
     }
-    if (show_preview >= 0) {
-        l->preview_vis = (show_preview > 0);
+    if (rules != NULL && rules->show_preview >= 0) {
+        l->preview_vis = (rules->show_preview > 0);
+    }
+    if (rules != NULL && rules->terminal_below >= 0) {
+        l->stacked = (rules->terminal_below > 0);
     }
     gint ew = 0;
     gint eh = 0;
