@@ -637,6 +637,14 @@ void update_path_label(AppData* app) {
         }
     }
     if (t->preview_btn != NULL) {
+        /* Editor tabs sharing the panel make it more than a preview */
+        if (!app->editor_dedicated && editor_has_dockable_tabs(app)) {
+            icon_button_set_content(t->preview_btn, "document-print-preview", _("Main"));
+            gtk_widget_set_tooltip_text(t->preview_btn, _("Show / Hide Main Panel (Preview and Editor Tabs)"));
+        } else {
+            icon_button_set_content(t->preview_btn, "document-print-preview", _("Preview"));
+            gtk_widget_set_tooltip_text(t->preview_btn, _("Show / Hide Preview Panel"));
+        }
         if (preview_vis) {
             gtk_widget_add_css_class(t->preview_btn, "pill-active");
         } else {

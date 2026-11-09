@@ -66,7 +66,8 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
   (cliquez sur une partie pour y aller), la carte des espaces de travail,
   les boutons **Dispositions** et **Thèmes**, puis les boutons qui
   affichent ou masquent les panneaux **Explorateur**, **Aperçu** et
-  **Terminal**, et **Aide** : un clic ouvre ce guide, un clic droit
+  **Terminal** (**Aperçu** devient **Principal** tant que des onglets
+  d’édition partagent le panneau Aperçu), et **Aide** : un clic ouvre ce guide, un clic droit
   l’aide-mémoire du clavier.
 - **Panneau Explorateur** (à gauche). Quatre vues, choisies avec les
   boutons en haut : fichiers, signets, notes et machines distantes.

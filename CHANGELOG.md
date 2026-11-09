@@ -8,6 +8,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The **Preview** button of the top bar reads **Main** while editor tabs
+  share the preview panel, since it then hides them too.
 - A Canvas note opens where a text file would (beside the editor tab used
   last, else in the editor panel, else in the preview panel) instead of
   always in the editor panel.

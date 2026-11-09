@@ -64,7 +64,8 @@ hidden.
 - **Top bar.** The current folder as breadcrumbs (click a part to go
   there), the workspace map, the **Layouts** and **Themes** buttons, then
   buttons that show or hide the **Explorer**, **Preview** and **Terminal**
-  panels, and **Help**: a click opens this guide, a right click the
+  panels (**Preview** reads **Main** while editor tabs share the preview
+  panel), and **Help**: a click opens this guide, a right click the
   keyboard cheat sheet.
 - **Explorer panel** (left). Four views, picked with the buttons at its
   top: files, bookmarks, notes and remote machines. Below them, a small

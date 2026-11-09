@@ -5306,6 +5306,14 @@ msgstr "Afficher / masquer le panneau Explorateur"
 msgid "Show / Hide Preview Panel"
 msgstr "Afficher / masquer le panneau Aperçu"
 
+#: src/chrome/topbar.c
+msgid "Main"
+msgstr "Principal"
+
+#: src/chrome/topbar.c
+msgid "Show / Hide Main Panel (Preview and Editor Tabs)"
+msgstr "Afficher / masquer le panneau principal (aperçu et onglets d’édition)"
+
 #: src/main.c:362
 msgid "Show / Hide Terminal Panel"
 msgstr "Afficher / masquer le panneau Terminal"
