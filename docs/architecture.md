@@ -849,6 +849,12 @@ The pointer is typed, never a `gpointer`: name the struct
 
 ### Known coupling (avoid making it worse)
 
+The dependencies between the directories of `src/` are frozen in
+`DIR_DEPS` (`tools/check_layers.sh`): `make check` fails when a file includes
+a header of a directory its own directory does not depend on yet. Prefer an
+event or moving the shared code down a layer; list a new dependency only
+when neither fits, and drop one from the list once it is gone.
+
 `make check` fails on any include cycle (two `.c` files including each other's
 header), except the two accepted ones: `file_list` ↔ `bookmarks` and
 `file_list` ↔ `remote`. The explorer dispatches keys and rows to these sidebar

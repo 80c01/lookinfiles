@@ -302,6 +302,54 @@ for f in $(grep -lE 'gtk_window_new|gtk_(alert|file|color|font)_dialog_new|gtk_f
     esac
 done
 
+# Dependencies between the directories of src/ (dir:included-dirs), frozen at
+# their current state: the feature directories are already tightly coupled, so
+# a new dependency between two directories fails until it is listed here.
+# Removing one is always welcome (then drop it from the list).
+DIR_DEPS="
+canvas:core,editor,explorer,theme,widgets
+chrome:canvas,core,editor,explorer,games,git,markup,media,notes,preview,search,terminal,theme,widgets,workspace
+code:core,editor,formats,git,markup,preview,theme,widgets
+core:explorer,git,notes,terminal
+editor:canvas,code,core,explorer,games,git,org,preview,search,terminal,theme,vim,widgets,workspace
+explorer:chrome,code,core,editor,formats,games,git,media,notes,preview,search,terminal,theme,widgets,workspace
+formats:core,preview
+games:core,editor,explorer,theme,widgets
+git:core,theme,widgets
+mail:core,office,preview
+markup:core,media,theme
+media:core,editor,preview,search,theme
+notes:canvas,core,editor,explorer,preview,theme,widgets
+office:core,formats,mail,preview
+org:core,editor,media,preview,theme
+preview:canvas,chrome,code,core,editor,explorer,formats,games,git,mail,markup,media,notes,office,org,search,theme,widgets
+search:code,core,editor,explorer,theme,widgets
+terminal:core,editor,explorer,theme,widgets,workspace
+theme:core
+vim:theme
+widgets:code,core,explorer,git,preview,theme
+workspace:canvas,chrome,core,editor,explorer,games,git,media,preview,search,terminal,theme,widgets
+"
+for d in src/*/; do
+    dir=$(basename "$d")
+    line=$(printf '%s\n' "$DIR_DEPS" | grep "^$dir:" || true)
+    if [ -z "$line" ]; then
+        echo "dirs: src/$dir/ has no entry in DIR_DEPS (tools/check_layers.sh)"
+        status=1
+        continue
+    fi
+    allowed=",${line#*:},"
+    for f in "$d"*.[ch]; do
+        for inc in $(sed -n 's/^#include "\([a-z_0-9]*\)\/[a-z_0-9]*\.h".*/\1/p' "$f" | sort -u); do
+            [ "$inc" = "$dir" ] && continue
+            case "$allowed" in
+                *",$inc,"*) ;;
+                *) echo "dirs: $f includes a header of $inc/, a new dependency of $dir/ (move the code down, emit an event, or list it in DIR_DEPS)"; status=1 ;;
+            esac
+        done
+    done
+done
+
 # No new include cycles: two modules must not include each other's header.
 # The remaining pairs are the explorer host and its sidebar views (the explorer
 # dispatches keys/rows to the view, the view asks the explorer to navigate).
