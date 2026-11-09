@@ -5323,8 +5323,8 @@ msgid "User Guide (F1) — Right-Click: Keyboard Shortcuts (?)"
 msgstr "Guide d’utilisation (F1) — clic droit : raccourcis clavier (?)"
 
 #: src/main.c:448 src/chrome/topbar.c:647
-msgid "Move Editor Tabs to a Dedicated Panel"
-msgstr "Déplacer les onglets d’édition dans un panneau dédié"
+msgid "Split Preview Tab from Main Panel"
+msgstr "Séparer l’onglet Aperçu du panneau principal"
 
 #: src/main.c:511
 msgid ""
@@ -8210,8 +8210,8 @@ msgid "Hidden: Off"
 msgstr "Cachés : non"
 
 #: src/chrome/topbar.c:643
-msgid "Dock Editor Tabs into Preview Panel"
-msgstr "Ancrer les onglets d’édition dans le panneau Aperçu"
+msgid "Merge Tabs into Main Panel"
+msgstr "Fusionner les onglets dans le panneau principal"
 
 #: src/chrome/topbar.c:653
 #, c-format

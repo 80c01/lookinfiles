@@ -657,11 +657,11 @@ void update_path_label(AppData* app) {
         if (app->editor_dedicated) {
             gtk_widget_add_css_class(t->split_btn, "tab-action-active");
             icon_button_set_content(t->split_btn, "view-paged", NULL);
-            gtk_widget_set_tooltip_text(t->split_btn, _("Dock Editor Tabs into Preview Panel"));
+            gtk_widget_set_tooltip_text(t->split_btn, _("Merge Tabs into Main Panel"));
         } else {
             gtk_widget_remove_css_class(t->split_btn, "tab-action-active");
             icon_button_set_content(t->split_btn, "view-dual", NULL);
-            gtk_widget_set_tooltip_text(t->split_btn, _("Move Editor Tabs to a Dedicated Panel"));
+            gtk_widget_set_tooltip_text(t->split_btn, _("Split Preview Tab from Main Panel"));
         }
     }
     if (t->term_btn != NULL) {
@@ -759,7 +759,7 @@ GtkWidget* topbar_split_button_new(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(t->split_btn), FALSE);
     gtk_widget_set_focusable(t->split_btn, FALSE);
     gtk_widget_add_css_class(t->split_btn, "tab-action-btn");
-    gtk_widget_set_tooltip_text(t->split_btn, _("Move Editor Tabs to a Dedicated Panel"));
+    gtk_widget_set_tooltip_text(t->split_btn, _("Split Preview Tab from Main Panel"));
     g_signal_connect(t->split_btn, "clicked", G_CALLBACK(on_split_btn_clicked), app);
     return t->split_btn;
 }

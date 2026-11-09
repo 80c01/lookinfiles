@@ -37,10 +37,10 @@ quitting with unsaved changes asks first.
 ### The dedicated editor panel
 
 By default editor tabs share the preview panel. The button at the start of
-the tab bar (**Move Editor Tabs to a Dedicated Panel**, shown once a tab is
+the tab bar (**Split Preview Tab from Main Panel**, shown once a tab is
 open) moves them to a panel of their own, beside the preview, so you can
 read one file while editing another. Canvas, terminal and video tabs move
-with them. The same button docks them all back.
+with them. The same button (**Merge Tabs into Main Panel**) docks them all back.
 
 ### Splitting
 
