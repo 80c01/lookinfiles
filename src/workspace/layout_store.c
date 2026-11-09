@@ -238,7 +238,9 @@ static gchar* grid_line(guint n, gchar dir) {
         return g_strdup("[0]");
     }
     gchar* rest = grid_line(n - 1, dir);
-    gchar* text = g_strdup_printf("%c:%.3f([0],%s)", dir, 1.0 / n, rest);
+    gchar frac[G_ASCII_DTOSTR_BUF_SIZE];
+    g_ascii_formatd(frac, sizeof frac, "%.3f", 1.0 / n); /* a dot whatever the locale */
+    gchar* text = g_strdup_printf("%c:%s([0],%s)", dir, frac, rest);
     g_free(rest);
     return text;
 }

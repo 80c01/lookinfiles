@@ -3,6 +3,7 @@
 #include "workspace/tab_tree.h"
 
 #include <glib/gstdio.h>
+#include <locale.h>
 #include <string.h>
 
 static void test_term_tree(void) {
@@ -279,6 +280,21 @@ static void expect_grid(guint files, gint w, gint h, const gchar* want) {
     g_free(text);
 }
 
+/* The splits keep a dot under a locale with a decimal comma (French) */
+static void test_grid_locale(void) {
+    gchar* old = g_strdup(setlocale(LC_NUMERIC, NULL));
+    if (setlocale(LC_NUMERIC, "fr_FR.UTF-8") == NULL && setlocale(LC_NUMERIC, "fr_FR.utf8") == NULL) {
+        g_free(old);
+        g_test_skip("no French locale");
+        return;
+    }
+    gchar* text = layout_store_grid_splits(4, 2600, 300);
+    setlocale(LC_NUMERIC, old);
+    g_free(old);
+    g_assert_cmpstr(text, ==, "H:0.250([0],H:0.333([0],H:0.500([0],[0])))");
+    g_free(text);
+}
+
 static void test_grid_size(void) {
     /* wide: side by side; tall: one above the other */
     expect_grid(2, 1400, 800, "H:0.500([0],[0])");
@@ -452,5 +468,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/layout_store/presets", test_presets);
     g_test_add_func("/layout_store/grid", test_grid);
     g_test_add_func("/layout_store/grid_size", test_grid_size);
+    g_test_add_func("/layout_store/grid_locale", test_grid_locale);
     return g_test_run();
 }
