@@ -7,6 +7,8 @@
 typedef struct Panels Panels;
 struct Panels {
     GtkWidget* focused; /* panel holding the keyboard focus ("panel-focused"), or NULL */
+    GtkWidget* notebook; /* notebook of that panel holding the focus ("notebook-focused"),
+                          * weak pointer, or NULL */
     GtkWidget* popup;   /* size badge over the workspace, shown while dragging; NULL before
                          * panels_size_popup_attach() */
     GtkWidget* label;   /* "w × h  |  w × h" of the two sides */
@@ -74,6 +76,39 @@ gint get_workspace_total_width(AppData* app) {
 }
 
 
+/* First notebook under w, depth first, or NULL */
+static GtkWidget* first_notebook(GtkWidget* w) {
+    if (GTK_IS_NOTEBOOK(w)) {
+        return w;
+    }
+    for (GtkWidget* c = gtk_widget_get_first_child(w); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        GtkWidget* nb = first_notebook(c);
+        if (nb != NULL) {
+            return nb;
+        }
+    }
+    return NULL;
+}
+
+/* Notebook of panel whose current tab shows the focus: the innermost one holding
+ * focus, else the one of the editor focused last, else the first one */
+static GtkWidget* focused_notebook(AppData* app, GtkWidget* panel, GtkWidget* focus) {
+    if (panel == NULL) {
+        return NULL;
+    }
+    for (GtkWidget* w = focus; w != NULL && w != panel; w = gtk_widget_get_parent(w)) {
+        if (GTK_IS_NOTEBOOK(w)) {
+            return w;
+        }
+    }
+    EditorTab* last = app->last_focused_editor;
+    if (last != NULL && g_list_find(app->editors, last) != NULL && last->nb != NULL &&
+        gtk_widget_is_ancestor(last->nb, panel)) {
+        return last->nb;
+    }
+    return first_notebook(panel);
+}
+
 /* Update the active-panel CSS highlight based on which panel owns keyboard focus */
 gboolean update_active_panel_highlight(AppData* app) {
     if (app == NULL || app->window == NULL) {
@@ -109,6 +144,17 @@ gboolean update_active_panel_highlight(AppData* app) {
     }
 
     Panels* p = panels_get(app);
+    /* Split views: only the notebook holding the focus shows it on its tab */
+    GtkWidget* nb = focused_notebook(app, target_panel, focused);
+    if (p->notebook != nb) {
+        if (p->notebook != NULL) {
+            gtk_widget_remove_css_class(p->notebook, "notebook-focused");
+        }
+        g_set_weak_pointer(&p->notebook, nb);
+        if (nb != NULL) {
+            gtk_widget_add_css_class(nb, "notebook-focused");
+        }
+    }
     if (p->focused == target_panel) {
         return FALSE;
     }
