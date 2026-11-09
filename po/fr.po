@@ -2077,19 +2077,19 @@ msgstr "Ne pas renvoyer à la ligne"
 msgid "Wrap Lines"
 msgstr "Renvoyer à la ligne"
 
-#: src/editor/editor_tab_menu.c:204
+#: src/editor/editor_tab_menu.c:204 src/preview/preview_menu.c:56
 msgid "Show Tagbar"
 msgstr "Afficher la barre de symboles"
 
-#: src/editor/editor_tab_menu.c:204
+#: src/editor/editor_tab_menu.c:204 src/preview/preview_menu.c:56
 msgid "Hide Tagbar"
 msgstr "Masquer la barre de symboles"
 
-#: src/editor/editor_tab_menu.c:214
+#: src/editor/editor_tab_menu.c:214 src/preview/preview_menu.c:59
 msgid "Hide Minimap"
 msgstr "Masquer la minicarte"
 
-#: src/editor/editor_tab_menu.c:214
+#: src/editor/editor_tab_menu.c:214 src/preview/preview_menu.c:59
 msgid "Show Minimap"
 msgstr "Afficher la minicarte"
 

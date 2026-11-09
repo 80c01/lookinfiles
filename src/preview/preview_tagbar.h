@@ -24,6 +24,12 @@ gboolean preview_tagbar_key(AppData* app, guint keyval, GdkModifierType state);
  * preview's cancellable, referenced) is not cancelled, i.e. until the next
  * preview */
 void preview_tagbar_set_outline(AppData* app, GCancellable* owner, GPtrArray* entries);
+/* Show the tagbar, the focus in it, or hide it, the focus back in the text
+ * (saved in settings.ini), as o does */
+void preview_tagbar_toggle(AppData* app);
+/* Whether the preview has headings or symbols to list / the tagbar shows */
+gboolean preview_tagbar_available(AppData* app);
+gboolean preview_tagbar_shown(AppData* app);
 /* Turn the tagbar on or off (not saved, focus unchanged) */
 void preview_tagbar_set_shown(AppData* app, gboolean shown);
 /* Move the handle to the shared tagbar width (editor_tagbar_set_width()) */

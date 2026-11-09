@@ -292,6 +292,26 @@ void preview_tagbar_set_outline(AppData* app, GCancellable* owner, GPtrArray* en
     pt->refresh_source = g_timeout_add(REFRESH_DELAY_MS, on_refresh_timeout, pt);
 }
 
+void preview_tagbar_toggle(AppData* app) {
+    PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
+    if (pt != NULL) toggle(pt);
+}
+
+gboolean preview_tagbar_available(AppData* app) {
+    PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
+    if (pt == NULL) return FALSE;
+    if (outline_pane_shown(pt->pane)) return TRUE;
+    GPtrArray* entries = collect_entries(pt);
+    gboolean any = entries->len > 0;
+    g_ptr_array_unref(entries);
+    return any;
+}
+
+gboolean preview_tagbar_shown(AppData* app) {
+    PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
+    return pt != NULL && outline_pane_shown(pt->pane);
+}
+
 void preview_tagbar_set_shown(AppData* app, gboolean shown) {
     PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
     if (app == NULL || app->settings.preview_tagbar == shown) return;

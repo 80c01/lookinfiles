@@ -52,6 +52,7 @@
 #include <stdlib.h>
 #include "widgets/focus_route.h"
 #include "preview/preview_tagbar.h"
+#include "preview/preview_menu.h"
 #include "preview/preview_full.h"
 #include "core/ui_probe.h"
 #include <string.h>
@@ -578,6 +579,7 @@ int main(int argc, char** argv) {
     focus_route_mark_nav(text_view);
     image_preview_attach_zoom(app, text_view);
     image_preview_attach_menu(app, text_view);
+    preview_menu_attach(app, text_view);
     text_chunks_attach(app);
 
     GtkGesture* viewer_click_ctrl = gtk_gesture_click_new();
