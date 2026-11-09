@@ -95,9 +95,11 @@ onto the page; double click a picture to crop it.
 - **Text**: while a text box is edited or selected, a bar floats just above
   it (below it near the top of the page) and follows it: paragraph style
   (headings, body, quote), bold, italic, underline, strikethrough, text
-  colour, more styles (highlight, code, fonts, sizes), lists, task
-  checkboxes and indent. Bold, italic, underline and strikethrough show as
-  pressed when the text at the cursor (or the whole selection) has them.
+  colour, more styles (highlight, code, fonts, sizes), centred lines, lists,
+  task checkboxes and indent. Bold, italic, underline and strikethrough show
+  as pressed when the text at the cursor (or the whole selection) has them;
+  **Center Text** centres every line of the text box (click again for
+  left-aligned lines) and shows as pressed while it is on.
 
 ### Canvas actions and shortcuts
 

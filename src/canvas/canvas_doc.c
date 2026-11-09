@@ -381,6 +381,7 @@ static void on_start(GMarkupParseContext* ctx, const gchar* element, const gchar
     if (strcmp(element, "text") == 0) {
         st->text_block = canvas_doc_add_text(st->doc, x, y, w, NULL);
         st->text_block->h = MAX(h, 0);
+        st->text_block->centered = g_strcmp0(attr(names, values, "align"), "center") == 0;
         g_string_truncate(st->text, 0);
         st->n_chars = 0;
     } else if (strcmp(element, "image") == 0) {
@@ -542,6 +543,7 @@ static void append_styles(GString* out, guint styles) {
 static void append_text_block(GString* out, const CanvasBlock* b) {
     g_string_append_printf(out, "  <text x=\"%d\" y=\"%d\" w=\"%d\"", b->x, b->y, b->w);
     if (b->h > 0) g_string_append_printf(out, " h=\"%d\"", b->h);
+    if (b->centered) g_string_append(out, " align=\"center\"");
     g_string_append_c(out, '>');
     const gchar* text = b->text;
     gint len = (gint)g_utf8_strlen(text, -1);

@@ -862,6 +862,7 @@ void canvas_page_update_format(CanvasPage* p) {
     CanvasItem* it = canvas_page_current_item(p);
     if (it == NULL || it->kind != CANVAS_BLOCK_TEXT || it->buffer == NULL) return;
     canvas_format_bar_set_styles(p->format_bar, canvas_text_active_styles(it->buffer, it->pending));
+    canvas_format_bar_set_centered(p->format_bar, canvas_item_centered(it));
 }
 
 /* The panel shows the style of the next shapes while drawing, or of the

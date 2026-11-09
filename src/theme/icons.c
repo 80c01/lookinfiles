@@ -77,6 +77,7 @@ static const IconFallback FALLBACKS[] = {
     {"view-list-ordered", {"view-list", NULL}},
     {"format-indent-less", {"go-previous", NULL}},
     {"format-indent-more", {"go-next", NULL}},
+    {"format-justify-center", {"text-x-generic", NULL}},
 };
 
 /* TRUE when gdk-pixbuf can load SVG (librsvg loader). Without it, the bundled

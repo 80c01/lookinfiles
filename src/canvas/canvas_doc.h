@@ -18,7 +18,8 @@
  * (start="1" end="2"): they follow them; a locked block (locked="1") stays
  * in place; blocks with the same group (group="1") are selected and moved
  * together; a turned shape (angle="30.0", degrees, clockwise) turns around
- * its centre, its box the one it has unturned. Pure model, no widgets. */
+ * its centre, its box the one it has unturned; a text box with centred
+ * lines has align="center". Pure model, no widgets. */
 
 #define CANVAS_PAGE_FILE "page.xml"
 #define CANVAS_MEDIA_DIR "media"
@@ -93,6 +94,7 @@ typedef struct {
     /* TEXT, and the label of a SHAPE (NULL or "": none) */
     gchar* text;     /* UTF-8 content */
     GArray* runs;    /* CanvasRun, sorted, not overlapping, styles != 0 */
+    gboolean centered; /* TEXT: lines centred in the box (align="center") */
     /* IMAGE */
     gchar* src;      /* path relative to the note directory */
     gdouble crop_x, crop_y, crop_w, crop_h; /* crop rectangle in 0..1 (crop_w=1,crop_h=1: full) */

@@ -294,12 +294,29 @@ static CanvasItem* item_base_new(CanvasPage* p, GtkWidget* surface, CanvasBlockK
     return it;
 }
 
+/* The text view of a text box with its lines centred, or left-aligned */
+static void set_view_centered(GtkWidget* view, gboolean centered) {
+    gtk_text_view_set_justification(GTK_TEXT_VIEW(view), centered ? GTK_JUSTIFY_CENTER : GTK_JUSTIFY_LEFT);
+}
+
+gboolean canvas_item_centered(const CanvasItem* it) {
+    return it != NULL && it->kind == CANVAS_BLOCK_TEXT && it->content != NULL &&
+           gtk_text_view_get_justification(GTK_TEXT_VIEW(it->content)) == GTK_JUSTIFY_CENTER;
+}
+
+void canvas_item_set_centered(CanvasItem* it, gboolean centered) {
+    if (it != NULL && it->kind == CANVAS_BLOCK_TEXT && it->content != NULL) {
+        set_view_centered(it->content, centered);
+    }
+}
+
 static CanvasItem* add_text(CanvasPage* p, GtkWidget* surface, const CanvasBlock* b,
                             CanvasItemNotify on_change, gboolean loading) {
     GtkWidget* view = gtk_text_view_new();
     gtk_widget_add_css_class(view, "canvas-text");
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD_CHAR);
     gtk_text_view_set_accepts_tab(GTK_TEXT_VIEW(view), FALSE);
+    set_view_centered(view, b->centered);
     CanvasItem* it = item_base_new(p, surface, CANVAS_BLOCK_TEXT, view);
     g_object_set_data(G_OBJECT(it->frame), NOTIFY_KEY, on_change);
     it->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
@@ -638,6 +655,7 @@ static CanvasBlock* item_to_block(CanvasDoc* doc, const CanvasItem* it) {
     gchar* text = gtk_text_buffer_get_text(it->buffer, &s, &e, TRUE);
     CanvasBlock* b = canvas_doc_add_text(doc, it->x, it->y, it->w, text);
     g_free(text);
+    b->centered = canvas_item_centered(it);
     GtkTextIter i = s;
     while (!gtk_text_iter_is_end(&i)) {
         GtkTextIter next = i;

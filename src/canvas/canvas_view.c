@@ -134,6 +134,19 @@ static void on_format_checkbox(gpointer udata) {
     canvas_page_restore_focus(udata);
 }
 
+/* Lines of the text box centred, or left-aligned again: undone with Ctrl+Z */
+static void on_format_center(gpointer udata) {
+    CanvasPage* p = udata;
+    CanvasItem* it = current_text_item(p);
+    if (it != NULL) {
+        canvas_page_remember(p);
+        canvas_item_set_centered(it, !canvas_item_centered(it));
+        canvas_page_schedule_save(p);
+    }
+    canvas_page_restore_focus(p);
+    canvas_page_update_format(p);
+}
+
 /* A row or column added or deleted from the table bar: undone with Ctrl+Z */
 static void on_table_action(CanvasTableAction action, gpointer udata) {
     CanvasPage* p = udata;
@@ -437,7 +450,8 @@ static CanvasPage* page_new(AppData* app) {
         .on_preset = on_format_preset,
         .on_list = on_format_list,
         .on_indent = on_format_indent,
-        .on_checkbox = on_format_checkbox
+        .on_checkbox = on_format_checkbox,
+        .on_center = on_format_center
     };
     p->format_bar = canvas_format_bar_new(&fcbs, p);
     p->table_bar = canvas_table_bar_new(on_table_action, p);

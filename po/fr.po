@@ -682,6 +682,10 @@ msgstr "Liste à puces"
 msgid "Numbered List"
 msgstr "Liste numérotée"
 
+#: src/canvas/canvas_format_bar.c
+msgid "Center Text"
+msgstr "Centrer le texte"
+
 #: src/canvas/canvas_format_bar.c:196
 msgid "Task Checkbox (Ctrl+Space)"
 msgstr "Case à cocher (Ctrl+Space)"

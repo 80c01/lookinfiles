@@ -32,12 +32,14 @@ static void test_xml_round_trip(void) {
     CanvasBlock* t = canvas_doc_add_text(doc, 40, 60, 320, "Agenda <today> & é\nline 2");
     canvas_block_add_run(t, 0, 6, CANVAS_STYLE_HEADING | CANVAS_STYLE_BOLD);
     canvas_block_add_run(t, 17, 18, CANVAS_STYLE_CODE);
+    t->centered = TRUE;
     canvas_doc_add_image(doc, 400, 60, 480, 300, "media/0001.png");
 
     g_autofree gchar* xml = canvas_doc_to_xml(doc);
     g_assert_nonnull(strstr(xml, "<span s=\"b h\">Agenda</span>"));
     g_assert_nonnull(strstr(xml, "&lt;today&gt; &amp; "));
     g_assert_nonnull(strstr(xml, "src=\"media/0001.png\""));
+    g_assert_nonnull(strstr(xml, " align=\"center\">"));
 
     g_autoptr(GError) error = NULL;
     g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
@@ -49,6 +51,7 @@ static void test_xml_round_trip(void) {
     g_assert_cmpint(bt->x, ==, 40);
     g_assert_cmpint(bt->w, ==, 320);
     g_assert_cmpint(bt->h, ==, 0);
+    g_assert_true(bt->centered);
     g_assert_cmpuint(bt->runs->len, ==, 2);
     g_assert_cmpint(run_at(bt, 1)->start, ==, 17);
     g_assert_cmpuint(run_at(bt, 1)->styles, ==, CANVAS_STYLE_CODE);

@@ -25,6 +25,7 @@ struct CanvasFormatBar {
     CanvasFormatBarCallbacks cbs;
     gpointer user_data;
     GPtrArray* style_buttons; /* the buttons toggling one style flag */
+    GtkWidget* center_button;
 };
 
 static void ensure_css(void) {
@@ -73,6 +74,12 @@ static void on_checkbox_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     CanvasFormatBar* bar = data;
     if (bar->cbs.on_checkbox) bar->cbs.on_checkbox(bar->user_data);
+}
+
+static void on_center_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    CanvasFormatBar* bar = data;
+    if (bar->cbs.on_center) bar->cbs.on_center(bar->user_data);
 }
 
 static void on_indent_clicked(GtkButton* btn, gpointer data) {
@@ -187,6 +194,11 @@ static void build(CanvasFormatBar* bar, GtkWidget* row) {
     gtk_box_append(GTK_BOX(row), more);
     add_sep(row);
 
+    bar->center_button = action_button(icon_image_new("format-justify-center"), N_("Center Text"),
+                                       G_CALLBACK(on_center_clicked), bar);
+    gtk_box_append(GTK_BOX(row), bar->center_button);
+    add_sep(row);
+
     GtkWidget* b = action_button(icon_image_new("view-list-bullet"), N_("Bullet List"), G_CALLBACK(on_list_clicked), bar);
     g_object_set_data(G_OBJECT(b), "list-prefix", (gpointer)"- ");
     gtk_box_append(GTK_BOX(row), b);
@@ -207,20 +219,28 @@ void canvas_format_bar_show_for(CanvasFormatBar* bar, GtkWidget* target) {
     if (bar != NULL) canvas_float_show_for(bar->floating, target);
 }
 
+/* A button shown pressed (on) or not */
+static void set_pressed(GtkWidget* b, gboolean on) {
+    if (on) {
+        gtk_widget_set_state_flags(b, GTK_STATE_FLAG_CHECKED, FALSE);
+    } else {
+        gtk_widget_unset_state_flags(b, GTK_STATE_FLAG_CHECKED);
+    }
+    gtk_accessible_update_state(GTK_ACCESSIBLE(b), GTK_ACCESSIBLE_STATE_PRESSED,
+                                on ? GTK_ACCESSIBLE_TRISTATE_TRUE : GTK_ACCESSIBLE_TRISTATE_FALSE, -1);
+}
+
 void canvas_format_bar_set_styles(CanvasFormatBar* bar, guint styles) {
     if (bar == NULL) return;
     for (guint i = 0; i < bar->style_buttons->len; i++) {
         GtkWidget* b = g_ptr_array_index(bar->style_buttons, i);
         guint flag = (guint)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "style-flag"));
-        gboolean on = (styles & flag) != 0;
-        if (on) {
-            gtk_widget_set_state_flags(b, GTK_STATE_FLAG_CHECKED, FALSE);
-        } else {
-            gtk_widget_unset_state_flags(b, GTK_STATE_FLAG_CHECKED);
-        }
-        gtk_accessible_update_state(GTK_ACCESSIBLE(b), GTK_ACCESSIBLE_STATE_PRESSED,
-                                    on ? GTK_ACCESSIBLE_TRISTATE_TRUE : GTK_ACCESSIBLE_TRISTATE_FALSE, -1);
+        set_pressed(b, (styles & flag) != 0);
     }
+}
+
+void canvas_format_bar_set_centered(CanvasFormatBar* bar, gboolean centered) {
+    if (bar != NULL) set_pressed(bar->center_button, centered);
 }
 
 /* ------------------------------------------------------------------------- */

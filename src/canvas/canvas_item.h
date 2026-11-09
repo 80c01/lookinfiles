@@ -73,6 +73,10 @@ gboolean canvas_item_in_label(CanvasItem* it, GtkWidget* hit);
  * 0: middle, 1: right or bottom) */
 gboolean canvas_item_resize_side(GtkWidget* w, gint* sx, gint* sy);
 
+/* A text box with its lines centred (TRUE), or left-aligned */
+gboolean canvas_item_centered(const CanvasItem* it);
+void canvas_item_set_centered(CanvasItem* it, gboolean centered);
+
 /* Label of a shape (free it); NULL when it has none */
 gchar* canvas_item_label_text(const CanvasItem* it);
 

@@ -4,7 +4,7 @@
 /* Text format bar of the Canvas page: one row floating just above the text
  * box being edited or selected (below it when there is no room), over the
  * page overlay. Paragraph style, bold / italic / underline / strikethrough,
- * more styles, text colour, lists, checkbox, indent. */
+ * more styles, text colour, centred lines, lists, checkbox, indent. */
 #include "canvas/canvas_text.h"
 #include <gtk/gtk.h>
 
@@ -14,6 +14,7 @@ typedef struct {
     void (*on_list)(const gchar* prefix, gpointer udata);
     void (*on_indent)(gint step, gpointer udata);
     void (*on_checkbox)(gpointer udata);
+    void (*on_center)(gpointer udata);
 } CanvasFormatBarCallbacks;
 
 typedef struct CanvasFormatBar CanvasFormatBar;
@@ -31,5 +32,8 @@ void canvas_format_bar_show_for(CanvasFormatBar* bar, GtkWidget* target);
 /* Show the style buttons (bold, italic, underline, strikethrough) whose flag
  * is in styles as pressed */
 void canvas_format_bar_set_styles(CanvasFormatBar* bar, guint styles);
+
+/* Show the Center Text button as pressed when the text box is centred */
+void canvas_format_bar_set_centered(CanvasFormatBar* bar, gboolean centered);
 
 #endif /* CANVAS_FORMAT_BAR_H */

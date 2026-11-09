@@ -101,9 +101,11 @@ déposés sur la page ; double-cliquez sur une image pour la recadrer.
   flotte juste au-dessus (en dessous près du haut de la page) et la suit :
   style de paragraphe (titres, corps, citation), gras, italique, souligné,
   barré, couleur du texte, autres styles (surlignage, code, polices,
-  tailles), listes, cases à cocher et retrait. Gras, italique, souligné et
-  barré apparaissent enfoncés quand le texte au curseur (ou toute la
-  sélection) les a.
+  tailles), lignes centrées, listes, cases à cocher et retrait. Gras,
+  italique, souligné et barré apparaissent enfoncés quand le texte au
+  curseur (ou toute la sélection) les a ; **Centrer le texte** centre toutes
+  les lignes de la zone de texte (un nouveau clic les aligne à gauche) et
+  apparaît enfoncé tant qu’il est actif.
 
 ### Actions et raccourcis du canvas
 
