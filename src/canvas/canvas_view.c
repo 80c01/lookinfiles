@@ -439,6 +439,8 @@ static CanvasPage* page_new(AppData* app) {
     gtk_widget_set_vexpand(p->surface, TRUE);
     p->rotate = canvas_rotate_new(p);
     p->viewport = canvas_viewport_new(p->surface, on_zoom_changed, p);
+    /* The top of the page starts below the floating tool bar */
+    canvas_viewport_set_top_inset(p->viewport, 56);
     GtkWidget* overlay = gtk_overlay_new();
     gtk_widget_set_vexpand(overlay, TRUE);
     gtk_overlay_set_child(GTK_OVERLAY(overlay), canvas_viewport_get_widget(p->viewport));

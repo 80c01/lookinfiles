@@ -33,7 +33,11 @@ void canvas_viewport_zoom_step(CanvasViewport* v, gint step);
 /* Back to 100 %, at the top-left corner of the page (another note opened) */
 void canvas_viewport_reset(CanvasViewport* v);
 
-/* Page point at the top-left corner of the view */
+/* Room above the page, in view pixels (not zoomed), so that its top is not
+ * under the floating tool bar at first */
+void canvas_viewport_set_top_inset(CanvasViewport* v, gint inset);
+
+/* Page point at the top-left corner of the view, below the top inset */
 void canvas_viewport_origin(CanvasViewport* v, gint* x, gint* y);
 
 /* The pan key (Space) is held down / released */

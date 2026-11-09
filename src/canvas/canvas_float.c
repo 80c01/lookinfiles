@@ -5,7 +5,6 @@
 
 #define BAR_GAP 6        /* between the bar and the block */
 #define EDGE 8           /* the bar keeps this far from the overlay sides */
-#define TOOLBAR_ROOM 60  /* the tool bar at the top of the page */
 
 struct CanvasFloat {
     GtkWidget* box;
@@ -27,8 +26,45 @@ static void ensure_css(void) {
                   ".canvas-fmt-sep { margin: 4px 3px; }");
 }
 
-/* Above the block, at its left; below it when the tool bar is in the way;
- * inside the overlay */
+/* The first other visible overlay (tool bar, properties panel...) that the
+ * bar would cover at (x, y), or FALSE */
+static gboolean find_obstacle(CanvasFloat* f, GtkWidget* overlay, gint x, gint y, gint bw, gint bh,
+                              graphene_rect_t* hit) {
+    graphene_rect_t bar = GRAPHENE_RECT_INIT((float)x, (float)y, (float)bw, (float)bh);
+    for (GtkWidget* w = gtk_widget_get_first_child(overlay); w != NULL; w = gtk_widget_get_next_sibling(w)) {
+        if (w == f->box || w == gtk_overlay_get_child(GTK_OVERLAY(overlay)) || !gtk_widget_get_visible(w)) {
+            continue;
+        }
+        if (gtk_widget_compute_bounds(w, overlay, hit) && graphene_rect_intersection(&bar, hit, NULL)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/* Clear of the other overlays at height y: moved right of them, or (when
+ * down is set) below them. FALSE when there is no room. */
+static gboolean clear_spot(CanvasFloat* f, GtkWidget* overlay, gint* x, gint* y, gint bw, gint bh,
+                           gboolean down) {
+    gint ow = gtk_widget_get_width(overlay), oh = gtk_widget_get_height(overlay);
+    graphene_rect_t hit;
+    for (gint tries = 0; tries < 6; tries++) {
+        if (*y < EDGE || *y + bh > oh - EDGE) return FALSE;
+        if (!find_obstacle(f, overlay, *x, *y, bw, bh, &hit)) return TRUE;
+        gint right = (gint)(hit.origin.x + hit.size.width) + BAR_GAP;
+        if (right + bw <= ow - EDGE) {
+            *x = right;
+        } else if (down) {
+            *y = (gint)(hit.origin.y + hit.size.height) + BAR_GAP;
+        } else {
+            return FALSE;
+        }
+    }
+    return FALSE;
+}
+
+/* Above the block, at its left; else below it; clear of the tool bar and
+ * the properties panel; inside the overlay */
 static void place(CanvasFloat* f) {
     GtkWidget* overlay = gtk_widget_get_parent(f->box);
     if (overlay == NULL || f->target == NULL) return;
@@ -40,10 +76,16 @@ static void place(CanvasFloat* f) {
     }
     gint bw = gtk_widget_get_width(f->box), bh = gtk_widget_get_height(f->box);
     gint ow = gtk_widget_get_width(overlay), oh = gtk_widget_get_height(overlay);
-    gint x = CLAMP((gint)top.x, EDGE, MAX(ow - bw - EDGE, EDGE));
-    gint y = (gint)top.y - bh - BAR_GAP;
-    if (y < TOOLBAR_ROOM) y = (gint)bottom.y + BAR_GAP;
-    y = CLAMP(y, TOOLBAR_ROOM, MAX(oh - bh - EDGE, TOOLBAR_ROOM));
+    gint x0 = CLAMP((gint)top.x, EDGE, MAX(ow - bw - EDGE, EDGE));
+    gint x = x0, y = (gint)top.y - bh - BAR_GAP;
+    if (!clear_spot(f, overlay, &x, &y, bw, bh, FALSE)) {
+        x = x0;
+        y = MAX((gint)bottom.y + BAR_GAP, EDGE);
+        if (!clear_spot(f, overlay, &x, &y, bw, bh, TRUE)) {
+            x = x0; /* no free spot: below the block, inside the overlay */
+            y = CLAMP((gint)bottom.y + BAR_GAP, EDGE, MAX(oh - bh - EDGE, EDGE));
+        }
+    }
     if (gtk_widget_get_margin_start(f->box) != x) gtk_widget_set_margin_start(f->box, x);
     if (gtk_widget_get_margin_top(f->box) != y) gtk_widget_set_margin_top(f->box, y);
 }

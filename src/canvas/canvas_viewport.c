@@ -93,6 +93,7 @@ struct CanvasViewport {
     GtkRoot* root;
     gulong focus_handler;
     guint reveal_tick; /* pending on_reveal_tick() */
+    gint top_inset;    /* view pixels above the page, under the tool bar */
 };
 
 static GtkAdjustment* adjustment(CanvasViewport* v, GtkOrientation o) {
@@ -104,12 +105,16 @@ static GtkAdjustment* adjustment(CanvasViewport* v, GtkOrientation o) {
 /* Scroll to value on one axis at the new scale. The view is laid out again
  * later: the range it will have is set now, so the value is not clamped to
  * the old one. */
+static gint axis_inset(CanvasViewport* v, GtkOrientation o) {
+    return o == GTK_ORIENTATION_VERTICAL ? v->top_inset : 0;
+}
+
 static void scroll_axis(CanvasViewport* v, GtkOrientation o, gdouble value) {
     GtkAdjustment* adj = adjustment(v, o);
     int nat = 0;
     gtk_widget_measure(v->surface, o, -1, NULL, &nat, NULL, NULL);
     gdouble page = gtk_adjustment_get_page_size(adj);
-    gdouble upper = MAX(page, ceil(nat * v->zoom->scale));
+    gdouble upper = MAX(page, ceil(nat * v->zoom->scale) + axis_inset(v, o));
     gtk_adjustment_configure(adj, CLAMP(value, 0, MAX(upper - page, 0)), 0, upper,
                              gtk_adjustment_get_step_increment(adj), gtk_adjustment_get_page_increment(adj), page);
 }
@@ -122,11 +127,11 @@ static void zoom_at(CanvasViewport* v, gdouble scale, gdouble sx, gdouble sy) {
     GtkAdjustment* h = adjustment(v, GTK_ORIENTATION_HORIZONTAL);
     GtkAdjustment* vv = adjustment(v, GTK_ORIENTATION_VERTICAL);
     gdouble px = (gtk_adjustment_get_value(h) + sx) / old;
-    gdouble py = (gtk_adjustment_get_value(vv) + sy) / old;
+    gdouble py = (gtk_adjustment_get_value(vv) + sy - v->top_inset) / old;
     v->zoom->scale = scale;
     gtk_widget_queue_resize(GTK_WIDGET(v->zoom));
     scroll_axis(v, GTK_ORIENTATION_HORIZONTAL, px * scale - sx);
-    scroll_axis(v, GTK_ORIENTATION_VERTICAL, py * scale - sy);
+    scroll_axis(v, GTK_ORIENTATION_VERTICAL, py * scale + v->top_inset - sy);
     if (v->on_zoom != NULL) v->on_zoom(scale, v->data);
 }
 
@@ -351,6 +356,11 @@ void canvas_viewport_zoom_step(CanvasViewport* v, gint step) {
     /* Stop at 100 % on the way, so it is easy to get back to */
     if (step != 0 && (v->zoom->scale - 1.0) * (scale - 1.0) < 0) scale = 1.0;
     zoom_at_centre(v, scale);
+}
+
+void canvas_viewport_set_top_inset(CanvasViewport* v, gint inset) {
+    v->top_inset = MAX(inset, 0);
+    gtk_widget_set_margin_top(GTK_WIDGET(v->zoom), v->top_inset);
 }
 
 void canvas_viewport_reset(CanvasViewport* v) {

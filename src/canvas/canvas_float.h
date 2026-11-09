@@ -2,8 +2,9 @@
 #define CANVAS_FLOAT_H
 
 /* A bar floating over the Canvas page, next to one block: just above it
- * (below it when the tool bar is in the way), following it each frame while
- * it moves, the view scrolls or zooms. Shared by the text format bar and the
+ * (below it when the tool bar is in the way), clear of the other floating
+ * panels, following it each frame while it moves, the view scrolls or
+ * zooms. Shared by the text format bar and the
  * table bar; also gives them the same look (.canvas-float-bar, and
  * .canvas-fmt for their buttons). */
 #include <gtk/gtk.h>
