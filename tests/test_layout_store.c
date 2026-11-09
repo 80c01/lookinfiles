@@ -281,21 +281,22 @@ static void expect_grid(guint files, gint w, gint h, const gchar* want) {
 
 static void test_grid_size(void) {
     /* wide: side by side; tall: one above the other */
-    expect_grid(2, 1200, 800, "H:0.500([0],[0])");
+    expect_grid(2, 1400, 800, "H:0.500([0],[0])");
+    expect_grid(2, 1200, 800, "V:0.500([0],[0])"); /* no room for two editors side by side */
     expect_grid(2, 800, 1000, "V:0.500([0],[0])");
     /* too narrow for two side by side, too short for two stacked */
-    expect_grid(2, 1000, 200, "H:0.500([0],[0])");
+    expect_grid(2, 1300, 200, "H:0.500([0],[0])");
     expect_grid(2, 400, 1000, "V:0.500([0],[0])");
     expect_grid(3, 400, 200, "[0]");
     /* three */
-    expect_grid(3, 1200, 800, "H:0.500([0],V:0.500([0],[0]))");
-    expect_grid(3, 1000, 1200, "V:0.500([0],H:0.500([0],[0]))");
-    expect_grid(3, 1600, 300, "H:0.333([0],H:0.500([0],[0]))");
+    expect_grid(3, 1400, 800, "H:0.500([0],V:0.500([0],[0]))");
+    expect_grid(3, 1400, 1500, "V:0.500([0],H:0.500([0],[0]))");
+    expect_grid(3, 2000, 300, "H:0.333([0],H:0.500([0],[0]))");
     expect_grid(3, 400, 900, "V:0.333([0],V:0.500([0],[0]))");
-    expect_grid(3, 1000, 200, "H:0.500([0],[0])");
+    expect_grid(3, 1300, 200, "H:0.500([0],[0])");
     /* four and more */
-    expect_grid(6, 1200, 800, "H:0.500(V:0.500([0],[0]),V:0.500([0],[0]))");
-    expect_grid(4, 2000, 300, "H:0.250([0],H:0.333([0],H:0.500([0],[0])))");
+    expect_grid(6, 1400, 800, "H:0.500(V:0.500([0],[0]),V:0.500([0],[0]))");
+    expect_grid(4, 2600, 300, "H:0.250([0],H:0.333([0],H:0.500([0],[0])))");
     expect_grid(5, 400, 1000, "V:0.250([0],V:0.333([0],V:0.500([0],[0])))");
 
     /* the editor panel's share of the window */
@@ -323,7 +324,7 @@ static void test_grid_size(void) {
     g_assert_cmpstr(a->editor_splits, ==, "V:0.500([0],[0])");
     saved_layout_free(a);
     l->term_vis = FALSE;
-    a = layout_store_auto(l, 2, 3000, 1000);
+    a = layout_store_auto(l, 2, 4000, 1000);
     g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
     saved_layout_free(a);
     saved_layout_free(l);
