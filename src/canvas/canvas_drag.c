@@ -290,10 +290,18 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
         canvas_page_select_toggle(p, it);
         return;
     }
-    /* A locked block: selected, never moved or resized (its text still edited) */
+    /* A locked block: selected, never moved or resized (its text still
+     * edited: a text box or table is selected from its grip or border, so
+     * it can be unlocked) */
     if (it->locked) {
         gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_DENIED);
-        if (it->kind != CANVAS_BLOCK_TEXT && it->kind != CANVAS_BLOCK_TABLE) canvas_item_select(it);
+        gboolean edge = hit == it->frame;
+        for (GtkWidget* w = hit; w != NULL && w != it->frame; w = gtk_widget_get_parent(w)) {
+            if (g_object_get_data(G_OBJECT(w), "canvas-grip") != NULL || canvas_item_resize_side(w, NULL, NULL)) {
+                edge = TRUE;
+            }
+        }
+        if (edge || (it->kind != CANVAS_BLOCK_TEXT && it->kind != CANVAS_BLOCK_TABLE)) canvas_item_select(it);
         return;
     }
     /* A handle of the selected line: drag that point */
