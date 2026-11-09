@@ -51,5 +51,8 @@ gboolean outline_pane_shown(OutlinePane* pane);
 /* Focus the list; whether the list has the focus */
 void outline_pane_focus(OutlinePane* pane);
 gboolean outline_pane_has_focus(OutlinePane* pane);
+/* The list (the widget focused by outline_pane_focus()); mapped while the
+ * tagbar is on screen with its entries */
+GtkWidget* outline_pane_list(OutlinePane* pane);
 
 #endif /* OUTLINE_PANE_H */

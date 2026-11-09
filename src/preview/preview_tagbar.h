@@ -28,5 +28,7 @@ void preview_tagbar_set_outline(AppData* app, GCancellable* owner, GPtrArray* en
 void preview_tagbar_set_shown(AppData* app, gboolean shown);
 /* Move the handle to the shared tagbar width (editor_tagbar_set_width()) */
 void preview_tagbar_place(AppData* app);
+/* The list of the tagbar, to focus (Alt+Left / Alt+Right), or NULL */
+GtkWidget* preview_tagbar_list(AppData* app);
 
 #endif /* PREVIEW_TAGBAR_H */

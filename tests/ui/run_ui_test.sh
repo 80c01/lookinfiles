@@ -543,6 +543,8 @@ key c;                  shot tagbar_collapsed     # every group collapsed
 key c;                  shot tagbar_expanded
 key s;                  shot tagbar_by_line
 key s Up Return; sleep 0.5; shot tagbar_jumped        # cursor on answer()
+key alt+Right;          shot tagbar_alt_focused   # Alt+Right: from the text into the tagbar
+key alt+Left;           shot tagbar_alt_back      # Alt+Left: back in the text
 key ctrl+k ctrl+o;      shot tagbar_hidden
 xdotool mousemove 747 50 click 3
 xdotool mousemove 747 374 click 1    # pick "Vim" in the tab menu

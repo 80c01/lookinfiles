@@ -621,6 +621,10 @@ void outline_pane_focus(OutlinePane* p) {
     gtk_widget_grab_focus(p->list);
 }
 
+GtkWidget* outline_pane_list(OutlinePane* p) {
+    return p->list;
+}
+
 gboolean outline_pane_has_focus(OutlinePane* p) {
     GtkRoot* root = gtk_widget_get_root(p->list);
     GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;

@@ -4480,8 +4480,8 @@ msgstr ""
 "Dans un terminal : copier le texte sélectionné / coller le presse-papiers"
 
 #: src/chrome/help.c:275
-msgid "Cycle the keyboard focus between panels"
-msgstr "Faire passer le focus clavier d’un panneau à l’autre"
+msgid "Cycle the keyboard focus between panels (a tagbar on screen comes after its text)"
+msgstr "Faire passer le focus clavier d’un panneau à l’autre (une barre de symboles affichée vient après son texte)"
 
 #: src/chrome/help.c:276
 msgid "Focus the next / previous panel (also h / l; from Vim editor tabs too)"

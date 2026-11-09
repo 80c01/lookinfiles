@@ -295,3 +295,8 @@ void preview_tagbar_place(AppData* app) {
     PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
     if (pt != NULL) outline_pane_place(pt->pane);
 }
+
+GtkWidget* preview_tagbar_list(AppData* app) {
+    PreviewTagbar* pt = app != NULL ? app->preview_tagbar_state : NULL;
+    return pt != NULL && outline_pane_shown(pt->pane) ? outline_pane_list(pt->pane) : NULL;
+}

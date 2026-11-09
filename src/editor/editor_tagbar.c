@@ -240,6 +240,10 @@ gboolean editor_tagbar_shown(EditorTab* tab) {
     return tab != NULL && tab->tagbar != NULL && outline_pane_shown(tab->tagbar->pane);
 }
 
+GtkWidget* editor_tagbar_list(EditorTab* tab) {
+    return editor_tagbar_shown(tab) ? outline_pane_list(tab->tagbar->pane) : NULL;
+}
+
 /* ------------------------------------------------------------------------- */
 /* States                                                                    */
 /* ------------------------------------------------------------------------- */

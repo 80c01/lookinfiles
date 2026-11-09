@@ -30,6 +30,8 @@ void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc messa
 gboolean editor_tagbar_available(EditorTab* tab);
 /* Whether the tagbar of tab is shown */
 gboolean editor_tagbar_shown(EditorTab* tab);
+/* The list of the tagbar of tab, to focus (Alt+Left / Alt+Right), or NULL */
+GtkWidget* editor_tagbar_list(EditorTab* tab);
 
 /* The tagbar of every editor tab, shown or hidden, and the last choice */
 typedef struct EditorTagbarStates EditorTagbarStates;

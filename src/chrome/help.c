@@ -275,7 +275,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Global"), "Ctrl+Shift+T", N_("Open a terminal in a new pane below the focused one"), 0},
     {N_("Global"), "Ctrl+PgDn / Ctrl+PgUp", N_("In a terminal: next / previous tab of its pane"), 0},
     {N_("Global"), "Ctrl+Shift+C / Ctrl+Shift+V", N_("In a terminal: copy the selected text / paste the clipboard"), 0},
-    {N_("Global"), "Alt+Left / Alt+Right", N_("Cycle the keyboard focus between panels"), 0},
+    {N_("Global"), "Alt+Left / Alt+Right", N_("Cycle the keyboard focus between panels (a tagbar on screen comes after its text)"), 0},
     {N_("Global"), "Ctrl+W w / Ctrl+W W", N_("Focus the next / previous panel (also h / l; from Vim editor tabs too)"), VI},
     {N_("Global"), "Ctrl+W c", N_("Close the focused editor tab, or the current one on screen (from Vim editor tabs too; asks when unsaved)"), VI},
     {N_("Global"), "C-x o", N_("Focus the next panel (from Emacs and Org-mode editor tabs too)"), EM},

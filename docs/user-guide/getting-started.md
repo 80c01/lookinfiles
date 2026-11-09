@@ -86,7 +86,7 @@ hidden.
 
 Every border between panels can be dragged. The panel that has the
 keyboard focus is outlined; `Alt+Left` and `Alt+Right` move the focus from
-panel to panel.
+panel to panel (a tagbar on screen comes right after its text).
 
 ## The global mode: Notepad, Emacs or Vim
 

@@ -16,6 +16,8 @@
 #include "notes/notes.h"
 #include "editor/editor.h"
 #include "editor/editor_modes.h"
+#include "editor/editor_tagbar.h"
+#include "preview/preview_tagbar.h"
 #include "widgets/focus_route.h"
 #include "search/quick_open.h"
 #include "search/project_search.h"
@@ -52,9 +54,18 @@ void wire_focus_tracking(AppData* app) {
     update_active_panel_highlight(app);
 }
 
+/* The tagbar list on screen in page (editor tab or preview), or NULL */
+static GtkWidget* page_tagbar(AppData* app, GtkWidget* page) {
+    EditorTab* tab = focus_route_page_tab(app, page);
+    GtkWidget* list = tab != NULL ? editor_tagbar_list(tab) : preview_tagbar_list(app);
+    if (list == NULL || !gtk_widget_get_mapped(list) || !gtk_widget_is_ancestor(list, page)) return NULL;
+    return list;
+}
+
 /* Panels in focus order: the explorer list, the page shown in each notebook
- * (preview notebook first), the terminal panes. Pages get the focus with
- * focus_route_focus_page() (editor view, preview text, list of a list page). */
+ * (preview notebook first) followed by its tagbar when shown, the terminal
+ * panes. Pages get the focus with focus_route_focus_page() (editor view,
+ * preview text, list of a list page). */
 void focus_adjacent_panel(gint step, AppData* app) {
     GPtrArray* panels = g_ptr_array_new();
     GPtrArray* pages = g_ptr_array_new(); /* the panels that are notebook pages */
@@ -81,6 +92,8 @@ void focus_adjacent_panel(gint step, AppData* app) {
         if (page != NULL) {
             g_ptr_array_add(panels, page);
             g_ptr_array_add(pages, page);
+            GtkWidget* tagbar = page_tagbar(app, page);
+            if (tagbar != NULL) g_ptr_array_add(panels, tagbar);
         }
     }
     g_ptr_array_unref(nbs);
@@ -100,18 +113,21 @@ void focus_adjacent_panel(gint step, AppData* app) {
         return;
     }
 
-    /* Which panel owns the focus? A focused tab bar counts as its page */
+    /* Which panel owns the focus? The tagbar inside a page first; a focused
+     * tab bar counts as its page */
     FocusInfo info;
     focus_route_get(app, &info);
-    GtkWidget* w = info.page != NULL ? info.page : info.focus;
-    while (w != NULL && current < 0) {
-        for (guint i = 0; i < panels->len; i++) {
-            if (g_ptr_array_index(panels, i) == w) {
-                current = (gint)i;
-                break;
+    for (gint pass = 0; pass < 2 && current < 0; pass++) {
+        GtkWidget* w = pass == 0 ? info.focus : info.page;
+        while (w != NULL && current < 0) {
+            for (guint i = 0; i < panels->len; i++) {
+                if (g_ptr_array_index(panels, i) == w) {
+                    current = (gint)i;
+                    break;
+                }
             }
+            w = gtk_widget_get_parent(w);
         }
-        w = gtk_widget_get_parent(w);
     }
     if (current < 0) {
         current = 0; /* unknown focus: count as first panel */

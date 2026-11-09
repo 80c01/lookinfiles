@@ -90,7 +90,8 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
 
 Chaque séparation entre panneaux peut être déplacée à la souris. Le panneau
 qui a le focus du clavier est entouré ; `Alt+Left` et `Alt+Right` déplacent
-le focus de panneau en panneau.
+le focus de panneau en panneau (une barre de symboles affichée vient juste
+après son texte).
 
 ## Le mode global : Notepad, Emacs ou Vim
 
