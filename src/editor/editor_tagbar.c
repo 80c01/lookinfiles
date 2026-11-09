@@ -5,7 +5,6 @@
 #include "code/code_outline.h"
 #include "widgets/outline_pane.h"
 #include "widgets/focus_route.h"
-#include "core/settings_store.h"
 
 #define REFRESH_DELAY_MS 600   /* pause in the edits before the outline is read again */
 #define CURSOR_DELAY_MS 80     /* cursor moves are followed after this pause */
@@ -162,7 +161,7 @@ GtkWidget* editor_tagbar_wrap(AppData* app, EditorTab* tab, GtkWidget* content) 
     Tagbar* tb = g_new0(Tagbar, 1);
     tb->app = app;
     tb->tab = tab;
-    tb->wanted = app->settings.tagbar; /* new tabs follow the last choice */
+    tb->wanted = app->settings.tagbar; /* new tabs follow Preferences → Editor */
     tab->tagbar = tb;
     tb->pane = outline_pane_new(content, &app->editor_tagbar_width, _("Reading the symbols…"), &callbacks, tb);
     GtkWidget* paned = outline_pane_widget(tb->pane);
@@ -227,24 +226,13 @@ void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc messa
         if (message != NULL) message(tab, _("No tagbar for this file type (code and Markdown files)"));
         return;
     }
-    tb->wanted = !shown;
-    app->settings.tagbar = tb->wanted; /* the tabs opened next follow it */
+    tb->wanted = !shown; /* this tab only: Preferences → Editor sets the others */
     update_visibility(tb);
     if (tb->wanted && outline_pane_shown(tb->pane)) {
         outline_pane_focus(tb->pane);
     } else if (tab->view != NULL) {
         gtk_widget_grab_focus(tab->view);
     }
-    gchar* path = settings_store_path();
-    Settings s;
-    settings_store_load(path, &s);
-    s.tagbar = app->settings.tagbar;
-    GError* error = NULL;
-    if (!settings_store_save(path, &s, &error)) {
-        g_printerr("[ Tagbar setting not saved: %s ]\n", error->message);
-        g_clear_error(&error);
-    }
-    g_free(path);
 }
 
 gboolean editor_tagbar_available(EditorTab* tab) {

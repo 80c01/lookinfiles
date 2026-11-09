@@ -97,7 +97,7 @@ once they are placed.
 
 Layouts are saved in `~/.config/lookinfiles/layouts.ini`. Applying a
 layout keeps its tagbars on or off afterwards, and the editor tabs opened
-next follow it, as after their toggle keys; this holds in every
+next follow it, as after the Preferences; this holds in every
 workspace.
 
 ## The session

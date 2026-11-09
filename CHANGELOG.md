@@ -22,8 +22,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The tagbar of the editor (`Ctrl+K Ctrl+O`, `:TagbarToggle`,
   `M-x imenu-list`) shows or hides in the current tab only, so split editors
-  each keep their own; new tabs follow the last choice. Preferences and saved
-  layouts still set every tab.
+  each keep their own, and is not saved: new tabs follow Preferences →
+  Editor. Preferences and saved layouts still set every tab.
 - The **Auto** layout fits its grid to the size of the editor panel: two
   files go side by side when it is wide enough for two editors of about 70
   columns and one above the other otherwise, three and four make one row or

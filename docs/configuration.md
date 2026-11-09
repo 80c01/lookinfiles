@@ -42,7 +42,7 @@ mode=vim
 line-numbers=true
 wrap=false
 color-column=81    # default; 0: no line
-tagbar=false       # new code and Markdown tabs show the tagbar (the last toggle)
+tagbar=false       # new code and Markdown tabs show the tagbar
 minimap=true       # editor tabs, the preview and Help show the minimap
 
 [Preview]

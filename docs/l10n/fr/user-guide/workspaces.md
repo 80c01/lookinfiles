@@ -113,8 +113,8 @@ reste une fois ceux-ci placés.
 
 Les dispositions sont enregistrées dans `~/.config/lookinfiles/layouts.ini`.
 Appliquer une disposition garde ensuite ses barres de symboles activées ou
-non, et les onglets d’édition ouverts ensuite la suivent, comme après leurs
-touches ; cela vaut dans tous les espaces de travail.
+non, et les onglets d’édition ouverts ensuite la suivent, comme après les
+Préférences ; cela vaut dans tous les espaces de travail.
 
 ## La session
 

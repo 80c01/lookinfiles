@@ -37,7 +37,7 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name) {
     g_free(l->editor_splits);
     l->editor_splits = editor_layout_capture(app);
     l->tagbars = TRUE;
-    l->editor_tagbar = app->settings.tagbar; /* the last choice, if saved */
+    l->editor_tagbar = app->settings.tagbar; /* the preference */
     l->editor_tagbar_as_is = TRUE;
     l->preview_tagbar = app->settings.preview_tagbar;
     l->tagbar_width = MAX(app->editor_tagbar_width, 0);

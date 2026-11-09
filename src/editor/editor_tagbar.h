@@ -7,7 +7,7 @@
  * (code_outline.h). It follows the cursor, refreshes after a pause in the
  * edits, and a click or Enter goes to the symbol (remembered in the code
  * navigation history). Shown or hidden in each tab on its own; a new tab
- * follows the last choice (settings.ini: tagbar). One width for all. */
+ * follows Preferences → Editor (settings.ini: tagbar). One width for all. */
 #include "core/app_types.h"
 #include "code/code_nav.h"
 
@@ -23,8 +23,8 @@ void editor_tagbar_set_shown(AppData* app, gboolean shown);
  * preview, and move the handles of the editor tabs to it (not saved) */
 void editor_tagbar_set_width(AppData* app, gint width);
 /* Show the tagbar of tab, the focus in it, or hide it, the focus back in
- * the view; the other tabs keep theirs, the tabs opened next follow (saved
- * in settings.ini). A message (through message) when tab has no outline. */
+ * the view; the other tabs and the tabs opened next keep the preference
+ * (not saved). A message (through message) when tab has no outline. */
 void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc message);
 /* Whether tab has a tagbar to show (a code or Markdown file) */
 gboolean editor_tagbar_available(EditorTab* tab);
@@ -33,7 +33,7 @@ gboolean editor_tagbar_shown(EditorTab* tab);
 /* The list of the tagbar of tab, to focus (Alt+Left / Alt+Right), or NULL */
 GtkWidget* editor_tagbar_list(EditorTab* tab);
 
-/* The tagbar of every editor tab, shown or hidden, and the last choice */
+/* The tagbar of every editor tab, shown or hidden, and the preference */
 typedef struct EditorTagbarStates EditorTagbarStates;
 EditorTagbarStates* editor_tagbar_states_take(AppData* app);
 /* Put them back (tabs closed meanwhile are skipped; not saved) */

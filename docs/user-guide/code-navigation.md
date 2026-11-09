@@ -29,7 +29,7 @@ headings of a Markdown file. It follows the cursor and is refreshed shortly
 after each edit. A click or `Enter` goes to the symbol (back with the usual
 key), `s` switches between grouping by kind and file order, `Esc` returns to
 the text, `q` hides it; `Alt+Right` from the text goes into it, `Alt+Left` comes back (also the panel keys of the tab's mode: `Ctrl+W l` / `Ctrl+W h` in Vim, `C-x o`, `F6` / `Shift+F6`); its header shows an accent line while it has the focus. In it, the keys of the tab's mode move (`j` / `k`, `gg` / `G`, `Ctrl+F` / `Ctrl+B`, `h` / `l` close / open a row in Vim; `C-n` / `C-p`, `M-<` / `M->`, `C-v` / `M-v`, `C-b` / `C-f` in Emacs; the arrows, `Page Up` / `Page Down`, `Ctrl+Home` / `Ctrl+End` in every mode) and search the names, collapsed rows included, in a bar at its bottom (`/` then `n` / `N` in Vim, `C-s` / `C-r` in Emacs, `Ctrl+F` then `F3` / `Shift+F3` in Notepad; `Enter` or `Esc` stays on the match, `C-g` goes back); the preview tagbar takes the keys of the global mode. Each tab shows or hides its own (a new
-tab follows the last choice, kept for the next start), and its width is
+tab follows the Preferences, Editor page), and its width is
 shared by the tabs.
 
 In a Markdown file, the symbol list and the tagbar show the headings.
