@@ -78,7 +78,8 @@ typedef struct {
 } AutoRules;
 
 /* The Auto layout (name translated): current with the editor tabs in the
- * dedicated panel, the panels changed as rules says (NULL: none), and the
+ * dedicated panel, the panels changed as rules says (NULL: none; the
+ * preview hides with two files or more unless rules shows it), and the
  * editor panel split as layout_store_grid_splits() for the size it gets in
  * a main area of width x height pixels (0 = unknown). Caller frees. */
 SavedLayout* layout_store_auto(const SavedLayout* current, guint files, const AutoRules* rules, gint width,
