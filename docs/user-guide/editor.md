@@ -32,7 +32,7 @@ quitting with unsaved changes asks first.
 | `Ctrl+R` / `F2` | Rename the file of the tab (only `F2` in Emacs and Org-mode tabs) |
 | `Ctrl+Alt+N` | Show or hide line numbers |
 | Middle click on the title | Close the tab |
-| Right click on the title | Change the mode, line numbers, move, split or close the tab |
+| Right click on the title | Change the mode, line numbers, show the tagbar (code and Markdown), move, split or close the tab |
 
 ### The dedicated editor panel
 

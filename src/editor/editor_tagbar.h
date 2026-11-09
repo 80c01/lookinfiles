@@ -26,6 +26,10 @@ void editor_tagbar_set_width(AppData* app, gint width);
  * the view; the other tabs keep theirs, the tabs opened next follow (saved
  * in settings.ini). A message (through message) when tab has no outline. */
 void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc message);
+/* Whether tab has a tagbar to show (a code or Markdown file) */
+gboolean editor_tagbar_available(EditorTab* tab);
+/* Whether the tagbar of tab is shown */
+gboolean editor_tagbar_shown(EditorTab* tab);
 
 /* The tagbar of every editor tab, shown or hidden, and the last choice */
 typedef struct EditorTagbarStates EditorTagbarStates;

@@ -2077,6 +2077,14 @@ msgstr "Ne pas renvoyer à la ligne"
 msgid "Wrap Lines"
 msgstr "Renvoyer à la ligne"
 
+#: src/editor/editor_tab_menu.c:204
+msgid "Show Tagbar"
+msgstr "Afficher la barre de symboles"
+
+#: src/editor/editor_tab_menu.c:204
+msgid "Hide Tagbar"
+msgstr "Masquer la barre de symboles"
+
 #: src/editor/editor.c:598
 msgid "Split Right"
 msgstr "Diviser à droite"

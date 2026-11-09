@@ -232,6 +232,14 @@ void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc messa
     g_free(path);
 }
 
+gboolean editor_tagbar_available(EditorTab* tab) {
+    return tab != NULL && tab->tagbar != NULL && code_outline_supported(tab);
+}
+
+gboolean editor_tagbar_shown(EditorTab* tab) {
+    return tab != NULL && tab->tagbar != NULL && outline_pane_shown(tab->tagbar->pane);
+}
+
 /* ------------------------------------------------------------------------- */
 /* States                                                                    */
 /* ------------------------------------------------------------------------- */

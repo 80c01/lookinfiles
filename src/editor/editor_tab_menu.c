@@ -3,6 +3,7 @@
 #include "editor/editor.h"
 #include "editor/editor_private.h"
 #include "editor/editor_modes.h"
+#include "editor/editor_tagbar.h"
 #include "core/i18n.h"
 #include "widgets/diff_gutter.h"
 
@@ -47,6 +48,9 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
         break;
     case TAB_ACTION_WRAP:
         editor_mode_toggle_wrap(tab);
+        break;
+    case TAB_ACTION_TAGBAR:
+        editor_tagbar_toggle(app, tab, NULL);
         break;
     case TAB_ACTION_CLOSE:
         editor_close_tab(app, tab);
@@ -188,19 +192,24 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
     gtk_widget_set_margin_bottom(sep3, 4);
     gtk_box_append(GTK_BOX(box), sep3);
 
+    gboolean vim = (tab->mode == EDITOR_MODE_VIM);
+    gboolean emacs = (tab->mode == EDITOR_MODE_EMACS || org);
     tab_menu_item(box, popover, app, tab,
                   diff_gutter_get_line_numbers(tab->view) ? _("Hide Line Numbers") : _("Show Line Numbers"),
                   "Ctrl+Alt+N", TAB_ACTION_LINE_NUMBERS);
     tab_menu_item(box, popover, app, tab, editor_mode_get_wrap(tab) ? _("Don't Wrap Lines") : _("Wrap Lines"),
                   NULL, TAB_ACTION_WRAP);
+    if (editor_tagbar_available(tab)) {
+        const gchar* key = vim ? ":TagbarToggle" : emacs ? "M-x imenu-list" : "Ctrl+K Ctrl+O";
+        tab_menu_item(box, popover, app, tab, editor_tagbar_shown(tab) ? _("Hide Tagbar") : _("Show Tagbar"), key,
+                      TAB_ACTION_TAGBAR);
+    }
 
     GtkWidget* sep_split = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_margin_top(sep_split, 4);
     gtk_widget_set_margin_bottom(sep_split, 4);
     gtk_box_append(GTK_BOX(box), sep_split);
-    /* The keys of the tab's mode (Notepad has none) */
-    gboolean vim = (tab->mode == EDITOR_MODE_VIM);
-    gboolean emacs = (tab->mode == EDITOR_MODE_EMACS || org);
+    /* The keys of the tab's mode (Notepad has none for the splits) */
     tab_menu_item(box, popover, app, tab, _("Split Right"), vim ? "Ctrl+W v" : emacs ? "C-x 3" : NULL,
                   TAB_ACTION_SPLIT_RIGHT);
     tab_menu_item(box, popover, app, tab, _("Split Down"), vim ? "Ctrl+W s" : emacs ? "C-x 2" : NULL,

@@ -8,6 +8,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The menu of an editor tab (right click on its title) shows or hides the
+  tagbar of a code or Markdown tab.
 - Preferences → **Layouts**: the **Auto** layout can show or hide the
   terminal, the preview and the tagbar of the editor tabs, and put the
   terminal below or on the right (by default it leaves them as they are).

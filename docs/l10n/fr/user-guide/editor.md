@@ -35,7 +35,7 @@ enregistrées demande d’abord.
 | `Ctrl+R` / `F2` | Renommer le fichier de l’onglet (seulement `F2` dans les onglets Emacs et Org-mode) |
 | `Ctrl+Alt+N` | Afficher ou masquer les numéros de ligne |
 | Clic du milieu sur le titre | Fermer l’onglet |
-| Clic droit sur le titre | Changer le mode, les numéros de ligne, déplacer, diviser ou fermer l’onglet |
+| Clic droit sur le titre | Changer le mode, les numéros de ligne, afficher la barre de symboles (code et Markdown), déplacer, diviser ou fermer l’onglet |
 
 ### Le panneau d’édition dédié
 
