@@ -5,13 +5,31 @@
 #include "editor/editor_modes.h"
 #include "editor/editor_tagbar.h"
 #include "core/i18n.h"
+#include "core/settings_store.h"
 #include "widgets/diff_gutter.h"
+#include "widgets/minimap.h"
 
 typedef struct {
     AppData* app;
     EditorTab* tab;
     GtkWidget* popover;
 } EditorTabMenuData;
+
+/* Show or hide every minimap and save it, as Preferences → Editor does */
+static void toggle_minimap(AppData* app) {
+    app->settings.minimap = !minimap_enabled();
+    minimap_set_enabled(app->settings.minimap);
+    gchar* path = settings_store_path();
+    Settings s;
+    settings_store_load(path, &s);
+    s.minimap = app->settings.minimap;
+    GError* error = NULL;
+    if (!settings_store_save(path, &s, &error)) {
+        g_printerr("[ Minimap setting not saved: %s ]\n", error->message);
+        g_clear_error(&error);
+    }
+    g_free(path);
+}
 
 static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
     (void)widget;
@@ -51,6 +69,9 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
         break;
     case TAB_ACTION_TAGBAR:
         editor_tagbar_toggle(app, tab, NULL);
+        break;
+    case TAB_ACTION_MINIMAP:
+        toggle_minimap(app);
         break;
     case TAB_ACTION_CLOSE:
         editor_close_tab(app, tab);
@@ -204,6 +225,8 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
         tab_menu_item(box, popover, app, tab, editor_tagbar_shown(tab) ? _("Hide Tagbar") : _("Show Tagbar"), key,
                       TAB_ACTION_TAGBAR);
     }
+    tab_menu_item(box, popover, app, tab, minimap_enabled() ? _("Hide Minimap") : _("Show Minimap"), NULL,
+                  TAB_ACTION_MINIMAP);
 
     GtkWidget* sep_split = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_margin_top(sep_split, 4);

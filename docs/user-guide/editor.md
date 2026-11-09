@@ -32,7 +32,7 @@ quitting with unsaved changes asks first.
 | `Ctrl+R` / `F2` | Rename the file of the tab (only `F2` in Emacs and Org-mode tabs) |
 | `Ctrl+Alt+N` | Show or hide line numbers |
 | Middle click on the title | Close the tab |
-| Right click on the title | Change the mode, line numbers, show the tagbar (code and Markdown), move, split or close the tab |
+| Right click on the title | Change the mode, line numbers, show the tagbar (code and Markdown), show the minimap, move, split or close the tab |
 
 ### The dedicated editor panel
 
@@ -71,7 +71,8 @@ global mode.
 The **Editor** section of the Preferences (`Ctrl+,`) sets the global mode
 kept for the next launches, whether new tabs show line numbers and wrap
 long lines (`-e` on the command line wins for one launch), and whether the
-code and Markdown tabs show the tagbar (the open tabs too).
+code and Markdown tabs show the tagbar (the open tabs too), and whether the
+editor tabs, the preview and Help show the minimap.
 
 In Emacs mode, `M-x org-mode` turns on Org-mode editing for any file, and
 `M-x text-mode` turns it off.

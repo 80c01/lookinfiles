@@ -2085,6 +2085,14 @@ msgstr "Afficher la barre de symboles"
 msgid "Hide Tagbar"
 msgstr "Masquer la barre de symboles"
 
+#: src/editor/editor_tab_menu.c:228
+msgid "Hide Minimap"
+msgstr "Masquer la minicarte"
+
+#: src/editor/editor_tab_menu.c:228
+msgid "Show Minimap"
+msgstr "Afficher la minicarte"
+
 #: src/editor/editor.c:598
 msgid "Split Right"
 msgstr "Diviser à droite"
@@ -6144,11 +6152,12 @@ msgstr[1] "%u diapositives"
 #: src/chrome/preferences.c:106
 msgid ""
 "For editor tabs opened from now on; the tabs already open keep theirs, "
-"except for the column line and the tagbar. Org files always open in Org-mode."
+"except for the column line, the tagbar and the minimap. Org files always "
+"open in Org-mode."
 msgstr ""
 "Pour les onglets d’édition ouverts à partir de maintenant ; les onglets déjà "
-"ouverts gardent les leurs, sauf pour la ligne de colonne et la barre de "
-"symboles. Les fichiers Org s’ouvrent toujours en Org-mode."
+"ouverts gardent les leurs, sauf pour la ligne de colonne, la barre de "
+"symboles et la minicarte. Les fichiers Org s’ouvrent toujours en Org-mode."
 
 #: src/chrome/preferences.c:111
 msgid "_Mode"
@@ -6199,6 +6208,19 @@ msgstr ""
 #: src/chrome/preferences.c:146
 msgid "Show the tagbar in the _preview"
 msgstr "Afficher la barre de symboles dans l’a_perçu"
+
+#: src/chrome/preferences.c:160
+msgid "Show the mi_nimap"
+msgstr "Afficher la mi_nicarte"
+
+#: src/chrome/preferences.c:162
+msgid ""
+"Overview of a long text beside it, in every editor tab, the tabs already "
+"open too, in the preview and in Help (hidden: the scrollbar)"
+msgstr ""
+"Vue d’ensemble d’un long texte à côté de lui, dans chaque onglet d’édition, "
+"y compris ceux déjà ouverts, dans l’aperçu et dans l’aide (masquée : la "
+"barre de défilement)"
 
 #: src/chrome/preferences.c:148
 msgid ""

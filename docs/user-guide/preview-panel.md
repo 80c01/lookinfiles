@@ -73,7 +73,10 @@ listed.
 (Emacs) opens it in the dedicated editor panel.
 
 On the right, the **minimap** shows the whole document in small, with the
-git change bars along its edge. Click or drag in it to scroll.
+git change bars along its edge. Click or drag in it to scroll. To hide it
+(and get the scrollbar back), untick **Show the minimap** in the
+Preferences, Editor page, or pick **Hide Minimap** in the menu of an editor
+tab.
 
 ## Images and PDF
 

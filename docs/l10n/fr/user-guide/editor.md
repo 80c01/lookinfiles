@@ -35,7 +35,7 @@ enregistrées demande d’abord.
 | `Ctrl+R` / `F2` | Renommer le fichier de l’onglet (seulement `F2` dans les onglets Emacs et Org-mode) |
 | `Ctrl+Alt+N` | Afficher ou masquer les numéros de ligne |
 | Clic du milieu sur le titre | Fermer l’onglet |
-| Clic droit sur le titre | Changer le mode, les numéros de ligne, afficher la barre de symboles (code et Markdown), déplacer, diviser ou fermer l’onglet |
+| Clic droit sur le titre | Changer le mode, les numéros de ligne, afficher la barre de symboles (code et Markdown), afficher la minicarte, déplacer, diviser ou fermer l’onglet |
 
 ### Le panneau d’édition dédié
 
@@ -80,7 +80,8 @@ La section **Éditeur** des Préférences (`Ctrl+,`) règle le mode global
 gardé pour les lancements suivants, si les nouveaux onglets affichent les
 numéros de ligne et renvoient les longues lignes à la ligne (`-e` sur la
 ligne de commande l’emporte pour un lancement), et si les onglets de code
-et Markdown affichent la barre de symboles (les onglets ouverts aussi).
+et Markdown affichent la barre de symboles (les onglets ouverts aussi), et
+si les onglets d’édition, l’aperçu et l’aide affichent la minicarte.
 
 En mode Emacs, `M-x org-mode` active l’édition Org-mode pour n’importe quel
 fichier, et `M-x text-mode` la désactive.

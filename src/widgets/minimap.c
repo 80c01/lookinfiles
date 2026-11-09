@@ -778,8 +778,14 @@ typedef struct {
     const gchar* who;        /* its name in the LOOKIN_DEBUG_MINIMAP log */
 } ViewMinimap;
 
+/* Preferences → Editor → minimap (settings.ini: minimap), and every minimap
+ * made by minimap_new_for_view(), to apply a change at once */
+static gboolean minimaps_enabled = TRUE;
+static GSList* all_minimaps = NULL;
+
 static void view_minimap_free(gpointer data) {
     ViewMinimap* vm = data;
+    all_minimaps = g_slist_remove(all_minimaps, vm);
     if (vm->vis_source != 0) {
         g_source_remove(vm->vis_source);
     }
@@ -797,6 +803,15 @@ static void view_minimap_invalidate(ViewMinimap* vm) {
 static gboolean view_minimap_vis_idle(gpointer data) {
     ViewMinimap* vm = data;
     vm->vis_source = 0;
+    if (!minimaps_enabled) {
+        /* Turned off: hide now, nothing to confirm on the next frame */
+        if (gtk_widget_get_visible(vm->minimap)) {
+            minimap_cache_clear(&vm->cache);
+            gtk_widget_set_visible(vm->minimap, FALSE);
+        }
+        sync_vertical_scrollbar(vm->view, FALSE);
+        return G_SOURCE_REMOVE;
+    }
     GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(vm->view));
     gboolean useful = adj != NULL &&
                       gtk_adjustment_get_upper(adj) > gtk_adjustment_get_page_size(adj) + 1.5 &&
@@ -879,6 +894,7 @@ GtkWidget* minimap_new_for_view(GtkWidget* text_view, const gchar* who) {
     gtk_widget_set_vexpand(minimap, TRUE);
     gtk_widget_set_visible(minimap, FALSE);
     g_object_set_data_full(G_OBJECT(minimap), "view-minimap", vm, view_minimap_free);
+    all_minimaps = g_slist_prepend(all_minimaps, vm);
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(minimap), on_view_minimap_draw, vm, NULL);
 
     GtkGesture* click = gtk_gesture_click_new();
@@ -930,6 +946,20 @@ void minimap_view_update_visibility(GtkWidget* minimap) {
     if (vm != NULL) {
         view_minimap_update_visibility(vm);
     }
+}
+
+void minimap_set_enabled(gboolean enabled) {
+    if (minimaps_enabled == enabled) {
+        return;
+    }
+    minimaps_enabled = enabled;
+    for (GSList* l = all_minimaps; l != NULL; l = l->next) {
+        view_minimap_update_visibility(l->data);
+    }
+}
+
+gboolean minimap_enabled(void) {
+    return minimaps_enabled;
 }
 
 void minimap_view_cache_clear(GtkWidget* minimap) {

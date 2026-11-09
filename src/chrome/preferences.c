@@ -9,6 +9,7 @@
 #include "editor/editor.h"
 #include "editor/editor_tagbar.h"
 #include "preview/preview_tagbar.h"
+#include "widgets/minimap.h"
 #include "explorer/nav_keys.h"
 #include "search/search.h"
 #include "chrome/themes.h"
@@ -31,6 +32,7 @@ typedef struct {
     GtkWidget* wrap;          /* GtkCheckButton */
     GtkWidget* tagbar;        /* GtkCheckButton */
     GtkWidget* preview_tagbar; /* GtkCheckButton */
+    GtkWidget* minimap;        /* GtkCheckButton */
     GtkWidget* ruler;         /* GtkCheckButton: vertical line at a column */
     GtkWidget* ruler_column;  /* GtkSpinButton */
     GtkWidget* width;         /* GtkSpinButton */
@@ -68,6 +70,7 @@ static SettingsEditor settings_editor_of(EditorMode mode) {
 
 void preferences_apply_startup(AppData* app, const Settings* settings) {
     app->settings = *settings;
+    minimap_set_enabled(settings->minimap);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -109,7 +112,7 @@ static GtkWidget* response_button(Preferences* p, const gchar* label, gint respo
 static GtkWidget* editor_page(Preferences* p) {
     GtkWidget* box = page_box();
     gtk_box_append(GTK_BOX(box), hint_label(_("For editor tabs opened from now on; the tabs already open keep "
-                                            "theirs, except for the column line and the tagbar. Org files always open "
+                                            "theirs, except for the column line, the tagbar and the minimap. Org files always open "
                                             "in Org-mode.")));
 
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -153,6 +156,12 @@ static GtkWidget* editor_page(Preferences* p) {
     gtk_widget_set_tooltip_text(p->preview_tagbar, _("Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews, PDF bookmarks, beside "
                                                    "the text (in the preview: o or Ctrl+K Ctrl+O)"));
     gtk_box_append(GTK_BOX(box), p->preview_tagbar);
+
+    p->minimap = gtk_check_button_new_with_mnemonic(_("Show the mi_nimap"));
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->minimap), p->app->settings.minimap);
+    gtk_widget_set_tooltip_text(p->minimap, _("Overview of a long text beside it, in every editor tab, the tabs "
+                                            "already open too, in the preview and in Help (hidden: the scrollbar)"));
+    gtk_box_append(GTK_BOX(box), p->minimap);
 
     /* Vim's colorcolumn: the line at the left edge of that column */
     GtkWidget* ruler_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -340,6 +349,7 @@ static void save_settings(Preferences* p) {
     s.wrap = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->wrap));
     s.tagbar = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->tagbar));
     s.preview_tagbar = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->preview_tagbar));
+    s.minimap = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->minimap));
     s.color_column = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->ruler))
                          ? gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->ruler_column))
                          : 0;
@@ -362,6 +372,7 @@ static void save_settings(Preferences* p) {
         editor_tagbar_set_shown(app, s.tagbar); /* every tab: only when changed */
     }
     preview_tagbar_set_shown(app, s.preview_tagbar);
+    minimap_set_enabled(s.minimap);
     gboolean column_changed = (s.color_column != app->settings.color_column);
     app->settings = s;
     if (column_changed) {

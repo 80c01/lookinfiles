@@ -8,6 +8,9 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Preferences → **Editor** → **Show the minimap**, also **Show / Hide
+  Minimap** in the menu of an editor tab: shows or hides the minimap of every
+  editor tab, the preview and Help (hidden, the scrollbar comes back).
 - The menu of an editor tab (right click on its title) shows or hides the
   tagbar of a code or Markdown tab.
 - Preferences → **Layouts**: the **Auto** layout can show or hide the

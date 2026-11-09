@@ -10,6 +10,7 @@
  *   wrap=false           # new editor tabs wrap long lines
  *   color-column=81      # vertical line at this column in editors (0: none)
  *   tagbar=false         # code and Markdown editor tabs show the tagbar
+ *   minimap=true         # editor tabs, the preview and Help show a minimap
  *   [Preview]
  *   tagbar=false         # previews with headings show the tagbar
  *   [Layouts]
@@ -59,6 +60,7 @@ typedef struct {
     gint color_column;     /* vertical line in editors at this column, 0: none */
     gboolean tagbar;       /* code and Markdown editor tabs show the tagbar */
     gboolean preview_tagbar; /* previews with headings show the tagbar */
+    gboolean minimap;      /* editor tabs, the preview and Help show a minimap */
     SettingsPanel auto_terminal; /* terminal panel of the Auto layout */
     SettingsPanel auto_preview;  /* preview panel of the Auto layout */
     SettingsPanel auto_tagbar;   /* editor tagbar of the Auto layout */
@@ -67,7 +69,7 @@ typedef struct {
     gint height;
 } Settings;
 
-/* Notepad, no line numbers, no wrap, column line at 81, no tagbars, Auto
+/* Notepad, no line numbers, no wrap, column line at 81, no tagbars, minimap, Auto
  * keeping the panels, 1000 x 600 */
 void settings_defaults(Settings* s);
 
