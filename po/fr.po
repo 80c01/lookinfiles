@@ -546,33 +546,19 @@ msgstr ""
 msgid "Crop Image"
 msgstr "Recadrer l’image"
 
-#: src/canvas/canvas_crop.c:118
-msgid "Apply"
-msgstr "Appliquer"
-
-#: src/canvas/canvas_crop.c:119
-msgid "Reset"
-msgstr "Réinitialiser"
-
-#: src/canvas/canvas_crop.c:120 src/editor/editor_notepad.c:549
+#: src/editor/editor_notepad.c:549
 msgid "Cancel"
 msgstr "Annuler"
 
-#: src/canvas/canvas_crop.c:142
-msgid "Left %"
-msgstr "Gauche %"
+#. TRANSLATORS: size of the cropped picture, in pixels
+#: src/canvas/canvas_crop.c
+#, c-format
+msgid "%1$d × %2$d pixels"
+msgstr "%1$d × %2$d pixels"
 
-#: src/canvas/canvas_crop.c:150
-msgid "Top %"
-msgstr "Haut %"
-
-#: src/canvas/canvas_crop.c:158
-msgid "Width %"
-msgstr "Largeur %"
-
-#: src/canvas/canvas_crop.c:166
-msgid "Height %"
-msgstr "Hauteur %"
+#: src/canvas/canvas_crop.c
+msgid "Drag a corner to crop, the inside of the frame to move it."
+msgstr "Faites glisser un coin pour recadrer, l’intérieur du cadre pour le déplacer."
 
 #: src/canvas/canvas_export.c:39
 msgid "The canvas is empty."

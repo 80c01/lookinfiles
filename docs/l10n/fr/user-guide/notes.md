@@ -87,7 +87,10 @@ commandes d’alignement, l’ordre de dessin, **Verrouiller / Déverrouiller**,
 la note sous le nom `<titre>.png` ou `<titre>.svg`.
 
 Les images viennent de `Ctrl+V` avec une image copiée, ou de fichiers image
-déposés sur la page ; double-cliquez sur une image pour la recadrer.
+déposés sur la page ; double-cliquez sur une image pour la recadrer :
+l’image entière s’ouvre en grand sous un cadre de recadrage ; faites
+glisser une poignée de coin pour recadrer, l’intérieur du cadre pour le
+déplacer (**Réinitialiser** remontre l’image entière).
 
 ### Panneau des propriétés et barre de mise en forme
 
