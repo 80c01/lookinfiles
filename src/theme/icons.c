@@ -58,6 +58,8 @@ static const IconFallback FALLBACKS[] = {
     {"canvas-send-back", {"pan-down", NULL}},
     {"canvas-lock", {"view-grid", NULL}},
     {"canvas-unlock", {"view-grid", NULL}},
+    {"canvas-group", {"view-grid", NULL}},
+    {"canvas-ungroup", {"view-grid", NULL}},
     {"canvas-crop", {"view-grid", NULL}},
     {"canvas-row-add-above", {"list-add", NULL}},
     {"canvas-row-add-below", {"list-add", NULL}},

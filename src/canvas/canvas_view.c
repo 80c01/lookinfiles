@@ -259,6 +259,16 @@ static void on_props_lock(gpointer udata) {
     canvas_page_restore_focus(p);
 }
 
+static void on_props_group(gboolean group, gpointer udata) {
+    CanvasPage* p = udata;
+    if (group) {
+        canvas_page_group_selected(p);
+    } else {
+        canvas_page_ungroup_selected(p);
+    }
+    canvas_page_restore_focus(p);
+}
+
 static void on_props_order(gint where, gpointer udata) {
     CanvasPage* p = udata;
     canvas_page_reorder_selected(p, where);
@@ -418,6 +428,7 @@ static CanvasPage* page_new(AppData* app) {
         .on_align = on_props_align,
         .on_order = on_props_order,
         .on_lock = on_props_lock,
+        .on_group = on_props_group,
         .on_crop = on_props_crop
     };
     p->props = canvas_props_new(&pcbs, p);

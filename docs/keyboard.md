@@ -144,6 +144,7 @@ editor tab; it stays in its workspace)
 | `Ctrl+C` / `Ctrl+X` | Copy / cut the selected blocks (other applications get their text) |
 | `Ctrl+D` | Duplicate the selected blocks |
 | `Ctrl+]` / `Ctrl+[` (`Shift`: to the front / back) | Bring the selected blocks forward / send them backward |
+| `Ctrl+G` / `Ctrl+Shift+G` | Group the selected blocks (a click on one then selects the group; groups among them merged) / ungroup them |
 | `Ctrl+Shift+K` | Lock the selected blocks in place (not moved, resized or deleted; text still edited), or unlock them |
 | Drop image files | Copy them into the note as pictures |
 | Drag the bar above a block (a picture or a shape: anywhere on it) / its corner (a shape: any corner or side) | Move / resize it, the opposite corner or side staying in place (pictures keep their proportions, shapes too with Shift); a selected block takes the other selected ones along |

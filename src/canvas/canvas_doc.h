@@ -16,7 +16,8 @@
  * drawing order (the last one on top). Each block has an id, unique on the
  * page (id="3"); a line or an arrow may have its ends bound to blocks
  * (start="1" end="2"): they follow them; a locked block (locked="1") stays
- * in place; a turned shape (angle="30.0", degrees, clockwise) turns around
+ * in place; blocks with the same group (group="1") are selected and moved
+ * together; a turned shape (angle="30.0", degrees, clockwise) turns around
  * its centre, its box the one it has unturned. Pure model, no widgets. */
 
 #define CANVAS_PAGE_FILE "page.xml"
@@ -85,6 +86,7 @@ typedef struct {
     CanvasBlockKind kind;
     gint id;         /* > 0, unique in the document */
     gboolean locked; /* kept in place: not moved, resized or deleted (locked="1") */
+    gint group;      /* > 0: blocks with the same group go together (group="1"); 0: none */
     gint x, y;       /* top-left corner on the page */
     gint w, h;       /* size; h = 0 for a text box: as tall as its text */
     gdouble angle;   /* SHAPE: turned around its centre, degrees in [0, 360) */

@@ -320,10 +320,12 @@ static void test_ids_and_bindings(void) {
     a->end_id = r->id;
     r->locked = TRUE;
     r->angle = 30;
+    r->group = 4;
+    a->group = 4;
 
     g_autofree gchar* xml = canvas_doc_to_xml(doc);
     g_assert_nonnull(strstr(xml, "<text id=\"1\" x="));
-    g_assert_nonnull(strstr(xml, "<shape id=\"3\" start=\"1\" end=\"2\" type=\"arrow\""));
+    g_assert_nonnull(strstr(xml, "<shape id=\"3\" start=\"1\" end=\"2\" group=\"4\" type=\"arrow\""));
     g_autoptr(GError) error = NULL;
     g_autoptr(CanvasDoc) back = canvas_doc_parse(xml, -1, &error);
     g_assert_no_error(error);
@@ -333,7 +335,9 @@ static void test_ids_and_bindings(void) {
     g_assert_cmpint(ba->end_id, ==, 2);
     g_assert_true(((CanvasBlock*)g_ptr_array_index(back->blocks, 1))->locked);
     g_assert_false(ba->locked);
-    g_assert_nonnull(strstr(xml, "<shape id=\"2\" locked=\"1\" angle=\"30.0\" type=\"rect\""));
+    g_assert_cmpint(ba->group, ==, 4);
+    g_assert_cmpint(((CanvasBlock*)g_ptr_array_index(back->blocks, 0))->group, ==, 0);
+    g_assert_nonnull(strstr(xml, "<shape id=\"2\" locked=\"1\" group=\"4\" angle=\"30.0\" type=\"rect\""));
     g_assert_cmpfloat_with_epsilon(((CanvasBlock*)g_ptr_array_index(back->blocks, 1))->angle, 30.0, 1e-9);
     g_assert_cmpfloat_with_epsilon(ba->angle, 0.0, 1e-9);
     g_assert_cmpfloat_with_epsilon(canvas_doc_angle(-90), 270.0, 1e-9);

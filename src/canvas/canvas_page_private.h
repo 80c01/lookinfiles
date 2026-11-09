@@ -108,6 +108,14 @@ gboolean canvas_page_is_selected(CanvasPage* p, CanvasItem* it);
 GPtrArray* canvas_page_selected_unlocked(CanvasPage* p);
 /* Ctrl+Shift+K: lock the selected blocks, or unlock them all if they are */
 void canvas_page_toggle_lock(CanvasPage* p);
+/* Groups: blocks selected and moved together. Ctrl+G: the selected blocks
+ * make one group (the groups among them merged); Ctrl+Shift+G: they leave
+ * their groups. can_group: 2 blocks or more, not all one group already;
+ * can_ungroup: a selected block is in a group. */
+gboolean canvas_page_can_group(CanvasPage* p);
+gboolean canvas_page_can_ungroup(CanvasPage* p);
+void canvas_page_group_selected(CanvasPage* p);
+void canvas_page_ungroup_selected(CanvasPage* p);
 void canvas_page_selection_clear(CanvasPage* p);
 /* Shift+click on a block: add it to the selection, or take it out */
 void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it);

@@ -149,6 +149,16 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         canvas_page_toggle_lock(p);
         return TRUE;
     }
+    /* Ctrl+G / Ctrl+Shift+G: group / ungroup the selected blocks */
+    if (control && (state & GDK_ALT_MASK) == 0 && on_blocks && it != NULL &&
+        (keyval == GDK_KEY_g || keyval == GDK_KEY_G)) {
+        if ((state & GDK_SHIFT_MASK) != 0) {
+            canvas_page_ungroup_selected(p);
+        } else {
+            canvas_page_group_selected(p);
+        }
+        return TRUE;
+    }
     /* Ctrl+] / Ctrl+[: one step up / down; with Shift: to the front / back */
     if (control && (state & GDK_ALT_MASK) == 0 && on_blocks && it != NULL) {
         gboolean shift = (state & GDK_SHIFT_MASK) != 0;

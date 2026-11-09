@@ -126,6 +126,7 @@ déposés sur la page ; double-cliquez sur une image pour la recadrer.
 | Éditer la zone de texte sélectionnée, ou le texte d’une forme | `Enter` (une forme : aussi un double-clic) |
 | Supprimer les blocs sélectionnés | `Delete` ou `Backspace` |
 | Ordre de dessin | `Ctrl+]` / `Ctrl+[` d’un cran vers le haut / le bas, `Ctrl+Shift+]` / `Ctrl+Shift+[` au premier / dernier plan (aussi dans le menu de la barre d’outils) ; déplacer un bloc garde sa place dans l’ordre |
+| Grouper des blocs | `Ctrl+G` (ou **Grouper** dans le panneau de droite) sur deux blocs sélectionnés ou plus : un clic sur l’un d’eux les sélectionne alors tous, et ils se déplacent, se copient et se suppriment ensemble ; `Ctrl+Shift+G` (**Dégrouper**) les sépare à nouveau |
 | Verrouiller des blocs | `Ctrl+Shift+K` (ou le menu de la barre d’outils) sur les blocs sélectionnés : ils ne peuvent plus être déplacés, redimensionnés, supprimés ni pris par un cadre de sélection (bordure en pointillés quand ils sont sélectionnés ; le texte reste modifiable) ; à nouveau pour déverrouiller |
 | Copier, couper, coller, dupliquer | `Ctrl+C`, `Ctrl+X`, `Ctrl+V` (au pointeur, aussi dans une autre note Canvas, images comprises), `Ctrl+D` ; les flèches copiées avec leurs blocs restent attachées aux copies |
 | Zoom | `Ctrl` + molette (autour du pointeur) ou `Ctrl+=` / `Ctrl+-` ; `Ctrl+0`, ou un clic sur l’échelle au-dessus de la page, revient à 100 % |

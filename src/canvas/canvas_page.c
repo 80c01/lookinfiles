@@ -168,18 +168,128 @@ void canvas_page_toggle_lock(CanvasPage* p) {
     canvas_page_update_props(p);
 }
 
+/* it and the blocks of its group, in drawing order (free with g_ptr_array_unref) */
+static GPtrArray* group_of(CanvasPage* p, CanvasItem* it) {
+    GPtrArray* items = g_ptr_array_new();
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* o = canvas_item_of(c);
+        if (o != NULL && (o == it || (it->group > 0 && o->group == it->group))) g_ptr_array_add(items, o);
+    }
+    return items;
+}
+
+/* The blocks of every group with a block selected join the selection */
+static void select_whole_groups(CanvasPage* p) {
+    GHashTable* groups = g_hash_table_new(g_direct_hash, g_direct_equal);
+    for (guint i = 0; i < p->selection->len; i++) {
+        CanvasItem* it = canvas_item_of(g_ptr_array_index(p->selection, i));
+        if (it != NULL && it->group > 0) g_hash_table_add(groups, GINT_TO_POINTER(it->group));
+    }
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* it = canvas_item_of(c);
+        if (it != NULL && it->group > 0 && g_hash_table_contains(groups, GINT_TO_POINTER(it->group))) {
+            set_add(p, it);
+        }
+    }
+    g_hash_table_unref(groups);
+}
+
+/* A group left with a single block is no group any more */
+static void prune_groups(CanvasPage* p) {
+    GHashTable* counts = g_hash_table_new(g_direct_hash, g_direct_equal);
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* it = canvas_item_of(c);
+        if (it == NULL || it->group <= 0) continue;
+        gpointer key = GINT_TO_POINTER(it->group);
+        g_hash_table_insert(counts, key, GINT_TO_POINTER(GPOINTER_TO_INT(g_hash_table_lookup(counts, key)) + 1));
+    }
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* it = canvas_item_of(c);
+        if (it != NULL && it->group > 0 &&
+            GPOINTER_TO_INT(g_hash_table_lookup(counts, GINT_TO_POINTER(it->group))) < 2) {
+            it->group = 0;
+        }
+    }
+    g_hash_table_unref(counts);
+}
+
+/* A group number no block has */
+static gint next_group(CanvasPage* p) {
+    gint max = 0;
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* it = canvas_item_of(c);
+        if (it != NULL) max = MAX(max, it->group);
+    }
+    return max + 1;
+}
+
+gboolean canvas_page_can_group(CanvasPage* p) {
+    GPtrArray* items = canvas_page_selected(p);
+    gboolean can = FALSE;
+    for (guint i = 1; i < items->len && !can; i++) {
+        CanvasItem* a = g_ptr_array_index(items, 0);
+        CanvasItem* b = g_ptr_array_index(items, i);
+        can = a->group <= 0 || b->group != a->group;
+    }
+    g_ptr_array_unref(items);
+    return can;
+}
+
+gboolean canvas_page_can_ungroup(CanvasPage* p) {
+    GPtrArray* items = canvas_page_selected(p);
+    gboolean can = FALSE;
+    for (guint i = 0; i < items->len && !can; i++) can = ((CanvasItem*)g_ptr_array_index(items, i))->group > 0;
+    g_ptr_array_unref(items);
+    return can;
+}
+
+void canvas_page_group_selected(CanvasPage* p) {
+    if (!canvas_page_can_group(p)) return;
+    GPtrArray* items = canvas_page_selected(p);
+    canvas_page_remember(p);
+    gint group = next_group(p);
+    for (guint i = 0; i < items->len; i++) {
+        CanvasItem* it = g_ptr_array_index(items, i);
+        it->group = group;
+        set_add(p, it);
+    }
+    g_ptr_array_unref(items);
+    canvas_page_schedule_save(p);
+    canvas_page_update_props(p);
+}
+
+void canvas_page_ungroup_selected(CanvasPage* p) {
+    if (!canvas_page_can_ungroup(p)) return;
+    GPtrArray* items = canvas_page_selected(p);
+    canvas_page_remember(p);
+    /* The blocks stay selected, each on its own now */
+    for (guint i = 0; i < items->len; i++) {
+        CanvasItem* it = g_ptr_array_index(items, i);
+        it->group = 0;
+        if (items->len > 1) set_add(p, it);
+    }
+    g_ptr_array_unref(items);
+    canvas_page_schedule_save(p);
+    canvas_page_update_props(p);
+}
+
 void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it) {
     if (it == NULL) return;
     CanvasItem* current = canvas_page_current_item(p);
+    GPtrArray* members = group_of(p, it);
     if (!canvas_page_is_selected(p, it)) {
         set_add(p, current);
-        set_add(p, it);
+        for (guint i = 0; i < members->len; i++) set_add(p, g_ptr_array_index(members, i));
+        g_ptr_array_unref(members);
         canvas_item_select(it);
         canvas_page_update_props(p);
         return;
     }
-    set_remove(p, it);
-    if (it != current) {
+    /* A block of a group: the whole group goes */
+    for (guint i = 0; i < members->len; i++) set_remove(p, g_ptr_array_index(members, i));
+    gboolean had_current = current != NULL && g_ptr_array_find(members, current, NULL);
+    g_ptr_array_unref(members);
+    if (!had_current) {
         canvas_page_update_props(p);
         return;
     }
@@ -218,6 +328,7 @@ void canvas_page_select_box(CanvasPage* p, gint x, gint y, gint w, gint h, gbool
             last = it;
         }
     }
+    select_whole_groups(p);
     /* Focus the top block, so the keys act on the selection */
     if (last != NULL) {
         canvas_item_select(last);
@@ -244,7 +355,13 @@ void canvas_page_select_all(CanvasPage* p) {
 void canvas_page_focus_changed(CanvasPage* p, GtkWidget* f) {
     if (f == NULL || !gtk_widget_is_ancestor(f, p->surface)) return;
     CanvasItem* it = canvas_item_of(f);
-    if (it != NULL && !in_set(p, it)) canvas_page_selection_clear(p);
+    if (it == NULL || in_set(p, it)) return;
+    canvas_page_selection_clear(p);
+    /* A block of a group: the whole group is selected */
+    if (it->group > 0) {
+        set_add(p, it);
+        select_whole_groups(p);
+    }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -453,6 +570,7 @@ void canvas_page_remove_item(CanvasItem* it) {
     set_remove(p, it);
     canvas_bind_forget(p->surface, it->id);
     gtk_fixed_remove(GTK_FIXED(p->surface), it->frame);
+    prune_groups(p);
     canvas_page_schedule_save(p);
 }
 
@@ -524,13 +642,29 @@ guint canvas_page_add_copies(CanvasPage* p, CanvasDoc* doc, gint dx, gint dy, co
         g_hash_table_insert(ids, GINT_TO_POINTER(b->id), GINT_TO_POINTER(it->id));
         g_ptr_array_add(added, it);
     }
-    /* Lines keep only the bindings to blocks copied with them */
+    /* Lines keep only the bindings to blocks copied with them; the copies
+     * of a group make a new group (numbered above every group on the page,
+     * so above the old numbers too) */
+    GHashTable* groups = g_hash_table_new(g_direct_hash, g_direct_equal); /* old group -> new group */
+    gint group = 0;
     for (guint i = 0; i < added->len; i++) {
         CanvasItem* it = g_ptr_array_index(added, i);
         it->start_id = GPOINTER_TO_INT(g_hash_table_lookup(ids, GINT_TO_POINTER(it->start_id)));
         it->end_id = GPOINTER_TO_INT(g_hash_table_lookup(ids, GINT_TO_POINTER(it->end_id)));
+        if (it->group > 0) {
+            gpointer key = GINT_TO_POINTER(it->group);
+            gint to = GPOINTER_TO_INT(g_hash_table_lookup(groups, key));
+            if (to == 0) {
+                if (group == 0) group = next_group(p);
+                to = group++;
+                g_hash_table_insert(groups, key, GINT_TO_POINTER(to));
+            }
+            it->group = to;
+        }
         set_add(p, it);
     }
+    g_hash_table_unref(groups);
+    prune_groups(p);
     guint n = added->len;
     if (n > 0) canvas_item_select(g_ptr_array_index(added, n - 1));
     g_ptr_array_unref(added);
@@ -554,6 +688,7 @@ void canvas_page_remove_selected(CanvasPage* p) {
         gtk_fixed_remove(GTK_FIXED(p->surface), it->frame);
     }
     g_ptr_array_unref(items);
+    prune_groups(p);
     canvas_page_deselect(p);
     canvas_page_update_extent(p);
     canvas_page_schedule_save(p);
@@ -763,6 +898,8 @@ void canvas_page_update_props(CanvasPage* p) {
             sel.locked = FALSE;
         }
         sel.picture = items->len == 1 && it->kind == CANVAS_BLOCK_IMAGE;
+        sel.groupable = canvas_page_can_group(p);
+        sel.grouped = canvas_page_can_ungroup(p);
         g_ptr_array_unref(items);
     }
     canvas_props_show_selection(p->props, &sel);

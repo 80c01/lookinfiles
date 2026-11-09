@@ -84,6 +84,8 @@ struct CanvasProps {
     GtkWidget* selection_box;
     GtkWidget* align_box;
     GtkWidget* lock;
+    GtkWidget* group;
+    GtkWidget* ungroup;
     GtkWidget* crop;
     GtkWidget* distributes[G_N_ELEMENTS(DISTRIBUTES)];
     GtkWidget* fill_row;
@@ -318,7 +320,7 @@ void canvas_props_hide_shape(CanvasProps* props) {
 }
 
 /* ------------------------------------------------------------------------- */
-/* Selection section: align, layers, lock, crop                             */
+/* Selection section: align, layers, lock, group, crop                       */
 /* ------------------------------------------------------------------------- */
 
 static void on_align_clicked(GtkButton* btn, gpointer data) {
@@ -337,6 +339,12 @@ static void on_lock_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     CanvasProps* props = data;
     if (props->cbs.on_lock) props->cbs.on_lock(props->user_data);
+}
+
+static void on_group_clicked(GtkButton* btn, gpointer data) {
+    CanvasProps* props = data;
+    gboolean group = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "value")) != 0;
+    if (props->cbs.on_group) props->cbs.on_group(group, props->user_data);
 }
 
 static void on_crop_clicked(GtkButton* btn, gpointer data) {
@@ -399,6 +407,11 @@ static GtkWidget* selection_section(CanvasProps* props) {
     row = row_new();
     props->lock = action_button(props, "canvas-lock", N_("Lock (Ctrl+Shift+K)"), 0, G_CALLBACK(on_lock_clicked));
     gtk_box_append(GTK_BOX(row), props->lock);
+    props->group = action_button(props, "canvas-group", N_("Group (Ctrl+G)"), 1, G_CALLBACK(on_group_clicked));
+    gtk_box_append(GTK_BOX(row), props->group);
+    props->ungroup = action_button(props, "canvas-ungroup", N_("Ungroup (Ctrl+Shift+G)"), 0,
+                                   G_CALLBACK(on_group_clicked));
+    gtk_box_append(GTK_BOX(row), props->ungroup);
     props->crop = action_button(props, "canvas-crop", N_("Crop Picture"), 0, G_CALLBACK(on_crop_clicked));
     gtk_box_append(GTK_BOX(row), props->crop);
     gtk_box_append(GTK_BOX(box), row);
@@ -416,6 +429,8 @@ void canvas_props_show_selection(CanvasProps* props, const CanvasPropsSelection*
         gtk_widget_set_visible(props->align_box, sel->movable >= 2);
         gtk_button_set_child(GTK_BUTTON(props->lock), icon_image_new(sel->locked ? "canvas-unlock" : "canvas-lock"));
         gtk_widget_set_tooltip_text(props->lock, sel->locked ? _("Unlock (Ctrl+Shift+K)") : _("Lock (Ctrl+Shift+K)"));
+        gtk_widget_set_visible(props->group, sel->groupable);
+        gtk_widget_set_visible(props->ungroup, sel->grouped);
         gtk_widget_set_visible(props->crop, sel->picture);
     }
     gtk_widget_set_visible(props->selection_box, shown);

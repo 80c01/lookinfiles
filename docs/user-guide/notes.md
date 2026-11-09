@@ -121,6 +121,7 @@ onto the page; double click a picture to crop it.
 | Delete selected blocks | `Delete` or `Backspace` |
 | Drawing order | `Ctrl+]` / `Ctrl+[` one step up / down, `Ctrl+Shift+]` / `Ctrl+Shift+[` to the front / back (also in the tool bar menu); moving a block keeps its place in the order |
 | Lock blocks | `Ctrl+Shift+K` (or the tool bar menu) on the selected blocks: they can no longer be moved, resized, deleted or caught by a selection box (a dashed border when selected; text can still be edited); again to unlock |
+| Group blocks | `Ctrl+G` (or **Group** in the panel on the right) on two selected blocks or more: a click on one of them then selects them all, and they move, copy and delete together; `Ctrl+Shift+G` (**Ungroup**) separates them again |
 | Copy, cut, paste, duplicate | `Ctrl+C`, `Ctrl+X`, `Ctrl+V` (at the pointer, also into another Canvas note, pictures included), `Ctrl+D`; arrows copied with their blocks stay bound to the copies |
 | Zoom | `Ctrl` + mouse wheel (around the pointer) or `Ctrl+=` / `Ctrl+-`; `Ctrl+0`, or a click on the scale above the page, goes back to 100 % |
 | Move the view | Drag with the middle button, or hold `Space` and drag (when not typing in a block) |

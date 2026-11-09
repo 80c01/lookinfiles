@@ -390,6 +390,13 @@ key Right Right;        shot canvas_group_moved
 xdotool keydown shift mousemove 820 460 click 1 keyup shift
                         shot canvas_shift_click
 key ctrl+z;             shot canvas_group_undo
+# Groups: the band selects both shapes again and Ctrl+G groups them; after
+# Esc, a click on the rectangle selects the whole group; Ctrl+Shift+G
+# ungroups them
+drag 560 360 960 700;   key ctrl+g; shot canvas_grouped
+key Escape; xdotool mousemove 820 460 click 1
+                        shot canvas_group_click
+key ctrl+shift+g;       shot canvas_ungrouped
 # Bound arrow: O draws an ellipse, A an arrow from the rectangle to it; the
 # ellipse selected and moved down, the arrow end follows it
 key o; drag 1000 400 1150 500

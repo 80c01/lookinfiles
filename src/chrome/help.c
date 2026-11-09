@@ -80,6 +80,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Canvas tab"), "Ctrl+A", N_("Select every block (not the locked ones; while typing: the text)"), 0},
     {N_("Canvas tab"), "Ctrl+C / Ctrl+X / Ctrl+D", N_("Copy / cut / duplicate the selected blocks"), 0},
     {N_("Canvas tab"), "Ctrl+] / Ctrl+[", N_("Bring forward / send backward (Shift: to the front / back)"), 0},
+    {N_("Canvas tab"), "Ctrl+G / Ctrl+Shift+G", N_("Group the selected blocks (selected and moved together) / ungroup them"), 0},
     {N_("Canvas tab"), "Ctrl+Shift+K", N_("Lock / unlock the selected blocks (kept in place)"), 0},
     {N_("Canvas tab"), NC_("key", "Drag bar / corner"), N_("Move / resize a block (a picture or shape moves from anywhere on it; a shape resizes by any corner or side; Shift: shape keeps its proportions)"), 0},
     {N_("Canvas tab"), NC_("key", "Drag round handle"), N_("Rotate the selected shape around its centre (Shift: 15-degree steps)"), 0},

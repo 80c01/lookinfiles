@@ -8560,3 +8560,15 @@ msgstr "Entrée ZIP %s endommagée : tailles incohérentes"
 #: src/formats/zip_reader.c:394
 msgid "bad local file header"
 msgstr "en-tête de fichier local incorrect"
+
+#: src/canvas/canvas_props.c
+msgid "Group (Ctrl+G)"
+msgstr "Grouper (Ctrl+G)"
+
+#: src/canvas/canvas_props.c
+msgid "Ungroup (Ctrl+Shift+G)"
+msgstr "Dégrouper (Ctrl+Shift+G)"
+
+#: src/chrome/help.c
+msgid "Group the selected blocks (selected and moved together) / ungroup them"
+msgstr "Grouper les blocs sélectionnés (sélectionnés et déplacés ensemble) / les dégrouper"

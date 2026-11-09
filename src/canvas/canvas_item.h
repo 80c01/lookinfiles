@@ -20,6 +20,7 @@ typedef struct {
     gint id;            /* unique on the page (canvas_doc.h) */
     gint start_id, end_id; /* line or arrow: blocks its ends are bound to */
     gboolean locked;    /* kept in place (canvas_item_set_locked()) */
+    gint group;         /* > 0: selected and moved with the blocks of the same group */
     GtkWidget* frame;   /* child of the surface */
     GtkWidget* content; /* text view, picture, shape or table */
     GtkTextBuffer* buffer;

@@ -336,8 +336,9 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
     p->drag_w = (it->kind == CANVAS_BLOCK_TEXT || it->kind == CANVAS_BLOCK_TABLE) ?
                 MAX(it->w, gtk_widget_get_width(it->frame)) : it->w;
     p->drag_h = it->h;
-    if (!corner) group_begin(p, it);
+    /* Selected first: a block of a group brings its group along */
     canvas_item_select(it);
+    if (!corner) group_begin(p, it);
 }
 
 /* Move the dragged blocks by (dx, dy), their box snapped to the grid and to

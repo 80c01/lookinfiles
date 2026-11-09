@@ -588,6 +588,7 @@ CanvasItem* canvas_item_add(CanvasPage* p, GtkWidget* surface, const gchar* dir,
         it->id = b->id;
         it->start_id = b->start_id;
         it->end_id = b->end_id;
+        it->group = b->group;
         canvas_item_set_locked(it, b->locked);
     }
     return it;
@@ -658,6 +659,7 @@ CanvasDoc* canvas_items_to_doc(GtkWidget* surface) {
         b->start_id = it->start_id;
         b->end_id = it->end_id;
         b->locked = it->locked;
+        b->group = it->group;
     }
     return doc;
 }
