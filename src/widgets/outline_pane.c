@@ -90,7 +90,6 @@ struct OutlinePane {
     GtkWidget* paned;
     GtkWidget* panel;
     GtkWidget* title;
-    GtkWidget* source;
     GtkWidget* sort_button;
     GtkWidget* collapse_button;
     gboolean collapse_shown; /* the collapse button shows "Collapse All" */
@@ -123,13 +122,23 @@ static gint pane_width(OutlinePane* p) {
 /* Width: kept when the window is resized                                    */
 /* ------------------------------------------------------------------------- */
 
-static void place_handle(OutlinePane* p) {
-    if (!gtk_widget_get_visible(p->panel)) return;
+/* The panel cannot shrink, so GTK takes its minimum width off max-position:
+ * the far end of the paned is max-position + that minimum */
+static gint paned_end(OutlinePane* p) {
     gint max = 0;
     g_object_get(p->paned, "max-position", &max, NULL);
-    if (max <= 0) return;
+    if (max <= 0) return 0;
+    gint min = 0;
+    gtk_widget_measure(p->panel, GTK_ORIENTATION_HORIZONTAL, -1, &min, NULL, NULL, NULL);
+    return max + min;
+}
+
+static void place_handle(OutlinePane* p) {
+    if (!gtk_widget_get_visible(p->panel)) return;
+    gint end = paned_end(p);
+    if (end <= 0) return;
     p->placing = TRUE;
-    gtk_paned_set_position(GTK_PANED(p->paned), MAX(max - pane_width(p), 0));
+    gtk_paned_set_position(GTK_PANED(p->paned), MAX(end - pane_width(p), 0));
     p->placing = FALSE;
 }
 
@@ -143,13 +152,13 @@ static void on_position(GObject* obj, GParamSpec* pspec, gpointer data) {
     (void)pspec;
     OutlinePane* p = data;
     if (p->placing || !gtk_widget_get_visible(p->panel) || !gtk_widget_get_mapped(p->paned)) return;
-    gint max = 0;
     gboolean set = FALSE;
-    g_object_get(obj, "max-position", &max, "position-set", &set, NULL);
+    g_object_get(obj, "position-set", &set, NULL);
     /* Before the first place_handle(), GTK picks a position of its own */
     if (!set) return;
-    gint width = max - gtk_paned_get_position(GTK_PANED(obj));
-    if (max > 0 && width >= MIN_WIDTH) *p->width = width;
+    gint end = paned_end(p);
+    gint width = end - gtk_paned_get_position(GTK_PANED(obj));
+    if (end > 0 && width >= MIN_WIDTH) *p->width = width;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -301,7 +310,8 @@ void outline_pane_set_entries(OutlinePane* p, GPtrArray* entries, gboolean headi
     p->entries = g_ptr_array_ref(entries);
     p->jumped = -1;
     gtk_label_set_text(GTK_LABEL(p->title), headings ? _("Headings") : _("Symbols"));
-    gtk_label_set_text(GTK_LABEL(p->source), headings || source == NULL ? "" : source);
+    /* The scanner name is a tooltip so the header stays narrow */
+    gtk_widget_set_tooltip_text(p->title, headings ? NULL : source);
     gtk_widget_set_visible(p->sort_button, !headings);
     gtk_label_set_text(GTK_LABEL(p->empty), headings ? _("No headings in this file") : _("No symbols in this file"));
     gtk_stack_set_visible_child_name(GTK_STACK(p->stack), entries->len > 0 ? "list" : "empty");
@@ -522,13 +532,10 @@ OutlinePane* outline_pane_new(GtkWidget* content, gint* width, const gchar* load
     gtk_widget_add_css_class(header, "tagbar-header");
     p->title = gtk_label_new(_("Symbols"));
     gtk_widget_add_css_class(p->title, "tagbar-title");
+    gtk_label_set_xalign(GTK_LABEL(p->title), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(p->title), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_hexpand(p->title, TRUE);
     gtk_box_append(GTK_BOX(header), p->title);
-    p->source = gtk_label_new(NULL);
-    gtk_widget_add_css_class(p->source, "tagbar-detail");
-    gtk_label_set_xalign(GTK_LABEL(p->source), 0.0f);
-    gtk_label_set_ellipsize(GTK_LABEL(p->source), PANGO_ELLIPSIZE_END);
-    gtk_widget_set_hexpand(p->source, TRUE);
-    gtk_box_append(GTK_BOX(header), p->source);
     p->sort_button = icon_button_new("view-list-ordered", NULL);
     update_sort_button(p);
     g_signal_connect(p->sort_button, "clicked", G_CALLBACK(on_sort_clicked), p);

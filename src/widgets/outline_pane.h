@@ -37,7 +37,7 @@ void outline_pane_detach(OutlinePane* pane);
 
 /* Show the outline: entries (CodeOutlineEntry* sorted by line, referenced)
  * are headings (title "Headings", no sort button) or symbols read by
- * source (shown in the header) */
+ * source (the tooltip of the title) */
 void outline_pane_set_entries(OutlinePane* pane, GPtrArray* entries, gboolean headings, const gchar* source);
 /* TRUE once entries were given */
 gboolean outline_pane_has_entries(OutlinePane* pane);
