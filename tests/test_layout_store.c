@@ -282,7 +282,7 @@ static void expect_grid(guint files, gint w, gint h, const gchar* want) {
 static void test_grid_size(void) {
     /* wide: side by side; tall: one above the other */
     expect_grid(2, 1400, 800, "H:0.500([0],[0])");
-    expect_grid(2, 1200, 800, "V:0.500([0],[0])"); /* no room for two editors side by side */
+    expect_grid(2, 1000, 800, "V:0.500([0],[0])"); /* no room for two editors side by side */
     expect_grid(2, 800, 1000, "V:0.500([0],[0])");
     /* too narrow for two side by side, too short for two stacked */
     expect_grid(2, 1300, 200, "H:0.500([0],[0])");
@@ -329,13 +329,18 @@ static void test_grid_size(void) {
     g_assert_cmpfloat(a->editor_frac, ==, 0.50);
     saved_layout_free(a);
 
-    /* the preview narrows for two editors side by side (1800 px shared: 28%) */
+    /* the preview narrows for two editors side by side (1800 px shared: 42%) */
     a = layout_store_auto(l, 2, NULL, 2400, 1000);
     g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
-    g_assert_cmpfloat(a->editor_frac, ==, 0.28);
+    g_assert_cmpfloat(a->editor_frac, ==, 0.42);
     saved_layout_free(a);
-    /* not below a quarter (1500 px shared) */
-    a = layout_store_auto(l, 2, NULL, 2000, 1000);
+    /* a full HD window with the explorer (1440 px shared: 27%) */
+    a = layout_store_auto(l, 2, NULL, 1920, 1000);
+    g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
+    g_assert_cmpfloat(a->editor_frac, ==, 0.27);
+    saved_layout_free(a);
+    /* not below a quarter (1200 px shared) */
+    a = layout_store_auto(l, 2, NULL, 1600, 1000);
     g_assert_cmpstr(a->editor_splits, ==, "V:0.500([0],[0])");
     g_assert_cmpfloat(a->editor_frac, ==, 0.50);
     saved_layout_free(a);
@@ -349,7 +354,7 @@ static void test_grid_size(void) {
     l->right_frac = 0.70;
     a = layout_store_auto(l, 2, NULL, 3840, 1100);
     g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
-    g_assert_cmpfloat(a->editor_frac, ==, 0.36);
+    g_assert_cmpfloat(a->editor_frac, ==, 0.45);
     saved_layout_free(a);
     l->term_vis = FALSE;
 

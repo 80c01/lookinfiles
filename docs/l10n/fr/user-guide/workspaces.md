@@ -89,13 +89,13 @@ fenêtre :
 
 - un fichier : une zone ;
 - deux : côte à côte quand le panneau est plus large que haut et a la place
-  pour deux éditeurs d’environ 90 colonnes, l’une au-dessus de l’autre
+  pour deux éditeurs d’environ 70 colonnes, l’une au-dessus de l’autre
   sinon ;
 - trois : une à gauche et deux empilées à droite (panneau large), ou une en
   haut et deux côte à côte en dessous (panneau haut) ;
 - quatre ou plus : deux par deux.
 
-Aucune zone ne fait moins d’environ 90 colonnes sur 12 lignes : sans place
+Aucune zone ne fait moins d’environ 70 colonnes sur 12 lignes : sans place
 pour deux par deux, les zones forment une rangée (panneau large) ou une
 colonne (panneau haut), et quand il y a moins de place que de fichiers, les
 fichiers se partagent les zones en onglets. Le fichier courant reste dans

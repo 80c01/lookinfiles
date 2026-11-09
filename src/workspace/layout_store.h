@@ -61,9 +61,9 @@ gboolean layout_store_is_customized(const SavedLayout* layout);
  * GPtrArray of SavedLayout* that frees its items. */
 GPtrArray* layout_store_presets(GPtrArray* saved);
 
-/* Smallest pane the Auto grid makes, in pixels (about 90 columns by 12
+/* Smallest pane the Auto grid makes, in pixels (about 70 columns by 12
  * lines): panes go side by side only with that room for each */
-#define LAYOUT_GRID_MIN_W 640
+#define LAYOUT_GRID_MIN_W 520
 #define LAYOUT_GRID_MIN_H 240
 /* Smallest share of the preview beside the editor panel the Auto layout
  * makes to put two editors side by side */

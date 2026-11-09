@@ -316,14 +316,16 @@ SavedLayout* layout_store_auto(const SavedLayout* current, guint files, const Au
     if (width > 0 && height > 0) {
         layout_store_editor_area(l, width, height, &ew, &eh);
     }
-    if (files >= 2 && l->preview_vis && ew > 0 && ew < 2 * LAYOUT_GRID_MIN_W) {
+    /* two editors go side by side in a panel that wide and wider than tall */
+    gint side_by_side = MAX(2 * LAYOUT_GRID_MIN_W, eh);
+    if (files >= 2 && l->preview_vis && ew > 0 && ew < side_by_side) {
         /* the preview narrows (down to LAYOUT_PREVIEW_MIN_FRAC) when that
          * leaves room for two editors side by side */
         l->preview_vis = FALSE;
         gint shared = 0;
         layout_store_editor_area(l, width, height, &shared, &eh);
         l->preview_vis = TRUE;
-        gdouble frac = floor((1.0 - 2.0 * LAYOUT_GRID_MIN_W / shared) * 100.0) / 100.0;
+        gdouble frac = floor((1.0 - (gdouble)side_by_side / shared) * 100.0) / 100.0;
         if (frac >= LAYOUT_PREVIEW_MIN_FRAC && frac < l->editor_frac) {
             l->editor_frac = frac;
             layout_store_editor_area(l, width, height, &ew, &eh);

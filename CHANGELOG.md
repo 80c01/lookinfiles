@@ -15,10 +15,10 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - The **Auto** layout fits its grid to the size of the editor panel: two
-  files go side by side when it is wide enough for two editors of about 90
+  files go side by side when it is wide enough for two editors of about 70
   columns and one above the other otherwise, three and four make one row or
   one column when two by two does not fit, and it never makes a pane smaller
-  than about 90 columns by 12 lines. With the preview beside the editor
+  than about 70 columns by 12 lines. With the preview beside the editor
   panel, it narrows the preview (down to a quarter) when that puts two
   editors side by side.
 - The **Preview** button of the top bar reads **Main** while editor tabs
