@@ -252,17 +252,15 @@ gchar* layout_store_grid_splits(guint files, gint width, gint height) {
     }
     guint cols = (guint)MAX(1, width / LAYOUT_GRID_MIN_W);
     guint rows = (guint)MAX(1, height / LAYOUT_GRID_MIN_H);
-    /* two files always get two panes, even below the minimum size */
-    guint n = MIN(MIN(MAX(files, 1u), 4u), MAX(cols * rows, 2u));
+    guint n = MIN(MIN(MAX(files, 1u), 4u), cols * rows);
     gboolean wide = width >= height;
     gboolean square = cols >= 2 && rows >= 2; /* room for two by two */
     switch (n) {
     case 1:
         return g_strdup("[0]");
     case 2:
-        /* side by side when wide, else one above the other, even below
-         * the minimum size */
-        return grid_line(2, wide ? 'H' : 'V');
+        /* side by side when wide, else one above the other */
+        return grid_line(2, (cols >= 2 && (wide || rows < 2)) ? 'H' : 'V');
     case 3:
         if (square) {
             return g_strdup(wide ? "H:0.500([0],V:0.500([0],[0]))"  /* one left, two stacked right */

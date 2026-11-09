@@ -88,8 +88,9 @@ d’édition, en grille selon leur nombre et la place que le panneau a dans la
 fenêtre :
 
 - un fichier : une zone ;
-- deux : côte à côte quand le panneau est plus large que haut, l’une
-  au-dessus de l’autre sinon ;
+- deux : côte à côte quand le panneau est plus large que haut et a la place
+  pour deux éditeurs d’environ 70 colonnes, l’une au-dessus de l’autre
+  sinon ;
 - trois : une à gauche et deux empilées à droite (panneau large), ou une en
   haut et deux côte à côte en dessous (panneau haut) ;
 - quatre ou plus : deux par deux.
@@ -97,9 +98,7 @@ fenêtre :
 Aucune zone ne fait moins d’environ 70 colonnes sur 12 lignes : sans place
 pour deux par deux, les zones forment une rangée (panneau large) ou une
 colonne (panneau haut), et quand il y a moins de place que de fichiers, les
-fichiers se partagent les zones en onglets. Deux fichiers ou plus ont
-toujours deux zones : sans cette place, le panneau est partagé dans sa plus
-grande dimension. Le fichier courant reste dans
+fichiers se partagent les zones en onglets. Le fichier courant reste dans
 la première zone. Avec deux fichiers ou plus et l’aperçu à côté du panneau
 d’édition, l’aperçu se rétrécit (jusqu’au quart de la place qu’ils se
 partagent) quand cela laisse la place à deux éditeurs côte à côte.

@@ -298,15 +298,12 @@ static void test_grid_locale(void) {
 static void test_grid_size(void) {
     /* wide: side by side; tall: one above the other */
     expect_grid(2, 1400, 800, "H:0.500([0],[0])");
-    expect_grid(2, 950, 530, "H:0.500([0],[0])"); /* wide: side by side even below the minimum */
+    expect_grid(2, 1000, 800, "V:0.500([0],[0])"); /* no room for two editors side by side */
     expect_grid(2, 800, 1000, "V:0.500([0],[0])");
     /* too narrow for two side by side, too short for two stacked */
     expect_grid(2, 1300, 200, "H:0.500([0],[0])");
     expect_grid(2, 400, 1000, "V:0.500([0],[0])");
-    /* no room even for one pane: two all the same, along the longer side */
-    expect_grid(3, 400, 200, "H:0.500([0],[0])");
-    expect_grid(2, 500, 350, "H:0.500([0],[0])");
-    expect_grid(2, 300, 400, "V:0.500([0],[0])");
+    expect_grid(3, 400, 200, "[0]");
     /* three */
     expect_grid(3, 1400, 800, "H:0.500([0],V:0.500([0],[0]))");
     expect_grid(3, 1400, 1500, "V:0.500([0],H:0.500([0],[0]))");
@@ -400,14 +397,6 @@ static void test_grid_size(void) {
     a = layout_store_auto(l, 2, &rules, 1800, 1000);
     g_assert_false(a->stacked);
     g_assert_cmpstr(a->editor_splits, ==, "V:0.500([0],[0])"); /* 810 x 1000 */
-    saved_layout_free(a);
-
-    /* a small window with a high terminal below: two panes still */
-    l->term_vis = TRUE;
-    l->stacked = TRUE;
-    l->right_frac = 0.50;
-    a = layout_store_auto(l, 2, NULL, 1366, 700);
-    g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])");
     saved_layout_free(a);
     saved_layout_free(l);
 }
