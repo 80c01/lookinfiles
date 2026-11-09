@@ -515,7 +515,7 @@ Layers, from bottom to top
   (keys), `canvas_clip` (copy / cut / paste / duplicate of blocks: a
   private clipboard type holding the source note and the blocks' XML, plus
   their Markdown as text; picture paste), `canvas_menu` (right-click menu
-  of the page: Paste Image), `canvas_drag` (drawing tools, moving / resizing with
+  of the page: Paste at the click), `canvas_drag` (drawing tools, moving / resizing with
   snapping, line points (added, moved, removed), clicks, drops).
   Its parts: `canvas_toolbar` (floating tool bar: select, shapes, pencil,
   text, table, eraser, and the grid / export menu), `canvas_export` (PNG / SVG of the page, written to the home folder: its

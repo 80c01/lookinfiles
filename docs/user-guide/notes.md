@@ -81,8 +81,8 @@ and **Export as PNG** / **Export as SVG**: a picture of the blocks (theme
 colours, PNG at twice the page scale) written next to the note as
 `<title>.png` or `<title>.svg`.
 
-Pictures come from `Ctrl+V` or **Paste Image** in the right-click menu
-(at the click) with an image copied, or image files dropped onto the page; double click a picture to crop it: the whole picture opens
+Pictures come from `Ctrl+V` or **Paste** in the right-click menu (at the
+click) with an image copied, or image files dropped onto the page; double click a picture to crop it: the whole picture opens
 large under a crop frame; drag a corner handle to crop, the inside of the
 frame to move it (**Reset** shows the whole picture again).
 

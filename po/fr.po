@@ -8577,8 +8577,8 @@ msgstr "Impossible de copier l’image « %s »"
 msgid "On an image: Copy Image to the clipboard"
 msgstr "Sur une image : copier l’image dans le presse-papiers"
 
-msgid "Paste Image"
-msgstr "Coller l’image"
+msgid "Context menu: Paste blocks, a picture or text at the click"
+msgstr "Menu contextuel : coller des blocs, une image ou du texte au clic"
 
-msgid "Context menu: Paste Image at the click"
-msgstr "Menu contextuel : coller l’image au clic"
+msgid "Paste"
+msgstr "Coller"

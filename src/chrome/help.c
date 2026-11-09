@@ -77,7 +77,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Canvas tab"), NC_("key", "Double-click / Ctrl+Enter"), N_("New text box (at the click, or below the selected block)"), 0},
     {N_("Canvas tab"), NC_("key", "Double-click a shape"), N_("Type text inside it (also Enter on a selected shape; Esc when done)"), 0},
     {N_("Canvas tab"), "Ctrl+V", N_("Paste copied blocks, or a picture as a new block (text outside a text box: new text box)"), 0},
-    {N_("Canvas tab"), NC_("key", "Right-click"), N_("Context menu: Paste Image at the click"), 0},
+    {N_("Canvas tab"), NC_("key", "Right-click"), N_("Context menu: Paste blocks, a picture or text at the click"), 0},
     {N_("Canvas tab"), "Ctrl+A", N_("Select every block (not the locked ones; while typing: the text)"), 0},
     {N_("Canvas tab"), "Ctrl+C / Ctrl+X / Ctrl+D", N_("Copy / cut / duplicate the selected blocks"), 0},
     {N_("Canvas tab"), "Ctrl+] / Ctrl+[", N_("Bring forward / send backward (Shift: to the front / back)"), 0},

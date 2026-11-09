@@ -59,6 +59,8 @@ gboolean canvas_clip_copy(CanvasPage* p, gboolean cut) {
 typedef struct {
     GtkWidget* root;
     guint generation;
+    gboolean at;   /* pasted at (x, y), not at the pointer */
+    gint x, y;
     GMemoryOutputStream* out;
 } PasteJob;
 
@@ -68,7 +70,7 @@ static void paste_job_free(PasteJob* job) {
     g_free(job);
 }
 
-static void paste_data(CanvasPage* p, const gchar* data, gsize len) {
+static void paste_data(CanvasPage* p, const PasteJob* job, const gchar* data, gsize len) {
     const gchar* nl = memchr(data, '\n', len);
     if (nl == NULL) return;
     gchar* from_dir = g_strndup(data, nl - data);
@@ -82,7 +84,10 @@ static void paste_data(CanvasPage* p, const gchar* data, gsize len) {
     gint x0, y0;
     doc_origin(doc, &x0, &y0);
     gint dx = COPY_OFFSET, dy = COPY_OFFSET;
-    if (p->pointer_in) {
+    if (job->at) {
+        dx = job->x - x0;
+        dy = job->y - y0;
+    } else if (p->pointer_in) {
         dx = (gint)p->pointer_x - x0;
         dy = (gint)p->pointer_y - y0;
     }
@@ -101,7 +106,7 @@ static void on_splice_done(GObject* source, GAsyncResult* result, gpointer data)
     }
     CanvasPage* p = g_object_get_data(G_OBJECT(job->root), CANVAS_PAGE_KEY);
     if (p != NULL && !p->closed && p->dir != NULL && p->generation == job->generation) {
-        paste_data(p, g_memory_output_stream_get_data(job->out), g_memory_output_stream_get_data_size(job->out));
+        paste_data(p, job, g_memory_output_stream_get_data(job->out), g_memory_output_stream_get_data_size(job->out));
     }
     paste_job_free(job);
 }
@@ -122,28 +127,35 @@ static void on_clipboard_read(GObject* source, GAsyncResult* result, gpointer da
     g_object_unref(in);
 }
 
-gboolean canvas_clip_paste(CanvasPage* p) {
+static gboolean paste_blocks(CanvasPage* p, gboolean at, gint x, gint y) {
     if (p->dir == NULL) return FALSE;
     GdkClipboard* clip = gtk_widget_get_clipboard(p->root);
     if (!gdk_content_formats_contain_mime_type(gdk_clipboard_get_formats(clip), CLIP_MIME)) return FALSE;
     PasteJob* job = g_new0(PasteJob, 1);
     job->root = g_object_ref(p->root);
     job->generation = p->generation;
+    job->at = at;
+    job->x = x;
+    job->y = y;
     static const gchar* MIMES[] = {CLIP_MIME, NULL};
     gdk_clipboard_read_async(clip, MIMES, G_PRIORITY_DEFAULT, NULL, on_clipboard_read, job);
     return TRUE;
 }
 
-/* A picture being read from the clipboard; the page root is kept alive
- * meanwhile, and the picture dropped if another note was opened */
+gboolean canvas_clip_paste(CanvasPage* p) {
+    return paste_blocks(p, FALSE, 0, 0);
+}
+
+/* A picture or text being read from the clipboard; the page root is kept alive
+ * meanwhile, and what is read dropped if another note was opened */
 typedef struct {
     GtkWidget* root;
     guint generation;
     gint x, y;
-} PictureJob;
+} ReadJob;
 
 static void on_picture_read(GObject* source, GAsyncResult* result, gpointer data) {
-    PictureJob* job = data;
+    ReadJob* job = data;
     g_autoptr(GError) error = NULL;
     GdkTexture* texture = gdk_clipboard_read_texture_finish(GDK_CLIPBOARD(source), result, &error);
     CanvasPage* p = g_object_get_data(G_OBJECT(job->root), CANVAS_PAGE_KEY);
@@ -166,11 +178,52 @@ gboolean canvas_clip_paste_picture(CanvasPage* p, gint x, gint y) {
     if (p->dir == NULL) return FALSE;
     GdkClipboard* clip = gtk_widget_get_clipboard(p->root);
     if (!canvas_media_clipboard_has_picture(clip)) return FALSE;
-    PictureJob* job = g_new0(PictureJob, 1);
+    ReadJob* job = g_new0(ReadJob, 1);
     job->root = g_object_ref(p->root);
     job->generation = p->generation;
     job->x = x;
     job->y = y;
     gdk_clipboard_read_texture_async(clip, NULL, on_picture_read, job);
     return TRUE;
+}
+
+/* Text being read from the clipboard, for a new text box at (x, y) */
+static void on_text_read(GObject* source, GAsyncResult* result, gpointer data) {
+    ReadJob* job = data;
+    g_autoptr(GError) error = NULL;
+    gchar* text = gdk_clipboard_read_text_finish(GDK_CLIPBOARD(source), result, &error);
+    CanvasPage* p = g_object_get_data(G_OBJECT(job->root), CANVAS_PAGE_KEY);
+    if (text != NULL && *text != '\0' && p != NULL && !p->closed && p->dir != NULL &&
+        p->generation == job->generation) {
+        gchar* valid = g_utf8_make_valid(text, -1);
+        canvas_page_new_text_box(p, job->x, job->y, valid);
+        g_free(valid);
+    }
+    g_free(text);
+    g_object_unref(job->root);
+    g_free(job);
+}
+
+static gboolean paste_text(CanvasPage* p, gint x, gint y) {
+    if (p->dir == NULL) return FALSE;
+    GdkClipboard* clip = gtk_widget_get_clipboard(p->root);
+    if (!canvas_media_clipboard_has_text(clip)) return FALSE;
+    ReadJob* job = g_new0(ReadJob, 1);
+    job->root = g_object_ref(p->root);
+    job->generation = p->generation;
+    job->x = x;
+    job->y = y;
+    gdk_clipboard_read_text_async(clip, NULL, on_text_read, job);
+    return TRUE;
+}
+
+gboolean canvas_clip_can_paste(CanvasPage* p) {
+    if (p->dir == NULL) return FALSE;
+    GdkClipboard* clip = gtk_widget_get_clipboard(p->root);
+    return gdk_content_formats_contain_mime_type(gdk_clipboard_get_formats(clip), CLIP_MIME) ||
+           canvas_media_clipboard_has_picture(clip) || canvas_media_clipboard_has_text(clip);
+}
+
+gboolean canvas_clip_paste_at(CanvasPage* p, gint x, gint y) {
+    return paste_blocks(p, TRUE, x, y) || canvas_clip_paste_picture(p, x, y) || paste_text(p, x, y);
 }

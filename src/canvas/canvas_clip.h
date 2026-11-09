@@ -25,4 +25,11 @@ gboolean canvas_clip_paste(CanvasPage* p);
  * corner at (x, y), once read; FALSE when the clipboard holds no picture */
 gboolean canvas_clip_paste_picture(CanvasPage* p, gint x, gint y);
 
+/* Paste of the context menu, at (x, y): copied blocks, else a picture, else
+ * text as a new text box; FALSE when the clipboard holds none of them */
+gboolean canvas_clip_paste_at(CanvasPage* p, gint x, gint y);
+
+/* TRUE if canvas_clip_paste_at() has something to paste */
+gboolean canvas_clip_can_paste(CanvasPage* p);
+
 #endif /* CANVAS_CLIP_H */

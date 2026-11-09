@@ -2,8 +2,8 @@
 #define CANVAS_MENU_H
 
 /* Context menu of the Canvas page: a right click on the page opens it at
- * the pointer. Paste Image (Ctrl+V) puts the picture of the clipboard
- * there, as a new picture block (greyed out without a picture). */
+ * the pointer. Paste (Ctrl+V) puts what the clipboard holds there: copied
+ * blocks, a picture, or text as a new text box (greyed out when empty). */
 #include <gtk/gtk.h>
 
 typedef struct CanvasPage CanvasPage;

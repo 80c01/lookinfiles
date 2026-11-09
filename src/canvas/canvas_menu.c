@@ -1,7 +1,6 @@
 /* Context menu of the Canvas page (see canvas_menu.h) */
 #include "canvas/canvas_menu.h"
 #include "canvas/canvas_clip.h"
-#include "canvas/canvas_media.h"
 #include "canvas/canvas_page_private.h"
 #include "core/i18n.h"
 
@@ -20,13 +19,13 @@ static void on_popover_closed(GtkPopover* popover, gpointer data) {
     g_idle_add(unparent_idle, g_object_ref(popover));
 }
 
-static void on_paste_image(GtkButton* btn, gpointer data) {
+static void on_paste(GtkButton* btn, gpointer data) {
     CanvasPage* p = data;
     GtkWidget* popover = gtk_widget_get_ancestor(GTK_WIDGET(btn), GTK_TYPE_POPOVER);
     gint x = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(popover), MENU_X_KEY));
     gint y = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(popover), MENU_Y_KEY));
     gtk_popover_popdown(GTK_POPOVER(popover));
-    if (!p->closed) canvas_clip_paste_picture(p, x, y);
+    if (!p->closed) canvas_clip_paste_at(p, x, y);
 }
 
 static GtkWidget* menu_item(const gchar* text, const gchar* hint) {
@@ -66,9 +65,9 @@ static void on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gd
     g_signal_connect(popover, "closed", G_CALLBACK(on_popover_closed), NULL);
 
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    GtkWidget* paste = menu_item(_("Paste Image"), "Ctrl+V");
-    gtk_widget_set_sensitive(paste, canvas_media_clipboard_has_picture(gtk_widget_get_clipboard(p->root)));
-    g_signal_connect(paste, "clicked", G_CALLBACK(on_paste_image), p);
+    GtkWidget* paste = menu_item(_("Paste"), "Ctrl+V");
+    gtk_widget_set_sensitive(paste, canvas_clip_can_paste(p));
+    g_signal_connect(paste, "clicked", G_CALLBACK(on_paste), p);
     gtk_box_append(GTK_BOX(box), paste);
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     gtk_popover_popup(GTK_POPOVER(popover));
