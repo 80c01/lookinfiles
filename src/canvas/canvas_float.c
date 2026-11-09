@@ -1,5 +1,6 @@
 /* Bar floating next to a Canvas block (see canvas_float.h) */
 #include "canvas/canvas_float.h"
+#include <math.h>
 #include "core/i18n.h"
 #include "theme/theme.h"
 
@@ -68,13 +69,16 @@ static gboolean clear_spot(CanvasFloat* f, GtkWidget* overlay, gint* x, gint* y,
 static void place(CanvasFloat* f) {
     GtkWidget* overlay = gtk_widget_get_parent(f->box);
     if (overlay == NULL || f->target == NULL) return;
-    graphene_point_t top, bottom;
-    gint th = gtk_widget_get_height(f->target);
-    if (!gtk_widget_compute_point(f->target, overlay, &GRAPHENE_POINT_INIT(0, 0), &top) ||
-        !gtk_widget_compute_point(f->target, overlay, &GRAPHENE_POINT_INIT(0, (float)th), &bottom)) {
+    /* Border boxes: gtk_widget_get_width() / _height() leave out the CSS
+     * border and padding, and the bar would cover the block's grip */
+    graphene_rect_t target, bar;
+    if (!gtk_widget_compute_bounds(f->target, overlay, &target) ||
+        !gtk_widget_compute_bounds(f->box, f->box, &bar)) {
         return;
     }
-    gint bw = gtk_widget_get_width(f->box), bh = gtk_widget_get_height(f->box);
+    graphene_point_t top = GRAPHENE_POINT_INIT(target.origin.x, target.origin.y);
+    graphene_point_t bottom = GRAPHENE_POINT_INIT(target.origin.x, target.origin.y + target.size.height);
+    gint bw = (gint)ceilf(bar.size.width), bh = (gint)ceilf(bar.size.height);
     gint ow = gtk_widget_get_width(overlay), oh = gtk_widget_get_height(overlay);
     gint x0 = CLAMP((gint)top.x, EDGE, MAX(ow - bw - EDGE, EDGE));
     gint x = x0, y = (gint)top.y - bh - BAR_GAP;
