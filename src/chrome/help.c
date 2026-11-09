@@ -331,6 +331,10 @@ static void fill_help_panel(AppData* app, GtkWidget* panel) {
         }
         GtkWidget* key_label = gtk_label_new(g_dpgettext2(GETTEXT_PACKAGE, "key", KEY_HELP[i].key));
         gtk_widget_add_css_class(key_label, "help-key");
+        /* A long key sequence wraps instead of squeezing the descriptions */
+        gtk_label_set_wrap(GTK_LABEL(key_label), TRUE);
+        gtk_label_set_max_width_chars(GTK_LABEL(key_label), 18);
+        gtk_label_set_xalign(GTK_LABEL(key_label), 0.0f);
         gtk_widget_set_halign(key_label, GTK_ALIGN_START);
         gtk_widget_set_valign(key_label, GTK_ALIGN_START);
 
