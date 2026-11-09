@@ -50,8 +50,10 @@ A note that does not exist is created, with its notebook. The extension
 ## Canvas notes
 
 A Canvas note is a freeform workspace of text boxes, hand-drawn shapes,
-tables and pictures, placed where you want them. It opens in a tab of the
-editor panel, named after the canvas, and is saved automatically. Several
+tables and pictures, placed where you want them. It opens in a tab named
+after the canvas, where a text file would open (beside the editor tab used
+last, else in the editor panel, else in the preview panel), and is saved
+automatically. Several
 canvases can be open at once, each in its own tab; drag a tab like an editor
 tab to another pane, to the edge of a pane to split it, or to the preview
 panel. A canvas tab belongs to the workspace it was opened in: it hides with

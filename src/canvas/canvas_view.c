@@ -535,7 +535,7 @@ GtkWidget* canvas_view_open(AppData* app, const gchar* dir, const gchar* title) 
     }
     if (p == NULL) {
         p = page_new(app);
-        editor_add_page(app, p->root, p->tab_label);
+        editor_add_page_like_file(app, p->root, p->tab_label);
         canvas_page_load(p, dir, title);
     }
     set_title(p, title);

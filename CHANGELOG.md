@@ -6,6 +6,12 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- A Canvas note opens where a text file would (beside the editor tab used
+  last, else in the editor panel, else in the preview panel) instead of
+  always in the editor panel.
+
 ## [0.6.0] - 2026-11-07
 
 Everything up to 0.6.0, including the first tagged releases (0.1.0 to 0.5.0).

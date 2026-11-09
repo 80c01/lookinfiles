@@ -113,6 +113,10 @@ gboolean editor_page_is_movable(GtkWidget* page);
  * current page of the editor panel: the notebook of the editor tab used
  * last, or the first one; the panel shows */
 void editor_add_page(AppData* app, GtkWidget* child, GtkWidget* label);
+/* The same, but where editor_open_file() puts a new file: the notebook of the
+ * editor tab used last, else the editor panel when it shows, else the
+ * preview panel */
+void editor_add_page_like_file(AppData* app, GtkWidget* child, GtkWidget* label);
 /* Move child, a movable page of a notebook, into to at index (-1: append) */
 void editor_move_page_to(AppData* app, GtkWidget* child, GtkNotebook* to, gint index);
 /* Move child, a movable page of the editor area (not an editor tab), as an

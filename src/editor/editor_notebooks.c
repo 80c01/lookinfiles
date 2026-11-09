@@ -658,16 +658,36 @@ static GtkNotebook* editor_panel_notebook(AppData* app) {
     return GTK_NOTEBOOK(nb);
 }
 
-void editor_add_page(AppData* app, GtkWidget* child, GtkWidget* label) {
-    if (app == NULL || child == NULL || app->editor_box == NULL) return;
-    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
-    GtkNotebook* nb = editor_panel_notebook(app);
+/* Append child to nb as its current, movable page */
+static void add_movable_page(AppData* app, GtkNotebook* nb, GtkWidget* child, GtkWidget* label) {
     editor_page_set_movable(child);
     gint page = gtk_notebook_append_page(nb, child, label);
     editor_page_set_draggable(nb, child);
     gtk_notebook_set_current_page(nb, page);
     editor_update_panel_visibilities(app);
     minimap_update_visibility(app);
+}
+
+void editor_add_page(AppData* app, GtkWidget* child, GtkWidget* label) {
+    if (app == NULL || child == NULL || app->editor_box == NULL) return;
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+    add_movable_page(app, editor_panel_notebook(app), child, label);
+}
+
+void editor_add_page_like_file(AppData* app, GtkWidget* child, GtkWidget* label) {
+    if (app == NULL || child == NULL || app->editor_box == NULL) return;
+    GtkNotebook* nb = editor_target_notebook(app);
+    if (nb == NULL || GTK_WIDGET(nb) != app->notebook) {
+        editor_add_page(app, child, label);
+        return;
+    }
+    add_movable_page(app, nb, child, label);
+    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+        app_layout_begin(app);
+        gtk_widget_set_visible(app->viewer_box, TRUE);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
+        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
+    }
 }
 
 gboolean editor_move_page_direction(AppData* app, GtkWidget* child, EditorMoveDirection dir) {

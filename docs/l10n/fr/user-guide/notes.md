@@ -53,8 +53,10 @@ Une note qui n’existe pas est créée, avec son carnet. L’extension (`.md`,
 
 Une note Canvas est un espace libre de zones de texte, de formes dessinées
 à main levée, de tableaux et d’images, placés où vous voulez. Elle s’ouvre
-dans un onglet du panneau d’édition, nommé d’après le canvas, et
-s’enregistre toute seule. Plusieurs canvas peuvent être ouverts à la fois,
+dans un onglet nommé d’après le canvas, là où s’ouvrirait un fichier texte
+(à côté du dernier onglet d’édition utilisé, sinon dans le panneau
+d’édition, sinon dans le panneau de prévisualisation), et s’enregistre toute
+seule. Plusieurs canvas peuvent être ouverts à la fois,
 chacun dans son onglet ; faites glisser un onglet comme un onglet d’édition
 vers un autre volet, vers le bord d’un volet pour le diviser, ou vers le
 panneau d’aperçu. Un onglet canvas appartient à l’espace de travail où il a
