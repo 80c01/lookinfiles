@@ -31,7 +31,7 @@ struct ou leur classe, ou les titres d’un fichier Markdown. Elle suit le
 curseur et se rafraîchit peu après chaque modification. Un clic ou `Enter`
 va au symbole (retour avec la touche habituelle), `s` bascule entre le
 regroupement par sorte et l’ordre du fichier, `Esc` revient au texte, `q`
-la masque ; `Alt+Right` depuis le texte y entre, `Alt+Left` en revient. Chaque onglet affiche ou masque la sienne (un
+la masque ; `Alt+Right` depuis le texte y entre, `Alt+Left` en revient (aussi les touches de panneau du mode de l’onglet : `Ctrl+W l` / `Ctrl+W h` en Vim, `C-x o`, `F6` / `Shift+F6`) ; son en-tête porte une ligne d’accent tant qu’elle a le focus. Chaque onglet affiche ou masque la sienne (un
 nouvel onglet suit le dernier choix, gardé pour le prochain démarrage), et
 sa largeur est partagée par les onglets.
 

@@ -22,6 +22,9 @@ typedef struct {
     void (*escape)(gpointer data);
     /* q in the list, or the close button: hide the tagbar */
     void (*close)(gpointer data);
+    /* A key in the list, before its own keys: TRUE when taken (the panel
+     * keys of the mode, focus_route_panel_key()) */
+    gboolean (*key)(gpointer data, guint keyval, GdkModifierType state);
 } OutlinePaneCallbacks;
 
 /* Put content and a hidden tagbar side by side. width holds the tagbar

@@ -4,6 +4,7 @@
 #include "editor/editor.h"
 #include "code/code_outline.h"
 #include "widgets/outline_pane.h"
+#include "widgets/focus_route.h"
 #include "core/settings_store.h"
 
 #define REFRESH_DELAY_MS 600   /* pause in the edits before the outline is read again */
@@ -74,7 +75,17 @@ static void close_tagbar(gpointer data) {
     if (tb->tab != NULL) editor_tagbar_toggle(tb->app, tb->tab, NULL);
 }
 
-static const OutlinePaneCallbacks callbacks = {go_to, cursor_line, escape, close_tagbar};
+/* The panel keys of the tab's mode (Ctrl+W l back in Vim...) */
+static gboolean tagbar_key(gpointer data, guint keyval, GdkModifierType state) {
+    Tagbar* tb = data;
+    if (tb->tab == NULL) return FALSE;
+    NavStyle style = tb->tab->mode == EDITOR_MODE_VIM                                         ? NAV_STYLE_VIM
+                   : tb->tab->mode == EDITOR_MODE_EMACS || tb->tab->mode == EDITOR_MODE_ORGMODE ? NAV_STYLE_EMACS
+                                                                                                 : NAV_STYLE_NOTEPAD;
+    return focus_route_panel_key(tb->app, style, keyval, state);
+}
+
+static const OutlinePaneCallbacks callbacks = {go_to, cursor_line, escape, close_tagbar, tagbar_key};
 
 /* ------------------------------------------------------------------------- */
 /* Cursor and outline                                                        */

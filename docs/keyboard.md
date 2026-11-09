@@ -315,7 +315,7 @@ headings of a Markdown file. It follows the cursor and is refreshed shortly
 after each edit. A click or `Enter` goes to the symbol (back with the usual
 key), `s` switches between grouping by kind and file order, `c` (or the arrow
 button of its header) collapses every row or expands them all, `Esc` returns to
-the text, `q` hides it; `Alt+Right` from the text goes into it, `Alt+Left` comes back. Each tab shows or hides its own (a new
+the text, `q` hides it; `Alt+Right` from the text goes into it, `Alt+Left` comes back (also the panel keys of the tab's mode: `Ctrl+W l` / `Ctrl+W h` in Vim, `C-x o`, `F6` / `Shift+F6`); its header shows an accent line while it has the focus. Each tab shows or hides its own (a new
 tab follows the last choice, kept for the next start), and its width is
 shared by the tabs.
 

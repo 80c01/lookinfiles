@@ -3,6 +3,8 @@
 #include "code/code_outline_tree.h"
 #include "explorer/nav_keys.h"
 #include "widgets/outline_pane.h"
+#include "widgets/focus_route.h"
+#include "widgets/panels.h"
 #include "core/i18n.h"
 #include "core/settings_store.h"
 
@@ -207,7 +209,13 @@ static void close_tagbar(gpointer data) {
     toggle(data);
 }
 
-static const OutlinePaneCallbacks callbacks = {go_to, top_line, escape, close_tagbar};
+/* The panel keys of the global mode */
+static gboolean tagbar_key(gpointer data, guint keyval, GdkModifierType state) {
+    PreviewTagbar* pt = data;
+    return focus_route_panel_key(pt->app, app_nav_style(pt->app), keyval, state);
+}
+
+static const OutlinePaneCallbacks callbacks = {go_to, top_line, escape, close_tagbar, tagbar_key};
 
 static gboolean on_scroll_timeout(gpointer data) {
     PreviewTagbar* pt = data;

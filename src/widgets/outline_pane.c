@@ -492,14 +492,16 @@ static void on_close_clicked(GtkButton* button, gpointer data) {
     if (!p->detached) p->cb.close(p->data);
 }
 
-/* Escape: back to the content; s: sort; c: collapse / expand all; q: hide
+/* The owner's keys first (panel keys); Escape: back to the content; s: sort; c: collapse / expand all; q: hide
  * (Enter goes to the entry) */
 static gboolean on_list_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
                             gpointer data) {
     (void)ctrl;
     (void)keycode;
     OutlinePane* p = data;
-    if (p->detached || (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SUPER_MASK)) != 0) return FALSE;
+    if (p->detached) return FALSE;
+    if (p->cb.key != NULL && p->cb.key(p->data, keyval, state)) return TRUE;
+    if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SUPER_MASK)) != 0) return FALSE;
     switch (keyval) {
     case GDK_KEY_Escape: p->cb.escape(p->data); return TRUE;
     case GDK_KEY_s:

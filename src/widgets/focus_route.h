@@ -64,6 +64,12 @@ void focus_route_return(AppData* app, GtkWidget* target, GtkWidget* closed);
  * to: a tab moving between notebooks passes the focus through other pages */
 void focus_route_hold_history(AppData* app, gboolean hold);
 
+/* The panel keys of style in a pane without navigation keys of its own (a
+ * tagbar): Vim Ctrl+W w / W / h / l... and Ctrl+W c, Emacs C-x o, Notepad
+ * F6 / Shift+F6. The started Ctrl+W / C-x waits in app->nav_prefix (dropped
+ * when the focus moves). TRUE when the key was taken. */
+gboolean focus_route_panel_key(AppData* app, NavStyle style, guint keyval, GdkModifierType state);
+
 /* Navigation keys of the global mode in a list page: next / previous row,
  * first / last, page down / up, panel and tab keys */
 void focus_route_attach_list(AppData* app, GtkWidget* list, GtkSingleSelection* selection);

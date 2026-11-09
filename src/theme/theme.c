@@ -866,6 +866,14 @@ void apply_panel_borders(void) {
         "  background-color: transparent;\n"
         "  font-size: @size_small;\n"
         "}\n"
+        /* The tagbar holding the focus: an accent line on its header (like a
+         * focused tab); elsewhere its selected row stays grey */
+        ".tagbar:focus-within > .tagbar-header {\n"
+        "  box-shadow: inset 0 2px @accent;\n"
+        "}\n"
+        ".tagbar:not(:focus-within) listview > row:selected {\n"
+        "  background-color: @bg_selected_inactive;\n"
+        "}\n"
         ".preview-full-bar {\n"
         "  background-color: @bg_bar;\n"
         "  border-bottom: 1px solid @border;\n"
