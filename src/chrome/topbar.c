@@ -455,9 +455,11 @@ static GtkWidget* pill_new(const gchar* icon, const gchar* label, const gchar* t
     return btn;
 }
 
+/* A short vertical rule between groups of pills */
 static GtkWidget* separator_new(void) {
-    GtkWidget* sep = gtk_label_new("|");
-    gtk_widget_add_css_class(sep, "breadcrumb-sep");
+    GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_VERTICAL);
+    gtk_widget_add_css_class(sep, "topbar-sep");
+    gtk_widget_set_valign(sep, GTK_ALIGN_CENTER);
     return sep;
 }
 

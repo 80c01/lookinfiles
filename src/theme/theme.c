@@ -269,6 +269,12 @@ void apply_panel_borders(void) {
         "  color: @fg_faint;\n"
         "  padding: 0px 2px;\n"
         "}\n"
+        "separator.topbar-sep {\n"
+        "  background-color: @border_strong;\n"
+        "  min-width: 1px;\n"
+        "  min-height: 16px;\n"
+        "  margin: 0px 4px;\n"
+        "}\n"
         /* Flat toolbar toggles (VS Code title bar layout controls) */
         "button.status-pill {\n"
         "  background-color: transparent;\n"
