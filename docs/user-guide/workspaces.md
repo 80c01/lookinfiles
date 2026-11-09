@@ -74,8 +74,8 @@ are, and the open files go to the editor panel in a grid made for their
 number and for the room the panel gets in the window:
 
 - one file: one pane;
-- two: side by side when the panel is wider than tall and has room for two
-  editors of about 70 columns, one above the other otherwise;
+- two: side by side when the panel is wider than tall, one above the other
+  otherwise;
 - three: one on the left and two stacked on the right (wide panel), or one
   on top and two side by side below (tall panel);
 - four or more: two by two.

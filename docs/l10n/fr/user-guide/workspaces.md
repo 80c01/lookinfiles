@@ -88,9 +88,8 @@ d’édition, en grille selon leur nombre et la place que le panneau a dans la
 fenêtre :
 
 - un fichier : une zone ;
-- deux : côte à côte quand le panneau est plus large que haut et a la place
-  pour deux éditeurs d’environ 70 colonnes, l’une au-dessus de l’autre
-  sinon ;
+- deux : côte à côte quand le panneau est plus large que haut, l’une
+  au-dessus de l’autre sinon ;
 - trois : une à gauche et deux empilées à droite (panneau large), ou une en
   haut et deux côte à côte en dessous (panneau haut) ;
 - quatre ou plus : deux par deux.

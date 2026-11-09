@@ -282,7 +282,7 @@ static void expect_grid(guint files, gint w, gint h, const gchar* want) {
 static void test_grid_size(void) {
     /* wide: side by side; tall: one above the other */
     expect_grid(2, 1400, 800, "H:0.500([0],[0])");
-    expect_grid(2, 1000, 800, "V:0.500([0],[0])"); /* no room for two editors side by side */
+    expect_grid(2, 950, 530, "H:0.500([0],[0])"); /* wide: side by side even below the minimum */
     expect_grid(2, 800, 1000, "V:0.500([0],[0])");
     /* too narrow for two side by side, too short for two stacked */
     expect_grid(2, 1300, 200, "H:0.500([0],[0])");

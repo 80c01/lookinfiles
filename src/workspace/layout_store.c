@@ -258,12 +258,9 @@ gchar* layout_store_grid_splits(guint files, gint width, gint height) {
     case 1:
         return g_strdup("[0]");
     case 2:
-        /* side by side when wide, else one above the other; without room
-         * for either, split the longer side */
-        if (cols >= 2 && (wide || rows < 2)) {
-            return grid_line(2, 'H');
-        }
-        return grid_line(2, (rows >= 2 || !wide) ? 'V' : 'H');
+        /* side by side when wide, else one above the other, even below
+         * the minimum size */
+        return grid_line(2, wide ? 'H' : 'V');
     case 3:
         if (square) {
             return g_strdup(wide ? "H:0.500([0],V:0.500([0],[0]))"  /* one left, two stacked right */
