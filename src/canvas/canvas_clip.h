@@ -4,7 +4,8 @@
 /* Copy, cut, paste and duplicate the selected blocks of the Canvas page.
  * The clipboard holds the blocks (their page.xml, with the note they come
  * from, so pictures follow into another note) and their text as Markdown
- * for other applications. */
+ * for other applications; a picture in the clipboard pastes as a picture
+ * block. */
 #include <gtk/gtk.h>
 
 typedef struct CanvasPage CanvasPage;
@@ -19,5 +20,9 @@ gboolean canvas_clip_copy(CanvasPage* p, gboolean cut);
 /* Ctrl+V: TRUE if the clipboard holds blocks; they are pasted at the
  * pointer (or a little lower right of where they were) once read */
 gboolean canvas_clip_paste(CanvasPage* p);
+
+/* A picture in the clipboard becomes a new picture block with its top-left
+ * corner at (x, y), once read; FALSE when the clipboard holds no picture */
+gboolean canvas_clip_paste_picture(CanvasPage* p, gint x, gint y);
 
 #endif /* CANVAS_CLIP_H */

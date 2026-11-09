@@ -6,6 +6,7 @@
 #include "core/app_events.h"
 #include "canvas/canvas_doc.h"
 #include "canvas/canvas_drag.h"
+#include "canvas/canvas_menu.h"
 #include "canvas/canvas_export.h"
 #include "canvas/canvas_format_bar.h"
 #include "canvas/canvas_geometry.h"
@@ -498,6 +499,7 @@ static CanvasPage* page_new(AppData* app) {
     gtk_box_append(GTK_BOX(root), bar);
 
     canvas_drag_attach(p);
+    canvas_menu_attach(p);
     canvas_keys_attach(p, root);
 
     g_object_set_data_full(G_OBJECT(root), CANVAS_PAGE_KEY, p, page_free);

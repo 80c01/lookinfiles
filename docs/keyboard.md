@@ -140,6 +140,7 @@ editor tab; it stays in its workspace)
 | Double click on the page, `Ctrl+Enter` | New text box (at the click, or below the selected block) |
 | Double click on a shape, `Enter` on a selected shape | Type text inside it (centred; `Esc` when done) |
 | `Ctrl+V` | Paste copied blocks, or a picture as a new block (at the pointer); text pasted outside a text box makes a text box |
+| Right click on the page | Context menu: **Paste Image** puts the copied picture at the click |
 | `Ctrl+A` | Select every block not locked (while typing in a block: its text) |
 | `Ctrl+C` / `Ctrl+X` | Copy / cut the selected blocks (other applications get their text) |
 | `Ctrl+D` | Duplicate the selected blocks |

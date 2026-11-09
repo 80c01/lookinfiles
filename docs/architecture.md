@@ -511,10 +511,11 @@ Layers, from bottom to top
   through `canvas_view_workspace_hidden()` / `_shown()` / `_removed()`.
   Its files: `canvas_view` (widgets, tool bar and panel actions, public API),
   `canvas_page` (the page state in `canvas_page_private.h`, internal to these
-  files: focus, selection, undo, saving, new blocks, the tool), `canvas_keys` (keys,
-  picture paste), `canvas_clip` (copy / cut / paste / duplicate of blocks: a
+  files: focus, selection, undo, saving, new blocks, the tool), `canvas_keys`
+  (keys), `canvas_clip` (copy / cut / paste / duplicate of blocks: a
   private clipboard type holding the source note and the blocks' XML, plus
-  their Markdown as text), `canvas_drag` (drawing tools, moving / resizing with
+  their Markdown as text; picture paste), `canvas_menu` (right-click menu
+  of the page: Paste Image), `canvas_drag` (drawing tools, moving / resizing with
   snapping, line points (added, moved, removed), clicks, drops).
   Its parts: `canvas_toolbar` (floating tool bar: select, shapes, pencil,
   text, table, eraser, and the grid / export menu), `canvas_export` (PNG / SVG of the page, written to the home folder: its

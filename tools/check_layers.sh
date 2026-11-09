@@ -264,7 +264,7 @@ done
 # canvas_page_private.h is internal to the Canvas page files
 for f in $(grep -lE '#include "([a-z]+/)?canvas_page_private.h"' $SRC_CH); do
     case "$(basename "$f")" in
-        canvas_view.c|canvas_page.c|canvas_keys.c|canvas_drag.c|canvas_clip.c|canvas_rotate.c) ;;
+        canvas_view.c|canvas_page.c|canvas_keys.c|canvas_drag.c|canvas_clip.c|canvas_menu.c|canvas_rotate.c) ;;
         *) echo "layering: $f includes canvas_page_private.h (internal to the Canvas page files)"; status=1 ;;
     esac
 done

@@ -1,6 +1,7 @@
 /* Copy, cut, paste and duplicate Canvas blocks (see canvas_clip.h) */
 #include "canvas/canvas_clip.h"
 #include "canvas/canvas_doc.h"
+#include "canvas/canvas_media.h"
 #include "canvas/canvas_page_private.h"
 
 #include <string.h>
@@ -130,5 +131,46 @@ gboolean canvas_clip_paste(CanvasPage* p) {
     job->generation = p->generation;
     static const gchar* MIMES[] = {CLIP_MIME, NULL};
     gdk_clipboard_read_async(clip, MIMES, G_PRIORITY_DEFAULT, NULL, on_clipboard_read, job);
+    return TRUE;
+}
+
+/* A picture being read from the clipboard; the page root is kept alive
+ * meanwhile, and the picture dropped if another note was opened */
+typedef struct {
+    GtkWidget* root;
+    guint generation;
+    gint x, y;
+} PictureJob;
+
+static void on_picture_read(GObject* source, GAsyncResult* result, gpointer data) {
+    PictureJob* job = data;
+    g_autoptr(GError) error = NULL;
+    GdkTexture* texture = gdk_clipboard_read_texture_finish(GDK_CLIPBOARD(source), result, &error);
+    CanvasPage* p = g_object_get_data(G_OBJECT(job->root), CANVAS_PAGE_KEY);
+    if (texture != NULL && p != NULL && !p->closed && p->dir != NULL && p->generation == job->generation) {
+        gchar* src = canvas_media_save_texture(texture, p->dir);
+        if (src != NULL) {
+            canvas_page_new_picture(p, src, job->x, job->y, gdk_texture_get_width(texture),
+                                    gdk_texture_get_height(texture));
+        } else {
+            g_warning("canvas: cannot save the pasted picture in %s", p->dir);
+        }
+        g_free(src);
+    }
+    if (texture != NULL) g_object_unref(texture);
+    g_object_unref(job->root);
+    g_free(job);
+}
+
+gboolean canvas_clip_paste_picture(CanvasPage* p, gint x, gint y) {
+    if (p->dir == NULL) return FALSE;
+    GdkClipboard* clip = gtk_widget_get_clipboard(p->root);
+    if (!canvas_media_clipboard_has_picture(clip)) return FALSE;
+    PictureJob* job = g_new0(PictureJob, 1);
+    job->root = g_object_ref(p->root);
+    job->generation = p->generation;
+    job->x = x;
+    job->y = y;
+    gdk_clipboard_read_texture_async(clip, NULL, on_picture_read, job);
     return TRUE;
 }

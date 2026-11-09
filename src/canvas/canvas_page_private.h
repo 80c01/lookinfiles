@@ -2,7 +2,7 @@
 #define CANVAS_PAGE_PRIVATE_H
 
 /* Internal to the Canvas page files (canvas_view.c, canvas_page.c,
- * canvas_keys.c, canvas_drag.c, canvas_clip.c, canvas_rotate.c): the page state and its core helpers,
+ * canvas_keys.c, canvas_drag.c, canvas_clip.c, canvas_menu.c, canvas_rotate.c): the page state and its core helpers,
  * defined in canvas_page.c. */
 
 #include "core/app_types.h"

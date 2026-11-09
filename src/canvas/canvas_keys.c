@@ -63,34 +63,6 @@ static gboolean block_key(CanvasPage* p, CanvasItem* it, guint keyval, GdkModifi
     }
 }
 
-/* A picture being read from the clipboard; the page root is kept alive
- * meanwhile, and the picture dropped if another note was opened */
-typedef struct {
-    GtkWidget* root;
-    guint generation;
-    gint x, y;
-} PasteJob;
-
-static void on_paste_read(GObject* source, GAsyncResult* result, gpointer data) {
-    PasteJob* job = data;
-    g_autoptr(GError) error = NULL;
-    GdkTexture* texture = gdk_clipboard_read_texture_finish(GDK_CLIPBOARD(source), result, &error);
-    CanvasPage* p = g_object_get_data(G_OBJECT(job->root), CANVAS_PAGE_KEY);
-    if (texture != NULL && p != NULL && !p->closed && p->dir != NULL && p->generation == job->generation) {
-        gchar* src = canvas_media_save_texture(texture, p->dir);
-        if (src != NULL) {
-            canvas_page_new_picture(p, src, job->x, job->y, gdk_texture_get_width(texture),
-                                    gdk_texture_get_height(texture));
-        } else {
-            g_warning("canvas: cannot save the pasted picture in %s", p->dir);
-        }
-        g_free(src);
-    }
-    if (texture != NULL) g_object_unref(texture);
-    g_object_unref(job->root);
-    g_free(job);
-}
-
 /* Ctrl+V with a picture in the clipboard: new picture. Text pasted in a
  * text box or a table cell stays text. */
 static gboolean paste_picture(CanvasPage* p) {
@@ -100,12 +72,9 @@ static gboolean paste_picture(CanvasPage* p) {
     if (it != NULL && canvas_page_focused_widget(p) != it->frame && canvas_media_clipboard_has_text(clip)) {
         return FALSE;
     }
-    PasteJob* job = g_new0(PasteJob, 1);
-    job->root = g_object_ref(p->root);
-    job->generation = p->generation;
-    canvas_page_new_position(p, TRUE, &job->x, &job->y);
-    gdk_clipboard_read_texture_async(clip, NULL, on_paste_read, job);
-    return TRUE;
+    gint x, y;
+    canvas_page_new_position(p, TRUE, &x, &y);
+    return canvas_clip_paste_picture(p, x, y);
 }
 
 /* Ctrl+= / Ctrl+- / Ctrl+0 (the window's font sizes elsewhere:
