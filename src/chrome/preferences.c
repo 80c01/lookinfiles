@@ -37,6 +37,7 @@ typedef struct {
     GtkWidget* height;
     GtkWidget* auto_terminal; /* GtkDropDown: as it is, shown, hidden (PANEL_CHOICES) */
     GtkWidget* auto_preview;
+    GtkWidget* auto_tagbar;
     GtkWidget* auto_place;    /* GtkDropDown: where it is, below, beside (PLACE_CHOICES) */
 } Preferences;
 
@@ -254,8 +255,8 @@ static SettingsPanel panel_selected(GtkWidget* drop) {
 static GtkWidget* layouts_page(Preferences* p, const Settings* s) {
     GtkWidget* box = page_box();
     gtk_box_append(GTK_BOX(box), hint_label(_("The Auto layout (Alt+L) puts the open files in a grid in the "
-                                            "editor panel; it can also show or hide the terminal and the "
-                                            "preview, and place the terminal.")));
+                                            "editor panel; it can also show or hide the terminal, the "
+                                            "preview and the tagbar, and place the terminal.")));
     GtkWidget* grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 8);
@@ -272,6 +273,8 @@ static GtkWidget* layouts_page(Preferences* p, const Settings* s) {
                                 _("Terminal below the preview and the editor panel, or on their right, with "
                                   "the Auto layout (as Ctrl+Shift+L does)"),
                                 places, place);
+    p->auto_tagbar = panel_choice(grid, 3, _("Tag_bar"),
+                                  _("Tagbar of code and Markdown editor tabs with the Auto layout"), s->auto_tagbar);
     gtk_box_append(GTK_BOX(box), grid);
     return box;
 }
@@ -344,6 +347,7 @@ static void save_settings(Preferences* p) {
     s.height = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->height));
     s.auto_terminal = panel_selected(p->auto_terminal);
     s.auto_preview = panel_selected(p->auto_preview);
+    s.auto_tagbar = panel_selected(p->auto_tagbar);
     guint place = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->auto_place));
     s.auto_terminal_place = (place < G_N_ELEMENTS(PLACE_CHOICES)) ? PLACE_CHOICES[place] : SETTINGS_PLACE_KEEP;
     GError* error = NULL;

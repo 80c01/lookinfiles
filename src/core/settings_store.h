@@ -14,7 +14,8 @@
  *   tagbar=false         # previews with headings show the tagbar
  *   [Layouts]
  *   auto-terminal=true   # the Auto layout shows (true) or hides (false) the
- *   auto-preview=false   # terminal / preview; missing: as they are
+ *   auto-preview=false   # terminal / preview / editor tagbar; missing: as
+ *   auto-tagbar=false    # they are
  *   auto-terminal-place=below  # the Auto layout puts the terminal below the
  *                              # preview or beside it; missing: as it is
  *   [Window]
@@ -60,6 +61,7 @@ typedef struct {
     gboolean preview_tagbar; /* previews with headings show the tagbar */
     SettingsPanel auto_terminal; /* terminal panel of the Auto layout */
     SettingsPanel auto_preview;  /* preview panel of the Auto layout */
+    SettingsPanel auto_tagbar;   /* editor tagbar of the Auto layout */
     SettingsPlace auto_terminal_place; /* terminal place of the Auto layout */
     gint width;            /* window size at startup */
     gint height;

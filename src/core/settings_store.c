@@ -18,6 +18,7 @@ void settings_defaults(Settings* s) {
     s->preview_tagbar = FALSE;
     s->auto_terminal = SETTINGS_PANEL_KEEP;
     s->auto_preview = SETTINGS_PANEL_KEEP;
+    s->auto_tagbar = SETTINGS_PANEL_KEEP;
     s->auto_terminal_place = SETTINGS_PLACE_KEEP;
     s->color_column = 81;
     s->width = 1000;
@@ -123,6 +124,7 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     s->preview_tagbar = read_bool(kf, "Preview", "tagbar", s->preview_tagbar);
     s->auto_terminal = read_panel(kf, "auto-terminal");
     s->auto_preview = read_panel(kf, "auto-preview");
+    s->auto_tagbar = read_panel(kf, "auto-tagbar");
     s->auto_terminal_place = read_place(kf);
     s->color_column = read_int(kf, "Editor", "color-column", 0, SETTINGS_MAX_COLUMN, s->color_column);
     s->width = read_size(kf, "width", SETTINGS_MIN_WIDTH, s->width);
@@ -142,6 +144,7 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
     g_key_file_set_integer(kf, "Editor", "color-column", s->color_column);
     write_panel(kf, "auto-terminal", s->auto_terminal);
     write_panel(kf, "auto-preview", s->auto_preview);
+    write_panel(kf, "auto-tagbar", s->auto_tagbar);
     if (s->auto_terminal_place == SETTINGS_PLACE_KEEP) {
         g_key_file_remove_key(kf, "Layouts", "auto-terminal-place", NULL);
     } else {

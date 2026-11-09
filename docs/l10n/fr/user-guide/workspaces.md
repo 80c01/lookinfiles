@@ -104,9 +104,9 @@ la première zone. Avec deux fichiers ou plus et l’aperçu à côté du pannea
 d’édition, l’aperçu se rétrécit (jusqu’au quart de la place qu’ils se
 partagent) quand cela laisse la place à deux éditeurs côte à côte.
 
-Préférences (`Ctrl+,`) → **Dispositions** règle ce qu’Auto fait du terminal
-et de l’aperçu : les laisser tels quels (par défaut), les afficher ou les
-masquer ; et où il met le terminal : où il est (par défaut), en bas ou à
+Préférences (`Ctrl+,`) → **Dispositions** règle ce qu’Auto fait du terminal,
+de l’aperçu et de la barre de symboles des onglets d’édition : les laisser
+tels quels (par défaut), les afficher ou les masquer ; et où il met le terminal : où il est (par défaut), en bas ou à
 droite (comme le fait `Ctrl+Shift+L`). La grille est faite pour la place qui
 reste une fois ceux-ci placés.
 

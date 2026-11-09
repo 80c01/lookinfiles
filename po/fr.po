@@ -6290,12 +6290,12 @@ msgstr "Affiché"
 #: src/chrome/preferences.c
 msgid ""
 "The Auto layout (Alt+L) puts the open files in a grid in the editor panel; "
-"it can also show or hide the terminal and the preview, and place the "
-"terminal."
+"it can also show or hide the terminal, the preview and the tagbar, and place "
+"the terminal."
 msgstr ""
 "La disposition Auto (Alt+L) place les fichiers ouverts en grille dans le "
-"panneau d’édition ; elle peut aussi afficher ou masquer le terminal et "
-"l’aperçu, et placer le terminal."
+"panneau d’édition ; elle peut aussi afficher ou masquer le terminal, "
+"l’aperçu et la barre de symboles, et placer le terminal."
 
 #: src/chrome/preferences.c
 msgid "_Terminal"
@@ -6312,6 +6312,16 @@ msgstr "A_perçu"
 #: src/chrome/preferences.c
 msgid "Preview panel with the Auto layout"
 msgstr "Panneau d’aperçu avec la disposition Auto"
+
+#: src/chrome/preferences.c
+msgid "Tag_bar"
+msgstr "_Barre de symboles"
+
+#: src/chrome/preferences.c
+msgid "Tagbar of code and Markdown editor tabs with the Auto layout"
+msgstr ""
+"Barre de symboles des onglets d’édition de code et Markdown avec la "
+"disposition Auto"
 
 #: src/chrome/preferences.c
 msgid "Where it is"

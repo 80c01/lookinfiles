@@ -375,19 +375,19 @@ static void test_grid_size(void) {
     l->term_vis = FALSE;
 
     /* the rules for the terminal and the preview */
-    AutoRules rules = {1, 0, -1};
+    AutoRules rules = {1, 0, -1, 0, -1};
     a = layout_store_auto(l, 2, &rules, 1600, 1000);
     g_assert_true(a->term_vis && !a->preview_vis);
     g_assert_cmpstr(a->editor_splits, ==, "V:0.500([0],[0])"); /* the terminal takes room beside */
     saved_layout_free(a);
     l->term_vis = TRUE;
-    rules = (AutoRules){0, -1, -1};
+    rules = (AutoRules){0, -1, -1, 0, -1};
     a = layout_store_auto(l, 2, &rules, 4000, 1000);
     g_assert_true(!a->term_vis && a->preview_vis);
     saved_layout_free(a);
 
     /* the explorer fitted to its content, at most LAYOUT_EXPLORER_MAX_FRAC */
-    rules = (AutoRules){-1, -1, -1, 0.10};
+    rules = (AutoRules){-1, -1, -1, 0.10, -1};
     a = layout_store_auto(l, 2, &rules, 1600, 1000);
     g_assert_cmpfloat(a->main_frac, ==, 0.10);
     saved_layout_free(a);
@@ -400,9 +400,27 @@ static void test_grid_size(void) {
     g_assert_cmpfloat(a->main_frac, ==, l->main_frac);
     saved_layout_free(a);
 
+    /* the tagbar of the editor tabs shown or hidden, else as it is */
+    l->tagbars = TRUE;
+    l->editor_tagbar = TRUE;
+    l->preview_tagbar = TRUE;
+    rules = (AutoRules){-1, -1, -1, 0, 0};
+    a = layout_store_auto(l, 2, &rules, 1600, 1000);
+    g_assert_true(a->tagbars && !a->editor_tagbar && a->preview_tagbar);
+    saved_layout_free(a);
+    rules.show_tagbar = -1;
+    a = layout_store_auto(l, 2, &rules, 1600, 1000);
+    g_assert_true(a->editor_tagbar);
+    saved_layout_free(a);
+    l->editor_tagbar = FALSE;
+    rules.show_tagbar = 1;
+    a = layout_store_auto(l, 2, &rules, 1600, 1000);
+    g_assert_true(a->editor_tagbar);
+    saved_layout_free(a);
+
     /* the terminal below leaves the whole width to the editor panel */
     l->preview_vis = FALSE;
-    rules = (AutoRules){1, -1, 1};
+    rules = (AutoRules){1, -1, 1, 0, -1};
     a = layout_store_auto(l, 2, &rules, 1800, 1000);
     g_assert_true(a->term_vis && a->stacked);
     g_assert_cmpstr(a->editor_splits, ==, "H:0.500([0],[0])"); /* 1350 x 600 */

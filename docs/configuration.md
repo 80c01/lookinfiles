@@ -30,7 +30,7 @@ keeps every change, **Cancel** restores them all.
 | Appearance | Theme and fonts (see [Themes](#themes)) |
 | Editor | Mode of new editor tabs (Notepad, Vim, Emacs; also the global mode of the top bar), line numbers and line wrap of new tabs, the tagbar of the code and Markdown tabs (open ones too) and of the preview, a vertical line at a column in every editor tab and in code previews (Vim's `colorcolumn`, colour `editor_ruler`) |
 | Window | Window size at startup (**Use the current size** fills it in) |
-| Layouts | Terminal and preview of the **Auto** layout (`Alt+L`): as they are, shown or hidden; the terminal's place: where it is, below or on the right (as `Ctrl+Shift+L` does) |
+| Layouts | Terminal, preview and editor tagbar of the **Auto** layout (`Alt+L`): as they are, shown or hidden; the terminal's place: where it is, below or on the right (as `Ctrl+Shift+L` does) |
 | Code navigation | **Edit lsp.ini** opens `lsp.ini` in an editor tab, created with a commented example if missing (see [Language servers](#language-servers)) |
 
 The Editor, Window and Layouts values are kept in `settings.ini`; the command-line
@@ -54,6 +54,7 @@ height=900
 [Layouts]
 auto-terminal=true # Auto shows the terminal (false: hides it; missing: as it is)
 auto-preview=false # Auto hides the preview (true: shows it; missing: as it is)
+auto-tagbar=false # Auto hides the tagbar of editor tabs (true: shows it; missing: as it is)
 auto-terminal-place=below # Auto puts the terminal below (beside: on the right; missing: where it is)
 ```
 

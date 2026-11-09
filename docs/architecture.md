@@ -268,7 +268,7 @@ Layers, from bottom to top
   `H:0.500([0*,2],V:0.400([1!],[0,t]))`.
 - `settings_store` — `settings.ini` (`Settings`: editor mode, line numbers
   and wrap of new editor tabs, column line of the editors, tagbars, window
-  size at startup, terminal, its place and preview of the Auto layout), defaults for missing or invalid values, other keys kept
+  size at startup, terminal, its place, preview and editor tagbar of the Auto layout), defaults for missing or invalid values, other keys kept
   on save. `app->settings` holds the values in use; the live editor mode is
   `app->default_editor_mode` (top bar, `-e`).
 - `trash_restore` — puts back a file moved to the trash: finds its newest

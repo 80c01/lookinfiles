@@ -221,6 +221,7 @@ void layout_switcher_show(AppData* app) {
         .show_preview = panel_rule(app->settings.auto_preview),
         .terminal_below = (place == SETTINGS_PLACE_BELOW) ? 1 : (place == SETTINGS_PLACE_BESIDE) ? 0 : -1,
         .explorer_frac = explorer_fit_frac(app),
+        .show_tagbar = panel_rule(app->settings.auto_tagbar),
     };
     SavedLayout* auto_layout = layout_store_auto(g_ptr_array_index(s->layouts, 0), files, &rules,
                                                  gtk_widget_get_width(area), gtk_widget_get_height(area));

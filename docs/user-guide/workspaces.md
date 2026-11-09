@@ -88,10 +88,10 @@ tabs. The current file stays in the first pane. With two files or more and
 the preview beside the editor panel, the preview narrows (down to a quarter
 of the room they share) when that leaves room for two editors side by side.
 
-Preferences (`Ctrl+,`) → **Layouts** sets what Auto does with the terminal
-and the preview: leave them as they are (the default), show them, or hide
-them; and where it puts the terminal: where it is (the default), below, or
-on the right (as `Ctrl+Shift+L` does). The grid is made for the room left
+Preferences (`Ctrl+,`) → **Layouts** sets what Auto does with the terminal,
+the preview and the tagbar of the editor tabs: leave them as they are (the
+default), show them, or hide them; and where it puts the terminal: where it
+is (the default), below, or on the right (as `Ctrl+Shift+L` does). The grid is made for the room left
 once they are placed.
 
 Layouts are saved in `~/.config/lookinfiles/layouts.ini`. Applying a
