@@ -70,9 +70,8 @@ They cannot be deleted. Saving a layout under the name of a built-in one
 replaces it; deleting yours brings the built-in one back.
 
 With files open, **Auto** comes first among them: the panels stay as they
-are (except the preview, which hides with two files or more), and the open
-files go to the editor panel in a grid made for their number and for the
-room the panel gets in the window:
+are, and the open files go to the editor panel in a grid made for their
+number and for the room the panel gets in the window:
 
 - one file: one pane;
 - two: side by side when the panel is wider than tall and has room for two
@@ -84,14 +83,13 @@ room the panel gets in the window:
 No pane gets smaller than about 90 columns by 12 lines: without room for
 two by two, the panes make one row (wide panel) or one column (tall one),
 and with room for fewer panes than files, the files share the panes as
-tabs. The current file stays in the first pane. When Preferences show the
-preview beside two files or more, it narrows (down to a quarter of the room
-it shares with the editor panel) when that leaves room for two editors side
-by side.
+tabs. The current file stays in the first pane. With two files or more and
+the preview beside the editor panel, the preview narrows (down to a quarter
+of the room they share) when that leaves room for two editors side by side.
 
 Preferences (`Ctrl+,`) → **Layouts** sets what Auto does with the terminal
-and the preview: leave them as they are (the default; the preview still
-hides with two files or more), show them, or hide them; and where it puts the terminal: where it is (the default), below, or
+and the preview: leave them as they are (the default), show them, or hide
+them; and where it puts the terminal: where it is (the default), below, or
 on the right (as `Ctrl+Shift+L` does). The grid is made for the room left
 once they are placed.
 

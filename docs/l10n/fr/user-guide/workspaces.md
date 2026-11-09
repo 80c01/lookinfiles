@@ -83,9 +83,9 @@ nom d’une disposition intégrée la remplace ; supprimer la vôtre fait
 revenir celle intégrée.
 
 Quand des fichiers sont ouverts, **Auto** vient en premier parmi elles : les
-panneaux restent tels quels (sauf l’aperçu, masqué dès deux fichiers), et
-les fichiers ouverts vont dans le panneau d’édition, en grille selon leur
-nombre et la place que le panneau a dans la fenêtre :
+panneaux restent tels quels, et les fichiers ouverts vont dans le panneau
+d’édition, en grille selon leur nombre et la place que le panneau a dans la
+fenêtre :
 
 - un fichier : une zone ;
 - deux : côte à côte quand le panneau est plus large que haut et a la place
@@ -99,14 +99,13 @@ Aucune zone ne fait moins d’environ 90 colonnes sur 12 lignes : sans place
 pour deux par deux, les zones forment une rangée (panneau large) ou une
 colonne (panneau haut), et quand il y a moins de place que de fichiers, les
 fichiers se partagent les zones en onglets. Le fichier courant reste dans
-la première zone. Quand les Préférences affichent l’aperçu à côté de deux
-fichiers ou plus, il se rétrécit (jusqu’au quart de la place qu’il partage
-avec le panneau d’édition) quand cela laisse la place à deux éditeurs côte à
-côte.
+la première zone. Avec deux fichiers ou plus et l’aperçu à côté du panneau
+d’édition, l’aperçu se rétrécit (jusqu’au quart de la place qu’ils se
+partagent) quand cela laisse la place à deux éditeurs côte à côte.
 
 Préférences (`Ctrl+,`) → **Dispositions** règle ce qu’Auto fait du terminal
-et de l’aperçu : les laisser tels quels (par défaut ; l’aperçu est tout de
-même masqué dès deux fichiers), les afficher ou les masquer ; et où il met le terminal : où il est (par défaut), en bas ou à
+et de l’aperçu : les laisser tels quels (par défaut), les afficher ou les
+masquer ; et où il met le terminal : où il est (par défaut), en bas ou à
 droite (comme le fait `Ctrl+Shift+L`). La grille est faite pour la place qui
 reste une fois ceux-ci placés.
 

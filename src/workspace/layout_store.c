@@ -307,8 +307,6 @@ SavedLayout* layout_store_auto(const SavedLayout* current, guint files, const Au
     }
     if (rules != NULL && rules->show_preview >= 0) {
         l->preview_vis = (rules->show_preview > 0);
-    } else if (files >= 2) {
-        l->preview_vis = FALSE; /* the room goes to the editors */
     }
     if (rules != NULL && rules->terminal_below >= 0) {
         l->stacked = (rules->terminal_below > 0);
