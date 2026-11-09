@@ -4389,11 +4389,11 @@ msgstr ""
 #: src/chrome/help.c:262
 msgid ""
 "Preferences: appearance, editor (mode, line numbers, wrap of new tabs, "
-"column line), window size, language servers"
+"column line), window size, Auto layout panels, language servers"
 msgstr ""
 "Préférences : apparence, éditeur (mode, numéros de ligne, renvoi à la ligne "
-"des nouveaux onglets, ligne de colonne), taille de la fenêtre, serveurs de "
-"langage"
+"des nouveaux onglets, ligne de colonne), taille de la fenêtre, panneaux de "
+"la disposition Auto, serveurs de langage"
 
 #: src/chrome/help.c:263
 msgid ""
@@ -6274,6 +6274,43 @@ msgstr "Fenêtre"
 #: src/chrome/preferences.c:362
 msgid "Code navigation"
 msgstr "Navigation dans le code"
+
+#: src/chrome/preferences.c
+msgid "Layouts"
+msgstr "Dispositions"
+
+#: src/chrome/preferences.c
+msgid "As it is"
+msgstr "Tel quel"
+
+#: src/chrome/preferences.c
+msgid "Shown"
+msgstr "Affiché"
+
+#: src/chrome/preferences.c
+msgid ""
+"The Auto layout (Alt+L) puts the open files in a grid in the editor panel; "
+"it can also show or hide the terminal and the preview."
+msgstr ""
+"La disposition Auto (Alt+L) place les fichiers ouverts en grille dans le "
+"panneau d’édition ; elle peut aussi afficher ou masquer le terminal et "
+"l’aperçu."
+
+#: src/chrome/preferences.c
+msgid "_Terminal"
+msgstr "_Terminal"
+
+#: src/chrome/preferences.c
+msgid "Terminal panel with the Auto layout"
+msgstr "Panneau du terminal avec la disposition Auto"
+
+#: src/chrome/preferences.c
+msgid "_Preview"
+msgstr "A_perçu"
+
+#: src/chrome/preferences.c
+msgid "Preview panel with the Auto layout"
+msgstr "Panneau d’aperçu avec la disposition Auto"
 
 #: src/preview/preview_formats.c:79
 #, c-format

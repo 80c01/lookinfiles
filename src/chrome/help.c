@@ -262,7 +262,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Global"), "Alt++ / Alt+-", N_("Add a virtual workspace with the default layout (+) or close the current workspace (-)"), 0},
     {N_("Global"), "Alt+R", N_("Recent folders and files: Enter opens a folder or shows a file (Ctrl+Enter edits it)"), 0},
     {N_("Global"), "Alt+L", N_("Workspace layouts: preview while moving (Alt+L: next), Enter applies, Escape restores; Edit Layouts… saves (not in Emacs editor tabs)"), 0},
-    {N_("Global"), "Ctrl+,", N_("Preferences: appearance, editor (mode, line numbers, wrap of new tabs, column line), window size, language servers"), 0},
+    {N_("Global"), "Ctrl+,", N_("Preferences: appearance, editor (mode, line numbers, wrap of new tabs, column line), window size, Auto layout panels, language servers"), 0},
     {N_("Global"), "Alt+T", N_("Preferences on Appearance: pick a theme (applied as you select it), set your fonts, save, edit or delete your themes"), 0},
     {N_("Global"), "Ctrl+= / Ctrl+- / Ctrl+0", N_("Larger / smaller fonts (interface and code), or back to the theme's sizes"), 0},
     {N_("Global"), "Ctrl+P", N_("Go to a file of the project: type part of its name (Enter shows it, Ctrl+Enter edits it; not in Vim editor tabs)"), VI},

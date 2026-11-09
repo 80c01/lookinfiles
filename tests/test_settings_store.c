@@ -26,6 +26,8 @@ static void test_missing_file(void) {
     g_assert_false(s.wrap);
     g_assert_false(s.tagbar);
     g_assert_false(s.preview_tagbar);
+    g_assert_cmpint(s.auto_terminal, ==, SETTINGS_PANEL_KEEP);
+    g_assert_cmpint(s.auto_preview, ==, SETTINGS_PANEL_KEEP);
     g_assert_cmpint(s.color_column, ==, 81);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
@@ -46,6 +48,8 @@ static void test_save_load(void) {
     s.wrap = TRUE;
     s.tagbar = TRUE;
     s.preview_tagbar = TRUE;
+    s.auto_terminal = SETTINGS_PANEL_SHOW;
+    s.auto_preview = SETTINGS_PANEL_HIDE;
     s.color_column = 81;
     s.width = 1920;
     s.height = 1080;
@@ -62,6 +66,8 @@ static void test_save_load(void) {
     g_assert_true(r.wrap);
     g_assert_true(r.tagbar);
     g_assert_true(r.preview_tagbar);
+    g_assert_cmpint(r.auto_terminal, ==, SETTINGS_PANEL_SHOW);
+    g_assert_cmpint(r.auto_preview, ==, SETTINGS_PANEL_HIDE);
     g_assert_cmpint(r.color_column, ==, 81);
     g_assert_cmpint(r.width, ==, 1920);
     g_assert_cmpint(r.height, ==, 1080);
@@ -70,6 +76,16 @@ static void test_save_load(void) {
     g_assert_true(g_file_get_contents(path, &text, NULL, NULL));
     g_assert_nonnull(g_strstr_len(text, -1, "key=value"));
     g_free(text);
+
+    /* Back to keeping the panels: the keys go away */
+    r.auto_terminal = SETTINGS_PANEL_KEEP;
+    r.auto_preview = SETTINGS_PANEL_KEEP;
+    g_assert_true(settings_store_save(path, &r, NULL));
+    g_assert_true(g_file_get_contents(path, &text, NULL, NULL));
+    g_assert_null(strstr(text, "auto-"));
+    g_free(text);
+    g_assert_true(settings_store_load(path, &r));
+    g_assert_cmpint(r.auto_terminal, ==, SETTINGS_PANEL_KEEP);
 
     g_remove(path);
     g_rmdir(sub);

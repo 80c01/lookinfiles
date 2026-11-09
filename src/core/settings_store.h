@@ -12,6 +12,9 @@
  *   tagbar=false         # code and Markdown editor tabs show the tagbar
  *   [Preview]
  *   tagbar=false         # previews with headings show the tagbar
+ *   [Layouts]
+ *   auto-terminal=true   # the Auto layout shows (true) or hides (false) the
+ *   auto-preview=false   # terminal / preview; missing: as they are
  *   [Window]
  *   width=1000           # window size at startup
  *   height=600
@@ -32,6 +35,13 @@ typedef enum {
 #define SETTINGS_MAX_SIZE   16384
 #define SETTINGS_MAX_COLUMN 1000
 
+/* What the Auto layout does with a panel */
+typedef enum {
+    SETTINGS_PANEL_KEEP,  /* as it is (the key is missing) */
+    SETTINGS_PANEL_SHOW,
+    SETTINGS_PANEL_HIDE
+} SettingsPanel;
+
 typedef struct {
     SettingsEditor editor; /* mode of new editor tabs (Org files: Org-mode) */
     gboolean line_numbers; /* new editor tabs show line numbers */
@@ -39,11 +49,14 @@ typedef struct {
     gint color_column;     /* vertical line in editors at this column, 0: none */
     gboolean tagbar;       /* code and Markdown editor tabs show the tagbar */
     gboolean preview_tagbar; /* previews with headings show the tagbar */
+    SettingsPanel auto_terminal; /* terminal panel of the Auto layout */
+    SettingsPanel auto_preview;  /* preview panel of the Auto layout */
     gint width;            /* window size at startup */
     gint height;
 } Settings;
 
-/* Notepad, no line numbers, no wrap, column line at 81, no tagbars, 1000 x 600 */
+/* Notepad, no line numbers, no wrap, column line at 81, no tagbars, Auto
+ * keeping the panels, 1000 x 600 */
 void settings_defaults(Settings* s);
 
 /* "notepad", "vim", "emacs" (any case): FALSE if name is none of them */

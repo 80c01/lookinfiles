@@ -101,6 +101,11 @@ colonne (panneau haut), et quand il y a moins de place que de fichiers, les
 fichiers se partagent les zones en onglets. Le fichier courant reste dans
 la première zone.
 
+Préférences (`Ctrl+,`) → **Dispositions** règle ce qu’Auto fait du terminal
+et de l’aperçu : les laisser tels quels (par défaut), les afficher ou les
+masquer. La grille est faite pour la place qui reste une fois ceux-ci
+affichés ou masqués.
+
 Les dispositions sont enregistrées dans `~/.config/lookinfiles/layouts.ini`.
 Appliquer une disposition garde ensuite ses barres de symboles activées ou
 non, comme le font leurs touches ; un nouvel espace de travail garde les

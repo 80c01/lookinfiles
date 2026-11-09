@@ -85,6 +85,10 @@ two by two, the panes make one row (wide panel) or one column (tall one),
 and with room for fewer panes than files, the files share the panes as
 tabs. The current file stays in the first pane.
 
+Preferences (`Ctrl+,`) → **Layouts** sets what Auto does with the terminal
+and the preview: leave them as they are (the default), show them, or hide
+them. The grid is made for the room left once they are shown or hidden.
+
 Layouts are saved in `~/.config/lookinfiles/layouts.ini`. Applying a
 layout keeps its tagbars on or off afterwards, as their toggle keys do; a
 new workspace keeps the current tagbars, since they are shared by all

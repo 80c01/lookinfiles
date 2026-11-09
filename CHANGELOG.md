@@ -6,6 +6,11 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Preferences → **Layouts**: the **Auto** layout can show or hide the
+  terminal and the preview (by default it leaves them as they are).
+
 ### Changed
 
 - The **Auto** layout fits its grid to the size of the editor panel: two

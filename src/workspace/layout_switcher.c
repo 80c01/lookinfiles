@@ -149,6 +149,11 @@ static void on_closed(GtkPopover* popover, gpointer data) {
     g_idle_add(finish_idle, s);
 }
 
+/* A Preferences rule for a panel of the Auto layout, as layout_store_auto() takes it */
+static gint panel_rule(SettingsPanel panel) {
+    return (panel == SETTINGS_PANEL_SHOW) ? 1 : (panel == SETTINGS_PANEL_HIDE) ? 0 : -1;
+}
+
 void layout_switcher_show(AppData* app) {
     if (app == NULL || app->current_ws < 0 || app->current_ws >= app->num_workspaces) {
         return;
@@ -184,6 +189,8 @@ void layout_switcher_show(AppData* app) {
     guint files = editor_layout_file_count(app);
     GtkWidget* area = (app->main_paned != NULL) ? app->main_paned : GTK_WIDGET(app->window);
     SavedLayout* auto_layout = layout_store_auto(g_ptr_array_index(s->layouts, 0), files,
+                                                 panel_rule(app->settings.auto_terminal),
+                                                 panel_rule(app->settings.auto_preview),
                                                  gtk_widget_get_width(area), gtk_widget_get_height(area));
     if (files > 0 && layout_store_find(named, auto_layout->name) == NULL) {
         g_ptr_array_add(s->layouts, auto_layout);

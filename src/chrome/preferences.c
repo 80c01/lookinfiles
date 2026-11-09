@@ -35,7 +35,12 @@ typedef struct {
     GtkWidget* ruler_column;  /* GtkSpinButton */
     GtkWidget* width;         /* GtkSpinButton */
     GtkWidget* height;
+    GtkWidget* auto_terminal; /* GtkDropDown: as it is, shown, hidden (PANEL_CHOICES) */
+    GtkWidget* auto_preview;
 } Preferences;
+
+/* Drop-down order of the panel rules of the Auto layout */
+static const SettingsPanel PANEL_CHOICES[] = {SETTINGS_PANEL_KEEP, SETTINGS_PANEL_SHOW, SETTINGS_PANEL_HIDE};
 
 /* Drop-down order of the editor modes */
 static const SettingsEditor MODES[] = {SETTINGS_EDITOR_NOTEPAD, SETTINGS_EDITOR_VIM, SETTINGS_EDITOR_EMACS};
@@ -213,6 +218,46 @@ static GtkWidget* window_page(Preferences* p, const Settings* s) {
     return box;
 }
 
+/* A labelled drop-down choosing what the Auto layout does with a panel */
+static GtkWidget* panel_choice(GtkWidget* grid, gint row, const gchar* label_text, const gchar* tooltip,
+                               SettingsPanel value) {
+    const char* const names[] = {_("As it is"), _("Shown"), _("Hidden"), NULL};
+    GtkWidget* drop = gtk_drop_down_new_from_strings(names);
+    for (guint i = 0; i < G_N_ELEMENTS(PANEL_CHOICES); i++) {
+        if (PANEL_CHOICES[i] == value) {
+            gtk_drop_down_set_selected(GTK_DROP_DOWN(drop), i);
+        }
+    }
+    gtk_widget_set_tooltip_text(drop, tooltip);
+    GtkWidget* label = gtk_label_new_with_mnemonic(label_text);
+    gtk_label_set_mnemonic_widget(GTK_LABEL(label), drop);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_grid_attach(GTK_GRID(grid), label, 0, row, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), drop, 1, row, 1, 1);
+    return drop;
+}
+
+static SettingsPanel panel_selected(GtkWidget* drop) {
+    guint i = gtk_drop_down_get_selected(GTK_DROP_DOWN(drop));
+    return (i < G_N_ELEMENTS(PANEL_CHOICES)) ? PANEL_CHOICES[i] : SETTINGS_PANEL_KEEP;
+}
+
+static GtkWidget* layouts_page(Preferences* p, const Settings* s) {
+    GtkWidget* box = page_box();
+    gtk_box_append(GTK_BOX(box), hint_label(_("The Auto layout (Alt+L) puts the open files in a grid in the "
+                                            "editor panel; it can also show or hide the terminal and the "
+                                            "preview.")));
+    GtkWidget* grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 8);
+    p->auto_terminal = panel_choice(grid, 0, _("_Terminal"), _("Terminal panel with the Auto layout"),
+                                    s->auto_terminal);
+    p->auto_preview = panel_choice(grid, 1, _("_Preview"), _("Preview panel with the Auto layout"),
+                                   s->auto_preview);
+    gtk_box_append(GTK_BOX(box), grid);
+    return box;
+}
+
 static gchar* lsp_ini_path(void) {
     gchar* dir = app_config_dir();
     gchar* path = g_build_filename(dir, "lsp.ini", NULL);
@@ -279,6 +324,8 @@ static void save_settings(Preferences* p) {
                          : 0;
     s.width = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->width));
     s.height = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->height));
+    s.auto_terminal = panel_selected(p->auto_terminal);
+    s.auto_preview = panel_selected(p->auto_preview);
     GError* error = NULL;
     if (!settings_store_save(path, &s, &error)) {
         g_printerr("[ Preferences not saved: %s ]\n", error->message);
@@ -325,6 +372,9 @@ static GtkWidget* page_focus(Preferences* p) {
     if (g_strcmp0(name, "window") == 0) {
         return p->width;
     }
+    if (g_strcmp0(name, "layouts") == 0) {
+        return p->auto_terminal;
+    }
     return NULL;
 }
 
@@ -354,6 +404,7 @@ void preferences_show(AppData* app, const gchar* section) {
     gtk_stack_add_titled(p.stack, appearance, PREFERENCES_APPEARANCE, _("Appearance"));
     gtk_stack_add_titled(p.stack, editor_page(&p), "editor", _("Editor"));
     gtk_stack_add_titled(p.stack, window_page(&p, &s), "window", _("Window"));
+    gtk_stack_add_titled(p.stack, layouts_page(&p, &s), "layouts", _("Layouts"));
     gtk_stack_add_titled(p.stack, code_page(&p), "code", _("Code navigation"));
     const gchar* show = (section != NULL) ? section : last_section;
     if (show != NULL && gtk_stack_get_child_by_name(p.stack, show) != NULL) {

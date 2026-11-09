@@ -67,10 +67,12 @@ GPtrArray* layout_store_presets(GPtrArray* saved);
 #define LAYOUT_GRID_MIN_H 240
 
 /* The Auto layout (name translated): current with the editor tabs in the
- * dedicated panel, split as layout_store_grid_splits() for the size the
- * editor panel gets in a main area of width x height pixels (0 = unknown).
- * Caller frees. */
-SavedLayout* layout_store_auto(const SavedLayout* current, guint files, gint width, gint height);
+ * dedicated panel, the terminal and preview panels shown when show_terminal /
+ * show_preview is 1, hidden when 0, as they are when -1, and the editor
+ * panel split as layout_store_grid_splits() for the size it gets in a main
+ * area of width x height pixels (0 = unknown). Caller frees. */
+SavedLayout* layout_store_auto(const SavedLayout* current, guint files, gint show_terminal, gint show_preview,
+                               gint width, gint height);
 /* editor_splits text of a grid for files open files in an editor panel of
  * width x height pixels (0 = unknown, taken as wide), panes being at least
  * LAYOUT_GRID_MIN_W x LAYOUT_GRID_MIN_H: up to four panes, as many as fit
