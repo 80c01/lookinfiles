@@ -333,27 +333,19 @@ void focus_route_focus_changed(AppData* app) {
     }
 }
 
-gboolean focus_route_panel_key(AppData* app, NavStyle style, guint keyval, GdkModifierType state) {
-    if (app == NULL) return FALSE;
-    NavPrefix prefix = (NavPrefix)app->nav_prefix;
-    NavPrefix next = NAV_PREFIX_NONE;
-    NavAction action = nav_keys_lookup(style, prefix, keyval, state, &next);
-    if (action == NAV_PENDING && next == prefix && prefix != NAV_PREFIX_NONE) {
-        return TRUE; /* a modifier pressed alone */
-    }
-    app->nav_prefix = NAV_PREFIX_NONE;
+void focus_route_panel_action(AppData* app, GtkWidget* widget, NavAction action) {
+    if (app == NULL) return;
     switch (action) {
-    case NAV_PANEL_NEXT: app_emit(app, APP_EVENT_FOCUS_NEXT_PANEL); return TRUE;
-    case NAV_PANEL_PREV: app_emit(app, APP_EVENT_FOCUS_PREV_PANEL); return TRUE;
-    case NAV_TAB_CLOSE: app_emit(app, APP_EVENT_CLOSE_TAB); return TRUE;
-    case NAV_PENDING:
-        if (next == NAV_PREFIX_CTRL_W || next == NAV_PREFIX_CTRL_X) {
-            app->nav_prefix = next;
-            return TRUE;
-        }
-        return prefix != NAV_PREFIX_NONE;
-    default:
-        return prefix != NAV_PREFIX_NONE; /* the key after a prefix is used up */
+    case NAV_PANEL_NEXT: app_emit(app, APP_EVENT_FOCUS_NEXT_PANEL); break;
+    case NAV_PANEL_PREV: app_emit(app, APP_EVENT_FOCUS_PREV_PANEL); break;
+    case NAV_TAB_CLOSE: app_emit(app, APP_EVENT_CLOSE_TAB); break;
+    case NAV_TAB_NEXT:
+    case NAV_TAB_PREV: {
+        GtkWidget* nb = widget != NULL ? gtk_widget_get_ancestor(widget, GTK_TYPE_NOTEBOOK) : NULL;
+        if (nb != NULL) focus_route_step_tab(app, GTK_NOTEBOOK(nb), action == NAV_TAB_NEXT ? 1 : -1, TRUE);
+        break;
+    }
+    default: break;
     }
 }
 
@@ -422,20 +414,12 @@ static gboolean on_list_key(GtkEventControllerKey* controller, guint keyval, gui
         return TRUE;
     }
     case NAV_PANEL_NEXT:
-        app_emit(app, APP_EVENT_FOCUS_NEXT_PANEL);
-        return TRUE;
     case NAV_PANEL_PREV:
-        app_emit(app, APP_EVENT_FOCUS_PREV_PANEL);
-        return TRUE;
     case NAV_TAB_CLOSE:
-        app_emit(app, APP_EVENT_CLOSE_TAB);
-        return TRUE;
     case NAV_TAB_NEXT:
-    case NAV_TAB_PREV: {
-        GtkWidget* nb = gtk_widget_get_ancestor(list, GTK_TYPE_NOTEBOOK);
-        if (nb != NULL) focus_route_step_tab(app, GTK_NOTEBOOK(nb), action == NAV_TAB_NEXT ? 1 : -1, TRUE);
+    case NAV_TAB_PREV:
+        focus_route_panel_action(app, list, action);
         return TRUE;
-    }
     default:
         return TRUE; /* prefixes, and keys a list has no use for (search, scrolling) */
     }

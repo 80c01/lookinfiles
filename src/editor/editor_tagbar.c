@@ -75,17 +75,21 @@ static void close_tagbar(gpointer data) {
     if (tb->tab != NULL) editor_tagbar_toggle(tb->app, tb->tab, NULL);
 }
 
-/* The panel keys of the tab's mode (Ctrl+W l back in Vim...) */
-static gboolean tagbar_key(gpointer data, guint keyval, GdkModifierType state) {
+/* The navigation keys of the tab's mode */
+static NavStyle nav_style(gpointer data) {
     Tagbar* tb = data;
-    if (tb->tab == NULL) return FALSE;
-    NavStyle style = tb->tab->mode == EDITOR_MODE_VIM                                         ? NAV_STYLE_VIM
-                   : tb->tab->mode == EDITOR_MODE_EMACS || tb->tab->mode == EDITOR_MODE_ORGMODE ? NAV_STYLE_EMACS
-                                                                                                 : NAV_STYLE_NOTEPAD;
-    return focus_route_panel_key(tb->app, style, keyval, state);
+    EditorMode mode = tb->tab != NULL ? tb->tab->mode : EDITOR_MODE_NOTEPAD;
+    if (mode == EDITOR_MODE_VIM) return NAV_STYLE_VIM;
+    if (mode == EDITOR_MODE_EMACS || mode == EDITOR_MODE_ORGMODE) return NAV_STYLE_EMACS;
+    return NAV_STYLE_NOTEPAD;
 }
 
-static const OutlinePaneCallbacks callbacks = {go_to, cursor_line, escape, close_tagbar, tagbar_key};
+static void panel_action(gpointer data, NavAction action) {
+    Tagbar* tb = data;
+    focus_route_panel_action(tb->app, outline_pane_list(tb->pane), action);
+}
+
+static const OutlinePaneCallbacks callbacks = {go_to, cursor_line, escape, close_tagbar, nav_style, panel_action};
 
 /* ------------------------------------------------------------------------- */
 /* Cursor and outline                                                        */

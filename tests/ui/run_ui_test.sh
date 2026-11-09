@@ -544,6 +544,10 @@ key c;                  shot tagbar_expanded
 key s;                  shot tagbar_by_line
 key s Up Return; sleep 0.5; shot tagbar_jumped        # cursor on answer()
 key alt+Right;          shot tagbar_alt_focused   # Alt+Right: from the text into the tagbar
+key ctrl+f; xdotool type --delay 60 "ans"
+                        shot tagbar_search        # Ctrl+F in the tagbar: answer() selected
+key Escape;             shot tagbar_search_done   # bar closed on the match
+key ctrl+End;           shot tagbar_moved_last    # last row
 key alt+Left;           shot tagbar_alt_back      # Alt+Left: back in the text
 key ctrl+k ctrl+o;      shot tagbar_hidden
 xdotool mousemove 747 50 click 3

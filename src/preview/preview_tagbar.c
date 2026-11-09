@@ -209,13 +209,18 @@ static void close_tagbar(gpointer data) {
     toggle(data);
 }
 
-/* The panel keys of the global mode */
-static gboolean tagbar_key(gpointer data, guint keyval, GdkModifierType state) {
+/* The navigation keys of the global mode */
+static NavStyle nav_style(gpointer data) {
     PreviewTagbar* pt = data;
-    return focus_route_panel_key(pt->app, app_nav_style(pt->app), keyval, state);
+    return app_nav_style(pt->app);
 }
 
-static const OutlinePaneCallbacks callbacks = {go_to, top_line, escape, close_tagbar, tagbar_key};
+static void panel_action(gpointer data, NavAction action) {
+    PreviewTagbar* pt = data;
+    focus_route_panel_action(pt->app, outline_pane_list(pt->pane), action);
+}
+
+static const OutlinePaneCallbacks callbacks = {go_to, top_line, escape, close_tagbar, nav_style, panel_action};
 
 static gboolean on_scroll_timeout(gpointer data) {
     PreviewTagbar* pt = data;

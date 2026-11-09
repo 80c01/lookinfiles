@@ -31,7 +31,7 @@ struct ou leur classe, ou les titres d’un fichier Markdown. Elle suit le
 curseur et se rafraîchit peu après chaque modification. Un clic ou `Enter`
 va au symbole (retour avec la touche habituelle), `s` bascule entre le
 regroupement par sorte et l’ordre du fichier, `Esc` revient au texte, `q`
-la masque ; `Alt+Right` depuis le texte y entre, `Alt+Left` en revient (aussi les touches de panneau du mode de l’onglet : `Ctrl+W l` / `Ctrl+W h` en Vim, `C-x o`, `F6` / `Shift+F6`) ; son en-tête porte une ligne d’accent tant qu’elle a le focus. Chaque onglet affiche ou masque la sienne (un
+la masque ; `Alt+Right` depuis le texte y entre, `Alt+Left` en revient (aussi les touches de panneau du mode de l’onglet : `Ctrl+W l` / `Ctrl+W h` en Vim, `C-x o`, `F6` / `Shift+F6`) ; son en-tête porte une ligne d’accent tant qu’elle a le focus. Dedans, les touches du mode de l’onglet déplacent (`j` / `k`, `gg` / `G`, `Ctrl+F` / `Ctrl+B`, `h` / `l` replient / déplient une ligne en Vim ; `C-n` / `C-p`, `M-<` / `M->`, `C-v` / `M-v`, `C-b` / `C-f` en Emacs ; les flèches, `Page Up` / `Page Down`, `Ctrl+Home` / `Ctrl+End` dans tous les modes) et cherchent dans les noms, lignes repliées comprises, dans une barre en bas (`/` puis `n` / `N` en Vim, `C-s` / `C-r` en Emacs, `Ctrl+F` puis `F3` / `Shift+F3` en Notepad ; `Enter` ou `Esc` reste sur le résultat, `C-g` revient au départ) ; la barre de symboles de l’aperçu prend les touches du mode global. Chaque onglet affiche ou masque la sienne (un
 nouvel onglet suit le dernier choix, gardé pour le prochain démarrage), et
 sa largeur est partagée par les onglets.
 

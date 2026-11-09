@@ -3754,12 +3754,14 @@ msgid ""
 "Show / hide the tagbar: headings of a Markdown, HTML, Org, Word, "
 "OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of "
 "source code, beside the text (Enter goes, s sorts symbols, c collapses / "
-"expands all, Esc back, q hides)"
+"expands all, Esc back, q hides; in it, the moving and search keys of the "
+"mode)"
 msgstr ""
 "Afficher / masquer la barre de symboles : titres d’un aperçu Markdown, HTML, "
 "Org, Word, OpenDocument ou EPUB, signets d’un PDF ou symboles du code "
 "source, à côté du texte (Enter y va, s trie les symboles, c replie / déplie "
-"tout, Esc revient, q masque)"
+"tout, Esc revient, q masque ; dedans, les touches de déplacement et de "
+"recherche du mode)"
 
 #: src/chrome/help.c:159
 msgid "Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)"
@@ -4069,10 +4071,12 @@ msgstr "Références (onglet Références) / symboles du fichier"
 #: src/chrome/help.c:206 src/chrome/help.c:247
 msgid ""
 "Show / hide the tagbar: symbols or Markdown headings beside the text (Enter "
-"goes, s sorts, c collapses / expands all, Esc back, q hides)"
+"goes, s sorts, c collapses / expands all, Esc back, q hides; in it, the "
+"moving and search keys of the mode)"
 msgstr ""
 "Afficher / masquer la barre de symboles : symboles ou titres Markdown à côté "
-"du texte (Enter y va, s trie, c replie / déplie tout, Esc revient, q masque)"
+"du texte (Enter y va, s trie, c replie / déplie tout, Esc revient, q masque ; "
+"dedans, les touches de déplacement et de recherche du mode)"
 
 #: src/chrome/help.c:208 src/chrome/help.c:209 src/chrome/help.c:210 src/chrome/help.c:211 src/chrome/help.c:212
 #: src/chrome/help.c:213 src/chrome/help.c:214 src/chrome/help.c:215 src/chrome/help.c:216 src/chrome/help.c:217
@@ -4171,10 +4175,12 @@ msgstr "Références (onglet Références) / symboles du tampon (imenu)"
 #: src/chrome/help.c:225
 msgid ""
 "Show / hide the tagbar: symbols or Markdown headings beside the text (RET "
-"goes, s sorts, c collapses / expands all, Esc back, q hides)"
+"goes, s sorts, c collapses / expands all, Esc back, q hides; in it, the "
+"moving and search keys of the mode)"
 msgstr ""
 "Afficher / masquer la barre de symboles : symboles ou titres Markdown à côté "
-"du texte (RET y va, s trie, c replie / déplie tout, Esc revient, q masque)"
+"du texte (RET y va, s trie, c replie / déplie tout, Esc revient, q masque ; "
+"dedans, les touches de déplacement et de recherche du mode)"
 
 #: src/chrome/help.c:226
 msgid "Execute command (e.g. set-justification-center, goto-line, save-buffer)"

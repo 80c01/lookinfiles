@@ -4,6 +4,8 @@
 #include "core/i18n.h"
 #include "widgets/panels.h"
 
+#include <string.h>
+
 #define DEFAULT_WIDTH 180
 #define MIN_WIDTH 120
 
@@ -104,6 +106,17 @@ struct OutlinePane {
     CodeOutlineSort sort;
     GHashTable* collapsed;   /* keys of the rows the user collapsed */
     gboolean placing;        /* the paned position is being set by the code */
+    NavPrefix prefix;        /* Vim g / z / Ctrl+W, Emacs C-x typed in the list */
+    gint recenter_step;      /* Emacs C-l: center, top, bottom in turn */
+    GtkWidget* search_bar;   /* at the bottom, shown while searching */
+    GtkWidget* search_prompt;
+    GtkWidget* search_entry;
+    GtkWidget* search_echo;
+    NavStyle search_style;   /* of the open search */
+    gboolean search_backward;
+    gboolean search_setting; /* the entry text is being set by the code */
+    gchar* search_term;      /* last text searched, or NULL */
+    OutlineItem* search_origin; /* selected when the search started (referenced), or NULL */
 };
 
 static void pane_free(OutlinePane* p) {
@@ -111,6 +124,8 @@ static void pane_free(OutlinePane* p) {
     g_clear_object(&p->tree);
     g_clear_pointer(&p->entries, g_ptr_array_unref);
     g_hash_table_unref(p->collapsed);
+    g_free(p->search_term);
+    g_clear_object(&p->search_origin);
     g_free(p);
 }
 
@@ -492,7 +507,366 @@ static void on_close_clicked(GtkButton* button, gpointer data) {
     if (!p->detached) p->cb.close(p->data);
 }
 
-/* The owner's keys first (panel keys); Escape: back to the content; s: sort; c: collapse / expand all; q: hide
+/* ------------------------------------------------------------------------- */
+/* Moving: the navigation keys of the mode                                   */
+/* ------------------------------------------------------------------------- */
+
+/* Select the row at pos and scroll to it; with focus, the keyboard focus
+ * goes to it too (not while typing in the search bar) */
+static void select_pos(OutlinePane* p, guint pos, gboolean focus) {
+    gtk_single_selection_set_selected(p->selection, pos);
+    if (pos == GTK_INVALID_LIST_POSITION) return;
+    gtk_list_view_scroll_to(GTK_LIST_VIEW(p->list), pos, focus ? GTK_LIST_SCROLL_FOCUS : GTK_LIST_SCROLL_NONE, NULL);
+}
+
+/* The item of the selected row (referenced), or NULL */
+static OutlineItem* selected_item(OutlinePane* p) {
+    GtkTreeListRow* row = gtk_single_selection_get_selected_item(p->selection);
+    return row != NULL ? gtk_tree_list_row_get_item(row) : NULL;
+}
+
+/* Position of the row showing item, or GTK_INVALID_LIST_POSITION */
+static guint row_of(OutlinePane* p, gpointer item) {
+    if (p->tree == NULL || item == NULL) return GTK_INVALID_LIST_POSITION;
+    GListModel* rows = G_LIST_MODEL(p->tree);
+    guint n = g_list_model_get_n_items(rows);
+    for (guint i = 0; i < n; i++) {
+        GtkTreeListRow* row = g_list_model_get_item(rows, i);
+        gpointer it = gtk_tree_list_row_get_item(row);
+        g_object_unref(row);
+        if (it != NULL) g_object_unref(it);
+        if (it == item) return i;
+    }
+    return GTK_INVALID_LIST_POSITION;
+}
+
+/* Rows shown at once, from the scroll adjustment */
+static guint page_rows(OutlinePane* p, guint n) {
+    GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(p->list));
+    gdouble upper = adj != NULL ? gtk_adjustment_get_upper(adj) : 0.0;
+    if (upper <= 0.0 || n == 0) return 10;
+    guint rows = (guint)(gtk_adjustment_get_page_size(adj) * n / upper);
+    return rows > 1 ? rows - 1 : 1; /* one row of the page stays in view */
+}
+
+/* Scroll so that the selected row is at where of the view (0 top, 0.5
+ * middle, 1 bottom: Vim zt / zz / zb, Emacs C-l) */
+static void scroll_selected(OutlinePane* p, gdouble where) {
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(p->selection));
+    guint pos = gtk_single_selection_get_selected(p->selection);
+    GtkAdjustment* adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(p->list));
+    if (adj == NULL || n == 0 || pos >= n) return;
+    gdouble row = gtk_adjustment_get_upper(adj) / n;
+    gdouble page = gtk_adjustment_get_page_size(adj);
+    gtk_adjustment_set_value(adj, pos * row - (page - row) * where);
+}
+
+/* Next / previous row, first / last, a page down / up; forward opens the
+ * row (or steps into it), backward closes it (or goes to its parent) */
+static void move(OutlinePane* p, NavAction action) {
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(p->selection));
+    guint cur = gtk_single_selection_get_selected(p->selection);
+    gboolean none = cur == GTK_INVALID_LIST_POSITION || cur >= n;
+    if (n == 0) return;
+    switch (action) {
+    case NAV_DOWN: select_pos(p, none ? 0 : MIN(cur + 1, n - 1), TRUE); break;
+    case NAV_UP: select_pos(p, none || cur == 0 ? 0 : cur - 1, TRUE); break;
+    case NAV_FIRST: select_pos(p, 0, TRUE); break;
+    case NAV_LAST: select_pos(p, n - 1, TRUE); break;
+    case NAV_PAGE_DOWN: select_pos(p, none ? 0 : MIN(cur + page_rows(p, n), n - 1), TRUE); break;
+    case NAV_PAGE_UP: {
+        guint rows = page_rows(p, n);
+        select_pos(p, none || cur < rows ? 0 : cur - rows, TRUE);
+        break;
+    }
+    case NAV_FORWARD:
+    case NAV_BACKWARD: {
+        if (none) break;
+        GtkTreeListRow* row = g_list_model_get_item(G_LIST_MODEL(p->tree), cur);
+        gboolean expandable = gtk_tree_list_row_is_expandable(row);
+        gboolean expanded = gtk_tree_list_row_get_expanded(row);
+        if (action == NAV_FORWARD) {
+            if (expandable && !expanded) {
+                set_row_expanded(p, row, TRUE);
+            } else if (expanded && cur + 1 < n) {
+                select_pos(p, cur + 1, TRUE);
+            }
+        } else if (expandable && expanded) {
+            set_row_expanded(p, row, FALSE);
+        } else {
+            GtkTreeListRow* parent = gtk_tree_list_row_get_parent(row);
+            if (parent != NULL) {
+                select_pos(p, gtk_tree_list_row_get_position(parent), TRUE);
+                g_object_unref(parent);
+            }
+        }
+        g_object_unref(row);
+        queue_collapse_button(p);
+        break;
+    }
+    case NAV_CENTER: scroll_selected(p, 0.5); break;
+    case NAV_TOP: scroll_selected(p, 0.0); break;
+    case NAV_BOTTOM: scroll_selected(p, 1.0); break;
+    case NAV_RECENTER: {
+        static const gdouble where[] = {0.5, 0.0, 1.0};
+        scroll_selected(p, where[p->recenter_step]);
+        p->recenter_step = (p->recenter_step + 1) % 3;
+        break;
+    }
+    default: break;
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Searching the names                                                       */
+/* ------------------------------------------------------------------------- */
+
+typedef enum { FOUND, WRAPPED, FAILED } SearchResult;
+
+/* Every item in the order of the rows, collapsed ones included, with the
+ * index of its parent (-1 at the top) */
+static void flatten(GListModel* model, gint parent, GPtrArray* items, GArray* parents) {
+    guint n = g_list_model_get_n_items(model);
+    for (guint i = 0; i < n; i++) {
+        OutlineItem* it = g_list_model_get_item(model, i);
+        g_ptr_array_add(items, it);
+        g_array_append_val(parents, parent);
+        gint index = (gint)items->len - 1;
+        if (it->children != NULL) flatten(G_LIST_MODEL(it->children), index, items, parents);
+    }
+}
+
+static gboolean item_matches(const OutlineItem* it, const gchar* folded) {
+    if (it == NULL || it->group || it->name == NULL || folded[0] == '\0') return FALSE;
+    gchar* name = g_utf8_casefold(it->name, -1);
+    gboolean match = strstr(name, folded) != NULL;
+    g_free(name);
+    return match;
+}
+
+/* Open the rows above items[index] and select it */
+static void reveal(OutlinePane* p, GPtrArray* items, GArray* parents, guint index, gboolean focus) {
+    GSList* chain = NULL;
+    for (gint i = g_array_index(parents, gint, index); i >= 0; i = g_array_index(parents, gint, i)) {
+        chain = g_slist_prepend(chain, g_ptr_array_index(items, i));
+    }
+    for (GSList* l = chain; l != NULL; l = l->next) {
+        guint pos = row_of(p, l->data);
+        if (pos == GTK_INVALID_LIST_POSITION) break;
+        GtkTreeListRow* row = g_list_model_get_item(G_LIST_MODEL(p->tree), pos);
+        if (!gtk_tree_list_row_get_expanded(row)) set_row_expanded(p, row, TRUE);
+        g_object_unref(row);
+    }
+    g_slist_free(chain);
+    queue_collapse_button(p);
+    select_pos(p, row_of(p, g_ptr_array_index(items, index)), focus);
+}
+
+/* The next name holding term in direction (+1 / -1), after the row
+ * selected (from_origin: the one selected when the search started),
+ * wrapping around */
+static SearchResult search_find(OutlinePane* p, const gchar* term, gint direction, gboolean from_origin,
+                                gboolean focus) {
+    if (p->tree == NULL || term == NULL || term[0] == '\0') return FAILED;
+    GPtrArray* items = g_ptr_array_new_with_free_func(g_object_unref);
+    GArray* parents = g_array_new(FALSE, FALSE, sizeof(gint));
+    flatten(gtk_tree_list_model_get_model(p->tree), -1, items, parents);
+    OutlineItem* from = from_origin ? (p->search_origin != NULL ? g_object_ref(p->search_origin) : NULL)
+                                    : selected_item(p);
+    gint n = (gint)items->len;
+    gint start = -1;
+    for (gint i = 0; from != NULL && i < n && start < 0; i++) {
+        if (g_ptr_array_index(items, i) == (gpointer)from) start = i;
+    }
+    if (from != NULL) g_object_unref(from);
+    gchar* folded = g_utf8_casefold(term, -1);
+    SearchResult result = FAILED;
+    for (gint k = 1; k <= n && result == FAILED; k++) {
+        gint i = start < 0 ? (direction > 0 ? k - 1 : n - k) : ((start + direction * k) % n + n) % n;
+        if (!item_matches(g_ptr_array_index(items, i), folded)) continue;
+        gboolean wrapped = start >= 0 && (direction > 0 ? i <= start : i >= start);
+        result = wrapped ? WRAPPED : FOUND;
+        reveal(p, items, parents, (guint)i, focus);
+    }
+    g_free(folded);
+    g_array_unref(parents);
+    g_ptr_array_unref(items);
+    return result;
+}
+
+static const gchar* const BAR_CLASSES[] = {"notepad-bar", "emacs-minibuffer", "vim-commandline"};
+static const gchar* const PROMPT_CLASSES[] = {"emacs-minibuffer-prompt", "vim-commandline-prompt"};
+static const gchar* const ENTRY_CLASSES[] = {"emacs-minibuffer-entry", "vim-commandline-entry", "flat"};
+static const gchar* const ECHO_CLASSES[] = {"vim-message-error", "dim-label"};
+
+static void remove_classes(GtkWidget* w, const gchar* const* classes, gsize n) {
+    for (gsize i = 0; i < n; i++) gtk_widget_remove_css_class(w, classes[i]);
+}
+
+static void set_echo(OutlinePane* p, const gchar* text, const gchar* css_class) {
+    remove_classes(p->search_echo, ECHO_CLASSES, G_N_ELEMENTS(ECHO_CLASSES));
+    if (css_class != NULL) gtk_widget_add_css_class(p->search_echo, css_class);
+    gtk_label_set_text(GTK_LABEL(p->search_echo), text != NULL ? text : "");
+    gtk_widget_set_visible(p->search_echo, text != NULL && text[0] != '\0');
+}
+
+/* Prompt and message the way the mode's search does (search.c) */
+static void search_report(OutlinePane* p, SearchResult result) {
+    const gchar* term = gtk_editable_get_text(GTK_EDITABLE(p->search_entry));
+    gboolean empty = term[0] == '\0';
+    gchar* msg = NULL;
+    switch (p->search_style) {
+    case NAV_STYLE_EMACS: {
+        gboolean failing = !empty && result == FAILED;
+        gboolean wrapped = !empty && result == WRAPPED;
+        gchar* prompt = g_strdup_printf("%s%sI-search%s: ", failing ? "Failing " : "",
+                                        wrapped ? "Wrapped " : "", p->search_backward ? " backward" : "");
+        gtk_label_set_text(GTK_LABEL(p->search_prompt), prompt);
+        g_free(prompt);
+        set_echo(p, NULL, NULL);
+        break;
+    }
+    case NAV_STYLE_VIM:
+        gtk_label_set_text(GTK_LABEL(p->search_prompt), "/");
+        if (!empty && result == FAILED) {
+            msg = g_strdup_printf("E486: Pattern not found: %s", term);
+            set_echo(p, msg, "vim-message-error");
+        } else if (!empty && result == WRAPPED) {
+            set_echo(p, p->search_backward ? "search hit TOP, continuing at BOTTOM"
+                                           : "search hit BOTTOM, continuing at TOP",
+                     "vim-message-error");
+        } else {
+            set_echo(p, NULL, NULL);
+        }
+        break;
+    default:
+        gtk_label_set_text(GTK_LABEL(p->search_prompt), _("Find:"));
+        if (!empty && result == FAILED) msg = g_strdup_printf(_("Cannot find \"%s\""), term);
+        set_echo(p, msg, "dim-label");
+        break;
+    }
+    g_free(msg);
+}
+
+static void search_open(OutlinePane* p, NavStyle style, gboolean backward) {
+    p->search_style = style;
+    p->search_backward = backward;
+    g_clear_object(&p->search_origin);
+    p->search_origin = selected_item(p);
+    remove_classes(p->search_bar, BAR_CLASSES, G_N_ELEMENTS(BAR_CLASSES));
+    remove_classes(p->search_prompt, PROMPT_CLASSES, G_N_ELEMENTS(PROMPT_CLASSES));
+    remove_classes(p->search_entry, ENTRY_CLASSES, G_N_ELEMENTS(ENTRY_CLASSES));
+    gtk_widget_set_margin_end(p->search_prompt, style == NAV_STYLE_NOTEPAD ? 6 : 0);
+    switch (style) {
+    case NAV_STYLE_EMACS:
+        gtk_widget_add_css_class(p->search_bar, "emacs-minibuffer");
+        gtk_widget_add_css_class(p->search_prompt, "emacs-minibuffer-prompt");
+        gtk_widget_add_css_class(p->search_entry, "emacs-minibuffer-entry");
+        gtk_widget_add_css_class(p->search_entry, "flat");
+        break;
+    case NAV_STYLE_VIM:
+        gtk_widget_add_css_class(p->search_bar, "vim-commandline");
+        gtk_widget_add_css_class(p->search_prompt, "vim-commandline-prompt");
+        gtk_widget_add_css_class(p->search_entry, "vim-commandline-entry");
+        gtk_widget_add_css_class(p->search_entry, "flat");
+        break;
+    default:
+        gtk_widget_add_css_class(p->search_bar, "notepad-bar");
+        break;
+    }
+    p->search_setting = TRUE;
+    gtk_editable_set_text(GTK_EDITABLE(p->search_entry), "");
+    p->search_setting = FALSE;
+    search_report(p, FOUND);
+    gtk_widget_set_visible(p->search_bar, TRUE);
+    gtk_widget_grab_focus(p->search_entry);
+}
+
+/* Close the bar, the focus back on the selected row (restore: on the one
+ * selected when the search started) */
+static void search_close(OutlinePane* p, gboolean restore) {
+    if (!gtk_widget_get_visible(p->search_bar)) return;
+    if (restore) select_pos(p, row_of(p, p->search_origin), FALSE);
+    g_clear_object(&p->search_origin);
+    gtk_widget_set_visible(p->search_bar, FALSE);
+    gtk_widget_grab_focus(p->list);
+    guint pos = gtk_single_selection_get_selected(p->selection);
+    if (pos != GTK_INVALID_LIST_POSITION) select_pos(p, pos, TRUE);
+}
+
+/* As you type: the selected name while it still holds the text, else the
+ * next one from where the search started */
+static void on_search_changed(GtkEditable* entry, gpointer data) {
+    OutlinePane* p = data;
+    if (p->search_setting || p->detached) return;
+    const gchar* term = gtk_editable_get_text(entry);
+    if (term[0] == '\0') {
+        select_pos(p, row_of(p, p->search_origin), FALSE);
+        search_report(p, FOUND);
+        return;
+    }
+    g_free(p->search_term);
+    p->search_term = g_strdup(term);
+    OutlineItem* cur = selected_item(p);
+    gchar* folded = g_utf8_casefold(term, -1);
+    gboolean keep = cur != NULL && cur != p->search_origin && item_matches(cur, folded);
+    g_free(folded);
+    if (cur != NULL) g_object_unref(cur);
+    search_report(p, keep ? FOUND : search_find(p, term, p->search_backward ? -1 : 1, TRUE, FALSE));
+}
+
+/* Keys of the mode in the bar (nav_keys_search_lookup()): next / previous
+ * match (Emacs C-s / C-r, Notepad Enter / F3 / Shift+F3; on an empty bar,
+ * the last text), Enter / Escape close it on the match, C-g goes back */
+static gboolean on_search_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
+                              gpointer data) {
+    (void)ctrl;
+    (void)keycode;
+    OutlinePane* p = data;
+    if (p->detached) return FALSE;
+    NavSearchKey key = nav_keys_search_lookup(p->search_style, keyval, state);
+    switch (key) {
+    case NAV_SEARCH_KEY_NEXT:
+    case NAV_SEARCH_KEY_PREV: {
+        p->search_backward = key == NAV_SEARCH_KEY_PREV;
+        const gchar* term = gtk_editable_get_text(GTK_EDITABLE(p->search_entry));
+        if (term[0] == '\0') {
+            /* on_search_changed() searches it */
+            if (p->search_term != NULL) gtk_editable_set_text(GTK_EDITABLE(p->search_entry), p->search_term);
+            gtk_editable_set_position(GTK_EDITABLE(p->search_entry), -1);
+        } else {
+            search_report(p, search_find(p, term, p->search_backward ? -1 : 1, FALSE, FALSE));
+        }
+        return TRUE;
+    }
+    case NAV_SEARCH_KEY_ACCEPT: search_close(p, FALSE); return TRUE;
+    case NAV_SEARCH_KEY_CANCEL: search_close(p, TRUE); return TRUE;
+    default: return FALSE;
+    }
+}
+
+/* Vim n / N, Notepad F3 / Shift+F3 in the list: the last text again (Vim N
+ * the other way) */
+static void search_again(OutlinePane* p, NavStyle style, gboolean next) {
+    gint direction = next ? 1 : -1;
+    if (style == NAV_STYLE_VIM && p->search_backward) direction = -direction;
+    if (search_find(p, p->search_term, direction, FALSE, TRUE) == FAILED) gtk_widget_error_bell(p->list);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Keys of the list                                                          */
+/* ------------------------------------------------------------------------- */
+
+/* A prefix typed before the focus left does not carry over */
+static void on_list_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
+    (void)ctrl;
+    OutlinePane* p = data;
+    p->prefix = NAV_PREFIX_NONE;
+    p->recenter_step = 0;
+}
+
+/* The navigation keys of the owner's mode (moving, searching, panel keys);
+ * Escape: back to the content; s: sort; c: collapse / expand all; q: hide
  * (Enter goes to the entry) */
 static gboolean on_list_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
                             gpointer data) {
@@ -500,7 +874,34 @@ static gboolean on_list_key(GtkEventControllerKey* ctrl, guint keyval, guint key
     (void)keycode;
     OutlinePane* p = data;
     if (p->detached) return FALSE;
-    if (p->cb.key != NULL && p->cb.key(p->data, keyval, state)) return TRUE;
+    NavStyle style = p->cb.nav_style != NULL ? p->cb.nav_style(p->data) : NAV_STYLE_NOTEPAD;
+    NavPrefix next = NAV_PREFIX_NONE;
+    NavAction action = nav_keys_lookup(style, p->prefix, keyval, state, &next);
+    p->prefix = next;
+    if (action != NAV_RECENTER && action != NAV_PENDING) p->recenter_step = 0;
+    switch (action) {
+    case NAV_NONE:
+        break;
+    case NAV_DOWN: case NAV_UP: case NAV_FORWARD: case NAV_BACKWARD:
+    case NAV_FIRST: case NAV_LAST: case NAV_PAGE_DOWN: case NAV_PAGE_UP:
+    case NAV_CENTER: case NAV_TOP: case NAV_BOTTOM: case NAV_RECENTER:
+        move(p, action);
+        return TRUE;
+    case NAV_SEARCH:
+    case NAV_SEARCH_BACKWARD:
+        search_open(p, style, action == NAV_SEARCH_BACKWARD);
+        return TRUE;
+    case NAV_SEARCH_NEXT:
+    case NAV_SEARCH_PREV:
+        search_again(p, style, action == NAV_SEARCH_NEXT);
+        return TRUE;
+    case NAV_PANEL_NEXT: case NAV_PANEL_PREV:
+    case NAV_TAB_NEXT: case NAV_TAB_PREV: case NAV_TAB_CLOSE:
+        if (p->cb.panel_action != NULL) p->cb.panel_action(p->data, action);
+        return TRUE;
+    default:
+        return TRUE; /* prefixes, and keys with no use here */
+    }
     if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SUPER_MASK)) != 0) return FALSE;
     switch (keyval) {
     case GDK_KEY_Escape: p->cb.escape(p->data); return TRUE;
@@ -560,9 +961,14 @@ OutlinePane* outline_pane_new(GtkWidget* content, gint* width, const gchar* load
     g_signal_connect(factory, "unbind", G_CALLBACK(on_unbind), p);
     p->list = gtk_list_view_new(GTK_SELECTION_MODEL(p->selection), factory);
     g_signal_connect(p->list, "activate", G_CALLBACK(on_activate), p);
+    /* Before the list's own keys: the mode decides what the arrows do */
     GtkEventController* keys = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
     g_signal_connect(keys, "key-pressed", G_CALLBACK(on_list_key), p);
     gtk_widget_add_controller(p->list, keys);
+    GtkEventController* focus = gtk_event_controller_focus_new();
+    g_signal_connect(focus, "enter", G_CALLBACK(on_list_focus_enter), p);
+    gtk_widget_add_controller(p->list, focus);
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), p->list);
@@ -577,6 +983,28 @@ OutlinePane* outline_pane_new(GtkWidget* content, gint* width, const gchar* load
     gtk_stack_add_named(GTK_STACK(p->stack), p->empty, "empty");
     gtk_stack_set_visible_child_name(GTK_STACK(p->stack), "empty");
     gtk_box_append(GTK_BOX(p->panel), p->stack);
+
+    /* Search bar: prompt and text, the message below */
+    p->search_bar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget* search_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    p->search_prompt = gtk_label_new(NULL);
+    gtk_box_append(GTK_BOX(search_row), p->search_prompt);
+    p->search_entry = gtk_entry_new();
+    gtk_widget_set_hexpand(p->search_entry, TRUE);
+    g_signal_connect(p->search_entry, "changed", G_CALLBACK(on_search_changed), p);
+    GtkEventController* search_keys = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(search_keys, GTK_PHASE_CAPTURE);
+    g_signal_connect(search_keys, "key-pressed", G_CALLBACK(on_search_key), p);
+    gtk_widget_add_controller(p->search_entry, search_keys);
+    gtk_box_append(GTK_BOX(search_row), p->search_entry);
+    gtk_box_append(GTK_BOX(p->search_bar), search_row);
+    p->search_echo = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(p->search_echo), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(p->search_echo), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_visible(p->search_echo, FALSE);
+    gtk_box_append(GTK_BOX(p->search_bar), p->search_echo);
+    gtk_widget_set_visible(p->search_bar, FALSE);
+    gtk_box_append(GTK_BOX(p->panel), p->search_bar);
     gtk_widget_set_visible(p->panel, FALSE);
 
     p->paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);

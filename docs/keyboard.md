@@ -219,7 +219,7 @@ in the preview)
 | `t` (Vim), `C-o` (Emacs) | Open the previewed file in the dedicated editor panel (in an Org-mode preview, `t` cycles the TODO keyword) |
 | `e` | Open the file in the editor (text files) |
 | `m` | Rendered / raw view: Markdown, HTML, Org, CSV, JSON, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
-| `o`, `Ctrl+K Ctrl+O` | Tagbar: the headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of source code, beside the text (`Enter` / click scrolls to one, `s` sorts symbols, `c` collapses / expands all, `Esc` back, `q` hides) |
+| `o`, `Ctrl+K Ctrl+O` | Tagbar: the headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of source code, beside the text (`Enter` / click scrolls to one, `s` sorts symbols, `c` collapses / expands all, `Esc` back, `q` hides; the moving and search keys of the global mode, see [Code navigation](#code-navigation)) |
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |
 | Right click on an image | Context menu: **Copy Image** copies the whole image to the clipboard |
 | `PgDn` / `PgUp` | PDF: next / previous page; mailbox: from the list into each message and back |
@@ -315,7 +315,7 @@ headings of a Markdown file. It follows the cursor and is refreshed shortly
 after each edit. A click or `Enter` goes to the symbol (back with the usual
 key), `s` switches between grouping by kind and file order, `c` (or the arrow
 button of its header) collapses every row or expands them all, `Esc` returns to
-the text, `q` hides it; `Alt+Right` from the text goes into it, `Alt+Left` comes back (also the panel keys of the tab's mode: `Ctrl+W l` / `Ctrl+W h` in Vim, `C-x o`, `F6` / `Shift+F6`); its header shows an accent line while it has the focus. Each tab shows or hides its own (a new
+the text, `q` hides it; `Alt+Right` from the text goes into it, `Alt+Left` comes back (also the panel keys of the tab's mode: `Ctrl+W l` / `Ctrl+W h` in Vim, `C-x o`, `F6` / `Shift+F6`); its header shows an accent line while it has the focus. In it, the keys of the tab's mode move (`j` / `k`, `gg` / `G`, `Ctrl+F` / `Ctrl+B`, `h` / `l` close / open a row in Vim; `C-n` / `C-p`, `M-<` / `M->`, `C-v` / `M-v`, `C-b` / `C-f` in Emacs; the arrows, `Page Up` / `Page Down`, `Ctrl+Home` / `Ctrl+End` in every mode) and search the names, collapsed rows included, in a bar at its bottom (`/` then `n` / `N` in Vim, `C-s` / `C-r` in Emacs, `Ctrl+F` then `F3` / `Shift+F3` in Notepad; `Enter` or `Esc` stays on the match, `C-g` goes back); the preview tagbar takes the keys of the global mode. Each tab shows or hides its own (a new
 tab follows the last choice, kept for the next start), and its width is
 shared by the tabs.
 

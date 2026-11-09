@@ -95,6 +95,11 @@ Notes:
   indexing, hung) is not waited for: the built-in scanner fills it.
   The widget is `outline_pane`, shared with the preview tagbar
   (`preview_tagbar`, docs/previews.md).
+  Its list takes the navigation keys (`nav_keys`) of the style its owner
+  gives (the tab's mode, the global mode for the preview): moving, and a
+  search bar at its bottom over every name, collapsed rows included (a
+  match opens the rows above it); panel and tab keys go back to the owner
+  (`focus_route_panel_action()`).
 
 ## Known limits
 
