@@ -87,7 +87,8 @@ Layers, from bottom to top
   the current panels with the editor panel split in a grid for the number
   of open files and the panel's size (`layout_store_editor_area()`): side
   by side when wide, stacked when tall, 2×2 or one row / column for four,
-  panes of at least `LAYOUT_GRID_MIN_W` × `LAYOUT_GRID_MIN_H`.
+  panes of at least `LAYOUT_GRID_MIN_W` × `LAYOUT_GRID_MIN_H` (two panes
+  for two files or more all the same).
 - `gif_decoder` — GIF frames composed on an RGBA canvas (LZW, interlacing,
   transparency, disposal, delays, loop count), played by `animation`
   (GdkPixbufAnimation is deprecated in gdk-pixbuf 2.44: never use it).
