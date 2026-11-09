@@ -926,6 +926,7 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
 void editor_modes_free_tab(EditorTab* tab) {
     if (tab == NULL || tab->mode_state == NULL) return;
     EditorModeState* st = tab->mode_state;
+    emacs_block_cursor_free(tab);
     g_free(st->emacs_last_search);
     g_free(st->emacs_qr_find);
     g_free(st->emacs_qr_rep);

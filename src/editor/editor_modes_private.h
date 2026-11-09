@@ -105,6 +105,9 @@ typedef struct EditorModeState {
     gboolean emacs_is_setting;       /* the entry text is being set by the search itself */
     gboolean emacs_block_on;         /* block cursor drawn (Emacs and Org-mode modes) */
     GtkWidget* emacs_block_eol;      /* block shown at a line end (text view overlay) */
+    GtkWidget* emacs_block_view;     /* weak: the view wired for the block cursor */
+    guint emacs_block_tick;          /* tick placing the line-end block while the layout settles */
+    gint emacs_block_frames;         /* frames followed by that tick */
     EmacsPromptFunc emacs_prompt_cb; /* EMACS_MINI_CALLBACK */
     gchar* emacs_prompt_data;        /* owned, given to the callback */
     GPtrArray* emacs_completions;    /* Tab completion candidates (gchar*), or NULL */
@@ -195,6 +198,8 @@ void notepad_reset(EditorTab* tab);
 void emacs_close_minibuffer(EditorTab* tab);
 /* Draw an Emacs block cursor in the tab (TRUE) or GTK's thin caret (FALSE) */
 void emacs_block_cursor_set(EditorTab* tab, gboolean on);
+/* Detach the block cursor from the tab's view before the tab is freed */
+void emacs_block_cursor_free(EditorTab* tab);
 /* End the incremental search: accept leaves the cursor at the match */
 void emacs_isearch_exit(EditorTab* tab, gboolean accept);
 /* Vim mode (editor_vim.c): create the engine when the tab enters Vim mode,

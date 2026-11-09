@@ -610,12 +610,13 @@ Layers, from bottom to top
   `editor_info` of the tab in each mode's style; `editor_modes_refresh_bars()`
   on `APP_EVENT_STATUS_CHANGED`, `editor_modes_refresh_git()` on
   `APP_EVENT_GIT_STATUS_CHANGED`), key dispatch.
-  Mode implementations: `editor_notepad`, `editor_emacs`, `editor_vim` (the
+  Mode implementations: `editor_notepad`, `editor_emacs` (with
+  `editor_block_cursor`, its block cursor), `editor_vim` (the
   host of `vim_engine`: status line, command line, `VimHost` callbacks), and
   `editor_org` (Emacs Org-mode keys in tabs: maps keys to `org_doc` /
   `org_table` commands, applies only the changed lines as one undo step,
   folding with an invisible tag). `editor_modes_private.h` (state
-  struct, mode enums) is internal to these 5 files.
+  struct, mode enums) is internal to these 6 files.
   Mode bar labels whose text can grow (file names, messages) must use
   `editor_bar_label_shrinkable()`, and filler text `editor_bar_clip()`: a bar
   wider than the panel pushes the minimap out of the window.
