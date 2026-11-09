@@ -41,9 +41,10 @@ enregistrées demande d’abord.
 
 Par défaut, les onglets d’édition partagent le panneau d’aperçu. Le bouton
 au début de la barre d’onglets (**Déplacer les onglets d’édition dans un
-panneau dédié**, affiché dès qu’un onglet d’édition est ouvert) les déplace
-dans un panneau à eux, à côté de l’aperçu : vous pouvez ainsi lire un
-fichier tout en en éditant un autre. Le même bouton les remet en place.
+panneau dédié**, affiché dès qu’un onglet est ouvert) les déplace dans un
+panneau à eux, à côté de l’aperçu : vous pouvez ainsi lire un fichier tout
+en en éditant un autre. Les onglets canvas, terminal et vidéo suivent. Le
+même bouton les remet tous en place.
 
 ### Diviser
 

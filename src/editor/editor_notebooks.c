@@ -690,6 +690,66 @@ void editor_add_page_like_file(AppData* app, GtkWidget* child, GtkWidget* label)
     }
 }
 
+/* Add to pages the movable pages of nb that are not editor tabs */
+static void collect_other_pages(AppData* app, GtkNotebook* nb, GPtrArray* pages) {
+    gint n = gtk_notebook_get_n_pages(nb);
+    for (gint i = 0; i < n; i++) {
+        GtkWidget* child = gtk_notebook_get_nth_page(nb, i);
+        if (editor_page_is_movable(child) && editor_tab_of_page(app, child) == NULL) {
+            g_ptr_array_add(pages, child);
+        }
+    }
+}
+
+/* The movable pages that are not editor tabs, in the preview notebook
+ * (preview TRUE) or in the editor panel */
+static GPtrArray* other_pages(AppData* app, gboolean preview) {
+    GPtrArray* pages = g_ptr_array_new();
+    if (preview) {
+        if (app->notebook != NULL) collect_other_pages(app, GTK_NOTEBOOK(app->notebook), pages);
+        return pages;
+    }
+    GPtrArray* nbs = editor_get_all_notebooks(app);
+    for (guint i = 0; i < nbs->len; i++) {
+        collect_other_pages(app, GTK_NOTEBOOK(g_ptr_array_index(nbs, i)), pages);
+    }
+    g_ptr_array_unref(nbs);
+    return pages;
+}
+
+void editor_move_other_pages(AppData* app, gboolean dedicated) {
+    if (app == NULL || app->notebook == NULL || app->editor_box == NULL) return;
+    GPtrArray* pages = other_pages(app, dedicated);
+    for (guint i = 0; i < pages->len; i++) {
+        GtkWidget* child = g_ptr_array_index(pages, i);
+        GtkNotebook* from = editor_notebook_of_page(child);
+        if (from == NULL) continue;
+        GtkNotebook* to = dedicated ? editor_panel_notebook(app) : GTK_NOTEBOOK(app->notebook);
+        editor_move_page(app, from, to, child, -1);
+        if (!dedicated && gtk_notebook_get_n_pages(from) == 0) {
+            editor_cleanup_notebook(app, GTK_WIDGET(from));
+        }
+    }
+    if (dedicated && pages->len > 0) {
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+    }
+    g_ptr_array_unref(pages);
+}
+
+gboolean editor_has_dockable_tabs(AppData* app) {
+    if (app == NULL) return FALSE;
+    if (app->editors != NULL) return TRUE;
+    GPtrArray* pages = other_pages(app, TRUE);
+    gboolean found = pages->len > 0;
+    g_ptr_array_unref(pages);
+    if (!found) {
+        pages = other_pages(app, FALSE);
+        found = pages->len > 0;
+        g_ptr_array_unref(pages);
+    }
+    return found;
+}
+
 gboolean editor_move_page_direction(AppData* app, GtkWidget* child, EditorMoveDirection dir) {
     GtkNotebook* cur_nb = (app != NULL && child != NULL) ? editor_notebook_of_page(child) : NULL;
     if (cur_nb == NULL || !editor_page_is_movable(child) || editor_tab_of_page(app, child) != NULL) return FALSE;

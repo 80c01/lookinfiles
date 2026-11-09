@@ -11,6 +11,9 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A Canvas note opens where a text file would (beside the editor tab used
   last, else in the editor panel, else in the preview panel) instead of
   always in the editor panel.
+- **Move Editor Tabs to a Dedicated Panel** (and docking back) also moves
+  the canvas, terminal and video tabs, and the button shows when only such
+  tabs are open.
 
 ## [0.6.0] - 2026-11-07
 

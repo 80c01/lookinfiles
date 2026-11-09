@@ -896,6 +896,8 @@ void editor_set_dedicated(AppData* app, gboolean dedicated) {
         }
         g_list_free(to_move);
     }
+    /* Canvas, terminal and video tabs go with them */
+    editor_move_other_pages(app, dedicated);
 
     if (keep != NULL && keep->nb != NULL) {
         GtkNotebook* nb = GTK_NOTEBOOK(keep->nb);

@@ -644,8 +644,8 @@ void update_path_label(AppData* app) {
         }
     }
     if (t->split_btn != NULL) {
-        /* Nothing to move or dock without an editor tab */
-        gtk_widget_set_visible(t->split_btn, app->editors != NULL);
+        /* Nothing to move or dock without a tab */
+        gtk_widget_set_visible(t->split_btn, editor_has_dockable_tabs(app));
         if (app->editor_dedicated) {
             gtk_widget_add_css_class(t->split_btn, "tab-action-active");
             icon_button_set_content(t->split_btn, "view-paged", NULL);

@@ -74,6 +74,12 @@ gboolean editor_confirm_discard_workspace(AppData* app, GList* editors);
 void editor_toggle_dedicated(AppData* app);
 void editor_set_dedicated(AppData* app, gboolean dedicated);
 void editor_move_tab_dedicated(AppData* app, EditorTab* tab);
+/* Move the tabs other than editor tabs (canvases, terminals, videos) as
+ * editor_set_dedicated() moves the editor tabs: from the preview notebook to
+ * the editor panel (dedicated), or back */
+void editor_move_other_pages(AppData* app, gboolean dedicated);
+/* Editor tabs, or other tabs editor_set_dedicated() moves, are open */
+gboolean editor_has_dockable_tabs(AppData* app);
 void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection dir);
 /* Show tab's file in a second view on the dir side of its notebook (moved to
  * the dedicated panel first when in the preview notebook). The views share
