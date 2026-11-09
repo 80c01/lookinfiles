@@ -404,14 +404,17 @@ static void test_grid_size(void) {
     l->tagbars = TRUE;
     l->editor_tagbar = TRUE;
     l->preview_tagbar = TRUE;
+    l->editor_tagbar_as_is = TRUE; /* the current layout: each tab as it is */
     rules = (AutoRules){-1, -1, -1, 0, 0};
     a = layout_store_auto(l, 2, &rules, 1600, 1000);
     g_assert_true(a->tagbars && !a->editor_tagbar && a->preview_tagbar);
+    g_assert_false(a->editor_tagbar_as_is);
     saved_layout_free(a);
     rules.show_tagbar = -1;
     a = layout_store_auto(l, 2, &rules, 1600, 1000);
-    g_assert_true(a->editor_tagbar);
+    g_assert_true(a->editor_tagbar && a->editor_tagbar_as_is);
     saved_layout_free(a);
+    l->editor_tagbar_as_is = FALSE;
     l->editor_tagbar = FALSE;
     rules.show_tagbar = 1;
     a = layout_store_auto(l, 2, &rules, 1600, 1000);

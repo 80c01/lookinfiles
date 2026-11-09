@@ -39,6 +39,8 @@ typedef struct {
     gboolean editor_tagbar;    /* code and Markdown editor tabs show the tagbar */
     gboolean preview_tagbar;   /* the preview shows the tagbar */
     gint tagbar_width;         /* tagbar width in pixels, 0 = default width */
+    gboolean editor_tagbar_as_is; /* not saved: each editor tab keeps its tagbar
+                                   * shown or hidden (the current layout) */
 } SavedLayout;
 
 SavedLayout* saved_layout_new(const gchar* name);

@@ -85,8 +85,10 @@ Notes:
   jump list in the buffer, then continue in the shared history across files.
 - `Ctrl+Click` also works in the read-only preview of source files.
 - Org-mode tabs are not concerned (no code language).
-- Tagbar: a `GtkPaned` in each editor tab (thin handle), hidden unless
-  `tagbar=true` in settings.ini; read again 600 ms after the last edit,
+- Tagbar: a `GtkPaned` in each editor tab (thin handle), shown or hidden
+  per tab by its key; a new tab follows the last choice (`tagbar=` in
+  settings.ini); a layout that saved its tagbars, and the Preferences, set
+  every tab, the current layout leaves them as they are; read again 600 ms after the last edit,
   only while shown; follows the cursor (last entry starting at or before its
   line); the rows the user collapsed stay collapsed across refreshes.
   A language server that has not answered within 2.5 s (starting,

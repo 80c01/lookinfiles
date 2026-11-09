@@ -315,8 +315,9 @@ headings of a Markdown file. It follows the cursor and is refreshed shortly
 after each edit. A click or `Enter` goes to the symbol (back with the usual
 key), `s` switches between grouping by kind and file order, `c` (or the arrow
 button of its header) collapses every row or expands them all, `Esc` returns to
-the text, `q` hides it. It is shown in every code and Markdown tab or in
-none (kept for the next start), and its width is shared by the tabs.
+the text, `q` hides it. Each tab shows or hides its own (a new
+tab follows the last choice, kept for the next start), and its width is
+shared by the tabs.
 
 ### Org-mode editing
 

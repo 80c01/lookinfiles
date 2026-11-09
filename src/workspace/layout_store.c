@@ -316,6 +316,7 @@ SavedLayout* layout_store_auto(const SavedLayout* current, guint files, const Au
     if (rules != NULL && rules->show_tagbar >= 0) {
         l->tagbars = TRUE; /* the preview tagbar and the width stay as they are */
         l->editor_tagbar = (rules->show_tagbar > 0);
+        l->editor_tagbar_as_is = FALSE;
     }
     if (rules != NULL && rules->explorer_frac > 0) {
         l->main_frac = MIN(rules->explorer_frac, LAYOUT_EXPLORER_MAX_FRAC);

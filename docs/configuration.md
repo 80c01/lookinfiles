@@ -42,7 +42,7 @@ mode=vim
 line-numbers=true
 wrap=false
 color-column=81    # default; 0: no line
-tagbar=false       # code and Markdown tabs show the tagbar (toggled with its key)
+tagbar=false       # new code and Markdown tabs show the tagbar (the last toggle)
 
 [Preview]
 tagbar=false       # previews with headings or symbols show the tagbar (o in the preview)

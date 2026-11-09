@@ -37,7 +37,8 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name) {
     g_free(l->editor_splits);
     l->editor_splits = editor_layout_capture(app);
     l->tagbars = TRUE;
-    l->editor_tagbar = app->settings.tagbar;
+    l->editor_tagbar = app->settings.tagbar; /* the last choice, if saved */
+    l->editor_tagbar_as_is = TRUE;
     l->preview_tagbar = app->settings.preview_tagbar;
     l->tagbar_width = MAX(app->editor_tagbar_width, 0);
     return l;
@@ -85,7 +86,9 @@ static void set_tagbars(AppData* app, const SavedLayout* l) {
     }
     editor_tagbar_set_width(app, l->tagbar_width);
     preview_tagbar_place(app);
-    editor_tagbar_set_shown(app, l->editor_tagbar);
+    if (!l->editor_tagbar_as_is) {
+        editor_tagbar_set_shown(app, l->editor_tagbar);
+    }
     preview_tagbar_set_shown(app, l->preview_tagbar);
 }
 
@@ -195,6 +198,7 @@ struct LayoutsPreview {
     AppData* app;
     SavedLayout* panels;      /* the panels at the start */
     EditorSnapshot* editor;   /* the editor tabs at the start */
+    EditorTagbarStates* tagbars; /* their tagbars at the start */
 #ifdef HAVE_VTE
     TermSnapshot* terms;      /* the terminal panel at the start */
 #endif
@@ -209,6 +213,7 @@ LayoutsPreview* layouts_preview_begin(AppData* app) {
     p->app = app;
     p->panels = layouts_capture(app, "");
     p->editor = editor_layout_snapshot(app);
+    p->tagbars = editor_tagbar_states_take(app);
 #ifdef HAVE_VTE
     p->terms = term_snapshot_take(app);
 #endif
@@ -227,6 +232,7 @@ static void restore_start(LayoutsPreview* p) {
 #endif
     set_panels(p->app, p->panels);
     set_tagbars(p->app, p->panels);
+    editor_tagbar_states_restore(p->app, p->tagbars);
 }
 
 void layouts_preview_show(LayoutsPreview* p, const SavedLayout* l) {
@@ -254,6 +260,7 @@ gboolean layouts_preview_end(LayoutsPreview* p, const SavedLayout* l) {
         workspace_show_panels(app);
     }
     editor_snapshot_free(p->editor);
+    editor_tagbar_states_free(p->tagbars);
 #ifdef HAVE_VTE
     term_snapshot_free(p->terms);
 #endif

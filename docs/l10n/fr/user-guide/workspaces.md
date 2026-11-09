@@ -44,8 +44,9 @@ Une disposition est un agencement de panneaux : lesquels sont visibles,
 leurs tailles, si le terminal est à côté de l’aperçu ou dessous, les
 panneaux de terminal, les divisions du panneau d’édition avec leurs onglets
 de terminal, et les barres de symboles (affichées dans les onglets
-d’édition, dans l’aperçu, et leur largeur ; les dispositions enregistrées
-avant cela gardent les barres de symboles actuelles). Elle ne garde aucun
+d’édition, dans l’aperçu, et leur largeur ; appliquer la disposition règle
+la barre de symboles de chaque onglet d’édition ; les dispositions
+enregistrées avant cela gardent les barres de symboles actuelles). Elle ne garde aucun
 fichier : l’appliquer déplace les fichiers ouverts dans les volets
 d’édition qui contenaient des fichiers (un volet vide en prend un au plus
 rempli), réutilise les terminaux en cours et démarre les shells qui
@@ -112,9 +113,8 @@ reste une fois ceux-ci placés.
 
 Les dispositions sont enregistrées dans `~/.config/lookinfiles/layouts.ini`.
 Appliquer une disposition garde ensuite ses barres de symboles activées ou
-non, comme le font leurs touches ; un nouvel espace de travail garde les
-barres de symboles actuelles, puisqu’elles sont partagées par tous les
-espaces de travail.
+non, et les onglets d’édition ouverts ensuite la suivent, comme après leurs
+touches ; cela vaut dans tous les espaces de travail.
 
 ## La session
 

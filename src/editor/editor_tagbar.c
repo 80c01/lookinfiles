@@ -17,6 +17,7 @@ typedef struct Tagbar {
     guint refresh_source;
     guint cursor_source;
     gboolean stale;          /* the buffer changed while the tagbar was hidden */
+    gboolean wanted;         /* shown in this tab (when the file has an outline) */
 } Tagbar;
 
 static void tagbar_free(Tagbar* tb) {
@@ -28,7 +29,7 @@ static void tagbar_free(Tagbar* tb) {
 }
 
 static gboolean tagbar_wanted(Tagbar* tb) {
-    return tb->tab != NULL && tb->app->settings.tagbar && code_outline_supported(tb->tab);
+    return tb->tab != NULL && tb->wanted && code_outline_supported(tb->tab);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -146,6 +147,7 @@ GtkWidget* editor_tagbar_wrap(AppData* app, EditorTab* tab, GtkWidget* content) 
     Tagbar* tb = g_new0(Tagbar, 1);
     tb->app = app;
     tb->tab = tab;
+    tb->wanted = app->settings.tagbar; /* new tabs follow the last choice */
     tab->tagbar = tb;
     tb->pane = outline_pane_new(content, &app->editor_tagbar_width, _("Reading the symbols…"), &callbacks, tb);
     GtkWidget* paned = outline_pane_widget(tb->pane);
@@ -168,19 +170,21 @@ void editor_tagbar_release(EditorTab* tab) {
     tab->tagbar = NULL;
 }
 
-static void update_tabs(GList* tabs) {
+static void update_tabs(GList* tabs, gboolean shown) {
     for (GList* l = tabs; l != NULL; l = l->next) {
         EditorTab* t = l->data;
-        if (t != NULL && t->tagbar != NULL) update_visibility(t->tagbar);
+        if (t == NULL || t->tagbar == NULL) continue;
+        t->tagbar->wanted = shown;
+        update_visibility(t->tagbar);
     }
 }
 
 void editor_tagbar_set_shown(AppData* app, gboolean shown) {
-    if (app == NULL || app->settings.tagbar == shown) return;
+    if (app == NULL) return;
     app->settings.tagbar = shown;
-    update_tabs(app->editors);
+    update_tabs(app->editors, shown);
     for (gint i = 0; i < app->num_workspaces; i++) {
-        if (i != app->current_ws) update_tabs(app->workspaces[i].editors);
+        if (i != app->current_ws) update_tabs(app->workspaces[i].editors, shown);
     }
 }
 
@@ -201,14 +205,17 @@ void editor_tagbar_set_width(AppData* app, gint width) {
 }
 
 void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
-    if (app == NULL || tab == NULL) return;
-    if (!app->settings.tagbar && !code_outline_supported(tab)) {
+    Tagbar* tb = tab != NULL ? tab->tagbar : NULL;
+    if (app == NULL || tb == NULL) return;
+    gboolean shown = outline_pane_shown(tb->pane);
+    if (!shown && !code_outline_supported(tab)) {
         if (message != NULL) message(tab, _("No tagbar for this file type (code and Markdown files)"));
         return;
     }
-    editor_tagbar_set_shown(app, !app->settings.tagbar);
-    Tagbar* tb = tab->tagbar;
-    if (app->settings.tagbar && tb != NULL && outline_pane_shown(tb->pane)) {
+    tb->wanted = !shown;
+    app->settings.tagbar = tb->wanted; /* the tabs opened next follow it */
+    update_visibility(tb);
+    if (tb->wanted && outline_pane_shown(tb->pane)) {
         outline_pane_focus(tb->pane);
     } else if (tab->view != NULL) {
         gtk_widget_grab_focus(tab->view);
@@ -223,4 +230,53 @@ void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc messa
         g_clear_error(&error);
     }
     g_free(path);
+}
+
+/* ------------------------------------------------------------------------- */
+/* States                                                                    */
+/* ------------------------------------------------------------------------- */
+
+struct EditorTagbarStates {
+    GPtrArray* panes;   /* the tabs' GtkPaned, referenced (they hold the Tagbar) */
+    GArray* wanted;     /* gboolean per pane */
+    gboolean last;      /* settings.tagbar */
+};
+
+static void take_tabs(EditorTagbarStates* st, GList* tabs) {
+    for (GList* l = tabs; l != NULL; l = l->next) {
+        EditorTab* t = l->data;
+        if (t == NULL || t->tagbar == NULL) continue;
+        g_ptr_array_add(st->panes, g_object_ref(outline_pane_widget(t->tagbar->pane)));
+        g_array_append_val(st->wanted, t->tagbar->wanted);
+    }
+}
+
+EditorTagbarStates* editor_tagbar_states_take(AppData* app) {
+    EditorTagbarStates* st = g_new0(EditorTagbarStates, 1);
+    st->panes = g_ptr_array_new_with_free_func(g_object_unref);
+    st->wanted = g_array_new(FALSE, FALSE, sizeof(gboolean));
+    st->last = app->settings.tagbar;
+    take_tabs(st, app->editors);
+    for (gint i = 0; i < app->num_workspaces; i++) {
+        if (i != app->current_ws) take_tabs(st, app->workspaces[i].editors);
+    }
+    return st;
+}
+
+void editor_tagbar_states_restore(AppData* app, const EditorTagbarStates* st) {
+    if (app == NULL || st == NULL) return;
+    app->settings.tagbar = st->last;
+    for (guint i = 0; i < st->panes->len; i++) {
+        Tagbar* tb = g_object_get_data(G_OBJECT(g_ptr_array_index(st->panes, i)), "editor-tagbar");
+        if (tb == NULL || tb->tab == NULL) continue; /* closed meanwhile */
+        tb->wanted = g_array_index(st->wanted, gboolean, i);
+        update_visibility(tb);
+    }
+}
+
+void editor_tagbar_states_free(EditorTagbarStates* st) {
+    if (st == NULL) return;
+    g_ptr_array_unref(st->panes);
+    g_array_unref(st->wanted);
+    g_free(st);
 }

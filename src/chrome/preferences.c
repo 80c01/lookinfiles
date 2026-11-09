@@ -358,7 +358,9 @@ static void save_settings(Preferences* p) {
     g_free(path);
 
     AppData* app = p->app;
-    editor_tagbar_set_shown(app, s.tagbar); /* before the copy: they compare */
+    if (s.tagbar != app->settings.tagbar) {
+        editor_tagbar_set_shown(app, s.tagbar); /* every tab: only when changed */
+    }
     preview_tagbar_set_shown(app, s.preview_tagbar);
     gboolean column_changed = (s.color_column != app->settings.color_column);
     app->settings = s;

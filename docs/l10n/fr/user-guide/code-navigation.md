@@ -31,9 +31,9 @@ struct ou leur classe, ou les titres d’un fichier Markdown. Elle suit le
 curseur et se rafraîchit peu après chaque modification. Un clic ou `Enter`
 va au symbole (retour avec la touche habituelle), `s` bascule entre le
 regroupement par sorte et l’ordre du fichier, `Esc` revient au texte, `q`
-la masque. Elle est affichée dans tous les onglets de code et Markdown ou
-dans aucun (gardé pour le prochain démarrage), et sa largeur est partagée
-par les onglets.
+la masque. Chaque onglet affiche ou masque la sienne (un
+nouvel onglet suit le dernier choix, gardé pour le prochain démarrage), et
+sa largeur est partagée par les onglets.
 
 Dans un fichier Markdown, la liste des symboles et la barre de symboles
 affichent les titres.

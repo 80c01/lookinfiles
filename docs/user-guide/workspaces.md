@@ -38,8 +38,9 @@ middle-click it to close it.
 A layout is an arrangement of panels: which ones are visible, their sizes,
 whether the terminal is beside or under the viewer, the terminal panes, the
 splits of the editor panel with their terminal tabs, and the tagbars (shown
-in the editor tabs, in the preview, and their width; layouts saved before
-this keep the current tagbars). It keeps no files:
+in the editor tabs, in the preview, and their width; applying the layout
+sets the tagbar of every editor tab; layouts saved before this keep the
+current tagbars). It keeps no files:
 applying it moves the open files into the editor panes that held files (an
 empty one takes a file from the fullest), reuses the running terminals and
 starts the missing shells.
@@ -95,9 +96,9 @@ is (the default), below, or on the right (as `Ctrl+Shift+L` does). The grid is m
 once they are placed.
 
 Layouts are saved in `~/.config/lookinfiles/layouts.ini`. Applying a
-layout keeps its tagbars on or off afterwards, as their toggle keys do; a
-new workspace keeps the current tagbars, since they are shared by all
-workspaces.
+layout keeps its tagbars on or off afterwards, and the editor tabs opened
+next follow it, as after their toggle keys; this holds in every
+workspace.
 
 ## The session
 
