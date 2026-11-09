@@ -199,8 +199,32 @@ static gboolean keep_cursor_clear(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
+/* After some edits (deleting text in an Org file, whose highlighting sets
+ * bold and underlined tags), GtkTextView 4.18 keeps drawing the old lines:
+ * neither the text, the tags nor the cursor change on screen until text is
+ * inserted or the view scrolls. A "value-changed" on its vertical adjustment
+ * (the value itself unchanged) makes it validate and redraw what is
+ * onscreen, as a scroll does. */
+#define REVALIDATE_KEY "editor-revalidate"
+
+static gboolean revalidate_idle(gpointer data) {
+    GtkWidget* view = data;
+    g_object_set_data(G_OBJECT(view), REVALIDATE_KEY, NULL);
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+    if (vadj != NULL && gtk_widget_get_mapped(view)) g_signal_emit_by_name(vadj, "value-changed");
+    return G_SOURCE_REMOVE;
+}
+
+static void queue_revalidate(GtkWidget* view) {
+    if (g_object_get_data(G_OBJECT(view), REVALIDATE_KEY) != NULL) return;
+    g_object_set_data(G_OBJECT(view), REVALIDATE_KEY, GINT_TO_POINTER(1));
+    /* Low priority: after GTK's own validation and the highlighting */
+    g_idle_add_full(G_PRIORITY_LOW, revalidate_idle, g_object_ref(view), g_object_unref);
+}
+
 /* Typing moves the cursor without "mark-set" */
 static void on_editor_text_changed(GtkTextBuffer* buffer, gpointer data) {
+    queue_revalidate(data);
     if (view_is_passive(buffer, data)) return;
     g_idle_add_full(G_PRIORITY_LOW, keep_cursor_clear, g_object_ref(data), g_object_unref);
 }
