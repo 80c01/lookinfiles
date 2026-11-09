@@ -372,7 +372,9 @@ static void save_settings(Preferences* p) {
         editor_tagbar_set_shown(app, s.tagbar); /* every tab: only when changed */
     }
     preview_tagbar_set_shown(app, s.preview_tagbar);
-    minimap_set_enabled(s.minimap);
+    if (s.minimap != app->settings.minimap) {
+        minimap_set_enabled(s.minimap); /* every tab: only when changed */
+    }
     gboolean column_changed = (s.color_column != app->settings.color_column);
     app->settings = s;
     if (column_changed) {

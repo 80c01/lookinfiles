@@ -7,8 +7,8 @@
  * in its GtkScrolledWindow) shown only on the Preview page (once, when the
  * window is built); the calls below do nothing before it exists */
 GtkWidget* minimap_viewer_new(AppData* app);
-/* TRUE while the preview's minimap exists but is hidden (even when
- * minimap_enabled() is FALSE) */
+/* TRUE while the preview's minimap exists, is enabled, but is hidden (it
+ * shows once the text is taller than the view) */
 gboolean minimap_viewer_is_hidden(AppData* app);
 /* Drop the preview minimap's render (theme changed) */
 void minimap_viewer_cache_clear(AppData* app);
@@ -27,9 +27,12 @@ void minimap_view_set_shown_if(GtkWidget* minimap, MinimapShownIf shown_if, gpoi
 void minimap_view_update_visibility(GtkWidget* minimap);
 void minimap_view_cache_clear(GtkWidget* minimap);
 
-/* Show (TRUE, the default) or hide every minimap, the ones already made too
- * (settings.ini: minimap); a hidden minimap gives back the scrollbar */
+/* Show (TRUE, the default) or hide every minimap, the ones already made too,
+ * and the ones made next (settings.ini: minimap); a hidden minimap gives back
+ * the scrollbar */
 void minimap_set_enabled(gboolean enabled);
-gboolean minimap_enabled(void);
+/* Show or hide one minimap_new_for_view() (an editor tab's own choice) */
+void minimap_view_set_enabled(GtkWidget* minimap, gboolean enabled);
+gboolean minimap_view_enabled(GtkWidget* minimap);
 
 #endif /* MINIMAP_H */

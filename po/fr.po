@@ -2085,11 +2085,11 @@ msgstr "Afficher la barre de symboles"
 msgid "Hide Tagbar"
 msgstr "Masquer la barre de symboles"
 
-#: src/editor/editor_tab_menu.c:228
+#: src/editor/editor_tab_menu.c:214
 msgid "Hide Minimap"
 msgstr "Masquer la minicarte"
 
-#: src/editor/editor_tab_menu.c:228
+#: src/editor/editor_tab_menu.c:214
 msgid "Show Minimap"
 msgstr "Afficher la minicarte"
 

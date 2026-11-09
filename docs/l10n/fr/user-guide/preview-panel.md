@@ -80,8 +80,7 @@ gros fichier, seule la partie affichée en premier est listée.
 barres de modification git le long de son bord. Cliquez ou faites glisser
 dedans pour faire défiler. Pour la masquer (et retrouver la barre de
 défilement), décochez **Afficher la minicarte** dans les Préférences, page
-Éditeur, ou choisissez **Masquer la minicarte** dans le menu d’un onglet
-d’édition.
+Éditeur.
 
 ## Images et PDF
 

@@ -774,12 +774,14 @@ typedef struct {
     gdouble grab;
     guint vis_source;
     MinimapShownIf shown_if; /* extra condition to show it, or NULL */
+    gboolean enabled;        /* FALSE: hidden by its tab (minimap_view_set_enabled()) */
     gpointer shown_data;
     const gchar* who;        /* its name in the LOOKIN_DEBUG_MINIMAP log */
 } ViewMinimap;
 
-/* Preferences → Editor → minimap (settings.ini: minimap), and every minimap
- * made by minimap_new_for_view(), to apply a change at once */
+/* Preferences → Editor → minimap (settings.ini: minimap): the choice of the
+ * minimaps made next; every minimap made by minimap_new_for_view(), to apply
+ * a change of it at once */
 static gboolean minimaps_enabled = TRUE;
 static GSList* all_minimaps = NULL;
 
@@ -803,7 +805,7 @@ static void view_minimap_invalidate(ViewMinimap* vm) {
 static gboolean view_minimap_vis_idle(gpointer data) {
     ViewMinimap* vm = data;
     vm->vis_source = 0;
-    if (!minimaps_enabled) {
+    if (!vm->enabled) {
         /* Turned off: hide now, nothing to confirm on the next frame */
         if (gtk_widget_get_visible(vm->minimap)) {
             minimap_cache_clear(&vm->cache);
@@ -887,6 +889,7 @@ GtkWidget* minimap_new_for_view(GtkWidget* text_view, const gchar* who) {
     ViewMinimap* vm = g_new0(ViewMinimap, 1);
     vm->view = text_view;
     vm->who = who;
+    vm->enabled = minimaps_enabled;
     GtkWidget* minimap = gtk_drawing_area_new();
     vm->minimap = minimap;
     gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(minimap), MINIMAP_WIDTH);
@@ -949,17 +952,25 @@ void minimap_view_update_visibility(GtkWidget* minimap) {
 }
 
 void minimap_set_enabled(gboolean enabled) {
-    if (minimaps_enabled == enabled) {
-        return;
-    }
     minimaps_enabled = enabled;
     for (GSList* l = all_minimaps; l != NULL; l = l->next) {
-        view_minimap_update_visibility(l->data);
+        ViewMinimap* vm = l->data;
+        vm->enabled = enabled;
+        view_minimap_update_visibility(vm);
     }
 }
 
-gboolean minimap_enabled(void) {
-    return minimaps_enabled;
+void minimap_view_set_enabled(GtkWidget* minimap, gboolean enabled) {
+    ViewMinimap* vm = view_minimap_of(minimap);
+    if (vm != NULL && vm->enabled != enabled) {
+        vm->enabled = enabled;
+        view_minimap_update_visibility(vm);
+    }
+}
+
+gboolean minimap_view_enabled(GtkWidget* minimap) {
+    ViewMinimap* vm = view_minimap_of(minimap);
+    return vm != NULL && vm->enabled;
 }
 
 void minimap_view_cache_clear(GtkWidget* minimap) {
@@ -989,7 +1000,8 @@ GtkWidget* minimap_viewer_new(AppData* app) {
 }
 
 gboolean minimap_viewer_is_hidden(AppData* app) {
-    return app->viewer_minimap != NULL && !gtk_widget_get_visible(app->viewer_minimap);
+    return app->viewer_minimap != NULL && minimap_view_enabled(app->viewer_minimap) &&
+           !gtk_widget_get_visible(app->viewer_minimap);
 }
 
 void minimap_viewer_cache_clear(AppData* app) {

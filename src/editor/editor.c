@@ -454,6 +454,7 @@ EditorTab* editor_add_view(AppData* app, EditorTab* tab, GtkNotebook* nb) {
     diff_gutter_set_line_numbers(twin->view, diff_gutter_get_line_numbers(tab->view) ? 0 : -1);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(twin->view),
                                 gtk_text_view_get_wrap_mode(GTK_TEXT_VIEW(tab->view)));
+    minimap_view_set_enabled(twin->minimap, minimap_view_enabled(tab->minimap));
     editor_tab_add_page(app, twin, nb);
     editor_update_panel_visibilities(app);
     /* Both views share the cursor: show it */
