@@ -441,6 +441,13 @@ static void merge_level(AppData* app, ExplorerRow* parent, const DirScanNode* no
             /* Kept: its expanded level is merged too (when still expanded) */
             if (child_node != NULL && row->loaded && explorer_tree_is_expanded(app->tree, row)) {
                 merge_level(app, row, child_node, out);
+            } else if (child_node != NULL) {
+                /* Collapsed here but expanded in the scan (expand all): show
+                 * the level read and expand the row like a new one */
+                explorer_row_remove_children(row);
+                apply_dir_node_to_rows(row, app, child_node);
+                explorer_row_set_loaded(row, TRUE);
+                g_ptr_array_add(out->new_dirs, row);
             }
         } else {
             row = insert_entry_row(parent, pos, app, node, i);
