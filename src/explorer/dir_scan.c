@@ -3,7 +3,32 @@
 #include "core/file_types.h"
 
 #include <glib/gstdio.h>
+#include <string.h>
 #include <sys/stat.h>
+
+/* Extension sort key: the extension, casefolded */
+static gchar* ext_key_of(const gchar* name) {
+    return g_utf8_casefold(file_extension(name), -1);
+}
+
+static gint compare_ext(const DirScanEntry* a, const DirScanEntry* b) {
+    if (a->ext_key != NULL && b->ext_key != NULL) {
+        return strcmp(a->ext_key, b->ext_key);
+    }
+    gchar* xa = ext_key_of(a->name);
+    gchar* xb = ext_key_of(b->name);
+    gint res = g_strcmp0(xa, xb);
+    g_free(xa);
+    g_free(xb);
+    return res;
+}
+
+static gint compare_name(const DirScanEntry* a, const DirScanEntry* b) {
+    if (a->name_key != NULL && b->name_key != NULL) {
+        return strcmp(a->name_key, b->name_key);
+    }
+    return g_utf8_collate(a->name, b->name);
+}
 
 gint dir_scan_compare(const DirScanEntry* a, const DirScanEntry* b, DirScanSort sort) {
     if (a->is_dir != b->is_dir) {
@@ -17,19 +42,14 @@ gint dir_scan_compare(const DirScanEntry* a, const DirScanEntry* b, DirScanSort 
     case DIR_SCAN_SORT_SIZE:
         res = (a->size > b->size) ? -1 : (a->size < b->size) ? 1 : 0;
         break;
-    case DIR_SCAN_SORT_EXT: {
-        gchar* xa = g_utf8_casefold(file_extension(a->name), -1);
-        gchar* xb = g_utf8_casefold(file_extension(b->name), -1);
-        res = g_strcmp0(xa, xb);
-        g_free(xa);
-        g_free(xb);
+    case DIR_SCAN_SORT_EXT:
+        res = compare_ext(a, b);
         break;
-    }
     case DIR_SCAN_SORT_NAME:
     default:
         break;
     }
-    return res != 0 ? res : g_utf8_collate(a->name, b->name);
+    return res != 0 ? res : compare_name(a, b);
 }
 
 static gint compare_with_data(gconstpointer a, gconstpointer b, gpointer data) {
@@ -43,7 +63,10 @@ void dir_scan_node_free(DirScanNode* node) {
     g_free(node->dirname);
     if (node->entries != NULL) {
         for (guint i = 0; i < node->entries->len; i++) {
-            g_free(g_array_index(node->entries, DirScanEntry, i).name);
+            DirScanEntry* e = &g_array_index(node->entries, DirScanEntry, i);
+            g_free(e->name);
+            g_free(e->name_key);
+            g_free(e->ext_key);
         }
         g_array_unref(node->entries);
     }
@@ -92,6 +115,14 @@ DirScanNode* dir_scan_read(const gchar* dirname, gboolean show_hidden, DirScanSo
     }
     g_dir_close(dir);
 
+    /* Keys made once: a comparison is then a strcmp (no collation per call) */
+    for (guint i = 0; i < node->entries->len; i++) {
+        DirScanEntry* e = &g_array_index(node->entries, DirScanEntry, i);
+        e->name_key = g_utf8_collate_key(e->name, -1);
+        if (sort == DIR_SCAN_SORT_EXT) {
+            e->ext_key = ext_key_of(e->name);
+        }
+    }
     g_array_sort_with_data(node->entries, compare_with_data, GINT_TO_POINTER(sort));
 
     for (guint i = 0; i < node->entries->len; i++) {

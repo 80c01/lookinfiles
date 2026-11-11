@@ -21,6 +21,10 @@ typedef struct {
     gboolean is_dir;
     gint64 mtime;
     gint64 size; /* 0 for folders */
+    /* Sort keys made once per entry by dir_scan_read() (NULL: computed by
+     * each comparison): g_utf8_collate_key() of the name, casefolded extension */
+    gchar* name_key;
+    gchar* ext_key;
 } DirScanEntry;
 
 /* One directory level, and the levels of its expanded folders */

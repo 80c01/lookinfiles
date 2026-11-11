@@ -82,6 +82,32 @@ static void test_compare_modes(void) {
     g_assert_cmpint(dir_scan_compare(&d, &a, DIR_SCAN_SORT_SIZE), <, 0); /* folders first */
 }
 
+/* A listing sorted by extension: the keys made once give the order of
+ * dir_scan_compare() without keys */
+static void test_sort_keys(void) {
+    gchar* dir = fixture_dir();
+    put(dir, "b.TXT", "x");
+    put(dir, "a.zip", "x");
+    put(dir, "c.c", "x");
+    put(dir, "A.c", "x");
+    DirScanNode* node = dir_scan_read(dir, FALSE, DIR_SCAN_SORT_EXT, NULL, NULL);
+    g_assert_cmpuint(node->entries->len, ==, 4);
+    g_assert_cmpstr(name_at(node, 0), ==, "A.c");
+    g_assert_cmpstr(name_at(node, 1), ==, "c.c");
+    g_assert_cmpstr(name_at(node, 2), ==, "b.TXT");
+    g_assert_cmpstr(name_at(node, 3), ==, "a.zip");
+    for (guint i = 0; i + 1 < node->entries->len; i++) {
+        DirScanEntry x = g_array_index(node->entries, DirScanEntry, i);
+        DirScanEntry y = g_array_index(node->entries, DirScanEntry, i + 1);
+        g_assert_nonnull(x.name_key);
+        x.name_key = x.ext_key = y.name_key = y.ext_key = NULL;
+        g_assert_cmpint(dir_scan_compare(&x, &y, DIR_SCAN_SORT_EXT), <, 0);
+    }
+    dir_scan_node_free(node);
+    remove_tree(dir);
+    g_free(dir);
+}
+
 static void test_expanded_and_unreadable(void) {
     gchar* dir = fixture_dir();
     put(dir, "open/inner", NULL);
@@ -163,6 +189,7 @@ int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/dir_scan/sorted_folders_first", test_sorted_folders_first);
     g_test_add_func("/dir_scan/compare_modes", test_compare_modes);
+    g_test_add_func("/dir_scan/sort_keys", test_sort_keys);
     g_test_add_func("/dir_scan/expanded_and_unreadable", test_expanded_and_unreadable);
     g_test_add_func("/dir_scan/cancelled", test_cancelled);
     g_test_add_func("/dir_scan/expand_all", test_expand_all);
