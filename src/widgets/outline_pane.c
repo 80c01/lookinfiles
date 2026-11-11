@@ -142,7 +142,8 @@ static gint pane_width(OutlinePane* p) {
 static gint paned_end(OutlinePane* p) {
     gint max = 0;
     g_object_get(p->paned, "max-position", &max, NULL);
-    if (max <= 0) return 0;
+    /* G_MAXINT until the paned is allocated */
+    if (max <= 0 || max == G_MAXINT) return 0;
     gint min = 0;
     gtk_widget_measure(p->panel, GTK_ORIENTATION_HORIZONTAL, -1, &min, NULL, NULL, NULL);
     return max + min;
