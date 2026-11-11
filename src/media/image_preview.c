@@ -24,6 +24,48 @@
 /* Largest decoded image, in pixels (zooming in on a large photo) */
 #define MAX_DECODED_PIXELS (48u * 1024 * 1024)
 
+/* Largest image kept decoded for the zoom steps, in pixels (64 MB) */
+#define MAX_KEPT_PIXELS (16u * 1024 * 1024)
+
+/* The last image decoded, upright, for the zoom: a step scales it instead of
+ * reading and decoding the file again. One image only, shared by the
+ * workers (hence the lock), replaced when another file is decoded. */
+static GMutex kept_lock;
+static gchar* kept_path;
+static gint64 kept_mtime;
+static gint64 kept_size;
+static GdkPixbuf* kept_pix;
+
+/* The kept image of path scaled to w x h (new reference), NULL when it is
+ * another file, changed since, or smaller than asked */
+static GdkPixbuf* kept_scaled(const gchar* path, const GStatBuf* st, gint w, gint h) {
+    GdkPixbuf* src = NULL;
+    g_mutex_lock(&kept_lock);
+    if (kept_pix != NULL && g_strcmp0(kept_path, path) == 0 && kept_mtime == (gint64)st->st_mtime &&
+        kept_size == (gint64)st->st_size && gdk_pixbuf_get_width(kept_pix) >= w &&
+        gdk_pixbuf_get_height(kept_pix) >= h) {
+        src = g_object_ref(kept_pix);
+    }
+    g_mutex_unlock(&kept_lock);
+    if (src == NULL) {
+        return NULL;
+    }
+    GdkPixbuf* pix = (gdk_pixbuf_get_width(src) == w && gdk_pixbuf_get_height(src) == h)
+                         ? g_object_ref(src)
+                         : gdk_pixbuf_scale_simple(src, w, h, GDK_INTERP_BILINEAR);
+    g_object_unref(src);
+    return pix;
+}
+
+static void keep_decoded(const gchar* path, const GStatBuf* st, GdkPixbuf* pix) {
+    g_mutex_lock(&kept_lock);
+    g_set_str(&kept_path, path);
+    kept_mtime = (gint64)st->st_mtime;
+    kept_size = (gint64)st->st_size;
+    g_set_object(&kept_pix, pix);
+    g_mutex_unlock(&kept_lock);
+}
+
 typedef struct {
     AppData* app;
     gchar* name;
@@ -199,7 +241,8 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
     }
 
     GStatBuf st;
-    gint64 fsize = (g_stat(td->full, &st) == 0) ? (gint64)st.st_size : 0;
+    gboolean stat_ok = (g_stat(td->full, &st) == 0);
+    gint64 fsize = stat_ok ? (gint64)st.st_size : 0;
     td->size_str = g_format_size((guint64)fsize);
 
     /* Photo details; orientations 5 to 8 swap width and height */
@@ -248,12 +291,41 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
     }
 
     GdkPixbuf* pix;
+    gboolean upright = FALSE; /* pix already has the EXIF orientation applied */
     if (embedded != NULL) {
         pix = gdk_pixbuf_scale_simple(embedded, load_w, load_h, GDK_INTERP_BILINEAR);
         g_object_unref(embedded);
+    } else if (stat_ok && (pix = kept_scaled(td->full, &st, td->target_w, td->target_h)) != NULL) {
+        upright = TRUE; /* a zoom step on the image decoded before */
     } else {
+        /* Zoomed: the whole image (capped) is decoded once and kept, the
+         * next steps scale it; otherwise the size shown, kept for "0" */
+        gint dec_w = load_w, dec_h = load_h;
+        gdouble file_px = (gdouble)file_w * file_h;
+        if (td->zoom != 1.0) {
+            gdouble s = (file_px > MAX_KEPT_PIXELS) ? sqrt(MAX_KEPT_PIXELS / file_px) : 1.0;
+            gint whole_w = MAX(1, (gint)(file_w * s));
+            gint whole_h = MAX(1, (gint)(file_h * s));
+            if (whole_w >= load_w && whole_h >= load_h) {
+                dec_w = whole_w;
+                dec_h = whole_h;
+            }
+        }
         GError* err = NULL;
-        pix = gdk_pixbuf_new_from_file_at_scale(td->full, load_w, load_h, TRUE, &err);
+        pix = gdk_pixbuf_new_from_file_at_scale(td->full, dec_w, dec_h, TRUE, &err);
+        if (pix != NULL) {
+            pix = apply_orientation(pix, orientation);
+            upright = TRUE;
+            if (stat_ok && (gdouble)dec_w * dec_h <= MAX_KEPT_PIXELS) {
+                keep_decoded(td->full, &st, pix);
+            }
+            if (gdk_pixbuf_get_width(pix) != td->target_w || gdk_pixbuf_get_height(pix) != td->target_h) {
+                GdkPixbuf* scaled = gdk_pixbuf_scale_simple(pix, td->target_w, td->target_h,
+                                                            GDK_INTERP_BILINEAR);
+                g_object_unref(pix);
+                pix = scaled;
+            }
+        }
         if (pix == NULL) {
             td->error_msg = g_strdup_printf(_("[ Error loading image: %1$s (%2$s) ]"),
                                             td->name, err ? err->message : _("unknown error"));
@@ -269,7 +341,9 @@ static void image_preview_thread_func(GTask* task, gpointer source_object,
         g_task_return_boolean(task, TRUE);
         return;
     }
-    pix = apply_orientation(pix, orientation);
+    if (!upright) {
+        pix = apply_orientation(pix, orientation);
+    }
 
     if (g_task_return_error_if_cancelled(task)) {
         g_object_unref(pix);
