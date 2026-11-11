@@ -63,9 +63,8 @@ static void set_string(gchar** field, const gchar* value) {
     *field = g_strdup(value != NULL ? value : "");
 }
 
-static ExplorerRow* insert_row(ExplorerRow* parent, guint position, gboolean container,
-                               const gchar* type, const gchar* name, const gchar* label,
-                               const gchar* path) {
+ExplorerRow* explorer_row_new_child(ExplorerRow* parent, gboolean container, const gchar* type,
+                                   const gchar* name, const gchar* label, const gchar* path) {
     g_return_val_if_fail(EXPLORER_IS_ROW(parent), NULL);
     g_return_val_if_fail(parent->children != NULL, NULL); /* parent must be a container */
     ExplorerRow* row = g_object_new(EXPLORER_TYPE_ROW, NULL);
@@ -78,6 +77,27 @@ static ExplorerRow* insert_row(ExplorerRow* parent, guint position, gboolean con
         /* Before insertion: the view checks once whether a new row can expand */
         row->children = g_list_store_new(EXPLORER_TYPE_ROW);
     }
+    return row;
+}
+
+void explorer_row_insert_rows(ExplorerRow* parent, guint position, GPtrArray* rows) {
+    g_return_if_fail(EXPLORER_IS_ROW(parent));
+    g_return_if_fail(parent->children != NULL);
+    if (rows == NULL || rows->len == 0) {
+        return;
+    }
+    for (guint i = 0; i < rows->len; i++) {
+        g_return_if_fail(((ExplorerRow*)g_ptr_array_index(rows, i))->parent == parent);
+    }
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(parent->children));
+    g_list_store_splice(parent->children, MIN(position, n), 0, rows->pdata, rows->len);
+}
+
+static ExplorerRow* insert_row(ExplorerRow* parent, guint position, gboolean container,
+                               const gchar* type, const gchar* name, const gchar* label,
+                               const gchar* path) {
+    ExplorerRow* row = explorer_row_new_child(parent, container, type, name, label, path);
+    g_return_val_if_fail(row != NULL, NULL);
     guint n = g_list_model_get_n_items(G_LIST_MODEL(parent->children));
     g_list_store_insert(parent->children, MIN(position, n), row);
     g_object_unref(row); /* owned by parent->children */

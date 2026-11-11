@@ -59,6 +59,16 @@ ExplorerRow* explorer_row_insert(ExplorerRow* parent, guint position, gboolean c
                                  const gchar* type, const gchar* name, const gchar* label,
                                  const gchar* path);
 
+/* A row made for parent (a container) but not added to it yet (new
+ * reference): fill it and its children first, then add a whole level with
+ * explorer_row_insert_rows(), one model change instead of one per row */
+ExplorerRow* explorer_row_new_child(ExplorerRow* parent, gboolean container, const gchar* type,
+                                   const gchar* name, const gchar* label, const gchar* path);
+
+/* Insert rows (ExplorerRow*, each made by explorer_row_new_child() for
+ * parent; the array keeps its references) at position, past the end: appended */
+void explorer_row_insert_rows(ExplorerRow* parent, guint position, GPtrArray* rows);
+
 /* Remove the child at position (nothing when out of range) */
 void explorer_row_remove_at(ExplorerRow* parent, guint position);
 

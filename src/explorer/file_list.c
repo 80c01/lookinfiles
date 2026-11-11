@@ -247,10 +247,10 @@ static gchar* entry_path(const DirScanNode* node, guint i) {
 
 static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirScanNode* node);
 
-/* The row of entry i of node, inserted under parent at position (G_MAXUINT:
- * appended), with its expanded levels below it */
-static ExplorerRow* insert_entry_row(ExplorerRow* parent, guint position, AppData* app,
-                                     const DirScanNode* node, guint i) {
+/* The row of entry i of node, made for parent but not added to it (new
+ * reference), with its expanded levels below it */
+static ExplorerRow* make_entry_row(ExplorerRow* parent, AppData* app, const DirScanNode* node,
+                                   guint i) {
     const DirScanEntry* e = &g_array_index(node->entries, DirScanEntry, i);
     const DirScanNode* child_node = entry_child_node(node, i);
     gchar* can_full = entry_path(node, i);
@@ -263,7 +263,7 @@ static ExplorerRow* insert_entry_row(ExplorerRow* parent, guint position, AppDat
     if (e->is_dir) {
         /* Bare names: the tree draws the icons (explorer_tree.c) */
         gboolean is_expanded = (child_node != NULL);
-        row = explorer_row_insert(parent, position, TRUE, "dir", e->name, e->name, can_full);
+        row = explorer_row_new_child(parent, TRUE, "dir", e->name, e->name, can_full);
         explorer_row_set_glyph(row, "folder");
         explorer_row_set_badge(row, git_badge);
         explorer_row_set_loaded(row, is_expanded);
@@ -275,8 +275,8 @@ static ExplorerRow* insert_entry_row(ExplorerRow* parent, guint position, AppDat
     } else {
         gboolean is_buf = (app != NULL && app->sidebar_view == SIDEBAR_VIEW_NOTES);
         gboolean as_archive = !is_buf && archive_extract_can_browse(e->name);
-        row = explorer_row_insert(parent, position, as_archive, is_buf ? "buffer" : "file", e->name,
-                                  e->name, can_full);
+        row = explorer_row_new_child(parent, as_archive, is_buf ? "buffer" : "file", e->name,
+                                     e->name, can_full);
         explorer_row_set_icon_name(row, e->name);
         if (as_archive) {
             /* Rows start loaded: the first expansion must list the archive */
@@ -286,6 +286,18 @@ static ExplorerRow* insert_entry_row(ExplorerRow* parent, guint position, AppDat
         explorer_row_set_badge(row, git_badge);
     }
     g_free(can_full);
+    return row;
+}
+
+/* The row of entry i of node, inserted under parent at position (G_MAXUINT:
+ * appended), with its expanded levels below it */
+static ExplorerRow* insert_entry_row(ExplorerRow* parent, guint position, AppData* app,
+                                     const DirScanNode* node, guint i) {
+    ExplorerRow* row = make_entry_row(parent, app, node, i);
+    GPtrArray* one = g_ptr_array_new_with_free_func(g_object_unref);
+    g_ptr_array_add(one, row);
+    explorer_row_insert_rows(parent, position, one);
+    g_ptr_array_unref(one); /* row now owned by parent->children */
     return row;
 }
 
@@ -319,9 +331,14 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
         return;
     }
 
+    /* The whole level in one model change: the view handles one insertion,
+     * not one per entry */
+    GPtrArray* rows = g_ptr_array_new_full(node->entries->len, g_object_unref);
     for (guint i = 0; i < node->entries->len; i++) {
-        insert_entry_row(parent, G_MAXUINT, app, node, i);
+        g_ptr_array_add(rows, make_entry_row(parent, app, node, i));
     }
+    explorer_row_insert_rows(parent, G_MAXUINT, rows);
+    g_ptr_array_unref(rows);
 }
 
 /* Read one directory level into parent's children */

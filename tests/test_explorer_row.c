@@ -133,11 +133,45 @@ static void test_insert_and_remove_at(void) {
     g_object_unref(root);
 }
 
+static void on_items_changed(GListModel* model, guint position, guint removed, guint added,
+                             gpointer data) {
+    (void)model;
+    (void)position;
+    (void)removed;
+    (void)added;
+    (*(guint*)data)++;
+}
+
+/* A level made aside then inserted at once: one model change */
+static void test_insert_rows(void) {
+    ExplorerRow* root = explorer_row_new_root();
+    explorer_row_append(root, "file", "z", "z", "/z");
+    guint changes = 0;
+    g_signal_connect(root->children, "items-changed", G_CALLBACK(on_items_changed), &changes);
+    GPtrArray* rows = g_ptr_array_new_with_free_func(g_object_unref);
+    ExplorerRow* d = explorer_row_new_child(root, TRUE, "dir", "d", "d", "/d");
+    explorer_row_append(d, "-", "", "...", "");
+    g_ptr_array_add(rows, d);
+    g_ptr_array_add(rows, explorer_row_new_child(root, FALSE, "file", "f", "f", "/f"));
+    g_assert_cmpuint(explorer_row_n_children(root), ==, 1);
+    explorer_row_insert_rows(root, 0, rows);
+    g_ptr_array_unref(rows);
+    g_assert_cmpuint(changes, ==, 1);
+    g_assert_cmpuint(explorer_row_n_children(root), ==, 3);
+    g_assert_true(explorer_row_child(root, 0) == d);
+    g_assert_cmpstr(explorer_row_child(root, 1)->name, ==, "f");
+    g_assert_cmpstr(explorer_row_child(root, 2)->name, ==, "z");
+    g_assert_cmpuint(explorer_row_n_children(d), ==, 1);
+    g_assert_null(explorer_row_get_parent(d));
+    g_object_unref(root);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/explorer_row/append_and_parents", test_append_and_parents);
     g_test_add_func("/explorer_row/remove", test_remove);
     g_test_add_func("/explorer_row/insert_and_remove_at", test_insert_and_remove_at);
+    g_test_add_func("/explorer_row/insert_rows", test_insert_rows);
     g_test_add_func("/explorer_row/find", test_find);
     g_test_add_func("/explorer_row/changed_signal", test_changed_signal);
     return g_test_run();
