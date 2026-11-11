@@ -90,7 +90,11 @@ void explorer_row_insert_rows(ExplorerRow* parent, guint position, GPtrArray* ro
         g_return_if_fail(((ExplorerRow*)g_ptr_array_index(rows, i))->parent == parent);
     }
     guint n = g_list_model_get_n_items(G_LIST_MODEL(parent->children));
-    g_list_store_splice(parent->children, MIN(position, n), 0, rows->pdata, rows->len);
+    guint at = MIN(position, n);
+    for (guint i = 0; i < rows->len; i++) {
+        ((ExplorerRow*)g_ptr_array_index(rows, i))->index_hint = at + i;
+    }
+    g_list_store_splice(parent->children, at, 0, rows->pdata, rows->len);
 }
 
 static ExplorerRow* insert_row(ExplorerRow* parent, guint position, gboolean container,
@@ -99,7 +103,8 @@ static ExplorerRow* insert_row(ExplorerRow* parent, guint position, gboolean con
     ExplorerRow* row = explorer_row_new_child(parent, container, type, name, label, path);
     g_return_val_if_fail(row != NULL, NULL);
     guint n = g_list_model_get_n_items(G_LIST_MODEL(parent->children));
-    g_list_store_insert(parent->children, MIN(position, n), row);
+    row->index_hint = MIN(position, n);
+    g_list_store_insert(parent->children, row->index_hint, row);
     g_object_unref(row); /* owned by parent->children */
     return row;
 }
@@ -144,10 +149,10 @@ void explorer_row_remove(ExplorerRow* row) {
     if (parent == NULL || parent->children == NULL) {
         return;
     }
-    guint pos = 0;
-    if (g_list_store_find(parent->children, row, &pos)) {
+    gint pos = explorer_row_index(row);
+    if (pos >= 0) {
         row->parent = NULL;
-        g_list_store_remove(parent->children, pos);
+        g_list_store_remove(parent->children, (guint)pos);
     }
 }
 
@@ -163,6 +168,7 @@ ExplorerRow* explorer_row_child(ExplorerRow* row, guint i) {
     }
     ExplorerRow* child = g_list_model_get_item(G_LIST_MODEL(row->children), i);
     if (child != NULL) {
+        child->index_hint = i; /* a loop over the children keeps the hints true */
         g_object_unref(child); /* still owned by row->children */
     }
     return child;
@@ -175,9 +181,22 @@ ExplorerRow* explorer_row_get_parent(ExplorerRow* row) {
 
 gint explorer_row_index(ExplorerRow* row) {
     g_return_val_if_fail(EXPLORER_IS_ROW(row), -1);
+    if (row->parent == NULL || row->parent->children == NULL) {
+        return -1;
+    }
+    /* The last known position first (a lookup), the linear search only
+     * when rows were inserted or removed before it since */
+    GListModel* siblings = G_LIST_MODEL(row->parent->children);
+    gpointer at_hint = g_list_model_get_item(siblings, row->index_hint);
+    if (at_hint != NULL) {
+        g_object_unref(at_hint);
+        if (at_hint == row) {
+            return (gint)row->index_hint;
+        }
+    }
     guint pos = 0;
-    if (row->parent != NULL && row->parent->children != NULL &&
-        g_list_store_find(row->parent->children, row, &pos)) {
+    if (g_list_store_find(row->parent->children, row, &pos)) {
+        row->index_hint = pos;
         return (gint)pos;
     }
     return -1;

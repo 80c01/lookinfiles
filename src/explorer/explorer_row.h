@@ -35,6 +35,8 @@ struct _ExplorerRow {
     ExplorerRow* parent;  /* parent row: the root for top-level rows, NULL for the root
                            * and for removed rows (use explorer_row_get_parent()) */
     gboolean is_root;
+    guint index_hint;     /* last known position among the parent's children (checked
+                           * before use: explorer_row_index()) */
     GListStore* children; /* children (ExplorerRow), NULL for a leaf */
 };
 

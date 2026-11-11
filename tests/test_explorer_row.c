@@ -166,12 +166,31 @@ static void test_insert_rows(void) {
     g_object_unref(root);
 }
 
+/* The position stays right when rows move before it (the hint is checked) */
+static void test_index_after_moves(void) {
+    ExplorerRow* root = explorer_row_new_root();
+    ExplorerRow* c = explorer_row_append(root, "file", "c", "c", "/c");
+    g_assert_cmpint(explorer_row_index(c), ==, 0);
+    explorer_row_insert(root, 0, FALSE, "file", "a", "a", "/a");
+    explorer_row_insert(root, 1, FALSE, "file", "b", "b", "/b");
+    g_assert_cmpint(explorer_row_index(c), ==, 2);
+    explorer_row_remove_at(root, 0);
+    g_assert_cmpint(explorer_row_index(c), ==, 1);
+    g_object_ref(c);
+    explorer_row_remove(c);
+    g_assert_cmpint(explorer_row_index(c), ==, -1);
+    g_assert_cmpuint(explorer_row_n_children(root), ==, 1);
+    g_object_unref(c);
+    g_object_unref(root);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/explorer_row/append_and_parents", test_append_and_parents);
     g_test_add_func("/explorer_row/remove", test_remove);
     g_test_add_func("/explorer_row/insert_and_remove_at", test_insert_and_remove_at);
     g_test_add_func("/explorer_row/insert_rows", test_insert_rows);
+    g_test_add_func("/explorer_row/index_after_moves", test_index_after_moves);
     g_test_add_func("/explorer_row/find", test_find);
     g_test_add_func("/explorer_row/changed_signal", test_changed_signal);
     return g_test_run();
