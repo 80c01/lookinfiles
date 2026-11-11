@@ -140,6 +140,55 @@ DirScanNode* dir_scan_read(const gchar* dirname, gboolean show_hidden, DirScanSo
     return node;
 }
 
+typedef struct {
+    gchar* dirname;
+    gboolean show_hidden;
+    DirScanSort sort;
+    GHashTable* expanded;
+} ReadJob;
+
+static void read_job_free(gpointer data) {
+    ReadJob* job = data;
+    g_free(job->dirname);
+    if (job->expanded != NULL) {
+        g_hash_table_destroy(job->expanded);
+    }
+    g_free(job);
+}
+
+static void read_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
+    (void)source;
+    ReadJob* job = data;
+    DirScanNode* node = dir_scan_read(job->dirname, job->show_hidden, job->sort, job->expanded,
+                                      cancellable);
+    g_task_return_pointer(task, node, (GDestroyNotify)dir_scan_node_free);
+}
+
+void dir_scan_read_async(const gchar* dirname, gboolean show_hidden, DirScanSort sort,
+                         GHashTable* expanded, GAsyncReadyCallback callback, gpointer user_data) {
+    ReadJob* job = g_new0(ReadJob, 1);
+    job->dirname = g_strdup(dirname);
+    job->show_hidden = show_hidden;
+    job->sort = sort;
+    if (expanded != NULL) {
+        job->expanded = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+        GHashTableIter iter;
+        gpointer key;
+        g_hash_table_iter_init(&iter, expanded);
+        while (g_hash_table_iter_next(&iter, &key, NULL)) {
+            g_hash_table_add(job->expanded, g_strdup(key));
+        }
+    }
+    GTask* task = g_task_new(NULL, NULL, callback, user_data);
+    g_task_set_task_data(task, job, read_job_free);
+    g_task_run_in_thread(task, read_thread);
+    g_object_unref(task);
+}
+
+DirScanNode* dir_scan_read_finish(GAsyncResult* result) {
+    return g_task_propagate_pointer(G_TASK(result), NULL);
+}
+
 void dir_scan_collect_expand_all(const gchar* base, gboolean show_hidden, guint max_rows,
                                  GHashTable* out, GCancellable* cancellable) {
     GQueue queue = G_QUEUE_INIT;

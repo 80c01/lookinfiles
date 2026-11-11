@@ -511,18 +511,49 @@ static void merge_scan(AppData* app, const DirScanNode* root_node) {
     g_ptr_array_unref(out.rebuilt);
 }
 
-/* Directory row expanded: read its contents (first time) and record the path */
-static void on_dir_expanded(AppData* app, ExplorerRow* row) {
-    if (!row->loaded && row->path[0] != '\0') {
+typedef struct {
+    AppData* app;
+    ExplorerRow* row;
+} LevelRead;
+
+/* Level of an expanded folder read: shown if the row still waits for it (not
+ * collapsed, rescanned or dropped with the tree meanwhile) */
+static void on_level_read(GObject* source, GAsyncResult* res, gpointer data) {
+    (void)source;
+    LevelRead* lr = data;
+    AppData* app = lr->app;
+    ExplorerRow* row = lr->row;
+    DirScanNode* node = dir_scan_read_finish(res);
+    if (node != NULL && !row->loaded && app->sidebar_view == SIDEBAR_VIEW_FILES &&
+        explorer_tree_contains(app->tree, row) && explorer_tree_is_expanded(app->tree, row)) {
         explorer_row_remove_children(row);
-        populate_level(row, app, row->path, app->show_hidden, app->sort_mode);
+        apply_dir_node_to_rows(row, app, node);
         explorer_row_set_loaded(row, TRUE);
+        batch_expanding = TRUE;
+        reexpand_paths_recursive(app, row);
+        batch_expanding = FALSE;
+        sync_directory_monitors(app);
     }
+    dir_scan_node_free(node);
+    g_object_unref(row);
+    g_free(lr);
+}
+
+/* Directory row expanded: record the path and, the first time, read its
+ * contents on a worker thread (the "..." placeholder stays meanwhile) */
+static void on_dir_expanded(AppData* app, ExplorerRow* row) {
     if (app->expanded_paths != NULL) {
         g_hash_table_add(app->expanded_paths, g_strdup(row->path));
         if (!batch_expanding) {
             sync_directory_monitors(app);
         }
+    }
+    if (!row->loaded && row->path[0] != '\0') {
+        LevelRead* lr = g_new0(LevelRead, 1);
+        lr->app = app;
+        lr->row = g_object_ref(row);
+        dir_scan_read_async(row->path, app->show_hidden, (DirScanSort)app->sort_mode,
+                            app->expanded_paths, on_level_read, lr);
     }
 }
 

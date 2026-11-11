@@ -108,6 +108,36 @@ static void test_sort_keys(void) {
     g_free(dir);
 }
 
+static void on_read(GObject* source, GAsyncResult* res, gpointer data) {
+    (void)source;
+    *(DirScanNode**)data = dir_scan_read_finish(res);
+}
+
+/* dir_scan_read() on a worker thread, the result back in the main context */
+static void test_read_async(void) {
+    gchar* dir = fixture_dir();
+    put(dir, "sub", NULL);
+    put(dir, "sub/in.txt", "x");
+    put(dir, "b.txt", "x");
+    GHashTable* expanded = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    g_hash_table_add(expanded, g_build_filename(dir, "sub", NULL));
+    DirScanNode* node = NULL;
+    dir_scan_read_async(dir, FALSE, DIR_SCAN_SORT_NAME, expanded, on_read, &node);
+    g_hash_table_destroy(expanded); /* copied */
+    while (node == NULL) {
+        g_main_context_iteration(NULL, TRUE);
+    }
+    g_assert_cmpuint(node->entries->len, ==, 2);
+    g_assert_cmpstr(name_at(node, 0), ==, "sub");
+    g_assert_cmpstr(name_at(node, 1), ==, "b.txt");
+    const DirScanNode* sub = g_ptr_array_index(node->children, 0);
+    g_assert_nonnull(sub);
+    g_assert_cmpstr(name_at(sub, 0), ==, "in.txt");
+    dir_scan_node_free(node);
+    remove_tree(dir);
+    g_free(dir);
+}
+
 static void test_expanded_and_unreadable(void) {
     gchar* dir = fixture_dir();
     put(dir, "open/inner", NULL);
@@ -190,6 +220,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/dir_scan/sorted_folders_first", test_sorted_folders_first);
     g_test_add_func("/dir_scan/compare_modes", test_compare_modes);
     g_test_add_func("/dir_scan/sort_keys", test_sort_keys);
+    g_test_add_func("/dir_scan/read_async", test_read_async);
     g_test_add_func("/dir_scan/expanded_and_unreadable", test_expanded_and_unreadable);
     g_test_add_func("/dir_scan/cancelled", test_cancelled);
     g_test_add_func("/dir_scan/expand_all", test_expand_all);

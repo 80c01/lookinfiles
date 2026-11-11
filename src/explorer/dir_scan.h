@@ -43,6 +43,13 @@ DirScanNode* dir_scan_read(const gchar* dirname, gboolean show_hidden, DirScanSo
 
 void dir_scan_node_free(DirScanNode* node);
 
+/* dir_scan_read() on a worker thread (expanded, may be NULL, is copied);
+ * callback runs in the calling thread's main context and gets the listing
+ * with dir_scan_read_finish() (free it with dir_scan_node_free()) */
+void dir_scan_read_async(const gchar* dirname, gboolean show_hidden, DirScanSort sort,
+                         GHashTable* expanded, GAsyncReadyCallback callback, gpointer user_data);
+DirScanNode* dir_scan_read_finish(GAsyncResult* result);
+
 /* Add to out (a set of paths) the folders below base that "expand all"
  * opens: breadth first, until about max_rows rows are listed; symbolic links
  * to folders stay closed (no loops). base itself is not added. */
