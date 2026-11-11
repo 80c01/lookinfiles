@@ -238,11 +238,9 @@ static const DirScanNode* entry_child_node(const DirScanNode* node, guint i) {
     return (node->children != NULL && i < node->children->len) ? g_ptr_array_index(node->children, i) : NULL;
 }
 
+/* Canonical path of entry i (node->dirname is canonical, a name has no '/') */
 static gchar* entry_path(const DirScanNode* node, guint i) {
-    gchar* full = g_build_filename(node->dirname, g_array_index(node->entries, DirScanEntry, i).name, NULL);
-    gchar* can_full = g_canonicalize_filename(full, NULL);
-    g_free(full);
-    return can_full;
+    return g_build_filename(node->dirname, g_array_index(node->entries, DirScanEntry, i).name, NULL);
 }
 
 static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirScanNode* node);
@@ -693,10 +691,8 @@ static gboolean rows_match_node(AppData* app, ExplorerRow* parent, const DirScan
         if (!explorer_row_is(row, e->is_dir ? "dir" : "file") || g_strcmp0(row->name, e->name) != 0) {
             return FALSE;
         }
-        gchar* full = g_build_filename(node->dirname, e->name, NULL);
-        gchar* can_full = g_canonicalize_filename(full, NULL);
-        gboolean same_path = (g_strcmp0(row->path, can_full) == 0);
-        g_free(can_full);
+        gchar* full = entry_path(node, i);
+        gboolean same_path = (g_strcmp0(row->path, full) == 0);
         g_free(full);
         if (!same_path) {
             return FALSE;

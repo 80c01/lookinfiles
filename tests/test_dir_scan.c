@@ -90,7 +90,10 @@ static void test_sort_keys(void) {
     put(dir, "a.zip", "x");
     put(dir, "c.c", "x");
     put(dir, "A.c", "x");
-    DirScanNode* node = dir_scan_read(dir, FALSE, DIR_SCAN_SORT_EXT, NULL, NULL);
+    gchar* odd = g_strconcat(dir, "/./", NULL);
+    DirScanNode* node = dir_scan_read(odd, FALSE, DIR_SCAN_SORT_EXT, NULL, NULL);
+    g_free(odd);
+    g_assert_cmpstr(node->dirname, ==, dir); /* canonical */
     g_assert_cmpuint(node->entries->len, ==, 4);
     g_assert_cmpstr(name_at(node, 0), ==, "A.c");
     g_assert_cmpstr(name_at(node, 1), ==, "c.c");

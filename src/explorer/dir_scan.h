@@ -29,7 +29,7 @@ typedef struct {
 
 /* One directory level, and the levels of its expanded folders */
 typedef struct DirScanNode {
-    gchar* dirname;
+    gchar* dirname;       /* canonical (g_canonicalize_filename()) */
     gboolean unreadable;  /* the directory could not be opened (entries NULL) */
     GArray* entries;      /* DirScanEntry, sorted */
     GPtrArray* children;  /* DirScanNode* per entry, NULL when not an expanded folder */

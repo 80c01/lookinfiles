@@ -82,7 +82,9 @@ void dir_scan_node_free(DirScanNode* node) {
 DirScanNode* dir_scan_read(const gchar* dirname, gboolean show_hidden, DirScanSort sort,
                            GHashTable* expanded, GCancellable* cancellable) {
     DirScanNode* node = g_new0(DirScanNode, 1);
-    node->dirname = g_strdup(dirname);
+    /* Canonical once here: an entry's path is then dirname/name as it is */
+    node->dirname = g_canonicalize_filename(dirname, NULL);
+    dirname = node->dirname;
 
     GDir* dir = g_dir_open(dirname, 0, NULL);
     if (dir == NULL) {
