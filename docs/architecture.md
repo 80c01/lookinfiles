@@ -190,8 +190,9 @@ Layers, from bottom to top
   of a symbolic link, permissions kept, read-only files refused, atomic).
 - `dir_scan` — explorer listings read in a worker thread (`dir_scan_read()`):
   one level sorted like the tree (folders first, then the sort mode) and the
-  levels of its expanded folders; the folders "expand all" opens
-  (`dir_scan_collect_expand_all()`).
+  levels of its expanded folders, sorted on keys made once per entry; the
+  same on its own worker (`dir_scan_read_async()`, used when a folder is
+  expanded); the folders "expand all" opens (`dir_scan_collect_expand_all()`).
 - `dir_summary` — one directory level for the directory preview: entries
   (name, type, size, date), totals, sorting, relative dates, column padding.
 - `preview_cache` — bounded most-recently-used cache of previews built,
@@ -333,7 +334,9 @@ Layers, from bottom to top
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can
   expand must be added with `explorer_row_append_container()`: GTK decides
-  once, when the row is inserted, whether it shows an expander.
+  once, when the row is inserted, whether it shows an expander. A whole level
+  is made with `explorer_row_new_child()` and added with
+  `explorer_row_insert_rows()`: one model change instead of one per row.
 - `vt_screen` — screen of the built-in terminal: xterm output (UTF-8, C0,
   ESC / CSI / OSC: cursor moves, erase, insert / delete, SGR colours (16,
   256, RGB), scroll region, alternate screen, DEC line drawing, title) on a
