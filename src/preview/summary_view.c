@@ -74,8 +74,10 @@ static void set_columns(GtkWidget* view, GtkTextBuffer* buffer, GPtrArray* lines
             fields = MAX(fields, text_width(view, line->text, FALSE));
             break;
         case PREVIEW_SUMMARY_ITEM: {
-            /* Very long names are not used to place the column */
-            gchar* name = g_utf8_substring(line->text, 0, PREVIEW_SUMMARY_NAME_MAX);
+            /* Very long names are not used to place the column (the end of
+             * g_utf8_substring() must not pass the end of the text) */
+            glong len = MIN(g_utf8_strlen(line->text, -1), PREVIEW_SUMMARY_NAME_MAX);
+            gchar* name = g_utf8_substring(line->text, 0, len);
             items = MAX(items, text_width(view, name, FALSE));
             g_free(name);
             break;
