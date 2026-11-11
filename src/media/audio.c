@@ -5,6 +5,7 @@
 #include "theme/text_style.h"
 #include "core/file_types.h"
 #include "media/image_utils.h"
+#include "media/media_player.h"
 #include "media/media_tags.h"
 #include "theme/icons.h"
 #include <string.h>
@@ -22,10 +23,7 @@ struct AudioPreview {
     GtkWidget* cover;        /* GtkImage: embedded cover art */
     GtkWidget* tag_line;     /* album / year / track / genre */
     gchar* details;          /* technical line from the tags (codec, rate...), or NULL */
-    GtkMediaStream* stream;  /* playing stream, or NULL */
-    gulong duration_sig;     /* notify::duration handler */
-    gulong prepared_sig;     /* notify::prepared handler */
-    gulong error_sig;        /* notify::error handler */
+    GtkMediaStream* stream;  /* the session's stream: previews swap its file */
     gchar* current_path;     /* file loaded in the player, or NULL */
 };
 
@@ -88,6 +86,9 @@ static void on_audio_error_notify(GtkMediaStream* stream, GParamSpec* pspec, gpo
         return;
     }
     AudioPreview* a = app->audio;
+    if (a->current_path == NULL) {
+        return; /* about a file closed since */
+    }
     const GError* err = gtk_media_stream_get_error(stream);
     if (err != NULL) {
         const gchar* err_msg = (err->message != NULL && err->message[0] != '\0')
@@ -190,42 +191,30 @@ void audio_preview_init(AppData* app) {
     a->icon = icon_label;
     a->cover = cover;
     a->tag_line = audio_tags;
+
+    /* One media stream for the whole session, as for videos (video.c): a
+     * GTK stream per file is never freed by its GStreamer backend, and the
+     * pipelines left behind kept running until one aborted the process. */
+    a->stream = media_player_new();
+    g_signal_connect(a->stream, "notify::duration", G_CALLBACK(on_audio_duration_notify), app);
+    g_signal_connect(a->stream, "notify::prepared", G_CALLBACK(on_audio_prepared_notify), app);
+    g_signal_connect(a->stream, "notify::error", G_CALLBACK(on_audio_error_notify), app);
+    gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(audio_controls), a->stream);
 }
 
 void audio_preview_stop(AppData* app) {
     AudioPreview* a = app != NULL ? app->audio : NULL;
-    if (a == NULL || (a->stream == NULL && a->current_path == NULL)) {
+    if (a == NULL || a->current_path == NULL) {
         return;
     }
-
-    if (a->stream != NULL) {
-        GtkMediaStream* stream = a->stream;
-        a->stream = NULL;
-
-        if (a->duration_sig != 0) {
-            g_signal_handler_disconnect(stream, a->duration_sig);
-            a->duration_sig = 0;
-        }
-        if (a->prepared_sig != 0) {
-            g_signal_handler_disconnect(stream, a->prepared_sig);
-            a->prepared_sig = 0;
-        }
-        if (a->error_sig != 0) {
-            g_signal_handler_disconnect(stream, a->error_sig);
-            a->error_sig = 0;
-        }
-
-        if (gtk_media_stream_get_playing(stream)) {
-            gtk_media_stream_pause(stream);
-        }
-
-        gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(a->controls), NULL);
-
-        g_object_unref(stream);
-    }
-
+    /* Cleared first: the notifications emitted while closing see no file */
     g_clear_pointer(&a->current_path, g_free);
     g_clear_pointer(&a->details, g_free);
+
+    if (gtk_media_stream_get_playing(a->stream)) {
+        gtk_media_stream_pause(a->stream);
+    }
+    gtk_media_file_clear(GTK_MEDIA_FILE(a->stream));
 }
 
 void audio_preview_free(AppData* app) {
@@ -233,12 +222,14 @@ void audio_preview_free(AppData* app) {
         return;
     }
     audio_preview_stop(app);
+    gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(app->audio->controls), NULL);
+    g_clear_object(&app->audio->stream);
     g_clear_pointer(&app->audio, g_free);
 }
 
 void audio_preview_pause(AppData* app) {
     AudioPreview* a = app != NULL ? app->audio : NULL;
-    if (a == NULL || a->stream == NULL) {
+    if (a == NULL || a->current_path == NULL) {
         return;
     }
     if (gtk_media_stream_get_playing(a->stream)) {
@@ -248,7 +239,7 @@ void audio_preview_pause(AppData* app) {
 
 void audio_preview_toggle_play(AppData* app) {
     AudioPreview* a = app != NULL ? app->audio : NULL;
-    if (a == NULL || a->stream == NULL) {
+    if (a == NULL || a->current_path == NULL) {
         return;
     }
     if (gtk_media_stream_get_playing(a->stream)) {
@@ -489,30 +480,6 @@ void render_audio_preview(AppData* app, const gchar* name, const gchar* full) {
     read_audio_tags(app, full);
 
     GFile* file = g_file_new_for_path(full);
-    if (file == NULL) {
-        return;
-    }
-    GtkMediaStream* stream = gtk_media_file_new_for_file(file);
+    gtk_media_file_set_file(GTK_MEDIA_FILE(a->stream), file);
     g_object_unref(file);
-
-    if (stream == NULL) {
-        gtk_label_set_text(GTK_LABEL(a->status),
-                           _("Could not create media stream for file (press 'm' for details)"));
-        gtk_widget_set_visible(a->status, TRUE);
-        return;
-    }
-
-    a->stream = stream;
-    gtk_media_controls_set_media_stream(GTK_MEDIA_CONTROLS(a->controls), stream);
-
-    a->duration_sig = g_signal_connect(stream, "notify::duration",
-                                              G_CALLBACK(on_audio_duration_notify), app);
-    a->prepared_sig = g_signal_connect(stream, "notify::prepared",
-                                              G_CALLBACK(on_audio_prepared_notify), app);
-    a->error_sig = g_signal_connect(stream, "notify::error",
-                                           G_CALLBACK(on_audio_error_notify), app);
-
-    if (gtk_media_stream_is_prepared(stream)) {
-        update_audio_metadata_label(app, stream);
-    }
 }
