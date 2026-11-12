@@ -30,6 +30,10 @@ Un notebook Jupyter (`.ipynb`) s’ouvre plutôt dans un **onglet notebook** :
 un cadre par cellule, avec son type (**Code**, **Markdown** ou **Brut**, à
 changer dans son menu), sa source colorée dans le langage du noyau ou en
 Markdown et, sous une cellule de code, ses sorties (texte, erreurs, images).
+Les cellules Markdown s’affichent rendues (titres, listes, tableaux, images,
+code) : `Enter` ou un double-clic en édite la source, et exécuter la cellule
+(`Ctrl+Enter`, `Shift+Enter`, **Tout exécuter**) la rend à nouveau. Une
+cellule Markdown nouvelle ou vide reste en source.
 
 - `Shift+Enter` exécute la cellule et passe à la suivante, `Ctrl+Enter`
   l’exécute. Les cellules s’exécutent dans le noyau Jupyter du notebook,

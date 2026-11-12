@@ -601,7 +601,9 @@ Layers, from bottom to top
   an editor file gets this tab instead (an nbformat 3 or broken one stays
   text; `editor_open_text_file()` skips the hook: **Edit as JSON**). One box
   per cell (type menu, source view highlighted with the kernel's language,
-  outputs) built again after each change of the cells' number, order or
+  outputs; a Markdown cell also has a rendered view, `render_markdown_to_buffer()`,
+  shown instead of its source unless its key is in `editing`: run renders it,
+  `Enter` / double click edits it) built again after each change of the cells' number, order or
   type; saved by itself after each change (`file_save_text()`), at close,
   workspace removal (`ipynb_tab_workspace_removed()`) and quit
   (`ipynb_tab_save_all()`). Movable like a Video tab, kept with its

@@ -330,7 +330,7 @@ explorer:chrome,code,core,editor,formats,games,git,media,notes,preview,search,te
 formats:core,preview
 games:core,editor,explorer,theme,widgets
 git:core,theme,widgets
-jupyter:core,editor,formats,theme,widgets
+jupyter:core,editor,formats,markup,theme,widgets
 mail:core,office,preview
 markup:core,media,theme
 media:core,editor,preview,search,theme

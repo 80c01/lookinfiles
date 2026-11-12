@@ -26,7 +26,10 @@ quitting with unsaved changes asks first.
 A Jupyter notebook (`.ipynb`) opens in a **notebook tab** instead: one box
 per cell, with its type (**Code**, **Markdown** or **Raw**, changed in its
 menu), its source highlighted in the kernel's language or as Markdown, and
-under a code cell its outputs (text, errors, images).
+under a code cell its outputs (text, errors, images). Markdown cells are
+shown rendered (headings, lists, tables, images, code): `Enter` or a double
+click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
+**Run All**) renders it again. A new or empty Markdown cell stays as source.
 
 - `Shift+Enter` runs the cell and goes to the next one, `Ctrl+Enter` runs
   it. The cells run in the notebook's Jupyter kernel, started at the first

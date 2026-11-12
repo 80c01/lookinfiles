@@ -142,6 +142,10 @@ format_scenario() {
     key alt+Left Home
     for i in $(seq 18); do key Down; done
     key Return; sleep 0.5; shot fmt_ipynb_tab
+    # The first cell is Markdown, shown rendered: Enter edits its source,
+    # Ctrl+Enter renders it again
+    key Return;         shot fmt_ipynb_markdown_edit
+    key ctrl+Return;    shot fmt_ipynb_markdown_rendered
     key ctrl+Down;      shot fmt_ipynb_next_cell
     # Run the cell, then run it and go on: the result depends on Jupyter
     # being installed and the kernel's start time (not compared)

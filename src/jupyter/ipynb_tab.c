@@ -5,6 +5,7 @@
 #include "editor/file_save.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_tab_private.h"
+#include "markup/markdown.h"
 #include "theme/icons.h"
 #include "theme/text_style.h"
 #include "theme/theme.h"
@@ -16,6 +17,7 @@
 #define CELL_INDEX_KEY "lookin-ipynb-cell"
 #define CELL_PROMPT_KEY "lookin-ipynb-prompt"   /* on a cell's view: its In [n] label */
 #define CELL_OUTPUTS_KEY "lookin-ipynb-outputs" /* on a cell's view: its outputs box */
+#define CELL_RENDERED_KEY "lookin-ipynb-rendered" /* on a Markdown cell's view: its rendered view */
 #define TAB_MAX_CHARS 24
 #define SAVE_DELAY_MS 1000
 #define MAX_OUTPUT_LINES 200
@@ -44,6 +46,8 @@ static void ensure_css(void) {
                   ".ipynb-tab .ipynb-cell-head dropdown > button { padding: 0 6px; min-height: 0; }"
                   ".ipynb-tab .ipynb-source { background-color: @bg_block; }"
                   ".ipynb-tab .ipynb-source text { background-color: @bg_block; }"
+                  ".ipynb-tab .ipynb-rendered, .ipynb-tab .ipynb-rendered text { background-color: @bg_view;"
+                  " color: @fg_text; }"
                   ".ipynb-tab .ipynb-outputs { padding: 6px 10px; border-top: 1px solid @border; }"
                   ".ipynb-tab .ipynb-output { color: @fg_text; font-family: @font_code; font-size: @size_code; }"
                   ".ipynb-tab .ipynb-output.ipynb-error { color: @error; }"
@@ -164,14 +168,79 @@ void ipynb_tab_rebuild_cells(IpynbTab* t) {
     queue_rebuild(t, t->current);
 }
 
+/* The rendered view of the Markdown cell at index when it is shown, else NULL */
+static GtkWidget* shown_rendered(IpynbTab* t, guint index) {
+    if (index >= t->views->len) return NULL;
+    GtkWidget* rendered = g_object_get_data(G_OBJECT(g_ptr_array_index(t->views, index)), CELL_RENDERED_KEY);
+    return rendered != NULL && gtk_widget_get_visible(rendered) ? rendered : NULL;
+}
+
 void ipynb_tab_focus_cell(IpynbTab* t, guint index) {
     if (t->views->len == 0) return;
     index = MIN(index, t->views->len - 1);
-    gtk_widget_grab_focus(g_ptr_array_index(t->views, index));
+    GtkWidget* rendered = shown_rendered(t, index);
+    gtk_widget_grab_focus(rendered != NULL ? rendered : g_ptr_array_index(t->views, index));
 }
 
 static guint cell_index(gpointer object) {
     return GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(object), CELL_INDEX_KEY));
+}
+
+/* --- Rendered Markdown cells --- */
+
+/* Show the Markdown cell at index rendered, or as its source (focused) */
+static void show_markdown(IpynbTab* t, guint index, gboolean render) {
+    if (index >= t->views->len) return;
+    GtkWidget* view = g_ptr_array_index(t->views, index);
+    GtkWidget* rendered = g_object_get_data(G_OBJECT(view), CELL_RENDERED_KEY);
+    if (rendered == NULL) return;
+    guint key = ipynb_doc_cell_key(t->doc, index);
+    gchar* source = ipynb_doc_cell_source(t->doc, index);
+    gchar* valid = g_utf8_make_valid(source, -1);
+    g_free(source);
+    /* An empty cell has nothing to show: it stays as source */
+    gboolean blank = TRUE;
+    for (const gchar* c = valid; blank && *c != '\0'; c++) blank = g_ascii_isspace(*c);
+    if (blank) render = FALSE;
+    if (render) {
+        g_hash_table_remove(t->editing, GUINT_TO_POINTER(key));
+        GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(rendered));
+        render_markdown_to_buffer(buffer, GTK_TEXT_VIEW(rendered), valid, t->path, FALSE, NULL, 0);
+    } else {
+        g_hash_table_add(t->editing, GUINT_TO_POINTER(key));
+    }
+    g_free(valid);
+    gboolean had_focus = gtk_widget_has_focus(view) || gtk_widget_has_focus(rendered);
+    gtk_widget_set_visible(view, !render);
+    gtk_widget_set_visible(rendered, render);
+    if (had_focus || !render) gtk_widget_grab_focus(render ? rendered : view);
+}
+
+void ipynb_tab_render_cell(IpynbTab* t, guint index) {
+    show_markdown(t, index, TRUE);
+}
+
+/* Double click on a rendered cell: edit its source */
+static void on_rendered_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)x;
+    (void)y;
+    if (n_press != 2) return;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    GtkWidget* rendered = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+    show_markdown(data, cell_index(rendered), FALSE);
+}
+
+/* Enter on a rendered cell: edit its source */
+static gboolean on_rendered_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
+                                gpointer data) {
+    (void)keycode;
+    if ((keyval != GDK_KEY_Return && keyval != GDK_KEY_KP_Enter) ||
+        (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK | GDK_SUPER_MASK)) != 0) {
+        return FALSE;
+    }
+    GtkWidget* rendered = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
+    show_markdown(data, cell_index(rendered), FALSE);
+    return TRUE;
 }
 
 void ipynb_tab_insert_cell(IpynbTab* t, guint at, IpynbCellType type) {
@@ -241,6 +310,40 @@ static void on_view_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
     set_current(t, cell_index(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl))));
 }
 
+static void track_focus(IpynbTab* t, GtkWidget* view) {
+    GtkEventController* focus = gtk_event_controller_focus_new();
+    g_signal_connect(focus, "enter", G_CALLBACK(on_view_focus_enter), t);
+    gtk_widget_add_controller(view, focus);
+}
+
+/* The rendered view of a Markdown cell (read only, focusable for the keys) */
+static GtkWidget* rendered_view_new(IpynbTab* t, guint index) {
+    GtkWidget* rendered = gtk_text_view_new();
+    gtk_widget_add_css_class(rendered, "ipynb-rendered");
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(rendered), FALSE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(rendered), FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(rendered), GTK_WRAP_WORD_CHAR);
+    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(rendered), 12);
+    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(rendered), 12);
+    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(rendered), 8);
+    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(rendered), 8);
+    set_view_monospace(rendered, FALSE);
+    ensure_markdown_tags(gtk_text_view_get_buffer(GTK_TEXT_VIEW(rendered)));
+    gtk_widget_set_tooltip_text(rendered, _("Double-click or Enter to edit the Markdown"));
+    g_object_set_data(G_OBJECT(rendered), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
+    track_focus(t, rendered);
+    /* Capture: before the view's own double click (select a word) */
+    GtkGesture* click = gtk_gesture_click_new();
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(click), GTK_PHASE_CAPTURE);
+    g_signal_connect(click, "pressed", G_CALLBACK(on_rendered_pressed), t);
+    gtk_widget_add_controller(rendered, GTK_EVENT_CONTROLLER(click));
+    GtkEventController* keys = gtk_event_controller_key_new();
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_rendered_key), t);
+    gtk_widget_add_controller(rendered, keys);
+    gtk_widget_set_visible(rendered, FALSE);
+    return rendered;
+}
+
 static void on_type_selected(GObject* dropdown, GParamSpec* pspec, gpointer data) {
     (void)pspec;
     IpynbTab* t = data;
@@ -250,6 +353,8 @@ static void on_type_selected(GObject* dropdown, GParamSpec* pspec, gpointer data
     IpynbCellType type = selected == 0 ? IPYNB_CELL_CODE : selected == 1 ? IPYNB_CELL_MARKDOWN : IPYNB_CELL_RAW;
     if (type == ipynb_doc_cell_type(t->doc, index)) return;
     ipynb_doc_set_type(t->doc, index, type);
+    /* Made Markdown: still edited until run */
+    g_hash_table_add(t->editing, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, index)));
     ipynb_tab_mark_changed(t);
     queue_rebuild(t, index);
 }
@@ -447,11 +552,18 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(view), 6);
     set_view_monospace(view, TRUE);
     g_object_set_data(G_OBJECT(view), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
-    GtkEventController* focus = gtk_event_controller_focus_new();
-    g_signal_connect(focus, "enter", G_CALLBACK(on_view_focus_enter), t);
-    gtk_widget_add_controller(view, focus);
+    track_focus(t, view);
     gtk_box_append(GTK_BOX(cell), view);
     g_ptr_array_add(t->views, view);
+
+    if (type == IPYNB_CELL_MARKDOWN) {
+        GtkWidget* rendered = rendered_view_new(t, index);
+        gtk_box_append(GTK_BOX(cell), rendered);
+        g_object_set_data(G_OBJECT(view), CELL_RENDERED_KEY, rendered);
+        if (!g_hash_table_contains(t->editing, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, index)))) {
+            show_markdown(t, index, TRUE);
+        }
+    }
 
     if (type == IPYNB_CELL_CODE) {
         GtkWidget* outputs = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
@@ -635,6 +747,7 @@ static void tab_free(gpointer data) {
     ipynb_doc_free(t->doc);
     g_ptr_array_unref(t->views);
     g_hash_table_unref(t->running);
+    g_hash_table_unref(t->editing);
     if (t->stale != NULL) g_hash_table_unref(t->stale);
     g_free(t->path);
     g_free(t->name);
@@ -675,6 +788,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     t->doc = doc;
     t->views = g_ptr_array_new();
     t->running = g_hash_table_new(NULL, NULL);
+    t->editing = g_hash_table_new(NULL, NULL);
 
     GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(root, "ipynb-tab");
@@ -703,6 +817,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     gtk_label_set_xalign(GTK_LABEL(t->info), 1.0f);
     gtk_widget_set_hexpand(t->info, TRUE);
     gtk_widget_set_tooltip_text(t->info, _("Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; "
+                                           "Double-click or Enter: edit a rendered Markdown cell; "
                                            "Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the "
                                            "cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"));
     gtk_box_append(GTK_BOX(bar), t->info);

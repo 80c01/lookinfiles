@@ -299,7 +299,12 @@ static void on_kernel_menu_show(GtkWidget* popover, gpointer data) {
 /* --- Running --- */
 
 void ipynb_run_cell(IpynbTab* t, guint index) {
-    if (index >= ipynb_doc_n_cells(t->doc) || ipynb_doc_cell_type(t->doc, index) != IPYNB_CELL_CODE) return;
+    if (index >= ipynb_doc_n_cells(t->doc)) return;
+    if (ipynb_doc_cell_type(t->doc, index) == IPYNB_CELL_MARKDOWN) {
+        ipynb_tab_render_cell(t, index); /* running a Markdown cell renders it */
+        return;
+    }
+    if (ipynb_doc_cell_type(t->doc, index) != IPYNB_CELL_CODE) return;
     guint key = ipynb_doc_cell_key(t->doc, index);
     if (g_hash_table_contains(t->running, GUINT_TO_POINTER(key)) || !ensure_kernel(t)) return;
     ipynb_doc_clear_outputs(t->doc, index);

@@ -18,6 +18,7 @@ typedef struct {
     GtkWidget* undo_button; /* puts the cell deleted last back */
     GPtrArray* views;       /* GtkTextView* of each cell (not referenced) */
     GHashTable* running;    /* keys (ipynb_doc_cell_key()) of the cells run or waiting to run */
+    GHashTable* editing;    /* keys of the Markdown cells shown as source, not rendered */
     IpynbDoc* doc;
     gchar* path;
     gchar* name;
@@ -57,6 +58,8 @@ void ipynb_tab_focus_cell(IpynbTab* t, guint index);
 void ipynb_tab_insert_cell(IpynbTab* t, guint at, IpynbCellType type);
 /* Show the prompt and outputs of one cell again */
 void ipynb_tab_refresh_cell(IpynbTab* t, guint index);
+/* Show the Markdown cell at index rendered (it was run) */
+void ipynb_tab_render_cell(IpynbTab* t, guint index);
 /* Build every cell again (the kernel's language changed) */
 void ipynb_tab_rebuild_cells(IpynbTab* t);
 
@@ -66,7 +69,8 @@ void ipynb_tab_rebuild_cells(IpynbTab* t);
 GtkWidget* ipynb_run_bar(IpynbTab* t, GtkWidget* bar);
 /* The row that asks for a line (input()), hidden */
 GtkWidget* ipynb_run_input_row_new(IpynbTab* t);
-/* Run the cell at index (a code cell; the kernel starts first if needed) */
+/* Run the cell at index: a code cell in the kernel (started first if
+ * needed); a Markdown cell is rendered */
 void ipynb_run_cell(IpynbTab* t, guint index);
 /* Run the current cell and go to the next one (a new code cell after the
  * last) */

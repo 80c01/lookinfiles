@@ -193,12 +193,14 @@ the notebook's metadata); a line asked by the
 code (`input()`) is typed in a row under the bar. Saved by itself shortly
 after each change, when the tab closes and at quit; the bar runs every cell,
 interrupts or restarts the kernel, adds cells, clears the outputs, or opens
-the file as JSON text. An nbformat 3 or broken notebook opens as text)
+the file as JSON text. Markdown cells are shown rendered; running one renders
+it again. An nbformat 3 or broken notebook opens as text)
 
 | Key | Action |
 |---|---|
 | `Shift+Enter` | Run the cell and go to the next one (a new code cell after the last) |
-| `Ctrl+Enter` | Run the cell |
+| `Ctrl+Enter` | Run the cell (a Markdown cell: render it) |
+| `Enter` / double click | Edit a rendered Markdown cell (its source) |
 | `Ctrl+Up` / `Ctrl+Down` | Previous / next cell |
 | `Alt+Up` / `Alt+Down` | Move the cell up / down |
 | `Alt+Enter` | New code cell below |

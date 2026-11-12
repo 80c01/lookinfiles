@@ -8776,8 +8776,8 @@ msgstr "Annuler la suppression"
 msgid "Put Back the Cell Deleted Last"
 msgstr "Remettre la dernière cellule supprimée"
 
-msgid "Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"
-msgstr "Shift+Enter : exécuter la cellule et passer à la suivante ; Ctrl+Enter : l’exécuter ; Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule"
+msgid "Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; Double-click or Enter: edit a rendered Markdown cell; Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"
+msgstr "Shift+Enter : exécuter la cellule et passer à la suivante ; Ctrl+Enter : l’exécuter ; double-clic ou Enter : éditer une cellule Markdown rendue ; Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule"
 
 #, c-format
 msgid "Not saved: %s"
@@ -8798,8 +8798,14 @@ msgstr[1] "… (%u lignes de plus)"
 msgid "Run the cell and go to the next one"
 msgstr "Exécuter la cellule et passer à la suivante"
 
-msgid "Run the cell (in the notebook's Jupyter kernel)"
-msgstr "Exécuter la cellule (dans le noyau Jupyter du notebook)"
+msgid "Run the cell (in the notebook's Jupyter kernel; a Markdown cell is rendered)"
+msgstr "Exécuter la cellule (dans le noyau Jupyter du notebook ; une cellule Markdown est rendue)"
+
+msgid "Edit a rendered Markdown cell"
+msgstr "Éditer une cellule Markdown rendue"
+
+msgid "Double-click or Enter to edit the Markdown"
+msgstr "Double-clic ou Enter pour éditer le Markdown"
 
 msgid "Run Cell (Ctrl+Enter)"
 msgstr "Exécuter la cellule (Ctrl+Enter)"
