@@ -59,13 +59,19 @@ class Bridge:
         self.errors = set()
         self.lock = threading.Lock()
         self.dead = False
+        self.restarting = False  # until the restarted kernel answers
 
     # --- Replies of the kernel ---
 
     def cell_of(self, msg):
+        """The request a reply is for, and its cell (None once the cell is
+        done: what comes after belongs to no cell, e.g. the interrupt of a
+        cell aborted by a restart)"""
         parent = msg.get("parent_header") or {}
         msg_id = parent.get("msg_id")
         with self.lock:
+            if msg_id in self.finished:
+                return msg_id, None
             return msg_id, self.cells.get(msg_id)
 
     def finish(self, msg_id, status):
@@ -135,6 +141,10 @@ class Bridge:
                 continue
             except Exception:
                 return
+            if msg["header"]["msg_type"] == "kernel_info_reply" and self.restarting:
+                self.restarting = False
+                emit("status", state="idle")
+                continue
             if msg["header"]["msg_type"] != "execute_reply":
                 continue
             msg_id, cell = self.cell_of(msg)
@@ -192,6 +202,15 @@ class Bridge:
              display=kernelspec["display_name"])
         emit("status", state="idle")
 
+    def wait_restarted(self):
+        """Ask the restarted kernel who it is until it answers (the shell
+        loop then says it is idle): it does not say so by itself"""
+        for _ in range(120):
+            if not self.restarting or _STOP.is_set():
+                return
+            self.kc.kernel_info()
+            _STOP.wait(0.5)
+
     def abort_all(self):
         with self.lock:
             pending = [m for m in self.cells if m not in self.finished]
@@ -219,8 +238,10 @@ class Bridge:
             self.km.interrupt_kernel()
         elif op == "restart":
             self.abort_all()
+            self.restarting = True
             self.km.restart_kernel(now=False)
             emit("restarted")
+            threading.Thread(target=self.wait_restarted, daemon=True).start()
         return True
 
     def shutdown(self):
