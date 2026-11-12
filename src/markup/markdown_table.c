@@ -203,6 +203,38 @@ static void fit_table_frame(GtkAdjustment* hadj, gpointer data) {
     }
 }
 
+/* Tables of a view waiting for their first fit (GPtrArray of frames) */
+#define PENDING_FITS_KEY "lookin-md-table-fits"
+
+static gboolean fit_pending_tables(gpointer data) {
+    GtkTextView* view = data;
+    GPtrArray* frames = g_object_steal_data(G_OBJECT(view), PENDING_FITS_KEY);
+    GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(view));
+    for (guint i = 0; frames != NULL && hadj != NULL && i < frames->len; i++) {
+        fit_table_frame(hadj, g_ptr_array_index(frames, i));
+    }
+    if (frames != NULL) {
+        g_ptr_array_unref(frames);
+    }
+    return G_SOURCE_REMOVE;
+}
+
+/* Fit the frame before the next frame of the view, with the other tables
+ * inserted until then: measuring right after each insertion validates the
+ * styles of the view again each time (seconds for a document of hundreds
+ * of tables), measuring them together validates them once */
+static void fit_table_later(GtkTextView* view, GtkWidget* frame) {
+    GPtrArray* frames = g_object_get_data(G_OBJECT(view), PENDING_FITS_KEY);
+    if (frames == NULL) {
+        frames = g_ptr_array_new_with_free_func(g_object_unref);
+        g_object_set_data_full(G_OBJECT(view), PENDING_FITS_KEY, frames,
+                               (GDestroyNotify)g_ptr_array_unref);
+        /* Before the layout of the next frame (GDK_PRIORITY_REDRAW) */
+        g_idle_add_full(G_PRIORITY_HIGH_IDLE, fit_pending_tables, g_object_ref(view), g_object_unref);
+    }
+    g_ptr_array_add(frames, g_object_ref(frame));
+}
+
 /* Table as a grid widget in the text (VS Code: no vertical borders, a line
  * under the header, faint lines between rows; CSS in theme.c) */
 static void insert_table_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextIter* iter,
@@ -252,7 +284,7 @@ static void insert_table_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextI
     if (hadj != NULL) {
         /* Disconnected when the frame goes (the text is rendered again) */
         g_signal_connect_object(hadj, "changed", G_CALLBACK(fit_table_frame), frame, 0);
-        fit_table_frame(hadj, frame);
+        fit_table_later(view, frame);
     }
     gtk_text_buffer_insert(buffer, iter, "\n", 1);
 }
