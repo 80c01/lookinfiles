@@ -84,4 +84,25 @@ void ipynb_cell_free(IpynbCell* cell);
 /* Move the cell at from to position to (both clamped) */
 void ipynb_doc_move_cell(IpynbDoc* doc, guint from, guint to);
 
+/* --- Running cells (ipynb_kernel.h) --- */
+
+/* A key of the cell at index that stays the same while cells are added,
+ * removed or moved (0 if there is no such cell; not saved), and the index
+ * of the cell with that key now (-1: deleted) */
+guint ipynb_doc_cell_key(const IpynbDoc* doc, guint index);
+gint ipynb_doc_find_cell(const IpynbDoc* doc, guint key);
+/* Set the execution count of a code cell (-1: none) */
+void ipynb_doc_set_execution_count(IpynbDoc* doc, guint index, gint count);
+/* Add an output (an nbformat output object, as JSON) to a code cell,
+ * stored as Jupyter stores it: text as lists of lines, a stream written
+ * in pieces joined to the output before it. FALSE with error set if json
+ * is not an object or the cell not a code cell. */
+gboolean ipynb_doc_append_output(IpynbDoc* doc, guint index, const gchar* json, gsize len, GError** error);
+/* Kernel name of the notebook ("python3"), or NULL */
+const gchar* ipynb_doc_kernel_name(const IpynbDoc* doc);
+/* Set the notebook's kernelspec and language_info metadata (JSON objects,
+ * either may be NULL), as Jupyter does once a kernel runs. Returns TRUE if
+ * they changed. */
+gboolean ipynb_doc_set_kernel_info(IpynbDoc* doc, const gchar* kernelspec, const gchar* language_info);
+
 #endif /* IPYNB_DOC_H */

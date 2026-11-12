@@ -17,10 +17,12 @@ struct Node {
     gchar* key;          /* member name, or NULL for an array item */
     gchar* text;         /* N_STRING: unescaped value; N_RAW: number or keyword */
     GPtrArray* children; /* N_OBJECT and N_ARRAY: Node* (owned) */
+    guint cell_key;      /* a cell: its key (ipynb_doc_cell_key()) */
 };
 
 struct IpynbDoc {
     Node* root;
+    guint next_key;     /* key of the next cell read or added */
     gchar* language;
     gchar* extension;
     gchar* kernel;
@@ -242,6 +244,9 @@ IpynbDoc* ipynb_doc_parse(const gchar* text, gsize len, GError** error) {
     Node* list = cells_of(doc);
     for (guint i = list->children->len; i-- > 0;) {
         if (((Node*)g_ptr_array_index(list->children, i))->type != N_OBJECT) g_ptr_array_remove_index(list->children, i);
+    }
+    for (guint i = 0; i < list->children->len; i++) {
+        ((Node*)g_ptr_array_index(list->children, i))->cell_key = ++doc->next_key;
     }
     read_kernel(doc);
     return doc;
@@ -506,6 +511,7 @@ guint ipynb_doc_insert_cell(IpynbDoc* doc, guint index, IpynbCellType type) {
     node_set(cell, "metadata", node_new(N_OBJECT, NULL, NULL));
     if (type == IPYNB_CELL_CODE) ensure_code_members(cell);
     node_set(cell, "source", node_new(N_ARRAY, NULL, NULL));
+    cell->cell_key = ++doc->next_key;
     g_ptr_array_insert(cells->children, (gint)index, cell);
     return index;
 }
@@ -540,4 +546,122 @@ void ipynb_doc_move_cell(IpynbDoc* doc, guint from, guint to) {
     if (from == to) return;
     gpointer cell = g_ptr_array_steal_index(cells->children, from);
     g_ptr_array_insert(cells->children, (gint)to, cell);
+}
+
+guint ipynb_doc_cell_key(const IpynbDoc* doc, guint index) {
+    Node* cell = cell_at(doc, index);
+    return cell != NULL ? cell->cell_key : 0;
+}
+
+gint ipynb_doc_find_cell(const IpynbDoc* doc, guint key) {
+    for (guint i = 0; key != 0 && i < ipynb_doc_n_cells(doc); i++) {
+        if (cell_at(doc, i)->cell_key == key) return (gint)i;
+    }
+    return -1;
+}
+
+void ipynb_doc_set_execution_count(IpynbDoc* doc, guint index, gint count) {
+    Node* cell = cell_at(doc, index);
+    if (cell == NULL || ipynb_doc_cell_type(doc, index) != IPYNB_CELL_CODE) return;
+    gchar* text = count >= 0 ? g_strdup_printf("%d", count) : g_strdup("null");
+    node_set(cell, "execution_count", node_new(N_RAW, NULL, text));
+    g_free(text);
+}
+
+/* The JSON object in text as a tree, or NULL with error set */
+static Node* node_parse_object(const gchar* text, gsize len, GError** error) {
+    g_autoptr(JsonValue) json = json_value_parse(text, len, error);
+    if (json == NULL) return NULL;
+    if (json_value_get_type(json) != JSON_VALUE_OBJECT) {
+        g_set_error(error, G_FILE_ERROR, G_FILE_ERROR_INVAL, "not a JSON object");
+        return NULL;
+    }
+    return node_from_json(json, NULL);
+}
+
+/* A string member as lines, as nbformat stores multiline text */
+static void split_member(Node* obj, const gchar* key) {
+    Node* n = node_get(obj, key);
+    if (n != NULL && n->type == N_STRING) node_set(obj, key, node_lines(n->text));
+}
+
+gboolean ipynb_doc_append_output(IpynbDoc* doc, guint index, const gchar* json, gsize len, GError** error) {
+    Node* cell = cell_at(doc, index);
+    if (cell == NULL || ipynb_doc_cell_type(doc, index) != IPYNB_CELL_CODE) {
+        g_set_error(error, G_FILE_ERROR, G_FILE_ERROR_INVAL, "not a code cell");
+        return FALSE;
+    }
+    Node* out = node_parse_object(json, len, error);
+    if (out == NULL) return FALSE;
+    ensure_code_members(cell);
+    Node* outputs = node_get(cell, "outputs");
+    const gchar* type = node_get_string(out, "output_type");
+    if (g_strcmp0(type, "stream") == 0) {
+        /* Jupyter shows a stream written in pieces as one output */
+        Node* last = outputs->children->len > 0 ? g_ptr_array_index(outputs->children, outputs->children->len - 1) : NULL;
+        if (last != NULL && g_strcmp0(node_get_string(last, "output_type"), "stream") == 0 &&
+            g_strcmp0(node_get_string(last, "name"), node_get_string(out, "name")) == 0) {
+            gchar* before = node_text(node_get(last, "text"));
+            gchar* more = node_text(node_get(out, "text"));
+            gchar* text = g_strconcat(before != NULL ? before : "", more != NULL ? more : "", NULL);
+            node_set(last, "text", node_lines(text));
+            g_free(text);
+            g_free(more);
+            g_free(before);
+            node_free(out);
+            return TRUE;
+        }
+        split_member(out, "text");
+    } else if (g_strcmp0(type, "execute_result") == 0 || g_strcmp0(type, "display_data") == 0) {
+        Node* data = node_get(out, "data");
+        for (guint i = 0; data != NULL && data->type == N_OBJECT && i < data->children->len; i++) {
+            Node* c = g_ptr_array_index(data->children, i);
+            if (g_str_has_prefix(c->key, "text/") || g_strcmp0(c->key, "application/javascript") == 0 ||
+                g_strcmp0(c->key, "image/svg+xml") == 0) {
+                split_member(data, c->key);
+            }
+        }
+    }
+    g_ptr_array_add(outputs->children, out);
+    return TRUE;
+}
+
+const gchar* ipynb_doc_kernel_name(const IpynbDoc* doc) {
+    return node_get_string(node_get(node_get(doc->root, "metadata"), "kernelspec"), "name");
+}
+
+/* Text of member key of obj, "" when missing */
+static gchar* member_json(const Node* obj, const gchar* key) {
+    GString* out = g_string_new(NULL);
+    Node* n = node_get(obj, key);
+    if (n != NULL) write_node(out, n, 0);
+    return g_string_free(out, FALSE);
+}
+
+gboolean ipynb_doc_set_kernel_info(IpynbDoc* doc, const gchar* kernelspec, const gchar* language_info) {
+    Node* meta = node_get(doc->root, "metadata");
+    if (meta == NULL || meta->type != N_OBJECT) {
+        node_set(doc->root, "metadata", node_new(N_OBJECT, NULL, NULL));
+        meta = node_get(doc->root, "metadata");
+    }
+    gboolean changed = FALSE;
+    const gchar* keys[] = { "kernelspec", "language_info" };
+    const gchar* values[] = { kernelspec, language_info };
+    for (gsize i = 0; i < G_N_ELEMENTS(keys); i++) {
+        Node* n = values[i] != NULL ? node_parse_object(values[i], strlen(values[i]), NULL) : NULL;
+        if (n == NULL) continue;
+        gchar* before = member_json(meta, keys[i]);
+        node_set(meta, keys[i], n);
+        gchar* after = member_json(meta, keys[i]);
+        changed = changed || g_strcmp0(before, after) != 0;
+        g_free(before);
+        g_free(after);
+    }
+    if (changed) {
+        g_clear_pointer(&doc->language, g_free);
+        g_clear_pointer(&doc->extension, g_free);
+        g_clear_pointer(&doc->kernel, g_free);
+        read_kernel(doc);
+    }
+    return changed;
 }

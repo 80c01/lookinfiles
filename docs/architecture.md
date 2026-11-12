@@ -62,7 +62,11 @@ Layers, from bottom to top
   back, moved; `ipynb_doc_to_json()` writes it as Jupyter does
   (`json.dumps(indent=1, ensure_ascii=False)`, sources as lists of lines),
   so an untouched notebook is written back byte for byte. Read by the
-  tolerant parser of `json_view` (`json_value_dup_key()`).
+  tolerant parser of `json_view` (`json_value_dup_key()`). For running
+  cells: a key per cell that survives moves (`ipynb_doc_cell_key()` /
+  `ipynb_doc_find_cell()`), outputs added as Jupyter stores them
+  (`ipynb_doc_append_output()`: lines, stream pieces joined), execution
+  count, kernel metadata (`ipynb_doc_set_kernel_info()`).
 - `notebook_icons` — the icons offered for notebooks and bookmark folders
   (theme glyph names)
   and the mapping of the emoji stored by older versions.
