@@ -36,6 +36,7 @@
 #include "preview/preview_formats.h"
 #include "preview/text_chunks.h"
 #include "preview/preview_full.h"
+#include "preview/preview_busy.h"
 #include "core/text_encoding.h"
 #include "preview/preview_cache.h"
 #include "explorer/tree_nav.h"
@@ -548,6 +549,13 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
     }
     gint64 ready_us = g_get_monotonic_time();
     show_text_preview(td);
+    if (cancellable != td->app->preview_cancellable && file_kind_is_media(td->kind) &&
+        td->kind != FILE_KIND_AUDIO && td->kind != FILE_KIND_VIDEO) {
+        /* A PDF or a picture: the notice lasts until its own worker is done */
+        preview_busy_start(td->app, td->name, td->app->preview_cancellable);
+    } else {
+        preview_busy_stop(td->app);
+    }
     if (debug_preview_timings()) {
         gint64 end_us = g_get_monotonic_time();
         g_printerr("preview %s [%s]: %.1f ms (worker %.1f ms, display %.1f ms)\n", td->name,
@@ -722,6 +730,10 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         }
     }
 
+    if (cached == NULL) {
+        preview_busy_start(app, name, app->preview_cancellable);
+    }
+
     GTask* task = g_task_new(NULL, app->preview_cancellable, on_text_preview_ready, NULL);
     g_task_set_task_data(task, td, text_preview_task_data_free);
     g_task_run_in_thread(task, text_preview_thread_func);
@@ -730,6 +742,8 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
 
 /* Set while the preview re-renders the selected row: the current tab stays in front */
 static gboolean reloading_selection = FALSE;
+
+static void show_selected_row(AppData* app);
 
 /* Re-render the file currently shown in the preview (APP_EVENT_PREVIEW_STALE) */
 void viewer_reload_preview(AppData* app) {
@@ -742,7 +756,7 @@ void viewer_reload_preview(AppData* app) {
                 dir_preview_show(app, row->name, row->path);
             } else {
                 reloading_selection = TRUE;
-                on_selection_changed(app->tree, app);
+                show_selected_row(app);
                 reloading_selection = FALSE;
             }
         }
@@ -828,9 +842,108 @@ static void render_canvas_summary(AppData* app, const gchar* summary, const gcha
 }
 
 
+/* The preview follows a new selection once the explorer has drawn it: the
+ * row is highlighted at once, however long the preview takes to build, and
+ * rows passed over quickly (a held arrow key) are never previewed */
+typedef struct {
+    AppData* app;
+    ExplorerRow* row;     /* row to preview (selected when scheduled) */
+    GdkFrameClock* clock; /* explorer's clock, waited for its next paint */
+    gulong paint_id;
+    guint fallback_id;    /* no frame painted (window hidden): run anyway */
+    guint idle_id;
+} PendingSelection;
+
+static PendingSelection pending_sel;
+
+/* Longest wait for the explorer's frame */
+#define SELECTION_FRAME_WAIT_MS 50
+
+static void pending_selection_clear(void) {
+    if (pending_sel.paint_id != 0) {
+        g_signal_handler_disconnect(pending_sel.clock, pending_sel.paint_id);
+        pending_sel.paint_id = 0;
+    }
+    g_clear_object(&pending_sel.clock);
+    if (pending_sel.fallback_id != 0) {
+        g_source_remove(pending_sel.fallback_id);
+        pending_sel.fallback_id = 0;
+    }
+    if (pending_sel.idle_id != 0) {
+        g_source_remove(pending_sel.idle_id);
+        pending_sel.idle_id = 0;
+    }
+    g_clear_object(&pending_sel.row);
+}
+
+static gboolean run_pending_selection(gpointer data) {
+    (void)data;
+    pending_sel.idle_id = 0;
+    AppData* app = pending_sel.app;
+    ExplorerRow* row = g_steal_pointer(&pending_sel.row);
+    pending_selection_clear();
+    /* Moved since without a preview (blocked handler) or view switched: the
+     * preview is not this row's any more */
+    if (app->tree != NULL && row != NULL && explorer_tree_get_selected(app->tree) == row) {
+        show_selected_row(app);
+    }
+    g_clear_object(&row);
+    return G_SOURCE_REMOVE;
+}
+
+/* After the frame (or the fallback delay): out of the frame clock first */
+static void schedule_pending_run(void) {
+    if (pending_sel.paint_id != 0) {
+        g_signal_handler_disconnect(pending_sel.clock, pending_sel.paint_id);
+        pending_sel.paint_id = 0;
+    }
+    if (pending_sel.fallback_id != 0) {
+        g_source_remove(pending_sel.fallback_id);
+        pending_sel.fallback_id = 0;
+    }
+    if (pending_sel.idle_id == 0) {
+        pending_sel.idle_id = g_idle_add(run_pending_selection, NULL);
+    }
+}
+
+static void on_explorer_painted(GdkFrameClock* clock, gpointer data) {
+    (void)clock;
+    (void)data;
+    schedule_pending_run();
+}
+
+static gboolean on_frame_wait_over(gpointer data) {
+    (void)data;
+    pending_sel.fallback_id = 0;
+    schedule_pending_run();
+    return G_SOURCE_REMOVE;
+}
+
 void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     AppData* app = (AppData*)user_data;
     ExplorerRow* row = explorer_tree_get_selected(tree);
+    GdkFrameClock* clock = (app->tree_view != NULL) ? gtk_widget_get_frame_clock(app->tree_view) : NULL;
+    /* A workspace switch previews its selection at once (it sets switching_ws
+     * around it) */
+    if (row == NULL || app->switching_ws || clock == NULL) {
+        pending_selection_clear();
+        show_selected_row(app);
+        return;
+    }
+    pending_sel.app = app;
+    g_set_object(&pending_sel.row, row);
+    if (pending_sel.paint_id != 0 || pending_sel.idle_id != 0) {
+        return; /* already waiting: the latest row is previewed */
+    }
+    pending_sel.clock = g_object_ref(clock);
+    pending_sel.paint_id = g_signal_connect(clock, "after-paint", G_CALLBACK(on_explorer_painted), NULL);
+    pending_sel.fallback_id = g_timeout_add(SELECTION_FRAME_WAIT_MS, on_frame_wait_over, NULL);
+    gtk_widget_queue_draw(app->tree_view);
+}
+
+/* Preview the selected row now */
+static void show_selected_row(AppData* app) {
+    ExplorerRow* row = explorer_tree_get_selected(app->tree);
     if (row == NULL) {
         return;
     }

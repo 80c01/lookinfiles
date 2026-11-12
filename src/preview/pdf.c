@@ -12,6 +12,7 @@
 #include "code/code_outline_tree.h"
 #include "preview/preview_tagbar.h"
 #include "widgets/minimap.h"
+#include "preview/preview_busy.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
@@ -685,6 +686,7 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     }
 
     AppData* app = td->app;
+    preview_busy_stop(app); /* the first pages are ready */
 
     if (td->first_page > 0) {
         append_pdf_pages(app, td);

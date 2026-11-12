@@ -158,6 +158,7 @@ typedef struct AppData {
     struct PreviewState* preview_state; /* file shown, kind, raw view, zoom, page (preview_state.c), NULL until first set */
     struct TextChunks* text_chunks; /* large text loaded on scroll (text_chunks.c) */
     struct PreviewFull* preview_full; /* "Load Whole File" bar of the preview (preview_full.c) */
+    struct PreviewBusy* preview_busy; /* "Rendering…" notice of the preview (preview_busy.c) */
     GHashTable* expanded_paths; /* set of full_path strings for expanded directories */
 
     /* File monitors & async I/O cancellation */

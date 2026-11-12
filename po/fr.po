@@ -6790,6 +6790,12 @@ msgstr ""
 msgid "Loading the whole file…"
 msgstr "Chargement de tout le fichier…"
 
+#. TRANSLATORS: %s is the name of the file whose preview is being built
+#: src/preview/preview_busy.c
+#, c-format
+msgid "Rendering %s…"
+msgstr "Rendu de %s…"
+
 #: src/preview/preview_full.c:91
 msgid "Load Whole File into the Preview"
 msgstr "Charger tout le fichier dans l’aperçu"

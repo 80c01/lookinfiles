@@ -95,6 +95,11 @@ format. Open work is in
   bar above a partial preview reads the file to the end (asking first above
   64 MB). The encoding is detected
   (UTF-8, UTF-16, Windows-1252) and shown in the preview bar.
+- The explorer highlights a new selection before its preview is built (the
+  preview starts after the explorer's next frame; rows passed over with a
+  held key are not previewed). A preview not ready after 150 ms dims the
+  previous one under a **Rendering…** notice with the file name
+  (`preview_busy.c`).
 
 ## Rules every preview follows
 

@@ -20,6 +20,7 @@
 #include "core/file_types.h"
 #include "media/image_utils.h"
 #include "theme/text_style.h"
+#include "preview/preview_busy.h"
 
 /* Largest decoded image, in pixels (zooming in on a large photo) */
 #define MAX_DECODED_PIXELS (48u * 1024 * 1024)
@@ -400,6 +401,7 @@ static void on_image_preview_ready(GObject* source_object, GAsyncResult* res,
     }
 
     AppData* app = td->app;
+    preview_busy_stop(app); /* the picture is ready */
 
     apply_viewer_language(app, NULL, NULL);
     set_view_monospace(app->text_view, FALSE);

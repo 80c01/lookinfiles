@@ -54,6 +54,7 @@
 #include "preview/preview_tagbar.h"
 #include "preview/preview_menu.h"
 #include "preview/preview_full.h"
+#include "preview/preview_busy.h"
 #include "core/ui_probe.h"
 #include <string.h>
 
@@ -390,7 +391,8 @@ int main(int argc, char** argv) {
     gtk_widget_set_vexpand(notebook, TRUE);
     gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), TRUE);
     gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "editor-tabs");
-    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_stack,
+    GtkWidget* preview_page = preview_busy_wrap(preview_stack);
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), preview_page,
                              icon_label_new("document-print-preview", _("Preview")));
 
     /* Preview panel: notebook, its search bar below it */
@@ -522,6 +524,7 @@ int main(int argc, char** argv) {
 
     app->notebook = notebook;
     app->preview_stack = preview_stack;
+    preview_busy_attach(app, preview_page);
     /* Column line over code previews; minimap then headings beside the
      * text, as in editors */
     GtkWidget* text_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
