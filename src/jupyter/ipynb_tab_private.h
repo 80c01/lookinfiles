@@ -33,7 +33,9 @@ typedef struct {
 
     /* Running cells (ipynb_run.c) */
     IpynbKernel* kernel;     /* NULL until a cell runs */
-    GtkWidget* kernel_label; /* the kernel's state */
+    GtkWidget* kernel_button; /* the kernel's state; its menu chooses the kernel */
+    GtkWidget* kernel_menu;   /* the box of that menu */
+    GCancellable* list_cancel; /* listing the installed kernels, or NULL */
     GtkWidget* interrupt_button;
     GtkWidget* restart_button;
     GtkWidget* input_row;    /* shown while the code asks for a line */
@@ -55,10 +57,12 @@ void ipynb_tab_focus_cell(IpynbTab* t, guint index);
 void ipynb_tab_insert_cell(IpynbTab* t, guint at, IpynbCellType type);
 /* Show the prompt and outputs of one cell again */
 void ipynb_tab_refresh_cell(IpynbTab* t, guint index);
+/* Build every cell again (the kernel's language changed) */
+void ipynb_tab_rebuild_cells(IpynbTab* t);
 
 /* ipynb_run.c */
-/* Add the run buttons to the tab's bar; returns the kernel state label,
- * placed by the caller */
+/* Add the run buttons to the tab's bar; returns the kernel button (its
+ * state, and a menu of the installed kernels), placed by the caller */
 GtkWidget* ipynb_run_bar(IpynbTab* t, GtkWidget* bar);
 /* The row that asks for a line (input()), hidden */
 GtkWidget* ipynb_run_input_row_new(IpynbTab* t);

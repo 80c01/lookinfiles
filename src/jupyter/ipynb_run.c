@@ -9,6 +9,7 @@
 #include <string.h>
 
 #define BRIDGE_RESOURCE "/org/lookin/jupyter/ipynb_bridge.py"
+#define SPEC_KEY "lookin-ipynb-kernel-spec"
 
 /* --- Showing what the kernel does --- */
 
@@ -19,7 +20,7 @@ static void update_kernel_label(IpynbTab* t) {
                       : state == IPYNB_KERNEL_BUSY     ? _("Kernel busy")
                       : state == IPYNB_KERNEL_DEAD     ? _("Kernel died")
                                                        : _("No kernel");
-    gtk_label_set_text(GTK_LABEL(t->kernel_label), text);
+    gtk_menu_button_set_label(GTK_MENU_BUTTON(t->kernel_button), text);
     gboolean on = state != IPYNB_KERNEL_OFF;
     gtk_widget_set_sensitive(t->interrupt_button, on && state != IPYNB_KERNEL_DEAD);
     gtk_widget_set_sensitive(t->restart_button, on);
@@ -202,6 +203,99 @@ static gboolean ensure_kernel(IpynbTab* t) {
     return t->kernel != NULL;
 }
 
+/* --- Choosing the kernel --- */
+
+static void menu_clear(IpynbTab* t) {
+    GtkWidget* child;
+    while ((child = gtk_widget_get_first_child(t->kernel_menu)) != NULL) gtk_box_remove(GTK_BOX(t->kernel_menu), child);
+}
+
+static void menu_message(IpynbTab* t, const gchar* text) {
+    menu_clear(t);
+    GtkWidget* label = gtk_label_new(text);
+    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(label), 40);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_widget_add_css_class(label, "dim-label");
+    gtk_widget_set_margin_start(label, 6);
+    gtk_widget_set_margin_end(label, 6);
+    gtk_box_append(GTK_BOX(t->kernel_menu), label);
+}
+
+static void on_kernel_chosen(GtkButton* item, gpointer data) {
+    IpynbTab* t = data;
+    const IpynbKernelSpec* spec = g_object_get_data(G_OBJECT(item), SPEC_KEY);
+    gtk_menu_button_popdown(GTK_MENU_BUTTON(t->kernel_button));
+    gboolean on = t->kernel != NULL && ipynb_kernel_get_state(t->kernel) != IPYNB_KERNEL_OFF;
+    if (on && g_strcmp0(spec->name, ipynb_doc_kernel_name(t->doc)) == 0) return; /* already that one */
+    /* The kernel running goes: its variables with it */
+    g_clear_pointer(&t->kernel, ipynb_kernel_free);
+    forget_running(t);
+    gchar* kernelspec = ipynb_kernel_spec_to_json(spec);
+    gchar* language_info = ipynb_kernel_spec_language_info(spec);
+    if (ipynb_doc_set_kernel_info(t->doc, kernelspec, language_info)) {
+        ipynb_tab_mark_changed(t);
+        ipynb_tab_update_info(t);
+        ipynb_tab_rebuild_cells(t); /* highlighted with its language */
+    }
+    g_free(kernelspec);
+    g_free(language_info);
+    ensure_kernel(t);
+}
+
+static void on_kernels_listed(GPtrArray* specs, const gchar* code, const gchar* message, gpointer data) {
+    IpynbTab* t = data;
+    g_clear_object(&t->list_cancel);
+    if (specs == NULL) {
+        gchar* text = g_strcmp0(code, "no-jupyter") == 0
+                          ? g_strdup(_("Running cells needs Jupyter: pip install jupyter_client ipykernel"))
+                          : g_strdup_printf(_("Kernel error: %s"), message);
+        menu_message(t, text);
+        g_free(text);
+        return;
+    }
+    if (specs->len == 0) {
+        menu_message(t, _("No kernel installed (e.g. pip install ipykernel)"));
+        g_ptr_array_unref(specs);
+        return;
+    }
+    menu_clear(t);
+    const gchar* current = ipynb_doc_kernel_name(t->doc);
+    for (guint i = 0; i < specs->len; i++) {
+        IpynbKernelSpec* spec = g_ptr_array_index(specs, i);
+        GtkWidget* item = gtk_button_new_with_label(spec->display_name);
+        gtk_widget_add_css_class(item, "flat");
+        if (g_strcmp0(spec->name, current) == 0) gtk_widget_add_css_class(item, "menu-item-current");
+        GtkWidget* text = gtk_button_get_child(GTK_BUTTON(item));
+        if (GTK_IS_LABEL(text)) gtk_label_set_xalign(GTK_LABEL(text), 0.0f);
+        gtk_widget_set_tooltip_text(item, spec->name);
+        /* The item keeps its spec */
+        g_object_set_data_full(G_OBJECT(item), SPEC_KEY, g_steal_pointer(&specs->pdata[i]),
+                               (GDestroyNotify)ipynb_kernel_spec_free);
+        g_signal_connect(item, "clicked", G_CALLBACK(on_kernel_chosen), t);
+        gtk_box_append(GTK_BOX(t->kernel_menu), item);
+    }
+    g_ptr_array_unref(specs);
+}
+
+/* The menu opens: list the kernels installed now */
+static void on_kernel_menu_show(GtkWidget* popover, gpointer data) {
+    (void)popover;
+    IpynbTab* t = data;
+    if (t->list_cancel != NULL) return; /* listing */
+    GError* error = NULL;
+    gchar** argv = bridge_argv(&error);
+    if (argv == NULL) {
+        menu_message(t, error->message);
+        g_error_free(error);
+        return;
+    }
+    menu_message(t, _("Looking for kernels…"));
+    t->list_cancel = g_cancellable_new();
+    ipynb_kernel_list((const gchar* const*)argv, t->list_cancel, on_kernels_listed, t);
+    g_strfreev(argv);
+}
+
 /* --- Running --- */
 
 void ipynb_run_cell(IpynbTab* t, guint index) {
@@ -271,10 +365,25 @@ GtkWidget* ipynb_run_bar(IpynbTab* t, GtkWidget* bar) {
     t->restart_button = run_button(t, "view-refresh", NULL, _("Restart the Kernel (Outputs Kept)"),
                                    G_CALLBACK(on_restart));
     gtk_box_append(GTK_BOX(bar), t->restart_button);
-    t->kernel_label = gtk_label_new(NULL);
-    gtk_widget_set_margin_start(t->kernel_label, 8);
+    t->kernel_button = gtk_menu_button_new();
+    gtk_menu_button_set_has_frame(GTK_MENU_BUTTON(t->kernel_button), FALSE);
+    gtk_menu_button_set_always_show_arrow(GTK_MENU_BUTTON(t->kernel_button), TRUE);
+    gtk_widget_set_tooltip_text(t->kernel_button, _("Choose the Kernel"));
+    gtk_widget_set_margin_start(t->kernel_button, 8);
+    GtkWidget* popover = gtk_popover_new();
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
+    t->kernel_menu = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
+    GtkWidget* scroll = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroll), 320);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scroll), TRUE);
+    gtk_scrolled_window_set_propagate_natural_width(GTK_SCROLLED_WINDOW(scroll), TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), t->kernel_menu);
+    gtk_popover_set_child(GTK_POPOVER(popover), scroll);
+    g_signal_connect(popover, "show", G_CALLBACK(on_kernel_menu_show), t);
+    gtk_menu_button_set_popover(GTK_MENU_BUTTON(t->kernel_button), popover);
     update_kernel_label(t);
-    return t->kernel_label;
+    return t->kernel_button;
 }
 
 GtkWidget* ipynb_run_input_row_new(IpynbTab* t) {
@@ -296,6 +405,10 @@ GtkWidget* ipynb_run_input_row_new(IpynbTab* t) {
 
 void ipynb_run_stop(IpynbTab* t) {
     g_clear_pointer(&t->kernel, ipynb_kernel_free);
+    if (t->list_cancel != NULL) {
+        g_cancellable_cancel(t->list_cancel); /* no callback after */
+        g_clear_object(&t->list_cancel);
+    }
     if (t->refresh_source != 0) {
         g_source_remove(t->refresh_source);
         t->refresh_source = 0;

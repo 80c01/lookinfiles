@@ -35,7 +35,10 @@ Markdown et, sous une cellule de code, ses sorties (texte, erreurs, images).
   l’exécute. Les cellules s’exécutent dans le noyau Jupyter du notebook,
   démarré à la première exécution dans le dossier du notebook et arrêté
   avec l’onglet : Python 3 avec `jupyter_client` et le noyau (`ipykernel`
-  pour Python) doivent être installés. **Tout exécuter** et les boutons
+  pour Python) doivent être installés. Le bouton du noyau dans la barre
+  montre son état ; son menu liste les noyaux installés : en choisir un
+  arrête le noyau en cours, l’enregistre dans le notebook et le démarre.
+  **Tout exécuter** et les boutons
   d’arrêt et de redémarrage de la barre exécutent toutes les cellules,
   interrompent et redémarrent le noyau ; quand le code demande une ligne
   (`input()`), tapez-la dans la ligne sous la barre.

@@ -160,6 +160,10 @@ static void queue_rebuild(IpynbTab* t, guint focus) {
     if (t->rebuild_source == 0) t->rebuild_source = g_idle_add(on_rebuild_idle, t);
 }
 
+void ipynb_tab_rebuild_cells(IpynbTab* t) {
+    queue_rebuild(t, t->current);
+}
+
 void ipynb_tab_focus_cell(IpynbTab* t, guint index) {
     if (t->views->len == 0) return;
     index = MIN(index, t->views->len - 1);
@@ -681,7 +685,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     /* Bar (top): new cells, clear outputs, JSON; kernel, save state */
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_widget_add_css_class(bar, "ipynb-bar");
-    GtkWidget* kernel_label = ipynb_run_bar(t, bar);
+    GtkWidget* kernel_button = ipynb_run_bar(t, bar);
     gtk_box_append(GTK_BOX(bar), bar_button(t, "list-add", _("Code"), _("New Code Cell Below (Alt+Enter)"),
                                             G_CALLBACK(on_add_code)));
     gtk_box_append(GTK_BOX(bar), bar_button(t, "list-add", _("Markdown"), _("New Markdown Cell Below"),
@@ -702,7 +706,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
                                            "Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the "
                                            "cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"));
     gtk_box_append(GTK_BOX(bar), t->info);
-    gtk_box_append(GTK_BOX(bar), kernel_label);
+    gtk_box_append(GTK_BOX(bar), kernel_button);
     t->status = gtk_label_new(NULL);
     gtk_widget_set_margin_start(t->status, 8);
     gtk_box_append(GTK_BOX(bar), t->status);

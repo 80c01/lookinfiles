@@ -150,9 +150,84 @@ static void test_failures(void) {
     g_string_free(r.log, TRUE);
 }
 
+typedef struct {
+    GString* log;
+    gboolean done;
+} Listing;
+
+static void on_listed(GPtrArray* specs, const gchar* code, const gchar* message, gpointer data) {
+    Listing* l = data;
+    l->done = TRUE;
+    if (specs == NULL) {
+        g_string_append_printf(l->log, "failed %s\n", code);
+        g_assert_nonnull(message);
+        return;
+    }
+    for (guint i = 0; i < specs->len; i++) {
+        IpynbKernelSpec* spec = g_ptr_array_index(specs, i);
+        gchar* json = ipynb_kernel_spec_to_json(spec);
+        gchar* info = ipynb_kernel_spec_language_info(spec);
+        g_string_append_printf(l->log, "%s %s\n", json, info);
+        g_free(json);
+        g_free(info);
+    }
+    g_ptr_array_unref(specs);
+}
+
+/* Run the main loop until l is done (or 10 s) */
+static gboolean wait_listed(Listing* l) {
+    gint64 end = g_get_monotonic_time() + 10 * G_USEC_PER_SEC;
+    while (!l->done && g_get_monotonic_time() < end) {
+        g_main_context_iteration(NULL, FALSE);
+        g_usleep(1000);
+    }
+    return l->done;
+}
+
+static void test_list(void) {
+    Listing l = { g_string_new(NULL), FALSE };
+    ipynb_kernel_list(FAKE, NULL, on_listed, &l);
+    g_assert_true(wait_listed(&l));
+    g_assert_cmpstr(l.log->str, ==,
+                    "{\"display_name\": \"Fake\", \"language\": \"python\", \"name\": \"fake\"} {\"name\": \"python\"}\n"
+                    "{\"display_name\": \"R \\\"4\\\"\", \"language\": \"R\", \"name\": \"ir\"} {\"name\": \"R\"}\n");
+
+    /* No language: no language_info */
+    IpynbKernelSpec bare = { "x", "X", "" };
+    g_assert_null(ipynb_kernel_spec_language_info(&bare));
+
+    /* A bridge that says nothing, or cannot run */
+    static const gchar* const SILENT[] = { "python3", "-c", "", NULL };
+    static const gchar* const NONE[] = { "/nonexistent/python3", "-c", "", NULL };
+    g_string_truncate(l.log, 0);
+    l.done = FALSE;
+    ipynb_kernel_list(SILENT, NULL, on_listed, &l);
+    g_assert_true(wait_listed(&l));
+    l.done = FALSE;
+    ipynb_kernel_list(NONE, NULL, on_listed, &l);
+    g_assert_false(l.done); /* in the main loop */
+    g_assert_true(wait_listed(&l));
+    g_assert_cmpstr(l.log->str, ==, "failed exited\nfailed start\n");
+
+    /* Cancelled: never called */
+    GCancellable* cancel = g_cancellable_new();
+    l.done = FALSE;
+    ipynb_kernel_list(FAKE, cancel, on_listed, &l);
+    ipynb_kernel_list(NONE, cancel, on_listed, &l);
+    g_cancellable_cancel(cancel);
+    for (gint i = 0; i < 300; i++) {
+        g_main_context_iteration(NULL, FALSE);
+        g_usleep(1000);
+    }
+    g_assert_false(l.done);
+    g_object_unref(cancel);
+    g_string_free(l.log, TRUE);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/ipynb_kernel/execute", test_execute);
     g_test_add_func("/ipynb_kernel/failures", test_failures);
+    g_test_add_func("/ipynb_kernel/list", test_list);
     return g_test_run();
 }

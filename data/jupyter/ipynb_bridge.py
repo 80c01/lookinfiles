@@ -2,7 +2,8 @@
 
 Runs one Jupyter kernel with jupyter_client and speaks to the application in
 JSON, one object per line: commands on stdin, events on stdout. Bundled in
-the binary and run as `python3 -c <this file>`.
+the binary and run as `python3 -c <this file>`; `python3 -c <this file>
+--list` only lists the installed kernels (a "kernels" event) and exits.
 
 Commands (field "op"):
   start      kernel (name, "" for the default), cwd
@@ -11,6 +12,7 @@ Commands (field "op"):
   interrupt, restart, shutdown
 
 Events (field "ev"):
+  kernels        kernels (a list of {name, display_name, language})
   started        kernelspec, language_info (JSON texts), display
   error          code ("no-jupyter", "no-kernel", "start", "command"), message
   status         state ("starting", "busy", "idle", "dead")
@@ -256,12 +258,31 @@ class Bridge:
             pass
 
 
+def list_kernels():
+    from jupyter_client.kernelspec import KernelSpecManager
+    try:
+        specs = KernelSpecManager().get_all_specs()
+    except Exception as e:
+        emit("error", code="command", message=str(e) or type(e).__name__)
+        return 1
+    kernels = []
+    for name, info in specs.items():
+        spec = (info or {}).get("spec") or {}
+        kernels.append({"name": name, "display_name": spec.get("display_name") or name,
+                        "language": spec.get("language") or ""})
+    kernels.sort(key=lambda k: (k["display_name"].lower(), k["name"]))
+    emit("kernels", kernels=kernels)
+    return 0
+
+
 def main():
     try:
         from jupyter_client import KernelManager
     except ImportError:
         emit("error", code="no-jupyter", message="jupyter_client is not installed")
         return 1
+    if "--list" in sys.argv[1:]:
+        return list_kernels()
     bridge = Bridge(KernelManager)
     try:
         for line in sys.stdin:

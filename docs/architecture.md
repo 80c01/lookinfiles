@@ -74,7 +74,9 @@ Layers, from bottom to top
   output goes to stderr). `GSubprocess` with asynchronous reads and a write
   queue, events as `IpynbKernelCallbacks` (state, started, failed, cell
   input / output / clear / done, input requests); the end of the bridge's
-  stdin stops the kernel. Tested with `tests/fixtures/fake_ipynb_bridge.py`.
+  stdin stops the kernel. `ipynb_kernel_list()` runs the bridge once with
+  `--list` for the installed kernelspecs (`IpynbKernelSpec`). Tested with
+  `tests/fixtures/fake_ipynb_bridge.py`.
 - `notebook_icons` — the icons offered for notebooks and bookmark folders
   (theme glyph names)
   and the mapping of the emoji stored by older versions.
@@ -609,7 +611,9 @@ Layers, from bottom to top
   `ipynb_tab.c`): an `ipynb_kernel` started at the first run, the bridge
   script from the GResource, outputs added to the `IpynbDoc` by cell key
   and drawn once per main loop turn (`ipynb_tab_refresh_cell()`: the other
-  cells and the source are left alone), the input row, interrupt, restart.
+  cells and the source are left alone), the input row, interrupt, restart,
+  and the kernel menu (`ipynb_kernel_list()` each time it opens; a choice
+  sets the notebook's kernelspec and starts that kernel).
 - `games` — the hidden Games view (unlocked in the help panel, for the
   current workspace only: `VirtualLayout.games_unlocked`) and its game tabs
   (`game_*`) in the preview notebook, kept with their workspace through

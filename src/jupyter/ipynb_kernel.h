@@ -1,7 +1,7 @@
 #ifndef IPYNB_KERNEL_H
 #define IPYNB_KERNEL_H
 
-#include <glib.h>
+#include <gio/gio.h>
 
 /* A Jupyter kernel run for a notebook through the bridge script
  * (data/jupyter/ipynb_bridge.py: jupyter_client in a Python process),
@@ -57,5 +57,29 @@ void ipynb_kernel_input(IpynbKernel* kernel, const gchar* value);
 void ipynb_kernel_interrupt(IpynbKernel* kernel);
 /* Restart the kernel: the cells waiting are done() "aborted" */
 void ipynb_kernel_restart(IpynbKernel* kernel);
+
+/* --- The installed kernels --- */
+
+typedef struct {
+    gchar* name;          /* e.g. "python3": the kernelspec name */
+    gchar* display_name;  /* e.g. "Python 3 (ipykernel)" */
+    gchar* language;      /* e.g. "python", "" if unknown */
+} IpynbKernelSpec;
+
+void ipynb_kernel_spec_free(IpynbKernelSpec* spec);
+/* The kernelspec metadata of a notebook for spec (a JSON object). Caller frees. */
+gchar* ipynb_kernel_spec_to_json(const IpynbKernelSpec* spec);
+/* Its language_info metadata ({"name": language}, until the kernel runs and
+ * tells the rest), or NULL when the language is unknown. Caller frees. */
+gchar* ipynb_kernel_spec_language_info(const IpynbKernelSpec* spec);
+
+/* Done listing: specs (IpynbKernelSpec*, sorted by display name; owned by
+ * the callee, free with g_ptr_array_unref()) or NULL, with code as in
+ * failed() ("no-jupyter", "command", "start") and message */
+typedef void (*IpynbKernelListFunc)(GPtrArray* specs, const gchar* code, const gchar* message, gpointer data);
+/* Run the bridge (argv as for ipynb_kernel_start(), "--list" added) to
+ * list the installed kernels, then call done in the main loop; not called
+ * once cancel is cancelled */
+void ipynb_kernel_list(const gchar* const* argv, GCancellable* cancel, IpynbKernelListFunc done, gpointer data);
 
 #endif /* IPYNB_KERNEL_H */

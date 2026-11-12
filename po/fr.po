@@ -8846,6 +8846,15 @@ msgstr "Interrompre le noyau"
 msgid "Restart the Kernel (Outputs Kept)"
 msgstr "Redémarrer le noyau (sorties gardées)"
 
+msgid "Choose the Kernel"
+msgstr "Choisir le noyau"
+
+msgid "Looking for kernels…"
+msgstr "Recherche des noyaux…"
+
+msgid "No kernel installed (e.g. pip install ipykernel)"
+msgstr "Aucun noyau installé (par exemple pip install ipykernel)"
+
 #, c-format
 msgid "Kernel not installed: %s"
 msgstr "Noyau non installé : %s"

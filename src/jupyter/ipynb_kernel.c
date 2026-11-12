@@ -270,3 +270,140 @@ gboolean ipynb_kernel_start(IpynbKernel* k, const gchar* const* argv, const gcha
     g_data_input_stream_read_line_async(k->out, G_PRIORITY_DEFAULT, k->cancel, on_line, kernel_ref(k));
     return TRUE;
 }
+
+/* --- The installed kernels --- */
+
+void ipynb_kernel_spec_free(IpynbKernelSpec* spec) {
+    if (spec == NULL) return;
+    g_free(spec->name);
+    g_free(spec->display_name);
+    g_free(spec->language);
+    g_free(spec);
+}
+
+gchar* ipynb_kernel_spec_to_json(const IpynbKernelSpec* spec) {
+    GString* out = g_string_new("{\"display_name\": ");
+    append_string(out, spec->display_name);
+    g_string_append(out, ", \"language\": ");
+    append_string(out, spec->language);
+    g_string_append(out, ", \"name\": ");
+    append_string(out, spec->name);
+    g_string_append_c(out, '}');
+    return g_string_free(out, FALSE);
+}
+
+gchar* ipynb_kernel_spec_language_info(const IpynbKernelSpec* spec) {
+    if (spec->language == NULL || spec->language[0] == '\0') return NULL;
+    GString* out = g_string_new("{\"name\": ");
+    append_string(out, spec->language);
+    g_string_append_c(out, '}');
+    return g_string_free(out, FALSE);
+}
+
+typedef struct {
+    IpynbKernelListFunc done;
+    gpointer data;
+    GCancellable* cancel; /* owned ref, or NULL */
+    GError* error;        /* the bridge could not run */
+} ListCall;
+
+static void list_call_free(ListCall* call) {
+    g_clear_object(&call->cancel);
+    g_clear_error(&call->error);
+    g_free(call);
+}
+
+/* The kernels of the bridge's events (out), or NULL with *code and
+ * *message set */
+static GPtrArray* parse_list(const gchar* out, gchar** code, gchar** message) {
+    gchar** lines = g_strsplit(out != NULL ? out : "", "\n", -1);
+    GPtrArray* specs = NULL;
+    for (gchar** l = lines; *l != NULL && specs == NULL && *code == NULL; l++) {
+        g_autoptr(JsonValue) v = json_value_parse(*l, strlen(*l), NULL);
+        if (v == NULL || json_value_get_type(v) != JSON_VALUE_OBJECT) continue;
+        gchar* ev = member_string(v, "ev");
+        if (g_strcmp0(ev, "error") == 0) {
+            *code = member_string(v, "code");
+            *message = member_string(v, "message");
+        } else if (g_strcmp0(ev, "kernels") == 0) {
+            const JsonValue* list = json_value_get(v, "kernels");
+            specs = g_ptr_array_new_with_free_func((GDestroyNotify)ipynb_kernel_spec_free);
+            for (guint i = 0; json_value_get_type(list) == JSON_VALUE_ARRAY && i < json_value_get_length(list); i++) {
+                const JsonValue* item = json_value_get_item(list, i);
+                gchar* name = member_string(item, "name");
+                if (name == NULL || name[0] == '\0') {
+                    g_free(name);
+                    continue;
+                }
+                IpynbKernelSpec* spec = g_new0(IpynbKernelSpec, 1);
+                spec->name = name;
+                spec->display_name = member_string(item, "display_name");
+                if (spec->display_name == NULL) spec->display_name = g_strdup(name);
+                spec->language = member_string(item, "language");
+                if (spec->language == NULL) spec->language = g_strdup("");
+                g_ptr_array_add(specs, spec);
+            }
+        }
+        g_free(ev);
+    }
+    g_strfreev(lines);
+    if (specs == NULL && *code == NULL) *code = g_strdup("exited");
+    return specs;
+}
+
+static void on_listed(GObject* source, GAsyncResult* res, gpointer data) {
+    ListCall* call = data;
+    gchar* out = NULL;
+    GError* error = NULL;
+    gboolean ok = g_subprocess_communicate_utf8_finish(G_SUBPROCESS(source), res, &out, NULL, &error);
+    if (!ok && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+        g_error_free(error);
+        list_call_free(call);
+        return;
+    }
+    gchar* code = NULL;
+    gchar* message = NULL;
+    GPtrArray* specs = NULL;
+    if (ok) {
+        specs = parse_list(out, &code, &message);
+    } else {
+        code = g_strdup("start");
+        message = g_strdup(error->message);
+    }
+    call->done(specs, code, message != NULL ? message : "", call->data);
+    g_clear_error(&error);
+    g_free(out);
+    g_free(code);
+    g_free(message);
+    list_call_free(call);
+}
+
+static gboolean on_list_failed(gpointer data) {
+    ListCall* call = data;
+    if (call->cancel == NULL || !g_cancellable_is_cancelled(call->cancel)) {
+        call->done(NULL, "start", call->error->message, call->data);
+    }
+    list_call_free(call);
+    return G_SOURCE_REMOVE;
+}
+
+void ipynb_kernel_list(const gchar* const* argv, GCancellable* cancel, IpynbKernelListFunc done, gpointer data) {
+    ListCall* call = g_new0(ListCall, 1);
+    call->done = done;
+    call->data = data;
+    if (cancel != NULL) call->cancel = g_object_ref(cancel);
+    GPtrArray* args = g_ptr_array_new();
+    for (const gchar* const* a = argv; *a != NULL; a++) g_ptr_array_add(args, (gpointer)*a);
+    g_ptr_array_add(args, (gpointer)"--list");
+    g_ptr_array_add(args, NULL);
+    GSubprocess* proc = g_subprocess_newv((const gchar* const*)args->pdata,
+                                          G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE,
+                                          &call->error);
+    g_ptr_array_unref(args);
+    if (proc == NULL) {
+        g_idle_add(on_list_failed, call); /* in the main loop, as when it runs */
+        return;
+    }
+    g_subprocess_communicate_utf8_async(proc, NULL, cancel, on_listed, call);
+    g_object_unref(proc);
+}

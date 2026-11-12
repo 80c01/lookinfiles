@@ -1,7 +1,7 @@
 """Fake Jupyter bridge for tests/test_ipynb_kernel.c: speaks the protocol of
 data/jupyter/ipynb_bridge.py without jupyter_client. Code "fail" raises,
 "ask" asks for a line and prints it, "quit" makes the bridge exit, any other
-code is printed back."""
+code is printed back. With --list, lists two kernels and exits."""
 import json
 import sys
 
@@ -19,6 +19,11 @@ def emit(ev, **fields):
 def output(cell, out):
     emit("output", id=cell, json=json.dumps(out, sort_keys=True))
 
+
+if "--list" in sys.argv[1:]:
+    emit("kernels", kernels=[{"name": "fake", "display_name": "Fake", "language": "python"},
+                             {"name": "ir", "display_name": "R \"4\"", "language": "R"}])
+    sys.exit(0)
 
 count = 0
 waiting = None  # cell asking for a line

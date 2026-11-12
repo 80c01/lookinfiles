@@ -32,9 +32,11 @@ under a code cell its outputs (text, errors, images).
   it. The cells run in the notebook's Jupyter kernel, started at the first
   run in the notebook's folder and stopped with the tab: Python 3 with
   `jupyter_client` and the kernel (`ipykernel` for Python) must be
-  installed. **Run All**, the stop and restart buttons of the bar run every
-  cell, interrupt and restart the kernel; when the code asks for a line
-  (`input()`), type it in the row under the bar.
+  installed. The kernel's button in the bar shows its state; its menu lists
+  the installed kernels: choosing one stops the kernel running, records it
+  in the notebook and starts it. **Run All**, the stop and restart buttons
+  of the bar run every cell, interrupt and restart the kernel; when the
+  code asks for a line (`input()`), type it in the row under the bar.
 - `Ctrl+Up` / `Ctrl+Down` go to the previous / next cell, `Alt+Up` /
   `Alt+Down` move the cell, `Alt+Enter` adds a code cell below,
   `Alt+Delete` deletes the cell (**Undo Delete** in the bar puts it back).
