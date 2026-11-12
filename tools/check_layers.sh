@@ -189,13 +189,14 @@ lsp_config:code_symbol
 layout_store:app_paths,tab_tree,i18n
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store,file_type_icons,icon_sets
-markdown:app_types,image_utils,fonts,text_tags,markdown_table,markdown_link,markdown_parse,md_out,icons
+markdown:app_types,fonts,text_tags,markdown_parse,md_show
+md_show:md_out,markdown_link,markdown_table,image_utils,icons
 markdown_parse:md_out,markdown_table,image_utils,i18n
 md_out:
 markdown_link:
 markdown_table:fonts,palette,markdown_link,md_out
 html_tags:fonts,text_tags
-html:app_types,html_text,image_utils,icons,i18n
+html:app_types,html_text,image_utils,md_out,md_show,i18n
 minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette,preview_state
 preview_doc_view:preview_doc,html,html_tags,markdown,image_utils,text_style,app_types,palette,fonts,text_tags
 tree_nav:app_types
@@ -324,7 +325,7 @@ markup:core,media,theme
 media:core,editor,preview,search,theme
 notes:canvas,core,editor,explorer,preview,theme,widgets
 office:core,formats,mail,preview
-org:core,editor,media,preview,theme
+org:core,editor,markup,media,preview,theme
 preview:canvas,chrome,code,core,editor,explorer,formats,games,git,mail,markup,media,notes,office,org,search,theme,widgets
 search:code,core,editor,explorer,theme,widgets
 terminal:core,editor,explorer,theme,widgets,workspace

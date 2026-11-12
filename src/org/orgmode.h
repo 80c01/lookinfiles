@@ -2,16 +2,15 @@
 #define ORGMODE_H
 
 #include "core/app_types.h"
-
-/* Orgmode global fold states */
-enum {
-    ORG_GLOBAL_SHOW_ALL = 0, /* All headings and subtrees expanded */
-    ORG_GLOBAL_OVERVIEW,     /* Top-level headings only (Level 1) */
-    ORG_GLOBAL_CONTENTS      /* All headings visible (Levels 1-6), body text hidden */
-};
+#include "markup/md_out.h"
+#include "org/org_render.h"
 
 /* Register tags for rich Orgmode rendering in GtkTextBuffer */
 void ensure_orgmode_tags(GtkTextBuffer* buffer);
+
+/* Show a parsed Org document (org_render_parse()) in buffer; line_maps: its
+ * lines (kept by the buffer, for clicks and keys) */
+void orgmode_show(GtkTextBuffer* buffer, GtkTextView* view, const MdOut* out, GPtrArray* line_maps);
 
 /* Render Orgmode document to GtkTextBuffer with interactive headings, TODOs, checkboxes, tables, code, and images */
 /* view: where images fit their width (NULL: natural size) */

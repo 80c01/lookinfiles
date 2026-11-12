@@ -46,6 +46,10 @@ gint md_out_offset(const MdOut* out) {
     return out->n_chars;
 }
 
+gint md_out_line(const MdOut* out) {
+    return out->n_lines;
+}
+
 void md_out_append(MdOut* out, const gchar* text, gssize len) {
     if (text == NULL) {
         return;
@@ -53,6 +57,9 @@ void md_out_append(MdOut* out, const gchar* text, gssize len) {
     gsize n = (len < 0) ? strlen(text) : (gsize)len;
     g_string_append_len(out->text, text, (gssize)n);
     out->n_chars += (gint)g_utf8_strlen(text, (gssize)n);
+    for (const gchar* c = memchr(text, '\n', n); c != NULL; c = memchr(c + 1, '\n', n - (gsize)(c + 1 - text))) {
+        out->n_lines++;
+    }
 }
 
 void md_out_append_tagged(MdOut* out, const gchar* text, const gchar* tag) {

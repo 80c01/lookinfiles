@@ -15,6 +15,7 @@
 #include "explorer/file_list.h"
 #include "markup/markdown.h"
 #include "markup/markdown_parse.h"
+#include "markup/md_show.h"
 #include "markup/html.h"
 #include "markup/html_tags.h"
 #include "preview/pdf.h"
@@ -281,7 +282,10 @@ typedef struct {
     gboolean preview;
     gchar* utf8_text;
     PreviewDoc* doc;       /* structured preview (preview_formats) or hex dump */
-    MdOut* md;             /* Markdown parsed for the rendered view */
+    MdOut* md;             /* Markdown, HTML or Org parsed for the rendered view */
+    GPtrArray* org_lines;  /* Org: OrgLineInfo of the preview lines */
+    GHashTable* org_folded; /* Org fold state at the selection (copy), or NULL */
+    gint org_global_fold;
     const gchar* encoding; /* text encoding detected (static string) */
     gchar* error_msg;
     gint64 start_us;       /* selection time (LOOKIN_DEBUG_PREVIEW timings) */
@@ -303,6 +307,12 @@ static void text_preview_task_data_free(gpointer data) {
     g_free(td->utf8_text);
     preview_doc_free(td->doc);
     md_out_free(td->md);
+    if (td->org_lines != NULL) {
+        g_ptr_array_unref(td->org_lines);
+    }
+    if (td->org_folded != NULL) {
+        g_hash_table_unref(td->org_folded);
+    }
     g_free(td->error_msg);
     g_free(td);
 }
@@ -437,9 +447,16 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         input.text_truncated = td->preview;
         td->doc = preview_format_build(&input, cancellable, NULL);
     }
-    if (td->kind == FILE_KIND_MARKDOWN && !td->render_raw && td->doc == NULL) {
-        /* Parsed here: the UI thread only puts it in the view */
-        td->md = markdown_parse(td->utf8_text, td->full, td->preview, td->name, td->fsize, TRUE);
+    /* Rendered documents are parsed here: the UI thread only puts them in the view */
+    if (!td->render_raw && td->doc == NULL) {
+        if (td->kind == FILE_KIND_MARKDOWN) {
+            td->md = markdown_parse(td->utf8_text, td->full, td->preview, td->name, td->fsize, TRUE);
+        } else if (td->kind == FILE_KIND_HTML) {
+            td->md = html_parse(td->utf8_text, td->full, td->preview, td->name, td->fsize);
+        } else if (td->kind == FILE_KIND_ORG) {
+            td->md = org_render_parse(td->utf8_text, td->full, td->preview, td->name, td->fsize,
+                                      td->org_folded, td->org_global_fold, &td->org_lines);
+        }
     }
 
     if (g_task_return_error_if_cancelled(task)) {
@@ -524,6 +541,8 @@ static void cache_text_preview(TextPreviewTaskData* td) {
     td->utf8_text = NULL;
     td->doc = NULL;
     td->md = NULL;
+    td->org_lines = NULL;
+    td->org_folded = NULL;
     gsize bytes = sizeof(TextPreviewTaskData) +
                   (kept->md != NULL ? kept->md->text->len * 2 : 0) +
                   (kept->utf8_text != NULL ? strlen(kept->utf8_text) : 0) +
@@ -702,23 +721,14 @@ static void show_text_preview(TextPreviewTaskData* td) {
 
     if (td->utf8_text != NULL) {
         if (is_md) {
+            /* Parsed by the worker (text_preview_thread_func()) */
             ensure_markdown_tags(app->buffer);
-            if (td->md != NULL) {
-                markdown_show(app->buffer, GTK_TEXT_VIEW(app->text_view), td->md);
-            } else {
-                render_markdown_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text,
-                                          td->full, td->preview, td->name, td->fsize);
-            }
+            md_out_show(app->buffer, GTK_TEXT_VIEW(app->text_view), td->md);
         } else if (is_html) {
             ensure_html_tags(app->buffer);
-            render_html_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,
-                                  td->preview, td->name, td->fsize);
+            md_out_show(app->buffer, GTK_TEXT_VIEW(app->text_view), td->md);
         } else if (is_org) {
-            gint global_fold = 0;
-            GHashTable* folded = org_fold_state(app, &global_fold);
-            ensure_orgmode_tags(app->buffer);
-            render_orgmode_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,
-                                     td->preview, td->name, td->fsize, folded, global_fold);
+            orgmode_show(app->buffer, GTK_TEXT_VIEW(app->text_view), td->md, td->org_lines);
         } else {
             GString* text = g_string_new(NULL);
             if (td->preview) {
@@ -772,6 +782,7 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     td->whole = preview_full_wanted(app, full);
     td->page = td->render_raw ? 0 : preview_state_page(app);
     td->start_us = g_get_monotonic_time();
+    td->org_folded = org_fold_state_copy(app, &td->org_global_fold); /* for the worker */
     if (g_strcmp0(full, preview_state_path(app)) != 0) {
         preview_state_set_page(app, 0, 0);
         /* Provisional kind until the content is read */

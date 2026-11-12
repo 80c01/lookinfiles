@@ -466,13 +466,15 @@ Layers, from bottom to top
   (`LOOKIN_INTERNAL_TAB_DRAG=1` turns it on elsewhere, to test it).
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`. The HTML tags are
   created by `html_tags` (`ensure_html_tags()`), its string helpers are `html_text`.
-  Markdown is parsed without widgets by `markdown_parse` into an `MdOut`
-  (`md_out`: the text, tag ranges, links, and objects standing as one U+FFFC
-  character: pictures, glyphs, tables, highlighted code), in the preview's
-  worker thread; `markdown_show()` puts it in the buffer with one insertion,
-  the objects, then the tags (thousands of small insertions into a buffer
-  shown in a view cost seconds of signal handlers).
-  `render_markdown_to_buffer()` does both, for the other views.
+  Markdown (`markdown_parse`), HTML (`html_parse()`) and Org (`org_render`)
+  are parsed without widgets into an `MdOut` (`md_out`: the text, tag
+  ranges, links, and objects standing as one U+FFFC character: pictures,
+  glyphs, tables, highlighted code), in the preview's worker thread;
+  `md_out_show()` (`md_show`) puts it in the buffer with one insertion, the
+  objects, then the tags (thousands of small insertions into a buffer shown
+  in a view cost seconds of signal handlers). `render_markdown_to_buffer()`,
+  `render_html_to_buffer()` and `render_orgmode_to_buffer()` do both, for
+  the other views.
   `markdown_table` — Markdown tables for `markdown`: rows split into cells, a
   grid widget anchored in the view (scrolling horizontally in its own frame
   when wider than the text; the tables of one rendering are measured
@@ -597,7 +599,11 @@ Layers, from bottom to top
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
   `org_fold` keeps the folding of the Org preview (headings folded by hand,
-  the global Shift+Tab state) that `orgmode` toggles and `viewer` renders with.
+  the global Shift+Tab state) that `orgmode` toggles and `viewer` renders with
+  (a copy, `org_fold_state_copy()`, goes to the worker). `org_render` parses
+  the document for the preview (`MdOut`) with the Org line of each preview
+  line (`OrgLineInfo`), which `orgmode_show()` keeps on the buffer for clicks
+  and keys.
 - `editor` — editor tabs in the notebook(s): open, save, close, move, split
   view (`editor_split_tab()`: a second tab on the same buffer), dedicated panel.
   `editor_notebooks.c` holds the notebook tree (moving, splitting, dropping

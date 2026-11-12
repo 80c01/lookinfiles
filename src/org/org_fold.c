@@ -59,3 +59,18 @@ void org_fold_free(AppData* app) {
     g_hash_table_destroy(app->org_fold->lines);
     g_clear_pointer(&app->org_fold, g_free);
 }
+
+GHashTable* org_fold_state_copy(AppData* app, gint* global) {
+    GHashTable* folded = org_fold_state(app, global);
+    if (folded == NULL) {
+        return NULL;
+    }
+    GHashTable* copy = g_hash_table_new(g_direct_hash, g_direct_equal);
+    GHashTableIter it;
+    gpointer key = NULL;
+    g_hash_table_iter_init(&it, folded);
+    while (g_hash_table_iter_next(&it, &key, NULL)) {
+        g_hash_table_add(copy, key);
+    }
+    return copy;
+}

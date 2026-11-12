@@ -13,6 +13,9 @@ void orgmode_cycle_global_fold(AppData* app);
 /* Lines folded by hand (set of GINT_TO_POINTER(file_line)), NULL if none;
  * global gets 0 all expanded, 1 overview, 2 contents */
 GHashTable* org_fold_state(AppData* app, gint* global);
+/* A copy of the lines folded by hand (free with g_hash_table_unref()), NULL
+ * if none, for a worker thread; global as org_fold_state() */
+GHashTable* org_fold_state_copy(AppData* app, gint* global);
 void org_fold_free(AppData* app);
 
 #endif /* ORG_FOLD_H */

@@ -1,17 +1,15 @@
 #include "markup/html.h"
 #include "markup/html_text.h"
+#include "markup/md_show.h"
 #include "core/i18n.h"
 #include "media/image_utils.h"
-#include "theme/icons.h"
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 
 /* Renderer context */
 typedef struct {
-    GtkTextBuffer* buffer;
-    GtkTextIter iter;
-    GtkTextView* view;
+    MdOut* out;
     const gchar* doc_dir;
     const gchar* p_cur;
 
@@ -52,16 +50,9 @@ typedef struct {
     gint trailing_newlines;
 } HtmlRenderContext;
 
-static void apply_tag_mark(GtkTextBuffer* buffer, const gchar* tag_name,
-                           GtkTextMark* start_mark, GtkTextIter* end_iter) {
-    GtkTextIter start_iter;
-    gtk_text_buffer_get_iter_at_mark(buffer, &start_iter, start_mark);
-    gtk_text_buffer_apply_tag_by_name(buffer, tag_name, &start_iter, end_iter);
-}
-
 static void ensure_newlines(HtmlRenderContext* ctx, gint count) {
     while (ctx->trailing_newlines < count) {
-        gtk_text_buffer_insert(ctx->buffer, &ctx->iter, "\n", 1);
+        md_out_append(ctx->out, "\n", 1);
         ctx->trailing_newlines++;
         ctx->last_was_ws = TRUE;
         ctx->line_needs_quote_bar = TRUE;
@@ -95,13 +86,12 @@ static void close_current_li(HtmlRenderContext* ctx) {
 
 static void insert_tag_text(HtmlRenderContext* ctx, const gchar* text, const gchar* tag_name) {
     if (text == NULL || *text == '\0') return;
-    GtkTextMark* m = gtk_text_buffer_create_mark(ctx->buffer, NULL, &ctx->iter, TRUE);
-    gtk_text_buffer_insert(ctx->buffer, &ctx->iter, text, -1);
-    apply_tag_mark(ctx->buffer, tag_name, m, &ctx->iter);
+    gint start = md_out_offset(ctx->out);
+    md_out_append(ctx->out, text, -1);
+    md_out_tag_from(ctx->out, start, tag_name);
     if (ctx->in_li && ctx->current_li_tag[0] != '\0') {
-        apply_tag_mark(ctx->buffer, ctx->current_li_tag, m, &ctx->iter);
+        md_out_tag_from(ctx->out, start, ctx->current_li_tag);
     }
-    gtk_text_buffer_delete_mark(ctx->buffer, m);
 
     gint tlen = (gint)strlen(text);
     const gchar* end = text + tlen;
@@ -117,7 +107,7 @@ static void insert_tag_text(HtmlRenderContext* ctx, const gchar* text, const gch
 
 /* Theme glyph (icons.h) at the insertion point, then a space */
 static void insert_glyph(HtmlRenderContext* ctx, const gchar* glyph, const gchar* tag_name) {
-    text_insert_glyph(ctx->buffer, &ctx->iter, glyph, tag_name);
+    md_out_add_glyph(ctx->out, glyph, tag_name);
     ctx->trailing_newlines = 0;
 }
 
@@ -139,20 +129,15 @@ static void insert_styled_text(HtmlRenderContext* ctx, const gchar* text, gssize
     }
 
     if (ctx->line_needs_quote_bar && ctx->quote_depth > 0) {
-        GtkTextMark* qm = gtk_text_buffer_create_mark(ctx->buffer, NULL, &ctx->iter, TRUE);
-        gtk_text_buffer_insert(ctx->buffer, &ctx->iter, "  │ ", -1);
-        apply_tag_mark(ctx->buffer, "html_quote_bar", qm, &ctx->iter);
-        gtk_text_buffer_delete_mark(ctx->buffer, qm);
+        md_out_append_tagged(ctx->out, "  │ ", "html_quote_bar");
         ctx->line_needs_quote_bar = FALSE;
     }
 
-    GtkTextMark* sm = gtk_text_buffer_create_mark(ctx->buffer, NULL, &ctx->iter, TRUE);
-    gtk_text_buffer_insert(ctx->buffer, &ctx->iter, text, len);
+    gint start = md_out_offset(ctx->out);
+    md_out_append(ctx->out, text, len);
     for (guint i = 0; i < ctx->active_tags->len; i++) {
-        const gchar* tag_name = g_ptr_array_index(ctx->active_tags, i);
-        apply_tag_mark(ctx->buffer, tag_name, sm, &ctx->iter);
+        md_out_tag_from(ctx->out, start, g_ptr_array_index(ctx->active_tags, i));
     }
-    gtk_text_buffer_delete_mark(ctx->buffer, sm);
 
     /* Update trailing newlines */
     const gchar* end = text + len;
@@ -625,7 +610,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
                 ensure_newlines(ctx, 2);
             }
         } else if (strcmp(tag, "br") == 0) {
-            gtk_text_buffer_insert(ctx->buffer, &ctx->iter, "\n", 1);
+            md_out_append(ctx->out, "\n", 1);
             ctx->trailing_newlines++;
             ctx->last_was_ws = TRUE;
             ctx->line_needs_quote_bar = TRUE;
@@ -825,11 +810,7 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
 
                 if (pix != NULL) {
                     ensure_newlines(ctx, 1);
-                    GdkTexture* tex = texture_new_for_pixbuf(pix);
-                    GdkPaintable* fit = fit_image_new(tex, ctx->view);
-                    gtk_text_buffer_insert_paintable(ctx->buffer, &ctx->iter, fit);
-                    g_object_unref(fit);
-                    g_object_unref(tex);
+                    md_out_add_image(ctx->out, G_OBJECT(pix));
                     g_object_unref(pix);
                     ctx->trailing_newlines = 0; /* the image is on the line: end it */
                     ensure_newlines(ctx, 1);
@@ -851,20 +832,11 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
     }
 }
 
-void render_html_to_buffer(GtkTextBuffer* buffer,
-                           GtkTextView* view,
-                           const gchar* html_text,
-                           const gchar* doc_path,
-                           gboolean is_preview,
-                           const gchar* file_name,
-                           gint64 total_size) {
-    gtk_text_buffer_set_text(buffer, "", -1);
-
+MdOut* html_parse(const gchar* html_text, const gchar* doc_path, gboolean is_preview,
+                  const gchar* file_name, gint64 total_size) {
     HtmlRenderContext ctx;
     memset(&ctx, 0, sizeof(ctx));
-    ctx.buffer = buffer;
-    ctx.view = view;
-    gtk_text_buffer_get_start_iter(buffer, &ctx.iter);
+    ctx.out = md_out_new();
     ctx.active_tags = g_ptr_array_new();
     ctx.trailing_newlines = 2;
     ctx.last_was_ws = TRUE;
@@ -1113,4 +1085,17 @@ void render_html_to_buffer(GtkTextBuffer* buffer,
         g_string_free(ctx.current_link_text, TRUE);
     }
     g_free(doc_dir);
+    return ctx.out;
+}
+
+void render_html_to_buffer(GtkTextBuffer* buffer,
+                           GtkTextView* view,
+                           const gchar* html_text,
+                           const gchar* doc_path,
+                           gboolean is_preview,
+                           const gchar* file_name,
+                           gint64 total_size) {
+    MdOut* out = html_parse(html_text, doc_path, is_preview, file_name, total_size);
+    md_out_show(buffer, view, out);
+    md_out_free(out);
 }

@@ -1,11 +1,11 @@
 #ifndef MD_OUT_H
 #define MD_OUT_H
 
-/* Output of the Markdown parser (markdown_parse.h): the text to show, the
- * ranges of the text tags of ensure_markdown_tags(), the links and the
- * objects the view draws (pictures, glyphs, tables, highlighted code).
- * Built without widgets (in a worker thread), shown on the UI thread by
- * markdown_show() with one insertion and the tags applied by range: tens of
+/* Output of the rich text parsers (Markdown, HTML, Org): the text to show,
+ * the ranges of named text tags, the links and the objects the view draws
+ * (pictures, glyphs, tables, highlighted code). Built without widgets (in
+ * a worker thread), shown on the UI thread by md_out_show() (md_show.h)
+ * with one insertion and the tags applied by range: tens of
  * thousands of small insertions into a buffer shown in a view cost seconds
  * of signal handlers.
  *
@@ -50,6 +50,7 @@ typedef struct {
 typedef struct {
     GString* text;
     gint n_chars;
+    gint n_lines;    /* line breaks in text: the line of the next text */
     GArray* spans;   /* MdSpan, in the order applied */
     GArray* links;   /* MdLinkSpan */
     GArray* objects; /* MdObject, in the order added */
@@ -61,6 +62,8 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(MdOut, md_out_free)
 
 /* Current length in characters: the offset of the next text */
 gint md_out_offset(const MdOut* out);
+/* Line (0-based) of the next text */
+gint md_out_line(const MdOut* out);
 /* Append valid UTF-8 text (len -1: NUL-terminated) */
 void md_out_append(MdOut* out, const gchar* text, gssize len);
 /* Append text with one tag */
