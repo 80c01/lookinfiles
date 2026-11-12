@@ -586,6 +586,11 @@ static void display_text_preview(TextPreviewTaskData* td) {
     preview_busy_learn(td->app, kind, bytes, start_us);
 }
 
+/* A PDF or a picture: rendered by its own worker, under a new cancellable */
+static gboolean has_own_worker(FileKind kind) {
+    return file_kind_is_media(kind) && kind != FILE_KIND_AUDIO && kind != FILE_KIND_VIDEO;
+}
+
 /* A worker's result, shown now (still the current preview) */
 static gboolean finish_text_preview(gpointer data) {
     GTask* task = G_TASK(data);
@@ -597,9 +602,8 @@ static gboolean finish_text_preview(gpointer data) {
     }
     gint64 ready_us = g_get_monotonic_time();
     display_text_preview(td);
-    if (cancellable != td->app->preview_cancellable && file_kind_is_media(td->kind) &&
-        td->kind != FILE_KIND_AUDIO && td->kind != FILE_KIND_VIDEO) {
-        /* A PDF or a picture: the notice lasts until its own worker is done */
+    if (cancellable != td->app->preview_cancellable && has_own_worker(td->kind)) {
+        /* The notice lasts until its own worker is done */
         preview_busy_start(td->app, td->name, td->app->preview_cancellable);
     } else {
         preview_busy_stop(td->app);
@@ -817,7 +821,8 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         }
     }
 
-    if (cached == NULL) {
+    /* A cached PDF or picture: its own worker is rendering it now */
+    if (cached == NULL || has_own_worker(cached->kind)) {
         preview_busy_start(app, name, app->preview_cancellable);
     }
 
