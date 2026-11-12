@@ -14,6 +14,8 @@
 #define NOTICE_FRAME_WAIT_MS 50
 /* Displays of fewer bytes say little about the cost per byte */
 #define LEARN_MIN_BYTES 4096
+/* Longest wait for the frame of a display being measured */
+#define LEARN_FRAME_WAIT_MS 2000
 
 typedef struct PreviewBusy {
     GtkWidget* content;
@@ -27,7 +29,16 @@ typedef struct PreviewBusy {
     guint hide_id;             /* hiding after a cancellation, or 0 */
 
     AfterFrame* then; /* display waiting for the notice to be drawn, or NULL */
+    AfterFrame* learn; /* display measured until its frame, or NULL */
 } PreviewBusy;
+
+/* A display measured by preview_busy_learn() */
+typedef struct {
+    PreviewBusy* pb;
+    PreviewDisplay kind;
+    gsize bytes;
+    gint64 start_us;
+} BusyLearn;
 
 /* A display of preview_busy_show_then() */
 typedef struct {
@@ -81,6 +92,7 @@ static void busy_hide(PreviewBusy* pb) {
 static void preview_busy_free(gpointer data) {
     PreviewBusy* pb = data;
     then_cancel(pb);
+    after_frame_cancel(pb->learn);
     if (pb->timer_id != 0) {
         g_source_remove(pb->timer_id);
     }
@@ -192,13 +204,39 @@ gboolean preview_busy_expect_slow(PreviewDisplay kind, gsize bytes) {
     return us_per_kb[kind] * ((gdouble)bytes / 1024.0) > SLOW_DISPLAY_US;
 }
 
-void preview_busy_learn(PreviewDisplay kind, gsize bytes, gint64 us) {
-    if (bytes < LEARN_MIN_BYTES || us < 0) {
-        return;
+static gboolean on_learn_frame(gpointer data) {
+    BusyLearn* bl = data;
+    PreviewBusy* pb = bl->pb;
+    pb->learn = NULL; /* freed after this run */
+    gint64 us = g_get_monotonic_time() - bl->start_us;
+    /* Not drawn (preview hidden): the wait says nothing of the cost */
+    if (!gtk_widget_get_mapped(pb->content)) {
+        return G_SOURCE_REMOVE;
     }
     /* Half the last measure: one unusual display does not decide alone */
-    gdouble measured = (gdouble)us / ((gdouble)bytes / 1024.0);
-    us_per_kb[kind] = (us_per_kb[kind] + measured) / 2.0;
+    gdouble measured = (gdouble)us / ((gdouble)bl->bytes / 1024.0);
+    us_per_kb[bl->kind] = (us_per_kb[bl->kind] + measured) / 2.0;
+    return G_SOURCE_REMOVE;
+}
+
+void preview_busy_learn(AppData* app, PreviewDisplay kind, gsize bytes, gint64 start_us) {
+    PreviewBusy* pb = app->preview_busy;
+    if (pb == NULL || bytes < LEARN_MIN_BYTES) {
+        return;
+    }
+    /* A newer display: the frame now also draws it */
+    AfterFrame* previous = pb->learn;
+    pb->learn = NULL;
+    after_frame_cancel(previous);
+    BusyLearn* bl = g_new0(BusyLearn, 1);
+    bl->pb = pb;
+    bl->kind = kind;
+    bl->bytes = bytes;
+    bl->start_us = start_us;
+    pb->learn = after_frame_new(pb->content, LEARN_FRAME_WAIT_MS, on_learn_frame, bl, g_free);
+    if (pb->learn == NULL) {
+        g_free(bl);
+    }
 }
 
 static void busy_then_free(gpointer data) {

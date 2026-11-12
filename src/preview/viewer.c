@@ -583,7 +583,7 @@ static void display_text_preview(TextPreviewTaskData* td) {
     PreviewDisplay kind = text_preview_display(td, &bytes);
     gint64 start_us = g_get_monotonic_time();
     show_text_preview(td);
-    preview_busy_learn(kind, bytes, g_get_monotonic_time() - start_us);
+    preview_busy_learn(td->app, kind, bytes, start_us);
 }
 
 /* A worker's result, shown now (still the current preview) */

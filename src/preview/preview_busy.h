@@ -28,8 +28,10 @@ typedef enum {
 /* TRUE if displaying bytes of this kind is expected to freeze the window a
  * while (from the cost of the displays measured so far) */
 gboolean preview_busy_expect_slow(PreviewDisplay kind, gsize bytes);
-/* A display of bytes of this kind took us microseconds */
-void preview_busy_learn(PreviewDisplay kind, gsize bytes, gint64 us);
+/* A display of bytes of this kind started at start_us (monotonic) has just
+ * filled the preview: its cost, up to its frame on screen (the text view's
+ * layout freezes the window too), is learnt once that frame is painted */
+void preview_busy_learn(AppData* app, PreviewDisplay kind, gsize bytes, gint64 start_us);
 /* A display expected to be slow: the notice for name is shown at once and
  * then(data) runs once it is on screen (the display then freezes the window
  * with the notice visible). Not run if cancellable is cancelled first or

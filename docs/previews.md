@@ -102,7 +102,7 @@ format. Open work is in
   (`preview_busy.c`). A display expected to freeze the window for over
   100 ms (Markdown, HTML and Org are rendered into the buffer on the UI
   thread; the cost per KB of each kind of display is learnt from the
-  previous ones) shows the notice first and starts once it is on screen.
+  previous ones, timed up to their frame on screen, layout included) shows the notice first and starts once it is on screen.
 
 ## Rules every preview follows
 
