@@ -24,6 +24,8 @@
 #define PAGE_BADGE_PREFIX "─── "
 /* Pages rendered before the preview is first shown; the others follow */
 #define FIRST_RENDER_PAGES 3
+/* Pages rendered by each next task: they show as they come */
+#define NEXT_RENDER_PAGES 3
 /* Bookmarks read for the tagbar at most */
 #define MAX_BOOKMARKS 2000
 
@@ -355,7 +357,7 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
         next->render_raw = FALSE;
         next->max_w = td->max_w;
         next->first_page = shown;
-        next->page_count = MAX_RENDER_PAGES;
+        next->page_count = NEXT_RENDER_PAGES;
         next->converted = td->converted;
         next->is_dvi = td->is_dvi;
         next->session = pdf_session_ref(td->session);
