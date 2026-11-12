@@ -107,6 +107,7 @@ font_info:i18n
 man_view:preview_doc,i18n
 notebook:json_view,i18n
 ipynb_doc:json_view,notebook,i18n
+ipynb_kernel:json_view
 zip_xml:zip_reader
 spreadsheet:zip_reader,zip_xml,preview_doc,i18n
 odf:zip_reader,zip_xml,i18n

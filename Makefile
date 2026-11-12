@@ -118,7 +118,7 @@ $(shell mkdir -p $(BUILD_DIR); if command -v cmp >/dev/null 2>&1; then printf '%
 # requires creating src/<dir>/<module>.c and its .h. Module names are unique,
 # so the objects stay flat in build/ (build/<module>.o).
 SRCS = $(sort $(wildcard src/*.c src/*/*.c))
-OBJS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRCS:.c=.o))) $(BUILD_DIR)/icon_resources.o $(BUILD_DIR)/guide_resources.o $(BUILD_DIR)/theme_resources.o
+OBJS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRCS:.c=.o))) $(BUILD_DIR)/icon_resources.o $(BUILD_DIR)/guide_resources.o $(BUILD_DIR)/theme_resources.o $(BUILD_DIR)/jupyter_resources.o
 
 # Toolbar icons bundled into the binary (icons/, see icons/COPYING and src/theme/icons.c)
 GLIB_COMPILE_RESOURCES != $(PKG_CONFIG) --variable=glib_compile_resources gio-2.0
@@ -197,6 +197,24 @@ $(BUILD_DIR)/theme_resources.c: $(BUILD_DIR)/theme.gresource.xml $(THEME_FILES)
 $(BUILD_DIR)/theme_resources.o: $(BUILD_DIR)/theme_resources.c $(FLAGS_STAMP)
 	$(CC) $(ALL_CFLAGS) -c -o $@ $<
 
+# The Jupyter bridge (data/jupyter/ipynb_bridge.py, run by src/jupyter/ipynb_tab.c
+# as python3 -c <script>) bundled into the binary
+JUPYTER_FILES = data/jupyter/ipynb_bridge.py
+
+$(BUILD_DIR)/jupyter.gresource.xml: Makefile | $(BUILD_DIR)
+	@{ echo '<?xml version="1.0" encoding="UTF-8"?>'; \
+	  echo '<gresources>'; \
+	  echo '  <gresource prefix="/org/lookin/jupyter">'; \
+	  for f in $(JUPYTER_FILES:data/jupyter/%=%); do echo "    <file>$$f</file>"; done; \
+	  echo '  </gresource>'; \
+	  echo '</gresources>'; } > $@
+
+$(BUILD_DIR)/jupyter_resources.c: $(BUILD_DIR)/jupyter.gresource.xml $(JUPYTER_FILES)
+	$(GLIB_COMPILE_RESOURCES) --sourcedir=data/jupyter --c-name jupyter --generate-source --target=$@ $<
+
+$(BUILD_DIR)/jupyter_resources.o: $(BUILD_DIR)/jupyter_resources.c $(FLAGS_STAMP)
+	$(CC) $(ALL_CFLAGS) -c -o $@ $<
+
 $(BUILD_DIR):
 	mkdir -p $@
 
@@ -242,7 +260,7 @@ po-update: pot
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(ALL_CFLAGS)
 TEST_LDFLAGS = $(ALL_LDFLAGS) $(LIBS)
-TESTS = test_app_paths test_i18n test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_ipynb_doc test_spreadsheet test_odf test_pptx test_slide_render test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_html_text test_md_out test_rich_parse test_notes_store test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_ps_convert test_vt_screen test_vt_pty test_ui_probe test_preview_state test_git_state
+TESTS = test_app_paths test_i18n test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_ipynb_doc test_ipynb_kernel test_spreadsheet test_odf test_pptx test_slide_render test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_html_text test_md_out test_rich_parse test_notes_store test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_ps_convert test_vt_screen test_vt_pty test_ui_probe test_preview_state test_git_state
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_i18n = $(BUILD_DIR)/i18n.o
@@ -295,6 +313,7 @@ TEST_DEPS_test_exif = $(BUILD_DIR)/exif.o
 TEST_DEPS_test_font_info = $(BUILD_DIR)/font_info.o
 TEST_DEPS_test_man_view = $(BUILD_DIR)/man_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_notebook = $(BUILD_DIR)/notebook.o $(BUILD_DIR)/json_view.o $(BUILD_DIR)/preview_doc.o
+TEST_DEPS_test_ipynb_kernel = $(BUILD_DIR)/ipynb_kernel.o $(BUILD_DIR)/json_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_ipynb_doc = $(BUILD_DIR)/ipynb_doc.o $(BUILD_DIR)/notebook.o $(BUILD_DIR)/json_view.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_spreadsheet = $(BUILD_DIR)/spreadsheet.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_reader.o $(BUILD_DIR)/preview_doc.o
 TEST_DEPS_test_odf = $(BUILD_DIR)/odf.o $(BUILD_DIR)/zip_xml.o $(BUILD_DIR)/zip_reader.o

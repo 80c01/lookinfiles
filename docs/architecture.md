@@ -67,6 +67,14 @@ Layers, from bottom to top
   `ipynb_doc_find_cell()`), outputs added as Jupyter stores them
   (`ipynb_doc_append_output()`: lines, stream pieces joined), execution
   count, kernel metadata (`ipynb_doc_set_kernel_info()`).
+- `ipynb_kernel` — a Jupyter kernel run through the bridge script
+  `data/jupyter/ipynb_bridge.py` (bundled as a GResource, run as `python3
+  -c <script>`): jupyter_client in a Python process, spoken to in JSON
+  lines (commands on its stdin, events on its stdout; the kernel's own
+  output goes to stderr). `GSubprocess` with asynchronous reads and a write
+  queue, events as `IpynbKernelCallbacks` (state, started, failed, cell
+  input / output / clear / done, input requests); the end of the bridge's
+  stdin stops the kernel. Tested with `tests/fixtures/fake_ipynb_bridge.py`.
 - `notebook_icons` — the icons offered for notebooks and bookmark folders
   (theme glyph names)
   and the mapping of the emoji stored by older versions.
