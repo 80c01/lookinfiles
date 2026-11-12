@@ -445,6 +445,23 @@ static gboolean open_document(GTask* task, PdfTaskData* td, GCancellable* cancel
     return TRUE;
 }
 
+/* The small copy of a page the minimap draws (made here, in the worker, so
+ * that the UI thread never shrinks a whole page) */
+static cairo_surface_t* minimap_source_new(cairo_surface_t* page, gint w, gint h) {
+    gint sw = MIN(w, MINIMAP_SOURCE_WIDTH);
+    gdouble s = (gdouble)sw / w;
+    gint sh = MAX(1, (gint)(h * s + 0.5));
+    cairo_surface_t* small = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, sw, sh);
+    cairo_t* cr = cairo_create(small);
+    cairo_scale(cr, s, s);
+    cairo_set_source_surface(cr, page, 0, 0);
+    cairo_pattern_set_filter(cairo_get_source(cr), CAIRO_FILTER_GOOD);
+    cairo_paint(cr);
+    cairo_destroy(cr);
+    cairo_surface_flush(small);
+    return small;
+}
+
 /* Page i rendered max_w pixels wide (within a sane scale), or NULL */
 static GdkTexture* render_page(PopplerDocument* doc, gint i, gint max_w) {
     PopplerPage* page = poppler_document_get_page(doc, i);
@@ -469,6 +486,7 @@ static GdkTexture* render_page(PopplerDocument* doc, gint i, gint max_w) {
     g_object_unref(page);
 
     cairo_surface_flush(surface);
+    cairo_surface_t* thumb = minimap_source_new(surface, rw, rh);
     gint stride = cairo_image_surface_get_stride(surface);
     /* The texture keeps the surface's pixels (no copy) */
     GBytes* bytes = g_bytes_new_with_free_func(cairo_image_surface_get_data(surface),
@@ -476,6 +494,11 @@ static GdkTexture* render_page(PopplerDocument* doc, gint i, gint max_w) {
                                                (GDestroyNotify)cairo_surface_destroy, surface);
     GdkTexture* tex = gdk_memory_texture_new(rw, rh, GDK_MEMORY_B8G8R8A8_PREMULTIPLIED, bytes, (gsize)stride);
     g_bytes_unref(bytes);
+    if (tex != NULL && thumb != NULL) {
+        g_object_set_data_full(G_OBJECT(tex), MINIMAP_TEXTURE_SOURCE, thumb, (GDestroyNotify)cairo_surface_destroy);
+    } else if (thumb != NULL) {
+        cairo_surface_destroy(thumb);
+    }
     return tex;
 }
 

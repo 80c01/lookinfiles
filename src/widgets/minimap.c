@@ -125,7 +125,9 @@ static void tag_colors(const GtkTextIter* it, GdkRGBA* fg, gboolean* has_fg,
 }
 
 /* A texture (PDF page) painted at the minimap scale. The downscaled copy is
- * kept on the texture so that redraws do not download it again. */
+ * kept on the texture so that redraws do not download it again; it is made
+ * from the texture's MINIMAP_TEXTURE_SOURCE when there is one (cheap), else
+ * from the whole texture. */
 static gboolean draw_texture(cairo_t* cc, GdkTexture* tex, gdouble x, gdouble y, gdouble w, gdouble h) {
     (void)h;
     gint tw = gdk_texture_get_width(tex), th = gdk_texture_get_height(tex);
@@ -138,18 +140,29 @@ static gboolean draw_texture(cairo_t* cc, GdkTexture* tex, gdouble x, gdouble y,
     cairo_surface_t* small = g_object_get_data(G_OBJECT(tex), "minimap-thumb");
     if (small == NULL || cairo_image_surface_get_width(small) != dw ||
         cairo_image_surface_get_height(small) != dh) {
-        cairo_surface_t* full = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, tw, th);
-        gdk_texture_download(tex, cairo_image_surface_get_data(full),
-                             cairo_image_surface_get_stride(full));
-        cairo_surface_mark_dirty(full);
+        cairo_surface_t* src = g_object_get_data(G_OBJECT(tex), MINIMAP_TEXTURE_SOURCE);
+        cairo_surface_t* full = NULL;
+        gdouble src_scale = scale;
+        if (src != NULL && cairo_image_surface_get_width(src) > 0) {
+            src_scale = (gdouble)dw / cairo_image_surface_get_width(src);
+        } else {
+            full = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, tw, th);
+            gdk_texture_download(tex, cairo_image_surface_get_data(full),
+                                 cairo_image_surface_get_stride(full));
+            cairo_surface_mark_dirty(full);
+            src = full;
+        }
         small = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, dw, dh);
         cairo_t* sc = cairo_create(small);
-        cairo_scale(sc, scale, scale);
-        cairo_set_source_surface(sc, full, 0, 0);
-        cairo_pattern_set_filter(cairo_get_source(sc), CAIRO_FILTER_BEST);
+        cairo_scale(sc, src_scale, src_scale);
+        cairo_set_source_surface(sc, src, 0, 0);
+        /* GOOD: a box filter when shrinking, far cheaper than BEST */
+        cairo_pattern_set_filter(cairo_get_source(sc), CAIRO_FILTER_GOOD);
         cairo_paint(sc);
         cairo_destroy(sc);
-        cairo_surface_destroy(full);
+        if (full != NULL) {
+            cairo_surface_destroy(full);
+        }
         g_object_set_data_full(G_OBJECT(tex), "minimap-thumb", small,
                                (GDestroyNotify)cairo_surface_destroy);
     }

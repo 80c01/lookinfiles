@@ -7,6 +7,12 @@
  * in its GtkScrolledWindow) shown only on the Preview page (once, when the
  * window is built); the calls below do nothing before it exists */
 GtkWidget* minimap_viewer_new(AppData* app);
+/* Key of a small copy of a texture's image (cairo image surface, at most
+ * MINIMAP_SOURCE_WIDTH wide) that a worker can attach to it with
+ * g_object_set_data_full(): the minimap scales it instead of downloading
+ * the whole texture on the UI thread */
+#define MINIMAP_TEXTURE_SOURCE "minimap-source"
+#define MINIMAP_SOURCE_WIDTH (2 * MINIMAP_WIDTH)
 /* TRUE while the preview's minimap exists, is enabled, but is hidden (it
  * shows once the text is taller than the view) */
 gboolean minimap_viewer_is_hidden(AppData* app);
