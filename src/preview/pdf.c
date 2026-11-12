@@ -75,6 +75,7 @@ typedef struct {
     gboolean converted;    /* PostScript or DVI shown through a PDF conversion */
     gboolean is_dvi;
     PdfSession* session;   /* the open document (set by the first task) */
+    gboolean read_marks;   /* this task reads the bookmarks (after its pages) */
 
     /* Results populated by worker thread */
     gchar* error_msg;
@@ -259,13 +260,22 @@ static struct {
     GArray* page_lines;
 } outline;
 
+/* The bookmarks read by a task, for the preview shown */
+static void outline_take_marks(AppData* app, PdfTaskData* td) {
+    if (outline.owner != app->preview_cancellable || outline.marks != NULL || td->marks == NULL ||
+        td->marks->len == 0) {
+        return;
+    }
+    outline.marks = g_steal_pointer(&td->marks);
+}
+
 static void outline_reset(AppData* app, PdfTaskData* td) {
     g_clear_object(&outline.owner);
     g_clear_pointer(&outline.marks, g_ptr_array_unref);
     g_clear_pointer(&outline.page_lines, g_array_unref);
-    if (td->marks == NULL || td->marks->len == 0 || td->total_pages <= 0) return;
+    if (td->total_pages <= 0) return;
     outline.owner = g_object_ref(app->preview_cancellable);
-    outline.marks = g_steal_pointer(&td->marks);
+    outline_take_marks(app, td);
     outline.page_lines = g_array_sized_new(FALSE, FALSE, sizeof(gint), (guint)td->total_pages);
     for (gint i = 0; i < td->total_pages; i++) {
         gint none = -1;
@@ -283,7 +293,7 @@ static void outline_note_page(GCancellable* owner, gint page, const GtkTextIter*
 /* Hand the bookmarks of the pages shown to the tagbar; a group without a
  * page of its own goes to the page of the next bookmark */
 static void outline_publish(AppData* app) {
-    if (outline.owner == NULL || outline.owner != app->preview_cancellable) return;
+    if (outline.owner == NULL || outline.owner != app->preview_cancellable || outline.marks == NULL) return;
     GPtrArray* entries = code_outline_entries_new();
     gint next_page = -1;
     gint* pages = g_new(gint, outline.marks->len);
@@ -314,6 +324,7 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
     if (td->error_msg != NULL || td->page_textures == NULL) {
         return;
     }
+    outline_take_marks(app, td);
     GtkTextIter iter;
     gtk_text_buffer_get_end_iter(app->buffer, &iter);
     guint render_count = td->page_textures->len;
@@ -349,6 +360,7 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
         next->is_dvi = td->is_dvi;
         next->session = pdf_session_ref(td->session);
         next->total_pages = td->total_pages;
+        next->read_marks = td->first_page == 0 && !td->read_marks;
         GTask* task = g_task_new(NULL, app->preview_cancellable, on_pdf_preview_ready, NULL);
         g_task_set_task_data(task, next, pdf_task_data_free);
         g_task_run_in_thread(task, pdf_preview_thread_func);
@@ -522,12 +534,8 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
         td->doc_title = poppler_document_get_title(doc);
         td->doc_author = poppler_document_get_author(doc);
         td->doc_ver = poppler_document_get_pdf_version_string(doc);
-        PopplerIndexIter* index = poppler_index_iter_new(doc);
-        if (index != NULL) {
-            td->marks = g_ptr_array_new_with_free_func(pdf_mark_free);
-            read_outline(doc, index, 1, td->marks);
-            poppler_index_iter_free(index);
-        }
+        /* The bookmarks wait for the next task, unless there is none */
+        td->read_marks = td->render_raw || MIN(td->total_pages, MAX_RENDER_PAGES) <= td->page_count;
     }
 
     if (!td->render_raw) {
@@ -544,6 +552,15 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
         }
     } else {
         extract_text(td, doc, cancellable);
+    }
+
+    if (td->read_marks && !g_cancellable_is_cancelled(cancellable)) {
+        PopplerIndexIter* index = poppler_index_iter_new(doc);
+        if (index != NULL) {
+            td->marks = g_ptr_array_new_with_free_func(pdf_mark_free);
+            read_outline(doc, index, 1, td->marks);
+            poppler_index_iter_free(index);
+        }
     }
 
     if (g_task_return_error_if_cancelled(task)) {
