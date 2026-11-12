@@ -37,6 +37,7 @@
 #include "preview/text_chunks.h"
 #include "preview/preview_full.h"
 #include "preview/preview_busy.h"
+#include "widgets/after_frame.h"
 #include "core/text_encoding.h"
 #include "preview/preview_cache.h"
 #include "explorer/tree_nav.h"
@@ -532,23 +533,42 @@ static gboolean debug_preview_timings(void) {
     return enabled;
 }
 
-static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
-                                  gpointer user_data) {
-    (void)source_object;
-    (void)user_data;
-    GTask* task = G_TASK(res);
+/* What showing td puts in the buffer, and how many bytes */
+static PreviewDisplay text_preview_display(const TextPreviewTaskData* td, gsize* bytes) {
+    *bytes = 0;
+    if (td->error_msg != NULL || file_kind_is_media(td->kind)) {
+        return PREVIEW_DISPLAY_TEXT;
+    }
+    if (td->doc != NULL) {
+        *bytes = (td->doc->text != NULL) ? td->doc->text->len : 0;
+        return PREVIEW_DISPLAY_DOC;
+    }
+    *bytes = (td->utf8_text != NULL) ? strlen(td->utf8_text) : 0;
+    gboolean rendered = !td->render_raw && (td->kind == FILE_KIND_MARKDOWN ||
+                                            td->kind == FILE_KIND_HTML || td->kind == FILE_KIND_ORG);
+    return rendered ? PREVIEW_DISPLAY_RENDERED : PREVIEW_DISPLAY_TEXT;
+}
+
+/* Show td, timed for the next predictions of the display cost */
+static void display_text_preview(TextPreviewTaskData* td) {
+    gsize bytes = 0;
+    PreviewDisplay kind = text_preview_display(td, &bytes);
+    gint64 start_us = g_get_monotonic_time();
+    show_text_preview(td);
+    preview_busy_learn(kind, bytes, g_get_monotonic_time() - start_us);
+}
+
+/* A worker's result, shown now (still the current preview) */
+static gboolean finish_text_preview(gpointer data) {
+    GTask* task = G_TASK(data);
     GCancellable* cancellable = g_task_get_cancellable(task);
     TextPreviewTaskData* td = (TextPreviewTaskData*)g_task_get_task_data(task);
-
     if (td == NULL || g_cancellable_is_cancelled(cancellable) ||
         cancellable != td->app->preview_cancellable) {
-        return;
-    }
-    if (td->unchanged) {
-        return; /* the cached preview shown at the selection is current */
+        return G_SOURCE_REMOVE;
     }
     gint64 ready_us = g_get_monotonic_time();
-    show_text_preview(td);
+    display_text_preview(td);
     if (cancellable != td->app->preview_cancellable && file_kind_is_media(td->kind) &&
         td->kind != FILE_KIND_AUDIO && td->kind != FILE_KIND_VIDEO) {
         /* A PDF or a picture: the notice lasts until its own worker is done */
@@ -564,6 +584,41 @@ static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
                    (end_us - ready_us) / 1000.0);
     }
     cache_text_preview(td);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_text_preview_ready(GObject* source_object, GAsyncResult* res,
+                                  gpointer user_data) {
+    (void)source_object;
+    (void)user_data;
+    GTask* task = G_TASK(res);
+    GCancellable* cancellable = g_task_get_cancellable(task);
+    TextPreviewTaskData* td = (TextPreviewTaskData*)g_task_get_task_data(task);
+
+    if (td == NULL || g_cancellable_is_cancelled(cancellable) ||
+        cancellable != td->app->preview_cancellable) {
+        return;
+    }
+    if (td->unchanged) {
+        return; /* the cached preview shown at the selection is current */
+    }
+    gsize bytes = 0;
+    PreviewDisplay kind = text_preview_display(td, &bytes);
+    if (preview_busy_expect_slow(kind, bytes)) {
+        /* The display freezes the window: with the notice on screen */
+        preview_busy_show_then(td->app, td->name, cancellable, finish_text_preview,
+                               g_object_ref(task), g_object_unref);
+        return;
+    }
+    finish_text_preview(task);
+}
+
+/* A cached preview expected to be slow, shown once the notice is on screen */
+static gboolean display_cached_preview(gpointer data) {
+    TextPreviewTaskData* cached = data;
+    display_text_preview(cached);
+    preview_busy_stop(cached->app);
+    return G_SOURCE_REMOVE;
 }
 
 static void show_text_preview(TextPreviewTaskData* td) {
@@ -722,7 +777,15 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     if (cached != NULL) {
         td->has_cached = TRUE;
         cached->app = app;
-        show_text_preview(cached);
+        gsize bytes = 0;
+        PreviewDisplay kind = text_preview_display(cached, &bytes);
+        if (preview_busy_expect_slow(kind, bytes)) {
+            /* Owned by the cache; a newer preview drops the display first */
+            preview_busy_show_then(app, name, app->preview_cancellable, display_cached_preview,
+                                   cached, NULL);
+        } else {
+            display_text_preview(cached);
+        }
         preview_state_set_detected(app, cached->kind, cached->encoding, cached->content_type);
         if (debug_preview_timings()) {
             g_printerr("preview %s [cached]: %.1f ms\n", name,
@@ -847,41 +910,27 @@ static void render_canvas_summary(AppData* app, const gchar* summary, const gcha
  * rows passed over quickly (a held arrow key) are never previewed */
 typedef struct {
     AppData* app;
-    ExplorerRow* row;     /* row to preview (selected when scheduled) */
-    GdkFrameClock* clock; /* explorer's clock, waited for its next paint */
-    gulong paint_id;
-    guint fallback_id;    /* no frame painted (window hidden): run anyway */
-    guint idle_id;
+    ExplorerRow* row;  /* row to preview (selected when scheduled) */
+    AfterFrame* wait;  /* the explorer's next frame */
 } PendingSelection;
 
 static PendingSelection pending_sel;
 
-/* Longest wait for the explorer's frame */
+/* Longest wait for the explorer's frame (window hidden: none comes) */
 #define SELECTION_FRAME_WAIT_MS 50
 
 static void pending_selection_clear(void) {
-    if (pending_sel.paint_id != 0) {
-        g_signal_handler_disconnect(pending_sel.clock, pending_sel.paint_id);
-        pending_sel.paint_id = 0;
-    }
-    g_clear_object(&pending_sel.clock);
-    if (pending_sel.fallback_id != 0) {
-        g_source_remove(pending_sel.fallback_id);
-        pending_sel.fallback_id = 0;
-    }
-    if (pending_sel.idle_id != 0) {
-        g_source_remove(pending_sel.idle_id);
-        pending_sel.idle_id = 0;
-    }
+    AfterFrame* wait = pending_sel.wait;
+    pending_sel.wait = NULL;
+    after_frame_cancel(wait);
     g_clear_object(&pending_sel.row);
 }
 
 static gboolean run_pending_selection(gpointer data) {
     (void)data;
-    pending_sel.idle_id = 0;
+    pending_sel.wait = NULL; /* freed after this run */
     AppData* app = pending_sel.app;
     ExplorerRow* row = g_steal_pointer(&pending_sel.row);
-    pending_selection_clear();
     /* Moved since without a preview (blocked handler) or view switched: the
      * preview is not this row's any more */
     if (app->tree != NULL && row != NULL && explorer_tree_get_selected(app->tree) == row) {
@@ -891,54 +940,27 @@ static gboolean run_pending_selection(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-/* After the frame (or the fallback delay): out of the frame clock first */
-static void schedule_pending_run(void) {
-    if (pending_sel.paint_id != 0) {
-        g_signal_handler_disconnect(pending_sel.clock, pending_sel.paint_id);
-        pending_sel.paint_id = 0;
-    }
-    if (pending_sel.fallback_id != 0) {
-        g_source_remove(pending_sel.fallback_id);
-        pending_sel.fallback_id = 0;
-    }
-    if (pending_sel.idle_id == 0) {
-        pending_sel.idle_id = g_idle_add(run_pending_selection, NULL);
-    }
-}
-
-static void on_explorer_painted(GdkFrameClock* clock, gpointer data) {
-    (void)clock;
-    (void)data;
-    schedule_pending_run();
-}
-
-static gboolean on_frame_wait_over(gpointer data) {
-    (void)data;
-    pending_sel.fallback_id = 0;
-    schedule_pending_run();
-    return G_SOURCE_REMOVE;
-}
-
 void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     AppData* app = (AppData*)user_data;
     ExplorerRow* row = explorer_tree_get_selected(tree);
-    GdkFrameClock* clock = (app->tree_view != NULL) ? gtk_widget_get_frame_clock(app->tree_view) : NULL;
     /* A workspace switch previews its selection at once (it sets switching_ws
      * around it) */
-    if (row == NULL || app->switching_ws || clock == NULL) {
+    if (row == NULL || app->switching_ws) {
         pending_selection_clear();
         show_selected_row(app);
         return;
     }
     pending_sel.app = app;
     g_set_object(&pending_sel.row, row);
-    if (pending_sel.paint_id != 0 || pending_sel.idle_id != 0) {
+    if (pending_sel.wait != NULL) {
         return; /* already waiting: the latest row is previewed */
     }
-    pending_sel.clock = g_object_ref(clock);
-    pending_sel.paint_id = g_signal_connect(clock, "after-paint", G_CALLBACK(on_explorer_painted), NULL);
-    pending_sel.fallback_id = g_timeout_add(SELECTION_FRAME_WAIT_MS, on_frame_wait_over, NULL);
-    gtk_widget_queue_draw(app->tree_view);
+    pending_sel.wait = after_frame_new(app->tree_view, SELECTION_FRAME_WAIT_MS,
+                                       run_pending_selection, NULL, NULL);
+    if (pending_sel.wait == NULL) {
+        pending_selection_clear(); /* explorer not realized: preview now */
+        show_selected_row(app);
+    }
 }
 
 /* Preview the selected row now */

@@ -208,6 +208,7 @@ image_utils:
 animation:gif_decoder,image_utils
 dialog:
 tab_drop:pane_geometry
+after_frame:
 explorer_tree:explorer_row,icons
 remote_store:app_types,app_paths,notebook_icons
 preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc,i18n

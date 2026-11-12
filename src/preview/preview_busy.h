@@ -18,4 +18,23 @@ void preview_busy_start(AppData* app, const gchar* name, GCancellable* cancellab
 /* The preview is shown (or another entry is selected): hide the notice */
 void preview_busy_stop(AppData* app);
 
+/* What a display puts in the preview, for its expected cost */
+typedef enum {
+    PREVIEW_DISPLAY_TEXT,     /* plain text or code */
+    PREVIEW_DISPLAY_DOC,      /* a preview_formats document (text and spans) */
+    PREVIEW_DISPLAY_RENDERED, /* Markdown, HTML or Org rendered into the buffer */
+} PreviewDisplay;
+
+/* TRUE if displaying bytes of this kind is expected to freeze the window a
+ * while (from the cost of the displays measured so far) */
+gboolean preview_busy_expect_slow(PreviewDisplay kind, gsize bytes);
+/* A display of bytes of this kind took us microseconds */
+void preview_busy_learn(PreviewDisplay kind, gsize bytes, gint64 us);
+/* A display expected to be slow: the notice for name is shown at once and
+ * then(data) runs once it is on screen (the display then freezes the window
+ * with the notice visible). Not run if cancellable is cancelled first or
+ * another display or stop comes; destroy(data) is called in every case. */
+void preview_busy_show_then(AppData* app, const gchar* name, GCancellable* cancellable,
+                            GSourceFunc then, gpointer data, GDestroyNotify destroy);
+
 #endif /* PREVIEW_BUSY_H */

@@ -99,7 +99,10 @@ format. Open work is in
   preview starts after the explorer's next frame; rows passed over with a
   held key are not previewed). A preview not ready after 150 ms dims the
   previous one under a **Rendering…** notice with the file name
-  (`preview_busy.c`).
+  (`preview_busy.c`). A display expected to freeze the window for over
+  100 ms (Markdown, HTML and Org are rendered into the buffer on the UI
+  thread; the cost per KB of each kind of display is learnt from the
+  previous ones) shows the notice first and starts once it is on screen.
 
 ## Rules every preview follows
 

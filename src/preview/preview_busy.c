@@ -2,11 +2,18 @@
 #include "preview/preview_busy.h"
 
 #include "core/i18n.h"
+#include "widgets/after_frame.h"
 
 /* Previews ready sooner show no notice (it would only flicker) */
 #define PREVIEW_BUSY_DELAY_MS 150
 /* Opacity of the previous preview while the new one renders */
 #define PREVIEW_BUSY_DIM 0.45
+/* Displays expected to take longer show the notice first */
+#define SLOW_DISPLAY_US (100 * 1000)
+/* Longest wait for the frame drawing the notice (window hidden: none comes) */
+#define NOTICE_FRAME_WAIT_MS 50
+/* Displays of fewer bytes say little about the cost per byte */
+#define LEARN_MIN_BYTES 4096
 
 typedef struct PreviewBusy {
     GtkWidget* content;
@@ -18,7 +25,31 @@ typedef struct PreviewBusy {
     gulong cancelled_id;
     guint timer_id;
     guint hide_id;             /* hiding after a cancellation, or 0 */
+
+    AfterFrame* then; /* display waiting for the notice to be drawn, or NULL */
 } PreviewBusy;
+
+/* A display of preview_busy_show_then() */
+typedef struct {
+    PreviewBusy* pb;
+    GSourceFunc fn;
+    gpointer data;
+    GDestroyNotify destroy;
+} BusyThen;
+
+/* Microseconds per KB of each kind of display, learnt from the displays
+ * shown; the start values are those of a slow machine */
+static gdouble us_per_kb[PREVIEW_DISPLAY_RENDERED + 1] = {
+    [PREVIEW_DISPLAY_TEXT] = 100.0,
+    [PREVIEW_DISPLAY_DOC] = 500.0,
+    [PREVIEW_DISPLAY_RENDERED] = 2000.0,
+};
+
+static void then_cancel(PreviewBusy* pb) {
+    AfterFrame* af = pb->then;
+    pb->then = NULL;
+    after_frame_cancel(af);
+}
 
 static void busy_forget(PreviewBusy* pb) {
     if (pb->cancellable != NULL) {
@@ -29,6 +60,7 @@ static void busy_forget(PreviewBusy* pb) {
 }
 
 static void busy_hide(PreviewBusy* pb) {
+    then_cancel(pb);
     if (pb->timer_id != 0) {
         g_source_remove(pb->timer_id);
         pb->timer_id = 0;
@@ -48,6 +80,7 @@ static void busy_hide(PreviewBusy* pb) {
 
 static void preview_busy_free(gpointer data) {
     PreviewBusy* pb = data;
+    then_cancel(pb);
     if (pb->timer_id != 0) {
         g_source_remove(pb->timer_id);
     }
@@ -85,13 +118,16 @@ static gboolean on_hide(gpointer data) {
 static void on_cancelled(GCancellable* cancellable, gpointer data) {
     (void)cancellable;
     PreviewBusy* pb = data;
+    then_cancel(pb);
     busy_forget(pb);
     if (pb->timer_id != 0) {
         g_source_remove(pb->timer_id);
         pb->timer_id = 0;
     }
     if (pb->hide_id == 0) {
-        pb->hide_id = g_idle_add(on_hide, pb);
+        /* Above idle priority: the text view validating a large preview
+         * keeps the main loop busy just below the redraw priority */
+        pb->hide_id = g_idle_add_full(G_PRIORITY_DEFAULT, on_hide, pb, NULL);
     }
 }
 
@@ -149,5 +185,71 @@ void preview_busy_start(AppData* app, const gchar* name, GCancellable* cancellab
 void preview_busy_stop(AppData* app) {
     if (app->preview_busy != NULL) {
         busy_hide(app->preview_busy);
+    }
+}
+
+gboolean preview_busy_expect_slow(PreviewDisplay kind, gsize bytes) {
+    return us_per_kb[kind] * ((gdouble)bytes / 1024.0) > SLOW_DISPLAY_US;
+}
+
+void preview_busy_learn(PreviewDisplay kind, gsize bytes, gint64 us) {
+    if (bytes < LEARN_MIN_BYTES || us < 0) {
+        return;
+    }
+    /* Half the last measure: one unusual display does not decide alone */
+    gdouble measured = (gdouble)us / ((gdouble)bytes / 1024.0);
+    us_per_kb[kind] = (us_per_kb[kind] + measured) / 2.0;
+}
+
+static void busy_then_free(gpointer data) {
+    BusyThen* bt = data;
+    if (bt->destroy != NULL && bt->data != NULL) {
+        bt->destroy(bt->data);
+    }
+    g_free(bt);
+}
+
+static gboolean run_then(gpointer data) {
+    BusyThen* bt = data;
+    bt->pb->then = NULL; /* freed after this run */
+    return bt->fn(bt->data);
+}
+
+void preview_busy_show_then(AppData* app, const gchar* name, GCancellable* cancellable,
+                            GSourceFunc then, gpointer data, GDestroyNotify destroy) {
+    PreviewBusy* pb = app->preview_busy;
+    gboolean on_screen = pb != NULL && gtk_widget_get_mapped(pb->content);
+    if (!on_screen || cancellable == NULL || g_cancellable_is_cancelled(cancellable)) {
+        /* No notice to draw (preview not on screen): display now */
+        if (cancellable == NULL || !g_cancellable_is_cancelled(cancellable)) {
+            then(data);
+        }
+        if (destroy != NULL && data != NULL) {
+            destroy(data);
+        }
+        return;
+    }
+    if (pb->cancellable != cancellable) {
+        preview_busy_start(app, name, cancellable);
+    } else {
+        then_cancel(pb);
+    }
+    if (pb->timer_id != 0) {
+        g_source_remove(pb->timer_id);
+        pb->timer_id = 0;
+    }
+    if (pb->name == NULL) {
+        pb->name = g_strdup(name);
+    }
+    on_delay(pb);
+    BusyThen* bt = g_new0(BusyThen, 1);
+    bt->pb = pb;
+    bt->fn = then;
+    bt->data = data;
+    bt->destroy = destroy;
+    pb->then = after_frame_new(pb->content, NOTICE_FRAME_WAIT_MS, run_then, bt, busy_then_free);
+    if (pb->then == NULL) {
+        run_then(bt);
+        busy_then_free(bt);
     }
 }

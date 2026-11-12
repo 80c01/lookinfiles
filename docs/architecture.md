@@ -449,6 +449,10 @@ Layers, from bottom to top
   around the editor's and the preview's scrolled windows, `color_column_set()`:
   Preferences, `:set colorcolumn`; in the preview for code only, hidden by
   any buffer change: `color_column_hide_on_change()`), colour `editor_ruler`.
+- `after_frame` — runs a function once a widget's next frame is on screen
+  (or after a short wait when none comes): the selected row is highlighted
+  before its preview is built (`viewer`), the "Rendering…" notice is drawn
+  before a display that freezes the window (`preview_busy`).
 - `tab_drop` — editor and terminal tabs dragged with the mouse (GtkNotebook
   tab DnD): drop target on a notebook (tab bar: insert; page: move in; edge:
   split), translucent highlight on the window overlay, end-of-drag report
