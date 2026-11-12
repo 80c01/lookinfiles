@@ -27,6 +27,43 @@
 /* Bookmarks read for the tagbar at most */
 #define MAX_BOOKMARKS 2000
 
+/* The document of a preview, opened by its first task and reused by the
+ * tasks of the next pages (one task at a time) */
+typedef struct {
+    gatomicrefcount ref;
+    gchar* path;              /* the PDF opened (a conversion for PostScript / DVI) */
+    GPtrArray* docs;          /* PopplerDocument* */
+} PdfSession;
+
+static PopplerDocument* pdf_open(const gchar* path, GCancellable* cancellable, GError** err) {
+    GFile* f = g_file_new_for_path(path);
+    PopplerDocument* doc = poppler_document_new_from_gfile(f, NULL, cancellable, err);
+    g_object_unref(f);
+    return doc;
+}
+
+static PdfSession* pdf_session_new(const gchar* path, PopplerDocument* doc) {
+    PdfSession* s = g_new0(PdfSession, 1);
+    g_atomic_ref_count_init(&s->ref);
+    s->path = g_strdup(path);
+    s->docs = g_ptr_array_new_with_free_func(g_object_unref);
+    g_ptr_array_add(s->docs, doc);
+    return s;
+}
+
+static PdfSession* pdf_session_ref(PdfSession* s) {
+    g_atomic_ref_count_inc(&s->ref);
+    return s;
+}
+
+static void pdf_session_unref(PdfSession* s) {
+    if (g_atomic_ref_count_dec(&s->ref)) {
+        g_free(s->path);
+        g_ptr_array_unref(s->docs);
+        g_free(s);
+    }
+}
+
 typedef struct {
     AppData* app;
     gchar* name;
@@ -37,6 +74,7 @@ typedef struct {
     gint page_count;       /* pages rendered by this task at most */
     gboolean converted;    /* PostScript or DVI shown through a PDF conversion */
     gboolean is_dvi;
+    PdfSession* session;   /* the open document (set by the first task) */
 
     /* Results populated by worker thread */
     gchar* error_msg;
@@ -84,6 +122,9 @@ static void pdf_task_data_free(gpointer data) {
     }
     if (td->marks != NULL) {
         g_ptr_array_unref(td->marks);
+    }
+    if (td->session != NULL) {
+        pdf_session_unref(td->session);
     }
     g_free(td);
 }
@@ -306,6 +347,8 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
         next->page_count = MAX_RENDER_PAGES;
         next->converted = td->converted;
         next->is_dvi = td->is_dvi;
+        next->session = pdf_session_ref(td->session);
+        next->total_pages = td->total_pages;
         GTask* task = g_task_new(NULL, app->preview_cancellable, on_pdf_preview_ready, NULL);
         g_task_set_task_data(task, next, pdf_task_data_free);
         g_task_run_in_thread(task, pdf_preview_thread_func);
@@ -320,15 +363,10 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
     }
 }
 
-static void pdf_preview_thread_func(GTask* task, gpointer source_object,
-                                    gpointer task_data, GCancellable* cancellable) {
-    (void)source_object;
-    PdfTaskData* td = (PdfTaskData*)task_data;
-
-    if (g_task_return_error_if_cancelled(task)) {
-        return;
-    }
-
+/* Open the document (PostScript and DVI: their PDF conversion) into
+ * td->session; FALSE when the task got its result (error, cancelled, the
+ * PostScript source in text mode) */
+static gboolean open_document(GTask* task, PdfTaskData* td, GCancellable* cancellable) {
     GStatBuf st;
     gint64 fsize = (g_stat(td->full, &st) == 0) ? (gint64)st.st_size : 0;
     td->size_str = g_format_size((guint64)fsize);
@@ -346,51 +384,144 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
             g_ptr_array_add(td->page_texts, src != NULL ? src : g_strdup(""));
             td->total_pages = 1;
             g_task_return_boolean(task, TRUE);
-            return;
+            return FALSE;
         }
         open_path = ps_convert_to_pdf(td->full, ps_source, MAX_RENDER_PAGES, cancellable, &err);
         if (open_path == NULL) {
             if (g_task_return_error_if_cancelled(task)) {
                 g_clear_error(&err);
-                return;
+                return FALSE;
             }
             td->error_msg = g_strdup_printf(_("[ Cannot preview %1$s: %2$s ]"), td->name,
                                             err ? err->message : _("conversion failed"));
             g_clear_error(&err);
             g_task_return_boolean(task, TRUE);
-            return;
+            return FALSE;
         }
+    } else {
+        open_path = g_strdup(td->full);
     }
-    GFile* f = g_file_new_for_path(open_path != NULL ? open_path : td->full);
-    PopplerDocument* doc = poppler_document_new_from_gfile(f, NULL, cancellable, &err);
-    g_object_unref(f);
-    g_free(open_path);
+    PopplerDocument* doc = pdf_open(open_path, cancellable, &err);
 
     if (g_task_return_error_if_cancelled(task)) {
-        if (doc != NULL) {
-            g_object_unref(doc);
-        }
-        if (err != NULL) {
-            g_error_free(err);
-        }
-        return;
+        g_clear_object(&doc);
+        g_clear_error(&err);
+        g_free(open_path);
+        return FALSE;
     }
-
     if (doc == NULL) {
         td->error_msg = g_strdup_printf(_("[ Cannot open PDF: %1$s (%2$s) ]"),
                                         td->name, err ? err->message : _("unknown error"));
-        if (err != NULL) {
-            g_error_free(err);
-        }
+        g_clear_error(&err);
+        g_free(open_path);
         g_task_return_boolean(task, TRUE);
+        return FALSE;
+    }
+    td->session = pdf_session_new(open_path, doc);
+    g_free(open_path);
+    return TRUE;
+}
+
+/* Page i rendered max_w pixels wide (within a sane scale), or NULL */
+static GdkTexture* render_page(PopplerDocument* doc, gint i, gint max_w) {
+    PopplerPage* page = poppler_document_get_page(doc, i);
+    if (page == NULL) {
+        return NULL;
+    }
+    double pw = 0.0, ph = 0.0;
+    poppler_page_get_size(page, &pw, &ph);
+
+    double scale = (pw > 0.0) ? ((double)max_w / pw) : 1.0;
+    scale = CLAMP(scale, 0.25, 2.5);
+    gint rw = MAX(1, (gint)(pw * scale));
+    gint rh = MAX(1, (gint)(ph * scale));
+
+    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, rw, rh);
+    cairo_t* cr = cairo_create(surface);
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_paint(cr);
+    cairo_scale(cr, scale, scale);
+    poppler_page_render(page, cr);
+    cairo_destroy(cr);
+    g_object_unref(page);
+
+    cairo_surface_flush(surface);
+    gint stride = cairo_image_surface_get_stride(surface);
+    /* The texture keeps the surface's pixels (no copy) */
+    GBytes* bytes = g_bytes_new_with_free_func(cairo_image_surface_get_data(surface),
+                                               (gsize)stride * (gsize)rh,
+                                               (GDestroyNotify)cairo_surface_destroy, surface);
+    GdkTexture* tex = gdk_memory_texture_new(rw, rh, GDK_MEMORY_B8G8R8A8_PREMULTIPLIED, bytes, (gsize)stride);
+    g_bytes_unref(bytes);
+    return tex;
+}
+
+/* The text of the pages, PREVIEW_BYTES in all at most */
+static void extract_text(PdfTaskData* td, PopplerDocument* doc, GCancellable* cancellable) {
+    td->page_texts = g_ptr_array_new_with_free_func(g_free);
+    gsize text_bytes = 0;
+    for (gint i = 0; i < td->total_pages; i++) {
+        if (g_cancellable_is_cancelled(cancellable)) {
+            break;
+        }
+        if (text_bytes >= PREVIEW_BYTES) {
+            td->text_cut = TRUE;
+            break;
+        }
+        PopplerPage* page = poppler_document_get_page(doc, i);
+        if (page == NULL) {
+            g_ptr_array_add(td->page_texts, g_strdup(""));
+            continue;
+        }
+        gchar* raw_text = poppler_page_get_text(page);
+        g_object_unref(page);
+
+        if (raw_text != NULL && !g_utf8_validate(raw_text, -1, NULL)) {
+            gchar* valid = g_utf8_make_valid(raw_text, -1);
+            g_free(raw_text);
+            raw_text = valid;
+        }
+        if (raw_text == NULL) {
+            raw_text = g_strdup("");
+        }
+        /* At most PREVIEW_BYTES in all, cut at a character boundary */
+        gsize len = strlen(raw_text);
+        if (text_bytes + len > PREVIEW_BYTES) {
+            gsize keep = PREVIEW_BYTES - text_bytes;
+            while (keep > 0 && ((guchar)raw_text[keep] & 0xC0) == 0x80) {
+                keep--;
+            }
+            raw_text[keep] = '\0';
+            len = keep;
+            td->text_cut = TRUE;
+        }
+        text_bytes += len;
+        g_ptr_array_add(td->page_texts, raw_text);
+        if (td->text_cut) {
+            break;
+        }
+    }
+}
+
+static void pdf_preview_thread_func(GTask* task, gpointer source_object,
+                                    gpointer task_data, GCancellable* cancellable) {
+    (void)source_object;
+    PdfTaskData* td = (PdfTaskData*)task_data;
+
+    if (g_task_return_error_if_cancelled(task)) {
         return;
     }
+    /* The first task opens the document, the next ones reuse it */
+    if (td->session == NULL && !open_document(task, td, cancellable)) {
+        return;
+    }
+    PopplerDocument* doc = g_ptr_array_index(td->session->docs, 0);
 
-    td->total_pages = poppler_document_get_n_pages(doc);
-    td->doc_title = poppler_document_get_title(doc);
-    td->doc_author = poppler_document_get_author(doc);
-    td->doc_ver = poppler_document_get_pdf_version_string(doc);
     if (td->first_page == 0) {
+        td->total_pages = poppler_document_get_n_pages(doc);
+        td->doc_title = poppler_document_get_title(doc);
+        td->doc_author = poppler_document_get_author(doc);
+        td->doc_ver = poppler_document_get_pdf_version_string(doc);
         PopplerIndexIter* index = poppler_index_iter_new(doc);
         if (index != NULL) {
             td->marks = g_ptr_array_new_with_free_func(pdf_mark_free);
@@ -406,89 +537,14 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
             if (g_cancellable_is_cancelled(cancellable)) {
                 break;
             }
-            PopplerPage* page = poppler_document_get_page(doc, i);
-            if (page == NULL) {
-                continue;
-            }
-
-            double pw = 0.0, ph = 0.0;
-            poppler_page_get_size(page, &pw, &ph);
-
-            double scale = (pw > 0.0) ? ((double)td->max_w / pw) : 1.0;
-            scale = CLAMP(scale, 0.25, 2.5);
-            gint rw = MAX(1, (gint)(pw * scale));
-            gint rh = MAX(1, (gint)(ph * scale));
-
-            cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, rw, rh);
-            cairo_t* cr = cairo_create(surface);
-            cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-            cairo_paint(cr);
-            cairo_scale(cr, scale, scale);
-            poppler_page_render(page, cr);
-            cairo_destroy(cr);
-
-            cairo_surface_flush(surface);
-            gint stride = cairo_image_surface_get_stride(surface);
-            /* The texture keeps the surface's pixels (no copy) */
-            GBytes* bytes = g_bytes_new_with_free_func(cairo_image_surface_get_data(surface),
-                                                       (gsize)stride * (gsize)rh,
-                                                       (GDestroyNotify)cairo_surface_destroy, surface);
-            GdkTexture* tex = gdk_memory_texture_new(
-                rw, rh, GDK_MEMORY_B8G8R8A8_PREMULTIPLIED, bytes, (gsize)stride);
-            g_bytes_unref(bytes);
-            g_object_unref(page);
-
+            GdkTexture* tex = render_page(doc, i, td->max_w);
             if (tex != NULL) {
                 g_ptr_array_add(td->page_textures, tex);
             }
         }
     } else {
-        td->page_texts = g_ptr_array_new_with_free_func(g_free);
-        gsize text_bytes = 0;
-        for (gint i = 0; i < td->total_pages; i++) {
-            if (g_cancellable_is_cancelled(cancellable)) {
-                break;
-            }
-            if (text_bytes >= PREVIEW_BYTES) {
-                td->text_cut = TRUE;
-                break;
-            }
-            PopplerPage* page = poppler_document_get_page(doc, i);
-            if (page == NULL) {
-                g_ptr_array_add(td->page_texts, g_strdup(""));
-                continue;
-            }
-            gchar* raw_text = poppler_page_get_text(page);
-            g_object_unref(page);
-
-            if (raw_text != NULL && !g_utf8_validate(raw_text, -1, NULL)) {
-                gchar* valid = g_utf8_make_valid(raw_text, -1);
-                g_free(raw_text);
-                raw_text = valid;
-            }
-            if (raw_text == NULL) {
-                raw_text = g_strdup("");
-            }
-            /* At most PREVIEW_BYTES in all, cut at a character boundary */
-            gsize len = strlen(raw_text);
-            if (text_bytes + len > PREVIEW_BYTES) {
-                gsize keep = PREVIEW_BYTES - text_bytes;
-                while (keep > 0 && ((guchar)raw_text[keep] & 0xC0) == 0x80) {
-                    keep--;
-                }
-                raw_text[keep] = '\0';
-                len = keep;
-                td->text_cut = TRUE;
-            }
-            text_bytes += len;
-            g_ptr_array_add(td->page_texts, raw_text);
-            if (td->text_cut) {
-                break;
-            }
-        }
+        extract_text(td, doc, cancellable);
     }
-
-    g_object_unref(doc);
 
     if (g_task_return_error_if_cancelled(task)) {
         return;
