@@ -12,8 +12,14 @@
  *
  * Each cell shows its type (Code, Markdown, Raw: a menu changes it), its
  * source in the code font (highlighted in the kernel language, or
- * Markdown), and for code cells the outputs kept in the file (text, errors,
- * images). Cells are not run: there is no kernel.
+ * Markdown), and for code cells their outputs (text, errors, images).
+ *
+ * Code cells run in a Jupyter kernel (ipynb_run.c, ipynb_kernel.h: the
+ * notebook's kernel, started at the first run through jupyter_client, in
+ * the notebook's directory; stopped with the tab): Shift+Enter runs the
+ * cell and goes to the next one, Ctrl+Enter runs it; the bar runs every
+ * cell, interrupts or restarts the kernel; a line asked by the code
+ * (input()) is typed in a row under the bar.
  *
  * - Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the
  *   cell; Alt+Enter: new code cell below; Alt+Delete: delete the cell (the

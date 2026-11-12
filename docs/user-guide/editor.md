@@ -26,9 +26,15 @@ quitting with unsaved changes asks first.
 A Jupyter notebook (`.ipynb`) opens in a **notebook tab** instead: one box
 per cell, with its type (**Code**, **Markdown** or **Raw**, changed in its
 menu), its source highlighted in the kernel's language or as Markdown, and
-under a code cell the outputs saved in the file (text, errors, images).
-Cells are not run: there is no kernel.
+under a code cell its outputs (text, errors, images).
 
+- `Shift+Enter` runs the cell and goes to the next one, `Ctrl+Enter` runs
+  it. The cells run in the notebook's Jupyter kernel, started at the first
+  run in the notebook's folder and stopped with the tab: Python 3 with
+  `jupyter_client` and the kernel (`ipykernel` for Python) must be
+  installed. **Run All**, the stop and restart buttons of the bar run every
+  cell, interrupt and restart the kernel; when the code asks for a line
+  (`input()`), type it in the row under the bar.
 - `Ctrl+Up` / `Ctrl+Down` go to the previous / next cell, `Alt+Up` /
   `Alt+Down` move the cell, `Alt+Enter` adds a code cell below,
   `Alt+Delete` deletes the cell (**Undo Delete** in the bar puts it back).

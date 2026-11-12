@@ -185,13 +185,18 @@ in the preview)
 
 **Jupyter notebook tab** (a `.ipynb` notebook opened with `Enter` or `e` in
 the explorer: its cells are edited one by one in the editor panel, one tab per
-file, dragged like an editor tab; code cells show the outputs saved in the
-file, they are not run. Saved by itself shortly after each change, when the
-tab closes and at quit; the bar adds cells, clears the outputs, or opens the
-file as JSON text. An nbformat 3 or broken notebook opens as text)
+file, dragged like an editor tab. Code cells run in the notebook's Jupyter
+kernel, started at the first run (needs Python 3 with `jupyter_client` and
+the kernel, e.g. `ipykernel`) and stopped with the tab; a line asked by the
+code (`input()`) is typed in a row under the bar. Saved by itself shortly
+after each change, when the tab closes and at quit; the bar runs every cell,
+interrupts or restarts the kernel, adds cells, clears the outputs, or opens
+the file as JSON text. An nbformat 3 or broken notebook opens as text)
 
 | Key | Action |
 |---|---|
+| `Shift+Enter` | Run the cell and go to the next one (a new code cell after the last) |
+| `Ctrl+Enter` | Run the cell |
 | `Ctrl+Up` / `Ctrl+Down` | Previous / next cell |
 | `Alt+Up` / `Alt+Down` | Move the cell up / down |
 | `Alt+Enter` | New code cell below |

@@ -605,6 +605,11 @@ Layers, from bottom to top
   (`ipynb_tab_save_all()`). Movable like a Video tab, kept with its
   workspace through `ipynb_tab_workspace_hidden()` / `_shown()`; its file is
   the page's `editor_page_file()`, which `editor_session` saves and reopens.
+  `ipynb_run.c` runs the cells (it shares `ipynb_tab_private.h` with
+  `ipynb_tab.c`): an `ipynb_kernel` started at the first run, the bridge
+  script from the GResource, outputs added to the `IpynbDoc` by cell key
+  and drawn once per main loop turn (`ipynb_tab_refresh_cell()`: the other
+  cells and the source are left alone), the input row, interrupt, restart.
 - `games` — the hidden Games view (unlocked in the help panel, for the
   current workspace only: `VirtualLayout.games_unlocked`) and its game tabs
   (`game_*`) in the preview notebook, kept with their workspace through

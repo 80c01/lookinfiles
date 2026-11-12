@@ -108,6 +108,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Video tab"), "s", N_("Next subtitles (then off)"), 0},
     {N_("Video tab"), "Ctrl+W", N_("Close the Video tab"), 0},
     {N_("Video tab"), NC_("key", "Ctrl+Alt+Arrow / right-click tab"), N_("Move the Video tab to another pane, as an editor tab"), 0},
+    {N_("Jupyter notebook tab"), "Shift+Enter", N_("Run the cell and go to the next one"), 0},
+    {N_("Jupyter notebook tab"), "Ctrl+Enter", N_("Run the cell (in the notebook's Jupyter kernel)"), 0},
     {N_("Jupyter notebook tab"), "Ctrl+Up / Ctrl+Down", N_("Previous / next cell"), 0},
     {N_("Jupyter notebook tab"), "Alt+Up / Alt+Down", N_("Move the cell up / down"), 0},
     {N_("Jupyter notebook tab"), "Alt+Enter", N_("New code cell below"), 0},

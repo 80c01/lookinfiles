@@ -8776,8 +8776,8 @@ msgstr "Annuler la suppression"
 msgid "Put Back the Cell Deleted Last"
 msgstr "Remettre la dernière cellule supprimée"
 
-msgid "Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"
-msgstr "Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule"
+msgid "Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"
+msgstr "Shift+Enter : exécuter la cellule et passer à la suivante ; Ctrl+Enter : l’exécuter ; Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule"
 
 #, c-format
 msgid "Not saved: %s"
@@ -8794,3 +8794,62 @@ msgid "… (%u more line)"
 msgid_plural "… (%u more lines)"
 msgstr[0] "… (%u ligne de plus)"
 msgstr[1] "… (%u lignes de plus)"
+
+msgid "Run the cell and go to the next one"
+msgstr "Exécuter la cellule et passer à la suivante"
+
+msgid "Run the cell (in the notebook's Jupyter kernel)"
+msgstr "Exécuter la cellule (dans le noyau Jupyter du notebook)"
+
+msgid "Run Cell (Ctrl+Enter)"
+msgstr "Exécuter la cellule (Ctrl+Enter)"
+
+msgid "Kernel starting…"
+msgstr "Démarrage du noyau…"
+
+msgid "Kernel idle"
+msgstr "Noyau inactif"
+
+msgid "Kernel busy"
+msgstr "Noyau occupé"
+
+msgid "Kernel died"
+msgstr "Noyau arrêté brutalement"
+
+msgid "No kernel"
+msgstr "Aucun noyau"
+
+msgid "Running cells needs Jupyter: pip install jupyter_client ipykernel"
+msgstr "Exécuter les cellules demande Jupyter : pip install jupyter_client ipykernel"
+
+msgid "The kernel stopped"
+msgstr "Le noyau s’est arrêté"
+
+msgid "Input:"
+msgstr "Saisie :"
+
+msgid "Running cells needs Python 3"
+msgstr "Exécuter les cellules demande Python 3"
+
+msgid "Kernel restarted"
+msgstr "Noyau redémarré"
+
+msgid "Run All"
+msgstr "Tout exécuter"
+
+msgid "Run Every Code Cell"
+msgstr "Exécuter toutes les cellules de code"
+
+msgid "Interrupt the Kernel"
+msgstr "Interrompre le noyau"
+
+msgid "Restart the Kernel (Outputs Kept)"
+msgstr "Redémarrer le noyau (sorties gardées)"
+
+#, c-format
+msgid "Kernel not installed: %s"
+msgstr "Noyau non installé : %s"
+
+#, c-format
+msgid "Kernel error: %s"
+msgstr "Erreur du noyau : %s"

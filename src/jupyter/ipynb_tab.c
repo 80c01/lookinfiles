@@ -4,6 +4,7 @@
 #include "editor/editor.h"
 #include "editor/file_save.h"
 #include "jupyter/ipynb_doc.h"
+#include "jupyter/ipynb_tab_private.h"
 #include "theme/icons.h"
 #include "theme/text_style.h"
 #include "theme/theme.h"
@@ -21,29 +22,6 @@
 #define MAX_NOTEBOOK_BYTES (64 * 1024 * 1024)
 #define IMAGE_MAX_HEIGHT 480
 
-typedef struct {
-    AppData* app;
-    GtkWidget* root;        /* the notebook page */
-    GtkWidget* tab_label;   /* owned ref: kept while the page moves */
-    GtkWidget* cells_box;   /* one child per cell */
-    GtkWidget* info;        /* kernel and cell count */
-    GtkWidget* status;      /* saved, or the error of the last save */
-    GtkWidget* undo_button; /* puts the cell deleted last back */
-    GPtrArray* views;       /* GtkTextView* of each cell (not referenced) */
-    GHashTable* running;    /* keys (ipynb_doc_cell_key()) of the cells run or waiting to run */
-    IpynbDoc* doc;
-    gchar* path;
-    gchar* name;
-    IpynbCell* deleted;     /* the cell deleted last, and where it was */
-    guint deleted_at;
-    guint current;          /* the cell with the focus, or used last */
-    guint save_source;
-    guint rebuild_source;
-    guint focus_after;      /* cell focused once rebuilt */
-    gboolean dirty;
-    gboolean building;      /* filling the buffers: not a change */
-    gboolean closed;
-} IpynbTab;
 
 static void ensure_css(void) {
     static gboolean done = FALSE;
@@ -54,6 +32,8 @@ static void ensure_css(void) {
                   " border-bottom: 1px solid @border; font-size: @size_bar; }"
                   ".ipynb-tab .ipynb-bar label { color: @fg_muted; }"
                   ".ipynb-tab .ipynb-bar .ipynb-error { color: @error; }"
+                  ".ipynb-tab .ipynb-input { padding: 4px 8px; background-color: @bg_bar;"
+                  " border-bottom: 1px solid @border; }"
                   ".ipynb-tab .ipynb-cells { padding: 12px 16px 48px 16px; }"
                   ".ipynb-tab .ipynb-cell { border: 1px solid @border; border-left: 3px solid @border;"
                   " border-radius: 4px; background-color: @bg_view; }"
@@ -108,7 +88,7 @@ static IpynbTab* focused_tab(AppData* app) {
 
 /* --- Saving --- */
 
-static void set_status(IpynbTab* t, const gchar* text, gboolean error) {
+void ipynb_tab_set_status(IpynbTab* t, const gchar* text, gboolean error) {
     gtk_label_set_text(GTK_LABEL(t->status), text);
     if (error) {
         gtk_widget_add_css_class(t->status, "ipynb-error");
@@ -117,7 +97,7 @@ static void set_status(IpynbTab* t, const gchar* text, gboolean error) {
     }
 }
 
-static void update_info(IpynbTab* t) {
+void ipynb_tab_update_info(IpynbTab* t) {
     guint n = ipynb_doc_n_cells(t->doc);
     gchar* cells = g_strdup_printf(ngettext("%u cell", "%u cells", n), n);
     const gchar* kernel = ipynb_doc_kernel(t->doc);
@@ -137,10 +117,10 @@ static void save_now(IpynbTab* t) {
     GError* error = NULL;
     if (file_save_text(t->path, json, -1, &error)) {
         t->dirty = FALSE;
-        if (!t->closed) set_status(t, _("Saved"), FALSE);
+        if (!t->closed) ipynb_tab_set_status(t, _("Saved"), FALSE);
     } else {
         gchar* msg = g_strdup_printf(_("Not saved: %s"), error->message);
-        if (!t->closed) set_status(t, msg, TRUE);
+        if (!t->closed) ipynb_tab_set_status(t, msg, TRUE);
         g_warning("%s: %s", t->path, msg);
         g_free(msg);
         g_error_free(error);
@@ -155,9 +135,9 @@ static gboolean on_save_timeout(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-static void mark_changed(IpynbTab* t) {
+void ipynb_tab_mark_changed(IpynbTab* t) {
     t->dirty = TRUE;
-    set_status(t, _("Modified"), FALSE);
+    ipynb_tab_set_status(t, _("Modified"), FALSE);
     if (t->save_source != 0) g_source_remove(t->save_source);
     t->save_source = g_timeout_add(SAVE_DELAY_MS, on_save_timeout, t);
 }
@@ -180,7 +160,7 @@ static void queue_rebuild(IpynbTab* t, guint focus) {
     if (t->rebuild_source == 0) t->rebuild_source = g_idle_add(on_rebuild_idle, t);
 }
 
-static void focus_cell(IpynbTab* t, guint index) {
+void ipynb_tab_focus_cell(IpynbTab* t, guint index) {
     if (t->views->len == 0) return;
     index = MIN(index, t->views->len - 1);
     gtk_widget_grab_focus(g_ptr_array_index(t->views, index));
@@ -190,9 +170,9 @@ static guint cell_index(gpointer object) {
     return GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(object), CELL_INDEX_KEY));
 }
 
-static void insert_cell(IpynbTab* t, guint at, IpynbCellType type) {
+void ipynb_tab_insert_cell(IpynbTab* t, guint at, IpynbCellType type) {
     guint index = ipynb_doc_insert_cell(t->doc, at, type);
-    mark_changed(t);
+    ipynb_tab_mark_changed(t);
     queue_rebuild(t, index);
 }
 
@@ -201,7 +181,7 @@ static void move_cell(IpynbTab* t, guint index, gint by) {
     if (index >= n || (by < 0 && index == 0) || (by > 0 && index + 1 >= n)) return;
     guint to = by < 0 ? index - 1 : index + 1;
     ipynb_doc_move_cell(t->doc, index, to);
-    mark_changed(t);
+    ipynb_tab_mark_changed(t);
     queue_rebuild(t, to);
 }
 
@@ -214,7 +194,7 @@ static void delete_cell(IpynbTab* t, guint index) {
     gtk_widget_set_visible(t->undo_button, TRUE);
     /* A notebook keeps one cell to type in */
     if (ipynb_doc_n_cells(t->doc) == 0) ipynb_doc_insert_cell(t->doc, 0, IPYNB_CELL_CODE);
-    mark_changed(t);
+    ipynb_tab_mark_changed(t);
     queue_rebuild(t, index > 0 && index >= ipynb_doc_n_cells(t->doc) ? index - 1 : index);
 }
 
@@ -225,7 +205,7 @@ static void on_undo_delete(GtkButton* button, gpointer data) {
     guint index = ipynb_doc_put_cell(t->doc, t->deleted_at, t->deleted);
     t->deleted = NULL;
     gtk_widget_set_visible(t->undo_button, FALSE);
-    mark_changed(t);
+    ipynb_tab_mark_changed(t);
     queue_rebuild(t, index);
 }
 
@@ -237,7 +217,7 @@ static void on_source_changed(GtkTextBuffer* buffer, gpointer data) {
     gchar* text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
     ipynb_doc_set_source(t->doc, cell_index(buffer), text);
     g_free(text);
-    mark_changed(t);
+    ipynb_tab_mark_changed(t);
 }
 
 static void set_current(IpynbTab* t, guint index) {
@@ -266,8 +246,12 @@ static void on_type_selected(GObject* dropdown, GParamSpec* pspec, gpointer data
     IpynbCellType type = selected == 0 ? IPYNB_CELL_CODE : selected == 1 ? IPYNB_CELL_MARKDOWN : IPYNB_CELL_RAW;
     if (type == ipynb_doc_cell_type(t->doc, index)) return;
     ipynb_doc_set_type(t->doc, index, type);
-    mark_changed(t);
+    ipynb_tab_mark_changed(t);
     queue_rebuild(t, index);
+}
+
+static void on_cell_run(GtkButton* button, gpointer data) {
+    ipynb_run_cell(data, cell_index(button));
 }
 
 static void on_cell_up(GtkButton* button, gpointer data) {
@@ -279,7 +263,7 @@ static void on_cell_down(GtkButton* button, gpointer data) {
 }
 
 static void on_cell_add(GtkButton* button, gpointer data) {
-    insert_cell(data, cell_index(button) + 1, IPYNB_CELL_CODE);
+    ipynb_tab_insert_cell(data, cell_index(button) + 1, IPYNB_CELL_CODE);
 }
 
 static void on_cell_delete(GtkButton* button, gpointer data) {
@@ -380,7 +364,7 @@ static void set_prompt(IpynbTab* t, guint index, GtkWidget* label) {
 
 /* Show the prompt and outputs of the cell at index again (after a run),
  * leaving its source and the other cells as they are */
-static void G_GNUC_UNUSED refresh_cell(IpynbTab* t, guint index) {
+void ipynb_tab_refresh_cell(IpynbTab* t, guint index) {
     if (index >= t->views->len) return;
     GtkWidget* view = g_ptr_array_index(t->views, index);
     GtkWidget* prompt = g_object_get_data(G_OBJECT(view), CELL_PROMPT_KEY);
@@ -414,6 +398,9 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     GtkWidget* spacer = gtk_label_new(NULL);
     gtk_widget_set_hexpand(spacer, TRUE);
     gtk_box_append(GTK_BOX(head), spacer);
+    if (type == IPYNB_CELL_CODE) {
+        gtk_box_append(GTK_BOX(head), cell_button(t, index, "go-next", _("Run Cell (Ctrl+Enter)"), G_CALLBACK(on_cell_run)));
+    }
     gtk_box_append(GTK_BOX(head), cell_button(t, index, "pan-up", _("Move Cell Up (Alt+Up)"), G_CALLBACK(on_cell_up)));
     gtk_box_append(GTK_BOX(head), cell_button(t, index, "pan-down", _("Move Cell Down (Alt+Down)"), G_CALLBACK(on_cell_down)));
     gtk_box_append(GTK_BOX(head),
@@ -486,10 +473,10 @@ static void rebuild(IpynbTab* t) {
     for (guint i = 0; i < ipynb_doc_n_cells(t->doc); i++) {
         gtk_box_append(GTK_BOX(t->cells_box), build_cell(t, i));
     }
-    update_info(t);
+    ipynb_tab_update_info(t);
     guint focus = MIN(t->focus_after, t->views->len > 0 ? t->views->len - 1 : 0);
     set_current(t, focus);
-    if (tab_shown(t) && gtk_widget_get_mapped(t->root)) focus_cell(t, focus);
+    if (tab_shown(t) && gtk_widget_get_mapped(t->root)) ipynb_tab_focus_cell(t, focus);
 }
 
 /* --- Bar --- */
@@ -497,20 +484,20 @@ static void rebuild(IpynbTab* t) {
 static void on_add_code(GtkButton* button, gpointer data) {
     (void)button;
     IpynbTab* t = data;
-    insert_cell(t, t->current + 1, IPYNB_CELL_CODE);
+    ipynb_tab_insert_cell(t, t->current + 1, IPYNB_CELL_CODE);
 }
 
 static void on_add_markdown(GtkButton* button, gpointer data) {
     (void)button;
     IpynbTab* t = data;
-    insert_cell(t, t->current + 1, IPYNB_CELL_MARKDOWN);
+    ipynb_tab_insert_cell(t, t->current + 1, IPYNB_CELL_MARKDOWN);
 }
 
 static void on_clear_outputs(GtkButton* button, gpointer data) {
     (void)button;
     IpynbTab* t = data;
     if (!ipynb_doc_clear_outputs(t->doc, G_MAXUINT)) return;
-    mark_changed(t);
+    ipynb_tab_mark_changed(t);
     queue_rebuild(t, t->current);
 }
 
@@ -538,8 +525,17 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
     if (t->closed) return FALSE;
     GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK | GDK_SUPER_MASK);
     if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_Up || keyval == GDK_KEY_Down)) {
-        if (keyval == GDK_KEY_Up && t->current > 0) focus_cell(t, t->current - 1);
-        if (keyval == GDK_KEY_Down) focus_cell(t, t->current + 1);
+        if (keyval == GDK_KEY_Up && t->current > 0) ipynb_tab_focus_cell(t, t->current - 1);
+        if (keyval == GDK_KEY_Down) ipynb_tab_focus_cell(t, t->current + 1);
+        return TRUE;
+    }
+    if ((keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) &&
+        (mods == GDK_SHIFT_MASK || mods == GDK_CONTROL_MASK)) {
+        if (mods == GDK_SHIFT_MASK) {
+            ipynb_run_advance(t);
+        } else {
+            ipynb_run_cell(t, t->current);
+        }
         return TRUE;
     }
     if (mods != GDK_ALT_MASK) return FALSE;
@@ -552,7 +548,7 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         return TRUE;
     case GDK_KEY_Return:
     case GDK_KEY_KP_Enter:
-        insert_cell(t, t->current + 1, IPYNB_CELL_CODE);
+        ipynb_tab_insert_cell(t, t->current + 1, IPYNB_CELL_CODE);
         return TRUE;
     case GDK_KEY_Delete:
     case GDK_KEY_KP_Delete:
@@ -568,6 +564,7 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
 /* Take the tab out of its notebook, or of the hidden workspace keeping it */
 static void close_tab(IpynbTab* t) {
     AppData* app = t->app;
+    ipynb_run_stop(t);
     save_now(t);
     t->closed = TRUE;
     GtkWidget* root = g_object_ref(t->root);
@@ -615,6 +612,7 @@ static void on_label_right_click(GtkGestureClick* gesture, gint n_press, gdouble
 
 static void on_root_destroy(GtkWidget* widget, gpointer data) {
     IpynbTab* t = data;
+    ipynb_run_stop(t);
     save_now(t); /* destroyed with its window or workspace: the last changes */
     t->closed = TRUE;
     if (t->rebuild_source != 0) {
@@ -633,6 +631,7 @@ static void tab_free(gpointer data) {
     ipynb_doc_free(t->doc);
     g_ptr_array_unref(t->views);
     g_hash_table_unref(t->running);
+    if (t->stale != NULL) g_hash_table_unref(t->stale);
     g_free(t->path);
     g_free(t->name);
     g_free(t);
@@ -682,6 +681,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     /* Bar (top): new cells, clear outputs, JSON; kernel, save state */
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_widget_add_css_class(bar, "ipynb-bar");
+    GtkWidget* kernel_label = ipynb_run_bar(t, bar);
     gtk_box_append(GTK_BOX(bar), bar_button(t, "list-add", _("Code"), _("New Code Cell Below (Alt+Enter)"),
                                             G_CALLBACK(on_add_code)));
     gtk_box_append(GTK_BOX(bar), bar_button(t, "list-add", _("Markdown"), _("New Markdown Cell Below"),
@@ -698,13 +698,16 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     gtk_label_set_ellipsize(GTK_LABEL(t->info), PANGO_ELLIPSIZE_END);
     gtk_label_set_xalign(GTK_LABEL(t->info), 1.0f);
     gtk_widget_set_hexpand(t->info, TRUE);
-    gtk_widget_set_tooltip_text(t->info, _("Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the "
+    gtk_widget_set_tooltip_text(t->info, _("Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; "
+                                           "Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the "
                                            "cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"));
     gtk_box_append(GTK_BOX(bar), t->info);
+    gtk_box_append(GTK_BOX(bar), kernel_label);
     t->status = gtk_label_new(NULL);
     gtk_widget_set_margin_start(t->status, 8);
     gtk_box_append(GTK_BOX(bar), t->status);
     gtk_box_append(GTK_BOX(root), bar);
+    gtk_box_append(GTK_BOX(root), ipynb_run_input_row_new(t));
 
     t->cells_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_add_css_class(t->cells_box, "ipynb-cells");
@@ -729,7 +732,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
 
     t->focus_after = 0;
     rebuild(t);
-    set_status(t, _("Saved"), FALSE);
+    ipynb_tab_set_status(t, _("Saved"), FALSE);
     return t;
 }
 
@@ -775,7 +778,7 @@ gboolean ipynb_tab_open(AppData* app, const gchar* name, const gchar* full, gboo
     }
     GtkNotebook* nb = notebook_of(t->root);
     if (nb != NULL) gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, t->root));
-    focus_cell(t, t->current);
+    ipynb_tab_focus_cell(t, t->current);
     return TRUE;
 }
 

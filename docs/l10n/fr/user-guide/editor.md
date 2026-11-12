@@ -29,10 +29,16 @@ enregistrées demande d’abord.
 Un notebook Jupyter (`.ipynb`) s’ouvre plutôt dans un **onglet notebook** :
 un cadre par cellule, avec son type (**Code**, **Markdown** ou **Brut**, à
 changer dans son menu), sa source colorée dans le langage du noyau ou en
-Markdown et, sous une cellule de code, les sorties enregistrées dans le
-fichier (texte, erreurs, images). Les cellules ne sont pas exécutées : il
-n’y a pas de noyau.
+Markdown et, sous une cellule de code, ses sorties (texte, erreurs, images).
 
+- `Shift+Enter` exécute la cellule et passe à la suivante, `Ctrl+Enter`
+  l’exécute. Les cellules s’exécutent dans le noyau Jupyter du notebook,
+  démarré à la première exécution dans le dossier du notebook et arrêté
+  avec l’onglet : Python 3 avec `jupyter_client` et le noyau (`ipykernel`
+  pour Python) doivent être installés. **Tout exécuter** et les boutons
+  d’arrêt et de redémarrage de la barre exécutent toutes les cellules,
+  interrompent et redémarrent le noyau ; quand le code demande une ligne
+  (`input()`), tapez-la dans la ligne sous la barre.
 - `Ctrl+Up` / `Ctrl+Down` passent à la cellule précédente / suivante,
   `Alt+Up` / `Alt+Down` déplacent la cellule, `Alt+Enter` ajoute une
   cellule de code en dessous, `Alt+Delete` supprime la cellule

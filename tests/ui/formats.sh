@@ -137,12 +137,16 @@ format_scenario() {
     key ctrl+alt+Left;  shot fmt_video_tab_moved_animated
     key ctrl+w;         shot fmt_video_tab_closed
     # Jupyter notebook: Enter opens the notebook tab (cells, outputs);
-    # Ctrl+Down goes to the next cell, Alt+Up moves it up, Alt+Enter adds a
+    # Ctrl+Down goes to the next cell, Ctrl+Enter / Shift+Enter run it, Alt+Up moves it up, Alt+Enter adds a
     # code cell below, Alt+Delete deletes it, Ctrl+S saves, Ctrl+W closes
     key alt+Left Home
     for i in $(seq 18); do key Down; done
     key Return; sleep 0.5; shot fmt_ipynb_tab
     key ctrl+Down;      shot fmt_ipynb_next_cell
+    # Run the cell, then run it and go on: the result depends on Jupyter
+    # being installed and the kernel's start time (not compared)
+    key ctrl+Return; sleep 2; shot fmt_ipynb_run_cell_animated
+    key shift+Return; sleep 1; shot fmt_ipynb_run_advance_animated
     key alt+Up;         shot fmt_ipynb_cell_moved_up
     key alt+Return;     shot fmt_ipynb_cell_added
     key alt+Delete;     shot fmt_ipynb_cell_deleted
