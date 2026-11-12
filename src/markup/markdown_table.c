@@ -6,14 +6,6 @@
 
 #include <string.h>
 
-/* Apply the tag named tag_name from start_mark to end_iter */
-static void apply_tag_mark(GtkTextBuffer* buffer, const gchar* tag_name,
-                           GtkTextMark* start_mark, GtkTextIter* end_iter) {
-    GtkTextIter start_iter;
-    gtk_text_buffer_get_iter_at_mark(buffer, &start_iter, start_mark);
-    gtk_text_buffer_apply_tag_by_name(buffer, tag_name, &start_iter, end_iter);
-}
-
 static gchar* clean_table_cell_text(const gchar* text) {
     GString* clean = g_string_new(NULL);
     const gchar* p = text;
@@ -237,8 +229,11 @@ static void fit_table_later(GtkTextView* view, GtkWidget* frame) {
 
 /* Table as a grid widget in the text (VS Code: no vertical borders, a line
  * under the header, faint lines between rows; CSS in theme.c) */
-static void insert_table_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextIter* iter,
-                              GPtrArray* rows, GPtrArray* aligns, guint cols) {
+void markdown_table_insert_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextIter* iter,
+                                GPtrArray* rows, GPtrArray* aligns, guint cols) {
+    if (cols == 0) {
+        return;
+    }
     GtkWidget* grid = gtk_grid_new();
     gtk_widget_add_css_class(grid, "md-table");
     for (guint r = 0; r < rows->len; r++) {
@@ -286,11 +281,13 @@ static void insert_table_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTextI
         g_signal_connect_object(hadj, "changed", G_CALLBACK(fit_table_frame), frame, 0);
         fit_table_later(view, frame);
     }
-    gtk_text_buffer_insert(buffer, iter, "\n", 1);
 }
 
 /* Without a view (no widgets): a text table with box-drawing borders */
-static void insert_text_table(GtkTextBuffer* buffer, GtkTextIter* iter, GPtrArray* rows, guint cols) {
+void markdown_table_append_text(MdOut* out, GPtrArray* rows, guint cols) {
+    if (cols == 0) {
+        return;
+    }
     for (guint r = 0; r < rows->len; r++) {
         GPtrArray* rc = g_ptr_array_index(rows, r);
         for (guint c = 0; c < rc->len; c++) {
@@ -331,10 +328,7 @@ static void insert_text_table(GtkTextBuffer* buffer, GtkTextIter* iter, GPtrArra
         }
     }
 
-    GtkTextMark* tb_mark = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-    gtk_text_buffer_insert(buffer, iter, border_top->str, -1);
-    apply_tag_mark(buffer, "md_table_border", tb_mark, iter);
-    gtk_text_buffer_delete_mark(buffer, tb_mark);
+    md_out_append_tagged(out, border_top->str, "md_table_border");
 
     for (guint r = 0; r < rows->len; r++) {
         GPtrArray* row_cells = g_ptr_array_index(rows, r);
@@ -349,39 +343,18 @@ static void insert_text_table(GtkTextBuffer* buffer, GtkTextIter* iter, GPtrArra
         }
         g_string_append_c(row_str, '\n');
 
-        GtkTextMark* rm = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-        gtk_text_buffer_insert(buffer, iter, row_str->str, -1);
-        apply_tag_mark(buffer, (r == 0) ? "md_table_header" : "md_table", rm, iter);
-        gtk_text_buffer_delete_mark(buffer, rm);
+        md_out_append_tagged(out, row_str->str, (r == 0) ? "md_table_header" : "md_table");
         g_string_free(row_str, TRUE);
 
         if (r == 0) {
-            GtkTextMark* mb_mark = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-            gtk_text_buffer_insert(buffer, iter, border_mid->str, -1);
-            apply_tag_mark(buffer, "md_table_border", mb_mark, iter);
-            gtk_text_buffer_delete_mark(buffer, mb_mark);
+            md_out_append_tagged(out, border_mid->str, "md_table_border");
         }
     }
 
-    GtkTextMark* bb_mark = gtk_text_buffer_create_mark(buffer, NULL, iter, TRUE);
-    gtk_text_buffer_insert(buffer, iter, border_bot->str, -1);
-    apply_tag_mark(buffer, "md_table_border", bb_mark, iter);
-    gtk_text_buffer_delete_mark(buffer, bb_mark);
+    md_out_append_tagged(out, border_bot->str, "md_table_border");
 
     g_string_free(border_top, TRUE);
     g_string_free(border_mid, TRUE);
     g_string_free(border_bot, TRUE);
     g_free(col_widths);
-}
-
-void markdown_table_insert(GtkTextBuffer* buffer, GtkTextView* view, GtkTextIter* iter,
-                           GPtrArray* rows, GPtrArray* aligns, guint cols) {
-    if (cols == 0) {
-        return;
-    }
-    if (view != NULL) {
-        insert_table_grid(buffer, view, iter, rows, aligns, cols);
-    } else {
-        insert_text_table(buffer, iter, rows, cols);
-    }
 }

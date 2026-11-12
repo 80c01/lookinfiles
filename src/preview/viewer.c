@@ -14,6 +14,7 @@
 #include "editor/editor.h"
 #include "explorer/file_list.h"
 #include "markup/markdown.h"
+#include "markup/markdown_parse.h"
 #include "markup/html.h"
 #include "markup/html_tags.h"
 #include "preview/pdf.h"
@@ -280,6 +281,7 @@ typedef struct {
     gboolean preview;
     gchar* utf8_text;
     PreviewDoc* doc;       /* structured preview (preview_formats) or hex dump */
+    MdOut* md;             /* Markdown parsed for the rendered view */
     const gchar* encoding; /* text encoding detected (static string) */
     gchar* error_msg;
     gint64 start_us;       /* selection time (LOOKIN_DEBUG_PREVIEW timings) */
@@ -300,6 +302,7 @@ static void text_preview_task_data_free(gpointer data) {
     g_free(td->content_type);
     g_free(td->utf8_text);
     preview_doc_free(td->doc);
+    md_out_free(td->md);
     g_free(td->error_msg);
     g_free(td);
 }
@@ -434,6 +437,10 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         input.text_truncated = td->preview;
         td->doc = preview_format_build(&input, cancellable, NULL);
     }
+    if (td->kind == FILE_KIND_MARKDOWN && !td->render_raw && td->doc == NULL) {
+        /* Parsed here: the UI thread only puts it in the view */
+        td->md = markdown_parse(td->utf8_text, td->full, td->preview, td->name, td->fsize, TRUE);
+    }
 
     if (g_task_return_error_if_cancelled(task)) {
         return;
@@ -516,7 +523,9 @@ static void cache_text_preview(TextPreviewTaskData* td) {
     td->content_type = NULL;
     td->utf8_text = NULL;
     td->doc = NULL;
+    td->md = NULL;
     gsize bytes = sizeof(TextPreviewTaskData) +
+                  (kept->md != NULL ? kept->md->text->len * 2 : 0) +
                   (kept->utf8_text != NULL ? strlen(kept->utf8_text) : 0) +
                   preview_doc_bytes(kept->doc);
     gchar* key = preview_cache_key(kept->full, kept->render_raw, kept->page, kept->whole);
@@ -694,8 +703,12 @@ static void show_text_preview(TextPreviewTaskData* td) {
     if (td->utf8_text != NULL) {
         if (is_md) {
             ensure_markdown_tags(app->buffer);
-            render_markdown_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,
-                                      td->preview, td->name, td->fsize);
+            if (td->md != NULL) {
+                markdown_show(app->buffer, GTK_TEXT_VIEW(app->text_view), td->md);
+            } else {
+                render_markdown_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text,
+                                          td->full, td->preview, td->name, td->fsize);
+            }
         } else if (is_html) {
             ensure_html_tags(app->buffer);
             render_html_to_buffer(app->buffer, GTK_TEXT_VIEW(app->text_view), td->utf8_text, td->full,

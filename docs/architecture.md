@@ -466,9 +466,17 @@ Layers, from bottom to top
   (`LOOKIN_INTERNAL_TAB_DRAG=1` turns it on elsewhere, to test it).
 - `markdown`, `html` — rich renderers into a `GtkTextBuffer`. The HTML tags are
   created by `html_tags` (`ensure_html_tags()`), its string helpers are `html_text`.
+  Markdown is parsed without widgets by `markdown_parse` into an `MdOut`
+  (`md_out`: the text, tag ranges, links, and objects standing as one U+FFFC
+  character: pictures, glyphs, tables, highlighted code), in the preview's
+  worker thread; `markdown_show()` puts it in the buffer with one insertion,
+  the objects, then the tags (thousands of small insertions into a buffer
+  shown in a view cost seconds of signal handlers).
+  `render_markdown_to_buffer()` does both, for the other views.
   `markdown_table` — Markdown tables for `markdown`: rows split into cells, a
   grid widget anchored in the view (scrolling horizontally in its own frame
-  when wider than the text), or a box-drawn text table without a view.
+  when wider than the text; the tables of one rendering are measured
+  together before the next frame), or a box-drawn text table without a view.
   `markdown_link` — links that can be followed, off by default (previews keep
   them as text): `markdown_link_attach()` on a view makes the renderer record the
   links of its buffer and calls a handler on click (table cells: `<a href>` labels).

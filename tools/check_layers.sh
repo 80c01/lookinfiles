@@ -189,9 +189,11 @@ lsp_config:code_symbol
 layout_store:app_paths,tab_tree,i18n
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store,file_type_icons,icon_sets
-markdown:app_types,image_utils,palette,fonts,text_tags,markdown_table,markdown_link,icons,i18n
+markdown:app_types,image_utils,fonts,text_tags,markdown_table,markdown_link,markdown_parse,md_out,icons
+markdown_parse:md_out,markdown_table,image_utils,i18n
+md_out:
 markdown_link:
-markdown_table:fonts,palette,markdown_link
+markdown_table:fonts,palette,markdown_link,md_out
 html_tags:fonts,text_tags
 html:app_types,html_text,image_utils,icons,i18n
 minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette,preview_state
