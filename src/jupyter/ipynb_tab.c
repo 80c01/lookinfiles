@@ -13,6 +13,8 @@
 
 #define IPYNB_TAB_KEY "lookin-ipynb-tab"
 #define CELL_INDEX_KEY "lookin-ipynb-cell"
+#define CELL_PROMPT_KEY "lookin-ipynb-prompt"   /* on a cell's view: its In [n] label */
+#define CELL_OUTPUTS_KEY "lookin-ipynb-outputs" /* on a cell's view: its outputs box */
 #define TAB_MAX_CHARS 24
 #define SAVE_DELAY_MS 1000
 #define MAX_OUTPUT_LINES 200
@@ -28,6 +30,7 @@ typedef struct {
     GtkWidget* status;      /* saved, or the error of the last save */
     GtkWidget* undo_button; /* puts the cell deleted last back */
     GPtrArray* views;       /* GtkTextView* of each cell (not referenced) */
+    GHashTable* running;    /* keys (ipynb_doc_cell_key()) of the cells run or waiting to run */
     IpynbDoc* doc;
     gchar* path;
     gchar* name;
@@ -334,14 +337,14 @@ static GtkWidget* output_image(const IpynbOutput* o) {
     return picture;
 }
 
-static GtkWidget* build_outputs(IpynbTab* t, guint index) {
-    GPtrArray* outputs = ipynb_doc_cell_outputs(t->doc, index, MAX_OUTPUT_LINES);
-    if (outputs->len == 0) {
-        g_ptr_array_unref(outputs);
-        return NULL;
+/* Fill box (emptied first) with the outputs of the code cell at index;
+ * hidden without outputs */
+static void fill_outputs(IpynbTab* t, guint index, GtkWidget* box) {
+    GtkWidget* child;
+    while ((child = gtk_widget_get_first_child(box)) != NULL) {
+        gtk_box_remove(GTK_BOX(box), child);
     }
-    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
-    gtk_widget_add_css_class(box, "ipynb-outputs");
+    GPtrArray* outputs = ipynb_doc_cell_outputs(t->doc, index, MAX_OUTPUT_LINES);
     gint count = ipynb_doc_cell_execution_count(t->doc, index);
     for (guint i = 0; i < outputs->len; i++) {
         const IpynbOutput* o = g_ptr_array_index(outputs, i);
@@ -356,8 +359,34 @@ static GtkWidget* build_outputs(IpynbTab* t, guint index) {
         gtk_box_append(GTK_BOX(box), o->kind == IPYNB_OUTPUT_IMAGE ? output_image(o)
                                                                    : output_label(o->text, o->kind == IPYNB_OUTPUT_ERROR));
     }
+    gtk_widget_set_visible(box, outputs->len > 0);
     g_ptr_array_unref(outputs);
-    return box;
+}
+
+/* The In [n] prompt of the code cell at index: [*] while it runs or waits */
+static void set_prompt(IpynbTab* t, guint index, GtkWidget* label) {
+    gchar* prompt;
+    gint count = ipynb_doc_cell_execution_count(t->doc, index);
+    if (g_hash_table_contains(t->running, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, index)))) {
+        prompt = g_strdup("In [*]:");
+    } else if (count >= 0) {
+        prompt = g_strdup_printf("In [%d]:", count);
+    } else {
+        prompt = g_strdup("In [ ]:");
+    }
+    gtk_label_set_text(GTK_LABEL(label), prompt);
+    g_free(prompt);
+}
+
+/* Show the prompt and outputs of the cell at index again (after a run),
+ * leaving its source and the other cells as they are */
+static void G_GNUC_UNUSED refresh_cell(IpynbTab* t, guint index) {
+    if (index >= t->views->len) return;
+    GtkWidget* view = g_ptr_array_index(t->views, index);
+    GtkWidget* prompt = g_object_get_data(G_OBJECT(view), CELL_PROMPT_KEY);
+    GtkWidget* outputs = g_object_get_data(G_OBJECT(view), CELL_OUTPUTS_KEY);
+    if (prompt != NULL) set_prompt(t, index, prompt);
+    if (outputs != NULL) fill_outputs(t, index, outputs);
 }
 
 static GtkWidget* build_cell(IpynbTab* t, guint index) {
@@ -368,11 +397,11 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     /* Head: prompt, type, actions */
     GtkWidget* head = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(head, "ipynb-cell-head");
+    GtkWidget* prompt = NULL;
     if (type == IPYNB_CELL_CODE) {
-        gint count = ipynb_doc_cell_execution_count(t->doc, index);
-        gchar* prompt = count >= 0 ? g_strdup_printf("In [%d]:", count) : g_strdup("In [ ]:");
-        gtk_box_append(GTK_BOX(head), gtk_label_new(prompt));
-        g_free(prompt);
+        prompt = gtk_label_new(NULL);
+        set_prompt(t, index, prompt);
+        gtk_box_append(GTK_BOX(head), prompt);
     }
     const gchar* const types[] = { _("Code"), _("Markdown"), _("Raw"), NULL };
     GtkWidget* dropdown = gtk_drop_down_new_from_strings(types);
@@ -434,8 +463,12 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     g_ptr_array_add(t->views, view);
 
     if (type == IPYNB_CELL_CODE) {
-        GtkWidget* outputs = build_outputs(t, index);
-        if (outputs != NULL) gtk_box_append(GTK_BOX(cell), outputs);
+        GtkWidget* outputs = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+        gtk_widget_add_css_class(outputs, "ipynb-outputs");
+        fill_outputs(t, index, outputs);
+        gtk_box_append(GTK_BOX(cell), outputs);
+        g_object_set_data(G_OBJECT(view), CELL_PROMPT_KEY, prompt);
+        g_object_set_data(G_OBJECT(view), CELL_OUTPUTS_KEY, outputs);
     }
     return cell;
 }
@@ -599,6 +632,7 @@ static void tab_free(gpointer data) {
     if (t->deleted != NULL) ipynb_cell_free(t->deleted);
     ipynb_doc_free(t->doc);
     g_ptr_array_unref(t->views);
+    g_hash_table_unref(t->running);
     g_free(t->path);
     g_free(t->name);
     g_free(t);
@@ -637,6 +671,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     t->name = g_strdup(name);
     t->doc = doc;
     t->views = g_ptr_array_new();
+    t->running = g_hash_table_new(NULL, NULL);
 
     GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(root, "ipynb-tab");
