@@ -6,6 +6,8 @@
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_tab_private.h"
 #include "markup/markdown.h"
+#include "markup/math_paintable.h"
+#include "theme/fonts.h"
 #include "theme/icons.h"
 #include "theme/text_style.h"
 #include "theme/theme.h"
@@ -430,6 +432,20 @@ static GtkWidget* output_image(const IpynbOutput* o) {
     return picture;
 }
 
+/* A formula output, scaled down to the cell's width */
+static GtkWidget* output_math(IpynbTab* t, const IpynbOutput* o) {
+    GdkPaintable* math = math_paintable_new(gtk_widget_get_pango_context(t->root), o->text, TRUE,
+                                            fonts_size(FONT_UI), NULL);
+    GtkWidget* picture = gtk_picture_new_for_paintable(math);
+    gtk_picture_set_can_shrink(GTK_PICTURE(picture), TRUE);
+    gtk_picture_set_content_fit(GTK_PICTURE(picture), GTK_CONTENT_FIT_SCALE_DOWN);
+    gtk_widget_set_halign(picture, GTK_ALIGN_START);
+    gtk_widget_set_size_request(picture, -1, gdk_paintable_get_intrinsic_height(math));
+    gtk_widget_set_tooltip_text(picture, o->text);
+    g_object_unref(math);
+    return picture;
+}
+
 /* Fill box (emptied first) with the outputs of the code cell at index;
  * hidden without outputs */
 static void fill_outputs(IpynbTab* t, guint index, GtkWidget* box) {
@@ -449,8 +465,10 @@ static void fill_outputs(IpynbTab* t, guint index, GtkWidget* box) {
             gtk_box_append(GTK_BOX(box), label);
             g_free(prompt);
         }
-        gtk_box_append(GTK_BOX(box), o->kind == IPYNB_OUTPUT_IMAGE ? output_image(o)
-                                                                   : output_label(o->text, o->kind == IPYNB_OUTPUT_ERROR));
+        GtkWidget* shown = o->kind == IPYNB_OUTPUT_IMAGE  ? output_image(o)
+                           : o->kind == IPYNB_OUTPUT_MATH ? output_math(t, o)
+                                                          : output_label(o->text, o->kind == IPYNB_OUTPUT_ERROR);
+        gtk_box_append(GTK_BOX(box), shown);
     }
     gtk_widget_set_visible(box, outputs->len > 0);
     g_ptr_array_unref(outputs);

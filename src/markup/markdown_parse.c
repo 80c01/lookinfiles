@@ -65,10 +65,110 @@ static const struct { const gchar* entity; const gchar* text; } ENTITIES[] = {
     {"&quot;", "\""}, {"&amp;", "&"}, {"&lt;", "<"}, {"&gt;", ">"}, {"&nbsp;", " "}, {"&#39;", "'"},
 };
 
-/* Inline formatting: emphasis, code, links, pictures, autolinks, entities */
+/* Math environments that may stand outside $$ (as MathJax takes them) */
+static const gchar* const MATH_ENVS[] = {
+    "equation", "equation*", "align", "align*", "aligned", "gather", "gather*", "gathered", "multline",
+    "multline*", "eqnarray", "eqnarray*", "split", "alignat", "alignat*", "cases", "matrix", "pmatrix",
+    "bmatrix", "Bmatrix", "vmatrix", "Vmatrix", "displaymath",
+};
+
+/* The math environment \begin{...} at p, or NULL */
+static const gchar* math_env_at(const gchar* p) {
+    if (!g_str_has_prefix(p, "\\begin{")) return NULL;
+    for (gsize i = 0; i < G_N_ELEMENTS(MATH_ENVS); i++) {
+        gsize n = strlen(MATH_ENVS[i]);
+        if (strncmp(p + 7, MATH_ENVS[i], n) == 0 && p[7 + n] == '}') return MATH_ENVS[i];
+    }
+    return NULL;
+}
+
+static gboolean is_blank(const gchar* s) {
+    while (g_ascii_isspace(*s)) s++;
+    return *s == '\0';
+}
+
+/* The first close at or after p that is not escaped (\$), or NULL */
+static const gchar* find_close(const gchar* p, const gchar* close) {
+    for (const gchar* q = strstr(p, close); q != NULL; q = strstr(q + 1, close)) {
+        gint backslashes = 0;
+        for (const gchar* b = q - 1; b >= p && *b == '\\'; b--) backslashes++;
+        if (backslashes % 2 == 0 || close[0] == '\\') return q;
+    }
+    return NULL;
+}
+
+/* A formula at p: $...$, $$...$$, \(...\), \[...\] or a math environment.
+ * Its TeX in *tex (caller frees), *end after it, *display for the display
+ * forms. $ needs a non-space after it, its closing $ a non-space before
+ * and no digit after ("from $5 to $10" is text). */
+static gboolean find_math(const gchar* p, gchar** tex, const gchar** end, gboolean* display) {
+    const gchar* start = NULL;
+    const gchar* close = NULL;
+    gsize close_len = 0;
+    const gchar* env = math_env_at(p);
+    if (p[0] == '$' && p[1] == '$') {
+        start = p + 2;
+        close = find_close(start, "$$");
+        close_len = 2;
+        *display = TRUE;
+    } else if (p[0] == '$') {
+        if (p[1] == '\0' || g_ascii_isspace(p[1])) return FALSE;
+        start = p + 1;
+        for (close = find_close(start, "$"); close != NULL; close = find_close(close + 1, "$")) {
+            if (!g_ascii_isspace(close[-1]) && !g_ascii_isdigit(close[1]) && close[1] != '$') break;
+        }
+        /* Not across inline code ("$PATH and `$x`") */
+        if (close != NULL && memchr(start, '`', close - start) != NULL) return FALSE;
+        close_len = 1;
+        *display = FALSE;
+    } else if (p[0] == '\\' && (p[1] == '(' || p[1] == '[')) {
+        start = p + 2;
+        close = find_close(start, p[1] == '(' ? "\\)" : "\\]");
+        close_len = 2;
+        *display = p[1] == '[';
+    } else if (env != NULL) {
+        gchar* end_tag = g_strdup_printf("\\end{%s}", env);
+        const gchar* found = strstr(p, end_tag);
+        start = p;
+        close = found != NULL ? found + strlen(end_tag) : NULL;
+        close_len = 0;
+        g_free(end_tag);
+        *display = TRUE;
+    }
+    if (start == NULL || close == NULL || close < start) return FALSE;
+    gchar* inner = g_strndup(start, close - start);
+    if (is_blank(inner)) {
+        /* nothing between the delimiters: text */
+        g_free(inner);
+        return FALSE;
+    }
+    *tex = inner;
+    *end = close + close_len;
+    return TRUE;
+}
+
+/* Inline formatting: emphasis, code, links, pictures, autolinks, entities, math */
 static void append_inline(MdOut* out, const gchar* text, const gchar* doc_dir) {
     const gchar* p = text;
     while (*p != '\0') {
+        /* Math: $x$, $$x$$, \(x\), \[x\], \begin{align}...\end{align} */
+        if (*p == '$' || (*p == '\\' && (p[1] == '(' || p[1] == '[' || p[1] == 'b'))) {
+            gchar* tex = NULL;
+            const gchar* end = NULL;
+            gboolean display = FALSE;
+            if (find_math(p, &tex, &end, &display)) {
+                if (display) {
+                    md_out_add_display_math(out, tex);
+                    while (*end == ' ') end++;
+                } else {
+                    md_out_add_math(out, tex, FALSE);
+                }
+                g_free(tex);
+                p = end;
+                continue;
+            }
+        }
+
         /* Backslash escape */
         if (*p == '\\' && p[1] != '\0') {
             p++;
@@ -207,7 +307,7 @@ static void append_inline(MdOut* out, const gchar* text, const gchar* doc_dir) {
 
         /* Plain text up to the next special character */
         const gchar* next = p;
-        while (*next != '\0' && strchr("\\![`~*_<&", *next) == NULL) {
+        while (*next != '\0' && strchr("\\![`~*_<&$", *next) == NULL) {
             next++;
         }
         if (next > p) {
@@ -277,8 +377,7 @@ static const MdAlert MD_ALERTS[] = {
 static const struct { const gchar* lang; const gchar* label; } SOURCE_LABELS[] = {
     { "mermaid", N_("Mermaid diagram (source)") }, { "plantuml", N_("PlantUML diagram (source)") },
     { "dot", N_("Graphviz diagram (source)") }, { "graphviz", N_("Graphviz diagram (source)") },
-    { "math", N_("Math (TeX source)") }, { "latex", N_("Math (TeX source)") },
-    { "tex", N_("TeX (source)") }, { "katex", N_("Math (TeX source)") },
+    { "latex", N_("Math (TeX source)") }, { "tex", N_("TeX (source)") },
 };
 
 /* Text of a list item: its first line plus the following continuation lines
@@ -332,6 +431,14 @@ static gint parse_fence(Parser* ps, gint i, const gchar* trim) {
         g_string_append(code, ps->lines[j]);
         g_string_append_c(code, '\n');
     }
+    /* ```math (GitHub, GitLab) and ```katex: a display formula */
+    gsize word = strcspn(info, " \t{");
+    if ((word == 4 && g_ascii_strncasecmp(info, "math", 4) == 0) ||
+        (word == 5 && g_ascii_strncasecmp(info, "katex", 5) == 0)) {
+        if (!is_blank(code->str)) md_out_add_display_math(out, code->str);
+        g_string_free(code, TRUE);
+        return j;
+    }
     /* Space between the text and the panel, above and below */
     md_out_append_tagged(out, "\n", "md_block_gap");
     for (gsize k = 0; k < G_N_ELEMENTS(SOURCE_LABELS); k++) {
@@ -351,6 +458,36 @@ static gint parse_fence(Parser* ps, gint i, const gchar* trim) {
     md_out_append_tagged(out, "\n", "md_block_gap");
     g_string_free(code, TRUE);
     return j;
+}
+
+#define MAX_MATH_LINES 200
+
+/* A display formula from line i ($$ ... $$, \[ ... \], a math
+ * environment) standing alone on its lines: shown centred. Returns its last
+ * line, or -1 when the lines are not one (then they are a paragraph). */
+static gint parse_display_math(Parser* ps, gint i, const gchar* trim) {
+    GString* text = g_string_new(trim);
+    gint last = -1;
+    for (gint j = i; j < ps->num_lines && j < i + MAX_MATH_LINES; j++) {
+        if (j > i) {
+            if (is_blank(ps->lines[j])) break;
+            g_string_append_c(text, '\n');
+            g_string_append(text, ps->lines[j]);
+        }
+        gchar* tex = NULL;
+        const gchar* end = NULL;
+        gboolean display = FALSE;
+        if (find_math(text->str, &tex, &end, &display)) {
+            if (display && is_blank(end)) {
+                md_out_add_display_math(ps->out, tex);
+                last = j;
+            }
+            g_free(tex);
+            break;
+        }
+    }
+    g_string_free(text, TRUE);
+    return last;
 }
 
 /* text rendered inline, then a line break, all with tag; h1/h2 get a rule under */
@@ -531,7 +668,9 @@ static gint parse_paragraph(Parser* ps, gint i) {
         j++;
     }
     append_inline(ps->out, para->str, ps->doc_dir);
-    md_out_append(ps->out, "\n", 1);
+    /* A display formula at the end already ended the line */
+    const GString* shown = ps->out->text;
+    if (shown->len == 0 || shown->str[shown->len - 1] != '\n') md_out_append(ps->out, "\n", 1);
     g_string_free(para, TRUE);
     return j;
 }
@@ -580,6 +719,17 @@ MdOut* markdown_parse(const gchar* markdown_text, const gchar* doc_path, gboolea
             i = parse_fence(&ps, i, trim); /* closing fence (or end of text) */
             ps.prev_was_empty = TRUE;      /* the gap replaces the blank line that follows */
             continue;
+        }
+
+        if (g_str_has_prefix(trim, "$$") || g_str_has_prefix(trim, "\\[") || math_env_at(trim) != NULL) {
+            gint last = parse_display_math(&ps, i, trim);
+            if (last >= 0) {
+                ps.last_was_li = FALSE;
+                ps.alert_tag = NULL;
+                i = last;
+                ps.prev_was_empty = FALSE;
+                continue;
+            }
         }
 
         /* ATX headings: # through ###### */

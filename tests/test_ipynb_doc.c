@@ -153,11 +153,15 @@ static void test_long_output_and_image(void) {
     for (gint i = 0; i < 10; i++) g_string_append_printf(nb, "line %d\\n", i);
     g_string_append(nb, "\"}, {\"output_type\": \"display_data\", \"data\": {\"image/png\": \"iVBO\\nRw==\\n\", "
                         "\"text/plain\": \"<Figure>\"}}, "
-                        "{\"output_type\": \"display_data\", \"data\": {\"text/html\": \"<b>x</b>\"}}]}]}");
+                        "{\"output_type\": \"display_data\", \"data\": {\"text/html\": \"<b>x</b>\"}}, "
+                        "{\"output_type\": \"execute_result\", \"data\": {\"text/latex\": \"$\\\\displaystyle \\\\frac{1}{x}$\", "
+                        "\"text/plain\": \"1/x\"}}, "
+                        "{\"output_type\": \"display_data\", \"data\": {\"text/latex\": \"\\\\begin{tabular}{l}\\\\end{tabular}\", "
+                        "\"text/plain\": \"a table\"}}]}]}");
     IpynbDoc* doc = ipynb_doc_parse(nb->str, nb->len, NULL);
     g_assert_nonnull(doc);
     GPtrArray* outs = ipynb_doc_cell_outputs(doc, 0, 3);
-    g_assert_cmpuint(outs->len, ==, 3);
+    g_assert_cmpuint(outs->len, ==, 5);
     IpynbOutput* o = g_ptr_array_index(outs, 0);
     g_assert_cmpint(o->kind, ==, IPYNB_OUTPUT_ERROR);
     g_assert_true(g_str_has_prefix(o->text, "line 0\nline 1\nline 2\n… (7 more lines)"));
@@ -169,6 +173,13 @@ static void test_long_output_and_image(void) {
     o = g_ptr_array_index(outs, 2);
     g_assert_cmpint(o->kind, ==, IPYNB_OUTPUT_TEXT);
     g_assert_nonnull(strstr(o->text, "HTML"));
+    o = g_ptr_array_index(outs, 3);
+    g_assert_cmpint(o->kind, ==, IPYNB_OUTPUT_MATH);
+    g_assert_cmpstr(o->text, ==, "\\displaystyle \\frac{1}{x}");
+    g_assert_true(o->result);
+    o = g_ptr_array_index(outs, 4); /* not a formula: its plain text */
+    g_assert_cmpint(o->kind, ==, IPYNB_OUTPUT_TEXT);
+    g_assert_cmpstr(o->text, ==, "a table");
     g_ptr_array_unref(outs);
     /* nbformat 4.2: new cells have no id */
     ipynb_doc_insert_cell(doc, 0, IPYNB_CELL_MARKDOWN);

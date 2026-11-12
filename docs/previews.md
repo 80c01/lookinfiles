@@ -54,7 +54,7 @@ format. Open work is in
   files (`.pst`, `.ost`) and Outlook Express folders (`.dbx`) show a card
   with their format, size and encryption.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
-  notebooks (Markdown cells, highlighted code, text and image outputs).
+  notebooks (Markdown cells, highlighted code, text, image and formula outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,
   JSONC and JSON Lines) pretty-printed and coloured, diffs and patches with a
   per-file summary, logs coloured by level and shown from their end, manual
@@ -187,7 +187,7 @@ every common format to L3 and never leave one below L1.
 | Format | Level | Module |
 |--------|-------|--------|
 | Text and source code (syntax colours, line numbers, git bars, column line; UTF-16 / Windows-1252 detected; large files load on scroll) | L3 | `viewer`, `text_style`, `text_encoding`, `text_chunks` |
-| Markdown (Mermaid / math blocks labelled as source) | L3 | `markdown` |
+| Markdown (TeX formulas rendered; Mermaid / Graphviz blocks labelled as source) | L3 | `markdown`, `tex_math`, `math_paintable` |
 | HTML | L3 | `html` |
 | Org | L3 | `orgmode` |
 | Images: zoom, EXIF details and orientation, animated GIF, RAW embedded previews | L3 | `image_preview`, `exif`, `animation`, `gif_decoder` |

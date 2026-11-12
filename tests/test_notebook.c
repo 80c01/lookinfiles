@@ -48,6 +48,17 @@ static void test_long_output_and_errors(void) {
     g_assert_null(notebook_to_markdown("{\"a\": 1}", 8, NULL, &error));
     g_assert_nonnull(error);
     g_error_free(error);
+    /* A formula output is display math for the Markdown renderer; other LaTeX is not */
+    const gchar* sympy = "{\"cells\": [{\"cell_type\": \"code\", \"source\": \"x\", \"outputs\": ["
+                         "{\"output_type\": \"display_data\", \"data\": {\"text/latex\": \"$\\\\displaystyle x^{2}$\", "
+                         "\"text/plain\": \"x**2\"}}, "
+                         "{\"output_type\": \"display_data\", \"data\": {\"text/latex\": \"\\\\begin{tabular}\", "
+                         "\"text/plain\": \"table\"}}]}]}";
+    md = notebook_to_markdown(sympy, strlen(sympy), NULL, NULL);
+    g_assert_nonnull(strstr(md, "$$\\displaystyle x^{2}$$\n"));
+    g_assert_nonnull(strstr(md, "table"));
+    g_assert_null(strstr(md, "tabular"));
+    g_free(md);
     gchar* s = notebook_strip_ansi("\x1b[1;31mred\x1b[0m text");
     g_assert_cmpstr(s, ==, "red text");
     g_free(s);

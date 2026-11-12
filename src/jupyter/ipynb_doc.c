@@ -402,6 +402,33 @@ static IpynbOutput* output_image(const Node* data) {
     return o;
 }
 
+/* The formula of a text/latex output: math in $...$, $$...$$, \[...\],
+ * \(...\) or an equation environment (SymPy, IPython.display.Math), else
+ * NULL (a LaTeX table or document is not a formula) */
+static gchar* latex_formula(const gchar* latex) {
+    static const struct {
+        const gchar* open;
+        const gchar* close;
+        gboolean keep; /* environments stay in the TeX */
+    } DELIMS[] = {
+        {"$$", "$$", FALSE}, {"\\[", "\\]", FALSE}, {"\\(", "\\)", FALSE}, {"$", "$", FALSE},
+        {"\\begin{equation", "}", TRUE}, {"\\begin{align", "}", TRUE}, {"\\begin{gather", "}", TRUE},
+    };
+    gchar* text = g_strstrip(g_strdup(latex));
+    gsize len = strlen(text);
+    for (gsize i = 0; i < G_N_ELEMENTS(DELIMS); i++) {
+        gsize open = strlen(DELIMS[i].open), close = strlen(DELIMS[i].close);
+        if (len < open + close || !g_str_has_prefix(text, DELIMS[i].open) || !g_str_has_suffix(text, DELIMS[i].close)) {
+            continue;
+        }
+        gchar* tex = DELIMS[i].keep ? g_strdup(text) : g_strndup(text + open, len - open - close);
+        g_free(text);
+        return tex;
+    }
+    g_free(text);
+    return NULL;
+}
+
 static void output_free(gpointer data) {
     IpynbOutput* o = data;
     g_free(o->text);
@@ -440,6 +467,16 @@ GPtrArray* ipynb_doc_cell_outputs(const IpynbDoc* doc, guint index, guint max_li
         } else if (g_strcmp0(type, "execute_result") == 0 || g_strcmp0(type, "display_data") == 0) {
             Node* data = node_get(out, "data");
             o = output_image(data);
+            if (o == NULL) {
+                gchar* latex = node_text(node_get(data, "text/latex"));
+                gchar* tex = latex != NULL ? latex_formula(latex) : NULL;
+                if (tex != NULL) {
+                    o = g_new0(IpynbOutput, 1);
+                    o->kind = IPYNB_OUTPUT_MATH;
+                    o->text = tex;
+                }
+                g_free(latex);
+            }
             gchar* plain = o == NULL ? node_text(node_get(data, "text/plain")) : NULL;
             if (plain == NULL && o == NULL) plain = node_text(node_get(data, "text/markdown"));
             if (plain != NULL) {

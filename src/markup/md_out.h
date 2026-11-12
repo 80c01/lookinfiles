@@ -22,6 +22,7 @@ typedef enum {
     MD_OBJECT_GLYPH, /* name: a glyph of icons.h */
     MD_OBJECT_TABLE, /* rows (header first), aligns, cols */
     MD_OBJECT_CODE,  /* name: the fence info; text: the code at offset (no object character) */
+    MD_OBJECT_MATH,  /* text: a TeX formula; name: "display" for display style, else NULL */
 } MdObjectKind;
 
 typedef struct {
@@ -79,6 +80,11 @@ void md_out_add_image(MdOut* out, GObject* image);
 void md_out_add_glyph(MdOut* out, const gchar* glyph, const gchar* tag);
 /* A table here, then a line break (takes rows and aligns) */
 void md_out_add_table(MdOut* out, GPtrArray* rows, GPtrArray* aligns, guint cols);
+/* A TeX formula here (display: display style, on a centred line of its own:
+ * see md_out_add_display_math()) */
+void md_out_add_math(MdOut* out, const gchar* tex, gboolean display);
+/* A display formula on a line of its own, centred (tag md_math_display) */
+void md_out_add_display_math(MdOut* out, const gchar* tex);
 /* Highlight code (already appended at offset start) for the fence info */
 void md_out_add_code(MdOut* out, gint start, const gchar* code, const gchar* info);
 

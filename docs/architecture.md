@@ -58,7 +58,7 @@ Layers, from bottom to top
 - `ipynb_doc` — a Jupyter notebook (nbformat 4) held for editing
   (`IpynbDoc`): an owned JSON tree whose members keep their order and their
   number text, the cells read and changed (type, source, outputs as
-  `IpynbOutput`: text, errors, decoded images), inserted, taken out and put
+  `IpynbOutput`: text, errors, decoded images, `text/latex` formulas in math delimiters), inserted, taken out and put
   back, moved; `ipynb_doc_to_json()` writes it as Jupyter does
   (`json.dumps(indent=1, ensure_ascii=False)`, sources as lists of lines),
   so an untouched notebook is written back byte for byte. Read by the
@@ -300,6 +300,15 @@ Layers, from bottom to top
   and moves it back.
 - `html_text` — text helpers of the HTML preview: entities (names are
   case-sensitive), attributes, tag stripping, code language, `<meta>`.
+- `tex_math` — TeX math (the MathJax / KaTeX subset of notebooks and
+  Markdown) parsed into a tree (`TexNode`): symbols as Unicode, letters
+  italic, functions upright, fractions, roots, scripts, big operators and
+  their limits, `\left` / `\right` and `\big` delimiters, accents, boxes,
+  matrices, `cases` and `aligned` environments; never fails (unknown
+  commands kept as text, nesting capped). `tex_math_to_text()` gives a
+  linear form, for the tests. Its symbol tables (Greek, operators,
+  relations, arrows, delimiters, big operators, functions, accents) are
+  `tex_symbols`.
 - `note_types` — note types of the notes view (`NoteType`: Plain Text,
   Markdown, Org-mode): extension, display name, icon, row badge and the
   name stored in `notes.xml` (the former `rich` reads as Markdown).
@@ -345,7 +354,8 @@ Layers, from bottom to top
   `@size_small` / `@size_bar` / `@size_normal` / `@size_title` (derived
   from the UI size), `@size_code`; `fonts_family()` for text tags and
   markup; `FONT_SCALE_*` for headings, titles, captions and code in
-  rendered documents.
+  rendered documents; `fonts_math_family()` for TeX formulas (serif, not
+  themed).
 - `lsp_protocol`, `lsp_client`, `lsp_config` — Language Server Protocol:
   messages and results (positions: UTF-16 unless the server chose UTF-8,
   `lsp_column_to_byte()`), one server process spoken to asynchronously on the
@@ -492,7 +502,8 @@ Layers, from bottom to top
   Markdown (`markdown_parse`), HTML (`html_parse()`) and Org (`org_render`)
   are parsed without widgets into an `MdOut` (`md_out`: the text, tag
   ranges, links, and objects standing as one U+FFFC character: pictures,
-  glyphs, tables, highlighted code), in the preview's worker thread;
+  glyphs, tables, highlighted code, TeX formulas), in the preview's worker
+  thread;
   `md_out_show()` (`md_show`) puts it in the buffer with one insertion, the
   objects, then the tags (thousands of small insertions into a buffer shown
   in a view cost seconds of signal handlers). `render_markdown_to_buffer()`,
@@ -502,6 +513,15 @@ Layers, from bottom to top
   grid widget anchored in the view (scrolling horizontally in its own frame
   when wider than the text; the tables of one rendering are measured
   together before the next frame), or a box-drawn text table without a view.
+  `math_paintable` — a `tex_math` tree laid out as TeX does (classes and
+  their spacing, script sizes, fraction and radical rules on the math axis,
+  delimiters stretched around it) into a `GdkPaintable` drawn with Pango and
+  Cairo in the palette's text colour at snapshot time. `md_show` inserts it
+  with a `rise` tag of its depth, so inline formulas share the text's
+  baseline; display formulas (`$$`, `\[`, environments, ```` ```math ````)
+  are centred lines (`md_math_display`). Markdown finds them in
+  `markdown_parse` (`$` needs a non-space inside and no digit after the
+  closing one, so prices stay text).
   `markdown_link` — links that can be followed, off by default (previews keep
   them as text): `markdown_link_attach()` on a view makes the renderer record the
   links of its buffer and calls a handler on click (table cells: `<a href>` labels).
@@ -601,7 +621,7 @@ Layers, from bottom to top
   an editor file gets this tab instead (an nbformat 3 or broken one stays
   text; `editor_open_text_file()` skips the hook: **Edit as JSON**). One box
   per cell (type menu, source view highlighted with the kernel's language,
-  outputs; a Markdown cell also has a rendered view, `render_markdown_to_buffer()`,
+  outputs, `text/latex` formulas as a `math_paintable`; a Markdown cell also has a rendered view, `render_markdown_to_buffer()`,
   shown instead of its source unless its key is in `editing`: run renders it,
   `Enter` / double click edits it) built again after each change of the cells' number, order or
   type; saved by itself after each change (`file_save_text()`), at close,

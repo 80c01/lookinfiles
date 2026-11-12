@@ -16,6 +16,11 @@ void ensure_markdown_tags(GtkTextBuffer* buffer) {
     CREATE_TAG("md_body",
                "pixels-inside-wrap", 4);
 
+    CREATE_TAG("md_math_display", /* a display formula ($$...$$), centred */
+               "justification", GTK_JUSTIFY_CENTER,
+               "pixels-above-lines", 6,
+               "pixels-below-lines", 6);
+
     CREATE_TAG("md_gap", /* blank line between blocks */
                "size-points", 8.0);
 

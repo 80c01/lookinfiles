@@ -29,6 +29,11 @@ const gchar* fonts_family(FontRole role) {
     return families[role] != NULL ? families[role] : DEFAULTS[role].family;
 }
 
+const gchar* fonts_math_family(void) {
+    return "Latin Modern Roman, CMU Serif, STIX Two Text, Libertinus Serif, Cambria, DejaVu Serif, "
+           "Noto Serif, Liberation Serif, Times New Roman, serif";
+}
+
 gint fonts_size(FontRole role) {
     g_return_val_if_fail(valid_role(role), 13);
     return sizes[role] > 0 ? sizes[role] : DEFAULTS[role].size;

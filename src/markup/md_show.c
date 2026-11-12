@@ -2,7 +2,9 @@
 #include "markup/md_show.h"
 #include "markup/markdown_link.h"
 #include "markup/markdown_table.h"
+#include "markup/math_paintable.h"
 #include "media/image_utils.h"
+#include "theme/fonts.h"
 #include "theme/icons.h"
 
 #ifdef HAVE_GSV
@@ -109,6 +111,24 @@ static void highlight_code(GtkTextBuffer* buffer, gint start, const gchar* code,
 }
 #endif
 
+/* A formula at at (moved after it), lowered so that its baseline meets the text's */
+static void insert_math(GtkTextBuffer* buffer, GtkTextView* view, GtkTextIter* at, const MdObject* o) {
+    PangoContext* pc = view != NULL ? gtk_widget_get_pango_context(GTK_WIDGET(view)) : NULL;
+    gint descent = 0;
+    GdkPaintable* math = math_paintable_new(pc, o->text, o->name != NULL, fonts_size(FONT_UI), &descent);
+    gint offset = gtk_text_iter_get_offset(at);
+    gtk_text_buffer_insert_paintable(buffer, at, math);
+    g_object_unref(math);
+    if (descent <= 0) return;
+    gchar name[32];
+    g_snprintf(name, sizeof name, "md_math_rise_%d", descent);
+    GtkTextTag* tag = gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(buffer), name);
+    if (tag == NULL) tag = gtk_text_buffer_create_tag(buffer, name, "rise", -descent * PANGO_SCALE, NULL);
+    GtkTextIter start;
+    gtk_text_buffer_get_iter_at_offset(buffer, &start, offset);
+    gtk_text_buffer_apply_tag(buffer, tag, &start, at);
+}
+
 /* Show the object o (its U+FFFC already in the text, except code) */
 static void show_object(GtkTextBuffer* buffer, GtkTextView* view, const MdObject* o) {
     if (o->kind == MD_OBJECT_CODE) {
@@ -141,6 +161,9 @@ static void show_object(GtkTextBuffer* buffer, GtkTextView* view, const MdObject
         if (view != NULL) {
             markdown_table_insert_grid(buffer, view, &at, o->rows, o->aligns, o->cols);
         }
+        break;
+    case MD_OBJECT_MATH:
+        insert_math(buffer, view, &at, o);
         break;
     case MD_OBJECT_CODE:
         break;

@@ -93,6 +93,45 @@ static void test_blocks(void) {
     g_assert_nonnull(find_object(out, MD_OBJECT_GLYPH));
 }
 
+/* The TeX of the formulas of markdown, "|"-separated, display ones in [] */
+static gchar* formulas(const gchar* markdown) {
+    g_autoptr(MdOut) out = markdown_parse(markdown, NULL, FALSE, NULL, 0, TRUE);
+    GString* s = g_string_new(NULL);
+    for (guint i = 0; i < out->objects->len; i++) {
+        const MdObject* o = &g_array_index(out->objects, MdObject, i);
+        if (o->kind != MD_OBJECT_MATH) continue;
+        if (s->len > 0) g_string_append_c(s, '|');
+        g_string_append_printf(s, o->name != NULL ? "[%s]" : "%s", o->text);
+    }
+    return g_string_free(s, FALSE);
+}
+
+static void check_formulas(const gchar* markdown, const gchar* expected) {
+    gchar* got = formulas(markdown);
+    g_assert_cmpstr(got, ==, expected);
+    g_free(got);
+}
+
+static void test_math(void) {
+    check_formulas("Euler: $e^{i\\pi}+1=0$ and \\(a_b\\).", "e^{i\\pi}+1=0|a_b");
+    check_formulas("From $5 to $10, $ x $ or \\$y\\$.", "");          /* prices, spaces, escapes */
+    check_formulas("`$HOME` and $PATH and `$x`", "");                  /* not across code */
+    check_formulas("Inline $$x^2$$ display", "[x^2]");
+    check_formulas("$$\n\\sum_{i=1}^n i\n$$\n", "[\n\\sum_{i=1}^n i\n]");
+    check_formulas("\\[ a \\]", "[ a ]");
+    check_formulas("\\begin{align}\na &= b\n\\end{align}\n", "[\\begin{align}\na &= b\n\\end{align}]");
+    check_formulas("```math\nE = mc^2\n```\n", "[E = mc^2\n]");
+    check_formulas("$$ $$ and $a*b*c$ *d*", "a*b*c");                  /* emphasis not in math */
+
+    /* A display formula is a centred line of its own */
+    g_autoptr(MdOut) out = markdown_parse("Before $$x$$ after", NULL, FALSE, NULL, 0, TRUE);
+    g_assert_cmpstr(out->text->str, ==, "Before \n" MD_OUT_OBJECT_CHAR "\nafter\n");
+    g_assert_true(has_span(out, "md_math_display", MD_OUT_OBJECT_CHAR "\n"));
+    g_autoptr(MdOut) block = markdown_parse("$$\nx\n$$\n\nText", NULL, FALSE, NULL, 0, TRUE);
+    g_assert_true(g_str_has_prefix(block->text->str, MD_OUT_OBJECT_CHAR "\n"));
+    g_assert_null(strstr(block->text->str, "$"));
+}
+
 static void test_tables(void) {
     const gchar* md = "| a | b |\n|:--|--:|\n| 1 | **2** |\n";
     g_autoptr(MdOut) widgets = markdown_parse(md, NULL, FALSE, NULL, 0, TRUE);
@@ -128,6 +167,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/md_out/offsets", test_offsets);
     g_test_add_func("/md_out/inline", test_inline);
     g_test_add_func("/md_out/blocks", test_blocks);
+    g_test_add_func("/md_out/math", test_math);
     g_test_add_func("/md_out/tables", test_tables);
     g_test_add_func("/md_out/missing_image", test_missing_image);
     g_test_add_func("/md_out/preview_banner", test_preview_banner);

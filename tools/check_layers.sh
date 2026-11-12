@@ -165,6 +165,9 @@ jump_list:
 trash_restore:
 note_types:
 html_text:
+tex_math:tex_symbols
+tex_symbols:tex_math
+math_paintable:tex_math,fonts,palette
 notes_store:note_types,notebook_icons
 notebook_icons:
 canvas_doc:
@@ -192,7 +195,7 @@ layout_store:app_paths,tab_tree,i18n
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store,file_type_icons,icon_sets
 markdown:app_types,fonts,text_tags,markdown_parse,md_show
-md_show:md_out,markdown_link,markdown_table,image_utils,icons
+md_show:md_out,markdown_link,markdown_table,math_paintable,image_utils,icons,fonts
 markdown_parse:md_out,markdown_table,image_utils,i18n
 md_out:
 markdown_link:

@@ -40,6 +40,9 @@ typedef enum {
 const gchar* fonts_family(FontRole role);
 /* Size in pixels */
 gint fonts_size(FontRole role);
+/* Family list for TeX formulas (math_paintable.h): serif faces with true
+ * italics, as TeX draws math; sized from FONT_UI, not themed */
+const gchar* fonts_math_family(void);
 
 /* A valid family list: names of letters, digits, spaces, '-' and '_',
  * separated by commas */

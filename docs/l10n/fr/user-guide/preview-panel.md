@@ -15,7 +15,7 @@ comment se servir du panneau.
 | Fichier | Aperçu |
 |---|---|
 | Texte et code source | Coloration syntaxique, numéros de ligne pour le code, barres de modification git |
-| Markdown | Rendu comme une page web : titres, listes, listes de tâches, tableaux, blocs de code, images |
+| Markdown | Rendu comme une page web : titres, listes, listes de tâches, tableaux, blocs de code, images, formules TeX (`$...$`, `$$...$$`, `\(...\)`, `\[...\]`, environnements mathématiques, blocs ```` ```math ````) |
 | HTML, Org-mode | Rendus ; Org-mode est interactif (voir plus bas) |
 | Images | Ajustées au panneau, avec l’appareil, l’exposition, la date et la position GPS |
 | PDF | Les pages |

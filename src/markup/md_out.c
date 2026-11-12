@@ -114,6 +114,20 @@ void md_out_add_table(MdOut* out, GPtrArray* rows, GPtrArray* aligns, guint cols
     md_out_append(out, "\n", 1);
 }
 
+void md_out_add_math(MdOut* out, const gchar* tex, gboolean display) {
+    MdObject* o = add_object(out, MD_OBJECT_MATH, TRUE);
+    o->text = g_strdup(tex);
+    o->name = display ? g_strdup("display") : NULL;
+}
+
+void md_out_add_display_math(MdOut* out, const gchar* tex) {
+    if (out->text->len > 0 && out->text->str[out->text->len - 1] != '\n') md_out_append(out, "\n", 1);
+    gint start = out->n_chars;
+    md_out_add_math(out, tex, TRUE);
+    md_out_append(out, "\n", 1);
+    md_out_tag_from(out, start, "md_math_display");
+}
+
 void md_out_add_code(MdOut* out, gint start, const gchar* code, const gchar* info) {
     MdObject o = {0};
     o.kind = MD_OBJECT_CODE;

@@ -14,7 +14,7 @@ panel.
 | File | Preview |
 |---|---|
 | Text and source code | Syntax highlighting, line numbers for code, git change bars |
-| Markdown | Rendered like a web page: headings, lists, task lists, tables, code blocks, images |
+| Markdown | Rendered like a web page: headings, lists, task lists, tables, code blocks, images, TeX formulas (`$...$`, `$$...$$`, `\(...\)`, `\[...\]`, math environments, ```` ```math ```` blocks) |
 | HTML, Org-mode | Rendered; Org-mode is interactive (see below) |
 | Images | Fitted to the panel, with camera, exposure, date and GPS details |
 | PDF | Pages |

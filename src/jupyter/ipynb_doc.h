@@ -21,13 +21,14 @@ typedef enum {
 typedef enum {
     IPYNB_OUTPUT_TEXT,   /* stream or plain text result */
     IPYNB_OUTPUT_ERROR,  /* stderr stream or error with its traceback */
-    IPYNB_OUTPUT_IMAGE   /* PNG, JPEG, GIF or SVG data */
+    IPYNB_OUTPUT_IMAGE,  /* PNG, JPEG, GIF or SVG data */
+    IPYNB_OUTPUT_MATH    /* a formula (text/latex in math delimiters): text is its TeX */
 } IpynbOutputKind;
 
 typedef struct {
     IpynbOutputKind kind;
     gboolean result;     /* an execute_result (shown "Out [n]") */
-    gchar* text;         /* TEXT and ERROR (ANSI colours removed) */
+    gchar* text;         /* TEXT and ERROR (ANSI colours removed); MATH: TeX without its delimiters */
     GBytes* image;       /* IMAGE: the decoded data */
     gchar* mime;         /* IMAGE: "image/png"... */
 } IpynbOutput;

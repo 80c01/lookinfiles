@@ -7,6 +7,8 @@ static void test_defaults(void) {
     g_assert_cmpint(fonts_size(FONT_CODE), ==, 13);
     g_assert_true(g_str_has_suffix(fonts_family(FONT_UI), "sans-serif"));
     g_assert_true(g_str_has_suffix(fonts_family(FONT_CODE), "monospace"));
+    g_assert_true(fonts_valid_family(fonts_math_family()));
+    g_assert_true(g_str_has_suffix(fonts_math_family(), "serif"));
 }
 
 static void test_set_and_reset(void) {

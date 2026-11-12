@@ -100,6 +100,22 @@ static void append_rich_output(GString* md, const JsonValue* data, const gchar* 
         }
         g_free(text);
     }
+    /* A formula (SymPy, IPython Math): shown by the Markdown renderer */
+    const JsonValue* latex = json_value_get(data, "text/latex");
+    if (latex != NULL) {
+        gchar* text = json_value_dup_text(latex);
+        gchar* tex = text != NULL ? g_strstrip(text) : NULL;
+        if (tex != NULL && (tex[0] == '$' || g_str_has_prefix(tex, "\\[") || g_str_has_prefix(tex, "\\(") ||
+                            g_str_has_prefix(tex, "\\begin{equation") || g_str_has_prefix(tex, "\\begin{align"))) {
+            if (label != NULL) g_string_append_printf(md, "*%s*\n\n", label);
+            /* $x$ alone on its line: as display math, like Jupyter */
+            gboolean inline_math = tex[0] == '$' && tex[1] != '$';
+            g_string_append_printf(md, inline_math ? "$%s$\n\n" : "%s\n\n", tex);
+            g_free(text);
+            return;
+        }
+        g_free(text);
+    }
     const JsonValue* markdown = json_value_get(data, "text/markdown");
     if (markdown != NULL) {
         gchar* text = json_value_dup_text(markdown);
