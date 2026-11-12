@@ -21,6 +21,27 @@ A file already open is not opened twice: its tab is shown.
 A bullet (●) in the tab title marks unsaved changes. Closing a tab or
 quitting with unsaved changes asks first.
 
+### Jupyter notebooks
+
+A Jupyter notebook (`.ipynb`) opens in a **notebook tab** instead: one box
+per cell, with its type (**Code**, **Markdown** or **Raw**, changed in its
+menu), its source highlighted in the kernel's language or as Markdown, and
+under a code cell the outputs saved in the file (text, errors, images).
+Cells are not run: there is no kernel.
+
+- `Ctrl+Up` / `Ctrl+Down` go to the previous / next cell, `Alt+Up` /
+  `Alt+Down` move the cell, `Alt+Enter` adds a code cell below,
+  `Alt+Delete` deletes the cell (**Undo Delete** in the bar puts it back).
+  The buttons of each cell do the same.
+- The bar adds code or Markdown cells, clears every output (**Clear
+  Outputs**), and opens the file as JSON text in an editor tab (**Edit as
+  JSON**).
+- The notebook saves itself shortly after each change, when the tab closes
+  and at quit (`Ctrl+S` saves at once). It is written as Jupyter writes it,
+  so an unchanged cell gives no difference in git.
+
+An nbformat 3 or damaged notebook opens as text.
+
 ## Tabs and panels
 
 | Key | Action |
@@ -39,8 +60,8 @@ quitting with unsaved changes asks first.
 By default editor tabs share the preview panel. The button at the start of
 the tab bar (**Split Preview Tab from Main Panel**, shown once a tab is
 open) moves them to a panel of their own, beside the preview, so you can
-read one file while editing another. Canvas, terminal and video tabs move
-with them. The same button (**Merge Tabs into Main Panel**) docks them all back.
+read one file while editing another. Canvas, notebook, terminal and video tabs
+move with them. The same button (**Merge Tabs into Main Panel**) docks them all back.
 
 ### Splitting
 

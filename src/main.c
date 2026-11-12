@@ -44,6 +44,7 @@
 #include "widgets/diff_gutter.h"
 #include "widgets/color_column.h"
 #include "canvas/canvas_view.h"
+#include "jupyter/ipynb_tab.h"
 #include "notes/note_types.h"
 #include "code/code_intel.h"
 #include "code/code_nav.h"
@@ -537,6 +538,7 @@ int main(int argc, char** argv) {
     video_preview_init(app);
     audio_preview_init(app);
     git_tab_init(app);
+    editor_set_open_hook(ipynb_tab_open); /* Jupyter notebooks: a tab of their own */
     g_signal_connect(notebook, "switch-page",
                      G_CALLBACK(on_editor_switch_page_changed), app);
     g_signal_connect(editor_notebook, "switch-page",

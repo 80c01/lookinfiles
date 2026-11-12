@@ -125,10 +125,26 @@ void editor_apply_language(GtkTextBuffer* buffer, const gchar* name) {
 
 
 
+static EditorOpenHook open_hook = NULL;
+
+void editor_set_open_hook(EditorOpenHook hook) {
+    open_hook = hook;
+}
+
+/* The hook opens full (not open in an editor tab) in a page of its own */
+static gboolean open_by_hook(AppData* app, const gchar* name, const gchar* full, gboolean dedicated) {
+    if (open_hook == NULL || editor_find_tab(app, full) != NULL) return FALSE;
+    return open_hook(app, name, full, dedicated);
+}
+
 EditorTab* editor_open_dedicated(AppData* app, const gchar* name, const gchar* full,
                                  GtkWidget* keep_focus) {
     if (app == NULL || full == NULL) return NULL;
-    editor_open_file(app, name, full);
+    if (open_by_hook(app, name, full, TRUE)) {
+        if (keep_focus != NULL) gtk_widget_grab_focus(keep_focus);
+        return NULL; /* a page of its own, not an editor tab */
+    }
+    editor_open_text_file(app, name, full);
     EditorTab* tab = editor_find_tab(app, full);
     if (tab == NULL) return NULL; /* media, too large, unreadable: previewed only */
     if (editor_tab_notebook(app, tab) == GTK_NOTEBOOK(app->notebook)) {
@@ -178,6 +194,11 @@ static void editor_tab_add_page(AppData* app, EditorTab* tab, GtkNotebook* targe
 }
 
 void editor_open_file(AppData* app, const gchar* name, const gchar* full) {
+    if (app != NULL && full != NULL && open_by_hook(app, name, full, FALSE)) return;
+    editor_open_text_file(app, name, full);
+}
+
+void editor_open_text_file(AppData* app, const gchar* name, const gchar* full) {
     FileKind kind = (g_strcmp0(full, preview_state_path(app)) == 0) ? preview_state_kind(app)
                                                              : file_kind_of_path(full, name);
     if (file_kind_is_media(kind)) {

@@ -106,6 +106,7 @@ exif:i18n
 font_info:i18n
 man_view:preview_doc,i18n
 notebook:json_view,i18n
+ipynb_doc:json_view,notebook,i18n
 zip_xml:zip_reader
 spreadsheet:zip_reader,zip_xml,preview_doc,i18n
 odf:zip_reader,zip_xml,i18n
@@ -312,7 +313,7 @@ done
 # Removing one is always welcome (then drop it from the list).
 DIR_DEPS="
 canvas:core,editor,explorer,theme,widgets
-chrome:canvas,core,editor,explorer,games,git,markup,media,notes,preview,search,terminal,theme,widgets,workspace
+chrome:canvas,core,editor,explorer,games,git,jupyter,markup,media,notes,preview,search,terminal,theme,widgets,workspace
 code:core,editor,formats,git,markup,preview,theme,widgets
 core:explorer,git,notes,terminal
 editor:canvas,code,core,explorer,games,git,org,preview,search,terminal,theme,vim,widgets,workspace
@@ -320,6 +321,7 @@ explorer:chrome,code,core,editor,formats,games,git,media,notes,preview,search,te
 formats:core,preview
 games:core,editor,explorer,theme,widgets
 git:core,theme,widgets
+jupyter:core,editor,formats,theme,widgets
 mail:core,office,preview
 markup:core,media,theme
 media:core,editor,preview,search,theme
@@ -332,7 +334,7 @@ terminal:core,editor,explorer,theme,widgets,workspace
 theme:core
 vim:theme
 widgets:code,core,explorer,git,preview,theme
-workspace:canvas,chrome,core,editor,explorer,games,git,media,preview,search,terminal,theme,widgets
+workspace:canvas,chrome,core,editor,explorer,games,git,jupyter,media,preview,search,terminal,theme,widgets
 "
 for d in src/*/; do
     dir=$(basename "$d")

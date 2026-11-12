@@ -24,6 +24,30 @@ Une puce (●) dans le titre de l’onglet signale des modifications non
 enregistrées. Fermer un onglet ou quitter avec des modifications non
 enregistrées demande d’abord.
 
+### Notebooks Jupyter
+
+Un notebook Jupyter (`.ipynb`) s’ouvre plutôt dans un **onglet notebook** :
+un cadre par cellule, avec son type (**Code**, **Markdown** ou **Brut**, à
+changer dans son menu), sa source colorée dans le langage du noyau ou en
+Markdown et, sous une cellule de code, les sorties enregistrées dans le
+fichier (texte, erreurs, images). Les cellules ne sont pas exécutées : il
+n’y a pas de noyau.
+
+- `Ctrl+Up` / `Ctrl+Down` passent à la cellule précédente / suivante,
+  `Alt+Up` / `Alt+Down` déplacent la cellule, `Alt+Enter` ajoute une
+  cellule de code en dessous, `Alt+Delete` supprime la cellule
+  (**Annuler la suppression** dans la barre la remet). Les boutons de
+  chaque cellule font de même.
+- La barre ajoute des cellules de code ou Markdown, efface toutes les
+  sorties (**Effacer les sorties**) et ouvre le fichier en texte JSON dans
+  un onglet d’édition (**Éditer en JSON**).
+- Le notebook s’enregistre tout seul peu après chaque modification, à la
+  fermeture de l’onglet et en quittant (`Ctrl+S` enregistre tout de suite).
+  Il est écrit comme Jupyter l’écrit : une cellule inchangée ne donne aucune
+  différence dans git.
+
+Un notebook nbformat 3 ou endommagé s’ouvre en texte.
+
 ## Onglets et panneaux
 
 | Touche | Action |
@@ -43,7 +67,7 @@ Par défaut, les onglets d’édition partagent le panneau d’aperçu. Le bouto
 au début de la barre d’onglets (**Séparer l’onglet Aperçu du panneau
 principal**, affiché dès qu’un onglet est ouvert) les déplace dans un
 panneau à eux, à côté de l’aperçu : vous pouvez ainsi lire un fichier tout
-en en éditant un autre. Les onglets canvas, terminal et vidéo suivent. Le
+en en éditant un autre. Les onglets canvas, notebook, terminal et vidéo suivent. Le
 même bouton (**Fusionner les onglets dans le panneau principal**) les
 remet tous en place.
 

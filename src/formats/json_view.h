@@ -52,6 +52,9 @@ const JsonValue* json_value_get(const JsonValue* value, const gchar* key);
 /* Items of an array or members of an object */
 guint json_value_get_length(const JsonValue* value);
 const JsonValue* json_value_get_item(const JsonValue* value, guint index);
+/* Name of an object member (an item of json_value_get_item() on an object),
+ * unquoted and unescaped; NULL for an array item. Caller frees. */
+gchar* json_value_dup_key(const JsonValue* member);
 /* String value unescaped, or the raw text of a number / keyword. Caller frees. */
 gchar* json_value_dup_string(const JsonValue* value);
 /* Text of a string, or the concatenation of an array of strings (Jupyter

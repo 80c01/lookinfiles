@@ -482,6 +482,16 @@ const JsonValue* json_value_get_item(const JsonValue* value, guint index) {
     return g_ptr_array_index(value->children, index);
 }
 
+gchar* json_value_dup_key(const JsonValue* member) {
+    if (member == NULL || member->key == NULL) {
+        return NULL;
+    }
+    if (member->key[0] == '"' || member->key[0] == '\'') {
+        return unescape_string(member->key, member->key_len);
+    }
+    return g_strndup(member->key, member->key_len);
+}
+
 gchar* json_value_dup_string(const JsonValue* value) {
     if (value == NULL || value->children != NULL) {
         return NULL;

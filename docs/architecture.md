@@ -31,6 +31,7 @@ The directories group modules by feature, not by layer:
 | `notes/` | notes and notebooks |
 | `canvas/` | Canvas notes |
 | `games/` | games mode |
+| `jupyter/` | Jupyter notebooks edited cell by cell: the notebook model and its tab |
 | `terminal/` | terminal panes and the built-in terminal |
 | `workspace/` | workspaces, layouts, session |
 | `chrome/` | top bar, status bar, sidebar, help, preferences, applying themes, `ui` |
@@ -54,6 +55,14 @@ Layers, from bottom to top
   each SIGUSR2 writes a new number to the file once the main loop is idle,
   so a screenshot waits for the application instead of a fixed delay
   (not SIGUSR1: WebKit takes it for its garbage collector).
+- `ipynb_doc` — a Jupyter notebook (nbformat 4) held for editing
+  (`IpynbDoc`): an owned JSON tree whose members keep their order and their
+  number text, the cells read and changed (type, source, outputs as
+  `IpynbOutput`: text, errors, decoded images), inserted, taken out and put
+  back, moved; `ipynb_doc_to_json()` writes it as Jupyter does
+  (`json.dumps(indent=1, ensure_ascii=False)`, sources as lists of lines),
+  so an untouched notebook is written back byte for byte. Read by the
+  tolerant parser of `json_view` (`json_value_dup_key()`).
 - `notebook_icons` — the icons offered for notebooks and bookmark folders
   (theme glyph names)
   and the mapping of the emoji stored by older versions.
@@ -572,6 +581,18 @@ Layers, from bottom to top
   its pipeline only then); separate from the preview player (`video`). Opened
   with `editor_add_page()`, movable like a Canvas tab, kept with its workspace
   through `video_tab_workspace_hidden()` / `_shown()` / `_removed()`.
+- `ipynb_tab` — the Jupyter notebook tabs (`app->ipynb_pages`, every
+  workspace): `ipynb_tab_open()` is the `EditorOpenHook` of `editor`
+  (`editor_set_open_hook()`, set in `main.c`), so a `.ipynb` file opened as
+  an editor file gets this tab instead (an nbformat 3 or broken one stays
+  text; `editor_open_text_file()` skips the hook: **Edit as JSON**). One box
+  per cell (type menu, source view highlighted with the kernel's language,
+  outputs) built again after each change of the cells' number, order or
+  type; saved by itself after each change (`file_save_text()`), at close,
+  workspace removal (`ipynb_tab_workspace_removed()`) and quit
+  (`ipynb_tab_save_all()`). Movable like a Video tab, kept with its
+  workspace through `ipynb_tab_workspace_hidden()` / `_shown()`; its file is
+  the page's `editor_page_file()`, which `editor_session` saves and reopens.
 - `games` — the hidden Games view (unlocked in the help panel, for the
   current workspace only: `VirtualLayout.games_unlocked`) and its game tabs
   (`game_*`) in the preview notebook, kept with their workspace through
@@ -609,6 +630,9 @@ Layers, from bottom to top
   `editor_notebooks.c` holds the notebook tree (moving, splitting, dropping
   tabs and movable pages), `editor_tab_menu.c` the tab menus and the clicks on
   a tab title; they share `editor_private.h`, the public API stays `editor.h`.
+  `editor_open_file()` first offers the file to the open hook (a page of its
+  own: `ipynb_tab`) when no editor tab has it; a movable page that edits a
+  file names it with `editor_page_set_file()`.
 - `editor_session` — the editor tabs of a workspace for the session:
   `editor_session_capture()` describes the preview notebook and the
   dedicated panel (notebooks, splits, sizes, current pages, view last

@@ -3159,12 +3159,13 @@ msgstr "Enter / double-clic"
 
 #: src/chrome/help.c:52
 msgid ""
-"Expand/collapse directory, open file in editor (a video in a Video tab), or "
-"open bookmark (Ctrl+Enter to enter directory)"
+"Expand/collapse directory, open file in editor (a video in a Video tab, a "
+"Jupyter notebook in a notebook tab), or open bookmark (Ctrl+Enter to enter "
+"directory)"
 msgstr ""
 "Déplier / replier le dossier, ouvrir le fichier dans l’éditeur (une vidéo "
-"dans un onglet Vidéo) ou ouvrir le signet (Ctrl+Enter pour entrer dans le "
-"dossier)"
+"dans un onglet Vidéo, un notebook Jupyter dans un onglet notebook) ou ouvrir "
+"le signet (Ctrl+Enter pour entrer dans le dossier)"
 
 #: src/chrome/help.c:53
 msgid "Go to the parent directory (or return to files view from bookmarks)"
@@ -8693,3 +8694,103 @@ msgstr "Menu contextuel : coller des blocs, une image ou du texte au clic"
 
 msgid "Paste"
 msgstr "Coller"
+
+msgid "Jupyter notebook tab"
+msgstr "Onglet notebook Jupyter"
+
+msgid "Previous / next cell"
+msgstr "Cellule précédente / suivante"
+
+msgid "Move the cell up / down"
+msgstr "Monter / descendre la cellule"
+
+msgid "New code cell below"
+msgstr "Nouvelle cellule de code en dessous"
+
+msgid "Delete the cell (Undo Delete in the bar puts it back)"
+msgstr "Supprimer la cellule (Annuler la suppression, dans la barre, la remet)"
+
+msgid "Save now (also saved by itself after each change)"
+msgstr "Enregistrer tout de suite (aussi enregistré tout seul après chaque modification)"
+
+msgid "Close the notebook tab (saved first)"
+msgstr "Fermer l’onglet notebook (enregistré d’abord)"
+
+msgid "Move the notebook tab to another pane, as an editor tab"
+msgstr "Déplacer l’onglet notebook dans un autre volet, comme un onglet d’édition"
+
+msgid "Not a Jupyter notebook (nbformat 4)"
+msgstr "Pas un notebook Jupyter (nbformat 4)"
+
+msgid "(HTML output, not shown)"
+msgstr "(sortie HTML, non affichée)"
+
+msgid "(output not shown)"
+msgstr "(sortie non affichée)"
+
+msgid "(image not shown)"
+msgstr "(image non affichée)"
+
+msgid "Saved"
+msgstr "Enregistré"
+
+msgid "Markdown"
+msgstr "Markdown"
+
+msgid "Raw"
+msgstr "Brut"
+
+msgid "Cell Type"
+msgstr "Type de cellule"
+
+msgid "Move Cell Up (Alt+Up)"
+msgstr "Monter la cellule (Alt+Up)"
+
+msgid "Move Cell Down (Alt+Down)"
+msgstr "Descendre la cellule (Alt+Down)"
+
+msgid "New Code Cell Below (Alt+Enter)"
+msgstr "Nouvelle cellule de code en dessous (Alt+Enter)"
+
+msgid "Delete Cell (Alt+Delete)"
+msgstr "Supprimer la cellule (Alt+Delete)"
+
+msgid "New Markdown Cell Below"
+msgstr "Nouvelle cellule Markdown en dessous"
+
+msgid "Clear Outputs"
+msgstr "Effacer les sorties"
+
+msgid "Clear the Outputs of Every Cell"
+msgstr "Effacer les sorties de toutes les cellules"
+
+msgid "Edit as JSON"
+msgstr "Éditer en JSON"
+
+msgid "Open the File as Text in an Editor Tab"
+msgstr "Ouvrir le fichier en texte dans un onglet d’édition"
+
+msgid "Undo Delete"
+msgstr "Annuler la suppression"
+
+msgid "Put Back the Cell Deleted Last"
+msgstr "Remettre la dernière cellule supprimée"
+
+msgid "Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"
+msgstr "Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule"
+
+#, c-format
+msgid "Not saved: %s"
+msgstr "Non enregistré : %s"
+
+#, c-format
+msgid "%u cell"
+msgid_plural "%u cells"
+msgstr[0] "%u cellule"
+msgstr[1] "%u cellules"
+
+#, c-format
+msgid "… (%u more line)"
+msgid_plural "… (%u more lines)"
+msgstr[0] "… (%u ligne de plus)"
+msgstr[1] "… (%u lignes de plus)"

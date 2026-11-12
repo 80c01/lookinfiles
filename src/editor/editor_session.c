@@ -99,7 +99,8 @@ static TabTreeNode* capture_notebook(Capture* c, GtkNotebook* nb) {
         if (tab != NULL) {
             add_tab(c, node, tab, p == current);
         } else {
-            add_path(c, node, canvas_view_page_dir(page), p == current, FALSE);
+            const gchar* dir = canvas_view_page_dir(page);
+            add_path(c, node, dir != NULL ? dir : editor_page_file(page), p == current, FALSE);
         }
     }
     return finish_notebook(node);
@@ -165,6 +166,10 @@ void editor_session_capture(AppData* app, gint ws, GPtrArray* files, gchar** pre
         for (guint i = 0; canvases != NULL && i < canvases->len; i++) {
             add_path(&c, preview, canvas_view_page_dir(g_ptr_array_index(canvases, i)), FALSE, FALSE);
         }
+        GPtrArray* notebooks = app->workspaces[ws].ipynb_pages; /* Jupyter tabs, set aside too */
+        for (guint i = 0; notebooks != NULL && i < notebooks->len; i++) {
+            add_path(&c, preview, editor_page_file(g_ptr_array_index(notebooks, i)), FALSE, FALSE);
+        }
 #ifdef HAVE_VTE
         guint terms = terminal_workspace_preview_tab_count(&app->workspaces[ws]); /* set aside with the workspace */
         for (guint i = 0; i < terms; i++) {
@@ -200,6 +205,28 @@ static GtkWidget* place_canvas(AppData* app, const gchar* dir, GtkNotebook* nb) 
     if (page != NULL && in != GTK_WIDGET(nb)) {
         editor_move_page_to(app, page, nb, -1);
     }
+    return page;
+}
+
+/* The page of nb editing path (editor_page_file()), or NULL */
+static GtkWidget* notebook_file_page(GtkNotebook* nb, const gchar* path) {
+    for (gint i = 0; i < gtk_notebook_get_n_pages(nb); i++) {
+        GtkWidget* page = gtk_notebook_get_nth_page(nb, i);
+        if (g_strcmp0(editor_page_file(page), path) == 0) return page;
+    }
+    return NULL;
+}
+
+/* The page opened for path in place of an editor tab (a Jupyter notebook),
+ * moved to nb; NULL when there is none */
+static GtkWidget* place_file_page(AppData* app, const gchar* path, GtkNotebook* nb) {
+    GtkWidget* page = app->notebook != NULL ? notebook_file_page(GTK_NOTEBOOK(app->notebook), path) : NULL;
+    GPtrArray* nbs = editor_get_all_notebooks(app);
+    for (guint i = 0; page == NULL && i < nbs->len; i++) {
+        page = notebook_file_page(g_ptr_array_index(nbs, i), path);
+    }
+    g_ptr_array_unref(nbs);
+    if (page != NULL && notebook_file_page(nb, path) != page) editor_move_page_to(app, page, nb, -1);
     return page;
 }
 
@@ -266,6 +293,10 @@ static void restore_notebook(Restore* r, const TabTreeNode* node, GtkNotebook* n
         EditorTab* tab = place_view(r->app, r->files[index], nb);
         if (tab != NULL && (gint)i == node->current) {
             current = tab->container;
+        }
+        GtkWidget* other = tab == NULL ? place_file_page(r->app, r->files[index], nb) : NULL;
+        if (other != NULL && (gint)i == node->current) {
+            current = other;
         }
         if (tab != NULL && (gint)i == node->focused) {
             r->focused = tab;

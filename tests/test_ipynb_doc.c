@@ -1,0 +1,193 @@
+/* Unit tests for src/jupyter/ipynb_doc.c (notebooks held for editing). */
+#include "jupyter/ipynb_doc.h"
+
+#include <string.h>
+
+#define FIXTURE "tests/fixtures/jupyter/roundtrip.ipynb"
+
+static IpynbDoc* load_fixture(gchar** text) {
+    gsize len = 0;
+    g_assert_true(g_file_get_contents(FIXTURE, text, &len, NULL));
+    GError* error = NULL;
+    IpynbDoc* doc = ipynb_doc_parse(*text, len, &error);
+    g_assert_no_error(error);
+    g_assert_nonnull(doc);
+    return doc;
+}
+
+/* A notebook written by Jupyter is written back byte for byte */
+static void test_roundtrip(void) {
+    gchar* text = NULL;
+    IpynbDoc* doc = load_fixture(&text);
+    gchar* out = ipynb_doc_to_json(doc);
+    g_assert_cmpstr(out, ==, text);
+    g_free(out);
+    ipynb_doc_free(doc);
+    g_free(text);
+}
+
+static void test_read_cells(void) {
+    gchar* text = NULL;
+    IpynbDoc* doc = load_fixture(&text);
+    g_assert_cmpstr(ipynb_doc_language(doc), ==, "python");
+    g_assert_cmpstr(ipynb_doc_file_extension(doc), ==, ".py");
+    g_assert_cmpstr(ipynb_doc_kernel(doc), ==, "Python 3");
+    g_assert_cmpuint(ipynb_doc_n_cells(doc), ==, 2);
+    g_assert_cmpint(ipynb_doc_cell_type(doc, 0), ==, IPYNB_CELL_MARKDOWN);
+    g_assert_cmpint(ipynb_doc_cell_type(doc, 1), ==, IPYNB_CELL_CODE);
+    gchar* src = ipynb_doc_cell_source(doc, 0);
+    g_assert_cmpstr(src, ==, "# Titre é\n\"quoted\" \\ tab\there");
+    g_free(src);
+    g_assert_cmpint(ipynb_doc_cell_execution_count(doc, 0), ==, -1);
+    g_assert_cmpint(ipynb_doc_cell_execution_count(doc, 1), ==, 3);
+
+    GPtrArray* outs = ipynb_doc_cell_outputs(doc, 1, 0);
+    g_assert_cmpuint(outs->len, ==, 3);
+    IpynbOutput* o = g_ptr_array_index(outs, 0);
+    g_assert_cmpint(o->kind, ==, IPYNB_OUTPUT_TEXT);
+    g_assert_cmpstr(o->text, ==, "hello\nworld");
+    o = g_ptr_array_index(outs, 1);
+    g_assert_true(o->result);
+    g_assert_cmpstr(o->text, ==, "42");
+    o = g_ptr_array_index(outs, 2);
+    g_assert_cmpint(o->kind, ==, IPYNB_OUTPUT_ERROR);
+    g_assert_cmpstr(o->text, ==, "ZeroDivisionError: division by zero");
+    g_ptr_array_unref(outs);
+    ipynb_doc_free(doc);
+    g_free(text);
+}
+
+static void test_edit(void) {
+    gchar* text = NULL;
+    IpynbDoc* doc = load_fixture(&text);
+    ipynb_doc_set_source(doc, 1, "a = 1\nb = 2\n");
+    gchar* out = ipynb_doc_to_json(doc);
+    g_assert_nonnull(strstr(out, "   \"source\": [\n    \"a = 1\\n\",\n    \"b = 2\\n\"\n   ]\n"));
+    g_free(out);
+
+    /* Empty source: an empty list */
+    ipynb_doc_set_source(doc, 0, "");
+    out = ipynb_doc_to_json(doc);
+    g_assert_nonnull(strstr(out, "\"metadata\": {},\n   \"source\": []\n  },"));
+    g_free(out);
+
+    /* Code to Markdown: no outputs nor execution count; and back */
+    ipynb_doc_set_type(doc, 1, IPYNB_CELL_MARKDOWN);
+    out = ipynb_doc_to_json(doc);
+    g_assert_null(strstr(out, "\"outputs\""));
+    g_assert_null(strstr(out, "\"execution_count\""));
+    g_free(out);
+    ipynb_doc_set_type(doc, 1, IPYNB_CELL_CODE);
+    out = ipynb_doc_to_json(doc);
+    g_assert_nonnull(strstr(out, "   \"cell_type\": \"code\",\n   \"execution_count\": null,\n   \"id\": \"e5f6a7b8\",\n"
+                                 "   \"metadata\": {\n"));
+    g_assert_nonnull(strstr(out, "   \"outputs\": [],\n   \"source\": ["));
+    g_free(out);
+    ipynb_doc_free(doc);
+    g_free(text);
+}
+
+static void test_cells_and_outputs(void) {
+    gchar* text = NULL;
+    IpynbDoc* doc = load_fixture(&text);
+    g_assert_true(ipynb_doc_clear_outputs(doc, G_MAXUINT));
+    g_assert_false(ipynb_doc_clear_outputs(doc, 1));
+    g_assert_cmpint(ipynb_doc_cell_execution_count(doc, 1), ==, -1);
+    GPtrArray* outs = ipynb_doc_cell_outputs(doc, 1, 0);
+    g_assert_cmpuint(outs->len, ==, 0);
+    g_ptr_array_unref(outs);
+
+    guint at = ipynb_doc_insert_cell(doc, 99, IPYNB_CELL_RAW);
+    g_assert_cmpuint(at, ==, 2);
+    g_assert_cmpint(ipynb_doc_cell_type(doc, 2), ==, IPYNB_CELL_RAW);
+    ipynb_doc_set_source(doc, 2, "raw");
+    ipynb_doc_move_cell(doc, 2, 0);
+    gchar* src = ipynb_doc_cell_source(doc, 0);
+    g_assert_cmpstr(src, ==, "raw");
+    g_free(src);
+    /* Taken out and put back: the same cell */
+    IpynbCell* cell = ipynb_doc_take_cell(doc, 0);
+    g_assert_nonnull(cell);
+    g_assert_cmpuint(ipynb_doc_n_cells(doc), ==, 2);
+    g_assert_cmpuint(ipynb_doc_put_cell(doc, 1, cell), ==, 1);
+    src = ipynb_doc_cell_source(doc, 1);
+    g_assert_cmpstr(src, ==, "raw");
+    g_free(src);
+    g_assert_null(ipynb_doc_take_cell(doc, 9));
+    ipynb_cell_free(ipynb_doc_take_cell(doc, 1));
+    g_assert_cmpuint(ipynb_doc_n_cells(doc), ==, 2);
+    g_assert_cmpint(ipynb_doc_cell_type(doc, 0), ==, IPYNB_CELL_MARKDOWN);
+    ipynb_doc_free(doc);
+    g_free(text);
+}
+
+static void test_new_and_invalid(void) {
+    IpynbDoc* doc = ipynb_doc_new();
+    g_assert_cmpuint(ipynb_doc_n_cells(doc), ==, 1);
+    gchar* out = ipynb_doc_to_json(doc);
+    g_assert_true(g_str_has_prefix(out, "{\n \"cells\": [\n  {\n   \"cell_type\": \"code\",\n"
+                                        "   \"execution_count\": null,\n   \"id\": \""));
+    g_assert_true(g_str_has_suffix(out, "\"metadata\": {},\n \"nbformat\": 4,\n \"nbformat_minor\": 5\n}\n"));
+    /* What it writes reads back */
+    IpynbDoc* again = ipynb_doc_parse(out, strlen(out), NULL);
+    g_assert_nonnull(again);
+    g_assert_cmpint(ipynb_doc_cell_type(again, 0), ==, IPYNB_CELL_CODE);
+    ipynb_doc_free(again);
+    g_free(out);
+    ipynb_doc_free(doc);
+
+    GError* error = NULL;
+    const gchar* v3 = "{\"nbformat\": 3, \"worksheets\": []}";
+    g_assert_null(ipynb_doc_parse(v3, strlen(v3), &error));
+    g_assert_nonnull(error);
+    g_clear_error(&error);
+    g_assert_null(ipynb_doc_parse("[1, 2", 5, &error));
+    g_assert_nonnull(error);
+    g_clear_error(&error);
+}
+
+static void test_long_output_and_image(void) {
+    GString* nb = g_string_new("{\"nbformat\": 4, \"nbformat_minor\": 2, \"metadata\": {}, \"cells\": ["
+                               "{\"cell_type\": \"code\", \"source\": \"\", \"outputs\": ["
+                               "{\"output_type\": \"stream\", \"name\": \"stderr\", \"text\": \"");
+    for (gint i = 0; i < 10; i++) g_string_append_printf(nb, "line %d\\n", i);
+    g_string_append(nb, "\"}, {\"output_type\": \"display_data\", \"data\": {\"image/png\": \"iVBO\\nRw==\\n\", "
+                        "\"text/plain\": \"<Figure>\"}}, "
+                        "{\"output_type\": \"display_data\", \"data\": {\"text/html\": \"<b>x</b>\"}}]}]}");
+    IpynbDoc* doc = ipynb_doc_parse(nb->str, nb->len, NULL);
+    g_assert_nonnull(doc);
+    GPtrArray* outs = ipynb_doc_cell_outputs(doc, 0, 3);
+    g_assert_cmpuint(outs->len, ==, 3);
+    IpynbOutput* o = g_ptr_array_index(outs, 0);
+    g_assert_cmpint(o->kind, ==, IPYNB_OUTPUT_ERROR);
+    g_assert_true(g_str_has_prefix(o->text, "line 0\nline 1\nline 2\n… (7 more lines)"));
+    o = g_ptr_array_index(outs, 1);
+    g_assert_cmpint(o->kind, ==, IPYNB_OUTPUT_IMAGE);
+    g_assert_cmpstr(o->mime, ==, "image/png");
+    g_assert_cmpuint(g_bytes_get_size(o->image), ==, 4);
+    g_assert_cmpmem(g_bytes_get_data(o->image, NULL), 4, "\x89PNG", 4);
+    o = g_ptr_array_index(outs, 2);
+    g_assert_cmpint(o->kind, ==, IPYNB_OUTPUT_TEXT);
+    g_assert_nonnull(strstr(o->text, "HTML"));
+    g_ptr_array_unref(outs);
+    /* nbformat 4.2: new cells have no id */
+    ipynb_doc_insert_cell(doc, 0, IPYNB_CELL_MARKDOWN);
+    gchar* out = ipynb_doc_to_json(doc);
+    g_assert_true(g_str_has_prefix(out, "{\n \"nbformat\": 4,\n \"nbformat_minor\": 2,\n \"metadata\": {},\n"
+                                        " \"cells\": [\n  {\n   \"cell_type\": \"markdown\",\n   \"metadata\": {},\n"
+                                        "   \"source\": []\n  },"));
+    g_free(out);
+    ipynb_doc_free(doc);
+    g_string_free(nb, TRUE);
+}
+
+int main(int argc, char** argv) {
+    g_test_init(&argc, &argv, NULL);
+    g_test_add_func("/ipynb_doc/roundtrip", test_roundtrip);
+    g_test_add_func("/ipynb_doc/read_cells", test_read_cells);
+    g_test_add_func("/ipynb_doc/edit", test_edit);
+    g_test_add_func("/ipynb_doc/cells_and_outputs", test_cells_and_outputs);
+    g_test_add_func("/ipynb_doc/new_and_invalid", test_new_and_invalid);
+    g_test_add_func("/ipynb_doc/long_output_and_image", test_long_output_and_image);
+    return g_test_run();
+}

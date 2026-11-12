@@ -23,6 +23,7 @@
 #include "preview/browser.h"
 #include "canvas/canvas_view.h"
 #include "media/video_tab.h"
+#include "jupyter/ipynb_tab.h"
 #include "games/games.h"
 
 /* Private to this file: the workspace minimap of the top bar and the layout
@@ -456,6 +457,7 @@ void workspace_switch(AppData* app, gint idx) {
             browser_workspace_hidden(app, &app->workspaces[app->current_ws]);
             canvas_view_workspace_hidden(app, &app->workspaces[app->current_ws]);
             video_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            ipynb_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             games_workspace_hidden(app, &app->workspaces[app->current_ws]);
 #ifdef HAVE_VTE
             terminal_workspace_hidden(app, &app->workspaces[app->current_ws]);
@@ -481,6 +483,7 @@ void workspace_switch(AppData* app, gint idx) {
         browser_workspace_shown(app, ws);
         canvas_view_workspace_shown(app, ws);
         video_tab_workspace_shown(app, ws);
+        ipynb_tab_workspace_shown(app, ws);
         games_workspace_shown(app, ws);
 #ifdef HAVE_VTE
         terminal_workspace_shown(app, ws);
@@ -716,6 +719,7 @@ void workspace_remove(AppData* app, gint idx) {
 
     canvas_view_workspace_removed(app, rm); /* saved before the panel goes */
     video_tab_workspace_removed(app, rm);
+    ipynb_tab_workspace_removed(app, rm); /* saved before the panel goes */
     games_workspace_removed(app, rm);
     if (idx == app->current_ws) {
         GtkWidget* panel = editor_detach_tabs(app);

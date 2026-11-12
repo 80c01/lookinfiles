@@ -85,7 +85,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Space` | Expand / collapse the selected directory |
 | `Right` (Vim: also `l`; Emacs: `C-f`) | Expand the selected directory or archive, or step into its first child |
 | `Left` (Vim: also `h`; Emacs: `C-b`) | Collapse the selected directory, or jump to its parent |
-| `Enter` / double click | Expand a directory, open a file in the editor (a video: in a **Video** tab), open a bookmark |
+| `Enter` / double click | Expand a directory, open a file in the editor (a video: in a **Video** tab; a Jupyter notebook: in a notebook tab), open a bookmark |
 | `Ctrl+Enter` | Enter the selected directory as the new root |
 | `Backspace` / `Alt+Up` | Parent directory (or back to the files view) |
 | `Shift+H` / `Shift+L`, mouse back / forward buttons | Back / forward in the folders this workspace showed, the entry selected when it was left selected again (also the arrows of the top bar; a right click on one lists the folders before / after) |
@@ -182,6 +182,23 @@ in the preview)
 | `s` | Next subtitles (those of the file, then the subtitle files beside it, then off) |
 | `Ctrl+W`, middle click on the tab | Close the Video tab |
 | `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the Video tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it) |
+
+**Jupyter notebook tab** (a `.ipynb` notebook opened with `Enter` or `e` in
+the explorer: its cells are edited one by one in the editor panel, one tab per
+file, dragged like an editor tab; code cells show the outputs saved in the
+file, they are not run. Saved by itself shortly after each change, when the
+tab closes and at quit; the bar adds cells, clears the outputs, or opens the
+file as JSON text. An nbformat 3 or broken notebook opens as text)
+
+| Key | Action |
+|---|---|
+| `Ctrl+Up` / `Ctrl+Down` | Previous / next cell |
+| `Alt+Up` / `Alt+Down` | Move the cell up / down |
+| `Alt+Enter` | New code cell below |
+| `Alt+Delete` | Delete the cell (**Undo Delete** in the bar puts it back) |
+| `Ctrl+S` | Save now |
+| `Ctrl+W`, middle click on the tab | Close the notebook tab (saved first) |
+| `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the notebook tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it) |
 
 **Help tab** (the user guide, opened with `F1` or a click on the top bar's
 **Help** button; the navigation keys of the global mode scroll it)

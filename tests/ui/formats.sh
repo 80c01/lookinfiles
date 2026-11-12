@@ -136,4 +136,16 @@ format_scenario() {
     key a s;            shot fmt_video_tab_tracks_animated
     key ctrl+alt+Left;  shot fmt_video_tab_moved_animated
     key ctrl+w;         shot fmt_video_tab_closed
+    # Jupyter notebook: Enter opens the notebook tab (cells, outputs);
+    # Ctrl+Down goes to the next cell, Alt+Up moves it up, Alt+Enter adds a
+    # code cell below, Alt+Delete deletes it, Ctrl+S saves, Ctrl+W closes
+    key alt+Left Home
+    for i in $(seq 18); do key Down; done
+    key Return; sleep 0.5; shot fmt_ipynb_tab
+    key ctrl+Down;      shot fmt_ipynb_next_cell
+    key alt+Up;         shot fmt_ipynb_cell_moved_up
+    key alt+Return;     shot fmt_ipynb_cell_added
+    key alt+Delete;     shot fmt_ipynb_cell_deleted
+    key ctrl+s;         shot fmt_ipynb_saved
+    key ctrl+w;         shot fmt_ipynb_tab_closed
 }

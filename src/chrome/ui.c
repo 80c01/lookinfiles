@@ -1,6 +1,7 @@
 #include "chrome/ui.h"
 #include "canvas/canvas_view.h"
 #include "media/video_tab.h"
+#include "jupyter/ipynb_tab.h"
 #include "chrome/help_guide.h"
 #include "preview/browser.h"
 #include "games/games.h"
@@ -159,7 +160,7 @@ void close_shown_tab(AppData* app) {
     FocusInfo info;
     focus_route_get(app, &info);
     if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL) &&
-        (canvas_view_close_shown(app) || video_tab_close_shown(app) || help_guide_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app))) {
+        (canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || help_guide_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app))) {
         return;
     }
     EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);
@@ -186,6 +187,7 @@ gboolean ui_confirm_quit(AppData* app) {
         }
     }
     canvas_view_save(app);
+    ipynb_tab_save_all(app);
     session_save_now(app);
     return TRUE;
 }
@@ -373,6 +375,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         if ((state & GDK_CONTROL_MASK) &&
             !(state & GDK_SHIFT_MASK) &&
             (keyval == GDK_KEY_s || keyval == GDK_KEY_S) && !focus_in_terminal(app)) {
+            if (ipynb_tab_save_focused(app)) return TRUE;
             return editor_save_current(app);
         }
         /* A terminal keeps Ctrl+W (the shell erases the word before) */

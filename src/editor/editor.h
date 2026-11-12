@@ -38,6 +38,14 @@ void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode);
 void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data);
 void editor_apply_language(GtkTextBuffer* buffer, const gchar* name);
 void editor_open_file(AppData* app, const gchar* name, const gchar* full);
+/* Opens a file in a page of its own instead of an editor tab (Jupyter
+ * notebooks), in the editor panel when dedicated: TRUE when it did. Called
+ * by editor_open_file() and editor_open_dedicated() for a file without an
+ * editor tab; set once by main.c. */
+typedef gboolean (*EditorOpenHook)(AppData* app, const gchar* name, const gchar* full, gboolean dedicated);
+void editor_set_open_hook(EditorOpenHook hook);
+/* editor_open_file() without the hook: the file as text in an editor tab */
+void editor_open_text_file(AppData* app, const gchar* name, const gchar* full);
 /* Open an in-memory buffer tab (tab->path = NULL, tab->is_buffer = TRUE) with
  * display name `name` and initial mode `mode` in the target editor notebook. */
 EditorTab* editor_open_buffer(AppData* app, const gchar* name, EditorMode mode);
@@ -117,6 +125,9 @@ void editor_remove_page(AppData* app, GtkWidget* child);
  * pages marked with editor_page_set_movable() (canvases) */
 void editor_page_set_movable(GtkWidget* page);
 gboolean editor_page_is_movable(GtkWidget* page);
+/* The file a movable page edits (kept by the session), or NULL */
+void editor_page_set_file(GtkWidget* page, const gchar* path);
+const gchar* editor_page_file(GtkWidget* page);
 /* Show child, a movable page (marked here) with its tab label, as the
  * current page of the editor panel: the notebook of the editor tab used
  * last, or the first one; the panel shows */

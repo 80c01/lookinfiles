@@ -1,0 +1,87 @@
+#ifndef IPYNB_DOC_H
+#define IPYNB_DOC_H
+
+#include <glib.h>
+
+/* A Jupyter notebook (.ipynb, nbformat 4) held for editing: its cells
+ * (type, source, execution count, outputs) can be read, changed, added,
+ * removed and moved, and the notebook written back as Jupyter writes it
+ * (indent of one space, sources as lists of lines, non-ASCII text as is).
+ * Everything the editor does not change (notebook and cell metadata, ids,
+ * attachments, outputs, members it does not know) is kept as it was, in
+ * its order, so that saving an unchanged notebook gives back the same file.
+ * Pure GLib, unit-tested. */
+
+typedef enum {
+    IPYNB_CELL_CODE,
+    IPYNB_CELL_MARKDOWN,
+    IPYNB_CELL_RAW      /* also a cell type the editor does not know */
+} IpynbCellType;
+
+typedef enum {
+    IPYNB_OUTPUT_TEXT,   /* stream or plain text result */
+    IPYNB_OUTPUT_ERROR,  /* stderr stream or error with its traceback */
+    IPYNB_OUTPUT_IMAGE   /* PNG, JPEG, GIF or SVG data */
+} IpynbOutputKind;
+
+typedef struct {
+    IpynbOutputKind kind;
+    gboolean result;     /* an execute_result (shown "Out [n]") */
+    gchar* text;         /* TEXT and ERROR (ANSI colours removed) */
+    GBytes* image;       /* IMAGE: the decoded data */
+    gchar* mime;         /* IMAGE: "image/png"... */
+} IpynbOutput;
+
+typedef struct IpynbDoc IpynbDoc;
+
+/* The notebook in text; NULL with error set if it is not an nbformat 4
+ * notebook (older ones are only previewed). */
+IpynbDoc* ipynb_doc_parse(const gchar* text, gsize len, GError** error);
+/* A new notebook (nbformat 4.5) with one empty code cell */
+IpynbDoc* ipynb_doc_new(void);
+void ipynb_doc_free(IpynbDoc* doc);
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(IpynbDoc, ipynb_doc_free)
+
+/* The notebook as Jupyter writes it, ending with a newline. Caller frees. */
+gchar* ipynb_doc_to_json(const IpynbDoc* doc);
+
+/* Kernel language ("python") and its file extension (".py"), or NULL */
+const gchar* ipynb_doc_language(const IpynbDoc* doc);
+const gchar* ipynb_doc_file_extension(const IpynbDoc* doc);
+/* Kernel display name ("Python 3"), or NULL */
+const gchar* ipynb_doc_kernel(const IpynbDoc* doc);
+
+guint ipynb_doc_n_cells(const IpynbDoc* doc);
+IpynbCellType ipynb_doc_cell_type(const IpynbDoc* doc, guint index);
+/* The source text of the cell. Caller frees. */
+gchar* ipynb_doc_cell_source(const IpynbDoc* doc, guint index);
+void ipynb_doc_set_source(IpynbDoc* doc, guint index, const gchar* source);
+/* Change the cell type: a code cell gets an empty execution count and
+ * outputs, the other types lose them */
+void ipynb_doc_set_type(IpynbDoc* doc, guint index, IpynbCellType type);
+/* Execution count of a code cell, or -1 (never run, or not code) */
+gint ipynb_doc_cell_execution_count(const IpynbDoc* doc, guint index);
+
+/* The outputs of a code cell (IpynbOutput*, freed with the array); text
+ * outputs longer than max_lines lines (0: no limit) are cut with a note.
+ * Outputs without text or a known image (HTML only, widgets) give a short
+ * note. */
+GPtrArray* ipynb_doc_cell_outputs(const IpynbDoc* doc, guint index, guint max_lines);
+/* Remove the outputs and execution count of one code cell, or of all
+ * (index G_MAXUINT). Returns TRUE if something was removed. */
+gboolean ipynb_doc_clear_outputs(IpynbDoc* doc, guint index);
+
+/* Insert a new empty cell of type at index (clamped); returns its index */
+guint ipynb_doc_insert_cell(IpynbDoc* doc, guint index, IpynbCellType type);
+void ipynb_doc_remove_cell(IpynbDoc* doc, guint index);
+/* Take the cell at index out of the notebook (NULL if there is none), to
+ * put it back with ipynb_doc_put_cell() (which owns it then; index clamped)
+ * or free it */
+typedef struct IpynbCell IpynbCell;
+IpynbCell* ipynb_doc_take_cell(IpynbDoc* doc, guint index);
+guint ipynb_doc_put_cell(IpynbDoc* doc, guint index, IpynbCell* cell);
+void ipynb_cell_free(IpynbCell* cell);
+/* Move the cell at from to position to (both clamped) */
+void ipynb_doc_move_cell(IpynbDoc* doc, guint from, guint to);
+
+#endif /* IPYNB_DOC_H */

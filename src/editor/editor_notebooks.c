@@ -46,9 +46,18 @@ void editor_page_set_draggable(GtkNotebook* nb, GtkWidget* child) {
 }
 
 #define MOVABLE_PAGE_KEY "editor-movable-page"
+#define PAGE_FILE_KEY "editor-page-file"
 
 void editor_page_set_movable(GtkWidget* page) {
     g_object_set_data(G_OBJECT(page), MOVABLE_PAGE_KEY, GINT_TO_POINTER(1));
+}
+
+void editor_page_set_file(GtkWidget* page, const gchar* path) {
+    g_object_set_data_full(G_OBJECT(page), PAGE_FILE_KEY, g_strdup(path), g_free);
+}
+
+const gchar* editor_page_file(GtkWidget* page) {
+    return page != NULL ? g_object_get_data(G_OBJECT(page), PAGE_FILE_KEY) : NULL;
 }
 
 gboolean editor_page_is_movable(GtkWidget* page) {
