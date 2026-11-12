@@ -6066,11 +6066,16 @@ msgstr "Page %1$d sur %2$d"
 #: src/preview/pdf.c:312
 #, c-format
 msgid ""
-"[ Showing first %1$d of %2$d pages • press m to view all extracted text ]\n"
+"[ Showing first %1$d of %2$d pages • press m for the extracted text ]\n"
 "\n"
 msgstr ""
-"[ %1$d premières pages sur %2$d • m pour voir tout le texte extrait ]\n"
+"[ %1$d premières pages sur %2$d • m pour voir le texte extrait ]\n"
 "\n"
+
+#: src/preview/pdf.c
+#, c-format
+msgid "[ Text shown up to page %1$u of %2$d (first %3$d KB) ]\n\n"
+msgstr "[ Texte affiché jusqu’à la page %1$u sur %2$d (premiers %3$d Ko) ]\n\n"
 
 #: src/preview/pdf.c:353
 #, c-format

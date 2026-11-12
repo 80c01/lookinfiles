@@ -47,6 +47,7 @@ typedef struct {
     gchar* doc_ver;
     GPtrArray* page_textures; /* GdkTexture* elements */
     GPtrArray* page_texts;    /* gchar* elements */
+    gboolean text_cut;        /* page_texts stops before the end (PREVIEW_BYTES) */
     GPtrArray* marks;         /* PdfMark* (first task only), or NULL */
 } PdfTaskData;
 
@@ -312,7 +313,7 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
         return;
     }
     if (td->total_pages > limit) {
-        gchar* notice = g_strdup_printf(_("[ Showing first %1$d of %2$d pages • press m to view all extracted text ]\n\n"),
+        gchar* notice = g_strdup_printf(_("[ Showing first %1$d of %2$d pages • press m for the extracted text ]\n\n"),
                                         limit, td->total_pages);
         gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, notice, -1, "pdf_meta", NULL);
         g_free(notice);
@@ -443,8 +444,13 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
         }
     } else {
         td->page_texts = g_ptr_array_new_with_free_func(g_free);
+        gsize text_bytes = 0;
         for (gint i = 0; i < td->total_pages; i++) {
             if (g_cancellable_is_cancelled(cancellable)) {
+                break;
+            }
+            if (text_bytes >= PREVIEW_BYTES) {
+                td->text_cut = TRUE;
                 break;
             }
             PopplerPage* page = poppler_document_get_page(doc, i);
@@ -460,7 +466,25 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
                 g_free(raw_text);
                 raw_text = valid;
             }
-            g_ptr_array_add(td->page_texts, raw_text ? raw_text : g_strdup(""));
+            if (raw_text == NULL) {
+                raw_text = g_strdup("");
+            }
+            /* At most PREVIEW_BYTES in all, cut at a character boundary */
+            gsize len = strlen(raw_text);
+            if (text_bytes + len > PREVIEW_BYTES) {
+                gsize keep = PREVIEW_BYTES - text_bytes;
+                while (keep > 0 && ((guchar)raw_text[keep] & 0xC0) == 0x80) {
+                    keep--;
+                }
+                raw_text[keep] = '\0';
+                len = keep;
+                td->text_cut = TRUE;
+            }
+            text_bytes += len;
+            g_ptr_array_add(td->page_texts, raw_text);
+            if (td->text_cut) {
+                break;
+            }
         }
     }
 
@@ -578,6 +602,12 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
                 gtk_text_buffer_insert(app->buffer, &iter, _("(no text on this page)\n"), -1);
             }
             gtk_text_buffer_insert(app->buffer, &iter, "\n\n", -1);
+        }
+        if (td->text_cut) {
+            gchar* notice = g_strdup_printf(_("[ Text shown up to page %1$u of %2$d (first %3$d KB) ]\n\n"),
+                                            td->page_texts->len, td->total_pages, PREVIEW_BYTES / 1024);
+            gtk_text_buffer_insert_with_tags_by_name(app->buffer, &iter, notice, -1, "pdf_meta", NULL);
+            g_free(notice);
         }
         outline_publish(app);
     }
