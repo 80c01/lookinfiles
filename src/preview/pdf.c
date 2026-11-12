@@ -428,12 +428,13 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
 
             cairo_surface_flush(surface);
             gint stride = cairo_image_surface_get_stride(surface);
-            GBytes* bytes = g_bytes_new(cairo_image_surface_get_data(surface),
-                                        (gsize)stride * (gsize)rh);
+            /* The texture keeps the surface's pixels (no copy) */
+            GBytes* bytes = g_bytes_new_with_free_func(cairo_image_surface_get_data(surface),
+                                                       (gsize)stride * (gsize)rh,
+                                                       (GDestroyNotify)cairo_surface_destroy, surface);
             GdkTexture* tex = gdk_memory_texture_new(
                 rw, rh, GDK_MEMORY_B8G8R8A8_PREMULTIPLIED, bytes, (gsize)stride);
             g_bytes_unref(bytes);
-            cairo_surface_destroy(surface);
             g_object_unref(page);
 
             if (tex != NULL) {
