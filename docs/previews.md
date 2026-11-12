@@ -153,8 +153,8 @@ every common format to L3 and never leave one below L1.
   branch of its own. Headings that are not in the text are handed over with
   `preview_tagbar_set_outline()`, tied to the preview's cancellable: the PDF
   bookmarks (poppler outline, at most 2000), each on the line of its page
-  badge, only for the pages shown (the first 20 rendered pages, every page
-  in the text view); the symbols of source code from `preview_symbols`
+  badge, only for the pages shown (the first 20 rendered pages, the pages
+  extracted in the text view), read after the first pages are shown; the symbols of source code from `preview_symbols`
   (the built-in scanner in a worker, never a language server: previews
   change too often to start one). Only the
   rendered part is listed (`PREVIEW_BYTES` for long text files: the chunks
@@ -183,7 +183,7 @@ every common format to L3 and never leave one below L1.
 | HTML | L3 | `html` |
 | Org | L3 | `orgmode` |
 | Images: zoom, EXIF details and orientation, animated GIF, RAW embedded previews | L3 | `image_preview`, `exif`, `animation`, `gif_decoder` |
-| PDF (poppler, optional): progressive pages, PgDn / PgUp, zoom | L3 | `pdf` |
+| PDF (poppler, optional): progressive pages (3 first, then 3 at a time, on up to 3 threads with a document each, the minimap's copy made by the worker), PgDn / PgUp, zoom; text mode: `PREVIEW_BYTES` of extracted text | L3 | `pdf` |
 | PostScript `.ps` / `.eps`, TeX `.dvi`: first 20 pages converted to PDF by Ghostscript (and `dvips`) into the user cache, then shown as a PDF; `m` shows the PostScript source. Without the tools: a message | L3 | `pdf`, `ps_convert` |
 | Video / audio: tags, cover art, codecs, duration | L3 | `video`, `audio`, `media_tags` |
 | Video: audio track and subtitle choice, subtitle files | L3 | `media_player`, `track_menu`, `media_tracks` |
