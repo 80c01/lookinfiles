@@ -48,6 +48,7 @@ static void ensure_css(void) {
                   ".ipynb-tab .ipynb-cell-head label { color: @fg_subtle; font-family: @font_code;"
                   " font-size: @size_code; }"
                   ".ipynb-tab .ipynb-cell-head button { padding: 0 6px; border: none; min-height: 23px; }"
+                  ".ipynb-tab .ipynb-cell-actions button { padding: 0 3px; min-width: 0; }"
                   ".ipynb-tab .ipynb-cell-head menubutton label { color: @fg_muted; font-family: @font_ui;"
                   " font-size: @size_bar; }"
                   ".ipynb-tab .ipynb-source { background-color: @bg_block; }"
@@ -588,17 +589,23 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     GtkWidget* spacer = gtk_label_new(NULL);
     gtk_widget_set_hexpand(spacer, TRUE);
     gtk_box_append(GTK_BOX(head), spacer);
+    /* The actions, side by side as in JupyterLab */
+    GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_add_css_class(actions, "ipynb-cell-actions");
     if (type == IPYNB_CELL_CODE) {
-        gtk_box_append(GTK_BOX(head), cell_button(t, index, "go-next", _("Run Cell (Ctrl+Enter)"), G_CALLBACK(on_cell_run)));
+        gtk_box_append(GTK_BOX(actions),
+                       cell_button(t, index, "go-next", _("Run Cell (Ctrl+Enter)"), G_CALLBACK(on_cell_run)));
     }
-    gtk_box_append(GTK_BOX(head), cell_button(t, index, "pan-up", _("Move Cell Up (Alt+Up)"), G_CALLBACK(on_cell_up)));
-    gtk_box_append(GTK_BOX(head), cell_button(t, index, "pan-down", _("Move Cell Down (Alt+Down)"), G_CALLBACK(on_cell_down)));
-    gtk_box_append(GTK_BOX(head), cell_button(t, index, "cell-add-above", _("Insert Code Cell Above (Alt+Shift+Enter)"),
-                                              G_CALLBACK(on_cell_add_above)));
-    gtk_box_append(GTK_BOX(head), cell_button(t, index, "cell-add-below", _("Insert Code Cell Below (Alt+Enter)"),
-                                              G_CALLBACK(on_cell_add_below)));
-    gtk_box_append(GTK_BOX(head),
+    gtk_box_append(GTK_BOX(actions), cell_button(t, index, "pan-up", _("Move Cell Up (Alt+Up)"), G_CALLBACK(on_cell_up)));
+    gtk_box_append(GTK_BOX(actions),
+                   cell_button(t, index, "pan-down", _("Move Cell Down (Alt+Down)"), G_CALLBACK(on_cell_down)));
+    gtk_box_append(GTK_BOX(actions), cell_button(t, index, "cell-add-above", _("Insert Code Cell Above (Alt+Shift+Enter)"),
+                                                 G_CALLBACK(on_cell_add_above)));
+    gtk_box_append(GTK_BOX(actions), cell_button(t, index, "cell-add-below", _("Insert Code Cell Below (Alt+Enter)"),
+                                                 G_CALLBACK(on_cell_add_below)));
+    gtk_box_append(GTK_BOX(actions),
                    cell_button(t, index, "edit-delete", _("Delete Cell (Alt+Delete)"), G_CALLBACK(on_cell_delete)));
+    gtk_box_append(GTK_BOX(head), actions);
     gtk_box_append(GTK_BOX(cell), head);
 
     /* Source */
