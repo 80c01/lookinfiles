@@ -48,6 +48,8 @@ static void ensure_css(void) {
                   ".ipynb-tab .ipynb-cell-head label { color: @fg_subtle; font-family: @font_code;"
                   " font-size: @size_code; }"
                   ".ipynb-tab .ipynb-cell-head button { padding: 0 6px; min-height: 23px; }"
+                  ".ipynb-tab .ipynb-cell-head menubutton label { color: @fg_muted; font-family: @font_ui;"
+                  " font-size: @size_bar; }"
                   ".ipynb-tab .ipynb-source { background-color: @bg_block; }"
                   ".ipynb-tab .ipynb-source text { background-color: @bg_block; }"
                   ".ipynb-tab .ipynb-rendered, .ipynb-tab .ipynb-rendered text { background-color: @bg_view;"
@@ -380,19 +382,49 @@ static GtkWidget* rendered_view_new(IpynbTab* t, guint index) {
     return rendered;
 }
 
-static void on_type_selected(GObject* dropdown, GParamSpec* pspec, gpointer data) {
-    (void)pspec;
+#define CELL_TYPE_KEY "lookin-ipynb-cell-type"
+
+static void on_type_chosen(GtkButton* item, gpointer data) {
     IpynbTab* t = data;
-    if (t->building) return;
-    guint index = cell_index(dropdown);
-    guint selected = gtk_drop_down_get_selected(GTK_DROP_DOWN(dropdown));
-    IpynbCellType type = selected == 0 ? IPYNB_CELL_CODE : selected == 1 ? IPYNB_CELL_MARKDOWN : IPYNB_CELL_RAW;
+    GtkWidget* popover = gtk_widget_get_ancestor(GTK_WIDGET(item), GTK_TYPE_POPOVER);
+    if (popover != NULL) gtk_popover_popdown(GTK_POPOVER(popover));
+    guint index = cell_index(item);
+    IpynbCellType type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), CELL_TYPE_KEY));
     if (type == ipynb_doc_cell_type(t->doc, index)) return;
     ipynb_doc_set_type(t->doc, index, type);
     /* Made Markdown: still edited until run */
     g_hash_table_add(t->editing, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, index)));
     ipynb_tab_mark_changed(t);
     queue_rebuild(t, index);
+}
+
+/* The type of a cell: a menu button like the kernel one of the bar */
+static GtkWidget* type_menu_new(IpynbTab* t, guint index, IpynbCellType current) {
+    static const IpynbCellType types[] = { IPYNB_CELL_CODE, IPYNB_CELL_MARKDOWN, IPYNB_CELL_RAW };
+    const gchar* const names[] = { _("Code"), _("Markdown"), _("Raw") };
+    GtkWidget* button = gtk_menu_button_new();
+    gtk_menu_button_set_has_frame(GTK_MENU_BUTTON(button), FALSE);
+    gtk_menu_button_set_always_show_arrow(GTK_MENU_BUTTON(button), TRUE);
+    gtk_widget_set_focusable(button, FALSE);
+    gtk_widget_set_tooltip_text(button, _("Cell Type"));
+    GtkWidget* popover = gtk_popover_new();
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
+    GtkWidget* menu = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
+    for (guint i = 0; i < G_N_ELEMENTS(types); i++) {
+        if (types[i] == current) gtk_menu_button_set_label(GTK_MENU_BUTTON(button), names[i]);
+        GtkWidget* item = gtk_button_new_with_label(names[i]);
+        gtk_widget_add_css_class(item, "flat");
+        if (types[i] == current) gtk_widget_add_css_class(item, "menu-item-current");
+        GtkWidget* text = gtk_button_get_child(GTK_BUTTON(item));
+        if (GTK_IS_LABEL(text)) gtk_label_set_xalign(GTK_LABEL(text), 0.0f);
+        g_object_set_data(G_OBJECT(item), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
+        g_object_set_data(G_OBJECT(item), CELL_TYPE_KEY, GINT_TO_POINTER(types[i]));
+        g_signal_connect(item, "clicked", G_CALLBACK(on_type_chosen), t);
+        gtk_box_append(GTK_BOX(menu), item);
+    }
+    gtk_popover_set_child(GTK_POPOVER(popover), menu);
+    gtk_menu_button_set_popover(GTK_MENU_BUTTON(button), popover);
+    return button;
 }
 
 static void on_cell_run(GtkButton* button, gpointer data) {
@@ -548,14 +580,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
         set_prompt(t, index, prompt);
         gtk_box_append(GTK_BOX(head), prompt);
     }
-    const gchar* const types[] = { _("Code"), _("Markdown"), _("Raw"), NULL };
-    GtkWidget* dropdown = gtk_drop_down_new_from_strings(types);
-    gtk_widget_set_focusable(dropdown, FALSE);
-    gtk_widget_set_tooltip_text(dropdown, _("Cell Type"));
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(dropdown), type == IPYNB_CELL_CODE ? 0 : type == IPYNB_CELL_MARKDOWN ? 1 : 2);
-    g_object_set_data(G_OBJECT(dropdown), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
-    g_signal_connect(dropdown, "notify::selected", G_CALLBACK(on_type_selected), t);
-    gtk_box_append(GTK_BOX(head), dropdown);
+    gtk_box_append(GTK_BOX(head), type_menu_new(t, index, type));
     GtkWidget* spacer = gtk_label_new(NULL);
     gtk_widget_set_hexpand(spacer, TRUE);
     gtk_box_append(GTK_BOX(head), spacer);
