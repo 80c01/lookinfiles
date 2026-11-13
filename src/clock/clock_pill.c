@@ -27,11 +27,11 @@ static void ensure_css(void) {
     done = TRUE;
     theme_add_css(".clock-pill label { font-feature-settings: \"tnum\"; }"
                   "label.clock-time { color: @fg_muted; font-size: @size_bar; margin: 0px 2px; }"
-                  "button.status-pill.clock-timer-paused label { color: @fg_faint; }"
+                  "button.status-pill.clock-timer-paused > label { color: @fg_faint; }"
                   "button.status-pill.clock-timer-inverse,"
                   "button.status-pill.clock-timer-inverse:hover { background-color: @fg_bright; }"
-                  "button.status-pill.clock-timer-inverse label,"
-                  "button.status-pill.clock-timer-inverse:hover label { color: @bg_bar; }");
+                  "button.status-pill.clock-timer-inverse > label,"
+                  "button.status-pill.clock-timer-inverse:hover > label { color: @bg_bar; }");
 }
 
 static gboolean animations_on(GtkWidget* widget) {
@@ -217,17 +217,10 @@ static GtkWidget* popover_button(const gchar* label, GCallback callback, gpointe
 
 static void on_timer_clicked(GtkButton* button, gpointer data) {
     ClockPill* p = data;
-    /* On the row, not the button: the pill's styles (reverse colours) stay off its content */
-    GtkWidget* row = gtk_widget_get_parent(GTK_WIDGET(button));
+    /* On the button, so it opens under the timer (the pill styles only reach its own label) */
     GtkWidget* popover = gtk_popover_new();
-    gtk_widget_set_parent(popover, row);
+    gtk_widget_set_parent(popover, GTK_WIDGET(button));
     gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
-    graphene_rect_t bounds;
-    if (gtk_widget_compute_bounds(GTK_WIDGET(button), row, &bounds)) {
-        GdkRectangle rect = {(gint)bounds.origin.x, (gint)bounds.origin.y, (gint)bounds.size.width,
-                             (gint)bounds.size.height};
-        gtk_popover_set_pointing_to(GTK_POPOVER(popover), &rect);
-    }
     g_object_set_data(G_OBJECT(popover), POPOVER_PILL_KEY, p);
 
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
