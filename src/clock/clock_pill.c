@@ -21,6 +21,8 @@ typedef struct {
     guint source;
 } ClockPill;
 
+/* Added at realize, after the main stylesheet (apply_panel_borders()): with the
+ * same priority the last provider wins, whatever the selectors */
 static void ensure_css(void) {
     static gboolean done = FALSE;
     if (done) return;
@@ -32,6 +34,12 @@ static void ensure_css(void) {
                   "button.status-pill.clock-timer-inverse:hover { background-color: @fg_bright; }"
                   "button.status-pill.clock-timer-inverse label,"
                   "button.status-pill.clock-timer-inverse:hover label { color: @bg_bar; }");
+}
+
+static void on_realize(GtkWidget* widget, gpointer data) {
+    (void)widget;
+    (void)data;
+    ensure_css();
 }
 
 static gboolean animations_on(GtkWidget* widget) {
@@ -300,7 +308,6 @@ void clock_pill_set_timer(GtkWidget* pill, gint minutes) {
 }
 
 GtkWidget* clock_pill_new(gint minutes) {
-    ensure_css();
     ClockPill* p = g_new0(ClockPill, 1);
     p->frozen = (g_getenv("LOOKIN_CLOCK_FROZEN") != NULL);
 
@@ -324,6 +331,7 @@ GtkWidget* clock_pill_new(gint minutes) {
 
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_add_css_class(box, "clock-pill");
+    g_signal_connect(box, "realize", G_CALLBACK(on_realize), NULL);
     gtk_box_append(GTK_BOX(box), p->clock);
     gtk_box_append(GTK_BOX(box), p->timer);
     g_object_set_data_full(G_OBJECT(box), CLOCK_KEY, p, clock_pill_free);
