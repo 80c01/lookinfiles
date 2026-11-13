@@ -51,6 +51,13 @@ Layers, from bottom to top
   binary; `file_kind_of_path()`). The preview
   detects the kind in its worker thread (`preview_state_kind()`): decide on
   the displayed file with it, not with its name.
+- `sysstat` — system statistics of Linux read from `/proc` (Linux only:
+  elsewhere the readers find nothing): pure parsers of `stat`, `meminfo`,
+  `loadavg`, `net/dev`, `diskstats`, `self/mounts` and `<pid>/stat`;
+  `sysstat_sample()` reads a snapshot (processes and filesystems on demand,
+  whole disks of `/sys/block` only) in a worker thread (`statvfs()` on a
+  network mount can block), `sysstat_sample_rates()` turns two snapshots into
+  CPU percentages (a process: 100 = one core), network and disk rates.
 - `ui_probe` — test hook for `make ui-shots`: with `LOOKIN_UI_PROBE=<file>`,
   each SIGUSR2 writes a new number to the file once the main loop is idle,
   so a screenshot waits for the application instead of a fixed delay

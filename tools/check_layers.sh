@@ -69,6 +69,7 @@ path_kind:
 pane_geometry:
 minimap_geometry:
 ui_probe:
+sysstat:
 dir_summary:file_types,text_encoding,i18n
 dir_scan:file_types
 file_save:
