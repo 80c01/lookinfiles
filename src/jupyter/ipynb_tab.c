@@ -33,9 +33,9 @@ static void ensure_css(void) {
     if (done) return;
     done = TRUE;
     theme_add_css(".ipynb-tab { background-color: @bg_view; }"
-                  ".ipynb-tab .ipynb-bar { padding: 2px 8px; background-color: @bg_bar;"
+                  ".ipynb-tab .ipynb-bar { padding: 3px 8px; background-color: @bg_bar;"
                   " border-bottom: 1px solid @border; font-size: @size_bar; }"
-                  ".ipynb-tab .ipynb-bar button { padding: 0 8px; min-height: 0; }"
+                  ".ipynb-tab .ipynb-bar button { padding: 0 8px; min-height: 23px; }"
                   ".ipynb-tab .ipynb-bar label { color: @fg_muted; }"
                   ".ipynb-tab .ipynb-bar .ipynb-error { color: @error; }"
                   ".ipynb-tab .ipynb-input { padding: 4px 8px; background-color: @bg_bar;"
