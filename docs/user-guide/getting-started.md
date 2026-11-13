@@ -78,8 +78,9 @@ hidden.
 - **Explorer bar** (bottom of the explorer). The git branch and short
   messages (with an **Undo** button after a move to the trash or a rename;
   in the top bar while the explorer is hidden).
-- **Preview bar** (bottom of the preview page). The name, size, type and
-  text encoding of the previewed entry.
+- **Preview bar** (bottom of the preview page). The name, size, modification
+  date (how long ago; the exact date in its tooltip), type and text encoding
+  of the previewed entry.
 - Each **editor tab** has its own bar, in the style of its mode: the file's
   git branch and path, unsaved mark, language, line ending, code navigation
   source and diagnostics (see [Editor](editor.md)).

@@ -81,8 +81,9 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
   de courts messages (avec un bouton **Annuler** après une mise à la
   corbeille ou un renommage ; dans la barre du haut quand l’explorateur est
   masqué).
-- **Barre de l’aperçu** (en bas de la page d’aperçu). Le nom, la taille, le
-  type et l’encodage du texte de l’élément affiché.
+- **Barre de l’aperçu** (en bas de la page d’aperçu). Le nom, la taille, la
+  date de modification (il y a combien de temps ; la date exacte dans son
+  info-bulle), le type et l’encodage du texte de l’élément affiché.
 - Chaque **onglet d’édition** a sa propre barre, dans le style de son
   mode : la branche git et le chemin du fichier, la marque de modification
   non enregistrée, le langage, la fin de ligne, la source de la navigation

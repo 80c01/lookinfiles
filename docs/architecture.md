@@ -823,8 +823,8 @@ Layers, from bottom to top
   their own, `editor_modes`): explorer bar (`create_explorer_bar()`: Git branch of the files
   view with modification `*` and ahead/behind `↑` / `↓` indicators, `app_notice()` message with Undo, sort order of the files view (click cycles it, like `o`); the message moves to the top bar,
   `create_topbar_notice()`, while the explorer is hidden), preview bar
-  (`create_preview_bar()`, under the preview page only: name, size, type,
-  encoding); `update_status_bar()` refreshes both. Their widgets are private
+  (`create_preview_bar()`, under the preview page only: name, size, modification
+  date, type, encoding); `update_status_bar()` refreshes both. Their widgets are private
   (`struct StatusBars`).
 - `sidebar` — explorer header: view switcher and per-view action toolbars;
   `sidebar_header_update()` (called by `update_path_label()`) shows the

@@ -1974,6 +1974,11 @@ msgid_plural "%u others"
 msgstr[0] "%u autre"
 msgstr[1] "%u autres"
 
+#: src/chrome/status_bar.c:656
+#, c-format
+msgid "Modified %s"
+msgstr "Modifié le %s"
+
 #: src/preview/dir_summary.c:238
 msgid "just now"
 msgstr "à l’instant"

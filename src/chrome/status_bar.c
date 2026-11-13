@@ -1,10 +1,11 @@
 /* Panel status bars: the explorer bar (Git branch, app_notice() messages,
  * shown in the top bar while the explorer is hidden, sort order) and the preview bar
- * (name, size, type and encoding of the previewed entry). Editor tabs have
+ * (name, size, modification date, type and encoding of the previewed entry). Editor tabs have
  * their own bar (editor_modes). */
 #include "chrome/status_bar.h"
 #include "git/git_state.h"
 #include "preview/preview_state.h"
+#include "preview/dir_summary.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"
@@ -24,6 +25,7 @@ struct StatusBars {
     GtkWidget* preview_bar;   /* shown under the preview page */
     GtkWidget* selection;     /* preview bar: previewed entry name */
     GtkWidget* size;          /* preview bar: file size */
+    GtkWidget* mtime;         /* preview bar: modification age, full date in the tooltip */
     GtkWidget* type;          /* preview bar: file type / language */
     GtkWidget* encoding;      /* preview bar: text encoding, hidden if not text */
 };
@@ -427,7 +429,8 @@ GtkWidget* create_topbar_notice(AppData* app) {
     return box;
 }
 
-/* Preview bar: name of the previewed entry on the left; size, type and encoding on the right */
+/* Preview bar: name of the previewed entry on the left; size, modification
+ * date, type and encoding on the right */
 GtkWidget* create_preview_bar(AppData* app) {
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(bar, "panel-statusbar");
@@ -443,6 +446,9 @@ GtkWidget* create_preview_bar(AppData* app) {
     GtkWidget* status_size = status_item_new();
     gtk_box_append(GTK_BOX(bar), status_size);
 
+    GtkWidget* status_mtime = status_item_new();
+    gtk_box_append(GTK_BOX(bar), status_mtime);
+
     GtkWidget* status_type = status_item_new();
     gtk_box_append(GTK_BOX(bar), status_type);
 
@@ -453,6 +459,7 @@ GtkWidget* create_preview_bar(AppData* app) {
     b->preview_bar = bar;
     b->selection = status_selection;
     b->size = status_size;
+    b->mtime = status_mtime;
     b->type = status_type;
     b->encoding = status_encoding;
     return bar;
@@ -607,6 +614,7 @@ void update_status_bar(AppData* app) {
 
     gboolean has_sel = (name != NULL && type != NULL && g_strcmp0(type, "-") != 0);
     gboolean has_size = FALSE;
+    gboolean has_mtime = FALSE;
     gboolean has_encoding = FALSE;
     if (has_sel) {
         gtk_label_set_text(GTK_LABEL(b->selection), name);
@@ -625,20 +633,39 @@ void update_status_bar(AppData* app) {
             gtk_label_set_text(GTK_LABEL(b->encoding), preview_state_encoding(app));
         }
 
-        gboolean is_file = (g_strcmp0(type, "dir") != 0 && g_strcmp0(type, "bookmark") != 0 &&
-                            g_strcmp0(type, "bm_folder") != 0 && g_strcmp0(type, "notebook") != 0 &&
-                            g_strcmp0(type, "trash") != 0 && g_strcmp0(type, "remote_folder") != 0);
+        /* Virtual entries have no date or size of their own; folders have a date only */
+        gboolean is_dir = (g_strcmp0(type, "dir") == 0);
+        gboolean on_disk = (g_strcmp0(type, "bookmark") != 0 && g_strcmp0(type, "bm_folder") != 0 &&
+                            g_strcmp0(type, "notebook") != 0 && g_strcmp0(type, "trash") != 0 &&
+                            g_strcmp0(type, "remote_folder") != 0);
         GStatBuf st;
-        if (is_file && full != NULL && g_stat(full, &st) == 0) {
-            gchar* size_str = g_format_size((guint64)st.st_size);
-            gtk_label_set_text(GTK_LABEL(b->size), size_str);
-            g_free(size_str);
-            has_size = TRUE;
+        if (on_disk && full != NULL && g_stat(full, &st) == 0) {
+            if (!is_dir) {
+                gchar* size_str = g_format_size((guint64)st.st_size);
+                gtk_label_set_text(GTK_LABEL(b->size), size_str);
+                g_free(size_str);
+                has_size = TRUE;
+            }
+            gint64 mtime = (gint64)st.st_mtime;
+            GDateTime* dt = g_date_time_new_from_unix_local(mtime);
+            if (mtime > 0 && dt != NULL) {
+                gchar* age = dir_summary_format_age(mtime, g_get_real_time() / G_USEC_PER_SEC);
+                gtk_label_set_text(GTK_LABEL(b->mtime), age);
+                g_free(age);
+                gchar* date = g_date_time_format(dt, "%Y-%m-%d %H:%M:%S");
+                gchar* tip = g_strdup_printf(_("Modified %s"), date);
+                gtk_widget_set_tooltip_text(b->mtime, tip);
+                g_free(tip);
+                g_free(date);
+                has_mtime = TRUE;
+            }
+            g_clear_pointer(&dt, g_date_time_unref);
         }
     }
     gtk_widget_set_visible(b->selection, has_sel);
     gtk_widget_set_visible(b->type, has_sel);
     gtk_widget_set_visible(b->size, has_size);
+    gtk_widget_set_visible(b->mtime, has_mtime);
     gtk_widget_set_visible(b->encoding, has_encoding);
     /* Only under the preview page: editor, Git and Help tabs have their own bars */
     if (b->preview_bar != NULL && app->notebook != NULL) {
