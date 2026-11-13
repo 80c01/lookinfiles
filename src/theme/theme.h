@@ -5,11 +5,13 @@
  * write them as named colours (@bg_window, alpha(@accent, 0.25)...). */
 #include <glib.h>
 
-/* Install the global stylesheet (call once at startup) */
+/* Install the global stylesheet (call once at startup); the sheets of
+ * theme_add_css() win over it, whenever they are added */
 void apply_panel_borders(void);
 
 /* Add a stylesheet for the display, with the palette's named colours
- * defined. css is copied: it is reloaded by theme_reload(). */
+ * defined; it wins over the global stylesheet, even when added before it.
+ * css is copied: it is reloaded by theme_reload(). */
 void theme_add_css(const gchar* css);
 
 /* At startup, before any widget: set the palette and fonts to the theme

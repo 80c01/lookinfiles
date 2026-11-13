@@ -29,7 +29,12 @@ static void sheet_load(ThemeSheet* sheet) {
     g_free(defines);
 }
 
-void theme_add_css(const gchar* css) {
+/* The global stylesheet sits just below the others: with the same priority
+ * GTK lets the provider added last win whatever the selectors, so a module
+ * sheet added before apply_panel_borders() would lose to it */
+#define BASE_PRIORITY (GTK_STYLE_PROVIDER_PRIORITY_APPLICATION - 1)
+
+static void add_sheet(const gchar* css, guint priority) {
     GdkDisplay* display = gdk_display_get_default();
     if (display == NULL || css == NULL) {
         return;
@@ -41,9 +46,12 @@ void theme_add_css(const gchar* css) {
     sheet->provider = gtk_css_provider_new();
     sheet->source = g_strdup(css);
     sheet_load(sheet);
-    gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(sheet->provider),
-                                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(sheet->provider), priority);
     g_ptr_array_add(sheets, sheet);
+}
+
+void theme_add_css(const gchar* css) {
+    add_sheet(css, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
 void theme_reload(void) {
@@ -974,7 +982,7 @@ void apply_panel_borders(void) {
         ".emacs-block-cursor-eol {\n"
         "  background-color: @editor_cursor;\n"
         "}\n";
-    theme_add_css(DATA);
+    add_sheet(DATA, BASE_PRIORITY);
 
     /* File-type icons (icons.c): image.ft-<colour> takes the role
      * icon_<colour>, on selected rows too, as in VS Code. Kept for reloads. */
@@ -987,5 +995,5 @@ void apply_panel_borders(void) {
         }
         file_icons = g_string_free(css, FALSE);
     }
-    theme_add_css(file_icons);
+    add_sheet(file_icons, BASE_PRIORITY);
 }
