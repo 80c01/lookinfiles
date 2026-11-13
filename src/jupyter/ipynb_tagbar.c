@@ -19,30 +19,48 @@ struct IpynbTagbar {
     GPtrArray* entries; /* the headings shown, or NULL */
     guint refresh_source;
     guint cursor_source;
+    guint scroll_source;
+    guint scroll_key;   /* ipynb_doc_cell_key() of the cell scrolled to */
     gboolean stale;     /* the notebook changed while the tagbar was hidden */
 };
 
 static void tagbar_free(IpynbTagbar* tb) {
     g_clear_handle_id(&tb->refresh_source, g_source_remove);
     g_clear_handle_id(&tb->cursor_source, g_source_remove);
+    g_clear_handle_id(&tb->scroll_source, g_source_remove);
     g_clear_pointer(&tb->entries, g_ptr_array_unref);
     g_free(tb);
 }
 
 /* --- Pane callbacks --- */
 
-/* Scroll the cell at index to the top of the view and focus it */
-static void go_to(gpointer data, const CodeOutlineEntry* entry) {
+/* The cell gone to at the top of the view, once laid out: the viewport
+ * has scrolled it into view when it got the focus (only just in view, and
+ * maybe still animating), which setting the value ends */
+static gboolean on_scroll_idle(gpointer data) {
     IpynbTagbar* tb = data;
+    tb->scroll_source = 0;
     IpynbTab* t = tb->tab;
-    if (t == NULL || entry->line < 0 || (guint)entry->line >= t->views->len) return;
-    GtkWidget* cell = gtk_widget_get_parent(g_ptr_array_index(t->views, (guint)entry->line));
+    gint index = t != NULL ? ipynb_doc_find_cell(t->doc, tb->scroll_key) : -1;
+    if (index < 0 || (guint)index >= t->views->len) return G_SOURCE_REMOVE;
+    GtkWidget* cell = gtk_widget_get_parent(g_ptr_array_index(t->views, (guint)index));
     graphene_point_t top;
     if (cell != NULL && gtk_widget_compute_point(cell, t->cells_box, &GRAPHENE_POINT_INIT(0, 0), &top)) {
         GtkAdjustment* adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(t->scroll));
         gtk_adjustment_set_value(adj, top.y);
     }
+    return G_SOURCE_REMOVE;
+}
+
+/* Focus the heading's cell, then scroll it to the top of the view */
+static void go_to(gpointer data, const CodeOutlineEntry* entry) {
+    IpynbTagbar* tb = data;
+    IpynbTab* t = tb->tab;
+    if (t == NULL || entry->line < 0 || (guint)entry->line >= t->views->len) return;
     ipynb_tab_focus_cell(t, (guint)entry->line);
+    tb->scroll_key = ipynb_doc_cell_key(t->doc, (guint)entry->line);
+    g_clear_handle_id(&tb->scroll_source, g_source_remove);
+    tb->scroll_source = g_idle_add(on_scroll_idle, tb);
 }
 
 static gint cursor_line(gpointer data) {
@@ -139,6 +157,7 @@ void ipynb_tagbar_release(IpynbTab* t) {
     if (tb == NULL) return;
     g_clear_handle_id(&tb->refresh_source, g_source_remove);
     g_clear_handle_id(&tb->cursor_source, g_source_remove);
+    g_clear_handle_id(&tb->scroll_source, g_source_remove);
     outline_pane_detach(tb->pane);
     tb->tab = NULL;
     t->tagbar = NULL;
