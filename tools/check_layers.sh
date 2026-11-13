@@ -214,6 +214,7 @@ focus_route:app_types,app_events,nav_keys,panels
 icons:file_type_icons,palette
 icon_sets:app_paths,theme_store
 icon_picker:icons
+sparkline:palette
 image_utils:
 animation:gif_decoder,image_utils
 dialog:

@@ -420,6 +420,9 @@ Layers, from bottom to top
   GStreamer, `media_player_new()` is a plain `GtkMediaFile` with no tracks.
 - `track_menu` — the **Audio** / **Subtitles** menu buttons of a player,
   bound to a `media_player` stream (popovers, current track marked).
+- `sparkline` — a small line chart (`GtkDrawingArea`) of the last values of
+  one or more series, each in a palette colour, the newest at the right;
+  fixed or automatic scale. Used by the system monitor.
 - `icon_picker` — a grid of toggle buttons to choose one theme glyph
   (notebook and bookmark folder dialogs).
 - `dialog` — `AppDialog`, the modal dialog drawn inside the main window: a
