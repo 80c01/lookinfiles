@@ -87,6 +87,15 @@ guint ipynb_doc_put_cell(IpynbDoc* doc, guint index, IpynbCell* cell);
 void ipynb_cell_free(IpynbCell* cell);
 /* Move the cell at from to position to (both clamped) */
 void ipynb_doc_move_cell(IpynbDoc* doc, guint from, guint to);
+/* The parts of a cell source split as JupyterLab does: at the cursor
+ * (start == end, character offsets), or before and after the selection
+ * start..end; each part without the newlines at its ends, the empty ones
+ * left out. NULL if that gives fewer than two parts. Free with g_strfreev(). */
+gchar** ipynb_split_source(const gchar* source, glong start, glong end);
+/* Split the cell at index into parts (NULL-terminated, two or more): new
+ * cells of its type before it take the first ones, the cell keeps the last
+ * one with its outputs, metadata and key. Returns the index of that cell. */
+guint ipynb_doc_split_cell(IpynbDoc* doc, guint index, gchar** parts);
 
 /* --- Running cells (ipynb_kernel.h) --- */
 

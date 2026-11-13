@@ -597,6 +597,50 @@ void ipynb_cell_free(IpynbCell* cell) {
     node_free(cell);
 }
 
+/* Add source[from..to) (byte offsets) without its end newlines, if any is left */
+static void add_part(GPtrArray* parts, const gchar* source, gsize from, gsize to) {
+    while (from < to && (source[from] == '\n' || source[from] == '\r')) from++;
+    while (to > from && (source[to - 1] == '\n' || source[to - 1] == '\r')) to--;
+    if (to > from) g_ptr_array_add(parts, g_strndup(source + from, to - from));
+}
+
+gchar** ipynb_split_source(const gchar* source, glong start, glong end) {
+    if (source == NULL) return NULL;
+    glong n = g_utf8_strlen(source, -1);
+    start = CLAMP(start, 0, n);
+    end = CLAMP(end, 0, n);
+    if (end < start) {
+        glong swap = start;
+        start = end;
+        end = swap;
+    }
+    gsize a = (gsize)(g_utf8_offset_to_pointer(source, start) - source);
+    gsize b = (gsize)(g_utf8_offset_to_pointer(source, end) - source);
+    GPtrArray* parts = g_ptr_array_new();
+    add_part(parts, source, 0, a);
+    if (b > a) add_part(parts, source, a, b);
+    add_part(parts, source, b, strlen(source));
+    if (parts->len < 2) {
+        g_ptr_array_set_free_func(parts, g_free);
+        g_ptr_array_free(parts, TRUE);
+        return NULL;
+    }
+    g_ptr_array_add(parts, NULL);
+    return (gchar**)g_ptr_array_free(parts, FALSE);
+}
+
+guint ipynb_doc_split_cell(IpynbDoc* doc, guint index, gchar** parts) {
+    guint n = parts != NULL ? g_strv_length(parts) : 0;
+    if (index >= ipynb_doc_n_cells(doc) || n < 2) return index;
+    IpynbCellType type = ipynb_doc_cell_type(doc, index);
+    for (guint i = 0; i + 1 < n; i++) {
+        ipynb_doc_set_source(doc, ipynb_doc_insert_cell(doc, index + i, type), parts[i]);
+    }
+    index += n - 1;
+    ipynb_doc_set_source(doc, index, parts[n - 1]);
+    return index;
+}
+
 void ipynb_doc_move_cell(IpynbDoc* doc, guint from, guint to) {
     Node* cells = cells_of(doc);
     guint n = cells->children->len;

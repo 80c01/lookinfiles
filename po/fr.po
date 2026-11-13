@@ -8762,6 +8762,12 @@ msgstr "Monter la cellule (Alt+Up)"
 msgid "Move Cell Down (Alt+Down)"
 msgstr "Descendre la cellule (Alt+Down)"
 
+msgid "Nothing to split here"
+msgstr "Rien à scinder ici"
+
+msgid "Split Cell"
+msgstr "Scinder la cellule"
+
 msgid "Insert Code Cell Above (Alt+Shift+Enter)"
 msgstr "Insérer une cellule de code au-dessus (Alt+Shift+Enter)"
 

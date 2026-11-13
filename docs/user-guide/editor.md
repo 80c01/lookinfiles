@@ -44,7 +44,9 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
 - `Ctrl+Up` / `Ctrl+Down` go to the previous / next cell, `Alt+Up` /
   `Alt+Down` move the cell, `Alt+Enter` / `Alt+Shift+Enter` insert a code cell below / above,
   `Alt+Delete` deletes the cell (**Undo Delete** in the bar puts it back).
-  The buttons of each cell do the same.
+  The buttons of each cell do the same. **Split Cell** in the right-click
+  menu of a cell's source splits it at the cursor (or before and after the
+  selection), as in JupyterLab: the outputs stay with the last part.
 - `Ctrl+K Ctrl+O` (or the list button at the end of the bar) shows the
   **tagbar** beside the cells: the headings of the Markdown cells, nested by
   level. It follows the current cell; `Enter` or a click goes to the

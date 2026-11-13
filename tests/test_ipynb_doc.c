@@ -214,6 +214,46 @@ static void test_keys(void) {
     g_free(text);
 }
 
+static void test_split(void) {
+    /* At the cursor, end newlines dropped; around a selection; nothing to split */
+    gchar** p = ipynb_split_source("a = 1\n\nb = 2\n", 6, 6);
+    g_assert_nonnull(p);
+    g_assert_cmpuint(g_strv_length(p), ==, 2);
+    g_assert_cmpstr(p[0], ==, "a = 1");
+    g_assert_cmpstr(p[1], ==, "b = 2");
+    g_strfreev(p);
+    p = ipynb_split_source("é1\né2\né3", 3, 5);
+    g_assert_cmpuint(g_strv_length(p), ==, 3);
+    g_assert_cmpstr(p[0], ==, "é1");
+    g_assert_cmpstr(p[1], ==, "é2");
+    g_assert_cmpstr(p[2], ==, "é3");
+    g_strfreev(p);
+    g_assert_null(ipynb_split_source("abc", 0, 0));
+    g_assert_null(ipynb_split_source("abc\n", 3, 3));
+    g_assert_null(ipynb_split_source("", 0, 0));
+
+    /* The cell keeps the last part (and its key, outputs); new cells before */
+    IpynbDoc* doc = ipynb_doc_new();
+    ipynb_doc_set_source(doc, 0, "x = 1\ny = 2");
+    ipynb_doc_set_execution_count(doc, 0, 3);
+    guint key = ipynb_doc_cell_key(doc, 0);
+    p = ipynb_split_source("x = 1\ny = 2", 6, 6);
+    g_assert_cmpuint(ipynb_doc_split_cell(doc, 0, p), ==, 1);
+    g_strfreev(p);
+    g_assert_cmpuint(ipynb_doc_n_cells(doc), ==, 2);
+    gchar* s0 = ipynb_doc_cell_source(doc, 0);
+    gchar* s1 = ipynb_doc_cell_source(doc, 1);
+    g_assert_cmpstr(s0, ==, "x = 1");
+    g_assert_cmpstr(s1, ==, "y = 2");
+    g_free(s0);
+    g_free(s1);
+    g_assert_cmpint(ipynb_doc_cell_type(doc, 0), ==, IPYNB_CELL_CODE);
+    g_assert_cmpint(ipynb_doc_cell_execution_count(doc, 0), ==, -1);
+    g_assert_cmpint(ipynb_doc_cell_execution_count(doc, 1), ==, 3);
+    g_assert_cmpint(ipynb_doc_find_cell(doc, key), ==, 1);
+    ipynb_doc_free(doc);
+}
+
 static void test_append_outputs(void) {
     IpynbDoc* doc = ipynb_doc_new();
     ipynb_doc_set_source(doc, 0, "print(1)");
@@ -292,6 +332,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/ipynb_doc/new_and_invalid", test_new_and_invalid);
     g_test_add_func("/ipynb_doc/long_output_and_image", test_long_output_and_image);
     g_test_add_func("/ipynb_doc/keys", test_keys);
+    g_test_add_func("/ipynb_doc/split", test_split);
     g_test_add_func("/ipynb_doc/append_outputs", test_append_outputs);
     g_test_add_func("/ipynb_doc/kernel_info", test_kernel_info);
     g_test_add_func("/ipynb_doc/cell_markdown", test_cell_markdown);

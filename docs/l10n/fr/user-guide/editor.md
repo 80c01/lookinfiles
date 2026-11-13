@@ -50,7 +50,10 @@ cellule Markdown nouvelle ou vide reste en source.
   `Alt+Up` / `Alt+Down` déplacent la cellule, `Alt+Enter` /
   `Alt+Shift+Enter` insèrent une cellule de code en dessous / au-dessus, `Alt+Delete` supprime la cellule
   (**Annuler la suppression** dans la barre la remet). Les boutons de
-  chaque cellule font de même.
+  chaque cellule font de même. **Scinder la cellule**, dans le menu du clic
+  droit sur le source d'une cellule, la coupe au curseur (ou avant et après
+  la sélection), comme dans JupyterLab : les sorties restent avec la
+  dernière partie.
 - `Ctrl+K Ctrl+O` (ou le bouton de liste au bout de la barre) affiche la
   **barre de symboles** à côté des cellules : les titres des cellules
   Markdown, imbriqués par niveau. Elle suit la cellule courante ; `Enter`
