@@ -16,8 +16,8 @@ typedef struct {
     GtkWidget* tab_label;   /* owned ref: kept while the page moves */
     GtkWidget* cells_box;   /* one child per cell */
     GtkWidget* scroll;      /* the GtkScrolledWindow of cells_box */
-    GtkWidget* info;        /* kernel and cell count */
-    GtkWidget* status;      /* saved, or the error of the last save or run */
+    GtkWidget* info;        /* cell count (status bar) */
+    GtkWidget* status;      /* saved, or the error of the last save or run (status bar) */
     GtkWidget* undo_button; /* puts the cell deleted last back */
     GPtrArray* views;       /* GtkTextView* of each cell (not referenced) */
     GHashTable* running;    /* keys (ipynb_doc_cell_key()) of the cells run or waiting to run */
@@ -37,7 +37,8 @@ typedef struct {
 
     /* Running cells (ipynb_run.c) */
     IpynbKernel* kernel;     /* NULL until a cell runs */
-    GtkWidget* kernel_button; /* the kernel's state; its menu chooses the kernel */
+    GtkWidget* kernel_button; /* the notebook's kernel; its menu chooses the kernel */
+    GtkWidget* kernel_state;  /* the kernel's state (status bar) */
     GtkWidget* kernel_menu;   /* the box of that menu */
     GCancellable* list_cancel; /* listing the installed kernels, or NULL */
     GtkWidget* interrupt_button;
@@ -71,8 +72,9 @@ void ipynb_tab_render_cell(IpynbTab* t, guint index);
 void ipynb_tab_rebuild_cells(IpynbTab* t);
 
 /* ipynb_run.c */
-/* Add the run buttons to the tab's bar; returns the kernel button (its
- * state, and a menu of the installed kernels), placed by the caller */
+/* Add the run buttons to the tab's bar; returns the kernel button (the
+ * notebook's kernel, and a menu of the installed kernels), placed by the
+ * caller; also creates t->kernel_state, the state label of the status bar */
 GtkWidget* ipynb_run_bar(IpynbTab* t, GtkWidget* bar);
 /* The row that asks for a line (input()), hidden */
 GtkWidget* ipynb_run_input_row_new(IpynbTab* t);

@@ -658,8 +658,10 @@ Layers, from bottom to top
   script from the GResource, outputs added to the `IpynbDoc` by cell key
   and drawn once per main loop turn (`ipynb_tab_refresh_cell()`: the other
   cells and the source are left alone), the input row, interrupt, restart,
-  and the kernel menu (`ipynb_kernel_list()` each time it opens; a choice
-  sets the notebook's kernelspec and starts that kernel).
+  the kernel menu (labelled with the notebook's kernel;
+  `ipynb_kernel_list()` each time it opens; a choice sets the notebook's
+  kernelspec and starts that kernel) and the kernel state in the tab's
+  status bar.
   `ipynb_tagbar.c` (also on `ipynb_tab_private.h`) puts an `outline_pane`
   beside the cells (the editor tagbar's width), filled by `ipynb_outline`
   600 ms after the last change (`ipynb_tab_mark_changed()`), set again only

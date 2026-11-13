@@ -19,8 +19,9 @@ static void update_kernel_label(IpynbTab* t) {
                       : state == IPYNB_KERNEL_IDLE     ? _("Kernel idle")
                       : state == IPYNB_KERNEL_BUSY     ? _("Kernel busy")
                       : state == IPYNB_KERNEL_DEAD     ? _("Kernel died")
-                                                       : _("No kernel");
-    gtk_menu_button_set_label(GTK_MENU_BUTTON(t->kernel_button), text);
+                      : ipynb_doc_kernel(t->doc) != NULL ? _("Kernel not started")
+                                                         : _("No kernel");
+    gtk_label_set_text(GTK_LABEL(t->kernel_state), text);
     gboolean on = state != IPYNB_KERNEL_OFF;
     gtk_widget_set_sensitive(t->interrupt_button, on && state != IPYNB_KERNEL_DEAD);
     gtk_widget_set_sensitive(t->restart_button, on);
@@ -387,6 +388,7 @@ GtkWidget* ipynb_run_bar(IpynbTab* t, GtkWidget* bar) {
     gtk_popover_set_child(GTK_POPOVER(popover), scroll);
     g_signal_connect(popover, "show", G_CALLBACK(on_kernel_menu_show), t);
     gtk_menu_button_set_popover(GTK_MENU_BUTTON(t->kernel_button), popover);
+    t->kernel_state = gtk_label_new(NULL);
     update_kernel_label(t);
     return t->kernel_button;
 }

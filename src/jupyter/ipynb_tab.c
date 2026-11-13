@@ -38,6 +38,7 @@ static void ensure_css(void) {
                   ".ipynb-tab .ipynb-bar button { padding: 0 8px; border: none; min-height: 23px; }"
                   ".ipynb-tab .ipynb-bar label { color: @fg_muted; }"
                   ".ipynb-tab .ipynb-bar .ipynb-error { color: @error; }"
+                  ".ipynb-tab .ipynb-bar.ipynb-statusbar { border-bottom: none; border-top: 1px solid @border; }"
                   ".ipynb-tab .ipynb-input { padding: 4px 8px; background-color: @bg_bar;"
                   " border-bottom: 1px solid @border; }"
                   ".ipynb-tab .ipynb-cells { padding: 12px 16px 48px 16px; }"
@@ -111,11 +112,10 @@ void ipynb_tab_set_status(IpynbTab* t, const gchar* text, gboolean error) {
 void ipynb_tab_update_info(IpynbTab* t) {
     guint n = ipynb_doc_n_cells(t->doc);
     gchar* cells = g_strdup_printf(ngettext("%u cell", "%u cells", n), n);
-    const gchar* kernel = ipynb_doc_kernel(t->doc);
-    gchar* text = kernel != NULL ? g_strdup_printf("%s · %s", kernel, cells) : g_strdup(cells);
-    gtk_label_set_text(GTK_LABEL(t->info), text);
-    g_free(text);
+    gtk_label_set_text(GTK_LABEL(t->info), cells);
     g_free(cells);
+    const gchar* kernel = ipynb_doc_kernel(t->doc);
+    gtk_menu_button_set_label(GTK_MENU_BUTTON(t->kernel_button), kernel != NULL ? kernel : _("Choose a Kernel"));
 }
 
 static void save_now(IpynbTab* t) {
@@ -960,7 +960,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     gtk_widget_set_vexpand(root, TRUE);
     t->root = root;
 
-    /* Bar (top): new cells, clear outputs, JSON; kernel, save state */
+    /* Bar (top): run, new cells, clear outputs, JSON; kernel menu, headings */
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_widget_add_css_class(bar, "ipynb-bar");
     GtkWidget* kernel_button = ipynb_run_bar(t, bar);
@@ -976,22 +976,13 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
                                 G_CALLBACK(on_undo_delete));
     gtk_widget_set_visible(t->undo_button, FALSE);
     gtk_box_append(GTK_BOX(bar), t->undo_button);
-    t->info = gtk_label_new(NULL);
-    gtk_label_set_ellipsize(GTK_LABEL(t->info), PANGO_ELLIPSIZE_END);
-    gtk_label_set_xalign(GTK_LABEL(t->info), 1.0f);
-    gtk_widget_set_hexpand(t->info, TRUE);
-    gtk_widget_set_tooltip_text(t->info, _("Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; "
-                                           "Double-click or Enter: edit a rendered Markdown cell; "
-                                           "Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the "
-                                           "cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"));
-    gtk_box_append(GTK_BOX(bar), t->info);
+    GtkWidget* spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(spacer, TRUE);
+    gtk_box_append(GTK_BOX(bar), spacer);
     gtk_box_append(GTK_BOX(bar), kernel_button);
     GtkWidget* tagbar = icon_button_new("view-list-bullet", _("Show / Hide the Headings (Ctrl+K Ctrl+O)"));
     g_signal_connect(tagbar, "clicked", G_CALLBACK(on_tagbar), t);
     gtk_box_append(GTK_BOX(bar), tagbar);
-    t->status = gtk_label_new(NULL);
-    gtk_widget_set_margin_start(t->status, 8);
-    gtk_box_append(GTK_BOX(bar), t->status);
     /* In a narrow pane the bar is cut on the right instead of widening the
      * tab past the pane (the tagbar would be out of sight) */
     GtkWidget* bar_clip = gtk_scrolled_window_new();
@@ -1012,6 +1003,24 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     GtkWidget* paned = ipynb_tagbar_wrap(t, scroll);
     gtk_widget_set_vexpand(paned, TRUE);
     gtk_box_append(GTK_BOX(root), paned);
+
+    /* Status bar (bottom): kernel state, save or run message, cell count */
+    GtkWidget* status_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_add_css_class(status_bar, "ipynb-bar");
+    gtk_widget_add_css_class(status_bar, "ipynb-statusbar");
+    gtk_box_append(GTK_BOX(status_bar), t->kernel_state);
+    t->status = gtk_label_new(NULL);
+    gtk_label_set_ellipsize(GTK_LABEL(t->status), PANGO_ELLIPSIZE_END);
+    gtk_label_set_xalign(GTK_LABEL(t->status), 0.0f);
+    gtk_widget_set_hexpand(t->status, TRUE);
+    gtk_box_append(GTK_BOX(status_bar), t->status);
+    t->info = gtk_label_new(NULL);
+    gtk_widget_set_tooltip_text(t->info, _("Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; "
+                                           "Double-click or Enter: edit a rendered Markdown cell; "
+                                           "Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the "
+                                           "cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"));
+    gtk_box_append(GTK_BOX(status_bar), t->info);
+    gtk_box_append(GTK_BOX(root), status_bar);
 
     /* Capture: the text views would take Ctrl+Up and the Alt keys first */
     GtkEventController* keys = gtk_event_controller_key_new();

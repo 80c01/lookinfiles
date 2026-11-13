@@ -188,8 +188,9 @@ the explorer: its cells are edited one by one in the editor panel, one tab per
 file, dragged like an editor tab. Code cells run in the notebook's Jupyter
 kernel, started at the first run (needs Python 3 with `jupyter_client` and
 the kernel, e.g. `ipykernel`) and stopped with the tab; the kernel's button
-in the bar shows its state and chooses another installed kernel (recorded in
-the notebook's metadata); a line asked by the
+in the bar shows the notebook's kernel and chooses another installed kernel
+(recorded in the notebook's metadata), the status bar under the cells its
+state, the save state and the cell count; a line asked by the
 code (`input()`) is typed in a row under the bar. Saved by itself shortly
 after each change, when the tab closes and at quit; the bar runs every cell,
 interrupts or restarts the kernel, adds cells, clears the outputs, or opens

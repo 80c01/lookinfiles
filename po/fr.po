@@ -8847,6 +8847,9 @@ msgstr "Noyau occupé"
 msgid "Kernel died"
 msgstr "Noyau arrêté brutalement"
 
+msgid "Kernel not started"
+msgstr "Noyau non démarré"
+
 msgid "No kernel"
 msgstr "Aucun noyau"
 
@@ -8879,6 +8882,9 @@ msgstr "Redémarrer le noyau (sorties gardées)"
 
 msgid "Choose the Kernel"
 msgstr "Choisir le noyau"
+
+msgid "Choose a Kernel"
+msgstr "Choisir un noyau"
 
 msgid "Looking for kernels…"
 msgstr "Recherche des noyaux…"
