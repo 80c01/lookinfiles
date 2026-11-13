@@ -24,8 +24,7 @@ static void ensure_css(void) {
     if (done) return;
     done = TRUE;
     theme_add_css(".sysmon-indicator .sysmon-indicator-value { font-size: @size_small;"
-                  "  font-feature-settings: \"tnum\"; }"
-                  ".sysmon-indicator .sparkline { background-color: @bg_input; border-radius: 3px; }");
+                  "  font-feature-settings: \"tnum\"; }");
 }
 
 static gchar* read_proc(const gchar* name) {
