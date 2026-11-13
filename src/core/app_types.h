@@ -123,6 +123,7 @@ typedef struct {
     struct FolderHistory* dir_history; /* folders shown, for back / forward (private to nav_history.c) */
     struct WsSearch* search_state; /* last search in files and its Search tab (project_search.c) */
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
+    GtkWidget* sysmon_page;        /* its System Monitor tab while another workspace is shown (owned ref, sysmon_tab.c) */
     GPtrArray* browser_pages;      /* its browser tabs while another workspace is shown (owned refs, browser.c) */
     GPtrArray* canvas_pages;       /* its Canvas tabs of the preview notebook while another workspace is shown (owned refs, canvas_view.c) */
     GPtrArray* video_pages;        /* its Video tabs of the preview notebook while another workspace is shown (owned refs, video_tab.c) */
@@ -191,6 +192,7 @@ typedef struct AppData {
     GPtrArray* video_pages;         /* Video tabs of every workspace (roots, not referenced; video_tab.c), or NULL */
     GPtrArray* ipynb_pages;         /* Jupyter notebook tabs of every workspace (roots, not referenced; ipynb_tab.c), or NULL */
     GtkWidget* help_page;           /* Help page (the user guide, help_guide.c), or NULL */
+    GtkWidget* sysmon_page;         /* System Monitor page (sysmon_tab.c), or NULL */
 
     /* Media previews */
     GtkWidget* preview_stack;   /* GtkStack: "text" (text_view), "video" (video_player), or "audio" (audio_player) */

@@ -143,3 +143,21 @@ a preview that is still loading.
 that name is defined (see [code navigation](code-navigation.md)).
 
 When the previewed file changes on disk, the preview reloads by itself.
+
+## System Monitor
+
+On Linux, the top bar shows a small chart of the CPU use over the last
+minute, with its last value; its tooltip adds the load average and the
+memory in use. A click on it opens the **System Monitor** tab in the preview
+panel (another click closes it):
+
+- **CPU** (and a bar per core), **Memory** (and swap), **Load Average**,
+  **Network** (received and sent) and **Disk I/O** (read and written), each
+  with a chart of the last two minutes, updated every second;
+- the mounted **Filesystems**, with how full each one is;
+- the **Processes**, by CPU use at first: click a column header to sort by
+  it. The CPU of a process counts 100% for one full core.
+
+The tab only shows: it never stops or changes a process. The processes and
+filesystems are read only while the tab is on screen. `Ctrl+W` or a middle
+click on the tab closes it.

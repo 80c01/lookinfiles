@@ -157,3 +157,25 @@ où ce nom est défini (voir [la navigation dans le code](code-navigation.md)).
 
 Quand le fichier affiché change sur le disque, l’aperçu se recharge tout
 seul.
+
+## Moniteur système
+
+Sous Linux, la barre du haut montre un petit graphique de l’utilisation du
+processeur sur la dernière minute, avec sa dernière valeur ; son info-bulle
+y ajoute la charge moyenne et la mémoire utilisée. Un clic dessus ouvre
+l’onglet **Moniteur système** dans le panneau d’aperçu (un autre clic le
+ferme) :
+
+- **Processeur** (et une barre par cœur), **Mémoire** (et swap), **Charge
+  moyenne**, **Réseau** (reçu et envoyé) et **E/S disque** (lu et écrit),
+  chacun avec un graphique des deux dernières minutes, mis à jour chaque
+  seconde ;
+- les **Systèmes de fichiers** montés, avec leur taux de remplissage ;
+- les **Processus**, d’abord par utilisation du processeur : un clic sur
+  l’en-tête d’une colonne trie selon elle. Le processeur d’un processus
+  compte 100 % pour un cœur entier.
+
+L’onglet ne fait qu’afficher : il n’arrête ni ne modifie jamais un
+processus. Les processus et les systèmes de fichiers ne sont lus que
+pendant que l’onglet est à l’écran. `Ctrl+W` ou un clic du milieu sur
+l’onglet le ferme.

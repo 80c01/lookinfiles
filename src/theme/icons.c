@@ -27,6 +27,7 @@ static const IconFallback FALLBACKS[] = {
     {"document-edit", {"edit", "text-editor", "text-x-generic", NULL}},
     {"network-transmit-receive", {"network-workgroup", NULL}},
     {"utilities-terminal", {"terminal", "system-run", NULL}},
+    {"utilities-system-monitor", {"power-profile-performance", "system-run", NULL}},
     {"document-print-preview", {"text-x-generic", NULL}},
     {"view-dual", {"view-grid", NULL}},
     {"view-paged", {"view-list", NULL}},

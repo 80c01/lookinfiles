@@ -63,6 +63,7 @@ until_true 300 test -s "$OUT/smoke_display" || { echo "ui-test: FAIL - Xvfb did 
 export DISPLAY=":$(cat "$OUT/smoke_display")"
 export GDK_BACKEND=x11 GSK_RENDERER=cairo NO_AT_BRIDGE=1
 export HOME="$FIX/home" XDG_CONFIG_HOME="$FIX/home/.config"
+export LOOKIN_SYSMON_FROZEN=1 # the top bar CPU chart reads nothing
 cd "$FIX/work" || exit 1
 LOOKIN_DEBUG_MINIMAP=1 "$BIN" -s 1280x800 "$FIX/work" > "$LOG" 2>&1 &
 APP=$!

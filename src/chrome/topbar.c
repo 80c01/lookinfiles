@@ -1,4 +1,4 @@
-/* Top bar: clickable path breadcrumbs, the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
+/* Top bar: clickable path breadcrumbs, the CPU chart (System Monitor tab), the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
 #include "chrome/topbar.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
@@ -8,6 +8,7 @@
 #include "git/git_tab.h"
 #include "chrome/help.h"
 #include "chrome/help_guide.h"
+#include "sysmon/sysmon_indicator.h"
 #include "widgets/minimap.h"
 #include "explorer/nav_history.h"
 #include "explorer/nav_keys.h"
@@ -29,6 +30,7 @@ struct TopBar {
     GtkWidget* preview_btn;
     GtkWidget* term_btn;
     GtkWidget* help_btn;
+    GtkWidget* sysmon_btn;      /* CPU chart: the System Monitor tab */
     GtkWidget* split_btn;       /* action button of the preview notebook: dedicated editor panel */
 };
 
@@ -695,6 +697,8 @@ void update_path_label(AppData* app) {
         }
     }
 
+    sysmon_indicator_sync(t->sysmon_btn, app);
+
     /* Explorer panel header (VS Code style): view title + current folder section */
     if (sidebar_header_update(app)) {
         git_tab_update(app, app->base_dir);
@@ -727,6 +731,8 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
     g_signal_connect(help_right, "pressed", G_CALLBACK(on_help_pill_right_clicked), app);
     gtk_widget_add_controller(t->help_btn, GTK_EVENT_CONTROLLER(help_right));
 
+    t->sysmon_btn = sysmon_indicator_new(app);
+
     /* Pushes the rest of the row to the right */
     GtkWidget* spacer = gtk_label_new(" ");
     gtk_widget_set_halign(spacer, GTK_ALIGN_START);
@@ -739,6 +745,7 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
     gtk_box_append(GTK_BOX(row), t->breadcrumb_box);
     gtk_box_append(GTK_BOX(row), spacer);
     gtk_box_append(GTK_BOX(row), create_topbar_notice(app));
+    gtk_box_append(GTK_BOX(row), t->sysmon_btn);
     gtk_box_append(GTK_BOX(row), mode_button_new(app));
     gtk_box_append(GTK_BOX(row), ws_minimap);
     gtk_box_append(GTK_BOX(row), layouts_btn);

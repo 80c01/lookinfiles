@@ -8893,3 +8893,163 @@ msgstr "Noyau non installé : %s"
 #, c-format
 msgid "Kernel error: %s"
 msgstr "Erreur du noyau : %s"
+
+msgid "System Monitor"
+msgstr "Moniteur système"
+
+msgid "System Monitor tab"
+msgstr "Onglet Moniteur système"
+
+msgctxt "key"
+msgid "Click the top bar's CPU chart"
+msgstr "Clic sur le graphique processeur de la barre du haut"
+
+msgid "Open the System Monitor (click again: close it)"
+msgstr "Ouvrir le moniteur système (nouveau clic : le fermer)"
+
+msgctxt "key"
+msgid "Click a column header"
+msgstr "Clic sur un en-tête de colonne"
+
+msgid "Sort the processes by that column (again: reverse)"
+msgstr "Trier les processus selon cette colonne (de nouveau : ordre inverse)"
+
+msgid "Close the System Monitor tab"
+msgstr "Fermer l’onglet Moniteur système"
+
+#, c-format
+msgid ""
+"CPU %.0f%% (%u CPUs) · Load %.2f %.2f %.2f · Memory %s of %s\n"
+"Click: System Monitor"
+msgstr ""
+"Processeur %.0f %% (%u processeurs) · Charge %.2f %.2f %.2f · Mémoire %s sur %s\n"
+"Clic : moniteur système"
+
+msgid "System Monitor: CPU, memory, disks, network and processes"
+msgstr "Moniteur système : processeur, mémoire, disques, réseau et processus"
+
+msgid "Running"
+msgstr "En cours"
+
+msgid "Sleeping"
+msgstr "En veille"
+
+msgid "Waiting"
+msgstr "En attente"
+
+msgid "Zombie"
+msgstr "Zombie"
+
+msgid "Stopped"
+msgstr "Arrêté"
+
+msgid "Idle"
+msgstr "Inactif"
+
+msgid "Process"
+msgstr "Processus"
+
+msgid "PID"
+msgstr "PID"
+
+msgid "CPU %"
+msgstr "Proc. %"
+
+msgid "Threads"
+msgstr "Threads"
+
+msgid "State"
+msgstr "État"
+
+#, c-format
+msgid "%s/s"
+msgstr "%s/s"
+
+#, c-format
+msgid "%u day"
+msgid_plural "%u days"
+msgstr[0] "%u jour"
+msgstr[1] "%u jours"
+
+#, c-format
+msgid "%s / %s (%.0f%%), %s free"
+msgstr "%s / %s (%.0f %%), %s libres"
+
+#, c-format
+msgid "%u core, busiest at %.0f%%"
+msgid_plural "%u cores, busiest at %.0f%%"
+msgstr[0] "%u cœur, le plus occupé à %.0f %%"
+msgstr[1] "%u cœurs, le plus occupé à %.0f %%"
+
+#, c-format
+msgid ""
+"%s of %s used, %s cache\n"
+"Swap: %s of %s"
+msgstr ""
+"%s sur %s utilisés, %s de cache\n"
+"Swap : %s sur %s"
+
+#, c-format
+msgid ""
+"%s of %s used, %s cache\n"
+"No swap"
+msgstr ""
+"%s sur %s utilisés, %s de cache\n"
+"Pas de swap"
+
+#, c-format
+msgid ""
+"1, 5, 15 minutes: %.2f  %.2f  %.2f\n"
+"%u running of %u tasks"
+msgstr ""
+"1, 5, 15 minutes : %.2f  %.2f  %.2f\n"
+"%u actives sur %u tâches"
+
+#, c-format
+msgid "Received %s, sent %s (%u interfaces)"
+msgstr "Reçu %s, envoyé %s (%u interfaces)"
+
+#, c-format
+msgid "Read %s, written %s; busiest disk at %.0f%%"
+msgstr "Lu %s, écrit %s ; disque le plus occupé à %.0f %%"
+
+#, c-format
+msgid "%s · Linux %s · up %s · %u CPUs"
+msgstr "%s · Linux %s · allumé depuis %s · %u processeurs"
+
+#, c-format
+msgid "Processes (%u)"
+msgstr "Processus (%u)"
+
+msgid "Processes"
+msgstr "Processus"
+
+msgid "Close System Monitor"
+msgstr "Fermer le moniteur système"
+
+msgid "CPU"
+msgstr "Processeur"
+
+msgid "Swap in use"
+msgstr "Swap utilisé"
+
+msgid "Load Average"
+msgstr "Charge moyenne"
+
+msgid "Network"
+msgstr "Réseau"
+
+msgid "Received and sent per second"
+msgstr "Reçu et envoyé par seconde"
+
+msgid "Disk I/O"
+msgstr "E/S disque"
+
+msgid "Read and written per second"
+msgstr "Lu et écrit par seconde"
+
+msgid "Filesystems"
+msgstr "Systèmes de fichiers"
+
+msgid "System statistics are only available on Linux"
+msgstr "Les statistiques système ne sont disponibles que sous Linux"

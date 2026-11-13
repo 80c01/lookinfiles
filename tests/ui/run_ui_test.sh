@@ -114,6 +114,8 @@ while [ ! -s "$OUT/display" ] && [ $i -lt 50 ]; do sleep 0.1; i=$((i + 1)); done
 export DISPLAY=":$(cat "$OUT/display")"
 export GDK_BACKEND=x11 GSK_RENDERER=cairo NO_AT_BRIDGE=1
 export HOME="$FIX/home" XDG_CONFIG_HOME="$FIX/home/.config"
+# The top bar CPU chart reads nothing: screenshots stay comparable
+export LOOKIN_SYSMON_FROZEN=1
 export LOOKIN_UI_PROBE="$OUT/probe"
 PROBE=$LOOKIN_UI_PROBE
 

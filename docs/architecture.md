@@ -34,6 +34,7 @@ The directories group modules by feature, not by layer:
 | `jupyter/` | Jupyter notebooks edited cell by cell: the notebook model and its tab |
 | `terminal/` | terminal panes and the built-in terminal |
 | `workspace/` | workspaces, layouts, session |
+| `sysmon/` | the system monitor: top bar CPU chart and the System Monitor tab |
 | `chrome/` | top bar, status bar, sidebar, help, preferences, applying themes, `ui` |
 
 Layers, from bottom to top
@@ -660,6 +661,14 @@ Layers, from bottom to top
   when the headings changed (`ipynb_outline_same()`: outputs coming in
   leave it alone), following `IpynbTab.current`; `ui.c` finds its list for
   `Alt+Left` / `Alt+Right` with `ipynb_tab_tagbar_list()`.
+- `sysmon_tab` — the System Monitor tab in the preview notebook (one per
+  workspace, kept like the Help tab): cards with `sparkline` charts (CPU and
+  a bar per core, memory and swap, load, network, disk I/O), the mounted
+  filesystems and the processes (`sysmon_procs`: a sorted `GtkColumnView`,
+  read only), from `sysstat` samples read in a worker each second (processes
+  and filesystems only while the page is mapped). `sysmon_indicator` — the
+  CPU chart of the top bar (`/proc/stat` every 2 s; `LOOKIN_SYSMON_FROZEN`
+  stops it for the UI tests), whose click opens or closes the tab.
 - `games` — the hidden Games view (unlocked in the help panel, for the
   current workspace only: `VirtualLayout.games_unlocked`) and its game tabs
   (`game_*`) in the preview notebook, kept with their workspace through

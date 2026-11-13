@@ -328,7 +328,7 @@ done
 # Removing one is always welcome (then drop it from the list).
 DIR_DEPS="
 canvas:core,editor,explorer,theme,widgets
-chrome:canvas,core,editor,explorer,games,git,jupyter,markup,media,notes,preview,search,terminal,theme,widgets,workspace
+chrome:canvas,core,editor,explorer,games,git,jupyter,markup,media,notes,preview,search,sysmon,terminal,theme,widgets,workspace
 code:core,editor,formats,git,markup,preview,theme,widgets
 core:explorer,git,notes,terminal
 editor:canvas,code,core,explorer,games,git,org,preview,search,terminal,theme,vim,widgets,workspace
@@ -345,11 +345,12 @@ office:core,formats,mail,preview
 org:core,editor,markup,media,preview,theme
 preview:canvas,chrome,code,core,editor,explorer,formats,games,git,mail,markup,media,notes,office,org,search,theme,widgets
 search:code,core,editor,explorer,theme,widgets
+sysmon:core,git,theme,widgets
 terminal:core,editor,explorer,theme,widgets,workspace
 theme:core
 vim:theme
 widgets:code,core,explorer,git,preview,theme
-workspace:canvas,chrome,core,editor,explorer,games,git,jupyter,media,preview,search,terminal,theme,widgets
+workspace:canvas,chrome,core,editor,explorer,games,git,jupyter,media,preview,search,sysmon,terminal,theme,widgets
 "
 for d in src/*/; do
     dir=$(basename "$d")

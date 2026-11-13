@@ -20,6 +20,7 @@
 #include "theme/palette.h"
 #include "search/project_search.h"
 #include "chrome/help_guide.h"
+#include "sysmon/sysmon_tab.h"
 #include "preview/browser.h"
 #include "canvas/canvas_view.h"
 #include "media/video_tab.h"
@@ -454,6 +455,7 @@ void workspace_switch(AppData* app, gint idx) {
             app->workspaces[app->current_ws].editor_panel = panel;
             project_search_workspace_hidden(app, &app->workspaces[app->current_ws]);
             help_guide_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            sysmon_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             browser_workspace_hidden(app, &app->workspaces[app->current_ws]);
             canvas_view_workspace_hidden(app, &app->workspaces[app->current_ws]);
             video_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
@@ -480,6 +482,7 @@ void workspace_switch(AppData* app, gint idx) {
         editor_attach_tabs(app, ws->editors, panel);
         project_search_workspace_shown(app, ws);
         help_guide_workspace_shown(app, ws);
+        sysmon_tab_workspace_shown(app, ws);
         browser_workspace_shown(app, ws);
         canvas_view_workspace_shown(app, ws);
         video_tab_workspace_shown(app, ws);
@@ -742,6 +745,7 @@ void workspace_remove(AppData* app, gint idx) {
     nav_history_workspace_removed(rm);
     project_search_workspace_removed(app, rm);
     help_guide_workspace_removed(app, rm);
+    sysmon_tab_workspace_removed(app, rm);
     browser_workspace_removed(app, rm);
 #ifdef HAVE_VTE
     terminal_workspace_removed(app, rm);

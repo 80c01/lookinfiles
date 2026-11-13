@@ -222,6 +222,16 @@ it again. An nbformat 3 or broken notebook opens as text)
 | `Up Up Down Down Left Right Left Right A B Enter` | (In help panel) Unlock Game Mode in this workspace |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Help tab |
 
+**System Monitor tab** (CPU, memory, load, network, disks, filesystems and
+processes, updated every second; opened by a click on the CPU chart of the top
+bar, which closes it when shown; Linux only; the navigation keys of the global
+mode move in the process list)
+
+| Key | Action |
+|---|---|
+| Click on a column header | Sort the processes by that column (again: reverse order) |
+| `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the System Monitor tab (also its cross) |
+
 **Remote view**
 
 | Key | Action |
