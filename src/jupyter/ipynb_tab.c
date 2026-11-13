@@ -48,7 +48,7 @@ static void ensure_css(void) {
                   ".ipynb-tab .ipynb-cell-head label { color: @fg_subtle; font-family: @font_code;"
                   " font-size: @size_code; }"
                   ".ipynb-tab .ipynb-cell-head button { padding: 0 6px; border: none; min-height: 23px; }"
-                  ".ipynb-tab .ipynb-cell-actions button { padding: 0 3px; min-width: 0; }"
+                  ".ipynb-tab .ipynb-cell-actions button { padding: 0 3px; margin: 0 1px; min-width: 18px; }"
                   ".ipynb-tab .ipynb-cell-head menubutton label { color: @fg_muted; font-family: @font_ui;"
                   " font-size: @size_bar; }"
                   ".ipynb-tab .ipynb-source { background-color: @bg_block; }"
@@ -589,8 +589,8 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     GtkWidget* spacer = gtk_label_new(NULL);
     gtk_widget_set_hexpand(spacer, TRUE);
     gtk_box_append(GTK_BOX(head), spacer);
-    /* The actions, side by side as in JupyterLab */
-    GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    /* The actions, spaced as the explorer's toolbar buttons (sidebar-icon-btn) */
+    GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_add_css_class(actions, "ipynb-cell-actions");
     if (type == IPYNB_CELL_CODE) {
         gtk_box_append(GTK_BOX(actions),
