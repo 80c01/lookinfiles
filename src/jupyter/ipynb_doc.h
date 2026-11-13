@@ -56,6 +56,9 @@ guint ipynb_doc_n_cells(const IpynbDoc* doc);
 IpynbCellType ipynb_doc_cell_type(const IpynbDoc* doc, guint index);
 /* The source text of the cell. Caller frees. */
 gchar* ipynb_doc_cell_source(const IpynbDoc* doc, guint index);
+/* The source of a Markdown cell to render: its "attachment:name" pictures
+ * as data: URIs. Caller frees. */
+gchar* ipynb_doc_cell_markdown(const IpynbDoc* doc, guint index);
 void ipynb_doc_set_source(IpynbDoc* doc, guint index, const gchar* source);
 /* Change the cell type: a code cell gets an empty execution count and
  * outputs, the other types lose them */

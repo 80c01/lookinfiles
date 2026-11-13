@@ -268,6 +268,21 @@ static void test_kernel_info(void) {
     ipynb_doc_free(doc);
 }
 
+static void test_cell_markdown(void) {
+    const gchar* nb = "{\"cells\": [{\"cell_type\": \"markdown\", \"metadata\": {}, \"source\": [\"![p](attachment:shot.png)\"], "
+                      "\"attachments\": {\"shot.png\": {\"image/png\": \"iVBORw==\\n\"}}}], "
+                      "\"metadata\": {}, \"nbformat\": 4, \"nbformat_minor\": 5}";
+    IpynbDoc* doc = ipynb_doc_parse(nb, strlen(nb), NULL);
+    g_assert_nonnull(doc);
+    gchar* md = ipynb_doc_cell_markdown(doc, 0);
+    g_assert_cmpstr(md, ==, "![p](data:image/png;base64,iVBORw==)");
+    g_free(md);
+    md = ipynb_doc_cell_source(doc, 0);
+    g_assert_cmpstr(md, ==, "![p](attachment:shot.png)");
+    g_free(md);
+    ipynb_doc_free(doc);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/ipynb_doc/roundtrip", test_roundtrip);
@@ -279,5 +294,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/ipynb_doc/keys", test_keys);
     g_test_add_func("/ipynb_doc/append_outputs", test_append_outputs);
     g_test_add_func("/ipynb_doc/kernel_info", test_kernel_info);
+    g_test_add_func("/ipynb_doc/cell_markdown", test_cell_markdown);
     return g_test_run();
 }

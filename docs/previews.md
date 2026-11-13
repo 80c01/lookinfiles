@@ -13,7 +13,8 @@ format. Open work is in
   line numbers and the column line (Preferences) for source code.
 - Markdown rendered like VS Code's preview: headings, lists, task lists
   (including in-progress `[/]` / `[-]` tasks), tables, quotes, GitHub alerts,
-  highlighted code blocks and images.
+  highlighted code blocks and images (`![alt](path "title")`, `<img>`,
+  badges in links, `file:` URIs; remote pictures are never fetched).
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
 - A tagbar of the headings beside Markdown, HTML, Org, Word (`.docx`,
   `.doc`: Heading N styles and outline levels), OpenDocument and EPUB
@@ -54,7 +55,7 @@ format. Open work is in
   files (`.pst`, `.ost`) and Outlook Express folders (`.dbx`) show a card
   with their format, size and encryption.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
-  notebooks (Markdown cells, highlighted code, text, image and formula outputs).
+  notebooks (Markdown cells with their attached pictures, highlighted code, text, image and formula outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,
   JSONC and JSON Lines) pretty-printed and coloured, diffs and patches with a
   per-file summary, logs coloured by level and shown from their end, manual

@@ -1,6 +1,8 @@
 /* Unit tests for src/markup/md_out.c and the Markdown parser
  * (src/markup/markdown_parse.c): text, tag ranges, links and objects */
 #include <string.h>
+#include <glib/gstdio.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include "markup/md_out.h"
 #include "markup/markdown_parse.h"
 
@@ -157,6 +159,48 @@ static void test_missing_image(void) {
     g_assert_true(has_span(out, "md_image", MD_OUT_OBJECT_CHAR " [alt]"));
 }
 
+/* Count of the pictures of markdown read beside dir */
+static guint count_images(const gchar* markdown, const gchar* doc_path) {
+    g_autoptr(MdOut) out = markdown_parse(markdown, doc_path, FALSE, NULL, 0, TRUE);
+    guint n = 0;
+    for (guint i = 0; i < out->objects->len; i++) {
+        n += g_array_index(out->objects, MdObject, i).kind == MD_OBJECT_IMAGE;
+    }
+    return n;
+}
+
+static void test_image_forms(void) {
+    g_autofree gchar* dir = g_dir_make_tmp("md_out_XXXXXX", NULL);
+    g_assert_nonnull(dir);
+    g_autoptr(GdkPixbuf) pix = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, 4, 4);
+    gdk_pixbuf_fill(pix, 0);
+    g_autofree gchar* png = g_build_filename(dir, "a.png", NULL);
+    g_autofree gchar* spaced = g_build_filename(dir, "my pic.png", NULL);
+    g_assert_true(gdk_pixbuf_save(pix, png, "png", NULL, NULL));
+    g_assert_true(gdk_pixbuf_save(pix, spaced, "png", NULL, NULL));
+    g_autofree gchar* doc = g_build_filename(dir, "README.md", NULL);
+    g_autofree gchar* uri = g_filename_to_uri(png, NULL, NULL);
+    g_autofree gchar* by_uri = g_strdup_printf("![x](%s)", uri);
+    const gchar* const shown[] = {
+        "![x](a.png)", "![x](./a.png \"title\")", "![x](<my pic.png>)", "![x](my%20pic.png)",
+        "![x](a.png?raw=true)", "<img src=\"a.png\">", "<p align=\"center\">\n  <img width=\"2\" src='a.png'/>\n</p>",
+        by_uri,
+    };
+    for (gsize i = 0; i < G_N_ELEMENTS(shown); i++) {
+        g_assert_cmpuint(count_images(shown[i], doc), ==, 1);
+    }
+    g_assert_cmpuint(count_images("![x](https://example.com/a.png)", doc), ==, 0); /* never fetched */
+    /* A badge: a picture inside a link */
+    g_autoptr(MdOut) badge = markdown_parse("[![b](a.png)](https://example.com/ci) after", doc, FALSE, NULL, 0, TRUE);
+    g_assert_nonnull(find_object(badge, MD_OBJECT_IMAGE));
+    g_assert_true(has_span(badge, "md_link", MD_OUT_OBJECT_CHAR));
+    g_assert_cmpstr(g_array_index(badge->links, MdLinkSpan, 0).url, ==, "https://example.com/ci");
+    g_assert_nonnull(strstr(badge->text->str, " after"));
+    g_remove(png);
+    g_remove(spaced);
+    g_rmdir(dir);
+}
+
 static void test_preview_banner(void) {
     g_autoptr(MdOut) out = markdown_parse("x", NULL, TRUE, "big.md", 1234, TRUE);
     g_assert_true(g_str_has_prefix(out->text->str, "  [ PREVIEW ] big.md (1234 bytes total)"));
@@ -170,6 +214,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/md_out/math", test_math);
     g_test_add_func("/md_out/tables", test_tables);
     g_test_add_func("/md_out/missing_image", test_missing_image);
+    g_test_add_func("/md_out/image_forms", test_image_forms);
     g_test_add_func("/md_out/preview_banner", test_preview_banner);
     return g_test_run();
 }

@@ -309,6 +309,29 @@ gchar* ipynb_doc_cell_source(const IpynbDoc* doc, guint index) {
     return s != NULL ? s : g_strdup("");
 }
 
+/* The data: URI of attachment name of a cell's attachments (data) */
+static gchar* node_attachment(const gchar* name, gpointer data) {
+    Node* bundle = node_get((const Node*)data, name);
+    for (guint i = 0; bundle != NULL && bundle->type == N_OBJECT && i < bundle->children->len; i++) {
+        Node* c = g_ptr_array_index(bundle->children, i);
+        if (c->key == NULL || !g_str_has_prefix(c->key, "image/")) continue;
+        gchar* b64 = node_text(c);
+        gchar* uri = b64 != NULL ? notebook_data_uri(c->key, b64) : NULL;
+        g_free(b64);
+        if (uri != NULL) return uri;
+    }
+    return NULL;
+}
+
+gchar* ipynb_doc_cell_markdown(const IpynbDoc* doc, guint index) {
+    gchar* source = ipynb_doc_cell_source(doc, index);
+    Node* attachments = node_get(cell_at(doc, index), "attachments");
+    if (attachments == NULL) return source;
+    gchar* shown = notebook_inline_attachments(source, node_attachment, attachments);
+    g_free(source);
+    return shown;
+}
+
 void ipynb_doc_set_source(IpynbDoc* doc, guint index, const gchar* source) {
     Node* cell = cell_at(doc, index);
     if (cell != NULL) node_set(cell, "source", node_lines(source));

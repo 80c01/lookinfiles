@@ -64,9 +64,18 @@ static void test_long_output_and_errors(void) {
     g_free(s);
 }
 
+static void test_attachments(void) {
+    const gchar* nb = "{\"cells\": [{\"cell_type\": \"markdown\", \"source\": \"![p](attachment:my%20shot.png) ![q](attachment:none.png)\", "
+                      "\"attachments\": {\"my shot.png\": {\"image/png\": \"iVBO\\nRw==\"}}}]}";
+    gchar* md = notebook_to_markdown(nb, strlen(nb), NULL, NULL);
+    g_assert_cmpstr(md, ==, "![p](data:image/png;base64,iVBORw==) ![q](attachment:none.png)\n\n");
+    g_free(md);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/notebook/fixture", test_fixture);
     g_test_add_func("/notebook/long_output_and_errors", test_long_output_and_errors);
+    g_test_add_func("/notebook/attachments", test_attachments);
     return g_test_run();
 }

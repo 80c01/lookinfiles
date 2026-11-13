@@ -27,6 +27,16 @@ typedef struct {
 gchar* notebook_to_markdown(const gchar* text, gsize len, NotebookInfo* info, GError** error);
 void notebook_info_clear(NotebookInfo* info);
 
+/* The data: URI of the attachment name of a cell, or NULL. Caller frees. */
+typedef gchar* (*NotebookAttachmentFunc)(const gchar* name, gpointer data);
+/* Markdown source with its "attachment:name" pictures (pasted into a cell,
+ * stored in the cell's attachments) replaced by the data: URIs func gives.
+ * Caller frees. */
+gchar* notebook_inline_attachments(const gchar* source, NotebookAttachmentFunc func, gpointer data);
+/* "data:mime;base64,..." of base64 data, its line breaks and spaces
+ * dropped. Caller frees. */
+gchar* notebook_data_uri(const gchar* mime, const gchar* b64);
+
 /* Text without ANSI escape sequences (colours in tracebacks). Caller frees. */
 gchar* notebook_strip_ansi(const gchar* text);
 

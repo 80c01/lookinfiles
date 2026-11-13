@@ -72,6 +72,58 @@ static gchar* image_data(const JsonValue* v) {
     return data;
 }
 
+gchar* notebook_data_uri(const gchar* mime, const gchar* b64) {
+    GString* uri = g_string_new("data:");
+    g_string_append_printf(uri, "%s;base64,", mime);
+    for (const gchar* r = b64; *r != '\0'; r++) {
+        if (!g_ascii_isspace(*r)) g_string_append_c(uri, *r);
+    }
+    return g_string_free(uri, FALSE);
+}
+
+gchar* notebook_inline_attachments(const gchar* source, NotebookAttachmentFunc func, gpointer data) {
+    static const gchar PREFIX[] = "attachment:";
+    GString* out = g_string_new(NULL);
+    const gchar* p = source;
+    for (const gchar* hit = strstr(p, PREFIX); hit != NULL; hit = strstr(p, PREFIX)) {
+        const gchar* name = hit + strlen(PREFIX);
+        gsize len = strcspn(name, ")\"' \t\n>");
+        gchar* escaped = g_strndup(name, len);
+        gchar* plain = g_uri_unescape_string(escaped, NULL);
+        gchar* uri = func(plain != NULL ? plain : escaped, data);
+        g_string_append_len(out, p, hit - p);
+        if (uri != NULL) {
+            g_string_append(out, uri);
+        } else {
+            g_string_append_len(out, hit, (gssize)(name + len - hit));
+        }
+        g_free(uri);
+        g_free(plain);
+        g_free(escaped);
+        p = name + len;
+    }
+    g_string_append(out, p);
+    return g_string_free(out, FALSE);
+}
+
+/* The data: URI of attachment name of the cell's attachments (data) */
+static gchar* json_attachment(const gchar* name, gpointer data) {
+    const JsonValue* bundle = json_value_get((const JsonValue*)data, name);
+    for (guint i = 0; i < json_value_get_length(bundle); i++) {
+        const JsonValue* member = json_value_get_item(bundle, i);
+        gchar* mime = json_value_dup_key(member);
+        gchar* uri = NULL;
+        if (mime != NULL && g_str_has_prefix(mime, "image/")) {
+            gchar* b64 = json_value_dup_text(member);
+            if (b64 != NULL && strlen(b64) <= NOTEBOOK_MAX_IMAGE) uri = notebook_data_uri(mime, b64);
+            g_free(b64);
+        }
+        g_free(mime);
+        if (uri != NULL) return uri;
+    }
+    return NULL;
+}
+
 static void append_rich_output(GString* md, const JsonValue* data, const gchar* label) {
     static const gchar* const IMAGES[] = { "image/png", "image/jpeg", "image/gif" };
     for (gsize i = 0; i < G_N_ELEMENTS(IMAGES); i++) {
@@ -216,7 +268,12 @@ gchar* notebook_to_markdown(const gchar* text, gsize len, NotebookInfo* info, GE
         }
         gchar* source = json_value_dup_text(src);
         if (g_strcmp0(type, "markdown") == 0 || g_strcmp0(type, "heading") == 0) {
-            g_string_append_printf(md, "%s\n\n", source != NULL ? source : "");
+            const JsonValue* attachments = json_value_get(cell, "attachments");
+            gchar* shown = attachments != NULL && source != NULL
+                               ? notebook_inline_attachments(source, json_attachment, (gpointer)attachments)
+                               : NULL;
+            g_string_append_printf(md, "%s\n\n", shown != NULL ? shown : source != NULL ? source : "");
+            g_free(shown);
         } else if (g_strcmp0(type, "code") == 0) {
             n_code++;
             const JsonValue* count_v = json_value_get(cell, "execution_count");

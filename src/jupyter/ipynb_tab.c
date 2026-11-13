@@ -197,7 +197,7 @@ static void show_markdown(IpynbTab* t, guint index, gboolean render) {
     GtkWidget* rendered = g_object_get_data(G_OBJECT(view), CELL_RENDERED_KEY);
     if (rendered == NULL) return;
     guint key = ipynb_doc_cell_key(t->doc, index);
-    gchar* source = ipynb_doc_cell_source(t->doc, index);
+    gchar* source = ipynb_doc_cell_markdown(t->doc, index);
     gchar* valid = g_utf8_make_valid(source, -1);
     g_free(source);
     /* An empty cell has nothing to show: it stays as source */
@@ -551,7 +551,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
         apply_buffer_language(buffer, name, FALSE);
         g_free(name);
     }
-    gchar* source = ipynb_doc_cell_source(t->doc, index);
+    gchar* source = ipynb_doc_cell_markdown(t->doc, index);
     gchar* valid = g_utf8_make_valid(source, -1);
     t->building = TRUE;
     gtk_text_buffer_set_text(buffer, valid, -1);

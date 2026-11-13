@@ -21,20 +21,40 @@ static void append_link(MdOut* out, const gchar* text, const gchar* url) {
     md_out_link_from(out, start, url);
 }
 
-/* ![alt](url): the picture (read now), else its alt text with a glyph */
-static void append_image(MdOut* out, const gchar* alt, const gchar* url, const gchar* doc_dir) {
-    gchar* img_path = NULL;
-    if (g_path_is_absolute(url)) {
-        img_path = g_strdup(url);
-    } else if (doc_dir != NULL) {
-        img_path = g_build_filename(doc_dir, url, NULL);
+/* The file a picture's url names: a path (absolute or from doc_dir) or a
+ * file: URI. %-escapes and a ?query or #fragment (GitHub's "?raw=true")
+ * are dropped when the url as written names no file. NULL if none. */
+static gchar* image_path(const gchar* url, const gchar* doc_dir) {
+    if (g_str_has_prefix(url, "data:")) return NULL;
+    if (g_str_has_prefix(url, "file:")) return g_filename_from_uri(url, NULL, NULL);
+    if (strstr(url, "://") != NULL) return NULL; /* remote pictures are never fetched */
+    gchar* plain = g_strdup(url);
+    for (gint attempt = 0; attempt < 2; attempt++) {
+        gchar* path = g_path_is_absolute(plain) ? g_strdup(plain)
+                      : doc_dir != NULL         ? g_build_filename(doc_dir, plain, NULL)
+                                                : NULL;
+        if (path != NULL && g_file_test(path, G_FILE_TEST_IS_REGULAR)) {
+            g_free(plain);
+            return path;
+        }
+        g_free(path);
+        plain[strcspn(plain, "?#")] = '\0';
+        gchar* unescaped = g_uri_unescape_string(plain, NULL);
+        if (unescaped == NULL) break;
+        g_free(plain);
+        plain = unescaped;
     }
+    g_free(plain);
+    return NULL;
+}
+
+/* ![alt](url) or <img>: the picture (read now), at most max_width pixels
+ * wide, else its alt text with a glyph */
+static void append_image(MdOut* out, const gchar* alt, const gchar* url, const gchar* doc_dir, gint max_width) {
     /* Natural size, shrunk to the view width (VS Code) */
-    GdkPixbuf* pix = pixbuf_from_data_uri(url, FIT_IMAGE_MAX_WIDTH);
-    if (pix == NULL && img_path != NULL && !g_str_has_prefix(url, "data:") &&
-        g_file_test(img_path, G_FILE_TEST_EXISTS)) {
-        pix = pixbuf_from_file(img_path, FIT_IMAGE_MAX_WIDTH);
-    }
+    GdkPixbuf* pix = pixbuf_from_data_uri(url, max_width);
+    gchar* img_path = pix == NULL ? image_path(url, doc_dir) : NULL;
+    if (img_path != NULL) pix = pixbuf_from_file(img_path, max_width);
     g_free(img_path);
     if (pix != NULL) {
         md_out_add_image(out, G_OBJECT(pix));
@@ -43,10 +63,109 @@ static void append_image(MdOut* out, const gchar* alt, const gchar* url, const g
     }
     gint start = md_out_offset(out);
     md_out_add_glyph(out, "image", NULL);
-    gchar* placeholder = g_strdup_printf("[%s]", alt);
+    gchar* placeholder = g_strdup_printf("[%s]", alt != NULL ? alt : "");
     md_out_append(out, placeholder, -1);
     g_free(placeholder);
     md_out_tag_from(out, start, "md_image");
+}
+
+/* The ']' closing a link label starting at p (after its '['), brackets
+ * inside it balanced ("[![badge](b.svg)](url)"), or NULL */
+static const gchar* find_label_end(const gchar* p) {
+    gint depth = 0;
+    for (; *p != '\0'; p++) {
+        if (*p == '\\' && p[1] != '\0') {
+            p++;
+        } else if (*p == '[') {
+            depth++;
+        } else if (*p == ']') {
+            if (depth == 0) return p;
+            depth--;
+        }
+    }
+    return NULL;
+}
+
+/* The ')' closing a link destination starting at p (after its '('):
+ * parentheses inside it balanced, a <url> or a "title" may hold any, or NULL */
+static const gchar* find_dest_end(const gchar* p) {
+    if (*p == '<') {
+        p = strchr(p, '>');
+        if (p == NULL) return NULL;
+    }
+    gint depth = 0;
+    gchar quote = '\0';
+    for (; *p != '\0'; p++) {
+        if (quote != '\0') {
+            if (*p == quote) quote = '\0';
+        } else if (*p == '\\' && p[1] != '\0') {
+            p++;
+        } else if ((*p == '"' || *p == '\'') && g_ascii_isspace(p[-1])) {
+            quote = *p;
+        } else if (*p == '(') {
+            depth++;
+        } else if (*p == ')') {
+            if (depth == 0) return p;
+            depth--;
+        }
+    }
+    return NULL;
+}
+
+/* The url of a link destination (len bytes at dest): without <> and
+ * without its title. Caller frees. */
+static gchar* dest_url(const gchar* dest, gsize len) {
+    gchar* s = g_strstrip(g_strndup(dest, len));
+    if (s[0] == '<') {
+        gchar* gt = strchr(s, '>');
+        gchar* url = g_strndup(s + 1, gt != NULL ? (gsize)(gt - s - 1) : strlen(s + 1));
+        g_free(s);
+        return url;
+    }
+    s[strcspn(s, " \t\n")] = '\0';
+    return s;
+}
+
+/* The value of attribute name in the HTML tag of len bytes at tag, or NULL.
+ * Caller frees. */
+static gchar* html_attr(const gchar* tag, gsize len, const gchar* name) {
+    gsize n = strlen(name);
+    for (const gchar* p = tag; p + n < tag + len; p++) {
+        if (!g_ascii_isspace(*p) || g_ascii_strncasecmp(p + 1, name, n) != 0) continue;
+        const gchar* v = p + 1 + n;
+        while (*v == ' ') v++;
+        if (*v != '=') continue;
+        v++;
+        while (*v == ' ') v++;
+        const gchar* end;
+        if (*v == '"' || *v == '\'') {
+            end = memchr(v + 1, *v, (gsize)(tag + len - v - 1));
+            v++;
+        } else {
+            end = v;
+            while (end < tag + len && !g_ascii_isspace(*end) && *end != '>' && *end != '/') end++;
+        }
+        return end != NULL ? g_strndup(v, (gsize)(end - v)) : NULL;
+    }
+    return NULL;
+}
+
+/* <img src="..." alt="..." width="..."> of len bytes at tag */
+static void append_html_image(MdOut* out, const gchar* tag, gsize len, const gchar* doc_dir) {
+    gchar* src = html_attr(tag, len, "src");
+    if (src == NULL) return;
+    gchar* alt = html_attr(tag, len, "alt");
+    gchar* width = html_attr(tag, len, "width");
+    gint max_width = FIT_IMAGE_MAX_WIDTH;
+    if (width != NULL && strchr(width, '%') == NULL) {
+        gint64 w = g_ascii_strtoll(width, NULL, 10);
+        if (w > 0) max_width = (gint)MIN(w, FIT_IMAGE_MAX_WIDTH);
+    }
+    gchar* url = g_strstrip(src);
+    append_image(out, alt != NULL ? alt : url, url, doc_dir, max_width);
+    g_free(width);
+    g_free(alt);
+    g_free(src);
 }
 
 static void append_inline(MdOut* out, const gchar* text, const gchar* doc_dir);
@@ -179,35 +298,38 @@ static void append_inline(MdOut* out, const gchar* text, const gchar* doc_dir) {
 
         /* Image: ![alt](url) */
         if (*p == '!' && p[1] == '[') {
-            const gchar* alt_end = strchr(p + 2, ']');
-            if (alt_end && alt_end[1] == '(') {
-                const gchar* url_end = strchr(alt_end + 2, ')');
-                if (url_end) {
-                    gchar* alt = g_strndup(p + 2, alt_end - (p + 2));
-                    gchar* url = g_strndup(alt_end + 2, url_end - (alt_end + 2));
-                    append_image(out, alt, url, doc_dir);
-                    g_free(alt);
-                    g_free(url);
-                    p = url_end + 1;
-                    continue;
-                }
+            const gchar* alt_end = find_label_end(p + 2);
+            const gchar* url_end = alt_end != NULL && alt_end[1] == '(' ? find_dest_end(alt_end + 2) : NULL;
+            if (url_end != NULL) {
+                gchar* alt = g_strndup(p + 2, alt_end - (p + 2));
+                gchar* url = dest_url(alt_end + 2, (gsize)(url_end - (alt_end + 2)));
+                append_image(out, alt, url, doc_dir, FIT_IMAGE_MAX_WIDTH);
+                g_free(alt);
+                g_free(url);
+                p = url_end + 1;
+                continue;
             }
         }
 
-        /* Link: [label](url) */
+        /* Link: [label](url); the label may hold a picture (a badge) */
         if (*p == '[') {
-            const gchar* label_end = strchr(p + 1, ']');
-            if (label_end && label_end[1] == '(') {
-                const gchar* url_end = strchr(label_end + 2, ')');
-                if (url_end) {
+            const gchar* label_end = find_label_end(p + 1);
+            const gchar* url_end = label_end != NULL && label_end[1] == '(' ? find_dest_end(label_end + 2) : NULL;
+            if (url_end != NULL) {
+                gchar* url = dest_url(label_end + 2, (gsize)(url_end - (label_end + 2)));
+                if (label_end == p + 1) {
+                    append_link(out, url, url);
+                } else {
                     gchar* label = g_strndup(p + 1, label_end - (p + 1));
-                    gchar* url = g_strndup(label_end + 2, url_end - (label_end + 2));
-                    append_link(out, (label[0] != '\0') ? label : url, url);
+                    gint start = md_out_offset(out);
+                    append_inline(out, label, doc_dir);
+                    md_out_tag_from(out, start, "md_link");
+                    md_out_link_from(out, start, url);
                     g_free(label);
-                    g_free(url);
-                    p = url_end + 1;
-                    continue;
                 }
+                g_free(url);
+                p = url_end + 1;
+                continue;
             }
         }
 
@@ -272,7 +394,7 @@ static void append_inline(MdOut* out, const gchar* text, const gchar* doc_dir) {
             }
         }
 
-        /* Autolink: <http://...> or <https://...>; <br>; other tags dropped */
+        /* Autolink: <http://...> or <https://...>; <img>, <br>; other tags dropped */
         if (*p == '<') {
             const gchar* closing = strchr(p + 1, '>');
             if (closing) {
@@ -281,6 +403,8 @@ static void append_inline(MdOut* out, const gchar* text, const gchar* doc_dir) {
                     gchar* url = g_strndup(p + 1, closing - (p + 1));
                     append_link(out, url, url);
                     g_free(url);
+                } else if (g_ascii_strncasecmp(p, "<img", 4) == 0 && (g_ascii_isspace(p[4]) || p[4] == '/')) {
+                    append_html_image(out, p, (gsize)(closing + 1 - p), doc_dir);
                 } else if (g_ascii_strncasecmp(p, "<br>", 4) == 0 || g_ascii_strncasecmp(p, "<br/>", 5) == 0 ||
                            g_ascii_strncasecmp(p, "<br />", 6) == 0) {
                     md_out_append(out, "\n", 1);
