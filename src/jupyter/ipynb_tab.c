@@ -870,13 +870,20 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     t->status = gtk_label_new(NULL);
     gtk_widget_set_margin_start(t->status, 8);
     gtk_box_append(GTK_BOX(bar), t->status);
-    gtk_box_append(GTK_BOX(root), bar);
+    /* In a narrow pane the bar is cut on the right instead of widening the
+     * tab past the pane (the tagbar would be out of sight) */
+    GtkWidget* bar_clip = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bar_clip), GTK_POLICY_EXTERNAL, GTK_POLICY_NEVER);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(bar_clip), TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(bar_clip), bar);
+    gtk_box_append(GTK_BOX(root), bar_clip);
     gtk_box_append(GTK_BOX(root), ipynb_run_input_row_new(t));
 
     t->cells_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_add_css_class(t->cells_box, "ipynb-cells");
     GtkWidget* scroll = gtk_scrolled_window_new();
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    /* Cells wider than a narrow pane scroll: the tagbar keeps its place */
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), t->cells_box);
     gtk_widget_set_hexpand(scroll, TRUE);
     t->scroll = scroll;
