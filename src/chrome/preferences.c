@@ -15,6 +15,7 @@
 #include "explorer/nav_keys.h"
 #include "search/search.h"
 #include "chrome/themes.h"
+#include "chrome/topbar.h"
 
 #include <glib/gstdio.h>
 
@@ -39,6 +40,7 @@ typedef struct {
     GtkWidget* ruler_column;  /* GtkSpinButton */
     GtkWidget* width;         /* GtkSpinButton */
     GtkWidget* height;
+    GtkWidget* timer;         /* GtkSpinButton: minutes of the top bar timer */
     GtkWidget* auto_terminal; /* GtkDropDown: as it is, shown, hidden (PANEL_CHOICES) */
     GtkWidget* auto_preview;
     GtkWidget* auto_tagbar;
@@ -233,6 +235,25 @@ static GtkWidget* window_page(Preferences* p, const Settings* s) {
     return box;
 }
 
+static GtkWidget* clock_page(Preferences* p, const Settings* s) {
+    GtkWidget* box = page_box();
+    gtk_box_append(GTK_BOX(box), hint_label(_("The timer of the top bar starts at launch and restarts as soon as it "
+                                            "expires. Its last minute is shown in reverse colours and its last ten "
+                                            "seconds blink. Click it to pause, right-click it to restart.")));
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget* label = gtk_label_new_with_mnemonic(_("_Timer duration (minutes)"));
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_widget_set_hexpand(label, TRUE);
+    p->timer = gtk_spin_button_new_with_range(0, SETTINGS_MAX_TIMER_MINUTES, 5);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(p->timer), s->timer_minutes);
+    gtk_widget_set_tooltip_text(p->timer, _("0: no timer. Applying a new duration restarts the timer"));
+    gtk_label_set_mnemonic_widget(GTK_LABEL(label), p->timer);
+    gtk_box_append(GTK_BOX(row), label);
+    gtk_box_append(GTK_BOX(row), p->timer);
+    gtk_box_append(GTK_BOX(box), row);
+    return box;
+}
+
 /* A labelled drop-down of names, at row of grid, selecting selected */
 static GtkWidget* grid_choice(GtkWidget* grid, gint row, const gchar* label_text, const gchar* tooltip,
                               const char* const* names, guint selected) {
@@ -357,6 +378,7 @@ static void save_settings(Preferences* p) {
                          : 0;
     s.width = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->width));
     s.height = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->height));
+    s.timer_minutes = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->timer));
     s.auto_terminal = panel_selected(p->auto_terminal);
     s.auto_preview = panel_selected(p->auto_preview);
     s.auto_tagbar = panel_selected(p->auto_tagbar);
@@ -380,6 +402,9 @@ static void save_settings(Preferences* p) {
     if (s.minimap != app->settings.minimap) {
         minimap_set_enabled(s.minimap); /* every tab: only when changed */
         workspace_set_preview_minimap(app, s.minimap);
+    }
+    if (s.timer_minutes != app->settings.timer_minutes) {
+        topbar_set_timer(app, s.timer_minutes); /* restarts it: only when changed */
     }
     gboolean column_changed = (s.color_column != app->settings.color_column);
     app->settings = s;
@@ -420,6 +445,9 @@ static GtkWidget* page_focus(Preferences* p) {
     if (g_strcmp0(name, "layouts") == 0) {
         return p->auto_terminal;
     }
+    if (g_strcmp0(name, "clock") == 0) {
+        return p->timer;
+    }
     return NULL;
 }
 
@@ -450,6 +478,7 @@ void preferences_show(AppData* app, const gchar* section) {
     gtk_stack_add_titled(p.stack, editor_page(&p), "editor", _("Editor"));
     gtk_stack_add_titled(p.stack, window_page(&p, &s), "window", _("Window"));
     gtk_stack_add_titled(p.stack, layouts_page(&p, &s), "layouts", _("Layouts"));
+    gtk_stack_add_titled(p.stack, clock_page(&p, &s), "clock", _("Clock"));
     gtk_stack_add_titled(p.stack, code_page(&p), "code", _("Code navigation"));
     const gchar* show = (section != NULL) ? section : last_section;
     if (show != NULL && gtk_stack_get_child_by_name(p.stack, show) != NULL) {

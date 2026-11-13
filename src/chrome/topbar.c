@@ -1,4 +1,4 @@
-/* Top bar: clickable path breadcrumbs, the CPU chart (System Monitor tab), the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
+/* Top bar: clickable path breadcrumbs, the CPU chart (System Monitor tab), the global mode pill, the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click), then the timer and the clock. */
 #include "chrome/topbar.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
@@ -9,6 +9,7 @@
 #include "chrome/help.h"
 #include "chrome/help_guide.h"
 #include "sysmon/sysmon_indicator.h"
+#include "clock/clock_pill.h"
 #include "widgets/minimap.h"
 #include "explorer/nav_history.h"
 #include "explorer/nav_keys.h"
@@ -31,6 +32,7 @@ struct TopBar {
     GtkWidget* term_btn;
     GtkWidget* help_btn;
     GtkWidget* sysmon_btn;      /* CPU chart: the System Monitor tab */
+    GtkWidget* clock;           /* timer and clock (clock_pill.h) */
     GtkWidget* split_btn;       /* action button of the preview notebook: dedicated editor panel */
 };
 
@@ -732,6 +734,7 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
     gtk_widget_add_controller(t->help_btn, GTK_EVENT_CONTROLLER(help_right));
 
     t->sysmon_btn = sysmon_indicator_new(app);
+    t->clock = clock_pill_new(app->settings.timer_minutes);
 
     /* Pushes the rest of the row to the right */
     GtkWidget* spacer = gtk_label_new(" ");
@@ -756,6 +759,8 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
     gtk_box_append(GTK_BOX(row), t->term_btn);
     gtk_box_append(GTK_BOX(row), separator_new());
     gtk_box_append(GTK_BOX(row), t->help_btn);
+    gtk_box_append(GTK_BOX(row), separator_new());
+    gtk_box_append(GTK_BOX(row), t->clock);
     return row;
 }
 
@@ -769,6 +774,10 @@ GtkWidget* topbar_split_button_new(AppData* app) {
     gtk_widget_set_tooltip_text(t->split_btn, _("Split Preview Tab from Main Panel"));
     g_signal_connect(t->split_btn, "clicked", G_CALLBACK(on_split_btn_clicked), app);
     return t->split_btn;
+}
+
+void topbar_set_timer(AppData* app, gint minutes) {
+    clock_pill_set_timer(bar_get(app)->clock, minutes);
 }
 
 void topbar_free(AppData* app) {

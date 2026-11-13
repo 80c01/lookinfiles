@@ -19,6 +19,8 @@
  *   auto-tagbar=false    # they are
  *   auto-terminal-place=below  # the Auto layout puts the terminal below the
  *                              # preview or beside it; missing: as it is
+ *   [Clock]
+ *   timer-minutes=60     # top bar timer, started at launch (0: no timer)
  *   [Window]
  *   width=1000           # window size at startup
  *   height=600
@@ -38,6 +40,7 @@ typedef enum {
 #define SETTINGS_MIN_HEIGHT 300
 #define SETTINGS_MAX_SIZE   16384
 #define SETTINGS_MAX_COLUMN 1000
+#define SETTINGS_MAX_TIMER_MINUTES 1440
 
 /* What the Auto layout does with a panel */
 typedef enum {
@@ -65,12 +68,13 @@ typedef struct {
     SettingsPanel auto_preview;  /* preview panel of the Auto layout */
     SettingsPanel auto_tagbar;   /* editor tagbar of the Auto layout */
     SettingsPlace auto_terminal_place; /* terminal place of the Auto layout */
+    gint timer_minutes;    /* top bar timer, started at launch, 0: none */
     gint width;            /* window size at startup */
     gint height;
 } Settings;
 
 /* Notepad, no line numbers, no wrap, column line at 81, no tagbars, minimap, Auto
- * keeping the panels, 1000 x 600 */
+ * keeping the panels, a 60-minute timer, 1000 x 600 */
 void settings_defaults(Settings* s);
 
 /* "notepad", "vim", "emacs" (any case): FALSE if name is none of them */

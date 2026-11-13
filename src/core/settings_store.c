@@ -22,6 +22,7 @@ void settings_defaults(Settings* s) {
     s->auto_tagbar = SETTINGS_PANEL_KEEP;
     s->auto_terminal_place = SETTINGS_PLACE_KEEP;
     s->color_column = 81;
+    s->timer_minutes = 60;
     s->width = 1000;
     s->height = 600;
 }
@@ -129,6 +130,7 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     s->auto_tagbar = read_panel(kf, "auto-tagbar");
     s->auto_terminal_place = read_place(kf);
     s->color_column = read_int(kf, "Editor", "color-column", 0, SETTINGS_MAX_COLUMN, s->color_column);
+    s->timer_minutes = read_int(kf, "Clock", "timer-minutes", 0, SETTINGS_MAX_TIMER_MINUTES, s->timer_minutes);
     s->width = read_size(kf, "width", SETTINGS_MIN_WIDTH, s->width);
     s->height = read_size(kf, "height", SETTINGS_MIN_HEIGHT, s->height);
     g_key_file_free(kf);
@@ -154,6 +156,7 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
         g_key_file_set_string(kf, "Layouts", "auto-terminal-place",
                               s->auto_terminal_place == SETTINGS_PLACE_BELOW ? "below" : "beside");
     }
+    g_key_file_set_integer(kf, "Clock", "timer-minutes", s->timer_minutes);
     g_key_file_set_integer(kf, "Window", "width", s->width);
     g_key_file_set_integer(kf, "Window", "height", s->height);
     gchar* dir = g_path_get_dirname(path);

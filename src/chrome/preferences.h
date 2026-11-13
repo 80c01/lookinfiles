@@ -8,6 +8,8 @@
  *   Appearance       themes and fonts (themes.h), previewed live
  *   Editor           mode, line numbers and wrap of new editor tabs
  *   Window           window size at startup
+ *   Layouts          what the Auto layout shows
+ *   Clock            duration of the top bar timer
  *   Code navigation  lsp.ini opened in an editor tab
  *
  * The values are kept in settings.ini (settings_store.h); command-line

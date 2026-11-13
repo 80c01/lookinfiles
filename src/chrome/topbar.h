@@ -15,6 +15,9 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
  * dedicated panel, or dock them back */
 GtkWidget* topbar_split_button_new(AppData* app);
 /* Forget the top bar's widgets (at exit) */
+/* Restart the top bar timer with minutes (0 hides it) */
+void topbar_set_timer(AppData* app, gint minutes);
+
 void topbar_free(AppData* app);
 
 /* Show / hide the explorer and the preview panels (pills, keys) */

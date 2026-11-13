@@ -70,6 +70,7 @@ pane_geometry:
 minimap_geometry:
 ui_probe:
 sysstat:
+countdown:
 dir_summary:file_types,text_encoding,i18n
 dir_scan:file_types
 file_save:
@@ -328,7 +329,8 @@ done
 # Removing one is always welcome (then drop it from the list).
 DIR_DEPS="
 canvas:core,editor,explorer,theme,widgets
-chrome:canvas,core,editor,explorer,games,git,jupyter,markup,media,notes,preview,search,sysmon,terminal,theme,widgets,workspace
+clock:core,theme
+chrome:canvas,clock,core,editor,explorer,games,git,jupyter,markup,media,notes,preview,search,sysmon,terminal,theme,widgets,workspace
 code:core,editor,formats,git,markup,preview,theme,widgets
 core:explorer,git,notes,terminal
 editor:canvas,code,core,explorer,games,git,org,preview,search,terminal,theme,vim,widgets,workspace

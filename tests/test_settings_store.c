@@ -32,6 +32,7 @@ static void test_missing_file(void) {
     g_assert_cmpint(s.auto_tagbar, ==, SETTINGS_PANEL_KEEP);
     g_assert_cmpint(s.auto_terminal_place, ==, SETTINGS_PLACE_KEEP);
     g_assert_cmpint(s.color_column, ==, 81);
+    g_assert_cmpint(s.timer_minutes, ==, 60);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
 }
@@ -57,6 +58,7 @@ static void test_save_load(void) {
     s.auto_tagbar = SETTINGS_PANEL_HIDE;
     s.auto_terminal_place = SETTINGS_PLACE_BESIDE;
     s.color_column = 81;
+    s.timer_minutes = 0;
     s.width = 1920;
     s.height = 1080;
     g_assert_true(settings_store_save(path, &s, NULL));
@@ -78,6 +80,7 @@ static void test_save_load(void) {
     g_assert_cmpint(r.auto_tagbar, ==, SETTINGS_PANEL_HIDE);
     g_assert_cmpint(r.auto_terminal_place, ==, SETTINGS_PLACE_BESIDE);
     g_assert_cmpint(r.color_column, ==, 81);
+    g_assert_cmpint(r.timer_minutes, ==, 0);
     g_assert_cmpint(r.width, ==, 1920);
     g_assert_cmpint(r.height, ==, 1080);
 
@@ -111,7 +114,7 @@ static void test_invalid_values(void) {
     gchar* path = g_build_filename(dir, "settings.ini", NULL);
     g_assert_true(g_file_set_contents(path,
                                       "[Editor]\nmode=nano\nline-numbers=maybe\nwrap=true\ncolor-column=-3\n"
-                                      "[Window]\nwidth=10\nheight=abc\n",
+                                      "[Clock]\ntimer-minutes=5000\n[Window]\nwidth=10\nheight=abc\n",
                                       -1, NULL));
     Settings s;
     g_assert_true(settings_store_load(path, &s));
@@ -119,6 +122,7 @@ static void test_invalid_values(void) {
     g_assert_false(s.line_numbers);
     g_assert_true(s.wrap);
     g_assert_cmpint(s.color_column, ==, 81);
+    g_assert_cmpint(s.timer_minutes, ==, 60);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
     g_remove(path);

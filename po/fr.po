@@ -9053,3 +9053,44 @@ msgstr "Systèmes de fichiers"
 
 msgid "System statistics are only available on Linux"
 msgstr "Les statistiques système ne sont disponibles que sous Linux"
+
+msgid "Clock"
+msgstr "Horloge"
+
+msgid ""
+"The timer of the top bar starts at launch and restarts as soon as it "
+"expires. Its last minute is shown in reverse colours and its last ten "
+"seconds blink. Click it to pause, right-click it to restart."
+msgstr ""
+"Le minuteur de la barre du haut démarre au lancement et repart dès qu’il "
+"expire. Sa dernière minute s’affiche en couleurs inversées et ses dix "
+"dernières secondes clignotent. Cliquez dessus pour le mettre en pause, clic "
+"droit pour le redémarrer."
+
+msgid "_Timer duration (minutes)"
+msgstr "Durée du _minuteur (minutes)"
+
+msgid "0: no timer. Applying a new duration restarts the timer"
+msgstr "0 : pas de minuteur. Appliquer une nouvelle durée redémarre le minuteur"
+
+#. TRANSLATORS: strftime format of the date in the clock tooltip
+msgid "%A, %B %-d, %Y"
+msgstr "%A %-d %B %Y"
+
+#, c-format
+msgid "Timer: %1$s left of %2$s"
+msgstr "Minuteur : %1$s restantes sur %2$s"
+
+#, c-format
+msgid "Timer paused: %1$s left of %2$s"
+msgstr "Minuteur en pause : %1$s restantes sur %2$s"
+
+#, c-format
+msgid "Cycle %u (restarts when it expires)"
+msgstr "Cycle %u (repart à l’expiration)"
+
+msgid ""
+"Click: Pause / Resume — Right-Click: Restart — Duration: Preferences, Clock"
+msgstr ""
+"Clic : pause / reprise — Clic droit : redémarrer — Durée : Préférences, "
+"Horloge"
