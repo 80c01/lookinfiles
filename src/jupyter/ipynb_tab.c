@@ -300,7 +300,7 @@ static void on_source_changed(GtkTextBuffer* buffer, gpointer data) {
 
 static void set_current(IpynbTab* t, guint index) {
     t->current = index;
-    for (guint i = 0; 0 && i < t->views->len; i++) {
+    for (guint i = 0; i < t->views->len; i++) {
         GtkWidget* cell = gtk_widget_get_parent(g_ptr_array_index(t->views, i));
         if (i == index) {
             gtk_widget_add_css_class(cell, "ipynb-current");
