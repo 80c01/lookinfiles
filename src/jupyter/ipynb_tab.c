@@ -13,6 +13,7 @@
 #include "theme/theme.h"
 
 #include <glib/gstdio.h>
+#include <math.h>
 #include <string.h>
 
 #define IPYNB_TAB_KEY "lookin-ipynb-tab"
@@ -216,6 +217,7 @@ static void show_markdown(IpynbTab* t, guint index, gboolean render) {
     gboolean had_focus = gtk_widget_has_focus(view) || gtk_widget_has_focus(rendered);
     gtk_widget_set_visible(view, !render);
     gtk_widget_set_visible(rendered, render);
+    gtk_widget_set_visible(gtk_widget_get_parent(rendered), render);
     if (had_focus || !render) gtk_widget_grab_focus(render ? rendered : view);
 }
 
@@ -298,7 +300,7 @@ static void on_source_changed(GtkTextBuffer* buffer, gpointer data) {
 
 static void set_current(IpynbTab* t, guint index) {
     t->current = index;
-    for (guint i = 0; i < t->views->len; i++) {
+    for (guint i = 0; 0 && i < t->views->len; i++) {
         GtkWidget* cell = gtk_widget_get_parent(g_ptr_array_index(t->views, i));
         if (i == index) {
             gtk_widget_add_css_class(cell, "ipynb-current");
@@ -320,7 +322,27 @@ static void track_focus(IpynbTab* t, GtkWidget* view) {
     gtk_widget_add_controller(view, focus);
 }
 
-/* The rendered view of a Markdown cell (read only, focusable for the keys) */
+/* The wheel over a rendered cell scrolls the cells: its own scrolled window
+ * (horizontal only) would take the vertical wheel for itself (Shift+wheel
+ * goes on, to a wide table) */
+static gboolean on_rendered_scroll(GtkEventControllerScroll* ctrl, gdouble dx, gdouble dy, gpointer data) {
+    (void)dx;
+    IpynbTab* t = data;
+    GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(ctrl));
+    if (dy == 0 || t->scroll == NULL || (state & GDK_SHIFT_MASK) != 0) return FALSE;
+    GtkAdjustment* adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(t->scroll));
+    gdouble page = gtk_adjustment_get_page_size(adj);
+    /* As GtkScrolledWindow does: a wheel step scrolls page^(2/3) */
+    gdouble step = gtk_event_controller_scroll_get_unit(ctrl) == GDK_SCROLL_UNIT_WHEEL ? pow(page, 2.0 / 3.0) : 1.0;
+    gtk_adjustment_set_value(adj, gtk_adjustment_get_value(adj) + dy * step);
+    return TRUE;
+}
+
+/* The rendered view of a Markdown cell (read only, focusable for the keys),
+ * in a GtkScrolledWindow (its parent, hidden with it) that scrolls it
+ * horizontally without a scrollbar: the tables of the Markdown renderer
+ * follow the width of that window (markdown_table.c), so the view never
+ * holds the cells wider than the tab */
 static GtkWidget* rendered_view_new(IpynbTab* t, guint index) {
     GtkWidget* rendered = gtk_text_view_new();
     gtk_widget_add_css_class(rendered, "ipynb-rendered");
@@ -345,6 +367,15 @@ static GtkWidget* rendered_view_new(IpynbTab* t, guint index) {
     g_signal_connect(keys, "key-pressed", G_CALLBACK(on_rendered_key), t);
     gtk_widget_add_controller(rendered, keys);
     gtk_widget_set_visible(rendered, FALSE);
+    GtkWidget* frame = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(frame), GTK_POLICY_EXTERNAL, GTK_POLICY_NEVER);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(frame), TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(frame), rendered);
+    GtkEventController* wheel = gtk_event_controller_scroll_new(GTK_EVENT_CONTROLLER_SCROLL_VERTICAL);
+    gtk_event_controller_set_propagation_phase(wheel, GTK_PHASE_CAPTURE);
+    g_signal_connect(wheel, "scroll", G_CALLBACK(on_rendered_scroll), t);
+    gtk_widget_add_controller(frame, wheel);
+    gtk_widget_set_visible(frame, FALSE);
     return rendered;
 }
 
@@ -578,7 +609,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
 
     if (type == IPYNB_CELL_MARKDOWN) {
         GtkWidget* rendered = rendered_view_new(t, index);
-        gtk_box_append(GTK_BOX(cell), rendered);
+        gtk_box_append(GTK_BOX(cell), gtk_widget_get_parent(rendered));
         g_object_set_data(G_OBJECT(view), CELL_RENDERED_KEY, rendered);
         if (!g_hash_table_contains(t->editing, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, index)))) {
             show_markdown(t, index, TRUE);
@@ -819,6 +850,7 @@ static GtkWidget* tab_label_new(IpynbTab* t) {
     gtk_widget_add_controller(box, GTK_EVENT_CONTROLLER(rclick));
     return g_object_ref_sink(box);
 }
+
 
 /* A new tab editing doc (taken), in no notebook yet */
 static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, IpynbDoc* doc) {

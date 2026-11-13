@@ -515,8 +515,10 @@ Layers, from bottom to top
   the other views.
   `markdown_table` — Markdown tables for `markdown`: rows split into cells, a
   grid widget anchored in the view (scrolling horizontally in its own frame
-  when wider than the text; the tables of one rendering are measured
-  together before the next frame), or a box-drawn text table without a view.
+  when wider than the text, as tall as the table at the width it is shown at;
+  the wheel over it scrolls the text around it; the tables of one rendering
+  are measured together before the next frame), or a box-drawn text table
+  without a view.
   `math_paintable` — a `tex_math` tree laid out as TeX does (classes and
   their spacing, script sizes, fraction and radical rules on the math axis,
   delimiters stretched around it) into a `GdkPaintable` drawn with Pango and
@@ -627,7 +629,9 @@ Layers, from bottom to top
   per cell (type menu, source view highlighted with the kernel's language,
   outputs, `text/latex` formulas as a `math_paintable`; a Markdown cell also has a rendered view, `render_markdown_to_buffer()`,
   shown instead of its source unless its key is in `editing`: run renders it,
-  `Enter` / double click edits it) built again after each change of the cells' number, order or
+  `Enter` / double click edits it; the rendered view sits in a scrolled window
+  of its own, horizontal only, so its tables follow the cell's width and
+  never hold the cells wider than the tab) built again after each change of the cells' number, order or
   type; saved by itself after each change (`file_save_text()`), at close,
   workspace removal (`ipynb_tab_workspace_removed()`) and quit
   (`ipynb_tab_save_all()`). Movable like a Video tab, kept with its
