@@ -204,7 +204,7 @@ it again. An nbformat 3 or broken notebook opens as text)
 | `Ctrl+Up` / `Ctrl+Down` | Previous / next cell |
 | `Ctrl+K Ctrl+O`, the list button of the bar | Show / hide the tagbar: the headings of the Markdown cells, beside the cells (it follows the current cell; `Enter` or a click goes to the heading's cell, `Esc` back, `q` hides; in it, the moving and search keys of the global mode; `Alt+Right` / `Alt+Left` go in and out). A new notebook tab follows Preferences → Editor, as an editor tab |
 | `Alt+Up` / `Alt+Down` | Move the cell up / down |
-| `Alt+Enter` | New code cell below |
+| `Alt+Enter` / `Alt+Shift+Enter` | Insert a code cell below / above (also the two insert buttons of each cell) |
 | `Alt+Delete` | Delete the cell (**Undo Delete** in the bar puts it back) |
 | `Ctrl+S` | Save now |
 | `Ctrl+W`, middle click on the tab | Close the notebook tab (saved first) |

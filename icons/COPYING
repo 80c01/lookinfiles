@@ -1,7 +1,8 @@
 Icons bundled into LookinFiles (icons/scalable/actions/)
 
 All icons except lookin-utilities-terminal-symbolic.svg, the
-lookin-canvas-*-symbolic.svg Canvas tools and the
+lookin-canvas-*-symbolic.svg Canvas tools, the
+lookin-cell-add-*-symbolic.svg notebook cell icons and the
 lookin-ft-*-symbolic.svg file-type icons are copied
 unchanged (renamed with the "lookin-" prefix) from the Adwaita icon theme
 by the GNOME Project, https://gitlab.gnome.org/GNOME/adwaita-icon-theme
@@ -43,6 +44,41 @@ https://github.com/jesseweed/seti-ui, under the MIT license:
   LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
   OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The notebook cell icons lookin-cell-add-above-symbolic.svg and
+lookin-cell-add-below-symbolic.svg are the "add-above" and "add-below"
+toolbar icons of JupyterLab (packages/ui-components/style/icons/toolbar/ in
+https://github.com/jupyterlab/jupyterlab), redrawn as single-colour fills
+(the stroked plus as a filled shape, no clip path). JupyterLab is under the
+BSD 3-Clause license:
+
+  Copyright (c) 2015-2024 Project Jupyter Contributors
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are
+  met:
+
+  1. Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Rules: icons must be single-colour symbolic SVGs without any "transform"
 attribute: icon themes whose symbolic icons use transforms (Adwaita "legacy"

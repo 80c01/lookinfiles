@@ -114,7 +114,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Jupyter notebook tab"), "Ctrl+Up / Ctrl+Down", N_("Previous / next cell"), 0},
     {N_("Jupyter notebook tab"), "Ctrl+K Ctrl+O", N_("Show / hide the tagbar: headings of the Markdown cells beside the cells (Enter goes, c collapses / expands all, Esc back, q hides)"), 0},
     {N_("Jupyter notebook tab"), "Alt+Up / Alt+Down", N_("Move the cell up / down"), 0},
-    {N_("Jupyter notebook tab"), "Alt+Enter", N_("New code cell below"), 0},
+    {N_("Jupyter notebook tab"), "Alt+Enter / Alt+Shift+Enter", N_("Insert a code cell below / above"), 0},
     {N_("Jupyter notebook tab"), "Alt+Delete", N_("Delete the cell (Undo Delete in the bar puts it back)"), 0},
     {N_("Jupyter notebook tab"), "Ctrl+S", N_("Save now (also saved by itself after each change)"), 0},
     {N_("Jupyter notebook tab"), "Ctrl+W", N_("Close the notebook tab (saved first)"), 0},

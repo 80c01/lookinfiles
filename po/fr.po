@@ -8717,8 +8717,8 @@ msgstr ""
 msgid "Move the cell up / down"
 msgstr "Monter / descendre la cellule"
 
-msgid "New code cell below"
-msgstr "Nouvelle cellule de code en dessous"
+msgid "Insert a code cell below / above"
+msgstr "Insérer une cellule de code en dessous / au-dessus"
 
 msgid "Delete the cell (Undo Delete in the bar puts it back)"
 msgstr "Supprimer la cellule (Annuler la suppression, dans la barre, la remet)"
@@ -8762,14 +8762,17 @@ msgstr "Monter la cellule (Alt+Up)"
 msgid "Move Cell Down (Alt+Down)"
 msgstr "Descendre la cellule (Alt+Down)"
 
-msgid "New Code Cell Below (Alt+Enter)"
-msgstr "Nouvelle cellule de code en dessous (Alt+Enter)"
+msgid "Insert Code Cell Above (Alt+Shift+Enter)"
+msgstr "Insérer une cellule de code au-dessus (Alt+Shift+Enter)"
+
+msgid "Insert Code Cell Below (Alt+Enter)"
+msgstr "Insérer une cellule de code en dessous (Alt+Enter)"
 
 msgid "Delete Cell (Alt+Delete)"
 msgstr "Supprimer la cellule (Alt+Delete)"
 
-msgid "New Markdown Cell Below"
-msgstr "Nouvelle cellule Markdown en dessous"
+msgid "Insert Markdown Cell Below"
+msgstr "Insérer une cellule Markdown en dessous"
 
 msgid "Clear Outputs"
 msgstr "Effacer les sorties"

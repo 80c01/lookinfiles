@@ -42,7 +42,7 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   of the bar run every cell, interrupt and restart the kernel; when the
   code asks for a line (`input()`), type it in the row under the bar.
 - `Ctrl+Up` / `Ctrl+Down` go to the previous / next cell, `Alt+Up` /
-  `Alt+Down` move the cell, `Alt+Enter` adds a code cell below,
+  `Alt+Down` move the cell, `Alt+Enter` / `Alt+Shift+Enter` insert a code cell below / above,
   `Alt+Delete` deletes the cell (**Undo Delete** in the bar puts it back).
   The buttons of each cell do the same.
 - `Ctrl+K Ctrl+O` (or the list button at the end of the bar) shows the

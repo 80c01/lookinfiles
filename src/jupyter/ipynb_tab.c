@@ -439,7 +439,11 @@ static void on_cell_down(GtkButton* button, gpointer data) {
     move_cell(data, cell_index(button), 1);
 }
 
-static void on_cell_add(GtkButton* button, gpointer data) {
+static void on_cell_add_above(GtkButton* button, gpointer data) {
+    ipynb_tab_insert_cell(data, cell_index(button), IPYNB_CELL_CODE);
+}
+
+static void on_cell_add_below(GtkButton* button, gpointer data) {
     ipynb_tab_insert_cell(data, cell_index(button) + 1, IPYNB_CELL_CODE);
 }
 
@@ -589,8 +593,10 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     }
     gtk_box_append(GTK_BOX(head), cell_button(t, index, "pan-up", _("Move Cell Up (Alt+Up)"), G_CALLBACK(on_cell_up)));
     gtk_box_append(GTK_BOX(head), cell_button(t, index, "pan-down", _("Move Cell Down (Alt+Down)"), G_CALLBACK(on_cell_down)));
-    gtk_box_append(GTK_BOX(head),
-                   cell_button(t, index, "list-add", _("New Code Cell Below (Alt+Enter)"), G_CALLBACK(on_cell_add)));
+    gtk_box_append(GTK_BOX(head), cell_button(t, index, "cell-add-above", _("Insert Code Cell Above (Alt+Shift+Enter)"),
+                                              G_CALLBACK(on_cell_add_above)));
+    gtk_box_append(GTK_BOX(head), cell_button(t, index, "cell-add-below", _("Insert Code Cell Below (Alt+Enter)"),
+                                              G_CALLBACK(on_cell_add_below)));
     gtk_box_append(GTK_BOX(head),
                    cell_button(t, index, "edit-delete", _("Delete Cell (Alt+Delete)"), G_CALLBACK(on_cell_delete)));
     gtk_box_append(GTK_BOX(cell), head);
@@ -751,6 +757,10 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         }
         return TRUE;
     }
+    if ((keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) && mods == (GDK_ALT_MASK | GDK_SHIFT_MASK)) {
+        ipynb_tab_insert_cell(t, t->current, IPYNB_CELL_CODE);
+        return TRUE;
+    }
     if (mods != GDK_ALT_MASK) return FALSE;
     switch (keyval) {
     case GDK_KEY_Up:
@@ -900,9 +910,9 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_widget_add_css_class(bar, "ipynb-bar");
     GtkWidget* kernel_button = ipynb_run_bar(t, bar);
-    gtk_box_append(GTK_BOX(bar), bar_button(t, "list-add", _("Code"), _("New Code Cell Below (Alt+Enter)"),
+    gtk_box_append(GTK_BOX(bar), bar_button(t, "cell-add-below", _("Code"), _("Insert Code Cell Below (Alt+Enter)"),
                                             G_CALLBACK(on_add_code)));
-    gtk_box_append(GTK_BOX(bar), bar_button(t, "list-add", _("Markdown"), _("New Markdown Cell Below"),
+    gtk_box_append(GTK_BOX(bar), bar_button(t, "cell-add-below", _("Markdown"), _("Insert Markdown Cell Below"),
                                             G_CALLBACK(on_add_markdown)));
     gtk_box_append(GTK_BOX(bar), bar_button(t, "edit-clear", _("Clear Outputs"), _("Clear the Outputs of Every Cell"),
                                             G_CALLBACK(on_clear_outputs)));

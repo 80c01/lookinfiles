@@ -47,8 +47,8 @@ cellule Markdown nouvelle ou vide reste en source.
   interrompent et redémarrent le noyau ; quand le code demande une ligne
   (`input()`), tapez-la dans la ligne sous la barre.
 - `Ctrl+Up` / `Ctrl+Down` passent à la cellule précédente / suivante,
-  `Alt+Up` / `Alt+Down` déplacent la cellule, `Alt+Enter` ajoute une
-  cellule de code en dessous, `Alt+Delete` supprime la cellule
+  `Alt+Up` / `Alt+Down` déplacent la cellule, `Alt+Enter` /
+  `Alt+Shift+Enter` insèrent une cellule de code en dessous / au-dessus, `Alt+Delete` supprime la cellule
   (**Annuler la suppression** dans la barre la remet). Les boutons de
   chaque cellule font de même.
 - `Ctrl+K Ctrl+O` (ou le bouton de liste au bout de la barre) affiche la
