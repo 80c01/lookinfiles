@@ -27,9 +27,6 @@
 #define FIRST_RENDER_PAGES 3
 /* Pages rendered by each next task: they show as they come */
 #define NEXT_RENDER_PAGES 3
-/* Threads rendering the pages of a task at most, each with its own
- * PopplerDocument (one document is not safe to render from two threads) */
-#define MAX_RENDER_THREADS 3
 /* Bookmarks read for the tagbar at most */
 #define MAX_BOOKMARKS 2000
 
@@ -37,15 +34,13 @@
  * tasks of the next pages (one task at a time) */
 typedef struct {
     gatomicrefcount ref;
-    gchar* path;              /* the PDF opened (a conversion for PostScript / DVI) */
-    GPtrArray* docs;          /* PopplerDocument* (NULL: not opened yet), one per render thread */
+    PopplerDocument* doc;
 } PdfSession;
 
-static void doc_clear(gpointer data) {
-    if (data != NULL) {
-        g_object_unref(data);
-    }
-}
+/* Poppler's cairo renderer shares state between documents (heap corruption
+ * when two threads render, even from separate documents): one page at a time
+ * in the whole process, a cancelled task may still be rendering its page */
+static GMutex render_lock;
 
 static PopplerDocument* pdf_open(const gchar* path, GCancellable* cancellable, GError** err) {
     GFile* f = g_file_new_for_path(path);
@@ -54,12 +49,10 @@ static PopplerDocument* pdf_open(const gchar* path, GCancellable* cancellable, G
     return doc;
 }
 
-static PdfSession* pdf_session_new(const gchar* path, PopplerDocument* doc) {
+static PdfSession* pdf_session_new(PopplerDocument* doc) {
     PdfSession* s = g_new0(PdfSession, 1);
     g_atomic_ref_count_init(&s->ref);
-    s->path = g_strdup(path);
-    s->docs = g_ptr_array_new_with_free_func(doc_clear);
-    g_ptr_array_add(s->docs, doc);
+    s->doc = doc;
     return s;
 }
 
@@ -70,8 +63,7 @@ static PdfSession* pdf_session_ref(PdfSession* s) {
 
 static void pdf_session_unref(PdfSession* s) {
     if (g_atomic_ref_count_dec(&s->ref)) {
-        g_free(s->path);
-        g_ptr_array_unref(s->docs);
+        g_object_unref(s->doc);
         g_free(s);
     }
 }
@@ -441,7 +433,7 @@ static gboolean open_document(GTask* task, PdfTaskData* td, GCancellable* cancel
         g_task_return_boolean(task, TRUE);
         return FALSE;
     }
-    td->session = pdf_session_new(open_path, doc);
+    td->session = pdf_session_new(doc);
     g_free(open_path);
     return TRUE;
 }
@@ -482,7 +474,9 @@ static GdkTexture* render_page(PopplerDocument* doc, gint i, gint max_w) {
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_paint(cr);
     cairo_scale(cr, scale, scale);
+    g_mutex_lock(&render_lock);
     poppler_page_render(page, cr);
+    g_mutex_unlock(&render_lock);
     cairo_destroy(cr);
     g_object_unref(page);
 
@@ -503,81 +497,18 @@ static GdkTexture* render_page(PopplerDocument* doc, gint i, gint max_w) {
     return tex;
 }
 
-/* One render thread: pages first, first + step... before end, into out
- * (indexed from base), with the session document of its slot (opened by the
- * thread itself when needed) */
-typedef struct {
-    PdfSession* session;
-    guint slot;
-    gint first;
-    gint end;
-    gint step;
-    gint base;
-    gint max_w;
-    GCancellable* cancellable;
-    GdkTexture** out;
-} PdfRenderJob;
-
-static gpointer render_job_run(gpointer data) {
-    PdfRenderJob* job = data;
-    PopplerDocument* doc = g_ptr_array_index(job->session->docs, job->slot);
-    if (doc == NULL) {
-        doc = pdf_open(job->session->path, job->cancellable, NULL);
-        if (doc == NULL) {
-            return NULL; /* its pages are rendered afterwards with the first document */
-        }
-        /* Only this thread touches its slot (the array is sized beforehand) */
-        g_ptr_array_index(job->session->docs, job->slot) = doc;
-    }
-    for (gint i = job->first; i < job->end; i += job->step) {
-        if (g_cancellable_is_cancelled(job->cancellable)) {
-            break;
-        }
-        job->out[i - job->base] = render_page(doc, i, job->max_w);
-    }
-    return NULL;
-}
-
-/* Pages first..end - 1 into td->page_textures, on up to MAX_RENDER_THREADS
- * threads (this one included) */
+/* Pages first..end - 1 into td->page_textures */
 static void render_pages(PdfTaskData* td, gint first, gint end, GCancellable* cancellable) {
     td->page_textures = g_ptr_array_new_with_free_func(g_object_unref);
-    gint count = end - first;
-    if (count <= 0) {
-        return;
-    }
-    gint threads = MIN(MIN((gint)g_get_num_processors(), MAX_RENDER_THREADS), count);
-    threads = MAX(threads, 1);
-    if (td->session->docs->len < (guint)threads) {
-        g_ptr_array_set_size(td->session->docs, threads);
-    }
-    GdkTexture** out = g_new0(GdkTexture*, count);
-    PdfRenderJob* jobs = g_new0(PdfRenderJob, threads);
-    GThread** started = g_new0(GThread*, threads);
-    for (gint k = 0; k < threads; k++) {
-        jobs[k] = (PdfRenderJob){td->session, (guint)k, first + k, end, threads, first, td->max_w, cancellable, out};
-        if (k > 0) {
-            started[k] = g_thread_try_new("pdf-render", render_job_run, &jobs[k], NULL);
+    for (gint i = first; i < end; i++) {
+        if (g_cancellable_is_cancelled(cancellable)) {
+            break;
+        }
+        GdkTexture* tex = render_page(td->session->doc, i, td->max_w);
+        if (tex != NULL) {
+            g_ptr_array_add(td->page_textures, tex);
         }
     }
-    render_job_run(&jobs[0]);
-    for (gint k = 1; k < threads; k++) {
-        if (started[k] != NULL) {
-            g_thread_join(started[k]);
-        }
-    }
-    PopplerDocument* doc = g_ptr_array_index(td->session->docs, 0);
-    for (gint i = 0; i < count; i++) {
-        if (out[i] == NULL && !g_cancellable_is_cancelled(cancellable)) {
-            out[i] = render_page(doc, first + i, td->max_w); /* a thread could not run */
-        }
-        if (out[i] != NULL) {
-            g_ptr_array_add(td->page_textures, out[i]);
-        }
-    }
-    g_free(started);
-    g_free(jobs);
-    g_free(out);
 }
 
 /* The text of the pages, PREVIEW_BYTES in all at most */
@@ -639,7 +570,7 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
     if (td->session == NULL && !open_document(task, td, cancellable)) {
         return;
     }
-    PopplerDocument* doc = g_ptr_array_index(td->session->docs, 0);
+    PopplerDocument* doc = td->session->doc;
 
     if (td->first_page == 0) {
         td->total_pages = poppler_document_get_n_pages(doc);
