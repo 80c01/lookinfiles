@@ -1,4 +1,4 @@
-/* Top bar: clickable path breadcrumbs, the clock and the timer, the CPU chart (System Monitor tab), the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
+/* Top bar: clickable path breadcrumbs, the clock and the timers, the CPU chart (System Monitor tab), the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
 #include "chrome/topbar.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
@@ -32,7 +32,7 @@ struct TopBar {
     GtkWidget* term_btn;
     GtkWidget* help_btn;
     GtkWidget* sysmon_btn;      /* CPU chart: the System Monitor tab */
-    GtkWidget* clock;           /* timer and clock (clock_pill.h) */
+    GtkWidget* clock;           /* clock and timers (clock_pill.h) */
     GtkWidget* split_btn;       /* action button of the preview notebook: dedicated editor panel */
 };
 

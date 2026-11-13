@@ -1,4 +1,4 @@
-/* A repeating countdown (see countdown.h). */
+/* A countdown that restarts or stops on expiry (see countdown.h). */
 #include "core/countdown.h"
 
 #define HALF_SECOND (COUNTDOWN_SECOND / 2)
@@ -9,11 +9,13 @@ void countdown_start(Countdown* c, gint64 duration, gint64 now) {
     c->left = c->duration;
     c->paused = FALSE;
     c->cycle = 1;
+    c->stop = FALSE;
 }
 
 gint64 countdown_left(Countdown* c, gint64 now) {
     if (c->paused) return c->left;
     if (now >= c->deadline) {
+        if (c->stop) return 0;
         gint64 ended = (now - c->deadline) / c->duration + 1;
         c->deadline += ended * c->duration;
         c->cycle += (guint)MIN(ended, (gint64)G_MAXUINT - c->cycle);
@@ -21,6 +23,19 @@ gint64 countdown_left(Countdown* c, gint64 now) {
         c->deadline = now + c->duration; /* the clock went back: restart this cycle */
     }
     return c->deadline - now;
+}
+
+gboolean countdown_expired(Countdown* c, gint64 now) {
+    return countdown_left(c, now) <= 0;
+}
+
+void countdown_set_stop(Countdown* c, gboolean stop, gint64 now) {
+    if (!stop && countdown_expired(c, now)) {
+        c->deadline = now + c->duration;
+        c->left = c->duration;
+        c->cycle += (c->cycle < G_MAXUINT) ? 1 : 0;
+    }
+    c->stop = stop;
 }
 
 void countdown_pause(Countdown* c, gint64 now) {
@@ -46,6 +61,7 @@ static gint64 within_second(gint64 left) {
 
 gboolean countdown_inverted(gint64 left, gboolean blink) {
     gint64 secs = countdown_seconds(left);
+    if (secs <= 0) return TRUE;
     if (secs > COUNTDOWN_WARNING_SECONDS) return FALSE;
     if (!blink || secs > COUNTDOWN_BLINK_SECONDS) return TRUE;
     return within_second(left) > HALF_SECOND;

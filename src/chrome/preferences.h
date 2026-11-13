@@ -9,7 +9,7 @@
  *   Editor           mode, line numbers and wrap of new editor tabs
  *   Window           window size at startup
  *   Layouts          what the Auto layout shows
- *   Clock            duration of the top bar timer
+ *   Clock            duration of timer 1 of the top bar
  *   Code navigation  lsp.ini opened in an editor tab
  *
  * The values are kept in settings.ini (settings_store.h); command-line

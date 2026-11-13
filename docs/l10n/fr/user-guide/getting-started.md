@@ -69,14 +69,18 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
   **Terminal** (**Aperçu** devient **Principal** tant que des onglets
   d’édition partagent le panneau Aperçu), et **Aide** : un clic ouvre ce guide, un clic droit
   l’aide-mémoire du clavier. Avant le graphique du processeur, l’**horloge**
-  (la date dans son info-bulle) et le **minuteur**. Le minuteur démarre au
-  lancement (60 minutes ; à changer dans les Préférences, **Horloge**, 0
-  pour aucun) et repart dès qu’il expire ; sa dernière minute s’affiche en
-  couleurs inversées et ses dix dernières secondes clignotent. Un clic
-  ouvre son menu : des durées prédéfinies (5, 15, 25, 60 min) et une durée
-  libre qui le démarrent aussitôt (jusqu’au prochain lancement),
-  **Pause** / **Reprendre** et **Réinitialiser** ; un clic droit le met en
-  pause ou le relance.
+  (la date dans son info-bulle) et jusqu’à trois **minuteurs**. Le
+  minuteur 1 démarre au lancement (60 minutes ; à changer dans les
+  Préférences, **Horloge**, 0 pour aucun) ; les minuteurs 2 et 3 sont
+  arrêtés au départ. La dernière minute d’un minuteur s’affiche en couleurs
+  inversées et ses dix dernières secondes clignotent. Un clic sur un
+  minuteur, ou sur l’horloge, ouvre le menu des minuteurs, un onglet par
+  minuteur : son état, des durées prédéfinies (5, 15, 25, 60 min) et une
+  durée libre qui le démarrent aussitôt, ce qu’il fait à l’expiration
+  (**Relancer** aussitôt, ou **Arrêter** à 0:00 en couleurs inversées),
+  **Pause** / **Reprendre**, **Réinitialiser** et **Masquer** (choix
+  valables jusqu’au prochain lancement) ; un clic droit sur un minuteur le
+  met en pause ou le relance.
 - **Panneau Explorateur** (à gauche). Quatre vues, choisies avec les
   boutons en haut : fichiers, signets, notes et machines distantes.
   En dessous, une petite barre d’outils avec les actions de la vue.

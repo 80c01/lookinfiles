@@ -19,6 +19,33 @@ static void test_count_and_restart(void) {
     g_assert_cmpuint(c.cycle, ==, 5);
 }
 
+static void test_stop_on_expiry(void) {
+    Countdown c;
+    countdown_start(&c, 60 * S, T0);
+    countdown_set_stop(&c, TRUE, T0);
+    g_assert_cmpint(countdown_left(&c, T0 + 59 * S), ==, 1 * S);
+    g_assert_false(countdown_expired(&c, T0 + 59 * S));
+    /* Expired: stays at 0, steady reverse colours */
+    g_assert_cmpint(countdown_left(&c, T0 + 60 * S), ==, 0);
+    g_assert_cmpint(countdown_left(&c, T0 + 3600 * S), ==, 0);
+    g_assert_true(countdown_expired(&c, T0 + 3600 * S));
+    g_assert_cmpuint(c.cycle, ==, 1);
+    g_assert_true(countdown_inverted(0, TRUE));
+    gchar* text = countdown_format(0, c.duration);
+    g_assert_cmpstr(text, ==, "0:00");
+    g_free(text);
+    /* Back to restart: a new cycle from now */
+    countdown_set_stop(&c, FALSE, T0 + 4000 * S);
+    g_assert_cmpint(countdown_left(&c, T0 + 4010 * S), ==, 50 * S);
+    g_assert_cmpuint(c.cycle, ==, 2);
+    /* Switched to stop while running: only the expiry changes */
+    countdown_set_stop(&c, TRUE, T0 + 4010 * S);
+    g_assert_cmpint(countdown_left(&c, T0 + 4020 * S), ==, 40 * S);
+    /* A new start restarts on expiry again */
+    countdown_start(&c, 60 * S, T0);
+    g_assert_false(c.stop);
+}
+
 static void test_clock_back(void) {
     Countdown c;
     countdown_start(&c, 60 * S, T0);
@@ -89,6 +116,7 @@ static void test_next_change(void) {
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/countdown/count_and_restart", test_count_and_restart);
+    g_test_add_func("/countdown/stop_on_expiry", test_stop_on_expiry);
     g_test_add_func("/countdown/clock_back", test_clock_back);
     g_test_add_func("/countdown/pause", test_pause);
     g_test_add_func("/countdown/minimum_duration", test_minimum_duration);

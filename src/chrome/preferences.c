@@ -237,11 +237,12 @@ static GtkWidget* window_page(Preferences* p, const Settings* s) {
 
 static GtkWidget* clock_page(Preferences* p, const Settings* s) {
     GtkWidget* box = page_box();
-    gtk_box_append(GTK_BOX(box), hint_label(_("The timer of the top bar starts at launch and restarts as soon as it "
-                                            "expires. Its last minute is shown in reverse colours and its last ten "
-                                            "seconds blink. Click it to pick another duration, right-click it to pause.")));
+    gtk_box_append(GTK_BOX(box), hint_label(_("Timer 1 of the top bar starts at launch. A timer's last minute is shown in "
+                                            "reverse colours and its last ten seconds blink. Click a timer or the clock "
+                                            "to set up three timers, each restarting or stopping at 0:00 when it "
+                                            "expires; right-click a timer to pause it.")));
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    GtkWidget* label = gtk_label_new_with_mnemonic(_("_Timer duration (minutes)"));
+    GtkWidget* label = gtk_label_new_with_mnemonic(_("_Timer 1 duration (minutes)"));
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_widget_set_hexpand(label, TRUE);
     p->timer = gtk_spin_button_new_with_range(0, SETTINGS_MAX_TIMER_MINUTES, 5);

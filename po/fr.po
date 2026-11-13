@@ -9058,17 +9058,19 @@ msgid "Clock"
 msgstr "Horloge"
 
 msgid ""
-"The timer of the top bar starts at launch and restarts as soon as it "
-"expires. Its last minute is shown in reverse colours and its last ten "
-"seconds blink. Click it to pick another duration, right-click it to pause."
+"Timer 1 of the top bar starts at launch. A timer's last minute is shown in "
+"reverse colours and its last ten seconds blink. Click a timer or the clock "
+"to set up three timers, each restarting or stopping at 0:00 when it "
+"expires; right-click a timer to pause it."
 msgstr ""
-"Le minuteur de la barre du haut démarre au lancement et repart dès qu’il "
-"expire. Sa dernière minute s’affiche en couleurs inversées et ses dix "
-"dernières secondes clignotent. Cliquez dessus pour choisir une autre durée, "
-"clic droit pour le mettre en pause."
+"Le minuteur 1 de la barre du haut démarre au lancement. La dernière minute "
+"d’un minuteur s’affiche en couleurs inversées et ses dix dernières secondes "
+"clignotent. Cliquez sur un minuteur ou sur l’horloge pour régler trois "
+"minuteurs, chacun repartant ou s’arrêtant à 0:00 à l’expiration ; clic droit "
+"sur un minuteur pour le mettre en pause."
 
-msgid "_Timer duration (minutes)"
-msgstr "Durée du _minuteur (minutes)"
+msgid "_Timer 1 duration (minutes)"
+msgstr "Durée du _minuteur 1 (minutes)"
 
 msgid "0: no timer. Applying a new duration restarts the timer"
 msgstr "0 : pas de minuteur. Appliquer une nouvelle durée redémarre le minuteur"
@@ -9077,21 +9079,32 @@ msgstr "0 : pas de minuteur. Appliquer une nouvelle durée redémarre le minuteu
 msgid "%A, %B %-d, %Y"
 msgstr "%A %-d %B %Y"
 
-#, c-format
-msgid "Timer: %1$s left of %2$s"
-msgstr "Minuteur : %1$s restantes sur %2$s"
+msgid "Click: Timers"
+msgstr "Clic : minuteurs"
 
 #, c-format
-msgid "Timer paused: %1$s left of %2$s"
-msgstr "Minuteur en pause : %1$s restantes sur %2$s"
+msgid "Timer %1$u: %2$s left of %3$s"
+msgstr "Minuteur %1$u : %2$s restantes sur %3$s"
+
+#, c-format
+msgid "Timer %1$u paused: %2$s left of %3$s"
+msgstr "Minuteur %1$u en pause : %2$s restantes sur %3$s"
+
+#, c-format
+msgid "Timer %1$u expired after %2$s"
+msgstr "Minuteur %1$u expiré après %2$s"
+
+msgid "Stops at 0:00 when it expires"
+msgstr "S’arrête à 0:00 à l’expiration"
 
 #, c-format
 msgid "Cycle %u (restarts when it expires)"
 msgstr "Cycle %u (repart à l’expiration)"
 
-msgid "Click: Durations, Start, Pause, Reset — Right-Click: Pause / Resume"
+msgid "Click: Timers, Start, Pause, Reset — Right-Click: Pause / Resume"
 msgstr ""
-"Clic : durées, démarrer, pause, réinitialiser — Clic droit : pause / reprise"
+"Clic : minuteurs, démarrer, pause, réinitialiser — Clic droit : pause / "
+"reprise"
 
 #, c-format
 msgid "%d min"
@@ -9120,3 +9133,43 @@ msgstr "Un clic droit sur le minuteur fait de même"
 
 msgid "Start the current duration again from the beginning"
 msgstr "Recommencer la durée actuelle depuis le début"
+
+msgid "Off"
+msgstr "Arrêté"
+
+#, c-format
+msgid "%s — expired"
+msgstr "%s — expiré"
+
+#, c-format
+msgid "%s — paused"
+msgstr "%s — en pause"
+
+#, c-format
+msgid "%s — running"
+msgstr "%s — en cours"
+
+msgid "When it expires"
+msgstr "À l’expiration"
+
+msgid "Restart"
+msgstr "Relancer"
+
+msgid "Start again at once with the same duration"
+msgstr "Repartir aussitôt avec la même durée"
+
+msgid "Stop"
+msgstr "Arrêter"
+
+msgid "Stay at 0:00 in reverse colours until Reset or Start"
+msgstr "Rester à 0:00 en couleurs inversées jusqu’à Réinitialiser ou Démarrer"
+
+msgid "_Off"
+msgstr "_Masquer"
+
+msgid "Hide this timer from the top bar"
+msgstr "Retirer ce minuteur de la barre du haut"
+
+#, c-format
+msgid "Timer %u"
+msgstr "Minuteur %u"

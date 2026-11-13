@@ -67,12 +67,15 @@ hidden.
   panels (**Preview** reads **Main** while editor tabs share the preview
   panel), and **Help**: a click opens this guide, a right click the
   keyboard cheat sheet. Before the CPU chart, the **clock** (the date in
-  its tooltip) and the **timer**. The timer starts at launch (60 minutes;
-  change it in Preferences, **Clock**, 0 for none) and restarts as soon as
-  it expires; its last minute is shown in reverse colours and its last ten
-  seconds blink. A click opens its menu: preset durations (5, 15, 25,
-  60 min) and a free one that start it at once (until the next launch),
-  **Pause** / **Resume** and **Reset**; a right click pauses or resumes it.
+  its tooltip) and up to three **timers**. Timer 1 starts at launch (60
+  minutes; change it in Preferences, **Clock**, 0 for none); timers 2 and 3
+  start off. A timer's last minute is shown in reverse colours and its last
+  ten seconds blink. A click on a timer, or on the clock, opens the timers
+  menu, a tab per timer: its state, preset durations (5, 15, 25, 60 min) and
+  a free one that start it at once, what it does when it expires
+  (**Restart** at once, or **Stop** at 0:00 in reverse colours),
+  **Pause** / **Resume**, **Reset** and **Off** (choices last until the next
+  launch); a right click on a timer pauses or resumes it.
 - **Explorer panel** (left). Four views, picked with the buttons at its
   top: files, bookmarks, notes and remote machines. Below them, a small
   toolbar with the actions of the view.

@@ -20,7 +20,7 @@
  *   auto-terminal-place=below  # the Auto layout puts the terminal below the
  *                              # preview or beside it; missing: as it is
  *   [Clock]
- *   timer-minutes=60     # top bar timer, started at launch (0: no timer)
+ *   timer-minutes=60     # top bar timer 1, started at launch (0: no timer)
  *   [Window]
  *   width=1000           # window size at startup
  *   height=600

@@ -34,7 +34,7 @@ The directories group modules by feature, not by layer:
 | `jupyter/` | Jupyter notebooks edited cell by cell: the notebook model and its tab |
 | `terminal/` | terminal panes and the built-in terminal |
 | `workspace/` | workspaces, layouts, session |
-| `clock/` | the clock and the timer of the top bar |
+| `clock/` | the clock and the timers of the top bar |
 | `sysmon/` | the system monitor: top bar CPU chart and the System Monitor tab |
 | `chrome/` | top bar, status bar, sidebar, help, preferences, applying themes, `ui` |
 
@@ -60,10 +60,10 @@ Layers, from bottom to top
   whole disks of `/sys/block` only) in a worker thread (`statvfs()` on a
   network mount can block), `sysstat_sample_rates()` turns two snapshots into
   CPU percentages (a process: 100 = one core), network and disk rates.
-- `countdown` — the repeating countdown of the top bar timer: wall-clock
-  deadline (right across a suspend), pause, immediate restart on expiry
-  (cycles counted), the text shown and when it changes, reverse colours in
-  the last minute and blinking in the last ten seconds.
+- `countdown` — the countdown of the top bar timers: wall-clock deadline
+  (right across a suspend), pause, immediate restart on expiry (cycles
+  counted) or a stop at 0, the text shown and when it changes, reverse
+  colours in the last minute (and at 0) and blinking in the last ten seconds.
 - `ui_probe` — test hook for `make ui-shots`: with `LOOKIN_UI_PROBE=<file>`,
   each SIGUSR2 writes a new number to the file once the main loop is idle,
   so a screenshot waits for the application instead of a fixed delay
@@ -674,13 +674,14 @@ Layers, from bottom to top
   and filesystems only while the page is mapped). `sysmon_indicator` — the
   CPU chart of the top bar (`/proc/stat` every 2 s; `LOOKIN_SYSMON_FROZEN`
   stops it for the UI tests), whose click opens or closes the tab.
-- `clock_pill` — the timer (`countdown`, minutes from `settings.ini`,
-  restarted by the Clock page of the Preferences through
-  `topbar_set_timer()`; its click opens a popover of durations, Start, Pause
-  and Reset, its right click pauses) and the clock, before the CPU chart: one
-  timeout at the next change (a second, half a second while blinking, else
-  the minute of the clock); `LOOKIN_CLOCK_FROZEN` stops both for the UI
-  tests.
+- `clock_pill` — the clock and three timers (`countdown`; timer 1 from
+  `settings.ini`, restarted by the Clock page of the Preferences through
+  `topbar_set_timer()`), before the CPU chart. A click on a timer or the
+  clock opens a popover with a stack page per timer (state, durations,
+  Start, expiry action Restart / Stop, Pause, Reset, Off), a right click on
+  a timer pauses it. One timeout at the next change of all of them (a
+  second, half a second while blinking, else the minute of the clock);
+  `LOOKIN_CLOCK_FROZEN` stops everything for the UI tests.
 - `games` — the hidden Games view (unlocked in the help panel, for the
   current workspace only: `VirtualLayout.games_unlocked`) and its game tabs
   (`game_*`) in the preview notebook, kept with their workspace through
