@@ -676,7 +676,8 @@ Layers, from bottom to top
   stops it for the UI tests), whose click opens or closes the tab.
 - `clock_pill` — the timer (`countdown`, minutes from `settings.ini`,
   restarted by the Clock page of the Preferences through
-  `topbar_set_timer()`) and the clock at the right end of the top bar: one
+  `topbar_set_timer()`; its click opens a popover of durations, Start, Pause
+  and Reset, its right click pauses) and the clock, before the CPU chart: one
   timeout at the next change (a second, half a second while blinking, else
   the minute of the clock); `LOOKIN_CLOCK_FROZEN` stops both for the UI
   tests.

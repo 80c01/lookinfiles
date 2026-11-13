@@ -239,7 +239,7 @@ static GtkWidget* clock_page(Preferences* p, const Settings* s) {
     GtkWidget* box = page_box();
     gtk_box_append(GTK_BOX(box), hint_label(_("The timer of the top bar starts at launch and restarts as soon as it "
                                             "expires. Its last minute is shown in reverse colours and its last ten "
-                                            "seconds blink. Click it to pause, right-click it to restart.")));
+                                            "seconds blink. Click it to pick another duration, right-click it to pause.")));
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget* label = gtk_label_new_with_mnemonic(_("_Timer duration (minutes)"));
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);

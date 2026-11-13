@@ -7,12 +7,14 @@
  * starts at launch with the duration of the preferences (settings.ini,
  * [Clock] timer-minutes) and counts down (countdown.h): its last minute is
  * shown in reverse colours, its last ten seconds blink (steady when GTK
- * animations are off), and when it expires it restarts at once. Click:
- * pause / resume; right click: restart. LOOKIN_CLOCK_FROZEN in the
+ * animations are off), and when it expires it restarts at once. Click: a
+ * popover of preset durations (5, 15, 25, 60 min), a free duration and
+ * Start / Pause / Reset (a duration picked there lasts until the next launch
+ * or Preferences change); right click: pause / resume. LOOKIN_CLOCK_FROZEN in the
  * environment shows a fixed time and a stopped timer (UI screenshots). */
 #include <gtk/gtk.h>
 
-/* The row of both; minutes 0: no timer */
+/* The row of both, clock first; minutes 0: no timer */
 GtkWidget* clock_pill_new(gint minutes);
 
 /* Restart the timer of pill with minutes (0 hides it) */

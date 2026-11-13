@@ -1,4 +1,4 @@
-/* Top bar: clickable path breadcrumbs, the CPU chart (System Monitor tab), the global mode pill, the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click), then the timer and the clock. */
+/* Top bar: clickable path breadcrumbs, the clock and the timer, the CPU chart (System Monitor tab), the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
 #include "chrome/topbar.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
@@ -748,6 +748,7 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
     gtk_box_append(GTK_BOX(row), t->breadcrumb_box);
     gtk_box_append(GTK_BOX(row), spacer);
     gtk_box_append(GTK_BOX(row), create_topbar_notice(app));
+    gtk_box_append(GTK_BOX(row), t->clock);
     gtk_box_append(GTK_BOX(row), t->sysmon_btn);
     gtk_box_append(GTK_BOX(row), mode_button_new(app));
     gtk_box_append(GTK_BOX(row), ws_minimap);
@@ -759,8 +760,6 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
     gtk_box_append(GTK_BOX(row), t->term_btn);
     gtk_box_append(GTK_BOX(row), separator_new());
     gtk_box_append(GTK_BOX(row), t->help_btn);
-    gtk_box_append(GTK_BOX(row), separator_new());
-    gtk_box_append(GTK_BOX(row), t->clock);
     return row;
 }
 

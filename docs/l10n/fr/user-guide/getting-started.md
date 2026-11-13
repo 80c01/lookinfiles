@@ -68,12 +68,15 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
   affichent ou masquent les panneaux **Explorateur**, **Aperçu** et
   **Terminal** (**Aperçu** devient **Principal** tant que des onglets
   d’édition partagent le panneau Aperçu), et **Aide** : un clic ouvre ce guide, un clic droit
-  l’aide-mémoire du clavier. Tout à droite, le **minuteur** et l’**horloge**
-  (la date dans son info-bulle). Le minuteur démarre au lancement
-  (60 minutes ; à changer dans les Préférences, **Horloge**, 0 pour aucun)
-  et repart dès qu’il expire ; sa dernière minute s’affiche en couleurs
-  inversées et ses dix dernières secondes clignotent. Un clic le met en
-  pause ou le relance, un clic droit le redémarre.
+  l’aide-mémoire du clavier. Avant le graphique du processeur, l’**horloge**
+  (la date dans son info-bulle) et le **minuteur**. Le minuteur démarre au
+  lancement (60 minutes ; à changer dans les Préférences, **Horloge**, 0
+  pour aucun) et repart dès qu’il expire ; sa dernière minute s’affiche en
+  couleurs inversées et ses dix dernières secondes clignotent. Un clic
+  ouvre son menu : des durées prédéfinies (5, 15, 25, 60 min) et une durée
+  libre qui le démarrent aussitôt (jusqu’au prochain lancement),
+  **Pause** / **Reprendre** et **Réinitialiser** ; un clic droit le met en
+  pause ou le relance.
 - **Panneau Explorateur** (à gauche). Quatre vues, choisies avec les
   boutons en haut : fichiers, signets, notes et machines distantes.
   En dessous, une petite barre d’outils avec les actions de la vue.

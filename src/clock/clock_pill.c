@@ -26,7 +26,7 @@ static void ensure_css(void) {
     if (done) return;
     done = TRUE;
     theme_add_css(".clock-pill label { font-feature-settings: \"tnum\"; }"
-                  "label.clock-time { color: @fg_muted; font-size: @size_bar; margin: 0px 6px 0px 2px; }"
+                  "label.clock-time { color: @fg_muted; font-size: @size_bar; margin: 0px 2px; }"
                   "button.status-pill.clock-timer-paused label { color: @fg_faint; }"
                   "button.status-pill.clock-timer-inverse,"
                   "button.status-pill.clock-timer-inverse:hover { background-color: @fg_bright; }"
@@ -84,7 +84,7 @@ static void update_timer(ClockPill* p, gint64 now, gboolean blink) {
                                  : g_strdup_printf(_("Timer: %1$s left of %2$s"), text, total);
         gchar* cycle = g_strdup_printf(_("Cycle %u (restarts when it expires)"), c->cycle);
         gchar* tip = g_strdup_printf("%s\n%s\n%s", state, cycle,
-                                     _("Click: Pause / Resume — Right-Click: Restart — Duration: Preferences, Clock"));
+                                     _("Click: Durations, Start, Pause, Reset — Right-Click: Pause / Resume"));
         gtk_widget_set_tooltip_text(p->timer, tip);
         g_free(tip);
         g_free(cycle);
@@ -125,9 +125,7 @@ static gboolean on_tick(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-static void on_timer_clicked(GtkButton* button, gpointer data) {
-    (void)button;
-    ClockPill* p = data;
+static void toggle_pause(ClockPill* p) {
     gint64 now = g_get_real_time();
     if (p->countdown.paused) {
         countdown_resume(&p->countdown, now);
@@ -137,15 +135,156 @@ static void on_timer_clicked(GtkButton* button, gpointer data) {
     refresh(p);
 }
 
+/* A new cycle of minutes, starting now */
+static void start_minutes(ClockPill* p, gint minutes) {
+    p->enabled = (minutes > 0);
+    gtk_widget_set_visible(p->timer, p->enabled);
+    countdown_start(&p->countdown, MAX(minutes, 1) * MINUTE, g_get_real_time());
+    if (p->frozen) countdown_pause(&p->countdown, g_get_real_time());
+    gchar* full = countdown_format(p->countdown.duration, p->countdown.duration);
+    gtk_label_set_width_chars(GTK_LABEL(p->timer_label), (gint)strlen(full)); /* the bar does not move */
+    g_free(full);
+    set_class(p->timer, "clock-timer-inverse", FALSE);
+    p->tooltip_minute = -1;
+    refresh(p);
+}
+
+/* ---- The popover of a click on the timer ---- */
+
+static const gint PRESETS[] = {5, 15, 25, 60};
+
+#define POPOVER_PILL_KEY "lookin-clock-popover-pill"
+
+static ClockPill* popover_pill(GtkWidget* widget) {
+    GtkWidget* popover = gtk_widget_get_ancestor(widget, GTK_TYPE_POPOVER);
+    return g_object_get_data(G_OBJECT(popover), POPOVER_PILL_KEY);
+}
+
+static void popdown(GtkWidget* widget) {
+    gtk_popover_popdown(GTK_POPOVER(gtk_widget_get_ancestor(widget, GTK_TYPE_POPOVER)));
+}
+
+static void on_preset_clicked(GtkButton* button, gpointer data) {
+    start_minutes(popover_pill(GTK_WIDGET(button)), GPOINTER_TO_INT(data));
+    popdown(GTK_WIDGET(button));
+}
+
+static void start_spin(GtkWidget* spin) {
+    gtk_spin_button_update(GTK_SPIN_BUTTON(spin));
+    start_minutes(popover_pill(spin), gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin)));
+    popdown(spin);
+}
+
+static void on_start_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    start_spin(GTK_WIDGET(data));
+}
+
+static void on_spin_activate(GtkSpinButton* spin, gpointer data) {
+    (void)data;
+    start_spin(GTK_WIDGET(spin));
+}
+
+static void on_pause_clicked(GtkButton* button, gpointer data) {
+    (void)data;
+    toggle_pause(popover_pill(GTK_WIDGET(button)));
+    popdown(GTK_WIDGET(button));
+}
+
+static void on_reset_clicked(GtkButton* button, gpointer data) {
+    (void)data;
+    ClockPill* p = popover_pill(GTK_WIDGET(button));
+    start_minutes(p, (gint)(p->countdown.duration / MINUTE));
+    popdown(GTK_WIDGET(button));
+}
+
+static gboolean unparent_idle(gpointer data) {
+    gtk_widget_unparent(GTK_WIDGET(data));
+    g_object_unref(data);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_popover_closed(GtkPopover* popover, gpointer data) {
+    (void)data;
+    g_idle_add(unparent_idle, g_object_ref(popover));
+}
+
+static GtkWidget* popover_button(const gchar* label, GCallback callback, gpointer data) {
+    GtkWidget* button = gtk_button_new_with_mnemonic(label);
+    g_signal_connect(button, "clicked", callback, data);
+    return button;
+}
+
+static void on_timer_clicked(GtkButton* button, gpointer data) {
+    ClockPill* p = data;
+    /* On the row, not the button: the pill's styles (reverse colours) stay off its content */
+    GtkWidget* row = gtk_widget_get_parent(GTK_WIDGET(button));
+    GtkWidget* popover = gtk_popover_new();
+    gtk_widget_set_parent(popover, row);
+    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
+    graphene_rect_t bounds;
+    if (gtk_widget_compute_bounds(GTK_WIDGET(button), row, &bounds)) {
+        GdkRectangle rect = {(gint)bounds.origin.x, (gint)bounds.origin.y, (gint)bounds.size.width,
+                             (gint)bounds.size.height};
+        gtk_popover_set_pointing_to(GTK_POPOVER(popover), &rect);
+    }
+    g_object_set_data(G_OBJECT(popover), POPOVER_PILL_KEY, p);
+
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_add_css_class(box, "clock-popover");
+    gtk_widget_set_margin_top(box, 8);
+    gtk_widget_set_margin_bottom(box, 8);
+    gtk_widget_set_margin_start(box, 8);
+    gtk_widget_set_margin_end(box, 8);
+
+    GtkWidget* presets = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_set_homogeneous(GTK_BOX(presets), TRUE);
+    for (gsize i = 0; i < G_N_ELEMENTS(PRESETS); i++) {
+        gchar* label = g_strdup_printf(_("%d min"), PRESETS[i]);
+        GtkWidget* preset = gtk_button_new_with_label(label);
+        g_free(label);
+        gtk_widget_set_tooltip_text(preset, _("Start the timer with this duration"));
+        g_signal_connect(preset, "clicked", G_CALLBACK(on_preset_clicked), GINT_TO_POINTER(PRESETS[i]));
+        gtk_box_append(GTK_BOX(presets), preset);
+    }
+    gtk_box_append(GTK_BOX(box), presets);
+
+    GtkWidget* custom = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget* spin = gtk_spin_button_new_with_range(1, 1440, 1);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin), (gdouble)(p->countdown.duration / MINUTE));
+    gtk_widget_set_tooltip_text(spin, _("Duration in minutes (Enter starts the timer)"));
+    g_signal_connect(spin, "activate", G_CALLBACK(on_spin_activate), NULL);
+    GtkWidget* unit = gtk_label_new(_("minutes"));
+    gtk_widget_set_hexpand(unit, TRUE);
+    gtk_label_set_xalign(GTK_LABEL(unit), 0.0f);
+    gtk_box_append(GTK_BOX(custom), spin);
+    gtk_box_append(GTK_BOX(custom), unit);
+    gtk_box_append(GTK_BOX(custom), popover_button(_("_Start"), G_CALLBACK(on_start_clicked), spin));
+    gtk_box_append(GTK_BOX(box), custom);
+
+    GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_set_homogeneous(GTK_BOX(actions), TRUE);
+    GtkWidget* pause = popover_button(p->countdown.paused ? _("_Resume") : _("_Pause"),
+                                      G_CALLBACK(on_pause_clicked), NULL);
+    gtk_widget_set_tooltip_text(pause, _("Right-click on the timer does the same"));
+    GtkWidget* reset = popover_button(_("_Reset"), G_CALLBACK(on_reset_clicked), NULL);
+    gtk_widget_set_tooltip_text(reset, _("Start the current duration again from the beginning"));
+    gtk_box_append(GTK_BOX(actions), pause);
+    gtk_box_append(GTK_BOX(actions), reset);
+    gtk_box_append(GTK_BOX(box), actions);
+
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
+    g_signal_connect(popover, "closed", G_CALLBACK(on_popover_closed), NULL);
+    gtk_popover_popup(GTK_POPOVER(popover));
+    gtk_widget_grab_focus(spin);
+}
+
 static void on_timer_right_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     (void)x;
     (void)y;
-    ClockPill* p = data;
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
-    countdown_start(&p->countdown, p->countdown.duration, g_get_real_time());
-    p->tooltip_minute = -1;
-    refresh(p);
+    toggle_pause(data);
 }
 
 static void clock_pill_free(gpointer data) {
@@ -157,17 +296,7 @@ static void clock_pill_free(gpointer data) {
 
 void clock_pill_set_timer(GtkWidget* pill, gint minutes) {
     ClockPill* p = (pill != NULL) ? g_object_get_data(G_OBJECT(pill), CLOCK_KEY) : NULL;
-    if (p == NULL) return;
-    p->enabled = (minutes > 0);
-    gtk_widget_set_visible(p->timer, p->enabled);
-    countdown_start(&p->countdown, MAX(minutes, 1) * MINUTE, g_get_real_time());
-    if (p->frozen) countdown_pause(&p->countdown, g_get_real_time());
-    gchar* full = countdown_format(p->countdown.duration, p->countdown.duration);
-    gtk_label_set_width_chars(GTK_LABEL(p->timer_label), (gint)strlen(full)); /* the bar does not move */
-    g_free(full);
-    set_class(p->timer, "clock-timer-inverse", FALSE);
-    p->tooltip_minute = -1;
-    refresh(p);
+    if (p != NULL) start_minutes(p, minutes);
 }
 
 GtkWidget* clock_pill_new(gint minutes) {
@@ -195,8 +324,8 @@ GtkWidget* clock_pill_new(gint minutes) {
 
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_add_css_class(box, "clock-pill");
-    gtk_box_append(GTK_BOX(box), p->timer);
     gtk_box_append(GTK_BOX(box), p->clock);
+    gtk_box_append(GTK_BOX(box), p->timer);
     g_object_set_data_full(G_OBJECT(box), CLOCK_KEY, p, clock_pill_free);
     clock_pill_set_timer(box, minutes);
     return box;

@@ -9060,12 +9060,12 @@ msgstr "Horloge"
 msgid ""
 "The timer of the top bar starts at launch and restarts as soon as it "
 "expires. Its last minute is shown in reverse colours and its last ten "
-"seconds blink. Click it to pause, right-click it to restart."
+"seconds blink. Click it to pick another duration, right-click it to pause."
 msgstr ""
 "Le minuteur de la barre du haut démarre au lancement et repart dès qu’il "
 "expire. Sa dernière minute s’affiche en couleurs inversées et ses dix "
-"dernières secondes clignotent. Cliquez dessus pour le mettre en pause, clic "
-"droit pour le redémarrer."
+"dernières secondes clignotent. Cliquez dessus pour choisir une autre durée, "
+"clic droit pour le mettre en pause."
 
 msgid "_Timer duration (minutes)"
 msgstr "Durée du _minuteur (minutes)"
@@ -9089,8 +9089,34 @@ msgstr "Minuteur en pause : %1$s restantes sur %2$s"
 msgid "Cycle %u (restarts when it expires)"
 msgstr "Cycle %u (repart à l’expiration)"
 
-msgid ""
-"Click: Pause / Resume — Right-Click: Restart — Duration: Preferences, Clock"
+msgid "Click: Durations, Start, Pause, Reset — Right-Click: Pause / Resume"
 msgstr ""
-"Clic : pause / reprise — Clic droit : redémarrer — Durée : Préférences, "
-"Horloge"
+"Clic : durées, démarrer, pause, réinitialiser — Clic droit : pause / reprise"
+
+#, c-format
+msgid "%d min"
+msgstr "%d min"
+
+msgid "Start the timer with this duration"
+msgstr "Démarrer le minuteur avec cette durée"
+
+msgid "Duration in minutes (Enter starts the timer)"
+msgstr "Durée en minutes (Entrée démarre le minuteur)"
+
+msgid "minutes"
+msgstr "minutes"
+
+msgid "_Start"
+msgstr "_Démarrer"
+
+msgid "_Resume"
+msgstr "_Reprendre"
+
+msgid "_Pause"
+msgstr "_Pause"
+
+msgid "Right-click on the timer does the same"
+msgstr "Un clic droit sur le minuteur fait de même"
+
+msgid "Start the current duration again from the beginning"
+msgstr "Recommencer la durée actuelle depuis le début"
