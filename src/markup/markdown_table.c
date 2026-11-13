@@ -4,6 +4,7 @@
 #include "theme/fonts.h"
 #include "theme/palette.h"
 
+#include <math.h>
 #include <string.h>
 
 static gchar* clean_table_cell_text(const gchar* text) {
@@ -176,17 +177,20 @@ static void fit_table_frame(GtkAdjustment* hadj, gpointer data) {
     gint minimum = 0, natural = 0;
     gtk_widget_measure(grid, GTK_ORIENTATION_HORIZONTAL, -1, &minimum, &natural, NULL, NULL);
     gint width = MAX(MIN(natural, avail), 1);
+    /* As tall as the table at the width it is shown at (a frame left to
+     * itself would be as tall as the table at its smallest width, its rows
+     * wrapped most: space under a table shown wider) */
+    gint height = 0;
+    gtk_widget_measure(grid, GTK_ORIENTATION_VERTICAL, MAX(width, minimum), &height, NULL, NULL, NULL);
     /* A fixed (not overlay) scrollbar takes room under the table, which the
      * frame does not count: add it when the table overflows */
-    gint height = -1;
     gboolean overlay = TRUE;
     g_object_get(gtk_widget_get_settings(frame), "gtk-overlay-scrolling", &overlay, NULL);
     if (minimum > width && !(overlay && gtk_scrolled_window_get_overlay_scrolling(GTK_SCROLLED_WINDOW(frame)))) {
-        gint table_h = 0, bar_h = 0;
-        gtk_widget_measure(grid, GTK_ORIENTATION_VERTICAL, minimum, &table_h, NULL, NULL, NULL);
+        gint bar_h = 0;
         gtk_widget_measure(gtk_scrolled_window_get_hscrollbar(GTK_SCROLLED_WINDOW(frame)),
                            GTK_ORIENTATION_VERTICAL, -1, NULL, &bar_h, NULL, NULL);
-        height = table_h + bar_h;
+        height += bar_h;
     }
     gint old_w = 0, old_h = 0;
     gtk_widget_get_size_request(frame, &old_w, &old_h);
@@ -225,6 +229,38 @@ static void fit_table_later(GtkTextView* view, GtkWidget* frame) {
         g_idle_add_full(G_PRIORITY_HIGH_IDLE, fit_pending_tables, g_object_ref(view), g_object_unref);
     }
     g_ptr_array_add(frames, g_object_ref(frame));
+}
+
+/* The wheel over a table scrolls the text around it, as over the rest of
+ * the text: the frame (vertical policy EXTERNAL) would take it for itself.
+ * Shift+wheel stays with the frame (a wide table scrolls sideways). */
+static gboolean on_frame_scroll(GtkEventControllerScroll* ctrl, gdouble dx, gdouble dy, gpointer data) {
+    (void)dx;
+    (void)data;
+    GdkModifierType state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(ctrl));
+    if (dy == 0 || (state & GDK_SHIFT_MASK) != 0) {
+        return FALSE;
+    }
+    GtkWidget* frame = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
+    for (GtkWidget* w = gtk_widget_get_parent(frame); w != NULL; w = gtk_widget_get_parent(w)) {
+        /* The first scrolled window around with something to scroll (the
+         * preview's may scroll without a scrollbar: EXTERNAL, its minimap) */
+        GtkPolicyType vpolicy = GTK_POLICY_NEVER;
+        if (GTK_IS_SCROLLED_WINDOW(w)) {
+            gtk_scrolled_window_get_policy(GTK_SCROLLED_WINDOW(w), NULL, &vpolicy);
+        }
+        GtkAdjustment* adj = vpolicy != GTK_POLICY_NEVER ? gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(w)) : NULL;
+        if (adj == NULL || gtk_adjustment_get_upper(adj) - gtk_adjustment_get_lower(adj) <= gtk_adjustment_get_page_size(adj)) {
+            continue;
+        }
+        /* As GtkScrolledWindow does: a wheel step scrolls page^(2/3) */
+        gdouble step = gtk_event_controller_scroll_get_unit(ctrl) == GDK_SCROLL_UNIT_WHEEL
+                           ? pow(gtk_adjustment_get_page_size(adj), 2.0 / 3.0)
+                           : 1.0;
+        gtk_adjustment_set_value(adj, gtk_adjustment_get_value(adj) + dy * step);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 /* Table as a grid widget in the text (VS Code: no vertical borders, a line
@@ -270,9 +306,15 @@ void markdown_table_insert_grid(GtkTextBuffer* buffer, GtkTextView* view, GtkTex
     }
     GtkWidget* frame = gtk_scrolled_window_new();
     gtk_widget_add_css_class(frame, "md-table-frame");
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(frame), GTK_POLICY_AUTOMATIC, GTK_POLICY_NEVER);
+    /* EXTERNAL, not NEVER: the frame's height is the one fit_table_frame()
+     * asks for, not the table's tallest */
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(frame), GTK_POLICY_AUTOMATIC, GTK_POLICY_EXTERNAL);
     gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(frame), TRUE);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(frame), grid);
+    GtkEventController* wheel = gtk_event_controller_scroll_new(GTK_EVENT_CONTROLLER_SCROLL_VERTICAL);
+    gtk_event_controller_set_propagation_phase(wheel, GTK_PHASE_CAPTURE);
+    g_signal_connect(wheel, "scroll", G_CALLBACK(on_frame_scroll), NULL);
+    gtk_widget_add_controller(frame, wheel);
     GtkTextChildAnchor* anchor = gtk_text_buffer_create_child_anchor(buffer, iter);
     gtk_text_view_add_child_at_anchor(view, frame, anchor);
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(view));
