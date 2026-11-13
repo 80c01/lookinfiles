@@ -393,7 +393,10 @@ static void minimap_build_cache(GtkTextBuffer* buffer, GtkTextView* view, Minima
         if (ly * sy > range_end) {
             break;
         }
-        if ((ly + lh) * sy < c->top) {
+        /* A hidden line (folded, invisible text) draws nothing; walking its
+         * display lines would also trip GTK, which skips a line of height 0
+         * and then checks the iter against the next line's layout */
+        if (lh <= 0 || (ly + lh) * sy < c->top) {
             continue;
         }
 
