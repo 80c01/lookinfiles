@@ -118,11 +118,13 @@ static void on_block_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
     block_cursor_update(data);
 }
 
-/* The view's height or its lines' heights changed (resize, zoom, wrap) */
+/* The view's height or its lines' heights changed (resize, zoom, wrap). The
+ * view emits this while it allocates: moving the box now would leave it
+ * without an allocation for the next snapshot, so the next frames place it. */
 static void on_block_vadj_changed(GtkAdjustment* adj, gpointer view) {
     (void)adj;
     EditorTab* tab = tab_of_view(view);
-    if (tab != NULL && place_eol_box(tab)) settle(tab);
+    if (tab != NULL) settle(tab);
 }
 
 static void on_block_vadj_set(GObject* view, GParamSpec* pspec, gpointer data) {
