@@ -146,6 +146,7 @@ void ipynb_tab_mark_changed(IpynbTab* t) {
     ipynb_tab_set_status(t, _("Modified"), FALSE);
     if (t->save_source != 0) g_source_remove(t->save_source);
     t->save_source = g_timeout_add(SAVE_DELAY_MS, on_save_timeout, t);
+    ipynb_tagbar_changed(t);
 }
 
 /* --- Cells --- */
@@ -305,6 +306,7 @@ static void set_current(IpynbTab* t, guint index) {
             gtk_widget_remove_css_class(cell, "ipynb-current");
         }
     }
+    ipynb_tagbar_cursor_moved(t);
 }
 
 static void on_view_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
@@ -642,6 +644,11 @@ static void on_edit_json(GtkButton* button, gpointer data) {
     editor_open_text_file(t->app, t->name, t->path);
 }
 
+static void on_tagbar(GtkButton* button, gpointer data) {
+    (void)button;
+    ipynb_tagbar_toggle(data);
+}
+
 static GtkWidget* bar_button(IpynbTab* t, const gchar* icon, const gchar* text, const gchar* tooltip, GCallback cb) {
     GtkWidget* b = icon_button_new(icon, tooltip);
     icon_button_set_content(b, icon, text);
@@ -653,11 +660,26 @@ static GtkWidget* bar_button(IpynbTab* t, const gchar* icon, const gchar* text, 
 
 static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
                        gpointer data) {
-    (void)ctrl;
     (void)keycode;
     IpynbTab* t = data;
     if (t->closed) return FALSE;
     GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK | GDK_SUPER_MASK);
+    /* Ctrl+K Ctrl+O: tagbar, as in the editor tabs (from the tagbar too);
+     * another key after Ctrl+K does what it does alone */
+    GdkEvent* event = gtk_event_controller_get_current_event(GTK_EVENT_CONTROLLER(ctrl));
+    if (t->chord_k && event != NULL && gdk_key_event_is_modifier(event)) return FALSE;
+    if (t->chord_k) {
+        t->chord_k = FALSE;
+        if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
+            ipynb_tagbar_toggle(t);
+            return TRUE;
+        }
+    } else if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_k || keyval == GDK_KEY_K)) {
+        t->chord_k = TRUE;
+        return TRUE;
+    }
+    /* The tagbar takes its other keys (Alt+Up would move a cell) */
+    if (ipynb_tagbar_has_focus(t)) return FALSE;
     if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_Up || keyval == GDK_KEY_Down)) {
         if (keyval == GDK_KEY_Up && t->current > 0) ipynb_tab_focus_cell(t, t->current - 1);
         if (keyval == GDK_KEY_Down) ipynb_tab_focus_cell(t, t->current + 1);
@@ -699,6 +721,7 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
 static void close_tab(IpynbTab* t) {
     AppData* app = t->app;
     ipynb_run_stop(t);
+    ipynb_tagbar_release(t);
     save_now(t);
     t->closed = TRUE;
     GtkWidget* root = g_object_ref(t->root);
@@ -747,6 +770,7 @@ static void on_label_right_click(GtkGestureClick* gesture, gint n_press, gdouble
 static void on_root_destroy(GtkWidget* widget, gpointer data) {
     IpynbTab* t = data;
     ipynb_run_stop(t);
+    ipynb_tagbar_release(t);
     save_now(t); /* destroyed with its window or workspace: the last changes */
     t->closed = TRUE;
     if (t->rebuild_source != 0) {
@@ -840,6 +864,9 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
                                            "cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"));
     gtk_box_append(GTK_BOX(bar), t->info);
     gtk_box_append(GTK_BOX(bar), kernel_button);
+    GtkWidget* tagbar = icon_button_new("view-list-bullet", _("Show / Hide the Headings (Ctrl+K Ctrl+O)"));
+    g_signal_connect(tagbar, "clicked", G_CALLBACK(on_tagbar), t);
+    gtk_box_append(GTK_BOX(bar), tagbar);
     t->status = gtk_label_new(NULL);
     gtk_widget_set_margin_start(t->status, 8);
     gtk_box_append(GTK_BOX(bar), t->status);
@@ -851,8 +878,11 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), t->cells_box);
-    gtk_widget_set_vexpand(scroll, TRUE);
-    gtk_box_append(GTK_BOX(root), scroll);
+    gtk_widget_set_hexpand(scroll, TRUE);
+    t->scroll = scroll;
+    GtkWidget* paned = ipynb_tagbar_wrap(t, scroll);
+    gtk_widget_set_vexpand(paned, TRUE);
+    gtk_box_append(GTK_BOX(root), paned);
 
     /* Capture: the text views would take Ctrl+Up and the Alt keys first */
     GtkEventController* keys = gtk_event_controller_key_new();
@@ -869,6 +899,8 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
 
     t->focus_after = 0;
     rebuild(t);
+    /* Shown as in a new editor tab (Preferences → Editor) */
+    ipynb_tagbar_set_shown(t, app->settings.tagbar);
     ipynb_tab_set_status(t, _("Saved"), FALSE);
     return t;
 }
@@ -986,4 +1018,16 @@ void ipynb_tab_workspace_removed(AppData* app, VirtualLayout* ws) {
         ipynb_tab_workspace_hidden(app, ws);
     }
     g_clear_pointer(&ws->ipynb_pages, g_ptr_array_unref);
+}
+
+void ipynb_tab_set_tagbar_shown(AppData* app, gboolean shown) {
+    for (guint i = 0; app != NULL && app->ipynb_pages != NULL && i < app->ipynb_pages->len; i++) {
+        IpynbTab* t = tab_of(g_ptr_array_index(app->ipynb_pages, i));
+        if (t != NULL && !t->closed) ipynb_tagbar_set_shown(t, shown);
+    }
+}
+
+GtkWidget* ipynb_tab_tagbar_list(GtkWidget* page) {
+    IpynbTab* t = page != NULL ? tab_of(page) : NULL;
+    return t != NULL && !t->closed ? ipynb_tagbar_list(t) : NULL;
 }

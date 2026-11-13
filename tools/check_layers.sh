@@ -108,6 +108,7 @@ man_view:preview_doc,i18n
 notebook:json_view,i18n
 ipynb_doc:json_view,notebook,i18n
 ipynb_kernel:json_view
+ipynb_outline:ipynb_doc,code_outline_tree,code_symbol
 zip_xml:zip_reader
 spreadsheet:zip_reader,zip_xml,preview_doc,i18n
 odf:zip_reader,zip_xml,i18n
@@ -281,8 +282,8 @@ done
 # ipynb_tab_private.h is internal to the Jupyter notebook tab files
 for f in $(grep -lE '#include "([a-z]+/)?ipynb_tab_private.h"' $SRC_CH); do
     case "$(basename "$f")" in
-        ipynb_tab.c|ipynb_run.c) ;;
-        *) echo "layering: $f includes ipynb_tab_private.h (internal to ipynb_tab.c, ipynb_run.c)"; status=1 ;;
+        ipynb_tab.c|ipynb_run.c|ipynb_tagbar.c) ;;
+        *) echo "layering: $f includes ipynb_tab_private.h (internal to ipynb_tab.c, ipynb_run.c, ipynb_tagbar.c)"; status=1 ;;
     esac
 done
 
@@ -333,7 +334,7 @@ explorer:chrome,code,core,editor,formats,games,git,media,notes,preview,search,te
 formats:core,preview
 games:core,editor,explorer,theme,widgets
 git:core,theme,widgets
-jupyter:core,editor,formats,markup,theme,widgets
+jupyter:code,core,editor,formats,markup,theme,widgets
 mail:core,office,preview
 markup:core,media,theme
 media:core,editor,preview,search,theme

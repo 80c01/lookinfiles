@@ -26,6 +26,9 @@
  *   bar's Undo button puts it back).
  * - The bar adds code and Markdown cells, clears every output, and opens
  *   the file as JSON text in an editor tab.
+ * - Ctrl+K Ctrl+O, or the bar's button: show / hide the tagbar, the
+ *   headings of the Markdown cells (ipynb_tagbar.c, the editor tagbar's
+ *   widget and width; a new tab follows Preferences → Editor).
  *
  * Saved automatically (shortly after each change, Ctrl+S at once, when the
  * tab is closed, when its workspace is removed, and at quit), written as
@@ -55,5 +58,11 @@ gboolean ipynb_tab_close_shown(AppData* app);
 void ipynb_tab_workspace_hidden(AppData* app, VirtualLayout* ws);
 void ipynb_tab_workspace_shown(AppData* app, VirtualLayout* ws);
 void ipynb_tab_workspace_removed(AppData* app, VirtualLayout* ws);
+
+/* Show or hide the tagbar of every notebook tab (Preferences → Editor,
+ * a layout; focus unchanged) */
+void ipynb_tab_set_tagbar_shown(AppData* app, gboolean shown);
+/* The list of the tagbar shown in page (a notebook tab), or NULL */
+GtkWidget* ipynb_tab_tagbar_list(GtkWidget* page);
 
 #endif /* IPYNB_TAB_H */

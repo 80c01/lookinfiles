@@ -45,6 +45,12 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   `Alt+Down` move the cell, `Alt+Enter` adds a code cell below,
   `Alt+Delete` deletes the cell (**Undo Delete** in the bar puts it back).
   The buttons of each cell do the same.
+- `Ctrl+K Ctrl+O` (or the list button at the end of the bar) shows the
+  **tagbar** beside the cells: the headings of the Markdown cells, nested by
+  level. It follows the current cell; `Enter` or a click goes to the
+  heading's cell, `Esc` comes back to the cells, `q` or `Ctrl+K Ctrl+O`
+  hides it. A new notebook tab shows it when Preferences → Editor shows the
+  tagbar of new editor tabs.
 - The bar adds code or Markdown cells, clears every output (**Clear
   Outputs**), and opens the file as JSON text in an editor tab (**Edit as
   JSON**).

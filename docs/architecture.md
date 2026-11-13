@@ -67,6 +67,10 @@ Layers, from bottom to top
   `ipynb_doc_find_cell()`), outputs added as Jupyter stores them
   (`ipynb_doc_append_output()`: lines, stream pieces joined), execution
   count, kernel metadata (`ipynb_doc_set_kernel_info()`).
+- `ipynb_outline` — the outline of a notebook for its tab's tagbar: the
+  headings of its Markdown cells (`code_outline_markdown()`), each
+  `CodeOutlineEntry` at the line of its cell's index (column: its line in
+  the cell), so `code_outline_entry_at_line()` finds the current cell's.
 - `ipynb_kernel` — a Jupyter kernel run through the bridge script
   `data/jupyter/ipynb_bridge.py` (bundled as a GResource, run as `python3
   -c <script>`): jupyter_client in a Python process, spoken to in JSON
@@ -636,6 +640,12 @@ Layers, from bottom to top
   cells and the source are left alone), the input row, interrupt, restart,
   and the kernel menu (`ipynb_kernel_list()` each time it opens; a choice
   sets the notebook's kernelspec and starts that kernel).
+  `ipynb_tagbar.c` (also on `ipynb_tab_private.h`) puts an `outline_pane`
+  beside the cells (the editor tagbar's width), filled by `ipynb_outline`
+  600 ms after the last change (`ipynb_tab_mark_changed()`), set again only
+  when the headings changed (`ipynb_outline_same()`: outputs coming in
+  leave it alone), following `IpynbTab.current`; `ui.c` finds its list for
+  `Alt+Left` / `Alt+Right` with `ipynb_tab_tagbar_list()`.
 - `games` — the hidden Games view (unlocked in the help panel, for the
   current workspace only: `VirtualLayout.games_unlocked`) and its game tabs
   (`game_*`) in the preview notebook, kept with their workspace through

@@ -8706,6 +8706,14 @@ msgstr "Onglet notebook Jupyter"
 msgid "Previous / next cell"
 msgstr "Cellule précédente / suivante"
 
+msgid ""
+"Show / hide the tagbar: headings of the Markdown cells beside the cells "
+"(Enter goes, c collapses / expands all, Esc back, q hides)"
+msgstr ""
+"Afficher / masquer la barre de symboles : titres des cellules Markdown à "
+"côté des cellules (Entrée y va, c replie / déplie tout, Échap revient, q "
+"masque)"
+
 msgid "Move the cell up / down"
 msgstr "Monter / descendre la cellule"
 
@@ -8780,6 +8788,9 @@ msgstr "Annuler la suppression"
 
 msgid "Put Back the Cell Deleted Last"
 msgstr "Remettre la dernière cellule supprimée"
+
+msgid "Show / Hide the Headings (Ctrl+K Ctrl+O)"
+msgstr "Afficher / masquer les titres (Ctrl+K Ctrl+O)"
 
 msgid "Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; Double-click or Enter: edit a rendered Markdown cell; Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"
 msgstr "Shift+Enter : exécuter la cellule et passer à la suivante ; Ctrl+Enter : l’exécuter ; double-clic ou Enter : éditer une cellule Markdown rendue ; Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule"

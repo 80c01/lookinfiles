@@ -55,10 +55,12 @@ void wire_focus_tracking(AppData* app) {
     update_active_panel_highlight(app);
 }
 
-/* The tagbar list on screen in page (editor tab or preview), or NULL */
+/* The tagbar list on screen in page (editor tab, notebook tab or preview),
+ * or NULL */
 static GtkWidget* page_tagbar(AppData* app, GtkWidget* page) {
     EditorTab* tab = focus_route_page_tab(app, page);
-    GtkWidget* list = tab != NULL ? editor_tagbar_list(tab) : preview_tagbar_list(app);
+    GtkWidget* list = tab != NULL ? editor_tagbar_list(tab) : ipynb_tab_tagbar_list(page);
+    if (list == NULL && tab == NULL) list = preview_tagbar_list(app);
     if (list == NULL || !gtk_widget_get_mapped(list) || !gtk_widget_is_ancestor(list, page)) return NULL;
     return list;
 }

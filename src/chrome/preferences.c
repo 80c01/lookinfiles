@@ -8,6 +8,7 @@
 #include "widgets/dialog.h"
 #include "editor/editor.h"
 #include "editor/editor_tagbar.h"
+#include "jupyter/ipynb_tab.h"
 #include "preview/preview_tagbar.h"
 #include "widgets/minimap.h"
 #include "workspace/workspace.h"
@@ -371,6 +372,7 @@ static void save_settings(Preferences* p) {
     AppData* app = p->app;
     if (s.tagbar != app->settings.tagbar) {
         editor_tagbar_set_shown(app, s.tagbar); /* every tab: only when changed */
+        ipynb_tab_set_tagbar_shown(app, s.tagbar);
     }
     if (s.preview_tagbar != app->settings.preview_tagbar) {
         workspace_set_preview_tagbar(app, s.preview_tagbar); /* every workspace: only when changed */

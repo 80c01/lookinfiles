@@ -94,7 +94,9 @@ Notes:
   A language server that has not answered within 2.5 s (starting,
   indexing, hung) is not waited for: the built-in scanner fills it.
   The widget is `outline_pane`, shared with the preview tagbar
-  (`preview_tagbar`, docs/previews.md).
+  (`preview_tagbar`, docs/previews.md) and the tagbar of the Jupyter
+  notebook tabs (`ipynb_tagbar.c`: the headings of the Markdown cells,
+  docs/keyboard.md).
   Its list takes the navigation keys (`nav_keys`) of the style its owner
   gives (the tab's mode, the global mode for the preview): moving, and a
   search bar at its bottom over every name, collapsed rows included (a

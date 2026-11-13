@@ -51,6 +51,12 @@ cellule Markdown nouvelle ou vide reste en source.
   cellule de code en dessous, `Alt+Delete` supprime la cellule
   (**Annuler la suppression** dans la barre la remet). Les boutons de
   chaque cellule font de même.
+- `Ctrl+K Ctrl+O` (ou le bouton de liste au bout de la barre) affiche la
+  **barre de symboles** à côté des cellules : les titres des cellules
+  Markdown, imbriqués par niveau. Elle suit la cellule courante ; `Enter`
+  ou un clic va à la cellule du titre, `Esc` revient aux cellules, `q` ou
+  `Ctrl+K Ctrl+O` la masque. Un nouvel onglet notebook l’affiche quand
+  Préférences → Éditeur affiche la barre de symboles des nouveaux onglets.
 - La barre ajoute des cellules de code ou Markdown, efface toutes les
   sorties (**Effacer les sorties**) et ouvre le fichier en texte JSON dans
   un onglet d’édition (**Éditer en JSON**).

@@ -5,6 +5,7 @@
 #include "editor/editor.h"
 #include "workspace/editor_layout.h"
 #include "editor/editor_tagbar.h"
+#include "jupyter/ipynb_tab.h"
 #include "core/i18n.h"
 #include "workspace/layout_store.h"
 #include "preview/preview_tagbar.h"
@@ -88,6 +89,7 @@ static void set_tagbars(AppData* app, const SavedLayout* l) {
     preview_tagbar_place(app);
     if (!l->editor_tagbar_as_is) {
         editor_tagbar_set_shown(app, l->editor_tagbar);
+        ipynb_tab_set_tagbar_shown(app, l->editor_tagbar);
     }
     preview_tagbar_set_shown(app, l->preview_tagbar);
 }
