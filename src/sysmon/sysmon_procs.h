@@ -3,8 +3,9 @@
 
 /* The process list of the System Monitor tab: a GtkColumnView (name, PID,
  * user, CPU %, memory, threads, state) sorted by a click on a column header,
- * by CPU at first. Read only: the rows are replaced at each update, the
- * selected process (by PID) and the scroll position stay. */
+ * by CPU at first. Read only: the rows are kept from one update to the
+ * next (by PID) and changed in place, the selection and the scroll position
+ * stay. */
 #include "core/app_types.h"
 #include "core/sysstat.h"
 

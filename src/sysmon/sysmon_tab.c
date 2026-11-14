@@ -186,7 +186,60 @@ static void on_draw_cores(GtkDrawingArea* area, cairo_t* cr, int width, int heig
     cairo_fill(cr);
 }
 
+/* "used / total (percent), free" of a filesystem */
+static gchar* mount_size_text(const SysMount* m, gdouble percent) {
+    gchar* used = g_format_size(m->used);
+    gchar* total = g_format_size(m->total);
+    gchar* avail = g_format_size(m->avail);
+    /* used / total (percent), free */
+    gchar* text = g_strdup_printf(_("%s / %s (%.0f%%), %s free"), used, total, percent, avail);
+    g_free(used);
+    g_free(total);
+    g_free(avail);
+    return text;
+}
+
+static gchar* mount_device_text(const SysMount* m) {
+    return g_strdup_printf("%s · %s", m->device, m->fs_type);
+}
+
+/* Does the grid show these filesystems, in this order? */
+static gboolean mounts_shown(SysmonTab* st, GPtrArray* mounts) {
+    GtkGrid* grid = GTK_GRID(st->mounts);
+    if (mounts->len == 0 || gtk_grid_get_child_at(grid, 0, (gint)mounts->len) != NULL) return FALSE;
+    for (guint i = 0; i < mounts->len; i++) {
+        const SysMount* m = g_ptr_array_index(mounts, i);
+        GtkWidget* dir = gtk_grid_get_child_at(grid, 0, (gint)i);
+        GtkWidget* dev = gtk_grid_get_child_at(grid, 1, (gint)i);
+        if (!GTK_IS_LABEL(dir) || !GTK_IS_LABEL(dev) || gtk_grid_get_child_at(grid, 3, (gint)i) == NULL) return FALSE;
+        if (g_strcmp0(gtk_label_get_text(GTK_LABEL(dir)), m->mount_point) != 0) return FALSE;
+        gchar* device = mount_device_text(m);
+        gboolean same = g_strcmp0(gtk_label_get_text(GTK_LABEL(dev)), device) == 0;
+        g_free(device);
+        if (!same) return FALSE;
+    }
+    return TRUE;
+}
+
+/* The filesystems: the same ones get their sizes updated in place, the
+ * rows are built again only when the list changes */
 static void show_mounts(SysmonTab* st, GPtrArray* mounts) {
+    if (mounts_shown(st, mounts)) {
+        for (guint i = 0; i < mounts->len; i++) {
+            const SysMount* m = g_ptr_array_index(mounts, i);
+            gdouble percent = m->total > 0 ? 100.0 * (gdouble)m->used / (gdouble)m->total : 0.0;
+            level_set(gtk_grid_get_child_at(GTK_GRID(st->mounts), 2, (gint)i), percent);
+            GtkWidget* size = gtk_grid_get_child_at(GTK_GRID(st->mounts), 3, (gint)i);
+            gchar* text = mount_size_text(m, percent);
+            if (g_strcmp0(gtk_label_get_text(GTK_LABEL(size)), text) != 0) gtk_label_set_text(GTK_LABEL(size), text);
+            g_free(text);
+        }
+        return;
+    }
+    if (mounts->len == 0 && gtk_grid_get_child_at(GTK_GRID(st->mounts), 0, 0) != NULL &&
+        gtk_grid_get_child_at(GTK_GRID(st->mounts), 1, 0) == NULL) {
+        return; /* "(empty)" already */
+    }
     GtkWidget* child;
     while ((child = gtk_widget_get_first_child(st->mounts)) != NULL) gtk_grid_remove(GTK_GRID(st->mounts), child);
     for (guint i = 0; i < mounts->len; i++) {
@@ -201,7 +254,7 @@ static void show_mounts(SysmonTab* st, GPtrArray* mounts) {
         gtk_grid_attach(GTK_GRID(st->mounts), dir, 0, row, 1, 1);
 
         GtkWidget* dev = small_label("sysmon-detail");
-        set_label(dev, g_strdup_printf("%s · %s", m->device, m->fs_type));
+        set_label(dev, mount_device_text(m));
         gtk_label_set_max_width_chars(GTK_LABEL(dev), 30);
         gtk_grid_attach(GTK_GRID(st->mounts), dev, 1, row, 1, 1);
 
@@ -211,18 +264,11 @@ static void show_mounts(SysmonTab* st, GPtrArray* mounts) {
         level_set(bar, percent);
         gtk_grid_attach(GTK_GRID(st->mounts), bar, 2, row, 1, 1);
 
-        gchar* used = g_format_size(m->used);
-        gchar* total = g_format_size(m->total);
-        gchar* avail = g_format_size(m->avail);
         GtkWidget* size = small_label("sysmon-detail");
         gtk_widget_add_css_class(size, "sysmon-num");
         gtk_label_set_xalign(GTK_LABEL(size), 1.0f);
-        /* used / total (percent), free */
-        set_label(size, g_strdup_printf(_("%s / %s (%.0f%%), %s free"), used, total, percent, avail));
+        set_label(size, mount_size_text(m, percent));
         gtk_grid_attach(GTK_GRID(st->mounts), size, 3, row, 1, 1);
-        g_free(used);
-        g_free(total);
-        g_free(avail);
     }
     if (mounts->len == 0) {
         GtkWidget* none = small_label("sysmon-detail");
