@@ -191,7 +191,7 @@ every common format to L3 and never leave one below L1.
 | Markdown (TeX formulas rendered; Mermaid / Graphviz blocks labelled as source) | L3 | `markdown`, `tex_math`, `math_paintable` |
 | HTML | L3 | `html` |
 | Org | L3 | `orgmode` |
-| Images: zoom, EXIF details and orientation, animated GIF, RAW embedded previews | L3 | `image_preview`, `image_decode`, `image_prefetch`, `exif`, `animation`, `gif_decoder` |
+| Images: zoom, EXIF details and orientation, animated GIF, RAW embedded previews | L3 | `image_preview`, `image_decode`, `image_prefetch`, `jpeg_decode`, `exif`, `animation`, `gif_decoder` |
 | PDF (poppler, optional): progressive pages (3 first, then 3 at a time, on up to 3 threads with a document each, the minimap's copy made by the worker), PgDn / PgUp, zoom; text mode: `PREVIEW_BYTES` of extracted text | L3 | `pdf` |
 | PostScript `.ps` / `.eps`, TeX `.dvi`: first 20 pages converted to PDF by Ghostscript (and `dvips`) into the user cache, then shown as a PDF; `m` shows the PostScript source. Without the tools: a message | L3 | `pdf`, `ps_convert` |
 | Video / audio: tags, cover art, codecs, duration | L3 | `video`, `audio`, `media_tags` |

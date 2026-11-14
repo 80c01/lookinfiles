@@ -12,6 +12,7 @@
 #include "core/i18n.h"
 #include "media/exif.h"
 #include "media/image_utils.h"
+#include "media/jpeg_decode.h"
 #include "preview/preview_cache.h"
 
 /* Largest decoded image, in pixels (zooming in on a large photo) */
@@ -237,6 +238,7 @@ static ImageDecoded* decode(const gchar* path, const gchar* name, const ImageDec
     ExifInfo* exif = NULL;
     GdkPixbuf* embedded = NULL;
     gint file_w = 0, file_h = 0;
+    gboolean is_jpeg = FALSE;
     guchar head[16];
     gsize head_len = read_head(path, head, sizeof(head));
     if (is_raw_photo_file(name) || (head_len >= 15 && memcmp(head, "FUJIFILMCCD-RAW", 15) == 0)) {
@@ -257,6 +259,7 @@ static ImageDecoded* decode(const gchar* path, const gchar* name, const ImageDec
             return d;
         }
         gchar* fmt_name = gdk_pixbuf_format_get_name(fmt);
+        is_jpeg = g_strcmp0(fmt_name, "jpeg") == 0;
         d->fmt_upper = g_ascii_strup(fmt_name, -1);
         g_free(fmt_name);
         exif = exif_read_file(path);
@@ -355,7 +358,16 @@ static ImageDecoded* decode(const gchar* path, const gchar* name, const ImageDec
             keep = stat_ok && (gdouble)dec_w * dec_h <= MAX_KEPT_PIXELS;
         }
         GError* err = NULL;
-        pix = gdk_pixbuf_new_from_file_at_scale(path, dec_w, dec_h, TRUE, &err);
+        /* Progressive JPEG: libjpeg at the size shown, else gdk-pixbuf */
+        pix = is_jpeg ? jpeg_decode_file(path, dec_w, dec_h, cancellable) : NULL;
+        if (pix == NULL && g_cancellable_is_cancelled(cancellable)) {
+            g_free(key);
+            image_decoded_free(d);
+            return NULL;
+        }
+        if (pix == NULL) {
+            pix = gdk_pixbuf_new_from_file_at_scale(path, dec_w, dec_h, TRUE, &err);
+        }
         if (pix != NULL) {
             pix = apply_orientation(pix, orientation);
             upright = TRUE;

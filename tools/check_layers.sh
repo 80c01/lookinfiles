@@ -79,6 +79,7 @@ ps_convert:i18n
 elf_info:i18n
 zip_reader:i18n
 gif_decoder:i18n
+jpeg_decode:
 ole_reader:i18n
 ole_props:ole_reader,preview_doc,i18n
 doc_reader:ole_reader,preview_doc,doc_writer,i18n

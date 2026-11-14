@@ -29,7 +29,7 @@ makepkg -si
 ```
 
 ### Dependencies:
-- **Runtime**: `gtk4`, `vte4`, `gtksourceview5`, `poppler-glib`, `sqlite`, `webkitgtk-6.0`, `libarchive`, `gst-plugins-base`
+- **Runtime**: `gtk4`, `vte4`, `gtksourceview5`, `poppler-glib`, `sqlite`, `webkitgtk-6.0`, `libarchive`, `libjpeg-turbo`, `gst-plugins-base`
 - **Optional**: `sshfs`
 
 ---

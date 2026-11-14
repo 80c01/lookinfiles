@@ -132,6 +132,10 @@ Layers, from bottom to top
 - `gif_decoder` — GIF frames composed on an RGBA canvas (LZW, interlacing,
   transparency, disposal, delays, loop count), played by `animation`
   (GdkPixbufAnimation is deprecated in gdk-pixbuf 2.44: never use it).
+- `jpeg_decode` — progressive JPEG files decoded at the size shown with
+  libjpeg (optional, `HAVE_LIBJPEG`): scaled by M/8 while decoding, fast
+  DCT, then to the exact size; NULL for what gdk-pixbuf decodes as fast
+  (baseline JPEGs) or libjpeg cannot (CMYK). Used by `image_decode`.
 - `zip_reader` — read-only ZIP archives (`zip_reader_open()`,
   `zip_reader_read()` with a size limit; stored / deflated via GIO's raw
   `GZlibDecompressor`, ZIP64, no encryption).

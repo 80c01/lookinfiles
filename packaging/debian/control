@@ -13,6 +13,7 @@ Build-Depends:
  libpoppler-glib-dev,
  libsqlite3-dev,
  libarchive-dev,
+ libjpeg-dev,
  libwebkitgtk-6.0-dev,
  libgstreamer-plugins-base1.0-dev
 Standards-Version: 4.6.2

@@ -36,6 +36,7 @@ check gtksourceview-5 -    "Syntax highlighting"    libgtksourceview-5-dev  opti
 check poppler-glib    -    "PDF preview"            libpoppler-glib-dev     optional
 check sqlite3         -    "Database preview"       libsqlite3-dev          optional
 check libarchive      -    "7z, RAR, xz, zstd, ISO" libarchive-dev          optional
+check libjpeg         -    "Fast JPEG photo preview" libjpeg-dev            optional
 check webkitgtk-6.0   -    "Browser tabs"           libwebkitgtk-6.0-dev    optional
 check gstreamer-video-1.0 - "Video audio / subtitle tracks" libgstreamer-plugins-base1.0-dev optional
 if command -v msgfmt >/dev/null 2>&1; then
