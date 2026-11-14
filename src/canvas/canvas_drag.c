@@ -118,8 +118,9 @@ static void group_clear(CanvasPage* p) {
 /* A move of a selected block takes the other selected blocks along */
 static void group_begin(CanvasPage* p, CanvasItem* it) {
     group_clear(p);
-    p->drag_group = canvas_page_is_selected(p, it) ? canvas_page_selected_unlocked(p) : g_ptr_array_new();
-    if (p->drag_group->len == 0) g_ptr_array_add(p->drag_group, it);
+    p->drag_group = canvas_page_is_selected(p, it) ? canvas_page_selected_movable(p) : g_ptr_array_new();
+    /* A block of a group holding a locked block does not move */
+    if (p->drag_group->len == 0 && it->group <= 0) g_ptr_array_add(p->drag_group, it);
     p->drag_starts = g_array_new(FALSE, FALSE, sizeof(CanvasRect));
     for (guint i = 0; i < p->drag_group->len; i++) {
         CanvasItem* m = g_ptr_array_index(p->drag_group, i);
@@ -346,6 +347,7 @@ static void on_drag_begin(GtkGestureDrag* gesture, gdouble x, gdouble y, gpointe
 static void group_move(CanvasPage* p, gdouble dx, gdouble dy) {
     GPtrArray* group = p->drag_group;
     GArray* starts = p->drag_starts;
+    if (group->len == 0) return;
     gint x0 = G_MAXINT, y0 = G_MAXINT, x1 = G_MININT, y1 = G_MININT;
     for (guint i = 0; i < starts->len; i++) {
         const CanvasRect* r = &g_array_index(starts, CanvasRect, i);
@@ -485,8 +487,9 @@ static void on_drag_end(GtkGestureDrag* gesture, gdouble dx, gdouble dy, gpointe
         canvas_page_update_extent(p);
         canvas_page_schedule_save(p);
     } else if (!p->drag_resize) {
-        /* A click on a selected block, no move: that block alone */
-        canvas_page_selection_clear(p);
+        /* A click on a selected block, no move: that block alone, with
+         * its group */
+        canvas_page_select_alone(p, p->drag_item);
     }
     p->drag_item = NULL;
     group_clear(p);

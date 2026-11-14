@@ -71,6 +71,30 @@ static void test_align_boxes(void) {
     g_assert_cmpint(boxes[2].x, ==, 50);
 }
 
+static void test_align_grouped(void) {
+    /* Blocks 0 and 2 grouped (box 10..90 x 0..60), block 1 on its own */
+    CanvasRect boxes[] = {
+        {10, 0, 30, 20},
+        {200, 100, 40, 40},
+        {50, 40, 40, 20},
+    };
+    const gint groups[] = {1, 0, 1};
+    canvas_align_grouped(boxes, groups, 3, CANVAS_ALIGN_RIGHT);
+    /* The group's right edge goes to 240: both its blocks move by 150 */
+    g_assert_cmpint(boxes[0].x, ==, 160);
+    g_assert_cmpint(boxes[2].x, ==, 200);
+    g_assert_cmpint(boxes[1].x, ==, 200);
+    g_assert_cmpint(boxes[0].y, ==, 0);
+    g_assert_cmpint(boxes[2].y, ==, 40);
+
+    /* One group alone: nothing moves */
+    CanvasRect one[] = { {10, 0, 30, 20}, {50, 40, 40, 20} };
+    const gint same[] = {3, 3};
+    canvas_align_grouped(one, same, 2, CANVAS_ALIGN_LEFT);
+    g_assert_cmpint(one[0].x, ==, 10);
+    g_assert_cmpint(one[1].x, ==, 50);
+}
+
 static void test_drag_box(void) {
     CanvasRect r;
     canvas_drag_box(100, 100, 40, 160, FALSE, &r);
@@ -266,6 +290,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/canvas_geometry/snap_coord", test_snap_coord);
     g_test_add_func("/canvas_geometry/snap_box", test_snap_box);
     g_test_add_func("/canvas_geometry/align_boxes", test_align_boxes);
+    g_test_add_func("/canvas_geometry/align_grouped", test_align_grouped);
     g_test_add_func("/canvas_geometry/drag_box", test_drag_box);
     g_test_add_func("/canvas_geometry/keep_ratio", test_keep_ratio);
     g_test_add_func("/canvas_geometry/resize_box", test_resize_box);

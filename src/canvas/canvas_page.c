@@ -223,6 +223,45 @@ static gint next_group(CanvasPage* p) {
     return max + 1;
 }
 
+GPtrArray* canvas_page_selected_movable(CanvasPage* p) {
+    GPtrArray* items = canvas_page_selected_unlocked(p);
+    /* A group with a locked block stays where it is, all of it */
+    GHashTable* held = g_hash_table_new(g_direct_hash, g_direct_equal);
+    for (GtkWidget* c = gtk_widget_get_first_child(p->surface); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        CanvasItem* it = canvas_item_of(c);
+        if (it != NULL && it->locked && it->group > 0) g_hash_table_add(held, GINT_TO_POINTER(it->group));
+    }
+    for (guint i = items->len; i > 0; i--) {
+        CanvasItem* it = g_ptr_array_index(items, i - 1);
+        if (it->group > 0 && g_hash_table_contains(held, GINT_TO_POINTER(it->group))) {
+            g_ptr_array_remove_index(items, i - 1);
+        }
+    }
+    g_hash_table_unref(held);
+    return items;
+}
+
+void canvas_page_select_alone(CanvasPage* p, CanvasItem* it) {
+    canvas_page_selection_clear(p);
+    if (it == NULL || it->group <= 0) return;
+    set_add(p, it);
+    select_whole_groups(p);
+}
+
+/* Boxes the selected blocks align as: a group counts once */
+static guint align_units(GPtrArray* items) {
+    guint n = 0;
+    for (guint i = 0; i < items->len; i++) {
+        CanvasItem* it = g_ptr_array_index(items, i);
+        gboolean seen = FALSE;
+        for (guint j = 0; j < i && it->group > 0 && !seen; j++) {
+            seen = ((CanvasItem*)g_ptr_array_index(items, j))->group == it->group;
+        }
+        if (!seen) n++;
+    }
+    return n;
+}
+
 gboolean canvas_page_can_group(CanvasPage* p) {
     GPtrArray* items = canvas_page_selected(p);
     gboolean can = FALSE;
@@ -732,7 +771,7 @@ void canvas_page_reorder_selected(CanvasPage* p, gint where) {
 }
 
 void canvas_page_move_selected(CanvasPage* p, gint dx, gint dy) {
-    GPtrArray* items = canvas_page_selected_unlocked(p);
+    GPtrArray* items = canvas_page_selected_movable(p);
     if (items->len > 0) canvas_page_remember(p);
     /* The blocks keep their places relative to each other at the page edge */
     for (guint i = 0; i < items->len; i++) {
@@ -891,13 +930,12 @@ void canvas_page_update_props(CanvasPage* p) {
         GPtrArray* items = canvas_page_selected(p);
         sel.selected = items->len;
         sel.locked = items->len > 0;
-        for (guint i = 0; i < items->len; i++) {
-            if (((CanvasItem*)g_ptr_array_index(items, i))->locked) {
-                continue;
-            }
-            sel.movable++;
-            sel.locked = FALSE;
+        for (guint i = 0; i < items->len && sel.locked; i++) {
+            if (!((CanvasItem*)g_ptr_array_index(items, i))->locked) sel.locked = FALSE;
         }
+        GPtrArray* movable = canvas_page_selected_movable(p);
+        sel.movable = align_units(movable);
+        g_ptr_array_unref(movable);
         sel.picture = items->len == 1 && it->kind == CANVAS_BLOCK_IMAGE;
         sel.groupable = canvas_page_can_group(p);
         sel.grouped = canvas_page_can_ungroup(p);

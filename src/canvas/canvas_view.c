@@ -196,16 +196,19 @@ static void on_toolbar_toggle_grid(gboolean enabled, gpointer udata) {
 /* Align or distribute the selected blocks */
 static void on_props_align(CanvasAlignOp op, gpointer udata) {
     CanvasPage* p = udata;
-    GPtrArray* items = canvas_page_selected_unlocked(p);
+    GPtrArray* items = canvas_page_selected_movable(p);
     if (items->len >= 2) {
         GArray* rects = g_array_new(FALSE, FALSE, sizeof(CanvasRect));
+        GArray* groups = g_array_new(FALSE, FALSE, sizeof(gint));
         for (guint i = 0; i < items->len; i++) {
             CanvasItem* it = g_ptr_array_index(items, i);
             CanvasRect r = { it->x, it->y, it->w, MAX(it->h, gtk_widget_get_height(it->frame)) };
             g_array_append_val(rects, r);
+            g_array_append_val(groups, it->group);
         }
         canvas_page_remember(p);
-        canvas_align_boxes((CanvasRect*)rects->data, rects->len, op);
+        /* A group aligns as one box, its blocks kept in place in it */
+        canvas_align_grouped((CanvasRect*)rects->data, (const gint*)groups->data, rects->len, op);
         for (guint i = 0; i < items->len; i++) {
             CanvasItem* it = g_ptr_array_index(items, i);
             const CanvasRect* r = &g_array_index(rects, CanvasRect, i);
@@ -214,6 +217,7 @@ static void on_props_align(CanvasAlignOp op, gpointer udata) {
             canvas_item_place(it);
         }
         canvas_bind_release(items);
+        g_array_unref(groups);
         g_array_unref(rects);
         canvas_page_update_extent(p);
         canvas_page_schedule_save(p);

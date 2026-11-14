@@ -106,6 +106,9 @@ GPtrArray* canvas_page_selected(CanvasPage* p);
 gboolean canvas_page_is_selected(CanvasPage* p, CanvasItem* it);
 /* The selected blocks that are not locked (free with g_ptr_array_unref) */
 GPtrArray* canvas_page_selected_unlocked(CanvasPage* p);
+/* The selected blocks that move: not locked, and not in a group with a
+ * locked block (free with g_ptr_array_unref) */
+GPtrArray* canvas_page_selected_movable(CanvasPage* p);
 /* Ctrl+Shift+K: lock the selected blocks, or unlock them all if they are */
 void canvas_page_toggle_lock(CanvasPage* p);
 /* Groups: blocks selected and moved together. Ctrl+G: the selected blocks
@@ -117,6 +120,8 @@ gboolean canvas_page_can_ungroup(CanvasPage* p);
 void canvas_page_group_selected(CanvasPage* p);
 void canvas_page_ungroup_selected(CanvasPage* p);
 void canvas_page_selection_clear(CanvasPage* p);
+/* Only it selected, with the blocks of its group */
+void canvas_page_select_alone(CanvasPage* p, CanvasItem* it);
 /* Shift+click on a block: add it to the selection, or take it out */
 void canvas_page_select_toggle(CanvasPage* p, CanvasItem* it);
 /* Rubber band: select the blocks inside (x, y, w, h); extend: keep the

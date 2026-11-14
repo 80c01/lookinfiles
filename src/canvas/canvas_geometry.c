@@ -173,6 +173,46 @@ void canvas_align_boxes(CanvasRect* rects, guint count, CanvasAlignOp op) {
     }
 }
 
+void canvas_align_grouped(CanvasRect* rects, const gint* groups, guint count, CanvasAlignOp op) {
+    if (rects == NULL || groups == NULL || count < 2) return;
+    /* unit[i]: the box of rects[i] among the boxes aligned */
+    guint* unit = g_new(guint, count);
+    CanvasRect* boxes = g_new(CanvasRect, count);
+    guint n = 0;
+    for (guint i = 0; i < count; i++) {
+        guint u = n;
+        for (guint j = 0; j < i && groups[i] > 0; j++) {
+            if (groups[j] == groups[i]) {
+                u = unit[j];
+                break;
+            }
+        }
+        unit[i] = u;
+        if (u == n) {
+            boxes[n++] = rects[i];
+            continue;
+        }
+        CanvasRect* b = &boxes[u];
+        gint r = MAX(b->x + b->w, rects[i].x + rects[i].w);
+        gint bottom = MAX(b->y + b->h, rects[i].y + rects[i].h);
+        b->x = MIN(b->x, rects[i].x);
+        b->y = MIN(b->y, rects[i].y);
+        b->w = r - b->x;
+        b->h = bottom - b->y;
+    }
+    if (n >= 2) {
+        CanvasRect* before = g_memdup2(boxes, n * sizeof(CanvasRect));
+        canvas_align_boxes(boxes, n, op);
+        for (guint i = 0; i < count; i++) {
+            rects[i].x += boxes[unit[i]].x - before[unit[i]].x;
+            rects[i].y += boxes[unit[i]].y - before[unit[i]].y;
+        }
+        g_free(before);
+    }
+    g_free(boxes);
+    g_free(unit);
+}
+
 void canvas_drag_box(gdouble x0, gdouble y0, gdouble x1, gdouble y1, gboolean square, CanvasRect* out) {
     if (out == NULL) return;
     gdouble dx = x1 - x0;

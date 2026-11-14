@@ -59,7 +59,8 @@ void canvas_props_hide_shape(CanvasProps* props);
 /* The selected blocks, for the selection section */
 typedef struct {
     guint selected;   /* blocks selected (0: section hidden) */
-    guint movable;    /* of them, not locked: aligning needs 2, distributing 3 */
+    guint movable;    /* boxes they align as (not locked, a group counts once):
+                       * aligning needs 2, distributing 3 */
     gboolean locked;  /* all locked: the lock button unlocks */
     gboolean groupable; /* the group button shows */
     gboolean grouped;   /* the ungroup button shows */

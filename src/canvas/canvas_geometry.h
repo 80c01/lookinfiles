@@ -41,6 +41,11 @@ typedef enum {
 /* Apply alignment or distribution to an array of rects */
 void canvas_align_boxes(CanvasRect* rects, guint count, CanvasAlignOp op);
 
+/* The same, the rects with the same group (groups[i] > 0) aligned as one
+ * box around them, keeping their places relative to each other; groups[i]
+ * 0: a rect on its own. Fewer than 2 such boxes: nothing moves. */
+void canvas_align_grouped(CanvasRect* rects, const gint* groups, guint count, CanvasAlignOp op);
+
 /* Room kept around the points of a line, arrow or pencil stroke inside its
  * block (stroke width, arrowhead) */
 #define CANVAS_LINE_PAD 16
