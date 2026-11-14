@@ -62,8 +62,9 @@ Layers, from bottom to top
   CPU percentages (a process: 100 = one core), network and disk rates.
 - `countdown` — the countdown of the top bar timers: wall-clock deadline
   (right across a suspend), pause, immediate restart on expiry (cycles
-  counted) or a stop at 0, the text shown and when it changes, reverse
-  colours in the last minute (and at 0) and blinking in the last ten seconds.
+  counted), a stop at 0 or an overtime below 0, the text shown and when it
+  changes, reverse colours in the last minute (and at or below 0) and
+  blinking in the last ten seconds.
 - `ui_probe` — test hook for `make ui-shots`: with `LOOKIN_UI_PROBE=<file>`,
   each SIGUSR2 writes a new number to the file once the main loop is idle,
   so a screenshot waits for the application instead of a fixed delay
@@ -680,8 +681,8 @@ Layers, from bottom to top
   `settings.ini`, restarted by the Clock page of the Preferences through
   `topbar_set_timer()`), before the CPU chart. A click on a timer or the
   clock opens a popover with a stack page per timer (state, durations,
-  Start, expiry action Restart / Stop, Pause, Reset, Off), a right click on
-  a timer pauses it. One timeout at the next change of all of them (a
+  Start, expiry action Restart / Stop / Count On, Pause, Reset, Off), a
+  right click on a timer pauses it (in overtime too). One timeout at the next change of all of them (a
   second, half a second while blinking, else the minute of the clock);
   `LOOKIN_CLOCK_FROZEN` stops everything for the UI tests.
 - `games` — the hidden Games view (unlocked in the help panel, for the

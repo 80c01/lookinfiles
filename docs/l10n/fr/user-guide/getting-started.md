@@ -77,7 +77,8 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
   minuteur, ou sur l’horloge, ouvre le menu des minuteurs, un onglet par
   minuteur : son état, des durées prédéfinies (5, 15, 25, 60 min) et une
   durée libre qui le démarrent aussitôt, ce qu’il fait à l’expiration
-  (**Relancer** aussitôt, ou **Arrêter** à 0:00 en couleurs inversées),
+  (**Relancer** aussitôt, **Arrêter** à 0:00 en couleurs inversées, ou
+  **Continuer** sous 0:00, -0:01, -0:02…, en couleurs inversées),
   **Pause** / **Reprendre**, **Réinitialiser** et **Masquer** (choix
   valables jusqu’au prochain lancement) ; un clic droit sur un minuteur le
   met en pause ou le relance.

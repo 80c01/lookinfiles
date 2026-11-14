@@ -22,7 +22,7 @@ static void test_count_and_restart(void) {
 static void test_stop_on_expiry(void) {
     Countdown c;
     countdown_start(&c, 60 * S, T0);
-    countdown_set_stop(&c, TRUE, T0);
+    countdown_set_expiry(&c, COUNTDOWN_STOP, T0);
     g_assert_cmpint(countdown_left(&c, T0 + 59 * S), ==, 1 * S);
     g_assert_false(countdown_expired(&c, T0 + 59 * S));
     /* Expired: stays at 0, steady reverse colours */
@@ -35,15 +35,65 @@ static void test_stop_on_expiry(void) {
     g_assert_cmpstr(text, ==, "0:00");
     g_free(text);
     /* Back to restart: a new cycle from now */
-    countdown_set_stop(&c, FALSE, T0 + 4000 * S);
+    countdown_set_expiry(&c, COUNTDOWN_RESTART, T0 + 4000 * S);
     g_assert_cmpint(countdown_left(&c, T0 + 4010 * S), ==, 50 * S);
     g_assert_cmpuint(c.cycle, ==, 2);
     /* Switched to stop while running: only the expiry changes */
-    countdown_set_stop(&c, TRUE, T0 + 4010 * S);
+    countdown_set_expiry(&c, COUNTDOWN_STOP, T0 + 4010 * S);
     g_assert_cmpint(countdown_left(&c, T0 + 4020 * S), ==, 40 * S);
     /* A new start restarts on expiry again */
     countdown_start(&c, 60 * S, T0);
-    g_assert_false(c.stop);
+    g_assert_cmpint(c.expiry, ==, COUNTDOWN_RESTART);
+}
+
+static void test_overtime(void) {
+    Countdown c;
+    countdown_start(&c, 60 * S, T0);
+    countdown_set_expiry(&c, COUNTDOWN_OVERTIME, T0);
+    g_assert_cmpint(countdown_left(&c, T0 + 59 * S), ==, 1 * S);
+    g_assert_false(countdown_overtime(&c, T0 + 59 * S));
+    /* Expired: counts on below 0, steady reverse colours */
+    g_assert_cmpint(countdown_left(&c, T0 + 60 * S), ==, 0);
+    g_assert_cmpint(countdown_left(&c, T0 + 125 * S), ==, -65 * S);
+    g_assert_true(countdown_overtime(&c, T0 + 125 * S));
+    g_assert_false(countdown_expired(&c, T0 + 125 * S));
+    g_assert_cmpuint(c.cycle, ==, 1);
+    g_assert_true(countdown_inverted(-65 * S, TRUE));
+    /* The first second over shows 0:00, then -0:01 */
+    g_assert_cmpint(countdown_seconds(-S / 2), ==, 0);
+    g_assert_cmpint(countdown_seconds(-S), ==, -1);
+    g_assert_cmpint(countdown_seconds(-S - 1), ==, -1);
+    g_assert_cmpint(countdown_next_change(-S / 4, TRUE), ==, 3 * S / 4);
+    g_assert_cmpint(countdown_next_change(-S, TRUE), ==, S);
+    gchar* text = countdown_format(-65 * S - S / 2, c.duration);
+    g_assert_cmpstr(text, ==, "-1:05");
+    g_free(text);
+    text = countdown_format(-S / 2, c.duration);
+    g_assert_cmpstr(text, ==, "0:00");
+    g_free(text);
+    text = countdown_format(-3601 * S, 120 * 60 * S);
+    g_assert_cmpstr(text, ==, "-1:00:01");
+    g_free(text);
+    /* Paused in overtime, then resumed */
+    countdown_pause(&c, T0 + 125 * S);
+    g_assert_cmpint(countdown_left(&c, T0 + 500 * S), ==, -65 * S);
+    countdown_resume(&c, T0 + 500 * S);
+    g_assert_cmpint(countdown_left(&c, T0 + 510 * S), ==, -75 * S);
+    /* Switched to stop: 0; back to overtime: the time since the deadline */
+    countdown_set_expiry(&c, COUNTDOWN_STOP, T0 + 510 * S);
+    g_assert_cmpint(countdown_left(&c, T0 + 520 * S), ==, 0);
+    countdown_set_expiry(&c, COUNTDOWN_OVERTIME, T0 + 520 * S);
+    g_assert_cmpint(countdown_left(&c, T0 + 520 * S), ==, -85 * S);
+    /* Paused in overtime, switched to stop: 0 */
+    countdown_pause(&c, T0 + 520 * S);
+    countdown_set_expiry(&c, COUNTDOWN_STOP, T0 + 530 * S);
+    g_assert_cmpint(countdown_left(&c, T0 + 540 * S), ==, 0);
+    /* Switched to restart: a new cycle from now */
+    countdown_resume(&c, T0 + 540 * S);
+    countdown_set_expiry(&c, COUNTDOWN_OVERTIME, T0 + 540 * S);
+    countdown_set_expiry(&c, COUNTDOWN_RESTART, T0 + 540 * S);
+    g_assert_cmpint(countdown_left(&c, T0 + 550 * S), ==, 50 * S);
+    g_assert_cmpuint(c.cycle, ==, 2);
 }
 
 static void test_clock_back(void) {
@@ -117,6 +167,7 @@ int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/countdown/count_and_restart", test_count_and_restart);
     g_test_add_func("/countdown/stop_on_expiry", test_stop_on_expiry);
+    g_test_add_func("/countdown/overtime", test_overtime);
     g_test_add_func("/countdown/clock_back", test_clock_back);
     g_test_add_func("/countdown/pause", test_pause);
     g_test_add_func("/countdown/minimum_duration", test_minimum_duration);

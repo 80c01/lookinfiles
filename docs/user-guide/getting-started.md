@@ -73,7 +73,8 @@ hidden.
   ten seconds blink. A click on a timer, or on the clock, opens the timers
   menu, a tab per timer: its state, preset durations (5, 15, 25, 60 min) and
   a free one that start it at once, what it does when it expires
-  (**Restart** at once, or **Stop** at 0:00 in reverse colours),
+  (**Restart** at once, **Stop** at 0:00 in reverse colours, or **Count
+  On** below 0:00, -0:01, -0:02…, in reverse colours),
   **Pause** / **Resume**, **Reset** and **Off** (choices last until the next
   launch); a right click on a timer pauses or resumes it.
 - **Explorer panel** (left). Four views, picked with the buttons at its

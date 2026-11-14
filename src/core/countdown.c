@@ -1,4 +1,4 @@
-/* A countdown that restarts or stops on expiry (see countdown.h). */
+/* A countdown that restarts, stops or counts on below 0 on expiry (see countdown.h). */
 #include "core/countdown.h"
 
 #define HALF_SECOND (COUNTDOWN_SECOND / 2)
@@ -9,13 +9,14 @@ void countdown_start(Countdown* c, gint64 duration, gint64 now) {
     c->left = c->duration;
     c->paused = FALSE;
     c->cycle = 1;
-    c->stop = FALSE;
+    c->expiry = COUNTDOWN_RESTART;
 }
 
 gint64 countdown_left(Countdown* c, gint64 now) {
     if (c->paused) return c->left;
     if (now >= c->deadline) {
-        if (c->stop) return 0;
+        if (c->expiry == COUNTDOWN_STOP) return 0;
+        if (c->expiry == COUNTDOWN_OVERTIME) return c->deadline - now;
         gint64 ended = (now - c->deadline) / c->duration + 1;
         c->deadline += ended * c->duration;
         c->cycle += (guint)MIN(ended, (gint64)G_MAXUINT - c->cycle);
@@ -26,16 +27,23 @@ gint64 countdown_left(Countdown* c, gint64 now) {
 }
 
 gboolean countdown_expired(Countdown* c, gint64 now) {
-    return countdown_left(c, now) <= 0;
+    return c->expiry == COUNTDOWN_STOP && countdown_left(c, now) <= 0;
 }
 
-void countdown_set_stop(Countdown* c, gboolean stop, gint64 now) {
-    if (!stop && countdown_expired(c, now)) {
+gboolean countdown_overtime(Countdown* c, gint64 now) {
+    return c->expiry == COUNTDOWN_OVERTIME && countdown_left(c, now) <= 0;
+}
+
+void countdown_set_expiry(Countdown* c, CountdownExpiry expiry, gint64 now) {
+    gboolean at_zero = (countdown_left(c, now) <= 0);
+    if (expiry == COUNTDOWN_RESTART && at_zero) {
         c->deadline = now + c->duration;
         c->left = c->duration;
         c->cycle += (c->cycle < G_MAXUINT) ? 1 : 0;
+    } else if (expiry == COUNTDOWN_STOP && at_zero) {
+        c->left = 0; /* paused in overtime */
     }
-    c->stop = stop;
+    c->expiry = expiry;
 }
 
 void countdown_pause(Countdown* c, gint64 now) {
@@ -51,7 +59,8 @@ void countdown_resume(Countdown* c, gint64 now) {
 }
 
 gint64 countdown_seconds(gint64 left) {
-    return (MAX(left, 0) + COUNTDOWN_SECOND - 1) / COUNTDOWN_SECOND;
+    if (left <= 0) return -(-left / COUNTDOWN_SECOND); /* C division rounds toward 0: up here */
+    return (left + COUNTDOWN_SECOND - 1) / COUNTDOWN_SECOND;
 }
 
 /* Time left within the second shown, in (0, COUNTDOWN_SECOND] */
@@ -68,7 +77,7 @@ gboolean countdown_inverted(gint64 left, gboolean blink) {
 }
 
 gint64 countdown_next_change(gint64 left, gboolean blink) {
-    if (left <= 0) return COUNTDOWN_SECOND;
+    if (left <= 0) return COUNTDOWN_SECOND - (-left) % COUNTDOWN_SECOND;
     gint64 rest = within_second(left);
     if (blink && countdown_seconds(left) <= COUNTDOWN_BLINK_SECONDS && rest > HALF_SECOND) {
         return rest - HALF_SECOND;
@@ -78,9 +87,11 @@ gint64 countdown_next_change(gint64 left, gboolean blink) {
 
 gchar* countdown_format(gint64 left, gint64 duration) {
     gint64 secs = countdown_seconds(left);
+    const gchar* sign = (secs < 0) ? "-" : "";
+    secs = ABS(secs);
     if (countdown_seconds(duration) >= 100 * 60) {
-        return g_strdup_printf("%" G_GINT64_FORMAT ":%02d:%02d", secs / 3600, (gint)(secs / 60 % 60),
+        return g_strdup_printf("%s%" G_GINT64_FORMAT ":%02d:%02d", sign, secs / 3600, (gint)(secs / 60 % 60),
                                (gint)(secs % 60));
     }
-    return g_strdup_printf("%" G_GINT64_FORMAT ":%02d", secs / 60, (gint)(secs % 60));
+    return g_strdup_printf("%s%" G_GINT64_FORMAT ":%02d", sign, secs / 60, (gint)(secs % 60));
 }

@@ -20,7 +20,7 @@ typedef struct {
     GtkWidget* label;
     Countdown countdown;
     gboolean enabled;  /* shown and counting */
-    gboolean stop;     /* expiry action: stay at 0:00 (else restart) */
+    CountdownExpiry expiry; /* expiry action, kept across starts */
     gint64 tooltip_minute; /* minute (and state) of the tooltip shown */
     /* Widgets of the open popover, else NULL */
     GtkWidget* status;
@@ -30,6 +30,7 @@ typedef struct {
     GtkWidget* off;
     GtkWidget* restart_choice;
     GtkWidget* stop_choice;
+    GtkWidget* overtime_choice;
 } Timer;
 
 struct ClockPill {
@@ -98,7 +99,7 @@ static void set_button_label(GtkWidget* button, const gchar* label) {
 }
 
 /* The page of t in the open popover */
-static void update_popover_page(Timer* t, const gchar* text, gboolean expired) {
+static void update_popover_page(Timer* t, const gchar* text, gboolean expired, gboolean overtime) {
     if (t->status == NULL) return;
     gchar* status;
     if (!t->enabled) {
@@ -107,6 +108,8 @@ static void update_popover_page(Timer* t, const gchar* text, gboolean expired) {
         status = g_strdup_printf(_("%s — expired"), text);
     } else if (t->countdown.paused) {
         status = g_strdup_printf(_("%s — paused"), text);
+    } else if (overtime) {
+        status = g_strdup_printf(_("%s — overtime"), text);
     } else {
         status = g_strdup_printf(_("%s — running"), text);
     }
@@ -120,23 +123,29 @@ static void update_popover_page(Timer* t, const gchar* text, gboolean expired) {
     gtk_widget_set_sensitive(t->off, t->enabled);
 }
 
-static void update_tooltip(Timer* t, gint64 left, const gchar* text, gboolean expired) {
+static void update_tooltip(Timer* t, gint64 left, const gchar* text, gboolean expired, gboolean overtime) {
     Countdown* c = &t->countdown;
     /* The tooltip changes once a minute (and on a click) */
-    gint64 minute = ((left + MINUTE - 1) / MINUTE * 2 + (c->paused ? 1 : 0)) * 2 + (t->stop ? 1 : 0);
+    gint64 minutes = (left > 0) ? (left + MINUTE - 1) / MINUTE : -(-left / MINUTE);
+    gint64 minute = ((minutes * 2 + (c->paused ? 1 : 0)) * 2 + (overtime ? 1 : 0)) * 3 + (gint64)t->expiry;
     if (minute == t->tooltip_minute) return;
     t->tooltip_minute = minute;
     gchar* total = countdown_format(c->duration, c->duration);
     gchar* state;
     if (expired) {
         state = g_strdup_printf(_("Timer %1$u expired after %2$s"), t->number, total);
+    } else if (overtime) {
+        const gchar* over = (text[0] == '-') ? text + 1 : text;
+        state = c->paused ? g_strdup_printf(_("Timer %1$u paused: %2$s over %3$s"), t->number, over, total)
+                          : g_strdup_printf(_("Timer %1$u: %2$s over %3$s"), t->number, over, total);
     } else if (c->paused) {
         state = g_strdup_printf(_("Timer %1$u paused: %2$s left of %3$s"), t->number, text, total);
     } else {
         state = g_strdup_printf(_("Timer %1$u: %2$s left of %3$s"), t->number, text, total);
     }
-    gchar* cycle = t->stop ? g_strdup(_("Stops at 0:00 when it expires"))
-                           : g_strdup_printf(_("Cycle %u (restarts when it expires)"), c->cycle);
+    gchar* cycle = (t->expiry == COUNTDOWN_STOP)       ? g_strdup(_("Stops at 0:00 when it expires"))
+                   : (t->expiry == COUNTDOWN_OVERTIME) ? g_strdup(_("Counts on below 0:00 when it expires"))
+                                                       : g_strdup_printf(_("Cycle %u (restarts when it expires)"), c->cycle);
     gchar* tip = g_strdup_printf("%s\n%s\n%s", state, cycle,
                                  _("Click: Timers, Start, Pause, Reset — Right-Click: Pause / Resume"));
     gtk_widget_set_tooltip_text(t->button, tip);
@@ -148,18 +157,19 @@ static void update_tooltip(Timer* t, gint64 left, const gchar* text, gboolean ex
 
 static void update_timer(Timer* t, gint64 now, gboolean blink) {
     if (!t->enabled) {
-        update_popover_page(t, NULL, FALSE);
+        update_popover_page(t, NULL, FALSE, FALSE);
         return;
     }
     Countdown* c = &t->countdown;
     gint64 left = countdown_left(c, now);
-    gboolean expired = (left <= 0);
+    gboolean overtime = countdown_overtime(c, now);
+    gboolean expired = (left <= 0 && !overtime);
     gchar* text = countdown_format(left, c->duration);
     gtk_label_set_text(GTK_LABEL(t->label), text);
     set_class(t->button, "clock-timer-inverse", expired || (!c->paused && countdown_inverted(left, blink)));
     set_class(t->button, "clock-timer-paused", c->paused && !expired && !t->pill->frozen);
-    update_tooltip(t, left, text, expired);
-    update_popover_page(t, text, expired);
+    update_tooltip(t, left, text, expired, overtime);
+    update_popover_page(t, text, expired, overtime);
     g_free(text);
 }
 
@@ -178,7 +188,9 @@ static void schedule(ClockPill* p) {
         Timer* t = &p->timers[i];
         if (!t->enabled || t->countdown.paused) continue;
         gint64 left = countdown_left(&t->countdown, now);
-        if (left > 0) delay = MIN(delay, countdown_next_change(left, blink));
+        if (left > 0 || t->countdown.expiry == COUNTDOWN_OVERTIME) {
+            delay = MIN(delay, countdown_next_change(left, blink));
+        }
     }
     p->source = g_timeout_add((guint)(delay / 1000) + 1, on_tick, p);
 }
@@ -209,6 +221,15 @@ static void toggle_pause(Timer* t) {
     refresh(t->pill);
 }
 
+/* Room for the full duration (and the minus sign of overtime): the bar
+ * does not move */
+static void set_label_width(Timer* t) {
+    gchar* full = countdown_format(t->countdown.duration, t->countdown.duration);
+    gint width = (gint)strlen(full) + ((t->expiry == COUNTDOWN_OVERTIME) ? 1 : 0);
+    gtk_label_set_width_chars(GTK_LABEL(t->label), width);
+    g_free(full);
+}
+
 /* A new cycle of minutes, starting now (0: the timer is hidden, its
  * duration kept for the popover) */
 static void start_minutes(Timer* t, gint minutes) {
@@ -217,20 +238,19 @@ static void start_minutes(Timer* t, gint minutes) {
     gtk_widget_set_visible(t->button, t->enabled);
     if (minutes <= 0) minutes = (t->countdown.duration > 0) ? (gint)(t->countdown.duration / MINUTE) : DEFAULT_MINUTES;
     countdown_start(&t->countdown, MAX(minutes, 1) * MINUTE, now);
-    countdown_set_stop(&t->countdown, t->stop, now);
+    countdown_set_expiry(&t->countdown, t->expiry, now);
     if (t->pill->frozen) countdown_pause(&t->countdown, now);
-    gchar* full = countdown_format(t->countdown.duration, t->countdown.duration);
-    gtk_label_set_width_chars(GTK_LABEL(t->label), (gint)strlen(full)); /* the bar does not move */
-    g_free(full);
+    set_label_width(t);
     set_class(t->button, "clock-timer-inverse", FALSE);
     t->tooltip_minute = -1;
     refresh(t->pill);
 }
 
-static void set_stop(Timer* t, gboolean stop) {
-    if (t->stop == stop) return;
-    t->stop = stop;
-    countdown_set_stop(&t->countdown, stop, g_get_real_time());
+static void set_expiry(Timer* t, CountdownExpiry expiry) {
+    if (t->expiry == expiry) return;
+    t->expiry = expiry;
+    countdown_set_expiry(&t->countdown, expiry, g_get_real_time());
+    set_label_width(t);
     t->tooltip_minute = -1;
     refresh(t->pill);
 }
@@ -282,12 +302,10 @@ static void on_off_clicked(GtkButton* button, gpointer data) {
     popdown(GTK_WIDGET(button));
 }
 
-static void on_restart_toggled(GtkToggleButton* button, gpointer data) {
-    if (gtk_toggle_button_get_active(button)) set_stop(data, FALSE);
-}
-
-static void on_stop_toggled(GtkToggleButton* button, gpointer data) {
-    if (gtk_toggle_button_get_active(button)) set_stop(data, TRUE);
+static void on_expiry_toggled(GtkToggleButton* button, gpointer data) {
+    if (!gtk_toggle_button_get_active(button)) return;
+    gpointer expiry = g_object_get_data(G_OBJECT(button), "lookin-expiry");
+    set_expiry(data, (CountdownExpiry)GPOINTER_TO_INT(expiry));
 }
 
 static gboolean unparent_idle(gpointer data) {
@@ -303,7 +321,7 @@ static void on_popover_closed(GtkPopover* popover, gpointer data) {
         for (guint i = 0; i < TIMER_COUNT; i++) {
             Timer* t = &p->timers[i];
             t->status = t->spin = t->pause = t->reset = t->off = NULL;
-            t->restart_choice = t->stop_choice = NULL;
+            t->restart_choice = t->stop_choice = t->overtime_choice = NULL;
         }
     }
     g_idle_add(unparent_idle, g_object_ref(popover));
@@ -313,6 +331,19 @@ static GtkWidget* popover_button(const gchar* label, GCallback callback, gpointe
     GtkWidget* button = gtk_button_new_with_mnemonic(label);
     g_signal_connect(button, "clicked", callback, data);
     return button;
+}
+
+/* A toggle of the expiry action (in the group of first, unless NULL) */
+static GtkWidget* expiry_choice(Timer* t, GtkWidget* box, GtkWidget* first, const gchar* label, const gchar* tooltip,
+                                CountdownExpiry expiry) {
+    GtkWidget* choice = gtk_toggle_button_new_with_label(label);
+    gtk_widget_set_tooltip_text(choice, tooltip);
+    if (first != NULL) gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(choice), GTK_TOGGLE_BUTTON(first));
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(choice), t->expiry == expiry);
+    g_object_set_data(G_OBJECT(choice), "lookin-expiry", GINT_TO_POINTER(expiry));
+    g_signal_connect(choice, "toggled", G_CALLBACK(on_expiry_toggled), t);
+    gtk_box_append(GTK_BOX(box), choice);
+    return choice;
 }
 
 /* The page of a timer: its state, durations, expiry action and actions */
@@ -356,16 +387,13 @@ static GtkWidget* timer_page(Timer* t) {
     gtk_label_set_xalign(GTK_LABEL(expiry_label), 0.0f);
     GtkWidget* choices = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(choices, "linked");
-    t->restart_choice = gtk_toggle_button_new_with_label(_("Restart"));
-    gtk_widget_set_tooltip_text(t->restart_choice, _("Start again at once with the same duration"));
-    t->stop_choice = gtk_toggle_button_new_with_label(_("Stop"));
-    gtk_widget_set_tooltip_text(t->stop_choice, _("Stay at 0:00 in reverse colours until Reset or Start"));
-    gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(t->stop_choice), GTK_TOGGLE_BUTTON(t->restart_choice));
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(t->stop ? t->stop_choice : t->restart_choice), TRUE);
-    g_signal_connect(t->restart_choice, "toggled", G_CALLBACK(on_restart_toggled), t);
-    g_signal_connect(t->stop_choice, "toggled", G_CALLBACK(on_stop_toggled), t);
-    gtk_box_append(GTK_BOX(choices), t->restart_choice);
-    gtk_box_append(GTK_BOX(choices), t->stop_choice);
+    t->restart_choice = expiry_choice(t, choices, NULL, _("Restart"), _("Start again at once with the same duration"),
+                                      COUNTDOWN_RESTART);
+    t->stop_choice = expiry_choice(t, choices, t->restart_choice, _("Stop"),
+                                   _("Stay at 0:00 in reverse colours until Reset or Start"), COUNTDOWN_STOP);
+    t->overtime_choice = expiry_choice(t, choices, t->restart_choice, _("Count On"),
+                                       _("Count on below 0:00 (-0:01, -0:02…) in reverse colours until Reset or Start"),
+                                       COUNTDOWN_OVERTIME);
     gtk_box_append(GTK_BOX(expiry), expiry_label);
     gtk_box_append(GTK_BOX(expiry), choices);
     gtk_box_append(GTK_BOX(box), expiry);
