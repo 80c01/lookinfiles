@@ -9321,3 +9321,16 @@ msgid ""
 msgstr ""
 "Long document : les niveaux profonds sont repliés (Tab replie ou déplie un "
 "bloc, Shift+Tab change de niveau)"
+
+msgid "JSON: copy the path of the value at the cursor (shown in the preview bar)"
+msgstr ""
+"JSON : copier le chemin de la valeur sous le curseur (affiché dans la barre "
+"de l’aperçu)"
+
+msgid "Path of the value at the cursor (y copies it)"
+msgstr "Chemin de la valeur sous le curseur (y le copie)"
+
+#. TRANSLATORS: %s is the path of a JSON value ("$.servers[2].host")
+#, c-format
+msgid "Copied %s"
+msgstr "%s copié"

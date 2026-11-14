@@ -151,7 +151,11 @@ replié indique son nombre de clés ou d’éléments. `Shift+Tab` affiche les
 membres de premier niveau seulement, puis deux niveaux, puis tout. Un
 document trop long pour être affiché en entier s’ouvre replié sous le
 niveau le plus profond qui tient. Les replis de chaque fichier sont gardés
-jusqu’à la fermeture de LookinFiles. Un fichier JSON de plus de 512 Ko
+jusqu’à la fermeture de LookinFiles.
+
+La barre du bas affiche le chemin de la valeur sous le curseur, par exemple
+`$.servers[2].host` ; `y` (ou **Copier le chemin** dans le menu du clic
+droit) le copie. Un fichier JSON de plus de 512 Ko
 affiche ses 64 premiers Ko, les valeurs ouvertes à cet endroit se terminant
 par `…` ; **Charger tout le fichier** l’affiche en entier.
 

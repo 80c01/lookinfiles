@@ -31,6 +31,7 @@
 #include "org/orgmode.h"
 #include "org/org_fold.h"
 #include "preview/preview_folding.h"
+#include "preview/preview_location.h"
 #include "preview/preview_symbols.h"
 #include "preview/preview_tagbar.h"
 #include "widgets/diff_gutter.h"
@@ -137,7 +138,8 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
-    if (orgmode_handle_viewer_key(app, keyval, state) || preview_folding_key(app, keyval, state)) {
+    if (orgmode_handle_viewer_key(app, keyval, state) || preview_folding_key(app, keyval, state) ||
+        preview_location_key(app, keyval, state)) {
         return TRUE;
     }
 
@@ -681,6 +683,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
 
     search_forget_viewer_match(app);
     preview_folding_shown(app, NULL);
+    preview_location_shown(app, NULL);
     g_object_set_data(G_OBJECT(app->buffer), "minimap_paged", NULL);
 
     if (td->error_msg != NULL) {
@@ -693,6 +696,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
         apply_viewer_language(app, NULL, NULL);
         preview_doc_show(GTK_TEXT_VIEW(app->text_view), td->doc, td->full, td->name, td->fsize);
         preview_folding_shown(app, td->doc);
+        preview_location_shown(app, td->doc);
         return;
     }
 

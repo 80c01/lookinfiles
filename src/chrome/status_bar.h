@@ -17,5 +17,7 @@ GtkWidget* create_preview_bar(AppData* app);
 void update_status_bar(AppData* app);
 /* Forget the bars' widgets (at exit) */
 void status_bar_free(AppData* app);
+/* Preview bar: the path of the value at the preview cursor (APP_EVENT_PREVIEW_LOCATION) */
+void status_bar_show_location(AppData* app);
 
 #endif /* STATUS_BAR_H */

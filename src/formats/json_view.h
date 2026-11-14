@@ -38,7 +38,8 @@ gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonVie
  * record n of JSON Lines). PREVIEW_FOLD_AUTO opens everything when it fits in
  * JSON_VIEW_MAX_LINES, else folds below the deepest level that fits (with a
  * note saying so). The members of an outer object are tagged
- * PREVIEW_STYLE_OUTLINE1 for the tagbar. */
+ * PREVIEW_STYLE_OUTLINE1 for the tagbar, and each line gets the path of its
+ * value (preview_doc_add_path(); a closing bracket: its block's). */
 gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
                                  const PreviewFold* fold, JsonViewInfo* info, GError** error);
 

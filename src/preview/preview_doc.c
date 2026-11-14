@@ -12,6 +12,7 @@ PreviewDoc* preview_doc_new(void) {
     doc->spans = g_array_new(FALSE, FALSE, sizeof(PreviewSpan));
     doc->images = g_array_new(FALSE, FALSE, sizeof(PreviewImage));
     doc->folds = g_array_new(FALSE, FALSE, sizeof(PreviewFoldPoint));
+    doc->paths = g_array_new(FALSE, FALSE, sizeof(PreviewPathPoint));
     doc->wrap = TRUE;
     doc->label_width = PREVIEW_DOC_LABEL_WIDTH;
     return doc;
@@ -42,6 +43,10 @@ void preview_doc_free(PreviewDoc* doc) {
     g_array_free(doc->spans, TRUE);
     g_array_free(doc->images, TRUE);
     g_array_free(doc->folds, TRUE);
+    for (guint i = 0; i < doc->paths->len; i++) {
+        g_free(g_array_index(doc->paths, PreviewPathPoint, i).path);
+    }
+    g_array_free(doc->paths, TRUE);
     if (doc->font_files != NULL) {
         g_ptr_array_free(doc->font_files, TRUE);
     }
@@ -150,6 +155,10 @@ void preview_doc_append_doc(PreviewDoc* doc, const PreviewDoc* other) {
         const PreviewFoldPoint* point = &g_array_index(other->folds, PreviewFoldPoint, i);
         preview_doc_add_fold(doc, base + point->start, base + point->end, point->id, point->folded);
     }
+    for (guint i = 0; i < other->paths->len; i++) {
+        const PreviewPathPoint* point = &g_array_index(other->paths, PreviewPathPoint, i);
+        preview_doc_add_path(doc, base + point->start, point->path);
+    }
 }
 
 /* --- Folding --- */
@@ -239,12 +248,35 @@ const PreviewFoldPoint* preview_doc_fold_find(const PreviewDoc* doc, const gchar
     return NULL;
 }
 
+void preview_doc_add_path(PreviewDoc* doc, gint start, const gchar* path) {
+    PreviewPathPoint point = { start, g_strdup(path) };
+    g_array_append_val(doc->paths, point);
+}
+
+const gchar* preview_doc_path_at(const PreviewDoc* doc, gint offset) {
+    if (doc == NULL || doc->paths->len == 0) {
+        return NULL;
+    }
+    /* Last point with start <= offset */
+    guint lo = 0;
+    guint hi = doc->paths->len;
+    while (lo < hi) {
+        guint mid = lo + (hi - lo) / 2;
+        if (g_array_index(doc->paths, PreviewPathPoint, mid).start <= offset) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    return lo > 0 ? g_array_index(doc->paths, PreviewPathPoint, lo - 1).path : NULL;
+}
+
 gsize preview_doc_size(const PreviewDoc* doc) {
     if (doc == NULL) {
         return 0;
     }
     gsize bytes = sizeof(PreviewDoc) + doc->text->len + doc->spans->len * sizeof(PreviewSpan) +
-                  doc->folds->len * sizeof(PreviewFoldPoint);
+                  doc->folds->len * sizeof(PreviewFoldPoint) + doc->paths->len * sizeof(PreviewPathPoint);
     for (guint i = 0; i < doc->images->len; i++) {
         GBytes* data = g_array_index(doc->images, PreviewImage, i).data;
         bytes += (data != NULL) ? g_bytes_get_size(data) : 0;

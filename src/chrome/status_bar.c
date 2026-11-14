@@ -5,6 +5,7 @@
 #include "chrome/status_bar.h"
 #include "git/git_state.h"
 #include "preview/preview_state.h"
+#include "preview/preview_location.h"
 #include "preview/dir_summary.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
@@ -28,6 +29,7 @@ struct StatusBars {
     GtkWidget* mtime;         /* preview bar: modification age, full date in the tooltip */
     GtkWidget* type;          /* preview bar: file type / language */
     GtkWidget* encoding;      /* preview bar: text encoding, hidden if not text */
+    GtkWidget* location;      /* preview bar: path of the value at the cursor (JSON) */
 };
 
 static struct StatusBars* bars_get(AppData* app) {
@@ -439,6 +441,10 @@ GtkWidget* create_preview_bar(AppData* app) {
     gtk_widget_add_css_class(status_selection, "status-dim");
     gtk_box_append(GTK_BOX(bar), status_selection);
 
+    GtkWidget* status_location = status_item_new();
+    gtk_widget_set_tooltip_text(status_location, _("Path of the value at the cursor (y copies it)"));
+    gtk_box_append(GTK_BOX(bar), status_location);
+
     GtkWidget* spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(spacer, TRUE);
     gtk_box_append(GTK_BOX(bar), spacer);
@@ -462,7 +468,18 @@ GtkWidget* create_preview_bar(AppData* app) {
     b->mtime = status_mtime;
     b->type = status_type;
     b->encoding = status_encoding;
+    b->location = status_location;
     return bar;
+}
+
+void status_bar_show_location(AppData* app) {
+    struct StatusBars* b = app->status_bars;
+    if (b == NULL || b->location == NULL) {
+        return;
+    }
+    const gchar* path = preview_location_current(app);
+    gtk_label_set_text(GTK_LABEL(b->location), path != NULL ? path : "");
+    gtk_widget_set_visible(b->location, path != NULL);
 }
 
 /* Human-readable type / language of an explorer entry, like VS Code's language mode */
@@ -667,6 +684,7 @@ void update_status_bar(AppData* app) {
     gtk_widget_set_visible(b->size, has_size);
     gtk_widget_set_visible(b->mtime, has_mtime);
     gtk_widget_set_visible(b->encoding, has_encoding);
+    status_bar_show_location(app);
     /* Only under the preview page: editor, Git and Help tabs have their own bars */
     if (b->preview_bar != NULL && app->notebook != NULL) {
         gtk_widget_set_visible(b->preview_bar,

@@ -1,6 +1,7 @@
 /* The right-click menu of the preview (see preview_menu.h) */
 #include "preview/preview_menu.h"
 #include "preview/preview_tagbar.h"
+#include "preview/preview_location.h"
 #include "widgets/minimap.h"
 #include "core/i18n.h"
 
@@ -9,6 +10,7 @@ typedef struct {
     GMenu* section;          /* the tagbar and minimap items */
     GSimpleAction* tagbar;
     GSimpleAction* minimap;
+    GSimpleAction* copy_path;
 } PreviewMenu;
 
 static void preview_menu_free(gpointer data) {
@@ -16,6 +18,7 @@ static void preview_menu_free(gpointer data) {
     g_object_unref(pm->section);
     g_object_unref(pm->tagbar);
     g_object_unref(pm->minimap);
+    g_object_unref(pm->copy_path);
     g_free(pm);
 }
 
@@ -31,6 +34,13 @@ static void on_minimap(GSimpleAction* action, GVariant* param, gpointer data) {
     (void)param;
     PreviewMenu* pm = data;
     minimap_viewer_set_enabled(pm->app, !minimap_viewer_enabled(pm->app));
+}
+
+static void on_copy_path(GSimpleAction* action, GVariant* param, gpointer data) {
+    (void)action;
+    (void)param;
+    PreviewMenu* pm = data;
+    preview_location_copy(pm->app);
 }
 
 static void append_item(GMenu* menu, const gchar* label, const gchar* action, const gchar* accel) {
@@ -51,7 +61,9 @@ static void on_secondary_press(GtkGestureClick* gesture, gint n_press, gdouble x
     AppData* app = pm->app;
     g_simple_action_set_enabled(pm->tagbar, preview_tagbar_available(app));
     g_simple_action_set_enabled(pm->minimap, app->viewer_minimap != NULL);
+    g_simple_action_set_enabled(pm->copy_path, preview_location_current(app) != NULL);
     g_menu_remove_all(pm->section);
+    append_item(pm->section, _("Copy Path"), "preview.copy-path", "y");
     append_item(pm->section, preview_tagbar_shown(app) ? _("Hide Tagbar") : _("Show Tagbar"), "preview.tagbar",
                 "o");
     append_item(pm->section,
@@ -67,10 +79,13 @@ void preview_menu_attach(AppData* app, GtkWidget* text_view) {
     pm->minimap = g_simple_action_new("minimap", NULL);
     g_signal_connect(pm->tagbar, "activate", G_CALLBACK(on_tagbar), pm);
     g_signal_connect(pm->minimap, "activate", G_CALLBACK(on_minimap), pm);
+    pm->copy_path = g_simple_action_new("copy-path", NULL);
+    g_signal_connect(pm->copy_path, "activate", G_CALLBACK(on_copy_path), pm);
 
     GSimpleActionGroup* group = g_simple_action_group_new();
     g_action_map_add_action(G_ACTION_MAP(group), G_ACTION(pm->tagbar));
     g_action_map_add_action(G_ACTION_MAP(group), G_ACTION(pm->minimap));
+    g_action_map_add_action(G_ACTION_MAP(group), G_ACTION(pm->copy_path));
     gtk_widget_insert_action_group(text_view, "preview", G_ACTION_GROUP(group));
     g_object_unref(group);
 

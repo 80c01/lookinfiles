@@ -105,6 +105,7 @@ typedef struct {
     guint pages;          /* pages after this view, reached with PgDn (mailbox messages), 0: none */
     gboolean paged;       /* slides or pages drawn to scale in the minimap */
     GArray* folds;        /* PreviewFoldPoint: blocks Tab folds (JSON), empty for most formats */
+    GArray* paths;        /* PreviewPathPoint: path of the value on each line (JSON), by offset */
 } PreviewDoc;
 
 /* Width of the labels of preview_doc_field() unless changed */
@@ -250,6 +251,21 @@ void preview_doc_add_fold(PreviewDoc* doc, gint start, gint end, const gchar* id
 const PreviewFoldPoint* preview_doc_fold_at(const PreviewDoc* doc, gint offset);
 /* The block named id, or NULL */
 const PreviewFoldPoint* preview_doc_fold_find(const PreviewDoc* doc, const gchar* id);
+
+/* --- Value paths ---
+ *
+ * Data formats name the value shown on each line ("$.servers[2].host"), for
+ * the status bar and Copy Path. */
+
+typedef struct {
+    gint start;           /* offset of the start of the line, in characters */
+    gchar* path;
+} PreviewPathPoint;
+
+/* The value on the line starting at offset start (in increasing order) */
+void preview_doc_add_path(PreviewDoc* doc, gint start, const gchar* path);
+/* Path of the value at offset (the last line started at or before it), or NULL */
+const gchar* preview_doc_path_at(const PreviewDoc* doc, gint offset);
 
 /* Approximate memory held by a document (cache accounting) */
 gsize preview_doc_size(const PreviewDoc* doc);

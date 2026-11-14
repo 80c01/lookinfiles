@@ -288,6 +288,26 @@ static void test_folds(void) {
     g_assert_cmpuint(preview_doc_size(doc), >, doc->text->len);
 }
 
+static void test_paths(void) {
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    g_assert_null(preview_doc_path_at(body, 0));
+    preview_doc_append_len(body, "{\n  a: 1,\n  b: 2\n}", -1);
+    preview_doc_add_path(body, 0, "$");
+    preview_doc_add_path(body, 2, "$.a");
+    preview_doc_add_path(body, 10, "$.b");
+    preview_doc_add_path(body, 17, "$");
+    g_assert_cmpstr(preview_doc_path_at(body, 0), ==, "$");
+    g_assert_cmpstr(preview_doc_path_at(body, 2), ==, "$.a");
+    g_assert_cmpstr(preview_doc_path_at(body, 9), ==, "$.a");
+    g_assert_cmpstr(preview_doc_path_at(body, 12), ==, "$.b");
+    g_assert_cmpstr(preview_doc_path_at(body, 99), ==, "$");
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    preview_doc_append_len(doc, "héader\n", -1);
+    preview_doc_append_doc(doc, body);
+    g_assert_null(preview_doc_path_at(doc, 3));
+    g_assert_cmpstr(preview_doc_path_at(doc, 9), ==, "$.a");
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/preview_doc/append_offsets", test_append_offsets);
@@ -302,6 +322,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_doc/paragraph_span", test_paragraph_span);
     g_test_add_func("/preview_doc/append_doc", test_append_doc);
     g_test_add_func("/preview_doc/folds", test_folds);
+    g_test_add_func("/preview_doc/paths", test_paths);
     g_test_add_func("/preview_doc/colors", test_colors);
     g_test_add_func("/preview_doc/symbol_text", test_symbol_text);
     return g_test_run();

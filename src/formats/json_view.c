@@ -380,6 +380,7 @@ static void print_node(Printer* pr, const JsonNode* node, guint indent) {
         return;
     }
     gint line_start = pr->line_start;
+    preview_doc_add_path(pr->doc, line_start, pr->path->str); /* every value starts its line */
     if (node->key != NULL) {
         gint start = preview_doc_offset(pr->doc);
         preview_doc_append_len(pr->doc, node->key, (gssize)node->key_len);
@@ -436,6 +437,7 @@ static void print_node(Printer* pr, const JsonNode* node, guint indent) {
     }
     if (!pr->stopped) {
         newline(pr, indent);
+        preview_doc_add_path(pr->doc, pr->line_start, pr->path->str);
         if (node->cut) {
             preview_doc_append(pr->doc, PREVIEW_STYLE_COMMENT, "…"); /* the rest was not read */
         } else {

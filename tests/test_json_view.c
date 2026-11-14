@@ -154,6 +154,31 @@ static void test_fold_points(void) {
     g_assert_cmpuint(outline, ==, 3);
 }
 
+/* Path of the value on the line holding text */
+static const gchar* path_of(const PreviewDoc* doc, const gchar* text) {
+    const gchar* at = strstr(doc->text->str, text);
+    g_assert_nonnull(at);
+    return preview_doc_path_at(doc, (gint)g_utf8_pointer_to_offset(doc->text->str, at));
+}
+
+static void test_paths(void) {
+    const gchar* json = "{\"a\": {\"b\": [{\"c\": 1}, \"é\"]}, \"odd key\": true, s: [1, 2]}";
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    g_assert_true(json_view_append_folded(doc, json, strlen(json), FALSE, NULL, NULL, NULL));
+    g_assert_cmpstr(path_of(doc, "{\n"), ==, "$");
+    g_assert_cmpstr(path_of(doc, "\"a\""), ==, "$.a");
+    g_assert_cmpstr(path_of(doc, "\"b\""), ==, "$.a.b");
+    g_assert_cmpstr(path_of(doc, "      {"), ==, "$.a.b[0]");
+    g_assert_cmpstr(path_of(doc, "\"c\""), ==, "$.a.b[0].c");
+    g_assert_cmpstr(path_of(doc, "      }"), ==, "$.a.b[0]");
+    g_assert_cmpstr(path_of(doc, "\"é\""), ==, "$.a.b[1]");
+    g_assert_cmpstr(path_of(doc, "    ]"), ==, "$.a.b");
+    g_assert_cmpstr(path_of(doc, "\"odd key\""), ==, "$[\"odd key\"]");
+    g_assert_cmpstr(path_of(doc, "s: [1, 2]"), ==, "$.s");
+    g_assert_cmpstr(path_of(doc, "\n}\n"), ==, "$.s"); /* the newline, then the closing line */
+    g_assert_cmpstr(preview_doc_path_at(doc, (gint)g_utf8_strlen(doc->text->str, -1) - 2), ==, "$");
+}
+
 static void test_folded(void) {
     const gchar* json = "{\"a\": {\"b\": {\"c\": 1}}, \"l\": [{\"x\": 1}, {\"y\": 2}]}";
     g_autoptr(PreviewFold) fold = preview_fold_new(1);
@@ -252,6 +277,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/json_view/deep_and_long", test_deep_and_long);
     g_test_add_func("/json_view/values", test_values);
     g_test_add_func("/json_view/fold_points", test_fold_points);
+    g_test_add_func("/json_view/paths", test_paths);
     g_test_add_func("/json_view/folded", test_folded);
     g_test_add_func("/json_view/auto_level", test_auto_level);
     g_test_add_func("/json_view/cut", test_cut);

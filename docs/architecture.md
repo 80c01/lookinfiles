@@ -197,7 +197,8 @@ Layers, from bottom to top
   `preview_doc_field()`, `preview_doc_section()`) and text tables
   (`PreviewTable`: aligned columns, numeric columns right-aligned, zebra rows);
   fold points (`PreviewFoldPoint`: blocks named by a stable id) and the fold
-  state a builder gets (`PreviewFold`: a level and the ids toggled by hand).
+  state a builder gets (`PreviewFold`: a level and the ids toggled by hand);
+  value paths (`PreviewPathPoint`: the path of the value on each line).
 - `preview_formats` — registry of structured previews, one builder per
   `FileKind` (`preview_format_build()` from a `PreviewInput`), the hex dump
   (`preview_format_hex_dump()`), and `preview_format_build_file()` for tests
@@ -728,6 +729,11 @@ Layers, from bottom to top
   (`preview_folding_key()` from `on_viewer_key_press()`), and the cursor put
   back on the block toggled once the new preview is shown
   (`preview_folding_shown()`).
+- `preview_location` — the path of the value at the cursor of the previews
+  that record value paths (JSON, `PreviewDoc.paths`), followed on the
+  buffer's cursor (`APP_EVENT_PREVIEW_LOCATION` when it changes, shown by
+  `status_bar` in the preview bar); `y` (`preview_location_key()`) and
+  **Copy Path** in `preview_menu` copy it.
 - `image_preview`, `image_decode`, `image_prefetch` — the image preview.
   `image_preview` lays the picture out in the preview (header, details,
   zoom, Copy Image); `image_decode` decodes it in a worker thread at the size
@@ -1025,6 +1031,7 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | `APP_EVENT_LAYOUT_REBUILT`       | panes shown, hidden or rebuilt               | `workspace_apply_positions()`  |
 | `APP_EVENT_FILES_CHANGED`        | files created/renamed/saved                  | `refresh_listing()`            |
 | `APP_EVENT_PREVIEW_STALE`        | previewed file changed                       | `viewer_reload_preview()`      |
+| `APP_EVENT_PREVIEW_LOCATION`     | path of the value at the preview cursor changed | `status_bar_show_location()` |
 | `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`, `refresh_diff_gutters()`, `editor_modes_refresh_git()` |
 | `APP_EVENT_SAVE_WORKSPACE_BOOKMARK` / `APP_EVENT_OPEN_WORKSPACE_BOOKMARK` | bookmarks view: save the workspace / open a saved one | `session_bookmark_save()` / `session_bookmark_open()` |
 | `APP_EVENT_FOCUS_NEXT_PANEL` / `_PREV_PANEL` | `C-x o`, `Ctrl+W w` / `W`, `F6` / `Shift+F6` | `focus_next_panel()` / `focus_prev_panel()` |
