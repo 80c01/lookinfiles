@@ -18,6 +18,7 @@
 #include "media/video.h"
 #include "workspace/layout_store.h"
 #include "theme/palette.h"
+#include "widgets/add_button.h"
 #include "search/project_search.h"
 #include "chrome/help_guide.h"
 #include "sysmon/sysmon_tab.h"
@@ -46,7 +47,7 @@ static struct WorkspaceView* view_get(AppData* app) {
 }
 
 #define WS_CELL_W   32
-#define WS_ADD_W    22
+#define WS_ADD_W    ADD_BUTTON_WIDTH
 #define WS_CELL_H   20
 #define WS_CELL_GAP 5
 #define WS_PAD_X    2
@@ -944,38 +945,7 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
         gdouble ax = WS_PAD_X + app->num_workspaces * (WS_CELL_W + WS_CELL_GAP);
         gdouble ay = start_y;
 
-        draw_rounded_rect(cr, ax, ay, WS_ADD_W, WS_CELL_H, 3.0);
-        if (add_hover) {
-            set_source_mix(cr, PAL_BG_BAR, PAL_BG_SELECTED, 0.4, 1.0);
-        } else {
-            set_source_role(cr, PAL_BG_WINDOW, 1.0);
-        }
-        cairo_fill_preserve(cr);
-
-        if (add_hover) {
-            set_source_role(cr, PAL_ACCENT, 1.0);
-            cairo_set_line_width(cr, 1.3);
-        } else {
-            set_source_role(cr, PAL_BORDER_STRONG, 1.0);
-            cairo_set_line_width(cr, 1.0);
-        }
-        cairo_stroke(cr);
-
-        /* Plus '+' icon */
-        gdouble cx = ax + WS_ADD_W * 0.5;
-        gdouble cy = ay + WS_CELL_H * 0.5;
-        gdouble arm = 4.0;
-        if (add_hover) {
-            set_source_role(cr, PAL_FG_BRIGHT, 1.0);
-        } else {
-            set_source_role(cr, PAL_FG_MUTED, 1.0);
-        }
-        cairo_set_line_width(cr, 1.6);
-        cairo_move_to(cr, cx - arm, cy);
-        cairo_line_to(cr, cx + arm, cy);
-        cairo_move_to(cr, cx, cy - arm);
-        cairo_line_to(cr, cx, cy + arm);
-        cairo_stroke(cr);
+        add_button_draw(cr, ax, ay, WS_ADD_W, WS_CELL_H, add_hover);
     }
 }
 

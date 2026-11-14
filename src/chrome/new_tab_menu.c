@@ -6,7 +6,7 @@
 #include "notes/notes.h"
 #include "preview/browser.h"
 #include "terminal/terminal.h"
-#include "theme/icons.h"
+#include "widgets/add_button.h"
 
 #define NOTEBOOK_KEY "lookin-new-tab-notebook"
 #define KIND_KEY "lookin-new-tab-kind"
@@ -110,11 +110,10 @@ static void on_plus_clicked(GtkButton* button, gpointer data) {
 
 void new_tab_menu_attach(AppData* app, GtkNotebook* nb) {
     if (app == NULL || nb == NULL) return;
-    GtkWidget* button = icon_button_new("list-add", _("New Tab"));
+    /* The + of the workspace switcher */
+    GtkWidget* button = add_button_new(_("New Tab"));
     gtk_widget_set_name(button, "tab-new-btn");
-    gtk_button_set_has_frame(GTK_BUTTON(button), FALSE);
     gtk_widget_set_focusable(button, FALSE);
-    gtk_widget_add_css_class(button, "tab-action-btn");
     g_object_set_data(G_OBJECT(button), NOTEBOOK_KEY, nb);
     g_signal_connect(button, "clicked", G_CALLBACK(on_plus_clicked), app);
     gtk_notebook_set_action_widget(nb, button, GTK_PACK_END);

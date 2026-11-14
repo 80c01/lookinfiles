@@ -217,6 +217,7 @@ icons:file_type_icons,palette
 icon_sets:app_paths,theme_store
 icon_picker:icons
 sparkline:palette
+add_button:palette
 image_utils:
 animation:gif_decoder,image_utils
 dialog:

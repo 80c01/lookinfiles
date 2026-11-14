@@ -434,6 +434,9 @@ Layers, from bottom to top
 - `sparkline` — a small line chart (`GtkDrawingArea`) of the last values of
   one or more series, each in a palette colour, the newest at the right;
   fixed or automatic scale. Used by the system monitor.
+- `add_button` — the "+" add button drawn with the palette (rounded box,
+  accent border on hover): `add_button_draw()` for the workspace switcher,
+  `add_button_new()` (a `GtkButton`) for the tab bars (`new_tab_menu`).
 - `icon_picker` — a grid of toggle buttons to choose one theme glyph
   (notebook and bookmark folder dialogs).
 - `dialog` — `AppDialog`, the modal dialog drawn inside the main window: a
@@ -896,7 +899,8 @@ Layers, from bottom to top
   and toggle pills; the split / dock button of the preview notebook
   (`topbar_split_button_new()`); `update_path_label()`. Its widgets are
   private (`struct TopBar`).
-- `new_tab_menu` — the **+** button at the end of the tab bar of the preview
+- `new_tab_menu` — the **+** button (`add_button_new()`, the + of the
+  workspace switcher) at the end of the tab bar of the preview
   notebook and of every editor notebook (`new_tab_menu_attach()` in `main.c`,
   then `editor_set_notebook_hook()`): its popover opens a browser tab
   (`browser_open()`, always in the preview notebook), a Canvas note
