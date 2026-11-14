@@ -89,7 +89,7 @@ gchar* countdown_format(gint64 left, gint64 duration) {
     gint64 secs = countdown_seconds(left);
     const gchar* sign = (secs < 0) ? "-" : "";
     secs = ABS(secs);
-    if (countdown_seconds(duration) >= 100 * 60) {
+    if (countdown_seconds(duration) >= 100 * 60 || (*sign != '\0' && secs >= 3600)) {
         return g_strdup_printf("%s%" G_GINT64_FORMAT ":%02d:%02d", sign, secs / 3600, (gint)(secs / 60 % 60),
                                (gint)(secs % 60));
     }

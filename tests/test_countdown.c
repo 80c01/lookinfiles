@@ -68,6 +68,12 @@ static void test_overtime(void) {
     gchar* text = countdown_format(-65 * S - S / 2, c.duration);
     g_assert_cmpstr(text, ==, "-1:05");
     g_free(text);
+    text = countdown_format(-3599 * S, c.duration);
+    g_assert_cmpstr(text, ==, "-59:59");
+    g_free(text);
+    text = countdown_format(-3600 * S, c.duration); /* an hour over: hours */
+    g_assert_cmpstr(text, ==, "-1:00:00");
+    g_free(text);
     text = countdown_format(-S / 2, c.duration);
     g_assert_cmpstr(text, ==, "0:00");
     g_free(text);

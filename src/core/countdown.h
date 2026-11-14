@@ -66,7 +66,8 @@ gboolean countdown_inverted(gint64 left, gboolean blink);
 gint64 countdown_next_change(gint64 left, gboolean blink);
 
 /* "4:59", "59:59", or "1:59:59" when duration is 100 minutes or more (the
- * width stays the same during a cycle); "-0:59" in overtime. Caller frees. */
+ * width stays the same during a cycle); "-0:59" in overtime, "-1:00:00"
+ * from an hour over whatever the duration. Caller frees. */
 gchar* countdown_format(gint64 left, gint64 duration);
 
 #endif /* COUNTDOWN_H */
