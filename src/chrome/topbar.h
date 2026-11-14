@@ -17,6 +17,10 @@ GtkWidget* topbar_split_button_new(AppData* app);
 /* Forget the top bar's widgets (at exit) */
 /* Restart timer 1 of the top bar with minutes (0 hides it) */
 void topbar_set_timer(AppData* app, gint minutes);
+/* The expiry action of timer 1 of the top bar, without restarting it */
+void topbar_set_timer_expiry(AppData* app, SettingsExpiry expiry);
+/* Show the time of the top bar as the [Clock] values of settings say */
+void topbar_set_clock(AppData* app, const Settings* settings);
 
 void topbar_free(AppData* app);
 

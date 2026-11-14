@@ -677,13 +677,16 @@ Layers, from bottom to top
   and filesystems only while the page is mapped). `sysmon_indicator` — the
   CPU chart of the top bar (`/proc/stat` every 2 s; `LOOKIN_SYSMON_FROZEN`
   stops it for the UI tests), whose click opens or closes the tab.
-- `clock_pill` — the clock and three timers (`countdown`; timer 1 from
-  `settings.ini`, restarted by the Clock page of the Preferences through
-  `topbar_set_timer()`), before the CPU chart. A click on a timer or the
+- `clock_pill` — the clock and three timers (`countdown`; the time format
+  and timer 1 from `settings.ini`, changed by the Clock page of the
+  Preferences through `topbar_set_clock()`, `topbar_set_timer()` and
+  `topbar_set_timer_expiry()`; a hidden time leaves an icon while no timer
+  shows), before the CPU chart. A click on a timer or the
   clock opens a popover with a stack page per timer (state, durations,
   Start, expiry action Restart / Stop / Count On, Pause, Reset, Off), a
   right click on a timer pauses it (in overtime too). One timeout at the next change of all of them (a
-  second, half a second while blinking, else the minute of the clock);
+  second, half a second while blinking, else the second or the minute of
+  the clock);
   `LOOKIN_CLOCK_FROZEN` stops everything for the UI tests.
 - `games` — the hidden Games view (unlocked in the help panel, for the
   current workspace only: `VirtualLayout.games_unlocked`) and its game tabs

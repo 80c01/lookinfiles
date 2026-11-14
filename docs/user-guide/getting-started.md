@@ -67,8 +67,10 @@ hidden.
   panels (**Preview** reads **Main** while editor tabs share the preview
   panel), and **Help**: a click opens this guide, a right click the
   keyboard cheat sheet. Before the CPU chart, the **clock** (the date in
-  its tooltip) and up to three **timers**. Timer 1 starts at launch (60
-  minutes; change it in Preferences, **Clock**, 0 for none); timers 2 and 3
+  its tooltip; Preferences, **Clock**, picks 24-hour or 12-hour time, the
+  seconds, or hides it: an icon then opens the timers while none runs) and
+  up to three **timers**. Timer 1 starts at launch (60 minutes and
+  **Restart**; change both in Preferences, **Clock**, 0 for none); timers 2 and 3
   start off. A timer's last minute is shown in reverse colours and its last
   ten seconds blink. A click on a timer, or on the clock, opens the timers
   menu, a tab per timer: its state, preset durations (5, 15, 25, 60 min) and

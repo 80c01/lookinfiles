@@ -9064,19 +9064,51 @@ msgid "Clock"
 msgstr "Horloge"
 
 msgid ""
-"Timer 1 of the top bar starts at launch. A timer's last minute is shown in "
-"reverse colours and its last ten seconds blink. Click a timer or the clock "
-"to set up three timers, each restarting, stopping at 0:00 or counting on "
-"below 0:00 when it expires; right-click a timer to pause it."
+"Click the clock or a timer to set up three timers; right-click a timer to "
+"pause it. A timer's last minute is shown in reverse colours and its last ten "
+"seconds blink."
 msgstr ""
-"Le minuteur 1 de la barre du haut démarre au lancement. La dernière minute "
-"d’un minuteur s’affiche en couleurs inversées et ses dix dernières secondes "
-"clignotent. Cliquez sur un minuteur ou sur l’horloge pour régler trois "
-"minuteurs, chacun repartant, s’arrêtant à 0:00 ou continuant sous 0:00 à "
-"l’expiration ; clic droit sur un minuteur pour le mettre en pause."
+"Cliquez sur l’horloge ou sur un minuteur pour régler trois minuteurs ; clic "
+"droit sur un minuteur pour le mettre en pause. La dernière minute d’un "
+"minuteur s’affiche en couleurs inversées et ses dix dernières secondes "
+"clignotent."
 
-msgid "_Timer 1 duration (minutes)"
-msgstr "Durée du _minuteur 1 (minutes)"
+msgid "Sho_w the time"
+msgstr "Afficher l’_heure"
+
+msgid "When hidden, an icon opens the timers while none runs"
+msgstr "Masquée, une icône ouvre les minuteurs tant qu’aucun ne tourne"
+
+msgid "24-hour (14:05)"
+msgstr "24 heures (14:05)"
+
+msgid "12-hour (2:05 PM)"
+msgstr "12 heures (2:05 PM)"
+
+msgid "Time _format"
+msgstr "_Format de l’heure"
+
+msgid "How the top bar shows the time"
+msgstr "Comment la barre du haut affiche l’heure"
+
+msgid "Show the _seconds"
+msgstr "Afficher les _secondes"
+
+msgid "_Timer 1 duration at launch (minutes)"
+msgstr "Durée du _minuteur 1 au lancement (minutes)"
+
+msgid "Stop at 0:00"
+msgstr "Arrêter à 0:00"
+
+msgid "Count on below 0:00"
+msgstr "Continuer sous 0:00"
+
+msgid "When timer 1 _expires"
+msgstr "À l’e_xpiration du minuteur 1"
+
+msgid "Restart at once, stay at 0:00 or count on below 0:00 (-0:01, -0:02…)"
+msgstr ""
+"Relancer aussitôt, rester à 0:00 ou continuer sous 0:00 (-0:01, -0:02…)"
 
 msgid "0: no timer. Applying a new duration restarts the timer"
 msgstr "0 : pas de minuteur. Appliquer une nouvelle durée redémarre le minuteur"

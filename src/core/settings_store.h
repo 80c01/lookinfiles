@@ -20,7 +20,12 @@
  *   auto-terminal-place=below  # the Auto layout puts the terminal below the
  *                              # preview or beside it; missing: as it is
  *   [Clock]
+ *   clock=true           # the top bar shows the time (false: an icon while
+ *                        # no timer shows, nothing while one does)
+ *   clock-format=24h     # 24h (14:05) or 12h (2:05 PM)
+ *   clock-seconds=false  # the time shows the seconds
  *   timer-minutes=60     # top bar timer 1, started at launch (0: no timer)
+ *   timer-expiry=restart # what timer 1 does at 0:00: restart, stop or count-on
  *   [Window]
  *   width=1000           # window size at startup
  *   height=600
@@ -56,6 +61,13 @@ typedef enum {
     SETTINGS_PLACE_BESIDE /* on their right */
 } SettingsPlace;
 
+/* What timer 1 of the top bar does when it expires */
+typedef enum {
+    SETTINGS_EXPIRY_RESTART, /* a new cycle at once */
+    SETTINGS_EXPIRY_STOP,    /* stays at 0:00 */
+    SETTINGS_EXPIRY_COUNT_ON /* counts on below 0:00 */
+} SettingsExpiry;
+
 typedef struct {
     SettingsEditor editor; /* mode of new editor tabs (Org files: Org-mode) */
     gboolean line_numbers; /* new editor tabs show line numbers */
@@ -68,13 +80,18 @@ typedef struct {
     SettingsPanel auto_preview;  /* preview panel of the Auto layout */
     SettingsPanel auto_tagbar;   /* editor tagbar of the Auto layout */
     SettingsPlace auto_terminal_place; /* terminal place of the Auto layout */
+    gboolean clock_shown;  /* the top bar shows the time */
+    gboolean clock_12h;    /* 12-hour time (2:05 PM), else 24-hour */
+    gboolean clock_seconds; /* the time shows the seconds */
     gint timer_minutes;    /* top bar timer, started at launch, 0: none */
+    SettingsExpiry timer_expiry; /* what that timer does at 0:00 */
     gint width;            /* window size at startup */
     gint height;
 } Settings;
 
 /* Notepad, no line numbers, no wrap, column line at 81, no tagbars, minimap, Auto
- * keeping the panels, a 60-minute timer, 1000 x 600 */
+ * keeping the panels, a 24-hour clock without seconds, a 60-minute timer
+ * restarting when it expires, 1000 x 600 */
 void settings_defaults(Settings* s);
 
 /* "notepad", "vim", "emacs" (any case): FALSE if name is none of them */

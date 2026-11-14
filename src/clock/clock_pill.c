@@ -2,6 +2,7 @@
 #include "clock/clock_pill.h"
 #include "core/countdown.h"
 #include "core/i18n.h"
+#include "theme/icons.h"
 #include "theme/theme.h"
 
 #include <string.h>
@@ -36,6 +37,10 @@ typedef struct {
 struct ClockPill {
     GtkWidget* clock; /* GtkButton: opens the popover too, when no timer shows */
     GtkWidget* clock_label;
+    GtkWidget* clock_icon; /* instead of the time when it is hidden */
+    gboolean shown;     /* the time shows */
+    gboolean twelve_hour;
+    gboolean seconds;
     Timer timers[TIMER_COUNT];
     GtkWidget* popover; /* open, else NULL */
     gboolean frozen;    /* LOOKIN_CLOCK_FROZEN: nothing moves */
@@ -75,7 +80,9 @@ static void set_class(GtkWidget* widget, const gchar* name, gboolean on) {
 static void update_clock(ClockPill* p, gint64 now) {
     GDateTime* dt = p->frozen ? g_date_time_new_local(2026, 1, 1, 12, 0, 0)
                               : g_date_time_new_from_unix_local_usec(now);
-    gchar* text = g_date_time_format(dt, "%H:%M");
+    const gchar* format = p->twelve_hour ? (p->seconds ? "%-I:%M:%S %p" : "%-I:%M %p")
+                                         : (p->seconds ? "%H:%M:%S" : "%H:%M");
+    gchar* text = g_strstrip(g_date_time_format(dt, format)); /* %p is empty in some languages */
     if (g_strcmp0(text, p->clock_text) != 0) {
         gtk_label_set_text(GTK_LABEL(p->clock_label), text);
         g_free(p->clock_text);
@@ -175,14 +182,24 @@ static void update_timer(Timer* t, gint64 now, gboolean blink) {
 
 static gboolean on_tick(gpointer data);
 
+/* The time, or the icon while no timer shows, or nothing */
+static void update_clock_visibility(ClockPill* p) {
+    gboolean timer_shown = FALSE;
+    for (guint i = 0; i < TIMER_COUNT; i++) timer_shown = timer_shown || p->timers[i].enabled;
+    gtk_widget_set_visible(p->clock_label, p->shown);
+    gtk_widget_set_visible(p->clock_icon, !p->shown);
+    gtk_widget_set_visible(p->clock, p->shown || !timer_shown);
+}
+
 /* One wake-up at the next change: the second of a running timer (half
- * second while it blinks), else the clock's minute */
+ * second while it blinks), else the clock's second or minute */
 static void schedule(ClockPill* p) {
     if (p->source != 0) g_source_remove(p->source);
     p->source = 0;
     if (p->frozen) return;
     gint64 now = g_get_real_time();
-    gint64 delay = MINUTE - now % MINUTE;
+    gint64 unit = (p->shown && p->seconds) ? COUNTDOWN_SECOND : MINUTE;
+    gint64 delay = unit - now % unit;
     gboolean blink = animations_on(p->clock);
     for (guint i = 0; i < TIMER_COUNT; i++) {
         Timer* t = &p->timers[i];
@@ -199,6 +216,7 @@ static void refresh(ClockPill* p) {
     gint64 now = g_get_real_time();
     gboolean blink = animations_on(p->clock);
     update_clock(p, now);
+    update_clock_visibility(p);
     for (guint i = 0; i < TIMER_COUNT; i++) update_timer(&p->timers[i], now, blink);
     schedule(p);
 }
@@ -476,9 +494,36 @@ static void clock_pill_free(gpointer data) {
     g_free(p);
 }
 
+static ClockPill* pill_get(GtkWidget* pill) {
+    return (pill != NULL) ? g_object_get_data(G_OBJECT(pill), CLOCK_KEY) : NULL;
+}
+
 void clock_pill_set_timer(GtkWidget* pill, gint minutes) {
-    ClockPill* p = (pill != NULL) ? g_object_get_data(G_OBJECT(pill), CLOCK_KEY) : NULL;
+    ClockPill* p = pill_get(pill);
     if (p != NULL) start_minutes(&p->timers[0], minutes);
+}
+
+static CountdownExpiry countdown_expiry_of(SettingsExpiry expiry) {
+    switch (expiry) {
+    case SETTINGS_EXPIRY_STOP: return COUNTDOWN_STOP;
+    case SETTINGS_EXPIRY_COUNT_ON: return COUNTDOWN_OVERTIME;
+    default: return COUNTDOWN_RESTART;
+    }
+}
+
+void clock_pill_set_expiry(GtkWidget* pill, SettingsExpiry expiry) {
+    ClockPill* p = pill_get(pill);
+    if (p != NULL) set_expiry(&p->timers[0], countdown_expiry_of(expiry));
+}
+
+void clock_pill_set_display(GtkWidget* pill, const Settings* settings) {
+    ClockPill* p = pill_get(pill);
+    if (p == NULL) return;
+    p->shown = settings->clock_shown;
+    p->twelve_hour = settings->clock_12h;
+    p->seconds = settings->clock_seconds;
+    g_clear_pointer(&p->clock_text, g_free); /* the label is rewritten */
+    refresh(p);
 }
 
 static GtkWidget* pill_button(GtkWidget* child) {
@@ -507,14 +552,18 @@ static void timer_init(ClockPill* p, Timer* t, guint number) {
     t->tooltip_minute = -1;
 }
 
-GtkWidget* clock_pill_new(gint minutes) {
+GtkWidget* clock_pill_new(const Settings* settings) {
     ensure_css();
     ClockPill* p = g_new0(ClockPill, 1);
     p->frozen = (g_getenv("LOOKIN_CLOCK_FROZEN") != NULL);
 
     p->clock_label = gtk_label_new(NULL);
     gtk_widget_add_css_class(p->clock_label, "clock-time");
-    p->clock = pill_button(p->clock_label);
+    p->clock_icon = icon_image_new("alarm");
+    GtkWidget* clock_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_append(GTK_BOX(clock_box), p->clock_icon);
+    gtk_box_append(GTK_BOX(clock_box), p->clock_label);
+    p->clock = pill_button(clock_box);
     gtk_widget_add_css_class(p->clock, "clock-clock");
     gtk_widget_set_valign(p->clock, GTK_ALIGN_CENTER);
     g_signal_connect(p->clock, "clicked", G_CALLBACK(on_clock_clicked), p);
@@ -526,7 +575,11 @@ GtkWidget* clock_pill_new(gint minutes) {
         timer_init(p, &p->timers[i], i + 1);
         gtk_box_append(GTK_BOX(box), p->timers[i].button);
     }
+    p->shown = settings->clock_shown;
+    p->twelve_hour = settings->clock_12h;
+    p->seconds = settings->clock_seconds;
+    p->timers[0].expiry = countdown_expiry_of(settings->timer_expiry);
     g_object_set_data_full(G_OBJECT(box), CLOCK_KEY, p, clock_pill_free);
-    clock_pill_set_timer(box, minutes);
+    clock_pill_set_timer(box, settings->timer_minutes);
     return box;
 }

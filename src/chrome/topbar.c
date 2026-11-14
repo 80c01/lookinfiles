@@ -734,7 +734,7 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
     gtk_widget_add_controller(t->help_btn, GTK_EVENT_CONTROLLER(help_right));
 
     t->sysmon_btn = sysmon_indicator_new(app);
-    t->clock = clock_pill_new(app->settings.timer_minutes);
+    t->clock = clock_pill_new(&app->settings);
 
     /* Pushes the rest of the row to the right */
     GtkWidget* spacer = gtk_label_new(" ");
@@ -777,6 +777,14 @@ GtkWidget* topbar_split_button_new(AppData* app) {
 
 void topbar_set_timer(AppData* app, gint minutes) {
     clock_pill_set_timer(bar_get(app)->clock, minutes);
+}
+
+void topbar_set_timer_expiry(AppData* app, SettingsExpiry expiry) {
+    clock_pill_set_expiry(bar_get(app)->clock, expiry);
+}
+
+void topbar_set_clock(AppData* app, const Settings* settings) {
+    clock_pill_set_display(bar_get(app)->clock, settings);
 }
 
 void topbar_free(AppData* app) {

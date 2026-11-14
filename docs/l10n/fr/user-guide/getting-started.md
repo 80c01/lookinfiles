@@ -69,9 +69,11 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
   **Terminal** (**Aperçu** devient **Principal** tant que des onglets
   d’édition partagent le panneau Aperçu), et **Aide** : un clic ouvre ce guide, un clic droit
   l’aide-mémoire du clavier. Avant le graphique du processeur, l’**horloge**
-  (la date dans son info-bulle) et jusqu’à trois **minuteurs**. Le
-  minuteur 1 démarre au lancement (60 minutes ; à changer dans les
-  Préférences, **Horloge**, 0 pour aucun) ; les minuteurs 2 et 3 sont
+  (la date dans son info-bulle ; Préférences, **Horloge**, choisit l’heure
+  sur 24 ou 12 heures, les secondes, ou la masque : une icône ouvre alors
+  les minuteurs tant qu’aucun ne tourne) et jusqu’à trois **minuteurs**. Le
+  minuteur 1 démarre au lancement (60 minutes et **Relancer** ; à changer
+  dans les Préférences, **Horloge**, 0 pour aucun) ; les minuteurs 2 et 3 sont
   arrêtés au départ. La dernière minute d’un minuteur s’affiche en couleurs
   inversées et ses dix dernières secondes clignotent. Un clic sur un
   minuteur, ou sur l’horloge, ouvre le menu des minuteurs, un onglet par

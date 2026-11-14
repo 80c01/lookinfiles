@@ -4,6 +4,12 @@
 
 #include <glib/gstdio.h>
 
+static const gchar* const EXPIRY_NAMES[] = {
+    [SETTINGS_EXPIRY_RESTART] = "restart",
+    [SETTINGS_EXPIRY_STOP] = "stop",
+    [SETTINGS_EXPIRY_COUNT_ON] = "count-on",
+};
+
 static const gchar* const EDITOR_NAMES[] = {
     [SETTINGS_EDITOR_NOTEPAD] = "notepad",
     [SETTINGS_EDITOR_VIM] = "vim",
@@ -22,7 +28,11 @@ void settings_defaults(Settings* s) {
     s->auto_tagbar = SETTINGS_PANEL_KEEP;
     s->auto_terminal_place = SETTINGS_PLACE_KEEP;
     s->color_column = 81;
+    s->clock_shown = TRUE;
+    s->clock_12h = FALSE;
+    s->clock_seconds = FALSE;
     s->timer_minutes = 60;
+    s->timer_expiry = SETTINGS_EXPIRY_RESTART;
     s->width = 1000;
     s->height = 600;
 }
@@ -94,6 +104,25 @@ static SettingsPlace read_place(GKeyFile* kf) {
     return place;
 }
 
+/* The expiry action of timer 1, or def when missing or unknown */
+static SettingsExpiry read_expiry(GKeyFile* kf, SettingsExpiry def) {
+    gchar* value = g_key_file_get_string(kf, "Clock", "timer-expiry", NULL);
+    SettingsExpiry expiry = def;
+    for (gsize i = 0; value != NULL && i < G_N_ELEMENTS(EXPIRY_NAMES); i++) {
+        if (g_ascii_strcasecmp(value, EXPIRY_NAMES[i]) == 0) expiry = (SettingsExpiry)i;
+    }
+    g_free(value);
+    return expiry;
+}
+
+/* The clock format: "12h" or "24h", else def */
+static gboolean read_12h(GKeyFile* kf, gboolean def) {
+    gchar* value = g_key_file_get_string(kf, "Clock", "clock-format", NULL);
+    gboolean twelve = (g_strcmp0(value, "12h") == 0) ? TRUE : (g_strcmp0(value, "24h") == 0) ? FALSE : def;
+    g_free(value);
+    return twelve;
+}
+
 /* An integer key within [min, max], or its default */
 static gint read_int(GKeyFile* kf, const gchar* group, const gchar* key, gint min, gint max, gint def) {
     GError* error = NULL;
@@ -130,7 +159,11 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     s->auto_tagbar = read_panel(kf, "auto-tagbar");
     s->auto_terminal_place = read_place(kf);
     s->color_column = read_int(kf, "Editor", "color-column", 0, SETTINGS_MAX_COLUMN, s->color_column);
+    s->clock_shown = read_bool(kf, "Clock", "clock", s->clock_shown);
+    s->clock_12h = read_12h(kf, s->clock_12h);
+    s->clock_seconds = read_bool(kf, "Clock", "clock-seconds", s->clock_seconds);
     s->timer_minutes = read_int(kf, "Clock", "timer-minutes", 0, SETTINGS_MAX_TIMER_MINUTES, s->timer_minutes);
+    s->timer_expiry = read_expiry(kf, s->timer_expiry);
     s->width = read_size(kf, "width", SETTINGS_MIN_WIDTH, s->width);
     s->height = read_size(kf, "height", SETTINGS_MIN_HEIGHT, s->height);
     g_key_file_free(kf);
@@ -156,7 +189,12 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
         g_key_file_set_string(kf, "Layouts", "auto-terminal-place",
                               s->auto_terminal_place == SETTINGS_PLACE_BELOW ? "below" : "beside");
     }
+    g_key_file_set_boolean(kf, "Clock", "clock", s->clock_shown);
+    g_key_file_set_string(kf, "Clock", "clock-format", s->clock_12h ? "12h" : "24h");
+    g_key_file_set_boolean(kf, "Clock", "clock-seconds", s->clock_seconds);
     g_key_file_set_integer(kf, "Clock", "timer-minutes", s->timer_minutes);
+    gsize expiry = ((gsize)s->timer_expiry < G_N_ELEMENTS(EXPIRY_NAMES)) ? (gsize)s->timer_expiry : 0;
+    g_key_file_set_string(kf, "Clock", "timer-expiry", EXPIRY_NAMES[expiry]);
     g_key_file_set_integer(kf, "Window", "width", s->width);
     g_key_file_set_integer(kf, "Window", "height", s->height);
     gchar* dir = g_path_get_dirname(path);
