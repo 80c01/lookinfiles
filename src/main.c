@@ -40,6 +40,7 @@
 #include "workspace/session_bookmark.h"
 #include "org/orgmode.h"
 #include "org/org_fold.h"
+#include "preview/preview_folding.h"
 #include "terminal/terminal.h"
 #include "widgets/diff_gutter.h"
 #include "widgets/color_column.h"
@@ -713,6 +714,7 @@ int main(int argc, char** argv) {
     notes_free(app);
     remote_free(app);
     org_fold_free(app);
+    preview_folding_free(app);
     preview_state_free(app);
     sidebar_free(app);
     topbar_free(app);

@@ -179,6 +179,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Preview panel"), "Space / p", N_("Play / pause active video or audio preview"), 0},
     {N_("Preview panel"), "Left / Right", N_("Video: seek 5 seconds back / forward (also in the explorer)"), 0},
     {N_("Org-mode"), "Tab / Shift+Tab", N_("In Org view: Fold/unfold heading or cycle global visibility (Overview -> Contents -> Show All)"), 0},
+    {N_("Preview panel"), "Tab / Shift+Tab", N_("JSON: fold or open the object or array at the cursor / cycle the level (outer members, two levels, all open)"), 0},
     {N_("Org-mode"), "t / Space / Return", N_("In Org view: Cycle TODO keyword (#+TODO, default TODO -> DONE) / toggle checkbox"), 0},
     {N_("Org-mode"), NC_("key", "Click heading/todo/box"), N_("Interactive click: toggle fold, cycle TODO, toggle checkbox, open link"), 0},
     {N_("Editor tabs"), "Ctrl+S", N_("Save the file open in the current editor tab"), 0},

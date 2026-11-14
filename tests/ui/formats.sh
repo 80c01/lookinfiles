@@ -76,6 +76,10 @@ format_scenario() {
     key m;              shot fmt_csv_raw
     key m
     key Down;           shot fmt_json_pretty
+    key alt+Right                                   # focus the preview
+    key shift+Tab;      shot fmt_json_outer_level   # objects and arrays folded
+    key shift+Tab; key shift+Tab                    # two levels, then all open again
+    key alt+Left                                    # back to the explorer
     key Down;           shot fmt_diff
     key Down;           shot fmt_zip
     key Down;           shot fmt_tar_gz

@@ -252,6 +252,42 @@ static void test_symbol_text(void) {
     g_free(t);
 }
 
+static void test_folds(void) {
+    g_autoptr(PreviewFold) fold = preview_fold_new(2);
+    g_assert_false(preview_fold_is_folded(fold, "$", 0, 2));
+    g_assert_false(preview_fold_is_folded(fold, "$.a", 1, 2));
+    g_assert_true(preview_fold_is_folded(fold, "$.a.b", 2, 2));
+    g_assert_false(preview_fold_is_folded(NULL, "$.a.b", 2, PREVIEW_FOLD_OPEN));
+    preview_fold_toggle(fold, "$.a.b");
+    g_assert_false(preview_fold_is_folded(fold, "$.a.b", 2, 2));
+
+    g_autofree gchar* sig = preview_fold_signature(fold);
+    g_autoptr(PreviewFold) copy = preview_fold_copy(fold);
+    g_autofree gchar* copy_sig = preview_fold_signature(copy);
+    g_assert_cmpstr(sig, ==, copy_sig);
+    preview_fold_toggle(copy, "$.a.b");
+    g_autofree gchar* other = preview_fold_signature(copy);
+    g_assert_cmpstr(sig, !=, other);
+    g_autoptr(PreviewFold) plain = preview_fold_new(PREVIEW_FOLD_AUTO);
+    g_autofree gchar* empty = preview_fold_signature(plain);
+    g_assert_cmpstr(empty, ==, "");
+
+    /* Innermost block at an offset; offsets move with preview_doc_append_doc() */
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    preview_doc_append_len(body, "{\n  a: {\n  }\n}", -1);
+    preview_doc_add_fold(body, 2, 11, "$.a", FALSE);
+    preview_doc_add_fold(body, 0, 13, "$", FALSE);
+    g_assert_cmpstr(preview_doc_fold_at(body, 4)->id, ==, "$.a");
+    g_assert_cmpstr(preview_doc_fold_at(body, 12)->id, ==, "$");
+    g_assert_null(preview_doc_fold_at(body, 20));
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    preview_doc_append_len(doc, "héader\n", -1);
+    preview_doc_append_doc(doc, body);
+    g_assert_cmpint(preview_doc_fold_find(doc, "$.a")->start, ==, 9);
+    g_assert_null(preview_doc_fold_find(doc, "$.b"));
+    g_assert_cmpuint(preview_doc_size(doc), >, doc->text->len);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/preview_doc/append_offsets", test_append_offsets);
@@ -265,6 +301,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_doc/source_doc", test_source_doc);
     g_test_add_func("/preview_doc/paragraph_span", test_paragraph_span);
     g_test_add_func("/preview_doc/append_doc", test_append_doc);
+    g_test_add_func("/preview_doc/folds", test_folds);
     g_test_add_func("/preview_doc/colors", test_colors);
     g_test_add_func("/preview_doc/symbol_text", test_symbol_text);
     return g_test_run();

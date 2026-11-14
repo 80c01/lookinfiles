@@ -227,6 +227,11 @@ typedef struct {
     PreviewDoc* doc;
     guint lines;
     gboolean stopped;
+    const PreviewFold* fold;
+    gint level;          /* fold level in effect (PREVIEW_FOLD_AUTO resolved) */
+    GString* path;       /* id of the value being printed ("$.a[2]") */
+    gint line_start;     /* offset of the start of the current line */
+    gboolean outline;    /* members of the outer object go to the tagbar */
 } Printer;
 
 static gboolean is_scalar(const JsonNode* node) {
@@ -239,6 +244,7 @@ static void newline(Printer* pr, guint indent) {
         pr->stopped = TRUE;
     }
     preview_doc_append_len(pr->doc, "\n", 1);
+    pr->line_start = preview_doc_offset(pr->doc);
     for (guint i = 0; i < indent; i++) {
         preview_doc_append_len(pr->doc, "  ", 2);
     }
@@ -269,14 +275,78 @@ static gboolean fits_inline(const JsonNode* node) {
     return width <= 72;
 }
 
+/* A container written on several lines (the ones that fold) */
+static gboolean is_block(const JsonNode* node) {
+    return !is_scalar(node) && node->children->len > 0 && !fits_inline(node);
+}
+
+static gboolean is_identifier(const gchar* name, gsize len) {
+    if (len == 0 || !(g_ascii_isalpha(name[0]) || name[0] == '_' || name[0] == '$')) {
+        return FALSE;
+    }
+    for (gsize i = 1; i < len; i++) {
+        if (!(g_ascii_isalnum(name[i]) || name[i] == '_' || name[i] == '$')) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+/* Append the path step of a child: ".name", ["odd name"] or [index] */
+static void path_push(GString* path, const JsonNode* child, guint index) {
+    if (child->key == NULL) {
+        g_string_append_printf(path, "[%u]", index);
+        return;
+    }
+    const gchar* key = child->key;
+    gsize len = child->key_len;
+    gboolean quoted = len >= 2 && (key[0] == '"' || key[0] == '\'');
+    if (quoted && is_identifier(key + 1, len - 2)) {
+        g_string_append_c(path, '.');
+        g_string_append_len(path, key + 1, (gssize)(len - 2));
+    } else if (!quoted && is_identifier(key, len)) {
+        g_string_append_c(path, '.');
+        g_string_append_len(path, key, (gssize)len);
+    } else {
+        g_string_append_c(path, '[');
+        if (!quoted) {
+            g_string_append_c(path, '"');
+        }
+        g_string_append_len(path, key, (gssize)len);
+        if (!quoted) {
+            g_string_append_c(path, '"');
+        }
+        g_string_append_c(path, ']');
+    }
+}
+
+static void print_folded(Printer* pr, const JsonNode* node) {
+    gboolean object = node->type == J_OBJECT;
+    preview_doc_append_len(pr->doc, object ? "{…}" : "[…]", -1);
+    gint start = preview_doc_offset(pr->doc);
+    guint n = node->children->len;
+    gchar* count = object ? g_strdup_printf(ngettext("  %u key", "  %u keys", n), n)
+                          : g_strdup_printf(ngettext("  %u item", "  %u items", n), n);
+    preview_doc_append_len(pr->doc, count, -1);
+    preview_doc_add_span(pr->doc, start, preview_doc_offset(pr->doc), PREVIEW_STYLE_COMMENT);
+    g_free(count);
+}
+
 static void print_node(Printer* pr, const JsonNode* node, guint indent) {
     if (pr->stopped) {
         return;
     }
+    gint line_start = pr->line_start;
     if (node->key != NULL) {
         gint start = preview_doc_offset(pr->doc);
         preview_doc_append_len(pr->doc, node->key, (gssize)node->key_len);
-        preview_doc_add_span(pr->doc, start, preview_doc_offset(pr->doc), PREVIEW_STYLE_KEY);
+        gint end = preview_doc_offset(pr->doc);
+        preview_doc_add_span(pr->doc, start, end, PREVIEW_STYLE_KEY);
+        if (pr->outline && indent == 1) {
+            gboolean quoted = node->key[0] == '"' || node->key[0] == '\'';
+            preview_doc_add_span(pr->doc, quoted ? start + 1 : start, quoted ? end - 1 : end,
+                                 PREVIEW_STYLE_OUTLINE1);
+        }
         preview_doc_append_len(pr->doc, ": ", 2);
     }
     if (is_scalar(node)) {
@@ -284,12 +354,12 @@ static void print_node(Printer* pr, const JsonNode* node, guint indent) {
         return;
     }
     gboolean object = node->type == J_OBJECT;
-    preview_doc_append_len(pr->doc, object ? "{" : "[", 1);
     if (node->children->len == 0) {
-        preview_doc_append_len(pr->doc, object ? "}" : "]", 1);
+        preview_doc_append_len(pr->doc, object ? "{}" : "[]", 2);
         return;
     }
     if (fits_inline(node)) {
+        preview_doc_append_len(pr->doc, "[", 1);
         for (guint i = 0; i < node->children->len; i++) {
             if (i > 0) {
                 preview_doc_append_len(pr->doc, ", ", 2);
@@ -299,9 +369,19 @@ static void print_node(Printer* pr, const JsonNode* node, guint indent) {
         preview_doc_append_len(pr->doc, "]", 1);
         return;
     }
+    if (preview_fold_is_folded(pr->fold, pr->path->str, (gint)indent, pr->level)) {
+        print_folded(pr, node);
+        preview_doc_add_fold(pr->doc, line_start, preview_doc_offset(pr->doc), pr->path->str, TRUE);
+        return;
+    }
+    preview_doc_append_len(pr->doc, object ? "{" : "[", 1);
+    gsize path_len = pr->path->len;
     for (guint i = 0; i < node->children->len && !pr->stopped; i++) {
+        const JsonNode* child = g_ptr_array_index(node->children, i);
         newline(pr, indent + 1);
-        print_node(pr, g_ptr_array_index(node->children, i), indent + 1);
+        path_push(pr->path, child, i);
+        print_node(pr, child, indent + 1);
+        g_string_truncate(pr->path, path_len);
         if (i + 1 < node->children->len) {
             preview_doc_append_len(pr->doc, ",", 1);
         }
@@ -309,11 +389,62 @@ static void print_node(Printer* pr, const JsonNode* node, guint indent) {
     if (!pr->stopped) {
         newline(pr, indent);
         preview_doc_append_len(pr->doc, object ? "}" : "]", 1);
+        preview_doc_add_fold(pr->doc, line_start, preview_doc_offset(pr->doc), pr->path->str, FALSE);
     }
+}
+
+/* Lines added by the blocks at each depth when they are open */
+static void count_block_lines(const JsonNode* node, guint depth, GArray* per_depth) {
+    if (!is_block(node)) {
+        return;
+    }
+    if (per_depth->len <= depth) {
+        g_array_set_size(per_depth, depth + 1);
+    }
+    g_array_index(per_depth, guint64, depth) += node->children->len + 1;
+    for (guint i = 0; i < node->children->len; i++) {
+        count_block_lines(g_ptr_array_index(node->children, i), depth + 1, per_depth);
+    }
+}
+
+/* The level in effect: PREVIEW_FOLD_AUTO opens everything that fits in
+ * JSON_VIEW_MAX_LINES, so long documents open folded below some depth */
+static gint resolve_level(GPtrArray* values, const PreviewFold* fold) {
+    if (fold != NULL && fold->level != PREVIEW_FOLD_AUTO) {
+        return fold->level;
+    }
+    GArray* per_depth = g_array_new(FALSE, TRUE, sizeof(guint64));
+    for (guint i = 0; i < values->len; i++) {
+        count_block_lines(g_ptr_array_index(values, i), 0, per_depth);
+    }
+    guint64 base = 2 * (guint64)values->len - 1; /* a line per value, blank lines between */
+    guint64 total = base;
+    for (guint d = 0; d < per_depth->len; d++) {
+        total += g_array_index(per_depth, guint64, d);
+    }
+    gint level = PREVIEW_FOLD_OPEN;
+    if (total >= JSON_VIEW_MAX_LINES) {
+        level = 1;
+        guint64 lines = base;
+        for (guint d = 0; d + 1 < per_depth->len; d++) {
+            lines += g_array_index(per_depth, guint64, d);
+            if (lines >= JSON_VIEW_MAX_LINES) {
+                break;
+            }
+            level = (gint)d + 1;
+        }
+    }
+    g_array_free(per_depth, TRUE);
+    return level;
 }
 
 gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonViewInfo* info,
                           GError** error) {
+    return json_view_append_folded(doc, text, len, NULL, info, error);
+}
+
+gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, const PreviewFold* fold,
+                                 JsonViewInfo* info, GError** error) {
     Parser p = { text, len, 0, error };
     GPtrArray* values = g_ptr_array_new_with_free_func(node_free);
     gboolean ok = TRUE;
@@ -349,15 +480,25 @@ gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonVie
     const JsonNode* first = g_ptr_array_index(values, 0);
     result.root = first->type == J_OBJECT ? '{' : first->type == J_ARRAY ? '[' : 0;
     result.n_root_items = first->children != NULL ? first->children->len : 0;
+    result.level = resolve_level(values, fold);
     if (info != NULL) {
         *info = result;
     }
 
-    Printer pr = { doc, 0, FALSE };
+    if ((fold == NULL || fold->level == PREVIEW_FOLD_AUTO) && result.level != PREVIEW_FOLD_OPEN) {
+        preview_doc_note(doc, _("Long document: the deeper levels are folded (Tab folds or opens a "
+                                "block, Shift+Tab changes the level)"));
+    }
+    Printer pr = { doc, 0, FALSE, fold, result.level, g_string_new(NULL), preview_doc_offset(doc),
+                   !result.lines && result.root == '{' };
     for (guint i = 0; i < values->len && !pr.stopped; i++) {
         if (i > 0) {
             preview_doc_append_len(doc, "\n", 1);
             newline(&pr, 0);
+        }
+        g_string_assign(pr.path, "$");
+        if (result.lines) {
+            g_string_append_printf(pr.path, "[%u]", i);
         }
         print_node(&pr, g_ptr_array_index(values, i), 0);
     }
@@ -367,6 +508,7 @@ gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonVie
         preview_doc_note(doc, note);
         g_free(note);
     }
+    g_string_free(pr.path, TRUE);
     g_ptr_array_free(values, TRUE);
     return TRUE;
 }

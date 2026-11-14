@@ -142,6 +142,17 @@ L’aperçu Org-mode s’utilise sans ouvrir d’éditeur :
 Les modifications sont enregistrées dans le fichier. Voir
 [Org-mode](org-mode.md) pour l’édition.
 
+## Fichiers JSON
+
+Le JSON est affiché indenté et coloré, ses clés de premier niveau dans la
+barre de symboles (`o`). `Tab` replie ou déplie l’objet ou le tableau sous
+le curseur (sur une ligne de valeurs : celui qui l’entoure), et un bloc
+replié indique son nombre de clés ou d’éléments. `Shift+Tab` affiche les
+membres de premier niveau seulement, puis deux niveaux, puis tout. Un
+document trop long pour être affiché en entier s’ouvre replié sous le
+niveau le plus profond qui tient. Les replis de chaque fichier sont gardés
+jusqu’à la fermeture de LookinFiles.
+
 ## Gros fichiers
 
 Les fichiers texte de plus de 512 Ko affichent leurs 64 premiers Ko, et la

@@ -195,7 +195,9 @@ Layers, from bottom to top
   text (spans of `PreviewStyle`, inline images) or HTML / Markdown source for
   the existing renderers; summary card helpers (`preview_doc_title()`,
   `preview_doc_field()`, `preview_doc_section()`) and text tables
-  (`PreviewTable`: aligned columns, numeric columns right-aligned, zebra rows).
+  (`PreviewTable`: aligned columns, numeric columns right-aligned, zebra rows);
+  fold points (`PreviewFoldPoint`: blocks named by a stable id) and the fold
+  state a builder gets (`PreviewFold`: a level and the ids toggled by hand).
 - `preview_formats` — registry of structured previews, one builder per
   `FileKind` (`preview_format_build()` from a `PreviewInput`), the hex dump
   (`preview_format_hex_dump()`), and `preview_format_build_file()` for tests
@@ -720,6 +722,12 @@ Layers, from bottom to top
   never add a format-specific branch to the viewer. Its results are kept in a
   `preview_cache`: a file selected again is shown at once, and the worker
   only checks the file's stamp (it reads and shows the file again if changed).
+- `preview_folding` — folding of the previews that record fold points
+  (JSON): the fold state of each file for the session, handed to the worker
+  (`preview_folding_state()`, part of the cache key), `Tab` / `Shift+Tab`
+  (`preview_folding_key()` from `on_viewer_key_press()`), and the cursor put
+  back on the block toggled once the new preview is shown
+  (`preview_folding_shown()`).
 - `image_preview`, `image_decode`, `image_prefetch` — the image preview.
   `image_preview` lays the picture out in the preview (header, details,
   zoom, Copy Image); `image_decode` decodes it in a worker thread at the size

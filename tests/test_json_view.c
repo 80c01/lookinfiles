@@ -117,6 +117,90 @@ static void test_values(void) {
     g_assert_null(json_value_parse("[1,", 3, NULL));
 }
 
+/* Text of a fold point */
+static gchar* fold_text(const PreviewDoc* doc, const PreviewFoldPoint* point) {
+    const gchar* a = g_utf8_offset_to_pointer(doc->text->str, point->start);
+    const gchar* b = g_utf8_offset_to_pointer(doc->text->str, point->end);
+    return g_strndup(a, (gsize)(b - a));
+}
+
+static void test_fold_points(void) {
+    const gchar* json = "{\"a\": {\"b\": [{\"c\": 1}, 2]}, \"odd key\": {\"x\": 1}, \"s\": [1, 2]}";
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    g_assert_true(json_view_append_folded(doc, json, strlen(json), NULL, NULL, NULL));
+    /* Blocks only: not the one-line array "s" */
+    const gchar* ids[] = { "$.a.b[0]", "$.a.b", "$.a", "$[\"odd key\"]", "$" };
+    g_assert_cmpuint(doc->folds->len, ==, G_N_ELEMENTS(ids));
+    for (guint i = 0; i < G_N_ELEMENTS(ids); i++) {
+        const PreviewFoldPoint* point = &g_array_index(doc->folds, PreviewFoldPoint, i);
+        g_assert_cmpstr(point->id, ==, ids[i]);
+        g_assert_false(point->folded);
+    }
+    g_autofree gchar* b = fold_text(doc, preview_doc_fold_find(doc, "$.a.b"));
+    g_assert_cmpstr(b, ==, "    \"b\": [\n      {\n        \"c\": 1\n      },\n      2\n    ]");
+    /* A line of values belongs to its block */
+    const gchar* two = strstr(doc->text->str, "      2");
+    const PreviewFoldPoint* at = preview_doc_fold_at(doc, (gint)g_utf8_pointer_to_offset(doc->text->str, two));
+    g_assert_cmpstr(at->id, ==, "$.a.b");
+    /* The members of the outer object go to the tagbar, without quotes */
+    guint outline = 0;
+    for (guint i = 0; i < doc->spans->len; i++) {
+        const PreviewSpan* span = &g_array_index(doc->spans, PreviewSpan, i);
+        if (span->style == PREVIEW_STYLE_OUTLINE1) {
+            outline++;
+            g_assert_cmpint(doc->text->str[span->start - 1], ==, '"');
+        }
+    }
+    g_assert_cmpuint(outline, ==, 3);
+}
+
+static void test_folded(void) {
+    const gchar* json = "{\"a\": {\"b\": {\"c\": 1}}, \"l\": [{\"x\": 1}, {\"y\": 2}]}";
+    g_autoptr(PreviewFold) fold = preview_fold_new(1);
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    g_assert_true(json_view_append_folded(doc, json, strlen(json), fold, NULL, NULL));
+    g_assert_cmpstr(doc->text->str, ==, "{\n  \"a\": {…}  1 key,\n  \"l\": […]  2 items\n}\n");
+    g_assert_true(preview_doc_fold_find(doc, "$.a")->folded);
+    g_assert_null(preview_doc_fold_find(doc, "$.a.b"));
+
+    /* Opened by hand against the level, then a block in it folded */
+    preview_fold_toggle(fold, "$.l");
+    g_autoptr(PreviewDoc) open = preview_doc_new();
+    g_assert_true(json_view_append_folded(open, json, strlen(json), fold, NULL, NULL));
+    g_assert_cmpstr(open->text->str, ==,
+                    "{\n  \"a\": {…}  1 key,\n  \"l\": [\n    {…}  1 key,\n    {…}  1 key\n  ]\n}\n");
+    g_assert_false(preview_doc_fold_find(open, "$.l")->folded);
+    g_assert_true(preview_doc_fold_find(open, "$.l[1]")->folded);
+
+    /* JSON Lines: one block per record */
+    g_autoptr(PreviewFold) none = preview_fold_new(PREVIEW_FOLD_OPEN);
+    preview_fold_toggle(none, "$[1]");
+    g_autoptr(PreviewDoc) lines = preview_doc_new();
+    g_assert_true(json_view_append_folded(lines, "{\"a\":1}\n{\"a\":2}\n", 16, none, NULL, NULL));
+    g_assert_cmpstr(lines->text->str, ==, "{\n  \"a\": 1\n}\n\n{…}  1 key\n");
+}
+
+static void test_auto_level(void) {
+    /* Too long open: folded below the deepest level that fits, with a note */
+    GString* big = g_string_new("{\"items\": [");
+    for (gint i = 0; i < JSON_VIEW_MAX_LINES / 4; i++) { /* 3 levels: 15,000 lines, 2: 2,500 */
+        g_string_append_printf(big, "%s{\"i\": %d, \"j\": {\"k\": 1}}", i > 0 ? "," : "", i);
+    }
+    g_string_append(big, "]}");
+    JsonViewInfo info;
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    g_assert_true(json_view_append_folded(doc, big->str, big->len, NULL, &info, NULL));
+    g_assert_cmpint(info.level, ==, 2);
+    g_assert_true(g_str_has_prefix(doc->text->str, "Long document"));
+    g_assert_null(strstr(doc->text->str, "stopped after"));
+    g_assert_true(preview_doc_fold_find(doc, "$.items[5]")->folded);
+    g_string_free(big, TRUE);
+
+    g_autoptr(PreviewDoc) small = preview_doc_new();
+    g_assert_true(json_view_append_folded(small, "[{\"a\": 1}]", 10, NULL, &info, NULL));
+    g_assert_cmpint(info.level, ==, PREVIEW_FOLD_OPEN);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/json_view/pretty", test_pretty);
@@ -126,5 +210,8 @@ int main(int argc, char** argv) {
     g_test_add_func("/json_view/errors", test_errors);
     g_test_add_func("/json_view/deep_and_long", test_deep_and_long);
     g_test_add_func("/json_view/values", test_values);
+    g_test_add_func("/json_view/fold_points", test_fold_points);
+    g_test_add_func("/json_view/folded", test_folded);
+    g_test_add_func("/json_view/auto_level", test_auto_level);
     return g_test_run();
 }

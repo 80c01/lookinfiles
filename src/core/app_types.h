@@ -237,6 +237,7 @@ typedef struct AppData {
     struct RemoteStore* remote_store; /* remote machines and their folders (remote_store.c), or NULL */
     gchar* current_remote_id;         /* active remote machine ID for the current workspace */
     struct OrgFold* org_fold;         /* folding of the Org preview (org_fold.c), NULL until first used */
+    struct PreviewFolding* preview_folding; /* folds of structured previews (preview_folding.c), or NULL */
     EditorMode default_editor_mode; /* mode of new non-Org editor tabs (-e / --editor) */
     Settings settings;            /* settings.ini as loaded or saved (settings_store.h): line numbers,
                                    * wrap, color column, tagbars; the live mode is default_editor_mode */

@@ -104,6 +104,7 @@ typedef struct {
     GPtrArray* font_files;  /* font files the view loads before showing (font samples) */
     guint pages;          /* pages after this view, reached with PgDn (mailbox messages), 0: none */
     gboolean paged;       /* slides or pages drawn to scale in the minimap */
+    GArray* folds;        /* PreviewFoldPoint: blocks Tab folds (JSON), empty for most formats */
 } PreviewDoc;
 
 /* Width of the labels of preview_doc_field() unless changed */
@@ -199,6 +200,59 @@ void preview_doc_field_styled(PreviewDoc* doc, const gchar* label, const gchar* 
 void preview_doc_item(PreviewDoc* doc, const gchar* text);
 /* Dimmed line (truncation notices, hints) */
 void preview_doc_note(PreviewDoc* doc, const gchar* text);
+
+/* --- Folding ---
+ *
+ * A builder that can fold its blocks (JSON objects and arrays) gets the
+ * fold state in its input and records each foldable block it writes; the
+ * viewer folds or opens the block at the cursor by building again with the
+ * state changed. Blocks are named by an id that stays the same across
+ * builds (a path: "$.servers[2]"). */
+
+/* A foldable block: [start, end] in characters, from the start of its first
+ * line to the end of its last one (its only line when folded) */
+typedef struct {
+    gint start;
+    gint end;
+    gchar* id;
+    gboolean folded;
+} PreviewFoldPoint;
+
+/* PreviewFold.level: everything open unless the document is too long */
+#define PREVIEW_FOLD_AUTO 0
+/* PreviewFold.level: everything open */
+#define PREVIEW_FOLD_OPEN G_MAXINT
+
+typedef struct {
+    /* Blocks at this depth or deeper start folded (the outer block is at
+     * depth 0 and is never folded by the level), or PREVIEW_FOLD_AUTO /
+     * PREVIEW_FOLD_OPEN */
+    gint level;
+    GHashTable* toggled;  /* ids (gchar*) folded or opened by hand against the level */
+} PreviewFold;
+
+PreviewFold* preview_fold_new(gint level);
+PreviewFold* preview_fold_copy(const PreviewFold* fold);
+void preview_fold_free(PreviewFold* fold);
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(PreviewFold, preview_fold_free)
+/* Fold or open a block by hand */
+void preview_fold_toggle(PreviewFold* fold, const gchar* id);
+/* Whether a block at depth is folded, level being the level in effect
+ * (PREVIEW_FOLD_AUTO resolved by the builder); fold may be NULL */
+gboolean preview_fold_is_folded(const PreviewFold* fold, const gchar* id, gint depth, gint level);
+/* Text that differs between fold states ("" for NULL or the default state),
+ * for cache keys. Caller frees. */
+gchar* preview_fold_signature(const PreviewFold* fold);
+
+/* Record a foldable block (offsets in characters) */
+void preview_doc_add_fold(PreviewDoc* doc, gint start, gint end, const gchar* id, gboolean folded);
+/* The innermost block whose range holds offset, or NULL */
+const PreviewFoldPoint* preview_doc_fold_at(const PreviewDoc* doc, gint offset);
+/* The block named id, or NULL */
+const PreviewFoldPoint* preview_doc_fold_find(const PreviewDoc* doc, const gchar* id);
+
+/* Approximate memory held by a document (cache accounting) */
+gsize preview_doc_size(const PreviewDoc* doc);
 
 /* --- Tables --- */
 

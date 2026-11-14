@@ -130,6 +130,15 @@ The Org-mode preview can be used without opening an editor:
 
 The changes are saved to the file. See [Org-mode](org-mode.md) for editing.
 
+## JSON files
+
+JSON is shown indented and coloured, its outer keys in the tagbar (`o`).
+`Tab` folds or opens the object or array at the cursor (on a line of values:
+the one around it), and a folded one shows how many keys or items it has.
+`Shift+Tab` shows the outer members only, then two levels, then everything.
+A document too long to show open starts folded below the deepest level that
+fits. The folds of each file are kept until LookinFiles quits.
+
 ## Large files
 
 Text files over 512 KB show their first 64 KB, and the next parts load as

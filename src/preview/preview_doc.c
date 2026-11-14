@@ -11,6 +11,7 @@ PreviewDoc* preview_doc_new(void) {
     doc->text = g_string_new(NULL);
     doc->spans = g_array_new(FALSE, FALSE, sizeof(PreviewSpan));
     doc->images = g_array_new(FALSE, FALSE, sizeof(PreviewImage));
+    doc->folds = g_array_new(FALSE, FALSE, sizeof(PreviewFoldPoint));
     doc->wrap = TRUE;
     doc->label_width = PREVIEW_DOC_LABEL_WIDTH;
     return doc;
@@ -35,8 +36,12 @@ void preview_doc_free(PreviewDoc* doc) {
     for (guint i = 0; i < doc->images->len; i++) {
         g_bytes_unref(g_array_index(doc->images, PreviewImage, i).data);
     }
+    for (guint i = 0; i < doc->folds->len; i++) {
+        g_free(g_array_index(doc->folds, PreviewFoldPoint, i).id);
+    }
     g_array_free(doc->spans, TRUE);
     g_array_free(doc->images, TRUE);
+    g_array_free(doc->folds, TRUE);
     if (doc->font_files != NULL) {
         g_ptr_array_free(doc->font_files, TRUE);
     }
@@ -141,6 +146,110 @@ void preview_doc_append_doc(PreviewDoc* doc, const PreviewDoc* other) {
     for (guint i = 0; other->font_files != NULL && i < other->font_files->len; i++) {
         preview_doc_add_font_file(doc, g_ptr_array_index(other->font_files, i));
     }
+    for (guint i = 0; i < other->folds->len; i++) {
+        const PreviewFoldPoint* point = &g_array_index(other->folds, PreviewFoldPoint, i);
+        preview_doc_add_fold(doc, base + point->start, base + point->end, point->id, point->folded);
+    }
+}
+
+/* --- Folding --- */
+
+PreviewFold* preview_fold_new(gint level) {
+    PreviewFold* fold = g_new0(PreviewFold, 1);
+    fold->level = level;
+    fold->toggled = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    return fold;
+}
+
+PreviewFold* preview_fold_copy(const PreviewFold* fold) {
+    if (fold == NULL) {
+        return NULL;
+    }
+    PreviewFold* copy = preview_fold_new(fold->level);
+    GHashTableIter it;
+    gpointer id = NULL;
+    g_hash_table_iter_init(&it, fold->toggled);
+    while (g_hash_table_iter_next(&it, &id, NULL)) {
+        g_hash_table_add(copy->toggled, g_strdup(id));
+    }
+    return copy;
+}
+
+void preview_fold_free(PreviewFold* fold) {
+    if (fold == NULL) {
+        return;
+    }
+    g_hash_table_destroy(fold->toggled);
+    g_free(fold);
+}
+
+void preview_fold_toggle(PreviewFold* fold, const gchar* id) {
+    if (!g_hash_table_remove(fold->toggled, id)) {
+        g_hash_table_add(fold->toggled, g_strdup(id));
+    }
+}
+
+gboolean preview_fold_is_folded(const PreviewFold* fold, const gchar* id, gint depth, gint level) {
+    gboolean folded = depth > 0 && level != PREVIEW_FOLD_AUTO && depth >= level;
+    if (fold != NULL && id != NULL && g_hash_table_contains(fold->toggled, id)) {
+        folded = !folded;
+    }
+    return folded;
+}
+
+gchar* preview_fold_signature(const PreviewFold* fold) {
+    if (fold == NULL || (fold->level == PREVIEW_FOLD_AUTO && g_hash_table_size(fold->toggled) == 0)) {
+        return g_strdup("");
+    }
+    GList* ids = g_list_sort(g_hash_table_get_keys(fold->toggled), (GCompareFunc)strcmp);
+    GChecksum* sum = g_checksum_new(G_CHECKSUM_SHA1);
+    for (GList* l = ids; l != NULL; l = l->next) {
+        g_checksum_update(sum, (const guchar*)l->data, -1);
+        g_checksum_update(sum, (const guchar*)"\n", 1);
+    }
+    g_list_free(ids);
+    gchar* signature = g_strdup_printf("%d:%s", fold->level, g_checksum_get_string(sum));
+    g_checksum_free(sum);
+    return signature;
+}
+
+void preview_doc_add_fold(PreviewDoc* doc, gint start, gint end, const gchar* id, gboolean folded) {
+    PreviewFoldPoint point = { start, end, g_strdup(id), folded };
+    g_array_append_val(doc->folds, point);
+}
+
+const PreviewFoldPoint* preview_doc_fold_at(const PreviewDoc* doc, gint offset) {
+    const PreviewFoldPoint* best = NULL;
+    for (guint i = 0; doc != NULL && i < doc->folds->len; i++) {
+        const PreviewFoldPoint* point = &g_array_index(doc->folds, PreviewFoldPoint, i);
+        if (offset >= point->start && offset <= point->end && (best == NULL || point->start > best->start)) {
+            best = point;
+        }
+    }
+    return best;
+}
+
+const PreviewFoldPoint* preview_doc_fold_find(const PreviewDoc* doc, const gchar* id) {
+    for (guint i = 0; doc != NULL && id != NULL && i < doc->folds->len; i++) {
+        const PreviewFoldPoint* point = &g_array_index(doc->folds, PreviewFoldPoint, i);
+        if (g_strcmp0(point->id, id) == 0) {
+            return point;
+        }
+    }
+    return NULL;
+}
+
+gsize preview_doc_size(const PreviewDoc* doc) {
+    if (doc == NULL) {
+        return 0;
+    }
+    gsize bytes = sizeof(PreviewDoc) + doc->text->len + doc->spans->len * sizeof(PreviewSpan) +
+                  doc->folds->len * sizeof(PreviewFoldPoint);
+    for (guint i = 0; i < doc->images->len; i++) {
+        GBytes* data = g_array_index(doc->images, PreviewImage, i).data;
+        bytes += (data != NULL) ? g_bytes_get_size(data) : 0;
+    }
+    return bytes;
 }
 
 gchar* preview_symbol_text(const gchar* text, const gchar* font) {

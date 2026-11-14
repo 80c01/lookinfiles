@@ -162,7 +162,7 @@ static PreviewDoc* build_json(const PreviewInput* in, GCancellable* cancellable,
     (void)cancellable;
     g_autoptr(PreviewDoc) body = preview_doc_new();
     JsonViewInfo info;
-    if (!json_view_append(body, in->text, in->text_len, &info, error)) {
+    if (!json_view_append_folded(body, in->text, in->text_len, in->fold, &info, error)) {
         return NULL;
     }
     PreviewDoc* doc = preview_doc_new();
@@ -181,7 +181,7 @@ static PreviewDoc* build_json(const PreviewInput* in, GCancellable* cancellable,
     if (doc->text->len > 0) {
         preview_doc_append_len(doc, "\n", 1);
     }
-    append_doc(doc, body);
+    preview_doc_append_doc(doc, body); /* with its fold points */
     return doc;
 }
 

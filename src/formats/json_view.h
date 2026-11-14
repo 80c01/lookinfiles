@@ -20,12 +20,22 @@ typedef struct {
     guint n_values;        /* top-level values */
     gchar root;            /* '{', '[' or 0 (scalar) of the first value */
     guint n_root_items;    /* keys or items of the first value */
+    gint level;            /* fold level in effect (PreviewFold.level, never AUTO) */
 } JsonViewInfo;
 
 /* Append the pretty-printed text to doc. FALSE with error set (line and
  * column of the problem) when the text is not JSON; doc is then unchanged. */
 gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonViewInfo* info,
                           GError** error);
+/* The same, folding the objects and arrays written on several lines as fold
+ * asks (NULL: PREVIEW_FOLD_AUTO), each recorded as a fold point of doc named
+ * by its path ("$", "$.name", "$.list[2]", "$[\"odd key\"]"; "$[n]" is
+ * record n of JSON Lines). PREVIEW_FOLD_AUTO opens everything when it fits in
+ * JSON_VIEW_MAX_LINES, else folds below the deepest level that fits (with a
+ * note saying so). The members of an outer object are tagged
+ * PREVIEW_STYLE_OUTLINE1 for the tagbar. */
+gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, const PreviewFold* fold,
+                                 JsonViewInfo* info, GError** error);
 
 /* --- Reading JSON values (notebooks...) --- */
 

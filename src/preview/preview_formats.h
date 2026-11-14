@@ -30,6 +30,8 @@ typedef struct {
     /* Page asked with PgDn / PgUp in documents that have pages after their
      * first view (PreviewDoc.pages: messages of a mailbox), 0 otherwise */
     guint page;
+    /* Fold state of the formats that fold (PreviewDoc.folds), NULL: default */
+    const PreviewFold* fold;
 } PreviewInput;
 
 /* Largest text a builder converts (documents, notebooks...) */
