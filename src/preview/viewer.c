@@ -3,6 +3,7 @@
 #include "core/i18n.h"
 #include "canvas/canvas_preview.h"
 #include "media/image_preview.h"
+#include "preview/image_prefetch.h"
 #include "preview/preview_summary.h"
 #include "preview/summary_view.h"
 #include "explorer/fs_watch.h"
@@ -488,6 +489,7 @@ static void show_media_preview(AppData* app, FileKind kind, const gchar* name, c
         render_pdf_preview(app, name, full);
     } else {
         render_image_preview(app, name, full);
+        image_prefetch_neighbours(app);
     }
 }
 

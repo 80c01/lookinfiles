@@ -706,6 +706,15 @@ Layers, from bottom to top
   never add a format-specific branch to the viewer. Its results are kept in a
   `preview_cache`: a file selected again is shown at once, and the worker
   only checks the file's stamp (it reads and shows the file again if changed).
+- `image_preview`, `image_decode`, `image_prefetch` — the image preview.
+  `image_preview` lays the picture out in the preview (header, details,
+  zoom, Copy Image); `image_decode` decodes it in a worker thread at the size
+  shown, upright (EXIF orientation, RAW embedded preview), keeps the last
+  ones in a `preview_cache` (keyed by fitting box and by size shown), and
+  shares a decoding between the requests of the same image;
+  `image_prefetch` decodes ahead the images next to the previewed one in the
+  explorer (`viewer` calls it after `render_image_preview()`), so arrowing
+  through photos shows them at once.
 - `summary_view` — draws a `preview_summary` in the preview in the style of
   the directory preview (icons, section bands, columns on tab stops).
 - `dir_preview` — directory preview (`dir_preview_show()`): one level read

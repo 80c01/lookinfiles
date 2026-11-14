@@ -12,6 +12,10 @@
 /* Render the image preview of a file (cancels the previous preview) */
 void render_image_preview(AppData* app, const gchar* name, const gchar* full);
 
+/* Decode these images (NULL-terminated, may be NULL: none) ahead, at the
+ * size another file is first shown, so selecting one shows it at once */
+void image_preview_prefetch(AppData* app, const gchar* const* paths);
+
 /* Zoom keys for images and PDFs: + / = zoom in, - zoom out, 0 back to the
  * fitted size. TRUE if the key was used (the previewed file zooms). */
 gboolean image_preview_zoom_key(AppData* app, guint keyval);
