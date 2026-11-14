@@ -127,7 +127,7 @@ static gchar* fold_text(const PreviewDoc* doc, const PreviewFoldPoint* point) {
 static void test_fold_points(void) {
     const gchar* json = "{\"a\": {\"b\": [{\"c\": 1}, 2]}, \"odd key\": {\"x\": 1}, \"s\": [1, 2]}";
     g_autoptr(PreviewDoc) doc = preview_doc_new();
-    g_assert_true(json_view_append_folded(doc, json, strlen(json), NULL, NULL, NULL));
+    g_assert_true(json_view_append_folded(doc, json, strlen(json), FALSE, NULL, NULL, NULL));
     /* Blocks only: not the one-line array "s" */
     const gchar* ids[] = { "$.a.b[0]", "$.a.b", "$.a", "$[\"odd key\"]", "$" };
     g_assert_cmpuint(doc->folds->len, ==, G_N_ELEMENTS(ids));
@@ -158,7 +158,7 @@ static void test_folded(void) {
     const gchar* json = "{\"a\": {\"b\": {\"c\": 1}}, \"l\": [{\"x\": 1}, {\"y\": 2}]}";
     g_autoptr(PreviewFold) fold = preview_fold_new(1);
     g_autoptr(PreviewDoc) doc = preview_doc_new();
-    g_assert_true(json_view_append_folded(doc, json, strlen(json), fold, NULL, NULL));
+    g_assert_true(json_view_append_folded(doc, json, strlen(json), FALSE, fold, NULL, NULL));
     g_assert_cmpstr(doc->text->str, ==, "{\n  \"a\": {…}  1 key,\n  \"l\": […]  2 items\n}\n");
     g_assert_true(preview_doc_fold_find(doc, "$.a")->folded);
     g_assert_null(preview_doc_fold_find(doc, "$.a.b"));
@@ -166,7 +166,7 @@ static void test_folded(void) {
     /* Opened by hand against the level, then a block in it folded */
     preview_fold_toggle(fold, "$.l");
     g_autoptr(PreviewDoc) open = preview_doc_new();
-    g_assert_true(json_view_append_folded(open, json, strlen(json), fold, NULL, NULL));
+    g_assert_true(json_view_append_folded(open, json, strlen(json), FALSE, fold, NULL, NULL));
     g_assert_cmpstr(open->text->str, ==,
                     "{\n  \"a\": {…}  1 key,\n  \"l\": [\n    {…}  1 key,\n    {…}  1 key\n  ]\n}\n");
     g_assert_false(preview_doc_fold_find(open, "$.l")->folded);
@@ -176,7 +176,7 @@ static void test_folded(void) {
     g_autoptr(PreviewFold) none = preview_fold_new(PREVIEW_FOLD_OPEN);
     preview_fold_toggle(none, "$[1]");
     g_autoptr(PreviewDoc) lines = preview_doc_new();
-    g_assert_true(json_view_append_folded(lines, "{\"a\":1}\n{\"a\":2}\n", 16, none, NULL, NULL));
+    g_assert_true(json_view_append_folded(lines, "{\"a\":1}\n{\"a\":2}\n", 16, FALSE, none, NULL, NULL));
     g_assert_cmpstr(lines->text->str, ==, "{\n  \"a\": 1\n}\n\n{…}  1 key\n");
 }
 
@@ -189,7 +189,7 @@ static void test_auto_level(void) {
     g_string_append(big, "]}");
     JsonViewInfo info;
     g_autoptr(PreviewDoc) doc = preview_doc_new();
-    g_assert_true(json_view_append_folded(doc, big->str, big->len, NULL, &info, NULL));
+    g_assert_true(json_view_append_folded(doc, big->str, big->len, FALSE, NULL, &info, NULL));
     g_assert_cmpint(info.level, ==, 2);
     g_assert_true(g_str_has_prefix(doc->text->str, "Long document"));
     g_assert_null(strstr(doc->text->str, "stopped after"));
@@ -197,8 +197,49 @@ static void test_auto_level(void) {
     g_string_free(big, TRUE);
 
     g_autoptr(PreviewDoc) small = preview_doc_new();
-    g_assert_true(json_view_append_folded(small, "[{\"a\": 1}]", 10, NULL, &info, NULL));
+    g_assert_true(json_view_append_folded(small, "[{\"a\": 1}]", 10, FALSE, NULL, &info, NULL));
     g_assert_cmpint(info.level, ==, PREVIEW_FOLD_OPEN);
+}
+
+/* The first bytes of a large file, cut anywhere */
+static gchar* pretty_cut(const gchar* json, JsonViewInfo* info) {
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    GError* error = NULL;
+    gboolean ok = json_view_append_folded(doc, json, strlen(json), TRUE, NULL, info, &error);
+    g_assert_no_error(error);
+    g_assert_true(ok);
+    return g_strdup(doc->text->str);
+}
+
+static void test_cut(void) {
+    JsonViewInfo info;
+    /* In a string, a number, a word, a key, after a comma, an empty block */
+    g_autofree gchar* in_string = pretty_cut("{\"a\": [1, 2, 3], \"b\": {\"c\": \"long te", &info);
+    g_assert_cmpstr(in_string, ==, "{\n  \"a\": [1, 2, 3],\n  \"b\": {…\n…\n");
+    g_assert_true(info.cut);
+    g_autofree gchar* in_number = pretty_cut("[1, 2, 34", NULL);
+    g_assert_cmpstr(in_number, ==, "[\n  1,\n  2\n…\n");
+    g_autofree gchar* in_word = pretty_cut("[true, fal", NULL);
+    g_assert_cmpstr(in_word, ==, "[\n  true\n…\n");
+    g_autofree gchar* in_key = pretty_cut("{\"a\": 1, \"bc", NULL);
+    g_assert_cmpstr(in_key, ==, "{\n  \"a\": 1\n…\n");
+    g_autofree gchar* after_colon = pretty_cut("{\"a\": 1, b:", NULL);
+    g_assert_cmpstr(after_colon, ==, "{\n  \"a\": 1\n…\n");
+    g_autofree gchar* empty = pretty_cut("{\"a\": [", NULL);
+    g_assert_cmpstr(empty, ==, "{\n  \"a\": […\n…\n");
+    /* Complete text: nothing cut; a real error is still one */
+    g_autofree gchar* whole = pretty_cut("{\"a\": \"x\"}", &info);
+    g_assert_cmpstr(whole, ==, "{\n  \"a\": \"x\"\n}\n");
+    g_assert_false(info.cut);
+    g_autoptr(PreviewDoc) bad = preview_doc_new();
+    g_assert_false(json_view_append_folded(bad, "{\"a\" 1, \"b\": [", 14, TRUE, NULL, NULL, NULL));
+    g_assert_cmpuint(bad->text->len, ==, 0);
+    /* JSON Lines: the last record cut, or left out when nothing of it shows */
+    g_autofree gchar* records = pretty_cut("{\"a\": 1}\n{\"a\": 2, \"b", &info);
+    g_assert_cmpstr(records, ==, "{\n  \"a\": 1\n}\n\n{\n  \"a\": 2\n…\n");
+    g_assert_true(info.lines);
+    g_autofree gchar* scalar = pretty_cut("{\"a\": 1}\n\"tex", &info);
+    g_assert_cmpstr(scalar, ==, "{\n  \"a\": 1\n}\n");
 }
 
 int main(int argc, char** argv) {
@@ -213,5 +254,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/json_view/fold_points", test_fold_points);
     g_test_add_func("/json_view/folded", test_folded);
     g_test_add_func("/json_view/auto_level", test_auto_level);
+    g_test_add_func("/json_view/cut", test_cut);
     return g_test_run();
 }

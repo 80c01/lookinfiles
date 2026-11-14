@@ -58,7 +58,8 @@ format.
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,
   JSONC and JSON Lines) pretty-printed and coloured, its objects and arrays
   folded with `Tab` / `Shift+Tab` (long documents open folded below the
-  deepest level that fits) and its outer keys in the tagbar, diffs and patches with a
+  deepest level that fits) and its outer keys in the tagbar; a file larger
+  than `PREVIEW_BYTES` is shown up to the cut, diffs and patches with a
   per-file summary, logs coloured by level and shown from their end, manual
   pages formatted like `man` (gzipped ones too), calendars (`.ics`), contacts
   (`.vcf`) and `.desktop` entries as cards.
@@ -198,7 +199,7 @@ every common format to L3 and never leave one below L1.
 | Video / audio: tags, cover art, codecs, duration | L3 | `video`, `audio`, `media_tags` |
 | Video: audio track and subtitle choice, subtitle files | L3 | `media_player`, `track_menu`, `media_tracks` |
 | CSV / TSV | L3 | `csv` |
-| JSON, JSONC, JSON Lines: folding, outer keys in the tagbar | L3 | `json_view`, `preview_folding` |
+| JSON, JSONC, JSON Lines: folding, outer keys in the tagbar, large files shown up to the cut | L3 | `json_view`, `preview_folding` |
 | Diffs and patches | L3 | `diff_view` |
 | Logs | L3 | `log_view` |
 | Jupyter notebooks | L3 | `notebook` |

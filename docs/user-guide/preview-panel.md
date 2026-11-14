@@ -137,7 +137,9 @@ JSON is shown indented and coloured, its outer keys in the tagbar (`o`).
 the one around it), and a folded one shows how many keys or items it has.
 `Shift+Tab` shows the outer members only, then two levels, then everything.
 A document too long to show open starts folded below the deepest level that
-fits. The folds of each file are kept until LookinFiles quits.
+fits. The folds of each file are kept until LookinFiles quits. A JSON file
+over 512 KB shows its first 64 KB, the values open there ending with `…`;
+**Load Whole File** shows all of it.
 
 ## Large files
 

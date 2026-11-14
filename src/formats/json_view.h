@@ -21,21 +21,26 @@ typedef struct {
     gchar root;            /* '{', '[' or 0 (scalar) of the first value */
     guint n_root_items;    /* keys or items of the first value */
     gint level;            /* fold level in effect (PreviewFold.level, never AUTO) */
+    gboolean cut;          /* the cut text ended inside a value (shown up to there) */
 } JsonViewInfo;
 
 /* Append the pretty-printed text to doc. FALSE with error set (line and
  * column of the problem) when the text is not JSON; doc is then unchanged. */
 gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonViewInfo* info,
                           GError** error);
-/* The same, folding the objects and arrays written on several lines as fold
+/* The same, for a text that may stop before the end of the file (cut: the
+ * first PREVIEW_BYTES of a large file): the values open at the end are shown
+ * up to there, the last one ending with a dimmed "…" line instead of its
+ * bracket, and a number, word or string the cut may have shortened is left
+ * out. Folds the objects and arrays written on several lines as fold
  * asks (NULL: PREVIEW_FOLD_AUTO), each recorded as a fold point of doc named
  * by its path ("$", "$.name", "$.list[2]", "$[\"odd key\"]"; "$[n]" is
  * record n of JSON Lines). PREVIEW_FOLD_AUTO opens everything when it fits in
  * JSON_VIEW_MAX_LINES, else folds below the deepest level that fits (with a
  * note saying so). The members of an outer object are tagged
  * PREVIEW_STYLE_OUTLINE1 for the tagbar. */
-gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, const PreviewFold* fold,
-                                 JsonViewInfo* info, GError** error);
+gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                                 const PreviewFold* fold, JsonViewInfo* info, GError** error);
 
 /* --- Reading JSON values (notebooks...) --- */
 

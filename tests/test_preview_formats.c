@@ -88,6 +88,27 @@ static void test_json(void) {
     g_assert_true(g_str_has_prefix(doc->text->str, "Object · 10 keys\n\n{\n  \"name\": \"lookin-demo\",\n"));
     g_autoptr(PreviewDoc) lines = build_fixture("events.jsonl", FILE_KIND_JSON);
     g_assert_true(g_str_has_prefix(lines->text->str, "JSON Lines · 3 records\n"));
+
+    /* Larger than what the viewer reads: shown up to the cut, foldable */
+    gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
+    gchar* path = g_build_filename(dir, "big.json", NULL);
+    GString* text = g_string_new("{\"items\": [");
+    for (guint i = 0; i < 20000; i++) {
+        g_string_append_printf(text, "%s{\"id\": %u, \"name\": \"item %u\"}", i > 0 ? ", " : "", i, i);
+    }
+    g_string_append(text, "]}");
+    g_assert_true(g_file_set_contents(path, text->str, (gssize)text->len, NULL));
+    g_autoptr(PreviewDoc) big = preview_format_build_file(path, "big.json", 64 * 1024, NULL, NULL, NULL);
+    g_assert_nonnull(big);
+    g_assert_true(g_str_has_prefix(big->text->str, "Object · 1 key\nOnly the first "));
+    g_assert_nonnull(strstr(big->text->str, "      \"id\": 100,\n"));
+    g_assert_true(g_str_has_suffix(big->text->str, "  …\n…\n"));
+    g_assert_nonnull(preview_doc_fold_find(big, "$.items[100]"));
+    g_string_free(text, TRUE);
+    g_remove(path);
+    g_rmdir(dir);
+    g_free(path);
+    g_free(dir);
 }
 
 static void test_diff(void) {

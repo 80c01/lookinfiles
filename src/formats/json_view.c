@@ -15,6 +15,7 @@ struct JsonValue {
     const gchar* key;      /* member name as written (quoted or not), or NULL */
     gsize key_len;
     GPtrArray* children;   /* objects and arrays */
+    gboolean cut;          /* container that the end of a cut text left open */
 };
 
 #define MAX_DEPTH 256
@@ -24,6 +25,8 @@ typedef struct {
     gsize len;
     gsize pos;
     GError** error;
+    gboolean cut;          /* the text stops before the end of the file */
+    gboolean at_cut;       /* parsing reached the end of the cut text */
 } Parser;
 
 static void node_free(gpointer data) {
@@ -50,6 +53,14 @@ static gboolean fail(Parser* p, const gchar* what) {
                     line, col, what);
     }
     return FALSE;
+}
+
+/* At the end of a cut text: what is open stops here, without an error */
+static gboolean at_cut(Parser* p) {
+    if (p->cut && p->pos >= p->len) {
+        p->at_cut = TRUE;
+    }
+    return p->at_cut;
 }
 
 /* Skip blanks and comments; stop_at_newline: stop before a line break */
@@ -94,6 +105,9 @@ static gboolean scan_string(Parser* p) {
             break;
         }
     }
+    if (at_cut(p)) {
+        return FALSE;
+    }
     return fail(p, _("unterminated string"));
 }
 
@@ -112,6 +126,10 @@ static JsonNode* parse_container(Parser* p, guint depth) {
     p->pos++;
     for (;;) {
         skip_space(p, FALSE);
+        if (at_cut(p)) {
+            node->cut = TRUE;
+            return node;
+        }
         if (p->pos >= p->len) {
             fail(p, object ? _("missing }") : _("missing ]"));
             node_free(node);
@@ -128,6 +146,10 @@ static JsonNode* parse_container(Parser* p, guint depth) {
             gchar c = p->text[p->pos];
             if (c == '"' || c == '\'') {
                 if (!scan_string(p)) {
+                    if (p->at_cut) {
+                        node->cut = TRUE;
+                        return node;
+                    }
                     node_free(node);
                     return NULL;
                 }
@@ -144,6 +166,10 @@ static JsonNode* parse_container(Parser* p, guint depth) {
             key = p->text + start;
             key_len = p->pos - start;
             skip_space(p, FALSE);
+            if (at_cut(p)) {
+                node->cut = TRUE;
+                return node;
+            }
             if (p->pos >= p->len || p->text[p->pos] != ':') {
                 fail(p, _("expected :"));
                 node_free(node);
@@ -152,6 +178,10 @@ static JsonNode* parse_container(Parser* p, guint depth) {
             p->pos++;
         }
         JsonNode* child = parse_value(p, depth + 1);
+        if (child == NULL && p->at_cut) {
+            node->cut = TRUE;
+            return node;
+        }
         if (child == NULL) {
             node_free(node);
             return NULL;
@@ -159,6 +189,10 @@ static JsonNode* parse_container(Parser* p, guint depth) {
         child->key = key;
         child->key_len = key_len;
         g_ptr_array_add(node->children, child);
+        if (child->cut) {
+            node->cut = TRUE;
+            return node;
+        }
         skip_space(p, FALSE);
         if (p->pos < p->len && p->text[p->pos] == ',') {
             p->pos++;
@@ -172,6 +206,9 @@ static JsonNode* parse_container(Parser* p, guint depth) {
 
 static JsonNode* parse_value(Parser* p, guint depth) {
     skip_space(p, FALSE);
+    if (at_cut(p)) {
+        return NULL;
+    }
     if (p->pos >= p->len) {
         fail(p, _("expected a value"));
         return NULL;
@@ -200,6 +237,9 @@ static JsonNode* parse_value(Parser* p, guint depth) {
         while (p->pos < p->len && g_ascii_isalpha(p->text[p->pos])) {
             p->pos++;
         }
+        if (at_cut(p)) {
+            return NULL; /* the word may go on after the cut */
+        }
         gsize n = p->pos - start;
         const gchar* w = p->text + start;
         if (!((n == 4 && (memcmp(w, "true", 4) == 0 || memcmp(w, "null", 4) == 0)) ||
@@ -213,6 +253,9 @@ static JsonNode* parse_value(Parser* p, guint depth) {
     } else {
         fail(p, _("unexpected character"));
         return NULL;
+    }
+    if (at_cut(p)) {
+        return NULL; /* a number may go on after the cut */
     }
     JsonNode* node = g_new0(JsonNode, 1);
     node->type = type;
@@ -261,7 +304,7 @@ static void print_scalar(Printer* pr, const JsonNode* node) {
 
 /* Arrays of a few short scalars stay on one line */
 static gboolean fits_inline(const JsonNode* node) {
-    if (node->type != J_ARRAY || node->children->len == 0) {
+    if (node->type != J_ARRAY || node->children->len == 0 || node->cut) {
         return FALSE;
     }
     gsize width = 0;
@@ -355,7 +398,12 @@ static void print_node(Printer* pr, const JsonNode* node, guint indent) {
     }
     gboolean object = node->type == J_OBJECT;
     if (node->children->len == 0) {
-        preview_doc_append_len(pr->doc, object ? "{}" : "[]", 2);
+        preview_doc_append_len(pr->doc, object ? "{" : "[", 1);
+        if (node->cut) {
+            preview_doc_append(pr->doc, PREVIEW_STYLE_COMMENT, "…");
+        } else {
+            preview_doc_append_len(pr->doc, object ? "}" : "]", 1);
+        }
         return;
     }
     if (fits_inline(node)) {
@@ -388,7 +436,11 @@ static void print_node(Printer* pr, const JsonNode* node, guint indent) {
     }
     if (!pr->stopped) {
         newline(pr, indent);
-        preview_doc_append_len(pr->doc, object ? "}" : "]", 1);
+        if (node->cut) {
+            preview_doc_append(pr->doc, PREVIEW_STYLE_COMMENT, "…"); /* the rest was not read */
+        } else {
+            preview_doc_append_len(pr->doc, object ? "}" : "]", 1);
+        }
         preview_doc_add_fold(pr->doc, line_start, preview_doc_offset(pr->doc), pr->path->str, FALSE);
     }
 }
@@ -440,12 +492,12 @@ static gint resolve_level(GPtrArray* values, const PreviewFold* fold) {
 
 gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonViewInfo* info,
                           GError** error) {
-    return json_view_append_folded(doc, text, len, NULL, info, error);
+    return json_view_append_folded(doc, text, len, FALSE, NULL, info, error);
 }
 
-gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, const PreviewFold* fold,
-                                 JsonViewInfo* info, GError** error) {
-    Parser p = { text, len, 0, error };
+gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                                 const PreviewFold* fold, JsonViewInfo* info, GError** error) {
+    Parser p = { text, len, 0, error, cut, FALSE };
     GPtrArray* values = g_ptr_array_new_with_free_func(node_free);
     gboolean ok = TRUE;
     for (;;) {
@@ -455,10 +507,13 @@ gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, 
         }
         JsonNode* node = parse_value(&p, 0);
         if (node == NULL) {
-            ok = FALSE;
+            ok = p.at_cut; /* a value cut before it shows anything */
             break;
         }
         g_ptr_array_add(values, node);
+        if (node->cut) {
+            break;
+        }
         /* JSON Lines: the next value starts on another line */
         skip_space(&p, TRUE);
         if (p.pos < p.len && p.text[p.pos] != '\n') {
@@ -467,6 +522,7 @@ gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, 
         }
     }
     if (ok && values->len == 0) {
+        p.at_cut = FALSE;
         ok = fail(&p, _("empty document"));
     }
     if (!ok) {
@@ -481,6 +537,7 @@ gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, 
     result.root = first->type == J_OBJECT ? '{' : first->type == J_ARRAY ? '[' : 0;
     result.n_root_items = first->children != NULL ? first->children->len : 0;
     result.level = resolve_level(values, fold);
+    result.cut = p.at_cut;
     if (info != NULL) {
         *info = result;
     }
@@ -516,7 +573,7 @@ gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, 
 /* --- Reading values --- */
 
 JsonValue* json_value_parse(const gchar* text, gsize len, GError** error) {
-    Parser p = { text, len, 0, error };
+    Parser p = { text, len, 0, error, FALSE, FALSE };
     JsonNode* node = parse_value(&p, 0);
     if (node == NULL) {
         return NULL;
