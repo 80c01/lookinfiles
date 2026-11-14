@@ -17,6 +17,11 @@
 #define MOUNTS_EVERY 5        /* seconds between two readings of the filesystems */
 #define WARN_PERCENT 80.0
 #define CRIT_PERCENT 95.0
+/* Widths in characters of the texts that change every second: fixed, so
+ * the cards and the columns do not move with what they show */
+#define VALUE_CHARS 14
+#define DETAIL_CHARS 30
+#define MOUNT_SIZE_CHARS 42
 
 /* A card of the dashboard: title and value, chart, details */
 typedef struct {
@@ -121,6 +126,14 @@ static GtkWidget* level_new(void) {
     return bar;
 }
 
+/* A label of a fixed natural width: the text is ellipsized beyond it when
+ * the room is short */
+static void label_fix_width(GtkWidget* label, gint chars) {
+    gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_width_chars(GTK_LABEL(label), chars);
+    gtk_label_set_max_width_chars(GTK_LABEL(label), chars);
+}
+
 static GtkWidget* small_label(const gchar* css) {
     GtkWidget* l = gtk_label_new(NULL);
     gtk_label_set_xalign(GTK_LABEL(l), 0.0f);
@@ -139,6 +152,8 @@ static GtkWidget* card_new(Card* c, GtkWidget* flow, const gchar* title, Palette
     gtk_widget_set_hexpand(t, TRUE);
     gtk_box_append(GTK_BOX(row), t);
     c->value = gtk_label_new("–");
+    label_fix_width(c->value, VALUE_CHARS);
+    gtk_label_set_xalign(GTK_LABEL(c->value), 1.0f);
     gtk_widget_add_css_class(c->value, "sysmon-card-value");
     gtk_widget_add_css_class(c->value, "sysmon-num");
     gtk_box_append(GTK_BOX(row), c->value);
@@ -149,9 +164,10 @@ static GtkWidget* card_new(Card* c, GtkWidget* flow, const gchar* title, Palette
     sparkline_set_grid(c->chart, TRUE);
     gtk_widget_set_size_request(c->chart, 220, 64);
     gtk_box_append(GTK_BOX(box), c->chart);
+    /* No wrapping: the lines of the details stay the same, so does the
+     * height of the cards */
     c->detail = small_label("sysmon-detail");
-    gtk_label_set_ellipsize(GTK_LABEL(c->detail), PANGO_ELLIPSIZE_NONE);
-    gtk_label_set_wrap(GTK_LABEL(c->detail), TRUE);
+    label_fix_width(c->detail, DETAIL_CHARS);
     gtk_box_append(GTK_BOX(box), c->detail);
     gtk_flow_box_append(GTK_FLOW_BOX(flow), box);
     return box;
@@ -160,6 +176,12 @@ static GtkWidget* card_new(Card* c, GtkWidget* flow, const gchar* title, Palette
 static void set_label(GtkWidget* label, gchar* text) {
     gtk_label_set_text(GTK_LABEL(label), text);
     g_free(text);
+}
+
+/* The details of a card, also in the tooltip when they do not fit */
+static void set_detail(GtkWidget* label, gchar* text) {
+    gtk_widget_set_tooltip_text(label, text);
+    set_label(label, text);
 }
 
 /* A bar per core, the height its use */
@@ -267,6 +289,7 @@ static void show_mounts(SysmonTab* st, GPtrArray* mounts) {
         GtkWidget* size = small_label("sysmon-detail");
         gtk_widget_add_css_class(size, "sysmon-num");
         gtk_label_set_xalign(GTK_LABEL(size), 1.0f);
+        label_fix_width(size, MOUNT_SIZE_CHARS);
         set_label(size, mount_size_text(m, percent));
         gtk_grid_attach(GTK_GRID(st->mounts), size, 3, row, 1, 1);
     }
@@ -288,7 +311,7 @@ static void show_sample(SysmonTab* st, SysSample* s) {
     gtk_widget_queue_draw(st->cores);
     gdouble busiest = 0;
     for (guint i = 0; i < s->core_percent->len; i++) busiest = MAX(busiest, g_array_index(s->core_percent, gdouble, i));
-    set_label(st->cpu.detail, g_strdup_printf(ngettext("%u core, busiest at %.0f%%", "%u cores, busiest at %.0f%%", ncpu),
+    set_detail(st->cpu.detail, g_strdup_printf(ngettext("%u core, busiest at %.0f%%", "%u cores, busiest at %.0f%%", ncpu),
                                               ncpu, busiest));
 
     guint64 used = sysstat_mem_used(&s->mem);
@@ -302,7 +325,7 @@ static void show_sample(SysmonTab* st, SysSample* s) {
     gchar* su = g_format_size(swap_used);
     gchar* stot = g_format_size(s->mem.swap_total);
     /* used of total, cache; swap used of total */
-    set_label(st->mem.detail, s->mem.swap_total > 0
+    set_detail(st->mem.detail, s->mem.swap_total > 0
                                   ? g_strdup_printf(_("%s of %s used, %s cache\nSwap: %s of %s"), u, t, c, su, stot)
                                   : g_strdup_printf(_("%s of %s used, %s cache\nNo swap"), u, t, c));
     level_set(st->swap_bar, s->mem.swap_total > 0 ? 100.0 * (gdouble)swap_used / (gdouble)s->mem.swap_total : 0.0);
@@ -318,7 +341,7 @@ static void show_sample(SysmonTab* st, SysSample* s) {
     sparkline_set_max(st->load.chart, MAX((gdouble)ncpu, st->load_peak * 1.1));
     sparkline_push(st->load.chart, 0, s->load[0]);
     set_label(st->load.value, g_strdup_printf("%.2f", s->load[0]));
-    set_label(st->load.detail,
+    set_detail(st->load.detail,
               g_strdup_printf(_("1, 5, 15 minutes: %.2f  %.2f  %.2f\n%u running of %u tasks"), s->load[0], s->load[1],
                               s->load[2], s->tasks_running, s->tasks_total));
 
@@ -327,7 +350,7 @@ static void show_sample(SysmonTab* st, SysSample* s) {
     gchar* rx = format_rate(s->net_rx_rate);
     gchar* tx = format_rate(s->net_tx_rate);
     set_label(st->net.value, g_strdup_printf("↓ %s", rx));
-    set_label(st->net.detail, g_strdup_printf(_("Received %s, sent %s (%u interfaces)"), rx, tx, s->net->len));
+    set_detail(st->net.detail, g_strdup_printf(_("Received %s, sent %s (%u interfaces)"), rx, tx, s->net->len));
     g_free(rx);
     g_free(tx);
 
@@ -336,7 +359,7 @@ static void show_sample(SysmonTab* st, SysSample* s) {
     set_label(st->disk.value, g_strdup_printf("%.0f%%", s->disk_busy));
     gchar* rd = format_rate(s->disk_read_rate);
     gchar* wr = format_rate(s->disk_write_rate);
-    set_label(st->disk.detail, g_strdup_printf(_("Read %s, written %s; busiest disk at %.0f%%"), rd, wr, s->disk_busy));
+    set_detail(st->disk.detail, g_strdup_printf(_("Read %s, written %s; busiest disk at %.0f%%"), rd, wr, s->disk_busy));
     g_free(rd);
     g_free(wr);
 

@@ -78,6 +78,21 @@ static const gchar* state_name(gchar state) {
     }
 }
 
+/* Width of a column's cells in characters: a fixed natural width, so the
+ * columns keep their place whatever the rows show */
+static gint cell_chars(ProcColumn col) {
+    switch (col) {
+    case COL_NAME: return 20;
+    case COL_PID: return 7;
+    case COL_USER: return 10;
+    case COL_CPU: return 6;
+    case COL_MEM: return 9;
+    case COL_THREADS: return 5;
+    case COL_STATE: return 9;
+    }
+    return 8;
+}
+
 /* Text of a cell */
 static gchar* cell_text(SysmonProc* p, ProcColumn col) {
     switch (col) {
@@ -99,6 +114,8 @@ static void on_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer da
     gboolean numeric = col == COL_PID || col == COL_CPU || col == COL_MEM || col == COL_THREADS;
     gtk_label_set_xalign(GTK_LABEL(label), numeric ? 1.0f : 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_width_chars(GTK_LABEL(label), cell_chars(col));
+    gtk_label_set_max_width_chars(GTK_LABEL(label), cell_chars(col));
     if (numeric) gtk_widget_add_css_class(label, "sysmon-num");
     g_object_set_data(G_OBJECT(label), COLUMN_KEY, data);
     gtk_list_item_set_child(item, label);
