@@ -189,7 +189,7 @@ static gboolean ensure_kernel(IpynbTab* t) {
     gchar** argv = bridge_argv(&error);
     if (argv != NULL) {
         t->kernel = ipynb_kernel_new(&CALLBACKS, t);
-        gchar* cwd = g_path_get_dirname(t->path);
+        gchar* cwd = g_strdup(t->dir);
         if (!ipynb_kernel_start(t->kernel, (const gchar* const*)argv, ipynb_doc_kernel_name(t->doc), cwd, &error)) {
             g_clear_pointer(&t->kernel, ipynb_kernel_free);
         }

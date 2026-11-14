@@ -32,7 +32,8 @@
  *
  * Saved automatically (shortly after each change, Ctrl+S at once, when the
  * tab is closed, when its workspace is removed, and at quit), written as
- * Jupyter writes it. */
+ * Jupyter writes it. A notebook made with ipynb_tab_new_untitled() lives in
+ * memory until Ctrl+S (or closing it) asks for a file name (ipynb_save.c). */
 
 /* EditorOpenHook (editor.h): open full in a notebook tab when it is a
  * notebook the tab can edit, in the editor panel when dedicated (a tab
@@ -40,8 +41,17 @@
  * FALSE when it is not. */
 gboolean ipynb_tab_open(AppData* app, const gchar* name, const gchar* full, gboolean dedicated);
 
-/* Ctrl+S in a notebook tab with the focus: save it now. Returns TRUE if one
- * had the focus. */
+/* A new notebook in memory ("Untitled.ipynb", one empty code cell, its
+ * folder the explorer's directory) as the current page of nb, an editor
+ * notebook or the preview notebook */
+void ipynb_tab_new_untitled(AppData* app, GtkNotebook* nb);
+
+/* Quitting: each notebook without a file and with changes asks to save
+ * them or drop them; FALSE when one is cancelled (do not quit) */
+gboolean ipynb_tab_confirm_quit(AppData* app);
+
+/* Ctrl+S in a notebook tab with the focus: save it now (a notebook without
+ * a file: asks for one). Returns TRUE if one had the focus. */
 gboolean ipynb_tab_save_focused(AppData* app);
 
 /* Save every notebook tab with changes now (all workspaces) */

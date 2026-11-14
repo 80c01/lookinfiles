@@ -26,6 +26,10 @@ void notes_attach_context_menu(AppData* app);
 /* Actions */
 void notes_new_note(AppData* app);
 void notes_new_notebook(AppData* app);
+/* A new Canvas note "Untitled-N" (no dialog) in the selected notebook, else
+ * the first one, opened in a Canvas tab of the editor panel; returns that
+ * tab's page, or NULL */
+GtkWidget* notes_new_canvas(AppData* app);
 void notes_edit_selected(AppData* app);
 void notes_convert_selected_type(AppData* app, NoteType target_type);
 /* Selected Canvas note: write its Markdown as a new note next to it */

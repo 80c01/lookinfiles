@@ -49,6 +49,10 @@ void editor_open_text_file(AppData* app, const gchar* name, const gchar* full);
 /* Open an in-memory buffer tab (tab->path = NULL, tab->is_buffer = TRUE) with
  * display name `name` and initial mode `mode` in the target editor notebook. */
 EditorTab* editor_open_buffer(AppData* app, const gchar* name, EditorMode mode);
+/* Open a new empty tab without a file ("Untitled-N", saved with the mode's
+ * Save As) in mode, as the current page of nb (an editor notebook or the
+ * preview notebook); unlike a buffer, closing it with changes asks first */
+EditorTab* editor_open_untitled(AppData* app, GtkNotebook* nb, EditorMode mode);
 /* Open full in the dedicated editor panel (moving its tab there when it is
  * open in the preview notebook). keep_focus: widget given the focus back
  * (Emacs C-o), NULL to focus the editor (Vim t). NULL when not editable. */
@@ -136,6 +140,13 @@ void editor_add_page(AppData* app, GtkWidget* child, GtkWidget* label);
  * editor tab used last, else the editor panel when it shows, else the
  * preview panel */
 void editor_add_page_like_file(AppData* app, GtkWidget* child, GtkWidget* label);
+/* Show child, a movable page (marked here) with its tab label, as the
+ * current page of nb, an editor notebook or the preview notebook */
+void editor_add_page_to(AppData* app, GtkNotebook* nb, GtkWidget* child, GtkWidget* label);
+/* Called with each editor notebook editor_notebook_new() makes (the chrome
+ * adds its buttons to the tab bar) */
+typedef void (*EditorNotebookHook)(AppData* app, GtkNotebook* nb);
+void editor_set_notebook_hook(EditorNotebookHook hook);
 /* Move child, a movable page of a notebook, into to at index (-1: append) */
 void editor_move_page_to(AppData* app, GtkWidget* child, GtkNotebook* to, gint index);
 /* Move child, a movable page of the editor area (not an editor tab), as an

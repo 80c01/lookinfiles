@@ -9234,3 +9234,64 @@ msgstr "Retirer ce minuteur de la barre du haut"
 #, c-format
 msgid "Timer %u"
 msgstr "Minuteur %u"
+
+msgid "Web Browser"
+msgstr "Navigateur web"
+
+msgid "Needs WebKitGTK 6.0"
+msgstr "Nécessite WebKitGTK 6.0"
+
+msgid "Canvas"
+msgstr "Canvas"
+
+msgid "Jupyter Notebook"
+msgstr "Notebook Jupyter"
+
+msgid "Vim"
+msgstr "Vim"
+
+msgid "Emacs"
+msgstr "Emacs"
+
+msgid "Notepad"
+msgstr "Notepad"
+
+msgid "Needs VTE for GTK 4"
+msgstr "Nécessite VTE pour GTK 4"
+
+msgid "Not saved yet (Ctrl+S to choose a file)"
+msgstr "Pas encore enregistré (Ctrl+S pour choisir un fichier)"
+
+msgid "Replace File"
+msgstr "Remplacer le fichier"
+
+#, c-format
+msgid "%s already exists. Replace it?"
+msgstr "%s existe déjà. Le remplacer ?"
+
+msgid "Save Notebook"
+msgstr "Enregistrer le notebook"
+
+msgid "File name (from the notebook's folder):"
+msgstr "Nom du fichier (depuis le dossier du notebook) :"
+
+msgid "Type a file name."
+msgstr "Tapez un nom de fichier."
+
+#, c-format
+msgid "%s is open in another tab."
+msgstr "%s est ouvert dans un autre onglet."
+
+#, c-format
+msgid "%s is a folder."
+msgstr "%s est un dossier."
+
+msgid "Unsaved Notebook"
+msgstr "Notebook non enregistré"
+
+msgid "_Save…"
+msgstr "_Enregistrer…"
+
+#, c-format
+msgid "%s has never been saved. Save it before closing?"
+msgstr "%s n’a jamais été enregistré. L’enregistrer avant de le fermer ?"

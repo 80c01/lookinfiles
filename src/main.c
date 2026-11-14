@@ -57,6 +57,7 @@
 #include "preview/preview_full.h"
 #include "preview/preview_busy.h"
 #include "core/ui_probe.h"
+#include "chrome/new_tab_menu.h"
 #include <string.h>
 
 /* The window is closed: ask about unsaved changes like Ctrl+Q, then remember
@@ -521,6 +522,10 @@ int main(int argc, char** argv) {
     GtkWidget* top_row = topbar_new(app, ws_minimap, layouts_btn, prefs_btn);
     /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
     gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), topbar_split_button_new(app), GTK_PACK_START);
+    /* Right end of the tab bars: the + button and its menu of new tabs */
+    new_tab_menu_attach(app, GTK_NOTEBOOK(notebook));
+    new_tab_menu_attach(app, GTK_NOTEBOOK(editor_notebook));
+    new_tab_menu_init();
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 
     app->notebook = notebook;

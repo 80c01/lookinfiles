@@ -110,6 +110,12 @@ void editor_notebook_enable_tab_drop(AppData* app, GtkWidget* nb) {
     tab_drop_set_swap(GTK_NOTEBOOK(nb), editor_swap_tabs);
 }
 
+static EditorNotebookHook notebook_hook = NULL;
+
+void editor_set_notebook_hook(EditorNotebookHook hook) {
+    notebook_hook = hook;
+}
+
 GtkWidget* editor_notebook_new(AppData* app) {
     GtkWidget* nb = gtk_notebook_new();
     gtk_widget_set_name(nb, "editor-notebook");
@@ -123,6 +129,7 @@ GtkWidget* editor_notebook_new(AppData* app) {
     g_signal_connect(nb, "page-reordered",
                      G_CALLBACK(on_notebook_page_reordered), app);
     editor_notebook_enable_tab_drop(app, nb);
+    if (notebook_hook != NULL) notebook_hook(app, GTK_NOTEBOOK(nb));
     return nb;
 }
 
@@ -675,6 +682,12 @@ static void add_movable_page(AppData* app, GtkNotebook* nb, GtkWidget* child, Gt
     gtk_notebook_set_current_page(nb, page);
     editor_update_panel_visibilities(app);
     minimap_update_visibility(app);
+}
+
+void editor_add_page_to(AppData* app, GtkNotebook* nb, GtkWidget* child, GtkWidget* label) {
+    if (app == NULL || nb == NULL || child == NULL) return;
+    if (GTK_WIDGET(nb) != app->notebook) app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+    add_movable_page(app, nb, child, label);
 }
 
 void editor_add_page(AppData* app, GtkWidget* child, GtkWidget* label) {

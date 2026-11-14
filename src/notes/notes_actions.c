@@ -82,6 +82,29 @@ static void open_note(AppData* app, NoteType type, const gchar* name, const gcha
     }
 }
 
+/* Write a note titled title of type in notebook nb (under a free file name)
+ * and list it; returns its path (free it) */
+static gchar* create_note(AppData* app, NotebookItem* nb, const gchar* title, NoteType type) {
+    const gchar* ext = note_type_ext(type);
+    gchar* filename = g_strdup_printf("%s%s", title, ext);
+    gchar* file_path = g_build_filename(nb->path, filename, NULL);
+    /* If file exists, find an available unique filename */
+    for (gint counter = 2; g_file_test(file_path, G_FILE_TEST_EXISTS); counter++) {
+        g_free(filename);
+        g_free(file_path);
+        filename = g_strdup_printf("%s (%d)%s", title, counter, ext);
+        file_path = g_build_filename(nb->path, filename, NULL);
+    }
+    note_create_on_disk(type, file_path, title);
+    nb->notes = g_list_append(nb->notes, note_item_new(filename, title, file_path, type));
+    nb->expanded = TRUE;
+    notes_save(app);
+    g_free(filename);
+    return file_path;
+}
+
+static NotebookItem* notes_ensure_notebook(NotesManager* mgr, const gchar* name);
+
 void notes_new_note(AppData* app) {
     NotesManager* mgr = notes_mgr_of(app);
     if (mgr == NULL) return;
@@ -106,39 +129,30 @@ void notes_new_note(AppData* app) {
     g_free(default_title);
     if (title == NULL) return;
 
-    const gchar* ext = note_type_ext(type);
-    gchar* filename = g_strdup_printf("%s%s", title, ext);
-    gchar* file_path = g_build_filename(target_nb->path, filename, NULL);
-
-    /* If file exists, find an available unique filename */
-    if (g_file_test(file_path, G_FILE_TEST_EXISTS)) {
-        gint counter = 2;
-        do {
-            g_free(filename);
-            g_free(file_path);
-            filename = g_strdup_printf("%s (%d)%s", title, counter++, ext);
-            file_path = g_build_filename(target_nb->path, filename, NULL);
-        } while (g_file_test(file_path, G_FILE_TEST_EXISTS));
-    }
-
-    note_create_on_disk(type, file_path, title);
-
-    NoteItem* note = note_item_new(filename, title, file_path, type);
-    target_nb->notes = g_list_append(target_nb->notes, note);
-    target_nb->expanded = TRUE;
-
-    notes_save(app);
-
+    gchar* file_path = create_note(app, target_nb, title, type);
     /* Open the new note to edit it */
     open_note(app, type, title, title, file_path);
-
     notes_refresh(app);
-
     notes_select_path(app, file_path);
-
     g_free(title);
-    g_free(filename);
     g_free(file_path);
+}
+
+GtkWidget* notes_new_canvas(AppData* app) {
+    NotesManager* mgr = notes_mgr_of(app);
+    if (mgr == NULL) return NULL;
+    NotebookItem* target_nb = NULL;
+    NotesSelectionType sel = notes_selected_info(app, &target_nb, NULL, NULL);
+    if (sel == SEL_TRASH || sel == SEL_TRASH_NOTE || target_nb == NULL) {
+        target_nb = mgr->notebooks != NULL ? (NotebookItem*)mgr->notebooks->data : notes_ensure_notebook(mgr, "General");
+    }
+    gchar* title = g_strdup_printf(_("Untitled-%d"), mgr->next_note_id++);
+    gchar* file_path = create_note(app, target_nb, title, NOTE_TYPE_CANVAS);
+    GtkWidget* page = canvas_view_open(app, file_path, title);
+    notes_refresh(app);
+    g_free(title);
+    g_free(file_path);
+    return page;
 }
 
 /* Notebook named `name`, created when missing */

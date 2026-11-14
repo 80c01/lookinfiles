@@ -2,18 +2,21 @@
 #define IPYNB_TAB_PRIVATE_H
 
 /* Shared by the files of the Jupyter notebook tab: ipynb_tab.c (the tab,
- * its cells, saving), ipynb_run.c (running cells in a kernel) and
- * ipynb_tagbar.c (the tagbar). The public API is ipynb_tab.h. */
+ * its cells), ipynb_save.c (saving), ipynb_run.c (running cells in a
+ * kernel) and ipynb_tagbar.c (the tagbar). The public API is ipynb_tab.h. */
 #include "core/app_types.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_kernel.h"
 
 typedef struct IpynbTagbar IpynbTagbar;
 
+#define IPYNB_TAB_MAX_CHARS 24 /* of the name in the tab label */
+
 typedef struct {
     AppData* app;
     GtkWidget* root;        /* the notebook page */
     GtkWidget* tab_label;   /* owned ref: kept while the page moves */
+    GtkWidget* label_text;  /* the name in tab_label */
     GtkWidget* cells_box;   /* one child per cell */
     GtkWidget* scroll;      /* the GtkScrolledWindow of cells_box */
     GtkWidget* info;        /* cell count (status bar) */
@@ -23,8 +26,9 @@ typedef struct {
     GHashTable* running;    /* keys (ipynb_doc_cell_key()) of the cells run or waiting to run */
     GHashTable* editing;    /* keys of the Markdown cells shown as source, not rendered */
     IpynbDoc* doc;
-    gchar* path;
+    gchar* path;            /* NULL: made in memory, no file yet */
     gchar* name;
+    gchar* dir;             /* the notebook's folder (kernel, Save As) */
     IpynbCell* deleted;     /* the cell deleted last, and where it was */
     guint deleted_at;
     guint current;          /* the cell with the focus, or used last */
@@ -57,10 +61,12 @@ typedef struct {
 } IpynbTab;
 
 /* ipynb_tab.c */
+/* The tab of a notebook page, or NULL; the open tab of the notebook at path
+ * (any workspace), or NULL */
+IpynbTab* ipynb_tab_of(GtkWidget* root);
+IpynbTab* ipynb_tab_find(AppData* app, const gchar* path);
 void ipynb_tab_set_status(IpynbTab* t, const gchar* text, gboolean error);
 void ipynb_tab_update_info(IpynbTab* t);
-/* The notebook changed: saved shortly */
-void ipynb_tab_mark_changed(IpynbTab* t);
 void ipynb_tab_focus_cell(IpynbTab* t, guint index);
 /* Insert a cell (the cells are built again, then it has the focus) */
 void ipynb_tab_insert_cell(IpynbTab* t, guint at, IpynbCellType type);
@@ -70,6 +76,18 @@ void ipynb_tab_refresh_cell(IpynbTab* t, guint index);
 void ipynb_tab_render_cell(IpynbTab* t, guint index);
 /* Build every cell again (the kernel's language changed) */
 void ipynb_tab_rebuild_cells(IpynbTab* t);
+
+/* ipynb_save.c */
+/* The notebook changed: saved shortly */
+void ipynb_tab_mark_changed(IpynbTab* t);
+/* Write the changes now (a notebook without a file: only says so) */
+void ipynb_tab_save_now(IpynbTab* t);
+/* Ask for a file name and write the notebook there; the tab edits that file
+ * from then on. FALSE when cancelled. */
+gboolean ipynb_save_as(IpynbTab* t);
+/* Before closing: a notebook without a file and with changes asks to save
+ * them (Save As), drop them, or stay open (FALSE) */
+gboolean ipynb_save_may_close(IpynbTab* t);
 
 /* ipynb_run.c */
 /* Add the run buttons to the tab's bar; returns the kernel button (the

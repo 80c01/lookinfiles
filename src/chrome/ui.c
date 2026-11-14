@@ -189,6 +189,7 @@ gboolean ui_confirm_quit(AppData* app) {
             return FALSE;
         }
     }
+    if (!ipynb_tab_confirm_quit(app)) return FALSE;
     canvas_view_save(app);
     ipynb_tab_save_all(app);
     session_save_now(app);

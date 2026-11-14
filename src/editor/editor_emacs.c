@@ -885,12 +885,12 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     /* Resolve C-x combinations */
     if (st->emacs_prefix == EMACS_PREFIX_CTRL_X) {
         st->emacs_prefix = EMACS_PREFIX_NONE;
-        if (ctrl && (keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
+        if (ctrl && (keyval == GDK_KEY_s || keyval == GDK_KEY_S) && tab->path != NULL) {
             editor_save_current(tab->app);
             emacs_echo(tab, "Wrote buffer");
             return TRUE;
-        }
-        if (ctrl && (keyval == GDK_KEY_w || keyval == GDK_KEY_W)) {
+        } /* C-x C-s without a file: asks for one, as C-x C-w */
+        if (ctrl && (keyval == GDK_KEY_w || keyval == GDK_KEY_W || keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
             emacs_open_minibuffer(tab, EMACS_MINI_WRITE_FILE, "Write file: ", tab->path ? tab->path : "");
             return TRUE;
         }

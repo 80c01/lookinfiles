@@ -18,6 +18,24 @@ Emacs keys (see [Org-mode](org-mode.md)).
 
 A file already open is not opened twice: its tab is shown.
 
+### New tabs
+
+The **+** button at the right end of a tab bar (the preview panel's and
+each editor group's) opens a new tab in that group:
+
+- **Web Browser**: an empty browser tab, the address bar focused (in the
+  preview panel; needs WebKitGTK 6.0, like `Ctrl+Shift+B`).
+- **Canvas**: a new Canvas note "Untitled-N" in the notebook selected in the
+  Notes view, else the first one (see [notes](notes.md)).
+- **Jupyter Notebook**: a notebook with one empty code cell, kept in memory
+  until you save it: `Ctrl+S` asks for a file name (from the explorer's
+  folder, `.ipynb` added). Closing it or quitting with changes asks to save
+  them first; its kernel starts in the explorer's folder.
+- **Vim**, **Emacs**, **Notepad**: an empty editor tab "Untitled-N" in that
+  mode. Save it with the mode's Save As (Notepad `Ctrl+S`, Emacs `C-x C-s` or
+  `C-x C-w`, Vim `:w name`); closing it with changes asks first.
+- **Terminal**: a shell in a new tab (needs VTE).
+
 A bullet (●) in the tab title marks unsaved changes. Closing a tab or
 quitting with unsaved changes asks first.
 
@@ -58,7 +76,8 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   Outputs**), and opens the file as JSON text in an editor tab (**Edit as
   JSON**).
 - The notebook saves itself shortly after each change, when the tab closes
-  and at quit (`Ctrl+S` saves at once). It is written as Jupyter writes it,
+  and at quit (`Ctrl+S` saves at once; a new notebook made with the **+**
+  button asks for a file name first). It is written as Jupyter writes it,
   so an unchanged cell gives no difference in git.
 
 An nbformat 3 or damaged notebook opens as text.

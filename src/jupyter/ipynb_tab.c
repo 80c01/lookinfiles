@@ -2,7 +2,6 @@
 #include "jupyter/ipynb_tab.h"
 #include "core/i18n.h"
 #include "editor/editor.h"
-#include "editor/file_save.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_tab_private.h"
 #include "markup/markdown.h"
@@ -21,8 +20,6 @@
 #define CELL_PROMPT_KEY "lookin-ipynb-prompt"   /* on a cell's view: its In [n] label */
 #define CELL_OUTPUTS_KEY "lookin-ipynb-outputs" /* on a cell's view: its outputs box */
 #define CELL_RENDERED_KEY "lookin-ipynb-rendered" /* on a Markdown cell's view: its rendered view */
-#define TAB_MAX_CHARS 24
-#define SAVE_DELAY_MS 1000
 #define MAX_OUTPUT_LINES 200
 #define MAX_NOTEBOOK_BYTES (64 * 1024 * 1024)
 #define IMAGE_MAX_HEIGHT 480
@@ -63,7 +60,7 @@ static void ensure_css(void) {
                   " font-size: @size_code; }");
 }
 
-static IpynbTab* tab_of(GtkWidget* root) {
+IpynbTab* ipynb_tab_of(GtkWidget* root) {
     return root != NULL ? g_object_get_data(G_OBJECT(root), IPYNB_TAB_KEY) : NULL;
 }
 
@@ -79,11 +76,10 @@ static gboolean tab_shown(IpynbTab* t) {
     return t->app->window != NULL && gtk_widget_get_root(t->root) == GTK_ROOT(t->app->window);
 }
 
-/* The open tab of the notebook at path (any workspace), or NULL */
-static IpynbTab* find_tab(AppData* app, const gchar* path) {
+IpynbTab* ipynb_tab_find(AppData* app, const gchar* path) {
     for (guint i = 0; app->ipynb_pages != NULL && i < app->ipynb_pages->len; i++) {
-        IpynbTab* t = tab_of(g_ptr_array_index(app->ipynb_pages, i));
-        if (t != NULL && !t->closed && g_strcmp0(t->path, path) == 0) return t;
+        IpynbTab* t = ipynb_tab_of(g_ptr_array_index(app->ipynb_pages, i));
+        if (t != NULL && !t->closed && t->path != NULL && g_strcmp0(t->path, path) == 0) return t;
     }
     return NULL;
 }
@@ -93,7 +89,7 @@ static IpynbTab* focused_tab(AppData* app) {
     GtkWidget* f = app->window != NULL ? gtk_window_get_focus(app->window) : NULL;
     for (guint i = 0; f != NULL && app->ipynb_pages != NULL && i < app->ipynb_pages->len; i++) {
         GtkWidget* root = g_ptr_array_index(app->ipynb_pages, i);
-        if (f == root || gtk_widget_is_ancestor(f, root)) return tab_of(root);
+        if (f == root || gtk_widget_is_ancestor(f, root)) return ipynb_tab_of(root);
     }
     return NULL;
 }
@@ -116,42 +112,6 @@ void ipynb_tab_update_info(IpynbTab* t) {
     g_free(cells);
     const gchar* kernel = ipynb_doc_kernel(t->doc);
     gtk_menu_button_set_label(GTK_MENU_BUTTON(t->kernel_button), kernel != NULL ? kernel : _("Choose a Kernel"));
-}
-
-static void save_now(IpynbTab* t) {
-    if (t->save_source != 0) {
-        g_source_remove(t->save_source);
-        t->save_source = 0;
-    }
-    if (!t->dirty) return;
-    gchar* json = ipynb_doc_to_json(t->doc);
-    GError* error = NULL;
-    if (file_save_text(t->path, json, -1, &error)) {
-        t->dirty = FALSE;
-        if (!t->closed) ipynb_tab_set_status(t, _("Saved"), FALSE);
-    } else {
-        gchar* msg = g_strdup_printf(_("Not saved: %s"), error->message);
-        if (!t->closed) ipynb_tab_set_status(t, msg, TRUE);
-        g_warning("%s: %s", t->path, msg);
-        g_free(msg);
-        g_error_free(error);
-    }
-    g_free(json);
-}
-
-static gboolean on_save_timeout(gpointer data) {
-    IpynbTab* t = data;
-    t->save_source = 0;
-    save_now(t);
-    return G_SOURCE_REMOVE;
-}
-
-void ipynb_tab_mark_changed(IpynbTab* t) {
-    t->dirty = TRUE;
-    ipynb_tab_set_status(t, _("Modified"), FALSE);
-    if (t->save_source != 0) g_source_remove(t->save_source);
-    t->save_source = g_timeout_add(SAVE_DELAY_MS, on_save_timeout, t);
-    ipynb_tagbar_changed(t);
 }
 
 /* --- Cells --- */
@@ -757,7 +717,8 @@ static void on_clear_outputs(GtkButton* button, gpointer data) {
 static void on_edit_json(GtkButton* button, gpointer data) {
     (void)button;
     IpynbTab* t = data;
-    save_now(t);
+    if (t->path == NULL && !ipynb_save_as(t)) return; /* a file to open first */
+    ipynb_tab_save_now(t);
     editor_open_text_file(t->app, t->name, t->path);
 }
 
@@ -843,7 +804,7 @@ static void close_tab(IpynbTab* t) {
     AppData* app = t->app;
     ipynb_run_stop(t);
     ipynb_tagbar_release(t);
-    save_now(t);
+    ipynb_tab_save_now(t);
     t->closed = TRUE;
     GtkWidget* root = g_object_ref(t->root);
     if (app->ipynb_pages != NULL) g_ptr_array_remove(app->ipynb_pages, root);
@@ -869,13 +830,13 @@ static void on_label_middle_click(GtkGestureClick* gesture, gint n_press, gdoubl
     (void)y;
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
     IpynbTab* t = data;
-    if (!t->closed) close_tab(t);
+    if (!t->closed && ipynb_save_may_close(t)) close_tab(t);
 }
 
 static void on_menu_close(GtkWidget* child, gpointer data) {
     (void)data;
-    IpynbTab* t = tab_of(child);
-    if (t != NULL && !t->closed) close_tab(t);
+    IpynbTab* t = ipynb_tab_of(child);
+    if (t != NULL && !t->closed && ipynb_save_may_close(t)) close_tab(t);
 }
 
 /* The tab menu, as for an editor tab: move, close */
@@ -892,7 +853,7 @@ static void on_root_destroy(GtkWidget* widget, gpointer data) {
     IpynbTab* t = data;
     ipynb_run_stop(t);
     ipynb_tagbar_release(t);
-    save_now(t); /* destroyed with its window or workspace: the last changes */
+    ipynb_tab_save_now(t); /* destroyed with its window or workspace: the last changes */
     t->closed = TRUE;
     if (t->rebuild_source != 0) {
         g_source_remove(t->rebuild_source);
@@ -914,6 +875,7 @@ static void tab_free(gpointer data) {
     if (t->stale != NULL) g_hash_table_unref(t->stale);
     g_free(t->path);
     g_free(t->name);
+    g_free(t->dir);
     g_free(t);
 }
 
@@ -923,10 +885,11 @@ static GtkWidget* tab_label_new(IpynbTab* t) {
     file_type_image_set(image, t->name, FALSE);
     gtk_box_append(GTK_BOX(box), image);
     GtkWidget* text = gtk_label_new(t->name);
+    t->label_text = text;
     gtk_label_set_ellipsize(GTK_LABEL(text), PANGO_ELLIPSIZE_END);
-    gtk_label_set_max_width_chars(GTK_LABEL(text), TAB_MAX_CHARS);
-    /* As wide as the name (up to TAB_MAX_CHARS) even when tabs are crowded */
-    gtk_label_set_width_chars(GTK_LABEL(text), (gint)MIN(g_utf8_strlen(t->name, -1), TAB_MAX_CHARS));
+    gtk_label_set_max_width_chars(GTK_LABEL(text), IPYNB_TAB_MAX_CHARS);
+    /* As wide as the name (up to IPYNB_TAB_MAX_CHARS) even when tabs are crowded */
+    gtk_label_set_width_chars(GTK_LABEL(text), (gint)MIN(g_utf8_strlen(t->name, -1), IPYNB_TAB_MAX_CHARS));
     gtk_box_append(GTK_BOX(box), text);
     gtk_widget_set_tooltip_text(box, t->path);
 
@@ -942,13 +905,15 @@ static GtkWidget* tab_label_new(IpynbTab* t) {
 }
 
 
-/* A new tab editing doc (taken), in no notebook yet */
-static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, IpynbDoc* doc) {
+/* A new tab editing doc (taken), in no notebook yet: the file at path, or
+ * (NULL) a notebook in memory of folder dir */
+static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, const gchar* dir, IpynbDoc* doc) {
     ensure_css();
     IpynbTab* t = g_new0(IpynbTab, 1);
     t->app = app;
     t->path = g_strdup(path);
     t->name = g_strdup(name);
+    t->dir = path != NULL ? g_path_get_dirname(path) : g_strdup(dir);
     t->doc = doc;
     t->views = g_ptr_array_new();
     t->running = g_hash_table_new(NULL, NULL);
@@ -1039,7 +1004,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, Ipy
     rebuild(t);
     /* Shown as in a new editor tab (Preferences → Editor) */
     ipynb_tagbar_set_shown(t, app->settings.tagbar);
-    ipynb_tab_set_status(t, _("Saved"), FALSE);
+    ipynb_tab_set_status(t, path != NULL ? _("Saved") : _("Not saved yet (Ctrl+S to choose a file)"), FALSE);
     return t;
 }
 
@@ -1065,7 +1030,7 @@ gboolean ipynb_tab_open(AppData* app, const gchar* name, const gchar* full, gboo
     g_free(lower);
     if (!notebook) return FALSE;
 
-    IpynbTab* t = find_tab(app, full);
+    IpynbTab* t = ipynb_tab_find(app, full);
     if (t != NULL && !tab_shown(t)) {
         /* Open in another workspace: it moves to this one */
         close_tab(t);
@@ -1075,7 +1040,7 @@ gboolean ipynb_tab_open(AppData* app, const gchar* name, const gchar* full, gboo
         IpynbDoc* doc = load(full);
         if (doc == NULL) return FALSE; /* edited as text */
         gchar* base = name != NULL ? g_strdup(name) : g_path_get_basename(full);
-        t = tab_new(app, base, full, doc);
+        t = tab_new(app, base, full, NULL, doc);
         g_free(base);
         if (dedicated) {
             editor_add_page(app, t->root, t->tab_label);
@@ -1089,21 +1054,47 @@ gboolean ipynb_tab_open(AppData* app, const gchar* name, const gchar* full, gboo
     return TRUE;
 }
 
+void ipynb_tab_new_untitled(AppData* app, GtkNotebook* nb) {
+    if (app == NULL || nb == NULL) return;
+    const gchar* dir = app->base_dir != NULL ? app->base_dir : g_get_home_dir();
+    /* Named as Jupyter names them: the first name no tab and no file has */
+    gchar* name = NULL;
+    for (guint n = 0; name == NULL; n++) {
+        name = n == 0 ? g_strdup("Untitled.ipynb") : g_strdup_printf("Untitled%u.ipynb", n);
+        gchar* path = g_build_filename(dir, name, NULL);
+        gboolean taken = g_file_test(path, G_FILE_TEST_EXISTS);
+        for (guint i = 0; !taken && app->ipynb_pages != NULL && i < app->ipynb_pages->len; i++) {
+            IpynbTab* o = ipynb_tab_of(g_ptr_array_index(app->ipynb_pages, i));
+            taken = o != NULL && !o->closed && g_strcmp0(o->name, name) == 0;
+        }
+        g_free(path);
+        if (taken) g_clear_pointer(&name, g_free);
+    }
+    IpynbTab* t = tab_new(app, name, NULL, dir, ipynb_doc_new());
+    g_free(name);
+    editor_add_page_to(app, nb, t->root, t->tab_label);
+    ipynb_tab_focus_cell(t, 0);
+}
+
 gboolean ipynb_tab_save_focused(AppData* app) {
     IpynbTab* t = app != NULL ? focused_tab(app) : NULL;
     if (t == NULL || t->closed) return FALSE;
+    if (t->path == NULL) {
+        ipynb_save_as(t);
+        return TRUE;
+    }
     if (!t->dirty) {
         /* Nothing new: written again all the same, as editors do */
         t->dirty = TRUE;
     }
-    save_now(t);
+    ipynb_tab_save_now(t);
     return TRUE;
 }
 
 void ipynb_tab_save_all(AppData* app) {
     for (guint i = 0; app != NULL && app->ipynb_pages != NULL && i < app->ipynb_pages->len; i++) {
-        IpynbTab* t = tab_of(g_ptr_array_index(app->ipynb_pages, i));
-        if (t != NULL && !t->closed) save_now(t);
+        IpynbTab* t = ipynb_tab_of(g_ptr_array_index(app->ipynb_pages, i));
+        if (t != NULL && !t->closed) ipynb_tab_save_now(t);
     }
 }
 
@@ -1114,11 +1105,11 @@ gboolean ipynb_tab_close_shown(AppData* app) {
         /* Else the current page of the preview notebook */
         GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
         gint cur = gtk_notebook_get_current_page(nb);
-        t = cur >= 0 ? tab_of(gtk_notebook_get_nth_page(nb, cur)) : NULL;
+        t = cur >= 0 ? ipynb_tab_of(gtk_notebook_get_nth_page(nb, cur)) : NULL;
         if (t != NULL && !gtk_widget_get_mapped(t->root)) t = NULL;
     }
     if (t == NULL || t->closed) return FALSE;
-    close_tab(t);
+    if (ipynb_save_may_close(t)) close_tab(t);
     return TRUE;
 }
 
@@ -1127,7 +1118,7 @@ void ipynb_tab_workspace_hidden(AppData* app, VirtualLayout* ws) {
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     for (gint i = gtk_notebook_get_n_pages(nb) - 1; i >= 0; i--) {
         GtkWidget* page = gtk_notebook_get_nth_page(nb, i);
-        if (tab_of(page) == NULL) continue;
+        if (ipynb_tab_of(page) == NULL) continue;
         if (ws->ipynb_pages == NULL) ws->ipynb_pages = g_ptr_array_new_with_free_func(g_object_unref);
         g_ptr_array_insert(ws->ipynb_pages, 0, g_object_ref(page));
         gtk_notebook_remove_page(nb, i);
@@ -1139,7 +1130,7 @@ void ipynb_tab_workspace_shown(AppData* app, VirtualLayout* ws) {
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     for (guint i = 0; i < ws->ipynb_pages->len; i++) {
         GtkWidget* root = g_ptr_array_index(ws->ipynb_pages, i);
-        IpynbTab* t = tab_of(root);
+        IpynbTab* t = ipynb_tab_of(root);
         if (t == NULL) continue;
         gtk_notebook_append_page(nb, root, t->tab_label);
         gtk_notebook_set_tab_reorderable(nb, root, TRUE);
@@ -1160,12 +1151,12 @@ void ipynb_tab_workspace_removed(AppData* app, VirtualLayout* ws) {
 
 void ipynb_tab_set_tagbar_shown(AppData* app, gboolean shown) {
     for (guint i = 0; app != NULL && app->ipynb_pages != NULL && i < app->ipynb_pages->len; i++) {
-        IpynbTab* t = tab_of(g_ptr_array_index(app->ipynb_pages, i));
+        IpynbTab* t = ipynb_tab_of(g_ptr_array_index(app->ipynb_pages, i));
         if (t != NULL && !t->closed) ipynb_tagbar_set_shown(t, shown);
     }
 }
 
 GtkWidget* ipynb_tab_tagbar_list(GtkWidget* page) {
-    IpynbTab* t = page != NULL ? tab_of(page) : NULL;
+    IpynbTab* t = page != NULL ? ipynb_tab_of(page) : NULL;
     return t != NULL && !t->closed ? ipynb_tagbar_list(t) : NULL;
 }

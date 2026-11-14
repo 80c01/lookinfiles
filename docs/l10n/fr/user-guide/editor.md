@@ -20,6 +20,28 @@ s’ouvrent en **Org-mode**, qui utilise les touches d’Emacs (voir
 
 Un fichier déjà ouvert ne s’ouvre pas deux fois : son onglet est affiché.
 
+### Nouveaux onglets
+
+Le bouton **+** au bout à droite d’une barre d’onglets (celle du panneau
+d’aperçu et celle de chaque groupe d’édition) ouvre un nouvel onglet dans
+ce groupe :
+
+- **Navigateur web** : un onglet de navigateur vide, la barre d’adresse
+  active (dans le panneau d’aperçu ; WebKitGTK 6.0 est nécessaire, comme
+  pour `Ctrl+Shift+B`).
+- **Canvas** : une nouvelle note Canvas « Sans-titre-N » dans le carnet
+  sélectionné dans la vue Notes, sinon le premier (voir [notes](notes.md)).
+- **Notebook Jupyter** : un notebook avec une cellule de code vide, gardé en
+  mémoire jusqu’à ce que vous l’enregistriez : `Ctrl+S` demande un nom de
+  fichier (depuis le dossier de l’explorateur, `.ipynb` ajouté). Le fermer
+  ou quitter avec des modifications propose d’abord de les enregistrer ;
+  son noyau démarre dans le dossier de l’explorateur.
+- **Vim**, **Emacs**, **Notepad** : un onglet d’édition vide « Sans-titre-N »
+  dans ce mode. Enregistrez-le avec l’« Enregistrer sous » du mode (Notepad
+  `Ctrl+S`, Emacs `C-x C-s` ou `C-x C-w`, Vim `:w nom`) ; le fermer avec des
+  modifications demande d’abord.
+- **Terminal** : un shell dans un nouvel onglet (VTE est nécessaire).
+
 Une puce (●) dans le titre de l’onglet signale des modifications non
 enregistrées. Fermer un onglet ou quitter avec des modifications non
 enregistrées demande d’abord.
@@ -65,7 +87,9 @@ cellule Markdown nouvelle ou vide reste en source.
   sorties (**Effacer les sorties**) et ouvre le fichier en texte JSON dans
   un onglet d’édition (**Éditer en JSON**).
 - Le notebook s’enregistre tout seul peu après chaque modification, à la
-  fermeture de l’onglet et en quittant (`Ctrl+S` enregistre tout de suite).
+  fermeture de l’onglet et en quittant (`Ctrl+S` enregistre tout de suite ;
+  un nouveau notebook fait avec le bouton **+** demande d’abord un nom de
+  fichier).
   Il est écrit comme Jupyter l’écrit : une cellule inchangée ne donne aucune
   différence dans git.
 

@@ -286,8 +286,8 @@ done
 # ipynb_tab_private.h is internal to the Jupyter notebook tab files
 for f in $(grep -lE '#include "([a-z]+/)?ipynb_tab_private.h"' $SRC_CH); do
     case "$(basename "$f")" in
-        ipynb_tab.c|ipynb_run.c|ipynb_tagbar.c) ;;
-        *) echo "layering: $f includes ipynb_tab_private.h (internal to ipynb_tab.c, ipynb_run.c, ipynb_tagbar.c)"; status=1 ;;
+        ipynb_tab.c|ipynb_save.c|ipynb_run.c|ipynb_tagbar.c) ;;
+        *) echo "layering: $f includes ipynb_tab_private.h (internal to ipynb_tab.c, ipynb_save.c, ipynb_run.c, ipynb_tagbar.c)"; status=1 ;;
     esac
 done
 

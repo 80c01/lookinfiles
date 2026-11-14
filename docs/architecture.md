@@ -590,7 +590,9 @@ Layers, from bottom to top
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
   `remote_store`). The notes view is `notes.c` (rows, selection, keys, menu),
-  `notes_dialogs.c` and `notes_actions.c`, sharing `notes_private.h`.
+  `notes_dialogs.c` and `notes_actions.c`, sharing `notes_private.h`;
+  `notes_new_canvas()` makes and opens a Canvas note without a dialog (the
+  **+** button of `new_tab_menu`).
 - `canvas_view` — the **Canvas** tabs (`app->canvas_pages`, every workspace):
   each edits one Canvas note (`canvas_doc`), one tab per note, text boxes and pictures on a
   `GtkFixed`; move / resize by dragging, pictures pasted (`Ctrl+V`) or dropped
@@ -658,8 +660,13 @@ Layers, from bottom to top
   (`ipynb_tab_save_all()`). Movable like a Video tab, kept with its
   workspace through `ipynb_tab_workspace_hidden()` / `_shown()`; its file is
   the page's `editor_page_file()`, which `editor_session` saves and reopens.
+  `ipynb_tab_new_untitled()` makes a notebook in memory (`path` NULL, `dir`
+  its folder: kernel and Save As), not saved by the session; `ipynb_save.c`
+  holds the saving (`ipynb_tab_save_now()`, the Save As dialog
+  `ipynb_save_as()` on `Ctrl+S` and **Edit as JSON**, `ipynb_save_may_close()`
+  before a close and `ipynb_tab_confirm_quit()` from `ui_confirm_quit()`).
   `ipynb_run.c` runs the cells (it shares `ipynb_tab_private.h` with
-  `ipynb_tab.c`): an `ipynb_kernel` started at the first run, the bridge
+  `ipynb_tab.c` and `ipynb_save.c`): an `ipynb_kernel` started at the first run, the bridge
   script from the GResource, outputs added to the `IpynbDoc` by cell key
   and drawn once per main loop turn (`ipynb_tab_refresh_cell()`: the other
   cells and the source are left alone), the input row, interrupt, restart,
@@ -740,7 +747,12 @@ Layers, from bottom to top
   a tab title; they share `editor_private.h`, the public API stays `editor.h`.
   `editor_open_file()` first offers the file to the open hook (a page of its
   own: `ipynb_tab`) when no editor tab has it; a movable page that edits a
-  file names it with `editor_page_set_file()`.
+  file names it with `editor_page_set_file()`. `editor_open_untitled()` opens an
+  empty tab without a file in a given notebook (unlike `editor_open_buffer()`,
+  a scratch buffer, it asks before closing with changes);
+  `editor_add_page_to()` puts a movable page in a given notebook;
+  `editor_set_notebook_hook()` lets the chrome add its buttons to each new
+  editor notebook (`new_tab_menu`).
 - `editor_session` — the editor tabs of a workspace for the session:
   `editor_session_capture()` describes the preview notebook and the
   dedicated panel (notebooks, splits, sizes, current pages, view last
@@ -884,6 +896,15 @@ Layers, from bottom to top
   and toggle pills; the split / dock button of the preview notebook
   (`topbar_split_button_new()`); `update_path_label()`. Its widgets are
   private (`struct TopBar`).
+- `new_tab_menu` — the **+** button at the end of the tab bar of the preview
+  notebook and of every editor notebook (`new_tab_menu_attach()` in `main.c`,
+  then `editor_set_notebook_hook()`): its popover opens a browser tab
+  (`browser_open()`, always in the preview notebook), a Canvas note
+  (`notes_new_canvas()`), a Jupyter notebook in memory
+  (`ipynb_tab_new_untitled()`), an empty Vim / Emacs / Notepad tab
+  (`editor_open_untitled()`) or a terminal (`terminal_add_tab()`) in the
+  notebook of the button; the browser and terminal entries are greyed out
+  without WebKitGTK / VTE.
 - `status_bar` — panel status bars (no window-wide bar: editor tabs have
   their own, `editor_modes`): explorer bar (`create_explorer_bar()`: Git branch of the files
   view with modification `*` and ahead/behind `↑` / `↓` indicators, `app_notice()` message with Undo, sort order of the files view (click cycles it, like `o`); the message moves to the top bar,

@@ -437,6 +437,38 @@ EditorTab* editor_open_buffer(AppData* app, const gchar* name, EditorMode mode) 
     return tab;
 }
 
+EditorTab* editor_open_untitled(AppData* app, GtkNotebook* nb, EditorMode mode) {
+    if (app == NULL || nb == NULL) return NULL;
+    /* The first "Untitled-N" no open tab without a file has */
+    gchar* name = NULL;
+    for (gint n = 1; name == NULL; n++) {
+        name = g_strdup_printf(_("Untitled-%d"), n);
+        for (GList* l = app->editors; l != NULL; l = l->next) {
+            EditorTab* t = (EditorTab*)l->data;
+            if (t != NULL && t->path == NULL && g_strcmp0(t->name, name) == 0) {
+                g_clear_pointer(&name, g_free);
+                break;
+            }
+        }
+    }
+    EditorTab* tab = g_new0(EditorTab, 1);
+    tab->name = name;
+    tab->app = app;
+    tab->nb = GTK_WIDGET(nb);
+    tab->line_ending = "Unix (LF)";
+    tab->final_break = "\n";
+    tab->mode = mode;
+#ifdef HAVE_GSV
+    GtkTextBuffer* buffer = GTK_TEXT_BUFFER(gtk_source_buffer_new(NULL));
+#else
+    GtkTextBuffer* buffer = gtk_text_buffer_new(NULL);
+#endif
+    editor_view_build(app, tab, buffer);
+    gtk_text_buffer_set_modified(tab->buffer, FALSE);
+    editor_tab_add_page(app, tab, nb);
+    return tab;
+}
+
 void editor_split_tab(AppData* app, EditorTab* tab, EditorMoveDirection dir) {
     if (app == NULL) return;
     if (tab == NULL) {
