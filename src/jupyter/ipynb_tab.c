@@ -577,6 +577,16 @@ void ipynb_tab_refresh_cell(IpynbTab* t, guint index) {
     if (outputs != NULL) fill_outputs(t, index, outputs);
 }
 
+static gboolean resize_view_idle(gpointer data) {
+    gtk_widget_queue_resize(GTK_WIDGET(data));
+    return G_SOURCE_REMOVE;
+}
+
+static void on_view_map(GtkWidget* view, gpointer data) {
+    (void)data;
+    g_idle_add_full(G_PRIORITY_DEFAULT_IDLE, resize_view_idle, g_object_ref(view), g_object_unref);
+}
+
 static GtkWidget* build_cell(IpynbTab* t, guint index) {
     IpynbCellType type = ipynb_doc_cell_type(t->doc, index);
     GtkWidget* cell = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -639,6 +649,11 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     gtk_text_buffer_set_modified(buffer, FALSE);
     g_object_set_data(G_OBJECT(buffer), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
     g_signal_connect(buffer, "changed", G_CALLBACK(on_source_changed), t);
+    /* A text view outside a scrolled window takes the height of its lines
+     * once they are laid out: measured again when it shows and as it changes,
+     * else an empty cell stays without height */
+    g_signal_connect_swapped(buffer, "changed", G_CALLBACK(gtk_widget_queue_resize), view);
+    g_signal_connect(view, "map", G_CALLBACK(on_view_map), NULL);
 
     gtk_widget_add_css_class(view, "ipynb-source");
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD_CHAR);
