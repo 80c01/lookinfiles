@@ -94,7 +94,9 @@ format_scenario() {
     key m;              shot fmt_json_raw       # the indented text
     key m
     key alt+Left
-    key Down;           shot fmt_toml
+    key Down;           shot fmt_toml_tree
+    key m;              shot fmt_toml_raw       # as written, with its comments
+    key m
     key Down;           shot fmt_xml_tree       # attributes, elements and texts
     key m;              shot fmt_xml_raw        # the indented text
     key m

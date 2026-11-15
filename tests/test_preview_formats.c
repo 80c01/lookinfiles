@@ -109,7 +109,8 @@ static void test_json(void) {
     g_assert_true(preview_format_has_raw_builder(FILE_KIND_XML));
     g_assert_nonnull(preview_doc_fold_find(xml, "/feed/entry[2]"));
     g_autoptr(PreviewDoc) toml = build_fixture("sample.toml", FILE_KIND_TOML);
-    g_assert_true(g_str_has_prefix(toml->text->str, "TOML · 7 tables\n\n# Sample project manifest\n"));
+    g_assert_true(g_str_has_prefix(toml->text->str, "TOML · 7 tables\n\n  title           \"LookinFiles demo\"\n"));
+    g_assert_true(preview_format_has_raw_builder(FILE_KIND_TOML));
     g_assert_nonnull(preview_doc_fold_find(toml, "plugins[1].options"));
     g_autoptr(PreviewDoc) yaml = build_fixture("sample.yaml", FILE_KIND_YAML);
     g_assert_true(g_str_has_prefix(yaml->text->str, "YAML · 5 keys\n\n  name          build & test\n"));

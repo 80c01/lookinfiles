@@ -70,10 +70,12 @@ format.
   with comments, CDATA, processing instructions and the DOCTYPE; elements
   folded, paths such as `/feed/entry[2]` and `/feed/entry[2]/@id`; tags
   that do not match shown as text);
-  TOML as written, coloured, its tables folded with the tables under them
-  (paths such as `servers.alpha.ip`, `plugins[1].name`; a file with a line
-  that is not TOML, such as an INI file, shown as text); YAML as a tree too (`m`: as written, with its comments;
-  mappings and sequences under a key or item fold, paths such as
+  TOML as a tree too (a table holding the tables under it, an array of
+  tables its entries; `m`: as written, with its comments), its tables
+  folded with the tables under them (paths such as `servers.alpha.ip`,
+  `plugins[1].name`; a file with a line that is not TOML, such as an INI
+  file, shown as text); YAML as a tree too (`m`: as written, with its
+  comments; mappings and sequences under a key or item fold, paths such as
   `jobs.build.steps[1].run`, several documents numbered `[0]`, `[1]`...;
   a subset is read: tabs in indentation and complex `?` keys make it plain
   text), diffs and patches with a

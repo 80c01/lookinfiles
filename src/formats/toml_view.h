@@ -44,4 +44,13 @@ gboolean toml_view_append(PreviewDoc* doc, const gchar* text, gsize len, gboolea
 gboolean toml_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
                          const PreviewFold* fold, const gchar* note, GError** error);
 
+/* The same as a tree (data_tree.h): the keys and tables of the document
+ * are the first level, each table holding its keys and the tables under it
+ * (a dotted key or header makes the tables it names), an array of tables
+ * its entries; arrays and inline tables open too, a string, number, date or
+ * boolean as written (comments are only in the text view). The same fold
+ * points and paths as toml_view_build(). */
+gboolean toml_view_build_tree(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                              const PreviewFold* fold, const gchar* note, GError** error);
+
 #endif /* TOML_VIEW_H */

@@ -186,6 +186,41 @@ static void test_build(void) {
     g_assert_cmpstr(keys->text->str, ==, "TOML · 1 key\nNote.\n\na = 1\n");
 }
 
+static void test_tree(void) {
+    const gchar* text = "# c\na.b = 1 # n\n[x.y]\nz = [1, {k = true}]\n[x]\nw = 'q'\n[[t]]\nn = 1\n[[t]]\n";
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    g_assert_true(toml_view_build_tree(doc, text, strlen(text), FALSE, NULL, NULL, NULL));
+    g_assert_cmpstr(doc->text->str, ==,
+                    "TOML · 4 tables\n\n"
+                    "▾ a          1 key\n"
+                    "    b        1\n"
+                    "▾ x          2 keys\n"
+                    "  ▾ y        1 key\n"
+                    "    ▾ z      2 items\n"
+                    "        0    1\n"
+                    "      ▾ 1    1 key\n"
+                    "          k  true\n"
+                    "    w        'q'\n"
+                    "▾ t          2 items\n"
+                    "  ▾ 0        1 key\n"
+                    "      n      1\n"
+                    "    1        {}\n");
+    g_assert_nonnull(preview_doc_fold_find(doc, "x.y.z[1]"));
+    g_assert_nonnull(preview_doc_fold_find(doc, "t[0]"));
+
+    /* Cut: the last line is left out, "…" after the rest */
+    const gchar* cut = "[a]\nb = 1\nc = 2";
+    g_autoptr(PreviewDoc) part = preview_doc_new();
+    g_assert_true(toml_view_build_tree(part, cut, strlen(cut), TRUE, NULL, NULL, NULL));
+    g_assert_true(g_str_has_suffix(part->text->str, "▾ a    1 key\n    b  1\n…\n"));
+
+    GError* error = NULL;
+    g_autoptr(PreviewDoc) bad = preview_doc_new();
+    g_assert_false(toml_view_build_tree(bad, "[a\n", 3, FALSE, NULL, NULL, &error));
+    g_assert_nonnull(error);
+    g_error_free(error);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/toml_view/text_and_styles", test_text_and_styles);
@@ -194,5 +229,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/toml_view/cut", test_cut);
     g_test_add_func("/toml_view/auto_level", test_auto_level);
     g_test_add_func("/toml_view/build", test_build);
+    g_test_add_func("/toml_view/tree", test_tree);
     return g_test_run();
 }
