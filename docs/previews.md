@@ -58,7 +58,8 @@ format.
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,
   JSONC and JSON Lines) pretty-printed and coloured, its objects and arrays
   folded with `Tab` / `Shift+Tab` (long documents open folded below the
-  deepest level that fits), its outer keys in the tagbar, the path of the
+  deepest level that fits; the line of the cursor and the block `Tab` folds
+  from it are highlighted), its outer keys in the tagbar, the path of the
   value at the cursor in the preview bar (`y` copies it); a file larger
   than `PREVIEW_BYTES` is shown up to the cut; XML the same way (elements
   folded, paths such as `/feed/entry[2]`; comments, CDATA, processing

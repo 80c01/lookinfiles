@@ -2,6 +2,7 @@
 #include "preview/preview_folding.h"
 #include "preview/preview_state.h"
 #include "core/app_events.h"
+#include "theme/text_tags.h"
 
 struct PreviewFolding {
     GHashTable* files;   /* path -> PreviewFold* changed by hand */
@@ -10,6 +11,8 @@ struct PreviewFolding {
     gchar* focus_path;   /* file of the fold change being built */
     GPtrArray* focus;    /* ids of the blocks at the cursor, innermost first */
     gdouble focus_align; /* height of the cursor line in the view, 0 (top) to 1 */
+    GtkTextBuffer* tracked; /* buffer whose cursor is followed */
+    gboolean marked;     /* the cursor line and its block are highlighted */
 };
 
 static struct PreviewFolding* folding_get(AppData* app) {
@@ -44,11 +47,60 @@ static void restore_focus(AppData* app, struct PreviewFolding* f) {
     }
 }
 
+/* Highlight the line of the cursor and the block Tab acts on from it */
+static void update_marks(AppData* app) {
+    struct PreviewFolding* f = app->preview_folding;
+    if (f == NULL || (f->shown == NULL && !f->marked)) {
+        return;
+    }
+    GtkTextTag* scope = text_tag_ensure(app->buffer, "fold_scope", "paragraph-background", "@bg_block", NULL);
+    GtkTextTag* line = text_tag_ensure(app->buffer, "fold_cursor_line", "paragraph-background", "@bg_hover", NULL);
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(app->buffer, &start, &end);
+    gtk_text_buffer_remove_tag(app->buffer, scope, &start, &end);
+    gtk_text_buffer_remove_tag(app->buffer, line, &start, &end);
+    f->marked = FALSE;
+    if (f->shown == NULL) {
+        return;
+    }
+    gtk_text_buffer_get_iter_at_mark(app->buffer, &start, gtk_text_buffer_get_insert(app->buffer));
+    gtk_text_iter_set_line_offset(&start, 0);
+    const PreviewFoldPoint* point = preview_doc_fold_at(f->shown, gtk_text_iter_get_offset(&start));
+    if (point != NULL) {
+        GtkTextIter first, last;
+        gtk_text_buffer_get_iter_at_offset(app->buffer, &first, point->start);
+        gtk_text_buffer_get_iter_at_offset(app->buffer, &last, point->end);
+        gtk_text_buffer_apply_tag(app->buffer, scope, &first, &last);
+    }
+    end = start;
+    gtk_text_iter_forward_to_line_end(&end);
+    gtk_text_tag_set_priority(line, gtk_text_tag_table_get_size(gtk_text_buffer_get_tag_table(app->buffer)) - 1);
+    gtk_text_buffer_apply_tag(app->buffer, line, &start, &end);
+    f->marked = TRUE;
+}
+
+static void on_cursor_moved(GObject* buffer, GParamSpec* pspec, gpointer data) {
+    (void)buffer;
+    (void)pspec;
+    update_marks((AppData*)data);
+}
+
+static void untrack(AppData* app, struct PreviewFolding* f) {
+    if (f->tracked != NULL) {
+        g_signal_handlers_disconnect_by_func(f->tracked, G_CALLBACK(on_cursor_moved), app);
+        g_object_remove_weak_pointer(G_OBJECT(f->tracked), (gpointer*)&f->tracked);
+        f->tracked = NULL;
+    }
+}
+
 void preview_folding_shown(AppData* app, const PreviewDoc* doc, const gchar* path) {
     struct PreviewFolding* f = folding_get(app);
     g_clear_pointer(&f->shown, preview_doc_free);
     g_clear_pointer(&f->shown_path, g_free);
     if (doc == NULL || doc->folds->len == 0 || path == NULL) {
+        if (app->buffer != NULL) {
+            update_marks(app);
+        }
         return;
     }
     f->shown_path = g_strdup(path);
@@ -62,6 +114,13 @@ void preview_folding_shown(AppData* app, const PreviewDoc* doc, const gchar* pat
     }
     g_clear_pointer(&f->focus, g_ptr_array_unref);
     g_clear_pointer(&f->focus_path, g_free);
+    if (f->tracked != app->buffer) {
+        untrack(app, f);
+        f->tracked = app->buffer;
+        g_object_add_weak_pointer(G_OBJECT(f->tracked), (gpointer*)&f->tracked);
+        g_signal_connect(app->buffer, "notify::cursor-position", G_CALLBACK(on_cursor_moved), app);
+    }
+    update_marks(app);
 }
 
 /* Remember the blocks at the cursor and its height, for after the rebuild */
@@ -143,6 +202,7 @@ void preview_folding_free(AppData* app) {
     if (f == NULL) {
         return;
     }
+    untrack(app, f);
     g_hash_table_destroy(f->files);
     preview_doc_free(f->shown);
     g_free(f->shown_path);
