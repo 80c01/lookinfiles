@@ -85,6 +85,11 @@ format_scenario() {
     key y;              shot fmt_json_copy_path     # its path in the bar, copied: $.name
     key shift+Tab; key shift+Tab                    # two levels, then all open again
     key alt+Left                                    # back to the explorer
+    key Down Up                                     # another file, then back: the cached preview
+    key alt+Right
+    key shift+Tab;      shot fmt_json_folded_after_return
+    key shift+Tab; key shift+Tab
+    key alt+Left
     key Down;           shot fmt_toml
     key Down;           shot fmt_xml_pretty
     key Down;           shot fmt_yaml

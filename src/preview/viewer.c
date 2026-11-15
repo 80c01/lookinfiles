@@ -682,8 +682,8 @@ static void show_text_preview(TextPreviewTaskData* td) {
     }
 
     search_forget_viewer_match(app);
-    preview_folding_shown(app, NULL);
-    preview_location_shown(app, NULL);
+    preview_folding_shown(app, NULL, NULL);
+    preview_location_shown(app, NULL, NULL);
     g_object_set_data(G_OBJECT(app->buffer), "minimap_paged", NULL);
 
     if (td->error_msg != NULL) {
@@ -695,8 +695,8 @@ static void show_text_preview(TextPreviewTaskData* td) {
     if (td->doc != NULL) {
         apply_viewer_language(app, NULL, NULL);
         preview_doc_show(GTK_TEXT_VIEW(app->text_view), td->doc, td->full, td->name, td->fsize);
-        preview_folding_shown(app, td->doc);
-        preview_location_shown(app, td->doc);
+        preview_folding_shown(app, td->doc, td->full);
+        preview_location_shown(app, td->doc, td->full);
         return;
     }
 

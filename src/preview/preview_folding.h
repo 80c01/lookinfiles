@@ -18,10 +18,11 @@
  * preview_fold_free()), NULL if it was never changed */
 PreviewFold* preview_folding_state(AppData* app, const gchar* path);
 
-/* The preview now shows doc (NULL: something without fold points): its
- * blocks are what Tab acts on; after a fold change, the cursor goes back to
- * the block it was on */
-void preview_folding_shown(AppData* app, const PreviewDoc* doc);
+/* The preview now shows doc, the preview of the file at path (NULL:
+ * something without fold points): its blocks are what Tab acts on; after a
+ * fold change, the cursor goes back to the block it was on. path is given:
+ * a cached preview is shown before preview_state_set_file() */
+void preview_folding_shown(AppData* app, const PreviewDoc* doc, const gchar* path);
 
 /* Tab / Shift+Tab in the preview; TRUE when handled (the preview shows fold
  * points) */

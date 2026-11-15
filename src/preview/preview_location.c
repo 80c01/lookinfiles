@@ -44,15 +44,15 @@ static void on_cursor_moved(GObject* buffer, GParamSpec* pspec, gpointer data) {
     update_current((AppData*)data);
 }
 
-void preview_location_shown(AppData* app, const PreviewDoc* doc) {
+void preview_location_shown(AppData* app, const PreviewDoc* doc, const gchar* path) {
     struct PreviewLocation* l = location_get(app);
     g_clear_pointer(&l->shown, preview_doc_free);
     g_clear_pointer(&l->shown_path, g_free);
-    if (doc == NULL || doc->paths->len == 0 || preview_state_path(app) == NULL) {
+    if (doc == NULL || doc->paths->len == 0 || path == NULL) {
         set_current(app, l, NULL);
         return;
     }
-    l->shown_path = g_strdup(preview_state_path(app));
+    l->shown_path = g_strdup(path);
     l->shown = preview_doc_new();
     for (guint i = 0; i < doc->paths->len; i++) {
         const PreviewPathPoint* point = &g_array_index(doc->paths, PreviewPathPoint, i);

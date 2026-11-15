@@ -11,8 +11,10 @@
  * bar shows it (APP_EVENT_PREVIEW_LOCATION when it changes), y and Copy
  * Path in the right-click menu copy it. */
 
-/* The preview now shows doc (NULL: something without paths) */
-void preview_location_shown(AppData* app, const PreviewDoc* doc);
+/* The preview now shows doc, the preview of the file at path (NULL:
+ * something without paths); path is given: a cached preview is shown
+ * before preview_state_set_file() */
+void preview_location_shown(AppData* app, const PreviewDoc* doc, const gchar* path);
 
 /* Path at the cursor of the file previewed now, or NULL */
 const gchar* preview_location_current(AppData* app);

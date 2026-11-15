@@ -44,14 +44,14 @@ static void restore_focus(AppData* app, struct PreviewFolding* f) {
     }
 }
 
-void preview_folding_shown(AppData* app, const PreviewDoc* doc) {
+void preview_folding_shown(AppData* app, const PreviewDoc* doc, const gchar* path) {
     struct PreviewFolding* f = folding_get(app);
     g_clear_pointer(&f->shown, preview_doc_free);
     g_clear_pointer(&f->shown_path, g_free);
-    if (doc == NULL || doc->folds->len == 0 || preview_state_path(app) == NULL) {
+    if (doc == NULL || doc->folds->len == 0 || path == NULL) {
         return;
     }
-    f->shown_path = g_strdup(preview_state_path(app));
+    f->shown_path = g_strdup(path);
     f->shown = preview_doc_new();
     for (guint i = 0; i < doc->folds->len; i++) {
         const PreviewFoldPoint* point = &g_array_index(doc->folds, PreviewFoldPoint, i);
