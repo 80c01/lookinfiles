@@ -5,14 +5,12 @@
 
 #include "preview/preview_doc.h"
 
-/* TOML preview: the document as written (its own layout and comments kept),
- * coloured: table headers, keys, strings, numbers and dates, booleans,
- * comments. Each statement must be a key = value pair, a [table] or
- * [[array of tables]] header, a comment or a blank line, so that INI and
- * other files are not taken for TOML. Pure GLib, unit-tested. */
-
-/* Most lines written; the rest is replaced by a note */
-#define TOML_VIEW_MAX_LINES 10000
+/* TOML preview: the document as written (its own layout and comments kept,
+ * at most TEXT_OUTLINE_MAX_LINES lines), coloured: table headers, keys,
+ * strings, numbers and dates, booleans, comments. Each statement must be a
+ * key = value pair, a [table] or [[array of tables]] header, a comment or a
+ * blank line, so that INI and other files are not taken for TOML. Pure
+ * GLib, unit-tested. */
 
 typedef struct {
     guint n_tables;       /* table and array of tables headers */

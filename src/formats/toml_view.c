@@ -1,28 +1,10 @@
 /* TOML preview (see toml_view.h). */
 #include "formats/toml_view.h"
+#include "formats/text_outline.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>
 #include <string.h>
-
-/* A coloured range of the text, in bytes */
-typedef struct {
-    gsize start;
-    gsize end;
-    PreviewStyle style;
-} Token;
-
-/* A foldable block, in lines */
-typedef struct {
-    guint first;
-    guint last;
-    gchar* id;
-    gint depth;           /* nesting: tables at the top are at depth 1 */
-    gboolean table;       /* a table section, else an array or inline table */
-    guint count;          /* tables: keys and subtables; arrays: items */
-    gsize name_start;     /* tables: the name in the header, for the tagbar */
-    gsize name_end;
-} Block;
 
 /* A table header still open: the tables after it may be under it */
 typedef struct {
@@ -38,10 +20,8 @@ typedef struct {
     GError** error;
     gboolean at_cut;      /* the end of the cut text was reached inside a value */
     gboolean cut;
-    GArray* line_starts;  /* gsize: offset of each line */
-    GArray* tokens;       /* Token, by offset */
-    GArray* blocks;       /* Block */
-    GPtrArray* line_paths;/* gchar*: path of each line, or NULL */
+    TextOutline* outline; /* lines, colours, blocks and paths found */
+    gboolean any_token;   /* something was coloured (comments only: still TOML) */
     GPtrArray* open;      /* Section*, innermost last */
     GHashTable* array_counts; /* path of an array of tables -> entries so far */
     guint n_tables;
@@ -75,34 +55,18 @@ static gboolean fail(Parser* p, const gchar* what) {
     return FALSE;
 }
 
-/* Line of a byte offset */
 static guint line_at(const Parser* p, gsize pos) {
-    guint lo = 0;
-    guint hi = p->line_starts->len;
-    while (lo + 1 < hi) {
-        guint mid = lo + (hi - lo) / 2;
-        if (g_array_index(p->line_starts, gsize, mid) <= pos) {
-            lo = mid;
-        } else {
-            hi = mid;
-        }
-    }
-    return lo;
+    return text_outline_line_at(p->outline, pos);
 }
 
 static void add_token(Parser* p, gsize start, gsize end, PreviewStyle style) {
-    if (end > start) {
-        Token token = { start, end, style };
-        g_array_append_val(p->tokens, token);
-    }
+    text_outline_add_token(p->outline, start, end, style);
+    p->any_token |= end > start;
 }
 
 /* The path of the line holding pos, unless it has one already */
 static void note_path(Parser* p, gsize pos, const gchar* path) {
-    guint line = line_at(p, pos);
-    if (g_ptr_array_index(p->line_paths, line) == NULL) {
-        g_ptr_array_index(p->line_paths, line) = g_strdup(path);
-    }
+    text_outline_set_path(p->outline, pos, path);
 }
 
 static gboolean at_end(const Parser* p) {
@@ -235,10 +199,6 @@ static gchar* join_path(const gchar* prefix, GPtrArray* parts, guint from) {
     return g_string_free(path, FALSE);
 }
 
-static void add_block(Parser* p, Block block) {
-    g_array_append_val(p->blocks, block);
-}
-
 static gboolean parse_value(Parser* p, const gchar* path, gint depth);
 
 /* Numbers, dates and times, booleans, inf and nan */
@@ -341,7 +301,8 @@ static gboolean parse_container(Parser* p, const gchar* path, gint depth) {
     }
     guint last = line_at(p, p->pos > 0 ? p->pos - 1 : 0);
     if (last > first) {
-        add_block(p, (Block){ first, last, g_strdup(path), depth, FALSE, count, 0, 0 });
+        text_outline_add_block(p->outline, first, last, path, depth, table ? TEXT_OUTLINE_KEYS : TEXT_OUTLINE_ITEMS,
+                               count, TRUE);
     }
     return TRUE;
 }
@@ -416,15 +377,16 @@ static gboolean parse_header(Parser* p) {
         path = entry;
     }
     if (parent != NULL) {
-        g_array_index(p->blocks, Block, parent->block).count++;
+        text_outline_block(p->outline, parent->block)->count++;
     }
     guint line = line_at(p, start);
+    gint depth = (gint)p->open->len + 1;
     note_path(p, start, path);
-    add_block(p, (Block){ line, line, g_strdup(path), (gint)p->open->len + 1, TRUE, 0, name_start, name_end });
+    text_outline_add_heading(p->outline, name_start, name_end, MIN(depth, 6));
     Section* section = g_new0(Section, 1);
     section->parts = parts;
     section->path = path;
-    section->block = p->blocks->len - 1;
+    section->block = text_outline_add_block(p->outline, line, line, path, depth, TEXT_OUTLINE_KEYS, 0, FALSE);
     g_ptr_array_add(p->open, section);
     p->n_tables++;
     return TRUE;
@@ -453,7 +415,7 @@ static gboolean parse_pair(Parser* p) {
     }
     g_free(path);
     if (ok && section != NULL) {
-        g_array_index(p->blocks, Block, section->block).count++;
+        text_outline_block(p->outline, section->block)->count++;
     }
     p->n_keys += ok;
     return ok;
@@ -499,7 +461,8 @@ static gboolean parse_document(Parser* p) {
         /* The open tables reach this statement */
         guint last = line_at(p, p->pos > 0 ? p->pos - 1 : 0);
         for (guint i = 0; i < p->open->len; i++) {
-            Block* block = &g_array_index(p->blocks, Block, ((Section*)g_ptr_array_index(p->open, i))->block);
+            const Section* section = g_ptr_array_index(p->open, i);
+            TextOutlineBlock* block = text_outline_block(p->outline, section->block);
             block->last = MAX(block->last, last);
         }
         if (p->at_cut) {
@@ -509,157 +472,10 @@ static gboolean parse_document(Parser* p) {
             return FALSE;
         }
     }
-    if (p->n_tables == 0 && p->n_keys == 0 && p->tokens->len == 0) {
+    if (p->n_tables == 0 && p->n_keys == 0 && !p->any_token) {
         return fail(p, _("empty document"));
     }
     return TRUE;
-}
-
-/* --- Printing --- */
-
-static gint compare_blocks(gconstpointer a, gconstpointer b) {
-    const Block* x = a;
-    const Block* y = b;
-    if (x->first != y->first) {
-        return x->first < y->first ? -1 : 1;
-    }
-    return x->depth - y->depth;
-}
-
-/* The level in effect: PREVIEW_FOLD_AUTO shows everything when it fits in
- * TOML_VIEW_MAX_LINES, else folds below the deepest level that fits */
-static gint resolve_level(const Parser* p, guint n_lines, const PreviewFold* fold) {
-    if (fold != NULL && fold->level != PREVIEW_FOLD_AUTO) {
-        return fold->level;
-    }
-    if (n_lines < TOML_VIEW_MAX_LINES) {
-        return PREVIEW_FOLD_OPEN;
-    }
-    gint max_depth = 0;
-    for (guint i = 0; i < p->blocks->len; i++) {
-        max_depth = MAX(max_depth, g_array_index(p->blocks, Block, i).depth);
-    }
-    for (gint level = max_depth; level > 1; level--) {
-        guint64 hidden = 0; /* the blocks at this depth fold, and those inside them */
-        for (guint i = 0; i < p->blocks->len; i++) {
-            const Block* block = &g_array_index(p->blocks, Block, i);
-            hidden += block->depth == level ? block->last - block->first : 0;
-        }
-        if (n_lines - hidden < TOML_VIEW_MAX_LINES) {
-            return level;
-        }
-    }
-    return 1;
-}
-
-typedef struct {
-    PreviewDoc* doc;
-    const Parser* p;
-    guint token;          /* first token that may reach the next line */
-} Printer;
-
-/* Line i as written, coloured; the header name of an outline block tagged */
-static void print_line(Printer* pr, guint i, const Block* header) {
-    const Parser* p = pr->p;
-    gsize start = g_array_index(p->line_starts, gsize, i);
-    gsize end = i + 1 < p->line_starts->len ? g_array_index(p->line_starts, gsize, i + 1) : p->len;
-    while (end > start && (p->text[end - 1] == '\n' || p->text[end - 1] == '\r')) end--;
-    gint base = preview_doc_offset(pr->doc);
-    preview_doc_append_len(pr->doc, p->text + start, (gssize)(end - start));
-    while (pr->token < p->tokens->len && g_array_index(p->tokens, Token, pr->token).end <= start) {
-        pr->token++;
-    }
-    for (guint t = pr->token; t < p->tokens->len; t++) {
-        const Token* token = &g_array_index(p->tokens, Token, t);
-        if (token->start >= end) {
-            break;
-        }
-        gsize a = MAX(token->start, start);
-        gsize b = MIN(token->end, end);
-        if (b > a) {
-            gint from = base + (gint)g_utf8_strlen(p->text + start, (gssize)(a - start));
-            gint to = from + (gint)g_utf8_strlen(p->text + a, (gssize)(b - a));
-            preview_doc_add_span(pr->doc, from, to, token->style);
-        }
-    }
-    if (header != NULL && header->name_end > header->name_start) {
-        gint from = base + (gint)g_utf8_strlen(p->text + start, (gssize)(header->name_start - start));
-        gint to = from + (gint)g_utf8_strlen(p->text + header->name_start,
-                                             (gssize)(header->name_end - header->name_start));
-        preview_doc_add_span(pr->doc, from, to, PREVIEW_STYLE_OUTLINE1 + MIN(header->depth, 6) - 1);
-    }
-}
-
-static void print_folded(PreviewDoc* doc, const Block* block) {
-    gchar* count = block->table ? g_strdup_printf(ngettext("  %u key", "  %u keys", block->count), block->count)
-                                : g_strdup_printf(ngettext("  %u item", "  %u items", block->count), block->count);
-    gint start = preview_doc_offset(doc);
-    preview_doc_append_len(doc, block->table ? "" : "…", -1);
-    preview_doc_append_len(doc, count, -1);
-    preview_doc_add_span(doc, start, preview_doc_offset(doc), PREVIEW_STYLE_COMMENT);
-    g_free(count);
-}
-
-typedef struct {
-    const Block* block;
-    gint start;
-} Pending;
-
-static gboolean print_document(PreviewDoc* doc, const Parser* p, guint n_lines, const PreviewFold* fold,
-                               gint level) {
-    Printer pr = { doc, p, 0 };
-    GArray* pending = g_array_new(FALSE, FALSE, sizeof(Pending)); /* open blocks shown */
-    guint b = 0;
-    guint shown = 0;
-    gboolean stopped = FALSE;
-    for (guint i = 0; i < n_lines;) {
-        if (shown >= TOML_VIEW_MAX_LINES) {
-            stopped = TRUE;
-            break;
-        }
-        if (shown > 0) {
-            preview_doc_append_len(doc, "\n", 1);
-        }
-        shown++;
-        gint line_start = preview_doc_offset(doc);
-        const gchar* path = g_ptr_array_index(p->line_paths, i);
-        if (path != NULL) {
-            preview_doc_add_path(doc, line_start, path);
-        }
-        const Block* folded = NULL;
-        const Block* header = NULL;
-        for (; b < p->blocks->len && g_array_index(p->blocks, Block, b).first == i; b++) {
-            const Block* block = &g_array_index(p->blocks, Block, b);
-            if (folded != NULL) {
-                continue; /* inside the folded block */
-            }
-            header = block->table ? block : header;
-            if (preview_fold_is_folded(fold, block->id, block->depth, level)) {
-                folded = block;
-            } else {
-                Pending open = { block, line_start };
-                g_array_append_val(pending, open);
-            }
-        }
-        print_line(&pr, i, header);
-        if (folded != NULL) {
-            print_folded(doc, folded);
-            preview_doc_add_fold(doc, line_start, preview_doc_offset(doc), folded->id, TRUE);
-            i = folded->last + 1;
-            while (b < p->blocks->len && g_array_index(p->blocks, Block, b).first < i) b++;
-        } else {
-            i++;
-        }
-        for (guint k = pending->len; k-- > 0;) {
-            const Pending* open = &g_array_index(pending, Pending, k);
-            if (open->block->last < i) {
-                preview_doc_add_fold(doc, open->start, preview_doc_offset(doc), open->block->id, FALSE);
-                g_array_remove_index(pending, k);
-            }
-        }
-    }
-    g_array_free(pending, TRUE);
-    return stopped;
 }
 
 gboolean toml_view_append(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
@@ -673,24 +489,12 @@ gboolean toml_view_append(PreviewDoc* doc, const gchar* text, gsize len, gboolea
     p.len = len;
     p.error = error;
     p.cut = cut;
-    p.line_starts = g_array_new(FALSE, FALSE, sizeof(gsize));
-    p.tokens = g_array_new(FALSE, FALSE, sizeof(Token));
-    p.blocks = g_array_new(FALSE, FALSE, sizeof(Block));
-    p.line_paths = g_ptr_array_new_with_free_func(g_free);
+    p.outline = text_outline_new(text, len);
     p.open = g_ptr_array_new_with_free_func(section_free);
     p.array_counts = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-    for (gsize i = 0; i <= len; i++) {
-        if (i == 0 || text[i - 1] == '\n') {
-            if (i == len && i > 0) break; /* no line after the final break */
-            g_array_append_val(p.line_starts, i);
-            g_ptr_array_add(p.line_paths, NULL);
-        }
-    }
-    guint n_lines = p.line_starts->len;
     gboolean ok = parse_document(&p);
     if (ok) {
-        g_array_sort(p.blocks, compare_blocks);
-        TomlViewInfo result = { p.n_tables, p.n_keys, resolve_level(&p, n_lines, fold), p.at_cut };
+        TomlViewInfo result = { p.n_tables, p.n_keys, text_outline_level(p.outline, fold), p.at_cut };
         if (info != NULL) {
             *info = result;
         }
@@ -698,24 +502,12 @@ gboolean toml_view_append(PreviewDoc* doc, const gchar* text, gsize len, gboolea
             preview_doc_note(doc, _("Long document: the deeper levels are folded (Tab folds or opens a "
                                     "block, Shift+Tab changes the level)"));
         }
-        gboolean stopped = print_document(doc, &p, n_lines, fold, result.level);
-        preview_doc_append_len(doc, "\n", 1);
+        text_outline_print(p.outline, doc, fold, result.level);
         if (cut) {
             preview_doc_append(doc, PREVIEW_STYLE_COMMENT, "…\n"); /* the rest was not read */
         }
-        if (stopped) {
-            gchar* note = g_strdup_printf(_("… (stopped after %u lines)"), TOML_VIEW_MAX_LINES);
-            preview_doc_note(doc, note);
-            g_free(note);
-        }
     }
-    for (guint i = 0; i < p.blocks->len; i++) {
-        g_free(g_array_index(p.blocks, Block, i).id);
-    }
-    g_array_free(p.blocks, TRUE);
-    g_array_free(p.tokens, TRUE);
-    g_array_free(p.line_starts, TRUE);
-    g_ptr_array_unref(p.line_paths);
+    text_outline_free(p.outline);
     g_ptr_array_unref(p.open);
     g_hash_table_destroy(p.array_counts);
     return ok;
