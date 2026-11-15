@@ -256,7 +256,7 @@ mode move in the process list)
 | `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
 | `t` (Vim), `C-o` (Emacs) | Open the previewed file in the dedicated editor panel (in an Org-mode preview, `t` cycles the TODO keyword) |
 | `e` | Open the file in the editor (text files) |
-| `m` | Rendered / raw view: JSON (tree / indented text), Markdown, HTML, Org, CSV, XML, TOML, YAML, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
+| `m` | Rendered / raw view: JSON, XML (tree / indented text), Markdown, HTML, Org, CSV, TOML, YAML, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
 | `o`, `Ctrl+K Ctrl+O` | Tagbar: the headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of source code, beside the text (`Enter` / click scrolls to one, `s` sorts symbols, `c` collapses / expands all, `Esc` back, `q` hides; the moving and search keys of the global mode, see [Code navigation](#code-navigation)) |
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |
 | Right click on an image | Context menu: **Copy Image** copies the whole image to the clipboard |
@@ -268,7 +268,7 @@ mode move in the process list)
 | `Tab` / `Shift+Tab` | JSON, XML, TOML, YAML: fold or open the object, array, element, table, mapping or sequence at the cursor (from a line of values or text: the one around it) / cycle the level: the outer members only, two levels, everything open |
 | `t` | Org-mode: cycle the TODO keyword (the file's `#+TODO:` keywords; `TODO` → `DONE` → none by default) |
 | `Space` / `Enter` | Org-mode: toggle the checkbox `[ ]` ↔ `[X]` (parents and `[n/m]` cookies follow) |
-| Click | Org-mode: fold a heading, cycle a TODO, toggle a checkbox, open a link; JSON tree: on a ▾ / ▸ twisty, fold or open the object or array |
+| Click | Org-mode: fold a heading, cycle a TODO, toggle a checkbox, open a link; JSON, XML tree: on a ▾ / ▸ twisty, fold or open the object, array or element |
 | `Esc` | Close the search bar (at the bottom of the preview) |
 
 ### Browser tabs

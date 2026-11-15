@@ -41,7 +41,7 @@ size and the detected text encoding.
 
 `m` switches between the rendered view and the raw one:
 
-- JSON: tree ↔ indented text;
+- JSON, XML: tree ↔ indented text;
 - Markdown, HTML, Org, CSV, XML, TOML, YAML, diffs, logs: rendered ↔ source text;
 - images: fitted ↔ actual size;
 - PDF: pages ↔ extracted text;
@@ -137,7 +137,10 @@ JSON is shown as a tree of keys and values in two columns: each key
 indented by its depth, the value coloured by its type, and each object or
 array with its number of keys or items and a ▾ / ▸ twisty that a click
 folds or opens (`m` shows the JSON indented and coloured instead). XML is
-shown indented and coloured, TOML and YAML as written and coloured. Their
+shown the same way: the attributes (`@id`), elements (`entry[2]`), texts
+(`#text`), CDATA sections and comments of each element under it, an element
+holding only a text as a value (`m`: the XML indented and coloured). TOML
+and YAML are shown as written and coloured. Their
 outer keys, elements or tables are in the tagbar (`o`). `Tab` folds or
 opens the object, array, element, table, mapping or sequence at the cursor
 (on a line of values or text: the one around it), highlighted with the

@@ -38,6 +38,8 @@ DataTreeNode* data_tree_add(DataTreeNode* parent, DataTreeKind kind, const gchar
 /* Text of a scalar (len -1: NUL-terminated) and its style; line breaks and
  * tabs are shown as ↵ and spaces, a very long value is shortened */
 void data_tree_set_value(DataTreeNode* node, const gchar* text, gssize len, PreviewStyle style);
+/* What a container shows instead of its count ("3 elements"; "": nothing) */
+void data_tree_set_summary(DataTreeNode* node, const gchar* summary);
 /* The end of a cut text was reached inside this container: "…" after it */
 void data_tree_set_cut(DataTreeNode* node);
 guint data_tree_n_children(const DataTreeNode* node);

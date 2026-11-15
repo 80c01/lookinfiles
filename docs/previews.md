@@ -64,9 +64,12 @@ format.
   deepest level that fits; the line of the cursor and the block `Tab` folds
   from it are highlighted), its outer keys in the tagbar, the path of the
   value at the cursor in the preview bar (`y` copies it); a file larger
-  than `PREVIEW_BYTES` is shown up to the cut; XML the same way (elements
-  folded, paths such as `/feed/entry[2]`; comments, CDATA, processing
-  instructions and the DOCTYPE kept, tags that do not match shown as text);
+  than `PREVIEW_BYTES` is shown up to the cut; XML the same way (a tree of
+  attributes `@id`, elements `entry[2]`, `#text`, `#cdata` and `#comment`,
+  an element holding only a text shown as a value; `m`: the indented text
+  with comments, CDATA, processing instructions and the DOCTYPE; elements
+  folded, paths such as `/feed/entry[2]` and `/feed/entry[2]/@id`; tags
+  that do not match shown as text);
   TOML as written, coloured, its tables folded with the tables under them
   (paths such as `servers.alpha.ip`, `plugins[1].name`; a file with a line
   that is not TOML, such as an INI file, shown as text); YAML the same way

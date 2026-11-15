@@ -104,8 +104,9 @@ static void test_json(void) {
     g_autoptr(PreviewDoc) lines = build_fixture("events.jsonl", FILE_KIND_JSON);
     g_assert_true(g_str_has_prefix(lines->text->str, "JSON Lines · 3 records\n"));
     g_autoptr(PreviewDoc) xml = build_fixture("sample.xml", FILE_KIND_XML);
-    g_assert_true(g_str_has_prefix(xml->text->str, "XML · <feed> · 12 elements\n\n<?xml version"));
-    g_assert_nonnull(strstr(xml->text->str, "\n    <title>Paths in the status bar</title>\n"));
+    g_assert_true(g_str_has_prefix(xml->text->str, "XML · <feed> · 12 elements\n\n  @xmlns   "));
+    g_assert_nonnull(strstr(xml->text->str, "\n    title            Paths in the status bar\n"));
+    g_assert_true(preview_format_has_raw_builder(FILE_KIND_XML));
     g_assert_nonnull(preview_doc_fold_find(xml, "/feed/entry[2]"));
     g_autoptr(PreviewDoc) toml = build_fixture("sample.toml", FILE_KIND_TOML);
     g_assert_true(g_str_has_prefix(toml->text->str, "TOML · 7 tables\n\n# Sample project manifest\n"));

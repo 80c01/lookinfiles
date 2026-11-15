@@ -48,4 +48,13 @@ gboolean xml_view_append(PreviewDoc* doc, const gchar* text, gsize len, gboolean
 gboolean xml_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
                         const PreviewFold* fold, const gchar* note, GError** error);
 
+/* The same as a tree (data_tree.h): the attributes ("@id") and nodes of
+ * the outer element are the first level; an element holding only a text is
+ * a row with that text as value, others list their attributes, elements
+ * ("entry[2]"), texts ("#text"), CDATA ("#cdata") and comments
+ * ("#comment"). The same fold points and paths as xml_view_build() (an
+ * attribute's: "/feed/entry[2]/@id"). */
+gboolean xml_view_build_tree(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                             const PreviewFold* fold, const gchar* note, GError** error);
+
 #endif /* XML_VIEW_H */

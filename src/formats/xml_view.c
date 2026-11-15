@@ -1,5 +1,6 @@
 /* XML pretty-printing for the preview (see xml_view.h). */
 #include "formats/xml_view.h"
+#include "formats/data_tree.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>
@@ -711,6 +712,24 @@ gboolean xml_view_append(PreviewDoc* doc, const gchar* text, gsize len, gboolean
     return TRUE;
 }
 
+/* The dimmed summary line ("XML · <feed> · 12 elements"), the note, then body */
+static void append_summary(PreviewDoc* doc, const XmlViewInfo* info, const gchar* note, const PreviewDoc* body) {
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* count = preview_doc_count(info->n_elements);
+    /* TRANSLATORS: %1$s is the name of the outer element, %2$s the number of elements */
+    preview_doc_appendf(doc, PREVIEW_STYLE_DIM,
+                        ngettext("XML · <%1$s> · %2$s element\n", "XML · <%1$s> · %2$s elements\n",
+                                 info->n_elements),
+                        info->root, count);
+    g_free(count);
+    if (note != NULL) {
+        preview_doc_note(doc, note);
+    }
+    preview_doc_append_len(doc, "\n", 1);
+    preview_doc_append_doc(doc, body); /* with its fold points and paths */
+}
+
 gboolean xml_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
                         const PreviewFold* fold, const gchar* note, GError** error) {
     g_autoptr(PreviewDoc) body = preview_doc_new();
@@ -718,19 +737,159 @@ gboolean xml_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean 
     if (!xml_view_append(body, text, len, cut, fold, &info, error)) {
         return FALSE;
     }
-    doc->monospace = TRUE;
-    doc->wrap = FALSE;
-    gchar* count = preview_doc_count(info.n_elements);
-    /* TRANSLATORS: %1$s is the name of the outer element, %2$s the number of elements */
-    preview_doc_appendf(doc, PREVIEW_STYLE_DIM,
-                        ngettext("XML · <%1$s> · %2$s element\n", "XML · <%1$s> · %2$s elements\n",
-                                 info.n_elements),
-                        info.root, count);
-    g_free(count);
-    if (note != NULL) {
-        preview_doc_note(doc, note);
+    append_summary(doc, &info, note, body);
+    return TRUE;
+}
+
+/* --- Tree --- */
+
+/* The attributes of an element's start tag (checked by the parser): a row
+ * "@name" each under row, at path "<element path>/@name"; returns how many */
+static guint add_attributes(DataTreeNode* row, const XmlNode* node, GString* path) {
+    const gchar* p = node->text + 1 + node->name_len;
+    const gchar* end = node->text + node->len;
+    gsize path_len = path->len;
+    for (guint n = 0;; n++) {
+        while (p < end && is_space(*p)) p++;
+        if (p >= end || *p == '>' || *p == '/') {
+            return n;
+        }
+        const gchar* name = p;
+        while (p < end && is_name_char(*p)) p++;
+        gchar* key = g_strdup_printf("@%.*s", (int)(p - name), name);
+        while (p < end && *p != '"' && *p != '\'') p++;
+        if (p >= end) {
+            g_free(key);
+            return n;
+        }
+        const gchar* value = p;
+        const gchar* close = memchr(p + 1, *p, (gsize)(end - p - 1));
+        p = close != NULL ? close + 1 : end;
+        g_string_append_printf(path, "/%s", key);
+        data_tree_set_value(data_tree_add(row, DATA_TREE_VALUE, key, path->str), value, p - value,
+                            PREVIEW_STYLE_STRING);
+        g_string_truncate(path, path_len);
+        g_free(key);
     }
-    preview_doc_append_len(doc, "\n", 1);
-    preview_doc_append_doc(doc, body); /* with its fold points and paths */
+}
+
+/* A text or CDATA node as a value: the content of the section */
+static void set_text_value(DataTreeNode* row, const XmlNode* node) {
+    const gchar* text = node->text;
+    gsize len = node->len;
+    if (node->type == X_CDATA && len >= 12) {
+        text += 9; /* <![CDATA[ */
+        len -= 12;
+    }
+    data_tree_set_value(row, text, (gssize)len, node->type == X_CDATA ? PREVIEW_STYLE_STRING : PREVIEW_STYLE_PLAIN);
+}
+
+static gboolean has_attributes(const XmlNode* node) {
+    const gchar* p = node->text + 1 + node->name_len;
+    while (p < node->text + node->len && is_space(*p)) p++;
+    return *p != '>' && *p != '/';
+}
+
+static void add_nodes(DataTreeNode* parent, GPtrArray* nodes, GString* path);
+
+/* The row of an element: a leaf when it holds only a text (or nothing),
+ * else its attributes and its nodes under it */
+static void add_element(DataTreeNode* parent, const XmlNode* node, const gchar* step, GString* path) {
+    const gchar* key = step + 1; /* "entry[2]" */
+    gboolean attributes = has_attributes(node);
+    const XmlNode* only = node->children != NULL && node->children->len == 1 ? g_ptr_array_index(node->children, 0)
+                                                                               : NULL;
+    gboolean text = only != NULL && (only->type == X_TEXT || only->type == X_CDATA);
+    if (!attributes && !node->cut && (node->children->len == 0 || text)) {
+        DataTreeNode* row = data_tree_add(parent, DATA_TREE_VALUE, key, path->str);
+        if (text) {
+            set_text_value(row, only);
+        }
+        return;
+    }
+    DataTreeNode* row = data_tree_add(parent, DATA_TREE_OBJECT, key, path->str);
+    if (node->cut) {
+        data_tree_set_cut(row);
+    }
+    guint n_attributes = add_attributes(row, node, path);
+    add_nodes(row, node->children, path);
+    guint n = count_elements(node);
+    gchar* summary = n > 0 ? g_strdup_printf(ngettext("%u element", "%u elements", n), n)
+                     : n_attributes > 0 ? g_strdup_printf(ngettext("%u attribute", "%u attributes", n_attributes), n_attributes)
+                     : g_strdup("");
+    data_tree_set_summary(row, summary);
+    g_free(summary);
+}
+
+/* Elements by name, then text, CDATA and comments as "#text", "#cdata",
+ * "#comment" (the declarations, processing instructions and DOCTYPE are
+ * left to the text view) */
+static void add_nodes(DataTreeNode* parent, GPtrArray* nodes, GString* path) {
+    GPtrArray* steps = path_steps(nodes);
+    gsize path_len = path->len;
+    for (guint i = 0; i < nodes->len; i++) {
+        const XmlNode* child = g_ptr_array_index(nodes, i);
+        switch (child->type) {
+        case X_ELEMENT:
+            g_string_append(path, g_ptr_array_index(steps, i));
+            add_element(parent, child, g_ptr_array_index(steps, i), path);
+            g_string_truncate(path, path_len);
+            break;
+        case X_TEXT:
+        case X_CDATA:
+            set_text_value(data_tree_add(parent, DATA_TREE_VALUE, child->type == X_TEXT ? "#text" : "#cdata",
+                                         path->str), child);
+            break;
+        case X_COMMENT:
+            data_tree_set_value(data_tree_add(parent, DATA_TREE_VALUE, "#comment", path->str), child->text,
+                                (gssize)child->len, PREVIEW_STYLE_COMMENT);
+            break;
+        default:
+            break;
+        }
+    }
+    g_ptr_array_unref(steps);
+}
+
+gboolean xml_view_build_tree(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                             const PreviewFold* fold, const gchar* note, GError** error) {
+    Parser p = { text, len, 0, error, cut, FALSE, 0 };
+    GPtrArray* top = g_ptr_array_new_with_free_func(node_free);
+    if (!parse_document(&p, top)) {
+        g_ptr_array_free(top, TRUE);
+        return FALSE;
+    }
+    XmlViewInfo info = { 0 };
+    info.n_elements = p.n_elements;
+    info.cut = p.at_cut;
+    g_autoptr(DataTree) tree = data_tree_new();
+    DataTreeNode* root = data_tree_root(tree);
+    for (guint i = 0; i < top->len; i++) {
+        const XmlNode* node = g_ptr_array_index(top, i);
+        if (node->type != X_ELEMENT) {
+            continue;
+        }
+        /* The attributes and nodes of the outer element are the first level */
+        g_strlcpy(info.root, node->name, MIN(node->name_len + 1, sizeof info.root));
+        GString* path = g_string_new("/");
+        g_string_append_len(path, node->name, (gssize)node->name_len);
+        add_attributes(root, node, path);
+        add_nodes(root, node->children, path);
+        if (node->cut) {
+            data_tree_set_cut(root);
+        }
+        g_string_free(path, TRUE);
+        break;
+    }
+    g_ptr_array_free(top, TRUE);
+
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    gint level = data_tree_level(tree, fold);
+    if ((fold == NULL || fold->level == PREVIEW_FOLD_AUTO) && level != PREVIEW_FOLD_OPEN) {
+        preview_doc_note(body, _("Long document: the deeper levels are folded (Tab folds or opens a "
+                                 "block, Shift+Tab changes the level)"));
+    }
+    data_tree_print(tree, body, fold, level);
+    append_summary(doc, &info, note, body);
     return TRUE;
 }

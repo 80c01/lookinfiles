@@ -13,7 +13,7 @@ struct DataTreeNode {
     DataTreeKind kind;
     gchar* key;
     gchar* path;
-    gchar* value;
+    gchar* value;         /* scalars; containers: the summary that replaces the count */
     PreviewStyle style;
     GPtrArray* children;  /* containers */
     gboolean cut;
@@ -96,6 +96,11 @@ void data_tree_set_value(DataTreeNode* node, const gchar* text, gssize len, Prev
     g_free(node->value);
     node->value = g_string_free(out, FALSE);
     node->style = style;
+}
+
+void data_tree_set_summary(DataTreeNode* node, const gchar* summary) {
+    g_free(node->value);
+    node->value = g_strdup(summary);
 }
 
 void data_tree_set_cut(DataTreeNode* node) {
@@ -183,11 +188,13 @@ static void append_styled(PreviewDoc* doc, const gchar* text, PreviewStyle style
     preview_doc_add_span(doc, start, preview_doc_offset(doc), style);
 }
 
-/* "3 keys", "2 items", "{}" / "[]" when empty */
+/* "3 keys", "2 items", "{}" / "[]" when empty, or the summary set */
 static void append_count(PreviewDoc* doc, const DataTreeNode* node) {
     guint n = data_tree_n_children(node);
     gchar* count;
-    if (n == 0) {
+    if (node->value != NULL) {
+        count = g_strdup(node->value);
+    } else if (n == 0) {
         count = g_strdup(node->kind == DATA_TREE_OBJECT ? "{}" : "[]");
     } else if (node->kind == DATA_TREE_OBJECT) {
         count = g_strdup_printf(ngettext("%u key", "%u keys", n), n);
@@ -195,8 +202,11 @@ static void append_count(PreviewDoc* doc, const DataTreeNode* node) {
         count = g_strdup_printf(ngettext("%u item", "%u items", n), n);
     }
     append_styled(doc, count, PREVIEW_STYLE_COMMENT);
+    if (node->cut && count[0] != '\0') {
+        preview_doc_append_len(doc, " ", 1);
+    }
     if (node->cut) {
-        append_styled(doc, " …", PREVIEW_STYLE_COMMENT);
+        append_styled(doc, "…", PREVIEW_STYLE_COMMENT);
     }
     g_free(count);
 }

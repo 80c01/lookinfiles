@@ -192,6 +192,36 @@ static void test_build(void) {
     g_assert_cmpstr(preview_doc_path_at(doc, (gint)g_utf8_strlen(doc->text->str, -1) - 2), ==, "/a");
 }
 
+static void test_tree(void) {
+    const gchar* text = "<?xml version=\"1.0\"?><a x=\"1\"><b>hi</b><b k='v'><![CDATA[<c>]]></b>t<!--n--><e/></a>";
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    g_assert_true(xml_view_build_tree(doc, text, strlen(text), FALSE, NULL, NULL, NULL));
+    g_assert_cmpstr(doc->text->str, ==,
+                    "XML · <a> · 4 elements\n\n"
+                    "  @x        \"1\"\n"
+                    "  b[1]      hi\n"
+                    "▾ b[2]      1 attribute\n"
+                    "    @k      'v'\n"
+                    "    #cdata  <c>\n"
+                    "  #text     t\n"
+                    "  #comment  <!--n-->\n"
+                    "  e         \n");
+    g_assert_nonnull(preview_doc_fold_find(doc, "/a/b[2]"));
+    g_assert_cmpstr(preview_doc_path_at(doc, 30), ==, "/a/@x");
+
+    GError* error = NULL;
+    g_autoptr(PreviewDoc) bad = preview_doc_new();
+    g_assert_false(xml_view_build_tree(bad, "<a>", 3, FALSE, NULL, NULL, &error));
+    g_assert_nonnull(error);
+    g_error_free(error);
+
+    /* Cut inside an element: shown up to there */
+    const gchar* cut = "<a><b><c>1</c>";
+    g_autoptr(PreviewDoc) part = preview_doc_new();
+    g_assert_true(xml_view_build_tree(part, cut, strlen(cut), TRUE, NULL, NULL, NULL));
+    g_assert_true(g_str_has_suffix(part->text->str, "▾ b    1 element …\n    c  1\n…\n"));
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/xml_view/pretty", test_pretty);
@@ -202,5 +232,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/xml_view/cut", test_cut);
     g_test_add_func("/xml_view/auto_level", test_auto_level);
     g_test_add_func("/xml_view/build", test_build);
+    g_test_add_func("/xml_view/tree", test_tree);
     return g_test_run();
 }

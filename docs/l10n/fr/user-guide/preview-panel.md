@@ -42,7 +42,7 @@ l’encodage de texte détecté.
 
 `m` bascule entre la vue rendue et la vue brute :
 
-- JSON : arbre ↔ texte indenté ;
+- JSON, XML : arbre ↔ texte indenté ;
 - Markdown, HTML, Org, CSV, XML, TOML, YAML, diffs, journaux : rendu ↔ texte source ;
 - images : ajustée ↔ taille réelle ;
 - PDF : pages ↔ texte extrait ;
@@ -149,8 +149,11 @@ Le JSON est affiché comme un arbre de clés et de valeurs sur deux
 colonnes : chaque clé indentée selon sa profondeur, la valeur colorée selon
 son type, et chaque objet ou tableau avec son nombre de clés ou d’éléments
 et une flèche ▾ / ▸ qu’un clic replie ou déplie (`m` affiche plutôt le JSON
-indenté et coloré). Le XML est affiché indenté et coloré, le TOML et le
-YAML tels qu’ils sont écrits et colorés. Leurs clés, éléments ou tables de
+indenté et coloré). Le XML est affiché de la même façon : les attributs
+(`@id`), éléments (`entry[2]`), textes (`#text`), sections CDATA et
+commentaires de chaque élément sous lui, un élément qui ne contient qu’un
+texte comme une valeur (`m` : le XML indenté et coloré). Le TOML et le YAML
+sont affichés tels qu’ils sont écrits et colorés. Leurs clés, éléments ou tables de
 premier niveau sont dans la barre de symboles (`o`). `Tab` replie ou
 déplie l’objet, le tableau, l’élément, la table, la correspondance ou la
 séquence sous le curseur (sur une ligne de valeurs ou de texte : celui qui
