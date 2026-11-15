@@ -98,7 +98,9 @@ format_scenario() {
     key Down;           shot fmt_xml_tree       # attributes, elements and texts
     key m;              shot fmt_xml_raw        # the indented text
     key m
-    key Down;           shot fmt_yaml
+    key Down;           shot fmt_yaml_tree
+    key m;              shot fmt_yaml_raw       # as written, with its comments
+    key m
     key Down;           shot fmt_diff
     key Down;           shot fmt_zip
     key Down;           shot fmt_tar_gz

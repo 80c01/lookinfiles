@@ -235,6 +235,42 @@ static void test_build(void) {
     g_assert_true(g_str_has_prefix(items->text->str, "YAML · 1 item\n"));
 }
 
+static void test_tree(void) {
+    const gchar* text = "# c\nname: x # note\nlist:\n  - 1\n  - k: v\n    l: |\n      a\n      b\nempty:\n";
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    g_assert_true(yaml_view_build_tree(doc, text, strlen(text), FALSE, NULL, NULL, NULL));
+    g_assert_cmpstr(doc->text->str, ==,
+                    "YAML · 3 keys\n\n"
+                    "  name   x\n"
+                    "▾ list   2 items\n"
+                    "    0    1\n"
+                    "  ▾ 1    2 keys\n"
+                    "      k  v\n"
+                    "      l  a↵b\n"
+                    "  empty  \n");
+    g_assert_nonnull(preview_doc_fold_find(doc, "list[1]"));
+    g_assert_cmpstr(preview_doc_path_at(doc, (gint)g_utf8_strlen(doc->text->str, -1) - 3), ==, "empty");
+
+    /* Several documents, the first a scalar */
+    const gchar* docs = "--- hi\n---\n- a\n";
+    g_autoptr(PreviewDoc) many = preview_doc_new();
+    g_assert_true(yaml_view_build_tree(many, docs, strlen(docs), FALSE, NULL, NULL, NULL));
+    g_assert_cmpstr(many->text->str, ==, "YAML · 2 documents\n\n  0    hi\n▾ 1    1 item\n    0  a\n");
+    g_assert_nonnull(preview_doc_fold_find(many, "[1]"));
+
+    /* Cut: the last line is left out, "…" after the rest */
+    const gchar* cut = "a:\n  b: 1\n  c: 2";
+    g_autoptr(PreviewDoc) part = preview_doc_new();
+    g_assert_true(yaml_view_build_tree(part, cut, strlen(cut), TRUE, NULL, NULL, NULL));
+    g_assert_true(g_str_has_suffix(part->text->str, "▾ a    1 key\n    b  1\n…\n"));
+
+    GError* error = NULL;
+    g_autoptr(PreviewDoc) bad = preview_doc_new();
+    g_assert_false(yaml_view_build_tree(bad, "a:\n\tb: 1\n", 9, FALSE, NULL, NULL, &error));
+    g_assert_nonnull(error);
+    g_error_free(error);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/yaml_view/text_and_styles", test_text_and_styles);
@@ -244,5 +280,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/yaml_view/cut", test_cut);
     g_test_add_func("/yaml_view/auto_level", test_auto_level);
     g_test_add_func("/yaml_view/build", test_build);
+    g_test_add_func("/yaml_view/tree", test_tree);
     return g_test_run();
 }

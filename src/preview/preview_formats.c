@@ -170,6 +170,7 @@ static DataBuild data_tree_builder_for(FileKind kind) {
     switch (kind) {
     case FILE_KIND_JSON: return json_view_build_tree;
     case FILE_KIND_XML:  return xml_view_build_tree;
+    case FILE_KIND_YAML: return yaml_view_build_tree;
     default:             return NULL;
     }
 }

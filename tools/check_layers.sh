@@ -103,7 +103,7 @@ data_tree:preview_doc,i18n
 xml_view:preview_doc,data_tree,i18n
 text_outline:preview_doc,i18n
 toml_view:preview_doc,text_outline,i18n
-yaml_view:preview_doc,text_outline,i18n
+yaml_view:preview_doc,text_outline,data_tree,i18n
 diff_view:preview_doc,i18n
 archive_listing:zip_reader,i18n
 archive_extract:app_paths,zip_reader,i18n

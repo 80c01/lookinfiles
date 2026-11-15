@@ -50,4 +50,13 @@ gboolean yaml_view_append(PreviewDoc* doc, const gchar* text, gsize len, gboolea
 gboolean yaml_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
                          const PreviewFold* fold, const gchar* note, GError** error);
 
+/* The same as a tree (data_tree.h): the keys or items of the document
+ * (the documents, "[n]", when there are several) are the first level, a
+ * scalar as written on one line (a quoted or flow value as written, a
+ * block scalar's lines joined, anchors and tags left out; comments are
+ * only in the text view). The same fold points and paths as
+ * yaml_view_build(). */
+gboolean yaml_view_build_tree(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                              const PreviewFold* fold, const gchar* note, GError** error);
+
 #endif /* YAML_VIEW_H */

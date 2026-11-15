@@ -72,8 +72,8 @@ format.
   that do not match shown as text);
   TOML as written, coloured, its tables folded with the tables under them
   (paths such as `servers.alpha.ip`, `plugins[1].name`; a file with a line
-  that is not TOML, such as an INI file, shown as text); YAML the same way
-  (mappings and sequences under a key or item fold, paths such as
+  that is not TOML, such as an INI file, shown as text); YAML as a tree too (`m`: as written, with its comments;
+  mappings and sequences under a key or item fold, paths such as
   `jobs.build.steps[1].run`, several documents numbered `[0]`, `[1]`...;
   a subset is read: tabs in indentation and complex `?` keys make it plain
   text), diffs and patches with a

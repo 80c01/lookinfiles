@@ -1,6 +1,7 @@
 /* YAML preview (see yaml_view.h). */
 #include "formats/yaml_view.h"
 #include "formats/text_outline.h"
+#include "formats/data_tree.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>
@@ -19,6 +20,7 @@ typedef struct {
     gint depth;           /* 0: the root of a document */
     guint block;          /* its block in the outline, NO_BLOCK for a root */
     guint count;          /* keys or items so far */
+    DataTreeNode* row;    /* its row in the tree, if one is built */
 } Node;
 
 typedef struct {
@@ -34,6 +36,7 @@ typedef struct {
     gint pending_indent;
     gboolean pending_same_seq; /* a key: "key:\n- item" at the same column */
     gchar* pending_path;
+    gchar* pending_key;   /* its key or item number, for the tree */
     gint pending_depth;
     guint pending_line;
     gsize heading_start;  /* the key, tagged for the tagbar if a block follows */
@@ -55,6 +58,12 @@ typedef struct {
     gchar root;
     guint n_root;
     gboolean any_token;
+    /* The tree (yaml_view_build_tree()), NULL for the text */
+    DataTree* tree;
+    DataTreeNode* value_row; /* the row of the value being read */
+    GString* value_text;
+    PreviewStyle value_style;
+    gboolean block_folded;   /* the block scalar read is folded (>) */
 } Parser;
 
 static void node_free(gpointer data) {
@@ -177,7 +186,67 @@ static Node* current(Parser* p) {
     return p->open->len > 0 ? g_ptr_array_index(p->open, p->open->len - 1) : NULL;
 }
 
-static gboolean push(Parser* p, NodeKind kind, gint indent, const gchar* path, gint depth, guint first) {
+/* --- Tree --- */
+
+/* The row the entries of the current node go under */
+static DataTreeNode* parent_row(Parser* p) {
+    Node* node = current(p);
+    return node != NULL ? node->row : NULL;
+}
+
+/* The value read so far goes to its row */
+static void flush_value(Parser* p) {
+    if (p->value_row != NULL) {
+        data_tree_set_value(p->value_row, p->value_text->str, (gssize)p->value_text->len, p->value_style);
+        p->value_row = NULL;
+    }
+}
+
+/* A scalar row under parent; the value read next fills it */
+static void start_value(Parser* p, DataTreeNode* parent, const gchar* key, const gchar* path) {
+    if (p->tree == NULL || parent == NULL) {
+        return;
+    }
+    flush_value(p);
+    p->value_row = data_tree_add(parent, DATA_TREE_VALUE, key, path[0] != '\0' ? path : NULL);
+    g_string_truncate(p->value_text, 0);
+    p->value_style = PREVIEW_STYLE_PLAIN;
+}
+
+/* Text of the value being read (its first part sets the style) */
+static void add_value_text(Parser* p, gsize start, gsize end, PreviewStyle style, const gchar* separator) {
+    if (p->value_row == NULL) {
+        return;
+    }
+    if (p->value_text->len > 0) {
+        g_string_append(p->value_text, separator);
+    } else {
+        p->value_style = style;
+    }
+    g_string_append_len(p->value_text, p->text + start, (gssize)(end - start));
+}
+
+/* "[2]" when the file has several documents, else "" */
+static gchar* document_prefix(const Parser* p) {
+    return p->many_docs ? g_strdup_printf("[%u]", p->doc) : g_strdup("");
+}
+
+/* The row of a document's root: the tree's root, or one per document */
+static DataTreeNode* document_row(Parser* p, DataTreeKind kind, const gchar* path) {
+    if (p->tree == NULL) {
+        return NULL;
+    }
+    if (!p->many_docs) {
+        return data_tree_root(p->tree);
+    }
+    gchar* key = g_strdup_printf("%u", p->doc);
+    DataTreeNode* row = data_tree_add(data_tree_root(p->tree), kind, key, path);
+    g_free(key);
+    return row;
+}
+
+static gboolean push(Parser* p, NodeKind kind, gint indent, const gchar* path, gint depth, guint first,
+                     const gchar* key) {
     if (p->open->len >= MAX_DEPTH) {
         return fail_at(p, text_outline_line_start(p->outline, first), _("nested too deeply"));
     }
@@ -190,6 +259,10 @@ static gboolean push(Parser* p, NodeKind kind, gint indent, const gchar* path, g
                                                      kind == NODE_MAP ? TEXT_OUTLINE_KEYS : TEXT_OUTLINE_ITEMS, 0,
                                                      FALSE)
                             : NO_BLOCK;
+    DataTreeKind row_kind = kind == NODE_MAP ? DATA_TREE_OBJECT : DATA_TREE_ARRAY;
+    node->row = depth == 0 ? document_row(p, row_kind, path)
+                : parent_row(p) != NULL ? data_tree_add(parent_row(p), row_kind, key, path)
+                : NULL;
     g_ptr_array_add(p->open, node);
     return TRUE;
 }
@@ -208,12 +281,23 @@ static void pop(Parser* p) {
 static void clear_pending(Parser* p) {
     p->pending = FALSE;
     g_clear_pointer(&p->pending_path, g_free);
+    g_clear_pointer(&p->pending_key, g_free);
     p->plain_indent = -1;
     p->block_indent = -1;
 }
 
+/* A key or item whose value never came: an empty row */
+static void pending_empty(Parser* p) {
+    if (p->pending) {
+        start_value(p, parent_row(p), p->pending_key, p->pending_path);
+        flush_value(p);
+    }
+}
+
 /* The end of a document: everything open closes */
 static void close_all(Parser* p) {
+    pending_empty(p);
+    flush_value(p);
     while (current(p) != NULL) {
         pop(p);
     }
@@ -363,6 +447,8 @@ static gboolean parse_value(Parser* p, guint line, gsize pos, const gchar* path,
         gsize start = pos++;
         while (pos < end && (p->text[pos] == '-' || p->text[pos] == '+' || g_ascii_isdigit(p->text[pos]))) pos++;
         add_token(p, start, pos, PREVIEW_STYLE_KEYWORD);
+        p->block_folded = c == '>';
+        p->value_style = PREVIEW_STYLE_STRING;
         p->block_indent = owner;
         g_free(p->block_path);
         p->block_path = g_strdup(path);
@@ -383,6 +469,7 @@ static gboolean parse_value(Parser* p, guint line, gsize pos, const gchar* path,
         if (!flow) {
             add_token(p, pos, close, PREVIEW_STYLE_STRING);
         }
+        add_value_text(p, pos, close, flow ? PREVIEW_STYLE_PLAIN : PREVIEW_STYLE_STRING, "");
         guint last = text_outline_line_at(p->outline, close > 0 ? close - 1 : 0);
         for (guint l = line + 1; l <= last; l++) {
             text_outline_set_path(p->outline, text_outline_line_start(p->outline, l), path);
@@ -401,6 +488,7 @@ static gboolean parse_value(Parser* p, guint line, gsize pos, const gchar* path,
         gsize start = pos;
         while (pos < end && !is_blank(p->text[pos])) pos++;
         add_token(p, start, pos, PREVIEW_STYLE_KEYWORD);
+        add_value_text(p, start, pos, PREVIEW_STYLE_KEYWORD, "");
         return end_of_line(p, pos);
     }
     /* A plain scalar, up to a comment */
@@ -409,6 +497,7 @@ static gboolean parse_value(Parser* p, guint line, gsize pos, const gchar* path,
     gsize text_end = stop;
     while (text_end > pos && is_blank(p->text[text_end - 1])) text_end--;
     add_token(p, pos, text_end, scalar_style(p->text + pos, text_end - pos));
+    add_value_text(p, pos, text_end, scalar_style(p->text + pos, text_end - pos), " ");
     add_token(p, stop, end, PREVIEW_STYLE_COMMENT);
     p->plain_indent = owner;
     g_free(p->plain_path);
@@ -417,14 +506,27 @@ static gboolean parse_value(Parser* p, guint line, gsize pos, const gchar* path,
 }
 
 /* A key or item whose value is on the next lines */
-static void expect_block(Parser* p, gint indent, gboolean same_seq, const gchar* path, gint depth, guint line) {
+static void expect_block(Parser* p, gint indent, gboolean same_seq, const gchar* path, gint depth, guint line,
+                         const gchar* key) {
     p->pending = TRUE;
+    g_free(p->pending_key);
+    p->pending_key = g_strdup(key);
     p->pending_indent = indent;
     p->pending_same_seq = same_seq;
     g_free(p->pending_path);
     p->pending_path = g_strdup(path);
     p->pending_depth = depth;
     p->pending_line = line;
+}
+
+/* A document that is a scalar: one row */
+static void start_scalar_document(Parser* p, const gchar* prefix) {
+    if (p->tree == NULL) {
+        return;
+    }
+    gchar* key = p->many_docs ? g_strdup_printf("%u", p->doc) : NULL;
+    start_value(p, data_tree_root(p->tree), key, prefix);
+    g_free(key);
 }
 
 /* The entry at pos (column indent) of line: an item, or a key */
@@ -445,20 +547,25 @@ static gboolean parse_entry(Parser* p, guint line, gsize pos, gint indent) {
             gchar* path = g_strdup(p->pending_path);
             gint owner = p->pending_indent;
             text_outline_set_path(p->outline, pos, path);
+            start_value(p, parent_row(p), p->pending_key, path);
             clear_pending(p);
             gboolean ok = parse_value(p, line, rest, path, owner, p->pending_depth);
             g_free(path);
             return ok;
         }
         if (below) {
-            if (!push(p, item ? NODE_SEQ : NODE_MAP, indent, p->pending_path, p->pending_depth, p->pending_line)) {
+            if (!push(p, item ? NODE_SEQ : NODE_MAP, indent, p->pending_path, p->pending_depth, p->pending_line,
+                      p->pending_key)) {
                 return FALSE;
             }
             if (p->heading_level > 0) {
                 text_outline_add_heading(p->outline, p->heading_start, p->heading_end, p->heading_level);
             }
+        } else {
+            pending_empty(p);
         }
         g_clear_pointer(&p->pending_path, g_free);
+        g_clear_pointer(&p->pending_key, g_free);
         p->pending = FALSE;
     }
     p->heading_level = 0;
@@ -474,18 +581,20 @@ static gboolean parse_entry(Parser* p, guint line, gsize pos, gint indent) {
             return fail_at(p, pos, _("bad indentation"));
         }
         p->root_seen = TRUE;
-        gchar* prefix = p->many_docs ? g_strdup_printf("[%u]", p->doc) : g_strdup("");
+        gchar* prefix = document_prefix(p);
         if (!item && !key && is_complex_key(p, pos, end)) {
+            g_free(prefix);
             return fail_at(p, pos, _("complex keys are not supported"));
         }
         if (!item && !key) {
             /* A scalar document: its lines are text */
             p->scalar_doc = TRUE;
+            start_scalar_document(p, prefix);
             gboolean ok = parse_value(p, line, skip_properties(p, pos), prefix, -1, 1);
             g_free(prefix);
             return ok;
         }
-        gboolean ok = push(p, item ? NODE_SEQ : NODE_MAP, indent, prefix, 0, line);
+        gboolean ok = push(p, item ? NODE_SEQ : NODE_MAP, indent, prefix, 0, line, NULL);
         g_free(prefix);
         if (!ok) {
             return FALSE;
@@ -496,6 +605,7 @@ static gboolean parse_entry(Parser* p, guint line, gsize pos, gint indent) {
         return fail_at(p, pos, _("bad indentation"));
     }
     if (node->kind == NODE_SEQ) {
+        gchar* index = g_strdup_printf("%u", node->count);
         gchar* path = g_strdup_printf("%s[%u]", node->path, node->count++);
         gsize rest = skip_properties(p, skip_blanks(p, pos + 1, end));
         gsize unused = 0;
@@ -506,14 +616,16 @@ static gboolean parse_entry(Parser* p, guint line, gsize pos, gint indent) {
         gboolean ok = TRUE;
         if (rest >= end || p->text[rest] == '#') {
             add_token(p, rest, end, PREVIEW_STYLE_COMMENT);
-            expect_block(p, indent, FALSE, path, node->depth + 1, line);
+            expect_block(p, indent, FALSE, path, node->depth + 1, line, index);
         } else if (is_item(p, rest, end) || scan_key(p, rest, &key_end, &after)) {
             /* - - a, - key: value: a node starting on the item's line */
-            ok = push(p, is_item(p, rest, end) ? NODE_SEQ : NODE_MAP, column, path, node->depth + 1, line) &&
+            ok = push(p, is_item(p, rest, end) ? NODE_SEQ : NODE_MAP, column, path, node->depth + 1, line, index) &&
                  parse_entry(p, line, rest, column);
         } else {
+            start_value(p, node->row, index, path);
             ok = parse_value(p, line, rest, path, indent, node->depth + 1);
         }
+        g_free(index);
         g_free(path);
         return ok;
     }
@@ -532,17 +644,20 @@ static gboolean parse_entry(Parser* p, guint line, gsize pos, gint indent) {
     }
     gsize rest = skip_properties(p, skip_blanks(p, after, end));
     gboolean ok = TRUE;
+    gchar* name = g_strndup(p->text + pos, key_end - pos);
     if (rest >= end || p->text[rest] == '#') {
         add_token(p, rest, end, PREVIEW_STYLE_COMMENT);
-        expect_block(p, indent, TRUE, path, node->depth + 1, line);
+        expect_block(p, indent, TRUE, path, node->depth + 1, line, name);
         if (node->depth > 0) {
             p->heading_start = pos;
             p->heading_end = key_end;
             p->heading_level = MIN(node->depth + 1, 6);
         }
     } else {
+        start_value(p, node->row, name, path);
         ok = parse_value(p, line, rest, path, indent, node->depth + 1);
     }
+    g_free(name);
     g_free(path);
     return ok;
 }
@@ -591,6 +706,7 @@ static gboolean parse_document(Parser* p) {
         }
         if (p->block_indent >= 0 && indent > p->block_indent) {
             add_token(p, pos, end, PREVIEW_STYLE_STRING); /* in a block scalar */
+            add_value_text(p, pos, end, PREVIEW_STYLE_STRING, p->block_folded ? " " : "\n");
             text_outline_set_path(p->outline, start, p->block_path);
             extend(p, line);
             continue;
@@ -616,7 +732,8 @@ static gboolean parse_document(Parser* p) {
                     /* --- text, --- | : a scalar document */
                     p->root_seen = TRUE;
                     p->scalar_doc = TRUE;
-                    gchar* prefix = p->many_docs ? g_strdup_printf("[%u]", p->doc) : g_strdup("");
+                    gchar* prefix = document_prefix(p);
+                    start_scalar_document(p, prefix);
                     gboolean ok = parse_value(p, line, rest, prefix, -1, 1);
                     g_free(prefix);
                     if (!ok) {
@@ -648,6 +765,7 @@ static gboolean parse_document(Parser* p) {
             gsize text_end = stop;
             while (text_end > pos && is_blank(p->text[text_end - 1])) text_end--;
             add_token(p, pos, text_end, PREVIEW_STYLE_STRING);
+            add_value_text(p, pos, text_end, PREVIEW_STYLE_STRING, " ");
             add_token(p, stop, end, PREVIEW_STYLE_COMMENT);
             const gchar* path = p->scalar_doc ? NULL : p->plain_path;
             if (path != NULL && path[0] != '\0') {
@@ -669,63 +787,76 @@ static gboolean parse_document(Parser* p) {
     return TRUE;
 }
 
-gboolean yaml_view_append(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
-                          const PreviewFold* fold, YamlViewInfo* info, GError** error) {
+/* Parse text into p (the tree too if tree is not NULL); free with parser_clear() */
+static gboolean parse_text(Parser* p, const gchar* text, gsize len, gboolean cut, DataTree* tree, GError** error) {
     if (cut) {
         /* The last line is incomplete */
         while (len > 0 && text[len - 1] != '\n') len--;
     }
-    Parser p = { 0 };
-    p.text = text;
-    p.len = len;
-    p.error = error;
-    p.cut = cut;
-    p.outline = text_outline_new(text, len);
-    p.open = g_ptr_array_new_with_free_func(node_free);
-    p.plain_indent = -1;
-    p.block_indent = -1;
-    gboolean ok = parse_document(&p);
+    memset(p, 0, sizeof *p);
+    p->text = text;
+    p->len = len;
+    p->error = error;
+    p->cut = cut;
+    p->outline = text_outline_new(text, len);
+    p->open = g_ptr_array_new_with_free_func(node_free);
+    p->plain_indent = -1;
+    p->block_indent = -1;
+    p->tree = tree;
+    p->value_text = g_string_new(NULL);
+    return parse_document(p);
+}
+
+static void parser_clear(Parser* p) {
+    text_outline_free(p->outline);
+    g_ptr_array_unref(p->open);
+    g_free(p->pending_path);
+    g_free(p->pending_key);
+    g_free(p->plain_path);
+    g_free(p->block_path);
+    g_string_free(p->value_text, TRUE);
+}
+
+static void note_long(PreviewDoc* doc, const PreviewFold* fold, gint level) {
+    if ((fold == NULL || fold->level == PREVIEW_FOLD_AUTO) && level != PREVIEW_FOLD_OPEN) {
+        preview_doc_note(doc, _("Long document: the deeper levels are folded (Tab folds or opens a "
+                                "block, Shift+Tab changes the level)"));
+    }
+}
+
+gboolean yaml_view_append(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                          const PreviewFold* fold, YamlViewInfo* info, GError** error) {
+    Parser p;
+    gboolean ok = parse_text(&p, text, len, cut, NULL, error);
     if (ok) {
         YamlViewInfo result = { MAX(p.n_documents, 1), p.root, p.n_root, text_outline_level(p.outline, fold),
                                 p.at_cut };
         if (info != NULL) {
             *info = result;
         }
-        if ((fold == NULL || fold->level == PREVIEW_FOLD_AUTO) && result.level != PREVIEW_FOLD_OPEN) {
-            preview_doc_note(doc, _("Long document: the deeper levels are folded (Tab folds or opens a "
-                                    "block, Shift+Tab changes the level)"));
-        }
+        note_long(doc, fold, result.level);
         text_outline_print(p.outline, doc, fold, result.level);
         if (cut) {
             preview_doc_append(doc, PREVIEW_STYLE_COMMENT, "…\n"); /* the rest was not read */
         }
     }
-    text_outline_free(p.outline);
-    g_ptr_array_unref(p.open);
-    g_free(p.pending_path);
-    g_free(p.plain_path);
-    g_free(p.block_path);
+    parser_clear(&p);
     return ok;
 }
 
-gboolean yaml_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
-                         const PreviewFold* fold, const gchar* note, GError** error) {
-    g_autoptr(PreviewDoc) body = preview_doc_new();
-    YamlViewInfo info;
-    if (!yaml_view_append(body, text, len, cut, fold, &info, error)) {
-        return FALSE;
-    }
+/* The dimmed summary line ("YAML · 5 keys"), the note, then body */
+static void append_summary(PreviewDoc* doc, const YamlViewInfo* info, const gchar* note, const PreviewDoc* body) {
     doc->monospace = TRUE;
     doc->wrap = FALSE;
-    gchar* count = preview_doc_count(info.n_documents > 1 ? info.n_documents : info.n_root);
-    if (info.n_documents > 1) {
+    gchar* count = preview_doc_count(info->n_documents > 1 ? info->n_documents : info->n_root);
+    if (info->n_documents > 1) {
         preview_doc_appendf(doc, PREVIEW_STYLE_DIM,
-                            ngettext("YAML · %s document\n", "YAML · %s documents\n", info.n_documents), count);
-    } else if (info.root == 'm') {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("YAML · %s key\n", "YAML · %s keys\n", info.n_root),
+                            ngettext("YAML · %s document\n", "YAML · %s documents\n", info->n_documents), count);
+    } else if (info->root == 'm') {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("YAML · %s key\n", "YAML · %s keys\n", info->n_root),
                             count);
-    } else if (info.root == 's') {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("YAML · %s item\n", "YAML · %s items\n", info.n_root),
+    } else if (info->root == 's') {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("YAML · %s item\n", "YAML · %s items\n", info->n_root),
                             count);
     } else {
         preview_doc_append(doc, PREVIEW_STYLE_DIM, "YAML\n");
@@ -736,5 +867,36 @@ gboolean yaml_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean
     }
     preview_doc_append_len(doc, "\n", 1);
     preview_doc_append_doc(doc, body); /* with its fold points and paths */
+}
+
+gboolean yaml_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                         const PreviewFold* fold, const gchar* note, GError** error) {
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    YamlViewInfo info;
+    if (!yaml_view_append(body, text, len, cut, fold, &info, error)) {
+        return FALSE;
+    }
+    append_summary(doc, &info, note, body);
+    return TRUE;
+}
+
+gboolean yaml_view_build_tree(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                              const PreviewFold* fold, const gchar* note, GError** error) {
+    g_autoptr(DataTree) tree = data_tree_new();
+    Parser p;
+    gboolean ok = parse_text(&p, text, len, cut, tree, error);
+    YamlViewInfo info = { MAX(p.n_documents, 1), p.root, p.n_root, 0, p.at_cut };
+    parser_clear(&p);
+    if (!ok) {
+        return FALSE;
+    }
+    if (cut) {
+        data_tree_set_cut(data_tree_root(tree));
+    }
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    info.level = data_tree_level(tree, fold);
+    note_long(body, fold, info.level);
+    data_tree_print(tree, body, fold, info.level);
+    append_summary(doc, &info, note, body);
     return TRUE;
 }
