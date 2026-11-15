@@ -4,6 +4,8 @@
 #include "preview/preview_state.h"
 
 #define SYNC_MARK "preview-sync"
+/* Frames the view is kept on the line while the new preview is laid out */
+#define SETTLE_FRAMES 60
 
 struct PreviewSync {
     gchar* path;            /* file in the preview */
@@ -15,6 +17,11 @@ struct PreviewSync {
     gint restore_line;      /* source line at the top of the view, or -1 */
     gint restore_offset;    /* else the offset at the top */
     guint idle_id;          /* scroll once the new preview is in the buffer */
+    guint settle_id;        /* tick callback keeping the view on the line */
+    gdouble settle_align;   /* height of the line in the view */
+    gdouble settle_upper;   /* document height at the last frame */
+    gint settle_frames;     /* frames left, and frames with the height unchanged */
+    gint settle_stable;
     gint synced_offset;     /* offset last scrolled to for the editor's cursor */
     GtkTextBuffer* tracked; /* editor buffer of path whose cursor is followed */
     GtkWindow* window;      /* window whose focus is watched (an editor of path */
@@ -69,6 +76,47 @@ static void scroll_to(AppData* app, gint offset, gdouble align) {
     gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(app->text_view), mark, 0.0, TRUE, 0.0, align);
 }
 
+/* The lines of a new preview get their real height over a few frames (the
+ * view estimates the lines not laid out yet): scroll to the line again at
+ * each frame until the height of the document stops changing */
+static gboolean settle_tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
+    (void)clock;
+    AppData* app = data;
+    struct PreviewSync* s = app->preview_sync;
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(widget));
+    gdouble upper = vadj != NULL ? gtk_adjustment_get_upper(vadj) : 0.0;
+    s->settle_stable = (upper == s->settle_upper) ? s->settle_stable + 1 : 0;
+    s->settle_upper = upper;
+    GtkTextMark* mark = gtk_text_buffer_get_mark(app->buffer, SYNC_MARK);
+    if (mark != NULL) {
+        gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(widget), mark, 0.0, TRUE, 0.0, s->settle_align);
+    }
+    if (mark == NULL || s->settle_stable >= 3 || --s->settle_frames <= 0) {
+        s->settle_id = 0;
+        return G_SOURCE_REMOVE;
+    }
+    return G_SOURCE_CONTINUE;
+}
+
+static void settle_stop(AppData* app, struct PreviewSync* s) {
+    if (s->settle_id != 0) {
+        gtk_widget_remove_tick_callback(app->text_view, s->settle_id);
+        s->settle_id = 0;
+    }
+}
+
+/* scroll_to() on a preview just put in the buffer */
+static void scroll_settled(AppData* app, struct PreviewSync* s, gint offset, gdouble align) {
+    scroll_to(app, offset, align);
+    s->settle_align = align;
+    s->settle_upper = -1.0;
+    s->settle_stable = 0;
+    s->settle_frames = SETTLE_FRAMES;
+    if (s->settle_id == 0) {
+        s->settle_id = gtk_widget_add_tick_callback(app->text_view, settle_tick, app, NULL);
+    }
+}
+
 /* The editor tab of buffer that has its cursor (a split view shares it) */
 static EditorTab* cursor_tab(AppData* app, GtkTextBuffer* buffer) {
     EditorTab* found = NULL;
@@ -86,7 +134,7 @@ static EditorTab* cursor_tab(AppData* app, GtkTextBuffer* buffer) {
 
 /* Bring the line of the editor's cursor into the preview, at the height of
  * the cursor in the editor; FALSE if the preview has no lines */
-static gboolean scroll_to_cursor(AppData* app, struct PreviewSync* s, EditorTab* tab) {
+static gboolean scroll_to_cursor(AppData* app, struct PreviewSync* s, EditorTab* tab, gboolean settle) {
     GtkTextIter cursor;
     gtk_text_buffer_get_iter_at_mark(tab->buffer, &cursor, gtk_text_buffer_get_insert(tab->buffer));
     gint offset = line_offset(app, s, gtk_text_iter_get_line(&cursor));
@@ -101,7 +149,12 @@ static gboolean scroll_to_cursor(AppData* app, struct PreviewSync* s, EditorTab*
     gtk_text_view_get_visible_rect(GTK_TEXT_VIEW(tab->view), &visible);
     gtk_text_view_get_iter_location(GTK_TEXT_VIEW(tab->view), &cursor, &line);
     gdouble align = visible.height > 0 ? CLAMP((gdouble)(line.y - visible.y) / visible.height, 0.0, 1.0) : 0.3;
-    scroll_to(app, offset, align);
+    if (settle) {
+        scroll_settled(app, s, offset, align);
+    } else {
+        settle_stop(app, s);
+        scroll_to(app, offset, align);
+    }
     return TRUE;
 }
 
@@ -116,7 +169,7 @@ static void on_editor_cursor_moved(GObject* buffer, GParamSpec* pspec, gpointer 
         !gtk_widget_get_mapped(app->text_view)) {
         return;
     }
-    scroll_to_cursor(app, s, tab);
+    scroll_to_cursor(app, s, tab, FALSE);
 }
 
 static void untrack(AppData* app, struct PreviewSync* s) {
@@ -168,9 +221,9 @@ static gboolean scroll_when_shown(gpointer data) {
     gboolean editing = tab != NULL && !gtk_widget_has_focus(app->text_view) &&
                        (gtk_widget_has_focus(tab->view) || tab == app->last_focused_editor) &&
                        (s->restore || gtk_widget_get_mapped(tab->view));
-    if (!(editing && scroll_to_cursor(app, s, tab)) && s->restore) {
+    if (!(editing && scroll_to_cursor(app, s, tab, TRUE)) && s->restore) {
         gint offset = s->restore_line >= 0 ? line_offset(app, s, s->restore_line) : -1;
-        scroll_to(app, offset >= 0 ? offset : s->restore_offset, 0.0);
+        scroll_settled(app, s, offset >= 0 ? offset : s->restore_offset, 0.0);
     }
     s->restore = FALSE;
     return G_SOURCE_REMOVE;
@@ -196,6 +249,7 @@ void preview_sync_loading(AppData* app, const gchar* path) {
 
 void preview_sync_showing(AppData* app, const gchar* path, const MdOut* md, gboolean keep) {
     struct PreviewSync* s = sync_get(app);
+    settle_stop(app, s);
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
     if (hadj != NULL) {
         gtk_adjustment_set_value(hadj, gtk_adjustment_get_lower(hadj));
@@ -240,6 +294,7 @@ void preview_sync_free(AppData* app) {
     if (s->idle_id != 0) {
         g_source_remove(s->idle_id);
     }
+    settle_stop(app, s);
     if (s->window != NULL) {
         g_signal_handler_disconnect(s->window, s->focus_handler);
         g_object_remove_weak_pointer(G_OBJECT(s->window), (gpointer*)&s->window);
