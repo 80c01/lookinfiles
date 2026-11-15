@@ -20,6 +20,7 @@
 #include "formats/hex_dump.h"
 #include "formats/json_view.h"
 #include "formats/xml_view.h"
+#include "formats/toml_view.h"
 #include "formats/log_view.h"
 #include "formats/man_view.h"
 #include "formats/notebook.h"
@@ -147,26 +148,25 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     return doc;
 }
 
-/* --- JSON, XML --- */
+/* --- JSON, XML, TOML --- */
 
-static PreviewDoc* build_json(const PreviewInput* in, GCancellable* cancellable, GError** error) {
-    (void)cancellable;
-    g_autofree gchar* note = truncated_note(in);
-    g_autoptr(PreviewDoc) doc = preview_doc_new();
-    if (!json_view_build(doc, in->text, in->text_len, in->text_truncated, in->fold, note, error)) {
-        return NULL;
+/* The data formats: summary line, truncation note, then the text (folds and paths) */
+typedef gboolean (*DataBuild)(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut, const PreviewFold* fold,
+                              const gchar* note, GError** error);
+
+static DataBuild data_builder_for(FileKind kind) {
+    switch (kind) {
+    case FILE_KIND_JSON: return json_view_build;
+    case FILE_KIND_XML:  return xml_view_build;
+    case FILE_KIND_TOML: return toml_view_build;
+    default:             return NULL;
     }
-    return g_steal_pointer(&doc);
 }
 
-static PreviewDoc* build_xml(const PreviewInput* in, GCancellable* cancellable, GError** error) {
-    (void)cancellable;
+static PreviewDoc* build_data(const PreviewInput* in, DataBuild build, GError** error) {
     g_autofree gchar* note = truncated_note(in);
     g_autoptr(PreviewDoc) doc = preview_doc_new();
-    if (!xml_view_build(doc, in->text, in->text_len, in->text_truncated, in->fold, note, error)) {
-        return NULL;
-    }
-    return g_steal_pointer(&doc);
+    return build(doc, in->text, in->text_len, in->text_truncated, in->fold, note, error) ? g_steal_pointer(&doc) : NULL;
 }
 
 /* --- Diff / patch --- */
@@ -1061,8 +1061,6 @@ static PreviewBuildFunc builder_for(FileKind kind) {
     case FILE_KIND_EXECUTABLE:   return build_elf;
     case FILE_KIND_DOCUMENT:     return build_document;
     case FILE_KIND_CSV:          return build_csv;
-    case FILE_KIND_JSON:         return build_json;
-    case FILE_KIND_XML:          return build_xml;
     case FILE_KIND_DIFF:         return build_diff;
     case FILE_KIND_ARCHIVE:      return build_archive;
     case FILE_KIND_CERTIFICATE:  return build_certificate;
@@ -1092,12 +1090,13 @@ static PreviewBuildFunc builder_for(FileKind kind) {
 }
 
 gboolean preview_format_has_builder(FileKind kind) {
-    return builder_for(kind) != NULL;
+    return builder_for(kind) != NULL || data_builder_for(kind) != NULL;
 }
 
 PreviewDoc* preview_format_build(const PreviewInput* input, GCancellable* cancellable,
                                  GError** error) {
     PreviewBuildFunc build = builder_for(input->kind);
+    if (build == NULL && data_builder_for(input->kind) != NULL) return build_data(input, data_builder_for(input->kind), error);
     if (build == NULL) {
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("no preview for this format yet"));
         return NULL;

@@ -1,0 +1,36 @@
+# Sample project manifest
+title = "LookinFiles demo"
+version = "1.4.0"
+released = 1979-05-27 07:32:00Z
+
+[owner]
+name = "Ada"
+"e-mail" = 'ada@example.org'
+
+[servers]
+enabled = true
+
+[servers.alpha]
+ip = "10.0.0.1"
+ports = [ 8000, 8001,
+          8002 ]
+
+[servers.beta]
+ip = "10.0.0.2"
+role = { kind = "backup", weight = 0.5 }
+
+[[plugins]]
+name = "fold"
+deps = [
+  "preview",   # the preview doc
+  "folding",
+]
+
+[[plugins]]
+name = "paths"
+
+[plugins.options]
+copy-key = "y"
+notes = """
+Copies the path
+of the value at the cursor."""

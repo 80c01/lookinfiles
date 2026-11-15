@@ -216,6 +216,12 @@ static void test_detect_text_formats(void) {
     g_assert_cmpint(DETECT("note", "<?xmlish"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(file_kind_detect("e.xml", NULL, 0), ==, FILE_KIND_XML);
     g_assert_true(file_kind_is_text(FILE_KIND_XML));
+    /* TOML: by name only (INI files look the same) */
+    g_assert_cmpint(DETECT("Cargo.toml", "[package]\nname = \"x\"\n"), ==, FILE_KIND_TOML);
+    g_assert_cmpint(DETECT("Cargo.lock", "version = 3\n"), ==, FILE_KIND_TOML);
+    g_assert_cmpint(DETECT("Pipfile", "[packages]\n"), ==, FILE_KIND_TOML);
+    g_assert_cmpint(DETECT("yarn.lock", "# yarn lockfile v1\n"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(DETECT("setup.cfg", "[metadata]\nname = x\n"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("settings.ini", "[section]\nkey=1"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("main.js", "{\"a\": 1}"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("nb.ipynb", "{\n \"cells\": ["), ==, FILE_KIND_NOTEBOOK);

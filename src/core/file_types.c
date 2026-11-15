@@ -232,6 +232,7 @@ static const struct {
     { "storyboard", FILE_KIND_XML }, { "rdf", FILE_KIND_XML }, { "xspf", FILE_KIND_XML },
     { "xul", FILE_KIND_XML }, { "musicxml", FILE_KIND_XML }, { "fodt", FILE_KIND_XML },
     { "fods", FILE_KIND_XML }, { "fodp", FILE_KIND_XML },
+    { "toml", FILE_KIND_TOML },
     { "ipynb", FILE_KIND_NOTEBOOK },
     { "diff", FILE_KIND_DIFF }, { "patch", FILE_KIND_DIFF }, { "rej", FILE_KIND_DIFF },
     { "log", FILE_KIND_LOG },
@@ -316,10 +317,13 @@ FileKind file_kind_from_name(const gchar* name) {
     if (name == NULL) return FILE_KIND_TEXT;
     if (is_rotated_log_name(name)) return FILE_KIND_LOG;
     if (is_manpage_name(name)) return FILE_KIND_MANPAGE;
+    static const gchar* const TOML_NAMES[] = { "Cargo.lock", "poetry.lock", "uv.lock", "pdm.lock", "Pipfile", NULL };
     gchar* base = g_path_get_basename(name);
     gboolean tnef = g_ascii_strcasecmp(base, "winmail.dat") == 0;
+    gboolean toml = g_strv_contains(TOML_NAMES, base);
     g_free(base);
     if (tnef) return FILE_KIND_MAIL; /* TNEF attachment of Outlook mails */
+    if (toml) return FILE_KIND_TOML;
     const gchar* ext = file_extension(name);
     for (gsize i = 0; i < G_N_ELEMENTS(KIND_EXTENSIONS); i++) {
         if (g_ascii_strcasecmp(ext, KIND_EXTENSIONS[i].ext) == 0) {
@@ -347,6 +351,7 @@ gboolean file_kind_is_text(FileKind kind) {
     case FILE_KIND_CSV:
     case FILE_KIND_JSON:
     case FILE_KIND_XML:
+    case FILE_KIND_TOML:
     case FILE_KIND_NOTEBOOK:
     case FILE_KIND_DIFF:
     case FILE_KIND_LOG:
@@ -387,6 +392,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_CSV:          return "CSV";
     case FILE_KIND_JSON:         return "JSON";
     case FILE_KIND_XML:          return "XML";
+    case FILE_KIND_TOML:         return "TOML";
     case FILE_KIND_NOTEBOOK:     return "Jupyter";
     case FILE_KIND_DIFF:         return NC_("file kind", "Diff");
     case FILE_KIND_LOG:          return NC_("file kind", "Log");
@@ -737,7 +743,7 @@ static FileKind detect_text_format(const gchar* name, const guchar* head, gsize 
     /* A name that already says which text format wins over content guesses */
     if (by_name == FILE_KIND_MARKDOWN || by_name == FILE_KIND_ORG || by_name == FILE_KIND_HTML ||
         by_name == FILE_KIND_CSV || by_name == FILE_KIND_JSON || by_name == FILE_KIND_LOG ||
-        by_name == FILE_KIND_XML) {
+        by_name == FILE_KIND_XML || by_name == FILE_KIND_TOML) {
         return by_name;
     }
     /* An XML declaration: any name (HTML and SVG are recognised before) */
@@ -830,6 +836,7 @@ FileKind file_kind_detect(const gchar* name, const guchar* head, gsize len) {
     case FILE_KIND_CSV:
     case FILE_KIND_JSON:
     case FILE_KIND_XML:
+    case FILE_KIND_TOML:
     case FILE_KIND_DIFF:
     case FILE_KIND_LOG:
     case FILE_KIND_TRANSLATION:

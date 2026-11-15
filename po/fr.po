@@ -9297,11 +9297,11 @@ msgid "%s has never been saved. Save it before closing?"
 msgstr "%s n’a jamais été enregistré. L’enregistrer avant de le fermer ?"
 
 msgid ""
-"JSON, XML: fold or open the block at the cursor / cycle the level (outer "
-"members, two levels, all open)"
+"JSON, XML, TOML: fold or open the block at the cursor / cycle the level "
+"(outer members, two levels, all open)"
 msgstr ""
-"JSON, XML : replier ou déplier le bloc sous le curseur / changer de niveau "
-"(membres de premier niveau, deux niveaux, tout déplié)"
+"JSON, XML, TOML : replier ou déplier le bloc sous le curseur / changer de "
+"niveau (membres de premier niveau, deux niveaux, tout déplié)"
 
 #, c-format
 msgid "  %u key"
@@ -9323,11 +9323,11 @@ msgstr ""
 "bloc, Shift+Tab change de niveau)"
 
 msgid ""
-"JSON, XML: copy the path of the value at the cursor (shown in the preview "
-"bar)"
+"JSON, XML, TOML: copy the path of the value at the cursor (shown in the "
+"preview bar)"
 msgstr ""
-"JSON, XML : copier le chemin de la valeur sous le curseur (affiché dans la "
-"barre de l’aperçu)"
+"JSON, XML, TOML : copier le chemin de la valeur sous le curseur (affiché "
+"dans la barre de l’aperçu)"
 
 msgid "Path of the value at the cursor (y copies it)"
 msgstr "Chemin de la valeur sous le curseur (y le copie)"
@@ -9400,3 +9400,27 @@ msgstr "</%s> manquant"
 
 msgid "no XML element"
 msgstr "aucun élément XML"
+
+#, c-format
+msgid "TOML · %s table\n"
+msgid_plural "TOML · %s tables\n"
+msgstr[0] "TOML · %s table\n"
+msgstr[1] "TOML · %s tables\n"
+
+#, c-format
+msgid "TOML · %s key\n"
+msgid_plural "TOML · %s keys\n"
+msgstr[0] "TOML · %s clé\n"
+msgstr[1] "TOML · %s clés\n"
+
+msgid "expected a key"
+msgstr "clé attendue"
+
+msgid "expected ]]"
+msgstr "]] attendu"
+
+msgid "expected ]"
+msgstr "] attendu"
+
+msgid "expected the end of the line"
+msgstr "fin de ligne attendue"

@@ -92,6 +92,9 @@ static void test_json(void) {
     g_assert_true(g_str_has_prefix(xml->text->str, "XML · <feed> · 12 elements\n\n<?xml version"));
     g_assert_nonnull(strstr(xml->text->str, "\n    <title>Paths in the status bar</title>\n"));
     g_assert_nonnull(preview_doc_fold_find(xml, "/feed/entry[2]"));
+    g_autoptr(PreviewDoc) toml = build_fixture("sample.toml", FILE_KIND_TOML);
+    g_assert_true(g_str_has_prefix(toml->text->str, "TOML · 7 tables\n\n# Sample project manifest\n"));
+    g_assert_nonnull(preview_doc_fold_find(toml, "plugins[1].options"));
 
     /* Larger than what the viewer reads: shown up to the cut, foldable */
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);
