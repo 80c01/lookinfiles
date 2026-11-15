@@ -179,12 +179,23 @@ Layers, from bottom to top
   rotation, geometry, fill, outline, picture, text, tables) drawn with cairo
   and Pango into a PNG per slide (`slide_render_png()`), and the deck preview
   (`slide_deck_preview()`: one picture per slide, notes below). Shared by
-  `pptx` and `ppt_reader`.
+  `pptx`, `ppt_reader` and `odp_reader`.
 - `pptx`, `pptx_shapes`, `pptx_build` (internal `pptx_shapes_private.h`) — PowerPoint `.pptx` read into a `SlideDeck`
   (`pptx_read_deck()`): theme colours and fonts, colour modifiers, slide
   masters, layouts and placeholders (inheritance of positions, body and list
   styles), groups, freeforms, tables with the banded style, pictures,
   backgrounds, speaker notes.
+- `odp_reader`, `odp_styles`, `odp_geometry`, `odp_text` — OpenDocument
+  presentations (`.odp`) read into a `SlideDeck` (`odp_read_deck()`):
+  `odp_styles` parses the parts into a small element tree (`OdpNode`) and
+  resolves styles as cascades (`OdpCascade`: the style, its parents, the
+  default style; list styles, font faces, gradients, fill images, page
+  layouts, master pages, table templates); `odp_geometry` turns SVG paths,
+  point lists and custom shape geometries (`draw:enhanced-path` with its
+  equations) into slide paths; `odp_text` builds paragraphs, list labels
+  and tables; `odp_reader` places the master's and the page's shapes
+  (transforms, fills, outlines, shadows, fields) and reads the notes.
+  `odf` keeps the `.odt` text documents (HTML).
 - `doc_writer` — Word processing documents written as a `PreviewDoc` that
   looks like the document (`DocWriter`: runs with fonts, sizes relative to
   the default size, colours, highlights; paragraph alignment, indents,

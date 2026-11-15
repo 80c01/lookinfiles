@@ -34,8 +34,10 @@ format.
   grids with column letters, number, date and percent formats; presentations:
   `.pptx` and `.ppt` / `.pps` drawn slide by slide like PowerPoint
   (shapes, fills, pictures, tables, text styles from the layout, master and
-  theme; speaker notes below; the first 20 slides drawn), `.odp` slide by
-  slide; RTF. The exact page
+  theme; speaker notes below; the first 20 slides drawn), `.odp` drawn the
+  same way like Impress (master page shapes and background, custom shapes,
+  paths, opacity, shadows, repeated bitmaps, lists and tables from the
+  styles); RTF. The exact page
   layout (page size, columns, floating positions) is not reproduced; long
   documents stop after 256 KB of text. Other OLE2
   compound files (`.msi`, `.vsd`, Works...) show their properties (title,
@@ -234,7 +236,7 @@ every common format to L3 and never leave one below L1.
 | Excel 97-2003 / 5.0 `.xls` | L3 | `xls_reader`, `spreadsheet` |
 | PowerPoint `.pptx`: slides drawn with their layout, master and theme | L3 | `pptx`, `pptx_shapes`, `pptx_build`, `slide_render` |
 | PowerPoint 97-2003 `.ppt` / `.pps`: slides drawn from their drawings | L3 | `ppt_reader`, `slide_render` |
-| OpenDocument presentations `.odp` | L2 | `odf` |
+| OpenDocument presentations `.odp`: slides drawn with their master page and styles | L3 | `odp_reader`, `odp_styles`, `odp_geometry`, `odp_text`, `slide_render` |
 | Other OLE2 compound files (properties, streams) | L1 | `ole_reader`, `ole_props`, `office97` |
 | Mail messages `.eml` / `.emlx`, Outlook `.msg`, TNEF `winmail.dat` | L3 | `mail_message`, `mail_view`, `mail_msg`, `mail_tnef` |
 | Mailboxes (mbox), Maildir and MH folders | L2 | `mail_box`, `mail_dir` |
@@ -281,7 +283,7 @@ dump (13.7 % before the preview work). Most of the rest are TeX font metrics
   header and footer from the header stories (PlcfHdd). Lists are shown as
   bullets (numbering formats are not read). LibreOffice cannot write Word 95 / Excel 5, so those paths are
   tested with files built in the tests (`tests/ole_builder.h`).
-- **Slides** (`.pptx`, `.ppt`): drawn with cairo and Pango into one
+- **Slides** (`.pptx`, `.ppt`, `.odp`): drawn with cairo and Pango into one
   picture per slide in the worker thread (`slide_render`); the speaker notes
   stay text below each picture, so they can be searched. Charts and
   diagrams show as labelled boxes, metafile pictures (EMF, WMF) are not
@@ -289,6 +291,11 @@ dump (13.7 % before the preview work). Most of the rest are TeX font metrics
   exports titles as plain text boxes). LibreOffice also writes its default
   drawing style (blue fill and outline) on exported `.ppt` text boxes
   without showing it: those two values are skipped on text boxes.
+  `.odp` custom shapes evaluate their `draw:enhanced-path` with its
+  formulas; gradients have two colours (axial and radial ones are
+  approximated), dashes have one pattern, line ends (arrows), 3D, fontwork
+  and animations are not drawn, and embedded objects (charts) show only a
+  PNG or SVG replacement picture (not the `.svm` metafiles).
 - **Mail**: `mail_message` parses RFC 5322 / MIME (encoded words, any
   charset, base64 / quoted-printable, RFC 2231 names; large parts listed,
   not decoded). Remote content is never fetched. mbox files can be

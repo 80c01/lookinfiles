@@ -230,7 +230,8 @@ static void test_office(void) {
     g_autoptr(PreviewDoc) rtf = build_fixture("notes.rtf", FILE_KIND_RTF);
     g_assert_nonnull(strstr(rtf->text->str, "<b>Meeting notes</b>"));
     g_autoptr(PreviewDoc) odp = build_fixture("roadmap.odp", FILE_KIND_PRESENTATION);
-    g_assert_nonnull(strstr(odp->text->str, "<h3>Previews</h3>"));
+    g_assert_nonnull(strstr(odp->text->str, "OpenDocument presentation · 2 slides"));
+    g_assert_cmpuint(odp->images->len, ==, 2);
 }
 
 static void test_database(void) {

@@ -9483,3 +9483,9 @@ msgstr "indentation incorrecte"
 
 msgid "complex keys are not supported"
 msgstr "clés complexes non prises en charge"
+
+msgid "OpenDocument presentation"
+msgstr "Présentation OpenDocument"
+
+msgid "not an OpenDocument presentation"
+msgstr "pas une présentation OpenDocument"

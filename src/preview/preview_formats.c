@@ -26,6 +26,7 @@
 #include "formats/man_view.h"
 #include "formats/notebook.h"
 #include "office/odf.h"
+#include "office/odp_reader.h"
 #include "mail/mail_box.h"
 #include "mail/mail_message.h"
 #include "mail/mail_store.h"
@@ -689,33 +690,11 @@ static PreviewDoc* build_ebook(const PreviewInput* in, GCancellable* cancellable
 
 static PreviewDoc* build_presentation(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
-    if (!is_opendocument(in)) {
-        gchar* size = preview_format_size(in->size);
-        PreviewDoc* doc = pptx_file_preview(in->path, in->name, size, NULL, error);
-        g_free(size);
-        return doc;
-    }
-    OdfInfo info = { 0 };
-    gchar* html = odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, &info, error);
-    if (html == NULL) {
-        return NULL;
-    }
-    /* Slide count in the metadata banner */
-    guint slides = info.n_slides;
-    gchar* label = g_strdup_printf(ngettext("Presentation · %u slide", "Presentation · %u slides", slides), slides);
-    gchar* count = g_markup_printf_escaped("<meta name=\"description\" content=\"%s\"></head>", label);
-    g_free(label);
-    gchar* head_end = strstr(html, "</head>");
-    gchar* page;
-    if (head_end != NULL) {
-        *head_end = '\0';
-        page = g_strconcat(html, count, head_end + 7, NULL);
-    } else {
-        page = g_strdup(html);
-    }
-    g_free(count);
-    g_free(html);
-    return preview_doc_new_source(PREVIEW_DOC_HTML, page);
+    gchar* size = preview_format_size(in->size);
+    PreviewDoc* doc = is_opendocument(in) ? odp_file_preview(in->path, in->name, size, NULL, error)
+                                          : pptx_file_preview(in->path, in->name, size, NULL, error);
+    g_free(size);
+    return doc;
 }
 
 /* --- Spreadsheets --- */
@@ -1021,7 +1000,7 @@ static PreviewDoc* build_document(const PreviewInput* in, GCancellable* cancella
         g_free(size);
         return doc;
     }
-    gchar* html = odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, NULL, error);
+    gchar* html = odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, error);
     return html != NULL ? preview_doc_new_source(PREVIEW_DOC_HTML, html) : NULL;
 }
 

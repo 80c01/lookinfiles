@@ -1,4 +1,4 @@
-/* OpenDocument text and presentations to HTML (see odf.h). */
+/* OpenDocument text documents to HTML (see odf.h). */
 #include "office/odf.h"
 #include "core/i18n.h"
 
@@ -148,11 +148,8 @@ typedef struct {
     GPtrArray* closers;         /* closing tags of open elements, in order */
     gint list_depth;
     GPtrArray* list_closers;    /* "</ul>" / "</ol>" of open lists */
-    gboolean in_title_frame;    /* presentation title frame */
     gboolean in_header_rows;
     gint cell_depth;            /* inside table cells: paragraphs without <p> */
-    guint slides;
-    gboolean presentation;
 } BodyParse;
 
 static void push_closer(BodyParse* b, const gchar* closer) {
@@ -239,9 +236,6 @@ static void body_start(GMarkupParseContext* ctx, const gchar* name, const gchar*
     } else if (strcmp(name, "text:p") == 0) {
         gint heading = 0;
         guint flags = resolve_flags(b->styles, style, &heading);
-        if (b->in_title_frame) {
-            heading = 3;
-        }
         gboolean inline_par = b->list_depth > 0 || b->cell_depth > 0;
         if (heading > 0 && !inline_par) {
             gint n = CLAMP(heading, 1, 6);
@@ -296,16 +290,6 @@ static void body_start(GMarkupParseContext* ctx, const gchar* name, const gchar*
     } else if (strcmp(name, "draw:image") == 0) {
         append_image(b, zip_xml_attr(names, values, "href"));
         push_closer(b, "");
-    } else if (strcmp(name, "draw:page") == 0) {
-        b->slides++;
-        gchar* slide = g_strdup_printf(_("Slide %u"), b->slides);
-        g_string_append_printf(b->out, "%s<h2>%s</h2>\n", b->slides > 1 ? "<hr>\n" : "", slide);
-        g_free(slide);
-        push_closer(b, "");
-    } else if (strcmp(name, "draw:frame") == 0) {
-        const gchar* cls = zip_xml_attr(names, values, "class");
-        b->in_title_frame = cls != NULL && (strcmp(cls, "title") == 0 || strcmp(cls, "subtitle") == 0);
-        push_closer(b, "");
     } else if (strcmp(name, "text:s") == 0) {
         const gchar* c = zip_xml_attr(names, values, "c");
         for (gint i = 0; i < (c != NULL ? MIN(atoi(c), 100) : 1); i++) {
@@ -340,8 +324,6 @@ static void body_end(GMarkupParseContext* ctx, const gchar* name, gpointer data,
         b->list_depth--;
     } else if (strcmp(name, "table:table-header-rows") == 0) {
         b->in_header_rows = FALSE;
-    } else if (strcmp(name, "draw:frame") == 0) {
-        b->in_title_frame = FALSE;
     } else if (strcmp(name, "table:table-cell") == 0) {
         b->cell_depth--;
     }
@@ -405,7 +387,7 @@ static void meta_text(GMarkupParseContext* ctx, const gchar* text, gsize len, gp
     }
 }
 
-gchar* odf_file_to_html(const gchar* path, gsize max_text, OdfInfo* info, GError** error) {
+gchar* odf_file_to_html(const gchar* path, gsize max_text, GError** error) {
     ZipReader* zip = zip_reader_open(path, error);
     if (zip == NULL) {
         return NULL;
@@ -424,7 +406,7 @@ gchar* odf_file_to_html(const gchar* path, gsize max_text, OdfInfo* info, GError
 
     BodyParse b = { zip, sp.styles, sp.numbered, g_string_new(NULL), max_text, 0, FALSE, 0,
                     g_ptr_array_new_with_free_func(g_free), 0, g_ptr_array_new_with_free_func(g_free),
-                    FALSE, FALSE, 0, 0, FALSE };
+                    FALSE, 0 };
     static const GMarkupParser body_parser = { body_start, body_end, body_text, NULL, NULL };
     gchar* html = NULL;
     if (zip_xml_parse(zip, "content.xml", MAX_PART, FALSE, &body_parser, &b, error)) {
@@ -453,10 +435,6 @@ gchar* odf_file_to_html(const gchar* path, gsize max_text, OdfInfo* info, GError
         html = g_string_free(doc, FALSE);
         g_string_free(m.title, TRUE);
         g_string_free(m.creator, TRUE);
-        if (info != NULL) {
-            info->n_slides = b.slides;
-            info->presentation = b.slides > 0;
-        }
     }
     g_string_free(b.out, TRUE);
     g_ptr_array_free(b.closers, TRUE);
