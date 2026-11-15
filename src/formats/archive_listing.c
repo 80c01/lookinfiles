@@ -509,6 +509,22 @@ static ArchiveListing* list_ar(GInputStream* in, guint max_entries, GCancellable
     return l;
 }
 
+gchar* archive_listing_format_label(const gchar* format) {
+    if (format == NULL) return NULL;
+    const gchar* translated = _(format);
+    if (translated != format) return g_strdup(translated);
+    /* "xz-compressed tar archive" composed from a libarchive filter */
+    const gchar* dash = strstr(format, "-compressed ");
+    if (dash != NULL) {
+        gchar* filter = g_strndup(format, (gsize)(dash - format));
+        /* TRANSLATORS: "xz-compressed tar archive": %1$s is the filter, %2$s the archive format */
+        gchar* label = g_strdup_printf(_("%1$s-compressed %2$s"), filter, _(dash + strlen("-compressed ")));
+        g_free(filter);
+        return label;
+    }
+    return g_strdup(format);
+}
+
 #ifdef HAVE_LIBARCHIVE
 
 /* "xz", "bzip2"... of the outer compression, NULL if none */
@@ -545,22 +561,6 @@ static const gchar* format_label(struct archive* a) {
     case ARCHIVE_FORMAT_WARC: return N_("WARC archive");
     default: return "archive";
     }
-}
-
-gchar* archive_listing_format_label(const gchar* format) {
-    if (format == NULL) return NULL;
-    const gchar* translated = _(format);
-    if (translated != format) return g_strdup(translated);
-    /* "xz-compressed tar archive" composed from a libarchive filter */
-    const gchar* dash = strstr(format, "-compressed ");
-    if (dash != NULL) {
-        gchar* filter = g_strndup(format, (gsize)(dash - format));
-        /* TRANSLATORS: "xz-compressed tar archive": %1$s is the filter, %2$s the archive format */
-        gchar* label = g_strdup_printf(_("%1$s-compressed %2$s"), filter, _(dash + strlen("-compressed ")));
-        g_free(filter);
-        return label;
-    }
-    return g_strdup(format);
 }
 
 /* Interned "xz-compressed tar archive" (the listing keeps a static string) */
