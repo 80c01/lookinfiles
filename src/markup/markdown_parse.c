@@ -576,7 +576,16 @@ static gint parse_fence(Parser* ps, gint i, const gchar* trim) {
     }
     md_out_append_tagged(out, " \n", "md_code_pad");
     gint code_start = md_out_offset(out);
-    md_out_append_tagged(out, code->str, "md_code_block");
+    /* Each code line is a line of the panel */
+    gint line = i + 1;
+    for (const gchar* c = code->str; *c != '\0'; line++) {
+        md_out_mark_source(out, line);
+        const gchar* next = strchr(c, '\n');
+        gsize len = next != NULL ? (gsize)(next - c + 1) : strlen(c);
+        md_out_append(out, c, (gssize)len);
+        c += len;
+    }
+    md_out_tag_from(out, code_start, "md_code_block");
     md_out_add_code(out, code_start, code->str, info);
     md_out_append_tagged(out, " \n", "md_code_pad");
     md_out_append_tagged(out, "\n", "md_block_gap");
@@ -833,6 +842,7 @@ MdOut* markdown_parse(const gchar* markdown_text, const gchar* doc_path, gboolea
     ps.widget_tables = widget_tables;
 
     for (gint i = 0; i < ps.num_lines; i++) {
+        md_out_mark_source(out, i);
         const gchar* line = ps.lines[i];
         const gchar* trim = line;
         while (*trim == ' ') trim++;

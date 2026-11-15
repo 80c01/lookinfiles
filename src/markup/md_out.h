@@ -48,6 +48,13 @@ typedef struct {
     gchar* url;
 } MdLinkSpan;
 
+/* Where a source line starts in the text (Markdown, Org): the editor's line
+ * shown in the preview */
+typedef struct {
+    gint offset;
+    gint line; /* 0-based line of the source */
+} MdSource;
+
 typedef struct {
     GString* text;
     gint n_chars;
@@ -55,6 +62,7 @@ typedef struct {
     GArray* spans;   /* MdSpan, in the order applied */
     GArray* links;   /* MdLinkSpan */
     GArray* objects; /* MdObject, in the order added */
+    GArray* sources; /* MdSource, offsets and lines increasing */
 } MdOut;
 
 MdOut* md_out_new(void);
@@ -87,5 +95,13 @@ void md_out_add_math(MdOut* out, const gchar* tex, gboolean display);
 void md_out_add_display_math(MdOut* out, const gchar* tex);
 /* Highlight code (already appended at offset start) for the fence info */
 void md_out_add_code(MdOut* out, gint start, const gchar* code, const gchar* info);
+
+/* Source line line starts here (ignored unless after the last one marked) */
+void md_out_mark_source(MdOut* out, gint line);
+/* Offset of source line line: the last point marked at or before it (the
+ * first point for a line before it), -1 if sources is NULL or empty */
+gint md_source_offset(const GArray* sources, gint line);
+/* Source line shown at offset: the last point at or before it, -1 if none */
+gint md_source_line(const GArray* sources, gint offset);
 
 #endif /* MD_OUT_H */

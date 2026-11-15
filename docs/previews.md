@@ -113,6 +113,10 @@ format.
   architecture, type, interpreter, linked libraries, soname, build ID,
   whether they are stripped, and their exported symbols; `m` shows the hex
   dump instead. Only the headers are read, even for a large library.
+- A preview shown again (the file saved or changed on disk, `m`, an Org
+  fold) stays on the line it showed; the preview of a file open in an
+  editor follows the editor's cursor (`preview_sync.c`), Markdown and Org
+  mapping each source line to where it is rendered.
 - `m` switches between the rendered and the raw view (text, or the hex dump
   of binary formats). Text files over 512 KB show their first 64 KB, and the
   next parts load as you scroll down (up to 8 MB); the **Load Whole File**

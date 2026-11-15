@@ -745,6 +745,13 @@ Layers, from bottom to top
   buffer's cursor (`APP_EVENT_PREVIEW_LOCATION` when it changes, shown by
   `status_bar` in the preview bar); `y` (`preview_location_key()`) and
   **Copy Path** in `preview_menu` copy it.
+- `preview_sync` — the preview kept on the line being edited: a file shown
+  again (saved, changed on disk, re-rendered) goes back to the line at the
+  top of the view (`preview_sync_loading()` from `load_file_content()`,
+  `preview_sync_showing()` from the viewer), and the preview of a file open
+  in an editor follows the editor's cursor. Rendered documents map their
+  source lines with `MdOut.sources` (`md_out_mark_source()`, set by the
+  Markdown parser and `org_render`); text previews go line by line.
 - `image_preview`, `image_decode`, `image_prefetch` — the image preview.
   `image_preview` lays the picture out in the preview (header, details,
   zoom, Copy Image); `image_decode` decodes it in a worker thread at the size

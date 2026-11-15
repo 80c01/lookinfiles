@@ -28,6 +28,7 @@ MdOut* md_out_new(void) {
     g_array_set_clear_func(out->links, link_clear);
     out->objects = g_array_new(FALSE, TRUE, sizeof(MdObject));
     g_array_set_clear_func(out->objects, object_clear);
+    out->sources = g_array_new(FALSE, FALSE, sizeof(MdSource));
     return out;
 }
 
@@ -39,6 +40,7 @@ void md_out_free(MdOut* out) {
     g_array_unref(out->spans);
     g_array_unref(out->links);
     g_array_unref(out->objects);
+    g_array_unref(out->sources);
     g_free(out);
 }
 
@@ -135,4 +137,49 @@ void md_out_add_code(MdOut* out, gint start, const gchar* code, const gchar* inf
     o.name = g_strdup(info);
     o.text = g_strdup(code);
     g_array_append_val(out->objects, o);
+}
+
+void md_out_mark_source(MdOut* out, gint line) {
+    GArray* sources = out->sources;
+    if (sources->len > 0) {
+        MdSource* last = &g_array_index(sources, MdSource, sources->len - 1);
+        /* Same offset: the lines since the last point printed nothing */
+        if (line <= last->line || last->offset == out->n_chars) {
+            return;
+        }
+    }
+    MdSource point = {out->n_chars, line};
+    g_array_append_val(sources, point);
+}
+
+gint md_source_offset(const GArray* sources, gint line) {
+    if (sources == NULL || sources->len == 0) {
+        return -1;
+    }
+    guint lo = 0, hi = sources->len; /* the first point after line is in [lo, hi] */
+    while (lo < hi) {
+        guint mid = (lo + hi) / 2;
+        if (g_array_index(sources, MdSource, mid).line <= line) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    return g_array_index(sources, MdSource, lo > 0 ? lo - 1 : 0).offset;
+}
+
+gint md_source_line(const GArray* sources, gint offset) {
+    if (sources == NULL || sources->len == 0) {
+        return -1;
+    }
+    guint lo = 0, hi = sources->len;
+    while (lo < hi) {
+        guint mid = (lo + hi) / 2;
+        if (g_array_index(sources, MdSource, mid).offset <= offset) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    return g_array_index(sources, MdSource, lo > 0 ? lo - 1 : 0).line;
 }

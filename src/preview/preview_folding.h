@@ -24,6 +24,10 @@ PreviewFold* preview_folding_state(AppData* app, const gchar* path);
  * a cached preview is shown before preview_state_set_file() */
 void preview_folding_shown(AppData* app, const PreviewDoc* doc, const gchar* path);
 
+/* A fold change of the file at path is being built: the cursor will go back
+ * to its block */
+gboolean preview_folding_restoring(AppData* app, const gchar* path);
+
 /* Tab / Shift+Tab in the preview; TRUE when handled (the preview shows fold
  * points) */
 gboolean preview_folding_key(AppData* app, guint keyval, GdkModifierType state);

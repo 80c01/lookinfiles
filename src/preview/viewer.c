@@ -32,6 +32,7 @@
 #include "org/org_fold.h"
 #include "preview/preview_folding.h"
 #include "preview/preview_location.h"
+#include "preview/preview_sync.h"
 #include "preview/preview_symbols.h"
 #include "preview/preview_tagbar.h"
 #include "widgets/diff_gutter.h"
@@ -675,15 +676,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
     audio_preview_stop(app);
     video_preview_stop(app);
 
-    GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
-    if (hadj != NULL) {
-        gtk_adjustment_set_value(hadj, gtk_adjustment_get_lower(hadj));
-    }
-    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(app->text_view));
-    if (vadj != NULL) {
-        gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
-    }
-
+    preview_sync_showing(app, td->full, td->md, td->error_msg == NULL && (td->doc == NULL || !td->doc->scroll_to_end));
     search_forget_viewer_match(app);
     preview_folding_shown(app, NULL, NULL);
     preview_location_shown(app, NULL, NULL);
@@ -752,6 +745,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
             }
             g_string_append(text, td->utf8_text);
             gtk_text_buffer_set_text(app->buffer, text->str, (gint)text->len);
+            preview_sync_text_lines(app, first_line);
             g_string_free(text, TRUE);
             if (code) {
                 diff_gutter_set_line_numbers(app->text_view, first_line);
@@ -771,6 +765,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
 /* Preview a file. Its kind is detected from its content in a worker thread
  * (one read serves detection and text), so the UI thread does no file I/O. */
 void load_file_content(AppData* app, const gchar* name, const gchar* full) {
+    preview_sync_loading(app, full);
     text_chunks_stop(app);
     preview_full_reset(app, full);
     if (app->preview_cancellable != NULL) {

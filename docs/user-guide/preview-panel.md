@@ -175,7 +175,11 @@ a preview that is still loading.
 `Ctrl+Click` on a name in the preview of a source file opens the file where
 that name is defined (see [code navigation](code-navigation.md)).
 
-When the previewed file changes on disk, the preview reloads by itself.
+When the previewed file changes on disk, the preview reloads by itself,
+staying on the line it showed. When the file is open in an editor beside
+the preview, the preview follows the editor's cursor: its line (in the
+rendered Markdown and Org too) is shown at the height of the cursor, and
+saving keeps it there.
 
 ## System Monitor
 

@@ -193,7 +193,10 @@ en cours de chargement.
 où ce nom est défini (voir [la navigation dans le code](code-navigation.md)).
 
 Quand le fichier affiché change sur le disque, l’aperçu se recharge tout
-seul.
+seul, en restant sur la ligne qu’il montrait. Quand le fichier est ouvert
+dans un éditeur à côté de l’aperçu, l’aperçu suit le curseur de l’éditeur :
+sa ligne (aussi dans le rendu Markdown et Org) est montrée à la hauteur du
+curseur, et l’enregistrement l’y garde.
 
 ## Moniteur système
 

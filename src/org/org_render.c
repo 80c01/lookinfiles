@@ -396,6 +396,7 @@ MdOut* org_render_parse(const gchar* org_text, const gchar* doc_path, gboolean i
             gboolean is_folded = (global_fold == ORG_GLOBAL_OVERVIEW) || (global_fold == ORG_GLOBAL_CONTENTS) ||
                                  (folded_lines != NULL &&
                                   g_hash_table_contains(folded_lines, GINT_TO_POINTER((gint)i)));
+            md_out_mark_source(out, (gint)i);
             append_heading(out, line_info_new(line_maps, out, i), raw_line, hlevel, is_folded, doc_dir);
             if (is_folded) {
                 skip_until_heading_level = hlevel;
@@ -405,6 +406,7 @@ MdOut* org_render_parse(const gchar* org_text, const gchar* doc_path, gboolean i
         if (skip_until_heading_level > 0) {
             continue; /* inside a folded subtree */
         }
+        md_out_mark_source(out, (gint)i);
 
         gchar* trimmed = g_strstrip(g_strdup(raw_line));
         /* Drawer lines: :PROPERTIES: ... :END: */

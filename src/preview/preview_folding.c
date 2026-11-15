@@ -123,6 +123,11 @@ void preview_folding_shown(AppData* app, const PreviewDoc* doc, const gchar* pat
     update_marks(app);
 }
 
+gboolean preview_folding_restoring(AppData* app, const gchar* path) {
+    struct PreviewFolding* f = app != NULL ? app->preview_folding : NULL;
+    return f != NULL && f->focus != NULL && g_strcmp0(f->focus_path, path) == 0;
+}
+
 /* Remember the blocks at the cursor and its height, for after the rebuild */
 static void keep_focus(AppData* app, struct PreviewFolding* f, gint offset) {
     g_clear_pointer(&f->focus, g_ptr_array_unref);

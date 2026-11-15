@@ -63,6 +63,10 @@ static void test_org_lines(void) {
         g_assert_cmpint(info->file_line, ==, expected_files[i]);
         g_assert_cmpint(info->buffer_line, <, (gint)g_strv_length(shown));
     }
+    /* Each file line starts where it is shown (the editor's line in the preview) */
+    gint body = md_source_offset(out->sources, 5);
+    g_assert_true(g_str_has_prefix(g_utf8_offset_to_pointer(out->text->str, body), "  corps"));
+    g_assert_cmpint(md_source_line(out->sources, body + 3), ==, 5);
     const OrgLineInfo* heading = g_ptr_array_index(lines, 0);
     g_assert_cmpint(heading->heading_level, ==, 1);
     g_assert_cmpstr(heading->todo_state, ==, "TODO");

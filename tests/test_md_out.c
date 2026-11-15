@@ -206,6 +206,34 @@ static void test_preview_banner(void) {
     g_assert_true(g_str_has_prefix(out->text->str, "  [ PREVIEW ] big.md (1234 bytes total)"));
 }
 
+/* The text shown from the offset of source line line */
+static gchar* text_at_line(const MdOut* out, gint line) {
+    gint offset = md_source_offset(out->sources, line);
+    g_assert_cmpint(offset, >=, 0);
+    return range_text(out, offset, MIN(offset + 4, out->n_chars));
+}
+
+static void test_sources(void) {
+    const gchar* md = "# Title\n\nPara one\nline two\n\n```c\nint a;\nint b;\n```\n- item\n";
+    g_autoptr(MdOut) out = markdown_parse(md, NULL, TRUE, "doc.md", 99, TRUE);
+    g_autofree gchar* title = text_at_line(out, 0);
+    g_assert_cmpstr(title, ==, "Titl");
+    /* The lines of a paragraph are one point, a blank line goes with the line before */
+    g_autofree gchar* para = text_at_line(out, 3);
+    g_assert_cmpstr(para, ==, "Para");
+    g_assert_cmpint(md_source_offset(out->sources, 2), ==, md_source_offset(out->sources, 3));
+    g_autofree gchar* code_a = text_at_line(out, 6);
+    g_assert_cmpstr(code_a, ==, "int ");
+    g_assert_cmpint(md_source_offset(out->sources, 7), ==, md_source_offset(out->sources, 6) + 7);
+    g_autofree gchar* item = text_at_line(out, 9);
+    g_assert_nonnull(strstr(item, "it"));
+    /* Back from the text to the source; the banner goes with the first line */
+    g_assert_cmpint(md_source_line(out->sources, md_source_offset(out->sources, 7)), ==, 7);
+    g_assert_cmpint(md_source_line(out->sources, 0), ==, 0);
+    g_assert_cmpint(md_source_offset(NULL, 3), ==, -1);
+    g_assert_cmpint(md_source_line(NULL, 3), ==, -1);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/md_out/offsets", test_offsets);
@@ -216,5 +244,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/md_out/missing_image", test_missing_image);
     g_test_add_func("/md_out/image_forms", test_image_forms);
     g_test_add_func("/md_out/preview_banner", test_preview_banner);
+    g_test_add_func("/md_out/sources", test_sources);
     return g_test_run();
 }

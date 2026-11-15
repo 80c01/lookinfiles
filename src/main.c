@@ -42,6 +42,7 @@
 #include "org/org_fold.h"
 #include "preview/preview_folding.h"
 #include "preview/preview_location.h"
+#include "preview/preview_sync.h"
 #include "terminal/terminal.h"
 #include "widgets/diff_gutter.h"
 #include "widgets/color_column.h"
@@ -717,6 +718,7 @@ int main(int argc, char** argv) {
     org_fold_free(app);
     preview_folding_free(app);
     preview_location_free(app);
+    preview_sync_free(app);
     preview_state_free(app);
     sidebar_free(app);
     topbar_free(app);
