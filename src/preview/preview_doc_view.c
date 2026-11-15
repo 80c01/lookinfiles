@@ -314,5 +314,10 @@ void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* pat
         gtk_text_buffer_place_cursor(buffer, &end);
         GtkTextMark* mark = gtk_text_buffer_get_insert(buffer);
         gtk_text_view_scroll_to_mark(view, mark, 0.0, TRUE, 0.0, 1.0);
+    } else {
+        /* The cursor at the top, where the view is (the path in the preview bar follows it) */
+        GtkTextIter start;
+        gtk_text_buffer_get_start_iter(buffer, &start);
+        gtk_text_buffer_place_cursor(buffer, &start);
     }
 }

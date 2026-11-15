@@ -81,7 +81,8 @@ format_scenario() {
     key Down;           shot fmt_json_pretty
     key alt+Right                                   # focus the preview
     key shift+Tab;      shot fmt_json_outer_level   # objects and arrays folded
-    key End; key y;     shot fmt_json_copy_path     # path of the value at the cursor copied
+    xdotool mousemove 400 125 click 1               # the cursor on the "name" line
+    key y;              shot fmt_json_copy_path     # its path in the bar, copied: $.name
     key shift+Tab; key shift+Tab                    # two levels, then all open again
     key alt+Left                                    # back to the explorer
     key Down;           shot fmt_toml
@@ -151,7 +152,9 @@ format_scenario() {
     # Ctrl+Down goes to the next cell, Ctrl+K Ctrl+O shows the tagbar, Ctrl+Enter / Shift+Enter run it, Alt+Up moves it up, Alt+Enter / Alt+Shift+Enter
     # insert a code cell below / above, Alt+Delete deletes it, Ctrl+S saves, Ctrl+W closes
     key alt+Left Home
-    for i in $(seq 18); do key Down; done
+    # Its row: the entries sorted before it (adding a fixture moves it)
+    rows=$(ls "$FMT" | LC_ALL=C sort | grep -n '^18-analysis\.ipynb$' | cut -d: -f1)
+    for i in $(seq $((rows - 1))); do key Down; done
     key Return; sleep 0.5; shot fmt_ipynb_tab
     # The first cell is Markdown, shown rendered: Enter edits its source,
     # Ctrl+Enter renders it again
