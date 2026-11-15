@@ -524,8 +524,8 @@ gboolean toml_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean
     doc->wrap = FALSE;
     if (info.n_tables > 0) {
         gchar* count = preview_doc_count(info.n_tables);
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("TOML · %s table\n", "TOML · %s tables\n", info.n_tables),
-                            count);
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM,
+                            ngettext("TOML · %s table\n", "TOML · %s tables\n", info.n_tables), count);
         g_free(count);
     } else {
         gchar* count = preview_doc_count(info.n_keys);

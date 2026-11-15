@@ -211,8 +211,8 @@ gboolean text_outline_print(TextOutline* o, PreviewDoc* doc, const PreviewFold* 
         const TextOutlineBlock* folded = NULL;
         for (; b < o->blocks->len && g_array_index(o->blocks, TextOutlineBlock, b).first == i; b++) {
             const TextOutlineBlock* block = &g_array_index(o->blocks, TextOutlineBlock, b);
-            if (folded != NULL) {
-                continue; /* inside the folded block */
+            if (folded != NULL || block->last <= block->first) {
+                continue; /* inside the folded block, or on one line: nothing to fold */
             }
             if (preview_fold_is_folded(fold, block->id, block->depth, level)) {
                 folded = block;

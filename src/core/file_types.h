@@ -54,6 +54,7 @@ typedef enum {
     FILE_KIND_JSON,      /* JSON, JSON Lines */
     FILE_KIND_XML,       /* XML documents (not HTML or SVG) */
     FILE_KIND_TOML,      /* TOML (.toml, Cargo.lock, Pipfile...) */
+    FILE_KIND_YAML,      /* YAML (.yaml, .yml, .clang-format...) */
     FILE_KIND_NOTEBOOK,  /* Jupyter notebook (.ipynb) */
     FILE_KIND_DIFF,      /* unified diff, git patch */
     FILE_KIND_LOG,       /* log file */

@@ -15,6 +15,7 @@
     cp "$ROOT/tests/fixtures/preview/sample.json" 05-package.json
     cp "$ROOT/tests/fixtures/preview/sample.toml" 05-package.toml # sorts after the JSON
     cp "$ROOT/tests/fixtures/preview/sample.xml" 05-package.xml   # and the TOML
+    cp "$ROOT/tests/fixtures/preview/sample.yaml" 05-package.yaml # then the XML
     cp "$ROOT/tests/fixtures/preview/fix-parser.patch" 06-fix-parser.patch
     cp "$ROOT/tests/fixtures/preview/sample.zip" 07-sources.zip
     cp "$ROOT/tests/fixtures/preview/sample.tar.gz" 08-sources.tar.gz
@@ -85,6 +86,7 @@ format_scenario() {
     key alt+Left                                    # back to the explorer
     key Down;           shot fmt_toml
     key Down;           shot fmt_xml_pretty
+    key Down;           shot fmt_yaml
     key Down;           shot fmt_diff
     key Down;           shot fmt_zip
     key Down;           shot fmt_tar_gz

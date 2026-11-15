@@ -176,10 +176,11 @@ static void test_auto_level(void) {
 
 static void test_build(void) {
     g_autoptr(PreviewDoc) doc = preview_doc_new();
-    g_assert_true(toml_view_build(doc, "[a]\n[b]\n", 8, FALSE, NULL, NULL, NULL));
-    g_assert_cmpstr(doc->text->str, ==, "TOML · 2 tables\n\n[a]\n[b]\n");
+    g_assert_true(toml_view_build(doc, "[a]\n[b]\nc = 1\n", 14, FALSE, NULL, NULL, NULL));
+    g_assert_cmpstr(doc->text->str, ==, "TOML · 2 tables\n\n[a]\n[b]\nc = 1\n");
     g_assert_true(doc->monospace);
     g_assert_nonnull(preview_doc_fold_find(doc, "b"));
+    g_assert_null(preview_doc_fold_find(doc, "a")); /* on one line: nothing to fold */
     g_autoptr(PreviewDoc) keys = preview_doc_new();
     g_assert_true(toml_view_build(keys, "a = 1\n", 6, FALSE, NULL, "Note.", NULL));
     g_assert_cmpstr(keys->text->str, ==, "TOML · 1 key\nNote.\n\na = 1\n");

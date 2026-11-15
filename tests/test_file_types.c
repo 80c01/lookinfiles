@@ -222,6 +222,12 @@ static void test_detect_text_formats(void) {
     g_assert_cmpint(DETECT("Pipfile", "[packages]\n"), ==, FILE_KIND_TOML);
     g_assert_cmpint(DETECT("yarn.lock", "# yarn lockfile v1\n"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("setup.cfg", "[metadata]\nname = x\n"), ==, FILE_KIND_TEXT);
+    /* YAML: by name, or a %YAML directive under any name */
+    g_assert_cmpint(DETECT("ci.yml", "on: push\n"), ==, FILE_KIND_YAML);
+    g_assert_cmpint(DETECT("values.yaml", "a: 1\n"), ==, FILE_KIND_YAML);
+    g_assert_cmpint(DETECT(".clang-format", "BasedOnStyle: LLVM\n"), ==, FILE_KIND_YAML);
+    g_assert_cmpint(DETECT("config", "%YAML 1.2\n---\na: 1\n"), ==, FILE_KIND_YAML);
+    g_assert_cmpint(DETECT("notes", "a: 1\n"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("settings.ini", "[section]\nkey=1"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("main.js", "{\"a\": 1}"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("nb.ipynb", "{\n \"cells\": ["), ==, FILE_KIND_NOTEBOOK);

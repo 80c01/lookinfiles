@@ -9297,11 +9297,11 @@ msgid "%s has never been saved. Save it before closing?"
 msgstr "%s n’a jamais été enregistré. L’enregistrer avant de le fermer ?"
 
 msgid ""
-"JSON, XML, TOML: fold or open the block at the cursor / cycle the level "
-"(outer members, two levels, all open)"
+"JSON, XML, TOML, YAML: fold or open the block at the cursor / cycle the "
+"level (outer members, two levels, all open)"
 msgstr ""
-"JSON, XML, TOML : replier ou déplier le bloc sous le curseur / changer de "
-"niveau (membres de premier niveau, deux niveaux, tout déplié)"
+"JSON, XML, TOML, YAML : replier ou déplier le bloc sous le curseur / changer "
+"de niveau (membres de premier niveau, deux niveaux, tout déplié)"
 
 #, c-format
 msgid "  %u key"
@@ -9323,11 +9323,11 @@ msgstr ""
 "bloc, Shift+Tab change de niveau)"
 
 msgid ""
-"JSON, XML, TOML: copy the path of the value at the cursor (shown in the "
-"preview bar)"
+"JSON, XML, TOML, YAML: copy the path of the value at the cursor (shown in "
+"the preview bar)"
 msgstr ""
-"JSON, XML, TOML : copier le chemin de la valeur sous le curseur (affiché "
-"dans la barre de l’aperçu)"
+"JSON, XML, TOML, YAML : copier le chemin de la valeur sous le curseur "
+"(affiché dans la barre de l’aperçu)"
 
 msgid "Path of the value at the cursor (y copies it)"
 msgstr "Chemin de la valeur sous le curseur (y le copie)"
@@ -9424,3 +9424,30 @@ msgstr "] attendu"
 
 msgid "expected the end of the line"
 msgstr "fin de ligne attendue"
+
+#, c-format
+msgid "YAML · %s document\n"
+msgid_plural "YAML · %s documents\n"
+msgstr[0] "YAML · %s document\n"
+msgstr[1] "YAML · %s documents\n"
+
+#, c-format
+msgid "YAML · %s key\n"
+msgid_plural "YAML · %s keys\n"
+msgstr[0] "YAML · %s clé\n"
+msgstr[1] "YAML · %s clés\n"
+
+#, c-format
+msgid "YAML · %s item\n"
+msgid_plural "YAML · %s items\n"
+msgstr[0] "YAML · %s élément\n"
+msgstr[1] "YAML · %s éléments\n"
+
+msgid "tabs are not allowed in indentation"
+msgstr "tabulations interdites dans l’indentation"
+
+msgid "bad indentation"
+msgstr "indentation incorrecte"
+
+msgid "complex keys are not supported"
+msgstr "clés complexes non prises en charge"

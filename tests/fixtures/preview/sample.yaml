@@ -1,0 +1,31 @@
+# Sample CI workflow
+name: build & test
+on:
+  push:
+    branches: [main, "release/*"]
+env:
+  CC: gcc
+  VERBOSE: true
+  RETRIES: 3
+defaults: &defaults
+  timeout: 10.5
+  shell: bash
+jobs:
+  build:
+    <<: *defaults
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          make -j"$(nproc)"
+          make check
+      - name: Report
+        if: ${{ failure() }}
+        with: {path: build/, keep: 7}
+  docs:
+    needs:
+      - build
+    summary: >-
+      Builds the user guide
+      in every language.

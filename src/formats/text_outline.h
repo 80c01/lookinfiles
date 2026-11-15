@@ -64,10 +64,10 @@ TextOutlineBlock* text_outline_block(TextOutline* outline, guint index);
 gint text_outline_level(TextOutline* outline, const PreviewFold* fold);
 
 /* Append the lines to doc, a line break after each, leaving out the
- * blocks folded at level (fold toggles them): each block shown is a fold
- * point, a folded one written as its first line and its count. Each line
- * gets its path. TRUE if the text stopped at TEXT_OUTLINE_MAX_LINES (with
- * a note). */
+ * blocks folded at level (fold toggles them): each block shown on several
+ * lines is a fold point, a folded one written as its first line and its
+ * count (a block on one line does not fold). Each line gets its path.
+ * TRUE if the text stopped at TEXT_OUTLINE_MAX_LINES (with a note). */
 gboolean text_outline_print(TextOutline* outline, PreviewDoc* doc, const PreviewFold* fold, gint level);
 
 #endif /* TEXT_OUTLINE_H */

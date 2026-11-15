@@ -21,6 +21,7 @@
 #include "formats/json_view.h"
 #include "formats/xml_view.h"
 #include "formats/toml_view.h"
+#include "formats/yaml_view.h"
 #include "formats/log_view.h"
 #include "formats/man_view.h"
 #include "formats/notebook.h"
@@ -148,17 +149,17 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     return doc;
 }
 
-/* --- JSON, XML, TOML --- */
+/* --- JSON, XML, TOML, YAML --- */
 
 /* The data formats: summary line, truncation note, then the text (folds and paths) */
-typedef gboolean (*DataBuild)(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut, const PreviewFold* fold,
-                              const gchar* note, GError** error);
+typedef gboolean (*DataBuild)(PreviewDoc*, const gchar*, gsize, gboolean, const PreviewFold*, const gchar*, GError**);
 
 static DataBuild data_builder_for(FileKind kind) {
     switch (kind) {
     case FILE_KIND_JSON: return json_view_build;
     case FILE_KIND_XML:  return xml_view_build;
     case FILE_KIND_TOML: return toml_view_build;
+    case FILE_KIND_YAML: return yaml_view_build;
     default:             return NULL;
     }
 }

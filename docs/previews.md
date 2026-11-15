@@ -65,7 +65,11 @@ format.
   instructions and the DOCTYPE kept, tags that do not match shown as text);
   TOML as written, coloured, its tables folded with the tables under them
   (paths such as `servers.alpha.ip`, `plugins[1].name`; a file with a line
-  that is not TOML, such as an INI file, shown as text), diffs and patches with a
+  that is not TOML, such as an INI file, shown as text); YAML the same way
+  (mappings and sequences under a key or item fold, paths such as
+  `jobs.build.steps[1].run`, several documents numbered `[0]`, `[1]`...;
+  a subset is read: tabs in indentation and complex `?` keys make it plain
+  text), diffs and patches with a
   per-file summary, logs coloured by level and shown from their end, manual
   pages formatted like `man` (gzipped ones too), calendars (`.ics`), contacts
   (`.vcf`) and `.desktop` entries as cards.
@@ -207,7 +211,8 @@ every common format to L3 and never leave one below L1.
 | CSV / TSV | L3 | `csv` |
 | JSON, JSONC, JSON Lines: folding, outer keys in the tagbar, path at the cursor, large files shown up to the cut | L3 | `json_view`, `preview_folding`, `preview_location` |
 | XML (`.xml`, `.xsd`, `.csproj`, `.plist`, `.rss`... or an XML declaration): the same | L3 | `xml_view`, `preview_folding`, `preview_location` |
-| TOML (`.toml`, `Cargo.lock`, `poetry.lock`, `uv.lock`, `Pipfile`): as written, tables and multi-line arrays folding, headers in the tagbar | L3 | `toml_view`, `preview_folding`, `preview_location` |
+| TOML (`.toml`, `Cargo.lock`, `poetry.lock`, `uv.lock`, `Pipfile`): as written, tables and multi-line arrays folding, headers in the tagbar | L3 | `toml_view`, `text_outline`, `preview_folding`, `preview_location` |
+| YAML (`.yaml`, `.yml`, `.cff`, `.clang-format`... or a `%YAML` directive): as written, mappings and sequences folding, keys in the tagbar | L3 | `yaml_view`, `text_outline`, `preview_folding`, `preview_location` |
 | Diffs and patches | L3 | `diff_view` |
 | Logs | L3 | `log_view` |
 | Jupyter notebooks | L3 | `notebook` |

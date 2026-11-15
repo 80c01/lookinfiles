@@ -23,7 +23,7 @@ panel.
 | Spreadsheets (`.xlsx`, `.ods`, `.xls`), CSV | A grid with column letters |
 | Presentations (`.pptx`, `.ppt`, `.odp`) | The slides, one by one, with speaker notes |
 | Mail (`.eml`, `.msg`) and mailboxes | The headers, the text, the attachments; remote images are never loaded |
-| JSON, XML, TOML, logs, diffs, man pages, calendars, contacts | Formatted and coloured |
+| JSON, XML, TOML, YAML, logs, diffs, man pages, calendars, contacts | Formatted and coloured |
 | Archives (`.zip`, `.tar.gz`, `.deb`...) | The list of files, with sizes and dates |
 | Certificates and keys | Subject, issuer, validity, fingerprints |
 | Fonts | Names, details and samples |
@@ -41,7 +41,7 @@ size and the detected text encoding.
 
 `m` switches between the rendered view and the raw one:
 
-- Markdown, HTML, Org, CSV, JSON, XML, TOML, diffs, logs: rendered ↔ source text;
+- Markdown, HTML, Org, CSV, JSON, XML, TOML, YAML, diffs, logs: rendered ↔ source text;
 - images: fitted ↔ actual size;
 - PDF: pages ↔ extracted text;
 - video and audio: player ↔ file details;
@@ -130,24 +130,26 @@ The Org-mode preview can be used without opening an editor:
 
 The changes are saved to the file. See [Org-mode](org-mode.md) for editing.
 
-## JSON, XML and TOML files
+## JSON, XML, TOML and YAML files
 
-JSON and XML are shown indented and coloured, TOML as written and coloured.
-Their outer keys, elements or tables are in the tagbar (`o`). `Tab` folds or
-opens the object, array, element or table at the cursor (on a line of values
-or text: the one around it), and a folded one shows how many keys, items or
-elements it has; a TOML table folds with the tables under it (`[servers.alpha]`
-under `[servers]`). `Shift+Tab` shows the outer members only, then two
-levels, then everything. A document too long to show open starts folded
-below the deepest level that fits. The folds of each file are kept until
-LookinFiles quits.
+JSON and XML are shown indented and coloured, TOML and YAML as written and
+coloured. Their outer keys, elements or tables are in the tagbar (`o`).
+`Tab` folds or opens the object, array, element, table, mapping or sequence
+at the cursor (on a line of values or text: the one around it), and a
+folded one shows how many keys, items or elements it has; a TOML table
+folds with the tables under it (`[servers.alpha]` under `[servers]`).
+`Shift+Tab` shows the outer members only, then two levels, then everything.
+A document too long to show open starts folded below the deepest level that
+fits. The folds of each file are kept until LookinFiles quits.
 
 The bar at the bottom shows the path of the value at the cursor, such as
-`$.servers[2].host` in JSON, `/feed/entry[2]/title` in XML or
-`servers.alpha.ip` in TOML; `y` (or **Copy Path** in the right-click menu)
-copies it. A file over 512 KB shows its first 64 KB, the values open there
-ending with `…`; **Load Whole File** shows all of it. A file that is not
-valid JSON, XML or TOML is shown as text.
+`$.servers[2].host` in JSON, `/feed/entry[2]/title` in XML,
+`servers.alpha.ip` in TOML or `jobs.build.steps[1].run` in YAML (`[1].kind`
+in the second document of a file of several); `y` (or **Copy Path** in the
+right-click menu) copies it. A file over 512 KB shows its first 64 KB, the
+values open there ending with `…`; **Load Whole File** shows all of it. A
+file that is not valid JSON, XML or TOML, or YAML with tabs in its
+indentation or complex `?` keys, is shown as text.
 
 ## Large files
 

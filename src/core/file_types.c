@@ -233,6 +233,7 @@ static const struct {
     { "xul", FILE_KIND_XML }, { "musicxml", FILE_KIND_XML }, { "fodt", FILE_KIND_XML },
     { "fods", FILE_KIND_XML }, { "fodp", FILE_KIND_XML },
     { "toml", FILE_KIND_TOML },
+    { "yaml", FILE_KIND_YAML }, { "yml", FILE_KIND_YAML }, { "cff", FILE_KIND_YAML },
     { "ipynb", FILE_KIND_NOTEBOOK },
     { "diff", FILE_KIND_DIFF }, { "patch", FILE_KIND_DIFF }, { "rej", FILE_KIND_DIFF },
     { "log", FILE_KIND_LOG },
@@ -318,12 +319,15 @@ FileKind file_kind_from_name(const gchar* name) {
     if (is_rotated_log_name(name)) return FILE_KIND_LOG;
     if (is_manpage_name(name)) return FILE_KIND_MANPAGE;
     static const gchar* const TOML_NAMES[] = { "Cargo.lock", "poetry.lock", "uv.lock", "pdm.lock", "Pipfile", NULL };
+    static const gchar* const YAML_NAMES[] = { ".clang-format", ".clang-tidy", ".yamllint", NULL };
     gchar* base = g_path_get_basename(name);
     gboolean tnef = g_ascii_strcasecmp(base, "winmail.dat") == 0;
     gboolean toml = g_strv_contains(TOML_NAMES, base);
+    gboolean yaml = g_strv_contains(YAML_NAMES, base);
     g_free(base);
     if (tnef) return FILE_KIND_MAIL; /* TNEF attachment of Outlook mails */
     if (toml) return FILE_KIND_TOML;
+    if (yaml) return FILE_KIND_YAML;
     const gchar* ext = file_extension(name);
     for (gsize i = 0; i < G_N_ELEMENTS(KIND_EXTENSIONS); i++) {
         if (g_ascii_strcasecmp(ext, KIND_EXTENSIONS[i].ext) == 0) {
@@ -352,6 +356,7 @@ gboolean file_kind_is_text(FileKind kind) {
     case FILE_KIND_JSON:
     case FILE_KIND_XML:
     case FILE_KIND_TOML:
+    case FILE_KIND_YAML:
     case FILE_KIND_NOTEBOOK:
     case FILE_KIND_DIFF:
     case FILE_KIND_LOG:
@@ -393,6 +398,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_JSON:         return "JSON";
     case FILE_KIND_XML:          return "XML";
     case FILE_KIND_TOML:         return "TOML";
+    case FILE_KIND_YAML:         return "YAML";
     case FILE_KIND_NOTEBOOK:     return "Jupyter";
     case FILE_KIND_DIFF:         return NC_("file kind", "Diff");
     case FILE_KIND_LOG:          return NC_("file kind", "Log");
@@ -743,12 +749,17 @@ static FileKind detect_text_format(const gchar* name, const guchar* head, gsize 
     /* A name that already says which text format wins over content guesses */
     if (by_name == FILE_KIND_MARKDOWN || by_name == FILE_KIND_ORG || by_name == FILE_KIND_HTML ||
         by_name == FILE_KIND_CSV || by_name == FILE_KIND_JSON || by_name == FILE_KIND_LOG ||
-        by_name == FILE_KIND_XML || by_name == FILE_KIND_TOML) {
+        by_name == FILE_KIND_XML || by_name == FILE_KIND_TOML ||
+        by_name == FILE_KIND_YAML) {
         return by_name;
     }
     /* An XML declaration: any name (HTML and SVG are recognised before) */
     if (HAS(start, "<?xml") && start + 5 < len && g_ascii_isspace(head[start + 5])) {
         return FILE_KIND_XML;
+    }
+    /* A YAML directive: any name */
+    if (HAS(start, "%YAML ")) {
+        return FILE_KIND_YAML;
     }
     if (HAS(start, "-----BEGIN ")) {
         return FILE_KIND_CERTIFICATE;
@@ -837,6 +848,7 @@ FileKind file_kind_detect(const gchar* name, const guchar* head, gsize len) {
     case FILE_KIND_JSON:
     case FILE_KIND_XML:
     case FILE_KIND_TOML:
+    case FILE_KIND_YAML:
     case FILE_KIND_DIFF:
     case FILE_KIND_LOG:
     case FILE_KIND_TRANSLATION:
