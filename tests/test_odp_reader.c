@@ -452,7 +452,7 @@ static void test_preview(void) {
     guint n = 0;
     GError* error = NULL;
     g_autoptr(PreviewDoc) doc = odp_file_preview("tests/fixtures/preview/roadmap.odp", "roadmap.odp", "3 kB", &n,
-                                                 &error);
+                                                 1.0, &error);
     g_assert_no_error(error);
     g_assert_cmpuint(n, ==, 2);
     g_assert_true(g_str_has_prefix(doc->text->str, "roadmap.odp\nOpenDocument presentation · 2 slides · 3 kB"));

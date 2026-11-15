@@ -123,7 +123,7 @@ file, new folder, terminal.
 |---|---|
 | `Ctrl+D` | Bookmark the selected entry (or the current folder) |
 | `m` | Switch the preview between rendered and raw |
-| `+` / `-` / `0` | Zoom the previewed image or PDF in, out, back to fit |
+| `+` / `-` / `0` | Zoom the previewed image, PDF or slides in, out, back to fit |
 
 The tree updates by itself when files change on disk, whether you change
 them in LookinFiles, in the terminal or in another program.

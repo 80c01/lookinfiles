@@ -152,7 +152,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Explorer panel"), "u", N_("Undo the last move to the trash or rename (also Undo in the explorer bar)"), 0},
     {N_("Explorer panel"), "i / I", N_("Toggle hidden files"), 0},
     {N_("Explorer panel"), "o", N_("Cycle sort: name, date, size, extension"), 0},
-    {N_("Explorer panel"), "+ / - / 0", N_("Zoom the previewed image or PDF in / out / to the fitted size"), 0},
+    {N_("Explorer panel"), "+ / - / 0", N_("Zoom the previewed image, PDF or slides in / out / to the fitted size"), 0},
     {N_("Explorer panel"), "?", N_("Show / hide this help panel"), 0},
     /* Preview panel */
     {N_("Preview panel"), "Down / Up", N_("Scroll a line down / up"), 0},
@@ -173,7 +173,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Preview panel"), "e", N_("Open the current file in the editor (text files only)"), 0},
     {N_("Preview panel"), "m", N_("Toggle rendered preview / raw view (documents, tables, data tree / text, diffs, logs, archives, certificates, images, PDF, video, audio)"), 0},
     {N_("Preview panel"), "o / Ctrl+K Ctrl+O", N_("Show / hide the tagbar: headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of source code, beside the text (Enter goes, s sorts symbols, c collapses / expands all, Esc back, q hides; in it, the moving and search keys of the mode)"), 0},
-    {N_("Preview panel"), "+ / - / 0", N_("Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)"), 0},
+    {N_("Preview panel"), "+ / - / 0", N_("Zoom image, PDF or slides in / out / to the fitted size (also Ctrl+wheel)"), 0},
     {N_("Preview panel"), NC_("key", "Right-click"), N_("On an image: Copy Image to the clipboard"), 0},
     {N_("Preview panel"), "PgDn / PgUp", N_("PDF: next / previous page; mailbox: next / previous message"), 0},
     {N_("Preview panel"), "Space / p", N_("Play / pause active video or audio preview"), 0},

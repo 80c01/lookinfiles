@@ -34,6 +34,8 @@ typedef struct {
     const PreviewFold* fold;
     /* The raw view (m) of a format that has one (preview_format_has_raw_builder()) */
     gboolean raw;
+    /* Zoom of the slides of presentations (+ / -), 0: 1 */
+    gdouble zoom;
 } PreviewInput;
 
 /* Largest text a builder converts (documents, notebooks...) */

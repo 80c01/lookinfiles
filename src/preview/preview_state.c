@@ -10,6 +10,7 @@ struct PreviewState {
     const gchar* encoding; /* static string */
     gboolean raw;
     gdouble zoom;
+    gboolean slides;
     guint page;
     guint pages;
 };
@@ -82,6 +83,14 @@ gdouble preview_state_zoom(const AppData* app) {
 
 void preview_state_set_zoom(AppData* app, gdouble zoom) {
     state_get(app)->zoom = zoom;
+}
+
+gboolean preview_state_slides(const AppData* app) {
+    return app != NULL && app->preview_state != NULL && app->preview_state->slides;
+}
+
+void preview_state_set_slides(AppData* app, gboolean slides) {
+    state_get(app)->slides = slides;
 }
 
 guint preview_state_page(const AppData* app) {

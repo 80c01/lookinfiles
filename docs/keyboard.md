@@ -101,7 +101,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `o` | Cycle the sort: name, date, size, extension |
 | `Ctrl+D` | Bookmark the selected entry or the current directory |
 | `m` | Toggle the rendered / raw preview of the selected file |
-| `+` / `-` / `0` | Zoom the previewed image or PDF in / out / back to the fitted size |
+| `+` / `-` / `0` | Zoom the previewed image, PDF or slides in / out / back to the fitted size |
 | Right click | Context menu. Files view: open, open in the side panel (text files) or with the default application (other files), in a browser tab (HTML files), open a terminal in a folder, rename, move to the trash, copy the path, bookmark, undo; on an empty area: new file, new folder, terminal |
 
 **Bookmarks view**
@@ -258,7 +258,7 @@ mode move in the process list)
 | `e` | Open the file in the editor (text files) |
 | `m` | Rendered / raw view: JSON, XML (tree / indented text), TOML, YAML (tree / as written), Markdown, HTML, Org, CSV, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
 | `o`, `Ctrl+K Ctrl+O` | Tagbar: the headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of source code, beside the text (`Enter` / click scrolls to one, `s` sorts symbols, `c` collapses / expands all, `Esc` back, `q` hides; the moving and search keys of the global mode, see [Code navigation](#code-navigation)) |
-| `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image or PDF in / out / back to the fitted size |
+| `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image, PDF or the slides of a presentation in / out / back to the fitted size |
 | Right click on an image | Context menu: **Copy Image** copies the whole image to the clipboard |
 | `PgDn` / `PgUp` | PDF: next / previous page; mailbox: from the list into each message and back |
 | `Space` / `p` | Play / pause the video or audio |

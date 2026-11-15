@@ -174,15 +174,30 @@ static void test_preview(void) {
         if (i == 0) s->notes = g_strdup("Say hello");
         g_ptr_array_add(deck->slides, s);
     }
-    g_autoptr(PreviewDoc) doc = slide_deck_preview(deck, "talk.pptx", "3 slides", 2);
+    g_autoptr(PreviewDoc) doc = slide_deck_preview(deck, "talk.pptx", "3 slides", 2, 1.0);
     g_assert_cmpuint(doc->images->len, ==, 2);
     g_assert_nonnull(strstr(doc->text->str, "Slide 1 · Part 1\n" PREVIEW_DOC_IMAGE_CHAR "\nSay hello\n"));
     g_assert_nonnull(strstr(doc->text->str, "The first 2 of 3 slides are drawn"));
     g_assert_true(g_str_has_suffix(doc->text->str, "Slide 3 · Part 3\n"));
 
     g_autoptr(SlideDeck) empty = slide_deck_new(720, 540);
-    g_autoptr(PreviewDoc) none = slide_deck_preview(empty, "e", NULL, 20);
+    g_autoptr(PreviewDoc) none = slide_deck_preview(empty, "e", NULL, 20, 1.0);
     g_assert_nonnull(strstr(none->text->str, "(no slides)"));
+}
+
+/* Zoomed slides: drawn larger, the same text */
+static void test_preview_zoom(void) {
+    g_autoptr(SlideDeck) deck = slide_deck_new(720, 405);
+    g_ptr_array_add(deck->slides, slide_new());
+    g_autoptr(PreviewDoc) fitted = slide_deck_preview(deck, "t", NULL, 20, 0);
+    g_autoptr(PreviewDoc) zoomed = slide_deck_preview(deck, "t", NULL, 20, 2.0);
+    g_autoptr(PreviewDoc) capped = slide_deck_preview(deck, "t", NULL, 20, 8.0);
+    g_assert_cmpfloat(fitted->image_zoom, ==, 1.0);
+    g_assert_cmpfloat(zoomed->image_zoom, ==, 2.0);
+    g_assert_cmpfloat(capped->image_zoom, ==, PREVIEW_DOC_IMAGE_ZOOM_MAX);
+    gint w1 = g_array_index(fitted->images, PreviewImage, 0).max_width;
+    g_assert_cmpint(g_array_index(zoomed->images, PreviewImage, 0).max_width, ==, 2 * w1);
+    g_assert_cmpstr(zoomed->text->str, ==, fitted->text->str);
 }
 
 int main(int argc, char** argv) {
@@ -191,5 +206,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/slide_render/effects", test_effects);
     g_test_add_func("/slide_render/table", test_table);
     g_test_add_func("/slide_render/preview", test_preview);
+    g_test_add_func("/slide_render/preview_zoom", test_preview_zoom);
     return g_test_run();
 }

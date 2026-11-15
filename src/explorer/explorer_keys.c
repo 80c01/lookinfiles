@@ -336,7 +336,7 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
-    /* Zoom of the previewed image or PDF (+ / - / 0) */
+    /* Zoom of the previewed image, PDF or slides (+ / - / 0) */
     if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) == 0 && image_preview_zoom_key(app, keyval)) {
         app->nav_prefix = NAV_PREFIX_NONE;
         return TRUE;

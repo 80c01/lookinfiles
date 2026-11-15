@@ -141,7 +141,7 @@ static void test_inheritance(void) {
 static void test_preview(void) {
     GError* error = NULL;
     guint n = 0;
-    g_autoptr(PreviewDoc) doc = pptx_file_preview("tests/fixtures/preview/deck.pptx", "deck.pptx", "8 kB", &n, &error);
+    g_autoptr(PreviewDoc) doc = pptx_file_preview("tests/fixtures/preview/deck.pptx", "deck.pptx", "8 kB", &n, 1.0, &error);
     g_assert_no_error(error);
     g_assert_cmpuint(n, ==, 3);
     g_assert_true(g_str_has_prefix(doc->text->str, "deck.pptx\nPowerPoint presentation · 3 slides · 8 kB\n"));
@@ -155,7 +155,7 @@ static void test_preview(void) {
 
 static void test_not_a_presentation(void) {
     GError* error = NULL;
-    g_assert_null(pptx_file_preview("tests/fixtures/preview/budget.xlsx", "x", NULL, NULL, &error));
+    g_assert_null(pptx_file_preview("tests/fixtures/preview/budget.xlsx", "x", NULL, NULL, 1.0, &error));
     g_assert_nonnull(error);
     g_clear_error(&error);
     g_assert_null(pptx_read_deck("/nonexistent.pptx", &error));

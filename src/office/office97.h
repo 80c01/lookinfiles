@@ -27,8 +27,10 @@ Office97Format office97_format(const OleReader* ole);
 const gchar* office97_format_label(Office97Format format);
 
 /* Preview of the compound file at path (NULL with error set when it is not
- * a readable compound file: the viewer then shows the hex dump) */
-PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, gsize max_text, GError** error);
+ * a readable compound file: the viewer then shows the hex dump); slides
+ * are drawn at zoom (slide_deck_preview()) */
+PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, gsize max_text, gdouble zoom,
+                             GError** error);
 
 /* The fallback: title, property card, a note (reason, may be NULL) and the
  * stream list */

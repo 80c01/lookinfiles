@@ -277,6 +277,7 @@ typedef struct {
     gboolean render_raw;
     gboolean whole;        /* read to the end, whatever the size (Load Whole File) */
     guint page;            /* PreviewInput.page */
+    gdouble zoom;          /* PreviewInput.zoom */
 
     /* Results populated by worker thread */
     FileKind kind;         /* detected from the first bytes */
@@ -364,7 +365,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     PreviewInput input = {
         .path = td->full, .name = td->name, .size = td->fsize, .kind = td->kind,
         .head = (const guchar*)contents, .head_len = MIN(len, FILE_SNIFF_BYTES), .page = td->page,
-        .fold = td->fold, .raw = td->render_raw,
+        .fold = td->fold, .raw = td->render_raw, .zoom = td->zoom,
     };
 
     if (file_kind_is_media(td->kind)) {
@@ -518,9 +519,9 @@ static PreviewCache* preview_cache(void) {
 
 /* Cache key: the file and the settings the worker built the preview with */
 static gchar* preview_cache_key(const gchar* full, gboolean render_raw, guint page, gboolean whole,
-                                const PreviewFold* fold) {
+                                const PreviewFold* fold, gdouble zoom) {
     g_autofree gchar* folds = preview_fold_signature(fold);
-    return g_strdup_printf("%d:%u:%d:%s:%s", render_raw ? 1 : 0, page, whole ? 1 : 0, folds, full);
+    return g_strdup_printf("%d:%u:%d:%s:%.3f:%s", render_raw ? 1 : 0, page, whole ? 1 : 0, folds, zoom, full);
 }
 
 /* Keep the results of a finished worker (moved out of td) */
@@ -542,7 +543,7 @@ static void cache_text_preview(TextPreviewTaskData* td) {
                   (kept->md != NULL ? kept->md->text->len * 2 : 0) +
                   (kept->utf8_text != NULL ? strlen(kept->utf8_text) : 0) +
                   preview_doc_size(kept->doc);
-    gchar* key = preview_cache_key(kept->full, kept->render_raw, kept->page, kept->whole, kept->fold);
+    gchar* key = preview_cache_key(kept->full, kept->render_raw, kept->page, kept->whole, kept->fold, kept->zoom);
     preview_cache_insert(preview_cache(), key, &kept->stamp, kept, bytes);
     g_free(key);
 }
@@ -654,6 +655,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
     /* Text cut at PREVIEW_BYTES: offer the whole file */
     gboolean partial = td->preview && td->utf8_text != NULL && td->error_msg == NULL;
     preview_full_update(app, td->full, partial ? (gint64)td->raw_len : -1, td->fsize);
+    preview_state_set_slides(app, td->doc != NULL && td->error_msg == NULL && td->doc->paged);
 
     if (g_strcmp0(td->full, preview_state_path(app)) == 0 &&
         preview_state_set_detected(app, td->kind, td->encoding, td->content_type)) {
@@ -784,6 +786,7 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
     td->render_raw = preview_state_raw(app);
     td->whole = preview_full_wanted(app, full);
     td->page = td->render_raw ? 0 : preview_state_page(app);
+    td->zoom = preview_state_zoom(app);
     td->start_us = g_get_monotonic_time();
     td->org_folded = org_fold_state_copy(app, &td->org_global_fold); /* for the worker */
     td->fold = preview_folding_state(app, full);
@@ -798,7 +801,7 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
      * only draw the old content again before the new one. */
     TextPreviewTaskData* cached = NULL;
     if (g_strcmp0(full, preview_state_path(app)) != 0) {
-        gchar* key = preview_cache_key(full, td->render_raw, td->page, td->whole, td->fold);
+        gchar* key = preview_cache_key(full, td->render_raw, td->page, td->whole, td->fold, td->zoom);
         cached = preview_cache_lookup(preview_cache(), key, &td->cached_stamp);
         g_free(key);
     }

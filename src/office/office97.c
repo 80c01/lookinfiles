@@ -94,7 +94,8 @@ PreviewDoc* office97_summary(OleReader* ole, const gchar* name, gint64 size, con
     return doc;
 }
 
-PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, gsize max_text, GError** error) {
+PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, gsize max_text, gdouble zoom,
+                             GError** error) {
     g_autoptr(OleReader) ole = ole_reader_open(path, error);
     if (ole == NULL) return NULL;
     /* Encrypted documents: only their properties can be read */
@@ -202,7 +203,7 @@ PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, 
             subtitle = with_size;
         }
         PreviewDoc* doc = slide_deck_preview(deck, props->title != NULL ? props->title : name, subtitle,
-                                             OFFICE97_MAX_DRAWN);
+                                             OFFICE97_MAX_DRAWN, zoom);
         g_free(subtitle);
         return doc;
     }

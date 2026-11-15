@@ -135,7 +135,7 @@ nouveau dossier, terminal.
 |---|---|
 | `Ctrl+D` | Ajouter un signet sur l’élément sélectionné (ou le dossier courant) |
 | `m` | Basculer l’aperçu entre rendu et brut |
-| `+` / `-` / `0` | Zoomer sur l’image ou le PDF affiché, dézoomer, revenir à l’ajustement |
+| `+` / `-` / `0` | Zoomer sur l’image, le PDF ou les diapositives affichés, dézoomer, revenir à l’ajustement |
 
 L’arborescence se met à jour toute seule quand des fichiers changent sur le
 disque, que vous les changiez dans LookinFiles, dans le terminal ou dans un

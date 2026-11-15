@@ -24,9 +24,9 @@ SlideDeck* odp_read_deck(const gchar* path, GError** error);
 
 /* The preview: title (the file name), subtitle ("OpenDocument presentation
  * · N slides · size_text"; size_text may be NULL), the slides. *n_slides
- * (may be NULL) receives the number of slides. NULL with error set if it is
+ * (may be NULL) receives the number of slides; zoom: slide_deck_preview(). NULL with error set if it is
  * not a readable presentation. */
 PreviewDoc* odp_file_preview(const gchar* path, const gchar* name, const gchar* size_text, guint* n_slides,
-                             GError** error);
+                             gdouble zoom, GError** error);
 
 #endif /* ODP_READER_H */

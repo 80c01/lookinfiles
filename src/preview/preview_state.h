@@ -27,9 +27,13 @@ gboolean preview_state_set_detected(AppData* app, FileKind kind, const gchar* en
 gboolean preview_state_raw(const AppData* app);
 void preview_state_set_raw(AppData* app, gboolean raw);
 
-/* Image and PDF zoom, relative to the fitted size (1.0 by default) */
+/* Image, PDF and slide zoom, relative to the fitted size (1.0 by default) */
 gdouble preview_state_zoom(const AppData* app);
 void preview_state_set_zoom(AppData* app, gdouble zoom);
+
+/* TRUE when the preview shows the slides of a presentation (zoomable) */
+gboolean preview_state_slides(const AppData* app);
+void preview_state_set_slides(AppData* app, gboolean slides);
 
 /* Paged previews (mailbox messages): the page shown and the number of pages
  * after the first view (0: not paged); page is clamped to pages */

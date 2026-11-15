@@ -285,7 +285,9 @@ dump (13.7 % before the preview work). Most of the rest are TeX font metrics
   tested with files built in the tests (`tests/ole_builder.h`).
 - **Slides** (`.pptx`, `.ppt`, `.odp`): drawn with cairo and Pango into one
   picture per slide in the worker thread (`slide_render`); the speaker notes
-  stay text below each picture, so they can be searched. Charts and
+  stay text below each picture, so they can be searched. `+` / `-` / `0`
+  zoom the pictures (up to 3x: the slides are drawn again at that size,
+  `PreviewInput.zoom`). Charts and
   diagrams show as labelled boxes, metafile pictures (EMF, WMF) are not
   drawn, and `.ppt` text keeps the text type the file gives it (LibreOffice
   exports titles as plain text boxes). LibreOffice also writes its default

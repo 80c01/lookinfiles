@@ -14,6 +14,8 @@
 #include "core/app_events.h"
 #include "core/file_types.h"
 #include "media/image_decode.h"
+#include "preview/preview_doc.h"
+#include "preview/preview_doc_view.h"
 #include "theme/text_style.h"
 #include "preview/preview_busy.h"
 
@@ -183,16 +185,20 @@ void image_preview_prefetch(AppData* app, const gchar* const* paths) {
 
 static gboolean zoomable(AppData* app) {
     return preview_state_path(app) != NULL &&
-           (preview_state_kind(app) == FILE_KIND_IMAGE || preview_state_kind(app) == FILE_KIND_PDF);
+           (preview_state_kind(app) == FILE_KIND_IMAGE || preview_state_kind(app) == FILE_KIND_PDF ||
+            preview_state_slides(app));
 }
 
 static void set_zoom(AppData* app, gdouble zoom) {
-    zoom = CLAMP(zoom, PREVIEW_ZOOM_MIN, PREVIEW_ZOOM_MAX);
+    zoom = CLAMP(zoom, PREVIEW_ZOOM_MIN, preview_state_slides(app) ? PREVIEW_DOC_IMAGE_ZOOM_MAX : PREVIEW_ZOOM_MAX);
     if (fabs(zoom - 1.0) < 0.01) {
         zoom = 1.0;
     }
     if (zoom == preview_state_zoom(app)) {
         return;
+    }
+    if (preview_state_slides(app) && app->text_view != NULL) {
+        preview_doc_keep_top(GTK_TEXT_VIEW(app->text_view), preview_state_path(app));
     }
     preview_state_set_zoom(app, zoom);
     app_emit(app, APP_EVENT_PREVIEW_STALE);

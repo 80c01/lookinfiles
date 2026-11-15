@@ -280,9 +280,30 @@ void preview_doc_insert(GtkTextBuffer* buffer, const PreviewDoc* doc) {
     insert_doc(buffer, doc, 0);
 }
 
+void preview_doc_keep_top(GtkTextView* view, const gchar* path) {
+    GdkRectangle rect;
+    GtkTextIter top;
+    gtk_text_view_get_visible_rect(view, &rect);
+    gtk_text_view_get_iter_at_location(view, &top, rect.x, rect.y);
+    GObject* buffer = G_OBJECT(gtk_text_view_get_buffer(view));
+    g_object_set_data_full(buffer, "kept_top_path", g_strdup(path), g_free);
+    g_object_set_data(buffer, "kept_top", GINT_TO_POINTER(gtk_text_iter_get_offset(&top)));
+}
+
+/* Offset kept by preview_doc_keep_top() for the slides of path, or -1 (forgotten) */
+static gint take_kept_top(GtkTextBuffer* buffer, const PreviewDoc* doc, const gchar* path) {
+    const gchar* kept = g_object_get_data(G_OBJECT(buffer), "kept_top_path");
+    gint top = (doc->paged && kept != NULL && g_strcmp0(kept, path) == 0)
+                   ? GPOINTER_TO_INT(g_object_get_data(G_OBJECT(buffer), "kept_top"))
+                   : -1;
+    g_object_set_data(G_OBJECT(buffer), "kept_top_path", NULL);
+    return top;
+}
+
 void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* path,
                       const gchar* name, gint64 size) {
     GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
+    gint kept_top = take_kept_top(buffer, doc, path);
     g_object_set_data(G_OBJECT(buffer), "minimap_paged",
                       (doc != NULL && doc->paged) ? GINT_TO_POINTER(1) : NULL);
     GtkWidget* widget = GTK_WIDGET(view);
@@ -305,15 +326,22 @@ void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* pat
     gtk_text_view_set_wrap_mode(view, doc->wrap ? GTK_WRAP_WORD_CHAR : GTK_WRAP_NONE);
     load_font_files(widget, doc->font_files);
     gtk_text_buffer_set_text(buffer, "", 0);
-    /* Images fit in the view as it is now (slides, document pictures) */
+    /* Images fit in the view as it is now (slides, document pictures), times
+     * the zoom of the slides */
     gint avail = gtk_widget_get_width(widget) - 2 * PREVIEW_TEXT_PADDING_X - TEXT_SCROLLBAR_CLEARANCE;
-    insert_doc(buffer, doc, avail >= 160 ? avail : 0);
+    insert_doc(buffer, doc, avail >= 160 ? (gint)(avail * doc->image_zoom) : 0);
     if (doc->scroll_to_end) {
         GtkTextIter end;
         gtk_text_buffer_get_end_iter(buffer, &end);
         gtk_text_buffer_place_cursor(buffer, &end);
         GtkTextMark* mark = gtk_text_buffer_get_insert(buffer);
         gtk_text_view_scroll_to_mark(view, mark, 0.0, TRUE, 0.0, 1.0);
+    } else if (kept_top >= 0) {
+        /* The slides drawn at another zoom: the slide that was at the top */
+        GtkTextIter top;
+        gtk_text_buffer_get_iter_at_offset(buffer, &top, kept_top);
+        gtk_text_buffer_place_cursor(buffer, &top);
+        gtk_text_view_scroll_to_mark(view, gtk_text_buffer_get_insert(buffer), 0.0, TRUE, 0.0, 0.0);
     } else {
         /* The cursor at the top, where the view is (the path in the preview bar follows it) */
         GtkTextIter start;

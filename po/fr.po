@@ -3700,8 +3700,8 @@ msgid "Cycle sort: name, date, size, extension"
 msgstr "Changer le tri : nom, date, taille, extension"
 
 #: src/chrome/help.c:138
-msgid "Zoom the previewed image or PDF in / out / to the fitted size"
-msgstr "Agrandir / réduire / ajuster l’image ou le PDF en aperçu"
+msgid "Zoom the previewed image, PDF or slides in / out / to the fitted size"
+msgstr "Agrandir / réduire / ajuster l’image, le PDF ou les diapositives en aperçu"
 
 #: src/chrome/help.c:139
 msgid "Show / hide this help panel"
@@ -3779,8 +3779,8 @@ msgstr ""
 "recherche du mode)"
 
 #: src/chrome/help.c:159
-msgid "Zoom image or PDF in / out / to the fitted size (also Ctrl+wheel)"
-msgstr "Agrandir / réduire / ajuster l’image ou le PDF (aussi Ctrl+molette)"
+msgid "Zoom image, PDF or slides in / out / to the fitted size (also Ctrl+wheel)"
+msgstr "Agrandir / réduire / ajuster l’image, le PDF ou les diapositives (aussi Ctrl+molette)"
 
 #: src/chrome/help.c:160
 msgid "PDF: next / previous page; mailbox: next / previous message"

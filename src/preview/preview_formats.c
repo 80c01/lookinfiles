@@ -691,8 +691,8 @@ static PreviewDoc* build_ebook(const PreviewInput* in, GCancellable* cancellable
 static PreviewDoc* build_presentation(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
     gchar* size = preview_format_size(in->size);
-    PreviewDoc* doc = is_opendocument(in) ? odp_file_preview(in->path, in->name, size, NULL, error)
-                                          : pptx_file_preview(in->path, in->name, size, NULL, error);
+    PreviewDoc* doc = is_opendocument(in) ? odp_file_preview(in->path, in->name, size, NULL, in->zoom, error)
+                                          : pptx_file_preview(in->path, in->name, size, NULL, in->zoom, error);
     g_free(size);
     return doc;
 }
@@ -988,7 +988,7 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
 
 static PreviewDoc* build_ole(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
-    return office97_preview(in->path, in->name, in->size, PREVIEW_FORMAT_MAX_TEXT, error);
+    return office97_preview(in->path, in->name, in->size, PREVIEW_FORMAT_MAX_TEXT, in->zoom, error);
 }
 
 static PreviewDoc* build_document(const PreviewInput* in, GCancellable* cancellable,

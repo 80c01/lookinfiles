@@ -13,6 +13,11 @@
 void preview_doc_show(GtkTextView* view, const PreviewDoc* doc, const gchar* path,
                       const gchar* name, gint64 size);
 
+/* Remember the character at the top of the view, which shows the slides of
+ * path: the next preview_doc_show() of them (drawn at another zoom, same
+ * text) scrolls back to it */
+void preview_doc_keep_top(GtkTextView* view, const gchar* path);
+
 /* Insert a styled-text document at the end of a buffer (no view settings) */
 void preview_doc_insert(GtkTextBuffer* buffer, const PreviewDoc* doc);
 

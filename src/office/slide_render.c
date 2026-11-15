@@ -744,9 +744,12 @@ GBytes* slide_render_png(const SlideDeck* deck, const Slide* slide, gint width) 
 
 /* ---- Preview ---- */
 
-PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const gchar* subtitle, guint max_drawn) {
+PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const gchar* subtitle, guint max_drawn,
+                               gdouble zoom) {
     PreviewDoc* doc = preview_doc_new();
     doc->paged = TRUE;
+    doc->image_zoom = zoom > 0 ? MIN(zoom, PREVIEW_DOC_IMAGE_ZOOM_MAX) : 1.0;
+    gint width = (gint)lround(RENDER_WIDTH * doc->image_zoom);
     preview_doc_title(doc, title, subtitle);
     guint n = deck->slides->len;
     for (guint i = 0; i < n; i++) {
@@ -770,9 +773,9 @@ PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const 
         if (i >= max_drawn) {
             continue;
         }
-        GBytes* png = slide_render_png(deck, s, RENDER_WIDTH);
+        GBytes* png = slide_render_png(deck, s, width);
         if (png != NULL) {
-            preview_doc_add_image(doc, png, RENDER_WIDTH);
+            preview_doc_add_image(doc, png, width);
             preview_doc_append_len(doc, "\n", 1);
             g_bytes_unref(png);
         }

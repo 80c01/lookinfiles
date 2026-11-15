@@ -14,6 +14,7 @@ PreviewDoc* preview_doc_new(void) {
     doc->folds = g_array_new(FALSE, FALSE, sizeof(PreviewFoldPoint));
     doc->paths = g_array_new(FALSE, FALSE, sizeof(PreviewPathPoint));
     doc->wrap = TRUE;
+    doc->image_zoom = 1.0;
     doc->label_width = PREVIEW_DOC_LABEL_WIDTH;
     return doc;
 }

@@ -104,9 +104,13 @@ typedef struct {
     GPtrArray* font_files;  /* font files the view loads before showing (font samples) */
     guint pages;          /* pages after this view, reached with PgDn (mailbox messages), 0: none */
     gboolean paged;       /* slides or pages drawn to scale in the minimap */
+    gdouble image_zoom;   /* images shown at this multiple of their fitted width (zoomed slides), 1 */
     GArray* folds;        /* PreviewFoldPoint: blocks Tab folds (JSON), empty for most formats */
     GArray* paths;        /* PreviewPathPoint: path of the value on each line (JSON), by offset */
 } PreviewDoc;
+
+/* Largest image_zoom (memory: the textures of the zoomed slides) */
+#define PREVIEW_DOC_IMAGE_ZOOM_MAX 3.0
 
 /* Width of the labels of preview_doc_field() unless changed */
 #define PREVIEW_DOC_LABEL_WIDTH 14
