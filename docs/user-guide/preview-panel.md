@@ -41,7 +41,8 @@ size and the detected text encoding.
 
 `m` switches between the rendered view and the raw one:
 
-- Markdown, HTML, Org, CSV, JSON, XML, TOML, YAML, diffs, logs: rendered ↔ source text;
+- JSON: tree ↔ indented text;
+- Markdown, HTML, Org, CSV, XML, TOML, YAML, diffs, logs: rendered ↔ source text;
 - images: fitted ↔ actual size;
 - PDF: pages ↔ extracted text;
 - video and audio: player ↔ file details;
@@ -132,10 +133,15 @@ The changes are saved to the file. See [Org-mode](org-mode.md) for editing.
 
 ## JSON, XML, TOML and YAML files
 
-JSON and XML are shown indented and coloured, TOML and YAML as written and
-coloured. Their outer keys, elements or tables are in the tagbar (`o`).
-`Tab` folds or opens the object, array, element, table, mapping or sequence
-at the cursor (on a line of values or text: the one around it), and a
+JSON is shown as a tree of keys and values in two columns: each key
+indented by its depth, the value coloured by its type, and each object or
+array with its number of keys or items and a ▾ / ▸ twisty that a click
+folds or opens (`m` shows the JSON indented and coloured instead). XML is
+shown indented and coloured, TOML and YAML as written and coloured. Their
+outer keys, elements or tables are in the tagbar (`o`). `Tab` folds or
+opens the object, array, element, table, mapping or sequence at the cursor
+(on a line of values or text: the one around it), highlighted with the
+cursor line, and a
 folded one shows how many keys, items or elements it has; a TOML table
 folds with the tables under it (`[servers.alpha]` under `[servers]`).
 `Shift+Tab` shows the outer members only, then two levels, then everything.

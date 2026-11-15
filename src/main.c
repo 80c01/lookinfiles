@@ -104,9 +104,8 @@ static void on_tree_click_pressed(GtkGestureClick* gesture, gint n_press,
 static void on_viewer_click_pressed(GtkGestureClick* gesture, gint n_press,
                                     gdouble x, gdouble y, gpointer user_data) {
     (void)gesture;
-    (void)n_press;
     AppData* app = (AppData*)user_data;
-    if (app != NULL) {
+    if (app != NULL && !(n_press == 1 && preview_folding_click(app, x, y))) {
         orgmode_handle_click(app, x, y);
     }
 }

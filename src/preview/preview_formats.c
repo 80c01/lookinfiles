@@ -164,6 +164,21 @@ static DataBuild data_builder_for(FileKind kind) {
     }
 }
 
+/* The tree of the formats that show one (data_tree.h); their text view
+ * above is then their raw view (m) */
+static DataBuild data_tree_builder_for(FileKind kind) {
+    switch (kind) {
+    case FILE_KIND_JSON: return json_view_build_tree;
+    default:             return NULL;
+    }
+}
+
+/* The view input asks for: the tree, else the text */
+static DataBuild data_view_for(const PreviewInput* in) {
+    DataBuild tree = data_tree_builder_for(in->kind);
+    return tree != NULL && !in->raw ? tree : data_builder_for(in->kind);
+}
+
 static PreviewDoc* build_data(const PreviewInput* in, DataBuild build, GError** error) {
     g_autofree gchar* note = truncated_note(in);
     g_autoptr(PreviewDoc) doc = preview_doc_new();
@@ -1094,10 +1109,14 @@ gboolean preview_format_has_builder(FileKind kind) {
     return builder_for(kind) != NULL || data_builder_for(kind) != NULL;
 }
 
+gboolean preview_format_has_raw_builder(FileKind kind) {
+    return data_tree_builder_for(kind) != NULL;
+}
+
 PreviewDoc* preview_format_build(const PreviewInput* input, GCancellable* cancellable,
                                  GError** error) {
     PreviewBuildFunc build = builder_for(input->kind);
-    if (build == NULL && data_builder_for(input->kind) != NULL) return build_data(input, data_builder_for(input->kind), error);
+    if (build == NULL && data_builder_for(input->kind) != NULL) return build_data(input, data_view_for(input), error);
     if (build == NULL) {
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("no preview for this format yet"));
         return NULL;

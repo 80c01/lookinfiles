@@ -78,10 +78,10 @@ format_scenario() {
     key Down;           shot fmt_csv_table
     key m;              shot fmt_csv_raw
     key m
-    key Down;           shot fmt_json_pretty
+    key Down;           shot fmt_json_tree      # keys and values in two columns
     key alt+Right                                   # focus the preview
     key shift+Tab;      shot fmt_json_outer_level   # objects and arrays folded
-    xdotool mousemove 400 125 click 1               # the cursor on the "name" line
+    xdotool mousemove 400 110 click 1               # the cursor on the "name" line
     key y;              shot fmt_json_copy_path     # its path in the bar, copied: $.name
     key shift+Tab; key shift+Tab                    # two levels, then all open again
     key alt+Left                                    # back to the explorer
@@ -89,6 +89,10 @@ format_scenario() {
     key alt+Right
     key shift+Tab;      shot fmt_json_folded_after_return
     key shift+Tab; key shift+Tab
+    xdotool mousemove 343 170 click 1               # the twisty of "scripts"
+    shot fmt_json_twisty_folded
+    key m;              shot fmt_json_raw       # the indented text
+    key m
     key alt+Left
     key Down;           shot fmt_toml
     key Down;           shot fmt_xml_pretty

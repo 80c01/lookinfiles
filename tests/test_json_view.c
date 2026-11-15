@@ -267,6 +267,44 @@ static void test_cut(void) {
     g_assert_cmpstr(scalar, ==, "{\n  \"a\": 1\n}\n");
 }
 
+static void test_tree(void) {
+    const gchar* text = "{\"a\": {\"b\": [1, true]}, \"odd key\": \"x\"}";
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    g_assert_true(json_view_build_tree(doc, text, strlen(text), FALSE, NULL, NULL, NULL));
+    g_assert_cmpstr(doc->text->str, ==,
+                    "Object · 2 keys\n\n"
+                    "▾ a        1 key\n"
+                    "  ▾ b      2 items\n"
+                    "      0    1\n"
+                    "      1    true\n"
+                    "  odd key  \"x\"\n");
+    g_assert_nonnull(preview_doc_fold_find(doc, "$.a.b"));
+    g_assert_cmpstr(preview_doc_path_at(doc, (gint)g_utf8_strlen(doc->text->str, -1) - 2), ==, "$[\"odd key\"]");
+
+    /* The same fold state as the text view */
+    g_autoptr(PreviewFold) fold = preview_fold_new(PREVIEW_FOLD_OPEN);
+    preview_fold_toggle(fold, "$.a.b");
+    g_autoptr(PreviewDoc) folded = preview_doc_new();
+    json_view_build_tree(folded, text, strlen(text), FALSE, fold, NULL, NULL);
+    g_assert_nonnull(strstr(folded->text->str, "  ▸ b      2 items\n  odd key"));
+
+    const gchar* lines = "{\"n\": 1}\n{\"n\": 2}\n";
+    g_autoptr(PreviewDoc) records = preview_doc_new();
+    g_assert_true(json_view_build_tree(records, lines, strlen(lines), FALSE, NULL, NULL, NULL));
+    g_assert_nonnull(strstr(records->text->str, "▾ 1    1 key\n    n  2\n"));
+    g_assert_nonnull(preview_doc_fold_find(records, "$[1]"));
+
+    g_autoptr(PreviewDoc) scalar = preview_doc_new();
+    g_assert_true(json_view_build_tree(scalar, "42", 2, FALSE, NULL, NULL, NULL));
+    g_assert_cmpstr(scalar->text->str, ==, "42\n");
+
+    GError* error = NULL;
+    g_autoptr(PreviewDoc) bad = preview_doc_new();
+    g_assert_false(json_view_build_tree(bad, "{", 1, FALSE, NULL, NULL, &error));
+    g_assert_nonnull(error);
+    g_error_free(error);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/json_view/pretty", test_pretty);
@@ -281,5 +319,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/json_view/folded", test_folded);
     g_test_add_func("/json_view/auto_level", test_auto_level);
     g_test_add_func("/json_view/cut", test_cut);
+    g_test_add_func("/json_view/tree", test_tree);
     return g_test_run();
 }

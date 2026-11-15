@@ -160,11 +160,61 @@ static gint next_level(gint level) {
     }
 }
 
-gboolean preview_folding_key(AppData* app, guint keyval, GdkModifierType state) {
+/* The fold state of the file shown, created on the first change */
+static PreviewFold* shown_fold(struct PreviewFolding* f) {
+    PreviewFold* fold = g_hash_table_lookup(f->files, f->shown_path);
+    if (fold == NULL) {
+        fold = preview_fold_new(PREVIEW_FOLD_AUTO);
+        g_hash_table_insert(f->files, g_strdup(f->shown_path), fold);
+    }
+    return fold;
+}
+
+/* The fold points of the preview on screen, or NULL */
+static struct PreviewFolding* shown_folding(AppData* app) {
     struct PreviewFolding* f = app != NULL ? app->preview_folding : NULL;
-    if (f == NULL || f->shown == NULL || preview_state_raw(app) ||
-        g_strcmp0(f->shown_path, preview_state_path(app)) != 0 ||
-        (state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) != 0) {
+    if (f == NULL || f->shown == NULL || g_strcmp0(f->shown_path, preview_state_path(app)) != 0) {
+        return NULL;
+    }
+    return f;
+}
+
+/* Fold or open point, keeping the cursor on it */
+static void toggle_point(AppData* app, struct PreviewFolding* f, const PreviewFoldPoint* point) {
+    preview_fold_toggle(shown_fold(f), point->id);
+    keep_focus(app, f, point->start);
+    app_emit(app, APP_EVENT_PREVIEW_STALE);
+}
+
+gboolean preview_folding_click(AppData* app, gdouble x, gdouble y) {
+    struct PreviewFolding* f = shown_folding(app);
+    if (f == NULL) {
+        return FALSE;
+    }
+    GtkTextView* view = GTK_TEXT_VIEW(app->text_view);
+    gint bx, by;
+    gtk_text_view_window_to_buffer_coords(view, GTK_TEXT_WINDOW_WIDGET, (gint)x, (gint)y, &bx, &by);
+    GtkTextIter iter;
+    if (!gtk_text_view_get_iter_at_location(view, &iter, bx, by)) {
+        return FALSE;
+    }
+    gunichar c = gtk_text_iter_get_char(&iter);
+    if (c != g_utf8_get_char(PREVIEW_FOLD_MARK_OPEN) && c != g_utf8_get_char(PREVIEW_FOLD_MARK_CLOSED)) {
+        return FALSE;
+    }
+    gtk_text_iter_set_line_offset(&iter, 0);
+    gint offset = gtk_text_iter_get_offset(&iter);
+    const PreviewFoldPoint* point = preview_doc_fold_at(f->shown, offset);
+    if (point == NULL || point->start != offset) {
+        return FALSE; /* a twisty in the text, not on the first line of a block */
+    }
+    toggle_point(app, f, point);
+    return TRUE;
+}
+
+gboolean preview_folding_key(AppData* app, guint keyval, GdkModifierType state) {
+    struct PreviewFolding* f = shown_folding(app);
+    if (f == NULL || (state & (GDK_CONTROL_MASK | GDK_ALT_MASK)) != 0) {
         return FALSE;
     }
     gboolean back = keyval == GDK_KEY_ISO_Left_Tab ||
@@ -180,18 +230,13 @@ gboolean preview_folding_key(AppData* app, guint keyval, GdkModifierType state) 
     if (!back && point == NULL) {
         return TRUE; /* not in a block (the header line) */
     }
-    PreviewFold* fold = g_hash_table_lookup(f->files, f->shown_path);
-    if (fold == NULL) {
-        fold = preview_fold_new(PREVIEW_FOLD_AUTO);
-        g_hash_table_insert(f->files, g_strdup(f->shown_path), fold);
+    if (!back) {
+        toggle_point(app, f, point);
+        return TRUE;
     }
-    if (back) {
-        fold->level = next_level(fold->level);
-        g_hash_table_remove_all(fold->toggled);
-    } else {
-        preview_fold_toggle(fold, point->id);
-        offset = point->start;
-    }
+    PreviewFold* fold = shown_fold(f);
+    fold->level = next_level(fold->level);
+    g_hash_table_remove_all(fold->toggled);
     keep_focus(app, f, offset);
     app_emit(app, APP_EVENT_PREVIEW_STALE);
     return TRUE;

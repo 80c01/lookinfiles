@@ -7,7 +7,7 @@
 #include "preview/preview_doc.h"
 
 /* Folding of the structured previews that record fold points
- * (PreviewDoc.folds: JSON objects and arrays). The fold state is kept per
+ * (PreviewDoc.folds: JSON objects and arrays...). The fold state is kept per
  * file for the session; Tab folds or opens the block at the cursor (the
  * enclosing one from a line of values), Shift+Tab cycles the level: the
  * outer members only, two levels, everything open. Each change builds the
@@ -27,6 +27,10 @@ void preview_folding_shown(AppData* app, const PreviewDoc* doc, const gchar* pat
 /* Tab / Shift+Tab in the preview; TRUE when handled (the preview shows fold
  * points) */
 gboolean preview_folding_key(AppData* app, guint keyval, GdkModifierType state);
+
+/* Click at (x, y) in the preview (widget coordinates): on the twisty of a
+ * block (PREVIEW_FOLD_MARK_*), folds or opens it; TRUE when handled */
+gboolean preview_folding_click(AppData* app, gdouble x, gdouble y);
 
 void preview_folding_free(AppData* app);
 

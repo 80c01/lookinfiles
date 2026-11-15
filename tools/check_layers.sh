@@ -98,7 +98,8 @@ docx_styles:zip_reader,zip_xml,preview_doc,doc_writer
 preview_doc:
 doc_writer:preview_doc
 csv:preview_doc,i18n
-json_view:preview_doc,i18n
+json_view:preview_doc,data_tree,i18n
+data_tree:preview_doc,i18n
 xml_view:preview_doc,i18n
 text_outline:preview_doc,i18n
 toml_view:preview_doc,text_outline,i18n

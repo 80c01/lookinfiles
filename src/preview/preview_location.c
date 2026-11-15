@@ -72,8 +72,7 @@ void preview_location_shown(AppData* app, const PreviewDoc* doc, const gchar* pa
 
 const gchar* preview_location_current(AppData* app) {
     struct PreviewLocation* l = app != NULL ? app->preview_location : NULL;
-    if (l == NULL || l->shown == NULL || preview_state_raw(app) ||
-        g_strcmp0(l->shown_path, preview_state_path(app)) != 0) {
+    if (l == NULL || l->shown == NULL || g_strcmp0(l->shown_path, preview_state_path(app)) != 0) {
         return NULL;
     }
     return l->current;

@@ -85,7 +85,22 @@ static void test_csv(void) {
 
 static void test_json(void) {
     g_autoptr(PreviewDoc) doc = build_fixture("sample.json", FILE_KIND_JSON);
-    g_assert_true(g_str_has_prefix(doc->text->str, "Object · 10 keys\n\n{\n  \"name\": \"lookin-demo\",\n"));
+    g_assert_true(g_str_has_prefix(doc->text->str, "Object · 10 keys\n\n  name          \"lookin-demo\"\n"));
+    g_assert_nonnull(strstr(doc->text->str, "\n  ▾ 0           2 keys\n      name      \"Ada\"\n"));
+    g_assert_nonnull(preview_doc_fold_find(doc, "$.contributors[1]"));
+    g_assert_true(preview_format_has_raw_builder(FILE_KIND_JSON));
+    g_assert_false(preview_format_has_raw_builder(FILE_KIND_CSV));
+    gchar* json_path = g_build_filename("tests", "fixtures", "preview", "sample.json", NULL);
+    gchar* json_text = NULL;
+    gsize json_len = 0;
+    g_assert_true(g_file_get_contents(json_path, &json_text, &json_len, NULL));
+    PreviewInput raw_in = { .path = json_path, .name = "sample.json", .size = (gint64)json_len,
+                            .kind = FILE_KIND_JSON, .head = (const guchar*)json_text, .head_len = json_len,
+                            .text = json_text, .text_len = json_len, .raw = TRUE };
+    g_autoptr(PreviewDoc) raw = preview_format_build(&raw_in, NULL, NULL);
+    g_assert_true(g_str_has_prefix(raw->text->str, "Object · 10 keys\n\n{\n  \"name\": \"lookin-demo\",\n"));
+    g_free(json_text);
+    g_free(json_path);
     g_autoptr(PreviewDoc) lines = build_fixture("events.jsonl", FILE_KIND_JSON);
     g_assert_true(g_str_has_prefix(lines->text->str, "JSON Lines · 3 records\n"));
     g_autoptr(PreviewDoc) xml = build_fixture("sample.xml", FILE_KIND_XML);
@@ -111,8 +126,8 @@ static void test_json(void) {
     g_autoptr(PreviewDoc) big = preview_format_build_file(path, "big.json", 64 * 1024, NULL, NULL, NULL);
     g_assert_nonnull(big);
     g_assert_true(g_str_has_prefix(big->text->str, "Object · 1 key\nOnly the first "));
-    g_assert_nonnull(strstr(big->text->str, "      \"id\": 100,\n"));
-    g_assert_true(g_str_has_suffix(big->text->str, "  …\n…\n"));
+    g_assert_nonnull(strstr(big->text->str, "\n      id    100\n"));
+    g_assert_true(g_str_has_suffix(big->text->str, "…\n"));
     g_assert_nonnull(preview_doc_fold_find(big, "$.items[100]"));
     g_string_free(text, TRUE);
     g_remove(path);

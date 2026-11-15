@@ -42,7 +42,8 @@ l’encodage de texte détecté.
 
 `m` bascule entre la vue rendue et la vue brute :
 
-- Markdown, HTML, Org, CSV, JSON, XML, TOML, YAML, diffs, journaux : rendu ↔ texte source ;
+- JSON : arbre ↔ texte indenté ;
+- Markdown, HTML, Org, CSV, XML, TOML, YAML, diffs, journaux : rendu ↔ texte source ;
 - images : ajustée ↔ taille réelle ;
 - PDF : pages ↔ texte extrait ;
 - vidéo et audio : lecteur ↔ détails du fichier ;
@@ -144,12 +145,16 @@ Les modifications sont enregistrées dans le fichier. Voir
 
 ## Fichiers JSON, XML, TOML et YAML
 
-Le JSON et le XML sont affichés indentés et colorés, le TOML et le YAML tels
-qu’ils sont écrits et colorés. Leurs clés, éléments ou tables de premier
-niveau sont dans la barre de symboles (`o`). `Tab` replie ou déplie
-l’objet, le tableau, l’élément, la table, la correspondance ou la séquence
-sous le curseur (sur une ligne de valeurs ou de texte : celui qui
-l’entoure), et un bloc replié indique son nombre de clés, d’éléments ou
+Le JSON est affiché comme un arbre de clés et de valeurs sur deux
+colonnes : chaque clé indentée selon sa profondeur, la valeur colorée selon
+son type, et chaque objet ou tableau avec son nombre de clés ou d’éléments
+et une flèche ▾ / ▸ qu’un clic replie ou déplie (`m` affiche plutôt le JSON
+indenté et coloré). Le XML est affiché indenté et coloré, le TOML et le
+YAML tels qu’ils sont écrits et colorés. Leurs clés, éléments ou tables de
+premier niveau sont dans la barre de symboles (`o`). `Tab` replie ou
+déplie l’objet, le tableau, l’élément, la table, la correspondance ou la
+séquence sous le curseur (sur une ligne de valeurs ou de texte : celui qui
+l’entoure), surligné avec la ligne du curseur, et un bloc replié indique son nombre de clés, d’éléments ou
 d’enfants ; une table TOML se replie avec les tables qui en dépendent
 (`[servers.alpha]` sous `[servers]`). `Shift+Tab` affiche les membres de
 premier niveau seulement, puis deux niveaux, puis tout. Un document trop

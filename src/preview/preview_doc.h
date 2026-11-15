@@ -219,6 +219,11 @@ typedef struct {
     gboolean folded;
 } PreviewFoldPoint;
 
+/* Twisties a builder may put on the first line of a block (data trees):
+ * a click on one folds or opens the block */
+#define PREVIEW_FOLD_MARK_OPEN "\xE2\x96\xBE" /* ▾ */
+#define PREVIEW_FOLD_MARK_CLOSED "\xE2\x96\xB8" /* ▸ */
+
 /* PreviewFold.level: everything open unless the document is too long */
 #define PREVIEW_FOLD_AUTO 0
 /* PreviewFold.level: everything open */

@@ -50,6 +50,12 @@ gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, 
 gboolean json_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
                          const PreviewFold* fold, const gchar* note, GError** error);
 
+/* The same as a tree (data_tree.h): the members of the document (the
+ * records of JSON Lines, "$[n]") are the first level, with the same fold
+ * points and paths as json_view_build() */
+gboolean json_view_build_tree(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                              const PreviewFold* fold, const gchar* note, GError** error);
+
 /* --- Reading JSON values (notebooks...) --- */
 
 typedef struct JsonValue JsonValue;

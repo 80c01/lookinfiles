@@ -56,8 +56,11 @@ format.
 - EPUB books (cover, metadata, contents, first chapters) and Jupyter
   notebooks (Markdown cells with their attached pictures, highlighted code, text, image and formula outputs).
 - Data and text formats: CSV / TSV as aligned tables, JSON (also minified,
-  JSONC and JSON Lines) pretty-printed and coloured, its objects and arrays
-  folded with `Tab` / `Shift+Tab` (long documents open folded below the
+  JSONC and JSON Lines) as a tree of keys and values in two columns
+  (`data_tree`: the key indented after a ▾ / ▸ twisty, the value coloured
+  by its type, objects and arrays with their count; `m` shows it
+  pretty-printed and coloured instead), its objects and arrays folded with
+  `Tab` / `Shift+Tab` or a click on a twisty (long documents open folded below the
   deepest level that fits; the line of the cursor and the block `Tab` folds
   from it are highlighted), its outer keys in the tagbar, the path of the
   value at the cursor in the preview bar (`y` copies it); a file larger

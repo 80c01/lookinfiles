@@ -1,5 +1,6 @@
 /* JSON pretty-printing for the preview (see json_view.h). */
 #include "formats/json_view.h"
+#include "formats/data_tree.h"
 #include "core/i18n.h"
 
 #include <gio/gio.h>
@@ -497,8 +498,9 @@ gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonVie
     return json_view_append_folded(doc, text, len, FALSE, NULL, info, error);
 }
 
-gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
-                                 const PreviewFold* fold, JsonViewInfo* info, GError** error) {
+/* The values of a document (several for JSON Lines), NULL with error set
+ * when it is not JSON; *at_end: the cut text ended inside a value */
+static GPtrArray* parse_document(const gchar* text, gsize len, gboolean cut, gboolean* at_end, GError** error) {
     Parser p = { text, len, 0, error, cut, FALSE };
     GPtrArray* values = g_ptr_array_new_with_free_func(node_free);
     gboolean ok = TRUE;
@@ -529,17 +531,34 @@ gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, 
     }
     if (!ok) {
         g_ptr_array_free(values, TRUE);
-        return FALSE;
+        return NULL;
     }
+    *at_end = p.at_cut;
+    return values;
+}
 
+/* What the summary line and the fold level need */
+static JsonViewInfo document_info(GPtrArray* values, gboolean at_end) {
     JsonViewInfo result = { 0 };
     result.n_values = values->len;
     result.lines = values->len > 1;
     const JsonNode* first = g_ptr_array_index(values, 0);
     result.root = first->type == J_OBJECT ? '{' : first->type == J_ARRAY ? '[' : 0;
     result.n_root_items = first->children != NULL ? first->children->len : 0;
+    result.cut = at_end;
+    return result;
+}
+
+
+gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                                 const PreviewFold* fold, JsonViewInfo* info, GError** error) {
+    gboolean at_end = FALSE;
+    GPtrArray* values = parse_document(text, len, cut, &at_end, error);
+    if (values == NULL) {
+        return FALSE;
+    }
+    JsonViewInfo result = document_info(values, at_end);
     result.level = resolve_level(values, fold);
-    result.cut = p.at_cut;
     if (info != NULL) {
         *info = result;
     }
@@ -572,22 +591,17 @@ gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, 
     return TRUE;
 }
 
-gboolean json_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
-                         const PreviewFold* fold, const gchar* note, GError** error) {
-    g_autoptr(PreviewDoc) body = preview_doc_new();
-    JsonViewInfo info;
-    if (!json_view_append_folded(body, text, len, cut, fold, &info, error)) {
-        return FALSE;
-    }
+/* The dimmed summary line ("Object · 12 keys"), the note, then body */
+static void append_summary(PreviewDoc* doc, const JsonViewInfo* info, const gchar* note, const PreviewDoc* body) {
     doc->monospace = TRUE;
     doc->wrap = FALSE;
-    gchar* count = preview_doc_count(info.lines ? info.n_values : info.n_root_items);
-    if (info.lines) {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("JSON Lines · %s record\n", "JSON Lines · %s records\n", info.n_values), count);
-    } else if (info.root == '{') {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Object · %s key\n", "Object · %s keys\n", info.n_root_items), count);
-    } else if (info.root == '[') {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Array · %s item\n", "Array · %s items\n", info.n_root_items), count);
+    gchar* count = preview_doc_count(info->lines ? info->n_values : info->n_root_items);
+    if (info->lines) {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("JSON Lines · %s record\n", "JSON Lines · %s records\n", info->n_values), count);
+    } else if (info->root == '{') {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Object · %s key\n", "Object · %s keys\n", info->n_root_items), count);
+    } else if (info->root == '[') {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Array · %s item\n", "Array · %s items\n", info->n_root_items), count);
     }
     g_free(count);
     if (note != NULL) {
@@ -597,6 +611,98 @@ gboolean json_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean
         preview_doc_append_len(doc, "\n", 1);
     }
     preview_doc_append_doc(doc, body); /* with its fold points and paths */
+}
+
+gboolean json_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                         const PreviewFold* fold, const gchar* note, GError** error) {
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    JsonViewInfo info;
+    if (!json_view_append_folded(body, text, len, cut, fold, &info, error)) {
+        return FALSE;
+    }
+    append_summary(doc, &info, note, body);
+    return TRUE;
+}
+
+/* --- Tree --- */
+
+static PreviewStyle scalar_style(const JsonNode* node) {
+    return node->type == J_STRING ? PREVIEW_STYLE_STRING
+           : node->type == J_NUMBER ? PREVIEW_STYLE_NUMBER
+           : PREVIEW_STYLE_KEYWORD;
+}
+
+static void add_children(DataTreeNode* row, const JsonNode* node, GString* path);
+
+/* The row of node under parent, named key, at path */
+static void add_row(DataTreeNode* parent, const JsonNode* node, const gchar* key, GString* path) {
+    DataTreeKind kind = node->type == J_OBJECT ? DATA_TREE_OBJECT
+                        : node->type == J_ARRAY ? DATA_TREE_ARRAY
+                        : DATA_TREE_VALUE;
+    DataTreeNode* row = data_tree_add(parent, kind, key, path->str);
+    if (kind == DATA_TREE_VALUE) {
+        data_tree_set_value(row, node->text, (gssize)node->len, scalar_style(node));
+        return;
+    }
+    if (node->cut) {
+        data_tree_set_cut(row);
+    }
+    add_children(row, node, path);
+}
+
+/* Members by name, items by index */
+static void add_children(DataTreeNode* row, const JsonNode* node, GString* path) {
+    gsize path_len = path->len;
+    for (guint i = 0; i < node->children->len; i++) {
+        const JsonNode* child = g_ptr_array_index(node->children, i);
+        gchar* key = child->key != NULL ? json_value_dup_key(child) : g_strdup_printf("%u", i);
+        path_push(path, child, i);
+        add_row(row, child, key, path);
+        g_string_truncate(path, path_len);
+        g_free(key);
+    }
+}
+
+gboolean json_view_build_tree(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                              const PreviewFold* fold, const gchar* note, GError** error) {
+    gboolean at_end = FALSE;
+    GPtrArray* values = parse_document(text, len, cut, &at_end, error);
+    if (values == NULL) {
+        return FALSE;
+    }
+    JsonViewInfo info = document_info(values, at_end);
+    g_autoptr(DataTree) tree = data_tree_new();
+    DataTreeNode* root = data_tree_root(tree);
+    GString* path = g_string_new("$");
+    if (info.lines) {
+        for (guint i = 0; i < values->len; i++) {
+            g_string_printf(path, "$[%u]", i);
+            gchar* key = g_strdup_printf("%u", i);
+            add_row(root, g_ptr_array_index(values, i), key, path);
+            g_free(key);
+        }
+    } else {
+        const JsonNode* value = g_ptr_array_index(values, 0);
+        if (value->children != NULL) {
+            add_children(root, value, path); /* the members of the document are the first level */
+            if (value->cut) {
+                data_tree_set_cut(root);
+            }
+        } else {
+            add_row(root, value, NULL, path);
+        }
+    }
+    g_string_free(path, TRUE);
+    g_ptr_array_free(values, TRUE);
+
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    gint level = data_tree_level(tree, fold);
+    if ((fold == NULL || fold->level == PREVIEW_FOLD_AUTO) && level != PREVIEW_FOLD_OPEN) {
+        preview_doc_note(body, _("Long document: the deeper levels are folded (Tab folds or opens a "
+                                 "block, Shift+Tab changes the level)"));
+    }
+    data_tree_print(tree, body, fold, level);
+    append_summary(doc, &info, note, body);
     return TRUE;
 }
 

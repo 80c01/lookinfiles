@@ -32,6 +32,8 @@ typedef struct {
     guint page;
     /* Fold state of the formats that fold (PreviewDoc.folds), NULL: default */
     const PreviewFold* fold;
+    /* The raw view (m) of a format that has one (preview_format_has_raw_builder()) */
+    gboolean raw;
 } PreviewInput;
 
 /* Largest text a builder converts (documents, notebooks...) */
@@ -39,6 +41,10 @@ typedef struct {
 
 /* TRUE if the kind has a structured preview builder */
 gboolean preview_format_has_builder(FileKind kind);
+
+/* TRUE if the raw view (m) of the kind is built too, not shown as the
+ * file's text: JSON shows a tree, and its indented text as raw view */
+gboolean preview_format_has_raw_builder(FileKind kind);
 
 /* Build the preview of a file. NULL with error set when the content cannot
  * be shown this way (G_IO_ERROR_NOT_SUPPORTED: no builder for the kind). */

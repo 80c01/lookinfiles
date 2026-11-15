@@ -3757,11 +3757,12 @@ msgstr "Ouvrir le fichier courant dans l’éditeur (fichiers texte uniquement)"
 
 #: src/chrome/help.c:157
 msgid ""
-"Toggle rendered preview / raw view (documents, tables, JSON, diffs, logs, "
-"archives, certificates, images, PDF, video, audio)"
+"Toggle rendered preview / raw view (documents, tables, JSON tree / text, "
+"diffs, logs, archives, certificates, images, PDF, video, audio)"
 msgstr ""
-"Basculer entre l’aperçu rendu et la vue brute (documents, tableaux, JSON, "
-"diffs, journaux, archives, certificats, images, PDF, vidéo, audio)"
+"Basculer entre l’aperçu rendu et la vue brute (documents, tableaux, JSON "
+"arbre / texte, diffs, journaux, archives, certificats, images, PDF, vidéo, "
+"audio)"
 
 #: src/chrome/help.c:158
 msgid ""
@@ -9302,6 +9303,25 @@ msgid ""
 msgstr ""
 "JSON, XML, TOML, YAML : replier ou déplier le bloc sous le curseur / changer "
 "de niveau (membres de premier niveau, deux niveaux, tout déplié)"
+
+msgctxt "key"
+msgid "Click a ▾ / ▸ twisty"
+msgstr "Clic sur une flèche ▾ / ▸"
+
+msgid "JSON tree: fold or open the object or array"
+msgstr "Arbre JSON : replier ou déplier l’objet ou le tableau"
+
+#, c-format
+msgid "%u key"
+msgid_plural "%u keys"
+msgstr[0] "%u clé"
+msgstr[1] "%u clés"
+
+#, c-format
+msgid "%u item"
+msgid_plural "%u items"
+msgstr[0] "%u élément"
+msgstr[1] "%u éléments"
 
 #, c-format
 msgid "  %u key"

@@ -359,11 +359,12 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     gchar* contents = g_malloc(cap + 1);
     gsize len = fread(contents, 1, FILE_SNIFF_BYTES, fp);
     td->kind = file_kind_detect(td->name, (const guchar*)contents, len);
-    gboolean structured = !td->render_raw && preview_format_has_builder(td->kind);
+    gboolean structured = preview_format_has_builder(td->kind) &&
+                          (!td->render_raw || preview_format_has_raw_builder(td->kind));
     PreviewInput input = {
         .path = td->full, .name = td->name, .size = td->fsize, .kind = td->kind,
         .head = (const guchar*)contents, .head_len = MIN(len, FILE_SNIFF_BYTES), .page = td->page,
-        .fold = td->fold,
+        .fold = td->fold, .raw = td->render_raw,
     };
 
     if (file_kind_is_media(td->kind)) {
