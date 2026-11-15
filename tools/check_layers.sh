@@ -64,6 +64,8 @@ file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table
 git_utils:palette,i18n
 line_diff:
+latex_log:
+latex_root:
 preview_cache:
 path_kind:
 pane_geometry:
@@ -344,12 +346,13 @@ clock:core,theme
 chrome:canvas,clock,core,editor,explorer,games,git,jupyter,markup,media,notes,preview,search,sysmon,terminal,theme,widgets,workspace
 code:core,editor,formats,git,markup,preview,theme,widgets
 core:explorer,git,notes,terminal
-editor:canvas,code,core,explorer,games,git,org,preview,search,terminal,theme,vim,widgets,workspace
+editor:canvas,code,core,explorer,games,git,latex,org,preview,search,terminal,theme,vim,widgets,workspace
 explorer:chrome,code,core,editor,formats,games,git,media,notes,preview,search,terminal,theme,widgets,workspace
 formats:core,preview
 games:core,editor,explorer,theme,widgets
 git:core,theme,widgets
 jupyter:code,core,editor,formats,markup,theme,widgets
+latex:core,editor,git,preview,theme,widgets
 mail:core,office,preview
 markup:core,media,theme
 media:core,editor,preview,search,theme

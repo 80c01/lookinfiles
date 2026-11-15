@@ -184,6 +184,29 @@ the tab.
 
 `C-g` or `Esc` cancels a command in the minibuffer.
 
+## LaTeX documents
+
+Saving a `.tex` file (`Ctrl+S`, `:w`, `C-x C-s`) compiles its document in
+the background, as Overleaf does, and shows the PDF in the preview. When
+the PDF is already shown, it is reloaded on the same page.
+
+- The command is `latexmk` when it is installed, else Tectonic, else
+  `pdflatex`, `xelatex` or `lualatex` run once. The engine comes from a
+  `% !TEX program = xelatex` line, else from the packages (`fontspec`,
+  `unicode-math` and `polyglossia` need XeLaTeX; `luacode` LuaLaTeX). A
+  `latexmkrc` in the folder of the document chooses it instead.
+- A chapter is compiled through its main document: the file named by a
+  `% !TEX root = ../main.tex` line, else the document of its folder (or of
+  the folder above) that includes it with `\input` or `\include`, else
+  `main.tex`.
+- Errors, warnings and bad boxes go to the **LaTeX** tab, next to **Git
+  Commits**, with the source line of each error. `Enter` or a double click
+  opens the place in an editor tab. The tab opens by itself when there are
+  errors or warnings.
+- The files of the compilation (`.aux`, `.log`, `.synctex.gz`...) are
+  written next to the document. A save during a compilation compiles again
+  once it ends.
+
 ## Code features
 
 In source files every mode can go to a definition, list references and show

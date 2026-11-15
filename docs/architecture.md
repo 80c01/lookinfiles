@@ -32,6 +32,7 @@ The directories group modules by feature, not by layer:
 | `canvas/` | Canvas notes |
 | `games/` | games mode |
 | `jupyter/` | Jupyter notebooks edited cell by cell: the notebook model and its tab |
+| `latex/` | LaTeX documents compiled on save: log messages, main document, the LaTeX tab |
 | `terminal/` | terminal panes and the built-in terminal |
 | `workspace/` | workspaces, layouts, session |
 | `clock/` | the clock and the timers of the top bar |
@@ -245,6 +246,14 @@ Layers, from bottom to top
 - `minimap_geometry` — minimap scale, scroll offset and slider (VS Code
   style: fixed minimum scale, the minimap scrolls with the view over long
   documents), slider drag and click-to-center mapping.
+- `latex_log` — the messages of a TeX log (`latex_log_parse()`, `LatexMessage`):
+  errors (`-file-line-error` or `!` with its `l.12` source), LaTeX / package /
+  class warnings, bad boxes; lines wrapped at 79 characters joined, the file
+  of a message from the `(./file.tex ... )` nesting, repeats kept once.
+- `latex_root` — the main document of a `.tex` file: `% !TEX root` and
+  `% !TEX program` magic comments, `\documentclass`, the engine its packages
+  need (`latex_root_engine()`), the candidate that `\input`s / `\include`s a
+  chapter (`latex_root_choose()`).
 - `file_save` — `file_save_text()`: edited text written in place (the target
   of a symbolic link, permissions kept, read-only files refused, atomic).
 - `dir_scan` — explorer listings read in a worker thread (`dir_scan_read()`):
@@ -846,6 +855,19 @@ Layers, from bottom to top
   `code_nav_find()`; also highlights the other occurrences of the word at
   the cursor. Diagnostics (`publishDiagnostics`) are underlined by
   `code_intel` (tags `lsp-error`...) and shown in help cards.
+- `latex_build` — a `.tex` file saved from an editor tab
+  (`editor_save_current()` calls `latex_build_saved()`) is compiled in a
+  worker: its main document found (`latex_root`), `latexmk`, else Tectonic,
+  else the engine, run with `GSubprocess` in the document's folder (SyncTeX
+  on), its log parsed (`latex_log`); then the PDF shown in the preview
+  (`load_file_content()`, or `APP_EVENT_PREVIEW_STALE` when it is shown
+  already) and the messages given to `latex_errors`. One compilation at a
+  time: a save meanwhile compiles again when it ends.
+- `latex_errors` — the LaTeX page of the preview notebook (`app->latex_page`,
+  after the Git and result tabs): one row per message (kind icon, message,
+  file and line, the source of an error), `Enter` opens it with
+  `editor_open_at()`. Made when a compilation has errors or warnings,
+  otherwise only updated.
 - `code_refs` — the References page of the preview notebook (after the Git
   tab; `editor_detach_tabs()` and `editor_current_tab()` only touch editor
   pages, wherever they are), from the server or `code_index_references()`;

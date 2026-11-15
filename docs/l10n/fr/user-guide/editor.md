@@ -205,6 +205,31 @@ bas de l’onglet. Ses messages restent en anglais, comme dans Emacs.
 
 `C-g` ou `Esc` annule une commande dans le minibuffer.
 
+## Documents LaTeX
+
+Enregistrer un fichier `.tex` (`Ctrl+S`, `:w`, `C-x C-s`) compile son
+document en arrière-plan, comme Overleaf, et affiche le PDF dans l’aperçu.
+Quand le PDF est déjà affiché, il est rechargé à la même page.
+
+- La commande est `latexmk` s’il est installé, sinon Tectonic, sinon
+  `pdflatex`, `xelatex` ou `lualatex` lancé une fois. Le moteur vient d’une
+  ligne `% !TEX program = xelatex`, sinon des paquets (`fontspec`,
+  `unicode-math` et `polyglossia` demandent XeLaTeX ; `luacode` LuaLaTeX).
+  Un `latexmkrc` dans le dossier du document le choisit à la place.
+- Un chapitre est compilé par son document principal : le fichier nommé par
+  une ligne `% !TEX root = ../main.tex`, sinon le document de son dossier
+  (ou du dossier au-dessus) qui l’inclut avec `\input` ou `\include`,
+  sinon `main.tex`.
+- Les erreurs, avertissements et boîtes mal remplies vont dans l’onglet
+  **LaTeX**, à côté de **Commits Git**, avec la ligne source de chaque
+  erreur. `Enter` ou un double-clic ouvre l’endroit dans un onglet
+  d’édition.
+  L’onglet s’ouvre de lui-même quand il y a des erreurs ou des
+  avertissements.
+- Les fichiers de la compilation (`.aux`, `.log`, `.synctex.gz`...) sont
+  écrits à côté du document. Un enregistrement pendant une compilation
+  recompile à la fin de celle-ci.
+
 ## Fonctions pour le code
 
 Dans les fichiers source, chaque mode peut aller à une définition, lister

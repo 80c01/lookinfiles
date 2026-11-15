@@ -15,6 +15,7 @@
 #include "explorer/nav_history.h"
 #include "editor/editor_view.h"
 #include "theme/icons.h"
+#include "latex/latex_build.h"
 
 
 /* Show or hide the line numbers of tab (NULL: the current editor tab) */
@@ -1008,6 +1009,7 @@ gboolean editor_save_current(AppData* app) {
             app->file_dirty = FALSE;
             app_emit(app, APP_EVENT_PREVIEW_STALE);
         }
+        latex_build_saved(app, tab->path);
         if (tab->view != NULL) {
             gtk_widget_grab_focus(tab->view);
         }

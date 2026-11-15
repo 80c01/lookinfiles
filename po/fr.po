@@ -9489,3 +9489,40 @@ msgstr "Présentation OpenDocument"
 
 msgid "not an OpenDocument presentation"
 msgstr "pas une présentation OpenDocument"
+
+msgid "%u bad box"
+msgid_plural "%u bad boxes"
+msgstr[0] "%u boîte mal remplie"
+msgstr[1] "%u boîtes mal remplies"
+
+msgid "no errors"
+msgstr "aucune erreur"
+
+msgid "LaTeX"
+msgstr "LaTeX"
+
+msgid "Close LaTeX"
+msgstr "Fermer LaTeX"
+
+msgid "Compiling %s…"
+msgstr "Compilation de %s…"
+
+msgid "The compilation failed"
+msgstr "La compilation a échoué"
+
+msgid "%s: no main document found (add a “%% !TEX root = main.tex” line)"
+msgstr "%s : aucun document principal trouvé (ajoutez une ligne « %% !TEX root = main.tex »)"
+
+msgid "No LaTeX compiler found: install latexmk (TeX Live) or Tectonic"
+msgstr "Aucun compilateur LaTeX trouvé : installez latexmk (TeX Live) ou Tectonic"
+
+msgid "%1$s: %2$u error (LaTeX tab)"
+msgid_plural "%1$s: %2$u errors (LaTeX tab)"
+msgstr[0] "%1$s : %2$u erreur (onglet LaTeX)"
+msgstr[1] "%1$s : %2$u erreurs (onglet LaTeX)"
+
+msgid "%s: the compilation failed (LaTeX tab)"
+msgstr "%s : la compilation a échoué (onglet LaTeX)"
+
+msgid "%s compiled"
+msgstr "%s compilé"

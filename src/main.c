@@ -51,6 +51,7 @@
 #include "notes/note_types.h"
 #include "code/code_intel.h"
 #include "code/code_nav.h"
+#include "latex/latex_build.h"
 #include "editor/editor_modes.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -703,6 +704,7 @@ int main(int argc, char** argv) {
     video_preview_free(app);
     editor_save_all_buffers(app);
     code_intel_shutdown(app);   /* language servers: shutdown, exit */
+    latex_build_free(app);      /* a running compilation stopped */
     fs_watch_free(app);
     git_tab_cleanup(app);
     panels_free(app);
