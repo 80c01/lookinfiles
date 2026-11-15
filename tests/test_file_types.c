@@ -110,7 +110,7 @@ static void test_detect_text(void) {
                     ==, FILE_KIND_IMAGE);
     g_assert_cmpint(DETECT("logo.svg", "<svg>"), ==, FILE_KIND_IMAGE);
     g_assert_cmpint(DETECT("icon.xpm", "/* XPM */\nstatic char* x[] = {"), ==, FILE_KIND_IMAGE);
-    g_assert_cmpint(DETECT("data.xml", "<?xml version=\"1.0\"?><root/>"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(DETECT("data.xml", "<?xml version=\"1.0\"?><root/>"), ==, FILE_KIND_XML); /* not an image */
 }
 
 static void test_detect_binary(void) {
@@ -207,6 +207,15 @@ static void test_detect_text_formats(void) {
     g_assert_cmpint(DETECT("data.json", "{\"a\": 1}"), ==, FILE_KIND_JSON);
     g_assert_cmpint(DETECT("config", "{\n  \"a\": 1}"), ==, FILE_KIND_JSON);
     g_assert_cmpint(DETECT("list", "[{\"a\": 1}]"), ==, FILE_KIND_JSON);
+    /* XML: by name, or an XML declaration under any name (not HTML or SVG) */
+    g_assert_cmpint(DETECT("pom.xml", "<project>"), ==, FILE_KIND_XML);
+    g_assert_cmpint(DETECT("App.csproj", "<Project Sdk=\"x\">"), ==, FILE_KIND_XML);
+    g_assert_cmpint(DETECT("feed", "<?xml version=\"1.0\"?>\n<feed>"), ==, FILE_KIND_XML);
+    g_assert_cmpint(DETECT("strings.ts", "\xEF\xBB\xBF<?xml version=\"1.0\"?><TS>"), ==, FILE_KIND_XML);
+    g_assert_cmpint(DETECT("page.xhtml", "<?xml version=\"1.0\"?><html>"), ==, FILE_KIND_HTML);
+    g_assert_cmpint(DETECT("note", "<?xmlish"), ==, FILE_KIND_TEXT);
+    g_assert_cmpint(file_kind_detect("e.xml", NULL, 0), ==, FILE_KIND_XML);
+    g_assert_true(file_kind_is_text(FILE_KIND_XML));
     g_assert_cmpint(DETECT("settings.ini", "[section]\nkey=1"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("main.js", "{\"a\": 1}"), ==, FILE_KIND_TEXT);
     g_assert_cmpint(DETECT("nb.ipynb", "{\n \"cells\": ["), ==, FILE_KIND_NOTEBOOK);

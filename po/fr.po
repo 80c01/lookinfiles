@@ -9297,11 +9297,11 @@ msgid "%s has never been saved. Save it before closing?"
 msgstr "%s n’a jamais été enregistré. L’enregistrer avant de le fermer ?"
 
 msgid ""
-"JSON: fold or open the object or array at the cursor / cycle the level "
-"(outer members, two levels, all open)"
+"JSON, XML: fold or open the block at the cursor / cycle the level (outer "
+"members, two levels, all open)"
 msgstr ""
-"JSON : replier ou déplier l’objet ou le tableau sous le curseur / changer "
-"de niveau (membres de premier niveau, deux niveaux, tout déplié)"
+"JSON, XML : replier ou déplier le bloc sous le curseur / changer de niveau "
+"(membres de premier niveau, deux niveaux, tout déplié)"
 
 #, c-format
 msgid "  %u key"
@@ -9322,10 +9322,12 @@ msgstr ""
 "Long document : les niveaux profonds sont repliés (Tab replie ou déplie un "
 "bloc, Shift+Tab change de niveau)"
 
-msgid "JSON: copy the path of the value at the cursor (shown in the preview bar)"
+msgid ""
+"JSON, XML: copy the path of the value at the cursor (shown in the preview "
+"bar)"
 msgstr ""
-"JSON : copier le chemin de la valeur sous le curseur (affiché dans la barre "
-"de l’aperçu)"
+"JSON, XML : copier le chemin de la valeur sous le curseur (affiché dans la "
+"barre de l’aperçu)"
 
 msgid "Path of the value at the cursor (y copies it)"
 msgstr "Chemin de la valeur sous le curseur (y le copie)"
@@ -9334,3 +9336,67 @@ msgstr "Chemin de la valeur sous le curseur (y le copie)"
 #, c-format
 msgid "Copied %s"
 msgstr "%s copié"
+
+#. TRANSLATORS: %1$s is the name of the outer element, %2$s the number of elements
+#, c-format
+msgid "XML · <%1$s> · %2$s element\n"
+msgid_plural "XML · <%1$s> · %2$s elements\n"
+msgstr[0] "XML · <%1$s> · %2$s élément\n"
+msgstr[1] "XML · <%1$s> · %2$s éléments\n"
+
+#, c-format
+msgid "  %u element"
+msgid_plural "  %u elements"
+msgstr[0] "  %u élément"
+msgstr[1] "  %u éléments"
+
+msgid "expected a tag name"
+msgstr "nom de balise attendu"
+
+msgid "missing >"
+msgstr "> manquant"
+
+msgid "expected />"
+msgstr "/> attendu"
+
+msgid "expected an attribute name"
+msgstr "nom d’attribut attendu"
+
+msgid "expected ="
+msgstr "= attendu"
+
+msgid "expected a quoted value"
+msgstr "valeur entre guillemets attendue"
+
+msgid "unterminated value"
+msgstr "valeur non terminée"
+
+msgid "expected >"
+msgstr "> attendu"
+
+#, c-format
+msgid "expected </%s>"
+msgstr "</%s> attendu"
+
+#, c-format
+msgid "unexpected </%s>"
+msgstr "</%s> inattendu"
+
+msgid "text outside the root element"
+msgstr "texte en dehors de l’élément racine"
+
+msgid "unterminated comment"
+msgstr "commentaire non terminé"
+
+msgid "unterminated CDATA section"
+msgstr "section CDATA non terminée"
+
+msgid "unterminated processing instruction"
+msgstr "instruction de traitement non terminée"
+
+#, c-format
+msgid "missing </%s>"
+msgstr "</%s> manquant"
+
+msgid "no XML element"
+msgstr "aucun élément XML"

@@ -222,6 +222,16 @@ static const struct {
     { "json", FILE_KIND_JSON }, { "jsonl", FILE_KIND_JSON }, { "ndjson", FILE_KIND_JSON },
     { "geojson", FILE_KIND_JSON }, { "jsonc", FILE_KIND_JSON }, { "json5", FILE_KIND_JSON },
     { "webmanifest", FILE_KIND_JSON }, { "har", FILE_KIND_JSON },
+    { "xml", FILE_KIND_XML }, { "xsd", FILE_KIND_XML }, { "xsl", FILE_KIND_XML }, { "xslt", FILE_KIND_XML },
+    { "wsdl", FILE_KIND_XML }, { "xaml", FILE_KIND_XML }, { "csproj", FILE_KIND_XML },
+    { "vbproj", FILE_KIND_XML }, { "fsproj", FILE_KIND_XML }, { "vcxproj", FILE_KIND_XML },
+    { "props", FILE_KIND_XML }, { "targets", FILE_KIND_XML }, { "nuspec", FILE_KIND_XML },
+    { "resx", FILE_KIND_XML }, { "plist", FILE_KIND_XML }, { "gpx", FILE_KIND_XML }, { "kml", FILE_KIND_XML },
+    { "rss", FILE_KIND_XML }, { "atom", FILE_KIND_XML }, { "opml", FILE_KIND_XML }, { "xlf", FILE_KIND_XML },
+    { "xliff", FILE_KIND_XML }, { "glade", FILE_KIND_XML }, { "xib", FILE_KIND_XML },
+    { "storyboard", FILE_KIND_XML }, { "rdf", FILE_KIND_XML }, { "xspf", FILE_KIND_XML },
+    { "xul", FILE_KIND_XML }, { "musicxml", FILE_KIND_XML }, { "fodt", FILE_KIND_XML },
+    { "fods", FILE_KIND_XML }, { "fodp", FILE_KIND_XML },
     { "ipynb", FILE_KIND_NOTEBOOK },
     { "diff", FILE_KIND_DIFF }, { "patch", FILE_KIND_DIFF }, { "rej", FILE_KIND_DIFF },
     { "log", FILE_KIND_LOG },
@@ -336,6 +346,7 @@ gboolean file_kind_is_text(FileKind kind) {
     case FILE_KIND_ORG:
     case FILE_KIND_CSV:
     case FILE_KIND_JSON:
+    case FILE_KIND_XML:
     case FILE_KIND_NOTEBOOK:
     case FILE_KIND_DIFF:
     case FILE_KIND_LOG:
@@ -375,6 +386,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_CERTIFICATE:  return NC_("file kind", "Certificate");
     case FILE_KIND_CSV:          return "CSV";
     case FILE_KIND_JSON:         return "JSON";
+    case FILE_KIND_XML:          return "XML";
     case FILE_KIND_NOTEBOOK:     return "Jupyter";
     case FILE_KIND_DIFF:         return NC_("file kind", "Diff");
     case FILE_KIND_LOG:          return NC_("file kind", "Log");
@@ -724,8 +736,13 @@ static FileKind detect_text_format(const gchar* name, const guchar* head, gsize 
                                    FileKind by_name) {
     /* A name that already says which text format wins over content guesses */
     if (by_name == FILE_KIND_MARKDOWN || by_name == FILE_KIND_ORG || by_name == FILE_KIND_HTML ||
-        by_name == FILE_KIND_CSV || by_name == FILE_KIND_JSON || by_name == FILE_KIND_LOG) {
+        by_name == FILE_KIND_CSV || by_name == FILE_KIND_JSON || by_name == FILE_KIND_LOG ||
+        by_name == FILE_KIND_XML) {
         return by_name;
+    }
+    /* An XML declaration: any name (HTML and SVG are recognised before) */
+    if (HAS(start, "<?xml") && start + 5 < len && g_ascii_isspace(head[start + 5])) {
+        return FILE_KIND_XML;
     }
     if (HAS(start, "-----BEGIN ")) {
         return FILE_KIND_CERTIFICATE;
@@ -812,6 +829,7 @@ FileKind file_kind_detect(const gchar* name, const guchar* head, gsize len) {
     case FILE_KIND_HTML:
     case FILE_KIND_CSV:
     case FILE_KIND_JSON:
+    case FILE_KIND_XML:
     case FILE_KIND_DIFF:
     case FILE_KIND_LOG:
     case FILE_KIND_TRANSLATION:

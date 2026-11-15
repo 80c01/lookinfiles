@@ -13,6 +13,7 @@
     cp "$ROOT/tests/ui/fixtures/report.docx" 03-report.docx
     cp "$ROOT/tests/fixtures/preview/sample.csv" 04-orders.csv
     cp "$ROOT/tests/fixtures/preview/sample.json" 05-package.json
+    cp "$ROOT/tests/fixtures/preview/sample.xml" 05-package.xml   # sorts right after the JSON
     cp "$ROOT/tests/fixtures/preview/fix-parser.patch" 06-fix-parser.patch
     cp "$ROOT/tests/fixtures/preview/sample.zip" 07-sources.zip
     cp "$ROOT/tests/fixtures/preview/sample.tar.gz" 08-sources.tar.gz
@@ -81,6 +82,7 @@ format_scenario() {
     key End; key y;     shot fmt_json_copy_path     # path of the value at the cursor copied
     key shift+Tab; key shift+Tab                    # two levels, then all open again
     key alt+Left                                    # back to the explorer
+    key Down;           shot fmt_xml_pretty
     key Down;           shot fmt_diff
     key Down;           shot fmt_zip
     key Down;           shot fmt_tar_gz

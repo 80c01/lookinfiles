@@ -43,6 +43,13 @@ gboolean json_view_append(PreviewDoc* doc, const gchar* text, gsize len, JsonVie
 gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
                                  const PreviewFold* fold, JsonViewInfo* info, GError** error);
 
+/* The whole preview of a JSON file in doc (monospace, not wrapped): a
+ * dimmed summary line ("Object · 12 keys", "JSON Lines · 30 records"), the
+ * note if not NULL (the text was cut), then json_view_append_folded().
+ * FALSE with error set when the text is not JSON. */
+gboolean json_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                         const PreviewFold* fold, const gchar* note, GError** error);
+
 /* --- Reading JSON values (notebooks...) --- */
 
 typedef struct JsonValue JsonValue;

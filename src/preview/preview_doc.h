@@ -267,6 +267,9 @@ void preview_doc_add_path(PreviewDoc* doc, gint start, const gchar* path);
 /* Path of the value at offset (the last line started at or before it), or NULL */
 const gchar* preview_doc_path_at(const PreviewDoc* doc, gint offset);
 
+/* "1,234,567": a count with thousands separators. Caller frees. */
+gchar* preview_doc_count(guint64 n);
+
 /* Approximate memory held by a document (cache accounting) */
 gsize preview_doc_size(const PreviewDoc* doc);
 

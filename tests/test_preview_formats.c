@@ -88,6 +88,10 @@ static void test_json(void) {
     g_assert_true(g_str_has_prefix(doc->text->str, "Object · 10 keys\n\n{\n  \"name\": \"lookin-demo\",\n"));
     g_autoptr(PreviewDoc) lines = build_fixture("events.jsonl", FILE_KIND_JSON);
     g_assert_true(g_str_has_prefix(lines->text->str, "JSON Lines · 3 records\n"));
+    g_autoptr(PreviewDoc) xml = build_fixture("sample.xml", FILE_KIND_XML);
+    g_assert_true(g_str_has_prefix(xml->text->str, "XML · <feed> · 12 elements\n\n<?xml version"));
+    g_assert_nonnull(strstr(xml->text->str, "\n    <title>Paths in the status bar</title>\n"));
+    g_assert_nonnull(preview_doc_fold_find(xml, "/feed/entry[2]"));
 
     /* Larger than what the viewer reads: shown up to the cut, foldable */
     gchar* dir = g_dir_make_tmp("pf-XXXXXX", NULL);

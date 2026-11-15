@@ -19,6 +19,7 @@
 #include "formats/gettext_view.h"
 #include "formats/hex_dump.h"
 #include "formats/json_view.h"
+#include "formats/xml_view.h"
 #include "formats/log_view.h"
 #include "formats/man_view.h"
 #include "formats/notebook.h"
@@ -47,19 +48,6 @@ gchar* preview_format_size(gint64 size) {
     return size < 0 ? g_strdup("") : g_format_size((guint64)size);
 }
 
-/* "12,345" */
-static gchar* format_count(guint64 n) {
-    gchar* digits = g_strdup_printf("%" G_GUINT64_FORMAT, n);
-    gsize len = strlen(digits);
-    GString* out = g_string_new(NULL);
-    for (gsize i = 0; i < len; i++) {
-        if (i > 0 && (len - i) % 3 == 0) g_string_append_c(out, ',');
-        g_string_append_c(out, digits[i]);
-    }
-    g_free(digits);
-    return g_string_free(out, FALSE);
-}
-
 /* TRUE if the first bytes are an OpenDocument package (mimetype entry
  * first); the bytes hold NULs, so no string search */
 static gboolean is_opendocument(const PreviewInput* in) {
@@ -72,16 +60,19 @@ static gboolean is_opendocument(const PreviewInput* in) {
 }
 
 /* Dimmed note saying only the start of the file was read */
-static void note_truncated_text(PreviewDoc* doc, const PreviewInput* in) {
-    if (in->text_truncated) {
-        gchar* shown = g_format_size(in->text_len);
-        gchar* total = preview_format_size(in->size);
-        gchar* note = g_strdup_printf(_("Only the first %1$s of %2$s were read."), shown, total);
-        preview_doc_note(doc, note);
-        g_free(note);
-        g_free(total);
-        g_free(shown);
+/* "Only the first … were read." for a text cut at PREVIEW_BYTES, else NULL. Caller frees. */
+static gchar* truncated_note(const PreviewInput* in) {
+    if (!in->text_truncated) {
+        return NULL;
     }
+    g_autofree gchar* shown = g_format_size(in->text_len);
+    g_autofree gchar* total = preview_format_size(in->size);
+    return g_strdup_printf(_("Only the first %1$s of %2$s were read."), shown, total);
+}
+
+static void note_truncated_text(PreviewDoc* doc, const PreviewInput* in) {
+    g_autofree gchar* note = truncated_note(in);
+    if (note != NULL) preview_doc_note(doc, note);
 }
 
 /* Append the text and spans of src to doc */
@@ -115,8 +106,8 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     guint body_rows = data->n_rows - (header ? 1 : 0);
 
     PreviewDoc* doc = preview_doc_new();
-    gchar* rows = format_count(body_rows);
-    gchar* cols = format_count(data->n_cols);
+    gchar* rows = preview_doc_count(body_rows);
+    gchar* cols = preview_doc_count(data->n_cols);
     gchar* rows_text = g_strdup_printf(ngettext("%s row", "%s rows", body_rows), rows);
     gchar* cols_text = g_strdup_printf(ngettext("%s column", "%s columns", data->n_cols), cols);
     const gchar* sep_name = g_dpgettext2(NULL, "csv separator", csv_separator_name(sep));
@@ -144,7 +135,7 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     }
     preview_doc_add_table(doc, table);
     if (body_rows > TABLE_MAX_ROWS) {
-        gchar* shown = format_count(TABLE_MAX_ROWS);
+        gchar* shown = preview_doc_count(TABLE_MAX_ROWS);
         gchar* note = g_strdup_printf(_("\nShowing the first %s rows."), shown);
         preview_doc_note(doc, note);
         g_free(note);
@@ -156,33 +147,26 @@ static PreviewDoc* build_csv(const PreviewInput* in, GCancellable* cancellable, 
     return doc;
 }
 
-/* --- JSON --- */
+/* --- JSON, XML --- */
 
 static PreviewDoc* build_json(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
-    g_autoptr(PreviewDoc) body = preview_doc_new();
-    JsonViewInfo info;
-    if (!json_view_append_folded(body, in->text, in->text_len, in->text_truncated, in->fold, &info, error)) {
+    g_autofree gchar* note = truncated_note(in);
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    if (!json_view_build(doc, in->text, in->text_len, in->text_truncated, in->fold, note, error)) {
         return NULL;
     }
-    PreviewDoc* doc = preview_doc_new();
-    doc->monospace = TRUE;
-    doc->wrap = FALSE;
-    gchar* count = format_count(info.lines ? info.n_values : info.n_root_items);
-    if (info.lines) {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("JSON Lines · %s record\n", "JSON Lines · %s records\n", info.n_values), count);
-    } else if (info.root == '{') {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Object · %s key\n", "Object · %s keys\n", info.n_root_items), count);
-    } else if (info.root == '[') {
-        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Array · %s item\n", "Array · %s items\n", info.n_root_items), count);
+    return g_steal_pointer(&doc);
+}
+
+static PreviewDoc* build_xml(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    (void)cancellable;
+    g_autofree gchar* note = truncated_note(in);
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    if (!xml_view_build(doc, in->text, in->text_len, in->text_truncated, in->fold, note, error)) {
+        return NULL;
     }
-    g_free(count);
-    note_truncated_text(doc, in);
-    if (doc->text->len > 0) {
-        preview_doc_append_len(doc, "\n", 1);
-    }
-    preview_doc_append_doc(doc, body); /* with its fold points */
-    return doc;
+    return g_steal_pointer(&doc);
 }
 
 /* --- Diff / patch --- */
@@ -305,7 +289,7 @@ static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellab
         return doc;
     }
 
-    gchar* files = format_count(l->n_files);
+    gchar* files = preview_doc_count(l->n_files);
     gchar* files_text = g_strdup_printf(ngettext("%s file", "%s files", l->n_files), files);
     gchar* dirs_text = g_strdup_printf(ngettext("%u folder", "%u folders", l->n_dirs), l->n_dirs);
     /* TRANSLATORS: "12 files, 3 folders" */
@@ -370,7 +354,7 @@ static PreviewDoc* build_archive(const PreviewInput* in, GCancellable* cancellab
     }
     preview_doc_add_table(doc, table);
     if (l->n_entries > l->entries->len || l->incomplete) {
-        gchar* shown = format_count(l->entries->len);
+        gchar* shown = preview_doc_count(l->entries->len);
         gchar* note = g_strdup_printf(l->incomplete ? _("\nShowing the first %s entries (the archive was not read to the end).")
                                                     : _("\nShowing the first %s entries."),
                                       shown);
@@ -482,7 +466,7 @@ static PreviewDoc* build_log(const PreviewInput* in, GCancellable* cancellable, 
     doc->monospace = TRUE;
     doc->wrap = FALSE;
     doc->scroll_to_end = TRUE;
-    gchar* lines = format_count(stats.lines);
+    gchar* lines = preview_doc_count(stats.lines);
     gint start = preview_doc_offset(doc);
     preview_doc_appendf(doc, PREVIEW_STYLE_PLAIN,
                         (tail != NULL || in->text_truncated) ? ngettext("last %s line", "last %s lines", stats.lines)
@@ -600,7 +584,7 @@ static PreviewDoc* build_font(const PreviewInput* in, GCancellable* cancellable,
     preview_doc_field(doc, _("Designer"), info->designer);
     preview_doc_field(doc, _("Foundry"), info->manufacturer);
     if (info->n_glyphs > 0) {
-        gchar* glyphs = format_count(info->n_glyphs);
+        gchar* glyphs = preview_doc_count(info->n_glyphs);
         preview_doc_field(doc, _("Glyphs"), glyphs);
         g_free(glyphs);
     }
@@ -1078,6 +1062,7 @@ static PreviewBuildFunc builder_for(FileKind kind) {
     case FILE_KIND_DOCUMENT:     return build_document;
     case FILE_KIND_CSV:          return build_csv;
     case FILE_KIND_JSON:         return build_json;
+    case FILE_KIND_XML:          return build_xml;
     case FILE_KIND_DIFF:         return build_diff;
     case FILE_KIND_ARCHIVE:      return build_archive;
     case FILE_KIND_CERTIFICATE:  return build_certificate;

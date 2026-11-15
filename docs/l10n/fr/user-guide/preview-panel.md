@@ -24,7 +24,7 @@ comment se servir du panneau.
 | Tableurs (`.xlsx`, `.ods`, `.xls`), CSV | Une grille avec les lettres des colonnes |
 | Présentations (`.pptx`, `.ppt`, `.odp`) | Les diapositives, une par une, avec les notes de l’orateur |
 | Courrier (`.eml`, `.msg`) et boîtes aux lettres | Les en-têtes, le texte, les pièces jointes ; les images distantes ne sont jamais chargées |
-| JSON, journaux, diffs, pages de manuel, agendas, contacts | Mis en forme et colorés |
+| JSON, XML, journaux, diffs, pages de manuel, agendas, contacts | Mis en forme et colorés |
 | Archives (`.zip`, `.tar.gz`, `.deb`…) | La liste des fichiers, avec tailles et dates |
 | Certificats et clés | Sujet, émetteur, validité, empreintes |
 | Polices | Noms, détails et échantillons |
@@ -42,7 +42,7 @@ l’encodage de texte détecté.
 
 `m` bascule entre la vue rendue et la vue brute :
 
-- Markdown, HTML, Org, CSV, JSON, diffs, journaux : rendu ↔ texte source ;
+- Markdown, HTML, Org, CSV, JSON, XML, diffs, journaux : rendu ↔ texte source ;
 - images : ajustée ↔ taille réelle ;
 - PDF : pages ↔ texte extrait ;
 - vidéo et audio : lecteur ↔ détails du fichier ;
@@ -142,22 +142,25 @@ L’aperçu Org-mode s’utilise sans ouvrir d’éditeur :
 Les modifications sont enregistrées dans le fichier. Voir
 [Org-mode](org-mode.md) pour l’édition.
 
-## Fichiers JSON
+## Fichiers JSON et XML
 
-Le JSON est affiché indenté et coloré, ses clés de premier niveau dans la
-barre de symboles (`o`). `Tab` replie ou déplie l’objet ou le tableau sous
-le curseur (sur une ligne de valeurs : celui qui l’entoure), et un bloc
-replié indique son nombre de clés ou d’éléments. `Shift+Tab` affiche les
-membres de premier niveau seulement, puis deux niveaux, puis tout. Un
-document trop long pour être affiché en entier s’ouvre replié sous le
-niveau le plus profond qui tient. Les replis de chaque fichier sont gardés
-jusqu’à la fermeture de LookinFiles.
+Le JSON et le XML sont affichés indentés et colorés, leurs clés ou éléments
+de premier niveau dans la barre de symboles (`o`). `Tab` replie ou déplie
+l’objet, le tableau ou l’élément sous le curseur (sur une ligne de valeurs
+ou de texte : celui qui l’entoure), et un bloc replié indique son nombre de
+clés, d’éléments ou d’enfants. `Shift+Tab` affiche les membres de premier
+niveau seulement, puis deux niveaux, puis tout. Un document trop long pour
+être affiché en entier s’ouvre replié sous le niveau le plus profond qui
+tient. Les replis de chaque fichier sont gardés jusqu’à la fermeture de
+LookinFiles.
 
 La barre du bas affiche le chemin de la valeur sous le curseur, par exemple
-`$.servers[2].host` ; `y` (ou **Copier le chemin** dans le menu du clic
-droit) le copie. Un fichier JSON de plus de 512 Ko
-affiche ses 64 premiers Ko, les valeurs ouvertes à cet endroit se terminant
-par `…` ; **Charger tout le fichier** l’affiche en entier.
+`$.servers[2].host` en JSON ou `/feed/entry[2]/title` en XML ; `y` (ou
+**Copier le chemin** dans le menu du clic droit) le copie. Un fichier de
+plus de 512 Ko affiche ses 64 premiers Ko, les valeurs ouvertes à cet
+endroit se terminant par `…` ; **Charger tout le fichier** l’affiche en
+entier. Un fichier qui n’est pas du JSON ou du XML valide est affiché comme
+texte.
 
 ## Gros fichiers
 

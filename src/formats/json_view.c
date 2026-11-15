@@ -572,6 +572,34 @@ gboolean json_view_append_folded(PreviewDoc* doc, const gchar* text, gsize len, 
     return TRUE;
 }
 
+gboolean json_view_build(PreviewDoc* doc, const gchar* text, gsize len, gboolean cut,
+                         const PreviewFold* fold, const gchar* note, GError** error) {
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    JsonViewInfo info;
+    if (!json_view_append_folded(body, text, len, cut, fold, &info, error)) {
+        return FALSE;
+    }
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* count = preview_doc_count(info.lines ? info.n_values : info.n_root_items);
+    if (info.lines) {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("JSON Lines · %s record\n", "JSON Lines · %s records\n", info.n_values), count);
+    } else if (info.root == '{') {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Object · %s key\n", "Object · %s keys\n", info.n_root_items), count);
+    } else if (info.root == '[') {
+        preview_doc_appendf(doc, PREVIEW_STYLE_DIM, ngettext("Array · %s item\n", "Array · %s items\n", info.n_root_items), count);
+    }
+    g_free(count);
+    if (note != NULL) {
+        preview_doc_note(doc, note);
+    }
+    if (doc->text->len > 0) {
+        preview_doc_append_len(doc, "\n", 1);
+    }
+    preview_doc_append_doc(doc, body); /* with its fold points and paths */
+    return TRUE;
+}
+
 /* --- Reading values --- */
 
 JsonValue* json_value_parse(const gchar* text, gsize len, GError** error) {

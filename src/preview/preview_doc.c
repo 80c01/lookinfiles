@@ -271,6 +271,18 @@ const gchar* preview_doc_path_at(const PreviewDoc* doc, gint offset) {
     return lo > 0 ? g_array_index(doc->paths, PreviewPathPoint, lo - 1).path : NULL;
 }
 
+gchar* preview_doc_count(guint64 n) {
+    gchar* digits = g_strdup_printf("%" G_GUINT64_FORMAT, n);
+    gsize len = strlen(digits);
+    GString* out = g_string_new(NULL);
+    for (gsize i = 0; i < len; i++) {
+        if (i > 0 && (len - i) % 3 == 0) g_string_append_c(out, ',');
+        g_string_append_c(out, digits[i]);
+    }
+    g_free(digits);
+    return g_string_free(out, FALSE);
+}
+
 gsize preview_doc_size(const PreviewDoc* doc) {
     if (doc == NULL) {
         return 0;

@@ -23,7 +23,7 @@ panel.
 | Spreadsheets (`.xlsx`, `.ods`, `.xls`), CSV | A grid with column letters |
 | Presentations (`.pptx`, `.ppt`, `.odp`) | The slides, one by one, with speaker notes |
 | Mail (`.eml`, `.msg`) and mailboxes | The headers, the text, the attachments; remote images are never loaded |
-| JSON, logs, diffs, man pages, calendars, contacts | Formatted and coloured |
+| JSON, XML, logs, diffs, man pages, calendars, contacts | Formatted and coloured |
 | Archives (`.zip`, `.tar.gz`, `.deb`...) | The list of files, with sizes and dates |
 | Certificates and keys | Subject, issuer, validity, fingerprints |
 | Fonts | Names, details and samples |
@@ -41,7 +41,7 @@ size and the detected text encoding.
 
 `m` switches between the rendered view and the raw one:
 
-- Markdown, HTML, Org, CSV, JSON, diffs, logs: rendered ↔ source text;
+- Markdown, HTML, Org, CSV, JSON, XML, diffs, logs: rendered ↔ source text;
 - images: fitted ↔ actual size;
 - PDF: pages ↔ extracted text;
 - video and audio: player ↔ file details;
@@ -130,20 +130,21 @@ The Org-mode preview can be used without opening an editor:
 
 The changes are saved to the file. See [Org-mode](org-mode.md) for editing.
 
-## JSON files
+## JSON and XML files
 
-JSON is shown indented and coloured, its outer keys in the tagbar (`o`).
-`Tab` folds or opens the object or array at the cursor (on a line of values:
-the one around it), and a folded one shows how many keys or items it has.
-`Shift+Tab` shows the outer members only, then two levels, then everything.
-A document too long to show open starts folded below the deepest level that
-fits. The folds of each file are kept until LookinFiles quits.
+JSON and XML are shown indented and coloured, their outer keys or elements
+in the tagbar (`o`). `Tab` folds or opens the object, array or element at
+the cursor (on a line of values or text: the one around it), and a folded
+one shows how many keys, items or elements it has. `Shift+Tab` shows the
+outer members only, then two levels, then everything. A document too long
+to show open starts folded below the deepest level that fits. The folds of
+each file are kept until LookinFiles quits.
 
 The bar at the bottom shows the path of the value at the cursor, such as
-`$.servers[2].host`; `y` (or **Copy Path** in the right-click menu) copies
-it. A JSON file
-over 512 KB shows its first 64 KB, the values open there ending with `…`;
-**Load Whole File** shows all of it.
+`$.servers[2].host` in JSON or `/feed/entry[2]/title` in XML; `y` (or
+**Copy Path** in the right-click menu) copies it. A file over 512 KB shows
+its first 64 KB, the values open there ending with `…`; **Load Whole File**
+shows all of it. A file that is not valid JSON or XML is shown as text.
 
 ## Large files
 
