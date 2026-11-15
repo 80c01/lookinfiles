@@ -66,6 +66,79 @@ static void test_draw(void) {
     g_bytes_unref(png);
 }
 
+/* A PNG w x 1, the first half red, the other green */
+static GBytes* stripes(gint w) {
+    GdkPixbuf* pix = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, w, 1);
+    guchar* px = gdk_pixbuf_get_pixels(pix);
+    for (gint x = 0; x < w; x++) {
+        px[x * 3] = x < w / 2 ? 0xFF : 0;
+        px[x * 3 + 1] = x < w / 2 ? 0 : 0xFF;
+        px[x * 3 + 2] = 0;
+    }
+    gchar* buf = NULL;
+    gsize len = 0;
+    g_assert_true(gdk_pixbuf_save_to_buffer(pix, &buf, &len, "png", NULL, NULL));
+    g_object_unref(pix);
+    return g_bytes_new_take(buf, len);
+}
+
+static gboolean near(guint32 a, guint32 b) {
+    for (gint shift = 0; shift < 24; shift += 8) {
+        gint d = (gint)((a >> shift) & 0xFF) - (gint)((b >> shift) & 0xFF);
+        if (d < -2 || d > 2) return FALSE;
+    }
+    return TRUE;
+}
+
+static void test_effects(void) {
+    g_autoptr(SlideDeck) deck = slide_deck_new(100, 100);
+    Slide* slide = slide_new();
+    /* Half transparent fill */
+    SlideShape* glass = box(0, 0, 20, 20, 0xFF0000);
+    glass->fill_opacity = 0.5;
+    g_ptr_array_add(slide->shapes, glass);
+    /* Shadow below and right of the shape */
+    SlideShape* raised = box(30, 0, 20, 20, 0x000000);
+    raised->shadow = 0x0000FF;
+    raised->shadow_dx = raised->shadow_dy = 5;
+    raised->shadow_opacity = 1;
+    g_ptr_array_add(slide->shapes, raised);
+    /* Repeated picture, and a picture clipped to an ellipse */
+    SlideShape* tiles = box(0, 40, 60, 10, SLIDE_NO_COLOR);
+    tiles->picture = stripes(4);
+    tiles->picture_tile_w = 20;
+    tiles->picture_tile_h = 10;
+    g_ptr_array_add(slide->shapes, tiles);
+    SlideShape* oval = box(70, 30, 30, 30, SLIDE_NO_COLOR);
+    oval->picture = stripes(2);
+    oval->geometry = SLIDE_GEOM_ELLIPSE;
+    g_ptr_array_add(slide->shapes, oval);
+    /* Text made smaller to stay in its box */
+    SlideShape* text = box(0, 55, 100, 28, SLIDE_NO_COLOR);
+    text->shrink_to_fit = TRUE;
+    SlideParagraph* p = slide_paragraph_new();
+    SlideRun* r = slide_paragraph_add_run(p, "Too many words here", -1);
+    r->size = 30;
+    g_ptr_array_add(text->paragraphs, p);
+    g_ptr_array_add(slide->shapes, text);
+    g_ptr_array_add(deck->slides, slide);
+
+    GBytes* png = slide_render_png(deck, slide, 100);
+    g_assert_true(near(pixel(png, 10, 10, NULL), 0xFF8080));
+    g_assert_cmphex(pixel(png, 40, 10, NULL), ==, 0x000000);
+    g_assert_cmphex(pixel(png, 52, 22, NULL), ==, 0x0000FF);
+    g_assert_cmphex(pixel(png, 3, 45, NULL), ==, 0xFF0000);
+    g_assert_cmphex(pixel(png, 13, 45, NULL), ==, 0x00FF00);
+    g_assert_cmphex(pixel(png, 23, 45, NULL), ==, 0xFF0000);
+    g_assert_cmphex(pixel(png, 71, 31, NULL), ==, 0xFFFFFF);  /* outside the ellipse */
+    for (gint y = 86; y < 100; y++) {
+        for (gint x = 0; x < 100; x += 3) {
+            g_assert_cmphex(pixel(png, x, y, NULL), ==, 0xFFFFFF);
+        }
+    }
+    g_bytes_unref(png);
+}
+
 static void test_table(void) {
     g_autoptr(SlideDeck) deck = slide_deck_new(720, 405);
     Slide* slide = slide_new();
@@ -115,6 +188,7 @@ static void test_preview(void) {
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/slide_render/draw", test_draw);
+    g_test_add_func("/slide_render/effects", test_effects);
     g_test_add_func("/slide_render/table", test_table);
     g_test_add_func("/slide_render/preview", test_preview);
     return g_test_run();

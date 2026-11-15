@@ -113,12 +113,19 @@ typedef struct {
     gdouble gradient_angle; /* degrees, 0: left to right */
     guint32 line;           /* SLIDE_NO_COLOR: no outline */
     gdouble line_width;
-    GBytes* picture;        /* encoded image stretched over the box */
+    gdouble fill_opacity;   /* 1: opaque (also of the picture) */
+    gdouble line_opacity;
+    gboolean line_dashed;
+    guint32 shadow;         /* shadow colour, SLIDE_NO_COLOR: none */
+    gdouble shadow_dx, shadow_dy, shadow_opacity;
+    GBytes* picture;        /* encoded image stretched over the box (clipped to the geometry) */
+    gdouble picture_tile_w, picture_tile_h; /* > 0: the picture repeated at that size instead */
     GPtrArray* paragraphs;  /* SlideParagraph* */
     SlideAnchor anchor;
     gdouble inset_left, inset_top, inset_right, inset_bottom;
     gboolean no_wrap;
     gdouble font_scale;     /* shrink on overflow: 1 = none */
+    gboolean shrink_to_fit; /* text made smaller (font_scale and below) until it fits */
     SlideTable* table;
 } SlideShape;
 
@@ -127,6 +134,7 @@ typedef struct {
     guint32 background;
     guint32 background_end; /* gradient end, SLIDE_NO_COLOR: solid */
     GBytes* background_picture;
+    gdouble background_tile_w, background_tile_h; /* > 0: the picture repeated at that size */
     GPtrArray* shapes;      /* SlideShape*, back to front */
     gchar* notes;           /* speaker notes, NULL: none */
 } Slide;

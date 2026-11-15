@@ -55,6 +55,8 @@ SlideShape* slide_shape_new(void) {
     SlideShape* s = g_new0(SlideShape, 1);
     s->fill = s->fill_end = s->line = SLIDE_NO_COLOR;
     s->line_width = 0.75;
+    s->fill_opacity = s->line_opacity = 1.0;
+    s->shadow = SLIDE_NO_COLOR;
     s->paragraphs = g_ptr_array_new_with_free_func((GDestroyNotify)slide_paragraph_free);
     s->inset_left = s->inset_right = 7.2;
     s->inset_top = s->inset_bottom = 3.6;
@@ -226,7 +228,10 @@ static cairo_surface_t* picture_surface(GBytes* data) {
     return surface;
 }
 
-static void draw_picture(cairo_t* cr, GBytes* data, gdouble x, gdouble y, gdouble w, gdouble h) {
+/* A picture stretched over the box, or repeated at tile_w x tile_h pixels
+ * when they are positive, with an opacity */
+static void draw_picture(cairo_t* cr, GBytes* data, gdouble x, gdouble y, gdouble w, gdouble h, gdouble tile_w,
+                         gdouble tile_h, gdouble alpha) {
     cairo_surface_t* surface = picture_surface(data);
     if (surface == NULL || w <= 0 || h <= 0) {
         if (surface != NULL) {
@@ -235,14 +240,18 @@ static void draw_picture(cairo_t* cr, GBytes* data, gdouble x, gdouble y, gdoubl
         return;
     }
     gint pw = cairo_image_surface_get_width(surface), ph = cairo_image_surface_get_height(surface);
+    gboolean tiled = tile_w > 0 && tile_h > 0;
     cairo_save(cr);
     cairo_rectangle(cr, x, y, w, h);
     cairo_clip(cr);
     cairo_translate(cr, x, y);
-    cairo_scale(cr, w / pw, h / ph);
+    cairo_scale(cr, tiled ? tile_w / pw : w / pw, tiled ? tile_h / ph : h / ph);
     cairo_set_source_surface(cr, surface, 0, 0);
     cairo_pattern_set_filter(cairo_get_source(cr), CAIRO_FILTER_GOOD);
-    cairo_paint(cr);
+    if (tiled) {
+        cairo_pattern_set_extend(cairo_get_source(cr), CAIRO_EXTEND_REPEAT);
+    }
+    cairo_paint_with_alpha(cr, CLAMP(alpha, 0, 1));
     cairo_restore(cr);
     cairo_surface_destroy(surface);
 }
@@ -420,6 +429,11 @@ static PangoLayout* paragraph_layout(cairo_t* cr, const SlideDeck* deck, const S
         pango_font_description_free(fd);
         guint32 color = p->bullet_color != SLIDE_NO_COLOR ? p->bullet_color : first != NULL ? first->color : 0;
         add_color_attr(attrs, color, start, end);
+        if (p->bullet_scale > 0 && p->bullet_scale < 1) {
+            /* A smaller bullet is centred on the text, not on its baseline */
+            gdouble rise = (1 - p->bullet_scale) * first_size * font_scale * scale * 0.25;
+            add_attr(attrs, pango_attr_rise_new((gint)(rise * PANGO_SCALE)), start, end);
+        }
         g_string_append_c(text, indent < 0 ? '\t' : ' ');
         if (indent < 0) {
             PangoTabArray* tabs = pango_tab_array_new_with_positions(1, FALSE, PANGO_TAB_LEFT, (gint)(-indent * PANGO_SCALE));
@@ -481,6 +495,22 @@ static PangoLayout* paragraph_layout(cairo_t* cr, const SlideDeck* deck, const S
         pango_layout_set_line_spacing(layout, (float)p->line_spacing);
     }
     return layout;
+}
+
+/* Height of paragraphs width wide (pixels) */
+static gdouble paragraphs_height(cairo_t* cr, const SlideDeck* deck, const GPtrArray* paragraphs, gdouble w,
+                                 gdouble scale, gdouble font_scale, gboolean wrap) {
+    gdouble total = 0;
+    for (guint i = 0; i < paragraphs->len; i++) {
+        const SlideParagraph* p = g_ptr_array_index(paragraphs, i);
+        gdouble off = 0;
+        PangoLayout* layout = paragraph_layout(cr, deck, p, w, scale, font_scale, wrap, &off);
+        gint lh = 0;
+        pango_layout_get_pixel_size(layout, NULL, &lh);
+        g_object_unref(layout);
+        total += lh + (i > 0 ? p->space_before * scale : 0) + (i + 1 < paragraphs->len ? p->space_after * scale : 0);
+    }
+    return total;
 }
 
 /* Draw paragraphs in the box (pixels), anchored */
@@ -598,23 +628,59 @@ static void draw_shape(cairo_t* cr, const SlideDeck* deck, const SlideShape* s, 
         cairo_translate(cr, s->flip_h ? w : 0, s->flip_v ? h : 0);
         cairo_scale(cr, s->flip_h ? -1 : 1, s->flip_v ? -1 : 1);
     }
-    if (s->picture != NULL) {
-        draw_picture(cr, s->picture, 0, 0, w, h);
-    }
-    if (s->fill != SLIDE_NO_COLOR && s->geometry != SLIDE_GEOM_LINE) {
+    if (s->shadow != SLIDE_NO_COLOR && (s->fill != SLIDE_NO_COLOR || s->picture != NULL || s->line != SLIDE_NO_COLOR)) {
+        cairo_save(cr);
+        cairo_translate(cr, s->shadow_dx * scale * (s->flip_h ? -1 : 1), s->shadow_dy * scale * (s->flip_v ? -1 : 1));
+        cairo_set_source_rgba(cr, ((s->shadow >> 16) & 0xFF) / 255.0, ((s->shadow >> 8) & 0xFF) / 255.0,
+                              (s->shadow & 0xFF) / 255.0, CLAMP(s->shadow_opacity, 0, 1));
         geometry_path(cr, s, w, h);
+        if ((s->fill != SLIDE_NO_COLOR || s->picture != NULL) && s->geometry != SLIDE_GEOM_LINE) {
+            cairo_fill(cr);
+        } else {
+            cairo_set_line_width(cr, MAX(s->line_width * scale, 1.0));
+            cairo_stroke(cr);
+        }
+        cairo_restore(cr);
+    }
+    if (s->picture != NULL) {
+        /* A picture fills the geometry: clipped to anything but a rectangle */
+        cairo_save(cr);
+        if (s->geometry != SLIDE_GEOM_RECT && s->geometry != SLIDE_GEOM_LINE) {
+            geometry_path(cr, s, w, h);
+            cairo_clip(cr);
+        }
+        draw_picture(cr, s->picture, 0, 0, w, h, s->picture_tile_w * scale, s->picture_tile_h * scale,
+                     s->fill_opacity);
+        cairo_restore(cr);
+    }
+    if (s->fill != SLIDE_NO_COLOR && s->geometry != SLIDE_GEOM_LINE && s->fill_opacity > 0) {
         if (s->fill_end != SLIDE_NO_COLOR) {
             set_gradient(cr, s->fill, s->fill_end, s->gradient_angle, 0, 0, w, h);
         } else {
             set_color(cr, s->fill);
         }
-        cairo_fill(cr);
-    }
-    if (s->line != SLIDE_NO_COLOR) {
         geometry_path(cr, s, w, h);
-        set_color(cr, s->line);
-        cairo_set_line_width(cr, MAX(s->line_width * scale, 1.0));
+        if (s->fill_opacity < 1) {
+            cairo_save(cr);
+            cairo_clip(cr);
+            cairo_paint_with_alpha(cr, s->fill_opacity);
+            cairo_restore(cr);
+        } else {
+            cairo_fill(cr);
+        }
+    }
+    if (s->line != SLIDE_NO_COLOR && s->line_opacity > 0) {
+        geometry_path(cr, s, w, h);
+        cairo_set_source_rgba(cr, ((s->line >> 16) & 0xFF) / 255.0, ((s->line >> 8) & 0xFF) / 255.0,
+                              (s->line & 0xFF) / 255.0, MIN(s->line_opacity, 1.0));
+        gdouble lw = MAX(s->line_width * scale, 1.0);
+        cairo_set_line_width(cr, lw);
+        if (s->line_dashed) {
+            gdouble dashes[2] = { 4 * lw, 3 * lw };
+            cairo_set_dash(cr, dashes, 2, 0);
+        }
         cairo_stroke(cr);
+        cairo_set_dash(cr, NULL, 0, 0);
     }
     cairo_restore(cr);
 
@@ -624,7 +690,14 @@ static void draw_shape(cairo_t* cr, const SlideDeck* deck, const SlideShape* s, 
     if (s->paragraphs->len > 0) {
         gdouble il = s->inset_left * scale, it = s->inset_top * scale;
         gdouble iw = w - il - s->inset_right * scale, ih = h - it - s->inset_bottom * scale;
-        draw_paragraphs(cr, deck, s->paragraphs, il, it, MAX(iw, 1.0), ih, s->anchor, scale, s->font_scale,
+        gdouble font_scale = s->font_scale;
+        if (s->shrink_to_fit) {
+            while (font_scale > 0.3 &&
+                   paragraphs_height(cr, deck, s->paragraphs, MAX(iw, 1.0), scale, font_scale, !s->no_wrap) > ih) {
+                font_scale *= 0.94;
+            }
+        }
+        draw_paragraphs(cr, deck, s->paragraphs, il, it, MAX(iw, 1.0), ih, s->anchor, scale, font_scale,
                         !s->no_wrap);
     }
     cairo_restore(cr);
@@ -652,7 +725,8 @@ GBytes* slide_render_png(const SlideDeck* deck, const Slide* slide, gint width) 
     }
     cairo_paint(cr);
     if (slide->background_picture != NULL) {
-        draw_picture(cr, slide->background_picture, 0, 0, width, height);
+        draw_picture(cr, slide->background_picture, 0, 0, width, height, slide->background_tile_w * scale,
+                     slide->background_tile_h * scale, 1.0);
     }
     for (guint i = 0; i < slide->shapes->len; i++) {
         draw_shape(cr, deck, g_ptr_array_index(slide->shapes, i), scale);
