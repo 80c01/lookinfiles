@@ -1,4 +1,4 @@
-/* Put back a file moved to the trash (freedesktop.org trash specification). */
+/* Put back a file moved to the trash (freedesktop.org trash, Windows Recycle Bin). */
 #include "explorer/trash_restore.h"
 
 #include <errno.h>
@@ -92,11 +92,157 @@ gchar* trash_find_item(const gchar* trash_dir, const gchar* topdir,
     return item;
 }
 
-#if defined(G_OS_WIN32) || defined(_WIN32)
-static gchar* find_in_trashes(const gchar* orig_path, gchar** out_info) {
-    (void)orig_path;
+/* ------------------------------------------------------------------------- */
+/* Windows Recycle Bin                                                       */
+/* ------------------------------------------------------------------------- */
+
+#define WIN_INFO_HEADER 24   /* version, size, deletion time: 3 x 64 bits */
+#define WIN_INFO_V1_CHARS 260 /* MAX_PATH */
+
+static guint64 read_le64(const guint8* p) {
+    guint64 v = 0;
+    for (int i = 7; i >= 0; i--) {
+        v = (v << 8) | p[i];
+    }
+    return v;
+}
+
+static guint32 read_le32(const guint8* p) {
+    return (guint32)p[0] | ((guint32)p[1] << 8) | ((guint32)p[2] << 16) | ((guint32)p[3] << 24);
+}
+
+gboolean trash_win_info_parse(const guint8* data, gsize len, gchar** out_path, guint64* out_time) {
+    *out_path = NULL;
+    *out_time = 0;
+    if (data == NULL || len < WIN_INFO_HEADER) {
+        return FALSE;
+    }
+    guint64 version = read_le64(data);
+    const guint8* name = NULL;
+    gsize chars = 0;
+    if (version == 1) {
+        name = data + WIN_INFO_HEADER;
+        chars = MIN((len - WIN_INFO_HEADER) / 2, WIN_INFO_V1_CHARS);
+    } else if (version == 2 && len >= WIN_INFO_HEADER + 4) {
+        guint32 n = read_le32(data + WIN_INFO_HEADER);
+        if (n > (len - WIN_INFO_HEADER - 4) / 2) {
+            return FALSE;
+        }
+        name = data + WIN_INFO_HEADER + 4;
+        chars = n;
+    } else {
+        return FALSE;
+    }
+    gunichar2* wide = g_new(gunichar2, chars + 1);
+    gsize count = 0;
+    while (count < chars) {
+        gunichar2 c = (gunichar2)(name[2 * count] | (name[2 * count + 1] << 8));
+        if (c == 0) {
+            break;
+        }
+        wide[count++] = c;
+    }
+    gchar* path = count > 0 ? g_utf16_to_utf8(wide, (glong)count, NULL, NULL, NULL) : NULL;
+    g_free(wide);
+    if (path == NULL) {
+        return FALSE;
+    }
+    *out_path = path;
+    *out_time = read_le64(data + 16);
+    return TRUE;
+}
+
+/* A Windows path for comparison: backslashes, no trailing one (but "C:\"),
+ * case folded */
+static gchar* win_path_key(const gchar* path) {
+    gchar* copy = g_strdup(path);
+    for (gchar* p = copy; *p != '\0'; p++) {
+        if (*p == '/') {
+            *p = '\\';
+        }
+    }
+    gsize n = strlen(copy);
+    while (n > 3 && copy[n - 1] == '\\') {
+        copy[--n] = '\0';
+    }
+    gchar* key = g_utf8_casefold(copy, -1);
+    g_free(copy);
+    return key;
+}
+
+gchar* trash_win_find_item(const gchar* bin_dir, const gchar* orig_path, gchar** out_info) {
     *out_info = NULL;
-    return NULL;
+    GDir* dir = g_dir_open(bin_dir, 0, NULL);
+    if (dir == NULL) {
+        return NULL;
+    }
+    gchar* want = win_path_key(orig_path);
+    gchar* best = NULL;
+    guint64 best_time = 0;
+    const gchar* name;
+    while ((name = g_dir_read_name(dir)) != NULL) {
+        if (!g_str_has_prefix(name, "$I")) {
+            continue;
+        }
+        gchar* file = g_build_filename(bin_dir, name, NULL);
+        gchar* data = NULL;
+        gsize len = 0;
+        gchar* path = NULL;
+        guint64 time = 0;
+        if (g_file_get_contents(file, &data, &len, NULL) &&
+            trash_win_info_parse((const guint8*)data, len, &path, &time) &&
+            (best == NULL || time >= best_time)) {
+            gchar* key = win_path_key(path);
+            gchar* item_name = g_strconcat("$R", name + 2, NULL);
+            gchar* item = g_build_filename(bin_dir, item_name, NULL);
+            if (g_strcmp0(key, want) == 0 && g_file_test(item, G_FILE_TEST_EXISTS)) {
+                g_free(best);
+                best = g_strdup(name);
+                best_time = time;
+            }
+            g_free(item);
+            g_free(item_name);
+            g_free(key);
+        }
+        g_free(path);
+        g_free(data);
+        g_free(file);
+    }
+    g_dir_close(dir);
+    g_free(want);
+    if (best == NULL) {
+        return NULL;
+    }
+    gchar* item_name = g_strconcat("$R", best + 2, NULL);
+    gchar* item = g_build_filename(bin_dir, item_name, NULL);
+    *out_info = g_build_filename(bin_dir, best, NULL);
+    g_free(item_name);
+    g_free(best);
+    return item;
+}
+
+#if defined(G_OS_WIN32) || defined(_WIN32)
+/* The Recycle Bin of the drive of orig_path: every user directory of
+ * <drive>:\$Recycle.Bin, those of other users failing to open */
+static gchar* find_in_trashes(const gchar* orig_path, gchar** out_info) {
+    *out_info = NULL;
+    if (!g_ascii_isalpha(orig_path[0]) || orig_path[1] != ':') {
+        return NULL; /* network paths have no Recycle Bin */
+    }
+    gchar* root = g_strdup_printf("%c:\\$Recycle.Bin", g_ascii_toupper(orig_path[0]));
+    GDir* dir = g_dir_open(root, 0, NULL);
+    gchar* item = NULL;
+    const gchar* name;
+    while (dir != NULL && item == NULL && (name = g_dir_read_name(dir)) != NULL) {
+        gchar* bin = g_build_filename(root, name, NULL);
+        item = trash_win_find_item(bin, orig_path, out_info);
+        g_free(bin);
+    }
+    if (dir != NULL) {
+        g_dir_close(dir);
+    }
+    g_free(root);
+    return item;
 }
 #else
 /* Mount point holding path: the top directory whose parent is on another device */

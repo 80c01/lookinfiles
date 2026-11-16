@@ -83,8 +83,8 @@ explorer (the top bar while the explorer is hidden) shows a message with
 an **Undo** button for a few seconds; `u` does the same at any time, for
 the last change only. Editor tabs follow a renamed file.
 
-Files go to the desktop trash (the one your file manager shows), so they
-can also be restored from there.
+Files go to the desktop trash (the one your file manager shows; the
+Recycle Bin on Windows), so they can also be restored from there.
 
 ## Sorting and hidden files
 

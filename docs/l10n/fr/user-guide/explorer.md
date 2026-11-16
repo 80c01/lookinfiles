@@ -90,8 +90,8 @@ même chose à tout moment, pour la dernière modification seulement. Les
 onglets d’édition suivent un fichier renommé.
 
 Les fichiers vont dans la corbeille du bureau (celle que montre votre
-gestionnaire de fichiers) ; on peut donc aussi les restaurer depuis
-celle-ci.
+gestionnaire de fichiers ; la Corbeille sous Windows) ; on peut donc aussi
+les restaurer depuis celle-ci.
 
 ## Tri et fichiers cachés
 
