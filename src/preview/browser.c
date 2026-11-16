@@ -1,6 +1,7 @@
-/* Browser tabs: web pages in the preview notebook (see browser.h) */
+/* Browser tabs: web pages in the preview notebook or the editor area (see browser.h) */
 #include "preview/browser.h"
 #include "core/app_events.h"
+#include "editor/editor.h"
 #include "widgets/focus_route.h"
 #include "theme/icons.h"
 #include "core/i18n.h"
@@ -55,6 +56,23 @@ static void ensure_css(void) {
 
 static BrowserTab* tab_of(GtkWidget* page) {
     return page != NULL ? g_object_get_data(G_OBJECT(page), PAGE_KEY) : NULL;
+}
+
+/* The notebook holding page, or NULL */
+static GtkNotebook* notebook_of(GtkWidget* page) {
+    GtkWidget* parent = gtk_widget_get_parent(page);
+    GtkWidget* nb = parent != NULL ? gtk_widget_get_ancestor(parent, GTK_TYPE_NOTEBOOK) : NULL;
+    return (nb != NULL && gtk_notebook_page_num(GTK_NOTEBOOK(nb), page) >= 0) ? GTK_NOTEBOOK(nb) : NULL;
+}
+
+/* The tab holding the keyboard focus, or NULL */
+static BrowserTab* focused_tab(AppData* app) {
+    GtkWidget* w = app->window != NULL ? gtk_window_get_focus(app->window) : NULL;
+    for (; w != NULL; w = gtk_widget_get_parent(w)) {
+        BrowserTab* bt = tab_of(w);
+        if (bt != NULL) return bt;
+    }
+    return NULL;
 }
 
 static void tab_free(gpointer data) {
@@ -161,8 +179,9 @@ static void show_preview_panel(AppData* app) {
 
 static void show_tab(BrowserTab* bt, gboolean focus_page) {
     AppData* app = bt->app;
-    show_preview_panel(app);
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    GtkNotebook* nb = notebook_of(bt->page);
+    if (nb == NULL) return;
+    if (GTK_WIDGET(nb) == app->notebook) show_preview_panel(app);
     gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, bt->page));
     if (focus_page) {
         gtk_widget_grab_focus(GTK_WIDGET(bt->view));
@@ -171,36 +190,46 @@ static void show_tab(BrowserTab* bt, gboolean focus_page) {
     }
 }
 
-/* Put the page in the notebook at position (-1: last) */
-static void insert_page(AppData* app, BrowserTab* bt, gint position) {
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+/* Put the page in nb (NULL: the preview notebook) at position (-1: last);
+ * it moves like an editor tab (drag, Ctrl+Alt+Arrow, its menu) */
+static void insert_page(AppData* app, BrowserTab* bt, GtkNotebook* nb, gint position) {
+    if (nb == NULL) nb = GTK_NOTEBOOK(app->notebook);
     gtk_notebook_insert_page(nb, bt->page, bt->label, position);
     gtk_notebook_set_tab_reorderable(nb, bt->page, TRUE);
+    gtk_notebook_set_tab_detachable(nb, bt->page, TRUE);
 }
 
 /* Take the page out of the notebook: an owned ref */
-static GtkWidget* detach_page(AppData* app, GtkWidget* page) {
+static GtkWidget* detach_page(GtkWidget* page) {
     GtkRoot* root = gtk_widget_get_root(page);
     GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
     if (focus != NULL && gtk_widget_is_ancestor(focus, page)) gtk_root_set_focus(root, NULL);
     g_object_ref(page);
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint n = gtk_notebook_page_num(nb, page);
-    if (n >= 0) gtk_notebook_remove_page(nb, n);
+    GtkNotebook* nb = notebook_of(page);
+    if (nb != NULL) gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, page));
     return page;
 }
 
+/* Take the tab out of its notebook (the page and the tab are freed), or of
+ * the hidden workspace keeping it */
 static void close_tab(BrowserTab* bt) {
     AppData* app = bt->app;
-    if (app->notebook == NULL) return;
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    GtkWidget* closed = bt->page;
-    gint num = gtk_notebook_page_num(nb, closed);
-    if (num < 0) return;
-    GtkWidget* focus_back = focus_route_return_target(app, closed);
-    g_object_ref(closed);
-    gtk_notebook_remove_page(nb, num); /* frees the tab with the page */
-    focus_route_return(app, focus_back, closed);
+    GtkWidget* closed = g_object_ref(bt->page);
+    GtkNotebook* nb = notebook_of(closed);
+    if (nb != NULL && app->window != NULL && gtk_widget_get_root(closed) == GTK_ROOT(app->window)) {
+        GtkWidget* focus_back = focus_route_return_target(app, closed);
+        editor_remove_page(app, closed); /* an editor notebook left empty goes */
+        focus_route_return(app, focus_back, closed);
+    } else if (nb != NULL) {
+        /* In the editor panel of a hidden workspace: a notebook left empty
+         * goes when the workspace shows again */
+        gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, closed));
+    } else {
+        for (gint i = 0; i < app->num_workspaces; i++) {
+            GPtrArray* kept = app->workspaces[i].browser_pages;
+            if (kept != NULL) g_ptr_array_remove(kept, closed);
+        }
+    }
     g_object_unref(closed);
 }
 
@@ -228,9 +257,9 @@ static GtkWidget* on_create(WebKitWebView* view, WebKitNavigationAction* action,
     BrowserTab* bt = data;
     AppData* app = bt->app;
     BrowserTab* nt = tab_new(app, view);
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint at = gtk_notebook_page_num(nb, bt->page);
-    insert_page(app, nt, at >= 0 ? at + 1 : -1);
+    GtkNotebook* nb = notebook_of(bt->page);
+    gint at = nb != NULL ? gtk_notebook_page_num(nb, bt->page) : -1;
+    insert_page(app, nt, nb, at >= 0 ? at + 1 : -1);
     return GTK_WIDGET(nt->view);
 }
 
@@ -360,6 +389,22 @@ static void on_label_middle_click(GtkGestureClick* gesture, gint n_press, gdoubl
     close_tab(data);
 }
 
+static void on_menu_close(GtkWidget* child, gpointer data) {
+    (void)data;
+    BrowserTab* bt = tab_of(child);
+    if (bt != NULL) close_tab(bt);
+}
+
+/* The tab menu, as for an editor tab: move, close */
+static void on_label_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)n_press;
+    (void)x;
+    (void)y;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    BrowserTab* bt = data;
+    editor_page_show_context_menu(bt->app, bt->page, bt->label, on_menu_close, NULL);
+}
+
 /* The mouse's back / forward buttons */
 static void on_side_button(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     (void)n_press;
@@ -413,11 +458,13 @@ static gboolean on_key(GtkEventControllerKey* controller, guint keyval, guint ke
     if ((mods & ~GDK_SHIFT_MASK) == GDK_CONTROL_MASK &&
         (keyval == GDK_KEY_Tab || keyval == GDK_KEY_ISO_Left_Tab)) {
         gint step = (keyval == GDK_KEY_ISO_Left_Tab || (mods & GDK_SHIFT_MASK)) ? -1 : 1;
-        focus_route_step_tab(app, GTK_NOTEBOOK(app->notebook), step, TRUE);
+        GtkNotebook* nb = notebook_of(bt->page);
+        if (nb != NULL) focus_route_step_tab(app, nb, step, TRUE);
         return TRUE;
     }
     if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_Page_Down || keyval == GDK_KEY_Page_Up)) {
-        focus_route_step_tab(app, GTK_NOTEBOOK(app->notebook), keyval == GDK_KEY_Page_Down ? 1 : -1, TRUE);
+        GtkNotebook* nb = notebook_of(bt->page);
+        if (nb != NULL) focus_route_step_tab(app, nb, keyval == GDK_KEY_Page_Down ? 1 : -1, TRUE);
         return TRUE;
     }
     if ((mods & ~GDK_SHIFT_MASK) == 0 && keyval == GDK_KEY_F6) {
@@ -494,6 +541,7 @@ static BrowserTab* tab_new(AppData* app, WebKitWebView* related) {
 
     bt->page = page;
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, bt, tab_free);
+    editor_page_set_movable(page);
 
     bt->label = g_object_ref(icon_label_new("network-transmit-receive", _("New Tab")));
     bt->title = g_object_ref(gtk_widget_get_last_child(bt->label));
@@ -504,6 +552,10 @@ static BrowserTab* tab_new(AppData* app, WebKitWebView* related) {
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), bt);
     gtk_widget_add_controller(bt->label, GTK_EVENT_CONTROLLER(mclick));
+    GtkGesture* rclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(rclick), GDK_BUTTON_SECONDARY);
+    g_signal_connect(rclick, "pressed", G_CALLBACK(on_label_right_click), bt);
+    gtk_widget_add_controller(bt->label, GTK_EVENT_CONTROLLER(rclick));
 
     update_buttons(bt);
     return bt;
@@ -512,7 +564,7 @@ static BrowserTab* tab_new(AppData* app, WebKitWebView* related) {
 void browser_open(AppData* app, const gchar* uri) {
     if (app == NULL || app->notebook == NULL) return;
     BrowserTab* bt = tab_new(app, NULL);
-    insert_page(app, bt, -1);
+    insert_page(app, bt, NULL, -1);
     if (uri != NULL) {
         webkit_web_view_load_uri(bt->view, uri);
         gtk_editable_set_text(GTK_EDITABLE(bt->entry), uri);
@@ -521,12 +573,17 @@ void browser_open(AppData* app, const gchar* uri) {
 }
 
 gboolean browser_close_shown(AppData* app) {
-    if (app == NULL || app->notebook == NULL) return FALSE;
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint cur = gtk_notebook_get_current_page(nb);
-    GtkWidget* page = cur >= 0 ? gtk_notebook_get_nth_page(nb, cur) : NULL;
-    BrowserTab* bt = tab_of(page);
-    if (bt == NULL || !gtk_widget_get_mapped(page)) return FALSE;
+    if (app == NULL) return FALSE;
+    BrowserTab* bt = focused_tab(app);
+    if (bt == NULL && app->notebook != NULL) {
+        /* Else the current page of the preview notebook */
+        GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+        gint cur = gtk_notebook_get_current_page(nb);
+        GtkWidget* page = cur >= 0 ? gtk_notebook_get_nth_page(nb, cur) : NULL;
+        bt = tab_of(page);
+        if (bt != NULL && !gtk_widget_get_mapped(page)) bt = NULL;
+    }
+    if (bt == NULL) return FALSE;
     close_tab(bt);
     return TRUE;
 }
@@ -538,7 +595,7 @@ void browser_workspace_hidden(AppData* app, VirtualLayout* ws) {
         ws->browser_pages = g_ptr_array_new_with_free_func(g_object_unref);
     }
     for (guint i = 0; i < pages->len; i++) {
-        g_ptr_array_add(ws->browser_pages, detach_page(app, g_ptr_array_index(pages, i)));
+        g_ptr_array_add(ws->browser_pages, detach_page(g_ptr_array_index(pages, i)));
     }
     g_ptr_array_unref(pages);
 }
@@ -549,7 +606,7 @@ void browser_workspace_shown(AppData* app, VirtualLayout* ws) {
     ws->browser_pages = NULL;
     for (guint i = 0; i < pages->len; i++) {
         BrowserTab* bt = tab_of(g_ptr_array_index(pages, i));
-        if (bt != NULL && app->notebook != NULL) insert_page(app, bt, -1);
+        if (bt != NULL && app->notebook != NULL) insert_page(app, bt, NULL, -1);
     }
     g_ptr_array_unref(pages);
 }
@@ -559,7 +616,7 @@ void browser_workspace_removed(AppData* app, VirtualLayout* ws) {
     if (app->current_ws >= 0 && app->current_ws < app->num_workspaces && ws == &app->workspaces[app->current_ws]) {
         GPtrArray* pages = notebook_pages(app);
         for (guint i = 0; i < pages->len; i++) {
-            g_object_unref(detach_page(app, g_ptr_array_index(pages, i)));
+            g_object_unref(detach_page(g_ptr_array_index(pages, i)));
         }
         g_ptr_array_unref(pages);
     }

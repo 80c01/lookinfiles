@@ -955,7 +955,8 @@ Layers, from bottom to top
   `term_snapshot_take()` / `_restore()` put back the exact panes of the
   panel after a layout preview; `terminal_detach_tab()` /
   `terminal_attach_tab()` keep a terminal running out of any notebook.
-- `browser` — browser tabs in the preview notebook (WebKitGTK 6.0, optional:
+- `browser` — browser tabs, opened in the preview notebook and movable like
+  editor tabs (`editor_page_set_movable()`) (WebKitGTK 6.0, optional:
   `HAVE_WEBKIT`; without it `browser_open()` hands the URI to the default
   browser): back / forward / reload, address bar (`web_address`), the
   `WebKitWebView`. Opened by `Ctrl+Shift+B` (`ui`), the Help tab's web links,
@@ -964,8 +965,9 @@ Layers, from bottom to top
   closes the tab; print, file chooser and fullscreen are refused,
   permissions denied; links to other schemes and files the page cannot show
   go to the default application (`GtkUriLauncher`). Per workspace
-  (`VirtualLayout.browser_pages`): taken out of the notebook on a switch
-  (`browser_workspace_hidden()` / `_shown()`). Not saved in the session.
+  (`VirtualLayout.browser_pages`): those of the preview notebook are taken
+  out of it on a switch (`browser_workspace_hidden()` / `_shown()`), those of
+  the editor panel go with the panel. Not saved in the session.
 - `search` — the search bars of the explorer and of the preview, one at the
   bottom of each panel (`search_bar_new()`; bars and state in the private `struct Search`), opened and
   driven by the keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s`

@@ -3619,8 +3619,8 @@ msgstr ""
 "Reculer / avancer dans les pages visitées (aussi les flèches de l’onglet)"
 
 #: src/chrome/help.c:120
-msgid "Next / previous tab of the preview panel"
-msgstr "Onglet suivant / précédent du panneau Aperçu"
+msgid "Next / previous tab of its pane"
+msgstr "Onglet suivant / précédent de son volet"
 
 #: src/chrome/help.c:121
 msgid "Focus the next / previous panel"
@@ -3629,6 +3629,9 @@ msgstr "Focus sur le panneau suivant / précédent"
 #: src/chrome/help.c:122
 msgid "Close the tab (also its cross, or a middle click on the tab)"
 msgstr "Fermer l’onglet (aussi sa croix, ou un clic du milieu sur l’onglet)"
+
+msgid "Move the browser tab to another pane, as an editor tab"
+msgstr "Déplacer l’onglet web dans un autre volet, comme un onglet d’édition"
 
 #: src/chrome/help.c:123 src/chrome/help.c:124 src/chrome/help.c:125 src/chrome/help.c:126 src/chrome/help.c:127
 #: src/chrome/help.c:128

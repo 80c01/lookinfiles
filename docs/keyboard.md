@@ -273,7 +273,9 @@ mode move in the process list)
 
 ### Browser tabs
 
-Web pages shown in tabs of the preview panel (built with WebKitGTK 6.0).
+Web pages shown in tabs of the preview panel (built with WebKitGTK 6.0);
+a tab moves like an editor tab (dragged to another pane or a split,
+`Ctrl+Alt+Arrow`, its menu).
 `Ctrl+Shift+B` opens an empty one; links of the **Help** tab, web bookmarks
 and **Open in Browser Tab** (right click on an HTML file) open one with the
 page. A link or popup opened in a new window becomes a new tab next to it;
@@ -286,9 +288,10 @@ application. The page keeps every other key.
 | `Esc` | In the address bar: back to the page's address and into the page; in the page: stop loading |
 | `F5` | Reload the page (also the reload button, which stops a page loading) |
 | Mouse back / forward buttons | Back / forward in the pages visited (also the arrows of the tab) |
-| `Ctrl+Tab` / `Ctrl+Shift+Tab`, `Ctrl+PgDn` / `Ctrl+PgUp` | Next / previous tab of the preview panel |
+| `Ctrl+Tab` / `Ctrl+Shift+Tab`, `Ctrl+PgDn` / `Ctrl+PgUp` | Next / previous tab of its pane |
 | `F6` / `Shift+F6` | Focus the next / previous panel |
 | `Ctrl+W` | Close the tab (also its cross, or a middle click on the tab) |
+| `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the browser tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it) |
 
 ## Editor tabs
 

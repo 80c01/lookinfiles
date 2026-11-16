@@ -1,7 +1,9 @@
 #ifndef BROWSER_H
 #define BROWSER_H
 
-/* Browser tabs: web pages in pages of the preview notebook, shown by
+/* Browser tabs: web pages in pages of the preview notebook (moved like an
+ * editor tab: dragged to another pane or a split, Ctrl+Alt+Arrow, the tab
+ * menu), shown by
  * WebKitGTK 6.0 (optional: HAVE_WEBKIT). Each tab has back / forward /
  * reload buttons, an address bar (web_address.h: an address, a path or words
  * to search) and the page; a link or popup opened in a new window becomes a
@@ -21,8 +23,8 @@ gboolean browser_available(void);
  * default browser, and NULL shows a notice. */
 void browser_open(AppData* app, const gchar* uri);
 
-/* Close the browser tab if it is the current page of the preview notebook
- * (Ctrl+W). Returns TRUE if it was closed. */
+/* Close the browser tab with the focus, else the one shown as the current
+ * page of the preview notebook (Ctrl+W). Returns TRUE if it was closed. */
 gboolean browser_close_shown(AppData* app);
 
 /* Workspace switch (workspace.c): the browser tabs of the workspace left are
