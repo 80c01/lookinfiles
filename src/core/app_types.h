@@ -91,6 +91,7 @@ typedef struct {
     GtkTextMark* view_insert;
     GtkTextMark* view_bound;
     gboolean view_passive; /* another view of the buffer has its cursor */
+    gboolean preview_paused; /* saves leave the preview of the file as it is */
 } EditorTab;
 
 /* Virtual workspace layout state (dynamic workspaces like Ubuntu) */

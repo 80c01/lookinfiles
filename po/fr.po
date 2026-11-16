@@ -2098,6 +2098,14 @@ msgstr "Masquer la minicarte"
 msgid "Show Minimap"
 msgstr "Afficher la minicarte"
 
+#: src/editor/editor_tab_menu.c
+msgid "Update Preview"
+msgstr "Mettre à jour l’aperçu"
+
+#: src/editor/editor_tab_menu.c
+msgid "Don't Update Preview"
+msgstr "Ne pas mettre à jour l’aperçu"
+
 #: src/editor/editor.c:598
 msgid "Split Right"
 msgstr "Diviser à droite"

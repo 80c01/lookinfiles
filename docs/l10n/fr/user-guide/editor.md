@@ -145,6 +145,13 @@ fichier (**Copier le nom**), son chemin depuis la racine de son dépôt git
 (**Copier le chemin relatif git**, seulement dans un dépôt) ou son chemin
 absolu (**Copier le chemin**).
 
+Enregistrer un fichier dont l’aperçu est rendu depuis son texte (Markdown,
+Org, HTML, JSON, le PDF d’un document LaTeX...) met l’aperçu à jour. Pour
+garder l’aperçu tel quel pendant que vous travaillez, choisissez **Ne pas
+mettre à jour l’aperçu** dans le menu contextuel de l’onglet ; **Mettre à
+jour l’aperçu** le remet à jour et laisse de nouveau les enregistrements le
+mettre à jour.
+
 ## Choisir le mode d’un onglet
 
 Un nouvel onglet prend le **mode global** affiché dans la barre du haut.

@@ -57,20 +57,28 @@ static gboolean deferred_refresh(gpointer data) {
     if (app->file_dirty) {
         app->file_dirty = FALSE;
         /* Do not overwrite preview if the viewed file is an open buffer being edited */
-        gboolean is_open_buffer = FALSE;
-        if (preview_state_path(app) != NULL) {
+        gboolean keep_preview = FALSE;
+        /* Nor when its editor tab keeps it (tab menu: Don't Update Preview) */
+        for (GList* l = app->editors; l != NULL && preview_state_path(app) != NULL; l = l->next) {
+            EditorTab* tab = (EditorTab*)l->data;
+            if (tab != NULL && tab->preview_paused && g_strcmp0(tab->path, preview_state_path(app)) == 0) {
+                keep_preview = TRUE;
+                break;
+            }
+        }
+        if (preview_state_path(app) != NULL && !keep_preview) {
             const gchar* cfg = g_get_user_config_dir();
             if (cfg != NULL && g_str_has_prefix(preview_state_path(app), cfg)) {
                 for (GList* l = app->editors; l != NULL; l = l->next) {
                     EditorTab* tab = (EditorTab*)l->data;
                     if (tab != NULL && g_strcmp0(tab->path, preview_state_path(app)) == 0) {
-                        is_open_buffer = TRUE;
+                        keep_preview = TRUE;
                         break;
                     }
                 }
             }
         }
-        if (preview_state_path(app) != NULL && !is_open_buffer) {
+        if (preview_state_path(app) != NULL && !keep_preview) {
             app_emit(app, APP_EVENT_PREVIEW_STALE);
         }
     }

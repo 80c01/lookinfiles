@@ -30,7 +30,8 @@ enum {
     TAB_ACTION_SPLIT_DOWN,
     TAB_ACTION_COPY_NAME,
     TAB_ACTION_COPY_RELATIVE,
-    TAB_ACTION_COPY_PATH
+    TAB_ACTION_COPY_PATH,
+    TAB_ACTION_PREVIEW_UPDATES
 };
 
 EditorTab* editor_current_tab(AppData* app);
@@ -76,6 +77,15 @@ void editor_close_page(AppData* app, gint page);
 void editor_close_current(AppData* app);
 void editor_save_all_buffers(AppData* app);
 gboolean editor_save_current(AppData* app);
+/* TRUE if path has a preview built from its text (Markdown, Org, JSON, a
+ * LaTeX PDF...), which follows the saves of its editor tabs */
+gboolean editor_tab_updates_preview(const EditorTab* tab);
+/* TRUE if an editor tab of path stops its saves from updating the preview
+ * (tab menu: Don't Update Preview) */
+gboolean editor_preview_paused(AppData* app, const gchar* path);
+/* Let the saves of tab update the preview again, or not: the preview is
+ * brought up to date when they do */
+void editor_set_preview_paused(AppData* app, EditorTab* tab, gboolean paused);
 
 /* Write the tab's text to path in place (file_save_text()); FALSE with error
  * set when nothing was written */

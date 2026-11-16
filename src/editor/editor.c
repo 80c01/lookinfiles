@@ -627,7 +627,7 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
                     editor_tab_label_update(t);
                 }
                 app->file_dirty = FALSE;
-                app_emit(app, APP_EVENT_PREVIEW_STALE);
+                if (!editor_preview_paused(app, t->path)) app_emit(app, APP_EVENT_PREVIEW_STALE);
                 break;
             }
         }
@@ -1005,16 +1005,49 @@ gboolean editor_save_current(AppData* app) {
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
         editor_tab_label_update(tab);
         app_emit(app, APP_EVENT_FILES_CHANGED);
-        if (preview_state_path(app) != NULL && g_strcmp0(preview_state_path(app), tab->path) == 0) {
-            app->file_dirty = FALSE;
-            app_emit(app, APP_EVENT_PREVIEW_STALE);
+        if (!editor_preview_paused(app, tab->path)) {
+            if (preview_state_path(app) != NULL && g_strcmp0(preview_state_path(app), tab->path) == 0) {
+                app->file_dirty = FALSE;
+                app_emit(app, APP_EVENT_PREVIEW_STALE);
+            }
+            latex_build_saved(app, tab->path);
         }
-        latex_build_saved(app, tab->path);
         if (tab->view != NULL) {
             gtk_widget_grab_focus(tab->view);
         }
     }
     return TRUE;
+}
+
+gboolean editor_tab_updates_preview(const EditorTab* tab) {
+    if (tab == NULL || tab->path == NULL || tab->is_buffer) return FALSE;
+    return g_str_has_suffix(tab->path, ".tex") ||
+           file_kind_is_renderable(file_kind_from_name(tab->name != NULL ? tab->name : tab->path));
+}
+
+gboolean editor_preview_paused(AppData* app, const gchar* path) {
+    if (app == NULL || path == NULL) return FALSE;
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* t = (EditorTab*)l->data;
+        if (t != NULL && t->preview_paused && g_strcmp0(t->path, path) == 0) return TRUE;
+    }
+    return FALSE;
+}
+
+void editor_set_preview_paused(AppData* app, EditorTab* tab, gboolean paused) {
+    if (app == NULL || tab == NULL || tab->path == NULL) return;
+    /* The views of one file share the choice */
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* t = (EditorTab*)l->data;
+        if (t != NULL && g_strcmp0(t->path, tab->path) == 0) t->preview_paused = paused;
+    }
+    if (paused) return;
+    /* Back to the saved file: what was saved meanwhile is shown */
+    if (g_strcmp0(preview_state_path(app), tab->path) == 0) {
+        app->file_dirty = FALSE;
+        app_emit(app, APP_EVENT_PREVIEW_STALE);
+    }
+    latex_build_saved(app, tab->path);
 }
 
 gboolean editor_tab_write(EditorTab* tab, const gchar* path, GError** error) {
