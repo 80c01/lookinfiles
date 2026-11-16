@@ -20,7 +20,8 @@ typedef struct {
     gboolean show_hidden;
     gint sort_mode;
     gint view;           /* explorer view (SIDEBAR_VIEW_* of app_types.h), 0: the files */
-    gchar** tabs;        /* files open in editor tabs, in order, each once */
+    gchar** tabs;        /* files open in editor tabs and addresses of browser
+                          * tabs, in order, each once */
     /* Where the tabs are (tab_tree.h, indices into tabs), NULL when not
      * saved (older session files: every tab in one notebook) */
     gchar* remote_id;    /* remote machine the folder is mounted from, or NULL */

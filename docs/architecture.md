@@ -818,9 +818,11 @@ Layers, from bottom to top
 - `editor_session` — the editor tabs of a workspace for the session:
   `editor_session_capture()` describes the preview notebook and the
   dedicated panel (notebooks, splits, sizes, current pages, view last
-  focused) as `tab_tree` text (the files of the tabs, notes included, and
-  the directories of the Canvas tabs), `editor_session_restore()` reopens
-  the files and Canvas notes (`canvas_view_open()`) at the same place (`editor_notebook_split()`, `editor_move_tab_to()`,
+  focused) as `tab_tree` text (the files of the tabs, notes included, the
+  directories of the Canvas tabs and the addresses of the browser tabs,
+  `browser_page_uri()`), `editor_session_restore()` reopens the files,
+  Canvas notes (`canvas_view_open()`) and browser tabs (`browser_open_in()`)
+  at the same place (`editor_notebook_split()`, `editor_move_tab_to()`,
   `editor_add_view()` for split views) and starts a new shell for each
   terminal tab there (`terminal_add_tab()`).
 - `editor_layout` — the shape of the dedicated panel for saved layouts:
@@ -967,7 +969,8 @@ Layers, from bottom to top
   go to the default application (`GtkUriLauncher`). Per workspace
   (`VirtualLayout.browser_pages`): those of the preview notebook are taken
   out of it on a switch (`browser_workspace_hidden()` / `_shown()`), those of
-  the editor panel go with the panel. Not saved in the session.
+  the editor panel go with the panel. Saved in the session by their
+  address (`editor_session`).
 - `search` — the search bars of the explorer and of the preview, one at the
   bottom of each panel (`search_bar_new()`; bars and state in the private `struct Search`), opened and
   driven by the keys of the global mode (`/` `n` `N`, `Ctrl+F` `F3`, `C-s`

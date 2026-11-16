@@ -4,6 +4,7 @@
 #include "canvas/canvas_view.h"
 #include "editor/editor.h"
 #include "editor/editor_view.h"
+#include "preview/browser.h"
 #include "workspace/tab_tree.h"
 #include "terminal/terminal.h"
 
@@ -31,10 +32,17 @@ static EditorTab* tab_of_page(GList* editors, GtkWidget* child) {
     return NULL;
 }
 
-/* Index of path (a file, or the directory of a Canvas note) in the list,
- * added when new; -1 when it is not saved (in-memory buffers) */
+/* A browser tab's entry in the list of files: its address (a scheme, where
+ * a file is an absolute path) */
+static gboolean is_web_entry(const gchar* entry) {
+    return entry != NULL && g_uri_peek_scheme(entry) != NULL;
+}
+
+/* Index of path (a file, the directory of a Canvas note, or the address of a
+ * browser tab) in the list, added when new; -1 when it is not saved
+ * (in-memory buffers) */
 static gint file_index(Capture* c, const gchar* path) {
-    if (path == NULL || !g_path_is_absolute(path)) {
+    if (path == NULL || (!g_path_is_absolute(path) && !is_web_entry(path))) {
         return -1;
     }
     for (guint i = 0; i < c->files->len; i++) {
@@ -96,8 +104,11 @@ static TabTreeNode* capture_notebook(Capture* c, GtkNotebook* nb) {
         }
 #endif
         EditorTab* tab = tab_of_page(c->editors, page);
+        const gchar* uri = browser_page_uri(page);
         if (tab != NULL) {
             add_tab(c, node, tab, p == current);
+        } else if (uri != NULL) {
+            add_path(c, node, uri, p == current, FALSE);
         } else {
             const gchar* dir = canvas_view_page_dir(page);
             add_path(c, node, dir != NULL ? dir : editor_page_file(page), p == current, FALSE);
@@ -165,6 +176,10 @@ void editor_session_capture(AppData* app, gint ws, GPtrArray* files, gchar** pre
         GPtrArray* canvases = app->workspaces[ws].canvas_pages; /* set aside with the workspace */
         for (guint i = 0; canvases != NULL && i < canvases->len; i++) {
             add_path(&c, preview, canvas_view_page_dir(g_ptr_array_index(canvases, i)), FALSE, FALSE);
+        }
+        GPtrArray* webs = app->workspaces[ws].browser_pages; /* browser tabs, set aside too */
+        for (guint i = 0; webs != NULL && i < webs->len; i++) {
+            add_path(&c, preview, browser_page_uri(g_ptr_array_index(webs, i)), FALSE, FALSE);
         }
         GPtrArray* notebooks = app->workspaces[ws].ipynb_pages; /* Jupyter tabs, set aside too */
         for (guint i = 0; notebooks != NULL && i < notebooks->len; i++) {
@@ -283,6 +298,13 @@ static void restore_notebook(Restore* r, const TabTreeNode* node, GtkNotebook* n
         if (index >= r->n_files || !r->usable[index]) {
             continue;
         }
+        if (is_web_entry(r->files[index])) {
+            GtkWidget* page = browser_open_in(r->app, r->files[index], nb);
+            if (page != NULL && (gint)i == node->current) {
+                current = page;
+            }
+            continue;
+        }
         if (is_canvas_dir(r->files[index])) {
             GtkWidget* page = place_canvas(r->app, r->files[index], nb);
             if (page != NULL && (gint)i == node->current) {
@@ -380,14 +402,15 @@ void editor_session_restore(AppData* app, const gchar* const* files, const gchar
     Restore r = { app, files, NULL, g_strv_length((gchar**)files), g_ptr_array_new(), NULL };
     r.usable = g_new0(gboolean, MAX(r.n_files, 1));
     for (guint i = 0; i < r.n_files; i++) {
-        r.usable[i] = g_file_test(files[i], G_FILE_TEST_IS_REGULAR) || is_canvas_dir(files[i]);
+        r.usable[i] = is_web_entry(files[i]) ? browser_available()
+                                             : g_file_test(files[i], G_FILE_TEST_IS_REGULAR) || is_canvas_dir(files[i]);
     }
     TabTreeNode* preview = tab_tree_parse(preview_tabs);
     TabTreeNode* panel = tab_tree_parse(editor_tabs);
     if (preview == NULL && panel == NULL) {
         /* Older session files: the files only, opened in order */
         for (guint i = 0; i < r.n_files; i++) {
-            if (r.usable[i] && !is_canvas_dir(files[i])) {
+            if (r.usable[i] && !is_canvas_dir(files[i]) && !is_web_entry(files[i])) {
                 gchar* name = g_path_get_basename(files[i]);
                 editor_open_file(app, name, files[i]);
                 g_free(name);

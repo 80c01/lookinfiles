@@ -12,7 +12,8 @@
  * chooser, no fullscreen, permissions (camera, location...) denied.
  * Ctrl+Shift+B opens an empty tab; in a tab Ctrl+L goes to the address bar,
  * F5 reloads, Escape stops loading; its close button, a middle click on the
- * tab, Ctrl+W close it. Each workspace has its own browser tabs. */
+ * tab, Ctrl+W close it. Each workspace has its own browser tabs, saved
+ * with the session (editor_session.h: their address and place). */
 #include "core/app_types.h"
 
 /* TRUE when built with WebKitGTK (browser tabs available) */
@@ -22,6 +23,13 @@ gboolean browser_available(void);
  * empty tab, the focus in the address bar). Without WebKit: uri goes to the
  * default browser, and NULL shows a notice. */
 void browser_open(AppData* app, const gchar* uri);
+
+/* The address of the browser tab page (a notebook page), NULL when page is
+ * not a browser tab or shows no page yet */
+const gchar* browser_page_uri(GtkWidget* page);
+/* A new browser tab loading uri, last page of nb, not shown (the session
+ * reopening it); NULL without WebKit */
+GtkWidget* browser_open_in(AppData* app, const gchar* uri, GtkNotebook* nb);
 
 /* Close the browser tab with the focus, else the one shown as the current
  * page of the preview notebook (Ctrl+W). Returns TRUE if it was closed. */

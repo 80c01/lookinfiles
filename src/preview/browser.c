@@ -572,6 +572,21 @@ void browser_open(AppData* app, const gchar* uri) {
     show_tab(bt, uri != NULL);
 }
 
+const gchar* browser_page_uri(GtkWidget* page) {
+    BrowserTab* bt = tab_of(page);
+    const gchar* uri = bt != NULL ? webkit_web_view_get_uri(bt->view) : NULL;
+    return (uri != NULL && uri[0] != '\0' && g_strcmp0(uri, "about:blank") != 0) ? uri : NULL;
+}
+
+GtkWidget* browser_open_in(AppData* app, const gchar* uri, GtkNotebook* nb) {
+    if (app == NULL || app->notebook == NULL || uri == NULL || nb == NULL) return NULL;
+    BrowserTab* bt = tab_new(app, NULL);
+    insert_page(app, bt, nb, -1);
+    webkit_web_view_load_uri(bt->view, uri);
+    gtk_editable_set_text(GTK_EDITABLE(bt->entry), uri);
+    return bt->page;
+}
+
 gboolean browser_close_shown(AppData* app) {
     if (app == NULL) return FALSE;
     BrowserTab* bt = focused_tab(app);
@@ -632,6 +647,18 @@ void browser_open(AppData* app, const gchar* uri) {
     } else {
         app_notice(app, _("Browser tabs need WebKitGTK 6.0 (install libwebkitgtk-6.0-dev and rebuild)"), FALSE);
     }
+}
+
+const gchar* browser_page_uri(GtkWidget* page) {
+    (void)page;
+    return NULL;
+}
+
+GtkWidget* browser_open_in(AppData* app, const gchar* uri, GtkNotebook* nb) {
+    (void)app;
+    (void)uri;
+    (void)nb;
+    return NULL;
 }
 
 gboolean browser_close_shown(AppData* app) {
