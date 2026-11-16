@@ -36,7 +36,7 @@ event, all starting with `profile: `:
 | `mark <total ms> +<since last> <label>` | start-up steps of `main.c` (`profile_mark()`); `first frame` and `startup done` (window drawn, main loop idle) by `widgets/frame_watch` |
 | `time <ms> <label>` | timed operations (`profile_start()` / `profile_done()`, also from worker threads): directory scans and rows (`file_list.c`), git status |
 | `preview <file> [<kind>]: <ms> (worker, display)` | the viewer and the folder overview (`dir_preview.c`, its 50 ms debounce included), from the selection to the preview on screen (the viewer's also with `LOOKIN_DEBUG_PREVIEW=1`, on stderr) |
-| `frame <ms> at <total ms>[ slow][ unpainted]` | each frame, from the frame clock's `before-paint` to `after-paint`; `slow` over 16.7 ms (one frame at 60 Hz), `unpainted` when nothing was drawn |
+| `frame <ms> at <total ms>[ slow][ unpainted][ (update, layout, paint)]` | each frame, from the frame clock's `before-paint` to `after-paint`; `slow` over 16.7 ms (one frame at 60 Hz), with its phases: animations and tick callbacks, measuring and allocating, drawing and rendering; `unpainted` when nothing was drawn |
 | `report key=value...` | at exit: uptime, CPU time, resident and peak memory, frames of the start-up and after it (painted, without drawing, slow, worst, mean) |
 
 To time something new: `gint64 t = profile_start(); ...; profile_done(t,
@@ -87,5 +87,11 @@ default stays `-O2 -g`. Measure again before changing it.
   WebKitGTK is `lookinfiles-webkit.so` (`web_engine_webkit.c`, opened by
   `web_engine.c` at the first browser tab, about 35 ms once): linked in, it
   cost every start-up 30 MB and 30 ms (77 more libraries to load).
+- **A frame draws what is on screen**: work for what is off screen (a
+  render kept for scrolling, a cache) goes to an idle callback at
+  `G_PRIORITY_LOW`, a few milliseconds at a time. Example: the minimap draws
+  the lines shown in the frame and the rest of its render afterwards;
+  drawing its three screens in the frame made frames of 50–65 ms after each
+  new preview.
 - **No wake-up without a change on screen**: a timer must run only while
   what it updates is shown, and set a label only when its text changes.

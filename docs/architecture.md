@@ -665,7 +665,10 @@ Layers, from bottom to top
 - `preview_doc_view` — shows a `PreviewDoc` in the preview text view (style
   tags in the Dark+ palette, images, HTML / Markdown renderers).
 - `minimap` — scaled file overview; draws only the part around what is shown
-  (`MinimapCache`), geometry from `minimap_geometry`. `minimap_new_for_view()`
+  (`MinimapCache`, three minimap heights): the lines on screen in the frame,
+  the rest by an idle fill at low priority (4 ms at a time, stopped when the
+  text changes), so a new text costs one screen in its frame; geometry from
+  `minimap_geometry`. `minimap_new_for_view()`
   makes the minimap of any text view: editor tabs, the Help tab, and the
   preview (`minimap_viewer_new()`, with `minimap_view_set_shown_if()`:
   Preview page only); its state goes with the widget. Shows itself only

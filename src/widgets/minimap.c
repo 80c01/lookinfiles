@@ -15,6 +15,15 @@ typedef struct {
     gdouble scale; /* scale it was drawn at */
     gboolean stale;          /* the text changed: redraw, but the old render may stand in */
     gint64 incomplete_since; /* monotonic time the new layout was first found incomplete */
+    /* Drawing: the frame draws the lines shown, an idle fill the rest of the
+     * render (fill_source), so a new text costs one screen in its frame */
+    GtkTextView* view;       /* referenced while the render is not complete */
+    gdouble sx, font_scale;
+    gboolean detailed;       /* text drawn run by run (else one bar per line) */
+    gint range_first, range_last; /* buffer lines of the whole render */
+    gint done_first, done_last;   /* buffer lines drawn so far */
+    gdouble done_top, done_bottom; /* their content y range */
+    guint fill_source;
 } MinimapCache;
 
 static void set_source_role(cairo_t* cr, PaletteRole role, double alpha) {
@@ -275,7 +284,16 @@ static void draw_run(cairo_t* cc, PangoLayout* layout, GtkTextView* view, GtkTex
     g_free(text);
 }
 
+static void cache_stop_fill(MinimapCache* cache) {
+    if (cache->fill_source != 0) {
+        g_source_remove(cache->fill_source);
+        cache->fill_source = 0;
+    }
+    g_clear_object(&cache->view);
+}
+
 static void minimap_cache_clear(MinimapCache* cache) {
+    cache_stop_fill(cache);
     if (cache->surface != NULL) {
         cairo_surface_destroy(cache->surface);
     }
@@ -285,13 +303,15 @@ static void minimap_cache_clear(MinimapCache* cache) {
 /* The text changed: the render is redrawn on the next draw, but stays
  * available to stand in while the new layout is incomplete */
 static void minimap_cache_mark_stale(MinimapCache* cache) {
+    cache_stop_fill(cache);
     cache->stale = TRUE;
 }
 
-/* Does the render cover what the minimap shows now? */
+/* Does the render cover what the minimap shows now (drawn lines only)? */
 static gboolean cache_covers(const MinimapCache* c, const MinimapGeometry* g, gint width, gint height) {
     return c->surface != NULL && !c->stale && c->width == width && c->scale == g->scale &&
-           g->offset >= c->top - 0.5 && g->offset + height <= c->top + c->height + 0.5;
+           g->offset >= c->top - 0.5 && g->offset + height <= c->top + c->height + 0.5 &&
+           g->offset >= c->done_top - 0.5 && g->offset + height <= c->done_bottom + 0.5;
 }
 
 /* Whether a line is hidden on purpose (folded Org heading): its zero height
@@ -336,8 +356,163 @@ static gboolean layout_complete(GtkTextBuffer* buffer, GtkTextView* view, const 
     return TRUE;
 }
 
-/* Draw the document lines around the minimap's position into an offscreen
- * image surface (cached) */
+/* Draw buffer line i into the render (cc in content coordinates) */
+static void draw_line(cairo_t* cc, PangoLayout* layout, GtkTextBuffer* buffer, GtkTextView* view,
+                      const MinimapCache* c, gint i) {
+    gdouble sx = c->sx, sy = c->scale, font_scale = c->font_scale;
+    gint width = c->width;
+    GtkTextIter ls;
+    gtk_text_buffer_get_iter_at_line(buffer, &ls, i);
+    gint ly = 0, lh = 0;
+    gtk_text_view_get_line_yrange(view, &ls, &ly, &lh);
+    /* A hidden line (folded, invisible text) draws nothing; walking its
+     * display lines would also trip GTK, which skips a line of height 0
+     * and then checks the iter against the next line's layout */
+    if (lh <= 0 || (ly + lh) * sy < c->top || ly * sy > c->top + c->height) {
+        return;
+    }
+
+    GdkRGBA fg, bg;
+    gboolean has_fg, has_bg;
+    tag_colors(&ls, &fg, &has_fg, &bg, &has_bg);
+    if (has_bg) {
+        cairo_set_source_rgba(cc, bg.red, bg.green, bg.blue, bg.alpha);
+        cairo_rectangle(cc, 0, ly * sy, width, MAX(1.0, lh * sy));
+        cairo_fill(cc);
+    }
+
+    GtkTextIter lend = ls;
+    if (!gtk_text_iter_ends_line(&lend)) {
+        gtk_text_iter_forward_to_line_end(&lend);
+    }
+    if (!c->detailed) {
+        gint len = gtk_text_iter_get_line_offset(&lend);
+        if (len > 0) {
+            set_source_role(cc, PAL_FG, 0.6);
+            cairo_rectangle(cc, 2.0, (gint)(ly * sy + 0.5), MIN(len * 7.0 * sx, width - 2.0),
+                            MAX(1, (gint)(lh * sy * 0.5)));
+            cairo_fill(cc);
+        }
+        return;
+    }
+
+    /* Each display (wrapped) line, run by run */
+    GtkTextIter ds = ls;
+    while (TRUE) {
+        GtkTextIter de = ds;
+        gtk_text_view_forward_display_line_end(view, &de);
+        if (gtk_text_iter_compare(&de, &lend) > 0 || gtk_text_iter_get_line(&de) != i) {
+            de = lend;
+        }
+        GtkTextIter rs = ds;
+        while (gtk_text_iter_compare(&rs, &de) < 0) {
+            GtkTextIter re = rs;
+            if (gtk_text_iter_get_child_anchor(&rs) != NULL || gtk_text_iter_get_paintable(&rs) != NULL) {
+                gtk_text_iter_forward_char(&re);
+            } else {
+                gtk_text_iter_forward_to_tag_toggle(&re, NULL);
+                /* stop before an embedded object so it is drawn as a block */
+                GtkTextIter scan = rs;
+                while (gtk_text_iter_compare(&scan, &re) < 0 && gtk_text_iter_compare(&scan, &de) < 0) {
+                    if (gtk_text_iter_get_char(&scan) == 0xFFFC && !gtk_text_iter_equal(&scan, &rs)) {
+                        re = scan;
+                        break;
+                    }
+                    gtk_text_iter_forward_char(&scan);
+                }
+            }
+            if (gtk_text_iter_compare(&re, &de) > 0) {
+                re = de;
+            }
+            if (gtk_text_iter_equal(&re, &rs)) {
+                break;
+            }
+            draw_run(cc, layout, view, &rs, &re, sx, sy, font_scale);
+            rs = re;
+        }
+        GtkTextIter next = ds;
+        if (!gtk_text_view_forward_display_line(view, &next) || gtk_text_iter_get_line(&next) != i ||
+            gtk_text_iter_compare(&next, &ds) <= 0) {
+            break;
+        }
+        ds = next;
+    }
+}
+
+/* Draw buffer lines first..last into the render */
+static void draw_lines(MinimapCache* c, GtkTextBuffer* buffer, GtkTextView* view, gint first, gint last) {
+    if (first > last) {
+        return;
+    }
+#ifdef HAVE_GSV
+    /* GtkSourceView colours only what has been shown: colour the drawn lines */
+    if (c->detailed && GTK_SOURCE_IS_BUFFER(buffer)) {
+        GtkTextIter hs, he;
+        gtk_text_buffer_get_iter_at_line(buffer, &hs, first);
+        gtk_text_buffer_get_iter_at_line(buffer, &he, last);
+        if (!gtk_text_iter_ends_line(&he)) {
+            gtk_text_iter_forward_to_line_end(&he);
+        }
+        gtk_source_buffer_ensure_highlight(GTK_SOURCE_BUFFER(buffer), &hs, &he);
+    }
+#endif
+    cairo_t* cc = cairo_create(c->surface);
+    cairo_translate(cc, 0, -c->top);
+    PangoLayout* layout = pango_cairo_create_layout(cc);
+    for (gint i = first; i <= last; i++) {
+        draw_line(cc, layout, buffer, view, c, i);
+    }
+    g_object_unref(layout);
+    cairo_destroy(cc);
+}
+
+/* Content y of the top of line i, or of its bottom */
+static gdouble line_edge(GtkTextBuffer* buffer, GtkTextView* view, gdouble sy, gint i, gboolean bottom) {
+    GtkTextIter it;
+    gtk_text_buffer_get_iter_at_line(buffer, &it, i);
+    gint ly = 0, lh = 0;
+    gtk_text_view_get_line_yrange(view, &it, &ly, &lh);
+    return (bottom ? ly + lh : ly) * sy;
+}
+
+/* Lines drawn per step of the idle fill, and the time one fill call may take */
+#define MINIMAP_FILL_LINES 32
+#define MINIMAP_FILL_BUDGET_US 4000
+
+/* Idle: draw the rest of the render, below the lines shown then above, a
+ * few milliseconds at a time (input and frames go first) */
+static gboolean on_fill_idle(gpointer data) {
+    MinimapCache* c = data;
+    GtkTextView* view = c->view;
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
+    gint lines = gtk_text_buffer_get_line_count(buffer);
+    c->range_last = MIN(c->range_last, lines - 1);
+    gint64 deadline = g_get_monotonic_time() + MINIMAP_FILL_BUDGET_US;
+    while (g_get_monotonic_time() < deadline) {
+        if (c->done_last < c->range_last) {
+            gint to = MIN(c->done_last + MINIMAP_FILL_LINES, c->range_last);
+            draw_lines(c, buffer, view, c->done_last + 1, to);
+            c->done_last = to;
+            c->done_bottom = line_edge(buffer, view, c->scale, to, TRUE);
+        } else if (c->done_first > c->range_first) {
+            gint from = MAX(c->done_first - MINIMAP_FILL_LINES, c->range_first);
+            draw_lines(c, buffer, view, from, c->done_first - 1);
+            c->done_first = from;
+            c->done_top = line_edge(buffer, view, c->scale, from, FALSE);
+        } else {
+            break;
+        }
+    }
+    if (c->done_last < c->range_last || c->done_first > c->range_first) {
+        return G_SOURCE_CONTINUE;
+    }
+    c->fill_source = 0;
+    g_clear_object(&c->view);
+    return G_SOURCE_REMOVE;
+}
+
+/* Make the offscreen render of the document lines around the minimap's
+ * position (cached): the lines shown now, the others by the idle fill */
 static void minimap_build_cache(GtkTextBuffer* buffer, GtkTextView* view, MinimapCache* c,
                                 gint width, gint height, const MinimapGeometry* g) {
     minimap_cache_clear(c);
@@ -356,118 +531,36 @@ static void minimap_build_cache(GtkTextBuffer* buffer, GtkTextView* view, Minima
     /* Centered on the shown part, within the content */
     c->top = (g->content <= ch) ? 0.0
              : (gdouble)(gint)CLAMP(g->offset - (ch - height) / 2.0, 0.0, g->content - ch);
+    c->sx = (gdouble)(width - 4) / view_w;
+    c->font_scale = MIN(c->sx, sy);
 
-    cairo_t* cc = cairo_create(c->surface);
     /* Background identical to the preview pane */
+    cairo_t* cc = cairo_create(c->surface);
     set_source_role(cc, PAL_BG_VIEW, 1.0);
     cairo_paint(cc);
-    cairo_translate(cc, 0, -c->top);
-
-    gdouble sx = (gdouble)(width - 4) / view_w;
-    gdouble font_scale = MIN(sx, sy);
-    PangoLayout* layout = pango_cairo_create_layout(cc);
-
-    /* Buffer lines in the drawn range */
-    gdouble range_end = c->top + ch;
-    GtkTextIter first_line, last_line;
-    gtk_text_view_get_line_at_y(view, &first_line, (gint)(c->top / sy), NULL);
-    gtk_text_view_get_line_at_y(view, &last_line, (gint)(range_end / sy), NULL);
-    gint first = gtk_text_iter_get_line(&first_line);
-    gint last = gtk_text_iter_get_line(&last_line);
-    gboolean detailed = (last - first <= 5000); /* very dense: one bar per line */
-#ifdef HAVE_GSV
-    /* GtkSourceView colours only what has been shown: colour the drawn lines */
-    if (detailed && GTK_SOURCE_IS_BUFFER(buffer)) {
-        if (!gtk_text_iter_ends_line(&last_line)) {
-            gtk_text_iter_forward_to_line_end(&last_line);
-        }
-        gtk_source_buffer_ensure_highlight(GTK_SOURCE_BUFFER(buffer), &first_line, &last_line);
-    }
-#endif
-    gint lines = gtk_text_buffer_get_line_count(buffer);
-    for (gint i = first; i < lines; i++) {
-        GtkTextIter ls;
-        gtk_text_buffer_get_iter_at_line(buffer, &ls, i);
-        gint ly = 0, lh = 0;
-        gtk_text_view_get_line_yrange(view, &ls, &ly, &lh);
-        if (ly * sy > range_end) {
-            break;
-        }
-        /* A hidden line (folded, invisible text) draws nothing; walking its
-         * display lines would also trip GTK, which skips a line of height 0
-         * and then checks the iter against the next line's layout */
-        if (lh <= 0 || (ly + lh) * sy < c->top) {
-            continue;
-        }
-
-        GdkRGBA fg, bg;
-        gboolean has_fg, has_bg;
-        tag_colors(&ls, &fg, &has_fg, &bg, &has_bg);
-        if (has_bg) {
-            cairo_set_source_rgba(cc, bg.red, bg.green, bg.blue, bg.alpha);
-            cairo_rectangle(cc, 0, ly * sy, width, MAX(1.0, lh * sy));
-            cairo_fill(cc);
-        }
-
-        GtkTextIter lend = ls;
-        if (!gtk_text_iter_ends_line(&lend)) {
-            gtk_text_iter_forward_to_line_end(&lend);
-        }
-        if (!detailed) {
-            gint len = gtk_text_iter_get_line_offset(&lend);
-            if (len > 0) {
-                set_source_role(cc, PAL_FG, 0.6);
-                cairo_rectangle(cc, 2.0, (gint)(ly * sy + 0.5), MIN(len * 7.0 * sx, width - 2.0),
-                                MAX(1, (gint)(lh * sy * 0.5)));
-                cairo_fill(cc);
-            }
-            continue;
-        }
-
-        /* Each display (wrapped) line, run by run */
-        GtkTextIter ds = ls;
-        while (TRUE) {
-            GtkTextIter de = ds;
-            gtk_text_view_forward_display_line_end(view, &de);
-            if (gtk_text_iter_compare(&de, &lend) > 0 || gtk_text_iter_get_line(&de) != i) {
-                de = lend;
-            }
-            GtkTextIter rs = ds;
-            while (gtk_text_iter_compare(&rs, &de) < 0) {
-                GtkTextIter re = rs;
-                if (gtk_text_iter_get_child_anchor(&rs) != NULL || gtk_text_iter_get_paintable(&rs) != NULL) {
-                    gtk_text_iter_forward_char(&re);
-                } else {
-                    gtk_text_iter_forward_to_tag_toggle(&re, NULL);
-                    /* stop before an embedded object so it is drawn as a block */
-                    GtkTextIter scan = rs;
-                    while (gtk_text_iter_compare(&scan, &re) < 0 && gtk_text_iter_compare(&scan, &de) < 0) {
-                        if (gtk_text_iter_get_char(&scan) == 0xFFFC && !gtk_text_iter_equal(&scan, &rs)) {
-                            re = scan;
-                            break;
-                        }
-                        gtk_text_iter_forward_char(&scan);
-                    }
-                }
-                if (gtk_text_iter_compare(&re, &de) > 0) {
-                    re = de;
-                }
-                if (gtk_text_iter_equal(&re, &rs)) {
-                    break;
-                }
-                draw_run(cc, layout, view, &rs, &re, sx, sy, font_scale);
-                rs = re;
-            }
-            GtkTextIter next = ds;
-            if (!gtk_text_view_forward_display_line(view, &next) || gtk_text_iter_get_line(&next) != i ||
-                gtk_text_iter_compare(&next, &ds) <= 0) {
-                break;
-            }
-            ds = next;
-        }
-    }
-    g_object_unref(layout);
     cairo_destroy(cc);
+
+    /* Buffer lines of the whole render, and of the part shown */
+    GtkTextIter it;
+    gtk_text_view_get_line_at_y(view, &it, (gint)(c->top / sy), NULL);
+    c->range_first = gtk_text_iter_get_line(&it);
+    gtk_text_view_get_line_at_y(view, &it, (gint)((c->top + ch) / sy), NULL);
+    c->range_last = gtk_text_iter_get_line(&it);
+    c->detailed = (c->range_last - c->range_first <= 5000); /* very dense: one bar per line */
+    gtk_text_view_get_line_at_y(view, &it, (gint)(MAX(g->offset, c->top) / sy), NULL);
+    gint shown_first = CLAMP(gtk_text_iter_get_line(&it), c->range_first, c->range_last);
+    gtk_text_view_get_line_at_y(view, &it, (gint)(MIN(g->offset + height, c->top + ch) / sy), NULL);
+    gint shown_last = CLAMP(gtk_text_iter_get_line(&it), shown_first, c->range_last);
+
+    draw_lines(c, buffer, view, shown_first, shown_last);
+    c->done_first = shown_first;
+    c->done_last = shown_last;
+    c->done_top = line_edge(buffer, view, sy, shown_first, FALSE);
+    c->done_bottom = line_edge(buffer, view, sy, shown_last, TRUE);
+    if (shown_first > c->range_first || shown_last < c->range_last) {
+        c->view = g_object_ref(view);
+        c->fill_source = g_idle_add_full(G_PRIORITY_LOW, on_fill_idle, c, NULL);
+    }
 }
 
 /* While the minimap is shown it is the vertical scrollbar (click / drag), as
