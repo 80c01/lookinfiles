@@ -13,7 +13,12 @@ make bench-preview   # every structured preview on the fixtures (headless, docs/
 make bench-app       # the application under Xvfb: start-up, idle cost, browsing
 LOOKIN_PROFILE=1 ./lookinfiles          # timings on stderr
 LOOKIN_PROFILE=/tmp/p.log ./lookinfiles # ... or in a file
+tools/mem_report.sh [PID]               # where the memory of a running instance goes
 ```
+
+`tools/mem_report.sh` sums `/proc/<pid>/smaps` by kind (heap, anonymous,
+GPU buffers, shared memory, libraries, mapped files) and lists the largest
+mappings: run it while the memory of a real session is high.
 
 Each benchmark prints its results and fails when one exceeds its budget.
 Run the one that matches a change before and after it, on the same machine:
