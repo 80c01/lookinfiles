@@ -48,6 +48,11 @@ typedef struct {
     guint save_source;
     guint rebuild_source;
     guint focus_after;      /* cell focused once rebuilt */
+    gdouble scroll_keep;    /* the scroll position before a rebuild, put back once laid out */
+    GdkFrameClock* scroll_clock; /* owned ref while it is to be put back, else NULL */
+    gulong scroll_handler;
+    guint scroll_layouts;   /* layouts since the rebuild */
+    gdouble scroll_upper;   /* the height of the cells at the last of them */
     gboolean dirty;
     gboolean building;      /* filling the buffers: not a change */
     gboolean closed;

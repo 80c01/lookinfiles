@@ -684,11 +684,62 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     return cell;
 }
 
+/* --- The scroll position across a rebuild --- */
+
+static void stop_keeping_scroll(IpynbTab* t) {
+    if (t->scroll_clock == NULL) return;
+    g_signal_handler_disconnect(t->scroll_clock, t->scroll_handler);
+    t->scroll_handler = 0;
+    g_clear_object(&t->scroll_clock);
+}
+
+/* The new cells laid out (before they are painted): the view back where it
+ * was, then moved just enough to show the cell with the focus. Removing
+ * the cells had taken it to the top, and the focus given to a cell not yet
+ * laid out does not scroll to it. Done again at each layout until the
+ * height of the cells stays the same (a text view takes the height of its
+ * lines a frame after it shows, on_view_map()). */
+static void on_rebuilt_layout(GdkFrameClock* clock, gpointer data) {
+    (void)clock;
+    IpynbTab* t = data;
+    GtkAdjustment* adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(t->scroll));
+    gdouble upper = gtk_adjustment_get_upper(adj);
+    t->scroll_layouts++;
+    if ((t->scroll_layouts > 3 && upper == t->scroll_upper) || t->scroll_layouts > 30) {
+        stop_keeping_scroll(t);
+        return;
+    }
+    t->scroll_upper = upper;
+    gdouble value = t->scroll_keep;
+    gdouble page = gtk_adjustment_get_page_size(adj);
+    graphene_rect_t box;
+    GtkWidget* cell = t->current < t->views->len ? gtk_widget_get_parent(g_ptr_array_index(t->views, t->current)) : NULL;
+    if (cell != NULL && gtk_widget_get_visible(cell) && gtk_widget_compute_bounds(cell, t->cells_box, &box)) {
+        gdouble top = box.origin.y, bottom = box.origin.y + box.size.height;
+        if (bottom > value + page) value = bottom - page;
+        if (top < value) value = top; /* a cell taller than the view: its top */
+    }
+    gtk_adjustment_set_value(adj, value);
+}
+
+static void keep_scroll(IpynbTab* t) {
+    stop_keeping_scroll(t);
+    GdkFrameClock* clock = gtk_widget_get_frame_clock(t->scroll);
+    if (clock == NULL) return; /* not shown yet: nothing to keep */
+    t->scroll_keep = gtk_adjustment_get_value(gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(t->scroll)));
+    t->scroll_clock = g_object_ref(clock);
+    t->scroll_layouts = 0;
+    t->scroll_upper = -1;
+    /* After GtkWindow's own handler, which lays out the widgets */
+    t->scroll_handler = g_signal_connect(clock, "layout", G_CALLBACK(on_rebuilt_layout), t);
+}
+
 static void rebuild(IpynbTab* t) {
     if (t->rebuild_source != 0) {
         g_source_remove(t->rebuild_source);
         t->rebuild_source = 0;
     }
+    keep_scroll(t);
     GtkWidget* child;
     while ((child = gtk_widget_get_first_child(t->cells_box)) != NULL) {
         gtk_box_remove(GTK_BOX(t->cells_box), child);
@@ -837,6 +888,7 @@ static void tab_free(gpointer data) {
     IpynbTab* t = data;
     if (t->save_source != 0) g_source_remove(t->save_source);
     if (t->rebuild_source != 0) g_source_remove(t->rebuild_source);
+    stop_keeping_scroll(t);
     g_clear_object(&t->tab_label);
     ipynb_select_drop_deleted(t);
     g_ptr_array_unref(t->deleted);
