@@ -22,6 +22,7 @@
  *   APP_EVENT_CLOSE_TAB       -> close_shown_tab()            (ui.c)
  *   APP_EVENT_SAVE_WORKSPACE_BOOKMARK -> session_bookmark_save() (session_bookmark.c)
  *   APP_EVENT_OPEN_WORKSPACE_BOOKMARK -> session_bookmark_open() (session_bookmark.c)
+ *   APP_EVENT_ADD_BOOKMARK    -> bookmarks_add_requested()    (bookmarks.c)
  *   APP_EVENT_PREVIEW_LOCATION -> status_bar_show_location()  (status_bar.c)
  */
 #include "core/app_types.h"
@@ -54,6 +55,9 @@ typedef enum {
      * saved workspace in app->session_open_target (taken by the handler) */
     APP_EVENT_SAVE_WORKSPACE_BOOKMARK,
     APP_EVENT_OPEN_WORKSPACE_BOOKMARK,
+    /* A browser tab asked to bookmark app->bookmark_add_target, named
+     * app->bookmark_add_name (both taken by the handler) */
+    APP_EVENT_ADD_BOOKMARK,
     /* The path of the value at the preview cursor changed (JSON): show it */
     APP_EVENT_PREVIEW_LOCATION,
     APP_EVENT_COUNT

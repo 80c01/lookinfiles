@@ -8,6 +8,8 @@ back to the files) or the bookmark button at the top of the explorer.
 
 - From any view, `Ctrl+D` bookmarks the selected entry, or the current
   folder.
+- In a browser tab, right-click the page and choose **Add Bookmark…**: the
+  dialog proposes the page's title and address.
 - In the bookmarks view, `a` adds a bookmark inside the selected folder.
   The dialog asks for a **Name**, a **Location** (a path or a URL; the
   **Current Directory** button fills in the explorer's folder) and a

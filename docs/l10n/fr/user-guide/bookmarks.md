@@ -9,6 +9,9 @@ de l’explorateur.
 
 - Depuis n’importe quelle vue, `Ctrl+D` ajoute un signet sur l’élément
   sélectionné, ou sur le dossier courant.
+- Dans un onglet de navigateur, faites un clic droit sur la page et
+  choisissez **Ajouter un signet…** : le dialogue propose le titre et
+  l’adresse de la page.
 - Dans la vue des signets, `a` ajoute un signet dans le dossier
   sélectionné. Le dialogue demande un **Nom**, un **Emplacement** (un
   chemin ou une URL ; le bouton **Dossier courant** remplit le dossier de

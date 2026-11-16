@@ -24,6 +24,9 @@ void bookmarks_attach_context_menu(AppData* app);
 
 /* Actions */
 void bookmarks_add_from_context(AppData* app);  /* Ctrl+D from any view */
+/* APP_EVENT_ADD_BOOKMARK: add a bookmark to app->bookmark_add_target, named
+ * app->bookmark_add_name in the dialog, or edit the one already linking there */
+void bookmarks_add_requested(AppData* app);
 void bookmarks_add(AppData* app);               /* add bookmark in selected folder */
 void bookmarks_new_folder(AppData* app);
 /* Add a link to a saved workspace (target from session_target_make()) in the

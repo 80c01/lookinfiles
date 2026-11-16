@@ -1106,6 +1106,7 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | `APP_EVENT_PREVIEW_LOCATION`     | path of the value at the preview cursor changed | `status_bar_show_location()` |
 | `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`, `refresh_diff_gutters()`, `editor_modes_refresh_git()` |
 | `APP_EVENT_SAVE_WORKSPACE_BOOKMARK` / `APP_EVENT_OPEN_WORKSPACE_BOOKMARK` | bookmarks view: save the workspace / open a saved one | `session_bookmark_save()` / `session_bookmark_open()` |
+| `APP_EVENT_ADD_BOOKMARK`         | browser tab: bookmark `app->bookmark_add_target` (name `app->bookmark_add_name`) | `bookmarks_add_requested()` |
 | `APP_EVENT_FOCUS_NEXT_PANEL` / `_PREV_PANEL` | `C-x o`, `Ctrl+W w` / `W`, `F6` / `Shift+F6` | `focus_next_panel()` / `focus_prev_panel()` |
 
 Handlers run synchronously inside `app_emit()`. `make check` rejects direct

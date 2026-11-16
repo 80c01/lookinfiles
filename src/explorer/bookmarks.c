@@ -530,8 +530,11 @@ static void bm_after_change(AppData* app, guint select_id) {
     bm_refresh_select(app, select_id);
 }
 
-static void bm_add_dialog(AppData* app, const gchar* init_target, GNode* parent) {
-    gchar* init_name = (init_target != NULL) ? bookmark_default_name(init_target) : NULL;
+/* name_hint NULL or empty: the default name of init_target */
+static void bm_add_dialog(AppData* app, const gchar* init_target, const gchar* name_hint, GNode* parent) {
+    gchar* init_name = (name_hint != NULL && name_hint[0] != '\0') ? g_strdup(name_hint)
+                       : (init_target != NULL)                    ? bookmark_default_name(init_target)
+                                                                  : NULL;
     gchar* name = NULL;
     gchar* target = NULL;
     GNode* out_parent = NULL;
@@ -646,7 +649,7 @@ void bookmarks_add(AppData* app) {
     if (app == NULL) {
         return;
     }
-    bm_add_dialog(app, app->base_dir, bm_context_folder(app));
+    bm_add_dialog(app, app->base_dir, NULL, bm_context_folder(app));
 }
 
 /* Ctrl+D: in the files view, bookmark the selected entry (or the current
@@ -674,6 +677,21 @@ void bookmarks_add_session(AppData* app, const gchar* name, const gchar* target)
     bm_after_change(app, bm_item(node)->id);
 }
 
+/* Add a bookmark to target (a path or a URL), name proposed in the dialog
+ * (NULL: from the target), or edit the bookmark that already links there */
+static void bm_add_link(AppData* app, const gchar* target, const gchar* name) {
+    if (app == NULL || app->bm == NULL || target == NULL || target[0] == '\0') {
+        return;
+    }
+    GNode* existing = bm_find_link_by_target(app->bm->root, target);
+    if (existing != NULL) {
+        bm_edit_node(app, existing, TRUE);
+    } else {
+        GNode* parent = bm_find_by_id(app->bm->root, app->bm->last_folder_id);
+        bm_add_dialog(app, target, name, parent != NULL ? parent : app->bm->root);
+    }
+}
+
 void bookmarks_add_from_context(AppData* app) {
     if (app == NULL || app->bm == NULL) {
         return;
@@ -692,17 +710,18 @@ void bookmarks_add_from_context(AppData* app) {
     if (target == NULL) {
         target = g_strdup(app->base_dir);
     }
-    if (target == NULL) {
-        return;
-    }
-    GNode* existing = bm_find_link_by_target(app->bm->root, target);
-    if (existing != NULL) {
-        bm_edit_node(app, existing, TRUE);
-    } else {
-        GNode* parent = bm_find_by_id(app->bm->root, app->bm->last_folder_id);
-        bm_add_dialog(app, target, parent != NULL ? parent : app->bm->root);
-    }
+    bm_add_link(app, target, NULL);
     g_free(target);
+}
+
+void bookmarks_add_requested(AppData* app) {
+    gchar* target = app->bookmark_add_target;
+    gchar* name = app->bookmark_add_name;
+    app->bookmark_add_target = NULL;
+    app->bookmark_add_name = NULL;
+    bm_add_link(app, target, name);
+    g_free(target);
+    g_free(name);
 }
 
 void bookmarks_new_folder(AppData* app) {
