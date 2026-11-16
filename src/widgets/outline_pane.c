@@ -932,7 +932,7 @@ OutlinePane* outline_pane_new(GtkWidget* content, gint* width, const gchar* load
     p->panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(p->panel, "tagbar");
     gtk_widget_set_size_request(p->panel, MIN_WIDTH, -1);
-    GtkWidget* header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget* header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_add_css_class(header, "tagbar-header");
     p->title = gtk_label_new(_("Symbols"));
     gtk_widget_add_css_class(p->title, "tagbar-title");
