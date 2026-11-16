@@ -20,6 +20,9 @@ void editor_view_release(EditorTab* tab);
 /* Give tab's view the buffer's cursor and selection (each view of a split
  * file keeps its own; done when the view is focused or clicked) */
 void editor_view_activate(EditorTab* tab);
+/* Make view validate and redraw its onscreen lines on the next idle: after
+ * some edits GtkTextView 4.18 keeps drawing the old ones, tags included */
+void editor_view_queue_revalidate(GtkWidget* view);
 /* The view of tab's buffer that has the cursor (tab itself without a split) */
 EditorTab* editor_view_active(EditorTab* tab);
 /* Another open tab of app showing tab's buffer, or NULL */

@@ -8,6 +8,7 @@
  * those frames so it never stays behind. */
 #include "editor/editor_modes_private.h"
 #include "theme/text_tags.h"
+#include "editor/editor_view.h"
 
 #define BLOCK_CURSOR_TAG "emacs_block_cursor"
 #define BLOCK_TAB_KEY "emacs-block-cursor-tab"
@@ -90,6 +91,9 @@ static void block_cursor_update(EditorTab* tab) {
     GtkTextIter s, e;
     gtk_text_buffer_get_bounds(b, &s, &e);
     if (tag != NULL) gtk_text_buffer_remove_tag(b, tag, &s, &e);
+    /* Moving the tag does not change the text: without this, a view that GTK
+     * left drawing its old lines keeps the cursor where it was */
+    if (st->emacs_block_on || tag != NULL) editor_view_queue_revalidate(tab->view);
     if (!place_eol_box(tab)) {
         if (!st->emacs_block_on) return;
         if (tag == NULL) {
