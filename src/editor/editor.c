@@ -599,6 +599,8 @@ EditorTab* editor_open_at(AppData* app, const gchar* path, gint line, gint index
 
 static guint status_idle_id = 0; /* pending status bar refresh after a page switch */
 
+static void update_preview_after_save(AppData* app, EditorTab* tab);
+
 static gboolean emit_status_changed_idle(gpointer data) {
     AppData* app = (AppData*)data;
     status_idle_id = 0;
@@ -640,6 +642,13 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
             EditorTab* t = (EditorTab*)l->data;
             if (t != NULL && t->container == cur_child) {
                 app->last_focused_editor = t;
+                /* The tab of a file whose saves update the preview shows its
+                 * file there (as saved; a LaTeX document: once built) */
+                if (!app->switching_ws && editor_tab_updates_preview(t) &&
+                    !g_str_has_suffix(t->path, ".tex") &&
+                    g_strcmp0(preview_state_path(app), t->path) != 0) {
+                    update_preview_after_save(app, t);
+                }
                 minimap_view_update_visibility(t->minimap);
                 editor_modes_update_status(t);
                 break;
