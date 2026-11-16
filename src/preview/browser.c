@@ -201,6 +201,7 @@ static void insert_page(AppData* app, BrowserTab* bt, GtkNotebook* nb, gint posi
     gtk_notebook_insert_page(nb, bt->page, bt->label, position);
     gtk_notebook_set_tab_reorderable(nb, bt->page, TRUE);
     gtk_notebook_set_tab_detachable(nb, bt->page, TRUE);
+    app_emit(app, APP_EVENT_CHROME_CHANGED); /* the split button shows with a tab */
 }
 
 /* Take the page out of the notebook: an owned ref */
