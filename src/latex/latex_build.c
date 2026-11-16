@@ -20,6 +20,7 @@
 struct LatexBuild {
     GCancellable* running; /* the compilation in progress, or NULL */
     gchar* pending;        /* file saved again meanwhile, or NULL */
+    GCancellable* finding; /* the search for a selected tab's PDF, or NULL */
     gboolean told_missing; /* "no compiler" said once */
 };
 
@@ -302,6 +303,24 @@ static void build_thread(GTask* task, gpointer source, gpointer data, GCancellab
     g_task_return_boolean(task, TRUE);
 }
 
+/* The PDF of the main document of the selected file, when it was built */
+static void find_pdf_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
+    (void)source;
+    (void)cancellable;
+    BuildJob* job = data;
+    gchar* text = NULL;
+    job->root = find_root(job->saved, &text);
+    g_free(text);
+    if (job->root != NULL) {
+        gchar* pdf = g_strdup(job->root);
+        if (g_str_has_suffix(pdf, ".tex")) pdf[strlen(pdf) - strlen(".tex")] = '\0';
+        job->pdf = g_strconcat(pdf, ".pdf", NULL);
+        g_free(pdf);
+        if (!g_file_test(job->pdf, G_FILE_TEST_IS_REGULAR)) g_clear_pointer(&job->pdf, g_free);
+    }
+    g_task_return_boolean(task, TRUE);
+}
+
 /* ------------------------------------------------------------------------- */
 /* Main thread                                                               */
 /* ------------------------------------------------------------------------- */
@@ -409,9 +428,47 @@ void latex_build_saved(AppData* app, const gchar* path) {
     start_build(app, path);
 }
 
+static void on_pdf_found(GObject* source, GAsyncResult* result, gpointer data) {
+    (void)source;
+    (void)data;
+    BuildJob* job = g_task_get_task_data(G_TASK(result));
+    if (g_cancellable_is_cancelled(job->cancellable)) return; /* another tab, or at exit */
+    AppData* app = job->app;
+    struct LatexBuild* st = build_state(app);
+    g_clear_object(&st->finding);
+    /* Still the selected tab, and not compiled meanwhile */
+    EditorTab* tab = app->last_focused_editor;
+    if (job->pdf == NULL || tab == NULL || g_strcmp0(tab->path, job->saved) != 0 || st->running != NULL) return;
+    if (g_strcmp0(preview_state_path(app), job->pdf) == 0) return;
+    show_pdf(app, job->pdf);
+    latex_sync_after_build(app);
+}
+
+void latex_build_show_pdf(AppData* app, const gchar* path) {
+    if (app == NULL || path == NULL || !g_str_has_suffix(path, ".tex")) return;
+    struct LatexBuild* st = build_state(app);
+    if (st->finding != NULL) {
+        g_cancellable_cancel(st->finding);
+        g_clear_object(&st->finding);
+    }
+    BuildJob* job = g_new0(BuildJob, 1);
+    job->app = app;
+    job->saved = g_strdup(path);
+    job->cancellable = g_cancellable_new();
+    st->finding = g_object_ref(job->cancellable);
+    GTask* task = g_task_new(NULL, job->cancellable, on_pdf_found, NULL);
+    g_task_set_task_data(task, job, job_free);
+    g_task_run_in_thread(task, find_pdf_thread);
+    g_object_unref(task);
+}
+
 void latex_build_free(AppData* app) {
     struct LatexBuild* st = app->latex_build;
     if (st == NULL) return;
+    if (st->finding != NULL) {
+        g_cancellable_cancel(st->finding);
+        g_object_unref(st->finding);
+    }
     if (st->running != NULL) {
         g_cancellable_cancel(st->running);
         g_object_unref(st->running);

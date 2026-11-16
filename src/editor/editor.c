@@ -643,11 +643,15 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
             if (t != NULL && t->container == cur_child) {
                 app->last_focused_editor = t;
                 /* The tab of a file whose saves update the preview shows its
-                 * file there (as saved; a LaTeX document: once built) */
+                 * file there (as saved; a LaTeX document: its PDF when built) */
                 if (!app->switching_ws && editor_tab_updates_preview(t) &&
-                    !g_str_has_suffix(t->path, ".tex") &&
+                    !editor_preview_paused(app, t->path) &&
                     g_strcmp0(preview_state_path(app), t->path) != 0) {
-                    update_preview_after_save(app, t);
+                    if (g_str_has_suffix(t->path, ".tex")) {
+                        latex_build_show_pdf(app, t->path);
+                    } else {
+                        update_preview_after_save(app, t);
+                    }
                 }
                 minimap_view_update_visibility(t->minimap);
                 editor_modes_update_status(t);

@@ -149,7 +149,7 @@ Enregistrer un fichier dont l’aperçu est rendu depuis son texte (Markdown,
 Org, HTML, JSON, le PDF d’un document LaTeX...) met l’aperçu à jour, et
 y affiche le fichier même quand l’aperçu montrait un autre fichier ;
 sélectionner l’onglet d’un tel fichier l’y affiche aussi (tel
-qu’enregistré). Pour
+qu’enregistré ; un document LaTeX : son PDF, s’il a été compilé). Pour
 garder l’aperçu tel quel pendant que vous travaillez, choisissez **Ne pas
 mettre à jour l’aperçu** dans le menu contextuel de l’onglet ; **Mettre à
 jour l’aperçu** le remet à jour et laisse de nouveau les enregistrements le

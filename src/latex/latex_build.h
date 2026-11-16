@@ -14,6 +14,10 @@
  * .tex file */
 void latex_build_saved(AppData* app, const gchar* path);
 
+/* The tab of the .tex file at path was selected: show the PDF of its main
+ * document in the preview when it was built (found in a worker) */
+void latex_build_show_pdf(AppData* app, const gchar* path);
+
 /* Stop a running compilation (at exit) */
 void latex_build_free(AppData* app);
 
