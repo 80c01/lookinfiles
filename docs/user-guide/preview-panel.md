@@ -70,8 +70,8 @@ It follows the scrolling; a click or `Enter` scrolls to a heading or symbol,
 preview of the workspace that has headings or symbols; each workspace keeps
 its own choice, and new workspaces and the next start follow the last one
 made with `o` (also in Preferences, Editor page, which sets every
-workspace). **Show / Hide Tagbar** in the right-click menu of the preview
-does it for the current workspace only, not kept. In a large file, only
+workspace). **Show / Hide Tagbar** in the right-click menu of the Preview
+tab does it for the current workspace only, not kept. In a large file, only
 the part first shown is listed.
 
 `e` opens the previewed text file in an editor tab; `t` (Vim) or `C-o`
@@ -80,7 +80,7 @@ the part first shown is listed.
 On the right, the **minimap** shows the whole document in small, with the
 git change bars along its edge. Click or drag in it to scroll. To hide it
 (and get the scrollbar back), choose **Hide Minimap** in the right-click
-menu of the preview (the current workspace only, not kept), or untick
+menu of the Preview tab (the current workspace only, not kept), or untick
 **Show the minimap** in the Preferences, Editor page (every minimap and
 workspace, kept).
 
@@ -158,7 +158,7 @@ The bar at the bottom shows the path of the value at the cursor, such as
 `$.servers[2].host` in JSON, `/feed/entry[2]/title` in XML,
 `servers.alpha.ip` in TOML or `jobs.build.steps[1].run` in YAML (`[1].kind`
 in the second document of a file of several); `y` (or **Copy Path** in the
-right-click menu) copies it. A file over 512 KB shows its first 64 KB, the
+right-click menu of the Preview tab) copies it. A file over 512 KB shows its first 64 KB, the
 values open there ending with `…`; **Load Whole File** shows all of it. A
 file that is not valid JSON, XML or TOML, or YAML with tabs in its
 indentation or complex `?` keys, is shown as text.

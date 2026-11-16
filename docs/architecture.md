@@ -905,11 +905,11 @@ Layers, from bottom to top
   (`preview_tagbar_set_outline()`: the PDF bookmarks from `pdf`, the
   symbols from `preview_symbols`), following the scrolling; `o` /
   `Ctrl+K Ctrl+O` from `on_viewer_key_press()`.
-- `preview_menu` — the right-click menu of the preview: a section added to
-  the text view's extra menu (after Copy Image) that shows or hides the
-  tagbar (`preview_tagbar_toggle()`) and the preview's minimap
-  (`minimap_viewer_set_enabled()`) in the current workspace, labels
-  updated on each right click. `workspace` keeps both per workspace
+- `preview_menu` — the right-click menu of the Preview tab title: a
+  popover built on each right click with only the items that apply, Copy
+  Path (`preview_location_copy()`), and showing or hiding the tagbar
+  (`preview_tagbar_toggle()`) and the preview's minimap
+  (`minimap_viewer_set_enabled()`) in the current workspace. `workspace` keeps both per workspace
   (`VirtualLayout.preview_tagbar` / `preview_minimap`).
 - `preview_symbols` — the symbols of a source code preview: the built-in
   scanner (`code_scan`) on the text shown, in a worker, handed to

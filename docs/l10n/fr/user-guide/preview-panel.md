@@ -76,7 +76,7 @@ symboles ; chaque espace de travail garde son propre choix, et les
 nouveaux espaces de travail et le prochain démarrage suivent le dernier
 fait avec `o` (aussi dans les Préférences, page Éditeur, qui règle tous
 les espaces de travail). **Afficher / Masquer la barre de symboles** dans
-le menu du clic droit de l’aperçu le fait pour l’espace de travail courant
+le menu du clic droit de l’onglet Aperçu le fait pour l’espace de travail courant
 seulement, sans le garder. Dans un gros fichier, seule la partie affichée
 en premier est listée.
 
@@ -87,7 +87,7 @@ en premier est listée.
 barres de modification git le long de son bord. Cliquez ou faites glisser
 dedans pour faire défiler. Pour la masquer (et retrouver la barre de
 défilement), choisissez **Masquer la minicarte** dans le menu du clic droit
-de l’aperçu (l’espace de travail courant seulement, sans le garder), ou
+de l’onglet Aperçu (l’espace de travail courant seulement, sans le garder), ou
 décochez **Afficher la minicarte** dans les Préférences, page Éditeur
 (toutes les minicartes et tous les espaces de travail, gardé).
 
@@ -172,7 +172,8 @@ La barre du bas affiche le chemin de la valeur sous le curseur, par exemple
 `$.servers[2].host` en JSON, `/feed/entry[2]/title` en XML,
 `servers.alpha.ip` en TOML ou `jobs.build.steps[1].run` en YAML
 (`[1].kind` dans le deuxième document d’un fichier qui en a plusieurs) ;
-`y` (ou **Copier le chemin** dans le menu du clic droit) le copie. Un
+`y` (ou **Copier le chemin** dans le menu du clic droit de
+l’onglet Aperçu) le copie. Un
 fichier de plus de 512 Ko affiche ses 64 premiers Ko, les valeurs ouvertes
 à cet endroit se terminant par `…` ; **Charger tout le fichier** l’affiche
 en entier. Un fichier qui n’est pas du JSON, du XML ou du TOML valide, ou

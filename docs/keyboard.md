@@ -264,7 +264,7 @@ mode move in the process list)
 | `Space` / `p` | Play / pause the video or audio |
 | `Left` / `Right` | Video: seek 5 seconds back / forward (also in the explorer, on the video shown; `h` / `l` still navigate) |
 | `Tab` / `Shift+Tab` | Org-mode: fold the heading / cycle the global visibility |
-| `y` | JSON, XML, TOML, YAML: copy the path of the value at the cursor (`$.servers[2].host`, `/feed/entry[2]/title`, `servers.alpha.ip`, `jobs.build.steps[1].run`, shown in the preview bar; also **Copy Path** in the right-click menu) |
+| `y` | JSON, XML, TOML, YAML: copy the path of the value at the cursor (`$.servers[2].host`, `/feed/entry[2]/title`, `servers.alpha.ip`, `jobs.build.steps[1].run`, shown in the preview bar; also **Copy Path** in the right-click menu of the Preview tab) |
 | `Tab` / `Shift+Tab` | JSON, XML, TOML, YAML: fold or open the object, array, element, table, mapping or sequence at the cursor (from a line of values or text: the one around it) / cycle the level: the outer members only, two levels, everything open |
 | `t` | Org-mode: cycle the TODO keyword (the file's `#+TODO:` keywords; `TODO` → `DONE` → none by default) |
 | `Space` / `Enter` | Org-mode: toggle the checkbox `[ ]` ↔ `[X]` (parents and `[n/m]` cookies follow) |
