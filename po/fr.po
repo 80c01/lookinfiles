@@ -8837,6 +8837,9 @@ msgstr "Annuler la suppression"
 msgid "Put Back the Cell Deleted Last"
 msgstr "Remettre la dernière cellule supprimée"
 
+msgid "More Actions"
+msgstr "Autres actions"
+
 msgid "Show / Hide the Headings (Ctrl+K Ctrl+O)"
 msgstr "Afficher / masquer les titres (Ctrl+K Ctrl+O)"
 

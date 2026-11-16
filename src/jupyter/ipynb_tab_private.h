@@ -3,7 +3,8 @@
 
 /* Shared by the files of the Jupyter notebook tab: ipynb_tab.c (the tab,
  * its cells), ipynb_save.c (saving), ipynb_run.c (running cells in a
- * kernel) and ipynb_tagbar.c (the tagbar). The public API is ipynb_tab.h. */
+ * kernel), ipynb_bar.c (the bar at the top) and ipynb_tagbar.c (the
+ * tagbar). The public API is ipynb_tab.h. */
 #include "core/app_types.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_kernel.h"
@@ -76,6 +77,8 @@ void ipynb_tab_refresh_cell(IpynbTab* t, guint index);
 void ipynb_tab_render_cell(IpynbTab* t, guint index);
 /* Build every cell again (the kernel's language changed) */
 void ipynb_tab_rebuild_cells(IpynbTab* t);
+/* Put back the cell deleted last (and hide t->undo_button) */
+void ipynb_tab_undo_delete(IpynbTab* t);
 
 /* ipynb_save.c */
 /* The notebook changed: saved shortly */
@@ -104,6 +107,12 @@ void ipynb_run_cell(IpynbTab* t, guint index);
 void ipynb_run_advance(IpynbTab* t);
 /* Stop the kernel (tab closed) */
 void ipynb_run_stop(IpynbTab* t);
+
+/* ipynb_bar.c */
+/* The bar at the top of the tab: run buttons, new cells, Undo Delete
+ * (creates t->undo_button), kernel menu, headings and a menu of the rarer
+ * actions */
+GtkWidget* ipynb_bar_new(IpynbTab* t);
 
 /* ipynb_tagbar.c */
 /* Put content (the scrolled cells) and the tagbar side by side; returns

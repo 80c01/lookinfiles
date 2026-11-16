@@ -709,6 +709,10 @@ Layers, from bottom to top
   `ipynb_kernel_list()` each time it opens; a choice sets the notebook's
   kernelspec and starts that kernel) and the kernel state in the tab's
   status bar.
+  `ipynb_bar.c` (also on `ipynb_tab_private.h`) builds the bar at the top:
+  the run buttons, new cells and Undo Delete, cut on the right in a narrow
+  pane; the kernel menu, the headings button and a `view-more` menu (Clear
+  Outputs, Edit as JSON) always in sight at the right end.
   `ipynb_tagbar.c` (also on `ipynb_tab_private.h`) puts an `outline_pane`
   beside the cells (the editor tagbar's width), filled by `ipynb_outline`
   600 ms after the last change (`ipynb_tab_mark_changed()`), set again only
