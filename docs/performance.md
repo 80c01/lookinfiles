@@ -110,6 +110,13 @@ default stays `-O2 -g`. Measure again before changing it.
   threshold), and with glycin (GTK 4.20+ decodes in a sandbox, at full size)
   a real session reached 1.1 GB. `tools/mem_report.sh` shows it as
   "anonymous" memory.
+- **Work for what is passed over is dropped**: image decodings wait in a
+  queue (`image_decode.c`, two at a time, the shown image before the ones
+  decoded ahead, newest first); one nobody wants any more is dropped before
+  it starts. Browsing posters fast (one key every 50 ms) took 5.0 s of CPU and
+  a 1.1 GB peak with every decoding started at once, 3.2 s and 433 MB with
+  the queue. `LOOKIN_PROFILE` writes a `time ... image decode` line for each
+  (`ahead`: prefetch, `abandoned`: cancelled while it ran).
 - **Free memory is trimmed once browsing stops**: freeing a preview leaves
   free space between blocks still in use, which glibc keeps (a real session
   kept 536 MB free that way, `malloc_free_mb`). `core/memory_trim` calls

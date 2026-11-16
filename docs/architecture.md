@@ -906,8 +906,10 @@ Layers, from bottom to top
   `image_preview` lays the picture out in the preview (header, details,
   zoom, Copy Image); `image_decode` decodes it in a worker thread at the size
   shown, upright (EXIF orientation, RAW embedded preview), keeps the last
-  ones in a `preview_cache` (keyed by fitting box and by size shown), and
-  shares a decoding between the requests of the same image;
+  ones in a `preview_cache` (keyed by fitting box and by size shown),
+  shares a decoding between the requests of the same image, and runs two
+  at a time from a queue (shown image first, newest first; a waiting one
+  nobody wants is dropped);
   `image_prefetch` decodes ahead the images next to the previewed one in the
   explorer (`viewer` calls it after `render_image_preview()`), so arrowing
   through photos shows them at once.

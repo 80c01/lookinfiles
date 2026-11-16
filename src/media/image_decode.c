@@ -14,6 +14,7 @@
 #include "media/image_utils.h"
 #include "media/jpeg_decode.h"
 #include "preview/preview_cache.h"
+#include "core/profile.h"
 
 /* Largest decoded image, in pixels (zooming in on a large photo) */
 #define MAX_DECODED_PIXELS (48u * 1024 * 1024)
@@ -438,9 +439,19 @@ typedef struct Job {
     GCancellable* cancellable; /* the decoding's own */
     GList* waiters;            /* Waiter* */
     gboolean prefetch;         /* wanted by the current prefetch */
+    gboolean started;          /* on a worker thread (else waiting in the queue) */
 } Job;
 
-static GHashTable* jobs; /* key -> Job*, decodings running */
+static GHashTable* jobs; /* key -> Job*, decodings waiting or running */
+
+/* At most MAX_RUNNING decodings at a time; the others wait in `queue`,
+ * newest first. Browsing fast passes over images: a waiting decoding nobody
+ * wants any more is dropped before it starts, and a shown image goes before
+ * the ones decoded ahead. Decoding every image passed over, all at once, took
+ * most of the CPU of a session and many full-size images at the same time. */
+#define MAX_RUNNING 2
+static GQueue queue = G_QUEUE_INIT; /* Job*, not started */
+static guint running = 0;
 
 static void job_free(Job* job) {
     g_free(job->key);
@@ -489,13 +500,19 @@ static void decode_thread_func(GTask* task, gpointer source_object, gpointer tas
     gboolean cached = job->size.zoom == 1.0 && file_stamp_read(job->path, &stamp);
     ImageDecoded* d = cached ? cache_lookup(job->key, &stamp) : NULL;
     if (d == NULL) {
+        gint64 start = profile_start();
         d = decode(job->path, job->name, &job->size, cached ? &stamp : NULL, cancellable);
+        profile_done(start, "image decode %s %dx%d%s", job->name, d != NULL ? d->target_w : 0,
+                     d != NULL ? d->target_h : 0,
+                     g_cancellable_is_cancelled(cancellable) ? " (abandoned)" : job->prefetch ? " (ahead)" : "");
         if (d != NULL && cached && d->texture != NULL) {
             cache_insert(job->key, &stamp, d);
         }
     }
     g_task_return_pointer(task, d, (GDestroyNotify)image_decoded_free);
 }
+
+static void pump(void);
 
 static void on_decoded(GObject* source_object, GAsyncResult* res, gpointer user_data) {
     (void)source_object;
@@ -516,9 +533,67 @@ static void on_decoded(GObject* source_object, GAsyncResult* res, gpointer user_
     }
     g_list_free_full(waiters, (GDestroyNotify)waiter_free);
     image_decoded_free(d);
+    running--;
+    pump();
 }
 
-/* The running decoding of key, or a new one */
+/* Whether someone still waits for the job (a live waiter, or the prefetch) */
+static gboolean job_wanted(const Job* job) {
+    if (job->prefetch) {
+        return TRUE;
+    }
+    for (const GList* l = job->waiters; l != NULL; l = l->next) {
+        if (!((const Waiter*)l->data)->dead) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static void job_start(Job* job) {
+    job->started = TRUE;
+    running++;
+    GTask* task = g_task_new(NULL, job->cancellable, on_decoded, NULL);
+    g_task_set_task_data(task, job, (GDestroyNotify)job_free);
+    g_task_set_return_on_cancel(task, FALSE);
+    g_task_run_in_thread(task, decode_thread_func);
+    g_object_unref(task);
+}
+
+/* A waiting job nobody wants: dropped without decoding */
+static void job_drop(Job* job) {
+    if (jobs != NULL && g_hash_table_lookup(jobs, job->key) == job) {
+        g_hash_table_remove(jobs, job->key);
+    }
+    g_list_free_full(g_steal_pointer(&job->waiters), (GDestroyNotify)waiter_free);
+    job_free(job);
+}
+
+/* Start waiting jobs while there is room: requested images first, then the
+ * ones ahead, newest first in each */
+static void pump(void) {
+    for (GList* l = queue.head; l != NULL;) {
+        GList* next = l->next;
+        Job* job = l->data;
+        if (!job_wanted(job)) {
+            g_queue_delete_link(&queue, l);
+            job_drop(job);
+        }
+        l = next;
+    }
+    while (running < MAX_RUNNING && queue.head != NULL) {
+        GList* pick = NULL;
+        for (GList* l = queue.head; l != NULL && pick == NULL; l = l->next) {
+            if (!((Job*)l->data)->prefetch) pick = l;
+        }
+        if (pick == NULL) pick = queue.head;
+        Job* job = pick->data;
+        g_queue_delete_link(&queue, pick);
+        job_start(job);
+    }
+}
+
+/* The waiting or running decoding of key, or a new one (queued) */
 static Job* job_get(const gchar* path, const gchar* name, const ImageDecodeSize* size) {
     if (jobs == NULL) {
         jobs = g_hash_table_new(g_str_hash, g_str_equal);
@@ -536,12 +611,7 @@ static Job* job_get(const gchar* path, const gchar* name, const ImageDecodeSize*
     job->size = *size;
     job->cancellable = g_cancellable_new();
     g_hash_table_replace(jobs, job->key, job);
-
-    GTask* task = g_task_new(NULL, job->cancellable, on_decoded, NULL);
-    g_task_set_task_data(task, job, (GDestroyNotify)job_free);
-    g_task_set_return_on_cancel(task, FALSE);
-    g_task_run_in_thread(task, decode_thread_func);
-    g_object_unref(task);
+    g_queue_push_head(&queue, job);
     return job;
 }
 
@@ -560,6 +630,7 @@ void image_decode_async(const gchar* path, const gchar* name, const ImageDecodeS
         /* Runs at once when already cancelled */
         w->cancelled_id = g_cancellable_connect(cancellable, G_CALLBACK(on_waiter_cancelled), w, NULL);
     }
+    pump();
 }
 
 void image_decode_prefetch(const gchar* const* paths, const ImageDecodeSize* size) {
@@ -585,6 +656,7 @@ void image_decode_prefetch(const gchar* const* paths, const ImageDecodeSize* siz
         }
     }
     g_ptr_array_free(wanted, TRUE);
+    pump();
 }
 
 GdkTexture* image_decode_whole(const gchar* path) {
