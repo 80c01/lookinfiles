@@ -740,6 +740,14 @@ static void rebuild(IpynbTab* t) {
         t->rebuild_source = 0;
     }
     keep_scroll(t);
+    /* A focused cell view must lose the focus before it goes: on Windows its
+     * IME context otherwise keeps a message filter on the freed context
+     * (Gtk-CRITICAL gtk_im_context_ime_message_filter, then a crash) */
+    GtkRoot* root = gtk_widget_get_root(t->cells_box);
+    GtkWidget* focused = root != NULL ? gtk_root_get_focus(root) : NULL;
+    if (focused != NULL && gtk_widget_is_ancestor(focused, t->cells_box)) {
+        gtk_root_set_focus(root, NULL);
+    }
     GtkWidget* child;
     while ((child = gtk_widget_get_first_child(t->cells_box)) != NULL) {
         gtk_box_remove(GTK_BOX(t->cells_box), child);
