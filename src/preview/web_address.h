@@ -19,4 +19,8 @@ gchar* web_address_to_uri(const gchar* text);
 /* TRUE for an http or https URI: the ones a browser tab opens */
 gboolean web_address_is_web(const gchar* uri);
 
+/* TRUE when a browser tab shows uri itself (http, https, file, about, data,
+ * blob, or no scheme); others (mailto:, apt:...) go to their application */
+gboolean web_address_shown(const gchar* uri);
+
 #endif /* WEB_ADDRESS_H */

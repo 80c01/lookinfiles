@@ -196,6 +196,9 @@ canvas_text:canvas_doc,fonts,palette,text_tags
 user_guide:
 fuzzy_match:
 web_address:
+web_keys:
+web_engine:web_address,i18n
+web_engine_win:web_engine,web_keys,web_address,dialog,app_paths,i18n
 path_globs:
 text_search:code_index,i18n
 session_store:app_paths,layout_store

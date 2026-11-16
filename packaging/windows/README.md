@@ -25,6 +25,7 @@ LookinFiles can be built natively for Windows using **MSYS2** with the **UCRT64*
      mingw-w64-ucrt-x86_64-gst-plugins-base \
      diffutils \
      make \
+     unzip \
      zip
    ```
 
@@ -33,6 +34,20 @@ built-in terminal instead (`src/terminal/term_widget.c`) on a Windows pseudo con
 (ConPTY), which needs Windows 10 version 1809 or later. The shell is
 PowerShell 7 (`pwsh.exe`) when installed, else Windows PowerShell, else
 `cmd.exe`; set `SHELL` to a Windows program to choose another one.)*
+
+*(Note: WebKitGTK does not exist on Windows either; browser tabs
+(`Ctrl+Shift+B`) use Microsoft WebView2 instead (`src/preview/web_engine_win.c`).
+Get its SDK once with:*
+
+```bash
+sh packaging/windows/fetch_webview2.sh   # into deps/webview2 (make WEBVIEW2_DIR=... for elsewhere)
+```
+
+*`make` then builds with `HAVE_WEBVIEW2` (`make deps` says so), and
+`make windows-zip` puts `WebView2Loader.dll` next to `lookinfiles.exe`. At run
+time the WebView2 Runtime is needed: it comes with Windows 11 and up-to-date
+Windows 10 (else install the Evergreen Runtime from Microsoft). Without the
+SDK or the runtime, web addresses open in the default browser.)*
 
 ## 2. Compiling
 

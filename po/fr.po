@@ -542,6 +542,16 @@ msgstr ""
 "Les onglets navigateur demandent WebKitGTK 6.0 (installez libwebkitgtk-6.0-"
 "dev et recompilez)"
 
+msgid ""
+"Browser tabs need the Microsoft Edge WebView2 Runtime and WebView2Loader.dll "
+"next to the program"
+msgstr ""
+"Les onglets navigateur demandent le runtime Microsoft Edge WebView2 et "
+"WebView2Loader.dll à côté du programme"
+
+msgid "The web view could not start (Microsoft Edge WebView2 Runtime)"
+msgstr "La vue web n’a pas pu démarrer (runtime Microsoft Edge WebView2)"
+
 #: src/canvas/canvas_crop.c:117
 msgid "Crop Image"
 msgstr "Recadrer l’image"
@@ -4591,11 +4601,11 @@ msgstr "Basculer en plein écran"
 
 #: src/chrome/help.c:286
 msgid ""
-"Open an empty browser tab in the preview panel (needs WebKitGTK 6.0; not in "
-"Emacs editor tabs)"
+"Open an empty browser tab in the preview panel (needs WebKitGTK 6.0, or "
+"WebView2 on Windows; not in Emacs editor tabs)"
 msgstr ""
 "Ouvrir un onglet navigateur vide dans le panneau Aperçu (nécessite WebKitGTK "
-"6.0 ; pas dans les onglets d’édition Emacs)"
+"6.0, ou WebView2 sous Windows ; pas dans les onglets d’édition Emacs)"
 
 #: src/chrome/help.c:287
 msgid ""
@@ -9417,8 +9427,8 @@ msgstr "Minuteur %u"
 msgid "Web Browser"
 msgstr "Navigateur web"
 
-msgid "Needs WebKitGTK 6.0"
-msgstr "Nécessite WebKitGTK 6.0"
+msgid "Needs WebKitGTK 6.0 (WebView2 on Windows)"
+msgstr "Nécessite WebKitGTK 6.0 (WebView2 sous Windows)"
 
 msgid "Canvas"
 msgstr "Canvas"

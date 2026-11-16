@@ -24,7 +24,8 @@ The **+** button at the right end of a tab bar (the preview panel's and
 each editor group's) opens a new tab in that group:
 
 - **Web Browser**: an empty browser tab, the address bar focused (in the
-  preview panel; needs WebKitGTK 6.0, like `Ctrl+Shift+B`).
+  preview panel; needs WebKitGTK 6.0, or WebView2 on Windows, like
+  `Ctrl+Shift+B`).
 - **Canvas**: a new Canvas note "Untitled-N" in the notebook selected in the
   Notes view, else the first one (see [notes](notes.md)).
 - **Jupyter Notebook**: a notebook with one empty code cell, kept in memory

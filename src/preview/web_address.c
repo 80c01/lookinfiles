@@ -94,3 +94,13 @@ gboolean web_address_is_web(const gchar* uri) {
     if (uri == NULL) return FALSE;
     return g_ascii_strncasecmp(uri, "http://", 7) == 0 || g_ascii_strncasecmp(uri, "https://", 8) == 0;
 }
+
+gboolean web_address_shown(const gchar* uri) {
+    const gchar* scheme = uri != NULL ? g_uri_peek_scheme(uri) : NULL;
+    if (scheme == NULL) return TRUE;
+    static const gchar* const shown[] = {"http", "https", "file", "about", "data", "blob", NULL};
+    for (gsize i = 0; shown[i] != NULL; i++) {
+        if (g_strcmp0(scheme, shown[i]) == 0) return TRUE;
+    }
+    return FALSE;
+}

@@ -37,7 +37,15 @@ check poppler-glib    -    "PDF preview"            libpoppler-glib-dev     opti
 check sqlite3         -    "Database preview"       libsqlite3-dev          optional
 check libarchive      -    "7z, RAR, xz, zstd, ISO" libarchive-dev          optional
 check libjpeg         -    "Fast JPEG photo preview" libjpeg-dev            optional
-check webkitgtk-6.0   -    "Browser tabs"           libwebkitgtk-6.0-dev    optional
+if [ "${OS:-}" = Windows_NT ]; then
+    if [ -f "${WEBVIEW2_DIR:-deps/webview2}/build/native/include/WebView2.h" ]; then
+        printf '  %-34s yes  (WebView2 SDK)\n' "Browser tabs"
+    else
+        printf '  %-34s no   -> sh packaging/windows/fetch_webview2.sh  (WebView2 SDK)\n' "Browser tabs"
+    fi
+else
+    check webkitgtk-6.0 -  "Browser tabs"           libwebkitgtk-6.0-dev    optional
+fi
 check gstreamer-video-1.0 - "Video audio / subtitle tracks" libgstreamer-plugins-base1.0-dev optional
 if command -v msgfmt >/dev/null 2>&1; then
     printf '  %-34s yes  (msgfmt)\n' "Translations"

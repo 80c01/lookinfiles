@@ -69,7 +69,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Ctrl+PgDn` / `Ctrl+PgUp` | In a terminal: next / previous tab of its pane (in the editor area, editor tabs included) |
 | `Ctrl+Shift+C` / `Ctrl+Shift+V` | In a terminal: copy the selected text / paste the clipboard (select with the mouse) |
 | `Ctrl+Shift+L` | Stack the terminal under the viewer, or put it back beside it |
-| `Ctrl+Shift+B` | Open an empty browser tab in the preview panel, the focus in its address bar (needs WebKitGTK 6.0; Emacs editor tabs keep `C-S-b`); see [Browser tabs](#browser-tabs) |
+| `Ctrl+Shift+B` | Open an empty browser tab in the preview panel, the focus in its address bar (needs WebKitGTK 6.0, or WebView2 on Windows; Emacs editor tabs keep `C-S-b`); see [Browser tabs](#browser-tabs) |
 | `Ctrl+A` | Switch between the files and bookmarks views |
 | `Ctrl+U` | Switch between the files and notes views |
 | `Ctrl+Shift+R` | Switch between the files and remote machines views |
@@ -108,7 +108,7 @@ count) is dropped when the focus moves to another panel or tab.
 
 | Key | Action |
 |---|---|
-| `Enter` / `Right` (Vim: also `l`; Emacs: `C-f`) | Open the bookmark (directory, file or URL: web pages in a browser tab when built with WebKitGTK) / expand the folder |
+| `Enter` / `Right` (Vim: also `l`; Emacs: `C-f`) | Open the bookmark (directory, file or URL: web pages in a browser tab when built with WebKitGTK, or WebView2 on Windows) / expand the folder |
 | `a` / `Shift+A` | Add a bookmark / a folder (inside the selected folder) |
 | `F2` / `r` / `e` | Edit name, location and folder (a folder: name, icon and parent) |
 | `d` / `Delete` | Delete the selected bookmark or folder |
@@ -277,14 +277,17 @@ mode move in the process list)
 
 ### Browser tabs
 
-Web pages shown in tabs of the preview panel (built with WebKitGTK 6.0);
+Web pages shown in tabs of the preview panel (built with WebKitGTK 6.0, or
+Microsoft WebView2 on Windows);
 a tab moves like an editor tab (dragged to another pane or a split,
 `Ctrl+Alt+Arrow`, its menu).
 `Ctrl+Shift+B` opens an empty one; links of the **Help** tab, web bookmarks
 and **Open in Browser Tab** (right click on an HTML file) open one with the
 page. A link or popup opened in a new window becomes a new tab next to it;
 links the tab cannot show (`mailto:`, downloads) go to the default
-application. The page keeps every other key.
+application. The page keeps every other key (with WebView2, the page keeps
+its editing keys, `Ctrl+C` / `V` / `X` / `A` / `Z` / `Y` / `F`, and the
+other `Ctrl` and `Alt` shortcuts go to the application).
 
 | Key | Action |
 |---|---|

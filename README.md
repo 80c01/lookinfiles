@@ -28,7 +28,7 @@ and Windows, with a VS Code look.
   **LaTeX** documents compiled on save, the PDF following the cursor.
 - **Tagbar**: the symbols of a code file, or the headings of a Markdown, Org,
   HTML or office document, beside the text; click one to jump to it.
-- **Browser tabs for web development** (needs WebKitGTK): open a page, a local
+- **Browser tabs for web development** (WebKitGTK on Linux, WebView2 on Windows): open a page, a local
   HTML file or a dev server in a tab of the preview panel, beside your editor
   and terminal. Press `F5` to reload after saving.
 - **Terminal built in** (VTE on Linux, ConPTY on Windows): shell panes next to the preview and the
@@ -134,6 +134,9 @@ make             # creates lookinfiles.exe
 make windows-zip # packages build/lookinfiles-<version>-windows-x86_64.zip
 make windows-exe # the same in one file: build/lookinfiles-<version>-windows-x86_64.exe
 ```
+
+Browser tabs on Windows use Microsoft WebView2: run
+`sh packaging/windows/fetch_webview2.sh` once before `make` to get its SDK.
 
 See [packaging/windows/README.md](packaging/windows/README.md) for prerequisites and setup details.
 

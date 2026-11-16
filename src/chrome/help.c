@@ -309,7 +309,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Global"), NC_("key", "Git Commits / References / Search"), N_("The navigation keys of the global mode move in the list (Enter opens)"), 0},
     {N_("Global"), NC_("key", "Top bar mode"), N_("Global mode: only the Notepad, Vim or Emacs navigation keys in the explorer, viewer and their search bars (arrows, Home / End, PgUp / PgDn in all); mode of new editor tabs"), 0},
     {N_("Global"), "f", N_("Toggle fullscreen"), 0},
-    {N_("Global"), "Ctrl+Shift+B", N_("Open an empty browser tab in the preview panel (needs WebKitGTK 6.0; not in Emacs editor tabs)"), 0},
+    {N_("Global"), "Ctrl+Shift+B", N_("Open an empty browser tab in the preview panel (needs WebKitGTK 6.0, or WebView2 on Windows; not in Emacs editor tabs)"), 0},
     {N_("Global"), "Ctrl+Shift+L", N_("Stack the terminal pane under the viewer, or put it back beside it (the explorer panel stays fixed)"), 0},
     {N_("Global"), "Ctrl+Shift+R", N_("Toggle Remote (SSH) machines view in sidebar"), 0},
     {N_("Global"), "F1", N_("User guide in a Help tab (also a click on the top bar's Help button; right click: this cheat sheet)"), 0},

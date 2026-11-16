@@ -27,8 +27,8 @@ d’aperçu et celle de chaque groupe d’édition) ouvre un nouvel onglet dans
 ce groupe :
 
 - **Navigateur web** : un onglet de navigateur vide, la barre d’adresse
-  active (dans le panneau d’aperçu ; WebKitGTK 6.0 est nécessaire, comme
-  pour `Ctrl+Shift+B`).
+  active (dans le panneau d’aperçu ; WebKitGTK 6.0 est nécessaire, ou
+  WebView2 sous Windows, comme pour `Ctrl+Shift+B`).
 - **Canvas** : une nouvelle note Canvas « Sans-titre-N » dans le carnet
   sélectionné dans la vue Notes, sinon le premier (voir [notes](notes.md)).
 - **Notebook Jupyter** : un notebook avec une cellule de code vide, gardé en

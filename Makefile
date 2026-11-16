@@ -72,6 +72,22 @@ APP_CFLAGS += -DHAVE_WEBKIT `$(PKG_CONFIG) --cflags webkitgtk-6.0`
 LIBS += `$(PKG_CONFIG) --libs webkitgtk-6.0`
 endif
 
+# Browser tabs on Windows (no WebKitGTK there): Microsoft WebView2, enabled
+# automatically when its SDK is in WEBVIEW2_DIR (packaging/windows/fetch_webview2.sh).
+# Only WebView2.h is used to build; WebView2Loader.dll is loaded at run time from
+# the executable's folder (make windows-zip copies it there).
+WEBVIEW2_DIR ?= deps/webview2
+HAVE_WEBVIEW2 = no
+ifeq ($(OS),Windows_NT)
+ifneq ($(HAVE_WEBKIT),yes)
+ifneq ($(wildcard $(WEBVIEW2_DIR)/build/native/include/WebView2.h),)
+HAVE_WEBVIEW2 = yes
+APP_CFLAGS += -DHAVE_WEBVIEW2 -isystem $(WEBVIEW2_DIR)/build/native/include
+LIBS += -lole32
+endif
+endif
+endif
+
 # Optional archive formats (7z, RAR, xz, bzip2, zstd, ISO...): enabled automatically with libarchive
 HAVE_LIBARCHIVE != $(PKG_CONFIG) --exists libarchive 2>/dev/null && echo yes || echo no
 ifeq ($(HAVE_LIBARCHIVE),yes)
@@ -141,11 +157,11 @@ $(TARGET): $(OBJS) $(FLAGS_STAMP)
 	$(CC) $(ALL_LDFLAGS) -o $@ $(OBJS) $(LIBS)
 	@echo "Build succeeded!"
 	@ls -lh $(TARGET)
-	@PKG_CONFIG=$(PKG_CONFIG) sh tools/check_deps.sh || true
+	@PKG_CONFIG=$(PKG_CONFIG) WEBVIEW2_DIR=$(WEBVIEW2_DIR) sh tools/check_deps.sh || true
 
 # Lists the required and optional libraries found (tools/check_deps.sh)
 deps:
-	@PKG_CONFIG=$(PKG_CONFIG) sh tools/check_deps.sh
+	@PKG_CONFIG=$(PKG_CONFIG) WEBVIEW2_DIR=$(WEBVIEW2_DIR) sh tools/check_deps.sh
 
 # One static pattern rule per directory of src/: each object is bound to its
 # own source (no search path, so an old path in build/*.d cannot win)
@@ -270,7 +286,7 @@ po-update: pot
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(ALL_CFLAGS)
 TEST_LDFLAGS = $(ALL_LDFLAGS) $(LIBS)
-TESTS = test_app_paths test_i18n test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_latex_log test_latex_root test_latex_synctex test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_data_tree test_xml_view test_text_outline test_toml_view test_yaml_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_ipynb_doc test_ipynb_kernel test_ipynb_outline test_spreadsheet test_odf test_pptx test_slide_render test_odp_reader test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_html_text test_tex_math test_md_out test_rich_parse test_notes_store test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_ps_convert test_vt_screen test_vt_pty test_ui_probe test_preview_state test_git_state test_sysstat test_sysstat_host test_countdown test_run_time test_jpeg_decode
+TESTS = test_app_paths test_i18n test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_latex_log test_latex_root test_latex_synctex test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_data_tree test_xml_view test_text_outline test_toml_view test_yaml_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_ipynb_doc test_ipynb_kernel test_ipynb_outline test_spreadsheet test_odf test_pptx test_slide_render test_odp_reader test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_html_text test_tex_math test_md_out test_rich_parse test_notes_store test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_web_keys test_ps_convert test_vt_screen test_vt_pty test_ui_probe test_preview_state test_git_state test_sysstat test_sysstat_host test_countdown test_run_time test_jpeg_decode
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_i18n = $(BUILD_DIR)/i18n.o
@@ -381,6 +397,7 @@ TEST_DEPS_test_jump_list = $(BUILD_DIR)/jump_list.o
 TEST_DEPS_test_trash_restore = $(BUILD_DIR)/trash_restore.o
 TEST_DEPS_test_fuzzy_match = $(BUILD_DIR)/fuzzy_match.o
 TEST_DEPS_test_web_address = $(BUILD_DIR)/web_address.o
+TEST_DEPS_test_web_keys = $(BUILD_DIR)/web_keys.o
 TEST_DEPS_test_path_globs = $(BUILD_DIR)/path_globs.o
 TEST_DEPS_test_session_store = $(BUILD_DIR)/session_store.o $(BUILD_DIR)/layout_store.o $(BUILD_DIR)/tab_tree.o $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_tab_tree = $(BUILD_DIR)/tab_tree.o
@@ -482,7 +499,7 @@ appimage:
 	@sh packaging/appimage/build_appimage.sh build
 
 windows-zip:
-	@sh packaging/windows/build_windows_zip.sh build
+	@WEBVIEW2_DIR=$(WEBVIEW2_DIR) sh packaging/windows/build_windows_zip.sh build
 
 # A single .exe holding the whole portable zip (packaging/windows/launcher.c)
 windows-exe:

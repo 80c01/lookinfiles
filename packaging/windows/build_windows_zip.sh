@@ -91,6 +91,13 @@ if [ -n "${PREFIX}" ] && [ -d "${PREFIX}/bin" ]; then
     done
 fi
 
+# Browser tabs (WebView2): the loader next to the executable, with its license
+WEBVIEW2_NATIVE="${WEBVIEW2_DIR:-${ROOT_DIR}/deps/webview2}/build/native"
+if [ -f "${WEBVIEW2_NATIVE}/x64/WebView2Loader.dll" ]; then
+    cp "${WEBVIEW2_NATIVE}/x64/WebView2Loader.dll" "${STAGE_DIR}/"
+    cp "${WEBVIEW2_NATIVE}/../../LICENSE.txt" "${STAGE_DIR}/WebView2-LICENSE.txt"
+fi
+
 # Include documentation and licenses
 cp "${ROOT_DIR}/README.md" "${STAGE_DIR}/"
 cp "${ROOT_DIR}/LICENSE" "${STAGE_DIR}/"

@@ -55,6 +55,18 @@ static void test_is_web(void) {
     g_assert_false(web_address_is_web(NULL));
 }
 
+static void test_shown(void) {
+    g_assert_true(web_address_shown("https://example.org"));
+    g_assert_true(web_address_shown("HTTP://example.org"));
+    g_assert_true(web_address_shown("file:///tmp/a.html"));
+    g_assert_true(web_address_shown("about:blank"));
+    g_assert_true(web_address_shown("data:text/html,x"));
+    g_assert_true(web_address_shown("no scheme"));
+    g_assert_true(web_address_shown(NULL));
+    g_assert_false(web_address_shown("mailto:a@example.org"));
+    g_assert_false(web_address_shown("apt:hello"));
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/web_address/uris", test_uris);
@@ -63,5 +75,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/web_address/search", test_search);
     g_test_add_func("/web_address/empty", test_empty);
     g_test_add_func("/web_address/is_web", test_is_web);
+    g_test_add_func("/web_address/shown", test_shown);
     return g_test_run();
 }

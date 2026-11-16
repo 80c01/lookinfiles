@@ -364,7 +364,11 @@ Layers, from bottom to top
 - `web_address` — what is typed in the address bar of a browser tab turned
   into a URI (`web_address_to_uri()`: URIs as is, paths as file URIs, hosts
   with https, or http for localhost, other words searched), and
-  `web_address_is_web()` (http / https: the bookmarks a browser tab opens).
+  `web_address_is_web()` (http / https: the bookmarks a browser tab opens),
+  `web_address_shown()` (the schemes a tab shows itself).
+- `web_keys` — the keys a native web view (WebView2) hands back to the
+  application: Ctrl and Alt shortcuts but the page's editing keys, function
+  keys but F3 / F7 / F12 (`web_keys_for_app()`).
 - `fuzzy_match` — fuzzy scoring of paths for quick open (file name, word
   starts and consecutive characters first) and the matched positions.
 - `path_globs` — comma-separated path patterns matched like `.gitignore`
@@ -1066,16 +1070,28 @@ Layers, from bottom to top
   `term_snapshot_take()` / `_restore()` put back the exact panes of the
   panel after a layout preview; `terminal_detach_tab()` /
   `terminal_attach_tab()` keep a terminal running out of any notebook.
+- `web_engine` — the web view of a browser tab, whatever engine shows it
+  (`web_engine_new()` with `WebEngineCallbacks`: changes, new window, close,
+  addresses for the default application, notices); the WebKitGTK 6.0
+  implementation (`HAVE_WEBKIT`): print, file chooser and fullscreen refused,
+  permissions denied. Built with no engine, `web_engine_available()` is FALSE.
+- `web_engine_win` — `web_engine.h` on Microsoft WebView2 (`HAVE_WEBVIEW2`,
+  Windows): `WebView2Loader.dll` loaded at run time, one environment (profile
+  in `app_cache_dir()/webview2`), a controller per view whose native window
+  follows the view widget (a tick callback while mapped; hidden while an
+  `AppDialog` is open). Keys `web_keys_for_app()` accepts are posted to the
+  GTK window; the GTK focus and the page's keyboard focus follow each other.
+  New windows become tabs, downloads go to the default application, DevTools
+  are off. COM handlers are written in C (one object type for every handler
+  interface).
 - `browser` — browser tabs, opened in the preview notebook and movable like
-  editor tabs (`editor_page_set_movable()`) (WebKitGTK 6.0, optional:
-  `HAVE_WEBKIT`; without it `browser_open()` hands the URI to the default
-  browser): back / forward / reload, address bar (`web_address`), the
-  `WebKitWebView`. Opened by `Ctrl+Shift+B` (`ui`), the Help tab's web links,
+  editor tabs (`editor_page_set_movable()`) (`web_engine`; without one
+  `browser_open()` hands the URI to the default browser): back / forward /
+  reload, address bar (`web_address`), the web view. Opened by `Ctrl+Shift+B` (`ui`), the Help tab's web links,
   web bookmarks and the files menu (HTML files). Everything stays in the
   window: a new window (`create`) is a new tab after its opener, `close`
-  closes the tab; print, file chooser and fullscreen are refused,
-  permissions denied; links to other schemes and files the page cannot show
-  go to the default application (`GtkUriLauncher`). Per workspace
+  closes the tab; links to other schemes and files the page cannot show go
+  to the default application (`GtkUriLauncher`). Per workspace
   (`VirtualLayout.browser_pages`): those of the preview notebook are taken
   out of it on a switch (`browser_workspace_hidden()` / `_shown()`), those of
   the editor panel go with the panel. Saved in the session by their

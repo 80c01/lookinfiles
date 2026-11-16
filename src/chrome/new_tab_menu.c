@@ -96,7 +96,7 @@ static void on_plus_clicked(GtkButton* button, gpointer data) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_widget_set_margin_start(box, 4);
     gtk_widget_set_margin_end(box, 4);
-    menu_item(box, app, nb, _("Web Browser"), NEW_TAB_WEB, browser_available(), _("Needs WebKitGTK 6.0"));
+    menu_item(box, app, nb, _("Web Browser"), NEW_TAB_WEB, browser_available(), _("Needs WebKitGTK 6.0 (WebView2 on Windows)"));
     menu_item(box, app, nb, _("Canvas"), NEW_TAB_CANVAS, TRUE, NULL);
     menu_item(box, app, nb, _("Jupyter Notebook"), NEW_TAB_JUPYTER, TRUE, NULL);
     menu_item(box, app, nb, _("Vim"), NEW_TAB_VIM, TRUE, NULL);
