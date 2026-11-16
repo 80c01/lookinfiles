@@ -51,7 +51,8 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
 **Run All**) renders it again. A new or empty Markdown cell stays as source.
 
 - `Shift+Enter` runs the cell and goes to the next one, `Ctrl+Enter` runs
-  it. The cells run in the notebook's Jupyter kernel, started at the first
+  it; the button after a code cell's run button runs it and every cell
+  below. The cells run in the notebook's Jupyter kernel, started at the first
   run in the notebook's folder and stopped with the tab: Python 3 with
   `jupyter_client` and the kernel (`ipykernel` for Python) must be
   installed. The kernel's button in the bar shows the notebook's kernel,

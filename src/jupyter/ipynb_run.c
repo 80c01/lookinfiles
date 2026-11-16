@@ -410,10 +410,13 @@ void ipynb_run_advance(IpynbTab* t) {
     }
 }
 
+void ipynb_run_from(IpynbTab* t, guint index) {
+    for (guint i = index; i < ipynb_doc_n_cells(t->doc); i++) ipynb_run_cell(t, i);
+}
+
 static void on_run_all(GtkButton* button, gpointer data) {
     (void)button;
-    IpynbTab* t = data;
-    for (guint i = 0; i < ipynb_doc_n_cells(t->doc); i++) ipynb_run_cell(t, i);
+    ipynb_run_from(data, 0);
 }
 
 static void on_interrupt(GtkButton* button, gpointer data) {

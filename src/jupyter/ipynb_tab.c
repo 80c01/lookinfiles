@@ -426,6 +426,10 @@ static void on_cell_run(GtkButton* button, gpointer data) {
     ipynb_run_cell(data, cell_index(button));
 }
 
+static void on_cell_run_below(GtkButton* button, gpointer data) {
+    ipynb_run_from(data, cell_index(button));
+}
+
 static void on_cell_up(GtkButton* button, gpointer data) {
     move_cell(data, cell_index(button), -1);
 }
@@ -674,6 +678,8 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     if (type == IPYNB_CELL_CODE) {
         gtk_box_append(GTK_BOX(actions),
                        cell_button(t, index, "go-next", _("Run Cell (Ctrl+Enter)"), G_CALLBACK(on_cell_run)));
+        gtk_box_append(GTK_BOX(actions), cell_button(t, index, "cell-run-below", _("Run This Cell and the Ones Below"),
+                                                     G_CALLBACK(on_cell_run_below)));
     }
     gtk_box_append(GTK_BOX(actions), cell_button(t, index, "pan-up", _("Move Cell Up (Alt+Up)"), G_CALLBACK(on_cell_up)));
     gtk_box_append(GTK_BOX(actions),

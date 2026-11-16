@@ -58,7 +58,8 @@ tableaux, images, code, formules TeX en `$...$` et `$$...$$`) : `Enter` ou un do
 cellule Markdown nouvelle ou vide reste en source.
 
 - `Shift+Enter` exécute la cellule et passe à la suivante, `Ctrl+Enter`
-  l’exécute. Les cellules s’exécutent dans le noyau Jupyter du notebook,
+  l’exécute ; le bouton qui suit celui d’exécution d’une cellule de code
+  l’exécute avec toutes les cellules suivantes. Les cellules s’exécutent dans le noyau Jupyter du notebook,
   démarré à la première exécution dans le dossier du notebook et arrêté
   avec l’onglet : Python 3 avec `jupyter_client` et le noyau (`ipykernel`
   pour Python) doivent être installés. Le bouton du noyau dans la barre

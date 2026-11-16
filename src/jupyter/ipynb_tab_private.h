@@ -117,6 +117,8 @@ GtkWidget* ipynb_run_input_row_new(IpynbTab* t);
 /* Run the cell at index: a code cell in the kernel (started first if
  * needed); a Markdown cell is rendered */
 void ipynb_run_cell(IpynbTab* t, guint index);
+/* Run the cell at index and every cell after it, in order (folded ones too) */
+void ipynb_run_from(IpynbTab* t, guint index);
 /* Run the current cell and go to the next one (a new code cell after the
  * last) */
 void ipynb_run_advance(IpynbTab* t);

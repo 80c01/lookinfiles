@@ -8883,6 +8883,9 @@ msgstr "Double-clic ou Enter pour éditer le Markdown"
 msgid "Run Cell (Ctrl+Enter)"
 msgstr "Exécuter la cellule (Ctrl+Enter)"
 
+msgid "Run This Cell and the Ones Below"
+msgstr "Exécuter cette cellule et les suivantes"
+
 msgid "Kernel starting…"
 msgstr "Démarrage du noyau…"
 
