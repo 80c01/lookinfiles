@@ -91,7 +91,7 @@ static GtkWidget* more_menu_new(IpynbTab* t) {
 }
 
 GtkWidget* ipynb_bar_new(IpynbTab* t) {
-    GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     GtkWidget* kernel_button = ipynb_run_bar(t, actions);
     gtk_box_append(GTK_BOX(actions), bar_button(t, "cell-code", NULL, _("Insert Code Cell Below (Alt+Enter)"),
                                                 G_CALLBACK(on_add_code)));
@@ -109,7 +109,7 @@ GtkWidget* ipynb_bar_new(IpynbTab* t) {
     gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(actions_clip), TRUE);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(actions_clip), actions);
     gtk_widget_set_hexpand(actions_clip, TRUE);
-    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_add_css_class(bar, "ipynb-bar");
     gtk_box_append(GTK_BOX(bar), actions_clip);
     gtk_box_append(GTK_BOX(bar), kernel_button);

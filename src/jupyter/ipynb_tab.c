@@ -32,7 +32,7 @@ static void ensure_css(void) {
     theme_add_css(".ipynb-tab { background-color: @bg_view; }"
                   ".ipynb-tab .ipynb-bar { padding: 3px 8px; background-color: @bg_bar;"
                   " border-bottom: 1px solid @border; font-size: @size_bar; }"
-                  ".ipynb-tab .ipynb-bar button { padding: 0 8px; border: none; min-height: 23px; }"
+                  ".ipynb-tab .ipynb-bar button { padding: 0 4px; border: none; min-height: 23px; min-width: 18px; }"
                   ".ipynb-tab .ipynb-bar label { color: @fg_muted; }"
                   ".ipynb-tab .ipynb-bar .ipynb-error { color: @error; }"
                   ".ipynb-tab .ipynb-bar.ipynb-statusbar { border-bottom: none; border-top: 1px solid @border; }"
