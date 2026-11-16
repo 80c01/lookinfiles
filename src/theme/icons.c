@@ -25,6 +25,7 @@ static const IconFallback FALLBACKS[] = {
     {"user-bookmarks", {"bookmark-new", NULL}},
     {"document-new", {"text-x-generic", NULL}},
     {"document-edit", {"edit", "text-editor", "text-x-generic", NULL}},
+    {"globe", {"web-browser", "network-workgroup", NULL}},
     {"network-transmit-receive", {"network-workgroup", NULL}},
     {"utilities-terminal", {"terminal", "system-run", NULL}},
     {"utilities-system-monitor", {"power-profile-performance", "system-run", NULL}},

@@ -543,7 +543,7 @@ static BrowserTab* tab_new(AppData* app, WebKitWebView* related) {
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, bt, tab_free);
     editor_page_set_movable(page);
 
-    bt->label = g_object_ref(icon_label_new("network-transmit-receive", _("New Tab")));
+    bt->label = g_object_ref(icon_label_new("globe", _("New Tab")));
     bt->title = g_object_ref(gtk_widget_get_last_child(bt->label));
     gtk_label_set_ellipsize(GTK_LABEL(bt->title), PANGO_ELLIPSIZE_END);
     gtk_label_set_width_chars(GTK_LABEL(bt->title), 12); /* minimum width when tabs are crowded */
