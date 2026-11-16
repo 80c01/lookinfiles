@@ -35,21 +35,19 @@ static git_repository* open_work_tree(const gchar* root) {
     return repo;
 }
 
-/* full relative to root with '/' separators, NULL when it is not below root */
+/* full relative to root with '/' separators, NULL when it is not below root.
+ * '\\' separates components on Windows only: elsewhere it is a file name
+ * character and stays as it is. */
 static gchar* path_below(const gchar* root, const gchar* full) {
     gsize n = strlen(root);
-    while (n > 0 && (root[n - 1] == '/' || root[n - 1] == '\\')) {
+    while (n > 0 && G_IS_DIR_SEPARATOR(root[n - 1])) {
         n--;
     }
-    if (strncmp(full, root, n) != 0 || (full[n] != '/' && full[n] != '\\') || full[n + 1] == '\0') {
+    if (strncmp(full, root, n) != 0 || !G_IS_DIR_SEPARATOR(full[n]) || full[n + 1] == '\0') {
         return NULL;
     }
     gchar* rel = g_strdup(full + n + 1);
-    for (gchar* c = rel; *c != '\0'; c++) {
-        if (*c == '\\') {
-            *c = '/';
-        }
-    }
+    g_strdelimit(rel, G_DIR_SEPARATOR_S, '/');
     return rel;
 }
 
@@ -57,7 +55,7 @@ static gchar* path_below(const gchar* root, const gchar* full) {
 static gboolean has_dot_git_component(const gchar* path) {
     const gchar* start = path;
     for (const gchar* c = path;; c++) {
-        if (*c == '\0' || G_IS_DIR_SEPARATOR(*c) || *c == '/') {
+        if (*c == '\0' || G_IS_DIR_SEPARATOR(*c)) {
             if (c - start == 4 && strncmp(start, ".git", 4) == 0) {
                 return TRUE;
             }

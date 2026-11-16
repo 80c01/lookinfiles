@@ -113,6 +113,15 @@ static void test_relative_path(Fixture* fx, gconstpointer data) {
     g_free(rel);
     g_free(unsaved);
 
+#ifdef G_OS_UNIX
+    /* '\\' is a file name character there, not a separator */
+    gchar* odd = make_path(fx, "repo/src/a\\b.c", "x\n");
+    rel = git_relative_path(odd);
+    g_assert_cmpstr(rel, ==, "src/a\\b.c");
+    g_free(rel);
+    g_free(odd);
+#endif
+
     gchar* outside = make_path(fx, "plain/notes.txt", "x\n");
     rel = git_relative_path(outside);
     g_assert_true(rel == NULL || !g_str_has_prefix(rel, "plain"));
