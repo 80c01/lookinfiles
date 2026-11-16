@@ -102,5 +102,12 @@ default stays `-O2 -g`. Measure again before changing it.
   the lines shown in the frame and the rest of its render afterwards;
   drawing its three screens in the frame made frames of 50–65 ms after each
   new preview.
+- **Freed memory goes back**: `main()` fixes glibc's mmap threshold at 4 MB
+  (`tune_malloc()`). Without it, glibc raises the threshold up to 32 MB, and
+  images decoded by worker threads, once freed, stayed in those threads'
+  arenas: browsing 30 photos of 3000 × 2000 kept 218 MB (99 MB with the
+  threshold), and with glycin (GTK 4.20+ decodes in a sandbox, at full size)
+  a real session reached 1.1 GB. `tools/mem_report.sh` shows it as
+  "anonymous" memory.
 - **No wake-up without a change on screen**: a timer must run only while
   what it updates is shown, and set a label only when its text changes.

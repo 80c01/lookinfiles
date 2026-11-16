@@ -57,6 +57,9 @@
 #include "editor/editor_modes.h"
 #include <stdio.h>
 #include <stdlib.h>
+#if defined(__GLIBC__)
+#include <malloc.h>
+#endif
 #include "widgets/focus_route.h"
 #include "widgets/frame_watch.h"
 #include "preview/preview_tagbar.h"
@@ -226,8 +229,20 @@ static void on_preferences_clicked(GtkButton* button, gpointer data) {
     preferences_show(data, NULL);
 }
 
+/* Large buffers (decoded images, above all) go back to the system when
+ * freed. glibc raises its mmap threshold up to 32 MB after the first large
+ * free, so buffers below that end up in the arena of the worker thread that
+ * freed them and stay resident: browsing photos kept hundreds of MB that
+ * were free (docs/performance.md). A fixed threshold also stops that raise. */
+static void tune_malloc(void) {
+#if defined(__GLIBC__)
+    mallopt(M_MMAP_THRESHOLD, 4 * 1024 * 1024);
+#endif
+}
+
 int main(int argc, char** argv) {
     profile_init(); /* LOOKIN_PROFILE: the origin of the start-up timings */
+    tune_malloc();
     i18n_init(argc > 0 ? argv[0] : NULL); /* before any message is printed */
     gboolean start_fullscreen = FALSE;
     /* Preferences (settings.ini), then the command line over them */
