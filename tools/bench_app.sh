@@ -27,14 +27,14 @@ SETTLE=${BENCH_SETTLE:-2}
 IDLE=${BENCH_IDLE:-5}
 
 # Budgets
-MAX_STARTUP_MS=${BENCH_STARTUP_MS:-600}      # LOOKIN_PROFILE origin to "startup done"
+MAX_STARTUP_MS=${BENCH_STARTUP_MS:-300}      # LOOKIN_PROFILE origin to "startup done"
 MAX_SETTLE_CPU_MS=${BENCH_SETTLE_CPU_MS:-100} # CPU after "startup done", while it settles
 MAX_IDLE_CPU=${BENCH_IDLE_CPU:-0.5}          # % of one core while idle
-MAX_IDLE_RSS_MB=${BENCH_IDLE_RSS_MB:-150}    # resident memory when idle
+MAX_IDLE_RSS_MB=${BENCH_IDLE_RSS_MB:-90}    # resident memory when idle
 MAX_IDLE_FPS=${BENCH_IDLE_FPS:-2.0}          # frames per second painted while idle (default
                                              # top bar: timer 1/s, CPU chart 0.5/s)
 MAX_PREVIEW_MS=${BENCH_PREVIEW_MS:-100}      # slowest preview while browsing
-MAX_BROWSE_RSS_MB=${BENCH_BROWSE_RSS_MB:-200} # resident memory after browsing
+MAX_BROWSE_RSS_MB=${BENCH_BROWSE_RSS_MB:-130} # resident memory after browsing
 
 export LANGUAGE=en
 for tool in Xvfb xdotool; do
@@ -83,7 +83,10 @@ until_true() {
 until_true 300 test -s "$OUT/display" || { echo "bench-app: FAIL - Xvfb did not start"; exit 1; }
 
 export DISPLAY=":$(cat "$OUT/display")"
-export GDK_BACKEND=x11 GSK_RENDERER=cairo NO_AT_BRIDGE=1
+# Cairo draws, so GL is of no use: without GDK_DISABLE=gl, GTK still loads
+# Mesa at gtk_init() (llvmpipe without a GPU: about 65 MB and 65 threads),
+# which would hide the memory of the application itself
+export GDK_BACKEND=x11 GSK_RENDERER=cairo GDK_DISABLE=gl NO_AT_BRIDGE=1
 export HOME="$FIX/home" XDG_CONFIG_HOME="$FIX/home/.config"
 cd "$W" || exit 1
 TICK=$(getconf CLK_TCK)

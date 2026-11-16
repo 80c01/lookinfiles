@@ -19,7 +19,11 @@ Each benchmark prints its results and fails when one exceeds its budget.
 Run the one that matches a change before and after it, on the same machine:
 the numbers are comparable between two runs, not between two machines.
 `bench-app` draws on Xvfb with the CPU renderer (`GSK_RENDERER=cairo`), a
-slow display: its frame times are higher than on a real screen.
+slow display: its frame times are higher than on a real screen. It also sets
+`GDK_DISABLE=gl`: GTK opens GL at `gtk_init()` even when cairo draws, and
+without a GPU that is Mesa's llvmpipe (about 65 MB and 65 threads), which
+would hide the memory of the application itself. On a desktop with a GPU,
+GTK draws with GL and that memory belongs to the driver.
 
 ## `LOOKIN_PROFILE`
 
@@ -46,22 +50,22 @@ To time something new: `gint64 t = profile_start(); ...; profile_done(t,
 | Rows of 100 000 entries | 100 ms | `bench-scan` (`BENCH_ROWS_MS`) |
 | Memory per explorer entry (listing + row) | 700 B | `bench-scan` (`BENCH_ROW_BYTES`) |
 | Text preview / binary or rendered preview (worker) | 50 ms / 150 ms | `bench-preview` |
-| Start-up to idle | 600 ms | `bench-app` (`BENCH_STARTUP_MS`) |
+| Start-up to idle | 300 ms | `bench-app` (`BENCH_STARTUP_MS`) |
 | CPU in the 2 s after the start-up (end of the loading) | 100 ms | `bench-app` (`BENCH_SETTLE_CPU_MS`) |
 | CPU while idle | 0.5 % of a core | `bench-app` (`BENCH_IDLE_CPU`) |
 | Frames painted while idle | 2 per second (the default top bar: the running timer once a second, the CPU chart every 2 s) | `bench-app` (`BENCH_IDLE_FPS`) |
-| Resident memory while idle | 150 MB | `bench-app` (`BENCH_IDLE_RSS_MB`) |
+| Resident memory while idle | 90 MB | `bench-app` (`BENCH_IDLE_RSS_MB`) |
 | Slowest preview while browsing (on screen) | 100 ms | `bench-app` (`BENCH_PREVIEW_MS`) |
-| Resident memory after browsing | 200 MB | `bench-app` (`BENCH_BROWSE_RSS_MB`) |
+| Resident memory after browsing | 130 MB | `bench-app` (`BENCH_BROWSE_RSS_MB`) |
 
 `bench-app` also takes `BENCH_RUNS` (start-ups, median; default 3),
 `BENCH_SETTLE` (seconds after the start-up counted as the end of the
 loading, not as idle; default 2) and `BENCH_IDLE` (seconds idle after that;
 default 5).
 
-The memory budgets are targets: the application does not meet them yet
-(November 2026: about 170 MB resident while idle). Lower a budget once the
-code is below it, never raise it to make a change pass.
+November 2026: start-up about 80 ms, idle 0 % CPU and 74 MB resident, 99 MB
+after browsing. Lower a budget once the code is below it, never raise it to
+make a change pass.
 
 ## Rules that keep it light
 
@@ -69,5 +73,10 @@ code is below it, never raise it to make a change pass.
   content; it marks it stale and loads it when shown. Example: the Git tab
   reads the history at its `map` (`git_tab.c`); it took 190 ms of CPU at
   each start-up before.
+- **Large optional libraries are modules**: a library only one feature uses
+  is opened when that feature is first used, not linked into the program.
+  WebKitGTK is `lookinfiles-webkit.so` (`web_engine_webkit.c`, opened by
+  `web_engine.c` at the first browser tab, about 35 ms once): linked in, it
+  cost every start-up 30 MB and 30 ms (77 more libraries to load).
 - **No wake-up without a change on screen**: a timer must run only while
   what it updates is shown, and set a label only when its text changes.
