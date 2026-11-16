@@ -990,6 +990,14 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     }
 }
 
+void viewer_explorer_focused(AppData* app) {
+    if (!preview_state_from_editor(app)) return;
+    pending_selection_clear();
+    reloading_selection = TRUE; /* the editor's page stays in front */
+    show_selected_row(app);
+    reloading_selection = FALSE;
+}
+
 /* Preview the selected row now */
 static void show_selected_row(AppData* app) {
     ExplorerRow* row = explorer_tree_get_selected(app->tree);

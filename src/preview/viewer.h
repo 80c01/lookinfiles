@@ -12,5 +12,8 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full);
 void viewer_reload_preview(AppData* app);
 /* explorer_tree "selection-changed": preview the selected row */
 void on_selection_changed(ExplorerTree* tree, gpointer user_data);
+/* The explorer got the focus: a preview put there by an editor tab gives
+ * way to the selected row's */
+void viewer_explorer_focused(AppData* app);
 
 #endif /* VIEWER_H */

@@ -347,6 +347,7 @@ static void show_pdf(AppData* app, const gchar* pdf) {
     app->file_dirty = FALSE;
     load_file_content(app, name, pdf);
     preview_state_set_file(app, pdf, name);
+    preview_state_set_from_editor(app); /* the PDF of an editor tab's document */
     monitor_file(app, pdf);
     app_emit(app, APP_EVENT_STATUS_CHANGED);
     g_free(name);

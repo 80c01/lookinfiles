@@ -130,7 +130,8 @@ Saving a file whose preview is rendered from its text (Markdown, Org, HTML,
 JSON, the PDF of a LaTeX document...) updates the preview, and shows the
 file there even when the preview showed another file; selecting the tab
 of such a file, or coming back to it from the explorer, shows it there too (as last saved; a LaTeX document: its
-PDF, when it was built). To keep the
+PDF, when it was built); coming back to the explorer shows its selection
+again. To keep the
 preview as it is while you work, pick **Don't Update Preview** in the
 right-click menu of the tab; **Update Preview** brings it up to date and
 lets the saves update it again.

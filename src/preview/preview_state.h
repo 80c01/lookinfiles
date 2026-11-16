@@ -12,6 +12,11 @@ const gchar* preview_state_path(const AppData* app);
 const gchar* preview_state_name(const AppData* app);
 /* Show path (named name) in the preview; NULL path: no file */
 void preview_state_set_file(AppData* app, const gchar* path, const gchar* name);
+/* The shown file was put there by an editor tab (its save, selection or
+ * focus), not by the explorer's selection: set after preview_state_set_file(),
+ * which clears it */
+gboolean preview_state_from_editor(const AppData* app);
+void preview_state_set_from_editor(AppData* app);
 
 /* Kind of the shown file, detected from its content (from its name until read) */
 FileKind preview_state_kind(const AppData* app);

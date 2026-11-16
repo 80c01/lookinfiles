@@ -13,6 +13,7 @@ struct PreviewState {
     gboolean slides;
     guint page;
     guint pages;
+    gboolean from_editor;
 };
 
 static struct PreviewState* state_get(AppData* app) {
@@ -40,6 +41,15 @@ void preview_state_set_file(AppData* app, const gchar* path, const gchar* name) 
     g_free(s->name);
     s->path = new_path;
     s->name = new_name;
+    s->from_editor = FALSE;
+}
+
+gboolean preview_state_from_editor(const AppData* app) {
+    return app != NULL && app->preview_state != NULL && app->preview_state->from_editor;
+}
+
+void preview_state_set_from_editor(AppData* app) {
+    state_get(app)->from_editor = TRUE;
 }
 
 FileKind preview_state_kind(const AppData* app) {

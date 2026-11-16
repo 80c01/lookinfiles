@@ -1039,6 +1039,7 @@ static void update_preview_after_save(AppData* app, EditorTab* tab) {
         preview_state_set_raw(app, FALSE);
         preview_state_set_zoom(app, 1.0);
         preview_state_set_file(app, tab->path, tab->name);
+        preview_state_set_from_editor(app);
         monitor_file(app, tab->path);
     }
     app->file_dirty = FALSE;

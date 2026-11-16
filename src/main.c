@@ -582,6 +582,10 @@ int main(int argc, char** argv) {
     gtk_widget_add_controller(tree_view, tree_key_ctrl);
     focus_route_mark_nav(tree_view);
 
+    GtkEventController* tree_focus_ctrl = gtk_event_controller_focus_new();
+    g_signal_connect_swapped(tree_focus_ctrl, "enter", G_CALLBACK(viewer_explorer_focused), app);
+    gtk_widget_add_controller(tree_view, tree_focus_ctrl);
+
     GtkGesture* tree_click_ctrl = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(tree_click_ctrl), GDK_BUTTON_PRIMARY);
     gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(tree_click_ctrl), GTK_PHASE_CAPTURE);
