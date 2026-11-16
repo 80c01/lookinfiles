@@ -148,7 +148,8 @@ absolu (**Copier le chemin**).
 Enregistrer un fichier dont l’aperçu est rendu depuis son texte (Markdown,
 Org, HTML, JSON, le PDF d’un document LaTeX...) met l’aperçu à jour, et
 y affiche le fichier même quand l’aperçu montrait un autre fichier ;
-sélectionner l’onglet d’un tel fichier l’y affiche aussi (tel
+sélectionner l’onglet d’un tel fichier, ou y revenir depuis
+l’explorateur, l’y affiche aussi (tel
 qu’enregistré ; un document LaTeX : son PDF, s’il a été compilé). Pour
 garder l’aperçu tel quel pendant que vous travaillez, choisissez **Ne pas
 mettre à jour l’aperçu** dans le menu contextuel de l’onglet ; **Mettre à

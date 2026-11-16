@@ -163,6 +163,37 @@ EditorTab* editor_open_dedicated(AppData* app, const gchar* name, const gchar* f
 
 /* Give tab (its view built) a page with a title in target_nb, make it current
  * and focus it */
+static void update_preview_after_save(AppData* app, EditorTab* tab);
+
+/* The tab of a file whose saves update the preview, selected or focused,
+ * shows its file there (as saved; a LaTeX document: its PDF when built) */
+static void show_tab_in_preview(AppData* app, EditorTab* tab) {
+    if (app->switching_ws || !editor_tab_updates_preview(tab) || editor_preview_paused(app, tab->path) ||
+        g_strcmp0(preview_state_path(app), tab->path) == 0) {
+        return;
+    }
+    if (g_str_has_suffix(tab->path, ".tex")) {
+        latex_build_show_pdf(app, tab->path);
+    } else {
+        update_preview_after_save(app, tab);
+    }
+}
+
+static void on_view_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
+    (void)ctrl;
+    EditorTab* tab = data;
+    show_tab_in_preview(tab->app, tab);
+}
+
+/* tab's view, which shows its file in the preview when focused (from the
+ * explorer: no tab switch) */
+static void build_view(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
+    editor_view_build(app, tab, buffer);
+    GtkEventController* focus = gtk_event_controller_focus_new();
+    g_signal_connect(focus, "enter", G_CALLBACK(on_view_focus_enter), tab);
+    gtk_widget_add_controller(tab->view, focus);
+}
+
 static void editor_tab_add_page(AppData* app, EditorTab* tab, GtkNotebook* target_nb) {
     tab->tab_label = file_type_label_new(tab->name, "");
     editor_tab_label_update(tab);
@@ -356,7 +387,7 @@ void editor_open_text_file(AppData* app, const gchar* name, const gchar* full) {
     }
     editor_apply_language(buffer, detect_name);
     g_free(detect_name);
-    editor_view_build(app, tab, buffer);
+    build_view(app, tab, buffer);
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
     editor_tab_add_page(app, tab, target_nb);
     g_free(contents);
@@ -433,7 +464,7 @@ EditorTab* editor_open_buffer(AppData* app, const gchar* name, EditorMode mode) 
 #else
     GtkTextBuffer* buffer = gtk_text_buffer_new(NULL);
 #endif
-    editor_view_build(app, tab, buffer);
+    build_view(app, tab, buffer);
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
     editor_tab_add_page(app, tab, target_nb);
     return tab;
@@ -465,7 +496,7 @@ EditorTab* editor_open_untitled(AppData* app, GtkNotebook* nb, EditorMode mode) 
 #else
     GtkTextBuffer* buffer = gtk_text_buffer_new(NULL);
 #endif
-    editor_view_build(app, tab, buffer);
+    build_view(app, tab, buffer);
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
     editor_tab_add_page(app, tab, nb);
     return tab;
@@ -504,7 +535,7 @@ EditorTab* editor_add_view(AppData* app, EditorTab* tab, GtkNotebook* nb) {
     twin->final_break = tab->final_break;
     twin->mode = tab->mode;
     twin->text_mode = tab->text_mode;
-    editor_view_build(app, twin, tab->buffer);
+    build_view(app, twin, tab->buffer);
     /* The view looks like the one it was split from */
     diff_gutter_set_line_numbers(twin->view, diff_gutter_get_line_numbers(tab->view) ? 0 : -1);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(twin->view),
@@ -599,8 +630,6 @@ EditorTab* editor_open_at(AppData* app, const gchar* path, gint line, gint index
 
 static guint status_idle_id = 0; /* pending status bar refresh after a page switch */
 
-static void update_preview_after_save(AppData* app, EditorTab* tab);
-
 static gboolean emit_status_changed_idle(gpointer data) {
     AppData* app = (AppData*)data;
     status_idle_id = 0;
@@ -642,17 +671,7 @@ void on_editor_switch_page_changed(GtkNotebook* notebook,
             EditorTab* t = (EditorTab*)l->data;
             if (t != NULL && t->container == cur_child) {
                 app->last_focused_editor = t;
-                /* The tab of a file whose saves update the preview shows its
-                 * file there (as saved; a LaTeX document: its PDF when built) */
-                if (!app->switching_ws && editor_tab_updates_preview(t) &&
-                    !editor_preview_paused(app, t->path) &&
-                    g_strcmp0(preview_state_path(app), t->path) != 0) {
-                    if (g_str_has_suffix(t->path, ".tex")) {
-                        latex_build_show_pdf(app, t->path);
-                    } else {
-                        update_preview_after_save(app, t);
-                    }
-                }
+                show_tab_in_preview(app, t);
                 minimap_view_update_visibility(t->minimap);
                 editor_modes_update_status(t);
                 break;
