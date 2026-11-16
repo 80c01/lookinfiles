@@ -324,6 +324,7 @@ typedef struct {
     GtkWidget* child;
     GtkWidget* popover;
     EditorPageCloseFunc on_close;
+    EditorPageCloseFunc on_extra;
     gpointer data;
 } PageMenu;
 
@@ -340,6 +341,7 @@ static void on_page_menu_action(GtkButton* button, gpointer data) {
     AppData* app = pm->app;
     GtkWidget* child = g_object_ref(pm->child);
     EditorPageCloseFunc on_close = pm->on_close;
+    EditorPageCloseFunc on_extra = pm->on_extra;
     gpointer close_data = pm->data;
     gtk_popover_popdown(GTK_POPOVER(pm->popover));
     switch (action) {
@@ -349,6 +351,9 @@ static void on_page_menu_action(GtkButton* button, gpointer data) {
     case TAB_ACTION_MOVE_UP: editor_move_page_direction(app, child, EDITOR_MOVE_UP); break;
     case TAB_ACTION_CLOSE:
         if (on_close != NULL) on_close(child, close_data);
+        break;
+    case TAB_ACTION_PAGE_EXTRA:
+        if (on_extra != NULL) on_extra(child, close_data);
         break;
     default: break;
     }
@@ -375,8 +380,21 @@ static void page_menu_item(GtkWidget* box, const gchar* label, const gchar* shor
     gtk_box_append(GTK_BOX(box), btn);
 }
 
+static void page_menu_separator(GtkWidget* box) {
+    GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_margin_top(sep, 4);
+    gtk_widget_set_margin_bottom(sep, 4);
+    gtk_box_append(GTK_BOX(box), sep);
+}
+
 void editor_page_show_context_menu(AppData* app, GtkWidget* child, GtkWidget* target_widget,
                                    EditorPageCloseFunc on_close, gpointer data) {
+    editor_page_show_context_menu_extra(app, child, target_widget, on_close, data, NULL, NULL);
+}
+
+void editor_page_show_context_menu_extra(AppData* app, GtkWidget* child, GtkWidget* target_widget,
+                                         EditorPageCloseFunc on_close, gpointer data,
+                                         const gchar* extra_label, EditorPageCloseFunc on_extra) {
     if (app == NULL || child == NULL || target_widget == NULL) return;
     GtkWidget* popover = gtk_popover_new();
     gtk_widget_set_hexpand(popover, FALSE);
@@ -395,8 +413,11 @@ void editor_page_show_context_menu(AppData* app, GtkWidget* child, GtkWidget* ta
     pm->child = g_object_ref(child);
     pm->popover = popover;
     pm->on_close = on_close;
+    pm->on_extra = on_extra;
     pm->data = data;
     g_object_set_data_full(G_OBJECT(box), "page-menu", pm, page_menu_free);
+    gboolean has_extra = extra_label != NULL && on_extra != NULL;
+    if (has_extra) page_menu_item(box, extra_label, NULL, TAB_ACTION_PAGE_EXTRA);
 
     /* Only the moves that would do something (none in the terminal panel) */
     GtkNotebook* cur_nb = editor_notebook_of_page(child);
@@ -406,17 +427,13 @@ void editor_page_show_context_menu(AppData* app, GtkWidget* child, GtkWidget* ta
     gboolean any_move = FALSE;
     for (gsize i = 0; movable && i < G_N_ELEMENTS(TAB_MOVES); i++) {
         if (!notebook_can_move_tab(app, cur_nb, TAB_MOVES[i].dir)) continue;
+        if (has_extra && !any_move) page_menu_separator(box);
         page_menu_item(box, g_dpgettext2(GETTEXT_PACKAGE, "editor tab", TAB_MOVES[i].name), TAB_MOVES[i].key,
                        TAB_MOVES[i].action);
         any_move = TRUE;
     }
     if (on_close != NULL) {
-        if (any_move) {
-            GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-            gtk_widget_set_margin_top(sep, 4);
-            gtk_widget_set_margin_bottom(sep, 4);
-            gtk_box_append(GTK_BOX(box), sep);
-        }
+        if (any_move || has_extra) page_menu_separator(box);
         page_menu_item(box, _("Close Tab"), "Ctrl+W", TAB_ACTION_CLOSE);
     }
 

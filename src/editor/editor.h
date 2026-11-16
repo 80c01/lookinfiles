@@ -31,7 +31,8 @@ enum {
     TAB_ACTION_COPY_NAME,
     TAB_ACTION_COPY_RELATIVE,
     TAB_ACTION_COPY_PATH,
-    TAB_ACTION_PREVIEW_UPDATES
+    TAB_ACTION_PREVIEW_UPDATES,
+    TAB_ACTION_PAGE_EXTRA
 };
 
 EditorTab* editor_current_tab(AppData* app);
@@ -174,6 +175,11 @@ gboolean editor_move_page_direction(AppData* app, GtkWidget* child, EditorMoveDi
 typedef void (*EditorPageCloseFunc)(GtkWidget* child, gpointer data);
 void editor_page_show_context_menu(AppData* app, GtkWidget* child, GtkWidget* target_widget,
                                    EditorPageCloseFunc on_close, gpointer data);
+/* The same menu with an item of the page first: extra_label, which calls
+ * on_extra(child, data) once the menu is closed */
+void editor_page_show_context_menu_extra(AppData* app, GtkWidget* child, GtkWidget* target_widget,
+                                         EditorPageCloseFunc on_close, gpointer data,
+                                         const gchar* extra_label, EditorPageCloseFunc on_extra);
 void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* target_widget);
 void on_notebook_page_reordered(GtkNotebook* notebook, GtkWidget* child,
                                 guint page_num, gpointer data);

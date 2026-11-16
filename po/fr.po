@@ -505,6 +505,10 @@ msgstr "Nouvel onglet"
 msgid "Not shown in the tab, opened with the default application: %s"
 msgstr "Non affiché dans l’onglet, ouvert avec l’application par défaut : %s"
 
+#: src/preview/browser.c:427
+msgid "This tab has no page to bookmark"
+msgstr "Cet onglet n’a pas de page à mettre en signet"
+
 #: src/preview/browser.c:296
 msgid "Choosing a file to upload is not supported in browser tabs"
 msgstr ""

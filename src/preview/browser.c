@@ -44,7 +44,6 @@ typedef struct {
     GtkWidget* label; /* tab label (also kept while the page is detached) */
     GtkWidget* title; /* the label's text */
     gboolean loading; /* reload_btn shows Stop */
-    GSimpleAction* bookmark_action; /* "Add Bookmark" of the page's context menu */
 } BrowserTab;
 
 static void ensure_css(void) {
@@ -88,10 +87,6 @@ static void tab_free(gpointer data) {
     g_clear_object(&bt->entry);
     g_clear_object(&bt->title);
     g_clear_object(&bt->label);
-    if (bt->bookmark_action != NULL) {
-        g_signal_handlers_disconnect_by_data(bt->bookmark_action, bt);
-        g_clear_object(&bt->bookmark_action);
-    }
     g_free(bt);
 }
 
@@ -361,38 +356,6 @@ static gboolean bookmark_idle(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-static void on_bookmark_activate(GSimpleAction* action, GVariant* parameter, gpointer data) {
-    (void)action;
-    (void)parameter;
-    BrowserTab* bt = data;
-    const gchar* uri = webkit_web_view_get_uri(bt->view);
-    if (uri == NULL || uri[0] == '\0') return;
-    BookmarkRequest* req = g_new0(BookmarkRequest, 1);
-    req->app = bt->app;
-    req->uri = g_strdup(uri);
-    req->title = g_strdup(webkit_web_view_get_title(bt->view));
-    g_idle_add(bookmark_idle, req);
-}
-
-/* The page's context menu, plus Add Bookmark (for the page) */
-static gboolean on_context_menu(WebKitWebView* view, WebKitContextMenu* menu, WebKitHitTestResult* hit,
-                                gpointer data) {
-    (void)hit;
-    BrowserTab* bt = data;
-    const gchar* uri = webkit_web_view_get_uri(view);
-    if (uri == NULL || uri[0] == '\0') return FALSE;
-    if (bt->bookmark_action == NULL) {
-        bt->bookmark_action = g_simple_action_new("add-bookmark", NULL);
-        g_signal_connect(bt->bookmark_action, "activate", G_CALLBACK(on_bookmark_activate), bt);
-    }
-    if (webkit_context_menu_get_n_items(menu) > 0) {
-        webkit_context_menu_append(menu, webkit_context_menu_item_new_separator());
-    }
-    webkit_context_menu_append(menu, webkit_context_menu_item_new_from_gaction(
-                                         G_ACTION(bt->bookmark_action), _("Add Bookmark…"), NULL));
-    return FALSE;
-}
-
 /* Fullscreen video and the like: the window stays as it is */
 static gboolean on_fullscreen(WebKitWebView* view, gpointer data) {
     (void)view;
@@ -455,14 +418,32 @@ static void on_menu_close(GtkWidget* child, gpointer data) {
     if (bt != NULL) close_tab(bt);
 }
 
-/* The tab menu, as for an editor tab: move, close */
+/* Add Bookmark… of the tab menu: the page's address, named after its title */
+static void on_menu_bookmark(GtkWidget* child, gpointer data) {
+    (void)data;
+    BrowserTab* bt = tab_of(child);
+    if (bt == NULL) return;
+    const gchar* uri = webkit_web_view_get_uri(bt->view);
+    if (uri == NULL || uri[0] == '\0') {
+        app_notice(bt->app, _("This tab has no page to bookmark"), FALSE);
+        return;
+    }
+    BookmarkRequest* req = g_new0(BookmarkRequest, 1);
+    req->app = bt->app;
+    req->uri = g_strdup(uri);
+    req->title = g_strdup(webkit_web_view_get_title(bt->view));
+    g_idle_add(bookmark_idle, req);
+}
+
+/* The tab menu, as for an editor tab: add a bookmark, move, close */
 static void on_label_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     (void)x;
     (void)y;
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
     BrowserTab* bt = data;
-    editor_page_show_context_menu(bt->app, bt->page, bt->label, on_menu_close, NULL);
+    editor_page_show_context_menu_extra(bt->app, bt->page, bt->label, on_menu_close, NULL,
+                                        _("Add Bookmark…"), on_menu_bookmark);
 }
 
 /* The mouse's back / forward buttons */
@@ -587,7 +568,6 @@ static BrowserTab* tab_new(AppData* app, WebKitWebView* related) {
     g_signal_connect(view, "run-file-chooser", G_CALLBACK(on_file_chooser), bt);
     g_signal_connect(view, "print", G_CALLBACK(on_print), bt);
     g_signal_connect(view, "enter-fullscreen", G_CALLBACK(on_fullscreen), bt);
-    g_signal_connect(view, "context-menu", G_CALLBACK(on_context_menu), bt);
     GtkGesture* side = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(side), 0);
     gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(side), GTK_PHASE_CAPTURE);
