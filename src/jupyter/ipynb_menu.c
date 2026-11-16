@@ -185,8 +185,12 @@ void ipynb_menu_add_text(IpynbTab* t, guint index, GtkWidget* view) {
     g_object_unref(split);
     gtk_widget_insert_action_group(view, "cell", G_ACTION_GROUP(group));
     g_object_unref(group);
+    /* In a section of its own: a separator above it, under the text commands */
+    GMenu* section = g_menu_new();
+    g_menu_append(section, _("Split Cell"), "cell.split");
     GMenu* menu = g_menu_new();
-    g_menu_append(menu, _("Split Cell"), "cell.split");
+    g_menu_append_section(menu, NULL, G_MENU_MODEL(section));
+    g_object_unref(section);
     gtk_text_view_set_extra_menu(GTK_TEXT_VIEW(view), G_MENU_MODEL(menu));
     g_object_unref(menu);
 }
