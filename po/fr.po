@@ -2771,8 +2771,8 @@ msgstr "Mettre à la corbeille…"
 msgid "Copy Name"
 msgstr "Copier le nom"
 
-msgid "Copy Relative Path"
-msgstr "Copier le chemin relatif"
+msgid "Copy Git Relative Path"
+msgstr "Copier le chemin relatif git"
 
 msgid "Copy Path"
 msgstr "Copier le chemin"

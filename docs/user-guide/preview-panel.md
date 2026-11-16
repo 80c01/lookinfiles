@@ -75,7 +75,7 @@ tab does it for the current workspace only, not kept. In a large file, only
 the part first shown is listed.
 
 The right-click menu of the Preview tab copies the previewed file's name
-(**Copy Name**), its path from the root of its git repository (**Copy
+(**Copy Name**), its path from the root of its git repository (**Copy Git
 Relative Path**, only inside a repository) or its absolute path (**Copy
 Path**).
 

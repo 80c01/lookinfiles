@@ -3,7 +3,7 @@
 
 #include "core/app_types.h"
 
-/* Copy Name / Copy Relative Path / Copy Path: the items of the explorer,
+/* Copy Name / Copy Git Relative Path / Copy Path: the items of the explorer,
  * editor tab and Preview tab menus, copying a file's name, its path from
  * the root of its git repository, or its absolute path */
 
@@ -13,7 +13,7 @@ typedef enum {
     PATH_COPY_ABSOLUTE,
 } PathCopyKind;
 
-/* Whether path is in a git repository (Copy Relative Path is shown) */
+/* Whether path is in a git repository (Copy Git Relative Path is shown) */
 gboolean path_copy_has_relative(const gchar* path);
 
 /* Copy that form of path to the clipboard, with a notice */

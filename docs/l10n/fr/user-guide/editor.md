@@ -142,7 +142,7 @@ un seul Vim : mode, registres et historique d’annulation.
 
 Le menu du clic droit sur le titre d’un onglet copie aussi le nom du
 fichier (**Copier le nom**), son chemin depuis la racine de son dépôt git
-(**Copier le chemin relatif**, seulement dans un dépôt) ou son chemin
+(**Copier le chemin relatif git**, seulement dans un dépôt) ou son chemin
 absolu (**Copier le chemin**).
 
 ## Choisir le mode d’un onglet

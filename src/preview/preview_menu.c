@@ -92,7 +92,9 @@ static void on_tab_right_click(GtkGestureClick* gesture, gint n_press, gdouble x
     const gchar* file = preview_state_path(app);
     if (file != NULL) {
         menu_item(box, app, _("Copy Name"), NULL, PREVIEW_ACTION_COPY_NAME);
-        if (path_copy_has_relative(file)) menu_item(box, app, _("Copy Relative Path"), NULL, PREVIEW_ACTION_COPY_RELATIVE);
+        if (path_copy_has_relative(file)) {
+            menu_item(box, app, _("Copy Git Relative Path"), NULL, PREVIEW_ACTION_COPY_RELATIVE);
+        }
         menu_item(box, app, _("Copy Path"), NULL, PREVIEW_ACTION_COPY_PATH);
     }
     if (preview_location_current(app) != NULL) {

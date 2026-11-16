@@ -82,7 +82,7 @@ en premier est listée.
 
 Le menu du clic droit de l’onglet Aperçu copie le nom du fichier affiché
 (**Copier le nom**), son chemin depuis la racine de son dépôt git
-(**Copier le chemin relatif**, seulement dans un dépôt) ou son chemin
+(**Copier le chemin relatif git**, seulement dans un dépôt) ou son chemin
 absolu (**Copier le chemin**).
 
 `e` ouvre le fichier texte affiché dans un onglet d’édition ; `t` (Vim) ou

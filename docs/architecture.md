@@ -474,7 +474,7 @@ Layers, from bottom to top
   (`app_dialog_is_open()`).
 - `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below;
   `app_notice()` shows a short message in the explorer bar (with Undo when asked).
-- `path_copy` — Copy Name / Copy Relative Path (from the git root,
+- `path_copy` — Copy Name / Copy Git Relative Path (from the git root,
   `git_relative_path()`) / Copy Path, the items of `files_menu`,
   `editor_tab_menu` and `preview_menu`: `path_copy()` puts the text in the
   clipboard with an `app_notice()`.
@@ -614,7 +614,7 @@ Layers, from bottom to top
   the view actions, the same in every mode.
 - `file_actions` — new file / new folder, rename and trash prompts.
 - `files_menu` — right-click menu of the files view (the key actions,
-  plus Copy Name / Relative Path / Path (`path_copy`), Open With Default App through `GtkFileLauncher`, Open in
+  plus Copy Name / Git Relative Path / Path (`path_copy`), Open With Default App through `GtkFileLauncher`, Open in
   Browser Tab for HTML files through `browser_open()`, and Open Terminal
   Here through `terminal_open()`).
 - `file_moves` — renames and moves to the trash with editor tabs and

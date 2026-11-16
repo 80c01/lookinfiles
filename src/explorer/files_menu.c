@@ -155,11 +155,11 @@ static const gchar* side_panel_key(AppData* app) {
     }
 }
 
-/* Copy Name, Copy Relative Path (in a git repository) and Copy Path */
+/* Copy Name, Copy Git Relative Path (in a git repository) and Copy Path */
 static void copy_items(GtkWidget* box, GtkWidget* popover, AppData* app, const gchar* path) {
     menu_item(box, popover, app, _("Copy Name"), NULL, FM_COPY_NAME);
     if (path_copy_has_relative(path)) {
-        menu_item(box, popover, app, _("Copy Relative Path"), NULL, FM_COPY_RELATIVE);
+        menu_item(box, popover, app, _("Copy Git Relative Path"), NULL, FM_COPY_RELATIVE);
     }
     menu_item(box, popover, app, _("Copy Path"), NULL, FM_COPY_PATH);
 }

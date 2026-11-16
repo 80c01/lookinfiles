@@ -123,7 +123,7 @@ Emacs `C-x 1`, Vim `Ctrl+W o` / `:only` close the other views of the file.
 In Vim mode the views share one Vim: mode, registers and undo history.
 
 The right-click menu of a tab title also copies the file's name (**Copy
-Name**), its path from the root of its git repository (**Copy Relative
+Name**), its path from the root of its git repository (**Copy Git Relative
 Path**, only inside a repository) or its absolute path (**Copy Path**).
 
 ## Choosing the mode of a tab

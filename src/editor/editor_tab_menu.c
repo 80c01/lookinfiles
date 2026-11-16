@@ -243,7 +243,7 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
         gtk_box_append(GTK_BOX(box), sep_copy);
         tab_menu_item(box, popover, app, tab, _("Copy Name"), NULL, TAB_ACTION_COPY_NAME);
         if (path_copy_has_relative(tab->path)) {
-            tab_menu_item(box, popover, app, tab, _("Copy Relative Path"), NULL, TAB_ACTION_COPY_RELATIVE);
+            tab_menu_item(box, popover, app, tab, _("Copy Git Relative Path"), NULL, TAB_ACTION_COPY_RELATIVE);
         }
         tab_menu_item(box, popover, app, tab, _("Copy Path"), NULL, TAB_ACTION_COPY_PATH);
     }
