@@ -27,6 +27,7 @@ struct _VteTerminal {
     double wheel;         /* partial lines of smooth scrolling */
     gboolean focused;
     GtkIMContext* im;
+    gboolean im_focused; /* im told of the focus (once: see im_focus_in()) */
 
     /* Selection from the anchor to the end, rows as vt_screen_line() rows
      * plus vt_screen_scrolled() (they stay on their line as output scrolls) */
@@ -354,13 +355,27 @@ static void on_key_released(GtkEventControllerKey* ctrl, guint keyval, guint key
     }
 }
 
+/* Balanced focus calls: the Windows IME adds a message filter per focus-in
+ * and removes it on focus-out, only while it knows the surface */
+static void im_focus_in(VteTerminal* t) {
+    if (!t->im_focused && gtk_widget_get_realized(GTK_WIDGET(t))) {
+        gtk_im_context_focus_in(t->im);
+        t->im_focused = TRUE;
+    }
+}
+
+static void im_focus_out(VteTerminal* t) {
+    if (t->im_focused) {
+        gtk_im_context_focus_out(t->im);
+        t->im_focused = FALSE;
+    }
+}
+
 static void on_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
     (void)ctrl;
     VteTerminal* t = data;
-    if (!t->focused && gtk_widget_get_realized(GTK_WIDGET(t))) {
-        gtk_im_context_focus_in(t->im); /* once: the Windows IME adds a filter per call */
-    }
     t->focused = TRUE;
+    im_focus_in(t);
     if (vt_screen_modes(t->screen) & VT_MODE_FOCUS_EVENTS) {
         vt_pty_write(t->pty, "\033[I", 3);
     }
@@ -370,9 +385,7 @@ static void on_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
 static void on_focus_leave(GtkEventControllerFocus* ctrl, gpointer data) {
     (void)ctrl;
     VteTerminal* t = data;
-    if (t->focused) {
-        gtk_im_context_focus_out(t->im);
-    }
+    im_focus_out(t);
     t->focused = FALSE;
     if (vt_screen_modes(t->screen) & VT_MODE_FOCUS_EVENTS) {
         vt_pty_write(t->pty, "\033[O", 3);
@@ -875,15 +888,13 @@ static void vte_terminal_realize(GtkWidget* widget) {
     VteTerminal* t = VTE_TERMINAL(widget);
     gtk_im_context_set_client_widget(t->im, widget);
     if (t->focused) {
-        gtk_im_context_focus_in(t->im);
+        im_focus_in(t);
     }
 }
 
 static void vte_terminal_unrealize(GtkWidget* widget) {
     VteTerminal* t = VTE_TERMINAL(widget);
-    if (t->focused) {
-        gtk_im_context_focus_out(t->im); /* realize focuses it in again */
-    }
+    im_focus_out(t); /* realize focuses it in again while t->focused */
     gtk_im_context_set_client_widget(t->im, NULL);
     GTK_WIDGET_CLASS(vte_terminal_parent_class)->unrealize(widget);
 }
