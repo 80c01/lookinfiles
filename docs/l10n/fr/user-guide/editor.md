@@ -92,8 +92,11 @@ cellule Markdown nouvelle ou vide reste en source.
   toutes les sections, ou les déplie toutes quand elles sont toutes
   repliées. Les sorties d’une cellule de code viennent sous un en-tête
   `Out [n]:` (`n` : l’exécution qui les a produites) ; un clic dessus les
-  masque, l’en-tête dit alors combien sont masquées.
-  Les deux sont gardés dans le notebook comme JupyterLab les garde : un
+  masque, l’en-tête dit alors combien sont masquées. La flèche au début de
+  l’en-tête d’une cellule de code replie son code : seule sa première
+  ligne reste, avec le nombre de lignes qui suivent ; un clic dessus (ou
+  `Entrée`) le déplie. Les trois sont gardés dans le notebook comme
+  JupyterLab les garde : un
   notebook replié ici s’ouvre replié dans JupyterLab. Les cellules
   repliées s’exécutent quand même avec **Tout exécuter** ; `Ctrl+Up` /
   `Ctrl+Down` et `Shift+Enter` les sautent, et aller à une cellule masquée

@@ -542,8 +542,9 @@ gboolean ipynb_doc_cell_flag(const IpynbDoc* doc, guint index, IpynbCellFlag fla
     if (flag == IPYNB_FLAG_HEADING_COLLAPSED) {
         return ipynb_doc_cell_type(doc, index) == IPYNB_CELL_MARKDOWN && node_true(node_get(meta, HEADING_COLLAPSED));
     }
-    return ipynb_doc_cell_type(doc, index) == IPYNB_CELL_CODE &&
-           (node_true(node_get(node_get(meta, "jupyter"), "outputs_hidden")) || node_true(node_get(meta, "collapsed")));
+    if (ipynb_doc_cell_type(doc, index) != IPYNB_CELL_CODE) return FALSE;
+    if (flag == IPYNB_FLAG_SOURCE_HIDDEN) return node_true(node_get(node_get(meta, "jupyter"), "source_hidden"));
+    return node_true(node_get(node_get(meta, "jupyter"), "outputs_hidden")) || node_true(node_get(meta, "collapsed"));
 }
 
 gboolean ipynb_doc_set_cell_flag(IpynbDoc* doc, guint index, IpynbCellFlag flag, gboolean on) {
@@ -558,19 +559,20 @@ gboolean ipynb_doc_set_cell_flag(IpynbDoc* doc, guint index, IpynbCellFlag flag,
         else node_remove(meta, HEADING_COLLAPSED);
         return TRUE;
     }
+    const gchar* member = flag == IPYNB_FLAG_SOURCE_HIDDEN ? "source_hidden" : "outputs_hidden";
     Node* jupyter = node_get(meta, "jupyter");
     if (on) {
         if (jupyter == NULL || jupyter->type != N_OBJECT) {
             node_set(meta, "jupyter", node_new(N_OBJECT, NULL, NULL));
             jupyter = node_get(meta, "jupyter");
         }
-        node_set(jupyter, "outputs_hidden", node_new(N_RAW, NULL, "true"));
-        node_set(meta, "collapsed", node_new(N_RAW, NULL, "true"));
+        node_set(jupyter, member, node_new(N_RAW, NULL, "true"));
+        if (flag == IPYNB_FLAG_OUTPUTS_HIDDEN) node_set(meta, "collapsed", node_new(N_RAW, NULL, "true"));
         return TRUE;
     }
-    node_remove(meta, "collapsed");
+    if (flag == IPYNB_FLAG_OUTPUTS_HIDDEN) node_remove(meta, "collapsed");
     if (jupyter != NULL && jupyter->type == N_OBJECT) {
-        node_remove(jupyter, "outputs_hidden");
+        node_remove(jupyter, member);
         if (jupyter->children->len == 0) node_remove(meta, "jupyter");
     }
     return TRUE;

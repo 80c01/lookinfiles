@@ -9638,3 +9638,15 @@ msgstr[1] "%u sorties masquées"
 
 msgid "On a rendered Markdown cell with headings: fold or unfold its section / fold every section, or unfold them all"
 msgstr "Sur une cellule Markdown rendue avec des titres : replier ou déplier sa section / replier toutes les sections, ou les déplier toutes"
+
+msgid "Show Code"
+msgstr "Afficher le code"
+
+msgid "Hide Code"
+msgstr "Masquer le code"
+
+#, c-format
+msgid "… %u more line"
+msgid_plural "… %u more lines"
+msgstr[0] "… %u ligne de plus"
+msgstr[1] "… %u lignes de plus"

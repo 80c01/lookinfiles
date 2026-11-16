@@ -17,6 +17,10 @@
 #define OUT_NOTE_KEY "lookin-ipynb-out-note"     /* on a code cell's view: "n outputs hidden" in it */
 #define OUT_AREA_KEY "lookin-ipynb-out-area"     /* on a code cell's view: the head and the outputs */
 #define OUT_BOX_KEY "lookin-ipynb-out-box"       /* on a code cell's view: the outputs */
+#define SRC_ARROW_KEY "lookin-ipynb-src-arrow"   /* on a code cell's view: its code arrow */
+#define SRC_NOTE_KEY "lookin-ipynb-src-note"     /* on a code cell's view: shown for its folded code */
+#define SRC_FIRST_KEY "lookin-ipynb-src-first"   /* on a code cell's view: the first line in that note */
+#define SRC_MORE_KEY "lookin-ipynb-src-more"     /* on a code cell's view: "… n more lines" in it */
 #define OUT_COUNT_KEY "lookin-ipynb-out-count"   /* on a code cell's view: how many outputs it shows */
 
 static void ensure_css(void) {
@@ -38,7 +42,13 @@ static void ensure_css(void) {
                   ".ipynb-tab .ipynb-fold-arrow { color: @fg; }"
                   ".ipynb-tab button.ipynb-out-head:hover .ipynb-fold-arrow,"
                   " .ipynb-tab button.ipynb-out-head:hover .ipynb-out-prompt { color: @fg_bright; }"
-                  ".ipynb-tab .ipynb-out-note { color: @fg_muted; font-style: italic; }");
+                  ".ipynb-tab .ipynb-out-note { color: @fg_muted; font-style: italic; }"
+                  /* Folded code: its first line where the code was */
+                  ".ipynb-tab button.ipynb-src-note { padding: 6px 10px; border: none; border-radius: 0;"
+                  " background-color: @bg_block; box-shadow: none; }"
+                  ".ipynb-tab .ipynb-src-first { color: @fg_text; font-family: @font_code; font-size: @size_code; }"
+                  ".ipynb-tab .ipynb-src-more { color: @fg_muted; font-style: italic; }"
+                  ".ipynb-tab button.ipynb-src-note:hover .ipynb-src-more { color: @fg_text; }");
 }
 
 static GtkWidget* view_at(IpynbTab* t, guint index) {
@@ -193,6 +203,101 @@ void ipynb_fold_add_heading(IpynbTab* t, guint index, GtkWidget* view, GtkWidget
     gtk_box_append(GTK_BOX(cell), note);
     g_object_set_data(G_OBJECT(view), FOLD_ARROW_KEY, arrow);
     g_object_set_data(G_OBJECT(view), FOLD_NOTE_KEY, note);
+}
+
+/* --- Code ---
+ * The arrow first in a code cell's head folds its source: its first line
+ * stays in its place, with how many lines follow it. */
+
+static gboolean blank(const gchar* line) {
+    for (; *line != '\0'; line++) {
+        if (!g_ascii_isspace(*line)) return FALSE;
+    }
+    return TRUE;
+}
+
+void ipynb_fold_refresh_source(IpynbTab* t, guint index) {
+    GtkWidget* view = view_at(t, index);
+    GtkWidget* note = view != NULL ? g_object_get_data(G_OBJECT(view), SRC_NOTE_KEY) : NULL;
+    if (note == NULL) return;
+    gboolean folded = ipynb_doc_cell_flag(t->doc, index, IPYNB_FLAG_SOURCE_HIDDEN);
+    GtkWidget* arrow = g_object_get_data(G_OBJECT(view), SRC_ARROW_KEY);
+    set_arrow(arrow, folded);
+    gtk_widget_set_tooltip_text(arrow, folded ? _("Show Code") : _("Hide Code"));
+    gboolean had_focus = gtk_widget_has_focus(view);
+    gtk_widget_set_visible(view, !folded);
+    gtk_widget_set_visible(note, folded);
+    if (had_focus && folded) gtk_widget_grab_focus(note);
+    if (!folded) return;
+    /* The first line that is not blank, and the lines after it */
+    gchar* source = ipynb_doc_cell_source(t->doc, index);
+    gchar* valid = g_utf8_make_valid(source != NULL ? source : "", -1);
+    g_free(source);
+    g_strchomp(valid);
+    gchar** lines = g_strsplit(valid, "\n", -1);
+    guint n = g_strv_length(lines);
+    guint first = 0;
+    while (first < n && blank(lines[first])) first++;
+    GtkWidget* first_label = g_object_get_data(G_OBJECT(view), SRC_FIRST_KEY);
+    GtkWidget* more = g_object_get_data(G_OBJECT(view), SRC_MORE_KEY);
+    gtk_label_set_text(GTK_LABEL(first_label), first < n ? lines[first] : "");
+    guint rest = first < n ? n - first - 1 : 0;
+    gchar* text = rest > 0 ? g_strdup_printf(ngettext("… %u more line", "… %u more lines", rest), rest)
+                  : first < n ? g_strdup("…")
+                              : g_strdup(_("(empty)"));
+    gtk_label_set_text(GTK_LABEL(more), text);
+    g_free(text);
+    g_strfreev(lines);
+    g_free(valid);
+}
+
+GtkWidget* ipynb_fold_source_note(IpynbTab* t, guint index) {
+    GtkWidget* view = view_at(t, index);
+    GtkWidget* note = view != NULL ? g_object_get_data(G_OBJECT(view), SRC_NOTE_KEY) : NULL;
+    return note != NULL && gtk_widget_get_visible(note) ? note : NULL;
+}
+
+static void on_source_clicked(GtkButton* button, gpointer data) {
+    IpynbTab* t = data;
+    guint index = fold_index(GTK_WIDGET(button));
+    GtkWidget* view = view_at(t, index);
+    GtkWidget* note = g_object_get_data(G_OBJECT(view), SRC_NOTE_KEY);
+    gboolean folded = ipynb_doc_cell_flag(t->doc, index, IPYNB_FLAG_SOURCE_HIDDEN);
+    if (!ipynb_doc_set_cell_flag(t->doc, index, IPYNB_FLAG_SOURCE_HIDDEN, !folded)) return;
+    ipynb_tab_mark_changed(t);
+    gboolean to_code = folded && (GTK_WIDGET(button) == note || gtk_widget_has_focus(note));
+    ipynb_fold_refresh_source(t, index);
+    /* Unfolded from its note (a click, Enter): typing goes on in the code */
+    if (to_code) gtk_widget_grab_focus(view);
+}
+
+void ipynb_fold_add_source(IpynbTab* t, guint index, GtkWidget* view, GtkWidget* head, GtkWidget* cell) {
+    ensure_css();
+    GtkWidget* arrow = fold_button(index, NULL, "ipynb-fold");
+    gtk_widget_set_valign(arrow, GTK_ALIGN_CENTER);
+    g_signal_connect(arrow, "clicked", G_CALLBACK(on_source_clicked), t);
+    gtk_box_prepend(GTK_BOX(head), arrow);
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget* first = gtk_label_new(NULL);
+    gtk_label_set_ellipsize(GTK_LABEL(first), PANGO_ELLIPSIZE_END);
+    gtk_label_set_xalign(GTK_LABEL(first), 0.0f);
+    gtk_widget_add_css_class(first, "ipynb-src-first");
+    gtk_box_append(GTK_BOX(row), first);
+    GtkWidget* more = gtk_label_new(NULL);
+    gtk_widget_add_css_class(more, "ipynb-src-more");
+    gtk_box_append(GTK_BOX(row), more);
+    GtkWidget* note = fold_button(index, NULL, "ipynb-src-note");
+    gtk_button_set_child(GTK_BUTTON(note), row);
+    gtk_widget_set_tooltip_text(note, _("Show Code"));
+    gtk_widget_set_visible(note, FALSE);
+    g_signal_connect(note, "clicked", G_CALLBACK(on_source_clicked), t);
+    gtk_box_insert_child_after(GTK_BOX(cell), note, view);
+    ipynb_tab_track_focus(t, note, index);
+    g_object_set_data(G_OBJECT(view), SRC_ARROW_KEY, arrow);
+    g_object_set_data(G_OBJECT(view), SRC_NOTE_KEY, note);
+    g_object_set_data(G_OBJECT(view), SRC_FIRST_KEY, first);
+    g_object_set_data(G_OBJECT(view), SRC_MORE_KEY, more);
+    ipynb_fold_refresh_source(t, index);
 }
 
 /* --- Outputs ---

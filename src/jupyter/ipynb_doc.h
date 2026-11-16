@@ -79,8 +79,10 @@ gboolean ipynb_doc_clear_outputs(IpynbDoc* doc, guint index);
 typedef enum {
     IPYNB_FLAG_HEADING_COLLAPSED, /* a Markdown cell: the cells of its section hidden
                                    * ("jp-MarkdownHeadingCollapsed") */
-    IPYNB_FLAG_OUTPUTS_HIDDEN     /* a code cell: its outputs hidden ("jupyter":
+    IPYNB_FLAG_OUTPUTS_HIDDEN,    /* a code cell: its outputs hidden ("jupyter":
                                    * {"outputs_hidden"}, also the older "collapsed") */
+    IPYNB_FLAG_SOURCE_HIDDEN      /* a code cell: its source hidden ("jupyter":
+                                   * {"source_hidden"}) */
 } IpynbCellFlag;
 gboolean ipynb_doc_cell_flag(const IpynbDoc* doc, guint index, IpynbCellFlag flag);
 /* Set or clear a flag (cleared: its members removed, as JupyterLab does);

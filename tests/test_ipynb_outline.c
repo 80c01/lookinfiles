@@ -135,6 +135,15 @@ static void test_flags(void) {
     g_assert_true(ipynb_doc_cell_flag(again, 2, IPYNB_FLAG_OUTPUTS_HIDDEN));
     ipynb_doc_free(again);
     g_free(json);
+    /* The source too, beside the outputs in "jupyter" */
+    g_assert_false(ipynb_doc_set_cell_flag(doc, 1, IPYNB_FLAG_SOURCE_HIDDEN, TRUE));
+    g_assert_true(ipynb_doc_set_cell_flag(doc, 2, IPYNB_FLAG_SOURCE_HIDDEN, TRUE));
+    g_assert_true(ipynb_doc_cell_flag(doc, 2, IPYNB_FLAG_SOURCE_HIDDEN));
+    json = ipynb_doc_to_json(doc);
+    g_assert_nonnull(strstr(json, "\"source_hidden\": true"));
+    g_free(json);
+    g_assert_true(ipynb_doc_set_cell_flag(doc, 2, IPYNB_FLAG_SOURCE_HIDDEN, FALSE));
+    g_assert_true(ipynb_doc_cell_flag(doc, 2, IPYNB_FLAG_OUTPUTS_HIDDEN)); /* left alone */
     /* Cleared: the notebook as it was */
     g_assert_true(ipynb_doc_set_cell_flag(doc, 1, IPYNB_FLAG_HEADING_COLLAPSED, FALSE));
     g_assert_true(ipynb_doc_set_cell_flag(doc, 2, IPYNB_FLAG_OUTPUTS_HIDDEN, FALSE));

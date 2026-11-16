@@ -157,7 +157,8 @@ void ipynb_tab_focus_cell(IpynbTab* t, guint index) {
     index = MIN(index, t->views->len - 1);
     ipynb_fold_reveal(t, index);
     GtkWidget* rendered = shown_rendered(t, index);
-    gtk_widget_grab_focus(rendered != NULL ? rendered : g_ptr_array_index(t->views, index));
+    GtkWidget* note = ipynb_fold_source_note(t, index);
+    gtk_widget_grab_focus(rendered != NULL ? rendered : note != NULL ? note : g_ptr_array_index(t->views, index));
 }
 
 static guint cell_index(gpointer object) {
@@ -309,6 +310,11 @@ static void track_focus(IpynbTab* t, GtkWidget* view) {
     GtkEventController* focus = gtk_event_controller_focus_new();
     g_signal_connect(focus, "enter", G_CALLBACK(on_view_focus_enter), t);
     gtk_widget_add_controller(view, focus);
+}
+
+void ipynb_tab_track_focus(IpynbTab* t, GtkWidget* widget, guint index) {
+    g_object_set_data(G_OBJECT(widget), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
+    track_focus(t, widget);
 }
 
 /* The wheel over a rendered cell scrolls the cells: its own scrolled window
@@ -736,6 +742,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     }
 
     if (type == IPYNB_CELL_CODE) {
+        ipynb_fold_add_source(t, index, view, head, cell);
         GtkWidget* outputs = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
         gtk_box_append(GTK_BOX(cell), ipynb_fold_outputs_wrap(t, index, view, outputs));
         fill_outputs(t, index, outputs);

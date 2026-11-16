@@ -79,6 +79,8 @@ IpynbTab* ipynb_tab_find(AppData* app, const gchar* path);
 void ipynb_tab_set_status(IpynbTab* t, const gchar* text, gboolean error);
 void ipynb_tab_update_info(IpynbTab* t);
 void ipynb_tab_focus_cell(IpynbTab* t, guint index);
+/* widget (of the cell at index) focused: that cell is the current one */
+void ipynb_tab_track_focus(IpynbTab* t, GtkWidget* widget, guint index);
 /* Insert a cell (the cells are built again, then it has the focus) */
 void ipynb_tab_insert_cell(IpynbTab* t, guint at, IpynbCellType type);
 /* Show the prompt and outputs of one cell again */
@@ -159,6 +161,14 @@ gboolean ipynb_tagbar_has_focus(IpynbTab* t);
  * its head, and the note of the cells its folded section hides, at the
  * bottom of the cell; view is the cell's source view */
 void ipynb_fold_add_heading(IpynbTab* t, guint index, GtkWidget* view, GtkWidget* head, GtkWidget* cell);
+/* The arrow folding the code of a code cell, first in its head, and the
+ * note shown in place of the folded code (its first line), after view */
+void ipynb_fold_add_source(IpynbTab* t, guint index, GtkWidget* view, GtkWidget* head, GtkWidget* cell);
+/* Show the code of the code cell at index, or its note when folded */
+void ipynb_fold_refresh_source(IpynbTab* t, guint index);
+/* The note of the code cell at index while its code is folded (it takes
+ * the focus in place of the code), else NULL */
+GtkWidget* ipynb_fold_source_note(IpynbTab* t, guint index);
 /* Put the outputs box of a code cell beside an arrow that hides them (a
  * note in their place); returns the widget to add to the cell */
 GtkWidget* ipynb_fold_outputs_wrap(IpynbTab* t, guint index, GtkWidget* view, GtkWidget* outputs);

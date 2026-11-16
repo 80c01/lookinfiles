@@ -78,7 +78,10 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   it. `Shift+Tab` folds every section, or unfolds them all when all are
   folded. The outputs of a code cell come under an `Out [n]:` head (`n`:
   the run that gave them); a click on it hides them, the head then says
-  how many are hidden. Both are kept in the notebook as JupyterLab keeps them, so a
+  how many are hidden. The arrow first in a code cell's head folds its
+  code: only its first line stays, with how many lines follow; a click on
+  it (or `Enter`) unfolds it. All three are kept in the notebook as JupyterLab
+  keeps them, so a
   notebook folded here opens folded in JupyterLab. Folded cells still run
   with **Run All**; `Ctrl+Up` / `Ctrl+Down` and `Shift+Enter` skip them,
   and going to a hidden cell (from the tagbar, or a new cell inserted in a
