@@ -66,6 +66,7 @@ git_utils:palette,i18n
 line_diff:
 latex_log:
 latex_root:
+latex_synctex:
 preview_cache:
 path_kind:
 pane_geometry:

@@ -209,7 +209,9 @@ bas de l’onglet. Ses messages restent en anglais, comme dans Emacs.
 
 Enregistrer un fichier `.tex` (`Ctrl+S`, `:w`, `C-x C-s`) compile son
 document en arrière-plan, comme Overleaf, et affiche le PDF dans l’aperçu.
-Quand le PDF est déjà affiché, il est rechargé à la même page.
+Le PDF suit ensuite le curseur : se déplacer dans le fichier `.tex` fait
+défiler l’aperçu jusqu’à l’endroit de la ligne (SyncTeX, par la commande
+`synctex` de TeX Live), à la hauteur du curseur dans l’éditeur.
 
 - La commande est `latexmk` s’il est installé, sinon Tectonic, sinon
   `pdflatex`, `xelatex` ou `lualatex` lancé une fois. Le moteur vient d’une

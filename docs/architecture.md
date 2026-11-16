@@ -32,7 +32,7 @@ The directories group modules by feature, not by layer:
 | `canvas/` | Canvas notes |
 | `games/` | games mode |
 | `jupyter/` | Jupyter notebooks edited cell by cell: the notebook model and its tab |
-| `latex/` | LaTeX documents compiled on save: log messages, main document, the LaTeX tab |
+| `latex/` | LaTeX documents compiled on save: log messages, main document, SyncTeX, the LaTeX tab |
 | `terminal/` | terminal panes and the built-in terminal |
 | `workspace/` | workspaces, layouts, session |
 | `clock/` | the clock and the timers of the top bar |
@@ -250,6 +250,9 @@ Layers, from bottom to top
   errors (`-file-line-error` or `!` with its `l.12` source), LaTeX / package /
   class warnings, bad boxes; lines wrapped at 79 characters joined, the file
   of a message from the `(./file.tex ... )` nesting, repeats kept once.
+- `latex_synctex` — SyncTeX: the `.synctex.gz` of a PDF
+  (`latex_synctex_file()`), the page and height of the first place in the
+  output of `synctex view` (`latex_synctex_parse_view()`).
 - `latex_root` — the main document of a `.tex` file: `% !TEX root` and
   `% !TEX program` magic comments, `\documentclass`, the engine its packages
   need (`latex_root_engine()`), the candidate that `\input`s / `\include`s a
@@ -864,6 +867,13 @@ Layers, from bottom to top
   and `monitor_file()`, so zoom and reloads are of the PDF), or
   `APP_EVENT_PREVIEW_STALE` when it is shown already and the messages given to `latex_errors`. One compilation at a
   time: a save meanwhile compiles again when it ends.
+- `latex_sync` — the PDF preview follows the cursor of a focused `.tex`
+  editor tab (SyncTeX forward search): after a pause, `synctex view` runs
+  asynchronously and `pdf_preview_show_point()` scrolls to the place, at
+  the height of the cursor in the editor; after a compilation
+  (`latex_sync_after_build()`) the place is shown again while the new pages
+  come into the preview buffer. `pdf.c` keeps each page's scale (pixels per
+  point) on its texture for this.
 - `latex_errors` — the LaTeX page of the preview notebook (`app->latex_page`,
   after the Git and result tabs): one row per message (kind icon, message,
   file and line, the source of an error), `Enter` opens it with

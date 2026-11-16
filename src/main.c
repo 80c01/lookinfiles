@@ -52,6 +52,7 @@
 #include "code/code_intel.h"
 #include "code/code_nav.h"
 #include "latex/latex_build.h"
+#include "latex/latex_sync.h"
 #include "editor/editor_modes.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -485,6 +486,7 @@ int main(int argc, char** argv) {
     app->window = GTK_WINDOW(window);
     app->main_loop = loop;
     app->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    latex_sync_init(app);
 #ifdef HAVE_GSV
     apply_vscode_scheme(app->buffer, text_view);
 #endif
@@ -705,6 +707,7 @@ int main(int argc, char** argv) {
     editor_save_all_buffers(app);
     code_intel_shutdown(app);   /* language servers: shutdown, exit */
     latex_build_free(app);      /* a running compilation stopped */
+    latex_sync_free(app);
     fs_watch_free(app);
     git_tab_cleanup(app);
     panels_free(app);

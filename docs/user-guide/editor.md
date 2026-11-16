@@ -187,8 +187,10 @@ the tab.
 ## LaTeX documents
 
 Saving a `.tex` file (`Ctrl+S`, `:w`, `C-x C-s`) compiles its document in
-the background, as Overleaf does, and shows the PDF in the preview. When
-the PDF is already shown, it is reloaded on the same page.
+the background, as Overleaf does, and shows the PDF in the preview. The
+PDF then follows the cursor: moving in the `.tex` file scrolls the preview
+to the place of the line (SyncTeX, through the `synctex` command of TeX
+Live), at the height of the cursor in the editor.
 
 - The command is `latexmk` when it is installed, else Tectonic, else
   `pdflatex`, `xelatex` or `lualatex` run once. The engine comes from a

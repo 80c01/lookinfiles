@@ -3,6 +3,7 @@
 #include "latex/latex_errors.h"
 #include "latex/latex_log.h"
 #include "latex/latex_root.h"
+#include "latex/latex_sync.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "explorer/fs_watch.h"
@@ -366,7 +367,10 @@ static void on_build_done(GObject* source, GAsyncResult* result, gpointer data) 
             g_free(pdf_name);
         }
         g_free(root_name);
-        if (job->pdf != NULL && job->pdf_new) show_pdf(app, job->pdf);
+        if (job->pdf != NULL && job->pdf_new) {
+            show_pdf(app, job->pdf);
+            latex_sync_after_build(app);
+        }
     }
     g_free(saved_name);
 

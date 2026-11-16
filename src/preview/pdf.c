@@ -23,6 +23,8 @@
 #define MAX_RENDER_PAGES 20
 /* Start of the page badges, found again by PgUp / PgDn (not translated) */
 #define PAGE_BADGE_PREFIX "─── "
+/* Pixels per PDF point of a rendered page (gdouble*, on its texture) */
+#define PAGE_SCALE_KEY "pdf-page-scale"
 /* Pages rendered before the preview is first shown; the others follow */
 #define FIRST_RENDER_PAGES 3
 /* Pages rendered by each next task: they show as they come */
@@ -489,6 +491,9 @@ static GdkTexture* render_page(PopplerDocument* doc, gint i, gint max_w) {
                                                (GDestroyNotify)cairo_surface_destroy, surface);
     GdkTexture* tex = gdk_memory_texture_new(rw, rh, GDK_MEMORY_B8G8R8A8_PREMULTIPLIED, bytes, (gsize)stride);
     g_bytes_unref(bytes);
+    if (tex != NULL) {
+        g_object_set_data_full(G_OBJECT(tex), PAGE_SCALE_KEY, g_memdup2(&scale, sizeof scale), g_free);
+    }
     if (tex != NULL && thumb != NULL) {
         g_object_set_data_full(G_OBJECT(tex), MINIMAP_TEXTURE_SOURCE, thumb, (GDestroyNotify)cairo_surface_destroy);
     } else if (thumb != NULL) {
@@ -753,6 +758,39 @@ gboolean pdf_preview_jump(AppData* app, gint direction) {
     return TRUE;
 }
 
+gboolean pdf_preview_show_point(AppData* app, gint page, gdouble y, gdouble align) {
+    if (preview_state_kind(app) != FILE_KIND_PDF || preview_state_raw(app) || app->text_view == NULL || page < 0) {
+        return FALSE;
+    }
+    /* The picture of the page follows its badge */
+    GtkTextView* view = GTK_TEXT_VIEW(app->text_view);
+    GtkTextIter from, match_start, match_end;
+    gtk_text_buffer_get_start_iter(app->buffer, &from);
+    gint n = 0;
+    while (gtk_text_iter_forward_search(&from, PAGE_BADGE_PREFIX, GTK_TEXT_SEARCH_TEXT_ONLY, &match_start, &match_end,
+                                        NULL)) {
+        from = match_end;
+        if (n++ < page) continue;
+        GtkTextIter it = match_end;
+        for (gint i = 0; i < 256 && gtk_text_iter_get_paintable(&it) == NULL; i++) {
+            if (!gtk_text_iter_forward_char(&it)) return FALSE;
+        }
+        GdkPaintable* picture = gtk_text_iter_get_paintable(&it);
+        const gdouble* scale = picture != NULL ? g_object_get_data(G_OBJECT(picture), PAGE_SCALE_KEY) : NULL;
+        if (scale == NULL) return FALSE;
+        GdkRectangle rect;
+        gtk_text_view_get_iter_location(view, &it, &rect);
+        /* The picture stands on the line's baseline: its top is its height above the line's bottom */
+        gdouble top = rect.y + rect.height - gdk_paintable_get_intrinsic_height(picture);
+        GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
+        gdouble target = top + y * *scale - CLAMP(align, 0.0, 1.0) * gtk_adjustment_get_page_size(vadj);
+        gtk_adjustment_set_value(vadj, CLAMP(target, gtk_adjustment_get_lower(vadj),
+                                             gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj)));
+        return TRUE;
+    }
+    return FALSE;
+}
+
 /* Width the pages are fitted to. Measure the viewport, not the text view: the
  * view can be wider than the scrolled window when the previous file had long
  * unwrapped lines. */
@@ -840,6 +878,14 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
 
 void pdf_preview_refit(AppData* app) {
     (void)app;
+}
+
+gboolean pdf_preview_show_point(AppData* app, gint page, gdouble y, gdouble align) {
+    (void)app;
+    (void)page;
+    (void)y;
+    (void)align;
+    return FALSE;
 }
 
 gboolean pdf_preview_jump(AppData* app, gint direction) {
