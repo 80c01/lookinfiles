@@ -290,12 +290,17 @@ void app_dialog_destroy(AppDialog* dialog) {
     /* The dialog below (if any) gets Enter and the focus back */
     AppDialog* below = (stack != NULL) ? APP_DIALOG(g_list_last(stack)->data) : NULL;
     gtk_window_set_default_widget(window, below != NULL ? below->default_button : NULL);
-    gtk_overlay_remove_overlay(overlay, GTK_WIDGET(dialog)); /* may finalize dialog */
+    /* The focus leaves the dialog before it goes: on Windows, an entry
+     * finalized while focused leaves its input method context behind, and
+     * the next window message crashes in it */
     if (previous != NULL && gtk_widget_get_root(previous) == GTK_ROOT(window)) {
         gtk_widget_grab_focus(previous);
     } else if (below != NULL) {
         focus_first(below);
+    } else {
+        gtk_window_set_focus(window, NULL);
     }
+    gtk_overlay_remove_overlay(overlay, GTK_WIDGET(dialog)); /* may finalize dialog */
 }
 
 typedef struct {
