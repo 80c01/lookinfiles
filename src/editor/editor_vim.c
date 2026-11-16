@@ -564,27 +564,74 @@ static const gchar* on_file_name(gpointer data) {
     return tab->path != NULL ? tab->path : tab->name;
 }
 
-/* Text copied in another application becomes the "+ register */
+/* Text copied in another application becomes the "+ register of every Vim
+ * tab. One watcher reads the clipboard for all of them, one read at a time:
+ * concurrent reads of the same X11 selection crash GDK (its text converter
+ * runs on freed memory in worker threads). The read is never cancelled and
+ * holds no tab: its result goes to the tabs watching when it ends. */
+static struct {
+    GdkClipboard* clipboard;
+    gulong handler;
+    GList* tabs;      /* EditorTab*, Vim tabs watching */
+    gboolean reading; /* a read is in flight */
+    gboolean again;   /* the clipboard changed during that read */
+} clip_watch;
+
+static void read_clipboard(void);
+
 static void on_clipboard_read(GObject* source, GAsyncResult* res, gpointer data) {
+    (void)data;
     gchar* text = gdk_clipboard_read_text_finish(GDK_CLIPBOARD(source), res, NULL);
-    EditorTab* tab = data;
-    /* tab is only valid while the read was not cancelled */
-    if (text != NULL && tab->mode_state != NULL && state_of(tab)->vim != NULL) {
-        vim_engine_clipboard_changed(state_of(tab)->vim, text);
+    clip_watch.reading = FALSE;
+    if (text != NULL) {
+        for (GList* l = clip_watch.tabs; l != NULL; l = l->next) {
+            EditorTab* tab = l->data;
+            if (tab->mode_state != NULL && state_of(tab)->vim != NULL) {
+                vim_engine_clipboard_changed(state_of(tab)->vim, text);
+            }
+        }
     }
     g_free(text);
+    if (clip_watch.again) read_clipboard();
 }
 
-static void read_clipboard(EditorTab* tab) {
-    EditorModeState* st = state_of(tab);
-    GdkClipboard* clip = gtk_widget_get_clipboard(tab->view);
-    if (gdk_clipboard_is_local(clip) || st->vim_clip_cancel == NULL) return;
-    gdk_clipboard_read_text_async(clip, st->vim_clip_cancel, on_clipboard_read, tab);
+static void read_clipboard(void) {
+    clip_watch.again = FALSE;
+    if (clip_watch.clipboard == NULL || clip_watch.tabs == NULL) return;
+    if (clip_watch.reading) {
+        clip_watch.again = TRUE;
+        return;
+    }
+    if (gdk_clipboard_is_local(clip_watch.clipboard)) return;
+    clip_watch.reading = TRUE;
+    gdk_clipboard_read_text_async(clip_watch.clipboard, NULL, on_clipboard_read, NULL);
 }
 
 static void on_clipboard_changed(GdkClipboard* clip, gpointer data) {
     (void)clip;
-    read_clipboard(data);
+    (void)data;
+    read_clipboard();
+}
+
+static void clip_watch_add(EditorTab* tab) {
+    if (g_list_find(clip_watch.tabs, tab) != NULL) return;
+    clip_watch.tabs = g_list_prepend(clip_watch.tabs, tab);
+    if (clip_watch.clipboard == NULL) {
+        clip_watch.clipboard = g_object_ref(gtk_widget_get_clipboard(tab->view));
+        clip_watch.handler = g_signal_connect(clip_watch.clipboard, "changed",
+                                              G_CALLBACK(on_clipboard_changed), NULL);
+    }
+    read_clipboard();
+}
+
+static void clip_watch_remove(EditorTab* tab) {
+    clip_watch.tabs = g_list_remove(clip_watch.tabs, tab);
+    if (clip_watch.tabs == NULL && clip_watch.clipboard != NULL) {
+        g_signal_handler_disconnect(clip_watch.clipboard, clip_watch.handler);
+        clip_watch.handler = 0;
+        g_clear_object(&clip_watch.clipboard);
+        clip_watch.again = FALSE;
+    }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -894,12 +941,7 @@ void vim_activate(EditorTab* tab) {
         shared->tabs = g_list_prepend(NULL, tab);
         g_object_set_data(G_OBJECT(tab->buffer), SHARED_ENGINE_KEY, shared);
     }
-    if (st->vim_clipboard == NULL) {
-        st->vim_clip_cancel = g_cancellable_new();
-        st->vim_clipboard = g_object_ref(gtk_widget_get_clipboard(tab->view));
-        st->vim_clip_handler = g_signal_connect(st->vim_clipboard, "changed", G_CALLBACK(on_clipboard_changed), tab);
-        read_clipboard(tab);
-    }
+    clip_watch_add(tab);
     hide_cmdline(st);
     gtk_text_view_set_overwrite(GTK_TEXT_VIEW(tab->view), FALSE);
     vim_engine_reset(st->vim);
@@ -908,15 +950,7 @@ void vim_activate(EditorTab* tab) {
 }
 
 static void release_engine(EditorModeState* st) {
-    if (st->vim_clip_cancel != NULL) {
-        g_cancellable_cancel(st->vim_clip_cancel);
-        g_clear_object(&st->vim_clip_cancel);
-    }
-    if (st->vim_clipboard != NULL) {
-        g_signal_handler_disconnect(st->vim_clipboard, st->vim_clip_handler);
-        g_clear_object(&st->vim_clipboard);
-        st->vim_clip_handler = 0;
-    }
+    clip_watch_remove(st->tab);
     SharedEngine* shared = shared_of(st->tab);
     if (shared != NULL && shared->engine == st->vim) {
         shared->tabs = g_list_remove(shared->tabs, st->tab);
