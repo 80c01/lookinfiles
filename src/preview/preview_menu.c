@@ -66,6 +66,15 @@ static void menu_item(GtkWidget* box, AppData* app, const gchar* label, const gc
     gtk_box_append(GTK_BOX(box), btn);
 }
 
+/* A line between two groups of items, when the box already has some */
+static void menu_separator(GtkWidget* box) {
+    if (gtk_widget_get_first_child(box) == NULL) return;
+    GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_set_margin_top(sep, 4);
+    gtk_widget_set_margin_bottom(sep, 4);
+    gtk_box_append(GTK_BOX(box), sep);
+}
+
 /* Right click on the tab title: only the items that apply, labels following
  * the current state */
 static void on_tab_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
@@ -89,7 +98,9 @@ static void on_tab_right_click(GtkGestureClick* gesture, gint n_press, gdouble x
     if (preview_location_current(app) != NULL) {
         menu_item(box, app, _("Copy Value Path"), "y", PREVIEW_ACTION_COPY_VALUE_PATH);
     }
-    if (preview_tagbar_available(app)) {
+    gboolean tagbar = preview_tagbar_available(app);
+    if (tagbar || app->viewer_minimap != NULL) menu_separator(box);
+    if (tagbar) {
         menu_item(box, app, preview_tagbar_shown(app) ? _("Hide Tagbar") : _("Show Tagbar"), "o",
                   PREVIEW_ACTION_TAGBAR);
     }
