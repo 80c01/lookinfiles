@@ -75,7 +75,8 @@ void profile_sample(void);
 gchar* profile_ms(gchar* buf, gint64 us, guint decimals);
 
 /* The summary line: frames of the start-up and after it, CPU time (in all,
- * and at the end of the start-up, loading of the libraries included), memory */
+ * and at the end of the start-up, loading of the libraries included), memory
+ * (and with glibc what malloc holds, as in the sample lines) */
 void profile_report(void);
 
 /* Frame counters (exposed for the unit test) */

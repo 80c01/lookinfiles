@@ -311,13 +311,14 @@ void profile_report(void) {
     ProfileFrameStats r = run_frames;
     g_mutex_unlock(&lock);
     gchar up[PROFILE_MS_LEN], cpu_ms[PROFILE_MS_LEN], scpu[PROFILE_MS_LEN], sworst[PROFILE_MS_LEN];
-    gchar worst[PROFILE_MS_LEN], mean[PROFILE_MS_LEN];
+    gchar worst[PROFILE_MS_LEN], mean[PROFILE_MS_LEN], heap[128];
+    malloc_fields(heap, sizeof(heap));
     write_linef("report uptime_ms=%s cpu_ms=%s startup_cpu_ms=%s rss_kb=%" G_GINT64_FORMAT
                 " peak_kb=%" G_GINT64_FORMAT
                 " startup_frames=%u startup_slow=%u startup_worst_ms=%s"
-                " frames=%u unpainted=%u slow=%u worst_ms=%s mean_ms=%s",
+                " frames=%u unpainted=%u slow=%u worst_ms=%s mean_ms=%s%s",
                 profile_ms(up, g_get_monotonic_time() - origin_us, 0), cpu >= 0 ? profile_ms(cpu_ms, cpu, 0) : "-1",
                 startup_cpu_us >= 0 ? profile_ms(scpu, startup_cpu_us, 0) : "-1", rss, peak, s.count, s.slow,
                 profile_ms(sworst, s.worst_us, 1), r.count, r.unpainted, r.slow, profile_ms(worst, r.worst_us, 1),
-                profile_ms(mean, mean_us(&r), 2));
+                profile_ms(mean, mean_us(&r), 2), heap);
 }

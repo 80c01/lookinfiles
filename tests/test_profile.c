@@ -114,6 +114,9 @@ static void test_output(void) {
     g_assert_nonnull(strstr(lines[9], " startup_frames=1 startup_slow=0 "));
     g_assert_nonnull(strstr(lines[9], " frames=2 unpainted=1 slow=1 "));
     g_assert_null(strchr(lines[9], ','));                       /* no decimal comma */
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33))
+    g_assert_nonnull(strstr(lines[9], " malloc_big_mb="));
+#endif
     g_assert_cmpstr(lines[10], ==, "");
     g_strfreev(lines);
 
