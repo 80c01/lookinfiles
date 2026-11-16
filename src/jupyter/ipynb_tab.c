@@ -62,7 +62,7 @@ static void ensure_css(void) {
                   ".ipynb-tab .ipynb-source text { background-color: @bg_block; }"
                   ".ipynb-tab .ipynb-rendered, .ipynb-tab .ipynb-rendered text { background-color: @bg_view;"
                   " color: @fg_text; }"
-                  ".ipynb-tab .ipynb-outputs { padding: 6px 10px; border-top: 1px solid @border; }"
+                  ".ipynb-tab .ipynb-outputs { border-top: 1px solid @border; }"
                   ".ipynb-tab .ipynb-output { color: @fg_text; font-family: @font_code; font-size: @size_code; }"
                   ".ipynb-tab .ipynb-output.ipynb-error { color: @error; }"
                   ".ipynb-tab .ipynb-out-prompt { color: @fg_subtle; font-family: @font_code;"

@@ -732,7 +732,8 @@ Layers, from bottom to top
   hidden" note under it, the cells of folded sections hidden (`ipynb_fold_apply()`,
   after each rebuild and each render of a Markdown cell), the
   arrow and `Out [n]:` head over each code cell's outputs (all of them, not only
-  the execute_result) that folds them; `ipynb_tab_focus_cell()` unfolds
+  the execute_result: a strip like the cell head, a line under it) that
+  folds them; `ipynb_tab_focus_cell()` unfolds
   the sections hiding the cell it goes to, `Ctrl+Up` / `Ctrl+Down` and
   `Shift+Enter` step over them (`ipynb_fold_step()`).
   `ipynb_tagbar.c` (also on `ipynb_tab_private.h`) puts an `outline_pane`
