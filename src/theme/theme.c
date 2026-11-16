@@ -240,6 +240,7 @@ void apply_panel_borders(void) {
         "  min-height: 28px;\n"
         "  padding: 3px 8px;\n"
         "  background-color: @bg_bar;\n"
+        "  background-image: none;\n"
         "  border-bottom: 1px solid @border;\n"
         "  box-shadow: none;\n"
         "}\n"
@@ -259,8 +260,11 @@ void apply_panel_borders(void) {
         "headerbar.default-decoration windowcontrols > button:hover {\n"
         "  background-color: @bg_hover;\n"
         "}\n"
+        /* GTK's theme makes the icon itself 30px high */
         "headerbar.default-decoration windowcontrols > button > image {\n"
-        "  padding: 1px;\n"
+        "  min-height: 16px;\n"
+        "  min-width: 16px;\n"
+        "  padding: 0;\n"
         "  background-color: transparent;\n"
         "}\n"
         /* ---- Top bar (title bar) ---- */
