@@ -79,6 +79,10 @@ Layers, from bottom to top
   (`countdown_parse_time()`).
 - `run_time` — the time a notebook cell run took, as shown in its head
   (`0.4s`, `1m 05s`, `2h 03m`).
+- `profile` — the performance probe (`LOOKIN_PROFILE`, docs/performance.md):
+  start-up marks (`profile_mark()`), timed operations (`profile_start()` /
+  `profile_done()`, thread-safe), frame counters and the exit report (CPU
+  time, resident memory); every call returns at once without the variable.
 - `ui_probe` — test hook for `make ui-shots`: with `LOOKIN_UI_PROBE=<file>`,
   each SIGUSR2 writes a new number to the file once the main loop is idle,
   so a screenshot waits for the application instead of a fixed delay
@@ -605,6 +609,10 @@ Layers, from bottom to top
   around the editor's and the preview's scrolled windows, `color_column_set()`:
   Preferences, `:set colorcolumn`; in the preview for code only, hidden by
   any buffer change: `color_column_hide_on_change()`), colour `editor_ruler`.
+- `frame_watch` — frame timings for `profile`: each frame of the window
+  timed from `before-paint` to `after-paint` (painted or not), the first one
+  marked, start-up over at the first idle moment after it; nothing without
+  `LOOKIN_PROFILE`.
 - `after_frame` — runs a function once a widget's next frame is on screen
   (or after a short wait when none comes): the selected row is highlighted
   before its preview is built (`viewer`), the "Rendering…" notice is drawn

@@ -14,6 +14,8 @@ More detail, read when the task touches it:
 - [docs/ui-conventions.md](docs/ui-conventions.md): keys, tooltips, menus,
   dialogs, empty states, icons (and how to add one), colours, fonts.
 - [docs/testing.md](docs/testing.md): UI test scenario, screenshot baselines.
+- [docs/performance.md](docs/performance.md): `LOOKIN_PROFILE`, `make bench`,
+  the performance budgets.
 - [docs/previews.md](docs/previews.md): preview rules, coverage, adding a
   format.
 - [docs/code-nav.md](docs/code-nav.md): code navigation (backends, keys).

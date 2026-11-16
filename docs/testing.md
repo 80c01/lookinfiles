@@ -11,6 +11,7 @@ make check        # zero-warning build + unit tests + module layering rules
 make ui-test      # fast headless UI smoke test, about a second (needs xvfb xdotool)
 make ui-shots     # full UI scenario with screenshots (needs xvfb xdotool imagemagick)
 make asan         # AddressSanitizer + UBSan build in build-asan/ (crash stacks)
+make bench        # performance benchmarks and budgets (docs/performance.md)
 make clean        # remove binary, build/ and build-asan/
 ./lookinfiles   # run (requires a display; shows a warning without one)
 ```

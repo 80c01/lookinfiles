@@ -286,7 +286,7 @@ po-update: pot
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(ALL_CFLAGS)
 TEST_LDFLAGS = $(ALL_LDFLAGS) $(LIBS)
-TESTS = test_app_paths test_i18n test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_latex_log test_latex_root test_latex_synctex test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_data_tree test_xml_view test_text_outline test_toml_view test_yaml_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_ipynb_doc test_ipynb_kernel test_ipynb_outline test_spreadsheet test_odf test_pptx test_slide_render test_odp_reader test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_html_text test_tex_math test_md_out test_rich_parse test_notes_store test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_web_keys test_ps_convert test_vt_screen test_vt_pty test_ui_probe test_preview_state test_git_state test_sysstat test_sysstat_host test_countdown test_run_time test_jpeg_decode
+TESTS = test_app_paths test_i18n test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_latex_log test_latex_root test_latex_synctex test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_data_tree test_xml_view test_text_outline test_toml_view test_yaml_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_ipynb_doc test_ipynb_kernel test_ipynb_outline test_spreadsheet test_odf test_pptx test_slide_render test_odp_reader test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_html_text test_tex_math test_md_out test_rich_parse test_notes_store test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_web_keys test_ps_convert test_vt_screen test_vt_pty test_ui_probe test_preview_state test_git_state test_sysstat test_sysstat_host test_countdown test_run_time test_jpeg_decode test_profile
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_i18n = $(BUILD_DIR)/i18n.o
@@ -318,6 +318,7 @@ TEST_DEPS_test_nav_keys = $(BUILD_DIR)/nav_keys.o
 TEST_DEPS_test_pane_geometry = $(BUILD_DIR)/pane_geometry.o
 TEST_DEPS_test_minimap_geometry = $(BUILD_DIR)/minimap_geometry.o
 TEST_DEPS_test_ui_probe = $(BUILD_DIR)/ui_probe.o
+TEST_DEPS_test_profile = $(BUILD_DIR)/profile.o
 TEST_DEPS_test_sysstat = $(BUILD_DIR)/sysstat.o
 TEST_DEPS_test_sysstat_host = $(BUILD_DIR)/sysstat_host.o $(BUILD_DIR)/sysstat.o
 TEST_DEPS_test_countdown = $(BUILD_DIR)/countdown.o
@@ -426,6 +427,24 @@ $(BUILD_DIR)/preview_tool: tools/preview_tool.c $(PREVIEW_FORMAT_OBJS) $(FLAGS_S
 bench-preview: $(BUILD_DIR)/preview_tool
 	@sh tools/bench_preview.sh $(BUILD_DIR)/preview_tool
 
+# Explorer and application benchmarks (docs/performance.md): make bench runs
+# them all with the preview one; each fails when a result exceeds its budget
+BENCH_TOOL_OBJS = $(BUILD_DIR)/dir_scan.o $(BUILD_DIR)/file_types.o $(BUILD_DIR)/text_encoding.o $(BUILD_DIR)/explorer_row.o $(BUILD_DIR)/profile.o
+$(BUILD_DIR)/bench_tool: tools/bench_tool.c $(BENCH_TOOL_OBJS) $(FLAGS_STAMP) | $(BUILD_DIR)
+	$(CC) $(TEST_CFLAGS) $(DEPFLAGS) -o $@ $< $(BENCH_TOOL_OBJS) $(TEST_LDFLAGS)
+
+# Listing and rows of a folder of 100 000 entries (BENCH_ENTRIES to change it)
+bench-scan: $(BUILD_DIR)/bench_tool
+	@$(BUILD_DIR)/bench_tool scan $(BUILD_DIR)/bench-scan $${BENCH_ENTRIES:-100000}
+
+# Start-up, idle cost and browsing of the application under Xvfb
+bench-app: $(TARGET)
+	@sh tools/bench_app.sh ./$(TARGET)
+
+bench:
+	@status=0; for t in bench-scan bench-preview bench-app; do \
+		echo "== $$t"; $(MAKE) --no-print-directory $$t || status=1; done; exit $$status
+
 # Share of files that end at the hex dump: make preview-coverage DIR=~/
 preview-coverage: $(BUILD_DIR)/preview_tool
 	@$(BUILD_DIR)/preview_tool coverage $${DIR:-$$HOME}
@@ -509,6 +528,6 @@ uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET) $(INSTALLED_DATA:%=$(DESTDIR)$(DATADIR)/%)
 	rm -f $(LINGUAS:%=$(DESTDIR)$(LOCALEDIR)/%/LC_MESSAGES/$(GETTEXT_DOMAIN).mo)
 
--include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d
+-include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d $(BUILD_DIR)/bench_tool.d
 
-.PHONY: all translations pot po-update asan deps clean dist install uninstall test check ui-test ui-shots bench-preview preview-coverage deb appimage windows-zip windows-exe
+.PHONY: all translations pot po-update asan deps clean dist install uninstall test check ui-test ui-shots bench bench-scan bench-app bench-preview preview-coverage deb appimage windows-zip windows-exe

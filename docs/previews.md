@@ -208,7 +208,8 @@ every common format to L3 and never leave one below L1.
 - **Tools**: fixtures in `tests/fixtures/preview/`; `make bench-preview`
   (latency); `make preview-coverage DIR=...` (share of files per level);
   one `shot` per format in `tests/ui/formats.sh` (part of `make ui-shots`);
-  `LOOKIN_DEBUG_PREVIEW=1` prints the time from selection to display.
+  `LOOKIN_DEBUG_PREVIEW=1` prints the time from selection to display
+  (`LOOKIN_PROFILE`, docs/performance.md, also does).
 
 ## Coverage (updated 2026-11-15)
 

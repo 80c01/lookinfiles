@@ -1,4 +1,5 @@
 #include "preview/viewer.h"
+#include "core/profile.h"
 #include "preview/preview_state.h"
 #include "core/i18n.h"
 #include "canvas/canvas_preview.h"
@@ -549,13 +550,29 @@ static void cache_text_preview(TextPreviewTaskData* td) {
     g_free(key);
 }
 
-/* LOOKIN_DEBUG_PREVIEW=1: time from the selection to the preview on screen */
+/* LOOKIN_DEBUG_PREVIEW=1 or LOOKIN_PROFILE: time from the selection to the
+ * preview on screen */
 static gboolean debug_preview_timings(void) {
     static gint enabled = -1;
     if (enabled < 0) {
-        enabled = g_getenv("LOOKIN_DEBUG_PREVIEW") != NULL;
+        enabled = g_getenv("LOOKIN_DEBUG_PREVIEW") != NULL || profile_enabled();
     }
     return enabled;
+}
+
+/* A preview timing line: in the profile when it is on, else on stderr */
+static void preview_timing(const gchar* format, ...) G_GNUC_PRINTF(1, 2);
+static void preview_timing(const gchar* format, ...) {
+    va_list args;
+    va_start(args, format);
+    gchar* text = g_strdup_vprintf(format, args);
+    va_end(args);
+    if (profile_enabled()) {
+        profile_log("%s", text);
+    } else {
+        g_printerr("%s\n", text);
+    }
+    g_free(text);
 }
 
 /* What showing td puts in the buffer, and how many bytes */
@@ -607,7 +624,7 @@ static gboolean finish_text_preview(gpointer data) {
     }
     if (debug_preview_timings()) {
         gint64 end_us = g_get_monotonic_time();
-        g_printerr("preview %s [%s]: %.1f ms (worker %.1f ms, display %.1f ms)\n", td->name,
+        preview_timing("preview %s [%s]: %.1f ms (worker %.1f ms, display %.1f ms)", td->name,
                    file_kind_label(td->kind) != NULL ? file_kind_label(td->kind) : "Text",
                    (end_us - td->start_us) / 1000.0, (ready_us - td->start_us) / 1000.0,
                    (end_us - ready_us) / 1000.0);
@@ -814,7 +831,7 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         }
         preview_state_set_detected(app, cached->kind, cached->encoding, cached->content_type);
         if (debug_preview_timings()) {
-            g_printerr("preview %s [cached]: %.1f ms\n", name,
+            preview_timing("preview %s [cached]: %.1f ms", name,
                        (g_get_monotonic_time() - td->start_us) / 1000.0);
         }
     }

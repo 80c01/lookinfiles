@@ -1,5 +1,6 @@
 #include "core/app_paths.h"
 #include "core/i18n.h"
+#include "core/profile.h"
 #include "chrome/topbar.h"
 #include "widgets/dialog.h"
 #include "workspace/layout_switcher.h"
@@ -57,6 +58,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "widgets/focus_route.h"
+#include "widgets/frame_watch.h"
 #include "preview/preview_tagbar.h"
 #include "preview/preview_menu.h"
 #include "preview/preview_full.h"
@@ -225,6 +227,7 @@ static void on_preferences_clicked(GtkButton* button, gpointer data) {
 }
 
 int main(int argc, char** argv) {
+    profile_init(); /* LOOKIN_PROFILE: the origin of the start-up timings */
     i18n_init(argc > 0 ? argv[0] : NULL); /* before any message is printed */
     gboolean start_fullscreen = FALSE;
     /* Preferences (settings.ini), then the command line over them */
@@ -232,6 +235,7 @@ int main(int argc, char** argv) {
     gchar* settings_path = settings_store_path();
     settings_store_load(settings_path, &prefs);
     g_free(settings_path);
+    profile_mark("settings");
     int win_width = prefs.width;
     int win_height = prefs.height;
     EditorMode default_editor_mode = preferences_editor_mode(prefs.editor);
@@ -294,14 +298,17 @@ int main(int argc, char** argv) {
     g_setenv("GST_PLAY_USE_PLAYBIN3", "0", FALSE);
 
     gtk_init();
+    profile_mark("gtk_init");
     ui_probe_install(); /* LOOKIN_UI_PROBE: UI tests only */
 #ifdef HAVE_GSV
     gtk_source_init();
+    profile_mark("gtk_source_init");
 #endif
 
     /* The chosen theme sets the palette and fonts before any widget is
      * made; GTK's own widgets follow its dark or light kind */
     gboolean dark_theme = theme_apply_saved();
+    profile_mark("theme");
     GtkSettings* settings = gtk_settings_get_default();
     if (settings != NULL) {
         g_object_set(settings,
@@ -313,6 +320,7 @@ int main(int argc, char** argv) {
     GMainLoop* loop = g_main_loop_new(NULL, FALSE);
 
     GtkWidget* window = gtk_window_new();
+    frame_watch_attach(window); /* LOOKIN_PROFILE: frame timings */
     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), loop);
     gtk_window_set_title(GTK_WINDOW(window), APP_NAME " " APP_VERSION);
     gtk_window_set_default_icon_name(APP_ID);
@@ -461,6 +469,8 @@ int main(int argc, char** argv) {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(term_scroll), term_stub);
 #endif
 
+    profile_mark("base widgets");
+
     /* Allocate and wire AppData */
     AppData* app = g_new0(AppData, 1);
 
@@ -499,6 +509,7 @@ int main(int argc, char** argv) {
     app->term_scroll = term_scroll;
 #ifdef HAVE_VTE
     terminal_init(app, term_scroll);
+    profile_mark("terminal");
 #endif
     workspaces_init(app);
     GtkWidget* ws_minimap = create_workspace_minimap(app);
@@ -523,7 +534,9 @@ int main(int argc, char** argv) {
     games_init(app);
     files_menu_attach(app);
     orgmode_install_gtksourceview_spec();
+    profile_mark("explorer views");
     populate_tree(app, start_dir, FALSE, SORT_NAME);
+    profile_mark("tree");
     app->text_view = text_view;
     g_object_set_data(G_OBJECT(text_view), "app", app);
     code_nav_attach_preview(app, editor_mode_message);   /* Ctrl+Click in source previews */
@@ -535,6 +548,7 @@ int main(int argc, char** argv) {
     new_tab_menu_attach(app, GTK_NOTEBOOK(editor_notebook));
     new_tab_menu_init();
     app_emit(app, APP_EVENT_CHROME_CHANGED);
+    profile_mark("top bar");
 
     app->notebook = notebook;
     app->preview_stack = preview_stack;
@@ -551,6 +565,7 @@ int main(int argc, char** argv) {
     video_preview_init(app);
     audio_preview_init(app);
     git_tab_init(app);
+    profile_mark("media and git");
     editor_set_open_hook(ipynb_tab_open); /* Jupyter notebooks: a tab of their own */
     g_signal_connect(notebook, "switch-page",
                      G_CALLBACK(on_editor_switch_page_changed), app);
@@ -667,7 +682,9 @@ int main(int argc, char** argv) {
     /* Dialogs are drawn over the window content, never in their own window */
     gtk_window_set_child(GTK_WINDOW(window), app_dialog_window_overlay_new(outer_vbox));
     apply_panel_borders();
+    profile_mark("window built");
     gtk_window_present(GTK_WINDOW(window));
+    profile_mark("window presented");
 
     if (start_fullscreen) {
         gtk_window_fullscreen(GTK_WINDOW(window));
@@ -706,7 +723,9 @@ int main(int argc, char** argv) {
     g_free(target_dir);
     g_free(cwd_alloc);
 
+    profile_mark("main loop");
     g_main_loop_run(loop);
+    profile_report(); /* LOOKIN_PROFILE: frames, CPU time, memory at exit */
 
     audio_preview_free(app);
     video_preview_free(app);

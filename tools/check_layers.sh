@@ -72,6 +72,7 @@ path_kind:
 pane_geometry:
 minimap_geometry:
 ui_probe:
+profile:
 sysstat:
 sysstat_host:sysstat
 countdown:
@@ -239,6 +240,7 @@ add_button:palette
 image_utils:
 animation:gif_decoder,image_utils
 dialog:
+frame_watch:profile
 tab_drop:pane_geometry
 after_frame:
 explorer_tree:explorer_row,icons

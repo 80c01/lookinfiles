@@ -1,4 +1,5 @@
 #include "explorer/file_list.h"
+#include "core/profile.h"
 #include "git/git_state.h"
 #include "preview/preview_state.h"
 #include "core/i18n.h"
@@ -58,12 +59,14 @@ static void git_scan_thread_func(GTask* task, gpointer source_object,
     (void)source_object;
     (void)cancellable;
     GitScanTaskData* td = (GitScanTaskData*)task_data;
+    gint64 start = profile_start();
     gchar* dir = g_canonicalize_filename(td->base_dir, NULL);
     GHashTable* statuses = scan_git_statuses(dir);
     guint ahead = 0, behind = 0;
     gboolean has_upstream = git_read_ahead_behind(dir, &ahead, &behind);
     gchar* root = find_git_root(td->base_dir);
     td->state = git_state_new(statuses, root, has_upstream, ahead, behind);
+    profile_done(start, "git status %s (worker)", dir);
     g_free(root);
     g_free(dir);
     g_task_return_boolean(task, TRUE);
@@ -343,8 +346,13 @@ static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirS
 static void populate_level(ExplorerRow* parent, AppData* app, const gchar* dirname,
                            gboolean show_hidden, gint sort_mode) {
     GHashTable* exp = (app != NULL) ? app->expanded_paths : NULL;
+    gint64 start = profile_start();
     DirScanNode* node = dir_scan_read(dirname, show_hidden, (DirScanSort)sort_mode, exp, NULL);
+    profile_done(start, "scan %s: %u entries (UI thread)", dirname,
+                 node != NULL && node->entries != NULL ? node->entries->len : 0);
+    start = profile_start();
     apply_dir_node_to_rows(parent, app, node);
+    profile_done(start, "rows %s", dirname);
     dir_scan_node_free(node);
 }
 
@@ -512,6 +520,7 @@ static void merge_scan(AppData* app, const DirScanNode* root_node) {
 typedef struct {
     AppData* app;
     ExplorerRow* row;
+    gint64 start_us; /* profile_start() */
 } LevelRead;
 
 /* Level of an expanded folder read: shown if the row still waits for it (not
@@ -522,6 +531,9 @@ static void on_level_read(GObject* source, GAsyncResult* res, gpointer data) {
     AppData* app = lr->app;
     ExplorerRow* row = lr->row;
     DirScanNode* node = dir_scan_read_finish(res);
+    profile_done(lr->start_us, "expand %s: %u entries (scan, worker)", row->path,
+                 node != NULL && node->entries != NULL ? node->entries->len : 0);
+    gint64 start = profile_start();
     if (node != NULL && !row->loaded && app->sidebar_view == SIDEBAR_VIEW_FILES &&
         explorer_tree_contains(app->tree, row) && explorer_tree_is_expanded(app->tree, row)) {
         explorer_row_remove_children(row);
@@ -531,6 +543,7 @@ static void on_level_read(GObject* source, GAsyncResult* res, gpointer data) {
         reexpand_paths_recursive(app, row);
         batch_expanding = FALSE;
         sync_directory_monitors(app);
+        profile_done(start, "expand %s (rows)", row->path);
     }
     dir_scan_node_free(node);
     g_object_unref(row);
@@ -550,6 +563,7 @@ static void on_dir_expanded(AppData* app, ExplorerRow* row) {
         LevelRead* lr = g_new0(LevelRead, 1);
         lr->app = app;
         lr->row = g_object_ref(row);
+        lr->start_us = profile_start();
         dir_scan_read_async(row->path, app->show_hidden, (DirScanSort)app->sort_mode,
                             app->expanded_paths, on_level_read, lr);
     }
