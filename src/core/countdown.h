@@ -70,4 +70,13 @@ gint64 countdown_next_change(gint64 left, gboolean blink);
  * from an hour over whatever the duration. Caller frees. */
 gchar* countdown_format(gint64 left, gint64 duration);
 
+/* The first instant at hour:minute (local time of tz) after now: today, or
+ * tomorrow when that time has come (a time skipped by a daylight saving
+ * change falls just after the change) */
+gint64 countdown_until(GTimeZone* tz, gint hour, gint minute, gint64 now);
+
+/* A time of day typed by the user: "14:30", "14h30", "14.30", "14h", "1430",
+ * "9", "2:30 pm", "2pm", "12 a.m."; FALSE when text is not one */
+gboolean countdown_parse_time(const gchar* text, gint* hour, gint* minute);
+
 #endif /* COUNTDOWN_H */

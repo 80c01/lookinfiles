@@ -15,7 +15,9 @@
  * timer-expiry); timers 2 and 3 start
  * off. Only the timers that run show. A click on a timer (or on the clock)
  * opens a popover with a page per timer: its state, preset durations (5, 15,
- * 25, 60 min), a free duration and Start, the expiry action (Restart /
+ * 25, 60 min), a free duration and Start, a time of day and Until (counts
+ * down to that time, today or tomorrow; no pause, and Restart counts down
+ * to the same time the next day), the expiry action (Restart /
  * Stop / Count On), Pause / Reset / Off (what is picked there lasts until the next
  * launch, or the next Preferences change for timer 1); a right click on a
  * timer pauses / resumes it. LOOKIN_CLOCK_FROZEN in the environment shows a

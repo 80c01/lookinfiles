@@ -78,7 +78,10 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
   inversées et ses dix dernières secondes clignotent. Un clic sur un
   minuteur, ou sur l’horloge, ouvre le menu des minuteurs, un onglet par
   minuteur : son état, des durées prédéfinies (5, 15, 25, 60 min) et une
-  durée libre qui le démarrent aussitôt, ce qu’il fait à l’expiration
+  durée libre qui le démarrent aussitôt, une heure (`14:30`, `14h30`,
+  `2:30 pm`) et **Jusqu’à**, qui compte à rebours jusqu’à cette heure
+  aujourd’hui ou demain (sans pause alors, et **Relancer** vise la même
+  heure le lendemain), ce qu’il fait à l’expiration
   (**Relancer** aussitôt, **Arrêter** à 0:00 en couleurs inversées, ou
   **Continuer** sous 0:00, -0:01, -0:02…, en couleurs inversées),
   **Pause** / **Reprendre**, **Réinitialiser** et **Masquer** (choix

@@ -74,7 +74,10 @@ hidden.
   start off. A timer's last minute is shown in reverse colours and its last
   ten seconds blink. A click on a timer, or on the clock, opens the timers
   menu, a tab per timer: its state, preset durations (5, 15, 25, 60 min) and
-  a free one that start it at once, what it does when it expires
+  a free one that start it at once, a time of day (`14:30`, `14h30`,
+  `2:30 pm`) and **Until**, which counts down to that time today or
+  tomorrow (no pause then, and **Restart** means the same time the next
+  day), what it does when it expires
   (**Restart** at once, **Stop** at 0:00 in reverse colours, or **Count
   On** below 0:00, -0:01, -0:02…, in reverse colours),
   **Pause** / **Resume**, **Reset** and **Off** (choices last until the next

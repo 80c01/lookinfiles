@@ -9228,8 +9228,8 @@ msgstr "_Reprendre"
 msgid "_Pause"
 msgstr "_Pause"
 
-msgid "Right-click on the timer does the same"
-msgstr "Un clic droit sur le minuteur fait de même"
+msgid "Right-click on the timer does the same (not for a time of day)"
+msgstr "Un clic droit sur le minuteur fait de même (pas pour une heure)"
 
 msgid "Start the current duration again from the beginning"
 msgstr "Recommencer la durée actuelle depuis le début"
@@ -9249,14 +9249,52 @@ msgstr "%s — en pause"
 msgid "%s — running"
 msgstr "%s — en cours"
 
+#, c-format
+msgid "%1$s — until %2$s"
+msgstr "%1$s — jusqu’à %2$s"
+
+#, c-format
+msgid "Timer %1$u expired at %2$s"
+msgstr "Minuteur %1$u expiré à %2$s"
+
+#, c-format
+msgid "Timer %1$u: %2$s past %3$s"
+msgstr "Minuteur %1$u : %2$s après %3$s"
+
+#, c-format
+msgid "Timer %1$u: %2$s left until %3$s"
+msgstr "Minuteur %1$u : %2$s restant jusqu’à %3$s"
+
+msgid "Restarts for the same time tomorrow when it expires"
+msgstr "Repart pour la même heure le lendemain à l’expiration"
+
+msgid "Click: Timers, Start, Reset"
+msgstr "Clic : minuteurs, démarrer, réinitialiser"
+
+#. TRANSLATORS: example of a time of day in the entry of the timers menu
+msgid "14:30"
+msgstr "14:30"
+
+msgid "A time of day: 14:30, 14h30, 2:30 pm (Enter starts the timer)"
+msgstr "Une heure : 14:30, 14h30, 2:30 pm (Entrée démarre le minuteur)"
+
+msgid "time of day"
+msgstr "heure"
+
+msgid "_Until"
+msgstr "_Jusqu’à"
+
+msgid "Count down to this time, today or tomorrow"
+msgstr "Compter à rebours jusqu’à cette heure, aujourd’hui ou demain"
+
 msgid "When it expires"
 msgstr "À l’expiration"
 
 msgid "Restart"
 msgstr "Relancer"
 
-msgid "Start again at once with the same duration"
-msgstr "Repartir aussitôt avec la même durée"
+msgid "Start again at once with the same duration (or for the same time tomorrow)"
+msgstr "Repartir aussitôt avec la même durée (ou pour la même heure le lendemain)"
 
 msgid "Stop"
 msgstr "Arrêter"

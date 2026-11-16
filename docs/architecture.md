@@ -65,7 +65,9 @@ Layers, from bottom to top
   (right across a suspend), pause, immediate restart on expiry (cycles
   counted), a stop at 0 or an overtime below 0, the text shown and when it
   changes, reverse colours in the last minute (and at or below 0) and
-  blinking in the last ten seconds.
+  blinking in the last ten seconds; the next instant at a time of day
+  (`countdown_until()`) and the parsing of a typed time
+  (`countdown_parse_time()`).
 - `ui_probe` — test hook for `make ui-shots`: with `LOOKIN_UI_PROBE=<file>`,
   each SIGUSR2 writes a new number to the file once the main loop is idle,
   so a screenshot waits for the application instead of a fixed delay
@@ -727,7 +729,8 @@ Layers, from bottom to top
   `topbar_set_timer_expiry()`; a hidden time leaves an icon while no timer
   shows), before the CPU chart. A click on a timer or the
   clock opens a popover with a stack page per timer (state, durations,
-  Start, expiry action Restart / Stop / Count On, Pause, Reset, Off), a
+  Start, a time of day and Until, which counts down to it and re-arms for
+  the next day on Restart, expiry action Restart / Stop / Count On, Pause, Reset, Off), a
   right click on a timer pauses it (in overtime too). One timeout at the next change of all of them (a
   second, half a second while blinking, else the second or the minute of
   the clock);

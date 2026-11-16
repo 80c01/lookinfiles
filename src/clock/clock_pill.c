@@ -21,11 +21,14 @@ typedef struct {
     GtkWidget* label;
     Countdown countdown;
     gboolean enabled;  /* shown and counting */
+    gint minutes;      /* last duration started (or offered) */
+    gint until;        /* counts down to this time of day (minutes after midnight), else -1 */
     CountdownExpiry expiry; /* expiry action, kept across starts */
     gint64 tooltip_minute; /* minute (and state) of the tooltip shown */
     /* Widgets of the open popover, else NULL */
     GtkWidget* status;
     GtkWidget* spin;
+    GtkWidget* until_entry;
     GtkWidget* pause;
     GtkWidget* reset;
     GtkWidget* off;
@@ -105,6 +108,14 @@ static void set_button_label(GtkWidget* button, const gchar* label) {
     }
 }
 
+/* hour:minute as the clock shows it (24-hour or 12-hour) */
+static gchar* time_of_day(ClockPill* p, gint minutes) {
+    GDateTime* dt = g_date_time_new_local(2026, 1, 1, minutes / 60, minutes % 60, 0);
+    gchar* text = g_strstrip(g_date_time_format(dt, p->twelve_hour ? "%-I:%M %p" : "%H:%M"));
+    g_date_time_unref(dt);
+    return text;
+}
+
 /* The page of t in the open popover */
 static void update_popover_page(Timer* t, const gchar* text, gboolean expired, gboolean overtime) {
     if (t->status == NULL) return;
@@ -117,6 +128,10 @@ static void update_popover_page(Timer* t, const gchar* text, gboolean expired, g
         status = g_strdup_printf(_("%s — paused"), text);
     } else if (overtime) {
         status = g_strdup_printf(_("%s — overtime"), text);
+    } else if (t->until >= 0) {
+        gchar* target = time_of_day(t->pill, t->until);
+        status = g_strdup_printf(_("%1$s — until %2$s"), text, target);
+        g_free(target);
     } else {
         status = g_strdup_printf(_("%s — running"), text);
     }
@@ -125,7 +140,7 @@ static void update_popover_page(Timer* t, const gchar* text, gboolean expired, g
     }
     g_free(status);
     set_button_label(t->pause, (t->enabled && t->countdown.paused) ? _("_Resume") : _("_Pause"));
-    gtk_widget_set_sensitive(t->pause, t->enabled && !expired);
+    gtk_widget_set_sensitive(t->pause, t->enabled && !expired && t->until < 0);
     gtk_widget_set_sensitive(t->reset, t->enabled);
     gtk_widget_set_sensitive(t->off, t->enabled);
 }
@@ -138,8 +153,14 @@ static void update_tooltip(Timer* t, gint64 left, const gchar* text, gboolean ex
     if (minute == t->tooltip_minute) return;
     t->tooltip_minute = minute;
     gchar* total = countdown_format(c->duration, c->duration);
+    gchar* target = (t->until >= 0) ? time_of_day(t->pill, t->until) : NULL;
     gchar* state;
-    if (expired) {
+    if (target != NULL) {
+        const gchar* over = (text[0] == '-') ? text + 1 : text;
+        state = expired    ? g_strdup_printf(_("Timer %1$u expired at %2$s"), t->number, target)
+                : overtime ? g_strdup_printf(_("Timer %1$u: %2$s past %3$s"), t->number, over, target)
+                           : g_strdup_printf(_("Timer %1$u: %2$s left until %3$s"), t->number, text, target);
+    } else if (expired) {
         state = g_strdup_printf(_("Timer %1$u expired after %2$s"), t->number, total);
     } else if (overtime) {
         const gchar* over = (text[0] == '-') ? text + 1 : text;
@@ -152,15 +173,20 @@ static void update_tooltip(Timer* t, gint64 left, const gchar* text, gboolean ex
     }
     gchar* cycle = (t->expiry == COUNTDOWN_STOP)       ? g_strdup(_("Stops at 0:00 when it expires"))
                    : (t->expiry == COUNTDOWN_OVERTIME) ? g_strdup(_("Counts on below 0:00 when it expires"))
-                                                       : g_strdup_printf(_("Cycle %u (restarts when it expires)"), c->cycle);
+                   : (target != NULL) ? g_strdup(_("Restarts for the same time tomorrow when it expires"))
+                                      : g_strdup_printf(_("Cycle %u (restarts when it expires)"), c->cycle);
     gchar* tip = g_strdup_printf("%s\n%s\n%s", state, cycle,
-                                 _("Click: Timers, Start, Pause, Reset — Right-Click: Pause / Resume"));
+                                 (target != NULL) ? _("Click: Timers, Start, Reset")
+                                                  : _("Click: Timers, Start, Pause, Reset — Right-Click: Pause / Resume"));
     gtk_widget_set_tooltip_text(t->button, tip);
     g_free(tip);
     g_free(cycle);
     g_free(state);
+    g_free(target);
     g_free(total);
 }
+
+static void arm_until(Timer* t, gint64 now);
 
 static void update_timer(Timer* t, gint64 now, gboolean blink) {
     if (!t->enabled) {
@@ -169,6 +195,10 @@ static void update_timer(Timer* t, gint64 now, gboolean blink) {
     }
     Countdown* c = &t->countdown;
     gint64 left = countdown_left(c, now);
+    if (t->until >= 0 && c->cycle > 1) {
+        arm_until(t, now); /* restarted: the same time the next day */
+        left = countdown_left(c, now);
+    }
     gboolean overtime = countdown_overtime(c, now);
     gboolean expired = (left <= 0 && !overtime);
     gchar* text = countdown_format(left, c->duration);
@@ -230,7 +260,7 @@ static gboolean on_tick(gpointer data) {
 
 static void toggle_pause(Timer* t) {
     gint64 now = g_get_real_time();
-    if (!t->enabled || countdown_expired(&t->countdown, now)) return;
+    if (!t->enabled || t->until >= 0 || countdown_expired(&t->countdown, now)) return;
     if (t->countdown.paused) {
         countdown_resume(&t->countdown, now);
     } else {
@@ -250,17 +280,38 @@ static void set_label_width(Timer* t) {
 
 /* A new cycle of minutes, starting now (0: the timer is hidden, its
  * duration kept for the popover) */
-static void start_minutes(Timer* t, gint minutes) {
-    gint64 now = g_get_real_time();
-    t->enabled = (minutes > 0);
-    gtk_widget_set_visible(t->button, t->enabled);
-    if (minutes <= 0) minutes = (t->countdown.duration > 0) ? (gint)(t->countdown.duration / MINUTE) : DEFAULT_MINUTES;
-    countdown_start(&t->countdown, MAX(minutes, 1) * MINUTE, now);
+static void start_countdown(Timer* t, gint64 duration, gint64 now) {
+    countdown_start(&t->countdown, duration, now);
     countdown_set_expiry(&t->countdown, t->expiry, now);
     if (t->pill->frozen) countdown_pause(&t->countdown, now);
     set_label_width(t);
     set_class(t->button, "clock-timer-inverse", FALSE);
     t->tooltip_minute = -1;
+}
+
+static void start_minutes(Timer* t, gint minutes) {
+    t->enabled = (minutes > 0);
+    t->until = -1;
+    gtk_widget_set_visible(t->button, t->enabled);
+    if (minutes > 0) t->minutes = minutes;
+    start_countdown(t, t->minutes * MINUTE, g_get_real_time());
+    refresh(t->pill);
+}
+
+/* A new cycle up to the next t->until */
+static void arm_until(Timer* t, gint64 now) {
+    GTimeZone* tz = g_time_zone_new_local();
+    gint64 deadline = countdown_until(tz, t->until / 60, t->until % 60, now);
+    g_time_zone_unref(tz);
+    start_countdown(t, deadline - now, now);
+}
+
+/* Counts down to hour:minute, today or tomorrow */
+static void start_until(Timer* t, gint hour, gint minute) {
+    t->enabled = TRUE;
+    t->until = hour * 60 + minute;
+    gtk_widget_set_visible(t->button, TRUE);
+    arm_until(t, g_get_real_time());
     refresh(t->pill);
 }
 
@@ -304,6 +355,33 @@ static void on_spin_activate(GtkSpinButton* spin, gpointer data) {
     start_spin(data);
 }
 
+static void start_entry(Timer* t) {
+    gint hour, minute;
+    if (!countdown_parse_time(gtk_editable_get_text(GTK_EDITABLE(t->until_entry)), &hour, &minute)) {
+        gtk_widget_add_css_class(t->until_entry, "error");
+        gtk_widget_grab_focus(t->until_entry);
+        return;
+    }
+    GtkWidget* entry = t->until_entry;
+    start_until(t, hour, minute);
+    popdown(entry);
+}
+
+static void on_until_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    start_entry(data);
+}
+
+static void on_until_activate(GtkEntry* entry, gpointer data) {
+    (void)entry;
+    start_entry(data);
+}
+
+static void on_until_changed(GtkEditable* editable, gpointer data) {
+    (void)data;
+    gtk_widget_remove_css_class(GTK_WIDGET(editable), "error");
+}
+
 static void on_pause_clicked(GtkButton* button, gpointer data) {
     toggle_pause(data);
     popdown(GTK_WIDGET(button));
@@ -311,7 +389,11 @@ static void on_pause_clicked(GtkButton* button, gpointer data) {
 
 static void on_reset_clicked(GtkButton* button, gpointer data) {
     Timer* t = data;
-    start_minutes(t, (gint)(t->countdown.duration / MINUTE));
+    if (t->until >= 0) {
+        start_until(t, t->until / 60, t->until % 60);
+    } else {
+        start_minutes(t, t->minutes);
+    }
     popdown(GTK_WIDGET(button));
 }
 
@@ -338,7 +420,7 @@ static void on_popover_closed(GtkPopover* popover, gpointer data) {
         p->popover = NULL;
         for (guint i = 0; i < TIMER_COUNT; i++) {
             Timer* t = &p->timers[i];
-            t->status = t->spin = t->pause = t->reset = t->off = NULL;
+            t->status = t->spin = t->until_entry = t->pause = t->reset = t->off = NULL;
             t->restart_choice = t->stop_choice = t->overtime_choice = NULL;
         }
     }
@@ -388,7 +470,7 @@ static GtkWidget* timer_page(Timer* t) {
 
     GtkWidget* custom = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     t->spin = gtk_spin_button_new_with_range(1, 1440, 1);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(t->spin), (gdouble)(t->countdown.duration / MINUTE));
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(t->spin), (gdouble)t->minutes);
     gtk_widget_set_tooltip_text(t->spin, _("Duration in minutes (Enter starts the timer)"));
     g_signal_connect(t->spin, "activate", G_CALLBACK(on_spin_activate), t);
     GtkWidget* unit = gtk_label_new(_("minutes"));
@@ -399,13 +481,37 @@ static GtkWidget* timer_page(Timer* t) {
     gtk_box_append(GTK_BOX(custom), popover_button(_("_Start"), G_CALLBACK(on_start_clicked), t));
     gtk_box_append(GTK_BOX(box), custom);
 
+    GtkWidget* until = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    t->until_entry = gtk_entry_new();
+    gtk_editable_set_width_chars(GTK_EDITABLE(t->until_entry), 8);
+    /* TRANSLATORS: example of a time of day in the entry of the timers menu */
+    gtk_entry_set_placeholder_text(GTK_ENTRY(t->until_entry), _("14:30"));
+    if (t->until >= 0) {
+        gchar* text = g_strdup_printf("%02d:%02d", t->until / 60, t->until % 60); /* parsed in any language */
+        gtk_editable_set_text(GTK_EDITABLE(t->until_entry), text);
+        g_free(text);
+    }
+    gtk_widget_set_tooltip_text(t->until_entry, _("A time of day: 14:30, 14h30, 2:30 pm (Enter starts the timer)"));
+    g_signal_connect(t->until_entry, "activate", G_CALLBACK(on_until_activate), t);
+    g_signal_connect(t->until_entry, "changed", G_CALLBACK(on_until_changed), NULL);
+    GtkWidget* until_label = gtk_label_new(_("time of day"));
+    gtk_widget_set_hexpand(until_label, TRUE);
+    gtk_label_set_xalign(GTK_LABEL(until_label), 0.0f);
+    GtkWidget* until_button = popover_button(_("_Until"), G_CALLBACK(on_until_clicked), t);
+    gtk_widget_set_tooltip_text(until_button, _("Count down to this time, today or tomorrow"));
+    gtk_box_append(GTK_BOX(until), t->until_entry);
+    gtk_box_append(GTK_BOX(until), until_label);
+    gtk_box_append(GTK_BOX(until), until_button);
+    gtk_box_append(GTK_BOX(box), until);
+
     GtkWidget* expiry = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     GtkWidget* expiry_label = gtk_label_new(_("When it expires"));
     gtk_widget_set_hexpand(expiry_label, TRUE);
     gtk_label_set_xalign(GTK_LABEL(expiry_label), 0.0f);
     GtkWidget* choices = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(choices, "linked");
-    t->restart_choice = expiry_choice(t, choices, NULL, _("Restart"), _("Start again at once with the same duration"),
+    t->restart_choice = expiry_choice(t, choices, NULL, _("Restart"),
+                                      _("Start again at once with the same duration (or for the same time tomorrow)"),
                                       COUNTDOWN_RESTART);
     t->stop_choice = expiry_choice(t, choices, t->restart_choice, _("Stop"),
                                    _("Stay at 0:00 in reverse colours until Reset or Start"), COUNTDOWN_STOP);
@@ -419,7 +525,7 @@ static GtkWidget* timer_page(Timer* t) {
     GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_box_set_homogeneous(GTK_BOX(actions), TRUE);
     t->pause = popover_button(_("_Pause"), G_CALLBACK(on_pause_clicked), t);
-    gtk_widget_set_tooltip_text(t->pause, _("Right-click on the timer does the same"));
+    gtk_widget_set_tooltip_text(t->pause, _("Right-click on the timer does the same (not for a time of day)"));
     t->reset = popover_button(_("_Reset"), G_CALLBACK(on_reset_clicked), t);
     gtk_widget_set_tooltip_text(t->reset, _("Start the current duration again from the beginning"));
     t->off = popover_button(_("_Off"), G_CALLBACK(on_off_clicked), t);
@@ -523,6 +629,7 @@ void clock_pill_set_display(GtkWidget* pill, const Settings* settings) {
     p->twelve_hour = settings->clock_12h;
     p->seconds = settings->clock_seconds;
     g_clear_pointer(&p->clock_text, g_free); /* the label is rewritten */
+    for (guint i = 0; i < TIMER_COUNT; i++) p->timers[i].tooltip_minute = -1; /* times of day */
     refresh(p);
 }
 
@@ -548,6 +655,8 @@ static void timer_init(ClockPill* p, Timer* t, guint number) {
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(right), GDK_BUTTON_SECONDARY);
     g_signal_connect(right, "pressed", G_CALLBACK(on_timer_right_clicked), t);
     gtk_widget_add_controller(t->button, GTK_EVENT_CONTROLLER(right));
+    t->minutes = DEFAULT_MINUTES;
+    t->until = -1;
     countdown_start(&t->countdown, DEFAULT_MINUTES * MINUTE, g_get_real_time());
     t->tooltip_minute = -1;
 }
