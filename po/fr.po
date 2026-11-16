@@ -8840,6 +8840,9 @@ msgstr "Remettre la dernière cellule supprimée"
 msgid "More Actions"
 msgstr "Autres actions"
 
+msgid "Time the Last Run Took"
+msgstr "Durée de la dernière exécution"
+
 msgid "Show / Hide the Headings (Ctrl+K Ctrl+O)"
 msgstr "Afficher / masquer les titres (Ctrl+K Ctrl+O)"
 

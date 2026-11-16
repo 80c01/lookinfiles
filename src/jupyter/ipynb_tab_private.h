@@ -55,6 +55,8 @@ typedef struct {
     guint clear_wait;        /* cell whose outputs go at its next output */
     GHashTable* stale;       /* keys of the cells to show again */
     guint refresh_source;
+    GHashTable* timings;     /* cell key -> IpynbTiming*: the cells run since the tab opened */
+    guint timing_source;     /* ticks the time of the cells running */
 
     /* Tagbar (ipynb_tagbar.c) */
     IpynbTagbar* tagbar;     /* NULL once released */
@@ -73,6 +75,8 @@ void ipynb_tab_focus_cell(IpynbTab* t, guint index);
 void ipynb_tab_insert_cell(IpynbTab* t, guint at, IpynbCellType type);
 /* Show the prompt and outputs of one cell again */
 void ipynb_tab_refresh_cell(IpynbTab* t, guint index);
+/* Show the run time of the code cell at index again */
+void ipynb_tab_refresh_time(IpynbTab* t, guint index);
 /* Show the Markdown cell at index rendered (it was run) */
 void ipynb_tab_render_cell(IpynbTab* t, guint index);
 /* Build every cell again (the kernel's language changed) */
@@ -105,6 +109,10 @@ void ipynb_run_cell(IpynbTab* t, guint index);
 /* Run the current cell and go to the next one (a new code cell after the
  * last) */
 void ipynb_run_advance(IpynbTab* t);
+/* The time the last run of the code cell at index took, or the time
+ * since it started while it runs; NULL when it has not run since the tab
+ * opened (or waits for its turn). Caller frees. */
+gchar* ipynb_run_time_text(IpynbTab* t, guint index);
 /* Stop the kernel (tab closed) */
 void ipynb_run_stop(IpynbTab* t);
 

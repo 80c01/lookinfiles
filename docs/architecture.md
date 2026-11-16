@@ -68,6 +68,8 @@ Layers, from bottom to top
   blinking in the last ten seconds; the next instant at a time of day
   (`countdown_until()`) and the parsing of a typed time
   (`countdown_parse_time()`).
+- `run_time` — the time a notebook cell run took, as shown in its head
+  (`0.4s`, `1m 05s`, `2h 03m`).
 - `ui_probe` — test hook for `make ui-shots`: with `LOOKIN_UI_PROBE=<file>`,
   each SIGUSR2 writes a new number to the file once the main loop is idle,
   so a screenshot waits for the application instead of a fixed delay
@@ -707,8 +709,10 @@ Layers, from bottom to top
   cells and the source are left alone), the input row, interrupt, restart,
   the kernel menu (labelled with the notebook's kernel;
   `ipynb_kernel_list()` each time it opens; a choice sets the notebook's
-  kernelspec and starts that kernel) and the kernel state in the tab's
-  status bar.
+  kernelspec and starts that kernel), the kernel state in the tab's
+  status bar and the run time in each code cell's head (from the kernel's
+  `execute_input` to the end of the run, ticking every tenth of a second
+  while it runs; in memory only, `run_time_format()`).
   `ipynb_bar.c` (also on `ipynb_tab_private.h`) builds the bar at the top:
   the run buttons, new code / Markdown cells (icons only) and Undo Delete,
   cut on the right in a narrow pane; the kernel menu, the headings button

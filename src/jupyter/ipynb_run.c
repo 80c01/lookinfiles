@@ -4,12 +4,67 @@
 #include "core/i18n.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_kernel.h"
+#include "core/run_time.h"
 #include "theme/icons.h"
 
 #include <string.h>
 
 #define BRIDGE_RESOURCE "/org/lookin/jupyter/ipynb_bridge.py"
 #define SPEC_KEY "lookin-ipynb-kernel-spec"
+#define TIMING_TICK_MS 100 /* the time of a cell running: tenths of a second */
+
+/* The last run of a cell (t->timings) */
+typedef struct {
+    gint64 start; /* monotonic, microseconds */
+    gint64 took;  /* microseconds, or -1 while it runs */
+} IpynbTiming;
+
+/* --- Run times --- */
+
+static IpynbTiming* timing_of(IpynbTab* t, guint key) {
+    if (t->timings == NULL) t->timings = g_hash_table_new_full(NULL, NULL, NULL, g_free);
+    return g_hash_table_lookup(t->timings, GUINT_TO_POINTER(key));
+}
+
+static gboolean on_timing_tick(gpointer data) {
+    IpynbTab* t = data;
+    gboolean any = FALSE;
+    GHashTableIter it;
+    gpointer key, value;
+    g_hash_table_iter_init(&it, t->timings);
+    while (g_hash_table_iter_next(&it, &key, &value)) {
+        if (((IpynbTiming*)value)->took >= 0) continue;
+        gint index = ipynb_doc_find_cell(t->doc, GPOINTER_TO_UINT(key));
+        if (index >= 0) ipynb_tab_refresh_time(t, (guint)index);
+        any = TRUE;
+    }
+    if (!any) t->timing_source = 0;
+    return any ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
+}
+
+/* The kernel starts running the cell with key (not when it is queued) */
+static void timing_start(IpynbTab* t, guint key) {
+    IpynbTiming* timing = timing_of(t, key);
+    if (timing == NULL) {
+        timing = g_new0(IpynbTiming, 1);
+        g_hash_table_insert(t->timings, GUINT_TO_POINTER(key), timing);
+    }
+    timing->start = g_get_monotonic_time();
+    timing->took = -1;
+    if (t->timing_source == 0) t->timing_source = g_timeout_add(TIMING_TICK_MS, on_timing_tick, t);
+}
+
+/* The cell with key ended (or the kernel stopped): keeps the time it took */
+static void timing_stop(IpynbTab* t, guint key) {
+    IpynbTiming* timing = timing_of(t, key);
+    if (timing != NULL && timing->took < 0) timing->took = g_get_monotonic_time() - timing->start;
+}
+
+gchar* ipynb_run_time_text(IpynbTab* t, guint index) {
+    IpynbTiming* timing = timing_of(t, ipynb_doc_cell_key(t->doc, index));
+    if (timing == NULL) return NULL;
+    return run_time_format(timing->took >= 0 ? timing->took : g_get_monotonic_time() - timing->start);
+}
 
 /* --- Showing what the kernel does --- */
 
@@ -53,7 +108,10 @@ static void forget_running(IpynbTab* t) {
     GHashTableIter it;
     gpointer key;
     g_hash_table_iter_init(&it, t->running);
-    while (g_hash_table_iter_next(&it, &key, NULL)) queue_refresh(t, GPOINTER_TO_UINT(key));
+    while (g_hash_table_iter_next(&it, &key, NULL)) {
+        timing_stop(t, GPOINTER_TO_UINT(key));
+        queue_refresh(t, GPOINTER_TO_UINT(key));
+    }
     g_hash_table_remove_all(t->running);
     t->clear_wait = 0;
     gtk_widget_set_visible(t->input_row, FALSE);
@@ -100,6 +158,7 @@ static void on_execute_input(guint key, gint count, gpointer data) {
     if (index < 0) return;
     ipynb_doc_set_execution_count(t->doc, (guint)index, count);
     ipynb_tab_mark_changed(t);
+    timing_start(t, key);
     queue_refresh(t, key);
 }
 
@@ -140,6 +199,7 @@ static void on_done(guint key, const gchar* status, gpointer data) {
     (void)status;
     IpynbTab* t = data;
     g_hash_table_remove(t->running, GUINT_TO_POINTER(key));
+    timing_stop(t, key);
     if (t->clear_wait == key) t->clear_wait = 0;
     queue_refresh(t, key);
 }
@@ -309,6 +369,7 @@ void ipynb_run_cell(IpynbTab* t, guint index) {
     guint key = ipynb_doc_cell_key(t->doc, index);
     if (g_hash_table_contains(t->running, GUINT_TO_POINTER(key)) || !ensure_kernel(t)) return;
     ipynb_doc_clear_outputs(t->doc, index);
+    if (timing_of(t, key) != NULL) g_hash_table_remove(t->timings, GUINT_TO_POINTER(key)); /* until it starts */
     g_hash_table_add(t->running, GUINT_TO_POINTER(key));
     ipynb_tab_refresh_cell(t, index);
     ipynb_tab_mark_changed(t);
@@ -420,6 +481,11 @@ void ipynb_run_stop(IpynbTab* t) {
         g_source_remove(t->refresh_source);
         t->refresh_source = 0;
     }
+    if (t->timing_source != 0) {
+        g_source_remove(t->timing_source);
+        t->timing_source = 0;
+    }
     g_hash_table_remove_all(t->running);
     if (t->stale != NULL) g_hash_table_remove_all(t->stale);
+    g_clear_pointer(&t->timings, g_hash_table_unref);
 }

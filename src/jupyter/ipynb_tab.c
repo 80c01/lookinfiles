@@ -19,6 +19,7 @@
 #define IPYNB_TAB_KEY "lookin-ipynb-tab"
 #define CELL_INDEX_KEY "lookin-ipynb-cell"
 #define CELL_PROMPT_KEY "lookin-ipynb-prompt"   /* on a cell's view: its In [n] label */
+#define CELL_TIME_KEY "lookin-ipynb-time"       /* on a code cell's view: its run time label */
 #define CELL_OUTPUTS_KEY "lookin-ipynb-outputs" /* on a cell's view: its outputs box */
 #define CELL_RENDERED_KEY "lookin-ipynb-rendered" /* on a Markdown cell's view: its rendered view */
 #define MAX_OUTPUT_LINES 200
@@ -47,6 +48,8 @@ static void ensure_css(void) {
                   ".ipynb-tab .ipynb-cell-head label { color: @fg_subtle; font-family: @font_code;"
                   " font-size: @size_code; }"
                   ".ipynb-tab .ipynb-cell-head button { padding: 0 6px; border: none; min-height: 23px; }"
+                  ".ipynb-tab .ipynb-cell-head label.ipynb-time { color: @fg_muted; font-family: @font_ui;"
+                  " font-size: @size_bar; }"
                   ".ipynb-tab .ipynb-cell-actions button { padding: 0 3px; margin: 0 1px; min-width: 18px; }"
                   ".ipynb-tab .ipynb-cell-head menubutton label { color: @fg_muted; font-family: @font_ui;"
                   " font-size: @size_bar; }"
@@ -577,6 +580,16 @@ static void set_prompt(IpynbTab* t, guint index, GtkWidget* label) {
     g_free(prompt);
 }
 
+void ipynb_tab_refresh_time(IpynbTab* t, guint index) {
+    if (index >= t->views->len) return;
+    GtkWidget* label = g_object_get_data(G_OBJECT(g_ptr_array_index(t->views, index)), CELL_TIME_KEY);
+    if (label == NULL) return;
+    gchar* text = ipynb_run_time_text(t, index);
+    gtk_label_set_text(GTK_LABEL(label), text != NULL ? text : "");
+    gtk_widget_set_visible(label, text != NULL);
+    g_free(text);
+}
+
 /* Show the prompt and outputs of the cell at index again (after a run),
  * leaving its source and the other cells as they are */
 void ipynb_tab_refresh_cell(IpynbTab* t, guint index) {
@@ -586,6 +599,7 @@ void ipynb_tab_refresh_cell(IpynbTab* t, guint index) {
     GtkWidget* outputs = g_object_get_data(G_OBJECT(view), CELL_OUTPUTS_KEY);
     if (prompt != NULL) set_prompt(t, index, prompt);
     if (outputs != NULL) fill_outputs(t, index, outputs);
+    ipynb_tab_refresh_time(t, index);
 }
 
 static gboolean resize_view_idle(gpointer data) {
@@ -616,6 +630,13 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     GtkWidget* spacer = gtk_label_new(NULL);
     gtk_widget_set_hexpand(spacer, TRUE);
     gtk_box_append(GTK_BOX(head), spacer);
+    GtkWidget* time = NULL;
+    if (type == IPYNB_CELL_CODE) {
+        time = gtk_label_new(NULL);
+        gtk_widget_add_css_class(time, "ipynb-time");
+        gtk_widget_set_tooltip_text(time, _("Time the Last Run Took"));
+        gtk_box_append(GTK_BOX(head), time);
+    }
     /* The actions, spaced as the explorer's toolbar buttons (sidebar-icon-btn) */
     GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_add_css_class(actions, "ipynb-cell-actions");
@@ -695,6 +716,8 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
         gtk_box_append(GTK_BOX(cell), outputs);
         g_object_set_data(G_OBJECT(view), CELL_PROMPT_KEY, prompt);
         g_object_set_data(G_OBJECT(view), CELL_OUTPUTS_KEY, outputs);
+        g_object_set_data(G_OBJECT(view), CELL_TIME_KEY, time);
+        ipynb_tab_refresh_time(t, index);
     }
     return cell;
 }

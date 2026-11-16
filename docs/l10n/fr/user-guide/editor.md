@@ -69,6 +69,9 @@ cellule Markdown nouvelle ou vide reste en source.
   d’arrêt et de redémarrage de la barre exécutent toutes les cellules,
   interrompent et redémarrent le noyau ; quand le code demande une ligne
   (`input()`), tapez-la dans la ligne sous la barre.
+  L’en-tête d’une cellule de code affiche la durée de sa dernière exécution
+  (qui défile pendant qu’elle tourne), pour les cellules exécutées depuis
+  l’ouverture de l’onglet.
 - `Ctrl+Up` / `Ctrl+Down` passent à la cellule précédente / suivante,
   `Alt+Up` / `Alt+Down` déplacent la cellule, `Alt+Enter` /
   `Alt+Shift+Enter` insèrent une cellule de code en dessous / au-dessus, `Alt+Delete` supprime la cellule
