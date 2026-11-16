@@ -127,7 +127,8 @@ Name**), its path from the root of its git repository (**Copy Git Relative
 Path**, only inside a repository) or its absolute path (**Copy Path**).
 
 Saving a file whose preview is rendered from its text (Markdown, Org, HTML,
-JSON, the PDF of a LaTeX document...) updates the preview. To keep the
+JSON, the PDF of a LaTeX document...) updates the preview, and shows the
+file there even when the preview showed another file. To keep the
 preview as it is while you work, pick **Don't Update Preview** in the
 right-click menu of the tab; **Update Preview** brings it up to date and
 lets the saves update it again.

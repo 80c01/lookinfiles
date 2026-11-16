@@ -16,6 +16,7 @@
 #include "editor/editor_view.h"
 #include "theme/icons.h"
 #include "latex/latex_build.h"
+#include "explorer/fs_watch.h"
 
 
 /* Show or hide the line numbers of tab (NULL: the current editor tab) */
@@ -990,6 +991,28 @@ void editor_save_all_buffers(AppData* app) {
     }
 }
 
+/* A save updates the preview of the file, unless its tab says not to (tab
+ * menu: Don't Update Preview). A file with a rendered preview is then shown
+ * there even when the preview showed another file (a LaTeX document: its PDF
+ * once built). */
+static void update_preview_after_save(AppData* app, EditorTab* tab) {
+    if (editor_preview_paused(app, tab->path)) return;
+    if (g_strcmp0(preview_state_path(app), tab->path) != 0) {
+        if (!editor_tab_updates_preview(tab) || g_str_has_suffix(tab->path, ".tex")) {
+            latex_build_saved(app, tab->path);
+            return;
+        }
+        preview_state_set_raw(app, FALSE);
+        preview_state_set_zoom(app, 1.0);
+        preview_state_set_file(app, tab->path, tab->name);
+        monitor_file(app, tab->path);
+    }
+    app->file_dirty = FALSE;
+    app_emit(app, APP_EVENT_PREVIEW_STALE);
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
+    latex_build_saved(app, tab->path);
+}
+
 gboolean editor_save_current(AppData* app) {
     EditorTab* tab = editor_current_tab(app);
     if (tab == NULL || tab->path == NULL) {
@@ -1005,13 +1028,7 @@ gboolean editor_save_current(AppData* app) {
         gtk_text_buffer_set_modified(tab->buffer, FALSE);
         editor_tab_label_update(tab);
         app_emit(app, APP_EVENT_FILES_CHANGED);
-        if (!editor_preview_paused(app, tab->path)) {
-            if (preview_state_path(app) != NULL && g_strcmp0(preview_state_path(app), tab->path) == 0) {
-                app->file_dirty = FALSE;
-                app_emit(app, APP_EVENT_PREVIEW_STALE);
-            }
-            latex_build_saved(app, tab->path);
-        }
+        update_preview_after_save(app, tab);
         if (tab->view != NULL) {
             gtk_widget_grab_focus(tab->view);
         }
@@ -1041,13 +1058,8 @@ void editor_set_preview_paused(AppData* app, EditorTab* tab, gboolean paused) {
         EditorTab* t = (EditorTab*)l->data;
         if (t != NULL && g_strcmp0(t->path, tab->path) == 0) t->preview_paused = paused;
     }
-    if (paused) return;
     /* Back to the saved file: what was saved meanwhile is shown */
-    if (g_strcmp0(preview_state_path(app), tab->path) == 0) {
-        app->file_dirty = FALSE;
-        app_emit(app, APP_EVENT_PREVIEW_STALE);
-    }
-    latex_build_saved(app, tab->path);
+    if (!paused) update_preview_after_save(app, tab);
 }
 
 gboolean editor_tab_write(EditorTab* tab, const gchar* path, GError** error) {
