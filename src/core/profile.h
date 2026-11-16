@@ -7,7 +7,8 @@
  *   profile: frame  <ms> at <total ms>[ slow][ unpainted]   each frame (a slow
  *                   one with "(update <ms>, layout <ms>, paint <ms>)")
  *   profile: sample at <s> s key=value...                    each minute after the
- *                   start-up: CPU %, memory, threads, frames of that minute
+ *                   start-up: CPU %, memory, threads, frames of that minute,
+ *                   and (glibc) what malloc holds: in use, large blocks, free
  *   profile: report key=value...                             summary at exit
  *
  * Numbers are written with a dot whatever the locale (profile_ms()), so that

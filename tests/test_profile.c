@@ -106,6 +106,10 @@ static void test_output(void) {
     g_assert_true(g_str_has_prefix(lines[8], "profile: sample at "));
     g_assert_nonnull(strstr(lines[8], " frames=2 unpainted=1 slow=1 worst_ms=16.7"));
     g_assert_nonnull(strstr(lines[8], " cpu="));
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33))
+    g_assert_nonnull(strstr(lines[8], " malloc_used_mb="));
+    g_assert_nonnull(strstr(lines[8], " malloc_free_mb="));
+#endif
     g_assert_true(g_str_has_prefix(lines[9], "profile: report "));
     g_assert_nonnull(strstr(lines[9], " startup_frames=1 startup_slow=0 "));
     g_assert_nonnull(strstr(lines[9], " frames=2 unpainted=1 slow=1 "));

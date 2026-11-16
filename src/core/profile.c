@@ -9,6 +9,10 @@
 #ifdef G_OS_UNIX
 #include <sys/resource.h>
 #endif
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33))
+#include <malloc.h>
+#define HAVE_MALLINFO2 1
+#endif
 
 static FILE* out = NULL;      /* NULL: profiling off */
 static gboolean initialized = FALSE;
@@ -249,6 +253,21 @@ static gint64 thread_count(void) {
     return n;
 }
 
+/* " malloc_used_mb=.. malloc_big_mb=.. malloc_free_mb=..": what glibc's
+ * malloc holds, in all threads' arenas: in use in small blocks, in use in
+ * blocks of their own (large buffers: images), free but kept. "" elsewhere. */
+static void malloc_fields(gchar* buf, gsize size) {
+    buf[0] = '\0';
+#ifdef HAVE_MALLINFO2
+    struct mallinfo2 mi = mallinfo2();
+    g_snprintf(buf, size, " malloc_used_mb=%" G_GSIZE_FORMAT " malloc_big_mb=%" G_GSIZE_FORMAT
+               " malloc_free_mb=%" G_GSIZE_FORMAT,
+               mi.uordblks >> 20, mi.hblkhd >> 20, mi.fordblks >> 20);
+#else
+    (void)size;
+#endif
+}
+
 void profile_sample(void) {
     if (out == NULL) {
         return;
@@ -272,10 +291,12 @@ void profile_sample(void) {
     } else {
         g_strlcpy(pct, "-1", sizeof(pct));
     }
+    gchar heap[128];
+    malloc_fields(heap, sizeof(heap));
     write_linef("sample at %s s cpu=%s%% rss_mb=%" G_GINT64_FORMAT " threads=%" G_GINT64_FORMAT
-                " frames=%u unpainted=%u slow=%u worst_ms=%s",
+                " frames=%u unpainted=%u slow=%u worst_ms=%s%s",
                 profile_ms(at, (now - origin_us) / 1000, 0), pct, rss >= 0 ? rss / 1024 : -1, thread_count(),
-                f.count, f.unpainted, f.slow, profile_ms(worst, f.worst_us, 1));
+                f.count, f.unpainted, f.slow, profile_ms(worst, f.worst_us, 1), heap);
 }
 
 void profile_report(void) {
