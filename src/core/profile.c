@@ -134,15 +134,23 @@ void profile_frame_stats_add(ProfileFrameStats* stats, gint64 duration_us, gbool
     }
 }
 
-void profile_frame(gint64 duration_us, gboolean painted) {
+void profile_frame(gint64 duration_us, gboolean painted, const ProfileFramePhases* phases) {
     if (out == NULL) {
         return;
     }
     g_mutex_lock(&lock);
     profile_frame_stats_add(startup_over ? &run_frames : &startup_frames, duration_us, painted);
     g_mutex_unlock(&lock);
-    write_linef("frame %6.1f ms at %.1f ms%s%s", ms(duration_us), ms(g_get_monotonic_time() - origin_us),
-                duration_us > PROFILE_SLOW_FRAME_US ? " slow" : "", painted ? "" : " unpainted");
+    gboolean slow = duration_us > PROFILE_SLOW_FRAME_US;
+    gchar detail[96] = "";
+    if (slow && phases != NULL) {
+        g_snprintf(detail, sizeof(detail), " (update %.1f, layout %.1f, paint %.1f)",
+                   phases->update_us >= 0 ? ms(phases->update_us) : 0.0,
+                   phases->layout_us >= 0 ? ms(phases->layout_us) : 0.0,
+                   phases->paint_us >= 0 ? ms(phases->paint_us) : 0.0);
+    }
+    write_linef("frame %6.1f ms at %.1f ms%s%s%s", ms(duration_us), ms(g_get_monotonic_time() - origin_us),
+                slow ? " slow" : "", painted ? "" : " unpainted", detail);
 }
 
 /* The number after "key:" at the start of a line of text, in KB; -1 if absent */

@@ -4,7 +4,8 @@
  *
  *   profile: mark   <total ms> +<since last mark> <label>    start-up steps
  *   profile: time   <ms> <label>                             timed operations
- *   profile: frame  <ms> at <total ms>[ slow][ unpainted]   each frame
+ *   profile: frame  <ms> at <total ms>[ slow][ unpainted]   each frame (a slow
+ *                   one with "(update <ms>, layout <ms>, paint <ms>)")
  *   profile: report key=value...                             summary at exit
  *
  * Without the variable every call returns at once (profile_start() gives 0
@@ -42,9 +43,18 @@ void profile_done(gint64 start_us, const gchar* format, ...) G_GNUC_PRINTF(2, 3)
 /* A free-form line ("profile: " + text) */
 void profile_log(const gchar* format, ...) G_GNUC_PRINTF(1, 2);
 
+/* Where a frame's time went: animations and tick callbacks, measuring and
+ * allocating the widgets, drawing and rendering them (-1: phase not run) */
+typedef struct {
+    gint64 update_us;
+    gint64 layout_us;
+    gint64 paint_us;
+} ProfileFramePhases;
+
 /* One frame of the frame clock, the time its work took (main thread);
- * painted: something was drawn (else only animations or tick callbacks ran) */
-void profile_frame(gint64 duration_us, gboolean painted);
+ * painted: something was drawn (else only animations or tick callbacks
+ * ran); phases may be NULL */
+void profile_frame(gint64 duration_us, gboolean painted, const ProfileFramePhases* phases);
 
 /* The summary line: frames of the start-up and after it, CPU time (in all,
  * and at the end of the start-up, loading of the libraries included), memory */

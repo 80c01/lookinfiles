@@ -70,12 +70,13 @@ static void test_output(void) {
     g_assert_cmpint(start, >, 0);
     profile_done(start, "scan %s", "dir");
     profile_done(0, "never written");
-    profile_frame(1000, TRUE);                       /* start-up frame */
+    profile_frame(1000, TRUE, NULL);                       /* start-up frame */
     profile_startup_done();
     profile_startup_done();                    /* once */
-    profile_frame(PROFILE_SLOW_FRAME_US + 1, TRUE); /* slow, after the start-up */
-    profile_frame(2000, TRUE);
-    profile_frame(500, FALSE);
+    ProfileFramePhases phases = {1000, 5000, PROFILE_SLOW_FRAME_US - 6000 + 1};
+    profile_frame(PROFILE_SLOW_FRAME_US + 1, TRUE, &phases); /* slow, after the start-up */
+    profile_frame(2000, TRUE, &phases); /* fast: no phases shown */
+    profile_frame(500, FALSE, NULL);
     profile_log("note %d", 7);
     profile_report();
 
@@ -88,8 +89,9 @@ static void test_output(void) {
     g_assert_true(g_str_has_prefix(lines[2], "profile: frame "));
     g_assert_true(g_str_has_suffix(lines[2], " ms"));                   /* fast, painted */
     g_assert_true(g_str_has_suffix(lines[3], " startup done"));
-    g_assert_true(g_str_has_suffix(lines[4], " ms slow"));
+    g_assert_true(g_str_has_suffix(lines[4], " ms slow (update 1.0, layout 5.0, paint 10.7)"));
     g_assert_true(g_str_has_prefix(lines[5], "profile: frame "));
+    g_assert_true(g_str_has_suffix(lines[5], " ms"));
     g_assert_true(g_str_has_suffix(lines[6], " ms unpainted"));
     g_assert_nonnull(strstr(lines[6], " ms at "));
     g_assert_cmpstr(lines[7], ==, "profile: note 7");
