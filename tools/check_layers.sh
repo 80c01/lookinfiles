@@ -74,6 +74,7 @@ minimap_geometry:
 ui_probe:
 profile:
 module_path:
+memory_trim:profile
 sysstat:
 sysstat_host:sysstat
 countdown:

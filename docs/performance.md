@@ -109,5 +109,10 @@ default stays `-O2 -g`. Measure again before changing it.
   threshold), and with glycin (GTK 4.20+ decodes in a sandbox, at full size)
   a real session reached 1.1 GB. `tools/mem_report.sh` shows it as
   "anonymous" memory.
+- **Free memory is trimmed once browsing stops**: freeing a preview leaves
+  free space between blocks still in use, which glibc keeps (a real session
+  kept 536 MB free that way, `malloc_free_mb`). `core/memory_trim` calls
+  `malloc_trim(0)` on a worker thread 2 s after the last change of
+  selection; with `LOOKIN_PROFILE` a `time` line tells what it gave back.
 - **No wake-up without a change on screen**: a timer must run only while
   what it updates is shown, and set a label only when its text changes.

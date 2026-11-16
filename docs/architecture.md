@@ -83,6 +83,9 @@ Layers, from bottom to top
   start-up marks (`profile_mark()`), timed operations (`profile_start()` /
   `profile_done()`, thread-safe), frame counters and the exit report (CPU
   time, resident memory); every call returns at once without the variable.
+- `memory_trim` — gives the memory malloc keeps free back to the system:
+  `memory_trim_soon()` (each change of selection, `viewer.c`) runs
+  `malloc_trim(0)` on a worker thread 2 s after the last call (glibc only).
 - `module_path` — where a module opened at run time is (`module_path_find()`):
   `$LOOKINFILES_MODULEDIR`, next to the program, `<exe dir>/build` (source
   tree), `<exe dir>/../lib/lookinfiles` (AppImage), `MODULEDIR` (set from

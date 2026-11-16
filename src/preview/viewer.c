@@ -1,5 +1,6 @@
 #include "preview/viewer.h"
 #include "core/profile.h"
+#include "core/memory_trim.h"
 #include "preview/preview_state.h"
 #include "core/i18n.h"
 #include "canvas/canvas_preview.h"
@@ -989,6 +990,7 @@ static gboolean run_pending_selection(gpointer data) {
 void on_selection_changed(ExplorerTree* tree, gpointer user_data) {
     AppData* app = (AppData*)user_data;
     ExplorerRow* row = explorer_tree_get_selected(tree);
+    memory_trim_soon(); /* the previous previews' memory, once browsing stops */
     /* A workspace switch previews its selection at once (it sets switching_ws
      * around it) */
     if (row == NULL || app->switching_ws) {
