@@ -53,13 +53,28 @@ static gchar* path_below(const gchar* root, const gchar* full) {
     return rel;
 }
 
+/* Whether one component of path ('/' or '\\' separated) is exactly ".git" */
+static gboolean has_dot_git_component(const gchar* path) {
+    const gchar* start = path;
+    for (const gchar* c = path;; c++) {
+        if (*c == '\0' || G_IS_DIR_SEPARATOR(*c) || *c == '/') {
+            if (c - start == 4 && strncmp(start, ".git", 4) == 0) {
+                return TRUE;
+            }
+            if (*c == '\0') {
+                return FALSE;
+            }
+            start = c + 1;
+        }
+    }
+}
+
 /* Find Git repository root directory from start_dir (or any parent), NULL if not in repo */
 gchar* find_git_root(const gchar* start_dir) {
     if (start_dir == NULL || start_dir[0] == '\0') {
         return NULL;
     }
-    if (strstr(start_dir, "/.git/") != NULL || g_str_has_suffix(start_dir, "/.git") ||
-        g_strcmp0(start_dir, ".git") == 0) {
+    if (has_dot_git_component(start_dir)) {
         return NULL;
     }
     gchar* curr = g_canonicalize_filename(start_dir, NULL);
@@ -92,12 +107,7 @@ gchar* git_relative_path(const gchar* path) {
     g_free(start);
     gchar* rel = NULL;
     if (root != NULL) {
-        gsize len = strlen(root);
-        if (g_strcmp0(full, root) == 0) {
-            rel = g_strdup(".");
-        } else if (strncmp(full, root, len) == 0 && full[len] == '/') {
-            rel = g_strdup(full + len + 1);
-        }
+        rel = g_strcmp0(full, root) == 0 ? g_strdup(".") : path_below(root, full);
     }
     g_free(root);
     g_free(full);

@@ -1099,13 +1099,27 @@ static void ex_read(VimEngine* e, const VimExCmd* c, gint l2) {
             dir = g_path_get_dirname(fn);
         }
 
-        const gchar* argv[] = {"/bin/sh", "-c", cmd, NULL};
+        gchar* shell = NULL;
+        const gchar* flag = "-c";
+#ifdef G_OS_WIN32
+        /* No /bin/sh: a POSIX sh on PATH (Git for Windows, MSYS2), else cmd */
+        shell = g_find_program_in_path("sh");
+        if (shell == NULL) {
+            const gchar* comspec = g_getenv("COMSPEC");
+            shell = g_strdup(comspec != NULL ? comspec : "cmd.exe");
+            flag = "/c";
+        }
+#else
+        shell = g_strdup("/bin/sh");
+#endif
+        const gchar* argv[] = {shell, flag, cmd, NULL};
         gchar* out = NULL;
         gchar* err_out = NULL;
         gint status = 0;
         GError* gerr = NULL;
         gboolean ok = g_spawn_sync(dir, (gchar**)argv, NULL, G_SPAWN_SEARCH_PATH,
                                    NULL, NULL, &out, &err_out, &status, &gerr);
+        g_free(shell);
         g_free(dir);
         g_free(cmd);
 

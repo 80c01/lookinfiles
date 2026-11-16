@@ -11,13 +11,22 @@ static void write_file(const gchar* dir, const gchar* name, const gchar* text) {
     g_free(path);
 }
 
+/* path with native separators (the parser returns local file names) */
+static gchar* native(const gchar* path) {
+    gchar* out = g_strdup(path);
+    g_strdelimit(out, "/", G_DIR_SEPARATOR);
+    return out;
+}
+
 static void test_parse(void) {
     gchar* path = NULL;
     gchar* date = NULL;
+    g_autofree gchar* want = native("/home/u/a b.txt");
+    g_autofree gchar* want_mount = native("/media/usb/docs/x");
     g_assert_true(trash_info_parse("[Trash Info]\nPath=/home/u/a%20b.txt\n"
                                    "DeletionDate=2026-10-31T10:00:00\n",
                                    NULL, &path, &date));
-    g_assert_cmpstr(path, ==, "/home/u/a b.txt");
+    g_assert_cmpstr(path, ==, want);
     g_assert_cmpstr(date, ==, "2026-10-31T10:00:00");
     g_free(path);
     g_free(date);
@@ -25,7 +34,7 @@ static void test_parse(void) {
     /* Relative paths belong to a mount's trash only */
     g_assert_false(trash_info_parse("[Trash Info]\nPath=docs/x\n", NULL, &path, &date));
     g_assert_true(trash_info_parse("[Trash Info]\nPath=docs/x\n", "/media/usb", &path, &date));
-    g_assert_cmpstr(path, ==, "/media/usb/docs/x");
+    g_assert_cmpstr(path, ==, want_mount);
     g_assert_cmpstr(date, ==, "");
     g_free(path);
     g_free(date);

@@ -277,7 +277,7 @@ static void test_export_markdown(void) {
     g_assert_cmpstr(md, ==, "# Plan\n\n![](<My Plan.canvas/media/0001.png>)\n");
     /* The name is taken: a numbered one */
     g_autofree gchar* second = canvas_doc_export_markdown(dir, NULL);
-    g_assert_true(g_str_has_suffix(second, "/My Plan (2).md"));
+    g_assert_true(g_str_has_suffix(second, G_DIR_SEPARATOR_S "My Plan (2).md"));
     /* Another extension: its own free name */
     g_autofree gchar* png = canvas_doc_export_path(dir, NULL, "png");
     g_autofree gchar* expected_png = g_build_filename(tmp, "My Plan.png", NULL);

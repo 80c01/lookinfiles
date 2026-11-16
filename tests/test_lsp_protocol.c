@@ -8,6 +8,14 @@ static LspMessage* parse(const gchar* json) {
     return lsp_message_parse(g_strdup(json), strlen(json));
 }
 
+/* URIs become local file names: native separators ("\\p\\a.c" on Windows) */
+static void assert_path(const gchar* got, const gchar* want) {
+    gchar* native = g_strdup(want);
+    g_strdelimit(native, "/", G_DIR_SEPARATOR);
+    g_assert_cmpstr(got, ==, native);
+    g_free(native);
+}
+
 static void test_framing(void) {
     gsize len = 0;
     gchar* msg = lsp_frame("{\"a\":1}", &len);
@@ -72,7 +80,7 @@ static void test_requests(void) {
     g_assert_cmpstr(lsp_language_id("x.hpp"), ==, "cpp");
     g_assert_cmpstr(lsp_language_id("Makefile"), ==, "makefile");
     gchar* path = lsp_uri_to_path("file:///tmp/a%20b.c");
-    g_assert_cmpstr(path, ==, "/tmp/a b.c");
+    assert_path(path, "/tmp/a b.c");
     g_free(path);
     g_assert_null(lsp_uri_to_path("untitled:1"));
 }
@@ -125,7 +133,7 @@ static void test_locations(void) {
     GPtrArray* l = lsp_parse_locations(m->result);
     g_assert_cmpuint(l->len, ==, 1);
     LspLocation* loc = g_ptr_array_index(l, 0);
-    g_assert_cmpstr(loc->path, ==, "/p/a.c");
+    assert_path(loc->path, "/p/a.c");
     g_assert_cmpint(loc->line, ==, 4);
     g_assert_cmpint(loc->column, ==, 2);
     g_ptr_array_unref(l);
@@ -137,7 +145,7 @@ static void test_locations(void) {
     l = lsp_parse_locations(m->result);
     g_assert_cmpuint(l->len, ==, 1);
     loc = g_ptr_array_index(l, 0);
-    g_assert_cmpstr(loc->path, ==, "/p/b.h");
+    assert_path(loc->path, "/p/b.h");
     g_assert_cmpint(loc->line, ==, 2);
     g_assert_cmpint(loc->column, ==, 5);
     g_ptr_array_unref(l);
@@ -217,7 +225,7 @@ static void test_symbols(void) {
               "\"range\":{\"start\":{\"line\":3,\"character\":1}}}}]}");
     syms = lsp_parse_symbols(m->result);
     s = g_ptr_array_index(syms, 0);
-    g_assert_cmpstr(s->path, ==, "/p/a.py");
+    assert_path(s->path, "/p/a.py");
     g_assert_cmpstr(s->container, ==, "m");
     g_assert_cmpint(s->kind, ==, CODE_SYM_VARIABLE);
     g_ptr_array_unref(syms);
@@ -231,7 +239,7 @@ static void test_diagnostics(void) {
                           "{\"range\":{\"start\":{\"line\":5,\"character\":0}},\"message\":\"x\"},{\"message\":\"no range\"}]}}");
     gchar* path = NULL;
     GPtrArray* d = lsp_parse_diagnostics(m->params, &path);
-    g_assert_cmpstr(path, ==, "/p/a.c");
+    assert_path(path, "/p/a.c");
     g_assert_cmpuint(d->len, ==, 2);
     LspDiagnostic* first = g_ptr_array_index(d, 0);
     g_assert_cmpint(first->severity, ==, LSP_SEVERITY_WARNING);

@@ -56,13 +56,25 @@ gchar* archive_extract_clean_path(const gchar* entry) {
     if (entry == NULL) {
         return NULL;
     }
-    gchar** parts = g_strsplit(entry, "/", -1);
+    gchar* unified = g_strdup(entry);
+#ifdef G_OS_WIN32
+    /* '\\' separates components too there: "a\\..\\..\\x" must not escape */
+    g_strdelimit(unified, "\\", '/');
+#endif
+    gchar** parts = g_strsplit(unified, "/", -1);
+    g_free(unified);
     GPtrArray* kept = g_ptr_array_new();
     gboolean ok = TRUE;
     for (gint i = 0; parts[i] != NULL; i++) {
         if (parts[i][0] == '\0' || strcmp(parts[i], ".") == 0) {
             continue;
         }
+#ifdef G_OS_WIN32
+        if (strchr(parts[i], ':') != NULL) { /* drive letter or stream name */
+            ok = FALSE;
+            break;
+        }
+#endif
         if (strcmp(parts[i], "..") == 0) {
             ok = FALSE;
             break;
@@ -90,6 +102,7 @@ gchar* archive_extract_cache_path(const gchar* archive, const gchar* entry) {
                                  (gint64)st.st_size, (gint64)st.st_mtime);
     gchar* id = g_compute_checksum_for_string(G_CHECKSUM_SHA1, key, -1);
     gchar* cache = app_cache_dir();
+    g_strdelimit(clean, "/", G_DIR_SEPARATOR); /* native separators all along */
     gchar* path = g_build_filename(cache, "archive", id, clean, NULL);
     g_free(cache);
     g_free(id);

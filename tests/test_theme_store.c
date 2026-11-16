@@ -207,7 +207,7 @@ static void test_save_round_trip(void) {
     GError* error = NULL;
     gchar* path = theme_store_save_current(dir, "My  Theme!", FALSE, &error);
     g_assert_no_error(error);
-    g_assert_true(g_str_has_suffix(path, "/my-theme.ini"));
+    g_assert_true(g_str_has_suffix(path, G_DIR_SEPARATOR_S "my-theme.ini"));
     palette_reset();
     fonts_reset();
 

@@ -41,9 +41,10 @@ static void fixture_teardown(Fixture* fx, gconstpointer data) {
     g_free(fx->dir);
 }
 
-/* Create dir/<rel> (and parents) with the given contents; NULL contents = directory */
+/* Create dir/<rel> (and parents) with the given contents; NULL contents = directory.
+ * Returns the canonical path (native separators, as the code under test builds them). */
 static gchar* make_path(Fixture* fx, const gchar* rel, const gchar* contents) {
-    gchar* path = g_build_filename(fx->dir, rel, NULL);
+    gchar* path = g_canonicalize_filename(rel, fx->dir);
     if (contents == NULL) {
         g_assert_cmpint(g_mkdir_with_parents(path, 0755), ==, 0);
     } else {

@@ -71,7 +71,7 @@ static gchar** server_argv(const gchar* extra) {
     if (python == NULL) return NULL;
     gchar** argv = g_new0(gchar*, 4);
     argv[0] = python;
-    /* Absolute: the server runs in the project root (/tmp here) */
+    /* Absolute: the server runs in the project root (the temporary directory here) */
     gchar* cwd = g_get_current_dir();
     argv[1] = g_build_filename(cwd, "tests", "fixtures", "fake_lsp.py", NULL);
     g_free(cwd);
@@ -86,13 +86,14 @@ static void test_requests(void) {
         return;
     }
     Ctx ctx = {0};
+    g_autofree gchar* doc = g_build_filename(g_get_tmp_dir(), "a.c", NULL);
     GError* err = NULL;
-    LspClient* c = lsp_client_new(argv, "/tmp", on_state, &ctx, &err);
+    LspClient* c = lsp_client_new(argv, g_get_tmp_dir(), on_state, &ctx, &err);
     g_assert_no_error(err);
     g_assert_cmpint(lsp_client_get_state(c), ==, LSP_CLIENT_STARTING);
     /* Queued until initialized */
-    lsp_client_sync_document(c, "/tmp/a.c", "first text");
-    gchar* params = lsp_params_position("/tmp/a.c", 3, 5, -1);
+    lsp_client_sync_document(c, doc, "first text");
+    gchar* params = lsp_params_position(doc, 3, 5, -1);
     gint64 id = lsp_client_request(c, "textDocument/definition", params, on_definition, &ctx, count_destroy);
     g_assert_cmpint(id, >, 0);
     WAIT_FOR(ctx.answers == 1);
@@ -106,19 +107,19 @@ static void test_requests(void) {
     g_assert_cmpstr(caps->signature_triggers, ==, "(");
 
     /* The server sees the documents as synchronized */
-    gchar* hover = lsp_params_position("/tmp/a.c", 0, 0, -1);
+    gchar* hover = lsp_params_position(doc, 0, 0, -1);
     lsp_client_request(c, "textDocument/hover", hover, on_hover, &ctx, NULL);
     WAIT_FOR(ctx.answers == 2);
     g_assert_cmpstr(ctx.last, ==, "first text");
-    lsp_client_sync_document(c, "/tmp/a.c", "first text"); /* unchanged: nothing sent */
-    lsp_client_sync_document(c, "/tmp/a.c", "second \"text\"\n");
+    lsp_client_sync_document(c, doc, "first text"); /* unchanged: nothing sent */
+    lsp_client_sync_document(c, doc, "second \"text\"\n");
     lsp_client_request(c, "textDocument/hover", hover, on_hover, &ctx, NULL);
     WAIT_FOR(ctx.answers == 3);
     g_assert_cmpstr(ctx.last, ==, "second \"text\""); /* hover text is trimmed */
     GList* docs = lsp_client_get_documents(c);
     g_assert_cmpuint(g_list_length(docs), ==, 1);
     g_list_free(docs);
-    lsp_client_close_document(c, "/tmp/a.c");
+    lsp_client_close_document(c, doc);
     docs = lsp_client_get_documents(c);
     g_assert_null(docs);
 
@@ -150,8 +151,9 @@ static void test_server_dies(void) {
         return;
     }
     Ctx ctx = {0};
-    LspClient* c = lsp_client_new(argv, "/tmp", on_state, &ctx, NULL);
-    gchar* params = lsp_params_position("/tmp/a.c", 0, 0, -1);
+    g_autofree gchar* doc = g_build_filename(g_get_tmp_dir(), "a.c", NULL);
+    LspClient* c = lsp_client_new(argv, g_get_tmp_dir(), on_state, &ctx, NULL);
+    gchar* params = lsp_params_position(doc, 0, 0, -1);
     lsp_client_request(c, "textDocument/definition", params, on_definition, &ctx, count_destroy);
     WAIT_FOR(ctx.state == LSP_CLIENT_FAILED);
     g_assert_cmpint(ctx.failures, ==, 1);
@@ -167,7 +169,7 @@ static void test_server_dies(void) {
 static void test_missing_program(void) {
     gchar* argv[] = {"lookin-no-such-language-server", NULL};
     GError* err = NULL;
-    LspClient* c = lsp_client_new(argv, "/tmp", NULL, NULL, &err);
+    LspClient* c = lsp_client_new(argv, g_get_tmp_dir(), NULL, NULL, &err);
     g_assert_null(c);
     g_assert_nonnull(err);
     g_error_free(err);

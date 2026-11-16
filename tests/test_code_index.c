@@ -50,7 +50,9 @@ static gchar* make_project(void) {
 
 static gchar* rel_path(const gchar* root, const gchar* path) {
     g_assert_true(g_str_has_prefix(path, root));
-    return g_strdup(path + strlen(root) + 1);
+    gchar* rel = g_strdup(path + strlen(root) + 1);
+    g_strdelimit(rel, G_DIR_SEPARATOR_S, '/'); /* compare with '/' everywhere */
+    return rel;
 }
 
 /* Relative paths of a file list, sorted, joined by spaces */

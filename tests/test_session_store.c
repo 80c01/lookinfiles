@@ -120,7 +120,7 @@ static void test_snapshot_target(void) {
     gchar* path = session_snapshot_path(id);
     g_assert_nonnull(path);
     g_assert_true(g_str_has_suffix(path, ".ini"));
-    g_assert_nonnull(strstr(path, "/sessions/"));
+    g_assert_nonnull(strstr(path, G_DIR_SEPARATOR_S "sessions" G_DIR_SEPARATOR_S));
     g_assert_null(session_snapshot_path("a/b"));
     session_snapshot_remove("a/b"); /* ignored */
     session_snapshot_remove(id);    /* missing file is fine */

@@ -198,8 +198,9 @@ static void test_other_compressions(void) {
     }
     /* A single xz-compressed file shows its content; a .tar.xz lists its entries */
     gchar* text = write_file("notes.txt", "hello xz\n", 9);
-    gchar* cmd = g_strdup_printf("xz -k -f %s", text);
-    g_assert_true(g_spawn_command_line_sync(cmd, NULL, NULL, NULL, NULL));
+    /* argv, not a command line: shell parsing would eat Windows backslashes */
+    gchar* cmd[] = {xz, "-k", "-f", text, NULL};
+    g_assert_true(g_spawn_sync(NULL, cmd, NULL, G_SPAWN_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL));
     gchar* xz_path = g_strconcat(text, ".xz", NULL);
     g_autoptr(ArchiveListing) single = archive_list(xz_path, 100, NULL, NULL);
     g_assert_nonnull(single);
@@ -208,8 +209,8 @@ static void test_other_compressions(void) {
     g_assert_cmpmem(g_bytes_get_data(single->inner_head, NULL), g_bytes_get_size(single->inner_head), "hello xz\n", 9);
     GByteArray* tar = sample_tar();
     gchar* tar_path = write_file("t.tar", tar->data, tar->len);
-    gchar* cmd2 = g_strdup_printf("xz -k -f %s", tar_path);
-    g_assert_true(g_spawn_command_line_sync(cmd2, NULL, NULL, NULL, NULL));
+    gchar* cmd2[] = {xz, "-k", "-f", tar_path, NULL};
+    g_assert_true(g_spawn_sync(NULL, cmd2, NULL, G_SPAWN_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL));
     gchar* txz = g_strconcat(tar_path, ".xz", NULL);
     g_autoptr(ArchiveListing) l = archive_list(txz, 100, NULL, NULL);
     g_assert_nonnull(l);
@@ -222,10 +223,8 @@ static void test_other_compressions(void) {
     g_remove(text);
     g_byte_array_unref(tar);
     g_free(txz);
-    g_free(cmd2);
     g_free(tar_path);
     g_free(xz_path);
-    g_free(cmd);
     g_free(text);
     g_free(xz);
 #else

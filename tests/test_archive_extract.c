@@ -17,6 +17,13 @@ static void test_clean_path(void) {
     g_assert_null(archive_extract_clean_path("a/../../evil"));
     g_assert_null(archive_extract_clean_path("./"));
     g_assert_null(archive_extract_clean_path(NULL));
+#ifdef G_OS_WIN32
+    g_assert_null(archive_extract_clean_path("a\\..\\..\\evil"));
+    g_assert_null(archive_extract_clean_path("C:/Windows/evil"));
+    p = archive_extract_clean_path("dir\\file.txt");
+    g_assert_cmpstr(p, ==, "dir/file.txt");
+    g_free(p);
+#endif
 }
 
 static void test_can_browse(void) {
@@ -60,7 +67,7 @@ static void test_extract_zip(void) {
 
     gchar* cache = archive_extract_cache_path(archive, "docs/readme.txt");
     g_assert_nonnull(cache);
-    g_assert_true(g_str_has_suffix(cache, "/docs/readme.txt"));
+    g_assert_true(g_str_has_suffix(cache, G_DIR_SEPARATOR_S "docs" G_DIR_SEPARATOR_S "readme.txt"));
     g_free(cache);
     g_assert_null(archive_extract_cache_path(archive, "../x"));
 
