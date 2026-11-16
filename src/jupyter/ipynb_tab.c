@@ -9,6 +9,7 @@
 #include "theme/fonts.h"
 #include "theme/icons.h"
 #include "theme/text_style.h"
+#include "theme/text_tags.h"
 #include "theme/theme.h"
 
 #include <glib/gstdio.h>
@@ -174,6 +175,12 @@ static void show_markdown(IpynbTab* t, guint index, gboolean render) {
         g_hash_table_remove(t->editing, GUINT_TO_POINTER(key));
         GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(rendered));
         render_markdown_to_buffer(buffer, GTK_TEXT_VIEW(rendered), valid, t->path, FALSE, NULL, 0);
+        /* A heading on the first line: no space above it, under the cell bar */
+        GtkTextIter start, end;
+        gtk_text_buffer_get_start_iter(buffer, &start);
+        end = start;
+        gtk_text_iter_forward_to_line_end(&end);
+        gtk_text_buffer_apply_tag_by_name(buffer, "ipynb_first_line", &start, &end);
     } else {
         g_hash_table_add(t->editing, GUINT_TO_POINTER(key));
     }
@@ -317,6 +324,9 @@ static GtkWidget* rendered_view_new(IpynbTab* t, guint index) {
     gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(rendered), 8);
     set_view_monospace(rendered, FALSE);
     ensure_markdown_tags(gtk_text_view_get_buffer(GTK_TEXT_VIEW(rendered)));
+    /* Created after the Markdown tags: it wins over their space above */
+    text_tag_ensure(gtk_text_view_get_buffer(GTK_TEXT_VIEW(rendered)), "ipynb_first_line", "pixels-above-lines", 0,
+                    NULL);
     gtk_widget_set_tooltip_text(rendered, _("Double-click or Enter to edit the Markdown"));
     g_object_set_data(G_OBJECT(rendered), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
     track_focus(t, rendered);
