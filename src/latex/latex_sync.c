@@ -27,6 +27,7 @@ struct LatexSync {
     gchar* place_pdf;
     gint place_page;
     gdouble place_y;
+    gdouble keep_align;     /* its height in the preview kept after a compilation, or -1 */
     guint settle_id;
     gint settle_left;
     gint64 follow_until;    /* pages followed after a compilation until then */
@@ -75,7 +76,8 @@ static gdouble cursor_align(EditorTab* tab) {
 static gboolean show_place(struct LatexSync* st) {
     AppData* app = st->app;
     if (st->place_pdf == NULL || g_strcmp0(preview_state_path(app), st->place_pdf) != 0) return FALSE;
-    return pdf_preview_show_point(app, st->place_page, st->place_y, cursor_align(buffer_tab(app, st->tracked)));
+    gdouble align = st->keep_align >= 0.0 ? st->keep_align : cursor_align(buffer_tab(app, st->tracked));
+    return pdf_preview_show_point(app, st->place_page, st->place_y, align);
 }
 
 static gboolean settle_cb(gpointer data) {
@@ -199,6 +201,7 @@ static void on_cursor_moved(GObject* buffer, GParamSpec* pspec, gpointer data) {
     EditorTab* tab = buffer_tab(st->app, GTK_TEXT_BUFFER(buffer));
     /* The user moves in the editor (not a reload of the tab) */
     if (tab == NULL || !gtk_widget_has_focus(tab->view) || synced_pdf(st->app) == NULL) return;
+    st->keep_align = -1.0;
     if (st->delay_id != 0) g_source_remove(st->delay_id);
     st->delay_id = g_timeout_add(SYNC_DELAY_MS, delay_cb, st);
 }
@@ -237,6 +240,7 @@ void latex_sync_init(AppData* app) {
     if (app->latex_sync != NULL || app->window == NULL) return;
     struct LatexSync* st = g_new0(struct LatexSync, 1);
     st->app = app;
+    st->keep_align = -1.0;
     st->window = app->window;
     g_object_add_weak_pointer(G_OBJECT(st->window), (gpointer*)&st->window);
     st->focus_handler = g_signal_connect(st->window, "notify::focus-widget", G_CALLBACK(on_focus_changed), st);
@@ -249,6 +253,12 @@ void latex_sync_after_build(AppData* app) {
     if (buffer_tab(app, st->tracked) == NULL && app->last_focused_editor != NULL &&
         is_tex(app->last_focused_editor->path)) {
         track(st, app->last_focused_editor->buffer);
+    }
+    /* The place of the cursor stays where it is in the preview (the old PDF
+     * is still shown): saving does not scroll it */
+    st->keep_align = -1.0;
+    if (st->place_pdf != NULL && g_strcmp0(preview_state_path(app), st->place_pdf) == 0) {
+        st->keep_align = pdf_preview_point_align(app, st->place_page, st->place_y);
     }
     /* The new PDF and its pages come in over the next moments */
     st->follow_until = g_get_monotonic_time() + BUILD_FOLLOW_US;

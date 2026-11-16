@@ -14,6 +14,10 @@ gboolean pdf_preview_jump(AppData* app, gint direction);
  * preview does not show that page rendered (yet). */
 gboolean pdf_preview_show_point(AppData* app, gint page, gdouble y, gdouble align);
 
+/* Height in the view (0: top, 1: bottom) of the point y of page, -1 if it is
+ * not on screen */
+gdouble pdf_preview_point_align(AppData* app, gint page, gdouble y);
+
 /* Re-render the shown PDF if the viewport width changed since it was fitted. */
 void pdf_preview_refit(AppData* app);
 

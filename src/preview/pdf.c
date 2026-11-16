@@ -758,7 +758,9 @@ gboolean pdf_preview_jump(AppData* app, gint direction) {
     return TRUE;
 }
 
-gboolean pdf_preview_show_point(AppData* app, gint page, gdouble y, gdouble align) {
+/* Height in the buffer of the point y (PDF points from the top) of page; FALSE
+ * if the preview does not show that page rendered (yet) */
+static gboolean point_top(AppData* app, gint page, gdouble y, gdouble* top) {
     if (preview_state_kind(app) != FILE_KIND_PDF || preview_state_raw(app) || app->text_view == NULL || page < 0) {
         return FALSE;
     }
@@ -781,14 +783,29 @@ gboolean pdf_preview_show_point(AppData* app, gint page, gdouble y, gdouble alig
         GdkRectangle rect;
         gtk_text_view_get_iter_location(view, &it, &rect);
         /* The picture stands on the line's baseline: its top is its height above the line's bottom */
-        gdouble top = rect.y + rect.height - gdk_paintable_get_intrinsic_height(picture);
-        GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(view));
-        gdouble target = top + y * *scale - CLAMP(align, 0.0, 1.0) * gtk_adjustment_get_page_size(vadj);
-        gtk_adjustment_set_value(vadj, CLAMP(target, gtk_adjustment_get_lower(vadj),
-                                             gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj)));
+        *top = rect.y + rect.height - gdk_paintable_get_intrinsic_height(picture) + y * *scale;
         return TRUE;
     }
     return FALSE;
+}
+
+gboolean pdf_preview_show_point(AppData* app, gint page, gdouble y, gdouble align) {
+    gdouble top = 0.0;
+    if (!point_top(app, page, y, &top)) return FALSE;
+    GtkAdjustment* vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(app->text_view));
+    gdouble target = top - CLAMP(align, 0.0, 1.0) * gtk_adjustment_get_page_size(vadj);
+    gtk_adjustment_set_value(vadj, CLAMP(target, gtk_adjustment_get_lower(vadj),
+                                         gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj)));
+    return TRUE;
+}
+
+gdouble pdf_preview_point_align(AppData* app, gint page, gdouble y) {
+    gdouble top = 0.0;
+    if (!point_top(app, page, y, &top)) return -1.0;
+    GdkRectangle visible;
+    gtk_text_view_get_visible_rect(GTK_TEXT_VIEW(app->text_view), &visible);
+    if (visible.height <= 0 || top < visible.y || top > visible.y + visible.height) return -1.0;
+    return (top - visible.y) / visible.height;
 }
 
 /* Width the pages are fitted to. Measure the viewport, not the text view: the
@@ -886,6 +903,13 @@ gboolean pdf_preview_show_point(AppData* app, gint page, gdouble y, gdouble alig
     (void)y;
     (void)align;
     return FALSE;
+}
+
+gdouble pdf_preview_point_align(AppData* app, gint page, gdouble y) {
+    (void)app;
+    (void)page;
+    (void)y;
+    return -1.0;
 }
 
 gboolean pdf_preview_jump(AppData* app, gint direction) {

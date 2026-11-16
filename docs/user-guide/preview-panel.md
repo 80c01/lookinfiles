@@ -178,8 +178,8 @@ that name is defined (see [code navigation](code-navigation.md)).
 When the previewed file changes on disk, the preview reloads by itself,
 staying on the line it showed. When the file is open in an editor beside
 the preview, the preview follows the editor's cursor: its line (in the
-rendered Markdown and Org too) is shown at the height of the cursor, and
-saving keeps it there.
+rendered Markdown and Org too) is shown at the height of the cursor when it
+moves. Saving leaves the preview where it is.
 
 ## System Monitor
 

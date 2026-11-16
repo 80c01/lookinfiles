@@ -761,7 +761,10 @@ Layers, from bottom to top
   again (saved, changed on disk, re-rendered) goes back to the line at the
   top of the view (`preview_sync_loading()` from `load_file_content()`,
   `preview_sync_showing()` from the viewer), and the preview of a file open
-  in an editor follows the editor's cursor. Rendered documents map their
+  in an editor follows the editor's cursor when it moves (a save leaves the
+  view where it is, to the pixel: `restore_delta`, placed again in the frame
+  clock's `layout` phase while the new lines get their height). Rendered
+  documents map their
   source lines with `MdOut.sources` (`md_out_mark_source()`, set by the
   Markdown parser and `org_render`); text previews go line by line.
 - `image_preview`, `image_decode`, `image_prefetch` — the image preview.
@@ -871,7 +874,8 @@ Layers, from bottom to top
   editor tab (SyncTeX forward search): after a pause, `synctex view` runs
   asynchronously and `pdf_preview_show_point()` scrolls to the place, at
   the height of the cursor in the editor; after a compilation
-  (`latex_sync_after_build()`) the place is shown again while the new pages
+  (`latex_sync_after_build()`) the place is shown again, at the height it
+  had in the old PDF (`pdf_preview_point_align()`), while the new pages
   come into the preview buffer. `pdf.c` keeps each page's scale (pixels per
   point) on its texture for this.
 - `latex_errors` — the LaTeX page of the preview notebook (`app->latex_page`,

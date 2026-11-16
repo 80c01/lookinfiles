@@ -12,7 +12,9 @@
  * open in an editor follows the editor's cursor, its line shown at the
  * height of the cursor in the editor (as VS Code's Markdown preview).
  * Rendered documents map their source lines (MdOut.sources: Markdown, Org);
- * text previews are shown line by line; other previews keep their offset. */
+ * text previews are shown line by line; other previews keep their offset.
+ * Saving the file edited leaves the view where it is: the cursor is
+ * followed when it moves. */
 
 /* The preview starts building the file at path (its old content is still
  * on screen): remember where the view is when path is the file shown */
