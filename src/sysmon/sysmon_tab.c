@@ -3,7 +3,7 @@
 #include "sysmon/sysmon_procs.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
-#include "core/sysstat.h"
+#include "core/sysstat_host.h"
 #include "git/git_tab.h"
 #include "theme/icons.h"
 #include "theme/palette.h"
@@ -42,7 +42,7 @@ typedef struct {
     GtkWidget* mounts;   /* GtkGrid of the filesystems */
     GtkWidget* procs;    /* sysmon_procs */
     GtkWidget* procs_title;
-    gchar* kernel;
+    gchar* os;           /* system and version */
     guint net_rx, net_tx, disk_read, disk_write; /* series of the charts */
     gdouble load_peak;   /* highest load shown */
 
@@ -337,13 +337,15 @@ static void show_sample(SysmonTab* st, SysSample* s) {
     g_free(stot);
 
     /* Scale of the load: the number of CPUs, or more when the load goes over */
-    st->load_peak = MAX(st->load_peak, s->load[0]);
-    sparkline_set_max(st->load.chart, MAX((gdouble)ncpu, st->load_peak * 1.1));
-    sparkline_push(st->load.chart, 0, s->load[0]);
-    set_label(st->load.value, g_strdup_printf("%.2f", s->load[0]));
-    set_detail(st->load.detail,
-              g_strdup_printf(_("1, 5, 15 minutes: %.2f  %.2f  %.2f\n%u running of %u tasks"), s->load[0], s->load[1],
-                              s->load[2], s->tasks_running, s->tasks_total));
+    if (st->load.chart != NULL) {
+        st->load_peak = MAX(st->load_peak, s->load[0]);
+        sparkline_set_max(st->load.chart, MAX((gdouble)ncpu, st->load_peak * 1.1));
+        sparkline_push(st->load.chart, 0, s->load[0]);
+        set_label(st->load.value, g_strdup_printf("%.2f", s->load[0]));
+        set_detail(st->load.detail, g_strdup_printf(_("1, 5, 15 minutes: %.2f  %.2f  %.2f\n%u running of %u tasks"),
+                                                    s->load[0], s->load[1], s->load[2], s->tasks_running,
+                                                    s->tasks_total));
+    }
 
     sparkline_push(st->net.chart, st->net_rx, s->net_rx_rate);
     sparkline_push(st->net.chart, st->net_tx, s->net_tx_rate);
@@ -364,8 +366,8 @@ static void show_sample(SysmonTab* st, SysSample* s) {
     g_free(wr);
 
     gchar* up = format_uptime(s->uptime);
-    set_label(st->info, g_strdup_printf(_("%s · Linux %s · up %s · %u CPUs"), g_get_host_name(),
-                                        st->kernel != NULL ? st->kernel : "?", up, ncpu));
+    /* host · system and version · uptime · CPUs */
+    set_label(st->info, g_strdup_printf(_("%s · %s · up %s · %u CPUs"), g_get_host_name(), st->os, up, ncpu));
     g_free(up);
 
     if (s->mounts != NULL) show_mounts(st, s->mounts);
@@ -384,7 +386,7 @@ static void read_thread(GTask* task, gpointer source, gpointer data, GCancellabl
     (void)source;
     (void)cancel;
     ReadJob* job = data;
-    SysSample* s = sysstat_sample(NULL, job->flags);
+    SysSample* s = sysstat_host_sample(job->flags);
     sysstat_sample_rates(s, job->prev);
     g_task_return_pointer(task, s, (GDestroyNotify)sysstat_sample_free);
 }
@@ -459,7 +461,7 @@ static void tab_free(gpointer data) {
     g_clear_object(&st->cancel);
     sysstat_sample_free(st->prev);
     g_array_unref(st->core_values);
-    g_free(st->kernel);
+    g_free(st->os);
     g_clear_object(&st->label);
     g_free(st);
 }
@@ -536,11 +538,7 @@ static SysmonTab* ensure_page(AppData* app) {
     st->app = app;
     st->cancel = g_cancellable_new();
     st->core_values = g_array_new(FALSE, TRUE, sizeof(gdouble));
-    gchar* kernel = NULL;
-    if (g_file_get_contents("/proc/sys/kernel/osrelease", &kernel, NULL, NULL)) {
-        st->kernel = g_strdup(g_strstrip(kernel));
-        g_free(kernel);
-    }
+    st->os = sysstat_host_os();
 
     GtkWidget* page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(page, "sysmon");
@@ -582,7 +580,7 @@ static SysmonTab* ensure_page(AppData* app) {
     st->swap_bar = level_new();
     gtk_widget_set_tooltip_text(st->swap_bar, _("Swap in use"));
     gtk_box_append(GTK_BOX(mem), st->swap_bar);
-    card_new(&st->load, flow, _("Load Average"), PAL_WARNING, 0);
+    if (sysstat_host_has_load()) card_new(&st->load, flow, _("Load Average"), PAL_WARNING, 0);
     card_new(&st->net, flow, _("Network"), PAL_SUCCESS, 0);
     st->net_rx = 0;
     st->net_tx = sparkline_add_series(st->net.chart, PAL_LINK);
@@ -627,8 +625,8 @@ static SysmonTab* ensure_page(AppData* app) {
     gtk_paned_set_position(GTK_PANED(paned), 330);
     gtk_box_append(GTK_BOX(page), paned);
 
-    if (!sysstat_available(NULL)) {
-        gtk_label_set_text(GTK_LABEL(st->info), _("System statistics are only available on Linux"));
+    if (!sysstat_host_available()) {
+        gtk_label_set_text(GTK_LABEL(st->info), _("System statistics are only available on Linux and Windows"));
     }
 
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, st, tab_free);
@@ -640,7 +638,7 @@ static SysmonTab* ensure_page(AppData* app) {
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), st);
     gtk_widget_add_controller(st->label, GTK_EVENT_CONTROLLER(mclick));
 
-    if (sysstat_available(NULL)) st->timer = g_timeout_add_seconds(1, on_tick, st);
+    if (sysstat_host_available()) st->timer = g_timeout_add_seconds(1, on_tick, st);
     insert_page(app, st);
     return st;
 }

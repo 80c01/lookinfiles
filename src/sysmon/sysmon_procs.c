@@ -1,6 +1,7 @@
 /* The process list of the System Monitor tab (see sysmon_procs.h) */
 #include "sysmon/sysmon_procs.h"
 #include "core/i18n.h"
+#include "core/sysstat_host.h"
 #include "widgets/focus_route.h"
 
 #define PROCS_KEY "lookin-sysmon-procs"
@@ -219,7 +220,7 @@ GtkWidget* sysmon_procs_new(AppData* app) {
     GtkColumnViewColumn* cpu = add_column(ps->view, _("CPU %"), COL_CPU, FALSE);
     add_column(ps->view, _("Memory"), COL_MEM, FALSE);
     add_column(ps->view, _("Threads"), COL_THREADS, FALSE);
-    add_column(ps->view, _("State"), COL_STATE, FALSE);
+    if (sysstat_host_has_proc_state()) add_column(ps->view, _("State"), COL_STATE, FALSE);
 
     GtkSorter* sorter = gtk_column_view_get_sorter(GTK_COLUMN_VIEW(ps->view));
     GtkSortListModel* sorted = gtk_sort_list_model_new(G_LIST_MODEL(g_object_ref(ps->store)), g_object_ref(sorter));

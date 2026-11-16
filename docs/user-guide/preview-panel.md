@@ -188,9 +188,9 @@ moves. Saving leaves the preview where it is.
 
 ## System Monitor
 
-On Linux, the top bar shows a small chart of the CPU use over the last
-minute, with its last value; its tooltip adds the load average and the
-memory in use. A click on it opens the **System Monitor** tab in the preview
+On Linux and Windows, the top bar shows a small chart of the CPU use over
+the last minute, with its last value; its tooltip adds the load average
+(Linux) and the memory in use. A click on it opens the **System Monitor** tab in the preview
 panel (another click closes it):
 
 - **CPU** (and a bar per core), **Memory** (and swap), **Load Average**,
@@ -199,6 +199,11 @@ panel (another click closes it):
 - the mounted **Filesystems**, with how full each one is;
 - the **Processes**, by CPU use at first: click a column header to sort by
   it. The CPU of a process counts 100% for one full core.
+
+On Windows there is no load average card and no process state; the
+filesystems are the fixed and removable drives, and the processes of other
+users (services) show no CPU, memory or user unless the application runs
+as administrator.
 
 The tab only shows: it never stops or changes a process. The processes and
 filesystems are read only while the tab is on screen. `Ctrl+W` or a middle

@@ -9064,6 +9064,14 @@ msgstr ""
 "Processeur %.0f %% (%u processeurs) · Charge %.2f %.2f %.2f · Mémoire %s sur %s\n"
 "Clic : moniteur système"
 
+#, c-format
+msgid ""
+"CPU %.0f%% (%u CPUs) · Memory %s of %s\n"
+"Click: System Monitor"
+msgstr ""
+"Processeur %.0f %% (%u processeurs) · Mémoire %s sur %s\n"
+"Clic : moniteur système"
+
 msgid "System Monitor: CPU, memory, disks, network and processes"
 msgstr "Moniteur système : processeur, mémoire, disques, réseau et processus"
 
@@ -9153,8 +9161,8 @@ msgid "Read %s, written %s; busiest disk at %.0f%%"
 msgstr "Lu %s, écrit %s ; disque le plus occupé à %.0f %%"
 
 #, c-format
-msgid "%s · Linux %s · up %s · %u CPUs"
-msgstr "%s · Linux %s · allumé depuis %s · %u processeurs"
+msgid "%s · %s · up %s · %u CPUs"
+msgstr "%s · %s · allumé depuis %s · %u processeurs"
 
 #, c-format
 msgid "Processes (%u)"
@@ -9190,8 +9198,8 @@ msgstr "Lu et écrit par seconde"
 msgid "Filesystems"
 msgstr "Systèmes de fichiers"
 
-msgid "System statistics are only available on Linux"
-msgstr "Les statistiques système ne sont disponibles que sous Linux"
+msgid "System statistics are only available on Linux and Windows"
+msgstr "Les statistiques système ne sont disponibles que sous Linux et Windows"
 
 msgid "Clock"
 msgstr "Horloge"

@@ -73,6 +73,7 @@ pane_geometry:
 minimap_geometry:
 ui_probe:
 sysstat:
+sysstat_host:sysstat
 countdown:
 run_time:
 dir_summary:file_types,text_encoding,i18n

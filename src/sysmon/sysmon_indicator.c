@@ -2,7 +2,7 @@
 #include "sysmon/sysmon_indicator.h"
 #include "sysmon/sysmon_tab.h"
 #include "core/i18n.h"
-#include "core/sysstat.h"
+#include "core/sysstat_host.h"
 #include "theme/theme.h"
 #include "widgets/sparkline.h"
 
@@ -27,28 +27,12 @@ static void ensure_css(void) {
                   "  font-feature-settings: \"tnum\"; }");
 }
 
-static gchar* read_proc(const gchar* name) {
-    gchar* path = g_build_filename("/proc", name, NULL);
-    gchar* text = NULL;
-    if (!g_file_get_contents(path, &text, NULL, NULL)) text = NULL;
-    g_free(path);
-    return text;
-}
-
-/* Tiny procfs files: read on the main loop */
+/* Quick readings (tiny procfs files on Linux): on the main loop */
 static gboolean on_tick(gpointer data) {
     Indicator* ind = data;
-    gchar* text = read_proc("stat");
-    GArray* cpu = g_array_new(FALSE, TRUE, sizeof(SysCpuTimes));
-    gboolean ok = sysstat_parse_cpu(text, cpu);
-    g_free(text);
-    if (!ok) {
-        g_array_unref(cpu);
-        return G_SOURCE_CONTINUE;
-    }
-    SysCpuTimes cur = g_array_index(cpu, SysCpuTimes, 0);
-    guint ncpu = cpu->len > 1 ? cpu->len - 1 : 1;
-    g_array_unref(cpu);
+    SysCpuTimes cur;
+    guint ncpu = 1;
+    if (!sysstat_host_cpu(&cur, &ncpu)) return G_SOURCE_CONTINUE;
     if (!ind->have_prev) {
         ind->prev = cur;
         ind->have_prev = TRUE;
@@ -61,19 +45,18 @@ static gboolean on_tick(gpointer data) {
     gtk_label_set_text(GTK_LABEL(ind->value), label);
     g_free(label);
 
-    gdouble load[3] = { 0, 0, 0 };
-    text = read_proc("loadavg");
-    sysstat_parse_loadavg(text, load, NULL, NULL);
-    g_free(text);
     SysMemInfo mem;
-    text = read_proc("meminfo");
-    gboolean have_mem = sysstat_parse_meminfo(text, &mem);
-    g_free(text);
+    gboolean have_mem = sysstat_host_mem(&mem);
     gchar* used = g_format_size(have_mem ? sysstat_mem_used(&mem) : 0);
     gchar* total = g_format_size(have_mem ? mem.total : 0);
-    gchar* tip = g_strdup_printf(_("CPU %.0f%% (%u CPUs) · Load %.2f %.2f %.2f · Memory %s of %s\n"
-                                   "Click: System Monitor"),
-                                 percent, ncpu, load[0], load[1], load[2], used, total);
+    gdouble load[3];
+    gchar* tip = sysstat_host_load(load)
+                     ? g_strdup_printf(_("CPU %.0f%% (%u CPUs) · Load %.2f %.2f %.2f · Memory %s of %s\n"
+                                         "Click: System Monitor"),
+                                       percent, ncpu, load[0], load[1], load[2], used, total)
+                     : g_strdup_printf(_("CPU %.0f%% (%u CPUs) · Memory %s of %s\n"
+                                         "Click: System Monitor"),
+                                       percent, ncpu, used, total);
     gtk_widget_set_tooltip_text(ind->button, tip);
     g_free(tip);
     g_free(used);
@@ -120,8 +103,8 @@ GtkWidget* sysmon_indicator_new(AppData* app) {
     ind->button = btn;
     g_object_set_data_full(G_OBJECT(btn), INDICATOR_KEY, ind, indicator_free);
 
-    gtk_widget_set_visible(btn, sysstat_available(NULL));
-    if (sysstat_available(NULL) && g_getenv("LOOKIN_SYSMON_FROZEN") == NULL) {
+    gtk_widget_set_visible(btn, sysstat_host_available());
+    if (sysstat_host_available() && g_getenv("LOOKIN_SYSMON_FROZEN") == NULL) {
         on_tick(ind);
         ind->timer = g_timeout_add_seconds(PERIOD_SECONDS, on_tick, ind);
     }

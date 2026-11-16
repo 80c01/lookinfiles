@@ -61,6 +61,11 @@ Layers, from bottom to top
   whole disks of `/sys/block` only) in a worker thread (`statvfs()` on a
   network mount can block), `sysstat_sample_rates()` turns two snapshots into
   CPU percentages (a process: 100 = one core), network and disk rates.
+- `sysstat_host` — the statistics of the running machine in `sysstat`
+  types, what the system monitor calls: `/proc` on Linux, the Win32 API on
+  Windows (CPU times in 100 ns, physical drives by `IOCTL_DISK_PERFORMANCE`,
+  drives, Toolhelp processes; no load average or process state, which
+  `sysstat_host_has_load()` / `_has_proc_state()` tell).
 - `countdown` — the countdown of the top bar timers: wall-clock deadline
   (right across a suspend), pause, immediate restart on expiry (cycles
   counted), a stop at 0 or an overtime below 0, the text shown and when it
@@ -766,9 +771,9 @@ Layers, from bottom to top
   workspace, kept like the Help tab): cards with `sparkline` charts (CPU and
   a bar per core, memory and swap, load, network, disk I/O), the mounted
   filesystems and the processes (`sysmon_procs`: a sorted `GtkColumnView`,
-  read only), from `sysstat` samples read in a worker each second (processes
+  read only), from `sysstat_host` samples read in a worker each second (processes
   and filesystems only while the page is mapped). `sysmon_indicator` — the
-  CPU chart of the top bar (`/proc/stat` every 2 s; `LOOKIN_SYSMON_FROZEN`
+  CPU chart of the top bar (`sysstat_host_cpu()` every 2 s; `LOOKIN_SYSMON_FROZEN`
   stops it for the UI tests), whose click opens or closes the tab.
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the

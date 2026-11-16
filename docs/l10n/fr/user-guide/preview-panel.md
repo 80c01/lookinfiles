@@ -206,9 +206,10 @@ curseur quand il se déplace. L’enregistrement laisse l’aperçu où il est.
 
 ## Moniteur système
 
-Sous Linux, la barre du haut montre un petit graphique de l’utilisation du
-processeur sur la dernière minute, avec sa dernière valeur ; son info-bulle
-y ajoute la charge moyenne et la mémoire utilisée. Un clic dessus ouvre
+Sous Linux et Windows, la barre du haut montre un petit graphique de
+l’utilisation du processeur sur la dernière minute, avec sa dernière
+valeur ; son info-bulle y ajoute la charge moyenne (Linux) et la mémoire
+utilisée. Un clic dessus ouvre
 l’onglet **Moniteur système** dans le panneau d’aperçu (un autre clic le
 ferme) :
 
@@ -220,6 +221,11 @@ ferme) :
 - les **Processus**, d’abord par utilisation du processeur : un clic sur
   l’en-tête d’une colonne trie selon elle. Le processeur d’un processus
   compte 100 % pour un cœur entier.
+
+Sous Windows, il n’y a ni carte de charge moyenne ni état des processus ;
+les systèmes de fichiers sont les lecteurs fixes et amovibles, et les
+processus des autres utilisateurs (services) n’affichent ni processeur, ni
+mémoire, ni utilisateur, sauf si l’application tourne en administrateur.
 
 L’onglet ne fait qu’afficher : il n’arrête ni ne modifie jamais un
 processus. Les processus et les systèmes de fichiers ne sont lus que

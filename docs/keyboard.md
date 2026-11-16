@@ -229,7 +229,7 @@ it again. An nbformat 3 or broken notebook opens as text)
 
 **System Monitor tab** (CPU, memory, load, network, disks, filesystems and
 processes, updated every second; opened by a click on the CPU chart of the top
-bar, which closes it when shown; Linux only; the navigation keys of the global
+bar, which closes it when shown; Linux and Windows; the navigation keys of the global
 mode move in the process list)
 
 | Key | Action |
