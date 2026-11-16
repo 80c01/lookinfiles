@@ -135,6 +135,7 @@ SavedLayout* saved_layout_read(GKeyFile* kf, const gchar* group, const gchar* na
     l->preview_vis = read_bool(kf, group, "Preview", TRUE);
     l->term_vis = read_bool(kf, group, "Terminal", FALSE);
     l->editor_dedicated = read_bool(kf, group, "EditorPanel", FALSE);
+    l->editor_left = read_bool(kf, group, "EditorLeft", FALSE);
     l->stacked = read_bool(kf, group, "TerminalBelow", FALSE);
     l->main_frac = read_frac(kf, group, "ExplorerWidth", l->main_frac);
     l->right_frac = read_frac(kf, group, "PreviewShare", l->right_frac);
@@ -350,6 +351,7 @@ gboolean layout_store_is_customized(const SavedLayout* l) {
     SavedLayout* d = layout_store_builtin_default();
     gboolean differs = l->files_vis != d->files_vis || l->preview_vis != d->preview_vis ||
                        l->term_vis != d->term_vis || l->editor_dedicated != d->editor_dedicated ||
+                       l->editor_left != d->editor_left ||
                        l->stacked != d->stacked || ABS(l->main_frac - d->main_frac) > 0.0005 ||
                        ABS(l->right_frac - d->right_frac) > 0.0005 ||
                        ABS(l->editor_frac - d->editor_frac) > 0.0005 ||
@@ -386,6 +388,7 @@ void saved_layout_write(GKeyFile* kf, const gchar* group, const SavedLayout* l, 
     g_key_file_set_boolean(kf, group, "Preview", l->preview_vis);
     g_key_file_set_boolean(kf, group, "Terminal", l->term_vis);
     g_key_file_set_boolean(kf, group, "EditorPanel", l->editor_dedicated);
+    g_key_file_set_boolean(kf, group, "EditorLeft", l->editor_left);
     g_key_file_set_boolean(kf, group, "TerminalBelow", l->stacked);
     set_frac(kf, group, "ExplorerWidth", l->main_frac);
     set_frac(kf, group, "PreviewShare", l->right_frac);

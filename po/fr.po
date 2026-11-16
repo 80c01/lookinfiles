@@ -3862,11 +3862,12 @@ msgstr ""
 #: src/chrome/help.c:168
 msgid ""
 "Move active editor tab right / left / down / up (Right from the main panel: "
-"dedicated panel; Left from it: dock back)"
+"dedicated panel; Left from it: dock back; the other way round when the "
+"panels are swapped)"
 msgstr ""
 "Déplacer l’onglet d’édition actif à droite / à gauche / en bas / en haut "
 "(Right depuis le panneau principal : panneau dédié ; Left depuis celui-ci : "
-"le ré-ancrer)"
+"le ré-ancrer ; l’inverse quand les panneaux sont échangés)"
 
 #: src/chrome/help.c:169
 msgctxt "key"
@@ -5371,6 +5372,9 @@ msgstr "Guide d’utilisation (F1) — clic droit : raccourcis clavier (?)"
 #: src/main.c:448 src/chrome/topbar.c:647
 msgid "Split Preview Tab from Main Panel"
 msgstr "Séparer l’onglet Aperçu du panneau principal"
+
+msgid "Swap Preview and Editor Panels"
+msgstr "Échanger les panneaux Aperçu et Édition"
 
 #: src/main.c:511
 msgid ""

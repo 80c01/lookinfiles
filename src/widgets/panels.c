@@ -281,7 +281,9 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
             gint len = gtk_widget_get_width(app->editor_paned);
             gint pos = gtk_paned_get_position(GTK_PANED(app->editor_paned));
             if (len > 40 && pos > 0 && pos < len) {
-                ws->editor_frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
+                gdouble start = (gdouble)pos / len;
+                /* The preview's share, whichever side it is on (editor_swap.h) */
+                ws->editor_frac = CLAMP(ws->editor_first ? 1.0 - start : start, 0.05, 0.95);
             }
         }
     } else if (widget == app->right_paned) {

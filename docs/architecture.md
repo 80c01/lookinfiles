@@ -807,6 +807,14 @@ Layers, from bottom to top
   `editor_add_page_to()` puts a movable page in a given notebook;
   `editor_set_notebook_hook()` lets the chrome add its buttons to each new
   editor notebook (`new_tab_menu`).
+- `editor_swap` — the side of the dedicated panel: right of the preview, or
+  left of it when swapped (`VirtualLayout.editor_first`, per workspace, saved
+  as `EditorLeft` with layouts and the session; `editor_frac` stays the
+  preview's share). `editor_swap_place()` orders the children of
+  `editor_paned` on a workspace or layout switch, `editor_swap_toggle()` is
+  the button next to the split button of the preview notebook, and
+  `editor_swap_preview_side()` gives the direction of `Ctrl+Alt+arrows` that
+  docks a tab back into the preview notebook.
 - `editor_session` — the editor tabs of a workspace for the session:
   `editor_session_capture()` describes the preview notebook and the
   dedicated panel (notebooks, splits, sizes, current pages, view last

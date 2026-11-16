@@ -31,6 +31,7 @@ static const IconFallback FALLBACKS[] = {
     {"document-print-preview", {"text-x-generic", NULL}},
     {"view-dual", {"view-grid", NULL}},
     {"view-paged", {"view-list", NULL}},
+    {"swap-horizontal", {"object-flip-horizontal", "view-dual", NULL}},
     {"edit-find", {"system-search", NULL}},
     {"applications-system", {"emblem-system", "system-run", NULL}},
     {"go-previous", {"pan-start", "pan-up", NULL}},

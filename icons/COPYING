@@ -1,7 +1,7 @@
 Icons bundled into LookinFiles (icons/scalable/actions/)
 
-All icons except lookin-utilities-terminal-symbolic.svg, the
-lookin-canvas-*-symbolic.svg Canvas tools, the
+All icons except lookin-utilities-terminal-symbolic.svg,
+lookin-swap-horizontal-symbolic.svg, the lookin-canvas-*-symbolic.svg Canvas tools, the
 lookin-cell-add-*-symbolic.svg notebook cell icons and the
 lookin-ft-*-symbolic.svg file-type icons are copied
 unchanged (renamed with the "lookin-" prefix) from the Adwaita icon theme
@@ -17,8 +17,8 @@ License texts:
 lookin-utilities-system-monitor-symbolic.svg is Adwaita's
 power-profile-performance-symbolic.svg, unchanged.
 
-lookin-utilities-terminal-symbolic.svg and the lookin-canvas-*-symbolic.svg
-Canvas tool icons were drawn for this project in the Adwaita symbolic style
+lookin-utilities-terminal-symbolic.svg, lookin-swap-horizontal-symbolic.svg and
+the lookin-canvas-*-symbolic.svg Canvas tool icons were drawn for this project in the Adwaita symbolic style
 and are released under the same terms.
 
 The file-type icons lookin-ft-*-symbolic.svg are the glyphs of the Seti

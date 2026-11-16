@@ -12,6 +12,7 @@
 #include "explorer/tree_nav.h"
 #include "media/audio.h"
 #include "editor/editor.h"
+#include "editor/editor_swap.h"
 #include "explorer/file_list.h"
 #include "widgets/minimap.h"
 #include "terminal/terminal.h"
@@ -122,6 +123,7 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->notebook_page = 0;
     ws->editors = NULL;
     ws->editor_dedicated = FALSE;
+    ws->editor_first = FALSE;
     ws->editor_frac = 0.50;
     ws->render_raw = FALSE;
     ws->preview_tagbar = app->settings.preview_tagbar; /* the preferences */
@@ -294,8 +296,9 @@ static gboolean apply_ws_positions_now(AppData* app) {
             }
         }
         if (ew > 40) {
-            gtk_paned_set_position(GTK_PANED(app->editor_paned),
-                                   (gint)(ws->editor_frac * ew + 0.5));
+            /* editor_frac is the preview's share, on either side */
+            gdouble start = ws->editor_first ? 1.0 - ws->editor_frac : ws->editor_frac;
+            gtk_paned_set_position(GTK_PANED(app->editor_paned), (gint)(start * ew + 0.5));
         } else {
             ready = FALSE;
         }
@@ -417,6 +420,7 @@ static void show_ws_panels(AppData* app, const VirtualLayout* ws) {
     if (app->editor_box != NULL) {
         gtk_widget_set_visible(app->editor_box, ws->editor_dedicated);
     }
+    editor_swap_place(app);
     if (app->right_paned != NULL) {
         gtk_orientable_set_orientation(GTK_ORIENTABLE(app->right_paned), ws->right_orient);
         gtk_widget_set_visible(app->right_paned, ws->preview_vis || ws->editor_dedicated || ws->term_vis);
@@ -630,6 +634,7 @@ static void set_default_panels(VirtualLayout* ws, const SavedLayout* def) {
     ws->main_frac = def->main_frac;
     ws->right_frac = def->right_frac;
     ws->editor_frac = def->editor_frac; /* no editor yet: the dedicated panel opens with them */
+    ws->editor_first = def->editor_left;
     if (!ws->files_vis && !ws->preview_vis && !ws->term_vis) {
         ws->preview_vis = TRUE;
     }
@@ -786,6 +791,27 @@ static void set_source_role(cairo_t* cr, PaletteRole role, gdouble alpha) {
     set_source_mix(cr, role, role, 0.0, alpha);
 }
 
+/* The preview and the editor panel of a miniature, in their order */
+static void draw_mini_center(cairo_t* cr, const VirtualLayout* ws, gdouble x, gdouble y,
+                             gdouble w, gdouble h, gdouble alpha) {
+    if (ws->preview_vis && ws->editor_dedicated) {
+        gdouble pw = w * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
+        gdouble ew = w - pw - 1.5;
+        gdouble px = ws->editor_first ? x + ew + 1.5 : x;
+        gdouble ex = ws->editor_first ? x : x + pw + 1.5;
+        set_source_role(cr, PAL_FG, alpha); /* Preview */
+        cairo_rectangle(cr, px, y, pw, h);
+        cairo_fill(cr);
+        set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
+        cairo_rectangle(cr, ex, y, ew, h);
+        cairo_fill(cr);
+    } else {
+        set_source_role(cr, ws->preview_vis ? PAL_FG : PAL_SYN_ESCAPE, alpha); /* Preview or Editor */
+        cairo_rectangle(cr, x, y, w, h);
+        cairo_fill(cr);
+    }
+}
+
 static void draw_rounded_rect(cairo_t* cr, gdouble x, gdouble y,
                               gdouble w, gdouble h, gdouble r) {
     if (w <= 0.0 || h <= 0.0) {
@@ -867,23 +893,7 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
                 if (ws->right_orient == GTK_ORIENTATION_VERTICAL) {
                     gdouble ph = ih * CLAMP(ws->right_frac, 0.25, 0.75) - 0.8;
                     /* Top: Center area */
-                    if (ws->preview_vis && ws->editor_dedicated) {
-                        gdouble ew = rw * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
-                        set_source_role(cr, PAL_FG, alpha); /* Preview */
-                        cairo_rectangle(cr, rx, iy, ew, ph);
-                        cairo_fill(cr);
-                        set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
-                        cairo_rectangle(cr, rx + ew + 1.5, iy, rw - ew - 1.5, ph);
-                        cairo_fill(cr);
-                    } else if (ws->preview_vis) {
-                        set_source_role(cr, PAL_FG, alpha); /* Preview */
-                        cairo_rectangle(cr, rx, iy, rw, ph);
-                        cairo_fill(cr);
-                    } else {
-                        set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
-                        cairo_rectangle(cr, rx, iy, rw, ph);
-                        cairo_fill(cr);
-                    }
+                    draw_mini_center(cr, ws, rx, iy, rw, ph, alpha);
                     /* Bottom: Terminal */
                     set_source_role(cr, PAL_ANSI_BRIGHT_GREEN, alpha); /* Terminal */
                     cairo_rectangle(cr, rx, iy + ph + 1.5, rw, ih - ph - 1.5);
@@ -891,46 +901,14 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
                 } else {
                     gdouble pw = rw * CLAMP(ws->right_frac, 0.25, 0.75) - 0.8;
                     /* Left: Center area */
-                    if (ws->preview_vis && ws->editor_dedicated) {
-                        gdouble ew = pw * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
-                        set_source_role(cr, PAL_FG, alpha); /* Preview */
-                        cairo_rectangle(cr, rx, iy, ew, ih);
-                        cairo_fill(cr);
-                        set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
-                        cairo_rectangle(cr, rx + ew + 1.5, iy, pw - ew - 1.5, ih);
-                        cairo_fill(cr);
-                    } else if (ws->preview_vis) {
-                        set_source_role(cr, PAL_FG, alpha); /* Preview */
-                        cairo_rectangle(cr, rx, iy, pw, ih);
-                        cairo_fill(cr);
-                    } else {
-                        set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
-                        cairo_rectangle(cr, rx, iy, pw, ih);
-                        cairo_fill(cr);
-                    }
+                    draw_mini_center(cr, ws, rx, iy, pw, ih, alpha);
                     /* Right: Terminal */
                     set_source_role(cr, PAL_ANSI_BRIGHT_GREEN, alpha); /* Terminal */
                     cairo_rectangle(cr, rx + pw + 1.5, iy, rw - pw - 1.5, ih);
                     cairo_fill(cr);
                 }
             } else if (center_vis) {
-                if (ws->preview_vis && ws->editor_dedicated) {
-                    gdouble ew = rw * CLAMP(ws->editor_frac, 0.20, 0.80) - 0.8;
-                    set_source_role(cr, PAL_FG, alpha); /* Preview */
-                    cairo_rectangle(cr, rx, iy, ew, ih);
-                    cairo_fill(cr);
-                    set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
-                    cairo_rectangle(cr, rx + ew + 1.5, iy, rw - ew - 1.5, ih);
-                    cairo_fill(cr);
-                } else if (ws->preview_vis) {
-                    set_source_role(cr, PAL_FG, alpha); /* Preview */
-                    cairo_rectangle(cr, rx, iy, rw, ih);
-                    cairo_fill(cr);
-                } else {
-                    set_source_role(cr, PAL_SYN_ESCAPE, alpha); /* Editor */
-                    cairo_rectangle(cr, rx, iy, rw, ih);
-                    cairo_fill(cr);
-                }
+                draw_mini_center(cr, ws, rx, iy, rw, ih, alpha);
             } else if (ws->term_vis) {
                 set_source_role(cr, PAL_ANSI_BRIGHT_GREEN, alpha); /* Terminal */
                 cairo_rectangle(cr, rx, iy, rw, ih);

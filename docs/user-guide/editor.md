@@ -102,13 +102,16 @@ the tab bar (**Split Preview Tab from Main Panel**, shown once a tab is
 open) moves them to a panel of their own, beside the preview, so you can
 read one file while editing another. Canvas, notebook, terminal and video tabs
 move with them. The same button (**Merge Tabs into Main Panel**) docks them all back.
+While the panel is shown, the button next to it (**Swap Preview and Editor
+Panels**) puts the editor panel on the other side of the preview, and back;
+each workspace keeps its side, and saved layouts remember it.
 
 ### Splitting
 
 `Ctrl+Alt+Arrows` (or `Ctrl+Alt+H` / `J` / `K` / `L`) moves the current tab
 to a new group on that side, splitting the panel. From the main panel,
 **right** opens the dedicated editor panel; from it, **left** docks the tab
-back.
+back (the other way round when the editor panel is left of the preview).
 
 You can also drag a tab: drop it on another tab bar to move it there, or
 near the edge of an editor to split that side.

@@ -5,6 +5,7 @@
 #include "core/app_events.h"
 #include "explorer/file_list.h"
 #include "editor/editor.h"
+#include "editor/editor_swap.h"
 #include "git/git_tab.h"
 #include "chrome/help.h"
 #include "chrome/help_guide.h"
@@ -34,6 +35,7 @@ struct TopBar {
     GtkWidget* sysmon_btn;      /* CPU chart: the System Monitor tab */
     GtkWidget* clock;           /* clock and timers (clock_pill.h) */
     GtkWidget* split_btn;       /* action button of the preview notebook: dedicated editor panel */
+    GtkWidget* swap_btn;        /* next to it: swap the preview and the editor panel */
 };
 
 static struct TopBar* bar_get(AppData* app) {
@@ -125,6 +127,11 @@ void on_preview_pill_clicked(GtkButton* btn, gpointer data) {
 static void on_split_btn_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     editor_toggle_dedicated((AppData*)data);
+}
+
+static void on_swap_btn_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    editor_swap_toggle((AppData*)data);
 }
 
 static void on_term_pill_clicked(GtkButton* btn, gpointer data) {
@@ -668,6 +675,10 @@ void update_path_label(AppData* app) {
             gtk_widget_set_tooltip_text(t->split_btn, _("Split Preview Tab from Main Panel"));
         }
     }
+    if (t->swap_btn != NULL) {
+        /* Only while the preview and the editor panel are side by side */
+        gtk_widget_set_visible(t->swap_btn, preview_vis && editor_vis && editor_has_dockable_tabs(app));
+    }
     if (t->term_btn != NULL) {
         RemoteMachine* act_rm = remote_get_active_machine(app);
         if (act_rm != NULL) {
@@ -763,16 +774,27 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
     return row;
 }
 
+/* A flat button of the preview notebook's tab strip */
+static GtkWidget* tab_action_button_new(const gchar* icon, const gchar* name, const gchar* tooltip) {
+    GtkWidget* btn = icon_button_new(icon, tooltip);
+    gtk_widget_set_name(btn, name);
+    gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+    gtk_widget_set_focusable(btn, FALSE);
+    gtk_widget_add_css_class(btn, "tab-action-btn");
+    return btn;
+}
+
 GtkWidget* topbar_split_button_new(AppData* app) {
     struct TopBar* t = bar_get(app);
-    t->split_btn = icon_button_new("view-dual", NULL);
-    gtk_widget_set_name(t->split_btn, "tab-split-btn");
-    gtk_button_set_has_frame(GTK_BUTTON(t->split_btn), FALSE);
-    gtk_widget_set_focusable(t->split_btn, FALSE);
-    gtk_widget_add_css_class(t->split_btn, "tab-action-btn");
-    gtk_widget_set_tooltip_text(t->split_btn, _("Split Preview Tab from Main Panel"));
+    t->split_btn = tab_action_button_new("view-dual", "tab-split-btn", _("Split Preview Tab from Main Panel"));
     g_signal_connect(t->split_btn, "clicked", G_CALLBACK(on_split_btn_clicked), app);
-    return t->split_btn;
+    t->swap_btn = tab_action_button_new("swap-horizontal", "tab-swap-btn", _("Swap Preview and Editor Panels"));
+    gtk_widget_set_visible(t->swap_btn, FALSE);
+    g_signal_connect(t->swap_btn, "clicked", G_CALLBACK(on_swap_btn_clicked), app);
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_append(GTK_BOX(box), t->split_btn);
+    gtk_box_append(GTK_BOX(box), t->swap_btn);
+    return box;
 }
 
 void topbar_set_timer(AppData* app, gint minutes) {

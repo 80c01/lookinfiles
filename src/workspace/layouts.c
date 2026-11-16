@@ -27,6 +27,7 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name) {
     l->preview_vis = ws->preview_vis;
     l->term_vis = ws->term_vis;
     l->editor_dedicated = ws->editor_dedicated;
+    l->editor_left = ws->editor_first;
     l->stacked = (ws->right_orient == GTK_ORIENTATION_VERTICAL);
     l->main_frac = ws->main_frac;
     l->right_frac = ws->right_frac;
@@ -74,6 +75,7 @@ static void set_panels(AppData* app, const SavedLayout* l) {
     ws->main_frac = l->main_frac;
     ws->right_frac = l->right_frac;
     ws->editor_frac = l->editor_frac;
+    ws->editor_first = l->editor_left;
     ws->editor_dedicated = app->editor_dedicated;
     if (!ws->files_vis && !ws->preview_vis && !ws->term_vis && !ws->editor_dedicated) {
         ws->preview_vis = TRUE; /* never leave the window empty */

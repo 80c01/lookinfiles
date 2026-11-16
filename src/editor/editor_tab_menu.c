@@ -2,6 +2,7 @@
  * the clicks on a tab title (see editor.h) */
 #include "editor/editor.h"
 #include "editor/editor_private.h"
+#include "editor/editor_swap.h"
 #include "editor/editor_modes.h"
 #include "editor/editor_tagbar.h"
 #include "core/i18n.h"
@@ -138,8 +139,9 @@ static void tab_menu_mode_item(GtkWidget* box, GtkWidget* popover, AppData* app,
  * rules as editor_move_tab_direction() and editor_move_page_direction() */
 static gboolean notebook_can_move_tab(AppData* app, GtkNotebook* cur_nb, EditorMoveDirection dir) {
     if (cur_nb == NULL) return FALSE;
-    if (GTK_WIDGET(cur_nb) == app->notebook) return dir != EDITOR_MOVE_LEFT;
-    if (dir == EDITOR_MOVE_LEFT || editor_neighbor_notebook(app, cur_nb, dir) != NULL) return TRUE;
+    EditorMoveDirection to_preview = editor_swap_preview_side(app);
+    if (GTK_WIDGET(cur_nb) == app->notebook) return dir != to_preview;
+    if (dir == to_preview || editor_neighbor_notebook(app, cur_nb, dir) != NULL) return TRUE;
     /* Otherwise the move splits the notebook, which needs another tab to stay */
     return gtk_notebook_get_n_pages(cur_nb) > 1;
 }

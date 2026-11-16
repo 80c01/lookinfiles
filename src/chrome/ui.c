@@ -19,6 +19,7 @@
 #include "editor/editor.h"
 #include "editor/editor_modes.h"
 #include "editor/editor_tagbar.h"
+#include "editor/editor_swap.h"
 #include "preview/preview_tagbar.h"
 #include "widgets/focus_route.h"
 #include "search/quick_open.h"
@@ -67,7 +68,8 @@ static GtkWidget* page_tagbar(AppData* app, GtkWidget* page) {
 }
 
 /* Panels in focus order: the explorer list, the page shown in each notebook
- * (preview notebook first) followed by its tagbar when shown, the terminal
+ * (in screen order: the preview notebook first, last when the editor panel
+ * is left of it) followed by its tagbar when shown, the terminal
  * panes. Pages get the focus with focus_route_focus_page() (editor view,
  * preview text, list of a list page). */
 void focus_adjacent_panel(gint step, AppData* app) {
@@ -79,15 +81,19 @@ void focus_adjacent_panel(gint step, AppData* app) {
         g_ptr_array_add(panels, GTK_WIDGET(app->tree_view));
     }
     GPtrArray* nbs = g_ptr_array_new();
-    if (app->viewer_box == NULL || gtk_widget_get_visible(app->viewer_box)) {
-        g_ptr_array_add(nbs, app->notebook);
-    }
     if (app->editor_box != NULL && gtk_widget_get_visible(app->editor_box)) {
         GPtrArray* arr = editor_get_all_notebooks(app);
         for (guint i = 0; i < arr->len; i++) {
             g_ptr_array_add(nbs, g_ptr_array_index(arr, i));
         }
         g_ptr_array_unref(arr);
+    }
+    if (app->viewer_box == NULL || gtk_widget_get_visible(app->viewer_box)) {
+        if (editor_swap_active(app)) {
+            g_ptr_array_add(nbs, app->notebook);
+        } else {
+            g_ptr_array_insert(nbs, 0, app->notebook);
+        }
     }
     for (guint i = 0; i < nbs->len; i++) {
         GtkNotebook* nb = GTK_NOTEBOOK(g_ptr_array_index(nbs, i));

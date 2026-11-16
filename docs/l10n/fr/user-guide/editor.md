@@ -116,14 +116,18 @@ principal**, affiché dès qu’un onglet est ouvert) les déplace dans un
 panneau à eux, à côté de l’aperçu : vous pouvez ainsi lire un fichier tout
 en en éditant un autre. Les onglets canvas, notebook, terminal et vidéo suivent. Le
 même bouton (**Fusionner les onglets dans le panneau principal**) les
-remet tous en place.
+remet tous en place. Tant que le panneau est affiché, le bouton voisin
+(**Échanger les panneaux Aperçu et Édition**) place le panneau d’édition de
+l’autre côté de l’aperçu, et inversement ; chaque espace de travail garde
+son côté, et les dispositions enregistrées le retiennent.
 
 ### Diviser
 
 `Ctrl+Alt+flèches` (ou `Ctrl+Alt+H` / `J` / `K` / `L`) déplace l’onglet
 actuel dans un nouveau groupe de ce côté, en divisant le panneau. Depuis le
 panneau principal, **droite** ouvre le panneau d’édition dédié ; depuis
-celui-ci, **gauche** remet l’onglet en place.
+celui-ci, **gauche** remet l’onglet en place (l’inverse quand le panneau
+d’édition est à gauche de l’aperçu).
 
 Vous pouvez aussi faire glisser un onglet : déposez-le sur une autre barre
 d’onglets pour l’y déplacer, ou près du bord d’un éditeur pour diviser ce

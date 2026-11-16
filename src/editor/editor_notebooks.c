@@ -2,6 +2,7 @@
  * splitting and dropping editor tabs and movable pages (see editor.h) */
 #include "editor/editor.h"
 #include "editor/editor_private.h"
+#include "editor/editor_swap.h"
 #include "widgets/pane_geometry.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
@@ -485,8 +486,10 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
     GtkNotebook* cur_nb = editor_tab_notebook(app, tab);
     if (cur_nb == NULL) return;
 
+    /* The preview is left of the editor panel, or right of it when swapped */
+    EditorMoveDirection to_preview = editor_swap_preview_side(app);
     if (GTK_WIDGET(cur_nb) == app->notebook) {
-        if (dir == EDITOR_MOVE_LEFT) {
+        if (dir == to_preview) {
             return;
         }
         editor_move_tab_dedicated(app, tab);
@@ -499,7 +502,7 @@ void editor_move_tab_direction(AppData* app, EditorTab* tab, EditorMoveDirection
         return;
     }
 
-    if (dir == EDITOR_MOVE_LEFT) {
+    if (dir == to_preview) {
         editor_move_tab_dedicated(app, tab);
         return;
     }
@@ -780,9 +783,10 @@ gboolean editor_move_page_direction(AppData* app, GtkWidget* child, EditorMoveDi
         return FALSE; /* a terminal of the terminal panel */
     }
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+    EditorMoveDirection to_preview = editor_swap_preview_side(app);
     if (in_preview) {
-        /* As for an editor tab: to the editor panel, except to the left */
-        if (dir != EDITOR_MOVE_LEFT) {
+        /* As for an editor tab: to the editor panel, except towards the preview's side */
+        if (dir != to_preview) {
             editor_move_page(app, cur_nb, editor_panel_notebook(app), child, -1);
             gtk_notebook_set_current_page(cur_nb, 0);
         }
@@ -790,9 +794,9 @@ gboolean editor_move_page_direction(AppData* app, GtkWidget* child, EditorMoveDi
         GtkWidget* target = editor_neighbor_notebook(app, cur_nb, dir);
         if (target != NULL) {
             editor_move_page(app, cur_nb, GTK_NOTEBOOK(target), child, -1);
-        } else if (dir == EDITOR_MOVE_LEFT && app->notebook != NULL) {
+        } else if (dir == to_preview && app->notebook != NULL) {
             editor_move_page(app, cur_nb, GTK_NOTEBOOK(app->notebook), child, -1);
-        } else if (dir != EDITOR_MOVE_LEFT && gtk_notebook_get_n_pages(cur_nb) > 1) {
+        } else if (dir != to_preview && gtk_notebook_get_n_pages(cur_nb) > 1) {
             PaneZone side = dir == EDITOR_MOVE_RIGHT ? PANE_ZONE_RIGHT
                           : dir == EDITOR_MOVE_UP    ? PANE_ZONE_TOP
                                                      : PANE_ZONE_BOTTOM;

@@ -25,6 +25,7 @@ typedef struct {
     gboolean preview_vis;      /* preview panel shown */
     gboolean term_vis;         /* terminal panel shown */
     gboolean editor_dedicated; /* editor tabs in the dedicated panel */
+    gboolean editor_left;      /* the editor panel left of the preview (else right) */
     gboolean stacked;          /* terminal below the preview (else beside it) */
     gdouble main_frac;         /* explorer width / window width */
     gdouble right_frac;        /* preview share of the preview/terminal pair */

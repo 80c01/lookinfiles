@@ -193,6 +193,20 @@ static void test_editor_splits(void) {
     saved_layout_write(kf, "H", l, TRUE);
     g_assert_false(g_key_file_has_key(kf, "H", "EditorSplits", NULL));
 
+    /* The editor panel's side: right by default, left when swapped */
+    back = saved_layout_read(kf, "H", "Split");
+    g_assert_false(back->editor_left);
+    saved_layout_free(back);
+    l->editor_left = TRUE;
+    saved_layout_write(kf, "H", l, TRUE);
+    back = saved_layout_read(kf, "H", "Split");
+    g_assert_true(back->editor_left);
+    saved_layout_free(back);
+    SavedLayout* left = saved_layout_new("Left");
+    left->editor_left = TRUE;
+    g_assert_true(layout_store_is_customized(left));
+    saved_layout_free(left);
+
     saved_layout_free(l);
     g_key_file_free(kf);
 }

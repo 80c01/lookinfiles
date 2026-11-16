@@ -186,7 +186,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Org-mode"), NC_("key", "Click heading/todo/box"), N_("Interactive click: toggle fold, cycle TODO, toggle checkbox, open link"), 0},
     {N_("Editor tabs"), "Ctrl+S", N_("Save the file open in the current editor tab"), 0},
     {N_("Editor tabs"), "Ctrl+W", N_("Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"), 0},
-    {N_("Editor tabs"), "Ctrl+Alt+Arrows / HJKL", N_("Move active editor tab right / left / down / up (Right from the main panel: dedicated panel; Left from it: dock back)"), 0},
+    {N_("Editor tabs"), "Ctrl+Alt+Arrows / HJKL", N_("Move active editor tab right / left / down / up (Right from the main panel: dedicated panel; Left from it: dock back; the other way round when the panels are swapped)"), 0},
     {N_("Editor tabs"), NC_("key", "Drag tab header"), N_("Drop on a tab bar to move the tab there, near an editor edge to split that side"), 0},
     {N_("Editor tabs"), NC_("key", "Shift+drag tab header"), N_("Drop on another editor to swap places with the tab shown there"), 0},
     {N_("Editor tabs"), NC_("key", "Right-click tab header"), N_("Context menu to change mode, show line numbers, wrap lines, move, split, or close the editor tab"), 0},

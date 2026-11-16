@@ -11,8 +11,9 @@ void update_path_label(AppData* app);
  * global mode pill, then ws_minimap, layouts_btn and prefs_btn, then the
  * panel pills and Help. Its widgets stay private to topbar.c. */
 GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_btn, GtkWidget* prefs_btn);
-/* Action button of the preview notebook: move the editor tabs to the
- * dedicated panel, or dock them back */
+/* Action buttons of the preview notebook: move the editor tabs to the
+ * dedicated panel, or dock them back; next to it, while the panel is shown,
+ * swap the preview and the editor panel (editor_swap.h) */
 GtkWidget* topbar_split_button_new(AppData* app);
 /* Forget the top bar's widgets (at exit) */
 /* Restart timer 1 of the top bar with minutes (0 hides it) */

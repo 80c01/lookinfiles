@@ -102,6 +102,7 @@ typedef struct {
     gboolean preview_vis;
     gboolean term_vis;
     gboolean editor_dedicated;
+    gboolean editor_first; /* editor panel left of the preview (editor_swap.h) */
     GtkOrientation right_orient;
     gdouble main_frac;
     gdouble right_frac;
@@ -180,9 +181,9 @@ typedef struct AppData {
     /* Editor tabs (double-click / Enter on a file in the list) */
     GtkWidget* notebook;        /* preview notebook (page 0 = read-only preview; page 1+ = docked tabs) */
     GtkWidget* editor_notebook; /* dedicated editor notebook (when editor tabs moved to dedicated panel) */
-    GtkWidget* editor_box;      /* dedicated editor panel container right of preview */
+    GtkWidget* editor_box;      /* dedicated editor panel container beside the preview */
     GtkWidget* editor_paned;    /* resizable paned divider between preview_box and editor_box */
-    gboolean editor_dedicated;  /* TRUE when editor tabs are in dedicated panel right of preview */
+    gboolean editor_dedicated;  /* TRUE when editor tabs are in dedicated panel beside the preview */
     GList* editors;             /* EditorTab*, order matching tab order */
     EditorTab* last_focused_editor; /* last focused editor tab */
     struct CodeNav* code_nav;       /* code navigation state (code_nav.c), created on first use */
