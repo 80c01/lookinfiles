@@ -20,12 +20,6 @@ static ClassBuilder* cb_new(guint16 major, guint16 minor) {
     return b;
 }
 
-static void cb_free(ClassBuilder* b) {
-    if (b == NULL) return;
-    g_byte_array_free(b->bytes, TRUE);
-    g_free(b);
-}
-
 /* Builds a synthetic class:
  * public class com.example.TestClass extends java.lang.Object implements java.io.Serializable
  * Fields: public static final int MAX_COUNT
