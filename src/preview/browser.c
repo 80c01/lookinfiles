@@ -51,7 +51,10 @@ static void ensure_css(void) {
     if (done) return;
     done = TRUE;
     theme_add_css(".browser-page { background-color: @bg_view; }"
-                  ".browser-page .browser-bar { padding: 4px 10px; color: @fg; }");
+                  ".browser-page .browser-bar { padding: 3px 8px; background-color: @bg_bar;"
+                  " border-bottom: 1px solid @border; font-size: @size_bar; color: @fg; }"
+                  ".browser-page .browser-bar button { padding: 0 6px; border: none; min-height: 23px; }"
+                  ".browser-page .browser-bar entry { min-height: 22px; padding-top: 0; padding-bottom: 0; }");
 }
 
 static BrowserTab* tab_of(GtkWidget* page) {
