@@ -572,6 +572,13 @@ void browser_open(AppData* app, const gchar* uri) {
     show_tab(bt, uri != NULL);
 }
 
+void browser_new_tab_in(AppData* app, GtkNotebook* nb) {
+    if (app == NULL || app->notebook == NULL) return;
+    BrowserTab* bt = tab_new(app, NULL);
+    insert_page(app, bt, nb, -1);
+    show_tab(bt, FALSE);
+}
+
 const gchar* browser_page_uri(GtkWidget* page) {
     BrowserTab* bt = tab_of(page);
     const gchar* uri = bt != NULL ? webkit_web_view_get_uri(bt->view) : NULL;
@@ -647,6 +654,11 @@ void browser_open(AppData* app, const gchar* uri) {
     } else {
         app_notice(app, _("Browser tabs need WebKitGTK 6.0 (install libwebkitgtk-6.0-dev and rebuild)"), FALSE);
     }
+}
+
+void browser_new_tab_in(AppData* app, GtkNotebook* nb) {
+    (void)nb;
+    browser_open(app, NULL);
 }
 
 const gchar* browser_page_uri(GtkWidget* page) {

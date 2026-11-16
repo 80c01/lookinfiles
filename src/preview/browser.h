@@ -23,6 +23,10 @@ gboolean browser_available(void);
  * empty tab, the focus in the address bar). Without WebKit: uri goes to the
  * default browser, and NULL shows a notice. */
 void browser_open(AppData* app, const gchar* uri);
+/* An empty browser tab, last page of nb (NULL: the preview notebook), shown
+ * with the focus in the address bar (the + menu of a tab bar). Without
+ * WebKit: a notice. */
+void browser_new_tab_in(AppData* app, GtkNotebook* nb);
 
 /* The address of the browser tab page (a notebook page), NULL when page is
  * not a browser tab or shows no page yet */

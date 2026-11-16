@@ -24,7 +24,7 @@ typedef enum {
 static void open_new_tab(AppData* app, GtkNotebook* nb, NewTabKind kind) {
     switch (kind) {
     case NEW_TAB_WEB:
-        browser_open(app, NULL);
+        browser_new_tab_in(app, nb);
         break;
     case NEW_TAB_CANVAS: {
         GtkWidget* page = notes_new_canvas(app);
