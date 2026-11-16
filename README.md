@@ -22,6 +22,8 @@ C and GTK 4 for Linux and Windows, with a VS Code look and a keyboard-first desi
 - **Edit in place**: tabs you can split in every direction, each in Notepad,
   Emacs or Vim mode (with a full Vim grammar), Org-mode editing, and go to
   definition and references (built-in index, ctags or a language server).
+- **Jupyter notebooks** edited cell by cell, run in their kernel, and
+  **LaTeX** documents compiled on save, the PDF following the cursor.
 - **Tagbar**: the symbols of a code file, or the headings of a Markdown, Org,
   HTML or office document, beside the text; click one to jump to it.
 - **Browser tabs for web development** (needs WebKitGTK): open a page, a local
@@ -43,6 +45,8 @@ C and GTK 4 for Linux and Windows, with a VS Code look and a keyboard-first desi
   terminals, restored at the next launch. Save one as a **bookmark** to
   reopen that whole session later, in a new workspace. Save panel
   arrangements as named **layouts** and switch between them with `Alt+L`.
+- **System Monitor**: a CPU chart in the top bar opens a tab with CPU,
+  memory, disks, network and processes.
 - **Keyboard first**: the same key for the same action in every view, and a
   cheat sheet on `?`.
 - **Themes and fonts**: Dark Modern, Light Modern, High Contrast Dark, six
@@ -76,6 +80,7 @@ panels, `Ctrl+Q` to quit.
 | libjpeg (libjpeg-turbo) | `libjpeg-dev` | Faster JPEG photo preview |
 | WebKitGTK 6.0 | `libwebkitgtk-6.0-dev` | Browser tabs |
 | GStreamer base libraries | `libgstreamer-plugins-base1.0-dev` | Video player: choice of audio track and subtitles |
+| gettext | `gettext` | Translations (`msgfmt`; without it the interface is in English) |
 | SSHFS | `sshfs` | Remote machines (run time) |
 | librsvg | `librsvg2-common` | Icons (run time; usually installed with GTK, missing on minimal systems) |
 
@@ -89,7 +94,7 @@ To install every optional library at once:
 ```bash
 sudo apt install libvte-2.91-gtk4-dev libgtksourceview-5-dev \
   libpoppler-glib-dev libsqlite3-dev libarchive-dev libjpeg-dev libwebkitgtk-6.0-dev \
-  libgstreamer-plugins-base1.0-dev sshfs librsvg2-common
+  libgstreamer-plugins-base1.0-dev gettext sshfs librsvg2-common
 ```
 
 ### Build

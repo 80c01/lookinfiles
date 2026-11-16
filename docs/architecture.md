@@ -54,6 +54,10 @@ Layers, from bottom to top
   binary; `file_kind_of_path()`). The preview
   detects the kind in its worker thread (`preview_state_kind()`): decide on
   the displayed file with it, not with its name.
+- `text_encoding` — text encodings of previewed files: byte order marks
+  (UTF-8, UTF-16, UTF-32), UTF-16 without a mark, UTF-8, and Windows-1252
+  for legacy 8-bit text (`text_encoding_detect()`), and the text converted
+  to valid UTF-8.
 - `sysstat` — system statistics of Linux read from `/proc` (Linux only:
   elsewhere the readers find nothing): pure parsers of `stat`, `meminfo`,
   `loadavg`, `net/dev`, `diskstats`, `self/mounts` and `<pid>/stat`;
@@ -226,6 +230,37 @@ Layers, from bottom to top
   fold points (`PreviewFoldPoint`: blocks named by a stable id) and the fold
   state a builder gets (`PreviewFold`: a level and the ids toggled by hand);
   value paths (`PreviewPathPoint`: the path of the value on each line).
+- Format parsers of `preview_formats` (pure GLib, unit-tested; their limits
+  in previews.md):
+  - data and text: `csv` (RFC 4180, separator sniffed), `data_tree` (a data
+    document as a foldable key / value tree, used by JSON, XML, TOML, YAML),
+    `text_outline` (a text kept as written with colours, folds, value paths
+    and headings: shared by `toml_view` and `yaml_view`), `xml_view`
+    (re-indented, coloured XML), `toml_view`, `yaml_view` (a subset of
+    YAML), `diff_view` (unified diffs: file summary, coloured hunks),
+    `log_view` (timestamps dimmed, levels coloured, the end of large logs),
+    `man_view` (roff man / mdoc pages), `gettext_view` (`.po`, `.pot`,
+    `.mo` catalogs), `card_view` (iCalendar, vCard, `.desktop` entries),
+    `cert_view` (PEM / DER certificates decoded without a TLS library;
+    private keys only named), `sqlite_view` (tables and first rows with
+    SQLite, read-only and immutable; header details without it);
+  - binaries: `hex_dump` (16 bytes per line, fixed width), `elf_info` (ELF
+    header, libraries, symbols, read through a callback), `class_info`
+    (Java), `wasm_info` (WebAssembly), `pyc_info` (Python bytecode),
+    `tfm_info` (TeX `.tfm`, `.vf`, Type 1 `.pfb`), `pcap_info` (PCAP /
+    PCAPNG and their packet headers), `torrent_info` (bencode),
+    `font_info` (TrueType, OpenType, collections, WOFF; WOFF2 header only);
+  - archives and documents: `archive_listing` (ZIP, tar, gzip, ar with
+    GLib; every libarchive format with `HAVE_LIBARCHIVE`, else only named),
+    `zip_xml` (XML parts of ZIP-based documents: `GMarkupParser`,
+    relationship targets, names without their prefix), `epub` (EPUB 2 / 3
+    to HTML: metadata, cover, contents, first chapters), `rtf` (RTF to
+    simple HTML: text styles, tables, pictures, `\info`);
+  - media: `exif` (photo details of JPEG, TIFF, PNG, WebP), `media_tags`
+    (ID3, FLAC / Vorbis comments, MP4 atoms, WAVE, headers only);
+  - `ps_convert` — PostScript, EPS and DVI shown as PDF: the first pages
+    converted by Ghostscript (`-dSAFER`) and dvips (`-R2`), both optional,
+    into the user cache directory.
 - `preview_formats` — registry of structured previews, one builder per
   `FileKind` (`preview_format_build()` from a `PreviewInput`), the hex dump
   (`preview_format_hex_dump()`), and `preview_format_build_file()` for tests
@@ -387,6 +422,10 @@ Layers, from bottom to top
   inside the Canvas).
 - `canvas_history` — undo / redo of a Canvas note: page states (`page.xml`
   content) recorded before each change, with a step limit.
+- `canvas_text` — the rich text of Canvas text boxes: the style tags in
+  `CanvasStyle` bit order (`canvas_text_ensure_tags()`,
+  `canvas_text_style_tag()`), the styles at a position and their
+  application to a range.
 - `palette` — every colour of the application, by role (`PaletteRole`:
   surfaces, text, accent, git, diff, syntax, editor, terminal ANSI...):
   `palette_color()` ("#rrggbb" for text tags and Pango markup),
@@ -521,6 +560,13 @@ Layers, from bottom to top
 - `theme` — global stylesheet (`apply_panel_borders()`); every module's CSS
   goes through `theme_add_css()` (palette colours defined, reloaded by
   `theme_reload()` after a palette or font change).
+- `icon_sets` — icon sets chosen by a theme (`icons=<set>`): folders of
+  `lookin-set-<icon>[-symbolic].svg` that replace the default icons, built
+  in (`icons/sets/`) or the user's (`icon_sets_user_dir()`);
+  `icon_sets_use()`, `icon_sets_list()`.
+- `image_utils` — image helpers of the previews and renderers: a texture
+  from a pixbuf (safe in a worker thread), an encoded image decoded at a
+  maximum width, the image of a `data:` URI.
 - `tree_nav` — explorer row traversal and selection (j/k, arrows, gg/G,
   Ctrl+F/B, zz/zt/zb, `tree_nav_selected()`, `select_row()`,
   `select_by_path()`), and suspending the preview handler while the tree is
@@ -681,6 +727,8 @@ Layers, from bottom to top
   the surface on top of the blocks, following the shape each frame while
   shown; the shape's frame turned by a `GtkFixed` child transform),
   `canvas_rough_draw` (hand-drawn rendering, line handles),
+  `canvas_media` (pictures pasted or dropped, saved as `media/NNNN.png`),
+  `canvas_crop` (the Crop dialog of a picture and the cropped drawing),
   `canvas_geometry` (snap, align, outline points, drag box, 45-degree lines,
   turned boxes and the rotation handle angle,
   the curve through the points of a line; unit-tested), `canvas_preview`
@@ -805,6 +853,12 @@ Layers, from bottom to top
   never add a format-specific branch to the viewer. Its results are kept in a
   `preview_cache`: a file selected again is shown at once, and the worker
   only checks the file's stamp (it reads and shows the file again if changed).
+- `text_chunks` — large text files in the preview: scrolling near the end
+  of the first `PREVIEW_BYTES` loads the next chunk in a worker thread, up
+  to `TEXT_CHUNKS_MAX_BYTES`; any new preview stops it.
+- `preview_full` — the **Load Whole File** bar above a text preview cut
+  before the end of the file: previews it again read to the end (asks
+  first above 64 MB), for that file until another one is selected.
 - `preview_folding` — folding of the previews that record fold points
   (JSON): the fold state of each file for the session, handed to the worker
   (`preview_folding_state()`, part of the cache key), `Tab` / `Shift+Tab`
