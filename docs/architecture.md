@@ -1163,6 +1163,7 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | `APP_EVENT_SAVE_WORKSPACE_BOOKMARK` / `APP_EVENT_OPEN_WORKSPACE_BOOKMARK` | bookmarks view: save the workspace / open a saved one | `session_bookmark_save()` / `session_bookmark_open()` |
 | `APP_EVENT_ADD_BOOKMARK`         | browser tab: bookmark `app->bookmark_add_target` (name `app->bookmark_add_name`) | `bookmarks_add_requested()` |
 | `APP_EVENT_FOCUS_NEXT_PANEL` / `_PREV_PANEL` | `C-x o`, `Ctrl+W w` / `W`, `F6` / `Shift+F6` | `focus_next_panel()` / `focus_prev_panel()` |
+| `APP_EVENT_QUIT`                 | `Ctrl+Q` in a popover (branches, layout switcher) | `ui_quit()`               |
 
 Handlers run synchronously inside `app_emit()`. `make check` rejects direct
 calls to the first five subscribers outside their module and `main.c`. A new

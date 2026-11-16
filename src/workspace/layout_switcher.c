@@ -1,5 +1,6 @@
 /* Alt+L layout switcher: preview layouts from a popover (see layout_switcher.h) */
 #include "workspace/layout_switcher.h"
+#include "core/app_events.h"
 #include "core/i18n.h"
 #include "workspace/editor_layout.h"
 #include "workspace/layout_store.h"
@@ -84,9 +85,10 @@ static void select_next(Switcher* s) {
 }
 
 /* Keys pressed in the popover do not reach the window: Alt+L selects the
- * next layout, Ctrl+Q goes on to the window (quit) */
+ * next layout, Ctrl+Q quits (APP_EVENT_QUIT) */
 static gboolean on_key_pressed(GtkEventControllerKey* controller, guint keyval, guint keycode,
                                GdkModifierType state, gpointer data) {
+    (void)controller;
     (void)keycode;
     Switcher* s = data;
     GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
@@ -95,9 +97,9 @@ static gboolean on_key_pressed(GtkEventControllerKey* controller, guint keyval, 
         return TRUE;
     }
     if ((mods & GDK_CONTROL_MASK) && (keyval == GDK_KEY_q || keyval == GDK_KEY_Q)) {
-        GtkWidget* window = GTK_WIDGET(s->app->window);
         gtk_popover_popdown(GTK_POPOVER(s->popover));
-        return gtk_event_controller_key_forward(controller, window);
+        app_emit(s->app, APP_EVENT_QUIT);
+        return TRUE;
     }
     return FALSE;
 }

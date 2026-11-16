@@ -20,8 +20,8 @@ static void test_full_line(void) {
 }
 
 static void test_partial_last_line_is_padded(void) {
-    const guchar data[19] = "0123456789abcdefXYZ";
-    gchar* s = hex_dump_format(data, sizeof data, 0);
+    const guchar data[] = "0123456789abcdefXYZ";
+    gchar* s = hex_dump_format(data, sizeof data - 1, 0); /* without the NUL */
     g_assert_cmpstr(s, ==,
         "00000000  30 31 32 33 34 35 36 37  38 39 61 62 63 64 65 66  |0123456789abcdef|\n"
         "00000010  58 59 5a                                          |XYZ             |\n");

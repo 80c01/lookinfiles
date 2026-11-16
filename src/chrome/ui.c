@@ -202,6 +202,12 @@ gboolean ui_confirm_quit(AppData* app) {
     return TRUE;
 }
 
+void ui_quit(AppData* app) {
+    if (ui_confirm_quit(app) && app->main_loop != NULL && g_main_loop_is_running(app->main_loop)) {
+        g_main_loop_quit(app->main_loop);
+    }
+}
+
 gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
                              guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
@@ -216,9 +222,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     /* Ctrl+Q: quit */
     if ((state & GDK_CONTROL_MASK) &&
         (keyval == GDK_KEY_q || keyval == GDK_KEY_Q)) {
-        if (ui_confirm_quit(app) && app->main_loop != NULL && g_main_loop_is_running(app->main_loop)) {
-            g_main_loop_quit(app->main_loop);
-        }
+        ui_quit(app);
         return TRUE;
     }
 

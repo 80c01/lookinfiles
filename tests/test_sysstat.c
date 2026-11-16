@@ -142,8 +142,8 @@ static void test_mounts(void) {
     g_assert_cmpstr(((SysMount*)g_ptr_array_index(m, 2))->mount_point, ==, "/media/My Disk");
     g_ptr_array_unref(m);
 
-    SysMount root = { NULL, (gchar*)"/", NULL, 0, 0, 0 };
 #ifdef G_OS_UNIX
+    SysMount root = { NULL, (gchar*)"/", NULL, 0, 0, 0 };
     g_assert_true(sysstat_mount_fill(&root));
     g_assert_cmpuint(root.total, >, 0);
     g_assert_cmpuint(root.used, <=, root.total);

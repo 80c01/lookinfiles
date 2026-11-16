@@ -243,10 +243,13 @@ static gchar* account_name(PSID sid) {
 static gchar* process_user(HANDLE proc) {
     HANDLE token = NULL;
     if (!OpenProcessToken(proc, TOKEN_QUERY, &token)) return g_strdup("");
-    DWORD64 buf[64]; /* TOKEN_USER and its SID, aligned */
+    union {
+        TOKEN_USER user;
+        DWORD64 bytes[64]; /* room for the SID that follows, aligned */
+    } buf;
     DWORD got = 0;
-    gchar* name = GetTokenInformation(token, TokenUser, buf, sizeof(buf), &got)
-                      ? account_name(((TOKEN_USER*)buf)->User.Sid)
+    gchar* name = GetTokenInformation(token, TokenUser, &buf, sizeof(buf), &got)
+                      ? account_name(buf.user.User.Sid)
                       : g_strdup("");
     CloseHandle(token);
     return name;

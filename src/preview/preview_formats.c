@@ -918,7 +918,6 @@ static PreviewDoc* build_mailbox(const PreviewInput* in, const gchar* data, gsiz
         const gchar* header[] = {"#", _("Date"), _("From"), _("Subject"), _("Size"), _("Attachments")};
         preview_table_set_header(table, header);
         preview_table_set_right_aligned(table, 4);
-        guint shown = 0;
         for (guint i = 0; i < n; i++) {
             /* Long mailboxes: the oldest and the newest messages */
             if (n > 2 * MAILBOX_ROWS_SHOWN && i == MAILBOX_ROWS_SHOWN) {
@@ -927,7 +926,6 @@ static PreviewDoc* build_mailbox(const PreviewInput* in, const gchar* data, gsiz
                 i = n - MAILBOX_ROWS_SHOWN;
             }
             mailbox_row(table, g_ptr_array_index(box->entries, i), i + 1);
-            shown++;
         }
         preview_doc_add_table(doc, table);
         if (n > 0) preview_doc_note(doc, _("\nPgDn opens the messages one by one, PgUp comes back."));

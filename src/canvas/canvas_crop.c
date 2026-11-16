@@ -31,14 +31,31 @@ typedef struct {
     GDestroyNotify destroy;
     GtkWidget* area;
     GtkWidget* size_label;
-    GdkPixbuf* pixbuf;  /* the picture, loaded once */
-    GdkPixbuf* scaled;  /* the picture at its shown size (cache) */
+    GdkPixbuf* pixbuf;       /* the picture, loaded once */
+    cairo_surface_t* scaled; /* the picture at its shown size (cache) */
     double cx, cy, cw, ch;
     /* Picture placement in the area, from the last draw */
     double ox, oy, scale;
     CropDrag drag;
     double start_x, start_y, start_w, start_h;
 } CropState;
+
+/* pixbuf as a premultiplied cairo image surface (GDK converts the pixels) */
+static cairo_surface_t* surface_from_pixbuf(GdkPixbuf* pixbuf) {
+    int w = gdk_pixbuf_get_width(pixbuf);
+    int h = gdk_pixbuf_get_height(pixbuf);
+    GBytes* bytes = gdk_pixbuf_read_pixel_bytes(pixbuf);
+    GdkMemoryFormat format = gdk_pixbuf_get_has_alpha(pixbuf) ? GDK_MEMORY_R8G8B8A8 : GDK_MEMORY_R8G8B8;
+    GdkTexture* texture = gdk_memory_texture_new(w, h, format, bytes, (gsize)gdk_pixbuf_get_rowstride(pixbuf));
+    g_bytes_unref(bytes);
+    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+    cairo_surface_flush(surface);
+    gdk_texture_download(texture, cairo_image_surface_get_data(surface),
+                         (gsize)cairo_image_surface_get_stride(surface));
+    cairo_surface_mark_dirty(surface);
+    g_object_unref(texture);
+    return surface;
+}
 
 void canvas_draw_cropped_image(cairo_t* cr, const gchar* full_path,
                                double crop_x, double crop_y, double crop_w, double crop_h,
@@ -61,10 +78,13 @@ void canvas_draw_cropped_image(cairo_t* cr, const gchar* full_path,
     GdkPixbuf* sub = gdk_pixbuf_new_subpixbuf(pixbuf, sub_x, sub_y, sub_w, sub_h);
     GdkPixbuf* scaled = gdk_pixbuf_scale_simple(sub, dest_w, dest_h, GDK_INTERP_BILINEAR);
 
-    gdk_cairo_set_source_pixbuf(cr, scaled, 0, 0);
-    cairo_paint(cr);
-
-    g_object_unref(scaled);
+    if (scaled != NULL) {
+        cairo_surface_t* surface = surface_from_pixbuf(scaled);
+        cairo_set_source_surface(cr, surface, 0, 0);
+        cairo_paint(cr);
+        cairo_surface_destroy(surface);
+        g_object_unref(scaled);
+    }
     g_object_unref(sub);
     g_object_unref(pixbuf);
 }
@@ -178,13 +198,18 @@ static void on_crop_draw(GtkDrawingArea* area, cairo_t* cr, int width, int heigh
 
     int sw = MAX(1, (int)lround(pic_w(st) * st->scale));
     int sh = MAX(1, (int)lround(pic_h(st) * st->scale));
-    if (st->scaled == NULL || gdk_pixbuf_get_width(st->scaled) != sw || gdk_pixbuf_get_height(st->scaled) != sh) {
-        g_clear_object(&st->scaled);
-        st->scaled = gdk_pixbuf_scale_simple(st->pixbuf, sw, sh, GDK_INTERP_BILINEAR);
+    if (st->scaled == NULL || cairo_image_surface_get_width(st->scaled) != sw ||
+        cairo_image_surface_get_height(st->scaled) != sh) {
+        g_clear_pointer(&st->scaled, cairo_surface_destroy);
+        GdkPixbuf* scaled = gdk_pixbuf_scale_simple(st->pixbuf, sw, sh, GDK_INTERP_BILINEAR);
+        if (scaled != NULL) {
+            st->scaled = surface_from_pixbuf(scaled);
+            g_object_unref(scaled);
+        }
     }
     if (st->scaled == NULL) return;
     double px = round(st->ox), py = round(st->oy);
-    gdk_cairo_set_source_pixbuf(cr, st->scaled, px, py);
+    cairo_set_source_surface(cr, st->scaled, px, py);
     cairo_rectangle(cr, px, py, sw, sh);
     cairo_fill(cr);
 
@@ -314,7 +339,7 @@ static void on_crop_dialog_response(AppDialog* dialog, gint response, gpointer u
 static void on_crop_state_destroy(gpointer data) {
     CropState* st = data;
     if (st->destroy != NULL) st->destroy(st->user_data);
-    g_clear_object(&st->scaled);
+    g_clear_pointer(&st->scaled, cairo_surface_destroy);
     g_clear_object(&st->pixbuf);
     g_free(st);
 }

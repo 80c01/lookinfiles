@@ -24,6 +24,7 @@
  *   APP_EVENT_OPEN_WORKSPACE_BOOKMARK -> session_bookmark_open() (session_bookmark.c)
  *   APP_EVENT_ADD_BOOKMARK    -> bookmarks_add_requested()    (bookmarks.c)
  *   APP_EVENT_PREVIEW_LOCATION -> status_bar_show_location()  (status_bar.c)
+ *   APP_EVENT_QUIT            -> ui_quit()                    (ui.c)
  */
 #include "core/app_types.h"
 
@@ -60,6 +61,9 @@ typedef enum {
     APP_EVENT_ADD_BOOKMARK,
     /* The path of the value at the preview cursor changed (JSON): show it */
     APP_EVENT_PREVIEW_LOCATION,
+    /* Ctrl+Q pressed where the window does not see it (a popover): quit,
+     * after confirming unsaved changes */
+    APP_EVENT_QUIT,
     APP_EVENT_COUNT
 } AppEvent;
 

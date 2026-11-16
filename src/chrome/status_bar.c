@@ -199,14 +199,16 @@ static void on_branches_popover_closed(GtkPopover* popover, gpointer data) {
 
 static gboolean on_branches_popover_key_pressed(GtkEventControllerKey* controller, guint keyval,
                                                 guint keycode, GdkModifierType state, gpointer data) {
+    (void)controller;
     (void)keycode;
     GtkWidget* popover = GTK_WIDGET(data);
     GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
     if ((mods & GDK_CONTROL_MASK) && (keyval == GDK_KEY_q || keyval == GDK_KEY_Q)) {
         AppData* app = (AppData*)g_object_get_data(G_OBJECT(popover), "app");
         gtk_popover_popdown(GTK_POPOVER(popover));
-        if (app != NULL && app->window != NULL) {
-            return gtk_event_controller_key_forward(controller, GTK_WIDGET(app->window));
+        if (app != NULL) {
+            app_emit(app, APP_EVENT_QUIT);
+            return TRUE;
         }
     }
     return FALSE;

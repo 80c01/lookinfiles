@@ -4,7 +4,6 @@
 #include <glib/gstdio.h>
 #ifdef G_OS_UNIX
 #include <signal.h>
-#endif
 
 static gchar* read_probe(const gchar* path) {
     gchar* text = NULL;
@@ -17,6 +16,7 @@ static gboolean on_busy(gpointer data) {
     (*runs)++;
     return *runs < 3 ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
 }
+#endif /* G_OS_UNIX: SIGUSR2 only */
 
 static void test_signal_counts(void) {
 #ifdef G_OS_UNIX
