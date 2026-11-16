@@ -248,10 +248,13 @@ static void build_thread(GTask* task, gpointer source, gpointer data, GCancellab
         GBytes* out = NULL;
         gboolean spawned = proc != NULL;
         if (spawned) {
-            /* stdin closed at once: TeX never waits for an answer */
-            if (!g_subprocess_communicate(proc, NULL, cancellable, &out, NULL, &error)) {
+            /* stdin closed at once: TeX never waits for an answer (a pipe
+             * needs input to communicate, even empty) */
+            GBytes* none = g_bytes_new_static("", 0);
+            if (!g_subprocess_communicate(proc, none, cancellable, &out, NULL, &error)) {
                 g_subprocess_force_exit(proc);
             }
+            g_bytes_unref(none);
             job->failed = error != NULL || !g_subprocess_get_successful(proc);
             g_object_unref(proc);
         } else {
