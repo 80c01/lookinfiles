@@ -100,6 +100,20 @@ typedef struct IpynbCell IpynbCell;
 IpynbCell* ipynb_doc_take_cell(IpynbDoc* doc, guint index);
 guint ipynb_doc_put_cell(IpynbDoc* doc, guint index, IpynbCell* cell);
 void ipynb_cell_free(IpynbCell* cell);
+/* A copy of the cell at index (NULL if there is none), with the same key
+ * and id: to put back with ipynb_doc_put_cell() in place of the cell, or
+ * to paste with ipynb_doc_paste_cell() */
+IpynbCell* ipynb_doc_copy_cell(const IpynbDoc* doc, guint index);
+/* Insert a copy of cell at index (clamped) as a new cell: a new key, and a
+ * new id in a notebook with ids (nbformat 4.5), none in an older one;
+ * returns its index */
+guint ipynb_doc_paste_cell(IpynbDoc* doc, guint index, const IpynbCell* cell);
+/* Merge the cells first..last into the first, as JupyterLab does: their
+ * sources joined by a blank line (the blank ones left out), the first's
+ * type, id and metadata, the attachments of the Markdown cells; a code
+ * cell loses its outputs. Returns FALSE (nothing done) for fewer than two
+ * cells. */
+gboolean ipynb_doc_merge_cells(IpynbDoc* doc, guint first, guint last);
 /* Move the cell at from to position to (both clamped) */
 void ipynb_doc_move_cell(IpynbDoc* doc, guint from, guint to);
 /* The parts of a cell source split as JupyterLab does: at the cursor

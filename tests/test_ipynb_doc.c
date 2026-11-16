@@ -254,6 +254,89 @@ static void test_split(void) {
     ipynb_doc_free(doc);
 }
 
+/* The source of the cell at index is expected */
+static void assert_source(IpynbDoc* doc, guint index, const gchar* expected) {
+    gchar* s = ipynb_doc_cell_source(doc, index);
+    g_assert_cmpstr(s, ==, expected);
+    g_free(s);
+}
+
+static void test_copy_paste(void) {
+    IpynbDoc* doc = ipynb_doc_new();
+    ipynb_doc_set_source(doc, 0, "x = 1");
+    ipynb_doc_set_execution_count(doc, 0, 4);
+    guint key = ipynb_doc_cell_key(doc, 0);
+    IpynbCell* copy = ipynb_doc_copy_cell(doc, 0);
+    g_assert_nonnull(copy);
+    g_assert_null(ipynb_doc_copy_cell(doc, 5));
+    /* Pasted twice: two new cells, each its own key and id, outputs kept */
+    g_assert_cmpuint(ipynb_doc_paste_cell(doc, 1, copy), ==, 1);
+    g_assert_cmpuint(ipynb_doc_paste_cell(doc, 9, copy), ==, 2);
+    ipynb_cell_free(copy);
+    g_assert_cmpuint(ipynb_doc_n_cells(doc), ==, 3);
+    assert_source(doc, 2, "x = 1");
+    g_assert_cmpint(ipynb_doc_cell_execution_count(doc, 1), ==, 4);
+    g_assert_cmpuint(ipynb_doc_cell_key(doc, 0), ==, key);
+    g_assert_cmpuint(ipynb_doc_cell_key(doc, 1), !=, key);
+    g_assert_cmpuint(ipynb_doc_cell_key(doc, 2), !=, ipynb_doc_cell_key(doc, 1));
+    gchar* json = ipynb_doc_to_json(doc);
+    gchar** ids = g_regex_split_simple("\"id\": \"", json, 0, 0);
+    g_assert_cmpuint(g_strv_length(ids), ==, 4); /* three ids */
+    g_assert_cmpstr(ids[1], !=, ids[2]);
+    g_assert_false(strncmp(ids[1], ids[2], 8) == 0 || strncmp(ids[2], ids[3], 8) == 0 ||
+                   strncmp(ids[1], ids[3], 8) == 0);
+    g_strfreev(ids);
+    g_free(json);
+    /* A copy put back in place of its cell keeps the key */
+    copy = ipynb_doc_copy_cell(doc, 0);
+    ipynb_doc_remove_cell(doc, 0);
+    ipynb_doc_put_cell(doc, 0, copy);
+    g_assert_cmpint(ipynb_doc_find_cell(doc, key), ==, 0);
+    ipynb_doc_free(doc);
+}
+
+static void test_merge(void) {
+    IpynbDoc* doc = ipynb_doc_new();
+    ipynb_doc_set_source(doc, 0, "a = 1\n");
+    ipynb_doc_set_execution_count(doc, 0, 2);
+    ipynb_doc_set_source(doc, ipynb_doc_insert_cell(doc, 1, IPYNB_CELL_MARKDOWN), "  \n");
+    ipynb_doc_set_source(doc, ipynb_doc_insert_cell(doc, 2, IPYNB_CELL_CODE), "b = 2");
+    ipynb_doc_set_source(doc, ipynb_doc_insert_cell(doc, 3, IPYNB_CELL_CODE), "c");
+    guint key = ipynb_doc_cell_key(doc, 0);
+    g_assert_false(ipynb_doc_merge_cells(doc, 1, 1));
+    g_assert_false(ipynb_doc_merge_cells(doc, 2, 9));
+    g_assert_true(ipynb_doc_merge_cells(doc, 0, 2));
+    g_assert_cmpuint(ipynb_doc_n_cells(doc), ==, 2);
+    assert_source(doc, 0, "a = 1\n\nb = 2");
+    assert_source(doc, 1, "c");
+    g_assert_cmpint(ipynb_doc_cell_type(doc, 0), ==, IPYNB_CELL_CODE);
+    g_assert_cmpint(ipynb_doc_cell_execution_count(doc, 0), ==, -1);
+    g_assert_cmpuint(ipynb_doc_cell_key(doc, 0), ==, key);
+    ipynb_doc_free(doc);
+
+    /* Markdown: the attachments of the others join the first's */
+    const gchar* text = "{\"cells\": ["
+                        "{\"cell_type\": \"markdown\", \"metadata\": {}, \"source\": [\"# A\"]},"
+                        "{\"attachments\": {\"p.png\": {\"image/png\": \"iVBO\"}},"
+                        " \"cell_type\": \"markdown\", \"metadata\": {}, \"source\": [\"![](attachment:p.png)\"]}],"
+                        " \"metadata\": {}, \"nbformat\": 4, \"nbformat_minor\": 4}";
+    doc = ipynb_doc_parse(text, strlen(text), NULL);
+    g_assert_nonnull(doc);
+    g_assert_true(ipynb_doc_merge_cells(doc, 0, 1));
+    assert_source(doc, 0, "# A\n\n![](attachment:p.png)");
+    gchar* json = ipynb_doc_to_json(doc);
+    g_assert_nonnull(strstr(json, "\"p.png\""));
+    g_free(json);
+    /* Pasted in a notebook without ids: none added */
+    IpynbCell* copy = ipynb_doc_copy_cell(doc, 0);
+    ipynb_doc_paste_cell(doc, 1, copy);
+    ipynb_cell_free(copy);
+    json = ipynb_doc_to_json(doc);
+    g_assert_null(strstr(json, "\"id\""));
+    g_free(json);
+    ipynb_doc_free(doc);
+}
+
 static void test_append_outputs(void) {
     IpynbDoc* doc = ipynb_doc_new();
     ipynb_doc_set_source(doc, 0, "print(1)");
@@ -333,6 +416,8 @@ int main(int argc, char** argv) {
     g_test_add_func("/ipynb_doc/long_output_and_image", test_long_output_and_image);
     g_test_add_func("/ipynb_doc/keys", test_keys);
     g_test_add_func("/ipynb_doc/split", test_split);
+    g_test_add_func("/ipynb_doc/copy_paste", test_copy_paste);
+    g_test_add_func("/ipynb_doc/merge", test_merge);
     g_test_add_func("/ipynb_doc/append_outputs", test_append_outputs);
     g_test_add_func("/ipynb_doc/kernel_info", test_kernel_info);
     g_test_add_func("/ipynb_doc/cell_markdown", test_cell_markdown);

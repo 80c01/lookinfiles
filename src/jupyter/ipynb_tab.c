@@ -421,55 +421,6 @@ static void on_cell_delete(GtkButton* button, gpointer data) {
     ipynb_select_delete(data, cell_index(button));
 }
 
-/* --- Context menu of the source --- */
-
-#define CELL_TAB_KEY "ipynb-tab"
-
-/* Split Cell: at the cursor, or around the selection, as in JupyterLab */
-static void on_split_cell(GSimpleAction* action, GVariant* param, gpointer data) {
-    (void)action;
-    (void)param;
-    GtkTextView* view = data;
-    IpynbTab* t = g_object_get_data(G_OBJECT(view), CELL_TAB_KEY);
-    if (t == NULL || t->closed) return;
-    GtkTextBuffer* buffer = gtk_text_view_get_buffer(view);
-    GtkTextIter start, end;
-    gtk_text_buffer_get_selection_bounds(buffer, &start, &end);
-    glong from = gtk_text_iter_get_offset(&start);
-    glong to = gtk_text_iter_get_offset(&end);
-    gtk_text_buffer_get_bounds(buffer, &start, &end);
-    gchar* text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
-    gchar** parts = ipynb_split_source(text, from, to);
-    g_free(text);
-    if (parts == NULL) {
-        ipynb_tab_set_status(t, _("Nothing to split here"), FALSE);
-        return;
-    }
-    /* Every part shows the same: the split ends the edit of a Markdown cell
-     * (the parts inserted above are rendered, the cell kept is the last) */
-    g_hash_table_remove(t->editing, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, cell_index(view))));
-    guint index = ipynb_doc_split_cell(t->doc, cell_index(view), parts);
-    g_strfreev(parts);
-    ipynb_tab_mark_changed(t);
-    ipynb_tab_queue_rebuild(t, index);
-}
-
-static void attach_source_menu(IpynbTab* t, GtkWidget* view) {
-    g_object_set_data(G_OBJECT(view), CELL_TAB_KEY, t);
-    GSimpleActionGroup* group = g_simple_action_group_new();
-    GSimpleAction* split = g_simple_action_new("split", NULL);
-    g_signal_connect(split, "activate", G_CALLBACK(on_split_cell), view);
-    g_action_map_add_action(G_ACTION_MAP(group), G_ACTION(split));
-    g_object_unref(split);
-    gtk_widget_insert_action_group(view, "cell", G_ACTION_GROUP(group));
-    g_object_unref(group);
-
-    GMenu* menu = g_menu_new();
-    g_menu_append(menu, _("Split Cell"), "cell.split");
-    gtk_text_view_set_extra_menu(GTK_TEXT_VIEW(view), G_MENU_MODEL(menu));
-    g_object_unref(menu);
-}
-
 static GtkWidget* cell_button(IpynbTab* t, guint index, const gchar* icon, const gchar* tooltip, GCallback cb) {
     GtkWidget* b = icon_button_new(icon, tooltip);
     g_object_set_data(G_OBJECT(b), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
@@ -705,7 +656,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     set_view_monospace(view, TRUE);
     g_object_set_data(G_OBJECT(view), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
     track_focus(t, view);
-    attach_source_menu(t, view);
+    ipynb_select_add_menu(t, index, view);
     gtk_box_append(GTK_BOX(cell), view);
     g_ptr_array_add(t->views, view);
 
@@ -781,14 +732,7 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         ipynb_tab_focus_cell(t, ipynb_fold_step(t, t->current, keyval == GDK_KEY_Up ? -1 : 1));
         return TRUE;
     }
-    if (mods == (GDK_CONTROL_MASK | GDK_SHIFT_MASK) && (keyval == GDK_KEY_Up || keyval == GDK_KEY_Down)) {
-        ipynb_select_extend(t, keyval == GDK_KEY_Up ? -1 : 1);
-        return TRUE;
-    }
-    if (keyval == GDK_KEY_Escape && mods == 0 && ipynb_select_count(t) > 1) {
-        ipynb_select_clear(t);
-        return TRUE;
-    }
+    if (ipynb_select_key(t, keyval, mods)) return TRUE;
     if ((keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) &&
         (mods == GDK_SHIFT_MASK || mods == GDK_CONTROL_MASK)) {
         if (mods == GDK_SHIFT_MASK) {
@@ -984,7 +928,8 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, con
                                            "Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the "
                                            "cell; Alt+Enter: new code cell; Alt+Delete: delete the cell; "
                                            "Ctrl+Shift+Up / Ctrl+Shift+Down, Shift+click on a cell's head: "
-                                           "select cells"));
+                                           "select cells; Ctrl+Shift+C / X / V: copy, cut, paste cells; "
+                                           "Ctrl+Shift+M: merge cells"));
     gtk_box_append(GTK_BOX(status_bar), t->info);
     gtk_box_append(GTK_BOX(root), status_bar);
 

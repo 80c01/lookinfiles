@@ -80,7 +80,7 @@ cellule Markdown nouvelle ou vide reste en source.
 - `Ctrl+Up` / `Ctrl+Down` passent à la cellule précédente / suivante,
   `Alt+Up` / `Alt+Down` déplacent la cellule, `Alt+Enter` /
   `Alt+Shift+Enter` insèrent une cellule de code en dessous / au-dessus, `Alt+Delete` supprime la cellule
-  (**Annuler la suppression** dans la barre la remet). Les boutons de
+  (**Annuler** dans la barre la remet). Les boutons de
   chaque cellule font de même.
 - `Ctrl+Shift+Up` / `Ctrl+Shift+Down`, ou `Shift`+clic sur l’en-tête
   d’une cellule, sélectionnent plusieurs cellules qui se suivent (leurs
@@ -92,6 +92,15 @@ cellule Markdown nouvelle ou vide reste en source.
   droit sur le source d'une cellule, la coupe au curseur (ou avant et après
   la sélection), comme dans JupyterLab : les sorties restent avec la
   dernière partie.
+- `Ctrl+Shift+C` / `Ctrl+Shift+X` copient / coupent la cellule (les
+  cellules sélectionnées), `Ctrl+Shift+V` colle les cellules copiées en
+  dessous (depuis n’importe quel onglet notebook, sorties comprises ; les
+  cellules collées sont sélectionnées). `Ctrl+Shift+M` fusionne les
+  cellules sélectionnées dans la première, ou la cellule avec la suivante,
+  comme dans JupyterLab : leurs sources jointes par une ligne vide, le type
+  de la première, les sorties abandonnées. Le menu du clic droit sur le
+  source d’une cellule a les mêmes quatre commandes ; **Annuler** dans la
+  barre remet les cellules supprimées, coupées ou fusionnées en dernier.
 - Une cellule Markdown avec des titres ouvre une **section** : les
   cellules qui la suivent jusqu’au prochain titre de même niveau ou plus
   haut. La flèche à gauche de son en-tête (celle de l’explorateur), ou

@@ -68,7 +68,7 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   or a stopped kernel. A cell skipped after an error shows no time.
 - `Ctrl+Up` / `Ctrl+Down` go to the previous / next cell, `Alt+Up` /
   `Alt+Down` move the cell, `Alt+Enter` / `Alt+Shift+Enter` insert a code cell below / above,
-  `Alt+Delete` deletes the cell (**Undo Delete** in the bar puts it back).
+  `Alt+Delete` deletes the cell (**Undo** in the bar puts it back).
   The buttons of each cell do the same.
 - `Ctrl+Shift+Up` / `Ctrl+Shift+Down`, or `Shift`+click on a cell's head,
   select several cells in a row (their heads highlighted, their count in
@@ -78,6 +78,14 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   click on a cell's head goes to that cell. **Split Cell** in the right-click
   menu of a cell's source splits it at the cursor (or before and after the
   selection), as in JupyterLab: the outputs stay with the last part.
+- `Ctrl+Shift+C` / `Ctrl+Shift+X` copy / cut the cell (the selected
+  cells), `Ctrl+Shift+V` pastes the cells copied below it (from any
+  notebook tab, outputs included; the pasted cells are selected).
+  `Ctrl+Shift+M` merges the selected cells into the first, or the cell
+  with the next one, as in JupyterLab: their sources joined by a blank
+  line, the first one's type, the outputs dropped. The right-click menu of
+  a cell's source has the same four commands; **Undo** in the bar puts back
+  the cells deleted, cut or merged last.
 - A Markdown cell with headings opens a **section**: the cells after it up
   to the next heading of the same level or higher. The arrow at the left of
   its head (the explorer's), or `Tab` on the rendered cell, folds it: its

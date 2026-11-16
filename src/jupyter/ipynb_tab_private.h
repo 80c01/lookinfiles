@@ -39,8 +39,9 @@ typedef struct {
     gchar* path;            /* NULL: made in memory, no file yet */
     gchar* name;
     gchar* dir;             /* the notebook's folder (kernel, Save As) */
-    GPtrArray* deleted;     /* IpynbCell*: the cells deleted last (owned), and where they were */
+    GPtrArray* deleted;     /* IpynbCell*: the cells deleted, cut or merged last (owned), and where they were */
     guint deleted_at;
+    guint deleted_merged;   /* key of the cell they were merged into (Undo takes it out), 0: deleted */
     guint current;          /* the cell with the focus, or used last */
     guint anchor;           /* key of the cell where the selected run starts (it ends at current), 0: none */
     gboolean extending;     /* moving the focus to extend the selection */
@@ -137,7 +138,7 @@ IpynbRunState ipynb_run_state(IpynbTab* t, guint index, gchar** text);
 void ipynb_run_stop(IpynbTab* t);
 
 /* ipynb_bar.c */
-/* The bar at the top of the tab: run buttons, new cells, Undo Delete
+/* The bar at the top of the tab: run buttons, new cells, Undo
  * (creates t->undo_button), kernel menu, headings and a menu of the rarer
  * actions */
 GtkWidget* ipynb_bar_new(IpynbTab* t);
@@ -216,12 +217,27 @@ void ipynb_select_add_head(IpynbTab* t, guint index, GtkWidget* head);
 /* Move the cells of index's range up (by -1) or down (1) */
 void ipynb_select_move(IpynbTab* t, guint index, gint by);
 /* Delete the cells of index's range, kept for ipynb_select_undo_delete()
- * (which puts them back and hides t->undo_button) */
+ * (which puts back the cells deleted, cut or merged last and hides
+ * t->undo_button) */
 void ipynb_select_delete(IpynbTab* t, guint index);
 void ipynb_select_undo_delete(IpynbTab* t);
 /* Free the cells kept by the last delete */
 void ipynb_select_drop_deleted(IpynbTab* t);
 /* Give the cells of index's range that type */
 void ipynb_select_set_type(IpynbTab* t, guint index, IpynbCellType type);
+/* Copy the cells of index's range (for every notebook tab) / copy and
+ * delete them / paste the cells copied below the range (then selected) /
+ * merge the range into its first cell (a cell alone: with the next one;
+ * Undo splits them again) */
+void ipynb_select_copy(IpynbTab* t, guint index);
+void ipynb_select_cut(IpynbTab* t, guint index);
+void ipynb_select_paste(IpynbTab* t, guint index);
+void ipynb_select_merge(IpynbTab* t, guint index);
+/* The selection keys (Ctrl+Shift+Up / Down, Esc) and those of the actions
+ * above (Ctrl+Shift+C / X / V / M); TRUE when key is one of them */
+gboolean ipynb_select_key(IpynbTab* t, guint keyval, GdkModifierType mods);
+/* The context menu of the source view of the cell at index: Split Cell,
+ * then copy, cut, paste and merge */
+void ipynb_select_add_menu(IpynbTab* t, guint index, GtkWidget* view);
 
 #endif /* IPYNB_TAB_PRIVATE_H */

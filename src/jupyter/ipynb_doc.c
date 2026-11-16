@@ -617,13 +617,18 @@ static gchar* new_cell_id(const IpynbDoc* doc) {
     }
 }
 
+/* The notebook gives its cells an id (nbformat 4.5 and later) */
+static gboolean has_cell_ids(const IpynbDoc* doc) {
+    Node* minor = node_get(doc->root, "nbformat_minor");
+    return minor != NULL && minor->type == N_RAW && g_ascii_strtoll(minor->text, NULL, 10) >= 5;
+}
+
 guint ipynb_doc_insert_cell(IpynbDoc* doc, guint index, IpynbCellType type) {
     Node* cells = cells_of(doc);
     index = MIN(index, cells->children->len);
     Node* cell = node_new(N_OBJECT, NULL, NULL);
     node_set(cell, "cell_type", node_new(N_STRING, NULL, type_name(type)));
-    Node* minor = node_get(doc->root, "nbformat_minor");
-    if (minor != NULL && minor->type == N_RAW && g_ascii_strtoll(minor->text, NULL, 10) >= 5) {
+    if (has_cell_ids(doc)) {
         gchar* id = new_cell_id(doc);
         node_set(cell, "id", node_new(N_STRING, NULL, id));
         g_free(id);
@@ -655,6 +660,72 @@ guint ipynb_doc_put_cell(IpynbDoc* doc, guint index, IpynbCell* cell) {
 
 void ipynb_cell_free(IpynbCell* cell) {
     node_free(cell);
+}
+
+static Node* node_copy(const Node* n) {
+    Node* c = node_new(n->type, n->key, n->text);
+    c->cell_key = n->cell_key;
+    for (guint i = 0; n->children != NULL && i < n->children->len; i++) {
+        g_ptr_array_add(c->children, node_copy(g_ptr_array_index(n->children, i)));
+    }
+    return c;
+}
+
+IpynbCell* ipynb_doc_copy_cell(const IpynbDoc* doc, guint index) {
+    Node* cell = cell_at(doc, index);
+    return cell != NULL ? (IpynbCell*)node_copy(cell) : NULL;
+}
+
+guint ipynb_doc_paste_cell(IpynbDoc* doc, guint index, const IpynbCell* cell) {
+    Node* copy = node_copy((const Node*)cell);
+    copy->cell_key = ++doc->next_key;
+    if (has_cell_ids(doc)) {
+        gchar* id = new_cell_id(doc);
+        node_set(copy, "id", node_new(N_STRING, NULL, id));
+        g_free(id);
+    } else {
+        node_remove(copy, "id");
+    }
+    return ipynb_doc_put_cell(doc, index, (IpynbCell*)copy);
+}
+
+gboolean ipynb_doc_merge_cells(IpynbDoc* doc, guint first, guint last) {
+    if (last >= ipynb_doc_n_cells(doc) || first >= last) return FALSE;
+    Node* into = cell_at(doc, first);
+    gboolean markdown = ipynb_doc_cell_type(doc, first) == IPYNB_CELL_MARKDOWN;
+    GString* source = g_string_new(NULL);
+    for (guint i = first; i <= last; i++) {
+        gchar* part = ipynb_doc_cell_source(doc, i);
+        gsize n = strlen(part);
+        while (n > 0 && (part[n - 1] == '\n' || part[n - 1] == '\r')) part[--n] = '\0';
+        gboolean blank = TRUE;
+        for (const gchar* c = part; blank && *c != '\0'; c++) blank = g_ascii_isspace(*c);
+        if (!blank) {
+            if (source->len > 0) g_string_append(source, "\n\n");
+            g_string_append(source, part);
+        }
+        g_free(part);
+        /* The pictures the merged Markdown shows */
+        Node* attachments = node_get(cell_at(doc, i), "attachments");
+        if (!markdown || i == first || attachments == NULL || attachments->type != N_OBJECT ||
+            ipynb_doc_cell_type(doc, i) != IPYNB_CELL_MARKDOWN) {
+            continue;
+        }
+        Node* to = node_get(into, "attachments");
+        if (to == NULL || to->type != N_OBJECT) {
+            node_set(into, "attachments", node_new(N_OBJECT, NULL, NULL));
+            to = node_get(into, "attachments");
+        }
+        for (guint j = 0; j < attachments->children->len; j++) {
+            Node* a = g_ptr_array_index(attachments->children, j);
+            if (node_get(to, a->key) == NULL) node_set(to, a->key, node_copy(a));
+        }
+    }
+    node_set(into, "source", node_lines(source->str));
+    g_string_free(source, TRUE);
+    clear_cell(into);
+    for (guint i = last; i > first; i--) ipynb_doc_remove_cell(doc, i);
+    return TRUE;
 }
 
 /* Add source[from..to) (byte offsets) without its end newlines, if any is left */

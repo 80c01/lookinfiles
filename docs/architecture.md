@@ -723,7 +723,7 @@ Layers, from bottom to top
   run, ticking every tenth of a second while it runs; in memory only,
   `run_time_format()`).
   `ipynb_bar.c` (also on `ipynb_tab_private.h`) builds the bar at the top:
-  the run buttons, new code / Markdown cells (icons only) and Undo Delete,
+  the run buttons, new code / Markdown cells (icons only) and Undo,
   cut on the right in a narrow pane; the kernel menu, the headings button
   and a `view-more` menu (Clear Outputs, Edit as JSON) always in sight at
   the right end.
@@ -744,9 +744,15 @@ Layers, from bottom to top
   an anchor (a cell key, `t->anchor`) to the current cell, extended by
   `Ctrl+Shift+Up` / `Ctrl+Shift+Down` and `Shift`+click on a head;
   `ipynb_select_range()` gives the cells an action on a cell takes (the
-  run when the cell is in it), used by moving, deleting (Undo Delete puts
-  the whole run back), running and setting the type; focusing another
-  cell, otherwise than to extend, drops it.
+  run when the cell is in it), used by moving, deleting (Undo puts
+  the whole run back), running, setting the type, copying, cutting,
+  pasting (a clipboard of `ipynb_doc_copy_cell()` copies shared by the
+  tabs, pasted with `ipynb_doc_paste_cell()`: new keys and ids) and merging
+  (`ipynb_doc_merge_cells()`; Undo puts copies of the cells back in place
+  of the merged one, found by its key); focusing another cell, otherwise
+  than to extend, drops it. It also holds the context menu of the source
+  views (Split Cell, then the four cell commands) and their keys
+  (`ipynb_select_key()`).
   `ipynb_tagbar.c` (also on `ipynb_tab_private.h`) puts an `outline_pane`
   beside the cells (the editor tagbar's width), filled by `ipynb_outline`
   600 ms after the last change (`ipynb_tab_mark_changed()`), set again only

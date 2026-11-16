@@ -1,5 +1,5 @@
 /* The bar at the top of a Jupyter notebook tab (see ipynb_tab_private.h):
- * run buttons, new cells and Undo Delete on the left, cut on the right in
+ * run buttons, new cells and Undo on the left, cut on the right in
  * a narrow pane; the kernel menu, the headings button and the menu of the
  * rarer actions (Clear Outputs, Edit as JSON) always in sight at the right
  * end. */
@@ -97,7 +97,7 @@ GtkWidget* ipynb_bar_new(IpynbTab* t) {
                                                 G_CALLBACK(on_add_code)));
     gtk_box_append(GTK_BOX(actions), bar_button(t, "cell-markdown", NULL, _("Insert Markdown Cell Below"),
                                                 G_CALLBACK(on_add_markdown)));
-    t->undo_button = bar_button(t, "edit-undo", _("Undo Delete"), _("Put Back the Cells Deleted Last"),
+    t->undo_button = bar_button(t, "edit-undo", _("Undo"), _("Undo the Last Delete, Cut or Merge"),
                                 G_CALLBACK(on_undo_delete));
     gtk_widget_set_visible(t->undo_button, FALSE);
     gtk_box_append(GTK_BOX(actions), t->undo_button);

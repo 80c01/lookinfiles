@@ -208,7 +208,9 @@ it again. An nbformat 3 or broken notebook opens as text)
 | `Ctrl+K Ctrl+O`, the list button of the bar | Show / hide the tagbar: the headings of the Markdown cells, beside the cells (it follows the current cell; `Enter` or a click goes to the heading's cell, `Esc` back, `q` hides; in it, the moving and search keys of the global mode; `Alt+Right` / `Alt+Left` go in and out). A new notebook tab follows Preferences → Editor, as an editor tab |
 | `Alt+Up` / `Alt+Down` | Move the cell (the selected cells) up / down |
 | `Alt+Enter` / `Alt+Shift+Enter` | Insert a code cell below / above (also the two insert buttons of each cell) |
-| `Alt+Delete` | Delete the cell (the selected cells; **Undo Delete** in the bar puts them back) |
+| `Alt+Delete` | Delete the cell (the selected cells; **Undo** in the bar puts them back) |
+| `Ctrl+Shift+C` / `Ctrl+Shift+X` / `Ctrl+Shift+V` | Copy / cut the cell (the selected cells) / paste the cells copied below it (also in the right-click menu of a cell's source) |
+| `Ctrl+Shift+M` | Merge the selected cells into the first, or the cell with the next one (sources joined by a blank line, outputs dropped; **Undo** in the bar splits them again) |
 | `Ctrl+S` | Save now |
 | `Ctrl+W`, middle click on the tab | Close the notebook tab (saved first) |
 | `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the notebook tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it) |

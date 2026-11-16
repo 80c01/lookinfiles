@@ -8762,8 +8762,14 @@ msgstr "Monter / descendre la cellule"
 msgid "Insert a code cell below / above"
 msgstr "Insérer une cellule de code en dessous / au-dessus"
 
-msgid "Delete the cell (Undo Delete in the bar puts it back)"
-msgstr "Supprimer la cellule (Annuler la suppression, dans la barre, la remet)"
+msgid "Delete the cell or the selected cells (Undo in the bar puts them back)"
+msgstr "Supprimer la cellule ou les cellules sélectionnées (Annuler, dans la barre, les remet)"
+
+msgid "Copy / cut the cell or the selected cells / paste the cells copied below"
+msgstr "Copier / couper la cellule ou les cellules sélectionnées / coller en dessous les cellules copiées"
+
+msgid "Merge the selected cells, or the cell with the next one (Undo in the bar splits them again)"
+msgstr "Fusionner les cellules sélectionnées, ou la cellule avec la suivante (Annuler, dans la barre, les sépare à nouveau)"
 
 msgid "Save now (also saved by itself after each change)"
 msgstr "Enregistrer tout de suite (aussi enregistré tout seul après chaque modification)"
@@ -8810,6 +8816,36 @@ msgstr "Rien à scinder ici"
 msgid "Split Cell"
 msgstr "Scinder la cellule"
 
+msgid "Copy Cells"
+msgstr "Copier les cellules"
+
+msgid "Cut Cells"
+msgstr "Couper les cellules"
+
+msgid "Paste Cells Below"
+msgstr "Coller les cellules en dessous"
+
+msgid "Merge Cells"
+msgstr "Fusionner les cellules"
+
+#, c-format
+msgid "%u cell copied"
+msgid_plural "%u cells copied"
+msgstr[0] "%u cellule copiée"
+msgstr[1] "%u cellules copiées"
+
+#, c-format
+msgid "%u cell merged"
+msgid_plural "%u cells merged"
+msgstr[0] "%u cellule fusionnée"
+msgstr[1] "%u cellules fusionnées"
+
+msgid "No cells to paste: copy some first"
+msgstr "Aucune cellule à coller : copiez-en d’abord"
+
+msgid "No cell below to merge with"
+msgstr "Aucune cellule en dessous avec laquelle fusionner"
+
 msgid "Insert Code Cell Above (Alt+Shift+Enter)"
 msgstr "Insérer une cellule de code au-dessus (Alt+Shift+Enter)"
 
@@ -8834,11 +8870,9 @@ msgstr "Éditer en JSON"
 msgid "Open the File as Text in an Editor Tab"
 msgstr "Ouvrir le fichier en texte dans un onglet d’édition"
 
-msgid "Undo Delete"
-msgstr "Annuler la suppression"
 
-msgid "Put Back the Cells Deleted Last"
-msgstr "Remettre les dernières cellules supprimées"
+msgid "Undo the Last Delete, Cut or Merge"
+msgstr "Annuler la dernière suppression, découpe ou fusion"
 
 msgid "More Actions"
 msgstr "Autres actions"
@@ -8852,8 +8886,8 @@ msgstr "en attente"
 msgid "Show / Hide the Headings (Ctrl+K Ctrl+O)"
 msgstr "Afficher / masquer les titres (Ctrl+K Ctrl+O)"
 
-msgid "Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; Double-click or Enter: edit a rendered Markdown cell; Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell; Ctrl+Shift+Up / Ctrl+Shift+Down, Shift+click on a cell's head: select cells"
-msgstr "Shift+Enter : exécuter la cellule et passer à la suivante ; Ctrl+Enter : l’exécuter ; double-clic ou Enter : éditer une cellule Markdown rendue ; Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule ; Ctrl+Shift+Up / Ctrl+Shift+Down, Shift+clic sur l’en-tête d’une cellule : sélectionner des cellules"
+msgid "Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; Double-click or Enter: edit a rendered Markdown cell; Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell; Ctrl+Shift+Up / Ctrl+Shift+Down, Shift+click on a cell's head: select cells; Ctrl+Shift+C / X / V: copy, cut, paste cells; Ctrl+Shift+M: merge cells"
+msgstr "Shift+Enter : exécuter la cellule et passer à la suivante ; Ctrl+Enter : l’exécuter ; double-clic ou Enter : éditer une cellule Markdown rendue ; Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule ; Ctrl+Shift+Up / Ctrl+Shift+Down, Shift+clic sur l’en-tête d’une cellule : sélectionner des cellules ; Ctrl+Shift+C / X / V : copier, couper, coller des cellules ; Ctrl+Shift+M : fusionner des cellules"
 
 #, c-format
 msgid "Not saved: %s"
