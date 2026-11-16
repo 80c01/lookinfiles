@@ -92,6 +92,18 @@ static void on_sidebar_games_clicked(GtkButton* btn, gpointer data) {
     }
 }
 
+/* Clicking the view title ("EXPLORER", "BOOKMARKS"...) focuses the view's list */
+static void on_sidebar_title_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    (void)y;
+    AppData* app = (AppData*)data;
+    if (app != NULL && app->tree_view != NULL) {
+        gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+}
+
 static void on_sidebar_games_play_clicked(GtkButton* btn, gpointer data) {
     (void)btn;
     AppData* app = (AppData*)data;
@@ -330,6 +342,9 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_label_set_xalign(GTK_LABEL(title), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(title), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(title, TRUE);
+    GtkGesture* title_click = gtk_gesture_click_new();
+    g_signal_connect(title_click, "pressed", G_CALLBACK(on_sidebar_title_pressed), app);
+    gtk_widget_add_controller(title, GTK_EVENT_CONTROLLER(title_click));
     gtk_box_append(GTK_BOX(title_row), title);
 
     GtkWidget* files_btn = icon_button_new("folder", NULL);
