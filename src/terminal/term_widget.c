@@ -357,8 +357,10 @@ static void on_key_released(GtkEventControllerKey* ctrl, guint keyval, guint key
 static void on_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
     (void)ctrl;
     VteTerminal* t = data;
+    if (!t->focused && gtk_widget_get_realized(GTK_WIDGET(t))) {
+        gtk_im_context_focus_in(t->im); /* once: the Windows IME adds a filter per call */
+    }
     t->focused = TRUE;
-    gtk_im_context_focus_in(t->im);
     if (vt_screen_modes(t->screen) & VT_MODE_FOCUS_EVENTS) {
         vt_pty_write(t->pty, "\033[I", 3);
     }
@@ -368,8 +370,10 @@ static void on_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
 static void on_focus_leave(GtkEventControllerFocus* ctrl, gpointer data) {
     (void)ctrl;
     VteTerminal* t = data;
+    if (t->focused) {
+        gtk_im_context_focus_out(t->im);
+    }
     t->focused = FALSE;
-    gtk_im_context_focus_out(t->im);
     if (vt_screen_modes(t->screen) & VT_MODE_FOCUS_EVENTS) {
         vt_pty_write(t->pty, "\033[O", 3);
     }
@@ -862,6 +866,28 @@ GtkWidget* vte_terminal_new(void) {
 /* GObject                                                                   */
 /* ------------------------------------------------------------------------- */
 
+/* The IM context follows the native surface, as in GtkText: on Windows the
+ * IME context registers a display message filter on focus-in and can only
+ * remove it while it still knows the surface, so it must be focused out and
+ * detached before unrealize, or the filter outlives the context (crash). */
+static void vte_terminal_realize(GtkWidget* widget) {
+    GTK_WIDGET_CLASS(vte_terminal_parent_class)->realize(widget);
+    VteTerminal* t = VTE_TERMINAL(widget);
+    gtk_im_context_set_client_widget(t->im, widget);
+    if (t->focused) {
+        gtk_im_context_focus_in(t->im);
+    }
+}
+
+static void vte_terminal_unrealize(GtkWidget* widget) {
+    VteTerminal* t = VTE_TERMINAL(widget);
+    if (t->focused) {
+        gtk_im_context_focus_out(t->im); /* realize focuses it in again */
+    }
+    gtk_im_context_set_client_widget(t->im, NULL);
+    GTK_WIDGET_CLASS(vte_terminal_parent_class)->unrealize(widget);
+}
+
 static void vte_terminal_dispose(GObject* object) {
     VteTerminal* t = VTE_TERMINAL(object);
     if (t->child_watch != 0) {
@@ -897,6 +923,8 @@ static void vte_terminal_class_init(VteTerminalClass* klass) {
     GtkWidgetClass* widget_class = GTK_WIDGET_CLASS(klass);
     object_class->dispose = vte_terminal_dispose;
     object_class->finalize = vte_terminal_finalize;
+    widget_class->realize = vte_terminal_realize;
+    widget_class->unrealize = vte_terminal_unrealize;
     widget_class->snapshot = vte_terminal_snapshot;
     widget_class->measure = vte_terminal_measure;
     widget_class->size_allocate = vte_terminal_size_allocate;
@@ -927,8 +955,7 @@ static void vte_terminal_init(VteTerminal* t) {
     t->screen = vt_screen_new(80, 24, TERM_SCROLLBACK);
     update_metrics(t);
 
-    t->im = gtk_im_multicontext_new();
-    gtk_im_context_set_client_widget(t->im, w);
+    t->im = gtk_im_multicontext_new(); /* client widget set in realize */
     gtk_im_context_set_use_preedit(t->im, FALSE);
     g_signal_connect(t->im, "commit", G_CALLBACK(on_im_commit), t);
 
