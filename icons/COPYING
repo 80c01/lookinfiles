@@ -2,7 +2,7 @@ Icons bundled into LookinFiles (icons/scalable/actions/)
 
 All icons except lookin-utilities-terminal-symbolic.svg,
 lookin-swap-horizontal-symbolic.svg, the lookin-canvas-*-symbolic.svg Canvas tools, the
-lookin-cell-add-*-symbolic.svg notebook cell icons and the
+lookin-cell-*-symbolic.svg notebook cell icons and the
 lookin-ft-*-symbolic.svg file-type icons are copied
 unchanged (renamed with the "lookin-" prefix) from the Adwaita icon theme
 by the GNOME Project, https://gitlab.gnome.org/GNOME/adwaita-icon-theme
@@ -52,7 +52,11 @@ The notebook cell icons lookin-cell-add-above-symbolic.svg and
 lookin-cell-add-below-symbolic.svg are the "add-above" and "add-below"
 toolbar icons of JupyterLab (packages/ui-components/style/icons/toolbar/ in
 https://github.com/jupyterlab/jupyterlab), redrawn as single-colour fills
-(the stroked plus as a filled shape, no clip path). JupyterLab is under the
+(the stroked plus as a filled shape, no clip path);
+lookin-cell-code-symbolic.svg is its "code" toolbar icon and
+lookin-cell-markdown-symbolic.svg its "markdown" file-type icon
+(packages/ui-components/style/icons/filetype/), in a single colour, the
+first with a view box cropped to the glyph. JupyterLab is under the
 BSD 3-Clause license:
 
   Copyright (c) 2015-2024 Project Jupyter Contributors

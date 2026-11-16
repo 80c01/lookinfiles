@@ -621,7 +621,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     gtk_box_append(GTK_BOX(actions), cell_button(t, index, "cell-add-below", _("Insert Code Cell Below (Alt+Enter)"),
                                                  G_CALLBACK(on_cell_add_below)));
     gtk_box_append(GTK_BOX(actions),
-                   cell_button(t, index, "edit-delete", _("Delete Cell (Alt+Delete)"), G_CALLBACK(on_cell_delete)));
+                   cell_button(t, index, "user-trash", _("Delete Cell (Alt+Delete)"), G_CALLBACK(on_cell_delete)));
     gtk_box_append(GTK_BOX(head), actions);
     gtk_box_append(GTK_BOX(cell), head);
 

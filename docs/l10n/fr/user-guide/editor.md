@@ -77,15 +77,18 @@ cellule Markdown nouvelle ou vide reste en source.
   droit sur le source d'une cellule, la coupe au curseur (ou avant et après
   la sélection), comme dans JupyterLab : les sorties restent avec la
   dernière partie.
-- `Ctrl+K Ctrl+O` (ou le bouton de liste au bout de la barre) affiche la
+- `Ctrl+K Ctrl+O` (ou le bouton de liste après celui du noyau) affiche la
   **barre de symboles** à côté des cellules : les titres des cellules
   Markdown, imbriqués par niveau. Elle suit la cellule courante ; `Enter`
   ou un clic va à la cellule du titre, `Esc` revient aux cellules, `q` ou
   `Ctrl+K Ctrl+O` la masque. Un nouvel onglet notebook l’affiche quand
   Préférences → Éditeur affiche la barre de symboles des nouveaux onglets.
-- La barre ajoute des cellules de code ou Markdown, efface toutes les
-  sorties (**Effacer les sorties**) et ouvre le fichier en texte JSON dans
-  un onglet d’édition (**Éditer en JSON**).
+- La barre ajoute une cellule de code (bouton `<>`) ou Markdown (bouton
+  M↓) sous la cellule courante. Son menu **⋯**, au bout à droite, efface
+  toutes les sorties (**Effacer les sorties**) et ouvre le fichier en texte
+  JSON dans un onglet d’édition (**Éditer en JSON**). Dans un panneau
+  étroit, les boutons de gauche sont coupés en premier : le bouton du
+  noyau, celui de liste et le menu restent visibles.
 - Le notebook s’enregistre tout seul peu après chaque modification, à la
   fermeture de l’onglet et en quittant (`Ctrl+S` enregistre tout de suite ;
   un nouveau notebook fait avec le bouton **+** demande d’abord un nom de

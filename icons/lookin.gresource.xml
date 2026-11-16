@@ -37,6 +37,8 @@
     <file>scalable/actions/lookin-canvas-column-delete-symbolic.svg</file>
     <file>scalable/actions/lookin-cell-add-above-symbolic.svg</file>
     <file>scalable/actions/lookin-cell-add-below-symbolic.svg</file>
+    <file>scalable/actions/lookin-cell-code-symbolic.svg</file>
+    <file>scalable/actions/lookin-cell-markdown-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-row-add-above-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-row-add-below-symbolic.svg</file>
     <file>scalable/actions/lookin-canvas-row-delete-symbolic.svg</file>

@@ -66,15 +66,17 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   The buttons of each cell do the same. **Split Cell** in the right-click
   menu of a cell's source splits it at the cursor (or before and after the
   selection), as in JupyterLab: the outputs stay with the last part.
-- `Ctrl+K Ctrl+O` (or the list button at the end of the bar) shows the
+- `Ctrl+K Ctrl+O` (or the list button after the kernel's) shows the
   **tagbar** beside the cells: the headings of the Markdown cells, nested by
   level. It follows the current cell; `Enter` or a click goes to the
   heading's cell, `Esc` comes back to the cells, `q` or `Ctrl+K Ctrl+O`
   hides it. A new notebook tab shows it when Preferences → Editor shows the
   tagbar of new editor tabs.
-- The bar adds code or Markdown cells, clears every output (**Clear
-  Outputs**), and opens the file as JSON text in an editor tab (**Edit as
-  JSON**).
+- The bar adds a code cell (`<>` button) or a Markdown cell (M↓ button)
+  below the current one. Its **⋯** menu, at the right end, clears every
+  output (**Clear Outputs**) and opens the file as JSON text in an editor
+  tab (**Edit as JSON**). In a narrow pane the buttons on the left are cut
+  first: the kernel's button, the list button and the menu stay in sight.
 - The notebook saves itself shortly after each change, when the tab closes
   and at quit (`Ctrl+S` saves at once; a new notebook made with the **+**
   button asks for a file name first). It is written as Jupyter writes it,

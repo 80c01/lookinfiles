@@ -68,6 +68,8 @@ static const IconFallback FALLBACKS[] = {
     {"canvas-crop", {"view-grid", NULL}},
     {"cell-add-above", {"list-add", NULL}},
     {"cell-add-below", {"list-add", NULL}},
+    {"cell-code", {"text-x-generic", NULL}},
+    {"cell-markdown", {"text-x-generic", NULL}},
     {"canvas-row-add-above", {"list-add", NULL}},
     {"canvas-row-add-below", {"list-add", NULL}},
     {"canvas-row-delete", {"list-remove", NULL}},

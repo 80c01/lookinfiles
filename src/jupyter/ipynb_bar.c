@@ -47,9 +47,10 @@ static void on_tagbar(GtkButton* button, gpointer data) {
     ipynb_tagbar_toggle(data);
 }
 
+/* An icon button, with a text after the icon unless NULL */
 static GtkWidget* bar_button(IpynbTab* t, const gchar* icon, const gchar* text, const gchar* tooltip, GCallback cb) {
     GtkWidget* b = icon_button_new(icon, tooltip);
-    icon_button_set_content(b, icon, text);
+    if (text != NULL) icon_button_set_content(b, icon, text);
     g_signal_connect(b, "clicked", cb, t);
     return b;
 }
@@ -92,9 +93,9 @@ static GtkWidget* more_menu_new(IpynbTab* t) {
 GtkWidget* ipynb_bar_new(IpynbTab* t) {
     GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     GtkWidget* kernel_button = ipynb_run_bar(t, actions);
-    gtk_box_append(GTK_BOX(actions), bar_button(t, "cell-add-below", _("Code"), _("Insert Code Cell Below (Alt+Enter)"),
+    gtk_box_append(GTK_BOX(actions), bar_button(t, "cell-code", NULL, _("Insert Code Cell Below (Alt+Enter)"),
                                                 G_CALLBACK(on_add_code)));
-    gtk_box_append(GTK_BOX(actions), bar_button(t, "cell-add-below", _("Markdown"), _("Insert Markdown Cell Below"),
+    gtk_box_append(GTK_BOX(actions), bar_button(t, "cell-markdown", NULL, _("Insert Markdown Cell Below"),
                                                 G_CALLBACK(on_add_markdown)));
     t->undo_button = bar_button(t, "edit-undo", _("Undo Delete"), _("Put Back the Cell Deleted Last"),
                                 G_CALLBACK(on_undo_delete));
