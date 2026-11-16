@@ -436,6 +436,9 @@ static void on_split_cell(GSimpleAction* action, GVariant* param, gpointer data)
         ipynb_tab_set_status(t, _("Nothing to split here"), FALSE);
         return;
     }
+    /* Every part shows the same: the split ends the edit of a Markdown cell
+     * (the parts inserted above are rendered, the cell kept is the last) */
+    g_hash_table_remove(t->editing, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, cell_index(view))));
     guint index = ipynb_doc_split_cell(t->doc, cell_index(view), parts);
     g_strfreev(parts);
     ipynb_tab_mark_changed(t);
