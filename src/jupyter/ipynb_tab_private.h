@@ -3,8 +3,8 @@
 
 /* Shared by the files of the Jupyter notebook tab: ipynb_tab.c (the tab,
  * its cells), ipynb_save.c (saving), ipynb_run.c (running cells in a
- * kernel), ipynb_bar.c (the bar at the top) and ipynb_tagbar.c (the
- * tagbar). The public API is ipynb_tab.h. */
+ * kernel), ipynb_bar.c (the bar at the top), ipynb_tagbar.c (the
+ * tagbar) and ipynb_fold.c (folding). The public API is ipynb_tab.h. */
 #include "core/app_types.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_kernel.h"
@@ -153,5 +153,29 @@ gboolean ipynb_tagbar_shown(IpynbTab* t);
  * tagbar (its list or search bar) */
 GtkWidget* ipynb_tagbar_list(IpynbTab* t);
 gboolean ipynb_tagbar_has_focus(IpynbTab* t);
+
+/* ipynb_fold.c */
+/* The fold arrow of a Markdown cell (shown while it has headings), first in
+ * its head, and the note of the cells its folded section hides, at the
+ * bottom of the cell; view is the cell's source view */
+void ipynb_fold_add_heading(IpynbTab* t, guint index, GtkWidget* view, GtkWidget* head, GtkWidget* cell);
+/* Put the outputs box of a code cell beside an arrow that hides them (a
+ * note in their place); returns the widget to add to the cell */
+GtkWidget* ipynb_fold_outputs_wrap(IpynbTab* t, guint index, GtkWidget* view, GtkWidget* outputs);
+/* The code cell at index shows n_outputs outputs: shown, folded, or
+ * nothing at all without outputs */
+void ipynb_fold_refresh_outputs(IpynbTab* t, guint index, guint n_outputs);
+/* Show or hide the cells of the folded sections, the arrows and notes
+ * (once every cell is built) */
+void ipynb_fold_apply(IpynbTab* t);
+/* Fold or unfold the section of the Markdown cell at index (Tab) / fold
+ * every section, or unfold them all when all are folded (Shift+Tab) */
+void ipynb_fold_toggle_section(IpynbTab* t, guint index);
+void ipynb_fold_cycle_all(IpynbTab* t);
+/* Unfold the sections hiding the cell at index; TRUE if it was hidden */
+gboolean ipynb_fold_reveal(IpynbTab* t, guint index);
+/* The next cell shown after index (step 1) or before it (step -1), or
+ * index when there is none */
+guint ipynb_fold_step(IpynbTab* t, guint index, gint step);
 
 #endif /* IPYNB_TAB_PRIVATE_H */

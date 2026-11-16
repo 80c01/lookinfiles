@@ -90,6 +90,11 @@ Layers, from bottom to top
   headings of its Markdown cells (`code_outline_markdown()`), each
   `CodeOutlineEntry` at the line of its cell's index (column: its line in
   the cell), so `code_outline_entry_at_line()` finds the current cell's.
+  Also the sections folded as in JupyterLab: a cell's level (its highest
+  heading, `ipynb_outline_cell_level()`), where its section ends
+  (`ipynb_outline_section_end()`) and the cells collapsed headings hide
+  (`ipynb_outline_hidden()`); the flags are `ipynb_doc_cell_flag()`
+  (`jp-MarkdownHeadingCollapsed`, `jupyter.outputs_hidden` / `collapsed`).
 - `ipynb_kernel` — a Jupyter kernel run through the bridge script
   `data/jupyter/ipynb_bridge.py` (bundled as a GResource, run as `python3
   -c <script>`): jupyter_client in a Python process, spoken to in JSON
@@ -721,6 +726,13 @@ Layers, from bottom to top
   cut on the right in a narrow pane; the kernel menu, the headings button
   and a `view-more` menu (Clear Outputs, Edit as JSON) always in sight at
   the right end.
+  `ipynb_fold.c` (also on `ipynb_tab_private.h`) folds: a ▾ / ▸ arrow in
+  the head of each Markdown cell with headings and a "n cells hidden" note
+  under it, the cells of folded sections hidden (`ipynb_fold_apply()`,
+  after each rebuild and each render of a Markdown cell), an arrow and a
+  note around each code cell's outputs; `ipynb_tab_focus_cell()` unfolds
+  the sections hiding the cell it goes to, `Ctrl+Up` / `Ctrl+Down` and
+  `Shift+Enter` step over them (`ipynb_fold_step()`).
   `ipynb_tagbar.c` (also on `ipynb_tab_private.h`) puts an `outline_pane`
   beside the cells (the editor tagbar's width), filled by `ipynb_outline`
   600 ms after the last change (`ipynb_tab_mark_changed()`), set again only

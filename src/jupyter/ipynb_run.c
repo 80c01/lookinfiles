@@ -401,10 +401,12 @@ void ipynb_run_cell(IpynbTab* t, guint index) {
 void ipynb_run_advance(IpynbTab* t) {
     guint index = t->current;
     ipynb_run_cell(t, index);
-    if (index + 1 >= ipynb_doc_n_cells(t->doc)) {
-        ipynb_tab_insert_cell(t, index + 1, IPYNB_CELL_CODE);
+    /* The next cell shown: past a folded section */
+    guint next = ipynb_fold_step(t, index, 1);
+    if (next == index) {
+        ipynb_tab_insert_cell(t, ipynb_doc_n_cells(t->doc), IPYNB_CELL_CODE);
     } else {
-        ipynb_tab_focus_cell(t, index + 1);
+        ipynb_tab_focus_cell(t, next);
     }
 }
 

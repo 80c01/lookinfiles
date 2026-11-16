@@ -3,6 +3,7 @@
 #include "core/i18n.h"
 #include "editor/editor.h"
 #include "jupyter/ipynb_doc.h"
+#include "jupyter/ipynb_outline.h"
 #include "jupyter/ipynb_tab_private.h"
 #include "markup/markdown.h"
 #include "markup/math_paintable.h"
@@ -154,6 +155,7 @@ static GtkWidget* shown_rendered(IpynbTab* t, guint index) {
 void ipynb_tab_focus_cell(IpynbTab* t, guint index) {
     if (t->views->len == 0) return;
     index = MIN(index, t->views->len - 1);
+    ipynb_fold_reveal(t, index);
     GtkWidget* rendered = shown_rendered(t, index);
     gtk_widget_grab_focus(rendered != NULL ? rendered : g_ptr_array_index(t->views, index));
 }
@@ -188,6 +190,7 @@ static void show_markdown(IpynbTab* t, guint index, gboolean render) {
         end = start;
         gtk_text_iter_forward_to_line_end(&end);
         gtk_text_buffer_apply_tag_by_name(buffer, "ipynb_first_line", &start, &end);
+        ipynb_fold_apply(t); /* its headings may have changed */
     } else {
         g_hash_table_add(t->editing, GUINT_TO_POINTER(key));
     }
@@ -213,16 +216,26 @@ static void on_rendered_pressed(GtkGestureClick* gesture, gint n_press, gdouble 
     show_markdown(data, cell_index(rendered), FALSE);
 }
 
-/* Enter on a rendered cell: edit its source */
+/* Enter on a rendered cell: edit its source; Tab: fold its section,
+ * Shift+Tab: every section */
 static gboolean on_rendered_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
                                 gpointer data) {
     (void)keycode;
-    if ((keyval != GDK_KEY_Return && keyval != GDK_KEY_KP_Enter) ||
-        (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK | GDK_SUPER_MASK)) != 0) {
-        return FALSE;
-    }
+    IpynbTab* t = data;
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK | GDK_SUPER_MASK);
     GtkWidget* rendered = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
-    show_markdown(data, cell_index(rendered), FALSE);
+    guint index = cell_index(rendered);
+    if (keyval == GDK_KEY_ISO_Left_Tab || (keyval == GDK_KEY_Tab && mods == GDK_SHIFT_MASK)) {
+        ipynb_fold_cycle_all(t);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_Tab && mods == 0) {
+        if (ipynb_outline_cell_level(t->doc, index) == 0) return FALSE;
+        ipynb_fold_toggle_section(t, index);
+        return TRUE;
+    }
+    if ((keyval != GDK_KEY_Return && keyval != GDK_KEY_KP_Enter) || mods != 0) return FALSE;
+    show_markdown(t, index, FALSE);
     return TRUE;
 }
 
@@ -542,7 +555,7 @@ static GtkWidget* output_math(IpynbTab* t, const IpynbOutput* o) {
 }
 
 /* Fill box (emptied first) with the outputs of the code cell at index;
- * hidden without outputs */
+ * hidden without outputs, or when folded */
 static void fill_outputs(IpynbTab* t, guint index, GtkWidget* box) {
     GtkWidget* child;
     while ((child = gtk_widget_get_first_child(box)) != NULL) {
@@ -565,7 +578,7 @@ static void fill_outputs(IpynbTab* t, guint index, GtkWidget* box) {
                                                           : output_label(o->text, o->kind == IPYNB_OUTPUT_ERROR);
         gtk_box_append(GTK_BOX(box), shown);
     }
-    gtk_widget_set_visible(box, outputs->len > 0);
+    ipynb_fold_refresh_outputs(t, index, outputs->len);
     g_ptr_array_unref(outputs);
 }
 
@@ -724,6 +737,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
         GtkWidget* rendered = rendered_view_new(t, index);
         gtk_box_append(GTK_BOX(cell), gtk_widget_get_parent(rendered));
         g_object_set_data(G_OBJECT(view), CELL_RENDERED_KEY, rendered);
+        ipynb_fold_add_heading(t, index, view, head, cell);
         if (!g_hash_table_contains(t->editing, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, index)))) {
             show_markdown(t, index, TRUE);
         }
@@ -731,9 +745,8 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
 
     if (type == IPYNB_CELL_CODE) {
         GtkWidget* outputs = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
-        gtk_widget_add_css_class(outputs, "ipynb-outputs");
+        gtk_box_append(GTK_BOX(cell), ipynb_fold_outputs_wrap(t, index, view, outputs));
         fill_outputs(t, index, outputs);
-        gtk_box_append(GTK_BOX(cell), outputs);
         g_object_set_data(G_OBJECT(view), CELL_PROMPT_KEY, prompt);
         g_object_set_data(G_OBJECT(view), CELL_OUTPUTS_KEY, outputs);
         g_object_set_data(G_OBJECT(view), CELL_TIME_KEY, time);
@@ -755,6 +768,7 @@ static void rebuild(IpynbTab* t) {
     for (guint i = 0; i < ipynb_doc_n_cells(t->doc); i++) {
         gtk_box_append(GTK_BOX(t->cells_box), build_cell(t, i));
     }
+    ipynb_fold_apply(t);
     ipynb_tab_update_info(t);
     guint focus = MIN(t->focus_after, t->views->len > 0 ? t->views->len - 1 : 0);
     set_current(t, focus);
@@ -786,8 +800,7 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
     /* The tagbar takes its other keys (Alt+Up would move a cell) */
     if (ipynb_tagbar_has_focus(t)) return FALSE;
     if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_Up || keyval == GDK_KEY_Down)) {
-        if (keyval == GDK_KEY_Up && t->current > 0) ipynb_tab_focus_cell(t, t->current - 1);
-        if (keyval == GDK_KEY_Down) ipynb_tab_focus_cell(t, t->current + 1);
+        ipynb_tab_focus_cell(t, ipynb_fold_step(t, t->current, keyval == GDK_KEY_Up ? -1 : 1));
         return TRUE;
     }
     if ((keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) &&

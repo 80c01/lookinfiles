@@ -84,6 +84,19 @@ cellule Markdown nouvelle ou vide reste en source.
   droit sur le source d'une cellule, la coupe au curseur (ou avant et après
   la sélection), comme dans JupyterLab : les sorties restent avec la
   dernière partie.
+- Une cellule Markdown avec des titres ouvre une **section** : les
+  cellules qui la suivent jusqu’au prochain titre de même niveau ou plus
+  haut. La flèche ▾ à gauche de son en-tête (ou `Tab` sur la cellule
+  rendue) la replie : ses cellules sont masquées et une note dit combien,
+  un clic sur la note la déplie. `Shift+Tab` replie toutes les sections,
+  ou les déplie toutes quand elles sont toutes repliées. La flèche ▾ à
+  gauche des sorties d’une cellule de code les masque de la même façon.
+  Les deux sont gardés dans le notebook comme JupyterLab les garde : un
+  notebook replié ici s’ouvre replié dans JupyterLab. Les cellules
+  repliées s’exécutent quand même avec **Tout exécuter** ; `Ctrl+Up` /
+  `Ctrl+Down` et `Shift+Enter` les sautent, et aller à une cellule masquée
+  (depuis la tagbar, ou une cellule insérée dans une section repliée)
+  déplie sa section.
 - `Ctrl+K Ctrl+O` (ou le bouton de liste après celui du noyau) affiche la
   **barre de symboles** à côté des cellules : les titres des cellules
   Markdown, imbriqués par niveau. Elle suit la cellule courante ; `Enter`

@@ -75,6 +75,19 @@ GPtrArray* ipynb_doc_cell_outputs(const IpynbDoc* doc, guint index, guint max_li
  * (index G_MAXUINT). Returns TRUE if something was removed. */
 gboolean ipynb_doc_clear_outputs(IpynbDoc* doc, guint index);
 
+/* What a cell shows folded, kept in its metadata as JupyterLab keeps it */
+typedef enum {
+    IPYNB_FLAG_HEADING_COLLAPSED, /* a Markdown cell: the cells of its section hidden
+                                   * ("jp-MarkdownHeadingCollapsed") */
+    IPYNB_FLAG_OUTPUTS_HIDDEN     /* a code cell: its outputs hidden ("jupyter":
+                                   * {"outputs_hidden"}, also the older "collapsed") */
+} IpynbCellFlag;
+gboolean ipynb_doc_cell_flag(const IpynbDoc* doc, guint index, IpynbCellFlag flag);
+/* Set or clear a flag (cleared: its members removed, as JupyterLab does);
+ * TRUE if the notebook changed. A heading flag goes on Markdown cells only,
+ * an outputs flag on code cells only. */
+gboolean ipynb_doc_set_cell_flag(IpynbDoc* doc, guint index, IpynbCellFlag flag, gboolean on);
+
 /* Insert a new empty cell of type at index (clamped); returns its index */
 guint ipynb_doc_insert_cell(IpynbDoc* doc, guint index, IpynbCellType type);
 void ipynb_doc_remove_cell(IpynbDoc* doc, guint index);

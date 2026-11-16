@@ -518,6 +518,64 @@ GPtrArray* ipynb_doc_cell_outputs(const IpynbDoc* doc, guint index, guint max_li
     return list;
 }
 
+/* --- Folding flags --- */
+
+#define HEADING_COLLAPSED "jp-MarkdownHeadingCollapsed"
+
+static gboolean node_true(const Node* n) {
+    return n != NULL && n->type == N_RAW && g_strcmp0(n->text, "true") == 0;
+}
+
+static Node* cell_metadata(Node* cell, gboolean create) {
+    Node* meta = node_get(cell, "metadata");
+    if ((meta == NULL || meta->type != N_OBJECT) && create) {
+        node_set(cell, "metadata", node_new(N_OBJECT, NULL, NULL));
+        meta = node_get(cell, "metadata");
+    }
+    return meta != NULL && meta->type == N_OBJECT ? meta : NULL;
+}
+
+gboolean ipynb_doc_cell_flag(const IpynbDoc* doc, guint index, IpynbCellFlag flag) {
+    Node* cell = cell_at(doc, index);
+    Node* meta = cell != NULL ? cell_metadata(cell, FALSE) : NULL;
+    if (meta == NULL) return FALSE;
+    if (flag == IPYNB_FLAG_HEADING_COLLAPSED) {
+        return ipynb_doc_cell_type(doc, index) == IPYNB_CELL_MARKDOWN && node_true(node_get(meta, HEADING_COLLAPSED));
+    }
+    return ipynb_doc_cell_type(doc, index) == IPYNB_CELL_CODE &&
+           (node_true(node_get(node_get(meta, "jupyter"), "outputs_hidden")) || node_true(node_get(meta, "collapsed")));
+}
+
+gboolean ipynb_doc_set_cell_flag(IpynbDoc* doc, guint index, IpynbCellFlag flag, gboolean on) {
+    Node* cell = cell_at(doc, index);
+    IpynbCellType want = flag == IPYNB_FLAG_HEADING_COLLAPSED ? IPYNB_CELL_MARKDOWN : IPYNB_CELL_CODE;
+    if (cell == NULL || ipynb_doc_cell_type(doc, index) != want) return FALSE;
+    if (!on && !ipynb_doc_cell_flag(doc, index, flag)) return FALSE;
+    if (on && ipynb_doc_cell_flag(doc, index, flag)) return FALSE;
+    Node* meta = cell_metadata(cell, on);
+    if (flag == IPYNB_FLAG_HEADING_COLLAPSED) {
+        if (on) node_set(meta, HEADING_COLLAPSED, node_new(N_RAW, NULL, "true"));
+        else node_remove(meta, HEADING_COLLAPSED);
+        return TRUE;
+    }
+    Node* jupyter = node_get(meta, "jupyter");
+    if (on) {
+        if (jupyter == NULL || jupyter->type != N_OBJECT) {
+            node_set(meta, "jupyter", node_new(N_OBJECT, NULL, NULL));
+            jupyter = node_get(meta, "jupyter");
+        }
+        node_set(jupyter, "outputs_hidden", node_new(N_RAW, NULL, "true"));
+        node_set(meta, "collapsed", node_new(N_RAW, NULL, "true"));
+        return TRUE;
+    }
+    node_remove(meta, "collapsed");
+    if (jupyter != NULL && jupyter->type == N_OBJECT) {
+        node_remove(jupyter, "outputs_hidden");
+        if (jupyter->children->len == 0) node_remove(meta, "jupyter");
+    }
+    return TRUE;
+}
+
 static gboolean clear_cell(Node* cell) {
     if (g_strcmp0(node_get_string(cell, "cell_type"), "code") != 0) return FALSE;
     Node* outputs = node_get(cell, "outputs");
